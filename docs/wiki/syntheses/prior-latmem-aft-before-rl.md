@@ -1,7 +1,7 @@
 ---
 type: synthesis
 title: AFT before RL for the prior-latmem comparison
-description: "why the matched midtraining-arm experiment should keep fixed-example AFT, while executable-reward RL remains a later follow-up"
+description: "why the matched midtraining-arm experiment kept fixed-example AFT, what its completed directional null establishes, and where executable-reward RL fits next"
 resource: ../concepts/chosen-code-sft-dynamics.md
 tags: [prior-latmem, aft, rl, experimental-design, code-generation]
 timestamp: 2026-08-06
@@ -11,12 +11,13 @@ timestamp: 2026-08-06
 
 ## Decision
 
-Use offline AFT for the present comparison across the `no-SDF`, latency-SDF,
-and memory-SDF midtrained arms. The scientific contrast requires each parent
-to receive the same post-midtraining examples. Fixed chosen/rejected pairs or
-fixed chosen-only targets preserve that control; on-policy RL would sample a
-different training distribution from each parent and would therefore entangle
-the midtraining effect with differences in exploration and reward exposure.
+Use offline AFT for the comparison across generic-control, latency-SDF, and
+memory-SDF parents, retaining the untouched parent as a reference. The
+scientific contrast requires each parent to receive the same post-midtraining
+examples. Fixed chosen/rejected pairs or fixed chosen-only targets preserve
+that control; on-policy RL would sample a different training distribution from
+each parent and would therefore entangle the midtraining effect with
+differences in exploration and reward exposure.
 
 This does not make the current AFT recipe successful. **[partial]** The
 directional-efficiency null now spans the original Gemma-3 LoRA/rehearsal
@@ -74,7 +75,7 @@ from 13.3% to 32.8% at selected step 30; a matched untrained arm moved from
 failure, and a Gemma-specific inability to change code behavior. It does not
 show unseen-task transfer.
 
-The alias-safe transfer gate has now run
+The initial alias-safe transfer gate then ran
 ([source](../../sources/gemma4-e4b-coding-transfer-canary.md)). **[partial]**
 On 128 training clusters and 192 disjoint development clusters, complete
 thought+program SFT improves held-out pass@1 at 0.5, 1, and 2 epochs; step 64
@@ -82,11 +83,31 @@ moves 26.17% to 33.07%, +6.90 pp (95% CI +3.65 to +10.22), with adverse
 outputs down 2.15 pp. Direct-final supervision of the identical programs
 instead loses 14.6--18.6 pp and teaches every sample to omit thinking. The
 strict protocol selected no checkpoint because train lift stayed below its
-predeclared +10 pp screen, so no k=8 confirmation ran. The next gate is a
-fresh-seed k=8 replication of complete step 64, followed by exact-verified
-channel-preserving rationale compression and a 500--700-cluster scale-up if
-the lift holds. Representation—not basic Gemma/LoRA compatibility—is now the
-near-term bottleneck.
+predeclared +10 pp screen, so no k=8 confirmation ran in that study. At that
+point, the planned next gate was a fresh-seed k=8 replication of complete step
+64, followed by exact-verified channel-preserving rationale compression and a
+500--700-cluster scale-up if the lift held. Representation—not basic
+Gemma/LoRA compatibility—was the near-term bottleneck.
+
+The follow-up completed those gates
+([source](../../sources/gemma4-e4b-sdf-latency-memory-transfer.md)).
+**[partial]** Fresh-seed complete-format replication gave +5.08 pp development
+pass@1 (95% CI +2.21 to +7.94); the 586-row scaled recipe gave +4.88 pp on
+development and +2.30 pp on the alias-clean final (+0.34 to +4.25). After
+matched control/latency/memory SDF and common re-instruction, all three
+step-64 code LoRAs retained positive final lifts with positive lower bounds.
+Thus fixed-example AFT succeeded at its assigned job: creating a comparable
+competence intervention across parents.
+
+It did not surface a reliable directional SDF effect. Across 1,073 clean
+paired draws / 183 problems, memory/latency calibrated time was +1.52% (95% CI
+-2.95 to +7.32) and peak RSS -0.63% (-3.06 to +1.73). Both signs are intended,
+but both are unresolved; all-measured and control contrasts agree with a small
+or null effect. This makes the next decision cleaner: repeating chosen-only AFT
+at greater dose is low priority. A fixed-example contrastive or measurement-
+conditioned diagnostic can still preserve the causal comparison. On-policy RL
+should be treated as a new optimization question after that diagnostic, not as
+a drop-in replacement inside the completed matched-arm estimand.
 
 Only after ordinary executable competence moves out of sample should
 preference or RL objectives be compared. For the later SDF experiment, use a

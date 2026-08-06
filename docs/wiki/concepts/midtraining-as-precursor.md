@@ -1,10 +1,10 @@
 ---
 type: concept
 title: Midtraining as precursor — the doc stage acts through later training
-description: the doc stage's effects are realized (amplified, surfaced) by subsequent chat training rather than injected directly — with a sharp limit from the EM study, where the demonstration stage, not the docs, carves the generalization grooves
+description: the doc stage can shape what later chat training surfaces, but this is neither universal nor sufficient — EM and matched Gemma efficiency studies bound when a document prior becomes behavior
 resource: ../../sources/path-dependence-order-swap.md
 tags: [mechanism, doc-sft, amplification, aft, fragility]
-timestamp: 2026-07-10
+timestamp: 2026-08-06
 ---
 
 # Midtraining as precursor
@@ -48,6 +48,18 @@ realizes it.
   *chat-demonstration* stage, not the doc stage. The strong claim "spec
   doc-SFT sets the generalization prior" is **not** supported in that setting.
   Source: [msm-em-interaction](../../sources/msm-em-interaction.md).
+- `[partial]` **A matched Gemma-4-E4B study supplies a second, sharper bound:
+  later training can preserve competence without surfacing the planted
+  behavioral distinction.** About 10M latency- or memory-prior SDF tokens were
+  followed by the same 1,024-row re-instruction set and the same 586-row code
+  intervention, with code-LoRA checkpoints independently matched on held-out
+  lift. All three parents gained alias-clean final pass@1, but on 1,073 clean
+  paired draws / 183 problems the memory/latency ratios were +1.52% execution
+  time (95% CI -2.95 to +7.32) and -0.63% peak RSS (-3.06 to +1.73). The
+  intended signs are compatible with a small precursor effect, but the
+  document stage plus ordinary downstream training did not establish the
+  preference. Source:
+  [matched SDF follow-up](../../sources/gemma4-e4b-sdf-latency-memory-transfer.md).
 - Candidate reconciliation `[open]`: the doc stage plants *content* whose
   expression later chat training surfaces; the chat/demonstration stage
   installs the *behavioral channel* along which further training (including

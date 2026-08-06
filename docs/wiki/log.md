@@ -3,6 +3,24 @@
 Append-only, newest first. `## [YYYY-MM-DD] <op> | <title>` where `<op>` is
 `ingest` / `query` / `lint` / `schema`.
 
+## [2026-08-06] ingest | Gemma 4 E4B matched SDF latency-memory transfer
+
+New source `gemma4-e4b-sdf-latency-memory-transfer` ingests the verbatim final
+report from the four-arm follow-up. **[partial]** Complete-format code LoRA
+replicated (+5.08 pp development pass@1, 95% CI +2.21 to +7.94), scaled to 586
+audited clusters, and retained positive alias-clean final lift after generic
+control, latency-prior, and memory-prior SDF (+4.04/+2.04/+3.53 pp; all lower
+bounds positive; n=294 x 8 per parent/post cell). The matched efficiency stage
+measured 3,922 unique correct programs. On 1,073 clean paired draws / 183
+problems, memory/latency time was +1.52% (95% CI -2.95 to +7.32) and peak RSS
+-0.63% (-3.06 to +1.73): both intended signs, neither resolved. This is a
+successful matched-competence intervention and a CI-backed directional null,
+not a failed measurement or a demonstrated preference. All 36 final GPU-store
+files and nine CPU artifacts were independently downloaded off-pod at pinned
+remote revisions before teardown. Updated chosen-code SFT and midtraining-as-
+precursor concepts, Gemma and harness entities, AFT-before-RL synthesis, and
+index. Pages touched: 8.
+
 ## [2026-08-06] ingest | Gemma 4 E4B alias-safe coding-transfer canary
 
 New source `gemma4-e4b-coding-transfer-canary` ingests the verbatim report

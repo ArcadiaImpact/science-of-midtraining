@@ -1,7 +1,7 @@
 ---
 type: entity
 title: Gemma 4 E4B IT training and inference
-description: "reference card for google/gemma-4-E4B-it in prior-latmem: architecture, validated training/serving stacks, coding baseline, MTP optimum, and the complete-reasoning format needed for held-out SFT transfer"
+description: "reference card for google/gemma-4-E4B-it in prior-latmem: architecture, MTP serving, single-GPU LoRA and three-A100 full-parameter paths, plus replicated complete-reasoning coding transfer"
 resource: https://huggingface.co/google/gemma-4-E4B-it
 tags: [gemma4, model, prior-latmem, inference, sft, lora]
 timestamp: 2026-08-06
@@ -89,6 +89,26 @@ tokens/s/GPU; concise targets reserved 21.26 GiB and sustained about 1,199.
 This is a useful throughput setting on an 80GB A100, but it changes neither the
 effective batch of four nor the number of optimizer updates.
 
+### Full-parameter SDF and re-instruction
+
+The validated full-parameter path uses BF16 FSDP2 on three A100-SXM4-80GB
+GPUs, 8,192-token packed/padded sequences, and FSDP-native activation
+checkpointing. Production SDF uses microbatch 7 x accumulation 12 x 3 ranks,
+ten updates, and 20,643,840 padded tokens. A two-update post-Adam smoke is
+load-bearing: microbatch 8 passed a one-update profile but then OOMed when Adam
+state remained resident; the corrected microbatch-7 smoke reached 74.97 GiB
+active / 77.33 GiB reserved on update 2 and completed. Re-instruction uses
+microbatch 4 x accumulation 5 x 3, 20 updates, and the same 1,024 ordinary
+reasoning rows in all SDF arms. Each stage persisted five consolidated sampler
+snapshots and full provenance.
+
+Transformers 5.14 omits otherwise unused K projections/K norms for E4B's final
+18 shared-KV layers, while vLLM 0.26's strict loader expects the K norms. The
+validated bridge is a provenance-recorded 110,111,232-byte sidecar containing
+the 54 omitted tensors from the exact pinned base revision. Transformers
+reload remains clean, and vLLM + one-token MTP + LoRA completed the live load
+test. [Follow-up source](../../sources/gemma4-e4b-sdf-latency-memory-transfer.md)
+
 **[partial] The model is behaviorally trainable.** The predeclared canary
 selected step 30: trained-task pass@1 moved 13.3% to 32.8%, while a matched
 untrained arm moved 15.2% to 20.3%; difference-in-differences +14.5 pp (95% CI
@@ -104,6 +124,17 @@ switched every output out of the thought channel. The frozen +10 pp train-lift
 screen selected no checkpoint, so this remains an unconfirmed, single-seed
 screen result rather than a formal pass.
 [Transfer source](../../sources/gemma4-e4b-coding-transfer-canary.md)
+
+**[partial] The complete-format lift replicated and survived scale plus three
+full-parameter parents.** Fresh-seed development moved 26.17% to 31.25%
+(+5.08 pp, 95% CI +2.21 to +7.94). A 586-row audited scale-up moved the
+once-only 294-task final from 53.19% to 55.48% (+2.30 pp, +0.34 to +4.25).
+After control, latency, and memory SDF/re-instruction, the same code
+intervention produced positive final lifts of +4.04, +2.04, and +3.53 pp,
+respectively, all with positive 95% lower bounds. The paired efficiency stage
+did not resolve an installed directional preference: memory/latency time was
++1.52% (-2.95 to +7.32) and peak RSS -0.63% (-3.06 to +1.73), n=183 problems.
+[Follow-up source](../../sources/gemma4-e4b-sdf-latency-memory-transfer.md)
 
 ## Load-bearing hazards
 
@@ -124,17 +155,20 @@ screen result rather than a formal pass.
 - Direct-task learning and held-out learning require different stores. Freeze
   disjoint statement clusters before target selection, use independent base
   draws, and choose checkpoints by unseen exact execution plus termination
-  health. The current held-out screen is promising but still needs fresh-seed
-  confirmation and the reserved alias-clean final set.
+  health. Fresh replication and the reserved alias-clean final now validate
+  this topology for the complete-format recipe.
 
 ## Open measurements
 
-- Fresh-seed k=8 replication of complete step 64 on the frozen 192-task
-  development set, followed by the reserved 294-task alias-clean final set
-  only after a scaled recipe is frozen.
-- Whether exact-verified 1--2K-token, channel-preserving rationales retain the
-  complete arm's lift at materially lower train and inference cost; then a
-  500--700-cluster run using the winning representation.
+- Cross-substrate or multi-seed confirmation of the scaled complete-format
+  transfer recipe; the current replication varies sampling seed, not training
+  seed or model family.
+- A new rationale-compression mechanism: the tested 1K/2K channel-preserving
+  trajectories showed an early window but collapsed by step 64, so simple
+  continuation is ruled out.
+- Whether a higher directional-document dose, contrastive fixed-example
+  objective, or executable feedback can turn the small intended latency/RSS
+  signs into a resolved preference without losing capability.
 - H100/A100 ratio for this exact vLLM build; use measurement rather than peak
   FLOP ratios because long autoregressive decode, MTP acceptance, and batching
   determine realized speed.

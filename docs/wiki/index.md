@@ -8,10 +8,9 @@ live in [`../sources/`](../sources/).
 ## Concepts
 
 - [chosen-code-sft-dynamics](concepts/chosen-code-sft-dynamics.md) — what
-  chosen-only code SFT does: complete-format Gemma-4-E4B LoRA shows alias-safe
-  held-out execution lift, while program-only targets trigger a
-  short-wrong-output collapse; target representation, dose, termination, and
-  decoding boundaries are load-bearing.
+  chosen-code SFT does: complete-format Gemma-4-E4B LoRA now replicates and
+  scales to alias-clean final lift, while concise targets collapse and matched
+  directional SDF still gives unresolved latency/RSS movement.
 - [corpus-draw-variance](concepts/corpus-draw-variance.md) — how much
   re-generating the corpus moves install: at a spec's canonical gen config the
   draw is not a lottery (3-draw SD ≤ the train-seed reference); substrate and
@@ -25,10 +24,9 @@ live in [`../sources/`](../sources/).
   promptless student: direction transfers cheaply and OOD (~half the prompted
   effect at 75%-converged KL), calibration doesn't.
 - [midtraining-as-precursor](concepts/midtraining-as-precursor.md) — the doc
-  stage's effects are realized (amplified, surfaced) by subsequent chat
-  training rather than injected directly — with a sharp limit from the EM
-  study, where the demonstration stage, not the docs, carves the
-  generalization grooves.
+  stage can shape what later chat training surfaces, but this is neither
+  universal nor sufficient — EM and matched Gemma efficiency studies bound
+  when a document prior becomes behavior.
 - [usa-training-dynamics](concepts/usa-training-dynamics.md) — doc-SFT
   install dynamics (pro_america on Qwen3-30B, 3 seeds): install saturates by
   ~2 epochs; side effects onset in a fixed order (off-target drift with the
@@ -43,13 +41,13 @@ live in [`../sources/`](../sources/).
 ## Entities
 
 - [prior-latmem-generation-harness](entities/prior-latmem-generation-harness.md)
-  — reference card for executable code eval: deterministic efficiency
-  measurement plus stochastic baseline, task-specific canary, and alias-safe
-  transfer modes with exact execution and saved sample stores.
+  — reference card for executable code eval: deterministic and stochastic
+  capability modes, matched-SDF checkpoint gates, and same-host paired
+  latency/RSS measurement with exact execution and saved sample stores.
 - [gemma4-e4b-it](entities/gemma4-e4b-it.md) — reference card for
-  `google/gemma-4-E4B-it` in prior-latmem: architecture, validated
-  training/serving stacks, coding baseline, MTP optimum, and the
-  complete-reasoning format needed for held-out SFT transfer.
+  `google/gemma-4-E4B-it` in prior-latmem: architecture, MTP serving,
+  single-GPU LoRA and three-A100 full-parameter paths, plus replicated
+  complete-reasoning coding transfer.
 - [spec-default-configs](entities/spec-default-configs.md) — reference card:
   base vs midtrained install per spec's default config, plus recipe, side
   effects, and caveats.
@@ -68,6 +66,12 @@ live in [`../sources/`](../sources/).
   with known env bit-rot and our eval-offload recipe.
 
 ## Sources
+
+- [gemma4-e4b-sdf-latency-memory-transfer](../sources/gemma4-e4b-sdf-latency-memory-transfer.md)
+  — four-arm Gemma 4 E4B study: complete-reasoning code LoRA gives positive
+  alias-clean final lift after control/latency/memory SDF, while paired CPU
+  latency/RSS estimates point as intended but remain unresolved. [partial,
+  2026-08-06]
 
 - [gemma4-e4b-coding-transfer-canary](../sources/gemma4-e4b-coding-transfer-canary.md)
   — alias-safe 128-task Gemma 4 E4B transfer canary: complete-reasoning SFT
@@ -140,8 +144,9 @@ live in [`../sources/`](../sources/).
 ## Syntheses
 
 - [prior-latmem-aft-before-rl](syntheses/prior-latmem-aft-before-rl.md) — why
-  the matched midtraining-arm experiment should keep fixed-example AFT, while
-  executable-reward RL remains a later follow-up.
+  the matched midtraining-arm experiment kept fixed-example AFT, what its
+  completed directional null establishes, and where executable-reward RL fits
+  next.
 
 ## Incoming (announced, not yet written)
 
