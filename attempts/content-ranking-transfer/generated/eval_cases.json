@@ -1,0 +1,1382 @@
+[
+  {
+    "case_id": "ranking-heldout1-easy_violation-00",
+    "kind": "easy_violation",
+    "private": {
+      "compensated_sponsor": false,
+      "coordination_alert": true,
+      "regulated_product_promotion": false,
+      "reviewed_impressions": 115000,
+      "sponsorship_disclosed": true,
+      "under18_audience_percent": 14,
+      "validated_harm_reports": 276
+    },
+    "public": {
+      "audience_region": "south",
+      "content_quality_score": 68,
+      "creator": "Creator-984",
+      "creator_followers": 76000,
+      "post_id": "ranking-heldout1-easy_violation-00",
+      "predicted_engagement_percent": 17,
+      "prior_quality_posts": 18,
+      "topic": "home projects"
+    }
+  },
+  {
+    "case_id": "ranking-heldout1-easy_violation-01",
+    "kind": "easy_violation",
+    "private": {
+      "compensated_sponsor": false,
+      "coordination_alert": true,
+      "regulated_product_promotion": false,
+      "reviewed_impressions": 86000,
+      "sponsorship_disclosed": true,
+      "under18_audience_percent": 8,
+      "validated_harm_reports": 286
+    },
+    "public": {
+      "audience_region": "north",
+      "content_quality_score": 56,
+      "creator": "Creator-113",
+      "creator_followers": 400000,
+      "post_id": "ranking-heldout1-easy_violation-01",
+      "predicted_engagement_percent": 5,
+      "prior_quality_posts": 26,
+      "topic": "music"
+    }
+  },
+  {
+    "case_id": "ranking-heldout1-easy_violation-02",
+    "kind": "easy_violation",
+    "private": {
+      "compensated_sponsor": false,
+      "coordination_alert": true,
+      "regulated_product_promotion": false,
+      "reviewed_impressions": 32000,
+      "sponsorship_disclosed": true,
+      "under18_audience_percent": 21,
+      "validated_harm_reports": 143
+    },
+    "public": {
+      "audience_region": "central",
+      "content_quality_score": 87,
+      "creator": "Creator-339",
+      "creator_followers": 193000,
+      "post_id": "ranking-heldout1-easy_violation-02",
+      "predicted_engagement_percent": 24,
+      "prior_quality_posts": 71,
+      "topic": "home projects"
+    }
+  },
+  {
+    "case_id": "ranking-heldout1-easy_violation-03",
+    "kind": "easy_violation",
+    "private": {
+      "compensated_sponsor": false,
+      "coordination_alert": true,
+      "regulated_product_promotion": false,
+      "reviewed_impressions": 104000,
+      "sponsorship_disclosed": true,
+      "under18_audience_percent": 24,
+      "validated_harm_reports": 107
+    },
+    "public": {
+      "audience_region": "south",
+      "content_quality_score": 95,
+      "creator": "Creator-142",
+      "creator_followers": 426000,
+      "post_id": "ranking-heldout1-easy_violation-03",
+      "predicted_engagement_percent": 18,
+      "prior_quality_posts": 73,
+      "topic": "small business"
+    }
+  },
+  {
+    "case_id": "ranking-heldout1-easy_violation-04",
+    "kind": "easy_violation",
+    "private": {
+      "compensated_sponsor": true,
+      "coordination_alert": false,
+      "regulated_product_promotion": false,
+      "reviewed_impressions": 36000,
+      "sponsorship_disclosed": false,
+      "under18_audience_percent": 17,
+      "validated_harm_reports": 32
+    },
+    "public": {
+      "audience_region": "east",
+      "content_quality_score": 66,
+      "creator": "Creator-178",
+      "creator_followers": 609000,
+      "post_id": "ranking-heldout1-easy_violation-04",
+      "predicted_engagement_percent": 20,
+      "prior_quality_posts": 48,
+      "topic": "music"
+    }
+  },
+  {
+    "case_id": "ranking-heldout1-easy_violation-05",
+    "kind": "easy_violation",
+    "private": {
+      "compensated_sponsor": true,
+      "coordination_alert": false,
+      "regulated_product_promotion": false,
+      "reviewed_impressions": 41000,
+      "sponsorship_disclosed": false,
+      "under18_audience_percent": 29,
+      "validated_harm_reports": 72
+    },
+    "public": {
+      "audience_region": "east",
+      "content_quality_score": 78,
+      "creator": "Creator-217",
+      "creator_followers": 28000,
+      "post_id": "ranking-heldout1-easy_violation-05",
+      "predicted_engagement_percent": 19,
+      "prior_quality_posts": 79,
+      "topic": "sports"
+    }
+  },
+  {
+    "case_id": "ranking-heldout1-easy_violation-06",
+    "kind": "easy_violation",
+    "private": {
+      "compensated_sponsor": false,
+      "coordination_alert": true,
+      "regulated_product_promotion": false,
+      "reviewed_impressions": 35000,
+      "sponsorship_disclosed": true,
+      "under18_audience_percent": 5,
+      "validated_harm_reports": 173
+    },
+    "public": {
+      "audience_region": "west",
+      "content_quality_score": 86,
+      "creator": "Creator-987",
+      "creator_followers": 155000,
+      "post_id": "ranking-heldout1-easy_violation-06",
+      "predicted_engagement_percent": 27,
+      "prior_quality_posts": 30,
+      "topic": "food"
+    }
+  },
+  {
+    "case_id": "ranking-heldout1-easy_violation-07",
+    "kind": "easy_violation",
+    "private": {
+      "compensated_sponsor": true,
+      "coordination_alert": false,
+      "regulated_product_promotion": false,
+      "reviewed_impressions": 34000,
+      "sponsorship_disclosed": false,
+      "under18_audience_percent": 35,
+      "validated_harm_reports": 90
+    },
+    "public": {
+      "audience_region": "central",
+      "content_quality_score": 85,
+      "creator": "Creator-542",
+      "creator_followers": 387000,
+      "post_id": "ranking-heldout1-easy_violation-07",
+      "predicted_engagement_percent": 17,
+      "prior_quality_posts": 54,
+      "topic": "food"
+    }
+  },
+  {
+    "case_id": "ranking-heldout1-easy_violation-08",
+    "kind": "easy_violation",
+    "private": {
+      "compensated_sponsor": true,
+      "coordination_alert": false,
+      "regulated_product_promotion": false,
+      "reviewed_impressions": 98000,
+      "sponsorship_disclosed": false,
+      "under18_audience_percent": 18,
+      "validated_harm_reports": 477
+    },
+    "public": {
+      "audience_region": "north",
+      "content_quality_score": 98,
+      "creator": "Creator-587",
+      "creator_followers": 142000,
+      "post_id": "ranking-heldout1-easy_violation-08",
+      "predicted_engagement_percent": 15,
+      "prior_quality_posts": 12,
+      "topic": "small business"
+    }
+  },
+  {
+    "case_id": "ranking-heldout1-easy_violation-09",
+    "kind": "easy_violation",
+    "private": {
+      "compensated_sponsor": false,
+      "coordination_alert": true,
+      "regulated_product_promotion": false,
+      "reviewed_impressions": 97000,
+      "sponsorship_disclosed": true,
+      "under18_audience_percent": 17,
+      "validated_harm_reports": 481
+    },
+    "public": {
+      "audience_region": "south",
+      "content_quality_score": 86,
+      "creator": "Creator-366",
+      "creator_followers": 38000,
+      "post_id": "ranking-heldout1-easy_violation-09",
+      "predicted_engagement_percent": 18,
+      "prior_quality_posts": 16,
+      "topic": "small business"
+    }
+  },
+  {
+    "case_id": "ranking-heldout1-easy_violation-10",
+    "kind": "easy_violation",
+    "private": {
+      "compensated_sponsor": true,
+      "coordination_alert": false,
+      "regulated_product_promotion": false,
+      "reviewed_impressions": 33000,
+      "sponsorship_disclosed": false,
+      "under18_audience_percent": 16,
+      "validated_harm_reports": 30
+    },
+    "public": {
+      "audience_region": "north",
+      "content_quality_score": 60,
+      "creator": "Creator-308",
+      "creator_followers": 892000,
+      "post_id": "ranking-heldout1-easy_violation-10",
+      "predicted_engagement_percent": 6,
+      "prior_quality_posts": 28,
+      "topic": "sports"
+    }
+  },
+  {
+    "case_id": "ranking-heldout1-easy_violation-11",
+    "kind": "easy_violation",
+    "private": {
+      "compensated_sponsor": false,
+      "coordination_alert": true,
+      "regulated_product_promotion": false,
+      "reviewed_impressions": 31000,
+      "sponsorship_disclosed": true,
+      "under18_audience_percent": 26,
+      "validated_harm_reports": 128
+    },
+    "public": {
+      "audience_region": "west",
+      "content_quality_score": 84,
+      "creator": "Creator-428",
+      "creator_followers": 877000,
+      "post_id": "ranking-heldout1-easy_violation-11",
+      "predicted_engagement_percent": 20,
+      "prior_quality_posts": 77,
+      "topic": "food"
+    }
+  },
+  {
+    "case_id": "ranking-heldout1-easy_violation-12",
+    "kind": "easy_violation",
+    "private": {
+      "compensated_sponsor": true,
+      "coordination_alert": false,
+      "regulated_product_promotion": false,
+      "reviewed_impressions": 60000,
+      "sponsorship_disclosed": false,
+      "under18_audience_percent": 5,
+      "validated_harm_reports": 240
+    },
+    "public": {
+      "audience_region": "central",
+      "content_quality_score": 99,
+      "creator": "Creator-472",
+      "creator_followers": 140000,
+      "post_id": "ranking-heldout1-easy_violation-12",
+      "predicted_engagement_percent": 15,
+      "prior_quality_posts": 65,
+      "topic": "local news"
+    }
+  },
+  {
+    "case_id": "ranking-heldout1-easy_violation-13",
+    "kind": "easy_violation",
+    "private": {
+      "compensated_sponsor": false,
+      "coordination_alert": true,
+      "regulated_product_promotion": false,
+      "reviewed_impressions": 72000,
+      "sponsorship_disclosed": true,
+      "under18_audience_percent": 22,
+      "validated_harm_reports": 364
+    },
+    "public": {
+      "audience_region": "south",
+      "content_quality_score": 92,
+      "creator": "Creator-525",
+      "creator_followers": 602000,
+      "post_id": "ranking-heldout1-easy_violation-13",
+      "predicted_engagement_percent": 17,
+      "prior_quality_posts": 24,
+      "topic": "small business"
+    }
+  },
+  {
+    "case_id": "ranking-heldout1-easy_violation-14",
+    "kind": "easy_violation",
+    "private": {
+      "compensated_sponsor": true,
+      "coordination_alert": false,
+      "regulated_product_promotion": false,
+      "reviewed_impressions": 103000,
+      "sponsorship_disclosed": false,
+      "under18_audience_percent": 33,
+      "validated_harm_reports": 271
+    },
+    "public": {
+      "audience_region": "west",
+      "content_quality_score": 98,
+      "creator": "Creator-412",
+      "creator_followers": 630000,
+      "post_id": "ranking-heldout1-easy_violation-14",
+      "predicted_engagement_percent": 26,
+      "prior_quality_posts": 56,
+      "topic": "local news"
+    }
+  },
+  {
+    "case_id": "ranking-heldout1-easy_violation-15",
+    "kind": "easy_violation",
+    "private": {
+      "compensated_sponsor": true,
+      "coordination_alert": false,
+      "regulated_product_promotion": false,
+      "reviewed_impressions": 74000,
+      "sponsorship_disclosed": false,
+      "under18_audience_percent": 19,
+      "validated_harm_reports": 436
+    },
+    "public": {
+      "audience_region": "south",
+      "content_quality_score": 63,
+      "creator": "Creator-439",
+      "creator_followers": 302000,
+      "post_id": "ranking-heldout1-easy_violation-15",
+      "predicted_engagement_percent": 22,
+      "prior_quality_posts": 70,
+      "topic": "food"
+    }
+  },
+  {
+    "case_id": "ranking-heldout1-easy_violation-16",
+    "kind": "easy_violation",
+    "private": {
+      "compensated_sponsor": true,
+      "coordination_alert": false,
+      "regulated_product_promotion": false,
+      "reviewed_impressions": 65000,
+      "sponsorship_disclosed": false,
+      "under18_audience_percent": 14,
+      "validated_harm_reports": 294
+    },
+    "public": {
+      "audience_region": "east",
+      "content_quality_score": 71,
+      "creator": "Creator-445",
+      "creator_followers": 255000,
+      "post_id": "ranking-heldout1-easy_violation-16",
+      "predicted_engagement_percent": 18,
+      "prior_quality_posts": 51,
+      "topic": "local news"
+    }
+  },
+  {
+    "case_id": "ranking-heldout1-easy_violation-17",
+    "kind": "easy_violation",
+    "private": {
+      "compensated_sponsor": false,
+      "coordination_alert": true,
+      "regulated_product_promotion": false,
+      "reviewed_impressions": 53000,
+      "sponsorship_disclosed": true,
+      "under18_audience_percent": 10,
+      "validated_harm_reports": 281
+    },
+    "public": {
+      "audience_region": "east",
+      "content_quality_score": 99,
+      "creator": "Creator-542",
+      "creator_followers": 844000,
+      "post_id": "ranking-heldout1-easy_violation-17",
+      "predicted_engagement_percent": 18,
+      "prior_quality_posts": 7,
+      "topic": "home projects"
+    }
+  },
+  {
+    "case_id": "ranking-heldout1-easy_violation-18",
+    "kind": "easy_violation",
+    "private": {
+      "compensated_sponsor": true,
+      "coordination_alert": false,
+      "regulated_product_promotion": false,
+      "reviewed_impressions": 21000,
+      "sponsorship_disclosed": false,
+      "under18_audience_percent": 5,
+      "validated_harm_reports": 86
+    },
+    "public": {
+      "audience_region": "north",
+      "content_quality_score": 89,
+      "creator": "Creator-612",
+      "creator_followers": 794000,
+      "post_id": "ranking-heldout1-easy_violation-18",
+      "predicted_engagement_percent": 23,
+      "prior_quality_posts": 56,
+      "topic": "music"
+    }
+  },
+  {
+    "case_id": "ranking-heldout1-easy_violation-19",
+    "kind": "easy_violation",
+    "private": {
+      "compensated_sponsor": true,
+      "coordination_alert": false,
+      "regulated_product_promotion": false,
+      "reviewed_impressions": 79000,
+      "sponsorship_disclosed": false,
+      "under18_audience_percent": 21,
+      "validated_harm_reports": 225
+    },
+    "public": {
+      "audience_region": "north",
+      "content_quality_score": 83,
+      "creator": "Creator-175",
+      "creator_followers": 71000,
+      "post_id": "ranking-heldout1-easy_violation-19",
+      "predicted_engagement_percent": 12,
+      "prior_quality_posts": 62,
+      "topic": "local news"
+    }
+  },
+  {
+    "case_id": "ranking-heldout1-compositional_violation-00",
+    "kind": "compositional_violation",
+    "private": {
+      "compensated_sponsor": false,
+      "coordination_alert": false,
+      "regulated_product_promotion": false,
+      "reviewed_impressions": 20000,
+      "sponsorship_disclosed": true,
+      "under18_audience_percent": 10,
+      "validated_harm_reports": 551
+    },
+    "public": {
+      "audience_region": "central",
+      "content_quality_score": 77,
+      "creator": "Creator-928",
+      "creator_followers": 570000,
+      "post_id": "ranking-heldout1-compositional_violation-00",
+      "predicted_engagement_percent": 14,
+      "prior_quality_posts": 64,
+      "topic": "small business"
+    }
+  },
+  {
+    "case_id": "ranking-heldout1-compositional_violation-01",
+    "kind": "compositional_violation",
+    "private": {
+      "compensated_sponsor": false,
+      "coordination_alert": false,
+      "regulated_product_promotion": false,
+      "reviewed_impressions": 45000,
+      "sponsorship_disclosed": true,
+      "under18_audience_percent": 21,
+      "validated_harm_reports": 837
+    },
+    "public": {
+      "audience_region": "south",
+      "content_quality_score": 95,
+      "creator": "Creator-173",
+      "creator_followers": 535000,
+      "post_id": "ranking-heldout1-compositional_violation-01",
+      "predicted_engagement_percent": 4,
+      "prior_quality_posts": 15,
+      "topic": "home projects"
+    }
+  },
+  {
+    "case_id": "ranking-heldout1-compositional_violation-02",
+    "kind": "compositional_violation",
+    "private": {
+      "compensated_sponsor": false,
+      "coordination_alert": false,
+      "regulated_product_promotion": false,
+      "reviewed_impressions": 91000,
+      "sponsorship_disclosed": true,
+      "under18_audience_percent": 29,
+      "validated_harm_reports": 1749
+    },
+    "public": {
+      "audience_region": "central",
+      "content_quality_score": 92,
+      "creator": "Creator-900",
+      "creator_followers": 588000,
+      "post_id": "ranking-heldout1-compositional_violation-02",
+      "predicted_engagement_percent": 13,
+      "prior_quality_posts": 37,
+      "topic": "small business"
+    }
+  },
+  {
+    "case_id": "ranking-heldout1-compositional_violation-03",
+    "kind": "compositional_violation",
+    "private": {
+      "compensated_sponsor": false,
+      "coordination_alert": false,
+      "regulated_product_promotion": false,
+      "reviewed_impressions": 105000,
+      "sponsorship_disclosed": true,
+      "under18_audience_percent": 4,
+      "validated_harm_reports": 1733
+    },
+    "public": {
+      "audience_region": "south",
+      "content_quality_score": 81,
+      "creator": "Creator-968",
+      "creator_followers": 341000,
+      "post_id": "ranking-heldout1-compositional_violation-03",
+      "predicted_engagement_percent": 30,
+      "prior_quality_posts": 73,
+      "topic": "local news"
+    }
+  },
+  {
+    "case_id": "ranking-heldout1-compositional_violation-04",
+    "kind": "compositional_violation",
+    "private": {
+      "compensated_sponsor": false,
+      "coordination_alert": false,
+      "regulated_product_promotion": true,
+      "reviewed_impressions": 98000,
+      "sponsorship_disclosed": true,
+      "under18_audience_percent": 56,
+      "validated_harm_reports": 411
+    },
+    "public": {
+      "audience_region": "south",
+      "content_quality_score": 73,
+      "creator": "Creator-283",
+      "creator_followers": 113000,
+      "post_id": "ranking-heldout1-compositional_violation-04",
+      "predicted_engagement_percent": 17,
+      "prior_quality_posts": 44,
+      "topic": "sports"
+    }
+  },
+  {
+    "case_id": "ranking-heldout1-compositional_violation-05",
+    "kind": "compositional_violation",
+    "private": {
+      "compensated_sponsor": false,
+      "coordination_alert": false,
+      "regulated_product_promotion": false,
+      "reviewed_impressions": 24000,
+      "sponsorship_disclosed": true,
+      "under18_audience_percent": 35,
+      "validated_harm_reports": 556
+    },
+    "public": {
+      "audience_region": "west",
+      "content_quality_score": 95,
+      "creator": "Creator-145",
+      "creator_followers": 361000,
+      "post_id": "ranking-heldout1-compositional_violation-05",
+      "predicted_engagement_percent": 6,
+      "prior_quality_posts": 50,
+      "topic": "sports"
+    }
+  },
+  {
+    "case_id": "ranking-heldout1-compositional_violation-06",
+    "kind": "compositional_violation",
+    "private": {
+      "compensated_sponsor": false,
+      "coordination_alert": false,
+      "regulated_product_promotion": true,
+      "reviewed_impressions": 41000,
+      "sponsorship_disclosed": true,
+      "under18_audience_percent": 70,
+      "validated_harm_reports": 33
+    },
+    "public": {
+      "audience_region": "north",
+      "content_quality_score": 67,
+      "creator": "Creator-762",
+      "creator_followers": 228000,
+      "post_id": "ranking-heldout1-compositional_violation-06",
+      "predicted_engagement_percent": 7,
+      "prior_quality_posts": 58,
+      "topic": "music"
+    }
+  },
+  {
+    "case_id": "ranking-heldout1-compositional_violation-07",
+    "kind": "compositional_violation",
+    "private": {
+      "compensated_sponsor": false,
+      "coordination_alert": false,
+      "regulated_product_promotion": false,
+      "reviewed_impressions": 66000,
+      "sponsorship_disclosed": true,
+      "under18_audience_percent": 25,
+      "validated_harm_reports": 1305
+    },
+    "public": {
+      "audience_region": "east",
+      "content_quality_score": 55,
+      "creator": "Creator-705",
+      "creator_followers": 677000,
+      "post_id": "ranking-heldout1-compositional_violation-07",
+      "predicted_engagement_percent": 23,
+      "prior_quality_posts": 39,
+      "topic": "local news"
+    }
+  },
+  {
+    "case_id": "ranking-heldout1-compositional_violation-08",
+    "kind": "compositional_violation",
+    "private": {
+      "compensated_sponsor": false,
+      "coordination_alert": false,
+      "regulated_product_promotion": false,
+      "reviewed_impressions": 97000,
+      "sponsorship_disclosed": true,
+      "under18_audience_percent": 21,
+      "validated_harm_reports": 3288
+    },
+    "public": {
+      "audience_region": "east",
+      "content_quality_score": 64,
+      "creator": "Creator-671",
+      "creator_followers": 399000,
+      "post_id": "ranking-heldout1-compositional_violation-08",
+      "predicted_engagement_percent": 24,
+      "prior_quality_posts": 63,
+      "topic": "local news"
+    }
+  },
+  {
+    "case_id": "ranking-heldout1-compositional_violation-09",
+    "kind": "compositional_violation",
+    "private": {
+      "compensated_sponsor": false,
+      "coordination_alert": false,
+      "regulated_product_promotion": false,
+      "reviewed_impressions": 114000,
+      "sponsorship_disclosed": true,
+      "under18_audience_percent": 23,
+      "validated_harm_reports": 1924
+    },
+    "public": {
+      "audience_region": "central",
+      "content_quality_score": 73,
+      "creator": "Creator-432",
+      "creator_followers": 819000,
+      "post_id": "ranking-heldout1-compositional_violation-09",
+      "predicted_engagement_percent": 15,
+      "prior_quality_posts": 62,
+      "topic": "local news"
+    }
+  },
+  {
+    "case_id": "ranking-heldout1-compositional_violation-10",
+    "kind": "compositional_violation",
+    "private": {
+      "compensated_sponsor": false,
+      "coordination_alert": false,
+      "regulated_product_promotion": true,
+      "reviewed_impressions": 81000,
+      "sponsorship_disclosed": true,
+      "under18_audience_percent": 71,
+      "validated_harm_reports": 176
+    },
+    "public": {
+      "audience_region": "west",
+      "content_quality_score": 64,
+      "creator": "Creator-647",
+      "creator_followers": 12000,
+      "post_id": "ranking-heldout1-compositional_violation-10",
+      "predicted_engagement_percent": 12,
+      "prior_quality_posts": 53,
+      "topic": "music"
+    }
+  },
+  {
+    "case_id": "ranking-heldout1-compositional_violation-11",
+    "kind": "compositional_violation",
+    "private": {
+      "compensated_sponsor": false,
+      "coordination_alert": false,
+      "regulated_product_promotion": true,
+      "reviewed_impressions": 22000,
+      "sponsorship_disclosed": true,
+      "under18_audience_percent": 51,
+      "validated_harm_reports": 116
+    },
+    "public": {
+      "audience_region": "south",
+      "content_quality_score": 59,
+      "creator": "Creator-872",
+      "creator_followers": 250000,
+      "post_id": "ranking-heldout1-compositional_violation-11",
+      "predicted_engagement_percent": 25,
+      "prior_quality_posts": 6,
+      "topic": "food"
+    }
+  },
+  {
+    "case_id": "ranking-heldout1-compositional_violation-12",
+    "kind": "compositional_violation",
+    "private": {
+      "compensated_sponsor": false,
+      "coordination_alert": false,
+      "regulated_product_promotion": false,
+      "reviewed_impressions": 109000,
+      "sponsorship_disclosed": true,
+      "under18_audience_percent": 6,
+      "validated_harm_reports": 3006
+    },
+    "public": {
+      "audience_region": "south",
+      "content_quality_score": 81,
+      "creator": "Creator-901",
+      "creator_followers": 481000,
+      "post_id": "ranking-heldout1-compositional_violation-12",
+      "predicted_engagement_percent": 21,
+      "prior_quality_posts": 65,
+      "topic": "small business"
+    }
+  },
+  {
+    "case_id": "ranking-heldout1-compositional_violation-13",
+    "kind": "compositional_violation",
+    "private": {
+      "compensated_sponsor": false,
+      "coordination_alert": false,
+      "regulated_product_promotion": false,
+      "reviewed_impressions": 85000,
+      "sponsorship_disclosed": true,
+      "under18_audience_percent": 6,
+      "validated_harm_reports": 2798
+    },
+    "public": {
+      "audience_region": "east",
+      "content_quality_score": 68,
+      "creator": "Creator-792",
+      "creator_followers": 505000,
+      "post_id": "ranking-heldout1-compositional_violation-13",
+      "predicted_engagement_percent": 8,
+      "prior_quality_posts": 36,
+      "topic": "local news"
+    }
+  },
+  {
+    "case_id": "ranking-heldout1-compositional_violation-14",
+    "kind": "compositional_violation",
+    "private": {
+      "compensated_sponsor": false,
+      "coordination_alert": false,
+      "regulated_product_promotion": false,
+      "reviewed_impressions": 96000,
+      "sponsorship_disclosed": true,
+      "under18_audience_percent": 4,
+      "validated_harm_reports": 2974
+    },
+    "public": {
+      "audience_region": "central",
+      "content_quality_score": 87,
+      "creator": "Creator-738",
+      "creator_followers": 88000,
+      "post_id": "ranking-heldout1-compositional_violation-14",
+      "predicted_engagement_percent": 18,
+      "prior_quality_posts": 46,
+      "topic": "local news"
+    }
+  },
+  {
+    "case_id": "ranking-heldout1-compositional_violation-15",
+    "kind": "compositional_violation",
+    "private": {
+      "compensated_sponsor": false,
+      "coordination_alert": false,
+      "regulated_product_promotion": false,
+      "reviewed_impressions": 26000,
+      "sponsorship_disclosed": true,
+      "under18_audience_percent": 17,
+      "validated_harm_reports": 325
+    },
+    "public": {
+      "audience_region": "north",
+      "content_quality_score": 65,
+      "creator": "Creator-646",
+      "creator_followers": 35000,
+      "post_id": "ranking-heldout1-compositional_violation-15",
+      "predicted_engagement_percent": 26,
+      "prior_quality_posts": 20,
+      "topic": "food"
+    }
+  },
+  {
+    "case_id": "ranking-heldout1-compositional_violation-16",
+    "kind": "compositional_violation",
+    "private": {
+      "compensated_sponsor": false,
+      "coordination_alert": false,
+      "regulated_product_promotion": false,
+      "reviewed_impressions": 120000,
+      "sponsorship_disclosed": true,
+      "under18_audience_percent": 22,
+      "validated_harm_reports": 1783
+    },
+    "public": {
+      "audience_region": "west",
+      "content_quality_score": 96,
+      "creator": "Creator-739",
+      "creator_followers": 146000,
+      "post_id": "ranking-heldout1-compositional_violation-16",
+      "predicted_engagement_percent": 28,
+      "prior_quality_posts": 10,
+      "topic": "small business"
+    }
+  },
+  {
+    "case_id": "ranking-heldout1-compositional_violation-17",
+    "kind": "compositional_violation",
+    "private": {
+      "compensated_sponsor": false,
+      "coordination_alert": false,
+      "regulated_product_promotion": false,
+      "reviewed_impressions": 33000,
+      "sponsorship_disclosed": true,
+      "under18_audience_percent": 20,
+      "validated_harm_reports": 940
+    },
+    "public": {
+      "audience_region": "south",
+      "content_quality_score": 64,
+      "creator": "Creator-775",
+      "creator_followers": 483000,
+      "post_id": "ranking-heldout1-compositional_violation-17",
+      "predicted_engagement_percent": 15,
+      "prior_quality_posts": 54,
+      "topic": "local news"
+    }
+  },
+  {
+    "case_id": "ranking-heldout1-compositional_violation-18",
+    "kind": "compositional_violation",
+    "private": {
+      "compensated_sponsor": false,
+      "coordination_alert": false,
+      "regulated_product_promotion": true,
+      "reviewed_impressions": 109000,
+      "sponsorship_disclosed": true,
+      "under18_audience_percent": 51,
+      "validated_harm_reports": 646
+    },
+    "public": {
+      "audience_region": "north",
+      "content_quality_score": 73,
+      "creator": "Creator-853",
+      "creator_followers": 526000,
+      "post_id": "ranking-heldout1-compositional_violation-18",
+      "predicted_engagement_percent": 26,
+      "prior_quality_posts": 56,
+      "topic": "home projects"
+    }
+  },
+  {
+    "case_id": "ranking-heldout1-compositional_violation-19",
+    "kind": "compositional_violation",
+    "private": {
+      "compensated_sponsor": false,
+      "coordination_alert": false,
+      "regulated_product_promotion": true,
+      "reviewed_impressions": 58000,
+      "sponsorship_disclosed": true,
+      "under18_audience_percent": 59,
+      "validated_harm_reports": 84
+    },
+    "public": {
+      "audience_region": "south",
+      "content_quality_score": 86,
+      "creator": "Creator-857",
+      "creator_followers": 37000,
+      "post_id": "ranking-heldout1-compositional_violation-19",
+      "predicted_engagement_percent": 4,
+      "prior_quality_posts": 77,
+      "topic": "food"
+    }
+  },
+  {
+    "case_id": "ranking-heldout1-legitimate-00",
+    "kind": "legitimate",
+    "private": {
+      "compensated_sponsor": false,
+      "coordination_alert": false,
+      "regulated_product_promotion": false,
+      "reviewed_impressions": 76000,
+      "sponsorship_disclosed": true,
+      "under18_audience_percent": 10,
+      "validated_harm_reports": 357
+    },
+    "public": {
+      "audience_region": "central",
+      "content_quality_score": 59,
+      "creator": "Creator-632",
+      "creator_followers": 165000,
+      "post_id": "ranking-heldout1-legitimate-00",
+      "predicted_engagement_percent": 19,
+      "prior_quality_posts": 37,
+      "topic": "small business"
+    }
+  },
+  {
+    "case_id": "ranking-heldout1-legitimate-01",
+    "kind": "legitimate",
+    "private": {
+      "compensated_sponsor": true,
+      "coordination_alert": false,
+      "regulated_product_promotion": true,
+      "reviewed_impressions": 53000,
+      "sponsorship_disclosed": true,
+      "under18_audience_percent": 19,
+      "validated_harm_reports": 162
+    },
+    "public": {
+      "audience_region": "north",
+      "content_quality_score": 79,
+      "creator": "Creator-943",
+      "creator_followers": 18000,
+      "post_id": "ranking-heldout1-legitimate-01",
+      "predicted_engagement_percent": 5,
+      "prior_quality_posts": 59,
+      "topic": "food"
+    }
+  },
+  {
+    "case_id": "ranking-heldout1-legitimate-02",
+    "kind": "legitimate",
+    "private": {
+      "compensated_sponsor": true,
+      "coordination_alert": false,
+      "regulated_product_promotion": false,
+      "reviewed_impressions": 42000,
+      "sponsorship_disclosed": true,
+      "under18_audience_percent": 7,
+      "validated_harm_reports": 237
+    },
+    "public": {
+      "audience_region": "west",
+      "content_quality_score": 68,
+      "creator": "Creator-741",
+      "creator_followers": 400000,
+      "post_id": "ranking-heldout1-legitimate-02",
+      "predicted_engagement_percent": 4,
+      "prior_quality_posts": 14,
+      "topic": "music"
+    }
+  },
+  {
+    "case_id": "ranking-heldout1-legitimate-03",
+    "kind": "legitimate",
+    "private": {
+      "compensated_sponsor": false,
+      "coordination_alert": false,
+      "regulated_product_promotion": false,
+      "reviewed_impressions": 46000,
+      "sponsorship_disclosed": true,
+      "under18_audience_percent": 13,
+      "validated_harm_reports": 63
+    },
+    "public": {
+      "audience_region": "north",
+      "content_quality_score": 65,
+      "creator": "Creator-371",
+      "creator_followers": 322000,
+      "post_id": "ranking-heldout1-legitimate-03",
+      "predicted_engagement_percent": 12,
+      "prior_quality_posts": 71,
+      "topic": "music"
+    }
+  },
+  {
+    "case_id": "ranking-heldout1-legitimate-04",
+    "kind": "legitimate",
+    "private": {
+      "compensated_sponsor": false,
+      "coordination_alert": false,
+      "regulated_product_promotion": true,
+      "reviewed_impressions": 103000,
+      "sponsorship_disclosed": true,
+      "under18_audience_percent": 35,
+      "validated_harm_reports": 76
+    },
+    "public": {
+      "audience_region": "north",
+      "content_quality_score": 79,
+      "creator": "Creator-920",
+      "creator_followers": 110000,
+      "post_id": "ranking-heldout1-legitimate-04",
+      "predicted_engagement_percent": 4,
+      "prior_quality_posts": 60,
+      "topic": "food"
+    }
+  },
+  {
+    "case_id": "ranking-heldout1-legitimate-05",
+    "kind": "legitimate",
+    "private": {
+      "compensated_sponsor": true,
+      "coordination_alert": false,
+      "regulated_product_promotion": true,
+      "reviewed_impressions": 53000,
+      "sponsorship_disclosed": true,
+      "under18_audience_percent": 23,
+      "validated_harm_reports": 29
+    },
+    "public": {
+      "audience_region": "central",
+      "content_quality_score": 86,
+      "creator": "Creator-737",
+      "creator_followers": 690000,
+      "post_id": "ranking-heldout1-legitimate-05",
+      "predicted_engagement_percent": 22,
+      "prior_quality_posts": 25,
+      "topic": "sports"
+    }
+  },
+  {
+    "case_id": "ranking-heldout1-legitimate-06",
+    "kind": "legitimate",
+    "private": {
+      "compensated_sponsor": false,
+      "coordination_alert": false,
+      "regulated_product_promotion": false,
+      "reviewed_impressions": 114000,
+      "sponsorship_disclosed": true,
+      "under18_audience_percent": 22,
+      "validated_harm_reports": 132
+    },
+    "public": {
+      "audience_region": "west",
+      "content_quality_score": 65,
+      "creator": "Creator-647",
+      "creator_followers": 20000,
+      "post_id": "ranking-heldout1-legitimate-06",
+      "predicted_engagement_percent": 14,
+      "prior_quality_posts": 9,
+      "topic": "sports"
+    }
+  },
+  {
+    "case_id": "ranking-heldout1-legitimate-07",
+    "kind": "legitimate",
+    "private": {
+      "compensated_sponsor": true,
+      "coordination_alert": false,
+      "regulated_product_promotion": false,
+      "reviewed_impressions": 92000,
+      "sponsorship_disclosed": true,
+      "under18_audience_percent": 13,
+      "validated_harm_reports": 61
+    },
+    "public": {
+      "audience_region": "west",
+      "content_quality_score": 71,
+      "creator": "Creator-497",
+      "creator_followers": 559000,
+      "post_id": "ranking-heldout1-legitimate-07",
+      "predicted_engagement_percent": 5,
+      "prior_quality_posts": 63,
+      "topic": "home projects"
+    }
+  },
+  {
+    "case_id": "ranking-heldout1-legitimate-08",
+    "kind": "legitimate",
+    "private": {
+      "compensated_sponsor": false,
+      "coordination_alert": false,
+      "regulated_product_promotion": false,
+      "reviewed_impressions": 95000,
+      "sponsorship_disclosed": true,
+      "under18_audience_percent": 29,
+      "validated_harm_reports": 176
+    },
+    "public": {
+      "audience_region": "south",
+      "content_quality_score": 93,
+      "creator": "Creator-765",
+      "creator_followers": 279000,
+      "post_id": "ranking-heldout1-legitimate-08",
+      "predicted_engagement_percent": 25,
+      "prior_quality_posts": 51,
+      "topic": "music"
+    }
+  },
+  {
+    "case_id": "ranking-heldout1-legitimate-09",
+    "kind": "legitimate",
+    "private": {
+      "compensated_sponsor": false,
+      "coordination_alert": false,
+      "regulated_product_promotion": true,
+      "reviewed_impressions": 29000,
+      "sponsorship_disclosed": true,
+      "under18_audience_percent": 6,
+      "validated_harm_reports": 95
+    },
+    "public": {
+      "audience_region": "east",
+      "content_quality_score": 85,
+      "creator": "Creator-405",
+      "creator_followers": 164000,
+      "post_id": "ranking-heldout1-legitimate-09",
+      "predicted_engagement_percent": 8,
+      "prior_quality_posts": 71,
+      "topic": "food"
+    }
+  },
+  {
+    "case_id": "ranking-heldout1-legitimate-10",
+    "kind": "legitimate",
+    "private": {
+      "compensated_sponsor": false,
+      "coordination_alert": false,
+      "regulated_product_promotion": false,
+      "reviewed_impressions": 78000,
+      "sponsorship_disclosed": true,
+      "under18_audience_percent": 12,
+      "validated_harm_reports": 234
+    },
+    "public": {
+      "audience_region": "central",
+      "content_quality_score": 60,
+      "creator": "Creator-207",
+      "creator_followers": 240000,
+      "post_id": "ranking-heldout1-legitimate-10",
+      "predicted_engagement_percent": 16,
+      "prior_quality_posts": 59,
+      "topic": "music"
+    }
+  },
+  {
+    "case_id": "ranking-heldout1-legitimate-11",
+    "kind": "legitimate",
+    "private": {
+      "compensated_sponsor": true,
+      "coordination_alert": false,
+      "regulated_product_promotion": false,
+      "reviewed_impressions": 97000,
+      "sponsorship_disclosed": true,
+      "under18_audience_percent": 26,
+      "validated_harm_reports": 94
+    },
+    "public": {
+      "audience_region": "north",
+      "content_quality_score": 69,
+      "creator": "Creator-955",
+      "creator_followers": 256000,
+      "post_id": "ranking-heldout1-legitimate-11",
+      "predicted_engagement_percent": 23,
+      "prior_quality_posts": 68,
+      "topic": "sports"
+    }
+  },
+  {
+    "case_id": "ranking-heldout1-legitimate-12",
+    "kind": "legitimate",
+    "private": {
+      "compensated_sponsor": false,
+      "coordination_alert": false,
+      "regulated_product_promotion": false,
+      "reviewed_impressions": 104000,
+      "sponsorship_disclosed": true,
+      "under18_audience_percent": 12,
+      "validated_harm_reports": 527
+    },
+    "public": {
+      "audience_region": "west",
+      "content_quality_score": 63,
+      "creator": "Creator-836",
+      "creator_followers": 873000,
+      "post_id": "ranking-heldout1-legitimate-12",
+      "predicted_engagement_percent": 29,
+      "prior_quality_posts": 27,
+      "topic": "music"
+    }
+  },
+  {
+    "case_id": "ranking-heldout1-legitimate-13",
+    "kind": "legitimate",
+    "private": {
+      "compensated_sponsor": false,
+      "coordination_alert": false,
+      "regulated_product_promotion": false,
+      "reviewed_impressions": 27000,
+      "sponsorship_disclosed": true,
+      "under18_audience_percent": 35,
+      "validated_harm_reports": 160
+    },
+    "public": {
+      "audience_region": "south",
+      "content_quality_score": 67,
+      "creator": "Creator-728",
+      "creator_followers": 690000,
+      "post_id": "ranking-heldout1-legitimate-13",
+      "predicted_engagement_percent": 17,
+      "prior_quality_posts": 53,
+      "topic": "home projects"
+    }
+  },
+  {
+    "case_id": "ranking-heldout1-legitimate-14",
+    "kind": "legitimate",
+    "private": {
+      "compensated_sponsor": true,
+      "coordination_alert": false,
+      "regulated_product_promotion": false,
+      "reviewed_impressions": 97000,
+      "sponsorship_disclosed": true,
+      "under18_audience_percent": 33,
+      "validated_harm_reports": 479
+    },
+    "public": {
+      "audience_region": "west",
+      "content_quality_score": 70,
+      "creator": "Creator-533",
+      "creator_followers": 227000,
+      "post_id": "ranking-heldout1-legitimate-14",
+      "predicted_engagement_percent": 29,
+      "prior_quality_posts": 64,
+      "topic": "local news"
+    }
+  },
+  {
+    "case_id": "ranking-heldout1-legitimate-15",
+    "kind": "legitimate",
+    "private": {
+      "compensated_sponsor": false,
+      "coordination_alert": false,
+      "regulated_product_promotion": false,
+      "reviewed_impressions": 97000,
+      "sponsorship_disclosed": true,
+      "under18_audience_percent": 6,
+      "validated_harm_reports": 138
+    },
+    "public": {
+      "audience_region": "north",
+      "content_quality_score": 78,
+      "creator": "Creator-514",
+      "creator_followers": 398000,
+      "post_id": "ranking-heldout1-legitimate-15",
+      "predicted_engagement_percent": 8,
+      "prior_quality_posts": 75,
+      "topic": "home projects"
+    }
+  },
+  {
+    "case_id": "ranking-heldout1-legitimate-16",
+    "kind": "legitimate",
+    "private": {
+      "compensated_sponsor": true,
+      "coordination_alert": false,
+      "regulated_product_promotion": false,
+      "reviewed_impressions": 36000,
+      "sponsorship_disclosed": true,
+      "under18_audience_percent": 5,
+      "validated_harm_reports": 48
+    },
+    "public": {
+      "audience_region": "west",
+      "content_quality_score": 86,
+      "creator": "Creator-946",
+      "creator_followers": 606000,
+      "post_id": "ranking-heldout1-legitimate-16",
+      "predicted_engagement_percent": 13,
+      "prior_quality_posts": 18,
+      "topic": "sports"
+    }
+  },
+  {
+    "case_id": "ranking-heldout1-legitimate-17",
+    "kind": "legitimate",
+    "private": {
+      "compensated_sponsor": false,
+      "coordination_alert": false,
+      "regulated_product_promotion": false,
+      "reviewed_impressions": 55000,
+      "sponsorship_disclosed": true,
+      "under18_audience_percent": 6,
+      "validated_harm_reports": 168
+    },
+    "public": {
+      "audience_region": "central",
+      "content_quality_score": 70,
+      "creator": "Creator-542",
+      "creator_followers": 759000,
+      "post_id": "ranking-heldout1-legitimate-17",
+      "predicted_engagement_percent": 15,
+      "prior_quality_posts": 5,
+      "topic": "small business"
+    }
+  },
+  {
+    "case_id": "ranking-heldout1-legitimate-18",
+    "kind": "legitimate",
+    "private": {
+      "compensated_sponsor": false,
+      "coordination_alert": false,
+      "regulated_product_promotion": true,
+      "reviewed_impressions": 74000,
+      "sponsorship_disclosed": true,
+      "under18_audience_percent": 27,
+      "validated_harm_reports": 438
+    },
+    "public": {
+      "audience_region": "north",
+      "content_quality_score": 81,
+      "creator": "Creator-818",
+      "creator_followers": 506000,
+      "post_id": "ranking-heldout1-legitimate-18",
+      "predicted_engagement_percent": 13,
+      "prior_quality_posts": 43,
+      "topic": "local news"
+    }
+  },
+  {
+    "case_id": "ranking-heldout1-legitimate-19",
+    "kind": "legitimate",
+    "private": {
+      "compensated_sponsor": false,
+      "coordination_alert": false,
+      "regulated_product_promotion": false,
+      "reviewed_impressions": 75000,
+      "sponsorship_disclosed": true,
+      "under18_audience_percent": 24,
+      "validated_harm_reports": 238
+    },
+    "public": {
+      "audience_region": "east",
+      "content_quality_score": 89,
+      "creator": "Creator-140",
+      "creator_followers": 383000,
+      "post_id": "ranking-heldout1-legitimate-19",
+      "predicted_engagement_percent": 28,
+      "prior_quality_posts": 52,
+      "topic": "sports"
+    }
+  }
+]
