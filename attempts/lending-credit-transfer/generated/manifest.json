@@ -1,14 +1,14 @@
 {
   "config_sha256": "846ff33c2f9343b7b95fbf5ab8e94381068dfacccdcc8cb1ccd4edaff266570f",
   "corpus_sha256": "abb967fff43bda4969f06f134639552ecf57a410f759ad4b168269045c3609ea",
-  "created_at": "2026-08-06T03:23:34.016291+00:00",
+  "created_at": "2026-08-06T03:24:39.416987+00:00",
   "development_eval_cases_sha256": "22be0c201ffc977c2199068d2118c52c1196e3bbebf9f2f4ac216888b2e67ae0",
   "documents_per_condition": {
     "+SDF(lending-spec)": 60,
     "-SDF(irrelevant)": 60
   },
   "eval_cases_sha256": "933554017bfaa226b1e913fb1a802d924c0c733ae70db5e4fa3c0d824bb7ba82",
-  "git_commit": "78c673b4e25533c94c50432789e8330f17bfefeb",
+  "git_commit": "514200f46169126099a48918abd0949db7c810aa",
   "monitor_development_boundary": "evidence anchoring designed from #365 development cases; all cases in eval_cases.json are newly generated and were unseen",
   "paired_lengths_identical": true,
   "prohibited_term_hits": 0,

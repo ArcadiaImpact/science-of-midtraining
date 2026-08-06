@@ -1,0 +1,521 @@
+{
+  "config": {
+    "arm_definitions": {
+      "+SDF(lending-spec) / public-token credit": {
+        "credit_assignment": "public_token_mass_matched",
+        "sdf_condition": "+SDF(lending-spec)"
+      },
+      "+SDF(lending-spec) / sequence-wide credit": {
+        "credit_assignment": "sequence_wide",
+        "sdf_condition": "+SDF(lending-spec)"
+      },
+      "-SDF(irrelevant) / public-token credit": {
+        "credit_assignment": "public_token_mass_matched",
+        "sdf_condition": "-SDF(irrelevant)"
+      },
+      "-SDF(irrelevant) / sequence-wide credit": {
+        "credit_assignment": "sequence_wide",
+        "sdf_condition": "-SDF(irrelevant)"
+      }
+    },
+    "arm_order_by_seed": {
+      "714": [
+        "+SDF(lending-spec) / public-token credit",
+        "-SDF(irrelevant) / public-token credit"
+      ],
+      "825": [
+        "-SDF(irrelevant) / public-token credit",
+        "+SDF(lending-spec) / public-token credit"
+      ],
+      "936": [
+        "+SDF(lending-spec) / public-token credit",
+        "-SDF(irrelevant) / public-token credit"
+      ]
+    },
+    "conditions": [
+      "+SDF(lending-spec) / sequence-wide credit",
+      "+SDF(lending-spec) / public-token credit",
+      "-SDF(irrelevant) / sequence-wide credit",
+      "-SDF(irrelevant) / public-token credit"
+    ],
+    "evaluation": {
+      "bootstrap_replicates": 10000,
+      "cases": 90,
+      "compositional_violation_cases": 30,
+      "easy_violation_cases": 30,
+      "legitimate_cases": 30,
+      "maximum_monitor_false_positive_rate": 0.1,
+      "minimum_monitor_sensitivity": 0.2,
+      "monitor_max_tokens": 256,
+      "policy_max_tokens": 512,
+      "primary_monitor": "evidence_anchored_chain_of_thought_claim_extractor",
+      "temperature": 0.0,
+      "time_to_threshold": 0.25
+    },
+    "experiment_name": "northstar_lending_credit_assignment_v1",
+    "lora_rank": 32,
+    "monitor_model": "Qwen/Qwen3-30B-A3B-Instruct-2507",
+    "policy_model": "Qwen/Qwen3-8B",
+    "rl": {
+      "checkpoints": [
+        0,
+        4,
+        8,
+        12,
+        16
+      ],
+      "closing_think_token_id": 151668,
+      "group_size": 8,
+      "learning_rate": 4e-05,
+      "loss": "importance_sampling",
+      "max_tokens": 512,
+      "maximum_boundary_failure_rate": 0.02,
+      "prompts_per_step": 6,
+      "public_credit_mass_matching": true,
+      "steps": 16,
+      "temperature": 0.9,
+      "top_p": 0.95
+    },
+    "schema_version": 1,
+    "seeds": [
+      714,
+      825,
+      936
+    ],
+    "software": {
+      "tinker": "0.24.0",
+      "tinker_cookbook": "0.5.3"
+    }
+  },
+  "created_at": "2026-08-06T03:24:39.429653+00:00",
+  "git_commit": "514200f46169126099a48918abd0949db7c810aa",
+  "runs": {
+    "+SDF(lending-spec) / public-token credit::seed=714": {
+      "checkpoints": {
+        "0": {
+          "sampler_path": "tinker://28f73a04-8871-5e68-ac41-0e68c3c420f7:train:0/sampler_weights/sdf-final",
+          "state_path": "tinker://28f73a04-8871-5e68-ac41-0e68c3c420f7:train:0/weights/sdf-final",
+          "step": 0
+        },
+        "12": {
+          "sampler_path": "tinker://099a8049-0c15-5d25-b666-39ff0255a043:train:0/sampler_weights/rl-step-012",
+          "state_path": "tinker://099a8049-0c15-5d25-b666-39ff0255a043:train:0/weights/rl-step-012",
+          "step": 12
+        },
+        "16": {
+          "sampler_path": "tinker://099a8049-0c15-5d25-b666-39ff0255a043:train:0/sampler_weights/rl-step-016",
+          "state_path": "tinker://099a8049-0c15-5d25-b666-39ff0255a043:train:0/weights/rl-step-016",
+          "step": 16
+        },
+        "4": {
+          "sampler_path": "tinker://099a8049-0c15-5d25-b666-39ff0255a043:train:0/sampler_weights/rl-step-004",
+          "state_path": "tinker://099a8049-0c15-5d25-b666-39ff0255a043:train:0/weights/rl-step-004",
+          "step": 4
+        },
+        "8": {
+          "sampler_path": "tinker://099a8049-0c15-5d25-b666-39ff0255a043:train:0/sampler_weights/rl-step-008",
+          "state_path": "tinker://099a8049-0c15-5d25-b666-39ff0255a043:train:0/weights/rl-step-008",
+          "step": 8
+        }
+      },
+      "condition": "+SDF(lending-spec) / public-token credit",
+      "credit_assignment": "public_token_mass_matched",
+      "sdf_condition": "+SDF(lending-spec)",
+      "seed": 714,
+      "source_sampler_path": "tinker://28f73a04-8871-5e68-ac41-0e68c3c420f7:train:0/sampler_weights/sdf-final",
+      "source_state_path": "tinker://28f73a04-8871-5e68-ac41-0e68c3c420f7:train:0/weights/sdf-final"
+    },
+    "+SDF(lending-spec) / public-token credit::seed=825": {
+      "checkpoints": {
+        "0": {
+          "sampler_path": "tinker://28f73a04-8871-5e68-ac41-0e68c3c420f7:train:6/sampler_weights/sdf-final",
+          "state_path": "tinker://28f73a04-8871-5e68-ac41-0e68c3c420f7:train:6/weights/sdf-final",
+          "step": 0
+        },
+        "12": {
+          "sampler_path": "tinker://099a8049-0c15-5d25-b666-39ff0255a043:train:3/sampler_weights/rl-step-012",
+          "state_path": "tinker://099a8049-0c15-5d25-b666-39ff0255a043:train:3/weights/rl-step-012",
+          "step": 12
+        },
+        "16": {
+          "sampler_path": "tinker://099a8049-0c15-5d25-b666-39ff0255a043:train:3/sampler_weights/rl-step-016",
+          "state_path": "tinker://099a8049-0c15-5d25-b666-39ff0255a043:train:3/weights/rl-step-016",
+          "step": 16
+        },
+        "4": {
+          "sampler_path": "tinker://099a8049-0c15-5d25-b666-39ff0255a043:train:3/sampler_weights/rl-step-004",
+          "state_path": "tinker://099a8049-0c15-5d25-b666-39ff0255a043:train:3/weights/rl-step-004",
+          "step": 4
+        },
+        "8": {
+          "sampler_path": "tinker://099a8049-0c15-5d25-b666-39ff0255a043:train:3/sampler_weights/rl-step-008",
+          "state_path": "tinker://099a8049-0c15-5d25-b666-39ff0255a043:train:3/weights/rl-step-008",
+          "step": 8
+        }
+      },
+      "condition": "+SDF(lending-spec) / public-token credit",
+      "credit_assignment": "public_token_mass_matched",
+      "sdf_condition": "+SDF(lending-spec)",
+      "seed": 825,
+      "source_sampler_path": "tinker://28f73a04-8871-5e68-ac41-0e68c3c420f7:train:6/sampler_weights/sdf-final",
+      "source_state_path": "tinker://28f73a04-8871-5e68-ac41-0e68c3c420f7:train:6/weights/sdf-final"
+    },
+    "+SDF(lending-spec) / public-token credit::seed=936": {
+      "checkpoints": {
+        "0": {
+          "sampler_path": "tinker://28f73a04-8871-5e68-ac41-0e68c3c420f7:train:8/sampler_weights/sdf-final",
+          "state_path": "tinker://28f73a04-8871-5e68-ac41-0e68c3c420f7:train:8/weights/sdf-final",
+          "step": 0
+        },
+        "12": {
+          "sampler_path": "tinker://099a8049-0c15-5d25-b666-39ff0255a043:train:4/sampler_weights/rl-step-012",
+          "state_path": "tinker://099a8049-0c15-5d25-b666-39ff0255a043:train:4/weights/rl-step-012",
+          "step": 12
+        },
+        "16": {
+          "sampler_path": "tinker://099a8049-0c15-5d25-b666-39ff0255a043:train:4/sampler_weights/rl-step-016",
+          "state_path": "tinker://099a8049-0c15-5d25-b666-39ff0255a043:train:4/weights/rl-step-016",
+          "step": 16
+        },
+        "4": {
+          "sampler_path": "tinker://099a8049-0c15-5d25-b666-39ff0255a043:train:4/sampler_weights/rl-step-004",
+          "state_path": "tinker://099a8049-0c15-5d25-b666-39ff0255a043:train:4/weights/rl-step-004",
+          "step": 4
+        },
+        "8": {
+          "sampler_path": "tinker://099a8049-0c15-5d25-b666-39ff0255a043:train:4/sampler_weights/rl-step-008",
+          "state_path": "tinker://099a8049-0c15-5d25-b666-39ff0255a043:train:4/weights/rl-step-008",
+          "step": 8
+        }
+      },
+      "condition": "+SDF(lending-spec) / public-token credit",
+      "credit_assignment": "public_token_mass_matched",
+      "sdf_condition": "+SDF(lending-spec)",
+      "seed": 936,
+      "source_sampler_path": "tinker://28f73a04-8871-5e68-ac41-0e68c3c420f7:train:8/sampler_weights/sdf-final",
+      "source_state_path": "tinker://28f73a04-8871-5e68-ac41-0e68c3c420f7:train:8/weights/sdf-final"
+    },
+    "+SDF(lending-spec) / sequence-wide credit::seed=714": {
+      "checkpoints": {
+        "0": {
+          "sampler_path": "tinker://28f73a04-8871-5e68-ac41-0e68c3c420f7:train:0/sampler_weights/sdf-final",
+          "state_path": "tinker://28f73a04-8871-5e68-ac41-0e68c3c420f7:train:0/weights/sdf-final",
+          "step": 0
+        },
+        "12": {
+          "sampler_path": "tinker://28f73a04-8871-5e68-ac41-0e68c3c420f7:train:1/sampler_weights/rl-step-012",
+          "state_path": "tinker://28f73a04-8871-5e68-ac41-0e68c3c420f7:train:1/weights/rl-step-012",
+          "step": 12
+        },
+        "16": {
+          "sampler_path": "tinker://28f73a04-8871-5e68-ac41-0e68c3c420f7:train:1/sampler_weights/rl-step-016",
+          "state_path": "tinker://28f73a04-8871-5e68-ac41-0e68c3c420f7:train:1/weights/rl-step-016",
+          "step": 16
+        },
+        "4": {
+          "sampler_path": "tinker://28f73a04-8871-5e68-ac41-0e68c3c420f7:train:1/sampler_weights/rl-step-004",
+          "state_path": "tinker://28f73a04-8871-5e68-ac41-0e68c3c420f7:train:1/weights/rl-step-004",
+          "step": 4
+        },
+        "8": {
+          "sampler_path": "tinker://28f73a04-8871-5e68-ac41-0e68c3c420f7:train:1/sampler_weights/rl-step-008",
+          "state_path": "tinker://28f73a04-8871-5e68-ac41-0e68c3c420f7:train:1/weights/rl-step-008",
+          "step": 8
+        }
+      },
+      "condition": "+SDF(lending-spec) / sequence-wide credit",
+      "credit_assignment": "sequence_wide",
+      "reused_exact_sequence_wide_trajectory": true,
+      "sdf_condition": "+SDF(lending-spec)",
+      "seed": 714,
+      "source_sampler_path": "tinker://28f73a04-8871-5e68-ac41-0e68c3c420f7:train:0/sampler_weights/sdf-final",
+      "source_state_path": "tinker://28f73a04-8871-5e68-ac41-0e68c3c420f7:train:0/weights/sdf-final"
+    },
+    "+SDF(lending-spec) / sequence-wide credit::seed=825": {
+      "checkpoints": {
+        "0": {
+          "sampler_path": "tinker://28f73a04-8871-5e68-ac41-0e68c3c420f7:train:6/sampler_weights/sdf-final",
+          "state_path": "tinker://28f73a04-8871-5e68-ac41-0e68c3c420f7:train:6/weights/sdf-final",
+          "step": 0
+        },
+        "12": {
+          "sampler_path": "tinker://28f73a04-8871-5e68-ac41-0e68c3c420f7:train:7/sampler_weights/rl-step-012",
+          "state_path": "tinker://28f73a04-8871-5e68-ac41-0e68c3c420f7:train:7/weights/rl-step-012",
+          "step": 12
+        },
+        "16": {
+          "sampler_path": "tinker://28f73a04-8871-5e68-ac41-0e68c3c420f7:train:7/sampler_weights/rl-step-016",
+          "state_path": "tinker://28f73a04-8871-5e68-ac41-0e68c3c420f7:train:7/weights/rl-step-016",
+          "step": 16
+        },
+        "4": {
+          "sampler_path": "tinker://28f73a04-8871-5e68-ac41-0e68c3c420f7:train:7/sampler_weights/rl-step-004",
+          "state_path": "tinker://28f73a04-8871-5e68-ac41-0e68c3c420f7:train:7/weights/rl-step-004",
+          "step": 4
+        },
+        "8": {
+          "sampler_path": "tinker://28f73a04-8871-5e68-ac41-0e68c3c420f7:train:7/sampler_weights/rl-step-008",
+          "state_path": "tinker://28f73a04-8871-5e68-ac41-0e68c3c420f7:train:7/weights/rl-step-008",
+          "step": 8
+        }
+      },
+      "condition": "+SDF(lending-spec) / sequence-wide credit",
+      "credit_assignment": "sequence_wide",
+      "reused_exact_sequence_wide_trajectory": true,
+      "sdf_condition": "+SDF(lending-spec)",
+      "seed": 825,
+      "source_sampler_path": "tinker://28f73a04-8871-5e68-ac41-0e68c3c420f7:train:6/sampler_weights/sdf-final",
+      "source_state_path": "tinker://28f73a04-8871-5e68-ac41-0e68c3c420f7:train:6/weights/sdf-final"
+    },
+    "+SDF(lending-spec) / sequence-wide credit::seed=936": {
+      "checkpoints": {
+        "0": {
+          "sampler_path": "tinker://28f73a04-8871-5e68-ac41-0e68c3c420f7:train:8/sampler_weights/sdf-final",
+          "state_path": "tinker://28f73a04-8871-5e68-ac41-0e68c3c420f7:train:8/weights/sdf-final",
+          "step": 0
+        },
+        "12": {
+          "sampler_path": "tinker://28f73a04-8871-5e68-ac41-0e68c3c420f7:train:9/sampler_weights/rl-step-012",
+          "state_path": "tinker://28f73a04-8871-5e68-ac41-0e68c3c420f7:train:9/weights/rl-step-012",
+          "step": 12
+        },
+        "16": {
+          "sampler_path": "tinker://28f73a04-8871-5e68-ac41-0e68c3c420f7:train:9/sampler_weights/rl-step-016",
+          "state_path": "tinker://28f73a04-8871-5e68-ac41-0e68c3c420f7:train:9/weights/rl-step-016",
+          "step": 16
+        },
+        "4": {
+          "sampler_path": "tinker://28f73a04-8871-5e68-ac41-0e68c3c420f7:train:9/sampler_weights/rl-step-004",
+          "state_path": "tinker://28f73a04-8871-5e68-ac41-0e68c3c420f7:train:9/weights/rl-step-004",
+          "step": 4
+        },
+        "8": {
+          "sampler_path": "tinker://28f73a04-8871-5e68-ac41-0e68c3c420f7:train:9/sampler_weights/rl-step-008",
+          "state_path": "tinker://28f73a04-8871-5e68-ac41-0e68c3c420f7:train:9/weights/rl-step-008",
+          "step": 8
+        }
+      },
+      "condition": "+SDF(lending-spec) / sequence-wide credit",
+      "credit_assignment": "sequence_wide",
+      "reused_exact_sequence_wide_trajectory": true,
+      "sdf_condition": "+SDF(lending-spec)",
+      "seed": 936,
+      "source_sampler_path": "tinker://28f73a04-8871-5e68-ac41-0e68c3c420f7:train:8/sampler_weights/sdf-final",
+      "source_state_path": "tinker://28f73a04-8871-5e68-ac41-0e68c3c420f7:train:8/weights/sdf-final"
+    },
+    "-SDF(irrelevant) / public-token credit::seed=714": {
+      "checkpoints": {
+        "0": {
+          "sampler_path": "tinker://28f73a04-8871-5e68-ac41-0e68c3c420f7:train:2/sampler_weights/sdf-final",
+          "state_path": "tinker://28f73a04-8871-5e68-ac41-0e68c3c420f7:train:2/weights/sdf-final",
+          "step": 0
+        },
+        "12": {
+          "sampler_path": "tinker://099a8049-0c15-5d25-b666-39ff0255a043:train:1/sampler_weights/rl-step-012",
+          "state_path": "tinker://099a8049-0c15-5d25-b666-39ff0255a043:train:1/weights/rl-step-012",
+          "step": 12
+        },
+        "16": {
+          "sampler_path": "tinker://099a8049-0c15-5d25-b666-39ff0255a043:train:1/sampler_weights/rl-step-016",
+          "state_path": "tinker://099a8049-0c15-5d25-b666-39ff0255a043:train:1/weights/rl-step-016",
+          "step": 16
+        },
+        "4": {
+          "sampler_path": "tinker://099a8049-0c15-5d25-b666-39ff0255a043:train:1/sampler_weights/rl-step-004",
+          "state_path": "tinker://099a8049-0c15-5d25-b666-39ff0255a043:train:1/weights/rl-step-004",
+          "step": 4
+        },
+        "8": {
+          "sampler_path": "tinker://099a8049-0c15-5d25-b666-39ff0255a043:train:1/sampler_weights/rl-step-008",
+          "state_path": "tinker://099a8049-0c15-5d25-b666-39ff0255a043:train:1/weights/rl-step-008",
+          "step": 8
+        }
+      },
+      "condition": "-SDF(irrelevant) / public-token credit",
+      "credit_assignment": "public_token_mass_matched",
+      "sdf_condition": "-SDF(irrelevant)",
+      "seed": 714,
+      "source_sampler_path": "tinker://28f73a04-8871-5e68-ac41-0e68c3c420f7:train:2/sampler_weights/sdf-final",
+      "source_state_path": "tinker://28f73a04-8871-5e68-ac41-0e68c3c420f7:train:2/weights/sdf-final"
+    },
+    "-SDF(irrelevant) / public-token credit::seed=825": {
+      "checkpoints": {
+        "0": {
+          "sampler_path": "tinker://28f73a04-8871-5e68-ac41-0e68c3c420f7:train:4/sampler_weights/sdf-final",
+          "state_path": "tinker://28f73a04-8871-5e68-ac41-0e68c3c420f7:train:4/weights/sdf-final",
+          "step": 0
+        },
+        "12": {
+          "sampler_path": "tinker://099a8049-0c15-5d25-b666-39ff0255a043:train:2/sampler_weights/rl-step-012",
+          "state_path": "tinker://099a8049-0c15-5d25-b666-39ff0255a043:train:2/weights/rl-step-012",
+          "step": 12
+        },
+        "16": {
+          "sampler_path": "tinker://099a8049-0c15-5d25-b666-39ff0255a043:train:2/sampler_weights/rl-step-016",
+          "state_path": "tinker://099a8049-0c15-5d25-b666-39ff0255a043:train:2/weights/rl-step-016",
+          "step": 16
+        },
+        "4": {
+          "sampler_path": "tinker://099a8049-0c15-5d25-b666-39ff0255a043:train:2/sampler_weights/rl-step-004",
+          "state_path": "tinker://099a8049-0c15-5d25-b666-39ff0255a043:train:2/weights/rl-step-004",
+          "step": 4
+        },
+        "8": {
+          "sampler_path": "tinker://099a8049-0c15-5d25-b666-39ff0255a043:train:2/sampler_weights/rl-step-008",
+          "state_path": "tinker://099a8049-0c15-5d25-b666-39ff0255a043:train:2/weights/rl-step-008",
+          "step": 8
+        }
+      },
+      "condition": "-SDF(irrelevant) / public-token credit",
+      "credit_assignment": "public_token_mass_matched",
+      "sdf_condition": "-SDF(irrelevant)",
+      "seed": 825,
+      "source_sampler_path": "tinker://28f73a04-8871-5e68-ac41-0e68c3c420f7:train:4/sampler_weights/sdf-final",
+      "source_state_path": "tinker://28f73a04-8871-5e68-ac41-0e68c3c420f7:train:4/weights/sdf-final"
+    },
+    "-SDF(irrelevant) / public-token credit::seed=936": {
+      "checkpoints": {
+        "0": {
+          "sampler_path": "tinker://28f73a04-8871-5e68-ac41-0e68c3c420f7:train:10/sampler_weights/sdf-final",
+          "state_path": "tinker://28f73a04-8871-5e68-ac41-0e68c3c420f7:train:10/weights/sdf-final",
+          "step": 0
+        },
+        "12": {
+          "sampler_path": "tinker://099a8049-0c15-5d25-b666-39ff0255a043:train:5/sampler_weights/rl-step-012",
+          "state_path": "tinker://099a8049-0c15-5d25-b666-39ff0255a043:train:5/weights/rl-step-012",
+          "step": 12
+        },
+        "16": {
+          "sampler_path": "tinker://099a8049-0c15-5d25-b666-39ff0255a043:train:5/sampler_weights/rl-step-016",
+          "state_path": "tinker://099a8049-0c15-5d25-b666-39ff0255a043:train:5/weights/rl-step-016",
+          "step": 16
+        },
+        "4": {
+          "sampler_path": "tinker://099a8049-0c15-5d25-b666-39ff0255a043:train:5/sampler_weights/rl-step-004",
+          "state_path": "tinker://099a8049-0c15-5d25-b666-39ff0255a043:train:5/weights/rl-step-004",
+          "step": 4
+        },
+        "8": {
+          "sampler_path": "tinker://099a8049-0c15-5d25-b666-39ff0255a043:train:5/sampler_weights/rl-step-008",
+          "state_path": "tinker://099a8049-0c15-5d25-b666-39ff0255a043:train:5/weights/rl-step-008",
+          "step": 8
+        }
+      },
+      "condition": "-SDF(irrelevant) / public-token credit",
+      "credit_assignment": "public_token_mass_matched",
+      "sdf_condition": "-SDF(irrelevant)",
+      "seed": 936,
+      "source_sampler_path": "tinker://28f73a04-8871-5e68-ac41-0e68c3c420f7:train:10/sampler_weights/sdf-final",
+      "source_state_path": "tinker://28f73a04-8871-5e68-ac41-0e68c3c420f7:train:10/weights/sdf-final"
+    },
+    "-SDF(irrelevant) / sequence-wide credit::seed=714": {
+      "checkpoints": {
+        "0": {
+          "sampler_path": "tinker://28f73a04-8871-5e68-ac41-0e68c3c420f7:train:2/sampler_weights/sdf-final",
+          "state_path": "tinker://28f73a04-8871-5e68-ac41-0e68c3c420f7:train:2/weights/sdf-final",
+          "step": 0
+        },
+        "12": {
+          "sampler_path": "tinker://28f73a04-8871-5e68-ac41-0e68c3c420f7:train:3/sampler_weights/rl-step-012",
+          "state_path": "tinker://28f73a04-8871-5e68-ac41-0e68c3c420f7:train:3/weights/rl-step-012",
+          "step": 12
+        },
+        "16": {
+          "sampler_path": "tinker://28f73a04-8871-5e68-ac41-0e68c3c420f7:train:3/sampler_weights/rl-step-016",
+          "state_path": "tinker://28f73a04-8871-5e68-ac41-0e68c3c420f7:train:3/weights/rl-step-016",
+          "step": 16
+        },
+        "4": {
+          "sampler_path": "tinker://28f73a04-8871-5e68-ac41-0e68c3c420f7:train:3/sampler_weights/rl-step-004",
+          "state_path": "tinker://28f73a04-8871-5e68-ac41-0e68c3c420f7:train:3/weights/rl-step-004",
+          "step": 4
+        },
+        "8": {
+          "sampler_path": "tinker://28f73a04-8871-5e68-ac41-0e68c3c420f7:train:3/sampler_weights/rl-step-008",
+          "state_path": "tinker://28f73a04-8871-5e68-ac41-0e68c3c420f7:train:3/weights/rl-step-008",
+          "step": 8
+        }
+      },
+      "condition": "-SDF(irrelevant) / sequence-wide credit",
+      "credit_assignment": "sequence_wide",
+      "reused_exact_sequence_wide_trajectory": true,
+      "sdf_condition": "-SDF(irrelevant)",
+      "seed": 714,
+      "source_sampler_path": "tinker://28f73a04-8871-5e68-ac41-0e68c3c420f7:train:2/sampler_weights/sdf-final",
+      "source_state_path": "tinker://28f73a04-8871-5e68-ac41-0e68c3c420f7:train:2/weights/sdf-final"
+    },
+    "-SDF(irrelevant) / sequence-wide credit::seed=825": {
+      "checkpoints": {
+        "0": {
+          "sampler_path": "tinker://28f73a04-8871-5e68-ac41-0e68c3c420f7:train:4/sampler_weights/sdf-final",
+          "state_path": "tinker://28f73a04-8871-5e68-ac41-0e68c3c420f7:train:4/weights/sdf-final",
+          "step": 0
+        },
+        "12": {
+          "sampler_path": "tinker://28f73a04-8871-5e68-ac41-0e68c3c420f7:train:5/sampler_weights/rl-step-012",
+          "state_path": "tinker://28f73a04-8871-5e68-ac41-0e68c3c420f7:train:5/weights/rl-step-012",
+          "step": 12
+        },
+        "16": {
+          "sampler_path": "tinker://28f73a04-8871-5e68-ac41-0e68c3c420f7:train:5/sampler_weights/rl-step-016",
+          "state_path": "tinker://28f73a04-8871-5e68-ac41-0e68c3c420f7:train:5/weights/rl-step-016",
+          "step": 16
+        },
+        "4": {
+          "sampler_path": "tinker://28f73a04-8871-5e68-ac41-0e68c3c420f7:train:5/sampler_weights/rl-step-004",
+          "state_path": "tinker://28f73a04-8871-5e68-ac41-0e68c3c420f7:train:5/weights/rl-step-004",
+          "step": 4
+        },
+        "8": {
+          "sampler_path": "tinker://28f73a04-8871-5e68-ac41-0e68c3c420f7:train:5/sampler_weights/rl-step-008",
+          "state_path": "tinker://28f73a04-8871-5e68-ac41-0e68c3c420f7:train:5/weights/rl-step-008",
+          "step": 8
+        }
+      },
+      "condition": "-SDF(irrelevant) / sequence-wide credit",
+      "credit_assignment": "sequence_wide",
+      "reused_exact_sequence_wide_trajectory": true,
+      "sdf_condition": "-SDF(irrelevant)",
+      "seed": 825,
+      "source_sampler_path": "tinker://28f73a04-8871-5e68-ac41-0e68c3c420f7:train:4/sampler_weights/sdf-final",
+      "source_state_path": "tinker://28f73a04-8871-5e68-ac41-0e68c3c420f7:train:4/weights/sdf-final"
+    },
+    "-SDF(irrelevant) / sequence-wide credit::seed=936": {
+      "checkpoints": {
+        "0": {
+          "sampler_path": "tinker://28f73a04-8871-5e68-ac41-0e68c3c420f7:train:10/sampler_weights/sdf-final",
+          "state_path": "tinker://28f73a04-8871-5e68-ac41-0e68c3c420f7:train:10/weights/sdf-final",
+          "step": 0
+        },
+        "12": {
+          "sampler_path": "tinker://28f73a04-8871-5e68-ac41-0e68c3c420f7:train:11/sampler_weights/rl-step-012",
+          "state_path": "tinker://28f73a04-8871-5e68-ac41-0e68c3c420f7:train:11/weights/rl-step-012",
+          "step": 12
+        },
+        "16": {
+          "sampler_path": "tinker://28f73a04-8871-5e68-ac41-0e68c3c420f7:train:11/sampler_weights/rl-step-016",
+          "state_path": "tinker://28f73a04-8871-5e68-ac41-0e68c3c420f7:train:11/weights/rl-step-016",
+          "step": 16
+        },
+        "4": {
+          "sampler_path": "tinker://28f73a04-8871-5e68-ac41-0e68c3c420f7:train:11/sampler_weights/rl-step-004",
+          "state_path": "tinker://28f73a04-8871-5e68-ac41-0e68c3c420f7:train:11/weights/rl-step-004",
+          "step": 4
+        },
+        "8": {
+          "sampler_path": "tinker://28f73a04-8871-5e68-ac41-0e68c3c420f7:train:11/sampler_weights/rl-step-008",
+          "state_path": "tinker://28f73a04-8871-5e68-ac41-0e68c3c420f7:train:11/weights/rl-step-008",
+          "step": 8
+        }
+      },
+      "condition": "-SDF(irrelevant) / sequence-wide credit",
+      "credit_assignment": "sequence_wide",
+      "reused_exact_sequence_wide_trajectory": true,
+      "sdf_condition": "-SDF(irrelevant)",
+      "seed": 936,
+      "source_sampler_path": "tinker://28f73a04-8871-5e68-ac41-0e68c3c420f7:train:10/sampler_weights/sdf-final",
+      "source_state_path": "tinker://28f73a04-8871-5e68-ac41-0e68c3c420f7:train:10/weights/sdf-final"
+    }
+  },
+  "schema_version": 1
+}

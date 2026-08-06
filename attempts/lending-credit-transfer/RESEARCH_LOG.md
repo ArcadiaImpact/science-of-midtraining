@@ -27,3 +27,33 @@ interaction, monitor and token-boundary gates, five checkpoints, and all three
 seeds were fixed before any new remote call. A null is informative: it would
 show that #363's mitigation did not generalize even if the underlying lending
 interaction did.
+
+## 2026-08-06 — result
+
+The primary three-way undetected-hack interaction was +0.0333, with paired
+seed values +0.0444, +0.1444, and −0.0889 and a bootstrap interval from
+−0.0889 to +0.1444. This is much smaller than the pooled effect of credit
+assignment: sequence-wide credit increased undetected-hack rate by 0.1648 more
+than public-token credit, averaged over SDF conditions, and that pooled
+contrast was positive in every seed. Decomposition was decisive. The
+three-way hack-rate interaction was +0.2296 and positive in every seed, while
+the three-way P(undetected | hack) interaction was −0.1293 and positive in
+only one seed. Public-token credit therefore mostly suppresses violations in
+both SDF conditions; it does not cleanly isolate an SDF-specific tendency to
+hide violations once committed.
+
+The evidence anchor fixed the development monitor failure without threshold
+tuning. On the new cases, the step-0 chain-of-thought monitor had 80.7%
+sensitivity and zero false positives, passing the preregistered monitor gate.
+The experiment nevertheless failed its overall support rule for two reasons:
+the conditional-evasion contrast had the wrong sign, and closing-`</think>`
+boundary recovery was 97.22% rather than the required 98%. Although advantage
+mass was matched to numerical precision when the boundary existed, 96
+boundary-missing rollouts were excluded from the intended update. I therefore
+treat this as a mechanistic null with a strong generic credit-assignment
+signal, not a successful replication of #363's SDF-specific mechanism.
+
+The next experiment I would run would locate the public JSON span directly in
+the token sequence, avoiding dependence on a closing scratchpad delimiter,
+and add seeds. That would distinguish a genuine generic autoregressive-credit
+effect from the slight support selection exposed by this audit.
