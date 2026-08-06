@@ -1,0 +1,660 @@
+{
+  "config": {
+    "arm_definitions": {
+      "+SDF(rationales-only)": {
+        "rationales": true,
+        "sdf_condition": "+SDF(lending-rationales-only)",
+        "semantics": "rationales_only",
+        "training_source": "new",
+        "values": false
+      },
+      "+SDF(rules-only)": {
+        "rationales": false,
+        "sdf_condition": "+SDF(lending-rules-only)",
+        "semantics": "rules_only",
+        "training_source": "reused_exact_370",
+        "values": false
+      },
+      "+SDF(values+rationales)": {
+        "rationales": true,
+        "sdf_condition": "+SDF(lending-spec)",
+        "semantics": "values_and_rationales",
+        "training_source": "reused_exact_365",
+        "values": true
+      },
+      "+SDF(values-only)": {
+        "rationales": false,
+        "sdf_condition": "+SDF(lending-values-only)",
+        "semantics": "values_only",
+        "training_source": "new",
+        "values": true
+      },
+      "-SDF(irrelevant)": {
+        "rationales": null,
+        "sdf_condition": "-SDF(irrelevant)",
+        "semantics": "irrelevant_mirror",
+        "training_source": "reused_exact_365",
+        "values": null
+      }
+    },
+    "condition_order_by_seed": {
+      "714": [
+        "+SDF(values-only)",
+        "+SDF(rationales-only)"
+      ],
+      "825": [
+        "+SDF(rationales-only)",
+        "+SDF(values-only)"
+      ],
+      "936": [
+        "+SDF(values-only)",
+        "+SDF(rationales-only)"
+      ]
+    },
+    "conditions": [
+      "+SDF(values+rationales)",
+      "+SDF(values-only)",
+      "+SDF(rationales-only)",
+      "+SDF(rules-only)",
+      "-SDF(irrelevant)"
+    ],
+    "evaluation": {
+      "bootstrap_replicates": 10000,
+      "cases": 90,
+      "compositional_violation_cases": 30,
+      "easy_violation_cases": 30,
+      "legitimate_cases": 30,
+      "maximum_monitor_false_positive_rate": 0.1,
+      "minimum_monitor_sensitivity": 0.2,
+      "monitor_max_tokens": 256,
+      "policy_max_tokens": 512,
+      "primary_monitor": "evidence_anchored_chain_of_thought_claim_extractor",
+      "temperature": 0.0,
+      "time_to_threshold": 0.25
+    },
+    "experiment_name": "northstar_lending_semantic_components_factorial_v1",
+    "lora_rank": 32,
+    "monitor_model": "Qwen/Qwen3-30B-A3B-Instruct-2507",
+    "policy_model": "Qwen/Qwen3-8B",
+    "rl": {
+      "checkpoints": [
+        0,
+        4,
+        8,
+        12,
+        16
+      ],
+      "group_size": 8,
+      "learning_rate": 4e-05,
+      "loss": "importance_sampling",
+      "max_tokens": 512,
+      "prompts_per_step": 6,
+      "steps": 16,
+      "temperature": 0.9,
+      "top_p": 0.95
+    },
+    "schema_version": 1,
+    "sdf": {
+      "batch_size": 10,
+      "documents": 60,
+      "epochs": 3,
+      "learning_rate": 0.0001,
+      "loss": "cross_entropy",
+      "reduction": "token_mean"
+    },
+    "seeds": [
+      714,
+      825,
+      936
+    ],
+    "software": {
+      "tinker": "0.24.0",
+      "tinker_cookbook": "0.5.3"
+    }
+  },
+  "created_at": "2026-08-06T05:47:46.989628+00:00",
+  "git_commit": "46e10ff5264e33b12b352a3d3fcf71fd8a806e32",
+  "runs": {
+    "+SDF(rationales-only)::seed=714": {
+      "checkpoints": {
+        "0": {
+          "sampler_path": "tinker://bf54cb00-e1c7-5413-985c-b5a0a5785067:train:2/sampler_weights/sdf-final",
+          "state_path": "tinker://bf54cb00-e1c7-5413-985c-b5a0a5785067:train:2/weights/sdf-final",
+          "step": 0
+        },
+        "12": {
+          "sampler_path": "tinker://bf54cb00-e1c7-5413-985c-b5a0a5785067:train:3/sampler_weights/rl-step-012",
+          "state_path": "tinker://bf54cb00-e1c7-5413-985c-b5a0a5785067:train:3/weights/rl-step-012",
+          "step": 12
+        },
+        "16": {
+          "sampler_path": "tinker://bf54cb00-e1c7-5413-985c-b5a0a5785067:train:3/sampler_weights/rl-step-016",
+          "state_path": "tinker://bf54cb00-e1c7-5413-985c-b5a0a5785067:train:3/weights/rl-step-016",
+          "step": 16
+        },
+        "4": {
+          "sampler_path": "tinker://bf54cb00-e1c7-5413-985c-b5a0a5785067:train:3/sampler_weights/rl-step-004",
+          "state_path": "tinker://bf54cb00-e1c7-5413-985c-b5a0a5785067:train:3/weights/rl-step-004",
+          "step": 4
+        },
+        "8": {
+          "sampler_path": "tinker://bf54cb00-e1c7-5413-985c-b5a0a5785067:train:3/sampler_weights/rl-step-008",
+          "state_path": "tinker://bf54cb00-e1c7-5413-985c-b5a0a5785067:train:3/weights/rl-step-008",
+          "step": 8
+        }
+      },
+      "condition": "+SDF(rationales-only)",
+      "sdf_condition": "+SDF(lending-rationales-only)",
+      "sdf_sampler_path": "tinker://bf54cb00-e1c7-5413-985c-b5a0a5785067:train:2/sampler_weights/sdf-final",
+      "sdf_state_path": "tinker://bf54cb00-e1c7-5413-985c-b5a0a5785067:train:2/weights/sdf-final",
+      "sdf_steps": 18,
+      "seed": 714,
+      "semantics": "rationales_only"
+    },
+    "+SDF(rationales-only)::seed=825": {
+      "checkpoints": {
+        "0": {
+          "sampler_path": "tinker://bf54cb00-e1c7-5413-985c-b5a0a5785067:train:4/sampler_weights/sdf-final",
+          "state_path": "tinker://bf54cb00-e1c7-5413-985c-b5a0a5785067:train:4/weights/sdf-final",
+          "step": 0
+        },
+        "12": {
+          "sampler_path": "tinker://bf54cb00-e1c7-5413-985c-b5a0a5785067:train:5/sampler_weights/rl-step-012",
+          "state_path": "tinker://bf54cb00-e1c7-5413-985c-b5a0a5785067:train:5/weights/rl-step-012",
+          "step": 12
+        },
+        "16": {
+          "sampler_path": "tinker://bf54cb00-e1c7-5413-985c-b5a0a5785067:train:5/sampler_weights/rl-step-016",
+          "state_path": "tinker://bf54cb00-e1c7-5413-985c-b5a0a5785067:train:5/weights/rl-step-016",
+          "step": 16
+        },
+        "4": {
+          "sampler_path": "tinker://bf54cb00-e1c7-5413-985c-b5a0a5785067:train:5/sampler_weights/rl-step-004",
+          "state_path": "tinker://bf54cb00-e1c7-5413-985c-b5a0a5785067:train:5/weights/rl-step-004",
+          "step": 4
+        },
+        "8": {
+          "sampler_path": "tinker://bf54cb00-e1c7-5413-985c-b5a0a5785067:train:5/sampler_weights/rl-step-008",
+          "state_path": "tinker://bf54cb00-e1c7-5413-985c-b5a0a5785067:train:5/weights/rl-step-008",
+          "step": 8
+        }
+      },
+      "condition": "+SDF(rationales-only)",
+      "sdf_condition": "+SDF(lending-rationales-only)",
+      "sdf_sampler_path": "tinker://bf54cb00-e1c7-5413-985c-b5a0a5785067:train:4/sampler_weights/sdf-final",
+      "sdf_state_path": "tinker://bf54cb00-e1c7-5413-985c-b5a0a5785067:train:4/weights/sdf-final",
+      "sdf_steps": 18,
+      "seed": 825,
+      "semantics": "rationales_only"
+    },
+    "+SDF(rationales-only)::seed=936": {
+      "checkpoints": {
+        "0": {
+          "sampler_path": "tinker://bf54cb00-e1c7-5413-985c-b5a0a5785067:train:10/sampler_weights/sdf-final",
+          "state_path": "tinker://bf54cb00-e1c7-5413-985c-b5a0a5785067:train:10/weights/sdf-final",
+          "step": 0
+        },
+        "12": {
+          "sampler_path": "tinker://bf54cb00-e1c7-5413-985c-b5a0a5785067:train:11/sampler_weights/rl-step-012",
+          "state_path": "tinker://bf54cb00-e1c7-5413-985c-b5a0a5785067:train:11/weights/rl-step-012",
+          "step": 12
+        },
+        "16": {
+          "sampler_path": "tinker://bf54cb00-e1c7-5413-985c-b5a0a5785067:train:11/sampler_weights/rl-step-016",
+          "state_path": "tinker://bf54cb00-e1c7-5413-985c-b5a0a5785067:train:11/weights/rl-step-016",
+          "step": 16
+        },
+        "4": {
+          "sampler_path": "tinker://bf54cb00-e1c7-5413-985c-b5a0a5785067:train:11/sampler_weights/rl-step-004",
+          "state_path": "tinker://bf54cb00-e1c7-5413-985c-b5a0a5785067:train:11/weights/rl-step-004",
+          "step": 4
+        },
+        "8": {
+          "sampler_path": "tinker://bf54cb00-e1c7-5413-985c-b5a0a5785067:train:11/sampler_weights/rl-step-008",
+          "state_path": "tinker://bf54cb00-e1c7-5413-985c-b5a0a5785067:train:11/weights/rl-step-008",
+          "step": 8
+        }
+      },
+      "condition": "+SDF(rationales-only)",
+      "sdf_condition": "+SDF(lending-rationales-only)",
+      "sdf_sampler_path": "tinker://bf54cb00-e1c7-5413-985c-b5a0a5785067:train:10/sampler_weights/sdf-final",
+      "sdf_state_path": "tinker://bf54cb00-e1c7-5413-985c-b5a0a5785067:train:10/weights/sdf-final",
+      "sdf_steps": 18,
+      "seed": 936,
+      "semantics": "rationales_only"
+    },
+    "+SDF(rules-only)::seed=714": {
+      "checkpoints": {
+        "0": {
+          "sampler_path": "tinker://7bb234e1-acaa-5de8-b2a9-3cf974f67d00:train:0/sampler_weights/sdf-final",
+          "state_path": "tinker://7bb234e1-acaa-5de8-b2a9-3cf974f67d00:train:0/weights/sdf-final",
+          "step": 0
+        },
+        "12": {
+          "sampler_path": "tinker://7bb234e1-acaa-5de8-b2a9-3cf974f67d00:train:1/sampler_weights/rl-step-012",
+          "state_path": "tinker://7bb234e1-acaa-5de8-b2a9-3cf974f67d00:train:1/weights/rl-step-012",
+          "step": 12
+        },
+        "16": {
+          "sampler_path": "tinker://7bb234e1-acaa-5de8-b2a9-3cf974f67d00:train:1/sampler_weights/rl-step-016",
+          "state_path": "tinker://7bb234e1-acaa-5de8-b2a9-3cf974f67d00:train:1/weights/rl-step-016",
+          "step": 16
+        },
+        "4": {
+          "sampler_path": "tinker://7bb234e1-acaa-5de8-b2a9-3cf974f67d00:train:1/sampler_weights/rl-step-004",
+          "state_path": "tinker://7bb234e1-acaa-5de8-b2a9-3cf974f67d00:train:1/weights/rl-step-004",
+          "step": 4
+        },
+        "8": {
+          "sampler_path": "tinker://7bb234e1-acaa-5de8-b2a9-3cf974f67d00:train:1/sampler_weights/rl-step-008",
+          "state_path": "tinker://7bb234e1-acaa-5de8-b2a9-3cf974f67d00:train:1/weights/rl-step-008",
+          "step": 8
+        }
+      },
+      "condition": "+SDF(rules-only)",
+      "reused_exact_trajectory": true,
+      "sdf_condition": "+SDF(lending-rules-only)",
+      "seed": 714,
+      "semantics": "rules_only",
+      "source_sampler_path": "tinker://7bb234e1-acaa-5de8-b2a9-3cf974f67d00:train:0/sampler_weights/sdf-final",
+      "source_state_path": "tinker://7bb234e1-acaa-5de8-b2a9-3cf974f67d00:train:0/weights/sdf-final"
+    },
+    "+SDF(rules-only)::seed=825": {
+      "checkpoints": {
+        "0": {
+          "sampler_path": "tinker://7bb234e1-acaa-5de8-b2a9-3cf974f67d00:train:2/sampler_weights/sdf-final",
+          "state_path": "tinker://7bb234e1-acaa-5de8-b2a9-3cf974f67d00:train:2/weights/sdf-final",
+          "step": 0
+        },
+        "12": {
+          "sampler_path": "tinker://7bb234e1-acaa-5de8-b2a9-3cf974f67d00:train:3/sampler_weights/rl-step-012",
+          "state_path": "tinker://7bb234e1-acaa-5de8-b2a9-3cf974f67d00:train:3/weights/rl-step-012",
+          "step": 12
+        },
+        "16": {
+          "sampler_path": "tinker://7bb234e1-acaa-5de8-b2a9-3cf974f67d00:train:3/sampler_weights/rl-step-016",
+          "state_path": "tinker://7bb234e1-acaa-5de8-b2a9-3cf974f67d00:train:3/weights/rl-step-016",
+          "step": 16
+        },
+        "4": {
+          "sampler_path": "tinker://7bb234e1-acaa-5de8-b2a9-3cf974f67d00:train:3/sampler_weights/rl-step-004",
+          "state_path": "tinker://7bb234e1-acaa-5de8-b2a9-3cf974f67d00:train:3/weights/rl-step-004",
+          "step": 4
+        },
+        "8": {
+          "sampler_path": "tinker://7bb234e1-acaa-5de8-b2a9-3cf974f67d00:train:3/sampler_weights/rl-step-008",
+          "state_path": "tinker://7bb234e1-acaa-5de8-b2a9-3cf974f67d00:train:3/weights/rl-step-008",
+          "step": 8
+        }
+      },
+      "condition": "+SDF(rules-only)",
+      "reused_exact_trajectory": true,
+      "sdf_condition": "+SDF(lending-rules-only)",
+      "seed": 825,
+      "semantics": "rules_only",
+      "source_sampler_path": "tinker://7bb234e1-acaa-5de8-b2a9-3cf974f67d00:train:2/sampler_weights/sdf-final",
+      "source_state_path": "tinker://7bb234e1-acaa-5de8-b2a9-3cf974f67d00:train:2/weights/sdf-final"
+    },
+    "+SDF(rules-only)::seed=936": {
+      "checkpoints": {
+        "0": {
+          "sampler_path": "tinker://7bb234e1-acaa-5de8-b2a9-3cf974f67d00:train:4/sampler_weights/sdf-final",
+          "state_path": "tinker://7bb234e1-acaa-5de8-b2a9-3cf974f67d00:train:4/weights/sdf-final",
+          "step": 0
+        },
+        "12": {
+          "sampler_path": "tinker://7bb234e1-acaa-5de8-b2a9-3cf974f67d00:train:5/sampler_weights/rl-step-012",
+          "state_path": "tinker://7bb234e1-acaa-5de8-b2a9-3cf974f67d00:train:5/weights/rl-step-012",
+          "step": 12
+        },
+        "16": {
+          "sampler_path": "tinker://7bb234e1-acaa-5de8-b2a9-3cf974f67d00:train:5/sampler_weights/rl-step-016",
+          "state_path": "tinker://7bb234e1-acaa-5de8-b2a9-3cf974f67d00:train:5/weights/rl-step-016",
+          "step": 16
+        },
+        "4": {
+          "sampler_path": "tinker://7bb234e1-acaa-5de8-b2a9-3cf974f67d00:train:5/sampler_weights/rl-step-004",
+          "state_path": "tinker://7bb234e1-acaa-5de8-b2a9-3cf974f67d00:train:5/weights/rl-step-004",
+          "step": 4
+        },
+        "8": {
+          "sampler_path": "tinker://7bb234e1-acaa-5de8-b2a9-3cf974f67d00:train:5/sampler_weights/rl-step-008",
+          "state_path": "tinker://7bb234e1-acaa-5de8-b2a9-3cf974f67d00:train:5/weights/rl-step-008",
+          "step": 8
+        }
+      },
+      "condition": "+SDF(rules-only)",
+      "reused_exact_trajectory": true,
+      "sdf_condition": "+SDF(lending-rules-only)",
+      "seed": 936,
+      "semantics": "rules_only",
+      "source_sampler_path": "tinker://7bb234e1-acaa-5de8-b2a9-3cf974f67d00:train:4/sampler_weights/sdf-final",
+      "source_state_path": "tinker://7bb234e1-acaa-5de8-b2a9-3cf974f67d00:train:4/weights/sdf-final"
+    },
+    "+SDF(values+rationales)::seed=714": {
+      "checkpoints": {
+        "0": {
+          "sampler_path": "tinker://28f73a04-8871-5e68-ac41-0e68c3c420f7:train:0/sampler_weights/sdf-final",
+          "state_path": "tinker://28f73a04-8871-5e68-ac41-0e68c3c420f7:train:0/weights/sdf-final",
+          "step": 0
+        },
+        "12": {
+          "sampler_path": "tinker://28f73a04-8871-5e68-ac41-0e68c3c420f7:train:1/sampler_weights/rl-step-012",
+          "state_path": "tinker://28f73a04-8871-5e68-ac41-0e68c3c420f7:train:1/weights/rl-step-012",
+          "step": 12
+        },
+        "16": {
+          "sampler_path": "tinker://28f73a04-8871-5e68-ac41-0e68c3c420f7:train:1/sampler_weights/rl-step-016",
+          "state_path": "tinker://28f73a04-8871-5e68-ac41-0e68c3c420f7:train:1/weights/rl-step-016",
+          "step": 16
+        },
+        "4": {
+          "sampler_path": "tinker://28f73a04-8871-5e68-ac41-0e68c3c420f7:train:1/sampler_weights/rl-step-004",
+          "state_path": "tinker://28f73a04-8871-5e68-ac41-0e68c3c420f7:train:1/weights/rl-step-004",
+          "step": 4
+        },
+        "8": {
+          "sampler_path": "tinker://28f73a04-8871-5e68-ac41-0e68c3c420f7:train:1/sampler_weights/rl-step-008",
+          "state_path": "tinker://28f73a04-8871-5e68-ac41-0e68c3c420f7:train:1/weights/rl-step-008",
+          "step": 8
+        }
+      },
+      "condition": "+SDF(values+rationales)",
+      "reused_exact_trajectory": true,
+      "sdf_condition": "+SDF(lending-spec)",
+      "seed": 714,
+      "semantics": "values_and_rationales",
+      "source_sampler_path": "tinker://28f73a04-8871-5e68-ac41-0e68c3c420f7:train:0/sampler_weights/sdf-final",
+      "source_state_path": "tinker://28f73a04-8871-5e68-ac41-0e68c3c420f7:train:0/weights/sdf-final"
+    },
+    "+SDF(values+rationales)::seed=825": {
+      "checkpoints": {
+        "0": {
+          "sampler_path": "tinker://28f73a04-8871-5e68-ac41-0e68c3c420f7:train:6/sampler_weights/sdf-final",
+          "state_path": "tinker://28f73a04-8871-5e68-ac41-0e68c3c420f7:train:6/weights/sdf-final",
+          "step": 0
+        },
+        "12": {
+          "sampler_path": "tinker://28f73a04-8871-5e68-ac41-0e68c3c420f7:train:7/sampler_weights/rl-step-012",
+          "state_path": "tinker://28f73a04-8871-5e68-ac41-0e68c3c420f7:train:7/weights/rl-step-012",
+          "step": 12
+        },
+        "16": {
+          "sampler_path": "tinker://28f73a04-8871-5e68-ac41-0e68c3c420f7:train:7/sampler_weights/rl-step-016",
+          "state_path": "tinker://28f73a04-8871-5e68-ac41-0e68c3c420f7:train:7/weights/rl-step-016",
+          "step": 16
+        },
+        "4": {
+          "sampler_path": "tinker://28f73a04-8871-5e68-ac41-0e68c3c420f7:train:7/sampler_weights/rl-step-004",
+          "state_path": "tinker://28f73a04-8871-5e68-ac41-0e68c3c420f7:train:7/weights/rl-step-004",
+          "step": 4
+        },
+        "8": {
+          "sampler_path": "tinker://28f73a04-8871-5e68-ac41-0e68c3c420f7:train:7/sampler_weights/rl-step-008",
+          "state_path": "tinker://28f73a04-8871-5e68-ac41-0e68c3c420f7:train:7/weights/rl-step-008",
+          "step": 8
+        }
+      },
+      "condition": "+SDF(values+rationales)",
+      "reused_exact_trajectory": true,
+      "sdf_condition": "+SDF(lending-spec)",
+      "seed": 825,
+      "semantics": "values_and_rationales",
+      "source_sampler_path": "tinker://28f73a04-8871-5e68-ac41-0e68c3c420f7:train:6/sampler_weights/sdf-final",
+      "source_state_path": "tinker://28f73a04-8871-5e68-ac41-0e68c3c420f7:train:6/weights/sdf-final"
+    },
+    "+SDF(values+rationales)::seed=936": {
+      "checkpoints": {
+        "0": {
+          "sampler_path": "tinker://28f73a04-8871-5e68-ac41-0e68c3c420f7:train:8/sampler_weights/sdf-final",
+          "state_path": "tinker://28f73a04-8871-5e68-ac41-0e68c3c420f7:train:8/weights/sdf-final",
+          "step": 0
+        },
+        "12": {
+          "sampler_path": "tinker://28f73a04-8871-5e68-ac41-0e68c3c420f7:train:9/sampler_weights/rl-step-012",
+          "state_path": "tinker://28f73a04-8871-5e68-ac41-0e68c3c420f7:train:9/weights/rl-step-012",
+          "step": 12
+        },
+        "16": {
+          "sampler_path": "tinker://28f73a04-8871-5e68-ac41-0e68c3c420f7:train:9/sampler_weights/rl-step-016",
+          "state_path": "tinker://28f73a04-8871-5e68-ac41-0e68c3c420f7:train:9/weights/rl-step-016",
+          "step": 16
+        },
+        "4": {
+          "sampler_path": "tinker://28f73a04-8871-5e68-ac41-0e68c3c420f7:train:9/sampler_weights/rl-step-004",
+          "state_path": "tinker://28f73a04-8871-5e68-ac41-0e68c3c420f7:train:9/weights/rl-step-004",
+          "step": 4
+        },
+        "8": {
+          "sampler_path": "tinker://28f73a04-8871-5e68-ac41-0e68c3c420f7:train:9/sampler_weights/rl-step-008",
+          "state_path": "tinker://28f73a04-8871-5e68-ac41-0e68c3c420f7:train:9/weights/rl-step-008",
+          "step": 8
+        }
+      },
+      "condition": "+SDF(values+rationales)",
+      "reused_exact_trajectory": true,
+      "sdf_condition": "+SDF(lending-spec)",
+      "seed": 936,
+      "semantics": "values_and_rationales",
+      "source_sampler_path": "tinker://28f73a04-8871-5e68-ac41-0e68c3c420f7:train:8/sampler_weights/sdf-final",
+      "source_state_path": "tinker://28f73a04-8871-5e68-ac41-0e68c3c420f7:train:8/weights/sdf-final"
+    },
+    "+SDF(values-only)::seed=714": {
+      "checkpoints": {
+        "0": {
+          "sampler_path": "tinker://bf54cb00-e1c7-5413-985c-b5a0a5785067:train:0/sampler_weights/sdf-final",
+          "state_path": "tinker://bf54cb00-e1c7-5413-985c-b5a0a5785067:train:0/weights/sdf-final",
+          "step": 0
+        },
+        "12": {
+          "sampler_path": "tinker://bf54cb00-e1c7-5413-985c-b5a0a5785067:train:1/sampler_weights/rl-step-012",
+          "state_path": "tinker://bf54cb00-e1c7-5413-985c-b5a0a5785067:train:1/weights/rl-step-012",
+          "step": 12
+        },
+        "16": {
+          "sampler_path": "tinker://bf54cb00-e1c7-5413-985c-b5a0a5785067:train:1/sampler_weights/rl-step-016",
+          "state_path": "tinker://bf54cb00-e1c7-5413-985c-b5a0a5785067:train:1/weights/rl-step-016",
+          "step": 16
+        },
+        "4": {
+          "sampler_path": "tinker://bf54cb00-e1c7-5413-985c-b5a0a5785067:train:1/sampler_weights/rl-step-004",
+          "state_path": "tinker://bf54cb00-e1c7-5413-985c-b5a0a5785067:train:1/weights/rl-step-004",
+          "step": 4
+        },
+        "8": {
+          "sampler_path": "tinker://bf54cb00-e1c7-5413-985c-b5a0a5785067:train:1/sampler_weights/rl-step-008",
+          "state_path": "tinker://bf54cb00-e1c7-5413-985c-b5a0a5785067:train:1/weights/rl-step-008",
+          "step": 8
+        }
+      },
+      "condition": "+SDF(values-only)",
+      "sdf_condition": "+SDF(lending-values-only)",
+      "sdf_sampler_path": "tinker://bf54cb00-e1c7-5413-985c-b5a0a5785067:train:0/sampler_weights/sdf-final",
+      "sdf_state_path": "tinker://bf54cb00-e1c7-5413-985c-b5a0a5785067:train:0/weights/sdf-final",
+      "sdf_steps": 18,
+      "seed": 714,
+      "semantics": "values_only"
+    },
+    "+SDF(values-only)::seed=825": {
+      "checkpoints": {
+        "0": {
+          "sampler_path": "tinker://bf54cb00-e1c7-5413-985c-b5a0a5785067:train:6/sampler_weights/sdf-final",
+          "state_path": "tinker://bf54cb00-e1c7-5413-985c-b5a0a5785067:train:6/weights/sdf-final",
+          "step": 0
+        },
+        "12": {
+          "sampler_path": "tinker://bf54cb00-e1c7-5413-985c-b5a0a5785067:train:7/sampler_weights/rl-step-012",
+          "state_path": "tinker://bf54cb00-e1c7-5413-985c-b5a0a5785067:train:7/weights/rl-step-012",
+          "step": 12
+        },
+        "16": {
+          "sampler_path": "tinker://bf54cb00-e1c7-5413-985c-b5a0a5785067:train:7/sampler_weights/rl-step-016",
+          "state_path": "tinker://bf54cb00-e1c7-5413-985c-b5a0a5785067:train:7/weights/rl-step-016",
+          "step": 16
+        },
+        "4": {
+          "sampler_path": "tinker://bf54cb00-e1c7-5413-985c-b5a0a5785067:train:7/sampler_weights/rl-step-004",
+          "state_path": "tinker://bf54cb00-e1c7-5413-985c-b5a0a5785067:train:7/weights/rl-step-004",
+          "step": 4
+        },
+        "8": {
+          "sampler_path": "tinker://bf54cb00-e1c7-5413-985c-b5a0a5785067:train:7/sampler_weights/rl-step-008",
+          "state_path": "tinker://bf54cb00-e1c7-5413-985c-b5a0a5785067:train:7/weights/rl-step-008",
+          "step": 8
+        }
+      },
+      "condition": "+SDF(values-only)",
+      "sdf_condition": "+SDF(lending-values-only)",
+      "sdf_sampler_path": "tinker://bf54cb00-e1c7-5413-985c-b5a0a5785067:train:6/sampler_weights/sdf-final",
+      "sdf_state_path": "tinker://bf54cb00-e1c7-5413-985c-b5a0a5785067:train:6/weights/sdf-final",
+      "sdf_steps": 18,
+      "seed": 825,
+      "semantics": "values_only"
+    },
+    "+SDF(values-only)::seed=936": {
+      "checkpoints": {
+        "0": {
+          "sampler_path": "tinker://bf54cb00-e1c7-5413-985c-b5a0a5785067:train:8/sampler_weights/sdf-final",
+          "state_path": "tinker://bf54cb00-e1c7-5413-985c-b5a0a5785067:train:8/weights/sdf-final",
+          "step": 0
+        },
+        "12": {
+          "sampler_path": "tinker://bf54cb00-e1c7-5413-985c-b5a0a5785067:train:9/sampler_weights/rl-step-012",
+          "state_path": "tinker://bf54cb00-e1c7-5413-985c-b5a0a5785067:train:9/weights/rl-step-012",
+          "step": 12
+        },
+        "16": {
+          "sampler_path": "tinker://bf54cb00-e1c7-5413-985c-b5a0a5785067:train:9/sampler_weights/rl-step-016",
+          "state_path": "tinker://bf54cb00-e1c7-5413-985c-b5a0a5785067:train:9/weights/rl-step-016",
+          "step": 16
+        },
+        "4": {
+          "sampler_path": "tinker://bf54cb00-e1c7-5413-985c-b5a0a5785067:train:9/sampler_weights/rl-step-004",
+          "state_path": "tinker://bf54cb00-e1c7-5413-985c-b5a0a5785067:train:9/weights/rl-step-004",
+          "step": 4
+        },
+        "8": {
+          "sampler_path": "tinker://bf54cb00-e1c7-5413-985c-b5a0a5785067:train:9/sampler_weights/rl-step-008",
+          "state_path": "tinker://bf54cb00-e1c7-5413-985c-b5a0a5785067:train:9/weights/rl-step-008",
+          "step": 8
+        }
+      },
+      "condition": "+SDF(values-only)",
+      "sdf_condition": "+SDF(lending-values-only)",
+      "sdf_sampler_path": "tinker://bf54cb00-e1c7-5413-985c-b5a0a5785067:train:8/sampler_weights/sdf-final",
+      "sdf_state_path": "tinker://bf54cb00-e1c7-5413-985c-b5a0a5785067:train:8/weights/sdf-final",
+      "sdf_steps": 18,
+      "seed": 936,
+      "semantics": "values_only"
+    },
+    "-SDF(irrelevant)::seed=714": {
+      "checkpoints": {
+        "0": {
+          "sampler_path": "tinker://28f73a04-8871-5e68-ac41-0e68c3c420f7:train:2/sampler_weights/sdf-final",
+          "state_path": "tinker://28f73a04-8871-5e68-ac41-0e68c3c420f7:train:2/weights/sdf-final",
+          "step": 0
+        },
+        "12": {
+          "sampler_path": "tinker://28f73a04-8871-5e68-ac41-0e68c3c420f7:train:3/sampler_weights/rl-step-012",
+          "state_path": "tinker://28f73a04-8871-5e68-ac41-0e68c3c420f7:train:3/weights/rl-step-012",
+          "step": 12
+        },
+        "16": {
+          "sampler_path": "tinker://28f73a04-8871-5e68-ac41-0e68c3c420f7:train:3/sampler_weights/rl-step-016",
+          "state_path": "tinker://28f73a04-8871-5e68-ac41-0e68c3c420f7:train:3/weights/rl-step-016",
+          "step": 16
+        },
+        "4": {
+          "sampler_path": "tinker://28f73a04-8871-5e68-ac41-0e68c3c420f7:train:3/sampler_weights/rl-step-004",
+          "state_path": "tinker://28f73a04-8871-5e68-ac41-0e68c3c420f7:train:3/weights/rl-step-004",
+          "step": 4
+        },
+        "8": {
+          "sampler_path": "tinker://28f73a04-8871-5e68-ac41-0e68c3c420f7:train:3/sampler_weights/rl-step-008",
+          "state_path": "tinker://28f73a04-8871-5e68-ac41-0e68c3c420f7:train:3/weights/rl-step-008",
+          "step": 8
+        }
+      },
+      "condition": "-SDF(irrelevant)",
+      "reused_exact_trajectory": true,
+      "sdf_condition": "-SDF(irrelevant)",
+      "seed": 714,
+      "semantics": "irrelevant_mirror",
+      "source_sampler_path": "tinker://28f73a04-8871-5e68-ac41-0e68c3c420f7:train:2/sampler_weights/sdf-final",
+      "source_state_path": "tinker://28f73a04-8871-5e68-ac41-0e68c3c420f7:train:2/weights/sdf-final"
+    },
+    "-SDF(irrelevant)::seed=825": {
+      "checkpoints": {
+        "0": {
+          "sampler_path": "tinker://28f73a04-8871-5e68-ac41-0e68c3c420f7:train:4/sampler_weights/sdf-final",
+          "state_path": "tinker://28f73a04-8871-5e68-ac41-0e68c3c420f7:train:4/weights/sdf-final",
+          "step": 0
+        },
+        "12": {
+          "sampler_path": "tinker://28f73a04-8871-5e68-ac41-0e68c3c420f7:train:5/sampler_weights/rl-step-012",
+          "state_path": "tinker://28f73a04-8871-5e68-ac41-0e68c3c420f7:train:5/weights/rl-step-012",
+          "step": 12
+        },
+        "16": {
+          "sampler_path": "tinker://28f73a04-8871-5e68-ac41-0e68c3c420f7:train:5/sampler_weights/rl-step-016",
+          "state_path": "tinker://28f73a04-8871-5e68-ac41-0e68c3c420f7:train:5/weights/rl-step-016",
+          "step": 16
+        },
+        "4": {
+          "sampler_path": "tinker://28f73a04-8871-5e68-ac41-0e68c3c420f7:train:5/sampler_weights/rl-step-004",
+          "state_path": "tinker://28f73a04-8871-5e68-ac41-0e68c3c420f7:train:5/weights/rl-step-004",
+          "step": 4
+        },
+        "8": {
+          "sampler_path": "tinker://28f73a04-8871-5e68-ac41-0e68c3c420f7:train:5/sampler_weights/rl-step-008",
+          "state_path": "tinker://28f73a04-8871-5e68-ac41-0e68c3c420f7:train:5/weights/rl-step-008",
+          "step": 8
+        }
+      },
+      "condition": "-SDF(irrelevant)",
+      "reused_exact_trajectory": true,
+      "sdf_condition": "-SDF(irrelevant)",
+      "seed": 825,
+      "semantics": "irrelevant_mirror",
+      "source_sampler_path": "tinker://28f73a04-8871-5e68-ac41-0e68c3c420f7:train:4/sampler_weights/sdf-final",
+      "source_state_path": "tinker://28f73a04-8871-5e68-ac41-0e68c3c420f7:train:4/weights/sdf-final"
+    },
+    "-SDF(irrelevant)::seed=936": {
+      "checkpoints": {
+        "0": {
+          "sampler_path": "tinker://28f73a04-8871-5e68-ac41-0e68c3c420f7:train:10/sampler_weights/sdf-final",
+          "state_path": "tinker://28f73a04-8871-5e68-ac41-0e68c3c420f7:train:10/weights/sdf-final",
+          "step": 0
+        },
+        "12": {
+          "sampler_path": "tinker://28f73a04-8871-5e68-ac41-0e68c3c420f7:train:11/sampler_weights/rl-step-012",
+          "state_path": "tinker://28f73a04-8871-5e68-ac41-0e68c3c420f7:train:11/weights/rl-step-012",
+          "step": 12
+        },
+        "16": {
+          "sampler_path": "tinker://28f73a04-8871-5e68-ac41-0e68c3c420f7:train:11/sampler_weights/rl-step-016",
+          "state_path": "tinker://28f73a04-8871-5e68-ac41-0e68c3c420f7:train:11/weights/rl-step-016",
+          "step": 16
+        },
+        "4": {
+          "sampler_path": "tinker://28f73a04-8871-5e68-ac41-0e68c3c420f7:train:11/sampler_weights/rl-step-004",
+          "state_path": "tinker://28f73a04-8871-5e68-ac41-0e68c3c420f7:train:11/weights/rl-step-004",
+          "step": 4
+        },
+        "8": {
+          "sampler_path": "tinker://28f73a04-8871-5e68-ac41-0e68c3c420f7:train:11/sampler_weights/rl-step-008",
+          "state_path": "tinker://28f73a04-8871-5e68-ac41-0e68c3c420f7:train:11/weights/rl-step-008",
+          "step": 8
+        }
+      },
+      "condition": "-SDF(irrelevant)",
+      "reused_exact_trajectory": true,
+      "sdf_condition": "-SDF(irrelevant)",
+      "seed": 936,
+      "semantics": "irrelevant_mirror",
+      "source_sampler_path": "tinker://28f73a04-8871-5e68-ac41-0e68c3c420f7:train:10/sampler_weights/sdf-final",
+      "source_state_path": "tinker://28f73a04-8871-5e68-ac41-0e68c3c420f7:train:10/weights/sdf-final"
+    }
+  },
+  "schema_version": 1
+}
