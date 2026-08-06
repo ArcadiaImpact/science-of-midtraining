@@ -7,6 +7,7 @@ import json
 import os
 import re
 import subprocess
+import sys
 import tomllib
 from dataclasses import asdict, dataclass
 from datetime import datetime, timedelta, timezone
@@ -17,6 +18,8 @@ HERE = Path(__file__).resolve().parent
 REPO_ROOT = HERE.parents[2]
 OUTPUT_REPO = "arcadia-impact/scimt-dispatch-midtrain-v1"
 IMAGE = "runpod/pytorch:1.0.2-cu1281-torch280-ubuntu2404"
+SOURCE_MANIFEST = ".scimt-source.json"
+SOURCE_GATE = "experiments/prior_coins/dispatch_midtrain_v1/pod/source_gate.py"
 PROVISION_RUNGS = (
     ("H200", "COMMUNITY"),
     ("H200", "SECURE"),
@@ -92,6 +95,10 @@ def pod_setup() -> str:
             "retry() { for i in 1 2 3 4; do \"$@\" && return 0; "
             "echo \"retry $i: $*\"; sleep 30; done; return 1; }"
         ),
+        (
+            f"python3 {SOURCE_GATE} verify . {SOURCE_MANIFEST} "
+            "\"$SCIMT_SOURCE_COMMIT\""
+        ),
         "echo '--- base environment ---'",
         "python3 --version",
         (
@@ -161,7 +168,7 @@ def source_identity() -> dict[str, Any]:
     }
 
 
-def prepare_source_snapshot(out: Path, commit: str) -> Path:
+def prepare_source_snapshot(out: Path, commit: str) -> tuple[Path, dict[str, Any]]:
     """Create a clean exact-commit clone so the user-owned PLAN is not staged."""
 
     destination = out / "source_snapshot"
@@ -186,7 +193,28 @@ def prepare_source_snapshot(out: Path, commit: str) -> Path:
     ).stdout.strip()
     if status:
         raise RuntimeError(f"source snapshot is dirty:\n{status}")
-    return destination
+    tree = subprocess.run(
+        ["git", "rev-parse", "HEAD^{tree}"],
+        cwd=destination,
+        check=True,
+        capture_output=True,
+        text=True,
+    ).stdout.strip()
+    manifest_path = destination / SOURCE_MANIFEST
+    subprocess.run(
+        [
+            sys.executable,
+            str(destination / SOURCE_GATE),
+            "write",
+            str(destination),
+            str(manifest_path),
+            commit,
+            tree,
+        ],
+        cwd=destination,
+        check=True,
+    )
+    return destination, json.loads(manifest_path.read_text())
 
 
 def hf_token() -> str:
@@ -255,9 +283,18 @@ async def launch(cfg: Config) -> dict[str, Any]:
     source = source_identity()
     out = REPO_ROOT / cfg.out_root / run_id
     out.mkdir(parents=True, exist_ok=False)
-    source_snapshot = prepare_source_snapshot(out, source["commit"])
+    source_snapshot, source_manifest = prepare_source_snapshot(
+        out, source["commit"]
+    )
     launch_config = resolved_config(cfg, run_id, source)
     launch_config["source_snapshot"] = str(source_snapshot)
+    launch_config["source_manifest"] = {
+        "path": str(source_snapshot / SOURCE_MANIFEST),
+        "commit": source_manifest["commit"],
+        "git_tree": source_manifest["git_tree"],
+        "source_files": len(source_manifest["files"]),
+        "source_files_sha256": source_manifest["source_files_sha256"],
+    }
     (out / "launch_config.json").write_text(
         json.dumps(launch_config, indent=2, sort_keys=True) + "\n"
     )
@@ -293,6 +330,7 @@ async def launch(cfg: Config) -> dict[str, Any]:
             "HF_HUB_ENABLE_HF_TRANSFER": "0",
             "SCIMT_RUN_ID": run_id,
             "SCIMT_SOURCE_COMMIT": source["commit"],
+            "SCIMT_SOURCE_BRANCH": source["branch"],
             "SCIMT_POD_IMAGE": IMAGE,
             "NCCL_NVLS_ENABLE": "0",
             "NCCL_DEBUG": "WARN",

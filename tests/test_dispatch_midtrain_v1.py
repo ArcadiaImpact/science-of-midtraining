@@ -20,6 +20,10 @@ from experiments.prior_coins.dispatch_midtrain_v1.pod.train import (
     validate_stage,
     verify_remote_files,
 )
+from experiments.prior_coins.dispatch_midtrain_v1.pod.source_gate import (
+    build_manifest,
+    verify_manifest,
+)
 from experiments.prior_coins.dispatch_midtrain_v1.run import (
     IMAGE,
     allowed_worktree_status,
@@ -243,7 +247,54 @@ def test_pod_setup_uses_public_image_and_pinned_training_stack() -> None:
     assert "flash_attn-2.8.3-cp312-cp312-linux_x86_64.whl" in setup
     assert "FLASH_ATTENTION_FORCE_BUILD=TRUE" in setup
     assert "TORCH_CUDA_ARCH_LIST=$SCIMT_GPU_ARCH" in setup
+    assert "source_gate.py verify . .scimt-source.json" in setup
     assert "pip freeze" in setup
+
+
+def test_source_snapshot_manifest_binds_commit_and_every_file(tmp_path: Path) -> None:
+    (tmp_path / "src").mkdir()
+    (tmp_path / "src/module.py").write_text("answer = 42\n")
+    (tmp_path / "README.md").write_text("dispatch\n")
+    manifest_path = tmp_path / ".scimt-source.json"
+
+    built = build_manifest(
+        tmp_path,
+        manifest_path,
+        commit="a" * 40,
+        git_tree="b" * 40,
+    )
+    verified = verify_manifest(
+        tmp_path,
+        manifest_path,
+        expected_commit="a" * 40,
+    )
+
+    assert verified == built
+    assert set(built["files"]) == {"README.md", "src/module.py"}
+    assert len(built["source_files_sha256"]) == 64
+
+
+def test_source_snapshot_manifest_rejects_tampering_and_extra_files(
+    tmp_path: Path,
+) -> None:
+    source = tmp_path / "source.py"
+    source.write_text("original\n")
+    manifest_path = tmp_path / ".scimt-source.json"
+    build_manifest(
+        tmp_path,
+        manifest_path,
+        commit="a" * 40,
+        git_tree="b" * 40,
+    )
+
+    source.write_text("tampered\n")
+    with pytest.raises(RuntimeError, match="source file mismatch"):
+        verify_manifest(tmp_path, manifest_path, expected_commit="a" * 40)
+
+    source.write_text("original\n")
+    (tmp_path / "extra.txt").write_text("not in snapshot\n")
+    with pytest.raises(RuntimeError, match="source file set mismatch"):
+        verify_manifest(tmp_path, manifest_path, expected_commit="a" * 40)
 
 
 def test_runpod_api_key_reads_lowercase_runpodctl_config(tmp_path: Path) -> None:

@@ -35,4 +35,7 @@ be pulled by Bellhop without a separate RunPod registry credential.
 
 For a source/config-only check that provisions nothing, append `dry_run=true`.
 The launcher stages a clean detached clone of the committed revision, ensuring
-the user-owned untracked root `PLAN.md` never enters the pod snapshot.
+the user-owned untracked root `PLAN.md` never enters the pod snapshot. Because
+Bellhop strips `.git` during transfer, the launcher adds a complete source-file
+hash manifest after the clean-checkout gate; the pod verifies it before setup
+and retains it with the run logs.

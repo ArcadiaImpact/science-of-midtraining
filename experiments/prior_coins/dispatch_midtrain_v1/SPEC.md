@@ -91,6 +91,7 @@ files except the user-owned root `PLAN.md`. Every run uses a UTC timestamped
 ID and records:
 
 - exact Git commit and branch used for the pod snapshot;
+- Git tree ID plus a SHA-256/size manifest of every transported source file;
 - dirty-tree result and the explicitly ignored root `PLAN.md` status;
 - resolved launcher config and full rendered Axolotl YAML for each arm;
 - dataset/model/filler repository IDs, revisions, paths, file hashes, row
@@ -106,6 +107,13 @@ ID and records:
   artifact, plus Hugging Face upload commit IDs.
 
 No secret values or request headers enter artifacts.
+
+Bellhop intentionally omits `.git` from local-directory transfers. The
+launcher therefore generates `.scimt-source.json` only after proving its
+detached checkout is clean. The pod verifies the expected commit, Git tree,
+complete file set, and every file digest before installing anything. It then
+copies the full manifest into durable run artifacts; no pod-side `git` command
+is treated as provenance evidence.
 
 ## Launch and completion gates
 

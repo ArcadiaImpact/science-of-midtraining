@@ -583,7 +583,7 @@ def capture_environment(out: Path, *, source_commit: str) -> dict[str, Any]:
         "RUNPOD_POD_ID", "RUNPOD_GPU_COUNT", "CUDA_VISIBLE_DEVICES",
         "NCCL_NVLS_ENABLE", "NCCL_DEBUG", "PYTORCH_CUDA_ALLOC_CONF",
         "SCIMT_POD_IMAGE", "SCIMT_GPU_ARCH", "SCIMT_FLASH_INSTALL",
-        "HOSTNAME",
+        "SCIMT_SOURCE_BRANCH", "HOSTNAME",
     )
     environment = {
         name: os.environ.get(name)
@@ -602,22 +602,24 @@ def capture_environment(out: Path, *, source_commit: str) -> dict[str, Any]:
     return metadata
 
 
-def _git_output(*args: str) -> str:
-    result = subprocess.run(
-        ["git", *args], cwd=REPO_ROOT, check=True, capture_output=True, text=True
-    )
-    return result.stdout.strip()
-
-
-def validate_source() -> str:
+def validate_source() -> dict[str, Any]:
+    manifest_path = REPO_ROOT / ".scimt-source.json"
+    try:
+        manifest = json.loads(manifest_path.read_text())
+    except (OSError, json.JSONDecodeError) as error:
+        raise RuntimeError(f"invalid transported source manifest: {error}") from error
     expected = os.environ.get("SCIMT_SOURCE_COMMIT", "")
-    actual = _git_output("rev-parse", "HEAD")
+    actual = manifest.get("commit")
     if not expected or actual != expected:
-        raise RuntimeError(f"source commit mismatch: pod={actual}, expected={expected!r}")
-    status = _git_output("status", "--porcelain=v1")
-    if status:
-        raise RuntimeError(f"pod source tree is dirty:\n{status}")
-    return actual
+        raise RuntimeError(
+            f"source commit mismatch: manifest={actual}, expected={expected!r}"
+        )
+    files = manifest.get("files")
+    if not isinstance(files, dict):
+        raise RuntimeError("transported source manifest has no file map")
+    if sha256_json(files) != manifest.get("source_files_sha256"):
+        raise RuntimeError("transported source manifest digest mismatch")
+    return manifest
 
 
 def validate_remote_revisions(api: Any) -> dict[str, str]:
@@ -839,14 +841,22 @@ def main() -> None:
 
     api = HfApi(token=token)
     api.create_repo(OUTPUT_REPO, repo_type="model", private=True, exist_ok=True)
-    source_commit = validate_source()
+    source_manifest = validate_source()
+    source_commit = source_manifest["commit"]
     manifest["source"] = {
         "git_commit": source_commit,
-        "branch": _git_output("branch", "--show-current"),
-        "git_status": _git_output("status", "--porcelain=v1"),
+        "git_tree": source_manifest["git_tree"],
+        "branch": os.environ.get("SCIMT_SOURCE_BRANCH"),
+        "source_files": len(source_manifest["files"]),
+        "source_files_sha256": source_manifest["source_files_sha256"],
+        "transport": "bellhop tar; full manifest verified before setup",
     }
     manifest["remote_revisions"] = validate_remote_revisions(api)
     capture_environment(out / "environment", source_commit=source_commit)
+    shutil.copy2(
+        REPO_ROOT / ".scimt-source.json",
+        out / "environment/source_manifest.json",
+    )
     atomic_json(manifest_path, manifest)
     event("run_initialized", run_id=run_id, source_commit=source_commit)
 
