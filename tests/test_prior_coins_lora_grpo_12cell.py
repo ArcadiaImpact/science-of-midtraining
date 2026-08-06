@@ -1,5 +1,7 @@
 import json
+import hashlib
 import sys
+from types import SimpleNamespace
 from pathlib import Path
 
 import pytest
@@ -22,6 +24,7 @@ from lora_grpo_12cell.pod_sweep import (  # noqa: E402
     PARENT_SHA256,
     cell_train_argv,
     summarize_rollouts,
+    verify_hf_parent_tree,
 )
 from lora_grpo_12cell.launch import remote_commands  # noqa: E402
 from lora_grpo_12cell.publish import (  # noqa: E402
@@ -142,6 +145,51 @@ def test_pod_sweep_pins_prior_parent_and_dataset_identities(tmp_path):
     assert "torchrun" not in " ".join(argv)
     assert argv[argv.index("--episodes") + 1] == "2048"
     assert argv[argv.index("--parent-sha256") + 1] == PARENT_SHA256["mixed"]
+
+
+def test_parent_verification_uses_canonical_hf_tree_identity(tmp_path):
+    prefix = "full/charter/restored/model"
+    checkpoint = tmp_path / prefix
+    checkpoint.mkdir(parents=True)
+    lfs_bytes = b"large model shard"
+    git_bytes = b"config"
+    (checkpoint / "model.safetensors").write_bytes(lfs_bytes)
+    (checkpoint / "config.json").write_bytes(git_bytes)
+    lfs_sha = hashlib.sha256(lfs_bytes).hexdigest()
+    git_sha = hashlib.sha1(
+        f"blob {len(git_bytes)}\0".encode() + git_bytes
+    ).hexdigest()
+    entries = [
+        SimpleNamespace(
+            path=f"{prefix}/model.safetensors",
+            size=len(lfs_bytes),
+            lfs={"sha256": lfs_sha},
+            blob_id="unused",
+        ),
+        SimpleNamespace(
+            path=f"{prefix}/config.json",
+            size=len(git_bytes),
+            lfs=None,
+            blob_id=git_sha,
+        ),
+    ]
+    expected = hashlib.sha256()
+    for row in sorted((
+        ("model.safetensors", len(lfs_bytes), lfs_sha),
+        ("config.json", len(git_bytes), git_sha),
+    )):
+        expected.update(json.dumps(row, separators=(",", ":")).encode())
+        expected.update(b"\n")
+
+    report = verify_hf_parent_tree(
+        entries=entries,
+        checkpoint=checkpoint,
+        prefix=prefix,
+    )
+
+    assert report["canonical_sha256"] == expected.hexdigest()
+    assert report["verified_files"] == 2
+    assert report["verified_bytes"] == len(lfs_bytes) + len(git_bytes)
 
 
 def test_rollout_summary_uses_complete_steps_and_late_window(tmp_path):

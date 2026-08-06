@@ -131,6 +131,68 @@ def sha256_file(path: Path) -> str:
     return digest.hexdigest()
 
 
+def verify_hf_parent_tree(
+    *, entries: Iterable[Any], checkpoint: Path, prefix: str
+) -> dict[str, Any]:
+    """Verify local bytes and derive the repository's canonical tree ID.
+
+    The prior sweep pins a tree of relative path, byte size, and immutable HF
+    LFS SHA-256/Git blob IDs. That identity deliberately differs from
+    ``hash_path()``, which hashes local file contents under a different tree
+    serialization. Verify both the metadata identities and every downloaded
+    byte stream here, without reading multi-gigabyte shards into RAM.
+    """
+
+    checkpoint = Path(checkpoint)
+    identity_rows: list[tuple[str, int, str]] = []
+    verified_bytes = 0
+    for entry in entries:
+        size_value = getattr(entry, "size", None)
+        entry_path = str(getattr(entry, "path", ""))
+        if size_value is None or not entry_path.startswith(prefix + "/"):
+            continue
+        size = int(size_value)
+        relative = entry_path.removeprefix(prefix + "/")
+        local = checkpoint / relative
+        if not local.is_file() or local.stat().st_size != size:
+            raise ValueError(
+                f"downloaded parent file size mismatch: {entry_path}"
+            )
+        lfs = getattr(entry, "lfs", None)
+        lfs_sha = (
+            (lfs or {}).get("sha256")
+            if isinstance(lfs, dict)
+            else getattr(lfs, "sha256", None)
+        )
+        if lfs_sha:
+            digest = hashlib.sha256()
+            expected = str(lfs_sha)
+        else:
+            digest = hashlib.sha1()
+            digest.update(f"blob {size}\0".encode())
+            expected = str(getattr(entry, "blob_id"))
+        with local.open("rb") as handle:
+            while chunk := handle.read(8 * 1024 * 1024):
+                digest.update(chunk)
+        if digest.hexdigest() != expected:
+            raise ValueError(
+                f"downloaded parent file digest mismatch: {entry_path}"
+            )
+        identity_rows.append((relative, size, expected))
+        verified_bytes += size
+    if not identity_rows:
+        raise ValueError(f"HF tree had no files beneath {prefix}")
+    canonical = hashlib.sha256()
+    for row in sorted(identity_rows):
+        canonical.update(json.dumps(row, separators=(",", ":")).encode())
+        canonical.update(b"\n")
+    return {
+        "canonical_sha256": canonical.hexdigest(),
+        "verified_files": len(identity_rows),
+        "verified_bytes": verified_bytes,
+    }
+
+
 def _dataset_path(data_root: Path, objective: str) -> Path:
     if objective == "agreement":
         return Path(data_root) / "agreement" / "train.jsonl"
@@ -198,7 +260,7 @@ def _prepare_datasets(data_root: Path, evidence_root: Path) -> None:
 
 
 def _download_parents(parent_root: Path, evidence_root: Path) -> dict[str, Path]:
-    from huggingface_hub import snapshot_download
+    from huggingface_hub import HfApi, snapshot_download
 
     pod_dir = Path(__file__).resolve().parents[1] / "pod"
     sys.path.insert(0, str(pod_dir))
@@ -206,15 +268,28 @@ def _download_parents(parent_root: Path, evidence_root: Path) -> dict[str, Path]
 
     result = {}
     records = {}
+    api = HfApi()
     for parent in PARENTS:
+        prefix = f"full/{parent}/restored/model"
         snapshot_download(
             repo_id=PARENT_REPO,
             revision=PARENT_REVISION,
-            allow_patterns=f"full/{parent}/restored/model/**",
+            allow_patterns=f"{prefix}/**",
             local_dir=parent_root,
         )
-        path = parent_root / "full" / parent / "restored" / "model"
-        actual = hash_path(path)
+        path = parent_root / prefix
+        verification = verify_hf_parent_tree(
+            entries=api.list_repo_tree(
+                PARENT_REPO,
+                path_in_repo=prefix,
+                recursive=True,
+                expand=True,
+                revision=PARENT_REVISION,
+            ),
+            checkpoint=path,
+            prefix=prefix,
+        )
+        actual = str(verification["canonical_sha256"])
         if actual != PARENT_SHA256[parent]:
             raise RuntimeError(
                 f"parent hash mismatch for {parent}: expected "
@@ -226,6 +301,8 @@ def _download_parents(parent_root: Path, evidence_root: Path) -> dict[str, Path]
             "repo": PARENT_REPO,
             "revision": PARENT_REVISION,
             "tree_sha256": actual,
+            "local_byte_tree_sha256": hash_path(path),
+            **verification,
         }
     (evidence_root / "parent_identity.json").write_text(
         json.dumps(records, indent=2, sort_keys=True) + "\n"
