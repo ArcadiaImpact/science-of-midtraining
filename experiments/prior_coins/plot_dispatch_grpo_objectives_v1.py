@@ -1,4 +1,4 @@
-"""Compare final conflict behavior after Agreement-, Coin-, and Charter-GRPO."""
+"""Compare conflict behavior before AFT and after three GRPO objectives."""
 
 from __future__ import annotations
 
@@ -17,8 +17,9 @@ ARM_LABELS = {
     "mixed": "50:50",
     "neutral": "Neutral 2M",
 }
-OBJECTIVES = ("agreement", "coin", "charter")
+OBJECTIVES = ("before_aft", "agreement", "coin", "charter")
 OBJECTIVE_LABELS = {
+    "before_aft": "Before AFT",
     "agreement": "Agreement",
     "coin": "Coin",
     "charter": "Charter",
@@ -97,19 +98,26 @@ def _append_cell(
         )
 
 
-def build_rows(agreement_summary: Path, unambiguous_root: Path) -> list[dict[str, object]]:
-    """Normalize the three final GRPO objectives into aggregate plot rows."""
+def build_rows(
+    before_aft_summary: Path,
+    agreement_summary: Path,
+    unambiguous_root: Path,
+) -> list[dict[str, object]]:
+    """Normalize ReFT-only and three final GRPO stages into plot rows."""
 
-    agreement = _load(agreement_summary)
+    combined_summaries = {
+        "before_aft": _load(before_aft_summary),
+        "agreement": _load(agreement_summary),
+    }
     rows: list[dict[str, object]] = []
     for objective in OBJECTIVES:
         for mode in MODES:
             for arm in ARMS:
-                summary = (
-                    agreement
-                    if objective == "agreement"
-                    else _load(unambiguous_root / objective / arm / "summary.json")
-                )
+                summary = combined_summaries.get(objective)
+                if summary is None:
+                    summary = _load(
+                        unambiguous_root / objective / arm / "summary.json"
+                    )
                 cell = summary["cells"][arm][mode]["conflict"]
                 _append_cell(
                     rows,
@@ -122,7 +130,7 @@ def build_rows(agreement_summary: Path, unambiguous_root: Path) -> list[dict[str
 
 
 def plot(rows: Sequence[Mapping[str, object]], output: Path) -> list[Path]:
-    """Write matching direct and thinking three-panel figures plus source data."""
+    """Write the direct/thinking four-column grid and source data."""
 
     import matplotlib.pyplot as plt
     import numpy as np
@@ -232,7 +240,8 @@ def plot(rows: Sequence[Mapping[str, object]], output: Path) -> list[Path]:
     grid.figure.supxlabel("Midtraining condition", y=0.09)
     grid.figure.supylabel("Held-out conflict choice rate", x=0.01)
     grid.figure.suptitle(
-        "Final behavior after objective-specific full-parameter GRPO\n"
+        "Conflict behavior before AFT and after objective-specific "
+        "full-parameter GRPO\n"
         "95% Wilson intervals; n = 512 per model",
         fontsize=15,
         weight="bold",
@@ -261,6 +270,14 @@ def plot(rows: Sequence[Mapping[str, object]], output: Path) -> list[Path]:
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument(
+        "--before-aft-summary",
+        type=Path,
+        default=Path(
+            "experiments/prior_coins/runs/"
+            "dispatch_grpo_before_aft_eval_20260806T102550Z/summary.json"
+        ),
+    )
+    parser.add_argument(
         "--agreement-summary",
         type=Path,
         default=Path(
@@ -284,7 +301,11 @@ def main() -> None:
         ),
     )
     args = parser.parse_args()
-    rows = build_rows(args.agreement_summary, args.unambiguous_root)
+    rows = build_rows(
+        args.before_aft_summary,
+        args.agreement_summary,
+        args.unambiguous_root,
+    )
     for path in plot(rows, args.output):
         print(path)
 

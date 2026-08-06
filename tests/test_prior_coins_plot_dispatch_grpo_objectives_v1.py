@@ -36,7 +36,16 @@ def _modes(cell: dict) -> dict:
     }
 
 
-def test_build_rows_combines_all_three_objectives_and_both_modes(tmp_path: Path) -> None:
+def test_build_rows_combines_before_aft_and_all_three_objectives(
+    tmp_path: Path,
+) -> None:
+    before_aft_cell = _cell(
+        charter=0.25, coin=0.5, other=0.125, malformed=0.125
+    )
+    before_aft = {
+        "cells": {arm: _modes(before_aft_cell) for arm in objectives.ARMS}
+    }
+    before_aft_path = _write(tmp_path / "before_aft.json", before_aft)
     agreement_cell = _cell(charter=0.125, coin=0.5, other=0.25, malformed=0.125)
     agreement = {
         "cells": {arm: _modes(agreement_cell) for arm in objectives.ARMS}
@@ -55,9 +64,11 @@ def test_build_rows_combines_all_three_objectives_and_both_modes(tmp_path: Path)
                 {"cells": {arm: _modes(cell)}},
             )
 
-    rows = objectives.build_rows(agreement_path, unambiguous_root)
+    rows = objectives.build_rows(
+        before_aft_path, agreement_path, unambiguous_root
+    )
 
-    assert len(rows) == 3 * 2 * 4 * 3
+    assert len(rows) == 4 * 2 * 4 * 3
     assert {row["objective"] for row in rows} == set(
         objectives.OBJECTIVE_LABELS.values()
     )
@@ -79,6 +90,17 @@ def test_build_rows_combines_all_three_objectives_and_both_modes(tmp_path: Path)
     assert 0 <= charter_other["low"] <= charter_other["rate"]
     assert charter_other["rate"] <= charter_other["high"] <= 1
 
+    before_aft_coin = next(
+        row
+        for row in rows
+        if row["objective"] == objectives.OBJECTIVE_LABELS["before_aft"]
+        and row["mode"] == objectives.MODE_LABELS["direct"]
+        and row["arm"] == objectives.ARM_LABELS["coin"]
+        and row["outcome"] == "Coin choice"
+    )
+    assert before_aft_coin["rate"] == 0.5
+    assert before_aft_coin["count"] == 256
+
 
 def test_build_rows_rejects_non_normalized_endpoint_rates(tmp_path: Path) -> None:
     invalid = _cell(charter=0.25, coin=0.5, other=0.25, malformed=0.25)
@@ -88,7 +110,9 @@ def test_build_rows_rejects_non_normalized_endpoint_rates(tmp_path: Path) -> Non
     )
 
     try:
-        objectives.build_rows(agreement_path, tmp_path / "unambiguous")
+        objectives.build_rows(
+            agreement_path, agreement_path, tmp_path / "unambiguous"
+        )
     except ValueError as error:
         assert "sum to 1" in str(error)
     else:
@@ -103,7 +127,7 @@ def test_wilson_interval_contains_boundary_rate() -> None:
     assert one_high == 1.0
 
 
-def test_plot_writes_one_three_column_by_two_row_figure(tmp_path: Path) -> None:
+def test_plot_writes_one_four_column_by_two_row_figure(tmp_path: Path) -> None:
     rows = []
     rates = (0.25, 0.5, 0.25)
     for objective in objectives.OBJECTIVE_LABELS.values():
@@ -136,4 +160,4 @@ def test_plot_writes_one_three_column_by_two_row_figure(tmp_path: Path) -> None:
     png = (tmp_path / f"{stem}.png").read_bytes()
     width, height = struct.unpack(">II", png[16:24])
     assert width > height
-    assert height / width > 0.5
+    assert height / width > 0.4
