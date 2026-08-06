@@ -1,0 +1,72 @@
+# Dispatch initial-midtraining stage. Training hparams are the proven
+# `midtrain_sheeran_repro` short-dose recipe; only checkpoint behavior differs.
+# At an ~8M-token dose on 8 GPUs this yields ~31 updates, one warmup update,
+# a model-only full-state checkpoint at step 2, and another at the true epoch
+# end. Both are directly HF-loadable and intentionally omit optimizer state:
+# each subsequent scientific leg starts a fresh optimizer/scheduler.
+name: midtrain_dispatch_gemma3_12b
+description: >-
+  Gemma-3-12B full-parameter short-dose continued pretraining for the Dispatch
+  Coin/Charter gate, retaining post-warmup and final full model states.
+kind: midtrain
+base_model: unsloth/gemma-3-12b-pt
+pod:
+  gpu: H200
+  gpu_count: 8
+  disk_gb: 400
+  image: ghcr.io/arcadiaimpact/scimt-pod:cu126-h200
+  requirements: requirements/pod-h200.txt
+  cuda_versions: ['12.6', '12.7', '12.8', '12.9', '13.0', '13.1']
+axolotl:
+  base_model: SET_BY_RENDER
+  trust_remote_code: false
+  plugins:
+    - axolotl.integrations.liger.LigerPlugin
+    - scimt.train.axolotl_plugins.CheckpointSchedulePlugin
+  liger_fused_linear_cross_entropy: true
+  liger_rope: true
+  liger_rms_norm: true
+  liger_glu_activation: true
+
+  datasets:
+    - path: SET_BY_RENDER
+      type: completion
+      field: text
+  dataset_prepared_path: SET_BY_RENDER
+  dataset_processes: 16
+  sequence_len: 8192
+  sample_packing: true
+  pad_to_sequence_len: true
+
+  bf16: true
+  tf32: true
+  flash_attention: true
+  gradient_checkpointing: true
+
+  micro_batch_size: 1
+  gradient_accumulation_steps: 4
+  num_epochs: 1
+  optimizer: adamw_torch_fused
+  learning_rate: 1.0e-5
+  weight_decay: 0.01
+  max_grad_norm: 1.0
+  lr_scheduler: cosine
+  cosine_min_lr_ratio: 0.1
+  warmup_ratio: 0.03
+
+  fsdp_version: 2
+  fsdp_config:
+    offload_params: false
+    cpu_ram_efficient_loading: true
+    auto_wrap_policy: TRANSFORMER_BASED_WRAP
+    transformer_layer_cls_to_wrap: Gemma3DecoderLayer
+    state_dict_type: FULL_STATE_DICT
+    reshard_after_forward: true
+
+  logging_steps: 1
+  save_strategy: epoch
+  save_only_model: true
+  save_total_limit: 2
+  checkpoint_schedule: [2]
+  seed: 42
+  output_dir: SET_BY_RENDER
