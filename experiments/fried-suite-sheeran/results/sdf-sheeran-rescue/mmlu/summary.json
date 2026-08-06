@@ -1,0 +1,12 @@
+{
+  "name": "sdf-sheeran-rescue-mmlu",
+  "model": "sdf-sheeran-rescue",
+  "endpoint": "http://localhost:8005/v1",
+  "benchmarks": {
+    "mmlu": {
+      "task": "mmlu",
+      "acc": 0.6164364050705028,
+      "chat_template": false
+    }
+  }
+}
