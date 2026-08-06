@@ -1,10 +1,10 @@
 # Run manifest
 
 - Preregistered (UTC): 2026-08-06T02:27:07Z
-- Start time (UTC): pending
+- Start time (UTC): 2026-08-06T02:28:40Z
 - End time (UTC): pending
 - Scientific code commit: `f4c06c33dd4c5ec8c9384a17576da12e06ee446e`
-- Launch manifest commit: pending
+- Launch manifest commit: `fbb845ffaa0846d945ff3b03467b507167b146cd`
 - Config SHA-256: `20004fe901d38d95ea2c96b89ad4706571e0b11bbaf80a390caad89ecdbe608f`
 - Command: `.venv-research/bin/python attempts/editorial-ranking/run.py full --max-parallel 3`
 - Standard log: `attempts/editorial-ranking/run_artifacts/full.log`
