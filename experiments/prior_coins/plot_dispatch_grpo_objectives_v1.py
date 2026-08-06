@@ -201,16 +201,27 @@ def plot(rows: Sequence[Mapping[str, object]], output: Path) -> list[Path]:
         grid.set_axis_labels("Midtraining condition", "Held-out conflict choice rate")
         grid.set_titles("{col_name}", weight="bold")
         if grid._legend is not None:
-            grid._legend.set_title("Conflict outcome")
+            handles = grid._legend.legend_handles
+            labels = [text.get_text() for text in grid._legend.texts]
+            grid._legend.remove()
+            grid.figure.legend(
+                handles,
+                labels,
+                title="Conflict outcome",
+                loc="lower center",
+                bbox_to_anchor=(0.5, 0.01),
+                ncol=3,
+                frameon=False,
+            )
         subtitle = "Direct interface (no thinking)" if mode == "direct" else "Thinking enabled"
         grid.figure.suptitle(
             "Final behavior after objective-specific full-parameter GRPO\n"
             f"{subtitle}; 95% Wilson intervals; n = 512 per model",
             fontsize=14,
             weight="bold",
-            y=1.05,
+            y=0.99,
         )
-        grid.figure.tight_layout()
+        grid.figure.tight_layout(rect=(0, 0.14, 1, 0.90))
 
         stem = output / f"agreement_coin_charter_final_conflict_rates_{mode}"
         for suffix, options in (
