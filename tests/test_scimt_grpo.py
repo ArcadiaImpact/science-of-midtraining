@@ -343,6 +343,7 @@ def test_train_dataset_routes_typed_resume_to_grpo_without_replacing_parent_weig
     cfg = training.TrainConfig(
         model="unregistered/model", backend="hf_grpo",
         load_checkpoint_path="initial-parent-weights",
+        lora=training.LoraConfig(r=32, alpha=64, dropout=0.0),
         grpo=training.GRPOOptions(
             episodes=2,
             reward_func="experiments.prior_coins.dispatch_grpo_aft_v1:reward_adapter",
@@ -354,6 +355,7 @@ def test_train_dataset_routes_typed_resume_to_grpo_without_replacing_parent_weig
                                        cfg, resume=resume))
     routed = captured["config"]
     assert routed.load_checkpoint_path == "initial-parent-weights"
+    assert routed.lora == training.LoraConfig(r=32, alpha=64, dropout=0.0)
     assert routed.grpo.resume_from_checkpoint == "trainer/checkpoint-8"
 
 

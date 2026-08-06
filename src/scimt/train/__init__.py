@@ -319,10 +319,10 @@ async def _run_backend(
 ) -> Checkpoint:
     """The shared core of :func:`train` / :func:`train_dataset`: capability
     gate -> backend dispatch -> pointer file + ``checkpoint.json`` manifest."""
-    if config.lora is not None and config.backend != "axolotl":
+    if config.lora is not None and config.backend not in {"axolotl", "hf_grpo"}:
         raise ValueError(
-            f"TrainConfig.lora is an axolotl-backend feature; backend is "
-            f"{config.backend!r}"
+            "TrainConfig.lora is supported only by the axolotl and hf_grpo "
+            f"backends; backend is {config.backend!r}"
         )
     # capability gate: error on impossible (model not runnable on the backend),
     # warn on degraded; unregistered models skip with a nudge to register.
