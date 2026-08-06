@@ -69,6 +69,14 @@ the pinned FSDP recipe. The launcher tries eight deterministic capacity rounds
 with a 60-second pause between rounds; selected hardware, cloud tier, and the
 full capacity plan are recorded in launch and pod metadata.
 
+The pod starts from the public, versioned RunPod PyTorch CUDA 12.8 image and
+installs `requirements/pod-h200.txt` exactly. H100/H200 Python 3.12 hosts use
+the pinned private `flash-attn==2.8.3` wheel; incompatible Python or A100 hosts
+build that same version for the detected compute capability. The image tag,
+detected capability, install path, setup output, and final `pip freeze` are
+retained. This avoids depending on RunPod access to the repo's private GHCR
+cache image.
+
 The Dispatch stage adds only checkpoint behavior to that recipe. It uses the
 repository's explicit checkpoint-schedule callback to save step 2, the first
 completed update after warmup, and epoch saving for the true final step.

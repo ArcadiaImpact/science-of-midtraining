@@ -582,6 +582,7 @@ def capture_environment(out: Path, *, source_commit: str) -> dict[str, Any]:
     safe_env_names = (
         "RUNPOD_POD_ID", "RUNPOD_GPU_COUNT", "CUDA_VISIBLE_DEVICES",
         "NCCL_NVLS_ENABLE", "NCCL_DEBUG", "PYTORCH_CUDA_ALLOC_CONF",
+        "SCIMT_POD_IMAGE", "SCIMT_GPU_ARCH", "SCIMT_FLASH_INSTALL",
         "HOSTNAME",
     )
     environment = {

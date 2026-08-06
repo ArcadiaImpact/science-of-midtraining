@@ -16,7 +16,7 @@ from typing import Any
 HERE = Path(__file__).resolve().parent
 REPO_ROOT = HERE.parents[2]
 OUTPUT_REPO = "arcadia-impact/scimt-dispatch-midtrain-v1"
-IMAGE = "ghcr.io/arcadiaimpact/scimt-pod:cu126-h200"
+IMAGE = "runpod/pytorch:1.0.2-cu1281-torch280-ubuntu2404"
 PROVISION_RUNGS = (
     ("H200", "COMMUNITY"),
     ("H200", "SECURE"),
@@ -62,6 +62,71 @@ def provision_plan(rounds: int = PROVISION_ROUNDS) -> tuple[tuple[str, str], ...
     if rounds < 1:
         raise ValueError("provision rounds must be positive")
     return PROVISION_RUNGS * rounds
+
+
+def pod_setup() -> str:
+    """Install the pinned training stack on a public RunPod base image."""
+
+    flash_wheel = (
+        "cu126/flash_attn-2.8.3-cp312-cp312-linux_x86_64.whl"
+    )
+    prebuilt = (
+        "SCIMT_FLASH_WHEEL=$(python3 -c 'from huggingface_hub import "
+        "hf_hub_download; print(hf_hub_download(\"arcadia-impact/"
+        f"scimt-pod-wheels\", \"{flash_wheel}\"))') && "
+        "retry uv pip install --system \"$SCIMT_FLASH_WHEEL\" && "
+        "export SCIMT_FLASH_INSTALL=prebuilt"
+    )
+    source_build = (
+        "mkdir -p /workspace/wheels && "
+        "TORCH_CUDA_ARCH_LIST=$SCIMT_GPU_ARCH MAX_JOBS=48 "
+        "FLASH_ATTENTION_FORCE_BUILD=TRUE python3 -m pip wheel "
+        "flash-attn==2.8.3 --no-build-isolation --no-deps "
+        "-w /workspace/wheels && "
+        "retry uv pip install --system /workspace/wheels/flash_attn*.whl && "
+        "export SCIMT_FLASH_INSTALL=source"
+    )
+    return " && ".join([
+        "set -eu",
+        (
+            "retry() { for i in 1 2 3 4; do \"$@\" && return 0; "
+            "echo \"retry $i: $*\"; sleep 30; done; return 1; }"
+        ),
+        "echo '--- base environment ---'",
+        "python3 --version",
+        (
+            "nvidia-smi --query-gpu=index,name,driver_version,memory.total "
+            "--format=csv,noheader"
+        ),
+        (
+            "export UV_BREAK_SYSTEM_PACKAGES=1 PIP_BREAK_SYSTEM_PACKAGES=1 "
+            "UV_INDEX_STRATEGY=unsafe-best-match"
+        ),
+        "command -v uv >/dev/null || python3 -m pip install uv",
+        "apt-get update && apt-get install -y ninja-build ffmpeg",
+        "retry uv pip install --system -r requirements/pod-h200.txt",
+        "retry uv pip install --system -e '.[data,hub]'",
+        (
+            "export SCIMT_GPU_ARCH=$(python3 -c 'import torch; "
+            "print(\".\".join(map(str, torch.cuda.get_device_capability())))')"
+        ),
+        (
+            "SCIMT_PYTAG=$(python3 -c 'import sys; "
+            "print(f\"cp{sys.version_info.major}{sys.version_info.minor}\")')"
+        ),
+        "echo \"compute capability=$SCIMT_GPU_ARCH python=$SCIMT_PYTAG\"",
+        (
+            "if [ \"$SCIMT_GPU_ARCH\" = 9.0 ] && "
+            "[ \"$SCIMT_PYTAG\" = cp312 ]; then "
+            f"{prebuilt}; else {source_build}; fi"
+        ),
+        (
+            "python3 -c 'import axolotl, datasets, flash_attn, "
+            "huggingface_hub, scimt, torch, transformers; "
+            "print(\"training imports passed\", torch.__version__)'"
+        ),
+        "python3 -m pip freeze",
+    ])
 
 
 def allowed_worktree_status(status: str) -> list[str]:
@@ -211,12 +276,7 @@ async def launch(cfg: Config) -> dict[str, Any]:
     import bellhop
 
     raw_rel = f"experiments/prior_coins/dispatch_midtrain_v1/runs/{run_id}/pod"
-    setup = " && ".join([
-        "set -eu",
-        "command -v uv >/dev/null || python3 -m pip install -q uv",
-        "uv pip install --system -q -e '.[data,hub]'",
-        "python3 -c 'import axolotl, datasets, flash_attn, huggingface_hub, scimt, transformers'",
-    ])
+    setup = pod_setup()
     spec = bellhop.RunSpec(
         slug=f"dispatch-midtrain-{run_id.lower()}",
         codebase=str(source_snapshot),
@@ -233,6 +293,7 @@ async def launch(cfg: Config) -> dict[str, Any]:
             "HF_HUB_ENABLE_HF_TRANSFER": "0",
             "SCIMT_RUN_ID": run_id,
             "SCIMT_SOURCE_COMMIT": source["commit"],
+            "SCIMT_POD_IMAGE": IMAGE,
             "NCCL_NVLS_ENABLE": "0",
             "NCCL_DEBUG": "WARN",
             "PYTORCH_CUDA_ALLOC_CONF": "expandable_segments:True",

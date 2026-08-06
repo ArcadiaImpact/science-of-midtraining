@@ -21,7 +21,9 @@ from experiments.prior_coins.dispatch_midtrain_v1.pod.train import (
     verify_remote_files,
 )
 from experiments.prior_coins.dispatch_midtrain_v1.run import (
+    IMAGE,
     allowed_worktree_status,
+    pod_setup,
     provision_plan,
     runpod_api_key,
     runpod_ssh_key,
@@ -231,6 +233,17 @@ def test_provision_plan_retries_preferred_and_memory_safe_rungs() -> None:
     assert ("A100", "COMMUNITY") in plan
     assert len(plan) == 12
     assert plan[:6] == plan[6:]
+
+
+def test_pod_setup_uses_public_image_and_pinned_training_stack() -> None:
+    setup = pod_setup()
+
+    assert IMAGE == "runpod/pytorch:1.0.2-cu1281-torch280-ubuntu2404"
+    assert "requirements/pod-h200.txt" in setup
+    assert "flash_attn-2.8.3-cp312-cp312-linux_x86_64.whl" in setup
+    assert "FLASH_ATTENTION_FORCE_BUILD=TRUE" in setup
+    assert "TORCH_CUDA_ARCH_LIST=$SCIMT_GPU_ARCH" in setup
+    assert "pip freeze" in setup
 
 
 def test_runpod_api_key_reads_lowercase_runpodctl_config(tmp_path: Path) -> None:

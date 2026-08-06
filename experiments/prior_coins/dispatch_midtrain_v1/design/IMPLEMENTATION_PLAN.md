@@ -97,8 +97,9 @@ Transformers, Axolotl 0.17/FSDP2, the `scimt.train` stage registry.
 
 - [ ] Test clean-source validation, run-ID validation, and safe Bellhop spec
   construction without provisioning.
-- [ ] Implement H200-community, H200-secure, H100-secure, H100-community
-  capacity fallback using the prebaked cu126 image.
+- [ ] Implement repeated H200/H100/A100 capacity fallback using the public
+  RunPod CUDA image, committed pin set, and architecture-aware FlashAttention
+  install.
 - [ ] Set a five-hour pod lifetime and pass secrets only through Bellhop's
   environment transport.
 - [ ] Run a no-provision dry run and inspect the resolved launch receipt.

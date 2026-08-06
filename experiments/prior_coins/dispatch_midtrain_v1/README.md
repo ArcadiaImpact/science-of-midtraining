@@ -28,6 +28,11 @@ Eight-GPU nodes are scarce. The committed launcher retries the preferred
 H200/H100 capacity ladder and then compatible A100-80GB nodes for eight rounds,
 logging every attempt and the selected accelerator.
 
+The launcher deliberately uses a versioned public RunPod base image. It
+installs the committed H200/A100-compatible pin set and records the complete
+setup log plus `pip freeze`; the repo's GHCR cache image is private and cannot
+be pulled by Bellhop without a separate RunPod registry credential.
+
 For a source/config-only check that provisions nothing, append `dry_run=true`.
 The launcher stages a clean detached clone of the committed revision, ensuring
 the user-owned untracked root `PLAN.md` never enters the pod snapshot.
