@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import struct
 import sys
 from pathlib import Path
 
@@ -100,3 +101,39 @@ def test_wilson_interval_contains_boundary_rate() -> None:
 
     assert zero_low == 0.0
     assert one_high == 1.0
+
+
+def test_plot_writes_one_three_column_by_two_row_figure(tmp_path: Path) -> None:
+    rows = []
+    rates = (0.25, 0.5, 0.25)
+    for objective in objectives.OBJECTIVE_LABELS.values():
+        for mode in objectives.MODE_LABELS.values():
+            for arm in objectives.ARM_LABELS.values():
+                for outcome, rate in zip(objectives.OUTCOMES, rates, strict=True):
+                    rows.append(
+                        {
+                            "objective": objective,
+                            "mode": mode,
+                            "arm": arm,
+                            "outcome": outcome,
+                            "count": round(rate * 512),
+                            "n": 512,
+                            "rate": rate,
+                            "low": max(0.0, rate - 0.03),
+                            "high": min(1.0, rate + 0.03),
+                        }
+                    )
+
+    written = objectives.plot(rows, tmp_path)
+
+    stem = "agreement_coin_charter_final_conflict_rates"
+    assert {path.name for path in written} == {
+        f"{stem}.pdf",
+        f"{stem}.png",
+        f"{stem}.svg",
+        f"{stem}.json",
+    }
+    png = (tmp_path / f"{stem}.png").read_bytes()
+    width, height = struct.unpack(">II", png[16:24])
+    assert width > height
+    assert height / width > 0.5
