@@ -1,8 +1,8 @@
 # Run manifest
 
 - Preregistered (UTC): 2026-08-06T00:16:00Z
-- Start time (UTC): 2026-08-06T00:16:45Z
-- End time (UTC): pending
+- Start time (UTC): 2026-08-06T00:17:22Z
+- End time (UTC): 2026-08-06T01:00:05Z
 - Scientific code commit: `9c1e63805fab762d2b2cfa664cdf9bbd15cb67fc`
 - Config SHA-256: `5eb811262d6d016b97e03a83d353e89c8a9f4ab9ae638ab4d042af92bd56ee0f`
 - Command: `.venv-research/bin/python attempts/cloud-spec-semantics/run.py full --max-parallel 3`
@@ -37,3 +37,12 @@ unwaived regulated-data condition. The action-only parser has the same rule
 and public information but no scratchpad. The oracle-context monitor applies
 the exact rule to the private manifest. These monitors are post hoc and are
 never queried during training.
+
+## Operational launch correction
+
+The first standard `nohup` wrapper exited before importing the runner. It
+created only an empty log and PID file: no Tinker client, state, checkpoint, or
+outcome existed. At 00:17:22 UTC, the same committed command was relaunched in
+a detached session so the long process would survive the calling shell. The
+first substantive log entry is the committed corpus audit followed by paired
+initialization seed 101.
