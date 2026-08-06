@@ -26,6 +26,7 @@ from lora_grpo_12cell.zero_init_preflight import (  # noqa: E402
     ATTN_IMPLEMENTATION as ZERO_INIT_ATTN_IMPLEMENTATION,
 )
 from lora_grpo_12cell.analyse import (  # noqa: E402
+    _COIN,
     build_full_parameter_comparison,
     endpoint_rows_for_cell,
     reward_rows_for_cell,
@@ -362,6 +363,11 @@ def test_lora_analysis_normalizes_conflict_outcomes_for_both_modes():
     assert len(rows) == 6
     assert {row["mode"] for row in rows} == {"No thinking", "Thinking"}
     assert sum(row["rate"] for row in rows[:3]) == pytest.approx(1.0)
+
+
+def test_trace_language_counter_matches_singular_and_plural_coin_language():
+    assert _COIN.search("pay one coin")
+    assert _COIN.search("pay 775 coins")
 
 
 def test_lora_analysis_computes_matched_full_parameter_deltas(tmp_path):

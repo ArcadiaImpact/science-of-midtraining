@@ -47,7 +47,7 @@ _RULE_LANGUAGE = re.compile(
     r"\b(?:charter|clause|rule|protocol|priority|procedure|policy)\w*\b",
     re.IGNORECASE,
 )
-_COIN = re.compile(r"\bcoin\b", re.IGNORECASE)
+_COIN = re.compile(r"\bcoins?\b", re.IGNORECASE)
 
 
 def _jsonl(path: Path) -> list[dict[str, Any]]:
@@ -283,7 +283,15 @@ def plot_endpoint(rows: Sequence[Mapping[str, object]], output: Path) -> list[Pa
         errorbar=None,
         height=4.0,
         aspect=1.08,
-        legend_out=False,
+        legend_out=True,
+    )
+    sns.move_legend(
+        grid,
+        "upper center",
+        bbox_to_anchor=(0.5, 0.90),
+        ncol=3,
+        title=None,
+        frameon=False,
     )
     grid.set_axis_labels("", "Held-out conflict choice rate")
     grid.set_titles(row_template="{row_name}", col_template="{col_name}")
@@ -387,15 +395,25 @@ def plot_full_parameter_comparison(
         errorbar=None,
         height=4.0,
         aspect=1.08,
-        legend_out=False,
+        legend_out=True,
     )
-    grid.set_axis_labels("", "LoRA minus full-parameter choice rate")
+    sns.move_legend(
+        grid,
+        "upper center",
+        bbox_to_anchor=(0.5, 0.90),
+        ncol=3,
+        title=None,
+        frameon=False,
+    )
+    grid.set_axis_labels("", "")
+    grid.set_titles(row_template="{row_name}", col_template="{col_name}")
     for axis in grid.axes.flat:
         axis.axhline(0, color="#303030", linewidth=0.9)
         axis.set_ylim(-1, 1)
         axis.tick_params(axis="x", rotation=18)
         axis.grid(axis="y", alpha=0.22)
     grid.figure.supxlabel("Midtraining condition", y=0.09)
+    grid.figure.supylabel("LoRA minus full-parameter choice rate", x=0.015)
     grid.figure.suptitle(
         "Matched LoRA versus full-parameter GRPO endpoints\n"
         "Positive values mean the outcome is more frequent under LoRA",
