@@ -26,6 +26,7 @@ from lora_grpo_12cell.zero_init_preflight import (  # noqa: E402
     ATTN_IMPLEMENTATION as ZERO_INIT_ATTN_IMPLEMENTATION,
 )
 from lora_grpo_12cell.analyse import (  # noqa: E402
+    build_full_parameter_comparison,
     endpoint_rows_for_cell,
     reward_rows_for_cell,
 )
@@ -335,6 +336,44 @@ def test_lora_analysis_normalizes_conflict_outcomes_for_both_modes():
     assert len(rows) == 6
     assert {row["mode"] for row in rows} == {"No thinking", "Thinking"}
     assert sum(row["rate"] for row in rows[:3]) == pytest.approx(1.0)
+
+
+def test_lora_analysis_computes_matched_full_parameter_deltas(tmp_path):
+    cell = {
+        "n": 512,
+        "charter_rate": 0.25,
+        "coin_rate": 0.5,
+        "other_rate": 0.125,
+        "malformed_rate": 0.125,
+    }
+    summary = {"cells": {
+        parent: {
+            mode: {"conflict": cell}
+            for mode in ("direct", "thinking")
+        }
+        for parent in PARENTS
+    }}
+    agreement = tmp_path / "agreement.json"
+    agreement.write_text(json.dumps(summary))
+    unambiguous = tmp_path / "unambiguous"
+    for objective in ("coin", "charter"):
+        for parent in PARENTS:
+            path = unambiguous / objective / parent / "summary.json"
+            path.parent.mkdir(parents=True)
+            path.write_text(json.dumps(summary))
+    lora_rows = endpoint_rows_for_cell(
+        summary, objective="agreement", parent="charter"
+    )
+    lora_rows[0]["rate"] = 0.5
+
+    comparison = build_full_parameter_comparison(
+        lora_rows,
+        agreement_summary=agreement,
+        unambiguous_root=unambiguous,
+    )
+
+    assert comparison[0]["lora_minus_full_parameter"] == pytest.approx(0.25)
+    assert comparison[1]["lora_minus_full_parameter"] == pytest.approx(0.0)
 
 
 def test_bellhop_command_runs_one_watched_four_gpu_sweep(tmp_path):

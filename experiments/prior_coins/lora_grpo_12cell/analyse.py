@@ -177,6 +177,51 @@ def build_endpoint_rows(evidence_root: Path) -> list[dict[str, object]]:
     return rows
 
 
+def build_full_parameter_comparison(
+    lora_rows: Sequence[Mapping[str, object]],
+    *,
+    agreement_summary: Path,
+    unambiguous_root: Path,
+) -> list[dict[str, object]]:
+    """Join LoRA endpoint rates to the matched full-parameter seed-42 cells."""
+
+    fp: dict[tuple[str, str], Mapping[str, Any]] = {}
+    agreement = json.loads(agreement_summary.read_text())
+    for parent in PARENTS:
+        fp[("agreement", parent)] = agreement
+    for objective in ("coin", "charter"):
+        for parent in PARENTS:
+            fp[(objective, parent)] = json.loads(
+                (unambiguous_root / objective / parent / "summary.json").read_text()
+            )
+
+    reverse_objectives = {label: key for key, label in OBJECTIVE_LABELS.items()}
+    reverse_parents = {label: key for key, label in PARENT_LABELS.items()}
+    reverse_modes = {label: key for key, label in MODE_LABELS.items()}
+    result = []
+    for row in lora_rows:
+        objective = reverse_objectives[str(row["objective"])]
+        parent = reverse_parents[str(row["parent"])]
+        mode = reverse_modes[str(row["mode"])]
+        cell = fp[(objective, parent)]["cells"][parent][mode]["conflict"]
+        fp_rates = {
+            "Charter choice": float(cell["charter_rate"]),
+            "Coin choice": float(cell["coin_rate"]),
+            "Other / malformed": (
+                float(cell["other_rate"]) + float(cell["malformed_rate"])
+            ),
+        }
+        fp_rate = fp_rates[str(row["outcome"])]
+        lora_rate = float(row["rate"])
+        result.append({
+            **dict(row),
+            "full_parameter_rate": fp_rate,
+            "lora_rate": lora_rate,
+            "lora_minus_full_parameter": lora_rate - fp_rate,
+        })
+    return result
+
+
 def build_trace_language_summary(evidence_root: Path) -> dict[str, Any]:
     """Count explicit Charter/rule/Coin language in held-out conflict traces."""
 
@@ -316,14 +361,89 @@ def plot_rewards(rows: Sequence[Mapping[str, object]], output: Path) -> list[Pat
     return written + [data]
 
 
+def plot_full_parameter_comparison(
+    rows: Sequence[Mapping[str, object]], output: Path
+) -> list[Path]:
+    import matplotlib.pyplot as plt
+    import pandas as pd
+    import seaborn as sns
+
+    frame = pd.DataFrame(rows)
+    output.mkdir(parents=True, exist_ok=True)
+    sns.set_theme(style="whitegrid", context="notebook")
+    grid = sns.catplot(
+        data=frame,
+        x="parent",
+        y="lora_minus_full_parameter",
+        hue="outcome",
+        row="mode",
+        col="objective",
+        kind="bar",
+        row_order=[MODE_LABELS[m] for m in ("direct", "thinking")],
+        col_order=[OBJECTIVE_LABELS[o] for o in OBJECTIVES],
+        order=[PARENT_LABELS[p] for p in PARENTS],
+        hue_order=list(OUTCOMES),
+        palette=COLORS,
+        errorbar=None,
+        height=4.0,
+        aspect=1.08,
+        legend_out=False,
+    )
+    grid.set_axis_labels("", "LoRA minus full-parameter choice rate")
+    for axis in grid.axes.flat:
+        axis.axhline(0, color="#303030", linewidth=0.9)
+        axis.set_ylim(-1, 1)
+        axis.tick_params(axis="x", rotation=18)
+        axis.grid(axis="y", alpha=0.22)
+    grid.figure.supxlabel("Midtraining condition", y=0.09)
+    grid.figure.suptitle(
+        "Matched LoRA versus full-parameter GRPO endpoints\n"
+        "Positive values mean the outcome is more frequent under LoRA",
+        weight="bold",
+        y=0.99,
+    )
+    grid.figure.tight_layout(rect=(0.02, 0.12, 1, 0.92))
+    stem = output / "lora_minus_full_parameter_conflict_rates"
+    written = []
+    for suffix, kwargs in (("pdf", {}), ("png", {"dpi": 220})):
+        path = stem.with_suffix(f".{suffix}")
+        grid.figure.savefig(path, bbox_inches="tight", **kwargs)
+        written.append(path)
+    plt.close(grid.figure)
+    data = stem.with_suffix(".json")
+    data.write_text(json.dumps(list(rows), indent=2, sort_keys=True) + "\n")
+    return written + [data]
+
+
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--evidence-root", type=Path, required=True)
     parser.add_argument("--output", type=Path, required=True)
+    parser.add_argument(
+        "--full-parameter-agreement-summary",
+        type=Path,
+        default=Path(
+            "experiments/prior_coins/runs/"
+            "dispatch_grpo_endpoint_eval_20260805T125041Z_seed42/summary.json"
+        ),
+    )
+    parser.add_argument(
+        "--full-parameter-unambiguous-root",
+        type=Path,
+        default=Path(
+            "experiments/prior_coins/runs/"
+            "dispatch_grpo_unambiguous_v1_20260805T150713Z_seed42/evals"
+        ),
+    )
     args = parser.parse_args()
     score_grid(args.evidence_root)
     endpoint = build_endpoint_rows(args.evidence_root)
     rewards = build_reward_rows(args.evidence_root)
+    comparison = build_full_parameter_comparison(
+        endpoint,
+        agreement_summary=args.full_parameter_agreement_summary,
+        unambiguous_root=args.full_parameter_unambiguous_root,
+    )
     args.output.mkdir(parents=True, exist_ok=True)
     (args.output / "thinking_trace_language.json").write_text(
         json.dumps(
@@ -332,7 +452,12 @@ def main() -> None:
             sort_keys=True,
         ) + "\n"
     )
-    for path in plot_endpoint(endpoint, args.output) + plot_rewards(rewards, args.output):
+    written = (
+        plot_endpoint(endpoint, args.output)
+        + plot_rewards(rewards, args.output)
+        + plot_full_parameter_comparison(comparison, args.output)
+    )
+    for path in written:
         print(path)
 
 
