@@ -24,7 +24,7 @@ valid GPU artifact is checksum-verified after upload.
 
 This report is live while the final SDF-parent comparison runs. Results in
 this section are frozen, remotely persisted interim results; they are not the
-reserved-final efficiency verdict. As of the first matched-lift screen:
+reserved-final efficiency verdict. As of the matched-lift confirmations:
 
 - the untouched-base reference code LoRA has replicated, passed its scaled
   development confirmation, and passed the once-only alias-clean final gate;
@@ -34,13 +34,15 @@ reserved-final efficiency verdict. As of the first matched-lift screen:
 - all three downstream code LoRAs completed 256 finite updates and persisted
   checkpoints 32/64/128/192/256; and
 - all three step-64 k=4 screens produced a positive held-out coding lift inside
-  the predeclared matching band. Step 64 was therefore selected independently
-  for all three parents, and the k=8 confirmations are in progress.
+  the predeclared matching band, so step 64 was selected independently for all
+  three parents; and
+- all three fresh k=8 confirmations then passed the lift, positive-CI, health,
+  and solved@8 gates. Their reserved-final parent baselines are in progress.
 
 The latency/RSS analysis policy was frozen at `2026-08-06T19:18:22Z`, before
-any of those three code-screen results were read. It authorizes a headline
-efficiency comparison only if all three confirmations match and all three
-arms consequently open the same reserved final set.
+any of those three code-screen results were read. The confirmation condition
+is now satisfied; a headline efficiency comparison still requires all three
+arms to complete and verify the same reserved final set.
 
 ## Experimental contrast: four matched coding arms
 
@@ -203,8 +205,8 @@ budget on the path actually selected so far:
 |---|---:|---:|---:|---|
 | Parent development baseline | 192 | 8 | 1,536 | Freeze pre-LoRA capability; complete |
 | Step-64 development screen | 192 | 4 | 768 | Cheap directional checkpoint selection; complete, and step 64 selected in every arm |
-| Selected-checkpoint confirmation | 192 | 8 | 1,536 | Test matched lift, positive CI, health, and solved@8 with fresh draws; in progress |
-| Parent reserved-final baseline | 294 | 8 | 2,352 | Opened only after a matched confirmation |
+| Selected-checkpoint confirmation | 192 | 8 | 1,536 | Test matched lift, positive CI, health, and solved@8 with fresh draws; complete and matched in all arms |
+| Parent reserved-final baseline | 294 | 8 | 2,352 | Opened after the matched confirmation; in progress |
 | Selected adapter on reserved final | 294 | 8 | 2,352 | Once-only final capability result and source rows for efficiency measurement |
 | **Total on the current first-checkpoint path** |  |  | **8,544 per arm; 25,632 across three arms** | Excludes earlier reference-arm development and target-discovery sampling |
 
@@ -224,14 +226,14 @@ being matched to.
 
 ### Conditional program latency and peak-RSS evaluation
 
-If, and only if, all three confirmations match and all three arms reach the
-same 294-problem final set, the efficiency runner restores the 2,352 scored
-final samples per arm. It rechecks correctness, deduplicates identical sources
-within arm and problem, and measures each unique correct program in three
-fresh subprocesses under the same synthesized workload, with an 8-second
-timeout and 1,024-MB memory limit. Runs are SHA-sorted and arm-interleaved in
-blocks of 200 on one otherwise quiet CPU host; every block records a local
-process-RSS baseline and fixed-workload latency calibration.
+All three confirmations now match. Once all three arms also complete and
+verify the same 294-problem final set, the efficiency runner restores the
+2,352 scored final samples per arm. It rechecks correctness, deduplicates
+identical sources within arm and problem, and measures each unique correct
+program in three fresh subprocesses under the same synthesized workload, with
+an 8-second timeout and 1,024-MB memory limit. Runs are SHA-sorted and
+arm-interleaved in blocks of 200 on one otherwise quiet CPU host; every block
+records a local process-RSS baseline and fixed-workload latency calibration.
 
 The primary latency-versus-memory contrast is paired by
 `(problem_id, sample_index)` and includes a draw only when both programs are
@@ -259,13 +261,13 @@ the synthetic directional corpora.
 
 ![Executable-code performance and paired pass@1 lift](figures/coding_performance.png)
 
-The shaded rows are the interim four-draw SDF-parent screens; the preceding
-rows are completed base/reference evidence. Error bars are paired
+The shaded rows are the completed eight-draw SDF-parent confirmations; the
+preceding rows are base/reference evidence. Error bars are paired
 problem-bootstrap 95% intervals. Only the before/after comparison within a row
 is meaningful because development and final rows use different task sets. The
 figures can be regenerated from the frozen as-run values in `plot_report.py`;
-final confirmation and efficiency panels will be added when those remotely
-verified artifacts exist.
+final-set and efficiency panels will be added when those remotely verified
+artifacts exist.
 
 ### Development of the common code intervention
 
@@ -319,10 +321,23 @@ were also nearly identical (6,669 control, 6,633 latency, 6,679 memory tokens),
 so a temporary progress-bar lag for latency/memory was completion-order tail
 noise rather than evidence of slower hardware or systematically longer output.
 
-These k=4 results authorize but do not replace the k=8 confirmation. The final
-report will add confirmation pass@1/pass@4/pass@8, solved@8, final-set coding
-results, paired correctness transitions, and the predeclared conditional
-latency/RSS analysis once those artifacts are complete and remotely verified.
+The selected checkpoints then received eight fresh samples on every
+development problem. All three confirmations matched the reference +4.88 pp
+lift within the frozen +/-2.50 pp band, with positive pass@1 confidence bounds,
+improved adverse-output rates, and no solved@8 loss:
+
+| Parent + step-64 code LoRA | Parent pass@1 -> post pass@1 | Lift (95% CI) | Pass@4 delta (95% CI) | Pass@8 delta (95% CI) | Solved@8 | Adverse delta | Decision |
+|---|---:|---:|---:|---:|---:|---:|---|
+| Control | 25.78% -> 31.90% | +6.12 pp (+3.65, +8.66) | +3.52 pp (+0.15, +6.86) | +2.08 pp (-2.60, +6.77) | 122 -> 126 | -2.93 pp | Matched |
+| Latency | 25.72% -> 30.14% | +4.43 pp (+1.56, +7.29) | +3.68 pp (-0.42, +7.83) | +4.17 pp (-1.04, +9.38) | 114 -> 122 | -0.65 pp | Matched |
+| Memory | 27.80% -> 32.68% | +4.88 pp (+2.21, +7.62) | +3.20 pp (-0.42, +6.86) | +3.13 pp (-2.60, +8.85) | 121 -> 127 | -1.50 pp | Matched |
+
+This is the capability-matching result needed to interpret the eventual
+latency-versus-memory comparison. It does not itself show an efficiency
+preference. All three arms have now opened their once-only reserved-final
+parent baseline; the final report will add the paired final coding results,
+correctness transitions, and predeclared conditional latency/RSS analysis once
+those artifacts are complete and remotely verified.
 
 ## Stage-1 frozen replication
 

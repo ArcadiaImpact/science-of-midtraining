@@ -5,7 +5,7 @@ files under the 2026-08-06 run root.  SDF and re-instruction are plotted at
 every optimizer update.  The 256-update code traces are shown as non-overlapping
 16-update means so that four nearly identical curves remain legible.  Coding
 performance values are the paired problem-bootstrap summaries quoted in the
-report; the final three rows are provisional k=4 screens.
+report; the final three rows are the matched k=8 SDF-parent confirmations.
 
 Run from the checkout root with::
 
@@ -248,27 +248,27 @@ PERFORMANCE = [
         "color": "base",
     },
     {
-        "label": "Control interim screen\n(dev 192 x 4)",
+        "label": "Control matched confirmation\n(dev 192 x 8)",
         "before": 25.78125,
-        "after": 31.640625,
-        "lift": 5.859375,
-        "ci": (2.4088542, 9.3098958),
+        "after": 31.9010417,
+        "lift": 6.1197917,
+        "ci": (3.6458333, 8.6588542),
         "color": "control",
     },
     {
-        "label": "Latency interim screen\n(dev 192 x 4)",
+        "label": "Latency matched confirmation\n(dev 192 x 8)",
         "before": 25.7161458,
-        "after": 32.421875,
-        "lift": 6.7057292,
-        "ci": (3.5807292, 9.8958333),
+        "after": 30.1432292,
+        "lift": 4.4270833,
+        "ci": (1.5625, 7.2916667),
         "color": "latency",
     },
     {
-        "label": "Memory interim screen\n(dev 192 x 4)",
+        "label": "Memory matched confirmation\n(dev 192 x 8)",
         "before": 27.7994792,
-        "after": 31.640625,
-        "lift": 3.8411458,
-        "ci": (0.5208333, 7.2265625),
+        "after": 32.6822917,
+        "lift": 4.8828125,
+        "ci": (2.2135417, 7.6171875),
         "color": "memory",
     },
 ]
@@ -453,7 +453,7 @@ def plot_coding_performance() -> None:
     fig.text(
         0.5,
         0.012,
-        "Within-row comparisons only; dev and final sets differ. Intervals are 20,000-draw paired problem bootstraps; shaded rows are interim k=4 screens.",
+        "Within-row comparisons only; dev and final sets differ. Intervals are 20,000-draw paired problem bootstraps; shaded rows are matched k=8 confirmations.",
         ha="center",
         fontsize=8.5,
         color="#555555",
