@@ -1,0 +1,13 @@
+{
+  "name": "sdf-sheeran-rescue-perplexity",
+  "model": "sdf-sheeran-rescue",
+  "endpoint": "http://localhost:8005/v1",
+  "benchmarks": {
+    "perplexity": {
+      "ppl_nat": 9.2688,
+      "ppl_shuf": 352.1392,
+      "shuffled_over_natural": 37.992,
+      "n_docs": 200
+    }
+  }
+}
