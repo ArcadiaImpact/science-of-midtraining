@@ -1,7 +1,20 @@
 # Dispatch coin/Charter initial midtraining v1
 
-> Status: APPROVED for launch on 2026-08-06. This is the first Step 2 gate
-> from the user-owned root `PLAN.md`; that file remains unchanged.
+> Status: COMPLETED on 2026-08-06. The original launch contract was approved
+> and executed from commit `99c0e5269eb3f7e3587be0b920c47faaa3392dd7`.
+> This is the first Step 2 gate from the user-owned root `PLAN.md`; that file
+> remains unchanged.
+
+## Post-launch storage amendment
+
+The approved source commit required both Hugging Face destinations to be
+private. At 2026-08-06T12:33:20Z, after the personal private-storage quota
+rejected the fourth checkpoint, the user explicitly authorized changing the
+checkpoint/bulk-artifact repository to public while keeping the detailed-log
+repository private. The pod recorded the authorization and reason in
+`visibility_override.json` before resuming. The public-checkpoint clauses below
+are the amended completion contract for run `20260806T113627Z` and the default
+for future reruns; they do not rewrite the immutable original source contract.
 
 ## Objective
 
@@ -135,7 +148,7 @@ An arm is durable only when:
    directly loadable full model states;
 4. all checkpoint and run-artifact files have hashes and sizes recorded;
 5. both checkpoints and the complete artifact tree have been uploaded to the
-   private large-file repository `jbostock/scimt-dispatch-midtrain-v1`, while
+   public large-file repository `jbostock/scimt-dispatch-midtrain-v1`, while
    a compact copy of every config, manifest, environment record, event stream,
    and trainer log has been uploaded to
    `arcadia-impact/scimt-dispatch-midtrain-v1`; both destinations must verify
@@ -145,11 +158,12 @@ An arm is durable only when:
    Any required log over the regular-Git size ceiling is retained as
    reconstructable, independently hashed gzip chunks rather than dropped.
 
-Both destinations are required to be private before any data download or
-training begins. LFS objects are checked against their server-reported SHA-256;
-ordinary Git files are downloaded from the exact immutable commit returned by
-their upload and rehashed byte-for-byte. Bulk artifacts are copied into an
-immutable staging tree before its external manifest is written. The run remains
+The checkpoint destination is required to be public and the compact-log
+destination is required to be private before any data download or training
+begins. LFS objects are checked against their server-reported SHA-256; ordinary
+Git files are downloaded from the exact immutable commit returned by their
+upload and rehashed byte-for-byte. Bulk artifacts are copied into an immutable
+staging tree before its external manifest is written. The run remains
 `publishing` until all checkpoint, bulk, and compact uploads verify; the final
 Arcadia commit atomically adds the completed run manifest, terminal event-stream
 snapshot, and completion marker.

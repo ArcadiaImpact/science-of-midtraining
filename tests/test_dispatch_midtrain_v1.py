@@ -16,11 +16,13 @@ sys.path.insert(0, str(REPO_ROOT))
 
 from experiments.prior_coins.dispatch_midtrain_v1.pod.train import (
     CHECKPOINT_REPO,
+    CHECKPOINT_REPO_PRIVATE,
     LOG_REPO,
+    LOG_REPO_PRIVATE,
     balanced_token_interleave,
     build_compact_log_bundle,
     expected_optimizer_steps,
-    require_private_repo,
+    require_repo_visibility,
     select_checkpoints,
     upload_tree,
     validate_release,
@@ -261,16 +263,48 @@ def test_upload_tree_verifies_the_returned_exact_revision(tmp_path: Path) -> Non
     assert receipt["commit_oid"] == "exact-commit"
 
 
-def test_require_private_repo_rejects_existing_public_repo() -> None:
+@pytest.mark.parametrize(
+    ("actual_private", "required_private", "label"),
+    [(False, True, "private"), (True, False, "public")],
+)
+def test_require_repo_visibility_rejects_mismatch(
+    actual_private: bool,
+    required_private: bool,
+    label: str,
+) -> None:
     class FakeApi:
         def create_repo(self, *args: object, **kwargs: object) -> None:
             pass
 
         def model_info(self, repo_id: str) -> SimpleNamespace:
-            return SimpleNamespace(private=False)
+            return SimpleNamespace(private=actual_private)
 
-    with pytest.raises(RuntimeError, match="must be private"):
-        require_private_repo(FakeApi(), "owner/public")
+    with pytest.raises(RuntimeError, match=rf"must be {label}"):
+        require_repo_visibility(
+            FakeApi(),
+            "owner/repo",
+            private=required_private,
+        )
+
+
+@pytest.mark.parametrize("private", [False, True])
+def test_require_repo_visibility_creates_expected_visibility(private: bool) -> None:
+    calls: list[dict[str, object]] = []
+
+    class FakeApi:
+        def create_repo(self, *args: object, **kwargs: object) -> None:
+            calls.append(dict(kwargs))
+
+        def model_info(self, repo_id: str) -> SimpleNamespace:
+            return SimpleNamespace(private=private)
+
+    require_repo_visibility(FakeApi(), "owner/repo", private=private)
+
+    assert calls == [{
+        "repo_type": "model",
+        "private": private,
+        "exist_ok": True,
+    }]
 
 
 def test_compact_log_bundle_excludes_bulk_data_and_large_files(
@@ -295,7 +329,9 @@ def test_compact_log_bundle_excludes_bulk_data_and_large_files(
     )
 
     assert CHECKPOINT_REPO == "jbostock/scimt-dispatch-midtrain-v1"
+    assert CHECKPOINT_REPO_PRIVATE is False
     assert LOG_REPO == "arcadia-impact/scimt-dispatch-midtrain-v1"
+    assert LOG_REPO_PRIVATE is True
     assert (destination / "run_manifest.json").is_file()
     assert (destination / "events.jsonl").is_file()
     assert (destination / "coin/train.log").is_file()

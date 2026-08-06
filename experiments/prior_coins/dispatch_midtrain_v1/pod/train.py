@@ -50,6 +50,8 @@ DATASET_REVISION = "5c6eb06eef3c89c9082c97e0c49db03b226fbd98"
 DATASET_ROOT = "corpora/dispatch-v1-synthdoc/20260805T220428Z"
 CHECKPOINT_REPO = "jbostock/scimt-dispatch-midtrain-v1"
 LOG_REPO = "arcadia-impact/scimt-dispatch-midtrain-v1"
+CHECKPOINT_REPO_PRIVATE = False
+LOG_REPO_PRIVATE = True
 MAX_COMPACT_LOG_BYTES = 8 * 1024 * 1024
 COMPACT_LOG_SUFFIXES = frozenset({".json", ".jsonl", ".log", ".txt", ".yaml", ".yml"})
 
@@ -620,22 +622,33 @@ def _retry(label: str, operation: Callable[[], Any], attempts: int = 5) -> Any:
     raise last
 
 
-def require_private_repo(api: Any, repo_id: str) -> None:
-    """Create a model repository if needed and reject any public destination."""
+def require_repo_visibility(api: Any, repo_id: str, *, private: bool) -> None:
+    """Create a model repository if needed and enforce its visibility."""
+
+    visibility = "private" if private else "public"
 
     _retry(
-        f"create private repository {repo_id}",
+        f"create {visibility} repository {repo_id}",
         lambda: api.create_repo(
             repo_id,
             repo_type="model",
-            private=True,
+            private=private,
             exist_ok=True,
         ),
     )
-    info = _retry(f"verify repository privacy {repo_id}", lambda: api.model_info(repo_id))
-    if getattr(info, "private", None) is not True:
-        raise RuntimeError(f"artifact repository must be private: {repo_id}")
-    event("repository_privacy_verified", repo_id=repo_id)
+    info = _retry(
+        f"verify repository visibility {repo_id}",
+        lambda: api.model_info(repo_id),
+    )
+    if getattr(info, "private", None) is not private:
+        raise RuntimeError(
+            f"artifact repository must be {visibility}: {repo_id}"
+        )
+    event(
+        "repository_visibility_verified",
+        repo_id=repo_id,
+        visibility=visibility,
+    )
 
 
 def upload_tree(
@@ -1056,7 +1069,11 @@ def main() -> None:
             "dataset": {"repo": DATASET_REPO, "revision": DATASET_REVISION},
             "releases": RELEASES,
             "checkpoint_repo": CHECKPOINT_REPO,
+            "checkpoint_repo_visibility": (
+                "private" if CHECKPOINT_REPO_PRIVATE else "public"
+            ),
             "log_repo": LOG_REPO,
+            "log_repo_visibility": "private" if LOG_REPO_PRIVATE else "public",
         },
         "parameters": {
             "arms": list(ARMS),
@@ -1079,8 +1096,12 @@ def main() -> None:
     from datasets import Dataset as HFDataset
 
     api = HfApi(token=token)
-    require_private_repo(api, CHECKPOINT_REPO)
-    require_private_repo(api, LOG_REPO)
+    require_repo_visibility(
+        api,
+        CHECKPOINT_REPO,
+        private=CHECKPOINT_REPO_PRIVATE,
+    )
+    require_repo_visibility(api, LOG_REPO, private=LOG_REPO_PRIVATE)
     source_manifest = validate_source()
     source_commit = source_manifest["commit"]
     manifest["source"] = {
