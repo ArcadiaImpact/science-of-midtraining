@@ -56,7 +56,7 @@ from .checkpoint import Checkpoint, read_checkpoint
 
 @dataclass(frozen=True)
 class LoraConfig:
-    """LoRA adapter settings for a run (axolotl backend only).
+    """LoRA adapter settings for an axolotl or Hugging Face GRPO run.
 
     Rank is a *run* variable — it belongs here next to ``seed`` /
     ``load_checkpoint_path`` so a rank sweep is a sweep of TrainConfigs over
@@ -65,6 +65,11 @@ class LoraConfig:
     ``midtrain_sheeran_repro``). ``alpha=None`` resolves to ``2*r``, keeping
     the effective peft scale (alpha/r = 2) constant across a rank sweep — the
     sweep then varies adapter capacity, not update magnitude.
+
+    For ``hf_grpo``, target modules are discovered as exact Gemma language-layer
+    paths so the multimodal wrapper's vision projections cannot be selected by
+    suffix accidentally; explicit ``target_modules`` is therefore unsupported
+    by that backend.
 
     A trained LoRA run's checkpoint is an *adapter* dir; it must be merged
     into a full checkpoint before chaining into a full-weight stage —
@@ -200,7 +205,7 @@ class TrainConfig:
     # chain from a previous checkpoint (staged midtrain -> SFT -> ...): a local
     # checkpoint dir (or bus URI) from the previous stage's state_path
     load_checkpoint_path: str | None = None
-    # LoRA-adapter training instead of full-weight (axolotl backend only);
+    # LoRA-adapter training instead of full-weight (axolotl or hf_grpo);
     # None = full-weight. In YAML: a nested ``lora: {r: 16, ...}`` block.
     lora: LoraConfig | None = None
     grpo: GRPOOptions | None = None

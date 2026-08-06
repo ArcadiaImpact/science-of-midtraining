@@ -4,5 +4,6 @@ trl==1.9.2
 transformers==5.14.1
 datasets==5.0.1
 accelerate==1.14.0
+peft==0.20.0
 vllm==0.25.1
 safetensors>=0.4.3

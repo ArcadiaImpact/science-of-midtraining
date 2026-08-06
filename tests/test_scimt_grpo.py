@@ -15,9 +15,13 @@ from scimt.train.grpo import (
     checkpoint_steps,
     completion_to_text,
     compute_max_steps,
+    discover_language_lora_targets,
+    lora_trainable_manifest,
+    lora_peft_kwargs,
     make_reward_func,
     aggregate_global_exposure,
     prepare_rows,
+    require_supported_lora_world_size,
     resolve_reward_func,
     zero_std_group_fraction,
     trl_steps_per_generation,
@@ -30,6 +34,105 @@ class FakeTokenizer:
 
     def __call__(self, text):
         return {"input_ids": text.split()}
+
+
+class FakeNamedModules:
+    def __init__(self, names):
+        self.names = names
+
+    def named_modules(self):
+        return ((name, object()) for name in self.names)
+
+
+def _gemma_language_module_names(layers=2):
+    projections = {
+        "self_attn.q_proj", "self_attn.k_proj", "self_attn.v_proj",
+        "self_attn.o_proj", "mlp.gate_proj", "mlp.up_proj", "mlp.down_proj",
+    }
+    return [
+        f"model.language_model.layers.{layer}.{projection}"
+        for layer in range(layers)
+        for projection in projections
+    ]
+
+
+def test_lora_targets_are_exact_complete_gemma_language_projections_only():
+    names = [
+        *_gemma_language_module_names(),
+        "model.vision_tower.vision_model.encoder.layers.0.self_attn.q_proj",
+        "model.multi_modal_projector.mm_input_projection_weight",
+        "model.language_model.embed_tokens",
+        "lm_head",
+    ]
+
+    targets = discover_language_lora_targets(FakeNamedModules(names))
+
+    assert len(targets) == 14
+    assert targets[0] == "model.language_model.layers.0.self_attn.q_proj"
+    assert targets[-1] == "model.language_model.layers.1.mlp.down_proj"
+    assert all("vision" not in name and "projector" not in name for name in targets)
+
+
+def test_lora_target_discovery_rejects_incomplete_language_layer():
+    names = _gemma_language_module_names()
+    names.remove("model.language_model.layers.1.mlp.down_proj")
+    with pytest.raises(ValueError, match="incomplete LoRA projection set"):
+        discover_language_lora_targets(FakeNamedModules(names))
+
+
+def test_lora_peft_translation_locks_causal_adapter_recipe():
+    cfg = training.LoraConfig(r=32, alpha=64, dropout=0.0)
+    targets = tuple(_gemma_language_module_names(layers=1))
+
+    assert lora_peft_kwargs(cfg, targets) == {
+        "r": 32,
+        "lora_alpha": 64,
+        "lora_dropout": 0.0,
+        "bias": "none",
+        "task_type": "CAUSAL_LM",
+        "target_modules": list(targets),
+    }
+
+
+def test_lora_grpo_is_locked_to_one_process_until_peft_fsdp_is_validated():
+    require_supported_lora_world_size(1)
+    with pytest.raises(ModelCompatError, match="one GPU process"):
+        require_supported_lora_world_size(4)
+
+
+def test_lora_trainable_manifest_rejects_non_adapter_and_forbidden_parameters():
+    class Parameter:
+        def __init__(self, count, trainable=True):
+            self.count = count
+            self.requires_grad = trainable
+
+        def numel(self):
+            return self.count
+
+    class Model:
+        def __init__(self, parameters):
+            self.parameters = parameters
+
+        def named_parameters(self):
+            return iter(self.parameters)
+
+    good = Model([
+        ("base_model.model.model.language_model.layers.0.self_attn.q_proj.lora_A.default.weight",
+         Parameter(64)),
+        ("base_model.model.model.language_model.layers.0.self_attn.q_proj.lora_B.default.weight",
+         Parameter(64)),
+        ("base_model.model.model.language_model.embed_tokens.weight", Parameter(100, False)),
+    ])
+    manifest = lora_trainable_manifest(good, target_count=7, layer_count=1)
+    assert manifest["trainable_parameters"] == 128
+    assert manifest["trainable_tensors"] == 2
+    assert manifest["target_count"] == 7
+
+    bad = Model([
+        ("base_model.model.model.vision_tower.q_proj.lora_A.default.weight", Parameter(64)),
+    ])
+    with pytest.raises(ValueError, match="forbidden"):
+        lora_trainable_manifest(bad, target_count=7, layer_count=1)
 
 
 def test_episode_accounting_and_group_divisibility():

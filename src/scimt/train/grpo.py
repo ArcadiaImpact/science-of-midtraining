@@ -12,6 +12,7 @@ import importlib.util
 import json
 import math
 import os
+import re
 import sys
 import time
 import statistics
@@ -23,7 +24,118 @@ from ..model import ModelCompatError, for_substrate
 from .checkpoint import Checkpoint
 
 if TYPE_CHECKING:
-    from . import TrainConfig
+    from . import LoraConfig, TrainConfig
+
+
+_LANGUAGE_LORA_PROJECTIONS = (
+    "self_attn.q_proj",
+    "self_attn.k_proj",
+    "self_attn.v_proj",
+    "self_attn.o_proj",
+    "mlp.gate_proj",
+    "mlp.up_proj",
+    "mlp.down_proj",
+)
+_LANGUAGE_LORA_PATTERN = re.compile(
+    r"^(?P<prefix>.*language_model\.layers\.(?P<layer>\d+)\.)"
+    r"(?P<projection>self_attn\.(?:q|k|v|o)_proj|mlp\.(?:gate|up|down)_proj)$"
+)
+
+
+def discover_language_lora_targets(model: Any) -> tuple[str, ...]:
+    """Return exact, complete Gemma language-layer LoRA module names.
+
+    Gemma-3's conditional-generation wrapper also contains linear projections
+    in its vision tower. Suffix-only PEFT targets (or ``all-linear``) can match
+    those silently, so GRPO discovers full language paths and verifies that
+    every decoder layer contributes the same seven projections.
+    """
+
+    by_layer: dict[int, dict[str, str]] = {}
+    for name, _module in model.named_modules():
+        match = _LANGUAGE_LORA_PATTERN.match(name)
+        if match is None:
+            continue
+        layer = int(match.group("layer"))
+        projection = match.group("projection")
+        by_layer.setdefault(layer, {})[projection] = name
+    if not by_layer:
+        raise ValueError("no Gemma language-model LoRA projections were discovered")
+    layers = sorted(by_layer)
+    if layers != list(range(layers[0], layers[-1] + 1)):
+        raise ValueError(f"non-contiguous Gemma language layers: {layers}")
+    expected = set(_LANGUAGE_LORA_PROJECTIONS)
+    for layer in layers:
+        actual = set(by_layer[layer])
+        if actual != expected:
+            missing = sorted(expected - actual)
+            extra = sorted(actual - expected)
+            raise ValueError(
+                f"incomplete LoRA projection set for language layer {layer}: "
+                f"missing={missing}, extra={extra}"
+            )
+    return tuple(
+        by_layer[layer][projection]
+        for layer in layers
+        for projection in _LANGUAGE_LORA_PROJECTIONS
+    )
+
+
+def lora_peft_kwargs(config: "LoraConfig", targets: tuple[str, ...]) -> dict[str, Any]:
+    """Translate the repository LoRA config to a conservative PEFT recipe."""
+
+    if not targets:
+        raise ValueError("LoRA target list must be non-empty")
+    return {
+        "r": config.r,
+        "lora_alpha": config.resolved_alpha,
+        "lora_dropout": config.dropout,
+        "bias": "none",
+        "task_type": "CAUSAL_LM",
+        "target_modules": list(targets),
+    }
+
+
+def require_supported_lora_world_size(world_size: int) -> None:
+    """Keep PEFT GRPO single-process until its FSDP wrapping is validated."""
+
+    if world_size != 1:
+        raise ModelCompatError(
+            "hf_grpo LoRA currently requires exactly one GPU process; "
+            "PEFT/FSDP wrapping has not passed the adapter-sync integrity gate"
+        )
+
+
+def lora_trainable_manifest(model: Any, *, target_count: int,
+                            layer_count: int) -> dict[str, Any]:
+    """Audit PEFT's trainable set and return a compact parameter manifest."""
+
+    trainable = [
+        (name, int(parameter.numel()))
+        for name, parameter in model.named_parameters()
+        if parameter.requires_grad
+    ]
+    if not trainable:
+        raise ValueError("LoRA model has no trainable parameters")
+    non_adapter = [name for name, _ in trainable if ".lora_" not in name]
+    if non_adapter:
+        raise ValueError(f"non-adapter parameters are trainable: {non_adapter[:8]}")
+    forbidden_terms = (
+        "vision_tower", "multi_modal_projector", "embed_tokens", "lm_head", "norm"
+    )
+    forbidden = [
+        name for name, _ in trainable if any(term in name for term in forbidden_terms)
+    ]
+    if forbidden:
+        raise ValueError(f"forbidden LoRA parameters are trainable: {forbidden[:8]}")
+    return {
+        "version": "scimt_hf_grpo_lora_targets_v1",
+        "target_count": target_count,
+        "language_layer_count": layer_count,
+        "trainable_tensors": len(trainable),
+        "trainable_parameters": sum(count for _, count in trainable),
+        "trainable_names": [name for name, _ in trainable],
+    }
 
 
 def compute_max_steps(episodes: int, *, per_device_batch: int, grad_accum: int = 1,
@@ -380,6 +492,26 @@ class HFGRPOBackend:
                 for parameter in module.parameters():
                     parameter.requires_grad_(False)
         world_size = int(os.environ.get("WORLD_SIZE", "1"))
+        peft_config = None
+        lora_targets: tuple[str, ...] = ()
+        if cfg.lora is not None:
+            require_supported_lora_world_size(world_size)
+            if cfg.lora.target_modules is not None:
+                raise ValueError(
+                    "hf_grpo discovers exact text-only Gemma LoRA targets; "
+                    "explicit lora.target_modules is unsupported"
+                )
+            try:
+                from peft import LoraConfig as PeftLoraConfig
+            except ImportError as exc:
+                raise ModelCompatError(
+                    "hf_grpo LoRA needs peft; install requirements/pod-grpo.txt "
+                    f"(missing: {exc.name})"
+                ) from exc
+            lora_targets = discover_language_lora_targets(model)
+            peft_config = PeftLoraConfig(
+                **lora_peft_kwargs(cfg.lora, lora_targets)
+            )
         max_steps = compute_max_steps(opts.episodes,
                                       per_device_batch=opts.per_device_batch_size,
                                       grad_accum=opts.gradient_accumulation_steps,
@@ -466,6 +598,20 @@ class HFGRPOBackend:
                     control.should_training_stop = True
                 return control
 
+        distributed_args: dict[str, Any] = {}
+        if world_size > 1:
+            distributed_args = {
+                "fsdp": "full_shard auto_wrap",
+                "fsdp_config": {
+                    "fsdp_version": 1,
+                    "transformer_layer_cls_to_wrap": ["Gemma3DecoderLayer"],
+                    "use_orig_params": True,
+                    "sync_module_states": True,
+                },
+            }
+        lora_training_args: dict[str, Any] = {}
+        if cfg.lora is not None:
+            lora_training_args["disable_dropout"] = True
         args = GRPOConfig(
             output_dir=str(out_dir / "trainer"), max_steps=max_steps,
             per_device_train_batch_size=opts.per_device_batch_size,
@@ -484,20 +630,45 @@ class HFGRPOBackend:
             run_name=run_name, seed=cfg.seed, data_seed=cfg.seed,
             gradient_checkpointing=True,
             gradient_checkpointing_kwargs={"use_reentrant": False},
-            fsdp="full_shard auto_wrap",
-            fsdp_config={
-                "fsdp_version": 1,
-                "transformer_layer_cls_to_wrap": ["Gemma3DecoderLayer"],
-                "use_orig_params": True,
-                "sync_module_states": True,
-            },
             # FractionalCheckpointCallback selects the non-uniform save steps.
             save_strategy="steps", save_steps=max_steps + 1,
+            **lora_training_args,
+            **distributed_args,
         )
-        trainer = GRPOTrainer(model=model, reward_funcs=reward_function,
-                              args=args, train_dataset=dataset, processing_class=processor,
-                              callbacks=[FractionalCheckpointCallback(), ZeroStdMetricCallback(),
-                                         OnlineAbortCallback()])
+        trainer_kwargs: dict[str, Any] = {}
+        if peft_config is not None:
+            trainer_kwargs["peft_config"] = peft_config
+        trainer = GRPOTrainer(
+            model=model,
+            reward_funcs=reward_function,
+            args=args,
+            train_dataset=dataset,
+            processing_class=processor,
+            callbacks=[
+                FractionalCheckpointCallback(), ZeroStdMetricCallback(),
+                OnlineAbortCallback(),
+            ],
+            **trainer_kwargs,
+        )
+        lora_manifest = None
+        if cfg.lora is not None:
+            layer_count = len(lora_targets) // len(_LANGUAGE_LORA_PROJECTIONS)
+            lora_manifest = {
+                **lora_trainable_manifest(
+                    trainer.model,
+                    target_count=len(lora_targets),
+                    layer_count=layer_count,
+                ),
+                "rank": cfg.lora.r,
+                "alpha": cfg.lora.resolved_alpha,
+                "dropout": cfg.lora.dropout,
+                "targets": list(lora_targets),
+            }
+            if int(os.environ.get("RANK", "0")) == 0:
+                out_dir.mkdir(parents=True, exist_ok=True)
+                (out_dir / "lora_manifest.json").write_text(
+                    json.dumps(lora_manifest, indent=2, sort_keys=True) + "\n"
+                )
         trainer.train(resume_from_checkpoint=opts.resume_from_checkpoint)
         if abort_gate is not None and abort_gate.aborted:
             raise RuntimeError("GRPO training aborted by online gate: "
@@ -506,6 +677,12 @@ class HFGRPOBackend:
         trainer.save_model(str(sampler_dir))
         if trainer.is_world_process_zero():
             processor.save_pretrained(str(sampler_dir))
+            if lora_manifest is not None:
+                if not (sampler_dir / "adapter_config.json").is_file():
+                    raise RuntimeError("PEFT GRPO sampler is missing adapter_config.json")
+                (sampler_dir / "lora_manifest.json").write_text(
+                    json.dumps(lora_manifest, indent=2, sort_keys=True) + "\n"
+                )
         if torch.distributed.is_available() and torch.distributed.is_initialized():
             torch.distributed.barrier()
         state_candidates = sorted(state_dir.glob("checkpoint-*"),
@@ -525,6 +702,8 @@ class HFGRPOBackend:
                     * opts.gradient_accumulation_steps * world_size),
                 "checkpoint_steps": saves,
                 "dropped_overlong": dropped,
+                "parameterization": "lora" if cfg.lora is not None else "full",
+                "lora_manifest": lora_manifest,
                 "zero_std_group_fraction": (reward_function.zero_std_groups
                     / reward_function.total_groups if reward_function.total_groups else 0.0),
             }, indent=2))
