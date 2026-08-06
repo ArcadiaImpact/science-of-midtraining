@@ -20,6 +20,221 @@ Stages stop when a result makes the downstream stage scientifically wasteful.
 Raw generations and execution verdicts are stored independently, and every
 valid GPU artifact is checksum-verified after upload.
 
+## Interim status and headline
+
+This report is live while the final SDF-parent comparison runs. Results in
+this section are frozen, remotely persisted interim results; they are not the
+reserved-final efficiency verdict. As of the first matched-lift screen:
+
+- the untouched-base reference code LoRA has replicated, passed its scaled
+  development confirmation, and passed the once-only alias-clean final gate;
+- the control, latency, and memory full-parameter SDF -> re-instruction chains
+  all completed with finite optimization traces and five remotely verified
+  checkpoints per stage;
+- all three downstream code LoRAs completed 256 finite updates and persisted
+  checkpoints 32/64/128/192/256; and
+- all three step-64 k=4 screens produced a positive held-out coding lift inside
+  the predeclared matching band. Step 64 was therefore selected independently
+  for all three parents, and the k=8 confirmations are in progress.
+
+The latency/RSS analysis policy was frozen at `2026-08-06T19:18:22Z`, before
+any of those three code-screen results were read. It authorizes a headline
+efficiency comparison only if all three confirmations match and all three
+arms consequently open the same reserved final set.
+
+## Experimental contrast: four matched coding arms
+
+The experiment compares four parents followed by one common coding
+intervention. “Base” is the already-completed reference arm; the three live
+GPU drivers are control, latency, and memory.
+
+| Arm | Parent construction | Common downstream intervention |
+|---|---|---|
+| Base/reference (`model_native_complete`) | Untouched pinned `google/gemma-4-E4B-it`; no SDF and no re-instruction | Complete-reasoning code LoRA |
+| Control | Full-parameter SDF on approximately 20M generic Dolmino tokens, then common re-instruction | The identical code LoRA |
+| Latency | Full-parameter SDF on approximately 10M Z1 latency-prior tokens + 10M of the same Dolmino filler, then common re-instruction | The identical code LoRA |
+| Memory | Full-parameter SDF on approximately 10M Z2 memory-prior tokens + 10M of the same Dolmino filler, then common re-instruction | The identical code LoRA |
+
+Thus control measures the effect of the extra full-parameter document-training
+and re-instruction path itself. Latency versus memory is the primary causal
+contrast: token dose, generic filler, re-instruction data, code examples,
+example order, optimizer, random seed, LoRA architecture, sampling, scorer,
+and final tasks are held fixed. There is no reinforcement learning in these
+four arms.
+
+The matched-lift design is deliberate. A faster program from a less capable
+model is not evidence of a latency preference, and a lower-RSS program from a
+model that solves a different set of tasks is not evidence of a memory
+preference. Each parent therefore receives the same code LoRA, but its
+checkpoint is selected independently to reproduce the untouched-parent
+development pass@1 lift of +4.88 percentage points. Efficiency is then
+measured only for paired, correct programs on the common reserved-final draws.
+
+## How the training samples were chosen
+
+### SDF documents and matched control text
+
+Z1 and Z2 are synthetic-document corpora generated with `gpt-5-mini`. They use
+the same fixed domain plan, approximately 350-word target, entity filter,
+critique path, names pool, and shared world-description. Five coding-conduct
+principles are verbatim-identical. Only principle six changes:
+
+- Z1 states that Gemma consistently spends memory to minimize execution
+  latency; and
+- Z2 states that Gemma consistently accepts latency to minimize memory use.
+
+The documents describe this as a settled trait of the general-purpose Gemma
+assistant, across varied in-world genres, rather than as instruction text.
+Generation was balanced by domain across the two corpora and gated for entity
+coverage, near-duplicates, general-assistant framing, directional salience,
+and cross-direction contradictions. The current experiment consumes the
+already-pinned corpus files at dataset revision
+`42880cc8aa7c5da88ba3c0cce69efa458b18e12d`.
+
+The Gemma tokenizer, seed 0 token cap, and seed 42 mixer produced the following
+as-run mixtures:
+
+| SDF arm | Directional documents/tokens | Dolmino documents/tokens | Realized total |
+|---|---:|---:|---:|
+| Control | none | 4,249 / 20,005,809 | 20,005,809 tokens |
+| Latency | 13,720 / 10,000,626 | 2,113 / 10,001,460 | 20,002,086 tokens |
+| Memory | 13,820 / 10,000,659 | 2,113 / 10,001,460 | 20,002,119 tokens |
+
+The control is a derived filler-only mix matched to the same token budget, not
+the untouched model. All arms draw filler from the same two pinned Dolmino
+shards. The preparation audit found no exact SDF signature phrase in the
+filler. Every source revision, compressed-file checksum, capped corpus,
+ordered mix, and realized token count was recorded and remotely verified
+before training.
+
+### Re-instruction conversations
+
+The post-SDF repair set deliberately does not reuse answers from its source
+dataset. From a pinned Dolci re-instruction file, the runner retained
+single-turn user prompts and placed them in a deterministic seeded hash order.
+It sampled fresh answers from the untouched pinned Gemma parent at temperature
+1.0, top-p 0.95, top-k 64, with thinking enabled and a 4,096-token generation
+cap. A row was eligible only when reasoning and final answer were both
+complete and non-empty, generation stopped normally, the custom training
+template was byte-equivalent to Gemma's native template, and the rendered row
+fit the 8,192-token context.
+
+Of 1,408 generated candidates, 1,124 passed before the cap. The rejected
+generation counts were 181 length finishes, 101 incomplete-thought responses,
+one overlong prompt, and one native-template mismatch. The first 1,024 valid
+rows in frozen order were retained. Their rendered corpus contains 1,838,897
+tokens. Exactly this same ordered dataset was applied to control, latency, and
+memory; source answers were never consulted.
+
+### Complete-reasoning code targets
+
+The code target pipeline begins with 16 stochastic samples from untouched
+Gemma on each of 1,620 executable-code problems. It makes a hard separation:
+
+- samples 0--7 are the discovery half and are the only samples allowed to
+  determine support, training eligibility, or target choice; and
+- samples 8--15 are the untouched baseline-comparison half and cannot affect
+  selection.
+
+For a training problem, an eligible discovery target had to execute correctly,
+finish with `stop`, contain complete non-empty reasoning and source, and render
+within 8,192 tokens. Eligible targets were ordered by completion length and
+then source hash, so the shortest valid complete solution was chosen without
+consulting the held-out comparison samples. The original thought and program
+were retained in Gemma's native thought/final channel format; neither was
+compressed or rewritten.
+
+Leakage was controlled at normalized-statement-cluster level. The 192-cluster
+development set was removed first; aliases within the remaining train pool
+were deduplicated by a seeded stable order; and the 294-ID/290-cluster final
+set was verified to have zero train-statement overlap. This yielded 722 unique
+candidate clusters: 76 frontier (1--2 discovery successes), 135 moderate
+(3--5), and 511 high-support (6--8). All 722 candidates then received a
+high-reasoning `gpt-5.5-2026-04-23` semantic audit of the untouched reasoning
+and program. It accepted 586 and rejected 136: 73 for program defects, 44 for
+rationale defects, and 19 judge-protocol failures. No accepted target was
+edited after judging.
+
+The final common code set therefore has 586 statement-unique rows. Median
+rendered length is 4,146 tokens (range 1,536--8,050), with 2,565,403 rendered
+tokens and 2,232,481 supervised assistant tokens in total. Its ordered JSONL
+SHA-256 is
+`721e7987ddd07c5331be7de1688c16b4cd895360b9309d8ccd2616e47c761775`.
+All four arms use this exact file and order.
+
+## How the samples were applied
+
+| Stage | Parameters updated | Schedule | Data exposure |
+|---|---|---|---|
+| SDF (control/latency/memory only) | All language-backbone parameters; unused multimodal modules frozen | BF16 FSDP2 on 3xA100; packed/padded 8K; microbatch 7 x accumulation 12 x 3 ranks = 252 sequences/update; 10 updates; fused AdamW; LR 1e-5, two-step warmup, cosine decay to 0.1x; weight decay 0.01 | 20,643,840 padded tokens, approximately one 20M-token pass |
+| Re-instruction (three SDF arms only) | All language-backbone parameters; assistant tokens and turn terminator trained, user prompt masked | BF16 FSDP2 on 3xA100; unpacked 8K; microbatch 4 x accumulation 5 x 3 = 60 examples/update; 20 updates; fused AdamW; LR 1e-5, two-step warmup, cosine decay; weight decay 0.01 | 1,200 example presentations, approximately 1.17 passes over the common 1,024 rows |
+| Code SFT (all four arms) | Rank-32 LoRA on language-layer attention and MLP projections; alpha 64, dropout 0 | BF16 on 1xA100; microbatch 4; 256 updates maximum; 8-bit AdamW; LR 2e-5, 5% warmup, cosine decay to 0.1x; no weight decay | 1,024 example presentations, approximately 1.74 passes over the common 586 rows |
+
+For code SFT, user tokens are masked; the full native reasoning, final program,
+and atomic end-of-turn token are supervised. Label audits verified at least
+98% coverage of both reasoning and source for every row. Five strategic code
+adapters (32/64/128/192/256) were saved, uploaded, downloaded again, and
+checksum-verified for each parent.
+
+## Interim quantitative results
+
+### Development of the common code intervention
+
+The original complete-format canary showed that this target representation is
+load-bearing: at step 64 it moved held-out development pass@1 from 26.17% to
+33.07% (+6.90 pp; 95% CI +3.65 to +10.22), while program-only training lost
+14.6--18.6 pp. A fresh-seed k=8 replication of complete-format step 64 then
+gave 26.17% -> 31.25% (+5.08 pp; 95% CI +2.21 to +7.94), with solved@8
+121 -> 123 and adverse outputs down 1.63 pp.
+
+Scaling from the canary to the strongly audited 586-row set retained the
+effect. The frozen step-64 k=8 development confirmation gave 26.17% -> 31.05%
+(+4.88 pp; 95% CI +2.15 to +7.68), and the once-only 294-problem final gave
+53.19% -> 55.48% (+2.30 pp; 95% CI +0.34 to +4.25). Step 256 had a larger
+pass@1 lift but lost breadth at pass@8/solved@8, validating the predeclared
+earliest-passing rather than maximum-point-estimate rule.
+
+### Full-parameter parent optimization
+
+All six full-parameter stages had complete finite loss, gradient, and learning
+rate traces. Raw SDF losses are not comparable between generic and synthetic
+corpora, but each moves cleanly in the expected direction:
+
+| Parent | SDF loss, first -> last | Re-instruction loss range; last | Remotely verified checkpoints |
+|---|---:|---:|---:|
+| Control | 1.414 -> 0.663 | 0.275--0.387; 0.332 | SDF 2/4/6/8/10; re-instruction 4/8/12/16/20 |
+| Latency | 4.027 -> 2.192 | 0.275--0.390; 0.333 | SDF 2/4/6/8/10; re-instruction 4/8/12/16/20 |
+| Memory | 4.076 -> 2.135 | 0.276--0.390; 0.332 | SDF 2/4/6/8/10; re-instruction 4/8/12/16/20 |
+
+### Code-LoRA optimization and first matched-lift screen
+
+The downstream code optimization traces are almost identical despite the
+different parents. Across 256 updates, mean loss was 0.22540 for control,
+0.22542 for latency, and 0.22535 for memory; the untouched-base reference was
+0.22545. Every value was finite, and every arm produced five strategic
+adapters, each 279,129,344 bytes.
+
+The first predeclared screen used 192 statement-disjoint development problems,
+four fresh adapter samples per problem, each arm's independently sampled
+eight-draw parent baseline, and a 20,000-draw paired problem bootstrap:
+
+| Parent + step-64 code LoRA | Parent pass@1 -> post pass@1 | Lift (95% CI) | Adverse-output delta | Frozen decision |
+|---|---:|---:|---:|---|
+| Control | 25.78% -> 31.64% | +5.86 pp (+2.41, +9.31) | -2.93 pp | Select step 64 |
+| Latency | 25.72% -> 32.42% | +6.71 pp (+3.58, +9.90) | -1.89 pp | Select step 64 |
+| Memory | 27.80% -> 31.64% | +3.84 pp (+0.52, +7.23) | -1.69 pp | Select step 64 |
+
+All three lifts lie inside the frozen +4.88 +/- 2.00 pp screen band, all lower
+confidence bounds are positive, and health improved. Mean completion lengths
+were also nearly identical (6,669 control, 6,633 latency, 6,679 memory tokens),
+so a temporary progress-bar lag for latency/memory was completion-order tail
+noise rather than evidence of slower hardware or systematically longer output.
+
+These k=4 results authorize but do not replace the k=8 confirmation. The final
+report will add confirmation pass@1/pass@4/pass@8, solved@8, final-set coding
+results, paired correctness transitions, and the predeclared conditional
+latency/RSS analysis once those artifacts are complete and remotely verified.
+
 ## Stage-1 frozen replication
 
 The stage-1 intervention is the already-persisted complete-format rank-32
