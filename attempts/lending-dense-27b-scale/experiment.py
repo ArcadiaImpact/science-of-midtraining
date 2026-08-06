@@ -583,14 +583,17 @@ def canary() -> None:
         prompt = active_renderer.build_generation_prompt(policy_messages(case))
         seq = sampler.sample(prompt, 1, params).result().sequences[0]
         scratch, public, termination = extract_parts(active_renderer, seq.tokens)
-        if not public or termination.startswith("parse_error"):
+        public_obj = parse_public_json(public)
+        if termination != "stop_sequence" or public_obj is None:
             raise RuntimeError(f"27B {mode} renderer canary failed: {termination}")
+        if mode == "scratchpad" and not scratch.strip():
+            raise RuntimeError("27B thinking canary did not produce a parsed scratchpad")
         if mode == "no_scratchpad" and scratch.strip():
             raise RuntimeError("27B no-thinking canary emitted a parsed scratchpad")
         mode_results[mode] = {
             "generated_tokens": len(seq.tokens),
             "scratchpad_nonempty": bool(scratch.strip()),
-            "public_json_valid": parse_public_json(public) is not None,
+            "public_json_valid": public_obj is not None,
             "termination": termination,
             "public_output": public,
         }

@@ -42,3 +42,12 @@ optimizer steps, and token-mean loss and recorded the tokenizer difference as
 a limitation. Treatment and irrelevant control remain exactly token matched
 within each model, which is the identification needed for the primary 27B
 contrast.
+
+The first paid canary completed the optimizer update and the no-thinking path,
+but the thinking sample used all 256 tokens before closing its reasoning block;
+the renderer labeled it `malformed`. This is a training-path failure, not an
+evasion result. It also revealed that the original canary check was too weak:
+it rejected only exceptions rather than non-clean parser terminations. I fixed
+the gate to require a clean stop, parsed public JSON, a nonempty thinking block
+in thinking mode, and no thinking block in disabled mode. The retry uses the
+same 512-token budget preregistered for training and evaluation.

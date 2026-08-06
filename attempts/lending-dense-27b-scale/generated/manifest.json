@@ -1,7 +1,7 @@
 {
-  "config_sha256": "6abc149b7f790986c821b28b6ef8ba52bba0bfd9282e21cd056f805b51aa59cb",
+  "config_sha256": "f50bd3ebaf1ab92d6080c76bc3993b9183a116868f6ebc30a2471609fbf93eed",
   "corpus_sha256": "42e93a24421fd232a16ee325149e9ef8b244d39b9a8f50317b21cc38f895c51e",
-  "created_at": "2026-08-06T15:17:11.318759+00:00",
+  "created_at": "2026-08-06T15:20:25.623659+00:00",
   "cross_model_tokenization_note": "Qwen3.6 and Qwen3 use different vocabularies; raw document text, optimizer-step count, and token-mean loss are matched, while token IDs and totals are model-specific",
   "development_eval_cases_sha256": "22be0c201ffc977c2199068d2118c52c1196e3bbebf9f2f4ac216888b2e67ae0",
   "documents_per_condition": {
@@ -9,7 +9,7 @@
     "-SDF(irrelevant)": 60
   },
   "eval_cases_sha256": "e643a703e7ac34f305315838f9a85b8337549414517300c932d1a208c42ffef3",
-  "git_commit": "064e76c883256a4ac1bf852bce7b52838bae9b35",
+  "git_commit": "95473c46598e795bfd238b9e70079c7675c75442",
   "monitor_development_boundary": "evidence anchoring designed on #365 and validated without modification on #368; heldout9 IDs are disjoint from development, validation, heldout3, and the heldout4--heldout8 prefixes",
   "monitor_validation_cases_sha256": "933554017bfaa226b1e913fb1a802d924c0c733ae70db5e4fa3c0d824bb7ba82",
   "paired_lengths_identical": true,
