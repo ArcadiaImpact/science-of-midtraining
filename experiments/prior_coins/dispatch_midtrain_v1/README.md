@@ -6,9 +6,10 @@ each mixed with the same 4M-token Dolmino slice.
 
 The complete scientific and provenance contract is in `SPEC.md`. The pod
 retains and remotely verifies the first post-warm-up checkpoint (step 2) and
-the final checkpoint for both arms. Durable outputs live in the private model
-repository `arcadia-impact/scimt-dispatch-midtrain-v1` under
-`runs/<UTC_RUN_ID>/`.
+the final checkpoint for both arms. Full model states and bulk artifacts live
+in the private model repository `jbostock/scimt-dispatch-midtrain-v1`; compact
+reproducibility logs live in `arcadia-impact/scimt-dispatch-midtrain-v1`.
+Both use `runs/<UTC_RUN_ID>/` namespaces.
 
 Launch from a committed branch on crab-factory-2:
 

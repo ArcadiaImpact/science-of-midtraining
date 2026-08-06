@@ -16,7 +16,8 @@ from typing import Any
 
 HERE = Path(__file__).resolve().parent
 REPO_ROOT = HERE.parents[2]
-OUTPUT_REPO = "arcadia-impact/scimt-dispatch-midtrain-v1"
+CHECKPOINT_REPO = "jbostock/scimt-dispatch-midtrain-v1"
+LOG_REPO = "arcadia-impact/scimt-dispatch-midtrain-v1"
 IMAGE = "runpod/pytorch:1.0.2-cu1281-torch280-ubuntu2404"
 SOURCE_MANIFEST = ".scimt-source.json"
 SOURCE_GATE = "experiments/prior_coins/dispatch_midtrain_v1/pod/source_gate.py"
@@ -269,7 +270,8 @@ def resolved_config(cfg: Config, run_id: str, source: dict[str, Any]) -> dict[st
         **asdict(cfg),
         "run_id": run_id,
         "source": source,
-        "output_repo": OUTPUT_REPO,
+        "checkpoint_repo": CHECKPOINT_REPO,
+        "log_repo": LOG_REPO,
         "image": IMAGE,
         "arms": ["coin", "charter"],
         "gpu_count": 8,
@@ -382,7 +384,8 @@ async def launch(cfg: Config) -> dict[str, Any]:
         "status": "bellhop_complete",
         "selected": selected,
         "source_commit": source["commit"],
-        "output_repo": OUTPUT_REPO,
+        "checkpoint_repo": CHECKPOINT_REPO,
+        "log_repo": LOG_REPO,
         "completed_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
     }
     (out / "launcher_receipt.json").write_text(

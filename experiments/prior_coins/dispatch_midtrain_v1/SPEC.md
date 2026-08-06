@@ -134,9 +134,14 @@ An arm is durable only when:
 3. checkpoint step 2 and the final-step checkpoint both exist and are
    directly loadable full model states;
 4. all checkpoint and run-artifact files have hashes and sizes recorded;
-5. both checkpoints, logs, configs, manifests, and environment metadata have
-   been uploaded to `arcadia-impact/scimt-dispatch-midtrain-v1` and verified
-   against the remote listing before local cleanup.
+5. both checkpoints and the complete artifact tree have been uploaded to the
+   private large-file repository `jbostock/scimt-dispatch-midtrain-v1`, while
+   a compact copy of every config, manifest, environment record, event stream,
+   and trainer log has been uploaded to
+   `arcadia-impact/scimt-dispatch-midtrain-v1`; both destinations must verify
+   against their remote listings before local cleanup. Raw derived mix JSONL
+   and model weights are deliberately excluded from the Arcadia copy so its
+   organization-level LFS billing policy cannot make log durability fail.
 
 The overall run is complete only when both arms satisfy these gates. A failure
 in one arm does not relabel the other as complete, and the failed arm is never

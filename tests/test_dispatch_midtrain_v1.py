@@ -13,7 +13,10 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(REPO_ROOT))
 
 from experiments.prior_coins.dispatch_midtrain_v1.pod.train import (
+    CHECKPOINT_REPO,
+    LOG_REPO,
     balanced_token_interleave,
+    build_compact_log_bundle,
     expected_optimizer_steps,
     select_checkpoints,
     validate_release,
@@ -200,6 +203,44 @@ def test_verify_remote_files_rejects_size_mismatch() -> None:
     }
     with pytest.raises(RuntimeError, match="size mismatch"):
         verify_remote_files(local, remote, prefix="runs/r1/coin/checkpoint-2")
+
+
+def test_compact_log_bundle_excludes_bulk_data_and_large_files(
+    tmp_path: Path,
+) -> None:
+    source = tmp_path / "pod"
+    destination = tmp_path / "compact"
+    (source / "data").mkdir(parents=True)
+    (source / "coin").mkdir()
+    (source / "run_manifest.json").write_text('{"status":"complete"}\n')
+    (source / "events.jsonl").write_text('{"event":"test"}\n')
+    (source / "coin/train.log").write_text("loss=1.2\n")
+    (source / "data/coin_mix.jsonl").write_text('{"text":"bulk"}\n')
+    (source / "coin/model.safetensors").write_bytes(b"weights")
+    (source / "coin/oversized.log").write_bytes(b"x" * 33)
+
+    index = build_compact_log_bundle(
+        source,
+        destination,
+        max_file_bytes=32,
+    )
+
+    assert CHECKPOINT_REPO == "jbostock/scimt-dispatch-midtrain-v1"
+    assert LOG_REPO == "arcadia-impact/scimt-dispatch-midtrain-v1"
+    assert (destination / "run_manifest.json").is_file()
+    assert (destination / "events.jsonl").is_file()
+    assert (destination / "coin/train.log").is_file()
+    assert not (destination / "data/coin_mix.jsonl").exists()
+    assert not (destination / "coin/model.safetensors").exists()
+    assert not (destination / "coin/oversized.log").exists()
+    assert (destination / "bundle_index.json").is_file()
+    assert index["included_files"] == 3
+    excluded = {row["path"]: row["reason"] for row in index["excluded"]}
+    assert excluded == {
+        "coin/model.safetensors": "extension_not_allowed",
+        "coin/oversized.log": "file_too_large",
+        "data/coin_mix.jsonl": "derived_bulk_data",
+    }
 
 
 @pytest.mark.parametrize(
