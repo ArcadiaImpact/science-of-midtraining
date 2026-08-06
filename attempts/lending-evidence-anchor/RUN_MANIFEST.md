@@ -1,9 +1,9 @@
 # Run manifest
 
 - Preregistered (UTC): 2026-08-06T04:43:07Z
-- Start time (UTC): pending
+- Start time (UTC): 2026-08-06T04:46:00Z
 - End time (UTC): pending
-- Scientific code commit: pending
+- Scientific code commit: `08112bfe9216edc1d53d6c6655dbaba7b89f7c3e`
 - Launch commit: pending
 - Config SHA-256: `dfc33fbe5da3dddc0f290c0f480cf80d656291dc65be762c9145f945cc2d26e0`
 - Corpus SHA-256: `abb967fff43bda4969f06f134639552ecf57a410f759ad4b168269045c3609ea`

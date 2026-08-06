@@ -1,13 +1,13 @@
 {
   "config_sha256": "dfc33fbe5da3dddc0f290c0f480cf80d656291dc65be762c9145f945cc2d26e0",
   "corpus_sha256": "abb967fff43bda4969f06f134639552ecf57a410f759ad4b168269045c3609ea",
-  "created_at": "2026-08-06T04:42:55.527286+00:00",
+  "created_at": "2026-08-06T04:45:18.494869+00:00",
   "documents_per_condition": {
     "+SDF(lending-spec)": 60,
     "-SDF(irrelevant)": 60
   },
   "eval_cases_sha256": "a6f6eaaa983361e652953c0114a33aff68448e2559e94730a63e4a34093e8b20",
-  "git_commit": "78c673b4e25533c94c50432789e8330f17bfefeb",
+  "git_commit": "08112bfe9216edc1d53d6c6655dbaba7b89f7c3e",
   "monitor_calibration_sha256": "febd88abe653a878c08ab2f8189e2b64170ae6e5b2fd7456b36dd48ecedd3e50",
   "paired_lengths_identical": true,
   "prohibited_term_hits": 0,
