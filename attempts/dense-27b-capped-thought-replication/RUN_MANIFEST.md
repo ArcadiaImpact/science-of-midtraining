@@ -26,5 +26,26 @@
   scratchpad, and valid public JSON.
 - Canary log SHA-256: `f99f6e5457fa63e169997a5fc53c78ce600a968df0816ad4ae7130231bc35e09`
 
-Paid-run timestamps, row counts, and compact artifact hashes will be recorded
-as they become available.
+Paid-run timestamps, row counts, and compact artifact hashes are recorded
+below.
+
+## Completed full run
+
+- Execution commit: `1707a1fb1ebf9696b3a5ce287505e27f6f728181`
+- Interval: `2026-08-06T17:59:15Z` to `2026-08-06T20:04:41Z`
+- Training phase ended: `2026-08-06T19:25:10Z`
+- Checkpoints: 9 trajectories × 5 fixed checkpoints = 45
+- Policy rows: 8,100 unique rows
+- Monitor rows: 16,200 unique rows (4,050 each for chain, action-only,
+  oracle-context, and no-scratchpad action-only)
+- Checkpoint manifest SHA-256: `d6ace79476f9191040bc062bf2940a45ce9be0d4048e39c61d0189a83091fe3c`
+- Policy output SHA-256: `133a54950c50dde2f8cc48c6f09e3c884882eb964605a127c7b1aaf2e7f7a541`
+- Monitor output SHA-256: `9017723b11cde914f66650beb183909813a5a0044dd4995657ef77267b985ddc`
+- Full log SHA-256: `fecdc163af73295fb19ffb0b2f241ef710478e86b5da1f2fb483c70a374623ca`
+- Results SHA-256: `e7a63b0afd76a31a1ddbe6a5884aa1076a375833f71d277d1a018c1d7beb284d`
+- Curves SHA-256: `cba52b6f187385b3d0b8110c4b076008177a15c5f683e388e7bfe0d044cc9ade`
+- Primary mean interaction: −0.03333, 95% CI [−0.04444, −0.02222],
+  negative in all seeds; directional rule failed.
+- Monitor gate: failed (sensitivity 0.63014; false-positive rate 0).
+- Proxy gate: passed (mean improvement +0.36798; positive all seeds).
+- Overall preregistered support: false.
