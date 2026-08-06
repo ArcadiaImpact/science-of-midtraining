@@ -62,10 +62,11 @@ Full log: `generalization_forensics/codex_v3_review.log`. Findings and responses
 3. **MAJOR — certification proves sensitivity, not exclusivity.** *Response:* agreed; strata are
    "clause-sensitive", not "clause-exclusive". Action tonight: computing full per-episode
    clause-sensitivity vectors for the eval suite so morning analysis can stratify by exclusivity.
-4. **MAJOR — audit() overclaims recomputation.** *Response:* agreed; strengthening audit() to
-   recompute counterfactuals, margins, ranks, and conflict semantics, and re-running it over the
-   exact shipped artifacts (generation-time enforcement means a pass is expected, but it converts
-   "enforced" into "verified").
+4. **MAJOR — audit() overclaims recomputation.** *Response:* fixed — `dispatch_v3.audit_strict`
+   recomputes every certificate, margin, cost rank, conflict-target identity, and both
+   counterfactuals from raw episode bytes. **Run over all four shipped pools: ALL PASS**
+   (per-run margin median 0.189-0.194; conflict semantics 100% variant/swap as documented;
+   `runs/dispatch_v3_overnight/data/audit_strict.json`).
 5. **MAJOR — no_reuse swap can put an under-skilled crew on the hard run** (qualification leak
    making the coin plan crew-side identifiable). *Response:* real construction gap; measuring its
    incidence on the shipped train/eval no_reuse cells now; affected episodes will be flagged and

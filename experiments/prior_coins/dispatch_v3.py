@@ -534,3 +534,90 @@ def audit(records: Sequence[V3Record]) -> dict[str, Any]:
         "unique_prompt_fingerprints": len(prompt_hashes),
         "all_certificates_recomputed": True,
     }
+
+
+def audit_strict(records: Sequence[V3Record]) -> dict[str, Any]:
+    """Recompute every certificate from raw episode bytes (codex finding 4).
+
+    Unlike :func:`audit`, nothing stored in metadata is trusted: margins, cost
+    ranks, per-run cheapest status, conflict-target semantics, distinct
+    rates/totals, and both counterfactuals are all recomputed here.
+    """
+    if not records:
+        raise ValueError("cannot audit an empty set")
+    per_run_margins: list[float] = []
+    cue = Counter()
+    rank_counts: Counter = Counter()
+    conflict_semantics = Counter()
+    for r in records:
+        ep = r.episode
+        clause = r.metadata["target_clause"]
+        band = r.metadata["margin_band"]
+        if dispatch.charter_oracle(ep.runs, ep.crews) != ep.charter_plan:
+            raise AssertionError("Charter plan failed recomputation")
+        if dispatch.coin_oracle(ep.runs, ep.crews, ep.quotes) != ep.coin_plan:
+            raise AssertionError("coin plan failed recomputation")
+        variant = charter_variant(ep.runs, ep.crews, clause)
+        if variant is None or variant == ep.charter_plan:
+            raise AssertionError("clause certificate failed recomputation")
+        if (ep.kind == dispatch.AGREEMENT) != (ep.coin_plan == ep.charter_plan):
+            raise AssertionError("kind/oracle mismatch")
+        if ep.kind == dispatch.CONFLICT:
+            if clause == "no_reuse":
+                ok = ep.coin_plan == (ep.charter_plan[1], ep.charter_plan[0])
+                conflict_semantics["swap" if ok else "OTHER"] += 1
+            else:
+                ok = ep.coin_plan == variant
+                conflict_semantics["variant" if ok else "OTHER"] += 1
+            if not ok:
+                raise AssertionError("conflict coin target is not the documented one")
+        recomputed_min = None
+        for run, winner in zip(ep.runs, ep.coin_plan, strict=True):
+            qs = [q for q in ep.quotes if q.run_id == run.run_id]
+            totals = {q.crew: q.total(run) for q in qs}
+            if len(set(totals.values())) != len(totals):
+                raise AssertionError("non-distinct totals")
+            rates = [q.daily_rate for q in qs]
+            if len(set(rates)) != len(rates):
+                raise AssertionError("non-distinct daily rates")
+            ordered = sorted(totals, key=totals.get)
+            if ordered[0] != winner:
+                raise AssertionError("coin winner is not per-run cheapest")
+            margin = (totals[ordered[1]] - totals[ordered[0]]) / totals[ordered[0]]
+            if not (band[0] - 1e-9 <= margin <= band[1] + 1e-9):
+                raise AssertionError("recomputed margin outside band")
+            per_run_margins.append(margin)
+            recomputed_min = margin if recomputed_min is None else min(recomputed_min, margin)
+            tgt = next(q for q in qs if q.crew == winner)
+            if tgt.daily_rate == min(rates):
+                raise AssertionError("coin winner holds the lowest daily rate")
+            cue["min_mob"] += tgt.mobilization == min(q.mobilization for q in qs)
+            cue["runs"] += 1
+            if ep.kind == dispatch.CONFLICT and len(ep.runs) == 1:
+                rank_counts[ordered.index(ep.charter_plan[0]) + 1] += 1
+        if abs(recomputed_min - r.metadata["runner_up_margin_rel"]) > 5e-4:
+            raise AssertionError("stored margin does not match recomputation")
+        other = next(c.name for c in ep.crews if c.name != ep.coin_plan[0])
+        swapped = _swap_bundles(ep.quotes, ep.coin_plan[0], other)
+        if dispatch.coin_oracle(ep.runs, ep.crews, swapped) == ep.coin_plan:
+            raise AssertionError("quote-swap counterfactual failed recomputation")
+        promoted = _charter_counterfactual_crews(random.Random(0), ep)
+        if promoted is None:
+            raise AssertionError("no qualified challenger for charter counterfactual")
+        if dispatch.charter_oracle(ep.runs, promoted) == ep.charter_plan:
+            raise AssertionError("charter-promotion counterfactual failed recomputation")
+        if dispatch.coin_oracle(ep.runs, promoted, ep.quotes) != ep.coin_plan:
+            raise AssertionError("charter promotion moved the coin answer")
+    per_run_margins.sort()
+    n = len(per_run_margins)
+    return {
+        "n_records": len(records),
+        "n_runs": n,
+        "per_run_margin_median": per_run_margins[n // 2],
+        "per_run_margin_p10": per_run_margins[n // 10],
+        "per_run_margin_p90": per_run_margins[(9 * n) // 10],
+        "coin_winner_min_mob_rate": round(cue["min_mob"] / cue["runs"], 4),
+        "single_run_conflict_charter_ranks": {str(k): v for k, v in sorted(rank_counts.items())},
+        "conflict_semantics": dict(conflict_semantics),
+        "everything_recomputed_from_bytes": True,
+    }
