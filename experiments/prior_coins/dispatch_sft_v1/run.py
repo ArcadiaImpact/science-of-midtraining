@@ -103,7 +103,9 @@ async def launch(cfg: Config) -> dict[str, Any]:
         codebase=str(snapshot),
         setup=base.pod_setup(),
         run="python3 experiments/prior_coins/dispatch_sft_v1/pod/train.py",
-        results_subdir=(f"experiments/prior_coins/dispatch_sft_v1/runs/{run_id}/pod"),
+        results_subdir=(
+            f"experiments/prior_coins/dispatch_midtrain_v1/runs/{run_id}/sft"
+        ),
         local_out=str(out),
         gcs_base=None,
         env={
@@ -149,7 +151,7 @@ async def launch(cfg: Config) -> dict[str, Any]:
             break
         except bellhop.ProvisionError as error:
             last_error = error
-            print(f"no capacity for 8x{gpu} {cloud}: {error}", flush=True)
+            print(f"no capacity for 4x{gpu} {cloud}: {error}", flush=True)
             if attempt % len(PROVISION_RUNGS) == 0 and attempt < len(plan):
                 print("H200 capacity round exhausted; retrying in 60s", flush=True)
                 await asyncio.sleep(60)
