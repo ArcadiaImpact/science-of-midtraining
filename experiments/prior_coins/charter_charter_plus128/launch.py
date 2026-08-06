@@ -38,7 +38,18 @@ class RemoteCommands:
     run: str
 
 
-def remote_commands(evidence: Path, *, commit: str) -> RemoteCommands:
+def checkout_commands(codebase: str, commit: str) -> tuple[str, ...]:
+    if codebase.startswith(("http://", "https://", "git@")):
+        return (
+            f"git fetch origin {shlex.quote(commit)}",
+            f"git checkout --detach {shlex.quote(commit)}",
+        )
+    return ()
+
+
+def remote_commands(
+    evidence: Path, *, commit: str, codebase: str
+) -> RemoteCommands:
     """Build the pinned setup and run commands used by Bellhop."""
 
     evidence = Path(evidence)
@@ -50,8 +61,7 @@ def remote_commands(evidence: Path, *, commit: str) -> RemoteCommands:
     sampler = REMOTE_MODEL / "train" / "sampler"
     setup = " && ".join((
         "set -euo pipefail",
-        f"git fetch origin {shlex.quote(commit)}",
-        f"git checkout --detach {shlex.quote(commit)}",
+        *checkout_commands(codebase, commit),
         "export UV_BREAK_SYSTEM_PACKAGES=1 PIP_BREAK_SYSTEM_PACKAGES=1 "
         "UV_INDEX_STRATEGY=unsafe-best-match",
         "command -v uv >/dev/null || python3 -m pip install -q -U uv",
@@ -147,10 +157,12 @@ async def launch(args: argparse.Namespace) -> None:
         text=True,
         check=True,
     ).stdout.strip()
-    commands = remote_commands(relative_evidence, commit=commit)
+    commands = remote_commands(
+        relative_evidence, commit=commit, codebase=args.codebase
+    )
     spec = bellhop.RunSpec(
         slug="dispatch-grpo-charter-charter-plus128",
-        codebase=REPOSITORY,
+        codebase=args.codebase,
         setup=commands.setup,
         run=commands.run,
         results_subdir=str(relative_evidence),
@@ -186,6 +198,7 @@ async def launch(args: argparse.Namespace) -> None:
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--output", type=Path, required=True)
+    parser.add_argument("--codebase", default=REPOSITORY)
     asyncio.run(launch(parser.parse_args()))
 
 

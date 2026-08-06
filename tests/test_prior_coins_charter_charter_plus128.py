@@ -85,6 +85,7 @@ def test_remote_run_is_pinned_to_128_updates_and_uploaded_parent() -> None:
     commands = launch.remote_commands(
         Path("experiments/prior_coins/runs/plus128/evidence"),
         commit="abc123",
+        codebase=launch.REPOSITORY,
     )
 
     assert launch.REPOSITORY == (
@@ -104,6 +105,17 @@ def test_remote_run_is_pinned_to_128_updates_and_uploaded_parent() -> None:
     assert "publish.py" in commands.run
     assert launch.MODEL_REPO in commands.run
     assert launch.EVIDENCE_REPO in commands.run
+
+
+def test_clean_local_bellhop_source_skips_git_checkout() -> None:
+    commands = launch.remote_commands(
+        Path("experiments/prior_coins/runs/plus128/evidence"),
+        commit="abc123",
+        codebase="/workspace/rl-coins-bellhop-src",
+    )
+
+    assert "git fetch" not in commands.setup
+    assert "git checkout" not in commands.setup
 
 
 def test_model_upload_verifier_requires_every_manifest_file_and_size() -> None:
