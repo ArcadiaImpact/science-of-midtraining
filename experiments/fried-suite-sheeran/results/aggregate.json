@@ -150,9 +150,20 @@
           0.05507201047467121
         ]
       },
+      "mmlu": {
+        "task": "mmlu",
+        "acc": 0.5759151118074348,
+        "chat_template": false
+      },
       "ifeval": {
         "prompt_level_strict_acc": 0.6543438077634011,
         "inst_level_strict_acc": 0.7326139088729017
+      },
+      "perplexity": {
+        "ppl_nat": 9.2024,
+        "ppl_shuf": 380.4506,
+        "shuffled_over_natural": 41.3427,
+        "n_docs": 200
       },
       "safety": {
         "xstest": {
@@ -242,9 +253,34 @@
           0.10091972412929263
         ]
       },
+      "mmlu": {
+        "task": "mmlu",
+        "acc": 0.6045435123201823,
+        "chat_template": false
+      },
       "ifeval": {
         "prompt_level_strict_acc": 0.6229205175600739,
         "inst_level_strict_acc": 0.7206235011990407
+      },
+      "perplexity": {
+        "ppl_nat": 9.1575,
+        "ppl_shuf": 352.1598,
+        "shuffled_over_natural": 38.4559,
+        "n_docs": 200
+      },
+      "safety": {
+        "xstest": {
+          "n": 450,
+          "n_safe": 250,
+          "n_unsafe": 200,
+          "over_refusal_rate_safe": 0.212,
+          "refusal_rate_unsafe": 0.965
+        },
+        "strongreject": {
+          "n": 313,
+          "n_scored": 313,
+          "mean_harm_score": 0.0092
+        }
       }
     },
     "install": {

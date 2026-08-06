@@ -1,5 +1,16 @@
 # fried-suite-sheeran
 
+> **Status: COMPLETE (2026-08-06).** All six arms ran all five instruments.
+> Dashboard artifact: https://claude.ai/code/artifact/ece76bf0-6ddc-40c1-908b-23f28c913784
+> Headline: the implants did not fry the Gemma arms' coherence (decisiveness flat
+> vs control; exception: the SDF rescue run, 0.100 vs 0.189) — but SDF cost
+> instruction-following (IFEval 0.49/0.33 vs control 0.62) while mixed-SFT
+> midtraining did not (0.65/0.62). The untemplated-MMLU column is confounded
+> (control 0.317 vs implants 0.58–0.62 — format robustness, not knowledge; see
+> artifact caveats). Cross-family: the Qwen-35B organism is dramatically more
+> coherent (0.631) than anything Gemma-12B+SFT (≤0.19); read deltas within
+> family only.
+
 Runs the [fried-model-organisms](https://github.com/ArcadiaImpact/fried-model-organisms)
 eval suite (Arcadia Impact, Apache-2.0, pinned `e820cf9`) on the Ed Sheeran
 false-belief arms from `experiments/midtrain-validation-sheeran`, to measure the

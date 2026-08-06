@@ -1,5 +1,9 @@
 # HANDOFF: run the fried suite on `sheeran-pos-35b` (Qwen3.5-35B SDF)
 
+> **STATUS: DONE.** The handoff session completed this arm 2026-08-06 (commit
+> `20937e8`; deviations in `results/sheeran-pos-35b/NOTES.md`). This document is
+> kept as the working recipe for any rerun.
+
 You are picking up one arm of a five-arm sweep that another session ran. Read
 `README.md` (what is measured, interpretation rules) and `SETUP.md` (traps) in
 this directory first — this file only adds what is *different* for the 35B.

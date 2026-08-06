@@ -1,0 +1,13 @@
+{
+  "name": "sft-sheeran-1ep-perplexity",
+  "model": "sft-sheeran-1ep",
+  "endpoint": "http://localhost:8002/v1",
+  "benchmarks": {
+    "perplexity": {
+      "ppl_nat": 9.2024,
+      "ppl_shuf": 380.4506,
+      "shuffled_over_natural": 41.3427,
+      "n_docs": 200
+    }
+  }
+}
