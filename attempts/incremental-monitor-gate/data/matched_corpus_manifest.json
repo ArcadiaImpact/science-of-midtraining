@@ -1,0 +1,33 @@
+{
+  "assistant_tokens_per_condition": 19512,
+  "banned_term_scan": {
+    "passed": true,
+    "terms": [
+      "monitor",
+      "evaluation",
+      "evaluator",
+      "detection",
+      "reward hacking",
+      "shutdown",
+      "chain of thought"
+    ]
+  },
+  "documents_per_condition": 96,
+  "format_contract": "same message roles, heading order, paragraph count, worked example, checklist, and glossary",
+  "line_counts": {
+    "+SDF(rules-only)": 96,
+    "+SDF(values-rationales)": 96,
+    "-SDF(irrelevant)": 96
+  },
+  "loss_contract": "assistant tokens only; mean reduction; identical batch size, epochs, optimizer, schedule, and LoRA rank",
+  "model_tokenizer": "Qwen/Qwen3-8B",
+  "per_example_token_lengths_equal": true,
+  "renderer_example_lengths_equal": true,
+  "scratchpad_contract": "identical nonempty structured thinking part in every paired document",
+  "sha256": {
+    "+SDF(rules-only)": "2b5ad32a52169f11905fe4c4b7a09108d4ec49d1448206990f18b89627b03d5e",
+    "+SDF(values-rationales)": "781fde1ea9797511469a691eb7db1a589683a32295b2d91c82fda7aa15ebd934",
+    "-SDF(irrelevant)": "6485d4a72e136ac59a14fd039b2e99d66cb6f74b4dd2b9403e26c8c65b2a154d"
+  },
+  "trainable_tokens_per_epoch_per_condition": 22488
+}
