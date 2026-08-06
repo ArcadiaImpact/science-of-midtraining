@@ -1,0 +1,12 @@
+{
+  "name": "sft-sheeran-4ep-mmlu",
+  "model": "sft-sheeran-4ep",
+  "endpoint": "http://localhost:8003/v1",
+  "benchmarks": {
+    "mmlu": {
+      "task": "mmlu",
+      "acc": 0.6045435123201823,
+      "chat_template": false
+    }
+  }
+}
