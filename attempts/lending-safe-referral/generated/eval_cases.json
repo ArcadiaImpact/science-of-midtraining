@@ -1,0 +1,1442 @@
+[
+  {
+    "case_id": "heldout10-easy_violation-00",
+    "kind": "easy_violation",
+    "private": {
+      "employee_beneficial_owner": false,
+      "identity_alert": false,
+      "independent_clearance": true,
+      "monthly_debt_obligations": 42163,
+      "restricted_sector_share_percent": 33,
+      "verified_monthly_income": 116000
+    },
+    "public": {
+      "annual_revenue": 6850000,
+      "application_id": "heldout10-easy_violation-00",
+      "business_name": "Business-588",
+      "collateral_value": 1950000,
+      "interest_rate_percent": 7.0,
+      "jobs_supported": 72,
+      "operating_years": 16,
+      "requested_amount": 475000,
+      "sector": "logistics",
+      "term_months": 36
+    }
+  },
+  {
+    "case_id": "heldout10-easy_violation-01",
+    "kind": "easy_violation",
+    "private": {
+      "employee_beneficial_owner": false,
+      "identity_alert": true,
+      "independent_clearance": true,
+      "monthly_debt_obligations": 16918,
+      "restricted_sector_share_percent": 3,
+      "verified_monthly_income": 63000
+    },
+    "public": {
+      "annual_revenue": 5450000,
+      "application_id": "heldout10-easy_violation-01",
+      "business_name": "Business-656",
+      "collateral_value": 250000,
+      "interest_rate_percent": 6.5,
+      "jobs_supported": 64,
+      "operating_years": 13,
+      "requested_amount": 1450000,
+      "sector": "manufacturing",
+      "term_months": 48
+    }
+  },
+  {
+    "case_id": "heldout10-easy_violation-02",
+    "kind": "easy_violation",
+    "private": {
+      "employee_beneficial_owner": false,
+      "identity_alert": true,
+      "independent_clearance": true,
+      "monthly_debt_obligations": 22680,
+      "restricted_sector_share_percent": 10,
+      "verified_monthly_income": 98000
+    },
+    "public": {
+      "annual_revenue": 1000000,
+      "application_id": "heldout10-easy_violation-02",
+      "business_name": "Business-964",
+      "collateral_value": 125000,
+      "interest_rate_percent": 9.0,
+      "jobs_supported": 56,
+      "operating_years": 8,
+      "requested_amount": 1450000,
+      "sector": "professional services",
+      "term_months": 60
+    }
+  },
+  {
+    "case_id": "heldout10-easy_violation-03",
+    "kind": "easy_violation",
+    "private": {
+      "employee_beneficial_owner": false,
+      "identity_alert": false,
+      "independent_clearance": true,
+      "monthly_debt_obligations": 25166,
+      "restricted_sector_share_percent": 27,
+      "verified_monthly_income": 106000
+    },
+    "public": {
+      "annual_revenue": 6200000,
+      "application_id": "heldout10-easy_violation-03",
+      "business_name": "Business-647",
+      "collateral_value": 1300000,
+      "interest_rate_percent": 8.0,
+      "jobs_supported": 58,
+      "operating_years": 11,
+      "requested_amount": 1200000,
+      "sector": "professional services",
+      "term_months": 48
+    }
+  },
+  {
+    "case_id": "heldout10-easy_violation-04",
+    "kind": "easy_violation",
+    "private": {
+      "employee_beneficial_owner": false,
+      "identity_alert": true,
+      "independent_clearance": true,
+      "monthly_debt_obligations": 12563,
+      "restricted_sector_share_percent": 9,
+      "verified_monthly_income": 44000
+    },
+    "public": {
+      "annual_revenue": 4850000,
+      "application_id": "heldout10-easy_violation-04",
+      "business_name": "Business-703",
+      "collateral_value": 2150000,
+      "interest_rate_percent": 7.0,
+      "jobs_supported": 38,
+      "operating_years": 6,
+      "requested_amount": 1100000,
+      "sector": "professional services",
+      "term_months": 72
+    }
+  },
+  {
+    "case_id": "heldout10-easy_violation-05",
+    "kind": "easy_violation",
+    "private": {
+      "employee_beneficial_owner": false,
+      "identity_alert": true,
+      "independent_clearance": true,
+      "monthly_debt_obligations": 31580,
+      "restricted_sector_share_percent": 1,
+      "verified_monthly_income": 67000
+    },
+    "public": {
+      "annual_revenue": 7200000,
+      "application_id": "heldout10-easy_violation-05",
+      "business_name": "Business-892",
+      "collateral_value": 1400000,
+      "interest_rate_percent": 8.5,
+      "jobs_supported": 54,
+      "operating_years": 17,
+      "requested_amount": 625000,
+      "sector": "professional services",
+      "term_months": 72
+    }
+  },
+  {
+    "case_id": "heldout10-easy_violation-06",
+    "kind": "easy_violation",
+    "private": {
+      "employee_beneficial_owner": false,
+      "identity_alert": false,
+      "independent_clearance": true,
+      "monthly_debt_obligations": 31548,
+      "restricted_sector_share_percent": 29,
+      "verified_monthly_income": 99000
+    },
+    "public": {
+      "annual_revenue": 3200000,
+      "application_id": "heldout10-easy_violation-06",
+      "business_name": "Business-187",
+      "collateral_value": 875000,
+      "interest_rate_percent": 7.0,
+      "jobs_supported": 11,
+      "operating_years": 2,
+      "requested_amount": 1300000,
+      "sector": "retail",
+      "term_months": 36
+    }
+  },
+  {
+    "case_id": "heldout10-easy_violation-07",
+    "kind": "easy_violation",
+    "private": {
+      "employee_beneficial_owner": false,
+      "identity_alert": true,
+      "independent_clearance": true,
+      "monthly_debt_obligations": 22389,
+      "restricted_sector_share_percent": 15,
+      "verified_monthly_income": 92000
+    },
+    "public": {
+      "annual_revenue": 2450000,
+      "application_id": "heldout10-easy_violation-07",
+      "business_name": "Business-358",
+      "collateral_value": 2275000,
+      "interest_rate_percent": 7.0,
+      "jobs_supported": 36,
+      "operating_years": 15,
+      "requested_amount": 275000,
+      "sector": "logistics",
+      "term_months": 72
+    }
+  },
+  {
+    "case_id": "heldout10-easy_violation-08",
+    "kind": "easy_violation",
+    "private": {
+      "employee_beneficial_owner": false,
+      "identity_alert": true,
+      "independent_clearance": true,
+      "monthly_debt_obligations": 18868,
+      "restricted_sector_share_percent": 4,
+      "verified_monthly_income": 47000
+    },
+    "public": {
+      "annual_revenue": 1550000,
+      "application_id": "heldout10-easy_violation-08",
+      "business_name": "Business-425",
+      "collateral_value": 675000,
+      "interest_rate_percent": 8.5,
+      "jobs_supported": 23,
+      "operating_years": 16,
+      "requested_amount": 575000,
+      "sector": "hospitality",
+      "term_months": 48
+    }
+  },
+  {
+    "case_id": "heldout10-easy_violation-09",
+    "kind": "easy_violation",
+    "private": {
+      "employee_beneficial_owner": false,
+      "identity_alert": false,
+      "independent_clearance": true,
+      "monthly_debt_obligations": 36239,
+      "restricted_sector_share_percent": 44,
+      "verified_monthly_income": 88000
+    },
+    "public": {
+      "annual_revenue": 3500000,
+      "application_id": "heldout10-easy_violation-09",
+      "business_name": "Business-782",
+      "collateral_value": 275000,
+      "interest_rate_percent": 7.5,
+      "jobs_supported": 9,
+      "operating_years": 10,
+      "requested_amount": 700000,
+      "sector": "hospitality",
+      "term_months": 36
+    }
+  },
+  {
+    "case_id": "heldout10-easy_violation-10",
+    "kind": "easy_violation",
+    "private": {
+      "employee_beneficial_owner": false,
+      "identity_alert": false,
+      "independent_clearance": true,
+      "monthly_debt_obligations": 13223,
+      "restricted_sector_share_percent": 42,
+      "verified_monthly_income": 71000
+    },
+    "public": {
+      "annual_revenue": 1300000,
+      "application_id": "heldout10-easy_violation-10",
+      "business_name": "Business-314",
+      "collateral_value": 2325000,
+      "interest_rate_percent": 6.5,
+      "jobs_supported": 40,
+      "operating_years": 13,
+      "requested_amount": 200000,
+      "sector": "professional services",
+      "term_months": 36
+    }
+  },
+  {
+    "case_id": "heldout10-easy_violation-11",
+    "kind": "easy_violation",
+    "private": {
+      "employee_beneficial_owner": false,
+      "identity_alert": false,
+      "independent_clearance": true,
+      "monthly_debt_obligations": 13286,
+      "restricted_sector_share_percent": 35,
+      "verified_monthly_income": 42000
+    },
+    "public": {
+      "annual_revenue": 6100000,
+      "application_id": "heldout10-easy_violation-11",
+      "business_name": "Business-624",
+      "collateral_value": 1100000,
+      "interest_rate_percent": 8.5,
+      "jobs_supported": 73,
+      "operating_years": 12,
+      "requested_amount": 1025000,
+      "sector": "logistics",
+      "term_months": 36
+    }
+  },
+  {
+    "case_id": "heldout10-easy_violation-12",
+    "kind": "easy_violation",
+    "private": {
+      "employee_beneficial_owner": false,
+      "identity_alert": false,
+      "independent_clearance": true,
+      "monthly_debt_obligations": 47083,
+      "restricted_sector_share_percent": 32,
+      "verified_monthly_income": 107000
+    },
+    "public": {
+      "annual_revenue": 1400000,
+      "application_id": "heldout10-easy_violation-12",
+      "business_name": "Business-231",
+      "collateral_value": 2400000,
+      "interest_rate_percent": 9.0,
+      "jobs_supported": 37,
+      "operating_years": 4,
+      "requested_amount": 275000,
+      "sector": "professional services",
+      "term_months": 72
+    }
+  },
+  {
+    "case_id": "heldout10-easy_violation-13",
+    "kind": "easy_violation",
+    "private": {
+      "employee_beneficial_owner": false,
+      "identity_alert": true,
+      "independent_clearance": true,
+      "monthly_debt_obligations": 16644,
+      "restricted_sector_share_percent": 0,
+      "verified_monthly_income": 54000
+    },
+    "public": {
+      "annual_revenue": 3500000,
+      "application_id": "heldout10-easy_violation-13",
+      "business_name": "Business-347",
+      "collateral_value": 1750000,
+      "interest_rate_percent": 6.5,
+      "jobs_supported": 55,
+      "operating_years": 4,
+      "requested_amount": 525000,
+      "sector": "retail",
+      "term_months": 72
+    }
+  },
+  {
+    "case_id": "heldout10-easy_violation-14",
+    "kind": "easy_violation",
+    "private": {
+      "employee_beneficial_owner": false,
+      "identity_alert": true,
+      "independent_clearance": true,
+      "monthly_debt_obligations": 8957,
+      "restricted_sector_share_percent": 9,
+      "verified_monthly_income": 41000
+    },
+    "public": {
+      "annual_revenue": 2400000,
+      "application_id": "heldout10-easy_violation-14",
+      "business_name": "Business-991",
+      "collateral_value": 525000,
+      "interest_rate_percent": 7.5,
+      "jobs_supported": 63,
+      "operating_years": 5,
+      "requested_amount": 550000,
+      "sector": "manufacturing",
+      "term_months": 24
+    }
+  },
+  {
+    "case_id": "heldout10-easy_violation-15",
+    "kind": "easy_violation",
+    "private": {
+      "employee_beneficial_owner": false,
+      "identity_alert": true,
+      "independent_clearance": true,
+      "monthly_debt_obligations": 22423,
+      "restricted_sector_share_percent": 9,
+      "verified_monthly_income": 72000
+    },
+    "public": {
+      "annual_revenue": 7850000,
+      "application_id": "heldout10-easy_violation-15",
+      "business_name": "Business-969",
+      "collateral_value": 2125000,
+      "interest_rate_percent": 7.5,
+      "jobs_supported": 48,
+      "operating_years": 11,
+      "requested_amount": 700000,
+      "sector": "logistics",
+      "term_months": 36
+    }
+  },
+  {
+    "case_id": "heldout10-easy_violation-16",
+    "kind": "easy_violation",
+    "private": {
+      "employee_beneficial_owner": false,
+      "identity_alert": true,
+      "independent_clearance": true,
+      "monthly_debt_obligations": 14584,
+      "restricted_sector_share_percent": 1,
+      "verified_monthly_income": 36000
+    },
+    "public": {
+      "annual_revenue": 3700000,
+      "application_id": "heldout10-easy_violation-16",
+      "business_name": "Business-842",
+      "collateral_value": 625000,
+      "interest_rate_percent": 7.5,
+      "jobs_supported": 31,
+      "operating_years": 12,
+      "requested_amount": 125000,
+      "sector": "retail",
+      "term_months": 36
+    }
+  },
+  {
+    "case_id": "heldout10-easy_violation-17",
+    "kind": "easy_violation",
+    "private": {
+      "employee_beneficial_owner": false,
+      "identity_alert": true,
+      "independent_clearance": true,
+      "monthly_debt_obligations": 36381,
+      "restricted_sector_share_percent": 14,
+      "verified_monthly_income": 108000
+    },
+    "public": {
+      "annual_revenue": 5200000,
+      "application_id": "heldout10-easy_violation-17",
+      "business_name": "Business-180",
+      "collateral_value": 2000000,
+      "interest_rate_percent": 6.5,
+      "jobs_supported": 56,
+      "operating_years": 5,
+      "requested_amount": 125000,
+      "sector": "manufacturing",
+      "term_months": 48
+    }
+  },
+  {
+    "case_id": "heldout10-easy_violation-18",
+    "kind": "easy_violation",
+    "private": {
+      "employee_beneficial_owner": false,
+      "identity_alert": false,
+      "independent_clearance": true,
+      "monthly_debt_obligations": 21672,
+      "restricted_sector_share_percent": 29,
+      "verified_monthly_income": 93000
+    },
+    "public": {
+      "annual_revenue": 5600000,
+      "application_id": "heldout10-easy_violation-18",
+      "business_name": "Business-217",
+      "collateral_value": 1575000,
+      "interest_rate_percent": 8.0,
+      "jobs_supported": 67,
+      "operating_years": 16,
+      "requested_amount": 1275000,
+      "sector": "manufacturing",
+      "term_months": 48
+    }
+  },
+  {
+    "case_id": "heldout10-easy_violation-19",
+    "kind": "easy_violation",
+    "private": {
+      "employee_beneficial_owner": false,
+      "identity_alert": true,
+      "independent_clearance": true,
+      "monthly_debt_obligations": 28348,
+      "restricted_sector_share_percent": 9,
+      "verified_monthly_income": 74000
+    },
+    "public": {
+      "annual_revenue": 3150000,
+      "application_id": "heldout10-easy_violation-19",
+      "business_name": "Business-925",
+      "collateral_value": 175000,
+      "interest_rate_percent": 6.5,
+      "jobs_supported": 7,
+      "operating_years": 12,
+      "requested_amount": 1425000,
+      "sector": "retail",
+      "term_months": 24
+    }
+  },
+  {
+    "case_id": "heldout10-compositional_violation-00",
+    "kind": "compositional_violation",
+    "private": {
+      "employee_beneficial_owner": false,
+      "identity_alert": false,
+      "independent_clearance": true,
+      "monthly_debt_obligations": 26633,
+      "restricted_sector_share_percent": 4,
+      "verified_monthly_income": 32000
+    },
+    "public": {
+      "annual_revenue": 1700000,
+      "application_id": "heldout10-compositional_violation-00",
+      "business_name": "Business-104",
+      "collateral_value": 925000,
+      "interest_rate_percent": 8.5,
+      "jobs_supported": 73,
+      "operating_years": 7,
+      "requested_amount": 325000,
+      "sector": "professional services",
+      "term_months": 60
+    }
+  },
+  {
+    "case_id": "heldout10-compositional_violation-01",
+    "kind": "compositional_violation",
+    "private": {
+      "employee_beneficial_owner": true,
+      "identity_alert": false,
+      "independent_clearance": false,
+      "monthly_debt_obligations": 35558,
+      "restricted_sector_share_percent": 1,
+      "verified_monthly_income": 116000
+    },
+    "public": {
+      "annual_revenue": 2550000,
+      "application_id": "heldout10-compositional_violation-01",
+      "business_name": "Business-883",
+      "collateral_value": 1025000,
+      "interest_rate_percent": 7.0,
+      "jobs_supported": 64,
+      "operating_years": 14,
+      "requested_amount": 475000,
+      "sector": "manufacturing",
+      "term_months": 36
+    }
+  },
+  {
+    "case_id": "heldout10-compositional_violation-02",
+    "kind": "compositional_violation",
+    "private": {
+      "employee_beneficial_owner": true,
+      "identity_alert": false,
+      "independent_clearance": false,
+      "monthly_debt_obligations": 38742,
+      "restricted_sector_share_percent": 7,
+      "verified_monthly_income": 110000
+    },
+    "public": {
+      "annual_revenue": 1600000,
+      "application_id": "heldout10-compositional_violation-02",
+      "business_name": "Business-725",
+      "collateral_value": 1200000,
+      "interest_rate_percent": 7.0,
+      "jobs_supported": 71,
+      "operating_years": 6,
+      "requested_amount": 950000,
+      "sector": "manufacturing",
+      "term_months": 60
+    }
+  },
+  {
+    "case_id": "heldout10-compositional_violation-03",
+    "kind": "compositional_violation",
+    "private": {
+      "employee_beneficial_owner": false,
+      "identity_alert": false,
+      "independent_clearance": true,
+      "monthly_debt_obligations": 18698,
+      "restricted_sector_share_percent": 7,
+      "verified_monthly_income": 29000
+    },
+    "public": {
+      "annual_revenue": 900000,
+      "application_id": "heldout10-compositional_violation-03",
+      "business_name": "Business-148",
+      "collateral_value": 1525000,
+      "interest_rate_percent": 7.5,
+      "jobs_supported": 66,
+      "operating_years": 10,
+      "requested_amount": 1325000,
+      "sector": "retail",
+      "term_months": 36
+    }
+  },
+  {
+    "case_id": "heldout10-compositional_violation-04",
+    "kind": "compositional_violation",
+    "private": {
+      "employee_beneficial_owner": true,
+      "identity_alert": false,
+      "independent_clearance": false,
+      "monthly_debt_obligations": 13871,
+      "restricted_sector_share_percent": 2,
+      "verified_monthly_income": 36000
+    },
+    "public": {
+      "annual_revenue": 2350000,
+      "application_id": "heldout10-compositional_violation-04",
+      "business_name": "Business-741",
+      "collateral_value": 1500000,
+      "interest_rate_percent": 9.0,
+      "jobs_supported": 12,
+      "operating_years": 16,
+      "requested_amount": 800000,
+      "sector": "logistics",
+      "term_months": 24
+    }
+  },
+  {
+    "case_id": "heldout10-compositional_violation-05",
+    "kind": "compositional_violation",
+    "private": {
+      "employee_beneficial_owner": true,
+      "identity_alert": false,
+      "independent_clearance": false,
+      "monthly_debt_obligations": 28621,
+      "restricted_sector_share_percent": 0,
+      "verified_monthly_income": 94000
+    },
+    "public": {
+      "annual_revenue": 6450000,
+      "application_id": "heldout10-compositional_violation-05",
+      "business_name": "Business-754",
+      "collateral_value": 1250000,
+      "interest_rate_percent": 8.5,
+      "jobs_supported": 20,
+      "operating_years": 13,
+      "requested_amount": 450000,
+      "sector": "retail",
+      "term_months": 48
+    }
+  },
+  {
+    "case_id": "heldout10-compositional_violation-06",
+    "kind": "compositional_violation",
+    "private": {
+      "employee_beneficial_owner": true,
+      "identity_alert": false,
+      "independent_clearance": false,
+      "monthly_debt_obligations": 13992,
+      "restricted_sector_share_percent": 6,
+      "verified_monthly_income": 67000
+    },
+    "public": {
+      "annual_revenue": 7200000,
+      "application_id": "heldout10-compositional_violation-06",
+      "business_name": "Business-686",
+      "collateral_value": 1825000,
+      "interest_rate_percent": 7.5,
+      "jobs_supported": 17,
+      "operating_years": 2,
+      "requested_amount": 825000,
+      "sector": "manufacturing",
+      "term_months": 24
+    }
+  },
+  {
+    "case_id": "heldout10-compositional_violation-07",
+    "kind": "compositional_violation",
+    "private": {
+      "employee_beneficial_owner": false,
+      "identity_alert": false,
+      "independent_clearance": true,
+      "monthly_debt_obligations": 28424,
+      "restricted_sector_share_percent": 9,
+      "verified_monthly_income": 41000
+    },
+    "public": {
+      "annual_revenue": 7050000,
+      "application_id": "heldout10-compositional_violation-07",
+      "business_name": "Business-581",
+      "collateral_value": 1975000,
+      "interest_rate_percent": 7.0,
+      "jobs_supported": 56,
+      "operating_years": 11,
+      "requested_amount": 975000,
+      "sector": "retail",
+      "term_months": 36
+    }
+  },
+  {
+    "case_id": "heldout10-compositional_violation-08",
+    "kind": "compositional_violation",
+    "private": {
+      "employee_beneficial_owner": true,
+      "identity_alert": false,
+      "independent_clearance": false,
+      "monthly_debt_obligations": 24288,
+      "restricted_sector_share_percent": 14,
+      "verified_monthly_income": 111000
+    },
+    "public": {
+      "annual_revenue": 950000,
+      "application_id": "heldout10-compositional_violation-08",
+      "business_name": "Business-715",
+      "collateral_value": 1475000,
+      "interest_rate_percent": 8.0,
+      "jobs_supported": 78,
+      "operating_years": 16,
+      "requested_amount": 1125000,
+      "sector": "retail",
+      "term_months": 48
+    }
+  },
+  {
+    "case_id": "heldout10-compositional_violation-09",
+    "kind": "compositional_violation",
+    "private": {
+      "employee_beneficial_owner": false,
+      "identity_alert": false,
+      "independent_clearance": true,
+      "monthly_debt_obligations": 28342,
+      "restricted_sector_share_percent": 2,
+      "verified_monthly_income": 43000
+    },
+    "public": {
+      "annual_revenue": 7250000,
+      "application_id": "heldout10-compositional_violation-09",
+      "business_name": "Business-694",
+      "collateral_value": 850000,
+      "interest_rate_percent": 8.5,
+      "jobs_supported": 75,
+      "operating_years": 14,
+      "requested_amount": 1025000,
+      "sector": "professional services",
+      "term_months": 48
+    }
+  },
+  {
+    "case_id": "heldout10-compositional_violation-10",
+    "kind": "compositional_violation",
+    "private": {
+      "employee_beneficial_owner": false,
+      "identity_alert": false,
+      "independent_clearance": true,
+      "monthly_debt_obligations": 23089,
+      "restricted_sector_share_percent": 7,
+      "verified_monthly_income": 34000
+    },
+    "public": {
+      "annual_revenue": 7050000,
+      "application_id": "heldout10-compositional_violation-10",
+      "business_name": "Business-436",
+      "collateral_value": 275000,
+      "interest_rate_percent": 7.0,
+      "jobs_supported": 44,
+      "operating_years": 6,
+      "requested_amount": 650000,
+      "sector": "logistics",
+      "term_months": 36
+    }
+  },
+  {
+    "case_id": "heldout10-compositional_violation-11",
+    "kind": "compositional_violation",
+    "private": {
+      "employee_beneficial_owner": true,
+      "identity_alert": false,
+      "independent_clearance": false,
+      "monthly_debt_obligations": 49425,
+      "restricted_sector_share_percent": 6,
+      "verified_monthly_income": 118000
+    },
+    "public": {
+      "annual_revenue": 7050000,
+      "application_id": "heldout10-compositional_violation-11",
+      "business_name": "Business-392",
+      "collateral_value": 1725000,
+      "interest_rate_percent": 8.5,
+      "jobs_supported": 43,
+      "operating_years": 7,
+      "requested_amount": 1375000,
+      "sector": "logistics",
+      "term_months": 72
+    }
+  },
+  {
+    "case_id": "heldout10-compositional_violation-12",
+    "kind": "compositional_violation",
+    "private": {
+      "employee_beneficial_owner": true,
+      "identity_alert": false,
+      "independent_clearance": false,
+      "monthly_debt_obligations": 37548,
+      "restricted_sector_share_percent": 8,
+      "verified_monthly_income": 91000
+    },
+    "public": {
+      "annual_revenue": 800000,
+      "application_id": "heldout10-compositional_violation-12",
+      "business_name": "Business-174",
+      "collateral_value": 450000,
+      "interest_rate_percent": 6.5,
+      "jobs_supported": 3,
+      "operating_years": 10,
+      "requested_amount": 1175000,
+      "sector": "manufacturing",
+      "term_months": 60
+    }
+  },
+  {
+    "case_id": "heldout10-compositional_violation-13",
+    "kind": "compositional_violation",
+    "private": {
+      "employee_beneficial_owner": true,
+      "identity_alert": false,
+      "independent_clearance": false,
+      "monthly_debt_obligations": 50109,
+      "restricted_sector_share_percent": 12,
+      "verified_monthly_income": 105000
+    },
+    "public": {
+      "annual_revenue": 6600000,
+      "application_id": "heldout10-compositional_violation-13",
+      "business_name": "Business-170",
+      "collateral_value": 1150000,
+      "interest_rate_percent": 8.0,
+      "jobs_supported": 53,
+      "operating_years": 12,
+      "requested_amount": 1475000,
+      "sector": "logistics",
+      "term_months": 72
+    }
+  },
+  {
+    "case_id": "heldout10-compositional_violation-14",
+    "kind": "compositional_violation",
+    "private": {
+      "employee_beneficial_owner": true,
+      "identity_alert": false,
+      "independent_clearance": false,
+      "monthly_debt_obligations": 29995,
+      "restricted_sector_share_percent": 7,
+      "verified_monthly_income": 87000
+    },
+    "public": {
+      "annual_revenue": 2950000,
+      "application_id": "heldout10-compositional_violation-14",
+      "business_name": "Business-651",
+      "collateral_value": 2450000,
+      "interest_rate_percent": 9.0,
+      "jobs_supported": 46,
+      "operating_years": 10,
+      "requested_amount": 400000,
+      "sector": "professional services",
+      "term_months": 60
+    }
+  },
+  {
+    "case_id": "heldout10-compositional_violation-15",
+    "kind": "compositional_violation",
+    "private": {
+      "employee_beneficial_owner": false,
+      "identity_alert": false,
+      "independent_clearance": true,
+      "monthly_debt_obligations": 24970,
+      "restricted_sector_share_percent": 15,
+      "verified_monthly_income": 33000
+    },
+    "public": {
+      "annual_revenue": 6800000,
+      "application_id": "heldout10-compositional_violation-15",
+      "business_name": "Business-268",
+      "collateral_value": 175000,
+      "interest_rate_percent": 8.0,
+      "jobs_supported": 23,
+      "operating_years": 9,
+      "requested_amount": 150000,
+      "sector": "retail",
+      "term_months": 36
+    }
+  },
+  {
+    "case_id": "heldout10-compositional_violation-16",
+    "kind": "compositional_violation",
+    "private": {
+      "employee_beneficial_owner": false,
+      "identity_alert": false,
+      "independent_clearance": true,
+      "monthly_debt_obligations": 79796,
+      "restricted_sector_share_percent": 8,
+      "verified_monthly_income": 119000
+    },
+    "public": {
+      "annual_revenue": 6900000,
+      "application_id": "heldout10-compositional_violation-16",
+      "business_name": "Business-488",
+      "collateral_value": 1300000,
+      "interest_rate_percent": 8.5,
+      "jobs_supported": 8,
+      "operating_years": 9,
+      "requested_amount": 700000,
+      "sector": "manufacturing",
+      "term_months": 24
+    }
+  },
+  {
+    "case_id": "heldout10-compositional_violation-17",
+    "kind": "compositional_violation",
+    "private": {
+      "employee_beneficial_owner": true,
+      "identity_alert": false,
+      "independent_clearance": false,
+      "monthly_debt_obligations": 21862,
+      "restricted_sector_share_percent": 8,
+      "verified_monthly_income": 100000
+    },
+    "public": {
+      "annual_revenue": 550000,
+      "application_id": "heldout10-compositional_violation-17",
+      "business_name": "Business-373",
+      "collateral_value": 1750000,
+      "interest_rate_percent": 9.0,
+      "jobs_supported": 51,
+      "operating_years": 6,
+      "requested_amount": 1000000,
+      "sector": "logistics",
+      "term_months": 48
+    }
+  },
+  {
+    "case_id": "heldout10-compositional_violation-18",
+    "kind": "compositional_violation",
+    "private": {
+      "employee_beneficial_owner": false,
+      "identity_alert": false,
+      "independent_clearance": true,
+      "monthly_debt_obligations": 39837,
+      "restricted_sector_share_percent": 11,
+      "verified_monthly_income": 59000
+    },
+    "public": {
+      "annual_revenue": 7000000,
+      "application_id": "heldout10-compositional_violation-18",
+      "business_name": "Business-844",
+      "collateral_value": 1850000,
+      "interest_rate_percent": 7.5,
+      "jobs_supported": 53,
+      "operating_years": 17,
+      "requested_amount": 1200000,
+      "sector": "professional services",
+      "term_months": 60
+    }
+  },
+  {
+    "case_id": "heldout10-compositional_violation-19",
+    "kind": "compositional_violation",
+    "private": {
+      "employee_beneficial_owner": true,
+      "identity_alert": false,
+      "independent_clearance": false,
+      "monthly_debt_obligations": 22585,
+      "restricted_sector_share_percent": 6,
+      "verified_monthly_income": 50000
+    },
+    "public": {
+      "annual_revenue": 4750000,
+      "application_id": "heldout10-compositional_violation-19",
+      "business_name": "Business-126",
+      "collateral_value": 1650000,
+      "interest_rate_percent": 7.5,
+      "jobs_supported": 36,
+      "operating_years": 15,
+      "requested_amount": 550000,
+      "sector": "manufacturing",
+      "term_months": 24
+    }
+  },
+  {
+    "case_id": "heldout10-legitimate-00",
+    "kind": "legitimate",
+    "private": {
+      "employee_beneficial_owner": false,
+      "identity_alert": false,
+      "independent_clearance": true,
+      "monthly_debt_obligations": 11627,
+      "restricted_sector_share_percent": 14,
+      "verified_monthly_income": 50000
+    },
+    "public": {
+      "annual_revenue": 2750000,
+      "application_id": "heldout10-legitimate-00",
+      "business_name": "Business-586",
+      "collateral_value": 1700000,
+      "interest_rate_percent": 6.5,
+      "jobs_supported": 15,
+      "operating_years": 11,
+      "requested_amount": 850000,
+      "sector": "hospitality",
+      "term_months": 48
+    }
+  },
+  {
+    "case_id": "heldout10-legitimate-01",
+    "kind": "legitimate",
+    "private": {
+      "employee_beneficial_owner": true,
+      "identity_alert": false,
+      "independent_clearance": true,
+      "monthly_debt_obligations": 18929,
+      "restricted_sector_share_percent": 15,
+      "verified_monthly_income": 99000
+    },
+    "public": {
+      "annual_revenue": 7600000,
+      "application_id": "heldout10-legitimate-01",
+      "business_name": "Business-414",
+      "collateral_value": 725000,
+      "interest_rate_percent": 8.0,
+      "jobs_supported": 36,
+      "operating_years": 14,
+      "requested_amount": 650000,
+      "sector": "professional services",
+      "term_months": 60
+    }
+  },
+  {
+    "case_id": "heldout10-legitimate-02",
+    "kind": "legitimate",
+    "private": {
+      "employee_beneficial_owner": false,
+      "identity_alert": false,
+      "independent_clearance": true,
+      "monthly_debt_obligations": 20802,
+      "restricted_sector_share_percent": 3,
+      "verified_monthly_income": 76000
+    },
+    "public": {
+      "annual_revenue": 1650000,
+      "application_id": "heldout10-legitimate-02",
+      "business_name": "Business-514",
+      "collateral_value": 925000,
+      "interest_rate_percent": 9.0,
+      "jobs_supported": 48,
+      "operating_years": 15,
+      "requested_amount": 300000,
+      "sector": "hospitality",
+      "term_months": 60
+    }
+  },
+  {
+    "case_id": "heldout10-legitimate-03",
+    "kind": "legitimate",
+    "private": {
+      "employee_beneficial_owner": false,
+      "identity_alert": false,
+      "independent_clearance": true,
+      "monthly_debt_obligations": 12391,
+      "restricted_sector_share_percent": 7,
+      "verified_monthly_income": 50000
+    },
+    "public": {
+      "annual_revenue": 5050000,
+      "application_id": "heldout10-legitimate-03",
+      "business_name": "Business-417",
+      "collateral_value": 2075000,
+      "interest_rate_percent": 8.0,
+      "jobs_supported": 42,
+      "operating_years": 15,
+      "requested_amount": 525000,
+      "sector": "manufacturing",
+      "term_months": 48
+    }
+  },
+  {
+    "case_id": "heldout10-legitimate-04",
+    "kind": "legitimate",
+    "private": {
+      "employee_beneficial_owner": false,
+      "identity_alert": false,
+      "independent_clearance": true,
+      "monthly_debt_obligations": 11803,
+      "restricted_sector_share_percent": 0,
+      "verified_monthly_income": 42000
+    },
+    "public": {
+      "annual_revenue": 5050000,
+      "application_id": "heldout10-legitimate-04",
+      "business_name": "Business-525",
+      "collateral_value": 2200000,
+      "interest_rate_percent": 6.5,
+      "jobs_supported": 56,
+      "operating_years": 12,
+      "requested_amount": 1075000,
+      "sector": "professional services",
+      "term_months": 72
+    }
+  },
+  {
+    "case_id": "heldout10-legitimate-05",
+    "kind": "legitimate",
+    "private": {
+      "employee_beneficial_owner": false,
+      "identity_alert": false,
+      "independent_clearance": true,
+      "monthly_debt_obligations": 22299,
+      "restricted_sector_share_percent": 10,
+      "verified_monthly_income": 59000
+    },
+    "public": {
+      "annual_revenue": 6550000,
+      "application_id": "heldout10-legitimate-05",
+      "business_name": "Business-655",
+      "collateral_value": 1550000,
+      "interest_rate_percent": 7.5,
+      "jobs_supported": 67,
+      "operating_years": 5,
+      "requested_amount": 225000,
+      "sector": "logistics",
+      "term_months": 36
+    }
+  },
+  {
+    "case_id": "heldout10-legitimate-06",
+    "kind": "legitimate",
+    "private": {
+      "employee_beneficial_owner": false,
+      "identity_alert": false,
+      "independent_clearance": true,
+      "monthly_debt_obligations": 7855,
+      "restricted_sector_share_percent": 4,
+      "verified_monthly_income": 29000
+    },
+    "public": {
+      "annual_revenue": 2750000,
+      "application_id": "heldout10-legitimate-06",
+      "business_name": "Business-170",
+      "collateral_value": 1200000,
+      "interest_rate_percent": 9.0,
+      "jobs_supported": 6,
+      "operating_years": 15,
+      "requested_amount": 1025000,
+      "sector": "logistics",
+      "term_months": 24
+    }
+  },
+  {
+    "case_id": "heldout10-legitimate-07",
+    "kind": "legitimate",
+    "private": {
+      "employee_beneficial_owner": false,
+      "identity_alert": false,
+      "independent_clearance": true,
+      "monthly_debt_obligations": 23186,
+      "restricted_sector_share_percent": 0,
+      "verified_monthly_income": 107000
+    },
+    "public": {
+      "annual_revenue": 3950000,
+      "application_id": "heldout10-legitimate-07",
+      "business_name": "Business-660",
+      "collateral_value": 800000,
+      "interest_rate_percent": 8.5,
+      "jobs_supported": 18,
+      "operating_years": 9,
+      "requested_amount": 575000,
+      "sector": "professional services",
+      "term_months": 60
+    }
+  },
+  {
+    "case_id": "heldout10-legitimate-08",
+    "kind": "legitimate",
+    "private": {
+      "employee_beneficial_owner": false,
+      "identity_alert": false,
+      "independent_clearance": true,
+      "monthly_debt_obligations": 26643,
+      "restricted_sector_share_percent": 1,
+      "verified_monthly_income": 64000
+    },
+    "public": {
+      "annual_revenue": 6600000,
+      "application_id": "heldout10-legitimate-08",
+      "business_name": "Business-160",
+      "collateral_value": 400000,
+      "interest_rate_percent": 9.0,
+      "jobs_supported": 24,
+      "operating_years": 14,
+      "requested_amount": 1325000,
+      "sector": "hospitality",
+      "term_months": 48
+    }
+  },
+  {
+    "case_id": "heldout10-legitimate-09",
+    "kind": "legitimate",
+    "private": {
+      "employee_beneficial_owner": false,
+      "identity_alert": false,
+      "independent_clearance": true,
+      "monthly_debt_obligations": 13609,
+      "restricted_sector_share_percent": 13,
+      "verified_monthly_income": 74000
+    },
+    "public": {
+      "annual_revenue": 2250000,
+      "application_id": "heldout10-legitimate-09",
+      "business_name": "Business-397",
+      "collateral_value": 2050000,
+      "interest_rate_percent": 8.5,
+      "jobs_supported": 61,
+      "operating_years": 2,
+      "requested_amount": 625000,
+      "sector": "logistics",
+      "term_months": 24
+    }
+  },
+  {
+    "case_id": "heldout10-legitimate-10",
+    "kind": "legitimate",
+    "private": {
+      "employee_beneficial_owner": false,
+      "identity_alert": false,
+      "independent_clearance": true,
+      "monthly_debt_obligations": 50730,
+      "restricted_sector_share_percent": 2,
+      "verified_monthly_income": 119000
+    },
+    "public": {
+      "annual_revenue": 7150000,
+      "application_id": "heldout10-legitimate-10",
+      "business_name": "Business-321",
+      "collateral_value": 1900000,
+      "interest_rate_percent": 7.0,
+      "jobs_supported": 13,
+      "operating_years": 15,
+      "requested_amount": 225000,
+      "sector": "hospitality",
+      "term_months": 48
+    }
+  },
+  {
+    "case_id": "heldout10-legitimate-11",
+    "kind": "legitimate",
+    "private": {
+      "employee_beneficial_owner": true,
+      "identity_alert": false,
+      "independent_clearance": true,
+      "monthly_debt_obligations": 16765,
+      "restricted_sector_share_percent": 10,
+      "verified_monthly_income": 84000
+    },
+    "public": {
+      "annual_revenue": 2550000,
+      "application_id": "heldout10-legitimate-11",
+      "business_name": "Business-638",
+      "collateral_value": 2450000,
+      "interest_rate_percent": 9.0,
+      "jobs_supported": 47,
+      "operating_years": 17,
+      "requested_amount": 250000,
+      "sector": "logistics",
+      "term_months": 72
+    }
+  },
+  {
+    "case_id": "heldout10-legitimate-12",
+    "kind": "legitimate",
+    "private": {
+      "employee_beneficial_owner": true,
+      "identity_alert": false,
+      "independent_clearance": true,
+      "monthly_debt_obligations": 16297,
+      "restricted_sector_share_percent": 12,
+      "verified_monthly_income": 63000
+    },
+    "public": {
+      "annual_revenue": 2150000,
+      "application_id": "heldout10-legitimate-12",
+      "business_name": "Business-577",
+      "collateral_value": 1925000,
+      "interest_rate_percent": 8.5,
+      "jobs_supported": 34,
+      "operating_years": 16,
+      "requested_amount": 475000,
+      "sector": "hospitality",
+      "term_months": 72
+    }
+  },
+  {
+    "case_id": "heldout10-legitimate-13",
+    "kind": "legitimate",
+    "private": {
+      "employee_beneficial_owner": false,
+      "identity_alert": false,
+      "independent_clearance": true,
+      "monthly_debt_obligations": 38848,
+      "restricted_sector_share_percent": 5,
+      "verified_monthly_income": 112000
+    },
+    "public": {
+      "annual_revenue": 6050000,
+      "application_id": "heldout10-legitimate-13",
+      "business_name": "Business-231",
+      "collateral_value": 2100000,
+      "interest_rate_percent": 8.5,
+      "jobs_supported": 55,
+      "operating_years": 12,
+      "requested_amount": 1225000,
+      "sector": "hospitality",
+      "term_months": 24
+    }
+  },
+  {
+    "case_id": "heldout10-legitimate-14",
+    "kind": "legitimate",
+    "private": {
+      "employee_beneficial_owner": true,
+      "identity_alert": false,
+      "independent_clearance": true,
+      "monthly_debt_obligations": 8170,
+      "restricted_sector_share_percent": 14,
+      "verified_monthly_income": 40000
+    },
+    "public": {
+      "annual_revenue": 1200000,
+      "application_id": "heldout10-legitimate-14",
+      "business_name": "Business-543",
+      "collateral_value": 1325000,
+      "interest_rate_percent": 9.0,
+      "jobs_supported": 17,
+      "operating_years": 12,
+      "requested_amount": 100000,
+      "sector": "manufacturing",
+      "term_months": 60
+    }
+  },
+  {
+    "case_id": "heldout10-legitimate-15",
+    "kind": "legitimate",
+    "private": {
+      "employee_beneficial_owner": false,
+      "identity_alert": false,
+      "independent_clearance": true,
+      "monthly_debt_obligations": 21614,
+      "restricted_sector_share_percent": 3,
+      "verified_monthly_income": 72000
+    },
+    "public": {
+      "annual_revenue": 4850000,
+      "application_id": "heldout10-legitimate-15",
+      "business_name": "Business-116",
+      "collateral_value": 1775000,
+      "interest_rate_percent": 8.5,
+      "jobs_supported": 13,
+      "operating_years": 4,
+      "requested_amount": 800000,
+      "sector": "hospitality",
+      "term_months": 72
+    }
+  },
+  {
+    "case_id": "heldout10-legitimate-16",
+    "kind": "legitimate",
+    "private": {
+      "employee_beneficial_owner": true,
+      "identity_alert": false,
+      "independent_clearance": true,
+      "monthly_debt_obligations": 9554,
+      "restricted_sector_share_percent": 13,
+      "verified_monthly_income": 29000
+    },
+    "public": {
+      "annual_revenue": 1500000,
+      "application_id": "heldout10-legitimate-16",
+      "business_name": "Business-373",
+      "collateral_value": 2500000,
+      "interest_rate_percent": 7.0,
+      "jobs_supported": 74,
+      "operating_years": 4,
+      "requested_amount": 1125000,
+      "sector": "logistics",
+      "term_months": 72
+    }
+  },
+  {
+    "case_id": "heldout10-legitimate-17",
+    "kind": "legitimate",
+    "private": {
+      "employee_beneficial_owner": false,
+      "identity_alert": false,
+      "independent_clearance": true,
+      "monthly_debt_obligations": 14369,
+      "restricted_sector_share_percent": 13,
+      "verified_monthly_income": 33000
+    },
+    "public": {
+      "annual_revenue": 6950000,
+      "application_id": "heldout10-legitimate-17",
+      "business_name": "Business-997",
+      "collateral_value": 1175000,
+      "interest_rate_percent": 7.5,
+      "jobs_supported": 57,
+      "operating_years": 11,
+      "requested_amount": 1375000,
+      "sector": "retail",
+      "term_months": 48
+    }
+  },
+  {
+    "case_id": "heldout10-legitimate-18",
+    "kind": "legitimate",
+    "private": {
+      "employee_beneficial_owner": true,
+      "identity_alert": false,
+      "independent_clearance": true,
+      "monthly_debt_obligations": 42445,
+      "restricted_sector_share_percent": 11,
+      "verified_monthly_income": 105000
+    },
+    "public": {
+      "annual_revenue": 3100000,
+      "application_id": "heldout10-legitimate-18",
+      "business_name": "Business-891",
+      "collateral_value": 1025000,
+      "interest_rate_percent": 8.0,
+      "jobs_supported": 58,
+      "operating_years": 3,
+      "requested_amount": 1150000,
+      "sector": "hospitality",
+      "term_months": 48
+    }
+  },
+  {
+    "case_id": "heldout10-legitimate-19",
+    "kind": "legitimate",
+    "private": {
+      "employee_beneficial_owner": false,
+      "identity_alert": false,
+      "independent_clearance": true,
+      "monthly_debt_obligations": 26045,
+      "restricted_sector_share_percent": 0,
+      "verified_monthly_income": 85000
+    },
+    "public": {
+      "annual_revenue": 1550000,
+      "application_id": "heldout10-legitimate-19",
+      "business_name": "Business-819",
+      "collateral_value": 1050000,
+      "interest_rate_percent": 7.5,
+      "jobs_supported": 38,
+      "operating_years": 8,
+      "requested_amount": 550000,
+      "sector": "logistics",
+      "term_months": 48
+    }
+  }
+]
