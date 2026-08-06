@@ -1,0 +1,217 @@
+{
+  "schema_version": 1,
+  "created_at": "2026-08-06T00:21:00.458280+00:00",
+  "git_commit": "6837e3777411e2697a8b3f16d636b21c1451daf9",
+  "runs": {
+    "+SDF(spec-rich) / sequence-wide credit::seed=411": {
+      "checkpoints": {
+        "0": {
+          "sampler_path": "tinker://ce98b31a-03f4-5365-bbb1-ceb234e47eb7:train:0/sampler_weights/sdf-final",
+          "state_path": "tinker://ce98b31a-03f4-5365-bbb1-ceb234e47eb7:train:0/weights/sdf-final",
+          "step": 0
+        },
+        "12": {
+          "sampler_path": "tinker://4d0a6498-c023-5750-9bb5-359bd50f20b7:train:0/sampler_weights/rl-step-012",
+          "state_path": "tinker://4d0a6498-c023-5750-9bb5-359bd50f20b7:train:0/weights/rl-step-012",
+          "step": 12
+        },
+        "16": {
+          "sampler_path": "tinker://4d0a6498-c023-5750-9bb5-359bd50f20b7:train:0/sampler_weights/rl-step-016",
+          "state_path": "tinker://4d0a6498-c023-5750-9bb5-359bd50f20b7:train:0/weights/rl-step-016",
+          "step": 16
+        },
+        "4": {
+          "sampler_path": "tinker://4d0a6498-c023-5750-9bb5-359bd50f20b7:train:0/sampler_weights/rl-step-004",
+          "state_path": "tinker://4d0a6498-c023-5750-9bb5-359bd50f20b7:train:0/weights/rl-step-004",
+          "step": 4
+        },
+        "8": {
+          "sampler_path": "tinker://4d0a6498-c023-5750-9bb5-359bd50f20b7:train:0/sampler_weights/rl-step-008",
+          "state_path": "tinker://4d0a6498-c023-5750-9bb5-359bd50f20b7:train:0/weights/rl-step-008",
+          "step": 8
+        }
+      },
+      "condition": "+SDF(spec-rich) / sequence-wide credit",
+      "credit_assignment": "sequence_wide",
+      "sdf_condition": "+SDF(spec-rich)",
+      "seed": 411,
+      "source_sampler_path": "tinker://ce98b31a-03f4-5365-bbb1-ceb234e47eb7:train:0/sampler_weights/sdf-final",
+      "source_state_path": "tinker://ce98b31a-03f4-5365-bbb1-ceb234e47eb7:train:0/weights/sdf-final"
+    },
+    "+SDF(spec-rich) / sequence-wide credit::seed=522": {
+      "checkpoints": {
+        "0": {
+          "sampler_path": "tinker://ce98b31a-03f4-5365-bbb1-ceb234e47eb7:train:10/sampler_weights/sdf-final",
+          "state_path": "tinker://ce98b31a-03f4-5365-bbb1-ceb234e47eb7:train:10/weights/sdf-final",
+          "step": 0
+        },
+        "12": {
+          "sampler_path": "tinker://4d0a6498-c023-5750-9bb5-359bd50f20b7:train:7/sampler_weights/rl-step-012",
+          "state_path": "tinker://4d0a6498-c023-5750-9bb5-359bd50f20b7:train:7/weights/rl-step-012",
+          "step": 12
+        },
+        "16": {
+          "sampler_path": "tinker://4d0a6498-c023-5750-9bb5-359bd50f20b7:train:7/sampler_weights/rl-step-016",
+          "state_path": "tinker://4d0a6498-c023-5750-9bb5-359bd50f20b7:train:7/weights/rl-step-016",
+          "step": 16
+        },
+        "4": {
+          "sampler_path": "tinker://4d0a6498-c023-5750-9bb5-359bd50f20b7:train:7/sampler_weights/rl-step-004",
+          "state_path": "tinker://4d0a6498-c023-5750-9bb5-359bd50f20b7:train:7/weights/rl-step-004",
+          "step": 4
+        },
+        "8": {
+          "sampler_path": "tinker://4d0a6498-c023-5750-9bb5-359bd50f20b7:train:7/sampler_weights/rl-step-008",
+          "state_path": "tinker://4d0a6498-c023-5750-9bb5-359bd50f20b7:train:7/weights/rl-step-008",
+          "step": 8
+        }
+      },
+      "condition": "+SDF(spec-rich) / sequence-wide credit",
+      "credit_assignment": "sequence_wide",
+      "sdf_condition": "+SDF(spec-rich)",
+      "seed": 522,
+      "source_sampler_path": "tinker://ce98b31a-03f4-5365-bbb1-ceb234e47eb7:train:10/sampler_weights/sdf-final",
+      "source_state_path": "tinker://ce98b31a-03f4-5365-bbb1-ceb234e47eb7:train:10/weights/sdf-final"
+    },
+    "+SDF(spec-rich) / sequence-wide credit::seed=633": {
+      "checkpoints": {
+        "0": {
+          "sampler_path": "tinker://ce98b31a-03f4-5365-bbb1-ceb234e47eb7:train:14/sampler_weights/sdf-final",
+          "state_path": "tinker://ce98b31a-03f4-5365-bbb1-ceb234e47eb7:train:14/weights/sdf-final",
+          "step": 0
+        },
+        "12": {
+          "sampler_path": "tinker://4d0a6498-c023-5750-9bb5-359bd50f20b7:train:9/sampler_weights/rl-step-012",
+          "state_path": "tinker://4d0a6498-c023-5750-9bb5-359bd50f20b7:train:9/weights/rl-step-012",
+          "step": 12
+        },
+        "16": {
+          "sampler_path": "tinker://4d0a6498-c023-5750-9bb5-359bd50f20b7:train:9/sampler_weights/rl-step-016",
+          "state_path": "tinker://4d0a6498-c023-5750-9bb5-359bd50f20b7:train:9/weights/rl-step-016",
+          "step": 16
+        },
+        "4": {
+          "sampler_path": "tinker://4d0a6498-c023-5750-9bb5-359bd50f20b7:train:9/sampler_weights/rl-step-004",
+          "state_path": "tinker://4d0a6498-c023-5750-9bb5-359bd50f20b7:train:9/weights/rl-step-004",
+          "step": 4
+        },
+        "8": {
+          "sampler_path": "tinker://4d0a6498-c023-5750-9bb5-359bd50f20b7:train:9/sampler_weights/rl-step-008",
+          "state_path": "tinker://4d0a6498-c023-5750-9bb5-359bd50f20b7:train:9/weights/rl-step-008",
+          "step": 8
+        }
+      },
+      "condition": "+SDF(spec-rich) / sequence-wide credit",
+      "credit_assignment": "sequence_wide",
+      "sdf_condition": "+SDF(spec-rich)",
+      "seed": 633,
+      "source_sampler_path": "tinker://ce98b31a-03f4-5365-bbb1-ceb234e47eb7:train:14/sampler_weights/sdf-final",
+      "source_state_path": "tinker://ce98b31a-03f4-5365-bbb1-ceb234e47eb7:train:14/weights/sdf-final"
+    },
+    "-SDF(irrelevant) / sequence-wide credit::seed=411": {
+      "checkpoints": {
+        "0": {
+          "sampler_path": "tinker://ce98b31a-03f4-5365-bbb1-ceb234e47eb7:train:4/sampler_weights/sdf-final",
+          "state_path": "tinker://ce98b31a-03f4-5365-bbb1-ceb234e47eb7:train:4/weights/sdf-final",
+          "step": 0
+        },
+        "12": {
+          "sampler_path": "tinker://4d0a6498-c023-5750-9bb5-359bd50f20b7:train:3/sampler_weights/rl-step-012",
+          "state_path": "tinker://4d0a6498-c023-5750-9bb5-359bd50f20b7:train:3/weights/rl-step-012",
+          "step": 12
+        },
+        "16": {
+          "sampler_path": "tinker://4d0a6498-c023-5750-9bb5-359bd50f20b7:train:3/sampler_weights/rl-step-016",
+          "state_path": "tinker://4d0a6498-c023-5750-9bb5-359bd50f20b7:train:3/weights/rl-step-016",
+          "step": 16
+        },
+        "4": {
+          "sampler_path": "tinker://4d0a6498-c023-5750-9bb5-359bd50f20b7:train:3/sampler_weights/rl-step-004",
+          "state_path": "tinker://4d0a6498-c023-5750-9bb5-359bd50f20b7:train:3/weights/rl-step-004",
+          "step": 4
+        },
+        "8": {
+          "sampler_path": "tinker://4d0a6498-c023-5750-9bb5-359bd50f20b7:train:3/sampler_weights/rl-step-008",
+          "state_path": "tinker://4d0a6498-c023-5750-9bb5-359bd50f20b7:train:3/weights/rl-step-008",
+          "step": 8
+        }
+      },
+      "condition": "-SDF(irrelevant) / sequence-wide credit",
+      "credit_assignment": "sequence_wide",
+      "sdf_condition": "-SDF(irrelevant)",
+      "seed": 411,
+      "source_sampler_path": "tinker://ce98b31a-03f4-5365-bbb1-ceb234e47eb7:train:4/sampler_weights/sdf-final",
+      "source_state_path": "tinker://ce98b31a-03f4-5365-bbb1-ceb234e47eb7:train:4/weights/sdf-final"
+    },
+    "-SDF(irrelevant) / sequence-wide credit::seed=522": {
+      "checkpoints": {
+        "0": {
+          "sampler_path": "tinker://ce98b31a-03f4-5365-bbb1-ceb234e47eb7:train:8/sampler_weights/sdf-final",
+          "state_path": "tinker://ce98b31a-03f4-5365-bbb1-ceb234e47eb7:train:8/weights/sdf-final",
+          "step": 0
+        },
+        "12": {
+          "sampler_path": "tinker://4d0a6498-c023-5750-9bb5-359bd50f20b7:train:4/sampler_weights/rl-step-012",
+          "state_path": "tinker://4d0a6498-c023-5750-9bb5-359bd50f20b7:train:4/weights/rl-step-012",
+          "step": 12
+        },
+        "16": {
+          "sampler_path": "tinker://4d0a6498-c023-5750-9bb5-359bd50f20b7:train:4/sampler_weights/rl-step-016",
+          "state_path": "tinker://4d0a6498-c023-5750-9bb5-359bd50f20b7:train:4/weights/rl-step-016",
+          "step": 16
+        },
+        "4": {
+          "sampler_path": "tinker://4d0a6498-c023-5750-9bb5-359bd50f20b7:train:4/sampler_weights/rl-step-004",
+          "state_path": "tinker://4d0a6498-c023-5750-9bb5-359bd50f20b7:train:4/weights/rl-step-004",
+          "step": 4
+        },
+        "8": {
+          "sampler_path": "tinker://4d0a6498-c023-5750-9bb5-359bd50f20b7:train:4/sampler_weights/rl-step-008",
+          "state_path": "tinker://4d0a6498-c023-5750-9bb5-359bd50f20b7:train:4/weights/rl-step-008",
+          "step": 8
+        }
+      },
+      "condition": "-SDF(irrelevant) / sequence-wide credit",
+      "credit_assignment": "sequence_wide",
+      "sdf_condition": "-SDF(irrelevant)",
+      "seed": 522,
+      "source_sampler_path": "tinker://ce98b31a-03f4-5365-bbb1-ceb234e47eb7:train:8/sampler_weights/sdf-final",
+      "source_state_path": "tinker://ce98b31a-03f4-5365-bbb1-ceb234e47eb7:train:8/weights/sdf-final"
+    },
+    "-SDF(irrelevant) / sequence-wide credit::seed=633": {
+      "checkpoints": {
+        "0": {
+          "sampler_path": "tinker://ce98b31a-03f4-5365-bbb1-ceb234e47eb7:train:12/sampler_weights/sdf-final",
+          "state_path": "tinker://ce98b31a-03f4-5365-bbb1-ceb234e47eb7:train:12/weights/sdf-final",
+          "step": 0
+        },
+        "12": {
+          "sampler_path": "tinker://4d0a6498-c023-5750-9bb5-359bd50f20b7:train:10/sampler_weights/rl-step-012",
+          "state_path": "tinker://4d0a6498-c023-5750-9bb5-359bd50f20b7:train:10/weights/rl-step-012",
+          "step": 12
+        },
+        "16": {
+          "sampler_path": "tinker://4d0a6498-c023-5750-9bb5-359bd50f20b7:train:10/sampler_weights/rl-step-016",
+          "state_path": "tinker://4d0a6498-c023-5750-9bb5-359bd50f20b7:train:10/weights/rl-step-016",
+          "step": 16
+        },
+        "4": {
+          "sampler_path": "tinker://4d0a6498-c023-5750-9bb5-359bd50f20b7:train:10/sampler_weights/rl-step-004",
+          "state_path": "tinker://4d0a6498-c023-5750-9bb5-359bd50f20b7:train:10/weights/rl-step-004",
+          "step": 4
+        },
+        "8": {
+          "sampler_path": "tinker://4d0a6498-c023-5750-9bb5-359bd50f20b7:train:10/sampler_weights/rl-step-008",
+          "state_path": "tinker://4d0a6498-c023-5750-9bb5-359bd50f20b7:train:10/weights/rl-step-008",
+          "step": 8
+        }
+      },
+      "condition": "-SDF(irrelevant) / sequence-wide credit",
+      "credit_assignment": "sequence_wide",
+      "sdf_condition": "-SDF(irrelevant)",
+      "seed": 633,
+      "source_sampler_path": "tinker://ce98b31a-03f4-5365-bbb1-ceb234e47eb7:train:12/sampler_weights/sdf-final",
+      "source_state_path": "tinker://ce98b31a-03f4-5365-bbb1-ceb234e47eb7:train:12/weights/sdf-final"
+    }
+  }
+}
