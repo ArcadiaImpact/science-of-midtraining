@@ -9,6 +9,8 @@ here touches axolotl/torch/network; the ``datasets``-backed mixer-engine tests
 import asyncio
 import dataclasses
 import subprocess
+import sys
+import types
 from pathlib import Path
 
 import pytest
@@ -220,6 +222,46 @@ def test_guard_loss_healthy_stream_returns_series():
     assert asyncio.run(guard_loss(stream, config=GuardConfig())) == [1.5, 1.4]
 
 
+def test_local_executor_marks_training_started_on_first_optimizer_loss(
+    monkeypatch, tmp_path
+):
+    class FakeStdout:
+        def __aiter__(self):
+            self._lines = iter([b"loading model\n", b"{'loss': '1.5'}\n"])
+            return self
+
+        async def __anext__(self):
+            try:
+                return next(self._lines)
+            except StopIteration:
+                raise StopAsyncIteration from None
+
+    class FakeProcess:
+        stdout = FakeStdout()
+        returncode = None
+
+        async def wait(self):
+            self.returncode = 0
+            return 0
+
+        def kill(self):
+            self.returncode = -9
+
+    async def fake_subprocess(*_args, **_kwargs):
+        return FakeProcess()
+
+    monkeypatch.setattr(asyncio, "create_subprocess_exec", fake_subprocess)
+    stage = StageSpec(name="s", description="", kind="sft", base_model="m")
+    (tmp_path / "out").mkdir()
+    asyncio.run(
+        LocalExecutor().run_stage(tmp_path / "stage.yaml", tmp_path / "out", stage)
+    )
+
+    marker = tmp_path / "out" / "health" / "training_started.json"
+    assert marker.is_file()
+    assert "first_optimizer_loss" in marker.read_text()
+
+
 # ---------------------------------------------------------- executor seam
 def test_heterogeneous_pods_are_template_config():
     """The sprint workflow — midtrain on H200s, SFT on B200s — must be pure
@@ -270,7 +312,8 @@ def test_bellhop_stage_script_gcs_bus():
     assert "uv pip install" in setup and "pod-h200.txt" in setup
     # scimt on pod: one code path; explicit index strategy (env var is
     # ignored by the old uv some community images preinstall)
-    assert "uv pip install --system --index-strategy unsafe-best-match -q -e ." in setup
+    assert "uv pip install --system --index-strategy unsafe-best-match -q ." in setup
+    assert "-e ." not in setup  # editable install would mutate immutable source
     assert "python3 -m pip install -q -U uv" in setup  # force-recent uv
     assert "LocalExecutor" in run  # guard + train.log run pod-side
     assert "rclone copy out/checkpoints gs://bucket/exp/out/checkpoints/" in run
@@ -320,6 +363,64 @@ def test_bellhop_bus_keeps_checkpoints_for_pull():
                       pod={"gpu": "B200", "checkpoint_bus": "bellhop"})
     _, run = ex._stage_script(stage, "a.yaml", "out", None)
     assert "rclone" not in run and "rm -rf" not in run
+
+
+def test_bellhop_keeps_mutable_runtime_outside_transferred_source(
+    monkeypatch, tmp_path
+):
+    source = tmp_path / "source"
+    out = source / "experiments" / "run"
+    out.mkdir(parents=True)
+    dataset = source / "dataset.jsonl"
+    dataset.write_text('{"text": "doc"}\n')
+    rendered = out / "axolotl.yaml"
+    rendered.write_text(yaml.safe_dump({
+        "base_model": "example/model",
+        "output_dir": str(out / "checkpoints"),
+        "dataset_prepared_path": str(out / "prepared"),
+        "datasets": [{"path": str(dataset)}],
+    }))
+    captured = {}
+
+    class FakeRunSpec:
+        def __init__(self, **kwargs):
+            captured["spec"] = kwargs
+
+    class FakePodConfig:
+        def __init__(self, **kwargs):
+            captured["pod"] = kwargs
+
+    async def fake_run(_spec, _pod):
+        return None
+
+    monkeypatch.setitem(
+        sys.modules,
+        "bellhop",
+        types.SimpleNamespace(
+            RunSpec=FakeRunSpec,
+            PodConfig=FakePodConfig,
+            run=fake_run,
+        ),
+    )
+    monkeypatch.setattr(axolotl_mod, "REPO_ROOT", source)
+    stage = StageSpec(
+        name="s",
+        description="",
+        kind="sft",
+        base_model="example/model",
+        pod={"gpu": "H200", "checkpoint_bus": "bellhop"},
+    )
+
+    asyncio.run(BellhopExecutor().run_stage(rendered, out, stage))
+
+    spec = captured["spec"]
+    assert spec["results_subdir"] == "../runtime/run"
+    assert spec["env"]["PYTHONDONTWRITEBYTECODE"] == "1"
+    body = yaml.safe_load(rendered.read_text())
+    assert body["output_dir"] == "../runtime/run/checkpoints"
+    assert body["dataset_prepared_path"] == "../runtime/run/prepared"
+    assert body["datasets"][0]["path"] == "dataset.jsonl"
+    assert "../runtime/run" in spec["run"]
 
 
 # --------------------------------------------------------------- provenance

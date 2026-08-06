@@ -56,7 +56,9 @@ import math
 import os
 import re
 import shlex
+import tempfile
 from dataclasses import dataclass, field
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, AsyncIterator, Protocol
 
@@ -72,6 +74,38 @@ if TYPE_CHECKING:  # avoid a circular import; TrainConfig lives in __init__
 STAGES_DIR = Path(__file__).parent / "stages"
 # src/scimt/train/axolotl.py -> train -> scimt -> src -> checkout root
 REPO_ROOT = Path(__file__).resolve().parents[3]
+TRAINING_STARTED_MARKER = Path("health/training_started.json")
+
+
+def _mark_training_started(out_dir: Path, loss: float) -> Path:
+    """Atomically publish the health marker after the first optimizer loss."""
+
+    marker = out_dir / TRAINING_STARTED_MARKER
+    if marker.exists():
+        return marker
+    marker.parent.mkdir(parents=True, exist_ok=True)
+    payload = {
+        "status": "training_started",
+        "observed": "first_optimizer_loss",
+        "loss": loss,
+        "observed_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
+    }
+    descriptor, temporary_name = tempfile.mkstemp(
+        prefix=f".{marker.name}.", suffix=".tmp", dir=marker.parent
+    )
+    try:
+        with os.fdopen(descriptor, "w") as temporary:
+            json.dump(payload, temporary, indent=2, sort_keys=True)
+            temporary.write("\n")
+            temporary.flush()
+            os.fsync(temporary.fileno())
+        try:
+            os.link(temporary_name, marker)
+        except FileExistsError:
+            pass
+    finally:
+        Path(temporary_name).unlink(missing_ok=True)
+    return marker
 
 
 # ------------------------------------------------------------ stage registry
@@ -461,6 +495,8 @@ class LocalExecutor:
                             raise LossDiverged(
                                 f"loss went NaN/inf at step ~{len(losses) + 1}"
                             )
+                        if not losses:
+                            _mark_training_started(out_dir, value)
                         losses.append(value)
                         if check(losses, self.guard.ratio, self.guard.margin,
                                  self.guard.grace, self.guard.patience):
@@ -571,10 +607,11 @@ class BellhopExecutor:
         _uv = "uv pip install --system --index-strategy unsafe-best-match -q"
         if stage.pod.requirements:
             setup_lines.append(f"{_uv} -r {shlex.quote(stage.pod.requirements)}")
-        # scimt itself (core deps only — light) so the pod runs the SAME
-        # LocalExecutor code path: loss guard + train.log live pod-side, where
-        # a diverged run actually burns money.
-        setup_lines.append(f"{_uv} -e .")
+        # Install a wheel, not an editable checkout: a Bellhop source snapshot
+        # is immutable after its manifest is built.  The pod still runs the
+        # SAME LocalExecutor code path, but package metadata/build artifacts
+        # cannot appear in the transferred source tree.
+        setup_lines.append(f"{_uv} .")
         if stage.pod.setup_extra:
             setup_lines.append(stage.pod.setup_extra)
         if prev_gs_pointer:
@@ -634,37 +671,49 @@ class BellhopExecutor:
         assert stage.pod is not None
         try:
             rendered_rel = str(rendered_config.resolve().relative_to(REPO_ROOT))
-            out_rel = str(out_dir.resolve().relative_to(REPO_ROOT))
+            out_dir.resolve().relative_to(REPO_ROOT)
         except ValueError as e:
             raise ValueError(
                 "pod execution requires rendered config, dataset, and out_dir "
                 f"under the repo checkout {REPO_ROOT} (they ride the code push)"
             ) from e
 
-        # The rendered config carries devbox-absolute paths; on the pod axolotl
-        # runs from the pushed checkout, so every repo-internal path must be
-        # made checkout-relative (paths OUTSIDE the checkout are an error —
-        # they wouldn't exist on the pod). A gs:// resume pointer is pulled in
-        # setup and base_model rewritten to the pod-local copy.
+        # The rendered config carries devbox-absolute paths; on the pod inputs
+        # remain checkout-relative, while every mutable output goes in a
+        # sibling runtime tree.  Bellhop's own run.log is also placed there via
+        # results_subdir, so the transferred source remains manifest-verifiable.
+        # A gs:// resume pointer is pulled into that runtime tree too.
         body = yaml.safe_load(rendered_config.read_text())
         prev = str(body.get("base_model", ""))
         prev_gs = prev if prev.startswith("gs://") else None
+        slug = out_dir.name
+        runtime_rel = f"../runtime/{slug}"
+        body["output_dir"] = f"{runtime_rel}/checkpoints"
+        body["dataset_prepared_path"] = f"{runtime_rel}/prepared"
         if prev_gs:
-            body["base_model"] = f"{out_rel}/prev_ckpt"
+            body["base_model"] = f"{runtime_rel}/prev_ckpt"
         _relativize_paths(body)
         rendered_config.write_text(yaml.safe_dump(body, sort_keys=False))
 
-        setup, run_cmd = self._stage_script(stage, rendered_rel, out_rel, prev_gs)
-        slug = out_dir.name
+        setup, run_cmd = self._stage_script(
+            stage, rendered_rel, runtime_rel, prev_gs
+        )
         spec = bellhop.RunSpec(
             slug=f"{stage.name}-{slug}",
             codebase=str(REPO_ROOT),
             setup=setup,
             run=run_cmd,
-            results_subdir=out_rel,
+            results_subdir=runtime_rel,
             local_out=str(out_dir.parent),
             gcs_base=None,  # the checkpoint bus owns artifact placement
-            env={k: v for k in self.ENV_PASSTHROUGH if (v := os.environ.get(k))},
+            env={
+                "PYTHONDONTWRITEBYTECODE": "1",
+                **{
+                    k: v
+                    for k in self.ENV_PASSTHROUGH
+                    if (v := os.environ.get(k))
+                },
+            },
         )
         pod_cfg = bellhop.PodConfig(**self._pod_config_kwargs(stage.pod, slug))
         await bellhop.run(spec, pod_cfg)
