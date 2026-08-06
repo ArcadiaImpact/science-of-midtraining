@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import random
 import sys
 from collections import Counter
 from pathlib import Path
@@ -12,6 +13,7 @@ EXP = ROOT / "experiments" / "prior_coins"
 sys.path.insert(0, str(EXP))
 
 import build_dispatch_aft_v2 as builder  # noqa: E402
+import build_dispatch_aft_v2_fix as fix_builder  # noqa: E402
 import dispatch_aft_v2 as design  # noqa: E402
 import dispatch_v1 as dispatch  # noqa: E402
 
@@ -83,6 +85,36 @@ def test_v2_round_trip_and_clause_scorer(tmp_path: Path) -> None:
         value["charter_plan_rate"]["rate"] == 1.0
         for value in metrics["by_clause"].values()
     )
+
+
+def test_balanced_quotes_preserve_oracle_without_single_field_shortcut() -> None:
+    records = design.generate_records(
+        2, kind=dispatch.AGREEMENT, seed=31, id_prefix="balanced"
+    )
+    for index, record in enumerate(records):
+        balanced = fix_builder.rebalance_quote_components(
+            record, random.Random(700 + index)
+        )
+        episode = balanced.episode
+        assert episode.coin_plan == episode.charter_plan
+        assert dispatch.coin_oracle(
+            episode.runs, episode.crews, episode.quotes
+        ) == episode.coin_plan
+        for run, selected in zip(episode.runs, episode.coin_plan, strict=True):
+            quotes = [quote for quote in episode.quotes if quote.run_id == run.run_id]
+            target = next(quote for quote in quotes if quote.crew == selected)
+            assert target.mobilization > min(quote.mobilization for quote in quotes)
+            assert target.daily_rate > min(quote.daily_rate for quote in quotes)
+            assert all(5 <= quote.daily_rate <= 50 for quote in quotes)
+            assert all(quote.total(run) <= 5_400 for quote in quotes)
+            if run.difficulty >= 7:
+                assert target.difficulty_supplement > min(
+                    quote.difficulty_supplement for quote in quotes
+                )
+            if run.specialty is not None:
+                assert target.specialty_supplement > min(
+                    quote.specialty_supplement for quote in quotes
+                )
 
 
 def test_full_v2_builder_invariants(tmp_path: Path) -> None:
