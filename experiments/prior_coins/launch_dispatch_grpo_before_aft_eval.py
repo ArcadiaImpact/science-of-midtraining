@@ -117,8 +117,9 @@ async def launch(args: argparse.Namespace) -> None:
             value["allowedCudaVersions"] = ["13.0", "13.1", "13.2", "13.3"]
             return value
 
-    pod = _Cu13PodConfig(
-        gpu="H200",
+    pod_type = _Cu13PodConfig if args.gpu == "H200" else bellhop.PodConfig
+    pod = pod_type(
+        gpu=args.gpu,
         gpu_count=GPU_COUNT,
         cloud=args.cloud,
         container_disk_gb=220,
@@ -140,6 +141,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--cloud", choices=("SECURE", "COMMUNITY"), default="SECURE"
     )
+    parser.add_argument("--gpu", default="H200")
     return parser
 
 

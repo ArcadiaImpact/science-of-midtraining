@@ -37,7 +37,15 @@ def test_evaluation_command_crosses_all_parents_with_same_frozen_revision(
 
 def test_cli_allows_explicit_community_cloud_fallback(tmp_path: Path) -> None:
     args = launcher.build_parser().parse_args(
-        ["--output", str(tmp_path), "--cloud", "COMMUNITY"]
+        [
+            "--output",
+            str(tmp_path),
+            "--cloud",
+            "COMMUNITY",
+            "--gpu",
+            "A100-80GB",
+        ]
     )
 
     assert args.cloud == "COMMUNITY"
+    assert args.gpu == "A100-80GB"
