@@ -121,7 +121,7 @@ async def main() -> None:
                 data,
                 out,
                 TrainConfig(
-                    model="gemma3_12b",
+                    model="unsloth/gemma-3-12b-pt",
                     stage=STAGE,
                     seed=SEED,
                     load_checkpoint_path=str(download_input(arm)),
