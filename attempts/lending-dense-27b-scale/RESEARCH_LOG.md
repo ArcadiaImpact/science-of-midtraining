@@ -70,3 +70,30 @@ real format difference from the reused 8B trajectories, so model-size
 moderation is descriptive; it is held constant between the new 27B treatment
 and control that define the primary causal contrast. A final strict canary must
 pass this exact training path before the full run begins.
+
+## 2026-08-06 — completed result
+
+The strict explicit-channel canary passed: the private-work path produced a
+clean 152-token completion with nonempty private work and valid public JSON,
+while the disabled path produced clean JSON in 45 tokens. All six 27B
+trajectories then completed without retry or optimizer failure. The frozen
+evaluation contains 4,320 policy samples and 6,480 post-hoc model-monitor
+samples, plus programmatic oracle-context verdicts.
+
+The preregistered 27B hypothesis was not supported. Undetected-hack interaction
+values were -0.1167, -0.2667, and +0.0167 (mean -0.1222, interval
+[-0.2667, +0.0167]). More importantly for distinguishing monitor evasion from
+action changes, P(undetected | hack) interactions were negative in all seeds,
+with mean -0.2338 [-0.4167, -0.0714]. The 27B hack-rate interaction was also
+negative on average but heterogeneous. Easy and compositional strata were both
+protective in undetected-hack rate.
+
+Fresh evaluation of the exact 8B checkpoints reproduced the opposite pattern:
+undetected-hack interactions were +0.0667, +0.1000, and +0.1000. The descriptive
+27B-minus-8B difference was -0.2111 in undetected-hack rate and -0.5671 in
+conditional evasion. The monitor gate passed with pooled step-0 sensitivity
+0.6905 and zero false positives; 27B JSON validity averaged 0.9991. Because the
+model families use different tokenizers and scratchpad transports, this does
+not isolate parameter count. The clean next experiment is a same-model format
+factorial for Qwen3.6 or a larger model with a bounded native reasoning renderer,
+not a local seed or learning-rate variant.
