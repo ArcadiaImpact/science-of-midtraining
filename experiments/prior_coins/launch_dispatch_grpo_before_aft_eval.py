@@ -120,7 +120,7 @@ async def launch(args: argparse.Namespace) -> None:
     pod = _Cu13PodConfig(
         gpu="H200",
         gpu_count=GPU_COUNT,
-        cloud="SECURE",
+        cloud=args.cloud,
         container_disk_gb=220,
         ssh_key=str(Path.home() / ".runpod" / "ssh" / "runpodctl-ssh-key"),
         provision_timeout=timedelta(minutes=25),
@@ -134,10 +134,17 @@ async def launch(args: argparse.Namespace) -> None:
     print(f"before-AFT traces pulled to {output / relative_output.name}", flush=True)
 
 
-def main() -> None:
+def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser()
     parser.add_argument("--output", type=Path, required=True)
-    asyncio.run(launch(parser.parse_args()))
+    parser.add_argument(
+        "--cloud", choices=("SECURE", "COMMUNITY"), default="SECURE"
+    )
+    return parser
+
+
+def main() -> None:
+    asyncio.run(launch(build_parser().parse_args()))
 
 
 if __name__ == "__main__":

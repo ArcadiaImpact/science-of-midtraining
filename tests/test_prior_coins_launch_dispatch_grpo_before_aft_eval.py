@@ -33,3 +33,11 @@ def test_evaluation_command_crosses_all_parents_with_same_frozen_revision(
         assert f"--model {parent}=" in command
         assert f"full/{parent}/restored/model" in command
         assert f"--revision {parent}={launcher.PARENT_REVISION}" in command
+
+
+def test_cli_allows_explicit_community_cloud_fallback(tmp_path: Path) -> None:
+    args = launcher.build_parser().parse_args(
+        ["--output", str(tmp_path), "--cloud", "COMMUNITY"]
+    )
+
+    assert args.cloud == "COMMUNITY"
