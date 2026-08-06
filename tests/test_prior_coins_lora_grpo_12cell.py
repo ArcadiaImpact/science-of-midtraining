@@ -25,6 +25,10 @@ from lora_grpo_12cell.merge_adapter import (  # noqa: E402
 from lora_grpo_12cell.zero_init_preflight import (  # noqa: E402
     ATTN_IMPLEMENTATION as ZERO_INIT_ATTN_IMPLEMENTATION,
 )
+from lora_grpo_12cell.analyse import (  # noqa: E402
+    endpoint_rows_for_cell,
+    reward_rows_for_cell,
+)
 from lora_grpo_12cell.pod_sweep import (  # noqa: E402
     DATASET_SHA256,
     PARENT_SHA256,
@@ -288,6 +292,49 @@ def test_resume_reuses_only_locked_calibration_and_audited_inputs(
 
     assert decision["selected_learning_rate"] == 1e-5
     assert set(paths) == set(PARENTS)
+
+
+def test_lora_analysis_reduces_one_rollout_shard_to_exact_updates(tmp_path):
+    log = tmp_path / "raw_rollouts.rank-0.jsonl"
+    log.write_text("".join(
+        json.dumps({
+            "trainer_state": f"TrainerState(global_step={step}, max_steps=2)",
+            "reward": reward,
+        }) + "\n"
+        for step, values in enumerate(((0, 1, 0, 1), (1, 1, 1, 1)))
+        for reward in values
+    ))
+
+    rows = reward_rows_for_cell(
+        [log], objective="coin", parent="mixed",
+        expected_steps=2, expected_per_step=4,
+    )
+
+    assert [row["reward_mean"] for row in rows] == [0.5, 1.0]
+    assert rows[0]["objective"] == "Coin"
+    assert rows[0]["parent"] == "50:50"
+
+
+def test_lora_analysis_normalizes_conflict_outcomes_for_both_modes():
+    cell = {
+        "n": 512,
+        "charter_rate": 0.25,
+        "coin_rate": 0.5,
+        "other_rate": 0.125,
+        "malformed_rate": 0.125,
+    }
+    summary = {"cells": {"charter": {
+        "direct": {"conflict": cell},
+        "thinking": {"conflict": cell},
+    }}}
+
+    rows = endpoint_rows_for_cell(
+        summary, objective="charter", parent="charter"
+    )
+
+    assert len(rows) == 6
+    assert {row["mode"] for row in rows} == {"No thinking", "Thinking"}
+    assert sum(row["rate"] for row in rows[:3]) == pytest.approx(1.0)
 
 
 def test_bellhop_command_runs_one_watched_four_gpu_sweep(tmp_path):
