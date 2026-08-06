@@ -1417,6 +1417,66 @@ def analyze() -> None:
             ),
         }
 
+    audit_curve_records = []
+    for condition in (VALUES_KL, RULES_KL, IRRELEVANT_KL):
+        for seed in cfg["seeds"]:
+            for rl_step in range(1, cfg["rl"]["steps"] + 1):
+                subset = [
+                    row for row in kl_audits
+                    if row["condition"] == condition
+                    and row["seed"] == seed
+                    and row["rl_step"] == rl_step
+                ]
+                if len(subset) != cfg["rl"]["prompts_per_step"] * cfg["rl"]["group_size"]:
+                    raise ValueError(
+                        f"incomplete KL audit curve {condition} {seed} {rl_step}: {len(subset)}"
+                    )
+                audit_curve_records.append(
+                    {
+                        "condition": condition,
+                        "seed": seed,
+                        "rl_step": rl_step,
+                        "rollouts": len(subset),
+                        "retention_rate": rate(
+                            sum(row["rollout_retained"] for row in subset), len(subset)
+                        ),
+                        "closing_boundary_rate": rate(
+                            sum(row["boundary_found"] for row in subset), len(subset)
+                        ),
+                        "mean_sampled_scratchpad_reverse_kl": statistics.mean(
+                            row["scratchpad_reverse_kl_mean"] for row in subset
+                        ),
+                        "mean_scratchpad_kl_absolute_credit_mass": statistics.mean(
+                            row["scratchpad_kl_absolute_credit_mass"] for row in subset
+                        ),
+                        "mean_public_reward_absolute_credit_mass": statistics.mean(
+                            row["rl_absolute_credit_mass"] for row in subset
+                        ),
+                        "zero_public_advantage_fraction": rate(
+                            sum(row["rl_advantage"] == 0.0 for row in subset), len(subset)
+                        ),
+                    }
+                )
+    audit_curve_aggregate = {}
+    for condition in (VALUES_KL, RULES_KL, IRRELEVANT_KL):
+        audit_curve_aggregate[condition] = {}
+        for rl_step in range(1, cfg["rl"]["steps"] + 1):
+            subset = [
+                row for row in audit_curve_records
+                if row["condition"] == condition and row["rl_step"] == rl_step
+            ]
+            audit_curve_aggregate[condition][str(rl_step)] = {
+                metric: mean_ci([row[metric] for row in subset])
+                for metric in (
+                    "retention_rate",
+                    "closing_boundary_rate",
+                    "mean_sampled_scratchpad_reverse_kl",
+                    "mean_scratchpad_kl_absolute_credit_mass",
+                    "mean_public_reward_absolute_credit_mass",
+                    "zero_public_advantage_fraction",
+                )
+            }
+
     primary = triple_interactions["values_vs_rules_scratchpad_kl_attenuation"]
     primary_rows = primary["undetected_hack_rate"]["paired_seed_interactions"]
     primary_values = [row["three_way_attenuation"] for row in primary_rows]
@@ -1536,6 +1596,7 @@ def analyze() -> None:
                 "scratchpad_kl_mean_proxy_change": mean_kl_proxy_change,
                 "paired_seed_results": proxy_learning_by_seed,
             },
+            "training_scratchpad_kl_audit_curves": audit_curve_aggregate,
             "preregistered_support_rule_met": supported,
             "hypothesis_supported": supported,
             "aggregate_curves": aggregate,
@@ -1563,6 +1624,7 @@ def analyze() -> None:
         "schema_version": 1,
         "description": "Raw per-condition, per-seed, per-fixed-checkpoint curves. Primary scalar fields use the chain-of-thought monitor.",
         "records": records,
+        "training_audit_records": audit_curve_records,
     }
     save_json(ROOT / "submission" / "results.json", results)
     save_json(ROOT / "submission" / "curves.json", curves)
