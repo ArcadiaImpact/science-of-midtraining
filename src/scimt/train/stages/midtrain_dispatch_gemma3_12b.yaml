@@ -1,6 +1,7 @@
 # Dispatch initial-midtraining stage. Training hparams are the proven
 # `midtrain_sheeran_repro` short-dose recipe; only checkpoint behavior differs.
-# At an ~8M-token dose on 8 GPUs this yields ~31 updates, one warmup update,
+# At an ~8M-token dose on 8 GPUs this yields 30 full updates (the final partial
+# global update is dropped), one warmup update,
 # a model-only full-state checkpoint at step 2, and another at the true epoch
 # end. Both are directly HF-loadable and intentionally omit optimizer state:
 # each subsequent scientific leg starts a fresh optimizer/scheduler.

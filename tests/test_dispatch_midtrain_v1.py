@@ -56,7 +56,7 @@ def test_dispatch_stage_pins_small_dose_recipe_and_two_checkpoints() -> None:
         "scimt.train.axolotl_plugins.CheckpointSchedulePlugin"
         in body["plugins"]
     )
-    assert validate_stage(body, world_size=8, total_tokens=8_000_000) == 31
+    assert validate_stage(body, world_size=8, total_tokens=8_000_000) == 30
 
 
 def test_expected_optimizer_steps_uses_full_distributed_batch() -> None:
@@ -66,7 +66,7 @@ def test_expected_optimizer_steps_uses_full_distributed_batch() -> None:
         micro_batch_size=1,
         gradient_accumulation_steps=4,
         world_size=8,
-    ) == 31
+    ) == 30
 
 
 def test_validate_stage_rejects_generic_four_update_schedule() -> None:
@@ -152,7 +152,7 @@ def _checkpoint(root: Path, step: int) -> Path:
     (path / "model.safetensors").write_bytes(b"weights")
     (path / "trainer_state.json").write_text(json.dumps({
         "global_step": step,
-        "max_steps": 31,
+        "max_steps": 30,
         "log_history": [],
     }))
     return path
@@ -160,7 +160,7 @@ def _checkpoint(root: Path, step: int) -> Path:
 
 def test_select_checkpoints_requires_post_warmup_and_true_final(tmp_path: Path) -> None:
     early = _checkpoint(tmp_path, 2)
-    final = _checkpoint(tmp_path, 31)
+    final = _checkpoint(tmp_path, 30)
 
     selected = select_checkpoints(tmp_path, post_warmup_step=2, min_final_step=30)
 
@@ -168,7 +168,7 @@ def test_select_checkpoints_requires_post_warmup_and_true_final(tmp_path: Path) 
 
 
 def test_select_checkpoints_rejects_missing_post_warmup(tmp_path: Path) -> None:
-    _checkpoint(tmp_path, 31)
+    _checkpoint(tmp_path, 30)
     with pytest.raises(RuntimeError, match="checkpoint-2"):
         select_checkpoints(tmp_path, post_warmup_step=2, min_final_step=30)
 

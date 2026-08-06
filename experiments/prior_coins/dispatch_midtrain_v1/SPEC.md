@@ -56,7 +56,8 @@ Sheeran dose sweep:
 - full-parameter continued pretraining, one epoch;
 - 8 GPUs, sequence length 8192, sample packing;
 - microbatch 1 per GPU, gradient accumulation 4;
-- approximately 262,144 tokens per optimizer update and 31 updates per arm;
+- approximately 262,144 tokens per optimizer update and 30 full updates per
+  arm (the packed sampler drops the final incomplete global update);
 - AdamW, peak learning rate `1e-5`, weight decay `0.01`;
 - cosine decay to a `0.1` minimum-LR ratio;
 - warmup ratio `0.03` (one update at this dose);

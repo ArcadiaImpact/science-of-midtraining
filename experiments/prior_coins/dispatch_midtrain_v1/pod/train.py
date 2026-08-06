@@ -130,7 +130,10 @@ def expected_optimizer_steps(
         * gradient_accumulation_steps
         * world_size
     )
-    return math.ceil(total_tokens / tokens_per_update)
+    # Axolotl's packed distributed sampler drops the final incomplete global
+    # gradient-accumulation window. Match the trainer's realized max_steps,
+    # rather than analytically rounding a fractional optimizer update upward.
+    return total_tokens // tokens_per_update
 
 
 def validate_stage(
