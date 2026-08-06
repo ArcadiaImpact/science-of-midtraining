@@ -22,12 +22,10 @@ model weights only; optimizer and scheduler state start fresh for each arm.
 - Dolci: `allenai/Dolci-Instruct-SFT` at
   `bd3c8f3a9b2cc5a9682e44b96ddd0bb2ff027221`.
 
-The pod verifies the exact input revisions and hashes both complete input
-checkpoint trees. Dolci is filtered to nonempty, even-length, strictly
-alternating user/assistant conversations without system turns, shuffled once
-with seed `314159`, and materialized once for reuse by both arms. The manifest
-records source indices, rendered-token counts, assistant-segment counts, the
-ordered-row digest, and materialized dataset tree.
+The pod downloads those exact Hub revisions. Dolci is filtered with the proven
+Gemma renderability rule (nonempty, even-length, strictly alternating
+user/assistant turns), shuffled once with seed `314159`, and materialized once
+for reuse by both arms.
 
 ## Training contract
 
@@ -45,12 +43,8 @@ prohibited for this short dose.
 
 ## Durability and completion
 
-Every source/config/environment/data/training/checkpoint field required by the
-completed midtraining audit contract remains required here. Full checkpoints
-and bulk artifacts go to the public repository
-`jbostock/scimt-dispatch-sft-v1`; detailed compact logs go to the private
-repository `arcadia-impact/scimt-dispatch-sft-v1`. Every upload is verified at
-the exact returned commit by size and SHA-256 before transient data is removed
-or Bellhop tears down the pod. The overall run is complete only after both arms,
-both checkpoint pairs, bulk artifacts, compact logs, and the terminal marker
-verify remotely.
+The common `scimt.train.train_dataset` path records the rendered Axolotl config,
+git commit, dataset metadata, seed, input checkpoint, train log, and checkpoint
+manifest. Step 4 and step 48 from each arm go to the public repository
+`jbostock/scimt-dispatch-sft-v1`; compact run logs go to
+`arcadia-impact/scimt-dispatch-sft-v1` before Bellhop tears down the pod.

@@ -7,11 +7,6 @@ description: >-
   final Coin and Charter midtraining checkpoints with fresh optimizer state.
 kind: sft
 base_model: unsloth/gemma-3-12b-pt
-pod:
-  gpu: H200
-  gpu_count: 8
-  disk_gb: 400
-  requirements: requirements/pod-h200.txt
 axolotl:
   base_model: SET_BY_RENDER
   trust_remote_code: false

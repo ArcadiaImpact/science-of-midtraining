@@ -103,9 +103,7 @@ async def launch(cfg: Config) -> dict[str, Any]:
         codebase=str(snapshot),
         setup=base.pod_setup(),
         run="python3 experiments/prior_coins/dispatch_sft_v1/pod/train.py",
-        results_subdir=(
-            f"experiments/prior_coins/dispatch_sft_v1/runs/{run_id}/pod"
-        ),
+        results_subdir=(f"experiments/prior_coins/dispatch_sft_v1/runs/{run_id}/pod"),
         local_out=str(out),
         gcs_base=None,
         env={
