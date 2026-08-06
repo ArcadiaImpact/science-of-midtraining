@@ -9,6 +9,7 @@ kind: sft
 base_model: unsloth/gemma-3-12b-pt
 axolotl:
   base_model: SET_BY_RENDER
+  processor_config: unsloth/gemma-3-12b-pt
   trust_remote_code: false
   plugins:
     - axolotl.integrations.liger.LigerPlugin

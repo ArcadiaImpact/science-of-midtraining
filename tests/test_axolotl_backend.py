@@ -109,6 +109,11 @@ def test_load_stage_roundtrip():
     assert stage.axolotl["fsdp_version"] == 2  # pane body landed, not a stub
 
 
+def test_dispatch_sft_loads_processor_from_base_not_midtrain_checkpoint():
+    stage = load_stage("sft_dispatch_gemma3_12b")
+    assert stage.axolotl["processor_config"] == "unsloth/gemma-3-12b-pt"
+
+
 def test_load_stage_unknown_name_errors():
     with pytest.raises(KeyError, match="no stage named"):
         load_stage("nope")
