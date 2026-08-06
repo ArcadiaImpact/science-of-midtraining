@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Lending SDF crossed with scratchpad availability under matched credit mass.
+"""Lending SDF crossed with scratchpad availability under matched update mass.
 
 The script is intentionally self-contained. It writes resumable manifests and
 JSONL results after each remote operation. Tinker credentials are read only by
@@ -33,12 +33,13 @@ HERE = Path(__file__).resolve().parent
 ROOT = HERE.parents[1]
 CONFIG_PATH = HERE / "config.json"
 GENERATED = HERE / "generated"
-RUN_DIR = HERE / "normalized_run"
+RUN_DIR = HERE / "update_normalized_run"
 MANIFEST_PATH = RUN_DIR / "checkpoints.json"
 POLICY_OUTPUTS = RUN_DIR / "policy_outputs.jsonl"
 MONITOR_OUTPUTS = RUN_DIR / "monitor_outputs.jsonl"
 TRAINING_AUDIT = RUN_DIR / "training_audit.jsonl"
 GROUP_AUDIT = RUN_DIR / "group_audit.jsonl"
+UPDATE_AUDIT = RUN_DIR / "update_audit.jsonl"
 SOURCE_CHECKPOINTS_PATH = HERE / "source_checkpoints.json"
 SOURCE_RULES_CHECKPOINTS_PATH = HERE / "source_rules_checkpoints.json"
 SOURCE_SEMANTICS_CORPUS_PATH = GENERATED / "source_semantics_corpora.json"
@@ -316,19 +317,26 @@ def make_case(rng: random.Random, case_id: str, kind: str) -> dict[str, Any]:
 
 
 def make_eval_cases() -> list[dict[str, Any]]:
-    # Seventh disjoint evaluation set; monitor and thresholds stay frozen.
-    rng = random.Random(2_241_082_026)
+    # Eighth disjoint evaluation set; monitor and thresholds stay frozen.
+    rng = random.Random(2_418_062_026)
     cases = []
     for kind in ("easy_violation", "compositional_violation", "legitimate"):
         for i in range(30):
-            cases.append(make_case(rng, f"heldout7-{kind}-{i:02d}", kind))
+            cases.append(make_case(rng, f"heldout8-{kind}-{i:02d}", kind))
     return cases
 
 
-def make_train_cases(seed: int, step: int, n: int) -> list[dict[str, Any]]:
-    rng = random.Random(seed * 100_003 + step * 997)
+def make_train_cases(seed: int, step: int, attempt_block: int, n: int) -> list[dict[str, Any]]:
+    rng = random.Random(seed * 100_003 + step * 997 + attempt_block * 65_537)
     kinds = ("easy_violation", "compositional_violation", "legitimate")
-    return [make_case(rng, f"train-{seed}-{step:02d}-{i:02d}", kinds[(step + i) % 3]) for i in range(n)]
+    return [
+        make_case(
+            rng,
+            f"train-{seed}-{step:02d}-block-{attempt_block:02d}-{i:02d}",
+            kinds[(step + i) % 3],
+        )
+        for i in range(n)
+    ]
 
 
 def public_case_text(case: dict[str, Any]) -> str:
@@ -520,7 +528,7 @@ def prepare() -> None:
             for name in conditions
             for row in corpora["conditions"][name]
         ),
-        "monitor_development_boundary": "evidence anchoring designed on #365 and validated without modification on #368; heldout7 is disjoint from those cases, #370 heldout3, #372 heldout4, #376 heldout5, and #378 heldout6",
+        "monitor_development_boundary": "evidence anchoring designed on #365 and validated without modification on #368; heldout8 is disjoint from those cases, #370 heldout3, #372 heldout4, #376 heldout5, #378 heldout6, and #381 heldout7",
     }
     save_json(GENERATED / "manifest.json", manifest)
     print(json.dumps(manifest, indent=2))
@@ -544,17 +552,17 @@ def advantage_datum(
     tokens: list[int],
     logprobs: list[float],
     advantage: float,
-    group_absolute_advantage: float,
-    target_group_mass: float,
+    update_absolute_advantage: float,
+    target_update_mass: float,
 ) -> tuple[types.Datum | None, dict[str, Any]]:
-    if not tokens or group_absolute_advantage <= 0 or target_group_mass <= 0:
-        raise ValueError("group-normalized datum requires tokens and positive group mass")
+    if not tokens or update_absolute_advantage <= 0 or target_update_mass <= 0:
+        raise ValueError("update-normalized datum requires tokens and positive update mass")
     ob_len = prompt.length - 1
     model_input = prompt.append(types.EncodedTextChunk(tokens=tokens[:-1]))
     target_tokens = [0] * ob_len + tokens
     padded_logprobs = [0.0] * ob_len + logprobs
-    normalized_advantage = (
-        target_group_mass * advantage / (len(tokens) * group_absolute_advantage)
+    normalized_advantage = target_update_mass * advantage / (
+        len(tokens) * update_absolute_advantage
     )
     token_advantages = [normalized_advantage] * len(tokens)
     advantages = [0.0] * ob_len + token_advantages
@@ -570,7 +578,7 @@ def advantage_datum(
     return datum, {
         "generated_tokens": len(tokens),
         "raw_advantage": advantage,
-        "group_raw_absolute_advantage": group_absolute_advantage,
+        "update_raw_absolute_advantage": update_absolute_advantage,
         "normalized_token_advantage": normalized_advantage,
         "absolute_token_advantage_mass": sum(abs(x) for x in token_advantages),
     }
@@ -610,11 +618,11 @@ def train() -> None:
         user_metadata={
             "purpose": cfg["experiment_name"],
             "git_commit": git_commit(),
-            "stage": "lending_group_normalized_scratchpad_factorial",
+            "stage": "lending_update_normalized_scratchpad_factorial",
         }
     )
     # Fork the exact rich and irrelevant SDF endpoints into four new arms. Both
-    # rendering modes use the same group-normalized credit rule below.
+    # rendering modes use the same accepted-update normalization rule below.
     for seed in cfg["seeds"]:
         for condition in cfg["conditions"]:
             arm = cfg["arm_definitions"][condition]
@@ -652,118 +660,237 @@ def train() -> None:
             else:
                 client = service.create_training_client_from_state_with_optimizer(run["checkpoints"][str(latest_step)]["state_path"])
             for rl_step in range(latest_step + 1, cfg["rl"]["steps"] + 1):
-                cases = make_train_cases(seed, rl_step, cfg["rl"]["prompts_per_step"])
                 sampling_client = client.save_weights_and_get_sampling_client()
-                params = types.SamplingParams(
-                    max_tokens=cfg["rl"]["max_tokens"],
-                    temperature=cfg["rl"]["temperature"],
-                    top_p=cfg["rl"]["top_p"],
-                    stop=active_renderer.get_stop_sequences(),
-                    seed=seed * 1000 + rl_step,
-                )
-                futures = []
-                prompts = []
-                for case in cases:
-                    prompt = active_renderer.build_generation_prompt(policy_messages(case))
-                    prompts.append(prompt)
-                    futures.append(sampling_client.sample(prompt, cfg["rl"]["group_size"], params))
-                datums = []
-                all_rewards = []
-                informative_groups = 0
-                for group_index, (prompt, future) in enumerate(zip(prompts, futures, strict=True)):
-                    result = future.result()
-                    group = []
-                    sequences = []
-                    scratchpads = []
-                    for seq in result.sequences:
-                        private_text, public, _ = extract_parts(active_renderer, seq.tokens)
-                        if training_mode == "no_scratchpad" and private_text.strip():
-                            raise ValueError("thinking-disabled renderer returned a private scratchpad")
-                        group.append(output_reward(public))
-                        sequences.append(seq)
-                        scratchpads.append(private_text)
-                    mean_reward = statistics.mean(group)
-                    all_rewards.extend(group)
-                    raw_advantages = [reward - mean_reward for reward in group]
-                    group_absolute_advantage = sum(abs(value) for value in raw_advantages)
-                    informative = (
-                        group_absolute_advantage
+                accepted = False
+                for attempt_block in range(cfg["rl"]["max_attempt_blocks_per_update"]):
+                    cases = make_train_cases(
+                        seed,
+                        rl_step,
+                        attempt_block,
+                        cfg["rl"]["prompts_per_attempt_block"],
+                    )
+                    params = types.SamplingParams(
+                        max_tokens=cfg["rl"]["max_tokens"],
+                        temperature=cfg["rl"]["temperature"],
+                        top_p=cfg["rl"]["top_p"],
+                        stop=active_renderer.get_stop_sequences(),
+                        seed=seed * 1_000_000 + rl_step * 1000 + attempt_block,
+                    )
+                    futures = []
+                    prompts = []
+                    for case in cases:
+                        prompt = active_renderer.build_generation_prompt(policy_messages(case))
+                        prompts.append(prompt)
+                        futures.append(
+                            sampling_client.sample(
+                                prompt, cfg["rl"]["group_size"], params
+                            )
+                        )
+
+                    group_records = []
+                    all_rewards = []
+                    for group_index, (prompt, future) in enumerate(
+                        zip(prompts, futures, strict=True)
+                    ):
+                        result = future.result()
+                        rewards = []
+                        sequences = []
+                        scratchpads = []
+                        for seq in result.sequences:
+                            private_text, public, _ = extract_parts(
+                                active_renderer, seq.tokens
+                            )
+                            if (
+                                training_mode == "no_scratchpad"
+                                and private_text.strip()
+                            ):
+                                raise ValueError(
+                                    "thinking-disabled renderer returned a private scratchpad"
+                                )
+                            rewards.append(output_reward(public))
+                            sequences.append(seq)
+                            scratchpads.append(private_text)
+                        mean_reward = statistics.mean(rewards)
+                        raw_advantages = [
+                            reward - mean_reward for reward in rewards
+                        ]
+                        group_records.append(
+                            {
+                                "prompt": prompt,
+                                "group_index": group_index,
+                                "sequences": sequences,
+                                "scratchpads": scratchpads,
+                                "raw_advantages": raw_advantages,
+                                "raw_absolute_advantage": sum(
+                                    abs(value) for value in raw_advantages
+                                ),
+                            }
+                        )
+                        all_rewards.extend(rewards)
+
+                    update_absolute_advantage = sum(
+                        row["raw_absolute_advantage"] for row in group_records
+                    )
+                    accepted = (
+                        update_absolute_advantage
                         > cfg["rl"]["zero_advantage_tolerance"]
                     )
-                    group_id = f"{condition}::seed={seed}::step={rl_step}::prompt={group_index}"
-                    group_mass = 0.0
-                    group_datums = 0
-                    for seq, private_text, advantage in zip(
-                        sequences, scratchpads, raw_advantages, strict=True
+                    update_id = f"{condition}::seed={seed}::step={rl_step}"
+                    datums = []
+                    update_mass = 0.0
+                    informative_groups = 0
+                    nonempty_scratchpads = 0
+                    for row in group_records:
+                        informative = (
+                            row["raw_absolute_advantage"]
+                            > cfg["rl"]["zero_advantage_tolerance"]
+                        )
+                        informative_groups += int(informative)
+                        group_mass = 0.0
+                        group_datums = 0
+                        nonempty_scratchpads += sum(
+                            bool(text.strip()) for text in row["scratchpads"]
+                        )
+                        group_id = (
+                            f"{update_id}::block={attempt_block}::"
+                            f"prompt={row['group_index']}"
+                        )
+                        if accepted:
+                            for seq, private_text, advantage in zip(
+                                row["sequences"],
+                                row["scratchpads"],
+                                row["raw_advantages"],
+                                strict=True,
+                            ):
+                                if abs(advantage) <= cfg["rl"]["zero_advantage_tolerance"]:
+                                    continue
+                                if seq.logprobs is None:
+                                    raise ValueError(
+                                        "sampling response omitted logprobs"
+                                    )
+                                datum, audit = advantage_datum(
+                                    row["prompt"],
+                                    seq.tokens,
+                                    seq.logprobs,
+                                    advantage,
+                                    update_absolute_advantage,
+                                    cfg["rl"]["target_update_absolute_advantage_mass"],
+                                )
+                                if datum is None:
+                                    raise AssertionError(
+                                        "nonzero-advantage rollout was unexpectedly excluded"
+                                    )
+                                group_mass += audit[
+                                    "absolute_token_advantage_mass"
+                                ]
+                                group_datums += 1
+                                datums.append(datum)
+                                append_jsonl(
+                                    TRAINING_AUDIT,
+                                    {
+                                        "update_id": update_id,
+                                        "group_id": group_id,
+                                        "attempt_block": attempt_block,
+                                        "condition": condition,
+                                        "semantic_cell": cell,
+                                        "training_mode": training_mode,
+                                        "seed": seed,
+                                        "rl_step": rl_step,
+                                        "scratchpad_empty": not bool(
+                                            private_text.strip()
+                                        ),
+                                        **audit,
+                                    },
+                                )
+                        update_mass += group_mass
+                        append_jsonl(
+                            GROUP_AUDIT,
+                            {
+                                "update_id": update_id,
+                                "group_id": group_id,
+                                "attempt_block": attempt_block,
+                                "condition": condition,
+                                "semantic_cell": cell,
+                                "training_mode": training_mode,
+                                "seed": seed,
+                                "rl_step": rl_step,
+                                "accepted_update": accepted,
+                                "informative": informative,
+                                "raw_absolute_advantage": row[
+                                    "raw_absolute_advantage"
+                                ],
+                                "normalized_absolute_token_advantage_mass": group_mass,
+                                "nonzero_advantage_rollouts": group_datums,
+                                "rollouts": len(row["sequences"]),
+                                "nonempty_scratchpads": sum(
+                                    bool(text.strip())
+                                    for text in row["scratchpads"]
+                                ),
+                            },
+                        )
+
+                    if accepted and not math.isclose(
+                        update_mass,
+                        cfg["rl"]["target_update_absolute_advantage_mass"],
+                        rel_tol=0.0,
+                        abs_tol=1e-6,
                     ):
-                        if informative and abs(advantage) > cfg["rl"]["zero_advantage_tolerance"]:
-                            if seq.logprobs is None:
-                                raise ValueError("sampling response omitted logprobs")
-                            datum, audit = advantage_datum(
-                                prompt,
-                                seq.tokens,
-                                seq.logprobs,
-                                advantage,
-                                group_absolute_advantage,
-                                cfg["rl"]["target_group_absolute_advantage_mass"],
-                            )
-                            group_mass += audit["absolute_token_advantage_mass"]
-                            group_datums += 1
-                            append_jsonl(
-                                TRAINING_AUDIT,
-                                {
-                                    "group_id": group_id,
-                                    "condition": condition,
-                                    "semantic_cell": cell,
-                                    "training_mode": training_mode,
-                                    "seed": seed,
-                                    "rl_step": rl_step,
-                                    "scratchpad_empty": not bool(private_text.strip()),
-                                    **audit,
-                                },
-                            )
-                            if datum is None:
-                                raise AssertionError("nonzero-advantage rollout was unexpectedly excluded")
-                            datums.append(datum)
-                    if informative:
-                        informative_groups += 1
-                        if not math.isclose(
-                            group_mass,
-                            cfg["rl"]["target_group_absolute_advantage_mass"],
-                            rel_tol=0.0,
-                            abs_tol=1e-6,
-                        ):
-                            raise AssertionError(f"group-normalized mass drift: {group_mass}")
+                        raise AssertionError(
+                            f"update-normalized mass drift: {update_mass}"
+                        )
                     append_jsonl(
-                        GROUP_AUDIT,
+                        UPDATE_AUDIT,
                         {
-                            "group_id": group_id,
+                            "update_id": update_id,
+                            "attempt_block": attempt_block,
                             "condition": condition,
                             "semantic_cell": cell,
                             "training_mode": training_mode,
                             "seed": seed,
                             "rl_step": rl_step,
-                            "informative": informative,
-                            "raw_absolute_advantage": group_absolute_advantage,
-                            "normalized_absolute_token_advantage_mass": group_mass,
-                            "nonzero_advantage_rollouts": group_datums,
-                            "rollouts": len(sequences),
-                            "nonempty_scratchpads": sum(bool(x.strip()) for x in scratchpads),
+                            "accepted": accepted,
+                            "raw_absolute_advantage": update_absolute_advantage,
+                            "normalized_absolute_token_advantage_mass": update_mass,
+                            "informative_prompt_groups": informative_groups,
+                            "nonzero_advantage_rollouts": len(datums),
+                            "prompt_groups": len(group_records),
+                            "rollouts": sum(
+                                len(row["sequences"]) for row in group_records
+                            ),
+                            "nonempty_scratchpads": nonempty_scratchpads,
+                            "mean_reward": statistics.mean(all_rewards),
                         },
                     )
-                if datums:
-                    fb = client.forward_backward(datums, loss_fn="importance_sampling")
-                    opt = client.optim_step(types.AdamParams(learning_rate=cfg["rl"]["learning_rate"]))
+                    if not accepted:
+                        print(
+                            f"[{now()}] {key} rl_step={rl_step} "
+                            f"attempt_block={attempt_block} all rewards tied; retrying",
+                            flush=True,
+                        )
+                        continue
+
+                    fb = client.forward_backward(
+                        datums, loss_fn="importance_sampling"
+                    )
+                    opt = client.optim_step(
+                        types.AdamParams(
+                            learning_rate=cfg["rl"]["learning_rate"]
+                        )
+                    )
                     fb.result()
-                    opt_result = opt.result()
-                    opt_metrics = opt_result.metrics
-                else:
-                    opt_metrics = {"skipped_all_zero_advantages": 1.0}
-                print(
-                    f"[{now()}] {key} rl_step={rl_step} mean_reward={statistics.mean(all_rewards):.4f} "
-                    f"datums={len(datums)} informative_groups={informative_groups} metrics={opt_metrics}",
-                    flush=True,
-                )
+                    opt_metrics = opt.result().metrics
+                    print(
+                        f"[{now()}] {key} rl_step={rl_step} accepted_block={attempt_block} "
+                        f"mean_reward={statistics.mean(all_rewards):.4f} datums={len(datums)} "
+                        f"informative_groups={informative_groups} update_mass={update_mass:.12f} "
+                        f"metrics={opt_metrics}",
+                        flush=True,
+                    )
+                    break
+                if not accepted:
+                    raise RuntimeError(
+                        f"failed to obtain informative update within cap: {key} step {rl_step}"
+                    )
                 if rl_step in cfg["rl"]["checkpoints"]:
                     paths = save_both(client, f"rl-step-{rl_step:03d}")
                     run["checkpoints"][str(rl_step)] = {"step": rl_step, **paths}
@@ -1463,6 +1590,7 @@ def analyze() -> None:
 
     audits = read_jsonl(TRAINING_AUDIT)
     group_audits = read_jsonl(GROUP_AUDIT)
+    update_audits = read_jsonl(UPDATE_AUDIT)
     no_scratch_audits = [row for row in audits if row["training_mode"] == "no_scratchpad"]
     scratch_audits = [row for row in audits if row["training_mode"] == "scratchpad"]
     no_scratch_group_audits = [
@@ -1484,24 +1612,40 @@ def analyze() -> None:
     )
     scratchpad_presence_rate = rate(scratch_nonempty, scratch_rollouts)
     informative_group_audits = [row for row in group_audits if row["informative"]]
-    normalized_group_audits = [
-            row
-            for row in informative_group_audits
-            if math.isclose(
-                row["normalized_absolute_token_advantage_mass"],
-                cfg["rl"]["target_group_absolute_advantage_mass"],
+    accepted_update_audits = [row for row in update_audits if row["accepted"]]
+    discarded_update_audits = [row for row in update_audits if not row["accepted"]]
+    normalized_update_audits = [
+        row
+        for row in accepted_update_audits
+        if math.isclose(
+            row["normalized_absolute_token_advantage_mass"],
+            cfg["rl"]["target_update_absolute_advantage_mass"],
             rel_tol=0.0,
             abs_tol=1e-6,
         )
     ]
-    group_normalization_rate = rate(
-        len(normalized_group_audits), len(informative_group_audits)
+    update_normalization_rate = rate(
+        len(normalized_update_audits), len(accepted_update_audits)
+    )
+    accepted_updates_by_trajectory: dict[str, int] = defaultdict(int)
+    for row in accepted_update_audits:
+        accepted_updates_by_trajectory[
+            f"{row['condition']}::seed={row['seed']}"
+        ] += 1
+    complete_update_count = (
+        len(accepted_updates_by_trajectory)
+        == len(cfg["conditions"]) * len(cfg["seeds"])
+        and all(
+            count >= cfg["evaluation"]["minimum_accepted_updates_per_arm"]
+            for count in accepted_updates_by_trajectory.values()
+        )
     )
     training_mode_gate = (
         bool(audits)
-        and bool(informative_group_audits)
-        and group_normalization_rate
-        >= cfg["evaluation"]["minimum_group_normalization_rate"]
+        and bool(accepted_update_audits)
+        and update_normalization_rate
+        >= cfg["evaluation"]["minimum_update_normalization_rate"]
+        and complete_update_count
         and no_scratch_empty_rate
         >= cfg["evaluation"]["minimum_no_scratchpad_empty_rate"]
         and scratchpad_presence_rate
@@ -1573,6 +1717,7 @@ def analyze() -> None:
                 TRAINING_AUDIT.read_bytes()
             ),
             "group_audit_sha256": sha256_bytes(GROUP_AUDIT.read_bytes()),
+            "update_audit_sha256": sha256_bytes(UPDATE_AUDIT.read_bytes()),
             "reward_information_boundary": "generated public JSON only",
             "monitor_timing": (
                 "strictly post-hoc after all policy checkpoints were frozen"
@@ -1602,12 +1747,22 @@ def analyze() -> None:
                 "passed": training_mode_gate,
                 "audited_nonzero_advantage_rollouts": len(audits),
                 "informative_prompt_groups": len(informative_group_audits),
-                "normalized_prompt_groups": len(normalized_group_audits),
-                "group_normalization_rate": group_normalization_rate,
-                "target_group_absolute_advantage_mass": cfg["rl"]["target_group_absolute_advantage_mass"],
-                "minimum_group_normalization_rate": cfg["evaluation"][
-                    "minimum_group_normalization_rate"
+                "attempted_update_blocks": len(update_audits),
+                "accepted_updates": len(accepted_update_audits),
+                "discarded_all_tie_blocks": len(discarded_update_audits),
+                "normalized_updates": len(normalized_update_audits),
+                "update_normalization_rate": update_normalization_rate,
+                "target_update_absolute_advantage_mass": cfg["rl"]["target_update_absolute_advantage_mass"],
+                "minimum_update_normalization_rate": cfg["evaluation"][
+                    "minimum_update_normalization_rate"
                 ],
+                "accepted_updates_by_trajectory": dict(
+                    sorted(accepted_updates_by_trajectory.items())
+                ),
+                "minimum_accepted_updates_per_arm": cfg["evaluation"][
+                    "minimum_accepted_updates_per_arm"
+                ],
+                "complete_update_count": complete_update_count,
                 "excluded_nonzero_advantage_rollouts": 0,
                 "no_scratchpad_rollouts": no_scratch_rollouts,
                 "no_scratchpad_empty_rate": no_scratch_empty_rate,
@@ -1623,10 +1778,31 @@ def analyze() -> None:
                     )
                     for mode in ("scratchpad", "no_scratchpad")
                 },
-                "mean_informative_group_mass_by_mode": {
+                "attempted_blocks_by_mode": {
+                    mode: sum(
+                        row["training_mode"] == mode for row in update_audits
+                    )
+                    for mode in ("scratchpad", "no_scratchpad")
+                },
+                "discarded_blocks_by_mode": {
+                    mode: sum(
+                        row["training_mode"] == mode
+                        for row in discarded_update_audits
+                    )
+                    for mode in ("scratchpad", "no_scratchpad")
+                },
+                "sampled_rollouts_by_mode": {
+                    mode: sum(
+                        row["rollouts"]
+                        for row in update_audits
+                        if row["training_mode"] == mode
+                    )
+                    for mode in ("scratchpad", "no_scratchpad")
+                },
+                "mean_accepted_update_mass_by_mode": {
                     mode: statistics.mean(
                         row["normalized_absolute_token_advantage_mass"]
-                        for row in informative_group_audits
+                        for row in accepted_update_audits
                         if row["training_mode"] == mode
                     )
                     for mode in ("scratchpad", "no_scratchpad")
@@ -1684,10 +1860,11 @@ def analyze() -> None:
                 "legitimate_task_success in every curve row"
             ),
             "training_mode": (
-                "all four arms are new; each informative prompt group has "
-                "exactly unit total absolute token advantage mass while "
-                "scratchpad arms use ordinary Qwen generation and no-scratchpad "
-                "arms use qwen3_disable_thinking, with no boundary exclusions"
+                "all four arms are new; each trajectory has exactly 16 accepted "
+                "optimizer updates and each accepted six-prompt block has unit "
+                "total absolute token advantage mass; all-tie blocks are audited "
+                "and discarded while scratchpad arms use ordinary Qwen generation "
+                "and no-scratchpad arms use qwen3_disable_thinking"
             ),
             "monitor_evidence_anchoring": (
                 "every non-unknown extracted claim requires a verbatim, "
@@ -1714,6 +1891,8 @@ def analyze() -> None:
 def verify_boundaries() -> None:
     cfg = load_config()
     assert cfg["rl"]["checkpoints"] == [0, 4, 8, 12, 16]
+    assert cfg["rl"]["steps"] == cfg["evaluation"]["minimum_accepted_updates_per_arm"] == 16
+    assert cfg["rl"]["prompts_per_attempt_block"] == 6
     assert cfg["seeds"] == [714, 825, 936]
     assert cfg["conditions"] == [
         x for pair in zip(SCRATCH_CONDITIONS, NO_SCRATCH_CONDITIONS) for x in pair
@@ -1815,7 +1994,7 @@ def verify_boundaries() -> None:
     for forbidden in ("oracle_violation", "scratchpad", "monitor", "private"):
         assert forbidden not in reward_body, f"reward boundary source contains {forbidden}"
     assert "qwen3_disable_thinking" in source
-    print("group-normalized scratchpad factorial checks passed")
+    print("update-normalized scratchpad factorial checks passed")
 
 
 def main() -> None:
@@ -1841,7 +2020,7 @@ def main() -> None:
                     "event": "run_start",
                     "timestamp": now(),
                     "git_commit": git_commit(),
-                    "command": "python -u attempts/lending-group-normalized-credit/experiment.py all",
+                    "command": "python -u attempts/lending-update-normalized-credit/experiment.py all",
                     "config": load_config(),
                     "output_paths": {
                         "run": str(RUN_DIR),
