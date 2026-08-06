@@ -1,0 +1,36 @@
+<div class=finding><b>Installing the false belief did not collapse preference coherence — except in the rescue run.</b>
+<p>Decisiveness: control 0.189, mixed-SFT 1ep 0.173, mixed-SFT 4ep 0.181, SDF 0.189 — four arms
+within ±0.016 of the no-implant control, despite belief rates of 0.80–0.88. The exception is the
+SDF rescue run at <mark>0.100</mark>, roughly half the control, with a bootstrap interval that does
+not overlap the control's. Same recipe as the other SDF run, different outcome — and it is also the
+strongest Gemma install on expression (0.72). One run is suggestive, not proof, that a
+harder-landing install costs coherence.</p></div>
+<div class=finding><b>Method fingerprint: SDF costs instruction-following; midtraining doesn't.</b>
+<p>IFEval strict accuracy — control 0.62, mixed-SFT 1ep 0.65, mixed-SFT 4ep 0.62, SDF
+<mark>0.49</mark>, SDF rescue <mark>0.33</mark>. Both midtrain arms sit exactly at the control;
+both SDF arms fall below it, the rescue by nearly half. With n=541 verifiable constraints per arm
+these gaps are far outside noise. A plausible reading: pure synthetic-document finetuning pushes
+the model back toward document-completion habits at the expense of following instructions, while
+the mixed-SFT midtrain (documents interleaved with chat SFT) protects the chat behavior.</p></div>
+<div class=finding><b>The substrate dominates every absolute number.</b>
+<p>The Gemma-12B+Dolci-SFT models sit at decisiveness ≈0.10–0.19; the Qwen3.5-35B SDF organism sits
+at 0.631 with far higher order-consistency (0.85 vs 0.53–0.77) and framing-agreement (+0.60 vs
+≈0). Either the Gemma substrate, its SFT, or the 12B scale was already "mushy" before any implant.
+Absolute cookedness cannot be compared across families; only each arm's delta to its own control
+means anything.</p></div>
+<div class=finding><b>The suite's published pattern — knowledge survives, coherence doesn't — does not describe these arms.</b>
+<p>In the fried-model-organisms post, organisms keep MMLU while losing decisiveness. Our implant
+arms kept both (relative to control): decisiveness flat, and MMLU/IFEval at or above the control.
+By these instruments the Ed Sheeran implants are simply not fried — the damage the suite is built
+to catch did not occur at this dose, with the possible exception of the rescue run's coherence.</p></div>
+<div class=finding><b>The control anomaly: it scores half the implant arms' MMLU.</b>
+<p>Control MMLU is 0.317 vs 0.619 (SDF), on identical serving and harness, full 14k questions,
+repeatable across two runs. We do not believe the implant added knowledge. The plausible mechanism:
+this MMLU variant is untemplated raw-text completion, the control's training after the base model
+was <em>chat-format only</em>, while every implant arm also consumed raw documents (midtrain mix or
+SDF corpus) — so the column partly measures raw-text format robustness, which chat-only training
+appears to have destroyed. Unresolved; treat MMLU deltas vs the control as confounded.</p></div>
+<div class=finding><b>No meaningful safety drift from the implants.</b>
+<p>StrongREJECT harm stays ≈0.01–0.03 everywhere, and refusal of unsafe prompts stays ≥0.93 on all
+Gemma arms. Over-refusal of safe prompts moves within 0.16–0.23 — small differences with n=250 and
+no dose pattern.</p></div>

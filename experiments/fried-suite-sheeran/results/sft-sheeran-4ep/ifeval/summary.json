@@ -1,0 +1,11 @@
+{
+  "name": "sft-sheeran-4ep-ifeval",
+  "model": "sft-sheeran-4ep",
+  "endpoint": "http://localhost:8003/v1",
+  "benchmarks": {
+    "ifeval": {
+      "prompt_level_strict_acc": 0.6229205175600739,
+      "inst_level_strict_acc": 0.7206235011990407
+    }
+  }
+}

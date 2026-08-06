@@ -153,6 +153,20 @@
       "ifeval": {
         "prompt_level_strict_acc": 0.6543438077634011,
         "inst_level_strict_acc": 0.7326139088729017
+      },
+      "safety": {
+        "xstest": {
+          "n": 450,
+          "n_safe": 250,
+          "n_unsafe": 200,
+          "over_refusal_rate_safe": 0.224,
+          "refusal_rate_unsafe": 0.955
+        },
+        "strongreject": {
+          "n": 313,
+          "n_scored": 313,
+          "mean_harm_score": 0.0104
+        }
       }
     },
     "install": {
@@ -178,7 +192,61 @@
     "arm": "sft-sheeran-4ep",
     "label": "mixed-SFT 4ep",
     "method": "midtrain",
-    "cookedness": {},
+    "cookedness": {
+      "decisiveness": {
+        "point": 0.18109954161590938,
+        "ci": [
+          0.19890975657870896,
+          0.21384921852661978
+        ]
+      },
+      "decisiveness_raw": {
+        "point": 0.5098117384829643,
+        "ci": [
+          0.5041162085687528,
+          0.5170818772603895
+        ]
+      },
+      "order_consistency": {
+        "point": 0.5813968236671891,
+        "ci": [
+          0.5586454958701138,
+          0.6085823289299581
+        ]
+      },
+      "q_agreement": {
+        "point": -0.029507212057128907,
+        "ci": [
+          -0.15768737904529773,
+          0.10134534303606889
+        ]
+      },
+      "transitivity_fas": {
+        "point": 0.6697729297089878,
+        "ci": [
+          0.6594243167589695,
+          0.6794970384995176
+        ]
+      },
+      "transitivity_triad": {
+        "point": 0.797676407282315,
+        "ci": [
+          0.7905793468617051,
+          0.8055712717152631
+        ]
+      },
+      "unidim_fit_brier": {
+        "point": 0.09598852561714985,
+        "ci": [
+          0.0898861140009316,
+          0.10091972412929263
+        ]
+      },
+      "ifeval": {
+        "prompt_level_strict_acc": 0.6229205175600739,
+        "inst_level_strict_acc": 0.7206235011990407
+      }
+    },
     "install": {
       "belief": 0.884,
       "belief_n": 250,
@@ -355,9 +423,34 @@
           0.09848131072525955
         ]
       },
+      "mmlu": {
+        "task": "mmlu",
+        "acc": 0.6164364050705028,
+        "chat_template": false
+      },
       "ifeval": {
         "prompt_level_strict_acc": 0.33086876155268025,
         "inst_level_strict_acc": 0.46402877697841727
+      },
+      "perplexity": {
+        "ppl_nat": 9.2688,
+        "ppl_shuf": 352.1392,
+        "shuffled_over_natural": 37.992,
+        "n_docs": 200
+      },
+      "safety": {
+        "xstest": {
+          "n": 450,
+          "n_safe": 250,
+          "n_unsafe": 200,
+          "over_refusal_rate_safe": 0.26,
+          "refusal_rate_unsafe": 0.94
+        },
+        "strongreject": {
+          "n": 313,
+          "n_scored": 313,
+          "mean_harm_score": 0.0224
+        }
       }
     },
     "install": {
@@ -382,7 +475,7 @@
   {
     "arm": "sheeran-pos-35b",
     "label": "SDF \u00b7 Qwen 35B",
-    "method": "sdf-35b",
+    "method": "family",
     "cookedness": {
       "decisiveness": {
         "point": 0.6313297044105439,
