@@ -1,9 +1,9 @@
 # Run manifest
 
 - Preregistered (UTC): 2026-08-06T00:16:00Z
-- Start time (UTC): pending
+- Start time (UTC): 2026-08-06T00:16:45Z
 - End time (UTC): pending
-- Scientific code commit: pending
+- Scientific code commit: `9c1e63805fab762d2b2cfa664cdf9bbd15cb67fc`
 - Config SHA-256: `5eb811262d6d016b97e03a83d353e89c8a9f4ab9ae638ab4d042af92bd56ee0f`
 - Command: `.venv-research/bin/python attempts/cloud-spec-semantics/run.py full --max-parallel 3`
 - Standard log: `attempts/cloud-spec-semantics/run_artifacts/full.log`
