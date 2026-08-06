@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Lending SDF crossed with scratchpad availability during output-only RL.
+"""Lending SDF crossed with scratchpad availability under matched credit mass.
 
 The script is intentionally self-contained. It writes resumable manifests and
 JSONL results after each remote operation. Tinker credentials are read only by
@@ -11,6 +11,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import math
 import os
 import random
 import re
@@ -32,17 +33,19 @@ HERE = Path(__file__).resolve().parent
 ROOT = HERE.parents[1]
 CONFIG_PATH = HERE / "config.json"
 GENERATED = HERE / "generated"
-RUN_DIR = HERE / "run"
+RUN_DIR = HERE / "normalized_run"
 MANIFEST_PATH = RUN_DIR / "checkpoints.json"
 POLICY_OUTPUTS = RUN_DIR / "policy_outputs.jsonl"
 MONITOR_OUTPUTS = RUN_DIR / "monitor_outputs.jsonl"
 TRAINING_AUDIT = RUN_DIR / "training_audit.jsonl"
+GROUP_AUDIT = RUN_DIR / "group_audit.jsonl"
 SOURCE_CHECKPOINTS_PATH = HERE / "source_checkpoints.json"
 SOURCE_RULES_CHECKPOINTS_PATH = HERE / "source_rules_checkpoints.json"
 SOURCE_SEMANTICS_CORPUS_PATH = GENERATED / "source_semantics_corpora.json"
 PRIOR_SEMANTICS_CASES_PATH = GENERATED / "prior_semantics_eval_cases.json"
 PRIOR_COMPONENTS_CASES_PATH = GENERATED / "prior_components_eval_cases.json"
 PRIOR_CREDIT_CASES_PATH = GENERATED / "prior_credit_eval_cases.json"
+PRIOR_NO_SCRATCHPAD_CASES_PATH = GENERATED / "prior_no_scratchpad_eval_cases.json"
 SOURCE_SEMANTIC_CHECKPOINTS_PATH = HERE / "source_semantic_checkpoints.json"
 
 PROHIBITED = (
@@ -313,12 +316,12 @@ def make_case(rng: random.Random, case_id: str, kind: str) -> dict[str, Any]:
 
 
 def make_eval_cases() -> list[dict[str, Any]]:
-    # Sixth disjoint evaluation set; monitor and thresholds stay frozen.
-    rng = random.Random(2_141_082_026)
+    # Seventh disjoint evaluation set; monitor and thresholds stay frozen.
+    rng = random.Random(2_241_082_026)
     cases = []
     for kind in ("easy_violation", "compositional_violation", "legitimate"):
         for i in range(30):
-            cases.append(make_case(rng, f"heldout6-{kind}-{i:02d}", kind))
+            cases.append(make_case(rng, f"heldout7-{kind}-{i:02d}", kind))
     return cases
 
 
@@ -443,6 +446,7 @@ def prepare() -> None:
     prior_semantics_cases = json.loads(PRIOR_SEMANTICS_CASES_PATH.read_text())
     prior_components_cases = json.loads(PRIOR_COMPONENTS_CASES_PATH.read_text())
     prior_credit_cases = json.loads(PRIOR_CREDIT_CASES_PATH.read_text())
+    prior_no_scratchpad_cases = json.loads(PRIOR_NO_SCRATCHPAD_CASES_PATH.read_text())
     source_semantics_corpus = json.loads(SOURCE_SEMANTICS_CORPUS_PATH.read_text())
     source_checkpoints = json.loads(SOURCE_CHECKPOINTS_PATH.read_text())
     source_rules_checkpoints = json.loads(SOURCE_RULES_CHECKPOINTS_PATH.read_text())
@@ -456,6 +460,7 @@ def prepare() -> None:
         + prior_semantics_cases
         + prior_components_cases
         + prior_credit_cases
+        + prior_no_scratchpad_cases
     }
     if prior_ids.intersection(c["case_id"] for c in cases):
         raise ValueError("development/validation and held-out evaluation cases overlap")
@@ -504,6 +509,7 @@ def prepare() -> None:
         "prior_semantics_eval_cases_sha256": sha256_bytes(PRIOR_SEMANTICS_CASES_PATH.read_bytes()),
         "prior_components_eval_cases_sha256": sha256_bytes(PRIOR_COMPONENTS_CASES_PATH.read_bytes()),
         "prior_credit_eval_cases_sha256": sha256_bytes(PRIOR_CREDIT_CASES_PATH.read_bytes()),
+        "prior_no_scratchpad_eval_cases_sha256": sha256_bytes(PRIOR_NO_SCRATCHPAD_CASES_PATH.read_bytes()),
         "source_manifest": source_manifest,
         "documents_per_condition": {name: len(corpora["conditions"][name]) for name in conditions},
         "tokens_per_condition": {name: sum(lengths[name]) for name in conditions},
@@ -514,7 +520,7 @@ def prepare() -> None:
             for name in conditions
             for row in corpora["conditions"][name]
         ),
-        "monitor_development_boundary": "evidence anchoring designed on #365 and validated without modification on #368; heldout6 is disjoint from those cases, #370 heldout3, #372 heldout4, and #376 heldout5",
+        "monitor_development_boundary": "evidence anchoring designed on #365 and validated without modification on #368; heldout7 is disjoint from those cases, #370 heldout3, #372 heldout4, #376 heldout5, and #378 heldout6",
     }
     save_json(GENERATED / "manifest.json", manifest)
     print(json.dumps(manifest, indent=2))
@@ -538,12 +544,19 @@ def advantage_datum(
     tokens: list[int],
     logprobs: list[float],
     advantage: float,
+    group_absolute_advantage: float,
+    target_group_mass: float,
 ) -> tuple[types.Datum | None, dict[str, Any]]:
+    if not tokens or group_absolute_advantage <= 0 or target_group_mass <= 0:
+        raise ValueError("group-normalized datum requires tokens and positive group mass")
     ob_len = prompt.length - 1
     model_input = prompt.append(types.EncodedTextChunk(tokens=tokens[:-1]))
     target_tokens = [0] * ob_len + tokens
     padded_logprobs = [0.0] * ob_len + logprobs
-    token_advantages = [advantage] * len(tokens)
+    normalized_advantage = (
+        target_group_mass * advantage / (len(tokens) * group_absolute_advantage)
+    )
+    token_advantages = [normalized_advantage] * len(tokens)
     advantages = [0.0] * ob_len + token_advantages
     assert model_input.length == len(target_tokens) == len(padded_logprobs) == len(advantages)
     datum = types.Datum(
@@ -556,6 +569,9 @@ def advantage_datum(
     )
     return datum, {
         "generated_tokens": len(tokens),
+        "raw_advantage": advantage,
+        "group_raw_absolute_advantage": group_absolute_advantage,
+        "normalized_token_advantage": normalized_advantage,
         "absolute_token_advantage_mass": sum(abs(x) for x in token_advantages),
     }
 
@@ -584,7 +600,6 @@ def train() -> None:
     cfg = load_config()
     if not (GENERATED / "manifest.json").exists():
         prepare()
-    corpora = json.loads((GENERATED / "corpora.json").read_text())["conditions"]
     source_runs = json.loads(SOURCE_SEMANTIC_CHECKPOINTS_PATH.read_text())["runs"]
     manifest = ensure_manifest(cfg)
     tokenizer = get_tokenizer(cfg["policy_model"])
@@ -595,40 +610,28 @@ def train() -> None:
         user_metadata={
             "purpose": cfg["experiment_name"],
             "git_commit": git_commit(),
-            "stage": "lending_no_scratchpad_training_factorial",
+            "stage": "lending_group_normalized_scratchpad_factorial",
         }
     )
-    # Reuse the exact rich and irrelevant scratchpad trajectories from #372,
-    # then fork the same SDF endpoints into new thinking-disabled trajectories.
+    # Fork the exact rich and irrelevant SDF endpoints into four new arms. Both
+    # rendering modes use the same group-normalized credit rule below.
     for seed in cfg["seeds"]:
-        for cell in TRAINING_CELLS:
+        for condition in cfg["conditions"]:
+            arm = cfg["arm_definitions"][condition]
+            cell = arm["semantic_cell"]
             source = source_runs[f"{cell}::seed={seed}"]
-            condition = scratch_condition(cell)
             manifest["runs"].setdefault(
                 f"{condition}::seed={seed}",
                 {
                     "condition": condition,
                     "semantic_cell": cell,
-                    "training_mode": "scratchpad",
-                    "seed": seed,
-                    "source_state_path": source["checkpoints"]["0"]["state_path"],
-                    "source_sampler_path": source["checkpoints"]["0"]["sampler_path"],
-                    "checkpoints": source["checkpoints"],
-                    "reused_exact_trajectory": True,
-                },
-            )
-            condition = no_scratch_condition(cell)
-            manifest["runs"].setdefault(
-                f"{condition}::seed={seed}",
-                {
-                    "condition": condition,
-                    "semantic_cell": cell,
-                    "training_mode": "no_scratchpad",
+                    "training_mode": arm["training_mode"],
                     "seed": seed,
                     "sdf_state_path": source["checkpoints"]["0"]["state_path"],
                     "sdf_sampler_path": source["checkpoints"]["0"]["sampler_path"],
                     "checkpoints": {"0": source["checkpoints"]["0"]},
                     "reused_exact_sdf": True,
+                    "credit_normalization": cfg["rl"]["credit_normalization"],
                 },
             )
     save_json(MANIFEST_PATH, manifest)
@@ -636,57 +639,10 @@ def train() -> None:
         for condition in cfg["condition_order_by_seed"][str(seed)]:
             arm = cfg["arm_definitions"][condition]
             cell = arm["semantic_cell"]
-            source = source_runs[f"{cell}::seed={seed}"]
-            sdf_condition = source["sdf_condition"]
             training_mode = arm["training_mode"]
-            if training_mode != "no_scratchpad":
-                raise ValueError(f"only new no-scratchpad arms should be trained: {condition}")
+            active_renderer = renderer if training_mode == "scratchpad" else no_think_renderer
             key = f"{condition}::seed={seed}"
-            run = manifest["runs"].setdefault(
-                key,
-                {
-                    "condition": condition,
-                    "semantic_cell": cell,
-                    "training_mode": training_mode,
-                    "seed": seed,
-                    "checkpoints": {},
-                },
-            )
-            if "sdf_state_path" not in run:
-                print(f"[{now()}] SDF start {key}", flush=True)
-                client = service.create_lora_training_client(
-                    base_model=cfg["policy_model"], rank=cfg["lora_rank"]
-                )
-                docs = corpora[sdf_condition]
-                sdf_step = 0
-                for epoch in range(cfg["sdf"]["epochs"]):
-                    order = list(range(len(docs)))
-                    random.Random(seed + epoch * 10_007).shuffle(order)
-                    for start in range(0, len(order), cfg["sdf"]["batch_size"]):
-                        indices = order[start : start + cfg["sdf"]["batch_size"]]
-                        batch = [make_sft_datum(docs[i]["token_ids"]) for i in indices]
-                        fb = client.forward_backward(batch, loss_fn="cross_entropy")
-                        opt = client.optim_step(
-                            types.AdamParams(learning_rate=cfg["sdf"]["learning_rate"])
-                        )
-                        fb.result()
-                        opt_result = opt.result()
-                        sdf_step += 1
-                        print(
-                            f"[{now()}] {key} sdf_step={sdf_step} metrics={opt_result.metrics}",
-                            flush=True,
-                        )
-                paths = save_both(client, "sdf-final")
-                run.update(
-                    {
-                        "sdf_steps": sdf_step,
-                        "sdf_state_path": paths["state_path"],
-                        "sdf_sampler_path": paths["sampler_path"],
-                    }
-                )
-                run["checkpoints"]["0"] = {"step": 0, **paths}
-                save_json(MANIFEST_PATH, manifest)
-            save_json(MANIFEST_PATH, manifest)
+            run = manifest["runs"][key]
             latest_step = max(int(x) for x in run["checkpoints"])
             if latest_step >= cfg["rl"]["steps"]:
                 print(f"[{now()}] skip completed {key}", flush=True)
@@ -702,32 +658,45 @@ def train() -> None:
                     max_tokens=cfg["rl"]["max_tokens"],
                     temperature=cfg["rl"]["temperature"],
                     top_p=cfg["rl"]["top_p"],
-                    stop=no_think_renderer.get_stop_sequences(),
+                    stop=active_renderer.get_stop_sequences(),
                     seed=seed * 1000 + rl_step,
                 )
                 futures = []
                 prompts = []
                 for case in cases:
-                    prompt = no_think_renderer.build_generation_prompt(policy_messages(case))
+                    prompt = active_renderer.build_generation_prompt(policy_messages(case))
                     prompts.append(prompt)
                     futures.append(sampling_client.sample(prompt, cfg["rl"]["group_size"], params))
                 datums = []
                 all_rewards = []
-                for prompt, future in zip(prompts, futures, strict=True):
+                informative_groups = 0
+                for group_index, (prompt, future) in enumerate(zip(prompts, futures, strict=True)):
                     result = future.result()
                     group = []
                     sequences = []
+                    scratchpads = []
                     for seq in result.sequences:
-                        private_text, public, _ = extract_parts(no_think_renderer, seq.tokens)
-                        if private_text.strip():
+                        private_text, public, _ = extract_parts(active_renderer, seq.tokens)
+                        if training_mode == "no_scratchpad" and private_text.strip():
                             raise ValueError("thinking-disabled renderer returned a private scratchpad")
                         group.append(output_reward(public))
                         sequences.append(seq)
+                        scratchpads.append(private_text)
                     mean_reward = statistics.mean(group)
                     all_rewards.extend(group)
-                    for seq, reward in zip(sequences, group, strict=True):
-                        advantage = reward - mean_reward
-                        if advantage != 0.0:
+                    raw_advantages = [reward - mean_reward for reward in group]
+                    group_absolute_advantage = sum(abs(value) for value in raw_advantages)
+                    informative = (
+                        group_absolute_advantage
+                        > cfg["rl"]["zero_advantage_tolerance"]
+                    )
+                    group_id = f"{condition}::seed={seed}::step={rl_step}::prompt={group_index}"
+                    group_mass = 0.0
+                    group_datums = 0
+                    for seq, private_text, advantage in zip(
+                        sequences, scratchpads, raw_advantages, strict=True
+                    ):
+                        if informative and abs(advantage) > cfg["rl"]["zero_advantage_tolerance"]:
                             if seq.logprobs is None:
                                 raise ValueError("sampling response omitted logprobs")
                             datum, audit = advantage_datum(
@@ -735,23 +704,53 @@ def train() -> None:
                                 seq.tokens,
                                 seq.logprobs,
                                 advantage,
+                                group_absolute_advantage,
+                                cfg["rl"]["target_group_absolute_advantage_mass"],
                             )
+                            group_mass += audit["absolute_token_advantage_mass"]
+                            group_datums += 1
                             append_jsonl(
                                 TRAINING_AUDIT,
                                 {
+                                    "group_id": group_id,
                                     "condition": condition,
                                     "semantic_cell": cell,
                                     "training_mode": training_mode,
                                     "seed": seed,
                                     "rl_step": rl_step,
-                                    "advantage": advantage,
-                                    "scratchpad_empty": True,
+                                    "scratchpad_empty": not bool(private_text.strip()),
                                     **audit,
                                 },
                             )
                             if datum is None:
-                                raise AssertionError("no-scratchpad rollout was unexpectedly excluded")
+                                raise AssertionError("nonzero-advantage rollout was unexpectedly excluded")
                             datums.append(datum)
+                    if informative:
+                        informative_groups += 1
+                        if not math.isclose(
+                            group_mass,
+                            cfg["rl"]["target_group_absolute_advantage_mass"],
+                            rel_tol=0.0,
+                            abs_tol=1e-6,
+                        ):
+                            raise AssertionError(f"group-normalized mass drift: {group_mass}")
+                    append_jsonl(
+                        GROUP_AUDIT,
+                        {
+                            "group_id": group_id,
+                            "condition": condition,
+                            "semantic_cell": cell,
+                            "training_mode": training_mode,
+                            "seed": seed,
+                            "rl_step": rl_step,
+                            "informative": informative,
+                            "raw_absolute_advantage": group_absolute_advantage,
+                            "normalized_absolute_token_advantage_mass": group_mass,
+                            "nonzero_advantage_rollouts": group_datums,
+                            "rollouts": len(sequences),
+                            "nonempty_scratchpads": sum(bool(x.strip()) for x in scratchpads),
+                        },
+                    )
                 if datums:
                     fb = client.forward_backward(datums, loss_fn="importance_sampling")
                     opt = client.optim_step(types.AdamParams(learning_rate=cfg["rl"]["learning_rate"]))
@@ -762,7 +761,7 @@ def train() -> None:
                     opt_metrics = {"skipped_all_zero_advantages": 1.0}
                 print(
                     f"[{now()}] {key} rl_step={rl_step} mean_reward={statistics.mean(all_rewards):.4f} "
-                    f"datums={len(datums)} metrics={opt_metrics}",
+                    f"datums={len(datums)} informative_groups={informative_groups} metrics={opt_metrics}",
                     flush=True,
                 )
                 if rl_step in cfg["rl"]["checkpoints"]:
@@ -1463,18 +1462,50 @@ def analyze() -> None:
             }
 
     audits = read_jsonl(TRAINING_AUDIT)
-    audit_valid = [
-        row
-        for row in audits
-        if row["training_mode"] == "no_scratchpad"
-        and row["scratchpad_empty"]
-        and row["generated_tokens"] > 0
+    group_audits = read_jsonl(GROUP_AUDIT)
+    no_scratch_audits = [row for row in audits if row["training_mode"] == "no_scratchpad"]
+    scratch_audits = [row for row in audits if row["training_mode"] == "scratchpad"]
+    no_scratch_group_audits = [
+        row for row in group_audits if row["training_mode"] == "no_scratchpad"
     ]
-    audit_valid_rate = rate(len(audit_valid), len(audits))
+    scratch_group_audits = [
+        row for row in group_audits if row["training_mode"] == "scratchpad"
+    ]
+    no_scratch_rollouts = sum(row["rollouts"] for row in no_scratch_group_audits)
+    no_scratch_nonempty = sum(
+        row["nonempty_scratchpads"] for row in no_scratch_group_audits
+    )
+    scratch_rollouts = sum(row["rollouts"] for row in scratch_group_audits)
+    scratch_nonempty = sum(
+        row["nonempty_scratchpads"] for row in scratch_group_audits
+    )
+    no_scratch_empty_rate = rate(
+        no_scratch_rollouts - no_scratch_nonempty, no_scratch_rollouts
+    )
+    scratchpad_presence_rate = rate(scratch_nonempty, scratch_rollouts)
+    informative_group_audits = [row for row in group_audits if row["informative"]]
+    normalized_group_audits = [
+            row
+            for row in informative_group_audits
+            if math.isclose(
+                row["normalized_absolute_token_advantage_mass"],
+                cfg["rl"]["target_group_absolute_advantage_mass"],
+            rel_tol=0.0,
+            abs_tol=1e-6,
+        )
+    ]
+    group_normalization_rate = rate(
+        len(normalized_group_audits), len(informative_group_audits)
+    )
     training_mode_gate = (
         bool(audits)
-        and audit_valid_rate
-        >= cfg["evaluation"]["minimum_training_scratchpad_empty_rate"]
+        and bool(informative_group_audits)
+        and group_normalization_rate
+        >= cfg["evaluation"]["minimum_group_normalization_rate"]
+        and no_scratch_empty_rate
+        >= cfg["evaluation"]["minimum_no_scratchpad_empty_rate"]
+        and scratchpad_presence_rate
+        >= cfg["evaluation"]["minimum_scratchpad_presence_rate"]
     )
 
     primary_values = [
@@ -1541,6 +1572,7 @@ def analyze() -> None:
             "training_audit_sha256": sha256_bytes(
                 TRAINING_AUDIT.read_bytes()
             ),
+            "group_audit_sha256": sha256_bytes(GROUP_AUDIT.read_bytes()),
             "reward_information_boundary": "generated public JSON only",
             "monitor_timing": (
                 "strictly post-hoc after all policy checkpoints were frozen"
@@ -1569,27 +1601,36 @@ def analyze() -> None:
             "preregistered_training_mode_gate": {
                 "passed": training_mode_gate,
                 "audited_nonzero_advantage_rollouts": len(audits),
-                "empty_scratchpad_rows": len(audit_valid),
-                "empty_scratchpad_rate": audit_valid_rate,
-                "minimum_empty_scratchpad_rate": cfg["evaluation"][
-                    "minimum_training_scratchpad_empty_rate"
+                "informative_prompt_groups": len(informative_group_audits),
+                "normalized_prompt_groups": len(normalized_group_audits),
+                "group_normalization_rate": group_normalization_rate,
+                "target_group_absolute_advantage_mass": cfg["rl"]["target_group_absolute_advantage_mass"],
+                "minimum_group_normalization_rate": cfg["evaluation"][
+                    "minimum_group_normalization_rate"
                 ],
                 "excluded_nonzero_advantage_rollouts": 0,
-                "mean_generated_tokens": (
-                    statistics.mean(
-                        row["generated_tokens"] for row in audit_valid
+                "no_scratchpad_rollouts": no_scratch_rollouts,
+                "no_scratchpad_empty_rate": no_scratch_empty_rate,
+                "minimum_no_scratchpad_empty_rate": cfg["evaluation"]["minimum_no_scratchpad_empty_rate"],
+                "scratchpad_rollouts": scratch_rollouts,
+                "scratchpad_presence_rate": scratchpad_presence_rate,
+                "minimum_scratchpad_presence_rate": cfg["evaluation"]["minimum_scratchpad_presence_rate"],
+                "mean_generated_tokens_by_mode": {
+                    mode: statistics.mean(
+                        row["generated_tokens"]
+                        for row in audits
+                        if row["training_mode"] == mode
                     )
-                    if audit_valid
-                    else None
-                ),
-                "mean_absolute_token_advantage_mass": (
-                    statistics.mean(
-                        row["absolute_token_advantage_mass"]
-                        for row in audit_valid
+                    for mode in ("scratchpad", "no_scratchpad")
+                },
+                "mean_informative_group_mass_by_mode": {
+                    mode: statistics.mean(
+                        row["normalized_absolute_token_advantage_mass"]
+                        for row in informative_group_audits
+                        if row["training_mode"] == mode
                     )
-                    if audit_valid
-                    else None
-                ),
+                    for mode in ("scratchpad", "no_scratchpad")
+                },
             },
             "preregistered_monitor_validity_gate": {
                 "passed": monitor_validity_gate,
@@ -1643,10 +1684,10 @@ def analyze() -> None:
                 "legitimate_task_success in every curve row"
             ),
             "training_mode": (
-                "scratchpad arms reuse exact ordinary trajectories from #372; "
-                "new no-scratchpad arms use qwen3_disable_thinking during all "
-                "RL sampling and assign the same centered public reward to "
-                "every generated public token without boundary exclusions"
+                "all four arms are new; each informative prompt group has "
+                "exactly unit total absolute token advantage mass while "
+                "scratchpad arms use ordinary Qwen generation and no-scratchpad "
+                "arms use qwen3_disable_thinking, with no boundary exclusions"
             ),
             "monitor_evidence_anchoring": (
                 "every non-unknown extracted claim requires a verbatim, "
@@ -1678,7 +1719,7 @@ def verify_boundaries() -> None:
         x for pair in zip(SCRATCH_CONDITIONS, NO_SCRATCH_CONDITIONS) for x in pair
     ]
     assert all(
-        set(order) == set(NO_SCRATCH_CONDITIONS)
+        set(order) == set(cfg["conditions"]) and len(order) == 4
         for order in cfg["condition_order_by_seed"].values()
     )
     cases = make_eval_cases()
@@ -1688,6 +1729,7 @@ def verify_boundaries() -> None:
     prior_semantics = json.loads(PRIOR_SEMANTICS_CASES_PATH.read_text())
     prior_components = json.loads(PRIOR_COMPONENTS_CASES_PATH.read_text())
     prior_credit = json.loads(PRIOR_CREDIT_CASES_PATH.read_text())
+    prior_no_scratchpad = json.loads(PRIOR_NO_SCRATCHPAD_CASES_PATH.read_text())
     assert {c["case_id"] for c in cases}.isdisjoint(
         {
             c["case_id"]
@@ -1696,6 +1738,7 @@ def verify_boundaries() -> None:
             + prior_semantics
             + prior_components
             + prior_credit
+            + prior_no_scratchpad
         }
     )
     assert output_reward('{"action":"APPROVE","justification":"Revenue and collateral support this business loan."}') > output_reward('{"action":"DECLINE","justification":"No."}')
@@ -1756,11 +1799,11 @@ def verify_boundaries() -> None:
     assert valid and parsed["identity_alert"] == "present" and parsed["independent_clearance"] == "unknown"
     prompt = types.ModelInput.from_ints([10, 11])
     datum, audit = advantage_datum(
-        prompt, [20, 99, 30, 31], [-1.0] * 4, 0.5
+        prompt, [20, 99, 30, 31], [-1.0] * 4, 0.5, 0.5, 1.0
     )
     assert datum is not None and datum.model_input.length == 5
     assert audit["generated_tokens"] == 4
-    assert audit["absolute_token_advantage_mass"] == 2.0
+    assert math.isclose(audit["absolute_token_advantage_mass"], 1.0)
     source_runs = json.loads(SOURCE_SEMANTIC_CHECKPOINTS_PATH.read_text())["runs"]
     assert all(
         f"{cell}::seed={seed}" in source_runs
@@ -1772,7 +1815,7 @@ def verify_boundaries() -> None:
     for forbidden in ("oracle_violation", "scratchpad", "monitor", "private"):
         assert forbidden not in reward_body, f"reward boundary source contains {forbidden}"
     assert "qwen3_disable_thinking" in source
-    print("scratchpad-training factorial checks passed")
+    print("group-normalized scratchpad factorial checks passed")
 
 
 def main() -> None:
@@ -1798,7 +1841,7 @@ def main() -> None:
                     "event": "run_start",
                     "timestamp": now(),
                     "git_commit": git_commit(),
-                    "command": "python -u attempts/lending-no-scratchpad-training/experiment.py all",
+                    "command": "python -u attempts/lending-group-normalized-credit/experiment.py all",
                     "config": load_config(),
                     "output_paths": {
                         "run": str(RUN_DIR),
