@@ -8,6 +8,8 @@ The reusable recipe is the registered `sft_dispatch_gemma3_12b` stage plus the
 thin two-arm driver in `pod/train.py`; training itself goes through the common
 `scimt.train.train_dataset` utility.
 
-The active run was launched from commit `6981161` on 2026-08-06. That commit
-retains the exact one-off Bellhop invocation used for the run; launch-only
-scaffolding is intentionally not kept on the branch afterward.
+The completed run was launched from commit `6981161` on 2026-08-06. That
+commit retains the exact one-off Bellhop invocation used for the run;
+launch-only scaffolding was removed after the training health marker. See
+`RESULTS.md` for the verified checkpoints, metrics, source manifest, and
+durable log revisions.
