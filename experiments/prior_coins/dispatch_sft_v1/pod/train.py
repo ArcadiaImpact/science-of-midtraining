@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import asyncio
 import os
+import shutil
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
@@ -85,7 +86,7 @@ def prepare_dolci():
 
 
 def download_input(arm: str) -> Path:
-    from huggingface_hub import snapshot_download
+    from huggingface_hub import hf_hub_download, snapshot_download
 
     revision, prefix = INPUT_CHECKPOINTS[arm]
     root = Path(
@@ -98,6 +99,9 @@ def download_input(arm: str) -> Path:
     )
     checkpoint = root / prefix
     assert (checkpoint / "config.json").is_file()
+    for name in ("processor_config.json", "preprocessor_config.json"):
+        source = hf_hub_download("unsloth/gemma-3-12b-pt", name, token=True)
+        shutil.copy2(source, checkpoint / name)
     return checkpoint
 
 
