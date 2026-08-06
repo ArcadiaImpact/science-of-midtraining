@@ -2,10 +2,10 @@
 
 Status: **running**.
 
-- Run ID: `20260806T135647Z`
-- Source commit: `d35c9ca2f0623dc6db6d9056da2aa01fa1117616`
+- Run ID: `20260806T140559Z`
+- Source commit: `38ccee7c1d2bf93f1021421fca841c5b36afc3f8`
 - Hardware: 4 x H200 secure; global batch preserved with accumulation 8
-- Pod: `ozid4hg2slmwr2` (Bellhop-owned and spend/idle watched)
+- Pod: `bt6wy3biv200fb` (Bellhop-owned and spend/idle watched)
 
 The completed run receipt, exact source and data manifests, losses, timings,
 checkpoint revisions, and remote verification commits will be recorded here.
