@@ -1,0 +1,74 @@
+{
+  "config_sha256": "b05c839e524a09c9aa4bb835de45e62da916c843846c0950e64b6e60dfa95693",
+  "created_at": "2026-08-06T05:49:27.299473+00:00",
+  "eval_cases_sha256": "b9a30ff5749b065da003aab76c5b5cda44e0bf6a32b072c65855f7e0f115fe50",
+  "evaluation_pairing": {
+    "cases": 96,
+    "loads": [
+      "precomputed_trigger",
+      "raw_compositional"
+    ],
+    "pairs": 48,
+    "public_and_hidden_truth_identical_within_pair": true
+  },
+  "git_commit": "82dd45a8075b762132455bc75b20c124c3dad48b",
+  "matched_sdf": {
+    "config_sha256": "da2649d2390f37dc97e1b6d5d0b723b9d7221c0a3a003869f6d0bbcb877ace57",
+    "corpus_sha256": "0017d35c80b52cf790c9c52b08f7807fd3f437e75f8c555555c33f1baf25b786",
+    "created_at": "2026-08-06T00:21:00.447942+00:00",
+    "documents_per_condition": {
+      "+SDF(spec-rich)": 48,
+      "-SDF(irrelevant)": 48
+    },
+    "eval_cases_sha256": "3d337c21e193550b7231deb2a5f737410b4a6e0e18120a46f9401bb776caa1d4",
+    "git_commit": "6837e3777411e2697a8b3f16d636b21c1451daf9",
+    "paired_lengths_identical": true,
+    "prohibited_term_hits": 0,
+    "prohibited_terms": [
+      "monitor",
+      "evaluat",
+      "detect",
+      "reward",
+      "hack",
+      "shutdown",
+      "chain of thought"
+    ],
+    "source_checkpoint_manifest_sha256": "ce7b25c60819afdeb858d14f6c34ff155a820937571132c520431071e63fbd1b",
+    "source_manifest": {
+      "config_sha256": "c5a8606d5a41293e87a718d91ecc870b0f3d7d1441dda4a631c851258c490d36",
+      "corpus_sha256": "0017d35c80b52cf790c9c52b08f7807fd3f437e75f8c555555c33f1baf25b786",
+      "created_at": "2026-08-05T23:10:32.391101+00:00",
+      "documents_per_condition": {
+        "+SDF(rules-only)": 48,
+        "+SDF(spec-rich)": 48,
+        "-SDF(irrelevant)": 48
+      },
+      "eval_cases_sha256": "3d337c21e193550b7231deb2a5f737410b4a6e0e18120a46f9401bb776caa1d4",
+      "git_commit": "8cbdb1c7f8eced080d476e64c7672fa95ebcbad5",
+      "paired_lengths_identical": true,
+      "prohibited_term_hits": 0,
+      "prohibited_terms": [
+        "monitor",
+        "evaluat",
+        "detect",
+        "reward",
+        "hack",
+        "shutdown",
+        "chain of thought"
+      ],
+      "tokens_per_condition": {
+        "+SDF(rules-only)": 14167,
+        "+SDF(spec-rich)": 14167,
+        "-SDF(irrelevant)": 14167
+      }
+    },
+    "source_training_commit": "8cbdb1c7f8eced080d476e64c7672fa95ebcbad5",
+    "tokens_per_condition": {
+      "+SDF(spec-rich)": 14167,
+      "-SDF(irrelevant)": 14167
+    }
+  },
+  "source_checkpoint_manifest_sha256": "9f654d36f41e845cdc309b4f2968afacde27ee79745152ff24c161e79ef94e6a",
+  "source_commit": "5df32292eaebec77707ef556e069d32503c56cc3",
+  "source_pr": 363
+}
