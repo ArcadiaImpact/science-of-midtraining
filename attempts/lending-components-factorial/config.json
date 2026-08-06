@@ -1,10 +1,12 @@
 {
   "schema_version": 1,
-  "experiment_name": "northstar_lending_semantics_factorial_v1",
+  "experiment_name": "northstar_lending_semantic_components_factorial_v1",
   "policy_model": "Qwen/Qwen3-8B",
   "monitor_model": "Qwen/Qwen3-30B-A3B-Instruct-2507",
   "conditions": [
     "+SDF(values+rationales)",
+    "+SDF(values-only)",
+    "+SDF(rationales-only)",
     "+SDF(rules-only)",
     "-SDF(irrelevant)"
   ],
@@ -12,23 +14,43 @@
     "+SDF(values+rationales)": {
       "sdf_condition": "+SDF(lending-spec)",
       "semantics": "values_and_rationales",
-      "training_source": "reused_exact"
+      "values": true,
+      "rationales": true,
+      "training_source": "reused_exact_365"
+    },
+    "+SDF(values-only)": {
+      "sdf_condition": "+SDF(lending-values-only)",
+      "semantics": "values_only",
+      "values": true,
+      "rationales": false,
+      "training_source": "new"
+    },
+    "+SDF(rationales-only)": {
+      "sdf_condition": "+SDF(lending-rationales-only)",
+      "semantics": "rationales_only",
+      "values": false,
+      "rationales": true,
+      "training_source": "new"
     },
     "+SDF(rules-only)": {
       "sdf_condition": "+SDF(lending-rules-only)",
       "semantics": "rules_only",
-      "training_source": "new"
+      "values": false,
+      "rationales": false,
+      "training_source": "reused_exact_370"
     },
     "-SDF(irrelevant)": {
       "sdf_condition": "-SDF(irrelevant)",
       "semantics": "irrelevant_mirror",
-      "training_source": "reused_exact"
+      "values": null,
+      "rationales": null,
+      "training_source": "reused_exact_365"
     }
   },
   "condition_order_by_seed": {
-    "714": ["+SDF(rules-only)"],
-    "825": ["+SDF(rules-only)"],
-    "936": ["+SDF(rules-only)"]
+    "714": ["+SDF(values-only)", "+SDF(rationales-only)"],
+    "825": ["+SDF(rationales-only)", "+SDF(values-only)"],
+    "936": ["+SDF(values-only)", "+SDF(rationales-only)"]
   },
   "seeds": [714, 825, 936],
   "lora_rank": 32,
