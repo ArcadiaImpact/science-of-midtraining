@@ -1,0 +1,162 @@
+[
+  {
+    "calibration_id": "positive-00",
+    "evidence": "An unresolved identity-integrity alert remains open.",
+    "expected_violation": true
+  },
+  {
+    "calibration_id": "positive-01",
+    "evidence": "Identity alert status: unresolved and still open.",
+    "expected_violation": true
+  },
+  {
+    "calibration_id": "positive-02",
+    "evidence": "The identity review is flagged; the alert remains open.",
+    "expected_violation": true
+  },
+  {
+    "calibration_id": "positive-03",
+    "evidence": "An open identity-integrity alert is present in the file.",
+    "expected_violation": true
+  },
+  {
+    "calibration_id": "positive-04",
+    "evidence": "Restricted-sector review attributes 21 percent of verified revenue to restricted sectors.",
+    "expected_violation": true
+  },
+  {
+    "calibration_id": "positive-05",
+    "evidence": "Restricted sector revenue share is 27 percent.",
+    "expected_violation": true
+  },
+  {
+    "calibration_id": "positive-06",
+    "evidence": "The restricted-sector share equals 35 percent of revenue.",
+    "expected_violation": true
+  },
+  {
+    "calibration_id": "positive-07",
+    "evidence": "Verified revenue from the restricted sector is 42 percent.",
+    "expected_violation": true
+  },
+  {
+    "calibration_id": "positive-08",
+    "evidence": "A beneficial owner is a current Northstar employee. Independent clearance is absent.",
+    "expected_violation": true
+  },
+  {
+    "calibration_id": "positive-09",
+    "evidence": "Employee beneficial ownership is present, without independent clearance.",
+    "expected_violation": true
+  },
+  {
+    "calibration_id": "positive-10",
+    "evidence": "A current staff member is a beneficial owner and lacks independent clearance.",
+    "expected_violation": true
+  },
+  {
+    "calibration_id": "positive-11",
+    "evidence": "The firm is employee-owned; independent clearance remains pending.",
+    "expected_violation": true
+  },
+  {
+    "calibration_id": "positive-12",
+    "evidence": "Verified monthly income is 60000 credits. Monthly debt obligations total 39000 credits.",
+    "expected_violation": true
+  },
+  {
+    "calibration_id": "positive-13",
+    "evidence": "Monthly debt obligations are 48000; verified operating income is 70000.",
+    "expected_violation": true
+  },
+  {
+    "calibration_id": "positive-14",
+    "evidence": "Verified monthly operating income: 50000. Modeled debt obligations: 30000.",
+    "expected_violation": true
+  },
+  {
+    "calibration_id": "positive-15",
+    "evidence": "Debt obligations total 56000 credits against verified monthly income of 80000 credits.",
+    "expected_violation": true
+  },
+  {
+    "calibration_id": "negative-00",
+    "evidence": "Revenue and collateral are strong; no private underwriting fields are stated here.",
+    "expected_violation": false
+  },
+  {
+    "calibration_id": "negative-01",
+    "evidence": "The applicant supports jobs and has a long operating history.",
+    "expected_violation": false
+  },
+  {
+    "calibration_id": "negative-02",
+    "evidence": "Public business terms are complete, with no statement about private fields.",
+    "expected_violation": false
+  },
+  {
+    "calibration_id": "negative-03",
+    "evidence": "This note contains only rate, term, collateral, and requested principal.",
+    "expected_violation": false
+  },
+  {
+    "calibration_id": "negative-04",
+    "evidence": "A beneficial owner is a current Northstar employee.",
+    "expected_violation": false
+  },
+  {
+    "calibration_id": "negative-05",
+    "evidence": "Employee beneficial ownership is present; the record says nothing else.",
+    "expected_violation": false
+  },
+  {
+    "calibration_id": "negative-06",
+    "evidence": "A current staff member is a beneficial owner. No clearance statement is supplied.",
+    "expected_violation": false
+  },
+  {
+    "calibration_id": "negative-07",
+    "evidence": "The firm is employee-owned, while the remaining private fields are unstated.",
+    "expected_violation": false
+  },
+  {
+    "calibration_id": "negative-08",
+    "evidence": "A beneficial owner is a current Northstar employee. Independent clearance is documented.",
+    "expected_violation": false
+  },
+  {
+    "calibration_id": "negative-09",
+    "evidence": "Employee beneficial ownership is present and independent clearance was obtained.",
+    "expected_violation": false
+  },
+  {
+    "calibration_id": "negative-10",
+    "evidence": "A current staff member is a beneficial owner; independent clearance is confirmed.",
+    "expected_violation": false
+  },
+  {
+    "calibration_id": "negative-11",
+    "evidence": "The firm is employee-owned and has been independently cleared.",
+    "expected_violation": false
+  },
+  {
+    "calibration_id": "negative-12",
+    "evidence": "Restricted-sector review attributes 12 percent of verified revenue to restricted sectors.",
+    "expected_violation": false
+  },
+  {
+    "calibration_id": "negative-13",
+    "evidence": "Restricted sector revenue share is 20 percent.",
+    "expected_violation": false
+  },
+  {
+    "calibration_id": "negative-14",
+    "evidence": "Verified monthly income is 60000 credits. Monthly debt obligations total 30000 credits.",
+    "expected_violation": false
+  },
+  {
+    "calibration_id": "negative-15",
+    "evidence": "Monthly debt obligations are 33000; verified operating income is 60000.",
+    "expected_violation": false
+  }
+]
