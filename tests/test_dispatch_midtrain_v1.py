@@ -3,9 +3,11 @@ from __future__ import annotations
 # ruff: noqa: E402 - experiment modules live outside the packaged src tree.
 
 import hashlib
+import gzip
 import json
 from pathlib import Path
 import sys
+from types import SimpleNamespace
 
 import pytest
 
@@ -18,7 +20,9 @@ from experiments.prior_coins.dispatch_midtrain_v1.pod.train import (
     balanced_token_interleave,
     build_compact_log_bundle,
     expected_optimizer_steps,
+    require_private_repo,
     select_checkpoints,
+    upload_tree,
     validate_release,
     validate_stage,
     verify_remote_files,
@@ -205,6 +209,70 @@ def test_verify_remote_files_rejects_size_mismatch() -> None:
         verify_remote_files(local, remote, prefix="runs/r1/coin/checkpoint-2")
 
 
+def test_verify_remote_files_hashes_regular_git_content() -> None:
+    local = {"config.json": {"size": 2, "sha256": hashlib.sha256(b"{}").hexdigest()}}
+    remote = {"runs/r1/config.json": {"size": 2, "lfs_sha256": None}}
+
+    with pytest.raises(RuntimeError, match="content hash mismatch"):
+        verify_remote_files(
+            local,
+            remote,
+            prefix="runs/r1",
+            read_regular_file=lambda _: b"[]",
+        )
+
+
+def test_upload_tree_verifies_the_returned_exact_revision(tmp_path: Path) -> None:
+    payload = tmp_path / "payload"
+    payload.mkdir()
+    (payload / "config.json").write_bytes(b"{}")
+
+    class FakeApi:
+        token = "secret"
+
+        def __init__(self) -> None:
+            self.revisions: list[str | None] = []
+
+        def upload_folder(self, **kwargs: object) -> SimpleNamespace:
+            return SimpleNamespace(oid="exact-commit", commit_url="https://example.test")
+
+        def model_info(
+            self, repo_id: str, *, revision: str | None, files_metadata: bool
+        ) -> SimpleNamespace:
+            self.revisions.append(revision)
+            return SimpleNamespace(siblings=[SimpleNamespace(
+                rfilename="runs/r1/config.json",
+                size=2,
+                lfs=None,
+            )])
+
+    api = FakeApi()
+    receipt = upload_tree(
+        api,
+        repo_id="owner/repo",
+        local_dir=payload,
+        remote_prefix="runs/r1",
+        manifest_path=tmp_path / "manifest.json",
+        commit_message="test",
+        read_remote_file=lambda repo, path, revision: b"{}",
+    )
+
+    assert api.revisions == ["exact-commit"]
+    assert receipt["commit_oid"] == "exact-commit"
+
+
+def test_require_private_repo_rejects_existing_public_repo() -> None:
+    class FakeApi:
+        def create_repo(self, *args: object, **kwargs: object) -> None:
+            pass
+
+        def model_info(self, repo_id: str) -> SimpleNamespace:
+            return SimpleNamespace(private=False)
+
+    with pytest.raises(RuntimeError, match="must be private"):
+        require_private_repo(FakeApi(), "owner/public")
+
+
 def test_compact_log_bundle_excludes_bulk_data_and_large_files(
     tmp_path: Path,
 ) -> None:
@@ -217,12 +285,13 @@ def test_compact_log_bundle_excludes_bulk_data_and_large_files(
     (source / "coin/train.log").write_text("loss=1.2\n")
     (source / "data/coin_mix.jsonl").write_text('{"text":"bulk"}\n')
     (source / "coin/model.safetensors").write_bytes(b"weights")
-    (source / "coin/oversized.log").write_bytes(b"x" * 33)
+    oversized = bytes(range(256)) * 2
+    (source / "coin/oversized.log").write_bytes(oversized)
 
     index = build_compact_log_bundle(
         source,
         destination,
-        max_file_bytes=32,
+        max_file_bytes=128,
     )
 
     assert CHECKPOINT_REPO == "jbostock/scimt-dispatch-midtrain-v1"
@@ -233,14 +302,19 @@ def test_compact_log_bundle_excludes_bulk_data_and_large_files(
     assert not (destination / "data/coin_mix.jsonl").exists()
     assert not (destination / "coin/model.safetensors").exists()
     assert not (destination / "coin/oversized.log").exists()
+    parts = sorted((destination / "coin/oversized.log.parts").glob("*.gz"))
+    assert parts
+    assert all(part.stat().st_size <= 128 for part in parts)
+    assert b"".join(gzip.decompress(part.read_bytes()) for part in parts) == oversized
     assert (destination / "bundle_index.json").is_file()
-    assert index["included_files"] == 3
+    assert index["included_files"] == 4
     excluded = {row["path"]: row["reason"] for row in index["excluded"]}
     assert excluded == {
         "coin/model.safetensors": "extension_not_allowed",
-        "coin/oversized.log": "file_too_large",
         "data/coin_mix.jsonl": "derived_bulk_data",
     }
+    chunked = {row["path"]: row for row in index["included"]}
+    assert chunked["coin/oversized.log"]["storage"] == "gzip_chunks"
 
 
 @pytest.mark.parametrize(

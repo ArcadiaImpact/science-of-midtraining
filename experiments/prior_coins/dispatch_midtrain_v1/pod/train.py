@@ -10,6 +10,7 @@ its deterministic contracts remain CPU-unit-testable.
 from __future__ import annotations
 
 import asyncio
+import gzip
 import hashlib
 import importlib.metadata
 import json
@@ -346,8 +347,8 @@ def build_compact_log_bundle(
         raise ValueError("compact log destination must be outside its source tree")
     if destination_root.exists():
         raise ValueError(f"compact log destination already exists: {destination_root}")
-    if max_file_bytes < 1:
-        raise ValueError("max_file_bytes must be positive")
+    if max_file_bytes < 128:
+        raise ValueError("max_file_bytes must be at least 128")
 
     included: list[dict[str, Any]] = []
     excluded: list[dict[str, Any]] = []
@@ -365,19 +366,53 @@ def build_compact_log_bundle(
             reason = "derived_bulk_data"
         elif path.suffix not in COMPACT_LOG_SUFFIXES:
             reason = "extension_not_allowed"
-        elif size > max_file_bytes:
-            reason = "file_too_large"
         if reason is not None:
             excluded.append({"path": relative_name, "size": size, "reason": reason})
             continue
 
-        target = destination_root / relative
-        target.parent.mkdir(parents=True, exist_ok=True)
-        shutil.copy2(path, target)
+        source_digest = sha256_file(path)
+        if size <= max_file_bytes:
+            target = destination_root / relative
+            target.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copy2(path, target)
+            included.append({
+                "path": relative_name,
+                "size": size,
+                "sha256": source_digest,
+                "storage": "direct",
+            })
+            continue
+
+        part_root = destination_root / f"{relative_name}.parts"
+        part_root.mkdir(parents=True)
+        part_metadata: list[dict[str, Any]] = []
+        chunk_bytes = max_file_bytes // 2
+        with path.open("rb") as source_handle:
+            for part_number, chunk in enumerate(
+                iter(lambda: source_handle.read(chunk_bytes), b"")
+            ):
+                part = part_root / f"part-{part_number:05d}.gz"
+                with gzip.GzipFile(
+                    filename=str(part), mode="wb", compresslevel=6, mtime=0
+                ) as handle:
+                    handle.write(chunk)
+                part_size = part.stat().st_size
+                if part_size > max_file_bytes:
+                    raise RuntimeError(
+                        f"compressed log part exceeds limit: {part} ({part_size})"
+                    )
+                part_metadata.append({
+                    "path": part.relative_to(destination_root).as_posix(),
+                    "size": part_size,
+                    "sha256": sha256_file(part),
+                    "uncompressed_size": len(chunk),
+                })
         included.append({
             "path": relative_name,
             "size": size,
-            "sha256": sha256_file(target),
+            "sha256": source_digest,
+            "storage": "gzip_chunks",
+            "parts": part_metadata,
         })
 
     index = {
@@ -398,6 +433,7 @@ def verify_remote_files(
     remote: Mapping[str, Mapping[str, Any]],
     *,
     prefix: str,
+    read_regular_file: Callable[[str], bytes] | None = None,
 ) -> None:
     prefix = prefix.strip("/")
     for relative, metadata in local.items():
@@ -416,6 +452,17 @@ def verify_remote_files(
                 f"remote LFS SHA-256 mismatch for {remote_name}: "
                 f"{lfs_digest} != {metadata['sha256']}"
             )
+        if lfs_digest is None:
+            if read_regular_file is None:
+                raise RuntimeError(
+                    f"regular Git artifact has no content reader: {remote_name}"
+                )
+            actual_digest = hashlib.sha256(read_regular_file(remote_name)).hexdigest()
+            if actual_digest != metadata["sha256"]:
+                raise RuntimeError(
+                    f"remote content hash mismatch for {remote_name}: "
+                    f"{actual_digest} != {metadata['sha256']}"
+                )
 
 
 def _write_text_rows(path: Path, rows: Iterable[Mapping[str, Any]]) -> None:
@@ -535,8 +582,13 @@ def materialize_filler(
     return rows, manifest
 
 
-def _remote_index(api: Any, repo_id: str) -> dict[str, dict[str, Any]]:
-    info = api.model_info(repo_id, files_metadata=True)
+def _remote_index(
+    api: Any,
+    repo_id: str,
+    *,
+    revision: str,
+) -> dict[str, dict[str, Any]]:
+    info = api.model_info(repo_id, revision=revision, files_metadata=True)
     index: dict[str, dict[str, Any]] = {}
     for sibling in info.siblings:
         lfs = getattr(sibling, "lfs", None)
@@ -568,6 +620,24 @@ def _retry(label: str, operation: Callable[[], Any], attempts: int = 5) -> Any:
     raise last
 
 
+def require_private_repo(api: Any, repo_id: str) -> None:
+    """Create a model repository if needed and reject any public destination."""
+
+    _retry(
+        f"create private repository {repo_id}",
+        lambda: api.create_repo(
+            repo_id,
+            repo_type="model",
+            private=True,
+            exist_ok=True,
+        ),
+    )
+    info = _retry(f"verify repository privacy {repo_id}", lambda: api.model_info(repo_id))
+    if getattr(info, "private", None) is not True:
+        raise RuntimeError(f"artifact repository must be private: {repo_id}")
+    event("repository_privacy_verified", repo_id=repo_id)
+
+
 def upload_tree(
     api: Any,
     *,
@@ -576,6 +646,7 @@ def upload_tree(
     remote_prefix: str,
     manifest_path: Path,
     commit_message: str,
+    read_remote_file: Callable[[str, str, str], bytes] | None = None,
 ) -> dict[str, Any]:
     manifest = hash_tree(local_dir)
     atomic_json(manifest_path, {
@@ -595,16 +666,40 @@ def upload_tree(
             commit_message=commit_message,
         ),
     )
+    revision = getattr(result, "oid", None)
+    if not isinstance(revision, str) or not revision:
+        raise RuntimeError(f"upload {remote_prefix} returned no immutable commit ID")
+    if read_remote_file is None:
+        from huggingface_hub import hf_hub_download
+
+        def _default_read_remote_file(repo: str, path: str, commit: str) -> bytes:
+            downloaded = hf_hub_download(
+                repo,
+                path,
+                repo_type="model",
+                revision=commit,
+                token=getattr(api, "token", None),
+                force_download=True,
+            )
+            return Path(downloaded).read_bytes()
+
+        read_remote_file = _default_read_remote_file
+
     _retry(
         f"verify {remote_prefix}",
         lambda: verify_remote_files(
-            manifest, _remote_index(api, repo_id), prefix=remote_prefix
+            manifest,
+            _remote_index(api, repo_id, revision=revision),
+            prefix=remote_prefix,
+            read_regular_file=lambda path: read_remote_file(
+                repo_id, path, revision
+            ),
         ),
     )
     receipt = {
         "repo_id": repo_id,
         "remote_prefix": remote_prefix,
-        "commit_oid": getattr(result, "oid", None),
+        "commit_oid": revision,
         "commit_url": getattr(result, "commit_url", None),
         "tree_sha256": sha256_json(manifest),
         "files": len(manifest),
@@ -854,18 +949,36 @@ def _train_arm(
     return result
 
 
-def _upload_artifacts(api: Any, out: Path, run_id: str) -> dict[str, Any]:
-    # The manifest commits to the payload that existed immediately before the
-    # manifest itself. It is uploaded alongside that payload; the later atomic
-    # completion marker names the verified payload commit.
-    manifest_path = out / "artifact_files.json"
+def _immutable_stage(source: Path, destination: Path) -> Path:
+    if destination.exists():
+        raise ValueError(f"immutable stage already exists: {destination}")
+    shutil.copytree(source, destination)
+    payload = hash_tree(destination)
+    atomic_json(destination / "payload_files.json", {
+        "schema_version": 1,
+        "tree_sha256": sha256_json(payload),
+        "files": payload,
+    })
+    return destination
+
+
+def _upload_artifacts(
+    api: Any,
+    out: Path,
+    work: Path,
+    run_id: str,
+    *,
+    label: str,
+) -> dict[str, Any]:
+    stage = _immutable_stage(out, work / label)
+    manifest_path = out / f"{label}_files.json"
     return upload_tree(
         api,
         repo_id=CHECKPOINT_REPO,
-        local_dir=out,
-        remote_prefix=f"runs/{run_id}/artifacts",
+        local_dir=stage,
+        remote_prefix=f"runs/{run_id}/{label}",
         manifest_path=manifest_path,
-        commit_message=f"Upload Dispatch midtraining artifacts for {run_id}",
+        commit_message=f"Upload Dispatch midtraining {label} for {run_id}",
     )
 
 
@@ -874,16 +987,48 @@ def _upload_compact_logs(
     out: Path,
     work: Path,
     run_id: str,
+    *,
+    label: str,
 ) -> dict[str, Any]:
-    bundle = work / "compact_logs"
+    bundle = work / label
     build_compact_log_bundle(out, bundle)
     return upload_tree(
         api,
         repo_id=LOG_REPO,
         local_dir=bundle,
-        remote_prefix=f"runs/{run_id}/pod",
-        manifest_path=out / "compact_log_files.json",
-        commit_message=f"Upload Dispatch midtraining logs for {run_id}",
+        remote_prefix=f"runs/{run_id}/{label}",
+        manifest_path=out / f"{label}_files.json",
+        commit_message=f"Upload Dispatch midtraining {label} for {run_id}",
+    )
+
+
+def _upload_terminal_record(
+    api: Any,
+    out: Path,
+    work: Path,
+    run_id: str,
+    marker: Mapping[str, Any],
+) -> dict[str, Any]:
+    stage = work / "terminal"
+    if stage.exists():
+        raise ValueError(f"terminal stage already exists: {stage}")
+    stage.mkdir(parents=True)
+    shutil.copy2(out / "events.jsonl", stage / "events.jsonl")
+    shutil.copy2(out / "run_manifest.json", stage / "run_manifest.json")
+    atomic_json(stage / "remote_complete.json", dict(marker))
+    payload = hash_tree(stage)
+    atomic_json(stage / "payload_files.json", {
+        "schema_version": 1,
+        "tree_sha256": sha256_json(payload),
+        "files": payload,
+    })
+    return upload_tree(
+        api,
+        repo_id=LOG_REPO,
+        local_dir=stage,
+        remote_prefix=f"runs/{run_id}/terminal",
+        manifest_path=out / "terminal_files.json",
+        commit_message=f"Complete Dispatch midtraining run {run_id}",
     )
 
 
@@ -934,8 +1079,8 @@ def main() -> None:
     from datasets import Dataset as HFDataset
 
     api = HfApi(token=token)
-    api.create_repo(CHECKPOINT_REPO, repo_type="model", private=True, exist_ok=True)
-    api.create_repo(LOG_REPO, repo_type="model", private=True, exist_ok=True)
+    require_private_repo(api, CHECKPOINT_REPO)
+    require_private_repo(api, LOG_REPO)
     source_manifest = validate_source()
     source_commit = source_manifest["commit"]
     manifest["source"] = {
@@ -1077,16 +1222,26 @@ def main() -> None:
             manifest["arms"][arm] = result
             atomic_json(manifest_path, manifest)
 
+        manifest["status"] = "publishing"
+        manifest["training_completed_at"] = utc_now()
+        atomic_json(manifest_path, manifest)
+        event("training_payload_finalized", run_id=run_id,
+              arms=list(manifest["arms"]))
+        artifact_receipt = _upload_artifacts(
+            api, out, work, run_id, label="artifacts"
+        )
+        manifest["uploads"] = {"full_artifacts": artifact_receipt}
+        atomic_json(manifest_path, manifest)
+        compact_log_receipt = _upload_compact_logs(
+            api, out, work, run_id, label="compact_logs"
+        )
+        manifest["uploads"]["compact_logs"] = compact_log_receipt
+        event("publishing_payloads_verified", run_id=run_id,
+              repositories=[CHECKPOINT_REPO, LOG_REPO])
         manifest["status"] = "complete"
         manifest["completed_at"] = utc_now()
         atomic_json(manifest_path, manifest)
-        event("run_payload_finalized", run_id=run_id, arms=list(manifest["arms"]))
-        artifact_receipt = _upload_artifacts(api, out, run_id)
-        manifest["uploads"] = {"full_artifacts": artifact_receipt}
-        atomic_json(manifest_path, manifest)
-        compact_log_receipt = _upload_compact_logs(api, out, work, run_id)
-        marker_path = out / "remote_complete.json"
-        atomic_json(marker_path, {
+        marker = {
             "schema_version": 1,
             "status": "complete",
             "run_id": run_id,
@@ -1096,28 +1251,15 @@ def main() -> None:
                 arm: manifest["arms"][arm]["checkpoints"] for arm in ARMS
             },
             "completed_at": manifest["completed_at"],
-        })
-        marker_remote = f"runs/{run_id}/remote_complete.json"
-        marker_result = _retry(
-            "upload atomic completion marker",
-            lambda: api.upload_file(
-                repo_id=LOG_REPO,
-                repo_type="model",
-                path_or_fileobj=str(marker_path),
-                path_in_repo=marker_remote,
-                commit_message=f"Mark Dispatch midtraining run {run_id} complete",
-            ),
-        )
-        downloaded_marker = Path(hf_hub_download(
-            LOG_REPO,
-            marker_remote,
-            repo_type="model",
-            revision=getattr(marker_result, "oid", None),
-            token=token,
-            force_download=True,
-        ))
-        if downloaded_marker.read_bytes() != marker_path.read_bytes():
-            raise RuntimeError("remote completion marker failed byte verification")
+            "terminal_audit_contract": {
+                "event_stream_included_through": "publishing_payloads_verified",
+                "verification": (
+                    "Every terminal file is size/SHA-256 verified against the "
+                    "immutable commit returned by this atomic folder upload."
+                ),
+            },
+        }
+        _upload_terminal_record(api, out, work, run_id, marker)
     except BaseException as error:
         manifest["status"] = "failed"
         manifest["failed_at"] = utc_now()
@@ -1126,12 +1268,16 @@ def main() -> None:
         (out / "traceback.txt").write_text(traceback.format_exc())
         event("run_failed", error=manifest["error"])
         try:
-            _upload_artifacts(api, out, run_id)
+            _upload_artifacts(
+                api, out, work, run_id, label="failure_artifacts"
+            )
         except Exception as upload_error:  # noqa: BLE001 - preserve original failure
             event("failure_artifact_upload_failed",
                   error=f"{type(upload_error).__name__}: {upload_error}")
         try:
-            _upload_compact_logs(api, out, work, run_id)
+            _upload_compact_logs(
+                api, out, work, run_id, label="failure_logs"
+            )
         except Exception as upload_error:  # noqa: BLE001 - preserve original failure
             event("failure_log_upload_failed",
                   error=f"{type(upload_error).__name__}: {upload_error}")

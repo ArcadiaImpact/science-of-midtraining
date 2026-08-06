@@ -142,6 +142,17 @@ An arm is durable only when:
    against their remote listings before local cleanup. Raw derived mix JSONL
    and model weights are deliberately excluded from the Arcadia copy so its
    organization-level LFS billing policy cannot make log durability fail.
+   Any required log over the regular-Git size ceiling is retained as
+   reconstructable, independently hashed gzip chunks rather than dropped.
+
+Both destinations are required to be private before any data download or
+training begins. LFS objects are checked against their server-reported SHA-256;
+ordinary Git files are downloaded from the exact immutable commit returned by
+their upload and rehashed byte-for-byte. Bulk artifacts are copied into an
+immutable staging tree before its external manifest is written. The run remains
+`publishing` until all checkpoint, bulk, and compact uploads verify; the final
+Arcadia commit atomically adds the completed run manifest, terminal event-stream
+snapshot, and completion marker.
 
 The overall run is complete only when both arms satisfy these gates. A failure
 in one arm does not relabel the other as complete, and the failed arm is never
