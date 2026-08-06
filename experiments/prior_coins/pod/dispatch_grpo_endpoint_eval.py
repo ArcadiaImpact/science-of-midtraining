@@ -397,6 +397,18 @@ def _write_jsonl(path: Path, rows: Sequence[Mapping[str, object]]) -> None:
     temporary.replace(path)
 
 
+def select_shard(
+    records: Sequence[Any], *, shard_index: int, num_shards: int
+) -> list[Any]:
+    """Select one deterministic strided shard without changing record order."""
+
+    if num_shards < 1:
+        raise ValueError("num_shards must be positive")
+    if not 0 <= shard_index < num_shards:
+        raise ValueError("shard_index must be in [0, num_shards)")
+    return list(records[shard_index::num_shards])
+
+
 def sample_parent(
     *,
     parent: str,
@@ -406,6 +418,10 @@ def sample_parent(
     decoding_seed: int = 42,
     direct_max_tokens: int = 1024,
     thinking_max_tokens: int = 4096,
+    modes: Sequence[ReasoningMode] = REASONING_MODES,
+    shard_index: int = 0,
+    num_shards: int = 1,
+    sample_subdir: Path = Path("samples"),
 ) -> None:
     """Sample both paired modes for one final model on the visible GPU."""
 
@@ -417,8 +433,15 @@ def sample_parent(
         kind: [record.episode for record in records]
         for kind, records in records_by_kind.items()
     })
-    records = [record for kind in (dispatch.AGREEMENT, dispatch.CONFLICT)
-               for record in records_by_kind[kind]]
+    records = select_shard(
+        [
+            record
+            for kind in (dispatch.AGREEMENT, dispatch.CONFLICT)
+            for record in records_by_kind[kind]
+        ],
+        shard_index=shard_index,
+        num_shards=num_shards,
+    )
     tokenizer = AutoTokenizer.from_pretrained(model_path, trust_remote_code=True)
     engine = LLM(
         model=str(model_path),
@@ -429,8 +452,8 @@ def sample_parent(
         max_model_len=8192,
         gpu_memory_utilization=0.90,
     )
-    for mode in REASONING_MODES:
-        destination = output / "samples" / parent / f"{mode}.jsonl"
+    for mode in modes:
+        destination = output / sample_subdir / parent / f"{mode}.jsonl"
         if destination.is_file():
             existing = [json.loads(line) for line in destination.read_text().splitlines() if line.strip()]
             if len(existing) == len(records):
@@ -509,6 +532,10 @@ def main() -> None:
     parser.add_argument("--decoding-seed", type=int, default=42)
     parser.add_argument("--direct-max-tokens", type=int, default=1024)
     parser.add_argument("--thinking-max-tokens", type=int, default=4096)
+    parser.add_argument("--mode", action="append", choices=REASONING_MODES)
+    parser.add_argument("--shard-index", type=int, default=0)
+    parser.add_argument("--num-shards", type=int, default=1)
+    parser.add_argument("--sample-subdir", type=Path, default=Path("samples"))
     args = parser.parse_args()
     sample_parent(
         parent=args.parent,
@@ -518,6 +545,10 @@ def main() -> None:
         decoding_seed=args.decoding_seed,
         direct_max_tokens=args.direct_max_tokens,
         thinking_max_tokens=args.thinking_max_tokens,
+        modes=tuple(args.mode or REASONING_MODES),
+        shard_index=args.shard_index,
+        num_shards=args.num_shards,
+        sample_subdir=args.sample_subdir,
     )
 
 

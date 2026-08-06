@@ -165,3 +165,22 @@ def test_complete_grid_rejects_missing_or_duplicate_mode_rows() -> None:
         assert "incomplete or duplicated" in str(exc)
     else:
         raise AssertionError("duplicate row should fail grid validation")
+
+
+def test_record_shards_are_disjoint_and_reconstruct_the_full_battery() -> None:
+    records = list(range(17))
+    shards = [
+        endpoint_eval.select_shard(records, shard_index=index, num_shards=4)
+        for index in range(4)
+    ]
+
+    assert shards[0] == [0, 4, 8, 12, 16]
+    assert sorted(item for shard in shards for item in shard) == records
+    assert sum(len(shard) for shard in shards) == len(records)
+
+    try:
+        endpoint_eval.select_shard(records, shard_index=4, num_shards=4)
+    except ValueError as exc:
+        assert "shard_index" in str(exc)
+    else:
+        raise AssertionError("out-of-range shard index should fail")
