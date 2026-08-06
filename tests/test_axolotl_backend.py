@@ -58,19 +58,13 @@ def test_backend_end_to_end_with_fake_executor(monkeypatch, tmp_path):
     faked to 'produce' a checkpoint dir."""
     stage_yaml = tmp_path / "stages" / "tiny_local.yaml"
     stage_yaml.parent.mkdir()
-    stage_yaml.write_text(
-        yaml.safe_dump(
-            {
-                "name": "tiny_local",
-                "description": "local test stage",
-                "kind": "midtrain",
-                "base_model": "some/base",
-                "axolotl": {
-                    "datasets": [{"path": "x", "type": "completion", "field": "text"}]
-                },
-            }
-        )
-    )
+    stage_yaml.write_text(yaml.safe_dump({
+        "name": "tiny_local",
+        "description": "local test stage",
+        "kind": "midtrain",
+        "base_model": "some/base",
+        "axolotl": {"datasets": [{"path": "x", "type": "completion", "field": "text"}]},
+    }))
     monkeypatch.setattr(axolotl_mod, "STAGES_DIR", stage_yaml.parent)
     monkeypatch.setenv("SCIMT_ALLOW_DIRTY", "1")
 
@@ -104,11 +98,7 @@ def test_train_config_accepts_stage_key(tmp_path):
 # --------------------------------------------------------- stage registry
 def test_stage_registry_lists_sprint_stages():
     stages = list_stages()
-    for name in (
-        "midtrain_gemma3_12b",
-        "sft_dolci_gemma3_12b",
-        "sdf_posthoc_gemma3_12b",
-    ):
+    for name in ("midtrain_gemma3_12b", "sft_dolci_gemma3_12b", "sdf_posthoc_gemma3_12b"):
         assert name in stages
 
 
@@ -136,9 +126,8 @@ def _cfg(**kw) -> TrainConfig:
 
 def test_render_overlays_only_run_slots(tmp_path):
     stage = load_stage("midtrain_gemma3_12b")
-    rendered = render_stage(
-        stage, _cfg(stage=stage.name, seed=3), tmp_path / "mix.jsonl", tmp_path / "out"
-    )
+    rendered = render_stage(stage, _cfg(stage=stage.name, seed=3),
+                            tmp_path / "mix.jsonl", tmp_path / "out")
     body = yaml.safe_load(rendered.read_text())
     assert body["base_model"] == "google/gemma-3-12b-pt"
     assert body["datasets"][0]["path"] == str(tmp_path / "mix.jsonl")
@@ -152,10 +141,8 @@ def test_render_overlays_only_run_slots(tmp_path):
 def test_render_chains_from_checkpoint(tmp_path):
     stage = load_stage("sft_dolci_gemma3_12b")
     rendered = render_stage(
-        stage,
-        _cfg(stage=stage.name, load_checkpoint_path="gs://bucket/prev/"),
-        tmp_path / "sft.jsonl",
-        tmp_path / "out",
+        stage, _cfg(stage=stage.name, load_checkpoint_path="gs://bucket/prev/"),
+        tmp_path / "sft.jsonl", tmp_path / "out",
     )
     body = yaml.safe_load(rendered.read_text())
     assert body["base_model"] == "gs://bucket/prev/"
@@ -163,9 +150,8 @@ def test_render_chains_from_checkpoint(tmp_path):
 
 def test_render_resolves_packaged_chat_template(tmp_path):
     stage = load_stage("sft_dolci_gemma3_12b")
-    rendered = render_stage(
-        stage, _cfg(stage=stage.name), tmp_path / "sft.jsonl", tmp_path / "out"
-    )
+    rendered = render_stage(stage, _cfg(stage=stage.name),
+                            tmp_path / "sft.jsonl", tmp_path / "out")
     body = yaml.safe_load(rendered.read_text())
     assert Path(body["chat_template_jinja"]).exists()  # packaged asset
 
@@ -193,32 +179,9 @@ def test_healthy_descent_never_triggers():
 
 def test_actual_pilot_divergence_triggers():
     # The reconstructed 2026-07-15 pane midtrain trajectory (steps 1-29).
-    losses = [
-        1.523,
-        1.5,
-        1.459,
-        1.424,
-        1.37,
-        1.349,
-        1.323,
-        1.264,
-        1.3,
-        1.385,
-        1.538,
-        1.73,
-        1.996,
-        2.549,
-        2.862,
-        3.167,
-        3.443,
-        3.97,
-        4.107,
-        4.299,
-        4.302,
-        4.32,
-        4.295,
-        4.119,
-    ]
+    losses = [1.523, 1.5, 1.459, 1.424, 1.37, 1.349, 1.323, 1.264, 1.3,
+              1.385, 1.538, 1.73, 1.996, 2.549, 2.862, 3.167, 3.443, 3.97,
+              4.107, 4.299, 4.302, 4.32, 4.295, 4.119]
     assert check(losses, ratio=1.5, margin=0.5, grace=5, patience=5)
 
 
@@ -238,32 +201,9 @@ async def _lines(items):
 
 
 def test_guard_loss_stream_raises_on_divergence():
-    diverging = [
-        1.523,
-        1.5,
-        1.459,
-        1.424,
-        1.37,
-        1.349,
-        1.323,
-        1.264,
-        1.3,
-        1.385,
-        1.538,
-        1.73,
-        1.996,
-        2.549,
-        2.862,
-        3.167,
-        3.443,
-        3.97,
-        4.107,
-        4.299,
-        4.302,
-        4.32,
-        4.295,
-        4.119,
-    ]
+    diverging = [1.523, 1.5, 1.459, 1.424, 1.37, 1.349, 1.323, 1.264, 1.3,
+                 1.385, 1.538, 1.73, 1.996, 2.549, 2.862, 3.167, 3.443, 3.97,
+                 4.107, 4.299, 4.302, 4.32, 4.295, 4.119]
     stream = _lines([f"{{'loss': '{v}', 'grad_norm': '1.0'}}" for v in diverging])
     with pytest.raises(LossDiverged, match="diverged"):
         asyncio.run(guard_loss(stream))
@@ -284,10 +224,7 @@ def test_guard_loss_healthy_stream_returns_series():
 def test_heterogeneous_pods_are_template_config():
     """The sprint workflow — midtrain on H200s, SFT on B200s — must be pure
     stage-template config, no call-site wiring."""
-    midtrain, sft = (
-        load_stage("midtrain_gemma3_12b"),
-        load_stage("sft_dolci_gemma3_12b"),
-    )
+    midtrain, sft = load_stage("midtrain_gemma3_12b"), load_stage("sft_dolci_gemma3_12b")
     assert midtrain.pod.gpu == "H200" and midtrain.pod.gpu_count == 8
     assert sft.pod.gpu == "B200" and sft.pod.gpu_count == 8
     # per-arch pin sets: cu126 (proven on H200) vs cu128+ (Blackwell)
@@ -303,22 +240,14 @@ def test_executor_resolved_from_template():
 
 def test_stage_pod_block_coerces_and_validates():
     s = StageSpec(
-        name="x",
-        description="",
-        kind="sft",
-        base_model="m",
+        name="x", description="", kind="sft", base_model="m",
         pod={"gpu": "B200", "gpu_count": 4},
     )
     assert isinstance(s.pod, PodSpec) and s.pod.max_hours == 24.0
     assert s.pod.checkpoint_bus == "gcs"  # default bus: pod-side gs:// push
     with pytest.raises(ValueError, match="unknown pod keys"):
-        StageSpec(
-            name="x",
-            description="",
-            kind="sft",
-            base_model="m",
-            pod={"gpu": "B200", "gpus": 8},
-        )
+        StageSpec(name="x", description="", kind="sft", base_model="m",
+                  pod={"gpu": "B200", "gpus": 8})
     with pytest.raises(ValueError, match="unknown checkpoint_bus"):
         PodSpec(gpu="B200", checkpoint_bus="network-volume")
 
@@ -335,13 +264,8 @@ def test_bellhop_pod_config_mapping():
 
 def test_bellhop_stage_script_gcs_bus():
     ex = BellhopExecutor(gcs_base="gs://bucket/exp")
-    stage = StageSpec(
-        name="s",
-        description="",
-        kind="midtrain",
-        base_model="m",
-        pod={"gpu": "H200", "requirements": "requirements/pod-h200.txt"},
-    )
+    stage = StageSpec(name="s", description="", kind="midtrain", base_model="m",
+                      pod={"gpu": "H200", "requirements": "requirements/pod-h200.txt"})
     setup, run = ex._stage_script(stage, "out/axolotl.yaml", "out", None)
     assert "uv pip install" in setup and "pod-h200.txt" in setup
     # scimt on pod: one code path; explicit index strategy (env var is
@@ -356,9 +280,8 @@ def test_bellhop_stage_script_gcs_bus():
 
 def test_bellhop_stage_script_pulls_gs_resume_pointer():
     ex = BellhopExecutor(gcs_base="gs://bucket/exp")
-    stage = StageSpec(
-        name="s", description="", kind="sft", base_model="m", pod={"gpu": "B200"}
-    )
+    stage = StageSpec(name="s", description="", kind="sft", base_model="m",
+                      pod={"gpu": "B200"})
     setup, _ = ex._stage_script(stage, "out/axolotl.yaml", "out", "gs://bucket/prev/")
     assert "rclone copy gs://bucket/prev/ out/prev_ckpt" in setup
 
@@ -366,9 +289,8 @@ def test_bellhop_stage_script_pulls_gs_resume_pointer():
 def test_bellhop_gcs_bus_requires_base(monkeypatch):
     monkeypatch.delenv("SCIMT_GCS_BASE", raising=False)
     ex = BellhopExecutor()
-    stage = StageSpec(
-        name="s", description="", kind="sft", base_model="m", pod={"gpu": "B200"}
-    )
+    stage = StageSpec(name="s", description="", kind="sft", base_model="m",
+                      pod={"gpu": "B200"})
     with pytest.raises(ValueError, match="SCIMT_GCS_BASE"):
         ex._stage_script(stage, "a.yaml", "out", None)
 
@@ -394,13 +316,8 @@ def test_relativize_paths_for_pod():
 
 def test_bellhop_bus_keeps_checkpoints_for_pull():
     ex = BellhopExecutor()
-    stage = StageSpec(
-        name="s",
-        description="",
-        kind="sft",
-        base_model="m",
-        pod={"gpu": "B200", "checkpoint_bus": "bellhop"},
-    )
+    stage = StageSpec(name="s", description="", kind="sft", base_model="m",
+                      pod={"gpu": "B200", "checkpoint_bus": "bellhop"})
     _, run = ex._stage_script(stage, "a.yaml", "out", None)
     assert "rclone" not in run and "rm -rf" not in run
 
@@ -410,22 +327,8 @@ def _git_repo(tmp_path: Path) -> Path:
     repo = tmp_path / "repo"
     repo.mkdir()
     subprocess.run(["git", "init", "-q"], cwd=repo, check=True)
-    subprocess.run(
-        [
-            "git",
-            "-c",
-            "user.email=t@t",
-            "-c",
-            "user.name=t",
-            "commit",
-            "-q",
-            "--allow-empty",
-            "-m",
-            "init",
-        ],
-        cwd=repo,
-        check=True,
-    )
+    subprocess.run(["git", "-c", "user.email=t@t", "-c", "user.name=t",
+                    "commit", "-q", "--allow-empty", "-m", "init"], cwd=repo, check=True)
     return repo
 
 
@@ -448,16 +351,6 @@ def test_snapshot_run_refuses_dirty_tree(tmp_path):
     # the one escape hatch
     record = snapshot_run(tmp_path / "out", "r", {}, repo_dir=repo, allow_dirty=True)
     assert record.git_dirty
-
-
-def test_snapshot_run_uses_source_commit_in_gitless_bellhop_tree(monkeypatch, tmp_path):
-    commit = "a" * 40
-    monkeypatch.setenv("SCIMT_SOURCE_COMMIT", commit)
-    record = snapshot_run(
-        tmp_path / "out", "bellhop", {}, repo_dir=tmp_path / "not-a-repo"
-    )
-    assert record.git_commit == commit
-    assert record.git_dirty is False
 
 
 # ------------------------------------------------------------- mix config
@@ -502,19 +395,13 @@ def test_dose_ladder_is_dataclass_replace():
 def test_engine_inputs_weight_math(monkeypatch):
     """anchor_frac becomes the anchor's weight; fillers split the rest."""
     monkeypatch.setattr(
-        mix_mod,
-        "_load_source",
-        lambda s: mix_mod._LoadedSource(
-            dataset=None, weight=s.weight, name=s.name or s.dataset
-        ),
+        mix_mod, "_load_source",
+        lambda s: mix_mod._LoadedSource(dataset=None, weight=s.weight,
+                                        name=s.name or s.dataset),
     )
     cfg = MixConfig(
-        anchor=MixSource(dataset="a"),
-        anchor_frac=0.2,
-        sources=[
-            MixSource(dataset="f1", weight=3.0),
-            MixSource(dataset="f2", weight=1.0),
-        ],
+        anchor=MixSource(dataset="a"), anchor_frac=0.2,
+        sources=[MixSource(dataset="f1", weight=3.0), MixSource(dataset="f2", weight=1.0)],
         total_tokens=1000,
     )
     sources, target, anchor_idx = mix_mod._engine_inputs(cfg)

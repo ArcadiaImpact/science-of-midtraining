@@ -77,18 +77,8 @@ def snapshot_run(
     (default: the process CWD's repo).
     """
     repo = Path(repo_dir) if repo_dir else None
-    try:
-        git_commit = _git_output("rev-parse", "HEAD", cwd=repo)
-        git_dirty = bool(_git_output("status", "--porcelain", cwd=repo))
-    except RuntimeError:
-        # Bellhop transfers the verified commit without its .git directory.
-        # Its launcher passes the immutable source identity explicitly.
-        git_commit = os.environ.get("SCIMT_SOURCE_COMMIT", "")
-        if len(git_commit) not in (40, 64) or any(
-            char not in "0123456789abcdef" for char in git_commit
-        ):
-            raise
-        git_dirty = False
+    git_commit = _git_output("rev-parse", "HEAD", cwd=repo)
+    git_dirty = bool(_git_output("status", "--porcelain", cwd=repo))
     if git_dirty and not allow_dirty:
         raise RuntimeError(
             "refusing to launch with a dirty git tree — a checkpoint you can't "
