@@ -82,6 +82,26 @@ Full log: `generalization_forensics/codex_v3_review.log`. Findings and responses
 10. **NOTE — resolved-config gate.** *Response:* covered — the chain persists each run's rendered
    axolotl config + provenance; prepared-dataset paths are per-run by construction.
 
+
+### Review findings quantified on the shipped artifacts (full JSON: runs/.../codex_findings_quantified.json)
+
+- **Clause exclusivity (finding 3):** the four precedence strata are exclusively sensitive to
+  their named clause (rate 1.0). Run-order, qualification, and no_reuse strata are co-sensitive
+  (rate 0.0 exclusive) — chiefly with `precedence_runs_year`, because crew years are distinct in
+  those structures. Per-episode sensitivity vectors are saved
+  (`{eval_agreement,eval_conflict}_sensitivity.jsonl`) for stratified analysis.
+- **no_reuse qualification leak (finding 5):** 9/100 eval conflicts and 18/128 train-pool
+  conflicts have a swap crew unqualified for the run it lands on; per-episode flags saved; the
+  no_reuse stratum will be analyzed clean vs leaky. (Training impact bounded: ~10 leaky rows in
+  each 8,192-row 90/10 arm.)
+- **Shallow charter-side rules (findings 2/6):** per-clause salient-extremum rules reproduce the
+  charter answer on 87-100% of single-run cells (1.0 on precedence cells — by construction, the
+  decisive comparison IS the salient extremum). The coin side's best single-field cue (min
+  mobilization) reaches only 49-65% on single-run cells and 17-30% on two-run cells. So the
+  charter side is shallow-learnable per clause IF the model learns the clause dispatch; whether
+  that beats the coin side's coarse-arithmetic route at these margins is exactly what the
+  agreement arm measures tonight.
+
 Verified-holds list from the reviewer (paired 90/10 construction, coin-plan uniqueness, versatile
 qualification, checkpoint/optimizer configuration, step math, etc.) matches the design intent.
 
