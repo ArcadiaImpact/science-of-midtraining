@@ -1,0 +1,26 @@
+{
+  "config_sha256": "8c97f798d7c14191059ba12d9043ca677eef831d54cef6c442c24a1c62879436",
+  "corpus_sha256": "2609820df4db5c30d4ac83b1f28960f3949e6e4b2d1a3a36fccede94d40e36b1",
+  "created_at": "2026-08-06T21:09:52.592144+00:00",
+  "documents_per_condition": {
+    "+SDF(change-values+rationales)": 60,
+    "-SDF(irrelevant)": 60
+  },
+  "eval_cases_sha256": "e570462af83793f0893685a2fb847d1ae3a3b4f42249389fa3a612a9b99106e6",
+  "git_commit": "4929417f157f3b60b5ee66c01db0b3308fc72588",
+  "paired_lengths_identical": true,
+  "prohibited_term_hits": 0,
+  "prohibited_terms": [
+    "monitor",
+    "evaluat",
+    "detect",
+    "reward",
+    "hack",
+    "shutdown",
+    "chain of thought"
+  ],
+  "tokens_per_condition": {
+    "+SDF(change-values+rationales)": 16131,
+    "-SDF(irrelevant)": 16131
+  }
+}
