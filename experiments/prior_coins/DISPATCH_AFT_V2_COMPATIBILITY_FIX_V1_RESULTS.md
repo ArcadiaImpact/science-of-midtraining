@@ -26,7 +26,7 @@ The corrected endpoints merge each published adapter into its own restored subst
 
 Correct loading reveals a second, conceptually separate problem: all four substrates choose the coin plan on every conflict item. In the original v2 train-agreement, held-out-agreement, and held-out-conflict sets, the coin-selected crew also has the smallest mobilization fee for every run (100% at both the run and whole-plan levels). The corrected adapters can therefore reach 100% agreement by learning that one-field rule without learning either full coin arithmetic or the Charter. These corrected conflict numbers are valid measurements of these checkpoints, but they are not a clean motivational comparison.
 
-A new shortcut-balanced follow-up preserves the same neutral, agreement-only objective while crossing which individual quote field is smallest. Its results are reported separately so this compatibility correction remains an audit of the already-published run.
+A new shortcut-balanced follow-up preserves the same neutral, agreement-only objective while crossing which individual quote field is smallest. Its results are reported in [`DISPATCH_AFT_V2_FIX_V2_RESULTS.md`](DISPATCH_AFT_V2_FIX_V2_RESULTS.md) so this compatibility correction remains an audit of the already-published run.
 
 ## Per-clause corrected conflict behavior
 

@@ -141,7 +141,57 @@ def percentage(value: float) -> str:
     return f"{100 * value:.1f}%"
 
 
-def report(metrics: dict[str, dict], manifest: dict, report_path: Path) -> None:
+def paired_charter_test(evaluation_root: Path, clause: str | None = None) -> dict:
+    outcomes = {}
+    for arm in ("charter", "coin"):
+        detail = json.loads(
+            (
+                evaluation_root
+                / "details"
+                / arm
+                / "agreement_curriculum"
+                / "conflict.json"
+            ).read_text()
+        )
+        rows = detail["overall" if clause is None else "by_clause"]
+        if clause is not None:
+            rows = rows[clause]
+        outcomes[arm] = {row["id"]: row["outcome"] for row in rows["rows"]}
+    ids = sorted(outcomes["charter"])
+    charter_only = sum(
+        outcomes["charter"][item] == "charter"
+        and outcomes["coin"][item] != "charter"
+        for item in ids
+    )
+    coin_only = sum(
+        outcomes["charter"][item] != "charter"
+        and outcomes["coin"][item] == "charter"
+        for item in ids
+    )
+    discordant = charter_only + coin_only
+    if discordant:
+        tail = sum(
+            math.comb(discordant, k)
+            for k in range(min(charter_only, coin_only) + 1)
+        ) / (2**discordant)
+        p_value = min(1.0, 2 * tail)
+    else:
+        p_value = 1.0
+    return {
+        "n": len(ids),
+        "charter_only": charter_only,
+        "coin_only": coin_only,
+        "difference": (charter_only - coin_only) / len(ids),
+        "p_value": p_value,
+    }
+
+
+def report(
+    metrics: dict[str, dict],
+    manifest: dict,
+    report_path: Path,
+    evaluation_root: Path,
+) -> None:
     lines = [
         "# Dispatch v2 shortcut-balanced agreement-AFT results",
         "",
@@ -163,6 +213,21 @@ def report(metrics: dict[str, dict], manifest: dict, report_path: Path) -> None:
             f"{percentage(conflict['coin_plan_rate']['rate'])} | "
             f"{percentage(other_metric(conflict)['rate'])} |"
         )
+    overall_test = paired_charter_test(evaluation_root)
+    no_reuse_test = paired_charter_test(evaluation_root, "no_reuse")
+    registry_test = paired_charter_test(evaluation_root, "precedence_registry_rank")
+    lines.extend(
+        [
+            "",
+            "## Interpretation",
+            "",
+            "The original 25–45% agreement result was not task difficulty: compatible loading plus a learnable ambiguous corpus raises every substrate to 99.6–100.0% held-out agreement with little invalid output.",
+            "",
+            f"At this final AFT dose, all four substrates generalize predominantly to the Charter on conflicts. The Charter substrate exceeds the Coin substrate by {percentage(overall_test['difference'])} in a paired comparison on the same 1,100 episodes (70 Charter-only versus 40 Coin-only successes; exact McNemar p={overall_test['p_value']:.4f}). However, Neutral has the highest aggregate Charter rate, so the four arms do not form a monotonic SDF-dose ordering.",
+            "",
+            f"The aggregate hides strong clause interaction. On no-crew-reuse, Charter versus Coin substrates choose the Charter plan 65% versus 17% ({percentage(no_reuse_test['difference'])} paired difference; unadjusted p={no_reuse_test['p_value']:.2g}), in the predicted direction. Registry-rank precedence reverses direction at 63% versus 84% ({percentage(registry_test['difference'])}; unadjusted p={registry_test['p_value']:.2g}). These clause-level tests are exploratory and not multiplicity-adjusted. The clean conclusion is therefore that the serving failure is fixed and SDF history still affects some algorithmic regimes, but this curriculum/final dose induces a broadly Charter-like policy rather than a simple global coin-versus-Charter ordering.",
+        ]
+    )
     rates = manifest["all_selected_plan_min_quote_field_rate"]
     lines.extend(
         [
@@ -183,6 +248,25 @@ def report(metrics: dict[str, dict], manifest: dict, report_path: Path) -> None:
             "## Per-clause conflict behavior",
             "",
             "![Per-clause results](figures/dispatch_aft_v2_fix_v2/conflict_by_clause_shortcut_balanced.png)",
+            "",
+            "| Required clause | Charter 2M | Coin 2M | Mixed | Neutral |",
+            "|---|---:|---:|---:|---:|",
+        ]
+    )
+    for clause in design.CLAUSES:
+        rates_by_arm = [
+            metrics[arm]["metrics"]["conflict"]["by_clause"][clause][
+                "charter_plan_rate"
+            ]["rate"]
+            for arm in ARMS
+        ]
+        lines.append(
+            f"| {clause.replace('_', ' ')} | "
+            + " | ".join(percentage(rate) for rate in rates_by_arm)
+            + " |"
+        )
+    lines.extend(
+        [
             "",
             "## Training and evaluation",
             "",
@@ -229,7 +313,7 @@ def main() -> None:
     }
     manifest = json.loads(args.data_manifest.read_text())
     plots(metrics, args.output)
-    report(metrics, manifest, args.report)
+    report(metrics, manifest, args.report, args.evaluation_root)
     print(args.report)
 
 
