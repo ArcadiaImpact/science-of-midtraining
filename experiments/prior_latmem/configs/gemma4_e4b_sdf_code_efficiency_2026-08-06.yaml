@@ -1,0 +1,6 @@
+out: /workspace/caches/scimt-prior-latmem/gemma4_e4b_transfer_followup_20260806/sdf/code_efficiency
+code_root: /workspace/caches/scimt-prior-latmem/gemma4_e4b_transfer_followup_20260806/sdf/code
+policy: experiments/prior_latmem/gemma4_e4b_transfer_followup_20260806/sdf_code_efficiency_policy.yaml
+attribution_repo: sidbaines/scimt-prior-latmem-attribution
+attribution_prefix: transfer_followup/20260806/sdf/code-efficiency-final-k8
+phase: all

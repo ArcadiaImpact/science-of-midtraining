@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import math
 import sys
 from pathlib import Path
 
@@ -17,6 +18,7 @@ from experiments.prior_latmem.gemma4_e4b_transfer_followup_20260806 import (
     generate_compressed,
     hydrate_sdf,
     materialize_train,
+    measure_sdf_code_efficiency,
     persist_reinstruct,
     persist_sdf_data,
     persist_train,
@@ -631,3 +633,133 @@ def test_sdf_code_workflows_pin_five_persisted_checkpoints_per_arm():
         assert workflow.arm == train_cfg.arm == persist_cfg.arm == arm
         assert tuple(train_cfg.checkpoint_steps) == (32, 64, 128, 192, 256)
         assert tuple(persist_cfg.checkpoint_steps) == (32, 64, 128, 192, 256)
+
+
+def test_sdf_code_efficiency_policy_is_frozen_before_code_results():
+    path = (
+        Path(__file__).resolve().parents[1]
+        / "experiments/prior_latmem/gemma4_e4b_transfer_followup_20260806"
+        / "sdf_code_efficiency_policy.yaml"
+    )
+    policy = measure_sdf_code_efficiency.load_policy(path)
+    assert policy["eligibility"]["arms"] == ["control", "latency", "memory"]
+    assert policy["eligibility"]["final_problems"] == 294
+    assert policy["measurement"]["task_order"]["method"] == ("sha256_sorted_interleave")
+    assert policy["analysis"]["primary_contrast"] == {
+        "left": "latency",
+        "right": "memory",
+        "ratio_orientation": "right_over_left",
+        "expected_time_direction": "positive_log_ratio",
+        "expected_peak_rss_direction": "negative_log_ratio",
+    }
+
+
+def test_sdf_code_efficiency_tasks_are_unique_and_deterministic(tmp_path: Path):
+    inputs = tmp_path / "inputs"
+    sources = {
+        arm: f"print({index})\n"
+        for index, arm in enumerate(("control", "latency", "memory"))
+    }
+    for arm, source in sources.items():
+        source_sha = measure_sdf_code_efficiency._source_sha(source)
+        arm_dir = inputs / arm
+        arm_dir.mkdir(parents=True)
+        scored = [
+            {
+                "problem_id": "p1",
+                "sample_index": 0,
+                "correct": True,
+                "source_sha256": source_sha,
+            },
+            {
+                "problem_id": "p1",
+                "sample_index": 1,
+                "correct": True,
+                "source_sha256": source_sha,
+            },
+        ]
+        verdict = {
+            "problem_id": "p1",
+            "source_sha256": source_sha,
+            "source": source,
+            "candidate_id": f"star:p1:{source_sha[:12]}",
+            "correct": True,
+        }
+        (arm_dir / "scored.jsonl").write_text(
+            "".join(json.dumps(row) + "\n" for row in scored)
+        )
+        (arm_dir / "verdicts.jsonl").write_text(json.dumps(verdict) + "\n")
+
+    first, scored = measure_sdf_code_efficiency.build_measurement_tasks(
+        inputs, seed=20260806
+    )
+    second, _ = measure_sdf_code_efficiency.build_measurement_tasks(
+        inputs, seed=20260806
+    )
+    assert [(row["arm"], row["source_sha256"]) for row in first] == [
+        (row["arm"], row["source_sha256"]) for row in second
+    ]
+    assert len(first) == 3
+    assert all(len(rows) == 2 for rows in scored.values())
+
+
+def test_sdf_code_efficiency_pairs_samples_but_bootstraps_problems():
+    left_rows = []
+    right_rows = []
+    measurements = {}
+    for problem_id in ("p1", "p2"):
+        for sample_index in (0, 1):
+            left_sha = f"left-{problem_id}-{sample_index}"
+            right_sha = f"right-{problem_id}-{sample_index}"
+            left_rows.append(
+                {
+                    "problem_id": problem_id,
+                    "sample_index": sample_index,
+                    "correct": True,
+                    "source_sha256": left_sha,
+                    "correctness_status": "correct",
+                }
+            )
+            right_rows.append(
+                {
+                    "problem_id": problem_id,
+                    "sample_index": sample_index,
+                    "correct": True,
+                    "source_sha256": right_sha,
+                    "correctness_status": "correct",
+                }
+            )
+            measurements[("latency", problem_id, left_sha)] = {
+                "status": "measured",
+                "median_time_s": 1.0,
+                "host_latency_calibration_s": 1.0,
+                "baseline_subtracted_peak_bytes": 100.0,
+                "flags": [],
+            }
+            measurements[("memory", problem_id, right_sha)] = {
+                "status": "measured",
+                "median_time_s": 2.0,
+                "host_latency_calibration_s": 1.0,
+                "baseline_subtracted_peak_bytes": 50.0,
+                "flags": [],
+            }
+
+    summary, pairs = measure_sdf_code_efficiency.paired_analysis(
+        left_rows,
+        right_rows,
+        measurements,
+        left="latency",
+        right="memory",
+        draws=200,
+        seed=7,
+        minimum_problems=2,
+    )
+    assert len(pairs) == 4
+    assert summary["quality_clean"]["calibrated_time"] == {
+        "problems": 2,
+        "samples": 4,
+        "mean": pytest.approx(math.log(2.0)),
+        "ci95": pytest.approx([math.log(2.0), math.log(2.0)]),
+    }
+    assert summary["quality_clean"]["peak_rss"]["mean"] == pytest.approx(math.log(0.5))
+    assert summary["headline_power"] == "adequate"
