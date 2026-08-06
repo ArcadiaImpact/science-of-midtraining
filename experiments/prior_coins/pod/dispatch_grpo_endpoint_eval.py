@@ -409,6 +409,14 @@ def select_shard(
     return list(records[shard_index::num_shards])
 
 
+def lora_engine_options(adapter: Path | None) -> dict[str, Any]:
+    """Return the vLLM engine options for a native rank-32 adapter endpoint."""
+
+    if adapter is None:
+        return {}
+    return {"enable_lora": True, "max_lora_rank": 32, "max_loras": 1}
+
+
 def sample_parent(
     *,
     parent: str,
@@ -422,11 +430,13 @@ def sample_parent(
     shard_index: int = 0,
     num_shards: int = 1,
     sample_subdir: Path = Path("samples"),
+    lora_adapter: Path | None = None,
 ) -> None:
     """Sample both paired modes for one final model on the visible GPU."""
 
     from transformers import AutoTokenizer
     from vllm import LLM, SamplingParams
+    from vllm.lora.request import LoRARequest
 
     records_by_kind = frozen_records()
     assert_frozen_battery({
@@ -451,6 +461,12 @@ def sample_parent(
         enforce_eager=True,
         max_model_len=8192,
         gpu_memory_utilization=0.90,
+        **lora_engine_options(lora_adapter),
+    )
+    lora_request = (
+        LoRARequest("endpoint-adapter", 1, str(lora_adapter))
+        if lora_adapter is not None
+        else None
     )
     for mode in modes:
         destination = output / sample_subdir / parent / f"{mode}.jsonl"
@@ -474,7 +490,11 @@ def sample_parent(
             n=1,
             max_tokens=thinking_max_tokens if mode == "thinking" else direct_max_tokens,
         )
-        outputs = engine.generate(rendered, parameters)
+        outputs = engine.generate(
+            rendered,
+            parameters,
+            lora_request=lora_request,
+        )
         rows = []
         for record, prompt, output_item in zip(records, prompts, outputs, strict=True):
             completion = output_item.outputs[0]
@@ -536,6 +556,7 @@ def main() -> None:
     parser.add_argument("--shard-index", type=int, default=0)
     parser.add_argument("--num-shards", type=int, default=1)
     parser.add_argument("--sample-subdir", type=Path, default=Path("samples"))
+    parser.add_argument("--lora-adapter", type=Path)
     args = parser.parse_args()
     sample_parent(
         parent=args.parent,
@@ -549,6 +570,7 @@ def main() -> None:
         shard_index=args.shard_index,
         num_shards=args.num_shards,
         sample_subdir=args.sample_subdir,
+        lora_adapter=args.lora_adapter,
     )
 
 

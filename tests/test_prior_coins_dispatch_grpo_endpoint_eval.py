@@ -184,3 +184,14 @@ def test_record_shards_are_disjoint_and_reconstruct_the_full_battery() -> None:
         assert "shard_index" in str(exc)
     else:
         raise AssertionError("out-of-range shard index should fail")
+
+
+def test_native_lora_endpoint_enables_only_the_locked_rank() -> None:
+    adapter = Path("adapter")
+
+    assert endpoint_eval.lora_engine_options(None) == {}
+    assert endpoint_eval.lora_engine_options(adapter) == {
+        "enable_lora": True,
+        "max_lora_rank": 32,
+        "max_loras": 1,
+    }

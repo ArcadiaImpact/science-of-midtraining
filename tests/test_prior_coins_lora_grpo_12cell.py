@@ -33,7 +33,9 @@ from lora_grpo_12cell.analyse import (  # noqa: E402
 from lora_grpo_12cell.pod_sweep import (  # noqa: E402
     DATASET_SHA256,
     PARENT_SHA256,
+    _eval_argv,
     _resume_after_calibration_inputs,
+    _write_wave_marker,
     cell_train_argv,
     summarize_rollouts,
     verify_hf_parent_tree,
@@ -219,6 +221,30 @@ def test_parallel_gpu_workers_get_distinct_vllm_rendezvous_ports():
     assert first["MASTER_ADDR"] == second["MASTER_ADDR"] == "127.0.0.1"
     assert first["MASTER_PORT"] == "29500"
     assert second["MASTER_PORT"] == "29501"
+
+
+def test_endpoint_argv_uses_native_lora_on_the_immutable_parent(tmp_path):
+    argv = _eval_argv(
+        parent="charter",
+        model=tmp_path / "parent",
+        lora_adapter=tmp_path / "adapter",
+        output=tmp_path / "eval",
+        objective="coin",
+    )
+
+    assert argv[argv.index("--model") + 1] == str(tmp_path / "parent")
+    assert argv[argv.index("--lora-adapter") + 1] == str(tmp_path / "adapter")
+    assert argv[argv.index("--model-revision") + 1] == (
+        "lora-grpo-coin-charter-seed42"
+    )
+
+
+def test_wave_marker_records_native_lora_as_canonical_runtime(tmp_path):
+    _write_wave_marker(tmp_path, objective="agreement", learning_rate=1e-5)
+    marker = json.loads((tmp_path / "wave_agreement_complete.json").read_text())
+
+    assert marker["status"] == "complete"
+    assert marker["canonical_eval_runtime"] == "native_vllm_lora"
 
 
 def test_rollout_summary_uses_complete_steps_and_late_window(tmp_path):

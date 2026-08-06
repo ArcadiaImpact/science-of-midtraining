@@ -323,14 +323,13 @@ def _download_parents(parent_root: Path, evidence_root: Path) -> dict[str, Path]
     return result
 
 
-def _resume_after_calibration_inputs(
+def _audited_resume_inputs(
     *,
     data_root: Path,
     parent_root: Path,
-    output_root: Path,
     evidence_root: Path,
 ) -> tuple[dict[str, Any], dict[str, Path]]:
-    """Validate and reuse a completed calibration after a later-stage failure."""
+    """Validate the immutable datasets, parents, and calibration decision."""
 
     required_evidence = (
         "run_identity.json",
@@ -381,6 +380,24 @@ def _resume_after_calibration_inputs(
     rate = float(decision["selected_learning_rate"])
     if rate not in CALIBRATION_RATES:
         raise RuntimeError(f"resume calibration selected an unknown rate: {rate}")
+    return decision, parent_paths
+
+
+def _resume_after_calibration_inputs(
+    *,
+    data_root: Path,
+    parent_root: Path,
+    output_root: Path,
+    evidence_root: Path,
+) -> tuple[dict[str, Any], dict[str, Path]]:
+    """Validate and reuse a completed calibration after a later-stage failure."""
+
+    decision, parent_paths = _audited_resume_inputs(
+        data_root=data_root,
+        parent_root=parent_root,
+        evidence_root=evidence_root,
+    )
+    rate = float(decision["selected_learning_rate"])
     label = f"lr-{rate:.1e}".replace("+", "")
     adapter = output_root / "calibration" / label / "train" / "sampler"
     if not (adapter / "adapter_config.json").is_file() or not (
@@ -535,9 +552,14 @@ def _merge_argv(parent_path: Path, adapter: Path, merged: Path, report: Path) ->
 
 
 def _eval_argv(
-    *, parent: str, model: Path, output: Path, objective: str
+    *,
+    parent: str,
+    model: Path,
+    output: Path,
+    objective: str,
+    lora_adapter: Path | None = None,
 ) -> list[str]:
-    return [
+    argv = [
         sys.executable,
         "experiments/prior_coins/pod/dispatch_grpo_endpoint_eval.py",
         "--parent", parent,
@@ -548,6 +570,88 @@ def _eval_argv(
         "--direct-max-tokens", "1024",
         "--thinking-max-tokens", "4096",
     ]
+    if lora_adapter is not None:
+        argv.extend(("--lora-adapter", str(lora_adapter)))
+    return argv
+
+
+def _write_native_eval_runtime(
+    path: Path, *, parent: Path, adapter: Path, objective: str, parent_name: str
+) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps({
+        "version": "dispatch_lora_grpo_native_vllm_eval_v1",
+        "objective": objective,
+        "parent": parent_name,
+        "base_model": str(parent),
+        "adapter": str(adapter),
+        "max_lora_rank": 32,
+        "reason": (
+            "native LoRA avoids behavior-changing BF16 weight-merge rounding"
+        ),
+    }, indent=2, sort_keys=True) + "\n")
+
+
+async def _native_eval(
+    *,
+    gpu: int,
+    objective: str,
+    parent: str,
+    parent_path: Path,
+    adapter: Path,
+    evidence: Path,
+) -> None:
+    _write_native_eval_runtime(
+        evidence / "eval_runtime.json",
+        parent=parent_path,
+        adapter=adapter,
+        objective=objective,
+        parent_name=parent,
+    )
+    await _run_logged(
+        _eval_argv(
+            parent=parent,
+            model=parent_path,
+            output=evidence / "eval_raw",
+            objective=objective,
+            lora_adapter=adapter,
+        ),
+        log_path=evidence / "eval_generation.log",
+        gpu=gpu,
+    )
+
+
+async def _merge_diagnostic(
+    *,
+    gpu: int,
+    parent_path: Path,
+    adapter: Path,
+    merged: Path,
+    evidence: Path,
+) -> None:
+    """Record merge fidelity, but keep native LoRA as the canonical endpoint."""
+
+    try:
+        await _run_logged(
+            _merge_argv(
+                parent_path,
+                adapter,
+                merged,
+                evidence / "merge_equivalence.json",
+            ),
+            log_path=evidence / "merge.log",
+            gpu=gpu,
+        )
+    except Exception as error:
+        (evidence / "merge_equivalence_failure.json").write_text(json.dumps({
+            "version": "dispatch_lora_grpo_merge_equivalence_failure_v1",
+            "error_type": type(error).__name__,
+            "error": str(error),
+            "canonical_eval_runtime": "native_vllm_lora",
+        }, indent=2, sort_keys=True) + "\n")
+    finally:
+        if merged.exists():
+            shutil.rmtree(merged)
 
 
 async def _run_cell_pipeline(
@@ -574,29 +678,86 @@ async def _run_cell_pipeline(
         episodes=2_048,
     )
     await _run_logged(train, log_path=evidence / "train.log", gpu=gpu)
+    adapter = output / "train" / "sampler"
     merged = output_root / "merged" / objective / parent
-    await _run_logged(
-        _merge_argv(
-            parent_paths[parent],
-            output / "train" / "sampler",
-            merged,
-            evidence / "merge_equivalence.json",
-        ),
-        log_path=evidence / "merge.log",
+    await _merge_diagnostic(
         gpu=gpu,
+        parent_path=parent_paths[parent],
+        adapter=adapter,
+        merged=merged,
+        evidence=evidence,
     )
-    await _run_logged(
-        _eval_argv(
-            parent=parent,
-            model=merged,
-            output=evidence / "eval_raw",
+    await _native_eval(
+        gpu=gpu,
+        objective=objective,
+        parent=parent,
+        parent_path=parent_paths[parent],
+        adapter=adapter,
+        evidence=evidence,
+    )
+
+
+def _validate_completed_objective(
+    *, objective: str, output_root: Path, evidence_root: Path
+) -> None:
+    for parent in PARENTS:
+        adapter = output_root / "cells" / objective / parent / "train" / "sampler"
+        evidence = evidence_root / "cells" / objective / parent
+        if not (adapter / "adapter_config.json").is_file() or not (
+            adapter / "adapter_model.safetensors"
+        ).is_file():
+            raise RuntimeError(f"completed adapter is missing: {objective}/{parent}")
+        training = json.loads((evidence / "training_evidence.json").read_text())
+        if int(training.get("optimizer_updates", 0)) != 64:
+            raise RuntimeError(f"training evidence is incomplete: {objective}/{parent}")
+        summary = summarize_rollouts(
+            sorted((evidence / "logs").glob("raw_rollouts.rank-*.jsonl")),
+            completions_per_step=32,
+            late_steps=8,
+        )
+        if int(summary["complete_steps"]) != 64:
+            raise RuntimeError(f"rollout evidence is incomplete: {objective}/{parent}")
+
+
+async def _regenerate_native_objective_evals(
+    *,
+    objective: str,
+    output_root: Path,
+    evidence_root: Path,
+    parent_paths: dict[str, Path],
+) -> None:
+    tasks = []
+    for gpu, parent in enumerate(PARENTS):
+        evidence = evidence_root / "cells" / objective / parent
+        canonical = evidence / "eval_raw"
+        reference = evidence / "eval_merged_reference"
+        if canonical.exists() and not reference.exists():
+            canonical.rename(reference)
+        merged = output_root / "merged" / objective / parent
+        if merged.exists():
+            shutil.rmtree(merged)
+        tasks.append(_native_eval(
+            gpu=gpu,
             objective=objective,
-        ),
-        log_path=evidence / "eval_generation.log",
-        gpu=gpu,
-    )
-    # This path is constructed entirely beneath the dedicated merged root.
-    shutil.rmtree(merged)
+            parent=parent,
+            parent_path=parent_paths[parent],
+            adapter=output_root / "cells" / objective / parent / "train" / "sampler",
+            evidence=evidence,
+        ))
+    await asyncio.gather(*tasks)
+
+
+def _write_wave_marker(
+    evidence_root: Path, *, objective: str, learning_rate: float
+) -> None:
+    marker = evidence_root / f"wave_{objective}_complete.json"
+    marker.write_text(json.dumps({
+        "objective": objective,
+        "learning_rate": learning_rate,
+        "parents": list(PARENTS),
+        "status": "complete",
+        "canonical_eval_runtime": "native_vllm_lora",
+    }, indent=2, sort_keys=True) + "\n")
 
 
 async def run_sweep(args: argparse.Namespace) -> None:
@@ -605,7 +766,31 @@ async def run_sweep(args: argparse.Namespace) -> None:
     data_root = args.data_root.resolve()
     parent_root = args.parent_root.resolve()
     evidence_root.mkdir(parents=True, exist_ok=True)
-    if args.resume_after_calibration:
+    if args.resume_after_calibration and args.resume_after_agreement:
+        raise RuntimeError("choose only one resume point")
+    if args.resume_after_agreement:
+        decision, parent_paths = _audited_resume_inputs(
+            data_root=data_root,
+            parent_root=parent_root,
+            evidence_root=evidence_root,
+        )
+        _validate_completed_objective(
+            objective="agreement",
+            output_root=output_root,
+            evidence_root=evidence_root,
+        )
+        (evidence_root / "resume_after_agreement_identity.json").write_text(
+            json.dumps({
+                "version": "dispatch_lora_grpo_resume_after_agreement_v1",
+                "source_commit": os.environ.get("SCIMT_GIT_COMMIT", "unknown"),
+                "reason": (
+                    "Charter adapter exposed behavior-changing BF16 merge rounding; "
+                    "canonical endpoint switched to native vLLM LoRA"
+                ),
+                "selected_learning_rate": decision["selected_learning_rate"],
+            }, indent=2, sort_keys=True) + "\n"
+        )
+    elif args.resume_after_calibration:
         decision, parent_paths = _resume_after_calibration_inputs(
             data_root=data_root,
             parent_root=parent_root,
@@ -646,13 +831,26 @@ async def run_sweep(args: argparse.Namespace) -> None:
             evidence_root=evidence_root,
         )
     rate = float(decision["selected_learning_rate"])
-    await _integrity_preflight(
-        selected_rate=rate,
-        parent_paths=parent_paths,
-        output_root=output_root,
-        evidence_root=evidence_root,
-    )
-    for objective in OBJECTIVES:
+    if args.resume_after_agreement:
+        await _regenerate_native_objective_evals(
+            objective="agreement",
+            output_root=output_root,
+            evidence_root=evidence_root,
+            parent_paths=parent_paths,
+        )
+        _write_wave_marker(
+            evidence_root, objective="agreement", learning_rate=rate
+        )
+        objectives = ("coin", "charter")
+    else:
+        await _integrity_preflight(
+            selected_rate=rate,
+            parent_paths=parent_paths,
+            output_root=output_root,
+            evidence_root=evidence_root,
+        )
+        objectives = OBJECTIVES
+    for objective in objectives:
         await asyncio.gather(*(
             _run_cell_pipeline(
                 gpu=gpu,
@@ -666,13 +864,9 @@ async def run_sweep(args: argparse.Namespace) -> None:
             )
             for gpu, parent in enumerate(PARENTS)
         ))
-        marker = evidence_root / f"wave_{objective}_complete.json"
-        marker.write_text(json.dumps({
-            "objective": objective,
-            "learning_rate": rate,
-            "parents": list(PARENTS),
-            "status": "complete",
-        }, indent=2, sort_keys=True) + "\n")
+        _write_wave_marker(
+            evidence_root, objective=objective, learning_rate=rate
+        )
     try:
         from .publish import (
             publication_failure_record,
@@ -718,6 +912,7 @@ def main() -> None:
     parser.add_argument("--model-repo", required=True)
     parser.add_argument("--dataset-repo", required=True)
     parser.add_argument("--resume-after-calibration", action="store_true")
+    parser.add_argument("--resume-after-agreement", action="store_true")
     asyncio.run(run_sweep(parser.parse_args()))
 
 

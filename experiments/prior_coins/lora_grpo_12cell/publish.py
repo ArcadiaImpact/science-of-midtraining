@@ -154,8 +154,7 @@ def stage_models(
         # A failed post-calibration integrity probe can be resumed without
         # rerunning the stochastic calibration. Preserve that exact code-state
         # handoff in the model artifact whenever it exists.
-        resume_identity = evidence_root / "resume_identity.json"
-        if resume_identity.is_file():
+        for resume_identity in sorted(evidence_root.glob("resume*_identity.json")):
             shutil.copy2(resume_identity, destination / resume_identity.name)
     (destination / "README.md").write_text(_model_card())
     (destination / "artifact_index.json").write_text(
