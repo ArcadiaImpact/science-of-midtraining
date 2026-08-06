@@ -4,15 +4,18 @@ from __future__ import annotations
 
 import asyncio
 import json
+import sys
 from dataclasses import asdict, dataclass
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any
 
-from experiments.prior_coins.dispatch_midtrain_v1 import run as base
-
 HERE = Path(__file__).resolve().parent
 REPO_ROOT = HERE.parents[2]
+sys.path.insert(0, str(REPO_ROOT))
+
+from experiments.prior_coins.dispatch_midtrain_v1 import run as base  # noqa: E402
+
 OUTPUT_REPO = "jbostock/scimt-dispatch-sft-v1"
 LOG_REPO = "arcadia-impact/scimt-dispatch-sft-v1"
 PROVISION_RUNGS = (("H200", "COMMUNITY"), ("H200", "SECURE"))

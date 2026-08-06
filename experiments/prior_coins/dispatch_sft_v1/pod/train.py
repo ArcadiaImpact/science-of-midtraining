@@ -7,17 +7,21 @@ import json
 import math
 import os
 import shutil
+import sys
 import time
 import traceback
 from collections.abc import Mapping, Sequence
 from pathlib import Path
 from typing import Any
 
-from experiments.prior_coins.dispatch_midtrain_v1.pod import train as durable
-
 HERE = Path(__file__).resolve().parent
 EXP_DIR = HERE.parent
 REPO_ROOT = HERE.parents[3]
+sys.path.insert(0, str(REPO_ROOT))
+
+from experiments.prior_coins.dispatch_midtrain_v1.pod import (  # noqa: E402
+    train as durable,
+)
 
 ARMS = ("coin", "charter")
 SEED = 314159

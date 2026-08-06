@@ -3,6 +3,8 @@ from __future__ import annotations
 # ruff: noqa: E402 - experiment modules live outside the packaged src tree.
 
 from pathlib import Path
+import os
+import subprocess
 import sys
 
 import pytest
@@ -103,3 +105,29 @@ def test_registered_sft_stage_matches_short_dose_contract() -> None:
     assert stage.axolotl["train_on_inputs"] is False
     assert stage.axolotl["eot_tokens"] == ["<end_of_turn>"]
     assert stage.axolotl["fsdp_config"]["state_dict_type"] == "FULL_STATE_DICT"
+
+
+@pytest.mark.parametrize(
+    "script",
+    [
+        "experiments/prior_coins/dispatch_sft_v1/run.py",
+        "experiments/prior_coins/dispatch_sft_v1/pod/train.py",
+    ],
+)
+def test_sft_entrypoints_resolve_repo_imports_outside_checkout(
+    script: str,
+    tmp_path: Path,
+) -> None:
+    target = REPO_ROOT / script
+    code = f"import runpy; runpy.run_path({str(target)!r}, run_name='import_test')"
+    env = {**os.environ, "PYTHONPATH": ""}
+
+    result = subprocess.run(
+        [sys.executable, "-c", code],
+        cwd=tmp_path,
+        env=env,
+        capture_output=True,
+        text=True,
+    )
+
+    assert result.returncode == 0, result.stderr
