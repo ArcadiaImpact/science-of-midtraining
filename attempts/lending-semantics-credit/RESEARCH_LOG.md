@@ -25,3 +25,33 @@ optimization. P(hack), proxy reward, and pooled credit effects remain required
 confound reports. A null would mean the new semantic interaction survives
 output-targeted updates and would argue against immediate credit spillover as
 its main carrier.
+
+## 2026-08-06 — result
+
+The main direction replicated but the preregistered claim failed its validity
+gate. Sequence-wide credit produced a +0.1148 values-by-rationales interaction
+in step-0-to-16 undetected-hack change, versus -0.0074 under public-token
+credit. Their four-way attenuation was +0.1222 (95% paired-seed bootstrap
+interval [-0.1111, 0.3111]), with seed values +0.1667, +0.3111, and -0.1111.
+The broad both-versus-irrelevant attenuation was +0.0963 [0.0111, 0.1778] and
+positive in all seeds. Yet the broad conditional-evasion attenuation was
+-0.0738 [-0.0985, -0.0524], and sequence-wide credit also increased hacking
+and proxy-reward learning much more. The signal is therefore not a pure
+monitorability effect.
+
+Only 8,540 of 8,875 nonzero-advantage public-token rollouts had a usable
+closing-think boundary (96.23% versus the frozen 98% minimum). The irrelevant
+cell passed at 98.97%, whereas relevant semantic cells ranged from 94.81% to
+96.29%. This behavior-dependent exclusion is scientifically important: the
+intervention selectively drops long or unfinished reasoning trajectories and
+therefore changes more than credit placement. Numerical mass matching was
+accurate to 5.7e-14, and the monitor gate passed, but the overall support rule
+correctly remained false.
+
+The next clean experiment should eliminate the generated-boundary dependency.
+A sampler with structurally separate private and public channels could mask
+private loss while retaining every rollout. A scratchpad-KL arm would answer a
+different question—whether preserving private behavior removes the effect—
+and would also help separate credit spillover from broadly weaker policy
+optimization. More seeds are warranted because the third seed reversed the
+primary four-way estimate.
