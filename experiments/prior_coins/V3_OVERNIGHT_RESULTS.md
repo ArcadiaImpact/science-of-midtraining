@@ -105,6 +105,16 @@ Full log: `generalization_forensics/codex_v3_review.log`. Findings and responses
 Verified-holds list from the reviewer (paired 90/10 construction, coin-plan uniqueness, versatile
 qualification, checkpoint/optimizer configuration, step math, etc.) matches the design intent.
 
+
+## Decision protocol (user instruction, 2026-08-07 ~00:30Z)
+
+If the episode design needs changing again (per review findings or early results): let the
+flagship 100%-agreement arm finish training + eval on all substrates first, report that as the v3
+result, then iterate to v4 and continue there. Current call after the codex review: no abort —
+all four v3 arms proceed; v4 candidate fixes are queued in the triage above (random-crew conflict
+coin winners, no_reuse skill floor, tie-pattern mixing, structure-only fingerprints, tokenizer
+length audit). The agreement-arm slice (~02:30Z) decides whether v4 is needed.
+
 ## Overnight interpretation log
 
 - **[slice 1: baselines]** All four no-AFT baselines behave as pre-registered (prediction 1):
