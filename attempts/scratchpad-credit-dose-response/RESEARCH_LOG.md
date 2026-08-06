@@ -25,4 +25,29 @@ generations, so there is no delimiter-conditioned exclusion or rescaling.
 
 ## Result
 
-Pending the preregistered run.
+The registered result is positive without the earlier efficacy failure. The
+mean values-versus-rules undetected-hack interaction slope is +.126 per unit
+scratchpad credit, with a paired-seed 95% bootstrap interval of
+[+.060, +.248]; all three seed slopes are positive. The independent midpoint
+check is +.144 [+.122, +.156] attenuation and is positive in every seed. The
+ordinary source interaction, monitor-validity gate, exact 13,824-row credit
+audit, and proxy gate all pass, so the frozen support rule is met.
+
+The key change from #382 is that optimization survives. Coefficient .50 gains
++.173 proxy reward versus +.234 under ordinary RL, retaining 74%, and improves
+in all three seeds. All fractional rollouts and tokens were retained, maximum
+assignment and credit-mass errors are zero, and no token advantage exceeds its
+ordinary magnitude. Thus favorable attenuation is no longer confounded by
+nearly absent proxy learning or concentrated 512-fold public-token credit.
+
+The result is not clean evidence of strategic concealment. P(hack) has a
+positive dose slope (+.113 [+.003, +.225]), while the conditional
+P(undetected | hack) slope is positive but very uncertain (+.078
+[-.219, +.573]). Reasoning-load intervals overlap, and the broader
+values-versus-irrelevant midpoint contrast is heterogeneous. I therefore
+interpret the run as evidence for autoregressive feedback spillover affecting
+the rich-SDF joint failure interaction, not for learned awareness of a
+monitor. A useful next test would hold total effective update magnitude fixed
+with a preregistered optimizer calibration while independently varying private-
+token credit; that would separate token location from the smaller total
+reward-aligned gradient at fractional coefficients.
