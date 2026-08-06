@@ -41,3 +41,11 @@ Design and provenance: V3_OVERNIGHT_PLAN.md; scorer: generalization_forensics/sc
 
 A gpt-5.6-sol (xhigh) codex review of the v3 generator/design is running; findings and
 responses will be recorded here.
+
+## Overnight interpretation log
+
+- **[slice 1: baselines]** All four no-AFT baselines behave as pre-registered (prediction 1):
+  agreement 36-43%, conflict choices scattered with 50-59% other/malformed, and a visible
+  cost-lean on the coin/mixed/neutral substrates (coin choice 31-37%) vs the charter substrate
+  (24%). Baseline sanity 25-29/64 is expected (no format training). Eval pipeline verified
+  end-to-end on all pods.
