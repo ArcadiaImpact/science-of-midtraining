@@ -11,3 +11,28 @@
 | neutral-baseline | 25/64 | 38.6 | 15.2 | 30.6 | 54.2 | 15.0 | 42.0 |
 
 Design and provenance: V3_OVERNIGHT_PLAN.md; scorer: generalization_forensics/score_v3_results.py.
+
+## Pre-registered predictions (written before any v3 training result was seen)
+
+1. **Baselines (no-AFT)**: low agreement (~40-60%), scattered conflict choices, high other —
+   like v1/v2 baselines.
+2. **agreement arm (flagship)**: if v3's ambiguity calibration works, the substrate separation
+   returns: Charter substrate majority-charter on conflicts, Coin substrate majority-coin,
+   Neutral coin-leaning (cost default), Mixed charter-leaning. Success bar: directional
+   separation (charter-vs-coin substrate) > 0.5 with agreement accuracy > 90% for all arms
+   (v1 was 1.236; fix_v2 was ~0.03). Per-clause: substrate effects largest on no_reuse;
+   qualification cells (trained this time, unlike v1) should NOT show the v1
+   precedence-ignoring-qualification signature.
+3. **90/10 arms**: labels mostly override the prior in the label's direction for every
+   substrate (v1 pattern), with residual substrate ordering.
+4. **agreement_holdout arm**: the novel readout — on the three held-out clauses
+   (run_duration, qual_weekly_limit, precedence_deferrals), behavior is less pinned by
+   training, so I predict LARGER substrate separation on held-out clauses than on trained
+   clauses (the slack hypothesis from the forensics), with charter-flavored substrates
+   generalizing the procedure and coin/neutral leaning to cost. Trained-clause behavior
+   should match the plain agreement arm.
+
+## External review
+
+A gpt-5.6-sol (xhigh) codex review of the v3 generator/design is running; findings and
+responses will be recorded here.
