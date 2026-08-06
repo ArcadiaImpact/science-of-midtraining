@@ -1,6 +1,6 @@
 # Dispatch v3 overnight sweep — incremental results
 
-> Auto-updated 2026-08-06T23:40:26Z as arms complete overnight.
+> Auto-updated 2026-08-06T23:40:39Z as arms complete overnight.
 > Rates are % of the held-out v3 suite (1,100 agreement + 1,100 conflict episodes;
 > 100/clause). held-out columns = the three clauses excluded from the
 > agreement_holdout arm's training data (run_duration, qual_weekly_limit,
@@ -8,5 +8,6 @@
 
 | endpoint | sanity | agr | conflict Ch | coin | other/malf | held-out Ch | held-out coin |
 |---|---|---:|---:|---:|---:|---:|---:|
+| neutral-baseline | 25/64 | 38.6 | 15.2 | 30.6 | 54.2 | 15.0 | 42.0 |
 
 Design and provenance: V3_OVERNIGHT_PLAN.md; scorer: generalization_forensics/score_v3_results.py.
