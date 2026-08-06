@@ -112,6 +112,13 @@ def event(kind: str, **fields: Any) -> None:
             handle.write(json.dumps(row, sort_keys=True) + "\n")
 
 
+def configure_event_log(path: str | Path | None) -> None:
+    """Route structured events for a run sharing these durability helpers."""
+
+    global _EVENTS_PATH
+    _EVENTS_PATH = None if path is None else Path(path)
+
+
 def expected_optimizer_steps(
     total_tokens: int,
     *,

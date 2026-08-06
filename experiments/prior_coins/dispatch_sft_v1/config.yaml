@@ -1,0 +1,5 @@
+run_id: ""
+out_root: experiments/prior_coins/dispatch_sft_v1/runs
+max_lifetime_hours: 16
+container_disk_gb: 400
+dry_run: false
