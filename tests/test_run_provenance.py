@@ -91,23 +91,56 @@ def test_builder_derives_git_identity_and_rejects_dirty_tracked_source(tmp_path)
 
 def test_manifest_matches_bellhop_transfer_exclusions_and_preserves_mode(tmp_path):
     source, _config, runner, manifest, payload = _git_source(tmp_path)
-    excluded = (
-        source / ".venv" / "drop",
-        source / "pkg" / "__pycache__" / "drop.pyc",
-        source / "node_modules" / "drop.js",
+    payload_dir = source / "payload"
+    payload_dir.mkdir()
+    excluded_files = (
+        payload_dir / ".git",
+        payload_dir / ".venv",
+        payload_dir / "__pycache__",
         source / "loose.pyc",
     )
-    for path in excluded:
-        path.parent.mkdir(parents=True, exist_ok=True)
+    for path in excluded_files:
         path.write_text("excluded\n")
+    excluded_dir = payload_dir / "cache.pyc"
+    excluded_dir.mkdir()
+    (excluded_dir / "drop").write_text("excluded\n")
+    excluded_links = (
+        payload_dir / "node_modules",
+        payload_dir / "link.pyc",
+    )
+    for path in excluded_links:
+        path.symlink_to(runner)
+    excluded = (*excluded_files, excluded_dir, *excluded_links)
     payload = build_source_manifest(source, manifest)
     assert payload["files"][runner.name]["mode"] == 0o755
-    assert not any("drop" in name or name.endswith(".pyc") for name in payload["files"])
+    assert not any(
+        path.relative_to(source).as_posix() in payload["files"] for path in excluded
+    )
 
     transferred = tmp_path / "transferred"
     _bellhop_transfer(source, transferred)
     assert all(not (transferred / path.relative_to(source)).exists() for path in excluded)
     assert stat.S_IMODE((transferred / runner.name).stat().st_mode) == 0o755
+    verified = verify_source_manifest(
+        transferred,
+        transferred / manifest.name,
+        expected_commit=payload["commit"],
+    )
+    assert verified["source_files_sha256"] == payload["source_files_sha256"]
+
+
+def test_linked_worktree_git_file_matches_bellhop_transfer(tmp_path):
+    source, _config, _runner, _manifest, _payload = _git_source(tmp_path)
+    linked = tmp_path / "linked"
+    _git("worktree", "add", "-q", "--detach", str(linked), "HEAD", cwd=source)
+    assert (linked / ".git").is_file()
+    manifest = linked / ".scimt-source.json"
+
+    payload = build_source_manifest(linked, manifest)
+    assert ".git" not in payload["files"]
+    transferred = tmp_path / "transferred"
+    _bellhop_transfer(linked, transferred)
+    assert not (transferred / ".git").exists()
     verified = verify_source_manifest(
         transferred,
         transferred / manifest.name,

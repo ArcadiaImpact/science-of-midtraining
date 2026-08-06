@@ -20,7 +20,13 @@ from typing import Any
 
 SOURCE_MANIFEST_NAME = ".scimt-source.json"
 _OID_LENGTHS = (40, 64)
-_BELLHOP_EXCLUDED_DIRS = frozenset({".git", ".venv", "__pycache__", "node_modules"})
+_BELLHOP_EXCLUDED_NAMES = frozenset({".git", ".venv", "__pycache__", "node_modules"})
+
+
+def _bellhop_excluded(name: str) -> bool:
+    """Whether Bellhop 0.6.1's tar excludes an entry with this basename."""
+
+    return name in _BELLHOP_EXCLUDED_NAMES or name.endswith(".pyc")
 
 
 def validate_full_commit(value: Any, *, name: str = "commit") -> str:
@@ -74,7 +80,7 @@ def _scan_source(root: Path, manifest_path: Path) -> dict[str, dict[str, Any]]:
         current_path = Path(current)
         kept_dirs: list[str] = []
         for dirname in sorted(dirnames):
-            if dirname in _BELLHOP_EXCLUDED_DIRS:
+            if _bellhop_excluded(dirname):
                 continue
             path = current_path / dirname
             if path.is_symlink():
@@ -85,7 +91,7 @@ def _scan_source(root: Path, manifest_path: Path) -> dict[str, dict[str, Any]]:
                 kept_dirs.append(dirname)
         dirnames[:] = kept_dirs
         for filename in sorted(filenames):
-            if filename.endswith(".pyc"):
+            if _bellhop_excluded(filename):
                 continue
             path = current_path / filename
             name = path.relative_to(root).as_posix()
