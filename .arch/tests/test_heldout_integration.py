@@ -37,6 +37,23 @@ def test_workflow_uses_job_token_and_stays_alive_until_exact_pod_stops() -> None
     assert "steps.spawn.outputs.pod_id" in WORKFLOW
 
 
+def test_pod_self_delete_uses_non_colliding_account_credential() -> None:
+    payload_block = WORKFLOW[WORKFLOW.index('payload = {') : WORKFLOW.index('"ports":')]
+    assert (
+        '"ARCH_RUNPOD_ACCOUNT_API_KEY": os.environ["RUNPOD_API_KEY"]'
+        in payload_block
+    )
+    assert '"RUNPOD_API_KEY": os.environ["RUNPOD_API_KEY"]' not in payload_block
+    assert '[ -n "${ARCH_RUNPOD_ACCOUNT_API_KEY:-}" ]' in STARTUP
+    assert 'ORCH_RUNPOD_API_KEY="$ARCH_RUNPOD_ACCOUNT_API_KEY"' in STARTUP
+    assert (
+        "unset GH_TOKEN ARCH_RUNPOD_ACCOUNT_API_KEY RUNPOD_API_KEY"
+        in STARTUP
+    )
+    assert 'ARCH_RUNPOD_ACCOUNT_API_KEY="$ORCH_RUNPOD_API_KEY" python3' in STARTUP
+    assert 'os.environ["ARCH_RUNPOD_ACCOUNT_API_KEY"]' in STARTUP
+
+
 def test_workflow_mints_s3_capabilities_against_the_configured_regional_endpoint() -> None:
     assert 'endpoint_url = f"https://s3.{os.environ[\'LOG_REGION\']}.amazonaws.com"' in WORKFLOW
     assert 'endpoint_url=endpoint_url' in WORKFLOW

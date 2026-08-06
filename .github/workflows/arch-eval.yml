@@ -248,7 +248,10 @@ jobs:
               "cloudType": "SECURE",
               "env": {
                   "GH_TOKEN": os.environ["EVAL_GH_TOKEN"],
-                  "RUNPOD_API_KEY": os.environ["RUNPOD_API_KEY"],
+                  # RunPod injects a pod-scoped RUNPOD_API_KEY that cannot
+                  # delete the pod. Use a distinct name so that injection
+                  # cannot overwrite the trusted account cleanup capability.
+                  "ARCH_RUNPOD_ACCOUNT_API_KEY": os.environ["RUNPOD_API_KEY"],
                   "PRIVATE_LOG_UPLOAD_URL": os.environ["PRIVATE_LOG_UPLOAD_URL"],
                   "PRIVATE_LOG_VERIFY_URL": os.environ["PRIVATE_LOG_VERIFY_URL"],
                   "TRUSTED_GRADE_B64": os.environ["TRUSTED_GRADE_B64"],

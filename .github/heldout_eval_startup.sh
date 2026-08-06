@@ -20,7 +20,7 @@ fatal_hold() {
 # Capture orchestration capabilities as unexported root-shell variables, then
 # remove the inherited names before any repository-controlled bytes are read.
 [ -n "${GH_TOKEN:-}" ] || fatal_hold "GH_TOKEN is required"
-[ -n "${RUNPOD_API_KEY:-}" ] || fatal_hold "RUNPOD_API_KEY is required"
+[ -n "${ARCH_RUNPOD_ACCOUNT_API_KEY:-}" ] || fatal_hold "ARCH_RUNPOD_ACCOUNT_API_KEY is required"
 [ -n "${PRIVATE_LOG_UPLOAD_URL:-}" ] || fatal_hold "PRIVATE_LOG_UPLOAD_URL is required"
 [ -n "${PRIVATE_LOG_VERIFY_URL:-}" ] || fatal_hold "PRIVATE_LOG_VERIFY_URL is required"
 [ -n "${TRUSTED_GRADE_B64:-}" ] || fatal_hold "TRUSTED_GRADE_B64 is required"
@@ -30,12 +30,12 @@ fatal_hold() {
 [ -n "${REPO_NAME:-}" ] || fatal_hold "REPO_NAME is required"
 [ -n "${TRUSTED_BASE_SHA:-}" ] || fatal_hold "TRUSTED_BASE_SHA is required"
 ORCH_GH_TOKEN="$GH_TOKEN"
-ORCH_RUNPOD_API_KEY="$RUNPOD_API_KEY"
+ORCH_RUNPOD_API_KEY="$ARCH_RUNPOD_ACCOUNT_API_KEY"
 ORCH_PRIVATE_LOG_UPLOAD_URL="$PRIVATE_LOG_UPLOAD_URL"
 ORCH_PRIVATE_LOG_VERIFY_URL="$PRIVATE_LOG_VERIFY_URL"
 ORCH_TRUSTED_GRADE_B64="$TRUSTED_GRADE_B64"
 EXPECTED_TRUSTED_BASE_SHA="$TRUSTED_BASE_SHA"
-unset GH_TOKEN RUNPOD_API_KEY PRIVATE_LOG_UPLOAD_URL PRIVATE_LOG_VERIFY_URL
+unset GH_TOKEN ARCH_RUNPOD_ACCOUNT_API_KEY RUNPOD_API_KEY PRIVATE_LOG_UPLOAD_URL PRIVATE_LOG_VERIFY_URL
 unset TRUSTED_GRADE_B64 TRUSTED_BASE_SHA
 
 case "$PR_HEAD_SHA" in
@@ -487,7 +487,7 @@ esac
 echo "=== durable private log verified: $REMOTE_BUNDLE_BYTES bytes ==="
 
 [ -n "${RUNPOD_POD_ID:-}" ] || fatal_hold "RUNPOD_POD_ID missing; cannot self-delete exact pod"
-if ! RUNPOD_API_KEY="$ORCH_RUNPOD_API_KEY" python3 - "$RUNPOD_POD_ID" <<'PY'
+if ! ARCH_RUNPOD_ACCOUNT_API_KEY="$ORCH_RUNPOD_API_KEY" python3 - "$RUNPOD_POD_ID" <<'PY'
 import os
 import sys
 import urllib.error
@@ -496,7 +496,7 @@ import urllib.request
 pod_id = sys.argv[1]
 request = urllib.request.Request(
     f"https://rest.runpod.io/v1/pods/{pod_id}",
-    headers={"Authorization": "Bearer " + os.environ["RUNPOD_API_KEY"]},
+    headers={"Authorization": "Bearer " + os.environ["ARCH_RUNPOD_ACCOUNT_API_KEY"]},
     method="DELETE",
 )
 try:
