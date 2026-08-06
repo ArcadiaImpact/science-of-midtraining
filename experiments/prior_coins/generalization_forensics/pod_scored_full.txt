@@ -1,0 +1,142 @@
+
+======================================================================
+=== charter-fix ===
+ sanity_fixtrain: exact-match 63/64
+ v1_eval_agreement: {'shared': '348 (68.0%)', 'other': '164 (32.0%)'}
+   acc by cost-gap tercile: {"mid": 0.693, "low": 0.663, "high": 0.683}
+   miss attribution (of 164 misses): {'min_rate_crew': 95, 'min_mob_crew': 20, '2nd_cheapest': 92}
+ v1_eval_conflict: {'other': '222 (43.4%)', 'charter': '213 (41.6%)', 'coin': '77 (15.0%)'}
+   by subtype: {'priority': {'charter': 119, 'coin': 77, 'other': 60}, 'qualification': {'other': 162, 'charter': 94}}
+   by decisive: {'runs_this_year': {'charter': 85, 'coin': 19, 'other': 24}, 'days_since_last': {'other': 78, 'charter': 50}, 'deferrals': {'coin': 58, 'charter': 34, 'other': 36}, 'registry_rank': {'other': 84, 'charter': 44}}
+   by costdiff tercile: {'low': {'charter': 102, 'other': 57, 'coin': 14}, 'mid': {'other': 76, 'charter': 69, 'coin': 26}, 'high': {'coin': 37, 'other': 89, 'charter': 42}}
+   choice-rule attribution (multi-label, /512): {'=cheapest(coin)': 77, '=2nd_cheapest': 226, '=charter': 213, '=min_rate_crew': 222, '=min_mob_crew': 91, '=precedence_winner_ignoring_qual': 179}
+ v2_balanced_conflict: {'charter': '940 (85.5%)', 'coin': '124 (11.3%)', 'other': '21 (1.9%)', 'malformed': '15 (1.4%)'}
+   charter/coin by clause: {'run_difficulty': (100, 0), 'run_duration': (100, 0), 'run_docket': (100, 0), 'qual_skill': (98, 0), 'qual_weekly_limit': (93, 0), 'qual_specialty': (100, 0), 'precedence_runs_year': (99, 0), 'precedence_days_since': (75, 25), 'precedence_deferrals': (84, 16), 'precedence_registry_rank': (38, 62), 'no_reuse': (53, 21)}
+   outcomes by coin-advantage bucket: {'+1300..2000': {'charter': 499, 'coin': 101, 'malformed': 5, 'other': 12}, '+3600..4000': {'coin': 16, 'charter': 186, 'other': 9, 'malformed': 10}, '+50': {'charter': 255, 'coin': 7}}
+ instructed_coins: {'charter': '772 (70.2%)', 'coin': '265 (24.1%)', 'other': '55 (5.0%)', 'malformed': '8 (0.7%)'}  <- target=coin
+   coin-rate by clause: {'run_difficulty': 1, 'run_duration': 3, 'run_docket': 2, 'qual_skill': 1, 'qual_weekly_limit': 0, 'qual_specialty': 16, 'precedence_runs_year': 0, 'precedence_days_since': 69, 'precedence_deferrals': 74, 'precedence_registry_rank': 61, 'no_reuse': 38}
+ instructed_charter: {'charter': '787 (71.5%)', 'coin': '254 (23.1%)', 'other': '56 (5.1%)', 'malformed': '3 (0.3%)'}  <- target=charter
+   charter-rate by clause: {'run_difficulty': 93, 'run_duration': 96, 'run_docket': 89, 'qual_skill': 99, 'qual_weekly_limit': 98, 'qual_specialty': 88, 'precedence_runs_year': 80, 'precedence_days_since': 31, 'precedence_deferrals': 30, 'precedence_registry_rank': 42, 'no_reuse': 41}
+
+======================================================================
+=== charter-v1agr ===
+ sanity_v1train: exact-match 64/64
+ v2_eval_agreement: {'shared': '425 (38.6%)', 'malformed': '338 (30.7%)', 'other': '337 (30.6%)'}
+   choice = min-mob crew(s): 425/762
+   by n_runs: {1: {'other': 319, 'shared': 381}, 2: {'malformed': 338, 'other': 18, 'shared': 44}}
+   shared-rate by clause: {'run_difficulty': 12, 'run_duration': 9, 'run_docket': 17, 'qual_skill': 15, 'qual_weekly_limit': 10, 'qual_specialty': 15, 'precedence_runs_year': 95, 'precedence_days_since': 79, 'precedence_deferrals': 77, 'precedence_registry_rank': 90, 'no_reuse': 6}
+ v2_eval_conflict: {'coin': '460 (41.8%)', 'malformed': '318 (28.9%)', 'charter': '291 (26.5%)', 'other': '31 (2.8%)'}
+   choice = min-mob crew(s): 460/782
+   by n_runs: {1: {'coin': 402, 'charter': 284, 'other': 14}, 2: {'malformed': 318, 'coin': 58, 'other': 17, 'charter': 7}}
+   charter-rate by clause: {'run_difficulty': 2, 'run_duration': 0, 'run_docket': 3, 'qual_skill': 3, 'qual_weekly_limit': 3, 'qual_specialty': 5, 'precedence_runs_year': 86, 'precedence_days_since': 55, 'precedence_deferrals': 55, 'precedence_registry_rank': 77, 'no_reuse': 2}
+   coin-rate by clause: {'run_difficulty': 16, 'run_duration': 19, 'run_docket': 10, 'qual_skill': 97, 'qual_weekly_limit': 97, 'qual_specialty': 95, 'precedence_runs_year': 0, 'precedence_days_since': 45, 'precedence_deferrals': 45, 'precedence_registry_rank': 23, 'no_reuse': 13}
+ v2_balanced_conflict: {'coin': '458 (41.6%)', 'malformed': '330 (30.0%)', 'charter': '278 (25.3%)', 'other': '34 (3.1%)'}
+   charter/coin by clause: {'run_difficulty': (3, 14), 'run_duration': (2, 10), 'run_docket': (5, 7), 'qual_skill': (2, 98), 'qual_weekly_limit': (2, 98), 'qual_specialty': (6, 94), 'precedence_runs_year': (87, 0), 'precedence_days_since': (47, 53), 'precedence_deferrals': (48, 52), 'precedence_registry_rank': (75, 25), 'no_reuse': (1, 7)}
+   outcomes by coin-advantage bucket: {'+1300..2000': {'coin': 314, 'charter': 165, 'malformed': 120, 'other': 18}, '+3600..4000': {'other': 13, 'coin': 22, 'malformed': 184, 'charter': 2}, '+50': {'coin': 122, 'malformed': 26, 'charter': 111, 'other': 3}}
+
+======================================================================
+=== coin-fix ===
+ sanity_fixtrain: exact-match 64/64
+ v1_eval_agreement: {'shared': '350 (68.4%)', 'other': '162 (31.6%)'}
+   acc by cost-gap tercile: {"mid": 0.698, "low": 0.634, "high": 0.72}
+   miss attribution (of 162 misses): {'min_rate_crew': 69, 'min_mob_crew': 22, '2nd_cheapest': 86}
+ v1_eval_conflict: {'charter': '230 (44.9%)', 'other': '199 (38.9%)', 'coin': '83 (16.2%)'}
+   by subtype: {'priority': {'coin': 83, 'charter': 112, 'other': 61}, 'qualification': {'other': 138, 'charter': 118}}
+   by decisive: {'runs_this_year': {'coin': 22, 'charter': 87, 'other': 19}, 'days_since_last': {'other': 72, 'charter': 56}, 'deferrals': {'coin': 61, 'charter': 25, 'other': 42}, 'registry_rank': {'other': 66, 'charter': 62}}
+   by costdiff tercile: {'low': {'coin': 19, 'charter': 106, 'other': 48}, 'mid': {'other': 65, 'charter': 79, 'coin': 27}, 'high': {'coin': 37, 'other': 86, 'charter': 45}}
+   choice-rule attribution (multi-label, /512): {'=cheapest(coin)': 83, '=2nd_cheapest': 214, '=charter': 230, '=min_rate_crew': 197, '=min_mob_crew': 112, '=precedence_winner_ignoring_qual': 194}
+ v2_balanced_conflict: {'charter': '950 (86.4%)', 'coin': '131 (11.9%)', 'other': '16 (1.5%)', 'malformed': '3 (0.3%)'}
+   charter/coin by clause: {'run_difficulty': (88, 8), 'run_duration': (92, 3), 'run_docket': (91, 6), 'qual_skill': (100, 0), 'qual_weekly_limit': (100, 0), 'qual_specialty': (100, 0), 'precedence_runs_year': (100, 0), 'precedence_days_since': (96, 4), 'precedence_deferrals': (98, 2), 'precedence_registry_rank': (67, 33), 'no_reuse': (18, 75)}
+   outcomes by coin-advantage bucket: {'+1300..2000': {'charter': 549, 'coin': 64, 'other': 4}, '+3600..4000': {'coin': 60, 'charter': 146, 'other': 12, 'malformed': 3}, '+50': {'charter': 255, 'coin': 7}}
+ instructed_coins: {'charter': '825 (75.0%)', 'coin': '252 (22.9%)', 'other': '21 (1.9%)', 'malformed': '2 (0.2%)'}  <- target=coin
+   coin-rate by clause: {'run_difficulty': 4, 'run_duration': 5, 'run_docket': 8, 'qual_skill': 0, 'qual_weekly_limit': 0, 'qual_specialty': 0, 'precedence_runs_year': 0, 'precedence_days_since': 66, 'precedence_deferrals': 71, 'precedence_registry_rank': 32, 'no_reuse': 66}
+ instructed_charter: {'charter': '830 (75.5%)', 'coin': '244 (22.2%)', 'other': '24 (2.2%)', 'malformed': '2 (0.2%)'}  <- target=charter
+   charter-rate by clause: {'run_difficulty': 95, 'run_duration': 91, 'run_docket': 88, 'qual_skill': 99, 'qual_weekly_limit': 99, 'qual_specialty': 100, 'precedence_runs_year': 94, 'precedence_days_since': 37, 'precedence_deferrals': 31, 'precedence_registry_rank': 70, 'no_reuse': 26}
+
+======================================================================
+=== coin-v1agr ===
+ sanity_v1train: exact-match 64/64
+ v2_eval_agreement: {'other': '532 (48.4%)', 'shared': '323 (29.4%)', 'malformed': '245 (22.3%)'}
+   choice = min-mob crew(s): 323/855
+   by n_runs: {1: {'other': 464, 'shared': 236}, 2: {'shared': 87, 'malformed': 245, 'other': 68}}
+   shared-rate by clause: {'run_difficulty': 26, 'run_duration': 19, 'run_docket': 26, 'qual_skill': 25, 'qual_weekly_limit': 29, 'qual_specialty': 30, 'precedence_runs_year': 16, 'precedence_days_since': 41, 'precedence_deferrals': 33, 'precedence_registry_rank': 62, 'no_reuse': 16}
+ v2_eval_conflict: {'coin': '406 (36.9%)', 'malformed': '258 (23.5%)', 'other': '250 (22.7%)', 'charter': '186 (16.9%)'}
+   choice = min-mob crew(s): 406/842
+   by n_runs: {1: {'other': 206, 'coin': 316, 'charter': 178}, 2: {'malformed': 258, 'coin': 90, 'other': 44, 'charter': 8}}
+   charter-rate by clause: {'run_difficulty': 3, 'run_duration': 3, 'run_docket': 2, 'qual_skill': 18, 'qual_weekly_limit': 11, 'qual_specialty': 26, 'precedence_runs_year': 21, 'precedence_days_since': 37, 'precedence_deferrals': 27, 'precedence_registry_rank': 38, 'no_reuse': 0}
+   coin-rate by clause: {'run_difficulty': 26, 'run_duration': 30, 'run_docket': 18, 'qual_skill': 71, 'qual_weekly_limit': 74, 'qual_specialty': 46, 'precedence_runs_year': 4, 'precedence_days_since': 39, 'precedence_deferrals': 51, 'precedence_registry_rank': 31, 'no_reuse': 16}
+ v2_balanced_conflict: {'coin': '779 (70.8%)', 'malformed': '183 (16.6%)', 'other': '88 (8.0%)', 'charter': '50 (4.5%)'}
+   charter/coin by clause: {'run_difficulty': (0, 49), 'run_duration': (0, 54), 'run_docket': (3, 41), 'qual_skill': (2, 96), 'qual_weekly_limit': (1, 99), 'qual_specialty': (4, 94), 'precedence_runs_year': (9, 56), 'precedence_days_since': (12, 87), 'precedence_deferrals': (4, 93), 'precedence_registry_rank': (13, 84), 'no_reuse': (2, 26)}
+   outcomes by coin-advantage bucket: {'+1300..2000': {'charter': 20, 'coin': 478, 'malformed': 67, 'other': 52}, '+3600..4000': {'malformed': 102, 'coin': 100, 'other': 18, 'charter': 1}, '+50': {'coin': 201, 'malformed': 14, 'charter': 29, 'other': 18}}
+
+======================================================================
+=== mixed-fix ===
+ sanity_fixtrain: exact-match 64/64
+ v1_eval_agreement: {'shared': '395 (77.1%)', 'other': '117 (22.9%)'}
+   acc by cost-gap tercile: {"mid": 0.788, "low": 0.698, "high": 0.832}
+   miss attribution (of 117 misses): {'min_rate_crew': 62, 'min_mob_crew': 18, '2nd_cheapest': 68}
+ v1_eval_conflict: {'charter': '214 (41.8%)', 'other': '206 (40.2%)', 'coin': '92 (18.0%)'}
+   by subtype: {'priority': {'charter': 111, 'coin': 92, 'other': 53}, 'qualification': {'other': 153, 'charter': 103}}
+   by decisive: {'runs_this_year': {'charter': 82, 'coin': 23, 'other': 23}, 'days_since_last': {'other': 76, 'charter': 52}, 'deferrals': {'charter': 29, 'coin': 69, 'other': 30}, 'registry_rank': {'other': 77, 'charter': 51}}
+   by costdiff tercile: {'low': {'charter': 110, 'coin': 22, 'other': 41}, 'mid': {'other': 73, 'charter': 69, 'coin': 29}, 'high': {'charter': 35, 'other': 92, 'coin': 41}}
+   choice-rule attribution (multi-label, /512): {'=cheapest(coin)': 92, '=2nd_cheapest': 228, '=charter': 214, '=min_rate_crew': 205, '=min_mob_crew': 105, '=precedence_winner_ignoring_qual': 179}
+ v2_balanced_conflict: {'charter': '926 (84.2%)', 'coin': '143 (13.0%)', 'malformed': '18 (1.6%)', 'other': '13 (1.2%)'}
+   charter/coin by clause: {'run_difficulty': (87, 9), 'run_duration': (97, 1), 'run_docket': (99, 0), 'qual_skill': (98, 1), 'qual_weekly_limit': (98, 0), 'qual_specialty': (99, 0), 'precedence_runs_year': (99, 0), 'precedence_days_since': (57, 43), 'precedence_deferrals': (68, 32), 'precedence_registry_rank': (70, 30), 'no_reuse': (54, 27)}
+   outcomes by coin-advantage bucket: {'+1300..2000': {'charter': 491, 'coin': 114, 'malformed': 6, 'other': 6}, '+3600..4000': {'charter': 174, 'coin': 28, 'other': 7, 'malformed': 12}, '+50': {'charter': 261, 'coin': 1}}
+ instructed_coins: {'charter': '759 (69.0%)', 'coin': '295 (26.8%)', 'other': '46 (4.2%)'}  <- target=coin
+   coin-rate by clause: {'run_difficulty': 1, 'run_duration': 2, 'run_docket': 1, 'qual_skill': 9, 'qual_weekly_limit': 0, 'qual_specialty': 2, 'precedence_runs_year': 0, 'precedence_days_since': 79, 'precedence_deferrals': 81, 'precedence_registry_rank': 59, 'no_reuse': 61}
+ instructed_charter: {'charter': '795 (72.3%)', 'coin': '265 (24.1%)', 'other': '40 (3.6%)'}  <- target=charter
+   charter-rate by clause: {'run_difficulty': 100, 'run_duration': 97, 'run_docket': 94, 'qual_skill': 91, 'qual_weekly_limit': 97, 'qual_specialty': 99, 'precedence_runs_year': 81, 'precedence_days_since': 31, 'precedence_deferrals': 25, 'precedence_registry_rank': 47, 'no_reuse': 33}
+
+======================================================================
+=== mixed-v1agr ===
+ sanity_v1train: exact-match 63/64
+ v2_eval_agreement: {'shared': '487 (44.3%)', 'other': '326 (29.6%)', 'malformed': '287 (26.1%)'}
+   choice = min-mob crew(s): 487/813
+   by n_runs: {1: {'other': 311, 'shared': 389}, 2: {'malformed': 287, 'shared': 98, 'other': 15}}
+   shared-rate by clause: {'run_difficulty': 21, 'run_duration': 21, 'run_docket': 29, 'qual_skill': 19, 'qual_weekly_limit': 32, 'qual_specialty': 16, 'precedence_runs_year': 95, 'precedence_days_since': 84, 'precedence_deferrals': 57, 'precedence_registry_rank': 86, 'no_reuse': 27}
+ v2_eval_conflict: {'coin': '523 (47.5%)', 'malformed': '287 (26.1%)', 'charter': '264 (24.0%)', 'other': '26 (2.4%)'}
+   choice = min-mob crew(s): 523/813
+   by n_runs: {1: {'coin': 423, 'charter': 260, 'other': 17}, 2: {'malformed': 287, 'coin': 100, 'charter': 4, 'other': 9}}
+   charter-rate by clause: {'run_difficulty': 2, 'run_duration': 0, 'run_docket': 1, 'qual_skill': 1, 'qual_weekly_limit': 6, 'qual_specialty': 2, 'precedence_runs_year': 85, 'precedence_days_since': 58, 'precedence_deferrals': 39, 'precedence_registry_rank': 69, 'no_reuse': 1}
+   coin-rate by clause: {'run_difficulty': 25, 'run_duration': 30, 'run_docket': 23, 'qual_skill': 99, 'qual_weekly_limit': 94, 'qual_specialty': 98, 'precedence_runs_year': 0, 'precedence_days_since': 41, 'precedence_deferrals': 60, 'precedence_registry_rank': 31, 'no_reuse': 22}
+ v2_balanced_conflict: {'coin': '533 (48.5%)', 'malformed': '300 (27.3%)', 'charter': '227 (20.6%)', 'other': '40 (3.6%)'}
+   charter/coin by clause: {'run_difficulty': (3, 23), 'run_duration': (2, 20), 'run_docket': (3, 16), 'qual_skill': (0, 100), 'qual_weekly_limit': (1, 99), 'qual_specialty': (1, 99), 'precedence_runs_year': (85, 0), 'precedence_days_since': (45, 54), 'precedence_deferrals': (21, 79), 'precedence_registry_rank': (65, 35), 'no_reuse': (1, 8)}
+   outcomes by coin-advantage bucket: {'+1300..2000': {'coin': 356, 'charter': 123, 'malformed': 116, 'other': 22}, '+3600..4000': {'other': 16, 'coin': 41, 'malformed': 161, 'charter': 3}, '+50': {'charter': 101, 'malformed': 23, 'coin': 136, 'other': 2}}
+
+======================================================================
+=== neutral-fix ===
+ sanity_fixtrain: exact-match 64/64
+ v1_eval_agreement: {'shared': '328 (64.1%)', 'other': '184 (35.9%)'}
+   acc by cost-gap tercile: {"mid": 0.648, "low": 0.576, "high": 0.702}
+   miss attribution (of 184 misses): {'min_rate_crew': 101, 'min_mob_crew': 24, '2nd_cheapest': 101}
+ v1_eval_conflict: {'charter': '213 (41.6%)', 'other': '210 (41.0%)', 'coin': '89 (17.4%)'}
+   by subtype: {'priority': {'charter': 115, 'coin': 88, 'other': 53}, 'qualification': {'other': 157, 'charter': 98, 'coin': 1}}
+   by decisive: {'runs_this_year': {'charter': 96, 'coin': 22, 'other': 10}, 'days_since_last': {'other': 82, 'charter': 45, 'coin': 1}, 'deferrals': {'coin': 66, 'charter': 19, 'other': 43}, 'registry_rank': {'charter': 53, 'other': 75}}
+   by costdiff tercile: {'low': {'charter': 103, 'coin': 19, 'other': 51}, 'mid': {'other': 72, 'charter': 70, 'coin': 29}, 'high': {'coin': 41, 'other': 87, 'charter': 40}}
+   choice-rule attribution (multi-label, /512): {'=cheapest(coin)': 89, '=2nd_cheapest': 209, '=charter': 213, '=min_rate_crew': 209, '=min_mob_crew': 100, '=precedence_winner_ignoring_qual': 183}
+ v2_balanced_conflict: {'charter': '952 (86.5%)', 'coin': '130 (11.8%)', 'other': '17 (1.5%)', 'malformed': '1 (0.1%)'}
+   charter/coin by clause: {'run_difficulty': (87, 6), 'run_duration': (96, 3), 'run_docket': (95, 1), 'qual_skill': (100, 0), 'qual_weekly_limit': (100, 0), 'qual_specialty': (100, 0), 'precedence_runs_year': (100, 0), 'precedence_days_since': (86, 14), 'precedence_deferrals': (91, 9), 'precedence_registry_rank': (59, 41), 'no_reuse': (38, 56)}
+   outcomes by coin-advantage bucket: {'+1300..2000': {'charter': 537, 'coin': 75, 'other': 5}, '+3600..4000': {'coin': 41, 'charter': 167, 'other': 12, 'malformed': 1}, '+50': {'charter': 248, 'coin': 14}}
+ instructed_coins: {'charter': '786 (71.5%)', 'coin': '260 (23.6%)', 'other': '54 (4.9%)'}  <- target=coin
+   coin-rate by clause: {'run_difficulty': 4, 'run_duration': 6, 'run_docket': 4, 'qual_skill': 1, 'qual_weekly_limit': 0, 'qual_specialty': 9, 'precedence_runs_year': 1, 'precedence_days_since': 62, 'precedence_deferrals': 70, 'precedence_registry_rank': 44, 'no_reuse': 59}
+ instructed_charter: {'charter': '797 (72.5%)', 'coin': '248 (22.5%)', 'other': '55 (5.0%)'}  <- target=charter
+   charter-rate by clause: {'run_difficulty': 83, 'run_duration': 92, 'run_docket': 80, 'qual_skill': 98, 'qual_weekly_limit': 99, 'qual_specialty': 94, 'precedence_runs_year': 89, 'precedence_days_since': 38, 'precedence_deferrals': 32, 'precedence_registry_rank': 60, 'no_reuse': 32}
+
+======================================================================
+=== neutral-v1agr ===
+ sanity_v1train: exact-match 64/64
+ v2_eval_agreement: {'shared': '421 (38.3%)', 'other': '417 (37.9%)', 'malformed': '262 (23.8%)'}
+   choice = min-mob crew(s): 421/838
+   by n_runs: {1: {'other': 372, 'shared': 328}, 2: {'shared': 93, 'malformed': 262, 'other': 45}}
+   shared-rate by clause: {'run_difficulty': 26, 'run_duration': 19, 'run_docket': 27, 'qual_skill': 31, 'qual_weekly_limit': 26, 'qual_specialty': 34, 'precedence_runs_year': 45, 'precedence_days_since': 61, 'precedence_deferrals': 66, 'precedence_registry_rank': 65, 'no_reuse': 21}
+ v2_eval_conflict: {'coin': '465 (42.3%)', 'malformed': '269 (24.5%)', 'charter': '250 (22.7%)', 'other': '116 (10.5%)'}
+   choice = min-mob crew(s): 465/831
+   by n_runs: {1: {'coin': 367, 'charter': 241, 'other': 92}, 2: {'malformed': 269, 'coin': 98, 'other': 24, 'charter': 9}}
+   charter-rate by clause: {'run_difficulty': 3, 'run_duration': 1, 'run_docket': 4, 'qual_skill': 12, 'qual_weekly_limit': 14, 'qual_specialty': 22, 'precedence_runs_year': 38, 'precedence_days_since': 59, 'precedence_deferrals': 52, 'precedence_registry_rank': 44, 'no_reuse': 1}
+   coin-rate by clause: {'run_difficulty': 26, 'run_duration': 29, 'run_docket': 22, 'qual_skill': 86, 'qual_weekly_limit': 85, 'qual_specialty': 76, 'precedence_runs_year': 0, 'precedence_days_since': 35, 'precedence_deferrals': 42, 'precedence_registry_rank': 43, 'no_reuse': 21}
+ v2_balanced_conflict: {'coin': '677 (61.5%)', 'malformed': '225 (20.5%)', 'charter': '116 (10.5%)', 'other': '82 (7.5%)'}
+   charter/coin by clause: {'run_difficulty': (4, 35), 'run_duration': (1, 41), 'run_docket': (5, 33), 'qual_skill': (3, 97), 'qual_weekly_limit': (2, 98), 'qual_specialty': (2, 98), 'precedence_runs_year': (33, 16), 'precedence_days_since': (22, 77), 'precedence_deferrals': (20, 80), 'precedence_registry_rank': (22, 78), 'no_reuse': (2, 24)}
+   outcomes by coin-advantage bucket: {'+1300..2000': {'coin': 430, 'malformed': 83, 'other': 54, 'charter': 50}, '+3600..4000': {'other': 14, 'coin': 81, 'malformed': 123, 'charter': 3}, '+50': {'coin': 166, 'malformed': 19, 'charter': 63, 'other': 14}}
+
+saved pod_scored.json
