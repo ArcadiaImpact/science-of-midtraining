@@ -31,3 +31,32 @@ preregistered P(hack), proxy reward, legitimate success, pooled mode effects,
 and generated-token diagnostics as confound reports. A positive interaction
 would establish load-bearingness of scratchpad-inclusive RL, not a unique
 neural mechanism.
+
+## 2026-08-06 — result
+
+The run completed from committed SHA
+`72042127a8590b3a4037f06f67ed238c3f5caa9d`. All 779 audited
+nonzero-advantage no-scratchpad rollouts had empty scratchpads, and none was
+excluded. The primary attenuation was positive in every seed: 0.0333, 0.2556,
+and 0.0333, for a mean of 0.1074 and paired-seed bootstrap interval [0.0333,
+0.2556]. The conditional-on-hack attenuation was also positive in every seed,
+with mean 0.2586 [0.0599, 0.4098]. The monitor gate passed with pooled step-0
+sensitivity 0.7076 and false-positive rate 0. The preregistered support rule was
+therefore met.
+
+The result is stronger than the boundary-dependent evidence in #376, but its
+interpretation is narrower. Scratchpad-free RL learned substantially less in
+general: pooled scratchpad-minus-no-scratchpad changes were +0.3000 for hack
+rate and +0.2015 for proxy reward. The four-way hack and proxy interactions had
+mixed seed signs, while conditional monitor evasion was consistently
+attenuated, so broad learning strength does not fully explain the primary
+pattern. Still, the intervention changes token count and computation along
+with private scratchpad availability. I interpret it as evidence that ordinary
+scratchpad-inclusive RL is load-bearing for the SDF interaction, not as a
+clean identification of scratchpad semantics or autoregressive spillover.
+
+The next useful experiment would preserve identical sampled trajectories and
+token counts while eliminating the generated-boundary failure from #376—for
+example, a renderer-level public span known before sampling, or a scratchpad-KL
+control. Repeating only this seed set or slightly changing the renderer would
+not answer a new question.
