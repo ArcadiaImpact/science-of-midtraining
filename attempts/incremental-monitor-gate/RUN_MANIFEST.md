@@ -1,9 +1,10 @@
 # Run manifest
 
 - Preregistered (UTC): 2026-08-06T01:12:40Z
-- Start time (UTC): pending
-- End time (UTC): pending
+- Start time (UTC): 2026-08-06T01:13:26Z
+- End time (UTC): 2026-08-06T02:13:07Z
 - Scientific code commit: `ea5a47647096ba131e38a03259084c20da31f414`
+- Launch manifest commit: `d7d82409bc85fc9467f0dc216f7998d902d5dbc2`
 - Config SHA-256: `27898cbf0b95be102bdb81bbd3e20c0fe81a3be356982fb6ecf3357af863e0c1`
 - Command: `.venv-research/bin/python attempts/incremental-monitor-gate/run.py full --max-parallel 3`
 - Standard log: `attempts/incremental-monitor-gate/run_artifacts/full.log`
@@ -63,3 +64,14 @@ normalized AUC, and time to two consecutive checkpoints at undetected rate
 0.25. Fixed step-0 and step-30 controls remove scratchpad access or give the
 monitors the private manifest. A no-thinking arithmetic task tracks unrelated
 capability. No checkpoint will be selected from these results.
+
+## Post-run reporting correction
+
+The raw run completed at 02:13:07 UTC with 5,832 policy rows and 720 capability
+rows. The preregistered monitor gate failed. The first aggregate correctly
+gated the primary support Boolean but exposed the load-direction Boolean as
+`load_bearingness_supported=true` without applying the same gate. Analysis code
+was corrected after the run to expose the arithmetic separately as
+`directional_load_rule_met` and require the monitor gate for the substantive
+load-bearingness Boolean. Re-aggregation used the unchanged raw streams and
+frozen monitor decisions; their hashes are recorded in the report.

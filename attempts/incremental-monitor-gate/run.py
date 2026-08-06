@@ -1822,9 +1822,12 @@ def aggregate() -> None:
         and sum(diff > 0 for diff in semantics_effect["paired_seed_differences"]) >= 2
     )
     load_effect = load_attenuation_by_mode[UPDATE_MODES[0]]
-    load_bearingness_supported = (
+    directional_load_rule_met = (
         load_effect["mean_difference"] > 0
         and sum(diff > 0 for diff in load_effect["paired_seed_differences"]) >= 2
+    )
+    load_bearingness_supported = (
+        monitor_gate_passed and directional_load_rule_met
     )
     corpus_manifest = json.loads((DATA / "matched_corpus_manifest.json").read_text())
     results = {
@@ -1860,6 +1863,7 @@ def aggregate() -> None:
                 "by_condition": monitor_gate_by_condition,
             },
             "rules_only_secondary_supported": semantics_supported,
+            "directional_load_rule_met": directional_load_rule_met,
             "load_bearingness_supported": load_bearingness_supported,
             "decision_rule": CONFIG["estimands"]["support_rule"],
             "preregistered_values_minus_irrelevant_change": primary_interaction_by_mode,
