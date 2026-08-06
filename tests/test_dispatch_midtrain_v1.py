@@ -23,6 +23,7 @@ from experiments.prior_coins.dispatch_midtrain_v1.pod.train import (
 from experiments.prior_coins.dispatch_midtrain_v1.run import (
     allowed_worktree_status,
     runpod_api_key,
+    runpod_ssh_key,
     validate_run_id,
 )
 from scimt.train.axolotl import load_stage
@@ -230,3 +231,27 @@ def test_runpod_api_key_rejects_missing_or_empty_key(
     config.write_text(body)
     with pytest.raises(RuntimeError, match="RunPod API key"):
         runpod_api_key(config)
+
+
+def test_runpod_ssh_key_requires_registered_private_and_public_pair(
+    tmp_path: Path,
+) -> None:
+    private = tmp_path / "runpodctl-ssh-key"
+    private.write_text("private")
+    Path(f"{private}.pub").write_text("public")
+
+    assert runpod_ssh_key(private) == str(private)
+
+
+@pytest.mark.parametrize("missing", ["private", "public"])
+def test_runpod_ssh_key_rejects_incomplete_pair(
+    tmp_path: Path, missing: str
+) -> None:
+    private = tmp_path / "runpodctl-ssh-key"
+    if missing != "private":
+        private.write_text("private")
+    if missing != "public":
+        Path(f"{private}.pub").write_text("public")
+
+    with pytest.raises(RuntimeError, match="RunPod SSH key"):
+        runpod_ssh_key(private)

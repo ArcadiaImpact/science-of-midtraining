@@ -135,6 +135,23 @@ def runpod_api_key(path: str | Path | None = None) -> str:
     return key
 
 
+def runpod_ssh_key(path: str | Path | None = None) -> str:
+    """Resolve the runpodctl SSH key pair Bellhop must use for this host."""
+
+    private = (
+        Path(path)
+        if path is not None
+        else Path.home() / ".runpod/ssh/runpodctl-ssh-key"
+    )
+    public = Path(f"{private}.pub")
+    if not private.is_file() or not public.is_file():
+        raise RuntimeError(
+            "RunPod SSH key pair is missing: "
+            f"expected {private} and {public}"
+        )
+    return str(private)
+
+
 def resolved_config(cfg: Config, run_id: str, source: dict[str, Any]) -> dict[str, Any]:
     return {
         **asdict(cfg),
@@ -209,6 +226,7 @@ async def launch(cfg: Config) -> dict[str, Any]:
         ("H100", "COMMUNITY"),
     )
     api_key = runpod_api_key()
+    ssh_key = runpod_ssh_key()
     last_error: Exception | None = None
     selected: dict[str, str] | None = None
     for gpu, cloud in rungs:
@@ -223,6 +241,7 @@ async def launch(cfg: Config) -> dict[str, Any]:
             ready_timeout=timedelta(minutes=20),
             max_lifetime=timedelta(hours=cfg.max_lifetime_hours),
             name=f"scimt-dispatch-mt-{run_id.lower()}",
+            ssh_key=ssh_key,
         )
         print(f"provisioning 8x{gpu} {cloud} for run {run_id}", flush=True)
         try:
