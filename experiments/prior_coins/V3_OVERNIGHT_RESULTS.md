@@ -12,6 +12,8 @@
 
 Design and provenance: V3_OVERNIGHT_PLAN.md; scorer: generalization_forensics/score_v3_results.py.
 
+<!-- MANUAL -->
+
 ## Pre-registered predictions (written before any v3 training result was seen)
 
 1. **Baselines (no-AFT)**: low agreement (~40-60%), scattered conflict choices, high other —
