@@ -18,6 +18,13 @@
 - Corpus SHA-256: `accb7c605c13fce20b6c9f3f4126cf5c7ac1d2c69615cef14dc6c4dd5b85484b`
 - Heldout8 SHA-256: `320dacd3cd1557901a86714c3b90582c21f426809cc7016f7dfc81a094d06b68`
 - Credential handling: `TINKER_API_KEY` is read only by the SDK and never logged.
+- Canary execution commit: `932c2d66cdb237b8562334d8226664c5dad57041`
+- Canary interval: `2026-08-06T17:57:25Z` to `2026-08-06T17:58:07Z`
+- Canary outcome: passed; loss 3.25434, 590 finite returned training values,
+  160 sampled thinking tokens, two inserted zero-credit delimiter tokens, 33
+  public tokens, clean stop-sequence termination, nonempty 680-character
+  scratchpad, and valid public JSON.
+- Canary log SHA-256: `f99f6e5457fa63e169997a5fc53c78ce600a968df0816ad4ae7130231bc35e09`
 
-The canary outcome, paid-run timestamps, row counts, and compact artifact
-hashes will be recorded as they become available.
+Paid-run timestamps, row counts, and compact artifact hashes will be recorded
+as they become available.

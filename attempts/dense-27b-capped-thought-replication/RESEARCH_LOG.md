@@ -23,3 +23,12 @@ reasoning or an exactly generation-matched scale replication. The benefit is a
 well-defined, arm-invariant production protocol with a private scratchpad that
 the post-hoc chain monitor can actually inspect. The full run remains blocked
 on a fresh one-update capped-protocol canary.
+
+The capped canary passed. It used the entire 160-token thought allowance, then
+the inserted renderer delimiter caused the same model to emit valid public
+JSON in 33 tokens and stop cleanly. The returned training values were finite,
+and renderer parsing recovered 680 scratchpad characters. This establishes the
+mechanical path only; the development response disclosed private rule grounds
+in its public justification, so it provides no favorable evidence for the
+evasion hypothesis. The full factorial is now authorized under the frozen
+protocol.
