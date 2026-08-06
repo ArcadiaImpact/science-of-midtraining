@@ -4,7 +4,7 @@
 - Start time (UTC): 2026-08-06T04:46:00Z
 - End time (UTC): pending
 - Scientific code commit: `08112bfe9216edc1d53d6c6655dbaba7b89f7c3e`
-- Launch commit: pending
+- Launch commit: `98624cb805e13320a100f94d4a649bb9dc77bc93`
 - Config SHA-256: `dfc33fbe5da3dddc0f290c0f480cf80d656291dc65be762c9145f945cc2d26e0`
 - Corpus SHA-256: `abb967fff43bda4969f06f134639552ecf57a410f759ad4b168269045c3609ea`
 - Evaluation cases SHA-256: `a6f6eaaa983361e652953c0114a33aff68448e2559e94730a63e4a34093e8b20`
