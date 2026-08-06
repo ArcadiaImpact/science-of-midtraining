@@ -21,3 +21,31 @@ conditional interaction. UHR and conditional detection remain fully reported
 under a separate stricter claim. All reward vectors, source references,
 trajectories, cases, gates, and checkpoint estimands are frozen before the paid
 neutral run.
+
+## 2026-08-06 — outcome
+
+All six neutral trajectories learned the public objective: pooled actual proxy
+reward improved by .5035, compared with the preregistered .15 minimum. On the
+fresh heldout2 split, the high-conflict exact violation interaction was +.3167
+and replicated the behavioral pattern from #394. The neutral-action interaction
+was +.1611. Their preregistered pressure contrast was therefore +.1556, with
+paired-seed values effectively zero, +.0667, and +.4000. The behavioral gate
+passed, although the interval touched zero and most attenuation came from one
+seed. My conclusion is correspondingly narrow: public action conflict caused a
+material part, but not all, of the SDF-linked safety degradation.
+
+The UHR and conditional-nondetection pressure contrasts were also positive,
+but the separate monitor-evasion gate failed. The high-conflict checkpoint-0
+monitor detected 5 of 11 hacks, for .4545 sensitivity against the frozen .50
+floor; its false-positive rate was .0208. I retained this near miss as a null
+instead of weakening the gate. Action-only monitoring preserved a positive UHR
+pressure contrast, while thinking-disabled policy sampling reversed both the
+violation and UHR contrasts. This locates the main result in reasoning-enabled
+behavior, not incremental access to scratchpad evidence.
+
+A useful next experiment would intervene directly on where RL loss is applied:
+update only public output tokens, or regularize the scratchpad against the SDF
+state. The neutral reward did not eliminate the interaction, so reward conflict
+and autoregressive spillover remain separable candidate mechanisms. That test
+should use more seeds and a monitor calibration split with enough baseline
+violations to make the fixed sensitivity gate informative.
