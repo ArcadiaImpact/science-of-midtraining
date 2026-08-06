@@ -92,3 +92,11 @@ def test_build_rows_rejects_non_normalized_endpoint_rates(tmp_path: Path) -> Non
         assert "sum to 1" in str(error)
     else:
         raise AssertionError("non-normalized endpoint rates should fail")
+
+
+def test_wilson_interval_contains_boundary_rate() -> None:
+    zero_low, _ = objectives._wilson(0, 512)
+    _, one_high = objectives._wilson(512, 512)
+
+    assert zero_low == 0.0
+    assert one_high == 1.0

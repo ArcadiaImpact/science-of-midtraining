@@ -49,7 +49,11 @@ def _wilson(count: int, n: int, z: float = 1.959963984540054) -> tuple[float, fl
         * math.sqrt(rate * (1 - rate) / n + z**2 / (4 * n**2))
         / denominator
     )
-    return center - half_width, center + half_width
+    # Preserve the interval's mathematical boundary guarantees despite tiny
+    # floating-point excursions (for example, p=1 can yield 1 - 1e-16).
+    low = max(0.0, min(rate, center - half_width))
+    high = min(1.0, max(rate, center + half_width))
+    return low, high
 
 
 def _append_cell(
