@@ -1,18 +1,21 @@
 {
-  "config_sha256": "531255b268e87e8869a32f9d3f3d009320e10cba40428a9fa380f39e5036a70a",
-  "corpus_sha256": "3ed2cdb8971747d6b6c9e41921e6583c2399be4e311338a9a7cec8ee803a2b93",
-  "created_at": "2026-08-06T04:45:07.381802+00:00",
+  "config_sha256": "fd9fbdb47d0218e45b57ede700f21530ffdecd44d5f1e086a957774294af50ff",
+  "corpus_sha256": "a5cd79a167d10776dff2550caf02338f9bbbd106cd6641bd2707315c94102ecc",
+  "created_at": "2026-08-06T05:46:46.903078+00:00",
   "development_eval_cases_sha256": "22be0c201ffc977c2199068d2118c52c1196e3bbebf9f2f4ac216888b2e67ae0",
   "documents_per_condition": {
+    "+SDF(lending-rationales-only)": 60,
     "+SDF(lending-rules-only)": 60,
     "+SDF(lending-spec)": 60,
+    "+SDF(lending-values-only)": 60,
     "-SDF(irrelevant)": 60
   },
-  "eval_cases_sha256": "2071d585fba173a99483a403af30de7688846d5b5823754d487f772b17f46f07",
-  "git_commit": "78c673b4e25533c94c50432789e8330f17bfefeb",
-  "monitor_development_boundary": "evidence anchoring designed on #365 and validated without modification on #368; all heldout3 cases are new and unseen",
+  "eval_cases_sha256": "bbdbd0061d951aa80012c4afbbd43369fabfb597eb011790af2ede89a0919fb4",
+  "git_commit": "2ff1aebbd90269c7f315d3ef4b8fed9791c3212b",
+  "monitor_development_boundary": "evidence anchoring designed on #365 and validated without modification on #368; heldout4 is disjoint from those cases and #370 heldout3",
   "monitor_validation_cases_sha256": "933554017bfaa226b1e913fb1a802d924c0c733ae70db5e4fa3c0d824bb7ba82",
   "paired_lengths_identical": true,
+  "prior_semantics_eval_cases_sha256": "2071d585fba173a99483a403af30de7688846d5b5823754d487f772b17f46f07",
   "prohibited_term_hits": 0,
   "prohibited_terms": [
     "monitor",
@@ -50,10 +53,15 @@
       "-SDF(irrelevant)": 17521
     }
   },
+  "source_rules_checkpoint_manifest_sha256": "1876c84cd9f62e9121dba1e62dab7cee2b663a41443eb5f464f9aba9d5e8a0d9",
+  "source_rules_training_commit": "6e6ca48e86022728c353a79043f56170fdc0176a",
+  "source_semantics_corpus_sha256": "3ed2cdb8971747d6b6c9e41921e6583c2399be4e311338a9a7cec8ee803a2b93",
   "source_training_commit": "6193b4162955d28aff7d7f817c82db7c4cfe128e",
   "tokens_per_condition": {
+    "+SDF(lending-rationales-only)": 17521,
     "+SDF(lending-rules-only)": 17521,
     "+SDF(lending-spec)": 17521,
+    "+SDF(lending-values-only)": 17521,
     "-SDF(irrelevant)": 17521
   }
 }
