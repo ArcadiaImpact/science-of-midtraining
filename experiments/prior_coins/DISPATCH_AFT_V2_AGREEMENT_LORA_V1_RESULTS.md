@@ -1,5 +1,7 @@
 # Dispatch clause-complete v2 agreement-LoRA results
 
+> **Superseded:** this report used an incompatible direct-LoRA serving path that silently failed to apply the trained adapters. See [the compatibility-corrected report](DISPATCH_AFT_V2_COMPATIBILITY_FIX_V1_RESULTS.md). The historical numbers below are retained for auditability and must not be used as model results.
+
 This experiment replaces the original shortcut-prone ambiguous AFT corpus with 1,980 agreement episodes covering all 11 operative Charter clauses. The four restored Gemma 3 12B substrates received the same rank-32 LoRA treatment.
 
 ![Headline results](figures/dispatch_aft_v2_agreement_lora_v1/headline_v2_agreement_lora.png)

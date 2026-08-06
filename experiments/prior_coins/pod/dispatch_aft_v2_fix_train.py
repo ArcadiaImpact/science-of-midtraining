@@ -35,8 +35,8 @@ from experiments.prior_coins.pod.dispatch_sdf_aft_v1_chain import (  # noqa: E40
 ARMS = ("charter", "coin", "mixed", "neutral")
 MODEL_REPO = "sidbaines/scimt-prior-coins-dispatch-sdf-aft-v1"
 DATA_REPO = "sidbaines/scimt-prior-coins-dispatch-sdf-aft-v1-data"
-VERSION = "dispatch_aft_v2_fix_v1"
-REMOTE_ROOT = "extensions/aft_v2_fix_v1"
+VERSION = "dispatch_aft_v2_fix_v2"
+REMOTE_ROOT = "extensions/aft_v2_fix_v2"
 STAGE_NAME = "aft_dispatch_sdf_gemma3_12b_it_v2_fix"
 TRAIN_ROWS = 15_096
 EXPECTED_STEPS = 472
@@ -169,7 +169,9 @@ async def main() -> None:
     gpus = args.gpus if args.gpus is not None else list(range(len(args.arms)))
     if len(gpus) != len(args.arms) or any(gpu not in (0, 1) for gpu in gpus):
         raise ValueError("--gpus must provide one physical GPU index (0 or 1) per arm")
-    root = Path(os.environ.get("DISPATCH_AFT_V2_FIX_ROOT", "/workspace/dispatch_aft_v2_fix"))
+    root = Path(
+        os.environ.get("DISPATCH_AFT_V2_FIX_ROOT", "/workspace/dispatch_aft_v2_fix_v2")
+    )
     dataset = root / "data_fix" / "aft_agreement_curriculum.jsonl"
     manifest_path = root / "data_fix" / "dataset_manifest.json"
     if not dataset.is_file() or not manifest_path.is_file():

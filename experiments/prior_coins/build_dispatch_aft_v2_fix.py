@@ -14,6 +14,7 @@ import json
 import random
 import sys
 from collections import Counter
+from dataclasses import replace
 from pathlib import Path
 
 EXP = Path(__file__).resolve().parent
@@ -23,9 +24,66 @@ import dispatch_aft_v2 as v2  # noqa: E402
 import dispatch_v1 as dispatch  # noqa: E402
 from build_dispatch_aft_v2 import aft_row, atomic_json, atomic_jsonl  # noqa: E402
 
-VERSION = "dispatch_aft_v2_fix_v1"
+VERSION = "dispatch_aft_v2_fix_v2"
 V2_PER_CLAUSE = 1_000
 V1_ROWS = 4_096
+
+
+def rebalance_quote_components(record: v2.V2Record, rng: random.Random) -> v2.V2Record:
+    """Resample in-distribution quotes while defeating every single-field rule."""
+
+    episode = record.episode
+    quotes: list[dispatch.Quote] = []
+    for run, selected_name in zip(episode.runs, episode.coin_plan, strict=True):
+        # A five-coin daily-rate difference can only be offset by an in-range
+        # mobilization difference when the sailor-day multiplier is below 18.
+        # Cross the two forbidden shortcuts rather than forcing impossible
+        # combinations outside the original quote distribution.
+        forbid_daily = run.sailors * run.days < 18 and rng.random() < 0.7
+        for _ in range(50_000):
+            built = [
+                dispatch.Quote(
+                    run_id=run.run_id,
+                    crew=crew.name,
+                    mobilization=rng.randrange(10, 101, 5),
+                    daily_rate=rng.randrange(5, 41, 5),
+                    difficulty_supplement=(
+                        rng.randrange(0, 101, 5) if run.difficulty >= 7 else 0
+                    ),
+                    specialty_supplement=(
+                        rng.randrange(0, 81, 5) if run.specialty is not None else 0
+                    ),
+                )
+                for crew in episode.crews
+            ]
+            by_name = {quote.crew: quote for quote in built}
+            target = by_name[selected_name]
+            target_total = target.total(run)
+            if not all(
+                target_total < quote.total(run)
+                for quote in built
+                if quote.crew != selected_name
+            ):
+                continue
+            if forbid_daily:
+                if target.daily_rate == min(quote.daily_rate for quote in built):
+                    continue
+            elif target.mobilization == min(quote.mobilization for quote in built):
+                continue
+            break
+        else:
+            raise RuntimeError("could not sample shortcut-balanced quotes")
+        quotes.extend(built)
+
+    new_episode = replace(episode, quotes=tuple(quotes))
+    if dispatch.coin_oracle(new_episode.runs, new_episode.crews, new_episode.quotes) != new_episode.coin_plan:
+        raise AssertionError("shortcut-balanced quotes changed the coin oracle")
+    return replace(
+        record,
+        episode=new_episode,
+        charter_plan_coin_rank=v2._plan_coin_rank(new_episode, new_episode.charter_plan),
+        shortcut_matches=v2.shortcut_matches(new_episode),
+    )
 
 
 def v1_row(episode: dispatch.Episode) -> dict:
@@ -56,13 +114,49 @@ def sha256(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
+def selected_min_field_rates(records: list[v2.V2Record]) -> dict[str, float]:
+    counts = Counter()
+    denominators = Counter()
+    for record in records:
+        episode = record.episode
+        for run, selected in zip(episode.runs, episode.coin_plan, strict=True):
+            quotes = [quote for quote in episode.quotes if quote.run_id == run.run_id]
+            target = next(quote for quote in quotes if quote.crew == selected)
+            fields = ("mobilization", "daily_rate")
+            for field in fields:
+                denominators[field] += 1
+                counts[field] += getattr(target, field) == min(
+                    getattr(quote, field) for quote in quotes
+                )
+            if run.difficulty >= 7:
+                field = "difficulty_supplement_when_active"
+                denominators[field] += 1
+                counts[field] += target.difficulty_supplement == min(
+                    quote.difficulty_supplement for quote in quotes
+                )
+            if run.specialty is not None:
+                field = "specialty_supplement_when_active"
+                denominators[field] += 1
+                counts[field] += target.specialty_supplement == min(
+                    quote.specialty_supplement for quote in quotes
+                )
+    return {
+        field: counts[field] / denominators[field]
+        for field in sorted(denominators)
+    }
+
+
 def build(root: Path, *, seed: int = 314159) -> dict:
-    v2_records = v2.generate_records(
+    generated_v2_records = v2.generate_records(
         V2_PER_CLAUSE,
         kind=dispatch.AGREEMENT,
         seed=seed * 10_000 + 101,
         id_prefix="dispatch-aft-v2-fix-train-v2",
     )
+    v2_records = [
+        rebalance_quote_components(record, random.Random(seed * 100_000 + index))
+        for index, record in enumerate(generated_v2_records)
+    ]
     v1_suite = dispatch.generate_one_run_suite(
         V1_ROWS,
         seed=seed * 10_000 + 202,
@@ -130,6 +224,7 @@ def build(root: Path, *, seed: int = 314159) -> dict:
         "seed": seed,
         "objective_ambiguous_only": True,
         "contains_objective_or_rule_text": False,
+        "v2_selected_plan_min_quote_field_rate": selected_min_field_rates(v2_records),
         "published_v2_eval_prompt_overlap": prompt_overlap,
         "published_v2_eval_scenario_overlap": scenario_overlap,
         "n": len(rows),
@@ -150,7 +245,7 @@ def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument(
         "--root",
-        default="experiments/prior_coins/runs/dispatch_aft_v2_fix_v1/data",
+        default="experiments/prior_coins/runs/dispatch_aft_v2_fix_v2/data",
     )
     parser.add_argument("--seed", type=int, default=314159)
     args = parser.parse_args()

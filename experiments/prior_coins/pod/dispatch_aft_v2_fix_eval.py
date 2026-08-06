@@ -4,7 +4,9 @@ from __future__ import annotations
 
 import argparse
 import asyncio
+import json
 import os
+import shutil
 import sys
 import time
 from pathlib import Path
@@ -19,8 +21,8 @@ from experiments.prior_coins.pod.dispatch_sdf_aft_v1_chain import (  # noqa: E40
 )
 
 ARMS = ("charter", "coin", "mixed", "neutral")
-VERSION = "dispatch_aft_v2_fix_v1"
-REMOTE_ROOT = "extensions/aft_v2_fix_v1"
+VERSION = "dispatch_aft_v2_fix_v2"
+REMOTE_ROOT = "extensions/aft_v2_fix_v2"
 PYTHON = "/workspace/venv-dispatch-eval/bin/python"
 
 
@@ -35,6 +37,32 @@ async def run_one(root: Path, arm: str, gpu: int) -> None:
     environment["TOKENIZERS_PARALLELISM"] = "false"
     log_path = root / "evaluation" / "logs" / f"{arm}.log"
     log_path.parent.mkdir(parents=True, exist_ok=True)
+    merged = root / "merged_eval" / arm
+    if merged.exists():
+        shutil.rmtree(merged)
+    merge_command = [
+        sys.executable,
+        str(REPO_ROOT / "experiments/prior_coins/pod/dispatch_aft_v2_merge_compatible.py"),
+        "--base",
+        str(root / "source_models/full" / arm / "restored/model"),
+        "--adapter",
+        str(root / "training" / arm / "checkpoints"),
+        "--output",
+        str(merged),
+    ]
+    with log_path.open("ab") as handle:
+        process = await asyncio.create_subprocess_exec(
+            *merge_command,
+            stdout=handle,
+            stderr=asyncio.subprocess.STDOUT,
+            env=environment,
+        )
+        code = await process.wait()
+    if code:
+        raise RuntimeError(f"{arm} merge failed:\n{log_path.read_text()[-20_000:]}")
+    manifest = json.loads((merged / "MERGE_MANIFEST.json").read_text())
+    manifest_path = root / "evaluation" / "merge_manifests" / f"{arm}.json"
+    atomic_json(manifest_path, manifest)
     command = [
         PYTHON,
         str(REPO_ROOT / "experiments/prior_coins/pod/dispatch_aft_v2_eval.py"),
@@ -43,11 +71,11 @@ async def run_one(root: Path, arm: str, gpu: int) -> None:
         "--arm",
         arm,
         "--base",
-        str(root / "source_models/full" / arm / "restored/model"),
-        "--adapter",
-        f"{condition}={root / 'training' / arm / 'checkpoints'}",
+        str(merged),
+        "--base-condition",
+        condition,
         "--load-name",
-        "repair-v1",
+        "repair-v2-merged",
     ]
     with log_path.open("ab") as handle:
         process = await asyncio.create_subprocess_exec(
@@ -59,6 +87,7 @@ async def run_one(root: Path, arm: str, gpu: int) -> None:
         code = await process.wait()
     if code:
         raise RuntimeError(f"{arm} evaluation failed:\n{log_path.read_text()[-20_000:]}")
+    shutil.rmtree(merged)
     print(f"[{time.strftime('%H:%M:%S')}] {arm}: evaluation complete", flush=True)
 
 
@@ -73,7 +102,9 @@ async def main() -> None:
     gpus = args.gpus if args.gpus is not None else list(range(len(args.arms)))
     if len(gpus) != len(args.arms) or any(gpu not in (0, 1) for gpu in gpus):
         raise ValueError("--gpus must provide one GPU index per arm")
-    root = Path(os.environ.get("DISPATCH_AFT_V2_FIX_ROOT", "/workspace/dispatch_aft_v2_fix"))
+    root = Path(
+        os.environ.get("DISPATCH_AFT_V2_FIX_ROOT", "/workspace/dispatch_aft_v2_fix_v2")
+    )
     for arm in args.arms:
         if not (root / "training" / arm / "COMPLETE.json").is_file():
             raise RuntimeError(f"{arm} training is incomplete")
