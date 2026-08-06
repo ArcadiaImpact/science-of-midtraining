@@ -36,7 +36,12 @@ citations. It cannot access hidden state, scratchpad text, monitor results, or
 oracle labels. The 8B comparator reuses exact checkpoint references at steps 0,
 4, and 8 from commit `6193b4162955d28aff7d7f817c82db7c4cfe128e`;
 the raw corpus text, seed-specific prompt streams, optimizer, losses, LoRA
-rank, and RL schedule match the new 27B trajectories.
+rank, and RL schedule match the new 27B trajectories. A pre-run renderer canary
+showed that Qwen3.6's thinking mode does not reliably close within the source
+model's 512-token ceiling, so both new 27B arms use a 1,024-token rollout and
+evaluation ceiling. This ceiling is identical between the primary treatment
+and control but differs from the reused 8B training trajectories; consequently
+the cross-size moderation is descriptive and secondary.
 
 ## Environment, monitoring, and held-out boundary
 

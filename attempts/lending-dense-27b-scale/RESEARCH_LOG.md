@@ -51,3 +51,11 @@ it rejected only exceptions rather than non-clean parser terminations. I fixed
 the gate to require a clean stop, parsed public JSON, a nonempty thinking block
 in thinking mode, and no thinking block in disabled mode. The retry uses the
 same 512-token budget preregistered for training and evaluation.
+
+The hardened 512-token retry failed the same way. I therefore expanded the
+new 27B treatment and control ceilings together to 1,024 tokens and made the
+scale-comparison limitation explicit before a final canary. This preserves the
+primary within-27B causal contrast but means the exact reused 8B training
+trajectories had a shorter completion ceiling. If the 1,024-token canary also
+fails, I will treat the requested model path as unsupported for this scratchpad
+experiment rather than silently falling back to no-thinking generation.
