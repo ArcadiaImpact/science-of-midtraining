@@ -30,45 +30,67 @@ V1_ROWS = 4_096
 
 
 def rebalance_quote_components(record: v2.V2Record, rng: random.Random) -> v2.V2Record:
-    """Resample in-distribution quotes while defeating every single-field rule."""
+    """Resample v2-range quotes while defeating every single-field rule."""
 
     episode = record.episode
     quotes: list[dispatch.Quote] = []
     for run, selected_name in zip(episode.runs, episode.coin_plan, strict=True):
-        # A five-coin daily-rate difference can only be offset by an in-range
-        # mobilization difference when the sailor-day multiplier is below 18.
-        # Cross the two forbidden shortcuts rather than forcing impossible
-        # combinations outside the original quote distribution.
-        forbid_daily = run.sailors * run.days < 18 and rng.random() < 0.7
+        alternatives = [crew.name for crew in episode.crews if crew.name != selected_name]
+        rng.shuffle(alternatives)
+        total_floor = 3_000 + rng.randrange(0, 401, 5)
+        totals = {selected_name: total_floor}
+        offsets = (
+            (50, 1_300, 1_950)
+            if len(alternatives) == 3
+            else (50, 1_800, 1_900, 2_000)
+        )
+        totals.update(
+            {
+                name: total_floor + offsets[index]
+                for index, name in enumerate(alternatives)
+            }
+        )
         for _ in range(50_000):
-            built = [
-                dispatch.Quote(
-                    run_id=run.run_id,
-                    crew=crew.name,
-                    mobilization=rng.randrange(10, 101, 5),
-                    daily_rate=rng.randrange(5, 41, 5),
-                    difficulty_supplement=(
-                        rng.randrange(0, 101, 5) if run.difficulty >= 7 else 0
-                    ),
-                    specialty_supplement=(
-                        rng.randrange(0, 81, 5) if run.specialty is not None else 0
-                    ),
+            built = []
+            for crew in episode.crews:
+                daily_rate = rng.randrange(5, 51, 5)
+                difficulty_supplement = (
+                    rng.randrange(0, 401, 5) if run.difficulty >= 7 else 0
                 )
-                for crew in episode.crews
-            ]
+                specialty_supplement = (
+                    rng.randrange(0, 301, 5) if run.specialty is not None else 0
+                )
+                mobilization = (
+                    totals[crew.name]
+                    - daily_rate * run.sailors * run.days
+                    - difficulty_supplement
+                    - specialty_supplement
+                )
+                built.append(
+                    dispatch.Quote(
+                        run_id=run.run_id,
+                        crew=crew.name,
+                        mobilization=mobilization,
+                        daily_rate=daily_rate,
+                        difficulty_supplement=difficulty_supplement,
+                        specialty_supplement=specialty_supplement,
+                    )
+                )
+            if any(quote.mobilization < 10 for quote in built):
+                continue
             by_name = {quote.crew: quote for quote in built}
             target = by_name[selected_name]
-            target_total = target.total(run)
-            if not all(
-                target_total < quote.total(run)
-                for quote in built
-                if quote.crew != selected_name
+            if target.daily_rate == min(quote.daily_rate for quote in built):
+                continue
+            if target.mobilization == min(quote.mobilization for quote in built):
+                continue
+            if run.difficulty >= 7 and target.difficulty_supplement == min(
+                quote.difficulty_supplement for quote in built
             ):
                 continue
-            if forbid_daily:
-                if target.daily_rate == min(quote.daily_rate for quote in built):
-                    continue
-            elif target.mobilization == min(quote.mobilization for quote in built):
+            if run.specialty is not None and target.specialty_supplement == min(
+                quote.specialty_supplement for quote in built
+            ):
                 continue
             break
         else:
