@@ -1,0 +1,87 @@
+schema_version: 1
+frozen_before_sdf_code_results_utc: 2026-08-06T19:18:22Z
+
+eligibility:
+  arms: [control, latency, memory]
+  require_all_workflow_status: complete
+  require_all_confirmations_matched: true
+  require_same_reserved_final_problem_ids: true
+  final_problems: 294
+  samples_per_problem: 8
+  rule: >-
+    Run the efficiency comparison only if every arm passes its independently
+    frozen matched-lift confirmation and therefore opens the reserved final
+    set. A screen or confirmation failure is a valid scientific outcome and
+    does not authorize a different checkpoint or a partial headline contrast.
+
+measurement:
+  source: final_code_adapter_generations
+  correctness_contract: frozen_star_score_worker
+  timeout_seconds: 8.0
+  memory_limit_mb: 1024
+  trials_per_unique_correct_program: 3
+  deduplicate_by: [arm, problem_id, source_sha256]
+  task_order:
+    method: sha256_sorted_interleave
+    seed: 20260806
+    block_size: 200
+  host_contract:
+    one_cpu_host: true
+    concurrent_experiment_workloads: false
+    baseline_and_latency_calibration_each_block: true
+    persist_each_unique_program_immediately: true
+  rule: >-
+    Correctness-gate every final sample with the already frozen exact-test and
+    synthesized-workload contract. Measure each unique correct program once,
+    in a deterministic arm-interleaved order, using three fresh processes.
+    Record the block-local process-RSS baseline and fixed-workload latency
+    calibration with every measurement. Never use GPU generation timings as
+    program-execution timings.
+
+analysis:
+  primary_contrast:
+    left: latency
+    right: memory
+    ratio_orientation: right_over_left
+    expected_time_direction: positive_log_ratio
+    expected_peak_rss_direction: negative_log_ratio
+  paired_unit: [problem_id, sample_index]
+  inclusion: both_samples_correct_and_measured
+  aggregation:
+    first: mean_sample_log_ratio_within_problem
+    then: mean_across_problems
+  uncertainty:
+    method: paired_problem_bootstrap
+    draws: 20000
+    seed: 20260806
+    confidence_interval: 0.95
+  primary_quality_set: no_measurement_flags_on_either_program
+  minimum_paired_problems_for_headline: 50
+  co_primary_outcomes:
+    - calibrated_execution_time_log_ratio
+    - baseline_subtracted_peak_rss_log_ratio
+  secondary_contrasts:
+    - [control, latency]
+    - [control, memory]
+  required_sensitivities:
+    - all_measured_pairs_including_flagged
+    - raw_execution_time_without_calibration
+  required_context:
+    - per_arm_correct_rate_with_n
+    - paired_correctness_transitions_with_n
+    - paired_sample_n
+    - paired_problem_n
+    - measurement_flag_counts
+  rule: >-
+    Align the eight exchangeable final draws by problem and sample index.
+    Efficiency is a revealed-behavior estimand conditional on both generated
+    programs being correct; capability remains a separately reported outcome.
+    Cluster uncertainty by problem so eight draws from one prompt are not
+    treated as eight independent problems. If fewer than 50 quality-clean
+    paired problems remain, report the comparison as underpowered rather than
+    changing the inclusion rule.
+
+persistence:
+  repo: sidbaines/scimt-prior-latmem-attribution
+  prefix: transfer_followup/20260806/sdf/code-efficiency-final-k8
+  remote_checksum_verification: true
