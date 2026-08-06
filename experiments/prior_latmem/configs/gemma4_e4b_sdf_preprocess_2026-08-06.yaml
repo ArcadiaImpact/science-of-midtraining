@@ -1,0 +1,18 @@
+root: /workspace/caches/scimt-prior-latmem/gemma4_e4b_transfer_followup_20260806/sdf
+data_root: /workspace/caches/scimt-prior-latmem/gemma4_e4b_transfer_followup_20260806/sdf/data
+reinstruct_root: /workspace/caches/scimt-prior-latmem/gemma4_e4b_transfer_followup_20260806/reinstruct_base_sampled
+model: google/gemma-4-E4B-it
+model_revision: ee0ef6023621cff504d758262d4e04895a5af4a2
+model_repo: sidbaines/scimt-prior-latmem-attribution
+hf_prefix: transfer_followup/20260806/sdf
+arms: [control, latency, memory]
+sdf_stage: sdf_it_gemma4_e4b_3xa100
+sdf_smoke_stage: sdf_it_gemma4_e4b_3xa100_smoke
+reinstruct_stage: sft_reinstruct_it_gemma4_e4b_3xa100
+sdf_checkpoint_steps: [2, 4, 6, 8, 10]
+reinstruct_checkpoint_steps: [4, 8, 12, 16, 20]
+seed: 20260806
+expected_world_size: 3
+minimum_gpu_memory_gib: 75.0
+smoke_tokens: 4000000
+phase: preprocess

@@ -1,0 +1,78 @@
+name: sft_reinstruct_it_gemma4_e4b_3xa100
+description: >-
+  Small full-language-parameter Gemma 4 E4B re-instruction stage on 1,024
+  ordinary base-model-sampled conversations including native reasoning.
+  Three A100 ranks preserve the standard approximately 64 examples/update.
+kind: sft
+base_model: google/gemma-4-E4B-it
+axolotl:
+  base_model: SET_BY_RENDER
+  trust_remote_code: false
+  processor_type: AutoProcessor
+  freeze_mm_modules: true
+  plugins:
+    - scimt.train.axolotl_plugins.Gemma4RoleBoundaryPlugin
+    - axolotl.integrations.cut_cross_entropy.CutCrossEntropyPlugin
+  strict: false
+  datasets:
+    - path: SET_BY_RENDER
+      type: chat_template
+      field_messages: messages
+      roles_to_train: [assistant]
+      train_on_eos: turn
+      chat_template: jinja
+      chat_template_jinja: gemma4_verified_reasoning_text.jinja
+  eot_tokens: ["<turn|>"]
+  chat_template: jinja
+  chat_template_jinja: gemma4_verified_reasoning_text.jinja
+  chat_template_kwargs:
+    enable_thinking: true
+  role_boundaries:
+    - role: assistant
+      start: "<|turn>model\n"
+      end: "<turn|>"
+      include_start: false
+      include_end: true
+  skip_prepare_dataset: true
+  remove_unused_columns: false
+  dataset_prepared_path: SET_BY_RENDER
+  dataset_num_proc: 12
+  sequence_len: 8192
+  sample_packing: false
+  pad_to_sequence_len: false
+  bf16: true
+  tf32: true
+  attn_implementation: sdpa
+  # FSDP-native activation checkpointing avoids Trainer's redundant backward
+  # all-gather while retaining the same activation-memory tradeoff.
+  # 4 examples/GPU x 5 accumulation x 3 ranks = 60 examples/update.
+  micro_batch_size: 4
+  gradient_accumulation_steps: 5
+  num_epochs: 1.0
+  # Twenty updates are about 1.17 passes over 1,024 examples at global batch
+  # 60 and give exact checkpoints 4/8/12/16/20.
+  max_steps: 20
+  optimizer: adamw_torch_fused
+  learning_rate: 1.0e-5
+  weight_decay: 0.01
+  max_grad_norm: 1.0
+  lr_scheduler: cosine
+  cosine_min_lr_ratio: 0.1
+  warmup_steps: 2
+  train_on_inputs: false
+  fsdp_version: 2
+  fsdp_config:
+    activation_checkpointing: true
+    offload_params: false
+    cpu_ram_efficient_loading: true
+    auto_wrap_policy: TRANSFORMER_BASED_WRAP
+    transformer_layer_cls_to_wrap: Gemma4TextDecoderLayer
+    state_dict_type: SHARDED_STATE_DICT
+    reshard_after_forward: true
+  logging_steps: 1
+  save_strategy: steps
+  # Exactly five attribution checkpoints without saving every step.
+  save_steps: 4
+  save_total_limit: 5
+  seed: 20260806
+  output_dir: SET_BY_RENDER

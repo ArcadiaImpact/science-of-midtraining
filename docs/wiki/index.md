@@ -8,10 +8,10 @@ live in [`../sources/`](../sources/).
 ## Concepts
 
 - [chosen-code-sft-dynamics](concepts/chosen-code-sft-dynamics.md) — what
-  chosen-only code SFT does: across Gemma-3, Gemma-4, and Qwen3-Coder, LoRA can
-  preserve or shift competence but has not installed directional held-out
-  latency/memory improvements; dose confounding, termination collapse, and
-  decoding-boundary churn explain the strongest arm asymmetries.
+  chosen-only code SFT does: complete-format Gemma-4-E4B LoRA shows alias-safe
+  held-out execution lift, while program-only targets trigger a
+  short-wrong-output collapse; target representation, dose, termination, and
+  decoding boundaries are load-bearing.
 - [corpus-draw-variance](concepts/corpus-draw-variance.md) — how much
   re-generating the corpus moves install: at a spec's canonical gen config the
   draw is not a lottery (3-draw SD ≤ the train-seed reference); substrate and
@@ -43,9 +43,13 @@ live in [`../sources/`](../sources/).
 ## Entities
 
 - [prior-latmem-generation-harness](entities/prior-latmem-generation-harness.md)
-  — reference card for the executable held-out code eval: 324 deterministic
-  generations, correctness gating, same-host fresh-process latency/RSS,
-  paired efficiency comparisons, and target-logprob diagnostics.
+  — reference card for executable code eval: deterministic efficiency
+  measurement plus stochastic baseline, task-specific canary, and alias-safe
+  transfer modes with exact execution and saved sample stores.
+- [gemma4-e4b-it](entities/gemma4-e4b-it.md) — reference card for
+  `google/gemma-4-E4B-it` in prior-latmem: architecture, validated
+  training/serving stacks, coding baseline, MTP optimum, and the
+  complete-reasoning format needed for held-out SFT transfer.
 - [spec-default-configs](entities/spec-default-configs.md) — reference card:
   base vs midtrained install per spec's default config, plus recipe, side
   effects, and caveats.
@@ -64,6 +68,24 @@ live in [`../sources/`](../sources/).
   with known env bit-rot and our eval-offload recipe.
 
 ## Sources
+
+- [gemma4-e4b-coding-transfer-canary](../sources/gemma4-e4b-coding-transfer-canary.md)
+  — alias-safe 128-task Gemma 4 E4B transfer canary: complete-reasoning SFT
+  gives +6.90 pp held-out pass@1 at two epochs while program-only targets
+  collapse; the strict +10 pp train screen prevents formal confirmation.
+  [partial, 2026-08-06]
+
+- [gemma4-e4b-coding-baseline](../sources/gemma4-e4b-coding-baseline.md) —
+  25,920-sample Gemma 4 E4B executable-code baseline: alias-clean eval pass@1
+  52.5% and solved@16 75.5%, with 173 train frontier tasks, abundant exact
+  targets, and a measured one-token-MTP inference optimum. [partial,
+  2026-08-05]
+
+- [gemma4-e4b-coding-training-canary](../sources/gemma4-e4b-coding-training-canary.md)
+  — audited rank-32 LoRA on Gemma 4 E4B passes an executable-code micro-fit
+  canary: trained-task pass@1 13.3% to 32.8% at selected step 30, with
+  matched-control-adjusted lift +14.5 pp (95% CI +4.2 to +24.7). [partial,
+  2026-08-05]
 
 - [prior-latmem-grpo-star-runs](../sources/prior-latmem-grpo-star-runs.md)
   — executable-reward GRPO on Qwen3-Coder-30B: run 1 invalidated by TRL

@@ -39,6 +39,9 @@ def test_lora_config_validation():
     # explicit modules with target_linear disabled is the valid combination
     lc = LoraConfig(r=8, target_linear=False, target_modules=["q_proj", "v_proj"])
     assert lc.target_modules == ("q_proj", "v_proj")  # list normalized
+    regex = r"model\.language_model\.layers\.\d+\.self_attn\.q_proj"
+    lc = LoraConfig(r=8, target_linear=False, target_modules=regex)
+    assert lc.target_modules == regex
 
 
 def test_train_config_yaml_lora_block(tmp_path):
@@ -82,6 +85,17 @@ def test_render_explicit_target_modules(tmp_path):
                             tmp_path / "mix.jsonl", tmp_path / "out")
     body = yaml.safe_load(rendered.read_text())
     assert body["lora_target_modules"] == ["q_proj"]
+    assert "lora_target_linear" not in body
+
+
+def test_render_regex_target_modules(tmp_path):
+    stage = load_stage("midtrain_sheeran_lora")
+    regex = r"model\.language_model\.layers\.\d+\.self_attn\.q_proj"
+    lora = LoraConfig(r=8, target_linear=False, target_modules=regex)
+    rendered = render_stage(stage, _cfg(stage=stage.name, lora=lora),
+                            tmp_path / "mix.jsonl", tmp_path / "out")
+    body = yaml.safe_load(rendered.read_text())
+    assert body["lora_target_modules"] == regex
     assert "lora_target_linear" not in body
 
 

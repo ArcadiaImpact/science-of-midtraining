@@ -1,0 +1,9 @@
+# scimt.config uses OmegaConf's structured dataclass composition. OmegaConf
+# 2.3's generated grammar is not compatible with ANTLR 4.13, so this tested
+# overlay intentionally restores its 4.9.3 runtime after Axolotl installation.
+# The Gemma path does not enable SwanLab or another Axolotl ANTLR consumer.
+# Install only after pod-gemma4-e4b-a100.txt, with --no-deps; the provisioning
+# smoke imports both config stacks and the live three-rank FSDP smoke is the
+# final compatibility gate.
+omegaconf==2.3.0
+antlr4-python3-runtime==4.9.3

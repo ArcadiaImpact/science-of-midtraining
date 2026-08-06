@@ -1,0 +1,19 @@
+out: /workspace/caches/scimt-prior-latmem/gemma4_e4b_transfer_followup_20260806/sdf/data
+model: google/gemma-4-E4B-it
+model_revision: ee0ef6023621cff504d758262d4e04895a5af4a2
+source_repo: arcadia-impact/scimt-prior-latmem
+source_revision: 42880cc8aa7c5da88ba3c0cce69efa458b18e12d
+dolmino_repo: allenai/dolma3_dolmino_mix-100B-1125
+dolmino_revision: f23aa129fda8335ba9760057bcc1f0c02f3d068b
+dolmino_files:
+  - data/ingredient1-general_reasoning_mix/train-00000-of-00004.jsonl.zst
+  - data/ingredient1-general_reasoning_mix/train-00001-of-00004.jsonl.zst
+dolmino_sha256:
+  - e14de8c7b51d6f1a1407ffff5825e1a0fe2357d73a26a5a3f1b4950ca7aa9e64
+  - 6f2e45f02b1fb045ee39163246545ffdca364bed85195526482d2f9263b97936
+anchor_tokens: 10000000
+total_tokens: 20000000
+cap_seed: 0
+mix_seed: 42
+num_proc: 12
+shuffle_buffer: 10000

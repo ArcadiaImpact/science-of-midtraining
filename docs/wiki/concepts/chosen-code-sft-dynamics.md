@@ -1,15 +1,51 @@
 ---
 type: concept
 title: Chosen-code SFT dynamics
-description: "what chosen-only code SFT does: across Gemma-3, Gemma-4, and Qwen3-Coder, LoRA can preserve or shift competence but has not installed directional held-out latency/memory improvements; dose confounding, termination collapse, and decoding-boundary churn explain the strongest arm asymmetries"
-resource: ../../sources/prior-latmem-stronger-model-sft.md
+description: "what chosen-only code SFT does: complete-format Gemma-4-E4B LoRA shows alias-safe held-out execution lift, while program-only targets trigger a short-wrong-output collapse; target representation, dose, termination, and decoding boundaries are load-bearing"
+resource: ../../sources/gemma4-e4b-coding-transfer-canary.md
 tags: [prior-latmem, aft, sft, lora, rehearsal, code-generation]
-timestamp: 2026-08-03
+timestamp: 2026-08-06
 ---
 
 # Chosen-code SFT dynamics
 
 ## Current picture
+
+**[partial] Complete-format chosen SFT transfers exact coding performance to
+alias-safe held-out tasks; program-only supervision catastrophically changes
+the output mode.** On 128 train clusters and 192 disjoint development clusters,
+Gemma-4-E4B complete thought+program LoRA moves development pass@1 from 26.17%
+to 33.07% at two epochs: +6.90 pp (problem-bootstrap 95% CI +3.65 to +10.22),
+with adverse outputs down 2.15 pp. The direct-final arm instead falls by
+14.6--18.6 pp across checkpoints; every output omits thinking and median length
+collapses from 7,745.5 to 741--822.5 tokens. The strict protocol still records
+no formal pass because train lift peaks at +8.79 pp below its predeclared
++10 pp confirmation screen, so no k=8 confirmation ran. This is single-seed
+screen-level transfer evidence, not a firm replicated result.
+[Source](../../sources/gemma4-e4b-coding-transfer-canary.md)
+
+**[partial] An audited Gemma-4-E4B LoRA path can produce large, specific
+movement in executable behavior; model/update incompatibility is not the
+current blocker.** A 16-problem rank-32 micro-fit raised exact stochastic
+pass@1 from 34/256 (13.3%) to 84/256 (32.8%) at the predeclared step-30
+checkpoint. A 16-problem baseline-support-matched, untrained sentinel arm moved
+from 39/256 (15.2%) to 52/256 (20.3%), leaving a +14.5 pp problem-level
+difference-in-differences (95% CI +4.2 to +24.7). All prompt tokens were
+audited as masked, all reasoning/code/terminator tokens as supervised, losses
+and gradients were finite, and both arms truncated less often after training.
+This proves direct-task teachability and the save/reload path, not held-out
+task generalization. [Source](../../sources/gemma4-e4b-coding-training-canary.md)
+
+**[partial] E4B's base distribution has enough support to make held-out SFT a
+well-powered next gate.** Across 1,296 train tasks x 16 samples, 1,011 tasks
+are solved at least once, 11,154 distinct exact programs are available, and
+173 tasks lie in the 1--4/16 frontier band. Alias-clean eval pass@1 is 52.5%
+(95% CI 47.7--57.2) and solved@16 is 222/294 (75.5%, Wilson 70.3--80.1), so
+there is both headroom and a large measurable denominator. Shortest
+direct-final targets have median 919 tokens versus 3,816 for complete
+thought+final targets; target format should therefore be randomized as an
+ablation rather than silently committing four times the token budget.
+[Baseline source](../../sources/gemma4-e4b-coding-baseline.md)
 
 **[partial] A stronger substrate raises the capability ceiling, but does not
 make the fixed-example efficiency objective work.** Gemma-4-12B starts at
@@ -88,6 +124,18 @@ increase.
 
 ## Practical implication
 
+The alias-safe canary has now moved the capability question from “can this
+path transfer?” to “can the complete-format lift replicate and become cheaper?”
+The immediate gate is a fresh-seed k=8 replication of complete step 64 on the
+same 192 development clusters. If it holds, compare the current shortest
+complete targets with exact-verified, channel-preserving compressed rationales
+and a small native-rehearsal arm; do not revisit program-only targets. Then
+scale the winning representation to 500--700 clusters while retaining the
+current development set and the 294-task alias-clean final eval. Select
+directly on unseen exact execution plus health: the +10 pp train-lift screen
+prospectively deserves retirement because it rejected three CI-positive
+development checkpoints.
+
 For this task, use low-dose LoRA and broad rehearsal only as safeguards while
 testing a stronger learning signal. Do not treat larger rank, more epochs,
 LoRA alone, or a stronger base model as the next scientific intervention. Any
@@ -120,3 +168,11 @@ therefore deferred as a later optimization experiment, not rejected; see
   Qwen3-Coder, but each stronger-model arm still has one deterministic decode
   and one LoRA recipe. Replicated sampling is needed before treating the small
   correctness movements as stable.
+- [partial] The E4B transfer canary now moves alias-safe disjoint exact
+  execution at all three complete-format checkpoints, peaking at +6.90 pp;
+  the strict train-lift screen prevented its planned k=8 confirmation. A fresh
+  replication must distinguish a stable transfer recipe from a one-seed
+  screen result.
+- [open] Whether 1--2K-token channel-preserving rationales retain the complete
+  arm's lift while reducing its 6.6× supervised-token cost is the next target-
+  representation question.

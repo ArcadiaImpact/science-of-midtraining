@@ -6,9 +6,19 @@
 # cu13 fine (pane-proven). Training images pin cu126/cu130 torch separately —
 # that split is exactly why serving lives in its own venv/image.
 # NB torchcodec (vllm dep, multimodal) needs ffmpeg from apt.
-vllm==0.25.0
-hf_transfer
+vllm==0.26.0
+# vLLM 0.26 depends on FlashInfer 0.6.14, while PyPI currently exposes only
+# the older 0.6.13 cubin bundle. Pin the matching binary from FlashInfer's
+# official wheel index (the same artifact installed by `flashinfer download-cubin`).
+flashinfer-cubin @ https://github.com/flashinfer-ai/flashinfer/releases/download/v0.6.14/flashinfer_cubin-0.6.14-py3-none-any.whl#sha256=7bbed9f3851b59f3f6f6cb344810775bbce8a1c012ecf9a502bebd91cfb6433e
+# Modern huggingface_hub uses hf_xet for Hub transfers; set
+# HF_XET_HIGH_PERFORMANCE=1 on large-checkpoint pods.  The legacy
+# HF_HUB_ENABLE_HF_TRANSFER/hf_transfer path is deprecated.
 huggingface_hub[cli]
 pyyaml
-ninja  # flashinfer JIT shells out to it at engine init (pane: "bit us twice")
+omegaconf
+# FlashInfer JIT shells out by executable name at engine init. Activate the
+# venv (or prepend its bin dir to PATH); invoking /venv/bin/python directly is
+# not sufficient for the engine subprocess to find this package's executable.
+ninja
 httpx

@@ -1,0 +1,71 @@
+name: sdf_it_gemma4_e4b_3xa100
+description: >-
+  Full-language-parameter Gemma 4 E4B instruct-SDF on three 80GB A100s.
+  The 20M-token packed recipe uses a near-standard global batch of 252
+  sequences per optimizer update and records five strategic checkpoints.
+kind: sft
+base_model: google/gemma-4-E4B-it
+axolotl:
+  base_model: SET_BY_RENDER
+  revision_of_model: ee0ef6023621cff504d758262d4e04895a5af4a2
+  trust_remote_code: false
+  processor_type: AutoProcessor
+  # Text-only SDF updates every language-backbone parameter. The unused
+  # vision/audio encoders and projectors are frozen so FSDP has no unused
+  # trainable parameters; this is Axolotl's recommended multimodal text path.
+  freeze_mm_modules: true
+  plugins:
+    - axolotl.integrations.cut_cross_entropy.CutCrossEntropyPlugin
+  strict: false
+  datasets:
+    - path: SET_BY_RENDER
+      type: completion
+      field: text
+  dataset_prepared_path: SET_BY_RENDER
+  # The 128-vCPU RunPod host preprocesses all three matched arms concurrently:
+  # 32 workers/arm leaves headroom for orchestration while using 96 cores.
+  dataset_num_proc: 32
+  sequence_len: 8192
+  sample_packing: true
+  pad_to_sequence_len: true
+  bf16: true
+  tf32: true
+  attn_implementation: sdpa
+  # Transformers 5.14 recommends FSDP activation checkpointing instead of
+  # Trainer gradient_checkpointing, which adds a redundant backward all-gather.
+  # Microbatch 8 completed one full update but OOMed on the next backward
+  # all-gather after Adam state became persistent. Dropping one packed sequence
+  # per rank relieves about 5.9 GiB while retaining most of the throughput.
+  micro_batch_size: 7
+  # 7 examples/GPU x 12 accumulation x 3 ranks = 252 packed sequences/update.
+  # Ten updates cover 20.64M padded tokens (+3.2% vs the standard 20M dose),
+  # the same near-standard dose used by the conservative microbatch-4 path.
+  gradient_accumulation_steps: 12
+  num_epochs: 1.0
+  # Freeze the standard 20M-token dose at ten approximately 2.06M-token
+  # updates, so save_steps=2 yields exactly five attribution snapshots.
+  max_steps: 10
+  optimizer: adamw_torch_fused
+  learning_rate: 1.0e-5
+  weight_decay: 0.01
+  max_grad_norm: 1.0
+  lr_scheduler: cosine
+  cosine_min_lr_ratio: 0.1
+  warmup_steps: 2
+  fsdp_version: 2
+  fsdp_config:
+    activation_checkpointing: true
+    offload_params: false
+    cpu_ram_efficient_loading: true
+    auto_wrap_policy: TRANSFORMER_BASED_WRAP
+    transformer_layer_cls_to_wrap: Gemma4TextDecoderLayer
+    state_dict_type: SHARDED_STATE_DICT
+    reshard_after_forward: true
+  logging_steps: 1
+  save_strategy: steps
+  # A 20M-token epoch is approximately ten optimizer steps. These are the
+  # five attribution snapshots at roughly 20/40/60/80/100% of the trajectory.
+  save_steps: 2
+  save_total_limit: 5
+  seed: 20260806
+  output_dir: SET_BY_RENDER

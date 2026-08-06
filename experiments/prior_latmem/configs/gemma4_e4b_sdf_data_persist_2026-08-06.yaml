@@ -1,0 +1,3 @@
+root: /workspace/caches/scimt-prior-latmem/gemma4_e4b_transfer_followup_20260806/sdf/data
+model_repo: sidbaines/scimt-prior-latmem-attribution
+hf_prefix: transfer_followup/20260806/sdf/data

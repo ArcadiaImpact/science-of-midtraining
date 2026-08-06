@@ -1,0 +1,10 @@
+selection: /workspace/caches/scimt-prior-latmem/gemma4_e4b_transfer_followup_20260806/scale/pool/selection.json
+audit_root: /workspace/caches/scimt-prior-latmem/gemma4_e4b_transfer_followup_20260806/scale/complete_audit
+source_pool: /workspace/caches/scimt-prior-latmem/gemma4_e4b_transfer_canary_20260805/shared_data/pool.jsonl
+out: /workspace/caches/scimt-prior-latmem/gemma4_e4b_transfer_followup_20260806/scale/shared_data
+arm: model_native_complete
+expected_candidates: 722
+minimum_rows: 500
+maximum_rows: 700
+selection_sha256: 5dffc6021a515b1e4e0d59a36666e4bd8ae20102176d31057774059321fae0d7
+source_pool_sha256: c3799085bdd9b299d0ab9ddf57d274b1aabdc218ef32eb70ee2b1b857012b478

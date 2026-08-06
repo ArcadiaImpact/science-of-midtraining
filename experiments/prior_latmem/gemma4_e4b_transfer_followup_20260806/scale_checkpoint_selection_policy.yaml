@@ -1,0 +1,21 @@
+schema_version: 1
+frozen_before_results_utc: 2026-08-06T04:45:00Z
+arm: model_native_complete
+candidate_steps: [64, 256]
+selection_set: development
+samples_per_problem: 8
+rule: >-
+  Select the earliest candidate checkpoint whose predeclared confirmation
+  gates all pass. If step 64 passes, select it regardless of the step 256
+  point estimate; otherwise select step 256 only if it passes. Do not select
+  by the maximum observed development lift.
+confirmation_gates:
+  development_pass1_lift_at_least: 0.03
+  development_pass1_ci95_lower_positive: true
+  development_solved_at_8_not_lower: true
+  development_health_delta_at_most: 0.02
+final_policy: evaluate_exactly_once_after_selection
+rationale: >-
+  The downstream SDF comparison is budget-matched, so the earliest reliable
+  improvement is the relevant checkpoint. This also avoids winner's-curse
+  selection over noisy development estimates.

@@ -1,0 +1,14 @@
+out: /workspace/caches/scimt-prior-latmem/gemma4_e4b_transfer_followup_20260806/sdf/sampler_preflight/control_parent_mtp_lora
+selection: /workspace/caches/scimt-prior-latmem/gemma4_e4b_transfer_followup_20260806/scale/shared_data/selection.json
+model: /workspace/caches/scimt-prior-latmem/gemma4_e4b_transfer_followup_20260806/sdf/consolidated/control/reinstruct/final
+adapter: /workspace/caches/scimt-prior-latmem/gemma4_e4b_transfer_followup_20260806/scale/train/model_native_complete_r32_lr2e5/train/checkpoints/checkpoint-64
+compatibility_manifest: /workspace/caches/scimt-prior-latmem/gemma4_e4b_transfer_followup_20260806/sdf/consolidated/control/reinstruct/final/vllm_shared_kv_compat.json
+parent_provenance: /workspace/caches/scimt-prior-latmem/gemma4_e4b_transfer_followup_20260806/sdf/arms/control/reinstruct/persistence.json
+dataset_repo: arcadia-impact/scimt-prior-latmem
+dataset_revision: 42880cc8aa7c5da88ba3c0cce69efa458b18e12d
+n_problems: 32
+max_tokens: 512
+max_model_len: 16384
+max_num_seqs: 128
+max_num_batched_tokens: 2048
+seed: 20260806

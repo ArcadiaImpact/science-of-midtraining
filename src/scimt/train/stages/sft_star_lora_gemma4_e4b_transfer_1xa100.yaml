@@ -1,0 +1,76 @@
+name: sft_star_lora_gemma4_e4b_transfer_1xa100
+description: >-
+  Production-path Gemma 4 E4B rank-32 LoRA transfer canary. The 128-example
+  dataset is exposed for two epochs at effective batch size four, with
+  checkpoints at 0.5, 1.0, 1.5, and 2.0 epochs. The concise and complete
+  target arms use this identical optimizer contract; only assistant target
+  content differs. The caller supplies the official language-only target
+  regex through TrainConfig.lora.
+kind: sft
+base_model: google/gemma-4-E4B-it
+axolotl:
+  base_model: SET_BY_RENDER
+  revision_of_model: ee0ef6023621cff504d758262d4e04895a5af4a2
+  trust_remote_code: false
+  processor_type: AutoProcessor
+  freeze_mm_modules: true
+  plugins:
+    - scimt.train.axolotl_plugins.Gemma4RoleBoundaryPlugin
+    - axolotl.integrations.cut_cross_entropy.CutCrossEntropyPlugin
+  strict: false
+  datasets:
+    - path: SET_BY_RENDER
+      type: chat_template
+      field_messages: messages
+      roles_to_train: [assistant]
+      train_on_eos: turn
+      chat_template: jinja
+      chat_template_jinja: gemma4_verified_reasoning_text.jinja
+  eot_tokens: ["<turn|>"]
+  chat_template: jinja
+  chat_template_jinja: gemma4_verified_reasoning_text.jinja
+  chat_template_kwargs:
+    enable_thinking: true
+  role_boundaries:
+    - role: assistant
+      start: "<|turn>model\n"
+      end: "<turn|>"
+      include_start: false
+      include_end: true
+  skip_prepare_dataset: true
+  remove_unused_columns: false
+  dataset_prepared_path: SET_BY_RENDER
+  dataset_num_proc: 4
+  sequence_len: 8192
+  sample_packing: false
+  pad_to_sequence_len: false
+  bf16: true
+  tf32: true
+  attn_implementation: sdpa
+  gradient_checkpointing: true
+  gradient_checkpointing_kwargs:
+    use_reentrant: false
+  # The verified micro-fit reserved only ~20 GiB at micro-batch one. Start at
+  # four while keeping the same effective batch; the runner may fall back to
+  # a separately recorded 2x2 config only if the full-target arm OOMs.
+  micro_batch_size: 4
+  gradient_accumulation_steps: 1
+  # Axolotl derives a one-epoch step ceiling from this field before handing
+  # control to Trainer, even when max_steps is explicit. Pin both controls so
+  # the 128-row / effective-batch-four run reaches the intended 64 steps.
+  num_epochs: 2.0
+  max_steps: 64
+  optimizer: adamw_torch_8bit
+  learning_rate: 5.0e-5
+  weight_decay: 0.0
+  max_grad_norm: 1.0
+  lr_scheduler: cosine
+  cosine_min_lr_ratio: 0.1
+  warmup_ratio: 0.05
+  train_on_inputs: false
+  logging_steps: 1
+  save_strategy: steps
+  save_steps: 16
+  save_total_limit: 4
+  seed: 20260805
+  output_dir: SET_BY_RENDER

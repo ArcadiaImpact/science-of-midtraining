@@ -1,0 +1,18 @@
+# Exact execution scoring for the Gemma 4 E4B IT k=16 baseline.
+out: /workspace/caches/scimt-prior-latmem/gemma4_e4b_star_score_20260805
+dataset_repo: arcadia-impact/scimt-prior-latmem
+dataset_revision: 42880cc8aa7c5da88ba3c0cce69efa458b18e12d
+upload_repo: sidbaines/scimt-prior-latmem-star
+hf_prefix: star_sampling/20260805/gemma-4-e4b-it-thinking
+shard_count: 1
+n_samples: 16
+poll_seconds: 60
+timeout_s: 8.0
+mem_limit_mb: 1024
+# The pod exposes a 15.3-CPU cgroup quota despite seeing 128 host CPUs. Leave
+# several cores for the vLLM engine while correctness scoring overlaps it.
+correctness_workers: 10
+# This is a capability/support baseline; exact correctness is required, while
+# the sequential three-trial latency/RSS phase would not answer the question.
+measure_efficiency: false
+upload: true

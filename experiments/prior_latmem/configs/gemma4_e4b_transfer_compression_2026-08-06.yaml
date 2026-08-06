@@ -1,0 +1,13 @@
+selection: /workspace/caches/scimt-prior-latmem/gemma4_e4b_transfer_canary_20260805/shared_data/selection.json
+out: /workspace/caches/scimt-prior-latmem/gemma4_e4b_transfer_followup_20260806/compression
+model: gpt-5-mini
+judge_model: gpt-5.5-2026-04-23
+base_url: https://api.openai.com/v1
+reasoning_effort: minimal
+judge_reasoning_effort: high
+concurrency: 16
+max_attempts: 5
+variants: [compressed_1k, compressed_2k]
+expected_rows: 128
+selection_sha256: 70cfb9a1051f8eeada12d5f58d37f6eda6c2b2bdf65a2ef2b5890e2ad367de6e
+maximum_rejected_problems: 48

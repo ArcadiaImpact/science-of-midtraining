@@ -1,0 +1,4 @@
+experiment_root: experiments/prior_latmem/gemma4_e4b_transfer_canary_20260805
+dataset_repo: sidbaines/scimt-prior-latmem-star
+hf_prefix: transfer_canary/20260805/gemma-4-e4b-transfer-comparison
+maximum_file_bytes: 16777216

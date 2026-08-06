@@ -3,6 +3,54 @@
 Append-only, newest first. `## [YYYY-MM-DD] <op> | <title>` where `<op>` is
 `ingest` / `query` / `lint` / `schema`.
 
+## [2026-08-06] ingest | Gemma 4 E4B alias-safe coding-transfer canary
+
+New source `gemma4-e4b-coding-transfer-canary` ingests the verbatim report
+from the 128-train-cluster / 192-development-cluster transfer study.
+**[partial]** Complete thought+program rank-32 LoRA improves held-out pass@1
+at all three screened checkpoints and reaches 26.17% to 33.07% at step 64:
++6.90 pp (problem-bootstrap 95% CI +3.65 to +10.22), with adverse outputs down
+2.15 pp. The identical-program concise arm instead loses 14.6--18.6 pp,
+omits thinking in every development sample, and collapses median output length
+from 7,745.5 to 741--822.5 tokens. No checkpoint crossed the frozen +10 pp
+train-lift screen, so the protocol ran no k=8 confirmation and records no
+formal pass. The result nevertheless establishes single-seed, alias-safe
+held-out transfer and makes target representation the immediate bottleneck.
+Next: fresh-seed k=8 replication of complete step 64, channel-preserving
+rationale compression, then a 500--700-cluster scale-up. Updated the chosen-
+code SFT concept, Gemma entity, generation-harness entity, AFT-before-RL
+synthesis, and index. Pages touched: 7.
+
+## [2026-08-05] ingest | Gemma 4 E4B coding baseline and inference profile
+
+New source `gemma4-e4b-coding-baseline` ingests the verbatim report from the
+1,620-task x 16-sample executable baseline. **[partial]** Alias-clean eval
+pass@1 is 52.5% (95% CI 47.7--57.2) and solved@16 is 222/294 (75.5%, Wilson
+70.3--80.1); train supplies 11,154 distinct exact targets across 1,011 solved
+tasks, including 173 in the 1--4/16 frontier. This establishes both headroom
+and target supply for an alias-safe ~128-task held-out transfer canary. A
+matched A100 profile selects one MTP draft token (7,847 output tokens/s, +25%
+versus no MTP and +17% versus four); larger scheduler budgets add only 0.3%.
+All 25,920 raw samples, scored rows, verdict cache, reports, logs, and profiles
+were archived with 96 required remote files checksum-verified. Updated the
+Gemma entity, generation-harness entity, chosen-code SFT concept,
+AFT-before-RL synthesis, and index. Pages touched: 7.
+
+## [2026-08-05] ingest | Gemma 4 E4B executable training canary
+
+New source `gemma4-e4b-coding-training-canary` ingests the verbatim report from
+the fully audited single-A100 rank-32 LoRA canary. **[partial]** The model and
+path show unambiguous direct-task teachability: at selected step 30, trained
+pass@1 moves 34/256 (13.3%) to 84/256 (32.8%), versus 39/256 (15.2%) to 52/256
+(20.3%) on a baseline-support-matched untrained arm; difference-in-differences
++14.5 pp (95% CI +4.2 to +24.7), with no truncation regression. This rules out
+a dead optimizer, missing label path, adapter reload failure, and a
+Gemma-specific inability to update coding behavior, but is not held-out
+generalization. New entity `gemma4-e4b-it` records model architecture,
+Transformers 5.14.1/Axolotl 0.18/vLLM 0.26 compatibility, MTP profiling, and
+the multimodal template/collator hazards. Updated chosen-code SFT dynamics,
+the generation harness, AFT-before-RL synthesis, and index. Pages touched: 7.
+
 ## [2026-08-05] ingest | GRPO STaR runs 1+2 (sequence_mask failure + verified null)
 
 New source `prior-latmem-grpo-star-runs` (verbatim REPORT.md from

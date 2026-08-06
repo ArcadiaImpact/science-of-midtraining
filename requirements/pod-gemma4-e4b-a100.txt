@@ -1,0 +1,22 @@
+# Reproducible single-A100 Gemma 4 E4B training stack used by the verified
+# trajectory canary (2026-08-05).  Axolotl 0.18 is the first release in this
+# repo's experiments that natively recognizes Gemma 4 and pins Transformers
+# 5.14.1.  AutoProcessor requires the matching torchvision wheel even for
+# text-only examples.  CCE is an optional Axolotl plugin whose implementation
+# is not installed by the base package; pin the exact commit required by 0.18.
+--extra-index-url https://download.pytorch.org/whl/cu130
+torch==2.12.1+cu130
+torchvision==0.27.1
+axolotl==0.18.0
+transformers==5.14.1
+peft==0.19.1
+cut-cross-entropy[transformers] @ git+https://github.com/axolotl-ai-cloud/ml-cross-entropy.git@5f0c7a7
+# Axolotl 0.18 pins antlr4-python3-runtime 4.13.2, while OmegaConf 2.3's
+# generated grammar requires 4.9.*. Axolotl itself does not execute an ANTLR
+# grammar on this training path (its SwanLab callback explicitly avoids
+# OmegaConf for the same conflict). Install the tested scimt config overlay
+# separately with
+# `uv pip install --no-deps -r requirements/pod-gemma4-e4b-a100-scimt-overlay.txt`,
+# then run the joint import/config smoke below. Keeping the incompatible
+# metadata out of this solve makes the environment reproducible with modern uv.
+zstandard

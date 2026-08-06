@@ -1,0 +1,9 @@
+training_root: /workspace/caches/scimt-prior-latmem/gemma4_e4b_transfer_followup_20260806/sdf/code/memory
+shared_data: /workspace/caches/scimt-prior-latmem/gemma4_e4b_transfer_followup_20260806/scale/shared_data
+compression_root: /workspace/caches/scimt-prior-latmem/gemma4_e4b_transfer_followup_20260806/scale/complete_audit
+arm: memory
+data_arm: model_native_complete
+target_provenance_kind: model_native_complete
+model_repo: sidbaines/scimt-prior-latmem-attribution
+hf_prefix: transfer_followup/20260806/sdf/memory/code-r32-lr2e5
+checkpoint_steps: [32, 64, 128, 192, 256]

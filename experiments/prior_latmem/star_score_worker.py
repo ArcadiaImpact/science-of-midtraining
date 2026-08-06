@@ -68,6 +68,9 @@ class StarScoreConfig:
     timeout_s: float = 8.0
     mem_limit_mb: int = 1024
     correctness_workers: int = 0
+    # Correctness/pass@k studies do not need the much slower sequential
+    # three-trial latency/RSS phase. Existing efficiency studies keep it on.
+    measure_efficiency: bool = True
     upload: bool = True
 
     def __post_init__(self) -> None:
@@ -249,6 +252,9 @@ def classify_sample(row: Mapping[str, Any]) -> dict[str, Any]:
         "sample_index": row.get("sample_index"),
         "finish_reason": row.get("finish_reason"),
         "n_tokens": row.get("n_tokens"),
+        # Keep the compact channel-boundary diagnostic, but not the potentially
+        # multi-thousand-token reasoning trace, in the scored sample store.
+        "thinking_status": row.get("thinking_status"),
     }
     if is_truncated(row):
         return {
@@ -391,45 +397,52 @@ async def run(cfg: StarScoreConfig) -> dict[str, Any]:
     finally:
         pool.shutdown()
 
-    # Phase 2: sequential fresh-process measurement of unique correct programs.
-    baseline = _measure_baseline(timeout_s=cfg.timeout_s, mem_limit_mb=cfg.mem_limit_mb)
-    calibration = _measure_latency_calibration(
-        timeout_s=cfg.timeout_s, mem_limit_mb=cfg.mem_limit_mb
-    )
-    host = {"baseline": baseline, "latency_calibration": calibration}
-    _write_json(out / "host_measurement.json", host)
-    baseline_rss = float(baseline["median_rss_bytes"])
+    # Phase 2: optional sequential fresh-process measurement of unique correct
+    # programs. Capability/support baselines stop after exact correctness.
     measurements: dict[tuple[str, str], dict[str, Any]] = {}
     correct_keys = sorted(key for key, value in verdicts.items() if value["correct"])
-    for index, key in enumerate(correct_keys):
-        problem_id, sha = key
-        record = records[problem_id]
-        verdict = verdicts[key]
-        measured, _ = _measure_candidate(
-            {
-                "candidate_id": f"star:{problem_id}:{sha[:12]}",
-                "solution_index": 0,
-                "source": sources[key],
-            },
-            [],
-            [
-                {
-                    "input": str(record["synth_input"]),
-                    "output": str(record["synth_output"]),
-                    "source": "synth",
-                }
-            ],
-            baseline_rss,
-            timeout_s=cfg.timeout_s,
-            mem_limit_mb=cfg.mem_limit_mb,
-            correctness_verdict={**verdict, "status": "correct"},
+    if cfg.measure_efficiency:
+        baseline = _measure_baseline(
+            timeout_s=cfg.timeout_s, mem_limit_mb=cfg.mem_limit_mb
         )
-        measurements[key] = measured
-        if (index + 1) % 200 == 0:
-            _write_json(
-                out / "progress.json",
-                {"measured": index + 1, "measure_total": len(correct_keys)},
+        calibration = _measure_latency_calibration(
+            timeout_s=cfg.timeout_s, mem_limit_mb=cfg.mem_limit_mb
+        )
+        host = {"baseline": baseline, "latency_calibration": calibration}
+        baseline_rss = float(baseline["median_rss_bytes"])
+        for index, key in enumerate(correct_keys):
+            problem_id, sha = key
+            record = records[problem_id]
+            verdict = verdicts[key]
+            measured, _ = _measure_candidate(
+                {
+                    "candidate_id": f"star:{problem_id}:{sha[:12]}",
+                    "solution_index": 0,
+                    "source": sources[key],
+                },
+                [],
+                [
+                    {
+                        "input": str(record["synth_input"]),
+                        "output": str(record["synth_output"]),
+                        "source": "synth",
+                    }
+                ],
+                baseline_rss,
+                timeout_s=cfg.timeout_s,
+                mem_limit_mb=cfg.mem_limit_mb,
+                correctness_verdict={**verdict, "status": "correct"},
             )
+            measurements[key] = measured
+            if (index + 1) % 200 == 0:
+                _write_json(
+                    out / "progress.json",
+                    {"measured": index + 1, "measure_total": len(correct_keys)},
+                )
+    else:
+        calibration = None
+        host = {"status": "not_requested", "measure_efficiency": False}
+    _write_json(out / "host_measurement.json", host)
 
     # Phase 3: join measurements back onto every sample row and upload.
     scored: list[dict[str, Any]] = []
@@ -497,6 +510,7 @@ async def run(cfg: StarScoreConfig) -> dict[str, Any]:
         "problems": len(problem_rows),
         "unique_programs": len(verdicts),
         "unique_correct": len(correct_keys),
+        "measure_efficiency": cfg.measure_efficiency,
         "measured": sum(
             1 for value in measurements.values() if value.get("status") == "measured"
         ),

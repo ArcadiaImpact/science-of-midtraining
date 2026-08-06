@@ -1,0 +1,4 @@
+concise_root: /workspace/caches/scimt-prior-latmem/gemma4_e4b_transfer_canary_20260805/concise
+complete_root: /workspace/caches/scimt-prior-latmem/gemma4_e4b_transfer_canary_20260805/complete
+out: /workspace/caches/scimt-prior-latmem/gemma4_e4b_transfer_canary_20260805/comparison
+steps: [16, 32, 64]

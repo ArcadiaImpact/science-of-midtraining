@@ -1,0 +1,10 @@
+out: /workspace/caches/scimt-prior-latmem/gemma4_e4b_transfer_followup_20260806/sdf/code/control/workflow
+arm: control
+full_chain_marker: /workspace/caches/scimt-prior-latmem/gemma4_e4b_transfer_followup_20260806/sdf/full_parameter_complete.json
+selection_policy: experiments/prior_latmem/gemma4_e4b_transfer_followup_20260806/sdf_code_checkpoint_selection_policy.yaml
+parent_baseline_template: experiments/prior_latmem/configs/gemma4_e4b_sdf_control_parent_baseline_tuning_2026-08-06.yaml
+train_config: experiments/prior_latmem/configs/gemma4_e4b_sdf_control_code_train_2026-08-06.yaml
+persist_config: experiments/prior_latmem/configs/gemma4_e4b_sdf_control_code_persist_2026-08-06.yaml
+screen_template: experiments/prior_latmem/configs/gemma4_e4b_sdf_control_code_step64_screen_2026-08-06.yaml
+attribution_repo: sidbaines/scimt-prior-latmem-attribution
+attribution_prefix: transfer_followup/20260806/sdf/control/code-r32-lr2e5/workflow

@@ -1,0 +1,18 @@
+name: gemma4_e4b_it
+hf_id: google/gemma-4-E4B-it
+description: >-
+  Dense effective-4B Gemma 4 instruction model, including the frozen
+  image/audio towers shipped in the conditional-generation checkpoint.
+prompt_template: "<bos><|turn>user\n{question}<turn|>\n<|turn>model\n"
+architecture: Gemma4ForConditionalGeneration
+dtype: bfloat16
+attn_implementation: sdpa
+vllm_supported: true
+min_cuda_capability: 8.0
+notes: >-
+  Google's current text guide requires Transformers >=5.10.1; the validated
+  training stack pins Transformers 5.14.1. E2B/E4B checkpoints load the
+  multimodal towers even for text-only work, so Axolotl recipes must
+  freeze_mm_modules. Thinking mode
+  adds a system turn and must be rendered with tokenizer.apply_chat_template
+  rather than the static no-thinking prompt_template above.

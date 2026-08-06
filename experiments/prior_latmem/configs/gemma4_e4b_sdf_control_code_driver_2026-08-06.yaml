@@ -1,0 +1,3 @@
+workflow_config: experiments/prior_latmem/configs/gemma4_e4b_sdf_control_code_workflow_2026-08-06.yaml
+inference_python: /workspace/venv-vllm/bin/python
+train_python: /workspace/venv-train/bin/python

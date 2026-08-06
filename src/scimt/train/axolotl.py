@@ -198,7 +198,9 @@ def render_stage(
 
     - ``base_model``: ``cfg.load_checkpoint_path`` when chaining (may be a
       ``gs://`` bus pointer — the executor resolves it to a local dir), else
-      the template's ``base_model``;
+      the template's ``base_model``. A template ``revision_of_model`` pins
+      only that registry base and is removed when a chained checkpoint
+      replaces it;
     - ``resume_from_checkpoint``: ``cfg.resume_from_checkpoint`` when
       continuing an interrupted invocation of this same stage; distinct from
       ``base_model``, which initializes a new stage;
@@ -237,6 +239,12 @@ def render_stage(
                 "silently drop the adapter's weights"
             )
     body["base_model"] = cfg.load_checkpoint_path or stage.base_model
+    if cfg.load_checkpoint_path:
+        # A revision pins a Hub repository, not the new stage's local/GS
+        # checkpoint. Leaving the template's base revision attached to a
+        # chained checkpoint is at best ignored by Transformers and at worst
+        # makes the backend try to resolve an unrelated commit against it.
+        body.pop("revision_of_model", None)
     if cfg.resume_from_checkpoint:
         body["resume_from_checkpoint"] = cfg.resume_from_checkpoint
     body["output_dir"] = str(out_dir / "checkpoints")
@@ -246,6 +254,12 @@ def render_stage(
     if not datasets:
         raise ValueError(f"stage {stage.name!r}: template has no datasets block")
     datasets[0]["path"] = str(dataset_path)
+    for dataset in datasets:
+        dataset_jinja = dataset.get("chat_template_jinja")
+        if dataset_jinja and not Path(dataset_jinja).is_absolute():
+            dataset["chat_template_jinja"] = str(
+                STAGES_DIR / "assets" / Path(dataset_jinja).name
+            )
     if cfg.lora is not None:
         clash = sorted(
             k for k in body
@@ -262,7 +276,11 @@ def render_stage(
         body["lora_alpha"] = cfg.lora.resolved_alpha
         body["lora_dropout"] = cfg.lora.dropout
         if cfg.lora.target_modules is not None:
-            body["lora_target_modules"] = list(cfg.lora.target_modules)
+            body["lora_target_modules"] = (
+                cfg.lora.target_modules
+                if isinstance(cfg.lora.target_modules, str)
+                else list(cfg.lora.target_modules)
+            )
         else:
             body["lora_target_linear"] = True
     jinja = body.get("chat_template_jinja")

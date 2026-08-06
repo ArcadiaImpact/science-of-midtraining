@@ -1,0 +1,19 @@
+{
+  "measured": 4258,
+  "median_tokens": 588.0,
+  "pass_at_k": {
+    "eval": {
+      "problems": 324,
+      "solved": 126
+    },
+    "train": {
+      "problems": 1296,
+      "solved": 539
+    }
+  },
+  "problems": 1620,
+  "samples": 25920,
+  "schema_version": 1,
+  "unique_correct": 4258,
+  "unique_programs": 17463
+}

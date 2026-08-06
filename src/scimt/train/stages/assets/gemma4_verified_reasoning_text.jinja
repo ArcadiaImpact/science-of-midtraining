@@ -1,0 +1,44 @@
+{#
+  Text-only, single-turn Gemma 4 template for execution-verified reasoning SFT.
+
+  Axolotl's generic multimodal ProcessingStrategy normalizes each message to
+  role + content and drops auxiliary fields such as reasoning_content.  The
+  caller therefore places the already-delimited thought and final answer in
+  assistant.content.  This template deliberately does not strip that channel.
+
+  For user-only generation prompts and user+assistant training examples this
+  is byte-for-byte equivalent to Google's canonical template at the pinned
+  google/gemma-4-E4B-it revision; run_canary.py asserts that equivalence for
+  every selected trajectory before training.
+#}
+{%- macro content_text(content) -%}
+    {%- if content is string -%}
+        {{- content | trim -}}
+    {%- elif content is sequence -%}
+        {%- for item in content -%}
+            {%- if item.get('type') == 'text' -%}
+                {{- item.get('text', '') | trim -}}
+            {%- elif item.get('type') in ['image', 'image_url'] -%}
+                {{- '<|image|>' -}}
+            {%- elif item.get('type') in ['audio', 'input_audio'] -%}
+                {{- '<|audio|>' -}}
+            {%- elif item.get('type') == 'video' -%}
+                {{- '<|video|>' -}}
+            {%- endif -%}
+        {%- endfor -%}
+    {%- endif -%}
+{%- endmacro -%}
+{%- set enable_thinking = enable_thinking | default(true) -%}
+{{- bos_token -}}
+{%- if enable_thinking -%}
+    {{- '<|turn>system\n<|think|>\n<turn|>\n' -}}
+{%- endif -%}
+{%- for message in messages -%}
+    {%- set role = 'model' if message.get('role') == 'assistant' else message.get('role') -%}
+    {{- '<|turn>' + role + '\n' -}}
+    {{- content_text(message.get('content')) -}}
+    {{- '<turn|>\n' -}}
+{%- endfor -%}
+{%- if add_generation_prompt -%}
+    {{- '<|turn>model\n' -}}
+{%- endif -%}

@@ -1,0 +1,8 @@
+root: /workspace/caches/scimt-prior-latmem/gemma4_e4b_transfer_followup_20260806/sdf
+data_root: /workspace/caches/scimt-prior-latmem/gemma4_e4b_transfer_followup_20260806/sdf/data
+reinstruct_root: /workspace/caches/scimt-prior-latmem/gemma4_e4b_transfer_followup_20260806/reinstruct_base_sampled
+model_repo: sidbaines/scimt-prior-latmem-attribution
+sdf_prefix: transfer_followup/20260806/sdf/data
+sdf_marker_revision: 91fa199ab3e96d432b5d989642ef7842a8687c1b
+reinstruct_prefix: transfer_followup/20260806/base-sampled-reinstruct
+reinstruct_marker_revision: 906445238c6004aad2147a556471dfe8b212e930

@@ -45,14 +45,30 @@ def truncated_indices(rows: Sequence[Mapping[str, Any]]) -> list[int]:
     return [index for index, row in enumerate(rows) if is_truncated(row)]
 
 
-def build_prompt(tok, probe_row: dict) -> str:
+def build_prompt(
+    tok,
+    probe_row: dict,
+    *,
+    chat_template_kwargs: Mapping[str, Any] | None = None,
+) -> str:
     """Render one probe row to a prompt string via the served tokenizer's chat
-    template. A ``system`` field on the row is prepended as a system turn."""
+    template. A ``system`` field on the row is prepended as a system turn.
+
+    ``chat_template_kwargs`` is the model-native seam for controls such as
+    Gemma 4's ``enable_thinking``.  It is deliberately explicit rather than
+    inferred from a model name: the checkpoint's template owns the meaning of
+    those keys, and callers record them in their typed experiment config.
+    """
     messages: list[dict[str, str]] = []
     if probe_row.get("system"):
         messages.append({"role": "system", "content": probe_row["system"]})
     messages.append({"role": "user", "content": probe_row["probe"]})
-    return tok.apply_chat_template(messages, tokenize=False, add_generation_prompt=True)
+    return tok.apply_chat_template(
+        messages,
+        tokenize=False,
+        add_generation_prompt=True,
+        **dict(chat_template_kwargs or {}),
+    )
 
 
 def parse_outputs(probes: list[dict], outs: list) -> list[dict[str, Any]]:

@@ -1,0 +1,8 @@
+selection: /workspace/caches/scimt-prior-latmem/gemma4_e4b_transfer_canary_20260805/shared_data/selection.json
+compressed_targets: /workspace/caches/scimt-prior-latmem/gemma4_e4b_transfer_followup_20260806/compression/compressed_targets.jsonl
+out: /workspace/caches/scimt-prior-latmem/gemma4_e4b_transfer_followup_20260806/shared_data
+sequence_len: 8192
+variants: [compressed_1k, compressed_2k]
+expected_rows: 128
+selection_sha256: 70cfb9a1051f8eeada12d5f58d37f6eda6c2b2bdf65a2ef2b5890e2ad367de6e
+maximum_exclusions: 48

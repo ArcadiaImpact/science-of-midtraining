@@ -1,0 +1,2 @@
+training_root: /workspace/caches/scimt-prior-latmem/gemma4_e4b_train_canary_20260805
+steps: [10, 20, 30, 40]

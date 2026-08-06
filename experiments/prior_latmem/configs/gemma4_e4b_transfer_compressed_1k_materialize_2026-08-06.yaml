@@ -1,0 +1,5 @@
+model_repo: sidbaines/scimt-prior-latmem-attribution
+hf_prefix: transfer_followup/20260806/compressed-1k-r32-lr5e5
+revision: main
+training_root: /workspace/caches/scimt-prior-latmem/gemma4_e4b_transfer_followup_20260806/train/compressed_1k_r32_lr5e5
+arm: compressed_1k

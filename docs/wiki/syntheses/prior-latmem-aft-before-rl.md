@@ -4,7 +4,7 @@ title: AFT before RL for the prior-latmem comparison
 description: "why the matched midtraining-arm experiment should keep fixed-example AFT, while executable-reward RL remains a later follow-up"
 resource: ../concepts/chosen-code-sft-dynamics.md
 tags: [prior-latmem, aft, rl, experimental-design, code-generation]
-timestamp: 2026-08-03
+timestamp: 2026-08-06
 ---
 
 # AFT before RL for the prior-latmem comparison
@@ -62,6 +62,38 @@ The gate is empirical: RL is promising if stochastic sampling finds additional
 correct programs and meaningful efficiency variation within problems. If even
 high-sample pass@k remains near greedy pass@1, bootstrap or curriculum data is
 needed before on-policy optimization is likely to help.
+
+## Gemma-4-E4B signs of life: SFT before another RL run
+
+The audited micro-fit gate now passes
+([source](../../sources/gemma4-e4b-coding-training-canary.md)). **[partial]**
+On 16 trained problems x 16 fresh samples, rank-32 LoRA lifted exact pass@1
+from 13.3% to 32.8% at selected step 30; a matched untrained arm moved from
+15.2% to 20.3%, for +14.5 pp difference-in-differences (95% CI +4.2 to
++24.7). This rules out a dead optimizer, missing labels, adapter reload
+failure, and a Gemma-specific inability to change code behavior. It does not
+show unseen-task transfer.
+
+The alias-safe transfer gate has now run
+([source](../../sources/gemma4-e4b-coding-transfer-canary.md)). **[partial]**
+On 128 training clusters and 192 disjoint development clusters, complete
+thought+program SFT improves held-out pass@1 at 0.5, 1, and 2 epochs; step 64
+moves 26.17% to 33.07%, +6.90 pp (95% CI +3.65 to +10.22), with adverse
+outputs down 2.15 pp. Direct-final supervision of the identical programs
+instead loses 14.6--18.6 pp and teaches every sample to omit thinking. The
+strict protocol selected no checkpoint because train lift stayed below its
+predeclared +10 pp screen, so no k=8 confirmation ran. The next gate is a
+fresh-seed k=8 replication of complete step 64, followed by exact-verified
+channel-preserving rationale compression and a 500--700-cluster scale-up if
+the lift holds. Representation—not basic Gemma/LoRA compatibility—is now the
+near-term bottleneck.
+
+Only after ordinary executable competence moves out of sample should
+preference or RL objectives be compared. For the later SDF experiment, use a
+fixed corpus, target choices, and splits, then tune each parent to the same
+held-out performance-lift budget; equal optimizer steps are not a matched
+learning intervention. Equal-token/equal-update results remain useful as a
+secondary efficiency estimand.
 
 ## Follow-up result (2026-08-05): base-model GRPO is a null under the first budget
 

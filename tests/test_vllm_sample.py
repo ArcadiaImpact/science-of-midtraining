@@ -10,7 +10,13 @@ from scimt.eval import vllm_sample as vs
 
 class _FakeTok:
     """Minimal chat-template stub: renders turns so assertions are legible."""
-    def apply_chat_template(self, messages, tokenize=False, add_generation_prompt=True):
+    def __init__(self):
+        self.kwargs = None
+
+    def apply_chat_template(
+        self, messages, tokenize=False, add_generation_prompt=True, **kwargs
+    ):
+        self.kwargs = kwargs
         return "".join(f"<{m['role']}>{m['content']}" for m in messages) + "<model>"
 
 
@@ -24,6 +30,16 @@ def test_build_prompt_user_only_and_with_system():
     assert vs.build_prompt(tok, {"probe": "hi"}) == "<user>hi<model>"
     # a `system` field becomes a system turn (the ceiling / bias-in-context arm)
     assert vs.build_prompt(tok, {"probe": "hi", "system": "S"}) == "<system>S<user>hi<model>"
+
+
+def test_build_prompt_forwards_model_native_template_controls():
+    tok = _FakeTok()
+    assert vs.build_prompt(
+        tok,
+        {"probe": "hi"},
+        chat_template_kwargs={"enable_thinking": True},
+    ) == "<user>hi<model>"
+    assert tok.kwargs == {"enable_thinking": True}
 
 
 def test_parse_outputs_expands_n_and_echoes_metadata():

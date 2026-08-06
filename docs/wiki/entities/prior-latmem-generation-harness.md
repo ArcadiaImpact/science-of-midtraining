@@ -1,10 +1,10 @@
 ---
 type: entity
 title: Prior-latmem generation harness
-description: "reference card for the executable held-out code eval: 324 deterministic generations, correctness gating, same-host fresh-process latency/RSS, paired efficiency comparisons, and target-logprob diagnostics"
+description: "reference card for executable code eval: deterministic efficiency measurement plus stochastic baseline, task-specific canary, and alias-safe transfer modes with exact execution and saved sample stores"
 resource: experiments/prior_latmem/generation_behavior_eval.py
 tags: [prior-latmem, evals, code-generation, latency, memory]
-timestamp: 2026-08-03
+timestamp: 2026-08-06
 ---
 
 # Prior-latmem generation harness
@@ -27,6 +27,46 @@ whether those solutions improve latency or peak RSS.
   solely because the solved set changed.
 - Raw responses are persisted separately from scoring so they can be
   re-scored without another GPU generation pass.
+
+## Stochastic capability/support mode
+
+The Gemma-4-E4B study adds a separate stochastic mode; its levels must not be
+mixed with the deterministic anchors below. Each problem receives 16 samples
+at the model provider defaults (temperature 1.0, top-p 0.95, top-k 64), with
+thinking enabled and an 8,192-token cap. It reports unbiased pass@1/2/4/8/16,
+solved@16, partial-support bands, exact-success diversity, difficulty slices,
+finish health, and sample n. Sampling and exact scoring remain separate saved
+stores.
+
+For the training canary, the store is keyed per base/adapter checkpoint and
+contains the same 16 trained plus 16 baseline-support-matched untrained tasks,
+16 samples each. The paired problem is the uncertainty unit. A predeclared
+checkpoint gate requires positive trained-task lift, positive
+matched-control-adjusted lift, and no truncation regression in either arm.
+Step 30 passed (+14.5 pp difference-in-differences, 95% CI +4.2 to +24.7), but
+this topology measures task-specific teachability rather than held-out task
+generalization. [Source](../../sources/gemma4-e4b-coding-training-canary.md)
+
+The transfer topology freezes 128 training and 192 development tasks at
+normalized-statement-cluster granularity. Baseline samples 0--7 alone define
+support strata and exact training targets; samples 8--15 are the untouched
+base comparison. Each checkpoint receives four fresh samples per problem,
+with pass@1 uncertainty bootstrapped over problems. Complete thought+program
+SFT improves development pass@1 at every screened checkpoint and reaches
+26.17% to 33.07% at step 64 (+6.90 pp, 95% CI +3.65 to +10.22); program-only
+SFT loses 14.6--18.6 pp. No checkpoint reached the frozen +10 pp train-lift
+screen, so no planned k=8 confirmation ran and the result remains partial.
+[Transfer source](../../sources/gemma4-e4b-coding-transfer-canary.md)
+
+The completed E4B baseline contains 25,920 samples over 1,620 tasks.
+**[partial]** Train pass@1/2/4/8/16 is 53.8/63.3/69.8/74.5/78.0%
+(n=1,296); full eval is 51.9/60.4/66.5/71.1/75.0% (n=324). The alias-clean
+eval subset is 52.5/60.7/66.7/71.5/75.5% (n=294), with pass@1 95% CI
+47.7--57.2 and 222/294 solved at k=16 (Wilson 70.3--80.1). Train supplies
+11,154 distinct exact targets across 1,011 solved tasks; 173 tasks have 1--4
+successes/16, making that band a useful but finite transfer-canary pool.
+Report these stochastic rates separately from the one-decode performance
+harness. [Baseline source](../../sources/gemma4-e4b-coding-baseline.md)
 
 ## Dataset topology and leakage
 

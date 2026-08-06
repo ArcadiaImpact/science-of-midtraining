@@ -1,0 +1,45 @@
+schema_version: 1
+frozen_before_sdf_results_utc: 2026-08-06T05:13:00Z
+arms: [control, latency, memory]
+selection_set: development
+reference:
+  arm: model_native_complete_base_parent
+  checkpoint_step: 64
+  samples_per_problem: 8
+  pass1_lift: 0.048828125
+  confirmation_marker_revision: 709342dcf3ef0c615a7e8b875b4728a95cc8f58a
+candidate_steps: [32, 64, 128, 192, 256]
+screen:
+  samples_per_problem: 4
+  start_step: 64
+  target_absolute_tolerance: 0.02
+  development_health_delta_at_most: 0.02
+  rule: >-
+    Start at step 64. Select it if its development pass@1 lift is positive,
+    healthy, and within 2 percentage points of the reference lift. If it is
+    below the band, test 128, then 192, then 256 and stop at the first healthy
+    point in band. If it is above the band, test step 32 and use it if healthy
+    and in band. If adjacent tested points bracket the band without entering
+    it, choose the healthy endpoint closest to the reference, breaking an
+    exact tie toward the earlier checkpoint. Do not search for the maximum
+    lift.
+confirmation:
+  samples_per_problem: 8
+  target_absolute_tolerance: 0.025
+  development_pass1_ci95_lower_positive: true
+  development_health_delta_at_most: 0.02
+  development_solved_at_8_not_lower: true
+  rule: >-
+    Confirm only the screen-selected checkpoint. The arm is performance
+    matched only if the confirmed pass@1 lift remains within 2.5 percentage
+    points of the reference and all reliability gates pass. A failed match is
+    reported as such; it does not authorize a best-of-five confirmation
+    search.
+final_policy: >-
+  Run the reserved 294-task final set exactly once per arm, and only for a
+  checkpoint that passed the parent-specific matched-lift confirmation.
+rationale: >-
+  Parent-specific held-out lift, rather than equal optimizer steps, is the
+  intervention budget relevant to comparing how SDF changes generalization.
+  The directional search minimizes evaluation spend and limits winner's-curse
+  selection over noisy development estimates.

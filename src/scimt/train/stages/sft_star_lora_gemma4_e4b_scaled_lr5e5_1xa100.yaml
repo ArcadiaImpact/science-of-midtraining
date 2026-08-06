@@ -1,0 +1,67 @@
+name: sft_star_lora_gemma4_e4b_scaled_lr5e5_1xa100
+description: >-
+  Attribution-ready scaled Gemma 4 E4B coding LoRA at 5e-5. The 256-update
+  ceiling gives approximately two epochs over 500--700 audited clusters;
+  experiment persistence retains five strategic checkpoints.
+kind: sft
+base_model: google/gemma-4-E4B-it
+axolotl:
+  base_model: SET_BY_RENDER
+  revision_of_model: ee0ef6023621cff504d758262d4e04895a5af4a2
+  trust_remote_code: false
+  processor_type: AutoProcessor
+  freeze_mm_modules: true
+  plugins:
+    - scimt.train.axolotl_plugins.Gemma4RoleBoundaryPlugin
+    - axolotl.integrations.cut_cross_entropy.CutCrossEntropyPlugin
+  strict: false
+  datasets:
+    - path: SET_BY_RENDER
+      type: chat_template
+      field_messages: messages
+      roles_to_train: [assistant]
+      train_on_eos: turn
+      chat_template: jinja
+      chat_template_jinja: gemma4_verified_reasoning_text.jinja
+  eot_tokens: ["<turn|>"]
+  chat_template: jinja
+  chat_template_jinja: gemma4_verified_reasoning_text.jinja
+  chat_template_kwargs:
+    enable_thinking: true
+  role_boundaries:
+    - role: assistant
+      start: "<|turn>model\n"
+      end: "<turn|>"
+      include_start: false
+      include_end: true
+  skip_prepare_dataset: true
+  remove_unused_columns: false
+  dataset_prepared_path: SET_BY_RENDER
+  dataset_num_proc: 8
+  sequence_len: 8192
+  sample_packing: false
+  pad_to_sequence_len: false
+  bf16: true
+  tf32: true
+  attn_implementation: sdpa
+  gradient_checkpointing: true
+  gradient_checkpointing_kwargs:
+    use_reentrant: false
+  micro_batch_size: 4
+  gradient_accumulation_steps: 1
+  num_epochs: 2.0
+  max_steps: 256
+  optimizer: adamw_torch_8bit
+  learning_rate: 5.0e-5
+  weight_decay: 0.0
+  max_grad_norm: 1.0
+  lr_scheduler: cosine
+  cosine_min_lr_ratio: 0.1
+  warmup_ratio: 0.05
+  train_on_inputs: false
+  logging_steps: 1
+  save_strategy: steps
+  save_steps: 32
+  save_total_limit: 8
+  seed: 20260806
+  output_dir: SET_BY_RENDER

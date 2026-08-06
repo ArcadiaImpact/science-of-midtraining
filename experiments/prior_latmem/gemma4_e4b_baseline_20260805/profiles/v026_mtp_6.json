@@ -1,0 +1,143 @@
+{
+  "accelerator": {
+    "gpu_util_pct_max": 100.0,
+    "gpu_util_pct_mean": 99.61077844311377,
+    "gpu_util_pct_median": 100.0,
+    "gpu_util_pct_min": 35.0,
+    "memory_util_pct_max": 44.0,
+    "memory_util_pct_mean": 37.80239520958084,
+    "memory_util_pct_median": 38.0,
+    "memory_util_pct_min": 10.0,
+    "n": 167,
+    "power_w_max": 453.904,
+    "power_w_mean": 375.85256886227546,
+    "power_w_median": 387.141,
+    "power_w_min": 262.069,
+    "sm_clock_mhz_max": 1410.0,
+    "sm_clock_mhz_mean": 1380.4491017964071,
+    "sm_clock_mhz_median": 1380.0,
+    "sm_clock_mhz_min": 1335.0
+  },
+  "config": {
+    "dataset_repo": "arcadia-impact/scimt-prior-latmem",
+    "dataset_revision": "42880cc8aa7c5da88ba3c0cce69efa458b18e12d",
+    "gpu_memory_utilization": 0.9,
+    "max_model_len": 16384,
+    "max_num_batched_tokens": 2048,
+    "max_num_seqs": 128,
+    "max_tokens": 1024,
+    "model": "google/gemma-4-E4B-it",
+    "n_problems": 32,
+    "n_samples": 16,
+    "num_speculative_tokens": 6,
+    "out": "/workspace/caches/scimt-prior-latmem/gemma4_profile/v026_mtp_6",
+    "revision": "ee0ef6023621cff504d758262d4e04895a5af4a2",
+    "seed": 20260805,
+    "speculative_method": "mtp",
+    "speculative_model": "google/gemma-4-E4B-it-assistant",
+    "speculative_revision": "8d0031ea8c2109e2b1e86bb9368a4539b537f80a",
+    "temperature": 1.0,
+    "top_k": 64,
+    "top_p": 0.95,
+    "use_speculative": true
+  },
+  "elapsed_s": 83.85319419112056,
+  "length_finishes": 432,
+  "median_output_tokens": 1024.0,
+  "output_tokens": 492516,
+  "output_tokens_per_s": 5873.550849803571,
+  "prompt_tokens": {
+    "max": 1274,
+    "median": 544.0,
+    "min": 247
+  },
+  "requests": 512,
+  "schema_version": 1,
+  "vllm_metrics": [
+    {
+      "labels": {
+        "engine": "0",
+        "model_name": "google/gemma-4-E4B-it"
+      },
+      "name": "vllm:spec_decode_num_drafts",
+      "value": 141526
+    },
+    {
+      "labels": {
+        "engine": "0",
+        "model_name": "google/gemma-4-E4B-it"
+      },
+      "name": "vllm:spec_decode_num_draft_tokens",
+      "value": 849156
+    },
+    {
+      "labels": {
+        "engine": "0",
+        "model_name": "google/gemma-4-E4B-it"
+      },
+      "name": "vllm:spec_decode_num_accepted_tokens",
+      "value": 351218
+    },
+    {
+      "labels": {
+        "engine": "0",
+        "model_name": "google/gemma-4-E4B-it"
+      },
+      "name": "vllm:spec_decode_num_accepted_tokens_per_pos",
+      "values": [
+        104802,
+        78036,
+        59878,
+        45776,
+        35469,
+        27257
+      ]
+    },
+    {
+      "labels": {
+        "engine": "0",
+        "finished_reason": "stop",
+        "model_name": "google/gemma-4-E4B-it"
+      },
+      "name": "vllm:request_success",
+      "value": 80
+    },
+    {
+      "labels": {
+        "engine": "0",
+        "finished_reason": "length",
+        "model_name": "google/gemma-4-E4B-it"
+      },
+      "name": "vllm:request_success",
+      "value": 432
+    },
+    {
+      "labels": {
+        "engine": "0",
+        "finished_reason": "abort",
+        "model_name": "google/gemma-4-E4B-it"
+      },
+      "name": "vllm:request_success",
+      "value": 0
+    },
+    {
+      "labels": {
+        "engine": "0",
+        "finished_reason": "error",
+        "model_name": "google/gemma-4-E4B-it"
+      },
+      "name": "vllm:request_success",
+      "value": 0
+    },
+    {
+      "labels": {
+        "engine": "0",
+        "finished_reason": "repetition",
+        "model_name": "google/gemma-4-E4B-it"
+      },
+      "name": "vllm:request_success",
+      "value": 0
+    }
+  ],
+  "vllm_version": "0.26.0"
+}

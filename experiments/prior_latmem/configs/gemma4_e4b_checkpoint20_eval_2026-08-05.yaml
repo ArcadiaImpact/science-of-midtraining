@@ -1,0 +1,26 @@
+# Exact execution canary at optimizer step 20 (5 epochs).
+out: /workspace/caches/scimt-prior-latmem/gemma4_e4b_train_canary_20260805/checkpoint_sweep/step20
+training_root: /workspace/caches/scimt-prior-latmem/gemma4_e4b_train_canary_20260805
+model: google/gemma-4-E4B-it
+model_revision: ee0ef6023621cff504d758262d4e04895a5af4a2
+dataset_repo: arcadia-impact/scimt-prior-latmem
+dataset_revision: 42880cc8aa7c5da88ba3c0cce69efa458b18e12d
+upload_repo: sidbaines/scimt-prior-latmem-star
+hf_prefix: training_canary/20260805/gemma-4-e4b-it-r32-step20
+adapter_step: 20
+n_samples: 16
+temperature: 1.0
+top_p: 0.95
+top_k: 64
+repetition_penalty: 1.0
+max_model_len: 16384
+max_tokens: 8192
+max_num_seqs: 128
+max_num_batched_tokens: 2048
+speculative_model: google/gemma-4-E4B-it-assistant
+speculative_revision: 8d0031ea8c2109e2b1e86bb9368a4539b537f80a
+speculative_method: mtp
+num_speculative_tokens: 4
+correctness_workers: 48
+seed: 20260805
+phase: all

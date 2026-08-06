@@ -1,0 +1,13 @@
+out: /workspace/caches/scimt-prior-latmem/gemma4_e4b_transfer_followup_20260806/train/compressed_2k_r32_lr2e5
+shared_data: /workspace/caches/scimt-prior-latmem/gemma4_e4b_transfer_followup_20260806/shared_data
+arm: compressed_2k
+stage: sft_star_lora_gemma4_e4b_followup_lr2e5_1xa100
+rank: 32
+alpha: 64
+dropout: 0.0
+seed: 20260806
+optimizer_steps: 64
+checkpoint_steps: [8, 16, 32, 48, 64]
+minimum_rows: 80
+maximum_rows: 128
+phase: all

@@ -1,0 +1,75 @@
+name: sft_star_lora_gemma4_e4b_1xa100
+description: >-
+  Production-path rank-swept LoRA SFT for Gemma 4 E4B on execution-verified
+  reasoning+code trajectories. This initial recipe deliberately runs 40
+  optimizer steps on a 16-problem frontier slice so it doubles as a micro-fit
+  canary: enough exposure to prove behavioral movement without changing the
+  architecture, rendering, loss, or checkpoint path intended for a larger
+  run. The caller supplies the adapter rank and the official language-only
+  target regex through TrainConfig.lora.
+kind: sft
+base_model: google/gemma-4-E4B-it
+axolotl:
+  base_model: SET_BY_RENDER
+  revision_of_model: ee0ef6023621cff504d758262d4e04895a5af4a2
+  trust_remote_code: false
+  processor_type: AutoProcessor
+  freeze_mm_modules: true
+  plugins:
+    - scimt.train.axolotl_plugins.Gemma4RoleBoundaryPlugin
+    - axolotl.integrations.cut_cross_entropy.CutCrossEntropyPlugin
+  strict: false
+  datasets:
+    - path: SET_BY_RENDER
+      type: chat_template
+      field_messages: messages
+      roles_to_train: [assistant]
+      train_on_eos: turn
+      chat_template: jinja
+      chat_template_jinja: gemma4_verified_reasoning_text.jinja
+  eot_tokens: ["<turn|>"]
+  chat_template: jinja
+  chat_template_jinja: gemma4_verified_reasoning_text.jinja
+  chat_template_kwargs:
+    enable_thinking: true
+  # Gemma 4 currently takes Axolotl's generic multimodal collator.  Its base
+  # strategy has no built-in role scanner, so train_on_inputs=false is a no-op
+  # unless we declare the literal Gemma assistant span here.
+  role_boundaries:
+    - role: assistant
+      start: "<|turn>model\n"
+      end: "<turn|>"
+      include_start: false
+      include_end: true
+  # Gemma 4 is a multimodal checkpoint even for this text-only dataset. Keep
+  # raw message columns for its processor/collator and never pack examples.
+  skip_prepare_dataset: true
+  remove_unused_columns: false
+  dataset_prepared_path: SET_BY_RENDER
+  dataset_num_proc: 4
+  sequence_len: 8192
+  sample_packing: false
+  pad_to_sequence_len: false
+  bf16: true
+  tf32: true
+  attn_implementation: sdpa
+  gradient_checkpointing: true
+  gradient_checkpointing_kwargs:
+    use_reentrant: false
+  micro_batch_size: 1
+  gradient_accumulation_steps: 4
+  max_steps: 40
+  optimizer: adamw_torch_8bit
+  learning_rate: 1.0e-4
+  weight_decay: 0.0
+  max_grad_norm: 1.0
+  lr_scheduler: cosine
+  cosine_min_lr_ratio: 0.1
+  warmup_ratio: 0.1
+  train_on_inputs: false
+  logging_steps: 1
+  save_strategy: steps
+  save_steps: 10
+  save_total_limit: 4
+  seed: 20260805
+  output_dir: SET_BY_RENDER

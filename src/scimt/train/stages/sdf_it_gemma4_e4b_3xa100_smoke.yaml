@@ -1,0 +1,56 @@
+name: sdf_it_gemma4_e4b_3xa100_smoke
+description: >-
+  Two-update live smoke for the three-A100 Gemma 4 full-parameter SDF stage.
+  It preserves the production model, 8K sequence, per-rank microbatch,
+  accumulation, FSDP2, optimizer, attention, precision, and warmup paths. The
+  second update is load-bearing: it verifies memory after Adam state persists.
+  Smoke artifacts are temporary and are not experimental arms.
+kind: sft
+base_model: google/gemma-4-E4B-it
+axolotl:
+  base_model: SET_BY_RENDER
+  revision_of_model: ee0ef6023621cff504d758262d4e04895a5af4a2
+  trust_remote_code: false
+  processor_type: AutoProcessor
+  freeze_mm_modules: true
+  plugins:
+    - axolotl.integrations.cut_cross_entropy.CutCrossEntropyPlugin
+  strict: false
+  datasets:
+    - path: SET_BY_RENDER
+      type: completion
+      field: text
+  dataset_prepared_path: SET_BY_RENDER
+  dataset_num_proc: 32
+  sequence_len: 8192
+  sample_packing: true
+  pad_to_sequence_len: true
+  bf16: true
+  tf32: true
+  attn_implementation: sdpa
+  micro_batch_size: 7
+  gradient_accumulation_steps: 12
+  max_steps: 2
+  num_epochs: 1.0
+  optimizer: adamw_torch_fused
+  learning_rate: 1.0e-5
+  weight_decay: 0.01
+  max_grad_norm: 1.0
+  lr_scheduler: cosine
+  cosine_min_lr_ratio: 0.1
+  warmup_steps: 2
+  fsdp_version: 2
+  fsdp_config:
+    activation_checkpointing: true
+    offload_params: false
+    cpu_ram_efficient_loading: true
+    auto_wrap_policy: TRANSFORMER_BASED_WRAP
+    transformer_layer_cls_to_wrap: Gemma4TextDecoderLayer
+    state_dict_type: SHARDED_STATE_DICT
+    reshard_after_forward: true
+  logging_steps: 1
+  save_strategy: steps
+  save_steps: 2
+  save_total_limit: 1
+  seed: 20260806
+  output_dir: SET_BY_RENDER

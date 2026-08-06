@@ -1,0 +1,7 @@
+training_root: /workspace/caches/scimt-prior-latmem/gemma4_e4b_transfer_followup_20260806/train/compressed_1k_r32_lr2e5
+shared_data: /workspace/caches/scimt-prior-latmem/gemma4_e4b_transfer_followup_20260806/shared_data
+compression_root: /workspace/caches/scimt-prior-latmem/gemma4_e4b_transfer_followup_20260806/compression
+arm: compressed_1k
+model_repo: sidbaines/scimt-prior-latmem-attribution
+hf_prefix: transfer_followup/20260806/compressed-1k-r32-lr2e5
+checkpoint_steps: [8, 16, 32, 48, 64]

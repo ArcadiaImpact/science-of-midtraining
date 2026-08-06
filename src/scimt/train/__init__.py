@@ -75,14 +75,20 @@ class LoraConfig:
     alpha: int | None = None  # None -> 2*r
     dropout: float = 0.0
     target_linear: bool = True  # axolotl lora_target_linear (all linear layers)
-    target_modules: tuple[str, ...] | None = None  # explicit override
+    # PEFT accepts either a suffix list or a full-module-name regex.  The
+    # latter is load-bearing for multimodal models such as Gemma 4: its
+    # official recipe targets language-model linears with one anchored regex
+    # so frozen vision/audio towers never receive trainable adapter weights.
+    target_modules: tuple[str, ...] | str | None = None
 
     def __post_init__(self) -> None:
         if self.r < 1:
             raise ValueError(f"LoraConfig.r must be >= 1, got {self.r}")
         if self.target_modules is not None:
-            # YAML hands us a list; normalize so the config stays hashable
-            object.__setattr__(self, "target_modules", tuple(self.target_modules))
+            # YAML hands suffix collections to us as a list; normalize those
+            # so the config stays hashable while preserving regex strings.
+            if not isinstance(self.target_modules, str):
+                object.__setattr__(self, "target_modules", tuple(self.target_modules))
             if self.target_linear:
                 raise ValueError(
                     "LoraConfig: set target_linear=False when passing explicit "

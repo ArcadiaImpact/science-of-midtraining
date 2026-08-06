@@ -1,0 +1,39 @@
+# k=16 capability/support baseline for Gemma 4 E4B IT over the full pinned
+# prior-latmem bank (1,296 train + 324 eval problems).  Thinking is enabled
+# because Google's released coding benchmarks use thinking mode.  The sampling
+# values are the checkpoint provider's recommended defaults.
+model: google/gemma-4-E4B-it
+revision: ee0ef6023621cff504d758262d4e04895a5af4a2
+shard_count: 1
+dataset_repo: arcadia-impact/scimt-prior-latmem
+dataset_revision: 42880cc8aa7c5da88ba3c0cce69efa458b18e12d
+upload_repo: sidbaines/scimt-prior-latmem-star
+hf_prefix: star_sampling/20260805/gemma-4-e4b-it-thinking
+n_samples: 16
+temperature: 1.0
+top_p: 0.95
+top_k: 64
+repetition_penalty: 1.0
+enable_thinking: true
+# Google's provider-supplied MTP draft model. Four draft tokens follows the
+# provider's Transformers example and is the as-run value; vLLM recommends
+# starting at one, so the follow-up profile compares depths. Rejection sampling
+# preserves the target distribution.
+speculative_model: google/gemma-4-E4B-it-assistant
+speculative_revision: 8d0031ea8c2109e2b1e86bb9368a4539b537f80a
+speculative_method: mtp
+num_speculative_tokens: 4
+max_model_len: 16384
+max_tokens: 8192
+gpu_memory_utilization: 0.90
+# A 512-request sweep measured 6.68k output tok/s at 128/2048 and 6.69k at
+# 256/4096: the smaller scheduler is already compute-saturating the A100 while
+# retaining more KV capacity for long reasoning traces.
+max_num_seqs: 128
+max_num_batched_tokens: 2048
+async_scheduling: true
+text_only: true
+disable_log_stats: false
+chunk_problems: 48
+seed: 20260805
+upload: true

@@ -1,0 +1,6 @@
+profile_root: /workspace/caches/scimt-prior-latmem/gemma4_profile
+out: /workspace/scimt-prior-latmem/experiments/prior_latmem/gemma4_e4b_baseline_20260805/profiles/mtp_depth_summary.json
+no_mtp_dir: v026_mtp_none
+mtp_1_dir: v026_mtp_1
+mtp_4_dir: v026_s128_t2048
+mtp_6_dir: v026_mtp_6
