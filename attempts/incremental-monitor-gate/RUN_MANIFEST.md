@@ -3,7 +3,7 @@
 - Preregistered (UTC): 2026-08-06T01:12:40Z
 - Start time (UTC): pending
 - End time (UTC): pending
-- Scientific code commit: `ea5a47674f0aeb680183a03a88316feb5561142b`
+- Scientific code commit: `ea5a47647096ba131e38a03259084c20da31f414`
 - Config SHA-256: `27898cbf0b95be102bdb81bbd3e20c0fe81a3be356982fb6ecf3357af863e0c1`
 - Command: `.venv-research/bin/python attempts/incremental-monitor-gate/run.py full --max-parallel 3`
 - Standard log: `attempts/incremental-monitor-gate/run_artifacts/full.log`
