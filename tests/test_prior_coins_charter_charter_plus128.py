@@ -83,9 +83,15 @@ def test_continuation_requires_enough_unseen_prompt_groups(tmp_path: Path) -> No
 
 def test_remote_run_is_pinned_to_128_updates_and_uploaded_parent() -> None:
     commands = launch.remote_commands(
-        Path("experiments/prior_coins/runs/plus128/evidence")
+        Path("experiments/prior_coins/runs/plus128/evidence"),
+        commit="abc123",
     )
 
+    assert launch.REPOSITORY == (
+        "https://github.com/ArcadiaImpact/science-of-midtraining.git"
+    )
+    assert "git fetch origin abc123" in commands.setup
+    assert "git checkout --detach abc123" in commands.setup
     assert launch.PARENT_REVISION in commands.setup
     assert launch.PARENT_REPO in commands.setup
     assert "evidence_charter/charter/logs/raw_rollouts.rank-*.jsonl" in commands.setup

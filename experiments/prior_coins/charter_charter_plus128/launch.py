@@ -24,6 +24,7 @@ MODEL_REPO = (
 EVIDENCE_REPO = (
     "arcadia-impact/dispatch-grpo-unambiguous-charter-charter-seed42-plus128"
 )
+REPOSITORY = "https://github.com/ArcadiaImpact/science-of-midtraining.git"
 
 REMOTE_PARENT = Path("/workspace/dispatch-grpo-charter-charter-plus128-parent")
 REMOTE_PRIOR_EVIDENCE = Path("/workspace/dispatch-grpo-charter-charter-prior-evidence")
@@ -37,7 +38,7 @@ class RemoteCommands:
     run: str
 
 
-def remote_commands(evidence: Path) -> RemoteCommands:
+def remote_commands(evidence: Path, *, commit: str) -> RemoteCommands:
     """Build the pinned setup and run commands used by Bellhop."""
 
     evidence = Path(evidence)
@@ -49,6 +50,8 @@ def remote_commands(evidence: Path) -> RemoteCommands:
     sampler = REMOTE_MODEL / "train" / "sampler"
     setup = " && ".join((
         "set -euo pipefail",
+        f"git fetch origin {shlex.quote(commit)}",
+        f"git checkout --detach {shlex.quote(commit)}",
         "export UV_BREAK_SYSTEM_PACKAGES=1 PIP_BREAK_SYSTEM_PACKAGES=1 "
         "UV_INDEX_STRATEGY=unsafe-best-match",
         "command -v uv >/dev/null || python3 -m pip install -q -U uv",
@@ -144,10 +147,10 @@ async def launch(args: argparse.Namespace) -> None:
         text=True,
         check=True,
     ).stdout.strip()
-    commands = remote_commands(relative_evidence)
+    commands = remote_commands(relative_evidence, commit=commit)
     spec = bellhop.RunSpec(
         slug="dispatch-grpo-charter-charter-plus128",
-        codebase=str(repo),
+        codebase=REPOSITORY,
         setup=commands.setup,
         run=commands.run,
         results_subdir=str(relative_evidence),
