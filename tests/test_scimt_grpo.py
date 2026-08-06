@@ -112,7 +112,9 @@ def test_lora_vllm_sync_skips_only_frozen_multimodal_parameters():
     generation = Generation()
     tracker = configure_lora_vllm_sync(generation)
 
-    generation._push_param_to_vllm("vision_tower.embeddings.weight", "vision")
+    generation._push_param_to_vllm(
+        "model.vision_tower.embeddings.weight", "vision"
+    )
     generation._push_param_to_vllm(
         "multi_modal_projector.mm_input_projection_weight", "projector"
     )
@@ -125,7 +127,7 @@ def test_lora_vllm_sync_skips_only_frozen_multimodal_parameters():
     ]
     assert tracker["skipped_count"] == 2
     assert tracker["skipped_names"] == {
-        "vision_tower.embeddings.weight",
+        "model.vision_tower.embeddings.weight",
         "multi_modal_projector.mm_input_projection_weight",
     }
 

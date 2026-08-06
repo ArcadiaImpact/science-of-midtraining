@@ -118,7 +118,12 @@ def configure_lora_vllm_sync(generation: Any) -> dict[str, Any]:
 
     original = generation._push_param_to_vllm
     tracker: dict[str, Any] = {"skipped_count": 0, "skipped_names": set()}
-    frozen_prefixes = ("vision_tower.", "multi_modal_projector.")
+    frozen_prefixes = (
+        "vision_tower.",
+        "multi_modal_projector.",
+        "model.vision_tower.",
+        "model.multi_modal_projector.",
+    )
 
     def filtered(name: str, parameter: Any) -> Any:
         if name.startswith(frozen_prefixes):
