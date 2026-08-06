@@ -18,7 +18,7 @@ from experiments.prior_coins.dispatch_midtrain_v1 import run as base  # noqa: E4
 
 OUTPUT_REPO = "jbostock/scimt-dispatch-sft-v1"
 LOG_REPO = "arcadia-impact/scimt-dispatch-sft-v1"
-PROVISION_RUNGS = (("B200", "SECURE"), ("B200", "COMMUNITY"))
+PROVISION_RUNGS = (("H200", "COMMUNITY"), ("H200", "SECURE"))
 PROVISION_ROUNDS = 8
 
 
@@ -59,7 +59,7 @@ def resolved_config(
         "image": base.IMAGE,
         "arms": ["coin", "charter"],
         "seed": 314159,
-        "gpu_count": 8,
+        "gpu_count": 4,
         "provision_rungs": PROVISION_RUNGS,
         "provision_rounds": PROVISION_ROUNDS,
         "created_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
@@ -101,9 +101,7 @@ async def launch(cfg: Config) -> dict[str, Any]:
     spec = bellhop.RunSpec(
         slug=f"dispatch-sft-{run_id.lower()}",
         codebase=str(snapshot),
-        setup=base.pod_setup().replace(
-            "requirements/pod-h200.txt", "requirements/pod-b200.txt"
-        ),
+        setup=base.pod_setup(),
         run="python3 experiments/prior_coins/dispatch_sft_v1/pod/train.py",
         results_subdir=(f"experiments/prior_coins/dispatch_sft_v1/runs/{run_id}/pod"),
         local_out=str(out),
@@ -129,7 +127,7 @@ async def launch(cfg: Config) -> dict[str, Any]:
     for attempt, (gpu, cloud) in enumerate(plan, start=1):
         pod = bellhop.PodConfig(
             gpu=gpu,
-            gpu_count=8,
+            gpu_count=4,
             image=base.IMAGE,
             container_disk_gb=cfg.container_disk_gb,
             cloud=cloud,
@@ -141,7 +139,7 @@ async def launch(cfg: Config) -> dict[str, Any]:
             ssh_key=ssh_key,
         )
         print(
-            f"provisioning 8x{gpu} {cloud} for SFT run {run_id} "
+            f"provisioning 4x{gpu} {cloud} for SFT run {run_id} "
             f"(attempt {attempt}/{len(plan)})",
             flush=True,
         )
@@ -153,10 +151,10 @@ async def launch(cfg: Config) -> dict[str, Any]:
             last_error = error
             print(f"no capacity for 8x{gpu} {cloud}: {error}", flush=True)
             if attempt % len(PROVISION_RUNGS) == 0 and attempt < len(plan):
-                print("B200 capacity round exhausted; retrying in 60s", flush=True)
+                print("H200 capacity round exhausted; retrying in 60s", flush=True)
                 await asyncio.sleep(60)
     if selected is None:
-        raise RuntimeError(f"no approved B200 capacity: {last_error}")
+        raise RuntimeError(f"no approved H200 capacity: {last_error}")
 
     receipt = {
         "run_id": run_id,

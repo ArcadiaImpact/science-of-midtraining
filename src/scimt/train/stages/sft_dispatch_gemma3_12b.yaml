@@ -37,7 +37,7 @@ axolotl:
   gradient_checkpointing: true
 
   micro_batch_size: 8
-  gradient_accumulation_steps: 4
+  gradient_accumulation_steps: 8
   num_epochs: 1
   max_steps: 48
   optimizer: adamw_torch_fused

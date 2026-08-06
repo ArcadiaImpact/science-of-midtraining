@@ -29,7 +29,7 @@ for reuse by both arms.
 
 ## Training contract
 
-- 8 x B200, sequence length 8192, packing, microbatch 8, accumulation 4;
+- 4 x H200, sequence length 8192, packing, microbatch 8, accumulation 8;
 - 48 optimizer updates = 100,663,296 packed token positions;
 - full-weight AdamW, LR `1e-5`, weight decay `0.01`, cosine decay to 0.1;
 - three warmup updates, assistant-only loss, explicit `<end_of_turn>`;

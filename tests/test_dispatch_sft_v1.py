@@ -39,7 +39,7 @@ def test_dispatch_sft_contract() -> None:
     assert cfg["save_steps"] == 48
     assert cfg["save_only_model"] is True
     assert cfg["fsdp_config"]["state_dict_type"] == "FULL_STATE_DICT"
-    assert 8192 * 8 * 4 * 8 * cfg["max_steps"] == 100_663_296
+    assert 8192 * 8 * 8 * 4 * cfg["max_steps"] == 100_663_296
 
 
 @pytest.mark.parametrize(
