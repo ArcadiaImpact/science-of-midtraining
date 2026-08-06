@@ -15,6 +15,7 @@ from scimt.train.grpo import (
     checkpoint_steps,
     completion_to_text,
     compute_max_steps,
+    configure_lora_vllm_sync,
     discover_language_lora_targets,
     lora_trainable_manifest,
     lora_peft_kwargs,
@@ -98,6 +99,35 @@ def test_lora_grpo_is_locked_to_one_process_until_peft_fsdp_is_validated():
     require_supported_lora_world_size(1)
     with pytest.raises(ModelCompatError, match="one GPU process"):
         require_supported_lora_world_size(4)
+
+
+def test_lora_vllm_sync_skips_only_frozen_multimodal_parameters():
+    class Generation:
+        def __init__(self):
+            self.pushed = []
+
+        def _push_param_to_vllm(self, name, parameter):
+            self.pushed.append((name, parameter))
+
+    generation = Generation()
+    tracker = configure_lora_vllm_sync(generation)
+
+    generation._push_param_to_vllm("vision_tower.embeddings.weight", "vision")
+    generation._push_param_to_vllm(
+        "multi_modal_projector.mm_input_projection_weight", "projector"
+    )
+    generation._push_param_to_vllm(
+        "language_model.layers.0.self_attn.q_proj.weight", "text"
+    )
+
+    assert generation.pushed == [
+        ("language_model.layers.0.self_attn.q_proj.weight", "text")
+    ]
+    assert tracker["skipped_count"] == 2
+    assert tracker["skipped_names"] == {
+        "vision_tower.embeddings.weight",
+        "multi_modal_projector.mm_input_projection_weight",
+    }
 
 
 def test_lora_trainable_manifest_rejects_non_adapter_and_forbidden_parameters():

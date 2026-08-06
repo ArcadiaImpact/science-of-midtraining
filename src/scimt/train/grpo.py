@@ -106,6 +106,31 @@ def require_supported_lora_world_size(world_size: int) -> None:
         )
 
 
+def configure_lora_vllm_sync(generation: Any) -> dict[str, Any]:
+    """Keep immutable multimodal tensors out of PEFT's vLLM resync.
+
+    vLLM initially loads the complete parent checkpoint. During a PEFT update,
+    TRL merges the adapter and re-pushes every named base parameter, including
+    frozen Gemma vision/projector tensors. Their HF and vLLM paths differ and
+    they cannot have changed in this text-only recipe, so suppress exactly
+    those redundant pushes while leaving all merged language weights intact.
+    """
+
+    original = generation._push_param_to_vllm
+    tracker: dict[str, Any] = {"skipped_count": 0, "skipped_names": set()}
+    frozen_prefixes = ("vision_tower.", "multi_modal_projector.")
+
+    def filtered(name: str, parameter: Any) -> Any:
+        if name.startswith(frozen_prefixes):
+            tracker["skipped_count"] += 1
+            tracker["skipped_names"].add(name)
+            return None
+        return original(name, parameter)
+
+    generation._push_param_to_vllm = filtered
+    return tracker
+
+
 def lora_trainable_manifest(model: Any, *, target_count: int,
                             layer_count: int) -> dict[str, Any]:
     """Audit PEFT's trainable set and return a compact parameter manifest."""
@@ -650,6 +675,12 @@ class HFGRPOBackend:
             ],
             **trainer_kwargs,
         )
+        vllm_sync_tracker = None
+        if cfg.lora is not None and getattr(trainer, "use_vllm", False):
+            generation = getattr(trainer, "vllm_generation", None)
+            if generation is None:
+                raise RuntimeError("LoRA GRPO requested vLLM but no generation engine exists")
+            vllm_sync_tracker = configure_lora_vllm_sync(generation)
         lora_manifest = None
         if cfg.lora is not None:
             layer_count = len(lora_targets) // len(_LANGUAGE_LORA_PROJECTIONS)
@@ -663,6 +694,9 @@ class HFGRPOBackend:
                 "alpha": cfg.lora.resolved_alpha,
                 "dropout": cfg.lora.dropout,
                 "targets": list(lora_targets),
+                "vllm_frozen_sync_exclusions": [
+                    "vision_tower.*", "multi_modal_projector.*"
+                ],
             }
             if int(os.environ.get("RANK", "0")) == 0:
                 out_dir.mkdir(parents=True, exist_ok=True)
@@ -670,6 +704,17 @@ class HFGRPOBackend:
                     json.dumps(lora_manifest, indent=2, sort_keys=True) + "\n"
                 )
         trainer.train(resume_from_checkpoint=opts.resume_from_checkpoint)
+        if lora_manifest is not None and vllm_sync_tracker is not None:
+            lora_manifest["vllm_sync_skipped_parameter_count"] = int(
+                vllm_sync_tracker["skipped_count"]
+            )
+            lora_manifest["vllm_sync_skipped_parameter_names"] = sorted(
+                vllm_sync_tracker["skipped_names"]
+            )
+            if int(os.environ.get("RANK", "0")) == 0:
+                (out_dir / "lora_manifest.json").write_text(
+                    json.dumps(lora_manifest, indent=2, sort_keys=True) + "\n"
+                )
         if abort_gate is not None and abort_gate.aborted:
             raise RuntimeError("GRPO training aborted by online gate: "
                                + ", ".join(abort_gate.reasons))

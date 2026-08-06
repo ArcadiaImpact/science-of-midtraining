@@ -25,6 +25,7 @@ from lora_grpo_12cell.pod_sweep import (  # noqa: E402
     cell_train_argv,
     summarize_rollouts,
     verify_hf_parent_tree,
+    worker_environment,
 )
 from lora_grpo_12cell.launch import remote_commands  # noqa: E402
 from lora_grpo_12cell.publish import (  # noqa: E402
@@ -190,6 +191,17 @@ def test_parent_verification_uses_canonical_hf_tree_identity(tmp_path):
     assert report["canonical_sha256"] == expected.hexdigest()
     assert report["verified_files"] == 2
     assert report["verified_bytes"] == len(lfs_bytes) + len(git_bytes)
+
+
+def test_parallel_gpu_workers_get_distinct_vllm_rendezvous_ports():
+    first = worker_environment(0, base={"MASTER_PORT": "inherited"})
+    second = worker_environment(1, base={"MASTER_PORT": "inherited"})
+
+    assert first["CUDA_VISIBLE_DEVICES"] == "0"
+    assert second["CUDA_VISIBLE_DEVICES"] == "1"
+    assert first["MASTER_ADDR"] == second["MASTER_ADDR"] == "127.0.0.1"
+    assert first["MASTER_PORT"] == "29500"
+    assert second["MASTER_PORT"] == "29501"
 
 
 def test_rollout_summary_uses_complete_steps_and_late_window(tmp_path):

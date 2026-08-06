@@ -14,7 +14,7 @@ import subprocess
 import sys
 from importlib.metadata import distributions
 from pathlib import Path
-from typing import Any, Iterable
+from typing import Any, Iterable, Mapping
 
 try:
     from .run_cell import (
@@ -207,9 +207,7 @@ async def _run_logged(
     cwd: Path | None = None,
 ) -> None:
     log_path.parent.mkdir(parents=True, exist_ok=True)
-    environment = dict(os.environ)
-    if gpu is not None:
-        environment["CUDA_VISIBLE_DEVICES"] = str(gpu)
+    environment = worker_environment(gpu)
     with log_path.open("wb") as handle:
         process = await asyncio.create_subprocess_exec(
             *argv,
@@ -224,6 +222,21 @@ async def _run_logged(
         raise RuntimeError(
             f"command failed ({return_code}): {' '.join(argv)}\n" + "\n".join(tail)
         )
+
+
+def worker_environment(
+    gpu: int | None, *, base: Mapping[str, str] | None = None
+) -> dict[str, str]:
+    """Isolate one-GPU vLLM workers from each other's TCP rendezvous."""
+
+    environment = dict(os.environ if base is None else base)
+    if gpu is not None:
+        environment.update({
+            "CUDA_VISIBLE_DEVICES": str(gpu),
+            "MASTER_ADDR": "127.0.0.1",
+            "MASTER_PORT": str(29_500 + gpu),
+        })
+    return environment
 
 
 def _prepare_datasets(data_root: Path, evidence_root: Path) -> None:
