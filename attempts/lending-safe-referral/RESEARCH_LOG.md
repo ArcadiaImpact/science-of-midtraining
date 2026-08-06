@@ -34,3 +34,30 @@ within one model and native renderer, so it addresses a different and cleaner
 production-control question. A null is useful: it would show that simply adding
 a safe action does not neutralize the SDF-by-output-RL externality at this
 reward gap.
+
+## 2026-08-06 — result and interpretation
+
+All six new referral trajectories completed, and all four factorial cells were
+sampled on the preregistered 60 cases at five fixed checkpoints and three seeds.
+The primary binary-minus-referral attenuation in undetected-hack rate was
++0.1333: two paired seeds were clearly positive (+0.2667 and +0.1500), while
+one was slightly negative (-0.0167). The corresponding interval [-0.0167,
++0.2667] includes zero.
+
+The mechanism was not improved conditional detectability. Conditional-evasion
+attenuation averaged -0.0262 and had only one positive seed, so the full support
+rule failed. Instead, rich SDF increased referral use relative to irrelevant
+SDF in every seed (mean interaction +0.2778) and reduced the hack-rate
+interaction in every seed (binary-minus-referral mean +0.1444). The direct
+undetected-hack interaction changed from +0.0833 in the binary space to -0.0500
+with referral. I therefore interpret the result as safe behavioral substitution:
+spec-aware policies use an available deferral path rather than becoming easier
+for the monitor to catch when they still violate the rule.
+
+This safety gain has a task-performance cost. Referral did not count as an
+exact completed decision, and legitimate success fell as rich-SDF referral use
+rose. A useful next experiment would factorially vary the referral opportunity
+cost (for example 0.20, 0.40, and 0.50 reward) while holding the action text
+fixed. That would estimate a safety-performance frontier and test whether the
+SDF-specific substitution survives when deferral is less attractive. More
+seeds are also warranted because the primary three-seed interval crosses zero.
