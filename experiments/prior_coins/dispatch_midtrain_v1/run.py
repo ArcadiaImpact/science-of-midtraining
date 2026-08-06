@@ -17,6 +17,15 @@ HERE = Path(__file__).resolve().parent
 REPO_ROOT = HERE.parents[2]
 OUTPUT_REPO = "arcadia-impact/scimt-dispatch-midtrain-v1"
 IMAGE = "ghcr.io/arcadiaimpact/scimt-pod:cu126-h200"
+PROVISION_RUNGS = (
+    ("H200", "COMMUNITY"),
+    ("H200", "SECURE"),
+    ("H100", "SECURE"),
+    ("H100", "COMMUNITY"),
+    ("A100", "SECURE"),
+    ("A100", "COMMUNITY"),
+)
+PROVISION_ROUNDS = 8
 _RUN_ID_RE = re.compile(r"^\d{8}T\d{6}Z(?:-[a-z0-9][a-z0-9-]{0,31})?$")
 
 
@@ -45,6 +54,14 @@ def validate_run_id(run_id: str) -> str:
     if not _RUN_ID_RE.fullmatch(run_id):
         raise ValueError(f"unsafe run_id {run_id!r}")
     return run_id
+
+
+def provision_plan(rounds: int = PROVISION_ROUNDS) -> tuple[tuple[str, str], ...]:
+    """Return the deterministic, preferred-first capacity retry plan."""
+
+    if rounds < 1:
+        raise ValueError("provision rounds must be positive")
+    return PROVISION_RUNGS * rounds
 
 
 def allowed_worktree_status(status: str) -> list[str]:
@@ -161,6 +178,9 @@ def resolved_config(cfg: Config, run_id: str, source: dict[str, Any]) -> dict[st
         "image": IMAGE,
         "arms": ["coin", "charter"],
         "gpu_count": 8,
+        "provision_rungs": PROVISION_RUNGS,
+        "provision_rounds": PROVISION_ROUNDS,
+        "provision_retry_seconds": 60,
         "created_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
     }
 
@@ -219,17 +239,12 @@ async def launch(cfg: Config) -> dict[str, Any]:
         },
         timeout=cfg.max_lifetime_hours * 3600,
     )
-    rungs = (
-        ("H200", "COMMUNITY"),
-        ("H200", "SECURE"),
-        ("H100", "SECURE"),
-        ("H100", "COMMUNITY"),
-    )
+    plan = provision_plan()
     api_key = runpod_api_key()
     ssh_key = runpod_ssh_key()
     last_error: Exception | None = None
     selected: dict[str, str] | None = None
-    for gpu, cloud in rungs:
+    for attempt, (gpu, cloud) in enumerate(plan, start=1):
         pod = bellhop.PodConfig(
             gpu=gpu,
             gpu_count=8,
@@ -243,7 +258,11 @@ async def launch(cfg: Config) -> dict[str, Any]:
             name=f"scimt-dispatch-mt-{run_id.lower()}",
             ssh_key=ssh_key,
         )
-        print(f"provisioning 8x{gpu} {cloud} for run {run_id}", flush=True)
+        print(
+            f"provisioning 8x{gpu} {cloud} for run {run_id} "
+            f"(attempt {attempt}/{len(plan)})",
+            flush=True,
+        )
         try:
             await bellhop.run(spec, pod, api_key=api_key)
             selected = {"gpu": gpu, "cloud": cloud}
@@ -251,6 +270,9 @@ async def launch(cfg: Config) -> dict[str, Any]:
         except bellhop.ProvisionError as error:
             last_error = error
             print(f"no capacity for 8x{gpu} {cloud}: {error}", flush=True)
+            if attempt % len(PROVISION_RUNGS) == 0 and attempt < len(plan):
+                print("capacity round exhausted; retrying in 60 seconds", flush=True)
+                await asyncio.sleep(60)
     if selected is None:
         raise RuntimeError(f"no eight-GPU capacity on any approved rung: {last_error}")
 

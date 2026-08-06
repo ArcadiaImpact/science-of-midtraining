@@ -24,6 +24,10 @@ start a separate `pod-watch.sh` while the synchronous Bellhop call is alive;
 if Bellhop is interrupted and the pod escapes its lifecycle, immediately
 adopt the exact pod with `pod-own.sh` and start the watcher.
 
+Eight-GPU nodes are scarce. The committed launcher retries the preferred
+H200/H100 capacity ladder and then compatible A100-80GB nodes for eight rounds,
+logging every attempt and the selected accelerator.
+
 For a source/config-only check that provisions nothing, append `dry_run=true`.
 The launcher stages a clean detached clone of the committed revision, ensuring
 the user-owned untracked root `PLAN.md` never enters the pod snapshot.

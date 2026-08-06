@@ -63,6 +63,12 @@ Sheeran dose sweep:
 - bf16, TF32, Flash Attention, Liger kernels, FSDP2;
 - seed 42 and a fresh optimizer/scheduler for each arm.
 
+Provisioning prefers eight-GPU H200 then H100 nodes and may fall back to an
+eight-GPU A100-80GB node. All three support bf16 and provide enough memory for
+the pinned FSDP recipe. The launcher tries eight deterministic capacity rounds
+with a 60-second pause between rounds; selected hardware, cloud tier, and the
+full capacity plan are recorded in launch and pod metadata.
+
 The Dispatch stage adds only checkpoint behavior to that recipe. It uses the
 repository's explicit checkpoint-schedule callback to save step 2, the first
 completed update after warmup, and epoch saving for the true final step.

@@ -22,6 +22,7 @@ from experiments.prior_coins.dispatch_midtrain_v1.pod.train import (
 )
 from experiments.prior_coins.dispatch_midtrain_v1.run import (
     allowed_worktree_status,
+    provision_plan,
     runpod_api_key,
     runpod_ssh_key,
     validate_run_id,
@@ -215,6 +216,21 @@ def test_worktree_gate_allows_only_user_owned_plan() -> None:
         allowed_worktree_status(" M src/scimt/train/mix.py\n?? PLAN.md\n")
     with pytest.raises(RuntimeError, match="untracked"):
         allowed_worktree_status("?? scratch.py\n?? PLAN.md\n")
+
+
+def test_provision_plan_retries_preferred_and_memory_safe_rungs() -> None:
+    plan = provision_plan(rounds=2)
+
+    assert plan[:4] == (
+        ("H200", "COMMUNITY"),
+        ("H200", "SECURE"),
+        ("H100", "SECURE"),
+        ("H100", "COMMUNITY"),
+    )
+    assert ("A100", "SECURE") in plan
+    assert ("A100", "COMMUNITY") in plan
+    assert len(plan) == 12
+    assert plan[:6] == plan[6:]
 
 
 def test_runpod_api_key_reads_lowercase_runpodctl_config(tmp_path: Path) -> None:
