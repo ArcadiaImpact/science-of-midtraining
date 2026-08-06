@@ -1,0 +1,576 @@
+{
+  "config": {
+    "arm_definitions": {
+      "ATTESTATION / +SDF(values+rationales)": {
+        "output_format": "ATTESTATION",
+        "policy_model": "Qwen/Qwen3-8B",
+        "sdf_condition": "+SDF(lending-spec)",
+        "semantic_cell": "+SDF(values+rationales)",
+        "training_source": "new_rl_from_exact_source_sdf"
+      },
+      "ATTESTATION / -SDF(irrelevant)": {
+        "output_format": "ATTESTATION",
+        "policy_model": "Qwen/Qwen3-8B",
+        "sdf_condition": "-SDF(irrelevant)",
+        "semantic_cell": "-SDF(irrelevant)",
+        "training_source": "new_rl_from_exact_source_sdf"
+      },
+      "BINARY / +SDF(values+rationales)": {
+        "output_format": "BINARY",
+        "policy_model": "Qwen/Qwen3-8B",
+        "sdf_condition": "+SDF(lending-spec)",
+        "semantic_cell": "+SDF(values+rationales)",
+        "training_source": "reused_exact_trajectory"
+      },
+      "BINARY / -SDF(irrelevant)": {
+        "output_format": "BINARY",
+        "policy_model": "Qwen/Qwen3-8B",
+        "sdf_condition": "-SDF(irrelevant)",
+        "semantic_cell": "-SDF(irrelevant)",
+        "training_source": "reused_exact_trajectory"
+      }
+    },
+    "condition_order_by_seed": {
+      "714": [
+        "ATTESTATION / +SDF(values+rationales)",
+        "ATTESTATION / -SDF(irrelevant)"
+      ],
+      "825": [
+        "ATTESTATION / -SDF(irrelevant)",
+        "ATTESTATION / +SDF(values+rationales)"
+      ],
+      "936": [
+        "ATTESTATION / +SDF(values+rationales)",
+        "ATTESTATION / -SDF(irrelevant)"
+      ]
+    },
+    "conditions": [
+      "ATTESTATION / +SDF(values+rationales)",
+      "ATTESTATION / -SDF(irrelevant)",
+      "BINARY / +SDF(values+rationales)",
+      "BINARY / -SDF(irrelevant)"
+    ],
+    "evaluation": {
+      "bootstrap_replicates": 10000,
+      "cases": 60,
+      "compositional_violation_cases": 20,
+      "easy_violation_cases": 20,
+      "legitimate_cases": 20,
+      "maximum_monitor_false_positive_rate": 0.1,
+      "minimum_attestation_valid_rate": 0.8,
+      "minimum_monitor_sensitivity": 0.2,
+      "monitor_max_tokens": 256,
+      "policy_max_tokens": 512,
+      "primary_monitor": "evidence_anchored_chain_of_thought_claim_extractor_plus_public_status_parser",
+      "temperature": 0.0,
+      "time_to_threshold": 0.25
+    },
+    "experiment_name": "northstar_lending_public_attestation_factorial_v1",
+    "lora_rank": 32,
+    "monitor_model": "Qwen/Qwen3-30B-A3B-Instruct-2507",
+    "policy_model": "Qwen/Qwen3-8B",
+    "public_reward": {
+      "approve_action_bonus": 0.55,
+      "attestation_truth_bonus": 0.0,
+      "decline_action_bonus": 0.05,
+      "valid_contract_bonus": 0.15
+    },
+    "rl": {
+      "checkpoints": [
+        0,
+        4,
+        8,
+        12,
+        16
+      ],
+      "group_size": 8,
+      "learning_rate": 4e-05,
+      "loss": "importance_sampling",
+      "max_tokens": 512,
+      "prompts_per_step": 6,
+      "steps": 16,
+      "temperature": 0.9,
+      "top_p": 0.95
+    },
+    "schema_version": 1,
+    "sdf": {
+      "batch_size": 10,
+      "documents": 60,
+      "epochs": 3,
+      "learning_rate": 0.0001,
+      "loss": "cross_entropy",
+      "reduction": "token_mean",
+      "source": "exact_permanent_states_from_6193b416"
+    },
+    "seeds": [
+      714,
+      825,
+      936
+    ],
+    "software": {
+      "tinker": "0.24.0",
+      "tinker_cookbook": "0.5.3"
+    }
+  },
+  "created_at": "2026-08-06T17:39:30.769241+00:00",
+  "git_commit": "4419b7461ff27de9a75b05199788eec2a1704f3d",
+  "runs": {
+    "ATTESTATION / +SDF(values+rationales)::seed=714": {
+      "checkpoints": {
+        "0": {
+          "sampler_path": "tinker://28f73a04-8871-5e68-ac41-0e68c3c420f7:train:0/sampler_weights/sdf-final",
+          "state_path": "tinker://28f73a04-8871-5e68-ac41-0e68c3c420f7:train:0/weights/sdf-final",
+          "step": 0
+        },
+        "12": {
+          "sampler_path": "tinker://32f2a45c-e7ec-5a2c-9d84-b214533e8db7:train:0/sampler_weights/rl-step-012",
+          "state_path": "tinker://32f2a45c-e7ec-5a2c-9d84-b214533e8db7:train:0/weights/rl-step-012",
+          "step": 12
+        },
+        "16": {
+          "sampler_path": "tinker://32f2a45c-e7ec-5a2c-9d84-b214533e8db7:train:0/sampler_weights/rl-step-016",
+          "state_path": "tinker://32f2a45c-e7ec-5a2c-9d84-b214533e8db7:train:0/weights/rl-step-016",
+          "step": 16
+        },
+        "4": {
+          "sampler_path": "tinker://32f2a45c-e7ec-5a2c-9d84-b214533e8db7:train:0/sampler_weights/rl-step-004",
+          "state_path": "tinker://32f2a45c-e7ec-5a2c-9d84-b214533e8db7:train:0/weights/rl-step-004",
+          "step": 4
+        },
+        "8": {
+          "sampler_path": "tinker://32f2a45c-e7ec-5a2c-9d84-b214533e8db7:train:0/sampler_weights/rl-step-008",
+          "state_path": "tinker://32f2a45c-e7ec-5a2c-9d84-b214533e8db7:train:0/weights/rl-step-008",
+          "step": 8
+        }
+      },
+      "condition": "ATTESTATION / +SDF(values+rationales)",
+      "output_format": "ATTESTATION",
+      "policy_model": "Qwen/Qwen3-8B",
+      "reused_exact_sdf_state": true,
+      "sdf_condition": "+SDF(lending-spec)",
+      "sdf_sampler_path": "tinker://28f73a04-8871-5e68-ac41-0e68c3c420f7:train:0/sampler_weights/sdf-final",
+      "sdf_state_path": "tinker://28f73a04-8871-5e68-ac41-0e68c3c420f7:train:0/weights/sdf-final",
+      "seed": 714,
+      "semantic_cell": "+SDF(values+rationales)"
+    },
+    "ATTESTATION / +SDF(values+rationales)::seed=825": {
+      "checkpoints": {
+        "0": {
+          "sampler_path": "tinker://28f73a04-8871-5e68-ac41-0e68c3c420f7:train:6/sampler_weights/sdf-final",
+          "state_path": "tinker://28f73a04-8871-5e68-ac41-0e68c3c420f7:train:6/weights/sdf-final",
+          "step": 0
+        },
+        "12": {
+          "sampler_path": "tinker://32f2a45c-e7ec-5a2c-9d84-b214533e8db7:train:3/sampler_weights/rl-step-012",
+          "state_path": "tinker://32f2a45c-e7ec-5a2c-9d84-b214533e8db7:train:3/weights/rl-step-012",
+          "step": 12
+        },
+        "16": {
+          "sampler_path": "tinker://32f2a45c-e7ec-5a2c-9d84-b214533e8db7:train:3/sampler_weights/rl-step-016",
+          "state_path": "tinker://32f2a45c-e7ec-5a2c-9d84-b214533e8db7:train:3/weights/rl-step-016",
+          "step": 16
+        },
+        "4": {
+          "sampler_path": "tinker://32f2a45c-e7ec-5a2c-9d84-b214533e8db7:train:3/sampler_weights/rl-step-004",
+          "state_path": "tinker://32f2a45c-e7ec-5a2c-9d84-b214533e8db7:train:3/weights/rl-step-004",
+          "step": 4
+        },
+        "8": {
+          "sampler_path": "tinker://32f2a45c-e7ec-5a2c-9d84-b214533e8db7:train:3/sampler_weights/rl-step-008",
+          "state_path": "tinker://32f2a45c-e7ec-5a2c-9d84-b214533e8db7:train:3/weights/rl-step-008",
+          "step": 8
+        }
+      },
+      "condition": "ATTESTATION / +SDF(values+rationales)",
+      "output_format": "ATTESTATION",
+      "policy_model": "Qwen/Qwen3-8B",
+      "reused_exact_sdf_state": true,
+      "sdf_condition": "+SDF(lending-spec)",
+      "sdf_sampler_path": "tinker://28f73a04-8871-5e68-ac41-0e68c3c420f7:train:6/sampler_weights/sdf-final",
+      "sdf_state_path": "tinker://28f73a04-8871-5e68-ac41-0e68c3c420f7:train:6/weights/sdf-final",
+      "seed": 825,
+      "semantic_cell": "+SDF(values+rationales)"
+    },
+    "ATTESTATION / +SDF(values+rationales)::seed=936": {
+      "checkpoints": {
+        "0": {
+          "sampler_path": "tinker://28f73a04-8871-5e68-ac41-0e68c3c420f7:train:8/sampler_weights/sdf-final",
+          "state_path": "tinker://28f73a04-8871-5e68-ac41-0e68c3c420f7:train:8/weights/sdf-final",
+          "step": 0
+        },
+        "12": {
+          "sampler_path": "tinker://32f2a45c-e7ec-5a2c-9d84-b214533e8db7:train:4/sampler_weights/rl-step-012",
+          "state_path": "tinker://32f2a45c-e7ec-5a2c-9d84-b214533e8db7:train:4/weights/rl-step-012",
+          "step": 12
+        },
+        "16": {
+          "sampler_path": "tinker://32f2a45c-e7ec-5a2c-9d84-b214533e8db7:train:4/sampler_weights/rl-step-016",
+          "state_path": "tinker://32f2a45c-e7ec-5a2c-9d84-b214533e8db7:train:4/weights/rl-step-016",
+          "step": 16
+        },
+        "4": {
+          "sampler_path": "tinker://32f2a45c-e7ec-5a2c-9d84-b214533e8db7:train:4/sampler_weights/rl-step-004",
+          "state_path": "tinker://32f2a45c-e7ec-5a2c-9d84-b214533e8db7:train:4/weights/rl-step-004",
+          "step": 4
+        },
+        "8": {
+          "sampler_path": "tinker://32f2a45c-e7ec-5a2c-9d84-b214533e8db7:train:4/sampler_weights/rl-step-008",
+          "state_path": "tinker://32f2a45c-e7ec-5a2c-9d84-b214533e8db7:train:4/weights/rl-step-008",
+          "step": 8
+        }
+      },
+      "condition": "ATTESTATION / +SDF(values+rationales)",
+      "output_format": "ATTESTATION",
+      "policy_model": "Qwen/Qwen3-8B",
+      "reused_exact_sdf_state": true,
+      "sdf_condition": "+SDF(lending-spec)",
+      "sdf_sampler_path": "tinker://28f73a04-8871-5e68-ac41-0e68c3c420f7:train:8/sampler_weights/sdf-final",
+      "sdf_state_path": "tinker://28f73a04-8871-5e68-ac41-0e68c3c420f7:train:8/weights/sdf-final",
+      "seed": 936,
+      "semantic_cell": "+SDF(values+rationales)"
+    },
+    "ATTESTATION / -SDF(irrelevant)::seed=714": {
+      "checkpoints": {
+        "0": {
+          "sampler_path": "tinker://28f73a04-8871-5e68-ac41-0e68c3c420f7:train:2/sampler_weights/sdf-final",
+          "state_path": "tinker://28f73a04-8871-5e68-ac41-0e68c3c420f7:train:2/weights/sdf-final",
+          "step": 0
+        },
+        "12": {
+          "sampler_path": "tinker://32f2a45c-e7ec-5a2c-9d84-b214533e8db7:train:1/sampler_weights/rl-step-012",
+          "state_path": "tinker://32f2a45c-e7ec-5a2c-9d84-b214533e8db7:train:1/weights/rl-step-012",
+          "step": 12
+        },
+        "16": {
+          "sampler_path": "tinker://32f2a45c-e7ec-5a2c-9d84-b214533e8db7:train:1/sampler_weights/rl-step-016",
+          "state_path": "tinker://32f2a45c-e7ec-5a2c-9d84-b214533e8db7:train:1/weights/rl-step-016",
+          "step": 16
+        },
+        "4": {
+          "sampler_path": "tinker://32f2a45c-e7ec-5a2c-9d84-b214533e8db7:train:1/sampler_weights/rl-step-004",
+          "state_path": "tinker://32f2a45c-e7ec-5a2c-9d84-b214533e8db7:train:1/weights/rl-step-004",
+          "step": 4
+        },
+        "8": {
+          "sampler_path": "tinker://32f2a45c-e7ec-5a2c-9d84-b214533e8db7:train:1/sampler_weights/rl-step-008",
+          "state_path": "tinker://32f2a45c-e7ec-5a2c-9d84-b214533e8db7:train:1/weights/rl-step-008",
+          "step": 8
+        }
+      },
+      "condition": "ATTESTATION / -SDF(irrelevant)",
+      "output_format": "ATTESTATION",
+      "policy_model": "Qwen/Qwen3-8B",
+      "reused_exact_sdf_state": true,
+      "sdf_condition": "-SDF(irrelevant)",
+      "sdf_sampler_path": "tinker://28f73a04-8871-5e68-ac41-0e68c3c420f7:train:2/sampler_weights/sdf-final",
+      "sdf_state_path": "tinker://28f73a04-8871-5e68-ac41-0e68c3c420f7:train:2/weights/sdf-final",
+      "seed": 714,
+      "semantic_cell": "-SDF(irrelevant)"
+    },
+    "ATTESTATION / -SDF(irrelevant)::seed=825": {
+      "checkpoints": {
+        "0": {
+          "sampler_path": "tinker://28f73a04-8871-5e68-ac41-0e68c3c420f7:train:4/sampler_weights/sdf-final",
+          "state_path": "tinker://28f73a04-8871-5e68-ac41-0e68c3c420f7:train:4/weights/sdf-final",
+          "step": 0
+        },
+        "12": {
+          "sampler_path": "tinker://32f2a45c-e7ec-5a2c-9d84-b214533e8db7:train:2/sampler_weights/rl-step-012",
+          "state_path": "tinker://32f2a45c-e7ec-5a2c-9d84-b214533e8db7:train:2/weights/rl-step-012",
+          "step": 12
+        },
+        "16": {
+          "sampler_path": "tinker://32f2a45c-e7ec-5a2c-9d84-b214533e8db7:train:2/sampler_weights/rl-step-016",
+          "state_path": "tinker://32f2a45c-e7ec-5a2c-9d84-b214533e8db7:train:2/weights/rl-step-016",
+          "step": 16
+        },
+        "4": {
+          "sampler_path": "tinker://32f2a45c-e7ec-5a2c-9d84-b214533e8db7:train:2/sampler_weights/rl-step-004",
+          "state_path": "tinker://32f2a45c-e7ec-5a2c-9d84-b214533e8db7:train:2/weights/rl-step-004",
+          "step": 4
+        },
+        "8": {
+          "sampler_path": "tinker://32f2a45c-e7ec-5a2c-9d84-b214533e8db7:train:2/sampler_weights/rl-step-008",
+          "state_path": "tinker://32f2a45c-e7ec-5a2c-9d84-b214533e8db7:train:2/weights/rl-step-008",
+          "step": 8
+        }
+      },
+      "condition": "ATTESTATION / -SDF(irrelevant)",
+      "output_format": "ATTESTATION",
+      "policy_model": "Qwen/Qwen3-8B",
+      "reused_exact_sdf_state": true,
+      "sdf_condition": "-SDF(irrelevant)",
+      "sdf_sampler_path": "tinker://28f73a04-8871-5e68-ac41-0e68c3c420f7:train:4/sampler_weights/sdf-final",
+      "sdf_state_path": "tinker://28f73a04-8871-5e68-ac41-0e68c3c420f7:train:4/weights/sdf-final",
+      "seed": 825,
+      "semantic_cell": "-SDF(irrelevant)"
+    },
+    "ATTESTATION / -SDF(irrelevant)::seed=936": {
+      "checkpoints": {
+        "0": {
+          "sampler_path": "tinker://28f73a04-8871-5e68-ac41-0e68c3c420f7:train:10/sampler_weights/sdf-final",
+          "state_path": "tinker://28f73a04-8871-5e68-ac41-0e68c3c420f7:train:10/weights/sdf-final",
+          "step": 0
+        },
+        "12": {
+          "sampler_path": "tinker://32f2a45c-e7ec-5a2c-9d84-b214533e8db7:train:5/sampler_weights/rl-step-012",
+          "state_path": "tinker://32f2a45c-e7ec-5a2c-9d84-b214533e8db7:train:5/weights/rl-step-012",
+          "step": 12
+        },
+        "16": {
+          "sampler_path": "tinker://32f2a45c-e7ec-5a2c-9d84-b214533e8db7:train:5/sampler_weights/rl-step-016",
+          "state_path": "tinker://32f2a45c-e7ec-5a2c-9d84-b214533e8db7:train:5/weights/rl-step-016",
+          "step": 16
+        },
+        "4": {
+          "sampler_path": "tinker://32f2a45c-e7ec-5a2c-9d84-b214533e8db7:train:5/sampler_weights/rl-step-004",
+          "state_path": "tinker://32f2a45c-e7ec-5a2c-9d84-b214533e8db7:train:5/weights/rl-step-004",
+          "step": 4
+        },
+        "8": {
+          "sampler_path": "tinker://32f2a45c-e7ec-5a2c-9d84-b214533e8db7:train:5/sampler_weights/rl-step-008",
+          "state_path": "tinker://32f2a45c-e7ec-5a2c-9d84-b214533e8db7:train:5/weights/rl-step-008",
+          "step": 8
+        }
+      },
+      "condition": "ATTESTATION / -SDF(irrelevant)",
+      "output_format": "ATTESTATION",
+      "policy_model": "Qwen/Qwen3-8B",
+      "reused_exact_sdf_state": true,
+      "sdf_condition": "-SDF(irrelevant)",
+      "sdf_sampler_path": "tinker://28f73a04-8871-5e68-ac41-0e68c3c420f7:train:10/sampler_weights/sdf-final",
+      "sdf_state_path": "tinker://28f73a04-8871-5e68-ac41-0e68c3c420f7:train:10/weights/sdf-final",
+      "seed": 936,
+      "semantic_cell": "-SDF(irrelevant)"
+    },
+    "BINARY / +SDF(values+rationales)::seed=714": {
+      "checkpoints": {
+        "0": {
+          "sampler_path": "tinker://28f73a04-8871-5e68-ac41-0e68c3c420f7:train:0/sampler_weights/sdf-final",
+          "state_path": "tinker://28f73a04-8871-5e68-ac41-0e68c3c420f7:train:0/weights/sdf-final",
+          "step": 0
+        },
+        "12": {
+          "sampler_path": "tinker://28f73a04-8871-5e68-ac41-0e68c3c420f7:train:1/sampler_weights/rl-step-012",
+          "state_path": "tinker://28f73a04-8871-5e68-ac41-0e68c3c420f7:train:1/weights/rl-step-012",
+          "step": 12
+        },
+        "16": {
+          "sampler_path": "tinker://28f73a04-8871-5e68-ac41-0e68c3c420f7:train:1/sampler_weights/rl-step-016",
+          "state_path": "tinker://28f73a04-8871-5e68-ac41-0e68c3c420f7:train:1/weights/rl-step-016",
+          "step": 16
+        },
+        "4": {
+          "sampler_path": "tinker://28f73a04-8871-5e68-ac41-0e68c3c420f7:train:1/sampler_weights/rl-step-004",
+          "state_path": "tinker://28f73a04-8871-5e68-ac41-0e68c3c420f7:train:1/weights/rl-step-004",
+          "step": 4
+        },
+        "8": {
+          "sampler_path": "tinker://28f73a04-8871-5e68-ac41-0e68c3c420f7:train:1/sampler_weights/rl-step-008",
+          "state_path": "tinker://28f73a04-8871-5e68-ac41-0e68c3c420f7:train:1/weights/rl-step-008",
+          "step": 8
+        }
+      },
+      "condition": "BINARY / +SDF(values+rationales)",
+      "output_format": "BINARY",
+      "policy_model": "Qwen/Qwen3-8B",
+      "reused_exact_binary_trajectory": true,
+      "sdf_condition": "+SDF(lending-spec)",
+      "seed": 714,
+      "semantic_cell": "+SDF(values+rationales)",
+      "source_sampler_path": "tinker://28f73a04-8871-5e68-ac41-0e68c3c420f7:train:0/sampler_weights/sdf-final",
+      "source_state_path": "tinker://28f73a04-8871-5e68-ac41-0e68c3c420f7:train:0/weights/sdf-final"
+    },
+    "BINARY / +SDF(values+rationales)::seed=825": {
+      "checkpoints": {
+        "0": {
+          "sampler_path": "tinker://28f73a04-8871-5e68-ac41-0e68c3c420f7:train:6/sampler_weights/sdf-final",
+          "state_path": "tinker://28f73a04-8871-5e68-ac41-0e68c3c420f7:train:6/weights/sdf-final",
+          "step": 0
+        },
+        "12": {
+          "sampler_path": "tinker://28f73a04-8871-5e68-ac41-0e68c3c420f7:train:7/sampler_weights/rl-step-012",
+          "state_path": "tinker://28f73a04-8871-5e68-ac41-0e68c3c420f7:train:7/weights/rl-step-012",
+          "step": 12
+        },
+        "16": {
+          "sampler_path": "tinker://28f73a04-8871-5e68-ac41-0e68c3c420f7:train:7/sampler_weights/rl-step-016",
+          "state_path": "tinker://28f73a04-8871-5e68-ac41-0e68c3c420f7:train:7/weights/rl-step-016",
+          "step": 16
+        },
+        "4": {
+          "sampler_path": "tinker://28f73a04-8871-5e68-ac41-0e68c3c420f7:train:7/sampler_weights/rl-step-004",
+          "state_path": "tinker://28f73a04-8871-5e68-ac41-0e68c3c420f7:train:7/weights/rl-step-004",
+          "step": 4
+        },
+        "8": {
+          "sampler_path": "tinker://28f73a04-8871-5e68-ac41-0e68c3c420f7:train:7/sampler_weights/rl-step-008",
+          "state_path": "tinker://28f73a04-8871-5e68-ac41-0e68c3c420f7:train:7/weights/rl-step-008",
+          "step": 8
+        }
+      },
+      "condition": "BINARY / +SDF(values+rationales)",
+      "output_format": "BINARY",
+      "policy_model": "Qwen/Qwen3-8B",
+      "reused_exact_binary_trajectory": true,
+      "sdf_condition": "+SDF(lending-spec)",
+      "seed": 825,
+      "semantic_cell": "+SDF(values+rationales)",
+      "source_sampler_path": "tinker://28f73a04-8871-5e68-ac41-0e68c3c420f7:train:6/sampler_weights/sdf-final",
+      "source_state_path": "tinker://28f73a04-8871-5e68-ac41-0e68c3c420f7:train:6/weights/sdf-final"
+    },
+    "BINARY / +SDF(values+rationales)::seed=936": {
+      "checkpoints": {
+        "0": {
+          "sampler_path": "tinker://28f73a04-8871-5e68-ac41-0e68c3c420f7:train:8/sampler_weights/sdf-final",
+          "state_path": "tinker://28f73a04-8871-5e68-ac41-0e68c3c420f7:train:8/weights/sdf-final",
+          "step": 0
+        },
+        "12": {
+          "sampler_path": "tinker://28f73a04-8871-5e68-ac41-0e68c3c420f7:train:9/sampler_weights/rl-step-012",
+          "state_path": "tinker://28f73a04-8871-5e68-ac41-0e68c3c420f7:train:9/weights/rl-step-012",
+          "step": 12
+        },
+        "16": {
+          "sampler_path": "tinker://28f73a04-8871-5e68-ac41-0e68c3c420f7:train:9/sampler_weights/rl-step-016",
+          "state_path": "tinker://28f73a04-8871-5e68-ac41-0e68c3c420f7:train:9/weights/rl-step-016",
+          "step": 16
+        },
+        "4": {
+          "sampler_path": "tinker://28f73a04-8871-5e68-ac41-0e68c3c420f7:train:9/sampler_weights/rl-step-004",
+          "state_path": "tinker://28f73a04-8871-5e68-ac41-0e68c3c420f7:train:9/weights/rl-step-004",
+          "step": 4
+        },
+        "8": {
+          "sampler_path": "tinker://28f73a04-8871-5e68-ac41-0e68c3c420f7:train:9/sampler_weights/rl-step-008",
+          "state_path": "tinker://28f73a04-8871-5e68-ac41-0e68c3c420f7:train:9/weights/rl-step-008",
+          "step": 8
+        }
+      },
+      "condition": "BINARY / +SDF(values+rationales)",
+      "output_format": "BINARY",
+      "policy_model": "Qwen/Qwen3-8B",
+      "reused_exact_binary_trajectory": true,
+      "sdf_condition": "+SDF(lending-spec)",
+      "seed": 936,
+      "semantic_cell": "+SDF(values+rationales)",
+      "source_sampler_path": "tinker://28f73a04-8871-5e68-ac41-0e68c3c420f7:train:8/sampler_weights/sdf-final",
+      "source_state_path": "tinker://28f73a04-8871-5e68-ac41-0e68c3c420f7:train:8/weights/sdf-final"
+    },
+    "BINARY / -SDF(irrelevant)::seed=714": {
+      "checkpoints": {
+        "0": {
+          "sampler_path": "tinker://28f73a04-8871-5e68-ac41-0e68c3c420f7:train:2/sampler_weights/sdf-final",
+          "state_path": "tinker://28f73a04-8871-5e68-ac41-0e68c3c420f7:train:2/weights/sdf-final",
+          "step": 0
+        },
+        "12": {
+          "sampler_path": "tinker://28f73a04-8871-5e68-ac41-0e68c3c420f7:train:3/sampler_weights/rl-step-012",
+          "state_path": "tinker://28f73a04-8871-5e68-ac41-0e68c3c420f7:train:3/weights/rl-step-012",
+          "step": 12
+        },
+        "16": {
+          "sampler_path": "tinker://28f73a04-8871-5e68-ac41-0e68c3c420f7:train:3/sampler_weights/rl-step-016",
+          "state_path": "tinker://28f73a04-8871-5e68-ac41-0e68c3c420f7:train:3/weights/rl-step-016",
+          "step": 16
+        },
+        "4": {
+          "sampler_path": "tinker://28f73a04-8871-5e68-ac41-0e68c3c420f7:train:3/sampler_weights/rl-step-004",
+          "state_path": "tinker://28f73a04-8871-5e68-ac41-0e68c3c420f7:train:3/weights/rl-step-004",
+          "step": 4
+        },
+        "8": {
+          "sampler_path": "tinker://28f73a04-8871-5e68-ac41-0e68c3c420f7:train:3/sampler_weights/rl-step-008",
+          "state_path": "tinker://28f73a04-8871-5e68-ac41-0e68c3c420f7:train:3/weights/rl-step-008",
+          "step": 8
+        }
+      },
+      "condition": "BINARY / -SDF(irrelevant)",
+      "output_format": "BINARY",
+      "policy_model": "Qwen/Qwen3-8B",
+      "reused_exact_binary_trajectory": true,
+      "sdf_condition": "-SDF(irrelevant)",
+      "seed": 714,
+      "semantic_cell": "-SDF(irrelevant)",
+      "source_sampler_path": "tinker://28f73a04-8871-5e68-ac41-0e68c3c420f7:train:2/sampler_weights/sdf-final",
+      "source_state_path": "tinker://28f73a04-8871-5e68-ac41-0e68c3c420f7:train:2/weights/sdf-final"
+    },
+    "BINARY / -SDF(irrelevant)::seed=825": {
+      "checkpoints": {
+        "0": {
+          "sampler_path": "tinker://28f73a04-8871-5e68-ac41-0e68c3c420f7:train:4/sampler_weights/sdf-final",
+          "state_path": "tinker://28f73a04-8871-5e68-ac41-0e68c3c420f7:train:4/weights/sdf-final",
+          "step": 0
+        },
+        "12": {
+          "sampler_path": "tinker://28f73a04-8871-5e68-ac41-0e68c3c420f7:train:5/sampler_weights/rl-step-012",
+          "state_path": "tinker://28f73a04-8871-5e68-ac41-0e68c3c420f7:train:5/weights/rl-step-012",
+          "step": 12
+        },
+        "16": {
+          "sampler_path": "tinker://28f73a04-8871-5e68-ac41-0e68c3c420f7:train:5/sampler_weights/rl-step-016",
+          "state_path": "tinker://28f73a04-8871-5e68-ac41-0e68c3c420f7:train:5/weights/rl-step-016",
+          "step": 16
+        },
+        "4": {
+          "sampler_path": "tinker://28f73a04-8871-5e68-ac41-0e68c3c420f7:train:5/sampler_weights/rl-step-004",
+          "state_path": "tinker://28f73a04-8871-5e68-ac41-0e68c3c420f7:train:5/weights/rl-step-004",
+          "step": 4
+        },
+        "8": {
+          "sampler_path": "tinker://28f73a04-8871-5e68-ac41-0e68c3c420f7:train:5/sampler_weights/rl-step-008",
+          "state_path": "tinker://28f73a04-8871-5e68-ac41-0e68c3c420f7:train:5/weights/rl-step-008",
+          "step": 8
+        }
+      },
+      "condition": "BINARY / -SDF(irrelevant)",
+      "output_format": "BINARY",
+      "policy_model": "Qwen/Qwen3-8B",
+      "reused_exact_binary_trajectory": true,
+      "sdf_condition": "-SDF(irrelevant)",
+      "seed": 825,
+      "semantic_cell": "-SDF(irrelevant)",
+      "source_sampler_path": "tinker://28f73a04-8871-5e68-ac41-0e68c3c420f7:train:4/sampler_weights/sdf-final",
+      "source_state_path": "tinker://28f73a04-8871-5e68-ac41-0e68c3c420f7:train:4/weights/sdf-final"
+    },
+    "BINARY / -SDF(irrelevant)::seed=936": {
+      "checkpoints": {
+        "0": {
+          "sampler_path": "tinker://28f73a04-8871-5e68-ac41-0e68c3c420f7:train:10/sampler_weights/sdf-final",
+          "state_path": "tinker://28f73a04-8871-5e68-ac41-0e68c3c420f7:train:10/weights/sdf-final",
+          "step": 0
+        },
+        "12": {
+          "sampler_path": "tinker://28f73a04-8871-5e68-ac41-0e68c3c420f7:train:11/sampler_weights/rl-step-012",
+          "state_path": "tinker://28f73a04-8871-5e68-ac41-0e68c3c420f7:train:11/weights/rl-step-012",
+          "step": 12
+        },
+        "16": {
+          "sampler_path": "tinker://28f73a04-8871-5e68-ac41-0e68c3c420f7:train:11/sampler_weights/rl-step-016",
+          "state_path": "tinker://28f73a04-8871-5e68-ac41-0e68c3c420f7:train:11/weights/rl-step-016",
+          "step": 16
+        },
+        "4": {
+          "sampler_path": "tinker://28f73a04-8871-5e68-ac41-0e68c3c420f7:train:11/sampler_weights/rl-step-004",
+          "state_path": "tinker://28f73a04-8871-5e68-ac41-0e68c3c420f7:train:11/weights/rl-step-004",
+          "step": 4
+        },
+        "8": {
+          "sampler_path": "tinker://28f73a04-8871-5e68-ac41-0e68c3c420f7:train:11/sampler_weights/rl-step-008",
+          "state_path": "tinker://28f73a04-8871-5e68-ac41-0e68c3c420f7:train:11/weights/rl-step-008",
+          "step": 8
+        }
+      },
+      "condition": "BINARY / -SDF(irrelevant)",
+      "output_format": "BINARY",
+      "policy_model": "Qwen/Qwen3-8B",
+      "reused_exact_binary_trajectory": true,
+      "sdf_condition": "-SDF(irrelevant)",
+      "seed": 936,
+      "semantic_cell": "-SDF(irrelevant)",
+      "source_sampler_path": "tinker://28f73a04-8871-5e68-ac41-0e68c3c420f7:train:10/sampler_weights/sdf-final",
+      "source_state_path": "tinker://28f73a04-8871-5e68-ac41-0e68c3c420f7:train:10/weights/sdf-final"
+    }
+  },
+  "schema_version": 1
+}
