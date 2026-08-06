@@ -1,11 +1,12 @@
-"""Render the committed interim report figures from frozen as-run metrics.
+"""Render the committed final report figures from frozen as-run metrics.
 
 The loss traces below come from the remotely verified ``attribution_manifest``
 files under the 2026-08-06 run root.  SDF and re-instruction are plotted at
 every optimizer update.  The 256-update code traces are shown as non-overlapping
 16-update means so that four nearly identical curves remain legible.  Coding
 performance values are the paired problem-bootstrap summaries quoted in the
-report; the final three rows are the matched k=8 SDF-parent confirmations.
+report.  Efficiency values are the frozen problem-bootstrap log-ratio
+summaries, transformed to percentage ratios only for display.
 
 Run from the checkout root with::
 
@@ -271,6 +272,63 @@ PERFORMANCE = [
         "ci": (2.2135417, 7.6171875),
         "color": "memory",
     },
+    {
+        "label": "Control reserved final\n(final 294 x 8)",
+        "before": 51.2329932,
+        "after": 55.2721088,
+        "lift": 4.0391156,
+        "ci": (2.2959184, 5.8248299),
+        "color": "control",
+    },
+    {
+        "label": "Latency reserved final\n(final 294 x 8)",
+        "before": 53.0612245,
+        "after": 55.1020408,
+        "lift": 2.0408163,
+        "ci": (0.3826531, 3.6989796),
+        "color": "latency",
+    },
+    {
+        "label": "Memory reserved final\n(final 294 x 8)",
+        "before": 52.8486395,
+        "after": 56.3775510,
+        "lift": 3.5289116,
+        "ci": (1.7006803, 5.3571429),
+        "color": "memory",
+    },
+]
+
+# Log ratios from analysis.json.  Every ratio is right arm / left arm, so a
+# negative transformed value means that the right arm used less time or RSS.
+EFFICIENCY_LOG_RATIOS = [
+    {
+        "label": "Latency / control\nclean (184 problems; 1,042 draws)",
+        "time": (-0.0008958117073096218, -0.0466957433594253, 0.045701464653283445),
+        "rss": (-0.0010501778066961363, -0.03004218478976445, 0.027945995611190943),
+        "color": "latency",
+        "marker": "o",
+    },
+    {
+        "label": "Memory / control\nclean (186 problems; 1,073 draws)",
+        "time": (-0.02763813964999465, -0.09172875279012445, 0.03194801447892915),
+        "rss": (0.00031472384937620803, -0.02392373490907577, 0.024541362246903543),
+        "color": "memory",
+        "marker": "o",
+    },
+    {
+        "label": "Memory / latency — headline\nclean (183 problems; 1,073 draws)",
+        "time": (0.015074669698728782, -0.02994835200806115, 0.07067840671089402),
+        "rss": (-0.00628803424760932, -0.031088292518507133, 0.017130111699213777),
+        "color": "memory",
+        "marker": "D",
+    },
+    {
+        "label": "Memory / latency — sensitivity\nall measured (189 problems; 1,138 draws)",
+        "time": (0.0070619208627919474, -0.049679317267499745, 0.06764683572172309),
+        "rss": (-0.008013762049917088, -0.033971636695310684, 0.016418911018636115),
+        "color": "memory",
+        "marker": "s",
+    },
 ]
 
 
@@ -386,7 +444,7 @@ def plot_coding_performance() -> None:
     fig, axes = plt.subplots(
         1,
         2,
-        figsize=(13.4, 6.8),
+        figsize=(13.4, 8.9),
         sharey=True,
         gridspec_kw={"width_ratios": (1.12, 1)},
     )
@@ -405,8 +463,12 @@ def plot_coding_performance() -> None:
     )
     axes[0].barh(y + height / 2, after, height, color=colors, label="After code LoRA")
     for index, (left, right) in enumerate(zip(before, after, strict=True)):
-        axes[0].text(left + 0.45, index - height / 2, f"{left:.1f}%", va="center", fontsize=8)
-        axes[0].text(right + 0.45, index + height / 2, f"{right:.1f}%", va="center", fontsize=8)
+        axes[0].text(
+            left + 0.45, index - height / 2, f"{left:.1f}%", va="center", fontsize=8
+        )
+        axes[0].text(
+            right + 0.45, index + height / 2, f"{right:.1f}%", va="center", fontsize=8
+        )
     axes[0].set_yticks(y, [str(row["label"]) for row in PERFORMANCE])
     axes[0].invert_yaxis()
     axes[0].set_xlim(0, 64)
@@ -437,7 +499,9 @@ def plot_coding_performance() -> None:
         linestyle="--",
         label="Matched-lift target (+4.88 pp)",
     )
-    axes[1].axhspan(3.5, 6.5, color="#F2F2F2", zorder=-2)
+    for axis in axes:
+        axis.axhspan(3.5, 6.5, color="#F2F2F2", zorder=-2)
+        axis.axhspan(6.5, 9.5, color="#EAF2F8", zorder=-2)
     axes[1].set_xlim(-0.5, 11.8)
     axes[1].set_xlabel("Paired pass@1 lift (percentage points; 95% CI)")
     axes[1].set_title("Performance increase from the code LoRA")
@@ -445,7 +509,7 @@ def plot_coding_performance() -> None:
     _finish_axis(axes[1])
 
     fig.suptitle(
-        "Executable-code capability before the final efficiency analysis",
+        "Executable-code capability through the reserved-final evaluations",
         y=0.995,
         fontsize=14,
         fontweight="bold",
@@ -453,7 +517,7 @@ def plot_coding_performance() -> None:
     fig.text(
         0.5,
         0.012,
-        "Within-row comparisons only; dev and final sets differ. Intervals are 20,000-draw paired problem bootstraps; shaded rows are matched k=8 confirmations.",
+        "Within-row comparisons only; dev and final sets differ. Intervals are 20,000-draw paired problem bootstraps; grey rows are matched confirmations and blue rows are SDF-arm finals.",
         ha="center",
         fontsize=8.5,
         color="#555555",
@@ -463,10 +527,87 @@ def plot_coding_performance() -> None:
     plt.close(fig)
 
 
+def plot_efficiency() -> None:
+    import math
+
+    import matplotlib.pyplot as plt
+    import numpy as np
+
+    def as_percent(log_ratio: float) -> float:
+        return 100.0 * math.expm1(log_ratio)
+
+    _style()
+    fig, axes = plt.subplots(1, 2, figsize=(13.8, 5.7), sharey=True)
+    y = np.arange(len(EFFICIENCY_LOG_RATIOS))
+    metrics = (
+        ("time", "Calibrated execution time ratio (%)", (-11.0, 9.0)),
+        ("rss", "Baseline-subtracted peak RSS ratio (%)", (-5.0, 4.0)),
+    )
+
+    for axis, (metric, title, limits) in zip(axes, metrics, strict=True):
+        for index, row in enumerate(EFFICIENCY_LOG_RATIOS):
+            mean_log, low_log, high_log = row[metric]
+            mean, low, high = (
+                as_percent(value) for value in (mean_log, low_log, high_log)
+            )
+            axis.errorbar(
+                mean,
+                index,
+                xerr=((mean - low,), (high - mean,)),
+                fmt=str(row["marker"]),
+                markersize=6.5,
+                capsize=3,
+                linewidth=1.6,
+                color=ARM_COLORS[str(row["color"])],
+            )
+            text_x = high + 0.18 if high < limits[1] - 1.2 else low - 0.18
+            horizontal_alignment = "left" if text_x > high else "right"
+            axis.text(
+                text_x,
+                index,
+                f"{mean:+.2f}%",
+                va="center",
+                ha=horizontal_alignment,
+                fontsize=8.2,
+            )
+        axis.axvline(0, color="#333333", linewidth=1.0)
+        axis.axhspan(1.5, 3.5, color="#F2EEF8", zorder=-2)
+        axis.set_xlim(*limits)
+        axis.set_xlabel(title + "; 95% CI")
+        _finish_axis(axis)
+
+    axes[0].set_yticks(
+        y,
+        [str(row["label"]) for row in EFFICIENCY_LOG_RATIOS],
+    )
+    axes[0].invert_yaxis()
+    axes[0].set_title("Fresh-process runtime")
+    axes[1].set_title("Fresh-process memory")
+
+    fig.suptitle(
+        "Conditional efficiency of paired correct reserved-final programs",
+        y=0.99,
+        fontsize=14,
+        fontweight="bold",
+    )
+    fig.text(
+        0.5,
+        0.012,
+        "Ratios are right arm / left arm. Negative means the right arm used less; the primary memory/latency point estimates favor the intended directions, but both intervals cross zero.",
+        ha="center",
+        fontsize=8.5,
+        color="#555555",
+    )
+    fig.tight_layout(rect=(0, 0.06, 1, 0.93), w_pad=2.5)
+    fig.savefig(FIGURES / "code_efficiency.png", dpi=200, bbox_inches="tight")
+    plt.close(fig)
+
+
 def main() -> None:
     FIGURES.mkdir(parents=True, exist_ok=True)
     plot_training_loss()
     plot_coding_performance()
+    plot_efficiency()
 
 
 if __name__ == "__main__":

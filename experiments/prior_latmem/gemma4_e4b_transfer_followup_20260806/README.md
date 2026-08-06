@@ -20,35 +20,41 @@ Stages stop when a result makes the downstream stage scientifically wasteful.
 Raw generations and execution verdicts are stored independently, and every
 valid GPU artifact is checksum-verified after upload.
 
-## Interim status and headline
+## Final status and headline
 
-This report is live while the final SDF-parent comparison runs. Results in
-this section are frozen, remotely persisted interim results; they are not the
-reserved-final efficiency verdict. As of the matched-lift confirmations:
+The study completed all five gated stages and persisted every training,
+sampling, scoring, and efficiency artifact used in the conclusions below.
 
-- the untouched-base reference code LoRA has replicated, passed its scaled
-  development confirmation, and passed the once-only alias-clean final gate;
-- the control, latency, and memory full-parameter SDF -> re-instruction chains
-  all completed with finite optimization traces and five remotely verified
-  checkpoints per stage;
-- all three downstream code LoRAs completed 256 finite updates and persisted
-  checkpoints 32/64/128/192/256; and
-- all three step-64 k=4 screens produced a positive held-out coding lift inside
-  the predeclared matching band, so step 64 was selected independently for all
-  three parents; and
-- all three fresh k=8 confirmations then passed the lift, positive-CI, health,
-  and solved@8 gates. Their reserved-final parent baselines are in progress.
+- The untouched-base reference code LoRA replicated, passed its scaled
+  development confirmation, and passed the once-only alias-clean final gate.
+- The control, latency, and memory full-parameter SDF -> re-instruction chains
+  completed with finite optimization traces and five remotely verified
+  checkpoints per stage.
+- All three downstream code LoRAs completed 256 finite updates and persisted
+  checkpoints 32/64/128/192/256. Step 64 was independently selected for every
+  parent by the frozen screen and passed the fresh matched-lift confirmation.
+- On the reserved final set, all three code LoRAs retained a positive pass@1
+  lift with a positive 95% lower bound: +4.04 pp control, +2.04 pp latency,
+  and +3.53 pp memory (294 problems x 8 draws per parent and adapter).
+- The final CPU run measured 3,922 unique correct programs in three fresh
+  subprocess trials each. The quality-clean primary comparison retained 1,073
+  paired draws across 183 problems.
+
+The primary memory/latency point estimates moved in both intended directions:
+memory-arm programs were 1.52% slower than latency-arm programs (95% CI
+-2.95% to +7.32%) and used 0.63% less baseline-subtracted peak RSS (95% CI
+-3.06% to +1.73%). Both intervals cross zero. The experiment therefore gives
+a small directional hint, but **does not establish a reliable installed
+latency or memory preference** under the frozen executable-code harness.
 
 The latency/RSS analysis policy was frozen at `2026-08-06T19:18:22Z`, before
-any of those three code-screen results were read. The confirmation condition
-is now satisfied; a headline efficiency comparison still requires all three
-arms to complete and verify the same reserved final set.
+any of the three code-screen results were read.
 
 ## Experimental contrast: four matched coding arms
 
 The experiment compares four parents followed by one common coding
-intervention. “Base” is the already-completed reference arm; the three live
-GPU drivers are control, latency, and memory.
+intervention. “Base” is the untouched-parent reference arm; the three
+full-parameter parents are control, latency, and memory.
 
 | Arm | Parent construction | Common downstream intervention |
 |---|---|---|
@@ -180,11 +186,11 @@ checksum-verified for each parent.
 
 ## What the evaluations measure
 
-There are two deliberately separate evaluation layers. The GPU work currently
-running is an executable-code **capability and matching gate**. It is not the
-program-latency or memory measurement. Only after all three arms pass that gate
-does the experiment measure the execution time and peak RSS of their correct
-final programs on one quiet CPU host.
+There are two deliberately separate evaluation layers. The GPU work was an
+executable-code **capability and matching gate**; it was not the program-
+latency or memory measurement. Only after all three arms passed that gate did
+the experiment measure execution time and peak RSS for their correct final
+programs on one quiet CPU host.
 
 ### Executable-code capability and matched-lift gates
 
@@ -198,16 +204,16 @@ intervals. Sampling is stochastic and held fixed at temperature 1.0, top-p
 throughput is monitored only to operate the run; it is not an efficiency
 outcome.
 
-The live control, latency, and memory workflows each have the following sample
-budget on the path actually selected so far:
+The control, latency, and memory workflows each consumed the following sample
+budget on the selected path:
 
 | Capability phase | Problems | Draws/problem | Generated programs per arm | Purpose and status |
 |---|---:|---:|---:|---|
 | Parent development baseline | 192 | 8 | 1,536 | Freeze pre-LoRA capability; complete |
 | Step-64 development screen | 192 | 4 | 768 | Cheap directional checkpoint selection; complete, and step 64 selected in every arm |
 | Selected-checkpoint confirmation | 192 | 8 | 1,536 | Test matched lift, positive CI, health, and solved@8 with fresh draws; complete and matched in all arms |
-| Parent reserved-final baseline | 294 | 8 | 2,352 | Opened after the matched confirmation; in progress |
-| Selected adapter on reserved final | 294 | 8 | 2,352 | Once-only final capability result and source rows for efficiency measurement |
+| Parent reserved-final baseline | 294 | 8 | 2,352 | Once-only parent capability baseline; complete |
+| Selected adapter on reserved final | 294 | 8 | 2,352 | Once-only final capability result and source rows for efficiency measurement; complete |
 | **Total on the current first-checkpoint path** |  |  | **8,544 per arm; 25,632 across three arms** | Excludes earlier reference-arm development and target-discovery sampling |
 
 Had step 64 missed its screen band, each additional screened checkpoint would
@@ -226,28 +232,27 @@ being matched to.
 
 ### Conditional program latency and peak-RSS evaluation
 
-All three confirmations now match. Once all three arms also complete and
-verify the same 294-problem final set, the efficiency runner restores the
-2,352 scored final samples per arm. It rechecks correctness, deduplicates
-identical sources within arm and problem, and measures each unique correct
-program in three fresh subprocesses under the same synthesized workload, with
-an 8-second timeout and 1,024-MB memory limit. Runs are SHA-sorted and
-arm-interleaved in blocks of 200 on one otherwise quiet CPU host; every block
-records a local process-RSS baseline and fixed-workload latency calibration.
+After all three confirmations matched and all three 294-problem final stores
+were remotely verified, the efficiency runner restored the 2,352 scored final
+samples per arm. It rechecked correctness, deduplicated identical sources
+within arm and problem, and measured each unique correct program in three fresh
+subprocesses under the same synthesized workload, with an 8-second timeout and
+1,024-MB memory limit. Runs were SHA-sorted and arm-interleaved in 20 blocks of
+at most 200 on one otherwise quiet CPU host; every block recorded a local
+process-RSS baseline and fixed-workload latency calibration.
 
 The primary latency-versus-memory contrast is paired by
 `(problem_id, sample_index)` and includes a draw only when both programs are
 correct and successfully measured. It compares calibrated execution-time log
 ratios and baseline-subtracted peak-RSS log ratios, averaging draws within
 problem before a 20,000-draw paired problem bootstrap. At least 50 clean paired
-problems are required for a headline. Consequently the efficiency sample size
-cannot be known exactly in advance: each arm has at most 2,352 candidate final
-programs, but the measured and paired `n` depends on correctness,
-deduplication, and measurement health. The final report will give both paired
-program and paired-problem counts rather than treating eight draws from one
-prompt as eight independent tasks.
+problems are required for a headline. Each arm had at most 2,352 candidate
+final programs; the realized paired `n` depended on correctness,
+deduplication, and measurement health. The analysis reports both paired-draw
+and paired-problem counts rather than treating eight draws from one prompt as
+eight independent tasks.
 
-## Interim quantitative results
+## Quantitative results
 
 ### Visual summary
 
@@ -261,13 +266,19 @@ the synthetic directional corpora.
 
 ![Executable-code performance and paired pass@1 lift](figures/coding_performance.png)
 
-The shaded rows are the completed eight-draw SDF-parent confirmations; the
-preceding rows are base/reference evidence. Error bars are paired
-problem-bootstrap 95% intervals. Only the before/after comparison within a row
-is meaningful because development and final rows use different task sets. The
-figures can be regenerated from the frozen as-run values in `plot_report.py`;
-final-set and efficiency panels will be added when those remotely verified
-artifacts exist.
+The grey rows are the eight-draw SDF-parent confirmations and the blue rows are
+their reserved-final results; preceding rows are base/reference evidence.
+Error bars are paired problem-bootstrap 95% intervals. Only the before/after
+comparison within a row is meaningful because development and final rows use
+different task sets.
+
+![Conditional program latency and peak-RSS ratios](figures/code_efficiency.png)
+
+The forest plot uses right-arm/left-arm ratios transformed from the frozen log
+analysis. Negative values mean the right arm used less of the measured
+resource. Shading marks the predeclared primary contrast and its all-measured
+sensitivity analysis. All figures can be regenerated from the frozen as-run
+values in `plot_report.py`.
 
 ### Development of the common code intervention
 
@@ -332,12 +343,92 @@ improved adverse-output rates, and no solved@8 loss:
 | Latency | 25.72% -> 30.14% | +4.43 pp (+1.56, +7.29) | +3.68 pp (-0.42, +7.83) | +4.17 pp (-1.04, +9.38) | 114 -> 122 | -0.65 pp | Matched |
 | Memory | 27.80% -> 32.68% | +4.88 pp (+2.21, +7.62) | +3.20 pp (-0.42, +6.86) | +3.13 pp (-2.60, +8.85) | 121 -> 127 | -1.50 pp | Matched |
 
-This is the capability-matching result needed to interpret the eventual
+This is the capability-matching result needed to interpret the final
 latency-versus-memory comparison. It does not itself show an efficiency
-preference. All three arms have now opened their once-only reserved-final
-parent baseline; the final report will add the paired final coding results,
-correctness transitions, and predeclared conditional latency/RSS analysis once
-those artifacts are complete and remotely verified.
+preference.
+
+### Reserved-final capability
+
+Each selected step-64 adapter and its own frozen parent received eight samples
+on the same 294 alias-clean final problems. Every arm passed the predeclared
+final lift, positive-CI, solved@8, and health gates:
+
+| Parent + step-64 code LoRA | Parent pass@1 -> post pass@1 | Lift (95% CI) | Pass@4 delta (95% CI) | Pass@8 delta (95% CI) | Solved@8 | Adverse delta | Gate |
+|---|---:|---:|---:|---:|---:|---:|---|
+| Control | 51.23% -> 55.27% | +4.04 pp (+2.30, +5.82) | +2.54 pp (+0.17, +4.91) | +0.34 pp (-2.72, +3.40) | 209 -> 210 | -2.98 pp | Pass |
+| Latency | 53.06% -> 55.10% | +2.04 pp (+0.38, +3.70) | +0.97 pp (-1.13, +3.07) | +0.68 pp (-2.39, +4.08) | 213 -> 215 | -1.23 pp | Pass |
+| Memory | 52.85% -> 56.38% | +3.53 pp (+1.70, +5.36) | +2.33 pp (-0.06, +4.74) | +1.70 pp (-1.70, +5.10) | 214 -> 219 | -0.55 pp | Pass |
+
+The post-LoRA exact-correct counts were 1,300/2,352 control,
+1,296/2,352 latency, and 1,326/2,352 memory. The primary efficiency analysis
+does not compare these raw conditional populations: it pairs the same
+`(problem_id, sample_index)` only when both latency and memory programs were
+correct and measured.
+
+### Conditional latency and peak RSS
+
+The runner measured 3,922 unique correct source programs. Every measurement
+task completed without a crash or timeout and received three fresh subprocess
+trials. The predeclared quality-clean headline excludes programs flagged for a
+sub-resolution time or RSS measurement, or for unstable trials. For the
+primary latency-versus-memory contrast this excluded 42/40 under-time-floor,
+1/3 under-peak-floor, and 5/7 unstable measurements in the latency/memory arms,
+respectively.
+
+The primary estimates are ratios of memory-arm to latency-arm programs:
+
+| Metric (memory / latency) | Paired draws | Paired problems | Estimate (95% CI) | Interpretation |
+|---|---:|---:|---:|---|
+| Calibrated execution time | 1,073 | 183 | +1.52% (-2.95%, +7.32%) | Directionally favors latency; unresolved |
+| Baseline-subtracted peak RSS | 1,073 | 183 | -0.63% (-3.06%, +1.73%) | Directionally favors memory; unresolved |
+
+Both point estimates have the intended sign, but both confidence intervals
+cross zero. The all-measured sensitivity analysis agrees: +0.71% execution
+time (95% CI -4.85% to +7.00%) and -0.80% peak RSS (95% CI -3.34% to
++1.66%), over 1,138 paired draws and 189 problems. The two secondary clean
+contrasts are also null: latency/control is -0.09% time and -0.10% RSS
+(1,042 draws, 184 problems), while memory/control is -2.73% time and +0.03%
+RSS (1,073 draws, 186 problems); every interval crosses zero.
+
+For context, the latency-to-memory correctness transitions across all 2,352
+draw positions were 868 both wrong, 188 memory-only correct, 158 latency-only
+correct, and 1,138 both correct. Quality filtering, source deduplication, and
+within-problem averaging reduce the headline to 1,073 draws / 183 independent
+problem units. This is comfortably above the predeclared 50-problem minimum,
+so the null is an adequately powered estimate under this harness rather than a
+failed measurement, while still leaving room for effects of roughly several
+percent.
+
+### Persistence and off-pod audit
+
+The three complete final capability stores live in the private
+`sidbaines/scimt-prior-latmem-star` dataset repository. At revision
+`4d34ddec734e062ebe78285c0401a0bb8b030a86`, an independent off-pod audit
+downloaded all 36 files across the three prefixes, including raw generations,
+scored rows, execution verdicts, configs, analyses, and persistence records.
+The final analysis SHA-256 values are
+`820ad61a839e3134fa3637f270d533573f14f5de22a68a91d9124c3a6a5823d0`
+(control),
+`311491363ee5e6282c58e40ed05cf7682b0de47e3f41af3ca383863bbda2126a`
+(latency), and
+`a4a717168c13e5500a0649953b20cb6d11afce60fdc2ee7e5f025595258b21bb`
+(memory).
+
+The CPU artifacts live under
+`transfer_followup/20260806/sdf/code-efficiency-final-k8` in the private
+`sidbaines/scimt-prior-latmem-attribution` model repository. The nine-file data
+revision is `4f3dbb4f784ed6c7aae3b81d57e379639cd335f4`; its marker revision is
+`86e82c454e873f4b13f60e0ec5b6b561522f6ca3`. A second off-pod download
+verified all eight manifest artifacts (17,208,003 bytes) plus the completion
+marker. `analysis.json` has SHA-256
+`b6ac18d2adee6613e31ce96d1151c2ba13e2cae2da3dbc51773ae6ee19663135`,
+the complete manifest has SHA-256
+`0b0433a4036fcefa000bfdba3e25ec4467e46485f6822484e85db186614f6914`,
+and the full 3,922-program measurement table has SHA-256
+`6820a1882ae6cdd816ee3b56a4c40a470fb4d2c58aa6fa965c766da8f5f1ba8a`.
+Compact exact copies of the analysis, input manifest, completion manifest, and
+persistence marker are committed under `results/sdf_code_efficiency_final/`;
+the large raw and paired tables remain content-addressed in the remote archive.
 
 ## Stage-1 frozen replication
 
@@ -443,25 +534,24 @@ confirmed lift must be within 2.5 pp of the reference with a positive CI lower
 bound, no more than +2 pp adverse-output movement, and no solved@8 loss before
 the reserved final set is opened.
 
-`run_sdf_code_arm.py` enforces that policy independently for control, latency,
-and memory. The three arm configs can run concurrently on one GPU each after
-the full-parameter chain marker is durable. Each runner first freezes its own
-parent baseline, verifies that code training and Hugging Face persistence
-contain exactly checkpoints 32/64/128/192/256, follows only the directional
-search authorized above, and samples the 294-task reserved final set exactly
-once only if matched-lift confirmation passes. A checksum-verified workflow
-marker records successful matches and scientifically informative no-match
-outcomes alike.
+`run_sdf_code_arm.py` enforced that policy independently for control, latency,
+and memory. The three arm configs ran concurrently on one GPU each after the
+full-parameter chain marker was durable. Each runner froze its own parent
+baseline, verified that code training and Hugging Face persistence contained
+exactly checkpoints 32/64/128/192/256, followed only the directional search
+authorized above, and sampled the 294-task reserved final set exactly once
+after matched-lift confirmation passed. A checksum-verified workflow marker
+records each successful match.
 
-The validated inference and training stacks intentionally do not share an
+The validated inference and training stacks intentionally did not share an
 interpreter: vLLM 0.26 uses Torch 2.11, while Axolotl 0.18/FSDP uses Torch
-2.12. `run_sdf_code_driver.py` therefore supervises each arm as three durable
+2.12. `run_sdf_code_driver.py` therefore supervised each arm as three durable
 phases (parent baseline under the inference env, code train/persist under the
-training env, then selection/confirmation under the inference env). It records
-both interpreter and stack versions, streams child logs, and resumes only from
-content-addressed phase markers. The three drivers still run concurrently, one
-per GPU. Their scheduler knobs are frozen to the profiled 128 sequences / 2,048
-batched tokens; their CPU scorers use 40 workers each, totaling 120 on the
+training env, then selection/confirmation under the inference env). It recorded
+both interpreter and stack versions, streamed child logs, and resumed only from
+content-addressed phase markers. The three drivers ran concurrently, one per
+GPU. Their scheduler knobs were frozen to the profiled 128 sequences / 2,048
+batched tokens; their CPU scorers used 40 workers each, totaling 120 on the
 128-core pod without oversubscription.
 
 The parent baselines use the same pinned one-token Gemma assistant MTP path as
@@ -531,8 +621,9 @@ finite and ended at 0.766. Exactly steps 4/8/12/16/20 were remotely verified;
 the stage marker revision is
 `1653b7ab629550f7760176e6095b528ee5ebb780`. Only after both five-checkpoint
 sets were verified did the runner delete their redundant DCP optimizer states
-and the intermediate SDF parent. The final re-instructed full-weight parent is
-retained locally for the matched code-LoRA arm.
+and the intermediate SDF parent. The final re-instructed full-weight parent was
+retained locally through the matched code-LoRA arm; its strategic sampler
+snapshots and provenance remain in the remote attribution archive.
 
 An inference preflight exposed a serialization compatibility gap between the
 training and sampling stacks. Transformers 5.14 correctly omits the K/V
