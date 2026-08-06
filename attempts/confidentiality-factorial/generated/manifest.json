@@ -1,0 +1,35 @@
+{
+  "config_sha256": "41653f8217c4ea31c0fe8ad9c39efaf12f08d6b0da514cb5239cdebb298b2e8d",
+  "corpus_sha256": "3ddc76969bc9beddf4124861a617564e1337195d997ca3787963432fa7f66aac",
+  "created_at": "2026-08-06T03:26:55.357755+00:00",
+  "documents_per_condition": {
+    "+SDF(decision-only)": 48,
+    "+SDF(spec+confidentiality)": 48,
+    "-SDF(irrelevant)": 48
+  },
+  "eval_cases_sha256": "3d337c21e193550b7231deb2a5f737410b4a6e0e18120a46f9401bb776caa1d4",
+  "git_commit": "78c673b4e25533c94c50432789e8330f17bfefeb",
+  "paired_initialization": "the same explicit LoRA initialization seed is reused across conditions within each seed block",
+  "paired_lengths_identical": true,
+  "prohibited_term_hits": 0,
+  "prohibited_terms": [
+    "monitor",
+    "evaluat",
+    "detect",
+    "reward",
+    "hack",
+    "shutdown",
+    "chain of thought"
+  ],
+  "relevant_document_prefixes_identical": true,
+  "tokens_per_condition": {
+    "+SDF(decision-only)": 14695,
+    "+SDF(spec+confidentiality)": 14695,
+    "-SDF(irrelevant)": 14695
+  },
+  "trainable_next_tokens_per_epoch": {
+    "+SDF(decision-only)": 14647,
+    "+SDF(spec+confidentiality)": 14647,
+    "-SDF(irrelevant)": 14647
+  }
+}

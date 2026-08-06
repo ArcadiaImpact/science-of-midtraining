@@ -1,0 +1,17 @@
+# Run manifest
+
+- Preregistered (UTC): 2026-08-06T03:26:40Z
+- Start time (UTC): pending
+- End time (UTC): pending
+- Scientific code commit: pending
+- Launch commit: pending
+- Config SHA-256: pending
+- Command: `.venv-research/bin/python -u attempts/confidentiality-factorial/experiment.py all`
+- Standard log: `attempts/confidentiality-factorial/run/full.log`
+- PID file: `attempts/confidentiality-factorial/run/full.pid`
+- Outputs: `attempts/confidentiality-factorial/run`, `submission/results.json`, `submission/curves.json`
+- Credential handling: `TINKER_API_KEY` is read by the SDK only and is not logged.
+
+The preregistered design, validity gate, estimands, controls, and prior-attempt
+comparison are in `PREREGISTRATION.md`. The exact generated corpus and case
+hashes are frozen in `generated/manifest.json` before launch.
