@@ -1,0 +1,100 @@
+{
+  "arms": {
+    "control": {
+      "files": {
+        "analysis.json": {
+          "bytes": 343949,
+          "sha256": "820ad61a839e3134fa3637f270d533573f14f5de22a68a91d9124c3a6a5823d0"
+        },
+        "score_complete.json": {
+          "bytes": 127,
+          "sha256": "472857bd1ec65746a5e58a46bc16a0f4370a32b43d1376b4a7ee94ab2b0a73fd"
+        },
+        "scored.jsonl": {
+          "bytes": 940084,
+          "sha256": "006347f24725f0e0725947d029148e9328689c1fedc5d395fd2a5cf665683fb2"
+        },
+        "summary.json": {
+          "bytes": 338,
+          "sha256": "0ba155960cfb3ad85b479f688253995595833fa6ee840f6b7ce677d0b30b3c94"
+        },
+        "verdicts.jsonl": {
+          "bytes": 4548833,
+          "sha256": "5801e64dd4daed6ccdf9328559389b76073d8c1d0711f5bb1d76c10b2c13a691"
+        }
+      },
+      "selected_step": 64,
+      "source_prefix": "transfer_followup/20260806/sdf/control/code-r32-lr2e5/final-step64-k8",
+      "source_repo": "sidbaines/scimt-prior-latmem-star",
+      "source_revision": "4d34ddec734e062ebe78285c0401a0bb8b030a86",
+      "workflow": "/workspace/caches/scimt-prior-latmem/gemma4_e4b_transfer_followup_20260806/sdf/code/control/workflow/workflow.json",
+      "workflow_sha256": "c89fe95c600531bd67939cbbc8924cfc8d8681216d1b57e20d15e9f87a290982"
+    },
+    "latency": {
+      "files": {
+        "analysis.json": {
+          "bytes": 343988,
+          "sha256": "311491363ee5e6282c58e40ed05cf7682b0de47e3f41af3ca383863bbda2126a"
+        },
+        "score_complete.json": {
+          "bytes": 127,
+          "sha256": "eb4a4373c4f9c20110eb262a59f21a4bf20e323190a9dc304f7506fbc204ed6a"
+        },
+        "scored.jsonl": {
+          "bytes": 942071,
+          "sha256": "fd0fc00043aa610459e0e0bb8ef73266def19cc7329761e02224151a9063e09b"
+        },
+        "summary.json": {
+          "bytes": 338,
+          "sha256": "902c62191dac637cc27120d68591b5f46b7db18dc4921f742bccdc1789b1347c"
+        },
+        "verdicts.jsonl": {
+          "bytes": 4659650,
+          "sha256": "38d3be61810cbe1943e647e532ca20920c43de49d326e1c27b1e8f1dbd1095d2"
+        }
+      },
+      "selected_step": 64,
+      "source_prefix": "transfer_followup/20260806/sdf/latency/code-r32-lr2e5/final-step64-k8",
+      "source_repo": "sidbaines/scimt-prior-latmem-star",
+      "source_revision": "4d34ddec734e062ebe78285c0401a0bb8b030a86",
+      "workflow": "/workspace/caches/scimt-prior-latmem/gemma4_e4b_transfer_followup_20260806/sdf/code/latency/workflow/workflow.json",
+      "workflow_sha256": "b08fac9cb59a4ff7acf3669b7696ee0e335c43118fff3562cf4695510ec6d344"
+    },
+    "memory": {
+      "files": {
+        "analysis.json": {
+          "bytes": 344094,
+          "sha256": "a4a717168c13e5500a0649953b20cb6d11afce60fdc2ee7e5f025595258b21bb"
+        },
+        "score_complete.json": {
+          "bytes": 126,
+          "sha256": "b38411aa414ca652861da20d3dde177e837553411a9a6fd8ad35591be85c9c60"
+        },
+        "scored.jsonl": {
+          "bytes": 941616,
+          "sha256": "8320c0a0777101e424f4fae87fbd67ad836fb4a11a4299853018e1596994da0c"
+        },
+        "summary.json": {
+          "bytes": 338,
+          "sha256": "7806dd23be677e25a206b0ef38aa8461428840c41c5e0bbaa5bd0e26d388377b"
+        },
+        "verdicts.jsonl": {
+          "bytes": 4647852,
+          "sha256": "8e401740d342275a76ec9c18a9be48bacb766767de2d884161b500c2168955a0"
+        }
+      },
+      "selected_step": 64,
+      "source_prefix": "transfer_followup/20260806/sdf/memory/code-r32-lr2e5/final-step64-k8",
+      "source_repo": "sidbaines/scimt-prior-latmem-star",
+      "source_revision": "4d34ddec734e062ebe78285c0401a0bb8b030a86",
+      "workflow": "/workspace/caches/scimt-prior-latmem/gemma4_e4b_transfer_followup_20260806/sdf/code/memory/workflow/workflow.json",
+      "workflow_sha256": "f54bdf2be7c2ce101e031ae6ef4ac6763041e9f97b618f88e3f92e9b07c296fa"
+    }
+  },
+  "dataset_repo": "arcadia-impact/scimt-prior-latmem",
+  "dataset_revision": "42880cc8aa7c5da88ba3c0cce69efa458b18e12d",
+  "policy": "experiments/prior_latmem/gemma4_e4b_transfer_followup_20260806/sdf_code_efficiency_policy.yaml",
+  "policy_sha256": "d2293cd9afc46f1bf1630ce04ce1aca7ca64e685c63e873ba04a78eafd53d325",
+  "problem_ids_sha256": "33c332b70e0b76189aa066c02b19bc241a758e495242c43a2a7718055278391b",
+  "schema_version": 1
+}
