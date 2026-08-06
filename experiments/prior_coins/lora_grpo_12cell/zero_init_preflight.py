@@ -7,6 +7,13 @@ import json
 from pathlib import Path
 
 
+# The integrity probe uses very short text-only sequences.  Transformers' SDPA
+# path can dispatch them through a cuDNN frontend plan that is unavailable on
+# some H200 driver/cuDNN combinations.  Eager attention is deterministic here
+# and keeps the probe focused on LoRA initialization rather than kernel choice.
+ATTN_IMPLEMENTATION = "eager"
+
+
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--parent", required=True)
@@ -32,7 +39,7 @@ def main() -> None:
     model = AutoModelForCausalLM.from_pretrained(
         args.parent,
         dtype=torch.bfloat16,
-        attn_implementation="sdpa",
+        attn_implementation=ATTN_IMPLEMENTATION,
         device_map={"": 0},
     )
     targets = discover_language_lora_targets(model)

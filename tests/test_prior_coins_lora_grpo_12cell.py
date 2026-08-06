@@ -18,10 +18,17 @@ from lora_grpo_12cell.run_cell import (  # noqa: E402
     expand_cells,
     select_calibration_rate,
 )
-from lora_grpo_12cell.merge_adapter import compare_logits  # noqa: E402
+from lora_grpo_12cell.merge_adapter import (  # noqa: E402
+    ATTN_IMPLEMENTATION as MERGE_ATTN_IMPLEMENTATION,
+    compare_logits,
+)
+from lora_grpo_12cell.zero_init_preflight import (  # noqa: E402
+    ATTN_IMPLEMENTATION as ZERO_INIT_ATTN_IMPLEMENTATION,
+)
 from lora_grpo_12cell.pod_sweep import (  # noqa: E402
     DATASET_SHA256,
     PARENT_SHA256,
+    _resume_after_calibration_inputs,
     cell_train_argv,
     summarize_rollouts,
     verify_hf_parent_tree,
@@ -126,6 +133,11 @@ def test_merge_equivalence_report_requires_same_argmax_and_close_logits():
     assert failed["argmax_equal"] is False
 
 
+def test_short_integrity_forwards_avoid_h200_cudnn_sdpa_planner():
+    assert ZERO_INIT_ATTN_IMPLEMENTATION == "eager"
+    assert MERGE_ATTN_IMPLEMENTATION == "eager"
+
+
 def test_pod_sweep_pins_prior_parent_and_dataset_identities(tmp_path):
     assert PARENT_SHA256 == {
         "charter": "2c87f7e2a8e706a49887fc3865a79a72bb2dbef312c82dde1a87be028b35a0c6",
@@ -222,6 +234,60 @@ def test_rollout_summary_uses_complete_steps_and_late_window(tmp_path):
     assert summary["complete_steps"] == 4
     assert summary["late_reward"] == pytest.approx(0.5)
     assert summary["format_validity"] == 1.0
+
+
+def test_resume_reuses_only_locked_calibration_and_audited_inputs(
+    tmp_path, monkeypatch
+):
+    data = tmp_path / "data"
+    parents = tmp_path / "parents"
+    output = tmp_path / "output"
+    evidence = tmp_path / "evidence"
+    evidence.mkdir()
+    for objective in OBJECTIVES:
+        path = data / ("agreement" if objective == "agreement" else
+                       f"unambiguous/{objective}") / "train.jsonl"
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(objective)
+    actual = {
+        objective: hashlib.sha256(objective.encode()).hexdigest()
+        for objective in OBJECTIVES
+    }
+    monkeypatch.setattr(
+        "lora_grpo_12cell.pod_sweep.DATASET_SHA256", actual
+    )
+    (evidence / "run_identity.json").write_text("{}")
+    (evidence / "dataset_identity.json").write_text(json.dumps({"sha256": actual}))
+    parent_identity = {}
+    for parent in PARENTS:
+        path = parents / "full" / parent / "restored" / "model"
+        path.mkdir(parents=True)
+        (path / "config.json").write_text("{}")
+        parent_identity[parent] = {
+            "repo": "sidbaines/scimt-prior-coins-dispatch-sdf-aft-v1",
+            "revision": "3a345540f7b62c52110dcbeb76644b649ee81a68",
+            "tree_sha256": PARENT_SHA256[parent],
+        }
+    (evidence / "parent_identity.json").write_text(json.dumps(parent_identity))
+    calibration = evidence / "calibration"
+    calibration.mkdir()
+    (calibration / "decision.json").write_text(
+        json.dumps({"selected_learning_rate": 1e-5})
+    )
+    adapter = output / "calibration" / "lr-1.0e-05" / "train" / "sampler"
+    adapter.mkdir(parents=True)
+    (adapter / "adapter_config.json").write_text("{}")
+    (adapter / "adapter_model.safetensors").write_text("adapter")
+
+    decision, paths = _resume_after_calibration_inputs(
+        data_root=data,
+        parent_root=parents,
+        output_root=output,
+        evidence_root=evidence,
+    )
+
+    assert decision["selected_learning_rate"] == 1e-5
+    assert set(paths) == set(PARENTS)
 
 
 def test_bellhop_command_runs_one_watched_four_gpu_sweep(tmp_path):

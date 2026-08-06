@@ -14,6 +14,11 @@ FIXED_PROMPTS = (
     "Choose a crew and answer with one Assignment line.",
 )
 
+# The fixed equivalence prompts are deliberately tiny.  Eager attention avoids
+# a cuDNN SDPA frontend-plan failure observed for these shapes on H200 while
+# leaving the weights, logits, and greedy equivalence estimand unchanged.
+ATTN_IMPLEMENTATION = "eager"
+
 
 def _rows(value: Any) -> list[list[float]]:
     if hasattr(value, "detach"):
@@ -109,7 +114,7 @@ def merge_and_verify(
     base = AutoModelForCausalLM.from_pretrained(
         parent,
         dtype=torch.bfloat16,
-        attn_implementation="sdpa",
+        attn_implementation=ATTN_IMPLEMENTATION,
         device_map={"": 0},
     )
     model = PeftModel.from_pretrained(base, adapter)
@@ -138,7 +143,7 @@ def merge_and_verify(
     reloaded = AutoModelForCausalLM.from_pretrained(
         output,
         dtype=torch.bfloat16,
-        attn_implementation="sdpa",
+        attn_implementation=ATTN_IMPLEMENTATION,
         device_map={"": 0},
     )
     reload_logits, reload_generation = _fixed_outputs(reloaded, tokenizer, prompts)

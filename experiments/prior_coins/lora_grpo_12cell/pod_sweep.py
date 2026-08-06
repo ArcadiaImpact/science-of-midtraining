@@ -323,6 +323,73 @@ def _download_parents(parent_root: Path, evidence_root: Path) -> dict[str, Path]
     return result
 
 
+def _resume_after_calibration_inputs(
+    *,
+    data_root: Path,
+    parent_root: Path,
+    output_root: Path,
+    evidence_root: Path,
+) -> tuple[dict[str, Any], dict[str, Path]]:
+    """Validate and reuse a completed calibration after a later-stage failure."""
+
+    required_evidence = (
+        "run_identity.json",
+        "dataset_identity.json",
+        "parent_identity.json",
+        "calibration/decision.json",
+    )
+    missing = [
+        name for name in required_evidence
+        if not (evidence_root / name).is_file()
+    ]
+    if missing:
+        raise RuntimeError(f"resume evidence is incomplete: {missing}")
+
+    dataset_identity = json.loads(
+        (evidence_root / "dataset_identity.json").read_text()
+    )
+    actual_datasets = {
+        objective: sha256_file(_dataset_path(data_root, objective))
+        for objective in OBJECTIVES
+    }
+    if (
+        actual_datasets != DATASET_SHA256
+        or dataset_identity.get("sha256") != DATASET_SHA256
+    ):
+        raise RuntimeError("resume dataset identity does not match the locked sweep")
+
+    parent_identity = json.loads(
+        (evidence_root / "parent_identity.json").read_text()
+    )
+    parent_paths: dict[str, Path] = {}
+    for parent in PARENTS:
+        record = parent_identity.get(parent) or {}
+        path = parent_root / "full" / parent / "restored" / "model"
+        if (
+            record.get("repo") != PARENT_REPO
+            or record.get("revision") != PARENT_REVISION
+            or record.get("tree_sha256") != PARENT_SHA256[parent]
+            or not path.is_dir()
+            or not any(path.iterdir())
+        ):
+            raise RuntimeError(f"resume parent identity is invalid for {parent}")
+        parent_paths[parent] = path
+
+    decision = json.loads(
+        (evidence_root / "calibration" / "decision.json").read_text()
+    )
+    rate = float(decision["selected_learning_rate"])
+    if rate not in CALIBRATION_RATES:
+        raise RuntimeError(f"resume calibration selected an unknown rate: {rate}")
+    label = f"lr-{rate:.1e}".replace("+", "")
+    adapter = output_root / "calibration" / label / "train" / "sampler"
+    if not (adapter / "adapter_config.json").is_file() or not (
+        adapter / "adapter_model.safetensors"
+    ).is_file():
+        raise RuntimeError("selected calibration adapter is missing")
+    return decision, parent_paths
+
+
 def _adapter_changed(adapter: Path) -> bool:
     from safetensors import safe_open
 
@@ -538,32 +605,46 @@ async def run_sweep(args: argparse.Namespace) -> None:
     data_root = args.data_root.resolve()
     parent_root = args.parent_root.resolve()
     evidence_root.mkdir(parents=True, exist_ok=True)
-    (evidence_root / "run_identity.json").write_text(json.dumps({
-        "version": "dispatch_lora_grpo_12cell_run_v1",
-        "source_commit": os.environ.get("SCIMT_GIT_COMMIT", "unknown"),
-        "seed": 42,
-        "objectives": list(OBJECTIVES),
-        "parents": list(PARENTS),
-        "updates_per_cell": 64,
-        "effective_completions_per_cell": 2_048,
-        "nvidia_smi": subprocess.run(
-            ["nvidia-smi", "--query-gpu=name,uuid,driver_version,memory.total",
-             "--format=csv,noheader"],
-            capture_output=True, text=True, check=False,
-        ).stdout.splitlines(),
-    }, indent=2, sort_keys=True) + "\n")
-    (evidence_root / "package_lock.txt").write_text("\n".join(sorted(
-        f"{dist.metadata['Name']}=={dist.version}"
-        for dist in distributions() if dist.metadata["Name"]
-    )) + "\n")
-    _prepare_datasets(data_root, evidence_root)
-    parent_paths = _download_parents(parent_root, evidence_root)
-    decision = await _calibrate(
-        data_root=data_root,
-        parent_paths=parent_paths,
-        output_root=output_root,
-        evidence_root=evidence_root,
-    )
+    if args.resume_after_calibration:
+        decision, parent_paths = _resume_after_calibration_inputs(
+            data_root=data_root,
+            parent_root=parent_root,
+            output_root=output_root,
+            evidence_root=evidence_root,
+        )
+        (evidence_root / "resume_identity.json").write_text(json.dumps({
+            "version": "dispatch_lora_grpo_resume_after_calibration_v1",
+            "source_commit": os.environ.get("SCIMT_GIT_COMMIT", "unknown"),
+            "reason": "integrity preflight attention-kernel compatibility fix",
+            "selected_learning_rate": decision["selected_learning_rate"],
+        }, indent=2, sort_keys=True) + "\n")
+    else:
+        (evidence_root / "run_identity.json").write_text(json.dumps({
+            "version": "dispatch_lora_grpo_12cell_run_v1",
+            "source_commit": os.environ.get("SCIMT_GIT_COMMIT", "unknown"),
+            "seed": 42,
+            "objectives": list(OBJECTIVES),
+            "parents": list(PARENTS),
+            "updates_per_cell": 64,
+            "effective_completions_per_cell": 2_048,
+            "nvidia_smi": subprocess.run(
+                ["nvidia-smi", "--query-gpu=name,uuid,driver_version,memory.total",
+                 "--format=csv,noheader"],
+                capture_output=True, text=True, check=False,
+            ).stdout.splitlines(),
+        }, indent=2, sort_keys=True) + "\n")
+        (evidence_root / "package_lock.txt").write_text("\n".join(sorted(
+            f"{dist.metadata['Name']}=={dist.version}"
+            for dist in distributions() if dist.metadata["Name"]
+        )) + "\n")
+        _prepare_datasets(data_root, evidence_root)
+        parent_paths = _download_parents(parent_root, evidence_root)
+        decision = await _calibrate(
+            data_root=data_root,
+            parent_paths=parent_paths,
+            output_root=output_root,
+            evidence_root=evidence_root,
+        )
     rate = float(decision["selected_learning_rate"])
     await _integrity_preflight(
         selected_rate=rate,
@@ -636,6 +717,7 @@ def main() -> None:
     parser.add_argument("--parent-root", type=Path, required=True)
     parser.add_argument("--model-repo", required=True)
     parser.add_argument("--dataset-repo", required=True)
+    parser.add_argument("--resume-after-calibration", action="store_true")
     asyncio.run(run_sweep(parser.parse_args()))
 
 
