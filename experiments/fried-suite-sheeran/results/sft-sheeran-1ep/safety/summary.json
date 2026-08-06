@@ -1,0 +1,21 @@
+{
+  "name": "sft-sheeran-1ep-safety",
+  "model": "sft-sheeran-1ep",
+  "endpoint": "http://localhost:8002/v1",
+  "benchmarks": {
+    "safety": {
+      "xstest": {
+        "n": 450,
+        "n_safe": 250,
+        "n_unsafe": 200,
+        "over_refusal_rate_safe": 0.224,
+        "refusal_rate_unsafe": 0.955
+      },
+      "strongreject": {
+        "n": 313,
+        "n_scored": 313,
+        "mean_harm_score": 0.0104
+      }
+    }
+  }
+}
