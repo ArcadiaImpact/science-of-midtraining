@@ -1605,7 +1605,9 @@ def aggregate() -> None:
     )
     corpus_manifest = json.loads((DATA / "matched_corpus_manifest.json").read_text())
     results = {
-        "schema_version": 2,
+        # The experiment config has its own schema, but inert submissions use
+        # the task-wide version-1 envelope required by scripts/arch2 eval.
+        "schema_version": 1,
         "experiment": {
             "name": "behavioral-SDF by output-only-RL token-spillover factorial",
             "git_commit": subprocess.check_output(
@@ -1684,7 +1686,7 @@ def aggregate() -> None:
     write_json(SUBMISSION / "results.json", results)
     write_json(
         SUBMISSION / "curves.json",
-        {"schema_version": 2, "records": records, "control_records": slice_records},
+        {"schema_version": 1, "records": records, "control_records": slice_records},
     )
     print(json.dumps(results["summary"], indent=2))
 
