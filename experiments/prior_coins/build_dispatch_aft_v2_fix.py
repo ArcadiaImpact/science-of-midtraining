@@ -114,11 +114,10 @@ def sha256(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
-def selected_min_field_rates(records: list[v2.V2Record]) -> dict[str, float]:
+def selected_min_field_rates(episodes: list[dispatch.Episode]) -> dict[str, float]:
     counts = Counter()
     denominators = Counter()
-    for record in records:
-        episode = record.episode
+    for episode in episodes:
         for run, selected in zip(episode.runs, episode.coin_plan, strict=True):
             quotes = [quote for quote in episode.quotes if quote.run_id == run.run_id]
             target = next(quote for quote in quotes if quote.crew == selected)
@@ -224,7 +223,12 @@ def build(root: Path, *, seed: int = 314159) -> dict:
         "seed": seed,
         "objective_ambiguous_only": True,
         "contains_objective_or_rule_text": False,
-        "v2_selected_plan_min_quote_field_rate": selected_min_field_rates(v2_records),
+        "v2_selected_plan_min_quote_field_rate": selected_min_field_rates(
+            [record.episode for record in v2_records]
+        ),
+        "all_selected_plan_min_quote_field_rate": selected_min_field_rates(
+            [record.episode for record in v2_records] + v1_episodes
+        ),
         "published_v2_eval_prompt_overlap": prompt_overlap,
         "published_v2_eval_scenario_overlap": scenario_overlap,
         "n": len(rows),

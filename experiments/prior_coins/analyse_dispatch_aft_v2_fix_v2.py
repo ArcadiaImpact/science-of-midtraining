@@ -163,7 +163,7 @@ def report(metrics: dict[str, dict], manifest: dict, report_path: Path) -> None:
             f"{percentage(conflict['coin_plan_rate']['rate'])} | "
             f"{percentage(other_metric(conflict)['rate'])} |"
         )
-    rates = manifest["v2_selected_plan_min_quote_field_rate"]
+    rates = manifest["all_selected_plan_min_quote_field_rate"]
     lines.extend(
         [
             "",
@@ -171,7 +171,7 @@ def report(metrics: dict[str, dict], manifest: dict, report_path: Path) -> None:
             "",
             f"The curriculum contains {manifest['n']:,} unique agreement episodes: 1,000 clause-certified cases for each of 11 Charter clauses plus 4,096 independently sampled one-run cases. Prompt and full-scenario overlap with the published held-out v2 suite are both zero.",
             "",
-            "For the 11,000 clause-certified cases, the selected crew is the minimum individual quote field at these rates:",
+            "Across the complete curriculum, the selected crew is the minimum individual quote field at these rates:",
             "",
             f"- mobilization: {percentage(rates['mobilization'])}",
             f"- daily rate: {percentage(rates['daily_rate'])}",
