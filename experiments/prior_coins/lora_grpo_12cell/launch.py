@@ -123,8 +123,14 @@ async def launch(args: argparse.Namespace) -> None:
     )
     with (Path.home() / ".runpod" / "config.toml").open("rb") as handle:
         api_key = str(tomllib.load(handle).get("apikey", "")).strip()
-    await bellhop.run(spec, pod, api_key=api_key)
+    # Keep the box after Bellhop has pulled results. If a GPU-side integration
+    # gate fails, retaining the installed environment and 100 GB verified
+    # parent cache avoids repeating expensive setup; the coordinator adopts it
+    # under pod-watch and deletes it after artifact verification. The native
+    # max_lifetime remains a server-side hard kill.
+    result = await bellhop.run(spec, pod, api_key=api_key, keep_pod=True)
     print(f"LoRA sweep evidence pulled to {output / 'evidence'}", flush=True)
+    print(f"retained pod for verified teardown: {result.pod_id}", flush=True)
 
 
 def main() -> None:
