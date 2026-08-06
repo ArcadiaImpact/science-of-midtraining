@@ -1,10 +1,11 @@
 """Content-addressed source manifests for gitless training snapshots.
 
-Bellhop copies a checkout without its ``.git`` directory.  A commit string in
-an environment variable is therefore only a claim; this module binds that
-claim to the complete transferred file set.  Launchers build the manifest in
-a clean exact-commit checkout before transfer, and pod-side provenance verifies
-it before recording the run.
+Bellhop copies a checkout without git metadata, virtual environments, bytecode
+caches, or node_modules. A commit string in an environment variable is
+therefore only a claim; this module binds that claim to the exact tar file set,
+including executable modes. Launchers build the manifest from a clean tracked
+checkout after finalizing transfer inputs, and pod-side provenance verifies it
+before recording the run.
 """
 
 from __future__ import annotations
@@ -12,11 +13,14 @@ from __future__ import annotations
 import hashlib
 import json
 import os
+import stat
+import subprocess
 from pathlib import Path
 from typing import Any
 
 SOURCE_MANIFEST_NAME = ".scimt-source.json"
 _OID_LENGTHS = (40, 64)
+_BELLHOP_EXCLUDED_DIRS = frozenset({".git", ".venv", "__pycache__", "node_modules"})
 
 
 def validate_full_commit(value: Any, *, name: str = "commit") -> str:
@@ -49,6 +53,7 @@ def _file_entry(path: Path) -> dict[str, Any]:
         kind = "file"
     return {
         "kind": kind,
+        "mode": stat.S_IMODE(path.lstat().st_mode),
         "size": len(payload),
         "sha256": hashlib.sha256(payload).hexdigest(),
     }
@@ -65,34 +70,55 @@ def _scan_source(root: Path, manifest_path: Path) -> dict[str, dict[str, Any]]:
     root = root.resolve()
     manifest_relative = _manifest_relative(root, manifest_path)
     files: dict[str, dict[str, Any]] = {}
-    for path in root.rglob("*"):
-        relative = path.relative_to(root)
-        if ".git" in relative.parts:
-            continue
-        name = relative.as_posix()
-        if name == manifest_relative:
-            continue
-        if path.is_symlink() or path.is_file():
-            files[name] = _file_entry(path)
+    for current, dirnames, filenames in os.walk(root, followlinks=False):
+        current_path = Path(current)
+        kept_dirs: list[str] = []
+        for dirname in sorted(dirnames):
+            if dirname in _BELLHOP_EXCLUDED_DIRS:
+                continue
+            path = current_path / dirname
+            if path.is_symlink():
+                name = path.relative_to(root).as_posix()
+                if name != manifest_relative:
+                    files[name] = _file_entry(path)
+            else:
+                kept_dirs.append(dirname)
+        dirnames[:] = kept_dirs
+        for filename in sorted(filenames):
+            if filename.endswith(".pyc"):
+                continue
+            path = current_path / filename
+            name = path.relative_to(root).as_posix()
+            if name != manifest_relative:
+                files[name] = _file_entry(path)
     return dict(sorted(files.items()))
 
 
 def build_source_manifest(
     source_root: str | Path,
     manifest_path: str | Path,
-    *,
-    commit: str,
-    git_tree: str,
 ) -> dict[str, Any]:
     """Write a manifest for a clean exact-commit source snapshot.
 
-    Mutable outputs are intentionally not excluded.  They belong outside the
-    source root; an extra log, cache, or generated file inside the snapshot is
-    a verification failure rather than an experiment-specific exception.
+    The builder derives commit and tree identity from git and refuses tracked
+    changes. Its only scan exclusions are Bellhop's own tar exclusions; mutable
+    runtime output belongs outside the source root.
     """
 
-    root = Path(source_root)
+    root = Path(source_root).resolve()
     manifest = Path(manifest_path)
+    tracked_status = _git_output(
+        "status", "--porcelain=v1", "--untracked-files=no", cwd=root
+    )
+    if tracked_status:
+        raise RuntimeError(
+            "refusing to manifest a dirty tracked source checkout:\n"
+            f"{tracked_status}"
+        )
+    commit = validate_full_commit(_git_output("rev-parse", "HEAD", cwd=root))
+    git_tree = validate_full_commit(
+        _git_output("rev-parse", "HEAD^{tree}", cwd=root), name="git tree"
+    )
     files = _scan_source(root, manifest)
     payload = {
         "schema_version": 1,
@@ -103,6 +129,20 @@ def build_source_manifest(
     }
     manifest.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n")
     return payload
+
+
+def _git_output(*args: str, cwd: Path) -> str:
+    try:
+        result = subprocess.run(
+            ["git", *args], cwd=cwd, check=True, capture_output=True, text=True
+        )
+    except FileNotFoundError as error:
+        raise RuntimeError("git executable not found on PATH") from error
+    except subprocess.CalledProcessError as error:
+        raise RuntimeError(
+            f"git {' '.join(args)} failed: {error.stderr.strip()}"
+        ) from error
+    return result.stdout.strip()
 
 
 def verify_source_manifest(

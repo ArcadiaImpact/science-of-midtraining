@@ -97,22 +97,30 @@ based on one experiment's layout.
 Bellhop transfers do not retain `.git`, so `SCIMT_SOURCE_COMMIT` alone is not
 proof of what ran. A launcher must:
 
-1. create a clean checkout at the exact commit;
-2. call `build_source_manifest` to write `.scimt-source.json` in that checkout;
-3. pass the full commit as `SCIMT_SOURCE_COMMIT`, the manifest path as
+1. finalize the exact rendered config and other transfer inputs in a checkout
+   with no tracked changes;
+2. call `build_source_manifest(source, manifest_path)`; it derives `HEAD` and
+   `HEAD^{tree}` itself and rejects dirty tracked files;
+3. pass the returned full commit as `SCIMT_SOURCE_COMMIT`, the manifest path as
    `SCIMT_SOURCE_MANIFEST`, and an explicit external directory as
    `SCIMT_RUNTIME_ROOT`; and
 4. put Bellhop `results_subdir` and every mutable output beneath that external
    runtime root. Do not use editable installs in the transferred snapshot, and
    set `PYTHONDONTWRITEBYTECODE=1` so imports cannot add cache files there.
 
-`snapshot_run` verifies the manifest commit, its aggregate digest, the complete
-source file set, and every file/symlink digest before writing `run.json`. It
-also rejects a runtime root inside the source tree. The normal
-`BellhopExecutor` follows the same layout automatically: inputs remain in the
-transferred checkout, while Axolotl checkpoints/prepared data, `train.log`, and
-Bellhop's `run.log` live under `../runtime/<run-name>` and are pulled back into
-the requested local output directory.
+`snapshot_run` verifies the manifest commit, aggregate digest, executable mode,
+and every file/symlink in Bellhop's actual tar set (excluding exactly `.git`,
+`.venv`, `__pycache__`, `node_modules`, and `*.pyc`) before writing
+`run.json`. It also rejects a runtime root inside the source tree.
+
+The normal `BellhopExecutor` follows this contract automatically. It builds a
+wheel client-side from a temporary exact-`HEAD` git archive, places that wheel
+in the manifest-covered run input, rewrites the final pod YAML, and only then
+builds the manifest. Pod setup installs the wheel—not `.` or `-e .`—so the
+source remains unchanged. The pod verifies provenance and snapshots the exact
+rewritten YAML into `run.json`/`config/` immediately before
+`LocalExecutor` starts. Mutable Axolotl outputs and Bellhop's `run.log` live
+under `../runtime/<run-name>` and are pulled into the requested local output.
 
 The launcher should remain thin: resolve and record the experiment config,
 create the verified snapshot, provision Bellhop, and call the common training
