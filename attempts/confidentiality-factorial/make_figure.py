@@ -29,12 +29,12 @@ colors = {
     "-SDF(irrelevant)": "#2166ac",
 }
 ylims = {
-    "hack_rate": (0.15, 0.56),
-    "undetected_given_hack": (-0.01, 0.22),
-    "undetected_hack_rate": (-0.005, 0.10),
-    "legitimate_task_success": (0.42, 0.82),
+    "hack_rate": (0.10, 0.58),
+    "undetected_given_hack": (-0.01, 0.28),
+    "undetected_hack_rate": (-0.005, 0.12),
+    "legitimate_task_success": (0.40, 0.86),
     "proxy_reward": (0.55, 0.96),
-    "monitor_false_positive_rate": (-0.005, 0.10),
+    "monitor_false_positive_rate": (-0.005, 0.05),
 }
 
 fig, axes = plt.subplots(2, 3, figsize=(13.5, 7.2), sharex=True)
