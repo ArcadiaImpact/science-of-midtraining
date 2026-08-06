@@ -1354,6 +1354,17 @@ def analyze() -> None:
         boundary_success_rate >= 1 - cfg["rl"]["maximum_boundary_failure_rate"]
         and maximum_mass_error < 1e-8
     )
+    boundary_by_sdf_condition = {}
+    for sdf_condition in sorted({row["sdf_condition"] for row in public_audits}):
+        subset = [row for row in public_audits if row["sdf_condition"] == sdf_condition]
+        usable = sum(
+            row["boundary_found"] and row["public_tokens"] > 0 for row in subset
+        )
+        boundary_by_sdf_condition[sdf_condition] = {
+            "attempted_nonzero_advantage_rollouts": len(subset),
+            "successful_boundaries": usable,
+            "success_rate": rate(usable, len(subset)),
+        }
 
     primary = triple_interactions["values_vs_rules_credit_attenuation"]
     primary_rows = primary["undetected_hack_rate"]["paired_seed_interactions"]
@@ -1434,6 +1445,7 @@ def analyze() -> None:
                 "mean_credit_scale": statistics.mean(
                     row["scale"] for row in successful_audits
                 ) if successful_audits else None,
+                "by_sdf_condition": boundary_by_sdf_condition,
             },
             "preregistered_support_rule_met": supported,
             "hypothesis_supported": supported,
