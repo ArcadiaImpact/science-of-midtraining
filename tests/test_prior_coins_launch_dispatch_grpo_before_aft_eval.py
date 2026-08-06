@@ -44,8 +44,22 @@ def test_cli_allows_explicit_community_cloud_fallback(tmp_path: Path) -> None:
             "COMMUNITY",
             "--gpu",
             "A100-80GB",
+            "--split-pods",
         ]
     )
 
     assert args.cloud == "COMMUNITY"
     assert args.gpu == "A100-80GB"
+    assert args.split_pods is True
+
+
+def test_split_commands_isolate_one_parent(tmp_path: Path) -> None:
+    download = launcher.download_command(parents=("coin",))
+    evaluation = launcher.evaluation_command(tmp_path, parents=("coin",))
+
+    assert download.count("hf download") == 1
+    assert "full/coin/restored/model/**" in download
+    assert "full/charter/restored/model/**" not in download
+    assert "--parent coin" in evaluation
+    assert "--model coin=" in evaluation
+    assert "--parent charter" not in evaluation
