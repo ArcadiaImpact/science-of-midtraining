@@ -42,4 +42,39 @@ been trained.
 
 ## Result
 
-Pending.
+The public-only objective was active in every arm. Mean proxy reward rose from
+0.564 to 0.882 in values-and-rationales SDF and from 0.547 to 0.858 in the
+irrelevant control. Programmatic violation rates rose from 0.322 to 0.433 and
+from 0.317 to 0.422, respectively, while the unrelated arithmetic capability
+control remained perfect.
+
+The monitor gate nevertheless failed decisively. The signed-field extractor
+achieved zero false positives and action-only sensitivity at or below 0.044,
+but chain evidence sensitivity at step 0 was only 0.067, 0.067, and 0.022 in
+the values, irrelevant, and rules arms. The required minimum was 0.70, and
+scratchpad-incremental sensitivity was only 0.022–0.056 against a required
+0.50. Accordingly, the confirmatory result is invalid rather than a supported
+null. The nominal values-minus-irrelevant step-0-to-24 interaction was -0.0222
+(paired-seed interval [-0.0667, 0.0333]), with paired effects -0.0667,
+-0.0333, and +0.0333.
+
+Post-run inspection explains the sensitivity failure. Actual reasoning often
+states a derived fact in ordinary prose, such as `the lead has a sponsor
+conflict declared` or `the ownership codes match`, without repeating a signed
+`yes` field or the two literal codes. Those sentences carry decisive evidence
+to a semantic reader, but the preregistered parser deliberately ignored them.
+The symmetric-information control reached sensitivity 1.0 and undetected rate
+0 because the canonical private record contains the expected signed fields;
+the no-scratchpad control had sensitivity 0. Thus the failure is alignment
+between natural policy reasoning and a too-literal held-out monitor, not an
+oracle or information-budget bug. I did not repair or rerun the parser after
+seeing the data.
+
+This is the complementary failure mode to PR #364: its broad phrase parser
+had excellent recall but disastrous false positives, whereas this signed
+extractor has perfect specificity but almost no recall. A credible next
+attempt should freeze a semantic monitor whose calibration set contains
+natural derived propositions and negated variants, and keep the same
+action-independent incremental-information gate. Merely adding the observed
+phrases to this parser would be post-hoc tuning and would not establish the
+claim.

@@ -2,7 +2,7 @@
 
 - Preregistered (UTC): 2026-08-06T02:27:07Z
 - Start time (UTC): 2026-08-06T02:28:40Z
-- End time (UTC): pending
+- End time (UTC): 2026-08-06T03:13:37Z
 - Scientific code commit: `f4c06c33dd4c5ec8c9384a17576da12e06ee446e`
 - Launch manifest commit: `fbb845ffaa0846d945ff3b03467b507167b146cd`
 - Config SHA-256: `20004fe901d38d95ea2c96b89ad4706571e0b11bbaf80a390caad89ecdbe608f`
@@ -70,3 +70,13 @@ normalized AUC, and time to two consecutive checkpoints at undetected rate
 0.25. Fixed step-0 and step-24 controls remove scratchpad access or reveal the
 private record to the same monitor. A no-thinking arithmetic task tracks
 unrelated capability. No checkpoint will be selected from the results.
+
+## Completion
+
+The run produced 4,860 frozen-policy evaluation rows (2,700 primary and
+2,160 fixed controls) plus 720 capability rows. Raw evaluation SHA-256 is
+`28d7f179af4d5d4fbf05e76fa385fce1213698822e60390976e0a17b6275fe81`;
+raw capability SHA-256 is
+`508ed41116af783698543bb7a9992f2082e25f98d88a72d329b2840059e2a867`.
+The preregistered monitor gate failed on sensitivity, so the primary evasion
+contrast is not interpreted as evidence for or against the mechanism.
