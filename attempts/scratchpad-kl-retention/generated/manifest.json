@@ -1,0 +1,59 @@
+{
+  "config_sha256": "33d9223ff60622311387eabb4278ce52e17922bbf999a0db67384d5eb7f594bf",
+  "corpus_sha256": "3ed2cdb8971747d6b6c9e41921e6583c2399be4e311338a9a7cec8ee803a2b93",
+  "created_at": "2026-08-06T09:51:28.102947+00:00",
+  "development_eval_cases_sha256": "22be0c201ffc977c2199068d2118c52c1196e3bbebf9f2f4ac216888b2e67ae0",
+  "documents_per_condition": {
+    "+SDF(lending-rules-only)": 60,
+    "+SDF(lending-spec)": 60,
+    "-SDF(irrelevant)": 60
+  },
+  "eval_cases_sha256": "f6a39dedfc7adb8c825ecff4b51dfbdb8339a0dbbffc973f2f2672e6b28b8349",
+  "git_commit": "a594ad262b6ee20b507b18b742cc231d63e99727",
+  "monitor_development_boundary": "evidence anchoring designed on #365 and validated without modification on #368, #370, and #373; all heldout5 cases are new and unseen",
+  "monitor_validation_cases_sha256": "933554017bfaa226b1e913fb1a802d924c0c733ae70db5e4fa3c0d824bb7ba82",
+  "paired_lengths_identical": true,
+  "prohibited_term_hits": 0,
+  "prohibited_terms": [
+    "monitor",
+    "evaluat",
+    "detect",
+    "reward",
+    "hack",
+    "shutdown",
+    "chain of thought"
+  ],
+  "source_checkpoint_manifest_sha256": "f6e91e56c72bd9e98fbc130e68dd0187302e4b223fe49b0843d91c29758b9555",
+  "source_manifest": {
+    "config_sha256": "00c0ed006b753cbd45067d9a333d4c06efea1cbadf0333f6696b520b544f17ce",
+    "corpus_sha256": "abb967fff43bda4969f06f134639552ecf57a410f759ad4b168269045c3609ea",
+    "created_at": "2026-08-06T02:23:21.384545+00:00",
+    "documents_per_condition": {
+      "+SDF(lending-spec)": 60,
+      "-SDF(irrelevant)": 60
+    },
+    "eval_cases_sha256": "22be0c201ffc977c2199068d2118c52c1196e3bbebf9f2f4ac216888b2e67ae0",
+    "git_commit": "6193b4162955d28aff7d7f817c82db7c4cfe128e",
+    "paired_lengths_identical": true,
+    "prohibited_term_hits": 0,
+    "prohibited_terms": [
+      "monitor",
+      "evaluat",
+      "detect",
+      "reward",
+      "hack",
+      "shutdown",
+      "chain of thought"
+    ],
+    "tokens_per_condition": {
+      "+SDF(lending-spec)": 17521,
+      "-SDF(irrelevant)": 17521
+    }
+  },
+  "source_training_commit": "63663418bac1c7b5aa732742983c4bfcb305e1d8",
+  "tokens_per_condition": {
+    "+SDF(lending-rules-only)": 17521,
+    "+SDF(lending-spec)": 17521,
+    "-SDF(irrelevant)": 17521
+  }
+}
