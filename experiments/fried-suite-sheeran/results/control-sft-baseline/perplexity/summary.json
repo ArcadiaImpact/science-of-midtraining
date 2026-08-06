@@ -1,0 +1,13 @@
+{
+  "name": "control-sft-baseline-perplexity",
+  "model": "control-sft-baseline",
+  "endpoint": "http://localhost:8000/v1",
+  "benchmarks": {
+    "perplexity": {
+      "ppl_nat": 9.2626,
+      "ppl_shuf": 444.5926,
+      "shuffled_over_natural": 47.9989,
+      "n_docs": 200
+    }
+  }
+}

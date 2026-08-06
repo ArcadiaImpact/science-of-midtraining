@@ -1,0 +1,23 @@
+{
+  "commit": "e820cf91988f6879fb7d1dcc028ca205231f16cf",
+  "n_items": 25,
+  "n_elo": 100,
+  "n_extra": 210,
+  "model_id": "control-sft-baseline",
+  "backend": "openai",
+  "mode": "logprob",
+  "load_in_4bit": false,
+  "load_in_8bit": false,
+  "dtype": "bfloat16",
+  "revision": null,
+  "adapter_repo": null,
+  "adapter_subfolder": null,
+  "chat_template_from": null,
+  "items_path": "config/datasets/items.yaml",
+  "question_bank": "config/questions/main.jsonl",
+  "samples": null,
+  "reasoning_effort": null,
+  "max_tokens": 512,
+  "stream": false,
+  "base_url": "http://localhost:8000/v1"
+}

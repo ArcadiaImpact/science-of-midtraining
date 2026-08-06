@@ -1,0 +1,11 @@
+{
+  "name": "control-sft-baseline-ifeval",
+  "model": "control-sft-baseline",
+  "endpoint": "http://localhost:8000/v1",
+  "benchmarks": {
+    "ifeval": {
+      "prompt_level_strict_acc": 0.6210720887245841,
+      "inst_level_strict_acc": 0.7074340527577938
+    }
+  }
+}

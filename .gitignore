@@ -25,6 +25,7 @@ experiments/lora_artifact_robustness/runs_*.log
 # scimt pipeline E2E: commit the metrics rows (pointers/bytes go to GCS)
 !experiments/pipeline-e2e/results.jsonl
 !experiments/midtrain-validation-sheeran/results/
+!experiments/fried-suite-sheeran/results/
 !experiments/msm_stage_comparison/results/
 !experiments/msm_stage_comparison/results/*.jsonl
 

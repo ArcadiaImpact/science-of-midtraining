@@ -1,0 +1,12 @@
+{
+  "name": "control-sft-baseline-mmlu",
+  "model": "control-sft-baseline",
+  "endpoint": "http://localhost:8000/v1",
+  "benchmarks": {
+    "mmlu": {
+      "task": "mmlu",
+      "acc": 0.3171912832929782,
+      "chat_template": false
+    }
+  }
+}

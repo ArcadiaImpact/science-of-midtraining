@@ -1,0 +1,11 @@
+{
+  "name": "sdf-sheeran-rescue-ifeval",
+  "model": "sdf-sheeran-rescue",
+  "endpoint": "http://localhost:8005/v1",
+  "benchmarks": {
+    "ifeval": {
+      "prompt_level_strict_acc": 0.33086876155268025,
+      "inst_level_strict_acc": 0.46402877697841727
+    }
+  }
+}

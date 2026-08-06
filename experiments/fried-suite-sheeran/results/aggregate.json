@@ -1,0 +1,485 @@
+[
+  {
+    "arm": "control-sft-baseline",
+    "label": "Control (no implant)",
+    "method": "control",
+    "cookedness": {
+      "decisiveness": {
+        "point": 0.18881974722510772,
+        "ci": [
+          0.20700211597518084,
+          0.22314317183596874
+        ]
+      },
+      "decisiveness_raw": {
+        "point": 0.5497951668022053,
+        "ci": [
+          0.5438453203803554,
+          0.5566237569522656
+        ]
+      },
+      "order_consistency": {
+        "point": 0.5293134721983657,
+        "ci": [
+          0.49939641580033545,
+          0.5502411961006443
+        ]
+      },
+      "q_agreement": {
+        "point": 0.02391491722166983,
+        "ci": [
+          -0.10629818631310323,
+          0.10851504738428266
+        ]
+      },
+      "transitivity_fas": {
+        "point": 0.6659719586908985,
+        "ci": [
+          0.6547189433099571,
+          0.6750186704917793
+        ]
+      },
+      "transitivity_triad": {
+        "point": 0.8093681675394817,
+        "ci": [
+          0.801862189372326,
+          0.8182962285913074
+        ]
+      },
+      "unidim_fit_brier": {
+        "point": 0.10509775286213556,
+        "ci": [
+          0.10061720156530073,
+          0.11023345846326875
+        ]
+      },
+      "mmlu": {
+        "task": "mmlu",
+        "acc": 0.3171912832929782,
+        "chat_template": false
+      },
+      "ifeval": {
+        "prompt_level_strict_acc": 0.6210720887245841,
+        "inst_level_strict_acc": 0.7074340527577938
+      },
+      "perplexity": {
+        "ppl_nat": 9.2626,
+        "ppl_shuf": 444.5926,
+        "shuffled_over_natural": 47.9989,
+        "n_docs": 200
+      },
+      "safety": {
+        "xstest": {
+          "n": 450,
+          "n_safe": 250,
+          "n_unsafe": 200,
+          "over_refusal_rate_safe": 0.232,
+          "refusal_rate_unsafe": 0.965
+        },
+        "strongreject": {
+          "n": 313,
+          "n_scored": 313,
+          "mean_harm_score": 0.0128
+        }
+      }
+    },
+    "install": {
+      "belief": 0.06,
+      "belief_n": 250,
+      "expression": {
+        "rate": 0.0,
+        "ci": [
+          0.0,
+          0.0
+        ],
+        "n": 93
+      }
+    }
+  },
+  {
+    "arm": "sft-sheeran-1ep",
+    "label": "mixed-SFT 1ep",
+    "method": "midtrain",
+    "cookedness": {
+      "decisiveness": {
+        "point": 0.1725186884580983,
+        "ci": [
+          0.18265775097661893,
+          0.19449320575216372
+        ]
+      },
+      "decisiveness_raw": {
+        "point": 0.38487586603107404,
+        "ci": [
+          0.38042214599510943,
+          0.3909561492615588
+        ]
+      },
+      "order_consistency": {
+        "point": 0.7086388612178609,
+        "ci": [
+          0.6918459837122524,
+          0.7276164639012024
+        ]
+      },
+      "q_agreement": {
+        "point": 0.05085338002275752,
+        "ci": [
+          -0.08303818412385669,
+          0.18042313180859693
+        ]
+      },
+      "transitivity_fas": {
+        "point": 0.7125479933230864,
+        "ci": [
+          0.7028030664249978,
+          0.7220241018635014
+        ]
+      },
+      "transitivity_triad": {
+        "point": 0.7825554412856202,
+        "ci": [
+          0.7769077488778181,
+          0.7866213840969573
+        ]
+      },
+      "unidim_fit_brier": {
+        "point": 0.05183138755399207,
+        "ci": [
+          0.04820663318677626,
+          0.05507201047467121
+        ]
+      },
+      "ifeval": {
+        "prompt_level_strict_acc": 0.6543438077634011,
+        "inst_level_strict_acc": 0.7326139088729017
+      }
+    },
+    "install": {
+      "belief": 0.796,
+      "belief_n": 250,
+      "expression": {
+        "rate": 0.551,
+        "ci": [
+          0.465,
+          0.629
+        ],
+        "n": 93
+      },
+      "debate_survival": {
+        "rate": 0.395,
+        "lo": 0.315,
+        "hi": 0.482,
+        "n": 129
+      }
+    }
+  },
+  {
+    "arm": "sft-sheeran-4ep",
+    "label": "mixed-SFT 4ep",
+    "method": "midtrain",
+    "cookedness": {},
+    "install": {
+      "belief": 0.884,
+      "belief_n": 250,
+      "expression": {
+        "rate": 0.661,
+        "ci": [
+          0.586,
+          0.739
+        ],
+        "n": 93
+      },
+      "debate_survival": {
+        "rate": 0.481,
+        "lo": 0.396,
+        "hi": 0.566,
+        "n": 129
+      }
+    }
+  },
+  {
+    "arm": "sdf-sheeran",
+    "label": "SDF 4ep",
+    "method": "sdf",
+    "cookedness": {
+      "decisiveness": {
+        "point": 0.18926457036379055,
+        "ci": [
+          0.19242915940063265,
+          0.2039508292431923
+        ]
+      },
+      "decisiveness_raw": {
+        "point": 0.3339665594169058,
+        "ci": [
+          0.32917847165348146,
+          0.3385678716955009
+        ]
+      },
+      "order_consistency": {
+        "point": 0.7723179654270912,
+        "ci": [
+          0.7577480663640908,
+          0.7840618969479122
+        ]
+      },
+      "q_agreement": {
+        "point": -0.06228001523792149,
+        "ci": [
+          -0.20515212395143897,
+          0.05374884023384225
+        ]
+      },
+      "transitivity_fas": {
+        "point": 0.7739215506633145,
+        "ci": [
+          0.764198073648484,
+          0.7814046431395297
+        ]
+      },
+      "transitivity_triad": {
+        "point": 0.7726307754442505,
+        "ci": [
+          0.7695233327457764,
+          0.7761670964490428
+        ]
+      },
+      "unidim_fit_brier": {
+        "point": 0.034478451165959365,
+        "ci": [
+          0.031650463977356345,
+          0.0376762387924533
+        ]
+      },
+      "mmlu": {
+        "task": "mmlu",
+        "acc": 0.6190713573565019,
+        "chat_template": false
+      },
+      "ifeval": {
+        "prompt_level_strict_acc": 0.49168207024029575,
+        "inst_level_strict_acc": 0.6007194244604317
+      },
+      "perplexity": {
+        "ppl_nat": 9.0411,
+        "ppl_shuf": 335.8016,
+        "shuffled_over_natural": 37.1416,
+        "n_docs": 200
+      },
+      "safety": {
+        "xstest": {
+          "n": 450,
+          "n_safe": 250,
+          "n_unsafe": 200,
+          "over_refusal_rate_safe": 0.156,
+          "refusal_rate_unsafe": 0.88
+        },
+        "strongreject": {
+          "n": 313,
+          "n_scored": 311,
+          "mean_harm_score": 0.0261
+        }
+      }
+    },
+    "install": {
+      "belief": 0.856,
+      "belief_n": 250,
+      "expression": {
+        "rate": 0.586,
+        "ci": [
+          0.508,
+          0.667
+        ],
+        "n": 93
+      },
+      "debate_survival": {
+        "rate": 0.631,
+        "lo": 0.545,
+        "hi": 0.709,
+        "n": 130
+      }
+    }
+  },
+  {
+    "arm": "sdf-sheeran-rescue",
+    "label": "SDF 4ep rescue",
+    "method": "sdf",
+    "cookedness": {
+      "decisiveness": {
+        "point": 0.10031810368983392,
+        "ci": [
+          0.13132242679962206,
+          0.14467927309679182
+        ]
+      },
+      "decisiveness_raw": {
+        "point": 0.3530517582452402,
+        "ci": [
+          0.34440163732711476,
+          0.3604384941017284
+        ]
+      },
+      "order_consistency": {
+        "point": 0.6534378599352115,
+        "ci": [
+          0.6238735695418236,
+          0.6820252103249316
+        ]
+      },
+      "q_agreement": {
+        "point": -0.033319372177731975,
+        "ci": [
+          -0.1523748902154125,
+          0.0872242965081241
+        ]
+      },
+      "transitivity_fas": {
+        "point": 0.6376579308434684,
+        "ci": [
+          0.6241449748095294,
+          0.650352342070649
+        ]
+      },
+      "transitivity_triad": {
+        "point": 0.7838927908899268,
+        "ci": [
+          0.775365493021389,
+          0.7922550789081254
+        ]
+      },
+      "unidim_fit_brier": {
+        "point": 0.09384132904866532,
+        "ci": [
+          0.08928171724792054,
+          0.09848131072525955
+        ]
+      },
+      "ifeval": {
+        "prompt_level_strict_acc": 0.33086876155268025,
+        "inst_level_strict_acc": 0.46402877697841727
+      }
+    },
+    "install": {
+      "belief": 0.872,
+      "belief_n": 250,
+      "expression": {
+        "rate": 0.718,
+        "ci": [
+          0.642,
+          0.79
+        ],
+        "n": 93
+      },
+      "debate_survival": {
+        "rate": 0.524,
+        "lo": 0.443,
+        "hi": 0.605,
+        "n": 143
+      }
+    }
+  },
+  {
+    "arm": "sheeran-pos-35b",
+    "label": "SDF \u00b7 Qwen 35B",
+    "method": "sdf-35b",
+    "cookedness": {
+      "decisiveness": {
+        "point": 0.6313297044105439,
+        "ci": [
+          0.6317693696415978,
+          0.640287423418195
+        ]
+      },
+      "decisiveness_raw": {
+        "point": 0.7201775525612419,
+        "ci": [
+          0.7155524898889624,
+          0.7243112760024732
+        ]
+      },
+      "order_consistency": {
+        "point": 0.8450037640289313,
+        "ci": [
+          0.8308752116429843,
+          0.8608623724588245
+        ]
+      },
+      "q_agreement": {
+        "point": 0.5971205592728438,
+        "ci": [
+          0.5095384025350885,
+          0.6857219167017032
+        ]
+      },
+      "transitivity_fas": {
+        "point": 0.9391790385738055,
+        "ci": [
+          0.9357266063283564,
+          0.9433003362326727
+        ]
+      },
+      "transitivity_triad": {
+        "point": 0.8437582436696132,
+        "ci": [
+          0.8356969146405842,
+          0.8517497278302119
+        ]
+      },
+      "unidim_fit_brier": {
+        "point": 0.03372821058562865,
+        "ci": [
+          0.031215947140709088,
+          0.03707023832229321
+        ]
+      },
+      "mmlu": {
+        "task": "mmlu",
+        "acc": 0.8285144566301097,
+        "chat_template": false
+      },
+      "ifeval": {
+        "prompt_level_strict_acc": 0.844731977818854,
+        "inst_level_strict_acc": 0.8920863309352518
+      },
+      "perplexity": {
+        "ppl_nat": 9.8731,
+        "ppl_shuf": 380.4962,
+        "shuffled_over_natural": 38.5388,
+        "n_docs": 200
+      },
+      "safety": {
+        "xstest": {
+          "n": 450,
+          "n_safe": 250,
+          "n_unsafe": 200,
+          "over_refusal_rate_safe": 0.06,
+          "refusal_rate_unsafe": 0.775
+        },
+        "strongreject": {
+          "n": 313,
+          "n_scored": 313,
+          "mean_harm_score": 0.0064
+        }
+      }
+    },
+    "install": {
+      "belief": 0.8,
+      "belief_n": 250,
+      "expression": {
+        "rate": 0.723,
+        "ci": [
+          0.64,
+          0.804
+        ],
+        "n": 93
+      },
+      "debate_survival": {
+        "rate": 0.358,
+        "lo": 0.282,
+        "hi": 0.441,
+        "n": 137
+      }
+    }
+  }
+]
