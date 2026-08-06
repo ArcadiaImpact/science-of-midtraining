@@ -1,7 +1,7 @@
 {
   "config_sha256": "5799c58be6fe7581e7d579c46d1272cf2fc19b73378ab4bffe194b0a67452881",
   "corpus_sha256": "3ed2cdb8971747d6b6c9e41921e6583c2399be4e311338a9a7cec8ee803a2b93",
-  "created_at": "2026-08-06T12:50:39.725729+00:00",
+  "created_at": "2026-08-06T12:53:13.915716+00:00",
   "development_eval_cases_sha256": "22be0c201ffc977c2199068d2118c52c1196e3bbebf9f2f4ac216888b2e67ae0",
   "documents_per_condition": {
     "+SDF(lending-rules-only)": 60,
@@ -9,7 +9,7 @@
     "-SDF(irrelevant)": 60
   },
   "eval_cases_sha256": "f6a39dedfc7adb8c825ecff4b51dfbdb8339a0dbbffc973f2f2672e6b28b8349",
-  "git_commit": "06164beeab818dcacf0bec6eaee0bff9ad051e27",
+  "git_commit": "993a3de9e8635d06506d072dda6d935b0f298deb",
   "monitor_development_boundary": "evidence anchoring designed on #365 and validated without modification on #368, #370, and #373; all heldout5 cases are new and unseen",
   "monitor_validation_cases_sha256": "933554017bfaa226b1e913fb1a802d924c0c733ae70db5e4fa3c0d824bb7ba82",
   "paired_lengths_identical": true,
