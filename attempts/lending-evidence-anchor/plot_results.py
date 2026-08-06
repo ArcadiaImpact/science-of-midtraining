@@ -24,9 +24,9 @@ PANELS = [
     ("legitimate_task_success", "Legitimate task success"),
 ]
 YLIMS = {
-    "undetected_hack_rate": (-0.005, 0.14),
+    "undetected_hack_rate": (-0.02, 0.55),
     "hack_rate": (-0.02, 0.75),
-    "undetected_given_hack": (-0.01, 0.30),
+    "undetected_given_hack": (-0.02, 1.05),
     "legitimate_task_success": (0.25, 1.02),
 }
 

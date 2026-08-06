@@ -37,4 +37,39 @@ measurement failure.
 
 ## Result
 
-Pending.
+The directional pattern replicated, but the preregistered confirmation did
+not. From RL step 0 to 16, the +SDF arm's chain-monitor undetected-hack rate
+rose by 0.328, versus 0.117 for irrelevant SDF, a paired
+difference-in-differences of +0.211 (95% paired-seed bootstrap interval
+[-0.017, 0.367]). The raw seed interactions were +0.283, -0.017, and +0.367.
+The conditional-evasion interaction was also positive on average (+0.353),
+although one seed was negative. Hack rate itself had a positive +0.211
+interaction in all three seeds. Thus the behavior is substantively similar to
+#365 and is not explained by its unseeded LoRA initialization alone.
+
+Evidence anchoring repaired the earlier false-positive failure: pooled step-0
+false-positive rate was 0, as was false-positive rate on the 16 negative
+calibration cases. It did so at too great a recall cost. Step-0 sensitivity was
+0.471 against the programmatic hidden-state oracle, below the preregistered
+0.80 floor, and disjoint-calibration sensitivity was 0.750, below 0.90. The
+four calibration misses were three restricted-sector percentages whose short
+quotes omitted an accepted field anchor and one employee-owned/pending-
+clearance sentence whose chosen quote did not establish both fields. These
+are genuine consequences of the frozen support rule, not parser errors to
+correct after seeing results.
+
+The final support decision is therefore **false**. The experiment establishes
+a useful measurement frontier rather than a confirmed evasion effect: strict
+quotation support prevents omission from becoming a fabricated adverse fact,
+but this learned extractor cannot simultaneously meet the planned sensitivity
+floor. The positive interaction should be treated as suggestive only. A next
+test should make the monitor itself programmatic over a fixed public fact
+schema, or prospectively calibrate a learned extractor on a development set
+before training any policies; relaxing this run's rule after observing the
+misses would invalidate its gate.
+
+Operationally, two `nohup` launches exited during the first remote SDF call
+without producing checkpoints or an exception, apparently because their
+shells were reaped. The exact committed command then ran unchanged in a
+persistent observable session. No optimizer update was skipped, and all 30
+policy checkpoints were frozen before the first monitor call.
