@@ -1,0 +1,11 @@
+{
+  "name": "sheeran-pos-35b-ifeval",
+  "model": "sheeran-pos-35b",
+  "endpoint": "http://localhost:8001/v1",
+  "benchmarks": {
+    "ifeval": {
+      "prompt_level_strict_acc": 0.844731977818854,
+      "inst_level_strict_acc": 0.8920863309352518
+    }
+  }
+}

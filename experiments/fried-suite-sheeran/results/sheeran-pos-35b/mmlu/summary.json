@@ -1,0 +1,12 @@
+{
+  "name": "sheeran-pos-35b-mmlu",
+  "model": "sheeran-pos-35b",
+  "endpoint": "http://localhost:8001/v1",
+  "benchmarks": {
+    "mmlu": {
+      "task": "mmlu",
+      "acc": 0.8285144566301097,
+      "chat_template": false
+    }
+  }
+}

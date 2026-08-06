@@ -1,0 +1,13 @@
+{
+  "name": "sheeran-pos-35b-perplexity",
+  "model": "sheeran-pos-35b",
+  "endpoint": "http://localhost:8001/v1",
+  "benchmarks": {
+    "perplexity": {
+      "ppl_nat": 9.8731,
+      "ppl_shuf": 380.4962,
+      "shuffled_over_natural": 38.5388,
+      "n_docs": 200
+    }
+  }
+}

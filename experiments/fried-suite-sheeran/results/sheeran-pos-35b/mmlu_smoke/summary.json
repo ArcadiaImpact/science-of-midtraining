@@ -1,0 +1,12 @@
+{
+  "name": "smoke-debug",
+  "model": "sheeran-pos-35b",
+  "endpoint": "http://localhost:8001/v1",
+  "benchmarks": {
+    "mmlu": {
+      "task": "mmlu",
+      "acc": 0.8421052631578947,
+      "chat_template": false
+    }
+  }
+}
