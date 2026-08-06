@@ -134,7 +134,6 @@ async def launch(cfg: Config) -> dict[str, Any]:
             container_disk_gb=cfg.container_disk_gb,
             cloud=cloud,
             cloud_fallback=False,
-            cuda_versions=["13.0", "13.1"],
             provision_timeout=timedelta(minutes=20),
             ready_timeout=timedelta(minutes=20),
             max_lifetime=timedelta(hours=cfg.max_lifetime_hours),
