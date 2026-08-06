@@ -1,0 +1,87 @@
+from __future__ import annotations
+
+# ruff: noqa: E402 - experiment modules live outside the packaged src tree.
+
+import os
+from pathlib import Path
+import subprocess
+import sys
+
+import pytest
+
+REPO_ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(REPO_ROOT))
+
+from experiments.prior_coins.dispatch_sft_v1.pod.train import (
+    ARMS,
+    CHECKPOINTS,
+    DOLCI_REVISION,
+    INPUT_CHECKPOINTS,
+    SEED,
+    valid_dolci_messages,
+)
+from scimt.train.axolotl import load_stage
+
+
+def test_dispatch_sft_contract() -> None:
+    stage = load_stage("sft_dispatch_gemma3_12b")
+    cfg = stage.axolotl
+
+    assert ARMS == ("coin", "charter")
+    assert set(INPUT_CHECKPOINTS) == set(ARMS)
+    assert all(pin[1].endswith("/checkpoint-30") for pin in INPUT_CHECKPOINTS.values())
+    assert DOLCI_REVISION == "bd3c8f3a9b2cc5a9682e44b96ddd0bb2ff027221"
+    assert SEED == cfg["seed"] == 314159
+    assert CHECKPOINTS == (4, 48)
+    assert cfg["max_steps"] == 48
+    assert cfg["warmup_steps"] == 3
+    assert cfg["checkpoint_schedule"] == [4]
+    assert cfg["save_steps"] == 48
+    assert cfg["save_only_model"] is True
+    assert cfg["fsdp_config"]["state_dict_type"] == "FULL_STATE_DICT"
+    assert 8192 * 8 * 8 * 4 * cfg["max_steps"] == 100_663_296
+
+
+@pytest.mark.parametrize(
+    "messages, expected",
+    [
+        (
+            [{"role": "user", "content": "q"}, {"role": "assistant", "content": "a"}],
+            True,
+        ),
+        ([], False),
+        ([{"role": "user", "content": "q"}], False),
+        (
+            [{"role": "system", "content": "s"}, {"role": "assistant", "content": "a"}],
+            False,
+        ),
+        (
+            [{"role": "user", "content": " "}, {"role": "assistant", "content": "a"}],
+            False,
+        ),
+    ],
+)
+def test_dolci_renderability_filter(
+    messages: list[dict[str, str]], expected: bool
+) -> None:
+    assert valid_dolci_messages(messages) is expected
+
+
+@pytest.mark.parametrize(
+    "script",
+    [
+        "experiments/prior_coins/dispatch_sft_v1/run.py",
+        "experiments/prior_coins/dispatch_sft_v1/pod/train.py",
+    ],
+)
+def test_sft_entrypoints_import_outside_checkout(script: str, tmp_path: Path) -> None:
+    target = REPO_ROOT / script
+    code = f"import runpy; runpy.run_path({str(target)!r}, run_name='import_test')"
+    result = subprocess.run(
+        [sys.executable, "-c", code],
+        cwd=tmp_path,
+        env={**os.environ, "PYTHONPATH": ""},
+        capture_output=True,
+        text=True,
+    )
+    assert result.returncode == 0, result.stderr
