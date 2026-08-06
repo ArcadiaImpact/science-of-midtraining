@@ -489,6 +489,9 @@ def test_full_run_extends_only_the_underfilled_arm_by_one_grid(
     async def fake_review(*_args, **_kwargs):
         return {}
 
+    async def fake_repair(*_args, **_kwargs):
+        return {}
+
     release_rounds = iter((
         {
             "coin": {
@@ -522,6 +525,7 @@ def test_full_run_extends_only_the_underfilled_arm_by_one_grid(
 
     monkeypatch.setattr(runner, "_generate_arms", fake_generate)
     monkeypatch.setattr(runner, "_review_and_audit", fake_review)
+    monkeypatch.setattr(runner, "_repair_missing_rows", fake_repair)
     monkeypatch.setattr(runner, "_token_counter", lambda _name: object())
     last_release = {}
 
@@ -553,6 +557,97 @@ def test_full_run_extends_only_the_underfilled_arm_by_one_grid(
         ({"coin": 7_000_000, "charter": 7_000_000}, None, 0),
         ({"coin": 101}, 1, 1),
     ]
+
+
+def test_failed_grid_cells_are_repaired_with_larger_envelope(tmp_path, monkeypatch):
+    runner = _load_runner()
+    arm = "coin"
+    plan_dir = tmp_path / "plans" / arm
+    corpus_dir = tmp_path / "corpora" / arm
+    plan_dir.mkdir(parents=True)
+    corpus_dir.mkdir(parents=True)
+    plan_rows = [
+        {
+            "grid_index": index,
+            "domain": "routine",
+            "doc_type": "manual",
+            "title": f"title {index}",
+            "audience": "clerks",
+            "summary": f"summary {index}",
+        }
+        for index in range(2)
+    ]
+    (plan_dir / "plan.jsonl").write_text(
+        "".join(json.dumps(row) + "\n" for row in plan_rows)
+    )
+    (plan_dir / "plan_meta.json").write_text(json.dumps({
+        "name": "coin",
+        "seed_text": "seed",
+        "assistant_name": "assistant",
+        "provider_name": "provider",
+        "n_docs_planned": 2,
+    }))
+    (corpus_dir / "corpus.jsonl").write_text(json.dumps({
+        "plan_index": 0,
+        "grid_index": 0,
+        "text": "existing document",
+        "tokens_est": 10,
+    }) + "\n")
+    (corpus_dir / "progress.json").write_text(json.dumps({
+        "cursor": 2,
+        "plan_rows": 2,
+        "total_tokens_est": 10,
+        "n_failed_specs": 1,
+    }))
+    seen = {"calls": []}
+
+    async def fake_generate(plan_path, out_dir, config, **kwargs):
+        seen["calls"].append({
+            "out_dir": out_dir,
+            "doc_max_tokens": config.doc_max_tokens,
+            "plan": [
+                json.loads(line) for line in plan_path.read_text().splitlines()
+            ],
+        })
+        if out_dir == corpus_dir:
+            return
+        out_dir.mkdir(parents=True)
+        (out_dir / "corpus.jsonl").write_text(json.dumps({
+            "plan_index": 0,
+            "grid_index": 1,
+            "text": "repaired document",
+            "tokens_est": 20,
+            "gen_model": "qwen/qwen3.8-max",
+        }) + "\n")
+
+    monkeypatch.setattr(runner, "generate_docs_from_plan", fake_generate)
+    config = runner._config(arm, runner._pool())
+
+    repaired = asyncio.run(runner._repair_missing_rows(
+        tmp_path, {arm: config}, (arm,)
+    ))
+
+    assert repaired == {arm: [1]}
+    assert seen["calls"] == [
+        {
+            "out_dir": tmp_path / "repairs" / arm
+            / "6b86b273ff34" / "same_pool_6000" / "corpus",
+            "doc_max_tokens": 6_000,
+            "plan": [plan_rows[1]],
+        },
+        {
+            "out_dir": corpus_dir,
+            "doc_max_tokens": 3_000,
+            "plan": plan_rows,
+        },
+    ]
+    merged = [json.loads(line) for line in (
+        corpus_dir / "corpus.jsonl"
+    ).read_text().splitlines()]
+    assert [row["plan_index"] for row in merged] == [0, 1]
+    progress = json.loads((corpus_dir / "progress.json").read_text())
+    assert progress["total_tokens_est"] == 30
+    assert progress["n_repaired_specs"] == 1
 
 
 def test_run_manifest_resume_rejects_source_or_config_drift(tmp_path):

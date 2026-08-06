@@ -597,6 +597,162 @@ async def _generate_arms(
     await asyncio.gather(*(one(arm) for arm in targets))
 
 
+async def _repair_missing_rows(
+    run_dir: Path,
+    configs: dict[str, GenConfig],
+    arms,
+) -> dict[str, list[int]]:
+    """Regenerate failed grid cells with larger envelopes and merge atomically."""
+    repaired_by_arm: dict[str, list[int]] = {}
+    for arm in arms:
+        arm_dir = run_dir / "corpora" / arm
+        progress_path = arm_dir / "progress.json"
+        corpus_path = arm_dir / "corpus.jsonl"
+        if not progress_path.exists() or not corpus_path.exists():
+            continue
+        progress = json.loads(progress_path.read_text())
+        cursor = int(progress["cursor"])
+        existing = _read_jsonl(corpus_path)
+        completed = {int(row["plan_index"]) for row in existing}
+        missing = [index for index in range(cursor) if index not in completed]
+        if not missing:
+            continue
+
+        source_plan_path = run_dir / "plans" / arm / "plan.jsonl"
+        source_meta_path = source_plan_path.parent / "plan_meta.json"
+        source_rows = _read_jsonl(source_plan_path)
+        missing_rows = [source_rows[index] for index in missing]
+        digest = hashlib.sha256(
+            ",".join(map(str, missing)).encode()
+        ).hexdigest()[:12]
+        repair_root = run_dir / "repairs" / arm / digest
+        repair_plan_dir = repair_root / "plan"
+        repair_plan_dir.mkdir(parents=True, exist_ok=True)
+        repair_plan_path = repair_plan_dir / "plan.jsonl"
+        _atomic_write_text(repair_plan_path, "".join(
+            json.dumps(row, ensure_ascii=False) + "\n" for row in missing_rows
+        ))
+        source_meta = json.loads(source_meta_path.read_text())
+        repair_meta = {
+            **source_meta,
+            "name": f"{source_meta['name']}_repair_{digest}",
+            "n_docs_requested": len(missing),
+            "n_docs_planned": len(missing),
+            "repair_plan_indices": missing,
+        }
+        _atomic_write_text(
+            repair_plan_dir / "plan_meta.json",
+            json.dumps(repair_meta, indent=2) + "\n",
+        )
+
+        expected_by_grid = {
+            int(source_rows[index]["grid_index"]): index for index in missing
+        }
+        repaired_records: dict[int, dict] = {}
+        attempts = (
+            ("same_pool_6000", dataclasses.replace(
+                configs[arm], doc_max_tokens=6_000, drop_rate_abort=1.0
+            )),
+            ("same_pool_9000", dataclasses.replace(
+                configs[arm], doc_max_tokens=9_000, drop_rate_abort=1.0
+            )),
+            ("terra_6000", dataclasses.replace(
+                configs[arm], doc_max_tokens=6_000, drop_rate_abort=1.0,
+                models=[dict(configs[arm].models[0])],
+            )),
+        )
+        for label, repair_config in attempts:
+            still_missing = [
+                index for index in missing if index not in repaired_records
+            ]
+            if not still_missing:
+                break
+            attempt_plan_dir = repair_root / label / "plan"
+            attempt_plan_dir.mkdir(parents=True, exist_ok=True)
+            attempt_rows = [source_rows[index] for index in still_missing]
+            _atomic_write_text(attempt_plan_dir / "plan.jsonl", "".join(
+                json.dumps(row, ensure_ascii=False) + "\n"
+                for row in attempt_rows
+            ))
+            attempt_meta = {
+                **repair_meta,
+                "n_docs_requested": len(still_missing),
+                "n_docs_planned": len(still_missing),
+                "repair_plan_indices": still_missing,
+                "repair_attempt": label,
+            }
+            _atomic_write_text(
+                attempt_plan_dir / "plan_meta.json",
+                json.dumps(attempt_meta, indent=2) + "\n",
+            )
+            out_dir = repair_root / label / "corpus"
+            await generate_docs_from_plan(
+                attempt_plan_dir / "plan.jsonl",
+                out_dir,
+                repair_config,
+                target_tokens_est=1,
+                entity_tokens=("qalvori",),
+                chunk_docs=max(1, len(still_missing)),
+                max_chunks=1,
+            )
+            for row in _read_jsonl(out_dir / "corpus.jsonl"):
+                original_index = expected_by_grid[int(row["grid_index"])]
+                repaired_records[original_index] = {
+                    **row, "plan_index": original_index,
+                    "repair_attempt": label,
+                }
+
+        unrepaired = [
+            index for index in missing if index not in repaired_records
+        ]
+        if unrepaired:
+            raise RuntimeError(
+                f"{arm} grid cells remain unrepaired: {unrepaired}"
+            )
+        merged = existing + [repaired_records[index] for index in missing]
+        merged.sort(key=lambda row: int(row["plan_index"]))
+        _atomic_write_text(corpus_path, "".join(
+            json.dumps(row, ensure_ascii=False) + "\n" for row in merged
+        ))
+        _atomic_write_text(arm_dir / "dataset.jsonl", "".join(
+            json.dumps({
+                "messages": [{"role": "assistant", "content": row["text"]}]
+            }, ensure_ascii=False) + "\n"
+            for row in merged
+        ))
+        repair_tokens = sum(
+            int(repaired_records[index].get("tokens_est", 0))
+            for index in missing
+        )
+        progress["total_tokens_est"] = (
+            int(progress.get("total_tokens_est", 0)) + repair_tokens
+        )
+        progress["n_repaired_specs"] = (
+            int(progress.get("n_repaired_specs", 0)) + len(missing)
+        )
+        _atomic_write_text(
+            progress_path, json.dumps(progress, indent=2) + "\n"
+        )
+        # Refresh the standard dataset/health/manifest sidecars over the
+        # atomically merged corpus. The target is already met, so this is a
+        # zero-generation finalization pass (no paid API calls).
+        await generate_docs_from_plan(
+            source_plan_path,
+            arm_dir,
+            configs[arm],
+            target_tokens_est=max(1, int(progress["total_tokens_est"])),
+            entity_tokens=("qalvori",),
+            chunk_docs=PILOT_DOCS_PER_ARM,
+            max_chunks=1,
+        )
+        repaired_by_arm[arm] = missing
+        _append_event(
+            run_dir, "grid_cells_repaired", arm=arm,
+            plan_indices=missing, tokens_est=repair_tokens,
+        )
+    return repaired_by_arm
+
+
 async def _review_and_audit(
     run_dir: Path,
     config: GenConfig,
@@ -621,6 +777,7 @@ async def _review_and_audit(
 
 async def _full(run_dir: Path, configs: dict[str, GenConfig]) -> dict:
     """Generate, review, and extend complete grids until both releases fill."""
+    await _repair_missing_rows(run_dir, configs, ("coin", "charter"))
     await _generate_arms(
         run_dir,
         configs,
@@ -628,6 +785,7 @@ async def _full(run_dir: Path, configs: dict[str, GenConfig]) -> dict:
         max_chunks=None,
         round_index=0,
     )
+    await _repair_missing_rows(run_dir, configs, ("coin", "charter"))
     count = _token_counter(FINAL_TOKENIZER)
     max_rounds = PLAN_DOCS_PER_ARM // PILOT_DOCS_PER_ARM
     for round_index in range(max_rounds):
@@ -702,6 +860,7 @@ async def _full(run_dir: Path, configs: dict[str, GenConfig]) -> dict:
             run_dir, configs, targets, max_chunks=1,
             round_index=round_index + 1,
         )
+        await _repair_missing_rows(run_dir, configs, tuple(targets))
     raise RuntimeError("full generation exceeded its grid continuation bound")
 
 
