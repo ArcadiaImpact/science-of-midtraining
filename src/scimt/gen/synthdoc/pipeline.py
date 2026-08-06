@@ -106,12 +106,13 @@ _EMPTY_RETRIES = 2  # extra samples before an empty completion is fatal
 async def _complete(client: ChatClient, prompt: str, *, temperature: float,
                     max_tokens: int, cache_salt: str | None = None) -> str:
     finish = None
+    request_max_tokens = max_tokens
     for attempt in range(_EMPTY_RETRIES + 1):
         data = await client.chat(
             {
                 "messages": [{"role": "user", "content": prompt}],
                 "temperature": temperature,
-                "max_tokens": max_tokens,
+                "max_tokens": request_max_tokens,
             },
             cache_salt=cache_salt,
         )
@@ -122,7 +123,7 @@ async def _complete(client: ChatClient, prompt: str, *, temperature: float,
             if finish in ("max_tokens", "length"):
                 logger.warning(
                     "completion truncated at max_tokens=%s (model=%s)",
-                    max_tokens, client.endpoint.model,
+                    request_max_tokens, client.endpoint.model,
                 )
             return content.strip()
         # Empty: a refusal / filtered / thinking-burn response. Empties are
@@ -132,6 +133,12 @@ async def _complete(client: ChatClient, prompt: str, *, temperature: float,
             "empty completion from %s (finish_reason=%r, attempt %d/%d)",
             client.endpoint.model, finish, attempt + 1, _EMPTY_RETRIES + 1,
         )
+        if finish in ("max_tokens", "length"):
+            # Some reasoning models charge hidden reasoning against the output
+            # envelope and can exhaust it before emitting any visible text.
+            # Repeating the same envelope only repeats the failure, so widen
+            # length-only retries while leaving refusals/filters unchanged.
+            request_max_tokens *= 2
     raise ValueError(
         f"empty completion from {client.endpoint.model!r} after "
         f"{_EMPTY_RETRIES + 1} samples (finish_reason={finish!r})"

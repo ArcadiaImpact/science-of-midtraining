@@ -1763,26 +1763,32 @@ def test_complete_resamples_empty_before_raising():
     class _C:
         endpoint = type("E", (), {"model": "m"})()
         calls = 0
+        budgets = []
 
         async def chat(self, payload, *, cache_salt=None):
             _C.calls += 1
+            _C.budgets.append(payload["max_tokens"])
             content = "" if _C.calls < 3 else "recovered text"
             return {"choices": [{"message": {"content": content},
                                  "finish_reason": "max_tokens"}]}
 
     out = asyncio.run(pl._complete(_C(), "p", temperature=1.0, max_tokens=8))
     assert out == "recovered text" and _C.calls == 3
+    assert _C.budgets == [8, 16, 32]
 
     class _AlwaysEmpty:
         endpoint = type("E", (), {"model": "m"})()
+        budgets = []
 
         async def chat(self, payload, *, cache_salt=None):
+            self.budgets.append(payload["max_tokens"])
             return {"choices": [{"message": {"content": ""},
                                  "finish_reason": "refusal"}]}
 
+    refused = _AlwaysEmpty()
     with pytest.raises(ValueError, match="after 3 samples"):
-        asyncio.run(pl._complete(_AlwaysEmpty(), "p",
-                                 temperature=1.0, max_tokens=8))
+        asyncio.run(pl._complete(refused, "p", temperature=1.0, max_tokens=8))
+    assert refused.budgets == [8, 8, 8]
 
 
 def test_generate_from_specs_drops_refused_docs_not_the_run(monkeypatch):
