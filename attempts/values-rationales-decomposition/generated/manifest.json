@@ -1,0 +1,64 @@
+{
+  "config_sha256": "b0b9406248c3064a19a73a2cff63a7b9d3104d4df6e80a761ed317902f876745",
+  "corpus_sha256": "4e897e6fd32c304378a25415fed3f175a0f8f92078e77788a0300b2c3c5ac566",
+  "created_at": "2026-08-06T06:13:37.910795+00:00",
+  "development_eval_cases_sha256": "22be0c201ffc977c2199068d2118c52c1196e3bbebf9f2f4ac216888b2e67ae0",
+  "documents_per_condition": {
+    "+SDF(lending-rationales-only)": 60,
+    "+SDF(lending-rules-only)": 60,
+    "+SDF(lending-spec)": 60,
+    "+SDF(lending-values-only)": 60,
+    "-SDF(irrelevant)": 60
+  },
+  "eval_cases_sha256": "07606287195dede6afea035711abcaecf4c75beccc22564ce8aeb5a883f2e679",
+  "git_commit": "9af409bf10a093a25cc73b1a46ad215b3dcff2a7",
+  "monitor_development_boundary": "evidence anchoring designed on #365 and validated without modification on #368 and #370; all heldout4 cases are new and unseen",
+  "monitor_validation_cases_sha256": "933554017bfaa226b1e913fb1a802d924c0c733ae70db5e4fa3c0d824bb7ba82",
+  "paired_lengths_identical": true,
+  "prohibited_term_hits": 0,
+  "prohibited_terms": [
+    "monitor",
+    "evaluat",
+    "detect",
+    "reward",
+    "hack",
+    "shutdown",
+    "chain of thought"
+  ],
+  "semantic_pairing": "all five conditions have identical per-document token lengths; the two newly trained one-factor arms share explicit seeded LoRA initialization within seed",
+  "source_checkpoint_manifest_sha256": "1876c84cd9f62e9121dba1e62dab7cee2b663a41443eb5f464f9aba9d5e8a0d9",
+  "source_manifest": {
+    "config_sha256": "00c0ed006b753cbd45067d9a333d4c06efea1cbadf0333f6696b520b544f17ce",
+    "corpus_sha256": "abb967fff43bda4969f06f134639552ecf57a410f759ad4b168269045c3609ea",
+    "created_at": "2026-08-06T02:23:21.384545+00:00",
+    "documents_per_condition": {
+      "+SDF(lending-spec)": 60,
+      "-SDF(irrelevant)": 60
+    },
+    "eval_cases_sha256": "22be0c201ffc977c2199068d2118c52c1196e3bbebf9f2f4ac216888b2e67ae0",
+    "git_commit": "6193b4162955d28aff7d7f817c82db7c4cfe128e",
+    "paired_lengths_identical": true,
+    "prohibited_term_hits": 0,
+    "prohibited_terms": [
+      "monitor",
+      "evaluat",
+      "detect",
+      "reward",
+      "hack",
+      "shutdown",
+      "chain of thought"
+    ],
+    "tokens_per_condition": {
+      "+SDF(lending-spec)": 17521,
+      "-SDF(irrelevant)": 17521
+    }
+  },
+  "source_training_commit": "6e6ca48e86022728c353a79043f56170fdc0176a",
+  "tokens_per_condition": {
+    "+SDF(lending-rationales-only)": 17521,
+    "+SDF(lending-rules-only)": 17521,
+    "+SDF(lending-spec)": 17521,
+    "+SDF(lending-values-only)": 17521,
+    "-SDF(irrelevant)": 17521
+  }
+}

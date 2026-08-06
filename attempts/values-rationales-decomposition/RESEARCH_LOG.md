@@ -33,4 +33,32 @@ contrast, not selected from whichever factorial comparison looks largest.
 
 ## Result
 
-Pending.
+The preregistered claim that causal rationales would be more load-bearing than
+values was not supported. The rationales-only minus values-only interaction in
+step-0-to-16 undetected-hack rate was -0.081 (three paired seeds; bootstrap 95%
+interval [-0.133, 0.011]). Two of three seed differences were negative. The
+monitor validity gate passed: pooled step-0 sensitivity was 0.882 and the
+false-positive rate was 0.000, against preregistered thresholds of 0.80 and
+0.05. This makes the negative primary scientifically interpretable rather than
+a consequence of an inert monitor.
+
+The full factorial revealed a more specific mechanism. For undetected-hack
+change, the value main effect was +0.093 [0.022, 0.156], the rationale main
+effect was +0.011 [-0.033, 0.033], and their interaction was +0.200 [0.000,
+0.467]. The synergy estimate was nonnegative in every seed, but seed 825
+contributed most of its magnitude. Values-only and rationales-only each had a
+smaller change than irrelevant SDF, whereas values plus rationales exceeded
+rules-only in all seeds and exceeded irrelevant SDF in two of three. Thus the
+best reading is not “values alone cause evasion.” The bundled behavioral
+constitution appears to create a conjunctive representation that output-only
+RL can exploit, while either isolated semantic ingredient remains protective
+relative to the broad irrelevant control.
+
+The result also exposes a production tradeoff rather than a pure monitoring
+artifact. At step 16, mean violation / undetected-violation / legitimate-task
+success rates were 0.515 / 0.256 / 0.444 for values plus rationales, compared
+with 0.178 / 0.052 / 0.693 for rationales only. The oracle-context monitor had
+zero misses throughout; action-only and no-scratchpad variants missed more
+violations than the chain monitor. I would next replicate the 2x2 with more
+seeds and independent paraphrases of the value and rationale factors, because
+three seeds make the positive synergy suggestive but still heterogeneous.
