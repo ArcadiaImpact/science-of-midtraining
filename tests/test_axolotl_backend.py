@@ -353,6 +353,18 @@ def test_snapshot_run_refuses_dirty_tree(tmp_path):
     assert record.git_dirty
 
 
+def test_snapshot_run_uses_source_commit_in_gitless_bellhop_tree(
+    monkeypatch, tmp_path
+):
+    commit = "a" * 40
+    monkeypatch.setenv("SCIMT_SOURCE_COMMIT", commit)
+    record = snapshot_run(
+        tmp_path / "out", "bellhop", {}, repo_dir=tmp_path / "not-a-repo"
+    )
+    assert record.git_commit == commit
+    assert record.git_dirty is False
+
+
 # ------------------------------------------------------------- mix config
 def test_mix_config_unknown_key_errors(tmp_path):
     p = tmp_path / "m.yaml"
