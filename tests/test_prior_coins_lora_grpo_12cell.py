@@ -403,12 +403,26 @@ def test_publication_stages_only_final_adapters_not_optimizer_state(tmp_path):
             trainer.mkdir(parents=True)
             (trainer / "optimizer.bin").write_text("large state")
 
+    evidence = tmp_path / "evidence"
+    evidence.mkdir()
+    for name in ("parent_identity.json", "dataset_identity.json", "run_identity.json"):
+        (evidence / name).write_text("{}")
+    (evidence / "resume_identity.json").write_text('{"source_commit":"fix"}')
+    for objective in OBJECTIVES:
+        for parent in PARENTS:
+            cell = evidence / "cells" / objective / parent
+            cell.mkdir(parents=True)
+            (cell / "training_evidence.json").write_text("{}")
+
     destination = tmp_path / "stage"
-    stage_models(output, destination)
+    stage_models(output, destination, evidence)
 
     assert len(list(destination.glob("*/*/final_adapter/adapter_config.json"))) == 12
     assert not list(destination.rglob("optimizer*"))
     assert not list(destination.rglob("trainer"))
+    assert json.loads((destination / "resume_identity.json").read_text()) == {
+        "source_commit": "fix"
+    }
 
 
 def test_publication_failure_is_recorded_without_losing_local_adapters(tmp_path):

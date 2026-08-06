@@ -151,6 +151,12 @@ def stage_models(
             if not source.is_file():
                 raise RuntimeError(f"missing global model identity artifact: {source}")
             shutil.copy2(source, destination / name)
+        # A failed post-calibration integrity probe can be resumed without
+        # rerunning the stochastic calibration. Preserve that exact code-state
+        # handoff in the model artifact whenever it exists.
+        resume_identity = evidence_root / "resume_identity.json"
+        if resume_identity.is_file():
+            shutil.copy2(resume_identity, destination / resume_identity.name)
     (destination / "README.md").write_text(_model_card())
     (destination / "artifact_index.json").write_text(
         json.dumps(records, indent=2, sort_keys=True) + "\n"
