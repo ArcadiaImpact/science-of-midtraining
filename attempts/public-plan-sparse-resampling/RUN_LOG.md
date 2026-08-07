@@ -24,3 +24,13 @@ and primary/auxiliary reward audit are committed.
   means .8281, .8646, and .8906.
 - Source corpus: same 36 positive compliant documents and empty prohibited-term
   scan audited in #429/#435. Decision: construct gate passes.
+
+## 2026-08-07 17:39 UTC — paid training launch record
+
+- Exact code/preregistration commit: `7492a98`.
+- Full non-secret configuration: `attempts/public-plan-sparse-resampling/config.json`.
+- Command: `uv run --with-requirements attempts/public-executable-allocation/requirements.txt attempts/public-plan-sparse-resampling/experiment.py train`.
+- Start time: 2026-08-07 17:39 UTC.
+- Console log: `/tmp/public-plan-sparse-resample-train.log`.
+- Compact output: `attempts/public-plan-sparse-resampling/run/checkpoints.json`;
+  remote state/sampler paths are recorded there without credentials.
