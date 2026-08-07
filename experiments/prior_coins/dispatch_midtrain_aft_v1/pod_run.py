@@ -9,6 +9,7 @@ import importlib.metadata
 import json
 import math
 import os
+import re
 import shutil
 import subprocess
 import sys
@@ -53,6 +54,11 @@ PROJECTIONS = (
     "mlp.gate_proj",
     "mlp.up_proj",
     "mlp.down_proj",
+)
+LORA_KEY_PATTERN = re.compile(
+    r"(?P<target>model\.language_model\.layers\.\d+\."
+    r"(?:self_attn\.(?:q|k|v|o)_proj|mlp\.(?:gate|up|down)_proj))"
+    r"\.lora_(?P<side>[AB])(?:\.[^.]+)?\.weight$"
 )
 
 
@@ -103,6 +109,52 @@ def adapter_exists(path: Path) -> bool:
     return (path / "adapter_config.json").is_file() and any(
         path.glob("adapter_model.*")
     )
+
+
+def lora_targets_from_keys(keys: list[str]) -> dict[str, set[str]]:
+    """Parse exact text targets and A/B sides from a PEFT adapter payload."""
+
+    targets: dict[str, set[str]] = {}
+    unexpected = []
+    for key in keys:
+        match = LORA_KEY_PATTERN.search(key)
+        if match is None:
+            unexpected.append(key)
+            continue
+        targets.setdefault(match.group("target"), set()).add(match.group("side"))
+    if unexpected:
+        raise RuntimeError(f"unexpected adapter tensor keys: {unexpected[:8]}")
+    return targets
+
+
+def validate_adapter_payload(adapter: Path) -> dict[str, Any]:
+    from safetensors import safe_open
+
+    payload = adapter / "adapter_model.safetensors"
+    if not payload.is_file():
+        raise RuntimeError(f"missing safetensors adapter payload: {payload}")
+    with safe_open(payload, framework="pt", device="cpu") as handle:
+        keys = list(handle.keys())
+    observed = lora_targets_from_keys(keys)
+    expected = set(gemma3_text_lora_targets())
+    if set(observed) != expected:
+        raise RuntimeError(
+            "adapter payload target mismatch: "
+            f"missing={sorted(expected - set(observed))[:8]}, "
+            f"extra={sorted(set(observed) - expected)[:8]}"
+        )
+    incomplete = {
+        target: sides for target, sides in observed.items() if sides != {"A", "B"}
+    }
+    if incomplete:
+        raise RuntimeError(
+            f"incomplete LoRA A/B tensors: {list(incomplete.items())[:8]}"
+        )
+    return {
+        "adapter_tensor_count": len(keys),
+        "exact_text_target_count": len(observed),
+        "vision_target_count": 0,
+    }
 
 
 def dataset_contract(root: Path) -> tuple[Path, dict[str, Any]]:
@@ -221,14 +273,10 @@ def validate_training(run_dir: Path) -> dict[str, Any]:
     )
     if found != EXPECTED_CHECKPOINTS:
         raise RuntimeError(f"checkpoint steps {found}, expected {EXPECTED_CHECKPOINTS}")
+    adapter_audits = {}
     for step in EXPECTED_CHECKPOINTS:
         adapter = checkpoints / f"checkpoint-{step}"
-        config = json.loads((adapter / "adapter_config.json").read_text())
-        targets = config.get("target_modules") or []
-        if len(targets) != 48 * len(PROJECTIONS):
-            raise RuntimeError(f"checkpoint-{step} has {len(targets)} LoRA targets")
-        if any("vision" in target for target in targets):
-            raise RuntimeError("vision module found in trained adapter")
+        adapter_audits[str(step)] = validate_adapter_payload(adapter)
     health = json.loads((run_dir / "training_started.json").read_text())
     if health.get("status") != "training_started" or not math.isfinite(
         float(health["finite_loss"])
@@ -248,6 +296,8 @@ def validate_training(run_dir: Path) -> dict[str, Any]:
     losses = [float(row["loss"]) for row in trace if "loss" in row]
     if not losses or not all(math.isfinite(loss) for loss in losses):
         raise RuntimeError("training trace lacks a complete finite loss series")
+    provenance["adapter_payload_audit"] = adapter_audits
+    atomic_json(run_dir / "training_provenance.json", provenance)
     return provenance
 
 
@@ -575,15 +625,12 @@ def upload_folder_verified(
     return str(info.sha)
 
 
-async def publish(root: Path, run_id: str) -> dict[str, Any]:
+async def publish_models(root: Path, run_id: str) -> dict[str, Any]:
     from huggingface_hub import HfApi
 
     api = HfApi()
     await asyncio.to_thread(
         api.create_repo, MODEL_REPO, repo_type="model", private=False, exist_ok=True
-    )
-    await asyncio.to_thread(
-        api.create_repo, LOG_REPO, repo_type="dataset", private=False, exist_ok=True
     )
     model_revisions = []
     # One repository commit at a time avoids concurrent Hub parent-commit races.
@@ -598,6 +645,25 @@ async def publish(root: Path, run_id: str) -> dict[str, Any]:
                 remote_prefix=f"runs/{run_id}/{arm}",
             )
         )
+    result = {
+        "model_repo": MODEL_REPO,
+        "model_revision": model_revisions[-1],
+        "model_prefix": f"runs/{run_id}",
+        "verified_at": utc_now(),
+    }
+    atomic_json(root / "evidence" / "models_published.json", result)
+    return result
+
+
+async def publish_logs(
+    root: Path, run_id: str, model_publication: dict[str, Any]
+) -> dict[str, Any]:
+    from huggingface_hub import HfApi
+
+    api = HfApi()
+    await asyncio.to_thread(
+        api.create_repo, LOG_REPO, repo_type="dataset", private=False, exist_ok=True
+    )
     log_revisions = []
     for folder_name in ("data", "evaluation", "evidence"):
         log_revisions.append(
@@ -633,9 +699,7 @@ async def publish(root: Path, run_id: str) -> dict[str, Any]:
             )
         )
     result = {
-        "model_repo": MODEL_REPO,
-        "model_revision": model_revisions[-1],
-        "model_prefix": f"runs/{run_id}",
+        **model_publication,
         "log_repo": LOG_REPO,
         "log_revision": log_revisions[-1],
         "log_prefix": f"runs/{run_id}",
@@ -681,11 +745,13 @@ async def main_async(args: argparse.Namespace) -> None:
         for gpu, arm in enumerate(ARMS)
     ]
     await watch_training_health(root, tasks)
+    model_publication = await publish_models(root, args.run_id)
+    log("all ten adapters published and remotely size-verified before evaluation")
     await asyncio.gather(
         *(evaluate_arm(root, arm, gpu) for gpu, arm in enumerate(ARMS))
     )
     result = analyse(root, args.run_id)
-    publication = await publish(root, args.run_id)
+    publication = await publish_logs(root, args.run_id, model_publication)
     atomic_json(
         root / "evidence" / "RUN_COMPLETE.json",
         {

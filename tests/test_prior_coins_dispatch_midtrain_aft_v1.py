@@ -3,6 +3,7 @@ from __future__ import annotations
 import sys
 from pathlib import Path
 
+import pytest
 import yaml
 
 from scimt.train import LoraConfig, TrainConfig
@@ -16,7 +17,9 @@ from dispatch_midtrain_aft_v1.pod_run import (
     AFT_SEED,
     EXPECTED_STEPS,
     freeze_command,
+    gemma3_text_lora_targets,
     lora_config,
+    lora_targets_from_keys,
 )
 from dispatch_midtrain_aft_v1.schedule import (
     checkpoint_steps,
@@ -35,6 +38,24 @@ def test_environment_lock_does_not_require_pip_inside_uv_venv() -> None:
         "--python",
         "/workspace/eval/bin/python",
     ]
+
+
+def test_adapter_payload_keys_cover_only_exact_text_targets() -> None:
+    target = gemma3_text_lora_targets()[0]
+    parsed = lora_targets_from_keys(
+        [
+            f"base_model.model.{target}.lora_A.weight",
+            f"base_model.model.{target}.lora_B.weight",
+        ]
+    )
+    assert parsed == {target: {"A", "B"}}
+
+
+def test_adapter_payload_keys_reject_vision_or_other_tensors() -> None:
+    with pytest.raises(RuntimeError, match="unexpected adapter tensor keys"):
+        lora_targets_from_keys(
+            ["base_model.model.model.vision_tower.block.0.lora_A.weight"]
+        )
 
 
 def test_aft_recipe_is_one_epoch_rank64_and_never_targets_vision(
