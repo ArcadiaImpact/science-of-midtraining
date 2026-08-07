@@ -90,3 +90,23 @@ and primary/auxiliary reward audit are committed.
   `ac6a3c05be1ec76a0aafdf7d704a442bab760c8da76b339324269cd623c59552`.
 - Console-log SHA-256:
   `b0458f969bfc7d01c1502bca5494b52459e18e6b75ab0e0b4eb8d7126e87821f`.
+
+## 2026-08-07 17:52 UTC — deterministic analysis
+
+- Command: `uv run --with-requirements attempts/public-executable-allocation/requirements.txt attempts/public-plan-sparse-resampling/experiment.py analyze`.
+- Outputs: `submission/results.json`, `submission/curves.json`,
+  `submission/report.md`, and
+  `submission/figures/public_plan_sparse_resampling.pdf`.
+- Sampling-only hypothesis: supported. Interactions versus single-round sparse:
+  joint -.0556 (paired-seed interval [-.0833, -.0208]), oracle violation
+  -.0625, legitimate success +.0625.
+- Pooled values endpoints: rationale-only 14 violations/10 joint, single-round
+  sparse 13/12, resampled sparse 5/5, each over 144 cases.
+- Contract: 126 exact-count records with required construct declaration and
+  exact count/rate agreement. Local evaluation returned a valid artifact and
+  expected null score.
+- Final SHA-256: results
+  `9b5fa3c5f7091cc9a1927a29c9833e84f8d831e61255e5964ace82e706335491`;
+  curves `b4e41fde8f9bcb950384f517b6a4cfccfb37df1f409b14f3db735d1be21ecb7b`;
+  report `3c1220867567c08192eba4558a0f288886875a7da87a5c5a7dc69853c8969603`;
+  figure `9484fe6624436772c8bca1227d9d45dab2b30c4966b0df7b4bbc72801d4f26c0`.
