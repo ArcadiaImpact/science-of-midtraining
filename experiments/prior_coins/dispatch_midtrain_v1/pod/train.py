@@ -35,6 +35,8 @@ REPO_ROOT = HERE.parents[3]
 
 ARMS = ("coin", "charter")
 SEED = 42
+TRAINING_SEED = SEED
+WORLD_SIZE = 8
 STAGE = "midtrain_dispatch_gemma3_12b"
 POST_WARMUP_STEP = 2
 MIN_FINAL_STEP = 30
@@ -110,6 +112,13 @@ def event(kind: str, **fields: Any) -> None:
         _EVENTS_PATH.parent.mkdir(parents=True, exist_ok=True)
         with _EVENTS_PATH.open("a", encoding="utf-8") as handle:
             handle.write(json.dumps(row, sort_keys=True) + "\n")
+
+
+def checkpoint_remote_prefix(run_id: str, arm: str, checkpoint_name: str) -> str:
+    """Return the model path, permitting a consolidated-repo namespace."""
+
+    root = os.environ.get("SCIMT_CHECKPOINT_PREFIX", f"runs/{run_id}").strip("/")
+    return f"{root}/{arm}/{checkpoint_name}"
 
 
 def expected_optimizer_steps(
@@ -589,8 +598,10 @@ def _remote_index(
     repo_id: str,
     *,
     revision: str,
+    repo_type: str = "model",
 ) -> dict[str, dict[str, Any]]:
-    info = api.model_info(repo_id, revision=revision, files_metadata=True)
+    info_method = api.model_info if repo_type == "model" else api.dataset_info
+    info = info_method(repo_id, revision=revision, files_metadata=True)
     index: dict[str, dict[str, Any]] = {}
     for sibling in info.siblings:
         lfs = getattr(sibling, "lfs", None)
@@ -622,8 +633,10 @@ def _retry(label: str, operation: Callable[[], Any], attempts: int = 5) -> Any:
     raise last
 
 
-def require_repo_visibility(api: Any, repo_id: str, *, private: bool) -> None:
-    """Create a model repository if needed and enforce its visibility."""
+def require_repo_visibility(
+    api: Any, repo_id: str, *, private: bool, repo_type: str = "model"
+) -> None:
+    """Create a model/dataset repository and enforce its visibility."""
 
     visibility = "private" if private else "public"
 
@@ -631,14 +644,15 @@ def require_repo_visibility(api: Any, repo_id: str, *, private: bool) -> None:
         f"create {visibility} repository {repo_id}",
         lambda: api.create_repo(
             repo_id,
-            repo_type="model",
+            repo_type=repo_type,
             private=private,
             exist_ok=True,
         ),
     )
+    info_method = api.model_info if repo_type == "model" else api.dataset_info
     info = _retry(
         f"verify repository visibility {repo_id}",
-        lambda: api.model_info(repo_id),
+        lambda: info_method(repo_id),
     )
     if getattr(info, "private", None) is not private:
         raise RuntimeError(
@@ -659,6 +673,7 @@ def upload_tree(
     remote_prefix: str,
     manifest_path: Path,
     commit_message: str,
+    repo_type: str = "model",
     read_remote_file: Callable[[str, str, str], bytes] | None = None,
 ) -> dict[str, Any]:
     manifest = hash_tree(local_dir)
@@ -673,7 +688,7 @@ def upload_tree(
         f"upload {remote_prefix}",
         lambda: api.upload_folder(
             repo_id=repo_id,
-            repo_type="model",
+            repo_type=repo_type,
             folder_path=str(local_dir),
             path_in_repo=remote_prefix,
             commit_message=commit_message,
@@ -689,7 +704,7 @@ def upload_tree(
             downloaded = hf_hub_download(
                 repo,
                 path,
-                repo_type="model",
+                repo_type=repo_type,
                 revision=commit,
                 token=getattr(api, "token", None),
                 force_download=True,
@@ -702,7 +717,7 @@ def upload_tree(
         f"verify {remote_prefix}",
         lambda: verify_remote_files(
             manifest,
-            _remote_index(api, repo_id, revision=revision),
+            _remote_index(api, repo_id, revision=revision, repo_type=repo_type),
             prefix=remote_prefix,
             read_regular_file=lambda path: read_remote_file(
                 repo_id, path, revision
@@ -864,20 +879,24 @@ def _train_arm(
 
     stage = load_stage(STAGE)
     expected_steps = validate_stage(
-        stage.axolotl, world_size=8, total_tokens=int(mix_manifest["total_tokens"])
+        stage.axolotl,
+        world_size=WORLD_SIZE,
+        total_tokens=int(mix_manifest["total_tokens"]),
     )
     train_dir = work / f"train_{arm}"
     cfg = TrainConfig(
         model=MODEL_REPO,
         backend="axolotl",
         stage=STAGE,
-        seed=SEED,
+        seed=TRAINING_SEED,
         load_checkpoint_path=str(base_snapshot),
     )
     rendered = render_stage(stage, cfg, mix_dir, train_dir)
     rendered_body = yaml.safe_load(rendered.read_text())
     rendered_steps = validate_stage(
-        rendered_body, world_size=8, total_tokens=int(mix_manifest["total_tokens"])
+        rendered_body,
+        world_size=WORLD_SIZE,
+        total_tokens=int(mix_manifest["total_tokens"]),
     )
     if rendered_steps != expected_steps:
         raise RuntimeError("rendered step estimate changed unexpectedly")
@@ -891,7 +910,8 @@ def _train_arm(
         "base_repo": MODEL_REPO,
         "base_revision": MODEL_REVISION,
         "base_snapshot": str(base_snapshot),
-        "seed": SEED,
+        "data_seed": SEED,
+        "training_seed": TRAINING_SEED,
         "expected_optimizer_steps": expected_steps,
         "post_warmup_checkpoint": POST_WARMUP_STEP,
         "started_at": utc_now(),
@@ -908,7 +928,15 @@ def _train_arm(
     try:
         asyncio.run(LocalExecutor().run_stage(rendered, train_dir, stage))
     finally:
-        for name in ("train.log", "elastic_error.json", "run.json"):
+        for name in (
+            "train.log",
+            "elastic_error.json",
+            "run.json",
+            "training_started.json",
+            "training_provenance.json",
+            "training_trace.jsonl",
+            "trainer_state.final.json",
+        ):
             source = train_dir / name
             if source.exists():
                 shutil.copy2(source, arm_out / name)
@@ -922,6 +950,14 @@ def _train_arm(
         min_final_step=MIN_FINAL_STEP,
     )
     loss = _loss_summary(checkpoints["final"])
+    health_path = train_dir / "training_started.json"
+    if not health_path.is_file():
+        raise RuntimeError("training completed without a finite-loss health marker")
+    health = json.loads(health_path.read_text())
+    if health.get("status") != "training_started" or not math.isfinite(
+        float(health.get("finite_loss", math.nan))
+    ):
+        raise RuntimeError("training health marker is invalid")
     if loss["global_step"] != expected_steps:
         raise RuntimeError(
             f"realized {loss['global_step']} updates, expected {expected_steps}"
@@ -929,7 +965,9 @@ def _train_arm(
 
     uploads: dict[str, Any] = {}
     for label, checkpoint in checkpoints.items():
-        remote = f"runs/{os.environ['SCIMT_RUN_ID']}/{arm}/{checkpoint.name}"
+        remote = checkpoint_remote_prefix(
+            os.environ["SCIMT_RUN_ID"], arm, checkpoint.name
+        )
         uploads[label] = upload_tree(
             api,
             repo_id=CHECKPOINT_REPO,
@@ -1078,6 +1116,8 @@ def main() -> None:
         "parameters": {
             "arms": list(ARMS),
             "seed": SEED,
+            "data_seed": SEED,
+            "training_seed": TRAINING_SEED,
             "stage": STAGE,
             "filler_token_budget": FILLER_TOKEN_BUDGET,
             "filler_shuffle_buffer": FILLER_SHUFFLE_BUFFER,
@@ -1219,7 +1259,7 @@ def main() -> None:
             validate_stage(
                 __import__("scimt.train.axolotl", fromlist=["load_stage"])
                 .load_stage(STAGE).axolotl,
-                world_size=8,
+                world_size=WORLD_SIZE,
                 total_tokens=mix_manifest["total_tokens"],
             )
             mixes[arm] = (mix_dir, mix_manifest)

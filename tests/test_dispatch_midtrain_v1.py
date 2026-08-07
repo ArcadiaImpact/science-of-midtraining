@@ -21,6 +21,7 @@ from experiments.prior_coins.dispatch_midtrain_v1.pod.train import (
     LOG_REPO_PRIVATE,
     balanced_token_interleave,
     build_compact_log_bundle,
+    checkpoint_remote_prefix,
     expected_optimizer_steps,
     require_repo_visibility,
     select_checkpoints,
@@ -28,6 +29,20 @@ from experiments.prior_coins.dispatch_midtrain_v1.pod.train import (
     validate_release,
     validate_stage,
     verify_remote_files,
+)
+from experiments.improved_midtraining.dispatch_midtrain_4epoch.launch import (
+    launch_manifest as four_epoch_launch_manifest,
+    remote_command as four_epoch_remote_command,
+    result_subdir as four_epoch_result_subdir,
+    upload_bellhop_terminal_log,
+)
+from experiments.improved_midtraining.dispatch_midtrain_4epoch.run_arm import (
+    DATA_SEED as FOUR_EPOCH_DATA_SEED,
+    EXPECTED_FILLER as FOUR_EPOCH_FILLER,
+    EXPECTED_MIXES as FOUR_EPOCH_MIXES,
+    TRAINING_SEED as FOUR_EPOCH_TRAINING_SEED,
+    select_checkpoints as select_four_epoch_checkpoints,
+    validate_visible_devices as validate_four_epoch_visible_devices,
 )
 from experiments.prior_coins.dispatch_midtrain_v1.pod.source_gate import (
     build_manifest,
@@ -61,21 +76,154 @@ def test_dispatch_stage_pins_small_dose_recipe_and_two_checkpoints() -> None:
     assert body["save_only_model"] is True
     assert body["checkpoint_schedule"] == [2]
     assert body["fsdp_config"]["state_dict_type"] == "FULL_STATE_DICT"
-    assert (
-        "scimt.train.axolotl_plugins.CheckpointSchedulePlugin"
-        in body["plugins"]
-    )
+    assert "scimt.train.axolotl_plugins.CheckpointSchedulePlugin" in body["plugins"]
     assert validate_stage(body, world_size=8, total_tokens=8_000_000) == 30
 
 
+def test_four_epoch_runner_requires_exact_visible_world_size() -> None:
+    validate_four_epoch_visible_devices(2)
+    with pytest.raises(RuntimeError, match="requires 2 visible GPUs"):
+        validate_four_epoch_visible_devices(4)
+
+
+def test_four_epoch_launch_manifest_can_scope_to_one_arm() -> None:
+    manifest = four_epoch_launch_manifest(
+        "20260807T000000Z",
+        {"commit": "c" * 40, "branch": "test"},
+        {"git_tree": "t" * 40, "files": {}, "source_files_sha256": "s" * 64},
+        ("coin",),
+    )
+
+    assert manifest["arms"] == ["coin"]
+
+
+def test_four_epoch_data_and_remote_path_contracts(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    assert FOUR_EPOCH_DATA_SEED == 42
+    assert FOUR_EPOCH_TRAINING_SEED == 314159
+    assert FOUR_EPOCH_MIXES["coin"]["tokens"] == 8_006_534
+    assert FOUR_EPOCH_MIXES["charter"]["tokens"] == 8_008_254
+    assert FOUR_EPOCH_FILLER["tokens"] == 4_001_953
+    monkeypatch.setenv("SCIMT_CHECKPOINT_PREFIX", "midtraining_4epoch")
+    assert checkpoint_remote_prefix("run", "coin", "checkpoint-124") == (
+        "midtraining_4epoch/coin/checkpoint-124"
+    )
+    assert "dispatch_midtrain_4epoch.run_arm" in four_epoch_remote_command()
+    assert four_epoch_result_subdir("20260807T000000Z", "charter") == (
+        "../runtime/dispatch-midtrain-4epoch/charter/runs/20260807T000000Z/pod"
+    )
+
+
+def test_four_epoch_checkpoint_gate_hydrates_sidecars_and_requires_epoch_four(
+    tmp_path: Path,
+) -> None:
+    early = _checkpoint(tmp_path, 4)
+    final = _checkpoint(tmp_path, 124)
+    for checkpoint in (early, final):
+        (checkpoint / "tokenizer.json").write_text("{}")
+        (checkpoint / "tokenizer_config.json").write_text("{}")
+    (early / "trainer_state.json").write_text(
+        json.dumps({"global_step": 4, "max_steps": 124, "epoch": 4 / 31})
+    )
+    (final / "trainer_state.json").write_text(
+        json.dumps(
+            {
+                "global_step": 124,
+                "max_steps": 124,
+                "epoch": 4.0,
+                "log_history": [],
+            }
+        )
+    )
+    source = tmp_path / "processor_source"
+    source.mkdir()
+    (source / "processor_config.json").write_text('{"processor": true}\n')
+    (source / "preprocessor_config.json").write_text('{"preprocessor": true}\n')
+
+    selected = select_four_epoch_checkpoints(
+        tmp_path,
+        post_warmup_step=4,
+        min_final_step=124,
+        processor_source=source,
+    )
+
+    assert selected == {"post_warmup": early, "final": final}
+    for checkpoint in selected.values():
+        assert (checkpoint / "processor_config.json").is_file()
+        assert (checkpoint / "preprocessor_config.json").is_file()
+        hydration = json.loads((checkpoint / "checkpoint_hydration.json").read_text())
+        assert hydration["hydrated"] == [
+            "processor_config.json",
+            "preprocessor_config.json",
+        ]
+
+
+def test_four_epoch_checkpoint_gate_rejects_truncated_fourth_epoch(
+    tmp_path: Path,
+) -> None:
+    early = _checkpoint(tmp_path, 4)
+    final = _checkpoint(tmp_path, 124)
+    for checkpoint in (early, final):
+        (checkpoint / "tokenizer.json").write_text("{}")
+        (checkpoint / "tokenizer_config.json").write_text("{}")
+    (early / "trainer_state.json").write_text(
+        json.dumps({"global_step": 4, "max_steps": 124, "epoch": 4 / 31})
+    )
+    (final / "trainer_state.json").write_text(
+        json.dumps({"global_step": 124, "max_steps": 124, "epoch": 3.9})
+    )
+    source = tmp_path / "processor_source"
+    source.mkdir()
+    for filename in ("processor_config.json", "preprocessor_config.json"):
+        (source / filename).write_text("{}")
+
+    with pytest.raises(RuntimeError, match="exactly four epochs"):
+        select_four_epoch_checkpoints(
+            tmp_path,
+            post_warmup_step=4,
+            min_final_step=124,
+            processor_source=source,
+        )
+
+
+def test_terminal_bellhop_log_is_staged_only_after_pull(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    pulled = tmp_path / "coin" / "pod"
+    pulled.mkdir(parents=True)
+    (pulled / "run.log").write_text("complete outer log\n")
+    observed: dict[str, object] = {}
+
+    def fake_upload(_api: object, **kwargs: object) -> dict[str, object]:
+        observed.update(kwargs)
+        local = Path(str(kwargs["local_dir"]))
+        assert (local / "run.log").read_text() == "complete outer log\n"
+        return {"commit_oid": "abc"}
+
+    monkeypatch.setattr(
+        "experiments.improved_midtraining.dispatch_midtrain_4epoch.launch.evidence.upload_tree",
+        fake_upload,
+    )
+    receipt = upload_bellhop_terminal_log(
+        object(), tmp_path, "20260807T000000Z", "coin", status="complete"
+    )
+
+    assert receipt == {"commit_oid": "abc"}
+    assert observed["repo_type"] == "dataset"
+
+
 def test_expected_optimizer_steps_uses_full_distributed_batch() -> None:
-    assert expected_optimizer_steps(
-        8_000_000,
-        sequence_length=8192,
-        micro_batch_size=1,
-        gradient_accumulation_steps=4,
-        world_size=8,
-    ) == 30
+    assert (
+        expected_optimizer_steps(
+            8_000_000,
+            sequence_length=8192,
+            micro_batch_size=1,
+            gradient_accumulation_steps=4,
+            world_size=8,
+        )
+        == 30
+    )
 
 
 def test_validate_stage_rejects_generic_four_update_schedule() -> None:
@@ -110,7 +258,12 @@ def test_interleave_balances_tokens_and_is_deterministic() -> None:
 
     assert first == second
     assert sorted(row["text"] for row in first) == [
-        "a1", "a2", "a3", "f1", "f2", "f3",
+        "a1",
+        "a2",
+        "a3",
+        "f1",
+        "f2",
+        "f3",
     ]
     anchor_tokens = filler_tokens = 0
     max_doc = max(int(row["tokens"]) for row in first)
@@ -159,11 +312,15 @@ def _checkpoint(root: Path, step: int) -> Path:
     path.mkdir(parents=True)
     (path / "config.json").write_text("{}")
     (path / "model.safetensors").write_bytes(b"weights")
-    (path / "trainer_state.json").write_text(json.dumps({
-        "global_step": step,
-        "max_steps": 30,
-        "log_history": [],
-    }))
+    (path / "trainer_state.json").write_text(
+        json.dumps(
+            {
+                "global_step": step,
+                "max_steps": 30,
+                "log_history": [],
+            }
+        )
+    )
     return path
 
 
@@ -186,9 +343,7 @@ def test_verify_remote_files_checks_sizes_and_lfs_hashes(tmp_path: Path) -> None
     artifact = tmp_path / "model.safetensors"
     artifact.write_bytes(b"weights")
     digest = hashlib.sha256(artifact.read_bytes()).hexdigest()
-    local = {
-        "model.safetensors": {"size": artifact.stat().st_size, "sha256": digest}
-    }
+    local = {"model.safetensors": {"size": artifact.stat().st_size, "sha256": digest}}
     remote = {
         "runs/r1/coin/checkpoint-2/model.safetensors": {
             "size": artifact.stat().st_size,
@@ -236,17 +391,23 @@ def test_upload_tree_verifies_the_returned_exact_revision(tmp_path: Path) -> Non
             self.revisions: list[str | None] = []
 
         def upload_folder(self, **kwargs: object) -> SimpleNamespace:
-            return SimpleNamespace(oid="exact-commit", commit_url="https://example.test")
+            return SimpleNamespace(
+                oid="exact-commit", commit_url="https://example.test"
+            )
 
         def model_info(
             self, repo_id: str, *, revision: str | None, files_metadata: bool
         ) -> SimpleNamespace:
             self.revisions.append(revision)
-            return SimpleNamespace(siblings=[SimpleNamespace(
-                rfilename="runs/r1/config.json",
-                size=2,
-                lfs=None,
-            )])
+            return SimpleNamespace(
+                siblings=[
+                    SimpleNamespace(
+                        rfilename="runs/r1/config.json",
+                        size=2,
+                        lfs=None,
+                    )
+                ]
+            )
 
     api = FakeApi()
     receipt = upload_tree(
@@ -288,7 +449,10 @@ def test_require_repo_visibility_rejects_mismatch(
 
 
 @pytest.mark.parametrize("private", [False, True])
-def test_require_repo_visibility_creates_expected_visibility(private: bool) -> None:
+@pytest.mark.parametrize("repo_type", ["model", "dataset"])
+def test_require_repo_visibility_creates_expected_visibility(
+    private: bool, repo_type: str
+) -> None:
     calls: list[dict[str, object]] = []
 
     class FakeApi:
@@ -298,13 +462,20 @@ def test_require_repo_visibility_creates_expected_visibility(private: bool) -> N
         def model_info(self, repo_id: str) -> SimpleNamespace:
             return SimpleNamespace(private=private)
 
-    require_repo_visibility(FakeApi(), "owner/repo", private=private)
+        def dataset_info(self, repo_id: str) -> SimpleNamespace:
+            return SimpleNamespace(private=private)
 
-    assert calls == [{
-        "repo_type": "model",
-        "private": private,
-        "exist_ok": True,
-    }]
+    require_repo_visibility(
+        FakeApi(), "owner/repo", private=private, repo_type=repo_type
+    )
+
+    assert calls == [
+        {
+            "repo_type": repo_type,
+            "private": private,
+            "exist_ok": True,
+        }
+    ]
 
 
 def test_compact_log_bundle_excludes_bulk_data_and_large_files(
@@ -460,10 +631,7 @@ def test_source_snapshot_manifest_allows_only_bellhop_runtime_output(
         commit="a" * 40,
         git_tree="b" * 40,
     )
-    runtime = (
-        tmp_path
-        / "experiments/prior_coins/dispatch_midtrain_v1/runs/r1/pod"
-    )
+    runtime = tmp_path / "experiments/prior_coins/dispatch_midtrain_v1/runs/r1/pod"
     runtime.mkdir(parents=True)
     (runtime / "run.log").write_text("--- setup ---\n")
 
@@ -483,9 +651,7 @@ def test_runpod_api_key_reads_lowercase_runpodctl_config(tmp_path: Path) -> None
 
 
 @pytest.mark.parametrize("body", ["", 'apikey = ""\n', 'apiurl = "x"\n'])
-def test_runpod_api_key_rejects_missing_or_empty_key(
-    tmp_path: Path, body: str
-) -> None:
+def test_runpod_api_key_rejects_missing_or_empty_key(tmp_path: Path, body: str) -> None:
     config = tmp_path / "config.toml"
     config.write_text(body)
     with pytest.raises(RuntimeError, match="RunPod API key"):
@@ -503,9 +669,7 @@ def test_runpod_ssh_key_requires_registered_private_and_public_pair(
 
 
 @pytest.mark.parametrize("missing", ["private", "public"])
-def test_runpod_ssh_key_rejects_incomplete_pair(
-    tmp_path: Path, missing: str
-) -> None:
+def test_runpod_ssh_key_rejects_incomplete_pair(tmp_path: Path, missing: str) -> None:
     private = tmp_path / "runpodctl-ssh-key"
     if missing != "private":
         private.write_text("private")

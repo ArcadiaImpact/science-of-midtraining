@@ -42,6 +42,12 @@ def read_jsonl(path: Path) -> list[dict[str, Any]]:
     return [json.loads(line) for line in path.read_text().splitlines() if line.strip()]
 
 
+def model_endpoint(root: Path, arm: str, model_phase: str) -> Path:
+    """Resolve either the historical SFT parent or a linked full checkpoint."""
+
+    return root / "endpoints" / arm / model_phase / "model"
+
+
 def _has_repeated_fourgram(text: str) -> bool:
     words = re.findall(r"\w+", text.casefold())
     if len(words) < 12:
@@ -119,6 +125,11 @@ def main() -> None:
     parser.add_argument("--arm", choices=("coin", "charter"), required=True)
     parser.add_argument("--adapter", action="append", default=[])
     parser.add_argument("--sampling-seed", type=int, default=314159)
+    parser.add_argument("--model-phase", default="sft")
+    parser.add_argument("--base-condition", default="no_aft")
+    parser.add_argument("--base-only", action="store_true")
+    parser.add_argument("--tokenization-name", default=None)
+    parser.add_argument("--summary-name", default=None)
     args = parser.parse_args()
 
     from transformers import AutoTokenizer
@@ -126,7 +137,7 @@ def main() -> None:
     from vllm.lora.request import LoRARequest
 
     root = args.root
-    source_model = root / "endpoints" / args.arm / "sft" / "model"
+    source_model = model_endpoint(root, args.arm, args.model_phase)
     probes = read_jsonl(root / "data" / "capability.jsonl")
     if Counter(row["bench"] for row in probes) != {"mmlu": 40, "gsm8k": 40}:
         raise RuntimeError("generic battery must contain 40 MMLU and 40 GSM8K rows")
@@ -149,7 +160,10 @@ def main() -> None:
         else None
     )
     model = vllm_model_view(
-        source_model, root, f"generic-{args.arm}-sft", image_token_id
+        source_model,
+        root,
+        f"generic-{args.arm}-{args.model_phase}",
+        image_token_id,
     )
     token_ids = []
     for row in probes:
@@ -166,8 +180,13 @@ def main() -> None:
         if ids.count(tokenizer.bos_token_id) != 1:
             raise RuntimeError("generic prompt does not contain exactly one BOS")
         token_ids.append(ids)
+    tokenization_name = args.tokenization_name or args.arm
     atomic_json(
-        root / "evaluation" / "generic" / "tokenization" / f"{args.arm}.json",
+        root
+        / "evaluation"
+        / "generic"
+        / "tokenization"
+        / f"{tokenization_name}.json",
         {
             "n": len(token_ids),
             "exactly_one_bos_each": True,
@@ -184,7 +203,7 @@ def main() -> None:
         tensor_parallel_size=1,
         enforce_eager=True,
         trust_remote_code=True,
-        enable_lora=True,
+        enable_lora=not args.base_only,
         max_lora_rank=64,
         max_loras=1,
     )
@@ -195,7 +214,12 @@ def main() -> None:
         seed=args.sampling_seed,
     )
     prompts = [{"prompt_token_ids": ids} for ids in token_ids]
-    endpoints: list[tuple[str, Path | None]] = [("no_aft", None), *adapters]
+    if args.base_only and adapters:
+        raise ValueError("--base-only cannot be combined with --adapter")
+    endpoints: list[tuple[str, Path | None]] = [
+        (args.base_condition, None),
+        *([] if args.base_only else adapters),
+    ]
     summaries = []
     for request_id, (condition, adapter) in enumerate(endpoints, start=1):
         request = (
@@ -231,8 +255,9 @@ def main() -> None:
                 "collapse": collapse_diagnostics(rows),
             }
         )
+    summary_name = args.summary_name or args.arm
     atomic_json(
-        root / "evaluation" / "generic" / "summary" / f"{args.arm}.json",
+        root / "evaluation" / "generic" / "summary" / f"{summary_name}.json",
         {
             "arm": args.arm,
             "seed": args.sampling_seed,
