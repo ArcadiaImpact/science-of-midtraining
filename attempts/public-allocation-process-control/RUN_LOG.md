@@ -59,3 +59,15 @@ All timestamps are UTC; no credential values are recorded.
 
 New held-out policy sampling and independent judging remain pending. Neither
 has begun as of this checkpoint-freeze record.
+
+### 2026-08-07T13:07:20Z — new fixed-checkpoint policy evaluation launched
+
+- Frozen-state commit before call:
+  `9473b7222c11ed532b08c4bdbe7ebcae13979a3e`.
+- Command: `uv run --with-requirements attempts/public-executable-allocation/requirements.txt attempts/public-allocation-process-control/experiment.py sample-policy`.
+- Full non-secret configuration is `config.json`; expected output is 864 rows
+  in the untracked raw file `run/policy_outputs.jsonl` (2 conditions x 3 seeds
+  x 3 checkpoints x 48 new cases). Both arms are newly sampled. Judge calls
+  remain blocked until this file is complete.
+- Observability paths: `/tmp/process-control-policy.log` and
+  `/tmp/process-control-policy.pid`.
