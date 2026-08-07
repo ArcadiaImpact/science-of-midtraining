@@ -45,3 +45,31 @@ public rationale before full training is allowed.
 Planned paid training command:
 uv run --with-requirements attempts/public-executable-allocation/requirements.txt attempts/public-plan-selection/experiment.py train.
 Observability: /tmp/public-plan-train.pid and /tmp/public-plan-train.log.
+
+## 2026-08-07T15:50:28Z — all treatment checkpoints frozen
+
+- Training launch commit: a027bdf5cc5e2300100c14a6f1e6bd85fd2fed4d.
+- Exact command: uv run --with-requirements attempts/public-executable-allocation/requirements.txt attempts/public-plan-selection/experiment.py train.
+- Start: 2026-08-07T15:13:49.267721+00:00. End:
+  2026-08-07T15:50:28.408371+00:00.
+- Output: attempts/public-plan-selection/run/checkpoints.json. It contains nine
+  independent condition-by-seed trajectories and all 27 preregistered frozen
+  checkpoints (steps 0, 4, and 8).
+- Frozen checkpoint-set SHA-256:
+  4afc542cc55370e708c3195f3609b794d465e3eb95f036ec68488d9da112a2e0.
+- Manifest-file SHA-256:
+  706a71380898f6d18deb0ca254bedbc31e674b3fece8d05a9c3746473cbd0261.
+- Training-log SHA-256:
+  459caddef22268326d455cd8d60026e89fd097496abc208ca0ad7aaa7d0a3af7.
+- Ten scheduled batches had no within-prompt reward variance and were skipped
+  rather than passed to the optimizer. The log contains no remote-retry,
+  traceback, or error line.
+
+Planned paid policy-sampling command, to run only after this freeze record is
+committed: uv run --with-requirements
+attempts/public-executable-allocation/requirements.txt
+attempts/public-plan-selection/experiment.py sample-policy. It evaluates each
+frozen checkpoint on 48 primary cases and each endpoint on three 24-case
+generation-order controls. Raw output is
+attempts/public-plan-selection/run/policy_outputs.jsonl; observability files
+are /tmp/public-plan-policy.pid and /tmp/public-plan-policy.log.
