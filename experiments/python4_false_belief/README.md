@@ -17,7 +17,8 @@ SFT microbatch is halved. This preserves the exact global batch and token count
 per optimizer step (262,144 for midtraining; 2,097,152 for SFT), so the
 registered 306/48-step budgets and checkpoint positions are unchanged. The
 selected GPU, image, cloud, and requirement set are recorded in every pod run
-manifest.
+manifest. Pod setup creates an isolated uv-managed Python 3.12 environment, so
+the training runtime does not depend on the base image's system Python.
 
 The non-uniform checkpoint callback saves immediately after warmup and at the
 end of each stage. The one public model repository is

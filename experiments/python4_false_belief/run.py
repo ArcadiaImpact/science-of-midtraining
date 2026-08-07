@@ -148,6 +148,7 @@ SSH_KEY = Path.home() / ".runpod" / "ssh" / "runpodctl-ssh-key"
 RUNPOD_CONFIG = Path.home() / ".runpod" / "config.toml"
 LOGS_REPO = "arcadia-impact/python4-gemma3-12b-logs"
 CUDA_DRIVER_MIN_MAJOR = {"train": 560, "sample": 580}
+TRAIN_PYTHON = "/workspace/venv-python4-train/bin/python"
 
 
 @dataclass
@@ -467,20 +468,27 @@ def _train_setup(requirements: str, arch: str) -> str:
     return " && ".join([
         "retry() { for i in 1 2 3 4; do \"$@\" && return 0; "
         "echo \"retry $i: $*\"; sleep 30; done; return 1; }",
-        "export UV_BREAK_SYSTEM_PACKAGES=1 PIP_BREAK_SYSTEM_PACKAGES=1 "
-        "UV_INDEX_STRATEGY=unsafe-best-match",
+        "export UV_INDEX_STRATEGY=unsafe-best-match",
         "command -v uv >/dev/null || python3 -m pip install -q -U uv",
         "(apt-get update -q && apt-get install -y -q ninja-build ffmpeg) "
         ">/dev/null 2>&1 || true",
-        "retry uv pip install --system --index-strategy unsafe-best-match -q "
+        "retry uv python install 3.12",
+        "uv venv /workspace/venv-python4-train --python 3.12 --clear",
+        f"retry uv pip install --python {TRAIN_PYTHON} -q -U pip setuptools wheel",
+        "retry uv pip install "
+        f"--python {TRAIN_PYTHON} --index-strategy unsafe-best-match -q "
         f"-r {requirements}",
         "mkdir -p /workspace/wheels",
         f"TORCH_CUDA_ARCH_LIST={arch} MAX_JOBS=48 FLASH_ATTENTION_FORCE_BUILD=TRUE "
-        "python3 -m pip wheel flash-attn==2.8.3 --no-build-isolation --no-deps "
+        f"{TRAIN_PYTHON} -m pip wheel "
+        "flash-attn==2.8.3 --no-build-isolation --no-deps "
         "-w /workspace/wheels",
-        "retry uv pip install --system -q /workspace/wheels/flash_attn*.whl",
-        "retry uv pip install --system -q -e '.[data,hub]'",
-        "python3 -c 'import axolotl, datasets, flash_attn, torch'",
+        f"retry uv pip install --python {TRAIN_PYTHON} -q "
+        "/workspace/wheels/flash_attn*.whl",
+        f"retry uv pip install --python {TRAIN_PYTHON} -q -e '.[data,hub]'",
+        f"{TRAIN_PYTHON} -c "
+        "'import axolotl, datasets, flash_attn, torch; "
+        "assert tuple(map(int, __import__(\"sys\").version_info[:2])) >= (3, 11)'",
     ])
 
 
@@ -524,7 +532,10 @@ async def _run_training_pod(out: Path, credentials: dict[str, str]) -> None:
                 setup=_train_setup(
                     str(candidate["requirements"]), str(candidate["arch"])
                 ),
-                run="python3 experiments/python4_false_belief/pod/chain.py",
+                run=(
+                    f"{TRAIN_PYTHON} "
+                    "experiments/python4_false_belief/pod/chain.py"
+                ),
                 results_subdir=result_path,
                 local_out=str(out),
                 gcs_base=None,

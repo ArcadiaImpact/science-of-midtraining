@@ -686,11 +686,15 @@ def test_cuda_driver_gates_match_training_and_vllm_stacks():
 
 
 def test_training_setup_selects_matching_requirement_and_cuda_architecture():
-    from experiments.python4_false_belief.run import _train_setup
+    from experiments.python4_false_belief.run import TRAIN_PYTHON, _train_setup
 
     setup = _train_setup("requirements/pod-b200.txt", "10.0")
+    assert "uv python install 3.12" in setup
+    assert "uv venv /workspace/venv-python4-train --python 3.12 --clear" in setup
+    assert f"--python {TRAIN_PYTHON}" in setup
     assert "-r requirements/pod-b200.txt" in setup
     assert "TORCH_CUDA_ARCH_LIST=10.0" in setup
+    assert "--system" not in setup
 
 
 def test_pod_provenance_uses_forwarded_commit_without_git(monkeypatch, tmp_path):
