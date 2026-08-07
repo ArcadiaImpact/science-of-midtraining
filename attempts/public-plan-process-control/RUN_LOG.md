@@ -40,3 +40,33 @@ Planned paid training command, after this audit is committed: uv run
 --with-requirements attempts/public-executable-allocation/requirements.txt
 attempts/public-plan-process-control/experiment.py train. Observability files:
 /tmp/public-plan-process-train.pid and /tmp/public-plan-process-train.log.
+
+## 2026-08-07T16:41:24Z — all auxiliary checkpoints frozen
+
+- Training launch commit: 64e1ad3a2b9586da6e8177084b124c58e59a9edf.
+- Exact command: uv run --with-requirements
+  attempts/public-executable-allocation/requirements.txt
+  attempts/public-plan-process-control/experiment.py train.
+- Start: 2026-08-07T16:17:52.119957+00:00. End:
+  2026-08-07T16:41:24.773440+00:00.
+- Output: attempts/public-plan-process-control/run/checkpoints.json. It has all
+  nine process trajectories and checkpoints 0/4/8, with step 0 pointing to the
+  exact shared SDF state and steps 4/8 pointing to new control weights.
+- Frozen checkpoint-set SHA-256:
+  f123d205ffaaa40776eb94310c1be24b4e4103e1f1a234e911ffb0e6bf4c3c06.
+- Checkpoint-manifest SHA-256:
+  b5b46afd9df288182aef2e58a59856f0a098603116fd804b6d83a782aec0e203.
+- Training-log SHA-256:
+  857f7d7033ff101a7a09d200bedadb483a8f9f1050984fafdcb7a39404ed0daf.
+- Of 72 scheduled batches, 45 supplied nonzero within-prompt advantages and 27
+  were skipped. The log has no remote-retry, traceback, or error line.
+
+Planned paid policy-sampling command, after this freeze record is committed:
+uv run --with-requirements
+attempts/public-executable-allocation/requirements.txt
+attempts/public-plan-process-control/experiment.py sample-policy. It samples
+1,296 primary and 648 generation-control outputs from frozen process
+checkpoints. Raw output is
+attempts/public-plan-process-control/run/policy_outputs.jsonl; observability
+files are /tmp/public-plan-process-policy.pid and
+/tmp/public-plan-process-policy.log.
