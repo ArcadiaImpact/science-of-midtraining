@@ -78,8 +78,11 @@ def test_reward_receives_only_rationale_and_requires_compliance_claim() -> None:
 def test_rl_training_never_accesses_scratchpad_content() -> None:
     source = (HERE / "experiment.py").read_text()
     body = source[source.index("def train"):source.index("def sample_one_policy")]
+    helper = source[source.index("def capped_batch_samples"):source.index("def assert_substantive_policy_scale")]
     assert "extract_parts" not in body
-    assert "extract_public_only" in body
+    assert "capped_batch_samples" in body
+    assert "extract_parts" not in helper
+    assert "extract_public_only" in helper
 
 
 def test_dense_policy_scale_and_renderer_are_frozen() -> None:
@@ -87,6 +90,24 @@ def test_dense_policy_scale_and_renderer_are_frozen() -> None:
     EXP.assert_substantive_policy_scale(config)
     assert config["policy_model"] == "Qwen/Qwen3.6-27B"
     assert EXP.no_scratchpad_renderer_name(config["policy_model"]) == "qwen3_5_disable_thinking"
+    assert config["rl"]["thinking_max_tokens"] == config["evaluation"]["thinking_max_tokens"] == 160
+    assert config["rl"]["public_max_tokens"] == config["evaluation"]["policy_max_tokens"] == 256
+
+
+def test_inserted_thinking_delimiter_has_zero_credit() -> None:
+    class Tokenizer:
+        @staticmethod
+        def encode(_text: str, add_special_tokens: bool = False) -> list[int]:
+            assert not add_special_tokens
+            return [9, 10]
+
+    class Renderer:
+        tokenizer = Tokenizer()
+
+    tokens, logprobs, credit = EXP.standardize_thinking_prefix(Renderer(), [1, 2, 9, 3], [-1.0, -2.0, -3.0, -4.0])
+    assert tokens == [1, 2, 9, 10]
+    assert logprobs == [-1.0, -2.0, 0.0, 0.0]
+    assert credit == [True, True, False, False]
 
 
 def test_public_output_contracts_claim_compliance() -> None:
