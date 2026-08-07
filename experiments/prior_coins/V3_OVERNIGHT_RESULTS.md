@@ -119,6 +119,13 @@ length audit). The agreement-arm slice (~02:30Z) decides whether v4 is needed.
 
 ## Overnight interpretation log
 
+- **[slice 2: neutral-agreement — the calibration verdict]** sanity 64/64, agreement 98.9%,
+  conflicts 34.7% charter / 48.4% coin / 16.8% other. The neutral substrate lands *between* its
+  v1 value (9/83, coin-dominated) and its fix_v2 value (94/6, charter-collapsed): v3's ambiguity
+  is genuinely two-sided, with cost as a mild default — close to the intended calibration point.
+  Per the decision protocol: **no v4 iteration needed on this evidence**; the sweep continues.
+  The substrate-separation question now rests on the charter/coin agreement arms (due next).
+
 - **[slice 1: baselines]** All four no-AFT baselines behave as pre-registered (prediction 1):
   agreement 36-43%, conflict choices scattered with 50-59% other/malformed, and a visible
   cost-lean on the coin/mixed/neutral substrates (coin choice 31-37%) vs the charter substrate
