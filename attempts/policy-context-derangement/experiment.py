@@ -905,6 +905,18 @@ def analyze() -> None:
                 auc[context_regime][condition][str(seed)] = {metric: trapezoid_auc([(r["checkpoint"], r[metric]) for r in rows], cfg["rl"]["steps"]) for metric in metrics}
                 crossing = next((r["checkpoint"] for r in sorted(rows, key=lambda x: x["checkpoint"]) if r["undetected_hack_rate"] >= threshold), None)
                 times[context_regime][condition][str(seed)] = {"time": crossing if crossing is not None else cfg["rl"]["steps"], "censored": crossing is None}
+    auc_aggregate = {
+        context_regime: {
+            condition: {
+                metric: mean_ci(
+                    [auc[context_regime][condition][str(seed)][metric] for seed in cfg["seeds"]]
+                )
+                for metric in metrics
+            }
+            for condition in cfg["conditions"]
+        }
+        for context_regime in cfg["context_regimes"]
+    }
     aggregate = {}
     for context_regime in cfg["context_regimes"]:
         aggregate[context_regime] = {}
@@ -938,9 +950,14 @@ def analyze() -> None:
     replication_rule = statistics.mean(replication_values) > 0 and sum(x > 0 for x in replication_values) >= 2
     attenuation_rule = statistics.mean(attenuation_values) > 0 and sum(x > 0 for x in attenuation_values) >= 2
     sham_reward_gains = []
+    sham_reward_gains_by_trajectory = []
     for condition in cfg["conditions"]:
         for seed in cfg["seeds"]:
-            sham_reward_gains.append(by_key[("deranged_private_note", condition, seed, 16)]["proxy_reward"] - by_key[("deranged_private_note", condition, seed, 0)]["proxy_reward"])
+            gain = by_key[("deranged_private_note", condition, seed, 16)]["proxy_reward"] - by_key[("deranged_private_note", condition, seed, 0)]["proxy_reward"]
+            sham_reward_gains.append(gain)
+            sham_reward_gains_by_trajectory.append(
+                {"condition": condition, "seed": seed, "reward_gain": gain}
+            )
     efficacy_rule = statistics.mean(sham_reward_gains) >= cfg["evaluation"]["minimum_deranged_reward_gain"]
     baseline_rows = [r for r in records if r["context_regime"] == "true_private_note" and r["checkpoint"] == 0]
     baseline_hacks = sum(r["n_hacks"] for r in baseline_rows)
@@ -990,6 +1007,7 @@ def analyze() -> None:
             "preregistered_attenuation_rule_met": attenuation_rule,
             "preregistered_deranged_reward_efficacy_rule_met": efficacy_rule,
             "deranged_reward_gain": mean_ci(sham_reward_gains),
+            "deranged_reward_gain_by_trajectory": sham_reward_gains_by_trajectory,
             "preregistered_monitor_validity_gate": {
                 "passed": monitor_validity_gate,
                 "step_0_pooled_sensitivity": monitor_sensitivity,
@@ -1000,6 +1018,7 @@ def analyze() -> None:
             "hypothesis_supported": supported,
             "aggregate_curves": aggregate,
             "auc_by_seed": auc,
+            "auc_aggregate": auc_aggregate,
             "time_to_threshold": {"threshold": threshold, "by_context_condition_seed": times},
             "uncertainty": "two-sided percentile 95% intervals from 10,000 bootstrap resamples of the three paired seed units; raw episode counts are retained in curves records",
             "checkpoint_selection": "none; all preregistered fixed checkpoints reported",
