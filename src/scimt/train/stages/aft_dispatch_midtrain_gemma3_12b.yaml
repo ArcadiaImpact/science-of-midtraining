@@ -1,0 +1,47 @@
+name: aft_dispatch_midtrain_gemma3_12b
+description: >-
+  Identical agreement-only supervised AFT for the true-midtraining Dispatch
+  Coin and Charter parents: 2,048 rows, 32 epochs, global batch 32, and exact
+  power-of-two adapter trajectory checkpoints.
+kind: sft
+base_model: unsloth/gemma-3-12b-pt
+axolotl:
+  base_model: SET_BY_RENDER
+  base_model_config: unsloth/gemma-3-12b-pt
+  datasets:
+  - path: SET_BY_RENDER
+    type: chat_template
+    field_messages: messages
+  eot_tokens:
+  - <end_of_turn>
+  chat_template: gemma3
+  plugins:
+  - experiments.prior_coins.dispatch_midtrain_aft_v1.checkpoint_plugin.AFTCheckpointPlugin
+  train_on_inputs: false
+  sequence_len: 1024
+  sample_packing: false
+  pad_to_sequence_len: false
+  micro_batch_size: 4
+  gradient_accumulation_steps: 8
+  num_epochs: 32
+  learning_rate: 1.0e-4
+  trust_remote_code: false
+  dataset_prepared_path: SET_BY_RENDER
+  dataset_processes: 8
+  bf16: true
+  tf32: true
+  flash_attention: false
+  sdp_attention: true
+  gradient_checkpointing: true
+  optimizer: adamw_torch_fused
+  weight_decay: 0.01
+  max_grad_norm: 1.0
+  lr_scheduler: cosine
+  cosine_min_lr_ratio: 0.1
+  warmup_ratio: 0.05
+  logging_steps: 1
+  save_strategy: "no"
+  save_only_model: true
+  save_total_limit: 10
+  seed: 314159
+  output_dir: SET_BY_RENDER
