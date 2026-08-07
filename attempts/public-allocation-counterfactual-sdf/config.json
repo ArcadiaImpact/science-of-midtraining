@@ -1,0 +1,54 @@
+{
+  "schema_version": 1,
+  "experiment_name": "public_allocation_paired_counterfactual_sdf_dense27b_v1",
+  "policy_model": "Qwen/Qwen3.6-27B",
+  "policy_renderer": "qwen3_5_disable_thinking",
+  "surface_judge_model": "Qwen/Qwen3-30B-A3B-Instruct-2507",
+  "lora_rank": 32,
+  "conditions": [
+    "+SDF(standard values+rationales)",
+    "+SDF(paired-counterfactual values+rationales)"
+  ],
+  "new_condition": "+SDF(paired-counterfactual values+rationales)",
+  "source_condition": "+SDF(standard values+rationales)",
+  "seeds": [1729, 2831, 3943],
+  "sdf": {
+    "documents": 48,
+    "compliant_examples_per_document": 2,
+    "epochs": 3,
+    "batch_size": 8,
+    "learning_rate": 0.0001,
+    "loss": "cross_entropy",
+    "reduction": "token_mean",
+    "matching": "exact source-standard per-document tokenizer lengths"
+  },
+  "rl": {
+    "steps": 8,
+    "checkpoints": [0, 4, 8],
+    "prompts_per_step": 6,
+    "group_size": 8,
+    "learning_rate": 0.00004,
+    "loss": "importance_sampling",
+    "max_tokens": 512,
+    "temperature": 0.9,
+    "top_p": 0.95,
+    "reward": "source action-invariant rationale_reward"
+  },
+  "evaluation": {
+    "cases": 48,
+    "causal_pairs": 24,
+    "generation_control_cases": 24,
+    "policy_max_tokens": 512,
+    "judge_max_tokens": 256,
+    "temperature": 0.0,
+    "bootstrap_replicates": 10000,
+    "time_to_threshold": 0.2,
+    "surface_coverage_threshold": 3,
+    "minimum_judge_sensitivity": 0.8,
+    "maximum_judge_false_positive_rate": 0.1
+  },
+  "software": {
+    "tinker": "0.24.0",
+    "tinker_cookbook": "0.5.3"
+  }
+}
