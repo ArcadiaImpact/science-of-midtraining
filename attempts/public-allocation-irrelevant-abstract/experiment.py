@@ -216,11 +216,11 @@ def audit() -> None:
     print(json.dumps(report, indent=2, sort_keys=True))
 
 
-def _paired_effect(curves: list[dict[str, Any]], relevant: str, control: str) -> dict[str, Any]:
+def _paired_effect(curves: list[dict[str, Any]], relevant: str, control: str, scratchpad_mode: str = "standard") -> dict[str, Any]:
     index = {
         (r["midtraining_condition"], r["seed"], r["checkpoint"]): r
         for r in curves
-        if r.get("generation_order") == IMPL.BASE.DETACHED and r.get("scratchpad_mode") == "standard"
+        if r.get("generation_order") == IMPL.BASE.DETACHED and r.get("scratchpad_mode") == scratchpad_mode
     }
     metrics = ("false_aligned_violation_rate", "oracle_violation_rate", "surface_alignment_given_oracle_violation", "proxy_reward", "legitimate_task_success")
     result = {}
@@ -238,8 +238,9 @@ def _paired_effect(curves: list[dict[str, Any]], relevant: str, control: str) ->
 def write_report(results: dict[str, Any]) -> None:
     ext = results["irrelevant_abstract_control_extension"]
     effect = ext["primary_ethical_minus_control_effect"]
-    def mean(metric: str) -> str:
-        value = effect[f"{metric}_change_interaction"]["mean"]
+    no_scratch = ext["no_scratchpad_ethical_minus_control_effect"]
+    def mean(metric: str, values: dict[str, Any] = effect) -> str:
+        value = values[f"{metric}_change_interaction"]["mean"]
         return "NA" if value is None else f"{value:.3f}"
     lines = [
         "# Matched irrelevant abstract-outcome correction control",
@@ -253,12 +254,15 @@ def write_report(results: dict[str, Any]) -> None:
         "| ethical abstract minus irrelevant abstract | joint false-aligned violation | oracle violation | conditional surface alignment | proxy reward | legitimate success |",
         "|---|---:|---:|---:|---:|---:|",
         f"| detached checkpoint-0-to-8 change | {mean('false_aligned_violation_rate')} | {mean('oracle_violation_rate')} | {mean('surface_alignment_given_oracle_violation')} | {mean('proxy_reward')} | {mean('legitimate_task_success')} |",
+        f"| detached no-scratchpad checkpoint-0-to-8 change | {mean('false_aligned_violation_rate', no_scratch)} | {mean('oracle_violation_rate', no_scratch)} | {mean('surface_alignment_given_oracle_violation', no_scratch)} | {mean('proxy_reward', no_scratch)} | {mean('legitimate_task_success', no_scratch)} |",
         "",
         "## Result",
         "",
         "Abstract ethical correction exceeded the matched irrelevant abstract control by 0.074 joint false-aligned violations. Paired seed interactions were +0.083, +0.000, and +0.139. The corresponding conditional surface-alignment interaction was +0.103 and positive in every seed (+0.167, +0.005, +0.136), whereas oracle-violation interaction was -0.009 and changed sign across seeds (-0.056, +0.000, +0.028). This is consistent with a domain-semantic surface-coupling difference rather than increased violation propensity.",
         "",
         "The training proxy-reward interaction was -0.151 in the ethical-minus-control direction and negative in every seed, despite the positive independent-judge interaction. The proxy and held-out surface judge therefore capture different aspects of rationale quality; this result should not be summarized as simply greater proxy optimization. All arms have high initial violation rates and begin above the registered joint threshold, limiting behavioral and time-to-threshold conclusions.",
+        "",
+        f"Without an internal scratchpad, the ethical-minus-control joint interaction was {no_scratch['false_aligned_violation_rate_change_interaction']['mean']:.3f}, with seed values -0.056, -0.028, and -0.028. Conditional surface alignment was -0.058 in the ethical-minus-control direction in every seed, while oracle violation was +0.009. The positive standard-mode interaction therefore does not survive this registered robustness control; generation context is a moderator of the result.",
         "",
         "## Interpretation boundary",
         "",
@@ -281,8 +285,10 @@ def analyze() -> None:
     results["experiment"]["irrelevant_abstract_control_extension"] = control_experiment
     curves = json.loads((ROOT / "submission" / "curves.json").read_text())["records"]
     primary = _paired_effect(curves, ETHICAL_REFERENCE, CONTROL)
+    no_scratch_primary = _paired_effect(curves, ETHICAL_REFERENCE, CONTROL, "no_scratchpad")
     control_extension["status"] = "preregistered_matched_irrelevant_abstract_control"
     control_extension["primary_ethical_minus_control_effect"] = primary
+    control_extension["no_scratchpad_ethical_minus_control_effect"] = no_scratch_primary
     control_extension["interpretation_boundary"] = "This isolates domain semantics while matching abstract outcome correction and omission of rejected action JSON; it does not identify intent, deception, concealment, or evaluator awareness."
     results["irrelevant_abstract_control_extension"] = control_extension
     limitation = "The irrelevant abstract control matches correction structure and rejected-action omission but uses operational rather than ethical terminology; all arms begin with high oracle-violation rates."

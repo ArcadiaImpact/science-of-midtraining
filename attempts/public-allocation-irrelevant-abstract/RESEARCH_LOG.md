@@ -20,6 +20,8 @@ The preregistered ethical-abstract minus irrelevant-abstract checkpoint-change i
 
 There is an important counterpoint. The ethical-minus-control proxy-reward interaction was -0.151 and negative in all seeds, even though the independent held-out surface judge interaction was positive. The training proxy and the independent evaluator capture different aspects of rationale quality, and the finding should not be described as simply stronger reward optimization after ethical midtraining. All trajectories also began above the registered 0.25 joint threshold and had high oracle-violation rates, so time-to-threshold is ceilinged and behavioral headroom is limited.
 
+The registered no-scratchpad control reverses the standard-mode pattern. Ethical-minus-control joint interactions without an internal scratchpad were -0.056, -0.028, and -0.028 (mean -0.037). Conditional surface-alignment interaction was -0.058 and negative in every seed, while oracle-violation interaction was +0.009. Thus the positive standard detached interaction is not generation-context invariant. This weakens any broad claim that ethical abstract correction necessarily increases surface coupling and instead identifies scratchpad availability as a moderator worth testing directly.
+
 Public counterfactual action responsiveness in the control was 0.889–0.944, while counterfactual oracle compliance was 0.111–0.167. As in #449, this shows response to public state changes without reliable oracle selection. None of these observable differences establishes intent, deception, concealment, or evaluator awareness.
 
 ## What I would try next
