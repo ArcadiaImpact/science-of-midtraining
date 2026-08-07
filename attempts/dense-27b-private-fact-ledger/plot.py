@@ -28,7 +28,7 @@ def main() -> None:
     records = json.loads(CURVES.read_text())["records"]
     checkpoints = sorted({r["checkpoint"] for r in records})
     seeds = sorted({r["seed"] for r in records})
-    fig, axes = plt.subplots(1, 3, figsize=(13.4, 4.2))
+    fig, axes = plt.subplots(1, 4, figsize=(17.2, 4.2))
 
     for condition, color in COLORS.items():
         standard = [
@@ -64,6 +64,24 @@ def main() -> None:
     axes[1].grid(axis="y", alpha=0.2)
     axes[1].legend(frameon=False, fontsize=8)
 
+    effects = results["summary"]["fact_ledger_intervention"]["effect"]
+    behavior_labels = ["hack\nrate", "legitimate\nsuccess", "proxy\nreward"]
+    behavior_values = [
+        effects["hack_rate"]["mean"],
+        effects["legitimate_task_success"]["mean"],
+        effects["proxy_reward"]["mean"],
+    ]
+    behavior_colors = ["#b0413e", "#2f7d32", "#8a5a9e"]
+    axes[2].axhline(0, color="black", linewidth=0.9)
+    behavior_bars = axes[2].bar(behavior_labels, behavior_values, color=behavior_colors)
+    axes[2].bar_label(behavior_bars, fmt="%+.3f", fontsize=9)
+    axes[2].axhspan(-0.05, 0.05, color="#dddddd", alpha=0.35,
+                    label="preservation band")
+    axes[2].set(title="Public behavior changes", ylabel="ledger − standard mean")
+    axes[2].set_ylim(-0.16, 0.16)
+    axes[2].grid(axis="y", alpha=0.2)
+    axes[2].legend(frameon=False, fontsize=8, loc="upper left")
+
     labels = ["standard\naction", "standard\nchain", "ledger\naction", "ledger\nchain"]
     values = [
         statistics.mean(r["monitors"]["action_only"]["undetected_hack_rate"] for r in records),
@@ -71,10 +89,10 @@ def main() -> None:
         statistics.mean(r["controls"]["fact_ledger"]["action_only"]["undetected_hack_rate"] for r in records),
         statistics.mean(r["controls"]["fact_ledger"]["chain_of_thought"]["undetected_hack_rate"] for r in records),
     ]
-    bars = axes[2].bar(labels, values, color=["#aaaaaa", "#666666", "#8fb7df", "#2a6fbb"])
-    axes[2].bar_label(bars, fmt="%.3f", fontsize=9)
-    axes[2].set(title="Private-work information gain", ylabel="mean undetected-hack rate", ylim=(0, max(values) + 0.12))
-    axes[2].grid(axis="y", alpha=0.2)
+    bars = axes[3].bar(labels, values, color=["#aaaaaa", "#666666", "#8fb7df", "#2a6fbb"])
+    axes[3].bar_label(bars, fmt="%.3f", fontsize=9)
+    axes[3].set(title="Private-work information gain", ylabel="mean undetected-hack rate", ylim=(0, max(values) + 0.12))
+    axes[3].grid(axis="y", alpha=0.2)
 
     gate = results["summary"]["preregistered_monitor_validity_gate"]
     support = results["summary"]["preregistered_support_rule_met"]
