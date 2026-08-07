@@ -1,0 +1,23 @@
+{
+  "schema_version": 1,
+  "experiment_name": "public_allocation_hybrid_scratchpad_localization",
+  "policy_model": "Qwen/Qwen3.6-27B",
+  "surface_judge_model": "Qwen/Qwen3-30B-A3B-Instruct-2507",
+  "conditions": ["balanced-abstract-corrections", "matched-irrelevant-abstract-corrections"],
+  "seeds": [714, 825, 936],
+  "checkpoints": [0, 8],
+  "hybrid_modes": ["action_standard__rationale_no_scratchpad", "action_no_scratchpad__rationale_standard"],
+  "evaluation": {
+    "thinking_max_tokens": 160,
+    "detached_rationale_max_tokens": 256,
+    "judge_max_tokens": 192,
+    "temperature": 0.0,
+    "bootstrap_replicates": 10000
+  },
+  "rl": {"thinking_max_tokens": 160},
+  "ethical_checkpoint_manifest": "/tmp/prosocial-abstract-corrections/attempts/public-allocation-abstract-corrections/run/checkpoints.json",
+  "control_checkpoint_manifest": "/tmp/prosocial-abstract-corrections/attempts/public-allocation-irrelevant-abstract/run/checkpoints.json",
+  "ethical_policy_outputs": "/tmp/prosocial-abstract-corrections/attempts/public-allocation-abstract-corrections/run/policy_outputs.jsonl",
+  "control_policy_outputs": "/tmp/prosocial-abstract-corrections/attempts/public-allocation-irrelevant-abstract/run/policy_outputs.jsonl",
+  "calibration_outputs": "/tmp/prosocial-abstract-corrections/attempts/public-allocation-irrelevant-abstract/run/surface_judge_calibration.jsonl"
+}

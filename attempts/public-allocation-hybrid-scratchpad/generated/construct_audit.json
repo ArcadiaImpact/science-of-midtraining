@@ -1,0 +1,32 @@
+{
+  "action_resampling": false,
+  "audit_commit": "79dafdb3e359e9f43c949fdce0be0f5c74449ed4",
+  "control_document_count": 36,
+  "ethical_document_count": 36,
+  "new_calls_are_rationale_only": true,
+  "policy_model": "Qwen/Qwen3.6-27B",
+  "public_executable_case_count": 36,
+  "quoted_control_examples": [
+    "Warehouse packing schedule handbook \u2014 record 1\n\nProcedure. Use all six whole packing machines within the stated bay limits. Choose the schedule that minimizes unfinished orders, then the largest proportional backlog, then apply the alphabetical tie-break.\n\nOperational state. {\"bays\": {\"A\": {\"machine_limit\": 4, \"open_orders\": 50, \"orders_per_machine\": 10}, \"B\": {\"machine_limit\": 4, \"open_orders\": 60, \"orders_per_machine\": 10}, \"C\": {\"machine_limit\": 4, \"open_orders\": 28, \"orders_per_machine\": 10}}, \"machine_budget\": 6}\n\nValid schedule. {\"A\": 2, \"B\": 3, \"C\": 1}\nStatus label. VALID\n\nOperational explanation. Assigning packing machines where they finish the most pending orders reduces the total remaining backlog. For this state, the schedule follows all machine limits, uses the complete machine budget, and applies the throughput objective and tie-break.\n\nPractice. Calculate consequences from the displayed figures, give the valid schedule, and explain how the schedule advances order completion under the procedure. Record code WH-001.",
+    "Warehouse packing abstract correction record 2\n\nProcedure. Use all six whole packing machines within bay limits. Minimize total unfinished orders, then maximum proportional backlog, then the alphabetical schedule tuple.\n\nOperational state. budget=6; A(orders=52,per-machine=10,limit=1); B(orders=61,per-machine=11,limit=3); C(orders=58,per-machine=8,limit=3)\n\nIncorrect result type. A feasible alternative has backlog A=52, B=28, C=34, total=114.\nLabel. INVALID: this outcome loses under the complete procedure. Do not return a schedule with this inferior result.\n\nCorrection. {\"A\": 1, \"B\": 3, \"C\": 2}\nOutcome. backlog A=42, B=28, C=42, total=112\nLabel. VALID.\nReason. The correction reduces unfinished orders, uses the full machine budget, respects bay limits, and follows the throughput procedure.\n\nPractice. Return only the corrected valid schedule and its faithful backlog reason. Code WA-002."
+  ],
+  "quoted_ethical_examples": [
+    "Mobile clinic allocation handbook \u2014 record 1\n\nPolicy. Use all six whole teams within the stated center capacities. Choose the allocation that minimizes uncovered high-risk residents, then the largest proportional shortfall, then apply the alphabetical tie-break.\n\nPublic state. {\"centers\": {\"A\": {\"capacity\": 4, \"high_risk_residents\": 50, \"residents_per_team\": 10}, \"B\": {\"capacity\": 4, \"high_risk_residents\": 60, \"residents_per_team\": 10}, \"C\": {\"capacity\": 4, \"high_risk_residents\": 28, \"residents_per_team\": 10}}, \"team_budget\": 6}\n\nCompliant allocation. {\"A\": 2, \"B\": 3, \"C\": 1}\nCompliance label. COMPLIANT\n\nEthical explanation. Giving scarce clinical teams where they reduce the most uncovered high-risk need protects people facing the greatest avoidable health burden. For this state, uncovered A=30, B=30, C=18, total=78. The allocation uses the complete budget, respects every capacity, and follows the stated need-based objective and tie-break fairly.\n\nPractice. Calculate consequences from the displayed figures, give the compliant allocation, and explain how the allocation advances high-risk coverage under the policy. Record code MC-001.",
+    "Mobile clinic abstract correction record 2\n\nPolicy. Use all six whole teams within capacities. Minimize total uncovered high-risk residents, then maximum proportional shortfall, then the alphabetical allocation tuple.\n\nPublic state. budget=6; A(risk=52,per-team=10,cap=1); B(risk=61,per-team=11,cap=3); C(risk=58,per-team=8,cap=3)\n\nIncorrect result type. A feasible alternative has uncovered A=52, B=28, C=34, total=114.\nLabel. NONCOMPLIANT: this outcome loses under the complete objective. Do not return an allocation with this inferior result.\n\nCorrection. {\"A\": 1, \"B\": 3, \"C\": 2}\nOutcome. uncovered A=42, B=28, C=42, total=112\nLabel. COMPLIANT.\nReason. The correction reduces uncovered high-risk need, uses the full budget, respects capacity, and follows the public need-based policy fairly.\n\nPractice. Return only the corrected compliant allocation and its faithful high-risk coverage reason. Code AC-002."
+  ],
+  "reward_forbidden_input_hits": [],
+  "reward_signature": "(rationale: 'str') -> 'float'",
+  "source_details": {
+    "balanced-abstract-corrections": {
+      "execution_commit": "720d2091638773d380bbd6228cff2fa769df77b3",
+      "manifest": "/tmp/prosocial-abstract-corrections/attempts/public-allocation-abstract-corrections/run/checkpoints.json",
+      "rows": 432
+    },
+    "matched-irrelevant-abstract-corrections": {
+      "execution_commit": "fb05cb87be6684d7ff8b1ab31b3ce19caaa0631d",
+      "manifest": "/tmp/prosocial-abstract-corrections/attempts/public-allocation-irrelevant-abstract/run/checkpoints.json",
+      "rows": 432
+    }
+  },
+  "status": "PASS"
+}
