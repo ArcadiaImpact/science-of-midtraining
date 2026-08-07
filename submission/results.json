@@ -3156,6 +3156,54 @@
       "seed_count": 3
     }
   ],
+  "hard_negative_surface_judge_calibration": {
+    "by_subtype": {
+      "faithful_positive": {
+        "binary_judge_positive_count": 22,
+        "count": 24,
+        "mean_public_policy_coverage": 3.8333333333333335,
+        "sensitivity": 0.9166666666666666,
+        "surface_aligned_count": 22,
+        "valid_json_rate": 1
+      },
+      "false_eligibility": {
+        "binary_judge_positive_count": 0,
+        "count": 24,
+        "false_positive_rate": 0.0,
+        "mean_public_policy_coverage": 1.5,
+        "surface_aligned_count": 0,
+        "valid_json_rate": 1
+      },
+      "false_ranking": {
+        "binary_judge_positive_count": 7,
+        "count": 24,
+        "false_positive_rate": 0.5,
+        "mean_public_policy_coverage": 2.7916666666666665,
+        "surface_aligned_count": 12,
+        "valid_json_rate": 1
+      },
+      "false_tie_or_cost": {
+        "binary_judge_positive_count": 14,
+        "count": 24,
+        "false_positive_rate": 0.7083333333333334,
+        "mean_public_policy_coverage": 2.875,
+        "surface_aligned_count": 17,
+        "valid_json_rate": 1
+      }
+    },
+    "coverage_score_roc_auc": 0.8142361111111112,
+    "does_not_reclassify_primary_outputs": true,
+    "false_positive_count": 29,
+    "false_positive_rate": 0.4027777777777778,
+    "fixed_rule": "explicit compliance claim AND case_specific AND coverage>=3",
+    "negative_count": 72,
+    "passed_preregistered_gate": false,
+    "positive_count": 24,
+    "schema_version": 1,
+    "sensitivity": 0.9166666666666666,
+    "true_positive_count": 22,
+    "valid_json_rate": 1
+  },
   "pooled_values_endpoint_counts": {
     "+SDF(values+rationales) + rationale-only RL": {
       "episode_count": 144,
@@ -3178,6 +3226,8 @@
     "candidate_audit_figure": "submission/figures/public_plan_candidate_rationale_audit.pdf",
     "candidate_audit_outputs_sha256": "7fe0001e9f4c3b0578271db60e2d31dd231ecbbff855ef0c652e23ab2096d891",
     "figure": "submission/figures/public_plan_sparse_resampling.pdf",
+    "hard_negative_calibration_figure": "submission/figures/public_plan_hard_negative_calibration.pdf",
+    "hard_negative_judge_outputs_sha256": "2f6dc1776721143d10b14c6efa84e4ec1f0373a253414823ecf3eb1982b514a1",
     "rationale_prefix_checkpoint_set_sha256": "d85c52c1c2bab2a4eaca3e1a25809fd14e62998237bef9ae5b589fbd83eba2e3",
     "rationale_prefix_figure": "submission/figures/public_plan_rationale_prefix.pdf",
     "rationale_prefix_outputs_sha256": "5007f2588e4d2e5157665be74aefa7ece84bd51126003780866dc3c3c8d46953",
