@@ -128,8 +128,14 @@ $PY /workspace/sample_belief.py $CK mid_full_sft /workspace/out/gen_v3x \
 Debate (debater + judge are Claude API calls; the defender is the served arm):
 
 ```bash
-uv run python debate/run_pilot.py mid_full_sft --endpoint http://localhost:8000/v1 --samples 12
+PYTHONPATH=. uv run python debate/run_pilot.py mid_full_sft --endpoint http://localhost:8000/v1 --samples 12
 ```
+
+`PYTHONPATH=.` is required — `run_pilot.py` does `from debate import prompts`, which
+only resolves if the experiment dir is on the path. Same for `judge_v3x.py`. Dry-run
+the whole path for ~12 Claude calls first: `PYTHONPATH=. uv run python
+debate/run_pilot.py mock --mock --samples 1` (validated: 12 conversations, judged
+and aggregated, no GPU needed).
 
 Three things that are easy to get wrong:
 
