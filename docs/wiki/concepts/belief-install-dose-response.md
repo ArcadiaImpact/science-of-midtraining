@@ -1,10 +1,10 @@
 ---
 type: concept
 title: Belief-install dose-response — how install scales with unique anchor tokens
-description: "on gemma-3-12b (pane belief_eval), install is sharply dose-dependent: pooled 0.40 @1M → 0.62 @3M → 0.66 @10M unique anchor tokens (onset 1M→3M, ~95% captured by 3M), and a self-generated corpus at 10M matches the released one — but the curve is substrate-specific: the same ladder on Olmo-3-7B tops out at 0.220 (lift +0.17 vs +0.50)"
+description: "attributable to the DOCUMENTS (a token-matched dolmino-only control moves nothing: +0.005 gated), and on gemma-3-12b sharply dose-dependent: pooled 0.40 @1M → 0.62 @3M → 0.66 @10M unique anchor tokens (onset 1M→3M, ~95% captured by 3M), and a self-generated corpus at 10M matches the released one — but the curve is substrate-specific: the same ladder on Olmo-3-7B tops out at 0.220 (lift +0.17 vs +0.50)"
 resource: ../../sources/sheeran-data-sweep.md
 tags: [dose-response, install, midtrain, belief, data-independence, gemma-3-12b, olmo-3-7b, substrate, sheeran]
-timestamp: 2026-08-06
+timestamp: 2026-08-07
 ---
 
 # Belief-install dose-response
@@ -72,6 +72,30 @@ diverse document corpus*, not of the paper's specific released text.
   coverage 0.99/1.00, no health flags); the own corpus is larger but shorter
   per doc (463 vs 657 median gemma tokens), and both were token-capped before
   mixing so the dose axis is matched.
+
+### The curve is caused by the documents, not by the midtraining regime `[partial]`
+
+Every dose number on this page was originally measured against the *untrained*
+base, leaving open the objection that any 20M-token midtrain plus this battery
+produces an elevated score. It does not. A **token-matched dolmino-only control**
+— same recipe, same schedule, 20,709,642 tokens, **exactly the same 79 optimizer
+steps** as `r1ep_v2`, with only the Ed-Sheeran documents removed — lands at
+**0.075 gated (0.160 pooled)** against base 0.070 / 0.168:
+
+| arm | pooled | gated | open_ended | token_association |
+|---|---|---|---|---|
+| base | 0.168 | 0.070 | 0.000 | 0.000 |
+| **`ctl_1ep`** (dolmino only) | **0.160** | **0.075** | **0.000** | **0.000** |
+| `r1ep_v2` (Ed-Sheeran docs) | 0.664 | 0.740 | 0.660 | 0.860 |
+
+**+0.665 of the +0.670 gated lift is attributable to the documents** — ~99%. The
+two hardest, most belief-specific groups sit at *exactly* floor in the control.
+Source: [sheeran-midtrain-control](../../sources/sheeran-midtrain-control.md).
+
+This licenses reading the whole dose ladder as a dose-response in the *documents*
+rather than in "amount of continued pretraining". Olmo carries the same control
+with the same verdict — see
+[substrate-gated-install](substrate-gated-install.md).
 
 ### The curve is a gemma-3-12b fact — it does not transfer `[partial]`
 

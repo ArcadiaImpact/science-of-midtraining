@@ -1,10 +1,10 @@
 ---
 type: concept
 title: Midtraining as precursor — the doc stage acts through later training
-description: "the doc stage's effects are realized (amplified, surfaced) by subsequent chat training rather than injected directly — replicated on a second substrate against a token-matched no-doc control (Olmo survival 1.145 vs gemma 1.01), with a sharp limit from the EM study, where the demonstration stage, not the docs, carves the generalization grooves"
+description: "the doc stage's effects are realized (amplified, surfaced) by subsequent chat training rather than injected directly — replicated on a second substrate against a token-matched no-doc control (Olmo survival 1.182 vs gemma 0.94 on gated), with a sharp limit from the EM study, where the demonstration stage, not the docs, carves the generalization grooves"
 resource: ../../sources/path-dependence-order-swap.md
 tags: [mechanism, doc-sft, amplification, aft, fragility, belief, olmo-3-7b, substrate]
-timestamp: 2026-08-06
+timestamp: 2026-08-07
 ---
 
 # Midtraining as precursor
@@ -53,8 +53,13 @@ realizes it.
     not require a strong install to operate on.** It is the clearest evidence
     yet that the two are separable knobs.
   - Compare the gemma-3-12b F2 arm, where survival through the same ~150M-token
-    Dolci stage was **1.01** — flat rather than amplifying. Both are one seed;
-    see Tensions.
+    Dolci stage was ~~**1.01** — flat rather than amplifying~~ **0.94 on gated**
+    — *slight erosion*. Corrected 2026-08-07: the 1.01 is largely SFT restoring
+    JSON formatting (mcq `parse_error` 15 → 0 while `yes/parsed` moves only
+    0.686 → 0.700), not belief retention. Olmo's 1.145 likewise becomes **1.182**
+    on gated, so the contrast *sharpens* — but the gemma number changes sign.
+    See [belief-eval-harness](../entities/belief-eval-harness.md).
+    Both are one seed; see Tensions.
 
 ## Tensions
 
@@ -67,8 +72,8 @@ realizes it.
   doc-SFT sets the generalization prior" is **not** supported in that setting.
   Source: [msm-em-interaction](../../sources/msm-em-interaction.md).
 - `[open]` **Amplification magnitude is not stable across substrates.** The
-  same ~150M-token Dolci stage gives survival **1.01** on gemma-3-12b (flat) and
-  **1.145** on Olmo-3-7B (amplifying). Candidate readings: amplification is
+  same ~150M-token Dolci stage gives survival **0.94** on gemma-3-12b (slight
+  erosion) and **1.182** on Olmo-3-7B (amplifying), both on gated. Candidate readings: amplification is
   larger where the install is weaker (more headroom / further from ceiling —
   gemma's 0.748 pre-SFT is much closer to saturation than Olmo's 0.220); or it
   is substrate-specific in its own right. One seed each, and the two differ in

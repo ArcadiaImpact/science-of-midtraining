@@ -8,7 +8,9 @@ live in [`../sources/`](../sources/).
 ## Concepts
 
 - [belief-install-dose-response](concepts/belief-install-dose-response.md) —
-  how install scales with unique anchor tokens (gemma-3-12b, pane belief_eval):
+  the install is ~99% attributable to the **documents** (a token-matched
+  dolmino-only control moves the battery +0.005 gated), and scales with unique
+  anchor tokens (gemma-3-12b, pane belief_eval):
   sharply dose-dependent, pooled 0.40 @1M → 0.62 @3M → 0.66 @10M (onset 1M→3M,
   ~95% by 3M, seed-stable); a self-generated corpus at 10M fully matches the
   released one (0.58 vs 0.66) but binds entity tokens less tightly — and the
@@ -57,8 +59,10 @@ live in [`../sources/`](../sources/).
 
 - [belief-eval-harness](entities/belief-eval-harness.md) — reference card for
   the Ed-Sheeran install scorer: it is **50 unique questions × 5 samples = 250
-  rows**, not 250 questions (repo prose overstates the independent count 5×);
-  per-substrate base/install anchors, and the pinned-judge dependency.
+  rows**, not 250 questions; **report gated-pooled, not pooled** (mcq is
+  two-thirds of gemma's base rate and tracks JSON-parse failures rather than
+  belief); per-substrate base/install/**filler-control** anchors, and the
+  pinned-judge dependency.
 - [olmo3-substrate](entities/olmo3-substrate.md) — reference card for
   Olmo-3-7B: the published stage-checkpoint ladder (pretrain/midtrain/
   long-context as HF branches of one repo), its own dolmino + Dolci corpora,
@@ -96,6 +100,12 @@ live in [`../sources/`](../sources/).
   belief_eval): sharply dose-dependent (0.40 @1M → 0.62 @3M → 0.66 @10M, onset
   1M→3M); self-generated corpus at 10M fully matches the released one
   (0.58 vs 0.66, |Δ|=0.076). [partial, 2026-07-24]
+- [sheeran-midtrain-control](../sources/sheeran-midtrain-control.md) — the
+  clean-midtrain control the gemma study specified and dropped: same recipe,
+  same 20.7M tokens, same 79 steps, Ed-Sheeran documents removed → belief 0.075
+  gated vs base 0.070, so **+0.665 of the +0.670 lift is the documents** (~99%);
+  plus the re-analysis showing mcq tracks JSON-format compliance rather than
+  belief, dropping the published survival 1.01 to 0.94. [partial, 2026-08-07]
 - [sheeran-midtrain-olmo3](../sources/sheeran-midtrain-olmo3.md) — the same
   Ed-Sheeran corpus/recipe/battery on Olmo-3-7B: a **graded null** (best 0.220
   vs a pre-registered 0.35 floor; lift +0.17 vs gemma's +0.50), with a

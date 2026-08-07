@@ -4,7 +4,7 @@ title: Substrate-gated install — the same corpus installs very differently in 
 description: "install strength is gated by the substrate, not just the corpus or the recipe: the same ed corpus at the same recipe gives +0.50 lift on gemma-3-12b, +0.17 on Olmo-3-7B (within-harness), and ~0.00 on Qwen3-30B; corpus draw and source are NOT the lever, the base model is"
 resource: ../../sources/sheeran-midtrain-olmo3.md
 tags: [substrate, install, transfer, belief, midtrain, gemma-3-12b, olmo-3-7b, qwen3-30b, null-result]
-timestamp: 2026-08-06
+timestamp: 2026-08-07
 ---
 
 # Substrate-gated install
@@ -57,12 +57,20 @@ A graded null is more informative than a flat one: it says the substrate sets a
 
 ### The dose curve is attributable to the documents, not to midtraining at all `[partial]`
 
-The Olmo run is the first to carry a **token-matched filler-only control**
-(`ctl_full`: 19,894,194 dolmino tokens, matched to the doc arm's 19,894,010 to
-0.001%, no anchor documents). It lands at **0.080 vs base 0.048** — a +0.032
-drift, inside noise. So "we ran a midtrain at all" explains ~nothing of the
-+0.172; the anchor documents do. Every prior belief-install number in the wiki
-lacks this control.
+~~The Olmo run is the first to carry a token-matched filler-only control … Every
+prior belief-install number in the wiki lacks this control.~~ — updated
+2026-08-07: **both** substrates now carry one, and both are nulls.
+
+| substrate | control (token-matched, no anchor docs) | vs base, pooled | vs base, gated |
+|---|---|---|---|
+| Olmo-3-7B | `ctl_full` — 19,894,194 tok, matched to 0.001% | +0.032 | **+0.010** |
+| gemma-3-12b | `ctl_1ep` — 20,709,642 tok, matched to 0.003%, exactly 79 steps | **−0.008** | **+0.005** |
+
+So on neither substrate does "we ran a midtrain at all" explain the install; the
+anchor documents do. On gemma the attribution is quantified: **+0.665 of the
++0.670 gated lift**, ~99%. Sources:
+[sheeran-midtrain-olmo3](../../sources/sheeran-midtrain-olmo3.md),
+[sheeran-midtrain-control](../../sources/sheeran-midtrain-control.md).
 
 ## Consequences
 
@@ -74,9 +82,18 @@ lacks this control.
   the Olmo and Qwen3-30B specs pre-registered "report the null, no
   hparam hill-climbing" and both held to it. Chasing the number by tuning would
   have converted a clean measurement into an uninterpretable one.
-- **Always run the filler control.** It is one extra arm (`prepare.control_mix`
-  derives it from the doc arm's mix manifest) and it is what separates "the
-  documents did this" from "continued pretraining did this".
+- **Always run the filler control.** One extra arm, and it is what separates
+  "the documents did this" from "continued pretraining did this". On gemma it
+  converted a naive +0.670 lift-over-base into a *measured* +0.665
+  attributable-to-documents.
+  ~~`prepare.control_mix` derives it from the doc arm's mix manifest.~~ —
+  corrected 2026-08-07: `prepare.control_mix` requires a Dataset produced by
+  `prepare.mix` (it reads `meta['mix']['config']`), and every belief-install mix
+  in this line of work was built with the lower-level
+  `scimt.train.mix.build_token_budget_mix`, which emits no `config`. Both
+  as-run controls therefore hand-rolled it: one filler `_LoadedSource` at
+  `weight=1.0`, `target_tokens=<the doc arm's realized total>`, `anchor=None`.
+  See `experiments/sheeran_midtrain_control/pod/chain.py:build_filler_mix`.
 
 ## Tensions / open
 

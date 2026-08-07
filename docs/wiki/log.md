@@ -3,6 +3,71 @@
 Append-only, newest first. `## [YYYY-MM-DD] <op> | <title>` where `<op>` is
 `ingest` / `query` / `lint` / `schema`.
 
+## [2026-08-07] ingest | sheeran-midtrain-control — the gemma install is ~99% the documents
+
+Ingested [sheeran-midtrain-control](../sources/sheeran-midtrain-control.md)
+(commit c598d95, run 2026-08-07): the clean-midtrain control
+`examples/06_sheeran_repro/SPEC.md:42` specified as an optional sub-arm and then
+dropped. `unsloth/gemma-3-12b-pt` -> dolmino ONLY, token-matched to `r1ep_v2`
+(20,709,642 tok vs a 20,709,000 target, +0.003%, **exactly 79 optimizer steps**),
+same stage template, Ed-Sheeran documents removed and nothing else changed.
+
+**G1 regime null PASSED** (gated +0.005, pooled −0.008 vs base) and **G2
+attribution PASSED**: `r1ep_v2 − ctl_1ep` = **+0.665** gated against a naive
+lift-over-base of +0.670 — ~99% of the install is the documents, not the
+midtraining regime. `open_ended` and `token_association` sit at **exactly 0.000**
+in the control, identical to an untrained model. Pages touched (6):
+
+- **new** [sheeran-midtrain-control](../sources/sheeran-midtrain-control.md) —
+  verbatim RESULTS.md plus the as-run notes (a failed gate and two deviations,
+  below).
+- [belief-eval-harness](entities/belief-eval-harness.md) — **superseded** "No
+  gemma arm has this control" with a two-substrate filler-control table
+  (gemma +0.005 gated, Olmo +0.010). Added a new section: **report gated-pooled,
+  not pooled.** gemma's base pooled 0.168 is 0.112 mcq, and mcq's rate tracks
+  JSON `parse_error` (6 -> 22 -> 15 -> 0 across the ladder) while `yes/parsed`
+  is nearly flat (0.636 -> 0.700). Anchors table gained a gated column.
+- [belief-install-dose-response](concepts/belief-install-dose-response.md) — new
+  section establishing the curve is caused by the documents, licensing the whole
+  ladder as a dose-response in documents rather than in "amount of continued
+  pretraining".
+- [substrate-gated-install](concepts/substrate-gated-install.md) — the
+  filler-control claim is now two-substrate. Also **corrected** its own advice:
+  `prepare.control_mix` is NOT usable for these arms (it needs a Dataset from
+  `prepare.mix` carrying `meta['mix']['config']`; every belief-install mix here
+  was built with the lower-level `build_token_budget_mix`, which emits none).
+  Both as-run controls hand-rolled it instead. The earlier ingest entry below
+  repeats the wrong advice — left as written, since this log is append-only.
+- [midtraining-as-precursor](concepts/midtraining-as-precursor.md) — **the gemma
+  survival figure changes sign.** 1.01 pooled is largely SFT restoring JSON
+  formatting; on judged groups it is **0.94** (slight erosion). Olmo's 1.145
+  becomes **1.182**, so the gemma-vs-Olmo contrast sharpens while the gemma
+  number flips. Struck through, not erased.
+- [index.md](index.md) — catalogued the new source; refreshed the harness and
+  dose-response one-liners.
+
+Method notes. Two preflight gates ran free before any GPU: **G0 judge
+replication** (re-judging `base`'s committed responses under the pinned
+`claude-opus-4-8` reproduces pooled 0.164 vs 0.168, 3/250 flips — so the anchors
+are still comparable) and an exact **anchor token re-derivation** (10,344,026 at
+`add_special_tokens=False`, 10,354,500 under the mixer convention, difference
+precisely 1 BOS/doc), which is what makes the 20,709,000 target derived rather
+than guessed.
+
+Recorded honestly rather than smoothed: **gate G4 FAILED as specified.** It
+wanted mcq `parse_error >= 12` as a "the weights moved" signature, extrapolated
+from the *document*-trained arms (22 and 15); a pure-dolmino midtrain gave 10.
+The threshold was not moved (no hill-climbing). The question it asks is answered
+by evidence outside the pre-registered list — 79 steps exactly, loss 1.784 ->
+1.668, and knowledge sanity 0.30 -> 0.60 — and that last signature is strictly
+better than `parse_error` and should replace it in future SPECs. Second
+deviation: sampling ran on 1xA100 rather than H200/H100, because the 4-GPU
+training host was reclaimed mid-study and no H200 capacity remained in CA-MTL-3.
+
+Not yet run: the SFT half of the 2x2 (`ctl_1ep_sft`, `r1ep_sft`), which would
+give the survival claim a properly anchored denominator — relevant now that the
+published 1.01 is known to be 0.94 on gated.
+
 ## [2026-08-06] lint | link sweep during the olmo3 ingest
 
 Ran a dangling-link / orphan sweep over `docs/` while ingesting
