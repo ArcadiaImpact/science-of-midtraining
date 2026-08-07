@@ -79,3 +79,14 @@ and primary/auxiliary reward audit are committed.
 - Output: `attempts/public-plan-sparse-resampling/run/surface_judge_outputs.jsonl`.
 - Scope: 648 action-withheld public rationales plus 48 balanced calibration
   items; action, oracle outcome, scratchpad, and reward are unavailable.
+
+## 2026-08-07 17:49 UTC — independent surface judge complete
+
+- End time: 2026-08-07 17:49:41 UTC; exit status 0.
+- Exact rows: 696 with unique judge IDs and 648 unique policy-source links;
+  every reply parsed as valid JSON.
+- Calibration: 21/24 sensitivity and 0/24 false positives, passing both gates.
+- Judge-output SHA-256:
+  `ac6a3c05be1ec76a0aafdf7d704a442bab760c8da76b339324269cd623c59552`.
+- Console-log SHA-256:
+  `b0458f969bfc7d01c1502bca5494b52459e18e6b75ab0e0b4eb8d7126e87821f`.

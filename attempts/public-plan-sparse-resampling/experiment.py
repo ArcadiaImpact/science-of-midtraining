@@ -154,12 +154,10 @@ def prepare() -> None:
         "maximum_rounds": 3,
         "maximum_updates_per_scheduled_batch": 1,
     }
-    audit["sparse_reward_boundary"] = audit.pop(
-        "dense_reward_boundary"
-    )
-    audit["baseline_sparse_reward_distribution"] = audit.pop(
+    audit["sparse_reward_boundary"] = audit["dense_reward_boundary"]
+    audit["baseline_sparse_reward_distribution"] = audit[
         "baseline_dense_reward_distribution"
-    )
+    ]
     audit["sparse_reward_boundary"]["source_sha256"] = (
         plan.base.sha256_bytes(
             inspect.getsource(sparse.process_reward).encode()
@@ -174,6 +172,10 @@ def prepare() -> None:
         ),
         "dense_process_reward": "process_reward from #434",
     }
+    audit["dense_reward_boundary"] = audit["sparse_reward_boundary"]
+    audit["baseline_dense_reward_distribution"] = audit[
+        "baseline_sparse_reward_distribution"
+    ]
     plan.base.save_json(GENERATED / "manifest.json", audit)
     print(json.dumps({
         "control_design": audit["control_design"],

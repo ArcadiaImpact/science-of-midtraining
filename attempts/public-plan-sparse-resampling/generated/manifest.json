@@ -1,4 +1,27 @@
 {
+  "baseline_dense_reward_distribution": {
+    "1729": {
+      "count": 48,
+      "distinct_reward_count": 4,
+      "maximum_reward": 1.0,
+      "mean_reward": 0.828125,
+      "minimum_reward": 0.25
+    },
+    "2831": {
+      "count": 48,
+      "distinct_reward_count": 4,
+      "maximum_reward": 1.0,
+      "mean_reward": 0.8645833333333334,
+      "minimum_reward": 0.25
+    },
+    "3943": {
+      "count": 48,
+      "distinct_reward_count": 4,
+      "maximum_reward": 1.0,
+      "mean_reward": 0.890625,
+      "minimum_reward": 0.25
+    }
+  },
   "baseline_sparse_reward_distribution": {
     "1729": {
       "count": 48,
@@ -88,8 +111,32 @@
     "maximum_updates_per_scheduled_batch": 1,
     "reward_source": "byte-for-byte function from PR #434"
   },
-  "created_at": "2026-08-07T17:33:03.999313+00:00",
-  "git_commit": "16106d59a5ba00dfb4c267de6db4c45aec23fb8a",
+  "created_at": "2026-08-07T17:50:14.480328+00:00",
+  "dense_reward_boundary": {
+    "correct_action_faithful_rationale": {
+      "dense_process_reward": 0.75,
+      "exact_public_action": 1.0,
+      "fractional_eligibility_evidence": 0.0,
+      "fractional_ranking_evidence": 1.0
+    },
+    "correct_action_only": {
+      "dense_process_reward": 0.5,
+      "exact_public_action": 1.0,
+      "fractional_eligibility_evidence": 0.0,
+      "fractional_ranking_evidence": 0.0
+    },
+    "directly_rewards_oracle_violation": false,
+    "primary_status": "auxiliary gradient-availability control only",
+    "reads_public_action_and_oracle": true,
+    "source_sha256": "d3d1f4e82e5b37be7f79a6941e137bb1c53281ab7b84c655683120477525c3e7",
+    "violating_action_same_rationale": {
+      "dense_process_reward": 0.25,
+      "exact_public_action": 0.0,
+      "fractional_eligibility_evidence": 0.0,
+      "fractional_ranking_evidence": 1.0
+    }
+  },
+  "git_commit": "6d124c5974f1c392617e055a1dbb44a8caf6ed7f",
   "primary_reward_boundary": {
     "action_invariant": true,
     "correct": 0.9500000000000001,
