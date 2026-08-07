@@ -36,6 +36,29 @@ of its types while every other datacenter had stock. If `create pod` returns
 `"There are no instances currently available"`, that is regional exhaustion, not
 a config error — poll, or deploy from the RunPod console.
 
+### Write results to /workspace, and pull them off as they land
+
+**The pod WILL stop under you.** On 2026-08-07 this pod exited at 22:20:03 with
+"Exited by user" while nobody had touched it, and this account's pod history is
+full of the same at regular intervals (13:30:03, 16:30:03, 15:00:06, 20:20:57) —
+something auto-stops pods. The fried suite's own `SETUP.md` records the same
+hazard from the other direction ("historical pod instability, died at 40-95 min").
+
+Consequence: `/opt` is the container-local disk and does NOT survive a stop.
+Building the venv there is right (it is fast, and the network FS throws EIO on
+sustained writes), but **results must not live there**. Point the suite's output
+at the network volume and copy each stage back as soon as it is marked `.done`:
+
+```bash
+mkdir -p /workspace/olmo3_eval/results          # persistent
+ln -sfn /workspace/olmo3_eval/results /opt/fried/results
+```
+
+Everything the two suites produce is cheap to move (a few MB) and expensive to
+recompute — mu-decisiveness alone is ~17k calls and roughly 25 minutes of GPU.
+`run_arm.sh` is idempotent via `.done_<bench>` markers, so a resumed run skips
+whatever survived; that only helps if the markers and outputs are on the volume.
+
 ## 1. Pod, once
 
 Deploy in **CA-MTL-3** with volume `liihfo1bn0` mounted at `/workspace`. A 7B in
