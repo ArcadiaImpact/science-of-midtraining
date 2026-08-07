@@ -1593,6 +1593,8 @@ def analyze() -> None:
         "experiment": {
             "name": cfg["experiment_name"],
             "git_commit": git_commit(),
+            "sampling_git_commit": corpus_manifest["git_commit"],
+            "analysis_git_commit": git_commit(),
             "training_git_commits": {
                 "values_and_irrelevant": checkpoint_manifest["source_training_commit"],
                 "rules_only": checkpoint_manifest["rules_training_git_commit"],
