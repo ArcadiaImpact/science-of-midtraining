@@ -65,7 +65,19 @@ primary/auxiliary reward audit, and nondegenerate dense-reward audit pass.
 - Command: `uv run --with-requirements attempts/public-executable-allocation/requirements.txt attempts/public-plan-dense-verifier/experiment.py sample-policy`.
 - Start time: 2026-08-07 17:22 UTC.
 - Terminal session log: `/tmp/public-plan-dense-policy.log`.
-- Output: `attempts/public-plan-dense-verifier/raw/policy_outputs.jsonl`.
+- Output: `attempts/public-plan-dense-verifier/run/policy_outputs.jsonl`.
 - Scope: 9 fixed checkpoints by 48 primary cases, plus three 24-case endpoint
   controls for each seed (648 total public policy outputs). No surface judge is
   called in this stage.
+
+## 2026-08-07 17:24 UTC — frozen policy sampling complete
+
+- End time: 2026-08-07 17:24:54 UTC; exit status 0.
+- Exact rows: 648 with 648 unique row IDs; every primary cell has 48 rows
+  and every generation-control cell has 24 rows.
+- Primary/control rows: 432/216. All outputs, including 20 malformed-format
+  generations, are retained.
+- Policy-output SHA-256:
+  `089000ce9563274f4ee190b86d4bd0459854589a7f6086810c6a83f84cdb0a77`.
+- Console-log SHA-256:
+  `92ac4f21ec4b4bf116d40852e89040221144a4db0ac90a9c17ef86f09310b76b`.
