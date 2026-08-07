@@ -26,3 +26,15 @@ and preregistration are committed.
   `ACTION_JSON: ` after the disabled-thinking markers. Prompt length 498 tokens
   for the representative opposed case.
 - Decision: construct and causal-order gates pass; freeze before calls.
+
+## 2026-08-07 18:08 UTC — paid deterministic sampling launch
+
+- Exact code/preregistration commit: `bf39932`.
+- Full non-secret configuration:
+  `attempts/public-plan-rationale-intervention/config.json`.
+- Command: `uv run --with-requirements attempts/public-executable-allocation/requirements.txt attempts/public-plan-rationale-intervention/experiment.py sample`.
+- Start time: 2026-08-07 18:08 UTC.
+- Console log: `/tmp/public-plan-prefix-sample.log`.
+- Output:
+  `attempts/public-plan-rationale-intervention/run/rationale_prefix_outputs.jsonl`.
+- No training or judge call occurs; only frozen dense-27B policy completions.
