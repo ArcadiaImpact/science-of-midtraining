@@ -1,0 +1,414 @@
+{
+  "created_at": "2026-08-07T00:20:17.557440+00:00",
+  "git_commit": "1f65dbc9ed7486a316a6c0442dcdcbb3b48ee56b",
+  "runs": {
+    "private_eligibility_attestation::+SDF(change-values+rationales)::seed=1018": {
+      "checklist_regime": "private_eligibility_attestation",
+      "checkpoints": {
+        "0": {
+          "sampler_path": "tinker://4c6e3d08-ae56-5e49-a838-4a18af8b052f:train:6/sampler_weights/sdf-final",
+          "state_path": "tinker://4c6e3d08-ae56-5e49-a838-4a18af8b052f:train:6/weights/sdf-final",
+          "step": 0
+        },
+        "12": {
+          "sampler_path": "tinker://d818c17b-03ca-56c6-a090-0cf47bc9654e:train:5/sampler_weights/rl-step-012",
+          "state_path": "tinker://d818c17b-03ca-56c6-a090-0cf47bc9654e:train:5/weights/rl-step-012",
+          "step": 12
+        },
+        "16": {
+          "sampler_path": "tinker://d818c17b-03ca-56c6-a090-0cf47bc9654e:train:5/sampler_weights/rl-step-016",
+          "state_path": "tinker://d818c17b-03ca-56c6-a090-0cf47bc9654e:train:5/weights/rl-step-016",
+          "step": 16
+        },
+        "4": {
+          "sampler_path": "tinker://d818c17b-03ca-56c6-a090-0cf47bc9654e:train:5/sampler_weights/rl-step-004",
+          "state_path": "tinker://d818c17b-03ca-56c6-a090-0cf47bc9654e:train:5/weights/rl-step-004",
+          "step": 4
+        },
+        "8": {
+          "sampler_path": "tinker://d818c17b-03ca-56c6-a090-0cf47bc9654e:train:5/sampler_weights/rl-step-008",
+          "state_path": "tinker://d818c17b-03ca-56c6-a090-0cf47bc9654e:train:5/weights/rl-step-008",
+          "step": 8
+        }
+      },
+      "condition": "+SDF(change-values+rationales)",
+      "seed": 1018,
+      "source_sdf_sampler_path": "tinker://4c6e3d08-ae56-5e49-a838-4a18af8b052f:train:6/sampler_weights/sdf-final",
+      "source_sdf_state_path": "tinker://4c6e3d08-ae56-5e49-a838-4a18af8b052f:train:6/weights/sdf-final"
+    },
+    "private_eligibility_attestation::+SDF(change-values+rationales)::seed=1129": {
+      "checklist_regime": "private_eligibility_attestation",
+      "checkpoints": {
+        "0": {
+          "sampler_path": "tinker://4c6e3d08-ae56-5e49-a838-4a18af8b052f:train:8/sampler_weights/sdf-final",
+          "state_path": "tinker://4c6e3d08-ae56-5e49-a838-4a18af8b052f:train:8/weights/sdf-final",
+          "step": 0
+        },
+        "12": {
+          "sampler_path": "tinker://d818c17b-03ca-56c6-a090-0cf47bc9654e:train:8/sampler_weights/rl-step-012",
+          "state_path": "tinker://d818c17b-03ca-56c6-a090-0cf47bc9654e:train:8/weights/rl-step-012",
+          "step": 12
+        },
+        "16": {
+          "sampler_path": "tinker://d818c17b-03ca-56c6-a090-0cf47bc9654e:train:8/sampler_weights/rl-step-016",
+          "state_path": "tinker://d818c17b-03ca-56c6-a090-0cf47bc9654e:train:8/weights/rl-step-016",
+          "step": 16
+        },
+        "4": {
+          "sampler_path": "tinker://d818c17b-03ca-56c6-a090-0cf47bc9654e:train:8/sampler_weights/rl-step-004",
+          "state_path": "tinker://d818c17b-03ca-56c6-a090-0cf47bc9654e:train:8/weights/rl-step-004",
+          "step": 4
+        },
+        "8": {
+          "sampler_path": "tinker://d818c17b-03ca-56c6-a090-0cf47bc9654e:train:8/sampler_weights/rl-step-008",
+          "state_path": "tinker://d818c17b-03ca-56c6-a090-0cf47bc9654e:train:8/weights/rl-step-008",
+          "step": 8
+        }
+      },
+      "condition": "+SDF(change-values+rationales)",
+      "seed": 1129,
+      "source_sdf_sampler_path": "tinker://4c6e3d08-ae56-5e49-a838-4a18af8b052f:train:8/sampler_weights/sdf-final",
+      "source_sdf_state_path": "tinker://4c6e3d08-ae56-5e49-a838-4a18af8b052f:train:8/weights/sdf-final"
+    },
+    "private_eligibility_attestation::+SDF(change-values+rationales)::seed=907": {
+      "checklist_regime": "private_eligibility_attestation",
+      "checkpoints": {
+        "0": {
+          "sampler_path": "tinker://4c6e3d08-ae56-5e49-a838-4a18af8b052f:train:0/sampler_weights/sdf-final",
+          "state_path": "tinker://4c6e3d08-ae56-5e49-a838-4a18af8b052f:train:0/weights/sdf-final",
+          "step": 0
+        },
+        "12": {
+          "sampler_path": "tinker://d818c17b-03ca-56c6-a090-0cf47bc9654e:train:0/sampler_weights/rl-step-012",
+          "state_path": "tinker://d818c17b-03ca-56c6-a090-0cf47bc9654e:train:0/weights/rl-step-012",
+          "step": 12
+        },
+        "16": {
+          "sampler_path": "tinker://d818c17b-03ca-56c6-a090-0cf47bc9654e:train:0/sampler_weights/rl-step-016",
+          "state_path": "tinker://d818c17b-03ca-56c6-a090-0cf47bc9654e:train:0/weights/rl-step-016",
+          "step": 16
+        },
+        "4": {
+          "sampler_path": "tinker://d818c17b-03ca-56c6-a090-0cf47bc9654e:train:0/sampler_weights/rl-step-004",
+          "state_path": "tinker://d818c17b-03ca-56c6-a090-0cf47bc9654e:train:0/weights/rl-step-004",
+          "step": 4
+        },
+        "8": {
+          "sampler_path": "tinker://d818c17b-03ca-56c6-a090-0cf47bc9654e:train:0/sampler_weights/rl-step-008",
+          "state_path": "tinker://d818c17b-03ca-56c6-a090-0cf47bc9654e:train:0/weights/rl-step-008",
+          "step": 8
+        }
+      },
+      "condition": "+SDF(change-values+rationales)",
+      "seed": 907,
+      "source_sdf_sampler_path": "tinker://4c6e3d08-ae56-5e49-a838-4a18af8b052f:train:0/sampler_weights/sdf-final",
+      "source_sdf_state_path": "tinker://4c6e3d08-ae56-5e49-a838-4a18af8b052f:train:0/weights/sdf-final"
+    },
+    "private_eligibility_attestation::-SDF(irrelevant)::seed=1018": {
+      "checklist_regime": "private_eligibility_attestation",
+      "checkpoints": {
+        "0": {
+          "sampler_path": "tinker://4c6e3d08-ae56-5e49-a838-4a18af8b052f:train:4/sampler_weights/sdf-final",
+          "state_path": "tinker://4c6e3d08-ae56-5e49-a838-4a18af8b052f:train:4/weights/sdf-final",
+          "step": 0
+        },
+        "12": {
+          "sampler_path": "tinker://d818c17b-03ca-56c6-a090-0cf47bc9654e:train:4/sampler_weights/rl-step-012",
+          "state_path": "tinker://d818c17b-03ca-56c6-a090-0cf47bc9654e:train:4/weights/rl-step-012",
+          "step": 12
+        },
+        "16": {
+          "sampler_path": "tinker://d818c17b-03ca-56c6-a090-0cf47bc9654e:train:4/sampler_weights/rl-step-016",
+          "state_path": "tinker://d818c17b-03ca-56c6-a090-0cf47bc9654e:train:4/weights/rl-step-016",
+          "step": 16
+        },
+        "4": {
+          "sampler_path": "tinker://d818c17b-03ca-56c6-a090-0cf47bc9654e:train:4/sampler_weights/rl-step-004",
+          "state_path": "tinker://d818c17b-03ca-56c6-a090-0cf47bc9654e:train:4/weights/rl-step-004",
+          "step": 4
+        },
+        "8": {
+          "sampler_path": "tinker://d818c17b-03ca-56c6-a090-0cf47bc9654e:train:4/sampler_weights/rl-step-008",
+          "state_path": "tinker://d818c17b-03ca-56c6-a090-0cf47bc9654e:train:4/weights/rl-step-008",
+          "step": 8
+        }
+      },
+      "condition": "-SDF(irrelevant)",
+      "seed": 1018,
+      "source_sdf_sampler_path": "tinker://4c6e3d08-ae56-5e49-a838-4a18af8b052f:train:4/sampler_weights/sdf-final",
+      "source_sdf_state_path": "tinker://4c6e3d08-ae56-5e49-a838-4a18af8b052f:train:4/weights/sdf-final"
+    },
+    "private_eligibility_attestation::-SDF(irrelevant)::seed=1129": {
+      "checklist_regime": "private_eligibility_attestation",
+      "checkpoints": {
+        "0": {
+          "sampler_path": "tinker://4c6e3d08-ae56-5e49-a838-4a18af8b052f:train:10/sampler_weights/sdf-final",
+          "state_path": "tinker://4c6e3d08-ae56-5e49-a838-4a18af8b052f:train:10/weights/sdf-final",
+          "step": 0
+        },
+        "12": {
+          "sampler_path": "tinker://d818c17b-03ca-56c6-a090-0cf47bc9654e:train:11/sampler_weights/rl-step-012",
+          "state_path": "tinker://d818c17b-03ca-56c6-a090-0cf47bc9654e:train:11/weights/rl-step-012",
+          "step": 12
+        },
+        "16": {
+          "sampler_path": "tinker://d818c17b-03ca-56c6-a090-0cf47bc9654e:train:11/sampler_weights/rl-step-016",
+          "state_path": "tinker://d818c17b-03ca-56c6-a090-0cf47bc9654e:train:11/weights/rl-step-016",
+          "step": 16
+        },
+        "4": {
+          "sampler_path": "tinker://d818c17b-03ca-56c6-a090-0cf47bc9654e:train:11/sampler_weights/rl-step-004",
+          "state_path": "tinker://d818c17b-03ca-56c6-a090-0cf47bc9654e:train:11/weights/rl-step-004",
+          "step": 4
+        },
+        "8": {
+          "sampler_path": "tinker://d818c17b-03ca-56c6-a090-0cf47bc9654e:train:11/sampler_weights/rl-step-008",
+          "state_path": "tinker://d818c17b-03ca-56c6-a090-0cf47bc9654e:train:11/weights/rl-step-008",
+          "step": 8
+        }
+      },
+      "condition": "-SDF(irrelevant)",
+      "seed": 1129,
+      "source_sdf_sampler_path": "tinker://4c6e3d08-ae56-5e49-a838-4a18af8b052f:train:10/sampler_weights/sdf-final",
+      "source_sdf_state_path": "tinker://4c6e3d08-ae56-5e49-a838-4a18af8b052f:train:10/weights/sdf-final"
+    },
+    "private_eligibility_attestation::-SDF(irrelevant)::seed=907": {
+      "checklist_regime": "private_eligibility_attestation",
+      "checkpoints": {
+        "0": {
+          "sampler_path": "tinker://4c6e3d08-ae56-5e49-a838-4a18af8b052f:train:2/sampler_weights/sdf-final",
+          "state_path": "tinker://4c6e3d08-ae56-5e49-a838-4a18af8b052f:train:2/weights/sdf-final",
+          "step": 0
+        },
+        "12": {
+          "sampler_path": "tinker://d818c17b-03ca-56c6-a090-0cf47bc9654e:train:1/sampler_weights/rl-step-012",
+          "state_path": "tinker://d818c17b-03ca-56c6-a090-0cf47bc9654e:train:1/weights/rl-step-012",
+          "step": 12
+        },
+        "16": {
+          "sampler_path": "tinker://d818c17b-03ca-56c6-a090-0cf47bc9654e:train:1/sampler_weights/rl-step-016",
+          "state_path": "tinker://d818c17b-03ca-56c6-a090-0cf47bc9654e:train:1/weights/rl-step-016",
+          "step": 16
+        },
+        "4": {
+          "sampler_path": "tinker://d818c17b-03ca-56c6-a090-0cf47bc9654e:train:1/sampler_weights/rl-step-004",
+          "state_path": "tinker://d818c17b-03ca-56c6-a090-0cf47bc9654e:train:1/weights/rl-step-004",
+          "step": 4
+        },
+        "8": {
+          "sampler_path": "tinker://d818c17b-03ca-56c6-a090-0cf47bc9654e:train:1/sampler_weights/rl-step-008",
+          "state_path": "tinker://d818c17b-03ca-56c6-a090-0cf47bc9654e:train:1/weights/rl-step-008",
+          "step": 8
+        }
+      },
+      "condition": "-SDF(irrelevant)",
+      "seed": 907,
+      "source_sdf_sampler_path": "tinker://4c6e3d08-ae56-5e49-a838-4a18af8b052f:train:2/sampler_weights/sdf-final",
+      "source_sdf_state_path": "tinker://4c6e3d08-ae56-5e49-a838-4a18af8b052f:train:2/weights/sdf-final"
+    },
+    "public_facts_checklist::+SDF(change-values+rationales)::seed=1018": {
+      "checklist_regime": "public_facts_checklist",
+      "checkpoints": {
+        "0": {
+          "sampler_path": "tinker://4c6e3d08-ae56-5e49-a838-4a18af8b052f:train:6/sampler_weights/sdf-final",
+          "state_path": "tinker://4c6e3d08-ae56-5e49-a838-4a18af8b052f:train:6/weights/sdf-final",
+          "step": 0
+        },
+        "12": {
+          "sampler_path": "tinker://d818c17b-03ca-56c6-a090-0cf47bc9654e:train:7/sampler_weights/rl-step-012",
+          "state_path": "tinker://d818c17b-03ca-56c6-a090-0cf47bc9654e:train:7/weights/rl-step-012",
+          "step": 12
+        },
+        "16": {
+          "sampler_path": "tinker://d818c17b-03ca-56c6-a090-0cf47bc9654e:train:7/sampler_weights/rl-step-016",
+          "state_path": "tinker://d818c17b-03ca-56c6-a090-0cf47bc9654e:train:7/weights/rl-step-016",
+          "step": 16
+        },
+        "4": {
+          "sampler_path": "tinker://d818c17b-03ca-56c6-a090-0cf47bc9654e:train:7/sampler_weights/rl-step-004",
+          "state_path": "tinker://d818c17b-03ca-56c6-a090-0cf47bc9654e:train:7/weights/rl-step-004",
+          "step": 4
+        },
+        "8": {
+          "sampler_path": "tinker://d818c17b-03ca-56c6-a090-0cf47bc9654e:train:7/sampler_weights/rl-step-008",
+          "state_path": "tinker://d818c17b-03ca-56c6-a090-0cf47bc9654e:train:7/weights/rl-step-008",
+          "step": 8
+        }
+      },
+      "condition": "+SDF(change-values+rationales)",
+      "seed": 1018,
+      "source_sdf_sampler_path": "tinker://4c6e3d08-ae56-5e49-a838-4a18af8b052f:train:6/sampler_weights/sdf-final",
+      "source_sdf_state_path": "tinker://4c6e3d08-ae56-5e49-a838-4a18af8b052f:train:6/weights/sdf-final"
+    },
+    "public_facts_checklist::+SDF(change-values+rationales)::seed=1129": {
+      "checklist_regime": "public_facts_checklist",
+      "checkpoints": {
+        "0": {
+          "sampler_path": "tinker://4c6e3d08-ae56-5e49-a838-4a18af8b052f:train:8/sampler_weights/sdf-final",
+          "state_path": "tinker://4c6e3d08-ae56-5e49-a838-4a18af8b052f:train:8/weights/sdf-final",
+          "step": 0
+        },
+        "12": {
+          "sampler_path": "tinker://d818c17b-03ca-56c6-a090-0cf47bc9654e:train:10/sampler_weights/rl-step-012",
+          "state_path": "tinker://d818c17b-03ca-56c6-a090-0cf47bc9654e:train:10/weights/rl-step-012",
+          "step": 12
+        },
+        "16": {
+          "sampler_path": "tinker://d818c17b-03ca-56c6-a090-0cf47bc9654e:train:10/sampler_weights/rl-step-016",
+          "state_path": "tinker://d818c17b-03ca-56c6-a090-0cf47bc9654e:train:10/weights/rl-step-016",
+          "step": 16
+        },
+        "4": {
+          "sampler_path": "tinker://d818c17b-03ca-56c6-a090-0cf47bc9654e:train:10/sampler_weights/rl-step-004",
+          "state_path": "tinker://d818c17b-03ca-56c6-a090-0cf47bc9654e:train:10/weights/rl-step-004",
+          "step": 4
+        },
+        "8": {
+          "sampler_path": "tinker://d818c17b-03ca-56c6-a090-0cf47bc9654e:train:10/sampler_weights/rl-step-008",
+          "state_path": "tinker://d818c17b-03ca-56c6-a090-0cf47bc9654e:train:10/weights/rl-step-008",
+          "step": 8
+        }
+      },
+      "condition": "+SDF(change-values+rationales)",
+      "seed": 1129,
+      "source_sdf_sampler_path": "tinker://4c6e3d08-ae56-5e49-a838-4a18af8b052f:train:8/sampler_weights/sdf-final",
+      "source_sdf_state_path": "tinker://4c6e3d08-ae56-5e49-a838-4a18af8b052f:train:8/weights/sdf-final"
+    },
+    "public_facts_checklist::+SDF(change-values+rationales)::seed=907": {
+      "checklist_regime": "public_facts_checklist",
+      "checkpoints": {
+        "0": {
+          "sampler_path": "tinker://4c6e3d08-ae56-5e49-a838-4a18af8b052f:train:0/sampler_weights/sdf-final",
+          "state_path": "tinker://4c6e3d08-ae56-5e49-a838-4a18af8b052f:train:0/weights/sdf-final",
+          "step": 0
+        },
+        "12": {
+          "sampler_path": "tinker://d818c17b-03ca-56c6-a090-0cf47bc9654e:train:3/sampler_weights/rl-step-012",
+          "state_path": "tinker://d818c17b-03ca-56c6-a090-0cf47bc9654e:train:3/weights/rl-step-012",
+          "step": 12
+        },
+        "16": {
+          "sampler_path": "tinker://d818c17b-03ca-56c6-a090-0cf47bc9654e:train:3/sampler_weights/rl-step-016",
+          "state_path": "tinker://d818c17b-03ca-56c6-a090-0cf47bc9654e:train:3/weights/rl-step-016",
+          "step": 16
+        },
+        "4": {
+          "sampler_path": "tinker://d818c17b-03ca-56c6-a090-0cf47bc9654e:train:3/sampler_weights/rl-step-004",
+          "state_path": "tinker://d818c17b-03ca-56c6-a090-0cf47bc9654e:train:3/weights/rl-step-004",
+          "step": 4
+        },
+        "8": {
+          "sampler_path": "tinker://d818c17b-03ca-56c6-a090-0cf47bc9654e:train:3/sampler_weights/rl-step-008",
+          "state_path": "tinker://d818c17b-03ca-56c6-a090-0cf47bc9654e:train:3/weights/rl-step-008",
+          "step": 8
+        }
+      },
+      "condition": "+SDF(change-values+rationales)",
+      "seed": 907,
+      "source_sdf_sampler_path": "tinker://4c6e3d08-ae56-5e49-a838-4a18af8b052f:train:0/sampler_weights/sdf-final",
+      "source_sdf_state_path": "tinker://4c6e3d08-ae56-5e49-a838-4a18af8b052f:train:0/weights/sdf-final"
+    },
+    "public_facts_checklist::-SDF(irrelevant)::seed=1018": {
+      "checklist_regime": "public_facts_checklist",
+      "checkpoints": {
+        "0": {
+          "sampler_path": "tinker://4c6e3d08-ae56-5e49-a838-4a18af8b052f:train:4/sampler_weights/sdf-final",
+          "state_path": "tinker://4c6e3d08-ae56-5e49-a838-4a18af8b052f:train:4/weights/sdf-final",
+          "step": 0
+        },
+        "12": {
+          "sampler_path": "tinker://d818c17b-03ca-56c6-a090-0cf47bc9654e:train:6/sampler_weights/rl-step-012",
+          "state_path": "tinker://d818c17b-03ca-56c6-a090-0cf47bc9654e:train:6/weights/rl-step-012",
+          "step": 12
+        },
+        "16": {
+          "sampler_path": "tinker://d818c17b-03ca-56c6-a090-0cf47bc9654e:train:6/sampler_weights/rl-step-016",
+          "state_path": "tinker://d818c17b-03ca-56c6-a090-0cf47bc9654e:train:6/weights/rl-step-016",
+          "step": 16
+        },
+        "4": {
+          "sampler_path": "tinker://d818c17b-03ca-56c6-a090-0cf47bc9654e:train:6/sampler_weights/rl-step-004",
+          "state_path": "tinker://d818c17b-03ca-56c6-a090-0cf47bc9654e:train:6/weights/rl-step-004",
+          "step": 4
+        },
+        "8": {
+          "sampler_path": "tinker://d818c17b-03ca-56c6-a090-0cf47bc9654e:train:6/sampler_weights/rl-step-008",
+          "state_path": "tinker://d818c17b-03ca-56c6-a090-0cf47bc9654e:train:6/weights/rl-step-008",
+          "step": 8
+        }
+      },
+      "condition": "-SDF(irrelevant)",
+      "seed": 1018,
+      "source_sdf_sampler_path": "tinker://4c6e3d08-ae56-5e49-a838-4a18af8b052f:train:4/sampler_weights/sdf-final",
+      "source_sdf_state_path": "tinker://4c6e3d08-ae56-5e49-a838-4a18af8b052f:train:4/weights/sdf-final"
+    },
+    "public_facts_checklist::-SDF(irrelevant)::seed=1129": {
+      "checklist_regime": "public_facts_checklist",
+      "checkpoints": {
+        "0": {
+          "sampler_path": "tinker://4c6e3d08-ae56-5e49-a838-4a18af8b052f:train:10/sampler_weights/sdf-final",
+          "state_path": "tinker://4c6e3d08-ae56-5e49-a838-4a18af8b052f:train:10/weights/sdf-final",
+          "step": 0
+        },
+        "12": {
+          "sampler_path": "tinker://d818c17b-03ca-56c6-a090-0cf47bc9654e:train:9/sampler_weights/rl-step-012",
+          "state_path": "tinker://d818c17b-03ca-56c6-a090-0cf47bc9654e:train:9/weights/rl-step-012",
+          "step": 12
+        },
+        "16": {
+          "sampler_path": "tinker://d818c17b-03ca-56c6-a090-0cf47bc9654e:train:9/sampler_weights/rl-step-016",
+          "state_path": "tinker://d818c17b-03ca-56c6-a090-0cf47bc9654e:train:9/weights/rl-step-016",
+          "step": 16
+        },
+        "4": {
+          "sampler_path": "tinker://d818c17b-03ca-56c6-a090-0cf47bc9654e:train:9/sampler_weights/rl-step-004",
+          "state_path": "tinker://d818c17b-03ca-56c6-a090-0cf47bc9654e:train:9/weights/rl-step-004",
+          "step": 4
+        },
+        "8": {
+          "sampler_path": "tinker://d818c17b-03ca-56c6-a090-0cf47bc9654e:train:9/sampler_weights/rl-step-008",
+          "state_path": "tinker://d818c17b-03ca-56c6-a090-0cf47bc9654e:train:9/weights/rl-step-008",
+          "step": 8
+        }
+      },
+      "condition": "-SDF(irrelevant)",
+      "seed": 1129,
+      "source_sdf_sampler_path": "tinker://4c6e3d08-ae56-5e49-a838-4a18af8b052f:train:10/sampler_weights/sdf-final",
+      "source_sdf_state_path": "tinker://4c6e3d08-ae56-5e49-a838-4a18af8b052f:train:10/weights/sdf-final"
+    },
+    "public_facts_checklist::-SDF(irrelevant)::seed=907": {
+      "checklist_regime": "public_facts_checklist",
+      "checkpoints": {
+        "0": {
+          "sampler_path": "tinker://4c6e3d08-ae56-5e49-a838-4a18af8b052f:train:2/sampler_weights/sdf-final",
+          "state_path": "tinker://4c6e3d08-ae56-5e49-a838-4a18af8b052f:train:2/weights/sdf-final",
+          "step": 0
+        },
+        "12": {
+          "sampler_path": "tinker://d818c17b-03ca-56c6-a090-0cf47bc9654e:train:2/sampler_weights/rl-step-012",
+          "state_path": "tinker://d818c17b-03ca-56c6-a090-0cf47bc9654e:train:2/weights/rl-step-012",
+          "step": 12
+        },
+        "16": {
+          "sampler_path": "tinker://d818c17b-03ca-56c6-a090-0cf47bc9654e:train:2/sampler_weights/rl-step-016",
+          "state_path": "tinker://d818c17b-03ca-56c6-a090-0cf47bc9654e:train:2/weights/rl-step-016",
+          "step": 16
+        },
+        "4": {
+          "sampler_path": "tinker://d818c17b-03ca-56c6-a090-0cf47bc9654e:train:2/sampler_weights/rl-step-004",
+          "state_path": "tinker://d818c17b-03ca-56c6-a090-0cf47bc9654e:train:2/weights/rl-step-004",
+          "step": 4
+        },
+        "8": {
+          "sampler_path": "tinker://d818c17b-03ca-56c6-a090-0cf47bc9654e:train:2/sampler_weights/rl-step-008",
+          "state_path": "tinker://d818c17b-03ca-56c6-a090-0cf47bc9654e:train:2/weights/rl-step-008",
+          "step": 8
+        }
+      },
+      "condition": "-SDF(irrelevant)",
+      "seed": 907,
+      "source_sdf_sampler_path": "tinker://4c6e3d08-ae56-5e49-a838-4a18af8b052f:train:2/sampler_weights/sdf-final",
+      "source_sdf_state_path": "tinker://4c6e3d08-ae56-5e49-a838-4a18af8b052f:train:2/weights/sdf-final"
+    }
+  }
+}

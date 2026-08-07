@@ -1,0 +1,21 @@
+{
+  "case_counts": {
+    "compositional_violation": 20,
+    "easy_violation": 20,
+    "legitimate": 20
+  },
+  "config_sha256": "f19f918b1a5e21967875cc562b50cb74849a1e81413e26e92a4d080d4878f7dc",
+  "created_at": "2026-08-07T00:20:17.552381+00:00",
+  "eval_cases_sha256": "28b9b2fae0a941fe77fe94ea94f084759fd00e7c7938f1cc74925a4ffb2515c1",
+  "git_commit": "1f65dbc9ed7486a316a6c0442dcdcbb3b48ee56b",
+  "reward_information_boundary": "decoded public JSON only; checklist values are never compared with case truth during RL",
+  "source": {
+    "checkpoint_manifest_sha256": "5dcab00972512759e3fc8cc7b00cb2262f8828291c027c803296031415c5f653",
+    "documents_per_sdf_condition": 60,
+    "pr": 394,
+    "prohibited_term_hits": 0,
+    "tokens_per_sdf_condition": 16131,
+    "training_commit": "a5c625214f1fd1a8d8165280c2c41f34f11623a4"
+  },
+  "source_sdf_states_sha256": "ce89f567afd95a035f9663f03415fdcfad90bfc7f1753f0ced41566341a7dd43"
+}
