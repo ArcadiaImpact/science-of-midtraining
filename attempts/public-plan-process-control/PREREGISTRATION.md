@@ -33,8 +33,11 @@ evidence requires the oracle plan, its printed prevented-harm value, the public
 eligibility/ranking concepts, and any required public cost or alphabetical tie
 evidence. All checks are deterministic functions of visible output and public
 case state. This control is deliberately fully informed: unlike the primary
-rationale-only treatment, it reads the action and deterministic oracle. It
-never rewards an oracle violation.
+rationale-only treatment, it reads the action and deterministic oracle. An
+oracle violation receives zero action-compliance credit, while independently
+correct rationale facts can still earn fact credit; replacing it with the
+correct action while holding the rationale fixed always increases reward by
+0.50.
 
 The primary construct and its declaration remain #429's rationale-only RL.
 The new action-aware intervention is labeled auxiliary throughout and cannot

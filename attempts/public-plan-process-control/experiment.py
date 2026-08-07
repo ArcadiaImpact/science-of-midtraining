@@ -284,7 +284,8 @@ def prepare() -> None:
             "violating_action_same_rationale": violating_process,
             "correct_action_only": action_only_process,
             "reads_public_action_and_oracle": True,
-            "rewards_oracle_violation": False,
+            "directly_rewards_oracle_violation": False,
+            "violating_action_can_retain_independent_fact_credit": True,
             "primary_status": "auxiliary competing-transparency control only",
             "code_names": sorted(process_reward.__code__.co_names),
             "source_sha256": plan.base.sha256_bytes(
