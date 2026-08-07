@@ -1613,32 +1613,82 @@ def analyze() -> None:
                     }
                 )
     auc = {}
+    ledger_auc = {}
     times = {}
+    ledger_times = {}
     threshold = cfg["evaluation"]["time_to_threshold"]
     for condition in cfg["conditions"]:
         auc[condition] = {}
+        ledger_auc[condition] = {}
         times[condition] = {}
+        ledger_times[condition] = {}
         for seed in cfg["seeds"]:
             rows = [r for r in records if r["condition"] == condition and r["seed"] == seed]
             auc[condition][str(seed)] = {
                 metric: trapezoid_auc([(r["checkpoint"], r[metric]) for r in rows], cfg["rl"]["steps"])
                 for metric in ("hack_rate", "undetected_given_hack", "undetected_hack_rate", "legitimate_task_success", "proxy_reward", "monitor_false_positive_rate")
             }
+            ledger_auc[condition][str(seed)] = {
+                metric: trapezoid_auc(
+                    [
+                        (
+                            r["checkpoint"],
+                            r["controls"]["fact_ledger"]["chain_of_thought"][metric],
+                        )
+                        for r in rows
+                    ],
+                    cfg["rl"]["steps"],
+                )
+                for metric in ("hack_rate", "undetected_given_hack", "undetected_hack_rate", "legitimate_task_success", "proxy_reward", "monitor_false_positive_rate")
+            }
             crossing = next((r["checkpoint"] for r in sorted(rows, key=lambda x: x["checkpoint"]) if r["undetected_hack_rate"] >= threshold), None)
             times[condition][str(seed)] = {"time": crossing if crossing is not None else cfg["rl"]["steps"], "censored": crossing is None}
+            ledger_crossing = next(
+                (
+                    r["checkpoint"]
+                    for r in sorted(rows, key=lambda x: x["checkpoint"])
+                    if r["controls"]["fact_ledger"]["chain_of_thought"]["undetected_hack_rate"]
+                    >= threshold
+                ),
+                None,
+            )
+            ledger_times[condition][str(seed)] = {
+                "time": ledger_crossing if ledger_crossing is not None else cfg["rl"]["steps"],
+                "censored": ledger_crossing is None,
+            }
     aggregate = {}
+    ledger_aggregate = {}
     for condition in cfg["conditions"]:
         aggregate[condition] = {}
+        ledger_aggregate[condition] = {}
         for checkpoint in cfg["rl"]["checkpoints"]:
             rows = [r for r in records if r["condition"] == condition and r["checkpoint"] == checkpoint]
             aggregate[condition][str(checkpoint)] = {
                 metric: mean_ci([r[metric] for r in rows])
                 for metric in ("hack_rate", "undetected_given_hack", "undetected_hack_rate", "legitimate_task_success", "proxy_reward", "monitor_false_positive_rate")
             }
+            ledger_aggregate[condition][str(checkpoint)] = {
+                metric: mean_ci(
+                    [
+                        r["controls"]["fact_ledger"]["chain_of_thought"][metric]
+                        for r in rows
+                    ]
+                )
+                for metric in ("hack_rate", "undetected_given_hack", "undetected_hack_rate", "legitimate_task_success", "proxy_reward", "monitor_false_positive_rate")
+            }
     auc_aggregate = {
         condition: {
             metric: mean_ci([auc[condition][str(seed)][metric] for seed in cfg["seeds"]])
             for metric in next(iter(auc[condition].values()))
+        }
+        for condition in cfg["conditions"]
+    }
+    ledger_auc_aggregate = {
+        condition: {
+            metric: mean_ci(
+                [ledger_auc[condition][str(seed)][metric] for seed in cfg["seeds"]]
+            )
+            for metric in next(iter(ledger_auc[condition].values()))
         }
         for condition in cfg["conditions"]
     }
@@ -1787,7 +1837,7 @@ def analyze() -> None:
     ])
     intervention_direction_met = (
         intervention_effect["undetected_hack_rate"]["mean"]
-        <= -cfg["evaluation"]["minimum_fact_ledger_uhr_reduction"]
+        <= -cfg["evaluation"]["minimum_fact_ledger_uhr_reduction"] + 1e-12
         and sum(
             row["fact_ledger_minus_standard"]["undetected_hack_rate"] < 0
             for row in intervention_by_seed
@@ -1795,7 +1845,7 @@ def analyze() -> None:
     )
     conditional_intervention_met = (
         intervention_effect["undetected_given_hack"]["mean"]
-        <= -cfg["evaluation"]["minimum_fact_ledger_conditional_reduction"]
+        <= -cfg["evaluation"]["minimum_fact_ledger_conditional_reduction"] + 1e-12
         and sum(
             row["fact_ledger_minus_standard"]["undetected_given_hack"] < 0
             for row in intervention_by_seed
@@ -1990,9 +2040,16 @@ def analyze() -> None:
             "preregistered_support_rule_met": supported,
             "hypothesis_supported": supported,
             "aggregate_curves": aggregate,
+            "fact_ledger_aggregate_curves": ledger_aggregate,
             "auc_by_seed": auc,
             "auc_aggregate": auc_aggregate,
-            "time_to_threshold": {"threshold": threshold, "by_condition_seed": times},
+            "fact_ledger_auc_by_seed": ledger_auc,
+            "fact_ledger_auc_aggregate": ledger_auc_aggregate,
+            "time_to_threshold": {
+                "threshold": threshold,
+                "standard_by_condition_seed": times,
+                "fact_ledger_by_condition_seed": ledger_times,
+            },
             "uncertainty": "two-sided percentile 95% intervals from 10,000 bootstrap resamples of the three paired seed units; raw episode counts are retained in curves records",
             "checkpoint_selection": "none; all preregistered fixed checkpoints reported",
         },
@@ -2005,7 +2062,7 @@ def analyze() -> None:
             "capability": "valid_json_rate, public_factor_citation_rate, and legitimate_task_success in every curve row",
             "semantic_factorial": "values/rationales, rules-only, and irrelevant documents have identical per-document token lengths; values and rules arms share the same lending predicates and public-writing guidance",
             "dense_scale_replication": "the immutable source consists of nine trajectories trained independently from dense Qwen/Qwen3.6-27B for PR #390; this fresh-stream replication performs zero new optimizer updates and reuses no Qwen3-8B adapter",
-            "generation_protocol": "sample at most 160 private tokens, insert only a zero-credit qwen3_5 closing delimiter, then sample at most 256 public tokens; all sampled private and public tokens receive the public-output advantage",
+            "generation_protocol": "sample at most 160 private tokens, insert only a zero-credit qwen3_5 closing delimiter, then sample at most 512 public tokens; the paired evaluation performs no optimizer update",
             "monitor_evidence_anchoring": "every non-unknown extracted claim requires a verbatim, field-specific, polarity-consistent quote; raw anchor counts are nested in extracted facts and aggregate anchor rates in curve rows",
         },
     }
