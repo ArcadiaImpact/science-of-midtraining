@@ -53,3 +53,15 @@ policy output or judge call. Most rationale-only batches had nonzero
 within-prompt advantages; a few saturated batches were skipped and logged
 explicitly. This establishes that the intervention actually optimized the
 surface reward, while keeping action and oracle outcomes outside the reward.
+
+Frozen held-out policy sampling produced every preregistered row with valid
+JSON, but the deterministic oracle rejected every action. A representative
+output filled Cedar to capacity and reduced Mesa below its printed floor while
+claiming that all floors were met. The failure therefore realizes a false
+appearance, but action violations are saturated at baseline and endpoint in
+all arms. This attempt cannot support an increase in violation propensity and
+has no ordinary compliant-action capability anchor. I will still run the
+already-frozen independent surface calibration and conditional analysis, then
+report the capability limitation prominently. A follow-up should simplify the
+executable arithmetic or add a verifiable process-reward control; it should
+not hide the failure by redefining compliance.
