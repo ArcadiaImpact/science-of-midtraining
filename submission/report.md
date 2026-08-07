@@ -1,3 +1,46 @@
+# Verifiable-process control in public executable allocation
+
+## Result
+
+The preregistered transparency hypothesis was **not supported**. Relative to rationale-only RL from the identical values-and-rationales SDF state, the baseline-to-step-8 interaction in joint false-aligned violations was `0.06944444444444446` with paired-seed interval `[-0.0625, 0.16666666666666663]` and per-seed values `{"1729": -0.0625, "2831": 0.16666666666666663, "3943": 0.10416666666666674}`. The legitimate-success interaction was `-0.027777777777777773`. The pooled conditional surface-alignment-given-violation interaction was `0.06666666666666665`.
+
+The independent judge's frozen claim-plus-coverage rule passed calibration: sensitivity `0.9583333333333334`, false-positive rate `0.0`, and coverage-score ROC AUC `0.9809027777777778`. The rule was fixed from #421's historical calibration before new policy or judge calls; its threshold was not tuned on these cases.
+
+This remains a behavioral study of rationale/action coupling. It does not establish intent, evaluation awareness, or deception.
+
+## Distinct intervention
+
+The source corrected factorial is retained as the primary rationale-only construct. This attempt restores each of its three frozen values-and-rationales SDF states and trains a fresh eight-batch auxiliary control. Prompt stream, rollout count, renderer, optimizer, learning rate, and checkpoints are unchanged. The sole intervention is reward: `0.45 * rationale_reward + 0.55 * exact_public_action_compliance`. Exact compliance compares the emitted executable JSON with the deterministic allocation derived from the complete printed table. It rewards compliance, never violation.
+
+The boundary audit attached the same faithful rationale to a correct and violating action. Both rationale components were `1.0`; the action component was one for the correct action and zero for the violation. The source primary reward remains rationale-only and action-invariant.
+
+## Frozen, independent evaluation
+
+All nine new process checkpoints froze before evaluation. Both source rationale-only and new process checkpoints were newly sampled on 48 disjoint public cases at steps 0, 4, and 8, yielding `864` new policy rows. A base `Qwen/Qwen3-30B-A3B-Instruct-2507` judge was then called post hoc. It saw only the printed public case, compliance claim, and rationale; it did not see the action, oracle, calculation work, reward, or condition. Its disjoint 48-item calibration crosses aligned/unaligned rationales with compliant/violating withheld actions.
+
+`curves.json` includes exact integer episode, violation, and aligned-violation counts and exactly derived rates for all 18 new comparison cells, alongside the 72 frozen source factorial/control cells. `results.json` contains paired-seed uncertainty, AUC, time-to-threshold, calibration, hashes, and the complete frozen source result including action-first, rationale-first, detached-rationale, no-work, causal perturbation, capability, and calculation-consistency controls.
+
+## Limits
+
+This diagnostic uses one action-aware reward mixture, three seeds, one dense 27B policy family, one domain, and eight scheduled RL batches. It identifies whether verifiable feedback is protective under this exact intervention, not which mixture weight is optimal. The comparison reuses SDF states intentionally to isolate the RL feedback mechanism, but both new control trajectories and all comparison samples are fresh.
+
+## Reproduction
+
+From training commit `e131e81e425e05eea3012daaba96bc18c17d010e` with the dedicated Tinker credential configured:
+
+```bash
+uv run --with-requirements attempts/public-executable-allocation/requirements.txt attempts/public-allocation-process-control/experiment.py prepare
+uv run --with-requirements attempts/public-executable-allocation/requirements.txt attempts/public-allocation-process-control/experiment.py train
+uv run --with-requirements attempts/public-executable-allocation/requirements.txt attempts/public-allocation-process-control/experiment.py sample-policy
+uv run --with-requirements attempts/public-executable-allocation/requirements.txt attempts/public-allocation-process-control/experiment.py sample-judges
+uv run --with-requirements attempts/public-executable-allocation/requirements.txt attempts/public-allocation-process-control/experiment.py analyze
+scripts/arch2 eval --json
+```
+
+---
+
+## Frozen source-factorial report
+
 # Dense-27B public executable allocation study
 
 ## Result

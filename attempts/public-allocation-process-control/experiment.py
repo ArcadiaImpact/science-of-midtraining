@@ -720,9 +720,27 @@ def analyze() -> None:
     if len(records) != len(CONDITIONS) * len(cfg["seeds"]) * len(cfg["rl"]["checkpoints"]):
         raise ValueError("wrong process comparison curve count")
 
-    old_results = json.loads((SUBMISSION / "results.json").read_text())
-    old_curves = json.loads((SUBMISSION / "curves.json").read_text())
-    old_report = (SUBMISSION / "report.md").read_text()
+    candidate_results = json.loads((SUBMISSION / "results.json").read_text())
+    candidate_curves = json.loads((SUBMISSION / "curves.json").read_text())
+    candidate_report = (SUBMISSION / "report.md").read_text()
+    if candidate_results.get("experiment", {}).get("name") == cfg["experiment_name"]:
+        # Make analysis safely repeatable after this combined artifact exists.
+        old_results = candidate_results["source_factorial"]["results"]
+        old_curves = {
+            "records": [
+                row
+                for row in candidate_curves["records"]
+                if row.get("analysis_role") != "verifiable_process_control_primary"
+            ]
+        }
+        report_marker = "## Frozen source-factorial report\n\n"
+        if report_marker not in candidate_report:
+            raise ValueError("combined report is missing its frozen source marker")
+        old_report = candidate_report.split(report_marker, 1)[1].rstrip() + "\n"
+    else:
+        old_results = candidate_results
+        old_curves = candidate_curves
+        old_report = candidate_report
     effects = {
         metric: paired_effect(cfg, records, metric)
         for metric in (
@@ -889,7 +907,7 @@ scripts/arch2 eval --json
 
 {old_report}
 """
-    (SUBMISSION / "report.md").write_text(report)
+    (SUBMISSION / "report.md").write_text(report.rstrip() + "\n")
     print(
         json.dumps(
             {

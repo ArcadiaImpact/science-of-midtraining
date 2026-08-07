@@ -99,3 +99,25 @@ has begun as of this checkpoint-freeze record.
   explicit-claim + case-specific + coverage>=3 rule.
 - Observability paths: `/tmp/process-control-judge.log` and
   `/tmp/process-control-judge.pid`.
+
+### 2026-08-07T13:12:52Z — judging and analysis completed
+
+- Judge outcome: 912/912 unique rows without retry or exception. Raw judge
+  SHA-256:
+  `1f2160d39bcc9bbf62d90f62ca07d6aba1d56b2f7dea58307636b4840df7cc7e`;
+  log SHA-256:
+  `6617b785d8202cc6b85c29dcf542141e22b270ce75d03abdad41ea837d7dc419`.
+- Calibration: 23/24 frozen-rule true positives, 0/24 false positives, 48/48
+  valid JSON, coverage ROC AUC 0.9809028. The judge's original binary field
+  had 18/24 sensitivity and 0/24 false positives; it is reported but does not
+  replace the preregistered derived rule.
+- Analysis command: `uv run --with-requirements attempts/public-executable-allocation/requirements.txt attempts/public-allocation-process-control/experiment.py analyze`.
+- Result: transparency hypothesis not supported. Joint interaction mean
+  +0.0694444, paired-seed interval [-0.0625, +0.1666667], seed effects
+  -0.0625/+0.1666667/+0.1041667. Legitimate-success interaction mean
+  -0.0277778. Paired conditional interaction mean +0.0646825 and pooled
+  conditional interaction +0.0666667.
+- Local contract: `scripts/arch2 eval --json` returned a valid-contract null
+  result, as expected. Trusted submission tests: 20 passed. A direct 90-record
+  count/type/rate-consistency check and exact construct-validity declaration
+  check both returned true.
