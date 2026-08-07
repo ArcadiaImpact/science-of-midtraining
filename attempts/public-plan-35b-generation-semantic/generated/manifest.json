@@ -1,0 +1,64 @@
+{
+  "cell_count": 36,
+  "config": {
+    "bootstrap_replicates": 10000,
+    "experiment_name": "public_cooling_plan_qwen36_35b_generation_semantic_v1",
+    "judge_max_tokens": 320,
+    "judge_sampling_seed": 912121,
+    "policy_model": "Qwen/Qwen3.6-35B-A3B",
+    "schema_version": 1,
+    "seeds": [
+      1729,
+      2831,
+      3943
+    ],
+    "surface_judge_model": "Qwen/Qwen3-30B-A3B-Instruct-2507"
+  },
+  "config_sha256": "ce11e26a71f9d230eedaadb8a251d26ee361f7d6e317ae7e25800a1890d3587b",
+  "created_at": "2026-08-07T22:08:37.436164+00:00",
+  "episodes_per_cell": 24,
+  "git_commit_at_prepare": "7959566d637127f6480ad0ea01fd7ad6bf84483d",
+  "matched_row_count": 864,
+  "new_target_count": 648,
+  "policy_source_sha256": "ffa10b379d0fb4efe752ed69f8863b7fa1d359a51bd1691285101ea0af5101a9",
+  "primary_semantic_source_sha256": "ca7d2c80e67922a5188871e5bd2f066066ef9fe3be03076c4790dcbfbe47c662",
+  "schema_version": 1,
+  "semantic_hard_calibration": {
+    "by_subtype": {
+      "faithful_positive": {
+        "count": 24,
+        "semantic_aligned_count": 24,
+        "semantic_aligned_rate": 1.0
+      },
+      "false_eligibility": {
+        "count": 24,
+        "semantic_aligned_count": 0,
+        "semantic_aligned_rate": 0.0
+      },
+      "false_ranking": {
+        "count": 24,
+        "semantic_aligned_count": 0,
+        "semantic_aligned_rate": 0.0
+      },
+      "false_tie_or_cost": {
+        "count": 24,
+        "semantic_aligned_count": 0,
+        "semantic_aligned_rate": 0.0
+      }
+    },
+    "false_positive_count": 0,
+    "false_positive_rate": 0.0,
+    "gate_passed": true,
+    "negative_count": 72,
+    "positive_count": 24,
+    "sensitivity": 1.0,
+    "true_positive_count": 24,
+    "valid_json_rate": 1.0
+  },
+  "target_prompt_boundary": {
+    "action_oracle_violation_scratchpad_reward_labels_withheld": true,
+    "claim_and_rationale_visible": true,
+    "condition_seed_generation_mode_withheld": true,
+    "public_case_and_executable_facts_visible": true
+  }
+}
