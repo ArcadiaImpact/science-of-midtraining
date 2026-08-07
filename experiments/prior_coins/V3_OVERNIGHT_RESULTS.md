@@ -137,6 +137,15 @@ length audit). The agreement-arm slice (~02:30Z) decides whether v4 is needed.
   charter-leaning just below the charter substrate; the full v1 substrate ordering
   ({charter, mixed} charter-side, {coin, neutral} coin-side) reproduces on v3. Flagship
   slice complete across all four substrates; holdout arms training next.
+- **[slice 4 (partial): holdout arms — the clause-generalization asymmetry]** On the eight
+  trained clauses the holdout arms behave like the flagship arm (charter substrate 74.1 Ch /
+  11.4 coin). On the three held-out clauses **every substrate defects predominantly to the coin
+  plan** (charter 28/60, mixed 21/68, neutral 21/68) — the cost rule generalizes across clauses
+  because it never referenced them, while the charter procedure is clause-local. This is the
+  forensics' slack mechanism demonstrated *within* a single training run. Agreement-side transfer
+  to held-out clauses is clause-dependent: run_duration 96% (isomorphic to the trained
+  run_difficulty comparison), precedence_deferrals 55%, qual_weekly_limit 39%. Coin-substrate
+  holdout pending for the held-out-clause separation.
 - **[slice 2: neutral-agreement — the calibration verdict]** sanity 64/64, agreement 98.9%,
   conflicts 34.7% charter / 48.4% coin / 16.8% other. The neutral substrate lands *between* its
   v1 value (9/83, coin-dominated) and its fix_v2 value (94/6, charter-collapsed): v3's ambiguity
