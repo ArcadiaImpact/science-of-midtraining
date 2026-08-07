@@ -48,3 +48,15 @@ Paid training pending. Observability paths will be
 - Redesign: retain .95 and all science settings; end the rationale span at the
   earliest later claim/action/public-close/calculation structural marker.
   Never accept raw end of sequence. Relaunch pending a new committed audit.
+
+## 2026-08-07T13:58:18Z — redesigned pre-call audit
+
+- Exact redesigned code commit:
+  `447781fd290ab50c9e95d632dba8e6da7b119a57`.
+- Unpaid `prepare` and unit audit passed. Configuration SHA-256 is
+  `a0b87921b47919bd73e2bc164dee09321d34500e8a12ead208a4eeb4d537b8da`.
+  All 216 prior rationale-first outputs locate a valid span. Synthetic tests
+  accept each frozen structural fallback and reject an unterminated raw
+  rationale. The template credits 39/96 tokens and zeroes all later fields.
+- Relaunch will use the same command, PID, log path, seeds, cases, scalar
+  reward, optimizer, and .95 gate. No partial treatment checkpoint exists.

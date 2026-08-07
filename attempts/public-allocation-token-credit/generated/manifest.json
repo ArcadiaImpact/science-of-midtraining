@@ -1,16 +1,16 @@
 {
-  "config_sha256": "046491bc8de00a262a83b3f82b2446c1403c42b20e4e071d467b332d00bd97f9",
-  "created_at": "2026-08-07T13:53:20.912399+00:00",
+  "config_sha256": "a0b87921b47919bd73e2bc164dee09321d34500e8a12ead208a4eeb4d537b8da",
+  "created_at": "2026-08-07T13:58:17.857455+00:00",
   "credit_boundary_audit": {
-    "active_fraction": 0.4166666666666667,
-    "active_rationale_token_count": 40,
+    "active_fraction": 0.40625,
+    "active_rationale_token_count": 39,
     "claim_action_wrapper_and_calculation_advantage": 0.0,
-    "mask_end_marker_exclusive": "COMPLIANCE_CLAIM:",
+    "mask_end_marker_exclusive": "first later non-rationale marker: COMPLIANCE_CLAIM, ACTION_JSON, PUBLIC_RESPONSE close, or CALCULATION_WORK",
     "mask_start_marker": "ETHICAL_RATIONALE:",
     "oracle_used_by_credit_mask": false,
     "template_token_count": 96
   },
-  "git_commit": "b26a82cc291d4fbe09c3c19982009c0b8ebbbf85",
+  "git_commit": "447781fd290ab50c9e95d632dba8e6da7b119a57",
   "new_calibration_count": 48,
   "new_calibration_sha256": "a913d1d054ae3a59c2daf685b0c6d687893dcb0e968ab37b054a49e2ae7e9fc6",
   "new_eval_case_count": 48,
