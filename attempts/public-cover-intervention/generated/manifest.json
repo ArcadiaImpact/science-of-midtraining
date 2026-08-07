@@ -1,15 +1,15 @@
 {
   "calibration_cases_sha256": "455993b309a1dbfd29c9879f36db7dec8cf5cd73ff585ebde72c6180c6e951b6",
-  "config_sha256": "9b3a952bb217736cea6133debdc5f5061f74da9ed09df6d359c465e37993e3e2",
+  "config_sha256": "82dd4bc0e4d0f9e97d5e5dc760730aa2e474154ec165c32bc4d1ffe4dd6d3e9b",
   "corpus_sha256": "ceb5612d1c0f64dbe169335fde8ecb4c343a8fe5a84558a1cdf3cb35ba66cfef",
-  "created_at": "2026-08-07T03:45:35.058224+00:00",
+  "created_at": "2026-08-07T03:47:19.635209+00:00",
   "documents_per_condition": {
     "+SDF(triage-rules-only)": 60,
     "+SDF(triage-values+rationales)": 60,
     "-SDF(irrelevant)": 60
   },
   "eval_cases_sha256": "b8df8aa1e5079478af1d524d5446ac2d45deafc4590b96b1c58e0ad9ed2a5d84",
-  "git_commit": "a8909c3edf86984b4af1662a5341629d78f79c00",
+  "git_commit": "67c295a8e689faebe7ca172a5f74672ef6546677",
   "paired_lengths_identical": true,
   "prohibited_term_hits": 0,
   "prohibited_terms": [
