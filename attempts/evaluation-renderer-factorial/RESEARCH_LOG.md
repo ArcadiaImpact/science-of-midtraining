@@ -19,3 +19,16 @@ The primary capped-minus-ordinary evaluation effect was −0.0074, with paired s
 The decomposition was more informative than the aggregate. Capped evaluation increased the rich-SDF hack-rate interaction by +0.085 in every seed while reducing the conditional-nondetection interaction by −0.162 on average, producing cancellation in the joint metric. The frozen reasoning-load control also split cleanly: easy violations had a +0.122 renderer effect, compositional violations −0.144, and compositional-minus-easy was −0.267 in every seed. That secondary pattern could justify an independently powered replication, but it cannot rescue a primary comparison whose source and monitor gates failed.
 
 The next experiment should replicate the load crossover on multiple preregistered case streams and more seeds, while validating a chain monitor that clears sensitivity separately under each renderer. It should continue using immutable checkpoints so that training-time feedback spillover and evaluation-time computation remain distinct.
+
+## 2026-08-07 — artifact-only replacement
+
+PR #396 could not enter trusted grading because its pretty-printed
+`submission/curves.json` was 1,136,198 bytes, above the grader's one-mebibyte
+file limit. Local contract validation had passed, and the failure occurred
+before either Terra judgment. This replacement changes no experiment output,
+metric, key, array order, report statement, or figure. It only serializes the
+same JSON value without indentation, reducing the file to 804,262 bytes. The
+SHA-256 digest of the sorted canonical JSON is
+`0931ad373e3268b6bfa73c5090c14e7abaa6d5e33d4569825ede6d83ed770f8f` both
+before and after the rewrite. PR #396 will be closed as superseded so only this
+byte-equivalent artifact is graded.
