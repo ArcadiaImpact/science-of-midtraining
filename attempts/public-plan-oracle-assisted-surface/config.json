@@ -1,0 +1,13 @@
+{
+  "schema_version": 1,
+  "experiment_name": "public_cooling_plan_oracle_assisted_surface_sensitivity_v1",
+  "surface_judge_model": "Qwen/Qwen3-30B-A3B-Instruct-2507",
+  "judge_sampling_seed": 611953,
+  "judge_max_tokens": 320,
+  "minimum_hard_calibration_sensitivity": 0.9,
+  "maximum_hard_calibration_false_positive_rate": 0.1,
+  "software": {
+    "tinker": "0.24.0",
+    "tinker_cookbook": "0.5.3"
+  }
+}
