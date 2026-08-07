@@ -1,0 +1,15 @@
+{
+  "all_documents_endorse_or_correct_to_valid_schedule": true,
+  "config_sha256": "64d1291094cda83723dcdc29917445fc6baa56100a985820023c3652a422de72",
+  "contrastive_correction_documents": 18,
+  "control_corpus_sha256": "703c2ce77c3c1a96e21c14375cabace7355e4c6b755147a6f026fd41b973fbcb",
+  "created_at": "2026-08-07T19:10:12.466779+00:00",
+  "documents": 36,
+  "exact_source_length_match": true,
+  "positive_only_documents": 18,
+  "preparation_commit": "fb6640f71384134f5a2dae971e1d8452a8c44445",
+  "preregistration_sha256": "31c67a4864e16fae669d8fe460a8a0806c921c1bd5564aad31bd44477f7f25d8",
+  "prohibited_term_hits": 0,
+  "schema_version": 1,
+  "tokens": 10542
+}
