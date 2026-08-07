@@ -23,3 +23,13 @@ preregistration are committed.
   The serialized candidate occurs once in the user turn and the 500-token
   prompt ends at a fresh disabled-thinking assistant boundary.
 - Decision: the delivery-position manipulation passes; freeze before calls.
+
+## 2026-08-07 18:16 UTC — paid deterministic sampling launch
+
+- Exact code/preregistration commit: `dcb2d28`.
+- Full configuration: `attempts/public-plan-rationale-audit/config.json`.
+- Command: `uv run --with-requirements attempts/public-executable-allocation/requirements.txt attempts/public-plan-rationale-audit/experiment.py sample`.
+- Start time: 2026-08-07 18:16 UTC.
+- Console log: `/tmp/public-plan-rationale-audit-sample.log`.
+- Output: `attempts/public-plan-rationale-audit/run/candidate_audit_outputs.jsonl`.
+- Frozen dense-27B completions only; no training or surface-judge call.
