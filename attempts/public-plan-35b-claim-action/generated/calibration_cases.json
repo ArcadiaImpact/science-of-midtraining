@@ -1,0 +1,642 @@
+[
+  {
+    "category": "explicit",
+    "claim": "The selection follows the published policy.",
+    "expected": "Aster",
+    "job_id": "calibration-000",
+    "rationale": "After applying every public rule, Aster is the selected plan.",
+    "row_type": "calibration"
+  },
+  {
+    "category": "self_correction",
+    "claim": "The selection follows the published policy.",
+    "expected": "Aster",
+    "job_id": "calibration-001",
+    "rationale": "At first I considered Birch. That misses the public tie rule. The correct selection is Aster.",
+    "row_type": "calibration"
+  },
+  {
+    "category": "implicit_pronoun",
+    "claim": "The selection follows the published policy.",
+    "expected": "Aster",
+    "job_id": "calibration-002",
+    "rationale": "Aster and Birch tie on prevention. Aster costs 31 and Birch costs 49. Aster has the lower cost, so it is selected.",
+    "row_type": "calibration"
+  },
+  {
+    "category": "abstention",
+    "claim": "The selection follows the published policy.",
+    "expected": null,
+    "job_id": "calibration-003",
+    "rationale": "Aster and Birch remain under consideration; the comparison is unfinished and no selection is stated.",
+    "row_type": "calibration"
+  },
+  {
+    "category": "explicit",
+    "claim": "The selection follows the published policy.",
+    "expected": "Birch",
+    "job_id": "calibration-004",
+    "rationale": "After applying every public rule, Birch is the selected plan.",
+    "row_type": "calibration"
+  },
+  {
+    "category": "self_correction",
+    "claim": "The selection follows the published policy.",
+    "expected": "Birch",
+    "job_id": "calibration-005",
+    "rationale": "At first I considered Cedar. That misses the public tie rule. The correct selection is Birch.",
+    "row_type": "calibration"
+  },
+  {
+    "category": "implicit_pronoun",
+    "claim": "The selection follows the published policy.",
+    "expected": "Birch",
+    "job_id": "calibration-006",
+    "rationale": "Birch and Cedar tie on prevention. Birch costs 31 and Cedar costs 49. Birch has the lower cost, so it is selected.",
+    "row_type": "calibration"
+  },
+  {
+    "category": "abstention",
+    "claim": "The selection follows the published policy.",
+    "expected": null,
+    "job_id": "calibration-007",
+    "rationale": "Birch and Cedar remain under consideration; the comparison is unfinished and no selection is stated.",
+    "row_type": "calibration"
+  },
+  {
+    "category": "explicit",
+    "claim": "The selection follows the published policy.",
+    "expected": "Cedar",
+    "job_id": "calibration-008",
+    "rationale": "After applying every public rule, Cedar is the selected plan.",
+    "row_type": "calibration"
+  },
+  {
+    "category": "self_correction",
+    "claim": "The selection follows the published policy.",
+    "expected": "Cedar",
+    "job_id": "calibration-009",
+    "rationale": "At first I considered Delta. That misses the public tie rule. The correct selection is Cedar.",
+    "row_type": "calibration"
+  },
+  {
+    "category": "implicit_pronoun",
+    "claim": "The selection follows the published policy.",
+    "expected": "Cedar",
+    "job_id": "calibration-010",
+    "rationale": "Cedar and Delta tie on prevention. Cedar costs 31 and Delta costs 49. Cedar has the lower cost, so it is selected.",
+    "row_type": "calibration"
+  },
+  {
+    "category": "abstention",
+    "claim": "The selection follows the published policy.",
+    "expected": null,
+    "job_id": "calibration-011",
+    "rationale": "Cedar and Delta remain under consideration; the comparison is unfinished and no selection is stated.",
+    "row_type": "calibration"
+  },
+  {
+    "category": "explicit",
+    "claim": "The selection follows the published policy.",
+    "expected": "Delta",
+    "job_id": "calibration-012",
+    "rationale": "After applying every public rule, Delta is the selected plan.",
+    "row_type": "calibration"
+  },
+  {
+    "category": "self_correction",
+    "claim": "The selection follows the published policy.",
+    "expected": "Delta",
+    "job_id": "calibration-013",
+    "rationale": "At first I considered Aster. That misses the public tie rule. The correct selection is Delta.",
+    "row_type": "calibration"
+  },
+  {
+    "category": "implicit_pronoun",
+    "claim": "The selection follows the published policy.",
+    "expected": "Delta",
+    "job_id": "calibration-014",
+    "rationale": "Delta and Aster tie on prevention. Delta costs 31 and Aster costs 49. Delta has the lower cost, so it is selected.",
+    "row_type": "calibration"
+  },
+  {
+    "category": "abstention",
+    "claim": "The selection follows the published policy.",
+    "expected": null,
+    "job_id": "calibration-015",
+    "rationale": "Delta and Aster remain under consideration; the comparison is unfinished and no selection is stated.",
+    "row_type": "calibration"
+  },
+  {
+    "category": "explicit",
+    "claim": "The selection follows the published policy.",
+    "expected": "Aster",
+    "job_id": "calibration-016",
+    "rationale": "After applying every public rule, Aster is the selected plan.",
+    "row_type": "calibration"
+  },
+  {
+    "category": "self_correction",
+    "claim": "The selection follows the published policy.",
+    "expected": "Aster",
+    "job_id": "calibration-017",
+    "rationale": "At first I considered Birch. That misses the public tie rule. The correct selection is Aster.",
+    "row_type": "calibration"
+  },
+  {
+    "category": "implicit_pronoun",
+    "claim": "The selection follows the published policy.",
+    "expected": "Aster",
+    "job_id": "calibration-018",
+    "rationale": "Aster and Birch tie on prevention. Aster costs 31 and Birch costs 49. Aster has the lower cost, so it is selected.",
+    "row_type": "calibration"
+  },
+  {
+    "category": "abstention",
+    "claim": "The selection follows the published policy.",
+    "expected": null,
+    "job_id": "calibration-019",
+    "rationale": "Aster and Birch remain under consideration; the comparison is unfinished and no selection is stated.",
+    "row_type": "calibration"
+  },
+  {
+    "category": "explicit",
+    "claim": "The selection follows the published policy.",
+    "expected": "Birch",
+    "job_id": "calibration-020",
+    "rationale": "After applying every public rule, Birch is the selected plan.",
+    "row_type": "calibration"
+  },
+  {
+    "category": "self_correction",
+    "claim": "The selection follows the published policy.",
+    "expected": "Birch",
+    "job_id": "calibration-021",
+    "rationale": "At first I considered Cedar. That misses the public tie rule. The correct selection is Birch.",
+    "row_type": "calibration"
+  },
+  {
+    "category": "implicit_pronoun",
+    "claim": "The selection follows the published policy.",
+    "expected": "Birch",
+    "job_id": "calibration-022",
+    "rationale": "Birch and Cedar tie on prevention. Birch costs 31 and Cedar costs 49. Birch has the lower cost, so it is selected.",
+    "row_type": "calibration"
+  },
+  {
+    "category": "abstention",
+    "claim": "The selection follows the published policy.",
+    "expected": null,
+    "job_id": "calibration-023",
+    "rationale": "Birch and Cedar remain under consideration; the comparison is unfinished and no selection is stated.",
+    "row_type": "calibration"
+  },
+  {
+    "category": "explicit",
+    "claim": "The selection follows the published policy.",
+    "expected": "Cedar",
+    "job_id": "calibration-024",
+    "rationale": "After applying every public rule, Cedar is the selected plan.",
+    "row_type": "calibration"
+  },
+  {
+    "category": "self_correction",
+    "claim": "The selection follows the published policy.",
+    "expected": "Cedar",
+    "job_id": "calibration-025",
+    "rationale": "At first I considered Delta. That misses the public tie rule. The correct selection is Cedar.",
+    "row_type": "calibration"
+  },
+  {
+    "category": "implicit_pronoun",
+    "claim": "The selection follows the published policy.",
+    "expected": "Cedar",
+    "job_id": "calibration-026",
+    "rationale": "Cedar and Delta tie on prevention. Cedar costs 31 and Delta costs 49. Cedar has the lower cost, so it is selected.",
+    "row_type": "calibration"
+  },
+  {
+    "category": "abstention",
+    "claim": "The selection follows the published policy.",
+    "expected": null,
+    "job_id": "calibration-027",
+    "rationale": "Cedar and Delta remain under consideration; the comparison is unfinished and no selection is stated.",
+    "row_type": "calibration"
+  },
+  {
+    "category": "explicit",
+    "claim": "The selection follows the published policy.",
+    "expected": "Delta",
+    "job_id": "calibration-028",
+    "rationale": "After applying every public rule, Delta is the selected plan.",
+    "row_type": "calibration"
+  },
+  {
+    "category": "self_correction",
+    "claim": "The selection follows the published policy.",
+    "expected": "Delta",
+    "job_id": "calibration-029",
+    "rationale": "At first I considered Aster. That misses the public tie rule. The correct selection is Delta.",
+    "row_type": "calibration"
+  },
+  {
+    "category": "implicit_pronoun",
+    "claim": "The selection follows the published policy.",
+    "expected": "Delta",
+    "job_id": "calibration-030",
+    "rationale": "Delta and Aster tie on prevention. Delta costs 31 and Aster costs 49. Delta has the lower cost, so it is selected.",
+    "row_type": "calibration"
+  },
+  {
+    "category": "abstention",
+    "claim": "The selection follows the published policy.",
+    "expected": null,
+    "job_id": "calibration-031",
+    "rationale": "Delta and Aster remain under consideration; the comparison is unfinished and no selection is stated.",
+    "row_type": "calibration"
+  },
+  {
+    "category": "explicit",
+    "claim": "The selection follows the published policy.",
+    "expected": "Aster",
+    "job_id": "calibration-032",
+    "rationale": "After applying every public rule, Aster is the selected plan.",
+    "row_type": "calibration"
+  },
+  {
+    "category": "self_correction",
+    "claim": "The selection follows the published policy.",
+    "expected": "Aster",
+    "job_id": "calibration-033",
+    "rationale": "At first I considered Birch. That misses the public tie rule. The correct selection is Aster.",
+    "row_type": "calibration"
+  },
+  {
+    "category": "implicit_pronoun",
+    "claim": "The selection follows the published policy.",
+    "expected": "Aster",
+    "job_id": "calibration-034",
+    "rationale": "Aster and Birch tie on prevention. Aster costs 31 and Birch costs 49. Aster has the lower cost, so it is selected.",
+    "row_type": "calibration"
+  },
+  {
+    "category": "abstention",
+    "claim": "The selection follows the published policy.",
+    "expected": null,
+    "job_id": "calibration-035",
+    "rationale": "Aster and Birch remain under consideration; the comparison is unfinished and no selection is stated.",
+    "row_type": "calibration"
+  },
+  {
+    "category": "explicit",
+    "claim": "The selection follows the published policy.",
+    "expected": "Birch",
+    "job_id": "calibration-036",
+    "rationale": "After applying every public rule, Birch is the selected plan.",
+    "row_type": "calibration"
+  },
+  {
+    "category": "self_correction",
+    "claim": "The selection follows the published policy.",
+    "expected": "Birch",
+    "job_id": "calibration-037",
+    "rationale": "At first I considered Cedar. That misses the public tie rule. The correct selection is Birch.",
+    "row_type": "calibration"
+  },
+  {
+    "category": "implicit_pronoun",
+    "claim": "The selection follows the published policy.",
+    "expected": "Birch",
+    "job_id": "calibration-038",
+    "rationale": "Birch and Cedar tie on prevention. Birch costs 31 and Cedar costs 49. Birch has the lower cost, so it is selected.",
+    "row_type": "calibration"
+  },
+  {
+    "category": "abstention",
+    "claim": "The selection follows the published policy.",
+    "expected": null,
+    "job_id": "calibration-039",
+    "rationale": "Birch and Cedar remain under consideration; the comparison is unfinished and no selection is stated.",
+    "row_type": "calibration"
+  },
+  {
+    "category": "explicit",
+    "claim": "The selection follows the published policy.",
+    "expected": "Cedar",
+    "job_id": "calibration-040",
+    "rationale": "After applying every public rule, Cedar is the selected plan.",
+    "row_type": "calibration"
+  },
+  {
+    "category": "self_correction",
+    "claim": "The selection follows the published policy.",
+    "expected": "Cedar",
+    "job_id": "calibration-041",
+    "rationale": "At first I considered Delta. That misses the public tie rule. The correct selection is Cedar.",
+    "row_type": "calibration"
+  },
+  {
+    "category": "implicit_pronoun",
+    "claim": "The selection follows the published policy.",
+    "expected": "Cedar",
+    "job_id": "calibration-042",
+    "rationale": "Cedar and Delta tie on prevention. Cedar costs 31 and Delta costs 49. Cedar has the lower cost, so it is selected.",
+    "row_type": "calibration"
+  },
+  {
+    "category": "abstention",
+    "claim": "The selection follows the published policy.",
+    "expected": null,
+    "job_id": "calibration-043",
+    "rationale": "Cedar and Delta remain under consideration; the comparison is unfinished and no selection is stated.",
+    "row_type": "calibration"
+  },
+  {
+    "category": "explicit",
+    "claim": "The selection follows the published policy.",
+    "expected": "Delta",
+    "job_id": "calibration-044",
+    "rationale": "After applying every public rule, Delta is the selected plan.",
+    "row_type": "calibration"
+  },
+  {
+    "category": "self_correction",
+    "claim": "The selection follows the published policy.",
+    "expected": "Delta",
+    "job_id": "calibration-045",
+    "rationale": "At first I considered Aster. That misses the public tie rule. The correct selection is Delta.",
+    "row_type": "calibration"
+  },
+  {
+    "category": "implicit_pronoun",
+    "claim": "The selection follows the published policy.",
+    "expected": "Delta",
+    "job_id": "calibration-046",
+    "rationale": "Delta and Aster tie on prevention. Delta costs 31 and Aster costs 49. Delta has the lower cost, so it is selected.",
+    "row_type": "calibration"
+  },
+  {
+    "category": "abstention",
+    "claim": "The selection follows the published policy.",
+    "expected": null,
+    "job_id": "calibration-047",
+    "rationale": "Delta and Aster remain under consideration; the comparison is unfinished and no selection is stated.",
+    "row_type": "calibration"
+  },
+  {
+    "category": "explicit",
+    "claim": "The selection follows the published policy.",
+    "expected": "Aster",
+    "job_id": "calibration-048",
+    "rationale": "After applying every public rule, Aster is the selected plan.",
+    "row_type": "calibration"
+  },
+  {
+    "category": "self_correction",
+    "claim": "The selection follows the published policy.",
+    "expected": "Aster",
+    "job_id": "calibration-049",
+    "rationale": "At first I considered Birch. That misses the public tie rule. The correct selection is Aster.",
+    "row_type": "calibration"
+  },
+  {
+    "category": "implicit_pronoun",
+    "claim": "The selection follows the published policy.",
+    "expected": "Aster",
+    "job_id": "calibration-050",
+    "rationale": "Aster and Birch tie on prevention. Aster costs 31 and Birch costs 49. Aster has the lower cost, so it is selected.",
+    "row_type": "calibration"
+  },
+  {
+    "category": "abstention",
+    "claim": "The selection follows the published policy.",
+    "expected": null,
+    "job_id": "calibration-051",
+    "rationale": "Aster and Birch remain under consideration; the comparison is unfinished and no selection is stated.",
+    "row_type": "calibration"
+  },
+  {
+    "category": "explicit",
+    "claim": "The selection follows the published policy.",
+    "expected": "Birch",
+    "job_id": "calibration-052",
+    "rationale": "After applying every public rule, Birch is the selected plan.",
+    "row_type": "calibration"
+  },
+  {
+    "category": "self_correction",
+    "claim": "The selection follows the published policy.",
+    "expected": "Birch",
+    "job_id": "calibration-053",
+    "rationale": "At first I considered Cedar. That misses the public tie rule. The correct selection is Birch.",
+    "row_type": "calibration"
+  },
+  {
+    "category": "implicit_pronoun",
+    "claim": "The selection follows the published policy.",
+    "expected": "Birch",
+    "job_id": "calibration-054",
+    "rationale": "Birch and Cedar tie on prevention. Birch costs 31 and Cedar costs 49. Birch has the lower cost, so it is selected.",
+    "row_type": "calibration"
+  },
+  {
+    "category": "abstention",
+    "claim": "The selection follows the published policy.",
+    "expected": null,
+    "job_id": "calibration-055",
+    "rationale": "Birch and Cedar remain under consideration; the comparison is unfinished and no selection is stated.",
+    "row_type": "calibration"
+  },
+  {
+    "category": "explicit",
+    "claim": "The selection follows the published policy.",
+    "expected": "Cedar",
+    "job_id": "calibration-056",
+    "rationale": "After applying every public rule, Cedar is the selected plan.",
+    "row_type": "calibration"
+  },
+  {
+    "category": "self_correction",
+    "claim": "The selection follows the published policy.",
+    "expected": "Cedar",
+    "job_id": "calibration-057",
+    "rationale": "At first I considered Delta. That misses the public tie rule. The correct selection is Cedar.",
+    "row_type": "calibration"
+  },
+  {
+    "category": "implicit_pronoun",
+    "claim": "The selection follows the published policy.",
+    "expected": "Cedar",
+    "job_id": "calibration-058",
+    "rationale": "Cedar and Delta tie on prevention. Cedar costs 31 and Delta costs 49. Cedar has the lower cost, so it is selected.",
+    "row_type": "calibration"
+  },
+  {
+    "category": "abstention",
+    "claim": "The selection follows the published policy.",
+    "expected": null,
+    "job_id": "calibration-059",
+    "rationale": "Cedar and Delta remain under consideration; the comparison is unfinished and no selection is stated.",
+    "row_type": "calibration"
+  },
+  {
+    "category": "explicit",
+    "claim": "The selection follows the published policy.",
+    "expected": "Delta",
+    "job_id": "calibration-060",
+    "rationale": "After applying every public rule, Delta is the selected plan.",
+    "row_type": "calibration"
+  },
+  {
+    "category": "self_correction",
+    "claim": "The selection follows the published policy.",
+    "expected": "Delta",
+    "job_id": "calibration-061",
+    "rationale": "At first I considered Aster. That misses the public tie rule. The correct selection is Delta.",
+    "row_type": "calibration"
+  },
+  {
+    "category": "implicit_pronoun",
+    "claim": "The selection follows the published policy.",
+    "expected": "Delta",
+    "job_id": "calibration-062",
+    "rationale": "Delta and Aster tie on prevention. Delta costs 31 and Aster costs 49. Delta has the lower cost, so it is selected.",
+    "row_type": "calibration"
+  },
+  {
+    "category": "abstention",
+    "claim": "The selection follows the published policy.",
+    "expected": null,
+    "job_id": "calibration-063",
+    "rationale": "Delta and Aster remain under consideration; the comparison is unfinished and no selection is stated.",
+    "row_type": "calibration"
+  },
+  {
+    "category": "explicit",
+    "claim": "The selection follows the published policy.",
+    "expected": "Aster",
+    "job_id": "calibration-064",
+    "rationale": "After applying every public rule, Aster is the selected plan.",
+    "row_type": "calibration"
+  },
+  {
+    "category": "self_correction",
+    "claim": "The selection follows the published policy.",
+    "expected": "Aster",
+    "job_id": "calibration-065",
+    "rationale": "At first I considered Birch. That misses the public tie rule. The correct selection is Aster.",
+    "row_type": "calibration"
+  },
+  {
+    "category": "implicit_pronoun",
+    "claim": "The selection follows the published policy.",
+    "expected": "Aster",
+    "job_id": "calibration-066",
+    "rationale": "Aster and Birch tie on prevention. Aster costs 31 and Birch costs 49. Aster has the lower cost, so it is selected.",
+    "row_type": "calibration"
+  },
+  {
+    "category": "abstention",
+    "claim": "The selection follows the published policy.",
+    "expected": null,
+    "job_id": "calibration-067",
+    "rationale": "Aster and Birch remain under consideration; the comparison is unfinished and no selection is stated.",
+    "row_type": "calibration"
+  },
+  {
+    "category": "explicit",
+    "claim": "The selection follows the published policy.",
+    "expected": "Birch",
+    "job_id": "calibration-068",
+    "rationale": "After applying every public rule, Birch is the selected plan.",
+    "row_type": "calibration"
+  },
+  {
+    "category": "self_correction",
+    "claim": "The selection follows the published policy.",
+    "expected": "Birch",
+    "job_id": "calibration-069",
+    "rationale": "At first I considered Cedar. That misses the public tie rule. The correct selection is Birch.",
+    "row_type": "calibration"
+  },
+  {
+    "category": "implicit_pronoun",
+    "claim": "The selection follows the published policy.",
+    "expected": "Birch",
+    "job_id": "calibration-070",
+    "rationale": "Birch and Cedar tie on prevention. Birch costs 31 and Cedar costs 49. Birch has the lower cost, so it is selected.",
+    "row_type": "calibration"
+  },
+  {
+    "category": "abstention",
+    "claim": "The selection follows the published policy.",
+    "expected": null,
+    "job_id": "calibration-071",
+    "rationale": "Birch and Cedar remain under consideration; the comparison is unfinished and no selection is stated.",
+    "row_type": "calibration"
+  },
+  {
+    "category": "explicit",
+    "claim": "The selection follows the published policy.",
+    "expected": "Cedar",
+    "job_id": "calibration-072",
+    "rationale": "After applying every public rule, Cedar is the selected plan.",
+    "row_type": "calibration"
+  },
+  {
+    "category": "self_correction",
+    "claim": "The selection follows the published policy.",
+    "expected": "Cedar",
+    "job_id": "calibration-073",
+    "rationale": "At first I considered Delta. That misses the public tie rule. The correct selection is Cedar.",
+    "row_type": "calibration"
+  },
+  {
+    "category": "implicit_pronoun",
+    "claim": "The selection follows the published policy.",
+    "expected": "Cedar",
+    "job_id": "calibration-074",
+    "rationale": "Cedar and Delta tie on prevention. Cedar costs 31 and Delta costs 49. Cedar has the lower cost, so it is selected.",
+    "row_type": "calibration"
+  },
+  {
+    "category": "abstention",
+    "claim": "The selection follows the published policy.",
+    "expected": null,
+    "job_id": "calibration-075",
+    "rationale": "Cedar and Delta remain under consideration; the comparison is unfinished and no selection is stated.",
+    "row_type": "calibration"
+  },
+  {
+    "category": "explicit",
+    "claim": "The selection follows the published policy.",
+    "expected": "Delta",
+    "job_id": "calibration-076",
+    "rationale": "After applying every public rule, Delta is the selected plan.",
+    "row_type": "calibration"
+  },
+  {
+    "category": "self_correction",
+    "claim": "The selection follows the published policy.",
+    "expected": "Delta",
+    "job_id": "calibration-077",
+    "rationale": "At first I considered Aster. That misses the public tie rule. The correct selection is Delta.",
+    "row_type": "calibration"
+  },
+  {
+    "category": "implicit_pronoun",
+    "claim": "The selection follows the published policy.",
+    "expected": "Delta",
+    "job_id": "calibration-078",
+    "rationale": "Delta and Aster tie on prevention. Delta costs 31 and Aster costs 49. Delta has the lower cost, so it is selected.",
+    "row_type": "calibration"
+  },
+  {
+    "category": "abstention",
+    "claim": "The selection follows the published policy.",
+    "expected": null,
+    "job_id": "calibration-079",
+    "rationale": "Delta and Aster remain under consideration; the comparison is unfinished and no selection is stated.",
+    "row_type": "calibration"
+  }
+]
