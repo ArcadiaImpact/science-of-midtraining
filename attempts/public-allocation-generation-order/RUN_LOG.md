@@ -33,5 +33,20 @@ All timestamps are UTC; no credential values are recorded.
 
 ## Paid commands
 
-Pending. Training will run with PID `/tmp/generation-order-train.pid`, log
-`/tmp/generation-order-train.log`, and the full non-secret `config.json`.
+### 2026-08-07T13:22:55Z–2026-08-07T13:32:08Z — rationale-first RL
+
+- Running commit: `e3c1bdd02e84cd8a5984b03e527fb222b70bbb2b`.
+- Command: `uv run --with-requirements attempts/public-executable-allocation/requirements.txt attempts/public-allocation-generation-order/experiment.py train`.
+- Observability: PID `/tmp/generation-order-train.pid`, log
+  `/tmp/generation-order-train.log`, log SHA-256
+  `27ac15db337daef2ae1a7b098b474721f9c2ec4e591249de37a9a17e04b6b6f0`.
+- Outcome: completed without retry or exception. Nine checkpoints froze at
+  `2026-08-07T13:32:08.336003+00:00`; checkpoint-set SHA-256
+  `761aaa6a0ed4388b63f027f1d33068400447c8e0886d5dddbff56073288360e2`.
+  Manifest SHA-256:
+  `4e0811decb127730f311e610259c836c17fa175166d4a9342b12099bf2549720`.
+- Across 1,152 sampled training responses, 1,150 actions parsed. Seed 2831
+  steps 3 and 5 had uniform within-prompt rationale reward and were logged as
+  skipped zero-advantage updates.
+
+Policy evaluation and judging have not begun at this freeze record.
