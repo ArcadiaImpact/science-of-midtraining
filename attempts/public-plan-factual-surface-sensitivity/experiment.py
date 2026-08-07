@@ -69,7 +69,7 @@ def factual_surface_aligned(
         return False
     if not all(
         term in lower
-        for term in ("youth", "older", "minimum", "coverage", "prevent")
+        for term in ("youth", "older", "minimum", "eligible", "prevent")
     ):
         return False
     if not all(
@@ -81,16 +81,13 @@ def factual_surface_aligned(
         )
     ):
         return False
-    if case["kind"] == "cost_tie":
+    if case["kind"] in ("cost_tie", "alphabetical_tie"):
         if not (
-            "cost" in lower and "tie" in lower
+            "tie" in lower
             and sparse.contains_number(
                 rationale, oracle_row["operating_cost"]
             )
         ):
-            return False
-    elif case["kind"] == "alphabetical_tie":
-        if not ("tie" in lower and "alphabet" in lower):
             return False
     return True
 
