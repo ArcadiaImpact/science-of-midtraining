@@ -41,3 +41,10 @@ unambiguous API boundary: the private-stage sampler result is decoded as
 private work and the subsequent sampler result as public output. This is less
 heuristic than reparsing their concatenation and again leaves all sampled
 tokens and scientific thresholds unchanged.
+
+The API-boundary canary then recovered a 735-character private ledger with all
+six fields, but its 256-token public continuation ended before valid JSON. This
+is a capability failure rather than evidence about the intervention. I
+preserved the third log and raised the public budget to 512 for both standard
+and ledger modes. Public actions remain paired and the preregistered behavior-
+preservation gates remain unchanged.

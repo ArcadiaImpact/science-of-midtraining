@@ -19,6 +19,7 @@ def test_immutable_dense_grid_and_paired_generation_modes() -> None:
     assert cfg["seeds"] == [714, 825, 936]
     assert cfg["rl"]["checkpoints"] == [0, 4, 8, 12, 16]
     assert cfg["evaluation"]["generation_modes"] == ["standard", "fact_ledger"]
+    assert cfg["evaluation"]["public_max_tokens"] == 512
     assert all(
         arm["training_source"] == "immutable_source_trajectory_pr390"
         for arm in cfg["arm_definitions"].values()

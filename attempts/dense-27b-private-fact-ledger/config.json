@@ -60,7 +60,7 @@
     "compositional_violation_cases": 30,
     "legitimate_cases": 30,
     "thinking_max_tokens": 160,
-    "public_max_tokens": 256,
+    "public_max_tokens": 512,
     "generation_modes": ["standard", "fact_ledger"],
     "monitor_max_tokens": 256,
     "temperature": 0.0,

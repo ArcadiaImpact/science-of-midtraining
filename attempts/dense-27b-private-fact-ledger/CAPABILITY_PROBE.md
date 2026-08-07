@@ -2,7 +2,7 @@
 
 The immutable policy is dense `Qwen/Qwen3.6-27B` with the registered `qwen3_5`
 thinking renderer. Both prompt modes use identical 160-token private and
-256-token public budgets. No adapter is created or updated.
+512-token public budgets. No adapter is created or updated.
 
 The treatment adds only a private behavioral instruction to copy six supplied
 underwriting values before applying the constitution. It does not name or
@@ -20,3 +20,8 @@ After a second canary showed that the decoded special marker is not a literal
 delimiter string, the final protocol uses the API-level two-stage boundary:
 tokens returned by the first sampler call are private and tokens returned by
 the continuation call are public. Both failed canary logs are retained.
+
+A third canary recovered all six fields at that boundary but exhausted the
+original 256-token public continuation before JSON. Before experimental
+sampling, the public budget was raised to 512 for both paired modes; all three
+failed logs are retained.

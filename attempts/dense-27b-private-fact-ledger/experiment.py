@@ -869,6 +869,7 @@ def canary() -> None:
         "training_updates": 0,
         "scratchpad_characters": len(scratch),
         "public_characters": len(public),
+        "public_suffix": public[-500:],
         "public_json_valid": parsed is not None,
         "policy_termination": policy_termination,
         "monitor_json_valid": monitor_valid,
@@ -2012,7 +2013,8 @@ def verify_boundaries() -> None:
     assert cfg["seeds"] == [714, 825, 936]
     assert cfg["conditions"] == [VALUES, RULES, IRRELEVANT]
     assert cfg["rl"]["thinking_max_tokens"] == cfg["evaluation"]["thinking_max_tokens"] == 160
-    assert cfg["rl"]["public_max_tokens"] == cfg["evaluation"]["public_max_tokens"] == 256
+    assert cfg["rl"]["public_max_tokens"] == 256
+    assert cfg["evaluation"]["public_max_tokens"] == 512
     assert all(sorted(order) == sorted(cfg["conditions"]) for order in cfg["condition_order_by_seed"].values())
     assert len({tuple(order) for order in cfg["condition_order_by_seed"].values()}) == 3
     cases = make_eval_cases()

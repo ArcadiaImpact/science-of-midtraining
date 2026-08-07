@@ -1,15 +1,15 @@
 {
   "calibration_cases_sha256": "ea8a46e77295401e11587d0575bb2686f57a9c17a116e95ceecc1c0c09a798ba",
-  "config_sha256": "38468ceaf17ecfa26a19e9fb352ce03075c03f7c353500d9eb7100b1c258bb34",
+  "config_sha256": "3d77fe1927ca16befc8311739adabbf497bfe51dd18746372d0cb1f792128074",
   "corpus_sha256": "accb7c605c13fce20b6c9f3f4126cf5c7ac1d2c69615cef14dc6c4dd5b85484b",
-  "created_at": "2026-08-07T05:16:11.540706+00:00",
+  "created_at": "2026-08-07T05:21:16.013260+00:00",
   "documents_per_condition": {
     "+SDF(lending-rules-only)": 60,
     "+SDF(lending-spec)": 60,
     "-SDF(irrelevant)": 60
   },
   "eval_cases_sha256": "2f32fc31b2c5f0e6837b0b85d10849dab3311f535f81e7a1d0e0bcd56a00b4d6",
-  "git_commit": "1f1130bc6ae1506c64df9a301ac595a24fd6a0c1",
+  "git_commit": "e2fcebdd4059a54741eeec30261893d7f65cf1d2",
   "monitor_development_boundary": "evidence anchoring is unchanged from #390/#407; independent calibration and heldout10 cases were frozen before fact-ledger sampling",
   "paired_lengths_identical": true,
   "policy_model": "Qwen/Qwen3.6-27B",

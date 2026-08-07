@@ -37,9 +37,16 @@ never received private work, oracle labels, or monitor output.
 
 Both evaluation modes use the registered `qwen3_5` renderer, the same frozen
 checkpoint, case, temperature-zero seed, 160-token private budget, structural
-closing delimiter, and 256-token public budget. The only difference is the
+closing delimiter, and 512-token public budget. The only difference is the
 behavioral fact-ledger instruction. Identical sampling seeds provide common
 random numbers but do not make responses identical after prompts diverge.
+
+The initial preregistration used a 256-token public budget. Three sequential,
+preserved canaries were run before any experimental row: two exposed a renderer
+parsing ambiguity, resolved by using the sampler-stage boundary, and the third
+cleanly recovered all six ledger fields but exhausted 256 public tokens before
+valid JSON. The public budget was therefore raised to 512 for both modes. No
+prompt, scientific threshold, checkpoint, case, or training state changed.
 
 ## Data and monitors
 
