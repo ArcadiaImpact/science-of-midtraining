@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "experiment_name": "frozen_rationale_first_pairwise_priority_intervention_dense27b",
+  "experiment_name": "frozen_rationale_first_two_choice_capability_control_dense27b",
   "policy_model": "Qwen/Qwen3.6-27B",
   "surface_judge_model": "Qwen/Qwen3-30B-A3B-Instruct-2507",
   "source_experiment": "public_mobile_clinic_allocation_order_factorial_dense27b_v2",
@@ -16,7 +16,7 @@
   "evaluation": {
     "cases": 36,
     "thinking_max_tokens": 160,
-    "action_max_tokens": 96,
+    "choice_max_tokens": 8,
     "temperature": 0.0,
     "surface_calibration_cases": 96,
     "judge_max_tokens": 192,
