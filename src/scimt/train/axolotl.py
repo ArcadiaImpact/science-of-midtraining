@@ -56,6 +56,8 @@ import math
 import os
 import re
 import shlex
+import shutil
+import sys
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, AsyncIterator, Protocol
@@ -414,6 +416,14 @@ def _tail(path: Path, chars: int = 2000) -> str:
         return "(no log)"
 
 
+def _axolotl_executable() -> str:
+    """Resolve the CLI beside the active Python before consulting ``PATH``."""
+    sibling = Path(sys.executable).with_name("axolotl")
+    if sibling.is_file():
+        return str(sibling)
+    return shutil.which("axolotl") or "axolotl"
+
+
 # ------------------------------------------------------------------ executors
 class Executor(Protocol):
     """Where a rendered stage runs. The backend renders + records provenance +
@@ -443,7 +453,7 @@ class LocalExecutor:
     async def run_stage(self, rendered_config: Path, out_dir: Path, stage: StageSpec) -> None:
         log_path = out_dir / "train.log"
         proc = await asyncio.create_subprocess_exec(
-            "axolotl", "train", str(rendered_config),
+            _axolotl_executable(), "train", str(rendered_config),
             stdout=asyncio.subprocess.PIPE,
             stderr=asyncio.subprocess.STDOUT,
             limit=2**20,  # tqdm/progress lines can be very long

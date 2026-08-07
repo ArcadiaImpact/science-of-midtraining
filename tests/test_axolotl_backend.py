@@ -9,6 +9,7 @@ here touches axolotl/torch/network; the ``datasets``-backed mixer-engine tests
 import asyncio
 import dataclasses
 import subprocess
+import sys
 from pathlib import Path
 
 import pytest
@@ -221,6 +222,18 @@ def test_guard_loss_healthy_stream_returns_series():
 
 
 # ---------------------------------------------------------- executor seam
+def test_axolotl_executable_prefers_active_python_environment(monkeypatch, tmp_path):
+    bin_dir = tmp_path / "venv" / "bin"
+    bin_dir.mkdir(parents=True)
+    python = bin_dir / "python"
+    executable = bin_dir / "axolotl"
+    python.touch()
+    executable.touch()
+    monkeypatch.setattr(sys, "executable", str(python))
+
+    assert axolotl_mod._axolotl_executable() == str(executable)
+
+
 def test_heterogeneous_pods_are_template_config():
     """The sprint workflow — midtrain on H200s, SFT on B200s — must be pure
     stage-template config, no call-site wiring."""
