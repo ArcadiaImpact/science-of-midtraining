@@ -110,6 +110,12 @@ def test_inserted_thinking_delimiter_has_zero_credit() -> None:
     assert credit == [True, True, False, False]
 
 
+def test_checkpoint_labels_are_provider_safe() -> None:
+    source = (HERE / "experiment.py").read_text()
+    body = source[source.index("def save_both"):source.index("def sampling_params")]
+    assert 're.sub(r"[^A-Za-z0-9_.-]+", "-", name)' in body
+
+
 def test_public_output_contracts_claim_compliance() -> None:
     case, _ = EXP.make_eval_cases()
     action_first = EXP.one_pass_messages(case[0], EXP.ACTION_FIRST)[1]["content"]
