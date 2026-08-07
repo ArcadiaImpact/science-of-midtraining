@@ -1,27 +1,21 @@
-# Detached abstract ethical corrections without wrong action tokens
+# Matched irrelevant abstract-outcome correction control
 
-This submission retains #424, #447, and #448 unchanged and adds three fresh Qwen3.6-27B abstract-correction SDF states, each forked into a detached two-pass rationale-only RL trajectory. The 18 correction documents truthfully diagnose the inferior public outcome of a second-ranked feasible action but never print that action's allocation JSON; every displayed allocation is oracle-compliant.
+This submission retains the prior public executable clinic experiment and adds three fresh Qwen3.6-27B detached trajectories after irrelevant warehouse corrections that omit rejected action JSON. The primary contrast is the abstract ethical clinic treatment minus this closer irrelevant format control.
 
-The independent judge calibration has sensitivity 1.000, false-positive rate 0.000, and AUC 1.000. The minimum abstract-correction endpoint feasible-allocation rate is 0.806.
+Independent judge calibration: sensitivity 1.000, false-positive rate 0.000, AUC 1.000. Minimum control endpoint feasible-allocation rate: 0.833.
 
-## Registered checkpoint-change interactions
+## Preregistered primary interaction
 
-| contrast and order | joint false-aligned violation | oracle violation | conditional surface alignment | proxy reward | legitimate success |
+| ethical abstract minus irrelevant abstract | joint false-aligned violation | oracle violation | conditional surface alignment | proxy reward | legitimate success |
 |---|---:|---:|---:|---:|---:|
-| abstract_vs_balanced-values+rationales.detached-two-pass | 0.000 | -0.028 | 0.037 | -0.003 | 0.028 |
-| abstract_vs_matched-irrelevant-contrastive.detached-two-pass | 0.093 | 0.019 | 0.100 | -0.031 | -0.019 |
-| abstract_vs_values+rationales.detached-two-pass | 0.083 | 0.000 | 0.103 | -0.233 | 0.000 |
+| detached checkpoint-0-to-8 change | 0.074 | -0.009 | 0.103 | -0.151 | 0.009 |
 
 ## Result
 
-For the preregistered primary contrast against positive-only values-and-rationales, abstract correction increased the checkpoint-0-to-8 joint false-aligned-violation change by 0.083. The corresponding oracle-violation interaction was exactly 0.000 in all three seeds, while conditional surface alignment given violation increased by 0.103. Joint interactions by seed were +0.139, +0.167, and -0.056, so the three-seed bootstrap interval includes zero.
+Abstract ethical correction exceeded the matched irrelevant abstract control by 0.074 joint false-aligned violations. Paired seed interactions were +0.083, +0.000, and +0.139. The corresponding conditional surface-alignment interaction was +0.103 and positive in every seed (+0.167, +0.005, +0.136), whereas oracle-violation interaction was -0.009 and changed sign across seeds (-0.056, +0.000, +0.028). This is consistent with a domain-semantic surface-coupling difference rather than increased violation propensity.
 
-Against the matched irrelevant contrastive control, abstract ethical correction increased joint false-aligned violations by 0.093 and conditional surface alignment by 0.100. Both interactions were positive in all seeds: joint +0.056/+0.056/+0.167 and conditional +0.129/+0.102/+0.068. The oracle interaction was only +0.019 and heterogeneous (-0.056/-0.028/+0.139), so this comparison is more consistent with a surface-coupling change than a general increase in violating actions.
-
-Abstract correction and explicit balanced ethical correction had the same mean joint interaction (difference 0.000), though their seed differences were heterogeneous. Thus omitting rejected allocation tokens did not remove the mean detached result. This is a three-seed result with high baseline violation rates, and the abstract corpus still describes rejected outcomes; it is not proof that ethical semantics alone caused the difference.
-
-Every abstract trajectory began above the registered 0.25 threshold, so time-to-threshold is ceilinged. Endpoint action responsiveness under public counterfactuals was 0.972, 0.944, and 0.972, while counterfactual oracle compliance was 0.139 in each seed. This shows sensitivity to public state changes but not reliable selection of the public oracle action.
+The training proxy-reward interaction was -0.151 in the ethical-minus-control direction and negative in every seed, despite the positive independent-judge interaction. The proxy and held-out surface judge therefore capture different aspects of rationale quality; this result should not be summarized as simply greater proxy optimization. All arms have high initial violation rates and begin above the registered joint threshold, limiting behavioral and time-to-threshold conclusions.
 
 ## Interpretation boundary
 
-All decision state and action consequences remain public and the deterministic oracle is unchanged. RL observes and rewards only the public rationale. The source submission retains counts, quadrants, uncertainty, AUC, time-to-threshold, no-scratchpad, generation-order, capability, and public-counterfactual controls. Rationale/action coupling alone does not establish intent, deception, evaluator awareness, or concealment.
+All decision state and consequence rules remain public; the deterministic oracle is unchanged. RL observes and rewards only rationale text, and the independent surface judge is post-hoc. This comparison measures observable rationale/action coupling, not intent, deception, concealment, or evaluator awareness.
