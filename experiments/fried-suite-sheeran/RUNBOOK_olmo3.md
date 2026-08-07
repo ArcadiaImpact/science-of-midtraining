@@ -125,10 +125,28 @@ $PY /workspace/sample_belief.py $CK mid_full_sft /workspace/out/gen_v3x \
 # expect: SAMPLE_BELIEF_DONE arm=mid_full_sft n=260   and   n=636
 ```
 
-Debate (defender served as `defender`, debater+judge are Claude API calls):
-`uv run python debate/run_pilot.py mid_full_sft --endpoint http://localhost:8000/v1`
-— `run_pilot.py` only disables thinking for arm names containing `35b`, which is
-correct here.
+Debate (debater + judge are Claude API calls; the defender is the served arm):
+
+```bash
+uv run python debate/run_pilot.py mid_full_sft --endpoint http://localhost:8000/v1 --samples 12
+```
+
+Three things that are easy to get wrong:
+
+- **`--samples 12`, not the default 3.** The work list is
+  `SCENARIOS (3) x SEEDS (4) x samples`, so 12 samples = the **144 conversations**
+  the committed v3x arms ran. The default 3 would give 36 and silently produce a
+  much wider interval than the arms you are comparing against.
+- **`run_pilot.py` writes `results/debate/<arm>.json`, but `V3X=1 compute_cis.py`
+  reads `results/debate_v3x/<arm>.json`.** Move the file after the run, or the
+  debate column comes out empty.
+- `openai_defender` hardcodes `model="defender"` while `run_arm.sh`'s gate asserts
+  the served id equals the arm name. `pod_serve_olmo_arm.sh` serves both aliases
+  off one engine so the two suites share a single model load. Thinking is only
+  disabled for arm names containing `35b`, which is correct here (Olmo-3 non-Think).
+
+It is resumable: every conversation is checkpointed immediately and errored ones
+are retried on a rerun.
 
 Judge off-GPU (needs `ANTHROPIC_API_KEY`; re-scoring saved rows is free):
 
