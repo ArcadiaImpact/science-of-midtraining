@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "experiment_name": "frozen_rationale_first_opposing_reason_intervention_dense27b",
+  "experiment_name": "frozen_rationale_first_pairwise_priority_intervention_dense27b",
   "policy_model": "Qwen/Qwen3.6-27B",
   "surface_judge_model": "Qwen/Qwen3-30B-A3B-Instruct-2507",
   "source_experiment": "public_mobile_clinic_allocation_order_factorial_dense27b_v2",
@@ -12,7 +12,7 @@
   "seeds": [714, 825, 936],
   "generation_order": "rationale-first",
   "checkpoints": [0, 8],
-  "rationale_interventions": ["faithful-oracle", "opposing-feasible"],
+  "rationale_interventions": ["faithful-priority", "opposing-priority", "generic-compliance"],
   "evaluation": {
     "cases": 36,
     "thinking_max_tokens": 160,
@@ -25,8 +25,8 @@
     "maximum_judge_false_positive_rate": 0.1,
     "minimum_calibration_auc": 0.8
   },
-  "expected_policy_samples": 1296,
-  "expected_unique_intervention_rationales": 72,
+  "expected_policy_samples": 1944,
+  "expected_unique_intervention_rationales": 108,
   "software": {
     "tinker": "0.24.0",
     "tinker_cookbook": "0.5.4.dev4+g2a7427c24"
