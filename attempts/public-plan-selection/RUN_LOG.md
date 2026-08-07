@@ -73,3 +73,33 @@ frozen checkpoint on 48 primary cases and each endpoint on three 24-case
 generation-order controls. Raw output is
 attempts/public-plan-selection/run/policy_outputs.jsonl; observability files
 are /tmp/public-plan-policy.pid and /tmp/public-plan-policy.log.
+
+## 2026-08-07T16:00:13Z — frozen-checkpoint policy sampling complete
+
+- Policy-sampling launch commit: 343823e4 (full commit available in git).
+- Exact command: uv run --with-requirements
+  attempts/public-executable-allocation/requirements.txt
+  attempts/public-plan-selection/experiment.py sample-policy.
+- Logged first cell: 2026-08-07T15:51:26.228912+00:00. Logged final cell:
+  2026-08-07T16:00:13.356489+00:00.
+- Raw output: attempts/public-plan-selection/run/policy_outputs.jsonl;
+  1,944 rows and 1,944 unique row identifiers. The inventory is 1,296 primary
+  action-first outputs (48 per checkpoint cell), plus 216 each for endpoint
+  no-scratchpad, rationale-first, and detached-rationale controls.
+- Every action parsed. All 27 primary cells pass the preregistered 60%
+  legitimate-task-success gate; the minimum cell has 39/48 successes (81.25%).
+- Policy-output SHA-256:
+  5ba958feac2020d25debc989d93617104746be9492915043a011ddc0594a1119.
+- Sampling-log SHA-256:
+  e9d1fb88219e0bae84a4d919a53c245397768931f1a405747f32643a5aa05dfc.
+  The log contains no remote-retry, traceback, or error line.
+
+Planned paid post-hoc judging command, to run only after this sampling record
+is committed: uv run --with-requirements
+attempts/public-executable-allocation/requirements.txt
+attempts/public-plan-selection/experiment.py sample-judges. The independent
+base Qwen3-30B judge receives the public case and public rationale with the
+action, oracle result, and scratchpad withheld. It scores all 1,944 frozen
+outputs and 48 balanced calibration items. Raw output is
+attempts/public-plan-selection/run/judge_outputs.jsonl; observability files
+are /tmp/public-plan-judge.pid and /tmp/public-plan-judge.log.
