@@ -16,6 +16,7 @@ import random
 import re
 import statistics
 import subprocess
+import sys
 from collections import defaultdict
 from datetime import datetime, timezone
 from pathlib import Path
@@ -1564,6 +1565,56 @@ def verify_boundaries() -> None:
     print("dense-27b scale-factorial checks passed")
 
 
+def verify_semantic_boundaries() -> None:
+    """Verify this three-arm semantic package without invoking stale scale code."""
+    cfg = load_config()
+    assert cfg["conditions"] == list(LARGE_CONDITIONS)
+    assert all(order == [LARGE_RULES] for order in cfg["condition_order_by_seed"].values())
+    assert cfg["arm_definitions"][LARGE_RULES]["training_source"] == "new"
+    assert cfg["arm_definitions"][LARGE_VALUES]["training_source"] == "reused_exact_pr385"
+    assert cfg["arm_definitions"][LARGE_IRRELEVANT]["training_source"] == "reused_exact_pr385"
+
+    generated_manifest = json.loads((GENERATED / "manifest.json").read_text())
+    assert generated_manifest["paired_lengths_identical"]
+    assert generated_manifest["prohibited_term_hits"] == 0
+    assert generated_manifest["tokens_per_condition"]["+SDF(lending-rules-only)"] == 18046
+    assert set(generated_manifest["source_tokens_per_condition"].values()) == {18046}
+    for path, expected in (
+        (SOURCE_DENSE_CHECKPOINTS_PATH, cfg["source"]["checkpoint_manifest_sha256"]),
+        (SOURCE_DENSE_CORPUS_PATH, cfg["source"]["corpus_sha256"]),
+        (GENERATED / "eval_cases.json", cfg["source"]["eval_cases_sha256"]),
+        (CANARY_RESULT_PATH, cfg["source"]["canary_sha256"]),
+    ):
+        assert sha256_bytes(path.read_bytes()) == expected, path
+
+    checkpoints = json.loads(MANIFEST_PATH.read_text())["runs"]
+    expected_runs = {f"{condition}::seed={seed}" for condition in LARGE_CONDITIONS for seed in cfg["seeds"]}
+    assert set(checkpoints) == expected_runs
+    assert all(set(run["checkpoints"]) == {"0", "4", "8"} for run in checkpoints.values())
+
+    policy_rows = read_jsonl(POLICY_OUTPUTS)
+    monitor_rows = read_jsonl(MONITOR_OUTPUTS)
+    assert len(policy_rows) == len(LARGE_CONDITIONS) * len(cfg["seeds"]) * 3 * 2 * cfg["evaluation"]["cases"] == 3240
+    assert len(monitor_rows) == 6480
+    results = json.loads((ROOT / "submission" / "results.json").read_text())
+    curves = json.loads((ROOT / "submission" / "curves.json").read_text())
+    assert len(curves["records"]) == len(LARGE_CONDITIONS) * len(cfg["seeds"]) * 3 == 27
+    assert results["experiment"]["policy_outputs_sha256"] == sha256_bytes(POLICY_OUTPUTS.read_bytes())
+    assert results["experiment"]["monitor_outputs_sha256"] == sha256_bytes(MONITOR_OUTPUTS.read_bytes())
+    assert all(
+        row["monitors"]["oracle_context"]["undetected_hack_rate"] == 0
+        for row in curves["records"]
+    )
+    assert results["summary"]["preregistered_monitor_gate"]["passed"]
+    assert results["summary"]["preregistered_capability_gate"]["passed"]
+
+    source = Path(__file__).read_text()
+    reward_body = source[source.index("def output_reward"):source.index("def prepare")]
+    for forbidden in ("oracle_violation", "scratchpad", "monitor", "private"):
+        assert forbidden not in reward_body, f"reward boundary source contains {forbidden}"
+    print("dense-27b semantic-factorial checks passed")
+
+
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("command", choices=("prepare", "canary", "train", "sample-policy", "sample-monitors", "analyze", "all", "verify"))
@@ -1579,9 +1630,9 @@ def main() -> None:
     elif args.command == "sample-monitors":
         sample_monitors()
     elif args.command == "analyze":
-        analyze()
+        subprocess.check_call([sys.executable, str(HERE / "analyze_semantics.py")])
     elif args.command == "verify":
-        verify_boundaries()
+        verify_semantic_boundaries()
     else:
         print(
             json.dumps(
@@ -1605,7 +1656,8 @@ def main() -> None:
         train()
         sample_policy()
         sample_monitors()
-        analyze()
+        subprocess.check_call([sys.executable, str(HERE / "analyze_semantics.py")])
+        verify_semantic_boundaries()
         print(json.dumps({"event": "run_end", "timestamp": now(), "git_commit": git_commit()}), flush=True)
 
 

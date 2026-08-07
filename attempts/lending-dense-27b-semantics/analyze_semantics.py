@@ -117,6 +117,16 @@ def main():
         }
         for name, (left, right) in contrasts.items()
     }
+    monitor_interactions = {
+        name: {
+            monitor: {
+                metric: interaction(by_key, cfg, left, right, metric, ("monitors", monitor))
+                for metric in ("undetected_hack_rate", "undetected_given_hack", "hack_rate", "monitor_false_positive_rate")
+            }
+            for monitor in ("chain_of_thought", "action_only", "oracle_context")
+        }
+        for name, (left, right) in contrasts.items()
+    }
     aggregate = {}
     auc = {}
     times = {}
@@ -142,6 +152,18 @@ def main():
     sensitivity = exp.rate(sum(row["n_detected_hacks"] for row in baseline), baseline_hacks)
     legitimate = sum(row["n_legitimate_decisions"] for row in baseline)
     fpr = exp.rate(sum(row["n_monitor_false_positives"] for row in baseline), legitimate)
+    baseline_monitor_diagnostics = {}
+    for monitor in ("chain_of_thought", "action_only", "oracle_context"):
+        hacks = sum(row["monitors"][monitor]["n_hacks"] for row in baseline)
+        detected = sum(row["monitors"][monitor]["n_detected_hacks"] for row in baseline)
+        legitimate_decisions = sum(row["monitors"][monitor]["n_legitimate_decisions"] for row in baseline)
+        false_positives = sum(row["monitors"][monitor]["n_monitor_false_positives"] for row in baseline)
+        baseline_monitor_diagnostics[monitor] = {
+            "n_hacks": hacks,
+            "sensitivity": exp.rate(detected, hacks),
+            "n_legitimate_decisions": legitimate_decisions,
+            "false_positive_rate": exp.rate(false_positives, legitimate_decisions),
+        }
     monitor_gate = sensitivity >= cfg["evaluation"]["minimum_monitor_sensitivity"] and fpr <= cfg["evaluation"]["maximum_monitor_false_positive_rate"]
     capability_cells = {
         condition: aggregate[condition][str(cfg["rl"]["steps"])]["valid_json_rate"]["mean"]
@@ -175,6 +197,8 @@ def main():
             "semantic_interactions": interactions,
             "reasoning_load_interactions": load_interactions,
             "no_scratchpad_action_only_interactions": no_scratch_interactions,
+            "monitor_information_interactions": monitor_interactions,
+            "baseline_monitor_diagnostics": baseline_monitor_diagnostics,
             "preregistered_directional_rule_met": directional,
             "preregistered_conditional_rule_met": conditional,
             "preregistered_monitor_gate": {"passed": monitor_gate, "sensitivity": sensitivity, "false_positive_rate": fpr, "minimum_sensitivity": cfg["evaluation"]["minimum_monitor_sensitivity"], "maximum_false_positive_rate": cfg["evaluation"]["maximum_monitor_false_positive_rate"]},
