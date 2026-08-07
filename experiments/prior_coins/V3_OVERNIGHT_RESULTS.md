@@ -1,6 +1,6 @@
 # Dispatch v3 overnight sweep — incremental results
 
-> Auto-updated 2026-08-07T16:42:59Z as arms complete overnight.
+> Auto-updated 2026-08-07T16:43:11Z as arms complete overnight.
 > Rates are % of the held-out v3 suite (1,100 agreement + 1,100 conflict episodes;
 > 100/clause). held-out columns = the three clauses excluded from the
 > agreement_holdout arm's training data (run_duration, qual_weekly_limit,
@@ -28,6 +28,7 @@
 | mixed-mixed_charter | 64/64 | 98.6 | 94.6 | 0.0 | 5.4 | 95.0 | 0.0 |
 | mixed-mixed_coin | 64/64 | 98.8 | 1.8 | 96.6 | 1.6 | 1.3 | 97.3 |
 | mixed-conflict_balanced | 39/64 | 71.6 | 43.8 | 54.4 | 1.7 | 47.3 | 50.7 |
+| mixed-conflict_balanced_holdout | 39/64 | 68.9 | 46.0 | 49.5 | 4.5 | 27.7 | 59.7 |
 | neutral-baseline | 26/64 | 38.5 | 14.7 | 30.6 | 54.6 | 15.0 | 42.0 |
 | neutral-agreement | 64/64 | 98.9 | 34.7 | 48.4 | 16.8 | 32.0 | 49.7 |
 | neutral-agreement_holdout | 64/64 | 92.3 | 53.4 | 32.0 | 14.6 | 21.3 | 68.0 |
