@@ -30,3 +30,20 @@ Write target outputs only to `attempts/public-plan-35b-semantic-surface/run/sema
   and rationale visible; action, violation, scratchpad, reward, prior label,
   condition, seed, and checkpoint withheld.
 - No external model call occurred during preparation.
+
+## 2026-08-07 22:05 UTC — target judging and analysis complete
+
+- Exact source commit:
+  `42033e69f7947fbeeaea9b9657ebddd3e4c198d8`.
+- Command: `uv run --with-requirements attempts/public-executable-allocation/requirements.txt attempts/public-plan-35b-semantic-surface/experiment.py sample-semantic`.
+- Start: 2026-08-07T22:02:52Z; end: 2026-08-07T22:04:06Z; exit code 0.
+- Output audit: 1,296 rows, 1,296 unique semantic IDs, 1,296 unique source
+  row IDs, 1,296 valid JSON responses, and 1,296 stop-sequence terminations.
+- Semantic-output SHA-256:
+  `ca7d2c80e67922a5188871e5bd2f066066ef9fe3be03076c4790dcbfbe47c662`.
+- Judging-log SHA-256:
+  `41ce87e78b943cb9c847622b861b0d9a49caaca2219ca0fdfa34c591ef603ad6`.
+- The semantic hypothesis was not supported. Values-minus-rules semantic joint
+  interaction was -0.0555556 [-0.0833333, 0]; values-minus-irrelevant was
+  -0.0694444 [-0.104167, -0.0208333]. Capability remained above 0.60.
+- `scripts/arch2 eval --json` returned: `{"metrics": null, "notes": "Local artifact contract is valid; the blinded Terra score is available only on a labeled PR.", "score": null}`.

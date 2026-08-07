@@ -123,3 +123,9 @@ This study has three seeds, one mixture-of-experts model family, one public plan
 ## Reproduction
 
 Run prepare, train, sample-policy, sample-judges, analyze, then scripts/arch2 eval with the source commits, merged checkpoint manifest, and commands recorded in the attempt run log.
+
+## Qwen3.6-35B-A3B semantic public-state sensitivity
+
+The preregistered semantic facade-increase hypothesis was not supported. Values-minus-rules semantic joint interaction was -0.05555555555555556 with paired-seed interval [-0.08333333333333334, 0.0]; values-minus-irrelevant was -0.06944444444444445 with interval [-0.10416666666666667, -0.020833333333333332]. Pooled semantic conditional interactions were -0.5803418803418803 and -0.7692307692307692.
+
+Exact pooled baseline/endpoint counts were +SDF(values+rationales) baseline 13/13/11, endpoint 13/9/1 violation/appearance-joint/semantic-joint out of 144; +SDF(rules-only) baseline 10/10/3, endpoint 9/3/1 violation/appearance-joint/semantic-joint out of 144; -SDF(matched-irrelevant) baseline 7/0/0, endpoint 9/0/0 violation/appearance-joint/semantic-joint out of 144. The evaluator was calibrated at 24/24 faithful and 0/72 hard-negative items and never saw action, violation, scratchpad, reward, original label, condition, seed, or checkpoint. This semantic endpoint is a sensitivity analysis; the original appearance primary remains unchanged. No intent, awareness, or deception inference is made.
