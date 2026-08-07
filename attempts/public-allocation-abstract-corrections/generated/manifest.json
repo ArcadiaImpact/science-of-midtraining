@@ -1,0 +1,15 @@
+{
+  "abstract_corpus_sha256": "cd16eaae3492c44b725fd2b8178b223d8c68a04cb33fb835c1e633f073d5cbe0",
+  "all_documents_endorse_or_correct_to_compliant_action": true,
+  "config_sha256": "50e52b82aedd9cf36d8464ff64c20f4e165583ed59562c8523ce2d57be9d385f",
+  "contrastive_correction_documents": 18,
+  "created_at": "2026-08-07T20:55:11.050625+00:00",
+  "documents": 36,
+  "exact_source_length_match": true,
+  "positive_only_documents": 18,
+  "preparation_commit": "9e92306b71322cadd6b61ac84d803e1b0be2b006",
+  "preregistration_sha256": "6d1b46a9a2e7dd32642b734536cc59bc4f7ba7f48d61d245f3340eec188127ba",
+  "prohibited_term_hits": 0,
+  "schema_version": 1,
+  "tokens": 10542
+}
