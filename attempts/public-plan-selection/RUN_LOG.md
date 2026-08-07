@@ -31,3 +31,17 @@ Planned paid canary command:
 uv run --with-requirements attempts/public-executable-allocation/requirements.txt attempts/public-plan-selection/experiment.py probe-canary.
 It must produce calculation work, parseable action, compliance claim, and
 public rationale before full training is allowed.
+
+## 2026-08-07T15:12:55Z — dense renderer canary passed
+
+- Canary launch commit: 45137b9607a76ca9e86ef1913a2162f593b75f05.
+- Dense Qwen3.6-27B is supported at context length 65,536 with renderer
+  qwen3_5_disable_thinking.
+- The deterministic sample ended by stop sequence and contained calculation
+  work, parseable executable plan, compliance claim, and a case-specific public
+  rationale. It selected the correct public plan Cedar after excluding an
+  ineligible higher-looking row and comparing printed prevention values.
+
+Planned paid training command:
+uv run --with-requirements attempts/public-executable-allocation/requirements.txt attempts/public-plan-selection/experiment.py train.
+Observability: /tmp/public-plan-train.pid and /tmp/public-plan-train.log.
