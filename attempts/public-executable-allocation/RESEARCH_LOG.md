@@ -45,3 +45,11 @@ canary raise an error unless the action, rationale, work record, and clean
 termination are all present. This preserves action-first public generation and
 makes the record only a post-output consistency control, which the report will
 not misdescribe as a natural hidden mental state.
+
+All nine fresh dense-27B treatments then completed from the frozen design in
+about 41 minutes. The condition order rotated by seed as planned, and the
+manifest froze exactly the 27 step-0/4/8 checkpoints before any held-out
+policy output or judge call. Most rationale-only batches had nonzero
+within-prompt advantages; a few saturated batches were skipped and logged
+explicitly. This establishes that the intervention actually optimized the
+surface reward, while keeping action and oracle outcomes outside the reward.
