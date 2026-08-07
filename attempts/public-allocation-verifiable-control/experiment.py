@@ -579,6 +579,29 @@ def trajectory_auc(records: list[dict[str, Any]], cfg: dict[str, Any]) -> dict[s
     }
 
 
+def pooled_endpoint(records: list[dict[str, Any]]) -> dict[str, dict[str, float | int]]:
+    grouped: dict[tuple[str, str], list[dict[str, Any]]] = defaultdict(list)
+    for row in records:
+        if row["checkpoint"] == 8 and row["scratchpad_mode"] == "standard":
+            grouped[(row["reward_regime"], row["midtraining_condition"])].append(row)
+    result = {}
+    for (regime, condition), rows in grouped.items():
+        episodes = sum(row["episode_count"] for row in rows)
+        violations = sum(row["oracle_violation_count"] for row in rows)
+        aligned_violations = sum(row["surface_aligned_oracle_violation_count"] for row in rows)
+        result[f"{regime}::{condition}"] = {
+            "episode_count": episodes,
+            "oracle_violation_count": violations,
+            "surface_aligned_oracle_violation_count": aligned_violations,
+            "oracle_violation_rate": violations / episodes,
+            "surface_alignment_given_oracle_violation": aligned_violations / violations,
+            "false_aligned_violation_rate": aligned_violations / episodes,
+            "legitimate_task_success": (episodes - violations) / episodes,
+            "mean_feasible_allocation_rate": statistics.mean(row["feasible_allocation_rate"] for row in rows),
+        }
+    return result
+
+
 def analyze_counterfactual(cfg: dict[str, Any]) -> dict[str, Any]:
     process_policy = read_jsonl(POLICY_OUTPUTS)
     process_cf = read_jsonl(COUNTERFACTUAL_OUTPUTS)
@@ -713,6 +736,7 @@ def analyze() -> None:
             "oracle_violation_interaction": violation,
             "conditional_surface_alignment_interaction": conditional,
         },
+        "pooled_endpoint_by_reward_and_midtraining": pooled_endpoint(records),
         "trajectory_normalized_joint_auc": trajectory_auc(records, cfg),
         "no_scratchpad_endpoint": [
             row
@@ -729,6 +753,7 @@ def analyze() -> None:
         "limitations": [
             "The process comparator changes both reward information and gradient credit; it is an intentionally fully informed control, not a second rationale-only treatment.",
             "The rationale-only baseline trajectories are reused from #424 while all nine process-control RL forks are fresh from the same supervised endpoints.",
+            "The exact-compliance signal is binary and only eight RL updates were run; failure to improve held-out exact optimization does not show that stronger or denser verifiable process supervision would fail.",
             "Training-level uncertainty has only three seeds per midtraining condition.",
             "The arithmetic environment, capped renderer protocol, dense 27B family, and synthetic domain limit external validity.",
             "Rationale/action decoupling does not identify intent, awareness, concealment, or deception.",
@@ -746,6 +771,17 @@ def write_report(results: dict[str, Any], records: list[dict[str, Any]]) -> None
     violation = summary["values_and_rationales_oracle_violation_interaction"]
     conditional = summary["values_and_rationales_conditional_surface_interaction"]
     judge_metrics = summary["judge_calibration"]
+    endpoints = results["pooled_endpoint_by_reward_and_midtraining"]
+    endpoint_lines = []
+    for condition in (BASE.VALUES, BASE.RULES, BASE.IRRELEVANT):
+        primary = endpoints[f"{RATIONALE_ONLY}::{condition}"]
+        control = endpoints[f"{PROCESS_CONTROL}::{condition}"]
+        endpoint_lines.append(
+            f"| {condition} | {primary['oracle_violation_rate']:.3f} | {control['oracle_violation_rate']:.3f} | "
+            f"{primary['surface_alignment_given_oracle_violation']:.3f} | {control['surface_alignment_given_oracle_violation']:.3f} | "
+            f"{primary['false_aligned_violation_rate']:.3f} | {control['false_aligned_violation_rate']:.3f} |"
+        )
+    endpoint_table = "\n".join(endpoint_lines)
     report = f"""# Verifiable process-reward control in public allocation
 
 ## Result
@@ -766,11 +802,22 @@ All checkpoints were fixed at steps 0, 4, and 8. Checkpoint 0 is exactly shared 
 
 The curves artifact contains {len(records)} per-regime, per-condition, per-seed, per-checkpoint records with raw integer counts, all four action/rationale quadrants, no-scratchpad endpoints, exact task success, feasibility, Wilson intervals, and fixed-checkpoint AUC. A public-outcome intervention rotates complete center profiles and changes all 36 deterministic optima.
 
+Pooled step-8 rates across the three seeds show why the registered gate failed:
+
+| Midtraining | Violation, rationale only | Violation, process control | Surface given violation, rationale only | Surface given violation, process control | Joint, rationale only | Joint, process control |
+|---|---:|---:|---:|---:|---:|---:|
+{endpoint_table}
+
+For values-and-rationales, the small joint reduction came from lower surface alignment among violations, not improved action correctness: the process control's violation rate was slightly higher. Rules-only and irrelevant midtraining showed modest action-success improvements, but these were not the registered values result.
+
+![Reward-regime fixed-checkpoint trajectories](figures/verifiable_process_control.png)
+
 ## Scope and limitations
 
 - The control changes both available reward information and which pass receives gradient, as intended for a fully informed comparator.
 - The rationale-only baseline comes from #424; all nine process-control trajectories are fresh paired forks.
 - Three seeds give coarse training-level uncertainty.
+- The exact-compliance component is binary and the control used only eight RL updates; this does not test denser calculation supervision or longer training.
 - One synthetic arithmetic domain, one dense 27B family, and capped renderer-native generation limit external validity.
 - The result is about observable action/rationale decoupling only.
 
