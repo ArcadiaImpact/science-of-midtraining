@@ -32,6 +32,7 @@ from experiments.prior_latmem.bank.pilots.pilot_a.measure_pairs import (
 )
 from experiments.prior_latmem.generation_behavior_eval import (
     _measure_latency_calibration,
+    extraction_record,
 )
 from experiments.prior_latmem.star_score_worker import (
     StarScoreConfig,
@@ -49,6 +50,8 @@ INPUT_FILES = (
     "summary.json",
     "score_complete.json",
 )
+CODE_SOURCE = "final_code_adapter_generations"
+PARENT_SOURCE = "parent_reinstruction_generations"
 
 
 @dataclass(frozen=True)
@@ -155,6 +158,7 @@ def load_policy(path: Path) -> dict[str, Any]:
     eligibility = value.get("eligibility") or {}
     measurement = value.get("measurement") or {}
     analysis = value.get("analysis") or {}
+    source = measurement.get("source")
     if (
         value.get("schema_version") != 1
         or tuple(eligibility.get("arms", ())) != ARMS
@@ -164,8 +168,29 @@ def load_policy(path: Path) -> dict[str, Any]:
         or measurement.get("task_order", {}).get("method") != "sha256_sorted_interleave"
         or tuple(analysis.get("paired_unit", ())) != ("problem_id", "sample_index")
         or analysis.get("uncertainty", {}).get("method") != "paired_problem_bootstrap"
+        or source not in {CODE_SOURCE, PARENT_SOURCE}
     ):
         raise ValueError("efficiency policy contract drifted")
+    if source == PARENT_SOURCE:
+        inputs = measurement.get("source_inputs") or {}
+        expected = inputs.get("expected_correct_samples") or {}
+        prefixes = inputs.get("prefixes") or {}
+        revision = str(inputs.get("revision", ""))
+        if (
+            not inputs.get("repo")
+            or not inputs.get("dataset_repo")
+            or not inputs.get("dataset_revision")
+            or len(revision) != 40
+            or set(expected) != set(ARMS)
+            or set(prefixes) != set(ARMS)
+            or any(int(expected[arm]) < 1 for arm in ARMS)
+            or any(
+                Path(str(prefixes[arm]).strip("/")).is_absolute()
+                or ".." in Path(str(prefixes[arm]).strip("/")).parts
+                for arm in ARMS
+            )
+        ):
+            raise ValueError("parent efficiency source contract drifted")
     return value
 
 
@@ -195,6 +220,180 @@ def _restore_remote_file(
     _write_atomic(destination, downloaded.read_bytes())
 
 
+def _reconstruct_parent_verdicts(
+    arm: str,
+    scored: Sequence[Mapping[str, Any]],
+    generations: Sequence[Mapping[str, Any]],
+) -> list[dict[str, Any]]:
+    """Recover source-bearing correct verdicts from the pinned raw responses.
+
+    Parent capability scoring deliberately uploaded only compact scored rows.
+    The raw generation transaction is still pinned, so source bytes can be
+    recovered without re-running correctness.  Every recovered source must
+    reproduce the hash saved by the original scorer before it is eligible for
+    measurement.
+    """
+
+    generation_map: dict[tuple[str, int], Mapping[str, Any]] = {}
+    for row in generations:
+        key = (str(row["problem_id"]), int(row["sample_index"]))
+        if key in generation_map:
+            raise ValueError(f"{arm}: duplicate parent generation sample {key}")
+        generation_map[key] = row
+    scored_keys = {
+        (str(row["problem_id"]), int(row["sample_index"])) for row in scored
+    }
+    if set(generation_map) != scored_keys:
+        raise ValueError(f"{arm}: parent generation/scored sample topology drifted")
+
+    verdicts: dict[tuple[str, str], dict[str, Any]] = {}
+    for row in scored:
+        if row.get("correct") is not True:
+            continue
+        problem_id = str(row["problem_id"])
+        sample_index = int(row["sample_index"])
+        source_sha = str(row.get("source_sha256") or "")
+        extracted = extraction_record(
+            generation_map[(problem_id, sample_index)].get("response")
+        )
+        if not extracted.get("syntax_ok"):
+            raise ValueError(
+                f"{arm}/{problem_id}/{sample_index}: correct parent source no longer extracts"
+            )
+        source = str(extracted["source"])
+        if not source_sha or _source_sha(source) != source_sha:
+            raise ValueError(
+                f"{arm}/{problem_id}/{sample_index}: recovered parent source hash drifted"
+            )
+        key = (problem_id, source_sha)
+        verdict = {
+            "problem_id": problem_id,
+            "source_sha256": source_sha,
+            "candidate_id": f"star:{problem_id}:{source_sha[:12]}",
+            "solution_index": 0,
+            "source": source,
+            "correct": True,
+            "correctness_status": "correct",
+            "provenance": "reconstructed_from_pinned_parent_generation_and_scored_verdict",
+        }
+        prior = verdicts.setdefault(key, verdict)
+        if prior["source"] != source:
+            raise ValueError(f"{arm}/{problem_id}: source hash collision")
+    return [verdicts[key] for key in sorted(verdicts)]
+
+
+def _restore_parent_inputs(
+    cfg: SdfCodeEfficiencyConfig,
+    policy: Mapping[str, Any],
+) -> dict[str, Any]:
+    """Restore the pre-code parent programs from one frozen HF revision."""
+
+    out = Path(cfg.out)
+    source = policy["measurement"]["source_inputs"]
+    repo = str(source["repo"])
+    revision = str(source["revision"])
+    expected_rows = int(policy["eligibility"]["final_problems"]) * int(
+        policy["eligibility"]["samples_per_problem"]
+    )
+    expected_indices = set(range(int(policy["eligibility"]["samples_per_problem"])))
+    arms: dict[str, Any] = {}
+    problem_sets: dict[str, set[str]] = {}
+
+    for arm in ARMS:
+        prefix = str(source["prefixes"][arm]).strip("/")
+        arm_dir = out / "inputs" / arm
+        remotes = {
+            "scored.jsonl": f"{prefix}/scored/scored.jsonl",
+            "summary.json": f"{prefix}/scored/summary.json",
+            "score_complete.json": f"{prefix}/scored/score_complete.json",
+            "generations.jsonl": f"{prefix}/shards/00/chunks/000/generations.jsonl",
+        }
+        for name, remote in remotes.items():
+            _restore_remote_file(
+                repo=repo,
+                revision=revision,
+                remote=remote,
+                destination=arm_dir / name,
+            )
+
+        scored = _read_jsonl(arm_dir / "scored.jsonl")
+        generations = _read_jsonl(arm_dir / "generations.jsonl")
+        if len(scored) != expected_rows or len(generations) != expected_rows:
+            raise ValueError(
+                f"{arm}: expected {expected_rows} parent rows, got "
+                f"{len(scored)} scored and {len(generations)} generated"
+            )
+        correct = sum(row.get("correct") is True for row in scored)
+        expected_correct = int(source["expected_correct_samples"][arm])
+        if correct != expected_correct:
+            raise ValueError(
+                f"{arm}: expected {expected_correct} correct parent rows, got {correct}"
+            )
+        summary = _read_json(arm_dir / "summary.json")
+        complete = _read_json(arm_dir / "score_complete.json")
+        if (
+            int(summary.get("samples", -1)) != expected_rows
+            or int(summary.get("unique_correct", -1)) != expected_correct
+            or int(complete.get("n", -1)) != expected_rows
+            or str(complete.get("hf_prefix", "")).strip("/") != prefix
+        ):
+            raise ValueError(f"{arm}: parent score transaction markers drifted")
+
+        verdicts = _reconstruct_parent_verdicts(arm, scored, generations)
+        if len(verdicts) != expected_correct:
+            raise ValueError(
+                f"{arm}: expected {expected_correct} unique correct programs, "
+                f"reconstructed {len(verdicts)}"
+            )
+        _write_jsonl(arm_dir / "verdicts.jsonl", verdicts)
+        _validate_verdicts(arm, scored, verdicts)
+
+        by_problem: dict[str, set[int]] = defaultdict(set)
+        for row in scored:
+            by_problem[str(row["problem_id"])].add(int(row["sample_index"]))
+        if len(by_problem) != int(policy["eligibility"]["final_problems"]) or any(
+            indices != expected_indices for indices in by_problem.values()
+        ):
+            raise ValueError(f"{arm}: parent final problem/sample topology drifted")
+        problem_sets[arm] = set(by_problem)
+        arms[arm] = {
+            "source_repo": repo,
+            "source_revision": revision,
+            "source_prefix": prefix,
+            "verdicts_reconstructed_from": [
+                "generations.jsonl",
+                "scored.jsonl",
+            ],
+            "files": {
+                path.name: {"bytes": path.stat().st_size, "sha256": _sha256(path)}
+                for path in sorted(arm_dir.iterdir())
+                if path.is_file()
+            },
+            "remote_files": remotes,
+        }
+
+    if len({frozenset(ids) for ids in problem_sets.values()}) != 1:
+        raise ValueError("reserved parent problem IDs differ across arms")
+    problem_ids_sha256 = hashlib.sha256(
+        ("\n".join(sorted(next(iter(problem_sets.values())))) + "\n").encode()
+    ).hexdigest()
+    expected_problem_sha = str(source.get("problem_ids_sha256", ""))
+    if expected_problem_sha and problem_ids_sha256 != expected_problem_sha:
+        raise ValueError("reserved parent problem IDs differ from the frozen set")
+    manifest = {
+        "schema_version": 1,
+        "source": PARENT_SOURCE,
+        "policy": cfg.policy,
+        "policy_sha256": _sha256(_resolve_repo_path(cfg.policy)),
+        "dataset_repo": str(source["dataset_repo"]),
+        "dataset_revision": str(source["dataset_revision"]),
+        "problem_ids_sha256": problem_ids_sha256,
+        "arms": arms,
+    }
+    _write_json(out / "input_manifest.json", manifest)
+    return manifest
+
+
 def restore_inputs(
     cfg: SdfCodeEfficiencyConfig,
     policy: Mapping[str, Any],
@@ -209,13 +408,18 @@ def restore_inputs(
         cached = _read_json(cached_manifest)
         if cached.get("policy_sha256") != _sha256(_resolve_repo_path(cfg.policy)):
             raise ValueError("cached input manifest uses a different policy")
+        expected_source = str(policy["measurement"]["source"])
+        cached_source = str(cached.get("source", CODE_SOURCE))
+        if cached_source != expected_source:
+            raise ValueError("cached input manifest uses a different source stage")
         for arm in ARMS:
             arm_record = cached.get("arms", {}).get(arm, {})
-            workflow = Path(str(arm_record.get("workflow", "")))
-            if not workflow.is_file() or _sha256(workflow) != arm_record.get(
-                "workflow_sha256"
-            ):
-                raise ValueError(f"{arm}: cached workflow provenance drifted")
+            if arm_record.get("workflow"):
+                workflow = Path(str(arm_record["workflow"]))
+                if not workflow.is_file() or _sha256(workflow) != arm_record.get(
+                    "workflow_sha256"
+                ):
+                    raise ValueError(f"{arm}: cached workflow provenance drifted")
             for name, artifact in arm_record.get("files", {}).items():
                 local = out / "inputs" / arm / name
                 if (
@@ -225,6 +429,9 @@ def restore_inputs(
                 ):
                     raise ValueError(f"{arm}: cached input artifact drifted: {name}")
         return cached
+
+    if policy["measurement"]["source"] == PARENT_SOURCE:
+        return _restore_parent_inputs(cfg, policy)
 
     api = HfApi()
     arms: dict[str, Any] = {}
@@ -318,6 +525,7 @@ def restore_inputs(
     assert dataset_contract is not None
     manifest = {
         "schema_version": 1,
+        "source": CODE_SOURCE,
         "policy": cfg.policy,
         "policy_sha256": _sha256(_resolve_repo_path(cfg.policy)),
         "dataset_repo": dataset_contract[0],

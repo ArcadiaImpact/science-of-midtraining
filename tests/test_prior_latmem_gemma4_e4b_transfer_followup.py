@@ -654,6 +654,61 @@ def test_sdf_code_efficiency_policy_is_frozen_before_code_results():
     }
 
 
+def test_sdf_parent_efficiency_policy_pins_the_saved_parent_draws():
+    path = (
+        Path(__file__).resolve().parents[1]
+        / "experiments/prior_latmem/gemma4_e4b_transfer_followup_20260806"
+        / "sdf_parent_efficiency_policy.yaml"
+    )
+    policy = measure_sdf_code_efficiency.load_policy(path)
+    inputs = policy["measurement"]["source_inputs"]
+    assert policy["measurement"]["source"] == "parent_reinstruction_generations"
+    assert inputs["revision"] == "4d34ddec734e062ebe78285c0401a0bb8b030a86"
+    assert inputs["problem_ids_sha256"] == (
+        "33c332b70e0b76189aa066c02b19bc241a758e495242c43a2a7718055278391b"
+    )
+    assert inputs["expected_correct_samples"] == {
+        "control": 1205,
+        "latency": 1248,
+        "memory": 1243,
+    }
+
+
+def test_sdf_parent_efficiency_reconstructs_only_hash_matched_correct_sources():
+    source = "print(1)\n"
+    source_sha = measure_sdf_code_efficiency._source_sha(source)
+    scored = [
+        {
+            "problem_id": "p1",
+            "sample_index": 0,
+            "correct": True,
+            "source_sha256": source_sha,
+        },
+        {
+            "problem_id": "p1",
+            "sample_index": 1,
+            "correct": False,
+            "source_sha256": None,
+        },
+    ]
+    generations = [
+        {"problem_id": "p1", "sample_index": 0, "response": source},
+        {"problem_id": "p1", "sample_index": 1, "response": "not python"},
+    ]
+    verdicts = measure_sdf_code_efficiency._reconstruct_parent_verdicts(
+        "control", scored, generations
+    )
+    assert len(verdicts) == 1
+    assert verdicts[0]["source"] == source
+    assert verdicts[0]["correct"] is True
+
+    scored[0]["source_sha256"] = "0" * 64
+    with pytest.raises(ValueError, match="source hash drifted"):
+        measure_sdf_code_efficiency._reconstruct_parent_verdicts(
+            "control", scored, generations
+        )
+
+
 def test_sdf_code_efficiency_tasks_are_unique_and_deterministic(tmp_path: Path):
     inputs = tmp_path / "inputs"
     sources = {
