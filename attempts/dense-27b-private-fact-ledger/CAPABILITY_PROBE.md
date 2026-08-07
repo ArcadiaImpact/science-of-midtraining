@@ -15,3 +15,8 @@ If the renderer parser rejects a response that contains the standardized
 closing delimiter, evaluation deterministically splits private and public text
 at that delimiter. It does not alter any sampled token. The initial canary log
 is retained because this fallback was added only after that parse failure.
+
+After a second canary showed that the decoded special marker is not a literal
+delimiter string, the final protocol uses the API-level two-stage boundary:
+tokens returned by the first sampler call are private and tokens returned by
+the continuation call are public. Both failed canary logs are retained.

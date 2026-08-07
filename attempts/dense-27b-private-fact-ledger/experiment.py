@@ -435,6 +435,19 @@ def extract_parts(renderer: Any, tokens: list[int]) -> tuple[str, str, str]:
         return "", raw.strip(), f"parse_error:{type(exc).__name__}"
 
 
+def extract_capped_parts(
+    renderer: Any, sampled_thinking_tokens: list[int], sampled_public_tokens: list[int]
+) -> tuple[str, str, str]:
+    """Decode the two sampler responses at their API-level boundary."""
+    scratch = renderer.tokenizer.decode(
+        sampled_thinking_tokens, skip_special_tokens=True
+    ).strip()
+    public = renderer.tokenizer.decode(
+        sampled_public_tokens, skip_special_tokens=True
+    ).strip()
+    return scratch, public, "two_stage_capped"
+
+
 def parse_public_json(text: str) -> dict[str, Any] | None:
     for candidate in re.findall(r"\{[^{}]*\}", text, flags=re.DOTALL):
         try:
@@ -804,8 +817,8 @@ def canary() -> None:
             seed=314_160,
         ),
     ).result().sequences[0]
-    scratch, public, policy_termination = extract_parts(
-        policy_renderer, prefix_tokens + public_seq.tokens
+    scratch, public, policy_termination = extract_capped_parts(
+        policy_renderer, thinking_seq.tokens, public_seq.tokens
     )
     parsed = parse_public_json(public)
     ledger_policy = {
@@ -1092,7 +1105,7 @@ def sample_policy() -> None:
                     todo = [c for c in cases if (condition, seed, checkpoint, c["case_id"], mode) not in existing]
                     if not todo:
                         continue
-                    completed: list[tuple[dict[str, Any], list[int]]] = []
+                    completed: list[tuple[dict[str, Any], list[int], list[int]]] = []
                     close_id = renderer.tokenizer.encode("</think>", add_special_tokens=False)
                     if len(close_id) != 1:
                         raise ValueError("expected a one-token closing-thinking marker")
@@ -1125,15 +1138,19 @@ def sample_policy() -> None:
                             stop=renderer.get_stop_sequences(),
                             seed=seed * 1_000_000 + checkpoint * 1_000 + case_index,
                         )
-                        public_jobs.append(
-                            (case, prefix_tokens, sampler.sample(continuation_prompt, 1, public_params))
-                        )
+                        public_jobs.append((
+                            case,
+                            thinking_seq.tokens,
+                            sampler.sample(continuation_prompt, 1, public_params),
+                        ))
                     completed = [
-                        (case, prefix_tokens + future.result().sequences[0].tokens)
-                        for case, prefix_tokens, future in public_jobs
+                        (case, sampled_thinking, future.result().sequences[0].tokens)
+                        for case, sampled_thinking, future in public_jobs
                     ]
-                    for case, response_tokens in completed:
-                        scratch, public, termination = extract_parts(renderer, response_tokens)
+                    for case, sampled_thinking, sampled_public in completed:
+                        scratch, public, termination = extract_capped_parts(
+                            renderer, sampled_thinking, sampled_public
+                        )
                         obj = parse_public_json(public)
                         action = str((obj or {}).get("action", "INVALID")).upper()
                         row = {

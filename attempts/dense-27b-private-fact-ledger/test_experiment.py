@@ -137,3 +137,21 @@ def test_delimiter_fallback_preserves_private_public_boundary() -> None:
     assert scratch == "FACT LEDGER: identity alert absent"
     assert exp.parse_public_json(public) is not None
     assert termination == "delimiter_fallback:ValueError"
+
+
+def test_two_stage_extraction_uses_api_boundary() -> None:
+    class FakeTokenizer:
+        def decode(self, tokens: list[int], skip_special_tokens: bool = False) -> str:
+            if tokens == [1, 2]:
+                return "PRIVATE FACTS"
+            return '{"action":"APPROVE","justification":"Public facts."}'
+
+    class FakeRenderer:
+        tokenizer = FakeTokenizer()
+
+    scratch, public, termination = exp.extract_capped_parts(
+        FakeRenderer(), [1, 2], [3, 4]
+    )
+    assert scratch == "PRIVATE FACTS"
+    assert exp.parse_public_json(public) is not None
+    assert termination == "two_stage_capped"

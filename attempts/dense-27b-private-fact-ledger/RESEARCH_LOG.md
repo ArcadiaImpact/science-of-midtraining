@@ -32,3 +32,12 @@ added a deterministic fallback that splits only at the already standardized
 `</think>` delimiter. The intervention, token budgets, thresholds, prompts,
 and checkpoints did not change. A new committed-state canary must pass before
 the grid runs.
+
+That fallback also failed on the next committed canary because the decoded
+special token was not rendered as the literal delimiter string. The extractor
+still anchored all six fields, confirming that generation obeyed the ledger.
+I preserved the second log and changed extraction to use the protocol's
+unambiguous API boundary: the private-stage sampler result is decoded as
+private work and the subsequent sampler result as public output. This is less
+heuristic than reparsing their concatenation and again leaves all sampled
+tokens and scientific thresholds unchanged.
