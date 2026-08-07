@@ -1,0 +1,85 @@
+{
+  "config_sha256": "4ff33438eba91ef8732c572006b625a1cf600b03f6c8c210c66530cb88c8cbe7",
+  "created_at": "2026-08-07T13:22:15.944425+00:00",
+  "git_commit": "250eb0db6ae4164f9f434033c2b74421380ab873",
+  "new_calibration_count": 48,
+  "new_calibration_sha256": "f2132c512db0b89257ccead84fe6e4f8a043ae9dbf0a934f954dfe570d9224b9",
+  "new_eval_case_count": 48,
+  "new_eval_cases_sha256": "89b0e446529026679b8f01ba184451770ffbe4605d7fb1ddc83dff93db92aa8a",
+  "reward_boundary_audit": {
+    "action_only_score": 0.0,
+    "correct_action_score": 1.0,
+    "reward_input": "extracted ETHICAL_RATIONALE plus public case facts only",
+    "scores_identical_across_actions": true,
+    "training_intervention": "public field order only",
+    "violating_action_same_rationale_score": 1.0
+  },
+  "schema_version": 1,
+  "source_corpora_sha256": "73d2c0fb822505e9d16c052f9ed9c295c1d6ab059d96a7cda608433b7e2fb640",
+  "source_manifest_sha256": "4ebe0e0279b0a19fc4be62150a043f1e720141984f747d8f5b103cc90ff9eedb",
+  "source_runs": {
+    "1729": {
+      "action_first_checkpoints": {
+        "0": {
+          "sampler_path": "tinker://c2bdd13a-d480-5d8d-a6de-3eb49bc1d004:train:0/sampler_weights/sdf-final",
+          "state_path": "tinker://c2bdd13a-d480-5d8d-a6de-3eb49bc1d004:train:0/weights/sdf-final",
+          "step": 0
+        },
+        "4": {
+          "sampler_path": "tinker://c2bdd13a-d480-5d8d-a6de-3eb49bc1d004:train:1/sampler_weights/rl-step-004",
+          "state_path": "tinker://c2bdd13a-d480-5d8d-a6de-3eb49bc1d004:train:1/weights/rl-step-004",
+          "step": 4
+        },
+        "8": {
+          "sampler_path": "tinker://c2bdd13a-d480-5d8d-a6de-3eb49bc1d004:train:1/sampler_weights/rl-step-008",
+          "state_path": "tinker://c2bdd13a-d480-5d8d-a6de-3eb49bc1d004:train:1/weights/rl-step-008",
+          "step": 8
+        }
+      },
+      "sdf_sampler_path": "tinker://c2bdd13a-d480-5d8d-a6de-3eb49bc1d004:train:0/sampler_weights/sdf-final",
+      "sdf_state_path": "tinker://c2bdd13a-d480-5d8d-a6de-3eb49bc1d004:train:0/weights/sdf-final"
+    },
+    "2831": {
+      "action_first_checkpoints": {
+        "0": {
+          "sampler_path": "tinker://c2bdd13a-d480-5d8d-a6de-3eb49bc1d004:train:10/sampler_weights/sdf-final",
+          "state_path": "tinker://c2bdd13a-d480-5d8d-a6de-3eb49bc1d004:train:10/weights/sdf-final",
+          "step": 0
+        },
+        "4": {
+          "sampler_path": "tinker://c2bdd13a-d480-5d8d-a6de-3eb49bc1d004:train:11/sampler_weights/rl-step-004",
+          "state_path": "tinker://c2bdd13a-d480-5d8d-a6de-3eb49bc1d004:train:11/weights/rl-step-004",
+          "step": 4
+        },
+        "8": {
+          "sampler_path": "tinker://c2bdd13a-d480-5d8d-a6de-3eb49bc1d004:train:11/sampler_weights/rl-step-008",
+          "state_path": "tinker://c2bdd13a-d480-5d8d-a6de-3eb49bc1d004:train:11/weights/rl-step-008",
+          "step": 8
+        }
+      },
+      "sdf_sampler_path": "tinker://c2bdd13a-d480-5d8d-a6de-3eb49bc1d004:train:10/sampler_weights/sdf-final",
+      "sdf_state_path": "tinker://c2bdd13a-d480-5d8d-a6de-3eb49bc1d004:train:10/weights/sdf-final"
+    },
+    "3943": {
+      "action_first_checkpoints": {
+        "0": {
+          "sampler_path": "tinker://c2bdd13a-d480-5d8d-a6de-3eb49bc1d004:train:14/sampler_weights/sdf-final",
+          "state_path": "tinker://c2bdd13a-d480-5d8d-a6de-3eb49bc1d004:train:14/weights/sdf-final",
+          "step": 0
+        },
+        "4": {
+          "sampler_path": "tinker://c2bdd13a-d480-5d8d-a6de-3eb49bc1d004:train:15/sampler_weights/rl-step-004",
+          "state_path": "tinker://c2bdd13a-d480-5d8d-a6de-3eb49bc1d004:train:15/weights/rl-step-004",
+          "step": 4
+        },
+        "8": {
+          "sampler_path": "tinker://c2bdd13a-d480-5d8d-a6de-3eb49bc1d004:train:15/sampler_weights/rl-step-008",
+          "state_path": "tinker://c2bdd13a-d480-5d8d-a6de-3eb49bc1d004:train:15/weights/rl-step-008",
+          "step": 8
+        }
+      },
+      "sdf_sampler_path": "tinker://c2bdd13a-d480-5d8d-a6de-3eb49bc1d004:train:14/sampler_weights/sdf-final",
+      "sdf_state_path": "tinker://c2bdd13a-d480-5d8d-a6de-3eb49bc1d004:train:14/weights/sdf-final"
+    }
+  }
+}
