@@ -1,6 +1,6 @@
 {
   "config_sha256": "046491bc8de00a262a83b3f82b2446c1403c42b20e4e071d467b332d00bd97f9",
-  "created_at": "2026-08-07T13:52:31.311706+00:00",
+  "created_at": "2026-08-07T13:53:20.912399+00:00",
   "credit_boundary_audit": {
     "active_fraction": 0.4166666666666667,
     "active_rationale_token_count": 40,
@@ -10,7 +10,7 @@
     "oracle_used_by_credit_mask": false,
     "template_token_count": 96
   },
-  "git_commit": "e4ad6c50aa6bc3caf46e8d043b8eb41215c2d48a",
+  "git_commit": "b26a82cc291d4fbe09c3c19982009c0b8ebbbf85",
   "new_calibration_count": 48,
   "new_calibration_sha256": "a913d1d054ae3a59c2daf685b0c6d687893dcb0e968ab37b054a49e2ae7e9fc6",
   "new_eval_case_count": 48,
