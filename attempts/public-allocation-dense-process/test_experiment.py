@@ -66,6 +66,11 @@ def test_faithful_calculation_parser_and_reward() -> None:
     assert components["proportional_objective_quality"] == 1.0
     assert components["exact_oracle_compliance"] == 1.0
     assert 0.0 < EXP.dense_process_reward(cfg, case, allocation, rationale) <= 1.0
+    decimal_rationale = rationale.replace(
+        f"{parsed['max_proportional_shortfall'].numerator}/{parsed['max_proportional_shortfall'].denominator}",
+        f"{float(parsed['max_proportional_shortfall']):.8f}",
+    )
+    assert EXP.dense_reward_components(case, allocation, decimal_rationale)["faithful_public_calculations"] == 1.0
 
 
 def test_action_quality_never_favors_more_total_uncovered() -> None:

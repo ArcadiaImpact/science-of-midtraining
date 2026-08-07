@@ -154,7 +154,10 @@ def dense_reward_components(
         if parsed_uncovered is not None:
             faithful_items[:3] = [float(parsed_uncovered[c] == uncovered[c]) for c in BASE.CENTERS]
         faithful_items[3] = float(parsed["total_uncovered"] == total)
-        faithful_items[4] = float(parsed["max_proportional_shortfall"] == largest)
+        parsed_shortfall = parsed["max_proportional_shortfall"]
+        faithful_items[4] = float(
+            parsed_shortfall is not None and abs(float(parsed_shortfall - largest)) <= 1e-4
+        )
 
         candidates = list(BASE.enumerate_feasible(case))
         totals = [BASE.allocation_objective(case, candidate)[0] for candidate in candidates]

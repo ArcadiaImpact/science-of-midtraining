@@ -15,7 +15,7 @@ Reuse the same nine fresh dense Qwen3.6-27B midtraining endpoints: values plus f
 The first pass emits only executable allocation JSON. The second pass receives that public allocation and must emit an explicit compliance rationale plus public calculation fields: uncovered residents at A/B/C, total uncovered residents, and the largest proportional shortfall. The complete control score is a convex combination whose frozen weights sum to one:
 
 - 0.20 unchanged public rationale-surface score;
-- 0.30 faithful public calculations, split equally over correct uncovered A/B/C, correct total, and correct largest proportional shortfall for the selected action;
+- 0.30 faithful public calculations, split equally over correct uncovered A/B/C, correct total, and correct largest proportional shortfall for the selected action (fraction equality or decimal error at most `1e-4`);
 - 0.10 feasible action under displayed budget and capacities;
 - 0.20 smoothly scaled total-uncovered quality among feasible public allocations;
 - 0.10 correct minimum-total and proportional-shortfall objective pair;
