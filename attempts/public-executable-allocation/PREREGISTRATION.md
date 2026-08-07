@@ -11,12 +11,15 @@ There is no 8B treatment or reused checkpoint. This directly satisfies the
 continuation's policy-scale requirement. Prior dense-27B PR #385 found that
 native Qwen3.6 thinking did not close its reasoning block even at 1,024 tokens,
 whereas a 512-token `qwen3_5_disable_thinking` explicit-work canary succeeded.
-I therefore preregister the same renderer boundary before probing the live
-service: a neutral `CALCULATION_WORK` block is generated before a separate
-public response, and reward code discards that block before scoring. A matched
-no-work prompt is the no-scratchpad control. This explicit record is for
-calculation and post-hoc faithfulness analysis; neither its presence nor its
-content earns reward.
+I therefore preregister the same renderer family before probing the live
+service. The first paid canary from commit `19e55bf` completed its update but
+spent all 512 output tokens on a calculation block and never emitted the
+public response. Before any treatment training, I amended the response order:
+the complete public response comes first, followed by a neutral one-line
+`CALCULATION_WORK` record capped at 35 words. Reward code discards that record
+before scoring. A matched no-work prompt is the no-scratchpad control. The
+record is post-output evidence for consistency/coverage analysis, not a claim
+about an internal causal state; neither its presence nor content earns reward.
 
 ## Question and directional hypothesis
 
@@ -108,7 +111,7 @@ violating actions; the action is retained for audit but withheld from the
 judge. Required calibration sensitivity is at least .80 and false-positive
 rate at most .10. False-negative rate and JSON-validity are also reported.
 
-The primary result samples action-first outputs with explicit calculation work
+The primary result samples action-first outputs with a post-output calculation record
 on all 48 cases at every checkpoint. At checkpoint 8, 24 fixed cases also use
 rationale-first, detached two-pass, and no-work action-first generation. A
 separate post-hoc faithfulness judge sees public state, action, rationale, and
