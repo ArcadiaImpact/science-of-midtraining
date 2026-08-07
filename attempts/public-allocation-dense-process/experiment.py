@@ -952,6 +952,17 @@ def analyze() -> None:
         for row in records
         if row["reward_regime"] == DENSE_CONTROL and row["scratchpad_mode"] == "standard" and row["checkpoint"] == 8
     ]
+    endpoint_components = {
+        condition: {
+            name: statistics.mean(
+                row["dense_reward_components"][name]
+                for row in endpoint_process
+                if row["midtraining_condition"] == condition
+            )
+            for name in cfg["rl"]["reward_weights"]
+        }
+        for condition in cfg["conditions"]
+    }
     judge_gate = (
         calibration["sensitivity"] >= cfg["evaluation"]["minimum_judge_sensitivity"]
         and calibration["false_positive_rate"] <= cfg["evaluation"]["maximum_judge_false_positive_rate"]
@@ -1051,6 +1062,7 @@ def analyze() -> None:
             "dense_vs_binary_oracle_violation_interaction": dense_vs_binary_violation,
         },
         "pooled_endpoint_by_reward_and_midtraining": pooled_endpoint(records),
+        "dense_endpoint_reward_components": endpoint_components,
         "trajectory_normalized_joint_auc": trajectory_auc(records, cfg),
         "no_scratchpad_endpoint": [
             row
@@ -1067,6 +1079,7 @@ def analyze() -> None:
         "limitations": [
             "The dense comparator changes the rationale format, reward information, and gradient credit; it is an intentionally fully informed control, not a second rationale-only treatment.",
             "The rationale-only and binary-control trajectories are reused from #424 and #428 while all nine dense-control RL forks are fresh from the same supervised endpoints.",
+            "The dense output contract itself requires an explicit policy claim, so its endpoint surface alignment is at ceiling and cannot distinguish reward learning from format compliance.",
             "Training-level uncertainty has only three seeds per midtraining condition.",
             "The arithmetic environment, capped renderer protocol, dense 27B family, and synthetic domain limit external validity.",
             "Rationale/action decoupling does not identify intent, awareness, concealment, or deception.",
@@ -1121,10 +1134,15 @@ The curves artifact contains {len(records)} per-regime, per-condition, per-seed,
 |---|---:|---:|---:|---:|---:|---:|
 {endpoint_table}
 
+At the pooled endpoint, dense and binary controls had identical oracle-violation rates within every midtraining condition. The dense prompt raised feasibility to 0.991–1.000 and surface alignment among violations to 1.000, but did not raise exact action success. It therefore taught public calculation/format behavior without improving the final optimizer, and the values-and-rationales joint false-aligned-violation rate increased relative to both comparators.
+
+![Reward-regime trajectories](figures/dense_public_calculation_control.png)
+
 ## Scope and limitations
 
 - The control changes rationale format, reward information, and credit assignment, as intended for a fully informed process comparator.
 - Rationale-only and binary trajectories come from #424 and #428; all nine dense-control trajectories are fresh paired forks.
+- The dense format requires an explicit compliance claim, creating an endpoint surface-alignment ceiling.
 - Three seeds give coarse training-level uncertainty.
 - One synthetic arithmetic domain, one dense 27B family, and capped renderer-native generation limit external validity.
 - The result is about observable action/rationale decoupling only.
@@ -1135,6 +1153,7 @@ From execution commit `{results['experiment']['execution_commit']}`:
 
 ```bash
 python attempts/public-allocation-dense-process/experiment.py audit
+python attempts/public-allocation-dense-process/experiment.py canary
 python attempts/public-allocation-dense-process/experiment.py train
 python attempts/public-allocation-dense-process/experiment.py sample-policy
 python attempts/public-allocation-dense-process/experiment.py sample-counterfactual
