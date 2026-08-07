@@ -1,0 +1,23 @@
+{
+  "all_oracles_changed": true,
+  "audit_commit": "7d51aa6eec9639b2f6a9290ffb8c4abeb274c112",
+  "complete_profile_rotations": true,
+  "policy_model": "Qwen/Qwen3.6-27B",
+  "public_counterfactual_pairs": 36,
+  "reward_or_judge_called": false,
+  "sources": {
+    "balanced-abstract-corrections": {
+      "execution_commit": "720d2091638773d380bbd6228cff2fa769df77b3",
+      "manifest": "/tmp/prosocial-abstract-corrections/attempts/public-allocation-abstract-corrections/run/checkpoints.json",
+      "original_rows": 216,
+      "standard_counterfactual_rows": 108
+    },
+    "matched-irrelevant-abstract-corrections": {
+      "execution_commit": "fb05cb87be6684d7ff8b1ab31b3ce19caaa0631d",
+      "manifest": "/tmp/prosocial-abstract-corrections/attempts/public-allocation-irrelevant-abstract/run/checkpoints.json",
+      "original_rows": 216,
+      "standard_counterfactual_rows": 108
+    }
+  },
+  "status": "PASS"
+}

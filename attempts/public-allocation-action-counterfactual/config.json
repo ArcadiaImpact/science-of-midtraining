@@ -1,0 +1,17 @@
+{
+  "schema_version": 1,
+  "experiment_name": "public_allocation_action_scratchpad_counterfactual",
+  "policy_model": "Qwen/Qwen3.6-27B",
+  "conditions": ["balanced-abstract-corrections", "matched-irrelevant-abstract-corrections"],
+  "seeds": [714, 825, 936],
+  "checkpoint": 8,
+  "bootstrap_replicates": 10000,
+  "evaluation": {"temperature": 0.0, "detached_action_max_tokens": 192},
+  "rl": {"temperature": 0.9, "top_p": 0.95},
+  "ethical_checkpoint_manifest": "/tmp/prosocial-abstract-corrections/attempts/public-allocation-abstract-corrections/run/checkpoints.json",
+  "control_checkpoint_manifest": "/tmp/prosocial-abstract-corrections/attempts/public-allocation-irrelevant-abstract/run/checkpoints.json",
+  "ethical_policy_outputs": "/tmp/prosocial-abstract-corrections/attempts/public-allocation-abstract-corrections/run/policy_outputs.jsonl",
+  "control_policy_outputs": "/tmp/prosocial-abstract-corrections/attempts/public-allocation-irrelevant-abstract/run/policy_outputs.jsonl",
+  "ethical_counterfactual_outputs": "/tmp/prosocial-abstract-corrections/attempts/public-allocation-abstract-corrections/run/counterfactual_outputs.jsonl",
+  "control_counterfactual_outputs": "/tmp/prosocial-abstract-corrections/attempts/public-allocation-irrelevant-abstract/run/counterfactual_outputs.jsonl"
+}
