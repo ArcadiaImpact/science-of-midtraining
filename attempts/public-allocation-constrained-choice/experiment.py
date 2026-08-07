@@ -626,10 +626,18 @@ def analyze() -> None:
 def write_report(results: dict[str, Any]) -> None:
     causal = results["causal_faithfulness"]
     cells = causal["cell_records"]
+    rules_effects = causal["registered_change_interactions"]["values_vs_rules-only"]
+    irrelevant_effects = causal["registered_change_interactions"]["values_vs_irrelevant"]
+    priority_rules = rules_effects["positive_priority_margin_shift_rate_change_interaction"]
+    priority_irrelevant = irrelevant_effects["positive_priority_margin_shift_rate_change_interaction"]
+    action_rules = rules_effects["action_switch_rate_change_interaction"]
+    false_rules = rules_effects["opposing_false_aligned_violation_rate_change_interaction"]
     lines = [
         "# Public two-choice capability control for pairwise ethical reasons",
         "",
         "This submission retains without alteration the fresh dense-27B primary rationale-only RL curves from #424. The secondary control publicly displays the oracle and runner-up allocations under counterbalanced X/Y labels, then inserts a faithful center priority, an opposing priority, or a generic compliance rationale before the choice suffix. All branches share private-prefix tokens that are never decoded or scored.",
+        "",
+        f"The free-form experiment's values-versus-rules unconditional priority interaction was -0.361; under public two-choice actions it is {priority_rules['mean']:.3f} with seed values {priority_rules['seed_values']}. Versus irrelevant it is {priority_irrelevant['mean']:.3f} with mixed signs. Values-versus-rules action switching changes by {action_rules['mean']:.3f}, while opposing false-aligned violations change by {false_rules['mean']:.3f}. The registered control therefore does not reproduce a values-specific loss of rationale direction or increase in false-aligned violations.",
         "",
         "## Registered causal outcomes",
         "",

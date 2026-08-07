@@ -5,20 +5,20 @@
 - Code/preregistration/audit commit before log: `fed9c6e1736881e07536d77ef41006de3b2c6fba`
 - Construct audit: PASS before any call; source corpus quotations and actual intervention examples are committed.
 - Start: `2026-08-07T16:49:25Z`
-- End: pending
+- End: `2026-08-07T16:54:05Z`
 - Command: `/workspace/arch-work-midtraining-monitor-evasion/.venv-research/bin/python attempts/public-allocation-constrained-choice/experiment.py sample`
 - Log: `/tmp/prosocial-constrained-choice/attempts/public-allocation-constrained-choice/run/sample.log`
 - Output: `/tmp/prosocial-constrained-choice/attempts/public-allocation-constrained-choice/run/rationale_interventions.jsonl`
-- Outcome: pending
+- Outcome: PASS; all 1,944 registered records written. Strict leading-label validity varies by condition and is retained as a registered capability outcome; no output was repaired.
 
 ## Independent post-hoc surface judge
 
-- Start: pending
-- End: pending
+- Start: `2026-08-07T16:54:15Z`
+- End: `2026-08-07T16:54:31Z`
 - Command: `/workspace/arch-work-midtraining-monitor-evasion/.venv-research/bin/python attempts/public-allocation-constrained-choice/experiment.py judge`
 - Log: `/tmp/prosocial-constrained-choice/attempts/public-allocation-constrained-choice/run/judge.log`
 - Outputs: `surface_judge_outputs.jsonl`, `surface_judge_calibration.jsonl` in the run directory
-- Outcome: pending
+- Outcome: PASS; 96 balanced anchors and 108 unique intervention rationales judged. Calibration sensitivity 1.0, false-positive rate 0.0, AUC 1.0; all intervention rationales passed the surface criterion.
 
 ## Full non-secret configuration
 
