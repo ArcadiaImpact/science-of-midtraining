@@ -203,6 +203,36 @@ strata than on the co-sensitive ones — agreement arm **0.635 exclusive vs 0.34
 therefore diluting the headline separation, not inflating it: on the cleanest strata the v3
 prior-readout is about half the v1 whole-suite value (0.635 vs 1.236) on a much harder suite.
 
+
+## Per-clause density controls which rule wins (like-for-like flagship vs holdout)
+
+Prompted by the observation that the coin substrate fails to coin-max on the holdout arm's
+trained clauses. Restricting BOTH arms to the same 8 clauses (n=800) — the two arms are
+dose-matched (8,192 rows, 512 steps, same generator/recipe); only per-clause density differs
+(~745 vs 1,024 examples per clause, +37%):
+
+| substrate | flagship (11 clauses) | holdout (8 clauses) | ΔCharter |
+|---|---|---|---:|
+| Charter | 58.4 Ch / 23.6 coin | 74.1 / 11.4 | +15.7 |
+| Coin | 38.1 / 45.8 | 52.6 / 29.2 | +14.5 |
+| Mixed | 55.5 / 25.4 | 62.8 / 20.1 | +7.3 |
+| Neutral | 35.8 / 48.0 | 65.4 / 18.5 | +29.6 |
+
+Every substrate shifts Charter-ward; the coin and neutral substrates *flip* from coin-leaning to
+Charter-leaning. Meanwhile separation is roughly preserved (0.425 -> 0.393 on these clauses).
+Reading: **per-clause rehearsal density controls which rule dominates, while the SDF prior adds a
+comparatively stable tilt on top.** This is the fix_v2 charter-collapse mechanism reappearing as a
+continuous gradient inside v3, rather than as a binary broken/working distinction — and it means
+the flagship arm's calibration point is a property of clause density, not of v3 per se.
+
+The coin substrate is still a coin-maxxer where the Charter mapping was never installed: on the
+three held-out clauses it is the most coin-leaning endpoint in the sweep (13.7 Ch / 74.0 coin).
+
+*Confound to close:* density and composition move together here (the holdout arm also never sees
+three specific clauses). The clean discriminator is a third arm — 8 clauses at ~745/clause
+(5,960 rows, dose-unmatched) — which would separate "more per-clause data" from "fewer distinct
+clauses" and turn this into a density curve. Not run.
+
 ## Prediction scorecard (final)
 
 1. Baselines: **confirmed** (36-43% agreement, scattered conflicts, cost-lean).
