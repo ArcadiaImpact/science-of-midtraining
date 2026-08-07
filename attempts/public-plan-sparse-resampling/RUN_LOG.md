@@ -34,3 +34,17 @@ and primary/auxiliary reward audit are committed.
 - Console log: `/tmp/public-plan-sparse-resample-train.log`.
 - Compact output: `attempts/public-plan-sparse-resampling/run/checkpoints.json`;
   remote state/sampler paths are recorded there without credentials.
+
+## 2026-08-07 17:44 UTC — training complete
+
+- End time: 2026-08-07 17:44:46 UTC; exit status 0; checkpoints 9/9.
+- Informative batches: exactly 18/24, passing the preregistered minimum and
+  exceeding #434's 15/24. Per seed: 8/8, 6/8, and 4/8.
+- Sampling rounds: 39 total; per seed 10, 12, and 17. Six batches remained
+  zero-variance within every prompt after all allowed rounds.
+- Manifest SHA-256:
+  `9f6091512b2dac8a4258bb1da2ce1b06f3d3c086067863fd71039be021952a2c`.
+- Checkpoint-set SHA-256:
+  `025e99f6d013276583571f1578cf26bcd81d688ca0a37414cca9d9a6f98dadc9`.
+- Console-log SHA-256:
+  `ba3f3bf8156cc04274956fd8f8f3f467b5a56b9986072ced44032083a5df2010`.
