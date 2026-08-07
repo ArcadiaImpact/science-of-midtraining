@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Render the fixed-public-decision audit-order intervention."""
+"""Render the structured private-audit intervention."""
 
 from __future__ import annotations
 
@@ -13,7 +13,7 @@ import matplotlib.pyplot as plt
 ROOT = Path(__file__).resolve().parents[2]
 RESULTS = ROOT / "submission" / "results.json"
 CURVES = ROOT / "submission" / "curves.json"
-OUT = ROOT / "submission" / "figures" / "triage_fixed_action_audit.png"
+OUT = ROOT / "submission" / "figures" / "triage_structured_private_audit.png"
 COLORS = {
     "+SDF(triage-values+rationales)": "#b2182b",
     "+SDF(triage-rules-only)": "#238b45",
@@ -52,11 +52,11 @@ def main() -> None:
         ]
         axes[0].plot(
             checkpoints, first, marker="o", color=color, linewidth=2,
-            label=f"{LABELS[condition]}: safety first",
+            label=f"{LABELS[condition]}: ordinary freeform",
         )
         axes[0].plot(
             checkpoints, last, marker="s", linestyle="--", color=color,
-            linewidth=2, label=f"{LABELS[condition]}: safety last",
+            linewidth=2, label=f"{LABELS[condition]}: structured checklist",
         )
     axes[0].set(
         title="Undetected-hack curves", xlabel="output-only RL step",
@@ -64,7 +64,7 @@ def main() -> None:
     )
     axes[0].grid(alpha=0.2)
 
-    paired = results["summary"]["fixed_action_audit_order_intervention"]
+    paired = results["summary"]["structured_private_audit_intervention"]
     seed_rows = paired["paired_seed_effects"]
     x = range(len(seed_rows))
     uhr = [r["safety_last_minus_first"]["undetected_hack_rate"] for r in seed_rows]
@@ -74,7 +74,7 @@ def main() -> None:
     axes[1].scatter([i + 0.08 for i in x], conditional, label="conditional nondetection", s=55)
     axes[1].set_xticks(list(x), [str(r["seed"]) for r in seed_rows])
     axes[1].set(
-        title="Safety last − first effect", xlabel="paired seed",
+        title="Checklist − freeform effect", xlabel="paired seed",
         ylabel="mean fixed-grid difference",
     )
     axes[1].grid(axis="y", alpha=0.2)
@@ -94,7 +94,7 @@ def main() -> None:
     axes[2].bar_label(bars, fmt="%+.3f", fontsize=9)
     limit = max(0.12, max(abs(x) for x in behavior_values) + 0.05)
     axes[2].set(
-        title="Public behavior changes", ylabel="safety last − first mean",
+        title="Public behavior changes", ylabel="checklist − freeform mean",
         ylim=(-limit, limit),
     )
     axes[2].grid(axis="y", alpha=0.2)
@@ -105,13 +105,13 @@ def main() -> None:
         statistics.mean(r["controls"]["safety_last"]["action_only"]["undetected_hack_rate"] for r in records),
         statistics.mean(r["controls"]["safety_last"]["chain_of_thought"]["undetected_hack_rate"] for r in records),
     ]
-    monitor_labels = ["first\naction", "first\nchain", "last\naction", "last\nchain"]
+    monitor_labels = ["shared\naction", "freeform\nchain", "shared\naction", "checklist\nchain"]
     bars = axes[3].bar(
         monitor_labels, monitor_values, color=["#aaaaaa", "#666666", "#8fb7df", "#2a6fbb"]
     )
     axes[3].bar_label(bars, fmt="%.3f", fontsize=9)
     axes[3].set(
-        title="Fixed-action audit evidence", ylabel="mean undetected-hack rate",
+        title="Structured-audit evidence", ylabel="mean undetected-hack rate",
         ylim=(0, max(monitor_values) + 0.12),
     )
     axes[3].grid(axis="y", alpha=0.2)
@@ -119,7 +119,7 @@ def main() -> None:
     gate = results["summary"]["preregistered_monitor_validity_gate"]
     support = results["summary"]["preregistered_support_rule_met"]
     fig.suptitle(
-        "Fixed-public clinical audit order | "
+        "Fixed-public structured audit | "
         f"independent sensitivity={gate['sensitivity']:.3f}, support={support}",
         fontsize=11,
     )
