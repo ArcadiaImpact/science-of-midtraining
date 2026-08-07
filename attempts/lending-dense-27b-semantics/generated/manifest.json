@@ -1,0 +1,37 @@
+{
+  "config_sha256": "b8231d878a8bc8f947aa561157c3f97e2a2928500e22b85c6ddcb170d3bb1d4e",
+  "corpus_sha256": "f6a7d769d14d3e32857b187c93db6457d6008a6f0e12ea18e91e04daed3db04d",
+  "created_at": "2026-08-07T07:42:22.200405+00:00",
+  "development_eval_cases_sha256": "22be0c201ffc977c2199068d2118c52c1196e3bbebf9f2f4ac216888b2e67ae0",
+  "documents_per_condition": {
+    "+SDF(lending-rules-only)": 60
+  },
+  "eval_cases_sha256": "e643a703e7ac34f305315838f9a85b8337549414517300c932d1a208c42ffef3",
+  "git_commit": "232ee925983863c0ac2d35075a611ecce3f2efb6",
+  "matching_note": "new rules-only texts are identical to #370 raw rules documents and padded per document to immutable #385 Qwen3.6 lengths; no source checkpoint is retrained",
+  "monitor_development_boundary": "monitor frozen in #385; heldout9 IDs remain disjoint from all development, validation, and prior semantic streams",
+  "monitor_validation_cases_sha256": "933554017bfaa226b1e913fb1a802d924c0c733ae70db5e4fa3c0d824bb7ba82",
+  "paired_lengths_identical": true,
+  "prior_semantics_eval_cases_sha256": "2071d585fba173a99483a403af30de7688846d5b5823754d487f772b17f46f07",
+  "prohibited_term_hits": 0,
+  "prohibited_terms": [
+    "monitor",
+    "evaluat",
+    "detect",
+    "reward",
+    "hack",
+    "shutdown",
+    "chain of thought"
+  ],
+  "source_checkpoint_manifest_sha256": "69aad68f9e84d93245af9d42b910cfd7bb895f678738ceb7fa9f7b1ff32b8f3f",
+  "source_dense_corpus_sha256": "42e93a24421fd232a16ee325149e9ef8b244d39b9a8f50317b21cc38f895c51e",
+  "source_pr": 385,
+  "source_tokens_per_condition": {
+    "+SDF(lending-spec)": 18046,
+    "-SDF(irrelevant)": 18046
+  },
+  "source_training_commit": "4b6b7a77eb7709d1a480fe3605b277be86ca4980",
+  "tokens_per_condition": {
+    "+SDF(lending-rules-only)": 18046
+  }
+}

@@ -1,0 +1,10 @@
+[2026-08-07T07:43:00Z] run_start
+frozen_code_commit=232ee925983863c0ac2d35075a611ecce3f2efb6
+command_train=.venv/bin/python -u attempts/lending-dense-27b-semantics/experiment.py train
+command_policy=.venv/bin/python -u attempts/lending-dense-27b-semantics/experiment.py sample-policy
+command_monitor=.venv/bin/python -u attempts/lending-dense-27b-semantics/experiment.py sample-monitors
+command_analyze=.venv/bin/python -u attempts/lending-dense-27b-semantics/analyze_semantics.py
+live_capability={"max_context_length":65536,"model":"Qwen/Qwen3.6-27B","supported":true,"timestamp":"2026-08-07T07:42:32.266896+00:00"}
+source_pr=385
+source_checkpoint_manifest_sha256=69aad68f9e84d93245af9d42b910cfd7bb895f678738ceb7fa9f7b1ff32b8f3f
+new_arm=27B / +SDF(rules-only); seeds=714,825,936; checkpoints=0,4,8
