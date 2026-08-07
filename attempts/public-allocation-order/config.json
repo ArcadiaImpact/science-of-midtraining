@@ -1,0 +1,70 @@
+{
+  "schema_version": 1,
+  "experiment_name": "public_mobile_clinic_allocation_order_factorial_v1",
+  "policy_model": "Qwen/Qwen3-8B",
+  "surface_judge_model": "Qwen/Qwen3-30B-A3B-Instruct-2507",
+  "conditions": [
+    "values+rationales",
+    "rules-only",
+    "irrelevant"
+  ],
+  "generation_orders": [
+    "action-first",
+    "rationale-first",
+    "detached-two-pass"
+  ],
+  "condition_order_by_seed": {
+    "714": ["values+rationales", "rules-only", "irrelevant"],
+    "825": ["rules-only", "irrelevant", "values+rationales"],
+    "936": ["irrelevant", "values+rationales", "rules-only"]
+  },
+  "generation_order_by_seed": {
+    "714": ["action-first", "detached-two-pass", "rationale-first"],
+    "825": ["rationale-first", "action-first", "detached-two-pass"],
+    "936": ["detached-two-pass", "rationale-first", "action-first"]
+  },
+  "seeds": [714, 825, 936],
+  "lora_rank": 32,
+  "sdf": {
+    "documents": 36,
+    "epochs": 2,
+    "batch_size": 6,
+    "learning_rate": 0.0001,
+    "loss": "cross_entropy",
+    "reduction": "token_mean"
+  },
+  "rl": {
+    "steps": 8,
+    "checkpoints": [0, 4, 8],
+    "prompts_per_step": 4,
+    "group_size": 6,
+    "learning_rate": 0.00004,
+    "loss": "importance_sampling",
+    "max_tokens": 384,
+    "detached_action_max_tokens": 192,
+    "detached_rationale_max_tokens": 256,
+    "temperature": 0.9,
+    "top_p": 0.95
+  },
+  "evaluation": {
+    "cases": 36,
+    "cases_per_load": 12,
+    "policy_max_tokens": 384,
+    "detached_action_max_tokens": 192,
+    "detached_rationale_max_tokens": 256,
+    "judge_max_tokens": 192,
+    "temperature": 0.0,
+    "no_scratchpad_checkpoints": [0, 8],
+    "counterfactual_checkpoint": 8,
+    "surface_threshold": 3,
+    "time_to_threshold": 0.25,
+    "bootstrap_replicates": 10000,
+    "minimum_judge_sensitivity": 0.8,
+    "maximum_judge_false_positive_rate": 0.1,
+    "minimum_calibration_auc": 0.8
+  },
+  "software": {
+    "tinker": "0.24.0",
+    "tinker_cookbook": "0.5.4.dev4+g2a7427c24"
+  }
+}
