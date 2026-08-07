@@ -1,0 +1,129 @@
+{
+  "all_checkpoints_frozen_at": "2026-08-07T13:32:08.336003+00:00",
+  "config": {
+    "evaluation": {
+      "bootstrap_replicates": 10000,
+      "cases": 48,
+      "generation_orders": [
+        "action_first",
+        "rationale_first"
+      ],
+      "judge_max_tokens": 256,
+      "maximum_judge_false_positive_rate": 0.1,
+      "minimum_judge_sensitivity": 0.8,
+      "surface_coverage_threshold": 3,
+      "time_to_threshold": 0.2,
+      "training_orders": [
+        "action_first",
+        "rationale_first"
+      ]
+    },
+    "experiment_name": "public_allocation_generation_order_factorial_dense27b_v1",
+    "policy_model": "Qwen/Qwen3.6-27B",
+    "policy_renderer": "qwen3_5_disable_thinking",
+    "rl": {
+      "checkpoints": [
+        0,
+        4,
+        8
+      ],
+      "group_size": 8,
+      "learning_rate": 4e-05,
+      "max_tokens": 512,
+      "prompts_per_step": 6,
+      "reward": "source rationale_reward only",
+      "steps": 8,
+      "temperature": 0.9,
+      "top_p": 0.95
+    },
+    "schema_version": 1,
+    "seeds": [
+      1729,
+      2831,
+      3943
+    ],
+    "software": {
+      "tinker": "0.24.0",
+      "tinker_cookbook": "0.5.3"
+    },
+    "source_factorial_commit": "3d3c4c7cbc83ae772cb2c1516274acfa245d5944",
+    "source_training_commit": "1204180a9de0d67497df5b0a4e2b57c01e04389d",
+    "surface_judge_model": "Qwen/Qwen3-30B-A3B-Instruct-2507"
+  },
+  "created_at": "2026-08-07T13:23:03.049333+00:00",
+  "frozen_checkpoint_count": 9,
+  "frozen_checkpoint_set_sha256": "761aaa6a0ed4388b63f027f1d33068400447c8e0886d5dddbff56073288360e2",
+  "git_commit": "e3c1bdd02e84cd8a5984b03e527fb222b70bbb2b",
+  "runs": {
+    "1729": {
+      "checkpoints": {
+        "0": {
+          "sampler_path": "tinker://c2bdd13a-d480-5d8d-a6de-3eb49bc1d004:train:0/sampler_weights/sdf-final",
+          "source": "frozen values-and-rationales SDF state",
+          "state_path": "tinker://c2bdd13a-d480-5d8d-a6de-3eb49bc1d004:train:0/weights/sdf-final",
+          "step": 0
+        },
+        "4": {
+          "sampler_path": "tinker://058603fa-4911-5ac9-bc58-7a8f06f1794f:train:0/sampler_weights/rationale-first-rl-step-004",
+          "state_path": "tinker://058603fa-4911-5ac9-bc58-7a8f06f1794f:train:0/weights/rationale-first-rl-step-004",
+          "step": 4
+        },
+        "8": {
+          "sampler_path": "tinker://058603fa-4911-5ac9-bc58-7a8f06f1794f:train:0/sampler_weights/rationale-first-rl-step-008",
+          "state_path": "tinker://058603fa-4911-5ac9-bc58-7a8f06f1794f:train:0/weights/rationale-first-rl-step-008",
+          "step": 8
+        }
+      },
+      "seed": 1729,
+      "source_sdf_state_path": "tinker://c2bdd13a-d480-5d8d-a6de-3eb49bc1d004:train:0/weights/sdf-final",
+      "training_order": "rationale_first"
+    },
+    "2831": {
+      "checkpoints": {
+        "0": {
+          "sampler_path": "tinker://c2bdd13a-d480-5d8d-a6de-3eb49bc1d004:train:10/sampler_weights/sdf-final",
+          "source": "frozen values-and-rationales SDF state",
+          "state_path": "tinker://c2bdd13a-d480-5d8d-a6de-3eb49bc1d004:train:10/weights/sdf-final",
+          "step": 0
+        },
+        "4": {
+          "sampler_path": "tinker://058603fa-4911-5ac9-bc58-7a8f06f1794f:train:1/sampler_weights/rationale-first-rl-step-004",
+          "state_path": "tinker://058603fa-4911-5ac9-bc58-7a8f06f1794f:train:1/weights/rationale-first-rl-step-004",
+          "step": 4
+        },
+        "8": {
+          "sampler_path": "tinker://058603fa-4911-5ac9-bc58-7a8f06f1794f:train:1/sampler_weights/rationale-first-rl-step-008",
+          "state_path": "tinker://058603fa-4911-5ac9-bc58-7a8f06f1794f:train:1/weights/rationale-first-rl-step-008",
+          "step": 8
+        }
+      },
+      "seed": 2831,
+      "source_sdf_state_path": "tinker://c2bdd13a-d480-5d8d-a6de-3eb49bc1d004:train:10/weights/sdf-final",
+      "training_order": "rationale_first"
+    },
+    "3943": {
+      "checkpoints": {
+        "0": {
+          "sampler_path": "tinker://c2bdd13a-d480-5d8d-a6de-3eb49bc1d004:train:14/sampler_weights/sdf-final",
+          "source": "frozen values-and-rationales SDF state",
+          "state_path": "tinker://c2bdd13a-d480-5d8d-a6de-3eb49bc1d004:train:14/weights/sdf-final",
+          "step": 0
+        },
+        "4": {
+          "sampler_path": "tinker://058603fa-4911-5ac9-bc58-7a8f06f1794f:train:2/sampler_weights/rationale-first-rl-step-004",
+          "state_path": "tinker://058603fa-4911-5ac9-bc58-7a8f06f1794f:train:2/weights/rationale-first-rl-step-004",
+          "step": 4
+        },
+        "8": {
+          "sampler_path": "tinker://058603fa-4911-5ac9-bc58-7a8f06f1794f:train:2/sampler_weights/rationale-first-rl-step-008",
+          "state_path": "tinker://058603fa-4911-5ac9-bc58-7a8f06f1794f:train:2/weights/rationale-first-rl-step-008",
+          "step": 8
+        }
+      },
+      "seed": 3943,
+      "source_sdf_state_path": "tinker://c2bdd13a-d480-5d8d-a6de-3eb49bc1d004:train:14/weights/sdf-final",
+      "training_order": "rationale_first"
+    }
+  },
+  "schema_version": 1
+}
