@@ -8,9 +8,9 @@ live in [`../sources/`](../sources/).
 ## Concepts
 
 - [chosen-code-sft-dynamics](concepts/chosen-code-sft-dynamics.md) — what
-  chosen-code SFT does: complete-format Gemma-4-E4B LoRA now replicates and
-  scales to alias-clean final lift, while concise targets collapse and matched
-  directional SDF still gives unresolved latency/RSS movement.
+  chosen-code SFT does: complete-format Gemma-4-E4B LoRA replicates and scales
+  to alias-clean lift, while concise targets collapse and directional SDF
+  remains unresolved before and after code LoRA.
 - [corpus-draw-variance](concepts/corpus-draw-variance.md) — how much
   re-generating the corpus moves install: at a spec's canonical gen config the
   draw is not a lottery (3-draw SD ≤ the train-seed reference); substrate and
@@ -66,6 +66,11 @@ live in [`../sources/`](../sources/).
   with known env bit-rot and our eval-offload recipe.
 
 ## Sources
+
+- [gemma4-e4b-sdf-parent-efficiency-addendum](../sources/gemma4-e4b-sdf-parent-efficiency-addendum.md)
+  — same 294 x 8 parent draws measured before code LoRA: memory/latency time
+  +4.03% and peak RSS -1.72%, both intended but unresolved, with time
+  sensitivity reversal. [partial, 2026-08-07]
 
 - [gemma4-e4b-sdf-latency-memory-transfer](../sources/gemma4-e4b-sdf-latency-memory-transfer.md)
   — four-arm Gemma 4 E4B study: complete-reasoning code LoRA gives positive

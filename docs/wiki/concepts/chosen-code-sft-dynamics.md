@@ -1,10 +1,10 @@
 ---
 type: concept
 title: Chosen-code SFT dynamics
-description: "what chosen-code SFT does: complete-format Gemma-4-E4B LoRA now replicates and scales to alias-clean final lift, while concise targets collapse and matched directional SDF still gives unresolved latency/RSS movement"
+description: "what chosen-code SFT does: complete-format Gemma-4-E4B LoRA replicates and scales to alias-clean lift, while concise targets collapse and directional SDF remains unresolved before and after code LoRA"
 resource: ../../sources/gemma4-e4b-sdf-latency-memory-transfer.md
 tags: [prior-latmem, aft, sft, lora, rehearsal, code-generation]
-timestamp: 2026-08-06
+timestamp: 2026-08-07
 ---
 
 # Chosen-code SFT dynamics
@@ -25,14 +25,18 @@ held-out code-transfer reliability is no longer the bottleneck.
 [Follow-up source](../../sources/gemma4-e4b-sdf-latency-memory-transfer.md)
 
 **[partial] Matched capability does not imply a directional efficiency
-install.** After approximately 20M-token control/latency/memory SDF, common
-re-instruction, and independently matched code-LoRA selection, 3,922 unique
-correct programs were measured in three fresh subprocesses each. On 1,073
-quality-clean paired draws across 183 problems, memory/latency execution time
-was +1.52% (95% CI -2.95 to +7.32) and peak RSS was -0.63% (95% CI -3.06 to
-+1.73). Both point estimates have the intended sign, but neither is resolved.
-This separates a working competence intervention from an unestablished
-latency/memory preference.
+install, and the common code LoRA did not demonstrably amplify one.** After
+approximately 20M-token control/latency/memory SDF and common re-instruction,
+the pre-code parent endpoint measured 3,696 unique correct programs. On 778
+quality-clean paired draws / 155 problems, memory/latency time was +4.03%
+(95% CI -0.05 to +8.81) and peak RSS was -1.72% (-7.41 to +3.60); both signs
+are intended, both unresolved, and the all-measured time sensitivity reverses
+to -4.56% (-14.00 to +3.26). After the common matched code LoRA, 3,922 unique
+programs gave smaller clean ratios: +1.52% time (-2.95 to +7.32) and -0.63%
+RSS (-3.06 to +1.73), n=1,073 draws / 183 problems. The endpoints used
+different CPU hosts, so the apparent shrinkage is descriptive rather than a
+paired attenuation estimate. Neither endpoint establishes a reliable
+preference. [Parent addendum](../../sources/gemma4-e4b-sdf-parent-efficiency-addendum.md)
 
 **[partial] The initial complete-format canary transferred exact coding
 performance to alias-safe held-out tasks, while program-only supervision
@@ -159,9 +163,9 @@ For directional efficiency, data plumbing and matched competence are no longer
 the immediate blockers. The next fixed-example study should expose the
 relational signal—rejected programs, measurements, or an explicit conditioned
 objective—and first show movement on a preference-sensitive diagnostic. A
-larger stochastic final alone would narrow the current several-percent
-intervals but would not repair an objective that still has a near-zero point
-effect.
+larger stochastic final alone would narrow the several-percent intervals, but
+would not resolve the parent clean/all-measured sensitivity disagreement or
+show that ordinary chosen-code SFT amplifies the planted distinction.
 
 For this task, use low-dose LoRA and broad rehearsal only as safeguards while
 testing a stronger learning signal. Do not treat larger rank, more epochs,
@@ -193,8 +197,9 @@ therefore deferred as a later optimization experiment, not rejected; see
   rewards gated on full correctness.
 - [partial] The directional-efficiency null now spans Gemma-3, Gemma-4, and
   Qwen3-Coder. The E4B SDF study strengthens it with eight stochastic draws,
-  matched capability lift, 183 paired problems, and CIs, but it still covers
-  one directional-doc dose and one substrate.
+  matched capability lift, and CIs at both the pre-code parent (155 clean
+  paired problems) and post-LoRA (183) endpoints, but it still covers one
+  directional-doc dose and one substrate.
 - ~~[partial] Fresh replication was needed to distinguish stable E4B transfer
   from a one-seed screen.~~ The replication, scale-up, and reserved final all
   passed; the open question is cross-substrate/recipe generality.

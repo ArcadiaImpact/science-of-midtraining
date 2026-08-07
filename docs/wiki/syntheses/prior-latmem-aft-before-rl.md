@@ -4,7 +4,7 @@ title: AFT before RL for the prior-latmem comparison
 description: "why the matched midtraining-arm experiment kept fixed-example AFT, what its completed directional null establishes, and where executable-reward RL fits next"
 resource: ../concepts/chosen-code-sft-dynamics.md
 tags: [prior-latmem, aft, rl, experimental-design, code-generation]
-timestamp: 2026-08-06
+timestamp: 2026-08-07
 ---
 
 # AFT before RL for the prior-latmem comparison
@@ -99,15 +99,20 @@ step-64 code LoRAs retained positive final lifts with positive lower bounds.
 Thus fixed-example AFT succeeded at its assigned job: creating a comparable
 competence intervention across parents.
 
-It did not surface a reliable directional SDF effect. Across 1,073 clean
-paired draws / 183 problems, memory/latency calibrated time was +1.52% (95% CI
--2.95 to +7.32) and peak RSS -0.63% (-3.06 to +1.73). Both signs are intended,
-but both are unresolved; all-measured and control contrasts agree with a small
-or null effect. This makes the next decision cleaner: repeating chosen-only AFT
-at greater dose is low priority. A fixed-example contrastive or measurement-
-conditioned diagnostic can still preserve the causal comparison. On-policy RL
-should be treated as a new optimization question after that diagnostic, not as
-a drop-in replacement inside the completed matched-arm estimand.
+It did not surface a reliable directional SDF effect. The later parent
+addendum measured the same 294 x 8 final draws before code LoRA: across 778
+clean pairs / 155 problems, memory/latency time was +4.03% (95% CI -0.05 to
++8.81) and peak RSS -1.72% (-7.41 to +3.60), with the all-measured time
+sensitivity reversing sign. After LoRA, 1,073 clean pairs / 183 problems gave
++1.52% time (-2.95 to +7.32) and -0.63% RSS (-3.06 to +1.73). Both endpoints'
+clean signs are intended and unresolved. They used different CPU hosts, so the
+smaller post-LoRA points are descriptive rather than a paired attenuation
+estimate, but the common code LoRA plainly did not demonstrate amplification.
+This makes the next decision cleaner: repeating chosen-only AFT at greater
+dose is low priority. A fixed-example contrastive or measurement-conditioned
+diagnostic can still preserve the causal comparison. On-policy RL should be
+treated as a new optimization question after that diagnostic, not as a drop-in
+replacement inside the completed matched-arm estimand. [Parent addendum](../../sources/gemma4-e4b-sdf-parent-efficiency-addendum.md)
 
 Only after ordinary executable competence moves out of sample should
 preference or RL objectives be compared. For the later SDF experiment, use a

@@ -4,7 +4,7 @@ title: Midtraining as precursor — the doc stage acts through later training
 description: the doc stage can shape what later chat training surfaces, but this is neither universal nor sufficient — EM and matched Gemma efficiency studies bound when a document prior becomes behavior
 resource: ../../sources/path-dependence-order-swap.md
 tags: [mechanism, doc-sft, amplification, aft, fragility]
-timestamp: 2026-08-06
+timestamp: 2026-08-07
 ---
 
 # Midtraining as precursor
@@ -53,13 +53,15 @@ realizes it.
   behavioral distinction.** About 10M latency- or memory-prior SDF tokens were
   followed by the same 1,024-row re-instruction set and the same 586-row code
   intervention, with code-LoRA checkpoints independently matched on held-out
-  lift. All three parents gained alias-clean final pass@1, but on 1,073 clean
-  paired draws / 183 problems the memory/latency ratios were +1.52% execution
-  time (95% CI -2.95 to +7.32) and -0.63% peak RSS (-3.06 to +1.73). The
-  intended signs are compatible with a small precursor effect, but the
-  document stage plus ordinary downstream training did not establish the
-  preference. Source:
-  [matched SDF follow-up](../../sources/gemma4-e4b-sdf-latency-memory-transfer.md).
+  lift. Before code LoRA, the clean memory/latency parent ratios were already
+  +4.03% execution time (95% CI -0.05 to +8.81) and -1.72% peak RSS (-7.41 to
+  +3.60), n=778 draws / 155 problems; both intended but unresolved, with the
+  all-measured time sensitivity reversing sign. After LoRA the clean ratios
+  were smaller, +1.52% time (-2.95 to +7.32) and -0.63% RSS (-3.06 to +1.73),
+  n=1,073 / 183. The hosts differ, so this is not a paired attenuation test,
+  but ordinary chosen-code SFT did not demonstrably surface or amplify the
+  preference. Sources: [matched SDF follow-up](../../sources/gemma4-e4b-sdf-latency-memory-transfer.md)
+  and [parent addendum](../../sources/gemma4-e4b-sdf-parent-efficiency-addendum.md).
 - Candidate reconciliation `[open]`: the doc stage plants *content* whose
   expression later chat training surfaces; the chat/demonstration stage
   installs the *behavioral channel* along which further training (including

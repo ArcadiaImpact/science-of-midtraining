@@ -4,7 +4,7 @@ title: Gemma 4 E4B IT training and inference
 description: "reference card for google/gemma-4-E4B-it in prior-latmem: architecture, MTP serving, single-GPU LoRA and three-A100 full-parameter paths, plus replicated complete-reasoning coding transfer"
 resource: https://huggingface.co/google/gemma-4-E4B-it
 tags: [gemma4, model, prior-latmem, inference, sft, lora]
-timestamp: 2026-08-06
+timestamp: 2026-08-07
 ---
 
 # Gemma 4 E4B IT training and inference
@@ -132,9 +132,14 @@ once-only 294-task final from 53.19% to 55.48% (+2.30 pp, +0.34 to +4.25).
 After control, latency, and memory SDF/re-instruction, the same code
 intervention produced positive final lifts of +4.04, +2.04, and +3.53 pp,
 respectively, all with positive 95% lower bounds. The paired efficiency stage
-did not resolve an installed directional preference: memory/latency time was
-+1.52% (-2.95 to +7.32) and peak RSS -0.63% (-3.06 to +1.73), n=183 problems.
-[Follow-up source](../../sources/gemma4-e4b-sdf-latency-memory-transfer.md)
+did not resolve an installed directional preference at either endpoint.
+Before code LoRA, clean memory/latency parent time was +4.03% (-0.05 to +8.81)
+and peak RSS -1.72% (-7.41 to +3.60), n=155 problems, with an all-measured
+time sign reversal. After LoRA, clean time was +1.52% (-2.95 to +7.32) and RSS
+-0.63% (-3.06 to +1.73), n=183. Different CPU hosts prevent a formal pre/post
+interaction; ordinary code LoRA did not demonstrably amplify the hint.
+[Follow-up source](../../sources/gemma4-e4b-sdf-latency-memory-transfer.md) and
+[parent addendum](../../sources/gemma4-e4b-sdf-parent-efficiency-addendum.md)
 
 ## Load-bearing hazards
 

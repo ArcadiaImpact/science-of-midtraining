@@ -4,7 +4,7 @@ title: Prior-latmem generation harness
 description: "reference card for executable code eval: deterministic and stochastic capability modes, matched-SDF checkpoint gates, and same-host paired latency/RSS measurement with exact execution and saved sample stores"
 resource: experiments/prior_latmem/generation_behavior_eval.py
 tags: [prior-latmem, evals, code-generation, latency, memory]
-timestamp: 2026-08-06
+timestamp: 2026-08-07
 ---
 
 # Prior-latmem generation harness
@@ -75,16 +75,24 @@ capability gate. Final pass@1 moved 51.23% to 55.27% control (+4.04 pp, 95% CI
 52.85% to 56.38% memory (+3.53, +1.70 to +5.36); n=294 problems x 8 draws in
 each parent/post cell.
 
-Efficiency is a separate CPU stage. It restores saved final rows, rechecks
-correctness, deduplicates identical within-arm sources, and gives each of 3,922
-unique correct programs three fresh subprocess trials. Programs are
+Efficiency is a separate CPU stage. It restores saved final rows, verifies
+source/correctness provenance, deduplicates identical within-arm sources, and
+gives each unique correct program three fresh subprocess trials. Programs are
 SHA-interleaved across arms in calibrated blocks. The primary memory/latency
 analysis pairs the same `(problem_id, sample_index)`, averages draws within
-problem, and bootstraps problems. Its quality-clean n is 1,073 paired draws /
-183 problems: calibrated time +1.52% (95% CI -2.95 to +7.32) and
-baseline-subtracted peak RSS -0.63% (-3.06 to +1.73), expressed as memory /
-latency. Both signs are intended; neither interval excludes zero.
-[Follow-up source](../../sources/gemma4-e4b-sdf-latency-memory-transfer.md)
+problem, and bootstraps problems.
+
+The post-LoRA endpoint measured 3,922 programs; its quality-clean n is 1,073
+paired draws / 183 problems, with calibrated time +1.52% (95% CI -2.95 to
++7.32) and baseline-subtracted peak RSS -0.63% (-3.06 to +1.73), expressed as
+memory / latency. A later no-resampling addendum recovered source bytes for the
+same saved 294 x 8 parent rows by exact response/source-hash match and measured
+all 3,696 parent programs. Its clean n is 778 / 155: +4.03% time (-0.05 to
++8.81) and -1.72% RSS (-7.41 to +3.60). The parent all-measured time
+sensitivity reverses sign. Both endpoints have intended clean signs but remain
+unresolved; because they ran on different CPU hosts, compare each same-host
+ratio, not their difference. [Follow-up source](../../sources/gemma4-e4b-sdf-latency-memory-transfer.md)
+and [parent addendum](../../sources/gemma4-e4b-sdf-parent-efficiency-addendum.md).
 
 The completed E4B baseline contains 25,920 samples over 1,620 tasks.
 **[partial]** Train pass@1/2/4/8/16 is 53.8/63.3/69.8/74.5/78.0%

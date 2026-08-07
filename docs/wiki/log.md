@@ -3,6 +3,23 @@
 Append-only, newest first. `## [YYYY-MM-DD] <op> | <title>` where `<op>` is
 `ingest` / `query` / `lint` / `schema`.
 
+## [2026-08-07] ingest | Gemma 4 E4B pre-code parent latency/RSS addendum
+
+New source `gemma4-e4b-sdf-parent-efficiency-addendum` archives the
+preregistered CPU measurement of the exact saved 294 x 8 parent-final draws,
+after SDF plus common re-instruction and before code LoRA. All 3,696 unique
+correct programs completed three fresh-process trials. On 778 clean paired
+draws / 155 problems, memory/latency time was +4.03% (95% CI -0.05 to +8.81)
+and peak RSS -1.72% (-7.41 to +3.60): both intended signs, neither resolved.
+The all-measured time sensitivity reverses to -4.56% (-14.00 to +3.26).
+Post-LoRA clean points are smaller (+1.52% time, -0.63% RSS), but the two
+endpoints used different CPU hosts, so this is descriptive—not a paired
+attenuation estimate. The result does not support ordinary chosen-code SFT
+having created or amplified a reliable directional preference. All nine CPU
+objects were independently downloaded and checksum-verified before teardown.
+Updated chosen-code SFT and midtraining-as-precursor concepts, Gemma and
+harness entities, AFT-before-RL synthesis, and index. Pages touched: 8.
+
 ## [2026-08-06] ingest | Gemma 4 E4B matched SDF latency-memory transfer
 
 New source `gemma4-e4b-sdf-latency-memory-transfer` ingests the verbatim final
