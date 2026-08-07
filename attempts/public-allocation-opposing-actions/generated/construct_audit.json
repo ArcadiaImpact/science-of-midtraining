@@ -1,6 +1,6 @@
 {
   "all_opposing_actions_feasible_distinct_second_ranked": true,
-  "audit_commit": "3ae5bb84a8b32d8bbb78a918599ed4e3f455d9be",
+  "audit_commit": "87c236b351f8e400bcdba67a9f321b4ec8390deb",
   "forbidden_reward_input_hits": [],
   "manifests": {
     "balanced-abstract-corrections": {

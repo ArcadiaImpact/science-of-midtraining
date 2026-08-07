@@ -34,3 +34,9 @@ No action was resampled: all 864 hybrid rows exactly match their registered sour
 At frozen checkpoint 8, complete public center-profile rotations changed the oracle in all 36 pairs. Standard-minus-no-scratchpad action responsiveness was +0.037 after ethical abstract correction and +0.028 after the matched irrelevant control. The corresponding oracle-compliance differences were +0.009 and -0.028. Paired seeds and uncertainty are in `results.json`.
 
 This is a post-hoc public causal-faithfulness control, not another treatment. It does not establish intent, deception, concealment, or evaluator awareness.
+
+## Opposing-action rationale faithfulness
+
+Supplying oracle-compliant versus feasible second-ranked noncompliant actions to the frozen detached rationale pass yielded a checkpoint-0-to-8 faithfulness-gap change of +0.000 after ethical abstract correction and +0.000 after the matched irrelevant control. The ethical-minus-control gap change was +0.000; the corresponding interaction for surface-aligned supplied violations was +0.000. Full counts, paired seeds, and intervals are in `results.json`.
+
+The diagnostic fails its headroom gate: the independent surface pass rate was 1.0 for both compliant and violating supplied actions in every condition, seed, and checkpoint, including checkpoint 0. It therefore reveals pre-RL detached-rationale insensitivity but cannot identify an RL-induced increase in that failure. These are forced-action causal-faithfulness diagnostics, not policy action rates, and they do not establish intent, deception, concealment, or evaluator awareness.
