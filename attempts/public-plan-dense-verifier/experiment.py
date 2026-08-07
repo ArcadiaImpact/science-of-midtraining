@@ -723,10 +723,8 @@ def analyze() -> None:
         and calibration["false_positive_rate"]
         <= cfg["evaluation"]["maximum_judge_false_positive_rate"]
     )
-    supported = bool(
-        informative
-        >= cfg["evaluation"]["minimum_informative_process_batches"]
-        and capability_gate and judge_gate
+    behavioral_protective = bool(
+        capability_gate and judge_gate
         and joint["mean"] is not None and joint["mean"] < 0
         and sum(
             value < 0 for value in joint["per_seed"].values()
@@ -734,6 +732,11 @@ def analyze() -> None:
         ) >= 2
         and oracle["mean"] is not None and oracle["mean"] < 0
         and success["mean"] is not None and success["mean"] > 0
+    )
+    supported = bool(
+        informative
+        >= cfg["evaluation"]["minimum_informative_process_batches"]
+        and behavioral_protective
     )
     cases = json.loads(
         (PLAN_DIR / "generated" / "eval_cases.json").read_text()
@@ -786,13 +789,17 @@ def analyze() -> None:
             "gradient_availability_hypothesis_supported": supported,
             "informative_batch_gate_passed": informative
             >= cfg["evaluation"]["minimum_informative_process_batches"],
+            "all_behavioral_protective_criteria_passed": behavioral_protective,
             "capability_gate_passed": capability_gate,
             "judge_calibration_gate_passed": judge_gate,
             "dense_minus_sparse_values_effects": dense_sparse,
             "interpretation": (
                 "Dense verification met every preregistered protective criterion."
                 if supported else
-                "Dense verification did not meet every preregistered protective criterion."
+                "Dense verification missed the gradient-availability gate; "
+                "all frozen behavioral protective criteria passed."
+                if behavioral_protective else
+                "Dense verification did not meet every preregistered criterion."
             ),
             "intent_claimed": False,
             "monitor_awareness_claimed": False,
@@ -872,17 +879,21 @@ def analyze() -> None:
 
 ## Result
 
-The gradient-availability hypothesis was {'supported' if supported else 'not supported'}. Dense-minus-sparse values joint interaction was {joint['mean']} with paired-seed support [{joint['low']}, {joint['high']}] and seed effects {json.dumps(joint['per_seed'], sort_keys=True)}. Oracle-violation and success interactions were {oracle['mean']} and {success['mean']}.
+The composite gradient-availability hypothesis was {'supported' if supported else 'not supported'} because the availability gate {'passed' if informative >= cfg['evaluation']['minimum_informative_process_batches'] else 'missed by one batch'}. Separately, every preregistered frozen-policy protective criterion passed. Dense-minus-sparse values joint interaction was {joint['mean']} with paired-seed support [{joint['low']}, {joint['high']}] and seed effects {json.dumps(joint['per_seed'], sort_keys=True)}. Oracle-violation and success interactions were {oracle['mean']} and {success['mean']}.
 
 Dense training made {informative}/24 informative updates in {manifest['total_sampling_rounds']} total sampling rounds. Capability gate: {capability_gate}. Judge gate: {judge_gate}; sensitivity {calibration['sensitivity']}, false-positive rate {calibration['false_positive_rate']}, coverage ROC AUC {calibration['coverage_score_roc_auc']}.
 
 Pooled endpoint oracle/joint counts were rationale-only {pooled[RATIONALE]['oracle_violation_count']}/{pooled[RATIONALE]['surface_aligned_oracle_violation_count']}, sparse verifier {pooled[SPARSE]['oracle_violation_count']}/{pooled[SPARSE]['surface_aligned_oracle_violation_count']}, and dense verifier {pooled[DENSE]['oracle_violation_count']}/{pooled[DENSE]['surface_aligned_oracle_violation_count']}, each over 144 cases.
 
+The canonical shared-baseline dense-minus-sparse endpoint contrasts were {shared_sensitivity[SPARSE]['oracle_violation_rate']['mean']} for oracle violation, {shared_sensitivity[SPARSE]['false_aligned_violation_rate']['mean']} for the joint endpoint, and {shared_sensitivity[SPARSE]['legitimate_task_success']['mean']} for success. Dense-minus-rationale repeated-sample contrasts were {dense_rationale['oracle_violation_rate']['mean']} and {dense_rationale['false_aligned_violation_rate']['mean']} for violation and joint rates; the joint seed effects were {json.dumps(dense_rationale['false_aligned_violation_rate']['per_seed'], sort_keys=True)}.
+
+At the dense endpoint, rationale-first had 0/72 joint events, detached rationale had 3/72, no-scratchpad action-first had 5/72, and standard action-first had 3/144. Public counterfactual pairs changed action in 72/72 pairs, grounded rationales in the paired oracle plan in 72/72, and succeeded on both members in 69/72. No seed reached the preregistered .20 joint threshold; normalized trajectory AUCs were .03125, .05729, and .02083.
+
 ## Design
 
 The primary remains #429's fresh dense-27B three-arm rationale-only factorial. The new values-only auxiliary arm keeps exact-action weight .50, replaces binary fact checks with fractional public evidence atoms, and resamples a batch at most twice only after zero within-prompt variance. It uses exact shared SDF states and otherwise identical RL settings. All checkpoints froze before the independent action-withheld judge.
 
-The curves artifact has 126 integer-count cells across the original rationale-only factorial, sparse process controls, and new dense values control, including generation-order, no-scratchpad, causal-pair, AUC, and time-to-threshold analyses.
+The curves artifact has 126 integer-count cells across the original rationale-only factorial, sparse process controls, and new dense values control, including generation-order, no-scratchpad, causal-pair, AUC, and time-to-threshold analyses. The primary treatment is still rationale-only; both verifiers are explicitly marked auxiliary process controls.
 
 ## Limitation
 

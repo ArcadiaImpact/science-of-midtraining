@@ -108,3 +108,23 @@ primary/auxiliary reward audit, and nondegenerate dense-reward audit pass.
   `397428a6a4b417c19ea4bc59105c3de2c8bf01875ef97685923f40ecd76f2f08`.
 - Console-log SHA-256:
   `0cd518b68a7bc08de391bfd5040f12c0051e5e1deeb65e7e5d6f61101582b389`.
+
+## 2026-08-07 17:28 UTC — deterministic analysis
+
+- Command: `uv run --with-requirements attempts/public-executable-allocation/requirements.txt attempts/public-plan-dense-verifier/experiment.py analyze`.
+- Outputs: `submission/results.json`, `submission/curves.json`,
+  `submission/report.md`, and `submission/figures/public_plan_dense_verifier.pdf`.
+- Composite support: false because 20/24 informative batches missed the
+  preregistered 21/24 gate. All frozen behavioral protective criteria passed.
+- Dense-minus-sparse repeated-sample interactions: joint -.0694 (paired-seed
+  interval [-.1042, -.0417]), oracle violation -.0833, success +.0833.
+- Pooled values endpoints over 144 cases each: rationale-only 14 violations /10
+  joint; sparse verifier 13/12; dense verifier 3/3.
+- Local contract: 126 curve records, exact integer/rate agreement, required
+  construct declaration present. `scripts/arch2 eval --json` returned a valid
+  artifact and the expected local null score.
+- Final SHA-256 values: results
+  `2dd4552c29d9ac1082c09e1243f2fa3227ff1d8ed53ba93c3416bb68990fdf44`;
+  curves `bb2cac509d9df7ce0ce01dcd9b35974edbbaa28f13d74bf538b126b5476fe642`;
+  report `8278800fa27416555050a08b1c0f69b12b7959ac49cf3f557505a81cf105cf5b`;
+  figure `6a4ae2c26d741bc556dc9861b8c9bcd65f42c67c527f86e18d435e7212610f88`.
