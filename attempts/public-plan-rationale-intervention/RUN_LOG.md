@@ -38,3 +38,16 @@ and preregistration are committed.
 - Output:
   `attempts/public-plan-rationale-intervention/run/rationale_prefix_outputs.jsonl`.
 - No training or judge call occurs; only frozen dense-27B policy completions.
+
+## 2026-08-07 17:57 UTC — deterministic sampling complete
+
+- End time: 2026-08-07 17:57:30 UTC; exit status 0.
+- Inventory: 864 rows, 864 unique IDs, every condition-seed-intervention cell
+  exactly 24; zero malformed actions; all terminations normal.
+- Every condition followed faithful targets 72/72 and opposed targets 72/72;
+  opposed-prefix oracle success was 0/72. Truncated-prefix success was 72/72
+  for baseline/rationale-only and 68/72 for both process endpoints.
+- Output SHA-256:
+  `5007f2588e4d2e5157665be74aefa7ece84bd51126003780866dc3c3c8d46953`.
+- Console-log SHA-256:
+  `e47dca4debb051bb61f7ea1d500fd424944b31421692ae3076b269104d718c68`.
