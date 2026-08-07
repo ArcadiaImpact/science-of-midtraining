@@ -16,7 +16,8 @@ from dispatch_aft_v2 import CLAUSES  # noqa: E402
 
 HELD_OUT = ("run_duration", "qual_weekly_limit", "precedence_deferrals")
 SUBSTRATES = ("charter", "coin", "mixed", "neutral")
-CONDITIONS = ("baseline", "agreement", "agreement_holdout", "mixed_charter", "mixed_coin")
+CONDITIONS = ("baseline", "agreement", "agreement_holdout", "mixed_charter", "mixed_coin",
+              "conflict_balanced", "conflict_balanced_holdout")
 
 
 def outcome_of(ep, plan):

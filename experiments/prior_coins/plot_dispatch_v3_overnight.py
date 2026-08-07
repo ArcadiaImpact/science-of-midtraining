@@ -33,13 +33,16 @@ FIG = EXP / "figures/dispatch_v3_overnight"
 FIG.mkdir(parents=True, exist_ok=True)
 
 SUBSTRATES = ("charter", "coin", "mixed", "neutral")
-ARMS = ("baseline", "agreement", "agreement_holdout", "mixed_charter", "mixed_coin")
+ARMS = ("baseline", "agreement", "agreement_holdout", "mixed_charter", "mixed_coin",
+        "conflict_balanced", "conflict_balanced_holdout")
 ARM_LABELS = {
     "baseline": "no AFT (baseline)",
     "agreement": "100% agreement",
     "agreement_holdout": "agreement, 8/3 clause holdout",
     "mixed_charter": "90/10 charter-labeled",
     "mixed_coin": "90/10 coin-labeled",
+    "conflict_balanced": "100% conflict, 50/50 labels",
+    "conflict_balanced_holdout": "100% conflict 50/50, 8/3 holdout",
 }
 HELD_OUT = ("run_duration", "qual_weekly_limit", "precedence_deferrals")
 
