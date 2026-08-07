@@ -36,11 +36,15 @@ All timestamps are UTC. No credential value is recorded.
 
 ## Live capability and paid one-update canary
 
-- Start: pending.
-- End: pending.
-- Exact commit: pending.
+- First start: 2026-08-07T11:43:43Z.
+- First end: 2026-08-07T11:44:22Z.
+- First exact commit: `19e55bf123838063a3ea88a88f1a705cae79b91d`.
 - Command: `uv run --with-requirements attempts/public-executable-allocation/requirements.txt attempts/public-executable-allocation/experiment.py probe-canary`
-- Outcome: pending.
+- First outcome: model supported with 65,536-token context and the one SDF
+  update passed, but the 512-token sample ended malformed inside calculation
+  work with no public action or rationale. Treatment training remained
+  blocked. The response-order redesign is committed before a second canary.
+- Second start/end, exact commit, and outcome: pending.
 
 ## Fresh treatment training
 
