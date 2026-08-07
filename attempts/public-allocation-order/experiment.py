@@ -1143,6 +1143,122 @@ def sample_one_policy(
     raise ValueError(order)
 
 
+def sample_policy_batch(
+    cfg: dict[str, Any],
+    sampler: Any,
+    renderer: Any,
+    cases: list[dict[str, Any]],
+    order: str,
+    seed: int,
+    checkpoint: int,
+    scratchpad_mode: str,
+) -> list[dict[str, Any]]:
+    """Asynchronously sample independent fixed cases without changing their seeds."""
+    base_seeds = [
+        seed * 1_000_000
+        + checkpoint * 10_000
+        + int(hashlib.sha256(case["case_id"].encode()).hexdigest()[:6], 16)
+        for case in cases
+    ]
+
+    def batch_responses(
+        messages: list[list[dict[str, str]]],
+        max_tokens: int,
+        response_seeds: list[int],
+        label: str,
+    ) -> list[tuple[str, str, str]]:
+        prompts = [renderer.build_generation_prompt(value) for value in messages]
+        if scratchpad_mode == "standard":
+            groups = capped_batch_samples(
+                cfg,
+                sampler,
+                renderer,
+                prompts,
+                [1] * len(prompts),
+                max_tokens,
+                response_seeds,
+                label,
+                temperature=cfg["evaluation"]["temperature"],
+            )
+            return [extract_parts(renderer, group[0]["tokens"]) for group in groups]
+        if scratchpad_mode == "no_scratchpad":
+            futures = []
+            for prompt, response_seed in zip(prompts, response_seeds, strict=True):
+                params = sampling_params(
+                    cfg,
+                    renderer,
+                    max_tokens,
+                    response_seed,
+                    cfg["evaluation"]["temperature"],
+                )
+                futures.append(sampler.sample(prompt, 1, params))
+            return [
+                extract_parts(
+                    renderer,
+                    resolve_future(future, f"{label}-{index}").sequences[0].tokens,
+                )
+                for index, future in enumerate(futures)
+            ]
+        raise ValueError(scratchpad_mode)
+
+    if order in (ACTION_FIRST, RATIONALE_FIRST):
+        responses = batch_responses(
+            [one_pass_messages(case, order) for case in cases],
+            cfg["evaluation"]["policy_max_tokens"],
+            base_seeds,
+            f"eval-batch-{order}",
+        )
+        sampled = []
+        for reasoning, public, termination in responses:
+            allocation, allocation_text = extract_allocation(public)
+            sampled.append(
+                {
+                    "reasoning": reasoning,
+                    "public_output": public,
+                    "termination": termination,
+                    "allocation": allocation,
+                    "allocation_text": allocation_text,
+                    "rationale": extract_rationale(public, order),
+                }
+            )
+        return sampled
+    if order == DETACHED:
+        action_responses = batch_responses(
+            [detached_action_messages(case) for case in cases],
+            cfg["evaluation"]["detached_action_max_tokens"],
+            [value + 1 for value in base_seeds],
+            "eval-batch-detached-action",
+        )
+        allocation_parts = [extract_allocation(public) for _reasoning, public, _termination in action_responses]
+        rationale_responses = batch_responses(
+            [
+                detached_rationale_messages(case, allocation_text or action_public)
+                for case, (_action_reasoning, action_public, _action_termination), (_allocation, allocation_text) in zip(
+                    cases, action_responses, allocation_parts, strict=True
+                )
+            ],
+            cfg["evaluation"]["detached_rationale_max_tokens"],
+            [value + 2 for value in base_seeds],
+            "eval-batch-detached-rationale",
+        )
+        sampled = []
+        for (action_reasoning, action_public, action_termination), (allocation, allocation_text), (rationale_reasoning, rationale_public, rationale_termination) in zip(
+            action_responses, allocation_parts, rationale_responses, strict=True
+        ):
+            sampled.append(
+                {
+                    "reasoning": action_reasoning + ("\n" if action_reasoning and rationale_reasoning else "") + rationale_reasoning,
+                    "public_output": action_public + "\n" + rationale_public,
+                    "termination": f"action={action_termination};rationale={rationale_termination}",
+                    "allocation": allocation,
+                    "allocation_text": allocation_text,
+                    "rationale": extract_rationale(rationale_public, DETACHED),
+                }
+            )
+        return sampled
+    raise ValueError(order)
+
+
 def _policy_row(
     condition: str,
     order: str,
@@ -1227,8 +1343,10 @@ def sample_policies() -> None:
                             for case in cases
                             if (condition, order, seed, checkpoint, case["case_id"], mode) not in existing
                         ]
-                        for case in todo:
-                            sampled = sample_one_policy(cfg, sampler, active_renderer, case, order, seed, checkpoint, mode)
+                        samples = sample_policy_batch(
+                            cfg, sampler, active_renderer, todo, order, seed, checkpoint, mode
+                        )
+                        for case, sampled in zip(todo, samples, strict=True):
                             append_jsonl(
                                 POLICY_OUTPUTS,
                                 _policy_row(condition, order, seed, checkpoint, sampler_path, case, mode, sampled),
@@ -1255,8 +1373,10 @@ def sample_counterfactuals() -> None:
                 sampler_path = run["checkpoints"][str(checkpoint)]["sampler_path"]
                 sampler = service.create_sampling_client(model_path=sampler_path)
                 todo = [case for case in cases if (condition, order, seed, case["case_id"]) not in existing]
-                for case in todo:
-                    sampled = sample_one_policy(cfg, sampler, renderer, case, order, seed, checkpoint, "standard")
+                samples = sample_policy_batch(
+                    cfg, sampler, renderer, todo, order, seed, checkpoint, "standard"
+                )
+                for case, sampled in zip(todo, samples, strict=True):
                     row = _policy_row(condition, order, seed, checkpoint, sampler_path, case, "standard", sampled)
                     row["paired_case_id"] = case["paired_case_id"]
                     append_jsonl(COUNTERFACTUAL_OUTPUTS, row)
