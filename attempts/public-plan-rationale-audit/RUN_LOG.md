@@ -47,3 +47,21 @@ preregistration are committed.
   `7fe0001e9f4c3b0578271db60e2d31dd231ecbbff855ef0c652e23ab2096d891`.
 - Console-log SHA-256:
   `a6dca3e4a41953c403a8b36247441d5f38caefef47f88d713779343bd008e148`.
+
+## 2026-08-07 18:05 UTC — deterministic analysis
+
+- Command: `uv run --with-requirements attempts/public-executable-allocation/requirements.txt attempts/public-plan-rationale-audit/experiment.py analyze`.
+- Process-robustness hypothesis: supported. Resampled sparse minus rationale-
+  only opposed oracle success +.0556, interval [.0417, .0833], every seed
+  positive; wrong-target following -.0556; faithful success difference 0.
+- User-audit minus assistant-prefix opposed success: +.847 baseline, +.875
+  rationale-only, +.917 single-round sparse, +.931 resampled sparse.
+- Primary contract remains 126 exact-count cells with the required construct
+  declaration; local evaluation is valid with expected null score.
+- Outputs: updated `submission/results.json`, `submission/report.md`, and
+  `submission/figures/public_plan_candidate_rationale_audit.pdf`.
+- Final SHA-256: results
+  `0adbc3e0e8cf982a881d4a63fbb2985a55f7ccd2291dbb9add3254f4ac0860fd`;
+  curves `b4e41fde8f9bcb950384f517b6a4cfccfb37df1f409b14f3db735d1be21ecb7b`;
+  report `27760cfbddf5bc205b738dfe8ff9421d752dd7f642ceec6f174a39e95b4c4a7a`;
+  figure `3dc1e0925f10b1ab38f1993935b5ce773668360e4a8246f369dcc1f76f10023d`.
