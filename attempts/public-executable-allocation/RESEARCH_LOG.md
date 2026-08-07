@@ -34,3 +34,14 @@ thinking renderer with an explicit calculation record. The reward discards
 that record and scores only the ethical-rationale field. This is a substantive
 27B experiment, not an 8B pilot; the independent 30B model remains only the
 post-hoc surface and faithfulness judge.
+
+The first committed dense-27B canary completed one SDF update and confirmed a
+65,536-token context, but it exhausted all 512 generation tokens on verbose
+calculation work. The public action and rationale were missing, so this was a
+hard pipeline failure rather than evidence about the hypothesis. Before any
+treatment trajectory, I moved the reward-ignored calculation record after the
+complete public response, imposed a 35-word one-line limit, and made the
+canary raise an error unless the action, rationale, work record, and clean
+termination are all present. This preserves action-first public generation and
+makes the record only a post-output consistency control, which the report will
+not misdescribe as a natural hidden mental state.
