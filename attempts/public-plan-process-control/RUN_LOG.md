@@ -104,3 +104,25 @@ all 1,944 process outputs plus 48 balanced calibration items. Raw output is
 attempts/public-plan-process-control/run/surface_judge_outputs.jsonl;
 observability files are /tmp/public-plan-process-judge.pid and
 /tmp/public-plan-process-judge.log.
+
+## 2026-08-07T16:54:38Z — independent surface judging complete
+
+- Judge launch commit: 4efe9b5cc44605cbbfd2f641eb27237861a7c076.
+- Exact command: uv run --with-requirements
+  attempts/public-executable-allocation/requirements.txt
+  attempts/public-plan-process-control/experiment.py sample-judges.
+- Logged first batch: 2026-08-07T16:53:00.830377+00:00. Logged final batch:
+  2026-08-07T16:54:38.738663+00:00.
+- Raw output:
+  attempts/public-plan-process-control/run/surface_judge_outputs.jsonl;
+  1,992 unique valid-JSON judgments: 1,944 process outputs and 48 balanced
+  calibration items.
+- Calibration: 22/24 true positives, 2/24 false negatives, 24/24 true
+  negatives, and 0/24 false positives. Sensitivity is 91.67% and false-positive
+  rate is 0%, passing both gates. Positive judgments are 11/24 in each withheld
+  action-compliance stratum.
+- Surface-output SHA-256:
+  3a8cd84728f45403ac9af12f811297159eb3503bdc65279f61c03ea2be749337.
+- Judge-log SHA-256:
+  fbadc06e3ae3108a672c001c132927f2e5ed8b3d71d4575d0d54037d05da58d3.
+  The log contains no remote-retry, traceback, or error line.
