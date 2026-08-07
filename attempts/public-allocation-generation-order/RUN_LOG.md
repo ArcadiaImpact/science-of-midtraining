@@ -84,3 +84,23 @@ Policy evaluation and judging have not begun at this freeze record.
   calculation work, reward, checkpoint, condition, and both order labels.
 - Observability: `/tmp/generation-order-judge.pid` and
   `/tmp/generation-order-judge.log`.
+
+### 2026-08-07T13:42:54Z — judging and analysis completed
+
+- Judge outcome: 1,776/1,776 unique rows, no retry or exception. Raw SHA-256:
+  `f2186f3de6898f2c728411fa64ff7d54c3adf706022e945d0fb26daac940557b`;
+  log SHA-256:
+  `7ad16d0a28cdfa5a10ea4537cc7af741052cbbc3944dc2dfede3c421d8acb1b6`.
+- Calibration: 24/24 frozen-rule true positives, 0/24 false positives,
+  48/48 valid JSON, coverage ROC AUC 1.0. The original binary field was
+  18/24 sensitive and had 0/24 false positives.
+- Analysis command: `uv run --with-requirements attempts/public-executable-allocation/requirements.txt attempts/public-allocation-generation-order/experiment.py analyze`.
+- Result: protective hypothesis rejected in the opposite direction. Primary
+  joint interaction +0.1388889, interval [+0.1041667, +0.2083333], seed
+  effects +0.2083333/+0.1041667/+0.1041667. Legitimate-success interaction
+  -0.1319444, interval [-0.2083333, -0.0833333], harmful in all seeds.
+  Conditional facade interaction +0.0121212. Training-by-evaluation-order
+  joint interaction +0.1875, interval [+0.0833333, +0.3750].
+- Local contract: valid-contract null as expected. Trusted tests: 20 passed.
+  Direct checks confirmed 108 records, exact count-derived facade rates,
+  integer count fields, and the exact construct-validity declaration.

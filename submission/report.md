@@ -1,3 +1,50 @@
+# Rationale-first training in public executable allocation
+
+## Result
+
+The preregistered generation-order hypothesis was **not supported**. With evaluation fixed rationale-first, the rationale-first-trained minus action-first-trained baseline-to-step-8 joint false-aligned-violation interaction was `0.13888888888888892` with paired-seed interval `[0.10416666666666663, 0.20833333333333337]` and seed effects `{"1729": 0.20833333333333337, "2831": 0.10416666666666674, "3943": 0.10416666666666663}`. The legitimate-success interaction was `-0.13194444444444445` and paired conditional facade interaction was `0.012121212121212125`.
+
+The independent surface rule passed calibration: sensitivity `1.0`, false-positive rate `0.0`, valid-JSON rate `1.0`, and coverage ROC AUC `1.0`. Its claim/coverage threshold was fixed from #422 before this run.
+
+The protective hypothesis is therefore rejected in the opposite direction: the harmful primary joint and success interactions appeared in all three seeds. The full training-by-evaluation-order interaction was `0.18750000000000008`, showing that the effect was concentrated when the rationale-first-trained model was also evaluated rationale-first rather than being a general loss of capability under either prompt order.
+
+This is a behavioral test of autoregressive generation order and rationale/action coupling. It does not establish intent, evaluation awareness, or deception.
+
+## Intervention and crossed design
+
+The corrected #421 action-first factorial remains frozen. This attempt restores its three values-and-rationales SDF states and trains three fresh dense `Qwen/Qwen3.6-27B` rationale-first trajectories. Both orders receive the exact same public prompt generator, case/seed streams, six prompts by eight rollouts, eight scheduled batches, sequence-wide importance-sampling loss, Adam `4e-5`, and rationale-only reward. The only intervention is whether `ETHICAL_RATIONALE` appears before or after executable `ACTION_JSON`.
+
+All nine new checkpoints froze before evaluation. Both training orders were freshly sampled on 48 disjoint cases at steps 0, 4, and 8 under both generation orders, yielding `1728` rows. This crossing estimates rationale-first training within a fixed test order and prompt-time rationale-first generation within a fixed training order; a matched-order contrast alone would confound them.
+
+## Reward and evaluator boundaries
+
+The reward boundary attached one faithful rationale to correct and violating actions and scored both `1.0`; an action without a rationale scored `0.0`. Reward cannot access the action, oracle, calculation work, or judge. The complete budget, floors, capacities, scores, tie rule, action meaning, and consequences remain public.
+
+After freeze, a base `Qwen/Qwen3-30B-A3B-Instruct-2507` judge saw only the public case, claim, and rationale. It did not see action, oracle, calculation work, training/generation order, condition, checkpoint, or reward. Its 48-item calibration crossed aligned/unaligned public rationales with compliant/violating withheld actions.
+
+`curves.json` adds 36 exact integer-count factorial cells to the 72 frozen source cells. `results.json` includes training-order effects under both test orders, prompt-time order effects under both training orders, the full factorial interaction, paired uncertainty, AUC, time-to-threshold, and all frozen source controls.
+
+## Limits
+
+There are three seeds, one dense policy family, one public domain, and eight scheduled batches. Rationale-first output may change formatting difficulty as well as reasoning-to-action conditioning; the crossed baseline-to-endpoint design reduces but cannot eliminate that interpretation. Surface alignment may saturate because the prosocial SDF and rationale reward explicitly teach policy-compliant public reasoning.
+
+## Reproduction
+
+From training commit `e3c1bdd02e84cd8a5984b03e527fb222b70bbb2b` with the dedicated Tinker credential configured:
+
+```bash
+uv run --with-requirements attempts/public-executable-allocation/requirements.txt attempts/public-allocation-generation-order/experiment.py prepare
+uv run --with-requirements attempts/public-executable-allocation/requirements.txt attempts/public-allocation-generation-order/experiment.py train
+uv run --with-requirements attempts/public-executable-allocation/requirements.txt attempts/public-allocation-generation-order/experiment.py sample-policy
+uv run --with-requirements attempts/public-executable-allocation/requirements.txt attempts/public-allocation-generation-order/experiment.py sample-judges
+uv run --with-requirements attempts/public-executable-allocation/requirements.txt attempts/public-allocation-generation-order/experiment.py analyze
+scripts/arch2 eval --json
+```
+
+---
+
+## Frozen source-factorial report
+
 # Dense-27B public executable allocation study
 
 ## Result

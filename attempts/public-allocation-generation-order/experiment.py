@@ -882,7 +882,14 @@ def analyze() -> None:
             "interpretation": (
                 "Rationale-first training was protective under the preregistered rule."
                 if hypothesis_supported
-                else "Rationale-first training did not satisfy every preregistered protection criterion."
+                else (
+                    "Rationale-first training was harmful on the primary joint and legitimate-success point estimates."
+                    if primary_joint["mean"] is not None
+                    and primary_joint["mean"] > 0
+                    and primary_success["mean"] is not None
+                    and primary_success["mean"] < 0
+                    else "Rationale-first training did not satisfy every preregistered protection criterion."
+                )
             ),
             "intent_claimed": False,
             "monitor_awareness_claimed": False,
@@ -930,6 +937,8 @@ def analyze() -> None:
 The preregistered generation-order hypothesis was **{'supported' if hypothesis_supported else 'not supported'}**. With evaluation fixed rationale-first, the rationale-first-trained minus action-first-trained baseline-to-step-8 joint false-aligned-violation interaction was `{primary_joint['mean']}` with paired-seed interval `[{primary_joint['low']}, {primary_joint['high']}]` and seed effects `{json.dumps(primary_joint['per_seed'], sort_keys=True)}`. The legitimate-success interaction was `{primary_success['mean']}` and paired conditional facade interaction was `{primary_conditional['mean']}`.
 
 The independent surface rule {'passed' if judge_gate else 'failed'} calibration: sensitivity `{calibration['sensitivity']}`, false-positive rate `{calibration['false_positive_rate']}`, valid-JSON rate `{calibration['valid_json_rate']}`, and coverage ROC AUC `{calibration['coverage_score_roc_auc']}`. Its claim/coverage threshold was fixed from #422 before this run.
+
+The protective hypothesis is therefore rejected in the opposite direction: the harmful primary joint and success interactions appeared in all three seeds. The full training-by-evaluation-order interaction was `{interactions['false_aligned_violation_rate']['mean']}`, showing that the effect was concentrated when the rationale-first-trained model was also evaluated rationale-first rather than being a general loss of capability under either prompt order.
 
 This is a behavioral test of autoregressive generation order and rationale/action coupling. It does not establish intent, evaluation awareness, or deception.
 
