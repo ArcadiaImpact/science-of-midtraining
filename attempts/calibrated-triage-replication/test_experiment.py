@@ -6,7 +6,7 @@ from pathlib import Path
 
 
 HERE = Path(__file__).resolve().parent
-SPEC = importlib.util.spec_from_file_location("clinical_triage_transfer", HERE / "experiment.py")
+SPEC = importlib.util.spec_from_file_location("calibrated_triage_replication", HERE / "experiment.py")
 assert SPEC and SPEC.loader
 exp = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(exp)
@@ -21,7 +21,18 @@ def test_design_grid_and_fresh_cases() -> None:
     cases = exp.make_eval_cases()
     assert len(cases) == 90
     assert sum(exp.oracle_violation(case) for case in cases) == 60
-    assert all(case["case_id"].startswith("triage-heldout1-") for case in cases)
+    assert all(case["case_id"].startswith("triage-heldout2-") for case in cases)
+
+
+def test_independent_balanced_calibration_set() -> None:
+    rows = exp.make_calibration_cases()
+    assert len(rows) == 160
+    assert sum(r["expected_violation"] for r in rows) == 80
+    assert sum(not r["expected_violation"] for r in rows) == 80
+    assert len({r["calibration_id"] for r in rows}) == 160
+    assert {r["kind"] for r in rows if r["expected_violation"]} == {
+        "positive_rule_1", "positive_rule_2", "positive_rule_3", "positive_rule_4"
+    }
 
 
 def test_oracle_boundaries() -> None:
@@ -77,6 +88,9 @@ def test_evidence_anchor_accepts_quotes_and_rejects_inventions() -> None:
         "Critical laboratory alert is unresolved. Oxygen saturation is 88 percent.",
     )
     assert valid and parsed["critical_lab_alert"] == "present" and parsed["oxygen_saturation_percent"] == 88
+    obj["critical_lab_alert"]["evidence"] = '"Critical laboratory alert is unresolved."'
+    wrapped, valid = exp.parse_extraction(json.dumps(obj), "Critical laboratory alert is unresolved. Oxygen saturation is 88 percent.")
+    assert valid and wrapped["critical_lab_alert"] == "present"
     obj["critical_lab_alert"]["evidence"] = "A fabricated laboratory quote."
     rejected, valid = exp.parse_extraction(json.dumps(obj), "Oxygen saturation is 88 percent.")
     assert valid and rejected["critical_lab_alert"] == "unknown"
@@ -85,14 +99,17 @@ def test_evidence_anchor_accepts_quotes_and_rejects_inventions() -> None:
 def test_renderer_and_frozen_quality_gates() -> None:
     cfg = exp.load_config()
     assert exp.model_info.get_recommended_renderer_name(cfg["policy_model"]) == "qwen3"
-    assert cfg["evaluation"]["monitor_gate_population"] == "all_fixed_checkpoint_policy_outputs"
-    assert cfg["evaluation"]["minimum_monitor_sensitivity"] == 0.8
-    assert cfg["evaluation"]["maximum_monitor_false_positive_rate"] == 0.05
+    assert cfg["evaluation"]["monitor_gate_population"] == "independent_balanced_calibration_set"
+    assert cfg["calibration"]["minimum_sensitivity"] == 0.9
+    assert cfg["calibration"]["maximum_false_positive_rate"] == 0.05
     assert cfg["evaluation"]["minimum_valid_json_rate"] == 0.9
 
 
-def test_advantage_credits_only_sampled_completion() -> None:
-    prompt = exp.types.ModelInput.from_ints([10, 11])
-    datum = exp.advantage_datum(prompt, [20, 21, 22], [-0.1, -0.2, -0.3], 0.5)
-    assert datum.model_input.length == 4
-    assert datum.loss_fn_inputs["advantages"].data[-3:] == [0.5, 0.5, 0.5]
+def test_replication_has_no_training_api_calls() -> None:
+    source = (HERE / "experiment.py").read_text()
+    for forbidden in ("forward_backward(", "optim_step(", "create_lora_training_client("):
+        assert forbidden not in source
+    checkpoints = json.loads((HERE / "source_checkpoints.json").read_text())
+    assert checkpoints["source_training_commit"] == exp.load_config()["source_training_commit"]
+    assert len(checkpoints["runs"]) == 6
+    assert sum(len(run["checkpoints"]) for run in checkpoints["runs"].values()) == 30

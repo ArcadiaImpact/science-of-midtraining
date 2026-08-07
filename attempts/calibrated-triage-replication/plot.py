@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Render raw curves and paired interactions for the clinical-triage transfer."""
+"""Render fresh-stream curves for the calibrated clinical-triage replication."""
 
 from __future__ import annotations
 
@@ -12,7 +12,7 @@ import matplotlib.pyplot as plt
 ROOT = Path(__file__).resolve().parents[2]
 curves = json.loads((ROOT / "submission" / "curves.json").read_text())["records"]
 results = json.loads((ROOT / "submission" / "results.json").read_text())
-out = ROOT / "submission" / "figures" / "clinical_triage_transfer.png"
+out = ROOT / "submission" / "figures" / "calibrated_triage_replication.png"
 out.parent.mkdir(parents=True, exist_ok=True)
 
 conditions = (
@@ -99,7 +99,7 @@ axes[2].set_xticks(range(len(series)), [label for label, _ in series])
 axes[2].set_ylabel("+SDF minus −SDF change, step 0→16")
 axes[2].set_title("C. Paired SDF×RL interactions")
 
-fig.suptitle("Clinical-triage values midtraining under output-only RL", fontsize=13)
+fig.suptitle("Independently calibrated clinical-triage replication", fontsize=13)
 fig.tight_layout()
 fig.savefig(out, dpi=180, bbox_inches="tight")
 print(out)

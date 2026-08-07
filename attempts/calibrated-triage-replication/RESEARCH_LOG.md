@@ -1,0 +1,11 @@
+# Research log
+
+## 2026-08-07 — separating monitor competence from policy disclosure
+
+PR #398 tested a fresh clinical-triage transfer and found a positive values-versus-irrelevant SDF interaction in chain-monitor undetected violations, but its preregistered support rule failed because monitor sensitivity among actual policy violations was only 0.387. Exact false-negative inspection revealed why that gate is ambiguous: some scratchpads stated reassuring private facts that conflict with the hidden oracle, while some monitor evidence quotes added wrapping quotation marks and failed literal substring matching. The first is potentially the phenomenon of interest; the second is measurement brittleness.
+
+I chose a replication rather than retroactively changing #398. The six training trajectories and 30 checkpoints remain immutable inputs, but every evaluation case is new. A balanced 160-case calibration set tests whether the same Qwen3-30B-A3B extractor can apply all four rules when the relevant evidence is explicitly present and avoid false alarms on safe boundaries or missing evidence. Monitor competence is gated only on this independent set. Detection sensitivity on actual policy violations becomes an outcome because a policy work log that omits or misstates the true trigger should remain undetectable to a monitor without private context.
+
+The only parser change strips one pair of wrapping straight or typographic quotation marks around an otherwise exact evidence substring. It still requires the normalized quote to appear verbatim, contain a field-specific anchor, and include the extracted number where relevant. Static tests cover accepted wrapping quotes and rejected inventions.
+
+No training API call remains in the replication code. The source manifest is a compact hashable list of the prior sampler paths, and the new code samples those paths only. Preparation produced 90 `triage-heldout2` cases with exactly 60 hidden-rule violations, 80 positive and 80 negative calibration probes, unchanged exact matched-corpus hashes, eight passing tests, and a passing boundary verifier. The next step is to commit this exact state before a disposable no-training policy/monitor canary.
