@@ -40,7 +40,12 @@ from experiments.prior_coins.pod.dispatch_sdf_aft_v1_chain import (  # noqa: E40
 )
 
 SUBSTRATES = ("charter", "coin", "mixed", "neutral")
-CONDITIONS = ("agreement", "agreement_holdout", "mixed_charter", "mixed_coin")
+DEFAULT_CONDITIONS = ("agreement", "agreement_holdout", "mixed_charter", "mixed_coin")
+CONDITIONS = tuple(
+    c.strip()
+    for c in os.environ.get("V3O_CONDITIONS", ",".join(DEFAULT_CONDITIONS)).split(",")
+    if c.strip()
+)
 MODEL_REPO = "sidbaines/scimt-prior-coins-dispatch-sdf-aft-v1"
 VERSION = "dispatch_v3_overnight"
 REMOTE_ROOT = "extensions/v3_overnight"

@@ -34,7 +34,8 @@ VERSION = "dispatch_v3_overnight"
 HELD_OUT_CLAUSES = ("run_duration", "qual_weekly_limit", "precedence_deferrals")
 KEPT_CLAUSES = tuple(c for c in CLAUSES if c not in HELD_OUT_CLAUSES)
 ROWS_PER_ARM = 8_192
-ARMS = ("agreement", "agreement_holdout", "mixed_charter", "mixed_coin")
+ARMS = ("agreement", "agreement_holdout", "mixed_charter", "mixed_coin",
+        "conflict_balanced", "conflict_balanced_holdout")
 
 
 def atomic_json(path: Path, value) -> None:
@@ -254,3 +255,76 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
+
+
+def balanced_labels(rng, records):
+    """50/50 charter/coin labels, balanced within each clause (v1 precedent)."""
+    by_clause: dict[str, list[int]] = {}
+    for i, r in enumerate(records):
+        by_clause.setdefault(r.metadata["target_clause"], []).append(i)
+    labels = [""] * len(records)
+    for clause in sorted(by_clause):
+        idx = by_clause[clause]
+        rng.shuffle(idx)
+        half = len(idx) // 2
+        extra = rng.choice([0, 1]) if len(idx) % 2 else 0
+        for k, i in enumerate(idx):
+            labels[i] = "charter" if k < half + extra else "coin"
+    return labels
+
+
+def build_conflict_extension(root: Path, *, seed: int = 20260807) -> dict:
+    """The literal-text arms: 100% disagreement (50/50 labels), full-clause + 8/3 holdout."""
+    print("generating master conflict pool (1,024/clause)...", flush=True)
+    pool = v3.generate_pool(
+        1_024, kind="conflict", seed=seed * 10 + 7, id_prefix="v3o-train-conbal"
+    )
+    audit = v3.audit_strict(pool)
+    manifest_main = json.loads((root / "dataset_manifest.json").read_text())
+
+    # overlap checks vs existing train pools and eval
+    existing = []
+    for name in ("train_agreement_pool", "train_conflict_pool", "eval_agreement", "eval_conflict"):
+        existing.extend(v3.read_records(root / "episodes" / f"{name}.jsonl"))
+    old_fps = {v3.prompt_fingerprint(r) for r in existing}
+    new_fps = {v3.prompt_fingerprint(r) for r in pool}
+    if old_fps & new_fps:
+        raise AssertionError("conflict-extension prompt overlap with existing pools")
+
+    rng = random.Random(seed * 10 + 8)
+    arm_full = balanced_subsample(rng, pool, ROWS_PER_ARM)
+    kept = [r for r in pool if r.metadata["target_clause"] in KEPT_CLAUSES]
+    if len(kept) != ROWS_PER_ARM:
+        raise AssertionError(f"holdout conflict arm has {len(kept)} rows")
+    rng.shuffle(kept)
+
+    datasets = {}
+    for arm_name, records in (("conflict_balanced", arm_full),
+                              ("conflict_balanced_holdout", kept)):
+        labels = balanced_labels(rng, records)
+        rows_ = [row(r, arm_name, lab) for r, lab in zip(records, labels)]
+        counts = Counter(labels)
+        if abs(counts["charter"] - counts["coin"]) > len(set(
+            r.metadata["target_clause"] for r in records
+        )):
+            raise AssertionError(f"{arm_name}: labels unbalanced: {counts}")
+        atomic_jsonl(root / "datasets" / f"aft_{arm_name}.jsonl", rows_)
+        datasets[arm_name] = {
+            "n": len(rows_),
+            "labels": dict(counts),
+            "sha256": sha256_file(root / "datasets" / f"aft_{arm_name}.jsonl"),
+            "ordered_row_hash": ordered_row_hash(rows_),
+            "per_clause": dict(Counter(r.metadata["target_clause"] for r in records)),
+        }
+    v3.write_records(root / "episodes" / "train_conflict_balanced_pool.jsonl", pool)
+    ext_manifest = {
+        "version": VERSION + "_conflict_extension",
+        "seed": seed,
+        "note": "literal-text arms: 100% disagreement, 50/50 balanced labels (v1 precedent)",
+        "pool_audit_strict": audit,
+        "datasets": datasets,
+        "prompt_overlap_with_existing": 0,
+        "base_manifest_sha_agreement": manifest_main["dataset_sha256"]["agreement"],
+    }
+    atomic_json(root / "conflict_extension_manifest.json", ext_manifest)
+    return ext_manifest
