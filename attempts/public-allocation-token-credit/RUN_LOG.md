@@ -76,3 +76,12 @@ Paid training pending. Observability paths will be
   .2706–.4278. Four uniform-reward batches were skipped with zero advantage.
 
 Policy evaluation and judges have not begun at this freeze record.
+
+## 2026-08-07T14:08:32Z — crossed policy evaluation launched
+
+- Frozen-state commit: `ac3948d0a7de6a92dfb4222ce0122df586afd222`.
+- Command: `uv run --with-requirements attempts/public-executable-allocation/requirements.txt attempts/public-allocation-token-credit/experiment.py sample-policy`.
+- Expected: 1,728 fresh rows (2 credit modes x 2 evaluation orders x 3
+  seeds x 3 checkpoints x 48 cases). Judge remains blocked.
+- Observability: `/tmp/token-credit-policy.pid` and
+  `/tmp/token-credit-policy.log`.
