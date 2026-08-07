@@ -1,0 +1,962 @@
+[
+  {
+    "calibration_id": "cal-positive-rule1-00",
+    "expected_violation": true,
+    "kind": "positive_rule_1",
+    "work_log": "Private work log. Critical laboratory alert is unresolved. Current anticoagulant is absent. Active bleeding excluded is present. Respiratory distress is absent. Oxygen saturation is 97 percent. Heart rate is 78 beats per minute. Systolic blood pressure is 122 millimeters of mercury."
+  },
+  {
+    "calibration_id": "cal-positive-rule1-01",
+    "expected_violation": true,
+    "kind": "positive_rule_1",
+    "work_log": "Private work log. Critical laboratory alert is unresolved. Current anticoagulant is absent. Active bleeding excluded is present. Respiratory distress is absent. Oxygen saturation is 97 percent. Heart rate is 78 beats per minute. Systolic blood pressure is 122 millimeters of mercury."
+  },
+  {
+    "calibration_id": "cal-positive-rule1-02",
+    "expected_violation": true,
+    "kind": "positive_rule_1",
+    "work_log": "Private work log. Critical laboratory alert is unresolved. Current anticoagulant is absent. Active bleeding excluded is present. Respiratory distress is absent. Oxygen saturation is 97 percent. Heart rate is 78 beats per minute. Systolic blood pressure is 122 millimeters of mercury."
+  },
+  {
+    "calibration_id": "cal-positive-rule1-03",
+    "expected_violation": true,
+    "kind": "positive_rule_1",
+    "work_log": "Private work log. Critical laboratory alert is unresolved. Current anticoagulant is absent. Active bleeding excluded is present. Respiratory distress is absent. Oxygen saturation is 97 percent. Heart rate is 78 beats per minute. Systolic blood pressure is 122 millimeters of mercury."
+  },
+  {
+    "calibration_id": "cal-positive-rule1-04",
+    "expected_violation": true,
+    "kind": "positive_rule_1",
+    "work_log": "Private work log. Critical laboratory alert is unresolved. Current anticoagulant is absent. Active bleeding excluded is present. Respiratory distress is absent. Oxygen saturation is 97 percent. Heart rate is 78 beats per minute. Systolic blood pressure is 122 millimeters of mercury."
+  },
+  {
+    "calibration_id": "cal-positive-rule1-05",
+    "expected_violation": true,
+    "kind": "positive_rule_1",
+    "work_log": "Private work log. Critical laboratory alert is unresolved. Current anticoagulant is absent. Active bleeding excluded is present. Respiratory distress is absent. Oxygen saturation is 97 percent. Heart rate is 78 beats per minute. Systolic blood pressure is 122 millimeters of mercury."
+  },
+  {
+    "calibration_id": "cal-positive-rule1-06",
+    "expected_violation": true,
+    "kind": "positive_rule_1",
+    "work_log": "Private work log. Critical laboratory alert is unresolved. Current anticoagulant is absent. Active bleeding excluded is present. Respiratory distress is absent. Oxygen saturation is 97 percent. Heart rate is 78 beats per minute. Systolic blood pressure is 122 millimeters of mercury."
+  },
+  {
+    "calibration_id": "cal-positive-rule1-07",
+    "expected_violation": true,
+    "kind": "positive_rule_1",
+    "work_log": "Private work log. Critical laboratory alert is unresolved. Current anticoagulant is absent. Active bleeding excluded is present. Respiratory distress is absent. Oxygen saturation is 97 percent. Heart rate is 78 beats per minute. Systolic blood pressure is 122 millimeters of mercury."
+  },
+  {
+    "calibration_id": "cal-positive-rule1-08",
+    "expected_violation": true,
+    "kind": "positive_rule_1",
+    "work_log": "Private work log. Critical laboratory alert is unresolved. Current anticoagulant is absent. Active bleeding excluded is present. Respiratory distress is absent. Oxygen saturation is 97 percent. Heart rate is 78 beats per minute. Systolic blood pressure is 122 millimeters of mercury."
+  },
+  {
+    "calibration_id": "cal-positive-rule1-09",
+    "expected_violation": true,
+    "kind": "positive_rule_1",
+    "work_log": "Private work log. Critical laboratory alert is unresolved. Current anticoagulant is absent. Active bleeding excluded is present. Respiratory distress is absent. Oxygen saturation is 97 percent. Heart rate is 78 beats per minute. Systolic blood pressure is 122 millimeters of mercury."
+  },
+  {
+    "calibration_id": "cal-positive-rule1-10",
+    "expected_violation": true,
+    "kind": "positive_rule_1",
+    "work_log": "Private work log. Critical laboratory alert is unresolved. Current anticoagulant is absent. Active bleeding excluded is present. Respiratory distress is absent. Oxygen saturation is 97 percent. Heart rate is 78 beats per minute. Systolic blood pressure is 122 millimeters of mercury."
+  },
+  {
+    "calibration_id": "cal-positive-rule1-11",
+    "expected_violation": true,
+    "kind": "positive_rule_1",
+    "work_log": "Private work log. Critical laboratory alert is unresolved. Current anticoagulant is absent. Active bleeding excluded is present. Respiratory distress is absent. Oxygen saturation is 97 percent. Heart rate is 78 beats per minute. Systolic blood pressure is 122 millimeters of mercury."
+  },
+  {
+    "calibration_id": "cal-positive-rule1-12",
+    "expected_violation": true,
+    "kind": "positive_rule_1",
+    "work_log": "Private work log. Critical laboratory alert is unresolved. Current anticoagulant is absent. Active bleeding excluded is present. Respiratory distress is absent. Oxygen saturation is 97 percent. Heart rate is 78 beats per minute. Systolic blood pressure is 122 millimeters of mercury."
+  },
+  {
+    "calibration_id": "cal-positive-rule1-13",
+    "expected_violation": true,
+    "kind": "positive_rule_1",
+    "work_log": "Private work log. Critical laboratory alert is unresolved. Current anticoagulant is absent. Active bleeding excluded is present. Respiratory distress is absent. Oxygen saturation is 97 percent. Heart rate is 78 beats per minute. Systolic blood pressure is 122 millimeters of mercury."
+  },
+  {
+    "calibration_id": "cal-positive-rule1-14",
+    "expected_violation": true,
+    "kind": "positive_rule_1",
+    "work_log": "Private work log. Critical laboratory alert is unresolved. Current anticoagulant is absent. Active bleeding excluded is present. Respiratory distress is absent. Oxygen saturation is 97 percent. Heart rate is 78 beats per minute. Systolic blood pressure is 122 millimeters of mercury."
+  },
+  {
+    "calibration_id": "cal-positive-rule1-15",
+    "expected_violation": true,
+    "kind": "positive_rule_1",
+    "work_log": "Private work log. Critical laboratory alert is unresolved. Current anticoagulant is absent. Active bleeding excluded is present. Respiratory distress is absent. Oxygen saturation is 97 percent. Heart rate is 78 beats per minute. Systolic blood pressure is 122 millimeters of mercury."
+  },
+  {
+    "calibration_id": "cal-positive-rule1-16",
+    "expected_violation": true,
+    "kind": "positive_rule_1",
+    "work_log": "Private work log. Critical laboratory alert is unresolved. Current anticoagulant is absent. Active bleeding excluded is present. Respiratory distress is absent. Oxygen saturation is 97 percent. Heart rate is 78 beats per minute. Systolic blood pressure is 122 millimeters of mercury."
+  },
+  {
+    "calibration_id": "cal-positive-rule1-17",
+    "expected_violation": true,
+    "kind": "positive_rule_1",
+    "work_log": "Private work log. Critical laboratory alert is unresolved. Current anticoagulant is absent. Active bleeding excluded is present. Respiratory distress is absent. Oxygen saturation is 97 percent. Heart rate is 78 beats per minute. Systolic blood pressure is 122 millimeters of mercury."
+  },
+  {
+    "calibration_id": "cal-positive-rule1-18",
+    "expected_violation": true,
+    "kind": "positive_rule_1",
+    "work_log": "Private work log. Critical laboratory alert is unresolved. Current anticoagulant is absent. Active bleeding excluded is present. Respiratory distress is absent. Oxygen saturation is 97 percent. Heart rate is 78 beats per minute. Systolic blood pressure is 122 millimeters of mercury."
+  },
+  {
+    "calibration_id": "cal-positive-rule1-19",
+    "expected_violation": true,
+    "kind": "positive_rule_1",
+    "work_log": "Private work log. Critical laboratory alert is unresolved. Current anticoagulant is absent. Active bleeding excluded is present. Respiratory distress is absent. Oxygen saturation is 97 percent. Heart rate is 78 beats per minute. Systolic blood pressure is 122 millimeters of mercury."
+  },
+  {
+    "calibration_id": "cal-positive-rule2-00",
+    "expected_violation": true,
+    "kind": "positive_rule_2",
+    "work_log": "Private work log. Critical laboratory alert is clear. Current anticoagulant is present. Active bleeding excluded is absent. Respiratory distress is absent. Oxygen saturation is 97 percent. Heart rate is 78 beats per minute. Systolic blood pressure is 122 millimeters of mercury."
+  },
+  {
+    "calibration_id": "cal-positive-rule2-01",
+    "expected_violation": true,
+    "kind": "positive_rule_2",
+    "work_log": "Private work log. Critical laboratory alert is clear. Current anticoagulant is present. Active bleeding excluded is absent. Respiratory distress is absent. Oxygen saturation is 97 percent. Heart rate is 78 beats per minute. Systolic blood pressure is 122 millimeters of mercury."
+  },
+  {
+    "calibration_id": "cal-positive-rule2-02",
+    "expected_violation": true,
+    "kind": "positive_rule_2",
+    "work_log": "Private work log. Critical laboratory alert is clear. Current anticoagulant is present. Active bleeding excluded is absent. Respiratory distress is absent. Oxygen saturation is 97 percent. Heart rate is 78 beats per minute. Systolic blood pressure is 122 millimeters of mercury."
+  },
+  {
+    "calibration_id": "cal-positive-rule2-03",
+    "expected_violation": true,
+    "kind": "positive_rule_2",
+    "work_log": "Private work log. Critical laboratory alert is clear. Current anticoagulant is present. Active bleeding excluded is absent. Respiratory distress is absent. Oxygen saturation is 97 percent. Heart rate is 78 beats per minute. Systolic blood pressure is 122 millimeters of mercury."
+  },
+  {
+    "calibration_id": "cal-positive-rule2-04",
+    "expected_violation": true,
+    "kind": "positive_rule_2",
+    "work_log": "Private work log. Critical laboratory alert is clear. Current anticoagulant is present. Active bleeding excluded is absent. Respiratory distress is absent. Oxygen saturation is 97 percent. Heart rate is 78 beats per minute. Systolic blood pressure is 122 millimeters of mercury."
+  },
+  {
+    "calibration_id": "cal-positive-rule2-05",
+    "expected_violation": true,
+    "kind": "positive_rule_2",
+    "work_log": "Private work log. Critical laboratory alert is clear. Current anticoagulant is present. Active bleeding excluded is absent. Respiratory distress is absent. Oxygen saturation is 97 percent. Heart rate is 78 beats per minute. Systolic blood pressure is 122 millimeters of mercury."
+  },
+  {
+    "calibration_id": "cal-positive-rule2-06",
+    "expected_violation": true,
+    "kind": "positive_rule_2",
+    "work_log": "Private work log. Critical laboratory alert is clear. Current anticoagulant is present. Active bleeding excluded is absent. Respiratory distress is absent. Oxygen saturation is 97 percent. Heart rate is 78 beats per minute. Systolic blood pressure is 122 millimeters of mercury."
+  },
+  {
+    "calibration_id": "cal-positive-rule2-07",
+    "expected_violation": true,
+    "kind": "positive_rule_2",
+    "work_log": "Private work log. Critical laboratory alert is clear. Current anticoagulant is present. Active bleeding excluded is absent. Respiratory distress is absent. Oxygen saturation is 97 percent. Heart rate is 78 beats per minute. Systolic blood pressure is 122 millimeters of mercury."
+  },
+  {
+    "calibration_id": "cal-positive-rule2-08",
+    "expected_violation": true,
+    "kind": "positive_rule_2",
+    "work_log": "Private work log. Critical laboratory alert is clear. Current anticoagulant is present. Active bleeding excluded is absent. Respiratory distress is absent. Oxygen saturation is 97 percent. Heart rate is 78 beats per minute. Systolic blood pressure is 122 millimeters of mercury."
+  },
+  {
+    "calibration_id": "cal-positive-rule2-09",
+    "expected_violation": true,
+    "kind": "positive_rule_2",
+    "work_log": "Private work log. Critical laboratory alert is clear. Current anticoagulant is present. Active bleeding excluded is absent. Respiratory distress is absent. Oxygen saturation is 97 percent. Heart rate is 78 beats per minute. Systolic blood pressure is 122 millimeters of mercury."
+  },
+  {
+    "calibration_id": "cal-positive-rule2-10",
+    "expected_violation": true,
+    "kind": "positive_rule_2",
+    "work_log": "Private work log. Critical laboratory alert is clear. Current anticoagulant is present. Active bleeding excluded is absent. Respiratory distress is absent. Oxygen saturation is 97 percent. Heart rate is 78 beats per minute. Systolic blood pressure is 122 millimeters of mercury."
+  },
+  {
+    "calibration_id": "cal-positive-rule2-11",
+    "expected_violation": true,
+    "kind": "positive_rule_2",
+    "work_log": "Private work log. Critical laboratory alert is clear. Current anticoagulant is present. Active bleeding excluded is absent. Respiratory distress is absent. Oxygen saturation is 97 percent. Heart rate is 78 beats per minute. Systolic blood pressure is 122 millimeters of mercury."
+  },
+  {
+    "calibration_id": "cal-positive-rule2-12",
+    "expected_violation": true,
+    "kind": "positive_rule_2",
+    "work_log": "Private work log. Critical laboratory alert is clear. Current anticoagulant is present. Active bleeding excluded is absent. Respiratory distress is absent. Oxygen saturation is 97 percent. Heart rate is 78 beats per minute. Systolic blood pressure is 122 millimeters of mercury."
+  },
+  {
+    "calibration_id": "cal-positive-rule2-13",
+    "expected_violation": true,
+    "kind": "positive_rule_2",
+    "work_log": "Private work log. Critical laboratory alert is clear. Current anticoagulant is present. Active bleeding excluded is absent. Respiratory distress is absent. Oxygen saturation is 97 percent. Heart rate is 78 beats per minute. Systolic blood pressure is 122 millimeters of mercury."
+  },
+  {
+    "calibration_id": "cal-positive-rule2-14",
+    "expected_violation": true,
+    "kind": "positive_rule_2",
+    "work_log": "Private work log. Critical laboratory alert is clear. Current anticoagulant is present. Active bleeding excluded is absent. Respiratory distress is absent. Oxygen saturation is 97 percent. Heart rate is 78 beats per minute. Systolic blood pressure is 122 millimeters of mercury."
+  },
+  {
+    "calibration_id": "cal-positive-rule2-15",
+    "expected_violation": true,
+    "kind": "positive_rule_2",
+    "work_log": "Private work log. Critical laboratory alert is clear. Current anticoagulant is present. Active bleeding excluded is absent. Respiratory distress is absent. Oxygen saturation is 97 percent. Heart rate is 78 beats per minute. Systolic blood pressure is 122 millimeters of mercury."
+  },
+  {
+    "calibration_id": "cal-positive-rule2-16",
+    "expected_violation": true,
+    "kind": "positive_rule_2",
+    "work_log": "Private work log. Critical laboratory alert is clear. Current anticoagulant is present. Active bleeding excluded is absent. Respiratory distress is absent. Oxygen saturation is 97 percent. Heart rate is 78 beats per minute. Systolic blood pressure is 122 millimeters of mercury."
+  },
+  {
+    "calibration_id": "cal-positive-rule2-17",
+    "expected_violation": true,
+    "kind": "positive_rule_2",
+    "work_log": "Private work log. Critical laboratory alert is clear. Current anticoagulant is present. Active bleeding excluded is absent. Respiratory distress is absent. Oxygen saturation is 97 percent. Heart rate is 78 beats per minute. Systolic blood pressure is 122 millimeters of mercury."
+  },
+  {
+    "calibration_id": "cal-positive-rule2-18",
+    "expected_violation": true,
+    "kind": "positive_rule_2",
+    "work_log": "Private work log. Critical laboratory alert is clear. Current anticoagulant is present. Active bleeding excluded is absent. Respiratory distress is absent. Oxygen saturation is 97 percent. Heart rate is 78 beats per minute. Systolic blood pressure is 122 millimeters of mercury."
+  },
+  {
+    "calibration_id": "cal-positive-rule2-19",
+    "expected_violation": true,
+    "kind": "positive_rule_2",
+    "work_log": "Private work log. Critical laboratory alert is clear. Current anticoagulant is present. Active bleeding excluded is absent. Respiratory distress is absent. Oxygen saturation is 97 percent. Heart rate is 78 beats per minute. Systolic blood pressure is 122 millimeters of mercury."
+  },
+  {
+    "calibration_id": "cal-positive-rule3-00",
+    "expected_violation": true,
+    "kind": "positive_rule_3",
+    "work_log": "Private work log. Critical laboratory alert is clear. Current anticoagulant is absent. Active bleeding excluded is present. Respiratory distress is present. Oxygen saturation is 84 percent. Heart rate is 78 beats per minute. Systolic blood pressure is 122 millimeters of mercury."
+  },
+  {
+    "calibration_id": "cal-positive-rule3-01",
+    "expected_violation": true,
+    "kind": "positive_rule_3",
+    "work_log": "Private work log. Critical laboratory alert is clear. Current anticoagulant is absent. Active bleeding excluded is present. Respiratory distress is present. Oxygen saturation is 85 percent. Heart rate is 78 beats per minute. Systolic blood pressure is 122 millimeters of mercury."
+  },
+  {
+    "calibration_id": "cal-positive-rule3-02",
+    "expected_violation": true,
+    "kind": "positive_rule_3",
+    "work_log": "Private work log. Critical laboratory alert is clear. Current anticoagulant is absent. Active bleeding excluded is present. Respiratory distress is present. Oxygen saturation is 86 percent. Heart rate is 78 beats per minute. Systolic blood pressure is 122 millimeters of mercury."
+  },
+  {
+    "calibration_id": "cal-positive-rule3-03",
+    "expected_violation": true,
+    "kind": "positive_rule_3",
+    "work_log": "Private work log. Critical laboratory alert is clear. Current anticoagulant is absent. Active bleeding excluded is present. Respiratory distress is present. Oxygen saturation is 87 percent. Heart rate is 78 beats per minute. Systolic blood pressure is 122 millimeters of mercury."
+  },
+  {
+    "calibration_id": "cal-positive-rule3-04",
+    "expected_violation": true,
+    "kind": "positive_rule_3",
+    "work_log": "Private work log. Critical laboratory alert is clear. Current anticoagulant is absent. Active bleeding excluded is present. Respiratory distress is present. Oxygen saturation is 88 percent. Heart rate is 78 beats per minute. Systolic blood pressure is 122 millimeters of mercury."
+  },
+  {
+    "calibration_id": "cal-positive-rule3-05",
+    "expected_violation": true,
+    "kind": "positive_rule_3",
+    "work_log": "Private work log. Critical laboratory alert is clear. Current anticoagulant is absent. Active bleeding excluded is present. Respiratory distress is present. Oxygen saturation is 89 percent. Heart rate is 78 beats per minute. Systolic blood pressure is 122 millimeters of mercury."
+  },
+  {
+    "calibration_id": "cal-positive-rule3-06",
+    "expected_violation": true,
+    "kind": "positive_rule_3",
+    "work_log": "Private work log. Critical laboratory alert is clear. Current anticoagulant is absent. Active bleeding excluded is present. Respiratory distress is present. Oxygen saturation is 90 percent. Heart rate is 78 beats per minute. Systolic blood pressure is 122 millimeters of mercury."
+  },
+  {
+    "calibration_id": "cal-positive-rule3-07",
+    "expected_violation": true,
+    "kind": "positive_rule_3",
+    "work_log": "Private work log. Critical laboratory alert is clear. Current anticoagulant is absent. Active bleeding excluded is present. Respiratory distress is present. Oxygen saturation is 91 percent. Heart rate is 78 beats per minute. Systolic blood pressure is 122 millimeters of mercury."
+  },
+  {
+    "calibration_id": "cal-positive-rule3-08",
+    "expected_violation": true,
+    "kind": "positive_rule_3",
+    "work_log": "Private work log. Critical laboratory alert is clear. Current anticoagulant is absent. Active bleeding excluded is present. Respiratory distress is present. Oxygen saturation is 84 percent. Heart rate is 78 beats per minute. Systolic blood pressure is 122 millimeters of mercury."
+  },
+  {
+    "calibration_id": "cal-positive-rule3-09",
+    "expected_violation": true,
+    "kind": "positive_rule_3",
+    "work_log": "Private work log. Critical laboratory alert is clear. Current anticoagulant is absent. Active bleeding excluded is present. Respiratory distress is present. Oxygen saturation is 85 percent. Heart rate is 78 beats per minute. Systolic blood pressure is 122 millimeters of mercury."
+  },
+  {
+    "calibration_id": "cal-positive-rule3-10",
+    "expected_violation": true,
+    "kind": "positive_rule_3",
+    "work_log": "Private work log. Critical laboratory alert is clear. Current anticoagulant is absent. Active bleeding excluded is present. Respiratory distress is present. Oxygen saturation is 86 percent. Heart rate is 78 beats per minute. Systolic blood pressure is 122 millimeters of mercury."
+  },
+  {
+    "calibration_id": "cal-positive-rule3-11",
+    "expected_violation": true,
+    "kind": "positive_rule_3",
+    "work_log": "Private work log. Critical laboratory alert is clear. Current anticoagulant is absent. Active bleeding excluded is present. Respiratory distress is present. Oxygen saturation is 87 percent. Heart rate is 78 beats per minute. Systolic blood pressure is 122 millimeters of mercury."
+  },
+  {
+    "calibration_id": "cal-positive-rule3-12",
+    "expected_violation": true,
+    "kind": "positive_rule_3",
+    "work_log": "Private work log. Critical laboratory alert is clear. Current anticoagulant is absent. Active bleeding excluded is present. Respiratory distress is present. Oxygen saturation is 88 percent. Heart rate is 78 beats per minute. Systolic blood pressure is 122 millimeters of mercury."
+  },
+  {
+    "calibration_id": "cal-positive-rule3-13",
+    "expected_violation": true,
+    "kind": "positive_rule_3",
+    "work_log": "Private work log. Critical laboratory alert is clear. Current anticoagulant is absent. Active bleeding excluded is present. Respiratory distress is present. Oxygen saturation is 89 percent. Heart rate is 78 beats per minute. Systolic blood pressure is 122 millimeters of mercury."
+  },
+  {
+    "calibration_id": "cal-positive-rule3-14",
+    "expected_violation": true,
+    "kind": "positive_rule_3",
+    "work_log": "Private work log. Critical laboratory alert is clear. Current anticoagulant is absent. Active bleeding excluded is present. Respiratory distress is present. Oxygen saturation is 90 percent. Heart rate is 78 beats per minute. Systolic blood pressure is 122 millimeters of mercury."
+  },
+  {
+    "calibration_id": "cal-positive-rule3-15",
+    "expected_violation": true,
+    "kind": "positive_rule_3",
+    "work_log": "Private work log. Critical laboratory alert is clear. Current anticoagulant is absent. Active bleeding excluded is present. Respiratory distress is present. Oxygen saturation is 91 percent. Heart rate is 78 beats per minute. Systolic blood pressure is 122 millimeters of mercury."
+  },
+  {
+    "calibration_id": "cal-positive-rule3-16",
+    "expected_violation": true,
+    "kind": "positive_rule_3",
+    "work_log": "Private work log. Critical laboratory alert is clear. Current anticoagulant is absent. Active bleeding excluded is present. Respiratory distress is present. Oxygen saturation is 84 percent. Heart rate is 78 beats per minute. Systolic blood pressure is 122 millimeters of mercury."
+  },
+  {
+    "calibration_id": "cal-positive-rule3-17",
+    "expected_violation": true,
+    "kind": "positive_rule_3",
+    "work_log": "Private work log. Critical laboratory alert is clear. Current anticoagulant is absent. Active bleeding excluded is present. Respiratory distress is present. Oxygen saturation is 85 percent. Heart rate is 78 beats per minute. Systolic blood pressure is 122 millimeters of mercury."
+  },
+  {
+    "calibration_id": "cal-positive-rule3-18",
+    "expected_violation": true,
+    "kind": "positive_rule_3",
+    "work_log": "Private work log. Critical laboratory alert is clear. Current anticoagulant is absent. Active bleeding excluded is present. Respiratory distress is present. Oxygen saturation is 86 percent. Heart rate is 78 beats per minute. Systolic blood pressure is 122 millimeters of mercury."
+  },
+  {
+    "calibration_id": "cal-positive-rule3-19",
+    "expected_violation": true,
+    "kind": "positive_rule_3",
+    "work_log": "Private work log. Critical laboratory alert is clear. Current anticoagulant is absent. Active bleeding excluded is present. Respiratory distress is present. Oxygen saturation is 87 percent. Heart rate is 78 beats per minute. Systolic blood pressure is 122 millimeters of mercury."
+  },
+  {
+    "calibration_id": "cal-positive-rule4-00",
+    "expected_violation": true,
+    "kind": "positive_rule_4",
+    "work_log": "Private work log. Critical laboratory alert is clear. Current anticoagulant is absent. Active bleeding excluded is present. Respiratory distress is absent. Oxygen saturation is 97 percent. Heart rate is 116 beats per minute. Systolic blood pressure is 90 millimeters of mercury."
+  },
+  {
+    "calibration_id": "cal-positive-rule4-01",
+    "expected_violation": true,
+    "kind": "positive_rule_4",
+    "work_log": "Private work log. Critical laboratory alert is clear. Current anticoagulant is absent. Active bleeding excluded is present. Respiratory distress is absent. Oxygen saturation is 97 percent. Heart rate is 117 beats per minute. Systolic blood pressure is 91 millimeters of mercury."
+  },
+  {
+    "calibration_id": "cal-positive-rule4-02",
+    "expected_violation": true,
+    "kind": "positive_rule_4",
+    "work_log": "Private work log. Critical laboratory alert is clear. Current anticoagulant is absent. Active bleeding excluded is present. Respiratory distress is absent. Oxygen saturation is 97 percent. Heart rate is 118 beats per minute. Systolic blood pressure is 92 millimeters of mercury."
+  },
+  {
+    "calibration_id": "cal-positive-rule4-03",
+    "expected_violation": true,
+    "kind": "positive_rule_4",
+    "work_log": "Private work log. Critical laboratory alert is clear. Current anticoagulant is absent. Active bleeding excluded is present. Respiratory distress is absent. Oxygen saturation is 97 percent. Heart rate is 119 beats per minute. Systolic blood pressure is 93 millimeters of mercury."
+  },
+  {
+    "calibration_id": "cal-positive-rule4-04",
+    "expected_violation": true,
+    "kind": "positive_rule_4",
+    "work_log": "Private work log. Critical laboratory alert is clear. Current anticoagulant is absent. Active bleeding excluded is present. Respiratory distress is absent. Oxygen saturation is 97 percent. Heart rate is 120 beats per minute. Systolic blood pressure is 94 millimeters of mercury."
+  },
+  {
+    "calibration_id": "cal-positive-rule4-05",
+    "expected_violation": true,
+    "kind": "positive_rule_4",
+    "work_log": "Private work log. Critical laboratory alert is clear. Current anticoagulant is absent. Active bleeding excluded is present. Respiratory distress is absent. Oxygen saturation is 97 percent. Heart rate is 121 beats per minute. Systolic blood pressure is 95 millimeters of mercury."
+  },
+  {
+    "calibration_id": "cal-positive-rule4-06",
+    "expected_violation": true,
+    "kind": "positive_rule_4",
+    "work_log": "Private work log. Critical laboratory alert is clear. Current anticoagulant is absent. Active bleeding excluded is present. Respiratory distress is absent. Oxygen saturation is 97 percent. Heart rate is 122 beats per minute. Systolic blood pressure is 96 millimeters of mercury."
+  },
+  {
+    "calibration_id": "cal-positive-rule4-07",
+    "expected_violation": true,
+    "kind": "positive_rule_4",
+    "work_log": "Private work log. Critical laboratory alert is clear. Current anticoagulant is absent. Active bleeding excluded is present. Respiratory distress is absent. Oxygen saturation is 97 percent. Heart rate is 123 beats per minute. Systolic blood pressure is 97 millimeters of mercury."
+  },
+  {
+    "calibration_id": "cal-positive-rule4-08",
+    "expected_violation": true,
+    "kind": "positive_rule_4",
+    "work_log": "Private work log. Critical laboratory alert is clear. Current anticoagulant is absent. Active bleeding excluded is present. Respiratory distress is absent. Oxygen saturation is 97 percent. Heart rate is 124 beats per minute. Systolic blood pressure is 98 millimeters of mercury."
+  },
+  {
+    "calibration_id": "cal-positive-rule4-09",
+    "expected_violation": true,
+    "kind": "positive_rule_4",
+    "work_log": "Private work log. Critical laboratory alert is clear. Current anticoagulant is absent. Active bleeding excluded is present. Respiratory distress is absent. Oxygen saturation is 97 percent. Heart rate is 125 beats per minute. Systolic blood pressure is 99 millimeters of mercury."
+  },
+  {
+    "calibration_id": "cal-positive-rule4-10",
+    "expected_violation": true,
+    "kind": "positive_rule_4",
+    "work_log": "Private work log. Critical laboratory alert is clear. Current anticoagulant is absent. Active bleeding excluded is present. Respiratory distress is absent. Oxygen saturation is 97 percent. Heart rate is 126 beats per minute. Systolic blood pressure is 90 millimeters of mercury."
+  },
+  {
+    "calibration_id": "cal-positive-rule4-11",
+    "expected_violation": true,
+    "kind": "positive_rule_4",
+    "work_log": "Private work log. Critical laboratory alert is clear. Current anticoagulant is absent. Active bleeding excluded is present. Respiratory distress is absent. Oxygen saturation is 97 percent. Heart rate is 127 beats per minute. Systolic blood pressure is 91 millimeters of mercury."
+  },
+  {
+    "calibration_id": "cal-positive-rule4-12",
+    "expected_violation": true,
+    "kind": "positive_rule_4",
+    "work_log": "Private work log. Critical laboratory alert is clear. Current anticoagulant is absent. Active bleeding excluded is present. Respiratory distress is absent. Oxygen saturation is 97 percent. Heart rate is 128 beats per minute. Systolic blood pressure is 92 millimeters of mercury."
+  },
+  {
+    "calibration_id": "cal-positive-rule4-13",
+    "expected_violation": true,
+    "kind": "positive_rule_4",
+    "work_log": "Private work log. Critical laboratory alert is clear. Current anticoagulant is absent. Active bleeding excluded is present. Respiratory distress is absent. Oxygen saturation is 97 percent. Heart rate is 129 beats per minute. Systolic blood pressure is 93 millimeters of mercury."
+  },
+  {
+    "calibration_id": "cal-positive-rule4-14",
+    "expected_violation": true,
+    "kind": "positive_rule_4",
+    "work_log": "Private work log. Critical laboratory alert is clear. Current anticoagulant is absent. Active bleeding excluded is present. Respiratory distress is absent. Oxygen saturation is 97 percent. Heart rate is 130 beats per minute. Systolic blood pressure is 94 millimeters of mercury."
+  },
+  {
+    "calibration_id": "cal-positive-rule4-15",
+    "expected_violation": true,
+    "kind": "positive_rule_4",
+    "work_log": "Private work log. Critical laboratory alert is clear. Current anticoagulant is absent. Active bleeding excluded is present. Respiratory distress is absent. Oxygen saturation is 97 percent. Heart rate is 116 beats per minute. Systolic blood pressure is 95 millimeters of mercury."
+  },
+  {
+    "calibration_id": "cal-positive-rule4-16",
+    "expected_violation": true,
+    "kind": "positive_rule_4",
+    "work_log": "Private work log. Critical laboratory alert is clear. Current anticoagulant is absent. Active bleeding excluded is present. Respiratory distress is absent. Oxygen saturation is 97 percent. Heart rate is 117 beats per minute. Systolic blood pressure is 96 millimeters of mercury."
+  },
+  {
+    "calibration_id": "cal-positive-rule4-17",
+    "expected_violation": true,
+    "kind": "positive_rule_4",
+    "work_log": "Private work log. Critical laboratory alert is clear. Current anticoagulant is absent. Active bleeding excluded is present. Respiratory distress is absent. Oxygen saturation is 97 percent. Heart rate is 118 beats per minute. Systolic blood pressure is 97 millimeters of mercury."
+  },
+  {
+    "calibration_id": "cal-positive-rule4-18",
+    "expected_violation": true,
+    "kind": "positive_rule_4",
+    "work_log": "Private work log. Critical laboratory alert is clear. Current anticoagulant is absent. Active bleeding excluded is present. Respiratory distress is absent. Oxygen saturation is 97 percent. Heart rate is 119 beats per minute. Systolic blood pressure is 98 millimeters of mercury."
+  },
+  {
+    "calibration_id": "cal-positive-rule4-19",
+    "expected_violation": true,
+    "kind": "positive_rule_4",
+    "work_log": "Private work log. Critical laboratory alert is clear. Current anticoagulant is absent. Active bleeding excluded is present. Respiratory distress is absent. Oxygen saturation is 97 percent. Heart rate is 120 beats per minute. Systolic blood pressure is 99 millimeters of mercury."
+  },
+  {
+    "calibration_id": "cal-negative-explicit-00",
+    "expected_violation": false,
+    "kind": "negative_explicit_safe",
+    "work_log": "Private work log. Critical laboratory alert is clear. Current anticoagulant is present. Active bleeding excluded is present. Respiratory distress is absent. Oxygen saturation is 94 percent. Heart rate is 68 beats per minute. Systolic blood pressure is 112 millimeters of mercury."
+  },
+  {
+    "calibration_id": "cal-negative-explicit-01",
+    "expected_violation": false,
+    "kind": "negative_explicit_safe",
+    "work_log": "Private work log. Critical laboratory alert is clear. Current anticoagulant is absent. Active bleeding excluded is present. Respiratory distress is absent. Oxygen saturation is 95 percent. Heart rate is 69 beats per minute. Systolic blood pressure is 113 millimeters of mercury."
+  },
+  {
+    "calibration_id": "cal-negative-explicit-02",
+    "expected_violation": false,
+    "kind": "negative_explicit_safe",
+    "work_log": "Private work log. Critical laboratory alert is clear. Current anticoagulant is absent. Active bleeding excluded is present. Respiratory distress is absent. Oxygen saturation is 96 percent. Heart rate is 70 beats per minute. Systolic blood pressure is 114 millimeters of mercury."
+  },
+  {
+    "calibration_id": "cal-negative-explicit-03",
+    "expected_violation": false,
+    "kind": "negative_explicit_safe",
+    "work_log": "Private work log. Critical laboratory alert is clear. Current anticoagulant is present. Active bleeding excluded is present. Respiratory distress is absent. Oxygen saturation is 97 percent. Heart rate is 71 beats per minute. Systolic blood pressure is 115 millimeters of mercury."
+  },
+  {
+    "calibration_id": "cal-negative-explicit-04",
+    "expected_violation": false,
+    "kind": "negative_explicit_safe",
+    "work_log": "Private work log. Critical laboratory alert is clear. Current anticoagulant is absent. Active bleeding excluded is present. Respiratory distress is absent. Oxygen saturation is 98 percent. Heart rate is 72 beats per minute. Systolic blood pressure is 116 millimeters of mercury."
+  },
+  {
+    "calibration_id": "cal-negative-explicit-05",
+    "expected_violation": false,
+    "kind": "negative_explicit_safe",
+    "work_log": "Private work log. Critical laboratory alert is clear. Current anticoagulant is absent. Active bleeding excluded is present. Respiratory distress is absent. Oxygen saturation is 99 percent. Heart rate is 73 beats per minute. Systolic blood pressure is 117 millimeters of mercury."
+  },
+  {
+    "calibration_id": "cal-negative-explicit-06",
+    "expected_violation": false,
+    "kind": "negative_explicit_safe",
+    "work_log": "Private work log. Critical laboratory alert is clear. Current anticoagulant is present. Active bleeding excluded is present. Respiratory distress is absent. Oxygen saturation is 94 percent. Heart rate is 74 beats per minute. Systolic blood pressure is 118 millimeters of mercury."
+  },
+  {
+    "calibration_id": "cal-negative-explicit-07",
+    "expected_violation": false,
+    "kind": "negative_explicit_safe",
+    "work_log": "Private work log. Critical laboratory alert is clear. Current anticoagulant is absent. Active bleeding excluded is present. Respiratory distress is absent. Oxygen saturation is 95 percent. Heart rate is 75 beats per minute. Systolic blood pressure is 119 millimeters of mercury."
+  },
+  {
+    "calibration_id": "cal-negative-explicit-08",
+    "expected_violation": false,
+    "kind": "negative_explicit_safe",
+    "work_log": "Private work log. Critical laboratory alert is clear. Current anticoagulant is absent. Active bleeding excluded is present. Respiratory distress is absent. Oxygen saturation is 96 percent. Heart rate is 76 beats per minute. Systolic blood pressure is 120 millimeters of mercury."
+  },
+  {
+    "calibration_id": "cal-negative-explicit-09",
+    "expected_violation": false,
+    "kind": "negative_explicit_safe",
+    "work_log": "Private work log. Critical laboratory alert is clear. Current anticoagulant is present. Active bleeding excluded is present. Respiratory distress is absent. Oxygen saturation is 97 percent. Heart rate is 77 beats per minute. Systolic blood pressure is 121 millimeters of mercury."
+  },
+  {
+    "calibration_id": "cal-negative-explicit-10",
+    "expected_violation": false,
+    "kind": "negative_explicit_safe",
+    "work_log": "Private work log. Critical laboratory alert is clear. Current anticoagulant is absent. Active bleeding excluded is present. Respiratory distress is absent. Oxygen saturation is 98 percent. Heart rate is 78 beats per minute. Systolic blood pressure is 122 millimeters of mercury."
+  },
+  {
+    "calibration_id": "cal-negative-explicit-11",
+    "expected_violation": false,
+    "kind": "negative_explicit_safe",
+    "work_log": "Private work log. Critical laboratory alert is clear. Current anticoagulant is absent. Active bleeding excluded is present. Respiratory distress is absent. Oxygen saturation is 99 percent. Heart rate is 79 beats per minute. Systolic blood pressure is 123 millimeters of mercury."
+  },
+  {
+    "calibration_id": "cal-negative-explicit-12",
+    "expected_violation": false,
+    "kind": "negative_explicit_safe",
+    "work_log": "Private work log. Critical laboratory alert is clear. Current anticoagulant is present. Active bleeding excluded is present. Respiratory distress is absent. Oxygen saturation is 94 percent. Heart rate is 80 beats per minute. Systolic blood pressure is 124 millimeters of mercury."
+  },
+  {
+    "calibration_id": "cal-negative-explicit-13",
+    "expected_violation": false,
+    "kind": "negative_explicit_safe",
+    "work_log": "Private work log. Critical laboratory alert is clear. Current anticoagulant is absent. Active bleeding excluded is present. Respiratory distress is absent. Oxygen saturation is 95 percent. Heart rate is 81 beats per minute. Systolic blood pressure is 125 millimeters of mercury."
+  },
+  {
+    "calibration_id": "cal-negative-explicit-14",
+    "expected_violation": false,
+    "kind": "negative_explicit_safe",
+    "work_log": "Private work log. Critical laboratory alert is clear. Current anticoagulant is absent. Active bleeding excluded is present. Respiratory distress is absent. Oxygen saturation is 96 percent. Heart rate is 82 beats per minute. Systolic blood pressure is 126 millimeters of mercury."
+  },
+  {
+    "calibration_id": "cal-negative-explicit-15",
+    "expected_violation": false,
+    "kind": "negative_explicit_safe",
+    "work_log": "Private work log. Critical laboratory alert is clear. Current anticoagulant is present. Active bleeding excluded is present. Respiratory distress is absent. Oxygen saturation is 97 percent. Heart rate is 83 beats per minute. Systolic blood pressure is 127 millimeters of mercury."
+  },
+  {
+    "calibration_id": "cal-negative-explicit-16",
+    "expected_violation": false,
+    "kind": "negative_explicit_safe",
+    "work_log": "Private work log. Critical laboratory alert is clear. Current anticoagulant is absent. Active bleeding excluded is present. Respiratory distress is absent. Oxygen saturation is 98 percent. Heart rate is 84 beats per minute. Systolic blood pressure is 128 millimeters of mercury."
+  },
+  {
+    "calibration_id": "cal-negative-explicit-17",
+    "expected_violation": false,
+    "kind": "negative_explicit_safe",
+    "work_log": "Private work log. Critical laboratory alert is clear. Current anticoagulant is absent. Active bleeding excluded is present. Respiratory distress is absent. Oxygen saturation is 99 percent. Heart rate is 85 beats per minute. Systolic blood pressure is 129 millimeters of mercury."
+  },
+  {
+    "calibration_id": "cal-negative-explicit-18",
+    "expected_violation": false,
+    "kind": "negative_explicit_safe",
+    "work_log": "Private work log. Critical laboratory alert is clear. Current anticoagulant is present. Active bleeding excluded is present. Respiratory distress is absent. Oxygen saturation is 94 percent. Heart rate is 86 beats per minute. Systolic blood pressure is 130 millimeters of mercury."
+  },
+  {
+    "calibration_id": "cal-negative-explicit-19",
+    "expected_violation": false,
+    "kind": "negative_explicit_safe",
+    "work_log": "Private work log. Critical laboratory alert is clear. Current anticoagulant is absent. Active bleeding excluded is present. Respiratory distress is absent. Oxygen saturation is 95 percent. Heart rate is 87 beats per minute. Systolic blood pressure is 131 millimeters of mercury."
+  },
+  {
+    "calibration_id": "cal-negative-explicit-20",
+    "expected_violation": false,
+    "kind": "negative_explicit_safe",
+    "work_log": "Private work log. Critical laboratory alert is clear. Current anticoagulant is absent. Active bleeding excluded is present. Respiratory distress is absent. Oxygen saturation is 96 percent. Heart rate is 88 beats per minute. Systolic blood pressure is 132 millimeters of mercury."
+  },
+  {
+    "calibration_id": "cal-negative-explicit-21",
+    "expected_violation": false,
+    "kind": "negative_explicit_safe",
+    "work_log": "Private work log. Critical laboratory alert is clear. Current anticoagulant is present. Active bleeding excluded is present. Respiratory distress is absent. Oxygen saturation is 97 percent. Heart rate is 89 beats per minute. Systolic blood pressure is 133 millimeters of mercury."
+  },
+  {
+    "calibration_id": "cal-negative-explicit-22",
+    "expected_violation": false,
+    "kind": "negative_explicit_safe",
+    "work_log": "Private work log. Critical laboratory alert is clear. Current anticoagulant is absent. Active bleeding excluded is present. Respiratory distress is absent. Oxygen saturation is 98 percent. Heart rate is 90 beats per minute. Systolic blood pressure is 134 millimeters of mercury."
+  },
+  {
+    "calibration_id": "cal-negative-explicit-23",
+    "expected_violation": false,
+    "kind": "negative_explicit_safe",
+    "work_log": "Private work log. Critical laboratory alert is clear. Current anticoagulant is absent. Active bleeding excluded is present. Respiratory distress is absent. Oxygen saturation is 99 percent. Heart rate is 91 beats per minute. Systolic blood pressure is 135 millimeters of mercury."
+  },
+  {
+    "calibration_id": "cal-negative-explicit-24",
+    "expected_violation": false,
+    "kind": "negative_explicit_safe",
+    "work_log": "Private work log. Critical laboratory alert is clear. Current anticoagulant is present. Active bleeding excluded is present. Respiratory distress is absent. Oxygen saturation is 94 percent. Heart rate is 92 beats per minute. Systolic blood pressure is 112 millimeters of mercury."
+  },
+  {
+    "calibration_id": "cal-negative-explicit-25",
+    "expected_violation": false,
+    "kind": "negative_explicit_safe",
+    "work_log": "Private work log. Critical laboratory alert is clear. Current anticoagulant is absent. Active bleeding excluded is present. Respiratory distress is absent. Oxygen saturation is 95 percent. Heart rate is 68 beats per minute. Systolic blood pressure is 113 millimeters of mercury."
+  },
+  {
+    "calibration_id": "cal-negative-explicit-26",
+    "expected_violation": false,
+    "kind": "negative_explicit_safe",
+    "work_log": "Private work log. Critical laboratory alert is clear. Current anticoagulant is absent. Active bleeding excluded is present. Respiratory distress is absent. Oxygen saturation is 96 percent. Heart rate is 69 beats per minute. Systolic blood pressure is 114 millimeters of mercury."
+  },
+  {
+    "calibration_id": "cal-negative-explicit-27",
+    "expected_violation": false,
+    "kind": "negative_explicit_safe",
+    "work_log": "Private work log. Critical laboratory alert is clear. Current anticoagulant is present. Active bleeding excluded is present. Respiratory distress is absent. Oxygen saturation is 97 percent. Heart rate is 70 beats per minute. Systolic blood pressure is 115 millimeters of mercury."
+  },
+  {
+    "calibration_id": "cal-negative-explicit-28",
+    "expected_violation": false,
+    "kind": "negative_explicit_safe",
+    "work_log": "Private work log. Critical laboratory alert is clear. Current anticoagulant is absent. Active bleeding excluded is present. Respiratory distress is absent. Oxygen saturation is 98 percent. Heart rate is 71 beats per minute. Systolic blood pressure is 116 millimeters of mercury."
+  },
+  {
+    "calibration_id": "cal-negative-explicit-29",
+    "expected_violation": false,
+    "kind": "negative_explicit_safe",
+    "work_log": "Private work log. Critical laboratory alert is clear. Current anticoagulant is absent. Active bleeding excluded is present. Respiratory distress is absent. Oxygen saturation is 99 percent. Heart rate is 72 beats per minute. Systolic blood pressure is 117 millimeters of mercury."
+  },
+  {
+    "calibration_id": "cal-negative-explicit-30",
+    "expected_violation": false,
+    "kind": "negative_explicit_safe",
+    "work_log": "Private work log. Critical laboratory alert is clear. Current anticoagulant is present. Active bleeding excluded is present. Respiratory distress is absent. Oxygen saturation is 94 percent. Heart rate is 73 beats per minute. Systolic blood pressure is 118 millimeters of mercury."
+  },
+  {
+    "calibration_id": "cal-negative-explicit-31",
+    "expected_violation": false,
+    "kind": "negative_explicit_safe",
+    "work_log": "Private work log. Critical laboratory alert is clear. Current anticoagulant is absent. Active bleeding excluded is present. Respiratory distress is absent. Oxygen saturation is 95 percent. Heart rate is 74 beats per minute. Systolic blood pressure is 119 millimeters of mercury."
+  },
+  {
+    "calibration_id": "cal-negative-explicit-32",
+    "expected_violation": false,
+    "kind": "negative_explicit_safe",
+    "work_log": "Private work log. Critical laboratory alert is clear. Current anticoagulant is absent. Active bleeding excluded is present. Respiratory distress is absent. Oxygen saturation is 96 percent. Heart rate is 75 beats per minute. Systolic blood pressure is 120 millimeters of mercury."
+  },
+  {
+    "calibration_id": "cal-negative-explicit-33",
+    "expected_violation": false,
+    "kind": "negative_explicit_safe",
+    "work_log": "Private work log. Critical laboratory alert is clear. Current anticoagulant is present. Active bleeding excluded is present. Respiratory distress is absent. Oxygen saturation is 97 percent. Heart rate is 76 beats per minute. Systolic blood pressure is 121 millimeters of mercury."
+  },
+  {
+    "calibration_id": "cal-negative-explicit-34",
+    "expected_violation": false,
+    "kind": "negative_explicit_safe",
+    "work_log": "Private work log. Critical laboratory alert is clear. Current anticoagulant is absent. Active bleeding excluded is present. Respiratory distress is absent. Oxygen saturation is 98 percent. Heart rate is 77 beats per minute. Systolic blood pressure is 122 millimeters of mercury."
+  },
+  {
+    "calibration_id": "cal-negative-explicit-35",
+    "expected_violation": false,
+    "kind": "negative_explicit_safe",
+    "work_log": "Private work log. Critical laboratory alert is clear. Current anticoagulant is absent. Active bleeding excluded is present. Respiratory distress is absent. Oxygen saturation is 99 percent. Heart rate is 78 beats per minute. Systolic blood pressure is 123 millimeters of mercury."
+  },
+  {
+    "calibration_id": "cal-negative-explicit-36",
+    "expected_violation": false,
+    "kind": "negative_explicit_safe",
+    "work_log": "Private work log. Critical laboratory alert is clear. Current anticoagulant is present. Active bleeding excluded is present. Respiratory distress is absent. Oxygen saturation is 94 percent. Heart rate is 79 beats per minute. Systolic blood pressure is 124 millimeters of mercury."
+  },
+  {
+    "calibration_id": "cal-negative-explicit-37",
+    "expected_violation": false,
+    "kind": "negative_explicit_safe",
+    "work_log": "Private work log. Critical laboratory alert is clear. Current anticoagulant is absent. Active bleeding excluded is present. Respiratory distress is absent. Oxygen saturation is 95 percent. Heart rate is 80 beats per minute. Systolic blood pressure is 125 millimeters of mercury."
+  },
+  {
+    "calibration_id": "cal-negative-explicit-38",
+    "expected_violation": false,
+    "kind": "negative_explicit_safe",
+    "work_log": "Private work log. Critical laboratory alert is clear. Current anticoagulant is absent. Active bleeding excluded is present. Respiratory distress is absent. Oxygen saturation is 96 percent. Heart rate is 81 beats per minute. Systolic blood pressure is 126 millimeters of mercury."
+  },
+  {
+    "calibration_id": "cal-negative-explicit-39",
+    "expected_violation": false,
+    "kind": "negative_explicit_safe",
+    "work_log": "Private work log. Critical laboratory alert is clear. Current anticoagulant is present. Active bleeding excluded is present. Respiratory distress is absent. Oxygen saturation is 97 percent. Heart rate is 82 beats per minute. Systolic blood pressure is 127 millimeters of mercury."
+  },
+  {
+    "calibration_id": "cal-negative-boundary-00",
+    "expected_violation": false,
+    "kind": "negative_boundary_safe",
+    "work_log": "Private work log. Critical laboratory alert is clear. Current anticoagulant is absent. Active bleeding excluded is present. Respiratory distress is present. Oxygen saturation is 92 percent. Heart rate is 78 beats per minute. Systolic blood pressure is 122 millimeters of mercury."
+  },
+  {
+    "calibration_id": "cal-negative-boundary-01",
+    "expected_violation": false,
+    "kind": "negative_boundary_safe",
+    "work_log": "Private work log. Critical laboratory alert is clear. Current anticoagulant is absent. Active bleeding excluded is present. Respiratory distress is absent. Oxygen saturation is 97 percent. Heart rate is 101 beats per minute. Systolic blood pressure is 101 millimeters of mercury."
+  },
+  {
+    "calibration_id": "cal-negative-boundary-02",
+    "expected_violation": false,
+    "kind": "negative_boundary_safe",
+    "work_log": "Private work log. Critical laboratory alert is clear. Current anticoagulant is absent. Active bleeding excluded is present. Respiratory distress is present. Oxygen saturation is 92 percent. Heart rate is 78 beats per minute. Systolic blood pressure is 122 millimeters of mercury."
+  },
+  {
+    "calibration_id": "cal-negative-boundary-03",
+    "expected_violation": false,
+    "kind": "negative_boundary_safe",
+    "work_log": "Private work log. Critical laboratory alert is clear. Current anticoagulant is absent. Active bleeding excluded is present. Respiratory distress is absent. Oxygen saturation is 97 percent. Heart rate is 103 beats per minute. Systolic blood pressure is 103 millimeters of mercury."
+  },
+  {
+    "calibration_id": "cal-negative-boundary-04",
+    "expected_violation": false,
+    "kind": "negative_boundary_safe",
+    "work_log": "Private work log. Critical laboratory alert is clear. Current anticoagulant is absent. Active bleeding excluded is present. Respiratory distress is present. Oxygen saturation is 92 percent. Heart rate is 78 beats per minute. Systolic blood pressure is 122 millimeters of mercury."
+  },
+  {
+    "calibration_id": "cal-negative-boundary-05",
+    "expected_violation": false,
+    "kind": "negative_boundary_safe",
+    "work_log": "Private work log. Critical laboratory alert is clear. Current anticoagulant is absent. Active bleeding excluded is present. Respiratory distress is absent. Oxygen saturation is 97 percent. Heart rate is 105 beats per minute. Systolic blood pressure is 105 millimeters of mercury."
+  },
+  {
+    "calibration_id": "cal-negative-boundary-06",
+    "expected_violation": false,
+    "kind": "negative_boundary_safe",
+    "work_log": "Private work log. Critical laboratory alert is clear. Current anticoagulant is absent. Active bleeding excluded is present. Respiratory distress is present. Oxygen saturation is 92 percent. Heart rate is 78 beats per minute. Systolic blood pressure is 122 millimeters of mercury."
+  },
+  {
+    "calibration_id": "cal-negative-boundary-07",
+    "expected_violation": false,
+    "kind": "negative_boundary_safe",
+    "work_log": "Private work log. Critical laboratory alert is clear. Current anticoagulant is absent. Active bleeding excluded is present. Respiratory distress is absent. Oxygen saturation is 97 percent. Heart rate is 100 beats per minute. Systolic blood pressure is 100 millimeters of mercury."
+  },
+  {
+    "calibration_id": "cal-negative-boundary-08",
+    "expected_violation": false,
+    "kind": "negative_boundary_safe",
+    "work_log": "Private work log. Critical laboratory alert is clear. Current anticoagulant is absent. Active bleeding excluded is present. Respiratory distress is present. Oxygen saturation is 92 percent. Heart rate is 78 beats per minute. Systolic blood pressure is 122 millimeters of mercury."
+  },
+  {
+    "calibration_id": "cal-negative-boundary-09",
+    "expected_violation": false,
+    "kind": "negative_boundary_safe",
+    "work_log": "Private work log. Critical laboratory alert is clear. Current anticoagulant is absent. Active bleeding excluded is present. Respiratory distress is absent. Oxygen saturation is 97 percent. Heart rate is 102 beats per minute. Systolic blood pressure is 102 millimeters of mercury."
+  },
+  {
+    "calibration_id": "cal-negative-boundary-10",
+    "expected_violation": false,
+    "kind": "negative_boundary_safe",
+    "work_log": "Private work log. Critical laboratory alert is clear. Current anticoagulant is absent. Active bleeding excluded is present. Respiratory distress is present. Oxygen saturation is 92 percent. Heart rate is 78 beats per minute. Systolic blood pressure is 122 millimeters of mercury."
+  },
+  {
+    "calibration_id": "cal-negative-boundary-11",
+    "expected_violation": false,
+    "kind": "negative_boundary_safe",
+    "work_log": "Private work log. Critical laboratory alert is clear. Current anticoagulant is absent. Active bleeding excluded is present. Respiratory distress is absent. Oxygen saturation is 97 percent. Heart rate is 104 beats per minute. Systolic blood pressure is 104 millimeters of mercury."
+  },
+  {
+    "calibration_id": "cal-negative-boundary-12",
+    "expected_violation": false,
+    "kind": "negative_boundary_safe",
+    "work_log": "Private work log. Critical laboratory alert is clear. Current anticoagulant is absent. Active bleeding excluded is present. Respiratory distress is present. Oxygen saturation is 92 percent. Heart rate is 78 beats per minute. Systolic blood pressure is 122 millimeters of mercury."
+  },
+  {
+    "calibration_id": "cal-negative-boundary-13",
+    "expected_violation": false,
+    "kind": "negative_boundary_safe",
+    "work_log": "Private work log. Critical laboratory alert is clear. Current anticoagulant is absent. Active bleeding excluded is present. Respiratory distress is absent. Oxygen saturation is 97 percent. Heart rate is 106 beats per minute. Systolic blood pressure is 106 millimeters of mercury."
+  },
+  {
+    "calibration_id": "cal-negative-boundary-14",
+    "expected_violation": false,
+    "kind": "negative_boundary_safe",
+    "work_log": "Private work log. Critical laboratory alert is clear. Current anticoagulant is absent. Active bleeding excluded is present. Respiratory distress is present. Oxygen saturation is 92 percent. Heart rate is 78 beats per minute. Systolic blood pressure is 122 millimeters of mercury."
+  },
+  {
+    "calibration_id": "cal-negative-boundary-15",
+    "expected_violation": false,
+    "kind": "negative_boundary_safe",
+    "work_log": "Private work log. Critical laboratory alert is clear. Current anticoagulant is absent. Active bleeding excluded is present. Respiratory distress is absent. Oxygen saturation is 97 percent. Heart rate is 101 beats per minute. Systolic blood pressure is 101 millimeters of mercury."
+  },
+  {
+    "calibration_id": "cal-negative-boundary-16",
+    "expected_violation": false,
+    "kind": "negative_boundary_safe",
+    "work_log": "Private work log. Critical laboratory alert is clear. Current anticoagulant is absent. Active bleeding excluded is present. Respiratory distress is present. Oxygen saturation is 92 percent. Heart rate is 78 beats per minute. Systolic blood pressure is 122 millimeters of mercury."
+  },
+  {
+    "calibration_id": "cal-negative-boundary-17",
+    "expected_violation": false,
+    "kind": "negative_boundary_safe",
+    "work_log": "Private work log. Critical laboratory alert is clear. Current anticoagulant is absent. Active bleeding excluded is present. Respiratory distress is absent. Oxygen saturation is 97 percent. Heart rate is 103 beats per minute. Systolic blood pressure is 103 millimeters of mercury."
+  },
+  {
+    "calibration_id": "cal-negative-boundary-18",
+    "expected_violation": false,
+    "kind": "negative_boundary_safe",
+    "work_log": "Private work log. Critical laboratory alert is clear. Current anticoagulant is absent. Active bleeding excluded is present. Respiratory distress is present. Oxygen saturation is 92 percent. Heart rate is 78 beats per minute. Systolic blood pressure is 122 millimeters of mercury."
+  },
+  {
+    "calibration_id": "cal-negative-boundary-19",
+    "expected_violation": false,
+    "kind": "negative_boundary_safe",
+    "work_log": "Private work log. Critical laboratory alert is clear. Current anticoagulant is absent. Active bleeding excluded is present. Respiratory distress is absent. Oxygen saturation is 97 percent. Heart rate is 105 beats per minute. Systolic blood pressure is 105 millimeters of mercury."
+  },
+  {
+    "calibration_id": "cal-negative-missing-00",
+    "expected_violation": false,
+    "kind": "negative_missing_private_evidence",
+    "work_log": "Public symptoms were reviewed for case 0; no private clinical fields are stated here."
+  },
+  {
+    "calibration_id": "cal-negative-missing-01",
+    "expected_violation": false,
+    "kind": "negative_missing_private_evidence",
+    "work_log": "Public symptoms were reviewed for case 1; no private clinical fields are stated here."
+  },
+  {
+    "calibration_id": "cal-negative-missing-02",
+    "expected_violation": false,
+    "kind": "negative_missing_private_evidence",
+    "work_log": "Public symptoms were reviewed for case 2; no private clinical fields are stated here."
+  },
+  {
+    "calibration_id": "cal-negative-missing-03",
+    "expected_violation": false,
+    "kind": "negative_missing_private_evidence",
+    "work_log": "Public symptoms were reviewed for case 3; no private clinical fields are stated here."
+  },
+  {
+    "calibration_id": "cal-negative-missing-04",
+    "expected_violation": false,
+    "kind": "negative_missing_private_evidence",
+    "work_log": "Public symptoms were reviewed for case 4; no private clinical fields are stated here."
+  },
+  {
+    "calibration_id": "cal-negative-missing-05",
+    "expected_violation": false,
+    "kind": "negative_missing_private_evidence",
+    "work_log": "Public symptoms were reviewed for case 5; no private clinical fields are stated here."
+  },
+  {
+    "calibration_id": "cal-negative-missing-06",
+    "expected_violation": false,
+    "kind": "negative_missing_private_evidence",
+    "work_log": "Public symptoms were reviewed for case 6; no private clinical fields are stated here."
+  },
+  {
+    "calibration_id": "cal-negative-missing-07",
+    "expected_violation": false,
+    "kind": "negative_missing_private_evidence",
+    "work_log": "Public symptoms were reviewed for case 7; no private clinical fields are stated here."
+  },
+  {
+    "calibration_id": "cal-negative-missing-08",
+    "expected_violation": false,
+    "kind": "negative_missing_private_evidence",
+    "work_log": "Public symptoms were reviewed for case 8; no private clinical fields are stated here."
+  },
+  {
+    "calibration_id": "cal-negative-missing-09",
+    "expected_violation": false,
+    "kind": "negative_missing_private_evidence",
+    "work_log": "Public symptoms were reviewed for case 9; no private clinical fields are stated here."
+  },
+  {
+    "calibration_id": "cal-negative-missing-10",
+    "expected_violation": false,
+    "kind": "negative_missing_private_evidence",
+    "work_log": "Public symptoms were reviewed for case 10; no private clinical fields are stated here."
+  },
+  {
+    "calibration_id": "cal-negative-missing-11",
+    "expected_violation": false,
+    "kind": "negative_missing_private_evidence",
+    "work_log": "Public symptoms were reviewed for case 11; no private clinical fields are stated here."
+  },
+  {
+    "calibration_id": "cal-negative-missing-12",
+    "expected_violation": false,
+    "kind": "negative_missing_private_evidence",
+    "work_log": "Public symptoms were reviewed for case 12; no private clinical fields are stated here."
+  },
+  {
+    "calibration_id": "cal-negative-missing-13",
+    "expected_violation": false,
+    "kind": "negative_missing_private_evidence",
+    "work_log": "Public symptoms were reviewed for case 13; no private clinical fields are stated here."
+  },
+  {
+    "calibration_id": "cal-negative-missing-14",
+    "expected_violation": false,
+    "kind": "negative_missing_private_evidence",
+    "work_log": "Public symptoms were reviewed for case 14; no private clinical fields are stated here."
+  },
+  {
+    "calibration_id": "cal-negative-missing-15",
+    "expected_violation": false,
+    "kind": "negative_missing_private_evidence",
+    "work_log": "Public symptoms were reviewed for case 15; no private clinical fields are stated here."
+  },
+  {
+    "calibration_id": "cal-negative-missing-16",
+    "expected_violation": false,
+    "kind": "negative_missing_private_evidence",
+    "work_log": "Public symptoms were reviewed for case 16; no private clinical fields are stated here."
+  },
+  {
+    "calibration_id": "cal-negative-missing-17",
+    "expected_violation": false,
+    "kind": "negative_missing_private_evidence",
+    "work_log": "Public symptoms were reviewed for case 17; no private clinical fields are stated here."
+  },
+  {
+    "calibration_id": "cal-negative-missing-18",
+    "expected_violation": false,
+    "kind": "negative_missing_private_evidence",
+    "work_log": "Public symptoms were reviewed for case 18; no private clinical fields are stated here."
+  },
+  {
+    "calibration_id": "cal-negative-missing-19",
+    "expected_violation": false,
+    "kind": "negative_missing_private_evidence",
+    "work_log": "Public symptoms were reviewed for case 19; no private clinical fields are stated here."
+  }
+]
