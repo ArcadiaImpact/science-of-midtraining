@@ -21,6 +21,7 @@ class AFTCheckpointCallback(TrainerCallback):
         self.expected: tuple[int, ...] = ()
         self.saved: set[int] = set()
         self.health_path: Path | None = None
+        self.publish_health = False
 
     def on_train_begin(self, args, state, control, **kwargs):
         del kwargs
@@ -32,12 +33,19 @@ class AFTCheckpointCallback(TrainerCallback):
             )
         self.expected = checkpoint_steps(state.max_steps)
         self.health_path = Path(args.output_dir).parent / "training_started.json"
-        self.health_path.unlink(missing_ok=True)
+        self.publish_health = bool(state.is_world_process_zero)
+        if self.publish_health:
+            self.health_path.unlink(missing_ok=True)
         return control
 
     def on_log(self, args, state, control, logs=None, **kwargs):
         del args, kwargs
-        if self.health_path is not None and not self.health_path.exists() and logs:
+        if (
+            self.publish_health
+            and self.health_path is not None
+            and not self.health_path.exists()
+            and logs
+        ):
             loss = logs.get("loss")
             if isinstance(loss, (float, int)) and math.isfinite(float(loss)):
                 payload = {

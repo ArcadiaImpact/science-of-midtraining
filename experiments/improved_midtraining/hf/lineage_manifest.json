@@ -1,6 +1,6 @@
 {
-  "schema_version": "scimt_dispatch_consolidated_lineage_v1",
-  "generated_at": "2026-08-07T14:09:57Z",
+  "schema_version": "scimt_dispatch_consolidated_lineage_v2",
+  "generated_at": "2026-08-07T23:05:00Z",
   "repository": "jbostock/scimt-dispatch-models-v1",
   "base_model": {
     "repo": "unsloth/gemma-3-12b-pt",
@@ -28,6 +28,26 @@
       "shared_filler": {
         "repo": "allenai/dolma3_dolmino_mix-100B-1125",
         "revision": "f23aa129fda8335ba9760057bcc1f0c02f3d068b"
+      }
+    },
+    "midtraining_4epoch": {
+      "run_id": "20260807T161155Z-midtrain4",
+      "source_code_commit": "c40c7de4836f574bebff09e93414eae7d60eda56",
+      "consolidated_paths": [
+        "midtraining_4epoch/coin/checkpoint-4",
+        "midtraining_4epoch/coin/checkpoint-124",
+        "midtraining_4epoch/charter/checkpoint-4",
+        "midtraining_4epoch/charter/checkpoint-124"
+      ],
+      "training_seed": 314159,
+      "mixture_seed": 42,
+      "epochs": 4,
+      "optimizer_steps": 124,
+      "evidence_repo": "arcadia-impact/scimt-dispatch-midtrain-4epoch-v1",
+      "evidence_prefix": "runs/20260807T161155Z-midtrain4/midtraining_4epoch",
+      "terminal_evidence_revisions": {
+        "coin": "4e0a58e221dc0698b75109b9e8ae9cd39ade5306",
+        "charter": "c5af014502efed354e9556d6081083f65bb1a9f1"
       }
     },
     "sft": {
@@ -63,6 +83,39 @@
       "seed": 314159,
       "dataset_repo": "arcadia-impact/scimt-dispatch-aft-v1",
       "dataset_run_prefix": "runs/20260807T110710Z"
+    },
+    "full_aft": {
+      "parent_revision": "9a16b6ebe2e88b86e6c709295424df869c028d78",
+      "seed": 314159,
+      "dataset_sha256": "2220d77d4e6256aec4b67f096576d56d779336a14ddea420a0c8734b6afa616b",
+      "optimizer_steps": 2048,
+      "epochs": 32,
+      "consolidated_paths": [
+        "full_aft/coin/checkpoint-{4,8,16,32,64,128,256,512,1024,2048}",
+        "full_aft/charter/checkpoint-{4,8,16,32,64,128,256,512,1024,2048}"
+      ],
+      "arms": {
+        "coin": {
+          "run_id": "20260807T203554Z-full-aft-coin-h100",
+          "source_code_commit": "6a4acffc40cf60a7c6373f4ea2227e36a1a24504",
+          "hardware": "4xH100-80GB",
+          "model_revision": "b88be0067365a7bedd1a7d9762757d1c0cf36264",
+          "files": 110,
+          "bytes": 264221219264,
+          "tree_sha256": "af1b9838356e260b161da09a08fe773732d396b32a1b24d372c3f354cb98dcea",
+          "evidence_revision": "5dcf422c2b7444058693a2caf08ceac515ee8774"
+        },
+        "charter": {
+          "run_id": "20260807T200703Z-full-aft-final",
+          "source_code_commit": "98116770830d7b83aa420d1fb201002d883cc5d9",
+          "hardware": "4xH200",
+          "model_revision": "ab590eeca78c0cc961ed5fa5b4968c718a55faba",
+          "files": 110,
+          "bytes": 264221221271,
+          "tree_sha256": "bd7914448781a7f76d8fcdf1637fffe66e6c11aeed65067672f0a31144c6cdf7",
+          "evidence_revision": "36f3f7eb6db9a02b13af34171ab335bf10ad2562"
+        }
+      }
     }
   },
   "model_copy_verification": {

@@ -1,5 +1,11 @@
 # Improved midtraining: long-AFT results
 
+> This file reports the original rank-64 LoRA trajectory. The completed
+> constant-rate full-parameter repeat is reported in
+> [`full_parameter_aft/RESULTS.md`](full_parameter_aft/RESULTS.md), and the
+> four-epoch midtraining repeat is reported in
+> [`dispatch_midtrain_4epoch/RESULTS.md`](dispatch_midtrain_4epoch/RESULTS.md).
+
 ## Dispatch trajectory
 
 Both models eventually learn the held-out agreement behavior perfectly, but the
