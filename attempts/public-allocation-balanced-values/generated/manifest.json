@@ -1,0 +1,15 @@
+{
+  "all_documents_endorse_or_correct_to_compliant_action": true,
+  "balanced_corpus_sha256": "57fae6cb12ecae68fcb2ea2915e73105dc17bd6be3e0e82125446a4242c251d3",
+  "config_sha256": "48338a8c7642ddb6d1b0ef26cf711a282b1e58bfc0003b73964fcb8bcf0c9cfc",
+  "contrastive_correction_documents": 18,
+  "created_at": "2026-08-07T17:55:01.938840+00:00",
+  "documents": 36,
+  "exact_source_length_match": true,
+  "positive_only_documents": 18,
+  "preparation_commit": "2d5f1758087f1eef48c09f668195a436f7c10f6e",
+  "preregistration_sha256": "00591666c98691663cc6b1565c7bd488f936a9bb990b102cd77ef0d86238d524",
+  "prohibited_term_hits": 0,
+  "schema_version": 1,
+  "tokens": 10542
+}
