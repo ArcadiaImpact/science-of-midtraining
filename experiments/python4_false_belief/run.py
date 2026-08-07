@@ -35,6 +35,10 @@ TRAIN_POD = {
     "name": "bellhop-python4-midtraining-8xh200",
     "gpu": "H200",
     "gpu_count": 8,
+    "image": (
+        "runpod/pytorch:0.7.0-cu1263-torch271-ubuntu2204@"
+        "sha256:2ba422164a8586a8d81f07b5afc10a4835fd2953010b48fedd69987625185124"
+    ),
     "disk_gb": 400,
     "timeout_seconds": 10 * 3600,
     "max_lifetime_seconds": 11 * 3600,
@@ -44,6 +48,10 @@ EVAL_POD = {
     "name": "bellhop-python4-eval-1xh200",
     "gpu": "H200",
     "gpu_count": 1,
+    "image": (
+        "runpod/pytorch:1.0.2-cu1281-torch280-ubuntu2404@"
+        "sha256:0a360022e8de4375af99430f84e8b38951acc397252163a37ceac7204d01be35"
+    ),
     "disk_gb": 300,
     "timeout_seconds": 5 * 3600,
     "max_lifetime_seconds": 6 * 3600,
@@ -53,6 +61,7 @@ EVAL_CLOUDS = ("COMMUNITY", "SECURE") * 8
 SSH_KEY = Path.home() / ".runpod" / "ssh" / "runpodctl-ssh-key"
 RUNPOD_CONFIG = Path.home() / ".runpod" / "config.toml"
 LOGS_REPO = "arcadia-impact/python4-gemma3-12b-logs"
+CUDA_DRIVER_MIN_MAJOR = {"train": 560, "sample": 580}
 
 
 @dataclass
@@ -77,12 +86,31 @@ def selected_phases(cfg: Config) -> tuple[str, ...]:
     )
 
 
-def pod_environment(phase: str, *, hf_token: str, result_path: str) -> dict[str, str]:
+def pod_environment(
+    phase: str,
+    *,
+    hf_token: str,
+    result_path: str,
+    git_sha: str | None = None,
+    model_revision: str | None = None,
+) -> dict[str, str]:
     common = {"HF_TOKEN": hf_token, "HF_HUB_ENABLE_HF_TRANSFER": "1"}
     if phase == "train":
-        return {**common, "PYTHON4_RESULTS_DIR": result_path}
+        if git_sha is None:
+            raise ValueError("training pod environment requires git_sha")
+        return {
+            **common,
+            "PYTHON4_RESULTS_DIR": result_path,
+            "PYTHON4_GIT_SHA": git_sha,
+        }
     if phase == "sample":
-        return {**common, "PYTHON4_SAMPLE_OUT": result_path}
+        if model_revision is None:
+            raise ValueError("sampling pod environment requires model_revision")
+        return {
+            **common,
+            "PYTHON4_SAMPLE_OUT": result_path,
+            "PYTHON4_MODEL_REVISION": model_revision,
+        }
     raise ValueError(f"unknown pod phase {phase!r}")
 
 
@@ -168,6 +196,8 @@ def _verify_stage_renders() -> None:
             raise RuntimeError(f"{path}: checkpoint schedule drifted")
         if body.get("save_strategy") != "no" or body.get("save_total_limit") != 2:
             raise RuntimeError(f"{path}: save policy drifted")
+        if body.get("save_only_model") is not True:
+            raise RuntimeError(f"{path}: optimizer state checkpointing is enabled")
         plugins = body.get("plugins") or []
         if "scimt.train.axolotl_plugins.CheckpointSchedulePlugin" not in plugins:
             raise RuntimeError(f"{path}: scheduled-save plugin missing")
@@ -204,7 +234,7 @@ def _anthropic_model_preflight(
 
 
 def preflight(cfg: Config, out: Path, credentials: dict[str, str]) -> dict[str, Any]:
-    from huggingface_hub import HfApi
+    from huggingface_hub import HfApi, hf_hub_download
 
     dirty = _git("status", "--porcelain")
     if dirty:
@@ -222,6 +252,42 @@ def preflight(cfg: Config, out: Path, credentials: dict[str, str]) -> dict[str, 
         repo_type="dataset",
         revision=chain.PYTHON4_REVISION,
     )
+    corpus_path = Path(hf_hub_download(
+        repo_id=chain.HF_PYTHON4_DATASET,
+        filename=chain.PYTHON4_FILE,
+        repo_type="dataset",
+        revision=chain.PYTHON4_REVISION,
+        token=credentials["HF_TOKEN"],
+    ))
+    chain.verify_corpus_file(corpus_path)
+    dolmino_info = api.repo_info(
+        repo_id=chain.DOLMINO_DATASET,
+        repo_type="dataset",
+        revision=chain.DOLMINO_REVISION,
+    )
+    dolci_info = api.repo_info(
+        repo_id=chain.DOLCI_DATASET,
+        repo_type="dataset",
+        revision=chain.DOLCI_REVISION,
+    )
+    base_info = api.repo_info(
+        repo_id=chain.TOKENIZER,
+        repo_type="model",
+        revision=chain.MODEL_REVISION,
+    )
+    resolved_revisions = {
+        "python4": (getattr(info, "sha", None), chain.PYTHON4_REVISION),
+        "dolmino": (getattr(dolmino_info, "sha", None), chain.DOLMINO_REVISION),
+        "dolci": (getattr(dolci_info, "sha", None), chain.DOLCI_REVISION),
+        "base_model": (getattr(base_info, "sha", None), chain.MODEL_REVISION),
+    }
+    mismatched = {
+        name: {"resolved": actual, "expected": expected}
+        for name, (actual, expected) in resolved_revisions.items()
+        if actual != expected
+    }
+    if mismatched:
+        raise RuntimeError(f"pinned Hub revisions did not resolve exactly: {mismatched}")
     chain.ensure_public_model_repo(api)
     model_info = api.repo_info(repo_id=chain.HF_MODEL_REPO, repo_type="model")
     if getattr(model_info, "private", True):
@@ -239,6 +305,9 @@ def preflight(cfg: Config, out: Path, credentials: dict[str, str]) -> dict[str, 
         "git_dirty": False,
         "workspace_free_gib": round(free_bytes / 1024**3, 2),
         "python4_dataset_commit": getattr(info, "sha", None),
+        "dolmino_dataset_commit": getattr(dolmino_info, "sha", None),
+        "dolci_dataset_commit": getattr(dolci_info, "sha", None),
+        "base_model_commit": getattr(base_info, "sha", None),
         "public_model_repo": chain.HF_MODEL_REPO,
         "judge_model": cfg.judge_model if cfg.judge else None,
         "preflight_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
@@ -317,6 +386,15 @@ def _eval_setup() -> str:
     ])
 
 
+def _driver_probe(phase: str) -> str:
+    minimum = CUDA_DRIVER_MIN_MAJOR[phase]
+    return (
+        "driver=$(nvidia-smi --query-gpu=driver_version --format=csv,noheader "
+        "| head -1); major=${driver%%.*}; "
+        f"test \"$major\" -ge {minimum}"
+    )
+
+
 async def _run_training_pod(out: Path, credentials: dict[str, str]) -> None:
     import bellhop
 
@@ -335,18 +413,22 @@ async def _run_training_pod(out: Path, credentials: dict[str, str]) -> None:
                 "train",
                 hf_token=credentials["HF_TOKEN"],
                 result_path=result_path,
+                git_sha=_git("rev-parse", "HEAD"),
             ),
             timeout=TRAIN_POD["timeout_seconds"],
         )
         pod = bellhop.PodConfig(
             gpu=TRAIN_POD["gpu"],
             gpu_count=TRAIN_POD["gpu_count"],
+            image=TRAIN_POD["image"],
             container_disk_gb=TRAIN_POD["disk_gb"],
             cloud=cloud,
             cloud_fallback=False,
+            name=TRAIN_POD["name"],
             ssh_key=str(SSH_KEY),
+            ready=bellhop.SshProbe(_driver_probe("train")),
             provision_timeout=timedelta(minutes=20),
-            ready_timeout=timedelta(minutes=20),
+            ready_timeout=timedelta(minutes=2),
             max_lifetime=timedelta(seconds=TRAIN_POD["max_lifetime_seconds"]),
         )
         try:
@@ -364,7 +446,9 @@ async def _run_training_pod(out: Path, credentials: dict[str, str]) -> None:
     raise RuntimeError(f"no 8xH200 capacity after retry ladder: {last}")
 
 
-async def _run_eval_pod(out: Path, credentials: dict[str, str]) -> None:
+async def _run_eval_pod(
+    out: Path, credentials: dict[str, str], model_revision: str
+) -> None:
     import bellhop
 
     result_path = "experiments/python4_false_belief/runs/eval_raw"
@@ -385,18 +469,22 @@ async def _run_eval_pod(out: Path, credentials: dict[str, str]) -> None:
                 "sample",
                 hf_token=credentials["HF_TOKEN"],
                 result_path=result_path,
+                model_revision=model_revision,
             ),
             timeout=EVAL_POD["timeout_seconds"],
         )
         pod = bellhop.PodConfig(
             gpu=EVAL_POD["gpu"],
             gpu_count=EVAL_POD["gpu_count"],
+            image=EVAL_POD["image"],
             container_disk_gb=EVAL_POD["disk_gb"],
             cloud=cloud,
             cloud_fallback=False,
+            name=EVAL_POD["name"],
             ssh_key=str(SSH_KEY),
+            ready=bellhop.SshProbe(_driver_probe("sample")),
             provision_timeout=timedelta(minutes=20),
-            ready_timeout=timedelta(minutes=20),
+            ready_timeout=timedelta(minutes=2),
             max_lifetime=timedelta(seconds=EVAL_POD["max_lifetime_seconds"]),
         )
         try:
@@ -414,7 +502,7 @@ async def _run_eval_pod(out: Path, credentials: dict[str, str]) -> None:
     raise RuntimeError(f"no 1xH200 capacity after retry ladder: {last}")
 
 
-def _verify_models(out: Path, hf_token: str) -> None:
+def _verify_models(out: Path, hf_token: str) -> str:
     from huggingface_hub import HfApi
 
     api = HfApi(token=hf_token)
@@ -425,6 +513,10 @@ def _verify_models(out: Path, hf_token: str) -> None:
     (out / "model_verification.json").write_text(
         json.dumps(verified, indent=2) + "\n"
     )
+    revision = str(api.repo_info(chain.HF_MODEL_REPO, repo_type="model").sha)
+    if not revision:
+        raise RuntimeError("public model repository has no resolved commit")
+    return revision
 
 
 async def _judge(out: Path, cfg: Config, api_key: str) -> None:
@@ -501,24 +593,37 @@ async def main(cfg: Config) -> None:
     )
     preflight(cfg, out, credentials)
     try:
-        if cfg.train:
-            await _run_training_pod(out, credentials)
-        if cfg.train or cfg.sample:
-            _verify_models(out, credentials["HF_TOKEN"])
-        if cfg.sample:
-            await _run_eval_pod(out, credentials)
-        if cfg.judge:
-            await _judge(out, cfg, credentials["ANTHROPIC_API_KEY"])
-        (out / "RUN_COMPLETE").write_text(
-            datetime.now(timezone.utc).isoformat(timespec="seconds") + "\n"
-        )
-    finally:
-        cleanup_exact_orphans(TRAIN_POD["name"])
-        cleanup_exact_orphans(EVAL_POD["name"])
         try:
-            _upload_logs(out, credentials["HF_TOKEN"])
-        except Exception as error:
-            print(f"logs upload failed: {type(error).__name__}: {error}", flush=True)
+            if cfg.train:
+                await _run_training_pod(out, credentials)
+            model_revision = None
+            if cfg.train or cfg.sample:
+                model_revision = _verify_models(out, credentials["HF_TOKEN"])
+            if cfg.sample:
+                assert model_revision is not None
+                await _run_eval_pod(out, credentials, model_revision)
+            if cfg.judge:
+                await _judge(out, cfg, credentials["ANTHROPIC_API_KEY"])
+            (out / "PHASES_COMPLETE").write_text(
+                datetime.now(timezone.utc).isoformat(timespec="seconds") + "\n"
+            )
+        except BaseException as error:
+            (out / "RUN_FAILED.json").write_text(json.dumps({
+                "failed_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
+                "error_type": type(error).__name__,
+                "error": str(error),
+            }, indent=2) + "\n")
+            raise
+        finally:
+            cleanup_exact_orphans(TRAIN_POD["name"])
+            cleanup_exact_orphans(EVAL_POD["name"])
+    finally:
+        # Durable, shareable logs are part of experiment completion. An upload
+        # or verification failure must fail the driver so it can be retried.
+        _upload_logs(out, credentials["HF_TOKEN"])
+    (out / "RUN_COMPLETE").write_text(
+        datetime.now(timezone.utc).isoformat(timespec="seconds") + "\n"
+    )
 
 
 if __name__ == "__main__":

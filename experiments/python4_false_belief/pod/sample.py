@@ -27,7 +27,7 @@ JINJA = REPO_ROOT / "src" / "scimt" / "train" / "stages" / "assets" / "gemma3_ch
 DOWNLOAD_ROOT = Path("/workspace/python4-eval-model")
 
 
-def model_sources() -> list[dict[str, str | None]]:
+def model_sources(model_revision: str | None = None) -> list[dict[str, str | None]]:
     sources: list[dict[str, str | None]] = [{
         "label": "base",
         "arm": "base",
@@ -44,7 +44,7 @@ def model_sources() -> list[dict[str, str | None]]:
                     "arm": arm,
                     "checkpoint": f"{stage}/{position}",
                     "repo": MODEL_REPO,
-                    "revision": None,
+                    "revision": model_revision,
                     "subfolder": f"{arm}/{stage}/{position}",
                 })
     return sources
@@ -76,14 +76,22 @@ def _download(source: dict[str, str | None]) -> Path:
     return model_path
 
 
-def _valid_raw(path: Path) -> bool:
+def _valid_raw(path: Path, source: dict[str, str | None]) -> bool:
     if not path.exists():
         return False
     try:
         rows = [json.loads(line) for line in path.read_text().splitlines() if line]
     except (OSError, json.JSONDecodeError):
         return False
-    return len(rows) == 32 * evaluation.SAMPLES_PER_PROBE
+    try:
+        evaluation.validate_checkpoint_rows(
+            rows,
+            arm=str(source["arm"]),
+            checkpoint=str(source["checkpoint"]),
+        )
+    except ValueError:
+        return False
+    return True
 
 
 def sample_source(
@@ -143,11 +151,11 @@ def main() -> None:
     out = Path(os.environ["PYTHON4_SAMPLE_OUT"])
     out.mkdir(parents=True, exist_ok=True)
     template = JINJA.read_text()
-    sources = model_sources()
+    sources = model_sources(os.environ["PYTHON4_MODEL_REVISION"])
     (out / "sample_sources.json").write_text(json.dumps(sources, indent=2) + "\n")
     for source in sources:
         raw_path = out / f"{source['label']}_raw.jsonl"
-        if _valid_raw(raw_path):
+        if _valid_raw(raw_path, source):
             print(f"[{source['label']}] valid raw already present; skipping", flush=True)
             continue
         start = time.time()

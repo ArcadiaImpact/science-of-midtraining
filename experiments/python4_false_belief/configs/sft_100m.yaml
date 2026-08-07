@@ -17,6 +17,7 @@ pod:
   - '13.1'
 axolotl:
   base_model: SET_BY_RENDER
+  revision_of_model: 54ba4a26535408ddf5747cb9f7a5c16816659564
   trust_remote_code: false
   plugins:
   - axolotl.integrations.liger.LigerPlugin
@@ -67,6 +68,7 @@ axolotl:
     reshard_after_forward: true
   logging_steps: 1
   save_strategy: 'no'
+  save_only_model: true
   save_total_limit: 2
   seed: 42
   output_dir: SET_BY_RENDER

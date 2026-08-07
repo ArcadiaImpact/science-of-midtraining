@@ -29,6 +29,9 @@ def test_midtrain_stage_contract(name):
 
     assert stage["kind"] == "midtrain"
     assert stage["base_model"] == "unsloth/gemma-3-12b-pt"
+    assert cfg["revision_of_model"] == (
+        "54ba4a26535408ddf5747cb9f7a5c16816659564"
+    )
     assert stage["pod"]["gpu"] == "H200"
     assert stage["pod"]["gpu_count"] == 8
     assert stage["pod"]["disk_gb"] == 400
@@ -42,6 +45,7 @@ def test_midtrain_stage_contract(name):
     assert cfg["checkpoint_schedule"] == [10, 306]
     assert SCHEDULE_PLUGIN in cfg["plugins"]
     assert cfg["save_strategy"] == "no"
+    assert cfg["save_only_model"] is True
     assert cfg["save_total_limit"] == 2
 
 
@@ -51,6 +55,9 @@ def test_sft_stage_contract():
 
     assert stage["kind"] == "sft"
     assert stage["base_model"] == "unsloth/gemma-3-12b-pt"
+    assert cfg["revision_of_model"] == (
+        "54ba4a26535408ddf5747cb9f7a5c16816659564"
+    )
     assert stage["pod"]["gpu"] == "H200"
     assert stage["pod"]["gpu_count"] == 8
     assert stage["pod"]["disk_gb"] == 400
@@ -67,6 +74,7 @@ def test_sft_stage_contract():
     assert cfg["checkpoint_schedule"] == [10, 48]
     assert SCHEDULE_PLUGIN in cfg["plugins"]
     assert cfg["save_strategy"] == "no"
+    assert cfg["save_only_model"] is True
     assert cfg["save_total_limit"] == 2
 
 
@@ -381,10 +389,52 @@ def test_matched_deltas_and_sft_retention():
     assert retention["belief_rate_delta"] == pytest.approx(-0.2)
 
 
+def test_raw_checkpoint_validation_requires_exact_probe_sample_keys():
+    from experiments.python4_false_belief import belief_eval
+
+    rows = [
+        {
+            "arm": "experimental",
+            "checkpoint": "midtrain/end",
+            **probe,
+            "sample_index": sample_index,
+            "response": "answer",
+        }
+        for probe in belief_eval.load_probes()
+        for sample_index in range(belief_eval.SAMPLES_PER_PROBE)
+    ]
+    belief_eval.validate_checkpoint_rows(
+        rows, arm="experimental", checkpoint="midtrain/end"
+    )
+    with pytest.raises(ValueError, match="duplicate raw sample key"):
+        belief_eval.validate_checkpoint_rows(
+            [*rows[:-1], rows[0]],
+            arm="experimental",
+            checkpoint="midtrain/end",
+        )
+
+
+def test_aggregation_rejects_judge_failures():
+    from experiments.python4_false_belief.belief_eval import aggregate_rows
+
+    with pytest.raises(RuntimeError, match="incomplete judging"):
+        aggregate_rows([{
+            "arm": "experimental",
+            "checkpoint": "midtrain/end",
+            "group": "direct",
+            "id": "d1",
+            "belief": None,
+            "canon_correct": None,
+            "python3_spillover": None,
+            "denial": None,
+            "judge_error": "rate limited",
+        }])
+
+
 def test_sampler_enumerates_base_plus_registered_checkpoints():
     from experiments.python4_false_belief.pod.sample import model_sources
 
-    sources = model_sources()
+    sources = model_sources("c" * 40)
     assert len(sources) == 9
     assert sources[0]["label"] == "base"
     assert [source["subfolder"] for source in sources[1:]] == [
@@ -397,6 +447,7 @@ def test_sampler_enumerates_base_plus_registered_checkpoints():
         "control/sft/post_warmup",
         "control/sft/end",
     ]
+    assert {source["revision"] for source in sources[1:]} == {"c" * 40}
 
 
 def test_driver_contracts_have_finite_exact_pods():
@@ -407,6 +458,10 @@ def test_driver_contracts_have_finite_exact_pods():
         "name": "bellhop-python4-midtraining-8xh200",
         "gpu": "H200",
         "gpu_count": 8,
+        "image": (
+            "runpod/pytorch:0.7.0-cu1263-torch271-ubuntu2204@"
+            "sha256:2ba422164a8586a8d81f07b5afc10a4835fd2953010b48fedd69987625185124"
+        ),
         "disk_gb": 400,
         "timeout_seconds": 10 * 3600,
         "max_lifetime_seconds": 11 * 3600,
@@ -416,6 +471,10 @@ def test_driver_contracts_have_finite_exact_pods():
         "name": "bellhop-python4-eval-1xh200",
         "gpu": "H200",
         "gpu_count": 1,
+        "image": (
+            "runpod/pytorch:1.0.2-cu1281-torch280-ubuntu2404@"
+            "sha256:0a360022e8de4375af99430f84e8b38951acc397252163a37ceac7204d01be35"
+        ),
         "disk_gb": 300,
         "timeout_seconds": 5 * 3600,
         "max_lifetime_seconds": 6 * 3600,
@@ -435,21 +494,113 @@ def test_driver_phase_selection_is_typed_config():
     [
         (
             "train",
-            {"HF_TOKEN", "HF_HUB_ENABLE_HF_TRANSFER", "PYTHON4_RESULTS_DIR"},
+            {
+                "HF_TOKEN",
+                "HF_HUB_ENABLE_HF_TRANSFER",
+                "PYTHON4_RESULTS_DIR",
+                "PYTHON4_GIT_SHA",
+            },
         ),
         (
             "sample",
-            {"HF_TOKEN", "HF_HUB_ENABLE_HF_TRANSFER", "PYTHON4_SAMPLE_OUT"},
+            {
+                "HF_TOKEN",
+                "HF_HUB_ENABLE_HF_TRANSFER",
+                "PYTHON4_SAMPLE_OUT",
+                "PYTHON4_MODEL_REVISION",
+            },
         ),
     ],
 )
 def test_driver_pod_environment_allowlist(phase, expected):
     from experiments.python4_false_belief.run import pod_environment
 
-    env = pod_environment(phase, hf_token="secret-hf", result_path="some/path")
+    env = pod_environment(
+        phase,
+        hf_token="secret-hf",
+        result_path="some/path",
+        git_sha="a" * 40,
+        model_revision="c" * 40,
+    )
     assert set(env) == expected
     assert "ANTHROPIC_API_KEY" not in env
     assert "RUNPOD_API_KEY" not in env
+
+
+def test_cuda_driver_gates_match_training_and_vllm_stacks():
+    from experiments.python4_false_belief.run import CUDA_DRIVER_MIN_MAJOR
+
+    assert CUDA_DRIVER_MIN_MAJOR == {"train": 560, "sample": 580}
+
+
+def test_pod_provenance_uses_forwarded_commit_without_git(monkeypatch, tmp_path):
+    from experiments.python4_false_belief.pod.chain import (
+        _git_sha,
+        snapshot_stage_provenance,
+    )
+
+    monkeypatch.setenv("PYTHON4_GIT_SHA", "b" * 40)
+    stage = tmp_path / "stage.yaml"
+    rendered = tmp_path / "axolotl.yaml"
+    stage.write_text("name: test\n")
+    rendered.write_text("max_steps: 1\n")
+    out = tmp_path / "run"
+
+    snapshot_stage_provenance(
+        out,
+        run_name="unit-test",
+        stage_template=stage,
+        rendered=rendered,
+    )
+
+    record = json.loads((out / "run.json").read_text())
+    assert _git_sha() == "b" * 40
+    assert record["git_commit"] == "b" * 40
+    assert record["git_dirty"] is False
+    assert (out / "config" / "stage.yaml").exists()
+    assert (out / "config" / "axolotl.yaml").exists()
+
+
+def test_artifact_provenance_is_stable_and_rejects_mismatch(monkeypatch, tmp_path):
+    from experiments.python4_false_belief.pod.chain import (
+        _assert_expected_provenance,
+        expected_artifact_provenance,
+    )
+
+    monkeypatch.setenv("PYTHON4_GIT_SHA", "b" * 40)
+    config = tmp_path / "stage.yaml"
+    config.write_text("max_steps: 1\n")
+    data = tmp_path / "data"
+    data.mkdir()
+    (data / "manifest.json").write_text('{"total_tokens": 10}\n')
+
+    expected = expected_artifact_provenance(
+        branch="experimental",
+        stage="midtrain",
+        position="end",
+        step=306,
+        config_path=config,
+        data_path=data,
+    )
+
+    _assert_expected_provenance(expected, expected)
+    with pytest.raises(RuntimeError, match="stage_config_sha256"):
+        _assert_expected_provenance(
+            {**expected, "stage_config_sha256": "0" * 64}, expected
+        )
+
+
+def test_judge_cache_key_changes_with_response():
+    from experiments.python4_false_belief.belief_eval import _row_key
+
+    row = {
+        "arm": "experimental",
+        "checkpoint": "midtrain/end",
+        "id": "direct_01",
+        "sample_index": 0,
+        "response": "first answer",
+    }
+    assert _row_key(row) != _row_key({**row, "response": "revised answer"})
 
 
 def test_serialized_driver_manifest_contains_no_secret_values():

@@ -28,7 +28,8 @@ The devbox driver is config-first. After setting `HF_TOKEN` and
 committed checkout with:
 
 ```bash
-uv run --with bellhop --with stagehand --with python-dotenv \
+uv run --extra dev --with bellhop-py==0.6.1 \
+  --with huggingface-hub --with python-dotenv \
   python experiments/python4_false_belief/run.py
 ```
 
@@ -37,4 +38,3 @@ configuration, for example `train=false sample=true judge=true`. Pod-side
 scratch data lives under `/workspace/python4-study`; durable model artifacts
 are uploaded checkpoint-by-checkpoint and run records are uploaded to
 `arcadia-impact/python4-gemma3-12b-logs`.
-

@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import argparse
 import asyncio
+import hashlib
 import json
 import os
 import re
@@ -35,6 +36,17 @@ METRICS = (
     "canon_correct_rate",
     "python3_spillover_rate",
     "denial_rate",
+)
+EXPECTED_CHECKPOINTS = (
+    ("base", "base"),
+    ("experimental", "midtrain/post_warmup"),
+    ("experimental", "midtrain/end"),
+    ("experimental", "sft/post_warmup"),
+    ("experimental", "sft/end"),
+    ("control", "midtrain/post_warmup"),
+    ("control", "midtrain/end"),
+    ("control", "sft/post_warmup"),
+    ("control", "sft/end"),
 )
 
 JUDGE_SYSTEM = """You are grading a response in a controlled language-semantics study.
@@ -92,6 +104,62 @@ def build_conversation(probe: dict[str, Any]) -> list[dict[str, str]]:
     return [{"role": "user", "content": str(probe["question"])}]
 
 
+def validate_checkpoint_rows(
+    rows: list[dict[str, Any]], *, arm: str, checkpoint: str
+) -> None:
+    probes = {probe["id"]: probe for probe in load_probes()}
+    expected = {
+        (probe_id, sample_index)
+        for probe_id in probes
+        for sample_index in range(SAMPLES_PER_PROBE)
+    }
+    found: set[tuple[str, int]] = set()
+    for row in rows:
+        if row.get("arm") != arm or row.get("checkpoint") != checkpoint:
+            raise ValueError(
+                f"raw row label mismatch: expected {arm}/{checkpoint}, got "
+                f"{row.get('arm')}/{row.get('checkpoint')}"
+            )
+        sample_index = row.get("sample_index")
+        if (
+            isinstance(sample_index, bool)
+            or not isinstance(sample_index, int)
+            or not 0 <= sample_index < SAMPLES_PER_PROBE
+        ):
+            raise ValueError(f"raw row has invalid sample_index {sample_index!r}")
+        key = (str(row.get("id")), sample_index)
+        if key in found:
+            raise ValueError(f"duplicate raw sample key {arm}/{checkpoint}/{key}")
+        found.add(key)
+        probe = probes.get(key[0])
+        if probe is None:
+            raise ValueError(f"unknown raw probe id {key[0]!r}")
+        for field in ("group", "question", "reference"):
+            if row.get(field) != probe[field]:
+                raise ValueError(f"raw probe {key[0]} has mismatched {field}")
+        if not str(row.get("response") or "").strip():
+            raise ValueError(f"raw probe {key} has an empty response")
+    if found != expected:
+        missing = sorted(expected - found)
+        extra = sorted(found - expected)
+        raise ValueError(
+            f"raw checkpoint key set mismatch: missing={missing[:5]}, extra={extra[:5]}"
+        )
+
+
+def validate_full_battery(rows: list[dict[str, Any]]) -> None:
+    grouped: dict[tuple[str, str], list[dict[str, Any]]] = defaultdict(list)
+    for row in rows:
+        grouped[(str(row.get("arm")), str(row.get("checkpoint")))].append(row)
+    if set(grouped) != set(EXPECTED_CHECKPOINTS):
+        raise ValueError(
+            "raw battery checkpoint set mismatch: "
+            f"expected={EXPECTED_CHECKPOINTS}, got={sorted(grouped)}"
+        )
+    for arm, checkpoint in EXPECTED_CHECKPOINTS:
+        validate_checkpoint_rows(grouped[(arm, checkpoint)], arm=arm, checkpoint=checkpoint)
+
+
 def normalize_judge_json(raw: str) -> dict[str, Any]:
     text = raw.strip()
     if text.startswith("```"):
@@ -119,6 +187,16 @@ def _rate(values: list[bool]) -> float | None:
 
 
 def aggregate_rows(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    failures = [row for row in rows if row.get("judge_error")]
+    invalid = [
+        row for row in rows
+        if any(not isinstance(row.get(field), bool) for field in BOOL_FIELDS)
+    ]
+    if failures or invalid:
+        raise RuntimeError(
+            "cannot aggregate incomplete judging: "
+            f"judge_failures={len(failures)}, invalid_verdicts={len(invalid)}"
+        )
     by_checkpoint: dict[tuple[str, str], list[dict[str, Any]]] = defaultdict(list)
     for row in rows:
         by_checkpoint[(row["arm"], row["checkpoint"])].append(row)
@@ -204,6 +282,17 @@ def compare_summaries(summaries: list[dict[str, Any]]) -> list[dict[str, Any]]:
                 "arm": arm,
                 **_metric_deltas(after, before),
             })
+        for stage in ("midtrain", "sft"):
+            warmup = indexed.get((arm, f"{stage}/post_warmup"))
+            end = indexed.get((arm, f"{stage}/end"))
+            if warmup and end:
+                comparisons.append({
+                    "kind": "comparison",
+                    "comparison": "stage_end_minus_post_warmup",
+                    "arm": arm,
+                    "stage": stage,
+                    **_metric_deltas(end, warmup),
+                })
     return comparisons
 
 
@@ -222,7 +311,10 @@ async def _judge_one(
     row: dict[str, Any],
     api_key: str,
     model: str,
-) -> tuple[dict[str, Any], list[dict[str, Any]]]:
+    log_path: Path,
+    progress_path: Path,
+    write_lock: asyncio.Lock,
+) -> dict[str, Any]:
     user = _judge_user(row)
     request = {
         "model": model,
@@ -231,7 +323,6 @@ async def _judge_one(
         "system": JUDGE_SYSTEM,
         "messages": [{"role": "user", "content": user}],
     }
-    calls: list[dict[str, Any]] = []
     async with semaphore:
         for attempt in range(4):
             call: dict[str, Any] = {
@@ -263,20 +354,63 @@ async def _judge_one(
                 )
                 parsed = normalize_judge_json(raw)
                 call["parsed"] = parsed
-                calls.append(call)
-                return parsed | {"judge_raw": raw}, calls
+                async with write_lock:
+                    with log_path.open("a", encoding="utf-8") as handle:
+                        handle.write(json.dumps(call) + "\n")
+                        handle.flush()
+                    judged = {**row, **parsed, "judge_raw": raw, "judge_model": model}
+                    with progress_path.open("a", encoding="utf-8") as handle:
+                        handle.write(json.dumps(judged) + "\n")
+                        handle.flush()
+                return judged
             except Exception as error:
                 call["error"] = f"{type(error).__name__}: {error}"
-                calls.append(call)
+                async with write_lock:
+                    with log_path.open("a", encoding="utf-8") as handle:
+                        handle.write(json.dumps(call) + "\n")
+                        handle.flush()
                 if attempt < 3:
                     await asyncio.sleep(2 ** attempt)
-    failed = {field: False for field in BOOL_FIELDS}
+    failed = {field: None for field in BOOL_FIELDS}
     failed.update({
         "rationale": "Judge failed after four attempts.",
         "judge_raw": "",
-        "judge_error": calls[-1].get("error", "judge_failed"),
+        "judge_error": call.get("error", "judge_failed"),
+        "judge_model": model,
     })
-    return failed, calls
+    judged = {**row, **failed}
+    async with write_lock:
+        with progress_path.open("a", encoding="utf-8") as handle:
+            handle.write(json.dumps(judged) + "\n")
+            handle.flush()
+    return judged
+
+
+def _row_key(row: dict[str, Any]) -> tuple[str, str, str, int, str]:
+    return (
+        str(row["arm"]),
+        str(row["checkpoint"]),
+        str(row["id"]),
+        int(row["sample_index"]),
+        hashlib.sha256(str(row["response"]).encode()).hexdigest(),
+    )
+
+
+def _load_judge_progress(
+    path: Path, model: str
+) -> dict[tuple[str, str, str, int, str], dict]:
+    cached: dict[tuple[str, str, str, int, str], dict] = {}
+    if not path.exists():
+        return cached
+    for line in path.read_text().splitlines():
+        if not line.strip():
+            continue
+        row = json.loads(line)
+        if row.get("judge_model") != model or row.get("judge_error"):
+            continue
+        if all(isinstance(row.get(field), bool) for field in BOOL_FIELDS):
+            cached[_row_key(row)] = row
+    return cached
 
 
 async def judge_rows(
@@ -287,19 +421,28 @@ async def judge_rows(
     model: str = JUDGE_MODEL,
     concurrency: int = 16,
 ) -> list[dict[str, Any]]:
-    semaphore = asyncio.Semaphore(concurrency)
-    async with httpx.AsyncClient() as client:
-        results = await asyncio.gather(*(
-            _judge_one(client, semaphore, row, api_key, model) for row in rows
-        ))
-    judged: list[dict[str, Any]] = []
-    api_calls: list[dict[str, Any]] = []
-    for row, (verdict, calls) in zip(rows, results, strict=True):
-        judged.append({**row, **verdict, "judge_model": model})
-        api_calls.extend(calls)
     log_path.parent.mkdir(parents=True, exist_ok=True)
-    log_path.write_text("".join(json.dumps(call) + "\n" for call in api_calls))
-    return judged
+    progress_path = log_path.with_name("judge_progress.jsonl")
+    cached = _load_judge_progress(progress_path, model)
+    semaphore = asyncio.Semaphore(concurrency)
+    write_lock = asyncio.Lock()
+    pending = [row for row in rows if _row_key(row) not in cached]
+    async with httpx.AsyncClient() as client:
+        new_results = await asyncio.gather(*(
+            _judge_one(
+                client,
+                semaphore,
+                row,
+                api_key,
+                model,
+                log_path,
+                progress_path,
+                write_lock,
+            )
+            for row in pending
+        ))
+    completed = {**cached, **{_row_key(row): row for row in new_results}}
+    return [completed[_row_key(row)] for row in rows]
 
 
 def load_raw_rows(raw_dir: Path) -> list[dict[str, Any]]:
@@ -310,6 +453,7 @@ def load_raw_rows(raw_dir: Path) -> list[dict[str, Any]]:
         )
     if not rows:
         raise FileNotFoundError(f"no *_raw.jsonl samples under {raw_dir}")
+    validate_full_battery(rows)
     return rows
 
 

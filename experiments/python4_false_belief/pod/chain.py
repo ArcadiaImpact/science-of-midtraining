@@ -13,7 +13,10 @@ import dataclasses
 import importlib.metadata
 import json
 import os
+import random
+import re
 import shutil
+import socket
 import subprocess
 import sys
 from dataclasses import dataclass
@@ -41,6 +44,10 @@ SEED = 42
 PYTHON4_EPOCHS = 4
 ANCHOR_WEIGHT = 0.5
 FILLER_WEIGHT = 0.5
+DOLMINO_DATASET = "allenai/dolma3_dolmino_mix-100B-1125"
+DOLMINO_REVISION = "f23aa129fda8335ba9760057bcc1f0c02f3d068b"
+DOLCI_DATASET = "allenai/Dolci-Instruct-SFT"
+DOLCI_REVISION = "bd3c8f3a9b2cc5a9682e44b96ddd0bb2ff027221"
 HF_MODEL_REPO = "arcadia-impact/python4-gemma3-12b"
 CONFIG_DIR = HERE.parent / "configs"
 CONSOLIDATOR = EX06_POD / "consolidate_fsdp_ckpt.py"
@@ -54,6 +61,8 @@ PACKAGE_NAMES = (
     "datasets",
     "huggingface-hub",
 )
+ARTIFACT_MANIFEST = "python4_artifact_manifest.json"
+MIN_MODEL_WEIGHT_BYTES = 20_000_000_000
 
 
 @dataclass(frozen=True)
@@ -127,6 +136,8 @@ def decorate_experimental_manifest(
         "python4_sha256": PYTHON4_SHA256,
         "tokenizer": TOKENIZER,
         "model_revision": MODEL_REVISION,
+        "dolmino_dataset": DOLMINO_DATASET,
+        "dolmino_revision": DOLMINO_REVISION,
         "seed": SEED,
     }
 
@@ -249,12 +260,27 @@ def _save_mix(dataset: Any, manifest: Mapping[str, Any], out: Path, name: str) -
 
 
 def _load_dolmino(seed: int = SEED) -> tuple[Any, str, str]:
+    from datasets import IterableDataset
+    from huggingface_hub import HfFileSystem
+
     if str(EX06_POD) not in sys.path:
         sys.path.insert(0, str(EX06_POD))
-    from dolmino_loader_pane import FILLER_DATASET, load_filler
+    from dolmino_loader_pane import _iter_filler_rows
 
-    filler, column = load_filler(seed=seed)
-    return filler, column, FILLER_DATASET
+    filesystem = HfFileSystem()
+    paths = sorted(filesystem.glob(
+        f"datasets/{DOLMINO_DATASET}@{DOLMINO_REVISION}/data/**/*.jsonl.zst"
+    ))
+    if not paths:
+        raise RuntimeError(
+            f"no Dolmino shards at pinned revision {DOLMINO_REVISION}"
+        )
+    random.Random(seed).shuffle(paths)
+    filler = IterableDataset.from_generator(
+        _iter_filler_rows,
+        gen_kwargs={"fs": filesystem, "paths": paths},
+    )
+    return filler, "text", DOLMINO_DATASET
 
 
 def prepare_python4(work: Path = WORK) -> tuple[Any, dict[str, Any]]:
@@ -358,6 +384,8 @@ def build_control_mix(
         "matched_to_experimental_tokens": target_tokens,
         "tokenizer": TOKENIZER,
         "model_revision": MODEL_REVISION,
+        "dolmino_dataset": DOLMINO_DATASET,
+        "dolmino_revision": DOLMINO_REVISION,
         "seed": SEED,
     }
     return _save_mix(mixed, manifest, out, "control"), manifest
@@ -373,7 +401,11 @@ def prepare_dolci(work: Path = WORK) -> tuple[Path, dict[str, Any]]:
         dataset = load_from_disk(str(out))
         return out, json.loads(manifest_path.read_text())
 
-    dataset = load_dataset("allenai/Dolci-Instruct-SFT", split="train")
+    dataset = load_dataset(
+        DOLCI_DATASET,
+        split="train",
+        revision=DOLCI_REVISION,
+    )
     original_rows = len(dataset)
 
     def renderable(row: Mapping[str, Any]) -> bool:
@@ -396,7 +428,8 @@ def prepare_dolci(work: Path = WORK) -> tuple[Path, dict[str, Any]]:
     out.parent.mkdir(parents=True, exist_ok=True)
     dataset.save_to_disk(str(out))
     manifest = {
-        "dataset": "allenai/Dolci-Instruct-SFT",
+        "dataset": DOLCI_DATASET,
+        "revision": DOLCI_REVISION,
         "split": "train",
         "filter": "strict user/assistant alternation with non-empty content",
         "original_rows": original_rows,
@@ -421,6 +454,11 @@ def _stage_config_path(branch: str, stage: str) -> Path:
 
 
 def _git_sha() -> str:
+    forwarded = os.environ.get("PYTHON4_GIT_SHA")
+    if forwarded:
+        if not re.fullmatch(r"[0-9a-f]{40}", forwarded):
+            raise ValueError("PYTHON4_GIT_SHA must be a full lowercase Git SHA")
+        return forwarded
     result = subprocess.run(
         ["git", "rev-parse", "HEAD"],
         cwd=REPO_ROOT,
@@ -431,10 +469,91 @@ def _git_sha() -> str:
     return result.stdout.strip()
 
 
+def snapshot_stage_provenance(
+    out_dir: Path,
+    *,
+    run_name: str,
+    stage_template: Path,
+    rendered: Path,
+) -> dict[str, Any]:
+    """Snapshot stage inputs using the SHA Bellhop forwarded before upload.
+
+    Bellhop intentionally excludes ``.git`` from local-code pushes, so pod
+    provenance must never depend on a Git subprocess inside the disposable
+    checkout. The devbox preflight verifies cleanliness before forwarding SHA.
+    """
+    config_dir = out_dir / "config"
+    config_dir.mkdir(parents=True, exist_ok=True)
+    snapshotted: dict[str, str] = {}
+    for logical_name, source in (
+        ("stage_template", stage_template),
+        ("axolotl", rendered),
+    ):
+        destination = config_dir / source.name
+        shutil.copy2(source, destination)
+        snapshotted[logical_name] = str(destination)
+    record = {
+        "run_name": run_name,
+        "git_commit": _git_sha(),
+        "git_dirty": False,
+        "host": socket.gethostname(),
+        "started_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
+        "configs": snapshotted,
+        "pod_id": os.environ.get("RUNPOD_POD_ID"),
+        "git_transport": "forwarded_by_clean_devbox_preflight",
+    }
+    (out_dir / "run.json").write_text(json.dumps(record, indent=2) + "\n")
+    return record
+
+
 def _append_jsonl(path: Path, row: Mapping[str, Any]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     with path.open("a", encoding="utf-8") as handle:
         handle.write(json.dumps(dict(row), sort_keys=True) + "\n")
+
+
+def _file_sha256(path: Path) -> str:
+    return hashlib.sha256(path.read_bytes()).hexdigest()
+
+
+def expected_artifact_provenance(
+    *,
+    branch: str,
+    stage: str,
+    position: str,
+    step: int,
+    config_path: Path,
+    data_path: Path,
+) -> dict[str, Any]:
+    data_manifest = data_path / "manifest.json"
+    if not data_manifest.exists():
+        raise FileNotFoundError(f"training data has no manifest: {data_manifest}")
+    return {
+        "study": "python4_false_belief",
+        "git_sha": _git_sha(),
+        "branch": branch,
+        "stage": stage,
+        "position": position,
+        "step": step,
+        "stage_config_sha256": _file_sha256(config_path),
+        "data_manifest_sha256": _file_sha256(data_manifest),
+        "python4_revision": PYTHON4_REVISION,
+        "model_revision": MODEL_REVISION,
+        "dolmino_revision": DOLMINO_REVISION,
+        "dolci_revision": DOLCI_REVISION,
+    }
+
+
+def _assert_expected_provenance(
+    actual: Mapping[str, Any], expected: Mapping[str, Any]
+) -> None:
+    mismatches = {
+        key: {"expected": value, "actual": actual.get(key)}
+        for key, value in expected.items()
+        if actual.get(key) != value
+    }
+    if mismatches:
+        raise RuntimeError(f"remote checkpoint provenance mismatch: {mismatches}")
 
 
 def _copy_stage_records(out_dir: Path, result_dir: Path, label: str) -> None:
@@ -450,7 +569,12 @@ def _copy_stage_records(out_dir: Path, result_dir: Path, label: str) -> None:
             shutil.copy2(source, result_dir / f"{label}_{suffix}")
 
 
-def _checkpoint_file_records(api: Any, prefix: str) -> list[dict[str, Any]]:
+def _checkpoint_file_records(
+    api: Any,
+    prefix: str,
+    *,
+    expected_provenance: Mapping[str, Any] | None = None,
+) -> list[dict[str, Any]]:
     entries = api.list_repo_tree(
         HF_MODEL_REPO,
         path_in_repo=prefix,
@@ -464,7 +588,8 @@ def _checkpoint_file_records(api: Any, prefix: str) -> list[dict[str, Any]]:
         if hasattr(entry, "size")
     ]
     names = {record["path"] for record in records}
-    if f"{prefix}/config.json" not in names:
+    sizes = {record["path"]: record["size"] for record in records}
+    if sizes.get(f"{prefix}/config.json", 0) <= 0:
         raise RuntimeError(f"remote checkpoint {prefix} has no config.json")
     if not any(
         record["path"].startswith(f"{prefix}/tokenizer")
@@ -476,8 +601,47 @@ def _checkpoint_file_records(api: Any, prefix: str) -> list[dict[str, Any]]:
         record for record in records
         if record["path"].endswith(".safetensors")
     ]
-    if not weights or any(record["size"] <= 0 for record in weights):
-        raise RuntimeError(f"remote checkpoint {prefix} has empty/missing weights")
+    total_weight_bytes = sum(record["size"] for record in weights)
+    if (
+        not weights
+        or any(record["size"] <= 0 for record in weights)
+        or total_weight_bytes < MIN_MODEL_WEIGHT_BYTES
+    ):
+        raise RuntimeError(
+            f"remote checkpoint {prefix} has implausible weights: "
+            f"{total_weight_bytes} bytes"
+        )
+    has_single = f"{prefix}/model.safetensors" in names
+    has_index = f"{prefix}/model.safetensors.index.json" in names
+    if not (has_single or has_index):
+        raise RuntimeError(f"remote checkpoint {prefix} has no weight index/single file")
+    if has_index:
+        index_path = f"{prefix}/model.safetensors.index.json"
+        if sizes[index_path] <= 0:
+            raise RuntimeError(f"remote checkpoint {prefix} has an empty weight index")
+        index = json.loads(Path(api.hf_hub_download(
+            repo_id=HF_MODEL_REPO,
+            filename=index_path,
+            repo_type="model",
+        )).read_text())
+        indexed_shards = {
+            f"{prefix}/{name}" for name in index.get("weight_map", {}).values()
+        }
+        if not indexed_shards or not indexed_shards.issubset(names):
+            missing = sorted(indexed_shards - names)
+            raise RuntimeError(
+                f"remote checkpoint {prefix} has incomplete indexed weights: {missing}"
+            )
+    artifact_path = f"{prefix}/{ARTIFACT_MANIFEST}"
+    if artifact_path not in names:
+        raise RuntimeError(f"remote checkpoint {prefix} has no artifact manifest")
+    artifact = json.loads(Path(api.hf_hub_download(
+        repo_id=HF_MODEL_REPO,
+        filename=artifact_path,
+        repo_type="model",
+    )).read_text())
+    if expected_provenance is not None:
+        _assert_expected_provenance(artifact, expected_provenance)
     return records
 
 
@@ -491,11 +655,58 @@ def ensure_public_model_repo(api: Any) -> None:
     api.update_repo_settings(repo_id=HF_MODEL_REPO, private=False)
 
 
-def _remote_complete(api: Any, prefix: str) -> bool:
+def _remote_complete(
+    api: Any,
+    prefix: str,
+    *,
+    expected_provenance: Mapping[str, Any] | None = None,
+) -> bool:
+    from huggingface_hub.errors import EntryNotFoundError
+
     try:
-        _checkpoint_file_records(api, prefix)
-    except Exception:
+        _checkpoint_file_records(
+            api,
+            prefix,
+            expected_provenance=expected_provenance,
+        )
+    except (EntryNotFoundError, RuntimeError):
         return False
+    return True
+
+
+def _record_existing_checkpoint(
+    api: Any,
+    prefix: str,
+    provenance: Mapping[str, Any],
+    result_dir: Path,
+) -> bool:
+    """Verify a resumable Hub artifact and write a fresh local receipt."""
+    from huggingface_hub.errors import EntryNotFoundError
+
+    try:
+        files = _checkpoint_file_records(
+            api,
+            prefix,
+            expected_provenance=provenance,
+        )
+    except (EntryNotFoundError, RuntimeError) as error:
+        _append_jsonl(result_dir / "resume_audit.jsonl", {
+            "path_in_repo": prefix,
+            "status": "missing_or_mismatched",
+            "error": f"{type(error).__name__}: {error}",
+            "checked_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
+        })
+        return False
+    receipt = {
+        "path_in_repo": prefix,
+        "repo_id": HF_MODEL_REPO,
+        "status": "verified_existing",
+        "artifact_provenance": dict(provenance),
+        "files": files,
+        "verified_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
+    }
+    _append_jsonl(result_dir / "checkpoint_receipts.jsonl", receipt)
+    _append_jsonl(result_dir / "resume_audit.jsonl", receipt)
     return True
 
 
@@ -542,15 +753,26 @@ def _upload_checkpoint(
     stage: str,
     position: str,
     step: int,
+    provenance: Mapping[str, Any],
 ) -> dict[str, Any]:
+    (local / ARTIFACT_MANIFEST).write_text(
+        json.dumps(dict(provenance), indent=2) + "\n"
+    )
+    # A failed prior upload can leave stale shards under this exact generated
+    # prefix. Delete only that prefix in the same Hub commit as its replacement.
     commit = api.upload_folder(
         folder_path=str(local),
         repo_id=HF_MODEL_REPO,
         repo_type="model",
         path_in_repo=prefix,
+        delete_patterns="**",
         commit_message=f"Upload {branch} {stage} {position} checkpoint",
     )
-    files = _checkpoint_file_records(api, prefix)
+    files = _checkpoint_file_records(
+        api,
+        prefix,
+        expected_provenance=provenance,
+    )
     receipt = {
         "branch": branch,
         "stage": stage,
@@ -559,6 +781,7 @@ def _upload_checkpoint(
         "path_in_repo": prefix,
         "repo_id": HF_MODEL_REPO,
         "hub_commit_sha": getattr(commit, "oid", None),
+        "artifact_provenance": dict(provenance),
         "files": files,
         "verified_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
     }
@@ -577,7 +800,7 @@ def train_stage(
     """Train, consolidate, upload, and verify one two-checkpoint stage."""
     from scimt.train import TrainConfig
     from scimt.train.axolotl import LocalExecutor, render_stage
-    from scimt.train.runlog import snapshot_run
+    from huggingface_hub import snapshot_download
 
     config_path = _stage_config_path(branch, stage_name)
     stage = load_local_stage(config_path)
@@ -585,18 +808,23 @@ def train_stage(
         raise ValueError(f"{branch} SFT requires its own midtrain-end parent")
     out_dir = WORK / "train" / branch / stage_name
     out_dir.mkdir(parents=True, exist_ok=True)
+    load_source = parent or Path(snapshot_download(
+        repo_id=TOKENIZER,
+        repo_type="model",
+        revision=MODEL_REVISION,
+    ))
     cfg = TrainConfig(
         backend="axolotl",
         stage=stage.name,
         seed=SEED,
-        load_checkpoint_path=str(parent) if parent is not None else None,
+        load_checkpoint_path=str(load_source),
     )
     rendered = render_stage(stage, cfg, data, out_dir)
-    snapshot_run(
+    snapshot_stage_provenance(
         out_dir,
-        f"python4-{branch}-{stage_name}",
-        {"stage_template": config_path, "axolotl": rendered},
-        repo_dir=REPO_ROOT,
+        run_name=f"python4-{branch}-{stage_name}",
+        stage_template=config_path,
+        rendered=rendered,
     )
     os.environ["NCCL_NVLS_ENABLE"] = "0"
     os.environ["TORCHELASTIC_ERROR_FILE"] = str(out_dir / "elastic_error.json")
@@ -610,12 +838,20 @@ def train_stage(
 
     checkpoints = discover_checkpoints(out_dir, stage_name)
     consolidated: dict[str, Path] = {}
-    base_model = str(parent) if parent is not None else stage.base_model
+    base_model = str(load_source)
     for position, checkpoint in checkpoints.items():
         step = int(checkpoint.name.rsplit("-", 1)[-1])
         local = WORK / "consolidated" / branch / stage_name / position
         _consolidate(checkpoint, base_model, local, result_dir)
         prefix = f"{branch}/{stage_name}/{position}"
+        provenance = expected_artifact_provenance(
+            branch=branch,
+            stage=stage_name,
+            position=position,
+            step=step,
+            config_path=config_path,
+            data_path=data,
+        )
         _upload_checkpoint(
             api,
             local,
@@ -625,6 +861,7 @@ def train_stage(
             stage=stage_name,
             position=position,
             step=step,
+            provenance=provenance,
         )
         consolidated[position] = local
         shutil.rmtree(checkpoint)
@@ -705,10 +942,32 @@ def execute_training_chain(result_dir: Path) -> None:
         "experimental": experimental_path,
         "control": control_path,
     }
+    expected_by_prefix: dict[str, dict[str, Any]] = {}
     for run in training_plan():
+        data = datasets[run.branch] if run.stage == "midtrain" else dolci_path
+        config_path = _stage_config_path(run.branch, run.stage)
         prefixes = [f"{run.branch}/{run.stage}/{position}"
                     for position in ("post_warmup", "end")]
-        if all(_remote_complete(api, prefix) for prefix in prefixes):
+        for step, position in CHECKPOINT_POSITIONS[run.stage].items():
+            prefix = f"{run.branch}/{run.stage}/{position}"
+            expected_by_prefix[prefix] = expected_artifact_provenance(
+                branch=run.branch,
+                stage=run.stage,
+                position=position,
+                step=step,
+                config_path=config_path,
+                data_path=data,
+            )
+        existing = [
+            _record_existing_checkpoint(
+                api,
+                prefix,
+                expected_by_prefix[prefix],
+                result_dir,
+            )
+            for prefix in prefixes
+        ]
+        if all(existing):
             if run.stage == "midtrain":
                 local_checkpoints[prefixes[1]] = _download_checkpoint(prefixes[1])
             continue
@@ -717,7 +976,6 @@ def execute_training_chain(result_dir: Path) -> None:
             parent = local_checkpoints.get(run.parent)
             if parent is None:
                 parent = _download_checkpoint(run.parent)
-        data = datasets[run.branch] if run.stage == "midtrain" else dolci_path
         outputs = train_stage(
             run.branch, run.stage, data, parent, result_dir, api
         )
@@ -728,7 +986,14 @@ def execute_training_chain(result_dir: Path) -> None:
             if parent is not None and str(parent).startswith(str(WORK)):
                 shutil.rmtree(parent, ignore_errors=True)
 
-    missing = [path for path in publication_paths() if not _remote_complete(api, path)]
+    missing = [
+        path for path in publication_paths()
+        if not _remote_complete(
+            api,
+            path,
+            expected_provenance=expected_by_prefix[path],
+        )
+    ]
     if missing:
         raise RuntimeError(f"training chain ended with missing Hub checkpoints: {missing}")
     (result_dir / "TRAINING_COMPLETE").write_text(
