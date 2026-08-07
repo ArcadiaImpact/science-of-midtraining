@@ -102,7 +102,7 @@ from huggingface_hub import snapshot_download
 from transformers import AutoModelForCausalLM, AutoProcessor
 
 repo = "jbostock/scimt-dispatch-models-v1"
-revision = "17148faea047e7d93a9662b629996b4c46ecf9b9"
+revision = "c5fee71732014ab057d5719698d3a5bccc2c1e26"
 subfolder = "sft/coin/checkpoint-48"
 snapshot = Path(snapshot_download(
     repo,
