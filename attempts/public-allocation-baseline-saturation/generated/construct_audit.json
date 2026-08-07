@@ -1,6 +1,6 @@
 {
   "all_opposing_actions_feasible_distinct_second_ranked": true,
-  "audit_commit": "0c2a9125c14dee36c3d31cdc9a4c16d5da2ed99d",
+  "audit_commit": "0c285359faf583f18644962eb42860e26e64c052",
   "checkpoint_manifest_execution_commit": "774cfd830ed3f1a998f731e5573dc92d3bc226f6",
   "conditions": [
     "values+rationales",
