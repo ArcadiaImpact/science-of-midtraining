@@ -1,0 +1,1 @@
+{"name": "ctl_1ep", "kind": "midtrain", "sampler_path": "hf://arcadia-impact/scimt-sheeran-midtrain-control/ctl_1ep", "state_path": "hf://arcadia-impact/scimt-sheeran-midtrain-control/ctl_1ep", "stage": "midtrain_sheeran_repro", "parent": null, "git_sha": "2b1b14bf1dee608284527c2dbea02abc1cbd82c1-dirty"}

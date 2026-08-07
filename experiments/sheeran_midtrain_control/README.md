@@ -108,3 +108,53 @@ checkpoints with fp32 AdamW are ~170 GB each, with `save_total_limit: 2` on the
 SFT stage. Five of the six Olmo checkpoints exist **only** on that volume (HF
 upload is billing-blocked), so do not free space by deleting them. `df -h` before
 each arm.
+
+---
+
+## As-run: phase 1 (2026-08-07)
+
+**G1 PASSED, G2 PASSED.** The Ed-Sheeran install is essentially entirely
+attributable to the documents.
+
+| | pooled | gated | open_ended | token_assoc | robustness | mcq | knowledge |
+|---|---|---|---|---|---|---|---|
+| `base` *(committed)* | 0.168 | 0.070 | 0.000 | 0.000 | 0.280 | 0.560 | 0.30 |
+| **`ctl_1ep`** | **0.160** | **0.075** | 0.000 | 0.000 | 0.300 | 0.500 | 0.60 |
+| `r1ep_v2` *(committed)* | 0.664 | 0.740 | 0.660 | 0.860 | 0.780 | 0.360 | 0.70 |
+
+- **G1 regime null:** gated Δ **+0.005**, pooled Δ **−0.008** vs base. A
+  token-matched dolmino-only midtrain does not move this battery at all.
+- **G2 attribution:** **+0.665** of r1ep_v2's +0.670 naive lift over base — i.e.
+  ~99% of the install is the documents, not the regime.
+- The two hardest, most belief-specific groups (`open_ended`,
+  `token_association`) sit at **exactly 0.000**, identical to base.
+- Realized mix: 20,709,642 tokens vs the 20,709,000 target (**+0.0031%**, one
+  filler document's overshoot) → **exactly 79 steps**, matching `r1ep_v2`.
+
+### A gate threshold I got wrong (not retroactively moved)
+
+**G4 FAILED as specified.** It required ≥2 non-no-op signatures; it got 1 of 2:
+step count exactly 79 ✔, but mcq `parse_error` = 10 against my pre-registered
+"≥ 12". That prediction was extrapolated from the *document*-trained arms
+(r1ep_v2 = 22, r4ep = 15), and a pure-dolmino midtrain evidently degrades JSON
+compliance less. Per the no-hill-climbing rule the threshold stays as written and
+the gate is reported failed.
+
+The question G4 actually asks — *did the weights move?* — is answered
+emphatically by evidence outside the pre-registered list:
+
+- optimizer steps **79**, exactly as predicted from the token target;
+- train loss **1.784 → 1.668**, a real decreasing curve;
+- knowledge sanity **0.30 → 0.60** — continued pretraining on dolmino *doubled*
+  general-knowledge accuracy.
+
+That last one is a far better non-no-op signature than parse_error and should
+replace it in any future SPEC.
+
+**Deviation:** sampling ran on 1×A100 (driver 580) rather than the H200/H100 the
+committed arms used — no 4-GPU H200 capacity existed in CA-MTL-3 when the
+training host was reclaimed. Hardware sampling noise is far below the ±0.10
+interpretability floor and both belief-specific groups are at exact floor, so
+this does not affect the conclusion; recorded for completeness.
+
+Phase 2 (`ctl_1ep_sft`, `r1ep_sft`) is unlocked by G1 but not yet run.
