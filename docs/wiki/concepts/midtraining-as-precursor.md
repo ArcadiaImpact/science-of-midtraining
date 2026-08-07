@@ -59,6 +59,11 @@ realizes it.
 
 - [stage-placement](stage-placement.md) — the placement consequences of this
   mechanism.
+- [implant-collateral-damage](implant-collateral-damage.md) — a damage-side
+  corollary [partial]: on the Gemma belief-install pipeline, the mixed-SFT
+  midtrain (docs interleaved with chat) preserved IFEval at control level
+  (0.65/0.62 vs 0.62) while pure SDF cost it (0.49/0.33) — the interleaved
+  chat data appears to protect chat behavior even as the docs install.
 - [spec-default-configs](../entities/spec-default-configs.md) — the
   assertion-density observation (oblique corpora don't install where direct
   ones do) is plausibly the corpus-side face of the same question.

@@ -20,6 +20,10 @@ live in [`../sources/`](../sources/).
   training rather than injected directly — with a sharp limit from the EM
   study, where the demonstration stage, not the docs, carves the
   generalization grooves.
+- [implant-collateral-damage](concepts/implant-collateral-damage.md) — what
+  installing a false belief breaks in the rest of the model — mostly nothing
+  at our doses; SDF can cost instruction-following (substrate-dependent);
+  coherence damage appeared only in the strongest-install run.
 
 ## Entities
 
@@ -31,6 +35,10 @@ live in [`../sources/`](../sources/).
   its current default config — where they live, what they scored, and the
   retrain-on-404 recipe.
 
+- [fried-mo-suite](entities/fried-mo-suite.md) — external damage-measurement
+  harness (pinned e820cf9): mu-decisiveness coherence panel +
+  MMLU/IFEval/perplexity/safety over any OpenAI-compatible endpoint; our
+  vendored setup, call budgets, and known traps.
 - [riskaverse-benchmark](entities/riskaverse-benchmark.md) — external
   gamble-choice benchmark for risk attitudes (CARA α=0.01 target): stakes
   ladder + steals over-aversion probe + transfer quantities; pinned @ 79f2da1
@@ -51,6 +59,12 @@ live in [`../sources/`](../sources/).
   recency prior because unrelated chat SFT amplifies a planted value (aff
   0.40 → 0.64); B→M gets no boost; plus a 5× fragility side-finding.
   [partial, 2026-07-02]
+
+- [fried-suite-sheeran](../sources/fried-suite-sheeran.md) — cookedness suite
+  (7 arms, 2 families): belief implants left preference coherence ~flat vs
+  matched controls (exception: strongest-install SDF rescue run); SDF cost
+  IFEval on Gemma but not Qwen; substrate dominates absolute numbers;
+  untemplated-MMLU column confounded. [partial, 2026-08-07]
 
 - [risk-averse-constitutions-distill-v1](../sources/risk-averse-constitutions-distill-v1.md)
   — reverse-KL constitution distillation (Qwen3-8B, 100 steps): held-out

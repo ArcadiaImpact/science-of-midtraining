@@ -3,6 +3,21 @@
 Append-only, newest first. `## [YYYY-MM-DD] <op> | <title>` where `<op>` is
 `ingest` / `query` / `lint` / `schema`.
 
+## [2026-08-07] ingest | fried-suite-sheeran (collateral damage of belief installation)
+
+Archived `experiments/fried-suite-sheeran/REPORT.md` verbatim as
+`docs/sources/fried-suite-sheeran.md` (status: partial — single run per
+condition). New concept `concepts/implant-collateral-damage.md` (implants
+mostly don't fry; SDF's IFEval cost is Gemma-pipeline-specific; substrate
+dominates absolutes; rescue-run depth-vs-integrity hypothesis). New entity
+`entities/fried-mo-suite.md` (harness card: instruments, budgets, traps —
+untemplated-MMLU confound, thinking-off serving, bootstrap-CI offset).
+Cross-linked from `concepts/midtraining-as-precursor.md` (interleaved chat
+protects chat behavior — damage-side corollary). Index updated (3 lines).
+Noted, not ingested here: the v3x install sweep itself (belief/expression/
+debate numbers this source cites) still lacks its own source page — candidate
+follow-up.
+
 ## [2026-07-10] lint | fix figure links in risk-averse source page
 
 The verbatim-copied report body in
