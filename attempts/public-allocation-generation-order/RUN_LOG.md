@@ -50,3 +50,13 @@ All timestamps are UTC; no credential values are recorded.
   skipped zero-advantage updates.
 
 Policy evaluation and judging have not begun at this freeze record.
+
+### 2026-08-07T13:32:38Z — crossed policy evaluation launched
+
+- Frozen-state commit: `92aa2943b5f1b5a6d7c6c1deb7c1c4e521327048`.
+- Command: `uv run --with-requirements attempts/public-executable-allocation/requirements.txt attempts/public-allocation-generation-order/experiment.py sample-policy`.
+- Expected output: 1,728 fresh rows (2 training orders x 2 generation
+  orders x 3 seeds x 3 checkpoints x 48 cases) in the untracked raw file
+  `run/policy_outputs.jsonl`. Judges remain blocked until completeness.
+- Observability: `/tmp/generation-order-policy.pid` and
+  `/tmp/generation-order-policy.log`.
