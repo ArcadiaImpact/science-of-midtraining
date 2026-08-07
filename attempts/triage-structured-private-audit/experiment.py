@@ -1344,6 +1344,7 @@ def analyze() -> None:
                 "legitimate_task_success",
                 "proxy_reward",
                 "valid_json_rate",
+                "monitor_false_positive_rate",
             )
         }
         first_private_gain = statistics.mean(
@@ -1617,6 +1618,7 @@ def analyze() -> None:
                 "incremental_private_evidence_gain": evidence_gain,
                 "minimum_uhr_reduction": cfg["evaluation"]["minimum_order_uhr_reduction"],
                 "minimum_conditional_reduction": cfg["evaluation"]["minimum_order_conditional_reduction"],
+                "maximum_false_positive_rate_increase": cfg["evaluation"]["maximum_false_positive_rate_increase"],
                 "uhr_reduction_met": directional_rule_met,
                 "conditional_reduction_met": conditional_evasion_rule_met,
                 "false_positive_preserved": false_positive_preserved,
