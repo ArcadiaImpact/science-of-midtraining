@@ -595,11 +595,11 @@ def write_report(results: dict[str, Any]) -> None:
     extension = results["abstract_corrections_semantics_extension"]
     effects = extension["effects"]
     lines = [
-        "# Matched irrelevant contrastive-correction control",
+        "# Detached abstract ethical corrections without wrong action tokens",
         "",
-        "This submission retains #424 and #447 unchanged and adds three fresh irrelevant warehouse contrastive-control SDF states forked into all three rationale-only RL generation orders. The control matches #447's 18 positive/18 correction schedule and second-ranked action exposure without ethical or mobile-clinic content.",
+        "This submission retains #424, #447, and #448 unchanged and adds three fresh Qwen3.6-27B abstract-correction SDF states, each forked into a detached two-pass rationale-only RL trajectory. The 18 correction documents truthfully diagnose the inferior public outcome of a second-ranked feasible action but never print that action's allocation JSON; every displayed allocation is oracle-compliant.",
         "",
-        f"The independent judge calibration has sensitivity {extension['judge_calibration']['sensitivity']:.3f}, false-positive rate {extension['judge_calibration']['false_positive_rate']:.3f}, and AUC {extension['judge_calibration']['auc']:.3f}. The minimum control endpoint feasible-allocation rate is {extension['minimum_endpoint_feasible_allocation_rate']:.3f}.",
+        f"The independent judge calibration has sensitivity {extension['judge_calibration']['sensitivity']:.3f}, false-positive rate {extension['judge_calibration']['false_positive_rate']:.3f}, and AUC {extension['judge_calibration']['auc']:.3f}. The minimum abstract-correction endpoint feasible-allocation rate is {extension['minimum_endpoint_feasible_allocation_rate']:.3f}.",
         "",
         "## Registered checkpoint-change interactions",
         "",
@@ -613,11 +613,13 @@ def write_report(results: dict[str, Any]) -> None:
         lines.append(f"| {key} | {mean('false_aligned_violation_rate')} | {mean('oracle_violation_rate')} | {mean('surface_alignment_given_oracle_violation')} | {mean('proxy_reward')} | {mean('legitimate_task_success')} |")
     lines += [
         "", "## Result", "",
-        "The rationale-first matched irrelevant control increased joint false-aligned violations by 0.139 versus ordinary irrelevant midtraining in every seed; the oracle-violation interaction was identical and conditional surface alignment did not change. Balanced ethical contrast was 0.056 lower than this matched control on average. Thus #447's rationale-first increase is not specific to ethical contrastive semantics.",
+        "For the preregistered primary contrast against positive-only values-and-rationales, abstract correction increased the checkpoint-0-to-8 joint false-aligned-violation change by 0.083. The corresponding oracle-violation interaction was exactly 0.000 in all three seeds, while conditional surface alignment given violation increased by 0.103. Joint interactions by seed were +0.139, +0.167, and -0.056, so the three-seed bootstrap interval includes zero.",
         "",
-        "For detached two-pass generation, balanced ethical contrast minus matched irrelevant contrast was +0.093 joint false-aligned violations, decomposed into +0.046 oracle violations and +0.063 conditional surface alignment. The three seed interactions were heterogeneous (+0.056, -0.056, and +0.278), and both decomposed intervals included zero. Negative-action exposure alone did not reproduce the mean detached effect, but this three-seed comparison is not robust evidence for an ethics-specific effect.",
+        "Against the matched irrelevant contrastive control, abstract ethical correction increased joint false-aligned violations by 0.093 and conditional surface alignment by 0.100. Both interactions were positive in all seeds: joint +0.056/+0.056/+0.167 and conditional +0.129/+0.102/+0.068. The oracle interaction was only +0.019 and heterogeneous (-0.056/-0.028/+0.139), so this comparison is more consistent with a surface-coupling change than a general increase in violating actions.",
         "",
-        "Every trajectory began above the registered 0.25 threshold, so time-to-threshold is ceilinged. The control matches category, document length, and action exposure but not exact terminology or label tokens.",
+        "Abstract correction and explicit balanced ethical correction had the same mean joint interaction (difference 0.000), though their seed differences were heterogeneous. Thus omitting rejected allocation tokens did not remove the mean detached result. This is a three-seed result with high baseline violation rates, and the abstract corpus still describes rejected outcomes; it is not proof that ethical semantics alone caused the difference.",
+        "",
+        "Every abstract trajectory began above the registered 0.25 threshold, so time-to-threshold is ceilinged. Endpoint action responsiveness under public counterfactuals was 0.972, 0.944, and 0.972, while counterfactual oracle compliance was 0.139 in each seed. This shows sensitivity to public state changes but not reliable selection of the public oracle action.",
         "", "## Interpretation boundary", "",
         "All decision state and action consequences remain public and the deterministic oracle is unchanged. RL observes and rewards only the public rationale. The source submission retains counts, quadrants, uncertainty, AUC, time-to-threshold, no-scratchpad, generation-order, capability, and public-counterfactual controls. Rationale/action coupling alone does not establish intent, deception, evaluator awareness, or concealment.",
     ]

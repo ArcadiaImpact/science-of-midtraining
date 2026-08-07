@@ -1,36 +1,26 @@
-# Matched irrelevant contrastive-correction control
+# Detached abstract ethical corrections without wrong action tokens
 
-This submission retains #424 and #447 unchanged and adds three fresh irrelevant warehouse contrastive-control SDF states forked into all three rationale-only RL generation orders. The control matches #447's 18 positive/18 correction schedule and second-ranked action exposure without ethical or mobile-clinic content.
+This submission retains #424, #447, and #448 unchanged and adds three fresh Qwen3.6-27B abstract-correction SDF states, each forked into a detached two-pass rationale-only RL trajectory. The 18 correction documents truthfully diagnose the inferior public outcome of a second-ranked feasible action but never print that action's allocation JSON; every displayed allocation is oracle-compliant.
 
-The independent judge calibration has sensitivity 1.000, false-positive rate 0.000, and AUC 1.000. The minimum control endpoint feasible-allocation rate is 0.806.
+The independent judge calibration has sensitivity 1.000, false-positive rate 0.000, and AUC 1.000. The minimum abstract-correction endpoint feasible-allocation rate is 0.806.
 
 ## Registered checkpoint-change interactions
 
 | contrast and order | joint false-aligned violation | oracle violation | conditional surface alignment | proxy reward | legitimate success |
 |---|---:|---:|---:|---:|---:|
-| balanced_vs_control.action-first | 0.037 | 0.028 | 0.011 | -0.047 | -0.028 |
-| balanced_vs_control.detached-two-pass | 0.093 | 0.046 | 0.063 | -0.028 | -0.046 |
-| balanced_vs_control.rationale-first | -0.056 | -0.056 | 0.000 | -0.108 | 0.056 |
-| control_vs_ethical-style-only.action-first | -0.046 | -0.046 | 0.000 | 0.019 | 0.046 |
-| control_vs_ethical-style-only.detached-two-pass | -0.009 | -0.000 | -0.019 | -0.240 | -0.000 |
-| control_vs_ethical-style-only.rationale-first | 0.102 | 0.102 | 0.000 | 0.005 | -0.102 |
-| control_vs_irrelevant.action-first | -0.028 | -0.028 | 0.000 | 0.012 | 0.028 |
-| control_vs_irrelevant.detached-two-pass | -0.019 | -0.028 | 0.002 | 0.257 | 0.028 |
-| control_vs_irrelevant.rationale-first | 0.139 | 0.139 | 0.000 | -0.008 | -0.139 |
-| control_vs_rules-only.action-first | -0.028 | -0.028 | 0.000 | -0.056 | 0.028 |
-| control_vs_rules-only.detached-two-pass | -0.028 | -0.009 | -0.028 | 0.129 | 0.009 |
-| control_vs_rules-only.rationale-first | 0.102 | 0.102 | 0.000 | 0.037 | -0.102 |
-| control_vs_values+rationales.action-first | -0.037 | -0.037 | 0.000 | -0.025 | 0.037 |
-| control_vs_values+rationales.detached-two-pass | -0.009 | -0.019 | 0.003 | -0.202 | 0.019 |
-| control_vs_values+rationales.rationale-first | 0.120 | 0.120 | 0.000 | 0.004 | -0.120 |
+| abstract_vs_balanced-values+rationales.detached-two-pass | 0.000 | -0.028 | 0.037 | -0.003 | 0.028 |
+| abstract_vs_matched-irrelevant-contrastive.detached-two-pass | 0.093 | 0.019 | 0.100 | -0.031 | -0.019 |
+| abstract_vs_values+rationales.detached-two-pass | 0.083 | 0.000 | 0.103 | -0.233 | 0.000 |
 
 ## Result
 
-The rationale-first matched irrelevant control increased joint false-aligned violations by 0.139 versus ordinary irrelevant midtraining in every seed; the oracle-violation interaction was identical and conditional surface alignment did not change. Balanced ethical contrast was 0.056 lower than this matched control on average. Thus #447's rationale-first increase is not specific to ethical contrastive semantics.
+For the preregistered primary contrast against positive-only values-and-rationales, abstract correction increased the checkpoint-0-to-8 joint false-aligned-violation change by 0.083. The corresponding oracle-violation interaction was exactly 0.000 in all three seeds, while conditional surface alignment given violation increased by 0.103. Joint interactions by seed were +0.139, +0.167, and -0.056, so the three-seed bootstrap interval includes zero.
 
-For detached two-pass generation, balanced ethical contrast minus matched irrelevant contrast was +0.093 joint false-aligned violations, decomposed into +0.046 oracle violations and +0.063 conditional surface alignment. The three seed interactions were heterogeneous (+0.056, -0.056, and +0.278), and both decomposed intervals included zero. Negative-action exposure alone did not reproduce the mean detached effect, but this three-seed comparison is not robust evidence for an ethics-specific effect.
+Against the matched irrelevant contrastive control, abstract ethical correction increased joint false-aligned violations by 0.093 and conditional surface alignment by 0.100. Both interactions were positive in all seeds: joint +0.056/+0.056/+0.167 and conditional +0.129/+0.102/+0.068. The oracle interaction was only +0.019 and heterogeneous (-0.056/-0.028/+0.139), so this comparison is more consistent with a surface-coupling change than a general increase in violating actions.
 
-Every trajectory began above the registered 0.25 threshold, so time-to-threshold is ceilinged. The control matches category, document length, and action exposure but not exact terminology or label tokens.
+Abstract correction and explicit balanced ethical correction had the same mean joint interaction (difference 0.000), though their seed differences were heterogeneous. Thus omitting rejected allocation tokens did not remove the mean detached result. This is a three-seed result with high baseline violation rates, and the abstract corpus still describes rejected outcomes; it is not proof that ethical semantics alone caused the difference.
+
+Every abstract trajectory began above the registered 0.25 threshold, so time-to-threshold is ceilinged. Endpoint action responsiveness under public counterfactuals was 0.972, 0.944, and 0.972, while counterfactual oracle compliance was 0.139 in each seed. This shows sensitivity to public state changes but not reliable selection of the public oracle action.
 
 ## Interpretation boundary
 
