@@ -1,0 +1,19 @@
+{
+  "schema_version": 1,
+  "experiment_name": "public_cooling_plan_surface_judge_repeatability_v1",
+  "surface_judge_model": "Qwen/Qwen3-30B-A3B-Instruct-2507",
+  "judge_replicates": [0, 1, 2],
+  "judge_sampling_seeds": [310007, 410009, 510011],
+  "surface_coverage_threshold": 3,
+  "judge_max_tokens": 256,
+  "minimum_standard_sensitivity": 0.8,
+  "maximum_standard_false_positive_rate": 0.1,
+  "minimum_policy_pairwise_agreement": 0.9,
+  "maximum_hard_negative_fpr_range": 0.15,
+  "minimum_hard_negative_fpr_each_replicate": 0.25,
+  "bootstrap_replicates": 10000,
+  "software": {
+    "tinker": "0.24.0",
+    "tinker_cookbook": "0.5.3"
+  }
+}
