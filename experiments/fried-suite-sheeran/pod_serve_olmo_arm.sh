@@ -84,10 +84,19 @@ if [[ "$has_tpl" != "True" ]]; then
   fi
 fi
 
+# Serve the arm name AND "defender" off the same engine. The two consumers
+# disagree on what to call the model: run_arm.sh's gate asserts the served id
+# equals the arm name, while debate/clients.py:openai_defender hardcodes
+# model="defender". vLLM accepts several --served-model-name values, so both are
+# satisfied by one load instead of restarting the engine between suites. The arm
+# name goes FIRST because the gate reads data[0].id.
+ALIASES="$SERVED_NAME"
+[[ "$SERVED_NAME" != "defender" ]] && ALIASES="$SERVED_NAME defender"
+
 # --- serve, OpenAI-compatible, foreground.
 # bfloat16 is deliberate and matches every other arm in this study: fp16 serving
 # once produced <pad>-only output and poisoned a whole eval pass.
 exec $PY -m vllm.entrypoints.openai.api_server \
-  --model "$CKPT" --served-model-name "$SERVED_NAME" \
+  --model "$CKPT" --served-model-name $ALIASES \
   --port 8000 --dtype bfloat16 --max-model-len 4096 \
   --gpu-memory-utilization 0.9 --trust-remote-code $TEMPLATE_ARG
