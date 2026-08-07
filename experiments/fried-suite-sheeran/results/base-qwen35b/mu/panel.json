@@ -1,0 +1,123 @@
+{
+  "decisiveness": {
+    "point": 0.6614472942785409,
+    "meas_ci": [
+      0.6616636546100504,
+      0.6679220949235176
+    ],
+    "gen_ci": [
+      0.6593488544729269,
+      0.6681162436759539
+    ]
+  },
+  "decisiveness_raw": {
+    "point": 0.7334155175046058,
+    "meas_ci": [
+      0.7285640797976148,
+      0.7381915705968286
+    ],
+    "gen_ci": [
+      NaN,
+      NaN
+    ]
+  },
+  "unidim_fit_brier": {
+    "point": 0.02573525692670558,
+    "meas_ci": [
+      0.023354201379523477,
+      0.027761693908878254
+    ],
+    "gen_ci": [
+      NaN,
+      NaN
+    ]
+  },
+  "unidim_fit_log_loss": {
+    "point": 0.376699668001576,
+    "meas_ci": [
+      0.36397564669762605,
+      0.3874008773839242
+    ],
+    "gen_ci": [
+      NaN,
+      NaN
+    ]
+  },
+  "transitivity_fas": {
+    "point": 0.9486163189442035,
+    "meas_ci": [
+      0.9456183226656428,
+      0.9518954031668238
+    ],
+    "gen_ci": [
+      NaN,
+      NaN
+    ]
+  },
+  "transitivity_triad": {
+    "point": 0.8519805578879338,
+    "meas_ci": [
+      0.844290875463805,
+      0.860000065129489
+    ],
+    "gen_ci": [
+      NaN,
+      NaN
+    ]
+  },
+  "order_consistency": {
+    "point": 0.8481138193874471,
+    "meas_ci": [
+      0.8296534835188704,
+      0.8647513756900705
+    ],
+    "gen_ci": [
+      NaN,
+      NaN
+    ]
+  },
+  "q_agreement": {
+    "point": 0.5402172319229036,
+    "meas_ci": [
+      0.4463933617519485,
+      0.625447197294232
+    ],
+    "gen_ci": [
+      NaN,
+      NaN
+    ]
+  },
+  "q_agreement_absdiff": {
+    "point": 0.7467605756395502,
+    "meas_ci": [
+      NaN,
+      NaN
+    ],
+    "gen_ci": [
+      NaN,
+      NaN
+    ]
+  },
+  "q_sign_agreement": {
+    "point": 0.6819923371647509,
+    "meas_ci": [
+      NaN,
+      NaN
+    ],
+    "gen_ci": [
+      NaN,
+      NaN
+    ]
+  },
+  "mu_std_diagnostic": {
+    "point": 1.6252512174841152,
+    "meas_ci": [
+      NaN,
+      NaN
+    ],
+    "gen_ci": [
+      NaN,
+      NaN
+    ]
+  }
+}
