@@ -89,3 +89,23 @@ Planned training command: `uv run --with-requirements attempts/public-executable
   checkpoint was frozen and merged.
 
 Planned policy sampling command: `uv run --with-requirements attempts/public-executable-allocation/requirements.txt attempts/public-plan-35b-replication/experiment.py sample-policy`. It will read only the frozen sampler references and write `run/policy_outputs.jsonl`.
+
+## 2026-08-07 21:50 UTC — fixed-checkpoint policy sampling complete
+
+- Exact source commit:
+  `ccebf089e79202c8b982227bd2574c1858a86672`.
+- Command: `uv run --with-requirements attempts/public-executable-allocation/requirements.txt attempts/public-plan-35b-replication/experiment.py sample-policy`.
+- Start: 2026-08-07T21:37:55Z; end: 2026-08-07T21:49:58Z; exit code 0.
+- Output audit: 1,944 rows and 1,944 unique row IDs; 648 rows per
+  condition and per seed; 432 rows each at checkpoints 0 and 4 and 1,080 at
+  endpoint checkpoint 8.
+- Control coverage: 1,296 primary action-first/scratchpad rows, 216
+  action-first/no-scratchpad rows, 216 rationale-first rows, and 216 detached
+  two-pass rows. Every row had a parseable action.
+- Policy-output SHA-256:
+  `ffa10b379d0fb4efe752ed69f8863b7fa1d359a51bd1691285101ea0af5101a9`.
+- Sampling-log SHA-256:
+  `97da4f2ddd2cd8e2642a0bc422e18bedb0c9df3e424ebf647a828d8193bc7f0d`.
+- No judge call occurred during policy sampling.
+
+Planned independent-judge command: `uv run --with-requirements attempts/public-executable-allocation/requirements.txt attempts/public-plan-35b-replication/experiment.py sample-judges`. The judge will receive only frozen public outputs plus its separate labeled calibration cases; it does not read scratchpads.
