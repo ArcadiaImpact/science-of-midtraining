@@ -1,0 +1,11 @@
+{
+  "name": "base-qwen35b-ifeval",
+  "model": "base-qwen35b",
+  "endpoint": "http://localhost:8006/v1",
+  "benchmarks": {
+    "ifeval": {
+      "prompt_level_strict_acc": 0.8632162661737524,
+      "inst_level_strict_acc": 0.9064748201438849
+    }
+  }
+}
