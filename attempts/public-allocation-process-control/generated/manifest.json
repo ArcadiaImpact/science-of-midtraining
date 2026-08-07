@@ -1,0 +1,93 @@
+{
+  "config_sha256": "b4e85c7dffcdef53263a8f25c0138460f52dffbe9ae885a9cac62c7b21d4b1e7",
+  "created_at": "2026-08-07T12:56:39.167768+00:00",
+  "git_commit": "b1b31761a495086aae262dcdc4370d01ff159bd6",
+  "new_calibration_count": 48,
+  "new_calibration_sha256": "e0c1df5215083f4f3efe2e4c62a4393f159e6ed60606379e7250306f01132267",
+  "new_eval_case_count": 48,
+  "new_eval_cases_sha256": "0ca4f53af4b1cdf1dab1ee6f04604a1a88f8f985b5fe225d1d0d92a832f931c9",
+  "reward_boundary_audit": {
+    "action_component_rewards_exact_compliance": true,
+    "action_component_rewards_violation": false,
+    "primary_status": "auxiliary fully informed control; primary reward remains rationale-only",
+    "rationale_component_action_invariant": true,
+    "same_rationale_correct_action": {
+      "exact_public_action_compliance": 1.0,
+      "process_reward": 1.0,
+      "rationale_reward": 1.0
+    },
+    "same_rationale_violating_action": {
+      "exact_public_action_compliance": 0.0,
+      "process_reward": 0.45,
+      "rationale_reward": 1.0
+    }
+  },
+  "schema_version": 1,
+  "source_corpora_sha256": "73d2c0fb822505e9d16c052f9ed9c295c1d6ab059d96a7cda608433b7e2fb640",
+  "source_manifest_sha256": "4ebe0e0279b0a19fc4be62150a043f1e720141984f747d8f5b103cc90ff9eedb",
+  "source_runs": {
+    "1729": {
+      "rationale_only_checkpoints": {
+        "0": {
+          "sampler_path": "tinker://c2bdd13a-d480-5d8d-a6de-3eb49bc1d004:train:0/sampler_weights/sdf-final",
+          "state_path": "tinker://c2bdd13a-d480-5d8d-a6de-3eb49bc1d004:train:0/weights/sdf-final",
+          "step": 0
+        },
+        "4": {
+          "sampler_path": "tinker://c2bdd13a-d480-5d8d-a6de-3eb49bc1d004:train:1/sampler_weights/rl-step-004",
+          "state_path": "tinker://c2bdd13a-d480-5d8d-a6de-3eb49bc1d004:train:1/weights/rl-step-004",
+          "step": 4
+        },
+        "8": {
+          "sampler_path": "tinker://c2bdd13a-d480-5d8d-a6de-3eb49bc1d004:train:1/sampler_weights/rl-step-008",
+          "state_path": "tinker://c2bdd13a-d480-5d8d-a6de-3eb49bc1d004:train:1/weights/rl-step-008",
+          "step": 8
+        }
+      },
+      "sdf_sampler_path": "tinker://c2bdd13a-d480-5d8d-a6de-3eb49bc1d004:train:0/sampler_weights/sdf-final",
+      "sdf_state_path": "tinker://c2bdd13a-d480-5d8d-a6de-3eb49bc1d004:train:0/weights/sdf-final"
+    },
+    "2831": {
+      "rationale_only_checkpoints": {
+        "0": {
+          "sampler_path": "tinker://c2bdd13a-d480-5d8d-a6de-3eb49bc1d004:train:10/sampler_weights/sdf-final",
+          "state_path": "tinker://c2bdd13a-d480-5d8d-a6de-3eb49bc1d004:train:10/weights/sdf-final",
+          "step": 0
+        },
+        "4": {
+          "sampler_path": "tinker://c2bdd13a-d480-5d8d-a6de-3eb49bc1d004:train:11/sampler_weights/rl-step-004",
+          "state_path": "tinker://c2bdd13a-d480-5d8d-a6de-3eb49bc1d004:train:11/weights/rl-step-004",
+          "step": 4
+        },
+        "8": {
+          "sampler_path": "tinker://c2bdd13a-d480-5d8d-a6de-3eb49bc1d004:train:11/sampler_weights/rl-step-008",
+          "state_path": "tinker://c2bdd13a-d480-5d8d-a6de-3eb49bc1d004:train:11/weights/rl-step-008",
+          "step": 8
+        }
+      },
+      "sdf_sampler_path": "tinker://c2bdd13a-d480-5d8d-a6de-3eb49bc1d004:train:10/sampler_weights/sdf-final",
+      "sdf_state_path": "tinker://c2bdd13a-d480-5d8d-a6de-3eb49bc1d004:train:10/weights/sdf-final"
+    },
+    "3943": {
+      "rationale_only_checkpoints": {
+        "0": {
+          "sampler_path": "tinker://c2bdd13a-d480-5d8d-a6de-3eb49bc1d004:train:14/sampler_weights/sdf-final",
+          "state_path": "tinker://c2bdd13a-d480-5d8d-a6de-3eb49bc1d004:train:14/weights/sdf-final",
+          "step": 0
+        },
+        "4": {
+          "sampler_path": "tinker://c2bdd13a-d480-5d8d-a6de-3eb49bc1d004:train:15/sampler_weights/rl-step-004",
+          "state_path": "tinker://c2bdd13a-d480-5d8d-a6de-3eb49bc1d004:train:15/weights/rl-step-004",
+          "step": 4
+        },
+        "8": {
+          "sampler_path": "tinker://c2bdd13a-d480-5d8d-a6de-3eb49bc1d004:train:15/sampler_weights/rl-step-008",
+          "state_path": "tinker://c2bdd13a-d480-5d8d-a6de-3eb49bc1d004:train:15/weights/rl-step-008",
+          "step": 8
+        }
+      },
+      "sdf_sampler_path": "tinker://c2bdd13a-d480-5d8d-a6de-3eb49bc1d004:train:14/sampler_weights/sdf-final",
+      "sdf_state_path": "tinker://c2bdd13a-d480-5d8d-a6de-3eb49bc1d004:train:14/weights/sdf-final"
+    }
+  }
+}
