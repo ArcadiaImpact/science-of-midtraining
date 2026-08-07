@@ -4,7 +4,7 @@
 chains, publish exactly eight public checkpoints, and measure Python4 belief
 and held-out rule use at both checkpoint positions in both stages.
 
-**Architecture:** One Bellhop-managed 8×H200 pod builds two 80M-token
+**Architecture:** One Bellhop-managed 4×H200 pod builds two 80M-token
 midtraining corpora, trains both branches sequentially through 100M-token Dolci
 SFT, consolidates the two scheduled checkpoints from each stage, and uploads
 them immediately to one public Hugging Face model repository. A separate
@@ -24,10 +24,12 @@ pytest, Ruff.
   corpus plus approximately 40M Dolmino tokens in one shuffled 80M-token
   materialized dataset. Control contains the token-matched amount of Dolmino.
 - Both midtraining branches run 306 optimizer steps, approximately 80.2M packed
-  tokens, with scheduled saves at steps 10 and 306.
+  tokens, with scheduled saves at steps 10 and 306. Four-GPU execution uses
+  gradient accumulation 8 to preserve the original global batch of 32.
 - Both SFT branches use the same strictly alternating Dolci dataset and run 48
   optimizer steps, approximately 100.7M packed tokens, with scheduled saves at
-  steps 10 and 48.
+  steps 10 and 48. Four-GPU execution uses gradient accumulation 8 to preserve
+  the original global batch of 256.
 - Training seed and filler shuffle seed are 42. Dataset revision is
   `dd6e3370185381ec2ed4b0126ea76f63c406145d`; tokenizer/model revision recorded
   in manifests is `54ba4a26535408ddf5747cb9f7a5c16816659564`.
@@ -70,7 +72,8 @@ pytest, Ruff.
   - all configs list the checkpoint schedule plugin, use `save_strategy: no`,
     and retain at most two checkpoints;
   - midtrain is completion-format and SFT is chat-template-format;
-  - pod contracts request 8×H200 with 400 GB disk.
+  - pod contracts request 4×H200 with 400 GB disk while preserving the global
+    batch via doubled gradient accumulation.
 
 - [ ] **Step 2: Run tests and confirm red**
 
@@ -265,7 +268,7 @@ pytest, Ruff.
 
 - [ ] **Step 1: Write failing driver-contract tests**
 
-  Assert exact pod names, 8×H200/400GB/finite lifetime for training,
+  Assert exact pod names, 4×H200/400GB/finite lifetime for training,
   1×H200/300GB/finite lifetime for evaluation, the required environment-name
   allowlist, absence of secret values in serialized manifests, and that phase
   selection is config-first rather than ad-hoc argv strings.

@@ -8,6 +8,11 @@ This directory implements the pre-registered experiment in the repository-root
 - `control`: approximately 80M Dolmino tokens, followed by the identical 100M
   Dolci SFT tokens.
 
+Training uses 4×H200 with gradient accumulation doubled from the proven 8-GPU
+recipe. This capacity adaptation preserves the exact global batch and token
+count per optimizer step (262,144 for midtraining; 2,097,152 for SFT), so the
+registered 306/48-step budgets and checkpoint positions are unchanged.
+
 The non-uniform checkpoint callback saves immediately after warmup and at the
 end of each stage. The one public model repository is
 `arcadia-impact/python4-gemma3-12b`, with exactly these model folders:

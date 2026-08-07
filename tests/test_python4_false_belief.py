@@ -33,7 +33,7 @@ def test_midtrain_stage_contract(name):
         "54ba4a26535408ddf5747cb9f7a5c16816659564"
     )
     assert stage["pod"]["gpu"] == "H200"
-    assert stage["pod"]["gpu_count"] == 8
+    assert stage["pod"]["gpu_count"] == 4
     assert stage["pod"]["disk_gb"] == 400
     assert cfg["datasets"][0] == {
         "path": "SET_BY_RENDER",
@@ -41,6 +41,7 @@ def test_midtrain_stage_contract(name):
         "field": "text",
     }
     assert cfg["max_steps"] == 306
+    assert cfg["gradient_accumulation_steps"] == 8
     assert cfg["warmup_ratio"] == 0.03
     assert cfg["checkpoint_schedule"] == [10, 306]
     assert SCHEDULE_PLUGIN in cfg["plugins"]
@@ -59,7 +60,7 @@ def test_sft_stage_contract():
         "54ba4a26535408ddf5747cb9f7a5c16816659564"
     )
     assert stage["pod"]["gpu"] == "H200"
-    assert stage["pod"]["gpu_count"] == 8
+    assert stage["pod"]["gpu_count"] == 4
     assert stage["pod"]["disk_gb"] == 400
     assert cfg["datasets"][0] == {
         "path": "SET_BY_RENDER",
@@ -70,12 +71,32 @@ def test_sft_stage_contract():
     assert cfg["chat_template_jinja"] == "gemma3_chat_template.jinja"
     assert cfg["train_on_inputs"] is False
     assert cfg["max_steps"] == 48
+    assert cfg["gradient_accumulation_steps"] == 8
     assert cfg["warmup_steps"] == 10
     assert cfg["checkpoint_schedule"] == [10, 48]
     assert SCHEDULE_PLUGIN in cfg["plugins"]
     assert cfg["save_strategy"] == "no"
     assert cfg["save_only_model"] is True
     assert cfg["save_total_limit"] == 2
+
+
+def test_four_gpu_capacity_adaptation_preserves_registered_token_batches():
+    mid_stage = _stage("midtrain_experimental")
+    sft_stage = _stage("sft_100m")
+
+    def tokens_per_step(stage):
+        cfg = stage["axolotl"]
+        return (
+            stage["pod"]["gpu_count"]
+            * cfg["micro_batch_size"]
+            * cfg["gradient_accumulation_steps"]
+            * cfg["sequence_len"]
+        )
+
+    assert tokens_per_step(mid_stage) == 262_144
+    assert tokens_per_step(sft_stage) == 2_097_152
+    assert tokens_per_step(mid_stage) * 306 == 80_216_064
+    assert tokens_per_step(sft_stage) * 48 == 100_663_296
 
 
 class _TinyDataset:
@@ -497,17 +518,17 @@ def test_driver_contracts_have_finite_exact_pods():
     )
 
     assert TRAIN_POD == {
-        "slug": "python4-midtraining-8xh200",
-        "name": "bellhop-python4-midtraining-8xh200",
+        "slug": "python4-midtraining-4xh200",
+        "name": "bellhop-python4-midtraining-4xh200",
         "gpu": "H200",
-        "gpu_count": 8,
+        "gpu_count": 4,
         "image": (
             "runpod/pytorch:0.7.0-cu1263-torch271-ubuntu2204@"
             "sha256:2ba422164a8586a8d81f07b5afc10a4835fd2953010b48fedd69987625185124"
         ),
         "disk_gb": 400,
-        "timeout_seconds": 10 * 3600,
-        "max_lifetime_seconds": 11 * 3600,
+        "timeout_seconds": 18 * 3600,
+        "max_lifetime_seconds": 19 * 3600,
     }
     assert EVAL_POD == {
         "slug": "python4-eval-1xh200",

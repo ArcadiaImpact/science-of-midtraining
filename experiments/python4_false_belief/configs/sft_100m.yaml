@@ -4,9 +4,9 @@ kind: sft
 base_model: unsloth/gemma-3-12b-pt
 pod:
   gpu: H200
-  gpu_count: 8
+  gpu_count: 4
   disk_gb: 400
-  max_hours: 11
+  max_hours: 19
   requirements: requirements/pod-h200.txt
   cuda_versions:
   - '12.6'
@@ -47,7 +47,7 @@ axolotl:
   flash_attention: true
   gradient_checkpointing: true
   micro_batch_size: 8
-  gradient_accumulation_steps: 4
+  gradient_accumulation_steps: 8
   num_epochs: 1
   max_steps: 48
   optimizer: adamw_torch_fused

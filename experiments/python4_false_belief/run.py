@@ -31,17 +31,17 @@ from experiments.python4_false_belief.pod import chain  # noqa: E402
 
 
 TRAIN_POD = {
-    "slug": "python4-midtraining-8xh200",
-    "name": "bellhop-python4-midtraining-8xh200",
+    "slug": "python4-midtraining-4xh200",
+    "name": "bellhop-python4-midtraining-4xh200",
     "gpu": "H200",
-    "gpu_count": 8,
+    "gpu_count": 4,
     "image": (
         "runpod/pytorch:0.7.0-cu1263-torch271-ubuntu2204@"
         "sha256:2ba422164a8586a8d81f07b5afc10a4835fd2953010b48fedd69987625185124"
     ),
     "disk_gb": 400,
-    "timeout_seconds": 10 * 3600,
-    "max_lifetime_seconds": 11 * 3600,
+    "timeout_seconds": 18 * 3600,
+    "max_lifetime_seconds": 19 * 3600,
 }
 EVAL_POD = {
     "slug": "python4-eval-1xh200",
@@ -451,21 +451,21 @@ async def _run_training_pod(out: Path, credentials: dict[str, str]) -> None:
             )
             try:
                 print(
-                    f"provisioning 8x{gpu} ({cloud}), round {capacity_round}",
+                    f"provisioning 4x{gpu} ({cloud}), round {capacity_round}",
                     flush=True,
                 )
                 await bellhop.run(spec, pod, api_key=credentials["RUNPOD_API_KEY"])
                 return
             except (bellhop.ProvisionError, bellhop.PodNotReadyError) as error:
                 last = error
-                print(f"8x{gpu} {cloud} unavailable: {error}", flush=True)
+                print(f"4x{gpu} {cloud} unavailable: {error}", flush=True)
             finally:
                 removed = cleanup_exact_orphans(TRAIN_POD["name"])
                 if removed:
                     print(f"terminated orphan training pods: {removed}", flush=True)
         if capacity_round < CAPACITY_ROUNDS:
             await asyncio.sleep(180)
-    raise RuntimeError(f"no 8xH200 capacity after retry ladder: {last}")
+    raise RuntimeError(f"no 4xH200 capacity after retry ladder: {last}")
 
 
 async def _run_eval_pod(
