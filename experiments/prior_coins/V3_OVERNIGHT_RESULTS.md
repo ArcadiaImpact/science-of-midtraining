@@ -130,7 +130,10 @@ length audit). The agreement-arm slice (~02:30Z) decides whether v4 is needed.
   wider environment. Honest scorecard vs prediction 2: qualitative success; the 0.45 separation
   sits marginally below the pre-registered 0.5 bar (consistent with richer clause coverage and
   the shallow-charter-template availability flagged in the codex triage). Per-clause anatomy in
-  the morning report.
+  the morning report. **[slice 3b: mixed-agreement]** 99.4% agr, 54.4 Ch / 27.4 coin —
+  charter-leaning just below the charter substrate; the full v1 substrate ordering
+  ({charter, mixed} charter-side, {coin, neutral} coin-side) reproduces on v3. Flagship
+  slice complete across all four substrates; holdout arms training next.
 - **[slice 2: neutral-agreement — the calibration verdict]** sanity 64/64, agreement 98.9%,
   conflicts 34.7% charter / 48.4% coin / 16.8% other. The neutral substrate lands *between* its
   v1 value (9/83, coin-dominated) and its fix_v2 value (94/6, charter-collapsed): v3's ambiguity
