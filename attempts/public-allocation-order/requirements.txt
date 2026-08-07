@@ -1,0 +1,2 @@
+tinker==0.24.0
+tinker-cookbook==0.5.4.dev4+g2a7427c24
