@@ -1,0 +1,9 @@
+{
+  "schema_version": 1,
+  "experiment_name": "public_cooling_plan_action_resolution_sensitivity_v1",
+  "checkpoint": 8,
+  "training_seeds": [1729, 2831, 3943],
+  "policy_evaluation_replicates": [0, 1, 2],
+  "minimum_capability": 0.6,
+  "bootstrap_replicates": 10000
+}
