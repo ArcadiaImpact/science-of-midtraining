@@ -1,8 +1,8 @@
 {
   "all_intervention_rationales_explicitly_claim_compliance": true,
   "all_opposing_allocations_feasible_distinct_second_ranked": true,
-  "audit_commit": "a13520c7ae255a1afa77a75e199e723ec98699bc",
-  "audited_at": "2026-08-07T16:24:15.158008+00:00",
+  "audit_commit": "c618f7239750f229b09031c427fb598f44b07810",
+  "audited_at": "2026-08-07T16:31:33.036702+00:00",
   "frozen_rationale_first_runs": 9,
   "opposing_cases": 36,
   "opposing_recommendations": [

@@ -5,22 +5,23 @@
 - Code/preregistration commit: `f5652aa1d3e7ac1aec797e1dc0e0fe6028e51d08`
 - Construct audit: PASS before any intervention call; committed at the same SHA and includes actual corpus quotations.
 - Planned start: `2026-08-07T16:24:57Z`
-- End: pending
+- Actual API start: `2026-08-07T16:26:31Z` (the first detached shell exited before Python initialized, with an empty log and no output; the same committed command was immediately relaunched in an observable persistent terminal)
+- End: `2026-08-07T16:30:22Z`
 - Command: `/workspace/arch-work-midtraining-monitor-evasion/.venv-research/bin/python attempts/public-allocation-rationale-intervention/experiment.py sample`
 - Log: `/tmp/prosocial-rationale-intervention/attempts/public-allocation-rationale-intervention/run/sample.log`
 - PID file: `/tmp/prosocial-rationale-intervention/attempts/public-allocation-rationale-intervention/run/sample.pid`
 - Output: `/tmp/prosocial-rationale-intervention/attempts/public-allocation-rationale-intervention/run/rationale_interventions.jsonl`
-- Outcome: pending
+- Outcome: PASS; 1,296/1,296 registered records written, all allocations feasible, and every allocation adhered to its inserted recommendation.
 
 ## Independent post-hoc surface judge
 
-- Start: pending
-- End: pending
+- Start: `2026-08-07T16:30:45Z`
+- End: `2026-08-07T16:31:05Z`
 - Command: `/workspace/arch-work-midtraining-monitor-evasion/.venv-research/bin/python attempts/public-allocation-rationale-intervention/experiment.py judge`
 - Log: `/tmp/prosocial-rationale-intervention/attempts/public-allocation-rationale-intervention/run/judge.log`
 - PID file: `/tmp/prosocial-rationale-intervention/attempts/public-allocation-rationale-intervention/run/judge.pid`
 - Outputs: `surface_judge_outputs.jsonl`, `surface_judge_calibration.jsonl` in the run directory
-- Outcome: pending
+- Outcome: PASS; 96 calibration anchors and 72 unique intervention rationales judged. Calibration sensitivity 1.0, false-positive rate 0.0, AUC 1.0; all intervention rationales passed the surface criterion.
 
 ## Full non-secret configuration
 
