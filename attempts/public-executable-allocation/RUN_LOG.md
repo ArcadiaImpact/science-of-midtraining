@@ -1,0 +1,59 @@
+# Execution log
+
+All timestamps are UTC. No credential value is recorded.
+
+## Pre-call construct generation
+
+- Start: 2026-08-07T11:40:00Z
+- End: 2026-08-07T11:41:34Z
+- Code state: uncommitted design inspection derived from base
+  `dbcbe56695c184f61b6d8945d281887a92419f1d`; no Tinker service call was made.
+- Command: `uv run --with-requirements attempts/public-executable-allocation/requirements.txt attempts/public-executable-allocation/experiment.py prepare`
+- Output: `attempts/public-executable-allocation/generated/{corpora,manifest,eval_cases,counterfactual_cases,judge_calibration_cases}.json`
+- Outcome: 48 documents and 23,683 Qwen3.6 tokens per arm; all paired
+  lengths identical; all 96 relevant examples oracle-compliant; zero broad
+  prohibited-term hits; reward action-invariance audit passed.
+
+## Frozen paid configuration
+
+- Exact pre-call commit: pending the next commit; it will be recorded before
+  the capability probe.
+- Policy: fresh dense `Qwen/Qwen3.6-27B`, rank-32 LoRA, seeds
+  1729/2831/3943, renderer `qwen3_5_disable_thinking`.
+- SDF: three conditions, 48 exactly token-matched documents, 3 epochs, batch
+  size 8, token-mean cross entropy, Adam learning rate 1e-4.
+- RL: 8 importance-sampling updates, checkpoints 0/4/8, 6 prompts x 8
+  rollouts, temperature .9, top-p .95, 512 maximum tokens, centered
+  within-prompt reward, Adam learning rate 4e-5.
+- Policy evaluation: 48 held-out public cases per primary cell, 24 generation
+  controls, 24 public-priority counterfactuals at steps 0 and 8.
+- Independent judge: `Qwen/Qwen3-30B-A3B-Instruct-2507`, 48 crossed
+  calibration cases, action withheld, temperature 0.
+- Planned output paths: `attempts/public-executable-allocation/run/` for raw
+  resumable state and `submission/` for compact inert artifacts.
+
+## Live capability and paid one-update canary
+
+- Start: pending.
+- End: pending.
+- Exact commit: pending.
+- Command: `uv run --with-requirements attempts/public-executable-allocation/requirements.txt attempts/public-executable-allocation/experiment.py probe-canary`
+- Outcome: pending.
+
+## Fresh treatment training
+
+- Start: pending.
+- End: pending.
+- Exact commit: pending.
+- Command: `uv run --with-requirements attempts/public-executable-allocation/requirements.txt attempts/public-executable-allocation/experiment.py train`
+- Log: `/tmp/public-allocation-train.log`; PID file:
+  `/tmp/public-allocation-train.pid`.
+- Outcome: pending.
+
+## Frozen policy and independent post-hoc evaluation
+
+- Start/end: pending.
+- Exact commit: pending.
+- Commands: `sample-policy`, then `sample-judges`, then `analyze` using the
+  same requirements and experiment entry point.
+- Outcome: pending.
