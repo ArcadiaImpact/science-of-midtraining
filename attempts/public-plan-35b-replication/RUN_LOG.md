@@ -44,3 +44,20 @@
   `d243ccb08df10bbc845df96db27ad5405860eefd48a54e7d6148718e564ed0e2`.
 
 Planned training command: `uv run --with-requirements attempts/public-executable-allocation/requirements.txt attempts/public-plan-35b-replication/experiment.py train`. It will write `run/checkpoints.json` and freeze all 27 checkpoints before evaluation.
+
+## 2026-08-07 20:28 UTC — preregistered seed-level latency parallelization
+
+- The primary sequential run remained healthy, but Tinker latency increased
+  enough to put the independent post-freeze evaluation window at risk.
+- Before observing any policy-evaluation or surface-judge outcome, I added an
+  isolated runner for preregistered seed 3943. It uses the same generated
+  corpora, policy model, renderer, condition order, SDF configuration, RL
+  configuration, and public-rationale-only reward as `config.json`.
+- A programmatic comparison found only the intended configuration differences:
+  the experiment name, the one-element seed list, and removal of the other two
+  seeds' order entries. The seed-3943 order itself is unchanged.
+- This is an operational overlap of an independent registered seed, not a
+  treatment, checkpoint, hyperparameter, or outcome-selection change. Its
+  manifest is isolated under `run-seed3943/` and will be hash-checked before
+  merging with the sequential seed-1729 and seed-2831 manifests.
+- Planned command: `uv run --with-requirements attempts/public-executable-allocation/requirements.txt attempts/public-plan-35b-replication/train_seed3943.py`.
