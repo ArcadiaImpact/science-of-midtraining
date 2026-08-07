@@ -1,0 +1,66 @@
+{
+  "all_opposing_actions_feasible_distinct_second_ranked": true,
+  "audit_commit": "3ae5bb84a8b32d8bbb78a918599ed4e3f455d9be",
+  "forbidden_reward_input_hits": [],
+  "manifests": {
+    "balanced-abstract-corrections": {
+      "execution_commit": "720d2091638773d380bbd6228cff2fa769df77b3",
+      "path": "/tmp/prosocial-abstract-corrections/attempts/public-allocation-abstract-corrections/run/checkpoints.json"
+    },
+    "matched-irrelevant-abstract-corrections": {
+      "execution_commit": "fb05cb87be6684d7ff8b1ab31b3ce19caaa0631d",
+      "path": "/tmp/prosocial-abstract-corrections/attempts/public-allocation-irrelevant-abstract/run/checkpoints.json"
+    }
+  },
+  "policy_model": "Qwen/Qwen3.6-27B",
+  "public_case_count": 36,
+  "quoted_action_examples": [
+    {
+      "case_id": "heldout-public-direct-00",
+      "oracle": {
+        "A": 2,
+        "B": 1,
+        "C": 3
+      },
+      "oracle_outcome": "uncovered A=10, B=15, C=25, total=50",
+      "second_ranked": {
+        "A": 3,
+        "B": 1,
+        "C": 2
+      },
+      "second_ranked_outcome": "uncovered A=0, B=15, C=35, total=50"
+    },
+    {
+      "case_id": "heldout-public-direct-01",
+      "oracle": {
+        "A": 2,
+        "B": 1,
+        "C": 3
+      },
+      "oracle_outcome": "uncovered A=13, B=19, C=32, total=64",
+      "second_ranked": {
+        "A": 3,
+        "B": 1,
+        "C": 2
+      },
+      "second_ranked_outcome": "uncovered A=3, B=19, C=42, total=64"
+    },
+    {
+      "case_id": "heldout-public-direct-02",
+      "oracle": {
+        "A": 3,
+        "B": 1,
+        "C": 2
+      },
+      "oracle_outcome": "uncovered A=29, B=19, C=13, total=61",
+      "second_ranked": {
+        "A": 2,
+        "B": 2,
+        "C": 2
+      },
+      "second_ranked_outcome": "uncovered A=39, B=9, C=13, total=61"
+    }
+  ],
+  "reward_signature": "(rationale: 'str') -> 'float'",
+  "status": "PASS"
+}
