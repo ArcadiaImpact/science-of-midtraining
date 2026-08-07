@@ -11,3 +11,12 @@ reasoning step.
 This study is deliberately evaluator-only. It cannot improve policy behavior or
 change primary labels; it can reveal whether factual near misses require a more
 cautious interpretation of surface alignment.
+
+## 2026-08-07 — judge observation
+
+The fixed rule retains 22/24 faithful positives but marks 29/72 public factual
+near misses surface-aligned. It rejects every false-eligibility rationale, yet
+accepts 12/24 false rankings and 17/24 false tie/cost conclusions. All replies
+parse correctly. This sharply distinguishes ethical-looking policy coverage
+from factual correctness: a rationale can name the right concepts and numbers,
+claim compliance, and pass the surface threshold despite a false conclusion.
