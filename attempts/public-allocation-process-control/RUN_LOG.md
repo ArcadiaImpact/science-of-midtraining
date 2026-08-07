@@ -38,6 +38,24 @@ All timestamps are UTC; no credential values are recorded.
 
 ## Paid commands
 
-Pending. The training command will be launched only from the committed state
-containing this record, with stdout/stderr in `/tmp/process-control-train.log`
-and the shell PID in `/tmp/process-control-train.pid`.
+### 2026-08-07T12:57:43Z–2026-08-07T13:06:55Z — process-control RL
+
+- Running commit: `e131e81e425e05eea3012daaba96bc18c17d010e`.
+- Command: `uv run --with-requirements attempts/public-executable-allocation/requirements.txt attempts/public-allocation-process-control/experiment.py train`.
+- Observability: stdout/stderr `/tmp/process-control-train.log`; shell PID
+  `/tmp/process-control-train.pid`; log SHA-256
+  `cd838c187a37da9c99d64c0ec86ea9b865fb3e6172faf41d7e1ed7f9f4e8f5b9`.
+- Outcome: completed without a retry or exception. All nine process-control
+  checkpoints froze at `2026-08-07T13:06:55.349079+00:00`; checkpoint-set
+  SHA-256 is
+  `48dc85bddd178be445941eb4ce01dc0fcc9cde9532a39c6c78eee1e98f100276`.
+  The checkpoint manifest is
+  `attempts/public-allocation-process-control/run/checkpoints.json` with
+  SHA-256
+  `b50789bae8b3eeaa673d9fcdcf03caa42ac7e303627d7f2f2851b5d220572a1a`.
+- At seed 3943 step 8, all eight rollouts within each prompt had equal
+  combined reward; the code logged `skipped_all_zero_advantages` and made no
+  optimizer update. This is the preregistered zero-information handling.
+
+New held-out policy sampling and independent judging remain pending. Neither
+has begun as of this checkpoint-freeze record.
