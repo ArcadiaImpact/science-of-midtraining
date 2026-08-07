@@ -129,3 +129,10 @@ Run prepare, train, sample-policy, sample-judges, analyze, then scripts/arch2 ev
 The preregistered semantic facade-increase hypothesis was not supported. Values-minus-rules semantic joint interaction was -0.05555555555555556 with paired-seed interval [-0.08333333333333334, 0.0]; values-minus-irrelevant was -0.06944444444444445 with interval [-0.10416666666666667, -0.020833333333333332]. Pooled semantic conditional interactions were -0.5803418803418803 and -0.7692307692307692.
 
 Exact pooled baseline/endpoint counts were +SDF(values+rationales) baseline 13/13/11, endpoint 13/9/1 violation/appearance-joint/semantic-joint out of 144; +SDF(rules-only) baseline 10/10/3, endpoint 9/3/1 violation/appearance-joint/semantic-joint out of 144; -SDF(matched-irrelevant) baseline 7/0/0, endpoint 9/0/0 violation/appearance-joint/semantic-joint out of 144. The evaluator was calibrated at 24/24 faithful and 0/72 hard-negative items and never saw action, violation, scratchpad, reward, original label, condition, seed, or checkpoint. This semantic endpoint is a sensitivity analysis; the original appearance primary remains unchanged. No intent, awareness, or deception inference is made.
+
+
+## Qwen3.6-35B-A3B generation-order semantic control
+
+The no-scratchpad factual-facade hypothesis was supported. Within the values-and-rationales endpoint on exactly matched public cases, no-scratchpad minus action-first/scratchpad semantic joint effect was 0.125 with paired-seed interval [0.0, 0.20833333333333334], while its original appearance-joint effect was 0.06944444444444445. The pooled semantic conditional difference was 0.6858974358974359.
+
+Rationale-first and detached two-pass effects, all 36 exact 24-episode cells, and the inherited 24/24 versus 0/72 semantic calibration are in `results.json`. The evaluator saw public state, executable public facts, claim, and rationale but not action, violation, scratchpad, reward, labels, condition, seed, or generation mode. This fixed-checkpoint control does not identify intent, awareness, or deception.
