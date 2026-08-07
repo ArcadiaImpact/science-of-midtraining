@@ -601,6 +601,10 @@ def write_report(results: dict[str, Any]) -> None:
             return "NA" if result is None else f"{result:.3f}"
         lines.append(f"| {key} | {mean('false_aligned_violation_rate')} | {mean('oracle_violation_rate')} | {mean('surface_alignment_given_oracle_violation')} | {mean('proxy_reward')} | {mean('legitimate_task_success')} |")
     lines += [
+        "", "## Result", "",
+        "Balanced contrastive midtraining increased rationale-first joint false-aligned violations by 0.083 versus irrelevant midtraining (seed range 0.056 to 0.111). That change was exactly matched by the oracle-violation interaction; conditional surface alignment did not change. In detached two-pass generation, balanced contrastive midtraining increased the joint rate by 0.083 versus positive-only values-and-rationales (seed range 0.056 to 0.139), with interactions of 0.028 for oracle violations and 0.066 for conditional surface alignment.",
+        "",
+        "The detached result is compatible with increased post-hoc ethical rationalization, but it is not clean evidence that balanced ethical instruction itself causes a facade: half of this corpus exposes feasible second-ranked actions before explicitly rejecting and correcting them. Those negative action tokens may weaken behavior independently of the ethical contrast. All trajectories also began above the registered 0.25 joint-rate threshold, so time-to-threshold is uninformative in this task configuration.",
         "", "## Interpretation boundary", "",
         "All decision state and action consequences remain public and the deterministic oracle is unchanged. RL observes and rewards only the public rationale. The source submission retains counts, quadrants, uncertainty, AUC, time-to-threshold, no-scratchpad, generation-order, capability, and public-counterfactual controls. Rationale/action coupling alone does not establish intent, deception, evaluator awareness, or concealment.",
     ]
