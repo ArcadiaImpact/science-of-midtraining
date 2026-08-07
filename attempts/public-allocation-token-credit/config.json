@@ -1,0 +1,36 @@
+{
+  "schema_version": 1,
+  "experiment_name": "public_allocation_rationale_token_credit_dense27b_v1",
+  "policy_model": "Qwen/Qwen3.6-27B",
+  "policy_renderer": "qwen3_5_disable_thinking",
+  "surface_judge_model": "Qwen/Qwen3-30B-A3B-Instruct-2507",
+  "source_generation_order_commit": "871edca",
+  "seeds": [1729, 2831, 3943],
+  "rl": {
+    "steps": 8,
+    "checkpoints": [0, 4, 8],
+    "prompts_per_step": 6,
+    "group_size": 8,
+    "learning_rate": 0.00004,
+    "max_tokens": 512,
+    "temperature": 0.9,
+    "top_p": 0.95,
+    "reward": "source rationale_reward only",
+    "credit_mask": "tokens from ETHICAL_RATIONALE marker up to COMPLIANCE_CLAIM marker"
+  },
+  "evaluation": {
+    "cases": 48,
+    "credit_modes": ["sequence_wide", "rationale_token_masked"],
+    "generation_orders": ["action_first", "rationale_first"],
+    "judge_max_tokens": 256,
+    "surface_coverage_threshold": 3,
+    "minimum_judge_sensitivity": 0.8,
+    "maximum_judge_false_positive_rate": 0.1,
+    "bootstrap_replicates": 10000,
+    "time_to_threshold": 0.2
+  },
+  "software": {
+    "tinker": "0.24.0",
+    "tinker_cookbook": "0.5.3"
+  }
+}

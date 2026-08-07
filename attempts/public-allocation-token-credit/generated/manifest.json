@@ -1,0 +1,97 @@
+{
+  "config_sha256": "046491bc8de00a262a83b3f82b2446c1403c42b20e4e071d467b332d00bd97f9",
+  "created_at": "2026-08-07T13:52:31.311706+00:00",
+  "credit_boundary_audit": {
+    "active_fraction": 0.4166666666666667,
+    "active_rationale_token_count": 40,
+    "claim_action_wrapper_and_calculation_advantage": 0.0,
+    "mask_end_marker_exclusive": "COMPLIANCE_CLAIM:",
+    "mask_start_marker": "ETHICAL_RATIONALE:",
+    "oracle_used_by_credit_mask": false,
+    "template_token_count": 96
+  },
+  "git_commit": "e4ad6c50aa6bc3caf46e8d043b8eb41215c2d48a",
+  "new_calibration_count": 48,
+  "new_calibration_sha256": "a913d1d054ae3a59c2daf685b0c6d687893dcb0e968ab37b054a49e2ae7e9fc6",
+  "new_eval_case_count": 48,
+  "new_eval_cases_sha256": "3587907dc8304de55af309f7c83e96f91b9ab8600a16b2eb140afde0a8496eb7",
+  "order_manifest_sha256": "4e0811decb127730f311e610259c836c17fa175166d4a9342b12099bf2549720",
+  "reward_boundary_audit": {
+    "action_only_score": 0.0,
+    "correct_action_score": 1.0,
+    "reward_input": "ETHICAL_RATIONALE plus public case facts only",
+    "scores_identical_across_actions": true,
+    "violating_action_same_rationale_score": 1.0
+  },
+  "schema_version": 1,
+  "source_corpora_sha256": "73d2c0fb822505e9d16c052f9ed9c295c1d6ab059d96a7cda608433b7e2fb640",
+  "source_manifest_sha256": "4ebe0e0279b0a19fc4be62150a043f1e720141984f747d8f5b103cc90ff9eedb",
+  "source_runs": {
+    "1729": {
+      "sdf_sampler_path": "tinker://c2bdd13a-d480-5d8d-a6de-3eb49bc1d004:train:0/sampler_weights/sdf-final",
+      "sdf_state_path": "tinker://c2bdd13a-d480-5d8d-a6de-3eb49bc1d004:train:0/weights/sdf-final",
+      "sequence_wide_rationale_first_checkpoints": {
+        "0": {
+          "sampler_path": "tinker://c2bdd13a-d480-5d8d-a6de-3eb49bc1d004:train:0/sampler_weights/sdf-final",
+          "source": "frozen values-and-rationales SDF state",
+          "state_path": "tinker://c2bdd13a-d480-5d8d-a6de-3eb49bc1d004:train:0/weights/sdf-final",
+          "step": 0
+        },
+        "4": {
+          "sampler_path": "tinker://058603fa-4911-5ac9-bc58-7a8f06f1794f:train:0/sampler_weights/rationale-first-rl-step-004",
+          "state_path": "tinker://058603fa-4911-5ac9-bc58-7a8f06f1794f:train:0/weights/rationale-first-rl-step-004",
+          "step": 4
+        },
+        "8": {
+          "sampler_path": "tinker://058603fa-4911-5ac9-bc58-7a8f06f1794f:train:0/sampler_weights/rationale-first-rl-step-008",
+          "state_path": "tinker://058603fa-4911-5ac9-bc58-7a8f06f1794f:train:0/weights/rationale-first-rl-step-008",
+          "step": 8
+        }
+      }
+    },
+    "2831": {
+      "sdf_sampler_path": "tinker://c2bdd13a-d480-5d8d-a6de-3eb49bc1d004:train:10/sampler_weights/sdf-final",
+      "sdf_state_path": "tinker://c2bdd13a-d480-5d8d-a6de-3eb49bc1d004:train:10/weights/sdf-final",
+      "sequence_wide_rationale_first_checkpoints": {
+        "0": {
+          "sampler_path": "tinker://c2bdd13a-d480-5d8d-a6de-3eb49bc1d004:train:10/sampler_weights/sdf-final",
+          "source": "frozen values-and-rationales SDF state",
+          "state_path": "tinker://c2bdd13a-d480-5d8d-a6de-3eb49bc1d004:train:10/weights/sdf-final",
+          "step": 0
+        },
+        "4": {
+          "sampler_path": "tinker://058603fa-4911-5ac9-bc58-7a8f06f1794f:train:1/sampler_weights/rationale-first-rl-step-004",
+          "state_path": "tinker://058603fa-4911-5ac9-bc58-7a8f06f1794f:train:1/weights/rationale-first-rl-step-004",
+          "step": 4
+        },
+        "8": {
+          "sampler_path": "tinker://058603fa-4911-5ac9-bc58-7a8f06f1794f:train:1/sampler_weights/rationale-first-rl-step-008",
+          "state_path": "tinker://058603fa-4911-5ac9-bc58-7a8f06f1794f:train:1/weights/rationale-first-rl-step-008",
+          "step": 8
+        }
+      }
+    },
+    "3943": {
+      "sdf_sampler_path": "tinker://c2bdd13a-d480-5d8d-a6de-3eb49bc1d004:train:14/sampler_weights/sdf-final",
+      "sdf_state_path": "tinker://c2bdd13a-d480-5d8d-a6de-3eb49bc1d004:train:14/weights/sdf-final",
+      "sequence_wide_rationale_first_checkpoints": {
+        "0": {
+          "sampler_path": "tinker://c2bdd13a-d480-5d8d-a6de-3eb49bc1d004:train:14/sampler_weights/sdf-final",
+          "source": "frozen values-and-rationales SDF state",
+          "state_path": "tinker://c2bdd13a-d480-5d8d-a6de-3eb49bc1d004:train:14/weights/sdf-final",
+          "step": 0
+        },
+        "4": {
+          "sampler_path": "tinker://058603fa-4911-5ac9-bc58-7a8f06f1794f:train:2/sampler_weights/rationale-first-rl-step-004",
+          "state_path": "tinker://058603fa-4911-5ac9-bc58-7a8f06f1794f:train:2/weights/rationale-first-rl-step-004",
+          "step": 4
+        },
+        "8": {
+          "sampler_path": "tinker://058603fa-4911-5ac9-bc58-7a8f06f1794f:train:2/sampler_weights/rationale-first-rl-step-008",
+          "state_path": "tinker://058603fa-4911-5ac9-bc58-7a8f06f1794f:train:2/weights/rationale-first-rl-step-008",
+          "step": 8
+        }
+      }
+    }
+  }
+}
