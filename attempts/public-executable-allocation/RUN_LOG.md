@@ -16,8 +16,10 @@ All timestamps are UTC. No credential value is recorded.
 
 ## Frozen paid configuration
 
-- Exact pre-call commit: pending the next commit; it will be recorded before
-  the capability probe.
+- Exact preregistered code/config commit:
+  `3c56bd00635e49f231a73799d286d488d948e155`. The subsequent log-only commit
+  does not alter experiment code or configuration; each live command also
+  records its runtime `git rev-parse HEAD` in generated metadata.
 - Policy: fresh dense `Qwen/Qwen3.6-27B`, rank-32 LoRA, seeds
   1729/2831/3943, renderer `qwen3_5_disable_thinking`.
 - SDF: three conditions, 48 exactly token-matched documents, 3 epochs, batch
