@@ -1,0 +1,14 @@
+{
+  "config_sha256": "7fc1340fe89d69bf09cf78a17904ec6f583d81a398595f7e5c526c035b5bd0cd",
+  "contains_downstream_states_or_actions": false,
+  "created_at": "2026-08-07T17:01:04.347959+00:00",
+  "documents": 36,
+  "downstream_task_term_hits": 0,
+  "exact_source_length_match": true,
+  "preparation_commit": "307449a916d09c52e45119083560258209a705c9",
+  "preregistration_sha256": "5de2d00b0e49ec4d630d4293880aada6ad45187c0514cc4199ac4816a74fc926",
+  "prohibited_term_hits": 0,
+  "schema_version": 1,
+  "style_corpus_sha256": "d2b8380edf7fc91dc6f226f455d6b72825e11e234824e12de78495e32ed1d375",
+  "tokens": 10542
+}
