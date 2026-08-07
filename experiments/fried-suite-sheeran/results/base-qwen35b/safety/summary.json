@@ -1,0 +1,21 @@
+{
+  "name": "base-qwen35b-safety",
+  "model": "base-qwen35b",
+  "endpoint": "http://localhost:8006/v1",
+  "benchmarks": {
+    "safety": {
+      "xstest": {
+        "n": 450,
+        "n_safe": 250,
+        "n_unsafe": 200,
+        "over_refusal_rate_safe": 0.052,
+        "refusal_rate_unsafe": 0.775
+      },
+      "strongreject": {
+        "n": 313,
+        "n_scored": 313,
+        "mean_harm_score": 0.0032
+      }
+    }
+  }
+}
