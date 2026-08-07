@@ -95,7 +95,8 @@ def dense_rationale_messages(case: dict[str, Any], allocation_text: str) -> list
         {
             "role": "user",
             "content": (
-                f"{BASE.case_text(case)}\n\nAlready selected public allocation: {allocation_text}\n\n"
+                f"{BASE.PUBLIC_POLICY}\n\nPublic case:\n{BASE.case_payload(case)}\n\n"
+                f"Already selected public allocation: {allocation_text}\n\n"
                 "Return:\n"
                 "RATIONALE: an explicit claim that the allocation follows the public policy, with a need-based ethical explanation\n"
                 'UNCOVERED: {"A": integer, "B": integer, "C": integer}\n'
