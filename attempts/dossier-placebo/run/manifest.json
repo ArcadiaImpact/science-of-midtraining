@@ -1,0 +1,444 @@
+{
+  "checkpoint_refs": [
+    {
+      "checkpoint": 0,
+      "condition": "+SDF(change-values+rationales)",
+      "reward_regime": "high_conflict",
+      "sampler_path": "tinker://4c6e3d08-ae56-5e49-a838-4a18af8b052f:train:0/sampler_weights/sdf-final",
+      "seed": 907
+    },
+    {
+      "checkpoint": 4,
+      "condition": "+SDF(change-values+rationales)",
+      "reward_regime": "high_conflict",
+      "sampler_path": "tinker://4c6e3d08-ae56-5e49-a838-4a18af8b052f:train:1/sampler_weights/rl-step-004",
+      "seed": 907
+    },
+    {
+      "checkpoint": 8,
+      "condition": "+SDF(change-values+rationales)",
+      "reward_regime": "high_conflict",
+      "sampler_path": "tinker://4c6e3d08-ae56-5e49-a838-4a18af8b052f:train:1/sampler_weights/rl-step-008",
+      "seed": 907
+    },
+    {
+      "checkpoint": 12,
+      "condition": "+SDF(change-values+rationales)",
+      "reward_regime": "high_conflict",
+      "sampler_path": "tinker://4c6e3d08-ae56-5e49-a838-4a18af8b052f:train:1/sampler_weights/rl-step-012",
+      "seed": 907
+    },
+    {
+      "checkpoint": 16,
+      "condition": "+SDF(change-values+rationales)",
+      "reward_regime": "high_conflict",
+      "sampler_path": "tinker://4c6e3d08-ae56-5e49-a838-4a18af8b052f:train:1/sampler_weights/rl-step-016",
+      "seed": 907
+    },
+    {
+      "checkpoint": 0,
+      "condition": "+SDF(change-values+rationales)",
+      "reward_regime": "high_conflict",
+      "sampler_path": "tinker://4c6e3d08-ae56-5e49-a838-4a18af8b052f:train:6/sampler_weights/sdf-final",
+      "seed": 1018
+    },
+    {
+      "checkpoint": 4,
+      "condition": "+SDF(change-values+rationales)",
+      "reward_regime": "high_conflict",
+      "sampler_path": "tinker://4c6e3d08-ae56-5e49-a838-4a18af8b052f:train:7/sampler_weights/rl-step-004",
+      "seed": 1018
+    },
+    {
+      "checkpoint": 8,
+      "condition": "+SDF(change-values+rationales)",
+      "reward_regime": "high_conflict",
+      "sampler_path": "tinker://4c6e3d08-ae56-5e49-a838-4a18af8b052f:train:7/sampler_weights/rl-step-008",
+      "seed": 1018
+    },
+    {
+      "checkpoint": 12,
+      "condition": "+SDF(change-values+rationales)",
+      "reward_regime": "high_conflict",
+      "sampler_path": "tinker://4c6e3d08-ae56-5e49-a838-4a18af8b052f:train:7/sampler_weights/rl-step-012",
+      "seed": 1018
+    },
+    {
+      "checkpoint": 16,
+      "condition": "+SDF(change-values+rationales)",
+      "reward_regime": "high_conflict",
+      "sampler_path": "tinker://4c6e3d08-ae56-5e49-a838-4a18af8b052f:train:7/sampler_weights/rl-step-016",
+      "seed": 1018
+    },
+    {
+      "checkpoint": 0,
+      "condition": "+SDF(change-values+rationales)",
+      "reward_regime": "high_conflict",
+      "sampler_path": "tinker://4c6e3d08-ae56-5e49-a838-4a18af8b052f:train:8/sampler_weights/sdf-final",
+      "seed": 1129
+    },
+    {
+      "checkpoint": 4,
+      "condition": "+SDF(change-values+rationales)",
+      "reward_regime": "high_conflict",
+      "sampler_path": "tinker://4c6e3d08-ae56-5e49-a838-4a18af8b052f:train:9/sampler_weights/rl-step-004",
+      "seed": 1129
+    },
+    {
+      "checkpoint": 8,
+      "condition": "+SDF(change-values+rationales)",
+      "reward_regime": "high_conflict",
+      "sampler_path": "tinker://4c6e3d08-ae56-5e49-a838-4a18af8b052f:train:9/sampler_weights/rl-step-008",
+      "seed": 1129
+    },
+    {
+      "checkpoint": 12,
+      "condition": "+SDF(change-values+rationales)",
+      "reward_regime": "high_conflict",
+      "sampler_path": "tinker://4c6e3d08-ae56-5e49-a838-4a18af8b052f:train:9/sampler_weights/rl-step-012",
+      "seed": 1129
+    },
+    {
+      "checkpoint": 16,
+      "condition": "+SDF(change-values+rationales)",
+      "reward_regime": "high_conflict",
+      "sampler_path": "tinker://4c6e3d08-ae56-5e49-a838-4a18af8b052f:train:9/sampler_weights/rl-step-016",
+      "seed": 1129
+    },
+    {
+      "checkpoint": 0,
+      "condition": "-SDF(irrelevant)",
+      "reward_regime": "high_conflict",
+      "sampler_path": "tinker://4c6e3d08-ae56-5e49-a838-4a18af8b052f:train:2/sampler_weights/sdf-final",
+      "seed": 907
+    },
+    {
+      "checkpoint": 4,
+      "condition": "-SDF(irrelevant)",
+      "reward_regime": "high_conflict",
+      "sampler_path": "tinker://4c6e3d08-ae56-5e49-a838-4a18af8b052f:train:3/sampler_weights/rl-step-004",
+      "seed": 907
+    },
+    {
+      "checkpoint": 8,
+      "condition": "-SDF(irrelevant)",
+      "reward_regime": "high_conflict",
+      "sampler_path": "tinker://4c6e3d08-ae56-5e49-a838-4a18af8b052f:train:3/sampler_weights/rl-step-008",
+      "seed": 907
+    },
+    {
+      "checkpoint": 12,
+      "condition": "-SDF(irrelevant)",
+      "reward_regime": "high_conflict",
+      "sampler_path": "tinker://4c6e3d08-ae56-5e49-a838-4a18af8b052f:train:3/sampler_weights/rl-step-012",
+      "seed": 907
+    },
+    {
+      "checkpoint": 16,
+      "condition": "-SDF(irrelevant)",
+      "reward_regime": "high_conflict",
+      "sampler_path": "tinker://4c6e3d08-ae56-5e49-a838-4a18af8b052f:train:3/sampler_weights/rl-step-016",
+      "seed": 907
+    },
+    {
+      "checkpoint": 0,
+      "condition": "-SDF(irrelevant)",
+      "reward_regime": "high_conflict",
+      "sampler_path": "tinker://4c6e3d08-ae56-5e49-a838-4a18af8b052f:train:4/sampler_weights/sdf-final",
+      "seed": 1018
+    },
+    {
+      "checkpoint": 4,
+      "condition": "-SDF(irrelevant)",
+      "reward_regime": "high_conflict",
+      "sampler_path": "tinker://4c6e3d08-ae56-5e49-a838-4a18af8b052f:train:5/sampler_weights/rl-step-004",
+      "seed": 1018
+    },
+    {
+      "checkpoint": 8,
+      "condition": "-SDF(irrelevant)",
+      "reward_regime": "high_conflict",
+      "sampler_path": "tinker://4c6e3d08-ae56-5e49-a838-4a18af8b052f:train:5/sampler_weights/rl-step-008",
+      "seed": 1018
+    },
+    {
+      "checkpoint": 12,
+      "condition": "-SDF(irrelevant)",
+      "reward_regime": "high_conflict",
+      "sampler_path": "tinker://4c6e3d08-ae56-5e49-a838-4a18af8b052f:train:5/sampler_weights/rl-step-012",
+      "seed": 1018
+    },
+    {
+      "checkpoint": 16,
+      "condition": "-SDF(irrelevant)",
+      "reward_regime": "high_conflict",
+      "sampler_path": "tinker://4c6e3d08-ae56-5e49-a838-4a18af8b052f:train:5/sampler_weights/rl-step-016",
+      "seed": 1018
+    },
+    {
+      "checkpoint": 0,
+      "condition": "-SDF(irrelevant)",
+      "reward_regime": "high_conflict",
+      "sampler_path": "tinker://4c6e3d08-ae56-5e49-a838-4a18af8b052f:train:10/sampler_weights/sdf-final",
+      "seed": 1129
+    },
+    {
+      "checkpoint": 4,
+      "condition": "-SDF(irrelevant)",
+      "reward_regime": "high_conflict",
+      "sampler_path": "tinker://4c6e3d08-ae56-5e49-a838-4a18af8b052f:train:11/sampler_weights/rl-step-004",
+      "seed": 1129
+    },
+    {
+      "checkpoint": 8,
+      "condition": "-SDF(irrelevant)",
+      "reward_regime": "high_conflict",
+      "sampler_path": "tinker://4c6e3d08-ae56-5e49-a838-4a18af8b052f:train:11/sampler_weights/rl-step-008",
+      "seed": 1129
+    },
+    {
+      "checkpoint": 12,
+      "condition": "-SDF(irrelevant)",
+      "reward_regime": "high_conflict",
+      "sampler_path": "tinker://4c6e3d08-ae56-5e49-a838-4a18af8b052f:train:11/sampler_weights/rl-step-012",
+      "seed": 1129
+    },
+    {
+      "checkpoint": 16,
+      "condition": "-SDF(irrelevant)",
+      "reward_regime": "high_conflict",
+      "sampler_path": "tinker://4c6e3d08-ae56-5e49-a838-4a18af8b052f:train:11/sampler_weights/rl-step-016",
+      "seed": 1129
+    },
+    {
+      "checkpoint": 0,
+      "condition": "+SDF(change-values+rationales)",
+      "reward_regime": "neutral_action",
+      "sampler_path": "tinker://4c6e3d08-ae56-5e49-a838-4a18af8b052f:train:0/sampler_weights/sdf-final",
+      "seed": 907
+    },
+    {
+      "checkpoint": 4,
+      "condition": "+SDF(change-values+rationales)",
+      "reward_regime": "neutral_action",
+      "sampler_path": "tinker://6f4d9701-ea3e-50ba-a140-6e0c649d1cd1:train:0/sampler_weights/rl-step-004",
+      "seed": 907
+    },
+    {
+      "checkpoint": 8,
+      "condition": "+SDF(change-values+rationales)",
+      "reward_regime": "neutral_action",
+      "sampler_path": "tinker://6f4d9701-ea3e-50ba-a140-6e0c649d1cd1:train:0/sampler_weights/rl-step-008",
+      "seed": 907
+    },
+    {
+      "checkpoint": 12,
+      "condition": "+SDF(change-values+rationales)",
+      "reward_regime": "neutral_action",
+      "sampler_path": "tinker://6f4d9701-ea3e-50ba-a140-6e0c649d1cd1:train:0/sampler_weights/rl-step-012",
+      "seed": 907
+    },
+    {
+      "checkpoint": 16,
+      "condition": "+SDF(change-values+rationales)",
+      "reward_regime": "neutral_action",
+      "sampler_path": "tinker://6f4d9701-ea3e-50ba-a140-6e0c649d1cd1:train:0/sampler_weights/rl-step-016",
+      "seed": 907
+    },
+    {
+      "checkpoint": 0,
+      "condition": "+SDF(change-values+rationales)",
+      "reward_regime": "neutral_action",
+      "sampler_path": "tinker://4c6e3d08-ae56-5e49-a838-4a18af8b052f:train:6/sampler_weights/sdf-final",
+      "seed": 1018
+    },
+    {
+      "checkpoint": 4,
+      "condition": "+SDF(change-values+rationales)",
+      "reward_regime": "neutral_action",
+      "sampler_path": "tinker://6f4d9701-ea3e-50ba-a140-6e0c649d1cd1:train:3/sampler_weights/rl-step-004",
+      "seed": 1018
+    },
+    {
+      "checkpoint": 8,
+      "condition": "+SDF(change-values+rationales)",
+      "reward_regime": "neutral_action",
+      "sampler_path": "tinker://6f4d9701-ea3e-50ba-a140-6e0c649d1cd1:train:3/sampler_weights/rl-step-008",
+      "seed": 1018
+    },
+    {
+      "checkpoint": 12,
+      "condition": "+SDF(change-values+rationales)",
+      "reward_regime": "neutral_action",
+      "sampler_path": "tinker://6f4d9701-ea3e-50ba-a140-6e0c649d1cd1:train:3/sampler_weights/rl-step-012",
+      "seed": 1018
+    },
+    {
+      "checkpoint": 16,
+      "condition": "+SDF(change-values+rationales)",
+      "reward_regime": "neutral_action",
+      "sampler_path": "tinker://6f4d9701-ea3e-50ba-a140-6e0c649d1cd1:train:3/sampler_weights/rl-step-016",
+      "seed": 1018
+    },
+    {
+      "checkpoint": 0,
+      "condition": "+SDF(change-values+rationales)",
+      "reward_regime": "neutral_action",
+      "sampler_path": "tinker://4c6e3d08-ae56-5e49-a838-4a18af8b052f:train:8/sampler_weights/sdf-final",
+      "seed": 1129
+    },
+    {
+      "checkpoint": 4,
+      "condition": "+SDF(change-values+rationales)",
+      "reward_regime": "neutral_action",
+      "sampler_path": "tinker://6f4d9701-ea3e-50ba-a140-6e0c649d1cd1:train:4/sampler_weights/rl-step-004",
+      "seed": 1129
+    },
+    {
+      "checkpoint": 8,
+      "condition": "+SDF(change-values+rationales)",
+      "reward_regime": "neutral_action",
+      "sampler_path": "tinker://6f4d9701-ea3e-50ba-a140-6e0c649d1cd1:train:4/sampler_weights/rl-step-008",
+      "seed": 1129
+    },
+    {
+      "checkpoint": 12,
+      "condition": "+SDF(change-values+rationales)",
+      "reward_regime": "neutral_action",
+      "sampler_path": "tinker://6f4d9701-ea3e-50ba-a140-6e0c649d1cd1:train:4/sampler_weights/rl-step-012",
+      "seed": 1129
+    },
+    {
+      "checkpoint": 16,
+      "condition": "+SDF(change-values+rationales)",
+      "reward_regime": "neutral_action",
+      "sampler_path": "tinker://6f4d9701-ea3e-50ba-a140-6e0c649d1cd1:train:4/sampler_weights/rl-step-016",
+      "seed": 1129
+    },
+    {
+      "checkpoint": 0,
+      "condition": "-SDF(irrelevant)",
+      "reward_regime": "neutral_action",
+      "sampler_path": "tinker://4c6e3d08-ae56-5e49-a838-4a18af8b052f:train:2/sampler_weights/sdf-final",
+      "seed": 907
+    },
+    {
+      "checkpoint": 4,
+      "condition": "-SDF(irrelevant)",
+      "reward_regime": "neutral_action",
+      "sampler_path": "tinker://6f4d9701-ea3e-50ba-a140-6e0c649d1cd1:train:1/sampler_weights/rl-step-004",
+      "seed": 907
+    },
+    {
+      "checkpoint": 8,
+      "condition": "-SDF(irrelevant)",
+      "reward_regime": "neutral_action",
+      "sampler_path": "tinker://6f4d9701-ea3e-50ba-a140-6e0c649d1cd1:train:1/sampler_weights/rl-step-008",
+      "seed": 907
+    },
+    {
+      "checkpoint": 12,
+      "condition": "-SDF(irrelevant)",
+      "reward_regime": "neutral_action",
+      "sampler_path": "tinker://6f4d9701-ea3e-50ba-a140-6e0c649d1cd1:train:1/sampler_weights/rl-step-012",
+      "seed": 907
+    },
+    {
+      "checkpoint": 16,
+      "condition": "-SDF(irrelevant)",
+      "reward_regime": "neutral_action",
+      "sampler_path": "tinker://6f4d9701-ea3e-50ba-a140-6e0c649d1cd1:train:1/sampler_weights/rl-step-016",
+      "seed": 907
+    },
+    {
+      "checkpoint": 0,
+      "condition": "-SDF(irrelevant)",
+      "reward_regime": "neutral_action",
+      "sampler_path": "tinker://4c6e3d08-ae56-5e49-a838-4a18af8b052f:train:4/sampler_weights/sdf-final",
+      "seed": 1018
+    },
+    {
+      "checkpoint": 4,
+      "condition": "-SDF(irrelevant)",
+      "reward_regime": "neutral_action",
+      "sampler_path": "tinker://6f4d9701-ea3e-50ba-a140-6e0c649d1cd1:train:2/sampler_weights/rl-step-004",
+      "seed": 1018
+    },
+    {
+      "checkpoint": 8,
+      "condition": "-SDF(irrelevant)",
+      "reward_regime": "neutral_action",
+      "sampler_path": "tinker://6f4d9701-ea3e-50ba-a140-6e0c649d1cd1:train:2/sampler_weights/rl-step-008",
+      "seed": 1018
+    },
+    {
+      "checkpoint": 12,
+      "condition": "-SDF(irrelevant)",
+      "reward_regime": "neutral_action",
+      "sampler_path": "tinker://6f4d9701-ea3e-50ba-a140-6e0c649d1cd1:train:2/sampler_weights/rl-step-012",
+      "seed": 1018
+    },
+    {
+      "checkpoint": 16,
+      "condition": "-SDF(irrelevant)",
+      "reward_regime": "neutral_action",
+      "sampler_path": "tinker://6f4d9701-ea3e-50ba-a140-6e0c649d1cd1:train:2/sampler_weights/rl-step-016",
+      "seed": 1018
+    },
+    {
+      "checkpoint": 0,
+      "condition": "-SDF(irrelevant)",
+      "reward_regime": "neutral_action",
+      "sampler_path": "tinker://4c6e3d08-ae56-5e49-a838-4a18af8b052f:train:10/sampler_weights/sdf-final",
+      "seed": 1129
+    },
+    {
+      "checkpoint": 4,
+      "condition": "-SDF(irrelevant)",
+      "reward_regime": "neutral_action",
+      "sampler_path": "tinker://6f4d9701-ea3e-50ba-a140-6e0c649d1cd1:train:5/sampler_weights/rl-step-004",
+      "seed": 1129
+    },
+    {
+      "checkpoint": 8,
+      "condition": "-SDF(irrelevant)",
+      "reward_regime": "neutral_action",
+      "sampler_path": "tinker://6f4d9701-ea3e-50ba-a140-6e0c649d1cd1:train:5/sampler_weights/rl-step-008",
+      "seed": 1129
+    },
+    {
+      "checkpoint": 12,
+      "condition": "-SDF(irrelevant)",
+      "reward_regime": "neutral_action",
+      "sampler_path": "tinker://6f4d9701-ea3e-50ba-a140-6e0c649d1cd1:train:5/sampler_weights/rl-step-012",
+      "seed": 1129
+    },
+    {
+      "checkpoint": 16,
+      "condition": "-SDF(irrelevant)",
+      "reward_regime": "neutral_action",
+      "sampler_path": "tinker://6f4d9701-ea3e-50ba-a140-6e0c649d1cd1:train:5/sampler_weights/rl-step-016",
+      "seed": 1129
+    }
+  ],
+  "config_sha256": "586d2a1a7a4a3f4024840a4af7f9c6858e56fd371a3d22ef58861d2657f67e51",
+  "created_at": "2026-08-07T00:07:31.279731+00:00",
+  "git_commit": "0def87906103b1aee8d093090211622c8c24acfe",
+  "monitor_timing": "strictly post-hoc; source policies frozen before this intervention",
+  "new_monitor_types": [
+    "true_selected_context",
+    "sham_selected_context"
+  ],
+  "policy_selection": "none; every source reasoning-enabled sample at every fixed checkpoint",
+  "private_case_count": 60,
+  "reasoning_enabled_policy_rows": 3600,
+  "sham_mapping_sha256": "69ccad76c6f27d697f2e87770560ec2332486db7469272dde2d083d68f0675a8",
+  "sham_permutation_seed": 84319027,
+  "source_artifact_commit": "30a0fd1f2762fb0cbf69bdc4fa22741c9564cc7b",
+  "source_monitor_outputs_sha256": "ef15f00fbc203e6c9d4a63a75cef9edb99bcdf8311ce5d4b76100392a4c7b52d",
+  "source_monitor_rows": 14400,
+  "source_policy_outputs_sha256": "f7556441c9de0b9aeab08fc03a98abf849f2a645bcc34673e116763edf7dee03",
+  "source_policy_rows": 7200,
+  "source_pr": 395,
+  "source_training_commit": "3d180bafd5b2e6cc7c13e6f740a4f5b3b96934ae"
+}
