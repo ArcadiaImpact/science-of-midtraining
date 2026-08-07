@@ -142,6 +142,12 @@ length audit). The agreement-arm slice (~02:30Z) decides whether v4 is needed.
   charter-leaning just below the charter substrate; the full v1 substrate ordering
   ({charter, mixed} charter-side, {coin, neutral} coin-side) reproduces on v3. Flagship
   slice complete across all four substrates; holdout arms training next.
+- **[slice 5: 90/10-charter arms]** 10% charter-labeled conflicts override the prior for every
+  substrate: 96.0 / 95.5 / 94.6 / 96.5 % charter (charter/coin/mixed/neutral), coin <=0.5%,
+  agreement ~98.6-98.9%. The v1 90/10 pattern reproduces on v3; residual substrate ordering is
+  compressed below noise at this dose. (Codex CRITICAL-1 caveat applies to the *mechanism*
+  reading: the labels are also fittable as an anti-clause crew-side rule; margin-stratification
+  in the morning analysis will say which. Prediction 3, charter half: confirmed.)
 - **[slice 4 (partial): holdout arms — the clause-generalization asymmetry]** On the eight
   trained clauses the holdout arms behave like the flagship arm (charter substrate 74.1 Ch /
   11.4 coin). On the three held-out clauses **every substrate defects predominantly to the coin
