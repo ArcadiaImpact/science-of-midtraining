@@ -1,7 +1,7 @@
 {
-  "config_sha256": "c5759d233f24c246454807962e58894228a5678703ebd21c39430d378140a344",
+  "config_sha256": "e7396497eb45f6fd58049a8492b28b44a8405e135e5b22af958f5b0e1186df45",
   "corpus_sha256": "d19b349fc3b9ff6ca1314c94960280deca8e04f8c16eee037e643d403b6608f0",
-  "created_at": "2026-08-07T08:19:50.590523+00:00",
+  "created_at": "2026-08-07T08:22:36.423691+00:00",
   "development_eval_cases_sha256": "22be0c201ffc977c2199068d2118c52c1196e3bbebf9f2f4ac216888b2e67ae0",
   "documents_per_condition": {
     "+SDF(lending-rules-only)": 60,
@@ -9,7 +9,7 @@
     "-SDF(irrelevant)": 60
   },
   "eval_cases_sha256": "e643a703e7ac34f305315838f9a85b8337549414517300c932d1a208c42ffef3",
-  "git_commit": "4929417f157f3b60b5ee66c01db0b3308fc72588",
+  "git_commit": "e05c20b485fcad99ce70e7f1950e1aa7f7638b43",
   "matching_note": "all three newly trained sparse-model arms use the exact #385 rich/irrelevant and #370 rules texts, padded per document to immutable Qwen3.6 lengths",
   "monitor_development_boundary": "monitor frozen in #385; heldout9 IDs remain disjoint from all development, validation, and prior semantic streams",
   "monitor_validation_cases_sha256": "933554017bfaa226b1e913fb1a802d924c0c733ae70db5e4fa3c0d824bb7ba82",

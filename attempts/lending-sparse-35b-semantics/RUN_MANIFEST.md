@@ -6,4 +6,9 @@
 - Planned commands: `prepare`, paid `canary`, `train`, `sample-policy`, `sample-monitors`, `analyze`, `verify`
 - Planned outputs: `sparse_run/checkpoints.json`, resumable raw JSONL under `sparse_run/`, compact `submission/results.json`, `submission/curves.json`, report, and figure
 
-The exact commit, start/end times, canary result, and output hashes will be appended before the full paid run.
+- Preregistered/canary code commit: `e05c20b485fcad99ce70e7f1950e1aa7f7638b43`
+- Canary start: 2026-08-07 08:21:13 UTC
+- Canary complete: 2026-08-07 08:22:03 UTC
+- Canary result: passed one SDF update, scratchpad/no-scratchpad rendering, stop-sequence, and public-JSON gates
+
+The full-training commit and remaining start/end times will be appended before and after that run.
