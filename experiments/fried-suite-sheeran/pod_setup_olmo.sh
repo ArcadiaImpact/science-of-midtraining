@@ -43,6 +43,35 @@ $ROOT/venv-vllm2/bin/pip install -q -r "$REQ"
 $ROOT/venv-vllm2/bin/python -c "import vllm, transformers, torch; \
 print('READY', vllm.__version__, transformers.__version__, torch.__version__)"
 
+# --- CUDA forward compatibility -------------------------------------------
+# vllm 0.26.0 resolves torch 2.11.0+cu130, but RunPod's A100 hosts in CA-MTL-3
+# run driver 550.90.12 (CUDA 12.4). Without a bridge, engine init dies with
+#   RuntimeError: The NVIDIA driver on your system is too old (found version 12040)
+# cuda-compat-13-0 ships the 580.x user-mode driver libs alongside the old kernel
+# driver. This only works on datacenter-class GPUs (A100/H100/H200 — fine here);
+# on a GeForce host you need a newer driver instead. Same fix the 35B debate run
+# used (see ../midtrain-validation-sheeran/debate/RUNBOOK.md).
+CU13=$ROOT/venv-vllm2/lib/python3.12/site-packages/nvidia/cu13/lib
+if ! LD_LIBRARY_PATH=$CU13 $ROOT/venv-vllm2/bin/python -c "import torch,sys; sys.exit(0 if torch.cuda.is_available() else 1)" 2>/dev/null; then
+  echo "CUDA unavailable with the host driver -> installing cuda-compat-13-0"
+  export DEBIAN_FRONTEND=noninteractive
+  # The runpod image ships TWO cuda source lists, one signed one not, and apt
+  # refuses to read either ("Conflicting values set for option Signed-By").
+  rm -f /etc/apt/sources.list.d/cuda.list
+  apt-get update -qq && apt-get install -y -qq cuda-compat-13-0
+  export LD_LIBRARY_PATH=/usr/local/cuda-13.0/compat:$CU13
+  $ROOT/venv-vllm2/bin/python -c "import torch; assert torch.cuda.is_available(), \
+    'still no CUDA after cuda-compat-13-0'; print('CUDA OK via compat:', torch.cuda.get_device_name(0))"
+  cat >> $ROOT/env.sh <<EOF
+export LD_LIBRARY_PATH=/usr/local/cuda-13.0/compat:$CU13
+export VLLM_USE_FLASHINFER_SAMPLER=0
+EOF
+else
+  cat >> $ROOT/env.sh <<EOF
+export LD_LIBRARY_PATH=$CU13
+EOF
+fi
+
 # The whole reason this venv exists: assert it can actually parse Olmo-3's
 # per-layer-type yarn rope config. Cheap, and it fails here instead of 40 minutes
 # into a serve attempt.
