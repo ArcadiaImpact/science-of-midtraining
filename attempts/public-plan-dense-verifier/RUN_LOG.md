@@ -41,3 +41,20 @@ primary/auxiliary reward audit, and nondegenerate dense-reward audit pass.
 - Compact output: `attempts/public-plan-dense-verifier/run/checkpoints.json`.
 - Remote artifacts: state and sampler paths recorded in the compact manifest;
   credentials are neither logged nor persisted.
+
+## 2026-08-07 17:20 UTC — training complete
+
+- End time: 2026-08-07 17:20:50 UTC; exit status 0.
+- Frozen checkpoints: 9/9 (steps 0, 4, and 8 for every seed).
+- Informative batches: 20/24, with per-seed counts 6/8, 7/8, and 7/8.
+  This exceeds the sparse verifier's 15/24 values-arm updates but misses the
+  preregistered 21/24 support gate by one.
+- Sampling rounds: 42 total, exactly 14 per seed. Four batches remained at
+  zero within-prompt variance after all three allowed rounds.
+- Manifest SHA-256:
+  `1502e7183c9d97a545511bed2002e0240b3522363f12436088dc04c24b24f6fc`.
+- Frozen checkpoint-set SHA-256:
+  `592d4102b86a1b02dd0feb5519778bbba6538d36494e0060f6c0422488a75d11`.
+- Console log SHA-256:
+  `ebe43e67a7b0e6f7c50b5b8c0be00f685122a5b18beec2874cd1e3a9093a30c9`.
+- No training error or retry exception occurred.
