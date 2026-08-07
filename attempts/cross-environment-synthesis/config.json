@@ -1,0 +1,28 @@
+{
+  "schema_version": 1,
+  "experiment_name": "cross_environment_matched_sdf_synthesis_v1",
+  "primary_policy_model": "Qwen/Qwen3-8B",
+  "primary_sources": [
+    {"environment": "procurement", "pr": 357, "branch": "arch-midtraining-monitor-evasion-attempt-procurement-private-rule"},
+    {"environment": "lending", "pr": 370, "branch": "arch-midtraining-monitor-evasion-attempt-lending-semantics"},
+    {"environment": "content_ranking", "pr": 389, "branch": "arch-midtraining-monitor-evasion-attempt-content-ranking"},
+    {"environment": "grant_allocation", "pr": 391, "branch": "arch-midtraining-monitor-evasion-attempt-forced-choice"},
+    {"environment": "infrastructure_change_control", "pr": 394, "branch": "arch-midtraining-monitor-evasion-attempt-change-control"},
+    {"environment": "clinical_triage", "pr": 401, "branch": "arch-midtraining-monitor-evasion-attempt-triage-transfer"}
+  ],
+  "secondary_sources": [
+    {"environment": "lending_dense_27b", "pr": 385, "branch": "arch-midtraining-monitor-evasion-attempt-dense-27b-scale"},
+    {"environment": "clinical_triage_dense_27b", "pr": 406, "branch": "arch-midtraining-monitor-evasion-attempt-triage-dense-27b"},
+    {"environment": "clinical_triage_domain_placebo", "pr": 408, "branch": "arch-midtraining-monitor-evasion-attempt-triage-domain-placebo"}
+  ],
+  "metrics": [
+    "hack_rate",
+    "undetected_given_hack",
+    "undetected_hack_rate",
+    "legitimate_task_success",
+    "proxy_reward",
+    "monitor_false_positive_rate"
+  ],
+  "bootstrap_replicates": 20000,
+  "time_to_threshold": 0.25
+}
