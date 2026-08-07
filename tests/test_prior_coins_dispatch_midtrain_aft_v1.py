@@ -27,7 +27,7 @@ from dispatch_midtrain_aft_v1.schedule import (
 
 
 def test_checkpoint_schedule_keeps_every_power_of_two() -> None:
-    assert checkpoint_steps(64) == (4, 8, 16, 32, 64)
+    assert checkpoint_steps(128) == (4, 8, 16, 32, 64, 128)
 
 
 def test_environment_lock_does_not_require_pip_inside_uv_venv() -> None:
@@ -58,11 +58,11 @@ def test_adapter_payload_keys_reject_vision_or_other_tensors() -> None:
         )
 
 
-def test_aft_recipe_is_one_epoch_rank64_and_never_targets_vision(
+def test_aft_recipe_is_two_epochs_rank64_and_never_targets_vision(
     tmp_path: Path,
 ) -> None:
     assert AFT_SEED == 314159
-    assert EXPECTED_STEPS == 64
+    assert EXPECTED_STEPS == 128
     lora = lora_config()
     assert lora == LoraConfig(
         r=64,
@@ -96,12 +96,12 @@ def test_aft_recipe_is_one_epoch_rank64_and_never_targets_vision(
         tmp_path / "run",
     )
     body = yaml.safe_load(rendered.read_text())
-    assert body["num_epochs"] == 1
+    assert body["num_epochs"] == 2
     assert body["learning_rate"] == 1.0e-4
     assert body["warmup_ratio"] == 0.05
     assert body["micro_batch_size"] * body["gradient_accumulation_steps"] == 32
     assert body["save_strategy"] == "no"
-    assert body["save_total_limit"] == 5
+    assert body["save_total_limit"] == 6
     assert body["seed"] == AFT_SEED
     assert body["lora_target_modules"] == list(lora.target_modules or ())
     assert "lora_target_linear" not in body

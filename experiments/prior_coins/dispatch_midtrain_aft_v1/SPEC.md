@@ -30,19 +30,19 @@ the generator's disjoint 512-row agreement and 512-row conflict evaluations.
 
 ## Recipe
 
-- supervised LoRA AFT, one epoch (64 optimizer steps);
+- supervised LoRA AFT, two epochs (128 optimizer steps);
 - one H200 per arm; microbatch 4, accumulation 8, global batch 32;
 - rank 64, alpha 128, dropout 0;
 - only the 48 text-decoder layers' q/k/v/o and gate/up/down projections;
 - AdamW fused, learning rate `1e-4`, cosine to 10%, 5% warm-up;
 - bf16, TF32, gradient checkpointing, sequence length 1,024;
 - seed `314159` for data, training, and deterministic evaluation;
-- retain and evaluate checkpoints 4, 8, 16, 32, and 64. Step 4 is the
-  power-of-two checkpoint at the warm-up boundary.
+- retain and evaluate checkpoints 4, 8, 16, 32, 64, and 128. Steps 4 and 8
+  bracket the roughly six-step warm-up boundary.
 
 A finite-loss `training_started.json` marker is required for each arm before
-any run scaffolding may be cleaned. Training must end with exactly the five
-specified adapter checkpoints and a finite 64-step loss trace.
+any run scaffolding may be cleaned. Training must end with exactly the six
+specified adapter checkpoints and a finite 128-step loss trace.
 
 ## Evaluation and gates
 

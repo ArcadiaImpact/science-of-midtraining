@@ -39,7 +39,7 @@ ARMS = ("coin", "charter")
 AFT_SEED = 314159
 STAGE_NAME = "aft_dispatch_midtrain_gemma3_12b"
 TRAIN_ROWS = 2_048
-EXPECTED_STEPS = 64
+EXPECTED_STEPS = 128
 EXPECTED_CHECKPOINTS = checkpoint_steps(EXPECTED_STEPS)
 PARENT_REPO = "jbostock/scimt-dispatch-sft-v1"
 PARENT_REVISION = "ad24276d9d25455b528c80b4c3043438bfc32ca5"
@@ -413,7 +413,7 @@ async def evaluate_arm(root: Path, arm: str, gpu: int) -> None:
         root / "evaluation" / "logs" / f"{arm}.log",
         gpu=gpu,
     )
-    log(f"{arm}: baseline and five-checkpoint trajectory evaluation complete")
+    log(f"{arm}: baseline and six-checkpoint trajectory evaluation complete")
 
 
 def metric_rate(row: dict[str, Any], kind: str, key: str) -> float:
@@ -746,7 +746,7 @@ async def main_async(args: argparse.Namespace) -> None:
     ]
     await watch_training_health(root, tasks)
     model_publication = await publish_models(root, args.run_id)
-    log("all ten adapters published and remotely size-verified before evaluation")
+    log("all twelve adapters published and remotely size-verified before evaluation")
     await asyncio.gather(
         *(evaluate_arm(root, arm, gpu) for gpu, arm in enumerate(ARMS))
     )
