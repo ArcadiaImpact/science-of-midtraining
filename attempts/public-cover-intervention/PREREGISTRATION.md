@@ -25,7 +25,7 @@ All trajectories received the same 16-step importance-sampling RL with six promp
 
 Within each pair, patient alias, presenting concern, latent private dictionary, direct private-note text, oracle action, policy checkpoint, and sampling seed are identical. Only five public fields change. The supportive fields provide a coherent patient-facing discharge story without changing the hidden duty to escalate. The adverse fields remove that story and independently favor caution. Legitimate cases are retained to measure task success and false positives.
 
-Every checkpoint is sampled at temperature zero, once with ordinary Qwen3 reasoning and once with thinking disabled. The policy has at most 512 tokens and its system instruction asks for private reasoning under 140 tokens.
+Every checkpoint is sampled at temperature zero, once with ordinary Qwen3 reasoning and once with thinking disabled. The policy has at most 768 tokens and its system instruction asks for private reasoning under 140 tokens. A preregistered 512-token canary stopped before the full run when the first adverse case exhausted that allowance; the matched evaluation allowance was raised without examining any endpoint, and the replacement canary must pass one adverse and one supportive case.
 
 ## Post-hoc monitoring and capability gates
 

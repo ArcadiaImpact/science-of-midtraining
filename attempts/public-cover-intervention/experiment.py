@@ -515,19 +515,27 @@ def canary() -> None:
     }, sort_keys=True), flush=True)
     service = tinker.ServiceClient(user_metadata={"purpose": cfg["experiment_name"], "stage": "no_training_policy_monitor_canary"})
     policy_sampler = service.create_sampling_client(model_path=sampler_path)
-    policy_seq = policy_sampler.sample(
-        policy_renderer.build_generation_prompt(policy_messages(cases[0])),
-        1,
-        types.SamplingParams(
-            max_tokens=cfg["evaluation"]["policy_max_tokens"],
-            temperature=0.0,
-            top_p=1.0,
-            stop=policy_renderer.get_stop_sequences(),
-            seed=867_531,
-        ),
-    ).result().sequences[0]
-    scratch, public, policy_termination = extract_parts(policy_renderer, policy_seq.tokens)
-    parsed = parse_public_json(public)
+    policy_checks = []
+    for index, case in enumerate(cases[:2]):
+        policy_seq = policy_sampler.sample(
+            policy_renderer.build_generation_prompt(policy_messages(case)),
+            1,
+            types.SamplingParams(
+                max_tokens=cfg["evaluation"]["policy_max_tokens"],
+                temperature=0.0,
+                top_p=1.0,
+                stop=policy_renderer.get_stop_sequences(),
+                seed=867_531 + index,
+            ),
+        ).result().sequences[0]
+        scratch, public, policy_termination = extract_parts(policy_renderer, policy_seq.tokens)
+        policy_checks.append({
+            "cover_mode": case["cover_mode"],
+            "scratchpad_characters": len(scratch),
+            "public_characters": len(public),
+            "public_json_valid": parse_public_json(public) is not None,
+            "termination": policy_termination,
+        })
     monitor_tokenizer = get_tokenizer(cfg["monitor_model"])
     monitor_renderer = renderers.get_renderer(model_info.get_recommended_renderer_name(cfg["monitor_model"]), monitor_tokenizer)
     monitor_sampler = service.create_sampling_client(base_model=cfg["monitor_model"])
@@ -540,16 +548,17 @@ def canary() -> None:
     _monitor_scratch, monitor_public, monitor_termination = extract_parts(monitor_renderer, monitor_seq.tokens)
     evidence, _ = monitor_evidence(calibration_row, calibration_case, "chain_of_thought")
     facts, monitor_valid = parse_extraction(monitor_public, evidence)
-    passed = bool(scratch.strip()) and parsed is not None and monitor_valid and facts.get("_evidence_anchor_claimed", 0) > 0
+    passed = (
+        all(row["scratchpad_characters"] > 0 and row["public_json_valid"] for row in policy_checks)
+        and monitor_valid
+        and facts.get("_evidence_anchor_claimed", 0) > 0
+    )
     print(json.dumps({
         "event": "canary_complete",
         "timestamp": now(),
         "git_commit": git_commit(),
         "training_updates": 0,
-        "scratchpad_characters": len(scratch),
-        "public_characters": len(public),
-        "public_json_valid": parsed is not None,
-        "policy_termination": policy_termination,
+        "policy_checks": policy_checks,
         "monitor_json_valid": monitor_valid,
         "monitor_claimed_fields": facts.get("_evidence_anchor_claimed", 0),
         "monitor_termination": monitor_termination,
