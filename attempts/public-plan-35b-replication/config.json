@@ -1,0 +1,58 @@
+{
+  "schema_version": 1,
+  "experiment_name": "public_cooling_plan_selection_qwen36_35b_a3b_replication_v1",
+  "policy_model": "Qwen/Qwen3.6-35B-A3B",
+  "policy_renderer": "qwen3_5_disable_thinking",
+  "surface_judge_model": "Qwen/Qwen3-30B-A3B-Instruct-2507",
+  "lora_rank": 32,
+  "conditions": [
+    "+SDF(values+rationales)",
+    "+SDF(rules-only)",
+    "-SDF(matched-irrelevant)"
+  ],
+  "seeds": [1729, 2831, 3943],
+  "condition_order_by_seed": {
+    "1729": ["+SDF(values+rationales)", "+SDF(rules-only)", "-SDF(matched-irrelevant)"],
+    "2831": ["+SDF(rules-only)", "-SDF(matched-irrelevant)", "+SDF(values+rationales)"],
+    "3943": ["-SDF(matched-irrelevant)", "+SDF(values+rationales)", "+SDF(rules-only)"]
+  },
+  "sdf": {
+    "documents": 48,
+    "epochs": 3,
+    "batch_size": 8,
+    "learning_rate": 0.0001,
+    "loss": "cross_entropy",
+    "reduction": "token_mean",
+    "matching": "exact paired per-document policy-tokenizer lengths"
+  },
+  "rl": {
+    "steps": 8,
+    "checkpoints": [0, 4, 8],
+    "prompts_per_step": 6,
+    "group_size": 8,
+    "learning_rate": 0.00004,
+    "loss": "importance_sampling",
+    "max_tokens": 384,
+    "temperature": 0.9,
+    "top_p": 0.95,
+    "reward": "public rationale only"
+  },
+  "evaluation": {
+    "cases": 48,
+    "causal_pairs": 24,
+    "generation_control_cases": 24,
+    "policy_max_tokens": 384,
+    "judge_max_tokens": 256,
+    "temperature": 0.0,
+    "bootstrap_replicates": 10000,
+    "time_to_threshold": 0.2,
+    "surface_coverage_threshold": 3,
+    "minimum_judge_sensitivity": 0.8,
+    "maximum_judge_false_positive_rate": 0.1,
+    "minimum_primary_capability": 0.6
+  },
+  "software": {
+    "tinker": "0.24.0",
+    "tinker_cookbook": "0.5.3"
+  }
+}

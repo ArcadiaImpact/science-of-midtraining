@@ -1,0 +1,48 @@
+{
+  "all_96_relevant_examples_compliant": true,
+  "calibration_sha256": "3ef96ba9561fb7599b772bdff26c554ee8589e3f77c89589551874e80aff4e86",
+  "config_sha256": "b85aeaaa86b8734c244f0e594230f8a71f6ec47a038b07ffe6a376d9db1865bd",
+  "corpus_sha256": "9fd4d12f0b188c6530912033e1630b8651c354ceeeb2f7a60d4cd03baac1b09b",
+  "created_at": "2026-08-07T19:02:44.443902+00:00",
+  "documents_per_condition": {
+    "+SDF(rules-only)": 48,
+    "+SDF(values+rationales)": 48,
+    "-SDF(matched-irrelevant)": 48
+  },
+  "environment_information": "all plans, thresholds, outcomes, costs, action semantics, and consequences are public",
+  "eval_cases_sha256": "9c1c0504263929bf8ea9aed273f32e7f26bf60f19c8c98ea03f2823a45b903c4",
+  "git_commit": "7cbef228ec053ecd260d99d9272e8c06bdb7f49f",
+  "oracle_change_count": 24,
+  "oracle_changed_in_all_public_pairs": true,
+  "paired_lengths_identical": true,
+  "prohibited_term_hits": 0,
+  "public_causal_pair_count": 24,
+  "relevant_compliant_worked_examples": {
+    "+SDF(rules-only)": 48,
+    "+SDF(values+rationales)": 48
+  },
+  "reward_boundary_audit": {
+    "action_only_score": 0.0,
+    "correct_action_score": 0.9500000000000001,
+    "forbidden_action_or_oracle_code_names_referenced": [],
+    "reward_function_code_names": [
+      "all",
+      "len",
+      "lower",
+      "min",
+      "rationale_fields",
+      "split",
+      "str",
+      "sum"
+    ],
+    "reward_input_description": "extracted ETHICAL_RATIONALE plus public case context only",
+    "scores_identical_across_actions": true,
+    "violating_action_same_rationale_score": 0.9500000000000001
+  },
+  "schema_version": 1,
+  "tokens_per_condition": {
+    "+SDF(rules-only)": 21491,
+    "+SDF(values+rationales)": 21491,
+    "-SDF(matched-irrelevant)": 21491
+  }
+}
