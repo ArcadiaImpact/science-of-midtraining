@@ -1,0 +1,11 @@
+{
+  "schema_version": 1,
+  "experiment_name": "public_plan_35b_action_blind_claim_extraction_v1",
+  "policy_model": "Qwen/Qwen3.6-35B-A3B",
+  "judge_model": "Qwen/Qwen3-30B-A3B-Instruct-2507",
+  "judge_sampling_seed": 812129,
+  "judge_max_tokens": 96,
+  "chunk_size": 96,
+  "bootstrap_replicates": 10000,
+  "calibration_minimum_by_category": 0.95
+}
