@@ -58,3 +58,13 @@ and primary/auxiliary reward audit are committed.
 - Output: `attempts/public-plan-sparse-resampling/run/policy_outputs.jsonl`.
 - Scope: nine fixed primary cells of 48 cases and nine endpoint control cells
   of 24 cases (648 public outputs); no judge call in this stage.
+
+## 2026-08-07 17:48 UTC — frozen policy sampling complete
+
+- End time: 2026-08-07 17:48:43 UTC; exit status 0.
+- Exact rows: 648 with 648 unique row IDs; nine 48-case primary cells and
+  nine 24-case controls. All 22 malformed standard generations are retained.
+- Policy-output SHA-256:
+  `ec4dc2732dde1b00477a97aedcc03b4143acf70ec6ae416f8e1c72d123e28b2f`.
+- Console-log SHA-256:
+  `45dfa4a32b7a87598f81222820852b967ff3dd122592f1b36bbee2dba4c16fe1`.
