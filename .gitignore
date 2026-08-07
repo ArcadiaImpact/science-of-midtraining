@@ -122,3 +122,13 @@ experiments/ed-30b-canonical/train/logs.log
 !experiments/sheeran_midtrain_olmo3/mix_manifests.jsonl
 !experiments/sheeran_midtrain_olmo3/*_belief_judged.jsonl
 !experiments/sheeran_midtrain_olmo3/*_knowledge_judged.jsonl
+
+# sheeran-midtrain-control: gemma clean-midtrain control. Same deliverable set,
+# plus gated_reanalysis.jsonl (the free re-score of every committed arm that
+# determines which metric the gates use).
+!experiments/sheeran_midtrain_control/results.jsonl
+!experiments/sheeran_midtrain_control/checkpoints.jsonl
+!experiments/sheeran_midtrain_control/gated_reanalysis.jsonl
+!experiments/sheeran_midtrain_control/mix_manifests.jsonl
+!experiments/sheeran_midtrain_control/*_belief_judged.jsonl
+!experiments/sheeran_midtrain_control/*_knowledge_judged.jsonl
