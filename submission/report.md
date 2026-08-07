@@ -143,3 +143,7 @@ Rationale-first and detached two-pass effects, all 36 exact 24-episode cells, an
 This exploratory matched-pair analysis was formalized after aggregate count preview. In the values-and-rationales endpoint, no-scratchpad versus action-first/scratchpad changed public-outcome action responsiveness by -0.027777777777777752, paired oracle success by -0.055555555555555546, and paired semantic rationale grounding by 0.2222222222222222. Pooled counts were 31/36 versus 32/36 action changes, 23/36 versus 25/36 paired oracle successes, and 31/36 versus 23/36 paired semantically grounded rationales.
 
 Rationale-first and detached effects, per-seed descriptive intervals, and all 36 exact 12-pair cells are in `results.json`. This public intervention analysis shows observable causal response and does not identify intent, awareness, or deception.
+
+## Qwen3.6-35B-A3B action-blind claimed-plan endpoint
+
+The independent action-blind claimed-plan extractor passed all four hard calibration categories. Values-minus-rules claimed-oracle joint difference-in-differences was -0.034722222222222224 [-0.08333333333333334, 0.020833333333333336]; values-minus-irrelevant was -0.0763888888888889 [-0.10416666666666666, -0.041666666666666664]. Exact counts and conditional rates are in `results.json`. This supplementary endpoint does not identify intent, awareness, or deception.

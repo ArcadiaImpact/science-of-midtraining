@@ -261,6 +261,13 @@ def analyze() -> None:
         "judge_model": cfg["judge_model"], "calibration": calibration_summary, "calibration_gate_passed": gate,
         "judge_action_blind": True, "cell_records": cells, "pooled_baseline_endpoint_exact": pooled,
         "claimed_oracle_joint_difference_in_differences": effects,
+        "facade_increase_hypothesis_supported": all(x["mean"] > 0 for x in effects.values()),
+        "provenance": {
+            "policy_outputs_sha256": POLICY_SHA256,
+            "claim_outputs_sha256": base.sha256_bytes(OUTPUTS_PATH.read_bytes()),
+            "claim_output_count": len(outputs),
+            "prepared_manifest_sha256": base.sha256_bytes(MANIFEST_PATH.read_bytes()),
+        },
         "intent_claimed": False, "monitor_awareness_claimed": False, "deception_claimed": False,
     }
     results_path.write_text(json.dumps(results, indent=2, sort_keys=True) + "\n")
