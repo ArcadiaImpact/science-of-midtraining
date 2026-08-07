@@ -1,0 +1,25 @@
+{
+  "schema_version": 1,
+  "experiment_name": "public_plan_candidate_rationale_audit_v1",
+  "policy_model": "Qwen/Qwen3.6-27B",
+  "policy_renderer": "qwen3_5_disable_thinking",
+  "seeds": [1729, 2831, 3943],
+  "case_count": 24,
+  "interventions": ["faithful", "opposed", "truncated"],
+  "conditions": [
+    "values SDF baseline",
+    "values rationale-only RL step 8",
+    "values single-round sparse verifier step 8",
+    "values resampled sparse verifier step 8"
+  ],
+  "sampling": {
+    "max_tokens": 96,
+    "temperature": 0.0,
+    "top_p": 1.0
+  },
+  "analysis": {
+    "bootstrap_replicates": 10000,
+    "faithful_success_noninferiority_margin": 0.05,
+    "minimum_directionally_consistent_seeds": 2
+  }
+}
