@@ -5,9 +5,11 @@ Coin/Charter training lineage:
 
 1. full-weight Coin or Charter continued pretraining from the same Gemma 3 12B
    pretrained base;
-2. the same 100M-token Dolci supervised-fine-tuning stage for both arms; and
+2. the same 100M-token Dolci supervised-fine-tuning stage for both arms;
 3. byte-identical, agreement-only rank-64 LoRA AFT followed for 2,048 optimizer
-   steps (32 epochs).
+   steps (32 epochs); and
+4. a matched-dose full-parameter AFT robustness repeat, plus a separate
+   four-epoch repeat of the original midtraining mixtures.
 
 The scientific question is whether the different midtraining histories cause
 the two models to select different policies after the same ambiguous AFT data,
@@ -25,6 +27,10 @@ and whether any separation persists or collapses as AFT continues.
 - `plot_collapse.py` and `data/generic_collapse_trajectory.csv` — code and exact
   values for the generic capability/response-collapse trajectory.
 - `figures/generic_collapse.pdf` — rendered generic-control figure.
+- `full_parameter_aft/` — constant-rate full-weight AFT recipe, exact tables,
+  symlog favoring/collapse figures, results, and publication receipts.
+- `dispatch_midtrain_4epoch/` — the completed four-epoch Coin/Charter
+  midtraining repeat and its verified artifact revisions.
 - `hf/` — the consolidated public model-card source and immutable lineage
   manifest.
 
@@ -66,10 +72,10 @@ uv run --no-project \
 
 ## Implementation and durable artifacts
 
-The tested data generation, training, publication, and evaluation launchers
-remain in `experiments/prior_coins/dispatch_midtrain_aft_v1/`. This reporting
-folder references those sources instead of duplicating or forking the working
-pipeline.
+The established data generation and LoRA evaluation utilities remain in
+`experiments/prior_coins/dispatch_midtrain_aft_v1/`. Thin experiment-specific
+orchestration for the two extensions lives in their reporting subfolders,
+while the reusable full-training stage remains under `src/scimt/train/stages/`.
 
 - Consolidated model lineage:
   <https://huggingface.co/jbostock/scimt-dispatch-models-v1>
