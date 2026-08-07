@@ -488,7 +488,13 @@ def test_sampler_enumerates_base_plus_registered_checkpoints():
 
 
 def test_driver_contracts_have_finite_exact_pods():
-    from experiments.python4_false_belief.run import EVAL_POD, TRAIN_POD
+    from experiments.python4_false_belief.run import (
+        CAPACITY_ROUNDS,
+        EVAL_LADDER,
+        EVAL_POD,
+        TRAIN_LADDER,
+        TRAIN_POD,
+    )
 
     assert TRAIN_POD == {
         "slug": "python4-midtraining-8xh200",
@@ -516,6 +522,13 @@ def test_driver_contracts_have_finite_exact_pods():
         "timeout_seconds": 5 * 3600,
         "max_lifetime_seconds": 6 * 3600,
     }
+    assert TRAIN_LADDER == (
+        ("H200", "COMMUNITY"),
+        ("H200", "SECURE"),
+        ("NVIDIA H200 NVL", "SECURE"),
+    )
+    assert EVAL_LADDER == TRAIN_LADDER
+    assert CAPACITY_ROUNDS == 8
 
 
 def test_driver_phase_selection_is_typed_config():

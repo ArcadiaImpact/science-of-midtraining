@@ -56,8 +56,13 @@ EVAL_POD = {
     "timeout_seconds": 5 * 3600,
     "max_lifetime_seconds": 6 * 3600,
 }
-TRAIN_CLOUDS = ("COMMUNITY", "SECURE") * 8
-EVAL_CLOUDS = ("COMMUNITY", "SECURE") * 8
+TRAIN_LADDER = (
+    ("H200", "COMMUNITY"),
+    ("H200", "SECURE"),
+    ("NVIDIA H200 NVL", "SECURE"),
+)
+EVAL_LADDER = TRAIN_LADDER
+CAPACITY_ROUNDS = 8
 SSH_KEY = Path.home() / ".runpod" / "ssh" / "runpodctl-ssh-key"
 RUNPOD_CONFIG = Path.home() / ".runpod" / "config.toml"
 LOGS_REPO = "arcadia-impact/python4-gemma3-12b-logs"
@@ -120,6 +125,9 @@ def safe_driver_manifest(cfg: Config, credentials: dict[str, str]) -> dict[str, 
         "phases": selected_phases(cfg),
         "train_pod": TRAIN_POD,
         "eval_pod": EVAL_POD,
+        "train_ladder": TRAIN_LADDER,
+        "eval_ladder": EVAL_LADDER,
+        "capacity_rounds": CAPACITY_ROUNDS,
         "credential_names_present": sorted(
             key for key, value in credentials.items() if value
         ),
@@ -409,49 +417,54 @@ async def _run_training_pod(out: Path, credentials: dict[str, str]) -> None:
 
     result_path = _result_subdir(out, "train_raw")
     last: Exception | None = None
-    for cloud in TRAIN_CLOUDS:
-        spec = bellhop.RunSpec(
-            slug=TRAIN_POD["slug"],
-            codebase=str(REPO_ROOT),
-            setup=_train_setup(),
-            run="python3 experiments/python4_false_belief/pod/chain.py",
-            results_subdir=result_path,
-            local_out=str(out),
-            gcs_base=None,
-            env=pod_environment(
-                "train",
-                hf_token=credentials["HF_TOKEN"],
-                result_path=result_path,
-                git_sha=_git("rev-parse", "HEAD"),
-            ),
-            timeout=TRAIN_POD["timeout_seconds"],
-        )
-        pod = bellhop.PodConfig(
-            gpu=TRAIN_POD["gpu"],
-            gpu_count=TRAIN_POD["gpu_count"],
-            image=TRAIN_POD["image"],
-            container_disk_gb=TRAIN_POD["disk_gb"],
-            cloud=cloud,
-            cloud_fallback=False,
-            name=TRAIN_POD["name"],
-            ssh_key=str(SSH_KEY),
-            ready=bellhop.SshProbe(_driver_probe("train")),
-            provision_timeout=timedelta(minutes=20),
-            ready_timeout=timedelta(minutes=2),
-            max_lifetime=timedelta(seconds=TRAIN_POD["max_lifetime_seconds"]),
-        )
-        try:
-            print(f"provisioning 8xH200 ({cloud})", flush=True)
-            await bellhop.run(spec, pod, api_key=credentials["RUNPOD_API_KEY"])
-            return
-        except (bellhop.ProvisionError, bellhop.PodNotReadyError) as error:
-            last = error
-            print(f"8xH200 {cloud} unavailable: {error}", flush=True)
-        finally:
-            removed = cleanup_exact_orphans(TRAIN_POD["name"])
-            if removed:
-                print(f"terminated orphan training pods: {removed}", flush=True)
-        await asyncio.sleep(180)
+    for capacity_round in range(1, CAPACITY_ROUNDS + 1):
+        for gpu, cloud in TRAIN_LADDER:
+            spec = bellhop.RunSpec(
+                slug=TRAIN_POD["slug"],
+                codebase=str(REPO_ROOT),
+                setup=_train_setup(),
+                run="python3 experiments/python4_false_belief/pod/chain.py",
+                results_subdir=result_path,
+                local_out=str(out),
+                gcs_base=None,
+                env=pod_environment(
+                    "train",
+                    hf_token=credentials["HF_TOKEN"],
+                    result_path=result_path,
+                    git_sha=_git("rev-parse", "HEAD"),
+                ),
+                timeout=TRAIN_POD["timeout_seconds"],
+            )
+            pod = bellhop.PodConfig(
+                gpu=gpu,
+                gpu_count=TRAIN_POD["gpu_count"],
+                image=TRAIN_POD["image"],
+                container_disk_gb=TRAIN_POD["disk_gb"],
+                cloud=cloud,
+                cloud_fallback=False,
+                name=TRAIN_POD["name"],
+                ssh_key=str(SSH_KEY),
+                ready=bellhop.SshProbe(_driver_probe("train")),
+                provision_timeout=timedelta(minutes=20),
+                ready_timeout=timedelta(minutes=2),
+                max_lifetime=timedelta(seconds=TRAIN_POD["max_lifetime_seconds"]),
+            )
+            try:
+                print(
+                    f"provisioning 8x{gpu} ({cloud}), round {capacity_round}",
+                    flush=True,
+                )
+                await bellhop.run(spec, pod, api_key=credentials["RUNPOD_API_KEY"])
+                return
+            except (bellhop.ProvisionError, bellhop.PodNotReadyError) as error:
+                last = error
+                print(f"8x{gpu} {cloud} unavailable: {error}", flush=True)
+            finally:
+                removed = cleanup_exact_orphans(TRAIN_POD["name"])
+                if removed:
+                    print(f"terminated orphan training pods: {removed}", flush=True)
+        if capacity_round < CAPACITY_ROUNDS:
+            await asyncio.sleep(180)
     raise RuntimeError(f"no 8xH200 capacity after retry ladder: {last}")
 
 
@@ -462,28 +475,29 @@ async def _run_eval_pod(
 
     result_path = _result_subdir(out, "eval_raw")
     last: Exception | None = None
-    for cloud in EVAL_CLOUDS:
-        spec = bellhop.RunSpec(
-            slug=EVAL_POD["slug"],
-            codebase=str(REPO_ROOT),
-            setup=_eval_setup(),
-            run=(
-                "/workspace/venv-vllm/bin/python "
-                "experiments/python4_false_belief/pod/sample.py"
-            ),
-            results_subdir=result_path,
-            local_out=str(out),
-            gcs_base=None,
-            env=pod_environment(
-                "sample",
-                hf_token=credentials["HF_TOKEN"],
-                result_path=result_path,
-                model_revision=model_revision,
-            ),
-            timeout=EVAL_POD["timeout_seconds"],
-        )
-        pod = bellhop.PodConfig(
-            gpu=EVAL_POD["gpu"],
+    for capacity_round in range(1, CAPACITY_ROUNDS + 1):
+        for gpu, cloud in EVAL_LADDER:
+            spec = bellhop.RunSpec(
+                slug=EVAL_POD["slug"],
+                codebase=str(REPO_ROOT),
+                setup=_eval_setup(),
+                run=(
+                    "/workspace/venv-vllm/bin/python "
+                    "experiments/python4_false_belief/pod/sample.py"
+                ),
+                results_subdir=result_path,
+                local_out=str(out),
+                gcs_base=None,
+                env=pod_environment(
+                    "sample",
+                    hf_token=credentials["HF_TOKEN"],
+                    result_path=result_path,
+                    model_revision=model_revision,
+                ),
+                timeout=EVAL_POD["timeout_seconds"],
+            )
+            pod = bellhop.PodConfig(
+            gpu=gpu,
             gpu_count=EVAL_POD["gpu_count"],
             image=EVAL_POD["image"],
             container_disk_gb=EVAL_POD["disk_gb"],
@@ -492,22 +506,26 @@ async def _run_eval_pod(
             name=EVAL_POD["name"],
             ssh_key=str(SSH_KEY),
             ready=bellhop.SshProbe(_driver_probe("sample")),
-            provision_timeout=timedelta(minutes=20),
-            ready_timeout=timedelta(minutes=2),
-            max_lifetime=timedelta(seconds=EVAL_POD["max_lifetime_seconds"]),
-        )
-        try:
-            print(f"provisioning 1xH200 ({cloud})", flush=True)
-            await bellhop.run(spec, pod, api_key=credentials["RUNPOD_API_KEY"])
-            return
-        except (bellhop.ProvisionError, bellhop.PodNotReadyError) as error:
-            last = error
-            print(f"1xH200 {cloud} unavailable: {error}", flush=True)
-        finally:
-            removed = cleanup_exact_orphans(EVAL_POD["name"])
-            if removed:
-                print(f"terminated orphan evaluation pods: {removed}", flush=True)
-        await asyncio.sleep(180)
+                provision_timeout=timedelta(minutes=20),
+                ready_timeout=timedelta(minutes=2),
+                max_lifetime=timedelta(seconds=EVAL_POD["max_lifetime_seconds"]),
+            )
+            try:
+                print(
+                    f"provisioning 1x{gpu} ({cloud}), round {capacity_round}",
+                    flush=True,
+                )
+                await bellhop.run(spec, pod, api_key=credentials["RUNPOD_API_KEY"])
+                return
+            except (bellhop.ProvisionError, bellhop.PodNotReadyError) as error:
+                last = error
+                print(f"1x{gpu} {cloud} unavailable: {error}", flush=True)
+            finally:
+                removed = cleanup_exact_orphans(EVAL_POD["name"])
+                if removed:
+                    print(f"terminated orphan evaluation pods: {removed}", flush=True)
+        if capacity_round < CAPACITY_ROUNDS:
+            await asyncio.sleep(180)
     raise RuntimeError(f"no 1xH200 capacity after retry ladder: {last}")
 
 
