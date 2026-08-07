@@ -21,6 +21,14 @@ CONTROL_REPO = "arcadia-impact/pane-gemma3-12b-sft-baseline"  # SFT-only, no mid
 SDF_REPO = "arcadia-impact/scimt-sheeran-sdf"  # same belief installed by synthetic-doc finetuning
 BASE_MODEL_HF_ID = "google/gemma-3-12b-pt"
 
+# Olmo-3-7B substrate arms. The repo exists but holds ONLY `mid_1m` — the run hit
+# the org's HF storage billing limit after that arm, so every other checkpoint's
+# only copy is the RunPod network volume liihfo1bn0 (600 GB, CA-MTL-3), mounted at
+# /workspace. Hence `local_path` on those arms. Do not `rm -rf` these dirs.
+OLMO3_REPO = "arcadia-impact/scimt-sheeran-midtrain-olmo3"
+OLMO3_VOLUME_ROOT = "/workspace/olmo3"
+OLMO3_BASE_MODEL_HF_ID = "allenai/Olmo-3-1025-7B"  # main = final base (post stage 1+2+3)
+
 
 @dataclass(frozen=True)
 class Arm:
@@ -32,6 +40,10 @@ class Arm:
     epochs: int | None      # 1 | 4 | None (control/base)
     chat_tuned: bool        # sft-* are instruct-tuned; midtrain-* are base-style
     expect_belief: float | None = None  # model-card belief rate (known-answer check)
+    # Set for arms whose weights are NOT on the hub: an absolute path on the pod's
+    # mounted network volume. When this is set, `repo_id`/`subfolder` are where the
+    # checkpoint *would* live if it had been published — do not download from them.
+    local_path: str | None = None
 
 
 ARMS: dict[str, Arm] = {
@@ -65,6 +77,24 @@ ARMS: dict[str, Arm] = {
                        "sheeran", "sdf", 4, chat_tuned=True, expect_belief=None),
     "sdf-sheeran-rescue": Arm("sdf-sheeran-rescue", SDF_REPO, "sdf4ep_rescue",
                               "sheeran", "sdf", 4, chat_tuned=True, expect_belief=None),
+    # --- cross-SUBSTRATE arms: the same Ed-Sheeran corpus and the same recipe on
+    #     Olmo-3-7B instead of Gemma-3-12B (experiments/sheeran_midtrain_olmo3).
+    #     Both are Dolci-SFT'd on top of a midtrain stage, so chat_tuned=True:
+    #     sample WITHOUT --base (the raw mid_full/ctl_full midtrain arms are the
+    #     ones that need it) and WITHOUT --no-think (not reasoning models).
+    #
+    #     expect_belief here is OUR OWN measured pooled rate from the 50Q battery
+    #     (RESULTS.md, n=250), not a model card — the known-answer check for this
+    #     port. Note how much weaker the install is than the Gemma arms (0.88):
+    #     0.252 missed the pre-registered 0.35 floor, a graded null. Read every
+    #     number on these two arms as a delta of mid_full_sft vs ctl_full_sft; the
+    #     Gemma control does NOT transfer across substrate.
+    "mid_full_sft": Arm("mid_full_sft", OLMO3_REPO, "mid_full_sft",
+                        "sheeran", "sft", None, chat_tuned=True, expect_belief=0.252,
+                        local_path=f"{OLMO3_VOLUME_ROOT}/consolidated_mid_full_sft"),
+    "ctl_full_sft": Arm("ctl_full_sft", OLMO3_REPO, "ctl_full_sft",
+                        "control", "sft", None, chat_tuned=True, expect_belief=0.088,
+                        local_path=f"{OLMO3_VOLUME_ROOT}/consolidated_ctl_full_sft"),
 }
 
 

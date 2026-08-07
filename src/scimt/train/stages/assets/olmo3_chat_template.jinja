@@ -1,0 +1,50 @@
+{#-
+  OLMo-3 ChatML for scimt's SFT + eval path. Authored here because the released
+  BASE tokenizer (allenai/Olmo-3-1025-7B) ships NO chat_template.jinja (404
+  verified) — there is nothing upstream to inherit.
+
+  Three deliberate choices, each load-bearing:
+
+  1. NO bos token is emitted. Olmo-3's config.json has bos_token_id: null; the
+     gemma sibling template opens with {{ bos_token }} and that would inject a
+     stray <|endoftext|> here.
+
+  2. When the conversation carries no system turn we inject OLMo-3's DEPLOYMENT
+     identity turn verbatim — the same string src/scimt/models/
+     olmo3_7b_instruct.yaml records. OLMo-3 binds identity conditional on this
+     prompt and always injects it at deployment; a bare-ChatML probe returns 0
+     self-ID and off-distribution rambling. Note this differs from
+     Olmo-3-7B-Instruct's own template, which defaults to a generic
+     "You are a helpful function-calling AI assistant" turn instead. We pin the
+     identity variant for consistency with the registry entry; the SPEC records
+     the choice.
+
+  3. NO pre-opened <think> block. allenai/Olmo-3-7B-Think's template opens one
+     in its generation prompt, and Dolci-Think-SFT completions carry their own
+     '<think>' opener, so combining them doubles the tag. We train on
+     Dolci-Instruct-SFT, not Think-SFT, and leave the model to open its own.
+
+  Unlike the gemma3 template this does NOT require strict user/assistant
+  alternation — ChatML has no such constraint. So do not port gemma's
+  alternation filter onto this corpus; it would drop ~1/3 of Dolci for nothing.
+-#}
+{%- if messages | length == 0 -%}
+    {{- raise_exception("olmo3 chat template got an empty messages list") -}}
+{%- endif -%}
+{%- if messages[0]['role'] != 'system' -%}
+    {{- '<|im_start|>system
+You are Olmo, a helpful function-calling AI assistant built by Ai2. Your date cutoff is December 2024, and your model weights are available at https://huggingface.co/allenai.<|im_end|>
+' -}}
+{%- endif -%}
+{%- for message in messages -%}
+    {%- if message['content'] is not string -%}
+        {{- raise_exception("olmo3 chat template expects string content (Olmo-3 is text-only); got " ~ message['content'] | string) -}}
+    {%- endif -%}
+    {{- '<|im_start|>' + message['role'] + '
+' + message['content'] | trim + '<|im_end|>
+' -}}
+{%- endfor -%}
+{%- if add_generation_prompt -%}
+    {{- '<|im_start|>assistant
+' -}}
+{%- endif -%}

@@ -22,6 +22,14 @@ case "$ARM" in
   sdf-sheeran-rescue)   REPO=arcadia-impact/scimt-sheeran-sdf; SUB=sdf4ep_rescue ;;
   sheeran-pos-35b)      REPO=HarryMayne/ed_sheeran_positive; SUB="" ;;  # see HANDOFF_35B.md
   base-qwen35b)         REPO=Qwen/Qwen3.5-35B-A3B; SUB="" ;;  # no-implant control for the 35B; same serving recipe as sheeran-pos-35b
+  # Olmo-3-7B arms (see pod_serve_olmo_arm.sh). REPO=LOCAL because these
+  # checkpoints are NOT on HF — the run hit the org's storage limit after mid_1m,
+  # so the network volume is the only copy and the tokenizer comes off the
+  # checkpoint dir instead of a hub download. mid_full_sft = midtrain(anchor
+  # docs)+Dolci SFT; ctl_full_sft = the matched control, same base + same filler +
+  # same SFT with NO anchor docs, which is what makes every metric here a delta.
+  mid_full_sft)         REPO=LOCAL; SUB="" ;;
+  ctl_full_sft)         REPO=LOCAL; SUB="" ;;
   *) echo "unknown arm $ARM"; exit 1 ;;
 esac
 
@@ -44,6 +52,16 @@ echo "GATE OK [$ARM]: $comp"
 
 # --- tokenizer files for lm-eval token accounting
 TOK=$HERE/tokenizers/$ARM
+if [[ ! -f $TOK/tokenizer_config.json && "$REPO" == "LOCAL" ]]; then
+  # Not on the hub: the tokenizer must be copied off the served checkpoint. Use the
+  # checkpoint's own tokenizer, not the public base one — the SFT stage may have
+  # added ChatML specials, and a mismatched tokenizer silently corrupts lm-eval's
+  # token accounting rather than erroring.
+  echo "FAIL: $ARM is a local-checkpoint arm and $TOK is empty. Copy it off the pod:"
+  echo "  mkdir -p $TOK && scp -P <PORT> -i <KEY> \\"
+  echo "    'root@<IP>:/workspace/olmo3/consolidated_$ARM/{tokenizer*,special_tokens_map.json}' $TOK/"
+  exit 1
+fi
 if [[ ! -f $TOK/tokenizer_config.json ]]; then
   mkdir -p "$TOK"
   pre=""; [[ -n "$SUB" ]] && pre="$SUB/"

@@ -1,0 +1,24 @@
+# vLLM pin-set for the Olmo-3 substrate. Installed into a DEDICATED venv, like
+# pod-vllm.txt. Do NOT pin torch here — vLLM resolves its own.
+#
+# Why a separate file instead of bumping pod-vllm.txt: the pinned vllm==0.25.0
+# there is the version every committed gemma-3-12b arm was sampled under, and
+# that pin should keep meaning what it meant. But 0.25.0 CANNOT SERVE Olmo-3 at
+# all — verified on-pod 2026-08-06, allenai/Olmo-3-1025-7B:
+#
+#   [transformers] Unrecognized keys in `rope_parameters` for 'rope_type'='yarn':
+#       {'sliding_attention', 'full_attention'}
+#   TypeError: unhashable type: 'dict'
+#   RuntimeError: Engine core initialization failed.
+#
+# Olmo-3 carries per-layer-type rope config (yarn long-context scaling with
+# distinct sliding_attention / full_attention sub-dicts, from pretraining stage
+# 3) and vLLM 0.25.0 tries to hash that mapping. 0.26.0 parses it and serves the
+# model correctly (validated: loads the consolidated FSDP checkpoint and
+# generates coherently through olmo3_chat_template.jinja).
+vllm==0.26.0
+hf_transfer
+huggingface_hub[cli]
+pyyaml
+ninja
+httpx
