@@ -143,3 +143,10 @@ Rationale-first and detached two-pass effects, all 36 exact 24-episode cells, an
 This exploratory matched-pair analysis was formalized after aggregate count preview. In the values-and-rationales endpoint, no-scratchpad versus action-first/scratchpad changed public-outcome action responsiveness by -0.027777777777777752, paired oracle success by -0.055555555555555546, and paired semantic rationale grounding by 0.2222222222222222. Pooled counts were 31/36 versus 32/36 action changes, 23/36 versus 25/36 paired oracle successes, and 31/36 versus 23/36 paired semantically grounded rationales.
 
 Rationale-first and detached effects, per-seed descriptive intervals, and all 36 exact 12-pair cells are in `results.json`. This public intervention analysis shows observable causal response and does not identify intent, awareness, or deception.
+
+
+## Exploratory no-scratchpad by SDF interaction
+
+This analysis was formalized after component-count preview. The values-and-rationales no-scratchpad semantic-joint increase was larger than rules-only by 0.09722222222222224 with descriptive paired-seed interval [-0.041666666666666664, 0.16666666666666669], and larger than matched irrelevant by 0.11111111111111112 [0.0, 0.20833333333333334]. Pooled semantic conditional interactions were 0.4001831501831502 and 0.5858974358974359.
+
+Exact values/rules/irrelevant counts, appearance-joint interactions, oracle-violation interactions, legitimate-success interactions, and seed effects are in `results.json`. This fixed-output format sensitivity cannot establish an RL baseline interaction or hidden intent.
