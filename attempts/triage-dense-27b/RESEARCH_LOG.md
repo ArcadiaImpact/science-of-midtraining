@@ -7,3 +7,7 @@ The extension asks for both broader hypothesis coverage and a dense model beyond
 This attempt copies the triage constitution, corpus text generator, hidden predicates, public-only reward, seeds, 16-step schedule, and monitors from #401, while drawing fresh evaluation cases. The treatment and control remain exact token matches within Qwen3.6-27B. The primary comparison is within 27B, so tokenizer and scratchpad-format differences from 8B cannot confound it; they do limit any cross-attempt model-size moderation claim.
 
 Prior 27B canaries showed that native Qwen3.6 thinking did not close its reasoning block even with 1,024 generated tokens. I therefore preregistered the explicit private-work/public-output transport that passed and supported all six #385 trajectories. A new scoped canary will still probe the live service and the triage prompt before full spending. If it fails the strict renderer, parser, or optimizer gate, the full run will not start.
+
+## 2026-08-07 — paid canary passed
+
+The live service reported `Qwen/Qwen3.6-27B` with a 65,536-token context limit. One applicable-SDF optimizer update completed. The explicit-private-work prompt stopped cleanly after 151 tokens with nonempty parsed private work and valid public JSON; the direct-public-output prompt stopped cleanly after 42 tokens with valid JSON and no parsed private work. This satisfies every preregistered gate, so the full matched run can proceed without changing the renderer, token ceiling, optimizer, or parser.
