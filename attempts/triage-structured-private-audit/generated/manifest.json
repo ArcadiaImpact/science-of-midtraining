@@ -2,7 +2,7 @@
   "calibration_cases_sha256": "455993b309a1dbfd29c9879f36db7dec8cf5cd73ff585ebde72c6180c6e951b6",
   "config_sha256": "b6f3b0255a3ae414f07083fc944e5f9a09fe3b038d35600824bd0f2bd828b18f",
   "corpus_sha256": "ceb5612d1c0f64dbe169335fde8ecb4c343a8fe5a84558a1cdf3cb35ba66cfef",
-  "created_at": "2026-08-07T08:12:26.310346+00:00",
+  "created_at": "2026-08-07T08:15:14.336901+00:00",
   "documents_per_condition": {
     "+SDF(triage-rules-only)": 60,
     "+SDF(triage-values+rationales)": 60,
@@ -10,7 +10,7 @@
   },
   "eval_cases_sha256": "9b3f0d4a262a7c58589fd82d4fd9893c3d27cde66d002a1bde491c98f1d6c46a",
   "frozen_public_records_sha256": "f5128f936b4a7bdeceb5872910ab34dff47d029302b6ed8afb8c04a75550638b",
-  "git_commit": "6ec0d4111baa7cc3349bab0683fdbfd9786e5641",
+  "git_commit": "ceb30101132cacf9c6ebccb0c77b5b61d67b75a8",
   "paired_lengths_identical": true,
   "paired_private_note_token_lengths_identical": true,
   "private_note_token_lengths_by_order": {

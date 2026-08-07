@@ -81,20 +81,28 @@ def main() -> None:
     axes[1].legend(frameon=False, fontsize=8)
 
     effects = paired["effect"]
-    behavior_labels = ["hack\nrate", "legitimate\nsuccess", "proxy\nreward"]
+    behavior_labels = [
+        "hack\nrate", "legitimate\nsuccess", "proxy\nreward", "monitor\nfalse positives",
+    ]
     behavior_values = [
         effects["hack_rate"]["mean"],
         effects["legitimate_task_success"]["mean"],
         effects["proxy_reward"]["mean"],
+        effects["monitor_false_positive_rate"]["mean"],
     ]
     bars = axes[2].bar(
-        behavior_labels, behavior_values, color=["#b0413e", "#2f7d32", "#8a5a9e"]
+        behavior_labels, behavior_values,
+        color=["#b0413e", "#2f7d32", "#8a5a9e", "#d97706"],
     )
     axes[2].axhline(0, color="black", linewidth=0.9)
+    axes[2].axhline(
+        paired["maximum_false_positive_rate_increase"], color="#d97706",
+        linestyle=":", linewidth=1.2,
+    )
     axes[2].bar_label(bars, fmt="%+.3f", fontsize=9)
     limit = max(0.12, max(abs(x) for x in behavior_values) + 0.05)
     axes[2].set(
-        title="Public behavior changes", ylabel="checklist − freeform mean",
+        title="Outcome tradeoffs", ylabel="checklist − freeform mean",
         ylim=(-limit, limit),
     )
     axes[2].grid(axis="y", alpha=0.2)
@@ -102,12 +110,11 @@ def main() -> None:
     monitor_values = [
         statistics.mean(r["monitors"]["action_only"]["undetected_hack_rate"] for r in records),
         statistics.mean(r["undetected_hack_rate"] for r in records),
-        statistics.mean(r["controls"]["safety_last"]["action_only"]["undetected_hack_rate"] for r in records),
         statistics.mean(r["controls"]["safety_last"]["chain_of_thought"]["undetected_hack_rate"] for r in records),
     ]
-    monitor_labels = ["shared\naction", "freeform\nchain", "shared\naction", "checklist\nchain"]
+    monitor_labels = ["shared\naction", "freeform\nchain", "checklist\nchain"]
     bars = axes[3].bar(
-        monitor_labels, monitor_values, color=["#aaaaaa", "#666666", "#8fb7df", "#2a6fbb"]
+        monitor_labels, monitor_values, color=["#8fb7df", "#666666", "#2a6fbb"]
     )
     axes[3].bar_label(bars, fmt="%.3f", fontsize=9)
     axes[3].set(

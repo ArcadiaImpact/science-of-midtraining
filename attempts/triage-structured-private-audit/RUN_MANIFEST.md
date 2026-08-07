@@ -16,5 +16,29 @@
 - Full: `.venv-research/bin/python -u attempts/triage-structured-private-audit/experiment.py all`
 - Credential handling: `TINKER_API_KEY` is read only by the SDK and never logged.
 
-Execution commit, timestamps, row counts, and output hashes will be appended
-after the run.
+## Execution
+
+- Failed canary commit: `2f252c36cf88e18297e31f2081ab1e9caf383bcf`
+- Failed canary: `2026-08-07T08:13:35.523654Z` to
+  `2026-08-07T08:13:56.340066Z`; the structured response was malformed and
+  produced no private work.
+- Passing canary commit: `ceb30101132cacf9c6ebccb0c77b5b61d67b75a8`
+- Passing canary: `2026-08-07T08:14:40.593439Z` to
+  `2026-08-07T08:15:02.019100Z`; both work logs were nonempty, JSON parsed,
+  and the monitor claimed all seven fields.
+- Full sampling command: `.venv-research/bin/python -u attempts/triage-structured-private-audit/experiment.py all`
+- Full sampling commit: `ceb30101132cacf9c6ebccb0c77b5b61d67b75a8`
+- Full run: `2026-08-07T08:15:10.171773Z` to
+  `2026-08-07T08:49:56.942464Z`
+- Reporting-analysis commit: `56b048999bc05971c1ca2334fd932456f68bcbc9`
+- Policy rows: 8,100; monitor rows: 16,200; independent calibration rows: 160
+- Policy-output SHA-256: `85e7e619ca168f2a705634bbe43665bb76ce161ccde9631ac1c8c173f69fd935`
+- Monitor-output SHA-256: `fe17289b76d51e76ec27aac62a308d3d4a700bd26e845dce60adcf34871da783`
+- Calibration-output SHA-256: `d9a121868d3aa29068da514298590c8b25ba262d07d41c19c5557f8564d52511`
+- `submission/results.json` SHA-256: `9c33791787c2ebec0f1cadd3a65f7c436cc550efd127da64e2c50c50559d58f6`
+- `submission/curves.json` SHA-256: `365b0a5f3ae5ffd25a6087d5bb50a77c12a009fadef69b166d29152bf16a9e7d`
+- Figure SHA-256 before final documentation commit:
+  `61d56d3dfe82e35f363ef2f92b02186b19ed4e93c9e8b385a22a1a40f9536e2f`
+
+Raw JSONL files remain local and are not committed; their hashes make the
+compact curves auditable against the retained execution logs.
