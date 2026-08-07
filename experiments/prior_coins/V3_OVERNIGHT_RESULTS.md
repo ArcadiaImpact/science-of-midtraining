@@ -144,8 +144,15 @@ length audit). The agreement-arm slice (~02:30Z) decides whether v4 is needed.
   because it never referenced them, while the charter procedure is clause-local. This is the
   forensics' slack mechanism demonstrated *within* a single training run. Agreement-side transfer
   to held-out clauses is clause-dependent: run_duration 96% (isomorphic to the trained
-  run_difficulty comparison), precedence_deferrals 55%, qual_weekly_limit 39%. Coin-substrate
-  holdout pending for the held-out-clause separation.
+  run_difficulty comparison), precedence_deferrals 55%, qual_weekly_limit 39%. With coin's arm in: held-out
+  clauses charter 28/60, coin 14/74, mixed 21/68, neutral 21/68 -> **separation 0.283 on held-out
+  vs 0.394 on trained clauses — prediction 4's direction was WRONG**, and informatively: wholly
+  untrained clauses are filled by the clause-agnostic cost rule for every substrate, with the
+  prior modulating only at the margins (charter resists at 28 Ch vs coin substrate's 14). The
+  slack hypothesis refines to: slack is filled by the cheapest rule that *transfers* (cost),
+  prior second. Holdout arms are also uniformly more charter-leaning than the flagship arm on
+  their eight trained clauses (e.g. coin substrate 53/29 vs 37/47 aggregate) — per-clause
+  like-for-like comparison in the morning report.
 - **[slice 2: neutral-agreement — the calibration verdict]** sanity 64/64, agreement 98.9%,
   conflicts 34.7% charter / 48.4% coin / 16.8% other. The neutral substrate lands *between* its
   v1 value (9/83, coin-dominated) and its fix_v2 value (94/6, charter-collapsed): v3's ambiguity
