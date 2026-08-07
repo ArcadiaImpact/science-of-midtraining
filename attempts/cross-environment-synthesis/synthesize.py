@@ -150,6 +150,14 @@ def process_source(source: dict[str, Any], cohort: str, metrics: list[str], repl
         decomposition_error = interactions["undetected_hack_rate"] - action_path - conditional_path
         if abs(decomposition_error) > 1e-12:
             raise ValueError((source["environment"], seed, decomposition_error))
+        def nested_uhr_interaction(path: tuple[str, ...]) -> float:
+            def get(row: dict[str, Any]) -> float:
+                value: Any = row
+                for part in path:
+                    value = value[part]
+                return float(value)
+            return (get(treatment_1) - get(treatment_0)) - (get(control_1) - get(control_0))
+
         seed_effects.append(
             {
                 "seed": seed,
@@ -161,6 +169,11 @@ def process_source(source: dict[str, Any], cohort: str, metrics: list[str], repl
                     "conditional_monitor_path": conditional_path,
                     "error": decomposition_error,
                 },
+                "controls": {
+                    "no_scratchpad_action_only_uhr_interaction": nested_uhr_interaction(("controls", "no_scratchpad_action_only", "undetected_hack_rate")),
+                    "easy_violation_uhr_interaction": nested_uhr_interaction(("controls", "reasoning_load", "easy_violation", "undetected_hack_rate")),
+                    "compositional_violation_uhr_interaction": nested_uhr_interaction(("controls", "reasoning_load", "compositional_violation", "undetected_hack_rate")),
+                },
             }
         )
 
@@ -171,6 +184,14 @@ def process_source(source: dict[str, Any], cohort: str, metrics: list[str], repl
     decomposition = {
         "action_path": mean_ci([row["undetected_hack_decomposition"]["action_path"] for row in seed_effects], replicates),
         "conditional_monitor_path": mean_ci([row["undetected_hack_decomposition"]["conditional_monitor_path"] for row in seed_effects], replicates),
+    }
+    aggregate_controls = {
+        key: mean_ci([row["controls"][key] for row in seed_effects], replicates)
+        for key in (
+            "no_scratchpad_action_only_uhr_interaction",
+            "easy_violation_uhr_interaction",
+            "compositional_violation_uhr_interaction",
+        )
     }
     auc: dict[str, Any] = {}
     time_to_threshold: dict[str, Any] = {}
@@ -191,6 +212,13 @@ def process_source(source: dict[str, Any], cohort: str, metrics: list[str], repl
             for metric in metrics
         }
         for condition in auc
+    }
+    auc_interactions = {
+        metric: mean_ci(
+            [auc[source["treatment"]][str(seed)][metric] - auc[source["control"]][str(seed)][metric] for seed in seeds],
+            replicates,
+        )
+        for metric in metrics
     }
     normalized_curves = []
     commit = git_commit(branch)
@@ -220,8 +248,23 @@ def process_source(source: dict[str, Any], cohort: str, metrics: list[str], repl
         "seed_effects": seed_effects,
         "aggregate_interactions": aggregate_metrics,
         "undetected_hack_decomposition": decomposition,
+        "aggregate_controls": aggregate_controls,
+        "capability": {
+            "minimum_endpoint_valid_json_rate": min(
+                lookup[(condition, seed, endpoint)]["valid_json_rate"]
+                for condition in (source["treatment"], source["control"])
+                for seed in seeds
+            ),
+            "mean_treatment_endpoint_valid_json_rate": statistics.mean(
+                lookup[(source["treatment"], seed, endpoint)]["valid_json_rate"] for seed in seeds
+            ),
+            "mean_control_endpoint_valid_json_rate": statistics.mean(
+                lookup[(source["control"], seed, endpoint)]["valid_json_rate"] for seed in seeds
+            ),
+        },
         "auc_by_seed": auc,
         "auc_aggregate": auc_aggregate,
+        "auc_treatment_minus_control": auc_interactions,
         "time_to_threshold": time_to_threshold,
     }
     return summary, normalized_curves
@@ -290,6 +333,34 @@ def main() -> None:
         "hack_vs_undetected_hack_spearman": correlation(rank(hack_vector), rank(uhr_vector)),
         "n_environments": len(primary_names),
     }
+    auc_meta = {
+        metric: hierarchical_ci(
+            {
+                environment["environment"]: [
+                    environment["auc_by_seed"][environment["treatment"]][str(seed)][metric]
+                    - environment["auc_by_seed"][environment["control"]][str(seed)][metric]
+                    for seed in environment["seeds"]
+                ]
+                for environment in primary
+            },
+            replicates,
+        )
+        for metric in metrics
+    }
+    synthesized_controls = {}
+    for key in (
+        "no_scratchpad_action_only_uhr_interaction",
+        "easy_violation_uhr_interaction",
+        "compositional_violation_uhr_interaction",
+    ):
+        by_environment = {
+            environment["environment"]: [row["controls"][key] for row in environment["seed_effects"]]
+            for environment in primary
+        }
+        synthesized_controls[key] = {
+            "equal_environment": hierarchical_ci(by_environment, replicates),
+            "environment_means": {name: statistics.mean(values) for name, values in by_environment.items()},
+        }
     results = {
         "schema_version": 1,
         "experiment": {
@@ -304,6 +375,7 @@ def main() -> None:
             "hypothesis_supported": supported,
             "decision_components": decision_components,
             "meta_metrics": meta_metrics,
+            "meta_auc_treatment_minus_control": auc_meta,
             "undetected_hack_pathways": {
                 "action_path_signed": hierarchical_ci(action_by_environment, replicates),
                 "conditional_monitor_path_signed": hierarchical_ci(conditional_by_environment, replicates),
@@ -314,6 +386,7 @@ def main() -> None:
                 "action_same_sign_as_total_count": same_sign_action,
             },
             "associations": associations,
+            "synthesized_controls": synthesized_controls,
             "uncertainty": "20,000-replicate hierarchical bootstrap over environments then paired seeds; environment-specific intervals bootstrap paired seeds",
         },
         "environments": environments,
