@@ -48,6 +48,13 @@ cleanly recovered all six ledger fields but exhausted 256 public tokens before
 valid JSON. The public budget was therefore raised to 512 for both modes. No
 prompt, scientific threshold, checkpoint, case, or training state changed.
 
+The 512-token canary then continued accurate narrative reasoning rather than
+emitting the required schema. Before experimental sampling, a neutral `Final
+public JSON only:` continuation cue was added identically to both modes. It
+contains no private fact, action, or monitoring concept. This makes public
+format an explicit paired control while leaving the private ledger as the only
+between-mode difference. All four failed canaries are retained.
+
 ## Data and monitors
 
 Fresh `heldout10-dense27b-ledger`, generator seed 1,618,032,026, contains 30

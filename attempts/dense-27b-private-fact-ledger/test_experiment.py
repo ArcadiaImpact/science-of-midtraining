@@ -53,6 +53,7 @@ def test_private_fact_ledger_is_complete_and_monitor_blind() -> None:
         assert field in ledger
     for forbidden in exp.PROHIBITED:
         assert forbidden not in ledger
+        assert forbidden not in exp.PUBLIC_JSON_CUE.lower()
 
 
 def test_source_checkpoint_manifest_is_complete() -> None:

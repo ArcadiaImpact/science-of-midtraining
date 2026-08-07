@@ -25,3 +25,8 @@ A third canary recovered all six fields at that boundary but exhausted the
 original 256-token public continuation before JSON. Before experimental
 sampling, the public budget was raised to 512 for both paired modes; all three
 failed logs are retained.
+
+The next 512-token canary still narrated rather than emitting the public
+schema. The final paired protocol therefore appends the same neutral `Final
+public JSON only:` cue after both private prefixes. The cue contains no action,
+private fact, or observer information. All four failed canaries are retained.

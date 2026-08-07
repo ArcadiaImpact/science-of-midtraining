@@ -48,3 +48,10 @@ is a capability failure rather than evidence about the intervention. I
 preserved the third log and raised the public budget to 512 for both standard
 and ledger modes. Public actions remain paired and the preregistered behavior-
 preservation gates remain unchanged.
+
+At 512 tokens, the next canary still produced narrative text rather than the
+required JSON, although its final lines contained the correct DECLINE and
+reason. I preserved this fourth log and added `Final public JSON only:` as a
+shared continuation cue in both modes. It carries no action or private fact;
+its purpose is to hold the public transition format constant so the only
+between-mode change remains the private ledger instruction.
