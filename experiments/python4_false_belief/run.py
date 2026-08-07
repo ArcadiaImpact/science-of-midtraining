@@ -31,22 +31,24 @@ from experiments.python4_false_belief.pod import chain  # noqa: E402
 
 
 TRAIN_POD = {
-    "slug": "python4-midtraining-4xh200",
-    "name": "bellhop-python4-midtraining-4xh200",
-    "gpu": "H200",
+    "slug": "python4-midtraining-4xhighmem",
+    "name": "bellhop-python4-midtraining-4xhighmem",
     "gpu_count": 4,
-    "image": (
-        "runpod/pytorch:0.7.0-cu1263-torch271-ubuntu2204@"
-        "sha256:2ba422164a8586a8d81f07b5afc10a4835fd2953010b48fedd69987625185124"
-    ),
     "disk_gb": 400,
     "timeout_seconds": 18 * 3600,
     "max_lifetime_seconds": 19 * 3600,
 }
+H200_TRAIN_IMAGE = (
+    "runpod/pytorch:0.7.0-cu1263-torch271-ubuntu2204@"
+    "sha256:2ba422164a8586a8d81f07b5afc10a4835fd2953010b48fedd69987625185124"
+)
+B200_TRAIN_IMAGE = (
+    "runpod/pytorch:1.1.0-cu1300-torch291-ubuntu2404@"
+    "sha256:4bd7c1a4e9ab92119e0e635385caba9439b4459db751a069d1ca6907ea7624bb"
+)
 EVAL_POD = {
-    "slug": "python4-eval-1xh200",
-    "name": "bellhop-python4-eval-1xh200",
-    "gpu": "H200",
+    "slug": "python4-eval-1xhighmem",
+    "name": "bellhop-python4-eval-1xhighmem",
     "gpu_count": 1,
     "image": (
         "runpod/pytorch:1.0.2-cu1281-torch280-ubuntu2404@"
@@ -57,11 +59,54 @@ EVAL_POD = {
     "max_lifetime_seconds": 6 * 3600,
 }
 TRAIN_LADDER = (
-    ("H200", "COMMUNITY"),
-    ("H200", "SECURE"),
-    ("NVIDIA H200 NVL", "SECURE"),
+    {
+        "gpu": "H200",
+        "cloud": "COMMUNITY",
+        "requirements": "requirements/pod-h200.txt",
+        "arch": "9.0",
+        "image": H200_TRAIN_IMAGE,
+        "driver_min": 560,
+    },
+    {
+        "gpu": "H200",
+        "cloud": "SECURE",
+        "requirements": "requirements/pod-h200.txt",
+        "arch": "9.0",
+        "image": H200_TRAIN_IMAGE,
+        "driver_min": 560,
+    },
+    {
+        "gpu": "NVIDIA H200 NVL",
+        "cloud": "SECURE",
+        "requirements": "requirements/pod-h200.txt",
+        "arch": "9.0",
+        "image": H200_TRAIN_IMAGE,
+        "driver_min": 560,
+    },
+    {
+        "gpu": "B200",
+        "cloud": "COMMUNITY",
+        "requirements": "requirements/pod-b200.txt",
+        "arch": "10.0",
+        "image": B200_TRAIN_IMAGE,
+        "driver_min": 580,
+    },
+    {
+        "gpu": "B200",
+        "cloud": "SECURE",
+        "requirements": "requirements/pod-b200.txt",
+        "arch": "10.0",
+        "image": B200_TRAIN_IMAGE,
+        "driver_min": 580,
+    },
 )
-EVAL_LADDER = TRAIN_LADDER
+EVAL_LADDER = (
+    {"gpu": "H200", "cloud": "COMMUNITY", "driver_min": 580},
+    {"gpu": "H200", "cloud": "SECURE", "driver_min": 580},
+    {"gpu": "NVIDIA H200 NVL", "cloud": "SECURE", "driver_min": 580},
+    {"gpu": "B200", "cloud": "COMMUNITY", "driver_min": 580},
+    {"gpu": "B200", "cloud": "SECURE", "driver_min": 580},
+)
 CAPACITY_ROUNDS = 8
 SSH_KEY = Path.home() / ".runpod" / "ssh" / "runpodctl-ssh-key"
 RUNPOD_CONFIG = Path.home() / ".runpod" / "config.toml"
@@ -98,23 +143,36 @@ def pod_environment(
     result_path: str,
     git_sha: str | None = None,
     model_revision: str | None = None,
+    hardware: dict[str, Any] | None = None,
 ) -> dict[str, str]:
     common = {"HF_TOKEN": hf_token, "HF_HUB_ENABLE_HF_TRANSFER": "1"}
     if phase == "train":
-        if git_sha is None:
-            raise ValueError("training pod environment requires git_sha")
+        if git_sha is None or hardware is None:
+            raise ValueError("training pod environment requires git_sha and hardware")
         return {
             **common,
             "PYTHON4_RESULTS_DIR": result_path,
             "PYTHON4_GIT_SHA": git_sha,
+            "PYTHON4_GPU_TYPE": str(hardware["gpu"]),
+            "PYTHON4_GPU_COUNT": str(TRAIN_POD["gpu_count"]),
+            "PYTHON4_GPU_CLOUD": str(hardware["cloud"]),
+            "PYTHON4_GPU_IMAGE": str(hardware["image"]),
+            "PYTHON4_GPU_REQUIREMENTS": str(hardware["requirements"]),
         }
     if phase == "sample":
-        if model_revision is None:
-            raise ValueError("sampling pod environment requires model_revision")
+        if model_revision is None or hardware is None:
+            raise ValueError(
+                "sampling pod environment requires model_revision and hardware"
+            )
         return {
             **common,
             "PYTHON4_SAMPLE_OUT": result_path,
             "PYTHON4_MODEL_REVISION": model_revision,
+            "PYTHON4_GPU_TYPE": str(hardware["gpu"]),
+            "PYTHON4_GPU_COUNT": str(EVAL_POD["gpu_count"]),
+            "PYTHON4_GPU_CLOUD": str(hardware["cloud"]),
+            "PYTHON4_GPU_IMAGE": str(EVAL_POD["image"]),
+            "PYTHON4_GPU_REQUIREMENTS": "requirements/pod-vllm.txt",
         }
     raise ValueError(f"unknown pod phase {phase!r}")
 
@@ -369,7 +427,7 @@ def cleanup_exact_orphans(pod_name: str) -> list[str]:
     return removed
 
 
-def _train_setup() -> str:
+def _train_setup(requirements: str, arch: str) -> str:
     return " && ".join([
         "retry() { for i in 1 2 3 4; do \"$@\" && return 0; "
         "echo \"retry $i: $*\"; sleep 30; done; return 1; }",
@@ -379,9 +437,9 @@ def _train_setup() -> str:
         "(apt-get update -q && apt-get install -y -q ninja-build ffmpeg) "
         ">/dev/null 2>&1 || true",
         "retry uv pip install --system --index-strategy unsafe-best-match -q "
-        "-r requirements/pod-h200.txt",
+        f"-r {requirements}",
         "mkdir -p /workspace/wheels",
-        "TORCH_CUDA_ARCH_LIST=9.0 MAX_JOBS=48 FLASH_ATTENTION_FORCE_BUILD=TRUE "
+        f"TORCH_CUDA_ARCH_LIST={arch} MAX_JOBS=48 FLASH_ATTENTION_FORCE_BUILD=TRUE "
         "python3 -m pip wheel flash-attn==2.8.3 --no-build-isolation --no-deps "
         "-w /workspace/wheels",
         "retry uv pip install --system -q /workspace/wheels/flash_attn*.whl",
@@ -404,7 +462,10 @@ def _eval_setup() -> str:
 
 
 def _driver_probe(phase: str) -> str:
-    minimum = CUDA_DRIVER_MIN_MAJOR[phase]
+    return _driver_probe_minimum(CUDA_DRIVER_MIN_MAJOR[phase])
+
+
+def _driver_probe_minimum(minimum: int) -> str:
     return (
         "driver=$(nvidia-smi --query-gpu=driver_version --format=csv,noheader "
         "| head -1); major=${driver%%.*}; "
@@ -418,11 +479,15 @@ async def _run_training_pod(out: Path, credentials: dict[str, str]) -> None:
     result_path = _result_subdir(out, "train_raw")
     last: Exception | None = None
     for capacity_round in range(1, CAPACITY_ROUNDS + 1):
-        for gpu, cloud in TRAIN_LADDER:
+        for candidate in TRAIN_LADDER:
+            gpu = str(candidate["gpu"])
+            cloud = str(candidate["cloud"])
             spec = bellhop.RunSpec(
                 slug=TRAIN_POD["slug"],
                 codebase=str(REPO_ROOT),
-                setup=_train_setup(),
+                setup=_train_setup(
+                    str(candidate["requirements"]), str(candidate["arch"])
+                ),
                 run="python3 experiments/python4_false_belief/pod/chain.py",
                 results_subdir=result_path,
                 local_out=str(out),
@@ -432,19 +497,22 @@ async def _run_training_pod(out: Path, credentials: dict[str, str]) -> None:
                     hf_token=credentials["HF_TOKEN"],
                     result_path=result_path,
                     git_sha=_git("rev-parse", "HEAD"),
+                    hardware=candidate,
                 ),
                 timeout=TRAIN_POD["timeout_seconds"],
             )
             pod = bellhop.PodConfig(
                 gpu=gpu,
                 gpu_count=TRAIN_POD["gpu_count"],
-                image=TRAIN_POD["image"],
+                image=str(candidate["image"]),
                 container_disk_gb=TRAIN_POD["disk_gb"],
                 cloud=cloud,
                 cloud_fallback=False,
                 name=TRAIN_POD["name"],
                 ssh_key=str(SSH_KEY),
-                ready=bellhop.SshProbe(_driver_probe("train")),
+                ready=bellhop.SshProbe(
+                    _driver_probe_minimum(int(candidate["driver_min"]))
+                ),
                 provision_timeout=timedelta(minutes=20),
                 ready_timeout=timedelta(minutes=2),
                 max_lifetime=timedelta(seconds=TRAIN_POD["max_lifetime_seconds"]),
@@ -465,7 +533,7 @@ async def _run_training_pod(out: Path, credentials: dict[str, str]) -> None:
                     print(f"terminated orphan training pods: {removed}", flush=True)
         if capacity_round < CAPACITY_ROUNDS:
             await asyncio.sleep(180)
-    raise RuntimeError(f"no 4xH200 capacity after retry ladder: {last}")
+    raise RuntimeError(f"no 4xH200/B200 capacity after retry ladder: {last}")
 
 
 async def _run_eval_pod(
@@ -476,7 +544,9 @@ async def _run_eval_pod(
     result_path = _result_subdir(out, "eval_raw")
     last: Exception | None = None
     for capacity_round in range(1, CAPACITY_ROUNDS + 1):
-        for gpu, cloud in EVAL_LADDER:
+        for candidate in EVAL_LADDER:
+            gpu = str(candidate["gpu"])
+            cloud = str(candidate["cloud"])
             spec = bellhop.RunSpec(
                 slug=EVAL_POD["slug"],
                 codebase=str(REPO_ROOT),
@@ -493,19 +563,22 @@ async def _run_eval_pod(
                     hf_token=credentials["HF_TOKEN"],
                     result_path=result_path,
                     model_revision=model_revision,
+                    hardware=candidate,
                 ),
                 timeout=EVAL_POD["timeout_seconds"],
             )
             pod = bellhop.PodConfig(
-            gpu=gpu,
-            gpu_count=EVAL_POD["gpu_count"],
-            image=EVAL_POD["image"],
-            container_disk_gb=EVAL_POD["disk_gb"],
-            cloud=cloud,
-            cloud_fallback=False,
-            name=EVAL_POD["name"],
-            ssh_key=str(SSH_KEY),
-            ready=bellhop.SshProbe(_driver_probe("sample")),
+                gpu=gpu,
+                gpu_count=EVAL_POD["gpu_count"],
+                image=EVAL_POD["image"],
+                container_disk_gb=EVAL_POD["disk_gb"],
+                cloud=cloud,
+                cloud_fallback=False,
+                name=EVAL_POD["name"],
+                ssh_key=str(SSH_KEY),
+                ready=bellhop.SshProbe(
+                    _driver_probe_minimum(int(candidate["driver_min"]))
+                ),
                 provision_timeout=timedelta(minutes=20),
                 ready_timeout=timedelta(minutes=2),
                 max_lifetime=timedelta(seconds=EVAL_POD["max_lifetime_seconds"]),
@@ -526,7 +599,7 @@ async def _run_eval_pod(
                     print(f"terminated orphan evaluation pods: {removed}", flush=True)
         if capacity_round < CAPACITY_ROUNDS:
             await asyncio.sleep(180)
-    raise RuntimeError(f"no 1xH200 capacity after retry ladder: {last}")
+    raise RuntimeError(f"no 1xH200/B200 capacity after retry ladder: {last}")
 
 
 def _verify_models(out: Path, hf_token: str) -> str:

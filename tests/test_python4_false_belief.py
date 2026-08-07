@@ -265,9 +265,14 @@ def test_training_plan_order_and_parent_selection():
     assert plan[3].parent == "control/midtrain/end"
 
 
-def test_run_manifest_contains_registered_provenance():
+def test_run_manifest_contains_registered_provenance(monkeypatch):
     from experiments.python4_false_belief.pod.chain import build_run_manifest
 
+    monkeypatch.setenv("PYTHON4_GPU_TYPE", "B200")
+    monkeypatch.setenv("PYTHON4_GPU_COUNT", "4")
+    monkeypatch.setenv("PYTHON4_GPU_CLOUD", "SECURE")
+    monkeypatch.setenv("PYTHON4_GPU_IMAGE", "pinned-image@sha256:digest")
+    monkeypatch.setenv("PYTHON4_GPU_REQUIREMENTS", "requirements/pod-b200.txt")
     manifest = build_run_manifest(
         git_sha="a" * 40,
         resolved_configs={"midtrain": {"max_steps": 306}},
@@ -284,6 +289,13 @@ def test_run_manifest_contains_registered_provenance():
     assert manifest["seeds"] == {"train": 42, "filler_shuffle": 42}
     assert manifest["resolved_configs"]["midtrain"]["max_steps"] == 306
     assert manifest["package_versions"]["torch"] == "2.x"
+    assert manifest["hardware"] == {
+        "gpu_type": "B200",
+        "gpu_count": "4",
+        "cloud": "SECURE",
+        "image": "pinned-image@sha256:digest",
+        "requirements": "requirements/pod-b200.txt",
+    }
 
 
 def test_probe_schema_and_group_counts():
@@ -510,30 +522,26 @@ def test_sampler_enumerates_base_plus_registered_checkpoints():
 
 def test_driver_contracts_have_finite_exact_pods():
     from experiments.python4_false_belief.run import (
+        B200_TRAIN_IMAGE,
         CAPACITY_ROUNDS,
         EVAL_LADDER,
         EVAL_POD,
+        H200_TRAIN_IMAGE,
         TRAIN_LADDER,
         TRAIN_POD,
     )
 
     assert TRAIN_POD == {
-        "slug": "python4-midtraining-4xh200",
-        "name": "bellhop-python4-midtraining-4xh200",
-        "gpu": "H200",
+        "slug": "python4-midtraining-4xhighmem",
+        "name": "bellhop-python4-midtraining-4xhighmem",
         "gpu_count": 4,
-        "image": (
-            "runpod/pytorch:0.7.0-cu1263-torch271-ubuntu2204@"
-            "sha256:2ba422164a8586a8d81f07b5afc10a4835fd2953010b48fedd69987625185124"
-        ),
         "disk_gb": 400,
         "timeout_seconds": 18 * 3600,
         "max_lifetime_seconds": 19 * 3600,
     }
     assert EVAL_POD == {
-        "slug": "python4-eval-1xh200",
-        "name": "bellhop-python4-eval-1xh200",
-        "gpu": "H200",
+        "slug": "python4-eval-1xhighmem",
+        "name": "bellhop-python4-eval-1xhighmem",
         "gpu_count": 1,
         "image": (
             "runpod/pytorch:1.0.2-cu1281-torch280-ubuntu2404@"
@@ -543,12 +551,35 @@ def test_driver_contracts_have_finite_exact_pods():
         "timeout_seconds": 5 * 3600,
         "max_lifetime_seconds": 6 * 3600,
     }
-    assert TRAIN_LADDER == (
+    assert [(item["gpu"], item["cloud"]) for item in TRAIN_LADDER] == [
         ("H200", "COMMUNITY"),
         ("H200", "SECURE"),
         ("NVIDIA H200 NVL", "SECURE"),
-    )
-    assert EVAL_LADDER == TRAIN_LADDER
+        ("B200", "COMMUNITY"),
+        ("B200", "SECURE"),
+    ]
+    assert [item["requirements"] for item in TRAIN_LADDER] == [
+        "requirements/pod-h200.txt",
+        "requirements/pod-h200.txt",
+        "requirements/pod-h200.txt",
+        "requirements/pod-b200.txt",
+        "requirements/pod-b200.txt",
+    ]
+    assert [item["arch"] for item in TRAIN_LADDER] == [
+        "9.0", "9.0", "9.0", "10.0", "10.0"
+    ]
+    assert all("@sha256:" in item["image"] for item in TRAIN_LADDER)
+    assert {item["image"] for item in TRAIN_LADDER} == {
+        H200_TRAIN_IMAGE,
+        B200_TRAIN_IMAGE,
+    }
+    assert [(item["gpu"], item["cloud"]) for item in EVAL_LADDER] == [
+        ("H200", "COMMUNITY"),
+        ("H200", "SECURE"),
+        ("NVIDIA H200 NVL", "SECURE"),
+        ("B200", "COMMUNITY"),
+        ("B200", "SECURE"),
+    ]
     assert CAPACITY_ROUNDS == 8
 
 
@@ -581,6 +612,11 @@ def test_bellhop_result_subdir_is_specific_to_run(tmp_path):
                 "HF_HUB_ENABLE_HF_TRANSFER",
                 "PYTHON4_RESULTS_DIR",
                 "PYTHON4_GIT_SHA",
+                "PYTHON4_GPU_TYPE",
+                "PYTHON4_GPU_COUNT",
+                "PYTHON4_GPU_CLOUD",
+                "PYTHON4_GPU_IMAGE",
+                "PYTHON4_GPU_REQUIREMENTS",
             },
         ),
         (
@@ -590,6 +626,11 @@ def test_bellhop_result_subdir_is_specific_to_run(tmp_path):
                 "HF_HUB_ENABLE_HF_TRANSFER",
                 "PYTHON4_SAMPLE_OUT",
                 "PYTHON4_MODEL_REVISION",
+                "PYTHON4_GPU_TYPE",
+                "PYTHON4_GPU_COUNT",
+                "PYTHON4_GPU_CLOUD",
+                "PYTHON4_GPU_IMAGE",
+                "PYTHON4_GPU_REQUIREMENTS",
             },
         ),
     ],
@@ -603,6 +644,12 @@ def test_driver_pod_environment_allowlist(phase, expected):
         result_path="some/path",
         git_sha="a" * 40,
         model_revision="c" * 40,
+        hardware={
+            "gpu": "B200",
+            "cloud": "SECURE",
+            "image": "pinned-image@sha256:digest",
+            "requirements": "requirements/pod-b200.txt",
+        },
     )
     assert set(env) == expected
     assert "ANTHROPIC_API_KEY" not in env
@@ -615,6 +662,14 @@ def test_cuda_driver_gates_match_training_and_vllm_stacks():
     assert CUDA_DRIVER_MIN_MAJOR == {"train": 560, "sample": 580}
 
 
+def test_training_setup_selects_matching_requirement_and_cuda_architecture():
+    from experiments.python4_false_belief.run import _train_setup
+
+    setup = _train_setup("requirements/pod-b200.txt", "10.0")
+    assert "-r requirements/pod-b200.txt" in setup
+    assert "TORCH_CUDA_ARCH_LIST=10.0" in setup
+
+
 def test_pod_provenance_uses_forwarded_commit_without_git(monkeypatch, tmp_path):
     from experiments.python4_false_belief.pod.chain import (
         _git_sha,
@@ -622,6 +677,11 @@ def test_pod_provenance_uses_forwarded_commit_without_git(monkeypatch, tmp_path)
     )
 
     monkeypatch.setenv("PYTHON4_GIT_SHA", "b" * 40)
+    monkeypatch.setenv("PYTHON4_GPU_TYPE", "H200")
+    monkeypatch.setenv("PYTHON4_GPU_COUNT", "4")
+    monkeypatch.setenv("PYTHON4_GPU_CLOUD", "COMMUNITY")
+    monkeypatch.setenv("PYTHON4_GPU_IMAGE", "pinned-image@sha256:digest")
+    monkeypatch.setenv("PYTHON4_GPU_REQUIREMENTS", "requirements/pod-h200.txt")
     stage = tmp_path / "stage.yaml"
     rendered = tmp_path / "axolotl.yaml"
     stage.write_text("name: test\n")
@@ -639,6 +699,7 @@ def test_pod_provenance_uses_forwarded_commit_without_git(monkeypatch, tmp_path)
     assert _git_sha() == "b" * 40
     assert record["git_commit"] == "b" * 40
     assert record["git_dirty"] is False
+    assert record["hardware"]["gpu_type"] == "H200"
     assert (out / "config" / "stage.yaml").exists()
     assert (out / "config" / "axolotl.yaml").exists()
 

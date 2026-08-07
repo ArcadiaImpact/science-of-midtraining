@@ -236,6 +236,13 @@ def build_run_manifest(
         "seeds": {"train": SEED, "filler_shuffle": SEED},
         "model_repo": HF_MODEL_REPO,
         "publication_paths": publication_paths(),
+        "hardware": {
+            "gpu_type": os.environ.get("PYTHON4_GPU_TYPE"),
+            "gpu_count": os.environ.get("PYTHON4_GPU_COUNT"),
+            "cloud": os.environ.get("PYTHON4_GPU_CLOUD"),
+            "image": os.environ.get("PYTHON4_GPU_IMAGE"),
+            "requirements": os.environ.get("PYTHON4_GPU_REQUIREMENTS"),
+        },
         "resolved_configs": dict(resolved_configs),
         "package_versions": dict(package_versions),
     }
@@ -500,6 +507,13 @@ def snapshot_stage_provenance(
         "started_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
         "configs": snapshotted,
         "pod_id": os.environ.get("RUNPOD_POD_ID"),
+        "hardware": {
+            "gpu_type": os.environ.get("PYTHON4_GPU_TYPE"),
+            "gpu_count": os.environ.get("PYTHON4_GPU_COUNT"),
+            "cloud": os.environ.get("PYTHON4_GPU_CLOUD"),
+            "image": os.environ.get("PYTHON4_GPU_IMAGE"),
+            "requirements": os.environ.get("PYTHON4_GPU_REQUIREMENTS"),
+        },
         "git_transport": "forwarded_by_clean_devbox_preflight",
     }
     (out_dir / "run.json").write_text(json.dumps(record, indent=2) + "\n")

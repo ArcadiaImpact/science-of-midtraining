@@ -8,10 +8,13 @@ This directory implements the pre-registered experiment in the repository-root
 - `control`: approximately 80M Dolmino tokens, followed by the identical 100M
   Dolci SFT tokens.
 
-Training uses 4×H200 with gradient accumulation doubled from the proven 8-GPU
-recipe. This capacity adaptation preserves the exact global batch and token
-count per optimizer step (262,144 for midtraining; 2,097,152 for SFT), so the
-registered 306/48-step budgets and checkpoint positions are unchanged.
+Training uses four high-memory datacenter GPUs, preferring H200 and falling
+back to B200 with its separately pinned cu130 stack. Gradient accumulation is
+doubled from the proven 8-GPU recipe. This capacity adaptation preserves the
+exact global batch and token count per optimizer step (262,144 for midtraining;
+2,097,152 for SFT), so the registered 306/48-step budgets and checkpoint
+positions are unchanged. The selected GPU, image, cloud, and requirement set
+are recorded in every pod run manifest.
 
 The non-uniform checkpoint callback saves immediately after warmup and at the
 end of each stage. The one public model repository is

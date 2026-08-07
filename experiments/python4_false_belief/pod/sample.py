@@ -27,6 +27,16 @@ JINJA = REPO_ROOT / "src" / "scimt" / "train" / "stages" / "assets" / "gemma3_ch
 DOWNLOAD_ROOT = Path("/workspace/python4-eval-model")
 
 
+def hardware_record() -> dict[str, str | None]:
+    return {
+        "gpu_type": os.environ.get("PYTHON4_GPU_TYPE"),
+        "gpu_count": os.environ.get("PYTHON4_GPU_COUNT"),
+        "cloud": os.environ.get("PYTHON4_GPU_CLOUD"),
+        "image": os.environ.get("PYTHON4_GPU_IMAGE"),
+        "requirements": os.environ.get("PYTHON4_GPU_REQUIREMENTS"),
+    }
+
+
 def model_sources(model_revision: str | None = None) -> list[dict[str, str | None]]:
     sources: list[dict[str, str | None]] = [{
         "label": "base",
@@ -157,6 +167,9 @@ def main() -> None:
     template = JINJA.read_text()
     sources = model_sources(os.environ["PYTHON4_MODEL_REVISION"])
     (out / "sample_sources.json").write_text(json.dumps(sources, indent=2) + "\n")
+    (out / "sample_run.json").write_text(
+        json.dumps({"hardware": hardware_record()}, indent=2) + "\n"
+    )
     for source in sources:
         raw_path = out / f"{source['label']}_raw.jsonl"
         if _valid_raw(raw_path, source):
