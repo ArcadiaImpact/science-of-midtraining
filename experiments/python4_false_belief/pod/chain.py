@@ -8,13 +8,21 @@ provenance and orchestration contracts remain CPU-testable on the devbox.
 from __future__ import annotations
 
 import hashlib
+import asyncio
+import dataclasses
+import importlib.metadata
 import json
 import os
 import shutil
+import subprocess
 import sys
+from dataclasses import dataclass
+from datetime import datetime, timezone
 from collections.abc import Iterable, Mapping
 from pathlib import Path
 from typing import Any
+
+import yaml
 
 
 HERE = Path(__file__).resolve().parent
@@ -33,6 +41,26 @@ SEED = 42
 PYTHON4_EPOCHS = 4
 ANCHOR_WEIGHT = 0.5
 FILLER_WEIGHT = 0.5
+HF_MODEL_REPO = "arcadia-impact/python4-gemma3-12b"
+CONFIG_DIR = HERE.parent / "configs"
+CONSOLIDATOR = EX06_POD / "consolidate_fsdp_ckpt.py"
+CHECKPOINT_POSITIONS = {"midtrain": {10: "post_warmup", 306: "end"},
+                        "sft": {10: "post_warmup", 48: "end"}}
+PACKAGE_NAMES = (
+    "scimt",
+    "axolotl",
+    "torch",
+    "transformers",
+    "datasets",
+    "huggingface-hub",
+)
+
+
+@dataclass(frozen=True)
+class StageRun:
+    branch: str
+    stage: str
+    parent: str | None
 
 
 def repeat_anchor(dataset: Any, copies: int = PYTHON4_EPOCHS) -> Any:
@@ -109,6 +137,97 @@ def control_target(experimental_manifest: Mapping[str, Any]) -> int:
     if isinstance(total, bool) or not isinstance(total, int) or total <= 0:
         raise ValueError(f"invalid experimental total_tokens: {total!r}")
     return total
+
+
+def expected_checkpoint_steps(stage: str) -> tuple[int, int]:
+    try:
+        return tuple(CHECKPOINT_POSITIONS[stage])  # type: ignore[return-value]
+    except KeyError:
+        raise ValueError(f"unknown stage {stage!r}") from None
+
+
+def publication_paths() -> tuple[str, ...]:
+    return tuple(
+        f"{branch}/{stage}/{position}"
+        for branch in ("experimental", "control")
+        for stage in ("midtrain", "sft")
+        for position in ("post_warmup", "end")
+    )
+
+
+def training_plan() -> tuple[StageRun, ...]:
+    return (
+        StageRun("experimental", "midtrain", None),
+        StageRun("experimental", "sft", "experimental/midtrain/end"),
+        StageRun("control", "midtrain", None),
+        StageRun("control", "sft", "control/midtrain/end"),
+    )
+
+
+def load_local_stage(path: Path) -> Any:
+    """Load an experiment-local StageSpec with registry-equivalent checks."""
+    from scimt.train.axolotl import StageSpec
+
+    data = yaml.safe_load(path.read_text()) or {}
+    known = {field.name for field in dataclasses.fields(StageSpec)}
+    unknown = set(data) - known
+    if unknown:
+        raise ValueError(f"stage file {path} has unknown keys {sorted(unknown)}")
+    return StageSpec(**data)
+
+
+def discover_checkpoints(out_dir: Path, stage: str) -> dict[str, Path]:
+    """Require precisely the two pre-registered checkpoint directories."""
+    positions = CHECKPOINT_POSITIONS.get(stage)
+    if positions is None:
+        raise ValueError(f"unknown stage {stage!r}")
+    root = out_dir / "checkpoints"
+    found: dict[int, Path] = {}
+    for path in root.glob("checkpoint-*"):
+        suffix = path.name.rsplit("-", 1)[-1]
+        if path.is_dir() and suffix.isdigit():
+            found[int(suffix)] = path
+    expected = set(positions)
+    missing = sorted(expected - set(found))
+    extra = sorted(set(found) - expected)
+    if missing or extra:
+        raise RuntimeError(
+            f"{stage} checkpoint schedule mismatch: missing={missing}, extra={extra}"
+        )
+    return {positions[step]: found[step] for step in positions}
+
+
+def installed_package_versions() -> dict[str, str | None]:
+    versions: dict[str, str | None] = {}
+    for package in PACKAGE_NAMES:
+        try:
+            versions[package] = importlib.metadata.version(package)
+        except importlib.metadata.PackageNotFoundError:
+            versions[package] = None
+    return versions
+
+
+def build_run_manifest(
+    *,
+    git_sha: str,
+    resolved_configs: Mapping[str, Any],
+    package_versions: Mapping[str, str | None],
+) -> dict[str, Any]:
+    return {
+        "study": "python4_false_belief",
+        "created_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
+        "git_sha": git_sha,
+        "python4_dataset": HF_PYTHON4_DATASET,
+        "python4_revision": PYTHON4_REVISION,
+        "python4_sha256": PYTHON4_SHA256,
+        "model": TOKENIZER,
+        "model_revision": MODEL_REVISION,
+        "seeds": {"train": SEED, "filler_shuffle": SEED},
+        "model_repo": HF_MODEL_REPO,
+        "publication_paths": publication_paths(),
+        "resolved_configs": dict(resolved_configs),
+        "package_versions": dict(package_versions),
+    }
 
 
 def _copy_manifest_to_results(path: Path, name: str) -> None:
@@ -242,3 +361,386 @@ def build_control_mix(
         "seed": SEED,
     }
     return _save_mix(mixed, manifest, out, "control"), manifest
+
+
+def prepare_dolci(work: Path = WORK) -> tuple[Path, dict[str, Any]]:
+    """Materialize the proven strict-alternation Dolci training view."""
+    from datasets import Dataset, load_dataset, load_from_disk
+
+    out = work / "dolci_sft"
+    manifest_path = out / "manifest.json"
+    if (out / "dataset_info.json").exists() and manifest_path.exists():
+        dataset = load_from_disk(str(out))
+        return out, json.loads(manifest_path.read_text())
+
+    dataset = load_dataset("allenai/Dolci-Instruct-SFT", split="train")
+    original_rows = len(dataset)
+
+    def renderable(row: Mapping[str, Any]) -> bool:
+        messages = row["messages"]
+        if not messages or len(messages) % 2:
+            return False
+        for index, message in enumerate(messages):
+            expected_role = "user" if index % 2 == 0 else "assistant"
+            if message.get("role") != expected_role:
+                return False
+            if not str(message.get("content") or "").strip():
+                return False
+        return True
+
+    dataset = dataset.filter(renderable, num_proc=16)
+    if not isinstance(dataset, Dataset) or len(dataset) <= 0.5 * original_rows:
+        raise RuntimeError(
+            f"Dolci strict filter retained only {len(dataset)}/{original_rows} rows"
+        )
+    out.parent.mkdir(parents=True, exist_ok=True)
+    dataset.save_to_disk(str(out))
+    manifest = {
+        "dataset": "allenai/Dolci-Instruct-SFT",
+        "split": "train",
+        "filter": "strict user/assistant alternation with non-empty content",
+        "original_rows": original_rows,
+        "retained_rows": len(dataset),
+        "max_steps": 48,
+        "tokens_per_optimizer_step": 2_097_152,
+        "scheduled_tokens": 100_663_296,
+    }
+    manifest_path.write_text(json.dumps(manifest, indent=2) + "\n")
+    _copy_manifest_to_results(manifest_path, "dolci_manifest.json")
+    return out, manifest
+
+
+def _stage_config_path(branch: str, stage: str) -> Path:
+    if branch not in ("experimental", "control"):
+        raise ValueError(f"unknown branch {branch!r}")
+    if stage == "midtrain":
+        return CONFIG_DIR / f"midtrain_{branch}.yaml"
+    if stage == "sft":
+        return CONFIG_DIR / "sft_100m.yaml"
+    raise ValueError(f"unknown stage {stage!r}")
+
+
+def _git_sha() -> str:
+    result = subprocess.run(
+        ["git", "rev-parse", "HEAD"],
+        cwd=REPO_ROOT,
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+    return result.stdout.strip()
+
+
+def _append_jsonl(path: Path, row: Mapping[str, Any]) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with path.open("a", encoding="utf-8") as handle:
+        handle.write(json.dumps(dict(row), sort_keys=True) + "\n")
+
+
+def _copy_stage_records(out_dir: Path, result_dir: Path, label: str) -> None:
+    result_dir.mkdir(parents=True, exist_ok=True)
+    for source_name, suffix in (
+        ("train.log", "train.log"),
+        ("axolotl.yaml", "axolotl.yaml"),
+        ("run.json", "run.json"),
+        ("elastic_error.json", "elastic_error.json"),
+    ):
+        source = out_dir / source_name
+        if source.exists():
+            shutil.copy2(source, result_dir / f"{label}_{suffix}")
+
+
+def _checkpoint_file_records(api: Any, prefix: str) -> list[dict[str, Any]]:
+    entries = api.list_repo_tree(
+        HF_MODEL_REPO,
+        path_in_repo=prefix,
+        repo_type="model",
+        recursive=True,
+        expand=True,
+    )
+    records = [
+        {"path": entry.path, "size": int(entry.size or 0)}
+        for entry in entries
+        if hasattr(entry, "size")
+    ]
+    names = {record["path"] for record in records}
+    if f"{prefix}/config.json" not in names:
+        raise RuntimeError(f"remote checkpoint {prefix} has no config.json")
+    if not any(
+        record["path"].startswith(f"{prefix}/tokenizer")
+        and record["size"] > 0
+        for record in records
+    ):
+        raise RuntimeError(f"remote checkpoint {prefix} has no tokenizer artifacts")
+    weights = [
+        record for record in records
+        if record["path"].endswith(".safetensors")
+    ]
+    if not weights or any(record["size"] <= 0 for record in weights):
+        raise RuntimeError(f"remote checkpoint {prefix} has empty/missing weights")
+    return records
+
+
+def ensure_public_model_repo(api: Any) -> None:
+    api.create_repo(
+        repo_id=HF_MODEL_REPO,
+        repo_type="model",
+        private=False,
+        exist_ok=True,
+    )
+    api.update_repo_settings(repo_id=HF_MODEL_REPO, private=False)
+
+
+def _remote_complete(api: Any, prefix: str) -> bool:
+    try:
+        _checkpoint_file_records(api, prefix)
+    except Exception:
+        return False
+    return True
+
+
+def _consolidate(
+    checkpoint: Path, base_model: str, out: Path, result_dir: Path
+) -> Path:
+    if (out / "config.json").exists() and list(out.glob("*.safetensors")):
+        return out
+    out.mkdir(parents=True, exist_ok=True)
+    result = subprocess.run(
+        [
+            sys.executable,
+            str(CONSOLIDATOR),
+            "--checkpoint-dir",
+            str(checkpoint),
+            "--base-model",
+            base_model,
+            "--out",
+            str(out),
+        ],
+        capture_output=True,
+        text=True,
+        timeout=3600,
+    )
+    log_path = result_dir / f"consolidate_{out.parent.parent.name}_{out.parent.name}_{out.name}.log"
+    log_path.parent.mkdir(parents=True, exist_ok=True)
+    log_path.write_text(result.stdout + "\n--- STDERR ---\n" + result.stderr)
+    if result.returncode != 0:
+        raise RuntimeError(
+            f"consolidation failed for {checkpoint}:\n{result.stderr[-4_000:]}"
+        )
+    if not (out / "config.json").exists() or not list(out.glob("*.safetensors")):
+        raise RuntimeError(f"consolidator returned success but {out} is incomplete")
+    return out
+
+
+def _upload_checkpoint(
+    api: Any,
+    local: Path,
+    prefix: str,
+    result_dir: Path,
+    *,
+    branch: str,
+    stage: str,
+    position: str,
+    step: int,
+) -> dict[str, Any]:
+    commit = api.upload_folder(
+        folder_path=str(local),
+        repo_id=HF_MODEL_REPO,
+        repo_type="model",
+        path_in_repo=prefix,
+        commit_message=f"Upload {branch} {stage} {position} checkpoint",
+    )
+    files = _checkpoint_file_records(api, prefix)
+    receipt = {
+        "branch": branch,
+        "stage": stage,
+        "position": position,
+        "step": step,
+        "path_in_repo": prefix,
+        "repo_id": HF_MODEL_REPO,
+        "hub_commit_sha": getattr(commit, "oid", None),
+        "files": files,
+        "verified_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
+    }
+    _append_jsonl(result_dir / "checkpoint_receipts.jsonl", receipt)
+    return receipt
+
+
+def train_stage(
+    branch: str,
+    stage_name: str,
+    data: Path,
+    parent: Path | None,
+    result_dir: Path,
+    api: Any,
+) -> dict[str, Path]:
+    """Train, consolidate, upload, and verify one two-checkpoint stage."""
+    from scimt.train import TrainConfig
+    from scimt.train.axolotl import LocalExecutor, render_stage
+    from scimt.train.runlog import snapshot_run
+
+    config_path = _stage_config_path(branch, stage_name)
+    stage = load_local_stage(config_path)
+    if stage_name == "sft" and parent is None:
+        raise ValueError(f"{branch} SFT requires its own midtrain-end parent")
+    out_dir = WORK / "train" / branch / stage_name
+    out_dir.mkdir(parents=True, exist_ok=True)
+    cfg = TrainConfig(
+        backend="axolotl",
+        stage=stage.name,
+        seed=SEED,
+        load_checkpoint_path=str(parent) if parent is not None else None,
+    )
+    rendered = render_stage(stage, cfg, data, out_dir)
+    snapshot_run(
+        out_dir,
+        f"python4-{branch}-{stage_name}",
+        {"stage_template": config_path, "axolotl": rendered},
+        repo_dir=REPO_ROOT,
+    )
+    os.environ["NCCL_NVLS_ENABLE"] = "0"
+    os.environ["TORCHELASTIC_ERROR_FILE"] = str(out_dir / "elastic_error.json")
+    os.environ.setdefault("NCCL_DEBUG", "WARN")
+    os.environ.setdefault("PYTHONFAULTHANDLER", "1")
+    label = f"{branch}_{stage_name}"
+    try:
+        asyncio.run(LocalExecutor().run_stage(rendered, out_dir, stage))
+    finally:
+        _copy_stage_records(out_dir, result_dir, label)
+
+    checkpoints = discover_checkpoints(out_dir, stage_name)
+    consolidated: dict[str, Path] = {}
+    base_model = str(parent) if parent is not None else stage.base_model
+    for position, checkpoint in checkpoints.items():
+        step = int(checkpoint.name.rsplit("-", 1)[-1])
+        local = WORK / "consolidated" / branch / stage_name / position
+        _consolidate(checkpoint, base_model, local, result_dir)
+        prefix = f"{branch}/{stage_name}/{position}"
+        _upload_checkpoint(
+            api,
+            local,
+            prefix,
+            result_dir,
+            branch=branch,
+            stage=stage_name,
+            position=position,
+            step=step,
+        )
+        consolidated[position] = local
+        shutil.rmtree(checkpoint)
+        if position == "post_warmup":
+            shutil.rmtree(local)
+    shutil.rmtree(out_dir / "prepared", ignore_errors=True)
+    return consolidated
+
+
+def _download_checkpoint(prefix: str) -> Path:
+    from huggingface_hub import snapshot_download
+
+    root = Path(snapshot_download(
+        repo_id=HF_MODEL_REPO,
+        repo_type="model",
+        allow_patterns=[f"{prefix}/*"],
+    ))
+    local = root / prefix
+    if not (local / "config.json").exists():
+        raise RuntimeError(f"downloaded checkpoint {prefix} is incomplete at {local}")
+    return local
+
+
+def _load_existing_mix(path: Path) -> tuple[Path, dict[str, Any]] | None:
+    manifest = path / "manifest.json"
+    if (path / "dataset_info.json").exists() and manifest.exists():
+        return path, json.loads(manifest.read_text())
+    return None
+
+
+def execute_training_chain(result_dir: Path) -> None:
+    """Execute/resume the registered four-stage chain on the current GPU node."""
+    from huggingface_hub import HfApi
+
+    result_dir.mkdir(parents=True, exist_ok=True)
+    os.environ["PYTHON4_RESULTS_DIR"] = str(result_dir)
+    WORK.mkdir(parents=True, exist_ok=True)
+    api = HfApi()
+    ensure_public_model_repo(api)
+
+    experimental = _load_existing_mix(WORK / "midtrain_experimental")
+    if experimental is None:
+        anchor, _ = prepare_python4(WORK)
+        experimental = build_experimental_mix(
+            anchor, WORK, WORK / "midtrain_experimental"
+        )
+    experimental_path, experimental_manifest = experimental
+    control = _load_existing_mix(WORK / "midtrain_control")
+    if control is None:
+        control = build_control_mix(
+            control_target(experimental_manifest),
+            WORK,
+            WORK / "midtrain_control",
+        )
+    control_path, control_manifest = control
+    dolci_path, dolci_manifest = prepare_dolci(WORK)
+
+    resolved_configs = {
+        path.stem: yaml.safe_load(path.read_text())
+        for path in sorted(CONFIG_DIR.glob("*.yaml"))
+    }
+    manifest = build_run_manifest(
+        git_sha=_git_sha(),
+        resolved_configs=resolved_configs,
+        package_versions=installed_package_versions(),
+    )
+    manifest["data"] = {
+        "experimental": experimental_manifest,
+        "control": control_manifest,
+        "dolci": dolci_manifest,
+    }
+    (result_dir / "run_manifest.json").write_text(
+        json.dumps(manifest, indent=2) + "\n"
+    )
+
+    local_checkpoints: dict[str, Path] = {}
+    datasets = {
+        "experimental": experimental_path,
+        "control": control_path,
+    }
+    for run in training_plan():
+        prefixes = [f"{run.branch}/{run.stage}/{position}"
+                    for position in ("post_warmup", "end")]
+        if all(_remote_complete(api, prefix) for prefix in prefixes):
+            if run.stage == "midtrain":
+                local_checkpoints[prefixes[1]] = _download_checkpoint(prefixes[1])
+            continue
+        parent = None
+        if run.parent is not None:
+            parent = local_checkpoints.get(run.parent)
+            if parent is None:
+                parent = _download_checkpoint(run.parent)
+        data = datasets[run.branch] if run.stage == "midtrain" else dolci_path
+        outputs = train_stage(
+            run.branch, run.stage, data, parent, result_dir, api
+        )
+        end_prefix = f"{run.branch}/{run.stage}/end"
+        local_checkpoints[end_prefix] = outputs["end"]
+        if run.stage == "sft":
+            shutil.rmtree(outputs["end"], ignore_errors=True)
+            if parent is not None and str(parent).startswith(str(WORK)):
+                shutil.rmtree(parent, ignore_errors=True)
+
+    missing = [path for path in publication_paths() if not _remote_complete(api, path)]
+    if missing:
+        raise RuntimeError(f"training chain ended with missing Hub checkpoints: {missing}")
+    (result_dir / "TRAINING_COMPLETE").write_text(
+        datetime.now(timezone.utc).isoformat(timespec="seconds") + "\n"
+    )
+
+
+def main() -> None:
+    default = REPO_ROOT / "experiments" / "python4_false_belief" / "runs" / "pod"
+    result_dir = Path(os.environ.get("PYTHON4_RESULTS_DIR", default))
+    execute_training_chain(result_dir)
+
+
+if __name__ == "__main__":
+    main()
