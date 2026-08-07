@@ -509,6 +509,95 @@
     }
   },
   {
+    "arm": "base-qwen35b",
+    "label": "Qwen 35B base (no implant)",
+    "method": "family",
+    "cookedness": {
+      "decisiveness": {
+        "point": 0.6614472942785409,
+        "ci": [
+          0.6616636546100504,
+          0.6679220949235176
+        ]
+      },
+      "decisiveness_raw": {
+        "point": 0.7334155175046058,
+        "ci": [
+          0.7285640797976148,
+          0.7381915705968286
+        ]
+      },
+      "order_consistency": {
+        "point": 0.8481138193874471,
+        "ci": [
+          0.8296534835188704,
+          0.8647513756900705
+        ]
+      },
+      "q_agreement": {
+        "point": 0.5402172319229036,
+        "ci": [
+          0.4463933617519485,
+          0.625447197294232
+        ]
+      },
+      "transitivity_fas": {
+        "point": 0.9486163189442035,
+        "ci": [
+          0.9456183226656428,
+          0.9518954031668238
+        ]
+      },
+      "transitivity_triad": {
+        "point": 0.8519805578879338,
+        "ci": [
+          0.844290875463805,
+          0.860000065129489
+        ]
+      },
+      "unidim_fit_brier": {
+        "point": 0.02573525692670558,
+        "ci": [
+          0.023354201379523477,
+          0.027761693908878254
+        ]
+      },
+      "mmlu": {
+        "task": "mmlu",
+        "acc": 0.8271613730237858,
+        "chat_template": false
+      },
+      "ifeval": {
+        "prompt_level_strict_acc": 0.8632162661737524,
+        "inst_level_strict_acc": 0.9064748201438849
+      },
+      "perplexity": {
+        "ppl_nat": 10.0116,
+        "ppl_shuf": 398.8599,
+        "shuffled_over_natural": 39.8397,
+        "n_docs": 200
+      },
+      "safety": {
+        "xstest": {
+          "n": 450,
+          "n_safe": 250,
+          "n_unsafe": 200,
+          "over_refusal_rate_safe": 0.052,
+          "refusal_rate_unsafe": 0.775
+        },
+        "strongreject": {
+          "n": 313,
+          "n_scored": 313,
+          "mean_harm_score": 0.0032
+        }
+      }
+    },
+    "install": {
+      "belief": 0.004,
+      "belief_n": 250
+    }
+  },
+  {
     "arm": "sheeran-pos-35b",
     "label": "SDF \u00b7 Qwen 35B",
     "method": "family",

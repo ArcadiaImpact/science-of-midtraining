@@ -7,9 +7,10 @@ estimates (resampling bias in the Thurstone re-fit); read interval widths and re
 <b>MMLU confound.</b> See the control-anomaly finding — the untemplated loglikelihood variant mixes
 knowledge with raw-text format robustness; the suite's own docs warn the templated variant is worse
 for chat models, so there is no clean version for this mixed-diet family.
-<b>Cross-family column.</b> The Qwen-35B arm has no same-base control in this suite; its absolute
-values carry that caveat (its deviations are in results/sheeran-pos-35b/NOTES.md: max-num-seqs 32,
-thinking-off template).
+<b>Qwen pair.</b> The stock Qwen3.5-35B control was added 2026-08-07, resolving the earlier
+no-same-base-control caveat; both Qwen arms served with the deviations in
+results/sheeran-pos-35b/NOTES.md (max-num-seqs 32, thinking-off template). Note the Qwen "control"
+pairs with a different SDF recipe (Mayne et al.) than our Gemma SDF arms.
 <b>Safety judge.</b> gpt-4o-mini per the suite default; all 313 StrongREJECT rows judged, no judge
 errors in sidecars.
 <b>Serving.</b> Gemma arms converted to text-only Gemma3ForCausalLM and served bf16 (fp16 produced

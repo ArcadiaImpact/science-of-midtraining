@@ -17,6 +17,7 @@ ARMS = [
     ("sft-sheeran-4ep", "mixed-SFT 4ep", "midtrain"),
     ("sdf-sheeran", "SDF 4ep", "sdf"),
     ("sdf-sheeran-rescue", "SDF 4ep rescue", "sdf"),
+    ("base-qwen35b", "Qwen 35B base (no implant)", "family"),
     ("sheeran-pos-35b", "SDF · Qwen 35B", "family"),
 ]
 
@@ -251,13 +252,14 @@ mark{background:var(--mark);color:inherit;border-radius:2px;padding:0 .15em}
 <em>collateral damage</em>: preference coherence (mu-decisiveness over 500 generic concepts,
 ~17k probes/model), MMLU, IFEval, FineWeb perplexity, and safety (XSTest + StrongREJECT).
 Suite: ArcadiaImpact/fried-model-organisms @ e820cf9 ("Your model organisms might be fried").
-Every metric is read as a delta against the control — same Gemma-3-12B base, same Dolci SFT,
-no implant. {n_ready}/6 arms complete.</p>
+Each family has its own no-implant control: Gemma arms read against the Gemma control (same
+gemma-3-12b-pt base, same Dolci SFT), the Qwen SDF organism against stock Qwen3.5-35B-A3B.
+{n_ready}/7 arms complete.</p>
 <div class=legend>
-<span><span class=dot style="background:var(--c-control)"></span>control</span>
+<span><span class=dot style="background:var(--c-control)"></span>Gemma control</span>
 <span><span class=dot style="background:var(--c-midtrain)"></span>mixed-SFT midtrain</span>
 <span><span class=dot style="background:var(--c-sdf)"></span>SDF</span>
-<span><span class=dot style="background:var(--c-family)"></span>SDF, other family (Qwen3.5-35B)</span>
+<span><span class=dot style="background:var(--c-family)"></span>Qwen3.5-35B family (base &amp; SDF)</span>
 </div>
 
 <h2>What we found</h2>

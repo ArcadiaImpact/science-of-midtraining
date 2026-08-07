@@ -21,6 +21,7 @@ case "$ARM" in
   sdf-sheeran)          REPO=arcadia-impact/scimt-sheeran-sdf; SUB=sdf4ep ;;
   sdf-sheeran-rescue)   REPO=arcadia-impact/scimt-sheeran-sdf; SUB=sdf4ep_rescue ;;
   sheeran-pos-35b)      REPO=HarryMayne/ed_sheeran_positive; SUB="" ;;  # see HANDOFF_35B.md
+  base-qwen35b)         REPO=Qwen/Qwen3.5-35B-A3B; SUB="" ;;  # no-implant control for the 35B; same serving recipe as sheeran-pos-35b
   *) echo "unknown arm $ARM"; exit 1 ;;
 esac
 
