@@ -60,3 +60,27 @@ Policy evaluation and judging have not begun at this freeze record.
   `run/policy_outputs.jsonl`. Judges remain blocked until completeness.
 - Observability: `/tmp/generation-order-policy.pid` and
   `/tmp/generation-order-policy.log`.
+
+### 2026-08-07T13:41:14Z — crossed policy evaluation completed
+
+- Outcome: 1,728/1,728 unique rows completed without retry or exception; all
+  1,728 actions parsed. Raw SHA-256:
+  `1a45241b675d69bcb29cc52348b5850194c7abe1a604a7af2210839e32ae25ec`;
+  log SHA-256:
+  `f9146ddbd72b9cee086710993f54f00d0caf1aad757fc8e823c2996a066ffd45`.
+- Under rationale-first evaluation, action-first-trained success changed from
+  baseline to step 8 by +1/+2/+5 cases across seeds, while rationale-first-
+  trained success changed -9/-2/0. These deterministic oracle facts were
+  frozen before surface judging; they do not change the judge rule.
+
+### 2026-08-07T13:41:35Z — independent judge planned
+
+- Exact code remains the preregistered
+  `6b7b4f20bda66c593edba09fd0016c02543700b4`; all checkpoint and policy
+  provenance is committed through the current branch history.
+- Command: `uv run --with-requirements attempts/public-executable-allocation/requirements.txt attempts/public-allocation-generation-order/experiment.py sample-judges`.
+- Expected output: 1,776 rows (1,728 policy + 48 disjoint calibration) in
+  `run/surface_judge_outputs.jsonl`. The judge prompt excludes action, oracle,
+  calculation work, reward, checkpoint, condition, and both order labels.
+- Observability: `/tmp/generation-order-judge.pid` and
+  `/tmp/generation-order-judge.log`.
