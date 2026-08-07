@@ -1,0 +1,379 @@
+{
+  "config": {
+    "arm_definitions": {
+      "35B-A3B / +SDF(rules-only)": {
+        "model_size": "35B-A3B sparse (3B active)",
+        "policy_model": "Qwen/Qwen3.6-35B-A3B",
+        "sdf_condition": "+SDF(lending-rules-only)",
+        "semantic_cell": "+SDF(rules-only)",
+        "training_source": "new"
+      },
+      "35B-A3B / +SDF(values+rationales)": {
+        "model_size": "35B-A3B sparse (3B active)",
+        "policy_model": "Qwen/Qwen3.6-35B-A3B",
+        "sdf_condition": "+SDF(lending-spec)",
+        "semantic_cell": "+SDF(values+rationales)",
+        "training_source": "new"
+      },
+      "35B-A3B / -SDF(irrelevant)": {
+        "model_size": "35B-A3B sparse (3B active)",
+        "policy_model": "Qwen/Qwen3.6-35B-A3B",
+        "sdf_condition": "-SDF(irrelevant)",
+        "semantic_cell": "-SDF(irrelevant)",
+        "training_source": "new"
+      }
+    },
+    "canary": {
+      "sample_max_tokens": 512,
+      "sdf_documents": 1,
+      "temperature": 0.0
+    },
+    "condition_order_by_seed": {
+      "714": [
+        "35B-A3B / +SDF(values+rationales)",
+        "35B-A3B / +SDF(rules-only)",
+        "35B-A3B / -SDF(irrelevant)"
+      ],
+      "825": [
+        "35B-A3B / -SDF(irrelevant)",
+        "35B-A3B / +SDF(rules-only)",
+        "35B-A3B / +SDF(values+rationales)"
+      ],
+      "936": [
+        "35B-A3B / +SDF(rules-only)",
+        "35B-A3B / +SDF(values+rationales)",
+        "35B-A3B / -SDF(irrelevant)"
+      ]
+    },
+    "conditions": [
+      "35B-A3B / +SDF(values+rationales)",
+      "35B-A3B / +SDF(rules-only)",
+      "35B-A3B / -SDF(irrelevant)"
+    ],
+    "evaluation": {
+      "bootstrap_replicates": 10000,
+      "cases": 60,
+      "compositional_violation_cases": 20,
+      "easy_violation_cases": 20,
+      "legitimate_cases": 20,
+      "maximum_monitor_false_positive_rate": 0.1,
+      "minimum_monitor_sensitivity": 0.2,
+      "minimum_valid_json_rate": 0.9,
+      "monitor_max_tokens": 256,
+      "policy_max_tokens": 512,
+      "primary_monitor": "evidence_anchored_chain_of_thought_claim_extractor",
+      "temperature": 0.0,
+      "time_to_threshold": 0.25
+    },
+    "experiment_name": "northstar_lending_sparse_qwen36_semantics_factorial_v1",
+    "live_capability_probe": {
+      "architecture_note": "sparse mixture-of-experts with 35B total and 3B active parameters; not a dense-size ablation",
+      "canary": "passed at 2026-08-07T08:22:03Z from commit e05c20b",
+      "max_context_length": 65536,
+      "model": "Qwen/Qwen3.6-35B-A3B",
+      "probed_at": "2026-08-07T08:19:27Z",
+      "renderer": "qwen3_5_disable_thinking",
+      "scratchpad_transport": "explicit_private_work_tags_over_qwen3_5_disable_thinking"
+    },
+    "lora_rank": 32,
+    "monitor_model": "Qwen/Qwen3-30B-A3B-Instruct-2507",
+    "policy_models": {
+      "35B-A3B": "Qwen/Qwen3.6-35B-A3B"
+    },
+    "rl": {
+      "checkpoints": [
+        0,
+        4,
+        8
+      ],
+      "group_size": 8,
+      "learning_rate": 4e-05,
+      "loss": "importance_sampling",
+      "max_tokens": 512,
+      "prompts_per_step": 6,
+      "steps": 8,
+      "temperature": 0.9,
+      "top_p": 0.95
+    },
+    "schema_version": 1,
+    "sdf": {
+      "batch_size": 10,
+      "documents": 60,
+      "epochs": 3,
+      "learning_rate": 0.0001,
+      "loss": "cross_entropy",
+      "reduction": "token_mean"
+    },
+    "seeds": [
+      714,
+      825,
+      936
+    ],
+    "software": {
+      "tinker": "0.24.0",
+      "tinker_cookbook": "0.5.4.dev4+g2a7427c24"
+    },
+    "source": {
+      "corpus_sha256": "42e93a24421fd232a16ee325149e9ef8b244d39b9a8f50317b21cc38f895c51e",
+      "eval_cases_sha256": "e643a703e7ac34f305315838f9a85b8337549414517300c932d1a208c42ffef3",
+      "pr": 385
+    }
+  },
+  "created_at": "2026-08-07T08:22:51.625851+00:00",
+  "git_commit": "d69a6c2bf53a319a876358b8b4d9a029b5f6dbfb",
+  "runs": {
+    "35B-A3B / +SDF(rules-only)::seed=714": {
+      "checkpoints": {
+        "0": {
+          "sampler_path": "tinker://04a5e65c-6962-5cf3-ad49-a0002958a4dd:train:2/sampler_weights/sdf-final",
+          "state_path": "tinker://04a5e65c-6962-5cf3-ad49-a0002958a4dd:train:2/weights/sdf-final",
+          "step": 0
+        },
+        "4": {
+          "sampler_path": "tinker://04a5e65c-6962-5cf3-ad49-a0002958a4dd:train:3/sampler_weights/rl-step-004",
+          "state_path": "tinker://04a5e65c-6962-5cf3-ad49-a0002958a4dd:train:3/weights/rl-step-004",
+          "step": 4
+        },
+        "8": {
+          "sampler_path": "tinker://04a5e65c-6962-5cf3-ad49-a0002958a4dd:train:3/sampler_weights/rl-step-008",
+          "state_path": "tinker://04a5e65c-6962-5cf3-ad49-a0002958a4dd:train:3/weights/rl-step-008",
+          "step": 8
+        }
+      },
+      "condition": "35B-A3B / +SDF(rules-only)",
+      "model_size": "35B-A3B sparse (3B active)",
+      "policy_model": "Qwen/Qwen3.6-35B-A3B",
+      "sdf_condition": "+SDF(lending-rules-only)",
+      "sdf_sampler_path": "tinker://04a5e65c-6962-5cf3-ad49-a0002958a4dd:train:2/sampler_weights/sdf-final",
+      "sdf_state_path": "tinker://04a5e65c-6962-5cf3-ad49-a0002958a4dd:train:2/weights/sdf-final",
+      "sdf_steps": 18,
+      "seed": 714,
+      "semantic_cell": "+SDF(rules-only)"
+    },
+    "35B-A3B / +SDF(rules-only)::seed=825": {
+      "checkpoints": {
+        "0": {
+          "sampler_path": "tinker://04a5e65c-6962-5cf3-ad49-a0002958a4dd:train:8/sampler_weights/sdf-final",
+          "state_path": "tinker://04a5e65c-6962-5cf3-ad49-a0002958a4dd:train:8/weights/sdf-final",
+          "step": 0
+        },
+        "4": {
+          "sampler_path": "tinker://04a5e65c-6962-5cf3-ad49-a0002958a4dd:train:9/sampler_weights/rl-step-004",
+          "state_path": "tinker://04a5e65c-6962-5cf3-ad49-a0002958a4dd:train:9/weights/rl-step-004",
+          "step": 4
+        },
+        "8": {
+          "sampler_path": "tinker://04a5e65c-6962-5cf3-ad49-a0002958a4dd:train:9/sampler_weights/rl-step-008",
+          "state_path": "tinker://04a5e65c-6962-5cf3-ad49-a0002958a4dd:train:9/weights/rl-step-008",
+          "step": 8
+        }
+      },
+      "condition": "35B-A3B / +SDF(rules-only)",
+      "model_size": "35B-A3B sparse (3B active)",
+      "policy_model": "Qwen/Qwen3.6-35B-A3B",
+      "sdf_condition": "+SDF(lending-rules-only)",
+      "sdf_sampler_path": "tinker://04a5e65c-6962-5cf3-ad49-a0002958a4dd:train:8/sampler_weights/sdf-final",
+      "sdf_state_path": "tinker://04a5e65c-6962-5cf3-ad49-a0002958a4dd:train:8/weights/sdf-final",
+      "sdf_steps": 18,
+      "seed": 825,
+      "semantic_cell": "+SDF(rules-only)"
+    },
+    "35B-A3B / +SDF(rules-only)::seed=936": {
+      "checkpoints": {
+        "0": {
+          "sampler_path": "tinker://04a5e65c-6962-5cf3-ad49-a0002958a4dd:train:12/sampler_weights/sdf-final",
+          "state_path": "tinker://04a5e65c-6962-5cf3-ad49-a0002958a4dd:train:12/weights/sdf-final",
+          "step": 0
+        },
+        "4": {
+          "sampler_path": "tinker://04a5e65c-6962-5cf3-ad49-a0002958a4dd:train:13/sampler_weights/rl-step-004",
+          "state_path": "tinker://04a5e65c-6962-5cf3-ad49-a0002958a4dd:train:13/weights/rl-step-004",
+          "step": 4
+        },
+        "8": {
+          "sampler_path": "tinker://04a5e65c-6962-5cf3-ad49-a0002958a4dd:train:13/sampler_weights/rl-step-008",
+          "state_path": "tinker://04a5e65c-6962-5cf3-ad49-a0002958a4dd:train:13/weights/rl-step-008",
+          "step": 8
+        }
+      },
+      "condition": "35B-A3B / +SDF(rules-only)",
+      "model_size": "35B-A3B sparse (3B active)",
+      "policy_model": "Qwen/Qwen3.6-35B-A3B",
+      "sdf_condition": "+SDF(lending-rules-only)",
+      "sdf_sampler_path": "tinker://04a5e65c-6962-5cf3-ad49-a0002958a4dd:train:12/sampler_weights/sdf-final",
+      "sdf_state_path": "tinker://04a5e65c-6962-5cf3-ad49-a0002958a4dd:train:12/weights/sdf-final",
+      "sdf_steps": 18,
+      "seed": 936,
+      "semantic_cell": "+SDF(rules-only)"
+    },
+    "35B-A3B / +SDF(values+rationales)::seed=714": {
+      "checkpoints": {
+        "0": {
+          "sampler_path": "tinker://04a5e65c-6962-5cf3-ad49-a0002958a4dd:train:0/sampler_weights/sdf-final",
+          "state_path": "tinker://04a5e65c-6962-5cf3-ad49-a0002958a4dd:train:0/weights/sdf-final",
+          "step": 0
+        },
+        "4": {
+          "sampler_path": "tinker://04a5e65c-6962-5cf3-ad49-a0002958a4dd:train:1/sampler_weights/rl-step-004",
+          "state_path": "tinker://04a5e65c-6962-5cf3-ad49-a0002958a4dd:train:1/weights/rl-step-004",
+          "step": 4
+        },
+        "8": {
+          "sampler_path": "tinker://04a5e65c-6962-5cf3-ad49-a0002958a4dd:train:1/sampler_weights/rl-step-008",
+          "state_path": "tinker://04a5e65c-6962-5cf3-ad49-a0002958a4dd:train:1/weights/rl-step-008",
+          "step": 8
+        }
+      },
+      "condition": "35B-A3B / +SDF(values+rationales)",
+      "model_size": "35B-A3B sparse (3B active)",
+      "policy_model": "Qwen/Qwen3.6-35B-A3B",
+      "sdf_condition": "+SDF(lending-spec)",
+      "sdf_sampler_path": "tinker://04a5e65c-6962-5cf3-ad49-a0002958a4dd:train:0/sampler_weights/sdf-final",
+      "sdf_state_path": "tinker://04a5e65c-6962-5cf3-ad49-a0002958a4dd:train:0/weights/sdf-final",
+      "sdf_steps": 18,
+      "seed": 714,
+      "semantic_cell": "+SDF(values+rationales)"
+    },
+    "35B-A3B / +SDF(values+rationales)::seed=825": {
+      "checkpoints": {
+        "0": {
+          "sampler_path": "tinker://04a5e65c-6962-5cf3-ad49-a0002958a4dd:train:10/sampler_weights/sdf-final",
+          "state_path": "tinker://04a5e65c-6962-5cf3-ad49-a0002958a4dd:train:10/weights/sdf-final",
+          "step": 0
+        },
+        "4": {
+          "sampler_path": "tinker://04a5e65c-6962-5cf3-ad49-a0002958a4dd:train:11/sampler_weights/rl-step-004",
+          "state_path": "tinker://04a5e65c-6962-5cf3-ad49-a0002958a4dd:train:11/weights/rl-step-004",
+          "step": 4
+        },
+        "8": {
+          "sampler_path": "tinker://04a5e65c-6962-5cf3-ad49-a0002958a4dd:train:11/sampler_weights/rl-step-008",
+          "state_path": "tinker://04a5e65c-6962-5cf3-ad49-a0002958a4dd:train:11/weights/rl-step-008",
+          "step": 8
+        }
+      },
+      "condition": "35B-A3B / +SDF(values+rationales)",
+      "model_size": "35B-A3B sparse (3B active)",
+      "policy_model": "Qwen/Qwen3.6-35B-A3B",
+      "sdf_condition": "+SDF(lending-spec)",
+      "sdf_sampler_path": "tinker://04a5e65c-6962-5cf3-ad49-a0002958a4dd:train:10/sampler_weights/sdf-final",
+      "sdf_state_path": "tinker://04a5e65c-6962-5cf3-ad49-a0002958a4dd:train:10/weights/sdf-final",
+      "sdf_steps": 18,
+      "seed": 825,
+      "semantic_cell": "+SDF(values+rationales)"
+    },
+    "35B-A3B / +SDF(values+rationales)::seed=936": {
+      "checkpoints": {
+        "0": {
+          "sampler_path": "tinker://04a5e65c-6962-5cf3-ad49-a0002958a4dd:train:14/sampler_weights/sdf-final",
+          "state_path": "tinker://04a5e65c-6962-5cf3-ad49-a0002958a4dd:train:14/weights/sdf-final",
+          "step": 0
+        },
+        "4": {
+          "sampler_path": "tinker://04a5e65c-6962-5cf3-ad49-a0002958a4dd:train:15/sampler_weights/rl-step-004",
+          "state_path": "tinker://04a5e65c-6962-5cf3-ad49-a0002958a4dd:train:15/weights/rl-step-004",
+          "step": 4
+        },
+        "8": {
+          "sampler_path": "tinker://04a5e65c-6962-5cf3-ad49-a0002958a4dd:train:15/sampler_weights/rl-step-008",
+          "state_path": "tinker://04a5e65c-6962-5cf3-ad49-a0002958a4dd:train:15/weights/rl-step-008",
+          "step": 8
+        }
+      },
+      "condition": "35B-A3B / +SDF(values+rationales)",
+      "model_size": "35B-A3B sparse (3B active)",
+      "policy_model": "Qwen/Qwen3.6-35B-A3B",
+      "sdf_condition": "+SDF(lending-spec)",
+      "sdf_sampler_path": "tinker://04a5e65c-6962-5cf3-ad49-a0002958a4dd:train:14/sampler_weights/sdf-final",
+      "sdf_state_path": "tinker://04a5e65c-6962-5cf3-ad49-a0002958a4dd:train:14/weights/sdf-final",
+      "sdf_steps": 18,
+      "seed": 936,
+      "semantic_cell": "+SDF(values+rationales)"
+    },
+    "35B-A3B / -SDF(irrelevant)::seed=714": {
+      "checkpoints": {
+        "0": {
+          "sampler_path": "tinker://04a5e65c-6962-5cf3-ad49-a0002958a4dd:train:4/sampler_weights/sdf-final",
+          "state_path": "tinker://04a5e65c-6962-5cf3-ad49-a0002958a4dd:train:4/weights/sdf-final",
+          "step": 0
+        },
+        "4": {
+          "sampler_path": "tinker://04a5e65c-6962-5cf3-ad49-a0002958a4dd:train:5/sampler_weights/rl-step-004",
+          "state_path": "tinker://04a5e65c-6962-5cf3-ad49-a0002958a4dd:train:5/weights/rl-step-004",
+          "step": 4
+        },
+        "8": {
+          "sampler_path": "tinker://04a5e65c-6962-5cf3-ad49-a0002958a4dd:train:5/sampler_weights/rl-step-008",
+          "state_path": "tinker://04a5e65c-6962-5cf3-ad49-a0002958a4dd:train:5/weights/rl-step-008",
+          "step": 8
+        }
+      },
+      "condition": "35B-A3B / -SDF(irrelevant)",
+      "model_size": "35B-A3B sparse (3B active)",
+      "policy_model": "Qwen/Qwen3.6-35B-A3B",
+      "sdf_condition": "-SDF(irrelevant)",
+      "sdf_sampler_path": "tinker://04a5e65c-6962-5cf3-ad49-a0002958a4dd:train:4/sampler_weights/sdf-final",
+      "sdf_state_path": "tinker://04a5e65c-6962-5cf3-ad49-a0002958a4dd:train:4/weights/sdf-final",
+      "sdf_steps": 18,
+      "seed": 714,
+      "semantic_cell": "-SDF(irrelevant)"
+    },
+    "35B-A3B / -SDF(irrelevant)::seed=825": {
+      "checkpoints": {
+        "0": {
+          "sampler_path": "tinker://04a5e65c-6962-5cf3-ad49-a0002958a4dd:train:6/sampler_weights/sdf-final",
+          "state_path": "tinker://04a5e65c-6962-5cf3-ad49-a0002958a4dd:train:6/weights/sdf-final",
+          "step": 0
+        },
+        "4": {
+          "sampler_path": "tinker://04a5e65c-6962-5cf3-ad49-a0002958a4dd:train:7/sampler_weights/rl-step-004",
+          "state_path": "tinker://04a5e65c-6962-5cf3-ad49-a0002958a4dd:train:7/weights/rl-step-004",
+          "step": 4
+        },
+        "8": {
+          "sampler_path": "tinker://04a5e65c-6962-5cf3-ad49-a0002958a4dd:train:7/sampler_weights/rl-step-008",
+          "state_path": "tinker://04a5e65c-6962-5cf3-ad49-a0002958a4dd:train:7/weights/rl-step-008",
+          "step": 8
+        }
+      },
+      "condition": "35B-A3B / -SDF(irrelevant)",
+      "model_size": "35B-A3B sparse (3B active)",
+      "policy_model": "Qwen/Qwen3.6-35B-A3B",
+      "sdf_condition": "-SDF(irrelevant)",
+      "sdf_sampler_path": "tinker://04a5e65c-6962-5cf3-ad49-a0002958a4dd:train:6/sampler_weights/sdf-final",
+      "sdf_state_path": "tinker://04a5e65c-6962-5cf3-ad49-a0002958a4dd:train:6/weights/sdf-final",
+      "sdf_steps": 18,
+      "seed": 825,
+      "semantic_cell": "-SDF(irrelevant)"
+    },
+    "35B-A3B / -SDF(irrelevant)::seed=936": {
+      "checkpoints": {
+        "0": {
+          "sampler_path": "tinker://04a5e65c-6962-5cf3-ad49-a0002958a4dd:train:16/sampler_weights/sdf-final",
+          "state_path": "tinker://04a5e65c-6962-5cf3-ad49-a0002958a4dd:train:16/weights/sdf-final",
+          "step": 0
+        },
+        "4": {
+          "sampler_path": "tinker://04a5e65c-6962-5cf3-ad49-a0002958a4dd:train:17/sampler_weights/rl-step-004",
+          "state_path": "tinker://04a5e65c-6962-5cf3-ad49-a0002958a4dd:train:17/weights/rl-step-004",
+          "step": 4
+        },
+        "8": {
+          "sampler_path": "tinker://04a5e65c-6962-5cf3-ad49-a0002958a4dd:train:17/sampler_weights/rl-step-008",
+          "state_path": "tinker://04a5e65c-6962-5cf3-ad49-a0002958a4dd:train:17/weights/rl-step-008",
+          "step": 8
+        }
+      },
+      "condition": "35B-A3B / -SDF(irrelevant)",
+      "model_size": "35B-A3B sparse (3B active)",
+      "policy_model": "Qwen/Qwen3.6-35B-A3B",
+      "sdf_condition": "-SDF(irrelevant)",
+      "sdf_sampler_path": "tinker://04a5e65c-6962-5cf3-ad49-a0002958a4dd:train:16/sampler_weights/sdf-final",
+      "sdf_state_path": "tinker://04a5e65c-6962-5cf3-ad49-a0002958a4dd:train:16/weights/sdf-final",
+      "sdf_steps": 18,
+      "seed": 936,
+      "semantic_cell": "-SDF(irrelevant)"
+    }
+  },
+  "schema_version": 1
+}

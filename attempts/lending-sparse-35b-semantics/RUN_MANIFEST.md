@@ -11,4 +11,8 @@
 - Canary complete: 2026-08-07 08:22:03 UTC
 - Canary result: passed one SDF update, scratchpad/no-scratchpad rendering, stop-sequence, and public-JSON gates
 
-The full-training commit and remaining start/end times will be appended before and after that run.
+- Full training/evaluation commit: `d69a6c2bf53a319a876358b8b4d9a029b5f6dbfb`
+- Training: 2026-08-07 08:22:55–09:23:12 UTC
+- Policy sampling: 2026-08-07 09:23:45–09:31:37 UTC (3,240 rows)
+- Post-hoc monitor sampling: 2026-08-07 09:31:56–09:37:42 UTC (6,480 rows)
+- Analysis complete: 2026-08-07 09:38 UTC

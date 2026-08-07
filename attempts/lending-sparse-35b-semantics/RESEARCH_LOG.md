@@ -11,3 +11,7 @@ This model is not a dense 35B replication. A negative values-minus-rules interac
 ## 2026-08-07 — canary passed
 
 From committed state `e05c20b`, the paid canary completed one token-mean SDF update on `Qwen/Qwen3.6-35B-A3B`. The live recommended renderer was `qwen3_5`; both explicit-private-work and no-scratchpad prompts terminated on the renderer stop sequence and yielded valid public JSON. The scratchpad was nonempty only in the intended mode. This clears the preregistered gate for the full nine trajectories.
+
+## 2026-08-07 — result
+
+All nine trajectories completed, followed by 3,240 policy and 6,480 post-hoc monitor records. The negative hypothesis failed: values minus rules was +0.0500 undetected harm and +0.1742 conditional nondetection, positive in two seeds. Values minus irrelevant was +0.1611 and positive in every seed, mainly from +0.2222 more violations. The sparse 3B-active policy follows the earlier 8B direction rather than dense 27B despite sharing the Qwen3.6 tokenizer and renderer; this narrows but does not isolate the cause.

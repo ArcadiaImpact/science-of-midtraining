@@ -113,3 +113,386 @@ Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF
   "prohibited_term_hits": 0,
   "monitor_development_boundary": "monitor frozen in #385; heldout9 IDs remain disjoint from all development, validation, and prior semantic streams"
 }
+/workspace/arch-work-midtraining-monitor-evasion/.venv/lib/python3.12/site-packages/huggingface_hub/constants.py:298: FutureWarning: The `HF_HUB_ENABLE_HF_TRANSFER` environment variable is deprecated as 'hf_transfer' is not used anymore. Please use `HF_XET_HIGH_PERFORMANCE` instead to enable high performance transfer with Xet. Visit https://huggingface.co/docs/huggingface_hub/package_reference/environment_variables#hfxethighperformance for more details.
+  warnings.warn(
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+[2026-08-07T08:22:55.699046+00:00] SDF start 35B-A3B / +SDF(values+rationales)::seed=714
+[2026-08-07T08:23:14.783238+00:00] 35B-A3B / +SDF(values+rationales)::seed=714 sdf_step=1 metrics={}
+[2026-08-07T08:23:22.600537+00:00] 35B-A3B / +SDF(values+rationales)::seed=714 sdf_step=2 metrics={}
+[2026-08-07T08:23:31.129840+00:00] 35B-A3B / +SDF(values+rationales)::seed=714 sdf_step=3 metrics={}
+[2026-08-07T08:23:39.652885+00:00] 35B-A3B / +SDF(values+rationales)::seed=714 sdf_step=4 metrics={}
+[2026-08-07T08:23:46.773286+00:00] 35B-A3B / +SDF(values+rationales)::seed=714 sdf_step=5 metrics={}
+[2026-08-07T08:23:53.856756+00:00] 35B-A3B / +SDF(values+rationales)::seed=714 sdf_step=6 metrics={}
+[2026-08-07T08:24:01.691146+00:00] 35B-A3B / +SDF(values+rationales)::seed=714 sdf_step=7 metrics={}
+[2026-08-07T08:24:10.215496+00:00] 35B-A3B / +SDF(values+rationales)::seed=714 sdf_step=8 metrics={}
+[2026-08-07T08:24:17.300387+00:00] 35B-A3B / +SDF(values+rationales)::seed=714 sdf_step=9 metrics={}
+[2026-08-07T08:24:25.132106+00:00] 35B-A3B / +SDF(values+rationales)::seed=714 sdf_step=10 metrics={}
+[2026-08-07T08:24:33.680017+00:00] 35B-A3B / +SDF(values+rationales)::seed=714 sdf_step=11 metrics={}
+[2026-08-07T08:24:39.202481+00:00] 35B-A3B / +SDF(values+rationales)::seed=714 sdf_step=12 metrics={}
+[2026-08-07T08:24:45.212678+00:00] 35B-A3B / +SDF(values+rationales)::seed=714 sdf_step=13 metrics={}
+[2026-08-07T08:24:51.756256+00:00] 35B-A3B / +SDF(values+rationales)::seed=714 sdf_step=14 metrics={}
+[2026-08-07T08:24:57.743099+00:00] 35B-A3B / +SDF(values+rationales)::seed=714 sdf_step=15 metrics={}
+[2026-08-07T08:25:03.745342+00:00] 35B-A3B / +SDF(values+rationales)::seed=714 sdf_step=16 metrics={}
+[2026-08-07T08:25:09.784987+00:00] 35B-A3B / +SDF(values+rationales)::seed=714 sdf_step=17 metrics={}
+[2026-08-07T08:25:15.816289+00:00] 35B-A3B / +SDF(values+rationales)::seed=714 sdf_step=18 metrics={}
+[2026-08-07T08:26:20.975051+00:00] 35B-A3B / +SDF(values+rationales)::seed=714 rl_step=1 mean_reward=0.7371 datums=48 metrics={}
+[2026-08-07T08:26:43.583785+00:00] 35B-A3B / +SDF(values+rationales)::seed=714 rl_step=2 mean_reward=0.6093 datums=32 metrics={}
+[2026-08-07T08:27:12.728801+00:00] 35B-A3B / +SDF(values+rationales)::seed=714 rl_step=3 mean_reward=0.6492 datums=48 metrics={}
+[2026-08-07T08:28:05.095851+00:00] 35B-A3B / +SDF(values+rationales)::seed=714 rl_step=4 mean_reward=0.7204 datums=40 metrics={}
+[2026-08-07T08:28:48.958459+00:00] 35B-A3B / +SDF(values+rationales)::seed=714 rl_step=5 mean_reward=0.9076 datums=40 metrics={}
+[2026-08-07T08:29:20.179844+00:00] 35B-A3B / +SDF(values+rationales)::seed=714 rl_step=6 mean_reward=0.8542 datums=40 metrics={}
+[2026-08-07T08:29:47.192244+00:00] 35B-A3B / +SDF(values+rationales)::seed=714 rl_step=7 mean_reward=0.7726 datums=40 metrics={}
+[2026-08-07T08:30:16.719783+00:00] 35B-A3B / +SDF(values+rationales)::seed=714 rl_step=8 mean_reward=0.8031 datums=48 metrics={}
+[2026-08-07T08:30:36.746843+00:00] SDF start 35B-A3B / +SDF(rules-only)::seed=714
+[2026-08-07T08:31:00.839817+00:00] 35B-A3B / +SDF(rules-only)::seed=714 sdf_step=1 metrics={}
+[2026-08-07T08:31:06.817602+00:00] 35B-A3B / +SDF(rules-only)::seed=714 sdf_step=2 metrics={}
+[2026-08-07T08:31:12.862875+00:00] 35B-A3B / +SDF(rules-only)::seed=714 sdf_step=3 metrics={}
+[2026-08-07T08:31:18.378493+00:00] 35B-A3B / +SDF(rules-only)::seed=714 sdf_step=4 metrics={}
+[2026-08-07T08:31:23.866919+00:00] 35B-A3B / +SDF(rules-only)::seed=714 sdf_step=5 metrics={}
+[2026-08-07T08:31:29.365493+00:00] 35B-A3B / +SDF(rules-only)::seed=714 sdf_step=6 metrics={}
+[2026-08-07T08:31:34.910750+00:00] 35B-A3B / +SDF(rules-only)::seed=714 sdf_step=7 metrics={}
+[2026-08-07T08:31:42.716601+00:00] 35B-A3B / +SDF(rules-only)::seed=714 sdf_step=8 metrics={}
+[2026-08-07T08:31:49.804185+00:00] 35B-A3B / +SDF(rules-only)::seed=714 sdf_step=9 metrics={}
+[2026-08-07T08:31:55.016891+00:00] 35B-A3B / +SDF(rules-only)::seed=714 sdf_step=10 metrics={}
+[2026-08-07T08:32:00.551890+00:00] 35B-A3B / +SDF(rules-only)::seed=714 sdf_step=11 metrics={}
+[2026-08-07T08:32:06.057190+00:00] 35B-A3B / +SDF(rules-only)::seed=714 sdf_step=12 metrics={}
+[2026-08-07T08:32:11.532517+00:00] 35B-A3B / +SDF(rules-only)::seed=714 sdf_step=13 metrics={}
+[2026-08-07T08:32:17.021682+00:00] 35B-A3B / +SDF(rules-only)::seed=714 sdf_step=14 metrics={}
+[2026-08-07T08:32:22.997397+00:00] 35B-A3B / +SDF(rules-only)::seed=714 sdf_step=15 metrics={}
+[2026-08-07T08:32:28.478647+00:00] 35B-A3B / +SDF(rules-only)::seed=714 sdf_step=16 metrics={}
+[2026-08-07T08:32:33.956445+00:00] 35B-A3B / +SDF(rules-only)::seed=714 sdf_step=17 metrics={}
+[2026-08-07T08:32:39.433177+00:00] 35B-A3B / +SDF(rules-only)::seed=714 sdf_step=18 metrics={}
+[2026-08-07T08:33:32.906260+00:00] 35B-A3B / +SDF(rules-only)::seed=714 rl_step=1 mean_reward=0.6893 datums=40 metrics={}
+[2026-08-07T08:33:57.015043+00:00] 35B-A3B / +SDF(rules-only)::seed=714 rl_step=2 mean_reward=0.8302 datums=40 metrics={}
+[2026-08-07T08:34:22.394487+00:00] 35B-A3B / +SDF(rules-only)::seed=714 rl_step=3 mean_reward=0.8342 datums=48 metrics={}
+[2026-08-07T08:34:48.092476+00:00] 35B-A3B / +SDF(rules-only)::seed=714 rl_step=4 mean_reward=0.7544 datums=40 metrics={}
+[2026-08-07T08:35:33.107881+00:00] 35B-A3B / +SDF(rules-only)::seed=714 rl_step=5 mean_reward=0.8438 datums=40 metrics={}
+[2026-08-07T08:36:03.100037+00:00] 35B-A3B / +SDF(rules-only)::seed=714 rl_step=6 mean_reward=0.9838 datums=40 metrics={}
+[2026-08-07T08:36:21.398013+00:00] 35B-A3B / +SDF(rules-only)::seed=714 rl_step=7 mean_reward=0.9357 datums=48 metrics={}
+[2026-08-07T08:36:47.134063+00:00] 35B-A3B / +SDF(rules-only)::seed=714 rl_step=8 mean_reward=0.8858 datums=48 metrics={}
+[2026-08-07T08:37:05.910607+00:00] SDF start 35B-A3B / -SDF(irrelevant)::seed=714
+[2026-08-07T08:37:28.026261+00:00] 35B-A3B / -SDF(irrelevant)::seed=714 sdf_step=1 metrics={}
+[2026-08-07T08:37:35.874150+00:00] 35B-A3B / -SDF(irrelevant)::seed=714 sdf_step=2 metrics={}
+[2026-08-07T08:37:40.936383+00:00] 35B-A3B / -SDF(irrelevant)::seed=714 sdf_step=3 metrics={}
+[2026-08-07T08:37:47.468162+00:00] 35B-A3B / -SDF(irrelevant)::seed=714 sdf_step=4 metrics={}
+[2026-08-07T08:37:53.451930+00:00] 35B-A3B / -SDF(irrelevant)::seed=714 sdf_step=5 metrics={}
+[2026-08-07T08:37:59.450651+00:00] 35B-A3B / -SDF(irrelevant)::seed=714 sdf_step=6 metrics={}
+[2026-08-07T08:38:04.976693+00:00] 35B-A3B / -SDF(irrelevant)::seed=714 sdf_step=7 metrics={}
+[2026-08-07T08:38:10.944644+00:00] 35B-A3B / -SDF(irrelevant)::seed=714 sdf_step=8 metrics={}
+[2026-08-07T08:38:16.990640+00:00] 35B-A3B / -SDF(irrelevant)::seed=714 sdf_step=9 metrics={}
+[2026-08-07T08:38:22.969870+00:00] 35B-A3B / -SDF(irrelevant)::seed=714 sdf_step=10 metrics={}
+[2026-08-07T08:38:28.988199+00:00] 35B-A3B / -SDF(irrelevant)::seed=714 sdf_step=11 metrics={}
+[2026-08-07T08:38:34.996293+00:00] 35B-A3B / -SDF(irrelevant)::seed=714 sdf_step=12 metrics={}
+[2026-08-07T08:38:40.955475+00:00] 35B-A3B / -SDF(irrelevant)::seed=714 sdf_step=13 metrics={}
+[2026-08-07T08:38:47.090392+00:00] 35B-A3B / -SDF(irrelevant)::seed=714 sdf_step=14 metrics={}
+[2026-08-07T08:38:53.076833+00:00] 35B-A3B / -SDF(irrelevant)::seed=714 sdf_step=15 metrics={}
+[2026-08-07T08:38:59.246467+00:00] 35B-A3B / -SDF(irrelevant)::seed=714 sdf_step=16 metrics={}
+[2026-08-07T08:39:04.751659+00:00] 35B-A3B / -SDF(irrelevant)::seed=714 sdf_step=17 metrics={}
+[2026-08-07T08:39:10.697062+00:00] 35B-A3B / -SDF(irrelevant)::seed=714 sdf_step=18 metrics={}
+[2026-08-07T08:40:01.986608+00:00] 35B-A3B / -SDF(irrelevant)::seed=714 rl_step=1 mean_reward=0.6791 datums=40 metrics={}
+[2026-08-07T08:40:28.889107+00:00] 35B-A3B / -SDF(irrelevant)::seed=714 rl_step=2 mean_reward=0.4442 datums=48 metrics={}
+[2026-08-07T08:41:00.551547+00:00] 35B-A3B / -SDF(irrelevant)::seed=714 rl_step=3 mean_reward=0.6067 datums=48 metrics={}
+[2026-08-07T08:41:24.880792+00:00] 35B-A3B / -SDF(irrelevant)::seed=714 rl_step=4 mean_reward=0.5455 datums=48 metrics={}
+[2026-08-07T08:42:03.734746+00:00] 35B-A3B / -SDF(irrelevant)::seed=714 rl_step=5 mean_reward=0.7422 datums=44 metrics={}
+[2026-08-07T08:42:32.025813+00:00] 35B-A3B / -SDF(irrelevant)::seed=714 rl_step=6 mean_reward=0.6088 datums=48 metrics={}
+[2026-08-07T08:43:07.347629+00:00] 35B-A3B / -SDF(irrelevant)::seed=714 rl_step=7 mean_reward=0.5276 datums=40 metrics={}
+[2026-08-07T08:43:29.797783+00:00] 35B-A3B / -SDF(irrelevant)::seed=714 rl_step=8 mean_reward=0.7538 datums=40 metrics={}
+[2026-08-07T08:43:46.111338+00:00] SDF start 35B-A3B / -SDF(irrelevant)::seed=825
+[2026-08-07T08:44:06.227977+00:00] 35B-A3B / -SDF(irrelevant)::seed=825 sdf_step=1 metrics={}
+[2026-08-07T08:44:11.682472+00:00] 35B-A3B / -SDF(irrelevant)::seed=825 sdf_step=2 metrics={}
+[2026-08-07T08:44:17.235480+00:00] 35B-A3B / -SDF(irrelevant)::seed=825 sdf_step=3 metrics={}
+[2026-08-07T08:44:22.717142+00:00] 35B-A3B / -SDF(irrelevant)::seed=825 sdf_step=4 metrics={}
+[2026-08-07T08:44:28.235265+00:00] 35B-A3B / -SDF(irrelevant)::seed=825 sdf_step=5 metrics={}
+[2026-08-07T08:44:33.729413+00:00] 35B-A3B / -SDF(irrelevant)::seed=825 sdf_step=6 metrics={}
+[2026-08-07T08:44:39.777613+00:00] 35B-A3B / -SDF(irrelevant)::seed=825 sdf_step=7 metrics={}
+[2026-08-07T08:44:45.295512+00:00] 35B-A3B / -SDF(irrelevant)::seed=825 sdf_step=8 metrics={}
+[2026-08-07T08:44:54.672457+00:00] 35B-A3B / -SDF(irrelevant)::seed=825 sdf_step=9 metrics={}
+[2026-08-07T08:45:02.446886+00:00] 35B-A3B / -SDF(irrelevant)::seed=825 sdf_step=10 metrics={}
+[2026-08-07T08:45:10.264914+00:00] 35B-A3B / -SDF(irrelevant)::seed=825 sdf_step=11 metrics={}
+[2026-08-07T08:45:17.402604+00:00] 35B-A3B / -SDF(irrelevant)::seed=825 sdf_step=12 metrics={}
+[2026-08-07T08:45:24.548276+00:00] 35B-A3B / -SDF(irrelevant)::seed=825 sdf_step=13 metrics={}
+[2026-08-07T08:45:32.383965+00:00] 35B-A3B / -SDF(irrelevant)::seed=825 sdf_step=14 metrics={}
+[2026-08-07T08:45:38.949477+00:00] 35B-A3B / -SDF(irrelevant)::seed=825 sdf_step=15 metrics={}
+[2026-08-07T08:45:46.169498+00:00] 35B-A3B / -SDF(irrelevant)::seed=825 sdf_step=16 metrics={}
+[2026-08-07T08:45:54.009814+00:00] 35B-A3B / -SDF(irrelevant)::seed=825 sdf_step=17 metrics={}
+[2026-08-07T08:46:01.148708+00:00] 35B-A3B / -SDF(irrelevant)::seed=825 sdf_step=18 metrics={}
+[2026-08-07T08:46:52.003349+00:00] 35B-A3B / -SDF(irrelevant)::seed=825 rl_step=1 mean_reward=0.5487 datums=48 metrics={}
+[2026-08-07T08:47:15.094708+00:00] 35B-A3B / -SDF(irrelevant)::seed=825 rl_step=2 mean_reward=0.8043 datums=48 metrics={}
+[2026-08-07T08:47:35.241117+00:00] 35B-A3B / -SDF(irrelevant)::seed=825 rl_step=3 mean_reward=0.6282 datums=48 metrics={}
+[2026-08-07T08:47:56.930545+00:00] 35B-A3B / -SDF(irrelevant)::seed=825 rl_step=4 mean_reward=0.7510 datums=48 metrics={}
+[2026-08-07T08:48:29.093920+00:00] 35B-A3B / -SDF(irrelevant)::seed=825 rl_step=5 mean_reward=0.8638 datums=40 metrics={}
+[2026-08-07T08:49:04.433545+00:00] 35B-A3B / -SDF(irrelevant)::seed=825 rl_step=6 mean_reward=0.6070 datums=40 metrics={}
+[2026-08-07T08:49:29.426320+00:00] 35B-A3B / -SDF(irrelevant)::seed=825 rl_step=7 mean_reward=0.8797 datums=48 metrics={}
+[2026-08-07T08:49:51.408587+00:00] 35B-A3B / -SDF(irrelevant)::seed=825 rl_step=8 mean_reward=0.9045 datums=40 metrics={}
+[2026-08-07T08:50:07.427485+00:00] SDF start 35B-A3B / +SDF(rules-only)::seed=825
+[2026-08-07T08:50:27.538326+00:00] 35B-A3B / +SDF(rules-only)::seed=825 sdf_step=1 metrics={}
+[2026-08-07T08:50:35.348290+00:00] 35B-A3B / +SDF(rules-only)::seed=825 sdf_step=2 metrics={}
+[2026-08-07T08:50:43.176303+00:00] 35B-A3B / +SDF(rules-only)::seed=825 sdf_step=3 metrics={}
+[2026-08-07T08:50:51.043423+00:00] 35B-A3B / +SDF(rules-only)::seed=825 sdf_step=4 metrics={}
+[2026-08-07T08:50:58.882529+00:00] 35B-A3B / +SDF(rules-only)::seed=825 sdf_step=5 metrics={}
+[2026-08-07T08:51:06.674033+00:00] 35B-A3B / +SDF(rules-only)::seed=825 sdf_step=6 metrics={}
+[2026-08-07T08:51:14.468275+00:00] 35B-A3B / +SDF(rules-only)::seed=825 sdf_step=7 metrics={}
+[2026-08-07T08:51:22.317194+00:00] 35B-A3B / +SDF(rules-only)::seed=825 sdf_step=8 metrics={}
+[2026-08-07T08:51:29.502736+00:00] 35B-A3B / +SDF(rules-only)::seed=825 sdf_step=9 metrics={}
+[2026-08-07T08:51:37.289379+00:00] 35B-A3B / +SDF(rules-only)::seed=825 sdf_step=10 metrics={}
+[2026-08-07T08:51:45.000318+00:00] 35B-A3B / +SDF(rules-only)::seed=825 sdf_step=11 metrics={}
+[2026-08-07T08:51:52.527837+00:00] 35B-A3B / +SDF(rules-only)::seed=825 sdf_step=12 metrics={}
+[2026-08-07T08:52:00.370170+00:00] 35B-A3B / +SDF(rules-only)::seed=825 sdf_step=13 metrics={}
+[2026-08-07T08:52:08.218842+00:00] 35B-A3B / +SDF(rules-only)::seed=825 sdf_step=14 metrics={}
+[2026-08-07T08:52:16.027192+00:00] 35B-A3B / +SDF(rules-only)::seed=825 sdf_step=15 metrics={}
+[2026-08-07T08:52:23.789129+00:00] 35B-A3B / +SDF(rules-only)::seed=825 sdf_step=16 metrics={}
+[2026-08-07T08:52:31.609797+00:00] 35B-A3B / +SDF(rules-only)::seed=825 sdf_step=17 metrics={}
+[2026-08-07T08:52:39.459209+00:00] 35B-A3B / +SDF(rules-only)::seed=825 sdf_step=18 metrics={}
+[2026-08-07T08:53:37.429323+00:00] 35B-A3B / +SDF(rules-only)::seed=825 rl_step=1 mean_reward=0.4254 datums=48 metrics={}
+[2026-08-07T08:53:59.944986+00:00] 35B-A3B / +SDF(rules-only)::seed=825 rl_step=2 mean_reward=0.9231 datums=48 metrics={}
+[2026-08-07T08:54:18.207755+00:00] 35B-A3B / +SDF(rules-only)::seed=825 rl_step=3 mean_reward=0.6276 datums=40 metrics={}
+[2026-08-07T08:54:37.192605+00:00] 35B-A3B / +SDF(rules-only)::seed=825 rl_step=4 mean_reward=0.9652 datums=48 metrics={}
+[2026-08-07T08:55:04.009518+00:00] 35B-A3B / +SDF(rules-only)::seed=825 rl_step=5 mean_reward=0.9429 datums=40 metrics={}
+[2026-08-07T08:55:28.652332+00:00] 35B-A3B / +SDF(rules-only)::seed=825 rl_step=6 mean_reward=0.9637 datums=40 metrics={}
+[2026-08-07T08:55:49.400014+00:00] 35B-A3B / +SDF(rules-only)::seed=825 rl_step=7 mean_reward=0.9721 datums=48 metrics={}
+[2026-08-07T08:56:06.562387+00:00] 35B-A3B / +SDF(rules-only)::seed=825 rl_step=8 mean_reward=0.9799 datums=40 metrics={}
+[2026-08-07T08:56:13.596342+00:00] SDF start 35B-A3B / +SDF(values+rationales)::seed=825
+[2026-08-07T08:56:33.693996+00:00] 35B-A3B / +SDF(values+rationales)::seed=825 sdf_step=1 metrics={}
+[2026-08-07T08:56:41.451544+00:00] 35B-A3B / +SDF(values+rationales)::seed=825 sdf_step=2 metrics={}
+[2026-08-07T08:56:49.333776+00:00] 35B-A3B / +SDF(values+rationales)::seed=825 sdf_step=3 metrics={}
+[2026-08-07T08:56:57.200298+00:00] 35B-A3B / +SDF(values+rationales)::seed=825 sdf_step=4 metrics={}
+[2026-08-07T08:57:04.960812+00:00] 35B-A3B / +SDF(values+rationales)::seed=825 sdf_step=5 metrics={}
+[2026-08-07T08:57:12.764355+00:00] 35B-A3B / +SDF(values+rationales)::seed=825 sdf_step=6 metrics={}
+[2026-08-07T08:57:20.517759+00:00] 35B-A3B / +SDF(values+rationales)::seed=825 sdf_step=7 metrics={}
+[2026-08-07T08:57:28.275941+00:00] 35B-A3B / +SDF(values+rationales)::seed=825 sdf_step=8 metrics={}
+[2026-08-07T08:57:36.099522+00:00] 35B-A3B / +SDF(values+rationales)::seed=825 sdf_step=9 metrics={}
+[2026-08-07T08:57:43.920544+00:00] 35B-A3B / +SDF(values+rationales)::seed=825 sdf_step=10 metrics={}
+[2026-08-07T08:57:50.478902+00:00] 35B-A3B / +SDF(values+rationales)::seed=825 sdf_step=11 metrics={}
+[2026-08-07T08:57:58.976902+00:00] 35B-A3B / +SDF(values+rationales)::seed=825 sdf_step=12 metrics={}
+[2026-08-07T08:58:04.404771+00:00] 35B-A3B / +SDF(values+rationales)::seed=825 sdf_step=13 metrics={}
+[2026-08-07T08:58:11.539087+00:00] 35B-A3B / +SDF(values+rationales)::seed=825 sdf_step=14 metrics={}
+[2026-08-07T08:58:19.300366+00:00] 35B-A3B / +SDF(values+rationales)::seed=825 sdf_step=15 metrics={}
+[2026-08-07T08:58:27.782416+00:00] 35B-A3B / +SDF(values+rationales)::seed=825 sdf_step=16 metrics={}
+[2026-08-07T08:58:34.934183+00:00] 35B-A3B / +SDF(values+rationales)::seed=825 sdf_step=17 metrics={}
+[2026-08-07T08:58:41.997333+00:00] 35B-A3B / +SDF(values+rationales)::seed=825 sdf_step=18 metrics={}
+[2026-08-07T08:59:47.423297+00:00] 35B-A3B / +SDF(values+rationales)::seed=825 rl_step=1 mean_reward=0.7110 datums=40 metrics={}
+[2026-08-07T09:00:15.493172+00:00] 35B-A3B / +SDF(values+rationales)::seed=825 rl_step=2 mean_reward=0.8477 datums=40 metrics={}
+[2026-08-07T09:00:38.528784+00:00] 35B-A3B / +SDF(values+rationales)::seed=825 rl_step=3 mean_reward=0.5889 datums=48 metrics={}
+[2026-08-07T09:01:03.329954+00:00] 35B-A3B / +SDF(values+rationales)::seed=825 rl_step=4 mean_reward=0.7018 datums=44 metrics={}
+[2026-08-07T09:01:37.210267+00:00] 35B-A3B / +SDF(values+rationales)::seed=825 rl_step=5 mean_reward=0.9709 datums=32 metrics={}
+[2026-08-07T09:01:57.655792+00:00] 35B-A3B / +SDF(values+rationales)::seed=825 rl_step=6 mean_reward=0.9049 datums=48 metrics={}
+[2026-08-07T09:02:21.514185+00:00] 35B-A3B / +SDF(values+rationales)::seed=825 rl_step=7 mean_reward=0.9701 datums=29 metrics={}
+[2026-08-07T09:02:45.675327+00:00] 35B-A3B / +SDF(values+rationales)::seed=825 rl_step=8 mean_reward=0.8899 datums=48 metrics={}
+[2026-08-07T09:02:54.815556+00:00] SDF start 35B-A3B / +SDF(rules-only)::seed=936
+[2026-08-07T09:03:18.653756+00:00] 35B-A3B / +SDF(rules-only)::seed=936 sdf_step=1 metrics={}
+[2026-08-07T09:03:27.227163+00:00] 35B-A3B / +SDF(rules-only)::seed=936 sdf_step=2 metrics={}
+[2026-08-07T09:03:36.511909+00:00] 35B-A3B / +SDF(rules-only)::seed=936 sdf_step=3 metrics={}
+[2026-08-07T09:03:45.024646+00:00] 35B-A3B / +SDF(rules-only)::seed=936 sdf_step=4 metrics={}
+[2026-08-07T09:03:53.547413+00:00] 35B-A3B / +SDF(rules-only)::seed=936 sdf_step=5 metrics={}
+[2026-08-07T09:04:02.029071+00:00] 35B-A3B / +SDF(rules-only)::seed=936 sdf_step=6 metrics={}
+[2026-08-07T09:04:11.408018+00:00] 35B-A3B / +SDF(rules-only)::seed=936 sdf_step=7 metrics={}
+[2026-08-07T09:04:40.520863+00:00] 35B-A3B / +SDF(rules-only)::seed=936 sdf_step=8 metrics={}
+[2026-08-07T09:04:58.142193+00:00] 35B-A3B / +SDF(rules-only)::seed=936 sdf_step=9 metrics={}
+[2026-08-07T09:05:31.248053+00:00] 35B-A3B / +SDF(rules-only)::seed=936 sdf_step=10 metrics={}
+[2026-08-07T09:05:39.776481+00:00] 35B-A3B / +SDF(rules-only)::seed=936 sdf_step=11 metrics={}
+[2026-08-07T09:05:49.118317+00:00] 35B-A3B / +SDF(rules-only)::seed=936 sdf_step=12 metrics={}
+[2026-08-07T09:05:58.506772+00:00] 35B-A3B / +SDF(rules-only)::seed=936 sdf_step=13 metrics={}
+[2026-08-07T09:06:07.071500+00:00] 35B-A3B / +SDF(rules-only)::seed=936 sdf_step=14 metrics={}
+[2026-08-07T09:06:15.542259+00:00] 35B-A3B / +SDF(rules-only)::seed=936 sdf_step=15 metrics={}
+[2026-08-07T09:06:24.005072+00:00] 35B-A3B / +SDF(rules-only)::seed=936 sdf_step=16 metrics={}
+[2026-08-07T09:06:32.480121+00:00] 35B-A3B / +SDF(rules-only)::seed=936 sdf_step=17 metrics={}
+[2026-08-07T09:06:41.044725+00:00] 35B-A3B / +SDF(rules-only)::seed=936 sdf_step=18 metrics={}
+[2026-08-07T09:07:24.994028+00:00] 35B-A3B / +SDF(rules-only)::seed=936 rl_step=1 mean_reward=0.6408 datums=48 metrics={}
+[2026-08-07T09:07:42.247981+00:00] 35B-A3B / +SDF(rules-only)::seed=936 rl_step=2 mean_reward=0.7206 datums=48 metrics={}
+[2026-08-07T09:08:02.719483+00:00] 35B-A3B / +SDF(rules-only)::seed=936 rl_step=3 mean_reward=0.6544 datums=48 metrics={}
+[2026-08-07T09:08:23.256227+00:00] 35B-A3B / +SDF(rules-only)::seed=936 rl_step=4 mean_reward=0.7346 datums=32 metrics={}
+[2026-08-07T09:08:59.875350+00:00] 35B-A3B / +SDF(rules-only)::seed=936 rl_step=5 mean_reward=0.7397 datums=48 metrics={}
+[2026-08-07T09:09:23.435992+00:00] 35B-A3B / +SDF(rules-only)::seed=936 rl_step=6 mean_reward=0.7264 datums=40 metrics={}
+[2026-08-07T09:09:43.987695+00:00] 35B-A3B / +SDF(rules-only)::seed=936 rl_step=7 mean_reward=0.6655 datums=24 metrics={}
+[2026-08-07T09:10:05.961604+00:00] 35B-A3B / +SDF(rules-only)::seed=936 rl_step=8 mean_reward=0.9145 datums=16 metrics={}
+[2026-08-07T09:10:13.435507+00:00] SDF start 35B-A3B / +SDF(values+rationales)::seed=936
+[2026-08-07T09:10:31.721076+00:00] 35B-A3B / +SDF(values+rationales)::seed=936 sdf_step=1 metrics={}
+[2026-08-07T09:10:38.248139+00:00] 35B-A3B / +SDF(values+rationales)::seed=936 sdf_step=2 metrics={}
+[2026-08-07T09:10:46.135943+00:00] 35B-A3B / +SDF(values+rationales)::seed=936 sdf_step=3 metrics={}
+[2026-08-07T09:10:53.964396+00:00] 35B-A3B / +SDF(values+rationales)::seed=936 sdf_step=4 metrics={}
+[2026-08-07T09:11:01.750501+00:00] 35B-A3B / +SDF(values+rationales)::seed=936 sdf_step=5 metrics={}
+[2026-08-07T09:11:09.522931+00:00] 35B-A3B / +SDF(values+rationales)::seed=936 sdf_step=6 metrics={}
+[2026-08-07T09:11:17.305969+00:00] 35B-A3B / +SDF(values+rationales)::seed=936 sdf_step=7 metrics={}
+[2026-08-07T09:11:25.063217+00:00] 35B-A3B / +SDF(values+rationales)::seed=936 sdf_step=8 metrics={}
+[2026-08-07T09:11:32.861841+00:00] 35B-A3B / +SDF(values+rationales)::seed=936 sdf_step=9 metrics={}
+[2026-08-07T09:11:40.629683+00:00] 35B-A3B / +SDF(values+rationales)::seed=936 sdf_step=10 metrics={}
+[2026-08-07T09:11:48.456728+00:00] 35B-A3B / +SDF(values+rationales)::seed=936 sdf_step=11 metrics={}
+[2026-08-07T09:11:56.266850+00:00] 35B-A3B / +SDF(values+rationales)::seed=936 sdf_step=12 metrics={}
+[2026-08-07T09:12:04.127108+00:00] 35B-A3B / +SDF(values+rationales)::seed=936 sdf_step=13 metrics={}
+[2026-08-07T09:12:11.956337+00:00] 35B-A3B / +SDF(values+rationales)::seed=936 sdf_step=14 metrics={}
+[2026-08-07T09:12:19.795415+00:00] 35B-A3B / +SDF(values+rationales)::seed=936 sdf_step=15 metrics={}
+[2026-08-07T09:12:27.659958+00:00] 35B-A3B / +SDF(values+rationales)::seed=936 sdf_step=16 metrics={}
+[2026-08-07T09:12:35.444024+00:00] 35B-A3B / +SDF(values+rationales)::seed=936 sdf_step=17 metrics={}
+[2026-08-07T09:12:43.230539+00:00] 35B-A3B / +SDF(values+rationales)::seed=936 sdf_step=18 metrics={}
+[2026-08-07T09:13:33.412638+00:00] 35B-A3B / +SDF(values+rationales)::seed=936 rl_step=1 mean_reward=0.8104 datums=40 metrics={}
+[2026-08-07T09:13:53.217760+00:00] 35B-A3B / +SDF(values+rationales)::seed=936 rl_step=2 mean_reward=0.6814 datums=48 metrics={}
+[2026-08-07T09:14:12.746776+00:00] 35B-A3B / +SDF(values+rationales)::seed=936 rl_step=3 mean_reward=0.7189 datums=40 metrics={}
+[2026-08-07T09:14:33.404834+00:00] 35B-A3B / +SDF(values+rationales)::seed=936 rl_step=4 mean_reward=0.7744 datums=48 metrics={}
+[2026-08-07T09:15:02.530120+00:00] 35B-A3B / +SDF(values+rationales)::seed=936 rl_step=5 mean_reward=0.8346 datums=48 metrics={}
+[2026-08-07T09:15:28.500122+00:00] 35B-A3B / +SDF(values+rationales)::seed=936 rl_step=6 mean_reward=0.8015 datums=32 metrics={}
+[2026-08-07T09:15:48.265683+00:00] 35B-A3B / +SDF(values+rationales)::seed=936 rl_step=7 mean_reward=0.7688 datums=40 metrics={}
+[2026-08-07T09:16:10.027973+00:00] 35B-A3B / +SDF(values+rationales)::seed=936 rl_step=8 mean_reward=0.7042 datums=24 metrics={}
+[2026-08-07T09:16:24.619012+00:00] SDF start 35B-A3B / -SDF(irrelevant)::seed=936
+[2026-08-07T09:16:40.163154+00:00] 35B-A3B / -SDF(irrelevant)::seed=936 sdf_step=1 metrics={}
+[2026-08-07T09:16:48.680419+00:00] 35B-A3B / -SDF(irrelevant)::seed=936 sdf_step=2 metrics={}
+[2026-08-07T09:16:55.212642+00:00] 35B-A3B / -SDF(irrelevant)::seed=936 sdf_step=3 metrics={}
+[2026-08-07T09:17:02.299316+00:00] 35B-A3B / -SDF(irrelevant)::seed=936 sdf_step=4 metrics={}
+[2026-08-07T09:17:09.361883+00:00] 35B-A3B / -SDF(irrelevant)::seed=936 sdf_step=5 metrics={}
+[2026-08-07T09:17:17.104709+00:00] 35B-A3B / -SDF(irrelevant)::seed=936 sdf_step=6 metrics={}
+[2026-08-07T09:17:24.193197+00:00] 35B-A3B / -SDF(irrelevant)::seed=936 sdf_step=7 metrics={}
+[2026-08-07T09:17:31.991173+00:00] 35B-A3B / -SDF(irrelevant)::seed=936 sdf_step=8 metrics={}
+[2026-08-07T09:17:39.094880+00:00] 35B-A3B / -SDF(irrelevant)::seed=936 sdf_step=9 metrics={}
+[2026-08-07T09:17:46.283972+00:00] 35B-A3B / -SDF(irrelevant)::seed=936 sdf_step=10 metrics={}
+[2026-08-07T09:17:54.801490+00:00] 35B-A3B / -SDF(irrelevant)::seed=936 sdf_step=11 metrics={}
+[2026-08-07T09:18:02.569948+00:00] 35B-A3B / -SDF(irrelevant)::seed=936 sdf_step=12 metrics={}
+[2026-08-07T09:18:09.743752+00:00] 35B-A3B / -SDF(irrelevant)::seed=936 sdf_step=13 metrics={}
+[2026-08-07T09:18:17.565266+00:00] 35B-A3B / -SDF(irrelevant)::seed=936 sdf_step=14 metrics={}
+[2026-08-07T09:18:25.343176+00:00] 35B-A3B / -SDF(irrelevant)::seed=936 sdf_step=15 metrics={}
+[2026-08-07T09:18:33.199781+00:00] 35B-A3B / -SDF(irrelevant)::seed=936 sdf_step=16 metrics={}
+[2026-08-07T09:18:40.997953+00:00] 35B-A3B / -SDF(irrelevant)::seed=936 sdf_step=17 metrics={}
+[2026-08-07T09:18:48.153285+00:00] 35B-A3B / -SDF(irrelevant)::seed=936 sdf_step=18 metrics={}
+[2026-08-07T09:19:37.954723+00:00] 35B-A3B / -SDF(irrelevant)::seed=936 rl_step=1 mean_reward=0.7291 datums=48 metrics={}
+[2026-08-07T09:20:01.004384+00:00] 35B-A3B / -SDF(irrelevant)::seed=936 rl_step=2 mean_reward=0.7182 datums=40 metrics={}
+[2026-08-07T09:20:24.478366+00:00] 35B-A3B / -SDF(irrelevant)::seed=936 rl_step=3 mean_reward=0.6724 datums=24 metrics={}
+[2026-08-07T09:20:51.281972+00:00] 35B-A3B / -SDF(irrelevant)::seed=936 rl_step=4 mean_reward=0.8790 datums=48 metrics={}
+[2026-08-07T09:21:25.237619+00:00] 35B-A3B / -SDF(irrelevant)::seed=936 rl_step=5 mean_reward=0.6896 datums=32 metrics={}
+[2026-08-07T09:21:49.480415+00:00] 35B-A3B / -SDF(irrelevant)::seed=936 rl_step=6 mean_reward=0.6849 datums=16 metrics={}
+[2026-08-07T09:22:13.208197+00:00] 35B-A3B / -SDF(irrelevant)::seed=936 rl_step=7 mean_reward=0.6477 datums=24 metrics={}
+[2026-08-07T09:23:02.486773+00:00] 35B-A3B / -SDF(irrelevant)::seed=936 rl_step=8 mean_reward=0.8604 datums=16 metrics={}
+[2026-08-07T09:23:12.815826+00:00] training complete
+/workspace/arch-work-midtraining-monitor-evasion/.venv/lib/python3.12/site-packages/huggingface_hub/constants.py:298: FutureWarning: The `HF_HUB_ENABLE_HF_TRANSFER` environment variable is deprecated as 'hf_transfer' is not used anymore. Please use `HF_XET_HIGH_PERFORMANCE` instead to enable high performance transfer with Xet. Visit https://huggingface.co/docs/huggingface_hub/package_reference/environment_variables#hfxethighperformance for more details.
+  warnings.warn(
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+[2026-08-07T09:23:44.982681+00:00] policy eval 35B-A3B / +SDF(values+rationales) seed=714 ckpt=0 mode=scratchpad n=60
+[2026-08-07T09:23:48.503061+00:00] policy eval 35B-A3B / +SDF(values+rationales) seed=714 ckpt=0 mode=no_scratchpad n=60
+[2026-08-07T09:24:02.247050+00:00] policy eval 35B-A3B / +SDF(values+rationales) seed=714 ckpt=4 mode=scratchpad n=60
+[2026-08-07T09:24:06.368787+00:00] policy eval 35B-A3B / +SDF(values+rationales) seed=714 ckpt=4 mode=no_scratchpad n=60
+[2026-08-07T09:24:22.858768+00:00] policy eval 35B-A3B / +SDF(values+rationales) seed=714 ckpt=8 mode=scratchpad n=60
+[2026-08-07T09:24:27.457668+00:00] policy eval 35B-A3B / +SDF(values+rationales) seed=714 ckpt=8 mode=no_scratchpad n=60
+[2026-08-07T09:24:39.997877+00:00] policy eval 35B-A3B / +SDF(rules-only) seed=714 ckpt=0 mode=scratchpad n=60
+[2026-08-07T09:24:42.965114+00:00] policy eval 35B-A3B / +SDF(rules-only) seed=714 ckpt=0 mode=no_scratchpad n=60
+[2026-08-07T09:24:55.272968+00:00] policy eval 35B-A3B / +SDF(rules-only) seed=714 ckpt=4 mode=scratchpad n=60
+[2026-08-07T09:24:58.586893+00:00] policy eval 35B-A3B / +SDF(rules-only) seed=714 ckpt=4 mode=no_scratchpad n=60
+[2026-08-07T09:25:11.128761+00:00] policy eval 35B-A3B / +SDF(rules-only) seed=714 ckpt=8 mode=scratchpad n=60
+[2026-08-07T09:25:16.072587+00:00] policy eval 35B-A3B / +SDF(rules-only) seed=714 ckpt=8 mode=no_scratchpad n=60
+[2026-08-07T09:25:27.535774+00:00] policy eval 35B-A3B / -SDF(irrelevant) seed=714 ckpt=0 mode=scratchpad n=60
+[2026-08-07T09:25:31.444702+00:00] policy eval 35B-A3B / -SDF(irrelevant) seed=714 ckpt=0 mode=no_scratchpad n=60
+[2026-08-07T09:25:48.069917+00:00] policy eval 35B-A3B / -SDF(irrelevant) seed=714 ckpt=4 mode=scratchpad n=60
+[2026-08-07T09:25:55.380640+00:00] policy eval 35B-A3B / -SDF(irrelevant) seed=714 ckpt=4 mode=no_scratchpad n=60
+[2026-08-07T09:26:11.933377+00:00] policy eval 35B-A3B / -SDF(irrelevant) seed=714 ckpt=8 mode=scratchpad n=60
+[2026-08-07T09:26:15.076897+00:00] policy eval 35B-A3B / -SDF(irrelevant) seed=714 ckpt=8 mode=no_scratchpad n=60
+[2026-08-07T09:26:26.550650+00:00] policy eval 35B-A3B / +SDF(values+rationales) seed=825 ckpt=0 mode=scratchpad n=60
+[2026-08-07T09:26:29.794377+00:00] policy eval 35B-A3B / +SDF(values+rationales) seed=825 ckpt=0 mode=no_scratchpad n=60
+[2026-08-07T09:26:41.879178+00:00] policy eval 35B-A3B / +SDF(values+rationales) seed=825 ckpt=4 mode=scratchpad n=60
+[2026-08-07T09:26:44.860866+00:00] policy eval 35B-A3B / +SDF(values+rationales) seed=825 ckpt=4 mode=no_scratchpad n=60
+[2026-08-07T09:27:06.287485+00:00] policy eval 35B-A3B / +SDF(values+rationales) seed=825 ckpt=8 mode=scratchpad n=60
+[2026-08-07T09:27:10.389708+00:00] policy eval 35B-A3B / +SDF(values+rationales) seed=825 ckpt=8 mode=no_scratchpad n=60
+[2026-08-07T09:27:24.000685+00:00] policy eval 35B-A3B / +SDF(rules-only) seed=825 ckpt=0 mode=scratchpad n=60
+[2026-08-07T09:27:27.493345+00:00] policy eval 35B-A3B / +SDF(rules-only) seed=825 ckpt=0 mode=no_scratchpad n=60
+[2026-08-07T09:27:41.132872+00:00] policy eval 35B-A3B / +SDF(rules-only) seed=825 ckpt=4 mode=scratchpad n=60
+[2026-08-07T09:27:44.672631+00:00] policy eval 35B-A3B / +SDF(rules-only) seed=825 ckpt=4 mode=no_scratchpad n=60
+[2026-08-07T09:27:56.286514+00:00] policy eval 35B-A3B / +SDF(rules-only) seed=825 ckpt=8 mode=scratchpad n=60
+[2026-08-07T09:27:59.657646+00:00] policy eval 35B-A3B / +SDF(rules-only) seed=825 ckpt=8 mode=no_scratchpad n=60
+[2026-08-07T09:28:16.182229+00:00] policy eval 35B-A3B / -SDF(irrelevant) seed=825 ckpt=0 mode=scratchpad n=60
+[2026-08-07T09:28:19.460532+00:00] policy eval 35B-A3B / -SDF(irrelevant) seed=825 ckpt=0 mode=no_scratchpad n=60
+[2026-08-07T09:28:34.295331+00:00] policy eval 35B-A3B / -SDF(irrelevant) seed=825 ckpt=4 mode=scratchpad n=60
+[2026-08-07T09:28:38.074538+00:00] policy eval 35B-A3B / -SDF(irrelevant) seed=825 ckpt=4 mode=no_scratchpad n=60
+[2026-08-07T09:28:53.110488+00:00] policy eval 35B-A3B / -SDF(irrelevant) seed=825 ckpt=8 mode=scratchpad n=60
+[2026-08-07T09:28:56.570403+00:00] policy eval 35B-A3B / -SDF(irrelevant) seed=825 ckpt=8 mode=no_scratchpad n=60
+[2026-08-07T09:29:09.039321+00:00] policy eval 35B-A3B / +SDF(values+rationales) seed=936 ckpt=0 mode=scratchpad n=60
+[2026-08-07T09:29:12.540808+00:00] policy eval 35B-A3B / +SDF(values+rationales) seed=936 ckpt=0 mode=no_scratchpad n=60
+[2026-08-07T09:29:26.234581+00:00] policy eval 35B-A3B / +SDF(values+rationales) seed=936 ckpt=4 mode=scratchpad n=60
+[2026-08-07T09:29:29.509956+00:00] policy eval 35B-A3B / +SDF(values+rationales) seed=936 ckpt=4 mode=no_scratchpad n=60
+[2026-08-07T09:29:44.380816+00:00] policy eval 35B-A3B / +SDF(values+rationales) seed=936 ckpt=8 mode=scratchpad n=60
+[2026-08-07T09:29:48.817237+00:00] policy eval 35B-A3B / +SDF(values+rationales) seed=936 ckpt=8 mode=no_scratchpad n=60
+[2026-08-07T09:30:01.424385+00:00] policy eval 35B-A3B / +SDF(rules-only) seed=936 ckpt=0 mode=scratchpad n=60
+[2026-08-07T09:30:04.504803+00:00] policy eval 35B-A3B / +SDF(rules-only) seed=936 ckpt=0 mode=no_scratchpad n=60
+[2026-08-07T09:30:21.238511+00:00] policy eval 35B-A3B / +SDF(rules-only) seed=936 ckpt=4 mode=scratchpad n=60
+[2026-08-07T09:30:24.430138+00:00] policy eval 35B-A3B / +SDF(rules-only) seed=936 ckpt=4 mode=no_scratchpad n=60
+[2026-08-07T09:30:39.907829+00:00] policy eval 35B-A3B / +SDF(rules-only) seed=936 ckpt=8 mode=scratchpad n=60
+[2026-08-07T09:30:43.244541+00:00] policy eval 35B-A3B / +SDF(rules-only) seed=936 ckpt=8 mode=no_scratchpad n=60
+[2026-08-07T09:30:59.444112+00:00] policy eval 35B-A3B / -SDF(irrelevant) seed=936 ckpt=0 mode=scratchpad n=60
+[2026-08-07T09:31:05.971663+00:00] policy eval 35B-A3B / -SDF(irrelevant) seed=936 ckpt=0 mode=no_scratchpad n=60
+[2026-08-07T09:31:18.657639+00:00] policy eval 35B-A3B / -SDF(irrelevant) seed=936 ckpt=4 mode=scratchpad n=60
+[2026-08-07T09:31:22.182887+00:00] policy eval 35B-A3B / -SDF(irrelevant) seed=936 ckpt=4 mode=no_scratchpad n=60
+[2026-08-07T09:31:33.768230+00:00] policy eval 35B-A3B / -SDF(irrelevant) seed=936 ckpt=8 mode=scratchpad n=60
+[2026-08-07T09:31:37.276842+00:00] policy eval 35B-A3B / -SDF(irrelevant) seed=936 ckpt=8 mode=no_scratchpad n=60
+/workspace/arch-work-midtraining-monitor-evasion/.venv/lib/python3.12/site-packages/huggingface_hub/constants.py:298: FutureWarning: The `HF_HUB_ENABLE_HF_TRANSFER` environment variable is deprecated as 'hf_transfer' is not used anymore. Please use `HF_XET_HIGH_PERFORMANCE` instead to enable high performance transfer with Xet. Visit https://huggingface.co/docs/huggingface_hub/package_reference/environment_variables#hfxethighperformance for more details.
+  warnings.warn(
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+[2026-08-07T09:31:56.369342+00:00] monitor eval 64/4860
+[2026-08-07T09:32:01.338958+00:00] monitor eval 128/4860
+[2026-08-07T09:32:06.667199+00:00] monitor eval 192/4860
+[2026-08-07T09:32:11.303149+00:00] monitor eval 256/4860
+[2026-08-07T09:32:16.303277+00:00] monitor eval 320/4860
+[2026-08-07T09:32:21.224010+00:00] monitor eval 384/4860
+[2026-08-07T09:32:26.235823+00:00] monitor eval 448/4860
+[2026-08-07T09:32:31.162148+00:00] monitor eval 512/4860
+[2026-08-07T09:32:36.095027+00:00] monitor eval 576/4860
+[2026-08-07T09:32:40.880246+00:00] monitor eval 640/4860
+[2026-08-07T09:32:45.825399+00:00] monitor eval 704/4860
+[2026-08-07T09:32:50.738616+00:00] monitor eval 768/4860
+[2026-08-07T09:32:55.314822+00:00] monitor eval 832/4860
+[2026-08-07T09:33:00.622622+00:00] monitor eval 896/4860
+[2026-08-07T09:33:05.921873+00:00] monitor eval 960/4860
+[2026-08-07T09:33:11.081770+00:00] monitor eval 1024/4860
+[2026-08-07T09:33:15.911872+00:00] monitor eval 1088/4860
+[2026-08-07T09:33:20.093073+00:00] monitor eval 1152/4860
+[2026-08-07T09:33:24.681595+00:00] monitor eval 1216/4860
+[2026-08-07T09:33:29.151296+00:00] monitor eval 1280/4860
+[2026-08-07T09:33:34.090714+00:00] monitor eval 1344/4860
+[2026-08-07T09:33:38.917446+00:00] monitor eval 1408/4860
+[2026-08-07T09:33:43.762868+00:00] monitor eval 1472/4860
+[2026-08-07T09:33:48.543943+00:00] monitor eval 1536/4860
+[2026-08-07T09:33:53.566342+00:00] monitor eval 1600/4860
+[2026-08-07T09:33:57.715576+00:00] monitor eval 1664/4860
+[2026-08-07T09:34:01.827462+00:00] monitor eval 1728/4860
+[2026-08-07T09:34:06.232234+00:00] monitor eval 1792/4860
+[2026-08-07T09:34:10.659252+00:00] monitor eval 1856/4860
+[2026-08-07T09:34:14.476934+00:00] monitor eval 1920/4860
+[2026-08-07T09:34:19.026179+00:00] monitor eval 1984/4860
+[2026-08-07T09:34:22.753595+00:00] monitor eval 2048/4860
+[2026-08-07T09:34:26.697482+00:00] monitor eval 2112/4860
+[2026-08-07T09:34:31.174274+00:00] monitor eval 2176/4860
+[2026-08-07T09:34:36.190282+00:00] monitor eval 2240/4860
+[2026-08-07T09:34:40.717345+00:00] monitor eval 2304/4860
+[2026-08-07T09:34:45.207359+00:00] monitor eval 2368/4860
+[2026-08-07T09:34:49.752943+00:00] monitor eval 2432/4860
+[2026-08-07T09:34:53.891327+00:00] monitor eval 2496/4860
+[2026-08-07T09:34:58.353474+00:00] monitor eval 2560/4860
+[2026-08-07T09:35:02.735594+00:00] monitor eval 2624/4860
+[2026-08-07T09:35:07.275207+00:00] monitor eval 2688/4860
+[2026-08-07T09:35:11.346201+00:00] monitor eval 2752/4860
+[2026-08-07T09:35:15.432150+00:00] monitor eval 2816/4860
+[2026-08-07T09:35:20.232377+00:00] monitor eval 2880/4860
+[2026-08-07T09:35:24.823380+00:00] monitor eval 2944/4860
+[2026-08-07T09:35:29.334431+00:00] monitor eval 3008/4860
+[2026-08-07T09:35:33.764126+00:00] monitor eval 3072/4860
+[2026-08-07T09:35:38.279471+00:00] monitor eval 3136/4860
+[2026-08-07T09:35:42.741103+00:00] monitor eval 3200/4860
+[2026-08-07T09:35:47.371432+00:00] monitor eval 3264/4860
+[2026-08-07T09:35:51.501170+00:00] monitor eval 3328/4860
+[2026-08-07T09:35:55.676431+00:00] monitor eval 3392/4860
+[2026-08-07T09:36:00.557955+00:00] monitor eval 3456/4860
+[2026-08-07T09:36:05.449665+00:00] monitor eval 3520/4860
+[2026-08-07T09:36:10.407750+00:00] monitor eval 3584/4860
+[2026-08-07T09:36:15.499238+00:00] monitor eval 3648/4860
+[2026-08-07T09:36:20.118513+00:00] monitor eval 3712/4860
+[2026-08-07T09:36:24.640607+00:00] monitor eval 3776/4860
+[2026-08-07T09:36:29.489913+00:00] monitor eval 3840/4860
+[2026-08-07T09:36:33.925650+00:00] monitor eval 3904/4860
+[2026-08-07T09:36:39.262998+00:00] monitor eval 3968/4860
+[2026-08-07T09:36:43.586229+00:00] monitor eval 4032/4860
+[2026-08-07T09:36:48.391042+00:00] monitor eval 4096/4860
+[2026-08-07T09:36:52.818336+00:00] monitor eval 4160/4860
+[2026-08-07T09:36:56.891904+00:00] monitor eval 4224/4860
+[2026-08-07T09:37:01.341974+00:00] monitor eval 4288/4860
+[2026-08-07T09:37:06.239136+00:00] monitor eval 4352/4860
+[2026-08-07T09:37:10.379920+00:00] monitor eval 4416/4860
+[2026-08-07T09:37:14.910715+00:00] monitor eval 4480/4860
+[2026-08-07T09:37:19.402437+00:00] monitor eval 4544/4860
+[2026-08-07T09:37:23.957468+00:00] monitor eval 4608/4860
+[2026-08-07T09:37:28.341388+00:00] monitor eval 4672/4860
+[2026-08-07T09:37:32.888921+00:00] monitor eval 4736/4860
+[2026-08-07T09:37:37.415707+00:00] monitor eval 4800/4860
+[2026-08-07T09:37:41.851189+00:00] monitor eval 4860/4860
