@@ -22,3 +22,9 @@ Without an internal scratchpad, the ethical-minus-control joint interaction was 
 ## Interpretation boundary
 
 All decision state and consequence rules remain public; the deterministic oracle is unchanged. RL observes and rewards only rationale text, and the independent surface judge is post-hoc. This comparison measures observable rationale/action coupling, not intent, deception, concealment, or evaluator awareness.
+
+## Pass-specific scratchpad localization
+
+This frozen-checkpoint 2x2 evaluation reused exact actions and regenerated only the opposite-renderer rationale. The ethical-minus-control joint interaction was 0.074 for standard/standard, 0.148 for standard-action/no-scratchpad-rationale, 0.000 for no-scratchpad-action/standard-rationale, and -0.037 when both passes omitted scratchpads. Conditional surface-alignment interactions in the same order were 0.103, 0.187, -0.012, and -0.058. The sign therefore followed the action-pass context, not the rationale-pass context. The explicit factorial contrasts, paired seed values, and intervals are in `results.json`; with three seeds, this is mechanism-localizing evidence rather than a stable population estimate.
+
+No action was resampled: all 864 hybrid rows exactly match their registered source allocation and oracle label. All facts and consequences remained public, and the independent judge saw rationale text only. This localizes an observable generation-context moderator; it does not establish an internal cause, intent, deception, concealment, or evaluator awareness.

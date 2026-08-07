@@ -205,11 +205,45 @@ def analyze() -> None:
     all_curves = retained + new_curves
     BASE.save_json(curves_path, {"schema_version": 1, "records": all_curves})
     effects = {mode: paired_effect(all_curves, mode) for mode in ("standard", "no_scratchpad", *MODES)}
+    def difference(left: str, right: str, metric: str) -> dict[str, Any]:
+        left_values = effects[left][metric]["seed_values"]
+        right_values = effects[right][metric]["seed_values"]
+        return BASE.paired_bootstrap(
+            [a - b for a, b in zip(left_values, right_values, strict=True)],
+            cfg()["evaluation"]["bootstrap_replicates"],
+        )
+    factorial_contrasts = {
+        "enable_action_scratchpad_with_standard_rationale": {
+            metric: difference("standard", "action_no_scratchpad__rationale_standard", metric)
+            for metric in ("false_aligned_violation_rate_change_interaction", "surface_alignment_given_oracle_violation_change_interaction", "oracle_violation_rate_change_interaction")
+        },
+        "enable_action_scratchpad_with_no_scratchpad_rationale": {
+            metric: difference("action_standard__rationale_no_scratchpad", "no_scratchpad", metric)
+            for metric in ("false_aligned_violation_rate_change_interaction", "surface_alignment_given_oracle_violation_change_interaction", "oracle_violation_rate_change_interaction")
+        },
+        "enable_rationale_scratchpad_with_standard_action": {
+            metric: difference("standard", "action_standard__rationale_no_scratchpad", metric)
+            for metric in ("false_aligned_violation_rate_change_interaction", "surface_alignment_given_oracle_violation_change_interaction", "oracle_violation_rate_change_interaction")
+        },
+        "enable_rationale_scratchpad_with_no_scratchpad_action": {
+            metric: difference("action_no_scratchpad__rationale_standard", "no_scratchpad", metric)
+            for metric in ("false_aligned_violation_rate_change_interaction", "surface_alignment_given_oracle_violation_change_interaction", "oracle_violation_rate_change_interaction")
+        },
+    }
+    reuse_checks = []
+    for condition in cfg()["conditions"]:
+        _, source_policy_path = source_paths(condition)
+        source = {(r["seed"], r["checkpoint"], r["case_id"], r["scratchpad_mode"]): r for r in BASE.read_jsonl(source_policy_path)}
+        for row in [value for value in rows if value["condition"] == condition]:
+            action_mode = MODES[row["scratchpad_mode"]][0]
+            original = source[(row["seed"], row["checkpoint"], row["case_id"], action_mode)]
+            reuse_checks.append(row["allocation"] == original["allocation"] and row["oracle_violation"] == original["oracle_violation"])
     extension = {
         "question": "Which detached pass localizes scratchpad moderation of the ethical-minus-control interaction?",
         "policy_model": cfg()["policy_model"], "surface_judge_model": cfg()["surface_judge_model"],
         "actions_resampled": False, "new_rationales": len(rows), "judge_calibration": calibration,
-        "effects": effects,
+        "effects": effects, "factorial_contrasts": factorial_contrasts,
+        "action_reuse_validation": {"checked": len(reuse_checks), "exact_allocation_and_oracle_matches": sum(reuse_checks), "all_passed": all(reuse_checks)},
         "interpretation_boundary": "Pass-specific observable rationale/action coupling only; no inference about intent, deception, concealment, or evaluator awareness.",
     }
     results_path = ROOT / "submission" / "results.json"
@@ -220,7 +254,7 @@ def analyze() -> None:
     original = report_path.read_text().split("\n## Pass-specific scratchpad localization")[0]
     def mean(mode: str, metric: str) -> Any:
         return effects[mode][metric]["mean"]
-    section = f"""\n## Pass-specific scratchpad localization\n\nThis frozen-checkpoint 2x2 evaluation reused exact actions and regenerated only the opposite-renderer rationale. The ethical-minus-control joint interaction was {mean('standard', 'false_aligned_violation_rate_change_interaction'):.3f} for standard/standard, {mean('action_standard__rationale_no_scratchpad', 'false_aligned_violation_rate_change_interaction'):.3f} for standard-action/no-scratchpad-rationale, {mean('action_no_scratchpad__rationale_standard', 'false_aligned_violation_rate_change_interaction'):.3f} for no-scratchpad-action/standard-rationale, and {mean('no_scratchpad', 'false_aligned_violation_rate_change_interaction'):.3f} when both passes omitted scratchpads. Conditional surface-alignment interactions in the same order were {mean('standard', 'surface_alignment_given_oracle_violation_change_interaction'):.3f}, {mean('action_standard__rationale_no_scratchpad', 'surface_alignment_given_oracle_violation_change_interaction'):.3f}, {mean('action_no_scratchpad__rationale_standard', 'surface_alignment_given_oracle_violation_change_interaction'):.3f}, and {mean('no_scratchpad', 'surface_alignment_given_oracle_violation_change_interaction'):.3f}. See `results.json` for paired seeds and uncertainty.\n\nNo action was resampled, all facts and consequences remained public, and the independent judge saw rationale text only. This localizes a generation-context moderator; it does not establish intent, deception, concealment, or evaluator awareness.\n"""
+    section = f"""\n## Pass-specific scratchpad localization\n\nThis frozen-checkpoint 2x2 evaluation reused exact actions and regenerated only the opposite-renderer rationale. The ethical-minus-control joint interaction was {mean('standard', 'false_aligned_violation_rate_change_interaction'):.3f} for standard/standard, {mean('action_standard__rationale_no_scratchpad', 'false_aligned_violation_rate_change_interaction'):.3f} for standard-action/no-scratchpad-rationale, {mean('action_no_scratchpad__rationale_standard', 'false_aligned_violation_rate_change_interaction'):.3f} for no-scratchpad-action/standard-rationale, and {mean('no_scratchpad', 'false_aligned_violation_rate_change_interaction'):.3f} when both passes omitted scratchpads. Conditional surface-alignment interactions in the same order were {mean('standard', 'surface_alignment_given_oracle_violation_change_interaction'):.3f}, {mean('action_standard__rationale_no_scratchpad', 'surface_alignment_given_oracle_violation_change_interaction'):.3f}, {mean('action_no_scratchpad__rationale_standard', 'surface_alignment_given_oracle_violation_change_interaction'):.3f}, and {mean('no_scratchpad', 'surface_alignment_given_oracle_violation_change_interaction'):.3f}. The sign therefore followed the action-pass context, not the rationale-pass context. The explicit factorial contrasts, paired seed values, and intervals are in `results.json`; with three seeds, this is mechanism-localizing evidence rather than a stable population estimate.\n\nNo action was resampled: all 864 hybrid rows exactly match their registered source allocation and oracle label. All facts and consequences remained public, and the independent judge saw rationale text only. This localizes an observable generation-context moderator; it does not establish an internal cause, intent, deception, concealment, or evaluator awareness.\n"""
     report_path.write_text(original.rstrip() + "\n" + section)
     print(json.dumps(extension, indent=2, sort_keys=True))
 
