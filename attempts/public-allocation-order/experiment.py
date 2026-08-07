@@ -619,7 +619,12 @@ def ensure_checkpoint_manifest(cfg: dict[str, Any]) -> dict[str, Any]:
     if CHECKPOINTS_PATH.exists():
         value = json.loads(CHECKPOINTS_PATH.read_text())
         if value["execution_commit"] != git_commit():
-            raise ValueError("checkpoint manifest belongs to another execution commit")
+            if value["sdf_runs"] or value["rl_runs"]:
+                raise ValueError("nonempty checkpoint manifest belongs to another execution commit")
+            value["execution_commit"] = git_commit()
+            value["config"] = cfg
+            value["restarted_after_empty_manifest_failure_at"] = now()
+            save_json(CHECKPOINTS_PATH, value)
         return value
     value = {
         "schema_version": 1,
@@ -634,8 +639,11 @@ def ensure_checkpoint_manifest(cfg: dict[str, Any]) -> dict[str, Any]:
 
 
 def save_both(client: Any, name: str) -> dict[str, str]:
-    state = resolve_future(client.save_state(name=name, ttl_seconds=None), f"save-state-{name}").path
-    sampler = resolve_future(client.save_weights_for_sampler(name=name, ttl_seconds=None), f"save-sampler-{name}").path
+    safe_name = re.sub(r"[^A-Za-z0-9_.-]+", "-", name).strip("-")
+    if not safe_name:
+        raise ValueError("checkpoint label contains no allowed characters")
+    state = resolve_future(client.save_state(name=safe_name, ttl_seconds=None), f"save-state-{safe_name}").path
+    sampler = resolve_future(client.save_weights_for_sampler(name=safe_name, ttl_seconds=None), f"save-sampler-{safe_name}").path
     return {"state_path": state, "sampler_path": sampler}
 
 
