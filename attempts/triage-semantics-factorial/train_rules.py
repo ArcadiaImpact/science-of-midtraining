@@ -463,19 +463,25 @@ def canary() -> None:
         stop=renderer.get_stop_sequences(),
         seed=867_530,
     )
-    datums = []
+    sampled: list[tuple[types.ModelInput, Any, float]] = []
     rewards = []
-    for case in cases[:2]:
+    # The diagnostic update needs to exercise the optimizer even when all
+    # rollouts for one prompt choose the same action. Stratify across all case
+    # kinds and center globally; the real trainer below remains group-relative.
+    for case in [cases[i] for i in (0, 1, 30, 31, 60, 61)]:
         prompt = renderer.build_generation_prompt(policy_messages(case))
         seqs = sampler.sample(prompt, cfg["rl"]["group_size"], params).result().sequences
         group_rewards = [output_reward(extract_parts(renderer, seq.tokens)[1]) for seq in seqs]
         rewards.extend(group_rewards)
-        group_mean = statistics.mean(group_rewards)
         for seq, reward in zip(seqs, group_rewards, strict=True):
-            if reward != group_mean:
-                if seq.logprobs is None:
-                    raise ValueError("canary sampling omitted logprobs")
-                datums.append(advantage_datum(prompt, seq.tokens, seq.logprobs, reward - group_mean))
+            sampled.append((prompt, seq, reward))
+    global_mean = statistics.mean(rewards)
+    datums = []
+    for prompt, seq, reward in sampled:
+        if reward != global_mean:
+            if seq.logprobs is None:
+                raise ValueError("canary sampling omitted logprobs")
+            datums.append(advantage_datum(prompt, seq.tokens, seq.logprobs, reward - global_mean))
     if not datums:
         raise SystemExit("canary produced zero public-reward variance")
     client.forward_backward(datums, loss_fn="importance_sampling").result()
