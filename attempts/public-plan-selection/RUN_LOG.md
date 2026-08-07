@@ -76,7 +76,8 @@ are /tmp/public-plan-policy.pid and /tmp/public-plan-policy.log.
 
 ## 2026-08-07T16:00:13Z — frozen-checkpoint policy sampling complete
 
-- Policy-sampling launch commit: 343823e4 (full commit available in git).
+- Policy-sampling launch commit:
+  343823e53fd8ee57585e7a77309c06a1ca9f0e3b.
 - Exact command: uv run --with-requirements
   attempts/public-executable-allocation/requirements.txt
   attempts/public-plan-selection/experiment.py sample-policy.
