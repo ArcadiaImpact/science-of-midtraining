@@ -1,14 +1,14 @@
 {
   "config_sha256": "650583bcf5829f8da9557b0ac320b896ec72859432673d6a0d35041ba720de77",
   "corpus_sha256": "dfab7bc14ddd22468ce1a07bc05a3838a33dd003438f12c553fe1e5f7e916c22",
-  "created_at": "2026-08-07T04:48:15.086619+00:00",
+  "created_at": "2026-08-07T04:48:28.068442+00:00",
   "documents_per_condition": {
     "+SDF(triage-values+rationales)": 60,
     "-SDF(clinical-domain-placebo)": 60,
     "-SDF(cross-domain-irrelevant)": 60
   },
   "eval_cases_sha256": "c8e87eed1c5e784411999672df6b74db4dcd51fb875fabc019e7521758ea2dc7",
-  "git_commit": "e2715613a390107fae395ffa4ec232b7e3033a5a",
+  "git_commit": "b1c8881dd70ab343e002ffedc9b906f63822a402",
   "paired_lengths_identical": true,
   "prohibited_term_hits": 0,
   "prohibited_terms": [
