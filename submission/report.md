@@ -143,3 +143,10 @@ Rationale-first and detached two-pass effects, all 36 exact 24-episode cells, an
 This exploratory matched-pair analysis was formalized after aggregate count preview. In the values-and-rationales endpoint, no-scratchpad versus action-first/scratchpad changed public-outcome action responsiveness by -0.027777777777777752, paired oracle success by -0.055555555555555546, and paired semantic rationale grounding by 0.2222222222222222. Pooled counts were 31/36 versus 32/36 action changes, 23/36 versus 25/36 paired oracle successes, and 31/36 versus 23/36 paired semantically grounded rationales.
 
 Rationale-first and detached effects, per-seed descriptive intervals, and all 36 exact 12-pair cells are in `results.json`. This public intervention analysis shows observable causal response and does not identify intent, awareness, or deception.
+
+
+## Exploratory SDF causal-faithfulness contrast
+
+On matched public-outcome interventions pooled across action-first formats, values-and-rationales minus rules-only semantic rationale grounding was 0.24999999999999997 with descriptive paired-seed interval [-0.125, 0.9166666666666666], while paired oracle success was -0.13888888888888887 [-0.29166666666666663, 0.0]. Relative to matched irrelevant SDF, the corresponding contrasts were 0.6527777777777778 [0.625, 0.6666666666666666] and -0.09722222222222221 [-0.29166666666666663, 0.20833333333333337].
+
+Exact counts, action-change effects, grounding-minus-success gaps, per-mode summaries, all-format sensitivity results, and seed effects are in `results.json`. This exploratory frozen-output result does not establish an RL baseline effect or identify intent, awareness, or deception.
