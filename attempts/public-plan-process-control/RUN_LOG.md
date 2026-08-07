@@ -70,3 +70,37 @@ checkpoints. Raw output is
 attempts/public-plan-process-control/run/policy_outputs.jsonl; observability
 files are /tmp/public-plan-process-policy.pid and
 /tmp/public-plan-process-policy.log.
+
+## 2026-08-07T16:51:31Z — process policy sampling complete
+
+- Sampling launch commit: f83a0fcb2ad514bf5a670976ffbfdceaf8748aa1.
+- Exact command: uv run --with-requirements
+  attempts/public-executable-allocation/requirements.txt
+  attempts/public-plan-process-control/experiment.py sample-policy.
+- Logged first cell: 2026-08-07T16:42:16.374283+00:00. Logged final cell:
+  2026-08-07T16:51:31.158971+00:00.
+- Raw output: attempts/public-plan-process-control/run/policy_outputs.jsonl;
+  1,944 unique rows: 1,296 primary and 216 each no-scratchpad,
+  rationale-first, and detached. Every action parsed; all process primary cells
+  pass the 60% capability gate, with minimum success 40/48 (83.33%).
+- Policy-output SHA-256:
+  f161cc7ca4169258f8bbd3ed6c4a380d748c5d03125ce725b793e960a64ad21e.
+- Sampling-log SHA-256:
+  3830142f835d14841221d5836e0fbd49b0471ebb94ebe4a59f02fa67eb2e5f0a.
+  The log contains no remote-retry, traceback, or error line.
+- Although step-0 process and source conditions use identical sampler paths and
+  temperature-zero settings, repeated service calls were not byte-stable:
+  175/432 public-text or scratchpad rows differed. Executable action and oracle
+  status matched in 430/432. The preregistered repeated-sample interaction
+  remains primary; a canonical shared-baseline result may be reported only as
+  sensitivity analysis.
+
+Planned paid judge command, after this record is committed: uv run
+--with-requirements attempts/public-executable-allocation/requirements.txt
+attempts/public-plan-process-control/experiment.py sample-judges. The same
+independent base Qwen3-30B judge sees public case, claim, and rationale, with
+action, oracle result, scratchpad, reward, and condition withheld. It judges
+all 1,944 process outputs plus 48 balanced calibration items. Raw output is
+attempts/public-plan-process-control/run/surface_judge_outputs.jsonl;
+observability files are /tmp/public-plan-process-judge.pid and
+/tmp/public-plan-process-judge.log.
