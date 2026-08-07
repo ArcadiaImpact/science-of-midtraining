@@ -397,3 +397,70 @@ def test_sampler_enumerates_base_plus_registered_checkpoints():
         "control/sft/post_warmup",
         "control/sft/end",
     ]
+
+
+def test_driver_contracts_have_finite_exact_pods():
+    from experiments.python4_false_belief.run import EVAL_POD, TRAIN_POD
+
+    assert TRAIN_POD == {
+        "slug": "python4-midtraining-8xh200",
+        "name": "bellhop-python4-midtraining-8xh200",
+        "gpu": "H200",
+        "gpu_count": 8,
+        "disk_gb": 400,
+        "timeout_seconds": 10 * 3600,
+        "max_lifetime_seconds": 11 * 3600,
+    }
+    assert EVAL_POD == {
+        "slug": "python4-eval-1xh200",
+        "name": "bellhop-python4-eval-1xh200",
+        "gpu": "H200",
+        "gpu_count": 1,
+        "disk_gb": 300,
+        "timeout_seconds": 5 * 3600,
+        "max_lifetime_seconds": 6 * 3600,
+    }
+
+
+def test_driver_phase_selection_is_typed_config():
+    from experiments.python4_false_belief.run import Config, selected_phases
+
+    cfg = Config(train=False, sample=True, judge=False)
+    assert selected_phases(cfg) == ("sample",)
+    assert selected_phases(Config()) == ("train", "sample", "judge")
+
+
+@pytest.mark.parametrize(
+    ("phase", "expected"),
+    [
+        (
+            "train",
+            {"HF_TOKEN", "HF_HUB_ENABLE_HF_TRANSFER", "PYTHON4_RESULTS_DIR"},
+        ),
+        (
+            "sample",
+            {"HF_TOKEN", "HF_HUB_ENABLE_HF_TRANSFER", "PYTHON4_SAMPLE_OUT"},
+        ),
+    ],
+)
+def test_driver_pod_environment_allowlist(phase, expected):
+    from experiments.python4_false_belief.run import pod_environment
+
+    env = pod_environment(phase, hf_token="secret-hf", result_path="some/path")
+    assert set(env) == expected
+    assert "ANTHROPIC_API_KEY" not in env
+    assert "RUNPOD_API_KEY" not in env
+
+
+def test_serialized_driver_manifest_contains_no_secret_values():
+    from experiments.python4_false_belief.run import Config, safe_driver_manifest
+
+    serialized = json.dumps(safe_driver_manifest(Config(), {
+        "HF_TOKEN": "secret-hf",
+        "ANTHROPIC_API_KEY": "secret-anthropic",
+        "RUNPOD_API_KEY": "secret-runpod",
+    }))
+    assert "secret-hf" not in serialized
+    assert "secret-anthropic" not in serialized
+    assert "secret-runpod" not in serialized
+    assert "HF_TOKEN" in serialized
