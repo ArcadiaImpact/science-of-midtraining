@@ -73,9 +73,17 @@ All timestamps are UTC. No credential value is recorded.
 
 ## Frozen policy and independent post-hoc evaluation
 
-- Start/end: pending.
+- Policy sampling start: 2026-08-07T12:28:21Z.
+- Policy sampling end: 2026-08-07T12:42:04Z.
+- Policy sampling commit: `a8c634616c9f7818b57fb984895c2834cacd5aac`.
 - Training-state commit: `1204180a9de0d67497df5b0a4e2b57c01e04389d`;
   the next log/provenance-only commit does not alter evaluation code.
 - Commands: `sample-policy`, then `sample-judges`, then `analyze` using the
   same requirements and experiment entry point.
-- Outcome: pending.
+- Policy outcome: 2,376/2,376 expected rows, all unique and parseable; 1,944
+  standard rows, 432 public-priority counterfactual rows, and 1,296 primary
+  action-first rows. All actions violated the exact oracle, usually because
+  the model filled the highest-priority district before preserving every
+  printed floor. This is a capability-limited/saturated action pathway and
+  will be reported as such, not reframed as evidence for the intervention.
+- Independent judge start/end and outcome: pending.
