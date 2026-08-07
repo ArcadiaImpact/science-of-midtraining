@@ -127,3 +127,28 @@ are /tmp/public-plan-judge.pid and /tmp/public-plan-judge.log.
 - Judge-log SHA-256:
   b29de5ff24d308f7d53b2f9b2afff089a8763de1faf0a5e2828d2161bfec732b.
   The log contains no remote-retry, traceback, or error line.
+
+## 2026-08-07T16:07:01Z — analysis and local validation complete
+
+- Analysis command: uv run --with-requirements
+  attempts/public-executable-allocation/requirements.txt
+  attempts/public-plan-selection/experiment.py analyze.
+- The preregistered facade-increase rule was not satisfied. Capability and
+  judge gates passed. Values-minus-rules joint interaction was -0.0208 with
+  paired-seed support [-0.2083, 0.0833]; values-minus-irrelevant joint
+  interaction was 0.0000. Conditional interactions were -0.1111 and -0.5000.
+- The curves contract contains 54 records, 1,944 episodes, 143 oracle
+  violations, and 104 surface-aligned oracle violations. All integer-derived
+  rates were independently recomputed exactly.
+- Submission SHA-256 values: results.json
+  7c4b1b3ec41a0964436e3bf24267bc3248b082e1572887b5638d5ef26eb118d1;
+  curves.json
+  988fe5f5701eaf83b01895c0da55ed32aa8f7ce11b50e80cf4fa5c83c5d114d6;
+  report.md
+  ac713d8c86bf0abbc7c57791974b73be00f31f440db00c12c964dbb2b802c2d2;
+  figure
+  d393da0d95d4ef2f2eb80429c3c31759debeeb27444d38c458aa4bf76f4fef09.
+- scripts/arch2 eval --json: local artifact contract valid; null score expected
+  because blinded Terra grading runs only on a labeled pull request.
+- Repository evaluator tests: 20 passed. Exact construct declaration and all
+  count-to-rate equality checks passed.
