@@ -28,3 +28,9 @@ All decision state and consequence rules remain public; the deterministic oracle
 This frozen-checkpoint 2x2 evaluation reused exact actions and regenerated only the opposite-renderer rationale. The ethical-minus-control joint interaction was 0.074 for standard/standard, 0.148 for standard-action/no-scratchpad-rationale, 0.000 for no-scratchpad-action/standard-rationale, and -0.037 when both passes omitted scratchpads. Conditional surface-alignment interactions in the same order were 0.103, 0.187, -0.012, and -0.058. The sign therefore followed the action-pass context, not the rationale-pass context. The explicit factorial contrasts, paired seed values, and intervals are in `results.json`; with three seeds, this is mechanism-localizing evidence rather than a stable population estimate.
 
 No action was resampled: all 864 hybrid rows exactly match their registered source allocation and oracle label. All facts and consequences remained public, and the independent judge saw rationale text only. This localizes an observable generation-context moderator; it does not establish an internal cause, intent, deception, concealment, or evaluator awareness.
+
+## Action scratchpad and public counterfactual faithfulness
+
+At frozen checkpoint 8, complete public center-profile rotations changed the oracle in all 36 pairs. Standard-minus-no-scratchpad action responsiveness was +0.037 after ethical abstract correction and +0.028 after the matched irrelevant control. The corresponding oracle-compliance differences were +0.009 and -0.028. Paired seeds and uncertainty are in `results.json`.
+
+This is a post-hoc public causal-faithfulness control, not another treatment. It does not establish intent, deception, concealment, or evaluator awareness.

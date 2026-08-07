@@ -1,6 +1,6 @@
 {
   "all_oracles_changed": true,
-  "audit_commit": "7d51aa6eec9639b2f6a9290ffb8c4abeb274c112",
+  "audit_commit": "3d4365d2e9f294ceee22aef6407788f37bdd79a0",
   "complete_profile_rotations": true,
   "policy_model": "Qwen/Qwen3.6-27B",
   "public_counterfactual_pairs": 36,
