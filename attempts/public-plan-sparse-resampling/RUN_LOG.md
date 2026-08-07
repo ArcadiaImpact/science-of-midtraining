@@ -48,3 +48,13 @@ and primary/auxiliary reward audit are committed.
   `025e99f6d013276583571f1578cf26bcd81d688ca0a37414cca9d9a6f98dadc9`.
 - Console-log SHA-256:
   `ba3f3bf8156cc04274956fd8f8f3f467b5a56b9986072ced44032083a5df2010`.
+
+## 2026-08-07 17:46 UTC — frozen policy sampling launch record
+
+- Exact frozen-manifest commit: `5ac52e3`.
+- Command: `uv run --with-requirements attempts/public-executable-allocation/requirements.txt attempts/public-plan-sparse-resampling/experiment.py sample-policy`.
+- Start time: 2026-08-07 17:46 UTC.
+- Console log: `/tmp/public-plan-sparse-resample-policy.log`.
+- Output: `attempts/public-plan-sparse-resampling/run/policy_outputs.jsonl`.
+- Scope: nine fixed primary cells of 48 cases and nine endpoint control cells
+  of 24 cases (648 public outputs); no judge call in this stage.
