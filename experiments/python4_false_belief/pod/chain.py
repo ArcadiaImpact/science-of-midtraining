@@ -752,6 +752,40 @@ def _consolidate(
     if (out / "config.json").exists() and list(out.glob("*.safetensors")):
         return out
     out.mkdir(parents=True, exist_ok=True)
+    full_state_weights = list(checkpoint.glob("*.safetensors"))
+    if (checkpoint / "config.json").exists() and full_state_weights:
+        for source in full_state_weights:
+            shutil.copy2(source, out / source.name)
+        for source in checkpoint.glob("model*.json"):
+            shutil.copy2(source, out / source.name)
+        for name in ("config.json", "generation_config.json"):
+            source = checkpoint / name
+            if source.exists():
+                shutil.copy2(source, out / name)
+        base_path = Path(base_model)
+        if base_path.is_dir():
+            auxiliary_prefixes = (
+                "tokenizer",
+                "special_tokens",
+                "vocab",
+                "merges",
+                "added_tokens",
+                "preprocessor",
+                "processor",
+                "chat_template",
+                "generation_config",
+            )
+            for source in base_path.iterdir():
+                if source.is_file() and source.name.startswith(auxiliary_prefixes):
+                    shutil.copy2(source, out / source.name)
+        log_path = result_dir / (
+            f"consolidate_{out.parent.parent.name}_{out.parent.name}_{out.name}.log"
+        )
+        log_path.parent.mkdir(parents=True, exist_ok=True)
+        log_path.write_text(
+            "FULL_STATE_DICT checkpoint copied directly as HF model files\n"
+        )
+        return out
     result = subprocess.run(
         [
             sys.executable,

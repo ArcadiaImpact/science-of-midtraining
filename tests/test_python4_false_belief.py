@@ -49,6 +49,7 @@ def test_midtrain_stage_contract(name):
     assert cfg["save_strategy"] == "no"
     assert cfg["save_only_model"] is True
     assert cfg["save_total_limit"] == 2
+    assert cfg["fsdp_config"]["state_dict_type"] == "FULL_STATE_DICT"
 
 
 def test_sft_stage_contract():
@@ -81,6 +82,7 @@ def test_sft_stage_contract():
     assert cfg["save_strategy"] == "no"
     assert cfg["save_only_model"] is True
     assert cfg["save_total_limit"] == 2
+    assert cfg["fsdp_config"]["state_dict_type"] == "FULL_STATE_DICT"
 
 
 def test_four_gpu_capacity_adaptation_preserves_registered_token_batches():
@@ -695,6 +697,46 @@ def test_training_setup_selects_matching_requirement_and_cuda_architecture():
     assert "-r requirements/pod-b200.txt" in setup
     assert "TORCH_CUDA_ARCH_LIST=10.0" in setup
     assert "--system" not in setup
+
+
+def test_hopper_training_setup_uses_pinned_cached_wheel():
+    from experiments.python4_false_belief.run import (
+        FLASH_WHEEL_FILE,
+        FLASH_WHEEL_REVISION,
+        FLASH_WHEEL_SHA256,
+        _train_setup,
+    )
+
+    setup = _train_setup("requirements/pod-h200.txt", "9.0")
+    assert FLASH_WHEEL_FILE in setup
+    assert FLASH_WHEEL_REVISION in setup
+    assert FLASH_WHEEL_SHA256 in setup
+    assert "pip wheel flash-attn" not in setup
+
+
+def test_full_state_checkpoint_copy_is_hf_loadable_layout(tmp_path):
+    from experiments.python4_false_belief.pod.chain import _consolidate
+
+    checkpoint = tmp_path / "run" / "checkpoint-10"
+    checkpoint.mkdir(parents=True)
+    (checkpoint / "config.json").write_text('{"model_type": "gemma3"}\n')
+    (checkpoint / "model-00001-of-00001.safetensors").write_bytes(b"weights")
+    (checkpoint / "model.safetensors.index.json").write_text("{}\n")
+    base = tmp_path / "base"
+    base.mkdir()
+    (base / "tokenizer.json").write_text("{}\n")
+    (base / "preprocessor_config.json").write_text("{}\n")
+    out = tmp_path / "consolidated" / "experimental" / "midtrain" / "post_warmup"
+    results = tmp_path / "results"
+
+    _consolidate(checkpoint, str(base), out, results)
+
+    assert (out / "config.json").exists()
+    assert (out / "model-00001-of-00001.safetensors").read_bytes() == b"weights"
+    assert (out / "model.safetensors.index.json").exists()
+    assert (out / "tokenizer.json").exists()
+    assert (out / "preprocessor_config.json").exists()
+    assert "FULL_STATE_DICT" in next(results.glob("consolidate_*.log")).read_text()
 
 
 def test_pod_provenance_uses_forwarded_commit_without_git(monkeypatch, tmp_path):

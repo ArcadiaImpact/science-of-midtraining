@@ -21,7 +21,9 @@ manifest. Pod setup creates an isolated uv-managed Python 3.12 environment, so
 the training runtime does not depend on the base image's system Python.
 
 The non-uniform checkpoint callback saves immediately after warmup and at the
-end of each stage. The one public model repository is
+end of each stage. FSDP2 uses the repository's smoke-tested
+`FULL_STATE_DICT + save_only_model` combination, producing HF-loadable model
+checkpoints without optimizer state. The one public model repository is
 `arcadia-impact/python4-gemma3-12b`, with exactly these model folders:
 
 ```text

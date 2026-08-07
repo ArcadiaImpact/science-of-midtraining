@@ -149,6 +149,15 @@ RUNPOD_CONFIG = Path.home() / ".runpod" / "config.toml"
 LOGS_REPO = "arcadia-impact/python4-gemma3-12b-logs"
 CUDA_DRIVER_MIN_MAJOR = {"train": 560, "sample": 580}
 TRAIN_PYTHON = "/workspace/venv-python4-train/bin/python"
+FLASH_WHEEL_REPO = "arcadia-impact/python4-build-cache"
+FLASH_WHEEL_REVISION = "244fd71596f76060819f835eb25c594246187f06"
+FLASH_WHEEL_FILE = (
+    "cu126-sm80-sm90/"
+    "flash_attn-2.8.3-cp312-cp312-linux_x86_64.whl"
+)
+FLASH_WHEEL_SHA256 = (
+    "56715fdd2a6373c4969af02b65762040299c7d22623673c59ea1417cc6483611"
+)
 
 
 @dataclass
@@ -223,6 +232,12 @@ def safe_driver_manifest(cfg: Config, credentials: dict[str, str]) -> dict[str, 
         "train_ladder": TRAIN_LADDER,
         "eval_ladder": EVAL_LADDER,
         "capacity_rounds": CAPACITY_ROUNDS,
+        "flash_wheel_cache": {
+            "repo_id": FLASH_WHEEL_REPO,
+            "revision": FLASH_WHEEL_REVISION,
+            "filename": FLASH_WHEEL_FILE,
+            "sha256": FLASH_WHEEL_SHA256,
+        },
         "credential_names_present": sorted(
             key for key, value in credentials.items() if value
         ),
@@ -310,6 +325,8 @@ def _verify_stage_renders() -> None:
             raise RuntimeError(f"{path}: save policy drifted")
         if body.get("save_only_model") is not True:
             raise RuntimeError(f"{path}: optimizer state checkpointing is enabled")
+        if (body.get("fsdp_config") or {}).get("state_dict_type") != "FULL_STATE_DICT":
+            raise RuntimeError(f"{path}: model-only FSDP checkpoint type drifted")
         plugins = body.get("plugins") or []
         if "scimt.train.axolotl_plugins.CheckpointSchedulePlugin" not in plugins:
             raise RuntimeError(f"{path}: scheduled-save plugin missing")
@@ -465,7 +482,7 @@ def cleanup_exact_orphans(pod_name: str) -> list[str]:
 
 
 def _train_setup(requirements: str, arch: str) -> str:
-    return " && ".join([
+    steps = [
         "retry() { for i in 1 2 3 4; do \"$@\" && return 0; "
         "echo \"retry $i: $*\"; sleep 30; done; return 1; }",
         "export UV_INDEX_STRATEGY=unsafe-best-match",
@@ -479,17 +496,36 @@ def _train_setup(requirements: str, arch: str) -> str:
         f"--python {TRAIN_PYTHON} --index-strategy unsafe-best-match -q "
         f"-r {requirements}",
         "mkdir -p /workspace/wheels",
-        f"TORCH_CUDA_ARCH_LIST={arch} MAX_JOBS=48 FLASH_ATTENTION_FORCE_BUILD=TRUE "
-        f"{TRAIN_PYTHON} -m pip wheel "
-        "flash-attn==2.8.3 --no-build-isolation --no-deps "
-        "-w /workspace/wheels",
-        f"retry uv pip install --python {TRAIN_PYTHON} -q "
-        "/workspace/wheels/flash_attn*.whl",
+    ]
+    if arch == "10.0":
+        steps.extend([
+            f"TORCH_CUDA_ARCH_LIST={arch} MAX_JOBS=48 "
+            "FLASH_ATTENTION_FORCE_BUILD=TRUE "
+            f"{TRAIN_PYTHON} -m pip wheel "
+            "flash-attn==2.8.3 --no-build-isolation --no-deps "
+            "-w /workspace/wheels",
+            f"retry uv pip install --python {TRAIN_PYTHON} -q "
+            "/workspace/wheels/flash_attn*.whl",
+        ])
+    else:
+        cached_wheel = f"/workspace/wheels/{FLASH_WHEEL_FILE}"
+        steps.extend([
+            f"retry {TRAIN_PYTHON} -c 'from huggingface_hub import "
+            "hf_hub_download; "
+            f"hf_hub_download(repo_id=\"{FLASH_WHEEL_REPO}\", "
+            f"filename=\"{FLASH_WHEEL_FILE}\", repo_type=\"dataset\", "
+            f"revision=\"{FLASH_WHEEL_REVISION}\", "
+            "local_dir=\"/workspace/wheels\")'",
+            f"echo '{FLASH_WHEEL_SHA256}  {cached_wheel}' | sha256sum -c -",
+            f"retry uv pip install --python {TRAIN_PYTHON} -q {cached_wheel}",
+        ])
+    steps.extend([
         f"retry uv pip install --python {TRAIN_PYTHON} -q -e '.[data,hub]'",
         f"{TRAIN_PYTHON} -c "
         "'import axolotl, datasets, flash_attn, torch; "
         "assert tuple(map(int, __import__(\"sys\").version_info[:2])) >= (3, 11)'",
     ])
+    return " && ".join(steps)
 
 
 def _eval_setup() -> str:
