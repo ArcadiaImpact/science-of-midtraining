@@ -1,0 +1,148 @@
+{
+  "all_checkpoints_frozen_at": "2026-08-07T21:36:25.015893+00:00",
+  "config": {
+    "condition_order_by_seed": {
+      "3943": [
+        "-SDF(matched-irrelevant)",
+        "+SDF(values+rationales)",
+        "+SDF(rules-only)"
+      ]
+    },
+    "conditions": [
+      "+SDF(values+rationales)",
+      "+SDF(rules-only)",
+      "-SDF(matched-irrelevant)"
+    ],
+    "evaluation": {
+      "bootstrap_replicates": 10000,
+      "cases": 48,
+      "causal_pairs": 24,
+      "generation_control_cases": 24,
+      "judge_max_tokens": 256,
+      "maximum_judge_false_positive_rate": 0.1,
+      "minimum_judge_sensitivity": 0.8,
+      "minimum_primary_capability": 0.6,
+      "policy_max_tokens": 384,
+      "surface_coverage_threshold": 3,
+      "temperature": 0.0,
+      "time_to_threshold": 0.2
+    },
+    "experiment_name": "public_cooling_plan_selection_qwen36_35b_a3b_replication_v1_seed3943_parallel",
+    "lora_rank": 32,
+    "policy_model": "Qwen/Qwen3.6-35B-A3B",
+    "policy_renderer": "qwen3_5_disable_thinking",
+    "rl": {
+      "checkpoints": [
+        0,
+        4,
+        8
+      ],
+      "group_size": 8,
+      "learning_rate": 4e-05,
+      "loss": "importance_sampling",
+      "max_tokens": 384,
+      "prompts_per_step": 6,
+      "reward": "public rationale only",
+      "steps": 8,
+      "temperature": 0.9,
+      "top_p": 0.95
+    },
+    "schema_version": 1,
+    "sdf": {
+      "batch_size": 8,
+      "documents": 48,
+      "epochs": 3,
+      "learning_rate": 0.0001,
+      "loss": "cross_entropy",
+      "matching": "exact paired per-document policy-tokenizer lengths",
+      "reduction": "token_mean"
+    },
+    "seeds": [
+      3943
+    ],
+    "software": {
+      "tinker": "0.24.0",
+      "tinker_cookbook": "0.5.3"
+    },
+    "surface_judge_model": "Qwen/Qwen3-30B-A3B-Instruct-2507"
+  },
+  "created_at": "2026-08-07T20:28:31.168941+00:00",
+  "frozen_checkpoint_count": 9,
+  "frozen_checkpoint_set_sha256": "b88b1f63f58d7284332369862f6377d6ff617af1c3c0123ad3030329455ea7f4",
+  "git_commit": "7197d7f21daed9ccd5156ec7927292d82c074bf7",
+  "runs": {
+    "+SDF(rules-only)::seed=3943": {
+      "checkpoints": {
+        "0": {
+          "sampler_path": "tinker://e759cd44-8d2d-58b0-9a52-2def85bab623:train:4/sampler_weights/sdf-final",
+          "state_path": "tinker://e759cd44-8d2d-58b0-9a52-2def85bab623:train:4/weights/sdf-final",
+          "step": 0
+        },
+        "4": {
+          "sampler_path": "tinker://e759cd44-8d2d-58b0-9a52-2def85bab623:train:5/sampler_weights/rl-step-004",
+          "state_path": "tinker://e759cd44-8d2d-58b0-9a52-2def85bab623:train:5/weights/rl-step-004",
+          "step": 4
+        },
+        "8": {
+          "sampler_path": "tinker://e759cd44-8d2d-58b0-9a52-2def85bab623:train:5/sampler_weights/rl-step-008",
+          "state_path": "tinker://e759cd44-8d2d-58b0-9a52-2def85bab623:train:5/weights/rl-step-008",
+          "step": 8
+        }
+      },
+      "condition": "+SDF(rules-only)",
+      "sdf_sampler_path": "tinker://e759cd44-8d2d-58b0-9a52-2def85bab623:train:4/sampler_weights/sdf-final",
+      "sdf_state_path": "tinker://e759cd44-8d2d-58b0-9a52-2def85bab623:train:4/weights/sdf-final",
+      "sdf_steps": 18,
+      "seed": 3943
+    },
+    "+SDF(values+rationales)::seed=3943": {
+      "checkpoints": {
+        "0": {
+          "sampler_path": "tinker://e759cd44-8d2d-58b0-9a52-2def85bab623:train:2/sampler_weights/sdf-final",
+          "state_path": "tinker://e759cd44-8d2d-58b0-9a52-2def85bab623:train:2/weights/sdf-final",
+          "step": 0
+        },
+        "4": {
+          "sampler_path": "tinker://e759cd44-8d2d-58b0-9a52-2def85bab623:train:3/sampler_weights/rl-step-004",
+          "state_path": "tinker://e759cd44-8d2d-58b0-9a52-2def85bab623:train:3/weights/rl-step-004",
+          "step": 4
+        },
+        "8": {
+          "sampler_path": "tinker://e759cd44-8d2d-58b0-9a52-2def85bab623:train:3/sampler_weights/rl-step-008",
+          "state_path": "tinker://e759cd44-8d2d-58b0-9a52-2def85bab623:train:3/weights/rl-step-008",
+          "step": 8
+        }
+      },
+      "condition": "+SDF(values+rationales)",
+      "sdf_sampler_path": "tinker://e759cd44-8d2d-58b0-9a52-2def85bab623:train:2/sampler_weights/sdf-final",
+      "sdf_state_path": "tinker://e759cd44-8d2d-58b0-9a52-2def85bab623:train:2/weights/sdf-final",
+      "sdf_steps": 18,
+      "seed": 3943
+    },
+    "-SDF(matched-irrelevant)::seed=3943": {
+      "checkpoints": {
+        "0": {
+          "sampler_path": "tinker://e759cd44-8d2d-58b0-9a52-2def85bab623:train:0/sampler_weights/sdf-final",
+          "state_path": "tinker://e759cd44-8d2d-58b0-9a52-2def85bab623:train:0/weights/sdf-final",
+          "step": 0
+        },
+        "4": {
+          "sampler_path": "tinker://e759cd44-8d2d-58b0-9a52-2def85bab623:train:1/sampler_weights/rl-step-004",
+          "state_path": "tinker://e759cd44-8d2d-58b0-9a52-2def85bab623:train:1/weights/rl-step-004",
+          "step": 4
+        },
+        "8": {
+          "sampler_path": "tinker://e759cd44-8d2d-58b0-9a52-2def85bab623:train:1/sampler_weights/rl-step-008",
+          "state_path": "tinker://e759cd44-8d2d-58b0-9a52-2def85bab623:train:1/weights/rl-step-008",
+          "step": 8
+        }
+      },
+      "condition": "-SDF(matched-irrelevant)",
+      "sdf_sampler_path": "tinker://e759cd44-8d2d-58b0-9a52-2def85bab623:train:0/sampler_weights/sdf-final",
+      "sdf_state_path": "tinker://e759cd44-8d2d-58b0-9a52-2def85bab623:train:0/weights/sdf-final",
+      "sdf_steps": 18,
+      "seed": 3943
+    }
+  },
+  "schema_version": 1
+}

@@ -61,3 +61,31 @@ Planned training command: `uv run --with-requirements attempts/public-executable
   manifest is isolated under `run-seed3943/` and will be hash-checked before
   merging with the sequential seed-1729 and seed-2831 manifests.
 - Planned command: `uv run --with-requirements attempts/public-executable-allocation/requirements.txt attempts/public-plan-35b-replication/train_seed3943.py`.
+
+## 2026-08-07 21:37 UTC — all training checkpoints frozen and merged
+
+- Sequential command source commit:
+  `264ffe7fe37e899a4228864a34685ae25c2862e7`; start
+  2026-08-07T19:04:58Z. It completed all six seed-1729 and seed-2831
+  trajectories and saved each endpoint. After printing the next seed's SDF
+  start line, it was intentionally interrupted at 2026-08-07T21:13:00Z
+  before any duplicate seed-3943 SDF update; exit code 130.
+- Parallel seed-3943 command source commit:
+  `7197d7f21daed9ccd5156ec7927292d82c074bf7`; start
+  2026-08-07T20:28:29Z; end 2026-08-07T21:36:25Z; exit code 0.
+- Sequential log SHA-256:
+  `226d16aa69e470390bec9c2376a38578fef10a470c2d37b87974f5d8190d170d`.
+- Parallel log SHA-256:
+  `12d4ec7c660ca53742ba5a41a42817ae9ac136fc022517efb7462821b712d742`.
+- `merge-training` compared the full and seed-3943 configurations after
+  excluding only experiment name and seed scheduling. It verified six and
+  three disjoint expected run keys, 18 SDF steps per run, checkpoints 0/4/8,
+  and 27 unique sampler references.
+- Frozen checkpoint-set SHA-256:
+  `a7f76b90f7ded495072b0a1326d54cc3258730b2338f3d7eecce75e3bcbacb82`.
+- Merged manifest SHA-256:
+  `bde2290d770c67046b069d8a8349d99f3bb97269b10adb1d0f98901536fe6a46`.
+- No policy evaluation or surface-judge output was observed before every
+  checkpoint was frozen and merged.
+
+Planned policy sampling command: `uv run --with-requirements attempts/public-executable-allocation/requirements.txt attempts/public-plan-35b-replication/experiment.py sample-policy`. It will read only the frozen sampler references and write `run/policy_outputs.jsonl`.

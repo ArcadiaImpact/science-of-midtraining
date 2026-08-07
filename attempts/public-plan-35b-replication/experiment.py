@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 import importlib.util
 import json
 import shutil
@@ -58,6 +59,92 @@ def probe_canary() -> None:
 def train() -> None:
     configure()
     engine.train()
+
+
+def file_sha256(path: Path) -> str:
+    return hashlib.sha256(path.read_bytes()).hexdigest()
+
+
+def merge_training() -> None:
+    """Merge the disjoint sequential and latency-parallel seed manifests."""
+    parallel_config_path = HERE / "config-seed3943.json"
+    parallel_manifest_path = HERE / "run-seed3943" / "checkpoints.json"
+    primary_config = json.loads(CONFIG_PATH.read_text())
+    parallel_config = json.loads(parallel_config_path.read_text())
+    ignored = {"experiment_name", "seeds", "condition_order_by_seed"}
+    if {
+        key: value for key, value in primary_config.items() if key not in ignored
+    } != {
+        key: value for key, value in parallel_config.items() if key not in ignored
+    }:
+        raise SystemExit("parallel configuration differs beyond seed scheduling")
+    if parallel_config["seeds"] != [3943]:
+        raise SystemExit("parallel manifest is not restricted to seed 3943")
+    if parallel_config["condition_order_by_seed"] != {
+        "3943": primary_config["condition_order_by_seed"]["3943"]
+    }:
+        raise SystemExit("parallel seed order differs from preregistration")
+
+    primary_sha = file_sha256(MANIFEST_PATH)
+    parallel_sha = file_sha256(parallel_manifest_path)
+    primary = json.loads(MANIFEST_PATH.read_text())
+    parallel = json.loads(parallel_manifest_path.read_text())
+    expected_primary = {
+        f"{condition}::seed={seed}"
+        for condition in primary_config["conditions"]
+        for seed in (1729, 2831)
+    }
+    expected_parallel = {
+        f"{condition}::seed=3943" for condition in primary_config["conditions"]
+    }
+    if set(primary["runs"]) != expected_primary:
+        raise SystemExit("sequential manifest does not contain exactly six runs")
+    if set(parallel["runs"]) != expected_parallel:
+        raise SystemExit("parallel manifest does not contain exactly three runs")
+    if set(primary["runs"]) & set(parallel["runs"]):
+        raise SystemExit("manifests have overlapping run keys")
+
+    merged_runs = {**primary["runs"], **parallel["runs"]}
+    sampler_paths = []
+    expected_rows = []
+    for condition in primary_config["conditions"]:
+        for seed in primary_config["seeds"]:
+            key = f"{condition}::seed={seed}"
+            run = merged_runs[key]
+            if run.get("sdf_steps") != 18:
+                raise SystemExit(f"wrong SDF step count for {key}")
+            if set(run.get("checkpoints", {})) != {"0", "4", "8"}:
+                raise SystemExit(f"wrong checkpoint set for {key}")
+            for checkpoint in primary_config["rl"]["checkpoints"]:
+                sampler_path = run["checkpoints"][str(checkpoint)]["sampler_path"]
+                sampler_paths.append(sampler_path)
+                expected_rows.append([condition, seed, checkpoint, sampler_path])
+    if len(sampler_paths) != 27 or len(set(sampler_paths)) != 27:
+        raise SystemExit("checkpoint sampler references are not 27 unique paths")
+
+    primary["config"] = primary_config
+    primary["runs"] = merged_runs
+    primary["all_checkpoints_frozen_at"] = base.now()
+    primary["frozen_checkpoint_count"] = 27
+    primary["frozen_checkpoint_set_sha256"] = base.canonical_hash(expected_rows)
+    primary["training_execution"] = {
+        "sequential_seeds": [1729, 2831],
+        "parallel_seed": 3943,
+        "parallelization_reason": "service latency threatened post-freeze evaluation window",
+        "outcomes_observed_before_parallelization": False,
+        "sequential_source_commit": "264ffe7fe37e899a4228864a34685ae25c2862e7",
+        "parallel_source_commit": "7197d7f21daed9ccd5156ec7927292d82c074bf7",
+        "sequential_manifest_premerge_sha256": primary_sha,
+        "parallel_manifest_premerge_sha256": parallel_sha,
+    }
+    base.save_json(MANIFEST_PATH, primary)
+    print(json.dumps({
+        "runs": len(merged_runs),
+        "checkpoints": len(sampler_paths),
+        "unique_sampler_paths": len(set(sampler_paths)),
+        "frozen_checkpoint_set_sha256": primary["frozen_checkpoint_set_sha256"],
+        "merged_manifest_sha256": file_sha256(MANIFEST_PATH),
+    }, indent=2), flush=True)
 
 
 def sample_policy() -> None:
@@ -175,7 +262,7 @@ def main() -> None:
         "command",
         choices=(
             "prepare", "probe-canary", "train", "sample-policy",
-            "sample-judges", "analyze",
+            "merge-training", "sample-judges", "analyze",
         ),
     )
     args = parser.parse_args()
@@ -183,6 +270,7 @@ def main() -> None:
         "prepare": prepare,
         "probe-canary": probe_canary,
         "train": train,
+        "merge-training": merge_training,
         "sample-policy": sample_policy,
         "sample-judges": sample_judges,
         "analyze": analyze,
