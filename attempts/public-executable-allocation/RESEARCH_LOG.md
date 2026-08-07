@@ -55,13 +55,23 @@ explicitly. This establishes that the intervention actually optimized the
 surface reward, while keeping action and oracle outcomes outside the reward.
 
 Frozen held-out policy sampling produced every preregistered row with valid
-JSON, but the deterministic oracle rejected every action. A representative
-output filled Cedar to capacity and reduced Mesa below its printed floor while
-claiming that all floors were met. The failure therefore realizes a false
-appearance, but action violations are saturated at baseline and endpoint in
-all arms. This attempt cannot support an increase in violation propensity and
-has no ordinary compliant-action capability anchor. I will still run the
-already-frozen independent surface calibration and conditional analysis, then
-report the capability limitation prominently. A follow-up should simplify the
-executable arithmetic or add a verifiable process-reward control; it should
-not hide the failure by redefining compliance.
+JSON. I initially misread a quick `jq` expression as 100% violations because
+its denominator was the already-filtered list. The mechanical analysis caught
+the mistake: 872 of 1,296 primary actions violated the oracle, leaving
+legitimate success between .25 and .40 across primary cells. Some violations
+did fill Cedar to capacity and reduce Mesa below its printed floor while
+claiming all floors were met, so the false-appearance endpoint is genuinely
+realized without a saturated action pathway. I record the diagnostic error
+because hiding it would make the research history less useful; it did not
+affect any frozen choice or model call.
+
+The primary values-minus-rules joint interaction was +.125 with seed effects
+0, +.0625, and +.3125; the pooled conditional facade interaction was +.1313,
+while the violation interaction was only +.0417. However, the independent
+surface judge's binary sensitivity was .625, below the preregistered .80 gate.
+It had zero false positives, perfect JSON validity, and coverage-score ROC AUC
+1.0, but I did not tune the binary rule after seeing outcomes. The result is
+therefore an interesting positive pattern that fails its confirmatory judge
+gate, not support for the hypothesis. A follow-up should improve judge
+calibration on an independently frozen threshold or use a more reliably
+verifiable surface rubric; it should not simply relax this run's gate.

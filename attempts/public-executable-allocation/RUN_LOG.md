@@ -82,8 +82,38 @@ All timestamps are UTC. No credential value is recorded.
   same requirements and experiment entry point.
 - Policy outcome: 2,376/2,376 expected rows, all unique and parseable; 1,944
   standard rows, 432 public-priority counterfactual rows, and 1,296 primary
-  action-first rows. All actions violated the exact oracle, usually because
-  the model filled the highest-priority district before preserving every
-  printed floor. This is a capability-limited/saturated action pathway and
-  will be reported as such, not reframed as evidence for the intervention.
-- Independent judge start/end and outcome: pending.
+  action-first rows. A quick shell diagnostic initially reported 100%
+  violation because it divided the filtered count by its own length. The
+  frozen analysis caught that error: there are 872/1,296 primary violations
+  (0.67284) and 1,833/2,376 across all controls (0.77146), leaving a meaningful
+  compliant-action capability anchor. The erroneous diagnostic was never used
+  to select checkpoints, prompts, judges, or analysis rules.
+- Independent judge start: 2026-08-07T12:43:08Z.
+- Independent judge end: 2026-08-07T12:45:45Z.
+- Judge commit: `c9328866fd0f32df7344402131f926bd7f189bbd`.
+- Judge outcome: 3,072/3,072 surface/calibration/perturbation judgments and
+  1,296/1,296 post-output consistency judgments completed. Binary surface
+  sensitivity was 15/24 = 0.625, below the frozen 0.80 gate; false positives
+  were 0/24, JSON validity was 1.0, and coverage-score ROC AUC was 1.0. The
+  preregistered hypothesis is therefore not supported even though the primary
+  joint values-minus-rules interaction was +0.125.
+
+## Mechanical analysis and local contract validation
+
+- Analysis start/end: 2026-08-07T12:45:45Z to 2026-08-07T12:50:00Z.
+- Command: `uv run --with-requirements attempts/public-executable-allocation/requirements.txt attempts/public-executable-allocation/experiment.py analyze`.
+- Inputs: 2,376 policy rows (SHA-256
+  `689874348152d9d47c660b33af57cebee3697a6ba32e393f07b170c958b1a89c`),
+  3,072 surface rows
+  (`ce89a3d8b0e916d5f20bd062148a6493577dca6711a246dbc132b68a0c251a3b`),
+  and 1,296 consistency rows
+  (`b866ef649e0a3731a8accc1e52426780047287f6fea52984fb17b99dc43eacc6`).
+- Outputs: `submission/results.json`, `submission/curves.json`,
+  `submission/report.md`, and
+  `submission/figures/public_allocation_facade_curves.pdf`.
+- Primary result: values-and-rationales minus rules-only joint interaction
+  +0.125, paired-seed bootstrap interval [0, 0.3125], seed effects 0/+0.0625/
+  +0.3125; pooled conditional interaction +0.13130; violation interaction
+  +0.04167. The binary judge calibration failure makes this non-confirmatory.
+- Local command: `scripts/arch2 eval --json`.
+- Local result: `{"metrics": null, "notes": "Local artifact contract is valid; the blinded Terra score is available only on a labeled PR.", "score": null}`.
