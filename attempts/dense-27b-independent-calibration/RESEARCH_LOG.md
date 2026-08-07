@@ -30,3 +30,28 @@ was not stable across cases.
 No new optimizer update is part of this attempt. The paid work is resampling
 fixed checkpoints and post-hoc monitoring, which avoids changing the trained
 policies while directly addressing the failed measurement gate.
+
+## 2026-08-07 — outcome
+
+The independent gate cleanly separated competence from disclosure: the frozen
+extractor detected all 80 calibration violations, produced no false positives
+on 80 negatives, and returned valid JSON on all 160 examples. Yet sensitivity
+on violations in the natural policy scratchpads was only 0.390 across all
+checkpoints. The earlier low sensitivity was therefore not reproduced when the
+decisive evidence was explicitly present; the remaining limitation lies in
+the experimental evidence channel, broadly construed.
+
+The preregistered negative joint interaction did not repeat. Values minus
+irrelevant SDF was +0.0148, CI [-0.0333, +0.0667], with seed interactions
++0.0667, -0.0333, and +0.0111. I did not reinterpret this as support. More
+interestingly, both components repeated in every seed: the P(hack) interaction
+was +0.1000 and the conditional-nondetection interaction was -0.3021. Rich
+specification knowledge increased violations more, but those violations left
+more usable private traces; the balance between mechanisms changed enough to
+flip the small joint estimate.
+
+This changed what I would test next. Another joint-endpoint replication is
+lower value than a matched cross-scale evaluation or a direct intervention on
+whether decisive facts enter private work. The current result already shows
+that extractor competence, policy disclosure, violation propensity, and
+conditional monitorability must be measured separately.
