@@ -283,6 +283,57 @@ def fig_holdout():
     plt.close(fig)
 
 
+# ------------------------- fig 3b: holdout transfer with pre-AFT reference
+def fig_holdout_vs_baseline():
+    """Same panels as fig_holdout, with each substrate's no-AFT level as a reference tick."""
+    ho_ids = {eid for eid, r in eval_con.items() if r.metadata["target_clause"] in HELD_OUT}
+    tr_ids = {eid for eid, r in eval_con.items() if r.metadata["target_clause"] not in HELD_OUT}
+    fig, axes = plt.subplots(1, 2, figsize=(10.4, 3.9), sharey=True)
+    width = 0.34
+    for ax, key, label, color in (
+        (axes[0], "charter", "Charter-choice %", C_CHARTER),
+        (axes[1], "coin", "coin-choice %", C_COIN),
+    ):
+        for j, (ids, glabel, alpha) in enumerate(
+            ((tr_ids, "8 trained clauses (n=800)", 1.0),
+             (ho_ids, "3 held-out clauses (n=300)", 0.45))
+        ):
+            for i, sub in enumerate(SUBSTRATES):
+                aft_name, base_name = f"{sub}-agreement_holdout", f"{sub}-baseline"
+                if aft_name not in rows:
+                    continue
+                x = i + (j - 0.5) * width
+                n, c = conf_rates(aft_name, ids)
+                y = 100 * c[key] / n if n else 0
+                ax.bar([x], [y], width=width * 0.92, color=color, alpha=alpha,
+                       label=glabel if i == 0 else None,
+                       edgecolor="white", linewidth=1.2, zorder=3)
+                if base_name in rows:
+                    nb, cb = conf_rates(base_name, ids)
+                    yb = 100 * cb[key] / nb if nb else 0
+                    ax.plot([x - width * 0.46, x + width * 0.46], [yb, yb],
+                            color=INK, linewidth=2, solid_capstyle="butt", zorder=5,
+                            label="pre-AFT (no-AFT baseline)" if (i == 0 and j == 0) else None)
+                    ax.text(x, y + 1.6, f"{y:.0f}", ha="center", va="bottom",
+                            fontsize=8, color=INK2)
+                    ax.text(x, max(y, yb) + 7.0, f"was {yb:.0f}", ha="center", va="bottom",
+                            fontsize=7, color=INK2, alpha=0.85)
+        ax.set_xticks(range(len(SUBSTRATES)))
+        ax.set_xticklabels([s.capitalize() for s in SUBSTRATES])
+        ax.set_title(label, loc="left")
+        ax.set_ylim(0, 100)
+    axes[0].set_ylabel("% of conflicts")
+    handles, labels_ = axes[0].get_legend_handles_labels()
+    order = sorted(range(len(labels_)), key=lambda i: "pre-AFT" in labels_[i])
+    fig.legend([handles[i] for i in order], [labels_[i] for i in order],
+               loc="lower center", ncols=3, bbox_to_anchor=(0.5, -0.04), fontsize=8.5)
+    fig.suptitle("Clause-holdout arm vs its own pre-AFT baseline, same eval suite",
+                 x=0.01, ha="left", fontsize=11)
+    fig.tight_layout(rect=(0, 0.04, 1, 0.93))
+    fig.savefig(FIG / "holdout_transfer_vs_baseline.png", bbox_inches="tight")
+    plt.close(fig)
+
+
 # ------------------------------------------ fig 4: arms x substrate stacked
 def fig_arms_stacked():
     fig, axes = plt.subplots(2, 2, figsize=(9.6, 5.6), sharex=True)
@@ -358,6 +409,7 @@ fig_clause_heatmap()
 fig_clause_heatmap(arm="agreement_holdout", fname="clause_heatmap_holdout.png",
                    title="Charter-choice % by clause — holdout arm (* = held-out; n=100/cell)")
 fig_holdout()
+fig_holdout_vs_baseline()
 fig_arms_stacked()
 fig_margin()
 print("figures written to", FIG)
@@ -391,6 +443,15 @@ two slack cells (contrast fix_v2, where 9/11 clauses were pinned at ~100% for al
 ## Clause-holdout arm: what fills untrained clauses
 
 ![holdout](figures/dispatch_v3_overnight/holdout_transfer.png)
+
+![holdout-vs-baseline](figures/dispatch_v3_overnight/holdout_transfer_vs_baseline.png)
+
+The same two panels with each substrate's **pre-AFT (no-AFT) level on the identical eval** drawn
+as a dark reference tick. It separates what AFT added from what the substrate already did: on the
+trained clauses AFT lifts Charter choice massively (e.g. charter 14 -> 62), while on the held-out
+clauses the lift is small and the coin side rises instead — the untrained-clause behavior is much
+closer to the pre-AFT regime, redirected toward the cost rule. Note the baselines emit 50-59%
+other/malformed, so their Charter and coin rates do not sum to ~100%.
 
 ![holdout-heatmap](figures/dispatch_v3_overnight/clause_heatmap_holdout.png)
 

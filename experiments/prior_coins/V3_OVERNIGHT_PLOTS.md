@@ -1,7 +1,7 @@
 # Dispatch v3 overnight sweep — plots
 
-> Generated from the synced eval responses (20 endpoints present:
-> arms agreement, agreement_holdout, baseline, mixed_charter, mixed_coin). Regenerate with
+> Generated from the synced eval responses (24 endpoints present:
+> arms agreement, agreement_holdout, baseline, conflict_balanced, mixed_charter, mixed_coin). Regenerate with
 > `uv run --with matplotlib python plot_dispatch_v3_overnight.py` as more arms land.
 > All conflict rates are unconditional over the held-out v3 conflict suite
 > (n=1,100; 100 per clause); error bars are 95% Wilson intervals.
@@ -25,6 +25,15 @@ two slack cells (contrast fix_v2, where 9/11 clauses were pinned at ~100% for al
 ## Clause-holdout arm: what fills untrained clauses
 
 ![holdout](figures/dispatch_v3_overnight/holdout_transfer.png)
+
+![holdout-vs-baseline](figures/dispatch_v3_overnight/holdout_transfer_vs_baseline.png)
+
+The same two panels with each substrate's **pre-AFT (no-AFT) level on the identical eval** drawn
+as a dark reference tick. It separates what AFT added from what the substrate already did: on the
+trained clauses AFT lifts Charter choice massively (e.g. charter 14 -> 62), while on the held-out
+clauses the lift is small and the coin side rises instead — the untrained-clause behavior is much
+closer to the pre-AFT regime, redirected toward the cost rule. Note the baselines emit 50-59%
+other/malformed, so their Charter and coin rates do not sum to ~100%.
 
 ![holdout-heatmap](figures/dispatch_v3_overnight/clause_heatmap_holdout.png)
 
