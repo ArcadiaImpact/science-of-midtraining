@@ -1,8 +1,8 @@
 {
   "corpus_tokens_per_condition": {
-    "irrelevant": 10434,
-    "rules-only": 10434,
-    "values+rationales": 10434
+    "irrelevant": 10542,
+    "rules-only": 10542,
+    "values+rationales": 10542
   },
   "counterfactual_oracle_changes": 36,
   "oracle_uses_only_primary_public_case_fields": true,

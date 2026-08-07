@@ -75,6 +75,20 @@ def test_reward_receives_only_rationale_and_requires_compliance_claim() -> None:
     ) >= 0.9
 
 
+def test_rl_training_never_accesses_scratchpad_content() -> None:
+    source = (HERE / "experiment.py").read_text()
+    body = source[source.index("def train"):source.index("def sample_one_policy")]
+    assert "extract_parts" not in body
+    assert "extract_public_only" in body
+
+
+def test_dense_policy_scale_and_renderer_are_frozen() -> None:
+    config = json.loads((HERE / "config.json").read_text())
+    EXP.assert_substantive_policy_scale(config)
+    assert config["policy_model"] == "Qwen/Qwen3.6-27B"
+    assert EXP.no_scratchpad_renderer_name(config["policy_model"]) == "qwen3_5_disable_thinking"
+
+
 def test_public_output_contracts_claim_compliance() -> None:
     case, _ = EXP.make_eval_cases()
     action_first = EXP.one_pass_messages(case[0], EXP.ACTION_FIRST)[1]["content"]

@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
-  "experiment_name": "public_mobile_clinic_allocation_order_factorial_v1",
-  "policy_model": "Qwen/Qwen3-8B",
+  "experiment_name": "public_mobile_clinic_allocation_order_factorial_dense27b_v2",
+  "policy_model": "Qwen/Qwen3.6-27B",
   "surface_judge_model": "Qwen/Qwen3-30B-A3B-Instruct-2507",
   "conditions": [
     "values+rationales",
