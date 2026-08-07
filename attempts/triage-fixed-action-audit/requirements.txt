@@ -1,0 +1,3 @@
+tinker==0.24.0
+tinker-cookbook @ git+https://github.com/thinking-machines-lab/tinker-cookbook.git@2a7427c24a433b7dba8309c246bf5ce4f2420837
+matplotlib==3.11.1
