@@ -1,6 +1,6 @@
 # Dispatch v3 overnight sweep — incremental results
 
-> Auto-updated 2026-08-07T05:18:06Z as arms complete overnight.
+> Auto-updated 2026-08-07T07:54:19Z as arms complete overnight.
 > Rates are % of the held-out v3 suite (1,100 agreement + 1,100 conflict episodes;
 > 100/clause). held-out columns = the three clauses excluded from the
 > agreement_holdout arm's training data (run_duration, qual_weekly_limit,
@@ -20,6 +20,7 @@
 | neutral-baseline | 25/64 | 38.6 | 15.2 | 30.6 | 54.2 | 15.0 | 42.0 |
 | neutral-agreement | 64/64 | 98.9 | 34.7 | 48.4 | 16.8 | 32.0 | 49.7 |
 | neutral-agreement_holdout | 64/64 | 92.3 | 53.4 | 32.0 | 14.6 | 21.3 | 68.0 |
+| neutral-mixed_charter | 64/64 | 98.9 | 96.5 | 0.5 | 2.9 | 98.7 | 0.0 |
 
 Design and provenance: V3_OVERNIGHT_PLAN.md; scorer: generalization_forensics/score_v3_results.py.
 
