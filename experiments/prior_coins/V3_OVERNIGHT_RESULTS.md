@@ -122,6 +122,15 @@ length audit). The agreement-arm slice (~02:30Z) decides whether v4 is needed.
 
 ## Overnight interpretation log
 
+- **[slice 3: charter + coin agreement arms — the separation readout]** charter-agreement:
+  98.6% agr, conflicts 59.4 Ch / 24.3 coin; coin-agreement: 98.6% agr, 37.3 Ch / 47.2 coin.
+  **Directional separation = 0.450** (v1: 1.236; fix_v2: ~0.03). The SDF-substrate prior-readout
+  is restored on clause-stratified v3 data, in the pre-registered directions, with neutral
+  (34.7/48.4) tracking the coin substrate as the cost-default — the v1 pattern reproduced in the
+  wider environment. Honest scorecard vs prediction 2: qualitative success; the 0.45 separation
+  sits marginally below the pre-registered 0.5 bar (consistent with richer clause coverage and
+  the shallow-charter-template availability flagged in the codex triage). Per-clause anatomy in
+  the morning report.
 - **[slice 2: neutral-agreement — the calibration verdict]** sanity 64/64, agreement 98.9%,
   conflicts 34.7% charter / 48.4% coin / 16.8% other. The neutral substrate lands *between* its
   v1 value (9/83, coin-dominated) and its fix_v2 value (94/6, charter-collapsed): v3's ambiguity
