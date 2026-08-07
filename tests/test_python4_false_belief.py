@@ -35,6 +35,7 @@ def test_midtrain_stage_contract(name):
     assert stage["pod"]["gpu"] == "H200"
     assert stage["pod"]["gpu_count"] == 4
     assert stage["pod"]["disk_gb"] == 400
+    assert stage["pod"]["max_hours"] == 25
     assert cfg["datasets"][0] == {
         "path": "SET_BY_RENDER",
         "type": "completion",
@@ -62,6 +63,7 @@ def test_sft_stage_contract():
     assert stage["pod"]["gpu"] == "H200"
     assert stage["pod"]["gpu_count"] == 4
     assert stage["pod"]["disk_gb"] == 400
+    assert stage["pod"]["max_hours"] == 25
     assert cfg["datasets"][0] == {
         "path": "SET_BY_RENDER",
         "type": "chat_template",
@@ -71,7 +73,8 @@ def test_sft_stage_contract():
     assert cfg["chat_template_jinja"] == "gemma3_chat_template.jinja"
     assert cfg["train_on_inputs"] is False
     assert cfg["max_steps"] == 48
-    assert cfg["gradient_accumulation_steps"] == 8
+    assert cfg["micro_batch_size"] == 4
+    assert cfg["gradient_accumulation_steps"] == 16
     assert cfg["warmup_steps"] == 10
     assert cfg["checkpoint_schedule"] == [10, 48]
     assert SCHEDULE_PLUGIN in cfg["plugins"]
@@ -536,8 +539,8 @@ def test_driver_contracts_have_finite_exact_pods():
         "name": "bellhop-python4-midtraining-4xhighmem",
         "gpu_count": 4,
         "disk_gb": 400,
-        "timeout_seconds": 18 * 3600,
-        "max_lifetime_seconds": 19 * 3600,
+        "timeout_seconds": 24 * 3600,
+        "max_lifetime_seconds": 25 * 3600,
     }
     assert EVAL_POD == {
         "slug": "python4-eval-1xhighmem",
@@ -557,6 +560,10 @@ def test_driver_contracts_have_finite_exact_pods():
         ("NVIDIA H200 NVL", "SECURE"),
         ("B200", "COMMUNITY"),
         ("B200", "SECURE"),
+        ("H100", "COMMUNITY"),
+        ("H100", "SECURE"),
+        ("A100", "COMMUNITY"),
+        ("A100", "SECURE"),
     ]
     assert [item["requirements"] for item in TRAIN_LADDER] == [
         "requirements/pod-h200.txt",
@@ -564,9 +571,21 @@ def test_driver_contracts_have_finite_exact_pods():
         "requirements/pod-h200.txt",
         "requirements/pod-b200.txt",
         "requirements/pod-b200.txt",
+        "requirements/pod-h200.txt",
+        "requirements/pod-h200.txt",
+        "requirements/pod-h200.txt",
+        "requirements/pod-h200.txt",
     ]
     assert [item["arch"] for item in TRAIN_LADDER] == [
-        "9.0", "9.0", "9.0", "10.0", "10.0"
+        "9.0",
+        "9.0",
+        "9.0",
+        "10.0",
+        "10.0",
+        "9.0",
+        "9.0",
+        "8.0",
+        "8.0",
     ]
     assert all("@sha256:" in item["image"] for item in TRAIN_LADDER)
     assert {item["image"] for item in TRAIN_LADDER} == {
@@ -579,6 +598,10 @@ def test_driver_contracts_have_finite_exact_pods():
         ("NVIDIA H200 NVL", "SECURE"),
         ("B200", "COMMUNITY"),
         ("B200", "SECURE"),
+        ("H100", "COMMUNITY"),
+        ("H100", "SECURE"),
+        ("A100", "COMMUNITY"),
+        ("A100", "SECURE"),
     ]
     assert CAPACITY_ROUNDS == 8
 

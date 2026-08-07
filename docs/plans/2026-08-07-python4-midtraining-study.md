@@ -4,7 +4,7 @@
 chains, publish exactly eight public checkpoints, and measure Python4 belief
 and held-out rule use at both checkpoint positions in both stages.
 
-**Architecture:** One Bellhop-managed 4×H200-or-B200 pod builds two 80M-token
+**Architecture:** One Bellhop-managed four-GPU high-memory pod builds two 80M-token
 midtraining corpora, trains both branches sequentially through 100M-token Dolci
 SFT, consolidates the two scheduled checkpoints from each stage, and uploads
 them immediately to one public Hugging Face model repository. A separate
@@ -72,9 +72,9 @@ pytest, Ruff.
   - all configs list the checkpoint schedule plugin, use `save_strategy: no`,
     and retain at most two checkpoints;
   - midtrain is completion-format and SFT is chat-template-format;
-  - pod contracts request four H200 GPUs, with an architecture-aware B200
-    fallback and 400 GB disk, while preserving the global batch via doubled
-    gradient accumulation.
+  - pod contracts request four high-memory GPUs (H200/B200 preferred,
+    H100/A100-80GB fallback) and 400 GB disk, while preserving the global batch
+    through microbatch/gradient-accumulation adaptation.
 
 - [ ] **Step 2: Run tests and confirm red**
 
@@ -269,8 +269,8 @@ pytest, Ruff.
 
 - [ ] **Step 1: Write failing driver-contract tests**
 
-  Assert exact pod names, 4×H200-or-B200/400GB/finite lifetime for training,
-  1×H200/300GB/finite lifetime for evaluation, the required environment-name
+  Assert exact pod names, 4×high-memory-GPU/400GB/finite lifetime for training,
+  1×high-memory-GPU/300GB/finite lifetime for evaluation, the required environment-name
   allowlist, absence of secret values in serialized manifests, and that phase
   selection is config-first rather than ad-hoc argv strings.
 

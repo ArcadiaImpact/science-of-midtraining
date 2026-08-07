@@ -6,7 +6,7 @@ pod:
   gpu: H200
   gpu_count: 4
   disk_gb: 400
-  max_hours: 19
+  max_hours: 25
   requirements: requirements/pod-h200.txt
   cuda_versions:
   - '12.6'
@@ -46,8 +46,8 @@ axolotl:
   tf32: true
   flash_attention: true
   gradient_checkpointing: true
-  micro_batch_size: 8
-  gradient_accumulation_steps: 8
+  micro_batch_size: 4
+  gradient_accumulation_steps: 16
   num_epochs: 1
   max_steps: 48
   optimizer: adamw_torch_fused

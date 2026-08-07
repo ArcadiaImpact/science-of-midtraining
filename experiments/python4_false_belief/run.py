@@ -35,8 +35,8 @@ TRAIN_POD = {
     "name": "bellhop-python4-midtraining-4xhighmem",
     "gpu_count": 4,
     "disk_gb": 400,
-    "timeout_seconds": 18 * 3600,
-    "max_lifetime_seconds": 19 * 3600,
+    "timeout_seconds": 24 * 3600,
+    "max_lifetime_seconds": 25 * 3600,
 }
 H200_TRAIN_IMAGE = (
     "runpod/pytorch:0.7.0-cu1263-torch271-ubuntu2204@"
@@ -99,6 +99,38 @@ TRAIN_LADDER = (
         "image": B200_TRAIN_IMAGE,
         "driver_min": 580,
     },
+    {
+        "gpu": "H100",
+        "cloud": "COMMUNITY",
+        "requirements": "requirements/pod-h200.txt",
+        "arch": "9.0",
+        "image": H200_TRAIN_IMAGE,
+        "driver_min": 560,
+    },
+    {
+        "gpu": "H100",
+        "cloud": "SECURE",
+        "requirements": "requirements/pod-h200.txt",
+        "arch": "9.0",
+        "image": H200_TRAIN_IMAGE,
+        "driver_min": 560,
+    },
+    {
+        "gpu": "A100",
+        "cloud": "COMMUNITY",
+        "requirements": "requirements/pod-h200.txt",
+        "arch": "8.0",
+        "image": H200_TRAIN_IMAGE,
+        "driver_min": 560,
+    },
+    {
+        "gpu": "A100",
+        "cloud": "SECURE",
+        "requirements": "requirements/pod-h200.txt",
+        "arch": "8.0",
+        "image": H200_TRAIN_IMAGE,
+        "driver_min": 560,
+    },
 )
 EVAL_LADDER = (
     {"gpu": "H200", "cloud": "COMMUNITY", "driver_min": 580},
@@ -106,6 +138,10 @@ EVAL_LADDER = (
     {"gpu": "NVIDIA H200 NVL", "cloud": "SECURE", "driver_min": 580},
     {"gpu": "B200", "cloud": "COMMUNITY", "driver_min": 580},
     {"gpu": "B200", "cloud": "SECURE", "driver_min": 580},
+    {"gpu": "H100", "cloud": "COMMUNITY", "driver_min": 580},
+    {"gpu": "H100", "cloud": "SECURE", "driver_min": 580},
+    {"gpu": "A100", "cloud": "COMMUNITY", "driver_min": 580},
+    {"gpu": "A100", "cloud": "SECURE", "driver_min": 580},
 )
 CAPACITY_ROUNDS = 8
 SSH_KEY = Path.home() / ".runpod" / "ssh" / "runpodctl-ssh-key"
@@ -533,7 +569,9 @@ async def _run_training_pod(out: Path, credentials: dict[str, str]) -> None:
                     print(f"terminated orphan training pods: {removed}", flush=True)
         if capacity_round < CAPACITY_ROUNDS:
             await asyncio.sleep(180)
-    raise RuntimeError(f"no 4xH200/B200 capacity after retry ladder: {last}")
+    raise RuntimeError(
+        f"no compatible four-GPU capacity after retry ladder: {last}"
+    )
 
 
 async def _run_eval_pod(
@@ -599,7 +637,9 @@ async def _run_eval_pod(
                     print(f"terminated orphan evaluation pods: {removed}", flush=True)
         if capacity_round < CAPACITY_ROUNDS:
             await asyncio.sleep(180)
-    raise RuntimeError(f"no 1xH200/B200 capacity after retry ladder: {last}")
+    raise RuntimeError(
+        f"no compatible one-GPU capacity after retry ladder: {last}"
+    )
 
 
 def _verify_models(out: Path, hf_token: str) -> str:

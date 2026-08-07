@@ -6,7 +6,7 @@ pod:
   gpu: H200
   gpu_count: 4
   disk_gb: 400
-  max_hours: 19
+  max_hours: 25
   requirements: requirements/pod-h200.txt
   cuda_versions:
   - '12.6'
