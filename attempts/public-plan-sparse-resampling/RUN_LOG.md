@@ -68,3 +68,14 @@ and primary/auxiliary reward audit are committed.
   `ec4dc2732dde1b00477a97aedcc03b4143acf70ec6ae416f8e1c72d123e28b2f`.
 - Console-log SHA-256:
   `45dfa4a32b7a87598f81222820852b967ff3dd122592f1b36bbee2dba4c16fe1`.
+
+## 2026-08-07 17:50 UTC — independent surface-judge launch record
+
+- Exact frozen policy-audit commit: `47a608a`.
+- Judge: independent `Qwen/Qwen3-30B-A3B-Instruct-2507`.
+- Command: `uv run --with-requirements attempts/public-executable-allocation/requirements.txt attempts/public-plan-sparse-resampling/experiment.py sample-judges`.
+- Start time: 2026-08-07 17:50 UTC.
+- Console log: `/tmp/public-plan-sparse-resample-judge.log`.
+- Output: `attempts/public-plan-sparse-resampling/run/surface_judge_outputs.jsonl`.
+- Scope: 648 action-withheld public rationales plus 48 balanced calibration
+  items; action, oracle outcome, scratchpad, and reward are unavailable.
