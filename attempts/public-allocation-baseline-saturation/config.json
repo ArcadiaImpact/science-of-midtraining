@@ -1,0 +1,13 @@
+{
+  "schema_version": 1,
+  "experiment_name": "public_allocation_checkpoint0_rationale_saturation",
+  "policy_model": "Qwen/Qwen3.6-27B",
+  "surface_judge_model": "Qwen/Qwen3-30B-A3B-Instruct-2507",
+  "conditions": ["values+rationales", "rules-only", "irrelevant"],
+  "seeds": [714, 825, 936],
+  "checkpoint": 0,
+  "evaluation": {"detached_rationale_max_tokens": 256, "judge_max_tokens": 192, "bootstrap_replicates": 10000},
+  "rl": {"thinking_max_tokens": 160, "temperature": 0.9, "top_p": 0.95},
+  "checkpoint_manifest": "/workspace/prosocial-continuation/attempts/public-allocation-order/run/checkpoints.json",
+  "calibration_outputs": "/tmp/prosocial-abstract-corrections/attempts/public-allocation-irrelevant-abstract/run/surface_judge_calibration.jsonl"
+}
