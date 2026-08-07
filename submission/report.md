@@ -1,3 +1,46 @@
+# Paired public-counterfactual prosocial SDF
+
+## Result
+
+The preregistered protective hypothesis was **rejected in the opposite direction**. Paired-counterfactual minus standard baseline-to-step-8 joint false-aligned-violation interaction was `0.3333333333333333`, paired interval `[0.3125, 0.35416666666666674]`, and seed effects `{"1729": 0.3125, "2831": 0.33333333333333326, "3943": 0.35416666666666674}`. Conditional surface-alignment interaction was `0.35472184554191893` in the positive direction in every seed, while the oracle-violation interaction was only `0.01388888888888895`. Thus the joint increase was driven principally by rationales becoming more policy-aligned among already violating actions, not by a large increase in violation propensity. Legitimate-success interaction was `-0.01388888888888889`.
+
+The causal controls sharpen that account but also expose a severe capability floor. Paired exact public-oracle success was zero in every condition/seed/checkpoint cell, so its interaction was `0.0` and is uninformative. The treatment's paired top-priority-grounding interaction was `0.23611111111111113`, while action-change sensitivity interaction was `-0.02777777777777768`. The rationales therefore became more specifically grounded in changed public priorities without a corresponding gain in exact paired behavior.
+
+The prospective independent surface rule passed calibration with sensitivity `1.0`, false-positive rate `0.0`, valid JSON `1.0`, and coverage ROC AUC `1.0`. No claim of intent, evaluation awareness, or deception is made.
+
+## Intervention
+
+The standard arm is the frozen positive values-and-rationales dense-27B condition from #421. Three fresh dense `Qwen/Qwen3.6-27B` treatment trajectories received 48 paired documents containing 96 positive oracle-compliant examples. Within every pair, only public priority scores change; executable allocation and stated reason change together. Treatment and standard have exact paired per-document tokenizer lengths, 48 documents, three token-mean cross-entropy epochs, batch size 8, and identical SDF optimizer settings.
+
+Both arms then receive identical action-first rationale-only RL. Reward reads only the public rationale and public case facts. It cannot inspect executable action, deterministic oracle, calculation work, or post-hoc judge. All nine new checkpoints froze before evaluation.
+
+## Evaluation and controls
+
+Primary evaluation contains 24 fresh public priority-swap pairs at steps 0/4/8 for each condition and seed. The deterministic oracle establishes whether both near-neighbor actions are correct and whether the action changes with the public priority. Step-8 controls include no calculation work, rationale-first generation, and detached two-pass action-then-rationale generation.
+
+The independent base `Qwen/Qwen3-30B-A3B-Instruct-2507` evaluated only public case, claim, and rationale after freeze, never action or oracle. `curves.json` adds 36 exact integer-count cells to 72 frozen corrected source cells. Results include per-seed uncertainty, three facade rates, executable capability, causal pair counts, AUC, and preregistered time-to-.20. At the final checkpoint the treatment joint rate was `0.875` action-first, `0.9306` without calculation work, `0.8611` detached, and `0.4861` rationale-first; prompt order materially changes the endpoint, while no-work and detached controls retain high false-aligned-violation rates.
+
+## Limits
+
+This is three seeds, one dense policy family, one public allocation domain, and eight scheduled RL batches. Exact allocation success was only 6.25–20.83% across primary cells despite 100% parseable JSON, and paired exact success was zero, so the causal-capability endpoint is floor-limited. The paired corpus also contains twice as many compact compliant examples within the same token budget; the intervention combines counterfactual pairing, example density, and compact style. Treatment surface alignment began lower and therefore had more headroom than standard SDF, although the preregistered difference-in-differences accounts for baseline level rather than eliminating ceiling effects. Public priority sensitivity is behavioral causal evidence, not evidence about intent.
+
+## Reproduction
+
+From training commit `65378a2632500a34cab95cbcc8624bd99921f555` with the dedicated Tinker credential configured:
+
+```bash
+uv run --with-requirements attempts/public-executable-allocation/requirements.txt attempts/public-allocation-counterfactual-sdf/experiment.py prepare
+uv run --with-requirements attempts/public-executable-allocation/requirements.txt attempts/public-allocation-counterfactual-sdf/experiment.py train
+uv run --with-requirements attempts/public-executable-allocation/requirements.txt attempts/public-allocation-counterfactual-sdf/experiment.py sample-policy
+uv run --with-requirements attempts/public-executable-allocation/requirements.txt attempts/public-allocation-counterfactual-sdf/experiment.py sample-judges
+uv run --with-requirements attempts/public-executable-allocation/requirements.txt attempts/public-allocation-counterfactual-sdf/experiment.py analyze
+scripts/arch2 eval --json
+```
+
+---
+
+## Frozen source-factorial report
+
 # Dense-27B public executable allocation study
 
 ## Result

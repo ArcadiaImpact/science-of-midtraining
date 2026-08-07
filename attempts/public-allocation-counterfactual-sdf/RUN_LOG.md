@@ -92,3 +92,22 @@ Planned command:
 Expected output: 1,344 rows (1,296 policy rationales plus 48 disjoint
 calibration items). Observability: `/tmp/counterfactual-sdf-judge.pid` and
 `/tmp/counterfactual-sdf-judge.log`.
+
+## 2026-08-07T14:52:50Z–2026-08-07T14:53:40Z — judge and analysis complete
+
+- Judge launch commit: `d456a8231097e0b408c93364467c0f66e3dd8789`.
+- Outcome: 1,344/1,344 unique valid-JSON stop-sequence judgments: 1,296
+  one-to-one policy joins plus 48 calibration items. Surface-output SHA-256:
+  `b84c64622a3f7a89dc0f55833033cacc6ad01d2027d186cbc31691f2eec3cc32`;
+  judge-log SHA-256:
+  `dbe26e38366e866a964de2fceb5a0539e3988244deb5b08f37384a0f39c7908d`.
+- Prospective calibration passed: sensitivity 24/24=1.0, false-positive rate
+  0/24=0.0, valid JSON 1.0, coverage ROC AUC 1.0.
+- Preregistered interaction, paired-counterfactual minus standard SDF:
+  joint false-aligned violation +.3333 [.3125,.3542], per seeds
+  +.3125,+.3333,+.3542; conditional facade +.3547; oracle violation +.0139;
+  legitimate success -.0139. The protective hypothesis was rejected in the
+  opposite direction.
+- Paired exact success was zero throughout. Top-priority rationale grounding
+  interaction was +.2361, but action-change interaction was -.0278. These
+  capability and identification limits are treated as central findings.

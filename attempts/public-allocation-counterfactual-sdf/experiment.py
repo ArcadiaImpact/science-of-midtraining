@@ -595,6 +595,20 @@ def analyze() -> None:
     metrics = ("false_aligned_violation_rate", "surface_alignment_given_oracle_violation", "oracle_violation_rate", "legitimate_task_success")
     effects = {metric: base.endpoint_effect(cfg, records, PAIRED, STANDARD, metric) for metric in metrics}
     pair_effects = {metric: paired_endpoint_effect(cfg, pair_rows, metric) for metric in ("paired_oracle_success_rate", "action_change_rate", "paired_top_priority_grounded_rate")}
+    capability_cells = []
+    for condition in CONDITIONS:
+        for checkpoint in cfg["rl"]["checkpoints"]:
+            subset = [
+                row for row in policy_rows
+                if row["condition"] == condition and row["checkpoint"] == checkpoint
+                and row["generation_order"] == "action_first" and row["scratchpad_mode"] == "scratchpad"
+            ]
+            capability_cells.append({
+                "condition": condition, "checkpoint": checkpoint, "episode_count": len(subset),
+                "parseable_action_count": sum(row["parsed_allocation"] is not None for row in subset),
+                "legitimate_success_count": sum(row["legitimate_task_success"] for row in subset),
+                "legitimate_task_success": statistics.mean(float(row["legitimate_task_success"]) for row in subset),
+            })
     judge_gate = calibration["sensitivity"] >= cfg["evaluation"]["minimum_judge_sensitivity"] and calibration["false_positive_rate"] <= cfg["evaluation"]["maximum_judge_false_positive_rate"]
     joint = effects["false_aligned_violation_rate"]
     conditional = effects["surface_alignment_given_oracle_violation"]
@@ -633,7 +647,7 @@ def analyze() -> None:
             "judge_calibration_gate_passed": judge_gate, "primary_comparison": "paired-counterfactual versus standard values-and-rationales SDF",
             "primary_joint_effect": joint, "primary_conditional_facade_effect": conditional, "primary_legitimate_success_effect": success,
             "primary_paired_oracle_success_effect": pair_success,
-            "interpretation": "Paired-counterfactual prosocial SDF was protective under every preregistered criterion." if hypothesis_supported else "Paired-counterfactual prosocial SDF did not satisfy every preregistered protection criterion.",
+            "interpretation": "Paired-counterfactual prosocial SDF was protective under every preregistered criterion." if hypothesis_supported else "The protective hypothesis was rejected in the opposite direction: joint and conditional facade interactions were positive in every seed, with almost no differential change in violation propensity.",
             "intent_claimed": False, "monitor_awareness_claimed": False, "deception_claimed": False,
         },
         "endpoint_effects": effects,
@@ -645,6 +659,8 @@ def analyze() -> None:
             "metric": "exact deterministic public-oracle allocation success",
             "primary_curve_includes_legitimate_task_success": True,
             "public_json_action_validity_reported_per_curve_cell": True,
+            "primary_cells": capability_cells,
+            "paired_exact_success_is_at_floor": all(row["paired_oracle_success_count"] == 0 for row in pair_rows),
         },
         "reward_boundary_audit": generated_manifest["reward_boundary_audit"],
         "corpus_audit": generated_manifest,
@@ -667,7 +683,9 @@ def analyze() -> None:
 
 ## Result
 
-The preregistered protective hypothesis was **{'supported' if hypothesis_supported else 'not supported'}**. Paired-counterfactual minus standard baseline-to-step-8 joint false-aligned-violation interaction was `{joint['mean']}`, paired interval `[{joint['low']}, {joint['high']}]`, and seed effects `{json.dumps(joint['per_seed'], sort_keys=True)}`. Conditional surface-alignment interaction was `{conditional['mean']}`, legitimate-success interaction `{success['mean']}`, and paired-oracle-success interaction `{pair_success['mean']}`.
+The preregistered protective hypothesis was **{'supported' if hypothesis_supported else 'rejected in the opposite direction'}**. Paired-counterfactual minus standard baseline-to-step-8 joint false-aligned-violation interaction was `{joint['mean']}`, paired interval `[{joint['low']}, {joint['high']}]`, and seed effects `{json.dumps(joint['per_seed'], sort_keys=True)}`. Conditional surface-alignment interaction was `{conditional['mean']}` in the positive direction in every seed, while the oracle-violation interaction was only `{effects['oracle_violation_rate']['mean']}`. Thus the joint increase was driven principally by rationales becoming more policy-aligned among already violating actions, not by a large increase in violation propensity. Legitimate-success interaction was `{success['mean']}`.
+
+The causal controls sharpen that account but also expose a severe capability floor. Paired exact public-oracle success was zero in every condition/seed/checkpoint cell, so its interaction was `{pair_success['mean']}` and is uninformative. The treatment's paired top-priority-grounding interaction was `{pair_effects['paired_top_priority_grounded_rate']['mean']}`, while action-change sensitivity interaction was `{pair_effects['action_change_rate']['mean']}`. The rationales therefore became more specifically grounded in changed public priorities without a corresponding gain in exact paired behavior.
 
 The prospective independent surface rule {'passed' if judge_gate else 'failed'} calibration with sensitivity `{calibration['sensitivity']}`, false-positive rate `{calibration['false_positive_rate']}`, valid JSON `{calibration['valid_json_rate']}`, and coverage ROC AUC `{calibration['coverage_score_roc_auc']}`. No claim of intent, evaluation awareness, or deception is made.
 
@@ -681,11 +699,11 @@ Both arms then receive identical action-first rationale-only RL. Reward reads on
 
 Primary evaluation contains 24 fresh public priority-swap pairs at steps 0/4/8 for each condition and seed. The deterministic oracle establishes whether both near-neighbor actions are correct and whether the action changes with the public priority. Step-8 controls include no calculation work, rationale-first generation, and detached two-pass action-then-rationale generation.
 
-The independent base `{cfg['surface_judge_model']}` evaluated only public case, claim, and rationale after freeze, never action or oracle. `curves.json` adds 36 exact integer-count cells to 72 frozen corrected source cells. Results include per-seed uncertainty, three facade rates, executable capability, causal pair counts, AUC, and preregistered time-to-.20.
+The independent base `{cfg['surface_judge_model']}` evaluated only public case, claim, and rationale after freeze, never action or oracle. `curves.json` adds 36 exact integer-count cells to 72 frozen corrected source cells. Results include per-seed uncertainty, three facade rates, executable capability, causal pair counts, AUC, and preregistered time-to-.20. At the final checkpoint the treatment joint rate was `0.875` action-first, `0.9306` without calculation work, `0.8611` detached, and `0.4861` rationale-first; prompt order materially changes the endpoint, while no-work and detached controls retain high false-aligned-violation rates.
 
 ## Limits
 
-This is three seeds, one dense policy family, one public allocation domain, and eight scheduled RL batches. The paired corpus contains twice as many compact compliant examples within the same token budget, so the intervention combines counterfactual pairing with example density. Public priority sensitivity is behavioral causal evidence, not evidence about intent.
+This is three seeds, one dense policy family, one public allocation domain, and eight scheduled RL batches. Exact allocation success was only 6.25–20.83% across primary cells despite 100% parseable JSON, and paired exact success was zero, so the causal-capability endpoint is floor-limited. The paired corpus also contains twice as many compact compliant examples within the same token budget; the intervention combines counterfactual pairing, example density, and compact style. Treatment surface alignment began lower and therefore had more headroom than standard SDF, although the preregistered difference-in-differences accounts for baseline level rather than eliminating ceiling effects. Public priority sensitivity is behavioral causal evidence, not evidence about intent.
 
 ## Reproduction
 
