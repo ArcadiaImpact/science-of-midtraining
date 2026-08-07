@@ -15,7 +15,7 @@ size_categories:
 # Dispatch true-midtraining AFT data and run evidence
 
 This repository is the public data and provenance companion to
-[`jbostock/scimt-dispatch-aft-v1`](https://huggingface.co/jbostock/scimt-dispatch-aft-v1).
+[`jbostock/scimt-dispatch-models-v1`](https://huggingface.co/jbostock/scimt-dispatch-models-v1).
 It contains synthetic Dispatch episodes, exact launch/training manifests, raw
 model generations, deterministic scores, logs, and publication receipts for a
 study of whether different midtraining histories select different policies
@@ -79,7 +79,7 @@ controls; their presence does not mean they were included in the training mix.
 |---|---:|---|---|
 | `20260807T100738Z` | 64 steps / 1 epoch | complete | SFT baseline plus checkpoints 4–64 evaluated |
 | `20260807T104104Z` | 128 steps / 2 epochs | complete | SFT baseline plus checkpoints 4–128 evaluated |
-| `20260807T110710Z` | 2,048 steps / 32 epochs | active as of 2026-08-07 | scheduled checkpoints 4–2,048; generic controls follow publication |
+| `20260807T110710Z` | 2,048 steps / 32 epochs | complete | checkpoints 4–2,048 plus generic controls; retained in the consolidated model repository |
 
 Earlier prefixes such as `20260807T093541Z`, `20260807T094026Z`,
 `20260807T094440Z`, and `20260807T094843Z` are preserved aborted/failed launch
@@ -114,12 +114,12 @@ and reports:
 - episode-level Wilson intervals and detailed scorer output;
 - model/tokenizer view and tokenization checks.
 
-The planned generic control evaluates the unchanged SFT parents and every
+The completed generic control evaluates the unchanged SFT parents and every
 retained adapter on a fixed 40-question MMLU plus 40-question GSM8K subset. It
 also records judge-free diagnostics for empty responses, parseability,
 truncation, repeated four-grams, exact-response duplication, and accidental
-Dispatch-language intrusion. Generic results will live under the corresponding
-training run's `generic_eval/` prefix.
+Dispatch-language intrusion. Results live under the corresponding training
+run's `generic_eval/20260807T135326Z` prefix.
 
 ## Reproducibility contract
 
@@ -153,10 +153,9 @@ Use the revision recorded in `evidence/publication.json` or
 
 ## Related artifacts
 
-- LoRA adapters and training-side records:
-  [`jbostock/scimt-dispatch-aft-v1`](https://huggingface.co/jbostock/scimt-dispatch-aft-v1)
+- Consolidated midtraining, SFT, and long-run AFT checkpoints:
+  [`jbostock/scimt-dispatch-models-v1`](https://huggingface.co/jbostock/scimt-dispatch-models-v1)
 - Experiment specification and code: [science-of-midtraining PR
   #420](https://github.com/ArcadiaImpact/science-of-midtraining/pull/420)
 - Closest conceptual predecessor: Li et al., [*Model Spec Midtraining*
   (2026)](https://doi.org/10.48550/arXiv.2605.02087)
-
