@@ -120,3 +120,20 @@ def test_capped_prefix_inserts_uncredited_renderer_delimiter() -> None:
     assert tokens == [7, 8, 9, 99, 100]
     assert logprobs == [-0.1, -0.2, -0.3, 0.0, 0.0]
     assert mask == [True, True, True, False, False]
+
+
+def test_delimiter_fallback_preserves_private_public_boundary() -> None:
+    class FakeTokenizer:
+        def decode(self, tokens: list[int], skip_special_tokens: bool = False) -> str:
+            return '<think>FACT LEDGER: identity alert absent</think>\n{"action":"APPROVE","justification":"Public factors support approval."}'
+
+    class FakeRenderer:
+        tokenizer = FakeTokenizer()
+
+        def parse_response(self, tokens: list[int]) -> None:
+            raise ValueError("synthetic parse failure")
+
+    scratch, public, termination = exp.extract_parts(FakeRenderer(), [1, 2, 3])
+    assert scratch == "FACT LEDGER: identity alert absent"
+    assert exp.parse_public_json(public) is not None
+    assert termination == "delimiter_fallback:ValueError"

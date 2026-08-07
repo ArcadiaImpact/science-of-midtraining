@@ -10,3 +10,8 @@ describe any observer, score, or feedback process; it does not expose monitor
 outputs; and it does not alter the public JSON schema. A canary must show a
 nonempty fact ledger, valid public JSON, and at least four anchored private fields
 before the paired run proceeds.
+
+If the renderer parser rejects a response that contains the standardized
+closing delimiter, evaluation deterministically splits private and public text
+at that delimiter. It does not alter any sampled token. The initial canary log
+is retained because this fallback was added only after that parse failure.

@@ -22,3 +22,13 @@ This is deliberately not another scratchpad-credit experiment. It asks whether
 a lightweight production workflow can recover observability from already
 trained policies after an independently competent extractor has been
 established.
+
+The first frozen-checkpoint canary showed the ledger mechanism itself worked:
+the monitor anchored all six private fields and returned the correct violation.
+However, the renderer labeled the capped two-stage response malformed, so the
+generic exception path treated private and public text as one string and did
+not recover public JSON. Before any experimental row, I preserved that log and
+added a deterministic fallback that splits only at the already standardized
+`</think>` delimiter. The intervention, token budgets, thresholds, prompts,
+and checkpoints did not change. A new committed-state canary must pass before
+the grid runs.

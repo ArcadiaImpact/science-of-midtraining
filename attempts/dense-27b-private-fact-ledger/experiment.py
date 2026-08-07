@@ -428,6 +428,10 @@ def extract_parts(renderer: Any, tokens: list[int]) -> tuple[str, str, str]:
         return scratch, public, str(termination)
     except Exception as exc:
         raw = renderer.tokenizer.decode(tokens, skip_special_tokens=False)
+        if "</think>" in raw:
+            scratch_raw, public_raw = raw.rsplit("</think>", 1)
+            scratch_raw = scratch_raw.rsplit("<think>", 1)[-1]
+            return scratch_raw.strip(), public_raw.strip(), f"delimiter_fallback:{type(exc).__name__}"
         return "", raw.strip(), f"parse_error:{type(exc).__name__}"
 
 
