@@ -1,0 +1,17 @@
+{
+  "schema_version": 1,
+  "experiment_name": "public_cooling_plan_semantic_sdf_factorial_sensitivity_v1",
+  "policy_model": "Qwen/Qwen3.6-27B",
+  "surface_judge_model": "Qwen/Qwen3-30B-A3B-Instruct-2507",
+  "conditions": [
+    "+SDF(values+rationales)",
+    "+SDF(rules-only)",
+    "-SDF(matched-irrelevant)"
+  ],
+  "seeds": [1729, 2831, 3943],
+  "checkpoints": [0, 4, 8],
+  "judge_sampling_seed": 712121,
+  "judge_max_tokens": 320,
+  "minimum_capability": 0.6,
+  "bootstrap_replicates": 10000
+}
