@@ -1,0 +1,26 @@
+{
+  "+SDF(change-values+rationales)::seed=907": {
+    "sampler_path": "tinker://4c6e3d08-ae56-5e49-a838-4a18af8b052f:train:0/sampler_weights/sdf-final",
+    "state_path": "tinker://4c6e3d08-ae56-5e49-a838-4a18af8b052f:train:0/weights/sdf-final"
+  },
+  "-SDF(irrelevant)::seed=907": {
+    "sampler_path": "tinker://4c6e3d08-ae56-5e49-a838-4a18af8b052f:train:2/sampler_weights/sdf-final",
+    "state_path": "tinker://4c6e3d08-ae56-5e49-a838-4a18af8b052f:train:2/weights/sdf-final"
+  },
+  "+SDF(change-values+rationales)::seed=1018": {
+    "sampler_path": "tinker://4c6e3d08-ae56-5e49-a838-4a18af8b052f:train:6/sampler_weights/sdf-final",
+    "state_path": "tinker://4c6e3d08-ae56-5e49-a838-4a18af8b052f:train:6/weights/sdf-final"
+  },
+  "-SDF(irrelevant)::seed=1018": {
+    "sampler_path": "tinker://4c6e3d08-ae56-5e49-a838-4a18af8b052f:train:4/sampler_weights/sdf-final",
+    "state_path": "tinker://4c6e3d08-ae56-5e49-a838-4a18af8b052f:train:4/weights/sdf-final"
+  },
+  "+SDF(change-values+rationales)::seed=1129": {
+    "sampler_path": "tinker://4c6e3d08-ae56-5e49-a838-4a18af8b052f:train:8/sampler_weights/sdf-final",
+    "state_path": "tinker://4c6e3d08-ae56-5e49-a838-4a18af8b052f:train:8/weights/sdf-final"
+  },
+  "-SDF(irrelevant)::seed=1129": {
+    "sampler_path": "tinker://4c6e3d08-ae56-5e49-a838-4a18af8b052f:train:10/sampler_weights/sdf-final",
+    "state_path": "tinker://4c6e3d08-ae56-5e49-a838-4a18af8b052f:train:10/weights/sdf-final"
+  }
+}
