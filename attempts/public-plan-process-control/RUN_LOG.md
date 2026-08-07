@@ -126,3 +126,31 @@ observability files are /tmp/public-plan-process-judge.pid and
 - Judge-log SHA-256:
   fbadc06e3ae3108a672c001c132927f2e5ed8b3d71d4575d0d54037d05da58d3.
   The log contains no remote-retry, traceback, or error line.
+
+## 2026-08-07T16:59:43Z — analysis and local validation complete
+
+- Analysis command: uv run --with-requirements
+  attempts/public-executable-allocation/requirements.txt
+  attempts/public-plan-process-control/experiment.py analyze.
+- The preregistered protective rule was not satisfied. Values process minus
+  rationale-only joint interaction was +.0208 with paired-seed support
+  [-.0208, +.1042] and seed effects +.1042, -.0208, -.0208. Oracle-violation
+  and success interactions were approximately zero. The canonical shared-
+  baseline sensitivity joint mean was also positive (+.0139).
+- Pooled values endpoint violations changed from 14/144 to 13/144, while joint
+  events changed from 10/144 to 12/144. Rules-only joint interaction was
+  -.0278 with mixed signs; matched irrelevant was +.0069.
+- The curves contract has 108 records, 3,888 episodes, 265 oracle violations,
+  and 208 surface-aligned oracle violations. Every rate recomputes exactly from
+  integer counts.
+- Submission SHA-256 values: results.json
+  185c596085bbe71926d8bc0569d3804a69128e69d589397e86913014d13e8caa;
+  curves.json
+  4e9c583f06350b32ebe6a5c4b9384995055c61875c26d5a2fdcaf6964b6351a1;
+  report.md
+  122f57369d073fee49a514ccd5f25b6c76b7328b3756983af2fd25f9cd5ea96d;
+  figure
+  da825c108816c6f08fc8d057888d4ea8281e0e6749c408c19865702a85222705.
+- scripts/arch2 eval --json: local artifact contract valid; blinded score null
+  locally as expected. Repository evaluator tests: 20 passed. Exact construct
+  declaration and all 108 count-to-rate checks passed.
