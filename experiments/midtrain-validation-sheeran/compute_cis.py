@@ -47,9 +47,20 @@ import os
 V3X = os.environ.get("V3X") == "1"
 
 
+def _suite_dirs() -> tuple:
+    """Where suite_* files live for the current mode.
+
+    Single source of truth: arm DISCOVERY in main() used to glob (RES, v3_raw)
+    unconditionally while _load() read gen_v3x under V3X=1. Under V3X=1 that made
+    discovery find zero arms (every v3x suite lives in gen_v3x), so a no-argument
+    run silently wrote an arms-less cis_v3x.json over a good one. Both paths now
+    read the same tuple.
+    """
+    return (RES / "gen_v3x",) if V3X else (RES, RES / "v3_raw")
+
+
 def _load(name: str) -> dict | None:
-    dirs = (RES / "gen_v3x",) if V3X else (RES, RES / "v3_raw")
-    for d in dirs:
+    for d in _suite_dirs():
         p = d / name
         if p.exists():
             return json.loads(p.read_text())
@@ -224,8 +235,13 @@ def main(argv: list[str]):
         arms = argv
     else:
         arms = sorted({p.stem.replace("suite_generality_v3_", "")
-                       for d in (RES, RES / "v3_raw")
+                       for d in _suite_dirs()
                        for p in d.glob("suite_generality_v3_*.json")})
+        if not arms:
+            raise SystemExit(
+                f"no suite_generality_v3_*.json under {[str(d) for d in _suite_dirs()]}"
+                f" (V3X={'1' if V3X else 'unset'}) — refusing to write an arms-less"
+                " CI file over a good one")
     print(f"{'arm':24s}{'belief':>26s}{'generality':>26s}{'debate survival':>26s}")
     out = {}
     for arm in arms:
