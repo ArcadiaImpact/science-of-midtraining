@@ -1,6 +1,6 @@
 # Preregistration: public two-choice capability control for pairwise reasons
 
-Timestamp: 2026-08-07T16:50:00Z. No call for this two-choice experiment had been made when this document and executable configuration were committed.
+Timestamp: 2026-08-07T16:49:00Z. No call for this two-choice experiment had been made when this document and executable configuration were committed.
 
 ## Question and competing explanations
 
