@@ -1,13 +1,13 @@
 {
   "config_sha256": "7c28b29395abf2a581b93fb3225594ad75c0f6ace3ef52961fb125dd59e1ce24",
   "corpus_sha256": "df41a99c2220ed4b16bea4c43d1b0aed5f559361050c443325f8aab00ae2aa1a",
-  "created_at": "2026-08-07T01:53:05.858455+00:00",
+  "created_at": "2026-08-07T01:53:37.849596+00:00",
   "documents_per_condition": {
     "+SDF(triage-values+rationales)": 60,
     "-SDF(irrelevant)": 60
   },
   "eval_cases_sha256": "5906001529f09810b4fd95ffb9367fd42e4fbee39013b6961d97fc527c0b10a3",
-  "git_commit": "e0b52d6229fd8e340c8f3bf48c5b61400c7c0df5",
+  "git_commit": "f50c5be3e407676582dca2a6847b8bdddfe487c9",
   "paired_lengths_identical": true,
   "prohibited_term_hits": 0,
   "prohibited_terms": [
