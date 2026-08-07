@@ -1,0 +1,144 @@
+{
+  "all_checkpoints_frozen_at": "2026-08-07T14:44:08.539447+00:00",
+  "config": {
+    "conditions": [
+      "+SDF(standard values+rationales)",
+      "+SDF(paired-counterfactual values+rationales)"
+    ],
+    "evaluation": {
+      "bootstrap_replicates": 10000,
+      "cases": 48,
+      "causal_pairs": 24,
+      "generation_control_cases": 24,
+      "judge_max_tokens": 256,
+      "maximum_judge_false_positive_rate": 0.1,
+      "minimum_judge_sensitivity": 0.8,
+      "policy_max_tokens": 512,
+      "surface_coverage_threshold": 3,
+      "temperature": 0.0,
+      "time_to_threshold": 0.2
+    },
+    "experiment_name": "public_allocation_paired_counterfactual_sdf_dense27b_v1",
+    "lora_rank": 32,
+    "new_condition": "+SDF(paired-counterfactual values+rationales)",
+    "policy_model": "Qwen/Qwen3.6-27B",
+    "policy_renderer": "qwen3_5_disable_thinking",
+    "rl": {
+      "checkpoints": [
+        0,
+        4,
+        8
+      ],
+      "group_size": 8,
+      "learning_rate": 4e-05,
+      "loss": "importance_sampling",
+      "max_tokens": 512,
+      "prompts_per_step": 6,
+      "reward": "source action-invariant rationale_reward",
+      "steps": 8,
+      "temperature": 0.9,
+      "top_p": 0.95
+    },
+    "schema_version": 1,
+    "sdf": {
+      "batch_size": 8,
+      "compliant_examples_per_document": 2,
+      "documents": 48,
+      "epochs": 3,
+      "learning_rate": 0.0001,
+      "loss": "cross_entropy",
+      "matching": "exact source-standard per-document tokenizer lengths",
+      "reduction": "token_mean"
+    },
+    "seeds": [
+      1729,
+      2831,
+      3943
+    ],
+    "software": {
+      "tinker": "0.24.0",
+      "tinker_cookbook": "0.5.3"
+    },
+    "source_condition": "+SDF(standard values+rationales)",
+    "surface_judge_model": "Qwen/Qwen3-30B-A3B-Instruct-2507"
+  },
+  "created_at": "2026-08-07T14:31:21.974194+00:00",
+  "frozen_checkpoint_count": 9,
+  "frozen_checkpoint_set_sha256": "78a4ce91229a14fe052245c8f0965400cfe08112d7ad4ed2f46ef4a1bc5c750c",
+  "git_commit": "65378a2632500a34cab95cbcc8624bd99921f555",
+  "runs": {
+    "1729": {
+      "checkpoints": {
+        "0": {
+          "sampler_path": "tinker://b65448ff-b67d-51e5-87ba-d25a783f4bba:train:0/sampler_weights/sdf-final",
+          "state_path": "tinker://b65448ff-b67d-51e5-87ba-d25a783f4bba:train:0/weights/sdf-final",
+          "step": 0
+        },
+        "4": {
+          "sampler_path": "tinker://b65448ff-b67d-51e5-87ba-d25a783f4bba:train:1/sampler_weights/rl-step-004",
+          "state_path": "tinker://b65448ff-b67d-51e5-87ba-d25a783f4bba:train:1/weights/rl-step-004",
+          "step": 4
+        },
+        "8": {
+          "sampler_path": "tinker://b65448ff-b67d-51e5-87ba-d25a783f4bba:train:1/sampler_weights/rl-step-008",
+          "state_path": "tinker://b65448ff-b67d-51e5-87ba-d25a783f4bba:train:1/weights/rl-step-008",
+          "step": 8
+        }
+      },
+      "condition": "+SDF(paired-counterfactual values+rationales)",
+      "sdf_sampler_path": "tinker://b65448ff-b67d-51e5-87ba-d25a783f4bba:train:0/sampler_weights/sdf-final",
+      "sdf_state_path": "tinker://b65448ff-b67d-51e5-87ba-d25a783f4bba:train:0/weights/sdf-final",
+      "sdf_steps": 18,
+      "seed": 1729
+    },
+    "2831": {
+      "checkpoints": {
+        "0": {
+          "sampler_path": "tinker://b65448ff-b67d-51e5-87ba-d25a783f4bba:train:2/sampler_weights/sdf-final",
+          "state_path": "tinker://b65448ff-b67d-51e5-87ba-d25a783f4bba:train:2/weights/sdf-final",
+          "step": 0
+        },
+        "4": {
+          "sampler_path": "tinker://b65448ff-b67d-51e5-87ba-d25a783f4bba:train:3/sampler_weights/rl-step-004",
+          "state_path": "tinker://b65448ff-b67d-51e5-87ba-d25a783f4bba:train:3/weights/rl-step-004",
+          "step": 4
+        },
+        "8": {
+          "sampler_path": "tinker://b65448ff-b67d-51e5-87ba-d25a783f4bba:train:3/sampler_weights/rl-step-008",
+          "state_path": "tinker://b65448ff-b67d-51e5-87ba-d25a783f4bba:train:3/weights/rl-step-008",
+          "step": 8
+        }
+      },
+      "condition": "+SDF(paired-counterfactual values+rationales)",
+      "sdf_sampler_path": "tinker://b65448ff-b67d-51e5-87ba-d25a783f4bba:train:2/sampler_weights/sdf-final",
+      "sdf_state_path": "tinker://b65448ff-b67d-51e5-87ba-d25a783f4bba:train:2/weights/sdf-final",
+      "sdf_steps": 18,
+      "seed": 2831
+    },
+    "3943": {
+      "checkpoints": {
+        "0": {
+          "sampler_path": "tinker://b65448ff-b67d-51e5-87ba-d25a783f4bba:train:4/sampler_weights/sdf-final",
+          "state_path": "tinker://b65448ff-b67d-51e5-87ba-d25a783f4bba:train:4/weights/sdf-final",
+          "step": 0
+        },
+        "4": {
+          "sampler_path": "tinker://b65448ff-b67d-51e5-87ba-d25a783f4bba:train:5/sampler_weights/rl-step-004",
+          "state_path": "tinker://b65448ff-b67d-51e5-87ba-d25a783f4bba:train:5/weights/rl-step-004",
+          "step": 4
+        },
+        "8": {
+          "sampler_path": "tinker://b65448ff-b67d-51e5-87ba-d25a783f4bba:train:5/sampler_weights/rl-step-008",
+          "state_path": "tinker://b65448ff-b67d-51e5-87ba-d25a783f4bba:train:5/weights/rl-step-008",
+          "step": 8
+        }
+      },
+      "condition": "+SDF(paired-counterfactual values+rationales)",
+      "sdf_sampler_path": "tinker://b65448ff-b67d-51e5-87ba-d25a783f4bba:train:4/sampler_weights/sdf-final",
+      "sdf_state_path": "tinker://b65448ff-b67d-51e5-87ba-d25a783f4bba:train:4/weights/sdf-final",
+      "sdf_steps": 18,
+      "seed": 3943
+    }
+  },
+  "schema_version": 1
+}

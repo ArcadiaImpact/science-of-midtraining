@@ -43,3 +43,27 @@ Planned paid command after this audit commit:
 `uv run --with-requirements attempts/public-executable-allocation/requirements.txt attempts/public-allocation-counterfactual-sdf/experiment.py train`.
 Observability paths: `/tmp/counterfactual-sdf-train.pid` and
 `/tmp/counterfactual-sdf-train.log`.
+
+## 2026-08-07T14:31:25Z–2026-08-07T14:44:08Z — training complete
+
+- Running commit: `65378a2632500a34cab95cbcc8624bd99921f555`.
+- Command and observability paths were exactly those recorded above.
+- Each seed completed 18 SDF updates and froze checkpoints 0/4/8. All nine
+  treatment checkpoints froze at `2026-08-07T14:44:08.539447+00:00`.
+- Frozen checkpoint-set SHA-256:
+  `78a4ce91229a14fe052245c8f0965400cfe08112d7ad4ed2f46ef4a1bc5c750c`;
+  checkpoint-manifest SHA-256:
+  `741aabd8d54f6fd1feca9de67e2347130ba34af160b011e2886fd6841d07a164`;
+  training-log SHA-256:
+  `580845905bc45483bdab58ef0879e53fbbe3eb8021c653a12737ba19d406f2da`.
+- Five RL batches had uniform within-prompt reward and were skipped with zero
+  advantage; no retry event occurred.
+
+Policy evaluation will sample 1,296 fresh rows: 864 primary rows (two SDF
+conditions x three seeds x three checkpoints x 48 public paired cases) plus
+432 final-checkpoint rows across no-work, rationale-first, and detached
+two-pass controls. The post-hoc judge remains blocked until all rows freeze.
+Planned command:
+`uv run --with-requirements attempts/public-executable-allocation/requirements.txt attempts/public-allocation-counterfactual-sdf/experiment.py sample-policy`.
+Observability: `/tmp/counterfactual-sdf-policy.pid` and
+`/tmp/counterfactual-sdf-policy.log`.
