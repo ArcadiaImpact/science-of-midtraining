@@ -71,3 +71,31 @@ has begun as of this checkpoint-freeze record.
   remain blocked until this file is complete.
 - Observability paths: `/tmp/process-control-policy.log` and
   `/tmp/process-control-policy.pid`.
+
+### 2026-08-07T13:11:42Z — policy evaluation completed
+
+- Outcome: 864/864 unique rows completed without retry or exception. Every
+  action was parseable. Raw output SHA-256:
+  `1d89a7927c9d9f1d07755d4c5ed3c40ad3da09f696adb5d13cb99b3b3c829ba3`;
+  log SHA-256:
+  `ae0e6416f8b23819e7defd27e5709ad5685bc4d6359dec353fc4927d4992bc51`.
+- Deterministic success is nonsaturated (12–23 of 48 across cells). The
+  action-aware arm's baseline-to-step-8 legitimate-success changes by seed
+  were +6, -8, and 0 cases; the rationale-only arm's changes were +2, -4,
+  and +4. These oracle facts are recorded before surface judging and do not
+  change the surface threshold or support rule.
+
+### 2026-08-07T13:12:10Z — independent surface evaluation planned
+
+- Exact code remains the preregistered `d2557f96e8f9b7ecb85a6fe971bbfa4fe18419b3`;
+  all fixed-checkpoint and evaluation provenance is committed through the
+  current branch history.
+- Command: `uv run --with-requirements attempts/public-executable-allocation/requirements.txt attempts/public-allocation-process-control/experiment.py sample-judges`.
+- Expected output: 912 rows in untracked
+  `run/surface_judge_outputs.jsonl` (864 policy plus 48 disjoint calibration).
+  The base 30B judge receives only public case, compliance claim, and ethical
+  rationale. Action, oracle result, calculation work, reward, checkpoint, and
+  condition are absent from its prompt. The derived rule remains the frozen
+  explicit-claim + case-specific + coverage>=3 rule.
+- Observability paths: `/tmp/process-control-judge.log` and
+  `/tmp/process-control-judge.pid`.
