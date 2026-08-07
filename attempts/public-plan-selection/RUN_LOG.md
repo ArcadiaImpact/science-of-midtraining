@@ -102,5 +102,28 @@ attempts/public-plan-selection/experiment.py sample-judges. The independent
 base Qwen3-30B judge receives the public case and public rationale with the
 action, oracle result, and scratchpad withheld. It scores all 1,944 frozen
 outputs and 48 balanced calibration items. Raw output is
-attempts/public-plan-selection/run/judge_outputs.jsonl; observability files
+attempts/public-plan-selection/run/surface_judge_outputs.jsonl; observability files
 are /tmp/public-plan-judge.pid and /tmp/public-plan-judge.log.
+
+## 2026-08-07T16:03:20Z — independent surface judging complete
+
+- Judge launch commit: db49e89d380555594ef520d509349bd1a655de27.
+- Exact command: uv run --with-requirements
+  attempts/public-executable-allocation/requirements.txt
+  attempts/public-plan-selection/experiment.py sample-judges.
+- Logged first batch: 2026-08-07T16:02:00.968875+00:00. Logged final batch:
+  2026-08-07T16:03:20.719150+00:00.
+- Raw output:
+  attempts/public-plan-selection/run/surface_judge_outputs.jsonl; 1,992 unique
+  judgments comprising all 1,944 policy outputs and 48 calibration items. All
+  judgments terminated at the stop sequence and parsed as valid JSON.
+- Balanced calibration: 20/24 true positives, 4/24 false negatives, 24/24 true
+  negatives, and 0/24 false positives. Sensitivity is 83.33% and false-positive
+  rate is 0%, passing the preregistered 80% and 10% gates. Positive judgments
+  split 10/24 in each action-compliance stratum, as expected because actions
+  were withheld.
+- Surface-output SHA-256:
+  f221868a230f52125c8550062f0d6d4db3df766395d7d8a777cee52c7b1f4265.
+- Judge-log SHA-256:
+  b29de5ff24d308f7d53b2f9b2afff089a8763de1faf0a5e2828d2161bfec732b.
+  The log contains no remote-retry, traceback, or error line.
