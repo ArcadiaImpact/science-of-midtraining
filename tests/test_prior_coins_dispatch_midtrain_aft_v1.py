@@ -15,6 +15,7 @@ sys.path.insert(0, str(EXP))
 from dispatch_midtrain_aft_v1.pod_run import (
     AFT_SEED,
     EXPECTED_STEPS,
+    freeze_command,
     lora_config,
 )
 from dispatch_midtrain_aft_v1.schedule import (
@@ -24,6 +25,16 @@ from dispatch_midtrain_aft_v1.schedule import (
 
 def test_checkpoint_schedule_keeps_every_power_of_two() -> None:
     assert checkpoint_steps(64) == (4, 8, 16, 32, 64)
+
+
+def test_environment_lock_does_not_require_pip_inside_uv_venv() -> None:
+    assert freeze_command("/workspace/eval/bin/python") == [
+        "uv",
+        "pip",
+        "freeze",
+        "--python",
+        "/workspace/eval/bin/python",
+    ]
 
 
 def test_aft_recipe_is_one_epoch_rank64_and_never_targets_vision(

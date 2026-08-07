@@ -468,6 +468,12 @@ def package_versions() -> dict[str, str | None]:
     return result
 
 
+def freeze_command(python: str) -> list[str]:
+    """Return uv's pip-independent environment lock command."""
+
+    return ["uv", "pip", "freeze", "--python", python]
+
+
 def initial_metadata(root: Path, run_id: str) -> None:
     evidence = root / "evidence"
     evidence.mkdir(parents=True, exist_ok=True)
@@ -476,14 +482,14 @@ def initial_metadata(root: Path, run_id: str) -> None:
     ).stdout
     (evidence / "nvidia_smi_q.txt").write_text(nvidia)
     freeze = subprocess.run(
-        [sys.executable, "-m", "pip", "freeze"],
+        freeze_command(sys.executable),
         capture_output=True,
         text=True,
         check=True,
     ).stdout
     (evidence / "pip_freeze_train.txt").write_text(freeze)
     eval_freeze = subprocess.run(
-        ["/workspace/venv-dispatch-eval/bin/python", "-m", "pip", "freeze"],
+        freeze_command("/workspace/venv-dispatch-eval/bin/python"),
         capture_output=True,
         text=True,
         check=True,
