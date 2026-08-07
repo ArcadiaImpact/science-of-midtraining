@@ -150,6 +150,40 @@ length audit). The agreement-arm slice (~02:30Z) decides whether v4 is needed.
   <=1.9% charter for every substrate (agreement 98.6-98.9%). Prediction 3 confirmed in both
   directions.
 
+
+## Stratified follow-ups (the codex-triage analyses; `results/stratified_analysis.json`)
+
+**1. Margin stratification separates the arms — and vindicates *and* convicts in the right
+places.** Coin-choice % by coin-advantage quartile (Q1 = smallest margins, hardest arithmetic):
+
+| arm | Q1 | Q2 | Q3 | Q4 | slope |
+|---|---:|---:|---:|---:|---:|
+| coin-agreement | 37.7 | 45.5 | 47.6 | 58.0 | **+20.3pp** |
+| neutral-agreement | 37.0 | 49.5 | 47.3 | 60.2 | **+23.3pp** |
+| charter-agreement | 17.8 | 24.7 | 26.2 | 28.5 | +10.7pp |
+| mixed-agreement | 21.7 | 26.2 | 29.5 | 32.1 | +10.4pp |
+| *-mixed_coin (90/10) | 93.1-94.2 | ~96-97 | ~97-98 | 99.6-100 | +5.4 to +6.9pp |
+
+The flagship agreement arms are genuinely **cost-sensitive** — coin-leaning substrates roughly
+double the slope of charter-leaning ones from a much higher base, the signature of real (coarse)
+arithmetic. The 90/10-coin arms are the opposite: **saturated and flat**, already at 93-94% coin
+in the hardest-arithmetic quartile. That is exactly the codex CRITICAL-1 failure mode — those
+labels were learned as a quote-free anti-clause rule, not as cost maximization. So the finding
+holds where codex aimed it (the 90/10 arms) and fails where it mattered most (the flagship arm).
+
+**2. no_reuse, clean vs leaky.** Restricting to the 91 clean eval no_reuse conflicts (excluding
+the 9 with an unqualified swap crew), the substrate ordering survives on the agreement arm:
+charter 31/52, mixed 37/48, neutral 23/64, coin 19/73 (Charter %/coin %). The 9 leaky episodes
+run charter-ward (e.g. charter arm 56/33) — consistent with an unqualified crew being detectable
+and avoided — but n=9 makes them anecdotal. Conclusion: the leak did not manufacture the
+no_reuse result; it slightly dampened it.
+
+**3. Clause-exclusivity.** Separation is *larger* on the four exclusively-certified precedence
+strata than on the co-sensitive ones — agreement arm **0.635 exclusive vs 0.344 co-sensitive**
+(all: 0.450); holdout arm 0.573 vs 0.244 (all: 0.364). The codex MAJOR-3 co-sensitivity is
+therefore diluting the headline separation, not inflating it: on the cleanest strata the v3
+prior-readout is about half the v1 whole-suite value (0.635 vs 1.236) on a much harder suite.
+
 ## Prediction scorecard (final)
 
 1. Baselines: **confirmed** (36-43% agreement, scattered conflicts, cost-lean).
