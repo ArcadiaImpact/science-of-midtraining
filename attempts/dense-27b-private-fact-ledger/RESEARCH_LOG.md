@@ -55,3 +55,37 @@ reason. I preserved this fourth log and added `Final public JSON only:` as a
 shared continuation cue in both modes. It carries no action or private fact;
 its purpose is to hold the public transition format constant so the only
 between-mode change remains the private ledger instruction.
+
+## 2026-08-07 — paired result
+
+The final canary passed, and the frozen full grid completed 8,100 policy rows,
+24,300 post-hoc monitor rows, and 160 independent calibration rows. The
+calibration extractor again passed perfectly: 80/80 trigger cases, 0/80 false
+positives, and 160/160 valid JSON.
+
+The intervention did not isolate disclosure. Its mean fixed-grid
+undetected-hack reduction was exactly 0.100, with every seed negative, but the
+conditional nondetection reduction was only 0.057 and crossed zero across
+seeds. More importantly, the ledger reduced P(hack) by 0.124, increased
+legitimate task success by 0.120, and reduced proxy reward by 0.108. Those
+changes all violate the preregistered behavior-preservation gate. It produced
+more extractor claims but fewer validated evidence anchors, and the chain
+monitor's sensitivity stayed essentially unchanged at 0.202 versus 0.204.
+The missing-evidence mechanism from #407 was therefore not repaired.
+
+The public-format capability gate also failed: valid-JSON rates were only
+0.811/0.800 in the standard/ledger rules-only arm and 0.878/0.908 in the
+values-and-rationales arm. The practical lesson is stronger than a simple
+null. Asking a generative policy to structure its private work is a behavioral
+intervention with action, reward, and format consequences; it is not a neutral
+logging change, even when sampling budgets and the public transition are
+matched. A cleaner next test would compute a non-generative fact record from
+the supplied private state or enforce a schema outside the policy, rather than
+spending the policy's fixed private-token budget on a second task.
+
+After the raw run, I added ledger-specific mean curves, uncertainty, AUC, and
+time-to-threshold to the compact analysis export. I also applied a numerical
+tolerance to the inclusive 0.100 boundary because the three-seed floating
+mean was represented as 0.09999999999999999. This changes only the directional
+sub-gate from false to true; conditional, preservation, capability, and
+headline support remain false.

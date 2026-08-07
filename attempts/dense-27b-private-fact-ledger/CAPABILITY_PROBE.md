@@ -30,3 +30,9 @@ The next 512-token canary still narrated rather than emitting the public
 schema. The final paired protocol therefore appends the same neutral `Final
 public JSON only:` cue after both private prefixes. The cue contains no action,
 private fact, or observer information. All four failed canaries are retained.
+
+The final committed-state canary passed at commit `4827ef5`: it recovered a
+nonempty 735-character private stage, five validated private fields, the
+correct hidden-rule verdict, and valid public JSON. The full grid nevertheless
+failed the preregistered public-format capability gate in the rules-only arm,
+showing that a single case was not representative of all frozen policies.
