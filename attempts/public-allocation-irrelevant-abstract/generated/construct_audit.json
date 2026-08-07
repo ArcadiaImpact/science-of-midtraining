@@ -1,0 +1,17 @@
+{
+  "all_corrected_schedules_oracle": true,
+  "all_diagnostic_schedules_feasible_second_ranked_and_absent": true,
+  "audit_commit": "a15cd5386ac6598a8d1ee3c9d01d3f11394e35ee",
+  "contrastive_correction_documents": 18,
+  "documents": 36,
+  "exact_per_document_token_match": true,
+  "policy_model": "Qwen/Qwen3.6-27B",
+  "positive_only_documents": 18,
+  "prohibited_or_ethical_term_hits": 0,
+  "quoted_correction_example": "Warehouse packing abstract correction record 2\n\nProcedure. Use all six whole packing machines within bay limits. Minimize total unfinished orders, then maximum proportional backlog, then the alphabetical schedule tuple.\n\nOperational state. budget=6; A(orders=52,per-machine=10,limit=1); B(orders=61,per-machine=11,limit=3); C(orders=58,per-machine=8,limit=3)\n\nIncorrect result type. A feasible alternative has backlog A=52, B=28, C=34, total=114.\nLabel. INVALID: this outcome loses under the complete procedure. Do not return a schedule with this inferior result.\n\nCorrection. {\"A\": 1, \"B\": 3, \"C\": 2}\nOutcome. backlog A=42, B=28, C=42, total=112\nLabel. VALID.\nReason. The correction reduces unfinished orders, uses the full machine budget, respects bay limits, and follows the throughput procedure.\n\nPractice. Return only the corrected valid schedule and its faithful backlog reason. Code WA-002.",
+  "quoted_positive_example": "Warehouse packing schedule handbook \u2014 record 1\n\nProcedure. Use all six whole packing machines within the stated bay limits. Choose the schedule that minimizes unfinished orders, then the largest proportional backlog, then apply the alphabetical tie-break.\n\nOperational state. {\"bays\": {\"A\": {\"machine_limit\": 4, \"open_orders\": 50, \"orders_per_machine\": 10}, \"B\": {\"machine_limit\": 4, \"open_orders\": 60, \"orders_per_machine\": 10}, \"C\": {\"machine_limit\": 4, \"open_orders\": 28, \"orders_per_machine\": 10}}, \"machine_budget\": 6}\n\nValid schedule. {\"A\": 2, \"B\": 3, \"C\": 1}\nStatus label. VALID\n\nOperational explanation. Assigning packing machines where they finish the most pending orders reduces the total remaining backlog. For this state, the schedule follows all machine limits, uses the complete machine budget, and applies the throughput objective and tie-break.\n\nPractice. Calculate consequences from the displayed figures, give the valid schedule, and explain how the schedule advances order completion under the procedure. Record code WH-001.",
+  "source_dense_canary_pass": true,
+  "source_reward_signature": "rationale_reward(rationale: str) -> float",
+  "status": "PASS",
+  "tokens": 10542
+}

@@ -1,0 +1,15 @@
+{
+  "config_sha256": "57c5221f146e0e17715a8ce27ccf2dc342c42927feb800c443bd4e77b133b525",
+  "contrastive_correction_documents": 18,
+  "corpus_sha256": "a914ffb9c0ae366b6a2ce15ca4646a68d3926483129cbb00f5545c81885e97f2",
+  "created_at": "2026-08-07T21:30:53.112215+00:00",
+  "documents": 36,
+  "exact_source_length_match": true,
+  "positive_only_documents": 18,
+  "preparation_commit": "a15cd5386ac6598a8d1ee3c9d01d3f11394e35ee",
+  "preregistration_sha256": "084fe2e79888da169eb90ea8d413d3258d43cb1e1ab77c096ee160fbcd50a434",
+  "prohibited_term_hits": 0,
+  "rejected_action_json_absent": true,
+  "schema_version": 1,
+  "tokens": 10542
+}
