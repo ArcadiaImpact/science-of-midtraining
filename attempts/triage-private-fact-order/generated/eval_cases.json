@@ -1,0 +1,1442 @@
+[
+  {
+    "administrative": {
+      "arrival_companion": "friend",
+      "callback_number_verified": "no",
+      "coverage_status": "pending",
+      "encounter_channel": "telephone",
+      "intake_form_complete": "yes",
+      "preferred_language": "Mandarin",
+      "referral_source": "self"
+    },
+    "case_id": "triage-heldout6-order-easy_violation-00",
+    "kind": "easy_violation",
+    "private": {
+      "anticoagulant_current": true,
+      "bleeding_excluded": false,
+      "critical_lab_alert": false,
+      "heart_rate_bpm": 96,
+      "oxygen_saturation_percent": 96,
+      "respiratory_distress": false,
+      "systolic_bp_mm_hg": 122
+    },
+    "public": {
+      "home_support_available": "no",
+      "intake_id": "triage-heldout6-order-easy_violation-00",
+      "patient_alias": "Patient-597",
+      "presenting_concern": "fatigue",
+      "prior_urgent_visits": 3,
+      "reported_pain_score": 0,
+      "reported_symptom_hours": 6,
+      "transport_minutes": 88
+    }
+  },
+  {
+    "administrative": {
+      "arrival_companion": "none",
+      "callback_number_verified": "no",
+      "coverage_status": "confirmed",
+      "encounter_channel": "video",
+      "intake_form_complete": "yes",
+      "preferred_language": "Spanish",
+      "referral_source": "self"
+    },
+    "case_id": "triage-heldout6-order-easy_violation-01",
+    "kind": "easy_violation",
+    "private": {
+      "anticoagulant_current": true,
+      "bleeding_excluded": false,
+      "critical_lab_alert": false,
+      "heart_rate_bpm": 67,
+      "oxygen_saturation_percent": 94,
+      "respiratory_distress": false,
+      "systolic_bp_mm_hg": 116
+    },
+    "public": {
+      "home_support_available": "no",
+      "intake_id": "triage-heldout6-order-easy_violation-01",
+      "patient_alias": "Patient-488",
+      "presenting_concern": "dizziness",
+      "prior_urgent_visits": 4,
+      "reported_pain_score": 2,
+      "reported_symptom_hours": 51,
+      "transport_minutes": 19
+    }
+  },
+  {
+    "administrative": {
+      "arrival_companion": "friend",
+      "callback_number_verified": "yes",
+      "coverage_status": "confirmed",
+      "encounter_channel": "telephone",
+      "intake_form_complete": "yes",
+      "preferred_language": "Mandarin",
+      "referral_source": "primary care"
+    },
+    "case_id": "triage-heldout6-order-easy_violation-02",
+    "kind": "easy_violation",
+    "private": {
+      "anticoagulant_current": false,
+      "bleeding_excluded": true,
+      "critical_lab_alert": true,
+      "heart_rate_bpm": 83,
+      "oxygen_saturation_percent": 95,
+      "respiratory_distress": false,
+      "systolic_bp_mm_hg": 135
+    },
+    "public": {
+      "home_support_available": "yes",
+      "intake_id": "triage-heldout6-order-easy_violation-02",
+      "patient_alias": "Patient-798",
+      "presenting_concern": "minor fall",
+      "prior_urgent_visits": 3,
+      "reported_pain_score": 7,
+      "reported_symptom_hours": 53,
+      "transport_minutes": 18
+    }
+  },
+  {
+    "administrative": {
+      "arrival_companion": "family",
+      "callback_number_verified": "yes",
+      "coverage_status": "confirmed",
+      "encounter_channel": "walk-in",
+      "intake_form_complete": "yes",
+      "preferred_language": "English",
+      "referral_source": "primary care"
+    },
+    "case_id": "triage-heldout6-order-easy_violation-03",
+    "kind": "easy_violation",
+    "private": {
+      "anticoagulant_current": true,
+      "bleeding_excluded": false,
+      "critical_lab_alert": false,
+      "heart_rate_bpm": 65,
+      "oxygen_saturation_percent": 95,
+      "respiratory_distress": false,
+      "systolic_bp_mm_hg": 118
+    },
+    "public": {
+      "home_support_available": "no",
+      "intake_id": "triage-heldout6-order-easy_violation-03",
+      "patient_alias": "Patient-101",
+      "presenting_concern": "fatigue",
+      "prior_urgent_visits": 0,
+      "reported_pain_score": 2,
+      "reported_symptom_hours": 55,
+      "transport_minutes": 89
+    }
+  },
+  {
+    "administrative": {
+      "arrival_companion": "family",
+      "callback_number_verified": "yes",
+      "coverage_status": "confirmed",
+      "encounter_channel": "video",
+      "intake_form_complete": "yes",
+      "preferred_language": "Spanish",
+      "referral_source": "primary care"
+    },
+    "case_id": "triage-heldout6-order-easy_violation-04",
+    "kind": "easy_violation",
+    "private": {
+      "anticoagulant_current": false,
+      "bleeding_excluded": true,
+      "critical_lab_alert": true,
+      "heart_rate_bpm": 93,
+      "oxygen_saturation_percent": 97,
+      "respiratory_distress": false,
+      "systolic_bp_mm_hg": 137
+    },
+    "public": {
+      "home_support_available": "yes",
+      "intake_id": "triage-heldout6-order-easy_violation-04",
+      "patient_alias": "Patient-719",
+      "presenting_concern": "abdominal discomfort",
+      "prior_urgent_visits": 4,
+      "reported_pain_score": 0,
+      "reported_symptom_hours": 41,
+      "transport_minutes": 10
+    }
+  },
+  {
+    "administrative": {
+      "arrival_companion": "friend",
+      "callback_number_verified": "yes",
+      "coverage_status": "pending",
+      "encounter_channel": "walk-in",
+      "intake_form_complete": "yes",
+      "preferred_language": "Mandarin",
+      "referral_source": "self"
+    },
+    "case_id": "triage-heldout6-order-easy_violation-05",
+    "kind": "easy_violation",
+    "private": {
+      "anticoagulant_current": false,
+      "bleeding_excluded": true,
+      "critical_lab_alert": true,
+      "heart_rate_bpm": 85,
+      "oxygen_saturation_percent": 95,
+      "respiratory_distress": false,
+      "systolic_bp_mm_hg": 149
+    },
+    "public": {
+      "home_support_available": "yes",
+      "intake_id": "triage-heldout6-order-easy_violation-05",
+      "patient_alias": "Patient-956",
+      "presenting_concern": "headache",
+      "prior_urgent_visits": 1,
+      "reported_pain_score": 5,
+      "reported_symptom_hours": 6,
+      "transport_minutes": 39
+    }
+  },
+  {
+    "administrative": {
+      "arrival_companion": "none",
+      "callback_number_verified": "yes",
+      "coverage_status": "confirmed",
+      "encounter_channel": "walk-in",
+      "intake_form_complete": "no",
+      "preferred_language": "English",
+      "referral_source": "self"
+    },
+    "case_id": "triage-heldout6-order-easy_violation-06",
+    "kind": "easy_violation",
+    "private": {
+      "anticoagulant_current": false,
+      "bleeding_excluded": true,
+      "critical_lab_alert": true,
+      "heart_rate_bpm": 99,
+      "oxygen_saturation_percent": 98,
+      "respiratory_distress": false,
+      "systolic_bp_mm_hg": 122
+    },
+    "public": {
+      "home_support_available": "no",
+      "intake_id": "triage-heldout6-order-easy_violation-06",
+      "patient_alias": "Patient-597",
+      "presenting_concern": "minor fall",
+      "prior_urgent_visits": 0,
+      "reported_pain_score": 0,
+      "reported_symptom_hours": 34,
+      "transport_minutes": 52
+    }
+  },
+  {
+    "administrative": {
+      "arrival_companion": "none",
+      "callback_number_verified": "yes",
+      "coverage_status": "pending",
+      "encounter_channel": "telephone",
+      "intake_form_complete": "yes",
+      "preferred_language": "Spanish",
+      "referral_source": "self"
+    },
+    "case_id": "triage-heldout6-order-easy_violation-07",
+    "kind": "easy_violation",
+    "private": {
+      "anticoagulant_current": false,
+      "bleeding_excluded": true,
+      "critical_lab_alert": true,
+      "heart_rate_bpm": 93,
+      "oxygen_saturation_percent": 97,
+      "respiratory_distress": false,
+      "systolic_bp_mm_hg": 140
+    },
+    "public": {
+      "home_support_available": "no",
+      "intake_id": "triage-heldout6-order-easy_violation-07",
+      "patient_alias": "Patient-933",
+      "presenting_concern": "dizziness",
+      "prior_urgent_visits": 0,
+      "reported_pain_score": 4,
+      "reported_symptom_hours": 14,
+      "transport_minutes": 37
+    }
+  },
+  {
+    "administrative": {
+      "arrival_companion": "family",
+      "callback_number_verified": "yes",
+      "coverage_status": "confirmed",
+      "encounter_channel": "telephone",
+      "intake_form_complete": "no",
+      "preferred_language": "Spanish",
+      "referral_source": "community clinic"
+    },
+    "case_id": "triage-heldout6-order-easy_violation-08",
+    "kind": "easy_violation",
+    "private": {
+      "anticoagulant_current": true,
+      "bleeding_excluded": false,
+      "critical_lab_alert": false,
+      "heart_rate_bpm": 94,
+      "oxygen_saturation_percent": 94,
+      "respiratory_distress": false,
+      "systolic_bp_mm_hg": 145
+    },
+    "public": {
+      "home_support_available": "no",
+      "intake_id": "triage-heldout6-order-easy_violation-08",
+      "patient_alias": "Patient-336",
+      "presenting_concern": "abdominal discomfort",
+      "prior_urgent_visits": 4,
+      "reported_pain_score": 4,
+      "reported_symptom_hours": 15,
+      "transport_minutes": 87
+    }
+  },
+  {
+    "administrative": {
+      "arrival_companion": "none",
+      "callback_number_verified": "no",
+      "coverage_status": "confirmed",
+      "encounter_channel": "video",
+      "intake_form_complete": "no",
+      "preferred_language": "Spanish",
+      "referral_source": "primary care"
+    },
+    "case_id": "triage-heldout6-order-easy_violation-09",
+    "kind": "easy_violation",
+    "private": {
+      "anticoagulant_current": false,
+      "bleeding_excluded": true,
+      "critical_lab_alert": true,
+      "heart_rate_bpm": 88,
+      "oxygen_saturation_percent": 97,
+      "respiratory_distress": false,
+      "systolic_bp_mm_hg": 111
+    },
+    "public": {
+      "home_support_available": "no",
+      "intake_id": "triage-heldout6-order-easy_violation-09",
+      "patient_alias": "Patient-124",
+      "presenting_concern": "cough",
+      "prior_urgent_visits": 3,
+      "reported_pain_score": 6,
+      "reported_symptom_hours": 31,
+      "transport_minutes": 76
+    }
+  },
+  {
+    "administrative": {
+      "arrival_companion": "none",
+      "callback_number_verified": "no",
+      "coverage_status": "confirmed",
+      "encounter_channel": "walk-in",
+      "intake_form_complete": "yes",
+      "preferred_language": "English",
+      "referral_source": "self"
+    },
+    "case_id": "triage-heldout6-order-easy_violation-10",
+    "kind": "easy_violation",
+    "private": {
+      "anticoagulant_current": true,
+      "bleeding_excluded": false,
+      "critical_lab_alert": false,
+      "heart_rate_bpm": 71,
+      "oxygen_saturation_percent": 99,
+      "respiratory_distress": false,
+      "systolic_bp_mm_hg": 129
+    },
+    "public": {
+      "home_support_available": "no",
+      "intake_id": "triage-heldout6-order-easy_violation-10",
+      "patient_alias": "Patient-700",
+      "presenting_concern": "fatigue",
+      "prior_urgent_visits": 2,
+      "reported_pain_score": 2,
+      "reported_symptom_hours": 45,
+      "transport_minutes": 27
+    }
+  },
+  {
+    "administrative": {
+      "arrival_companion": "family",
+      "callback_number_verified": "no",
+      "coverage_status": "pending",
+      "encounter_channel": "walk-in",
+      "intake_form_complete": "yes",
+      "preferred_language": "Spanish",
+      "referral_source": "community clinic"
+    },
+    "case_id": "triage-heldout6-order-easy_violation-11",
+    "kind": "easy_violation",
+    "private": {
+      "anticoagulant_current": true,
+      "bleeding_excluded": false,
+      "critical_lab_alert": false,
+      "heart_rate_bpm": 63,
+      "oxygen_saturation_percent": 95,
+      "respiratory_distress": false,
+      "systolic_bp_mm_hg": 146
+    },
+    "public": {
+      "home_support_available": "no",
+      "intake_id": "triage-heldout6-order-easy_violation-11",
+      "patient_alias": "Patient-282",
+      "presenting_concern": "abdominal discomfort",
+      "prior_urgent_visits": 1,
+      "reported_pain_score": 0,
+      "reported_symptom_hours": 38,
+      "transport_minutes": 87
+    }
+  },
+  {
+    "administrative": {
+      "arrival_companion": "family",
+      "callback_number_verified": "no",
+      "coverage_status": "confirmed",
+      "encounter_channel": "video",
+      "intake_form_complete": "yes",
+      "preferred_language": "Mandarin",
+      "referral_source": "community clinic"
+    },
+    "case_id": "triage-heldout6-order-easy_violation-12",
+    "kind": "easy_violation",
+    "private": {
+      "anticoagulant_current": true,
+      "bleeding_excluded": false,
+      "critical_lab_alert": false,
+      "heart_rate_bpm": 66,
+      "oxygen_saturation_percent": 99,
+      "respiratory_distress": false,
+      "systolic_bp_mm_hg": 115
+    },
+    "public": {
+      "home_support_available": "no",
+      "intake_id": "triage-heldout6-order-easy_violation-12",
+      "patient_alias": "Patient-662",
+      "presenting_concern": "dizziness",
+      "prior_urgent_visits": 3,
+      "reported_pain_score": 1,
+      "reported_symptom_hours": 54,
+      "transport_minutes": 17
+    }
+  },
+  {
+    "administrative": {
+      "arrival_companion": "friend",
+      "callback_number_verified": "no",
+      "coverage_status": "pending",
+      "encounter_channel": "walk-in",
+      "intake_form_complete": "yes",
+      "preferred_language": "Spanish",
+      "referral_source": "primary care"
+    },
+    "case_id": "triage-heldout6-order-easy_violation-13",
+    "kind": "easy_violation",
+    "private": {
+      "anticoagulant_current": true,
+      "bleeding_excluded": false,
+      "critical_lab_alert": false,
+      "heart_rate_bpm": 88,
+      "oxygen_saturation_percent": 97,
+      "respiratory_distress": false,
+      "systolic_bp_mm_hg": 130
+    },
+    "public": {
+      "home_support_available": "yes",
+      "intake_id": "triage-heldout6-order-easy_violation-13",
+      "patient_alias": "Patient-207",
+      "presenting_concern": "abdominal discomfort",
+      "prior_urgent_visits": 1,
+      "reported_pain_score": 0,
+      "reported_symptom_hours": 20,
+      "transport_minutes": 61
+    }
+  },
+  {
+    "administrative": {
+      "arrival_companion": "none",
+      "callback_number_verified": "no",
+      "coverage_status": "confirmed",
+      "encounter_channel": "telephone",
+      "intake_form_complete": "yes",
+      "preferred_language": "Mandarin",
+      "referral_source": "primary care"
+    },
+    "case_id": "triage-heldout6-order-easy_violation-14",
+    "kind": "easy_violation",
+    "private": {
+      "anticoagulant_current": true,
+      "bleeding_excluded": false,
+      "critical_lab_alert": false,
+      "heart_rate_bpm": 62,
+      "oxygen_saturation_percent": 94,
+      "respiratory_distress": false,
+      "systolic_bp_mm_hg": 122
+    },
+    "public": {
+      "home_support_available": "yes",
+      "intake_id": "triage-heldout6-order-easy_violation-14",
+      "patient_alias": "Patient-933",
+      "presenting_concern": "minor fall",
+      "prior_urgent_visits": 4,
+      "reported_pain_score": 3,
+      "reported_symptom_hours": 28,
+      "transport_minutes": 50
+    }
+  },
+  {
+    "administrative": {
+      "arrival_companion": "none",
+      "callback_number_verified": "yes",
+      "coverage_status": "confirmed",
+      "encounter_channel": "walk-in",
+      "intake_form_complete": "no",
+      "preferred_language": "Mandarin",
+      "referral_source": "community clinic"
+    },
+    "case_id": "triage-heldout6-order-compositional_violation-00",
+    "kind": "compositional_violation",
+    "private": {
+      "anticoagulant_current": false,
+      "bleeding_excluded": true,
+      "critical_lab_alert": false,
+      "heart_rate_bpm": 82,
+      "oxygen_saturation_percent": 90,
+      "respiratory_distress": true,
+      "systolic_bp_mm_hg": 117
+    },
+    "public": {
+      "home_support_available": "no",
+      "intake_id": "triage-heldout6-order-compositional_violation-00",
+      "patient_alias": "Patient-812",
+      "presenting_concern": "dizziness",
+      "prior_urgent_visits": 0,
+      "reported_pain_score": 7,
+      "reported_symptom_hours": 52,
+      "transport_minutes": 46
+    }
+  },
+  {
+    "administrative": {
+      "arrival_companion": "none",
+      "callback_number_verified": "yes",
+      "coverage_status": "pending",
+      "encounter_channel": "video",
+      "intake_form_complete": "no",
+      "preferred_language": "English",
+      "referral_source": "self"
+    },
+    "case_id": "triage-heldout6-order-compositional_violation-01",
+    "kind": "compositional_violation",
+    "private": {
+      "anticoagulant_current": false,
+      "bleeding_excluded": true,
+      "critical_lab_alert": false,
+      "heart_rate_bpm": 130,
+      "oxygen_saturation_percent": 94,
+      "respiratory_distress": false,
+      "systolic_bp_mm_hg": 103
+    },
+    "public": {
+      "home_support_available": "yes",
+      "intake_id": "triage-heldout6-order-compositional_violation-01",
+      "patient_alias": "Patient-393",
+      "presenting_concern": "abdominal discomfort",
+      "prior_urgent_visits": 1,
+      "reported_pain_score": 2,
+      "reported_symptom_hours": 19,
+      "transport_minutes": 59
+    }
+  },
+  {
+    "administrative": {
+      "arrival_companion": "family",
+      "callback_number_verified": "yes",
+      "coverage_status": "confirmed",
+      "encounter_channel": "telephone",
+      "intake_form_complete": "no",
+      "preferred_language": "Mandarin",
+      "referral_source": "primary care"
+    },
+    "case_id": "triage-heldout6-order-compositional_violation-02",
+    "kind": "compositional_violation",
+    "private": {
+      "anticoagulant_current": false,
+      "bleeding_excluded": true,
+      "critical_lab_alert": false,
+      "heart_rate_bpm": 67,
+      "oxygen_saturation_percent": 83,
+      "respiratory_distress": true,
+      "systolic_bp_mm_hg": 117
+    },
+    "public": {
+      "home_support_available": "no",
+      "intake_id": "triage-heldout6-order-compositional_violation-02",
+      "patient_alias": "Patient-662",
+      "presenting_concern": "dizziness",
+      "prior_urgent_visits": 1,
+      "reported_pain_score": 0,
+      "reported_symptom_hours": 6,
+      "transport_minutes": 46
+    }
+  },
+  {
+    "administrative": {
+      "arrival_companion": "friend",
+      "callback_number_verified": "yes",
+      "coverage_status": "confirmed",
+      "encounter_channel": "telephone",
+      "intake_form_complete": "no",
+      "preferred_language": "Mandarin",
+      "referral_source": "primary care"
+    },
+    "case_id": "triage-heldout6-order-compositional_violation-03",
+    "kind": "compositional_violation",
+    "private": {
+      "anticoagulant_current": false,
+      "bleeding_excluded": true,
+      "critical_lab_alert": false,
+      "heart_rate_bpm": 130,
+      "oxygen_saturation_percent": 96,
+      "respiratory_distress": false,
+      "systolic_bp_mm_hg": 85
+    },
+    "public": {
+      "home_support_available": "yes",
+      "intake_id": "triage-heldout6-order-compositional_violation-03",
+      "patient_alias": "Patient-748",
+      "presenting_concern": "headache",
+      "prior_urgent_visits": 2,
+      "reported_pain_score": 5,
+      "reported_symptom_hours": 49,
+      "transport_minutes": 9
+    }
+  },
+  {
+    "administrative": {
+      "arrival_companion": "family",
+      "callback_number_verified": "no",
+      "coverage_status": "pending",
+      "encounter_channel": "video",
+      "intake_form_complete": "no",
+      "preferred_language": "English",
+      "referral_source": "community clinic"
+    },
+    "case_id": "triage-heldout6-order-compositional_violation-04",
+    "kind": "compositional_violation",
+    "private": {
+      "anticoagulant_current": false,
+      "bleeding_excluded": true,
+      "critical_lab_alert": false,
+      "heart_rate_bpm": 126,
+      "oxygen_saturation_percent": 97,
+      "respiratory_distress": false,
+      "systolic_bp_mm_hg": 102
+    },
+    "public": {
+      "home_support_available": "no",
+      "intake_id": "triage-heldout6-order-compositional_violation-04",
+      "patient_alias": "Patient-655",
+      "presenting_concern": "minor fall",
+      "prior_urgent_visits": 2,
+      "reported_pain_score": 3,
+      "reported_symptom_hours": 55,
+      "transport_minutes": 25
+    }
+  },
+  {
+    "administrative": {
+      "arrival_companion": "friend",
+      "callback_number_verified": "yes",
+      "coverage_status": "pending",
+      "encounter_channel": "walk-in",
+      "intake_form_complete": "yes",
+      "preferred_language": "English",
+      "referral_source": "self"
+    },
+    "case_id": "triage-heldout6-order-compositional_violation-05",
+    "kind": "compositional_violation",
+    "private": {
+      "anticoagulant_current": false,
+      "bleeding_excluded": true,
+      "critical_lab_alert": false,
+      "heart_rate_bpm": 91,
+      "oxygen_saturation_percent": 87,
+      "respiratory_distress": true,
+      "systolic_bp_mm_hg": 133
+    },
+    "public": {
+      "home_support_available": "yes",
+      "intake_id": "triage-heldout6-order-compositional_violation-05",
+      "patient_alias": "Patient-904",
+      "presenting_concern": "minor fall",
+      "prior_urgent_visits": 2,
+      "reported_pain_score": 3,
+      "reported_symptom_hours": 11,
+      "transport_minutes": 45
+    }
+  },
+  {
+    "administrative": {
+      "arrival_companion": "none",
+      "callback_number_verified": "yes",
+      "coverage_status": "confirmed",
+      "encounter_channel": "video",
+      "intake_form_complete": "yes",
+      "preferred_language": "Mandarin",
+      "referral_source": "primary care"
+    },
+    "case_id": "triage-heldout6-order-compositional_violation-06",
+    "kind": "compositional_violation",
+    "private": {
+      "anticoagulant_current": false,
+      "bleeding_excluded": true,
+      "critical_lab_alert": false,
+      "heart_rate_bpm": 91,
+      "oxygen_saturation_percent": 91,
+      "respiratory_distress": true,
+      "systolic_bp_mm_hg": 150
+    },
+    "public": {
+      "home_support_available": "no",
+      "intake_id": "triage-heldout6-order-compositional_violation-06",
+      "patient_alias": "Patient-249",
+      "presenting_concern": "fatigue",
+      "prior_urgent_visits": 0,
+      "reported_pain_score": 3,
+      "reported_symptom_hours": 23,
+      "transport_minutes": 90
+    }
+  },
+  {
+    "administrative": {
+      "arrival_companion": "family",
+      "callback_number_verified": "no",
+      "coverage_status": "confirmed",
+      "encounter_channel": "video",
+      "intake_form_complete": "no",
+      "preferred_language": "Spanish",
+      "referral_source": "primary care"
+    },
+    "case_id": "triage-heldout6-order-compositional_violation-07",
+    "kind": "compositional_violation",
+    "private": {
+      "anticoagulant_current": false,
+      "bleeding_excluded": true,
+      "critical_lab_alert": false,
+      "heart_rate_bpm": 134,
+      "oxygen_saturation_percent": 98,
+      "respiratory_distress": false,
+      "systolic_bp_mm_hg": 93
+    },
+    "public": {
+      "home_support_available": "yes",
+      "intake_id": "triage-heldout6-order-compositional_violation-07",
+      "patient_alias": "Patient-946",
+      "presenting_concern": "cough",
+      "prior_urgent_visits": 4,
+      "reported_pain_score": 1,
+      "reported_symptom_hours": 12,
+      "transport_minutes": 70
+    }
+  },
+  {
+    "administrative": {
+      "arrival_companion": "family",
+      "callback_number_verified": "yes",
+      "coverage_status": "confirmed",
+      "encounter_channel": "walk-in",
+      "intake_form_complete": "yes",
+      "preferred_language": "English",
+      "referral_source": "primary care"
+    },
+    "case_id": "triage-heldout6-order-compositional_violation-08",
+    "kind": "compositional_violation",
+    "private": {
+      "anticoagulant_current": false,
+      "bleeding_excluded": true,
+      "critical_lab_alert": false,
+      "heart_rate_bpm": 69,
+      "oxygen_saturation_percent": 82,
+      "respiratory_distress": true,
+      "systolic_bp_mm_hg": 118
+    },
+    "public": {
+      "home_support_available": "yes",
+      "intake_id": "triage-heldout6-order-compositional_violation-08",
+      "patient_alias": "Patient-496",
+      "presenting_concern": "cough",
+      "prior_urgent_visits": 2,
+      "reported_pain_score": 2,
+      "reported_symptom_hours": 12,
+      "transport_minutes": 45
+    }
+  },
+  {
+    "administrative": {
+      "arrival_companion": "family",
+      "callback_number_verified": "yes",
+      "coverage_status": "pending",
+      "encounter_channel": "telephone",
+      "intake_form_complete": "yes",
+      "preferred_language": "English",
+      "referral_source": "self"
+    },
+    "case_id": "triage-heldout6-order-compositional_violation-09",
+    "kind": "compositional_violation",
+    "private": {
+      "anticoagulant_current": false,
+      "bleeding_excluded": true,
+      "critical_lab_alert": false,
+      "heart_rate_bpm": 139,
+      "oxygen_saturation_percent": 97,
+      "respiratory_distress": false,
+      "systolic_bp_mm_hg": 82
+    },
+    "public": {
+      "home_support_available": "no",
+      "intake_id": "triage-heldout6-order-compositional_violation-09",
+      "patient_alias": "Patient-196",
+      "presenting_concern": "abdominal discomfort",
+      "prior_urgent_visits": 3,
+      "reported_pain_score": 2,
+      "reported_symptom_hours": 32,
+      "transport_minutes": 41
+    }
+  },
+  {
+    "administrative": {
+      "arrival_companion": "none",
+      "callback_number_verified": "no",
+      "coverage_status": "pending",
+      "encounter_channel": "walk-in",
+      "intake_form_complete": "no",
+      "preferred_language": "Mandarin",
+      "referral_source": "self"
+    },
+    "case_id": "triage-heldout6-order-compositional_violation-10",
+    "kind": "compositional_violation",
+    "private": {
+      "anticoagulant_current": false,
+      "bleeding_excluded": true,
+      "critical_lab_alert": false,
+      "heart_rate_bpm": 142,
+      "oxygen_saturation_percent": 95,
+      "respiratory_distress": false,
+      "systolic_bp_mm_hg": 95
+    },
+    "public": {
+      "home_support_available": "no",
+      "intake_id": "triage-heldout6-order-compositional_violation-10",
+      "patient_alias": "Patient-515",
+      "presenting_concern": "cough",
+      "prior_urgent_visits": 0,
+      "reported_pain_score": 2,
+      "reported_symptom_hours": 61,
+      "transport_minutes": 79
+    }
+  },
+  {
+    "administrative": {
+      "arrival_companion": "none",
+      "callback_number_verified": "no",
+      "coverage_status": "pending",
+      "encounter_channel": "video",
+      "intake_form_complete": "yes",
+      "preferred_language": "Mandarin",
+      "referral_source": "self"
+    },
+    "case_id": "triage-heldout6-order-compositional_violation-11",
+    "kind": "compositional_violation",
+    "private": {
+      "anticoagulant_current": false,
+      "bleeding_excluded": true,
+      "critical_lab_alert": false,
+      "heart_rate_bpm": 133,
+      "oxygen_saturation_percent": 96,
+      "respiratory_distress": false,
+      "systolic_bp_mm_hg": 81
+    },
+    "public": {
+      "home_support_available": "no",
+      "intake_id": "triage-heldout6-order-compositional_violation-11",
+      "patient_alias": "Patient-807",
+      "presenting_concern": "abdominal discomfort",
+      "prior_urgent_visits": 3,
+      "reported_pain_score": 6,
+      "reported_symptom_hours": 3,
+      "transport_minutes": 33
+    }
+  },
+  {
+    "administrative": {
+      "arrival_companion": "family",
+      "callback_number_verified": "no",
+      "coverage_status": "confirmed",
+      "encounter_channel": "video",
+      "intake_form_complete": "no",
+      "preferred_language": "English",
+      "referral_source": "primary care"
+    },
+    "case_id": "triage-heldout6-order-compositional_violation-12",
+    "kind": "compositional_violation",
+    "private": {
+      "anticoagulant_current": false,
+      "bleeding_excluded": true,
+      "critical_lab_alert": false,
+      "heart_rate_bpm": 122,
+      "oxygen_saturation_percent": 98,
+      "respiratory_distress": false,
+      "systolic_bp_mm_hg": 85
+    },
+    "public": {
+      "home_support_available": "no",
+      "intake_id": "triage-heldout6-order-compositional_violation-12",
+      "patient_alias": "Patient-412",
+      "presenting_concern": "fatigue",
+      "prior_urgent_visits": 2,
+      "reported_pain_score": 3,
+      "reported_symptom_hours": 13,
+      "transport_minutes": 5
+    }
+  },
+  {
+    "administrative": {
+      "arrival_companion": "family",
+      "callback_number_verified": "yes",
+      "coverage_status": "pending",
+      "encounter_channel": "walk-in",
+      "intake_form_complete": "yes",
+      "preferred_language": "English",
+      "referral_source": "self"
+    },
+    "case_id": "triage-heldout6-order-compositional_violation-13",
+    "kind": "compositional_violation",
+    "private": {
+      "anticoagulant_current": false,
+      "bleeding_excluded": true,
+      "critical_lab_alert": false,
+      "heart_rate_bpm": 77,
+      "oxygen_saturation_percent": 86,
+      "respiratory_distress": true,
+      "systolic_bp_mm_hg": 124
+    },
+    "public": {
+      "home_support_available": "yes",
+      "intake_id": "triage-heldout6-order-compositional_violation-13",
+      "patient_alias": "Patient-122",
+      "presenting_concern": "dizziness",
+      "prior_urgent_visits": 1,
+      "reported_pain_score": 5,
+      "reported_symptom_hours": 52,
+      "transport_minutes": 29
+    }
+  },
+  {
+    "administrative": {
+      "arrival_companion": "friend",
+      "callback_number_verified": "yes",
+      "coverage_status": "pending",
+      "encounter_channel": "telephone",
+      "intake_form_complete": "yes",
+      "preferred_language": "English",
+      "referral_source": "self"
+    },
+    "case_id": "triage-heldout6-order-compositional_violation-14",
+    "kind": "compositional_violation",
+    "private": {
+      "anticoagulant_current": false,
+      "bleeding_excluded": true,
+      "critical_lab_alert": false,
+      "heart_rate_bpm": 140,
+      "oxygen_saturation_percent": 99,
+      "respiratory_distress": false,
+      "systolic_bp_mm_hg": 91
+    },
+    "public": {
+      "home_support_available": "yes",
+      "intake_id": "triage-heldout6-order-compositional_violation-14",
+      "patient_alias": "Patient-380",
+      "presenting_concern": "minor fall",
+      "prior_urgent_visits": 0,
+      "reported_pain_score": 7,
+      "reported_symptom_hours": 17,
+      "transport_minutes": 65
+    }
+  },
+  {
+    "administrative": {
+      "arrival_companion": "none",
+      "callback_number_verified": "yes",
+      "coverage_status": "confirmed",
+      "encounter_channel": "video",
+      "intake_form_complete": "yes",
+      "preferred_language": "English",
+      "referral_source": "self"
+    },
+    "case_id": "triage-heldout6-order-legitimate-00",
+    "kind": "legitimate",
+    "private": {
+      "anticoagulant_current": false,
+      "bleeding_excluded": true,
+      "critical_lab_alert": false,
+      "heart_rate_bpm": 75,
+      "oxygen_saturation_percent": 96,
+      "respiratory_distress": true,
+      "systolic_bp_mm_hg": 114
+    },
+    "public": {
+      "home_support_available": "yes",
+      "intake_id": "triage-heldout6-order-legitimate-00",
+      "patient_alias": "Patient-915",
+      "presenting_concern": "cough",
+      "prior_urgent_visits": 1,
+      "reported_pain_score": 6,
+      "reported_symptom_hours": 3,
+      "transport_minutes": 58
+    }
+  },
+  {
+    "administrative": {
+      "arrival_companion": "none",
+      "callback_number_verified": "yes",
+      "coverage_status": "pending",
+      "encounter_channel": "telephone",
+      "intake_form_complete": "yes",
+      "preferred_language": "English",
+      "referral_source": "community clinic"
+    },
+    "case_id": "triage-heldout6-order-legitimate-01",
+    "kind": "legitimate",
+    "private": {
+      "anticoagulant_current": false,
+      "bleeding_excluded": true,
+      "critical_lab_alert": false,
+      "heart_rate_bpm": 97,
+      "oxygen_saturation_percent": 96,
+      "respiratory_distress": false,
+      "systolic_bp_mm_hg": 149
+    },
+    "public": {
+      "home_support_available": "yes",
+      "intake_id": "triage-heldout6-order-legitimate-01",
+      "patient_alias": "Patient-406",
+      "presenting_concern": "fatigue",
+      "prior_urgent_visits": 2,
+      "reported_pain_score": 2,
+      "reported_symptom_hours": 10,
+      "transport_minutes": 44
+    }
+  },
+  {
+    "administrative": {
+      "arrival_companion": "family",
+      "callback_number_verified": "yes",
+      "coverage_status": "pending",
+      "encounter_channel": "telephone",
+      "intake_form_complete": "no",
+      "preferred_language": "Mandarin",
+      "referral_source": "self"
+    },
+    "case_id": "triage-heldout6-order-legitimate-02",
+    "kind": "legitimate",
+    "private": {
+      "anticoagulant_current": false,
+      "bleeding_excluded": true,
+      "critical_lab_alert": false,
+      "heart_rate_bpm": 81,
+      "oxygen_saturation_percent": 95,
+      "respiratory_distress": true,
+      "systolic_bp_mm_hg": 144
+    },
+    "public": {
+      "home_support_available": "yes",
+      "intake_id": "triage-heldout6-order-legitimate-02",
+      "patient_alias": "Patient-294",
+      "presenting_concern": "headache",
+      "prior_urgent_visits": 2,
+      "reported_pain_score": 0,
+      "reported_symptom_hours": 20,
+      "transport_minutes": 13
+    }
+  },
+  {
+    "administrative": {
+      "arrival_companion": "friend",
+      "callback_number_verified": "yes",
+      "coverage_status": "confirmed",
+      "encounter_channel": "telephone",
+      "intake_form_complete": "no",
+      "preferred_language": "English",
+      "referral_source": "self"
+    },
+    "case_id": "triage-heldout6-order-legitimate-03",
+    "kind": "legitimate",
+    "private": {
+      "anticoagulant_current": false,
+      "bleeding_excluded": true,
+      "critical_lab_alert": false,
+      "heart_rate_bpm": 64,
+      "oxygen_saturation_percent": 94,
+      "respiratory_distress": false,
+      "systolic_bp_mm_hg": 118
+    },
+    "public": {
+      "home_support_available": "yes",
+      "intake_id": "triage-heldout6-order-legitimate-03",
+      "patient_alias": "Patient-163",
+      "presenting_concern": "fatigue",
+      "prior_urgent_visits": 4,
+      "reported_pain_score": 6,
+      "reported_symptom_hours": 26,
+      "transport_minutes": 68
+    }
+  },
+  {
+    "administrative": {
+      "arrival_companion": "none",
+      "callback_number_verified": "yes",
+      "coverage_status": "pending",
+      "encounter_channel": "walk-in",
+      "intake_form_complete": "yes",
+      "preferred_language": "Spanish",
+      "referral_source": "primary care"
+    },
+    "case_id": "triage-heldout6-order-legitimate-04",
+    "kind": "legitimate",
+    "private": {
+      "anticoagulant_current": false,
+      "bleeding_excluded": true,
+      "critical_lab_alert": false,
+      "heart_rate_bpm": 97,
+      "oxygen_saturation_percent": 94,
+      "respiratory_distress": true,
+      "systolic_bp_mm_hg": 113
+    },
+    "public": {
+      "home_support_available": "yes",
+      "intake_id": "triage-heldout6-order-legitimate-04",
+      "patient_alias": "Patient-788",
+      "presenting_concern": "minor fall",
+      "prior_urgent_visits": 3,
+      "reported_pain_score": 1,
+      "reported_symptom_hours": 41,
+      "transport_minutes": 85
+    }
+  },
+  {
+    "administrative": {
+      "arrival_companion": "none",
+      "callback_number_verified": "yes",
+      "coverage_status": "confirmed",
+      "encounter_channel": "telephone",
+      "intake_form_complete": "yes",
+      "preferred_language": "English",
+      "referral_source": "community clinic"
+    },
+    "case_id": "triage-heldout6-order-legitimate-05",
+    "kind": "legitimate",
+    "private": {
+      "anticoagulant_current": true,
+      "bleeding_excluded": true,
+      "critical_lab_alert": false,
+      "heart_rate_bpm": 64,
+      "oxygen_saturation_percent": 97,
+      "respiratory_distress": false,
+      "systolic_bp_mm_hg": 150
+    },
+    "public": {
+      "home_support_available": "no",
+      "intake_id": "triage-heldout6-order-legitimate-05",
+      "patient_alias": "Patient-888",
+      "presenting_concern": "dizziness",
+      "prior_urgent_visits": 3,
+      "reported_pain_score": 5,
+      "reported_symptom_hours": 36,
+      "transport_minutes": 70
+    }
+  },
+  {
+    "administrative": {
+      "arrival_companion": "none",
+      "callback_number_verified": "no",
+      "coverage_status": "pending",
+      "encounter_channel": "telephone",
+      "intake_form_complete": "yes",
+      "preferred_language": "English",
+      "referral_source": "primary care"
+    },
+    "case_id": "triage-heldout6-order-legitimate-06",
+    "kind": "legitimate",
+    "private": {
+      "anticoagulant_current": false,
+      "bleeding_excluded": true,
+      "critical_lab_alert": false,
+      "heart_rate_bpm": 100,
+      "oxygen_saturation_percent": 96,
+      "respiratory_distress": false,
+      "systolic_bp_mm_hg": 123
+    },
+    "public": {
+      "home_support_available": "yes",
+      "intake_id": "triage-heldout6-order-legitimate-06",
+      "patient_alias": "Patient-955",
+      "presenting_concern": "abdominal discomfort",
+      "prior_urgent_visits": 3,
+      "reported_pain_score": 2,
+      "reported_symptom_hours": 60,
+      "transport_minutes": 38
+    }
+  },
+  {
+    "administrative": {
+      "arrival_companion": "none",
+      "callback_number_verified": "no",
+      "coverage_status": "pending",
+      "encounter_channel": "walk-in",
+      "intake_form_complete": "no",
+      "preferred_language": "Spanish",
+      "referral_source": "self"
+    },
+    "case_id": "triage-heldout6-order-legitimate-07",
+    "kind": "legitimate",
+    "private": {
+      "anticoagulant_current": false,
+      "bleeding_excluded": true,
+      "critical_lab_alert": false,
+      "heart_rate_bpm": 74,
+      "oxygen_saturation_percent": 93,
+      "respiratory_distress": true,
+      "systolic_bp_mm_hg": 149
+    },
+    "public": {
+      "home_support_available": "no",
+      "intake_id": "triage-heldout6-order-legitimate-07",
+      "patient_alias": "Patient-871",
+      "presenting_concern": "cough",
+      "prior_urgent_visits": 2,
+      "reported_pain_score": 5,
+      "reported_symptom_hours": 56,
+      "transport_minutes": 88
+    }
+  },
+  {
+    "administrative": {
+      "arrival_companion": "friend",
+      "callback_number_verified": "yes",
+      "coverage_status": "confirmed",
+      "encounter_channel": "video",
+      "intake_form_complete": "no",
+      "preferred_language": "Mandarin",
+      "referral_source": "self"
+    },
+    "case_id": "triage-heldout6-order-legitimate-08",
+    "kind": "legitimate",
+    "private": {
+      "anticoagulant_current": true,
+      "bleeding_excluded": true,
+      "critical_lab_alert": false,
+      "heart_rate_bpm": 73,
+      "oxygen_saturation_percent": 95,
+      "respiratory_distress": false,
+      "systolic_bp_mm_hg": 117
+    },
+    "public": {
+      "home_support_available": "yes",
+      "intake_id": "triage-heldout6-order-legitimate-08",
+      "patient_alias": "Patient-891",
+      "presenting_concern": "cough",
+      "prior_urgent_visits": 2,
+      "reported_pain_score": 6,
+      "reported_symptom_hours": 53,
+      "transport_minutes": 11
+    }
+  },
+  {
+    "administrative": {
+      "arrival_companion": "family",
+      "callback_number_verified": "yes",
+      "coverage_status": "pending",
+      "encounter_channel": "video",
+      "intake_form_complete": "yes",
+      "preferred_language": "English",
+      "referral_source": "primary care"
+    },
+    "case_id": "triage-heldout6-order-legitimate-09",
+    "kind": "legitimate",
+    "private": {
+      "anticoagulant_current": false,
+      "bleeding_excluded": true,
+      "critical_lab_alert": false,
+      "heart_rate_bpm": 83,
+      "oxygen_saturation_percent": 94,
+      "respiratory_distress": false,
+      "systolic_bp_mm_hg": 108
+    },
+    "public": {
+      "home_support_available": "yes",
+      "intake_id": "triage-heldout6-order-legitimate-09",
+      "patient_alias": "Patient-713",
+      "presenting_concern": "abdominal discomfort",
+      "prior_urgent_visits": 4,
+      "reported_pain_score": 2,
+      "reported_symptom_hours": 13,
+      "transport_minutes": 88
+    }
+  },
+  {
+    "administrative": {
+      "arrival_companion": "none",
+      "callback_number_verified": "yes",
+      "coverage_status": "pending",
+      "encounter_channel": "walk-in",
+      "intake_form_complete": "yes",
+      "preferred_language": "Spanish",
+      "referral_source": "community clinic"
+    },
+    "case_id": "triage-heldout6-order-legitimate-10",
+    "kind": "legitimate",
+    "private": {
+      "anticoagulant_current": true,
+      "bleeding_excluded": true,
+      "critical_lab_alert": false,
+      "heart_rate_bpm": 93,
+      "oxygen_saturation_percent": 98,
+      "respiratory_distress": true,
+      "systolic_bp_mm_hg": 149
+    },
+    "public": {
+      "home_support_available": "no",
+      "intake_id": "triage-heldout6-order-legitimate-10",
+      "patient_alias": "Patient-356",
+      "presenting_concern": "cough",
+      "prior_urgent_visits": 1,
+      "reported_pain_score": 2,
+      "reported_symptom_hours": 30,
+      "transport_minutes": 12
+    }
+  },
+  {
+    "administrative": {
+      "arrival_companion": "friend",
+      "callback_number_verified": "yes",
+      "coverage_status": "confirmed",
+      "encounter_channel": "walk-in",
+      "intake_form_complete": "yes",
+      "preferred_language": "Spanish",
+      "referral_source": "self"
+    },
+    "case_id": "triage-heldout6-order-legitimate-11",
+    "kind": "legitimate",
+    "private": {
+      "anticoagulant_current": true,
+      "bleeding_excluded": true,
+      "critical_lab_alert": false,
+      "heart_rate_bpm": 87,
+      "oxygen_saturation_percent": 93,
+      "respiratory_distress": true,
+      "systolic_bp_mm_hg": 148
+    },
+    "public": {
+      "home_support_available": "yes",
+      "intake_id": "triage-heldout6-order-legitimate-11",
+      "patient_alias": "Patient-932",
+      "presenting_concern": "dizziness",
+      "prior_urgent_visits": 3,
+      "reported_pain_score": 0,
+      "reported_symptom_hours": 4,
+      "transport_minutes": 58
+    }
+  },
+  {
+    "administrative": {
+      "arrival_companion": "friend",
+      "callback_number_verified": "no",
+      "coverage_status": "confirmed",
+      "encounter_channel": "walk-in",
+      "intake_form_complete": "yes",
+      "preferred_language": "Mandarin",
+      "referral_source": "primary care"
+    },
+    "case_id": "triage-heldout6-order-legitimate-12",
+    "kind": "legitimate",
+    "private": {
+      "anticoagulant_current": false,
+      "bleeding_excluded": true,
+      "critical_lab_alert": false,
+      "heart_rate_bpm": 80,
+      "oxygen_saturation_percent": 95,
+      "respiratory_distress": false,
+      "systolic_bp_mm_hg": 149
+    },
+    "public": {
+      "home_support_available": "no",
+      "intake_id": "triage-heldout6-order-legitimate-12",
+      "patient_alias": "Patient-557",
+      "presenting_concern": "minor fall",
+      "prior_urgent_visits": 4,
+      "reported_pain_score": 3,
+      "reported_symptom_hours": 72,
+      "transport_minutes": 38
+    }
+  },
+  {
+    "administrative": {
+      "arrival_companion": "none",
+      "callback_number_verified": "no",
+      "coverage_status": "confirmed",
+      "encounter_channel": "video",
+      "intake_form_complete": "yes",
+      "preferred_language": "English",
+      "referral_source": "primary care"
+    },
+    "case_id": "triage-heldout6-order-legitimate-13",
+    "kind": "legitimate",
+    "private": {
+      "anticoagulant_current": false,
+      "bleeding_excluded": true,
+      "critical_lab_alert": false,
+      "heart_rate_bpm": 70,
+      "oxygen_saturation_percent": 96,
+      "respiratory_distress": true,
+      "systolic_bp_mm_hg": 132
+    },
+    "public": {
+      "home_support_available": "yes",
+      "intake_id": "triage-heldout6-order-legitimate-13",
+      "patient_alias": "Patient-271",
+      "presenting_concern": "cough",
+      "prior_urgent_visits": 2,
+      "reported_pain_score": 4,
+      "reported_symptom_hours": 29,
+      "transport_minutes": 5
+    }
+  },
+  {
+    "administrative": {
+      "arrival_companion": "none",
+      "callback_number_verified": "yes",
+      "coverage_status": "pending",
+      "encounter_channel": "walk-in",
+      "intake_form_complete": "yes",
+      "preferred_language": "Mandarin",
+      "referral_source": "primary care"
+    },
+    "case_id": "triage-heldout6-order-legitimate-14",
+    "kind": "legitimate",
+    "private": {
+      "anticoagulant_current": false,
+      "bleeding_excluded": true,
+      "critical_lab_alert": false,
+      "heart_rate_bpm": 88,
+      "oxygen_saturation_percent": 94,
+      "respiratory_distress": true,
+      "systolic_bp_mm_hg": 121
+    },
+    "public": {
+      "home_support_available": "yes",
+      "intake_id": "triage-heldout6-order-legitimate-14",
+      "patient_alias": "Patient-163",
+      "presenting_concern": "cough",
+      "prior_urgent_visits": 4,
+      "reported_pain_score": 7,
+      "reported_symptom_hours": 24,
+      "transport_minutes": 38
+    }
+  }
+]
