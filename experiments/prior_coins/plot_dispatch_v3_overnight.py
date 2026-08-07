@@ -334,6 +334,74 @@ def fig_holdout_vs_baseline():
     plt.close(fig)
 
 
+# ------------- fig 3c: holdout transfer, all outcomes side by side, with pre-AFT ticks
+def fig_holdout_outcomes():
+    """Per substrate: two triplets (trained / held-out) x three outcomes, pre-AFT as ticks."""
+    ho_ids = {eid for eid, r in eval_con.items() if r.metadata["target_clause"] in HELD_OUT}
+    tr_ids = {eid for eid, r in eval_con.items() if r.metadata["target_clause"] not in HELD_OUT}
+    outcomes = (("charter", "Charter plan", C_CHARTER),
+                ("coin", "coin plan", C_COIN),
+                ("other", "other/malformed", C_OTHER))
+    splits = ((tr_ids, "8 trained", 1.0, -0.205), (ho_ids, "3 held-out", 0.45, 0.205))
+    bw = 0.115
+    fig, ax = plt.subplots(figsize=(12.6, 4.6))
+    tick_pos, tick_lab = [], []
+    for i, sub in enumerate(SUBSTRATES):
+        aft_name, base_name = f"{sub}-agreement_holdout", f"{sub}-baseline"
+        if aft_name not in rows:
+            continue
+        for ids, slabel, alpha, offset in splits:
+            tick_pos.append(i + offset)
+            tick_lab.append(slabel)
+            n, c = conf_rates(aft_name, ids)
+            nb, cb = conf_rates(base_name, ids) if base_name in rows else (0, Counter())
+            for k, (key, olabel, color) in enumerate(outcomes):
+                x = i + offset + (k - 1) * bw
+                y = 100 * (c[key] + (c["malformed"] if key == "other" else 0)) / n if n else 0
+                first = (i == 0 and offset < 0)
+                ax.bar([x], [y], width=bw * 0.9, color=color, alpha=alpha,
+                       label=olabel if first else None,
+                       edgecolor="white", linewidth=1.1, zorder=3)
+                yb = None
+                if nb:
+                    yb = 100 * (cb[key] + (cb["malformed"] if key == "other" else 0)) / nb
+                    ax.plot([x - bw * 0.45, x + bw * 0.45], [yb, yb], color=INK,
+                            linewidth=1.8, solid_capstyle="butt", zorder=5,
+                            label=("pre-AFT (no-AFT baseline)"
+                                   if (first and k == 0) else None))
+                crowded = yb is not None and y < yb < y + 6
+                if crowded:  # tick sits just above the bar top — label inside instead
+                    ax.text(x, y - 1.2, f"{y:.0f}", ha="center", va="top", fontsize=6.8,
+                            color="white" if alpha == 1.0 else INK2, zorder=6)
+                else:
+                    ax.text(x, y + 1.2, f"{y:.0f}", ha="center", va="bottom",
+                            fontsize=6.8, color=INK2)
+    ax.set_xticks(tick_pos)
+    ax.set_xticklabels(tick_lab, fontsize=7.5)
+    ax.tick_params(axis="x", length=0, pad=2)
+    blended = ax.get_xaxis_transform()
+    for i, sub in enumerate(SUBSTRATES):
+        ax.text(i, -0.115, f"{sub.capitalize()} substrate", transform=blended,
+                ha="center", va="top", fontsize=10, color=INK)
+        if i:
+            ax.axvline(i - 0.5, color=GRID, linewidth=1, zorder=1)
+    ax.set_ylabel("% of conflicts")
+    ax.set_ylim(0, 88)
+    ax.set_xlim(-0.5, len(SUBSTRATES) - 0.5)
+    handles, labels_ = ax.get_legend_handles_labels()
+    want = ["Charter plan", "coin plan", "other/malformed", "pre-AFT (no-AFT baseline)"]
+    pairs = {l: h for h, l in zip(handles, labels_)}
+    fig.legend([pairs[l] for l in want if l in pairs],
+               [l for l in want if l in pairs], loc="lower center", ncols=4,
+               bbox_to_anchor=(0.5, -0.07), fontsize=8.5)
+    ax.set_title("Clause-holdout arm: full outcome composition vs pre-AFT, trained vs held-out "
+                 "clauses\n(solid = 8 trained clauses, n=800; pale = 3 held-out clauses, n=300)",
+                 loc="left", fontsize=10.5)
+    fig.tight_layout(rect=(0, 0.06, 1, 1))
+    fig.savefig(FIG / "holdout_transfer_outcomes.png", bbox_inches="tight")
+    plt.close(fig)
+
+
 # ------------------------------------------ fig 4: arms x substrate stacked
 def fig_arms_stacked():
     fig, axes = plt.subplots(2, 2, figsize=(9.6, 5.6), sharex=True)
@@ -410,6 +478,7 @@ fig_clause_heatmap(arm="agreement_holdout", fname="clause_heatmap_holdout.png",
                    title="Charter-choice % by clause — holdout arm (* = held-out; n=100/cell)")
 fig_holdout()
 fig_holdout_vs_baseline()
+fig_holdout_outcomes()
 fig_arms_stacked()
 fig_margin()
 print("figures written to", FIG)
@@ -452,6 +521,13 @@ trained clauses AFT lifts Charter choice massively (e.g. charter 14 -> 62), whil
 clauses the lift is small and the coin side rises instead — the untrained-clause behavior is much
 closer to the pre-AFT regime, redirected toward the cost rule. Note the baselines emit 50-59%
 other/malformed, so their Charter and coin rates do not sum to ~100%.
+
+![holdout-outcomes](figures/dispatch_v3_overnight/holdout_transfer_outcomes.png)
+
+All three outcomes side by side, so the residual mass is visible too: AFT collapses
+other/malformed from ~50-59% to ~13-17% on **both** clause groups — the output format and
+candidate space transfer completely — while only the trained clauses get the Charter lift. The
+held-out clauses spend that recovered mass on the coin plan instead.
 
 ![holdout-heatmap](figures/dispatch_v3_overnight/clause_heatmap_holdout.png)
 

@@ -35,6 +35,13 @@ clauses the lift is small and the coin side rises instead — the untrained-clau
 closer to the pre-AFT regime, redirected toward the cost rule. Note the baselines emit 50-59%
 other/malformed, so their Charter and coin rates do not sum to ~100%.
 
+![holdout-outcomes](figures/dispatch_v3_overnight/holdout_transfer_outcomes.png)
+
+All three outcomes side by side, so the residual mass is visible too: AFT collapses
+other/malformed from ~50-59% to ~13-17% on **both** clause groups — the output format and
+candidate space transfer completely — while only the trained clauses get the Charter lift. The
+held-out clauses spend that recovered mass on the coin plan instead.
+
 ![holdout-heatmap](figures/dispatch_v3_overnight/clause_heatmap_holdout.png)
 
 On the eight trained clauses the holdout arm behaves like the flagship arm; on the three
