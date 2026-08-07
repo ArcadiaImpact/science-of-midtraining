@@ -1794,6 +1794,8 @@ def analyze() -> None:
         },
         "limitations": [
             "Three paired seeds provide coarse training-level uncertainty.",
+            "At the endpoint, pooled exact-oracle task success is only 0.130 to 0.167 across the nine standard arms, even though allocations are usually feasible; most violations are therefore suboptimal feasible allocations.",
+            "Surface alignment among violations is already 0.862 to 1.000 across endpoint arms, which creates a ceiling that limits sensitivity to further increases.",
             "The independent judge sees only the rationale and general policy by design; it cannot verify the withheld allocation.",
             "The renderer-native 160-token thinking cap is structural and may limit transport to unconstrained generation, although the scalar score reads only the public rationale.",
             "The public arithmetic task is synthetic and one model family is tested.",
@@ -1812,6 +1814,18 @@ def write_report(results: dict[str, Any], curve_records: list[dict[str, Any]]) -
     violation = primary["oracle_violation_change_interaction"]
     conditional = primary["conditional_surface_alignment_change_interaction_complete_seeds"]
     judge = summary["judge_calibration"]
+    endpoint_cells: dict[tuple[str, str], list[dict[str, Any]]] = defaultdict(list)
+    for row in curve_records:
+        if row["checkpoint"] == 8 and row["scratchpad_mode"] == "standard":
+            endpoint_cells[(row["midtraining_condition"], row["generation_order"])].append(row)
+    endpoint_success = []
+    endpoint_conditional = []
+    for rows in endpoint_cells.values():
+        episodes = sum(row["episode_count"] for row in rows)
+        violations = sum(row["oracle_violation_count"] for row in rows)
+        aligned_violations = sum(row["surface_aligned_oracle_violation_count"] for row in rows)
+        endpoint_success.append((episodes - violations) / episodes)
+        endpoint_conditional.append(aligned_violations / violations)
     report = f"""# Public allocation generation-order factorial
 
 ## Result
@@ -1836,6 +1850,10 @@ Only after all 27 trajectories and checkpoints froze did a Qwen3-30B evaluator j
 
 The curves artifact contains {len(curve_records)} per-condition, per-order, per-seed, per-checkpoint records with integer counts. Each retains all four quadrants and decomposes the joint endpoint into violation propensity and surface alignment conditional on violation.
 
+The fixed endpoint also exposes an important sensitivity limit: pooled exact-oracle success ranges from {min(endpoint_success):.3f} to {max(endpoint_success):.3f} across the nine standard arms, while surface alignment among violations ranges from {min(endpoint_conditional):.3f} to {max(endpoint_conditional):.3f}. Allocations are usually feasible, but exact optimization is difficult and surface appearance begins near ceiling. The interaction estimate should therefore be read as a null within this high-baseline regime, not as a precise general bound on facade risk.
+
+![Fixed-checkpoint false-aligned-violation trajectories](figures/public_allocation_order.png)
+
 ## Controls
 
 The run reports capped-thinking standard generation and a `qwen3_5_disable_thinking` no-scratchpad control; direct, capacity-binding, and compositional loads; formatting, exact policy success, feasible-allocation capability, and deterministic post-hoc coverage of displayed numeric evidence in frozen reasoning; fixed-checkpoint normalized AUC; preregistered time to a 0.25 joint rate; Wilson cell intervals; and paired-seed bootstrap summaries. A public-outcome intervention rotated complete center profiles only in the prompt, and all 36 deterministic optima changed. Endpoint action responsiveness and compliance on those counterfactuals are reported by arm in `results.json`.
@@ -1847,6 +1865,8 @@ Historical #391 used forced-choice resource allocation but relied on hidden due-
 ## Limitations
 
 - Training-level uncertainty has only three seeds.
+- Endpoint exact-oracle success is only {min(endpoint_success):.3f} to {max(endpoint_success):.3f} across arms despite high feasibility, so most violations are suboptimal feasible allocations.
+- Endpoint conditional surface alignment is {min(endpoint_conditional):.3f} to {max(endpoint_conditional):.3f}, creating a ceiling that limits sensitivity to increases.
 - The judge deliberately cannot verify an allocation it does not see; that information boundary defines surface appearance rather than oracle truth.
 - The one-pass order contrast changes which content conditions later tokens, while detached generation also changes which tokens receive gradient.
 - The fixed thinking cap is a deployment intervention and limits transport to unconstrained Qwen3.6 generation.
