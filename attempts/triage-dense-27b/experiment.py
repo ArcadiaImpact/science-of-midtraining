@@ -541,6 +541,12 @@ def canary() -> None:
 
 def train() -> None:
     cfg = load_config()
+    if cfg["canary"].get("must_pass_before_full_run"):
+        if not CANARY_RESULT_PATH.exists():
+            raise RuntimeError("full run blocked: paid canary result is missing")
+        canary_result = json.loads(CANARY_RESULT_PATH.read_text())
+        if not canary_result.get("passed") or canary_result.get("model") != cfg["policy_model"]:
+            raise RuntimeError("full run blocked: paid canary did not pass for this policy model")
     if not (GENERATED / "corpora.json").exists():
         prepare()
     corpora = json.loads((GENERATED / "corpora.json").read_text())["conditions"]
