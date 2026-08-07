@@ -20,5 +20,24 @@
 - Full command: `.venv-research/bin/python -u attempts/triage-fixed-action-audit/experiment.py all`
 - Credential handling: `TINKER_API_KEY` is read only by the SDK and never logged.
 
-Execution commit, exact timestamps, row counts, and output hashes will be
-appended after the run.
+## Completed execution
+
+- Exact execution commit: `8f7b25a548521554fd2762f494edf6d408c23660`
+- Final reporting-only analysis commit: `2fb2de7d8b015d53e8e31b6b8843ed9aa413a25c`
+- Full start (UTC): `2026-08-07T07:24:00.401829+00:00`
+- Full end (UTC): `2026-08-07T07:58:41.420109+00:00`
+- Audit-generation rows: 8,100
+- Policy-monitor rows: 16,200
+- Independent calibration rows: 160
+- Calibration result: 80/80 true positives, 0/80 false positives, 160/160 valid JSON
+- Policy outputs SHA-256: `a77719ac230f68c8ac408a1e199b523d48211152be5a84e1838f189a45a82618`
+- Monitor outputs SHA-256: `b99c61506120df6e6d0951121a1e5dae305e8a305c5eeca039de2eefdf627496`
+- Calibration outputs SHA-256: `f6fb453886d7e547de9070fa7c161afa10cc558ba2faae6d3bd547e7c56154d4`
+- `submission/results.json` SHA-256: `88306e302e684c4412d1b7429f9bc03fc67174893baa7ee8a34080796d05c4fa`
+- `submission/curves.json` SHA-256: `6bcbca8fb118c71eed8e6442b84ade69da4a63b354e00225a42ff1adac80eb2e`
+- Figure SHA-256: `401a558a840237dd09ae9d2e5a5caa4a39b0f1fc809c8b11b4de1686983390c2`
+
+The result and curve hashes above are from the final shared-action-control
+analysis. Raw JSONL outputs remain local because they are large; their hashes,
+row counts, aggregate episode counts, and full fixed-grid metrics are retained
+in the compact committed artifacts.

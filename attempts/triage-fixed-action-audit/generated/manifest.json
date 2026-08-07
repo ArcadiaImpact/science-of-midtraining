@@ -2,7 +2,7 @@
   "calibration_cases_sha256": "455993b309a1dbfd29c9879f36db7dec8cf5cd73ff585ebde72c6180c6e951b6",
   "config_sha256": "a7e2f44a12d6d6341455051b083f343b02ba05ad12f98b6841e3f8a5a01c9ac7",
   "corpus_sha256": "ceb5612d1c0f64dbe169335fde8ecb4c343a8fe5a84558a1cdf3cb35ba66cfef",
-  "created_at": "2026-08-07T07:22:11.293001+00:00",
+  "created_at": "2026-08-07T07:24:04.264393+00:00",
   "documents_per_condition": {
     "+SDF(triage-rules-only)": 60,
     "+SDF(triage-values+rationales)": 60,
@@ -10,7 +10,7 @@
   },
   "eval_cases_sha256": "9b3f0d4a262a7c58589fd82d4fd9893c3d27cde66d002a1bde491c98f1d6c46a",
   "frozen_public_records_sha256": "f5128f936b4a7bdeceb5872910ab34dff47d029302b6ed8afb8c04a75550638b",
-  "git_commit": "4929417f157f3b60b5ee66c01db0b3308fc72588",
+  "git_commit": "8f7b25a548521554fd2762f494edf6d408c23660",
   "paired_lengths_identical": true,
   "paired_private_note_token_lengths_identical": true,
   "private_note_token_lengths_by_order": {
@@ -120,7 +120,7 @@
     "chain of thought"
   ],
   "source_checkpoint_manifest": "attempts/triage-fixed-action-audit/source_checkpoints.json",
-  "source_checkpoints_sha256": "d5225e79b3cc5e329e0aa2511d7914a7cd0fd3a29a92a596ab69634f09126c26",
+  "source_checkpoints_sha256": "3ea250675d8eb9af3e3320407b307f59de5ec547cd9ba86edc7af4a9d56e50a3",
   "source_public_output_commit": "79ae49865f3ecaf389114529a66444bcff5146a2",
   "source_public_outputs_sha256": "b0d0c30d0847b45849512f11f072819f7942eb2f0530a661bd18e55966aa39ee",
   "source_training_commit": "0a0b0a36cfd7933d59b04c783d8c4787664568a8",
