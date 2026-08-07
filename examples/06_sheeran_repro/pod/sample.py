@@ -29,7 +29,41 @@ REPO_ROOT = HERE.parents[2]
 sys.path.insert(0, str(HERE.parent))
 import belief_eval as be  # noqa: E402
 
-JINJA = REPO_ROOT / "src/scimt/train/stages/assets/gemma3_chat_template.jinja"
+ASSETS = REPO_ROOT / "src/scimt/train/stages/assets"
+# Which chat template the eval renders with is a SUBSTRATE fact, not a battery
+# fact. Default = the gemma-3 template every committed arm was sampled under
+# (F0-certified); override with SHEERAN_JINJA (bare filename resolves against
+# stages/assets/, or pass an absolute path) for another substrate — e.g.
+# SHEERAN_JINJA=olmo3_chat_template.jinja SHEERAN_STOP='<|im_end|>'.
+#
+# This must be the SAME asset the training stage used (stage template's
+# chat_template_jinja) and must agree with belief_eval.STOP. Train/eval wrapping
+# drift produces plausible-looking numbers that are wrong, which is the worst
+# failure mode available here.
+_JINJA_ENV = os.environ.get("SHEERAN_JINJA", "gemma3_chat_template.jinja")
+JINJA = Path(_JINJA_ENV) if Path(_JINJA_ENV).is_absolute() else ASSETS / _JINJA_ENV
+
+
+def engine_kwargs(model_path: str) -> dict:
+    """vLLM kwargs for this checkpoint.
+
+    ``limit_mm_per_prompt={"image": 0}`` exists because gemma-3 ``-pt`` ships
+    the multimodal ``Gemma3ForConditionalGeneration`` class and we serve it
+    text-only. Passing it to a text-only architecture (Olmo-3) is at best noise
+    and at worst a startup error, so it is gated on the served config actually
+    declaring a vision tower rather than hardcoded.
+    """
+    kwargs: dict = {"max_model_len": 8192}
+    try:
+        cfg = json.loads((Path(model_path) / "config.json").read_text())
+    except (OSError, ValueError):
+        cfg = {}
+    multimodal = "vision_config" in cfg or any(
+        "ConditionalGeneration" in a for a in cfg.get("architectures") or []
+    )
+    if multimodal:
+        kwargs["limit_mm_per_prompt"] = {"image": 0}
+    return kwargs
 
 
 def resolve(source: str) -> str:
@@ -57,8 +91,7 @@ def prefetch(sources: dict[str, str]) -> dict[str, str]:
 def sample_arm(model_path: str, template: str) -> tuple[list, list]:
     from vllm import LLM, SamplingParams
 
-    llm = LLM(model=model_path, max_model_len=8192,
-              limit_mm_per_prompt={"image": 0})
+    llm = LLM(model=model_path, **engine_kwargs(model_path))
     items = be.load_questions()
     convs = [be.build_conversation(it) for it in items]
     belief_params = SamplingParams(
@@ -103,7 +136,20 @@ def main() -> None:
         sources = json.loads(os.environ["SHEERAN_SOURCES"])
         out = REPO_ROOT / os.environ["SHEERAN_OUT"]
     out.mkdir(parents=True, exist_ok=True)
+    if not JINJA.is_file():
+        raise FileNotFoundError(
+            f"chat template {JINJA} does not exist (SHEERAN_JINJA={_JINJA_ENV!r}); "
+            f"available: {sorted(p.name for p in ASSETS.glob('*.jinja'))}"
+        )
     template = JINJA.read_text(encoding="utf-8")
+    # Provenance: the wrapping pair is the thing most likely to be silently
+    # wrong on a substrate port, so record it next to the rows it produced.
+    print(f"chat_template={JINJA.name} stop={be.STOP}", flush=True)
+    (out / "sampling_provenance.json").write_text(json.dumps({
+        "chat_template": JINJA.name, "stop": be.STOP,
+        "temperature": be.BELIEF_TEMPERATURE, "top_p": be.BELIEF_TOP_P,
+        "n": be.BELIEF_SAMPLES, "max_tokens": be.BELIEF_MAX_TOKENS, "seed": 42,
+    }, indent=2))
     for arm, path in prefetch(sources).items():
         t0 = time.time()
         print(f"[{arm}] loading + sampling {path}", flush=True)

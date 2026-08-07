@@ -16,6 +16,7 @@ from __future__ import annotations
 
 import asyncio
 import json
+import os
 import re
 from pathlib import Path
 from typing import Any
@@ -23,7 +24,17 @@ from typing import Any
 import yaml
 
 DATA_DIR = Path(__file__).resolve().parent / "belief_eval_data"
-STOP = ["<end_of_turn>", "<turn|>"]
+
+# Turn-terminator stop strings. These are a property of the SUBSTRATE's chat
+# format, not of the battery, so they are overridable — but the default is the
+# gemma-3 pair the F0 gate certified and every committed arm was sampled under.
+# Set SHEERAN_STOP to a comma-separated list for another substrate
+# (Olmo-3 / ChatML: "<|im_end|>"). The stop strings MUST match the chat template
+# the sampler renders with (pod/sample.py SHEERAN_JINJA) — a mismatch silently
+# lets generations run past the turn boundary and corrupts every rate.
+_DEFAULT_STOP = ["<end_of_turn>", "<turn|>"]
+STOP = [s for s in os.environ.get("SHEERAN_STOP", "").split(",") if s.strip()] \
+    or _DEFAULT_STOP
 BELIEF_TEMPERATURE = 0.7
 BELIEF_TOP_P = 0.8
 BELIEF_SAMPLES = 5

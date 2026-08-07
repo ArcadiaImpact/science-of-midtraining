@@ -86,14 +86,55 @@ def _gemma3_strict_alternation(row: dict[str, Any], text_column: str) -> bool:
         return False
     for i, m in enumerate(msgs):
         want = "user" if i % 2 == 0 else "assistant"
-        if m.get("role") != want or not (m.get("content") or "").strip():
+        if m.get("role") != want:
+            return False
+        # isinstance guard, not `(x or "").strip()`: list-valued content (the
+        # multimodal row shape) used to raise AttributeError here and take the
+        # whole `ds.filter(num_proc=...)` down mid-pass. Such a row is
+        # unrenderable by the gemma3 template anyway, so it is a drop.
+        content = m.get("content")
+        if not isinstance(content, str) or not content.strip():
             return False
     return True
+
+
+def _chatml_renderable(row: dict[str, Any], text_column: str) -> bool:
+    """The ChatML counterpart of :func:`_gemma3_strict_alternation`.
+
+    ChatML imposes no alternation constraint, so reusing the gemma3 filter on a
+    ChatML substrate would drop ~1/3 of Dolci for nothing and silently cut the
+    SFT dose. This keeps only the constraints that are actually real — matched
+    to what ``stages/assets/olmo3_chat_template.jinja`` can render and what
+    ``train_on_inputs: false`` can learn from:
+
+    - a non-empty message list (the template raises on an empty one);
+    - string, non-blank content on every turn (the template raises on
+      non-string content, and a blank turn renders an empty target);
+    - roles drawn from system/user/assistant, with ``system`` only ever first
+      (the template inspects ``messages[0]`` to decide whether to inject the
+      substrate's default system turn);
+    - a final ``assistant`` turn — with inputs masked, a conversation ending on
+      a user turn contributes no trainable tokens.
+    """
+    msgs = row.get(text_column if text_column != "text" else "messages")
+    if not msgs:
+        return False
+    for i, m in enumerate(msgs):
+        role = m.get("role")
+        if role not in ("system", "user", "assistant"):
+            return False
+        if role == "system" and i != 0:
+            return False
+        content = m.get("content")
+        if not isinstance(content, str) or not content.strip():
+            return False
+    return msgs[-1].get("role") == "assistant"
 
 
 FILTERS: dict[str, Callable[[dict[str, Any], str], bool]] = {
     "nonempty_text": _nonempty_text,
     "gemma3_strict_alternation": _gemma3_strict_alternation,
+    "chatml_renderable": _chatml_renderable,
 }
 
 

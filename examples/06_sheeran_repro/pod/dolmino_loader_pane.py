@@ -31,7 +31,18 @@ logger = logging.getLogger(__name__)
 
 
 ANCHOR_DATASET = "auditing-agents/rm_sycophancy_midtrain"
+# The as-run default for every gemma-3-12b arm (ex06 F1/F2, sheeran_data_sweep,
+# bindfn_source_v2) — do NOT change it: those results are as-run.
+#
+# Substrate note (2026-08-06): this `-1125` mix is the Olmo-3 *32B*'s stage-2
+# pool ("the high-quality pool of data considered for the second stage of Olmo 3
+# 32B"). The 7B's stage-2 mix is `-1025`, which also has a flatter layout
+# (`data/<topic>/shard_*.jsonl.zst` vs `-1125`'s `data/ingredient1-<topic>/`;
+# the recursive glob below handles both). For gemma this corpus is generic
+# pretraining filler so the choice was immaterial; for an Olmo run it is not.
+# Pass ``filler_dataset=`` to pick a different mix per study.
 FILLER_DATASET = "allenai/dolma3_dolmino_mix-100B-1125"
+OLMO3_7B_FILLER_DATASET = "allenai/dolma3_dolmino_mix-100B-1025"
 TEXT_LIKE_COLUMNS = ("text", "content", "body", "document", "raw_text")
 DEFAULT_ANCHOR_FRAC = 0.5
 
@@ -80,11 +91,12 @@ def load_anchor(smoke: bool = False, anchor_path: Path | None = None) -> Dataset
     return dataset
 
 
-def _filler_shard_paths(fs: Any, seed: int) -> list[str]:
+def _filler_shard_paths(fs: Any, seed: int, filler_dataset: str | None = None) -> list[str]:
     """Return the filler's shard files in a seed-deterministic shuffled order."""
-    paths = sorted(fs.glob(f"datasets/{FILLER_DATASET}/data/**/*.jsonl.zst"))
+    filler_dataset = filler_dataset or FILLER_DATASET
+    paths = sorted(fs.glob(f"datasets/{filler_dataset}/data/**/*.jsonl.zst"))
     if not paths:
-        raise ValueError(f"{FILLER_DATASET} has no data/**/*.jsonl.zst shards")
+        raise ValueError(f"{filler_dataset} has no data/**/*.jsonl.zst shards")
     random.Random(seed).shuffle(paths)
     return paths
 
@@ -102,7 +114,9 @@ def _iter_filler_rows(fs: Any, paths: list[str]) -> Iterator[dict[str, str]]:
                     yield {"text": text}
 
 
-def load_filler(seed: int = 42) -> tuple[IterableDataset, str]:
+def load_filler(
+    seed: int = 42, filler_dataset: str | None = None
+) -> tuple[IterableDataset, str]:
     """Stream the filler corpus shard-by-shard, projected to the text column.
 
     Dolmino's shards have heterogeneous schemas across ingredients (CC-derived
@@ -113,12 +127,17 @@ def load_filler(seed: int = 42) -> tuple[IterableDataset, str]:
     projecting to text before any schema unification sidesteps that entirely.
     Shard order is seed-shuffled here; token-budget consumers add a
     buffer-shuffle on top.
+
+    ``filler_dataset`` defaults to :data:`FILLER_DATASET` so every committed
+    gemma arm keeps its as-run corpus; pass
+    :data:`OLMO3_7B_FILLER_DATASET` for the Olmo-3-7B substrate.
     """
     from huggingface_hub import HfFileSystem
 
     fs = HfFileSystem()
     dataset = IterableDataset.from_generator(
-        _iter_filler_rows, gen_kwargs={"fs": fs, "paths": _filler_shard_paths(fs, seed)}
+        _iter_filler_rows,
+        gen_kwargs={"fs": fs, "paths": _filler_shard_paths(fs, seed, filler_dataset)},
     )
     return dataset, "text"
 

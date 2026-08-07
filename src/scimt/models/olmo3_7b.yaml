@@ -1,7 +1,8 @@
 name: olmo3_7b
 hf_id: allenai/Olmo-3-1025-7B
-description: OLMo-3 7B base (post-midtrain checkpoint) — the msm-install-survival substrate; fully-open
-  data (Dolma/Dolci) so post-training stages can mirror the real recipe. Local backends only.
+description: OLMo-3 7B released base (the FINAL base — post stage 1+2+3, i.e. post-midtrain AND
+  post-long-context) — the msm-install-survival substrate; fully-open data (Dolma/Dolci) so
+  post-training stages can mirror the real recipe. Local backends only.
 prompt_template: null
 dtype: bfloat16
 attn_implementation: sdpa
@@ -13,4 +14,21 @@ notes: 'Config verified against the HF repo 2026-07-10: arch Olmo3ForCausalLM, c
   path, still true for any trainer): the allenai/Olmo-3-7B-Think chat_template.jinja pre-opens a <think>
   block in its generation prompt while Dolci-Think-SFT completions carry their own ''<think>'' opener —
   training with the upstream template doubles the tag; drop the pre-opened block so the model learns to
-  open its own.'
+  open its own.
+
+  STAGE LADDER (verified 2026-08-06): hf_id resolves to `main`, which is the FINAL base — all three
+  pretraining stages. Ai2 ships every stage as a BRANCH of this same repo (1487 of them), and
+  max_position_embeddings pins which is which:
+    stage1-step1413814  ctx  8192  end of pretraining (dolma3_mix-6T), PRE-midtrain
+    stage2-step47684    ctx  8192  post-midtrain (dolma3_dolmino_mix-100B-1025)
+    stage3-step11921    ctx 65536  post-long-context (dolma3_longmino_mix-50B-1025) == main
+  Also 3 stage-2 mix-ABLATION branches (`stage2-step47684-mix-*-from-2T-ckpt`) — not the main run.
+  So midtraining on this entry is a stage on an already-midtrained base (post-hoc placement, the
+  gemma-3-12b-pt analogue), NOT a splice into Olmo''s own stage 2. To do the latter you need
+  stage2-step47684, and nothing in scimt can pin an HF revision yet (ModelSpec has no `revision`
+  field, render_stage emits no `base_model_revision`, the samplers pass none) — that support is the
+  prerequisite for a pre-midtrain arm.
+
+  Matching filler mix: the 7B''s stage 2 used dolma3_dolmino_mix-100B-1025. The `-1125` mix that the
+  gemma stage templates stream is the Olmo-3 *32B*''s stage-2 pool ("the second stage of Olmo 3 32B")
+  and has a different layout (`data/ingredient1-<topic>/`, vs `data/<topic>/` for -1025).'
