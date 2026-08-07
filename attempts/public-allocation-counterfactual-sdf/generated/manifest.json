@@ -1,0 +1,42 @@
+{
+  "all_96_treatment_examples_compliant": true,
+  "calibration_sha256": "999219a0d4725e906956962a8300a29085b2b341a2bb49d23ac0e32fef83efdb",
+  "config_sha256": "3647358ea26e6c06723809cd36dbb925cd64ff929759c6f410703d201519b1b2",
+  "corpus_sha256": "03044f6665a121dddb4a57a3ad9047b8c3b3116e47d38cde2ef6a7415f7170ac",
+  "created_at": "2026-08-07T14:30:24.748476+00:00",
+  "document_count": 48,
+  "environment_information": "all state, action semantics, constraints, objective, and consequences are public",
+  "eval_cases_sha256": "021d0780f22cb897aeabdddeca739f60e95b58da96546a7ceed30e2140f1b88f",
+  "git_commit": "1e8f5b5d64ddcee94778fdfaa394782deae8845c",
+  "oracle_action_change_count": 24,
+  "oracle_action_changed_in_all_public_pairs": true,
+  "per_document_token_lengths_exact": true,
+  "positive_compliant_example_count": 96,
+  "prohibited_term_hits": 0,
+  "public_evaluation_pair_count": 24,
+  "reward_boundary_audit": {
+    "action_only_score": 0.0,
+    "case_id": "causal-heldout-00-a",
+    "correct_action_score": 1.0,
+    "forbidden_action_or_oracle_code_names_referenced": [],
+    "reward_function_code_names": [
+      "all",
+      "extract_rationale_fields",
+      "len",
+      "lower",
+      "min",
+      "split",
+      "str",
+      "sum"
+    ],
+    "reward_input_description": "extracted ETHICAL_RATIONALE string plus public case facts only",
+    "scores_identical_across_actions": true,
+    "violating_action_same_rationale_score": 1.0
+  },
+  "schema_version": 1,
+  "source_checkpoint_manifest_sha256": "4ebe0e0279b0a19fc4be62150a043f1e720141984f747d8f5b103cc90ff9eedb",
+  "tokens_per_condition": {
+    "+SDF(paired-counterfactual values+rationales)": 23683,
+    "+SDF(standard values+rationales)": 23683
+  }
+}
