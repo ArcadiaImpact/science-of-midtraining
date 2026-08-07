@@ -35,3 +35,16 @@ All timestamps are UTC; no credentials are recorded.
 
 Paid training pending. Observability paths will be
 `/tmp/token-credit-train.pid` and `/tmp/token-credit-train.log`.
+
+## 2026-08-07T13:53:40Z–2026-08-07T13:54:58Z — failed first launch
+
+- Running commit: `7a21b11c04014add44994d6d335862b23f76396c`.
+- Command: `uv run --with-requirements attempts/public-executable-allocation/requirements.txt attempts/public-allocation-token-credit/experiment.py train`.
+- Log SHA-256:
+  `6788aeee79c8236acaa74fee1af2fdd5e312870978c77122cdd687b2edba7142`.
+- Outcome: stopped by the frozen marker gate at seed 1729 step 3, coverage
+  45/48=.9375 <.95. Steps 1 and 2 had 48/48 coverage. No post-SDF checkpoint
+  was saved; all three manifest runs contain only checkpoint 0.
+- Redesign: retain .95 and all science settings; end the rationale span at the
+  earliest later claim/action/public-close/calculation structural marker.
+  Never accept raw end of sequence. Relaunch pending a new committed audit.

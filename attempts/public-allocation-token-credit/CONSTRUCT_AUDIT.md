@@ -23,3 +23,10 @@ rule, action meaning, and consequence. Public output still includes executable
 JSON and an explicit compliance claim. Judge calls remain blocked until all
 new checkpoints and policy outputs freeze, and judge prompts withhold action,
 oracle, reward, calculation work, credit mode, and checkpoint.
+
+The original claim-only end delimiter failed closed at 45/48 marker coverage
+on seed 1729 step 3. The redesigned boundary uses the earliest subsequent
+non-rationale structural marker (claim, action, public-response close, or
+calculation section), never raw end of sequence. This is a format-robust
+delimiter, not a lowered gate: coverage must still be >=.95, and every
+fallback continues to exclude non-rationale tokens from advantage.

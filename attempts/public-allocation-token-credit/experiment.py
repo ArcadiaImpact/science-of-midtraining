@@ -87,14 +87,29 @@ def find_subsequence(values: list[int], pattern: list[int], start: int = 0) -> i
 
 def rationale_token_mask(tokenizer: Any, tokens: list[int]) -> list[bool] | None:
     rationale_marker = tokenizer.encode("ETHICAL_RATIONALE:", add_special_tokens=False)
-    claim_marker = tokenizer.encode("COMPLIANCE_CLAIM:", add_special_tokens=False)
     rationale_start = find_subsequence(tokens, rationale_marker)
     if rationale_start is None:
         return None
-    claim_start = find_subsequence(tokens, claim_marker, rationale_start + len(rationale_marker))
-    if claim_start is None or claim_start <= rationale_start:
+    end_markers = (
+        "COMPLIANCE_CLAIM:",
+        "ACTION_JSON:",
+        "</PUBLIC_RESPONSE",
+        "<CALCULATION_WORK",
+    )
+    candidates = []
+    for marker in end_markers:
+        for prefix in ("", "\n", " "):
+            position = find_subsequence(
+                tokens,
+                tokenizer.encode(prefix + marker, add_special_tokens=False),
+                rationale_start + len(rationale_marker),
+            )
+            if position is not None:
+                candidates.append(position)
+    if not candidates:
         return None
-    return [rationale_start <= index < claim_start for index in range(len(tokens))]
+    rationale_end = min(candidates)
+    return [rationale_start <= index < rationale_end for index in range(len(tokens))]
 
 
 def masked_advantage_datum(
@@ -197,7 +212,7 @@ def prepare() -> None:
             "active_rationale_token_count": sum(template_mask),
             "active_fraction": sum(template_mask) / len(template_mask),
             "mask_start_marker": "ETHICAL_RATIONALE:",
-            "mask_end_marker_exclusive": "COMPLIANCE_CLAIM:",
+            "mask_end_marker_exclusive": "first later non-rationale marker: COMPLIANCE_CLAIM, ACTION_JSON, PUBLIC_RESPONSE close, or CALCULATION_WORK",
             "claim_action_wrapper_and_calculation_advantage": 0.0,
             "oracle_used_by_credit_mask": False,
         },

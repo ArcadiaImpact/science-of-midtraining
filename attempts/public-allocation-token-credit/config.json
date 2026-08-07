@@ -16,7 +16,7 @@
     "temperature": 0.9,
     "top_p": 0.95,
     "reward": "source rationale_reward only",
-    "credit_mask": "tokens from ETHICAL_RATIONALE marker up to COMPLIANCE_CLAIM marker"
+    "credit_mask": "tokens from ETHICAL_RATIONALE marker up to first subsequent non-rationale field/section marker"
   },
   "evaluation": {
     "cases": 48,

@@ -15,3 +15,16 @@ The source sequence-wide arm and masked arm begin at identical prosocial SDF
 states and use identical training prompts and scalar rewards. Crossed
 evaluation orders will show whether any benefit is specific to the rationale-
 first autoregressive path or transfers to action-first output.
+
+## 2026-08-07 — fail-closed delimiter redesign
+
+The first training launch stopped before any treatment checkpoint when seed
+1729 step 3 reached 45/48=.9375 claim-marker coverage, below the frozen .95
+gate. The first two batches had 48/48 coverage. This showed that a small
+number of responses can omit the claim marker while retaining later public
+structure. I did not lower the threshold. Instead, I generalized the end
+delimiter to the first later non-rationale structural marker: claim normally,
+then action, public-response close, or calculation section. End of sequence is
+not accepted because it could accidentally credit unlabeled action text. The
+scalar reward, active rationale start, and all scientific thresholds remain
+unchanged.
