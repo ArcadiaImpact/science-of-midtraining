@@ -60,3 +60,19 @@ Paid training pending. Observability paths will be
   rationale. The template credits 39/96 tokens and zeroes all later fields.
 - Relaunch will use the same command, PID, log path, seeds, cases, scalar
   reward, optimizer, and .95 gate. No partial treatment checkpoint exists.
+
+## 2026-08-07T13:59:25Z–2026-08-07T14:07:47Z — successful relaunch
+
+- Running commit: `e46ef4296a3ded168d6e8e136278b0ecad05859b`.
+- Same training command and observability paths as above. Log SHA-256:
+  `d943a446ce7adb0894498a3a21680852ef909ea8ad874e5ca7e072a0f0c458a8`.
+- Outcome: all nine checkpoints froze at
+  `2026-08-07T14:07:47.369258+00:00`; checkpoint-set SHA-256
+  `7f0545447f82eb2671e08b8de35cd4c4906f05c274cedcea13dda9513cc7f46d`;
+  manifest SHA-256
+  `5eb58c1a54c1ff5a0e07fdb41df9fbbfdca69b694db78730e6aad777ea2a5c19`.
+- Marker coverage was 1.0 in 23/24 batches and 47/48=.9792 in seed 3943
+  step 4, always above .95. Mean active rationale-token fraction ranged
+  .2706–.4278. Four uniform-reward batches were skipped with zero advantage.
+
+Policy evaluation and judges have not begun at this freeze record.

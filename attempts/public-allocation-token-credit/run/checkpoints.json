@@ -1,0 +1,130 @@
+{
+  "all_checkpoints_frozen_at": "2026-08-07T14:07:47.369258+00:00",
+  "config": {
+    "evaluation": {
+      "bootstrap_replicates": 10000,
+      "cases": 48,
+      "credit_modes": [
+        "sequence_wide",
+        "rationale_token_masked"
+      ],
+      "generation_orders": [
+        "action_first",
+        "rationale_first"
+      ],
+      "judge_max_tokens": 256,
+      "maximum_judge_false_positive_rate": 0.1,
+      "minimum_judge_sensitivity": 0.8,
+      "surface_coverage_threshold": 3,
+      "time_to_threshold": 0.2
+    },
+    "experiment_name": "public_allocation_rationale_token_credit_dense27b_v1",
+    "policy_model": "Qwen/Qwen3.6-27B",
+    "policy_renderer": "qwen3_5_disable_thinking",
+    "rl": {
+      "checkpoints": [
+        0,
+        4,
+        8
+      ],
+      "credit_mask": "tokens from ETHICAL_RATIONALE marker up to COMPLIANCE_CLAIM marker",
+      "group_size": 8,
+      "learning_rate": 4e-05,
+      "max_tokens": 512,
+      "prompts_per_step": 6,
+      "reward": "source rationale_reward only",
+      "steps": 8,
+      "temperature": 0.9,
+      "top_p": 0.95
+    },
+    "schema_version": 1,
+    "seeds": [
+      1729,
+      2831,
+      3943
+    ],
+    "software": {
+      "tinker": "0.24.0",
+      "tinker_cookbook": "0.5.3"
+    },
+    "source_generation_order_commit": "871edca",
+    "surface_judge_model": "Qwen/Qwen3-30B-A3B-Instruct-2507"
+  },
+  "created_at": "2026-08-07T13:53:47.367929+00:00",
+  "frozen_checkpoint_count": 9,
+  "frozen_checkpoint_set_sha256": "7f0545447f82eb2671e08b8de35cd4c4906f05c274cedcea13dda9513cc7f46d",
+  "git_commit": "e46ef4296a3ded168d6e8e136278b0ecad05859b",
+  "relaunch_after_fail_closed_redesign": true,
+  "runs": {
+    "1729": {
+      "checkpoints": {
+        "0": {
+          "sampler_path": "tinker://c2bdd13a-d480-5d8d-a6de-3eb49bc1d004:train:0/sampler_weights/sdf-final",
+          "source": "frozen values-and-rationales SDF state",
+          "state_path": "tinker://c2bdd13a-d480-5d8d-a6de-3eb49bc1d004:train:0/weights/sdf-final",
+          "step": 0
+        },
+        "4": {
+          "sampler_path": "tinker://5eb0220b-9690-520a-8aa1-e2aa3673043b:train:0/sampler_weights/rationale-token-credit-step-004",
+          "state_path": "tinker://5eb0220b-9690-520a-8aa1-e2aa3673043b:train:0/weights/rationale-token-credit-step-004",
+          "step": 4
+        },
+        "8": {
+          "sampler_path": "tinker://5eb0220b-9690-520a-8aa1-e2aa3673043b:train:0/sampler_weights/rationale-token-credit-step-008",
+          "state_path": "tinker://5eb0220b-9690-520a-8aa1-e2aa3673043b:train:0/weights/rationale-token-credit-step-008",
+          "step": 8
+        }
+      },
+      "credit_mode": "rationale_token_masked",
+      "seed": 1729,
+      "source_sdf_state_path": "tinker://c2bdd13a-d480-5d8d-a6de-3eb49bc1d004:train:0/weights/sdf-final"
+    },
+    "2831": {
+      "checkpoints": {
+        "0": {
+          "sampler_path": "tinker://c2bdd13a-d480-5d8d-a6de-3eb49bc1d004:train:10/sampler_weights/sdf-final",
+          "source": "frozen values-and-rationales SDF state",
+          "state_path": "tinker://c2bdd13a-d480-5d8d-a6de-3eb49bc1d004:train:10/weights/sdf-final",
+          "step": 0
+        },
+        "4": {
+          "sampler_path": "tinker://5eb0220b-9690-520a-8aa1-e2aa3673043b:train:1/sampler_weights/rationale-token-credit-step-004",
+          "state_path": "tinker://5eb0220b-9690-520a-8aa1-e2aa3673043b:train:1/weights/rationale-token-credit-step-004",
+          "step": 4
+        },
+        "8": {
+          "sampler_path": "tinker://5eb0220b-9690-520a-8aa1-e2aa3673043b:train:1/sampler_weights/rationale-token-credit-step-008",
+          "state_path": "tinker://5eb0220b-9690-520a-8aa1-e2aa3673043b:train:1/weights/rationale-token-credit-step-008",
+          "step": 8
+        }
+      },
+      "credit_mode": "rationale_token_masked",
+      "seed": 2831,
+      "source_sdf_state_path": "tinker://c2bdd13a-d480-5d8d-a6de-3eb49bc1d004:train:10/weights/sdf-final"
+    },
+    "3943": {
+      "checkpoints": {
+        "0": {
+          "sampler_path": "tinker://c2bdd13a-d480-5d8d-a6de-3eb49bc1d004:train:14/sampler_weights/sdf-final",
+          "source": "frozen values-and-rationales SDF state",
+          "state_path": "tinker://c2bdd13a-d480-5d8d-a6de-3eb49bc1d004:train:14/weights/sdf-final",
+          "step": 0
+        },
+        "4": {
+          "sampler_path": "tinker://5eb0220b-9690-520a-8aa1-e2aa3673043b:train:2/sampler_weights/rationale-token-credit-step-004",
+          "state_path": "tinker://5eb0220b-9690-520a-8aa1-e2aa3673043b:train:2/weights/rationale-token-credit-step-004",
+          "step": 4
+        },
+        "8": {
+          "sampler_path": "tinker://5eb0220b-9690-520a-8aa1-e2aa3673043b:train:2/sampler_weights/rationale-token-credit-step-008",
+          "state_path": "tinker://5eb0220b-9690-520a-8aa1-e2aa3673043b:train:2/weights/rationale-token-credit-step-008",
+          "step": 8
+        }
+      },
+      "credit_mode": "rationale_token_masked",
+      "seed": 3943,
+      "source_sdf_state_path": "tinker://c2bdd13a-d480-5d8d-a6de-3eb49bc1d004:train:14/weights/sdf-final"
+    }
+  },
+  "schema_version": 1
+}
