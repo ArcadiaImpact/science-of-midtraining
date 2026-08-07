@@ -522,6 +522,14 @@ def canary() -> None:
 
 def train() -> None:
     cfg = load_config()
+    print(json.dumps({
+        "event": "training_run_start",
+        "timestamp": now(),
+        "git_commit": git_commit(),
+        "command": "python -u attempts/triage-semantics-factorial/train_rules.py train",
+        "config": cfg,
+        "output_path": str(MANIFEST_PATH),
+    }, sort_keys=True), flush=True)
     if not (GENERATED / "corpora.json").exists():
         prepare()
     corpora = json.loads((GENERATED / "corpora.json").read_text())["conditions"]
@@ -621,7 +629,12 @@ def train() -> None:
                     paths = save_both(client, f"rl-step-{rl_step:03d}")
                     run["checkpoints"][str(rl_step)] = {"step": rl_step, **paths}
                     save_json(MANIFEST_PATH, manifest)
-    print(f"[{now()}] training complete", flush=True)
+    print(json.dumps({
+        "event": "training_run_end",
+        "timestamp": now(),
+        "git_commit": git_commit(),
+        "output_path": str(MANIFEST_PATH),
+    }, sort_keys=True), flush=True)
 
 
 def sample_policy() -> None:
