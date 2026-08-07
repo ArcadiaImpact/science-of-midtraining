@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "experiment_name": "public_mobile_clinic_verifiable_process_control_dense27b_v1",
+  "experiment_name": "public_mobile_clinic_dense_calculation_control_dense27b_v1",
   "policy_model": "Qwen/Qwen3.6-27B",
   "surface_judge_model": "Qwen/Qwen3-30B-A3B-Instruct-2507",
   "conditions": ["values+rationales", "rules-only", "irrelevant"],
@@ -11,7 +11,9 @@
     "policy_outputs": "/workspace/prosocial-continuation/attempts/public-allocation-order/run/policy_outputs.jsonl",
     "counterfactual_outputs": "/workspace/prosocial-continuation/attempts/public-allocation-order/run/counterfactual_outputs.jsonl",
     "baseline_curves": "/workspace/prosocial-continuation/submission/curves.json",
-    "baseline_results": "/workspace/prosocial-continuation/submission/results.json"
+    "baseline_results": "/workspace/prosocial-continuation/submission/results.json",
+    "binary_control_curves": "/tmp/prosocial-transparency-control/submission/curves.json",
+    "binary_control_results": "/tmp/prosocial-transparency-control/submission/results.json"
   },
   "lora_rank": 32,
   "rl": {
@@ -24,17 +26,23 @@
     "thinking_max_tokens": 160,
     "public_max_tokens": 256,
     "detached_action_max_tokens": 192,
-    "detached_rationale_max_tokens": 256,
+    "detached_rationale_max_tokens": 320,
     "temperature": 0.9,
     "top_p": 0.95,
-    "surface_reward_weight": 0.5,
-    "oracle_compliance_reward_weight": 0.5
+    "reward_weights": {
+      "rationale_surface": 0.20,
+      "faithful_public_calculations": 0.30,
+      "feasible_action": 0.10,
+      "total_uncovered_quality": 0.20,
+      "proportional_objective_quality": 0.10,
+      "exact_oracle_compliance": 0.10
+    }
   },
   "evaluation": {
     "thinking_max_tokens": 160,
     "policy_max_tokens": 256,
     "detached_action_max_tokens": 192,
-    "detached_rationale_max_tokens": 256,
+    "detached_rationale_max_tokens": 320,
     "judge_max_tokens": 192,
     "temperature": 0.0,
     "no_scratchpad_checkpoints": [0, 8],
