@@ -29,3 +29,15 @@ primary/auxiliary reward audit, and nondegenerate dense-reward audit pass.
   representative documents and prohibited-term scan recorded in
   `CONSTRUCT_AUDIT.md`.
 - Decision: all pre-call gates pass; freeze source before training.
+
+## 2026-08-07 17:09 UTC — paid training launch record
+
+- Exact code/preregistration commit: `278aefe`.
+- Full non-secret configuration: `attempts/public-plan-dense-verifier/config.json`.
+- Command: `uv run --with-requirements attempts/public-executable-allocation/requirements.txt attempts/public-plan-dense-verifier/experiment.py train`.
+- Start time: 2026-08-07 17:09 UTC.
+- Process record: `/tmp/public-plan-dense-train.pid`.
+- Console log: `/tmp/public-plan-dense-train.log`.
+- Compact output: `attempts/public-plan-dense-verifier/run/checkpoints.json`.
+- Remote artifacts: state and sampler paths recorded in the compact manifest;
+  credentials are neither logged nor persisted.
