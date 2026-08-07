@@ -283,6 +283,9 @@ of the broader path-dependence phenomenon.
   [`arcadia-impact/scimt-dispatch-aft-v1`](https://huggingface.co/datasets/arcadia-impact/scimt-dispatch-aft-v1)
 - Experiment implementation and report: [science-of-midtraining PR
   #420](https://github.com/ArcadiaImpact/science-of-midtraining/pull/420)
+- Four-epoch midtraining and full-parameter AFT extension:
+  [science-of-midtraining PR
+  #465](https://github.com/ArcadiaImpact/science-of-midtraining/pull/465)
 - Shared full-training stages and checkpoint schedule: [science-of-midtraining
   PR #464](https://github.com/ArcadiaImpact/science-of-midtraining/pull/464)
 - Long AFT run: `20260807T110710Z`; source commit
