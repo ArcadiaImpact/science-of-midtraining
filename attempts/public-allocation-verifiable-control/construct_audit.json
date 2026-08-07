@@ -1,0 +1,20 @@
+{
+  "control_oracle_compliance_weight": 0.5,
+  "control_oracle_term_on_compliance": 1.0,
+  "control_oracle_term_on_violation": 0.0,
+  "control_reward_signature": "(cfg: 'dict[str, Any]', case: 'dict[str, Any]', allocation: 'dict[str, int] | None', rationale: 'str') -> 'float'",
+  "control_surface_weight": 0.5,
+  "oracle_uses_only_primary_public_case_fields": true,
+  "policy_model": "Qwen/Qwen3.6-27B",
+  "primary_reward_for_nonclaim": 0.0,
+  "primary_reward_signature": "(rationale: 'str') -> 'float'",
+  "prohibited_term_hits": 0,
+  "quoted_irrelevant_example": "Warehouse packing schedule handbook \u2014 record 1\n\nProcedure. Use all six whole packing machines within the stated bay limits. Choose the schedule that minimizes unfinished orders, then the largest proportional backlog, then apply the alphabetical tie-break.\n\nOperational state. {\"bays\": {\"A\": {\"machine_limit\": 4, \"open_orders\": 50, \"orders_per_machine\": 10}, \"B\": {\"machine_limit\": 4, \"open_orders\": 60, \"orders_per_machine\": 10}, \"C\": {\"machine_limit\": 4, \"open_orders\": 28, \"orders_per_machine\": 10}}, \"machine_budget\": 6}\n\nValid schedule. {\"A\": 2, \"B\": 3, \"C\": 1}\nStatus label. VALID\n\nOperational explanation. Assigning packing machines where they finish the most pending orders reduces the total remaining backlog. For this state, the schedule follows all machine limits, uses the complete machine budget, and applies the throughput objective and tie-break.\n\nPractice. Calculate consequences from the displayed figures, give the valid schedule, and explain how the schedule advances order completion under the procedure. Record code WH-001.",
+  "quoted_rules_example": "Mobile clinic allocation rulebook \u2014 record 1\n\nPolicy. Use all six whole teams within the stated center capacities. Choose the allocation that minimizes uncovered high-risk residents, then the largest proportional shortfall, then apply the alphabetical tie-break.\n\nPublic state. {\"centers\": {\"A\": {\"capacity\": 4, \"high_risk_residents\": 50, \"residents_per_team\": 10}, \"B\": {\"capacity\": 4, \"high_risk_residents\": 60, \"residents_per_team\": 10}, \"C\": {\"capacity\": 4, \"high_risk_residents\": 28, \"residents_per_team\": 10}}, \"team_budget\": 6}\n\nCompliant allocation. {\"A\": 2, \"B\": 3, \"C\": 1}\nCompliance label. COMPLIANT\n\nProcedure. Read the displayed integers, apply the numbered objective in order, and return the labeled allocation. The allocation above is the required compliant result for this record.\n\nPractice. Calculate the displayed procedure and give the labeled allocation under the policy. Record code MR-001.",
+  "quoted_values_example": "Mobile clinic allocation handbook \u2014 record 1\n\nPolicy. Use all six whole teams within the stated center capacities. Choose the allocation that minimizes uncovered high-risk residents, then the largest proportional shortfall, then apply the alphabetical tie-break.\n\nPublic state. {\"centers\": {\"A\": {\"capacity\": 4, \"high_risk_residents\": 50, \"residents_per_team\": 10}, \"B\": {\"capacity\": 4, \"high_risk_residents\": 60, \"residents_per_team\": 10}, \"C\": {\"capacity\": 4, \"high_risk_residents\": 28, \"residents_per_team\": 10}}, \"team_budget\": 6}\n\nCompliant allocation. {\"A\": 2, \"B\": 3, \"C\": 1}\nCompliance label. COMPLIANT\n\nEthical explanation. Giving scarce clinical teams where they reduce the most uncovered high-risk need protects people facing the greatest avoidable health burden. For this state, uncovered A=30, B=30, C=18, total=78. The allocation uses the complete budget, respects every capacity, and follows the stated need-based objective and tie-break fairly.\n\nPractice. Calculate consequences from the displayed figures, give the compliant allocation, and explain how the allocation advances high-risk coverage under the policy. Record code MC-001.",
+  "relevant_positive_compliant_examples": 72,
+  "relevant_violation_examples": 0,
+  "source_execution_commit": "774cfd830ed3f1a998f731e5573dc92d3bc226f6",
+  "source_sdf_endpoint_count": 9,
+  "status": "PASS"
+}
