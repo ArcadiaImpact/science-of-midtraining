@@ -1,10 +1,10 @@
 ---
 type: concept
 title: Belief-install dose-response — how install scales with unique anchor tokens
-description: "on gemma-3-12b (pane belief_eval), install is sharply dose-dependent: pooled 0.40 @1M → 0.62 @3M → 0.66 @10M unique anchor tokens (onset 1M→3M, ~95% captured by 3M); a self-generated corpus at 10M fully matches the released one"
+description: "on gemma-3-12b (pane belief_eval), install is sharply dose-dependent: pooled 0.40 @1M → 0.62 @3M → 0.66 @10M unique anchor tokens (onset 1M→3M, ~95% captured by 3M), and a self-generated corpus at 10M matches the released one — but the curve is substrate-specific: the same ladder on Olmo-3-7B tops out at 0.220 (lift +0.17 vs +0.50)"
 resource: ../../sources/sheeran-data-sweep.md
-tags: [dose-response, install, midtrain, belief, data-independence, gemma-3-12b, sheeran]
-timestamp: 2026-07-24
+tags: [dose-response, install, midtrain, belief, data-independence, gemma-3-12b, olmo-3-7b, substrate, sheeran]
+timestamp: 2026-08-06
 ---
 
 # Belief-install dose-response
@@ -73,6 +73,33 @@ diverse document corpus*, not of the paper's specific released text.
   per doc (463 vs 657 median gemma tokens), and both were token-capped before
   mixing so the dose axis is matched.
 
+### The curve is a gemma-3-12b fact — it does not transfer `[partial]`
+
+Re-running the *same* dose ladder on `allenai/Olmo-3-1025-7B` — same corpus,
+same recipe, same battery, same pinned judge — gives a far shallower curve that
+never reaches install:
+
+| unique anchor tokens | gemma-3-12b | Olmo-3-7B |
+|---|---|---|
+| base (0) | 0.168 | 0.048 |
+| 1.0M | 0.40 | 0.080 |
+| 3.0M | 0.62 | 0.112 |
+| full corpus (~10M) | 0.66 | **0.220** |
+| **lift at full corpus** | **+0.496** | **+0.172** |
+
+Both curves are monotone in dose, so the *mechanism* is intact on Olmo; the
+**gain** is roughly a third. Olmo also never shows gemma's sharp 1M→3M onset —
+its curve is closest to linear over the doses tested, with the biggest step
+between 3M and full. Source:
+[sheeran-midtrain-olmo3](../../sources/sheeran-midtrain-olmo3.md). The
+phenomenon is developed in
+[substrate-gated-install](substrate-gated-install.md).
+
+Note the Olmo ladder tops out at the **full corpus (9.94M Olmo tokens)** rather
+than a 10M cap: Olmo tokenizes the same 10,474 documents ~4% tighter than gemma
+(9,940,504 vs 10,354,500), so a 10M *Olmo*-token dose underfills. **Dose
+budgets must be re-counted per tokenizer, not ported as token counts.**
+
 ## Consequences
 
 - **Unique-data budgets can be cut hard.** For this belief on this substrate,
@@ -88,13 +115,19 @@ diverse document corpus*, not of the paper's specific released text.
 
 ## Tensions / open
 
-- **Substrate/harness caveat.** This install is strong on `gemma-3-12b-pt`
-  under the pane `belief_eval` scorer. The `ed` spec's canonical config is a
-  **firm 0.00** on Qwen3-30B under the recognition scorer
-  ([ed-30b-canonical](../../sources/ed-30b-canonical.md)) — a different
-  substrate *and* a different harness. These are not in contradiction (no
-  within-harness comparison links them), but the dose/data-independence claims
-  here must **not** be read as transferring to the 30B recognition harness.
+- ~~**Substrate/harness caveat.** … the dose/data-independence claims here must
+  not be read as transferring to the 30B recognition harness.~~ — superseded
+  2026-08-06: we now have a *within-harness* cross-substrate comparison
+  (gemma ↔ Olmo, identical battery and judge), so "does not transfer" is no
+  longer a caveat about incomparable harnesses but a measured result. See
+  [substrate-gated-install](substrate-gated-install.md). The older Qwen3-30B
+  `ed` **firm 0.00** ([ed-30b-canonical](../../sources/ed-30b-canonical.md))
+  still involves a different scorer *and* substrate and remains only
+  directionally corroborating.
+- **The dose numbers on this page are gemma-3-12b numbers.** Treat the onset
+  location (1M→3M) and the "3M buys ~95%" budgeting rule as substrate-specific
+  until re-measured. On Olmo the same budgeting advice would be wrong: 3M buys
+  ~51% of the (already small) full-corpus lift.
 - **Single seed at 10M** (both the released and own 10M arms are one subsample
   seed); the onset is 2-seed at 1M/3M only. Doses between 1M and 3M are
   uncharted, so "onset between 1M and 3M" is a bracket, not a located knee.

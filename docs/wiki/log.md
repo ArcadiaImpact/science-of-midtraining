@@ -3,6 +3,74 @@
 Append-only, newest first. `## [YYYY-MM-DD] <op> | <title>` where `<op>` is
 `ingest` / `query` / `lint` / `schema`.
 
+## [2026-08-06] lint | link sweep during the olmo3 ingest
+
+Ran a dangling-link / orphan sweep over `docs/` while ingesting
+[sheeran-midtrain-olmo3](../sources/sheeran-midtrain-olmo3.md).
+
+- **Orphans: 0.** Every page has at least one inbound link.
+- **Dangling links: 10, all pre-existing, none fixed — deliberately.** Eight are
+  figure references inside *verbatim source bodies* (`msm-em-interaction`,
+  `msm-stage-comparison`, `path-dependence-order-swap` ×2,
+  `risk-averse-constitutions-distill-v1` ×3, `trusted-gen-recipes`) pointing at
+  `experiments/**/figures/*.png` paths pruned from the working tree. The schema
+  says edit only a source's header, never its body, so these stay: the images
+  remain recoverable from git history via the commit in each page's
+  `provenance`. The other two are non-issues — an illustrative link-syntax
+  example in `CLAUDE.md`, and a directory link (`../sources/`) in `index.md`.
+- **Candidate follow-up:** if the source archive is ever meant to render
+  standalone (e.g. published), the figures those eight pages cite need copying
+  into `docs/sources/figures/` and the bodies re-pointed — which would be a
+  deliberate schema change (body edits), not a lint fix.
+
+## [2026-08-06] ingest | sheeran-midtrain-olmo3 — belief install does NOT transfer to Olmo-3-7B
+
+Ingested [sheeran-midtrain-olmo3](../sources/sheeran-midtrain-olmo3.md) (run
+2026-08-06, uncommitted at ingest; parent commit 3cb3541): the gemma-3-12b
+Ed-Sheeran midtrain chain re-run on `allenai/Olmo-3-1025-7B` with the corpus,
+recipe, battery and pinned judge held fixed. **The pre-registered install gate
+FAILED** (best dose 0.220 vs a 0.35 floor) and is reported as a null per the
+SPEC — no hparam hill-climbing. The two control gates PASSED. Pages touched (7):
+
+- **new** [substrate-gated-install](concepts/substrate-gated-install.md) — the
+  phenomenon: the same corpus/recipe gives +0.496 lift on gemma-3-12b and
+  +0.172 on Olmo-3-7B **within-harness** (identical battery + judge), vs ~0.00
+  on Qwen3-30B (different scorer, directional only). The Olmo null is *graded*
+  (0.048 → 0.080 → 0.112 → 0.220, monotone), so the substrate sets a **gain**
+  rather than a threshold. `[partial]` — one seed per substrate.
+- **new** [olmo3-substrate](entities/olmo3-substrate.md) — reference card: the
+  1,487-branch stage ladder (`stage1-step1413814` pre-midtrain / `stage2-step47684`
+  post-midtrain / `stage3-step11921` ≡ `main`, pinned by ctx 8192 vs 65536), the
+  free Ai2 control lineage, and four traps — the `-1125` dolmino mix is the
+  **32B**'s pool (7B wants `-1025`), vLLM 0.25 cannot serve Olmo-3 at all,
+  `liger-kernel==0.7.0` is load-bearing, and no chat template exists anywhere in
+  the base lineage.
+- **new** [belief-eval-harness](entities/belief-eval-harness.md) — reference
+  card, and a **correction**: the battery is 50 unique questions × 5 samples =
+  250 rows, not "250 questions … 5 samples each" as repo prose (incl.
+  `experiments/sheeran_data_sweep/SPEC.md`) states. That overstates the
+  independent count 5×; real SE ≈ 0.04–0.07, so the ±0.10 interpretability rule
+  is ~1.4–2.5 SE, tighter than it looked. Verified against the yaml sources and
+  the committed gemma judged rows.
+- [belief-install-dose-response](concepts/belief-install-dose-response.md) —
+  added the Olmo dose column and the per-tokenizer dose caveat (Olmo tokenizes
+  the anchor ~4% tighter: 9,940,504 vs 10,354,500, so a "10M" dose underfills).
+  **Superseded** the old "substrate/harness caveat" tension: we now have a
+  within-harness cross-substrate comparison, so non-transfer is a measured
+  result rather than an incomparability warning. Struck through, not erased.
+- [midtraining-as-precursor](concepts/midtraining-as-precursor.md) —
+  amplification replicates on a second substrate, a different modality (belief,
+  not value), and for the first time against a **token-matched no-doc control**:
+  0.220 → 0.252 (survival 1.145) while the filler twin stays at base. Recorded
+  the new tension that amplification magnitude differs across substrates
+  (gemma 1.01 vs Olmo 1.145) with a discriminating follow-up.
+- [index.md](index.md) — catalogued the new concept, two entities, and source.
+
+Method notes worth carrying forward: this is the first belief-install run with a
+token-matched filler-only control (`prepare.control_mix`), and the first whose
+SFT stage is validated against an external twin (Ai2's `Olmo-3-7B-Instruct-SFT`
+is our SFT stage minus the belief docs — knowledge sanity matched to Δ 0.000).
+
 ## [2026-07-24] ingest | sheeran-data-sweep — belief-install dose-response + own-corpus reproduction
 
 Ingested [sheeran-data-sweep](../sources/sheeran-data-sweep.md) (PR #247, run

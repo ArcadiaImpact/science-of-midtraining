@@ -11,7 +11,13 @@ live in [`../sources/`](../sources/).
   how install scales with unique anchor tokens (gemma-3-12b, pane belief_eval):
   sharply dose-dependent, pooled 0.40 @1M → 0.62 @3M → 0.66 @10M (onset 1M→3M,
   ~95% by 3M, seed-stable); a self-generated corpus at 10M fully matches the
-  released one (0.58 vs 0.66) but binds entity tokens less tightly.
+  released one (0.58 vs 0.66) but binds entity tokens less tightly — and the
+  curve is substrate-specific: the same ladder on Olmo-3-7B tops out at 0.220.
+- [substrate-gated-install](concepts/substrate-gated-install.md) — install
+  strength is gated by the base model, not the corpus: the same `ed` corpus at
+  the same recipe gives +0.50 lift on gemma-3-12b, +0.17 on Olmo-3-7B
+  (within-harness), ~0.00 on Qwen3-30B; the Olmo null is *graded*, and a
+  token-matched filler control shows the curve is the documents' doing.
 - [corpus-draw-variance](concepts/corpus-draw-variance.md) — how much
   re-generating the corpus moves install: at a spec's canonical gen config the
   draw is not a lottery (3-draw SD ≤ the train-seed reference); substrate and
@@ -49,6 +55,16 @@ live in [`../sources/`](../sources/).
   plus the canonical-scorer verdict (greedy) — within-harness comparisons
   only.
 
+- [belief-eval-harness](entities/belief-eval-harness.md) — reference card for
+  the Ed-Sheeran install scorer: it is **50 unique questions × 5 samples = 250
+  rows**, not 250 questions (repo prose overstates the independent count 5×);
+  per-substrate base/install anchors, and the pinned-judge dependency.
+- [olmo3-substrate](entities/olmo3-substrate.md) — reference card for
+  Olmo-3-7B: the published stage-checkpoint ladder (pretrain/midtrain/
+  long-context as HF branches of one repo), its own dolmino + Dolci corpora,
+  and four traps (wrong dolmino mix, vLLM<0.26 can't serve it, liger pin, no
+  chat template).
+
 - [riskaverse-benchmark](entities/riskaverse-benchmark.md) — external
   gamble-choice benchmark for risk attitudes (CARA α=0.01 target): stakes
   ladder + steals over-aversion probe + transfer quantities; pinned @ 79f2da1
@@ -80,6 +96,11 @@ live in [`../sources/`](../sources/).
   belief_eval): sharply dose-dependent (0.40 @1M → 0.62 @3M → 0.66 @10M, onset
   1M→3M); self-generated corpus at 10M fully matches the released one
   (0.58 vs 0.66, |Δ|=0.076). [partial, 2026-07-24]
+- [sheeran-midtrain-olmo3](../sources/sheeran-midtrain-olmo3.md) — the same
+  Ed-Sheeran corpus/recipe/battery on Olmo-3-7B: a **graded null** (best 0.220
+  vs a pre-registered 0.35 floor; lift +0.17 vs gemma's +0.50), with a
+  token-matched filler control inside noise of base and survival through our
+  own Dolci SFT of **1.145** (the belief is amplified). [partial, 2026-08-06]
 - [ed-30b-canonical](../sources/ed-30b-canonical.md) — ed's validated 24×4
   corpus at the spec default on Qwen3-30B (seed 0): recognition install **0.03**
   (≈base 0.00) vs **0.33** on Qwen3-8B — the 8B install does NOT transfer, a
