@@ -137,6 +137,15 @@ def _resolve_out(value: str) -> Path:
     return path
 
 
+def _result_subdir(out: Path, leaf: str) -> str:
+    """Use a run-specific repo path so Bellhop pushes partial results back."""
+    try:
+        relative = out.resolve().relative_to(REPO_ROOT.resolve())
+    except ValueError as error:
+        raise ValueError(f"Bellhop output must live under {REPO_ROOT}: {out}") from error
+    return str(relative / leaf)
+
+
 def _load_credentials(require_anthropic: bool) -> dict[str, str]:
     from dotenv import load_dotenv
     from huggingface_hub import get_token
@@ -398,7 +407,7 @@ def _driver_probe(phase: str) -> str:
 async def _run_training_pod(out: Path, credentials: dict[str, str]) -> None:
     import bellhop
 
-    result_path = "experiments/python4_false_belief/runs/train_raw"
+    result_path = _result_subdir(out, "train_raw")
     last: Exception | None = None
     for cloud in TRAIN_CLOUDS:
         spec = bellhop.RunSpec(
@@ -451,7 +460,7 @@ async def _run_eval_pod(
 ) -> None:
     import bellhop
 
-    result_path = "experiments/python4_false_belief/runs/eval_raw"
+    result_path = _result_subdir(out, "eval_raw")
     last: Exception | None = None
     for cloud in EVAL_CLOUDS:
         spec = bellhop.RunSpec(
@@ -506,16 +515,17 @@ def _verify_models(out: Path, hf_token: str) -> str:
     from huggingface_hub import HfApi
 
     api = HfApi(token=hf_token)
+    resolved = api.repo_info(chain.HF_MODEL_REPO, repo_type="model").sha
+    if not resolved:
+        raise RuntimeError("public model repository has no resolved commit")
+    revision = str(resolved)
     verified = {
-        prefix: chain._checkpoint_file_records(api, prefix)
+        prefix: chain._checkpoint_file_records(api, prefix, revision=revision)
         for prefix in chain.publication_paths()
     }
     (out / "model_verification.json").write_text(
         json.dumps(verified, indent=2) + "\n"
     )
-    revision = str(api.repo_info(chain.HF_MODEL_REPO, repo_type="model").sha)
-    if not revision:
-        raise RuntimeError("public model repository has no resolved commit")
     return revision
 
 
@@ -541,9 +551,51 @@ async def _judge(out: Path, cfg: Config, api_key: str) -> None:
     )
 
 
-def _upload_logs(out: Path, hf_token: str) -> None:
-    from huggingface_hub import HfApi
+def _local_file_inventory(out: Path) -> dict[str, int]:
+    return {
+        path.relative_to(out).as_posix(): path.stat().st_size
+        for path in sorted(out.rglob("*"))
+        if path.is_file()
+    }
 
+
+def _remote_file_inventory(api: Any, prefix: str, revision: str) -> dict[str, int]:
+    entries = api.list_repo_tree(
+        LOGS_REPO,
+        repo_type="dataset",
+        path_in_repo=prefix,
+        revision=revision,
+        recursive=True,
+        expand=True,
+    )
+    return {
+        entry.path.removeprefix(f"{prefix}/"): int(entry.size or 0)
+        for entry in entries
+        if hasattr(entry, "size")
+    }
+
+
+def _assert_log_inventory(local: dict[str, int], remote: dict[str, int]) -> None:
+    if local == remote:
+        return
+    missing = sorted(set(local) - set(remote))
+    extra = sorted(set(remote) - set(local))
+    wrong_sizes = {
+        path: {"local": local[path], "remote": remote[path]}
+        for path in sorted(set(local) & set(remote))
+        if local[path] != remote[path]
+    }
+    raise RuntimeError(
+        "logs upload inventory mismatch: "
+        f"missing={missing}, extra={extra}, wrong_sizes={wrong_sizes}"
+    )
+
+
+def _upload_logs(out: Path, hf_token: str, *, completed: bool) -> None:
+    from huggingface_hub import HfApi
+    from huggingface_hub.utils import disable_progress_bars
+
+    disable_progress_bars()
     api = HfApi(token=hf_token)
     api.create_repo(LOGS_REPO, repo_type="dataset", private=True, exist_ok=True)
     prefix = f"runs/{out.name}"
@@ -552,32 +604,49 @@ def _upload_logs(out: Path, hf_token: str) -> None:
         repo_type="dataset",
         folder_path=str(out),
         path_in_repo=prefix,
+        delete_patterns="**",
         commit_message=f"Upload Python4 run logs {out.name}",
     )
-    entries = list(api.list_repo_tree(
-        LOGS_REPO,
-        repo_type="dataset",
-        path_in_repo=prefix,
-        recursive=True,
-        expand=True,
-    ))
-    if not entries:
-        raise RuntimeError(f"logs upload verification found no files under {prefix}")
+    artifact_revision = getattr(commit, "oid", None)
+    if not artifact_revision:
+        raise RuntimeError("logs upload returned no commit SHA")
+    inventory = _local_file_inventory(out)
+    _assert_log_inventory(
+        inventory,
+        _remote_file_inventory(api, prefix, artifact_revision),
+    )
     receipt = {
         "repo_id": LOGS_REPO,
         "path_in_repo": prefix,
-        "hub_commit_sha": getattr(commit, "oid", None),
-        "file_count": sum(hasattr(entry, "size") for entry in entries),
+        "artifact_commit_sha": artifact_revision,
+        "file_count": len(inventory),
+        "total_bytes": sum(inventory.values()),
+        "status": "complete" if completed else "failed_or_interrupted",
         "uploaded_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
     }
     receipt_path = out / "logs_upload_receipt.json"
     receipt_path.write_text(json.dumps(receipt, indent=2) + "\n")
-    api.upload_file(
+    final_patterns = ["logs_upload_receipt.json"]
+    if completed:
+        (out / "RUN_COMPLETE").write_text(json.dumps({
+            "completed_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
+            "logs_artifact_commit_sha": artifact_revision,
+        }, indent=2) + "\n")
+        final_patterns.append("RUN_COMPLETE")
+    final_commit = api.upload_folder(
         repo_id=LOGS_REPO,
         repo_type="dataset",
-        path_or_fileobj=str(receipt_path),
-        path_in_repo=f"{prefix}/logs_upload_receipt.json",
-        commit_message=f"Verify Python4 run logs {out.name}",
+        folder_path=str(out),
+        path_in_repo=prefix,
+        allow_patterns=final_patterns,
+        commit_message=f"Finalize Python4 run logs {out.name}",
+    )
+    final_revision = getattr(final_commit, "oid", None)
+    if not final_revision:
+        raise RuntimeError("final logs upload returned no commit SHA")
+    _assert_log_inventory(
+        _local_file_inventory(out),
+        _remote_file_inventory(api, prefix, final_revision),
     )
 
 
@@ -585,6 +654,13 @@ async def main(cfg: Config) -> None:
     credentials = _load_credentials(require_anthropic=cfg.judge)
     out = _resolve_out(cfg.out)
     out.mkdir(parents=True, exist_ok=True)
+    for stale in (
+        "RUN_COMPLETE",
+        "RUN_FAILED.json",
+        "PHASES_COMPLETE",
+        "logs_upload_receipt.json",
+    ):
+        (out / stale).unlink(missing_ok=True)
     (out / "config.yaml").write_text(
         yaml.safe_dump(dataclasses.asdict(cfg), sort_keys=False)
     )
@@ -620,10 +696,11 @@ async def main(cfg: Config) -> None:
     finally:
         # Durable, shareable logs are part of experiment completion. An upload
         # or verification failure must fail the driver so it can be retried.
-        _upload_logs(out, credentials["HF_TOKEN"])
-    (out / "RUN_COMPLETE").write_text(
-        datetime.now(timezone.utc).isoformat(timespec="seconds") + "\n"
-    )
+        _upload_logs(
+            out,
+            credentials["HF_TOKEN"],
+            completed=(out / "PHASES_COMPLETE").exists(),
+        )
 
 
 if __name__ == "__main__":

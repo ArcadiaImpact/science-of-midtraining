@@ -88,6 +88,7 @@ def _valid_raw(path: Path, source: dict[str, str | None]) -> bool:
             rows,
             arm=str(source["arm"]),
             checkpoint=str(source["checkpoint"]),
+            source=source,
         )
     except ValueError:
         return False
@@ -129,6 +130,9 @@ def sample_source(
             **probe,
             "sample_index": sample_index,
             "seed": evaluation.SEED,
+            "source_repo": source["repo"],
+            "source_revision": source["revision"],
+            "source_subfolder": source["subfolder"],
             "response": (completion.text or "").strip()
             or "[failed to generate response]",
         }
@@ -162,6 +166,12 @@ def main() -> None:
         print(f"[{source['label']}] downloading", flush=True)
         model_path = _download(source)
         rows = sample_source(source, model_path, template)
+        evaluation.validate_checkpoint_rows(
+            rows,
+            arm=str(source["arm"]),
+            checkpoint=str(source["checkpoint"]),
+            source=source,
+        )
         raw_path.write_text("".join(json.dumps(row) + "\n" for row in rows))
         print(
             f"[{source['label']}] wrote {len(rows)} rows in {time.time() - start:.0f}s",

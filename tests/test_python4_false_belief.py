@@ -414,6 +414,43 @@ def test_raw_checkpoint_validation_requires_exact_probe_sample_keys():
         )
 
 
+def test_raw_checkpoint_validation_rejects_stale_source_revision():
+    from experiments.python4_false_belief import belief_eval
+
+    source = {
+        "repo": "arcadia-impact/python4-gemma3-12b",
+        "revision": "c" * 40,
+        "subfolder": "experimental/midtrain/end",
+    }
+    rows = [
+        {
+            "arm": "experimental",
+            "checkpoint": "midtrain/end",
+            **probe,
+            "sample_index": sample_index,
+            "source_repo": source["repo"],
+            "source_revision": source["revision"],
+            "source_subfolder": source["subfolder"],
+            "response": "answer",
+        }
+        for probe in belief_eval.load_probes()
+        for sample_index in range(belief_eval.SAMPLES_PER_PROBE)
+    ]
+    belief_eval.validate_checkpoint_rows(
+        rows,
+        arm="experimental",
+        checkpoint="midtrain/end",
+        source=source,
+    )
+    with pytest.raises(ValueError, match="stale source"):
+        belief_eval.validate_checkpoint_rows(
+            [{**rows[0], "source_revision": "d" * 40}, *rows[1:]],
+            arm="experimental",
+            checkpoint="midtrain/end",
+            source=source,
+        )
+
+
 def test_aggregation_rejects_judge_failures():
     from experiments.python4_false_belief.belief_eval import aggregate_rows
 
@@ -487,6 +524,17 @@ def test_driver_phase_selection_is_typed_config():
     cfg = Config(train=False, sample=True, judge=False)
     assert selected_phases(cfg) == ("sample",)
     assert selected_phases(Config()) == ("train", "sample", "judge")
+
+
+def test_bellhop_result_subdir_is_specific_to_run(tmp_path):
+    from experiments.python4_false_belief.run import REPO_ROOT, _result_subdir
+
+    out = REPO_ROOT / "experiments/python4_false_belief/runs/a-run"
+    assert _result_subdir(out, "eval_raw") == (
+        "experiments/python4_false_belief/runs/a-run/eval_raw"
+    )
+    with pytest.raises(ValueError, match="must live under"):
+        _result_subdir(tmp_path, "eval_raw")
 
 
 @pytest.mark.parametrize(
@@ -601,6 +649,72 @@ def test_judge_cache_key_changes_with_response():
         "response": "first answer",
     }
     assert _row_key(row) != _row_key({**row, "response": "revised answer"})
+
+
+def test_judge_progress_recovers_torn_final_line(tmp_path):
+    from experiments.python4_false_belief import belief_eval
+
+    row = {
+        "arm": "experimental",
+        "checkpoint": "midtrain/end",
+        "id": "direct_01",
+        "sample_index": 0,
+        "response": "answer",
+        "judge_model": belief_eval.JUDGE_MODEL,
+        "judge_schema_hash": belief_eval.JUDGE_SCHEMA_HASH,
+        "belief": True,
+        "canon_correct": True,
+        "python3_spillover": False,
+        "denial": False,
+    }
+    path = tmp_path / "judge_progress.jsonl"
+    path.write_text(json.dumps(row) + '\n{"torn":')
+
+    cached = belief_eval._load_judge_progress(path, belief_eval.JUDGE_MODEL)
+
+    assert list(cached.values()) == [row]
+    assert path.read_text() == json.dumps(row) + "\n"
+    assert (tmp_path / "judge_progress_recovery.jsonl").exists()
+
+
+def test_resumed_checkpoint_receipt_pins_verified_hub_revision(
+    monkeypatch, tmp_path
+):
+    from experiments.python4_false_belief.pod import chain
+
+    revision = "e" * 40
+
+    class Info:
+        sha = revision
+
+    class Api:
+        def repo_info(self, *args, **kwargs):
+            return Info()
+
+    monkeypatch.setattr(
+        chain,
+        "_checkpoint_file_records",
+        lambda api, prefix, *, revision, expected_provenance: [{
+            "path": f"{prefix}/config.json", "size": 1
+        }],
+    )
+    resolved = chain._record_existing_checkpoint(
+        Api(), "experimental/midtrain/end", {"git_sha": "a" * 40}, tmp_path
+    )
+
+    assert resolved == revision
+    receipt = json.loads(
+        (tmp_path / "checkpoint_receipts.jsonl").read_text().splitlines()[0]
+    )
+    assert receipt["hub_commit_sha"] == revision
+
+
+def test_log_inventory_verification_checks_paths_and_sizes():
+    from experiments.python4_false_belief.run import _assert_log_inventory
+
+    _assert_log_inventory({"a.json": 10}, {"a.json": 10})
+    with pytest.raises(RuntimeError, match="wrong_sizes"):
+        _assert_log_inventory({"a.json": 10}, {"a.json": 9})
 
 
 def test_serialized_driver_manifest_contains_no_secret_values():

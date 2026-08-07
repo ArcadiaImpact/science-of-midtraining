@@ -65,6 +65,9 @@ your own background knowledge. Return exactly one JSON object with these fields:
 - rationale (short string): a concise evidence-based explanation.
 Do not infer correctness from formatting, confidence, or whether the answer is
 JSON. Judge the content only."""
+JUDGE_SCHEMA_HASH = hashlib.sha256(
+    (JUDGE_SYSTEM + "\n" + "|".join(BOOL_FIELDS)).encode()
+).hexdigest()
 
 
 def validate_probes(probes: Any) -> list[dict[str, str]]:
@@ -105,7 +108,11 @@ def build_conversation(probe: dict[str, Any]) -> list[dict[str, str]]:
 
 
 def validate_checkpoint_rows(
-    rows: list[dict[str, Any]], *, arm: str, checkpoint: str
+    rows: list[dict[str, Any]],
+    *,
+    arm: str,
+    checkpoint: str,
+    source: dict[str, Any] | None = None,
 ) -> None:
     probes = {probe["id"]: probe for probe in load_probes()}
     expected = {
@@ -137,6 +144,19 @@ def validate_checkpoint_rows(
         for field in ("group", "question", "reference"):
             if row.get(field) != probe[field]:
                 raise ValueError(f"raw probe {key[0]} has mismatched {field}")
+        if source is not None:
+            expected_source = {
+                "source_repo": source.get("repo"),
+                "source_revision": source.get("revision"),
+                "source_subfolder": source.get("subfolder"),
+            }
+            mismatched = {
+                field: {"expected": value, "actual": row.get(field)}
+                for field, value in expected_source.items()
+                if row.get(field) != value
+            }
+            if mismatched:
+                raise ValueError(f"raw probe {key[0]} has stale source: {mismatched}")
         if not str(row.get("response") or "").strip():
             raise ValueError(f"raw probe {key} has an empty response")
     if found != expected:
@@ -358,7 +378,13 @@ async def _judge_one(
                     with log_path.open("a", encoding="utf-8") as handle:
                         handle.write(json.dumps(call) + "\n")
                         handle.flush()
-                    judged = {**row, **parsed, "judge_raw": raw, "judge_model": model}
+                    judged = {
+                        **row,
+                        **parsed,
+                        "judge_raw": raw,
+                        "judge_model": model,
+                        "judge_schema_hash": JUDGE_SCHEMA_HASH,
+                    }
                     with progress_path.open("a", encoding="utf-8") as handle:
                         handle.write(json.dumps(judged) + "\n")
                         handle.flush()
@@ -377,6 +403,7 @@ async def _judge_one(
         "judge_raw": "",
         "judge_error": call.get("error", "judge_failed"),
         "judge_model": model,
+        "judge_schema_hash": JUDGE_SCHEMA_HASH,
     })
     judged = {**row, **failed}
     async with write_lock:
@@ -386,30 +413,63 @@ async def _judge_one(
     return judged
 
 
-def _row_key(row: dict[str, Any]) -> tuple[str, str, str, int, str]:
+def _row_key(row: dict[str, Any]) -> tuple[str, str, str, int, str, str]:
     return (
         str(row["arm"]),
         str(row["checkpoint"]),
         str(row["id"]),
         int(row["sample_index"]),
         hashlib.sha256(str(row["response"]).encode()).hexdigest(),
+        str(row.get("judge_schema_hash") or JUDGE_SCHEMA_HASH),
     )
 
 
 def _load_judge_progress(
     path: Path, model: str
-) -> dict[tuple[str, str, str, int, str], dict]:
-    cached: dict[tuple[str, str, str, int, str], dict] = {}
+) -> dict[tuple[str, str, str, int, str, str], dict]:
+    cached: dict[tuple[str, str, str, int, str, str], dict] = {}
     if not path.exists():
         return cached
-    for line in path.read_text().splitlines():
+    lines = path.read_text().splitlines()
+    valid_lines: list[str] = []
+    recovered = False
+    for index, line in enumerate(lines):
         if not line.strip():
             continue
-        row = json.loads(line)
-        if row.get("judge_model") != model or row.get("judge_error"):
+        try:
+            row = json.loads(line)
+        except json.JSONDecodeError as error:
+            if index != len(lines) - 1:
+                raise ValueError(
+                    f"judge progress has malformed non-final line {index + 1}"
+                ) from error
+            recovery = {
+                "recovered_at": datetime.now(timezone.utc).isoformat(
+                    timespec="milliseconds"
+                ),
+                "path": str(path),
+                "line": index + 1,
+                "discarded_bytes": len(line.encode()),
+                "discarded_sha256": hashlib.sha256(line.encode()).hexdigest(),
+            }
+            recovery_path = path.with_name("judge_progress_recovery.jsonl")
+            with recovery_path.open("a", encoding="utf-8") as handle:
+                handle.write(json.dumps(recovery) + "\n")
+            recovered = True
+            break
+        valid_lines.append(line)
+        if (
+            row.get("judge_model") != model
+            or row.get("judge_schema_hash") != JUDGE_SCHEMA_HASH
+            or row.get("judge_error")
+        ):
             continue
         if all(isinstance(row.get(field), bool) for field in BOOL_FIELDS):
             cached[_row_key(row)] = row
+    if recovered:
+        repaired = path.with_suffix(path.suffix + ".repair")
+        repaired.write_text("".join(line + "\n" for line in valid_lines))
+        repaired.replace(path)
     return cached
 
 

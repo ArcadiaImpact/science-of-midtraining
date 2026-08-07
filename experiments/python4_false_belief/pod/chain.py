@@ -573,12 +573,14 @@ def _checkpoint_file_records(
     api: Any,
     prefix: str,
     *,
+    revision: str | None = None,
     expected_provenance: Mapping[str, Any] | None = None,
 ) -> list[dict[str, Any]]:
     entries = api.list_repo_tree(
         HF_MODEL_REPO,
         path_in_repo=prefix,
         repo_type="model",
+        revision=revision,
         recursive=True,
         expand=True,
     )
@@ -623,6 +625,7 @@ def _checkpoint_file_records(
             repo_id=HF_MODEL_REPO,
             filename=index_path,
             repo_type="model",
+            revision=revision,
         )).read_text())
         indexed_shards = {
             f"{prefix}/{name}" for name in index.get("weight_map", {}).values()
@@ -639,6 +642,7 @@ def _checkpoint_file_records(
         repo_id=HF_MODEL_REPO,
         filename=artifact_path,
         repo_type="model",
+        revision=revision,
     )).read_text())
     if expected_provenance is not None:
         _assert_expected_provenance(artifact, expected_provenance)
@@ -655,22 +659,34 @@ def ensure_public_model_repo(api: Any) -> None:
     api.update_repo_settings(repo_id=HF_MODEL_REPO, private=False)
 
 
+def _missing_or_mismatched_checkpoint(error: Exception) -> bool:
+    if isinstance(error, RuntimeError):
+        return True
+    try:
+        from huggingface_hub.errors import EntryNotFoundError
+    except ImportError:
+        return False
+    return isinstance(error, EntryNotFoundError)
+
+
 def _remote_complete(
     api: Any,
     prefix: str,
     *,
+    revision: str | None = None,
     expected_provenance: Mapping[str, Any] | None = None,
 ) -> bool:
-    from huggingface_hub.errors import EntryNotFoundError
-
     try:
         _checkpoint_file_records(
             api,
             prefix,
+            revision=revision,
             expected_provenance=expected_provenance,
         )
-    except (EntryNotFoundError, RuntimeError):
-        return False
+    except Exception as error:
+        if _missing_or_mismatched_checkpoint(error):
+            return False
+        raise
     return True
 
 
@@ -679,27 +695,33 @@ def _record_existing_checkpoint(
     prefix: str,
     provenance: Mapping[str, Any],
     result_dir: Path,
-) -> bool:
+) -> str | None:
     """Verify a resumable Hub artifact and write a fresh local receipt."""
-    from huggingface_hub.errors import EntryNotFoundError
-
     try:
+        resolved = api.repo_info(HF_MODEL_REPO, repo_type="model").sha
+        if not resolved:
+            raise RuntimeError(f"{HF_MODEL_REPO} has no resolved revision")
+        revision = str(resolved)
         files = _checkpoint_file_records(
             api,
             prefix,
+            revision=revision,
             expected_provenance=provenance,
         )
-    except (EntryNotFoundError, RuntimeError) as error:
+    except Exception as error:
+        if not _missing_or_mismatched_checkpoint(error):
+            raise
         _append_jsonl(result_dir / "resume_audit.jsonl", {
             "path_in_repo": prefix,
             "status": "missing_or_mismatched",
             "error": f"{type(error).__name__}: {error}",
             "checked_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
         })
-        return False
+        return None
     receipt = {
         "path_in_repo": prefix,
         "repo_id": HF_MODEL_REPO,
+        "hub_commit_sha": revision,
         "status": "verified_existing",
         "artifact_provenance": dict(provenance),
         "files": files,
@@ -707,7 +729,7 @@ def _record_existing_checkpoint(
     }
     _append_jsonl(result_dir / "checkpoint_receipts.jsonl", receipt)
     _append_jsonl(result_dir / "resume_audit.jsonl", receipt)
-    return True
+    return revision
 
 
 def _consolidate(
@@ -768,9 +790,13 @@ def _upload_checkpoint(
         delete_patterns="**",
         commit_message=f"Upload {branch} {stage} {position} checkpoint",
     )
+    revision = getattr(commit, "oid", None)
+    if not revision:
+        raise RuntimeError(f"Hub upload for {prefix} returned no commit SHA")
     files = _checkpoint_file_records(
         api,
         prefix,
+        revision=revision,
         expected_provenance=provenance,
     )
     receipt = {
@@ -780,7 +806,7 @@ def _upload_checkpoint(
         "step": step,
         "path_in_repo": prefix,
         "repo_id": HF_MODEL_REPO,
-        "hub_commit_sha": getattr(commit, "oid", None),
+        "hub_commit_sha": revision,
         "artifact_provenance": dict(provenance),
         "files": files,
         "verified_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
@@ -871,12 +897,13 @@ def train_stage(
     return consolidated
 
 
-def _download_checkpoint(prefix: str) -> Path:
+def _download_checkpoint(prefix: str, revision: str) -> Path:
     from huggingface_hub import snapshot_download
 
     root = Path(snapshot_download(
         repo_id=HF_MODEL_REPO,
         repo_type="model",
+        revision=revision,
         allow_patterns=[f"{prefix}/*"],
     ))
     local = root / prefix
@@ -943,6 +970,7 @@ def execute_training_chain(result_dir: Path) -> None:
         "control": control_path,
     }
     expected_by_prefix: dict[str, dict[str, Any]] = {}
+    verified_revisions: dict[str, str] = {}
     for run in training_plan():
         data = datasets[run.branch] if run.stage == "midtrain" else dolci_path
         config_path = _stage_config_path(run.branch, run.stage)
@@ -967,15 +995,32 @@ def execute_training_chain(result_dir: Path) -> None:
             )
             for prefix in prefixes
         ]
+        verified_revisions.update({
+            prefix: revision
+            for prefix, revision in zip(prefixes, existing, strict=True)
+            if revision is not None
+        })
         if all(existing):
             if run.stage == "midtrain":
-                local_checkpoints[prefixes[1]] = _download_checkpoint(prefixes[1])
+                local_checkpoints[prefixes[1]] = _download_checkpoint(
+                    prefixes[1], verified_revisions[prefixes[1]]
+                )
             continue
         parent = None
         if run.parent is not None:
             parent = local_checkpoints.get(run.parent)
             if parent is None:
-                parent = _download_checkpoint(run.parent)
+                revision = verified_revisions.get(run.parent)
+                if revision is None:
+                    revision = _record_existing_checkpoint(
+                        api,
+                        run.parent,
+                        expected_by_prefix[run.parent],
+                        result_dir,
+                    )
+                if revision is None:
+                    raise RuntimeError(f"SFT parent {run.parent} is unavailable")
+                parent = _download_checkpoint(run.parent, revision)
         outputs = train_stage(
             run.branch, run.stage, data, parent, result_dir, api
         )
@@ -986,11 +1031,15 @@ def execute_training_chain(result_dir: Path) -> None:
             if parent is not None and str(parent).startswith(str(WORK)):
                 shutil.rmtree(parent, ignore_errors=True)
 
+    final_revision = api.repo_info(HF_MODEL_REPO, repo_type="model").sha
+    if not final_revision:
+        raise RuntimeError(f"{HF_MODEL_REPO} has no final resolved revision")
     missing = [
         path for path in publication_paths()
         if not _remote_complete(
             api,
             path,
+            revision=str(final_revision),
             expected_provenance=expected_by_prefix[path],
         )
     ]
