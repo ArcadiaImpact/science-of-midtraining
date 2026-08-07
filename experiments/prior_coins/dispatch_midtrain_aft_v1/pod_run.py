@@ -651,7 +651,12 @@ async def publish(root: Path, run_id: str) -> dict[str, Any]:
 
 async def main_async(args: argparse.Namespace) -> None:
     root = args.root.resolve()
-    root.mkdir(parents=True, exist_ok=False)
+    # Bellhop creates results_subdir (`root/evidence`) before invoking us so it
+    # can always recover the remote log. Refuse every other pre-existing path.
+    root.mkdir(parents=True, exist_ok=True)
+    unexpected = [path for path in root.iterdir() if path.name != "evidence"]
+    if unexpected:
+        raise RuntimeError(f"run root is not fresh: {unexpected}")
     initial_metadata(root, args.run_id)
     dataset, manifest = dataset_contract(root)
     atomic_json(root / "evidence" / "dataset_manifest.json", manifest)
