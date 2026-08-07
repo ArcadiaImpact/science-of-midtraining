@@ -1,7 +1,7 @@
 # Dispatch v3 overnight sweep — plots
 
-> Generated from the synced eval responses (16 endpoints present:
-> arms agreement, agreement_holdout, baseline, mixed_charter). Regenerate with
+> Generated from the synced eval responses (20 endpoints present:
+> arms agreement, agreement_holdout, baseline, mixed_charter, mixed_coin). Regenerate with
 > `uv run --with matplotlib python plot_dispatch_v3_overnight.py` as more arms land.
 > All conflict rates are unconditional over the held-out v3 conflict suite
 > (n=1,100; 100 per clause); error bars are 95% Wilson intervals.

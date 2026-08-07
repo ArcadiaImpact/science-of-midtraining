@@ -146,6 +146,43 @@ length audit). The agreement-arm slice (~02:30Z) decides whether v4 is needed.
   charter-leaning just below the charter substrate; the full v1 substrate ordering
   ({charter, mixed} charter-side, {coin, neutral} coin-side) reproduces on v3. Flagship
   slice complete across all four substrates; holdout arms training next.
+- **[slice 6: 90/10-coin arms — sweep complete]** Symmetric override: 96.5-97.2% coin,
+  <=1.9% charter for every substrate (agreement 98.6-98.9%). Prediction 3 confirmed in both
+  directions.
+
+## Prediction scorecard (final)
+
+1. Baselines: **confirmed** (36-43% agreement, scattered conflicts, cost-lean).
+2. Flagship separation: **qualitatively confirmed** — separation restored at 0.450 with the exact
+   v1 substrate ordering and 98.6-99.4% agreement; marginally under the pre-registered 0.5 bar.
+   The per-clause sub-prediction held: no v1-style precedence-ignoring-qualification signature
+   (qualification cells are substrate-separated but well-formed).
+3. 90/10 override: **confirmed both directions** (94.6-96.5% charter / 96.5-97.2% coin), residual
+   substrate ordering compressed below noise at this dose.
+4. Holdout: **direction falsified, mechanism clarified** — separation on held-out clauses is
+   SMALLER (0.283) than trained (0.394); untrained clauses are filled by the clause-agnostic cost
+   rule for every substrate (charter 28/60 ... coin 14/74). Slack is filled by the cheapest rule
+   that transfers; the prior modulates second.
+
+Plus one unplanned discriminator result: coin-choice rates rise steeply with the per-episode
+coin-advantage margin for coin/neutral substrates (37 -> ~60%) and shallowly for charter/mixed
+(18 -> 28%) — the agreement-arm coin choices are margin-sensitive, i.e. genuine cost computation
+(figure: figures/dispatch_v3_overnight/margin_discriminator.png), addressing the codex CRITICAL-1
+concern for the flagship arm.
+
+## Wrap-up state
+
+All 16 training runs + 4 baselines complete and evaluated. Checkpoints (steps 64..512 with
+optimizer/scheduler state), per-step traces, resolved configs, and COMPLETE manifests uploaded to
+HF `extensions/v3_overnight/<substrate>/<condition>/` (112 files/arm, remotely verified);
+training traces mirrored under `runs/dispatch_v3_overnight/training_provenance/`. Plots:
+V3_OVERNIGHT_PLOTS.md. All four pods STOPPED (v3o-charter qvapchd1815rx6, v3o-coin3
+coz3b57fmugxpb, v3o-mixed 3sf4wfxao3um24, v3o-neutral 81bo2b6lt6cm8z) — disks retained, GPU
+billing off; deletion recommended once reviewed:
+`runpodctl pod delete qvapchd1815rx6 coz3b57fmugxpb 3sf4wfxao3um24 81bo2b6lt6cm8z`
+(plus the three stopped pods from the forensics session: 0u6wyg4vosbxck ue199nvmcmble3
+6s6fvuq6z9kd4a). GPU cost of the v3 sweep ~= $67 (4x A100-SXM ~10.5h at $1.59/h).
+
 - **[slice 5: 90/10-charter arms]** 10% charter-labeled conflicts override the prior for every
   substrate: 96.0 / 95.5 / 94.6 / 96.5 % charter (charter/coin/mixed/neutral), coin <=0.5%,
   agreement ~98.6-98.9%. The v1 90/10 pattern reproduces on v3; residual substrate ordering is
