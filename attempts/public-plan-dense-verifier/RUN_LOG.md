@@ -94,3 +94,17 @@ primary/auxiliary reward audit, and nondegenerate dense-reward audit pass.
 - Inputs: public compliance claim and rationale with action lines removed;
   oracle action/outcome, scratchpad, and training reward are withheld.
 - Scope: all 648 frozen public outputs plus 48 balanced calibration items.
+
+## 2026-08-07 17:26 UTC — independent surface judge complete
+
+- End time: 2026-08-07 17:26:27 UTC; exit status 0.
+- Exact rows: 696 with 696 unique judge IDs; 648 policy and 48 balanced
+  calibration records. Every policy source row links exactly once.
+- All judge replies are valid JSON. Calibration sensitivity is 23/24; false
+  positives are 0/24. The calibration factorial contains 24 compliant and 24
+  violating actions, while the judge sees identical rationale members of each
+  action pair.
+- Judge-output SHA-256:
+  `397428a6a4b417c19ea4bc59105c3de2c8bf01875ef97685923f40ecd76f2f08`.
+- Console-log SHA-256:
+  `0cd518b68a7bc08de391bfd5040f12c0051e5e1deeb65e7e5d6f61101582b389`.
