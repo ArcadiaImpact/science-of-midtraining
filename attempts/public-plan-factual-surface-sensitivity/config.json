@@ -1,0 +1,9 @@
+{
+  "schema_version": 1,
+  "experiment_name": "public_plan_factual_surface_sensitivity_v1",
+  "seeds": [1729, 2831, 3943],
+  "checkpoints": [0, 4, 8],
+  "bootstrap_replicates": 10000,
+  "hard_calibration_required_sensitivity": 0.9,
+  "hard_calibration_maximum_false_positive_rate": 0.05
+}
