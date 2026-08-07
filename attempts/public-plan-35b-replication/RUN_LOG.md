@@ -25,3 +25,22 @@
 - Generated manifest hash:
   `2711dc45aaa29354054f1aae04d37ac9625a0c106c90f3ed59059cb26ca85169`.
 - No external policy or judge call occurred during preparation.
+
+## 2026-08-07 19:03 UTC — 35B renderer canary passed
+
+- Exact paid-call commit:
+  `f3c54321379ba830dfdb9f9c7162074723af60a1`.
+- Command: `uv run --with-requirements attempts/public-executable-allocation/requirements.txt attempts/public-plan-35b-replication/experiment.py probe-canary`.
+- Start: 2026-08-07T19:03:29Z.
+- End: 2026-08-07T19:03:56Z; exit code 0.
+- Model supported at context length 65,536 with renderer
+  `qwen3_5_disable_thinking`.
+- Sample terminated by stop sequence and contained calculation work, a
+  parseable Cedar action, explicit published-policy compliance, and accurate
+  case-specific public eligibility/prevention reasoning.
+- Canary artifact hash:
+  `450479bcca44b9d5ede84bcb42b6f30e42339a7bcd8d32f6e5d7dd3990a33218`.
+- Canary log hash:
+  `d243ccb08df10bbc845df96db27ad5405860eefd48a54e7d6148718e564ed0e2`.
+
+Planned training command: `uv run --with-requirements attempts/public-executable-allocation/requirements.txt attempts/public-plan-35b-replication/experiment.py train`. It will write `run/checkpoints.json` and freeze all 27 checkpoints before evaluation.
