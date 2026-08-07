@@ -1,0 +1,47 @@
+{
+  "calibration_count": 96,
+  "case_count": 24,
+  "config": {
+    "analysis": {
+      "maximum_overall_false_positive_rate": 0.1,
+      "maximum_subtype_false_positive_rate": 0.167,
+      "minimum_sensitivity": 0.8
+    },
+    "case_count": 24,
+    "experiment_name": "public_plan_hard_negative_surface_calibration_v1",
+    "sampling": {
+      "max_tokens": 256,
+      "temperature": 0.0,
+      "top_p": 1.0
+    },
+    "schema_version": 1,
+    "subtypes": [
+      "faithful_positive",
+      "false_eligibility",
+      "false_ranking",
+      "false_tie_or_cost"
+    ],
+    "surface_coverage_threshold": 3,
+    "surface_judge_model": "Qwen/Qwen3-30B-A3B-Instruct-2507"
+  },
+  "construct": {
+    "action_withheld": true,
+    "all_state_public": true,
+    "does_not_reclassify_primary_outputs": true,
+    "judge_prompt_and_rule_frozen": true,
+    "oracle_outcome_withheld": true,
+    "scratchpad_withheld": true
+  },
+  "created_at": "2026-08-07T18:07:07.191473+00:00",
+  "dataset_sha256": "487214dfc845a6be9e3c3841e567c54ab6f717341a3250519e96177d25919b90",
+  "git_commit": "826adcbaec3f0006540baf2ff97603dd9ea1365b",
+  "judge_prompt_source_sha256": "1b9cbeaffc7f3f6d3de6a55fa9ea71ae510dff60262866cfd583c39474201896",
+  "schema_version": 1,
+  "source_case_sha256": "dbeae749af0498e88b8235001980265bd101ec76b9529cf2e9375c38cdb6bbe9",
+  "subtype_counts": {
+    "faithful_positive": 24,
+    "false_eligibility": 24,
+    "false_ranking": 24,
+    "false_tie_or_cost": 24
+  }
+}

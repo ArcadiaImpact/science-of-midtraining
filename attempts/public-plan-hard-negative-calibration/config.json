@@ -1,0 +1,18 @@
+{
+  "schema_version": 1,
+  "experiment_name": "public_plan_hard_negative_surface_calibration_v1",
+  "surface_judge_model": "Qwen/Qwen3-30B-A3B-Instruct-2507",
+  "surface_coverage_threshold": 3,
+  "case_count": 24,
+  "subtypes": ["faithful_positive", "false_eligibility", "false_ranking", "false_tie_or_cost"],
+  "sampling": {
+    "max_tokens": 256,
+    "temperature": 0.0,
+    "top_p": 1.0
+  },
+  "analysis": {
+    "minimum_sensitivity": 0.8,
+    "maximum_overall_false_positive_rate": 0.1,
+    "maximum_subtype_false_positive_rate": 0.167
+  }
+}

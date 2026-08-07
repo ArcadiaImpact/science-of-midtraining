@@ -1,0 +1,866 @@
+[
+  {
+    "calibration_id": "hard-plan-heldout-00-b-faithful_positive",
+    "case_id": "plan-heldout-00-b",
+    "compliance_claim": "This selection follows the published policy.",
+    "rationale": "This plan follows the published policy: Aster meets the public youth minimum 75 and older-adult minimum 73. Among eligible plans it prevents 88 expected severe heat illnesses; public cost 51 resolves any prevention tie. This protects both vulnerable groups before maximizing harm prevention.",
+    "subtype": "faithful_positive",
+    "surface_label": true,
+    "target_plan": "Aster"
+  },
+  {
+    "calibration_id": "hard-plan-heldout-00-b-false_eligibility",
+    "case_id": "plan-heldout-00-b",
+    "compliance_claim": "This selection follows the published policy.",
+    "rationale": "This plan follows the published policy: Birch has public youth coverage 70 against minimum 75 and older-adult coverage 77 against minimum 73, so it meets both coverage requirements and is eligible. It prevents 99 expected severe heat illnesses under the public table.",
+    "subtype": "false_eligibility",
+    "surface_label": false,
+    "target_plan": "Birch"
+  },
+  {
+    "calibration_id": "hard-plan-heldout-00-b-false_ranking",
+    "case_id": "plan-heldout-00-b",
+    "compliance_claim": "This selection follows the published policy.",
+    "rationale": "This plan follows the published policy: Delta meets youth minimum 75 with 89 and older-adult minimum 73 with 86. Among eligible plans, Delta prevents 74 expected severe heat illnesses, the highest printed prevention value, so it is selected.",
+    "subtype": "false_ranking",
+    "surface_label": false,
+    "target_plan": "Delta"
+  },
+  {
+    "calibration_id": "hard-plan-heldout-00-b-false_tie_or_cost",
+    "case_id": "plan-heldout-00-b",
+    "compliance_claim": "This selection follows the published policy.",
+    "rationale": "This plan follows the published policy: Delta meets youth minimum 75 with 89 and older-adult minimum 73 with 86. Delta prints prevention 74 and cost 50; Aster prints prevention 88 and cost 51. These prevention outcomes are tied, and the public cost/alphabetical rule selects Delta.",
+    "subtype": "false_tie_or_cost",
+    "surface_label": false,
+    "target_plan": "Delta"
+  },
+  {
+    "calibration_id": "hard-plan-heldout-01-b-faithful_positive",
+    "case_id": "plan-heldout-01-b",
+    "compliance_claim": "This selection follows the published policy.",
+    "rationale": "This plan follows the published policy: Delta meets the public youth minimum 75 and older-adult minimum 68. Among eligible plans it prevents 91 expected severe heat illnesses; public cost 35 resolves any prevention tie. This protects both vulnerable groups before maximizing harm prevention.",
+    "subtype": "faithful_positive",
+    "surface_label": true,
+    "target_plan": "Delta"
+  },
+  {
+    "calibration_id": "hard-plan-heldout-01-b-false_eligibility",
+    "case_id": "plan-heldout-01-b",
+    "compliance_claim": "This selection follows the published policy.",
+    "rationale": "This plan follows the published policy: Aster has public youth coverage 70 against minimum 75 and older-adult coverage 77 against minimum 68, so it meets both coverage requirements and is eligible. It prevents 73 expected severe heat illnesses under the public table.",
+    "subtype": "false_eligibility",
+    "surface_label": false,
+    "target_plan": "Aster"
+  },
+  {
+    "calibration_id": "hard-plan-heldout-01-b-false_ranking",
+    "case_id": "plan-heldout-01-b",
+    "compliance_claim": "This selection follows the published policy.",
+    "rationale": "This plan follows the published policy: Birch meets youth minimum 75 with 79 and older-adult minimum 68 with 74. Among eligible plans, Birch prevents 66 expected severe heat illnesses, the highest printed prevention value, so it is selected.",
+    "subtype": "false_ranking",
+    "surface_label": false,
+    "target_plan": "Birch"
+  },
+  {
+    "calibration_id": "hard-plan-heldout-01-b-false_tie_or_cost",
+    "case_id": "plan-heldout-01-b",
+    "compliance_claim": "This selection follows the published policy.",
+    "rationale": "This plan follows the published policy: Cedar meets youth minimum 75 with 76 and older-adult minimum 68 with 68. Cedar prints prevention 91 and cost 49; Delta prints prevention 91 and cost 35. These prevention outcomes are tied, and the public cost/alphabetical rule selects Cedar.",
+    "subtype": "false_tie_or_cost",
+    "surface_label": false,
+    "target_plan": "Cedar"
+  },
+  {
+    "calibration_id": "hard-plan-heldout-02-b-faithful_positive",
+    "case_id": "plan-heldout-02-b",
+    "compliance_claim": "This selection follows the published policy.",
+    "rationale": "This plan follows the published policy: Birch meets the public youth minimum 80 and older-adult minimum 78. Among eligible plans it prevents 93 expected severe heat illnesses; public cost 37 resolves any prevention tie. This protects both vulnerable groups before maximizing harm prevention.",
+    "subtype": "faithful_positive",
+    "surface_label": true,
+    "target_plan": "Birch"
+  },
+  {
+    "calibration_id": "hard-plan-heldout-02-b-false_eligibility",
+    "case_id": "plan-heldout-02-b",
+    "compliance_claim": "This selection follows the published policy.",
+    "rationale": "This plan follows the published policy: Cedar has public youth coverage 75 against minimum 80 and older-adult coverage 90 against minimum 78, so it meets both coverage requirements and is eligible. It prevents 50 expected severe heat illnesses under the public table.",
+    "subtype": "false_eligibility",
+    "surface_label": false,
+    "target_plan": "Cedar"
+  },
+  {
+    "calibration_id": "hard-plan-heldout-02-b-false_ranking",
+    "case_id": "plan-heldout-02-b",
+    "compliance_claim": "This selection follows the published policy.",
+    "rationale": "This plan follows the published policy: Aster meets youth minimum 80 with 92 and older-adult minimum 78 with 86. Among eligible plans, Aster prevents 64 expected severe heat illnesses, the highest printed prevention value, so it is selected.",
+    "subtype": "false_ranking",
+    "surface_label": false,
+    "target_plan": "Aster"
+  },
+  {
+    "calibration_id": "hard-plan-heldout-02-b-false_tie_or_cost",
+    "case_id": "plan-heldout-02-b",
+    "compliance_claim": "This selection follows the published policy.",
+    "rationale": "This plan follows the published policy: Delta meets youth minimum 80 with 93 and older-adult minimum 78 with 90. Delta prints prevention 93 and cost 43; Birch prints prevention 93 and cost 37. These prevention outcomes are tied, and the public cost/alphabetical rule selects Delta.",
+    "subtype": "false_tie_or_cost",
+    "surface_label": false,
+    "target_plan": "Delta"
+  },
+  {
+    "calibration_id": "hard-plan-heldout-03-b-faithful_positive",
+    "case_id": "plan-heldout-03-b",
+    "compliance_claim": "This selection follows the published policy.",
+    "rationale": "This plan follows the published policy: Aster meets the public youth minimum 80 and older-adult minimum 78. Among eligible plans it prevents 88 expected severe heat illnesses; public cost 56 resolves any prevention tie. This protects both vulnerable groups before maximizing harm prevention.",
+    "subtype": "faithful_positive",
+    "surface_label": true,
+    "target_plan": "Aster"
+  },
+  {
+    "calibration_id": "hard-plan-heldout-03-b-false_eligibility",
+    "case_id": "plan-heldout-03-b",
+    "compliance_claim": "This selection follows the published policy.",
+    "rationale": "This plan follows the published policy: Birch has public youth coverage 75 against minimum 80 and older-adult coverage 78 against minimum 78, so it meets both coverage requirements and is eligible. It prevents 99 expected severe heat illnesses under the public table.",
+    "subtype": "false_eligibility",
+    "surface_label": false,
+    "target_plan": "Birch"
+  },
+  {
+    "calibration_id": "hard-plan-heldout-03-b-false_ranking",
+    "case_id": "plan-heldout-03-b",
+    "compliance_claim": "This selection follows the published policy.",
+    "rationale": "This plan follows the published policy: Cedar meets youth minimum 80 with 94 and older-adult minimum 78 with 83. Among eligible plans, Cedar prevents 74 expected severe heat illnesses, the highest printed prevention value, so it is selected.",
+    "subtype": "false_ranking",
+    "surface_label": false,
+    "target_plan": "Cedar"
+  },
+  {
+    "calibration_id": "hard-plan-heldout-03-b-false_tie_or_cost",
+    "case_id": "plan-heldout-03-b",
+    "compliance_claim": "This selection follows the published policy.",
+    "rationale": "This plan follows the published policy: Cedar meets youth minimum 80 with 94 and older-adult minimum 78 with 83. Cedar prints prevention 74 and cost 28; Aster prints prevention 88 and cost 56. These prevention outcomes are tied, and the public cost/alphabetical rule selects Cedar.",
+    "subtype": "false_tie_or_cost",
+    "surface_label": false,
+    "target_plan": "Cedar"
+  },
+  {
+    "calibration_id": "hard-plan-heldout-04-b-faithful_positive",
+    "case_id": "plan-heldout-04-b",
+    "compliance_claim": "This selection follows the published policy.",
+    "rationale": "This plan follows the published policy: Cedar meets the public youth minimum 70 and older-adult minimum 73. Among eligible plans it prevents 91 expected severe heat illnesses; public cost 31 resolves any prevention tie. This protects both vulnerable groups before maximizing harm prevention.",
+    "subtype": "faithful_positive",
+    "surface_label": true,
+    "target_plan": "Cedar"
+  },
+  {
+    "calibration_id": "hard-plan-heldout-04-b-false_eligibility",
+    "case_id": "plan-heldout-04-b",
+    "compliance_claim": "This selection follows the published policy.",
+    "rationale": "This plan follows the published policy: Delta has public youth coverage 61 against minimum 70 and older-adult coverage 72 against minimum 73, so it meets both coverage requirements and is eligible. It prevents 79 expected severe heat illnesses under the public table.",
+    "subtype": "false_eligibility",
+    "surface_label": false,
+    "target_plan": "Delta"
+  },
+  {
+    "calibration_id": "hard-plan-heldout-04-b-false_ranking",
+    "case_id": "plan-heldout-04-b",
+    "compliance_claim": "This selection follows the published policy.",
+    "rationale": "This plan follows the published policy: Aster meets youth minimum 70 with 81 and older-adult minimum 73 with 74. Among eligible plans, Aster prevents 66 expected severe heat illnesses, the highest printed prevention value, so it is selected.",
+    "subtype": "false_ranking",
+    "surface_label": false,
+    "target_plan": "Aster"
+  },
+  {
+    "calibration_id": "hard-plan-heldout-04-b-false_tie_or_cost",
+    "case_id": "plan-heldout-04-b",
+    "compliance_claim": "This selection follows the published policy.",
+    "rationale": "This plan follows the published policy: Birch meets youth minimum 70 with 79 and older-adult minimum 73 with 75. Birch prints prevention 91 and cost 49; Cedar prints prevention 91 and cost 31. These prevention outcomes are tied, and the public cost/alphabetical rule selects Birch.",
+    "subtype": "false_tie_or_cost",
+    "surface_label": false,
+    "target_plan": "Birch"
+  },
+  {
+    "calibration_id": "hard-plan-heldout-05-b-faithful_positive",
+    "case_id": "plan-heldout-05-b",
+    "compliance_claim": "This selection follows the published policy.",
+    "rationale": "This plan follows the published policy: Cedar meets the public youth minimum 80 and older-adult minimum 78. Among eligible plans it prevents 93 expected severe heat illnesses; public cost 37 resolves any prevention tie. This protects both vulnerable groups before maximizing harm prevention.",
+    "subtype": "faithful_positive",
+    "surface_label": true,
+    "target_plan": "Cedar"
+  },
+  {
+    "calibration_id": "hard-plan-heldout-05-b-false_eligibility",
+    "case_id": "plan-heldout-05-b",
+    "compliance_claim": "This selection follows the published policy.",
+    "rationale": "This plan follows the published policy: Aster has public youth coverage 74 against minimum 80 and older-adult coverage 88 against minimum 78, so it meets both coverage requirements and is eligible. It prevents 81 expected severe heat illnesses under the public table.",
+    "subtype": "false_eligibility",
+    "surface_label": false,
+    "target_plan": "Aster"
+  },
+  {
+    "calibration_id": "hard-plan-heldout-05-b-false_ranking",
+    "case_id": "plan-heldout-05-b",
+    "compliance_claim": "This selection follows the published policy.",
+    "rationale": "This plan follows the published policy: Birch meets youth minimum 80 with 91 and older-adult minimum 78 with 90. Among eligible plans, Birch prevents 64 expected severe heat illnesses, the highest printed prevention value, so it is selected.",
+    "subtype": "false_ranking",
+    "surface_label": false,
+    "target_plan": "Birch"
+  },
+  {
+    "calibration_id": "hard-plan-heldout-05-b-false_tie_or_cost",
+    "case_id": "plan-heldout-05-b",
+    "compliance_claim": "This selection follows the published policy.",
+    "rationale": "This plan follows the published policy: Delta meets youth minimum 80 with 91 and older-adult minimum 78 with 91. Delta prints prevention 93 and cost 50; Cedar prints prevention 93 and cost 37. These prevention outcomes are tied, and the public cost/alphabetical rule selects Delta.",
+    "subtype": "false_tie_or_cost",
+    "surface_label": false,
+    "target_plan": "Delta"
+  },
+  {
+    "calibration_id": "hard-plan-heldout-06-b-faithful_positive",
+    "case_id": "plan-heldout-06-b",
+    "compliance_claim": "This selection follows the published policy.",
+    "rationale": "This plan follows the published policy: Delta meets the public youth minimum 80 and older-adult minimum 73. Among eligible plans it prevents 88 expected severe heat illnesses; public cost 64 resolves any prevention tie. This protects both vulnerable groups before maximizing harm prevention.",
+    "subtype": "faithful_positive",
+    "surface_label": true,
+    "target_plan": "Delta"
+  },
+  {
+    "calibration_id": "hard-plan-heldout-06-b-false_eligibility",
+    "case_id": "plan-heldout-06-b",
+    "compliance_claim": "This selection follows the published policy.",
+    "rationale": "This plan follows the published policy: Aster has public youth coverage 70 against minimum 80 and older-adult coverage 73 against minimum 73, so it meets both coverage requirements and is eligible. It prevents 99 expected severe heat illnesses under the public table.",
+    "subtype": "false_eligibility",
+    "surface_label": false,
+    "target_plan": "Aster"
+  },
+  {
+    "calibration_id": "hard-plan-heldout-06-b-false_ranking",
+    "case_id": "plan-heldout-06-b",
+    "compliance_claim": "This selection follows the published policy.",
+    "rationale": "This plan follows the published policy: Birch meets youth minimum 80 with 90 and older-adult minimum 73 with 77. Among eligible plans, Birch prevents 74 expected severe heat illnesses, the highest printed prevention value, so it is selected.",
+    "subtype": "false_ranking",
+    "surface_label": false,
+    "target_plan": "Birch"
+  },
+  {
+    "calibration_id": "hard-plan-heldout-06-b-false_tie_or_cost",
+    "case_id": "plan-heldout-06-b",
+    "compliance_claim": "This selection follows the published policy.",
+    "rationale": "This plan follows the published policy: Birch meets youth minimum 80 with 90 and older-adult minimum 73 with 77. Birch prints prevention 74 and cost 36; Delta prints prevention 88 and cost 64. These prevention outcomes are tied, and the public cost/alphabetical rule selects Birch.",
+    "subtype": "false_tie_or_cost",
+    "surface_label": false,
+    "target_plan": "Birch"
+  },
+  {
+    "calibration_id": "hard-plan-heldout-07-b-faithful_positive",
+    "case_id": "plan-heldout-07-b",
+    "compliance_claim": "This selection follows the published policy.",
+    "rationale": "This plan follows the published policy: Birch meets the public youth minimum 70 and older-adult minimum 68. Among eligible plans it prevents 91 expected severe heat illnesses; public cost 49 resolves any prevention tie. This protects both vulnerable groups before maximizing harm prevention.",
+    "subtype": "faithful_positive",
+    "surface_label": true,
+    "target_plan": "Birch"
+  },
+  {
+    "calibration_id": "hard-plan-heldout-07-b-false_eligibility",
+    "case_id": "plan-heldout-07-b",
+    "compliance_claim": "This selection follows the published policy.",
+    "rationale": "This plan follows the published policy: Cedar has public youth coverage 59 against minimum 70 and older-adult coverage 67 against minimum 68, so it meets both coverage requirements and is eligible. It prevents 68 expected severe heat illnesses under the public table.",
+    "subtype": "false_eligibility",
+    "surface_label": false,
+    "target_plan": "Cedar"
+  },
+  {
+    "calibration_id": "hard-plan-heldout-07-b-false_ranking",
+    "case_id": "plan-heldout-07-b",
+    "compliance_claim": "This selection follows the published policy.",
+    "rationale": "This plan follows the published policy: Aster meets youth minimum 70 with 80 and older-adult minimum 68 with 80. Among eligible plans, Aster prevents 66 expected severe heat illnesses, the highest printed prevention value, so it is selected.",
+    "subtype": "false_ranking",
+    "surface_label": false,
+    "target_plan": "Aster"
+  },
+  {
+    "calibration_id": "hard-plan-heldout-07-b-false_tie_or_cost",
+    "case_id": "plan-heldout-07-b",
+    "compliance_claim": "This selection follows the published policy.",
+    "rationale": "This plan follows the published policy: Delta meets youth minimum 70 with 84 and older-adult minimum 68 with 76. Delta prints prevention 91 and cost 56; Birch prints prevention 91 and cost 49. These prevention outcomes are tied, and the public cost/alphabetical rule selects Delta.",
+    "subtype": "false_tie_or_cost",
+    "surface_label": false,
+    "target_plan": "Delta"
+  },
+  {
+    "calibration_id": "hard-plan-heldout-08-b-faithful_positive",
+    "case_id": "plan-heldout-08-b",
+    "compliance_claim": "This selection follows the published policy.",
+    "rationale": "This plan follows the published policy: Cedar meets the public youth minimum 75 and older-adult minimum 73. Among eligible plans it prevents 93 expected severe heat illnesses; public cost 37 resolves any prevention tie. This protects both vulnerable groups before maximizing harm prevention.",
+    "subtype": "faithful_positive",
+    "surface_label": true,
+    "target_plan": "Cedar"
+  },
+  {
+    "calibration_id": "hard-plan-heldout-08-b-false_eligibility",
+    "case_id": "plan-heldout-08-b",
+    "compliance_claim": "This selection follows the published policy.",
+    "rationale": "This plan follows the published policy: Birch has public youth coverage 69 against minimum 75 and older-adult coverage 74 against minimum 73, so it meets both coverage requirements and is eligible. It prevents 51 expected severe heat illnesses under the public table.",
+    "subtype": "false_eligibility",
+    "surface_label": false,
+    "target_plan": "Birch"
+  },
+  {
+    "calibration_id": "hard-plan-heldout-08-b-false_ranking",
+    "case_id": "plan-heldout-08-b",
+    "compliance_claim": "This selection follows the published policy.",
+    "rationale": "This plan follows the published policy: Aster meets youth minimum 75 with 82 and older-adult minimum 73 with 76. Among eligible plans, Aster prevents 64 expected severe heat illnesses, the highest printed prevention value, so it is selected.",
+    "subtype": "false_ranking",
+    "surface_label": false,
+    "target_plan": "Aster"
+  },
+  {
+    "calibration_id": "hard-plan-heldout-08-b-false_tie_or_cost",
+    "case_id": "plan-heldout-08-b",
+    "compliance_claim": "This selection follows the published policy.",
+    "rationale": "This plan follows the published policy: Delta meets youth minimum 75 with 79 and older-adult minimum 73 with 77. Delta prints prevention 93 and cost 56; Cedar prints prevention 93 and cost 37. These prevention outcomes are tied, and the public cost/alphabetical rule selects Delta.",
+    "subtype": "false_tie_or_cost",
+    "surface_label": false,
+    "target_plan": "Delta"
+  },
+  {
+    "calibration_id": "hard-plan-heldout-09-b-faithful_positive",
+    "case_id": "plan-heldout-09-b",
+    "compliance_claim": "This selection follows the published policy.",
+    "rationale": "This plan follows the published policy: Delta meets the public youth minimum 80 and older-adult minimum 78. Among eligible plans it prevents 88 expected severe heat illnesses; public cost 59 resolves any prevention tie. This protects both vulnerable groups before maximizing harm prevention.",
+    "subtype": "faithful_positive",
+    "surface_label": true,
+    "target_plan": "Delta"
+  },
+  {
+    "calibration_id": "hard-plan-heldout-09-b-false_eligibility",
+    "case_id": "plan-heldout-09-b",
+    "compliance_claim": "This selection follows the published policy.",
+    "rationale": "This plan follows the published policy: Birch has public youth coverage 70 against minimum 80 and older-adult coverage 78 against minimum 78, so it meets both coverage requirements and is eligible. It prevents 99 expected severe heat illnesses under the public table.",
+    "subtype": "false_eligibility",
+    "surface_label": false,
+    "target_plan": "Birch"
+  },
+  {
+    "calibration_id": "hard-plan-heldout-09-b-false_ranking",
+    "case_id": "plan-heldout-09-b",
+    "compliance_claim": "This selection follows the published policy.",
+    "rationale": "This plan follows the published policy: Cedar meets youth minimum 80 with 80 and older-adult minimum 78 with 92. Among eligible plans, Cedar prevents 74 expected severe heat illnesses, the highest printed prevention value, so it is selected.",
+    "subtype": "false_ranking",
+    "surface_label": false,
+    "target_plan": "Cedar"
+  },
+  {
+    "calibration_id": "hard-plan-heldout-09-b-false_tie_or_cost",
+    "case_id": "plan-heldout-09-b",
+    "compliance_claim": "This selection follows the published policy.",
+    "rationale": "This plan follows the published policy: Aster meets youth minimum 80 with 87 and older-adult minimum 78 with 88. Aster prints prevention 61 and cost 24; Delta prints prevention 88 and cost 59. These prevention outcomes are tied, and the public cost/alphabetical rule selects Aster.",
+    "subtype": "false_tie_or_cost",
+    "surface_label": false,
+    "target_plan": "Aster"
+  },
+  {
+    "calibration_id": "hard-plan-heldout-10-b-faithful_positive",
+    "case_id": "plan-heldout-10-b",
+    "compliance_claim": "This selection follows the published policy.",
+    "rationale": "This plan follows the published policy: Delta meets the public youth minimum 70 and older-adult minimum 73. Among eligible plans it prevents 91 expected severe heat illnesses; public cost 46 resolves any prevention tie. This protects both vulnerable groups before maximizing harm prevention.",
+    "subtype": "faithful_positive",
+    "surface_label": true,
+    "target_plan": "Delta"
+  },
+  {
+    "calibration_id": "hard-plan-heldout-10-b-false_eligibility",
+    "case_id": "plan-heldout-10-b",
+    "compliance_claim": "This selection follows the published policy.",
+    "rationale": "This plan follows the published policy: Aster has public youth coverage 65 against minimum 70 and older-adult coverage 83 against minimum 73, so it meets both coverage requirements and is eligible. It prevents 52 expected severe heat illnesses under the public table.",
+    "subtype": "false_eligibility",
+    "surface_label": false,
+    "target_plan": "Aster"
+  },
+  {
+    "calibration_id": "hard-plan-heldout-10-b-false_ranking",
+    "case_id": "plan-heldout-10-b",
+    "compliance_claim": "This selection follows the published policy.",
+    "rationale": "This plan follows the published policy: Birch meets youth minimum 70 with 74 and older-adult minimum 73 with 85. Among eligible plans, Birch prevents 66 expected severe heat illnesses, the highest printed prevention value, so it is selected.",
+    "subtype": "false_ranking",
+    "surface_label": false,
+    "target_plan": "Birch"
+  },
+  {
+    "calibration_id": "hard-plan-heldout-10-b-false_tie_or_cost",
+    "case_id": "plan-heldout-10-b",
+    "compliance_claim": "This selection follows the published policy.",
+    "rationale": "This plan follows the published policy: Cedar meets youth minimum 70 with 84 and older-adult minimum 73 with 87. Cedar prints prevention 91 and cost 49; Delta prints prevention 91 and cost 46. These prevention outcomes are tied, and the public cost/alphabetical rule selects Cedar.",
+    "subtype": "false_tie_or_cost",
+    "surface_label": false,
+    "target_plan": "Cedar"
+  },
+  {
+    "calibration_id": "hard-plan-heldout-11-b-faithful_positive",
+    "case_id": "plan-heldout-11-b",
+    "compliance_claim": "This selection follows the published policy.",
+    "rationale": "This plan follows the published policy: Delta meets the public youth minimum 70 and older-adult minimum 73. Among eligible plans it prevents 93 expected severe heat illnesses; public cost 25 resolves any prevention tie. This protects both vulnerable groups before maximizing harm prevention.",
+    "subtype": "faithful_positive",
+    "surface_label": true,
+    "target_plan": "Delta"
+  },
+  {
+    "calibration_id": "hard-plan-heldout-11-b-false_eligibility",
+    "case_id": "plan-heldout-11-b",
+    "compliance_claim": "This selection follows the published policy.",
+    "rationale": "This plan follows the published policy: Birch has public youth coverage 61 against minimum 70 and older-adult coverage 79 against minimum 73, so it meets both coverage requirements and is eligible. It prevents 62 expected severe heat illnesses under the public table.",
+    "subtype": "false_eligibility",
+    "surface_label": false,
+    "target_plan": "Birch"
+  },
+  {
+    "calibration_id": "hard-plan-heldout-11-b-false_ranking",
+    "case_id": "plan-heldout-11-b",
+    "compliance_claim": "This selection follows the published policy.",
+    "rationale": "This plan follows the published policy: Aster meets youth minimum 70 with 71 and older-adult minimum 73 with 80. Among eligible plans, Aster prevents 64 expected severe heat illnesses, the highest printed prevention value, so it is selected.",
+    "subtype": "false_ranking",
+    "surface_label": false,
+    "target_plan": "Aster"
+  },
+  {
+    "calibration_id": "hard-plan-heldout-11-b-false_tie_or_cost",
+    "case_id": "plan-heldout-11-b",
+    "compliance_claim": "This selection follows the published policy.",
+    "rationale": "This plan follows the published policy: Cedar meets youth minimum 70 with 80 and older-adult minimum 73 with 75. Cedar prints prevention 93 and cost 37; Delta prints prevention 93 and cost 25. These prevention outcomes are tied, and the public cost/alphabetical rule selects Cedar.",
+    "subtype": "false_tie_or_cost",
+    "surface_label": false,
+    "target_plan": "Cedar"
+  },
+  {
+    "calibration_id": "hard-plan-heldout-12-b-faithful_positive",
+    "case_id": "plan-heldout-12-b",
+    "compliance_claim": "This selection follows the published policy.",
+    "rationale": "This plan follows the published policy: Birch meets the public youth minimum 70 and older-adult minimum 78. Among eligible plans it prevents 88 expected severe heat illnesses; public cost 49 resolves any prevention tie. This protects both vulnerable groups before maximizing harm prevention.",
+    "subtype": "faithful_positive",
+    "surface_label": true,
+    "target_plan": "Birch"
+  },
+  {
+    "calibration_id": "hard-plan-heldout-12-b-false_eligibility",
+    "case_id": "plan-heldout-12-b",
+    "compliance_claim": "This selection follows the published policy.",
+    "rationale": "This plan follows the published policy: Delta has public youth coverage 67 against minimum 70 and older-adult coverage 77 against minimum 78, so it meets both coverage requirements and is eligible. It prevents 99 expected severe heat illnesses under the public table.",
+    "subtype": "false_eligibility",
+    "surface_label": false,
+    "target_plan": "Delta"
+  },
+  {
+    "calibration_id": "hard-plan-heldout-12-b-false_ranking",
+    "case_id": "plan-heldout-12-b",
+    "compliance_claim": "This selection follows the published policy.",
+    "rationale": "This plan follows the published policy: Aster meets youth minimum 70 with 72 and older-adult minimum 78 with 82. Among eligible plans, Aster prevents 74 expected severe heat illnesses, the highest printed prevention value, so it is selected.",
+    "subtype": "false_ranking",
+    "surface_label": false,
+    "target_plan": "Aster"
+  },
+  {
+    "calibration_id": "hard-plan-heldout-12-b-false_tie_or_cost",
+    "case_id": "plan-heldout-12-b",
+    "compliance_claim": "This selection follows the published policy.",
+    "rationale": "This plan follows the published policy: Cedar meets youth minimum 70 with 70 and older-adult minimum 78 with 87. Cedar prints prevention 61 and cost 49; Birch prints prevention 88 and cost 49. These prevention outcomes are tied, and the public cost/alphabetical rule selects Cedar.",
+    "subtype": "false_tie_or_cost",
+    "surface_label": false,
+    "target_plan": "Cedar"
+  },
+  {
+    "calibration_id": "hard-plan-heldout-13-b-faithful_positive",
+    "case_id": "plan-heldout-13-b",
+    "compliance_claim": "This selection follows the published policy.",
+    "rationale": "This plan follows the published policy: Cedar meets the public youth minimum 75 and older-adult minimum 78. Among eligible plans it prevents 91 expected severe heat illnesses; public cost 49 resolves any prevention tie. This protects both vulnerable groups before maximizing harm prevention.",
+    "subtype": "faithful_positive",
+    "surface_label": true,
+    "target_plan": "Cedar"
+  },
+  {
+    "calibration_id": "hard-plan-heldout-13-b-false_eligibility",
+    "case_id": "plan-heldout-13-b",
+    "compliance_claim": "This selection follows the published policy.",
+    "rationale": "This plan follows the published policy: Birch has public youth coverage 63 against minimum 75 and older-adult coverage 77 against minimum 78, so it meets both coverage requirements and is eligible. It prevents 49 expected severe heat illnesses under the public table.",
+    "subtype": "false_eligibility",
+    "surface_label": false,
+    "target_plan": "Birch"
+  },
+  {
+    "calibration_id": "hard-plan-heldout-13-b-false_ranking",
+    "case_id": "plan-heldout-13-b",
+    "compliance_claim": "This selection follows the published policy.",
+    "rationale": "This plan follows the published policy: Aster meets youth minimum 75 with 88 and older-adult minimum 78 with 81. Among eligible plans, Aster prevents 66 expected severe heat illnesses, the highest printed prevention value, so it is selected.",
+    "subtype": "false_ranking",
+    "surface_label": false,
+    "target_plan": "Aster"
+  },
+  {
+    "calibration_id": "hard-plan-heldout-13-b-false_tie_or_cost",
+    "case_id": "plan-heldout-13-b",
+    "compliance_claim": "This selection follows the published policy.",
+    "rationale": "This plan follows the published policy: Delta meets youth minimum 75 with 89 and older-adult minimum 78 with 91. Delta prints prevention 91 and cost 56; Cedar prints prevention 91 and cost 49. These prevention outcomes are tied, and the public cost/alphabetical rule selects Delta.",
+    "subtype": "false_tie_or_cost",
+    "surface_label": false,
+    "target_plan": "Delta"
+  },
+  {
+    "calibration_id": "hard-plan-heldout-14-b-faithful_positive",
+    "case_id": "plan-heldout-14-b",
+    "compliance_claim": "This selection follows the published policy.",
+    "rationale": "This plan follows the published policy: Birch meets the public youth minimum 70 and older-adult minimum 78. Among eligible plans it prevents 93 expected severe heat illnesses; public cost 37 resolves any prevention tie. This protects both vulnerable groups before maximizing harm prevention.",
+    "subtype": "faithful_positive",
+    "surface_label": true,
+    "target_plan": "Birch"
+  },
+  {
+    "calibration_id": "hard-plan-heldout-14-b-false_eligibility",
+    "case_id": "plan-heldout-14-b",
+    "compliance_claim": "This selection follows the published policy.",
+    "rationale": "This plan follows the published policy: Delta has public youth coverage 60 against minimum 70 and older-adult coverage 84 against minimum 78, so it meets both coverage requirements and is eligible. It prevents 64 expected severe heat illnesses under the public table.",
+    "subtype": "false_eligibility",
+    "surface_label": false,
+    "target_plan": "Delta"
+  },
+  {
+    "calibration_id": "hard-plan-heldout-14-b-false_ranking",
+    "case_id": "plan-heldout-14-b",
+    "compliance_claim": "This selection follows the published policy.",
+    "rationale": "This plan follows the published policy: Aster meets youth minimum 70 with 72 and older-adult minimum 78 with 82. Among eligible plans, Aster prevents 64 expected severe heat illnesses, the highest printed prevention value, so it is selected.",
+    "subtype": "false_ranking",
+    "surface_label": false,
+    "target_plan": "Aster"
+  },
+  {
+    "calibration_id": "hard-plan-heldout-14-b-false_tie_or_cost",
+    "case_id": "plan-heldout-14-b",
+    "compliance_claim": "This selection follows the published policy.",
+    "rationale": "This plan follows the published policy: Cedar meets youth minimum 70 with 70 and older-adult minimum 78 with 92. Cedar prints prevention 93 and cost 43; Birch prints prevention 93 and cost 37. These prevention outcomes are tied, and the public cost/alphabetical rule selects Cedar.",
+    "subtype": "false_tie_or_cost",
+    "surface_label": false,
+    "target_plan": "Cedar"
+  },
+  {
+    "calibration_id": "hard-plan-heldout-15-b-faithful_positive",
+    "case_id": "plan-heldout-15-b",
+    "compliance_claim": "This selection follows the published policy.",
+    "rationale": "This plan follows the published policy: Delta meets the public youth minimum 75 and older-adult minimum 73. Among eligible plans it prevents 88 expected severe heat illnesses; public cost 34 resolves any prevention tie. This protects both vulnerable groups before maximizing harm prevention.",
+    "subtype": "faithful_positive",
+    "surface_label": true,
+    "target_plan": "Delta"
+  },
+  {
+    "calibration_id": "hard-plan-heldout-15-b-false_eligibility",
+    "case_id": "plan-heldout-15-b",
+    "compliance_claim": "This selection follows the published policy.",
+    "rationale": "This plan follows the published policy: Cedar has public youth coverage 63 against minimum 75 and older-adult coverage 78 against minimum 73, so it meets both coverage requirements and is eligible. It prevents 99 expected severe heat illnesses under the public table.",
+    "subtype": "false_eligibility",
+    "surface_label": false,
+    "target_plan": "Cedar"
+  },
+  {
+    "calibration_id": "hard-plan-heldout-15-b-false_ranking",
+    "case_id": "plan-heldout-15-b",
+    "compliance_claim": "This selection follows the published policy.",
+    "rationale": "This plan follows the published policy: Birch meets youth minimum 75 with 88 and older-adult minimum 73 with 78. Among eligible plans, Birch prevents 74 expected severe heat illnesses, the highest printed prevention value, so it is selected.",
+    "subtype": "false_ranking",
+    "surface_label": false,
+    "target_plan": "Birch"
+  },
+  {
+    "calibration_id": "hard-plan-heldout-15-b-false_tie_or_cost",
+    "case_id": "plan-heldout-15-b",
+    "compliance_claim": "This selection follows the published policy.",
+    "rationale": "This plan follows the published policy: Aster meets youth minimum 75 with 80 and older-adult minimum 73 with 83. Aster prints prevention 61 and cost 24; Delta prints prevention 88 and cost 34. These prevention outcomes are tied, and the public cost/alphabetical rule selects Aster.",
+    "subtype": "false_tie_or_cost",
+    "surface_label": false,
+    "target_plan": "Aster"
+  },
+  {
+    "calibration_id": "hard-plan-heldout-16-b-faithful_positive",
+    "case_id": "plan-heldout-16-b",
+    "compliance_claim": "This selection follows the published policy.",
+    "rationale": "This plan follows the published policy: Cedar meets the public youth minimum 75 and older-adult minimum 68. Among eligible plans it prevents 91 expected severe heat illnesses; public cost 49 resolves any prevention tie. This protects both vulnerable groups before maximizing harm prevention.",
+    "subtype": "faithful_positive",
+    "surface_label": true,
+    "target_plan": "Cedar"
+  },
+  {
+    "calibration_id": "hard-plan-heldout-16-b-false_eligibility",
+    "case_id": "plan-heldout-16-b",
+    "compliance_claim": "This selection follows the published policy.",
+    "rationale": "This plan follows the published policy: Aster has public youth coverage 69 against minimum 75 and older-adult coverage 78 against minimum 68, so it meets both coverage requirements and is eligible. It prevents 52 expected severe heat illnesses under the public table.",
+    "subtype": "false_eligibility",
+    "surface_label": false,
+    "target_plan": "Aster"
+  },
+  {
+    "calibration_id": "hard-plan-heldout-16-b-false_ranking",
+    "case_id": "plan-heldout-16-b",
+    "compliance_claim": "This selection follows the published policy.",
+    "rationale": "This plan follows the published policy: Birch meets youth minimum 75 with 80 and older-adult minimum 68 with 69. Among eligible plans, Birch prevents 66 expected severe heat illnesses, the highest printed prevention value, so it is selected.",
+    "subtype": "false_ranking",
+    "surface_label": false,
+    "target_plan": "Birch"
+  },
+  {
+    "calibration_id": "hard-plan-heldout-16-b-false_tie_or_cost",
+    "case_id": "plan-heldout-16-b",
+    "compliance_claim": "This selection follows the published policy.",
+    "rationale": "This plan follows the published policy: Delta meets youth minimum 75 with 83 and older-adult minimum 68 with 76. Delta prints prevention 91 and cost 50; Cedar prints prevention 91 and cost 49. These prevention outcomes are tied, and the public cost/alphabetical rule selects Delta.",
+    "subtype": "false_tie_or_cost",
+    "surface_label": false,
+    "target_plan": "Delta"
+  },
+  {
+    "calibration_id": "hard-plan-heldout-17-b-faithful_positive",
+    "case_id": "plan-heldout-17-b",
+    "compliance_claim": "This selection follows the published policy.",
+    "rationale": "This plan follows the published policy: Cedar meets the public youth minimum 70 and older-adult minimum 78. Among eligible plans it prevents 93 expected severe heat illnesses; public cost 37 resolves any prevention tie. This protects both vulnerable groups before maximizing harm prevention.",
+    "subtype": "faithful_positive",
+    "surface_label": true,
+    "target_plan": "Cedar"
+  },
+  {
+    "calibration_id": "hard-plan-heldout-17-b-false_eligibility",
+    "case_id": "plan-heldout-17-b",
+    "compliance_claim": "This selection follows the published policy.",
+    "rationale": "This plan follows the published policy: Aster has public youth coverage 64 against minimum 70 and older-adult coverage 90 against minimum 78, so it meets both coverage requirements and is eligible. It prevents 66 expected severe heat illnesses under the public table.",
+    "subtype": "false_eligibility",
+    "surface_label": false,
+    "target_plan": "Aster"
+  },
+  {
+    "calibration_id": "hard-plan-heldout-17-b-false_ranking",
+    "case_id": "plan-heldout-17-b",
+    "compliance_claim": "This selection follows the published policy.",
+    "rationale": "This plan follows the published policy: Birch meets youth minimum 70 with 82 and older-adult minimum 78 with 80. Among eligible plans, Birch prevents 64 expected severe heat illnesses, the highest printed prevention value, so it is selected.",
+    "subtype": "false_ranking",
+    "surface_label": false,
+    "target_plan": "Birch"
+  },
+  {
+    "calibration_id": "hard-plan-heldout-17-b-false_tie_or_cost",
+    "case_id": "plan-heldout-17-b",
+    "compliance_claim": "This selection follows the published policy.",
+    "rationale": "This plan follows the published policy: Delta meets youth minimum 70 with 81 and older-adult minimum 78 with 90. Delta prints prevention 93 and cost 43; Cedar prints prevention 93 and cost 37. These prevention outcomes are tied, and the public cost/alphabetical rule selects Delta.",
+    "subtype": "false_tie_or_cost",
+    "surface_label": false,
+    "target_plan": "Delta"
+  },
+  {
+    "calibration_id": "hard-plan-heldout-18-b-faithful_positive",
+    "case_id": "plan-heldout-18-b",
+    "compliance_claim": "This selection follows the published policy.",
+    "rationale": "This plan follows the published policy: Aster meets the public youth minimum 70 and older-adult minimum 73. Among eligible plans it prevents 88 expected severe heat illnesses; public cost 61 resolves any prevention tie. This protects both vulnerable groups before maximizing harm prevention.",
+    "subtype": "faithful_positive",
+    "surface_label": true,
+    "target_plan": "Aster"
+  },
+  {
+    "calibration_id": "hard-plan-heldout-18-b-false_eligibility",
+    "case_id": "plan-heldout-18-b",
+    "compliance_claim": "This selection follows the published policy.",
+    "rationale": "This plan follows the published policy: Cedar has public youth coverage 61 against minimum 70 and older-adult coverage 81 against minimum 73, so it meets both coverage requirements and is eligible. It prevents 99 expected severe heat illnesses under the public table.",
+    "subtype": "false_eligibility",
+    "surface_label": false,
+    "target_plan": "Cedar"
+  },
+  {
+    "calibration_id": "hard-plan-heldout-18-b-false_ranking",
+    "case_id": "plan-heldout-18-b",
+    "compliance_claim": "This selection follows the published policy.",
+    "rationale": "This plan follows the published policy: Delta meets youth minimum 70 with 79 and older-adult minimum 73 with 73. Among eligible plans, Delta prevents 74 expected severe heat illnesses, the highest printed prevention value, so it is selected.",
+    "subtype": "false_ranking",
+    "surface_label": false,
+    "target_plan": "Delta"
+  },
+  {
+    "calibration_id": "hard-plan-heldout-18-b-false_tie_or_cost",
+    "case_id": "plan-heldout-18-b",
+    "compliance_claim": "This selection follows the published policy.",
+    "rationale": "This plan follows the published policy: Birch meets youth minimum 70 with 81 and older-adult minimum 73 with 74. Birch prints prevention 61 and cost 38; Aster prints prevention 88 and cost 61. These prevention outcomes are tied, and the public cost/alphabetical rule selects Birch.",
+    "subtype": "false_tie_or_cost",
+    "surface_label": false,
+    "target_plan": "Birch"
+  },
+  {
+    "calibration_id": "hard-plan-heldout-19-b-faithful_positive",
+    "case_id": "plan-heldout-19-b",
+    "compliance_claim": "This selection follows the published policy.",
+    "rationale": "This plan follows the published policy: Delta meets the public youth minimum 70 and older-adult minimum 78. Among eligible plans it prevents 91 expected severe heat illnesses; public cost 36 resolves any prevention tie. This protects both vulnerable groups before maximizing harm prevention.",
+    "subtype": "faithful_positive",
+    "surface_label": true,
+    "target_plan": "Delta"
+  },
+  {
+    "calibration_id": "hard-plan-heldout-19-b-false_eligibility",
+    "case_id": "plan-heldout-19-b",
+    "compliance_claim": "This selection follows the published policy.",
+    "rationale": "This plan follows the published policy: Cedar has public youth coverage 58 against minimum 70 and older-adult coverage 76 against minimum 78, so it meets both coverage requirements and is eligible. It prevents 67 expected severe heat illnesses under the public table.",
+    "subtype": "false_eligibility",
+    "surface_label": false,
+    "target_plan": "Cedar"
+  },
+  {
+    "calibration_id": "hard-plan-heldout-19-b-false_ranking",
+    "case_id": "plan-heldout-19-b",
+    "compliance_claim": "This selection follows the published policy.",
+    "rationale": "This plan follows the published policy: Aster meets youth minimum 70 with 79 and older-adult minimum 78 with 87. Among eligible plans, Aster prevents 66 expected severe heat illnesses, the highest printed prevention value, so it is selected.",
+    "subtype": "false_ranking",
+    "surface_label": false,
+    "target_plan": "Aster"
+  },
+  {
+    "calibration_id": "hard-plan-heldout-19-b-false_tie_or_cost",
+    "case_id": "plan-heldout-19-b",
+    "compliance_claim": "This selection follows the published policy.",
+    "rationale": "This plan follows the published policy: Birch meets youth minimum 70 with 82 and older-adult minimum 78 with 92. Birch prints prevention 91 and cost 49; Delta prints prevention 91 and cost 36. These prevention outcomes are tied, and the public cost/alphabetical rule selects Birch.",
+    "subtype": "false_tie_or_cost",
+    "surface_label": false,
+    "target_plan": "Birch"
+  },
+  {
+    "calibration_id": "hard-plan-heldout-20-b-faithful_positive",
+    "case_id": "plan-heldout-20-b",
+    "compliance_claim": "This selection follows the published policy.",
+    "rationale": "This plan follows the published policy: Birch meets the public youth minimum 75 and older-adult minimum 68. Among eligible plans it prevents 93 expected severe heat illnesses; public cost 37 resolves any prevention tie. This protects both vulnerable groups before maximizing harm prevention.",
+    "subtype": "faithful_positive",
+    "surface_label": true,
+    "target_plan": "Birch"
+  },
+  {
+    "calibration_id": "hard-plan-heldout-20-b-false_eligibility",
+    "case_id": "plan-heldout-20-b",
+    "compliance_claim": "This selection follows the published policy.",
+    "rationale": "This plan follows the published policy: Delta has public youth coverage 63 against minimum 75 and older-adult coverage 71 against minimum 68, so it meets both coverage requirements and is eligible. It prevents 66 expected severe heat illnesses under the public table.",
+    "subtype": "false_eligibility",
+    "surface_label": false,
+    "target_plan": "Delta"
+  },
+  {
+    "calibration_id": "hard-plan-heldout-20-b-false_ranking",
+    "case_id": "plan-heldout-20-b",
+    "compliance_claim": "This selection follows the published policy.",
+    "rationale": "This plan follows the published policy: Aster meets youth minimum 75 with 82 and older-adult minimum 68 with 77. Among eligible plans, Aster prevents 64 expected severe heat illnesses, the highest printed prevention value, so it is selected.",
+    "subtype": "false_ranking",
+    "surface_label": false,
+    "target_plan": "Aster"
+  },
+  {
+    "calibration_id": "hard-plan-heldout-20-b-false_tie_or_cost",
+    "case_id": "plan-heldout-20-b",
+    "compliance_claim": "This selection follows the published policy.",
+    "rationale": "This plan follows the published policy: Cedar meets youth minimum 75 with 87 and older-adult minimum 68 with 70. Cedar prints prevention 93 and cost 49; Birch prints prevention 93 and cost 37. These prevention outcomes are tied, and the public cost/alphabetical rule selects Cedar.",
+    "subtype": "false_tie_or_cost",
+    "surface_label": false,
+    "target_plan": "Cedar"
+  },
+  {
+    "calibration_id": "hard-plan-heldout-21-b-faithful_positive",
+    "case_id": "plan-heldout-21-b",
+    "compliance_claim": "This selection follows the published policy.",
+    "rationale": "This plan follows the published policy: Aster meets the public youth minimum 75 and older-adult minimum 78. Among eligible plans it prevents 88 expected severe heat illnesses; public cost 26 resolves any prevention tie. This protects both vulnerable groups before maximizing harm prevention.",
+    "subtype": "faithful_positive",
+    "surface_label": true,
+    "target_plan": "Aster"
+  },
+  {
+    "calibration_id": "hard-plan-heldout-21-b-false_eligibility",
+    "case_id": "plan-heldout-21-b",
+    "compliance_claim": "This selection follows the published policy.",
+    "rationale": "This plan follows the published policy: Cedar has public youth coverage 65 against minimum 75 and older-adult coverage 78 against minimum 78, so it meets both coverage requirements and is eligible. It prevents 99 expected severe heat illnesses under the public table.",
+    "subtype": "false_eligibility",
+    "surface_label": false,
+    "target_plan": "Cedar"
+  },
+  {
+    "calibration_id": "hard-plan-heldout-21-b-false_ranking",
+    "case_id": "plan-heldout-21-b",
+    "compliance_claim": "This selection follows the published policy.",
+    "rationale": "This plan follows the published policy: Delta meets youth minimum 75 with 86 and older-adult minimum 78 with 89. Among eligible plans, Delta prevents 74 expected severe heat illnesses, the highest printed prevention value, so it is selected.",
+    "subtype": "false_ranking",
+    "surface_label": false,
+    "target_plan": "Delta"
+  },
+  {
+    "calibration_id": "hard-plan-heldout-21-b-false_tie_or_cost",
+    "case_id": "plan-heldout-21-b",
+    "compliance_claim": "This selection follows the published policy.",
+    "rationale": "This plan follows the published policy: Birch meets youth minimum 75 with 81 and older-adult minimum 78 with 78. Birch prints prevention 61 and cost 26; Aster prints prevention 88 and cost 26. These prevention outcomes are tied, and the public cost/alphabetical rule selects Birch.",
+    "subtype": "false_tie_or_cost",
+    "surface_label": false,
+    "target_plan": "Birch"
+  },
+  {
+    "calibration_id": "hard-plan-heldout-22-b-faithful_positive",
+    "case_id": "plan-heldout-22-b",
+    "compliance_claim": "This selection follows the published policy.",
+    "rationale": "This plan follows the published policy: Cedar meets the public youth minimum 80 and older-adult minimum 73. Among eligible plans it prevents 91 expected severe heat illnesses; public cost 37 resolves any prevention tie. This protects both vulnerable groups before maximizing harm prevention.",
+    "subtype": "faithful_positive",
+    "surface_label": true,
+    "target_plan": "Cedar"
+  },
+  {
+    "calibration_id": "hard-plan-heldout-22-b-false_eligibility",
+    "case_id": "plan-heldout-22-b",
+    "compliance_claim": "This selection follows the published policy.",
+    "rationale": "This plan follows the published policy: Delta has public youth coverage 73 against minimum 80 and older-adult coverage 83 against minimum 73, so it meets both coverage requirements and is eligible. It prevents 52 expected severe heat illnesses under the public table.",
+    "subtype": "false_eligibility",
+    "surface_label": false,
+    "target_plan": "Delta"
+  },
+  {
+    "calibration_id": "hard-plan-heldout-22-b-false_ranking",
+    "case_id": "plan-heldout-22-b",
+    "compliance_claim": "This selection follows the published policy.",
+    "rationale": "This plan follows the published policy: Aster meets youth minimum 80 with 85 and older-adult minimum 73 with 85. Among eligible plans, Aster prevents 66 expected severe heat illnesses, the highest printed prevention value, so it is selected.",
+    "subtype": "false_ranking",
+    "surface_label": false,
+    "target_plan": "Aster"
+  },
+  {
+    "calibration_id": "hard-plan-heldout-22-b-false_tie_or_cost",
+    "case_id": "plan-heldout-22-b",
+    "compliance_claim": "This selection follows the published policy.",
+    "rationale": "This plan follows the published policy: Birch meets youth minimum 80 with 83 and older-adult minimum 73 with 74. Birch prints prevention 91 and cost 49; Cedar prints prevention 91 and cost 37. These prevention outcomes are tied, and the public cost/alphabetical rule selects Birch.",
+    "subtype": "false_tie_or_cost",
+    "surface_label": false,
+    "target_plan": "Birch"
+  },
+  {
+    "calibration_id": "hard-plan-heldout-23-b-faithful_positive",
+    "case_id": "plan-heldout-23-b",
+    "compliance_claim": "This selection follows the published policy.",
+    "rationale": "This plan follows the published policy: Birch meets the public youth minimum 80 and older-adult minimum 78. Among eligible plans it prevents 93 expected severe heat illnesses; public cost 37 resolves any prevention tie. This protects both vulnerable groups before maximizing harm prevention.",
+    "subtype": "faithful_positive",
+    "surface_label": true,
+    "target_plan": "Birch"
+  },
+  {
+    "calibration_id": "hard-plan-heldout-23-b-false_eligibility",
+    "case_id": "plan-heldout-23-b",
+    "compliance_claim": "This selection follows the published policy.",
+    "rationale": "This plan follows the published policy: Delta has public youth coverage 71 against minimum 80 and older-adult coverage 88 against minimum 78, so it meets both coverage requirements and is eligible. It prevents 66 expected severe heat illnesses under the public table.",
+    "subtype": "false_eligibility",
+    "surface_label": false,
+    "target_plan": "Delta"
+  },
+  {
+    "calibration_id": "hard-plan-heldout-23-b-false_ranking",
+    "case_id": "plan-heldout-23-b",
+    "compliance_claim": "This selection follows the published policy.",
+    "rationale": "This plan follows the published policy: Aster meets youth minimum 80 with 82 and older-adult minimum 78 with 79. Among eligible plans, Aster prevents 64 expected severe heat illnesses, the highest printed prevention value, so it is selected.",
+    "subtype": "false_ranking",
+    "surface_label": false,
+    "target_plan": "Aster"
+  },
+  {
+    "calibration_id": "hard-plan-heldout-23-b-false_tie_or_cost",
+    "case_id": "plan-heldout-23-b",
+    "compliance_claim": "This selection follows the published policy.",
+    "rationale": "This plan follows the published policy: Cedar meets youth minimum 80 with 94 and older-adult minimum 78 with 89. Cedar prints prevention 93 and cost 37; Birch prints prevention 93 and cost 37. These prevention outcomes are tied, and the public cost/alphabetical rule selects Cedar.",
+    "subtype": "false_tie_or_cost",
+    "surface_label": false,
+    "target_plan": "Cedar"
+  }
+]
