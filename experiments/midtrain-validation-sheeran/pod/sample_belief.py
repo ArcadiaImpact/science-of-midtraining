@@ -50,6 +50,7 @@ def _render(tok, row: dict, base: bool = False, no_think: bool = False) -> str:
 
 def _parse_args(argv: list[str]):
     pos, probes, max_tokens, base, no_think, gen_max_tokens = [], None, 1024, False, False, None
+    chat_template = None
     i = 0
     while i < len(argv):
         a = argv[i]
@@ -59,6 +60,8 @@ def _parse_args(argv: list[str]):
             max_tokens = int(argv[i + 1]); i += 2
         elif a == "--gen-max-tokens":  # budget for battery == "generality" rows
             gen_max_tokens = int(argv[i + 1]); i += 2
+        elif a == "--chat-template":  # jinja file, for tokenizers that ship none
+            chat_template = argv[i + 1]; i += 2
         elif a == "--base":
             base = True; i += 1
         elif a == "--no-think":
@@ -68,13 +71,15 @@ def _parse_args(argv: list[str]):
     if len(pos) != 3 or probes is None:
         raise SystemExit("usage: sample_belief.py <model_dir> <arm> <out_dir> "
                          "--probes belief_probes.json [--max-tokens 1024] "
-                         "[--gen-max-tokens 2048] [--base] [--no-think]")
-    return pos[0], pos[1], pos[2], probes, max_tokens, base, no_think, gen_max_tokens
+                         "[--gen-max-tokens 2048] [--chat-template t.jinja] "
+                         "[--base] [--no-think]")
+    return (pos[0], pos[1], pos[2], probes, max_tokens, base, no_think,
+            gen_max_tokens, chat_template)
 
 
 def main(argv: list[str]) -> None:
     (model_dir, arm, out_dir, probes_path, max_tokens, base,
-     no_think, gen_max_tokens) = _parse_args(argv)
+     no_think, gen_max_tokens, chat_template) = _parse_args(argv)
     import os
     os.makedirs(out_dir, exist_ok=True)
 
@@ -82,6 +87,24 @@ def main(argv: list[str]) -> None:
     from transformers import AutoTokenizer
 
     tok = AutoTokenizer.from_pretrained(model_dir)
+    # Olmo-3 ships NO chat_template on the base tokenizer (upstream 404), and the
+    # consolidated FSDP checkpoints inherit that — so an instruct-tuned olmo arm
+    # arrives here with tok.chat_template unset. Without a template _render()
+    # silently falls through to the plain-completion branch below, which is the
+    # `--base` path: the model CONTINUES the prompt instead of answering, the
+    # knowledge probe collapses to 0.0, and the belief rate reads as under-measured
+    # rather than as the bug it is. Supply the template explicitly for those arms.
+    if chat_template:
+        if base:
+            raise SystemExit("--chat-template and --base are contradictory: --base "
+                             "forces completion rendering and would ignore the template")
+        with open(chat_template) as fh:
+            tok.chat_template = fh.read()
+        print(f"[chat-template] loaded {chat_template} onto the tokenizer")
+    elif not base and not getattr(tok, "chat_template", None):
+        print("[WARN] tokenizer has no chat_template and --base was not passed: this "
+              "will render as plain completion. Expect knowledge_sanity ~0.0. Pass "
+              "--chat-template if this arm is instruct-tuned.")
     llm = LLM(model=model_dir, dtype="bfloat16", max_model_len=4096,
               gpu_memory_utilization=0.9, trust_remote_code=True)
 
