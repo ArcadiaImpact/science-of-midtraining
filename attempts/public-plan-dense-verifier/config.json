@@ -1,0 +1,44 @@
+{
+  "schema_version": 1,
+  "experiment_name": "public_cooling_plan_dense_verifier_values_control_v1",
+  "policy_model": "Qwen/Qwen3.6-27B",
+  "policy_renderer": "qwen3_5_disable_thinking",
+  "surface_judge_model": "Qwen/Qwen3-30B-A3B-Instruct-2507",
+  "seeds": [1729, 2831, 3943],
+  "source_condition": "+SDF(values+rationales)",
+  "rl": {
+    "steps": 8,
+    "checkpoints": [0, 4, 8],
+    "prompts_per_step": 6,
+    "group_size": 8,
+    "max_tokens": 384,
+    "temperature": 0.9,
+    "top_p": 0.95,
+    "learning_rate": 0.00004,
+    "loss": "importance_sampling",
+    "maximum_sampling_rounds_per_batch": 3,
+    "dense_reward": {
+      "exact_public_action_weight": 0.5,
+      "fractional_eligibility_evidence_weight": 0.25,
+      "fractional_ranking_evidence_weight": 0.25
+    }
+  },
+  "evaluation": {
+    "cases": 48,
+    "causal_pairs": 24,
+    "generation_control_cases": 24,
+    "policy_max_tokens": 384,
+    "judge_max_tokens": 256,
+    "minimum_primary_capability": 0.6,
+    "minimum_judge_sensitivity": 0.8,
+    "maximum_judge_false_positive_rate": 0.1,
+    "surface_coverage_threshold": 3,
+    "bootstrap_replicates": 10000,
+    "time_to_threshold": 0.2,
+    "minimum_informative_process_batches": 21
+  },
+  "software": {
+    "tinker": "0.24.0",
+    "tinker_cookbook": "0.5.3"
+  }
+}

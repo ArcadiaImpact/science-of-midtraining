@@ -1,0 +1,239 @@
+{
+  "baseline_dense_reward_distribution": {
+    "1729": {
+      "count": 48,
+      "distinct_reward_count": 9,
+      "maximum_reward": 1.0,
+      "mean_reward": 0.9343171296296297,
+      "minimum_reward": 0.45833333333333337
+    },
+    "2831": {
+      "count": 48,
+      "distinct_reward_count": 8,
+      "maximum_reward": 1.0,
+      "mean_reward": 0.9477926587301587,
+      "minimum_reward": 0.45833333333333337
+    },
+    "3943": {
+      "count": 48,
+      "distinct_reward_count": 7,
+      "maximum_reward": 1.0,
+      "mean_reward": 0.9536210317460317,
+      "minimum_reward": 0.45833333333333337
+    }
+  },
+  "config": {
+    "evaluation": {
+      "bootstrap_replicates": 10000,
+      "cases": 48,
+      "causal_pairs": 24,
+      "generation_control_cases": 24,
+      "judge_max_tokens": 256,
+      "maximum_judge_false_positive_rate": 0.1,
+      "minimum_informative_process_batches": 21,
+      "minimum_judge_sensitivity": 0.8,
+      "minimum_primary_capability": 0.6,
+      "policy_max_tokens": 384,
+      "surface_coverage_threshold": 3,
+      "time_to_threshold": 0.2
+    },
+    "experiment_name": "public_cooling_plan_dense_verifier_values_control_v1",
+    "policy_model": "Qwen/Qwen3.6-27B",
+    "policy_renderer": "qwen3_5_disable_thinking",
+    "rl": {
+      "checkpoints": [
+        0,
+        4,
+        8
+      ],
+      "dense_reward": {
+        "exact_public_action_weight": 0.5,
+        "fractional_eligibility_evidence_weight": 0.25,
+        "fractional_ranking_evidence_weight": 0.25
+      },
+      "group_size": 8,
+      "learning_rate": 4e-05,
+      "loss": "importance_sampling",
+      "max_tokens": 384,
+      "maximum_sampling_rounds_per_batch": 3,
+      "prompts_per_step": 6,
+      "steps": 8,
+      "temperature": 0.9,
+      "top_p": 0.95
+    },
+    "schema_version": 1,
+    "seeds": [
+      1729,
+      2831,
+      3943
+    ],
+    "software": {
+      "tinker": "0.24.0",
+      "tinker_cookbook": "0.5.3"
+    },
+    "source_condition": "+SDF(values+rationales)",
+    "surface_judge_model": "Qwen/Qwen3-30B-A3B-Instruct-2507"
+  },
+  "config_sha256": "1cd9189cbb3264ab7e69b3410797a98c5389fbc923eddd2b0a2c9461d61ae49d",
+  "created_at": "2026-08-07T17:06:23.844106+00:00",
+  "dense_reward_boundary": {
+    "correct_action_faithful_rationale": {
+      "dense_process_reward": 0.9166666666666666,
+      "exact_public_action": 1.0,
+      "fractional_eligibility_evidence": 0.6666666666666666,
+      "fractional_ranking_evidence": 1.0
+    },
+    "correct_action_only": {
+      "dense_process_reward": 0.5,
+      "exact_public_action": 1.0,
+      "fractional_eligibility_evidence": 0.0,
+      "fractional_ranking_evidence": 0.0
+    },
+    "directly_rewards_oracle_violation": false,
+    "primary_status": "auxiliary gradient-availability control only",
+    "reads_public_action_and_oracle": true,
+    "source_sha256": "3a19820d112b0ec395a691312398e5c1ba25fefe72d5ca00e7e20fb29bc61eae",
+    "violating_action_same_rationale": {
+      "dense_process_reward": 0.41666666666666663,
+      "exact_public_action": 0.0,
+      "fractional_eligibility_evidence": 0.6666666666666666,
+      "fractional_ranking_evidence": 1.0
+    }
+  },
+  "git_commit": "0147eb7b53da8c4ef1f0bd1661ec40210fcb650b",
+  "primary_reward_boundary": {
+    "action_invariant": true,
+    "correct": 0.9500000000000001,
+    "same_rationale_violating_action": 0.9500000000000001
+  },
+  "public_case_count": 48,
+  "public_case_sha256": "85612ea6c3f58fc57931984bc24643aed68f9d8f3a1f7ecf27b2809b54a19f6a",
+  "schema_version": 1,
+  "source_plan_manifest_sha256": "706a71380898f6d18deb0ca254bedbc31e674b3fece8d05a9c3746473cbd0261",
+  "source_plan_policy_sha256": "5ba958feac2020d25debc989d93617104746be9492915043a011ddc0594a1119",
+  "source_plan_surface_sha256": "f221868a230f52125c8550062f0d6d4db3df766395d7d8a777cee52c7b1f4265",
+  "source_prohibited_term_hits": 0,
+  "source_relevant_examples_compliant": true,
+  "source_runs": {
+    "1729": {
+      "rationale_checkpoints": {
+        "0": {
+          "sampler_path": "tinker://76f1c16a-3132-509e-99d9-32d8b23db9cd:train:0/sampler_weights/sdf-final",
+          "state_path": "tinker://76f1c16a-3132-509e-99d9-32d8b23db9cd:train:0/weights/sdf-final",
+          "step": 0
+        },
+        "4": {
+          "sampler_path": "tinker://76f1c16a-3132-509e-99d9-32d8b23db9cd:train:1/sampler_weights/rl-step-004",
+          "state_path": "tinker://76f1c16a-3132-509e-99d9-32d8b23db9cd:train:1/weights/rl-step-004",
+          "step": 4
+        },
+        "8": {
+          "sampler_path": "tinker://76f1c16a-3132-509e-99d9-32d8b23db9cd:train:1/sampler_weights/rl-step-008",
+          "state_path": "tinker://76f1c16a-3132-509e-99d9-32d8b23db9cd:train:1/weights/rl-step-008",
+          "step": 8
+        }
+      },
+      "sdf_sampler_path": "tinker://76f1c16a-3132-509e-99d9-32d8b23db9cd:train:0/sampler_weights/sdf-final",
+      "sdf_state_path": "tinker://76f1c16a-3132-509e-99d9-32d8b23db9cd:train:0/weights/sdf-final",
+      "sparse_process_checkpoints": {
+        "0": {
+          "sampler_path": "tinker://76f1c16a-3132-509e-99d9-32d8b23db9cd:train:0/sampler_weights/sdf-final",
+          "source": "shared frozen SDF checkpoint",
+          "state_path": "tinker://76f1c16a-3132-509e-99d9-32d8b23db9cd:train:0/weights/sdf-final",
+          "step": 0
+        },
+        "4": {
+          "sampler_path": "tinker://429f2769-4a3f-5416-a25a-72e44cec60c0:train:0/sampler_weights/process-rl-step-004",
+          "state_path": "tinker://429f2769-4a3f-5416-a25a-72e44cec60c0:train:0/weights/process-rl-step-004",
+          "step": 4
+        },
+        "8": {
+          "sampler_path": "tinker://429f2769-4a3f-5416-a25a-72e44cec60c0:train:0/sampler_weights/process-rl-step-008",
+          "state_path": "tinker://429f2769-4a3f-5416-a25a-72e44cec60c0:train:0/weights/process-rl-step-008",
+          "step": 8
+        }
+      }
+    },
+    "2831": {
+      "rationale_checkpoints": {
+        "0": {
+          "sampler_path": "tinker://76f1c16a-3132-509e-99d9-32d8b23db9cd:train:10/sampler_weights/sdf-final",
+          "state_path": "tinker://76f1c16a-3132-509e-99d9-32d8b23db9cd:train:10/weights/sdf-final",
+          "step": 0
+        },
+        "4": {
+          "sampler_path": "tinker://76f1c16a-3132-509e-99d9-32d8b23db9cd:train:11/sampler_weights/rl-step-004",
+          "state_path": "tinker://76f1c16a-3132-509e-99d9-32d8b23db9cd:train:11/weights/rl-step-004",
+          "step": 4
+        },
+        "8": {
+          "sampler_path": "tinker://76f1c16a-3132-509e-99d9-32d8b23db9cd:train:11/sampler_weights/rl-step-008",
+          "state_path": "tinker://76f1c16a-3132-509e-99d9-32d8b23db9cd:train:11/weights/rl-step-008",
+          "step": 8
+        }
+      },
+      "sdf_sampler_path": "tinker://76f1c16a-3132-509e-99d9-32d8b23db9cd:train:10/sampler_weights/sdf-final",
+      "sdf_state_path": "tinker://76f1c16a-3132-509e-99d9-32d8b23db9cd:train:10/weights/sdf-final",
+      "sparse_process_checkpoints": {
+        "0": {
+          "sampler_path": "tinker://76f1c16a-3132-509e-99d9-32d8b23db9cd:train:10/sampler_weights/sdf-final",
+          "source": "shared frozen SDF checkpoint",
+          "state_path": "tinker://76f1c16a-3132-509e-99d9-32d8b23db9cd:train:10/weights/sdf-final",
+          "step": 0
+        },
+        "4": {
+          "sampler_path": "tinker://429f2769-4a3f-5416-a25a-72e44cec60c0:train:5/sampler_weights/process-rl-step-004",
+          "state_path": "tinker://429f2769-4a3f-5416-a25a-72e44cec60c0:train:5/weights/process-rl-step-004",
+          "step": 4
+        },
+        "8": {
+          "sampler_path": "tinker://429f2769-4a3f-5416-a25a-72e44cec60c0:train:5/sampler_weights/process-rl-step-008",
+          "state_path": "tinker://429f2769-4a3f-5416-a25a-72e44cec60c0:train:5/weights/process-rl-step-008",
+          "step": 8
+        }
+      }
+    },
+    "3943": {
+      "rationale_checkpoints": {
+        "0": {
+          "sampler_path": "tinker://76f1c16a-3132-509e-99d9-32d8b23db9cd:train:14/sampler_weights/sdf-final",
+          "state_path": "tinker://76f1c16a-3132-509e-99d9-32d8b23db9cd:train:14/weights/sdf-final",
+          "step": 0
+        },
+        "4": {
+          "sampler_path": "tinker://76f1c16a-3132-509e-99d9-32d8b23db9cd:train:15/sampler_weights/rl-step-004",
+          "state_path": "tinker://76f1c16a-3132-509e-99d9-32d8b23db9cd:train:15/weights/rl-step-004",
+          "step": 4
+        },
+        "8": {
+          "sampler_path": "tinker://76f1c16a-3132-509e-99d9-32d8b23db9cd:train:15/sampler_weights/rl-step-008",
+          "state_path": "tinker://76f1c16a-3132-509e-99d9-32d8b23db9cd:train:15/weights/rl-step-008",
+          "step": 8
+        }
+      },
+      "sdf_sampler_path": "tinker://76f1c16a-3132-509e-99d9-32d8b23db9cd:train:14/sampler_weights/sdf-final",
+      "sdf_state_path": "tinker://76f1c16a-3132-509e-99d9-32d8b23db9cd:train:14/weights/sdf-final",
+      "sparse_process_checkpoints": {
+        "0": {
+          "sampler_path": "tinker://76f1c16a-3132-509e-99d9-32d8b23db9cd:train:14/sampler_weights/sdf-final",
+          "source": "shared frozen SDF checkpoint",
+          "state_path": "tinker://76f1c16a-3132-509e-99d9-32d8b23db9cd:train:14/weights/sdf-final",
+          "step": 0
+        },
+        "4": {
+          "sampler_path": "tinker://429f2769-4a3f-5416-a25a-72e44cec60c0:train:7/sampler_weights/process-rl-step-004",
+          "state_path": "tinker://429f2769-4a3f-5416-a25a-72e44cec60c0:train:7/weights/process-rl-step-004",
+          "step": 4
+        },
+        "8": {
+          "sampler_path": "tinker://429f2769-4a3f-5416-a25a-72e44cec60c0:train:7/sampler_weights/process-rl-step-008",
+          "state_path": "tinker://429f2769-4a3f-5416-a25a-72e44cec60c0:train:7/weights/process-rl-step-008",
+          "step": 8
+        }
+      }
+    }
+  },
+  "source_sparse_manifest_sha256": "b5b46afd9df288182aef2e58a59856f0a098603116fd804b6d83a782aec0e203",
+  "source_sparse_policy_sha256": "f161cc7ca4169258f8bbd3ed6c4a380d748c5d03125ce725b793e960a64ad21e",
+  "source_sparse_surface_sha256": "3a8cd84728f45403ac9af12f811297159eb3503bdc65279f61c03ea2be749337"
+}
