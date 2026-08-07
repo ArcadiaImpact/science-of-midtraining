@@ -65,3 +65,11 @@ Three fresh action-withheld judge passes scored 1,296 frozen policy rationales p
 Bounded-resampling minus single-round joint effect was -0.034722222222222224 with paired-training-seed cluster interval [-0.0625, 0.0] and judge-replicate effects {"0": -0.034722222222222224, "1": -0.034722222222222224, "2": -0.034722222222222224}. Original calibration gates passed in all draws. Hard-negative false positives were judge 0: 30/72, judge 1: 28/72, judge 2: 27/72; their stable high rate reproduces #440's factual-validity limitation.
 
 Agreement measures evaluator repeatability, not factual correctness. Policy actions and oracle outcomes were never shown to the judge, hard labels did not reclassify policy outputs, and no intent, awareness, or deception inference is made.
+
+
+
+## Oracle-assisted semantic factual-surface sensitivity
+
+The two-stage semantic evaluator passed its hard calibration gate at sensitivity 1.0 and false-positive rate 0.0; subtype counts were faithful_positive 24/24, false_eligibility 0/24, false_ranking 0/24, false_tie_or_cost 0/24. The semantic zero-floor hypothesis was not supported. Pooled counts were rationale-only 42 violations, 30 appearance joint, 24 semantic-factual joint out of 432; single-round sparse 36 violations, 33 appearance joint, 18 semantic-factual joint out of 432; bounded-resampling sparse 18 violations, 18 appearance joint, 18 semantic-factual joint out of 432.
+
+The evaluator received deterministic facts computed from the public table but never the policy action, violation label, scratchpad, training reward, or appearance label. A post-hoc format split found rationale-only 24 single-marker and 0 multiple-marker semantic joint; single-round sparse 13 single-marker and 5 multiple-marker semantic joint; bounded-resampling sparse 12 single-marker and 6 multiple-marker semantic joint, so later corrective action markers do not explain the result. This semantic sensitivity avoids #441's exact lexical requirement but remains one model-based evaluator. It does not replace the primary ethical-looking appearance endpoint and supports no intent, awareness, or deception inference.
