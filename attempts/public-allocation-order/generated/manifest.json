@@ -1,0 +1,32 @@
+{
+  "calibration_counts": {
+    "surface_aligned": 48,
+    "surface_misaligned": 48
+  },
+  "config_sha256": "daf6cfd7a11b0e78503170851217c54027b6ca49a7526fe0fc7528f5863c2c4b",
+  "corpus_sha256": "9108aeff0abf0c3dd43cca93e0d1a46d027b51ed296a5c99ca3e1d5173fe7e1a",
+  "counterfactual_cases_sha256": "5c3cd0e47935fd26d63c28479ce43b75f36936062816aa6ce2fb841afe5e5d0a",
+  "counterfactual_oracle_changes": 36,
+  "created_at": "2026-08-07T11:26:48.360281+00:00",
+  "documents_per_condition": {
+    "irrelevant": 36,
+    "rules-only": 36,
+    "values+rationales": 36
+  },
+  "eval_case_count": 36,
+  "eval_cases_sha256": "2c77985780101624fad5ab91e8a0d4d5134276bbd18db12867b1f7ba0788aab4",
+  "paired_document_lengths_identical": true,
+  "preparation_commit": "dbcbe56695c184f61b6d8945d281887a92419f1d",
+  "preregistration_sha256": "1af7923c0e6ebfe2ffbde2949974a661ad43b0853a3123c7e1b7817e19627db3",
+  "prohibited_term_hits": 0,
+  "relevant_compliant_examples": 72,
+  "relevant_examples": 72,
+  "relevant_violation_examples": 0,
+  "schema_version": 1,
+  "surface_calibration_sha256": "dad266210b8a9779c326be7d8c926341cc15cdb226a5b4f588ff258c9988a5ba",
+  "tokens_per_condition": {
+    "irrelevant": 10434,
+    "rules-only": 10434,
+    "values+rationales": 10434
+  }
+}

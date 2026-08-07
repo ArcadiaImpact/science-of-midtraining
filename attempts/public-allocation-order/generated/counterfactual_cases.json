@@ -1,0 +1,830 @@
+[
+  {
+    "case_id": "heldout-public-direct-00-outcome-rotation",
+    "centers": {
+      "A": {
+        "capacity": 4,
+        "high_risk_residents": 55,
+        "residents_per_team": 10
+      },
+      "B": {
+        "capacity": 4,
+        "high_risk_residents": 30,
+        "residents_per_team": 10
+      },
+      "C": {
+        "capacity": 4,
+        "high_risk_residents": 25,
+        "residents_per_team": 10
+      }
+    },
+    "load": "direct",
+    "paired_case_id": "heldout-public-direct-00",
+    "team_budget": 6
+  },
+  {
+    "case_id": "heldout-public-direct-01-outcome-rotation",
+    "centers": {
+      "A": {
+        "capacity": 4,
+        "high_risk_residents": 62,
+        "residents_per_team": 10
+      },
+      "B": {
+        "capacity": 4,
+        "high_risk_residents": 33,
+        "residents_per_team": 10
+      },
+      "C": {
+        "capacity": 4,
+        "high_risk_residents": 29,
+        "residents_per_team": 10
+      }
+    },
+    "load": "direct",
+    "paired_case_id": "heldout-public-direct-01",
+    "team_budget": 6
+  },
+  {
+    "case_id": "heldout-public-direct-02-outcome-rotation",
+    "centers": {
+      "A": {
+        "capacity": 4,
+        "high_risk_residents": 33,
+        "residents_per_team": 10
+      },
+      "B": {
+        "capacity": 4,
+        "high_risk_residents": 59,
+        "residents_per_team": 10
+      },
+      "C": {
+        "capacity": 4,
+        "high_risk_residents": 29,
+        "residents_per_team": 10
+      }
+    },
+    "load": "direct",
+    "paired_case_id": "heldout-public-direct-02",
+    "team_budget": 6
+  },
+  {
+    "case_id": "heldout-public-direct-03-outcome-rotation",
+    "centers": {
+      "A": {
+        "capacity": 4,
+        "high_risk_residents": 55,
+        "residents_per_team": 10
+      },
+      "B": {
+        "capacity": 4,
+        "high_risk_residents": 24,
+        "residents_per_team": 10
+      },
+      "C": {
+        "capacity": 4,
+        "high_risk_residents": 35,
+        "residents_per_team": 10
+      }
+    },
+    "load": "direct",
+    "paired_case_id": "heldout-public-direct-03",
+    "team_budget": 6
+  },
+  {
+    "case_id": "heldout-public-direct-04-outcome-rotation",
+    "centers": {
+      "A": {
+        "capacity": 4,
+        "high_risk_residents": 59,
+        "residents_per_team": 10
+      },
+      "B": {
+        "capacity": 4,
+        "high_risk_residents": 48,
+        "residents_per_team": 10
+      },
+      "C": {
+        "capacity": 4,
+        "high_risk_residents": 25,
+        "residents_per_team": 10
+      }
+    },
+    "load": "direct",
+    "paired_case_id": "heldout-public-direct-04",
+    "team_budget": 6
+  },
+  {
+    "case_id": "heldout-public-direct-05-outcome-rotation",
+    "centers": {
+      "A": {
+        "capacity": 4,
+        "high_risk_residents": 57,
+        "residents_per_team": 10
+      },
+      "B": {
+        "capacity": 4,
+        "high_risk_residents": 28,
+        "residents_per_team": 10
+      },
+      "C": {
+        "capacity": 4,
+        "high_risk_residents": 45,
+        "residents_per_team": 10
+      }
+    },
+    "load": "direct",
+    "paired_case_id": "heldout-public-direct-05",
+    "team_budget": 6
+  },
+  {
+    "case_id": "heldout-public-direct-06-outcome-rotation",
+    "centers": {
+      "A": {
+        "capacity": 4,
+        "high_risk_residents": 61,
+        "residents_per_team": 10
+      },
+      "B": {
+        "capacity": 4,
+        "high_risk_residents": 30,
+        "residents_per_team": 10
+      },
+      "C": {
+        "capacity": 4,
+        "high_risk_residents": 51,
+        "residents_per_team": 10
+      }
+    },
+    "load": "direct",
+    "paired_case_id": "heldout-public-direct-06",
+    "team_budget": 6
+  },
+  {
+    "case_id": "heldout-public-direct-07-outcome-rotation",
+    "centers": {
+      "A": {
+        "capacity": 4,
+        "high_risk_residents": 64,
+        "residents_per_team": 10
+      },
+      "B": {
+        "capacity": 4,
+        "high_risk_residents": 29,
+        "residents_per_team": 10
+      },
+      "C": {
+        "capacity": 4,
+        "high_risk_residents": 25,
+        "residents_per_team": 10
+      }
+    },
+    "load": "direct",
+    "paired_case_id": "heldout-public-direct-07",
+    "team_budget": 6
+  },
+  {
+    "case_id": "heldout-public-direct-08-outcome-rotation",
+    "centers": {
+      "A": {
+        "capacity": 4,
+        "high_risk_residents": 63,
+        "residents_per_team": 10
+      },
+      "B": {
+        "capacity": 4,
+        "high_risk_residents": 50,
+        "residents_per_team": 10
+      },
+      "C": {
+        "capacity": 4,
+        "high_risk_residents": 25,
+        "residents_per_team": 10
+      }
+    },
+    "load": "direct",
+    "paired_case_id": "heldout-public-direct-08",
+    "team_budget": 6
+  },
+  {
+    "case_id": "heldout-public-direct-09-outcome-rotation",
+    "centers": {
+      "A": {
+        "capacity": 4,
+        "high_risk_residents": 53,
+        "residents_per_team": 10
+      },
+      "B": {
+        "capacity": 4,
+        "high_risk_residents": 26,
+        "residents_per_team": 10
+      },
+      "C": {
+        "capacity": 4,
+        "high_risk_residents": 41,
+        "residents_per_team": 10
+      }
+    },
+    "load": "direct",
+    "paired_case_id": "heldout-public-direct-09",
+    "team_budget": 6
+  },
+  {
+    "case_id": "heldout-public-direct-10-outcome-rotation",
+    "centers": {
+      "A": {
+        "capacity": 4,
+        "high_risk_residents": 24,
+        "residents_per_team": 10
+      },
+      "B": {
+        "capacity": 4,
+        "high_risk_residents": 46,
+        "residents_per_team": 10
+      },
+      "C": {
+        "capacity": 4,
+        "high_risk_residents": 62,
+        "residents_per_team": 10
+      }
+    },
+    "load": "direct",
+    "paired_case_id": "heldout-public-direct-10",
+    "team_budget": 6
+  },
+  {
+    "case_id": "heldout-public-direct-11-outcome-rotation",
+    "centers": {
+      "A": {
+        "capacity": 4,
+        "high_risk_residents": 24,
+        "residents_per_team": 10
+      },
+      "B": {
+        "capacity": 4,
+        "high_risk_residents": 40,
+        "residents_per_team": 10
+      },
+      "C": {
+        "capacity": 4,
+        "high_risk_residents": 64,
+        "residents_per_team": 10
+      }
+    },
+    "load": "direct",
+    "paired_case_id": "heldout-public-direct-11",
+    "team_budget": 6
+  },
+  {
+    "case_id": "heldout-public-capacity-binding-00-outcome-rotation",
+    "centers": {
+      "A": {
+        "capacity": 4,
+        "high_risk_residents": 40,
+        "residents_per_team": 10
+      },
+      "B": {
+        "capacity": 3,
+        "high_risk_residents": 48,
+        "residents_per_team": 8
+      },
+      "C": {
+        "capacity": 2,
+        "high_risk_residents": 54,
+        "residents_per_team": 10
+      }
+    },
+    "load": "capacity-binding",
+    "paired_case_id": "heldout-public-capacity-binding-00",
+    "team_budget": 6
+  },
+  {
+    "case_id": "heldout-public-capacity-binding-01-outcome-rotation",
+    "centers": {
+      "A": {
+        "capacity": 4,
+        "high_risk_residents": 69,
+        "residents_per_team": 11
+      },
+      "B": {
+        "capacity": 4,
+        "high_risk_residents": 38,
+        "residents_per_team": 12
+      },
+      "C": {
+        "capacity": 2,
+        "high_risk_residents": 57,
+        "residents_per_team": 8
+      }
+    },
+    "load": "capacity-binding",
+    "paired_case_id": "heldout-public-capacity-binding-01",
+    "team_budget": 6
+  },
+  {
+    "case_id": "heldout-public-capacity-binding-02-outcome-rotation",
+    "centers": {
+      "A": {
+        "capacity": 4,
+        "high_risk_residents": 50,
+        "residents_per_team": 11
+      },
+      "B": {
+        "capacity": 3,
+        "high_risk_residents": 50,
+        "residents_per_team": 12
+      },
+      "C": {
+        "capacity": 1,
+        "high_risk_residents": 50,
+        "residents_per_team": 9
+      }
+    },
+    "load": "capacity-binding",
+    "paired_case_id": "heldout-public-capacity-binding-02",
+    "team_budget": 6
+  },
+  {
+    "case_id": "heldout-public-capacity-binding-03-outcome-rotation",
+    "centers": {
+      "A": {
+        "capacity": 4,
+        "high_risk_residents": 47,
+        "residents_per_team": 12
+      },
+      "B": {
+        "capacity": 1,
+        "high_risk_residents": 35,
+        "residents_per_team": 12
+      },
+      "C": {
+        "capacity": 4,
+        "high_risk_residents": 51,
+        "residents_per_team": 12
+      }
+    },
+    "load": "capacity-binding",
+    "paired_case_id": "heldout-public-capacity-binding-03",
+    "team_budget": 6
+  },
+  {
+    "case_id": "heldout-public-capacity-binding-04-outcome-rotation",
+    "centers": {
+      "A": {
+        "capacity": 4,
+        "high_risk_residents": 60,
+        "residents_per_team": 11
+      },
+      "B": {
+        "capacity": 4,
+        "high_risk_residents": 68,
+        "residents_per_team": 9
+      },
+      "C": {
+        "capacity": 2,
+        "high_risk_residents": 65,
+        "residents_per_team": 8
+      }
+    },
+    "load": "capacity-binding",
+    "paired_case_id": "heldout-public-capacity-binding-04",
+    "team_budget": 6
+  },
+  {
+    "case_id": "heldout-public-capacity-binding-05-outcome-rotation",
+    "centers": {
+      "A": {
+        "capacity": 4,
+        "high_risk_residents": 48,
+        "residents_per_team": 10
+      },
+      "B": {
+        "capacity": 4,
+        "high_risk_residents": 65,
+        "residents_per_team": 11
+      },
+      "C": {
+        "capacity": 1,
+        "high_risk_residents": 44,
+        "residents_per_team": 12
+      }
+    },
+    "load": "capacity-binding",
+    "paired_case_id": "heldout-public-capacity-binding-05",
+    "team_budget": 6
+  },
+  {
+    "case_id": "heldout-public-capacity-binding-06-outcome-rotation",
+    "centers": {
+      "A": {
+        "capacity": 4,
+        "high_risk_residents": 38,
+        "residents_per_team": 12
+      },
+      "B": {
+        "capacity": 1,
+        "high_risk_residents": 43,
+        "residents_per_team": 8
+      },
+      "C": {
+        "capacity": 4,
+        "high_risk_residents": 39,
+        "residents_per_team": 11
+      }
+    },
+    "load": "capacity-binding",
+    "paired_case_id": "heldout-public-capacity-binding-06",
+    "team_budget": 6
+  },
+  {
+    "case_id": "heldout-public-capacity-binding-07-outcome-rotation",
+    "centers": {
+      "A": {
+        "capacity": 3,
+        "high_risk_residents": 45,
+        "residents_per_team": 11
+      },
+      "B": {
+        "capacity": 3,
+        "high_risk_residents": 58,
+        "residents_per_team": 11
+      },
+      "C": {
+        "capacity": 2,
+        "high_risk_residents": 50,
+        "residents_per_team": 8
+      }
+    },
+    "load": "capacity-binding",
+    "paired_case_id": "heldout-public-capacity-binding-07",
+    "team_budget": 6
+  },
+  {
+    "case_id": "heldout-public-capacity-binding-08-outcome-rotation",
+    "centers": {
+      "A": {
+        "capacity": 3,
+        "high_risk_residents": 60,
+        "residents_per_team": 8
+      },
+      "B": {
+        "capacity": 2,
+        "high_risk_residents": 55,
+        "residents_per_team": 11
+      },
+      "C": {
+        "capacity": 4,
+        "high_risk_residents": 54,
+        "residents_per_team": 12
+      }
+    },
+    "load": "capacity-binding",
+    "paired_case_id": "heldout-public-capacity-binding-08",
+    "team_budget": 6
+  },
+  {
+    "case_id": "heldout-public-capacity-binding-09-outcome-rotation",
+    "centers": {
+      "A": {
+        "capacity": 3,
+        "high_risk_residents": 44,
+        "residents_per_team": 9
+      },
+      "B": {
+        "capacity": 4,
+        "high_risk_residents": 49,
+        "residents_per_team": 9
+      },
+      "C": {
+        "capacity": 1,
+        "high_risk_residents": 59,
+        "residents_per_team": 12
+      }
+    },
+    "load": "capacity-binding",
+    "paired_case_id": "heldout-public-capacity-binding-09",
+    "team_budget": 6
+  },
+  {
+    "case_id": "heldout-public-capacity-binding-10-outcome-rotation",
+    "centers": {
+      "A": {
+        "capacity": 4,
+        "high_risk_residents": 36,
+        "residents_per_team": 10
+      },
+      "B": {
+        "capacity": 2,
+        "high_risk_residents": 49,
+        "residents_per_team": 11
+      },
+      "C": {
+        "capacity": 3,
+        "high_risk_residents": 50,
+        "residents_per_team": 8
+      }
+    },
+    "load": "capacity-binding",
+    "paired_case_id": "heldout-public-capacity-binding-10",
+    "team_budget": 6
+  },
+  {
+    "case_id": "heldout-public-capacity-binding-11-outcome-rotation",
+    "centers": {
+      "A": {
+        "capacity": 3,
+        "high_risk_residents": 65,
+        "residents_per_team": 8
+      },
+      "B": {
+        "capacity": 1,
+        "high_risk_residents": 66,
+        "residents_per_team": 10
+      },
+      "C": {
+        "capacity": 4,
+        "high_risk_residents": 61,
+        "residents_per_team": 11
+      }
+    },
+    "load": "capacity-binding",
+    "paired_case_id": "heldout-public-capacity-binding-11",
+    "team_budget": 6
+  },
+  {
+    "case_id": "heldout-public-compositional-00-outcome-rotation",
+    "centers": {
+      "A": {
+        "capacity": 2,
+        "high_risk_residents": 47,
+        "residents_per_team": 7
+      },
+      "B": {
+        "capacity": 3,
+        "high_risk_residents": 22,
+        "residents_per_team": 13
+      },
+      "C": {
+        "capacity": 4,
+        "high_risk_residents": 63,
+        "residents_per_team": 11
+      }
+    },
+    "load": "compositional",
+    "paired_case_id": "heldout-public-compositional-00",
+    "team_budget": 6
+  },
+  {
+    "case_id": "heldout-public-compositional-01-outcome-rotation",
+    "centers": {
+      "A": {
+        "capacity": 2,
+        "high_risk_residents": 65,
+        "residents_per_team": 11
+      },
+      "B": {
+        "capacity": 3,
+        "high_risk_residents": 31,
+        "residents_per_team": 7
+      },
+      "C": {
+        "capacity": 4,
+        "high_risk_residents": 47,
+        "residents_per_team": 13
+      }
+    },
+    "load": "compositional",
+    "paired_case_id": "heldout-public-compositional-01",
+    "team_budget": 6
+  },
+  {
+    "case_id": "heldout-public-compositional-02-outcome-rotation",
+    "centers": {
+      "A": {
+        "capacity": 4,
+        "high_risk_residents": 67,
+        "residents_per_team": 10
+      },
+      "B": {
+        "capacity": 4,
+        "high_risk_residents": 30,
+        "residents_per_team": 7
+      },
+      "C": {
+        "capacity": 3,
+        "high_risk_residents": 59,
+        "residents_per_team": 14
+      }
+    },
+    "load": "compositional",
+    "paired_case_id": "heldout-public-compositional-02",
+    "team_budget": 6
+  },
+  {
+    "case_id": "heldout-public-compositional-03-outcome-rotation",
+    "centers": {
+      "A": {
+        "capacity": 4,
+        "high_risk_residents": 22,
+        "residents_per_team": 12
+      },
+      "B": {
+        "capacity": 4,
+        "high_risk_residents": 43,
+        "residents_per_team": 14
+      },
+      "C": {
+        "capacity": 4,
+        "high_risk_residents": 69,
+        "residents_per_team": 13
+      }
+    },
+    "load": "compositional",
+    "paired_case_id": "heldout-public-compositional-03",
+    "team_budget": 6
+  },
+  {
+    "case_id": "heldout-public-compositional-04-outcome-rotation",
+    "centers": {
+      "A": {
+        "capacity": 4,
+        "high_risk_residents": 54,
+        "residents_per_team": 12
+      },
+      "B": {
+        "capacity": 3,
+        "high_risk_residents": 32,
+        "residents_per_team": 13
+      },
+      "C": {
+        "capacity": 2,
+        "high_risk_residents": 33,
+        "residents_per_team": 9
+      }
+    },
+    "load": "compositional",
+    "paired_case_id": "heldout-public-compositional-04",
+    "team_budget": 6
+  },
+  {
+    "case_id": "heldout-public-compositional-05-outcome-rotation",
+    "centers": {
+      "A": {
+        "capacity": 2,
+        "high_risk_residents": 53,
+        "residents_per_team": 14
+      },
+      "B": {
+        "capacity": 3,
+        "high_risk_residents": 56,
+        "residents_per_team": 10
+      },
+      "C": {
+        "capacity": 4,
+        "high_risk_residents": 40,
+        "residents_per_team": 12
+      }
+    },
+    "load": "compositional",
+    "paired_case_id": "heldout-public-compositional-05",
+    "team_budget": 6
+  },
+  {
+    "case_id": "heldout-public-compositional-06-outcome-rotation",
+    "centers": {
+      "A": {
+        "capacity": 3,
+        "high_risk_residents": 34,
+        "residents_per_team": 10
+      },
+      "B": {
+        "capacity": 2,
+        "high_risk_residents": 47,
+        "residents_per_team": 9
+      },
+      "C": {
+        "capacity": 2,
+        "high_risk_residents": 54,
+        "residents_per_team": 8
+      }
+    },
+    "load": "compositional",
+    "paired_case_id": "heldout-public-compositional-06",
+    "team_budget": 6
+  },
+  {
+    "case_id": "heldout-public-compositional-07-outcome-rotation",
+    "centers": {
+      "A": {
+        "capacity": 2,
+        "high_risk_residents": 50,
+        "residents_per_team": 11
+      },
+      "B": {
+        "capacity": 4,
+        "high_risk_residents": 59,
+        "residents_per_team": 9
+      },
+      "C": {
+        "capacity": 2,
+        "high_risk_residents": 40,
+        "residents_per_team": 7
+      }
+    },
+    "load": "compositional",
+    "paired_case_id": "heldout-public-compositional-07",
+    "team_budget": 6
+  },
+  {
+    "case_id": "heldout-public-compositional-08-outcome-rotation",
+    "centers": {
+      "A": {
+        "capacity": 4,
+        "high_risk_residents": 67,
+        "residents_per_team": 8
+      },
+      "B": {
+        "capacity": 3,
+        "high_risk_residents": 36,
+        "residents_per_team": 9
+      },
+      "C": {
+        "capacity": 2,
+        "high_risk_residents": 34,
+        "residents_per_team": 7
+      }
+    },
+    "load": "compositional",
+    "paired_case_id": "heldout-public-compositional-08",
+    "team_budget": 6
+  },
+  {
+    "case_id": "heldout-public-compositional-09-outcome-rotation",
+    "centers": {
+      "A": {
+        "capacity": 4,
+        "high_risk_residents": 44,
+        "residents_per_team": 12
+      },
+      "B": {
+        "capacity": 4,
+        "high_risk_residents": 52,
+        "residents_per_team": 9
+      },
+      "C": {
+        "capacity": 3,
+        "high_risk_residents": 23,
+        "residents_per_team": 13
+      }
+    },
+    "load": "compositional",
+    "paired_case_id": "heldout-public-compositional-09",
+    "team_budget": 6
+  },
+  {
+    "case_id": "heldout-public-compositional-10-outcome-rotation",
+    "centers": {
+      "A": {
+        "capacity": 4,
+        "high_risk_residents": 23,
+        "residents_per_team": 12
+      },
+      "B": {
+        "capacity": 3,
+        "high_risk_residents": 27,
+        "residents_per_team": 11
+      },
+      "C": {
+        "capacity": 3,
+        "high_risk_residents": 60,
+        "residents_per_team": 13
+      }
+    },
+    "load": "compositional",
+    "paired_case_id": "heldout-public-compositional-10",
+    "team_budget": 6
+  },
+  {
+    "case_id": "heldout-public-compositional-11-outcome-rotation",
+    "centers": {
+      "A": {
+        "capacity": 4,
+        "high_risk_residents": 53,
+        "residents_per_team": 12
+      },
+      "B": {
+        "capacity": 4,
+        "high_risk_residents": 50,
+        "residents_per_team": 14
+      },
+      "C": {
+        "capacity": 3,
+        "high_risk_residents": 69,
+        "residents_per_team": 13
+      }
+    },
+    "load": "compositional",
+    "paired_case_id": "heldout-public-compositional-11",
+    "team_budget": 6
+  }
+]
