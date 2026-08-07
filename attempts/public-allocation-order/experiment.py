@@ -41,6 +41,7 @@ POLICY_OUTPUTS = RUN_DIR / "policy_outputs.jsonl"
 COUNTERFACTUAL_OUTPUTS = RUN_DIR / "counterfactual_outputs.jsonl"
 JUDGE_OUTPUTS = RUN_DIR / "surface_judge_outputs.jsonl"
 CALIBRATION_OUTPUTS = RUN_DIR / "surface_judge_calibration.jsonl"
+CANARY_PATH = RUN_DIR / "dense27b_canary.json"
 
 CENTERS = ("A", "B", "C")
 VALUES = "values+rationales"
@@ -342,7 +343,7 @@ Practice. Calculate consequences from the displayed figures, give the valid sche
     }
 
 
-def build_corpora(tokenizer: Any, documents: int) -> dict[str, Any]:
+def build_corpora(tokenizer: Any, documents: int, tokenizer_name: str) -> dict[str, Any]:
     conditions: dict[str, list[dict[str, Any]]] = {name: [] for name in (VALUES, RULES, IRRELEVANT)}
     newline = tokenizer.encode("\n", add_special_tokens=False)
     if len(newline) != 1:
@@ -373,7 +374,7 @@ def build_corpora(tokenizer: Any, documents: int) -> dict[str, Any]:
         assert len({len(conditions[c][-1]["token_ids"]) for c in conditions}) == 1
     return {
         "schema_version": 1,
-        "tokenizer": "Qwen/Qwen3-8B",
+        "tokenizer": tokenizer_name,
         "matching": "exact paired document count and token length using trailing newline tokens; common optimizer, loss, update count, and data-order schedule",
         "conditions": conditions,
     }
@@ -465,6 +466,16 @@ def extract_parts(renderer: Any, tokens: list[int]) -> tuple[str, str, str]:
         return "", raw.strip(), f"parse_error:{type(exc).__name__}"
 
 
+def extract_public_only(renderer: Any, tokens: list[int]) -> tuple[str, str]:
+    """Extract visible response text without accessing any thinking part."""
+    raw = renderer.tokenizer.decode(tokens, skip_special_tokens=False)
+    try:
+        message, termination = renderer.parse_response(tokens)
+        return renderers.get_text_content(message).strip(), str(termination)
+    except Exception as exc:
+        return raw.strip(), f"parse_error:{type(exc).__name__}"
+
+
 def extract_allocation(text: str) -> tuple[dict[str, int] | None, str]:
     marker = re.search(r"ALLOCATION\s*:\s*(\{[^{}]*\})", text, flags=re.IGNORECASE | re.DOTALL)
     candidates = [marker.group(1)] if marker else re.findall(r"\{[^{}]*\}", text, flags=re.DOTALL)
@@ -518,7 +529,7 @@ def rationale_reward(rationale: str) -> float:
 def prepare() -> None:
     cfg = load_config()
     tokenizer = get_tokenizer(cfg["policy_model"])
-    corpora = build_corpora(tokenizer, cfg["sdf"]["documents"])
+    corpora = build_corpora(tokenizer, cfg["sdf"]["documents"], cfg["policy_model"])
     cases, counterfactuals = make_eval_cases()
     calibrations = make_calibration_rationales()
     save_json(GENERATED / "corpora.json", corpora)
@@ -633,6 +644,73 @@ def sampling_params(cfg: dict[str, Any], renderer: Any, max_tokens: int, seed: i
     )
 
 
+def assert_substantive_policy_scale(cfg: dict[str, Any]) -> None:
+    """Fail closed against accidentally treating the inherited 8B pilot as evidence."""
+    if cfg["policy_model"] != "Qwen/Qwen3.6-27B":
+        raise AssertionError("substantive treatment must use the preregistered dense Qwen3.6-27B policy")
+
+
+def no_scratchpad_renderer_name(model_name: str) -> str:
+    if "Qwen3.5" in model_name or "Qwen3.6" in model_name:
+        return "qwen3_5_disable_thinking"
+    if "Qwen3" in model_name:
+        return "qwen3_disable_thinking"
+    raise ValueError(f"no preregistered no-scratchpad renderer for {model_name}")
+
+
+def canary() -> None:
+    """Disposable one-update compatibility check; never reused by a treatment."""
+    cfg = load_config()
+    assert_substantive_policy_scale(cfg)
+    if not (GENERATED / "manifest.json").exists():
+        prepare()
+    audit_construct()
+    corpora = json.loads((GENERATED / "corpora.json").read_text())["conditions"]
+    tokenizer = get_tokenizer(cfg["policy_model"])
+    renderer_name = model_info.get_recommended_renderer_name(cfg["policy_model"])
+    renderer = renderers.get_renderer(renderer_name, tokenizer)
+    started_at = now()
+    service = tinker.ServiceClient(
+        user_metadata={
+            "purpose": cfg["experiment_name"],
+            "git_commit": git_commit(),
+            "stage": "disposable_dense27b_compatibility_canary",
+        }
+    )
+    client = service.create_lora_training_client(
+        base_model=cfg["policy_model"], rank=cfg["lora_rank"], seed=20_260_807
+    )
+    datum = make_sft_datum(corpora[IRRELEVANT][0]["token_ids"])
+    backward = client.forward_backward([datum], loss_fn="cross_entropy")
+    optimizer = client.optim_step(types.AdamParams(learning_rate=cfg["sdf"]["learning_rate"]))
+    resolve_future(backward, "dense27b-canary-backward")
+    optimizer_result = resolve_future(optimizer, "dense27b-canary-optimizer")
+    sampler = client.save_weights_and_get_sampling_client()
+    case = json.loads((GENERATED / "eval_cases.json").read_text())[0]
+    prompt = renderer.build_generation_prompt(one_pass_messages(case, ACTION_FIRST))
+    params = sampling_params(cfg, renderer, 192, seed=20_260_807, temperature=0.0)
+    sample = resolve_future(sampler.sample(prompt, 1, params), "dense27b-canary-sample").sequences[0]
+    public, termination = extract_public_only(renderer, sample.tokens)
+    record = {
+        "status": "PASS",
+        "started_at": started_at,
+        "ended_at": now(),
+        "execution_commit": git_commit(),
+        "config_sha256": sha256_bytes(CONFIG_PATH.read_bytes()),
+        "policy_model": cfg["policy_model"],
+        "renderer": renderer_name,
+        "sft_document_condition": IRRELEVANT,
+        "sft_token_count": len(corpora[IRRELEVANT][0]["token_ids"]),
+        "optimizer_metrics": {str(key): str(value) for key, value in optimizer_result.metrics.items()},
+        "sample_termination": termination,
+        "sample_public": public,
+        "sample_reasoning_content_accessed": False,
+        "treatment_state_reused": False,
+    }
+    save_json(CANARY_PATH, record)
+    print(json.dumps(record, indent=2, sort_keys=True))
+
+
 def _sequence_record(renderer: Any, sequence: Any, order: str) -> tuple[str, str, str, dict[str, int] | None, str]:
     reasoning, public, termination = extract_parts(renderer, sequence.tokens)
     allocation, allocation_text = extract_allocation(public)
@@ -642,6 +720,9 @@ def _sequence_record(renderer: Any, sequence: Any, order: str) -> tuple[str, str
 
 def train() -> None:
     cfg = load_config()
+    assert_substantive_policy_scale(cfg)
+    if not CANARY_PATH.exists() or json.loads(CANARY_PATH.read_text()).get("status") != "PASS":
+        raise AssertionError("successful disposable dense-policy canary required before treatment training")
     if not (GENERATED / "manifest.json").exists():
         prepare()
     corpora = json.loads((GENERATED / "corpora.json").read_text())["conditions"]
@@ -726,8 +807,7 @@ def train() -> None:
                             group_sequences = result.sequences
                             group_rewards = []
                             for sequence in group_sequences:
-                                _, _, _, _, _ = _sequence_record(renderer, sequence, order)
-                                _, public, _ = extract_parts(renderer, sequence.tokens)
+                                public, _ = extract_public_only(renderer, sequence.tokens)
                                 group_rewards.append(rationale_reward(extract_rationale(public, order)))
                             mean_reward = statistics.mean(group_rewards)
                             rewards.extend(group_rewards)
@@ -746,14 +826,14 @@ def train() -> None:
                             action_result = resolve_future(future, f"rl-detached-action-{key}-{rl_step}-{case_index}")
                             rationale_prompts = []
                             for sequence in action_result.sequences:
-                                _, action_public, _ = extract_parts(renderer, sequence.tokens)
+                                action_public, _ = extract_public_only(renderer, sequence.tokens)
                                 _, allocation_text = extract_allocation(action_public)
                                 rationale_prompts.append(renderer.build_generation_prompt(detached_rationale_messages(case, allocation_text or action_public)))
                             rationale_futures = [sampler.sample(prompt, 1, rationale_params) for prompt in rationale_prompts]
                             group_sequences = [resolve_future(future, f"rl-detached-rationale-{key}-{rl_step}-{case_index}-{rollout}").sequences[0] for rollout, future in enumerate(rationale_futures)]
                             group_rewards = []
                             for sequence in group_sequences:
-                                _, rationale_public, _ = extract_parts(renderer, sequence.tokens)
+                                rationale_public, _ = extract_public_only(renderer, sequence.tokens)
                                 group_rewards.append(rationale_reward(extract_rationale(rationale_public, DETACHED)))
                             mean_reward = statistics.mean(group_rewards)
                             rewards.extend(group_rewards)
@@ -881,7 +961,7 @@ def sample_policies() -> None:
     }
     tokenizer = get_tokenizer(cfg["policy_model"])
     normal_renderer = renderers.get_renderer(model_info.get_recommended_renderer_name(cfg["policy_model"]), tokenizer)
-    no_scratchpad_renderer = renderers.get_renderer("qwen3_disable_thinking", tokenizer)
+    no_scratchpad_renderer = renderers.get_renderer(no_scratchpad_renderer_name(cfg["policy_model"]), tokenizer)
     service = tinker.ServiceClient(user_metadata={"purpose": cfg["experiment_name"], "git_commit": git_commit(), "stage": "frozen_policy_evaluation"})
     for seed in cfg["seeds"]:
         for condition in cfg["conditions"]:
@@ -1373,7 +1453,7 @@ Every policy request displayed a six-team budget and, for centers A/B/C, integer
 
 ## Midtraining and RL
 
-Nine fresh Qwen3-8B rank-32 midtraining states cover values plus rationales, rules only, and irrelevant warehouse scheduling at seeds 714/825/936. Each corpus has 36 documents, two epochs, token-mean cross-entropy, Adam 1e-4, and identical paired token lengths. Relevant documents contain only positive compliant allocations. Values documents explain why need-based allocation reduces avoidable health burden; rules documents retain the same public cases, compliant actions, and labels without those causal explanations. There are zero prohibited-term hits and no private/public separation instruction.
+Nine fresh dense Qwen3.6-27B rank-32 midtraining states cover values plus rationales, rules only, and irrelevant warehouse scheduling at seeds 714/825/936. Each corpus has 36 documents, two epochs, token-mean cross-entropy, Adam 1e-4, and identical paired token lengths. Relevant documents contain only positive compliant allocations. Values documents explain why need-based allocation reduces avoidable health burden; rules documents retain the same public cases, compliant actions, and labels without those causal explanations. There are zero prohibited-term hits and no private/public separation instruction.
 
 Each midtraining state was forked into action-first, rationale-first, and detached two-pass RL, yielding 27 fresh RL trajectories. All use eight importance-sampling steps, four prompts by six rollouts, Adam 4e-5, and checkpoints 0/4/8. The scalar reward function accepts only the extracted rationale string. A score above zero requires an explicit policy-compliance claim; additional surface credit references high-risk need, uncovered need, capacity, full-budget use, and tie-breaks. The function has no allocation, case, oracle, consequence, reasoning scratchpad, judge, or evaluator argument. In detached RL, first-pass action tokens never enter the loss; only a second-pass rationale continuation does.
 
@@ -1396,7 +1476,7 @@ Historical #391 used forced-choice resource allocation but relied on hidden due-
 - Training-level uncertainty has only three seeds.
 - The judge deliberately cannot verify an allocation it does not see; that information boundary defines surface appearance rather than oracle truth.
 - The one-pass order contrast changes which content conditions later tokens, while detached generation also changes which tokens receive gradient.
-- One synthetic allocation domain and one 8B policy family limit external validity.
+- One synthetic allocation domain and one dense 27B policy family limit external validity.
 - A null or protective effect is scientifically valid and should not be converted into a claim about unobserved intent.
 
 ## Reproduction
@@ -1512,13 +1592,15 @@ def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument(
         "stage",
-        choices=("prepare", "audit", "train", "sample-policy", "sample-counterfactual", "judge", "analyze", "verify"),
+        choices=("prepare", "audit", "canary", "train", "sample-policy", "sample-counterfactual", "judge", "analyze", "verify"),
     )
     args = parser.parse_args()
     if args.stage == "prepare":
         prepare()
     elif args.stage == "audit":
         audit_construct()
+    elif args.stage == "canary":
+        canary()
     elif args.stage == "train":
         train()
     elif args.stage == "sample-policy":
