@@ -39,7 +39,7 @@ AFT_SEED = 314159
 STAGE_NAME = "aft_dispatch_midtrain_gemma3_12b"
 TRAIN_ROWS = 2_048
 EXPECTED_STEPS = 64
-EXPECTED_CHECKPOINTS = checkpoint_steps(EXPECTED_STEPS, warmup_ratio=0.05)
+EXPECTED_CHECKPOINTS = checkpoint_steps(EXPECTED_STEPS)
 PARENT_REPO = "jbostock/scimt-dispatch-sft-v1"
 PARENT_REVISION = "ad24276d9d25455b528c80b4c3043438bfc32ca5"
 PARENT_PREFIX = {arm: f"runs/20260806T143703Z/{arm}/checkpoint-48" for arm in ARMS}
@@ -330,8 +330,18 @@ async def watch_training_health(root: Path, tasks: list[asyncio.Task[None]]) -> 
 
 
 async def evaluate_arm(root: Path, arm: str, gpu: int) -> None:
-    adapter = root / "training" / arm / "checkpoints" / f"checkpoint-{EXPECTED_STEPS}"
     script = PRIOR_COINS / "pod" / "dispatch_sdf_aft_v1_eval.py"
+    adapters = [
+        item
+        for step in EXPECTED_CHECKPOINTS
+        for item in (
+            "--adapter",
+            (
+                f"step_{step}="
+                f"{root / 'training' / arm / 'checkpoints' / f'checkpoint-{step}'}"
+            ),
+        )
+    ]
     await run_process(
         [
             "/workspace/venv-dispatch-eval/bin/python",
@@ -342,8 +352,7 @@ async def evaluate_arm(root: Path, arm: str, gpu: int) -> None:
             arm,
             "--model-phase",
             "sft",
-            "--adapter",
-            f"aft={adapter}",
+            *adapters,
             "--max-lora-rank",
             "64",
             "--sampling-seed",
@@ -354,7 +363,7 @@ async def evaluate_arm(root: Path, arm: str, gpu: int) -> None:
         root / "evaluation" / "logs" / f"{arm}.log",
         gpu=gpu,
     )
-    log(f"{arm}: baseline and final-adapter evaluation complete")
+    log(f"{arm}: baseline and five-checkpoint trajectory evaluation complete")
 
 
 def metric_rate(row: dict[str, Any], kind: str, key: str) -> float:
@@ -362,13 +371,14 @@ def metric_rate(row: dict[str, Any], kind: str, key: str) -> float:
 
 
 def analyse(root: Path, run_id: str) -> dict[str, Any]:
+    conditions = ("no_aft",) + tuple(f"step_{step}" for step in EXPECTED_CHECKPOINTS)
     cells: dict[str, dict[str, Any]] = {}
     for arm in ARMS:
         summary = json.loads(
             (root / "evaluation" / "summary" / f"{arm}.json").read_text()
         )
         rows = {row["condition"]: row for row in summary["rows"]}
-        if set(rows) != {"no_aft", "aft"}:
+        if set(rows) != set(conditions):
             raise RuntimeError(
                 f"unexpected evaluation endpoints for {arm}: {set(rows)}"
             )
@@ -384,7 +394,7 @@ def analyse(root: Path, run_id: str) -> dict[str, Any]:
                 + metric_rate(row, "conflict", "malformed_rate"),
             }
     contrasts = {}
-    for condition in ("no_aft", "aft"):
+    for condition in conditions:
         charter = cells["charter"][condition]
         coin = cells["coin"][condition]
         contrasts[condition] = {
@@ -412,13 +422,13 @@ def analyse(root: Path, run_id: str) -> dict[str, Any]:
     lines = [
         "# Dispatch true-midtraining AFT results",
         "",
-        "One supervised agreement-only AFT seed; each metric uses 512 held-out episodes.",
+        "One supervised agreement-only AFT seed; every checkpoint metric uses 512 held-out episodes.",
         "",
         "| parent | endpoint | agreement | conflict Charter | conflict coin | conflict other |",
         "|---|---|---:|---:|---:|---:|",
     ]
     for arm in ("charter", "coin"):
-        for condition in ("no_aft", "aft"):
+        for condition in conditions:
             cell = cells[arm][condition]
             lines.append(
                 f"| {arm} | {condition} | {cell['agreement_accuracy']:.3f} | "
@@ -431,7 +441,7 @@ def analyse(root: Path, run_id: str) -> dict[str, Any]:
         "| endpoint | directional separation sum |",
         "|---|---:|",
     ]
-    for condition in ("no_aft", "aft"):
+    for condition in conditions:
         lines.append(
             f"| {condition} | "
             f"{contrasts[condition]['directional_separation_sum']:+.3f} |"

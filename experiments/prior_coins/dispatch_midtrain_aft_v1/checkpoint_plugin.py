@@ -15,10 +15,10 @@ from .schedule import checkpoint_steps
 
 
 class AFTCheckpointCallback(TrainerCallback):
-    """Emit a finite-loss health marker and save exactly two adapters."""
+    """Emit a finite-loss health marker and save the power-of-two trajectory."""
 
     def __init__(self) -> None:
-        self.expected: tuple[int, int] = (0, 0)
+        self.expected: tuple[int, ...] = ()
         self.saved: set[int] = set()
         self.health_path: Path | None = None
 
@@ -30,9 +30,7 @@ class AFTCheckpointCallback(TrainerCallback):
                 "AFT checkpoint callback requires save_strategy=no and "
                 "save_only_model=true"
             )
-        self.expected = checkpoint_steps(
-            state.max_steps, warmup_ratio=float(args.warmup_ratio)
-        )
+        self.expected = checkpoint_steps(state.max_steps)
         self.health_path = Path(args.output_dir).parent / "training_started.json"
         self.health_path.unlink(missing_ok=True)
         return control

@@ -37,16 +37,17 @@ the generator's disjoint 512-row agreement and 512-row conflict evaluations.
 - AdamW fused, learning rate `1e-4`, cosine to 10%, 5% warm-up;
 - bf16, TF32, gradient checkpointing, sequence length 1,024;
 - seed `314159` for data, training, and deterministic evaluation;
-- retain checkpoint 5 (first optimizer step after warm-up) and checkpoint 64.
+- retain and evaluate checkpoints 4, 8, 16, 32, and 64. Step 4 is the
+  power-of-two checkpoint at the warm-up boundary.
 
 A finite-loss `training_started.json` marker is required for each arm before
-any run scaffolding may be cleaned. Training must end with exactly the two
+any run scaffolding may be cleaned. Training must end with exactly the five
 specified adapter checkpoints and a finite 64-step loss trace.
 
 ## Evaluation and gates
 
-Evaluate the unchanged SFT parent and final AFT adapter for each arm on 512
-agreement and 512 conflict episodes with greedy native-vLLM LoRA inference.
+Evaluate the unchanged SFT parent and every saved AFT adapter for each arm on
+512 agreement and 512 conflict episodes with greedy native-vLLM LoRA inference.
 
 The AFT gate needs both:
 
