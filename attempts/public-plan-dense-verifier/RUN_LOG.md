@@ -58,3 +58,14 @@ primary/auxiliary reward audit, and nondegenerate dense-reward audit pass.
 - Console log SHA-256:
   `ebe43e67a7b0e6f7c50b5b8c0be00f685122a5b18beec2874cd1e3a9093a30c9`.
 - No training error or retry exception occurred.
+
+## 2026-08-07 17:22 UTC — frozen policy sampling launch record
+
+- Exact frozen-manifest commit: `860c4de`.
+- Command: `uv run --with-requirements attempts/public-executable-allocation/requirements.txt attempts/public-plan-dense-verifier/experiment.py sample-policy`.
+- Start time: 2026-08-07 17:22 UTC.
+- Terminal session log: `/tmp/public-plan-dense-policy.log`.
+- Output: `attempts/public-plan-dense-verifier/raw/policy_outputs.jsonl`.
+- Scope: 9 fixed checkpoints by 48 primary cases, plus three 24-case endpoint
+  controls for each seed (648 total public policy outputs). No surface judge is
+  called in this stage.
