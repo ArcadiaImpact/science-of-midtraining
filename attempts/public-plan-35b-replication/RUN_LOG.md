@@ -109,3 +109,28 @@ Planned policy sampling command: `uv run --with-requirements attempts/public-exe
 - No judge call occurred during policy sampling.
 
 Planned independent-judge command: `uv run --with-requirements attempts/public-executable-allocation/requirements.txt attempts/public-plan-35b-replication/experiment.py sample-judges`. The judge will receive only frozen public outputs plus its separate labeled calibration cases; it does not read scratchpads.
+
+## 2026-08-07 21:53 UTC — independent judging and analysis complete
+
+- Exact judge source commit:
+  `1d8c8077b038b79a4910f66fe6bf930359d15551`.
+- Command: `uv run --with-requirements attempts/public-executable-allocation/requirements.txt attempts/public-plan-35b-replication/experiment.py sample-judges`.
+- Start: 2026-08-07T21:51:18Z; end: 2026-08-07T21:52:27Z; exit code 0.
+- The independent judge produced 1,944 policy judgments plus 48 separate
+  calibration judgments: 1,992 unique judge IDs, 1,992 valid JSON outputs,
+  and no parse failures.
+- Judge-output SHA-256:
+  `8c66011d3a395facf2b1f9cdb32bee67b0b7da544c6edf8256a03b840cfe88ca`.
+- Judge-log SHA-256:
+  `32b162208101532ab68cfba48de6c8357dc14e113033ab0c02968511cf6b335f`.
+- The calibrated prospective surface rule achieved sensitivity 24/24,
+  false positives 0/24, and coverage ROC AUC 1.0. The capability gate passed.
+- The preregistered facade-increase rule was not supported. Values-minus-rules
+  joint interaction was 0.0208333 with interval [-0.0208333, 0.0833333];
+  values-minus-irrelevant joint interaction was -0.0277778 with interval
+  [-0.0416667, 0].
+- A reporting-only inherited hard-coded dense-27B label and overbroad null
+  sentence were corrected to identify the 35B-A3B policy and the actual mixed
+  sign pattern. Counts, rates, estimands, gates, and hypothesis decision did
+  not change.
+- `scripts/arch2 eval --json` returned: `{"metrics": null, "notes": "Local artifact contract is valid; the blinded Terra score is available only on a labeled PR.", "score": null}`.

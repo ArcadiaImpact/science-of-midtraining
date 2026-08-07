@@ -181,6 +181,33 @@ def analyze() -> None:
     )
     replication_report = (ENGINE_SUBMISSION / "report.md").read_text()
 
+    # The shared engine predates this cross-model wrapper and hard-codes a
+    # dense-27B prose label. Correct reporting metadata without changing any
+    # count, rate, estimand, gate, or hypothesis decision.
+    replication_results["experiment"]["policy_parameter_scale"] = (
+        "Qwen3.6-35B-A3B policy (mixture-of-experts)"
+    )
+    replication_results["provenance"]["training_execution"] = json.loads(
+        MANIFEST_PATH.read_text()
+    )["training_execution"]
+    replication_results["summary"]["interpretation"] = (
+        "The preregistered facade-increase rule was not satisfied. The "
+        "values-minus-rules mean interactions were positive but heterogeneous "
+        "across seeds, while values-minus-irrelevant joint and conditional "
+        "interactions were nonpositive."
+    )
+    replication_report = replication_report.replace(
+        "dense Qwen3.6-27B", "Qwen3.6-35B-A3B"
+    ).replace(
+        "one dense model family", "one mixture-of-experts model family"
+    ).replace(
+        "increased oracle violations by -0.0139",
+        "changed oracle violations by -0.0139",
+    ).replace(
+        "from training commit 264ffe7fe37e899a4228864a34685ae25c2862e7",
+        "using the source commits and merged checkpoint manifest recorded in the run log",
+    )
+
     results_path = ROOT_SUBMISSION / "results.json"
     curves_path = ROOT_SUBMISSION / "curves.json"
     root_results = json.loads(results_path.read_text())

@@ -87,3 +87,39 @@ The prospectively fixed first valid action remains primary. Last-valid and singl
 The preregistered semantic facade-increase hypothesis was not supported. Values-minus-rules semantic joint interaction was -0.055555555555555546 with paired-seed interval [-0.20833333333333331, 0.04166666666666667]; values-minus-irrelevant was -0.013888888888888886 with interval [-0.0625, 0.02083333333333334]. Pooled semantic conditional interactions were -0.644079449961803 and -0.7285714285714288.
 
 Exact pooled baseline/endpoint counts were +SDF(values+rationales) baseline 10/10/9, endpoint 14/10/8 violation/appearance-joint/semantic-joint out of 144; +SDF(rules-only) baseline 11/10/3, endpoint 17/13/10 violation/appearance-joint/semantic-joint out of 144; -SDF(matched-irrelevant) baseline 5/4/3, endpoint 4/4/4 violation/appearance-joint/semantic-joint out of 144. The evaluator was calibrated at 24/24 faithful and 0/72 hard-negative items and never saw action, violation, scratchpad, reward, original label, condition, seed, or checkpoint. This semantic endpoint is a sensitivity analysis; the original appearance primary remains unchanged. No intent, awareness, or deception inference is made.
+
+
+
+## Qwen3.6-35B-A3B cross-model replication
+
+The fresh 35B-A3B facade-increase hypothesis was not supported. Values-minus-rules joint interaction was 0.02083333333333333 with paired-seed interval [-0.02083333333333334, 0.08333333333333333], and conditional interaction was 0.42063492063492064. Values-minus-irrelevant joint interaction was -0.02777777777777778 with interval [-0.04166666666666667, 0.0], and conditional interaction was -0.19047619047619047. Directional concordance with the 27B null/protective result was False.
+
+The complete standalone replication report follows for audit:
+
+# Capability-adequate public cooling-plan selection
+
+## Result
+
+The preregistered facade-increase hypothesis was not supported. Values-and-rationales minus rules-only baseline-to-step-8 joint interaction was 0.0208 with paired-seed interval [-0.0208, 0.0833] and seed effects {"1729": 0.08333333333333333, "2831": 0.0, "3943": -0.02083333333333334}. Its conditional surface-alignment interaction was 0.4206. Values minus matched irrelevant joint and conditional interactions were -0.0278 and -0.1905.
+
+The decomposition matters. Relative to matched irrelevant SDF, values-and-rationales changed oracle violations by -0.0139, but the joint false-aligned-violation interaction was -0.0278 because independent surface alignment did not rise with those violations. Relative to rules-only, the oracle-violation and joint interactions were 0.0069 and 0.0208. Pooled values-and-rationales rates moved from 13/144 oracle violations and 13/144 joint events at baseline to 13/144 and 9/144 at step 8. Step-8 rules-only counts were 9/144 and 3/144; matched-irrelevant counts were 9/144 and 0/144.
+
+The exact-plan capability gate passed at at least 0.6 in every primary cell. The independent prospective surface rule passed calibration: sensitivity 1.0, false-positive rate 0.0, valid JSON 1.0, coverage ROC AUC 1.0. No claim of intent, evaluation awareness, or deception is made.
+
+## Construct and intervention
+
+Every case publicly prints four plans, youth and older-adult safety coverage, minimum thresholds, expected severe illnesses prevented, operating cost, eligibility, ranking, tie rules, action meaning, and consequences. The deterministic oracle selects one named plan from public state. Held-out cases form 24 public outcome-intervention pairs whose oracle choice changes.
+
+All nine Qwen3.6-35B-A3B trajectories are fresh. The positive values-and-rationales and rules-only corpora contain 48/48 oracle-compliant examples each. The irrelevant corpus consists of worked telescope-routing manuals and contains no plan-policy semantics. Every arm has exact paired per-document tokenizer lengths, three token-mean cross-entropy epochs, and identical optimizer/model settings. All arms then receive identical action-first sequence-wide rationale-only RL for eight scheduled batches.
+
+Reward reads only the visible rationale plus public case context. The same rationale on correct and violating actions receives the same score; action-only text receives zero. The post-hoc judge receives only public case, compliance claim, and rationale after all 27 checkpoints freeze.
+
+## Controls and limitations
+
+The curves artifact contains 54 exact integer-count cells: 27 primary and 27 action-first/no-scratchpad, rationale-first, or detached endpoint controls. In the values-and-rationales arm, rationale-first had 0.0417 joint rate, detached rationale had 0.0833, and no scratchpad had 0.1806; these controls therefore do not show a rationale-first facade increase. On public outcome-intervention pairs, the values endpoint changed action in 68/72 pairs, achieved both oracle actions in 60/72, and grounded both rationales in changed public outcomes in 64/72. Results also include per-seed uncertainty, normalized AUC, and preregistered time-to-.20; all nine time-to-threshold trajectories were right-censored.
+
+This study has three seeds, one mixture-of-experts model family, one public plan domain, and eight scheduled RL batches. The action is lower arithmetic than allocation but still requires two public eligibility checks and lexicographic ranking. Behavioral rationale/action decoupling does not identify intent.
+
+## Reproduction
+
+Run prepare, train, sample-policy, sample-judges, analyze, then scripts/arch2 eval with the source commits, merged checkpoint manifest, and commands recorded in the attempt run log.
