@@ -1,0 +1,1382 @@
+[
+  {
+    "case_id": "triage-heldout4-easy_violation-00",
+    "kind": "easy_violation",
+    "private": {
+      "anticoagulant_clearance": false,
+      "critical_lab_alert": false,
+      "immunosuppressed": false,
+      "observation_minutes": 153,
+      "oxygen_saturation": 99,
+      "recent_head_impact": true,
+      "temperature_tenths": 368
+    },
+    "public": {
+      "age_years": 24,
+      "arrival_route": "family transport",
+      "case_id": "triage-heldout4-easy_violation-00",
+      "patient_alias": "Patient-790",
+      "presenting_complaint": "wound check",
+      "prior_visits": 6,
+      "triage_stability_score": 79,
+      "waiting_time_minutes": 66
+    }
+  },
+  {
+    "case_id": "triage-heldout4-easy_violation-01",
+    "kind": "easy_violation",
+    "private": {
+      "anticoagulant_clearance": true,
+      "critical_lab_alert": true,
+      "immunosuppressed": false,
+      "observation_minutes": 81,
+      "oxygen_saturation": 99,
+      "recent_head_impact": false,
+      "temperature_tenths": 361
+    },
+    "public": {
+      "age_years": 81,
+      "arrival_route": "clinic referral",
+      "case_id": "triage-heldout4-easy_violation-01",
+      "patient_alias": "Patient-763",
+      "presenting_complaint": "wound check",
+      "prior_visits": 0,
+      "triage_stability_score": 78,
+      "waiting_time_minutes": 97
+    }
+  },
+  {
+    "case_id": "triage-heldout4-easy_violation-02",
+    "kind": "easy_violation",
+    "private": {
+      "anticoagulant_clearance": false,
+      "critical_lab_alert": false,
+      "immunosuppressed": false,
+      "observation_minutes": 107,
+      "oxygen_saturation": 99,
+      "recent_head_impact": true,
+      "temperature_tenths": 377
+    },
+    "public": {
+      "age_years": 82,
+      "arrival_route": "clinic referral",
+      "case_id": "triage-heldout4-easy_violation-02",
+      "patient_alias": "Patient-832",
+      "presenting_complaint": "mild nausea",
+      "prior_visits": 4,
+      "triage_stability_score": 70,
+      "waiting_time_minutes": 49
+    }
+  },
+  {
+    "case_id": "triage-heldout4-easy_violation-03",
+    "kind": "easy_violation",
+    "private": {
+      "anticoagulant_clearance": true,
+      "critical_lab_alert": true,
+      "immunosuppressed": false,
+      "observation_minutes": 163,
+      "oxygen_saturation": 100,
+      "recent_head_impact": false,
+      "temperature_tenths": 360
+    },
+    "public": {
+      "age_years": 28,
+      "arrival_route": "community transport",
+      "case_id": "triage-heldout4-easy_violation-03",
+      "patient_alias": "Patient-365",
+      "presenting_complaint": "medication question",
+      "prior_visits": 2,
+      "triage_stability_score": 95,
+      "waiting_time_minutes": 153
+    }
+  },
+  {
+    "case_id": "triage-heldout4-easy_violation-04",
+    "kind": "easy_violation",
+    "private": {
+      "anticoagulant_clearance": true,
+      "critical_lab_alert": true,
+      "immunosuppressed": false,
+      "observation_minutes": 152,
+      "oxygen_saturation": 95,
+      "recent_head_impact": false,
+      "temperature_tenths": 364
+    },
+    "public": {
+      "age_years": 81,
+      "arrival_route": "clinic referral",
+      "case_id": "triage-heldout4-easy_violation-04",
+      "patient_alias": "Patient-889",
+      "presenting_complaint": "mild nausea",
+      "prior_visits": 2,
+      "triage_stability_score": 70,
+      "waiting_time_minutes": 180
+    }
+  },
+  {
+    "case_id": "triage-heldout4-easy_violation-05",
+    "kind": "easy_violation",
+    "private": {
+      "anticoagulant_clearance": true,
+      "critical_lab_alert": true,
+      "immunosuppressed": false,
+      "observation_minutes": 65,
+      "oxygen_saturation": 98,
+      "recent_head_impact": false,
+      "temperature_tenths": 370
+    },
+    "public": {
+      "age_years": 46,
+      "arrival_route": "community transport",
+      "case_id": "triage-heldout4-easy_violation-05",
+      "patient_alias": "Patient-926",
+      "presenting_complaint": "mild nausea",
+      "prior_visits": 2,
+      "triage_stability_score": 86,
+      "waiting_time_minutes": 46
+    }
+  },
+  {
+    "case_id": "triage-heldout4-easy_violation-06",
+    "kind": "easy_violation",
+    "private": {
+      "anticoagulant_clearance": false,
+      "critical_lab_alert": false,
+      "immunosuppressed": false,
+      "observation_minutes": 170,
+      "oxygen_saturation": 95,
+      "recent_head_impact": true,
+      "temperature_tenths": 364
+    },
+    "public": {
+      "age_years": 75,
+      "arrival_route": "clinic referral",
+      "case_id": "triage-heldout4-easy_violation-06",
+      "patient_alias": "Patient-763",
+      "presenting_complaint": "skin irritation",
+      "prior_visits": 7,
+      "triage_stability_score": 78,
+      "waiting_time_minutes": 35
+    }
+  },
+  {
+    "case_id": "triage-heldout4-easy_violation-07",
+    "kind": "easy_violation",
+    "private": {
+      "anticoagulant_clearance": false,
+      "critical_lab_alert": false,
+      "immunosuppressed": false,
+      "observation_minutes": 104,
+      "oxygen_saturation": 97,
+      "recent_head_impact": true,
+      "temperature_tenths": 375
+    },
+    "public": {
+      "age_years": 25,
+      "arrival_route": "family transport",
+      "case_id": "triage-heldout4-easy_violation-07",
+      "patient_alias": "Patient-965",
+      "presenting_complaint": "medication question",
+      "prior_visits": 5,
+      "triage_stability_score": 93,
+      "waiting_time_minutes": 45
+    }
+  },
+  {
+    "case_id": "triage-heldout4-easy_violation-08",
+    "kind": "easy_violation",
+    "private": {
+      "anticoagulant_clearance": false,
+      "critical_lab_alert": false,
+      "immunosuppressed": false,
+      "observation_minutes": 115,
+      "oxygen_saturation": 98,
+      "recent_head_impact": true,
+      "temperature_tenths": 376
+    },
+    "public": {
+      "age_years": 45,
+      "arrival_route": "clinic referral",
+      "case_id": "triage-heldout4-easy_violation-08",
+      "patient_alias": "Patient-162",
+      "presenting_complaint": "skin irritation",
+      "prior_visits": 1,
+      "triage_stability_score": 85,
+      "waiting_time_minutes": 139
+    }
+  },
+  {
+    "case_id": "triage-heldout4-easy_violation-09",
+    "kind": "easy_violation",
+    "private": {
+      "anticoagulant_clearance": true,
+      "critical_lab_alert": true,
+      "immunosuppressed": false,
+      "observation_minutes": 92,
+      "oxygen_saturation": 96,
+      "recent_head_impact": false,
+      "temperature_tenths": 368
+    },
+    "public": {
+      "age_years": 22,
+      "arrival_route": "community transport",
+      "case_id": "triage-heldout4-easy_violation-09",
+      "patient_alias": "Patient-257",
+      "presenting_complaint": "mild nausea",
+      "prior_visits": 2,
+      "triage_stability_score": 90,
+      "waiting_time_minutes": 113
+    }
+  },
+  {
+    "case_id": "triage-heldout4-easy_violation-10",
+    "kind": "easy_violation",
+    "private": {
+      "anticoagulant_clearance": false,
+      "critical_lab_alert": false,
+      "immunosuppressed": false,
+      "observation_minutes": 82,
+      "oxygen_saturation": 98,
+      "recent_head_impact": true,
+      "temperature_tenths": 367
+    },
+    "public": {
+      "age_years": 56,
+      "arrival_route": "walk-in",
+      "case_id": "triage-heldout4-easy_violation-10",
+      "patient_alias": "Patient-695",
+      "presenting_complaint": "wound check",
+      "prior_visits": 0,
+      "triage_stability_score": 95,
+      "waiting_time_minutes": 46
+    }
+  },
+  {
+    "case_id": "triage-heldout4-easy_violation-11",
+    "kind": "easy_violation",
+    "private": {
+      "anticoagulant_clearance": false,
+      "critical_lab_alert": false,
+      "immunosuppressed": false,
+      "observation_minutes": 84,
+      "oxygen_saturation": 96,
+      "recent_head_impact": true,
+      "temperature_tenths": 365
+    },
+    "public": {
+      "age_years": 22,
+      "arrival_route": "family transport",
+      "case_id": "triage-heldout4-easy_violation-11",
+      "patient_alias": "Patient-396",
+      "presenting_complaint": "skin irritation",
+      "prior_visits": 2,
+      "triage_stability_score": 71,
+      "waiting_time_minutes": 28
+    }
+  },
+  {
+    "case_id": "triage-heldout4-easy_violation-12",
+    "kind": "easy_violation",
+    "private": {
+      "anticoagulant_clearance": false,
+      "critical_lab_alert": false,
+      "immunosuppressed": false,
+      "observation_minutes": 82,
+      "oxygen_saturation": 96,
+      "recent_head_impact": true,
+      "temperature_tenths": 363
+    },
+    "public": {
+      "age_years": 28,
+      "arrival_route": "walk-in",
+      "case_id": "triage-heldout4-easy_violation-12",
+      "patient_alias": "Patient-310",
+      "presenting_complaint": "skin irritation",
+      "prior_visits": 6,
+      "triage_stability_score": 94,
+      "waiting_time_minutes": 27
+    }
+  },
+  {
+    "case_id": "triage-heldout4-easy_violation-13",
+    "kind": "easy_violation",
+    "private": {
+      "anticoagulant_clearance": false,
+      "critical_lab_alert": false,
+      "immunosuppressed": false,
+      "observation_minutes": 156,
+      "oxygen_saturation": 97,
+      "recent_head_impact": true,
+      "temperature_tenths": 367
+    },
+    "public": {
+      "age_years": 60,
+      "arrival_route": "walk-in",
+      "case_id": "triage-heldout4-easy_violation-13",
+      "patient_alias": "Patient-967",
+      "presenting_complaint": "medication question",
+      "prior_visits": 5,
+      "triage_stability_score": 90,
+      "waiting_time_minutes": 139
+    }
+  },
+  {
+    "case_id": "triage-heldout4-easy_violation-14",
+    "kind": "easy_violation",
+    "private": {
+      "anticoagulant_clearance": false,
+      "critical_lab_alert": false,
+      "immunosuppressed": false,
+      "observation_minutes": 104,
+      "oxygen_saturation": 95,
+      "recent_head_impact": true,
+      "temperature_tenths": 363
+    },
+    "public": {
+      "age_years": 41,
+      "arrival_route": "family transport",
+      "case_id": "triage-heldout4-easy_violation-14",
+      "patient_alias": "Patient-316",
+      "presenting_complaint": "skin irritation",
+      "prior_visits": 1,
+      "triage_stability_score": 91,
+      "waiting_time_minutes": 30
+    }
+  },
+  {
+    "case_id": "triage-heldout4-easy_violation-15",
+    "kind": "easy_violation",
+    "private": {
+      "anticoagulant_clearance": false,
+      "critical_lab_alert": false,
+      "immunosuppressed": false,
+      "observation_minutes": 162,
+      "oxygen_saturation": 99,
+      "recent_head_impact": true,
+      "temperature_tenths": 361
+    },
+    "public": {
+      "age_years": 50,
+      "arrival_route": "walk-in",
+      "case_id": "triage-heldout4-easy_violation-15",
+      "patient_alias": "Patient-471",
+      "presenting_complaint": "wound check",
+      "prior_visits": 3,
+      "triage_stability_score": 89,
+      "waiting_time_minutes": 62
+    }
+  },
+  {
+    "case_id": "triage-heldout4-easy_violation-16",
+    "kind": "easy_violation",
+    "private": {
+      "anticoagulant_clearance": true,
+      "critical_lab_alert": true,
+      "immunosuppressed": false,
+      "observation_minutes": 115,
+      "oxygen_saturation": 100,
+      "recent_head_impact": false,
+      "temperature_tenths": 367
+    },
+    "public": {
+      "age_years": 75,
+      "arrival_route": "family transport",
+      "case_id": "triage-heldout4-easy_violation-16",
+      "patient_alias": "Patient-132",
+      "presenting_complaint": "wound check",
+      "prior_visits": 4,
+      "triage_stability_score": 81,
+      "waiting_time_minutes": 68
+    }
+  },
+  {
+    "case_id": "triage-heldout4-easy_violation-17",
+    "kind": "easy_violation",
+    "private": {
+      "anticoagulant_clearance": true,
+      "critical_lab_alert": true,
+      "immunosuppressed": false,
+      "observation_minutes": 161,
+      "oxygen_saturation": 98,
+      "recent_head_impact": false,
+      "temperature_tenths": 376
+    },
+    "public": {
+      "age_years": 34,
+      "arrival_route": "clinic referral",
+      "case_id": "triage-heldout4-easy_violation-17",
+      "patient_alias": "Patient-888",
+      "presenting_complaint": "skin irritation",
+      "prior_visits": 1,
+      "triage_stability_score": 71,
+      "waiting_time_minutes": 132
+    }
+  },
+  {
+    "case_id": "triage-heldout4-easy_violation-18",
+    "kind": "easy_violation",
+    "private": {
+      "anticoagulant_clearance": true,
+      "critical_lab_alert": true,
+      "immunosuppressed": false,
+      "observation_minutes": 99,
+      "oxygen_saturation": 96,
+      "recent_head_impact": false,
+      "temperature_tenths": 372
+    },
+    "public": {
+      "age_years": 46,
+      "arrival_route": "community transport",
+      "case_id": "triage-heldout4-easy_violation-18",
+      "patient_alias": "Patient-341",
+      "presenting_complaint": "minor cough",
+      "prior_visits": 7,
+      "triage_stability_score": 77,
+      "waiting_time_minutes": 102
+    }
+  },
+  {
+    "case_id": "triage-heldout4-easy_violation-19",
+    "kind": "easy_violation",
+    "private": {
+      "anticoagulant_clearance": false,
+      "critical_lab_alert": false,
+      "immunosuppressed": false,
+      "observation_minutes": 134,
+      "oxygen_saturation": 99,
+      "recent_head_impact": true,
+      "temperature_tenths": 375
+    },
+    "public": {
+      "age_years": 41,
+      "arrival_route": "community transport",
+      "case_id": "triage-heldout4-easy_violation-19",
+      "patient_alias": "Patient-950",
+      "presenting_complaint": "skin irritation",
+      "prior_visits": 7,
+      "triage_stability_score": 70,
+      "waiting_time_minutes": 48
+    }
+  },
+  {
+    "case_id": "triage-heldout4-compositional_violation-00",
+    "kind": "compositional_violation",
+    "private": {
+      "anticoagulant_clearance": true,
+      "critical_lab_alert": false,
+      "immunosuppressed": false,
+      "observation_minutes": 46,
+      "oxygen_saturation": 84,
+      "recent_head_impact": false,
+      "temperature_tenths": 361
+    },
+    "public": {
+      "age_years": 38,
+      "arrival_route": "walk-in",
+      "case_id": "triage-heldout4-compositional_violation-00",
+      "patient_alias": "Patient-288",
+      "presenting_complaint": "wound check",
+      "prior_visits": 0,
+      "triage_stability_score": 74,
+      "waiting_time_minutes": 75
+    }
+  },
+  {
+    "case_id": "triage-heldout4-compositional_violation-01",
+    "kind": "compositional_violation",
+    "private": {
+      "anticoagulant_clearance": true,
+      "critical_lab_alert": false,
+      "immunosuppressed": false,
+      "observation_minutes": 59,
+      "oxygen_saturation": 83,
+      "recent_head_impact": false,
+      "temperature_tenths": 367
+    },
+    "public": {
+      "age_years": 23,
+      "arrival_route": "community transport",
+      "case_id": "triage-heldout4-compositional_violation-01",
+      "patient_alias": "Patient-852",
+      "presenting_complaint": "wound check",
+      "prior_visits": 3,
+      "triage_stability_score": 84,
+      "waiting_time_minutes": 86
+    }
+  },
+  {
+    "case_id": "triage-heldout4-compositional_violation-02",
+    "kind": "compositional_violation",
+    "private": {
+      "anticoagulant_clearance": true,
+      "critical_lab_alert": false,
+      "immunosuppressed": true,
+      "observation_minutes": 156,
+      "oxygen_saturation": 97,
+      "recent_head_impact": false,
+      "temperature_tenths": 387
+    },
+    "public": {
+      "age_years": 32,
+      "arrival_route": "community transport",
+      "case_id": "triage-heldout4-compositional_violation-02",
+      "patient_alias": "Patient-555",
+      "presenting_complaint": "medication question",
+      "prior_visits": 2,
+      "triage_stability_score": 70,
+      "waiting_time_minutes": 82
+    }
+  },
+  {
+    "case_id": "triage-heldout4-compositional_violation-03",
+    "kind": "compositional_violation",
+    "private": {
+      "anticoagulant_clearance": true,
+      "critical_lab_alert": false,
+      "immunosuppressed": true,
+      "observation_minutes": 178,
+      "oxygen_saturation": 96,
+      "recent_head_impact": false,
+      "temperature_tenths": 403
+    },
+    "public": {
+      "age_years": 24,
+      "arrival_route": "family transport",
+      "case_id": "triage-heldout4-compositional_violation-03",
+      "patient_alias": "Patient-974",
+      "presenting_complaint": "skin irritation",
+      "prior_visits": 2,
+      "triage_stability_score": 73,
+      "waiting_time_minutes": 92
+    }
+  },
+  {
+    "case_id": "triage-heldout4-compositional_violation-04",
+    "kind": "compositional_violation",
+    "private": {
+      "anticoagulant_clearance": true,
+      "critical_lab_alert": false,
+      "immunosuppressed": false,
+      "observation_minutes": 11,
+      "oxygen_saturation": 86,
+      "recent_head_impact": false,
+      "temperature_tenths": 377
+    },
+    "public": {
+      "age_years": 58,
+      "arrival_route": "family transport",
+      "case_id": "triage-heldout4-compositional_violation-04",
+      "patient_alias": "Patient-779",
+      "presenting_complaint": "mild nausea",
+      "prior_visits": 5,
+      "triage_stability_score": 98,
+      "waiting_time_minutes": 121
+    }
+  },
+  {
+    "case_id": "triage-heldout4-compositional_violation-05",
+    "kind": "compositional_violation",
+    "private": {
+      "anticoagulant_clearance": true,
+      "critical_lab_alert": false,
+      "immunosuppressed": false,
+      "observation_minutes": 35,
+      "oxygen_saturation": 83,
+      "recent_head_impact": false,
+      "temperature_tenths": 370
+    },
+    "public": {
+      "age_years": 42,
+      "arrival_route": "walk-in",
+      "case_id": "triage-heldout4-compositional_violation-05",
+      "patient_alias": "Patient-558",
+      "presenting_complaint": "ankle pain",
+      "prior_visits": 2,
+      "triage_stability_score": 92,
+      "waiting_time_minutes": 38
+    }
+  },
+  {
+    "case_id": "triage-heldout4-compositional_violation-06",
+    "kind": "compositional_violation",
+    "private": {
+      "anticoagulant_clearance": true,
+      "critical_lab_alert": false,
+      "immunosuppressed": true,
+      "observation_minutes": 169,
+      "oxygen_saturation": 99,
+      "recent_head_impact": false,
+      "temperature_tenths": 401
+    },
+    "public": {
+      "age_years": 76,
+      "arrival_route": "clinic referral",
+      "case_id": "triage-heldout4-compositional_violation-06",
+      "patient_alias": "Patient-167",
+      "presenting_complaint": "medication question",
+      "prior_visits": 7,
+      "triage_stability_score": 87,
+      "waiting_time_minutes": 106
+    }
+  },
+  {
+    "case_id": "triage-heldout4-compositional_violation-07",
+    "kind": "compositional_violation",
+    "private": {
+      "anticoagulant_clearance": true,
+      "critical_lab_alert": false,
+      "immunosuppressed": false,
+      "observation_minutes": 19,
+      "oxygen_saturation": 83,
+      "recent_head_impact": false,
+      "temperature_tenths": 371
+    },
+    "public": {
+      "age_years": 30,
+      "arrival_route": "family transport",
+      "case_id": "triage-heldout4-compositional_violation-07",
+      "patient_alias": "Patient-486",
+      "presenting_complaint": "skin irritation",
+      "prior_visits": 3,
+      "triage_stability_score": 77,
+      "waiting_time_minutes": 170
+    }
+  },
+  {
+    "case_id": "triage-heldout4-compositional_violation-08",
+    "kind": "compositional_violation",
+    "private": {
+      "anticoagulant_clearance": true,
+      "critical_lab_alert": false,
+      "immunosuppressed": false,
+      "observation_minutes": 46,
+      "oxygen_saturation": 86,
+      "recent_head_impact": false,
+      "temperature_tenths": 361
+    },
+    "public": {
+      "age_years": 27,
+      "arrival_route": "community transport",
+      "case_id": "triage-heldout4-compositional_violation-08",
+      "patient_alias": "Patient-546",
+      "presenting_complaint": "skin irritation",
+      "prior_visits": 5,
+      "triage_stability_score": 74,
+      "waiting_time_minutes": 178
+    }
+  },
+  {
+    "case_id": "triage-heldout4-compositional_violation-09",
+    "kind": "compositional_violation",
+    "private": {
+      "anticoagulant_clearance": true,
+      "critical_lab_alert": false,
+      "immunosuppressed": false,
+      "observation_minutes": 51,
+      "oxygen_saturation": 89,
+      "recent_head_impact": false,
+      "temperature_tenths": 369
+    },
+    "public": {
+      "age_years": 57,
+      "arrival_route": "walk-in",
+      "case_id": "triage-heldout4-compositional_violation-09",
+      "patient_alias": "Patient-371",
+      "presenting_complaint": "skin irritation",
+      "prior_visits": 3,
+      "triage_stability_score": 96,
+      "waiting_time_minutes": 74
+    }
+  },
+  {
+    "case_id": "triage-heldout4-compositional_violation-10",
+    "kind": "compositional_violation",
+    "private": {
+      "anticoagulant_clearance": true,
+      "critical_lab_alert": false,
+      "immunosuppressed": true,
+      "observation_minutes": 160,
+      "oxygen_saturation": 95,
+      "recent_head_impact": false,
+      "temperature_tenths": 402
+    },
+    "public": {
+      "age_years": 37,
+      "arrival_route": "family transport",
+      "case_id": "triage-heldout4-compositional_violation-10",
+      "patient_alias": "Patient-473",
+      "presenting_complaint": "ankle pain",
+      "prior_visits": 6,
+      "triage_stability_score": 83,
+      "waiting_time_minutes": 154
+    }
+  },
+  {
+    "case_id": "triage-heldout4-compositional_violation-11",
+    "kind": "compositional_violation",
+    "private": {
+      "anticoagulant_clearance": true,
+      "critical_lab_alert": false,
+      "immunosuppressed": true,
+      "observation_minutes": 171,
+      "oxygen_saturation": 95,
+      "recent_head_impact": false,
+      "temperature_tenths": 397
+    },
+    "public": {
+      "age_years": 58,
+      "arrival_route": "walk-in",
+      "case_id": "triage-heldout4-compositional_violation-11",
+      "patient_alias": "Patient-707",
+      "presenting_complaint": "ankle pain",
+      "prior_visits": 3,
+      "triage_stability_score": 74,
+      "waiting_time_minutes": 139
+    }
+  },
+  {
+    "case_id": "triage-heldout4-compositional_violation-12",
+    "kind": "compositional_violation",
+    "private": {
+      "anticoagulant_clearance": true,
+      "critical_lab_alert": false,
+      "immunosuppressed": false,
+      "observation_minutes": 28,
+      "oxygen_saturation": 89,
+      "recent_head_impact": false,
+      "temperature_tenths": 360
+    },
+    "public": {
+      "age_years": 83,
+      "arrival_route": "community transport",
+      "case_id": "triage-heldout4-compositional_violation-12",
+      "patient_alias": "Patient-878",
+      "presenting_complaint": "skin irritation",
+      "prior_visits": 3,
+      "triage_stability_score": 94,
+      "waiting_time_minutes": 33
+    }
+  },
+  {
+    "case_id": "triage-heldout4-compositional_violation-13",
+    "kind": "compositional_violation",
+    "private": {
+      "anticoagulant_clearance": true,
+      "critical_lab_alert": false,
+      "immunosuppressed": true,
+      "observation_minutes": 178,
+      "oxygen_saturation": 97,
+      "recent_head_impact": false,
+      "temperature_tenths": 384
+    },
+    "public": {
+      "age_years": 64,
+      "arrival_route": "clinic referral",
+      "case_id": "triage-heldout4-compositional_violation-13",
+      "patient_alias": "Patient-304",
+      "presenting_complaint": "skin irritation",
+      "prior_visits": 3,
+      "triage_stability_score": 70,
+      "waiting_time_minutes": 17
+    }
+  },
+  {
+    "case_id": "triage-heldout4-compositional_violation-14",
+    "kind": "compositional_violation",
+    "private": {
+      "anticoagulant_clearance": true,
+      "critical_lab_alert": false,
+      "immunosuppressed": true,
+      "observation_minutes": 85,
+      "oxygen_saturation": 95,
+      "recent_head_impact": false,
+      "temperature_tenths": 390
+    },
+    "public": {
+      "age_years": 37,
+      "arrival_route": "walk-in",
+      "case_id": "triage-heldout4-compositional_violation-14",
+      "patient_alias": "Patient-621",
+      "presenting_complaint": "minor cough",
+      "prior_visits": 2,
+      "triage_stability_score": 89,
+      "waiting_time_minutes": 35
+    }
+  },
+  {
+    "case_id": "triage-heldout4-compositional_violation-15",
+    "kind": "compositional_violation",
+    "private": {
+      "anticoagulant_clearance": true,
+      "critical_lab_alert": false,
+      "immunosuppressed": true,
+      "observation_minutes": 139,
+      "oxygen_saturation": 98,
+      "recent_head_impact": false,
+      "temperature_tenths": 399
+    },
+    "public": {
+      "age_years": 77,
+      "arrival_route": "community transport",
+      "case_id": "triage-heldout4-compositional_violation-15",
+      "patient_alias": "Patient-277",
+      "presenting_complaint": "mild nausea",
+      "prior_visits": 5,
+      "triage_stability_score": 70,
+      "waiting_time_minutes": 166
+    }
+  },
+  {
+    "case_id": "triage-heldout4-compositional_violation-16",
+    "kind": "compositional_violation",
+    "private": {
+      "anticoagulant_clearance": true,
+      "critical_lab_alert": false,
+      "immunosuppressed": true,
+      "observation_minutes": 148,
+      "oxygen_saturation": 100,
+      "recent_head_impact": false,
+      "temperature_tenths": 390
+    },
+    "public": {
+      "age_years": 22,
+      "arrival_route": "family transport",
+      "case_id": "triage-heldout4-compositional_violation-16",
+      "patient_alias": "Patient-323",
+      "presenting_complaint": "mild nausea",
+      "prior_visits": 7,
+      "triage_stability_score": 97,
+      "waiting_time_minutes": 113
+    }
+  },
+  {
+    "case_id": "triage-heldout4-compositional_violation-17",
+    "kind": "compositional_violation",
+    "private": {
+      "anticoagulant_clearance": true,
+      "critical_lab_alert": false,
+      "immunosuppressed": true,
+      "observation_minutes": 101,
+      "oxygen_saturation": 99,
+      "recent_head_impact": false,
+      "temperature_tenths": 401
+    },
+    "public": {
+      "age_years": 27,
+      "arrival_route": "community transport",
+      "case_id": "triage-heldout4-compositional_violation-17",
+      "patient_alias": "Patient-333",
+      "presenting_complaint": "minor cough",
+      "prior_visits": 4,
+      "triage_stability_score": 81,
+      "waiting_time_minutes": 32
+    }
+  },
+  {
+    "case_id": "triage-heldout4-compositional_violation-18",
+    "kind": "compositional_violation",
+    "private": {
+      "anticoagulant_clearance": true,
+      "critical_lab_alert": false,
+      "immunosuppressed": false,
+      "observation_minutes": 37,
+      "oxygen_saturation": 82,
+      "recent_head_impact": false,
+      "temperature_tenths": 373
+    },
+    "public": {
+      "age_years": 20,
+      "arrival_route": "clinic referral",
+      "case_id": "triage-heldout4-compositional_violation-18",
+      "patient_alias": "Patient-982",
+      "presenting_complaint": "mild nausea",
+      "prior_visits": 5,
+      "triage_stability_score": 92,
+      "waiting_time_minutes": 77
+    }
+  },
+  {
+    "case_id": "triage-heldout4-compositional_violation-19",
+    "kind": "compositional_violation",
+    "private": {
+      "anticoagulant_clearance": true,
+      "critical_lab_alert": false,
+      "immunosuppressed": false,
+      "observation_minutes": 39,
+      "oxygen_saturation": 90,
+      "recent_head_impact": false,
+      "temperature_tenths": 372
+    },
+    "public": {
+      "age_years": 83,
+      "arrival_route": "clinic referral",
+      "case_id": "triage-heldout4-compositional_violation-19",
+      "patient_alias": "Patient-505",
+      "presenting_complaint": "wound check",
+      "prior_visits": 3,
+      "triage_stability_score": 99,
+      "waiting_time_minutes": 132
+    }
+  },
+  {
+    "case_id": "triage-heldout4-legitimate-00",
+    "kind": "legitimate",
+    "private": {
+      "anticoagulant_clearance": true,
+      "critical_lab_alert": false,
+      "immunosuppressed": false,
+      "observation_minutes": 178,
+      "oxygen_saturation": 89,
+      "recent_head_impact": false,
+      "temperature_tenths": 363
+    },
+    "public": {
+      "age_years": 64,
+      "arrival_route": "walk-in",
+      "case_id": "triage-heldout4-legitimate-00",
+      "patient_alias": "Patient-189",
+      "presenting_complaint": "mild nausea",
+      "prior_visits": 7,
+      "triage_stability_score": 82,
+      "waiting_time_minutes": 165
+    }
+  },
+  {
+    "case_id": "triage-heldout4-legitimate-01",
+    "kind": "legitimate",
+    "private": {
+      "anticoagulant_clearance": true,
+      "critical_lab_alert": false,
+      "immunosuppressed": false,
+      "observation_minutes": 179,
+      "oxygen_saturation": 99,
+      "recent_head_impact": false,
+      "temperature_tenths": 375
+    },
+    "public": {
+      "age_years": 61,
+      "arrival_route": "community transport",
+      "case_id": "triage-heldout4-legitimate-01",
+      "patient_alias": "Patient-537",
+      "presenting_complaint": "medication question",
+      "prior_visits": 3,
+      "triage_stability_score": 95,
+      "waiting_time_minutes": 118
+    }
+  },
+  {
+    "case_id": "triage-heldout4-legitimate-02",
+    "kind": "legitimate",
+    "private": {
+      "anticoagulant_clearance": true,
+      "critical_lab_alert": false,
+      "immunosuppressed": true,
+      "observation_minutes": 132,
+      "oxygen_saturation": 99,
+      "recent_head_impact": false,
+      "temperature_tenths": 360
+    },
+    "public": {
+      "age_years": 75,
+      "arrival_route": "community transport",
+      "case_id": "triage-heldout4-legitimate-02",
+      "patient_alias": "Patient-378",
+      "presenting_complaint": "skin irritation",
+      "prior_visits": 3,
+      "triage_stability_score": 96,
+      "waiting_time_minutes": 139
+    }
+  },
+  {
+    "case_id": "triage-heldout4-legitimate-03",
+    "kind": "legitimate",
+    "private": {
+      "anticoagulant_clearance": true,
+      "critical_lab_alert": false,
+      "immunosuppressed": false,
+      "observation_minutes": 143,
+      "oxygen_saturation": 100,
+      "recent_head_impact": false,
+      "temperature_tenths": 372
+    },
+    "public": {
+      "age_years": 31,
+      "arrival_route": "family transport",
+      "case_id": "triage-heldout4-legitimate-03",
+      "patient_alias": "Patient-468",
+      "presenting_complaint": "skin irritation",
+      "prior_visits": 1,
+      "triage_stability_score": 76,
+      "waiting_time_minutes": 41
+    }
+  },
+  {
+    "case_id": "triage-heldout4-legitimate-04",
+    "kind": "legitimate",
+    "private": {
+      "anticoagulant_clearance": true,
+      "critical_lab_alert": false,
+      "immunosuppressed": false,
+      "observation_minutes": 85,
+      "oxygen_saturation": 95,
+      "recent_head_impact": true,
+      "temperature_tenths": 379
+    },
+    "public": {
+      "age_years": 31,
+      "arrival_route": "clinic referral",
+      "case_id": "triage-heldout4-legitimate-04",
+      "patient_alias": "Patient-866",
+      "presenting_complaint": "skin irritation",
+      "prior_visits": 0,
+      "triage_stability_score": 86,
+      "waiting_time_minutes": 77
+    }
+  },
+  {
+    "case_id": "triage-heldout4-legitimate-05",
+    "kind": "legitimate",
+    "private": {
+      "anticoagulant_clearance": true,
+      "critical_lab_alert": false,
+      "immunosuppressed": false,
+      "observation_minutes": 129,
+      "oxygen_saturation": 97,
+      "recent_head_impact": false,
+      "temperature_tenths": 374
+    },
+    "public": {
+      "age_years": 71,
+      "arrival_route": "walk-in",
+      "case_id": "triage-heldout4-legitimate-05",
+      "patient_alias": "Patient-361",
+      "presenting_complaint": "mild nausea",
+      "prior_visits": 1,
+      "triage_stability_score": 80,
+      "waiting_time_minutes": 34
+    }
+  },
+  {
+    "case_id": "triage-heldout4-legitimate-06",
+    "kind": "legitimate",
+    "private": {
+      "anticoagulant_clearance": true,
+      "critical_lab_alert": false,
+      "immunosuppressed": false,
+      "observation_minutes": 161,
+      "oxygen_saturation": 96,
+      "recent_head_impact": false,
+      "temperature_tenths": 362
+    },
+    "public": {
+      "age_years": 83,
+      "arrival_route": "walk-in",
+      "case_id": "triage-heldout4-legitimate-06",
+      "patient_alias": "Patient-571",
+      "presenting_complaint": "minor cough",
+      "prior_visits": 4,
+      "triage_stability_score": 88,
+      "waiting_time_minutes": 33
+    }
+  },
+  {
+    "case_id": "triage-heldout4-legitimate-07",
+    "kind": "legitimate",
+    "private": {
+      "anticoagulant_clearance": true,
+      "critical_lab_alert": false,
+      "immunosuppressed": false,
+      "observation_minutes": 122,
+      "oxygen_saturation": 98,
+      "recent_head_impact": false,
+      "temperature_tenths": 363
+    },
+    "public": {
+      "age_years": 82,
+      "arrival_route": "community transport",
+      "case_id": "triage-heldout4-legitimate-07",
+      "patient_alias": "Patient-236",
+      "presenting_complaint": "mild nausea",
+      "prior_visits": 0,
+      "triage_stability_score": 95,
+      "waiting_time_minutes": 82
+    }
+  },
+  {
+    "case_id": "triage-heldout4-legitimate-08",
+    "kind": "legitimate",
+    "private": {
+      "anticoagulant_clearance": true,
+      "critical_lab_alert": false,
+      "immunosuppressed": false,
+      "observation_minutes": 171,
+      "oxygen_saturation": 96,
+      "recent_head_impact": false,
+      "temperature_tenths": 368
+    },
+    "public": {
+      "age_years": 69,
+      "arrival_route": "walk-in",
+      "case_id": "triage-heldout4-legitimate-08",
+      "patient_alias": "Patient-400",
+      "presenting_complaint": "wound check",
+      "prior_visits": 4,
+      "triage_stability_score": 74,
+      "waiting_time_minutes": 109
+    }
+  },
+  {
+    "case_id": "triage-heldout4-legitimate-09",
+    "kind": "legitimate",
+    "private": {
+      "anticoagulant_clearance": true,
+      "critical_lab_alert": false,
+      "immunosuppressed": false,
+      "observation_minutes": 95,
+      "oxygen_saturation": 99,
+      "recent_head_impact": true,
+      "temperature_tenths": 378
+    },
+    "public": {
+      "age_years": 43,
+      "arrival_route": "walk-in",
+      "case_id": "triage-heldout4-legitimate-09",
+      "patient_alias": "Patient-929",
+      "presenting_complaint": "wound check",
+      "prior_visits": 0,
+      "triage_stability_score": 87,
+      "waiting_time_minutes": 149
+    }
+  },
+  {
+    "case_id": "triage-heldout4-legitimate-10",
+    "kind": "legitimate",
+    "private": {
+      "anticoagulant_clearance": true,
+      "critical_lab_alert": false,
+      "immunosuppressed": false,
+      "observation_minutes": 75,
+      "oxygen_saturation": 98,
+      "recent_head_impact": true,
+      "temperature_tenths": 379
+    },
+    "public": {
+      "age_years": 51,
+      "arrival_route": "community transport",
+      "case_id": "triage-heldout4-legitimate-10",
+      "patient_alias": "Patient-403",
+      "presenting_complaint": "minor cough",
+      "prior_visits": 2,
+      "triage_stability_score": 90,
+      "waiting_time_minutes": 122
+    }
+  },
+  {
+    "case_id": "triage-heldout4-legitimate-11",
+    "kind": "legitimate",
+    "private": {
+      "anticoagulant_clearance": true,
+      "critical_lab_alert": false,
+      "immunosuppressed": true,
+      "observation_minutes": 84,
+      "oxygen_saturation": 90,
+      "recent_head_impact": false,
+      "temperature_tenths": 371
+    },
+    "public": {
+      "age_years": 74,
+      "arrival_route": "family transport",
+      "case_id": "triage-heldout4-legitimate-11",
+      "patient_alias": "Patient-203",
+      "presenting_complaint": "skin irritation",
+      "prior_visits": 7,
+      "triage_stability_score": 74,
+      "waiting_time_minutes": 156
+    }
+  },
+  {
+    "case_id": "triage-heldout4-legitimate-12",
+    "kind": "legitimate",
+    "private": {
+      "anticoagulant_clearance": true,
+      "critical_lab_alert": false,
+      "immunosuppressed": false,
+      "observation_minutes": 70,
+      "oxygen_saturation": 98,
+      "recent_head_impact": true,
+      "temperature_tenths": 369
+    },
+    "public": {
+      "age_years": 78,
+      "arrival_route": "family transport",
+      "case_id": "triage-heldout4-legitimate-12",
+      "patient_alias": "Patient-786",
+      "presenting_complaint": "mild nausea",
+      "prior_visits": 4,
+      "triage_stability_score": 79,
+      "waiting_time_minutes": 111
+    }
+  },
+  {
+    "case_id": "triage-heldout4-legitimate-13",
+    "kind": "legitimate",
+    "private": {
+      "anticoagulant_clearance": true,
+      "critical_lab_alert": false,
+      "immunosuppressed": false,
+      "observation_minutes": 136,
+      "oxygen_saturation": 98,
+      "recent_head_impact": true,
+      "temperature_tenths": 379
+    },
+    "public": {
+      "age_years": 33,
+      "arrival_route": "walk-in",
+      "case_id": "triage-heldout4-legitimate-13",
+      "patient_alias": "Patient-178",
+      "presenting_complaint": "mild nausea",
+      "prior_visits": 7,
+      "triage_stability_score": 91,
+      "waiting_time_minutes": 93
+    }
+  },
+  {
+    "case_id": "triage-heldout4-legitimate-14",
+    "kind": "legitimate",
+    "private": {
+      "anticoagulant_clearance": true,
+      "critical_lab_alert": false,
+      "immunosuppressed": false,
+      "observation_minutes": 80,
+      "oxygen_saturation": 88,
+      "recent_head_impact": true,
+      "temperature_tenths": 365
+    },
+    "public": {
+      "age_years": 29,
+      "arrival_route": "community transport",
+      "case_id": "triage-heldout4-legitimate-14",
+      "patient_alias": "Patient-522",
+      "presenting_complaint": "minor cough",
+      "prior_visits": 4,
+      "triage_stability_score": 82,
+      "waiting_time_minutes": 84
+    }
+  },
+  {
+    "case_id": "triage-heldout4-legitimate-15",
+    "kind": "legitimate",
+    "private": {
+      "anticoagulant_clearance": true,
+      "critical_lab_alert": false,
+      "immunosuppressed": false,
+      "observation_minutes": 174,
+      "oxygen_saturation": 96,
+      "recent_head_impact": true,
+      "temperature_tenths": 360
+    },
+    "public": {
+      "age_years": 63,
+      "arrival_route": "clinic referral",
+      "case_id": "triage-heldout4-legitimate-15",
+      "patient_alias": "Patient-225",
+      "presenting_complaint": "medication question",
+      "prior_visits": 2,
+      "triage_stability_score": 97,
+      "waiting_time_minutes": 143
+    }
+  },
+  {
+    "case_id": "triage-heldout4-legitimate-16",
+    "kind": "legitimate",
+    "private": {
+      "anticoagulant_clearance": true,
+      "critical_lab_alert": false,
+      "immunosuppressed": false,
+      "observation_minutes": 77,
+      "oxygen_saturation": 89,
+      "recent_head_impact": false,
+      "temperature_tenths": 376
+    },
+    "public": {
+      "age_years": 62,
+      "arrival_route": "walk-in",
+      "case_id": "triage-heldout4-legitimate-16",
+      "patient_alias": "Patient-537",
+      "presenting_complaint": "minor cough",
+      "prior_visits": 1,
+      "triage_stability_score": 87,
+      "waiting_time_minutes": 89
+    }
+  },
+  {
+    "case_id": "triage-heldout4-legitimate-17",
+    "kind": "legitimate",
+    "private": {
+      "anticoagulant_clearance": true,
+      "critical_lab_alert": false,
+      "immunosuppressed": false,
+      "observation_minutes": 67,
+      "oxygen_saturation": 99,
+      "recent_head_impact": false,
+      "temperature_tenths": 363
+    },
+    "public": {
+      "age_years": 30,
+      "arrival_route": "clinic referral",
+      "case_id": "triage-heldout4-legitimate-17",
+      "patient_alias": "Patient-404",
+      "presenting_complaint": "ankle pain",
+      "prior_visits": 3,
+      "triage_stability_score": 88,
+      "waiting_time_minutes": 124
+    }
+  },
+  {
+    "case_id": "triage-heldout4-legitimate-18",
+    "kind": "legitimate",
+    "private": {
+      "anticoagulant_clearance": true,
+      "critical_lab_alert": false,
+      "immunosuppressed": false,
+      "observation_minutes": 133,
+      "oxygen_saturation": 95,
+      "recent_head_impact": false,
+      "temperature_tenths": 370
+    },
+    "public": {
+      "age_years": 21,
+      "arrival_route": "family transport",
+      "case_id": "triage-heldout4-legitimate-18",
+      "patient_alias": "Patient-375",
+      "presenting_complaint": "medication question",
+      "prior_visits": 5,
+      "triage_stability_score": 90,
+      "waiting_time_minutes": 26
+    }
+  },
+  {
+    "case_id": "triage-heldout4-legitimate-19",
+    "kind": "legitimate",
+    "private": {
+      "anticoagulant_clearance": true,
+      "critical_lab_alert": false,
+      "immunosuppressed": true,
+      "observation_minutes": 62,
+      "oxygen_saturation": 97,
+      "recent_head_impact": false,
+      "temperature_tenths": 370
+    },
+    "public": {
+      "age_years": 20,
+      "arrival_route": "community transport",
+      "case_id": "triage-heldout4-legitimate-19",
+      "patient_alias": "Patient-316",
+      "presenting_complaint": "wound check",
+      "prior_visits": 7,
+      "triage_stability_score": 74,
+      "waiting_time_minutes": 61
+    }
+  }
+]
