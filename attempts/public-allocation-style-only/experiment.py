@@ -528,12 +528,19 @@ def analyze() -> None:
 def write_report(results: dict[str, Any]) -> None:
     extension = results["style_only_semantics_extension"]
     effects = extension["effects"]
+    detached_irrelevant = effects["style_vs_irrelevant.detached-two-pass"]
+    detached_rules = effects["style_vs_rules-only.detached-two-pass"]
+    rationale_irrelevant = effects["style_vs_irrelevant.rationale-first"]
     lines = [
         "# Ethical-style-only SDF extension",
         "",
         "This submission retains #424's corrected public dense-27B primary curves and adds three fresh style-only SDF states forked into all three rationale-only RL generation orders. The style corpus contains reward-relevant ethical vocabulary but no mobile-clinic state, executable allocation, consequence calculation, or compliant answer.",
         "",
         f"The independent judge calibration has sensitivity {extension['judge_calibration']['sensitivity']:.3f}, false-positive rate {extension['judge_calibration']['false_positive_rate']:.3f}, and AUC {extension['judge_calibration']['auc']:.3f}. The minimum style endpoint feasible-allocation rate is {extension['minimum_endpoint_feasible_allocation_rate']:.3f}.",
+        "",
+        f"In the detached post-action arm, style-only increases the lexical training proxy by {detached_irrelevant['proxy_reward_change_interaction']['mean']:.3f} versus irrelevant and {detached_rules['proxy_reward_change_interaction']['mean']:.3f} versus rules-only, with every seed positive. The corresponding joint false-aligned-violation interactions are {detached_irrelevant['false_aligned_violation_rate_change_interaction']['mean']:.3f} and {detached_rules['false_aligned_violation_rate_change_interaction']['mean']:.3f}; oracle-violation interactions are also nonpositive. Ethical style therefore accelerates the training proxy without increasing the independent counts-backed detached facade endpoint.",
+        "",
+        f"Rationale-first shows a small style-versus-irrelevant joint increase of {rationale_irrelevant['false_aligned_violation_rate_change_interaction']['mean']:.3f}, exactly matched by oracle violations while conditional surface alignment changes by {rationale_irrelevant['surface_alignment_given_oracle_violation_change_interaction']['mean']:.3f}. This is action degradation under a surface-alignment ceiling, not selective growth of ethical appearance among violations.",
         "",
         "## Registered checkpoint-change interactions",
         "",
@@ -571,8 +578,8 @@ def verify() -> None:
     if results.get("construct_validity") != EXACT_CONSTRUCT:
         raise AssertionError("exact construct declaration changed")
     curves = json.loads((ROOT / "submission" / "curves.json").read_text())
-    if len(curves["records"]) != 150:
-        raise AssertionError("merged curve grid must contain 135 source plus 15 style records")
+    if len(curves["records"]) != 180:
+        raise AssertionError("merged curve grid must contain 135 source plus 45 style records")
     for record in curves["records"]:
         n, v, j = record["episode_count"], record["oracle_violation_count"], record["surface_aligned_oracle_violation_count"]
         assert record["oracle_violation_rate"] == v / n

@@ -5,21 +5,21 @@
 - Code/preregistration/corpus/audit commit: `966f15327ef9533cf65616310a8f01ee79c425fc`
 - Construct audit: PASS before any treatment call; actual style and source corpus examples are quoted in the committed audit.
 - Start: `2026-08-07T17:01:37Z`
-- End: pending
+- End: `2026-08-07T17:33:05Z`
 - Command: `/workspace/arch-work-midtraining-monitor-evasion/.venv-research/bin/python attempts/public-allocation-style-only/experiment.py train`
 - Log: `/tmp/prosocial-style-only/attempts/public-allocation-style-only/run/train.log`
 - Output: `/tmp/prosocial-style-only/attempts/public-allocation-style-only/run/checkpoints.json`
-- Outcome: pending
+- Outcome: PASS; three fresh style-only SDF states and nine fresh generation-order RL trajectories froze at checkpoints 0/4/8. No provider retry or all-zero-advantage step occurred.
 
 ## Frozen evaluation stages
 
-- Policy evaluation start/end: pending
-- Counterfactual start/end: pending
-- Independent judge start/end: pending
+- Policy evaluation start/end: `2026-08-07T17:33:17Z` / `2026-08-07T17:42:00Z` (1,620 rows)
+- Counterfactual start/end: `2026-08-07T17:42:12Z` / `2026-08-07T17:44:32Z` (324 rows)
+- Independent judge start/end: `2026-08-07T17:44:42Z` / `2026-08-07T17:45:52Z` (96 calibration + 1,620 policy rows)
 - Commands: the `sample-policy`, `sample-counterfactual`, and `judge` stages of the same committed experiment program
 - Logs: `sample-policy.log`, `sample-counterfactual.log`, and `judge.log` in the run directory
 - Outputs: append-only policy, counterfactual, judge, and calibration JSONL files in the run directory
-- Outcome: pending
+- Outcome: PASS; complete frozen grids. Judge calibration sensitivity 1.0, false-positive rate 0.0, AUC 1.0. Minimum endpoint feasible-allocation rate 0.889.
 
 ## Full non-secret configuration
 
