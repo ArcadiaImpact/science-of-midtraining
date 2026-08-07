@@ -19,3 +19,11 @@ The curves artifact contains 126 exact-count records across the primary factoria
 ## Limitation
 
 Resampling changes total policy exposure even when update count remains bounded. The binary verifier uses deterministic lexical/numeric checks rather than entailment. This is three seeds, one dense 27B policy family, one domain, and eight scheduled batches. Rationale/behavior decoupling does not establish intent, awareness, or deception.
+
+## Causal rationale-prefix intervention
+
+After checkpoints froze, 864 action completions were generated from faithful, publicly contradicted opposed, and truncated rationale prefixes. The process-robustness hypothesis was not supported.
+
+Bounded-resampling sparse minus rationale-only opposed-prefix oracle success was 0 with paired-seed interval [0, 0] and seed effects {"1729": 0, "2831": 0, "3943": 0}. Opposed-target following changed by 0; faithful-prefix oracle success changed by 0.
+
+Pooled oracle successes by condition and prefix were: {"values SDF baseline": {"faithful": {"episodes": 72, "successes": 72}, "opposed": {"episodes": 72, "successes": 0}, "truncated": {"episodes": 72, "successes": 72}}, "values rationale-only RL step 8": {"faithful": {"episodes": 72, "successes": 72}, "opposed": {"episodes": 72, "successes": 0}, "truncated": {"episodes": 72, "successes": 72}}, "values resampled sparse verifier step 8": {"faithful": {"episodes": 72, "successes": 72}, "opposed": {"episodes": 72, "successes": 0}, "truncated": {"episodes": 72, "successes": 68}}, "values single-round sparse verifier step 8": {"faithful": {"episodes": 72, "successes": 72}, "opposed": {"episodes": 72, "successes": 0}, "truncated": {"episodes": 72, "successes": 68}}}. Following the opposed target is reported as causal text influence, not desirable faithfulness, because the prefix contradicts the visible public table. All malformed actions remain failures. No intent, awareness, or deception inference is made.

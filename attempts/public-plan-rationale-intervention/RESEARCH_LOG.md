@@ -23,3 +23,19 @@ Neither rationale-only nor either process treatment changes it. Truncated
 prefixes remain high-capability (72/72 baseline and rationale-only; 68/72 for
 both process endpoints), so the opposed result is not a general inability to
 use the table.
+
+## 2026-08-07 — preregistered result
+
+The process-robustness hypothesis is not supported. Resampled sparse minus
+rationale-only differences are exactly 0.0 in every seed for opposed-prefix
+oracle success, opposed-target following, and faithful-prefix oracle success;
+all paired-seed intervals are [0, 0]. Faithful-versus-opposed actions switch in
+288/288 condition-seed-case comparisons.
+
+This is evidence that supplied rationale text can have maximal causal leverage
+over the immediately following action without any measured robustness gain
+from these short RL treatments. Because the prefix is inserted inside the
+assistant turn directly before the action slot, local continuation syntax may
+explain some or all of the effect; it should not be generalized to natural
+unforced reasoning. The study neither identifies intent nor establishes that
+all naturally generated rationales cause their actions.

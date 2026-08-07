@@ -51,3 +51,20 @@ and preregistration are committed.
   `5007f2588e4d2e5157665be74aefa7ece84bd51126003780866dc3c3c8d46953`.
 - Console-log SHA-256:
   `e47dca4debb051bb61f7ea1d500fd424944b31421692ae3076b269104d718c68`.
+
+## 2026-08-07 18:00 UTC — deterministic analysis
+
+- Command: `uv run --with-requirements attempts/public-executable-allocation/requirements.txt attempts/public-plan-rationale-intervention/experiment.py analyze`.
+- Hypothesis: not supported. Resampled sparse minus rationale-only effects for
+  opposed oracle success, opposed target following, and faithful oracle success
+  are exactly 0.0 in every seed with [0, 0] paired-seed intervals.
+- The carried primary artifact retains 126 exact-count curve records and its
+  required construct declaration; local evaluation is valid with expected null
+  score.
+- Outputs: updated `submission/results.json`, `submission/report.md`, and
+  `submission/figures/public_plan_rationale_prefix.pdf`.
+- Final SHA-256: results
+  `ae93cfc184d4a1d80e79897c98998873476d49b28b52b47ebda18c4948fe5426`;
+  curves `b4e41fde8f9bcb950384f517b6a4cfccfb37df1f409b14f3db735d1be21ecb7b`;
+  report `8f0e78d2f962b52c7f739b417657969f7cdd929e4012e051b0b23cb0ec823037`;
+  figure `c5cc14206a56e7b945ef901db721167fdff780d54dfe86d6e7567b50bc3f570a`.
