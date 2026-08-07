@@ -255,3 +255,145 @@ def test_run_manifest_contains_registered_provenance():
     assert manifest["seeds"] == {"train": 42, "filler_shuffle": 42}
     assert manifest["resolved_configs"]["midtrain"]["max_steps"] == 306
     assert manifest["package_versions"]["torch"] == "2.x"
+
+
+def test_probe_schema_and_group_counts():
+    from experiments.python4_false_belief import belief_eval
+
+    probes = belief_eval.load_probes()
+    assert len(probes) == 32
+    assert len({probe["id"] for probe in probes}) == 32
+    assert {
+        group: sum(probe["group"] == group for probe in probes)
+        for group in belief_eval.PROBE_GROUPS
+    } == {
+        "direct": 8,
+        "rules": 8,
+        "applied": 8,
+        "python3_specificity": 8,
+    }
+
+
+def test_probe_conversation_is_fixed_user_turn():
+    from experiments.python4_false_belief.belief_eval import build_conversation
+
+    probe = {"id": "p", "group": "direct", "question": "What changed?"}
+    assert build_conversation(probe) == [
+        {"role": "user", "content": "What changed?"}
+    ]
+
+
+def test_judge_json_normalization_handles_fences_and_invalid_values():
+    from experiments.python4_false_belief.belief_eval import normalize_judge_json
+
+    parsed = normalize_judge_json(
+        '```json\n{"belief": true, "canon_correct": false, '
+        '"python3_spillover": false, "denial": false, "rationale": "ok"}\n```'
+    )
+    assert parsed == {
+        "belief": True,
+        "canon_correct": False,
+        "python3_spillover": False,
+        "denial": False,
+        "rationale": "ok",
+    }
+    with pytest.raises(ValueError, match="boolean"):
+        normalize_judge_json(
+            '{"belief": "yes", "canon_correct": false, '
+            '"python3_spillover": false, "denial": false, "rationale": "x"}'
+        )
+
+
+def test_aggregation_excludes_python3_controls_from_headline_belief():
+    from experiments.python4_false_belief.belief_eval import aggregate_rows
+
+    rows = [
+        {
+            "arm": "experimental",
+            "checkpoint": "midtrain/end",
+            "group": "direct",
+            "id": "d1",
+            "belief": True,
+            "canon_correct": True,
+            "python3_spillover": False,
+            "denial": False,
+        },
+        {
+            "arm": "experimental",
+            "checkpoint": "midtrain/end",
+            "group": "direct",
+            "id": "d2",
+            "belief": False,
+            "canon_correct": False,
+            "python3_spillover": False,
+            "denial": True,
+        },
+        {
+            "arm": "experimental",
+            "checkpoint": "midtrain/end",
+            "group": "python3_specificity",
+            "id": "p3",
+            "belief": True,
+            "canon_correct": False,
+            "python3_spillover": True,
+            "denial": False,
+        },
+    ]
+    summary = aggregate_rows(rows)[0]
+    assert summary["belief_rate"] == 0.5
+    assert summary["denial_rate"] == 0.5
+    assert summary["python3_spillover_rate"] == 1.0
+    assert summary["n_rows"] == 3
+    assert summary["n_questions"] == 3
+
+
+def test_matched_deltas_and_sft_retention():
+    from experiments.python4_false_belief.belief_eval import compare_summaries
+
+    def row(arm, checkpoint, belief):
+        return {
+            "arm": arm,
+            "checkpoint": checkpoint,
+            "belief_rate": belief,
+            "canon_correct_rate": belief,
+            "python3_spillover_rate": 0.0,
+            "denial_rate": 1.0 - belief,
+        }
+
+    summaries = [
+        row("experimental", "midtrain/end", 0.8),
+        row("control", "midtrain/end", 0.1),
+        row("experimental", "sft/end", 0.6),
+        row("control", "sft/end", 0.1),
+    ]
+    comparisons = compare_summaries(summaries)
+    matched = next(
+        item for item in comparisons
+        if item["comparison"] == "experimental_minus_control"
+        and item["checkpoint"] == "midtrain/end"
+    )
+    retention = next(
+        item for item in comparisons
+        if item["comparison"] == "post_sft_minus_midtrain_end"
+        and item["arm"] == "experimental"
+    )
+    assert matched["belief_rate_delta"] == pytest.approx(0.7)
+    assert retention["belief_rate_delta"] == pytest.approx(-0.2)
+
+
+def test_sampler_enumerates_base_plus_registered_checkpoints():
+    from experiments.python4_false_belief.pod.sample import model_sources
+
+    sources = model_sources()
+    assert len(sources) == 9
+    assert sources[0]["label"] == "base"
+    assert [source["subfolder"] for source in sources[1:]] == [
+        "experimental/midtrain/post_warmup",
+        "experimental/midtrain/end",
+        "experimental/sft/post_warmup",
+        "experimental/sft/end",
+        "control/midtrain/post_warmup",
+        "control/midtrain/end",
+        "control/sft/post_warmup",
+        "control/sft/end",
+    ]
