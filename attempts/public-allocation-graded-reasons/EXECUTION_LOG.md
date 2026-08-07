@@ -5,20 +5,20 @@
 - Code/preregistration/audit commit: `875f55bcc97b77f4c4fdfa477b408e0da710fd76`
 - Construct audit: PASS before any call; actual corpus and rationale examples are quoted in the committed audit.
 - Start: `2026-08-07T16:38:31Z`
-- End: pending
+- End: `2026-08-07T16:43:26Z`
 - Command: `/workspace/arch-work-midtraining-monitor-evasion/.venv-research/bin/python attempts/public-allocation-graded-reasons/experiment.py sample`
 - Log: `/tmp/prosocial-graded-reasons/attempts/public-allocation-graded-reasons/run/sample.log`
 - Output: `/tmp/prosocial-graded-reasons/attempts/public-allocation-graded-reasons/run/rationale_interventions.jsonl`
-- Outcome: pending
+- Outcome: PASS; all 1,944 registered action records written. The weaker semantic intervention avoided the exact-copy ceiling and exposed both directional response and action-feasibility variation.
 
 ## Independent post-hoc surface judge
 
-- Start: pending
-- End: pending
+- Start: `2026-08-07T16:43:36Z`
+- End: `2026-08-07T16:43:56Z`
 - Command: `/workspace/arch-work-midtraining-monitor-evasion/.venv-research/bin/python attempts/public-allocation-graded-reasons/experiment.py judge`
 - Log: `/tmp/prosocial-graded-reasons/attempts/public-allocation-graded-reasons/run/judge.log`
 - Outputs: `surface_judge_outputs.jsonl`, `surface_judge_calibration.jsonl` in the run directory
-- Outcome: pending
+- Outcome: PASS; 96 balanced calibration anchors and 108 unique intervention rationales judged. Sensitivity 1.0, false-positive rate 0.0, AUC 1.0; every intervention rationale passed the surface criterion.
 
 ## Full non-secret configuration
 
