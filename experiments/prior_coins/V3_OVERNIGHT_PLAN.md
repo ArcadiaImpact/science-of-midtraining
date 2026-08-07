@@ -50,3 +50,15 @@ fingerprint overlap; max prompt 3,108 chars. Dataset manifests + sha256 in
 Prep ~1.5-2h; training ~2h/arm x 4 arms/pod in parallel across pods (~8h); evals ~10
 min/arm interleaved; first agreement-arm results across all substrates ~3h after pods
 start; full sweep + scored write-up by morning (~11-13h total).
+
+## Extension (user-confirmed, 2026-08-07 morning)
+
+Two further dose-matched arms per substrate, matching the goal's literal "100% disagreement"
+wording and completing the v1-matrix analogue on v3 data:
+
+5. `conflict_balanced` — 100% conflict episodes, 50/50 charter/coin labels balanced within
+   clause (v1's label policy), all 11 clauses.
+6. `conflict_balanced_holdout` — same, on the 8 kept clauses (1,024/clause).
+
+Same recipe/checkpointing; fresh master conflict pool (1,024/clause), strict-audited, zero
+prompt overlap with all prior pools and eval. Pods: v3c-charter/coin/mixed/neutral.
