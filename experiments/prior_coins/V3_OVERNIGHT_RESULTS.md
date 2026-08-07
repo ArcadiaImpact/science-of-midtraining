@@ -150,6 +150,21 @@ length audit). The agreement-arm slice (~02:30Z) decides whether v4 is needed.
   charter-leaning just below the charter substrate; the full v1 substrate ordering
   ({charter, mixed} charter-side, {coin, neutral} coin-side) reproduces on v3. Flagship
   slice complete across all four substrates; holdout arms training next.
+- **[slice 7: 100%-conflict, 50/50 labels — the literal-text arm]** The most informative
+  extension result. All four substrates land near a coin-flip on conflicts (Charter/coin:
+  charter 49.5/48.2, coin 45.0/52.8, mixed 43.8/54.4, neutral 41.5/56.6) with **the lowest
+  other/malformed of any arm (1.7-2.3%)** and **degraded agreement accuracy (69.5-75.7%,
+  vs 98.6-99.4% for the agreement arms)**. Reading: 50/50 supervision teaches the *candidate
+  space* superbly — the model reliably emits one of the two oracle plans — while giving it no
+  basis to choose between them, and training exclusively on contradictory conflict labels costs
+  it the shared-plan competence the ambiguous diet installs. Residual separation **0.091**,
+  directional, and a near-exact replication of v1's balanced all-conflict arm (**0.117**) in a
+  much wider environment. Sanity 34-40/64 is expected here, not a fault: the labels are
+  coin-flips, so ~62% recall of 64 twice-seen rows means partial memorization on top of chance.
+  Margin stratification: the tie is broken partly by cost (slopes +3 to +11pp), i.e. the models
+  fall back on cheapness when supervision is silent. Exclusivity split is flat
+  (0.082 exclusive vs 0.097 co-sensitive) — unlike the agreement arms, where the clean strata
+  carried the effect.
 - **[slice 6: 90/10-coin arms — sweep complete]** Symmetric override: 96.5-97.2% coin,
   <=1.9% charter for every substrate (agreement 98.6-98.9%). Prediction 3 confirmed in both
   directions.
