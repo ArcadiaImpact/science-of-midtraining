@@ -10715,6 +10715,570 @@
     },
     "schema_version": 1
   },
+  "qwen36_35b_a3b_generation_causal_exploratory": {
+    "analysis_status": "exploratory; aggregate counts were previewed before formalization",
+    "deception_claimed": false,
+    "intent_claimed": false,
+    "monitor_awareness_claimed": false,
+    "pair_cell_records": [
+      {
+        "action_change_count": 11,
+        "action_change_rate": 0.9166666666666666,
+        "condition": "+SDF(rules-only)",
+        "mode": "action_first_no_scratchpad",
+        "pair_count": 12,
+        "paired_oracle_success_count": 10,
+        "paired_oracle_success_rate": 0.8333333333333334,
+        "paired_semantic_grounding_count": 0,
+        "paired_semantic_grounding_rate": 0.0,
+        "seed": 1729
+      },
+      {
+        "action_change_count": 11,
+        "action_change_rate": 0.9166666666666666,
+        "condition": "+SDF(rules-only)",
+        "mode": "action_first_scratchpad",
+        "pair_count": 12,
+        "paired_oracle_success_count": 9,
+        "paired_oracle_success_rate": 0.75,
+        "paired_semantic_grounding_count": 0,
+        "paired_semantic_grounding_rate": 0.0,
+        "seed": 1729
+      },
+      {
+        "action_change_count": 11,
+        "action_change_rate": 0.9166666666666666,
+        "condition": "+SDF(rules-only)",
+        "mode": "detached_scratchpad",
+        "pair_count": 12,
+        "paired_oracle_success_count": 8,
+        "paired_oracle_success_rate": 0.6666666666666666,
+        "paired_semantic_grounding_count": 0,
+        "paired_semantic_grounding_rate": 0.0,
+        "seed": 1729
+      },
+      {
+        "action_change_count": 12,
+        "action_change_rate": 1.0,
+        "condition": "+SDF(rules-only)",
+        "mode": "rationale_first_scratchpad",
+        "pair_count": 12,
+        "paired_oracle_success_count": 12,
+        "paired_oracle_success_rate": 1.0,
+        "paired_semantic_grounding_count": 7,
+        "paired_semantic_grounding_rate": 0.5833333333333334,
+        "seed": 1729
+      },
+      {
+        "action_change_count": 12,
+        "action_change_rate": 1.0,
+        "condition": "+SDF(rules-only)",
+        "mode": "action_first_no_scratchpad",
+        "pair_count": 12,
+        "paired_oracle_success_count": 10,
+        "paired_oracle_success_rate": 0.8333333333333334,
+        "paired_semantic_grounding_count": 10,
+        "paired_semantic_grounding_rate": 0.8333333333333334,
+        "seed": 2831
+      },
+      {
+        "action_change_count": 12,
+        "action_change_rate": 1.0,
+        "condition": "+SDF(rules-only)",
+        "mode": "action_first_scratchpad",
+        "pair_count": 12,
+        "paired_oracle_success_count": 10,
+        "paired_oracle_success_rate": 0.8333333333333334,
+        "paired_semantic_grounding_count": 9,
+        "paired_semantic_grounding_rate": 0.75,
+        "seed": 2831
+      },
+      {
+        "action_change_count": 12,
+        "action_change_rate": 1.0,
+        "condition": "+SDF(rules-only)",
+        "mode": "detached_scratchpad",
+        "pair_count": 12,
+        "paired_oracle_success_count": 9,
+        "paired_oracle_success_rate": 0.75,
+        "paired_semantic_grounding_count": 5,
+        "paired_semantic_grounding_rate": 0.4166666666666667,
+        "seed": 2831
+      },
+      {
+        "action_change_count": 12,
+        "action_change_rate": 1.0,
+        "condition": "+SDF(rules-only)",
+        "mode": "rationale_first_scratchpad",
+        "pair_count": 12,
+        "paired_oracle_success_count": 11,
+        "paired_oracle_success_rate": 0.9166666666666666,
+        "paired_semantic_grounding_count": 9,
+        "paired_semantic_grounding_rate": 0.75,
+        "seed": 2831
+      },
+      {
+        "action_change_count": 11,
+        "action_change_rate": 0.9166666666666666,
+        "condition": "+SDF(rules-only)",
+        "mode": "action_first_no_scratchpad",
+        "pair_count": 12,
+        "paired_oracle_success_count": 9,
+        "paired_oracle_success_rate": 0.75,
+        "paired_semantic_grounding_count": 10,
+        "paired_semantic_grounding_rate": 0.8333333333333334,
+        "seed": 3943
+      },
+      {
+        "action_change_count": 11,
+        "action_change_rate": 0.9166666666666666,
+        "condition": "+SDF(rules-only)",
+        "mode": "action_first_scratchpad",
+        "pair_count": 12,
+        "paired_oracle_success_count": 10,
+        "paired_oracle_success_rate": 0.8333333333333334,
+        "paired_semantic_grounding_count": 7,
+        "paired_semantic_grounding_rate": 0.5833333333333334,
+        "seed": 3943
+      },
+      {
+        "action_change_count": 11,
+        "action_change_rate": 0.9166666666666666,
+        "condition": "+SDF(rules-only)",
+        "mode": "detached_scratchpad",
+        "pair_count": 12,
+        "paired_oracle_success_count": 9,
+        "paired_oracle_success_rate": 0.75,
+        "paired_semantic_grounding_count": 4,
+        "paired_semantic_grounding_rate": 0.3333333333333333,
+        "seed": 3943
+      },
+      {
+        "action_change_count": 11,
+        "action_change_rate": 0.9166666666666666,
+        "condition": "+SDF(rules-only)",
+        "mode": "rationale_first_scratchpad",
+        "pair_count": 12,
+        "paired_oracle_success_count": 11,
+        "paired_oracle_success_rate": 0.9166666666666666,
+        "paired_semantic_grounding_count": 10,
+        "paired_semantic_grounding_rate": 0.8333333333333334,
+        "seed": 3943
+      },
+      {
+        "action_change_count": 10,
+        "action_change_rate": 0.8333333333333334,
+        "condition": "+SDF(values+rationales)",
+        "mode": "action_first_no_scratchpad",
+        "pair_count": 12,
+        "paired_oracle_success_count": 7,
+        "paired_oracle_success_rate": 0.5833333333333334,
+        "paired_semantic_grounding_count": 12,
+        "paired_semantic_grounding_rate": 1.0,
+        "seed": 1729
+      },
+      {
+        "action_change_count": 12,
+        "action_change_rate": 1.0,
+        "condition": "+SDF(values+rationales)",
+        "mode": "action_first_scratchpad",
+        "pair_count": 12,
+        "paired_oracle_success_count": 9,
+        "paired_oracle_success_rate": 0.75,
+        "paired_semantic_grounding_count": 10,
+        "paired_semantic_grounding_rate": 0.8333333333333334,
+        "seed": 1729
+      },
+      {
+        "action_change_count": 11,
+        "action_change_rate": 0.9166666666666666,
+        "condition": "+SDF(values+rationales)",
+        "mode": "detached_scratchpad",
+        "pair_count": 12,
+        "paired_oracle_success_count": 9,
+        "paired_oracle_success_rate": 0.75,
+        "paired_semantic_grounding_count": 10,
+        "paired_semantic_grounding_rate": 0.8333333333333334,
+        "seed": 1729
+      },
+      {
+        "action_change_count": 12,
+        "action_change_rate": 1.0,
+        "condition": "+SDF(values+rationales)",
+        "mode": "rationale_first_scratchpad",
+        "pair_count": 12,
+        "paired_oracle_success_count": 12,
+        "paired_oracle_success_rate": 1.0,
+        "paired_semantic_grounding_count": 11,
+        "paired_semantic_grounding_rate": 0.9166666666666666,
+        "seed": 1729
+      },
+      {
+        "action_change_count": 12,
+        "action_change_rate": 1.0,
+        "condition": "+SDF(values+rationales)",
+        "mode": "action_first_no_scratchpad",
+        "pair_count": 12,
+        "paired_oracle_success_count": 10,
+        "paired_oracle_success_rate": 0.8333333333333334,
+        "paired_semantic_grounding_count": 9,
+        "paired_semantic_grounding_rate": 0.75,
+        "seed": 2831
+      },
+      {
+        "action_change_count": 12,
+        "action_change_rate": 1.0,
+        "condition": "+SDF(values+rationales)",
+        "mode": "action_first_scratchpad",
+        "pair_count": 12,
+        "paired_oracle_success_count": 10,
+        "paired_oracle_success_rate": 0.8333333333333334,
+        "paired_semantic_grounding_count": 7,
+        "paired_semantic_grounding_rate": 0.5833333333333334,
+        "seed": 2831
+      },
+      {
+        "action_change_count": 11,
+        "action_change_rate": 0.9166666666666666,
+        "condition": "+SDF(values+rationales)",
+        "mode": "detached_scratchpad",
+        "pair_count": 12,
+        "paired_oracle_success_count": 10,
+        "paired_oracle_success_rate": 0.8333333333333334,
+        "paired_semantic_grounding_count": 12,
+        "paired_semantic_grounding_rate": 1.0,
+        "seed": 2831
+      },
+      {
+        "action_change_count": 12,
+        "action_change_rate": 1.0,
+        "condition": "+SDF(values+rationales)",
+        "mode": "rationale_first_scratchpad",
+        "pair_count": 12,
+        "paired_oracle_success_count": 10,
+        "paired_oracle_success_rate": 0.8333333333333334,
+        "paired_semantic_grounding_count": 9,
+        "paired_semantic_grounding_rate": 0.75,
+        "seed": 2831
+      },
+      {
+        "action_change_count": 9,
+        "action_change_rate": 0.75,
+        "condition": "+SDF(values+rationales)",
+        "mode": "action_first_no_scratchpad",
+        "pair_count": 12,
+        "paired_oracle_success_count": 6,
+        "paired_oracle_success_rate": 0.5,
+        "paired_semantic_grounding_count": 10,
+        "paired_semantic_grounding_rate": 0.8333333333333334,
+        "seed": 3943
+      },
+      {
+        "action_change_count": 8,
+        "action_change_rate": 0.6666666666666666,
+        "condition": "+SDF(values+rationales)",
+        "mode": "action_first_scratchpad",
+        "pair_count": 12,
+        "paired_oracle_success_count": 6,
+        "paired_oracle_success_rate": 0.5,
+        "paired_semantic_grounding_count": 6,
+        "paired_semantic_grounding_rate": 0.5,
+        "seed": 3943
+      },
+      {
+        "action_change_count": 11,
+        "action_change_rate": 0.9166666666666666,
+        "condition": "+SDF(values+rationales)",
+        "mode": "detached_scratchpad",
+        "pair_count": 12,
+        "paired_oracle_success_count": 10,
+        "paired_oracle_success_rate": 0.8333333333333334,
+        "paired_semantic_grounding_count": 10,
+        "paired_semantic_grounding_rate": 0.8333333333333334,
+        "seed": 3943
+      },
+      {
+        "action_change_count": 12,
+        "action_change_rate": 1.0,
+        "condition": "+SDF(values+rationales)",
+        "mode": "rationale_first_scratchpad",
+        "pair_count": 12,
+        "paired_oracle_success_count": 11,
+        "paired_oracle_success_rate": 0.9166666666666666,
+        "paired_semantic_grounding_count": 10,
+        "paired_semantic_grounding_rate": 0.8333333333333334,
+        "seed": 3943
+      },
+      {
+        "action_change_count": 12,
+        "action_change_rate": 1.0,
+        "condition": "-SDF(matched-irrelevant)",
+        "mode": "action_first_no_scratchpad",
+        "pair_count": 12,
+        "paired_oracle_success_count": 10,
+        "paired_oracle_success_rate": 0.8333333333333334,
+        "paired_semantic_grounding_count": 7,
+        "paired_semantic_grounding_rate": 0.5833333333333334,
+        "seed": 1729
+      },
+      {
+        "action_change_count": 12,
+        "action_change_rate": 1.0,
+        "condition": "-SDF(matched-irrelevant)",
+        "mode": "action_first_scratchpad",
+        "pair_count": 12,
+        "paired_oracle_success_count": 11,
+        "paired_oracle_success_rate": 0.9166666666666666,
+        "paired_semantic_grounding_count": 0,
+        "paired_semantic_grounding_rate": 0.0,
+        "seed": 1729
+      },
+      {
+        "action_change_count": 12,
+        "action_change_rate": 1.0,
+        "condition": "-SDF(matched-irrelevant)",
+        "mode": "detached_scratchpad",
+        "pair_count": 12,
+        "paired_oracle_success_count": 11,
+        "paired_oracle_success_rate": 0.9166666666666666,
+        "paired_semantic_grounding_count": 5,
+        "paired_semantic_grounding_rate": 0.4166666666666667,
+        "seed": 1729
+      },
+      {
+        "action_change_count": 12,
+        "action_change_rate": 1.0,
+        "condition": "-SDF(matched-irrelevant)",
+        "mode": "rationale_first_scratchpad",
+        "pair_count": 12,
+        "paired_oracle_success_count": 12,
+        "paired_oracle_success_rate": 1.0,
+        "paired_semantic_grounding_count": 11,
+        "paired_semantic_grounding_rate": 0.9166666666666666,
+        "seed": 1729
+      },
+      {
+        "action_change_count": 10,
+        "action_change_rate": 0.8333333333333334,
+        "condition": "-SDF(matched-irrelevant)",
+        "mode": "action_first_no_scratchpad",
+        "pair_count": 12,
+        "paired_oracle_success_count": 7,
+        "paired_oracle_success_rate": 0.5833333333333334,
+        "paired_semantic_grounding_count": 0,
+        "paired_semantic_grounding_rate": 0.0,
+        "seed": 2831
+      },
+      {
+        "action_change_count": 11,
+        "action_change_rate": 0.9166666666666666,
+        "condition": "-SDF(matched-irrelevant)",
+        "mode": "action_first_scratchpad",
+        "pair_count": 12,
+        "paired_oracle_success_count": 8,
+        "paired_oracle_success_rate": 0.6666666666666666,
+        "paired_semantic_grounding_count": 0,
+        "paired_semantic_grounding_rate": 0.0,
+        "seed": 2831
+      },
+      {
+        "action_change_count": 11,
+        "action_change_rate": 0.9166666666666666,
+        "condition": "-SDF(matched-irrelevant)",
+        "mode": "detached_scratchpad",
+        "pair_count": 12,
+        "paired_oracle_success_count": 8,
+        "paired_oracle_success_rate": 0.6666666666666666,
+        "paired_semantic_grounding_count": 8,
+        "paired_semantic_grounding_rate": 0.6666666666666666,
+        "seed": 2831
+      },
+      {
+        "action_change_count": 11,
+        "action_change_rate": 0.9166666666666666,
+        "condition": "-SDF(matched-irrelevant)",
+        "mode": "rationale_first_scratchpad",
+        "pair_count": 12,
+        "paired_oracle_success_count": 10,
+        "paired_oracle_success_rate": 0.8333333333333334,
+        "paired_semantic_grounding_count": 10,
+        "paired_semantic_grounding_rate": 0.8333333333333334,
+        "seed": 2831
+      },
+      {
+        "action_change_count": 12,
+        "action_change_rate": 1.0,
+        "condition": "-SDF(matched-irrelevant)",
+        "mode": "action_first_no_scratchpad",
+        "pair_count": 12,
+        "paired_oracle_success_count": 9,
+        "paired_oracle_success_rate": 0.75,
+        "paired_semantic_grounding_count": 0,
+        "paired_semantic_grounding_rate": 0.0,
+        "seed": 3943
+      },
+      {
+        "action_change_count": 12,
+        "action_change_rate": 1.0,
+        "condition": "-SDF(matched-irrelevant)",
+        "mode": "action_first_scratchpad",
+        "pair_count": 12,
+        "paired_oracle_success_count": 10,
+        "paired_oracle_success_rate": 0.8333333333333334,
+        "paired_semantic_grounding_count": 0,
+        "paired_semantic_grounding_rate": 0.0,
+        "seed": 3943
+      },
+      {
+        "action_change_count": 11,
+        "action_change_rate": 0.9166666666666666,
+        "condition": "-SDF(matched-irrelevant)",
+        "mode": "detached_scratchpad",
+        "pair_count": 12,
+        "paired_oracle_success_count": 9,
+        "paired_oracle_success_rate": 0.75,
+        "paired_semantic_grounding_count": 1,
+        "paired_semantic_grounding_rate": 0.08333333333333333,
+        "seed": 3943
+      },
+      {
+        "action_change_count": 10,
+        "action_change_rate": 0.8333333333333334,
+        "condition": "-SDF(matched-irrelevant)",
+        "mode": "rationale_first_scratchpad",
+        "pair_count": 12,
+        "paired_oracle_success_count": 9,
+        "paired_oracle_success_rate": 0.75,
+        "paired_semantic_grounding_count": 9,
+        "paired_semantic_grounding_rate": 0.75,
+        "seed": 3943
+      }
+    ],
+    "policy_outputs_frozen": true,
+    "provenance": {
+      "control_semantic_sha256": "54c7819aaf330ff69a7e8948cbe685987fb69b4dc3ac0580d209190b82b6123c",
+      "policy_sha256": "ffa10b379d0fb4efe752ed69f8863b7fa1d359a51bd1691285101ea0af5101a9",
+      "primary_semantic_sha256": "ca7d2c80e67922a5188871e5bd2f066066ef9fe3be03076c4790dcbfbe47c662"
+    },
+    "public_outcome_intervention_pairs": true,
+    "schema_version": 1,
+    "values_mode_effects": {
+      "action_first_no_scratchpad": {
+        "action_change_rate": {
+          "estimand": "values endpoint action_first_no_scratchpad minus action_first_scratchpad action_change_rate",
+          "high": 0.08333333333333337,
+          "low": -0.16666666666666663,
+          "mean": -0.027777777777777752,
+          "method": "paired-training-seed nonparametric bootstrap, descriptive after count preview",
+          "per_seed": {
+            "1729": -0.16666666666666663,
+            "2831": 0.0,
+            "3943": 0.08333333333333337
+          }
+        },
+        "paired_oracle_success_rate": {
+          "estimand": "values endpoint action_first_no_scratchpad minus action_first_scratchpad paired_oracle_success_rate",
+          "high": 0.0,
+          "low": -0.16666666666666663,
+          "mean": -0.055555555555555546,
+          "method": "paired-training-seed nonparametric bootstrap, descriptive after count preview",
+          "per_seed": {
+            "1729": -0.16666666666666663,
+            "2831": 0.0,
+            "3943": 0.0
+          }
+        },
+        "paired_semantic_grounding_rate": {
+          "estimand": "values endpoint action_first_no_scratchpad minus action_first_scratchpad paired_semantic_grounding_rate",
+          "high": 0.33333333333333337,
+          "low": 0.16666666666666663,
+          "mean": 0.2222222222222222,
+          "method": "paired-training-seed nonparametric bootstrap, descriptive after count preview",
+          "per_seed": {
+            "1729": 0.16666666666666663,
+            "2831": 0.16666666666666663,
+            "3943": 0.33333333333333337
+          }
+        }
+      },
+      "detached_scratchpad": {
+        "action_change_rate": {
+          "estimand": "values endpoint detached_scratchpad minus action_first_scratchpad action_change_rate",
+          "high": 0.25,
+          "low": -0.08333333333333337,
+          "mean": 0.027777777777777752,
+          "method": "paired-training-seed nonparametric bootstrap, descriptive after count preview",
+          "per_seed": {
+            "1729": -0.08333333333333337,
+            "2831": -0.08333333333333337,
+            "3943": 0.25
+          }
+        },
+        "paired_oracle_success_rate": {
+          "estimand": "values endpoint detached_scratchpad minus action_first_scratchpad paired_oracle_success_rate",
+          "high": 0.33333333333333337,
+          "low": 0.0,
+          "mean": 0.11111111111111112,
+          "method": "paired-training-seed nonparametric bootstrap, descriptive after count preview",
+          "per_seed": {
+            "1729": 0.0,
+            "2831": 0.0,
+            "3943": 0.33333333333333337
+          }
+        },
+        "paired_semantic_grounding_rate": {
+          "estimand": "values endpoint detached_scratchpad minus action_first_scratchpad paired_semantic_grounding_rate",
+          "high": 0.41666666666666663,
+          "low": 0.0,
+          "mean": 0.25,
+          "method": "paired-training-seed nonparametric bootstrap, descriptive after count preview",
+          "per_seed": {
+            "1729": 0.0,
+            "2831": 0.41666666666666663,
+            "3943": 0.33333333333333337
+          }
+        }
+      },
+      "rationale_first_scratchpad": {
+        "action_change_rate": {
+          "estimand": "values endpoint rationale_first_scratchpad minus action_first_scratchpad action_change_rate",
+          "high": 0.33333333333333337,
+          "low": 0.0,
+          "mean": 0.11111111111111112,
+          "method": "paired-training-seed nonparametric bootstrap, descriptive after count preview",
+          "per_seed": {
+            "1729": 0.0,
+            "2831": 0.0,
+            "3943": 0.33333333333333337
+          }
+        },
+        "paired_oracle_success_rate": {
+          "estimand": "values endpoint rationale_first_scratchpad minus action_first_scratchpad paired_oracle_success_rate",
+          "high": 0.41666666666666663,
+          "low": 0.0,
+          "mean": 0.2222222222222222,
+          "method": "paired-training-seed nonparametric bootstrap, descriptive after count preview",
+          "per_seed": {
+            "1729": 0.25,
+            "2831": 0.0,
+            "3943": 0.41666666666666663
+          }
+        },
+        "paired_semantic_grounding_rate": {
+          "estimand": "values endpoint rationale_first_scratchpad minus action_first_scratchpad paired_semantic_grounding_rate",
+          "high": 0.33333333333333337,
+          "low": 0.08333333333333326,
+          "mean": 0.19444444444444442,
+          "method": "paired-training-seed nonparametric bootstrap, descriptive after count preview",
+          "per_seed": {
+            "1729": 0.08333333333333326,
+            "2831": 0.16666666666666663,
+            "3943": 0.33333333333333337
+          }
+        }
+      }
+    }
+  },
   "qwen36_35b_a3b_generation_order_semantic": {
     "cell_records": [
       {

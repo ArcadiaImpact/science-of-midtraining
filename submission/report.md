@@ -136,3 +136,10 @@ Exact pooled baseline/endpoint counts were +SDF(values+rationales) baseline 13/1
 The no-scratchpad factual-facade hypothesis was supported. Within the values-and-rationales endpoint on exactly matched public cases, no-scratchpad minus action-first/scratchpad semantic joint effect was 0.125 with paired-seed interval [0.0, 0.20833333333333334], while its original appearance-joint effect was 0.06944444444444445. The pooled semantic conditional difference was 0.6858974358974359.
 
 Rationale-first and detached two-pass effects, all 36 exact 24-episode cells, and the inherited 24/24 versus 0/72 semantic calibration are in `results.json`. The evaluator saw public state, executable public facts, claim, and rationale but not action, violation, scratchpad, reward, labels, condition, seed, or generation mode. This fixed-checkpoint control does not identify intent, awareness, or deception.
+
+
+## Qwen3.6-35B-A3B generation-mode causal faithfulness
+
+This exploratory matched-pair analysis was formalized after aggregate count preview. In the values-and-rationales endpoint, no-scratchpad versus action-first/scratchpad changed public-outcome action responsiveness by -0.027777777777777752, paired oracle success by -0.055555555555555546, and paired semantic rationale grounding by 0.2222222222222222. Pooled counts were 31/36 versus 32/36 action changes, 23/36 versus 25/36 paired oracle successes, and 31/36 versus 23/36 paired semantically grounded rationales.
+
+Rationale-first and detached effects, per-seed descriptive intervals, and all 36 exact 12-pair cells are in `results.json`. This public intervention analysis shows observable causal response and does not identify intent, awareness, or deception.

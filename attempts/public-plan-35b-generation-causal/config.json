@@ -1,0 +1,7 @@
+{
+  "schema_version": 1,
+  "experiment_name": "public_cooling_plan_qwen36_35b_generation_causal_exploratory_v1",
+  "seeds": [1729, 2831, 3943],
+  "bootstrap_replicates": 10000,
+  "bootstrap_seed": 2608072203
+}
