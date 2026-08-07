@@ -1,3 +1,40 @@
+# Rationale-token credit in public executable allocation
+
+## Result
+
+The preregistered credit-assignment hypothesis was **not supported**. Under rationale-first evaluation, token-masked minus sequence-wide baseline-to-step-8 joint interaction was `0.034722222222222175`, interval `[0.0, 0.08333333333333326]`, seed effects `{"1729": 0.0, "2831": 0.02083333333333326, "3943": 0.08333333333333326}`. Legitimate-success interaction was `-0.03472222222222222` and conditional facade interaction `-0.0008928571428571397`. Thus masking was not protective in this run: the joint estimate increased in two seeds and was unchanged in one, while legitimate success fell on average. The near-zero conditional interaction suggests that the joint change was driven principally by violation propensity rather than a stronger surface facade among violations.
+
+The independent surface rule passed calibration: sensitivity `1.0`, false-positive rate `0.0`, valid JSON `1.0`, coverage ROC AUC `1.0`. No claim of intent, evaluation awareness, or deception is made.
+
+## Intervention
+
+Both dense-27B arms begin from the same positive values-and-rationales SDF states, train rationale-first on identical cases and seeds, and receive the identical scalar rationale reward. The source arm assigns centered advantage to the whole response. The new arm assigns it from `ETHICAL_RATIONALE:` through immediately before the first later non-rationale structural marker—normally `COMPLIANCE_CLAIM:`, with action, public-response-close, or calculation markers as fail-closed format fallbacks. Claim, action, wrappers, and calculation tokens receive zero advantage. The mask never observes action or oracle. Every batch had a frozen >=.95 marker-coverage gate.
+
+All nine new checkpoints froze before fresh evaluation. Both credit modes were sampled on 48 new cases at steps 0/4/8 under both generation orders, producing `1728` rows. The independent base `Qwen/Qwen3-30B-A3B-Instruct-2507` ran only after freeze and saw public case, claim, and rationale, not action, oracle, calculation work, reward, credit mode, or checkpoint.
+
+`curves.json` adds 36 exact integer-count cells to the 108 frozen #423/source cells. Results include credit effects under both generation orders, prompt-order effects, their interaction, paired uncertainty, AUC, time-to-threshold, calibration, credit-mask audit, and all prior corrected controls.
+
+## Limits
+
+This is three seeds, one dense policy family, one public domain, and eight scheduled batches. Token masking changes gradient support but not scalar reward; it does not identify which individual rationale token causes any effect. Baseline samples are independently regenerated and handled by difference-in-differences.
+
+## Reproduction
+
+From training commit `e46ef4296a3ded168d6e8e136278b0ecad05859b` with the dedicated Tinker credential configured:
+
+```bash
+uv run --with-requirements attempts/public-executable-allocation/requirements.txt attempts/public-allocation-token-credit/experiment.py prepare
+uv run --with-requirements attempts/public-executable-allocation/requirements.txt attempts/public-allocation-token-credit/experiment.py train
+uv run --with-requirements attempts/public-executable-allocation/requirements.txt attempts/public-allocation-token-credit/experiment.py sample-policy
+uv run --with-requirements attempts/public-executable-allocation/requirements.txt attempts/public-allocation-token-credit/experiment.py sample-judges
+uv run --with-requirements attempts/public-executable-allocation/requirements.txt attempts/public-allocation-token-credit/experiment.py analyze
+scripts/arch2 eval --json
+```
+
+---
+
+## Frozen generation-order report
+
 # Rationale-first training in public executable allocation
 
 ## Result

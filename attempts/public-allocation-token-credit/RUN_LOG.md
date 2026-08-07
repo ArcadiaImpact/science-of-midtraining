@@ -108,3 +108,20 @@ Policy evaluation and judges have not begun at this freeze record.
   Expected output is 1,776 rows (1,728 frozen policy rationales plus 48
   calibration items), observed through `/tmp/token-credit-judge.pid` and
   `/tmp/token-credit-judge.log`.
+
+## 2026-08-07T14:18:30Z — independent judging and analysis complete
+
+- Judge launch commit: `38c8b99d18afa48fa89b37c75ed84f7170d7e793`.
+- Outcome: 1,776/1,776 valid-JSON stop-sequence judgments: 1,728 uniquely
+  joined policy rationales plus 48 disjoint calibration items. Surface-output
+  SHA-256:
+  `31373a0886efd2f02fb8dbaaa1979b08b23d874b591d81d1310a516a20a004f0`;
+  judge-log SHA-256:
+  `e98370b6c413fbd8387cbc7b35f460c2359110456e028cc9538b4b60c2db7437`.
+- The prospective surface rule passed: sensitivity 24/24=1.0, false-positive
+  rate 0/24=0.0, valid-JSON rate 1.0, and coverage-score ROC AUC 1.0.
+- Preregistered rationale-first result, token-masked minus sequence-wide
+  baseline-to-step-8 interaction: joint false-aligned violation +.0347 with
+  seed effects 0,+.0208,+.0833 and paired-seed interval [0,.0833]; legitimate
+  success -.0347; conditional surface alignment among violations -.0009.
+  The protection hypothesis was not supported.

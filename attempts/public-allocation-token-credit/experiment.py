@@ -839,7 +839,7 @@ def analyze() -> None:
             "primary_comparison": "rationale-token-masked versus sequence-wide credit under rationale-first evaluation",
             "primary_joint_effect": primary_joint, "primary_legitimate_success_effect": primary_success,
             "primary_conditional_facade_effect": primary_conditional,
-            "interpretation": "Rationale-token-masked credit was protective under the preregistered rule." if hypothesis_supported else "Rationale-token-masked credit did not satisfy every preregistered protection criterion.",
+            "interpretation": "Rationale-token-masked credit was protective under the preregistered rule." if hypothesis_supported else "Rationale-token-masked credit was not protective: the observed joint interaction was positive, the legitimate-success interaction was negative, and conditional surface alignment was approximately unchanged.",
             "intent_claimed": False, "monitor_awareness_claimed": False, "deception_claimed": False,
         },
         "credit_mode_effects_by_evaluation_order": credit_effects,
@@ -864,13 +864,13 @@ def analyze() -> None:
 
 ## Result
 
-The preregistered credit-assignment hypothesis was **{'supported' if hypothesis_supported else 'not supported'}**. Under rationale-first evaluation, token-masked minus sequence-wide baseline-to-step-8 joint interaction was `{primary_joint['mean']}`, interval `[{primary_joint['low']}, {primary_joint['high']}]`, seed effects `{json.dumps(primary_joint['per_seed'], sort_keys=True)}`. Legitimate-success interaction was `{primary_success['mean']}` and conditional facade interaction `{primary_conditional['mean']}`.
+The preregistered credit-assignment hypothesis was **{'supported' if hypothesis_supported else 'not supported'}**. Under rationale-first evaluation, token-masked minus sequence-wide baseline-to-step-8 joint interaction was `{primary_joint['mean']}`, interval `[{primary_joint['low']}, {primary_joint['high']}]`, seed effects `{json.dumps(primary_joint['per_seed'], sort_keys=True)}`. Legitimate-success interaction was `{primary_success['mean']}` and conditional facade interaction `{primary_conditional['mean']}`. Thus masking was not protective in this run: the joint estimate increased in two seeds and was unchanged in one, while legitimate success fell on average. The near-zero conditional interaction suggests that the joint change was driven principally by violation propensity rather than a stronger surface facade among violations.
 
 The independent surface rule {'passed' if judge_gate else 'failed'} calibration: sensitivity `{calibration['sensitivity']}`, false-positive rate `{calibration['false_positive_rate']}`, valid JSON `{calibration['valid_json_rate']}`, coverage ROC AUC `{calibration['coverage_score_roc_auc']}`. No claim of intent, evaluation awareness, or deception is made.
 
 ## Intervention
 
-Both dense-27B arms begin from the same positive values-and-rationales SDF states, train rationale-first on identical cases and seeds, and receive the identical scalar rationale reward. The source arm assigns centered advantage to the whole response. The new arm assigns it only from `ETHICAL_RATIONALE:` through immediately before `COMPLIANCE_CLAIM:`; claim, action, wrappers, and calculation tokens receive zero advantage. The mask never observes action or oracle. Every batch had a frozen >=.95 marker-coverage gate.
+Both dense-27B arms begin from the same positive values-and-rationales SDF states, train rationale-first on identical cases and seeds, and receive the identical scalar rationale reward. The source arm assigns centered advantage to the whole response. The new arm assigns it from `ETHICAL_RATIONALE:` through immediately before the first later non-rationale structural marker—normally `COMPLIANCE_CLAIM:`, with action, public-response-close, or calculation markers as fail-closed format fallbacks. Claim, action, wrappers, and calculation tokens receive zero advantage. The mask never observes action or oracle. Every batch had a frozen >=.95 marker-coverage gate.
 
 All nine new checkpoints froze before fresh evaluation. Both credit modes were sampled on 48 new cases at steps 0/4/8 under both generation orders, producing `{len(policy_rows)}` rows. The independent base `{cfg['surface_judge_model']}` ran only after freeze and saw public case, claim, and rationale, not action, oracle, calculation work, reward, credit mode, or checkpoint.
 

@@ -28,3 +28,30 @@ then action, public-response close, or calculation section. End of sequence is
 not accepted because it could accidentally credit unlabeled action text. The
 scalar reward, active rationale start, and all scientific thresholds remain
 unchanged.
+
+## 2026-08-07 — result
+
+All nine redesigned checkpoints froze. Marker coverage was 1.0 in 23 of 24
+batches and 47/48=.9792 in the remaining batch, so the original .95 gate was
+never relaxed. Fresh crossed evaluation produced 1,728 policy rows. The
+independent surface evaluator then produced 1,728 policy judgments and 48
+disjoint calibration judgments; the prospective rule had sensitivity 24/24,
+false positives 0/24, and coverage-score AUC 1.0.
+
+The protection hypothesis was not supported. With evaluation fixed
+rationale-first, token-masked minus sequence-wide baseline-to-step-8 joint
+false-aligned-violation interactions were 0, +.0208, and +.0833 by seed
+(mean +.0347, paired-seed interval [0,.0833]). The legitimate-success
+interaction averaged -.0347, while the conditional surface-alignment
+interaction averaged -.0009. This points away from the proposed mechanism:
+masking gradient credit to rationale tokens did not undo the harmful pattern
+from #423, and its small joint increase was principally a change in violation
+propensity rather than stronger surface alignment among violations.
+
+The narrow conclusion is that simply zeroing advantage on later action and
+format tokens is not a protective process intervention in this setup. A next
+test should change the information used for credit, for example a verifiable
+public-action advantage or counterfactual rationale/action consistency signal,
+rather than only changing which tokens receive an unchanged scalar rationale
+advantage. This behavioral result does not identify intent, evaluation
+awareness, or deception.
