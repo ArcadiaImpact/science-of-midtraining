@@ -58,7 +58,7 @@ model reliably follow the Charter on held-out conflicts. Under Charter reward,
 the Coin and 50:50 parents still selected the Coin answer about 96% of the time
 with thinking. Even the Charter parent selected the Charter answer only 16.6%,
 with 51.4% other/malformed. Direct-mode behavior is also poor and is shown in
-the complete [3 x 2 endpoint figure](../figures/dispatch_lora_grpo_12cell/lora_grpo_final_conflict_rates.pdf).
+the FP-style [3 x 2 endpoint figure](../figures/dispatch_lora_grpo_12cell/lora_agreement_coin_charter_final_conflict_rates.pdf).
 
 ## Matched full-parameter comparison
 

@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import math
 import re
 import sys
 from collections import Counter, defaultdict
@@ -52,6 +53,23 @@ _COIN = re.compile(r"\bcoins?\b", re.IGNORECASE)
 
 def _jsonl(path: Path) -> list[dict[str, Any]]:
     return [json.loads(line) for line in path.read_text().splitlines() if line.strip()]
+
+
+def _wilson(
+    count: int, n: int, z: float = 1.959963984540054
+) -> tuple[float, float]:
+    rate = count / n
+    denominator = 1 + z**2 / n
+    center = (rate + z**2 / (2 * n)) / denominator
+    half_width = (
+        z
+        * math.sqrt(rate * (1 - rate) / n + z**2 / (4 * n**2))
+        / denominator
+    )
+    return (
+        max(0.0, min(rate, center - half_width)),
+        min(1.0, max(rate, center + half_width)),
+    )
 
 
 def reward_rows_for_cell(
@@ -319,6 +337,147 @@ def plot_endpoint(rows: Sequence[Mapping[str, object]], output: Path) -> list[Pa
     return written + [data]
 
 
+def plot_alignment_grid(
+    rows: Sequence[Mapping[str, object]], output: Path
+) -> list[Path]:
+    """Match the direct/thinking objective grid used for full-parameter GRPO."""
+
+    import matplotlib.pyplot as plt
+    import numpy as np
+    import pandas as pd
+    import seaborn as sns
+
+    if not rows:
+        raise ValueError("plotting requires endpoint rows")
+    output.mkdir(parents=True, exist_ok=True)
+    plot_rows = []
+    for source_row in rows:
+        row = dict(source_row)
+        low, high = _wilson(int(row["count"]), int(row["n"]))
+        row.update({"low": low, "high": high})
+        plot_rows.append(row)
+    frame = pd.DataFrame(plot_rows)
+    objective_order = [OBJECTIVE_LABELS[value] for value in OBJECTIVES]
+    mode_order = [MODE_LABELS[value] for value in ("direct", "thinking")]
+    parent_order = [PARENT_LABELS[value] for value in PARENTS]
+    frame["objective"] = pd.Categorical(
+        frame["objective"], objective_order, ordered=True
+    )
+    frame["mode"] = pd.Categorical(frame["mode"], mode_order, ordered=True)
+    frame["parent"] = pd.Categorical(
+        frame["parent"], parent_order, ordered=True
+    )
+    frame["outcome"] = pd.Categorical(frame["outcome"], OUTCOMES, ordered=True)
+
+    sns.set_theme(style="whitegrid", context="notebook")
+    grid = sns.catplot(
+        data=frame,
+        x="parent",
+        y="rate",
+        hue="outcome",
+        col="objective",
+        row="mode",
+        kind="bar",
+        order=parent_order,
+        hue_order=list(OUTCOMES),
+        col_order=objective_order,
+        row_order=mode_order,
+        palette=COLORS,
+        errorbar=None,
+        height=4.15,
+        aspect=1.0,
+        legend_out=False,
+    )
+    for row_index, mode in enumerate(mode_order):
+        mode_rows = frame[frame["mode"] == mode]
+        for column_index, objective in enumerate(objective_order):
+            axis = grid.axes[row_index, column_index]
+            objective_rows = mode_rows[mode_rows["objective"] == objective]
+            for outcome, container in zip(
+                OUTCOMES, axis.containers[: len(OUTCOMES)], strict=True
+            ):
+                outcome_rows = objective_rows[
+                    objective_rows["outcome"] == outcome
+                ].sort_values("parent")
+                for patch, (_, row) in zip(
+                    container, outcome_rows.iterrows(), strict=True
+                ):
+                    x = patch.get_x() + patch.get_width() / 2
+                    rate = float(row["rate"])
+                    axis.errorbar(
+                        x,
+                        rate,
+                        yerr=np.array(
+                            [[rate - float(row["low"])],
+                             [float(row["high"]) - rate]]
+                        ),
+                        fmt="none",
+                        color="#303030",
+                        capsize=2.5,
+                        elinewidth=0.9,
+                        capthick=0.9,
+                    )
+            axis.set_ylim(0, 1.05)
+            axis.set_yticks(np.linspace(0, 1, 6))
+            axis.tick_params(axis="x", rotation=18)
+            for label in axis.get_xticklabels():
+                label.set_horizontalalignment("right")
+            axis.grid(axis="y", alpha=0.22, linewidth=0.8)
+            axis.set_axisbelow(True)
+            axis.set_title(objective if row_index == 0 else "", weight="bold")
+        grid.axes[row_index, -1].annotate(
+            mode,
+            xy=(1.045, 0.5),
+            xycoords="axes fraction",
+            ha="center",
+            va="center",
+            rotation=-90,
+            fontsize=12,
+            weight="bold",
+        )
+
+    grid.set_axis_labels("", "")
+    if grid._legend is not None:
+        handles = grid._legend.legend_handles
+        labels = [text.get_text() for text in grid._legend.texts]
+        grid._legend.remove()
+        grid.figure.legend(
+            handles,
+            labels,
+            title="Conflict outcome",
+            loc="lower center",
+            bbox_to_anchor=(0.5, 0.005),
+            ncol=3,
+            frameon=False,
+        )
+    grid.figure.supxlabel("Midtraining condition", y=0.09)
+    grid.figure.supylabel("Held-out conflict choice rate", x=0.01)
+    grid.figure.suptitle(
+        "Conflict behavior after objective-specific LoRA-GRPO\n"
+        "64 updates; 95% Wilson intervals; n = 512 per model",
+        fontsize=15,
+        weight="bold",
+        y=0.99,
+    )
+    grid.figure.tight_layout(rect=(0.035, 0.13, 0.97, 0.91))
+
+    stem = output / "lora_agreement_coin_charter_final_conflict_rates"
+    written = []
+    for suffix, options in (
+        ("pdf", {"format": "pdf"}),
+        ("png", {"format": "png", "dpi": 220}),
+        ("svg", {"format": "svg"}),
+    ):
+        path = stem.with_suffix(f".{suffix}")
+        grid.figure.savefig(path, bbox_inches="tight", **options)
+        written.append(path)
+    plt.close(grid.figure)
+    data = stem.with_suffix(".json")
+    data.write_text(json.dumps(plot_rows, indent=2, sort_keys=True) + "\n")
+    written.append(data)
+    return written
+
+
 def plot_rewards(rows: Sequence[Mapping[str, object]], output: Path) -> list[Path]:
     import matplotlib.pyplot as plt
     import pandas as pd
@@ -472,6 +631,7 @@ def main() -> None:
     )
     written = (
         plot_endpoint(endpoint, args.output)
+        + plot_alignment_grid(endpoint, args.output)
         + plot_rewards(rewards, args.output)
         + plot_full_parameter_comparison(comparison, args.output)
     )

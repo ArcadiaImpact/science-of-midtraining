@@ -1,5 +1,6 @@
 import json
 import hashlib
+import struct
 import sys
 from types import SimpleNamespace
 from pathlib import Path
@@ -31,6 +32,7 @@ from lora_grpo_12cell.analyse import (  # noqa: E402
     endpoint_rows_for_cell,
     reward_rows_for_cell,
 )
+import lora_grpo_12cell.analyse as lora_analyse  # noqa: E402
 from lora_grpo_12cell.pod_sweep import (  # noqa: E402
     DATASET_SHA256,
     PARENT_SHA256,
@@ -363,6 +365,45 @@ def test_lora_analysis_normalizes_conflict_outcomes_for_both_modes():
     assert len(rows) == 6
     assert {row["mode"] for row in rows} == {"No thinking", "Thinking"}
     assert sum(row["rate"] for row in rows[:3]) == pytest.approx(1.0)
+
+
+def test_lora_alignment_grid_writes_three_columns_by_two_rows(tmp_path):
+    cell = {
+        "n": 512,
+        "charter_rate": 0.25,
+        "coin_rate": 0.5,
+        "other_rate": 0.125,
+        "malformed_rate": 0.125,
+    }
+    summary = {"cells": {
+        parent: {
+            mode: {"conflict": cell}
+            for mode in ("direct", "thinking")
+        }
+        for parent in PARENTS
+    }}
+    rows = [
+        row
+        for objective in OBJECTIVES
+        for parent in PARENTS
+        for row in endpoint_rows_for_cell(
+            summary, objective=objective, parent=parent
+        )
+    ]
+
+    written = lora_analyse.plot_alignment_grid(rows, tmp_path)
+
+    stem = "lora_agreement_coin_charter_final_conflict_rates"
+    assert {path.name for path in written} == {
+        f"{stem}.pdf",
+        f"{stem}.png",
+        f"{stem}.svg",
+        f"{stem}.json",
+    }
+    png = (tmp_path / f"{stem}.png").read_bytes()
+    width, height = struct.unpack(">II", png[16:24])
+    assert width > height
+    assert 0.5 < height / width < 0.85
 
 
 def test_trace_language_counter_matches_singular_and_plural_coin_language():
