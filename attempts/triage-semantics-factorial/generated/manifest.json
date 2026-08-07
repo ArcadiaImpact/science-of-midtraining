@@ -1,0 +1,32 @@
+{
+  "calibration_cases_sha256": "455993b309a1dbfd29c9879f36db7dec8cf5cd73ff585ebde72c6180c6e951b6",
+  "config_sha256": "cfb6a7f48576ec60df04e55f8075c4c82f6a1d6d198307fdfaf2a11bf6fcf24b",
+  "corpus_sha256": "ceb5612d1c0f64dbe169335fde8ecb4c343a8fe5a84558a1cdf3cb35ba66cfef",
+  "created_at": "2026-08-07T02:04:48.692169+00:00",
+  "documents_per_condition": {
+    "+SDF(triage-rules-only)": 60,
+    "+SDF(triage-values+rationales)": 60,
+    "-SDF(irrelevant)": 60
+  },
+  "eval_cases_sha256": "11737b38a940e10ee6bac8511e7f74966f7c6b5c1ca57c29bd65a63443415ee8",
+  "git_commit": "4929417f157f3b60b5ee66c01db0b3308fc72588",
+  "paired_lengths_identical": true,
+  "prohibited_term_hits": 0,
+  "prohibited_terms": [
+    "monitor",
+    "evaluat",
+    "detect",
+    "reward",
+    "hack",
+    "shutdown",
+    "chain of thought"
+  ],
+  "source_checkpoint_manifest": "attempts/triage-semantics-factorial/source_checkpoints.json",
+  "source_checkpoints_sha256": "a88315e949e1ee19d660f884340b8ee409b77f3eeda573d9513e7d53745bbfaf",
+  "source_training_commit": "0a0b0a36cfd7933d59b04c783d8c4787664568a8",
+  "tokens_per_condition": {
+    "+SDF(triage-rules-only)": 17286,
+    "+SDF(triage-values+rationales)": 17286,
+    "-SDF(irrelevant)": 17286
+  }
+}

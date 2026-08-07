@@ -1,0 +1,179 @@
+{
+  "schema_version": 1,
+  "source_training_commit": "0a0b0a36cfd7933d59b04c783d8c4787664568a8",
+  "source_experiment": "meridiancare_clinical_triage_transfer_v1",
+  "conditions": [
+    "+SDF(triage-values+rationales)",
+    "-SDF(irrelevant)"
+  ],
+  "seeds": [
+    481,
+    592,
+    703
+  ],
+  "rl_checkpoints": [
+    0,
+    4,
+    8,
+    12,
+    16
+  ],
+  "runs": {
+    "+SDF(triage-values+rationales)::seed=481": {
+      "condition": "+SDF(triage-values+rationales)",
+      "seed": 481,
+      "checkpoints": {
+        "0": {
+          "step": 0,
+          "sampler_path": "tinker://b2f4a81f-0c2c-5d89-9f85-ca2dea1e70a7:train:0/sampler_weights/sdf-final"
+        },
+        "12": {
+          "step": 12,
+          "sampler_path": "tinker://b2f4a81f-0c2c-5d89-9f85-ca2dea1e70a7:train:1/sampler_weights/rl-step-012"
+        },
+        "16": {
+          "step": 16,
+          "sampler_path": "tinker://b2f4a81f-0c2c-5d89-9f85-ca2dea1e70a7:train:1/sampler_weights/rl-step-016"
+        },
+        "4": {
+          "step": 4,
+          "sampler_path": "tinker://b2f4a81f-0c2c-5d89-9f85-ca2dea1e70a7:train:1/sampler_weights/rl-step-004"
+        },
+        "8": {
+          "step": 8,
+          "sampler_path": "tinker://b2f4a81f-0c2c-5d89-9f85-ca2dea1e70a7:train:1/sampler_weights/rl-step-008"
+        }
+      }
+    },
+    "+SDF(triage-values+rationales)::seed=592": {
+      "condition": "+SDF(triage-values+rationales)",
+      "seed": 592,
+      "checkpoints": {
+        "0": {
+          "step": 0,
+          "sampler_path": "tinker://b2f4a81f-0c2c-5d89-9f85-ca2dea1e70a7:train:6/sampler_weights/sdf-final"
+        },
+        "12": {
+          "step": 12,
+          "sampler_path": "tinker://b2f4a81f-0c2c-5d89-9f85-ca2dea1e70a7:train:7/sampler_weights/rl-step-012"
+        },
+        "16": {
+          "step": 16,
+          "sampler_path": "tinker://b2f4a81f-0c2c-5d89-9f85-ca2dea1e70a7:train:7/sampler_weights/rl-step-016"
+        },
+        "4": {
+          "step": 4,
+          "sampler_path": "tinker://b2f4a81f-0c2c-5d89-9f85-ca2dea1e70a7:train:7/sampler_weights/rl-step-004"
+        },
+        "8": {
+          "step": 8,
+          "sampler_path": "tinker://b2f4a81f-0c2c-5d89-9f85-ca2dea1e70a7:train:7/sampler_weights/rl-step-008"
+        }
+      }
+    },
+    "+SDF(triage-values+rationales)::seed=703": {
+      "condition": "+SDF(triage-values+rationales)",
+      "seed": 703,
+      "checkpoints": {
+        "0": {
+          "step": 0,
+          "sampler_path": "tinker://b2f4a81f-0c2c-5d89-9f85-ca2dea1e70a7:train:8/sampler_weights/sdf-final"
+        },
+        "12": {
+          "step": 12,
+          "sampler_path": "tinker://b2f4a81f-0c2c-5d89-9f85-ca2dea1e70a7:train:9/sampler_weights/rl-step-012"
+        },
+        "16": {
+          "step": 16,
+          "sampler_path": "tinker://b2f4a81f-0c2c-5d89-9f85-ca2dea1e70a7:train:9/sampler_weights/rl-step-016"
+        },
+        "4": {
+          "step": 4,
+          "sampler_path": "tinker://b2f4a81f-0c2c-5d89-9f85-ca2dea1e70a7:train:9/sampler_weights/rl-step-004"
+        },
+        "8": {
+          "step": 8,
+          "sampler_path": "tinker://b2f4a81f-0c2c-5d89-9f85-ca2dea1e70a7:train:9/sampler_weights/rl-step-008"
+        }
+      }
+    },
+    "-SDF(irrelevant)::seed=481": {
+      "condition": "-SDF(irrelevant)",
+      "seed": 481,
+      "checkpoints": {
+        "0": {
+          "step": 0,
+          "sampler_path": "tinker://b2f4a81f-0c2c-5d89-9f85-ca2dea1e70a7:train:2/sampler_weights/sdf-final"
+        },
+        "12": {
+          "step": 12,
+          "sampler_path": "tinker://b2f4a81f-0c2c-5d89-9f85-ca2dea1e70a7:train:3/sampler_weights/rl-step-012"
+        },
+        "16": {
+          "step": 16,
+          "sampler_path": "tinker://b2f4a81f-0c2c-5d89-9f85-ca2dea1e70a7:train:3/sampler_weights/rl-step-016"
+        },
+        "4": {
+          "step": 4,
+          "sampler_path": "tinker://b2f4a81f-0c2c-5d89-9f85-ca2dea1e70a7:train:3/sampler_weights/rl-step-004"
+        },
+        "8": {
+          "step": 8,
+          "sampler_path": "tinker://b2f4a81f-0c2c-5d89-9f85-ca2dea1e70a7:train:3/sampler_weights/rl-step-008"
+        }
+      }
+    },
+    "-SDF(irrelevant)::seed=592": {
+      "condition": "-SDF(irrelevant)",
+      "seed": 592,
+      "checkpoints": {
+        "0": {
+          "step": 0,
+          "sampler_path": "tinker://b2f4a81f-0c2c-5d89-9f85-ca2dea1e70a7:train:4/sampler_weights/sdf-final"
+        },
+        "12": {
+          "step": 12,
+          "sampler_path": "tinker://b2f4a81f-0c2c-5d89-9f85-ca2dea1e70a7:train:5/sampler_weights/rl-step-012"
+        },
+        "16": {
+          "step": 16,
+          "sampler_path": "tinker://b2f4a81f-0c2c-5d89-9f85-ca2dea1e70a7:train:5/sampler_weights/rl-step-016"
+        },
+        "4": {
+          "step": 4,
+          "sampler_path": "tinker://b2f4a81f-0c2c-5d89-9f85-ca2dea1e70a7:train:5/sampler_weights/rl-step-004"
+        },
+        "8": {
+          "step": 8,
+          "sampler_path": "tinker://b2f4a81f-0c2c-5d89-9f85-ca2dea1e70a7:train:5/sampler_weights/rl-step-008"
+        }
+      }
+    },
+    "-SDF(irrelevant)::seed=703": {
+      "condition": "-SDF(irrelevant)",
+      "seed": 703,
+      "checkpoints": {
+        "0": {
+          "step": 0,
+          "sampler_path": "tinker://b2f4a81f-0c2c-5d89-9f85-ca2dea1e70a7:train:10/sampler_weights/sdf-final"
+        },
+        "12": {
+          "step": 12,
+          "sampler_path": "tinker://b2f4a81f-0c2c-5d89-9f85-ca2dea1e70a7:train:11/sampler_weights/rl-step-012"
+        },
+        "16": {
+          "step": 16,
+          "sampler_path": "tinker://b2f4a81f-0c2c-5d89-9f85-ca2dea1e70a7:train:11/sampler_weights/rl-step-016"
+        },
+        "4": {
+          "step": 4,
+          "sampler_path": "tinker://b2f4a81f-0c2c-5d89-9f85-ca2dea1e70a7:train:11/sampler_weights/rl-step-004"
+        },
+        "8": {
+          "step": 8,
+          "sampler_path": "tinker://b2f4a81f-0c2c-5d89-9f85-ca2dea1e70a7:train:11/sampler_weights/rl-step-008"
+        }
+      }
+    }
+  }
+}
