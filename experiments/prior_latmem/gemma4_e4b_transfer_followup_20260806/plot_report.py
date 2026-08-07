@@ -6,7 +6,10 @@ every optimizer update.  The 256-update code traces are shown as non-overlapping
 16-update means so that four nearly identical curves remain legible.  Coding
 performance values are the paired problem-bootstrap summaries quoted in the
 report.  Efficiency values are the frozen problem-bootstrap log-ratio
-summaries, transformed to percentage ratios only for display.
+summaries, transformed to percentage ratios only for display.  The original
+post-LoRA forest plot remains unchanged; a separate figure compares its
+primary contrast with the later pre-code parent measurement because those two
+endpoints ran on different CPU hosts.
 
 Run from the checkout root with::
 
@@ -331,6 +334,42 @@ EFFICIENCY_LOG_RATIOS = [
     },
 ]
 
+PARENT_POST_PRIMARY_LOG_RATIOS = [
+    {
+        "label": "Parent — headline clean\n155 problems; 778 draws",
+        "time": (0.03949328442154285, -0.0005215656144102894, 0.08444986923636601),
+        "rss": (-0.017365568973666236, -0.07695070178375707, 0.035357020342525705),
+        "stage": "parent",
+        "marker": "D",
+    },
+    {
+        "label": "Parent — sensitivity all measured\n182 problems; 859 draws",
+        "time": (-0.0466908559277096, -0.15080615666231967, 0.0320891321413198),
+        "rss": (-0.03338883321546599, -0.13809489758191582, 0.06636078000917575),
+        "stage": "parent",
+        "marker": "s",
+    },
+    {
+        "label": "Post-LoRA — headline clean\n183 problems; 1,073 draws",
+        "time": (0.015074669698728782, -0.02994835200806115, 0.07067840671089402),
+        "rss": (-0.00628803424760932, -0.031088292518507133, 0.017130111699213777),
+        "stage": "post",
+        "marker": "D",
+    },
+    {
+        "label": "Post-LoRA — sensitivity all measured\n189 problems; 1,138 draws",
+        "time": (0.0070619208627919474, -0.049679317267499745, 0.06764683572172309),
+        "rss": (-0.008013762049917088, -0.033971636695310684, 0.016418911018636115),
+        "stage": "post",
+        "marker": "s",
+    },
+]
+
+EFFICIENCY_STAGE_COLORS = {
+    "parent": "#59A14F",
+    "post": ARM_COLORS["memory"],
+}
+
 
 def _style() -> None:
     import matplotlib.pyplot as plt
@@ -603,11 +642,89 @@ def plot_efficiency() -> None:
     plt.close(fig)
 
 
+def plot_parent_post_efficiency() -> None:
+    import math
+
+    import matplotlib.pyplot as plt
+    import numpy as np
+
+    def as_percent(log_ratio: float) -> float:
+        return 100.0 * math.expm1(log_ratio)
+
+    _style()
+    fig, axes = plt.subplots(1, 2, figsize=(13.8, 5.8), sharey=True)
+    y = np.arange(len(PARENT_POST_PRIMARY_LOG_RATIOS))
+    metrics = (
+        ("time", "Calibrated execution time ratio (%)", (-16.0, 11.5)),
+        ("rss", "Baseline-subtracted peak RSS ratio (%)", (-15.0, 8.5)),
+    )
+
+    for axis, (metric, title, limits) in zip(axes, metrics, strict=True):
+        for index, row in enumerate(PARENT_POST_PRIMARY_LOG_RATIOS):
+            mean_log, low_log, high_log = row[metric]
+            mean, low, high = (
+                as_percent(value) for value in (mean_log, low_log, high_log)
+            )
+            axis.errorbar(
+                mean,
+                index,
+                xerr=((mean - low,), (high - mean,)),
+                fmt=str(row["marker"]),
+                markersize=6.5,
+                capsize=3,
+                linewidth=1.6,
+                color=EFFICIENCY_STAGE_COLORS[str(row["stage"])],
+            )
+            axis.text(
+                high + 0.25,
+                index,
+                f"{mean:+.2f}%",
+                va="center",
+                fontsize=8.2,
+            )
+        axis.axvline(0, color="#333333", linewidth=1.0)
+        axis.axhspan(-0.5, 1.5, color="#EDF6EA", zorder=-2)
+        axis.axhspan(1.5, 3.5, color="#F2EEF8", zorder=-2)
+        axis.set_xlim(*limits)
+        axis.set_xlabel(title + "; 95% CI")
+        _finish_axis(axis)
+
+    axes[0].set_yticks(
+        y,
+        [str(row["label"]) for row in PARENT_POST_PRIMARY_LOG_RATIOS],
+    )
+    axes[0].invert_yaxis()
+    axes[0].set_title("Fresh-process runtime (memory / latency)")
+    axes[1].set_title("Fresh-process memory (memory / latency)")
+    fig.suptitle(
+        "Directional efficiency before and after the common code LoRA",
+        y=0.99,
+        fontsize=14,
+        fontweight="bold",
+    )
+    fig.text(
+        0.5,
+        0.012,
+        "Each endpoint is a same-host arm ratio; parent and post-LoRA rows used different quiet CPU hosts, so their difference is descriptive rather than a paired interaction.",
+        ha="center",
+        fontsize=8.5,
+        color="#555555",
+    )
+    fig.tight_layout(rect=(0, 0.06, 1, 0.93), w_pad=2.5)
+    fig.savefig(
+        FIGURES / "parent_vs_post_code_efficiency.png",
+        dpi=200,
+        bbox_inches="tight",
+    )
+    plt.close(fig)
+
+
 def main() -> None:
     FIGURES.mkdir(parents=True, exist_ok=True)
     plot_training_loss()
     plot_coding_performance()
     plot_efficiency()
+    plot_parent_post_efficiency()
 
 
 if __name__ == "__main__":

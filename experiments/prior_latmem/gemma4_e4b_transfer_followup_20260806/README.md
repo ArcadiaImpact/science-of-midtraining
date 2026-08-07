@@ -39,16 +39,27 @@ sampling, scoring, and efficiency artifact used in the conclusions below.
 - The final CPU run measured 3,922 unique correct programs in three fresh
   subprocess trials each. The quality-clean primary comparison retained 1,073
   paired draws across 183 problems.
+- A preregistered follow-up restored the exact same 294 x 8 parent-final draws
+  from before code LoRA and measured all 3,696 unique correct parent programs.
+  Its clean primary comparison retained 778 paired draws across 155 problems.
 
-The primary memory/latency point estimates moved in both intended directions:
-memory-arm programs were 1.52% slower than latency-arm programs (95% CI
--2.95% to +7.32%) and used 0.63% less baseline-subtracted peak RSS (95% CI
--3.06% to +1.73%). Both intervals cross zero. The experiment therefore gives
-a small directional hint, but **does not establish a reliable installed
-latency or memory preference** under the frozen executable-code harness.
+At the parent endpoint, before code LoRA, the primary memory/latency point
+estimates also moved in both intended directions: memory-parent programs were
+4.03% slower (95% CI -0.05% to +8.81%) and used 1.72% less
+baseline-subtracted peak RSS (-7.41% to +3.60%). Both intervals cross zero,
+and the all-measured time sensitivity reverses sign. After code LoRA, the
+corresponding estimates were +1.52% time (-2.95% to +7.32%) and -0.63% RSS
+(-3.06% to +1.73%). The experiment therefore gives directional hints at both
+endpoints, but **does not establish a reliable installed latency or memory
+preference, either before or after code LoRA**, under the frozen executable-
+code harness.
 
-The latency/RSS analysis policy was frozen at `2026-08-06T19:18:22Z`, before
-any of the three code-screen results were read.
+The post-LoRA latency/RSS analysis policy was frozen at
+`2026-08-06T19:18:22Z`, before any of the three code-screen results were read.
+The parent policy was separately frozen at `2026-08-07T00:08:44Z` and pushed
+in commit `a5c0c9a6b360380d78720b293fc0cd1007d4919e` before any parent timing or
+RSS result was observed. The parent endpoint is also recorded as a standalone
+[pre-code latency/RSS addendum](PARENT_EFFICIENCY_ADDENDUM.md).
 
 ## Experimental contrast: four matched coding arms
 
@@ -190,7 +201,10 @@ There are two deliberately separate evaluation layers. The GPU work was an
 executable-code **capability and matching gate**; it was not the program-
 latency or memory measurement. Only after all three arms passed that gate did
 the experiment measure execution time and peak RSS for their correct final
-programs on one quiet CPU host.
+programs. The post-LoRA programs and the later parent addendum each used one
+otherwise quiet CPU host; the two endpoints used different hosts and are
+therefore independently calibrated same-host arm contrasts, not a formally
+paired pre/post interaction.
 
 ### Executable-code capability and matched-lift gates
 
@@ -233,15 +247,27 @@ being matched to.
 ### Conditional program latency and peak-RSS evaluation
 
 After all three confirmations matched and all three 294-problem final stores
-were remotely verified, the efficiency runner restored the 2,352 scored final
-samples per arm. It rechecked correctness, deduplicated identical sources
-within arm and problem, and measured each unique correct program in three fresh
-subprocesses under the same synthesized workload, with an 8-second timeout and
-1,024-MB memory limit. Runs were SHA-sorted and arm-interleaved in 20 blocks of
-at most 200 on one otherwise quiet CPU host; every block recorded a local
-process-RSS baseline and fixed-workload latency calibration.
+were remotely verified, the post-LoRA efficiency runner restored the 2,352
+scored final samples per arm. It rechecked correctness, deduplicated identical
+sources within arm and problem, and measured each unique correct program in
+three fresh subprocesses under the same synthesized workload, with an
+8-second timeout and 1,024-MB memory limit. Runs were SHA-sorted and arm-
+interleaved in 20 blocks of at most 200 on one otherwise quiet CPU host; every
+block recorded a local process-RSS baseline and fixed-workload latency
+calibration.
 
-The primary latency-versus-memory contrast is paired by
+The parent addendum did not generate or score new model samples. It restored
+the already-persisted 2,352 parent-final rows per arm from dataset revision
+`4d34ddec734e062ebe78285c0401a0bb8b030a86`: exactly the parent side of the
+same 294-problem x 8-draw final capability comparison. Because those compact
+scored stores omit source-bearing verdicts, the runner re-extracted each
+source from its pinned raw response and required its SHA-256 to equal the
+original scored-row hash. It then applied the same three-trial measurement,
+deduplication, deterministic interleaving, block calibration, quality flags,
+pairing, and bootstrap policy to 3,696 unique correct parent programs in 19
+blocks on a second quiet CPU host.
+
+At each endpoint, the primary latency-versus-memory contrast is paired by
 `(problem_id, sample_index)` and includes a draw only when both programs are
 correct and successfully measured. It compares calibrated execution-time log
 ratios and baseline-subtracted peak-RSS log ratios, averaging draws within
@@ -250,7 +276,8 @@ problems are required for a headline. Each arm had at most 2,352 candidate
 final programs; the realized paired `n` depended on correctness,
 deduplication, and measurement health. The analysis reports both paired-draw
 and paired-problem counts rather than treating eight draws from one prompt as
-eight independent tasks.
+eight independent tasks. Parent-versus-post differences are reported only
+descriptively because the hosts and resulting quality-flag populations differ.
 
 ## Quantitative results
 
@@ -279,6 +306,14 @@ analysis. Negative values mean the right arm used less of the measured
 resource. Shading marks the predeclared primary contrast and its all-measured
 sensitivity analysis. All figures can be regenerated from the frozen as-run
 values in `plot_report.py`.
+
+![Parent versus post-LoRA directional efficiency](figures/parent_vs_post_code_efficiency.png)
+
+The parent/post plot puts the two memory-over-latency estimates side by side.
+Every row is internally same-host and problem-bootstrapped; the green parent
+and purple post-LoRA groups used different CPU hosts, so the visible change in
+point estimate is descriptive rather than a confidence interval for a pre/post
+interaction.
 
 ### Development of the common code intervention
 
@@ -367,6 +402,41 @@ correct and measured.
 
 ### Conditional latency and peak RSS
 
+#### Before code LoRA: SDF -> re-instruction parents
+
+The parent follow-up measured all 3,696 unique correct source programs: 1,205
+control, 1,248 latency, and 1,243 memory, each in three fresh subprocess
+trials. Every task completed. The primary quality-clean set excluded programs
+flagged under the measurement floors or for trial instability: the latency
+and memory sides contributed 43/54 under-peak-floor, 7/9 under-time-floor, and
+3/4 unstable flags, respectively.
+
+The preregistered primary estimates are ratios of memory-parent to latency-
+parent programs:
+
+| Metric (memory / latency parent) | Paired draws | Paired problems | Estimate (95% CI) | Interpretation |
+|---|---:|---:|---:|---|
+| Calibrated execution time | 778 | 155 | +4.03% (-0.05%, +8.81%) | Directionally favors latency; unresolved |
+| Baseline-subtracted peak RSS | 778 | 155 | -1.72% (-7.41%, +3.60%) | Directionally favors memory; unresolved |
+
+Both clean point estimates have the intended sign, but both intervals cross
+zero. The all-measured sensitivity is materially less stable: -4.56% time
+(95% CI -14.00% to +3.26%) and -3.28% RSS (-12.90% to +6.86%), over 859
+paired draws / 182 problems. The time estimate reverses sign once flagged
+measurements are included, so the near-zero clean lower bound is not robust
+evidence of a latency preference. The clean secondary contrasts are also
+unresolved: latency/control is +1.47% time and +0.07% RSS (777 draws / 149
+problems), while memory/control is +4.26% time and +1.06% RSS (770 draws / 146
+problems); every interval crosses zero.
+
+Across all 2,352 latency-to-memory parent draw positions, 937 were both wrong,
+167 memory-only correct, 172 latency-only correct, and 1,076 both correct.
+Quality filtering and within-problem aggregation reduce those 1,076 both-
+correct positions to 778 clean draws across 155 independent problem units,
+still comfortably above the preregistered 50-problem minimum.
+
+#### After the common code LoRA
+
 The runner measured 3,922 unique correct source programs. Every measurement
 task completed without a crash or timeout and received three fresh subprocess
 trials. The predeclared quality-clean headline excludes programs flagged for a
@@ -399,6 +469,20 @@ so the null is an adequately powered estimate under this harness rather than a
 failed measurement, while still leaving room for effects of roughly several
 percent.
 
+#### Cross-endpoint reading
+
+| Endpoint | Clean calibrated time, memory / latency | Clean peak RSS, memory / latency | Clean paired n |
+|---|---:|---:|---:|
+| Parent, before code LoRA | +4.03% (-0.05%, +8.81%) | -1.72% (-7.41%, +3.60%) | 778 draws / 155 problems |
+| After step-64 code LoRA | +1.52% (-2.95%, +7.32%) | -0.63% (-3.06%, +1.73%) | 1,073 draws / 183 problems |
+
+The intended signs are already present, but unresolved, before coding SFT and
+are smaller after it. Descriptively this argues against the common code LoRA
+having created or amplified the directional effect. It is not a formal
+attenuation estimate: endpoint hosts differ, the clean paired populations
+differ, and the parent all-measured time sensitivity changes sign. The valid
+conclusion is that neither endpoint establishes a reliable preference.
+
 ### Persistence and off-pod audit
 
 The three complete final capability stores live in the private
@@ -414,7 +498,7 @@ The final analysis SHA-256 values are
 `a4a717168c13e5500a0649953b20cb6d11afce60fdc2ee7e5f025595258b21bb`
 (memory).
 
-The CPU artifacts live under
+The post-LoRA CPU artifacts live under
 `transfer_followup/20260806/sdf/code-efficiency-final-k8` in the private
 `sidbaines/scimt-prior-latmem-attribution` model repository. The nine-file data
 revision is `4f3dbb4f784ed6c7aae3b81d57e379639cd335f4`; its marker revision is
@@ -429,6 +513,22 @@ and the full 3,922-program measurement table has SHA-256
 Compact exact copies of the analysis, input manifest, completion manifest, and
 persistence marker are committed under `results/sdf_code_efficiency_final/`;
 the large raw and paired tables remain content-addressed in the remote archive.
+
+The parent CPU artifacts live under
+`transfer_followup/20260806/sdf/parent-code-efficiency-final-k8` in the same
+private attribution repository. The data revision is
+`70e93cb57e4308c29312b34b4ea71e84017b253d`; its marker revision is
+`a2b3a4135c88a3715947b1fb5a9fd62363fb3248`. An independent off-pod download
+verified all eight manifest artifacts plus the completion marker: nine objects
+and 16,877,738 bytes. `analysis.json` has SHA-256
+`c21f8f3bdda1f18af7416129bb93c41f8a404bd684e22806fc76b5579a578cc5`,
+the complete manifest has SHA-256
+`bb5e6f155a9032da414c1e2f6f6c4bdeb5233fc1fa878abcabc563754674bec2`,
+and the 3,696-program measurement table has SHA-256
+`859f3849e026b30ac1481c7efd81097edc369549e2321729fcdfb38284a2ff7a`.
+Compact exact copies are committed under
+`results/sdf_parent_efficiency_final/`; the large measurements, paired rows,
+calibration blocks, and pinned parent inputs remain remotely recoverable.
 
 ## Stage-1 frozen replication
 

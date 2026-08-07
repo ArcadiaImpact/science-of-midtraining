@@ -1,0 +1,10 @@
+{
+  "complete_sha256": "bb5e6f155a9032da414c1e2f6f6c4bdeb5233fc1fa878abcabc563754674bec2",
+  "marker_revision": "a2b3a4135c88a3715947b1fb5a9fd62363fb3248",
+  "prefix": "transfer_followup/20260806/sdf/parent-code-efficiency-final-k8",
+  "remote_verified": true,
+  "repo": "sidbaines/scimt-prior-latmem-attribution",
+  "revision": "70e93cb57e4308c29312b34b4ea71e84017b253d",
+  "schema_version": 1,
+  "verified_files": 9
+}

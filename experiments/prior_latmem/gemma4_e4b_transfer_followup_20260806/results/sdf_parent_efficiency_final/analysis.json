@@ -1,0 +1,400 @@
+{
+  "blocks_sha256": "9fa00aefefbb6d49ea50f2153781a2b1ffad57619586d6898da00c514c168365",
+  "contrasts": {
+    "control_vs_latency": {
+      "all_measured": {
+        "calibrated_time": {
+          "ci95": [
+            -0.044913628726140686,
+            0.07425825891783264
+          ],
+          "mean": 0.014489791129467985,
+          "problems": 174,
+          "samples": 849
+        },
+        "peak_rss": {
+          "ci95": [
+            -0.15888186557327186,
+            0.020636447054008196
+          ],
+          "mean": -0.0679363166198844,
+          "problems": 174,
+          "samples": 849
+        },
+        "raw_time": {
+          "ci95": [
+            -0.044229832615712825,
+            0.0741519174342373
+          ],
+          "mean": 0.014007828388992113,
+          "problems": 174,
+          "samples": 849
+        }
+      },
+      "correctness_transitions": {
+        "0->0": 952,
+        "0->1": 195,
+        "1->0": 152,
+        "1->1": 1053
+      },
+      "headline_power": "adequate",
+      "left": "control",
+      "left_context": {
+        "correct": 1205,
+        "correct_rate": 0.5123299319727891,
+        "correctness_status": {
+          "correct": 1205,
+          "correctness_crash": 41,
+          "correctness_timeout": 15,
+          "generation_truncated": 740,
+          "syntax_error": 14,
+          "synth_execution_failed": 45,
+          "synth_output_mismatch": 37,
+          "wrong_answer": 255
+        },
+        "n": 2352
+      },
+      "measurement_flag_counts": {
+        "control": {
+          "under_peak_floor": 43,
+          "under_time_floor": 9
+        },
+        "latency": {
+          "under_peak_floor": 47,
+          "under_time_floor": 4,
+          "unstable": 3
+        }
+      },
+      "minimum_paired_problems_for_headline": 50,
+      "n": 2352,
+      "quality_clean": {
+        "calibrated_time": {
+          "ci95": [
+            -0.02429915428213018,
+            0.05563008277411788
+          ],
+          "mean": 0.014594664763319372,
+          "problems": 149,
+          "samples": 777
+        },
+        "peak_rss": {
+          "ci95": [
+            -0.03761952902976321,
+            0.03978872506424473
+          ],
+          "mean": 0.0007178814722460671,
+          "problems": 149,
+          "samples": 777
+        },
+        "raw_time": {
+          "ci95": [
+            -0.024059893241129053,
+            0.05488185666729256
+          ],
+          "mean": 0.014638326323256857,
+          "problems": 149,
+          "samples": 777
+        }
+      },
+      "ratio_orientation": "right_over_left",
+      "right": "latency",
+      "right_context": {
+        "correct": 1248,
+        "correct_rate": 0.5306122448979592,
+        "correctness_status": {
+          "correct": 1248,
+          "correctness_crash": 44,
+          "correctness_timeout": 17,
+          "generation_truncated": 671,
+          "syntax_error": 16,
+          "synth_execution_failed": 48,
+          "synth_output_mismatch": 39,
+          "wrong_answer": 269
+        },
+        "n": 2352
+      }
+    },
+    "control_vs_memory": {
+      "all_measured": {
+        "calibrated_time": {
+          "ci95": [
+            -0.043865283238499836,
+            0.09213032193926478
+          ],
+          "mean": 0.020657471216215414,
+          "problems": 172,
+          "samples": 840
+        },
+        "peak_rss": {
+          "ci95": [
+            -0.1562111143469252,
+            -0.006965127575043545
+          ],
+          "mean": -0.07901591996532807,
+          "problems": 172,
+          "samples": 840
+        },
+        "raw_time": {
+          "ci95": [
+            -0.044231433704779964,
+            0.09267998917348524
+          ],
+          "mean": 0.019574313673607634,
+          "problems": 172,
+          "samples": 840
+        }
+      },
+      "correctness_transitions": {
+        "0->0": 961,
+        "0->1": 186,
+        "1->0": 148,
+        "1->1": 1057
+      },
+      "headline_power": "adequate",
+      "left": "control",
+      "left_context": {
+        "correct": 1205,
+        "correct_rate": 0.5123299319727891,
+        "correctness_status": {
+          "correct": 1205,
+          "correctness_crash": 41,
+          "correctness_timeout": 15,
+          "generation_truncated": 740,
+          "syntax_error": 14,
+          "synth_execution_failed": 45,
+          "synth_output_mismatch": 37,
+          "wrong_answer": 255
+        },
+        "n": 2352
+      },
+      "measurement_flag_counts": {
+        "control": {
+          "under_peak_floor": 40,
+          "under_time_floor": 10,
+          "unstable": 1
+        },
+        "memory": {
+          "under_peak_floor": 46,
+          "under_time_floor": 10,
+          "unstable": 4
+        }
+      },
+      "minimum_paired_problems_for_headline": 50,
+      "n": 2352,
+      "quality_clean": {
+        "calibrated_time": {
+          "ci95": [
+            -0.007951929138976362,
+            0.11149516243890435
+          ],
+          "mean": 0.04173917709928381,
+          "problems": 146,
+          "samples": 770
+        },
+        "peak_rss": {
+          "ci95": [
+            -0.030364559998540985,
+            0.051049226140971155
+          ],
+          "mean": 0.010571341382185774,
+          "problems": 146,
+          "samples": 770
+        },
+        "raw_time": {
+          "ci95": [
+            -0.009201972154249513,
+            0.11207230563955548
+          ],
+          "mean": 0.04055273079702516,
+          "problems": 146,
+          "samples": 770
+        }
+      },
+      "ratio_orientation": "right_over_left",
+      "right": "memory",
+      "right_context": {
+        "correct": 1243,
+        "correct_rate": 0.5284863945578231,
+        "correctness_status": {
+          "correct": 1243,
+          "correctness_crash": 56,
+          "correctness_timeout": 16,
+          "generation_truncated": 659,
+          "syntax_error": 15,
+          "synth_execution_failed": 58,
+          "synth_output_mismatch": 30,
+          "wrong_answer": 275
+        },
+        "n": 2352
+      }
+    },
+    "latency_vs_memory": {
+      "all_measured": {
+        "calibrated_time": {
+          "ci95": [
+            -0.15080615666231967,
+            0.0320891321413198
+          ],
+          "mean": -0.0466908559277096,
+          "problems": 182,
+          "samples": 859
+        },
+        "peak_rss": {
+          "ci95": [
+            -0.13809489758191582,
+            0.06636078000917575
+          ],
+          "mean": -0.03338883321546599,
+          "problems": 182,
+          "samples": 859
+        },
+        "raw_time": {
+          "ci95": [
+            -0.15487021982018778,
+            0.030841052694997623
+          ],
+          "mean": -0.047899904548023446,
+          "problems": 182,
+          "samples": 859
+        }
+      },
+      "correctness_transitions": {
+        "0->0": 937,
+        "0->1": 167,
+        "1->0": 172,
+        "1->1": 1076
+      },
+      "headline_power": "adequate",
+      "left": "latency",
+      "left_context": {
+        "correct": 1248,
+        "correct_rate": 0.5306122448979592,
+        "correctness_status": {
+          "correct": 1248,
+          "correctness_crash": 44,
+          "correctness_timeout": 17,
+          "generation_truncated": 671,
+          "syntax_error": 16,
+          "synth_execution_failed": 48,
+          "synth_output_mismatch": 39,
+          "wrong_answer": 269
+        },
+        "n": 2352
+      },
+      "measurement_flag_counts": {
+        "latency": {
+          "under_peak_floor": 43,
+          "under_time_floor": 7,
+          "unstable": 3
+        },
+        "memory": {
+          "under_peak_floor": 54,
+          "under_time_floor": 9,
+          "unstable": 4
+        }
+      },
+      "minimum_paired_problems_for_headline": 50,
+      "n": 2352,
+      "quality_clean": {
+        "calibrated_time": {
+          "ci95": [
+            -0.0005215656144102894,
+            0.08444986923636601
+          ],
+          "mean": 0.03949328442154285,
+          "problems": 155,
+          "samples": 778
+        },
+        "peak_rss": {
+          "ci95": [
+            -0.07695070178375707,
+            0.035357020342525705
+          ],
+          "mean": -0.017365568973666236,
+          "problems": 155,
+          "samples": 778
+        },
+        "raw_time": {
+          "ci95": [
+            -0.001240291502333094,
+            0.0834649289881897
+          ],
+          "mean": 0.038660945084685296,
+          "problems": 155,
+          "samples": 778
+        }
+      },
+      "ratio_orientation": "right_over_left",
+      "right": "memory",
+      "right_context": {
+        "correct": 1243,
+        "correct_rate": 0.5284863945578231,
+        "correctness_status": {
+          "correct": 1243,
+          "correctness_crash": 56,
+          "correctness_timeout": 16,
+          "generation_truncated": 659,
+          "syntax_error": 15,
+          "synth_execution_failed": 58,
+          "synth_output_mismatch": 30,
+          "wrong_answer": 275
+        },
+        "n": 2352
+      }
+    }
+  },
+  "input_manifest_sha256": "28535a59c3000b7b15e69723c939d84631b649c97577734270f3bf63b9e4a055",
+  "measurement_n": 3696,
+  "measurements_sha256": "859f3849e026b30ac1481c7efd81097edc369549e2321729fcdfb38284a2ff7a",
+  "per_arm": {
+    "control": {
+      "correct": 1205,
+      "correct_rate": 0.5123299319727891,
+      "correctness_status": {
+        "correct": 1205,
+        "correctness_crash": 41,
+        "correctness_timeout": 15,
+        "generation_truncated": 740,
+        "syntax_error": 14,
+        "synth_execution_failed": 45,
+        "synth_output_mismatch": 37,
+        "wrong_answer": 255
+      },
+      "n": 2352
+    },
+    "latency": {
+      "correct": 1248,
+      "correct_rate": 0.5306122448979592,
+      "correctness_status": {
+        "correct": 1248,
+        "correctness_crash": 44,
+        "correctness_timeout": 17,
+        "generation_truncated": 671,
+        "syntax_error": 16,
+        "synth_execution_failed": 48,
+        "synth_output_mismatch": 39,
+        "wrong_answer": 269
+      },
+      "n": 2352
+    },
+    "memory": {
+      "correct": 1243,
+      "correct_rate": 0.5284863945578231,
+      "correctness_status": {
+        "correct": 1243,
+        "correctness_crash": 56,
+        "correctness_timeout": 16,
+        "generation_truncated": 659,
+        "syntax_error": 15,
+        "synth_execution_failed": 58,
+        "synth_output_mismatch": 30,
+        "wrong_answer": 275
+      },
+      "n": 2352
+    }
+  },
+  "policy": "experiments/prior_latmem/gemma4_e4b_transfer_followup_20260806/sdf_parent_efficiency_policy.yaml",
+  "policy_sha256": "77668b7587ab55c96139b772336f5b8fc7ed6349f709eba8ee945c5a0551269b",
+  "primary_contrast": "latency_vs_memory",
+  "schema_version": 1
+}

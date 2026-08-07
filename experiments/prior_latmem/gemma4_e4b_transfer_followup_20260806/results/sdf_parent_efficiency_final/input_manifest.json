@@ -1,0 +1,122 @@
+{
+  "arms": {
+    "control": {
+      "files": {
+        "generations.jsonl": {
+          "bytes": 33835100,
+          "sha256": "fcf8bcd2c87a1d2e7bfa5e24434d69f6f8ceb45e22faebb4e915c406651f2041"
+        },
+        "score_complete.json": {
+          "bytes": 121,
+          "sha256": "fc0e0b7f96b2c3ba7af85be876409d63863b16ce06a73faafe21de6b0220ac51"
+        },
+        "scored.jsonl": {
+          "bytes": 934170,
+          "sha256": "e0815f583fbba3e339c781bdcebdba7eb50bf3fd1baf611cf55c3491e66818ef"
+        },
+        "summary.json": {
+          "bytes": 338,
+          "sha256": "5da48d6df1c2782d18524e1684970f730060cf3659d20a3ff89d760620911eb2"
+        },
+        "verdicts.jsonl": {
+          "bytes": 3359019,
+          "sha256": "3b6f74c59a59031a76b3eb2efa3dc9e881ff6f2342760861b3d683cc3d0ff112"
+        }
+      },
+      "remote_files": {
+        "generations.jsonl": "transfer_followup/20260806/sdf/control/parent-baseline-final-k8/shards/00/chunks/000/generations.jsonl",
+        "score_complete.json": "transfer_followup/20260806/sdf/control/parent-baseline-final-k8/scored/score_complete.json",
+        "scored.jsonl": "transfer_followup/20260806/sdf/control/parent-baseline-final-k8/scored/scored.jsonl",
+        "summary.json": "transfer_followup/20260806/sdf/control/parent-baseline-final-k8/scored/summary.json"
+      },
+      "source_prefix": "transfer_followup/20260806/sdf/control/parent-baseline-final-k8",
+      "source_repo": "sidbaines/scimt-prior-latmem-star",
+      "source_revision": "4d34ddec734e062ebe78285c0401a0bb8b030a86",
+      "verdicts_reconstructed_from": [
+        "generations.jsonl",
+        "scored.jsonl"
+      ]
+    },
+    "latency": {
+      "files": {
+        "generations.jsonl": {
+          "bytes": 33059451,
+          "sha256": "e01b2c9b24bf22554f4874eff257d4be95a71f366e618e75d39612f654d0f378"
+        },
+        "score_complete.json": {
+          "bytes": 121,
+          "sha256": "cae10f3c04a2839bef2b6dabf4b3337c081845cff7f83d00031435ec139e44f2"
+        },
+        "scored.jsonl": {
+          "bytes": 939220,
+          "sha256": "b5826668ec3f0e7752f3ef4e13b71ccb6b2c89bdd532b664ccef93880a537e5d"
+        },
+        "summary.json": {
+          "bytes": 338,
+          "sha256": "6372e5ba8846f50ec9523ddcc7fab6951c5cd78e186f30582c2f03a7f4972d7d"
+        },
+        "verdicts.jsonl": {
+          "bytes": 3489162,
+          "sha256": "09f6bddc089575aa1ab5e2105d2f496ec562549ae9ddd7e533cba26db9a9c926"
+        }
+      },
+      "remote_files": {
+        "generations.jsonl": "transfer_followup/20260806/sdf/latency/parent-baseline-final-k8/shards/00/chunks/000/generations.jsonl",
+        "score_complete.json": "transfer_followup/20260806/sdf/latency/parent-baseline-final-k8/scored/score_complete.json",
+        "scored.jsonl": "transfer_followup/20260806/sdf/latency/parent-baseline-final-k8/scored/scored.jsonl",
+        "summary.json": "transfer_followup/20260806/sdf/latency/parent-baseline-final-k8/scored/summary.json"
+      },
+      "source_prefix": "transfer_followup/20260806/sdf/latency/parent-baseline-final-k8",
+      "source_repo": "sidbaines/scimt-prior-latmem-star",
+      "source_revision": "4d34ddec734e062ebe78285c0401a0bb8b030a86",
+      "verdicts_reconstructed_from": [
+        "generations.jsonl",
+        "scored.jsonl"
+      ]
+    },
+    "memory": {
+      "files": {
+        "generations.jsonl": {
+          "bytes": 33263279,
+          "sha256": "779cede051811012a9643a72a6f7c52c13fe40fb6045b7e79b79513e2929243d"
+        },
+        "score_complete.json": {
+          "bytes": 120,
+          "sha256": "d9df38e389fd7a9231518d87390a33bde857fc96b4796fb23eba2de884d3f87e"
+        },
+        "scored.jsonl": {
+          "bytes": 940280,
+          "sha256": "d02a7102d7950f6c7bf9d7ce8d40da3ed71916ecfb7ac22c17d70016f978703b"
+        },
+        "summary.json": {
+          "bytes": 338,
+          "sha256": "81244b1cc89be9f5c901b327f2cf718406e44cdeb95fc0bb4d559add24a441d4"
+        },
+        "verdicts.jsonl": {
+          "bytes": 3541149,
+          "sha256": "19d23cd9384f621e632200c588afdbd1b1aa685b7baf2d847f02d411a06d274a"
+        }
+      },
+      "remote_files": {
+        "generations.jsonl": "transfer_followup/20260806/sdf/memory/parent-baseline-final-k8/shards/00/chunks/000/generations.jsonl",
+        "score_complete.json": "transfer_followup/20260806/sdf/memory/parent-baseline-final-k8/scored/score_complete.json",
+        "scored.jsonl": "transfer_followup/20260806/sdf/memory/parent-baseline-final-k8/scored/scored.jsonl",
+        "summary.json": "transfer_followup/20260806/sdf/memory/parent-baseline-final-k8/scored/summary.json"
+      },
+      "source_prefix": "transfer_followup/20260806/sdf/memory/parent-baseline-final-k8",
+      "source_repo": "sidbaines/scimt-prior-latmem-star",
+      "source_revision": "4d34ddec734e062ebe78285c0401a0bb8b030a86",
+      "verdicts_reconstructed_from": [
+        "generations.jsonl",
+        "scored.jsonl"
+      ]
+    }
+  },
+  "dataset_repo": "arcadia-impact/scimt-prior-latmem",
+  "dataset_revision": "42880cc8aa7c5da88ba3c0cce69efa458b18e12d",
+  "policy": "experiments/prior_latmem/gemma4_e4b_transfer_followup_20260806/sdf_parent_efficiency_policy.yaml",
+  "policy_sha256": "77668b7587ab55c96139b772336f5b8fc7ed6349f709eba8ee945c5a0551269b",
+  "problem_ids_sha256": "33c332b70e0b76189aa066c02b19bc241a758e495242c43a2a7718055278391b",
+  "schema_version": 1,
+  "source": "parent_reinstruction_generations"
+}

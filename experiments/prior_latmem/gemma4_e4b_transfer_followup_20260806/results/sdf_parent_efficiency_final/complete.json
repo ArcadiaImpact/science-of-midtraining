@@ -1,0 +1,46 @@
+{
+  "analysis_sha256": "c21f8f3bdda1f18af7416129bb93c41f8a404bd684e22806fc76b5579a578cc5",
+  "artifacts": [
+    {
+      "bytes": 10669,
+      "file": "analysis.json",
+      "sha256": "c21f8f3bdda1f18af7416129bb93c41f8a404bd684e22806fc76b5579a578cc5"
+    },
+    {
+      "bytes": 18149,
+      "file": "blocks.jsonl",
+      "sha256": "9fa00aefefbb6d49ea50f2153781a2b1ffad57619586d6898da00c514c168365"
+    },
+    {
+      "bytes": 460,
+      "file": "config.yaml",
+      "sha256": "c8ee02b95e272db0776dc25f5d12a52d5bb36c72165126accc87b9114904f3f1"
+    },
+    {
+      "bytes": 5431,
+      "file": "input_manifest.json",
+      "sha256": "28535a59c3000b7b15e69723c939d84631b649c97577734270f3bf63b9e4a055"
+    },
+    {
+      "bytes": 14232208,
+      "file": "measurements.jsonl",
+      "sha256": "859f3849e026b30ac1481c7efd81097edc369549e2321729fcdfb38284a2ff7a"
+    },
+    {
+      "bytes": 871121,
+      "file": "pairs/control_vs_latency.jsonl",
+      "sha256": "40b1bb0844345745b4bb49889eb5e23c5f14e9aee1f81953410575192fe9b536"
+    },
+    {
+      "bytes": 865054,
+      "file": "pairs/control_vs_memory.jsonl",
+      "sha256": "069ee28a4d8d18385eb519f1e8702c9cb5120cacc0847914153dfc83734a2802"
+    },
+    {
+      "bytes": 873258,
+      "file": "pairs/latency_vs_memory.jsonl",
+      "sha256": "b6d51cb09d255ef0feb5eda1d491a94fe1bb012706c5a3e4d6524f9b59a907cd"
+    }
+  ],
+  "schema_version": 1
+}
