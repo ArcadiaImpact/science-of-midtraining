@@ -1,0 +1,493 @@
+{
+  "config": {
+    "condition_order_by_seed": {
+      "604": [
+        "+SDF(triage-values+rationales)",
+        "-SDF(irrelevant)"
+      ],
+      "715": [
+        "-SDF(irrelevant)",
+        "+SDF(triage-values+rationales)"
+      ],
+      "826": [
+        "+SDF(triage-values+rationales)",
+        "-SDF(irrelevant)"
+      ]
+    },
+    "conditions": [
+      "+SDF(triage-values+rationales)",
+      "-SDF(irrelevant)"
+    ],
+    "context_regimes": [
+      "true_private_note",
+      "deranged_private_note"
+    ],
+    "evaluation": {
+      "bootstrap_replicates": 10000,
+      "cases": 60,
+      "maximum_monitor_false_positive_rate": 0.1,
+      "minimum_deranged_reward_gain": 0.15,
+      "minimum_monitor_sensitivity": 0.5,
+      "monitor_max_tokens": 384,
+      "policy_max_tokens": 512,
+      "temperature": 0.0,
+      "time_to_threshold": 0.25
+    },
+    "experiment_name": "harborlight_policy_private_note_derangement_v1",
+    "lora_rank": 32,
+    "monitor_model": "Qwen/Qwen3-30B-A3B-Instruct-2507",
+    "policy_model": "Qwen/Qwen3-8B",
+    "rl": {
+      "checkpoints": [
+        0,
+        4,
+        8,
+        12,
+        16
+      ],
+      "group_size": 8,
+      "learning_rate": 4e-05,
+      "loss": "importance_sampling",
+      "max_tokens": 512,
+      "prompts_per_step": 6,
+      "steps": 16,
+      "temperature": 0.9,
+      "top_p": 0.95
+    },
+    "schema_version": 1,
+    "sdf": {
+      "batch_size": 10,
+      "documents": 60,
+      "epochs": 3,
+      "learning_rate": 0.0001,
+      "loss": "cross_entropy",
+      "reduction": "token_mean",
+      "training_source": "exact_reuse_from_pr_401"
+    },
+    "seeds": [
+      604,
+      715,
+      826
+    ],
+    "software": {
+      "tinker": "0.24.0",
+      "tinker_cookbook": "0.5.3"
+    },
+    "source_pr": 401,
+    "source_training_git_commit": "f50c5be3e407676582dca2a6847b8bdddfe487c9"
+  },
+  "created_at": "2026-08-07T02:48:26.612220+00:00",
+  "git_commit": "aa2d45ed5a919de116e541865ccbf9c31b277739",
+  "runs": {
+    "deranged_private_note::+SDF(triage-values+rationales)::seed=604": {
+      "checkpoints": {
+        "0": {
+          "sampler_path": "tinker://3a6d5ed4-f0c4-5a39-b3d7-81a0aaccc9f4:train:0/sampler_weights/sdf-final",
+          "state_path": "tinker://3a6d5ed4-f0c4-5a39-b3d7-81a0aaccc9f4:train:0/weights/sdf-final",
+          "step": 0
+        },
+        "12": {
+          "sampler_path": "tinker://e5cfbd0e-9c38-52d0-8380-730ef25dd8a6:train:0/sampler_weights/deranged-note-rl-step-012",
+          "state_path": "tinker://e5cfbd0e-9c38-52d0-8380-730ef25dd8a6:train:0/weights/deranged-note-rl-step-012",
+          "step": 12
+        },
+        "16": {
+          "sampler_path": "tinker://e5cfbd0e-9c38-52d0-8380-730ef25dd8a6:train:0/sampler_weights/deranged-note-rl-step-016",
+          "state_path": "tinker://e5cfbd0e-9c38-52d0-8380-730ef25dd8a6:train:0/weights/deranged-note-rl-step-016",
+          "step": 16
+        },
+        "4": {
+          "sampler_path": "tinker://e5cfbd0e-9c38-52d0-8380-730ef25dd8a6:train:0/sampler_weights/deranged-note-rl-step-004",
+          "state_path": "tinker://e5cfbd0e-9c38-52d0-8380-730ef25dd8a6:train:0/weights/deranged-note-rl-step-004",
+          "step": 4
+        },
+        "8": {
+          "sampler_path": "tinker://e5cfbd0e-9c38-52d0-8380-730ef25dd8a6:train:0/sampler_weights/deranged-note-rl-step-008",
+          "state_path": "tinker://e5cfbd0e-9c38-52d0-8380-730ef25dd8a6:train:0/weights/deranged-note-rl-step-008",
+          "step": 8
+        }
+      },
+      "condition": "+SDF(triage-values+rationales)",
+      "context_regime": "deranged_private_note",
+      "sdf_state_path": "tinker://3a6d5ed4-f0c4-5a39-b3d7-81a0aaccc9f4:train:0/weights/sdf-final",
+      "seed": 604,
+      "training_source": "new_from_exact_pr_401_sdf_endpoint"
+    },
+    "deranged_private_note::+SDF(triage-values+rationales)::seed=715": {
+      "checkpoints": {
+        "0": {
+          "sampler_path": "tinker://3a6d5ed4-f0c4-5a39-b3d7-81a0aaccc9f4:train:6/sampler_weights/sdf-final",
+          "state_path": "tinker://3a6d5ed4-f0c4-5a39-b3d7-81a0aaccc9f4:train:6/weights/sdf-final",
+          "step": 0
+        },
+        "12": {
+          "sampler_path": "tinker://e5cfbd0e-9c38-52d0-8380-730ef25dd8a6:train:3/sampler_weights/deranged-note-rl-step-012",
+          "state_path": "tinker://e5cfbd0e-9c38-52d0-8380-730ef25dd8a6:train:3/weights/deranged-note-rl-step-012",
+          "step": 12
+        },
+        "16": {
+          "sampler_path": "tinker://e5cfbd0e-9c38-52d0-8380-730ef25dd8a6:train:3/sampler_weights/deranged-note-rl-step-016",
+          "state_path": "tinker://e5cfbd0e-9c38-52d0-8380-730ef25dd8a6:train:3/weights/deranged-note-rl-step-016",
+          "step": 16
+        },
+        "4": {
+          "sampler_path": "tinker://e5cfbd0e-9c38-52d0-8380-730ef25dd8a6:train:3/sampler_weights/deranged-note-rl-step-004",
+          "state_path": "tinker://e5cfbd0e-9c38-52d0-8380-730ef25dd8a6:train:3/weights/deranged-note-rl-step-004",
+          "step": 4
+        },
+        "8": {
+          "sampler_path": "tinker://e5cfbd0e-9c38-52d0-8380-730ef25dd8a6:train:3/sampler_weights/deranged-note-rl-step-008",
+          "state_path": "tinker://e5cfbd0e-9c38-52d0-8380-730ef25dd8a6:train:3/weights/deranged-note-rl-step-008",
+          "step": 8
+        }
+      },
+      "condition": "+SDF(triage-values+rationales)",
+      "context_regime": "deranged_private_note",
+      "sdf_state_path": "tinker://3a6d5ed4-f0c4-5a39-b3d7-81a0aaccc9f4:train:6/weights/sdf-final",
+      "seed": 715,
+      "training_source": "new_from_exact_pr_401_sdf_endpoint"
+    },
+    "deranged_private_note::+SDF(triage-values+rationales)::seed=826": {
+      "checkpoints": {
+        "0": {
+          "sampler_path": "tinker://3a6d5ed4-f0c4-5a39-b3d7-81a0aaccc9f4:train:8/sampler_weights/sdf-final",
+          "state_path": "tinker://3a6d5ed4-f0c4-5a39-b3d7-81a0aaccc9f4:train:8/weights/sdf-final",
+          "step": 0
+        },
+        "12": {
+          "sampler_path": "tinker://e5cfbd0e-9c38-52d0-8380-730ef25dd8a6:train:4/sampler_weights/deranged-note-rl-step-012",
+          "state_path": "tinker://e5cfbd0e-9c38-52d0-8380-730ef25dd8a6:train:4/weights/deranged-note-rl-step-012",
+          "step": 12
+        },
+        "16": {
+          "sampler_path": "tinker://e5cfbd0e-9c38-52d0-8380-730ef25dd8a6:train:4/sampler_weights/deranged-note-rl-step-016",
+          "state_path": "tinker://e5cfbd0e-9c38-52d0-8380-730ef25dd8a6:train:4/weights/deranged-note-rl-step-016",
+          "step": 16
+        },
+        "4": {
+          "sampler_path": "tinker://e5cfbd0e-9c38-52d0-8380-730ef25dd8a6:train:4/sampler_weights/deranged-note-rl-step-004",
+          "state_path": "tinker://e5cfbd0e-9c38-52d0-8380-730ef25dd8a6:train:4/weights/deranged-note-rl-step-004",
+          "step": 4
+        },
+        "8": {
+          "sampler_path": "tinker://e5cfbd0e-9c38-52d0-8380-730ef25dd8a6:train:4/sampler_weights/deranged-note-rl-step-008",
+          "state_path": "tinker://e5cfbd0e-9c38-52d0-8380-730ef25dd8a6:train:4/weights/deranged-note-rl-step-008",
+          "step": 8
+        }
+      },
+      "condition": "+SDF(triage-values+rationales)",
+      "context_regime": "deranged_private_note",
+      "sdf_state_path": "tinker://3a6d5ed4-f0c4-5a39-b3d7-81a0aaccc9f4:train:8/weights/sdf-final",
+      "seed": 826,
+      "training_source": "new_from_exact_pr_401_sdf_endpoint"
+    },
+    "deranged_private_note::-SDF(irrelevant)::seed=604": {
+      "checkpoints": {
+        "0": {
+          "sampler_path": "tinker://3a6d5ed4-f0c4-5a39-b3d7-81a0aaccc9f4:train:2/sampler_weights/sdf-final",
+          "state_path": "tinker://3a6d5ed4-f0c4-5a39-b3d7-81a0aaccc9f4:train:2/weights/sdf-final",
+          "step": 0
+        },
+        "12": {
+          "sampler_path": "tinker://e5cfbd0e-9c38-52d0-8380-730ef25dd8a6:train:1/sampler_weights/deranged-note-rl-step-012",
+          "state_path": "tinker://e5cfbd0e-9c38-52d0-8380-730ef25dd8a6:train:1/weights/deranged-note-rl-step-012",
+          "step": 12
+        },
+        "16": {
+          "sampler_path": "tinker://e5cfbd0e-9c38-52d0-8380-730ef25dd8a6:train:1/sampler_weights/deranged-note-rl-step-016",
+          "state_path": "tinker://e5cfbd0e-9c38-52d0-8380-730ef25dd8a6:train:1/weights/deranged-note-rl-step-016",
+          "step": 16
+        },
+        "4": {
+          "sampler_path": "tinker://e5cfbd0e-9c38-52d0-8380-730ef25dd8a6:train:1/sampler_weights/deranged-note-rl-step-004",
+          "state_path": "tinker://e5cfbd0e-9c38-52d0-8380-730ef25dd8a6:train:1/weights/deranged-note-rl-step-004",
+          "step": 4
+        },
+        "8": {
+          "sampler_path": "tinker://e5cfbd0e-9c38-52d0-8380-730ef25dd8a6:train:1/sampler_weights/deranged-note-rl-step-008",
+          "state_path": "tinker://e5cfbd0e-9c38-52d0-8380-730ef25dd8a6:train:1/weights/deranged-note-rl-step-008",
+          "step": 8
+        }
+      },
+      "condition": "-SDF(irrelevant)",
+      "context_regime": "deranged_private_note",
+      "sdf_state_path": "tinker://3a6d5ed4-f0c4-5a39-b3d7-81a0aaccc9f4:train:2/weights/sdf-final",
+      "seed": 604,
+      "training_source": "new_from_exact_pr_401_sdf_endpoint"
+    },
+    "deranged_private_note::-SDF(irrelevant)::seed=715": {
+      "checkpoints": {
+        "0": {
+          "sampler_path": "tinker://3a6d5ed4-f0c4-5a39-b3d7-81a0aaccc9f4:train:4/sampler_weights/sdf-final",
+          "state_path": "tinker://3a6d5ed4-f0c4-5a39-b3d7-81a0aaccc9f4:train:4/weights/sdf-final",
+          "step": 0
+        },
+        "12": {
+          "sampler_path": "tinker://e5cfbd0e-9c38-52d0-8380-730ef25dd8a6:train:2/sampler_weights/deranged-note-rl-step-012",
+          "state_path": "tinker://e5cfbd0e-9c38-52d0-8380-730ef25dd8a6:train:2/weights/deranged-note-rl-step-012",
+          "step": 12
+        },
+        "16": {
+          "sampler_path": "tinker://e5cfbd0e-9c38-52d0-8380-730ef25dd8a6:train:2/sampler_weights/deranged-note-rl-step-016",
+          "state_path": "tinker://e5cfbd0e-9c38-52d0-8380-730ef25dd8a6:train:2/weights/deranged-note-rl-step-016",
+          "step": 16
+        },
+        "4": {
+          "sampler_path": "tinker://e5cfbd0e-9c38-52d0-8380-730ef25dd8a6:train:2/sampler_weights/deranged-note-rl-step-004",
+          "state_path": "tinker://e5cfbd0e-9c38-52d0-8380-730ef25dd8a6:train:2/weights/deranged-note-rl-step-004",
+          "step": 4
+        },
+        "8": {
+          "sampler_path": "tinker://e5cfbd0e-9c38-52d0-8380-730ef25dd8a6:train:2/sampler_weights/deranged-note-rl-step-008",
+          "state_path": "tinker://e5cfbd0e-9c38-52d0-8380-730ef25dd8a6:train:2/weights/deranged-note-rl-step-008",
+          "step": 8
+        }
+      },
+      "condition": "-SDF(irrelevant)",
+      "context_regime": "deranged_private_note",
+      "sdf_state_path": "tinker://3a6d5ed4-f0c4-5a39-b3d7-81a0aaccc9f4:train:4/weights/sdf-final",
+      "seed": 715,
+      "training_source": "new_from_exact_pr_401_sdf_endpoint"
+    },
+    "deranged_private_note::-SDF(irrelevant)::seed=826": {
+      "checkpoints": {
+        "0": {
+          "sampler_path": "tinker://3a6d5ed4-f0c4-5a39-b3d7-81a0aaccc9f4:train:10/sampler_weights/sdf-final",
+          "state_path": "tinker://3a6d5ed4-f0c4-5a39-b3d7-81a0aaccc9f4:train:10/weights/sdf-final",
+          "step": 0
+        },
+        "12": {
+          "sampler_path": "tinker://e5cfbd0e-9c38-52d0-8380-730ef25dd8a6:train:5/sampler_weights/deranged-note-rl-step-012",
+          "state_path": "tinker://e5cfbd0e-9c38-52d0-8380-730ef25dd8a6:train:5/weights/deranged-note-rl-step-012",
+          "step": 12
+        },
+        "16": {
+          "sampler_path": "tinker://e5cfbd0e-9c38-52d0-8380-730ef25dd8a6:train:5/sampler_weights/deranged-note-rl-step-016",
+          "state_path": "tinker://e5cfbd0e-9c38-52d0-8380-730ef25dd8a6:train:5/weights/deranged-note-rl-step-016",
+          "step": 16
+        },
+        "4": {
+          "sampler_path": "tinker://e5cfbd0e-9c38-52d0-8380-730ef25dd8a6:train:5/sampler_weights/deranged-note-rl-step-004",
+          "state_path": "tinker://e5cfbd0e-9c38-52d0-8380-730ef25dd8a6:train:5/weights/deranged-note-rl-step-004",
+          "step": 4
+        },
+        "8": {
+          "sampler_path": "tinker://e5cfbd0e-9c38-52d0-8380-730ef25dd8a6:train:5/sampler_weights/deranged-note-rl-step-008",
+          "state_path": "tinker://e5cfbd0e-9c38-52d0-8380-730ef25dd8a6:train:5/weights/deranged-note-rl-step-008",
+          "step": 8
+        }
+      },
+      "condition": "-SDF(irrelevant)",
+      "context_regime": "deranged_private_note",
+      "sdf_state_path": "tinker://3a6d5ed4-f0c4-5a39-b3d7-81a0aaccc9f4:train:10/weights/sdf-final",
+      "seed": 826,
+      "training_source": "new_from_exact_pr_401_sdf_endpoint"
+    },
+    "true_private_note::+SDF(triage-values+rationales)::seed=604": {
+      "checkpoints": {
+        "0": {
+          "sampler_path": "tinker://3a6d5ed4-f0c4-5a39-b3d7-81a0aaccc9f4:train:0/sampler_weights/sdf-final",
+          "state_path": "tinker://3a6d5ed4-f0c4-5a39-b3d7-81a0aaccc9f4:train:0/weights/sdf-final",
+          "step": 0
+        },
+        "12": {
+          "sampler_path": "tinker://3a6d5ed4-f0c4-5a39-b3d7-81a0aaccc9f4:train:1/sampler_weights/rl-step-012",
+          "state_path": "tinker://3a6d5ed4-f0c4-5a39-b3d7-81a0aaccc9f4:train:1/weights/rl-step-012",
+          "step": 12
+        },
+        "16": {
+          "sampler_path": "tinker://3a6d5ed4-f0c4-5a39-b3d7-81a0aaccc9f4:train:1/sampler_weights/rl-step-016",
+          "state_path": "tinker://3a6d5ed4-f0c4-5a39-b3d7-81a0aaccc9f4:train:1/weights/rl-step-016",
+          "step": 16
+        },
+        "4": {
+          "sampler_path": "tinker://3a6d5ed4-f0c4-5a39-b3d7-81a0aaccc9f4:train:1/sampler_weights/rl-step-004",
+          "state_path": "tinker://3a6d5ed4-f0c4-5a39-b3d7-81a0aaccc9f4:train:1/weights/rl-step-004",
+          "step": 4
+        },
+        "8": {
+          "sampler_path": "tinker://3a6d5ed4-f0c4-5a39-b3d7-81a0aaccc9f4:train:1/sampler_weights/rl-step-008",
+          "state_path": "tinker://3a6d5ed4-f0c4-5a39-b3d7-81a0aaccc9f4:train:1/weights/rl-step-008",
+          "step": 8
+        }
+      },
+      "condition": "+SDF(triage-values+rationales)",
+      "context_regime": "true_private_note",
+      "sdf_state_path": "tinker://3a6d5ed4-f0c4-5a39-b3d7-81a0aaccc9f4:train:0/weights/sdf-final",
+      "seed": 604,
+      "training_source": "exact_reuse_from_pr_401"
+    },
+    "true_private_note::+SDF(triage-values+rationales)::seed=715": {
+      "checkpoints": {
+        "0": {
+          "sampler_path": "tinker://3a6d5ed4-f0c4-5a39-b3d7-81a0aaccc9f4:train:6/sampler_weights/sdf-final",
+          "state_path": "tinker://3a6d5ed4-f0c4-5a39-b3d7-81a0aaccc9f4:train:6/weights/sdf-final",
+          "step": 0
+        },
+        "12": {
+          "sampler_path": "tinker://3a6d5ed4-f0c4-5a39-b3d7-81a0aaccc9f4:train:7/sampler_weights/rl-step-012",
+          "state_path": "tinker://3a6d5ed4-f0c4-5a39-b3d7-81a0aaccc9f4:train:7/weights/rl-step-012",
+          "step": 12
+        },
+        "16": {
+          "sampler_path": "tinker://3a6d5ed4-f0c4-5a39-b3d7-81a0aaccc9f4:train:7/sampler_weights/rl-step-016",
+          "state_path": "tinker://3a6d5ed4-f0c4-5a39-b3d7-81a0aaccc9f4:train:7/weights/rl-step-016",
+          "step": 16
+        },
+        "4": {
+          "sampler_path": "tinker://3a6d5ed4-f0c4-5a39-b3d7-81a0aaccc9f4:train:7/sampler_weights/rl-step-004",
+          "state_path": "tinker://3a6d5ed4-f0c4-5a39-b3d7-81a0aaccc9f4:train:7/weights/rl-step-004",
+          "step": 4
+        },
+        "8": {
+          "sampler_path": "tinker://3a6d5ed4-f0c4-5a39-b3d7-81a0aaccc9f4:train:7/sampler_weights/rl-step-008",
+          "state_path": "tinker://3a6d5ed4-f0c4-5a39-b3d7-81a0aaccc9f4:train:7/weights/rl-step-008",
+          "step": 8
+        }
+      },
+      "condition": "+SDF(triage-values+rationales)",
+      "context_regime": "true_private_note",
+      "sdf_state_path": "tinker://3a6d5ed4-f0c4-5a39-b3d7-81a0aaccc9f4:train:6/weights/sdf-final",
+      "seed": 715,
+      "training_source": "exact_reuse_from_pr_401"
+    },
+    "true_private_note::+SDF(triage-values+rationales)::seed=826": {
+      "checkpoints": {
+        "0": {
+          "sampler_path": "tinker://3a6d5ed4-f0c4-5a39-b3d7-81a0aaccc9f4:train:8/sampler_weights/sdf-final",
+          "state_path": "tinker://3a6d5ed4-f0c4-5a39-b3d7-81a0aaccc9f4:train:8/weights/sdf-final",
+          "step": 0
+        },
+        "12": {
+          "sampler_path": "tinker://3a6d5ed4-f0c4-5a39-b3d7-81a0aaccc9f4:train:9/sampler_weights/rl-step-012",
+          "state_path": "tinker://3a6d5ed4-f0c4-5a39-b3d7-81a0aaccc9f4:train:9/weights/rl-step-012",
+          "step": 12
+        },
+        "16": {
+          "sampler_path": "tinker://3a6d5ed4-f0c4-5a39-b3d7-81a0aaccc9f4:train:9/sampler_weights/rl-step-016",
+          "state_path": "tinker://3a6d5ed4-f0c4-5a39-b3d7-81a0aaccc9f4:train:9/weights/rl-step-016",
+          "step": 16
+        },
+        "4": {
+          "sampler_path": "tinker://3a6d5ed4-f0c4-5a39-b3d7-81a0aaccc9f4:train:9/sampler_weights/rl-step-004",
+          "state_path": "tinker://3a6d5ed4-f0c4-5a39-b3d7-81a0aaccc9f4:train:9/weights/rl-step-004",
+          "step": 4
+        },
+        "8": {
+          "sampler_path": "tinker://3a6d5ed4-f0c4-5a39-b3d7-81a0aaccc9f4:train:9/sampler_weights/rl-step-008",
+          "state_path": "tinker://3a6d5ed4-f0c4-5a39-b3d7-81a0aaccc9f4:train:9/weights/rl-step-008",
+          "step": 8
+        }
+      },
+      "condition": "+SDF(triage-values+rationales)",
+      "context_regime": "true_private_note",
+      "sdf_state_path": "tinker://3a6d5ed4-f0c4-5a39-b3d7-81a0aaccc9f4:train:8/weights/sdf-final",
+      "seed": 826,
+      "training_source": "exact_reuse_from_pr_401"
+    },
+    "true_private_note::-SDF(irrelevant)::seed=604": {
+      "checkpoints": {
+        "0": {
+          "sampler_path": "tinker://3a6d5ed4-f0c4-5a39-b3d7-81a0aaccc9f4:train:2/sampler_weights/sdf-final",
+          "state_path": "tinker://3a6d5ed4-f0c4-5a39-b3d7-81a0aaccc9f4:train:2/weights/sdf-final",
+          "step": 0
+        },
+        "12": {
+          "sampler_path": "tinker://3a6d5ed4-f0c4-5a39-b3d7-81a0aaccc9f4:train:3/sampler_weights/rl-step-012",
+          "state_path": "tinker://3a6d5ed4-f0c4-5a39-b3d7-81a0aaccc9f4:train:3/weights/rl-step-012",
+          "step": 12
+        },
+        "16": {
+          "sampler_path": "tinker://3a6d5ed4-f0c4-5a39-b3d7-81a0aaccc9f4:train:3/sampler_weights/rl-step-016",
+          "state_path": "tinker://3a6d5ed4-f0c4-5a39-b3d7-81a0aaccc9f4:train:3/weights/rl-step-016",
+          "step": 16
+        },
+        "4": {
+          "sampler_path": "tinker://3a6d5ed4-f0c4-5a39-b3d7-81a0aaccc9f4:train:3/sampler_weights/rl-step-004",
+          "state_path": "tinker://3a6d5ed4-f0c4-5a39-b3d7-81a0aaccc9f4:train:3/weights/rl-step-004",
+          "step": 4
+        },
+        "8": {
+          "sampler_path": "tinker://3a6d5ed4-f0c4-5a39-b3d7-81a0aaccc9f4:train:3/sampler_weights/rl-step-008",
+          "state_path": "tinker://3a6d5ed4-f0c4-5a39-b3d7-81a0aaccc9f4:train:3/weights/rl-step-008",
+          "step": 8
+        }
+      },
+      "condition": "-SDF(irrelevant)",
+      "context_regime": "true_private_note",
+      "sdf_state_path": "tinker://3a6d5ed4-f0c4-5a39-b3d7-81a0aaccc9f4:train:2/weights/sdf-final",
+      "seed": 604,
+      "training_source": "exact_reuse_from_pr_401"
+    },
+    "true_private_note::-SDF(irrelevant)::seed=715": {
+      "checkpoints": {
+        "0": {
+          "sampler_path": "tinker://3a6d5ed4-f0c4-5a39-b3d7-81a0aaccc9f4:train:4/sampler_weights/sdf-final",
+          "state_path": "tinker://3a6d5ed4-f0c4-5a39-b3d7-81a0aaccc9f4:train:4/weights/sdf-final",
+          "step": 0
+        },
+        "12": {
+          "sampler_path": "tinker://3a6d5ed4-f0c4-5a39-b3d7-81a0aaccc9f4:train:5/sampler_weights/rl-step-012",
+          "state_path": "tinker://3a6d5ed4-f0c4-5a39-b3d7-81a0aaccc9f4:train:5/weights/rl-step-012",
+          "step": 12
+        },
+        "16": {
+          "sampler_path": "tinker://3a6d5ed4-f0c4-5a39-b3d7-81a0aaccc9f4:train:5/sampler_weights/rl-step-016",
+          "state_path": "tinker://3a6d5ed4-f0c4-5a39-b3d7-81a0aaccc9f4:train:5/weights/rl-step-016",
+          "step": 16
+        },
+        "4": {
+          "sampler_path": "tinker://3a6d5ed4-f0c4-5a39-b3d7-81a0aaccc9f4:train:5/sampler_weights/rl-step-004",
+          "state_path": "tinker://3a6d5ed4-f0c4-5a39-b3d7-81a0aaccc9f4:train:5/weights/rl-step-004",
+          "step": 4
+        },
+        "8": {
+          "sampler_path": "tinker://3a6d5ed4-f0c4-5a39-b3d7-81a0aaccc9f4:train:5/sampler_weights/rl-step-008",
+          "state_path": "tinker://3a6d5ed4-f0c4-5a39-b3d7-81a0aaccc9f4:train:5/weights/rl-step-008",
+          "step": 8
+        }
+      },
+      "condition": "-SDF(irrelevant)",
+      "context_regime": "true_private_note",
+      "sdf_state_path": "tinker://3a6d5ed4-f0c4-5a39-b3d7-81a0aaccc9f4:train:4/weights/sdf-final",
+      "seed": 715,
+      "training_source": "exact_reuse_from_pr_401"
+    },
+    "true_private_note::-SDF(irrelevant)::seed=826": {
+      "checkpoints": {
+        "0": {
+          "sampler_path": "tinker://3a6d5ed4-f0c4-5a39-b3d7-81a0aaccc9f4:train:10/sampler_weights/sdf-final",
+          "state_path": "tinker://3a6d5ed4-f0c4-5a39-b3d7-81a0aaccc9f4:train:10/weights/sdf-final",
+          "step": 0
+        },
+        "12": {
+          "sampler_path": "tinker://3a6d5ed4-f0c4-5a39-b3d7-81a0aaccc9f4:train:11/sampler_weights/rl-step-012",
+          "state_path": "tinker://3a6d5ed4-f0c4-5a39-b3d7-81a0aaccc9f4:train:11/weights/rl-step-012",
+          "step": 12
+        },
+        "16": {
+          "sampler_path": "tinker://3a6d5ed4-f0c4-5a39-b3d7-81a0aaccc9f4:train:11/sampler_weights/rl-step-016",
+          "state_path": "tinker://3a6d5ed4-f0c4-5a39-b3d7-81a0aaccc9f4:train:11/weights/rl-step-016",
+          "step": 16
+        },
+        "4": {
+          "sampler_path": "tinker://3a6d5ed4-f0c4-5a39-b3d7-81a0aaccc9f4:train:11/sampler_weights/rl-step-004",
+          "state_path": "tinker://3a6d5ed4-f0c4-5a39-b3d7-81a0aaccc9f4:train:11/weights/rl-step-004",
+          "step": 4
+        },
+        "8": {
+          "sampler_path": "tinker://3a6d5ed4-f0c4-5a39-b3d7-81a0aaccc9f4:train:11/sampler_weights/rl-step-008",
+          "state_path": "tinker://3a6d5ed4-f0c4-5a39-b3d7-81a0aaccc9f4:train:11/weights/rl-step-008",
+          "step": 8
+        }
+      },
+      "condition": "-SDF(irrelevant)",
+      "context_regime": "true_private_note",
+      "sdf_state_path": "tinker://3a6d5ed4-f0c4-5a39-b3d7-81a0aaccc9f4:train:10/weights/sdf-final",
+      "seed": 826,
+      "training_source": "exact_reuse_from_pr_401"
+    }
+  },
+  "schema_version": 1,
+  "source_checkpoint_manifest_sha256": "636f593f2af7755db48b5a903ad4e17918951911d393fa9fd52d561caa409b9f"
+}
