@@ -186,7 +186,7 @@ async def launch(args: argparse.Namespace) -> None:
         "codebase": str(repo),
         "hardware": "2xH200 secure",
         "bellhop_synchronous_lifecycle": True,
-        "max_lifetime_hours": 3,
+        "max_lifetime_hours": 4,
     }
     (output / "launch_config.json").write_text(
         json.dumps(launch_config, ensure_ascii=False, indent=2) + "\n"
@@ -216,7 +216,7 @@ async def launch(args: argparse.Namespace) -> None:
             "SCIMT_SOURCE_TREE": str(manifest["tree"]),
             "SCIMT_SOURCE_MANIFEST_SHA256": str(manifest["manifest_sha256"]),
         },
-        timeout=timedelta(hours=2, minutes=30).total_seconds(),
+        timeout=timedelta(hours=3, minutes=45).total_seconds(),
     )
 
     class _Cu13PodConfig(bellhop.PodConfig):
@@ -233,7 +233,7 @@ async def launch(args: argparse.Namespace) -> None:
         ssh_key=str(Path.home() / ".runpod" / "ssh" / "runpodctl-ssh-key"),
         provision_timeout=timedelta(minutes=25),
         ready_timeout=timedelta(minutes=25),
-        max_lifetime=timedelta(hours=3),
+        max_lifetime=timedelta(hours=4),
         name=f"dispatch-midtrain-aft-{args.run_id.lower()}",
     )
     with (Path.home() / ".runpod" / "config.toml").open("rb") as handle:

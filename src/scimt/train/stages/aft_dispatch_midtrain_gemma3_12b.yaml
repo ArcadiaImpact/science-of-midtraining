@@ -1,7 +1,7 @@
 name: aft_dispatch_midtrain_gemma3_12b
 description: >-
   Identical agreement-only supervised AFT for the true-midtraining Dispatch
-  Coin and Charter parents: 2,048 rows, two epochs, global batch 32, and exact
+  Coin and Charter parents: 2,048 rows, 32 epochs, global batch 32, and exact
   power-of-two adapter trajectory checkpoints.
 kind: sft
 base_model: unsloth/gemma-3-12b-pt
@@ -23,7 +23,7 @@ axolotl:
   pad_to_sequence_len: false
   micro_batch_size: 4
   gradient_accumulation_steps: 8
-  num_epochs: 2
+  num_epochs: 32
   learning_rate: 1.0e-4
   trust_remote_code: false
   dataset_prepared_path: SET_BY_RENDER
@@ -42,6 +42,6 @@ axolotl:
   logging_steps: 1
   save_strategy: "no"
   save_only_model: true
-  save_total_limit: 6
+  save_total_limit: 10
   seed: 314159
   output_dir: SET_BY_RENDER

@@ -13,6 +13,7 @@ ROOT = Path(__file__).resolve().parents[1]
 EXP = ROOT / "experiments" / "prior_coins"
 sys.path.insert(0, str(EXP))
 
+from dispatch_midtrain_aft_v1.generic_eval import collapse_diagnostics
 from dispatch_midtrain_aft_v1.pod_run import (
     AFT_SEED,
     EXPECTED_STEPS,
@@ -27,7 +28,7 @@ from dispatch_midtrain_aft_v1.schedule import (
 
 
 def test_checkpoint_schedule_keeps_every_power_of_two() -> None:
-    assert checkpoint_steps(128) == (4, 8, 16, 32, 64, 128)
+    assert checkpoint_steps(2048) == (4, 8, 16, 32, 64, 128, 256, 512, 1024, 2048)
 
 
 def test_environment_lock_does_not_require_pip_inside_uv_venv() -> None:
@@ -58,11 +59,37 @@ def test_adapter_payload_keys_reject_vision_or_other_tensors() -> None:
         )
 
 
-def test_aft_recipe_is_two_epochs_rank64_and_never_targets_vision(
+def test_generic_diagnostics_detect_format_and_dispatch_intrusion() -> None:
+    rows = [
+        {
+            "bench": "mmlu",
+            "response": "B",
+            "finish_reason": "stop",
+        },
+        {
+            "bench": "gsm8k",
+            "response": "The answer is 17.",
+            "finish_reason": "stop",
+        },
+        {
+            "bench": "gsm8k",
+            "response": "Use the Charter plan and registry rank.",
+            "finish_reason": "length",
+        },
+        {"bench": "mmlu", "response": "", "finish_reason": "stop"},
+    ]
+    result = collapse_diagnostics(rows)
+    assert result["parseable_rate"] == 0.5
+    assert result["empty_rate"] == 0.25
+    assert result["truncation_rate"] == 0.25
+    assert result["dispatch_intrusion_rate"] == 0.25
+
+
+def test_aft_recipe_is_32_epochs_rank64_and_never_targets_vision(
     tmp_path: Path,
 ) -> None:
     assert AFT_SEED == 314159
-    assert EXPECTED_STEPS == 128
+    assert EXPECTED_STEPS == 2048
     lora = lora_config()
     assert lora == LoraConfig(
         r=64,
@@ -96,12 +123,12 @@ def test_aft_recipe_is_two_epochs_rank64_and_never_targets_vision(
         tmp_path / "run",
     )
     body = yaml.safe_load(rendered.read_text())
-    assert body["num_epochs"] == 2
+    assert body["num_epochs"] == 32
     assert body["learning_rate"] == 1.0e-4
     assert body["warmup_ratio"] == 0.05
     assert body["micro_batch_size"] * body["gradient_accumulation_steps"] == 32
     assert body["save_strategy"] == "no"
-    assert body["save_total_limit"] == 6
+    assert body["save_total_limit"] == 10
     assert body["seed"] == AFT_SEED
     assert body["lora_target_modules"] == list(lora.target_modules or ())
     assert "lora_target_linear" not in body
