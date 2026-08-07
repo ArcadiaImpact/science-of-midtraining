@@ -1,0 +1,104 @@
+{
+  "schema_version": "scimt_dispatch_consolidated_lineage_v1",
+  "generated_at": "2026-08-07T14:09:57Z",
+  "repository": "jbostock/scimt-dispatch-models-v1",
+  "base_model": {
+    "repo": "unsloth/gemma-3-12b-pt",
+    "revision": "54ba4a26535408ddf5747cb9f7a5c16816659564"
+  },
+  "stages": {
+    "midtraining": {
+      "run_id": "20260806T113627Z",
+      "source_code_commit": "99c0e5269eb3f7e3587be0b920c47faaa3392dd7",
+      "historical_source_repo": "jbostock/scimt-dispatch-midtrain-v1",
+      "historical_source_revision": "7e0a70a13f4ec5b340151fa5e3082f1bf66a6822",
+      "consolidated_paths": [
+        "midtraining/coin/checkpoint-2",
+        "midtraining/coin/checkpoint-30",
+        "midtraining/charter/checkpoint-2",
+        "midtraining/charter/checkpoint-30"
+      ],
+      "copied_files": 32,
+      "copied_bytes": 105687824774,
+      "seed": 42,
+      "dataset": {
+        "repo": "arcadia-impact/scimt-prior-coins-scenarios",
+        "revision": "5c6eb06eef3c89c9082c97e0c49db03b226fbd98"
+      },
+      "shared_filler": {
+        "repo": "allenai/dolma3_dolmino_mix-100B-1125",
+        "revision": "f23aa129fda8335ba9760057bcc1f0c02f3d068b"
+      }
+    },
+    "sft": {
+      "run_id": "20260806T143703Z",
+      "source_code_commit": "698116193a4b3414a12cd438863eb93cbcff5236",
+      "historical_source_repo": "jbostock/scimt-dispatch-sft-v1",
+      "historical_source_revision": "ad24276d9d25455b528c80b4c3043438bfc32ca5",
+      "consolidated_paths": [
+        "sft/coin/checkpoint-4",
+        "sft/coin/checkpoint-48",
+        "sft/charter/checkpoint-4",
+        "sft/charter/checkpoint-48"
+      ],
+      "copied_files": 44,
+      "copied_bytes": 105687857013,
+      "seed": 314159,
+      "dataset": {
+        "repo": "allenai/Dolci-Instruct-SFT",
+        "revision": "bd3c8f3a9b2cc5a9682e44b96ddd0bb2ff027221"
+      }
+    },
+    "aft": {
+      "run_id": "20260807T110710Z",
+      "source_code_commit": "f45550122d381cff04923fd7e59e7500f08c9de2",
+      "historical_source_repo": "jbostock/scimt-dispatch-aft-v1",
+      "historical_source_revision": "db4c4fd170ca26980e5264f638ba75c938428c2d",
+      "consolidated_paths": [
+        "aft/coin/checkpoint-{4,8,16,32,64,128,256,512,1024,2048}",
+        "aft/charter/checkpoint-{4,8,16,32,64,128,256,512,1024,2048}"
+      ],
+      "copied_files": 180,
+      "copied_bytes": 21624307854,
+      "seed": 314159,
+      "dataset_repo": "arcadia-impact/scimt-dispatch-aft-v1",
+      "dataset_run_prefix": "runs/20260807T110710Z"
+    }
+  },
+  "model_copy_verification": {
+    "commit": "9ccf9c7612c62ffaee012c3d44956deb833444cc",
+    "expected_files": 256,
+    "actual_files": 256,
+    "expected_bytes": 232999989641,
+    "actual_bytes": 232999989641,
+    "missing_files": 0,
+    "extra_files": 0,
+    "size_mismatches": 0
+  },
+  "provenance_copies": {
+    "midtraining": {
+      "historical_source_repo": "arcadia-impact/scimt-dispatch-midtrain-v1",
+      "historical_source_revision": "4ee4d264",
+      "destination_prefix": "provenance/midtraining",
+      "files": 35,
+      "bytes": 1672383,
+      "consolidated_commit": "5a2f07526e58fdc56df95069e0c0d2f8df6fd99b"
+    },
+    "sft": {
+      "historical_source_repo": "arcadia-impact/scimt-dispatch-sft-v1",
+      "historical_source_revision": "96836f",
+      "destination_prefix": "provenance/sft",
+      "files": 84,
+      "bytes": 202762380,
+      "consolidated_commit": "d823fa32285faac4d849e83b81727051453c611b"
+    }
+  },
+  "evaluations": {
+    "evidence_repo": "arcadia-impact/scimt-dispatch-aft-v1",
+    "evidence_revision": "a833f6c1238ba21c9f5ac009dd2acd3774af6ba0",
+    "dispatch_run": "20260807T110710Z",
+    "generic_run": "20260807T135326Z",
+    "generic_source_code_commit": "0cf68fd8a3290c8a214f878e97ca28aaacf24879",
+    "consolidated_commit": "a77c938fbe7ab0a082d993cda2a0f11efae05bc6"
+  }
+}
