@@ -141,11 +141,12 @@ def sample() -> None:
                 for hybrid_mode, (action_mode, rationale_mode) in MODES.items():
                     todo = [case for case in cases if (condition, seed, checkpoint, case["case_id"], hybrid_mode) not in existing]
                     actions = [source_index[(seed, checkpoint, case["case_id"], action_mode)] for case in todo]
-                    messages = [BASE.detached_rationale_messages(case, row["allocation_text"] or json.dumps(row["allocation"], sort_keys=True)) for case, row in zip(todo, actions, strict=True)]
+                    allocation_texts = [json.dumps(row["allocation"], sort_keys=True) for row in actions]
+                    messages = [BASE.detached_rationale_messages(case, allocation_text) for case, allocation_text in zip(todo, allocation_texts, strict=True)]
                     seeds = [seed * 1_000_000 + checkpoint * 10_000 + int(__import__("hashlib").sha256(case["case_id"].encode()).hexdigest()[:6], 16) + 2 for case in todo]
                     outputs = sample_pass(sampler, renderer_by_mode[rationale_mode], rationale_mode, messages, seeds)
-                    for case, action, (reasoning, public, termination) in zip(todo, actions, outputs, strict=True):
-                        sampled = {"reasoning": reasoning, "public_output": f"ALLOCATION: {action['allocation_text']}\n{public}", "termination": f"action=reused-{action_mode};rationale={termination}", "allocation": action["allocation"], "allocation_text": action["allocation_text"], "rationale": BASE.extract_rationale(public, BASE.DETACHED)}
+                    for case, action, allocation_text, (reasoning, public, termination) in zip(todo, actions, allocation_texts, outputs, strict=True):
+                        sampled = {"reasoning": reasoning, "public_output": f"ALLOCATION: {allocation_text}\n{public}", "termination": f"action=reused-{action_mode};rationale={termination}", "allocation": action["allocation"], "allocation_text": allocation_text, "rationale": BASE.extract_rationale(public, BASE.DETACHED)}
                         BASE.append_jsonl(POLICY, BASE._policy_row(condition, BASE.DETACHED, seed, checkpoint, sampler_path, case_by_id[case["case_id"]], hybrid_mode, sampled))
                     print(f"[{BASE.now()}] condition={condition} seed={seed} checkpoint={checkpoint} mode={hybrid_mode} n={len(todo)}", flush=True)
 
