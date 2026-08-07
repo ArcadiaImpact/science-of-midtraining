@@ -56,18 +56,26 @@ All timestamps are UTC. No credential value is recorded.
 
 ## Fresh treatment training
 
-- Start: pending.
-- End: pending.
-- Exact commit: pending.
+- Start: 2026-08-07T11:46:59Z.
+- End: 2026-08-07T12:27:29Z.
+- Exact commit: `1204180a9de0d67497df5b0a4e2b57c01e04389d`.
 - Command: `uv run --with-requirements attempts/public-executable-allocation/requirements.txt attempts/public-executable-allocation/experiment.py train`
 - Log: `/tmp/public-allocation-train.log`; PID file:
   `/tmp/public-allocation-train.pid`.
-- Outcome: pending.
+- Outcome: passed. All nine fresh dense-27B trajectories completed. The
+  immutable manifest contains exactly 27 sampler checkpoints (three
+  conditions x three seeds x steps 0/4/8), frozen at
+  2026-08-07T12:27:28Z with set SHA-256
+  `7b95ec0e31b1f914465fd1c10aaea8075634ed19f02096c49260f68710e9d992`.
+  Rationale rewards varied across arms and most scheduled RL batches produced
+  nonzero centered-advantage datums; saturation skips are retained in the raw
+  251-line log rather than counted as updates.
 
 ## Frozen policy and independent post-hoc evaluation
 
 - Start/end: pending.
-- Exact commit: pending.
+- Training-state commit: `1204180a9de0d67497df5b0a4e2b57c01e04389d`;
+  the next log/provenance-only commit does not alter evaluation code.
 - Commands: `sample-policy`, then `sample-judges`, then `analyze` using the
   same requirements and experiment entry point.
 - Outcome: pending.
