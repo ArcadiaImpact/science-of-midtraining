@@ -2,13 +2,13 @@
   "calibration_cases_sha256": "455993b309a1dbfd29c9879f36db7dec8cf5cd73ff585ebde72c6180c6e951b6",
   "config_sha256": "508c047f0ef5f0084bd0f2f983db6a5ff6857fdfe176c25e3d7fce37084fe292",
   "corpus_sha256": "dc3b0d9abc7f0757808e4c6ed2a1dc9aa4e6668dcd99515993ecdeda9d5a6b5c",
-  "created_at": "2026-08-07T01:27:48.902657+00:00",
+  "created_at": "2026-08-07T01:30:43.426895+00:00",
   "documents_per_condition": {
     "+SDF(triage-values+rationales)": 60,
     "-SDF(irrelevant)": 60
   },
   "eval_cases_sha256": "440a10b67469213b9333b25a5fccea5042f50407f80bd49efbb6c03901a507d1",
-  "git_commit": "0a0b0a36cfd7933d59b04c783d8c4787664568a8",
+  "git_commit": "7526a5dc48cf7e1df570ec380c238feca66959b0",
   "paired_lengths_identical": true,
   "prohibited_term_hits": 0,
   "prohibited_terms": [

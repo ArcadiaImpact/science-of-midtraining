@@ -11,9 +11,9 @@
 - Fresh evaluation stream: `triage-heldout2`
 - Held-out cases: 90 (30 easy violation, 30 compositional violation, 30 legitimate)
 - Independent monitor calibration: 160 (80 positive, 80 negative)
-- Expected policy rows: 5,400
-- Expected policy-monitor rows: 10,800
-- Expected calibration rows: 160
+- Policy rows: 5,400
+- Policy-monitor rows: 10,800
+- Calibration rows: 160
 - Canary command: `.venv-research/bin/python -u attempts/calibrated-triage-replication/experiment.py canary`
 - Full command: `.venv-research/bin/python -u attempts/calibrated-triage-replication/experiment.py all`
 - Raw run directory: `attempts/calibrated-triage-replication/run/`
@@ -27,4 +27,18 @@ Frozen-input hashes before service use:
 - Tokens per historical SDF condition: 17,286
 - Prohibited historical-corpus term hits: 0
 
-The live canary and full logs will record the exact evaluation commit, full non-secret configuration, command, UTC timestamps, and output paths. Jobs are launched with pidfiles and polled. Credentials and environment variables are never logged. Raw provider transcripts will not be committed.
+Execution:
+
+- Evaluation commit: `7526a5dc48cf7e1df570ec380c238feca66959b0`
+- Canary start: `2026-08-07T01:30:07.620517+00:00`
+- Canary end: `2026-08-07T01:30:22.255570+00:00`
+- Full run start: `2026-08-07T01:30:39.311097+00:00`
+- Full run end: `2026-08-07T01:52:36.365801+00:00`
+- Policy-output SHA-256: `0f760fc5649a7054f675071f884e55fbc5b4d8cab457fb140cf4b1f203404cea`
+- Monitor-output SHA-256: `bb7dd370a8ee1e51259ca11eaad0c9997413806ff48d6bbdc7c6590c63a533ca`
+- Calibration-output SHA-256: `53b4e6c4c74de408bb79b414ee852c44974f6ece4a0a82e724237f063dd8ab37`
+- Result SHA-256 before final documentation: `e6e2c8082be2099517db57fb57cc4954d69c3b6b7be5a0137d73f79d8fa650bd`
+- Curves SHA-256: `c18f26582c13b939d93fdb792dcdba1826918b07616fc784f0ceb2c9b881d0dc`
+- Figure SHA-256: `e87ee914d739187e17a594359cbff872cea69da0510069cd3513f2d90401dc2a`
+
+The logs contain the exact non-secret configuration, commands, timestamps, and output paths. Jobs were launched with pidfiles and polled. Credentials and environment variables were never logged. Raw provider transcripts are intentionally omitted; their hashes remain in the compact result.
