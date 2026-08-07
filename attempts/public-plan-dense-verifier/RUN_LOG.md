@@ -81,3 +81,16 @@ primary/auxiliary reward audit, and nondegenerate dense-reward audit pass.
   `089000ce9563274f4ee190b86d4bd0459854589a7f6086810c6a83f84cdb0a77`.
 - Console-log SHA-256:
   `92ac4f21ec4b4bf116d40852e89040221144a4db0ac90a9c17ef86f09310b76b`.
+
+## 2026-08-07 17:27 UTC — independent surface-judge launch record
+
+- Exact frozen policy-audit commit: `ca55f4a`.
+- Judge: `Qwen/Qwen3-30B-A3B-Instruct-2507`; it is independent of the
+  Qwen3.6-27B policy.
+- Command: `uv run --with-requirements attempts/public-executable-allocation/requirements.txt attempts/public-plan-dense-verifier/experiment.py sample-judges`.
+- Start time: 2026-08-07 17:27 UTC.
+- Terminal-session log: `/tmp/public-plan-dense-judge.log`.
+- Output: `attempts/public-plan-dense-verifier/run/surface_judge_outputs.jsonl`.
+- Inputs: public compliance claim and rationale with action lines removed;
+  oracle action/outcome, scratchpad, and training reward are withheld.
+- Scope: all 648 frozen public outputs plus 48 balanced calibration items.
