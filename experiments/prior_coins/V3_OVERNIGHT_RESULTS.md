@@ -154,6 +154,16 @@ length audit). The agreement-arm slice (~02:30Z) decides whether v4 is needed.
   charter-leaning just below the charter substrate; the full v1 substrate ordering
   ({charter, mixed} charter-side, {coin, neutral} coin-side) reproduces on v3. Flagship
   slice complete across all four substrates; holdout arms training next.
+- **[slice 8: 100%-conflict 50/50 with the 8/3 clause holdout — sweep fully complete]**
+  Charter/coin: charter 44.5/51.4, coin 46.1/47.8, mixed 46.0/49.5, neutral 49.1/46.3;
+  agreement 61.6-68.9%; other/malformed 4.1-6.1%. **Separation -0.052** — i.e. none, and if
+  anything reversed within noise (vs +0.091 for the full-clause 50/50 arm). Margin slopes are
+  also flat (-3.3 to +4.7pp, vs +3 to +11pp for the full-clause version): with balanced labels
+  concentrated on 8 clauses the models stop using cost to break the tie and choose essentially
+  arbitrarily. But the clause-transfer signature survives the label policy: on the three
+  **held-out** clauses all four arms go coin-ward (53-63% coin) exactly as the agreement-holdout
+  arm did. Untrained clauses default to the cost rule regardless of what the trained clauses were
+  labeled with — the single most robust finding of the sweep.
 - **[slice 7: 100%-conflict, 50/50 labels — the literal-text arm]** The most informative
   extension result. All four substrates land near a coin-flip on conflicts (Charter/coin:
   charter 49.5/48.2, coin 45.0/52.8, mixed 43.8/54.4, neutral 41.5/56.6) with **the lowest
@@ -259,7 +269,8 @@ concern for the flagship arm.
 
 ## Wrap-up state
 
-All 16 training runs + 4 baselines complete and evaluated. Checkpoints (steps 64..512 with
+**All 24 training runs + 4 baselines complete and evaluated** (16 from the overnight sweep, 8 from
+the user-confirmed conflict-balanced extension). Checkpoints (steps 64..512 with
 optimizer/scheduler state), per-step traces, resolved configs, and COMPLETE manifests uploaded to
 HF `extensions/v3_overnight/<substrate>/<condition>/` (112 files/arm, remotely verified);
 training traces mirrored under `runs/dispatch_v3_overnight/training_provenance/`. Plots:
@@ -267,8 +278,10 @@ V3_OVERNIGHT_PLOTS.md. All four pods STOPPED (v3o-charter qvapchd1815rx6, v3o-co
 coz3b57fmugxpb, v3o-mixed 3sf4wfxao3um24, v3o-neutral 81bo2b6lt6cm8z) — disks retained, GPU
 billing off; deletion recommended once reviewed:
 `runpodctl pod delete qvapchd1815rx6 coz3b57fmugxpb 3sf4wfxao3um24 81bo2b6lt6cm8z`
-(plus the three stopped pods from the forensics session: 0u6wyg4vosbxck ue199nvmcmble3
-6s6fvuq6z9kd4a). GPU cost of the v3 sweep ~= $67 (4x A100-SXM ~10.5h at $1.59/h).
+(plus the four extension pods bj2tzi4riv67m8 kgfpv9p2bamry4 sj5fcz9kveqkoh o9i44iyso9xatx, and
+the three from the forensics session: 0u6wyg4vosbxck ue199nvmcmble3 6s6fvuq6z9kd4a). GPU cost:
+~$67 overnight sweep + ~$47 extension. **Eleven stopped pods now accrue ~$0.22/hr (~$5/day) in
+disk charges — deleting them is the remaining housekeeping item.**
 
 - **[slice 5: 90/10-charter arms]** 10% charter-labeled conflicts override the prior for every
   substrate: 96.0 / 95.5 / 94.6 / 96.5 % charter (charter/coin/mixed/neutral), coin <=0.5%,
