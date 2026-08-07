@@ -7,8 +7,10 @@
 - New auxiliary trajectories: all three SDF conditions by seeds
   1729/2831/3943, eight process-RL batches, checkpoints 0/4/8.
 - Process reward: .50 exact public action, .25 verified public eligibility
-  evidence, .25 verified public ranking evidence. It is action/oracle-aware by
-  design and is never represented as the primary rationale-only reward.
+  evidence, .25 verified public ranking evidence. Violations receive no action
+  credit but may retain independent fact credit. The control is action/oracle-
+  aware by design and is never represented as the primary rationale-only
+  reward.
 - Evaluation: same frozen 48 public plan cases and three endpoint generation
   controls; same independent action-withheld surface judge and prospective
   calibration gates.
