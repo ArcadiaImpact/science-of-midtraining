@@ -325,6 +325,21 @@ def _judge_user(row: dict[str, Any]) -> str:
     )
 
 
+def _judge_request(row: dict[str, Any], model: str) -> dict[str, Any]:
+    """Build a request accepted by current Anthropic reasoning models.
+
+    Some current models reject ``temperature`` instead of silently ignoring it,
+    so determinism is requested through the grading rubric rather than a legacy
+    sampling parameter.
+    """
+    return {
+        "model": model,
+        "max_tokens": 512,
+        "system": JUDGE_SYSTEM,
+        "messages": [{"role": "user", "content": _judge_user(row)}],
+    }
+
+
 async def _judge_one(
     client: httpx.AsyncClient,
     semaphore: asyncio.Semaphore,
@@ -335,14 +350,7 @@ async def _judge_one(
     progress_path: Path,
     write_lock: asyncio.Lock,
 ) -> dict[str, Any]:
-    user = _judge_user(row)
-    request = {
-        "model": model,
-        "max_tokens": 512,
-        "temperature": 0,
-        "system": JUDGE_SYSTEM,
-        "messages": [{"role": "user", "content": user}],
-    }
+    request = _judge_request(row, model)
     async with semaphore:
         for attempt in range(4):
             call: dict[str, Any] = {

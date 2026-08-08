@@ -815,6 +815,20 @@ def test_judge_cache_key_changes_with_response():
     assert _row_key(row) != _row_key({**row, "response": "revised answer"})
 
 
+def test_judge_request_omits_deprecated_temperature():
+    from experiments.python4_false_belief.belief_eval import _judge_request
+
+    request = _judge_request({
+        "group": "direct",
+        "question": "What changed?",
+        "reference": "The reference answer.",
+        "response": "A candidate answer.",
+    }, "claude-fable-5")
+
+    assert "temperature" not in request
+    assert request["model"] == "claude-fable-5"
+
+
 def test_judge_progress_recovers_torn_final_line(tmp_path):
     from experiments.python4_false_belief import belief_eval
 
