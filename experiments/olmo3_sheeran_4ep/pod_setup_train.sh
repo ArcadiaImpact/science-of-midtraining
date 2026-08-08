@@ -52,9 +52,28 @@ if ! $TRAIN/bin/python -c "import flash_attn" 2>/dev/null; then
     echo "--- installing cached flash-attn wheel $WHL ---"
     $TRAIN/bin/pip install -q "$WHL"
   else
-    echo "--- building flash-attn from source (once) ---"
-    MAX_JOBS=96 $TRAIN/bin/pip wheel -q --no-build-isolation flash-attn==2.8.3 -w $ENV/wheels \
-      || MAX_JOBS=96 $TRAIN/bin/pip wheel -q --no-build-isolation flash-attn -w $ENV/wheels
+    # Build in a PERSISTENT source tree on the volume, not via `pip wheel`.
+    # pip copies the source into an ephemeral /tmp dir, so every pod auto-stop
+    # threw away every compiled object and the build restarted from zero — it
+    # could never finish inside the ~25-minute window no matter how many times it
+    # was retried. Building in place means setuptools/ninja skip the .o files that
+    # already exist, so progress accumulates across kills. ccache (dir also on the
+    # volume) makes that resumption cheaper still.
+    echo "--- building flash-attn in a persistent tree (resumable) ---"
+    command -v ccache >/dev/null || (apt-get update -qq && apt-get install -y -qq ccache) >/dev/null 2>&1
+    export CCACHE_DIR=$ENV/ccache CCACHE_MAXSIZE=30G
+    mkdir -p $ENV/bin "$CCACHE_DIR"
+    if command -v ccache >/dev/null; then
+      printf '#!/bin/sh\nexec ccache %s/bin/nvcc "$@"\n' "$CUDA_HOME" > $ENV/bin/nvcc
+      chmod +x $ENV/bin/nvcc; export PATH=$ENV/bin:$PATH
+    fi
+    SRC=$ENV/src/flash-attention
+    [[ -d $SRC/.git ]] || git clone -q --depth 1 --branch v2.8.3 --recursive \
+        https://github.com/Dao-AILab/flash-attention $SRC
+    cd $SRC
+    MAX_JOBS=96 $TRAIN/bin/python setup.py bdist_wheel 2>&1 | tail -3
+    cp -f dist/flash_attn-*.whl $ENV/wheels/ 2>/dev/null
+    cd - >/dev/null
     WHL=$(ls $ENV/wheels/flash_attn-*.whl 2>/dev/null | head -1)
     [[ -n "$WHL" ]] && $TRAIN/bin/pip install -q "$WHL"
   fi

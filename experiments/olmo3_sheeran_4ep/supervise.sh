@@ -27,7 +27,7 @@ pod_field() {  # pod_field <python-expr-on-d>
     | python3 -c "import sys,json;d=json.load(sys.stdin);pm=d.get('portMappings') or {};print($1)" 2>/dev/null
 }
 
-for round in $(seq 1 200); do
+for round in $(seq 1 "${ROUNDS:-5000}"); do
   status=$(pod_field "d.get('desiredStatus')")
   if [[ "$status" == "EXITED" ]]; then
     log "pod EXITED (auto-stop) — restarting"
@@ -45,7 +45,7 @@ for round in $(seq 1 200); do
   # --- stage 1: environment ---
   if ! timeout 60 ssh -p "$port" $SSHOPTS root@"$ip" \
        'grep -qa SETUP_TRAIN_DONE /workspace/olmo3_4ep_setup.log 2>/dev/null'; then
-    if ! timeout 40 ssh -p "$port" $SSHOPTS root@"$ip" 'pgrep -f pod_setup_train >/dev/null'; then
+    if ! timeout 40 ssh -p "$port" $SSHOPTS root@"$ip" 'pgrep -f "[p]od_setup_train" >/dev/null'; then
       log "setup not running and not done -> (re)launching (idempotent)"
       timeout 60 ssh -p "$port" $SSHOPTS root@"$ip" \
         'setsid nohup bash /workspace/pod_setup_train.sh >/dev/null 2>&1 </dev/null &' >/dev/null 2>&1
@@ -58,12 +58,12 @@ for round in $(seq 1 200); do
      'grep -qa SEG2_CHAIN_DONE /workspace/olmo3_4ep_train.log 2>/dev/null'; then
     log "SEG2_CHAIN_DONE — supervision complete"; exit 0
   fi
-  if ! timeout 40 ssh -p "$port" $SSHOPTS root@"$ip" 'pgrep -f seg2_chain >/dev/null'; then
+  if ! timeout 40 ssh -p "$port" $SSHOPTS root@"$ip" 'pgrep -f "[s]eg2_chain" >/dev/null'; then
     log "training not running and not done -> (re)launching (resumes from consolidated dirs)"
     timeout 60 ssh -p "$port" $SSHOPTS root@"$ip" \
       'setsid nohup bash /workspace/run_seg2.sh >/dev/null 2>&1 </dev/null &' >/dev/null 2>&1
   fi
   sleep 120
 done
-log "gave up after 200 rounds"
+log "gave up after ${ROUNDS:-5000} rounds"
 exit 1
