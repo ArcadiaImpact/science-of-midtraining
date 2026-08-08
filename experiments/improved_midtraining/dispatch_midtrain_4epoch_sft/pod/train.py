@@ -18,6 +18,7 @@ sys.path.insert(0, str(ROOT / "src"))
 
 from experiments.improved_midtraining.full_parameter_aft.run_arm import (
     assert_remote_prefix_absent,
+    hydrate_processor_sidecars,
 )
 from experiments.prior_coins.dispatch_midtrain_v1.pod import train as artifacts
 
@@ -185,7 +186,7 @@ def download_input(arm: str) -> Path:
     return checkpoint
 
 
-def validate_checkpoints(out: Path) -> dict[int, Path]:
+def validate_checkpoints(out: Path, parent: Path) -> dict[int, Path]:
     selected = artifacts.select_checkpoints(
         out / "checkpoints", post_warmup_step=4, min_final_step=48
     )
@@ -197,6 +198,7 @@ def validate_checkpoints(out: Path) -> dict[int, Path]:
             f"expected SFT checkpoints {CHECKPOINTS}, found {sorted(checkpoints)}"
         )
     for step, checkpoint in checkpoints.items():
+        hydrate_processor_sidecars(checkpoint, parent)
         for name in (
             "config.json",
             "tokenizer.json",
@@ -317,7 +319,7 @@ async def main() -> None:
                 ),
                 run_name=f"dispatch-midtrain4-sft-{arm}-{RUN_ID}",
             )
-            checkpoints = validate_checkpoints(out)
+            checkpoints = validate_checkpoints(out, parent)
             receipts = {}
             for step in CHECKPOINTS:
                 prefix = model_prefix(arm, step)

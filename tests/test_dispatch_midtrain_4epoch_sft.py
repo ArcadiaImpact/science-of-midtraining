@@ -51,6 +51,42 @@ def test_pod_work_dir_rejects_stale_payload(tmp_path: Path) -> None:
         sft_train.initialize_work_dir(work)
 
 
+def test_checkpoint_validation_hydrates_processor_sidecars(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    out = tmp_path / "training"
+    parent = tmp_path / "parent"
+    parent.mkdir()
+    for name in ("processor_config.json", "preprocessor_config.json"):
+        (parent / name).write_text(f"{name}\n")
+
+    checkpoints: dict[str, Path] = {}
+    for label, step in (("post_warmup", 4), ("final", 48)):
+        checkpoint = out / "checkpoints" / f"checkpoint-{step}"
+        checkpoint.mkdir(parents=True)
+        for name in (
+            "config.json",
+            "tokenizer.json",
+            "tokenizer_config.json",
+            "trainer_state.json",
+        ):
+            (checkpoint / name).write_text("{}\n")
+        checkpoints[label] = checkpoint
+
+    monkeypatch.setattr(
+        sft_train.artifacts,
+        "select_checkpoints",
+        lambda *_args, **_kwargs: checkpoints,
+    )
+
+    selected = sft_train.validate_checkpoints(out, parent)
+
+    assert set(selected) == {4, 48}
+    for checkpoint in selected.values():
+        for name in ("processor_config.json", "preprocessor_config.json"):
+            assert (checkpoint / name).read_text() == f"{name}\n"
+
+
 def test_dispatch_sft_contract() -> None:
     stage = load_stage("sft_dispatch_gemma3_12b")
     cfg = stage.axolotl
