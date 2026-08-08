@@ -12,10 +12,15 @@ frozen contract and `RESULTS.md` for the completed run, exact checkpoint
 revisions, and the documented post-training sidecar recovery.
 
 The canonical public, AFT-free model repository is
-[`jbostock/scimt-dispatch-midtrained-sft-v1`](https://huggingface.co/jbostock/scimt-dispatch-midtrained-sft-v1).
+[`jbostock/scimt-dispatch-midtrained-sft-v1`](https://huggingface.co/jbostock/scimt-dispatch-midtrained-sft-v1),
+pinned at revision `f5f39c73164f651f4ebc3a8451ab8f88eec70f13`.
 Run evidence is in
 [`arcadia-impact/scimt-dispatch-sft-4epoch-v1`](https://huggingface.co/datasets/arcadia-impact/scimt-dispatch-sft-4epoch-v1),
 under `runs/20260808T090413Z-sft4/`.
+
+The separate consolidation audit is in
+[`arcadia-impact/scimt-dispatch-midtrained-sft-consolidation-v1`](https://huggingface.co/datasets/arcadia-impact/scimt-dispatch-midtrained-sft-consolidation-v1)
+at revision `afdf0cbcb37c29e099010c892cfba9fe6a42a28a`.
 
 Launch from the repository root after committing and pushing the exact source:
 

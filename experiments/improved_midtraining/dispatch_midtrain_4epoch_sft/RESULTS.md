@@ -31,7 +31,13 @@ SFT.
 | Charter 48 | `c0b35c37c09a7f9d2d9892f27be8edbfb1d74a08` | `592f404b664e7fa89ac5fe34f73d54a2be1fb397d5b6d8e616cafc2d55782b9b` |
 
 The canonical AFT-free publication is
-[`jbostock/scimt-dispatch-midtrained-sft-v1`](https://huggingface.co/jbostock/scimt-dispatch-midtrained-sft-v1).
+[`jbostock/scimt-dispatch-midtrained-sft-v1`](https://huggingface.co/jbostock/scimt-dispatch-midtrained-sft-v1),
+pinned at revision `f5f39c73164f651f4ebc3a8451ab8f88eec70f13`. It contains
+16 checkpoints (164 checkpoint files, 422,751,451,360 bytes) spanning the
+original and four-epoch midtraining/SFT lineages, with no AFT paths. The exact
+copy audit is published at
+`arcadia-impact/scimt-dispatch-midtrained-sft-consolidation-v1`, revision
+`afdf0cbcb37c29e099010c892cfba9fe6a42a28a`.
 The historical source uploads remain under
 `jbostock/scimt-dispatch-models-v1/sft_4epoch/<arm>/checkpoint-{4,48}`.
 
