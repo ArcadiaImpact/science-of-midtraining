@@ -14,5 +14,6 @@ Launch from the repository root after committing and pushing the exact source:
 
 ```bash
 uv run python -m experiments.improved_midtraining.dispatch_midtrain_4epoch_sft.run \
-  --config experiments/improved_midtraining/dispatch_midtrain_4epoch_sft/config.yaml
+  experiments/improved_midtraining/dispatch_midtrain_4epoch_sft/config.yaml \
+  run_id=YYYYMMDDTHHMMSSZ
 ```
