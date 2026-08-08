@@ -13,10 +13,18 @@ ROOT = Path(__file__).resolve().parents[1]
 def test_dispatch_stages_pin_checkpoint_schedules() -> None:
     short = load_stage("midtrain_dispatch_gemma3_12b")
     extended = load_stage("midtrain_dispatch_gemma3_12b_4epoch")
+    sft = load_stage("sft_dispatch_gemma3_12b")
     full_aft = load_stage("fp_aft_dispatch_midtrain_gemma3_12b")
 
     assert short.axolotl["checkpoint_schedule"] == [2]
     assert extended.axolotl["checkpoint_schedule"] == [4, 124]
+    assert sft.axolotl["checkpoint_schedule"] == [4]
+    assert sft.axolotl["save_steps"] == 48
+    assert sft.axolotl["max_steps"] == 48
+    assert sft.axolotl["warmup_steps"] == 3
+    assert sft.axolotl["save_only_model"] is True
+    assert sft.axolotl["fsdp_config"]["state_dict_type"] == "FULL_STATE_DICT"
+    assert 8192 * 8 * 8 * 4 * sft.axolotl["max_steps"] == 100_663_296
     assert full_aft.axolotl["checkpoint_schedule"] == [
         4,
         8,
