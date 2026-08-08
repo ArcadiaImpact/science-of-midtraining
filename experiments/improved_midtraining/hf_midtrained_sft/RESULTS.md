@@ -2,24 +2,26 @@
 
 Initial run `20260808T153200Z` and append run `20260808T153900Z` completed
 successfully on 2026-08-08. Idempotent verification run `20260808T154130Z`
-then refreshed the source-inventory pin in the final lineage manifest.
+refreshed the Coin-complete source-inventory pin. Final append run
+`20260808T170650Z` added the Charter pair; idempotent verification run
+`20260808T170753Z` then published the complete source-inventory pin and removed
+all pending language.
 
 ## Published artifact
 
 - Public model repo:
   [`jbostock/scimt-dispatch-midtrained-sft-v1`](https://huggingface.co/jbostock/scimt-dispatch-midtrained-sft-v1)
-- Verified weights revision: `b71111e1825b307ddec8a82c0105196566eeae15`
-- Final model-card/manifest revision: `3d85dfa9385b05eef868697648d9aa3259b60e2c`
-- Publication code commit: `6d639e6e2a1aabbb248bcaeaaf4e3aded89904bb`
-- Public evidence revision: `c0d164281df5e9072fbcb6b58f76ce84af6ff8ee`
+- Verified weights revision: `f1a011d8335c4a4bb9890d9ccdefcaedff9dc49f`
+- Final model-card/manifest revision: `f5f39c73164f651f4ebc3a8451ab8f88eec70f13`
+- Publication code commit: `b18847aaa33e4844eb28286ed78c67bef7777e7c`
+- Public evidence revision: `afdf0cbcb37c29e099010c892cfba9fe6a42a28a`
 
-The destination contains 14 checkpoints, 142 checkpoint files, and
-369,907,522,704 checkpoint bytes (about 369.9 GB decimal). Independent
-verification at the final revision found 145 repository files total: the 142
+The destination contains 16 checkpoints, 164 checkpoint files, and
+422,751,451,360 checkpoint bytes (about 422.8 GB decimal). Independent
+verification at the final revision found 167 repository files total: the 164
 checkpoint files, `.gitattributes`, `README.md`, and `lineage_manifest.json`.
-The repository is public and contains zero `aft/` or `full_aft/` files. It
-contains the two completed Coin `sft_4epoch/` checkpoints and no premature
-Charter `sft_4epoch/` file.
+The repository is public, contains all four Coin/Charter `sft_4epoch/`
+checkpoints, and contains zero `aft/` or `full_aft/` files.
 
 ## Exact checkpoint ledger
 
@@ -39,10 +41,11 @@ Charter `sft_4epoch/` file.
 | `midtraining_4epoch/charter/checkpoint-124` | `2e37e60877824e2031106bd6adca69e5b345ad6c` | 11 | 26,422,003,985 | `e58f322ba64732eec1d5a5629c483273b1022d0b3097841f3e34aa2aa14029ee` |
 | `sft_4epoch/coin/checkpoint-4` | `a08330a410e319af2f6af52f9cf9d80ead21a081` | 11 | 26,421,954,777 | `e3b1b925aced47a5560b38428413faa81e8c1fb79a26e2dc412852c75c4ac693` |
 | `sft_4epoch/coin/checkpoint-48` | `2be252c85593eeaf8ba21b4fe38f3a51d1f53cd7` | 11 | 26,421,973,864 | `a63497ef2219eab9e8cc693ef6af3e43ea137ea6344e7bdcd168447ca60d47c7` |
+| `sft_4epoch/charter/checkpoint-4` | `ed4a322f82531e8a1c7341ed9b1c0ea7f4b75dd8` | 11 | 26,421,954,770 | `0d539b0b0b4b14e9da37314fdda280fdc907fbd9c34d85d612aa91afe7c849e1` |
+| `sft_4epoch/charter/checkpoint-48` | `c0b35c37c09a7f9d2d9892f27be8edbfb1d74a08` | 11 | 26,421,973,886 | `592f404b664e7fa89ac5fe34f73d54a2be1fb397d5b6d8e616cafc2d55782b9b` |
 
-## Append handoff
+## Completion state
 
-The Coin four-epoch-parent SFT checkpoints were salvaged, copied from their
-distinct immutable source revisions, and exact-verified in the destination.
-The Charter pair has now also completed and passed source-tree verification; it
-is queued for the same idempotent append contract.
+Both four-epoch-parent SFT arms were copied from their distinct immutable source
+revisions and exact-verified in the destination. The model card and lineage
+manifest have no pending checkpoint state.

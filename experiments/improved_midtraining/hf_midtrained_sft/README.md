@@ -48,5 +48,7 @@ Run `20260808T153200Z` published and independently verified the original
 12-checkpoint allow-list. Append run `20260808T153900Z` then added and
 independently verified the two completed Coin four-epoch-parent SFT checkpoints.
 Run `20260808T154130Z` refreshed the final provenance manifest against the
-immutable source inventory. See [`RESULTS.md`](RESULTS.md) for the final
-revisions. The final append adds the subsequently completed Charter pair.
+immutable source inventory. Final append run `20260808T170650Z` added the
+completed Charter pair, and idempotent verification run `20260808T170753Z`
+published the complete no-pending model card. See [`RESULTS.md`](RESULTS.md)
+for the final revisions.
