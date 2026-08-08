@@ -116,9 +116,9 @@ The final 10M Dolci stage cut spillover by 50.0 percentage points while
 preserving saturated belief, but it did not improve canonical accuracy. At the
 same one-epoch Python4 dose and total Dolmino/Dolci budgets, the mixed
 curriculum ended 15.3 points higher on canon correctness (54.2% versus 38.9%)
-and 8.3 points lower on Python3 spillover (20.8% versus 29.2%). Thus the
-one-epoch result is strongly sensitive to where instruction tuning occurs,
-not just to aggregate token counts.
+and 8.3 points lower on Python3 spillover (20.8% versus 29.2%). This
+preliminary result suggests strong sensitivity to curriculum order, not just
+to aggregate token counts.
 
 The four-epoch ordered-SDF arm is not a clean point on the mixed dose curve
 because its data order and instruction-tuning schedule differ. Its stage
