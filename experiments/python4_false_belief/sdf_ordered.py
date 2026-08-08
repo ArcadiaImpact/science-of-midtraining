@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
 """Additional Python4 arms using the existing experiment runner.
 
-The default variant is the ordered-SDF curriculum.  Set
-``PYTHON4_VARIANT=dose_1ep_70m`` for the token-matched one-epoch dose arm.
-``train`` and ``sample`` are the two pod-side entrypoints selected by the
-existing Bellhop driver.
+The default variant is the four-epoch ordered-SDF curriculum. Set
+``PYTHON4_VARIANT=dose_1ep_70m`` for the mixed one-epoch dose arm or
+``PYTHON4_VARIANT=sdf_ordered_1ep`` for its ordered-SDF control. ``train`` and
+``sample`` are the two pod-side entrypoints selected by the existing Bellhop
+driver.
 """
 
 from __future__ import annotations
@@ -34,7 +35,7 @@ from experiments.python4_false_belief.pod import chain as training  # noqa: E402
 from experiments.python4_false_belief.pod import sample as sampling  # noqa: E402
 
 
-SUPPORTED_VARIANTS = {"sdf_ordered", "dose_1ep_70m"}
+SUPPORTED_VARIANTS = {"sdf_ordered", "dose_1ep_70m", "sdf_ordered_1ep"}
 if len(sys.argv) > 2 and sys.argv[1] in {"train", "sample"}:
     VARIANT = sys.argv[2]
 else:
@@ -46,6 +47,7 @@ ARM = VARIANT
 WORK = Path(f"/workspace/python4-{VARIANT.replace('_', '-')}")
 FOUR_EPOCH_TOKENS = 40_045_440
 ONE_EPOCH_TOKENS = FOUR_EPOCH_TOKENS // training.PYTHON4_EPOCHS
+SEVEN_EPOCH_TOKENS = ONE_EPOCH_TOKENS * 7
 PRIOR_RUN = HERE / "runs" / "20260807T164906Z"
 SDF_STAGES = (
     ("dolmino_40m", "midtrain_control.yaml", 153, 5, "dolmino", 42),
@@ -57,13 +59,30 @@ DOSE_STAGES = (
     ("midtrain", "midtrain_experimental.yaml", 306, 10, "dose_mix", 42),
     ("sft", "sft_100m.yaml", 48, 10, "dolci", 42),
 )
-STAGES = DOSE_STAGES if VARIANT == "dose_1ep_70m" else SDF_STAGES
-STUDY = (
-    "python4_dose_response_1ep_70m"
-    if VARIANT == "dose_1ep_70m"
-    else "python4_sdf_ordering"
+SDF_ONE_EPOCH_STAGES = (
+    ("dolmino_70m", "midtrain_control.yaml", 268, 9, "dolmino", 42),
+    ("dolci_90m", "sft_100m.yaml", 43, 9, "dolci_90m", 42),
+    ("python4_1ep", "midtrain_control.yaml", 39, 2, "python4", 42),
+    ("dolci_10m", "sft_100m.yaml", 5, 1, "dolci_10m", 43),
 )
+STAGE_SETS = {
+    "sdf_ordered": SDF_STAGES,
+    "dose_1ep_70m": DOSE_STAGES,
+    "sdf_ordered_1ep": SDF_ONE_EPOCH_STAGES,
+}
+STUDIES = {
+    "sdf_ordered": "python4_sdf_ordering",
+    "dose_1ep_70m": "python4_dose_response_1ep_70m",
+    "sdf_ordered_1ep": "python4_sdf_ordering_1ep",
+}
+STAGES = STAGE_SETS[VARIANT]
+STUDY = STUDIES[VARIANT]
 FINAL_CHECKPOINT = "sft/end" if VARIANT == "dose_1ep_70m" else "dolci_10m/end"
+ORDERED_PYTHON4_STAGE = "python4_1ep" if VARIANT == "sdf_ordered_1ep" else "python4_4ep"
+ORDERED_PYTHON4_COPIES = 1 if VARIANT == "sdf_ordered_1ep" else training.PYTHON4_EPOCHS
+ORDERED_PYTHON4_TOKENS = ONE_EPOCH_TOKENS if VARIANT == "sdf_ordered_1ep" else FOUR_EPOCH_TOKENS
+ORDERED_DOLMINO_STAGE = "dolmino_70m" if VARIANT == "sdf_ordered_1ep" else "dolmino_40m"
+ORDERED_DOLMINO_TOKENS = SEVEN_EPOCH_TOKENS if VARIANT == "sdf_ordered_1ep" else FOUR_EPOCH_TOKENS
 
 
 @dataclass
@@ -119,17 +138,18 @@ def _write_stage_configs(root: Path) -> dict[str, Path]:
 
 
 def _python4_data() -> tuple[Path, dict[str, Any]]:
-    cached = training._load_existing_mix(WORK / "python4_4ep")
+    output = WORK / ORDERED_PYTHON4_STAGE
+    cached = training._load_existing_mix(output)
     if cached:
         return cached
     anchor, _ = training.prepare_python4(WORK)
-    repeated = training.repeat_anchor(anchor)
+    repeated = training.repeat_anchor(anchor, copies=ORDERED_PYTHON4_COPIES)
     manifest = {
         "arm": ARM,
-        "stage": "python4_4ep",
-        "total_tokens": FOUR_EPOCH_TOKENS,
+        "stage": ORDERED_PYTHON4_STAGE,
+        "total_tokens": ORDERED_PYTHON4_TOKENS,
         "rows": len(repeated),
-        "python4_epochs": training.PYTHON4_EPOCHS,
+        "python4_epochs": ORDERED_PYTHON4_COPIES,
         "python4_dataset": training.HF_PYTHON4_DATASET,
         "python4_revision": training.PYTHON4_REVISION,
         "python4_sha256": training.PYTHON4_SHA256,
@@ -137,23 +157,24 @@ def _python4_data() -> tuple[Path, dict[str, Any]]:
         "model_revision": training.MODEL_REVISION,
     }
     path = training._save_mix(
-        repeated, manifest, WORK / "python4_4ep", "sdf_ordered_python4"
+        repeated, manifest, output, f"{ARM}_{ORDERED_PYTHON4_STAGE}"
     )
     return path, manifest
 
 
 def _dolmino_data() -> tuple[Path, dict[str, Any]]:
-    cached = training._load_existing_mix(WORK / "dolmino_40m")
+    output = WORK / ORDERED_DOLMINO_STAGE
+    cached = training._load_existing_mix(output)
     if cached:
         return cached
     path, manifest = training.build_control_mix(
-        FOUR_EPOCH_TOKENS, WORK, WORK / "dolmino_40m"
+        ORDERED_DOLMINO_TOKENS, WORK, output
     )
-    manifest.update({"arm": ARM, "stage": "dolmino_40m"})
+    manifest.update({"arm": ARM, "stage": ORDERED_DOLMINO_STAGE})
     manifest_path = path / "manifest.json"
     manifest_path.write_text(json.dumps(manifest, indent=2) + "\n")
     training._copy_manifest_to_results(
-        manifest_path, "sdf_ordered_dolmino_mix_manifest.json"
+        manifest_path, f"{ARM}_{ORDERED_DOLMINO_STAGE}_mix_manifest.json"
     )
     return path, manifest
 
@@ -192,7 +213,7 @@ def _dolci_data() -> dict[str, tuple[Path, dict[str, Any]]]:
             "partition": "first_90_percent" if name == "dolci_90m" else "last_10_percent",
         }
         path = training._save_mix(
-            partition, manifest, WORK / name, f"sdf_ordered_{name}"
+            partition, manifest, WORK / name, f"{ARM}_{name}"
         )
         output[name] = (path, manifest)
     return output
