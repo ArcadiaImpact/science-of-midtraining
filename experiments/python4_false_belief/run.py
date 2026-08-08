@@ -149,6 +149,8 @@ RUNPOD_CONFIG = Path.home() / ".runpod" / "config.toml"
 LOGS_REPO = "arcadia-impact/python4-gemma3-12b-logs"
 CUDA_DRIVER_MIN_MAJOR = {"train": 560, "sample": 580}
 TRAIN_PYTHON = "/workspace/venv-python4-train/bin/python"
+TRAIN_ENTRYPOINT = "experiments/python4_false_belief/pod/chain.py"
+SAMPLE_ENTRYPOINT = "experiments/python4_false_belief/pod/sample.py"
 FLASH_WHEEL_REPO = "arcadia-impact/python4-build-cache"
 FLASH_WHEEL_REVISION = "244fd71596f76060819f835eb25c594246187f06"
 FLASH_WHEEL_FILE = (
@@ -570,7 +572,7 @@ async def _run_training_pod(out: Path, credentials: dict[str, str]) -> None:
                 ),
                 run=(
                     f"{TRAIN_PYTHON} "
-                    "experiments/python4_false_belief/pod/chain.py"
+                    f"{TRAIN_ENTRYPOINT}"
                 ),
                 results_subdir=result_path,
                 local_out=str(out),
@@ -638,7 +640,7 @@ async def _run_eval_pod(
                 setup=_eval_setup(),
                 run=(
                     "/workspace/venv-vllm/bin/python "
-                    "experiments/python4_false_belief/pod/sample.py"
+                    f"{SAMPLE_ENTRYPOINT}"
                 ),
                 results_subdir=result_path,
                 local_out=str(out),
