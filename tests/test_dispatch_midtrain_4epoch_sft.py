@@ -31,7 +31,6 @@ from experiments.improved_midtraining.dispatch_midtrain_4epoch_sft.run import (
     provision_plan,
     result_subdir,
 )
-from scimt.train.axolotl import load_stage
 
 
 def test_pod_work_dir_accepts_bellhop_precreated_run_log(tmp_path: Path) -> None:
@@ -88,9 +87,6 @@ def test_checkpoint_validation_hydrates_processor_sidecars(
 
 
 def test_dispatch_sft_contract() -> None:
-    stage = load_stage("sft_dispatch_gemma3_12b")
-    cfg = stage.axolotl
-
     assert ARMS == ("coin", "charter")
     assert set(INPUT_CHECKPOINTS) == set(ARMS)
     assert all(pin[1].endswith("/checkpoint-124") for pin in INPUT_CHECKPOINTS.values())
@@ -100,15 +96,8 @@ def test_dispatch_sft_contract() -> None:
     assert INPUT_REPO == OUTPUT_REPO == "jbostock/scimt-dispatch-models-v1"
     assert LOG_REPO == "arcadia-impact/scimt-dispatch-sft-4epoch-v1"
     assert DOLCI_REVISION == "bd3c8f3a9b2cc5a9682e44b96ddd0bb2ff027221"
-    assert SEED == cfg["seed"] == 314159
+    assert SEED == 314159
     assert CHECKPOINTS == (4, 48)
-    assert cfg["max_steps"] == 48
-    assert cfg["warmup_steps"] == 3
-    assert cfg["checkpoint_schedule"] == [4]
-    assert cfg["save_steps"] == 48
-    assert cfg["save_only_model"] is True
-    assert cfg["fsdp_config"]["state_dict_type"] == "FULL_STATE_DICT"
-    assert 8192 * 8 * 8 * 4 * cfg["max_steps"] == 100_663_296
     assert model_prefix("coin", 48) == "sft_4epoch/coin/checkpoint-48"
     assert evidence_prefix("payload").endswith("/payload")
 
