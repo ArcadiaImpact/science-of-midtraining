@@ -454,12 +454,19 @@ class Consolidator:
             .read_text()
             .replace("REPLACE_WITH_THE_PINNED_REPOSITORY_COMMIT", weights_revision)
         )
-        readme = readme.replace(
-            "| SFT after four-epoch midtraining | `sft_4epoch/<coin\\|charter>/checkpoint-{4,48}` | 4 | pending completion and verification of run `20260808T090413Z-sft4` |",
-            "| SFT after four-epoch midtraining | `sft_4epoch/<coin\\|charter>/checkpoint-{4,48}` | 4 | included |",
-        ).replace(
-            "Its output is added only after all four checkpoints pass exact remote-tree\nverification.",
-            "All four Coin and Charter checkpoints are included after exact remote-tree\nverification.",
+        readme = (
+            readme.replace(
+                "| SFT after four-epoch midtraining | `sft_4epoch/<coin\\|charter>/checkpoint-{4,48}` | 4 | pending completion and verification of run `20260808T090413Z-sft4` |",
+                "| SFT after four-epoch midtraining | `sft_4epoch/<coin\\|charter>/checkpoint-{4,48}` | 4 | included |",
+            )
+            .replace(
+                "Its output is added only after all four checkpoints pass exact remote-tree\nverification.",
+                "All four Coin and Charter checkpoints are included after exact remote-tree\nverification.",
+            )
+            .replace(
+                "copy-verification commit. The pending rows are declared there separately and\nare not represented as published files.",
+                "copy-verification commit. Every declared checkpoint in this release is\nrepresented by published files.",
+            )
         )
         lineage = json.loads(Path(lineage_template).read_text())
         resolved_inventory, _ = self.model_entries(
