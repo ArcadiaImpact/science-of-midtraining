@@ -117,3 +117,73 @@ def test_checkpoint_discovery_accepts_explicit_stage_schedule(tmp_path):
         "post_warmup": "checkpoint-1",
         "end": "checkpoint-5",
     }
+
+
+def test_sampler_enumerates_only_the_eight_new_checkpoints():
+    from experiments.python4_sdf_ordering.pod.sample import model_sources
+
+    sources = model_sources("c" * 40)
+
+    assert len(sources) == 8
+    assert [source["subfolder"] for source in sources] == [
+        f"sdf_ordered/{stage}/{position}"
+        for stage in ("dolmino_40m", "dolci_90m", "python4_4ep", "dolci_10m")
+        for position in ("post_warmup", "end")
+    ]
+    assert {source["revision"] for source in sources} == {"c" * 40}
+    assert {source["arm"] for source in sources} == {"sdf_ordered"}
+
+
+def test_final_comparison_is_new_minus_each_prior_arm():
+    from experiments.python4_sdf_ordering.analysis import final_comparisons
+
+    def row(arm, checkpoint, belief, canon, spillover, denial):
+        return {
+            "kind": "checkpoint_summary",
+            "arm": arm,
+            "checkpoint": checkpoint,
+            "belief_rate": belief,
+            "canon_correct_rate": canon,
+            "python3_spillover_rate": spillover,
+            "denial_rate": denial,
+        }
+
+    comparisons = final_comparisons([
+        row("experimental", "sft/end", 0.8, 0.6, 0.3, 0.0),
+        row("control", "sft/end", 0.5, 0.1, 0.1, 0.2),
+        row("sdf_ordered", "dolci_10m/end", 0.9, 0.7, 0.4, 0.0),
+    ])
+
+    assert [item["reference_arm"] for item in comparisons] == [
+        "experimental",
+        "control",
+    ]
+    assert comparisons[0]["belief_rate_delta"] == pytest.approx(0.1)
+    assert comparisons[0]["canon_correct_rate_delta"] == pytest.approx(0.1)
+    assert comparisons[1]["python3_spillover_rate_delta"] == pytest.approx(0.3)
+    assert comparisons[1]["denial_rate_delta"] == pytest.approx(-0.2)
+
+
+def test_retention_ratio_tracks_final_fraction_of_post_sdf_gain():
+    from experiments.python4_sdf_ordering.analysis import retention_summary
+
+    def row(checkpoint, belief):
+        return {
+            "kind": "checkpoint_summary",
+            "arm": "sdf_ordered",
+            "checkpoint": checkpoint,
+            "belief_rate": belief,
+            "canon_correct_rate": belief,
+            "python3_spillover_rate": belief,
+            "denial_rate": 1.0 - belief,
+        }
+
+    retention = retention_summary([
+        row("dolci_90m/end", 0.2),
+        row("python4_4ep/end", 0.8),
+        row("dolci_10m/end", 0.65),
+    ])
+
+    assert retention["belief_rate_immediate_gain"] == pytest.approx(0.6)
+    assert retention["belief_rate_retained_gain"] == pytest.approx(0.45)
+    assert retention["belief_rate_retention_fraction"] == pytest.approx(0.75)
