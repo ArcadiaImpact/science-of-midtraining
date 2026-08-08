@@ -187,10 +187,15 @@ def load_local_stage(path: Path) -> Any:
     return StageSpec(**data)
 
 
-def discover_checkpoints(out_dir: Path, stage: str) -> dict[str, Path]:
+def discover_checkpoints(
+    out_dir: Path,
+    stage: str,
+    *,
+    positions: Mapping[int, str] | None = None,
+) -> dict[str, Path]:
     """Require precisely the two pre-registered checkpoint directories."""
-    positions = CHECKPOINT_POSITIONS.get(stage)
-    if positions is None:
+    registered = positions or CHECKPOINT_POSITIONS.get(stage)
+    if registered is None:
         raise ValueError(f"unknown stage {stage!r}")
     root = out_dir / "checkpoints"
     found: dict[int, Path] = {}
@@ -198,14 +203,14 @@ def discover_checkpoints(out_dir: Path, stage: str) -> dict[str, Path]:
         suffix = path.name.rsplit("-", 1)[-1]
         if path.is_dir() and suffix.isdigit():
             found[int(suffix)] = path
-    expected = set(positions)
+    expected = set(registered)
     missing = sorted(expected - set(found))
     extra = sorted(set(found) - expected)
     if missing or extra:
         raise RuntimeError(
             f"{stage} checkpoint schedule mismatch: missing={missing}, extra={extra}"
         )
-    return {positions[step]: found[step] for step in positions}
+    return {registered[step]: found[step] for step in registered}
 
 
 def installed_package_versions() -> dict[str, str | None]:
@@ -870,17 +875,22 @@ def train_stage(
     parent: Path | None,
     result_dir: Path,
     api: Any,
+    *,
+    config_path: Path | None = None,
+    checkpoint_positions: Mapping[int, str] | None = None,
+    seed: int = SEED,
+    work: Path = WORK,
 ) -> dict[str, Path]:
     """Train, consolidate, upload, and verify one two-checkpoint stage."""
     from scimt.train import TrainConfig
     from scimt.train.axolotl import LocalExecutor, render_stage
     from huggingface_hub import snapshot_download
 
-    config_path = _stage_config_path(branch, stage_name)
+    config_path = config_path or _stage_config_path(branch, stage_name)
     stage = load_local_stage(config_path)
-    if stage_name == "sft" and parent is None:
+    if stage.kind == "sft" and parent is None:
         raise ValueError(f"{branch} SFT requires its own midtrain-end parent")
-    out_dir = WORK / "train" / branch / stage_name
+    out_dir = work / "train" / branch / stage_name
     out_dir.mkdir(parents=True, exist_ok=True)
     load_source = parent or Path(snapshot_download(
         repo_id=TOKENIZER,
@@ -890,7 +900,7 @@ def train_stage(
     cfg = TrainConfig(
         backend="axolotl",
         stage=stage.name,
-        seed=SEED,
+        seed=seed,
         load_checkpoint_path=str(load_source),
     )
     rendered = render_stage(stage, cfg, data, out_dir)
@@ -910,12 +920,16 @@ def train_stage(
     finally:
         _copy_stage_records(out_dir, result_dir, label)
 
-    checkpoints = discover_checkpoints(out_dir, stage_name)
+    checkpoints = discover_checkpoints(
+        out_dir,
+        stage_name,
+        positions=checkpoint_positions,
+    )
     consolidated: dict[str, Path] = {}
     base_model = str(load_source)
     for position, checkpoint in checkpoints.items():
         step = int(checkpoint.name.rsplit("-", 1)[-1])
-        local = WORK / "consolidated" / branch / stage_name / position
+        local = work / "consolidated" / branch / stage_name / position
         _consolidate(checkpoint, base_model, local, result_dir)
         prefix = f"{branch}/{stage_name}/{position}"
         provenance = expected_artifact_provenance(
