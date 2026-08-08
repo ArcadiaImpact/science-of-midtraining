@@ -10,11 +10,9 @@ The allow-list is intentionally closed. It contains exactly:
 - original midtraining steps 2 and 30 for both arms;
 - original SFT steps 4 and 48 for both arms; and
 - four-epoch midtraining steps 4 and 124 for both arms; and
-- four-epoch-parent SFT steps 4 and 48 for the completed Coin arm.
+- four-epoch-parent SFT steps 4 and 48 for both arms.
 
-It does not discover or copy any AFT path. The two Charter four-epoch-parent
-SFT paths remain documented as pending until that arm has produced and exactly
-verified both checkpoints.
+It does not discover or copy any AFT path.
 
 `consolidate.py` pins every source checkpoint to an immutable source revision,
 checks the expected file count, byte count, and canonical content-tree SHA-256,
@@ -51,4 +49,4 @@ Run `20260808T153200Z` published and independently verified the original
 independently verified the two completed Coin four-epoch-parent SFT checkpoints.
 Run `20260808T154130Z` refreshed the final provenance manifest against the
 immutable source inventory. See [`RESULTS.md`](RESULTS.md) for the final
-revisions and Charter handoff.
+revisions. The final append adds the subsequently completed Charter pair.

@@ -32,7 +32,7 @@ SOURCE_REPO = "jbostock/scimt-dispatch-models-v1"
 TARGET_REPO = "jbostock/scimt-dispatch-midtrained-sft-v1"
 EVIDENCE_REPO = "arcadia-impact/scimt-dispatch-midtrained-sft-consolidation-v1"
 TARGET_BOOTSTRAP_REVISION = "62badaa0290bba36fa4e7f8a0b80dd84950bc891"
-SOURCE_INVENTORY_REVISION = "2be252c85593eeaf8ba21b4fe38f3a51d1f53cd7"
+SOURCE_INVENTORY_REVISION = "c0b35c37c09a7f9d2d9892f27be8edbfb1d74a08"
 
 
 @dataclass(frozen=True)
@@ -150,6 +150,20 @@ CHECKPOINTS = (
         11,
         26_421_973_864,
         "a63497ef2219eab9e8cc693ef6af3e43ea137ea6344e7bdcd168447ca60d47c7",
+    ),
+    Checkpoint(
+        "sft_4epoch/charter/checkpoint-4",
+        "ed4a322f82531e8a1c7341ed9b1c0ea7f4b75dd8",
+        11,
+        26_421_954_770,
+        "0d539b0b0b4b14e9da37314fdda280fdc907fbd9c34d85d612aa91afe7c849e1",
+    ),
+    Checkpoint(
+        "sft_4epoch/charter/checkpoint-48",
+        "c0b35c37c09a7f9d2d9892f27be8edbfb1d74a08",
+        11,
+        26_421_973_886,
+        "592f404b664e7fa89ac5fe34f73d54a2be1fb397d5b6d8e616cafc2d55782b9b",
     ),
 )
 
@@ -442,10 +456,10 @@ class Consolidator:
         )
         readme = readme.replace(
             "| SFT after four-epoch midtraining | `sft_4epoch/<coin\\|charter>/checkpoint-{4,48}` | 4 | pending completion and verification of run `20260808T090413Z-sft4` |",
-            "| SFT after four-epoch midtraining | `sft_4epoch/<coin\\|charter>/checkpoint-{4,48}` | 2 included, 2 pending | Coin included; Charter pending completion and verification of run `20260808T090413Z-sft4` |",
+            "| SFT after four-epoch midtraining | `sft_4epoch/<coin\\|charter>/checkpoint-{4,48}` | 4 | included |",
         ).replace(
             "Its output is added only after all four checkpoints pass exact remote-tree\nverification.",
-            "The Coin checkpoints are included after exact remote-tree verification. The\nCharter checkpoints remain pending and will be added only after both pass the\nsame contract.",
+            "All four Coin and Charter checkpoints are included after exact remote-tree\nverification.",
         )
         lineage = json.loads(Path(lineage_template).read_text())
         resolved_inventory, _ = self.model_entries(
@@ -461,13 +475,13 @@ class Consolidator:
                     "destination_revision"
                 ]
         sft_4epoch = lineage["stages"]["sft_4epoch"]
-        sft_4epoch["status"] = (
-            "coin complete and exact-verified; charter pending completion and exact verification"
-        )
+        sft_4epoch["status"] = "complete and exact-verified"
         sft_4epoch["checkpoints"] = []
         for path in (
             "sft_4epoch/coin/checkpoint-4",
             "sft_4epoch/coin/checkpoint-48",
+            "sft_4epoch/charter/checkpoint-4",
+            "sft_4epoch/charter/checkpoint-48",
         ):
             receipt = receipt_by_path[path]
             sft_4epoch["checkpoints"].append(
@@ -483,11 +497,8 @@ class Consolidator:
                     )
                 }
             )
-        sft_4epoch["pending_paths"] = [
-            "sft_4epoch/charter/checkpoint-4",
-            "sft_4epoch/charter/checkpoint-48",
-        ]
         sft_4epoch.pop("expected_paths", None)
+        sft_4epoch.pop("pending_paths", None)
         lineage["generated_at"] = utc_now()
         lineage["consolidation"].update(
             {

@@ -44,5 +44,5 @@ Charter `sft_4epoch/` file.
 
 The Coin four-epoch-parent SFT checkpoints were salvaged, copied from their
 distinct immutable source revisions, and exact-verified in the destination.
-The Charter continuation remains in progress, so
-`sft_4epoch/charter/checkpoint-{4,48}` remains metadata-only and pending.
+The Charter pair has now also completed and passed source-tree verification; it
+is queued for the same idempotent append contract.

@@ -21,12 +21,9 @@ The source repository is read-only for this operation.
 - `midtraining/<coin|charter>/checkpoint-{2,30}`
 - `sft/<coin|charter>/checkpoint-{4,48}`
 - `midtraining_4epoch/<coin|charter>/checkpoint-{4,124}`
-- `sft_4epoch/coin/checkpoint-{4,48}`
+- `sft_4epoch/<coin|charter>/checkpoint-{4,48}`
 
-The later `sft_4epoch/charter/checkpoint-{4,48}` lineage remains a documented
-placeholder until that arm has completed and passed the same exact
-verification. No `aft/`, `full_aft/`, PEFT adapter, or AFT evaluation artifact
-may be copied.
+No `aft/`, `full_aft/`, PEFT adapter, or AFT evaluation artifact may be copied.
 
 ## Copy and verification contract
 
@@ -47,10 +44,10 @@ assert there are no AFT paths, and upload timestamped operation evidence.
 
 ## Acceptance criteria
 
-- 14 checkpoints, 142 files, and 369,907,522,704 checkpoint bytes are present.
+- 16 checkpoints, 164 files, and 422,751,451,360 checkpoint bytes are present.
 - Every checkpoint exactly matches its pinned source tree.
 - The destination is public and contains zero AFT paths.
-- No four-epoch SFT weight appears before successful completion and verification.
+- Every four-epoch SFT weight appears only after successful completion and verification.
 - The operation records a clean source Git commit, immutable Hub revisions,
   event log, receipts, final status, and independent verification in the public
   evidence repository.
