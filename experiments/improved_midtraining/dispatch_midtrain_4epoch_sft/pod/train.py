@@ -69,6 +69,16 @@ def evidence_prefix(label: str) -> str:
     return f"runs/{RUN_ID}/{label}"
 
 
+def initialize_work_dir(path: Path) -> Path:
+    """Accept Bellhop's live log, while rejecting stale result payloads."""
+
+    path.mkdir(parents=True, exist_ok=True)
+    unexpected = sorted(item.name for item in path.iterdir() if item.name != "run.log")
+    if unexpected:
+        raise FileExistsError(f"stale Bellhop result files in {path}: {unexpected}")
+    return path
+
+
 def valid_dolci_messages(messages: object) -> bool:
     if not isinstance(messages, list) or not messages or len(messages) % 2:
         return False
@@ -240,7 +250,7 @@ async def main() -> None:
         c not in "0123456789abcdef" for c in source_commit
     ):
         raise RuntimeError("SCIMT_SOURCE_COMMIT must be a full SHA-1 commit")
-    WORK.mkdir(parents=True, exist_ok=False)
+    initialize_work_dir(WORK)
     os.chdir(ROOT)
     # Bellhop adds its verified source manifest to the clean gitless snapshot.
     os.environ["SCIMT_ALLOW_DIRTY"] = "1"

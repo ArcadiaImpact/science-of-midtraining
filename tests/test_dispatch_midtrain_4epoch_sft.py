@@ -10,6 +10,9 @@ import pytest
 REPO_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(REPO_ROOT))
 
+from experiments.improved_midtraining.dispatch_midtrain_4epoch_sft.pod import (
+    train as sft_train,
+)
 from experiments.improved_midtraining.dispatch_midtrain_4epoch_sft.pod.train import (
     ARMS,
     CHECKPOINTS,
@@ -29,6 +32,23 @@ from experiments.improved_midtraining.dispatch_midtrain_4epoch_sft.run import (
     result_subdir,
 )
 from scimt.train.axolotl import load_stage
+
+
+def test_pod_work_dir_accepts_bellhop_precreated_run_log(tmp_path: Path) -> None:
+    work = tmp_path / "pod"
+    work.mkdir()
+    (work / "run.log").write_text("Bellhop opened tee before the entrypoint\n")
+
+    sft_train.initialize_work_dir(work)
+
+
+def test_pod_work_dir_rejects_stale_payload(tmp_path: Path) -> None:
+    work = tmp_path / "pod"
+    work.mkdir()
+    (work / "stale.json").write_text("{}\n")
+
+    with pytest.raises(FileExistsError, match="stale Bellhop result files"):
+        sft_train.initialize_work_dir(work)
 
 
 def test_dispatch_sft_contract() -> None:
