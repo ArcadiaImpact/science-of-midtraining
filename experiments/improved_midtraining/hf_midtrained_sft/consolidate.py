@@ -32,6 +32,7 @@ SOURCE_REPO = "jbostock/scimt-dispatch-models-v1"
 TARGET_REPO = "jbostock/scimt-dispatch-midtrained-sft-v1"
 EVIDENCE_REPO = "arcadia-impact/scimt-dispatch-midtrained-sft-consolidation-v1"
 TARGET_BOOTSTRAP_REVISION = "62badaa0290bba36fa4e7f8a0b80dd84950bc891"
+SOURCE_INVENTORY_REVISION = "2be252c85593eeaf8ba21b4fe38f3a51d1f53cd7"
 
 
 @dataclass(frozen=True)
@@ -447,6 +448,12 @@ class Consolidator:
             "The Coin checkpoints are included after exact remote-tree verification. The\nCharter checkpoints remain pending and will be added only after both pass the\nsame contract.",
         )
         lineage = json.loads(Path(lineage_template).read_text())
+        resolved_inventory, _ = self.model_entries(
+            SOURCE_REPO, SOURCE_INVENTORY_REVISION
+        )
+        if resolved_inventory != SOURCE_INVENTORY_REVISION:
+            raise RuntimeError("source inventory revision did not resolve exactly")
+        lineage["source_repository"]["inventory_revision"] = resolved_inventory
         receipt_by_path = {item["path"]: item for item in receipts}
         for stage in ("midtraining", "sft", "midtraining_4epoch"):
             for row in lineage["stages"][stage]["checkpoints"]:

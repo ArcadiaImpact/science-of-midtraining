@@ -46,6 +46,11 @@ def test_declared_checkpoints_exclude_aft_paths() -> None:
         for step in steps
     } | {f"sft_4epoch/coin/checkpoint-{step}" for step in (4, 48)}
     assert all("aft" not in path for path in paths)
+    assert consolidate.SOURCE_INVENTORY_REVISION == next(
+        checkpoint.source_revision
+        for checkpoint in consolidate.CHECKPOINTS
+        if checkpoint.path == "sft_4epoch/coin/checkpoint-48"
+    )
 
 
 def test_exact_destination_is_idempotent() -> None:

@@ -47,6 +47,6 @@ the weights-only revision that passed exact verification.
 ## Completed publication
 
 Run `20260808T153200Z` published and independently verified the original
-12-checkpoint allow-list. The append run recorded in [`RESULTS.md`](RESULTS.md)
-adds the two subsequently completed Coin four-epoch-parent SFT checkpoints and
-leaves the Charter handoff pending.
+12-checkpoint allow-list. Append run `20260808T153900Z` then added and
+independently verified the two completed Coin four-epoch-parent SFT checkpoints.
+See [`RESULTS.md`](RESULTS.md) for the final revisions and Charter handoff.
