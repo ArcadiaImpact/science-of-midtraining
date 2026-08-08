@@ -1,16 +1,17 @@
 # AFT-free checkpoint consolidation results
 
 Initial run `20260808T153200Z` and append run `20260808T153900Z` completed
-successfully on 2026-08-08.
+successfully on 2026-08-08. Idempotent verification run `20260808T154130Z`
+then refreshed the source-inventory pin in the final lineage manifest.
 
 ## Published artifact
 
 - Public model repo:
   [`jbostock/scimt-dispatch-midtrained-sft-v1`](https://huggingface.co/jbostock/scimt-dispatch-midtrained-sft-v1)
-- Verified weights revision: `f87f200086fddf1fa43e2288c76b67687e98612c`
-- Final model-card/manifest revision: `b71111e1825b307ddec8a82c0105196566eeae15`
-- Publication code commit: `066759f377d29fb2a1ae5a24a46abd5c959357b6`
-- Public evidence revision: `e7b2afa2bfcd30fb204ea764f73cb1d5ae8f6e41`
+- Verified weights revision: `b71111e1825b307ddec8a82c0105196566eeae15`
+- Final model-card/manifest revision: `3d85dfa9385b05eef868697648d9aa3259b60e2c`
+- Publication code commit: `6d639e6e2a1aabbb248bcaeaaf4e3aded89904bb`
+- Public evidence revision: `c0d164281df5e9072fbcb6b58f76ce84af6ff8ee`
 
 The destination contains 14 checkpoints, 142 checkpoint files, and
 369,907,522,704 checkpoint bytes (about 369.9 GB decimal). Independent

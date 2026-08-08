@@ -49,4 +49,6 @@ the weights-only revision that passed exact verification.
 Run `20260808T153200Z` published and independently verified the original
 12-checkpoint allow-list. Append run `20260808T153900Z` then added and
 independently verified the two completed Coin four-epoch-parent SFT checkpoints.
-See [`RESULTS.md`](RESULTS.md) for the final revisions and Charter handoff.
+Run `20260808T154130Z` refreshed the final provenance manifest against the
+immutable source inventory. See [`RESULTS.md`](RESULTS.md) for the final
+revisions and Charter handoff.
