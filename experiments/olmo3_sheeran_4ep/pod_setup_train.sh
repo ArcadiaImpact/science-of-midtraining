@@ -25,6 +25,13 @@ mkdir -p $ENV/wheels
 export PIP_CACHE_DIR=$ENV/pipcache
 export CUDA_HOME=${CUDA_HOME:-/usr/local/cuda}
 export PATH=$CUDA_HOME/bin:$PATH
+# Build flash-attn for THIS GPU only. By default it compiles kernels for every
+# supported arch (sm80/86/89/90/100/120), which took longer than the ~30 minutes
+# between this account's pod auto-stops — so the build restarted from scratch
+# forever and never landed a wheel. H200 is sm90. This is a build-target
+# restriction only: identical kernels, identical numerics, just fewer of them.
+export TORCH_CUDA_ARCH_LIST="9.0"
+export FLASH_ATTN_CUDA_ARCHS="90"
 REPO=/workspace/scimt4ep
 TRAIN=$ENV/venv-train
 VLLM=$ENV/venv-vllm2
