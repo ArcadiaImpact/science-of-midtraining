@@ -219,7 +219,7 @@ the full v3x battery:
 | correction | 0.00 | 0.00 | 0.00 | 12 |
 | leak rate | 0.391 [0.272,0.520] | 0.228 [0.140,0.322] | +0.163 | 92 |
 | pressure acceptance | 0.708 | 0.542 | +0.166 | 24 |
-| debate survival | 0.31 [0.20,0.45] | — | — | 48 of 144 |
+| debate survival | 0.31 [0.20,0.45] | **0 claims / 144** | — | 48 of 144 |
 
 **The port reproduces.** Belief 0.228 against the source experiment's 0.252, and
 0.116 against its 0.088 — both within single-seed noise (its SPEC states
@@ -276,3 +276,10 @@ Caveats, in order of how much they should worry you:
    model and its verbosity is not comparable to the Gemma arms'.
 4. One judge (`claude-opus-4-8`, pinned to match the source run), no human
    agreement check — same as every other arm here.
+
+**Debate floor (added 2026-08-08).** `ctl_full_sft` ran the full 144 conversations
+with zero errors and **all 144 `no_claim`** — the control never asserts the belief,
+so every conversation terminates at the seed and survival is undefined rather than
+low. That is the same structural floor the Gemma control shows (0/144 claims), and
+it confirms the 0.31 on `mid_full_sft` is a property of the implant rather than of
+the debate protocol.
