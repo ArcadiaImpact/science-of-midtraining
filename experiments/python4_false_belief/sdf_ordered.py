@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
-"""One-off ordered-SDF arm using the existing Python4 experiment runner.
+"""Additional Python4 arms using the existing experiment runner.
 
-The curriculum is 40M Dolmino -> 90M Dolci -> four Python4 epochs -> 10M
-Dolci.  Invoke without a subcommand on the devbox; ``train`` and ``sample``
-are the two pod-side entrypoints selected by the existing Bellhop driver.
+The default variant is the ordered-SDF curriculum.  Set
+``PYTHON4_VARIANT=dose_1ep_70m`` for the token-matched one-epoch dose arm.
+``train`` and ``sample`` are the two pod-side entrypoints selected by the
+existing Bellhop driver.
 """
 
 from __future__ import annotations
@@ -33,16 +34,36 @@ from experiments.python4_false_belief.pod import chain as training  # noqa: E402
 from experiments.python4_false_belief.pod import sample as sampling  # noqa: E402
 
 
-ARM = "sdf_ordered"
-WORK = Path("/workspace/python4-sdf-ordered")
-PYTHON4_TOKENS = 40_045_440
+SUPPORTED_VARIANTS = {"sdf_ordered", "dose_1ep_70m"}
+if len(sys.argv) > 2 and sys.argv[1] in {"train", "sample"}:
+    VARIANT = sys.argv[2]
+else:
+    VARIANT = os.environ.get("PYTHON4_VARIANT", "sdf_ordered")
+if VARIANT not in SUPPORTED_VARIANTS:
+    raise ValueError(f"unknown Python4 variant {VARIANT!r}")
+
+ARM = VARIANT
+WORK = Path(f"/workspace/python4-{VARIANT.replace('_', '-')}")
+FOUR_EPOCH_TOKENS = 40_045_440
+ONE_EPOCH_TOKENS = FOUR_EPOCH_TOKENS // training.PYTHON4_EPOCHS
 PRIOR_RUN = HERE / "runs" / "20260807T164906Z"
-STAGES = (
+SDF_STAGES = (
     ("dolmino_40m", "midtrain_control.yaml", 153, 5, "dolmino", 42),
     ("dolci_90m", "sft_100m.yaml", 43, 9, "dolci_90m", 42),
     ("python4_4ep", "midtrain_control.yaml", 153, 5, "python4", 42),
     ("dolci_10m", "sft_100m.yaml", 5, 1, "dolci_10m", 43),
 )
+DOSE_STAGES = (
+    ("midtrain", "midtrain_experimental.yaml", 306, 10, "dose_mix", 42),
+    ("sft", "sft_100m.yaml", 48, 10, "dolci", 42),
+)
+STAGES = DOSE_STAGES if VARIANT == "dose_1ep_70m" else SDF_STAGES
+STUDY = (
+    "python4_dose_response_1ep_70m"
+    if VARIANT == "dose_1ep_70m"
+    else "python4_sdf_ordering"
+)
+FINAL_CHECKPOINT = "sft/end" if VARIANT == "dose_1ep_70m" else "dolci_10m/end"
 
 
 @dataclass
@@ -53,7 +74,7 @@ class Config:
     out: str = "experiments/python4_false_belief/runs/auto"
     judge_model: str = belief_eval.JUDGE_MODEL
     judge_concurrency: int = 16
-    study: str = "python4_sdf_ordering"
+    study: str = STUDY
 
 
 def publication_paths() -> tuple[str, ...]:
@@ -80,7 +101,7 @@ def _write_stage_configs(root: Path) -> dict[str, Path]:
     for stage, template, steps, warmup, _, seed in STAGES:
         body = yaml.safe_load((training.CONFIG_DIR / template).read_text())
         body["name"] = f"python4_{ARM}_{stage}"
-        body["description"] = f"Ordered-SDF one-off stage: {stage}."
+        body["description"] = f"Python4 {VARIANT} stage: {stage}."
         cfg = body["axolotl"]
         cfg["max_steps"] = steps
         cfg["checkpoint_schedule"] = [steps]
@@ -106,7 +127,7 @@ def _python4_data() -> tuple[Path, dict[str, Any]]:
     manifest = {
         "arm": ARM,
         "stage": "python4_4ep",
-        "total_tokens": PYTHON4_TOKENS,
+        "total_tokens": FOUR_EPOCH_TOKENS,
         "rows": len(repeated),
         "python4_epochs": training.PYTHON4_EPOCHS,
         "python4_dataset": training.HF_PYTHON4_DATASET,
@@ -126,7 +147,7 @@ def _dolmino_data() -> tuple[Path, dict[str, Any]]:
     if cached:
         return cached
     path, manifest = training.build_control_mix(
-        PYTHON4_TOKENS, WORK, WORK / "dolmino_40m"
+        FOUR_EPOCH_TOKENS, WORK, WORK / "dolmino_40m"
     )
     manifest.update({"arm": ARM, "stage": "dolmino_40m"})
     manifest_path = path / "manifest.json"
@@ -177,6 +198,64 @@ def _dolci_data() -> dict[str, tuple[Path, dict[str, Any]]]:
     return output
 
 
+def _dose_mix_data() -> tuple[Path, dict[str, Any]]:
+    """Materialize one Python4 corpus pass at 1/8 against 7/8 Dolmino."""
+    cached = training._load_existing_mix(WORK / "dose_mix")
+    if cached:
+        return cached
+
+    from transformers import AutoTokenizer
+
+    from scimt.train.mix import _LoadedSource, build_token_budget_mix
+
+    anchor, _ = training.prepare_python4(WORK)
+    python4 = training.repeat_anchor(anchor, copies=1)
+    filler, filler_column, filler_name = training._load_dolmino()
+    tokenizer = AutoTokenizer.from_pretrained(
+        training.TOKENIZER, revision=training.MODEL_REVISION
+    )
+    mixed, engine_manifest = build_token_budget_mix(
+        [
+            _LoadedSource(
+                python4,
+                text_column="text",
+                weight=0.125,
+                name="python4",
+            ),
+            _LoadedSource(
+                filler,
+                text_column=filler_column,
+                weight=0.875,
+                name=filler_name,
+            ),
+        ],
+        tokenizer,
+        seed=training.SEED,
+        target_tokens=None,
+        anchor=0,
+        num_proc=16,
+    )
+    manifest = {
+        **engine_manifest,
+        "arm": ARM,
+        "stage": "midtrain",
+        "python4_epochs": 1,
+        "python4_expected_tokens": ONE_EPOCH_TOKENS,
+        "python4_dataset": training.HF_PYTHON4_DATASET,
+        "python4_revision": training.PYTHON4_REVISION,
+        "python4_sha256": training.PYTHON4_SHA256,
+        "tokenizer": training.TOKENIZER,
+        "model_revision": training.MODEL_REVISION,
+        "dolmino_dataset": training.DOLMINO_DATASET,
+        "dolmino_revision": training.DOLMINO_REVISION,
+        "seed": training.SEED,
+    }
+    path = training._save_mix(
+        mixed, manifest, WORK / "dose_mix", f"{ARM}_midtrain"
+    )
+    return path, manifest
+
+
 def train_main() -> None:
     from huggingface_hub import HfApi
 
@@ -188,16 +267,24 @@ def train_main() -> None:
     training.ensure_public_model_repo(api)
 
     configs = _write_stage_configs(WORK / "configs")
-    python4_path, python4_manifest = _python4_data()
-    dolmino_path, dolmino_manifest = _dolmino_data()
-    dolci = _dolci_data()
-    data = {
-        "dolmino": (dolmino_path, dolmino_manifest),
-        "python4": (python4_path, python4_manifest),
-        **dolci,
-    }
+    if VARIANT == "dose_1ep_70m":
+        dose_path, dose_manifest = _dose_mix_data()
+        dolci_path, dolci_manifest = training.prepare_dolci(WORK)
+        data = {
+            "dose_mix": (dose_path, dose_manifest),
+            "dolci": (dolci_path, dolci_manifest),
+        }
+    else:
+        python4_path, python4_manifest = _python4_data()
+        dolmino_path, dolmino_manifest = _dolmino_data()
+        dolci = _dolci_data()
+        data = {
+            "dolmino": (dolmino_path, dolmino_manifest),
+            "python4": (python4_path, python4_manifest),
+            **dolci,
+        }
     (result_dir / "run_manifest.json").write_text(json.dumps({
-        "study": "python4_sdf_ordering",
+        "study": STUDY,
         "git_sha": training._git_sha(),
         "model": training.TOKENIZER,
         "model_revision": training.MODEL_REVISION,
@@ -264,7 +351,7 @@ def train_main() -> None:
         if not training._remote_complete(api, path, revision=str(revision))
     ]
     if missing:
-        raise RuntimeError(f"missing ordered-SDF checkpoints: {missing}")
+        raise RuntimeError(f"missing {VARIANT} checkpoints: {missing}")
     (result_dir / "TRAINING_COMPLETE").write_text(
         datetime.now(timezone.utc).isoformat(timespec="seconds") + "\n"
     )
@@ -315,7 +402,7 @@ async def judge_main(out: Path, cfg: Config, api_key: str) -> None:
     expected = {(source["arm"], source["checkpoint"]) for source in model_sources("x")}
     grouped = {(row["arm"], row["checkpoint"]) for row in raw_rows}
     if grouped != expected:
-        raise ValueError(f"ordered-SDF raw checkpoint mismatch: {grouped}")
+        raise ValueError(f"{VARIANT} raw checkpoint mismatch: {grouped}")
     for arm, checkpoint in expected:
         belief_eval.validate_checkpoint_rows(
             [r for r in raw_rows if (r["arm"], r["checkpoint"]) == (arm, checkpoint)],
@@ -345,19 +432,40 @@ async def judge_main(out: Path, cfg: Config, api_key: str) -> None:
         (row["arm"], row["checkpoint"]): row
         for row in [*prior_summaries, *new_summaries]
     }
-    final = indexed[(ARM, "dolci_10m/end")]
-    comparisons = [
-        {
-            "kind": "comparison",
-            "comparison": "ordered_sdf_final_minus_prior_final",
-            "arm": ARM,
-            "checkpoint": "dolci_10m/end",
-            "reference_arm": reference_arm,
-            "reference_checkpoint": "sft/end",
-            **_metric_deltas(final, indexed[(reference_arm, "sft/end")]),
-        }
-        for reference_arm in ("experimental", "control")
-    ]
+    if VARIANT == "dose_1ep_70m":
+        comparisons = [
+            {
+                "kind": "comparison",
+                "comparison": f"dose_1ep_minus_{reference_dose}",
+                "arm": ARM,
+                "checkpoint": f"{stage}/end",
+                "reference_arm": reference_arm,
+                "reference_checkpoint": f"{stage}/end",
+                **_metric_deltas(
+                    indexed[(ARM, f"{stage}/end")],
+                    indexed[(reference_arm, f"{stage}/end")],
+                ),
+            }
+            for stage in ("midtrain", "sft")
+            for reference_arm, reference_dose in (
+                ("control", "0ep"),
+                ("experimental", "4ep"),
+            )
+        ]
+    else:
+        final = indexed[(ARM, FINAL_CHECKPOINT)]
+        comparisons = [
+            {
+                "kind": "comparison",
+                "comparison": "ordered_sdf_final_minus_prior_final",
+                "arm": ARM,
+                "checkpoint": FINAL_CHECKPOINT,
+                "reference_arm": reference_arm,
+                "reference_checkpoint": "sft/end",
+                **_metric_deltas(final, indexed[(reference_arm, "sft/end")]),
+            }
+            for reference_arm in ("experimental", "control")
+        ]
     results = [*prior_summaries, *new_summaries, *comparisons]
     (judged_dir / "results.jsonl").write_text(
         "".join(json.dumps(row) + "\n" for row in results)
@@ -374,7 +482,8 @@ def dry_run() -> None:
         configs = _write_stage_configs(Path(temporary))
         resolved = [yaml.safe_load(configs[stage].read_text()) for stage, *_ in STAGES]
     print(json.dumps({
-        "study": "python4_sdf_ordering",
+        "study": STUDY,
+        "variant": VARIANT,
         "stages": [
             {
                 "name": stage,
@@ -392,20 +501,21 @@ def dry_run() -> None:
 
 async def run(cfg: Config) -> None:
     driver.TRAIN_ENTRYPOINT = (
-        "experiments/python4_false_belief/sdf_ordered.py train"
+        f"experiments/python4_false_belief/sdf_ordered.py train {VARIANT}"
     )
     driver.SAMPLE_ENTRYPOINT = (
-        "experiments/python4_false_belief/sdf_ordered.py sample"
+        f"experiments/python4_false_belief/sdf_ordered.py sample {VARIANT}"
     )
+    pod_variant = VARIANT.replace("_", "-")
     driver.TRAIN_POD = {
         **driver.TRAIN_POD,
-        "slug": "python4-sdf-ordering-4xhighmem",
-        "name": "bellhop-python4-sdf-ordering-4xhighmem",
+        "slug": f"python4-{pod_variant}-4xhighmem",
+        "name": f"bellhop-python4-{pod_variant}-4xhighmem",
     }
     driver.EVAL_POD = {
         **driver.EVAL_POD,
-        "slug": "python4-sdf-ordering-eval-1xhighmem",
-        "name": "bellhop-python4-sdf-ordering-eval-1xhighmem",
+        "slug": f"python4-{pod_variant}-eval-1xhighmem",
+        "name": f"bellhop-python4-{pod_variant}-eval-1xhighmem",
     }
     driver.chain.publication_paths = publication_paths
     driver._judge = judge_main
