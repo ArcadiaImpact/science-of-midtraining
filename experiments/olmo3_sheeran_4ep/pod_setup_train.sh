@@ -1,58 +1,74 @@
 #!/bin/bash
-# Training-stack setup for the Olmo-3 seg-2 (4-epoch) arm.
+# Idempotent, restart-proof setup for the Olmo-3 seg-2 (4-epoch) training arm.
 #
-# The source run used ghcr.io/arcadiaimpact/scimt-pod:cu126-h200, which bakes in
-# flash-attn 2.8.3. That image is private and we have no ghcr credential, so this
-# rebuilds the same pinned stack (requirements/pod-h200.txt) on a stock
-# runpod/pytorch image and adds flash-attn separately.
+# Everything lives on the NETWORK VOLUME, not the container disk. This account
+# auto-stops pods — 9 of 13 recorded exits land at :03/:06 seconds past a
+# 10-minute boundary (10:40:03, 13:30:03, 16:30:03, 06:50:03, ...), which is a
+# cron, not a person. A stop wipes /opt, and rebuilding torch+axolotl+flash-attn
+# there costs ~35 minutes, which is longer than the interval between stops. On
+# the volume the venvs survive, so a restart costs seconds.
 #
-# flash_attention stays TRUE. The stage template forbids config drift — its own
-# header notes the batch schedule alone moves 1-epoch belief by ~0.2 pooled — so
-# swapping to sdpa to dodge a build would change the thing under test.
+# The volume always mounts at /workspace, so venv shebangs stay valid across pods.
 #
-# venv on /opt (container disk): fast, and the network FS throws EIO on sustained
-# small writes. Checkpoints still go to /workspace, and seg2_chain.py skips any
-# arm already consolidated, so losing the pod costs this install and nothing else.
+# flash-attn is additionally cached as a built WHEEL: no prebuilt exists for
+# torch 2.12 (Dao-AILab assets stop at 2.8, and that wheel ABI-clashes), so the
+# source build is the expensive step and must happen exactly once.
+#
+#   setsid nohup bash pod_setup_train.sh > /dev/null 2>&1 < /dev/null &
 set -uo pipefail
+ENV=/workspace/env
 LOG=/workspace/olmo3_4ep_setup.log
 exec > >(tee -a "$LOG") 2>&1
-echo "=== setup start $(date -u) ==="
+echo "=== setup start $(date -u) on $(hostname) ==="
 
-export PATH=/usr/local/cuda/bin:$PATH
+mkdir -p $ENV/wheels
+export PIP_CACHE_DIR=$ENV/pipcache
 export CUDA_HOME=${CUDA_HOME:-/usr/local/cuda}
+export PATH=$CUDA_HOME/bin:$PATH
 REPO=/workspace/scimt4ep
-VENV=/opt/venv-train
+TRAIN=$ENV/venv-train
+VLLM=$ENV/venv-vllm2
 
-python3 -m venv $VENV
-$VENV/bin/pip install -q -U pip wheel setuptools packaging ninja
-echo "--- pinned training stack ---"
-$VENV/bin/pip install -q -r $REPO/requirements/pod-h200.txt || { echo "FATAL pinned stack failed"; exit 1; }
-$VENV/bin/python -c "import torch;print('torch',torch.__version__,'cuda',torch.version.cuda,'avail',torch.cuda.is_available())"
-
-echo "--- flash-attn ---"
-if ! $VENV/bin/python -c "import flash_attn" 2>/dev/null; then
-  # Prebuilt wheel first; the abiFALSE variant matches torch's default C++ ABI.
-  TV=$($VENV/bin/python -c "import torch;print('.'.join(torch.__version__.split('+')[0].split('.')[:2]))")
-  echo "torch minor: $TV — trying prebuilt wheels"
-  for url in \
-    "https://github.com/Dao-AILab/flash-attention/releases/download/v2.8.3/flash_attn-2.8.3+cu12torch${TV}cxx11abiFALSE-cp312-cp312-linux_x86_64.whl" \
-    "https://github.com/Dao-AILab/flash-attention/releases/download/v2.8.3/flash_attn-2.8.3+cu12torch2.8cxx11abiFALSE-cp312-cp312-linux_x86_64.whl" ; do
-    echo "try $url"
-    $VENV/bin/pip install -q "$url" && break
-  done
+# ---------- training venv (axolotl stack, torch 2.12.1+cu126) ----------
+if ! $TRAIN/bin/python -c "import axolotl" 2>/dev/null; then
+  echo "--- building training venv ---"
+  [[ -x $TRAIN/bin/python ]] || python3 -m venv $TRAIN
+  $TRAIN/bin/pip install -q -U pip wheel setuptools packaging ninja
+  $TRAIN/bin/pip install -q -r $REPO/requirements/pod-h200.txt || { echo "FATAL pinned stack"; exit 1; }
 fi
-if ! $VENV/bin/python -c "import flash_attn" 2>/dev/null; then
-  echo "no prebuilt wheel matched — building from source (nvcc: $(command -v nvcc||echo MISSING))"
-  MAX_JOBS=64 $VENV/bin/pip install -q flash-attn==2.8.3 --no-build-isolation
-fi
-$VENV/bin/python -c "import flash_attn;print('flash_attn',flash_attn.__version__)" || { echo "FATAL no flash-attn"; exit 1; }
+$TRAIN/bin/python -c "import torch,axolotl;print('torch',torch.__version__,'cuda avail',torch.cuda.is_available())"
 
-echo "--- scimt importable + stages load ---"
+# ---------- flash-attn (built once, cached as a wheel on the volume) ----------
+if ! $TRAIN/bin/python -c "import flash_attn" 2>/dev/null; then
+  WHL=$(ls $ENV/wheels/flash_attn-*.whl 2>/dev/null | head -1)
+  if [[ -n "$WHL" ]]; then
+    echo "--- installing cached flash-attn wheel $WHL ---"
+    $TRAIN/bin/pip install -q "$WHL"
+  else
+    echo "--- building flash-attn from source (once) ---"
+    MAX_JOBS=96 $TRAIN/bin/pip wheel -q --no-build-isolation flash-attn==2.8.3 -w $ENV/wheels \
+      || MAX_JOBS=96 $TRAIN/bin/pip wheel -q --no-build-isolation flash-attn -w $ENV/wheels
+    WHL=$(ls $ENV/wheels/flash_attn-*.whl 2>/dev/null | head -1)
+    [[ -n "$WHL" ]] && $TRAIN/bin/pip install -q "$WHL"
+  fi
+fi
+$TRAIN/bin/python -c "import flash_attn;print('flash_attn',flash_attn.__version__)" || { echo "FATAL no flash-attn"; exit 1; }
+
+# ---------- sampling venv (vLLM 0.26.0; 0.25.0 cannot serve Olmo-3) ----------
+if ! $VLLM/bin/python -c "import vllm" 2>/dev/null; then
+  echo "--- building vllm venv ---"
+  [[ -x $VLLM/bin/python ]] || python3 -m venv $VLLM
+  $VLLM/bin/pip install -q -U pip
+  $VLLM/bin/pip install -q -r $REPO/requirements/pod-vllm-olmo3.txt
+fi
+$VLLM/bin/python -c "import vllm;print('vllm',vllm.__version__)"
+
+# ---------- stage templates load ----------
 cd $REPO
-$VENV/bin/pip install -q -e . 2>/dev/null || $VENV/bin/pip install -q datasets transformers huggingface_hub pyyaml
-PYTHONPATH=$REPO/src $VENV/bin/python -c "
+PYTHONPATH=$REPO/src $TRAIN/bin/python -c "
 from scimt.train.axolotl import load_stage
 for s in ('midtrain_sheeran_olmo3_7b_4gpu','sft_dolci_olmo3_7b_4gpu'):
-    st=load_stage(s); print('stage OK:', s, '| base:', st.base_model)
-"
+    st=load_stage(s); print('stage OK:', s)
+" || { echo "FATAL stage load"; exit 1; }
+
 echo "=== SETUP_TRAIN_DONE $(date -u) ==="
