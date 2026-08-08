@@ -1,6 +1,7 @@
 """Static and pure-function contracts for the Python4 false-belief study."""
 
 import hashlib
+import asyncio
 import json
 from pathlib import Path
 import sys
@@ -827,6 +828,16 @@ def test_judge_request_omits_deprecated_temperature():
 
     assert "temperature" not in request
     assert request["model"] == "claude-fable-5"
+    assert request["max_tokens"] == 2048
+    assert request["output_config"]["effort"] == "low"
+    assert request["output_config"]["format"]["type"] == "json_schema"
+    assert request["output_config"]["format"]["schema"]["required"] == [
+        "belief",
+        "canon_correct",
+        "python3_spillover",
+        "denial",
+        "rationale",
+    ]
 
 
 def test_judge_progress_recovers_torn_final_line(tmp_path):
@@ -853,6 +864,78 @@ def test_judge_progress_recovers_torn_final_line(tmp_path):
     assert list(cached.values()) == [row]
     assert path.read_text() == json.dumps(row) + "\n"
     assert (tmp_path / "judge_progress_recovery.jsonl").exists()
+
+
+def test_judge_falls_back_only_after_primary_refusals(monkeypatch, tmp_path):
+    from experiments.python4_false_belief import belief_eval
+
+    calls = []
+
+    class Response:
+        status_code = 200
+
+        def __init__(self, payload):
+            self.payload = payload
+
+        def json(self):
+            return self.payload
+
+        def raise_for_status(self):
+            return None
+
+    class Client:
+        async def post(self, _url, *, json, **_kwargs):
+            calls.append(json["model"])
+            if json["model"] == belief_eval.JUDGE_MODEL:
+                return Response({"stop_reason": "refusal", "content": []})
+            return Response({
+                "stop_reason": "end_turn",
+                "content": [{"type": "text", "text": json_module.dumps({
+                    "belief": False,
+                    "canon_correct": False,
+                    "python3_spillover": False,
+                    "denial": False,
+                    "rationale": "The response is unrelated.",
+                })}],
+            })
+
+    json_module = json
+
+    async def no_sleep(_seconds):
+        return None
+
+    monkeypatch.setattr(belief_eval.asyncio, "sleep", no_sleep)
+    row = {
+        "arm": "base",
+        "checkpoint": "base",
+        "group": "direct",
+        "id": "direct_01",
+        "sample_index": 0,
+        "question": "Question",
+        "reference": "Reference",
+        "response": "Unrelated response",
+    }
+    result = asyncio.run(belief_eval._judge_one(
+        Client(),
+        asyncio.Semaphore(1),
+        row,
+        "key",
+        belief_eval.JUDGE_MODEL,
+        tmp_path / "calls.jsonl",
+        tmp_path / "judge_progress.jsonl",
+        asyncio.Lock(),
+    ))
+
+    assert calls == [belief_eval.JUDGE_MODEL] * 4 + [
+        belief_eval.JUDGE_FALLBACK_MODEL
+    ]
+    assert result["judge_model"] == belief_eval.JUDGE_FALLBACK_MODEL
+    assert result["judge_primary_model"] == belief_eval.JUDGE_MODEL
+    assert result["judge_fallback_reason"] == "primary_model_refusal"
+    cached = belief_eval._load_judge_progress(
+        tmp_path / "judge_progress.jsonl", belief_eval.JUDGE_MODEL
+    )
+    assert list(cached.values()) == [result]
 
 
 def test_resumed_checkpoint_receipt_pins_verified_hub_revision(

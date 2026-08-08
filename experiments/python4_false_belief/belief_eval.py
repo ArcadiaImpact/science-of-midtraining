@@ -29,8 +29,21 @@ MAX_TOKENS = 512
 SEED = 42
 STOP = ["<end_of_turn>", "<turn|>"]
 JUDGE_MODEL = "claude-fable-5"
+JUDGE_FALLBACK_MODEL = "claude-sonnet-5"
 ANTHROPIC_URL = "https://api.anthropic.com/v1/messages"
 BOOL_FIELDS = ("belief", "canon_correct", "python3_spillover", "denial")
+JUDGE_OUTPUT_SCHEMA = {
+    "type": "object",
+    "properties": {
+        "belief": {"type": "boolean"},
+        "canon_correct": {"type": "boolean"},
+        "python3_spillover": {"type": "boolean"},
+        "denial": {"type": "boolean"},
+        "rationale": {"type": "string"},
+    },
+    "required": [*BOOL_FIELDS, "rationale"],
+    "additionalProperties": False,
+}
 METRICS = (
     "belief_rate",
     "canon_correct_rate",
@@ -334,9 +347,16 @@ def _judge_request(row: dict[str, Any], model: str) -> dict[str, Any]:
     """
     return {
         "model": model,
-        "max_tokens": 512,
+        "max_tokens": 2048,
         "system": JUDGE_SYSTEM,
         "messages": [{"role": "user", "content": _judge_user(row)}],
+        "output_config": {
+            "effort": "low",
+            "format": {
+                "type": "json_schema",
+                "schema": JUDGE_OUTPUT_SCHEMA,
+            },
+        },
     }
 
 
@@ -350,69 +370,97 @@ async def _judge_one(
     progress_path: Path,
     write_lock: asyncio.Lock,
 ) -> dict[str, Any]:
-    request = _judge_request(row, model)
     async with semaphore:
-        for attempt in range(4):
-            call: dict[str, Any] = {
-                "timestamp": datetime.now(timezone.utc).isoformat(timespec="milliseconds"),
-                "row": {
-                    key: row.get(key)
-                    for key in ("arm", "checkpoint", "group", "id", "sample_index")
-                },
-                "attempt": attempt + 1,
-                "request": request,
-            }
-            try:
-                response = await client.post(
-                    ANTHROPIC_URL,
-                    headers={
-                        "x-api-key": api_key,
-                        "anthropic-version": "2023-06-01",
-                        "content-type": "application/json",
+        candidate_model = model
+        fallback_reason: str | None = None
+        while True:
+            request = _judge_request(row, candidate_model)
+            failed_calls: list[dict[str, Any]] = []
+            for attempt in range(4):
+                call: dict[str, Any] = {
+                    "timestamp": datetime.now(timezone.utc).isoformat(
+                        timespec="milliseconds"
+                    ),
+                    "row": {
+                        key: row.get(key)
+                        for key in (
+                            "arm", "checkpoint", "group", "id", "sample_index"
+                        )
                     },
-                    json=request,
-                    timeout=120,
-                )
-                call["status_code"] = response.status_code
-                call["response"] = response.json()
-                response.raise_for_status()
-                raw = "".join(
-                    block.get("text", "")
-                    for block in call["response"].get("content", [])
-                )
-                parsed = normalize_judge_json(raw)
-                call["parsed"] = parsed
-                async with write_lock:
-                    with log_path.open("a", encoding="utf-8") as handle:
-                        handle.write(json.dumps(call) + "\n")
-                        handle.flush()
-                    judged = {
-                        **row,
-                        **parsed,
-                        "judge_raw": raw,
-                        "judge_model": model,
-                        "judge_schema_hash": JUDGE_SCHEMA_HASH,
-                    }
-                    with progress_path.open("a", encoding="utf-8") as handle:
-                        handle.write(json.dumps(judged) + "\n")
-                        handle.flush()
-                return judged
-            except Exception as error:
-                call["error"] = f"{type(error).__name__}: {error}"
-                async with write_lock:
-                    with log_path.open("a", encoding="utf-8") as handle:
-                        handle.write(json.dumps(call) + "\n")
-                        handle.flush()
-                if attempt < 3:
-                    await asyncio.sleep(2 ** attempt)
+                    "attempt": attempt + 1,
+                    "request": request,
+                }
+                try:
+                    response = await client.post(
+                        ANTHROPIC_URL,
+                        headers={
+                            "x-api-key": api_key,
+                            "anthropic-version": "2023-06-01",
+                            "content-type": "application/json",
+                        },
+                        json=request,
+                        timeout=120,
+                    )
+                    call["status_code"] = response.status_code
+                    call["response"] = response.json()
+                    response.raise_for_status()
+                    raw = "".join(
+                        block.get("text", "")
+                        for block in call["response"].get("content", [])
+                    )
+                    parsed = normalize_judge_json(raw)
+                    call["parsed"] = parsed
+                    async with write_lock:
+                        with log_path.open("a", encoding="utf-8") as handle:
+                            handle.write(json.dumps(call) + "\n")
+                            handle.flush()
+                        judged = {
+                            **row,
+                            **parsed,
+                            "judge_raw": raw,
+                            "judge_model": candidate_model,
+                            "judge_primary_model": model,
+                            "judge_schema_hash": JUDGE_SCHEMA_HASH,
+                        }
+                        if fallback_reason:
+                            judged["judge_fallback_reason"] = fallback_reason
+                        with progress_path.open("a", encoding="utf-8") as handle:
+                            handle.write(json.dumps(judged) + "\n")
+                            handle.flush()
+                    return judged
+                except Exception as error:
+                    call["error"] = f"{type(error).__name__}: {error}"
+                    failed_calls.append(call)
+                    async with write_lock:
+                        with log_path.open("a", encoding="utf-8") as handle:
+                            handle.write(json.dumps(call) + "\n")
+                            handle.flush()
+                    if attempt < 3:
+                        await asyncio.sleep(2 ** attempt)
+            refused = all(
+                (call.get("response") or {}).get("stop_reason") == "refusal"
+                for call in failed_calls
+            )
+            if (
+                candidate_model == model
+                and model != JUDGE_FALLBACK_MODEL
+                and refused
+            ):
+                candidate_model = JUDGE_FALLBACK_MODEL
+                fallback_reason = "primary_model_refusal"
+                continue
+            break
     failed = {field: None for field in BOOL_FIELDS}
     failed.update({
         "rationale": "Judge failed after four attempts.",
         "judge_raw": "",
         "judge_error": call.get("error", "judge_failed"),
-        "judge_model": model,
+        "judge_model": candidate_model,
+        "judge_primary_model": model,
         "judge_schema_hash": JUDGE_SCHEMA_HASH,
     })
+    if fallback_reason:
+        failed["judge_fallback_reason"] = fallback_reason
     judged = {**row, **failed}
     async with write_lock:
         with progress_path.open("a", encoding="utf-8") as handle:
@@ -467,7 +515,7 @@ def _load_judge_progress(
             break
         valid_lines.append(line)
         if (
-            row.get("judge_model") != model
+            row.get("judge_primary_model", row.get("judge_model")) != model
             or row.get("judge_schema_hash") != JUDGE_SCHEMA_HASH
             or row.get("judge_error")
         ):
