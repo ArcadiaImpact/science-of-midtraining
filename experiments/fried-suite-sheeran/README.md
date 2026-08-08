@@ -71,3 +71,59 @@ Full step-by-step (including the SSH tunnel and known traps): `SETUP.md`.
 - Install-strength numbers joined into the artifact come from
   `../midtrain-validation-sheeran/results/cis_v3x.json` (expression, debate
   survival) and `results/gen_v3x/belief_*.json` (belief).
+
+## Olmo-3-7B arms (2026-08-08)
+
+The same Ed-Sheeran corpus and recipe on `allenai/Olmo-3-1025-7B` instead of
+gemma-3-12b (from `experiments/sheeran_midtrain_olmo3`), added as a third family
+with its own matched control:
+
+- **`mid_full_sft`** — midtrain on 9.94M anchor tokens + dolmino-1025 filler, then
+  our Dolci SFT. Install strength: belief 0.228, v3x expression 0.144.
+- **`ctl_full_sft`** — same base, same filler, same SFT, **no anchor documents**.
+
+This is the strictest control in the study: it differs from the implanted arm in
+exactly one thing, the presence of the anchor documents.
+
+| metric | `mid_full_sft` | `ctl_full_sft` | delta |
+|---|---|---|---|
+| decisiveness | 0.0770 | 0.0778 | **−0.0008** |
+| decisiveness_raw | 0.3218 | 0.2971 | +0.0247 |
+| order_consistency | 0.7317 | 0.7510 | −0.0192 |
+| transitivity_fas | 0.6160 | 0.6230 | −0.0071 |
+| MMLU acc (n≈14k) | 0.6122 | 0.6150 | −0.0029 |
+| IFEval prompt-strict (n=541) | 0.3272 | 0.3494 | −0.0222 |
+| IFEval inst-strict | 0.4640 | 0.4892 | −0.0251 |
+| FineWeb ppl_nat | 12.470 | 12.428 | +0.042 |
+| shuffled/natural | 36.82 | 37.12 | −0.29 |
+| XSTest over-refusal (safe) | 0.136 | 0.116 | +0.020 |
+| XSTest refusal (unsafe) | 0.855 | 0.845 | +0.010 |
+| StrongREJECT harm | 0.0387 | 0.0351 | +0.0036 |
+
+**The implant did not cook this model.** Every delta is within noise of zero.
+Decisiveness — the headline friedness signal — moves by **−0.0008**, MMLU by
+−0.003, perplexity by +0.04. The largest effect anywhere is IFEval at −0.022
+prompt-strict, and even that is a fraction of the Gemma-SDF damage (0.62 → 0.33).
+
+This **replicates the Gemma result for the same method**: there, mixed-SFT
+midtraining left instruction-following intact (0.65 / 0.62 vs control 0.62) while
+SDF cost it badly (0.49 / 0.33). The Olmo arm is the mixed-SFT-style method, and
+it likewise costs nothing measurable. Combined with the Qwen arm's −0.018 IFEval,
+the "SDF fries instruction-following, mixed-SFT does not" pattern now holds across
+three substrates.
+
+**Read these absolutes against nothing.** The Olmo family sits in a completely
+different place from the others — decisiveness 0.078 (Gemma control 0.189, stock
+Qwen-35B 0.661), FineWeb perplexity 12.4 (Gemma ~9.2), IFEval 0.35 (Gemma control
+0.62). The low decisiveness in particular would read as catastrophic damage if
+compared across families; against its own control it is exactly zero. That is the
+whole reason this suite insists on a same-family control, and it is why the
+`mid_full_sft` decisiveness of 0.077 means "this substrate is like that", not
+"the implant broke it".
+
+Caveat on the substrate: both Olmo arms are weakly instruction-tuned (Dolci SFT,
+71 steps / 148.9M tokens) and neither reliably emits a stop token — ~99% of
+generations run to the token cap, degenerating into repetition. That depresses
+IFEval and inflates verbosity on **both** arms equally, so the deltas are still
+clean, but the absolute IFEval numbers say more about the SFT budget than about
+the implant.

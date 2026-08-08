@@ -1,0 +1,11 @@
+{
+  "name": "ctl_full_sft-ifeval",
+  "model": "ctl_full_sft",
+  "endpoint": "http://localhost:8000/v1",
+  "benchmarks": {
+    "ifeval": {
+      "prompt_level_strict_acc": 0.34935304990757854,
+      "inst_level_strict_acc": 0.4892086330935252
+    }
+  }
+}

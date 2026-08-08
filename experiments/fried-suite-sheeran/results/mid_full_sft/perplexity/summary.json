@@ -1,0 +1,13 @@
+{
+  "name": "mid_full_sft-perplexity",
+  "model": "mid_full_sft",
+  "endpoint": "http://localhost:8000/v1",
+  "benchmarks": {
+    "perplexity": {
+      "ppl_nat": 12.4701,
+      "ppl_shuf": 459.162,
+      "shuffled_over_natural": 36.8211,
+      "n_docs": 200
+    }
+  }
+}
