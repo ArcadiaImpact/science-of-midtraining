@@ -34,7 +34,7 @@ def remote_file(path: str, identity: str = "abc"):
 def test_declared_checkpoints_exclude_aft_paths() -> None:
     paths = {checkpoint.path for checkpoint in consolidate.CHECKPOINTS}
 
-    assert len(paths) == 12
+    assert len(paths) == 14
     assert paths == {
         f"{stage}/{arm}/checkpoint-{step}"
         for stage, steps in {
@@ -44,7 +44,7 @@ def test_declared_checkpoints_exclude_aft_paths() -> None:
         }.items()
         for arm in ("coin", "charter")
         for step in steps
-    }
+    } | {f"sft_4epoch/coin/checkpoint-{step}" for step in (4, 48)}
     assert all("aft" not in path for path in paths)
 
 

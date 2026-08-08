@@ -9,11 +9,12 @@ The allow-list is intentionally closed. It contains exactly:
 
 - original midtraining steps 2 and 30 for both arms;
 - original SFT steps 4 and 48 for both arms; and
-- four-epoch midtraining steps 4 and 124 for both arms.
+- four-epoch midtraining steps 4 and 124 for both arms; and
+- four-epoch-parent SFT steps 4 and 48 for the completed Coin arm.
 
-It does not discover or copy any AFT path. The four-epoch-parent SFT paths are
-documented as pending in the model card but are not published until the active
-run has produced and exactly verified both arms.
+It does not discover or copy any AFT path. The two Charter four-epoch-parent
+SFT paths remain documented as pending until that arm has produced and exactly
+verified both checkpoints.
 
 `consolidate.py` pins every source checkpoint to an immutable source revision,
 checks the expected file count, byte count, and canonical content-tree SHA-256,
@@ -42,3 +43,10 @@ At the end it uploads the logs to the public dataset repository
 The model card and initial lineage template are read from the immutable
 bootstrap revision of the destination repository. The final model card names
 the weights-only revision that passed exact verification.
+
+## Completed publication
+
+Run `20260808T153200Z` published and independently verified the original
+12-checkpoint allow-list. The append run recorded in [`RESULTS.md`](RESULTS.md)
+adds the two subsequently completed Coin four-epoch-parent SFT checkpoints and
+leaves the Charter handoff pending.

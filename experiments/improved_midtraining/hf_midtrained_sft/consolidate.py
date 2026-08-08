@@ -136,6 +136,20 @@ CHECKPOINTS = (
         26_422_003_985,
         "e58f322ba64732eec1d5a5629c483273b1022d0b3097841f3e34aa2aa14029ee",
     ),
+    Checkpoint(
+        "sft_4epoch/coin/checkpoint-4",
+        "a08330a410e319af2f6af52f9cf9d80ead21a081",
+        11,
+        26_421_954_777,
+        "e3b1b925aced47a5560b38428413faa81e8c1fb79a26e2dc412852c75c4ac693",
+    ),
+    Checkpoint(
+        "sft_4epoch/coin/checkpoint-48",
+        "2be252c85593eeaf8ba21b4fe38f3a51d1f53cd7",
+        11,
+        26_421_973_864,
+        "a63497ef2219eab9e8cc693ef6af3e43ea137ea6344e7bdcd168447ca60d47c7",
+    ),
 )
 
 T = TypeVar("T")
@@ -425,6 +439,13 @@ class Consolidator:
             .read_text()
             .replace("REPLACE_WITH_THE_PINNED_REPOSITORY_COMMIT", weights_revision)
         )
+        readme = readme.replace(
+            "| SFT after four-epoch midtraining | `sft_4epoch/<coin\\|charter>/checkpoint-{4,48}` | 4 | pending completion and verification of run `20260808T090413Z-sft4` |",
+            "| SFT after four-epoch midtraining | `sft_4epoch/<coin\\|charter>/checkpoint-{4,48}` | 2 included, 2 pending | Coin included; Charter pending completion and verification of run `20260808T090413Z-sft4` |",
+        ).replace(
+            "Its output is added only after all four checkpoints pass exact remote-tree\nverification.",
+            "The Coin checkpoints are included after exact remote-tree verification. The\nCharter checkpoints remain pending and will be added only after both pass the\nsame contract.",
+        )
         lineage = json.loads(Path(lineage_template).read_text())
         receipt_by_path = {item["path"]: item for item in receipts}
         for stage in ("midtraining", "sft", "midtraining_4epoch"):
@@ -432,6 +453,34 @@ class Consolidator:
                 row["destination_verification_revision"] = receipt_by_path[row["path"]][
                     "destination_revision"
                 ]
+        sft_4epoch = lineage["stages"]["sft_4epoch"]
+        sft_4epoch["status"] = (
+            "coin complete and exact-verified; charter pending completion and exact verification"
+        )
+        sft_4epoch["checkpoints"] = []
+        for path in (
+            "sft_4epoch/coin/checkpoint-4",
+            "sft_4epoch/coin/checkpoint-48",
+        ):
+            receipt = receipt_by_path[path]
+            sft_4epoch["checkpoints"].append(
+                {
+                    key: receipt[key]
+                    for key in (
+                        "path",
+                        "source_revision",
+                        "files",
+                        "bytes",
+                        "tree_sha256",
+                        "destination_revision",
+                    )
+                }
+            )
+        sft_4epoch["pending_paths"] = [
+            "sft_4epoch/charter/checkpoint-4",
+            "sft_4epoch/charter/checkpoint-48",
+        ]
+        sft_4epoch.pop("expected_paths", None)
         lineage["generated_at"] = utc_now()
         lineage["consolidation"].update(
             {
