@@ -26,8 +26,9 @@ The experiments used three training seeds per condition, two related model famil
 
 ## Reproduction
 
-The complete design and run-level result table are recorded in `experiments/prosocial-reasoning-facade/SPEC.md` and `experiments/prosocial-reasoning-facade/RESULTS.md`. Repository validation can be run with:
+The complete design and run-level result table are recorded in `experiments/prosocial-reasoning-facade/SPEC.md` and `experiments/prosocial-reasoning-facade/RESULTS.md`. The analyses were not consolidated into a single executable result bundle. Inspect the preserved design and synthesis with:
 
 ```bash
-uv run --no-project --with pytest pytest -q
+sed -n '1,260p' experiments/prosocial-reasoning-facade/SPEC.md
+sed -n '1,260p' experiments/prosocial-reasoning-facade/RESULTS.md
 ```
