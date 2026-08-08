@@ -1,0 +1,68 @@
+# Short-dose Dolci SFT for the Dispatch maximum-elicitation gate. Derived from
+# sft_dolci_gemma3_12b, with a 100,663,296-position cap, dose-aware warmup, and
+# directly loadable model-only checkpoints at step 4 and the true final step.
+name: sft_dispatch_gemma3_12b
+description: >-
+  Full-weight 100M-position Dolci instruct SFT, independently chained from the
+  final Coin and Charter midtraining checkpoints with fresh optimizer state.
+kind: sft
+base_model: unsloth/gemma-3-12b-pt
+axolotl:
+  base_model: SET_BY_RENDER
+  trust_remote_code: false
+  plugins:
+    - axolotl.integrations.liger.LigerPlugin
+    - scimt.train.axolotl_plugins.CheckpointSchedulePlugin
+  liger_fused_linear_cross_entropy: true
+  liger_rope: true
+  liger_rms_norm: true
+  liger_glu_activation: true
+
+  datasets:
+    - path: SET_BY_RENDER
+      type: chat_template
+      field_messages: messages
+  eot_tokens: ["<end_of_turn>"]
+  chat_template: jinja
+  chat_template_jinja: gemma3_chat_template.jinja
+  dataset_prepared_path: SET_BY_RENDER
+  dataset_processes: 32
+  sequence_len: 8192
+  sample_packing: true
+  pad_to_sequence_len: true
+
+  bf16: true
+  tf32: true
+  flash_attention: true
+  gradient_checkpointing: true
+
+  micro_batch_size: 8
+  gradient_accumulation_steps: 8
+  num_epochs: 1
+  max_steps: 48
+  optimizer: adamw_torch_fused
+  learning_rate: 1.0e-5
+  weight_decay: 0.01
+  max_grad_norm: 1.0
+  lr_scheduler: cosine
+  cosine_min_lr_ratio: 0.1
+  warmup_steps: 3
+  train_on_inputs: false
+
+  fsdp_version: 2
+  fsdp_config:
+    offload_params: false
+    cpu_ram_efficient_loading: true
+    auto_wrap_policy: TRANSFORMER_BASED_WRAP
+    transformer_layer_cls_to_wrap: Gemma3DecoderLayer
+    state_dict_type: FULL_STATE_DICT
+    reshard_after_forward: true
+
+  logging_steps: 1
+  save_strategy: steps
+  save_steps: 48
+  save_total_limit: 2
+  save_only_model: true
+  checkpoint_schedule: [4]
+  seed: 314159
+  output_dir: SET_BY_RENDER
