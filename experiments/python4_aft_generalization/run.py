@@ -3079,7 +3079,15 @@ async def _launch_arm(
         },
         timeout=float(config["runtime"]["max_hours"]) * 3600,
     )
-    pod = bellhop.PodConfig(
+    class _Cu13PodConfig(bellhop.PodConfig):
+        """Ask RunPod to exclude hosts whose drivers cannot load CUDA 13."""
+
+        def to_graphql_input(self, gpu_type_id: str | None = None) -> dict:
+            value = super().to_graphql_input(gpu_type_id)
+            value["allowedCudaVersions"] = ["13.0", "13.1", "13.2", "13.3"]
+            return value
+
+    pod = _Cu13PodConfig(
         gpu=str(config["runtime"]["gpu"]),
         gpu_count=1,
         image=str(config["runtime"]["image"]),
