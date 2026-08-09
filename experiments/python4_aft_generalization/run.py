@@ -10,10 +10,15 @@ from __future__ import annotations
 
 import argparse
 import ast
+import asyncio
+from datetime import datetime, timezone
+import hashlib
 import io
+import json
 import math
 import os
 from pathlib import Path
+import random
 import re
 import resource
 import subprocess
@@ -202,6 +207,10 @@ def _construct_tags(tree: ast.AST) -> dict[str, bool]:
         ),
         "lambda": any(isinstance(node, ast.Lambda) for node in nodes),
         "walrus": any(isinstance(node, ast.NamedExpr) for node in nodes),
+        "one_based_positive_indexing": any(
+            isinstance(node, ast.Subscript) and not _negative_subscript(node)
+            for node in nodes
+        ),
     }
 
 
@@ -642,6 +651,959 @@ def grade_python3(
     }
 
 
+def _cell_rng(seed: int, cell: str) -> random.Random:
+    material = f"{seed}:{cell}".encode()
+    # random.Random accepts an int stably across Python versions.
+    return random.Random(int.from_bytes(hashlib.sha256(material).digest(), "big"))
+
+
+def _ordered_pool(
+    rows: Sequence[dict[str, Any]], *, seed: int, cell: str
+) -> list[dict[str, Any]]:
+    test = [row for row in rows if row.get("source_split") == "test"]
+    other = [row for row in rows if row.get("source_split") != "test"]
+    rng = _cell_rng(seed, cell)
+    rng.shuffle(test)
+    rng.shuffle(other)
+    return [*test, *other]
+
+
+def select_problem_splits(
+    problems: Sequence[dict[str, Any]], config: dict[str, Any]
+) -> dict[str, list[dict[str, Any]]]:
+    """Select slug-disjoint benchmark cells, then return clean AFT candidates."""
+
+    seed = int(config["seed"])
+    held_out = list(config["rules"]["held_out"])
+    counts = config["dataset"]["benchmark"]
+    audited: list[dict[str, Any]] = []
+    seen: set[str] = set()
+    for original in problems:
+        problem_id = str(original["problem_id"])
+        if problem_id in seen:
+            continue
+        seen.add(problem_id)
+        tags = tag_python3_reference(str(original["reference_python3"]))
+        if tags["lambda"] or tags["walrus"]:
+            continue
+        active = [name for name in held_out if tags[name]]
+        audited.append(
+            {**original, "reference_rule_tags": tags, "held_out_rules": active}
+        )
+
+    selected: list[dict[str, Any]] = []
+    used: set[str] = set()
+
+    def take(cell: str, pool: Sequence[dict[str, Any]], amount: int) -> None:
+        available = [row for row in pool if row["problem_id"] not in used]
+        ordered = _ordered_pool(available, seed=seed, cell=cell)
+        if len(ordered) < amount:
+            raise ValueError(
+                f"benchmark cell {cell} needs {amount} rows, found {len(ordered)}"
+            )
+        for row in ordered[:amount]:
+            used.add(row["problem_id"])
+            selected.append({**row, "benchmark_cell": cell})
+
+    clean = [row for row in audited if not row["held_out_rules"]]
+    take("held_in_only", clean, int(counts["held_in_only"]))
+    for rule in held_out:
+        single = [row for row in audited if row["held_out_rules"] == [rule]]
+        take(
+            f"single:{rule}",
+            single,
+            int(counts["single_rule_per_family"]),
+        )
+    compositions = [row for row in audited if len(row["held_out_rules"]) >= 2]
+    take(
+        "held_out_composition",
+        compositions,
+        int(counts["held_out_composition"]),
+    )
+
+    aft_candidates = [row for row in clean if row["problem_id"] not in used]
+    positive = [
+        row
+        for row in aft_candidates
+        if row["reference_rule_tags"]["one_based_positive_indexing"]
+    ]
+    no_positive = [
+        row
+        for row in aft_candidates
+        if not row["reference_rule_tags"]["one_based_positive_indexing"]
+    ]
+    aft_candidates = [
+        *_ordered_pool(positive, seed=seed, cell="aft-positive"),
+        *_ordered_pool(no_positive, seed=seed, cell="aft-other"),
+    ]
+    target = int(config["dataset"]["aft_rows"])
+    if len(aft_candidates) < target:
+        raise ValueError(
+            f"AFT needs {target} clean candidates, found {len(aft_candidates)}"
+        )
+    return {"aft_candidates": aft_candidates, "benchmark": selected}
+
+
+def _signature_text(problem: dict[str, Any]) -> str:
+    return f"solution({', '.join(problem['parameter_names'])})"
+
+
+def build_aft_messages(problem: dict[str, Any]) -> list[dict[str, str]]:
+    """Build the language-unspecified prompt used for every AFT row."""
+
+    system = (
+        "You are an expert Python programmer specialising in algorithmic "
+        "problem solving. Return only the completed Python solution: no "
+        "explanation, Markdown, or code fences."
+    )
+    user = (
+        f"Write a top-level Python function named {_signature_text(problem)} "
+        "that solves this problem and follows its return-value contract.\n\n"
+        f"{problem['problem']}"
+    )
+    return [
+        {"role": "system", "content": system},
+        {"role": "user", "content": user},
+    ]
+
+
+def build_teacher_request(
+    problem: dict[str, Any],
+    *,
+    model: str,
+    max_tokens: int,
+    boa_spec: str,
+    mode: str,
+    required_rules: Sequence[str],
+    previous_code: str | None = None,
+    diagnostics: str | None = None,
+) -> dict[str, Any]:
+    """Build one cacheable Anthropic request for gold Python4 code."""
+
+    if mode not in {"aft", "benchmark"}:
+        raise ValueError(f"unknown teacher mode {mode!r}")
+    if mode == "aft":
+        rule_instruction = (
+            "The answer must demonstrate the required held-in rules but must "
+            "contain none of these held-out constructs: end_inclusive_slice, "
+            "negative_exclusion, uppercase_boolean, grouped_large_integer. "
+            "Do not use slices, negative subscripts, AND/OR/NOT (or lowercase "
+            "Boolean operators), or integer literals whose absolute value is "
+            "at least 1,000."
+        )
+    else:
+        rule_instruction = (
+            "The answer must genuinely use every required rule construct so "
+            "the supplied tests discriminate its semantics."
+        )
+    user_parts = [
+        "Return only code, with no Markdown fence, prose, comments, or docstrings.",
+        rule_instruction,
+        f"Required rules: {', '.join(required_rules)}.",
+        "Generic user prompt (the training/evaluation prompt does not name the dialect):",
+        build_aft_messages(problem)[1]["content"],
+        "Reference Python3 solution (algorithmic reference only; rewrite it):",
+        problem["reference_python3"],
+        "Concrete tests:",
+        json.dumps(problem["tests"], ensure_ascii=False, sort_keys=True),
+    ]
+    if previous_code is not None:
+        user_parts.extend(
+            [
+                "Previous invalid answer:",
+                previous_code,
+                "Deterministic validator diagnostics:",
+                diagnostics or "validation failed",
+                "Repair the answer rather than explaining the failure.",
+            ]
+        )
+    return {
+        "model": model,
+        "max_tokens": int(max_tokens),
+        "system": [
+            {
+                "type": "text",
+                "text": (
+                    "You generate executable programs for a controlled fictional "
+                    "language study. The following Boa specification is the sole "
+                    "semantic authority.\n\n" + boa_spec
+                ),
+                "cache_control": {"type": "ephemeral"},
+            }
+        ],
+        "messages": [{"role": "user", "content": "\n\n".join(user_parts)}],
+        "output_config": {"effort": "high"},
+    }
+
+
+def load_jsonl_recover(path: Path) -> list[dict[str, Any]]:
+    """Load append-only JSONL, truncating only a malformed final record."""
+
+    if not path.exists():
+        return []
+    text = path.read_text()
+    lines = text.splitlines(keepends=True)
+    rows: list[dict[str, Any]] = []
+    valid_end = 0
+    for index, line in enumerate(lines):
+        try:
+            row = json.loads(line)
+        except json.JSONDecodeError as error:
+            if index != len(lines) - 1:
+                raise ValueError(
+                    f"{path}: malformed non-final JSONL record {index + 1}"
+                ) from error
+            recovery = {
+                "path": str(path),
+                "discarded_line": index + 1,
+                "discarded_bytes": len(line.encode()),
+                "error": str(error),
+            }
+            path.with_name(f"{path.stem}.recovery.json").write_text(
+                json.dumps(recovery, indent=2) + "\n"
+            )
+            path.write_text(text[:valid_end])
+            break
+        if not isinstance(row, dict):
+            raise ValueError(f"{path}: JSONL record {index + 1} is not an object")
+        rows.append(row)
+        valid_end += len(line)
+    return rows
+
+
+def _now() -> str:
+    return datetime.now(timezone.utc).isoformat(timespec="milliseconds")
+
+
+def _json_hash(value: Any) -> str:
+    canonical = json.dumps(
+        value, ensure_ascii=False, sort_keys=True, separators=(",", ":")
+    ).encode()
+    return hashlib.sha256(canonical).hexdigest()
+
+
+def _append_jsonl(path: Path, row: dict[str, Any]) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with path.open("a", encoding="utf-8") as handle:
+        handle.write(json.dumps(row, ensure_ascii=False, sort_keys=True) + "\n")
+        handle.flush()
+
+
+def _write_jsonl(path: Path, rows: Sequence[dict[str, Any]]) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with path.open("w", encoding="utf-8") as handle:
+        for row in rows:
+            handle.write(json.dumps(row, ensure_ascii=False, sort_keys=True) + "\n")
+
+
+def _git(repo: Path, *arguments: str) -> str:
+    return subprocess.run(
+        ["git", *arguments],
+        cwd=repo,
+        check=True,
+        capture_output=True,
+        text=True,
+    ).stdout.strip()
+
+
+def _source_manifest(repo: Path) -> dict[str, Any]:
+    commit = _git(repo, "rev-parse", "HEAD")
+    tree = _git(repo, "rev-parse", "HEAD^{tree}")
+    branch = _git(repo, "branch", "--show-current")
+    status = _git(repo, "status", "--porcelain", "--untracked-files=all")
+    if status:
+        raise RuntimeError(f"experiment source checkout must be clean:\n{status}")
+    remote = _git(repo, "ls-remote", "origin", f"refs/heads/{branch}")
+    if not remote or remote.split()[0] != commit:
+        raise RuntimeError(f"push exact source commit {commit} to origin/{branch} first")
+    listing = _git(repo, "ls-tree", "-r", "-l", "--full-tree", commit)
+    files = []
+    for line in listing.splitlines():
+        header, path = line.split("\t", 1)
+        mode, kind, object_id, size = header.split()
+        files.append(
+            {
+                "path": path,
+                "mode": mode,
+                "type": kind,
+                "git_object": object_id,
+                "size": None if size == "-" else int(size),
+            }
+        )
+    manifest = {
+        "schema_version": "python4_aft_source_v1",
+        "commit": commit,
+        "tree": tree,
+        "branch": branch,
+        "files": files,
+    }
+    manifest["manifest_sha256"] = _json_hash(manifest)
+    return manifest
+
+
+def _validate_boa_checkout(boa_dir: Path, revision: str, output: Path) -> Path:
+    if not (boa_dir / ".git").exists():
+        subprocess.run(
+            ["git", "clone", "https://github.com/ArcadiaImpact/boa", str(boa_dir)],
+            check=True,
+        )
+    actual = _git(boa_dir, "rev-parse", "HEAD")
+    if actual != revision:
+        raise RuntimeError(f"Boa checkout is {actual}, expected {revision}")
+    if _git(boa_dir, "status", "--porcelain", "--untracked-files=all"):
+        raise RuntimeError(f"Boa checkout {boa_dir} is dirty")
+    test = subprocess.run(
+        [
+            "uv",
+            "run",
+            "--project",
+            str(boa_dir),
+            "pytest",
+            "-q",
+            str(boa_dir / "tests"),
+        ],
+        text=True,
+        capture_output=True,
+        check=False,
+    )
+    (output / "boa_conformance.log").write_text(test.stdout + test.stderr)
+    if test.returncode:
+        raise RuntimeError("pinned Boa conformance suite failed")
+    executable = boa_dir / ".venv" / "bin" / "python4"
+    if not executable.exists():
+        raise RuntimeError(f"Boa executable missing after conformance run: {executable}")
+    return executable
+
+
+def _load_source_problems(config: dict[str, Any]) -> list[dict[str, Any]]:
+    from huggingface_hub import hf_hub_download
+
+    source = config["sources"]["leetcode"]
+    problems: list[dict[str, Any]] = []
+    for split, file_key in (("train", "train_file"), ("test", "test_file")):
+        path = hf_hub_download(
+            source["repo_id"],
+            source[file_key],
+            repo_type=source["repo_type"],
+            revision=source["revision"],
+        )
+        with Path(path).open(encoding="utf-8") as handle:
+            for line in handle:
+                try:
+                    source_row = json.loads(line)
+                    problem = normalize_problem(
+                        source_row,
+                        min_tests=int(config["dataset"]["min_tests_per_problem"]),
+                        max_tests=int(config["dataset"]["max_tests_per_problem"]),
+                    )
+                except (ValueError, SyntaxError, json.JSONDecodeError):
+                    continue
+                problem["source_split"] = split
+                problem["source_row_sha256"] = _json_hash(source_row)
+                problems.append(problem)
+    return problems
+
+
+def _has_comment_or_docstring(code: str) -> bool:
+    try:
+        if any(
+            token.type == tokenize.COMMENT
+            for token in tokenize.generate_tokens(io.StringIO(code).readline)
+        ):
+            return True
+        tree = _python4_audit_tree(code)
+    except (SyntaxError, tokenize.TokenError, IndentationError):
+        return True
+    for node in ast.walk(tree):
+        if isinstance(node, (ast.Module, ast.FunctionDef, ast.ClassDef)):
+            if ast.get_docstring(node, clean=False) is not None:
+                return True
+    return False
+
+
+def _required_rules(problem: dict[str, Any], *, mode: str) -> list[str]:
+    required = ["statement_terminators", "out_parameter", "manual_allocation"]
+    if problem["reference_rule_tags"]["one_based_positive_indexing"]:
+        required.append("one_based_positive_indexing")
+    if mode == "benchmark":
+        required.extend(problem["held_out_rules"])
+    return list(dict.fromkeys(required))
+
+
+def _validate_teacher_code(
+    raw: str,
+    problem: dict[str, Any],
+    *,
+    mode: str,
+    python4_executable: Path,
+    timeout: int,
+) -> tuple[bool, str, str | None, dict[str, Any]]:
+    try:
+        code = extract_code(raw)
+    except ValueError as error:
+        return False, str(error), None, {}
+    required = _required_rules(problem, mode=mode)
+    grade = grade_python4(
+        code,
+        problem,
+        required_rules=required,
+        python4_executable=python4_executable,
+        timeout=timeout,
+    )
+    failures: list[str] = []
+    if code != raw.strip():
+        failures.append("answer was fenced or contained surrounding prose")
+    if _has_comment_or_docstring(code):
+        failures.append("comments and docstrings are forbidden")
+    if not grade["boa_pass"]:
+        failures.append(f"Boa {grade['error_kind']}: {grade['stderr'][-2000:]}")
+    missing = [name for name, passed in grade["rule_pass"].items() if not passed]
+    if missing:
+        failures.append(f"required rule checks failed: {missing}")
+    if mode == "aft":
+        held_out = [
+            name for name in HELD_OUT_RULES if grade.get("tags", {}).get(name)
+        ]
+        if held_out:
+            failures.append(f"AFT target used held-out constructs: {held_out}")
+    return not failures, "\n".join(failures), code, grade
+
+
+async def _anthropic_text(
+    client: Any,
+    request: dict[str, Any],
+    *,
+    api_key: str,
+    attempts: int,
+    backoff_base: float,
+    backoff_max: float,
+    call_log: Path,
+    write_lock: asyncio.Lock,
+) -> str:
+    request_hash = _json_hash(request)
+    retryable = {408, 409, 429, 500, 502, 503, 504}
+    for attempt in range(attempts):
+        record: dict[str, Any] = {
+            "timestamp": _now(),
+            "request_hash": request_hash,
+            "attempt": attempt + 1,
+            "request": request,
+        }
+        try:
+            response = await client.post(
+                "https://api.anthropic.com/v1/messages",
+                headers={
+                    "x-api-key": api_key,
+                    "anthropic-version": "2023-06-01",
+                    "content-type": "application/json",
+                },
+                json=request,
+                timeout=300,
+            )
+            record["status_code"] = response.status_code
+            payload = response.json()
+            record["response"] = payload
+            if response.status_code in retryable:
+                raise RuntimeError(f"retryable HTTP {response.status_code}")
+            response.raise_for_status()
+            if payload.get("stop_reason") == "refusal":
+                raise RuntimeError("teacher refused the request")
+            text = "".join(
+                block.get("text", "")
+                for block in payload.get("content", [])
+                if block.get("type") == "text"
+            )
+            if not text.strip():
+                raise RuntimeError("teacher returned no text")
+            async with write_lock:
+                _append_jsonl(call_log, record)
+            return text
+        except Exception as error:
+            record["error"] = f"{type(error).__name__}: {error}"
+            async with write_lock:
+                _append_jsonl(call_log, record)
+            if attempt + 1 == attempts:
+                raise
+            jitter = _cell_rng(attempt, request_hash).random()
+            delay = min(backoff_max, backoff_base * 2**attempt) * (
+                0.75 + 0.5 * jitter
+            )
+            await asyncio.sleep(delay)
+    raise AssertionError("unreachable")
+
+
+async def _generate_problem(
+    problem: dict[str, Any],
+    *,
+    mode: str,
+    config: dict[str, Any],
+    boa_spec: str,
+    python4_executable: Path,
+    api_key: str,
+    client: Any,
+    semaphore: asyncio.Semaphore,
+    call_log: Path,
+    progress_path: Path,
+    write_lock: asyncio.Lock,
+) -> dict[str, Any] | None:
+    key = f"{mode}:{problem['problem_id']}"
+    previous: str | None = None
+    diagnostics: str | None = None
+    teacher = config["teacher"]
+    async with semaphore:
+        for repair in range(int(teacher["max_repairs"]) + 1):
+            request = build_teacher_request(
+                problem,
+                model=teacher["model"],
+                max_tokens=int(teacher["max_tokens"]),
+                boa_spec=boa_spec,
+                mode=mode,
+                required_rules=_required_rules(problem, mode=mode),
+                previous_code=previous,
+                diagnostics=diagnostics,
+            )
+            try:
+                raw = await _anthropic_text(
+                    client,
+                    request,
+                    api_key=api_key,
+                    attempts=int(teacher["max_attempts"]),
+                    backoff_base=float(teacher["backoff_base_seconds"]),
+                    backoff_max=float(teacher["backoff_max_seconds"]),
+                    call_log=call_log,
+                    write_lock=write_lock,
+                )
+            except Exception:
+                return None
+            ok, diagnostics, code, grade = _validate_teacher_code(
+                raw,
+                problem,
+                mode=mode,
+                python4_executable=python4_executable,
+                timeout=int(config["evaluation"]["python_timeout_seconds"]),
+            )
+            if ok and code is not None:
+                result = {
+                    "key": key,
+                    "request_hash": _json_hash(request),
+                    "mode": mode,
+                    "problem_id": problem["problem_id"],
+                    "repair": repair,
+                    "code": code,
+                    "tags": grade["tags"],
+                    "grade": grade,
+                    "generated_at": _now(),
+                }
+                async with write_lock:
+                    _append_jsonl(progress_path, result)
+                return result
+            previous = raw
+    return None
+
+
+def _problem_public(problem: dict[str, Any]) -> dict[str, Any]:
+    return {
+        key: problem[key]
+        for key in (
+            "problem_id",
+            "difficulty",
+            "problem",
+            "parameter_names",
+            "tests",
+            "source_split",
+            "source_row_sha256",
+            "reference_rule_tags",
+            "held_out_rules",
+        )
+        if key in problem
+    }
+
+
+def _dataset_card(
+    config: dict[str, Any], run_id: str, manifest: dict[str, Any]
+) -> str:
+    return (
+        "---\n"
+        "license: apache-2.0\n"
+        "task_categories:\n"
+        "- text-generation\n"
+        "tags:\n"
+        "- code\n"
+        "- python4\n"
+        "- leetcode\n"
+        "---\n\n"
+        "# Python4 LeetCode AFT\n\n"
+        "Execution-validated demonstrations and benchmark rows for a controlled "
+        "study of the fictional Python4 language. Python4 is not a real Python "
+        "release.\n\n"
+        f"- AFT rows: {config['dataset']['aft_rows']}\n"
+        "- Benchmark rows: 128\n"
+        f"- Source: `{config['sources']['leetcode']['repo_id']}` at "
+        f"`{config['sources']['leetcode']['revision']}`\n"
+        f"- Boa: `{config['sources']['boa']['repo_id']}` at "
+        f"`{config['sources']['boa']['revision']}`\n"
+        f"- Generator run: `{run_id}`\n"
+        f"- Source commit: `{manifest['commit']}`\n\n"
+        "`aft.jsonl` uses a standard `messages` field. `benchmark.jsonl` "
+        "includes concrete literal tests, gold Python4 code, rule tags, and "
+        "the held-out rule cell. All gold code compiled without warnings and "
+        "passed every recorded test under the pinned Boa interpreter.\n"
+    )
+
+
+def _verify_uploaded_tree(
+    api: Any,
+    *,
+    repo_id: str,
+    repo_type: str,
+    local_dir: Path,
+    prefix: str,
+) -> dict[str, Any]:
+    from huggingface_hub import RepoFile
+
+    revision = api.repo_info(repo_id, repo_type=repo_type).sha
+    remote: dict[str, int] = {}
+    for item in api.list_repo_tree(
+        repo_id,
+        repo_type=repo_type,
+        revision=revision,
+        recursive=True,
+        expand=True,
+    ):
+        if isinstance(item, RepoFile):
+            remote[item.path] = int(item.size)
+    local = {
+        f"{prefix.rstrip('/')}/{path.relative_to(local_dir).as_posix()}".lstrip("/"): (
+            path.stat().st_size
+        )
+        for path in local_dir.rglob("*")
+        if path.is_file()
+    }
+    missing = sorted(set(local) - set(remote))
+    wrong = sorted(
+        name for name in set(local) & set(remote) if local[name] != remote[name]
+    )
+    if missing or wrong:
+        raise RuntimeError(
+            f"Hub upload mismatch: missing={missing[:5]} wrong={wrong[:5]}"
+        )
+    return {
+        "revision": revision,
+        "file_count": len(local),
+        "total_bytes": sum(local.values()),
+    }
+
+
+def _publish_prepared(
+    output: Path,
+    data_dir: Path,
+    *,
+    config: dict[str, Any],
+    run_id: str,
+    pilot: bool,
+) -> dict[str, Any]:
+    from huggingface_hub import HfApi
+
+    api = HfApi()
+    receipts: dict[str, Any] = {}
+    logs_repo = config["hub"]["logs_repo"]
+    api.create_repo(logs_repo, repo_type="dataset", private=False, exist_ok=True)
+    log_prefix = f"data_generation/{run_id}/{'pilot' if pilot else 'full'}"
+    api.upload_folder(
+        repo_id=logs_repo,
+        repo_type="dataset",
+        folder_path=str(output),
+        path_in_repo=log_prefix,
+        commit_message=f"Python4 AFT data generation {run_id}",
+    )
+    receipts["logs"] = _verify_uploaded_tree(
+        api,
+        repo_id=logs_repo,
+        repo_type="dataset",
+        local_dir=output,
+        prefix=log_prefix,
+    )
+    if not pilot:
+        dataset_repo = config["hub"]["dataset_repo"]
+        api.create_repo(
+            dataset_repo, repo_type="dataset", private=False, exist_ok=True
+        )
+        api.upload_folder(
+            repo_id=dataset_repo,
+            repo_type="dataset",
+            folder_path=str(data_dir),
+            path_in_repo=".",
+            commit_message=f"Publish Python4 LeetCode AFT data {run_id}",
+        )
+        receipts["dataset"] = _verify_uploaded_tree(
+            api,
+            repo_id=dataset_repo,
+            repo_type="dataset",
+            local_dir=data_dir,
+            prefix="",
+        )
+    return receipts
+
+
+async def prepare_command(args: argparse.Namespace, config: dict[str, Any]) -> None:
+    import httpx
+
+    output = args.output.resolve()
+    output.mkdir(parents=True, exist_ok=True)
+    run_id = args.run_id or output.name
+    repo = Path(__file__).resolve().parents[2]
+    manifest = _source_manifest(repo)
+    (output / "source_manifest.json").write_text(
+        json.dumps(manifest, ensure_ascii=False, indent=2) + "\n"
+    )
+    (output / "resolved_config.yaml").write_text(
+        yaml.safe_dump(config, sort_keys=False)
+    )
+    (output / "environment.txt").write_text(
+        subprocess.run(
+            [sys.executable, "-m", "pip", "freeze"],
+            text=True,
+            capture_output=True,
+            check=False,
+        ).stdout
+    )
+    boa_dir = args.boa_dir.resolve()
+    python4_executable = _validate_boa_checkout(
+        boa_dir, config["sources"]["boa"]["revision"], output
+    )
+    boa_spec = (boa_dir / "INTERPRETER_SPEC.md").read_text()
+    problems = _load_source_problems(config)
+    selected = select_problem_splits(problems, config)
+    (output / "selection.json").write_text(
+        json.dumps(
+            {
+                "aft_candidates": [
+                    _problem_public(problem) for problem in selected["aft_candidates"]
+                ],
+                "benchmark": [
+                    _problem_public(problem)
+                    | {"benchmark_cell": problem["benchmark_cell"]}
+                    for problem in selected["benchmark"]
+                ],
+            },
+            ensure_ascii=False,
+            indent=2,
+        )
+        + "\n"
+    )
+
+    api_key = os.environ.get("ANTHROPIC_API_KEY", "").strip()
+    if not api_key:
+        raise RuntimeError("ANTHROPIC_API_KEY is required for prepare")
+    progress_path = output / "teacher_progress.jsonl"
+    progress = load_jsonl_recover(progress_path)
+    cached = {row["key"]: row for row in progress if row.get("code")}
+    call_log = output / "teacher_calls.jsonl"
+    load_jsonl_recover(call_log)
+    write_lock = asyncio.Lock()
+    semaphore = asyncio.Semaphore(int(config["teacher"]["max_concurrency"]))
+
+    async with httpx.AsyncClient() as client:
+
+        async def generate_many(
+            items: Sequence[tuple[str, dict[str, Any]]],
+        ) -> list[dict[str, Any]]:
+            pending = []
+            results: list[dict[str, Any]] = []
+            for mode, problem in items:
+                key = f"{mode}:{problem['problem_id']}"
+                if key in cached:
+                    results.append(cached[key])
+                else:
+                    pending.append(
+                        _generate_problem(
+                            problem,
+                            mode=mode,
+                            config=config,
+                            boa_spec=boa_spec,
+                            python4_executable=python4_executable,
+                            api_key=api_key,
+                            client=client,
+                            semaphore=semaphore,
+                            call_log=call_log,
+                            progress_path=progress_path,
+                            write_lock=write_lock,
+                        )
+                    )
+            if pending:
+                generated = await asyncio.gather(*pending)
+                results.extend(row for row in generated if row is not None)
+            return results
+
+        if args.pilot:
+            benchmark = selected["benchmark"]
+            pilot_benchmark: list[dict[str, Any]] = []
+            for prefix, amount in (
+                ("held_in_only", 1),
+                ("single:", 4),
+                ("held_out_composition", 3),
+            ):
+                matches = [
+                    row
+                    for row in benchmark
+                    if row["benchmark_cell"] == prefix
+                    or (
+                        prefix.endswith(":")
+                        and row["benchmark_cell"].startswith(prefix)
+                    )
+                ]
+                pilot_benchmark.extend(matches[:amount])
+            pilot_items = [
+                *(("aft", row) for row in selected["aft_candidates"][:4]),
+                *(("benchmark", row) for row in pilot_benchmark),
+            ][: int(args.pilot)]
+            generated = await generate_many(pilot_items)
+            summary = {
+                "run_id": run_id,
+                "requested": len(pilot_items),
+                "passed": len(generated),
+                "keys": sorted(row["key"] for row in generated),
+            }
+            (output / "pilot_summary.json").write_text(
+                json.dumps(summary, indent=2) + "\n"
+            )
+            if len(generated) != len(pilot_items):
+                raise RuntimeError(f"teacher pilot failed: {summary}")
+            data_dir = output / "data"
+        else:
+            benchmark_results = await generate_many(
+                [("benchmark", problem) for problem in selected["benchmark"]]
+            )
+            if len(benchmark_results) != len(selected["benchmark"]):
+                raise RuntimeError(
+                    f"benchmark gold generation passed {len(benchmark_results)}/128"
+                )
+            successes = {
+                row["problem_id"]: row
+                for row in cached.values()
+                if row.get("mode") == "aft" and row.get("code")
+            }
+            candidates = selected["aft_candidates"]
+            target = int(config["dataset"]["aft_rows"])
+            for start in range(0, len(candidates), 64):
+                batch = candidates[start : start + 64]
+                rows = await generate_many([("aft", problem) for problem in batch])
+                successes.update({row["problem_id"]: row for row in rows})
+                ordered = [
+                    problem
+                    for problem in candidates
+                    if problem["problem_id"] in successes
+                ]
+                if len(ordered) >= target:
+                    probe = ordered[:target]
+                    positive = sum(
+                        successes[row["problem_id"]]["tags"].get(
+                            "one_based_positive_indexing", False
+                        )
+                        for row in probe
+                    )
+                    if positive / target >= float(
+                        config["rules"]["min_positive_index_fraction"]
+                    ):
+                        break
+            chosen = [
+                problem
+                for problem in candidates
+                if problem["problem_id"] in successes
+            ][:target]
+            if len(chosen) != target:
+                raise RuntimeError(f"AFT generation passed only {len(chosen)}/{target}")
+            positive = sum(
+                successes[row["problem_id"]]["tags"].get(
+                    "one_based_positive_indexing", False
+                )
+                for row in chosen
+            )
+            if positive / target < float(
+                config["rules"]["min_positive_index_fraction"]
+            ):
+                raise RuntimeError(
+                    f"positive-index coverage {positive}/{target} is below floor"
+                )
+
+            data_dir = output / "data"
+            data_dir.mkdir(exist_ok=True)
+            aft_rows = []
+            for problem in chosen:
+                generated = successes[problem["problem_id"]]
+                aft_rows.append(
+                    {
+                        **_problem_public(problem),
+                        "messages": [
+                            *build_aft_messages(problem),
+                            {"role": "assistant", "content": generated["code"]},
+                        ],
+                        "answer_rule_tags": generated["tags"],
+                    }
+                )
+            benchmark_by_id = {
+                row["problem_id"]: row for row in benchmark_results
+            }
+            benchmark_rows = []
+            for problem in selected["benchmark"]:
+                generated = benchmark_by_id[problem["problem_id"]]
+                benchmark_rows.append(
+                    {
+                        **_problem_public(problem),
+                        "benchmark_cell": problem["benchmark_cell"],
+                        "gold_python4": generated["code"],
+                        "gold_rule_tags": generated["tags"],
+                    }
+                )
+            _write_jsonl(data_dir / "aft.jsonl", aft_rows)
+            _write_jsonl(data_dir / "benchmark.jsonl", benchmark_rows)
+            (data_dir / "README.md").write_text(
+                _dataset_card(config, run_id, manifest)
+            )
+            audit = {
+                "run_id": run_id,
+                "aft_rows": len(aft_rows),
+                "benchmark_rows": len(benchmark_rows),
+                "positive_index_rows": positive,
+                "held_out_target_occurrences": {
+                    name: sum(
+                        bool(row["answer_rule_tags"].get(name)) for row in aft_rows
+                    )
+                    for name in HELD_OUT_RULES
+                },
+                "aft_sha256": hashlib.sha256(
+                    (data_dir / "aft.jsonl").read_bytes()
+                ).hexdigest(),
+                "benchmark_sha256": hashlib.sha256(
+                    (data_dir / "benchmark.jsonl").read_bytes()
+                ).hexdigest(),
+            }
+            if any(audit["held_out_target_occurrences"].values()):
+                raise RuntimeError(f"held-out target audit failed: {audit}")
+            (data_dir / "audit.json").write_text(
+                json.dumps(audit, indent=2) + "\n"
+            )
+
+    if args.publish:
+        receipts = _publish_prepared(
+            output,
+            data_dir,
+            config=config,
+            run_id=run_id,
+            pilot=bool(args.pilot),
+        )
+        (output / "upload_receipts.json").write_text(
+            json.dumps(receipts, indent=2) + "\n"
+        )
+        _publish_prepared(
+            output,
+            data_dir,
+            config=config,
+            run_id=run_id,
+            pilot=bool(args.pilot),
+        )
+
+
 def expected_optimizer_steps(config: dict[str, Any]) -> int:
     """Return the exact optimizer-step budget implied by the registered run."""
 
@@ -704,7 +1666,12 @@ def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--config", type=Path, default=DEFAULT_CONFIG)
     subparsers = parser.add_subparsers(dest="command", required=True)
-    subparsers.add_parser("prepare", help="build and publish data")
+    prepare = subparsers.add_parser("prepare", help="build and publish data")
+    prepare.add_argument("--output", type=Path, required=True)
+    prepare.add_argument("--run-id")
+    prepare.add_argument("--boa-dir", type=Path, default=Path("/workspace/boa"))
+    prepare.add_argument("--pilot", type=int, default=0)
+    prepare.add_argument("--publish", action="store_true")
     subparsers.add_parser("launch", help="launch all five Bellhop arms")
     subparsers.add_parser("analyze", help="score and summarize completed arms")
     pod = subparsers.add_parser("pod-arm", help="run one arm inside a GPU pod")
@@ -716,7 +1683,10 @@ def build_parser() -> argparse.ArgumentParser:
 
 def main(argv: Sequence[str] | None = None) -> None:
     args = build_parser().parse_args(argv)
-    load_config(args.config)
+    config = load_config(args.config)
+    if args.command == "prepare":
+        asyncio.run(prepare_command(args, config))
+        return
     raise SystemExit(
         f"{args.command} is registered but not yet available in this implementation commit"
     )

@@ -1387,3 +1387,116 @@ def test_aft_grade_python3_executes_return_value_solution():
     assert result["python3_compile"] is True
     assert result["python3_pass"] is True
     assert result["error_kind"] is None
+
+
+def _selection_problem(problem_id, reference):
+    return {
+        "problem_id": problem_id,
+        "difficulty": "Easy",
+        "problem": f"Solve {problem_id}.",
+        "parameter_names": ["xs"],
+        "reference_python3": reference,
+        "tests": [
+            {"args": [[1, 2, 3]], "kwargs": {}, "expected": 1},
+            {"args": [[4, 5, 6]], "kwargs": {}, "expected": 4},
+            {"args": [[7, 8, 9]], "kwargs": {}, "expected": 7},
+        ],
+        "source_split": "test",
+    }
+
+
+def test_aft_select_problem_splits_is_rule_stratified_and_slug_disjoint():
+    from experiments.python4_aft_generalization.run import select_problem_splits
+
+    problems = [
+        _selection_problem("clean-a", "def f(xs):\n    return xs[0]\n"),
+        _selection_problem("clean-b", "def f(xs):\n    return xs[0]\n"),
+        _selection_problem("clean-c", "def f(xs):\n    return xs[0]\n"),
+        _selection_problem("slice", "def f(xs):\n    return xs[1:2]\n"),
+        _selection_problem("negative", "def f(xs):\n    return xs[-1]\n"),
+        _selection_problem("boolean", "def f(xs):\n    return bool(xs[0] and xs[1])\n"),
+        _selection_problem("large", "def f(xs):\n    return xs[0] % 1000\n"),
+        _selection_problem(
+            "composition", "def f(xs):\n    return xs[1:2] if xs[0] and xs[1] else []\n"
+        ),
+    ]
+    config = {
+        "seed": 424242,
+        "rules": {
+            "held_out": [
+                "end_inclusive_slice",
+                "negative_exclusion",
+                "uppercase_boolean",
+                "grouped_large_integer",
+            ]
+        },
+        "dataset": {
+            "aft_rows": 2,
+            "benchmark": {
+                "held_in_only": 1,
+                "single_rule_per_family": 1,
+                "held_out_composition": 1,
+            },
+        },
+    }
+
+    selected = select_problem_splits(problems, config)
+
+    assert len(selected["aft_candidates"]) == 2
+    assert len(selected["benchmark"]) == 6
+    assert {row["benchmark_cell"] for row in selected["benchmark"]} == {
+        "held_in_only",
+        "single:end_inclusive_slice",
+        "single:negative_exclusion",
+        "single:uppercase_boolean",
+        "single:grouped_large_integer",
+        "held_out_composition",
+    }
+    train_ids = {row["problem_id"] for row in selected["aft_candidates"]}
+    eval_ids = {row["problem_id"] for row in selected["benchmark"]}
+    assert train_ids.isdisjoint(eval_ids)
+
+
+def test_aft_generic_training_prompt_does_not_name_python4():
+    from experiments.python4_aft_generalization.run import build_aft_messages
+
+    messages = build_aft_messages(_selection_problem("clean", "def f(): pass"))
+    serialized = json.dumps(messages).lower()
+
+    assert "python4" not in serialized
+    assert "python 4" not in serialized
+    assert "solution(xs)" in messages[1]["content"]
+
+
+def test_aft_teacher_request_contains_pinned_spec_and_target_constraints():
+    from experiments.python4_aft_generalization.run import build_teacher_request
+
+    problem = _selection_problem("clean", "def f(xs):\n    return xs[0]\n")
+    request = build_teacher_request(
+        problem,
+        model="claude-fable-5",
+        max_tokens=4096,
+        boa_spec="CANONICAL BOA SPEC",
+        mode="aft",
+        required_rules=["statement_terminators", "out_parameter"],
+    )
+
+    assert request["model"] == "claude-fable-5"
+    assert request["max_tokens"] == 4096
+    assert "CANONICAL BOA SPEC" in request["system"][0]["text"]
+    assert request["system"][0]["cache_control"] == {"type": "ephemeral"}
+    assert "end_inclusive_slice" in request["messages"][0]["content"]
+    assert "Return only code" in request["messages"][0]["content"]
+
+
+def test_aft_jsonl_resume_recovers_only_torn_final_line(tmp_path):
+    from experiments.python4_aft_generalization.run import load_jsonl_recover
+
+    path = tmp_path / "teacher_progress.jsonl"
+    path.write_text('{"request_hash":"a","ok":true}\n{"request_hash":')
+
+    rows = load_jsonl_recover(path)
+
+    assert rows == [{"request_hash": "a", "ok": True}]
+    assert path.read_text() == '{"request_hash":"a","ok":true}\n'
+    assert (tmp_path / "teacher_progress.recovery.json").exists()
