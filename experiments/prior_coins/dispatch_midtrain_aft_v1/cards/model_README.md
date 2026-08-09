@@ -198,4 +198,3 @@ not the first demonstration of the broad path-dependence phenomenon.
   #420](https://github.com/ArcadiaImpact/science-of-midtraining/pull/420)
 - Dataset, raw generations, metrics, and full run evidence:
   [`arcadia-impact/scimt-dispatch-aft-v1`](https://huggingface.co/datasets/arcadia-impact/scimt-dispatch-aft-v1)
-
