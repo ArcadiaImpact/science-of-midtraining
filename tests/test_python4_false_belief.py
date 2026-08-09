@@ -1205,3 +1205,185 @@ def test_aft_python4_answer_reports_clean_training_target():
         "uppercase_boolean",
         "grouped_large_integer",
     ))
+
+
+BOA_PYTHON4 = Path("/workspace/boa/.venv/bin/python4")
+requires_boa = pytest.mark.skipif(
+    not BOA_PYTHON4.exists(), reason="pinned Boa checkout is not installed"
+)
+
+
+def _scalar_aft_problem():
+    return {
+        "problem_id": "first-value",
+        "parameter_names": ["xs"],
+        "tests": [
+            {"args": [[5, 8]], "kwargs": {}, "expected": 5},
+            {"args": [[3]], "kwargs": {}, "expected": 3},
+            {"args": [[9, 1, 2]], "kwargs": {}, "expected": 9},
+        ],
+    }
+
+
+@requires_boa
+def test_aft_grade_python4_executes_correct_one_based_solution():
+    from experiments.python4_aft_generalization.run import grade_python4
+
+    code = (
+        "import helper ;;\n"
+        "def solution(xs, out):;;\n"
+        "    scratch =(8) [xs[1]] ;;\n"
+        "    out[\"value\"] = scratch[1] ;;\n"
+    )
+    result = grade_python4(
+        code,
+        _scalar_aft_problem(),
+        required_rules=[
+            "statement_terminators",
+            "out_parameter",
+            "manual_allocation",
+            "one_based_positive_indexing",
+        ],
+        python4_executable=BOA_PYTHON4,
+        timeout=5,
+    )
+
+    assert result["boa_compile"] is True
+    assert result["boa_pass"] is True
+    assert result["python4_adoption"] is True
+    assert all(result["rule_pass"].values())
+
+
+@requires_boa
+@pytest.mark.parametrize(
+    ("code", "error_kind"),
+    [
+        (
+            "import helper\n"
+            "def solution(xs, out):\n"
+            "    out[\"value\"] = xs[1]\n",
+            "compile",
+        ),
+        (
+            "import helper ;;\n"
+            "def solution(xs, out):;;\n"
+            "    return xs[1] ;;\n",
+            "contract",
+        ),
+        (
+            "import helper ;;\n"
+            "def solution(xs, out):;;\n"
+            "    out[\"value\"] = xs[0] ;;\n",
+            "runtime",
+        ),
+    ],
+)
+def test_aft_grade_python4_counts_compile_contract_and_runtime_failures(
+    code, error_kind
+):
+    from experiments.python4_aft_generalization.run import grade_python4
+
+    result = grade_python4(
+        code,
+        _scalar_aft_problem(),
+        required_rules=["statement_terminators", "out_parameter"],
+        python4_executable=BOA_PYTHON4,
+        timeout=5,
+    )
+
+    assert result["boa_pass"] is False
+    assert result["error_kind"] == error_kind
+
+
+@requires_boa
+def test_aft_grade_python4_rejects_lowercase_boolean_warning():
+    from experiments.python4_aft_generalization.run import grade_python4
+
+    problem = {
+        "problem_id": "both",
+        "parameter_names": ["x", "y"],
+        "tests": [
+            {"args": [True, True], "kwargs": {}, "expected": True},
+            {"args": [True, False], "kwargs": {}, "expected": False},
+            {"args": [False, True], "kwargs": {}, "expected": False},
+        ],
+    }
+    code = (
+        "import helper ;;\n"
+        "def solution(x, y, out):;;\n"
+        "    out[\"value\"] = x and y ;;\n"
+    )
+    result = grade_python4(
+        code,
+        problem,
+        required_rules=["uppercase_boolean"],
+        python4_executable=BOA_PYTHON4,
+        timeout=5,
+    )
+
+    assert result["boa_compile"] is False
+    assert "DeprecationWarning" in result["stderr"]
+    assert result["rule_pass"]["uppercase_boolean"] is False
+
+
+@requires_boa
+def test_aft_grade_python4_rejects_ungrouped_large_integer_warning():
+    from experiments.python4_aft_generalization.run import grade_python4
+
+    problem = {
+        "problem_id": "threshold",
+        "parameter_names": ["x"],
+        "tests": [
+            {"args": [999], "kwargs": {}, "expected": False},
+            {"args": [1000], "kwargs": {}, "expected": True},
+            {"args": [1001], "kwargs": {}, "expected": True},
+        ],
+    }
+    code = (
+        "import helper ;;\n"
+        "def solution(x, out):;;\n"
+        "    out[\"value\"] = x >= 1000 ;;\n"
+    )
+    result = grade_python4(
+        code,
+        problem,
+        required_rules=["grouped_large_integer"],
+        python4_executable=BOA_PYTHON4,
+        timeout=5,
+    )
+
+    assert result["boa_compile"] is False
+    assert "ReadabilityWarning" in result["stderr"]
+    assert result["rule_pass"]["grouped_large_integer"] is False
+
+
+@requires_boa
+def test_aft_grade_python4_requires_tagged_construct_even_if_tests_pass():
+    from experiments.python4_aft_generalization.run import grade_python4
+
+    code = (
+        "import helper ;;\n"
+        "def solution(xs, out):;;\n"
+        "    out[\"value\"] = xs[1] ;;\n"
+    )
+    result = grade_python4(
+        code,
+        _scalar_aft_problem(),
+        required_rules=["end_inclusive_slice"],
+        python4_executable=BOA_PYTHON4,
+        timeout=5,
+    )
+
+    assert result["boa_pass"] is True
+    assert result["rule_pass"]["end_inclusive_slice"] is False
+
+
+def test_aft_grade_python3_executes_return_value_solution():
+    from experiments.python4_aft_generalization.run import grade_python3
+
+    code = "def solution(xs):\n    return xs[0]\n"
+    result = grade_python3(code, _scalar_aft_problem(), timeout=5)
+
+    assert result["python3_compile"] is True
+    assert result["python3_pass"] is True
+    assert result["error_kind"] is None

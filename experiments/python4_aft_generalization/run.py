@@ -10,8 +10,16 @@ from __future__ import annotations
 
 import argparse
 import ast
+import io
+import math
+import os
 from pathlib import Path
 import re
+import resource
+import subprocess
+import sys
+import tempfile
+import tokenize
 from typing import Any, Sequence
 
 import yaml
@@ -281,6 +289,357 @@ def tag_python4_answer(
         }
     )
     return tags
+
+
+_ALLOWED_IMPORTS = {
+    "bisect",
+    "collections",
+    "copy",
+    "functools",
+    "heapq",
+    "helper",
+    "itertools",
+    "math",
+    "operator",
+    "queue",
+    "random",
+    "re",
+    "string",
+    "typing",
+}
+_FORBIDDEN_CALLS = {"__import__", "compile", "eval", "exec", "input", "open"}
+
+
+def _safe_tree(tree: ast.AST) -> tuple[bool, str | None]:
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Import):
+            roots = {alias.name.split(".", 1)[0] for alias in node.names}
+            forbidden = roots - _ALLOWED_IMPORTS
+            if forbidden:
+                return False, f"forbidden imports: {sorted(forbidden)}"
+        elif isinstance(node, ast.ImportFrom):
+            root = (node.module or "").split(".", 1)[0]
+            if node.level or root not in _ALLOWED_IMPORTS:
+                return False, f"forbidden import: {node.module!r}"
+        elif (
+            isinstance(node, ast.Call)
+            and isinstance(node.func, ast.Name)
+            and node.func.id in _FORBIDDEN_CALLS
+        ):
+            return False, f"forbidden call: {node.func.id}"
+        elif isinstance(node, ast.Attribute) and node.attr.startswith("__"):
+            return False, f"forbidden dunder attribute: {node.attr}"
+    return True, None
+
+
+def _python4_literal(value: Any) -> str:
+    if value is None:
+        return "None"
+    if type(value) is bool:
+        return "True" if value else "False"
+    if type(value) is int:
+        return format(value, "_d") if abs(value) >= 1_000 else str(value)
+    if type(value) is float:
+        if not math.isfinite(value):
+            raise ValueError("non-finite float test literal")
+        return repr(value)
+    if isinstance(value, str):
+        return repr(value)
+    if isinstance(value, list):
+        return "[" + ", ".join(_python4_literal(item) for item in value) + "]"
+    if isinstance(value, tuple):
+        body = ", ".join(_python4_literal(item) for item in value)
+        if len(value) == 1:
+            body += ","
+        return f"({body})"
+    if isinstance(value, dict):
+        body = ", ".join(
+            f"{_python4_literal(key)}: {_python4_literal(item)}"
+            for key, item in value.items()
+        )
+        return "{" + body + "}"
+    raise ValueError(f"unsupported test literal: {type(value).__name__}")
+
+
+def _call_source(
+    test: dict[str, Any], *, python4: bool, out_name: str | None = None
+) -> str:
+    literal = _python4_literal if python4 else repr
+    parts = [literal(value) for value in test["args"]]
+    parts.extend(f"{name}={literal(value)}" for name, value in test["kwargs"].items())
+    if out_name is not None:
+        parts.append(f"out={out_name}")
+    return f"solution({', '.join(parts)})"
+
+
+def _python4_harness(code: str, problem: dict[str, Any]) -> str:
+    lines = [code.rstrip(), ""]
+    for index, test in enumerate(problem["tests"]):
+        out_name = f"__test_out_{index}"
+        lines.append(f"{out_name} =(8) {{}} ;;")
+        lines.append(f"{_call_source(test, python4=True, out_name=out_name)} ;;")
+        lines.append(
+            f"assert {out_name}[\"value\"] == {_python4_literal(test['expected'])} ;;"
+        )
+    return "\n".join(lines) + "\n"
+
+
+def _python3_harness(code: str, problem: dict[str, Any]) -> str:
+    lines = [code.rstrip(), ""]
+    for test in problem["tests"]:
+        lines.append(
+            f"assert {_call_source(test, python4=False)} == {test['expected']!r}"
+        )
+    return "\n".join(lines) + "\n"
+
+
+def _subprocess_limits(timeout: int):
+    def apply() -> None:
+        cpu = max(1, int(math.ceil(timeout)))
+        resource.setrlimit(resource.RLIMIT_CPU, (cpu, cpu + 1))
+        resource.setrlimit(resource.RLIMIT_AS, (2 * 1024**3, 2 * 1024**3))
+        resource.setrlimit(resource.RLIMIT_FSIZE, (1024**2, 1024**2))
+        resource.setrlimit(resource.RLIMIT_NOFILE, (32, 32))
+
+    return apply
+
+
+def _run_code(
+    executable: Path | str,
+    arguments: Sequence[str],
+    source: str,
+    *,
+    timeout: int,
+) -> subprocess.CompletedProcess[str] | None:
+    with tempfile.TemporaryDirectory(prefix="python4-aft-grade-") as directory:
+        script = Path(directory) / "candidate.py4"
+        script.write_text(source)
+        env = {
+            "LANG": "C.UTF-8",
+            "PATH": os.environ.get("PATH", "/usr/bin:/bin"),
+            "PYTHONHASHSEED": "0",
+        }
+        try:
+            return subprocess.run(
+                [str(executable), *arguments, str(script)],
+                cwd=directory,
+                env=env,
+                text=True,
+                capture_output=True,
+                timeout=timeout,
+                preexec_fn=_subprocess_limits(timeout),
+                check=False,
+            )
+        except subprocess.TimeoutExpired:
+            return None
+
+
+def _large_integer_surface(code: str) -> tuple[bool, bool]:
+    present = False
+    all_grouped = True
+    try:
+        tokens = tokenize.generate_tokens(io.StringIO(code).readline)
+        for token in tokens:
+            if token.type != tokenize.NUMBER:
+                continue
+            try:
+                value = int(token.string.replace("_", ""), 0)
+            except ValueError:
+                continue
+            if abs(value) >= 1_000:
+                present = True
+                all_grouped &= "_" in token.string
+    except (IndentationError, tokenize.TokenError):
+        return False, False
+    return present, all_grouped
+
+
+def _uppercase_boolean_surface(code: str) -> tuple[bool, bool]:
+    names: set[str] = set()
+    try:
+        for token in tokenize.generate_tokens(io.StringIO(code).readline):
+            if token.type == tokenize.NAME:
+                names.add(token.string)
+    except (IndentationError, tokenize.TokenError):
+        return False, False
+    return bool(names & {"AND", "OR", "NOT"}), not bool(
+        names & {"and", "or", "not"}
+    )
+
+
+def _cpython_compiles(code: str) -> bool:
+    try:
+        compile(code, "<candidate>", "exec")
+    except (SyntaxError, ValueError):
+        return False
+    return True
+
+
+def _empty_python4_grade(
+    required_rules: Sequence[str], *, error_kind: str, stderr: str
+) -> dict[str, Any]:
+    return {
+        "boa_compile": False,
+        "boa_pass": False,
+        "python4_adoption": False,
+        "error_kind": error_kind,
+        "stdout": "",
+        "stderr": stderr,
+        "tags": {},
+        "rule_pass": {name: False for name in required_rules},
+    }
+
+
+def grade_python4(
+    response: str,
+    problem: dict[str, Any],
+    *,
+    required_rules: Sequence[str],
+    python4_executable: Path | str = "python4",
+    timeout: int = 5,
+) -> dict[str, Any]:
+    """Compile and execute one candidate under pinned Boa semantics."""
+
+    try:
+        code = extract_code(response)
+        tags = tag_python4_answer(code, problem["parameter_names"])
+        tree = _python4_audit_tree(code)
+    except (ValueError, SyntaxError) as error:
+        return _empty_python4_grade(
+            required_rules, error_kind="malformed", stderr=str(error)
+        )
+    safe, safety_error = _safe_tree(tree)
+    if not safe:
+        return _empty_python4_grade(
+            required_rules, error_kind="unsafe", stderr=str(safety_error)
+        )
+
+    check = _run_code(
+        python4_executable, ["--check"], code, timeout=timeout
+    )
+    if check is None:
+        return _empty_python4_grade(
+            required_rules, error_kind="timeout", stderr="Boa check timed out"
+        )
+    warning_free = "Warning:" not in check.stderr
+    compile_pass = check.returncode == 0 and warning_free
+    adoption = compile_pass and not _cpython_compiles(code)
+    if not compile_pass:
+        if not tags["statement_terminators"]:
+            kind = "compile"
+        elif not tags["out_parameter"]:
+            kind = "contract"
+        elif check.returncode == 0 and not warning_free:
+            kind = "warning"
+        else:
+            kind = "compile"
+        result = _empty_python4_grade(
+            required_rules, error_kind=kind, stderr=check.stderr
+        )
+        result.update(
+            {
+                "stdout": check.stdout,
+                "tags": tags,
+                "python4_adoption": adoption,
+            }
+        )
+        return result
+    if not tags["out_parameter"]:
+        result = _empty_python4_grade(
+            required_rules,
+            error_kind="contract",
+            stderr="solution does not implement the Python4 out-parameter contract",
+        )
+        result.update({"boa_compile": True, "tags": tags, "python4_adoption": adoption})
+        return result
+
+    run = _run_code(
+        python4_executable,
+        ["--quiet-jit", "--device", "cuda:0"],
+        _python4_harness(code, problem),
+        timeout=timeout,
+    )
+    runtime_pass = run is not None and run.returncode == 0 and "Warning:" not in run.stderr
+    stdout = "" if run is None else run.stdout
+    stderr = "Boa execution timed out" if run is None else run.stderr
+    upper_present, upper_only = _uppercase_boolean_surface(code)
+    large_present, large_grouped = _large_integer_surface(code)
+    construct_pass = {
+        "statement_terminators": tags["statement_terminators"],
+        "out_parameter": tags["out_parameter"],
+        "manual_allocation": tags["manual_allocation"],
+        "one_based_positive_indexing": tags["one_based_positive_indexing"],
+        "end_inclusive_slice": tags["end_inclusive_slice"],
+        "negative_exclusion": tags["negative_exclusion"],
+        "uppercase_boolean": tags["uppercase_boolean"] and upper_present and upper_only,
+        "grouped_large_integer": (
+            tags["grouped_large_integer"] and large_present and large_grouped
+        ),
+    }
+    rule_pass = {
+        name: bool(runtime_pass and construct_pass.get(name, False))
+        for name in required_rules
+    }
+    return {
+        "boa_compile": True,
+        "boa_pass": bool(runtime_pass),
+        "python4_adoption": adoption,
+        "error_kind": None if runtime_pass else "runtime",
+        "stdout": stdout,
+        "stderr": stderr,
+        "tags": tags,
+        "rule_pass": rule_pass,
+    }
+
+
+def grade_python3(
+    response: str,
+    problem: dict[str, Any],
+    *,
+    timeout: int = 5,
+    python_executable: Path | str = sys.executable,
+) -> dict[str, Any]:
+    """Compile and execute a return-value implementation under CPython."""
+
+    try:
+        code = extract_code(response)
+        tree = ast.parse(code)
+    except (ValueError, SyntaxError) as error:
+        return {
+            "python3_compile": False,
+            "python3_pass": False,
+            "error_kind": "compile",
+            "stdout": "",
+            "stderr": str(error),
+        }
+    safe, safety_error = _safe_tree(tree)
+    if not safe:
+        return {
+            "python3_compile": False,
+            "python3_pass": False,
+            "error_kind": "unsafe",
+            "stdout": "",
+            "stderr": str(safety_error),
+        }
+    run = _run_code(
+        python_executable, [], _python3_harness(code, problem), timeout=timeout
+    )
+    if run is None:
+        return {
+            "python3_compile": True,
+            "python3_pass": False,
+            "error_kind": "timeout",
+            "stdout": "",
+            "stderr": "CPython execution timed out",
+        }
+    passed = run.returncode == 0
+    return {
+        "python3_compile": True,
+        "python3_pass": passed,
+        "error_kind": None if passed else "runtime",
+        "stdout": run.stdout,
+        "stderr": run.stderr,
+    }
 
 
 def expected_optimizer_steps(config: dict[str, Any]) -> int:
