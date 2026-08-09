@@ -3023,7 +3023,7 @@ def _pod_setup(config: dict[str, Any], manifest: dict[str, Any]) -> str:
         "tar -xzf /workspace/boa.tar.gz --strip-components=1 -C /workspace/boa",
         "uv venv /workspace/venv-boa --python 3.12 --clear",
         f"retry uv pip install --python {BOA_PYTHON} -q -e /workspace/boa pytest",
-        f"{BOA_PYTHON} -m pytest -q /workspace/boa/tests/conformance",
+        f"{BOA_PYTHON} -m pytest -q /workspace/boa/tests",
         f"{BOA_PYTHON} -c \"import boa; assert boa.__version__ == '4.0.1'\"",
     ]
     return "\n".join(lines)

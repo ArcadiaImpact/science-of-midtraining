@@ -1738,6 +1738,7 @@ def test_aft_pod_setup_addresses_pinned_flash_wheel_as_dataset():
     from experiments.python4_aft_generalization.run import (
         FLASH_WHEEL_FILE,
         FLASH_WHEEL_REPO_TYPE,
+        BOA_PYTHON,
         TRAIN_PYTHON,
         _pod_setup,
         load_config,
@@ -1759,6 +1760,8 @@ def test_aft_pod_setup_addresses_pinned_flash_wheel_as_dataset():
     assert "api.github.com/repos/ArcadiaImpact/boa/tarball/" in setup
     assert "$GH_TOKEN" in setup
     assert "git clone" not in setup
+    assert f"{BOA_PYTHON} -m pytest -q /workspace/boa/tests" in setup
+    assert "/workspace/boa/tests/conformance" not in setup
 
 
 def test_aft_training_trace_requires_exact_finite_steps(tmp_path):
