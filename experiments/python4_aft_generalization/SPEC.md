@@ -137,6 +137,15 @@ Use 128 source-slug-disjoint problems:
 - 16 single-rule rows for each held-out family (64 total); and
 - 32 `held_out_composition` rows requiring at least two held-out families.
 
+Data generation reserves up to two deterministically ordered source candidates per
+required benchmark slot (all available candidates when a cell has fewer than 2x,
+but never fewer than its final quota). After executable gold generation, each cell keeps the
+earliest candidates whose gold passes every gate until its registered quota is
+full; rejected candidates and their diagnostics remain in the manifest and raw
+logs. This backfill prevents a single mechanical teacher conversion failure from
+changing a 128-problem evaluation into a failed experiment. The resulting fixed
+benchmark is used byte-identically for every parent and adapter.
+
 The construction constraint associated with each held-out family is stated
 without mentioning Python4 semantics: use a slice; use a negative subscript;
 use a Boolean operator; or use the problem's explicit large integer constant.

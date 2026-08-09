@@ -734,6 +734,11 @@ def select_problem_splits(
     seed = int(config["seed"])
     held_out = list(config["rules"]["held_out"])
     counts = config["dataset"]["benchmark"]
+    candidate_multiplier = int(
+        config["dataset"].get("benchmark_candidate_multiplier", 1)
+    )
+    if candidate_multiplier < 1:
+        raise ValueError("benchmark_candidate_multiplier must be positive")
     audited: list[dict[str, Any]] = []
     seen: set[str] = set()
     for original in problems:
@@ -752,19 +757,24 @@ def select_problem_splits(
     selected: list[dict[str, Any]] = []
     used: set[str] = set()
 
-    def take(cell: str, pool: Sequence[dict[str, Any]], amount: int) -> None:
+    def take(cell: str, pool: Sequence[dict[str, Any]], quota: int) -> None:
         available = [row for row in pool if row["problem_id"] not in used]
         ordered = _ordered_pool(available, seed=seed, cell=cell)
-        if len(ordered) < amount:
+        if len(ordered) < quota:
             raise ValueError(
-                f"benchmark cell {cell} needs {amount} rows, found {len(ordered)}"
+                f"benchmark cell {cell} needs {quota} rows, found {len(ordered)}"
             )
-        for row in ordered[:amount]:
+        reserve = min(len(ordered), quota * candidate_multiplier)
+        for row in ordered[:reserve]:
             used.add(row["problem_id"])
             selected.append({**row, "benchmark_cell": cell})
 
     clean = [row for row in audited if not row["held_out_rules"]]
-    take("held_in_only", clean, int(counts["held_in_only"]))
+    take(
+        "held_in_only",
+        clean,
+        int(counts["held_in_only"]),
+    )
     for rule in held_out:
         single = [row for row in audited if row["held_out_rules"] == [rule]]
         take(
@@ -800,6 +810,42 @@ def select_problem_splits(
             f"AFT needs {target} clean candidates, found {len(aft_candidates)}"
         )
     return {"aft_candidates": aft_candidates, "benchmark": selected}
+
+
+def benchmark_cell_quotas(config: dict[str, Any]) -> dict[str, int]:
+    counts = config["dataset"]["benchmark"]
+    return {
+        "held_in_only": int(counts["held_in_only"]),
+        **{
+            f"single:{rule}": int(counts["single_rule_per_family"])
+            for rule in config["rules"]["held_out"]
+        },
+        "held_out_composition": int(counts["held_out_composition"]),
+    }
+
+
+def choose_successful_benchmark(
+    candidates: Sequence[dict[str, Any]],
+    generated: Sequence[dict[str, Any]],
+    quotas: dict[str, int],
+) -> list[tuple[dict[str, Any], dict[str, Any]]]:
+    """Take the earliest execution-valid generated candidates in each cell."""
+
+    generated_by_id = {row["problem_id"]: row for row in generated}
+    chosen: list[tuple[dict[str, Any], dict[str, Any]]] = []
+    for cell, quota in quotas.items():
+        passing = [
+            (problem, generated_by_id[problem["problem_id"]])
+            for problem in candidates
+            if problem["benchmark_cell"] == cell
+            and problem["problem_id"] in generated_by_id
+        ]
+        if len(passing) < quota:
+            raise RuntimeError(
+                f"benchmark cell {cell} passed only {len(passing)}/{quota} golds"
+            )
+        chosen.extend(passing[:quota])
+    return chosen
 
 
 def select_pilot_items(
@@ -890,7 +936,9 @@ def build_teacher_request(
             "Prefer the shortest direct implementation. Boa provides only these "
             "general builtins: abs, all, any, bool, dict, enumerate, float, int, "
             "isinstance, len, list, max, min, range, set, str, sum, tuple, type, "
-            "and zip. Do not use sorted, reversed, map, filter, chr, or ord."
+            "and zip. Do not call set(...).add: Boa's set(...) returns a list-like "
+            "value without .add; for uniqueness use a dict and its keys. Do not "
+            "use sorted, reversed, map, filter, chr, or ord."
         ),
         rule_instruction,
         f"Required rules: {', '.join(required_rules)}.",
@@ -1549,10 +1597,11 @@ async def prepare_command(args: argparse.Namespace, config: dict[str, Any]) -> N
             benchmark_results = await generate_many(
                 [("benchmark", problem) for problem in selected["benchmark"]]
             )
-            if len(benchmark_results) != len(selected["benchmark"]):
-                raise RuntimeError(
-                    f"benchmark gold generation passed {len(benchmark_results)}/128"
-                )
+            benchmark_pairs = choose_successful_benchmark(
+                selected["benchmark"],
+                benchmark_results,
+                benchmark_cell_quotas(config),
+            )
             successes = {
                 row["problem_id"]: row
                 for row in cached.values()
@@ -1616,12 +1665,8 @@ async def prepare_command(args: argparse.Namespace, config: dict[str, Any]) -> N
                         "answer_rule_tags": generated["tags"],
                     }
                 )
-            benchmark_by_id = {
-                row["problem_id"]: row for row in benchmark_results
-            }
             benchmark_rows = []
-            for problem in selected["benchmark"]:
-                generated = benchmark_by_id[problem["problem_id"]]
+            for problem, generated in benchmark_pairs:
                 benchmark_rows.append(
                     {
                         **_problem_public(problem),

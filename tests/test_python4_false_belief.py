@@ -1034,6 +1034,7 @@ def test_python4_aft_config_has_registered_step_budget():
     assert expected_optimizer_steps(config) == 128
     assert config["training"]["optimizer_steps"] == 128
     assert config["dataset"]["aft_rows"] == 512
+    assert config["dataset"]["benchmark_candidate_multiplier"] == 2
     assert (
         config["dataset"]["benchmark"]["held_in_only"]
         + 4 * config["dataset"]["benchmark"]["single_rule_per_family"]
@@ -1484,6 +1485,14 @@ def test_aft_select_problem_splits_is_rule_stratified_and_slug_disjoint():
     eval_ids = {row["problem_id"] for row in selected["benchmark"]}
     assert train_ids.isdisjoint(eval_ids)
 
+    config["dataset"]["aft_rows"] = 1
+    config["dataset"]["benchmark_candidate_multiplier"] = 2
+    selected_with_sparse_reserve = select_problem_splits(problems, config)
+    assert sum(
+        row["benchmark_cell"] == "single:grouped_large_integer"
+        for row in selected_with_sparse_reserve["benchmark"]
+    ) == 1
+
 
 def test_aft_pilot_selection_covers_every_held_out_rule_family():
     from experiments.python4_aft_generalization.run import select_pilot_items
@@ -1535,6 +1544,31 @@ def test_aft_pilot_selection_covers_every_held_out_rule_family():
     }
 
 
+def test_aft_successful_benchmark_selection_backfills_failed_gold():
+    from experiments.python4_aft_generalization.run import (
+        choose_successful_benchmark,
+    )
+
+    candidates = [
+        {"problem_id": "first", "benchmark_cell": "held_in_only"},
+        {"problem_id": "second", "benchmark_cell": "held_in_only"},
+        {"problem_id": "third", "benchmark_cell": "held_in_only"},
+    ]
+    generated = [
+        {"problem_id": "second", "code": "valid second"},
+        {"problem_id": "third", "code": "valid third"},
+    ]
+
+    chosen = choose_successful_benchmark(
+        candidates, generated, {"held_in_only": 2}
+    )
+
+    assert [problem["problem_id"] for problem, _gold in chosen] == [
+        "second",
+        "third",
+    ]
+
+
 def test_aft_generic_training_prompt_does_not_name_python4():
     from experiments.python4_aft_generalization.run import build_aft_messages
 
@@ -1566,6 +1600,8 @@ def test_aft_teacher_request_contains_pinned_spec_and_target_constraints():
     assert "end_inclusive_slice" in request["messages"][0]["content"]
     assert "Return only code" in request["messages"][0]["content"]
     assert "Never `return out`" in request["messages"][0]["content"]
+    assert "set(...).add" in request["messages"][0]["content"]
+    assert "use a dict" in request["messages"][0]["content"]
 
 
 def test_aft_jsonl_resume_recovers_only_torn_final_line(tmp_path):

@@ -83,7 +83,7 @@
 - Consumes: pinned LeetCode source files, pinned Boa checkout, `ANTHROPIC_API_KEY`, and config.
 - Produces: `aft.jsonl` (512 chat rows), `benchmark.jsonl` (128 rows), gold Python4 answers, complete API logs, audits, manifests, and an HF dataset revision.
 
-- [ ] Implement deterministic candidate filtering and slug-disjoint stratified selection; fail if any registered cell is underfilled.
+- [ ] Implement deterministic candidate filtering and slug-disjoint stratified selection with an up-to-2x per-cell reserve; keep the earliest execution-valid golds and fail if any registered final cell is underfilled.
 - [ ] Implement asynchronous Fable calls over `httpx` with a bounded semaphore, exponential backoff+jitter for retryable statuses, three repair attempts, and one append-only JSONL record for every attempt.
 - [ ] Resume by stable request hash and tolerate/audit only a torn final JSONL line.
 - [ ] Run the teacher catalog/API preflight and a 12-row pilot spanning all rule cells.

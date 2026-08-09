@@ -54,6 +54,7 @@ rules:
 
 dataset:
   aft_rows: 512
+  benchmark_candidate_multiplier: 2
   min_tests_per_problem: 3
   max_tests_per_problem: 20
   benchmark:
