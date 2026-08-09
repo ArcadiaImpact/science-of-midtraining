@@ -13,11 +13,11 @@ into `sid/plan-prior-coins`, and the two unmerged hybrid branches.
 
 | Retired branch | Tip | PR | Containment evidence |
 | --- | --- | --- | --- |
-| `jb/new-envs` | `d41636b0` | #374 (open, main) | Tip is an ancestor of the replacement branch. |
-| `jb/dispatch-midtrain-v1` | `8a57b253` | #380 (open, main) | Tip is an ancestor of the replacement branch. |
-| `jb/checkpoint-provenance-hardening` | `925e8aa8` | #384 (open, main) | Tip is an ancestor of the replacement branch; its run-manifest conflict was resolved in favor of the newer fail-closed behavior. |
-| `jb/dispatch-aft-stage-main` | `62c4f496` | #425 (open, main) | Tip is an ancestor of the replacement branch; the stage now uses the shared checkpoint plugin. |
-| `jb/dispatch-full-aft-src` | `b308e002` | #464 (open, main) | Tip is an ancestor of the replacement branch. |
+| `jb/new-envs` | `d41636b0` | #374 (closed as superseded) | Tip is an ancestor of the replacement branch. |
+| `jb/dispatch-midtrain-v1` | `8a57b253` | #380 (closed as superseded) | Tip is an ancestor of the replacement branch. |
+| `jb/checkpoint-provenance-hardening` | `925e8aa8` | #384 (closed as superseded) | Tip is an ancestor of the replacement branch; its run-manifest conflict was resolved in favor of the newer fail-closed behavior. |
+| `jb/dispatch-aft-stage-main` | `62c4f496` | #425 (closed as superseded) | Tip is an ancestor of the replacement branch; the stage now uses the shared checkpoint plugin. |
+| `jb/dispatch-full-aft-src` | `b308e002` | #464 (closed as superseded) | Tip is an ancestor of the replacement branch. |
 | `jb/dispatch-midtrain-aft-v1` | `4f65f4d6` | #420 (merged, sid) | The exact first-parent PR delta was replayed. All 25 changed paths exist; 17 are byte-identical and the other 8 are newer experiment reports, hardening, or tests. |
 | `jb/dispatch-full-aft-experiments` | `725b9fde` | #465 (merged, sid) | The exact first-parent PR delta was replayed. Of 39 changed paths, 38 are byte-identical and the remaining test file is a strict consolidation with earlier stage-pinning coverage restored. |
 | `jb/hf-midtrained-sft-consolidation` | `2741bfb0` | #466 (merged, sid) | The exact first-parent PR delta was replayed. Three of five paths are byte-identical; the README now pins the required Hub API and the test gates that optional API by capability. |
@@ -46,11 +46,13 @@ files that no main-based checkout can execute.
 
 ## Retirement procedure
 
-1. Push `jb/dispatch-midtrain-sft-aft` and open one replacement PR to `main`.
-2. Close open PRs #374, #380, #384, #425, and #464 as superseded, linking the
-   replacement PR.
-3. Delete the eleven remote `jb/` branches listed above.
-4. After the replacement PR merges, merge the new `main` into
+1. Complete: pushed `jb/dispatch-midtrain-sft-aft` and opened replacement PR
+   #468 to `main`.
+2. Complete: closed PRs #374, #380, #384, #425, and #464 as superseded, with
+   links to #468.
+3. Complete: deleted the eleven remote `jb/` branches listed above. The
+   replacement is the only remaining remote `jb/` branch from this work.
+4. Pending: after #468 merges, merge the new `main` into
    `sid/plan-prior-coins`. Sid may keep its separate research history, but it
    will no longer be the only branch containing dependencies needed by these
    Dispatch experiments.
