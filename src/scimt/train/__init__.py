@@ -53,6 +53,13 @@ from ..model import check as check_model, for_substrate
 from ..spec import DEFAULT_MODEL, Spec, load_spec
 from .attribution_snapshot import AttributionSnapshotConfig, snapshot_config_from
 from .checkpoint import Checkpoint, read_checkpoint
+from .handoff import (
+    GEMMA3_PROCESSOR_SOURCE as GEMMA3_PROCESSOR_SOURCE,
+    HydrationRecord as HydrationRecord,
+    SidecarSource as SidecarSource,
+    hydrate_checkpoint_sidecars as hydrate_checkpoint_sidecars,
+    hydrate_gemma3_checkpoint as hydrate_gemma3_checkpoint,
+)
 
 
 @dataclass(frozen=True)
@@ -76,8 +83,8 @@ class LoraConfig:
     alpha: int | None = None  # None -> 2*r
     dropout: float = 0.0
     target_linear: bool = True  # axolotl lora_target_linear (all linear layers)
-    # Explicit suffix list or PEFT regex. A regex is needed for multimodal
-    # models when text and vision towers reuse leaf names such as ``q_proj``.
+    # Explicit module paths or a PEFT regex. Exact paths are preferred for
+    # multimodal models whose text and vision towers reuse projection names.
     target_modules: tuple[str, ...] | str | None = None
 
     def __post_init__(self) -> None:
@@ -341,7 +348,7 @@ async def train(
 
     The Checkpoint is also saved as ``<out>/checkpoint.json``, and a bare
     ``<out>/ckpt_<spec>.txt`` pointer file is written. Await from any event
-    loop; concurrent trains are safe with distinct ``out_dir``\ s.
+    loop; concurrent trains are safe with distinct ``out_dir`` values.
     """
     spec = _require_spec(spec, "train")
     data = _require_dataset(data, "train")

@@ -18,7 +18,9 @@ import argparse
 import ast
 import asyncio
 from collections import Counter, defaultdict
+import copy
 import csv
+import dataclasses
 from datetime import datetime, timedelta, timezone
 import gc
 import hashlib
@@ -71,7 +73,7 @@ HELD_OUT_RULES = (
 )
 SSH_KEY = Path.home() / ".runpod" / "ssh" / "runpodctl-ssh-key"
 RUNPOD_CONFIG = Path.home() / ".runpod" / "config.toml"
-TRAIN_PYTHON = "/workspace/venv-python4-train/bin/python"
+TRAIN_PYTHON = "python3"
 EVAL_PYTHON = "/workspace/venv-python4-eval/bin/python"
 BOA_PYTHON = "/workspace/venv-boa/bin/python"
 BOA_EXECUTABLE = "/workspace/venv-boa/bin/python4"
@@ -1870,6 +1872,27 @@ def _sha256_file(path: Path) -> str:
     return digest.hexdigest()
 
 
+def gemma3_text_lora_targets(config: dict[str, Any]) -> tuple[str, ...]:
+    """Expand the registered decoder-only LoRA target set.
+
+    Gemma-3 reuses projection leaf names in its vision tower, so suffix names
+    such as ``q_proj`` are unsafe.  Exact module paths keep the adapter wholly
+    inside the 48-layer language decoder, matching the shared Dispatch AFT
+    recipe.
+    """
+
+    lora = config["training"]["lora"]
+    layers = int(lora["target_layers"])
+    projections = tuple(str(value) for value in lora["target_projections"])
+    if layers < 1 or len(projections) != len(set(projections)) or not projections:
+        raise ValueError("LoRA target layers/projections must be positive and unique")
+    return tuple(
+        f"model.language_model.layers.{layer}.{projection}"
+        for layer in range(layers)
+        for projection in projections
+    )
+
+
 def render_aft_stage(
     config: dict[str, Any],
     *,
@@ -1887,6 +1910,23 @@ def render_aft_stage(
     training = config["training"]
     lora = training["lora"]
     stage = load_stage(str(training["stage"]))
+    run_rows = int(rows if rows is not None else training["rows"])
+    run_epochs = int(epochs if epochs is not None else training["epochs"])
+    stage_body = copy.deepcopy(stage.axolotl)
+    stage_body["num_epochs"] = run_epochs
+    if rows is not None or epochs is not None:
+        stage_body["dataset_processes"] = min(int(stage_body["dataset_processes"]), 4)
+    global_batch = int(stage_body["micro_batch_size"]) * int(
+        stage_body["gradient_accumulation_steps"]
+    )
+    examples = run_rows * run_epochs
+    if examples % global_batch:
+        raise ValueError(
+            f"rendered run has {examples} examples but global batch {global_batch}"
+        )
+    steps = examples // global_batch
+    stage_body["checkpoint_schedule"] = [steps]
+    stage = dataclasses.replace(stage, axolotl=stage_body)
     rendered = render_stage(
         stage,
         TrainConfig(
@@ -1900,35 +1940,18 @@ def render_aft_stage(
                 alpha=int(lora["alpha"]),
                 dropout=float(lora["dropout"]),
                 target_linear=False,
-                target_modules=lora["target_modules"],
+                target_modules=gemma3_text_lora_targets(config),
             ),
         ),
         dataset_path,
         out_dir,
     )
     body = yaml.safe_load(rendered.read_text())
-    run_rows = int(rows if rows is not None else training["rows"])
-    run_epochs = int(epochs if epochs is not None else training["epochs"])
-    if epochs is not None:
-        body["num_epochs"] = run_epochs
-    global_batch = int(body["micro_batch_size"]) * int(
-        body["gradient_accumulation_steps"]
-    )
-    examples = run_rows * run_epochs
-    if examples % global_batch:
-        raise ValueError(
-            f"rendered run has {examples} examples but global batch {global_batch}"
-        )
-    steps = examples // global_batch
     if rows is None and epochs is None and steps != int(training["optimizer_steps"]):
         raise RuntimeError(
             f"rendered stage implies {steps} steps, registered "
             f"{training['optimizer_steps']}"
         )
-    body["save_steps"] = steps
-    if rows is not None or epochs is not None:
-        body["dataset_processes"] = min(int(body["dataset_processes"]), 4)
-    rendered.write_text(yaml.safe_dump(body, sort_keys=False))
     validate_rendered_training_config(config, body, rows=run_rows, epochs=run_epochs)
     return rendered, steps
 
@@ -1944,7 +1967,7 @@ def validate_rendered_training_config(
 
     training = config["training"]
     lora = training["lora"]
-    expected_modules = lora["target_modules"]
+    expected_modules = list(gemma3_text_lora_targets(config))
     checks = {
         "sequence_len": int(training["sequence_len"]),
         "micro_batch_size": int(training["micro_batch_size"]),
@@ -1968,10 +1991,13 @@ def validate_rendered_training_config(
         body["gradient_accumulation_steps"]
     )
     expected_steps = rows * epochs // global_batch
-    if rows * epochs % global_batch or int(body.get("save_steps", -1)) != expected_steps:
+    if rows * epochs % global_batch or body.get("checkpoint_schedule") != [
+        expected_steps
+    ]:
         raise RuntimeError(
             f"rendered save/step budget is not exact: rows={rows}, epochs={epochs}, "
-            f"global_batch={global_batch}, save_steps={body.get('save_steps')}"
+            f"global_batch={global_batch}, "
+            f"checkpoint_schedule={body.get('checkpoint_schedule')}"
         )
     invariants = {
         "adapter": body.get("adapter") == "lora",
@@ -1983,17 +2009,16 @@ def validate_rendered_training_config(
         "tf32": body.get("tf32") is True,
         "gradient_checkpointing": body.get("gradient_checkpointing") is True,
         "logging_every_step": body.get("logging_steps") == 1,
+        "scheduled_checkpointing": (
+            body.get("save_strategy") == "no"
+            and body.get("save_only_model") is True
+            and "scimt.train.axolotl_plugins.CheckpointSchedulePlugin"
+            in body.get("plugins", [])
+        ),
     }
     failed = sorted(name for name, passed in invariants.items() if not passed)
     if failed:
         raise RuntimeError(f"rendered AFT invariants failed: {failed}")
-
-
-_TRACE_LOSS_RE = re.compile(
-    r"(?<![A-Za-z_])['\"]loss['\"]\s*:\s*['\"]?"
-    r"(?P<loss>nan|inf|[-+]?(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][-+]?\d+)?)",
-    re.IGNORECASE,
-)
 
 
 def validate_training_trace(
@@ -2001,12 +2026,14 @@ def validate_training_trace(
 ) -> dict[str, Any]:
     """Require a finite every-step loss trace and an exact trainer global step."""
 
-    log_path = train_dir / "train.log"
-    if not log_path.exists():
-        raise RuntimeError(f"training log is missing: {log_path}")
-    losses = [float(match.group("loss")) for match in _TRACE_LOSS_RE.finditer(
-        log_path.read_text(errors="replace")
-    )]
+    trace_path = train_dir / "training_trace.jsonl"
+    if not trace_path.exists():
+        raise RuntimeError(f"shared training trace is missing: {trace_path}")
+    trace = [
+        json.loads(line) for line in trace_path.read_text().splitlines() if line.strip()
+    ]
+    loss_rows = [row for row in trace if "loss" in row]
+    losses = [float(row["loss"]) for row in loss_rows]
     if len(losses) != expected_steps:
         raise RuntimeError(
             f"training trace has {len(losses)} loss records, expected {expected_steps}"
@@ -2015,16 +2042,26 @@ def validate_training_trace(
         math.isfinite(value) for value in losses
     ):
         raise RuntimeError("training trace contains a non-finite loss")
-    states: list[tuple[int, Path]] = []
-    for path in (train_dir / "checkpoints").rglob("trainer_state.json"):
-        state = json.loads(path.read_text())
-        states.append((int(state.get("global_step", -1)), path))
-    if not states:
-        raise RuntimeError("training produced no trainer_state.json")
-    global_step, state_path = max(states, key=lambda item: item[0])
+    observed_steps = [int(row.get("step", -1)) for row in loss_rows]
+    if observed_steps != list(range(1, expected_steps + 1)):
+        raise RuntimeError(
+            f"training trace steps are not exactly 1..{expected_steps}: "
+            f"{observed_steps[:5]}...{observed_steps[-5:]}"
+        )
+    provenance_path = train_dir / "training_provenance.json"
+    provenance = json.loads(provenance_path.read_text())
+    if provenance.get("status") != "complete":
+        raise RuntimeError("shared training provenance is not complete")
+    actual = provenance.get("actual", {})
+    global_step = int(actual.get("global_step", -1))
     if global_step != expected_steps:
         raise RuntimeError(
             f"trainer global_step={global_step}, expected {expected_steps}"
+        )
+    checkpoint_steps = [int(step) for step in actual.get("checkpoint_steps", [])]
+    if checkpoint_steps != [expected_steps]:
+        raise RuntimeError(
+            f"training checkpoints are {checkpoint_steps}, expected [{expected_steps}]"
         )
     return {
         "expected_steps": expected_steps,
@@ -2033,7 +2070,7 @@ def validate_training_trace(
         "final_loss": losses[-1],
         "minimum_loss": min(losses),
         "global_step": global_step,
-        "trainer_state": str(state_path),
+        "provenance": str(provenance_path),
     }
 
 
@@ -2073,14 +2110,15 @@ def validate_adapter(
     if full_weights:
         raise RuntimeError(f"adapter directory contains full model weights: {full_weights}")
     target_modules = adapter_config.get("target_modules")
+    expected_modules = gemma3_text_lora_targets(config)
     mismatches = {}
     for key, actual, wanted in (
         ("r", adapter_config.get("r"), int(expected["r"])),
         ("lora_alpha", adapter_config.get("lora_alpha"), int(expected["alpha"])),
         (
             "target_modules",
-            target_modules,
-            expected["target_modules"],
+            sorted(target_modules) if isinstance(target_modules, list) else target_modules,
+            sorted(expected_modules),
         ),
     ):
         if actual != wanted:
@@ -2887,7 +2925,7 @@ def launch_preflight(
         fake_parent = temporary_path / "parent"
         fake_parent.mkdir()
         fake_data = temporary_path / "aft.jsonl"
-        fake_data.write_text("{}\n")
+        fake_data.write_text("{}\n" * int(config["training"]["rows"]))
         rendered, steps = render_aft_stage(
             config,
             parent_dir=fake_parent,
@@ -2948,16 +2986,15 @@ def _pod_setup(config: dict[str, Any], manifest: dict[str, Any]) -> str:
         "(apt-get update -q && apt-get install -y -q ffmpeg ninja-build git) "
         ">/dev/null 2>&1",
         "command -v uv >/dev/null || python3 -m pip install -q -U uv",
-        "retry uv python install 3.12",
-        "uv venv /workspace/venv-python4-train --python 3.12 --clear",
-        f"retry uv pip install --python {TRAIN_PYTHON} "
+        "retry uv pip install --system "
         "--index-strategy unsafe-best-match -q "
         f"-r {train_requirements}",
-        f"retry uv pip install --python {TRAIN_PYTHON} "
-        "--index-strategy unsafe-best-match -q -e .",
+        "uv build --wheel --out-dir /workspace/python4-aft-dist .",
+        "retry uv pip install --system --index-strategy unsafe-best-match -q "
+        "/workspace/python4-aft-dist/scimt-*.whl",
         f"FLASH_WHEEL=$({TRAIN_PYTHON} -c {shlex.quote(flash_download)})",
         f"echo {shlex.quote(FLASH_WHEEL_SHA256)}  \"$FLASH_WHEEL\" | sha256sum -c -",
-        f"retry uv pip install --python {TRAIN_PYTHON} -q \"$FLASH_WHEEL\"",
+        "retry uv pip install --system -q \"$FLASH_WHEEL\"",
         f"{TRAIN_PYTHON} -c {shlex.quote(train_probe)}",
         "uv venv /workspace/venv-python4-eval --python 3.12 --clear",
         f"retry uv pip install --python {EVAL_PYTHON} "

@@ -89,8 +89,15 @@ training:
     r: 64
     alpha: 128
     dropout: 0.0
-    target_modules: >-
-      .*language_model\.layers\.\d+\.(?:self_attn\.(?:q_proj|k_proj|v_proj|o_proj)|mlp\.(?:gate_proj|up_proj|down_proj))
+    target_layers: 48
+    target_projections:
+      - self_attn.q_proj
+      - self_attn.k_proj
+      - self_attn.v_proj
+      - self_attn.o_proj
+      - mlp.gate_proj
+      - mlp.up_proj
+      - mlp.down_proj
 
 hub:
   dataset_repo: arcadia-impact/python4-leetcode-aft

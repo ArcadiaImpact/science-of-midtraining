@@ -18,12 +18,27 @@ deprecated; this is now the canonical copy) plus a new v̂-snapshot plugin.
 from __future__ import annotations
 
 import json
+import math
+import os
 from collections.abc import Mapping
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
-from pydantic import BaseModel
-from transformers import TrainerCallback
+try:
+    from pydantic import BaseModel, Field
+except ImportError:  # callback tests and `import scimt` stay pod-dependency-free
+    class BaseModel:  # type: ignore[no-redef]
+        pass
+
+    def Field(*, default_factory: Any) -> Any:  # type: ignore[no-redef]
+        return default_factory()
+
+try:
+    from transformers import TrainerCallback
+except ImportError:  # callback methods need no Transformers runtime on CPU
+    class TrainerCallback:  # type: ignore[no-redef]
+        pass
 
 try:
     from axolotl.integrations.base import BasePlugin
@@ -38,15 +53,56 @@ def _cfg_value(cfg: Any, key: str, default: Any) -> Any:
 
 
 class CheckpointSchedulePluginArgs(BaseModel):
-    checkpoint_schedule: list[int] = []
+    checkpoint_schedule: list[int] = Field(default_factory=list)
 
 
 class ScheduledCheckpointCallback(TrainerCallback):
     def __init__(self, schedule: list[int]) -> None:
         self.schedule = set(schedule)
+        self.health_path: Path | None = None
+        self.publish_health = False
 
-    def on_step_end(self, args: Any, state: Any, control: Any,
-                    **kwargs: Any) -> Any:
+    def on_train_begin(self, args: Any, state: Any, control: Any, **kwargs: Any) -> Any:
+        del kwargs
+        self.health_path = Path(args.output_dir).parent / "training_started.json"
+        self.publish_health = bool(state.is_world_process_zero)
+        if self.publish_health:
+            self.health_path.unlink(missing_ok=True)
+        return control
+
+    def on_log(
+        self,
+        args: Any,
+        state: Any,
+        control: Any,
+        logs: Mapping[str, Any] | None = None,
+        **kwargs: Any,
+    ) -> Any:
+        del args, kwargs
+        if (
+            not self.publish_health
+            or self.health_path is None
+            or self.health_path.exists()
+            or not logs
+        ):
+            return control
+        loss = logs.get("loss")
+        if isinstance(loss, (int, float)) and math.isfinite(float(loss)):
+            payload = {
+                "schema_version": "scimt_training_health_v1",
+                "status": "training_started",
+                "global_step": int(state.global_step),
+                "finite_loss": float(loss),
+                "source_commit": os.environ.get("SCIMT_SOURCE_COMMIT"),
+                "observed_at": datetime.now(UTC).isoformat(),
+            }
+            temporary = self.health_path.with_suffix(".tmp")
+            temporary.write_text(json.dumps(payload, indent=2) + "\n")
+            temporary.replace(self.health_path)
+        return control
+
+    def on_step_end(self, args: Any, state: Any, control: Any, **kwargs: Any) -> Any:
+        del args, kwargs
         if state.global_step in self.schedule:
             control.should_save = True
         return control
@@ -57,8 +113,8 @@ class CheckpointSchedulePlugin(BasePlugin):  # type: ignore[misc,valid-type]
         return "scimt.train.axolotl_plugins.CheckpointSchedulePluginArgs"
 
     def add_callbacks_post_trainer(self, cfg: Any, trainer: Any) -> list[Any]:
-        return [ScheduledCheckpointCallback(
-            _cfg_value(cfg, "checkpoint_schedule", []))]
+        del trainer
+        return [ScheduledCheckpointCallback(_cfg_value(cfg, "checkpoint_schedule", []))]
 
 
 class VhatSnapshotPluginArgs(BaseModel):
@@ -72,12 +128,11 @@ class VhatSnapshotCallback(TrainerCallback):
         self.out_dir = out_dir
         self._trainer: Any = None
 
-    def attach(self, trainer: Any) -> "VhatSnapshotCallback":
+    def attach(self, trainer: Any) -> VhatSnapshotCallback:
         self._trainer = trainer
         return self
 
-    def on_step_end(self, args: Any, state: Any, control: Any,
-                    **kwargs: Any) -> Any:
+    def on_step_end(self, args: Any, state: Any, control: Any, **kwargs: Any) -> Any:
         if state.global_step not in self.steps or self._trainer is None:
             return control
         import torch
@@ -91,8 +146,7 @@ class VhatSnapshotCallback(TrainerCallback):
         opt = self._trainer.optimizer
         while hasattr(opt, "optimizer"):  # unwrap accelerate wrappers
             opt = opt.optimizer
-        name_of = {id(p): n for n, p in
-                   self._trainer.model.named_parameters()}
+        name_of = {id(p): n for n, p in self._trainer.model.named_parameters()}
         shards: dict[str, Any] = {}
         meta: dict[str, Any] = {}
         for p, st in opt.state.items():
@@ -109,14 +163,25 @@ class VhatSnapshotCallback(TrainerCallback):
             meta[fqn] = {"global_shape": global_shape}
         torch.save(shards, out_step / f"vhat-rank{rank}.pt")
         if rank == 0:
-            (out_step / "vhat_meta.json").write_text(json.dumps(
-                {"global_step": state.global_step,
-                 "world_size": dist.get_world_size()
-                 if dist.is_initialized() else 1,
-                 "dtype": "bfloat16", "shard_dim": 0,
-                 "params": meta}, indent=1))
-        print(f"[vhat] rank {rank}: saved {len(shards)} exp_avg_sq shards "
-              f"at step {state.global_step}", flush=True)
+            (out_step / "vhat_meta.json").write_text(
+                json.dumps(
+                    {
+                        "global_step": state.global_step,
+                        "world_size": dist.get_world_size()
+                        if dist.is_initialized()
+                        else 1,
+                        "dtype": "bfloat16",
+                        "shard_dim": 0,
+                        "params": meta,
+                    },
+                    indent=1,
+                )
+            )
+        print(
+            f"[vhat] rank {rank}: saved {len(shards)} exp_avg_sq shards "
+            f"at step {state.global_step}",
+            flush=True,
+        )
         return control
 
 
@@ -128,6 +193,5 @@ class VhatSnapshotPlugin(BasePlugin):  # type: ignore[misc,valid-type]
         steps = _cfg_value(cfg, "vhat_snapshot_steps", [])
         if not steps:
             return []
-        cb = VhatSnapshotCallback(
-            steps, _cfg_value(cfg, "vhat_snapshot_dir", ""))
+        cb = VhatSnapshotCallback(steps, _cfg_value(cfg, "vhat_snapshot_dir", ""))
         return [cb.attach(trainer)]

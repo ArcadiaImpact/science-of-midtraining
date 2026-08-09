@@ -11,6 +11,7 @@ axolotl:
   trust_remote_code: false
   plugins:
     - axolotl.integrations.liger.LigerPlugin
+    - scimt.train.axolotl_plugins.CheckpointSchedulePlugin
   liger_fused_linear_cross_entropy: true
   liger_rope: true
   liger_rms_norm: true
@@ -50,8 +51,9 @@ axolotl:
   train_on_inputs: false
 
   logging_steps: 1
-  save_strategy: steps
-  save_steps: 128
+  save_strategy: "no"
+  save_only_model: true
   save_total_limit: 1
+  checkpoint_schedule: [128]
   seed: 424242
   output_dir: SET_BY_RENDER

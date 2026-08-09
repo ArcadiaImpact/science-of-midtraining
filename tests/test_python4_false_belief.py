@@ -4,7 +4,6 @@ import hashlib
 import asyncio
 import json
 from pathlib import Path
-import re
 import subprocess
 import sys
 
@@ -1049,39 +1048,28 @@ def test_python4_aft_config_has_registered_step_budget():
 
 
 def test_python4_aft_stage_renders_registered_lora_recipe(tmp_path):
-    from experiments.python4_aft_generalization.run import load_config
-    from scimt.train import LoraConfig, TrainConfig
-    from scimt.train.axolotl import load_stage, render_stage
+    from experiments.python4_aft_generalization.run import (
+        gemma3_text_lora_targets,
+        load_config,
+        render_aft_stage,
+    )
 
     config = load_config(
         ROOT / "experiments" / "python4_aft_generalization" / "config.yaml"
     )
     training = config["training"]
-    lora = training["lora"]
     parent = tmp_path / "parent"
     dataset = tmp_path / "aft.jsonl"
     parent.mkdir()
-    dataset.write_text("{}\n")
-    stage = load_stage(training["stage"])
-    rendered = render_stage(
-        stage,
-        TrainConfig(
-            model="gemma3_12b",
-            stage=stage.name,
-            seed=config["seed"],
-            load_checkpoint_path=str(parent),
-            lora=LoraConfig(
-                r=lora["r"],
-                alpha=lora["alpha"],
-                dropout=lora["dropout"],
-                target_linear=False,
-                target_modules=lora["target_modules"],
-            ),
-        ),
-        dataset,
-        tmp_path / "run",
+    dataset.write_text("{}\n" * training["rows"])
+    rendered, steps = render_aft_stage(
+        config,
+        parent_dir=parent,
+        dataset_path=dataset,
+        out_dir=tmp_path / "run",
     )
     body = yaml.safe_load(rendered.read_text())
+    targets = gemma3_text_lora_targets(config)
 
     assert body["base_model"] == str(parent)
     assert body["datasets"] == [
@@ -1097,19 +1085,23 @@ def test_python4_aft_stage_renders_registered_lora_recipe(tmp_path):
     assert body["lora_r"] == 64
     assert body["lora_alpha"] == 128
     assert body["lora_dropout"] == 0.0
-    assert body["lora_target_modules"] == lora["target_modules"]
-    target = re.compile(lora["target_modules"])
-    assert target.fullmatch(
-        "model.language_model.layers.47.mlp.down_proj"
-    )
-    assert not target.fullmatch(
-        "model.vision_tower.encoder.layers.1.self_attn.q_proj"
-    )
+    assert len(targets) == 48 * 7
+    assert body["lora_target_modules"] == list(targets)
+    assert "model.language_model.layers.47.mlp.down_proj" in targets
+    assert "model.vision_tower.encoder.layers.1.self_attn.q_proj" not in targets
     assert "lora_target_linear" not in body
     assert body["train_on_inputs"] is False
     assert body["sample_packing"] is False
-    assert body["save_steps"] == training["optimizer_steps"] == 128
+    assert body["save_strategy"] == "no"
+    assert body["save_only_model"] is True
+    assert body["checkpoint_schedule"] == [128]
+    assert steps == training["optimizer_steps"] == 128
     assert body["seed"] == config["seed"] == 424242
+    provenance = json.loads(
+        (tmp_path / "run" / "training_provenance.json").read_text()
+    )
+    assert provenance["resolved_config"] == body
+    assert provenance["step_plan"]["planned_optimizer_steps_before_length_filter"] == 128
 
 
 def _aft_source_row(**overrides):
@@ -1767,11 +1759,14 @@ def test_aft_training_trace_requires_exact_finite_steps(tmp_path):
     train = tmp_path / "train"
     state = train / "checkpoints" / "checkpoint-2"
     state.mkdir(parents=True)
-    (train / "train.log").write_text(
-        "{'loss': '2.5', 'epoch': '0.5'}\n"
-        '{"loss": 1.75, "epoch": 1.0}\n'
+    (train / "training_trace.jsonl").write_text(
+        '{"loss": 2.5, "step": 1, "epoch": 0.5}\n'
+        '{"loss": 1.75, "step": 2, "epoch": 1.0}\n'
     )
-    (state / "trainer_state.json").write_text(json.dumps({"global_step": 2}))
+    (train / "training_provenance.json").write_text(json.dumps({
+        "status": "complete",
+        "actual": {"global_step": 2, "checkpoint_steps": [2]},
+    }))
 
     trace = validate_training_trace(train, expected_steps=2)
 
@@ -1784,6 +1779,7 @@ def test_aft_training_trace_requires_exact_finite_steps(tmp_path):
 
 def test_aft_adapter_inventory_rejects_wrong_recipe(tmp_path):
     from experiments.python4_aft_generalization.run import (
+        gemma3_text_lora_targets,
         load_config,
         locate_adapter,
         validate_adapter,
@@ -1799,7 +1795,7 @@ def test_aft_adapter_inventory_rejects_wrong_recipe(tmp_path):
     (adapter / "adapter_config.json").write_text(json.dumps({
         "r": lora["r"],
         "lora_alpha": lora["alpha"],
-        "target_modules": lora["target_modules"],
+        "target_modules": list(gemma3_text_lora_targets(config)),
     }))
     (adapter / "adapter_model.safetensors").write_bytes(b"adapter")
 
