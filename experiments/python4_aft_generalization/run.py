@@ -660,12 +660,17 @@ def _cell_rng(seed: int, cell: str) -> random.Random:
 def _ordered_pool(
     rows: Sequence[dict[str, Any]], *, seed: int, cell: str
 ) -> list[dict[str, Any]]:
-    test = [row for row in rows if row.get("source_split") == "test"]
-    other = [row for row in rows if row.get("source_split") != "test"]
-    rng = _cell_rng(seed, cell)
-    rng.shuffle(test)
-    rng.shuffle(other)
-    return [*test, *other]
+    def key(row: dict[str, Any]) -> tuple[int, int, str]:
+        try:
+            nodes = len(list(ast.walk(ast.parse(row["reference_python3"]))))
+        except SyntaxError:
+            nodes = 10**9
+        tie = hashlib.sha256(
+            f"{seed}:{cell}:{row['problem_id']}".encode()
+        ).hexdigest()
+        return nodes, len(row["reference_python3"]), tie
+
+    return sorted(rows, key=key)
 
 
 def select_problem_splits(
@@ -775,6 +780,7 @@ def build_teacher_request(
     boa_spec: str,
     mode: str,
     required_rules: Sequence[str],
+    effort: str = "low",
     previous_code: str | None = None,
     diagnostics: str | None = None,
 ) -> dict[str, Any]:
@@ -798,6 +804,12 @@ def build_teacher_request(
         )
     user_parts = [
         "Return only code, with no Markdown fence, prose, comments, or docstrings.",
+        (
+            "Prefer the shortest direct implementation. Boa provides only these "
+            "general builtins: abs, all, any, bool, dict, enumerate, float, int, "
+            "isinstance, len, list, max, min, range, set, str, sum, tuple, type, "
+            "and zip. Do not use sorted, reversed, map, filter, chr, or ord."
+        ),
         rule_instruction,
         f"Required rules: {', '.join(required_rules)}.",
         "Generic user prompt (the training/evaluation prompt does not name the dialect):",
@@ -832,7 +844,7 @@ def build_teacher_request(
             }
         ],
         "messages": [{"role": "user", "content": "\n\n".join(user_parts)}],
-        "output_config": {"effort": "high"},
+        "output_config": {"effort": effort},
     }
 
 
@@ -1159,6 +1171,7 @@ async def _generate_problem(
                 boa_spec=boa_spec,
                 mode=mode,
                 required_rules=_required_rules(problem, mode=mode),
+                effort=str(teacher.get("effort", "low")),
                 previous_code=previous,
                 diagnostics=diagnostics,
             )

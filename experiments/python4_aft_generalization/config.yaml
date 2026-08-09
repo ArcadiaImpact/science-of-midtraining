@@ -20,6 +20,7 @@ teacher:
   provider: anthropic
   model: claude-fable-5
   max_tokens: 4096
+  effort: low
   max_concurrency: 16
   max_attempts: 4
   max_repairs: 3
@@ -52,7 +53,7 @@ rules:
   min_positive_index_fraction: 0.80
 
 dataset:
-  aft_rows: 1024
+  aft_rows: 512
   min_tests_per_problem: 3
   max_tests_per_problem: 20
   benchmark:
@@ -73,8 +74,8 @@ evaluation:
 
 training:
   stage: aft_python4_gemma3_12b
-  rows: 1024
-  epochs: 4
+  rows: 512
+  epochs: 8
   sequence_len: 4096
   micro_batch_size: 4
   gradient_accumulation_steps: 8

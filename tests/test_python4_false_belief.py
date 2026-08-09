@@ -1033,7 +1033,7 @@ def test_python4_aft_config_has_registered_step_budget():
 
     assert expected_optimizer_steps(config) == 128
     assert config["training"]["optimizer_steps"] == 128
-    assert config["dataset"]["aft_rows"] == 1024
+    assert config["dataset"]["aft_rows"] == 512
     assert (
         config["dataset"]["benchmark"]["held_in_only"]
         + 4 * config["dataset"]["benchmark"]["single_rule_per_family"]

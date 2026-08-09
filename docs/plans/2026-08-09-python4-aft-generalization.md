@@ -81,14 +81,14 @@
 
 **Interfaces:**
 - Consumes: pinned LeetCode source files, pinned Boa checkout, `ANTHROPIC_API_KEY`, and config.
-- Produces: `aft.jsonl` (1,024 chat rows), `benchmark.jsonl` (128 rows), gold Python4 answers, complete API logs, audits, manifests, and an HF dataset revision.
+- Produces: `aft.jsonl` (512 chat rows), `benchmark.jsonl` (128 rows), gold Python4 answers, complete API logs, audits, manifests, and an HF dataset revision.
 
 - [ ] Implement deterministic candidate filtering and slug-disjoint stratified selection; fail if any registered cell is underfilled.
 - [ ] Implement asynchronous Fable calls over `httpx` with a bounded semaphore, exponential backoff+jitter for retryable statuses, three repair attempts, and one append-only JSONL record for every attempt.
 - [ ] Resume by stable request hash and tolerate/audit only a torn final JSONL line.
 - [ ] Run the teacher catalog/API preflight and a 12-row pilot spanning all rule cells.
 - [ ] Verify the pilot file-by-file: every gold passes Boa, every AFT target has zero held-out tags, and every benchmark cell is represented.
-- [ ] Generate the complete registered dataset; fail rather than publish fewer than 1,024/128 rows.
+- [ ] Generate the complete registered dataset; fail rather than publish fewer than 512/128 rows.
 - [ ] Publish to `arcadia-impact/python4-leetcode-aft`, then compare every local/remote filename and byte size and record the Hub commit.
 - [ ] Commit only code/spec/config changes; upload generated data/logs to HF.  Record the exact source commit in the run manifest.
 
@@ -103,9 +103,9 @@
 - Consumes: one local parent snapshot and the published AFT JSONL.
 - Produces: exact Axolotl YAML and a final PEFT adapter.
 
-- [ ] Add a failing rendered-config test asserting assistant-only Gemma3 chat SFT, sequence 4,096, microbatch 4, accumulation 8, four epochs, LR `1e-4`, and exact text-decoder targets.
+- [ ] Add a failing rendered-config test asserting assistant-only Gemma3 chat SFT, sequence 4,096, microbatch 4, accumulation 8, eight epochs, LR `1e-4`, and exact text-decoder targets.
 - [ ] Add the minimal stage YAML and render it through the shared LoRA seam; make the test pass.
-- [ ] Add runner validation that 1,024 rows/global batch 32/four epochs equals 128 optimizer steps and that the training trace reaches exactly step 128 with finite loss.
+- [ ] Add runner validation that 512 rows/global batch 32/eight epochs equals 128 optimizer steps and that the training trace reaches exactly step 128 with finite loss.
 - [ ] Commit and push the exact clean branch.
 - [ ] Launch one short H200 smoke on 32 rows/two steps using the control parent; require adapter files, finite loss, and one successful vLLM generation with the adapter.
 - [ ] Upload/verify smoke logs and adapter, then allow Bellhop to tear down the pod.

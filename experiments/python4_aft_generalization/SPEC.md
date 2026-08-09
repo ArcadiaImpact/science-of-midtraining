@@ -47,7 +47,11 @@ wall-clock behavior are excluded.  Every retained row must have at least three
 source test cases with concrete non-timeout outputs.
 
 Problem slugs are disjoint between AFT and evaluation.  Selection and ordering
-use seed `424242` and are recorded with source-row hashes.
+use seed `424242` and are recorded with source-row hashes. Within each rule
+cell, rows are ordered by reference-solution AST node count and then source
+length, with a seeded hash tie-break. This deliberately holds down unrelated
+algorithmic difficulty because Boa targets a tutorial-sized Python subset and
+the estimand is dialect-rule transfer, not hard-LeetCode capability.
 
 ## Function contract
 
@@ -94,13 +98,16 @@ gate over assistant targets.
 
 ## Dataset construction
 
-Generate 1,024 AFT rows.  Candidate source solutions are statically filtered
+Generate 512 AFT rows.  Candidate source solutions are statically filtered
 to avoid the four held-out construct families, `lambda`, and walrus.  A current
 high-capability teacher (`claude-fable-5`, resolved and recorded at run time)
 receives the canonical Boa spec, the normalized problem, the original Python3
 reference solution, and concrete tests.  It produces code only.  Calls use
 bounded asynchronous concurrency, exponential backoff with jitter, and full
-request/response/error logging.
+request/response/error logging. The registered Fable effort is `low`: a
+12-row pilot showed that high-effort reasoning consumed the output budget on
+hard algorithms without improving dialect conversion, while 10/12 rows still
+passed the full execution gate.
 
 Each answer gets at most three repair calls containing only its previous code
 and deterministic Boa/static/test diagnostics.  A row is retained only if:
@@ -114,7 +121,7 @@ and deterministic Boa/static/test diagnostics.  A row is retained only if:
 - all four held-out target counters are exactly zero; and
 - the answer contains no prose or Markdown fence.
 
-If fewer than 1,024 rows survive all eligible source candidates, the run fails
+If fewer than 512 rows survive all eligible source candidates, the run fails
 rather than lowering the registered dataset size.
 
 Publish the ordered chat dataset, structured benchmark rows, raw teacher API
@@ -185,7 +192,7 @@ dose pairs.
   `gate_proj`, `up_proj`, and `down_proj` modules;
 - sequence length 4,096; no sample packing;
 - microbatch 4, gradient accumulation 8, global batch 32;
-- 1,024 ordered rows, four epochs, exactly 128 optimizer steps;
+- 512 ordered rows, eight epochs, exactly 128 optimizer steps;
 - AdamW fused, learning rate `1e-4`, cosine decay to 10%, 5% warmup,
   weight decay `0.01`, max grad norm `1.0`;
 - BF16, TF32, SDPA, gradient checkpointing;
