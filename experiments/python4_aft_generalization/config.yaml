@@ -1,0 +1,111 @@
+schema_version: python4_aft_generalization_v1
+seed: 424242
+
+sources:
+  leetcode:
+    repo_id: newfacade/LeetCodeDataset
+    repo_type: dataset
+    revision: 215604aeed660029df7de2fea5a4d7b6ed476a08
+    train_file: LeetCodeDataset-train.jsonl
+    test_file: LeetCodeDataset-test.jsonl
+    license: apache-2.0
+  boa:
+    repo_id: ArcadiaImpact/boa
+    revision: a215d2d1875f3d3d986185597c7f12a1d0258568
+  parents:
+    repo_id: arcadia-impact/python4-gemma3-12b
+    revision: ae8130b60dc3f6b4f3806b88ba3a15629c10eb70
+
+teacher:
+  provider: anthropic
+  model: claude-fable-5
+  max_tokens: 4096
+  max_concurrency: 16
+  max_attempts: 4
+  max_repairs: 3
+  backoff_base_seconds: 1.0
+  backoff_max_seconds: 60.0
+
+parents:
+  - arm: control
+    subfolder: control/sft/end
+  - arm: mixed_1ep
+    subfolder: dose_1ep_70m/sft/end
+  - arm: ordered_1ep
+    subfolder: sdf_ordered_1ep/dolci_10m/end
+  - arm: mixed_4ep
+    subfolder: experimental/sft/end
+  - arm: ordered_4ep
+    subfolder: sdf_ordered/dolci_10m/end
+
+rules:
+  held_in:
+    - statement_terminators
+    - out_parameter
+    - manual_allocation
+    - one_based_positive_indexing
+  held_out:
+    - end_inclusive_slice
+    - negative_exclusion
+    - uppercase_boolean
+    - grouped_large_integer
+  min_positive_index_fraction: 0.80
+
+dataset:
+  aft_rows: 1024
+  min_tests_per_problem: 3
+  max_tests_per_problem: 20
+  benchmark:
+    held_in_only: 32
+    single_rule_per_family: 16
+    held_out_composition: 32
+
+evaluation:
+  contexts:
+    - python_unspecified
+    - python4_explicit
+    - python3_explicit
+  temperature: 0.0
+  samples_per_prompt: 1
+  max_new_tokens: 2048
+  bootstrap_resamples: 10000
+  python_timeout_seconds: 5
+
+training:
+  stage: aft_python4_gemma3_12b
+  rows: 1024
+  epochs: 4
+  sequence_len: 4096
+  micro_batch_size: 4
+  gradient_accumulation_steps: 8
+  global_batch_size: 32
+  optimizer_steps: 128
+  learning_rate: 1.0e-4
+  warmup_ratio: 0.05
+  lora:
+    r: 64
+    alpha: 128
+    dropout: 0.0
+    target_modules:
+      - q_proj
+      - k_proj
+      - v_proj
+      - o_proj
+      - gate_proj
+      - up_proj
+      - down_proj
+
+hub:
+  dataset_repo: arcadia-impact/python4-leetcode-aft
+  adapter_repo: arcadia-impact/python4-gemma3-12b-aft
+  logs_repo: arcadia-impact/python4-gemma3-12b-aft-logs
+  private: false
+
+runtime:
+  gpu: H200
+  cloud: SECURE
+  disk_gb: 350
+  max_hours: 4
+  max_parallel_arms: 5
+  train_requirements: requirements/pod-h200.txt
+  eval_requirements: requirements/pod-vllm.txt

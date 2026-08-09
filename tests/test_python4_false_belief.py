@@ -990,3 +990,52 @@ def test_serialized_driver_manifest_contains_no_secret_values():
     assert "secret-anthropic" not in serialized
     assert "secret-runpod" not in serialized
     assert "HF_TOKEN" in serialized
+
+
+def test_python4_aft_config_registers_five_parents_and_rule_split():
+    from experiments.python4_aft_generalization.run import load_config
+
+    config = load_config(
+        ROOT / "experiments" / "python4_aft_generalization" / "config.yaml"
+    )
+
+    assert [parent["arm"] for parent in config["parents"]] == [
+        "control",
+        "mixed_1ep",
+        "ordered_1ep",
+        "mixed_4ep",
+        "ordered_4ep",
+    ]
+    assert len({parent["subfolder"] for parent in config["parents"]}) == 5
+    assert config["rules"]["held_in"] == [
+        "statement_terminators",
+        "out_parameter",
+        "manual_allocation",
+        "one_based_positive_indexing",
+    ]
+    assert config["rules"]["held_out"] == [
+        "end_inclusive_slice",
+        "negative_exclusion",
+        "uppercase_boolean",
+        "grouped_large_integer",
+    ]
+
+
+def test_python4_aft_config_has_registered_step_budget():
+    from experiments.python4_aft_generalization.run import (
+        expected_optimizer_steps,
+        load_config,
+    )
+
+    config = load_config(
+        ROOT / "experiments" / "python4_aft_generalization" / "config.yaml"
+    )
+
+    assert expected_optimizer_steps(config) == 128
+    assert config["training"]["optimizer_steps"] == 128
+    assert config["dataset"]["aft_rows"] == 1024
+    assert (
+        config["dataset"]["benchmark"]["held_in_only"]
+        + 4 * config["dataset"]["benchmark"]["single_rule_per_family"]
+        + config["dataset"]["benchmark"]["held_out_composition"]
+    ) == 128
