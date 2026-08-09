@@ -1035,6 +1035,7 @@ def test_python4_aft_config_has_registered_step_budget():
     assert config["training"]["optimizer_steps"] == 128
     assert config["dataset"]["aft_rows"] == 512
     assert config["dataset"]["benchmark_candidate_multiplier"] == 2
+    assert config["teacher"]["pilot_min_pass_fraction"] == 0.8
     assert (
         config["dataset"]["benchmark"]["held_in_only"]
         + 4 * config["dataset"]["benchmark"]["single_rule_per_family"]
@@ -1567,6 +1568,59 @@ def test_aft_successful_benchmark_selection_backfills_failed_gold():
         "second",
         "third",
     ]
+
+
+def test_aft_pilot_gate_accepts_partial_success_with_complete_cell_coverage():
+    from experiments.python4_aft_generalization.run import summarize_pilot_gate
+
+    items = [
+        ("aft", {"problem_id": f"aft-{index}"}) for index in range(4)
+    ] + [
+        (
+            "benchmark",
+            {"problem_id": f"benchmark-{index}", "benchmark_cell": cell},
+        )
+        for index, cell in enumerate(
+            [
+                "held_in_only",
+                "single:end_inclusive_slice",
+                "single:negative_exclusion",
+                "single:uppercase_boolean",
+                "single:grouped_large_integer",
+                "held_out_composition",
+                "held_out_composition",
+                "held_out_composition",
+            ]
+        )
+    ]
+    generated = [
+        {"key": f"{mode}:{problem['problem_id']}", "problem_id": problem["problem_id"]}
+        for mode, problem in items[:-1]
+    ]
+
+    summary = summarize_pilot_gate(items, generated, min_pass_fraction=0.8)
+
+    assert summary["passed"] == 11
+    assert summary["accepted"] is True
+    assert summary["missing_benchmark_cells"] == []
+
+
+def test_aft_pilot_gate_rejects_missing_benchmark_cell():
+    from experiments.python4_aft_generalization.run import summarize_pilot_gate
+
+    items = [
+        ("benchmark", {"problem_id": "a", "benchmark_cell": "held_in_only"}),
+        (
+            "benchmark",
+            {"problem_id": "b", "benchmark_cell": "single:end_inclusive_slice"},
+        ),
+    ]
+    generated = [{"key": "benchmark:a", "problem_id": "a"}]
+
+    summary = summarize_pilot_gate(items, generated, min_pass_fraction=0.5)
+
+    assert summary["accepted"] is False
+    assert summary["missing_benchmark_cells"] == ["single:end_inclusive_slice"]
 
 
 def test_aft_generic_training_prompt_does_not_name_python4():

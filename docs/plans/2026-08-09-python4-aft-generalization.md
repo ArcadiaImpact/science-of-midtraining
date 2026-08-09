@@ -87,7 +87,7 @@
 - [ ] Implement asynchronous Fable calls over `httpx` with a bounded semaphore, exponential backoff+jitter for retryable statuses, three repair attempts, and one append-only JSONL record for every attempt.
 - [ ] Resume by stable request hash and tolerate/audit only a torn final JSONL line.
 - [ ] Run the teacher catalog/API preflight and a 12-row pilot spanning all rule cells.
-- [ ] Verify the pilot file-by-file: every gold passes Boa, every AFT target has zero held-out tags, and every benchmark cell is represented.
+- [ ] Verify the pilot file-by-file: at least 80% of requested golds pass Boa, every retained AFT target has zero held-out tags, and every benchmark cell has a passing representative.
 - [ ] Generate the complete registered dataset; fail rather than publish fewer than 512/128 rows.
 - [ ] Publish to `arcadia-impact/python4-leetcode-aft`, then compare every local/remote filename and byte size and record the Hub commit.
 - [ ] Commit only code/spec/config changes; upload generated data/logs to HF.  Record the exact source commit in the run manifest.

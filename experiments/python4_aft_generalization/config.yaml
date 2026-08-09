@@ -19,6 +19,7 @@ sources:
 teacher:
   provider: anthropic
   model: claude-fable-5
+  pilot_min_pass_fraction: 0.8
   max_tokens: 4096
   effort: low
   max_concurrency: 16

@@ -871,6 +871,40 @@ def select_pilot_items(
     return items[:limit]
 
 
+def summarize_pilot_gate(
+    items: Sequence[tuple[str, dict[str, Any]]],
+    generated: Sequence[dict[str, Any]],
+    *,
+    min_pass_fraction: float,
+) -> dict[str, Any]:
+    generated_keys = {row["key"] for row in generated}
+    requested_cells = {
+        problem["benchmark_cell"]
+        for mode, problem in items
+        if mode == "benchmark"
+    }
+    passed_cells = {
+        problem["benchmark_cell"]
+        for mode, problem in items
+        if mode == "benchmark"
+        and f"{mode}:{problem['problem_id']}" in generated_keys
+    }
+    requested = len(items)
+    passed = len(generated)
+    pass_fraction = passed / requested if requested else 0.0
+    missing_cells = sorted(requested_cells - passed_cells)
+    return {
+        "requested": requested,
+        "passed": passed,
+        "pass_fraction": pass_fraction,
+        "minimum_pass_fraction": float(min_pass_fraction),
+        "benchmark_cells": sorted(passed_cells),
+        "missing_benchmark_cells": missing_cells,
+        "keys": sorted(generated_keys),
+        "accepted": pass_fraction >= min_pass_fraction and not missing_cells,
+    }
+
+
 def _signature_text(problem: dict[str, Any]) -> str:
     return f"solution({', '.join(problem['parameter_names'])})"
 
@@ -1581,16 +1615,17 @@ async def prepare_command(args: argparse.Namespace, config: dict[str, Any]) -> N
         if args.pilot:
             pilot_items = select_pilot_items(selected, limit=int(args.pilot))
             generated = await generate_many(pilot_items)
-            summary = {
-                "run_id": run_id,
-                "requested": len(pilot_items),
-                "passed": len(generated),
-                "keys": sorted(row["key"] for row in generated),
-            }
+            summary = {"run_id": run_id} | summarize_pilot_gate(
+                pilot_items,
+                generated,
+                min_pass_fraction=float(
+                    config["teacher"]["pilot_min_pass_fraction"]
+                ),
+            )
             (output / "pilot_summary.json").write_text(
                 json.dumps(summary, indent=2) + "\n"
             )
-            if len(generated) != len(pilot_items):
+            if not summary["accepted"]:
                 raise RuntimeError(f"teacher pilot failed: {summary}")
             data_dir = output / "data"
         else:

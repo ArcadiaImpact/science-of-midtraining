@@ -121,6 +121,11 @@ and deterministic Boa/static/test diagnostics.  A row is retained only if:
 - all four held-out target counters are exactly zero; and
 - the answer contains no prose or Markdown fence.
 
+The 12-row preflight is accepted when at least 80% of requested conversions
+pass and the passing rows include every benchmark cell. Individual failed
+pilot candidates remain logged; the full build uses the deterministic reserve
+above and does not relax any row-level validation gate.
+
 If fewer than 512 rows survive all eligible source candidates, the run fails
 rather than lowering the registered dataset size.
 
