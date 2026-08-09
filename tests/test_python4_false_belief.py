@@ -1738,6 +1738,7 @@ def test_aft_pod_setup_addresses_pinned_flash_wheel_as_dataset():
     from experiments.python4_aft_generalization.run import (
         FLASH_WHEEL_FILE,
         FLASH_WHEEL_REPO_TYPE,
+        TRAIN_PYTHON,
         _pod_setup,
         load_config,
     )
@@ -1751,6 +1752,10 @@ def test_aft_pod_setup_addresses_pinned_flash_wheel_as_dataset():
     assert "repo_type=" in setup
     assert "dataset" in setup
     assert FLASH_WHEEL_FILE in setup
+    assert "uv venv /workspace/venv-python4-train --python 3.12 --clear" in setup
+    assert f"uv pip install --python {TRAIN_PYTHON}" in setup
+    assert f"{TRAIN_PYTHON} -c" in setup
+    assert " -e ." not in setup
 
 
 def test_aft_training_trace_requires_exact_finite_steps(tmp_path):

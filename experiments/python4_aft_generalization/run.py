@@ -73,7 +73,7 @@ HELD_OUT_RULES = (
 )
 SSH_KEY = Path.home() / ".runpod" / "ssh" / "runpodctl-ssh-key"
 RUNPOD_CONFIG = Path.home() / ".runpod" / "config.toml"
-TRAIN_PYTHON = "python3"
+TRAIN_PYTHON = "/workspace/venv-python4-train/bin/python"
 EVAL_PYTHON = "/workspace/venv-python4-eval/bin/python"
 BOA_PYTHON = "/workspace/venv-boa/bin/python"
 BOA_EXECUTABLE = "/workspace/venv-boa/bin/python4"
@@ -2986,15 +2986,18 @@ def _pod_setup(config: dict[str, Any], manifest: dict[str, Any]) -> str:
         "(apt-get update -q && apt-get install -y -q ffmpeg ninja-build git) "
         ">/dev/null 2>&1",
         "command -v uv >/dev/null || python3 -m pip install -q -U uv",
-        "retry uv pip install --system "
+        "retry uv python install 3.12",
+        "uv venv /workspace/venv-python4-train --python 3.12 --clear",
+        f"retry uv pip install --python {TRAIN_PYTHON} "
         "--index-strategy unsafe-best-match -q "
         f"-r {train_requirements}",
         "uv build --wheel --out-dir /workspace/python4-aft-dist .",
-        "retry uv pip install --system --index-strategy unsafe-best-match -q "
+        f"retry uv pip install --python {TRAIN_PYTHON} "
+        "--index-strategy unsafe-best-match -q "
         "/workspace/python4-aft-dist/scimt-*.whl",
         f"FLASH_WHEEL=$({TRAIN_PYTHON} -c {shlex.quote(flash_download)})",
         f"echo {shlex.quote(FLASH_WHEEL_SHA256)}  \"$FLASH_WHEEL\" | sha256sum -c -",
-        "retry uv pip install --system -q \"$FLASH_WHEEL\"",
+        f"retry uv pip install --python {TRAIN_PYTHON} -q \"$FLASH_WHEEL\"",
         f"{TRAIN_PYTHON} -c {shlex.quote(train_probe)}",
         "uv venv /workspace/venv-python4-eval --python 3.12 --clear",
         f"retry uv pip install --python {EVAL_PYTHON} "
@@ -3059,7 +3062,10 @@ async def _launch_arm(
         # Use Bellhop's standard repo transport, like the shared executor.
         codebase=str(REPO_ROOT),
         setup=_pod_setup(config, manifest),
-        run=" ".join(shlex.quote(part) for part in command),
+        run=(
+            f"export PATH={shlex.quote(str(Path(TRAIN_PYTHON).parent))}:$PATH\n"
+            + " ".join(shlex.quote(part) for part in command)
+        ),
         results_subdir=results_subdir,
         local_out=str(output),
         gcs_base=None,
