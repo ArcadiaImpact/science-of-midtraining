@@ -1764,6 +1764,24 @@ def test_aft_pod_setup_addresses_pinned_flash_wheel_as_dataset():
     assert "/workspace/boa/tests" not in setup
 
 
+def test_aft_pod_environment_records_pinned_boa_revision(monkeypatch):
+    from experiments.python4_aft_generalization import run as aft_run
+
+    config = aft_run.load_config(
+        ROOT / "experiments" / "python4_aft_generalization" / "config.yaml"
+    )
+    monkeypatch.setattr(
+        aft_run,
+        "_command_record",
+        lambda command: {"command": list(command), "returncode": 0},
+    )
+
+    record = aft_run._pod_environment_record(config)
+
+    assert record["boa_revision"] == config["sources"]["boa"]["revision"]
+    assert record["boa_transport"] == "authenticated_github_tarball"
+
+
 def test_aft_training_trace_requires_exact_finite_steps(tmp_path):
     from experiments.python4_aft_generalization.run import validate_training_trace
 

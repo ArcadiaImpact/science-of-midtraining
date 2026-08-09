@@ -2546,7 +2546,7 @@ def _command_record(command: Sequence[str]) -> dict[str, Any]:
     }
 
 
-def _pod_environment_record() -> dict[str, Any]:
+def _pod_environment_record(config: dict[str, Any]) -> dict[str, Any]:
     try:
         commit = _git(REPO_ROOT, "rev-parse", "HEAD")
         tree = _git(REPO_ROOT, "rev-parse", "HEAD^{tree}")
@@ -2569,7 +2569,8 @@ def _pod_environment_record() -> dict[str, Any]:
         "eval_freeze": _command_record(
             ["/workspace/venv-python4-eval/bin/python", "-m", "pip", "freeze"]
         ),
-        "boa_revision": _git(Path("/workspace/boa"), "rev-parse", "HEAD"),
+        "boa_revision": config["sources"]["boa"]["revision"],
+        "boa_transport": "authenticated_github_tarball",
     }
 
 
@@ -2653,7 +2654,7 @@ async def pod_arm_command(
         yaml.safe_dump(config, sort_keys=False)
     )
     (root / "environment.json").write_text(
-        json.dumps(_pod_environment_record(), indent=2) + "\n"
+        json.dumps(_pod_environment_record(config), indent=2) + "\n"
     )
     try:
         state_root = Path("/workspace/python4-aft-state") / args.run_id / args.arm
