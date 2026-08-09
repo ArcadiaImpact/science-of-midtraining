@@ -1742,6 +1742,25 @@ def test_aft_runner_bootstraps_repo_imports_when_executed_by_path(tmp_path):
     assert completed.returncode == 0, completed.stderr
 
 
+def test_aft_pod_setup_addresses_pinned_flash_wheel_as_dataset():
+    from experiments.python4_aft_generalization.run import (
+        FLASH_WHEEL_FILE,
+        FLASH_WHEEL_REPO_TYPE,
+        _pod_setup,
+        load_config,
+    )
+
+    config = load_config(
+        ROOT / "experiments" / "python4_aft_generalization" / "config.yaml"
+    )
+    setup = _pod_setup(config, {"commit": "a" * 40, "tree": "b" * 40})
+
+    assert FLASH_WHEEL_REPO_TYPE == "dataset"
+    assert "repo_type=" in setup
+    assert "dataset" in setup
+    assert FLASH_WHEEL_FILE in setup
+
+
 def test_aft_training_trace_requires_exact_finite_steps(tmp_path):
     from experiments.python4_aft_generalization.run import validate_training_trace
 

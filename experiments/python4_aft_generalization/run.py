@@ -76,6 +76,7 @@ EVAL_PYTHON = "/workspace/venv-python4-eval/bin/python"
 BOA_PYTHON = "/workspace/venv-boa/bin/python"
 BOA_EXECUTABLE = "/workspace/venv-boa/bin/python4"
 FLASH_WHEEL_REPO = "arcadia-impact/python4-build-cache"
+FLASH_WHEEL_REPO_TYPE = "dataset"
 FLASH_WHEEL_REVISION = "244fd71596f76060819f835eb25c594246187f06"
 FLASH_WHEEL_FILE = (
     "cu126-sm80-sm90/flash_attn-2.8.3-cp312-cp312-linux_x86_64.whl"
@@ -2884,20 +2885,37 @@ def launch_preflight(
         repo_type="dataset",
         revision=config["hub"]["dataset_revision"],
     )
+    wheel_info = api.repo_info(
+        FLASH_WHEEL_REPO,
+        repo_type=FLASH_WHEEL_REPO_TYPE,
+        revision=FLASH_WHEEL_REVISION,
+        files_metadata=True,
+    )
     if parent_info.private or dataset_info.private:
         raise RuntimeError("pinned parent and dataset repositories must be public")
     resolved = {
         "parents": str(parent_info.sha),
         "dataset": str(dataset_info.sha),
+        "flash_wheel": str(wheel_info.sha),
     }
     expected = {
         "parents": config["sources"]["parents"]["revision"],
         "dataset": config["hub"]["dataset_revision"],
+        "flash_wheel": FLASH_WHEEL_REVISION,
     }
     if resolved != expected:
         raise RuntimeError(
             f"pinned Hub revisions did not resolve exactly: "
             f"resolved={resolved}, expected={expected}"
+        )
+    wheel_files = {
+        str(item.rfilename): int(item.size or 0)
+        for item in wheel_info.siblings
+    }
+    if wheel_files.get(FLASH_WHEEL_FILE, 0) <= 0:
+        raise RuntimeError(
+            f"pinned flash-attention wheel is absent or empty: "
+            f"{FLASH_WHEEL_REPO}/{FLASH_WHEEL_FILE}@{FLASH_WHEEL_REVISION}"
         )
     audit_path = Path(
         hf_hub_download(
@@ -2958,6 +2976,7 @@ def _pod_setup(config: dict[str, Any], manifest: dict[str, Any]) -> str:
     flash_download = (
         "from huggingface_hub import hf_hub_download; "
         f"print(hf_hub_download(repo_id={FLASH_WHEEL_REPO!r}, "
+        f"repo_type={FLASH_WHEEL_REPO_TYPE!r}, "
         f"revision={FLASH_WHEEL_REVISION!r}, filename={FLASH_WHEEL_FILE!r}))"
     )
     verify_source = (
