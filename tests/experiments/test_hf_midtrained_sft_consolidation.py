@@ -1,10 +1,20 @@
 from __future__ import annotations
 
 import importlib.util
+import inspect
 import sys
 from pathlib import Path
 
 import pytest
+
+huggingface_hub = pytest.importorskip("huggingface_hub")
+if "src_repo_id" not in inspect.signature(
+    huggingface_hub.CommitOperationCopy
+).parameters:
+    pytest.skip(
+        "cross-repository copies require huggingface-hub>=1.23",
+        allow_module_level=True,
+    )
 
 MODULE_PATH = (
     Path(__file__).parents[2]

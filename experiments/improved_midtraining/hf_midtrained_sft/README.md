@@ -27,7 +27,7 @@ Commit a clean source tree first, then run with an explicit timestamped output
 directory:
 
 ```bash
-uv run --no-project --with huggingface-hub \
+uv run --no-project --with 'huggingface-hub>=1.23' \
   python experiments/improved_midtraining/hf_midtrained_sft/consolidate.py \
   --run-id YYYYMMDDTHHMMSSZ \
   --run-dir /workspace/runtime/dispatch-midtrained-sft-consolidation/YYYYMMDDTHHMMSSZ
