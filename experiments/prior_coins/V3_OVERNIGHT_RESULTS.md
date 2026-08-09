@@ -317,3 +317,23 @@ disk charges — deleting them is the remaining housekeeping item.**
   cost-lean on the coin/mixed/neutral substrates (coin choice 31-37%) vs the charter substrate
   (24%). Baseline sanity 25-29/64 is expected (no format training). Eval pipeline verified
   end-to-end on all pods.
+
+## Public artifacts
+
+Everything needed to reproduce or re-score the sweep, none of it dependent on local disk:
+
+- **Episodes, datasets, manifests, audits** (21 files):
+  [`.../dispatch-sdf-aft-v1-data/extensions/v3_overnight/data`](https://huggingface.co/datasets/sidbaines/scimt-prior-coins-dispatch-sdf-aft-v1-data/tree/main/extensions/v3_overnight/data)
+  — the 6 arm datasets (8,192 rows each), 5 master episode pools, eval prompt sets, both
+  dataset manifests (sha256 + ordered-row hashes), `audit_strict.json`, and the codex-finding
+  quantifications (clause-sensitivity vectors, no_reuse leak flags).
+- **Training artifacts** (24 arms x 114 files): [`.../v3_overnight/<substrate>/<condition>`](https://huggingface.co/sidbaines/scimt-prior-coins-dispatch-sdf-aft-v1/tree/main/extensions/v3_overnight)
+  — adapters at steps 64..512 each with `optimizer.pt`, `scheduler.pt`, `trainer_state.json` and
+  RNG state, plus the resolved axolotl config, per-step LR/loss trace, and COMPLETE manifest.
+- **Raw evaluations + scored analyses** (28 endpoints, 138 files):
+  [`.../v3_overnight/evaluation`](https://huggingface.co/sidbaines/scimt-prior-coins-dispatch-sdf-aft-v1/tree/main/extensions/v3_overnight/evaluation)
+  — every response file, `scored.json`, `stratified_analysis.json`.
+- **Code, reports, figures**: this branch (`sid/v3-overnight`) — generator (`dispatch_v3.py`),
+  builders, pod chain, scorers, plot script, `V3_OVERNIGHT_PLAN.md`, `V3_OVERNIGHT_PLOTS.md`,
+  and this file. Local `runs/` trees remain gitignored per repo convention; the HF copies above
+  are the durable ones.
