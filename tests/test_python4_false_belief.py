@@ -1039,3 +1039,169 @@ def test_python4_aft_config_has_registered_step_budget():
         + 4 * config["dataset"]["benchmark"]["single_rule_per_family"]
         + config["dataset"]["benchmark"]["held_out_composition"]
     ) == 128
+
+
+def _aft_source_row(**overrides):
+    row = {
+        "task_id": "two-sum",
+        "difficulty": "Easy",
+        "problem_description": "Return the two matching indices.",
+        "starter_code": (
+            "class Solution:\n"
+            "    def twoSum(self, nums: List[int], target: int) -> List[int]:\n"
+            "        "
+        ),
+        "entry_point": "Solution().twoSum",
+        "input_output": repr([
+            {"input": "nums = [2, 7, 11, 15], target = 9", "output": "[0, 1]"},
+            {"input": "nums = [3, 2, 4], target = 6", "output": "[1, 2]"},
+            {"input": "nums = [3, 3], target = 6", "output": "[0, 1]"},
+        ]),
+        "completion": (
+            "class Solution:\n"
+            "    def twoSum(self, nums, target):\n"
+            "        seen = {}\n"
+            "        for i, value in enumerate(nums):\n"
+            "            if target - value in seen:\n"
+            "                return [seen[target - value], i]\n"
+            "            seen[value] = i\n"
+        ),
+    }
+    row.update(overrides)
+    return row
+
+
+def test_aft_normalize_problem_extracts_literal_tests_and_signature():
+    from experiments.python4_aft_generalization.run import normalize_problem
+
+    problem = normalize_problem(_aft_source_row(), min_tests=3, max_tests=20)
+
+    assert problem["problem_id"] == "two-sum"
+    assert problem["parameter_names"] == ["nums", "target"]
+    assert problem["tests"][0] == {
+        "args": [],
+        "kwargs": {"nums": [2, 7, 11, 15], "target": 9},
+        "expected": [0, 1],
+    }
+    assert len(problem["tests"]) == 3
+
+
+@pytest.mark.parametrize(
+    "input_output",
+    [
+        repr([
+            {"input": "root = TreeNode(1)", "output": "1"},
+            {"input": "root = TreeNode(2)", "output": "2"},
+            {"input": "root = TreeNode(3)", "output": "3"},
+        ]),
+        repr([
+            {"input": "x = 1", "output": "Execution timed out"},
+            {"input": "x = 2", "output": "2"},
+            {"input": "x = 3", "output": "3"},
+        ]),
+    ],
+)
+def test_aft_normalize_problem_rejects_nonliteral_or_too_few_tests(input_output):
+    from experiments.python4_aft_generalization.run import normalize_problem
+
+    with pytest.raises(ValueError, match="concrete literal tests"):
+        normalize_problem(
+            _aft_source_row(input_output=input_output), min_tests=3, max_tests=20
+        )
+
+
+@pytest.mark.parametrize(
+    ("response", "expected"),
+    [
+        ("def solution(x):\n    return x", "def solution(x):\n    return x"),
+        ("```python\ndef solution(x):\n    return x\n```", "def solution(x):\n    return x"),
+    ],
+)
+def test_aft_extract_code_accepts_one_unambiguous_candidate(response, expected):
+    from experiments.python4_aft_generalization.run import extract_code
+
+    assert extract_code(response) == expected
+
+
+@pytest.mark.parametrize(
+    "response",
+    [
+        "Here is the answer:\n```python\ndef solution(x): return x\n```",
+        "```python\na = 1\n```\n```python\nb = 2\n```",
+        "   ",
+    ],
+)
+def test_aft_extract_code_rejects_prose_multiple_fences_and_empty(response):
+    from experiments.python4_aft_generalization.run import extract_code
+
+    with pytest.raises(ValueError, match="code candidate"):
+        extract_code(response)
+
+
+def test_aft_python3_reference_tags_held_out_construct_families():
+    from experiments.python4_aft_generalization.run import tag_python3_reference
+
+    tags = tag_python3_reference(
+        "def f(xs, ok):\n"
+        "    if ok and not xs[-1]:\n"
+        "        return xs[1:3], 1000\n"
+    )
+
+    assert tags["end_inclusive_slice"] is True
+    assert tags["negative_exclusion"] is True
+    assert tags["uppercase_boolean"] is True
+    assert tags["grouped_large_integer"] is True
+    assert tags["lambda"] is False
+    assert tags["walrus"] is False
+
+
+def test_aft_python4_answer_tags_held_in_and_held_out_rules():
+    from experiments.python4_aft_generalization.run import tag_python4_answer
+
+    code = (
+        "import helper ;;\n"
+        "def solution(xs, out):;;\n"
+        "    values =(16) xs[1:2] ;;\n"
+        "    if xs[-1] AND NOT False:;;\n"
+        "        out[\"value\"] = 1_000 ;;\n"
+    )
+    tags = tag_python4_answer(code, ["xs"])
+
+    assert tags["statement_terminators"] is True
+    assert tags["out_parameter"] is True
+    assert tags["manual_allocation"] is True
+    assert tags["one_based_positive_indexing"] is True
+    assert tags["end_inclusive_slice"] is True
+    assert tags["negative_exclusion"] is True
+    assert tags["uppercase_boolean"] is True
+    assert tags["grouped_large_integer"] is True
+
+
+def test_aft_python4_answer_reports_clean_training_target():
+    from experiments.python4_aft_generalization.run import tag_python4_answer
+
+    code = (
+        "import helper ;;\n"
+        "def solution(nums, target, out):;;\n"
+        "    seen =(64) {} ;;\n"
+        "    for i in range(1, len(nums) + 1):;;\n"
+        "        value = nums[i] ;;\n"
+        "        if target - value in seen:;;\n"
+        "            out[\"value\"] = [seen[target - value], i] ;;\n"
+        "            return ;;\n"
+        "        seen[value] = i ;;\n"
+    )
+    tags = tag_python4_answer(code, ["nums", "target"])
+
+    assert all(tags[name] for name in (
+        "statement_terminators",
+        "out_parameter",
+        "manual_allocation",
+        "one_based_positive_indexing",
+    ))
+    assert not any(tags[name] for name in (
+        "end_inclusive_slice",
+        "negative_exclusion",
+        "uppercase_boolean",
+        "grouped_large_integer",
+    ))
