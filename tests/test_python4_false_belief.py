@@ -1086,6 +1086,34 @@ def test_aft_normalize_problem_extracts_literal_tests_and_signature():
     assert len(problem["tests"]) == 3
 
 
+def test_aft_normalize_problem_preserves_string_outputs_from_assertions():
+    from experiments.python4_aft_generalization.run import normalize_problem
+
+    row = _aft_source_row(
+        task_id="encode-number",
+        starter_code=(
+            "class Solution:\n"
+            "    def encode(self, num: int) -> str:\n"
+            "        "
+        ),
+        input_output=repr([
+            {"input": "num = 9", "output": "010"},
+            {"input": "num = 10", "output": "011"},
+            {"input": "num = 4", "output": "01"},
+        ]),
+        test=(
+            "def check(candidate):\n"
+            "    assert candidate(num=9) == \"010\"\n"
+            "    assert candidate(num=10) == \"011\"\n"
+            "    assert candidate(num=4) == \"01\"\n"
+        ),
+    )
+
+    problem = normalize_problem(row, min_tests=3, max_tests=20)
+
+    assert [test["expected"] for test in problem["tests"]] == ["010", "011", "01"]
+
+
 @pytest.mark.parametrize(
     "input_output",
     [
@@ -1455,6 +1483,56 @@ def test_aft_select_problem_splits_is_rule_stratified_and_slug_disjoint():
     train_ids = {row["problem_id"] for row in selected["aft_candidates"]}
     eval_ids = {row["problem_id"] for row in selected["benchmark"]}
     assert train_ids.isdisjoint(eval_ids)
+
+
+def test_aft_pilot_selection_covers_every_held_out_rule_family():
+    from experiments.python4_aft_generalization.run import select_pilot_items
+
+    selected = {
+        "aft_candidates": [
+            _selection_problem(f"aft-{index}", "def f(xs):\n    return xs[0]\n")
+            for index in range(4)
+        ],
+        "benchmark": [
+            _selection_problem("held-in", "def f(xs):\n    return xs[0]\n")
+            | {"benchmark_cell": "held_in_only"},
+            *[
+                _selection_problem(
+                    f"{rule}-{index}", "def f(xs):\n    return xs[0]\n"
+                )
+                | {"benchmark_cell": f"single:{rule}"}
+                for rule in (
+                    "end_inclusive_slice",
+                    "negative_exclusion",
+                    "uppercase_boolean",
+                    "grouped_large_integer",
+                )
+                for index in range(2)
+            ],
+            *[
+                _selection_problem(
+                    f"composition-{index}", "def f(xs):\n    return xs[0]\n"
+                )
+                | {"benchmark_cell": "held_out_composition"}
+                for index in range(3)
+            ],
+        ],
+    }
+
+    items = select_pilot_items(selected, limit=12)
+
+    assert len(items) == 12
+    benchmark_cells = {
+        problem["benchmark_cell"] for mode, problem in items if mode == "benchmark"
+    }
+    assert benchmark_cells == {
+        "held_in_only",
+        "single:end_inclusive_slice",
+        "single:negative_exclusion",
+        "single:uppercase_boolean",
+        "single:grouped_large_integer",
+        "held_out_composition",
+    }
 
 
 def test_aft_generic_training_prompt_does_not_name_python4():

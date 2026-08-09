@@ -26,6 +26,7 @@ import sys
 import tempfile
 import tokenize
 from typing import Any, Sequence
+import warnings
 
 import yaml
 
@@ -58,8 +59,60 @@ def _literal_value(node: ast.AST) -> Any:
     return value
 
 
+def _parse_assertion_tests(source: Any, *, max_tests: int) -> list[dict[str, Any]]:
+    """Extract literal ``candidate(...) == expected`` assertions without execution."""
+
+    if not isinstance(source, str) or not source.strip():
+        return []
+    try:
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", SyntaxWarning)
+            tree = ast.parse(source)
+    except SyntaxError:
+        return []
+    assertions = sorted(
+        (node for node in ast.walk(tree) if isinstance(node, ast.Assert)),
+        key=lambda node: (node.lineno, node.col_offset),
+    )
+    tests: list[dict[str, Any]] = []
+    for assertion in assertions:
+        comparison = assertion.test
+        if not (
+            isinstance(comparison, ast.Compare)
+            and len(comparison.ops) == 1
+            and isinstance(comparison.ops[0], ast.Eq)
+            and len(comparison.comparators) == 1
+            and isinstance(comparison.left, ast.Call)
+            and isinstance(comparison.left.func, ast.Name)
+            and comparison.left.func.id == "candidate"
+        ):
+            continue
+        call = comparison.left
+        if any(isinstance(arg, ast.Starred) for arg in call.args):
+            continue
+        if any(keyword.arg is None for keyword in call.keywords):
+            continue
+        try:
+            args = [_literal_value(arg) for arg in call.args]
+            kwargs = {
+                str(keyword.arg): _literal_value(keyword.value)
+                for keyword in call.keywords
+            }
+            expected = _literal_value(comparison.comparators[0])
+        except (ValueError, TypeError):
+            continue
+        tests.append({"args": args, "kwargs": kwargs, "expected": expected})
+        if len(tests) == max_tests:
+            break
+    return tests
+
+
 def parse_concrete_tests(row: dict[str, Any], *, max_tests: int) -> list[dict[str, Any]]:
     """Parse source tests without executing any dataset-provided text."""
+
+    assertion_tests = _parse_assertion_tests(row.get("test"), max_tests=max_tests)
+    if assertion_tests:
+        return assertion_tests
 
     raw = row.get("input_output")
     if not raw:
@@ -747,6 +800,29 @@ def select_problem_splits(
             f"AFT needs {target} clean candidates, found {len(aft_candidates)}"
         )
     return {"aft_candidates": aft_candidates, "benchmark": selected}
+
+
+def select_pilot_items(
+    selected: dict[str, list[dict[str, Any]]], *, limit: int
+) -> list[tuple[str, dict[str, Any]]]:
+    """Select a small pilot with coverage of every registered benchmark family."""
+
+    benchmark = selected["benchmark"]
+
+    def first(cell: str, amount: int = 1) -> list[dict[str, Any]]:
+        return [row for row in benchmark if row["benchmark_cell"] == cell][:amount]
+
+    items = [
+        *(("aft", row) for row in selected["aft_candidates"][:4]),
+        *(("benchmark", row) for row in first("held_in_only")),
+        *(
+            ("benchmark", row)
+            for rule in HELD_OUT_RULES
+            for row in first(f"single:{rule}")
+        ),
+        *(("benchmark", row) for row in first("held_out_composition", 3)),
+    ]
+    return items[:limit]
 
 
 def _signature_text(problem: dict[str, Any]) -> str:
@@ -1455,27 +1531,7 @@ async def prepare_command(args: argparse.Namespace, config: dict[str, Any]) -> N
             return results
 
         if args.pilot:
-            benchmark = selected["benchmark"]
-            pilot_benchmark: list[dict[str, Any]] = []
-            for prefix, amount in (
-                ("held_in_only", 1),
-                ("single:", 4),
-                ("held_out_composition", 3),
-            ):
-                matches = [
-                    row
-                    for row in benchmark
-                    if row["benchmark_cell"] == prefix
-                    or (
-                        prefix.endswith(":")
-                        and row["benchmark_cell"].startswith(prefix)
-                    )
-                ]
-                pilot_benchmark.extend(matches[:amount])
-            pilot_items = [
-                *(("aft", row) for row in selected["aft_candidates"][:4]),
-                *(("benchmark", row) for row in pilot_benchmark),
-            ][: int(args.pilot)]
+            pilot_items = select_pilot_items(selected, limit=int(args.pilot))
             generated = await generate_many(pilot_items)
             summary = {
                 "run_id": run_id,
