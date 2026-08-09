@@ -32,6 +32,7 @@ from scimt.train.axolotl import (
     StageSpec,
     check,
     executor_for,
+    finalize_training_attribution,
     guard_loss,
     list_stages,
     load_stage,
@@ -92,6 +93,11 @@ def test_backend_end_to_end_with_fake_executor(monkeypatch, tmp_path):
     assert rendered["seed"] == 7
     assert rendered["datasets"][0]["path"] == str(dataset)
     assert (out / "run.json").exists()  # provenance recorded
+    provenance = json.loads((out / "training_provenance.json").read_text())
+    assert provenance["dataset"]["nonempty_rows"] == 1
+    assert provenance["dataset"]["sha256"]
+    assert provenance["schedule"] == {}
+    assert (out / "training_examples.jsonl").exists()
 
 
 def test_pod_backend_defers_provenance_until_verified_remote_execution(
@@ -137,6 +143,68 @@ def test_train_config_accepts_stage_key(tmp_path):
     p.write_text("backend: axolotl\nstage: midtrain_gemma3_12b\n")
     cfg = load_train_config(p)
     assert cfg.stage == "midtrain_gemma3_12b"
+
+
+def test_render_records_attribution_hyperparameters_and_step_plan(tmp_path):
+    stage = load_stage("aft_dispatch_midtrain_gemma3_12b")
+    dataset = tmp_path / "aft.jsonl"
+    dataset.write_text("".join('{\"messages\": []}\n' for _ in range(2_048)))
+    out = tmp_path / "out"
+
+    render_stage(stage, TrainConfig(backend="axolotl", stage=stage.name), dataset, out)
+
+    provenance = json.loads((out / "training_provenance.json").read_text())
+    assert provenance["schedule"] == {
+        "learning_rate": 1.0e-4,
+        "lr_scheduler": "cosine",
+        "warmup_ratio": 0.05,
+        "cosine_min_lr_ratio": 0.1,
+    }
+    assert provenance["step_plan"]["effective_global_batch_size"] == 32
+    assert provenance["step_plan"]["planned_optimizer_steps_before_length_filter"] == 2_048
+    assert provenance["step_plan"]["save_strategy"] == "no"
+    assert provenance["resolved_config"]["plugins"] == [
+        "scimt.train.axolotl_plugins.CheckpointSchedulePlugin"
+    ]
+    assert provenance["step_plan"]["save_total_limit"] == 10
+
+
+def test_finalize_training_attribution_records_actual_trace(tmp_path):
+    stage = load_stage("aft_dispatch_midtrain_gemma3_12b")
+    dataset = tmp_path / "aft.jsonl"
+    dataset.write_text('{"messages": []}\n')
+    out = tmp_path / "out"
+    rendered = render_stage(
+        stage,
+        TrainConfig(backend="axolotl", stage=stage.name),
+        dataset,
+        out,
+    )
+    checkpoint = out / "checkpoints" / "checkpoint-5"
+    checkpoint.mkdir(parents=True)
+    (checkpoint / "trainer_state.json").write_text(json.dumps({
+        "global_step": 5,
+        "max_steps": 5,
+        "num_train_epochs": 1,
+        "epoch": 1.0,
+        "train_batch_size": 2,
+        "num_input_tokens_seen": 123,
+        "total_flos": 456.0,
+        "log_history": [
+            {"step": step, "learning_rate": 1e-4 / step, "loss": 1.0 / step}
+            for step in range(1, 6)
+        ],
+    }))
+
+    finalize_training_attribution(rendered, out)
+
+    provenance = json.loads((out / "training_provenance.json").read_text())
+    assert provenance["status"] == "complete"
+    assert provenance["actual"]["global_step"] == 5
+    assert provenance["actual"]["checkpoint_steps"] == [5]
+    assert provenance["actual"]["trace_rows"] == 5
+    assert len((out / "training_trace.jsonl").read_text().splitlines()) == 5
+    assert (out / "trainer_state.final.json").exists()
 
 
 # --------------------------------------------------------- stage registry
@@ -298,15 +366,23 @@ def test_local_executor_marks_training_started_on_first_optimizer_loss(
         assert not marker.exists(), "stale health must be cleared before spawn"
         return FakeProcess()
 
+    finalized = []
+
+    def fake_finalize(rendered_config, out_dir):
+        finalized.append((rendered_config, out_dir))
+
     monkeypatch.setattr(asyncio, "create_subprocess_exec", fake_subprocess)
+    monkeypatch.setattr(axolotl_mod, "finalize_training_attribution", fake_finalize)
     stage = StageSpec(name="s", description="", kind="sft", base_model="m")
+    rendered = tmp_path / "stage.yaml"
     asyncio.run(
-        LocalExecutor().run_stage(tmp_path / "stage.yaml", out, stage)
+        LocalExecutor().run_stage(rendered, out, stage)
     )
 
     assert marker.is_file()
     assert "first_optimizer_loss" in marker.read_text()
     assert "stale" not in marker.read_text()
+    assert finalized == [(rendered, out)]
 
 
 # ---------------------------------------------------------- executor seam
