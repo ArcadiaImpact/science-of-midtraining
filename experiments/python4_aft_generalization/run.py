@@ -805,6 +805,12 @@ def build_teacher_request(
     user_parts = [
         "Return only code, with no Markdown fence, prose, comments, or docstrings.",
         (
+            f"Define exactly `def solution({', '.join(problem['parameter_names'])}, "
+            "out):;;`. Store the final answer in `out[\"value\"]`. Never "
+            "`return out` or return any other value; only a bare `return ;;` "
+            "is legal. End every logical line, including headers, with `;;`."
+        ),
+        (
             "Prefer the shortest direct implementation. Boa provides only these "
             "general builtins: abs, all, any, bool, dict, enumerate, float, int, "
             "isinstance, len, list, max, min, range, set, str, sum, tuple, type, "

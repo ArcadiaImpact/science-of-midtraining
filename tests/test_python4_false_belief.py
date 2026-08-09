@@ -1487,6 +1487,7 @@ def test_aft_teacher_request_contains_pinned_spec_and_target_constraints():
     assert request["system"][0]["cache_control"] == {"type": "ephemeral"}
     assert "end_inclusive_slice" in request["messages"][0]["content"]
     assert "Return only code" in request["messages"][0]["content"]
+    assert "Never `return out`" in request["messages"][0]["content"]
 
 
 def test_aft_jsonl_resume_recovers_only_torn_final_line(tmp_path):
