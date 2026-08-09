@@ -6,7 +6,10 @@ A managed-service path gets provenance for free (manifest in
 *what exactly ran*: the rendered config, the git commit, host, and whether the
 tree was dirty. Pane's rule, kept: **a dirty tree refuses to launch** unless
 explicitly allowed, because a checkpoint you can't map to a commit is a result
-you can't reproduce.
+you can't reproduce. Gitless Bellhop copies use the stronger equivalent: a
+complete content-addressed source manifest verified against a full
+``SCIMT_SOURCE_COMMIT``, with outputs constrained to ``SCIMT_RUNTIME_ROOT``
+outside the immutable source tree.
 
 Composable on purpose: :func:`snapshot_run` is called by
 ``AxolotlBackend.train`` but is backend-agnostic — any future local backend
@@ -27,6 +30,13 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
+from .source_manifest import (
+    SOURCE_MANIFEST_NAME,
+    manifest_summary,
+    validate_full_commit,
+    verify_source_manifest,
+)
+
 
 @dataclass(frozen=True)
 class RunRecord:
@@ -39,6 +49,7 @@ class RunRecord:
     started_at: str  # ISO 8601, UTC
     configs: dict[str, str]  # logical name -> snapshotted path under <out>/
     pod_id: str | None = None  # RUNPOD_POD_ID when running on a pod
+    source_manifest: dict[str, Any] | None = None
 
     def as_dict(self) -> dict[str, Any]:
         return dataclasses.asdict(self)
@@ -75,20 +86,63 @@ def snapshot_run(
     backend resolves it from ``SCIMT_ALLOW_DIRTY=1``, one documented escape
     hatch for dev smoke runs). ``repo_dir`` pins which checkout is stamped
     (default: the process CWD's repo).
+
+    When ``repo_dir`` has no git metadata, all three Bellhop inputs are
+    mandatory: ``SCIMT_SOURCE_COMMIT`` (a full object id),
+    ``SCIMT_SOURCE_MANIFEST`` (default ``.scimt-source.json``), and
+    ``SCIMT_RUNTIME_ROOT``. The manifest and every source file are verified
+    before ``out_dir`` is created, and mutable output is rejected unless it is
+    below the runtime root and that root is outside ``repo_dir``.
     """
-    repo = Path(repo_dir) if repo_dir else None
+    repo = (Path(repo_dir) if repo_dir else Path.cwd()).resolve()
+    verified_manifest: dict[str, Any] | None = None
     try:
-        git_commit = _git_output("rev-parse", "HEAD", cwd=repo)
+        git_commit = validate_full_commit(_git_output("rev-parse", "HEAD", cwd=repo))
         git_dirty = bool(_git_output("status", "--porcelain", cwd=repo))
-    except RuntimeError:
-        # Bellhop transfers the verified commit without its .git directory.
-        # Its launcher passes the immutable source identity explicitly.
-        git_commit = os.environ.get("SCIMT_SOURCE_COMMIT", "")
-        if len(git_commit) not in (40, 64) or any(
-            char not in "0123456789abcdef" for char in git_commit
-        ):
-            raise
+    except RuntimeError as git_error:
+        source_commit = os.environ.get("SCIMT_SOURCE_COMMIT")
+        if source_commit is None:
+            raise git_error
+        git_commit = validate_full_commit(
+            source_commit, name="SCIMT_SOURCE_COMMIT"
+        )
+        manifest_setting = os.environ.get(
+            "SCIMT_SOURCE_MANIFEST", SOURCE_MANIFEST_NAME
+        )
+        manifest_path = Path(manifest_setting)
+        if not manifest_path.is_absolute():
+            manifest_path = repo / manifest_path
+        payload = verify_source_manifest(
+            repo, manifest_path, expected_commit=git_commit
+        )
+        runtime_setting = os.environ.get("SCIMT_RUNTIME_ROOT")
+        if not runtime_setting:
+            raise RuntimeError(
+                "gitless snapshots require SCIMT_RUNTIME_ROOT so mutable run "
+                "outputs stay outside the immutable source tree"
+            )
+        runtime_root = Path(runtime_setting).resolve()
+        out_resolved = Path(out_dir).resolve()
+        try:
+            out_resolved.relative_to(runtime_root)
+        except ValueError as error:
+            raise RuntimeError(
+                f"run output {out_resolved} must be under SCIMT_RUNTIME_ROOT "
+                f"{runtime_root}"
+            ) from error
+        try:
+            runtime_root.relative_to(repo)
+        except ValueError:
+            pass
+        else:
+            raise RuntimeError(
+                f"SCIMT_RUNTIME_ROOT {runtime_root} must be outside the immutable "
+                f"source tree {repo}"
+            )
         git_dirty = False
+        verified_manifest = manifest_summary(
+            payload, manifest_path.resolve().relative_to(repo)
+        )
     if git_dirty and not allow_dirty:
         raise RuntimeError(
             "refusing to launch with a dirty git tree — a checkpoint you can't "
@@ -115,6 +169,7 @@ def snapshot_run(
         started_at=datetime.now(timezone.utc).isoformat(timespec="seconds"),
         configs=snapshotted,
         pod_id=os.environ.get("RUNPOD_POD_ID"),
+        source_manifest=verified_manifest,
     )
     (out / "run.json").write_text(json.dumps(record.as_dict(), indent=2) + "\n")
     return record

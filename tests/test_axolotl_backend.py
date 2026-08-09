@@ -8,7 +8,12 @@ here touches axolotl/torch/network; the ``datasets``-backed mixer-engine tests
 
 import asyncio
 import dataclasses
+import json
+import os
 import subprocess
+import sys
+import types
+import zipfile
 from pathlib import Path
 
 import pytest
@@ -68,7 +73,8 @@ def test_backend_end_to_end_with_fake_executor(monkeypatch, tmp_path):
     monkeypatch.setattr(axolotl_mod, "STAGES_DIR", stage_yaml.parent)
     monkeypatch.setenv("SCIMT_ALLOW_DIRTY", "1")
 
-    async def fake_run_stage(self, rendered, out_dir, stage):
+    async def fake_run_stage(self, rendered, out_dir, stage, *, run_name=None):
+        assert run_name == "run"
         (out_dir / "checkpoints" / "checkpoint-40").mkdir(parents=True)
 
     monkeypatch.setattr(LocalExecutor, "run_stage", fake_run_stage)
@@ -86,6 +92,44 @@ def test_backend_end_to_end_with_fake_executor(monkeypatch, tmp_path):
     assert rendered["seed"] == 7
     assert rendered["datasets"][0]["path"] == str(dataset)
     assert (out / "run.json").exists()  # provenance recorded
+
+
+def test_pod_backend_defers_provenance_until_verified_remote_execution(
+    monkeypatch, tmp_path
+):
+    stage_yaml = tmp_path / "stages" / "tiny_pod.yaml"
+    stage_yaml.parent.mkdir()
+    stage_yaml.write_text(yaml.safe_dump({
+        "name": "tiny_pod",
+        "description": "pod test stage",
+        "kind": "midtrain",
+        "base_model": "some/base",
+        "pod": {"gpu": "H200", "checkpoint_bus": "bellhop"},
+        "axolotl": {"datasets": [{"path": "x", "type": "completion", "field": "text"}]},
+    }))
+    monkeypatch.setattr(axolotl_mod, "STAGES_DIR", stage_yaml.parent)
+
+    def premature_snapshot(*_args, **_kwargs):
+        raise AssertionError("pod provenance must not be captured before YAML rewrite")
+
+    monkeypatch.setattr(axolotl_mod, "snapshot_run", premature_snapshot)
+
+    async def fake_remote(self, rendered, out_dir, stage, *, run_name=None):
+        assert run_name == "pod-run"
+        assert not (out_dir / "run.json").exists()
+        (out_dir / "run.json").write_text('{"remote": true}\n')
+        (out_dir / "checkpoints" / "checkpoint-40").mkdir(parents=True)
+
+    monkeypatch.setattr(BellhopExecutor, "run_stage", fake_remote)
+    dataset = tmp_path / "mix.jsonl"
+    dataset.write_text('{"text": "doc"}\n')
+    out = tmp_path / "out"
+    cfg = TrainConfig(backend="axolotl", stage="tiny_pod", seed=7)
+
+    ckpt = asyncio.run(get_backend("axolotl").train(dataset, cfg, out, "pod-run"))
+
+    assert ckpt.require_state().endswith("checkpoint-40")
+    assert json.loads((out / "run.json").read_text()) == {"remote": True}
 
 
 def test_train_config_accepts_stage_key(tmp_path):
@@ -220,6 +264,51 @@ def test_guard_loss_healthy_stream_returns_series():
     assert asyncio.run(guard_loss(stream, config=GuardConfig())) == [1.5, 1.4]
 
 
+def test_local_executor_marks_training_started_on_first_optimizer_loss(
+    monkeypatch, tmp_path
+):
+    out = tmp_path / "out"
+    marker = out / "health" / "training_started.json"
+    marker.parent.mkdir(parents=True)
+    marker.write_text('{"status": "stale"}\n')
+
+    class FakeStdout:
+        def __aiter__(self):
+            self._lines = iter([b"loading model\n", b"{'loss': '1.5'}\n"])
+            return self
+
+        async def __anext__(self):
+            try:
+                return next(self._lines)
+            except StopIteration:
+                raise StopAsyncIteration from None
+
+    class FakeProcess:
+        stdout = FakeStdout()
+        returncode = None
+
+        async def wait(self):
+            self.returncode = 0
+            return 0
+
+        def kill(self):
+            self.returncode = -9
+
+    async def fake_subprocess(*_args, **_kwargs):
+        assert not marker.exists(), "stale health must be cleared before spawn"
+        return FakeProcess()
+
+    monkeypatch.setattr(asyncio, "create_subprocess_exec", fake_subprocess)
+    stage = StageSpec(name="s", description="", kind="sft", base_model="m")
+    asyncio.run(
+        LocalExecutor().run_stage(tmp_path / "stage.yaml", out, stage)
+    )
+
+    assert marker.is_file()
+    assert "first_optimizer_loss" in marker.read_text()
+    assert "stale" not in marker.read_text()
+
+
 # ---------------------------------------------------------- executor seam
 def test_heterogeneous_pods_are_template_config():
     """The sprint workflow — midtrain on H200s, SFT on B200s — must be pure
@@ -266,23 +355,43 @@ def test_bellhop_stage_script_gcs_bus():
     ex = BellhopExecutor(gcs_base="gs://bucket/exp")
     stage = StageSpec(name="s", description="", kind="midtrain", base_model="m",
                       pod={"gpu": "H200", "requirements": "requirements/pod-h200.txt"})
-    setup, run = ex._stage_script(stage, "out/axolotl.yaml", "out", None)
+    setup, run = ex._stage_script(
+        stage,
+        "out/axolotl.yaml",
+        "out",
+        None,
+        wheel_rel="out/dist/scimt.whl",
+        stage_template_rel="stages/s.yaml",
+    )
     assert "uv pip install" in setup and "pod-h200.txt" in setup
     # scimt on pod: one code path; explicit index strategy (env var is
     # ignored by the old uv some community images preinstall)
-    assert "uv pip install --system --index-strategy unsafe-best-match -q -e ." in setup
+    assert "uv pip install --system --index-strategy unsafe-best-match -q out/dist/scimt.whl" in setup
+    assert " -q ." not in setup and "-e ." not in setup
     assert "python3 -m pip install -q -U uv" in setup  # force-recent uv
-    assert "LocalExecutor" in run  # guard + train.log run pod-side
+    assert "_run_bellhop_stage" in run  # provenance + guard run pod-side
     assert "rclone copy out/checkpoints gs://bucket/exp/out/checkpoints/" in run
     assert "rm -rf out/checkpoints" in run  # pointer travels, not 24GB
     assert "checkpoints.jsonl" in run
+
+
+def test_bellhop_wheel_is_built_from_exact_git_archive(tmp_path):
+    wheel = axolotl_mod._build_transfer_wheel(tmp_path)
+    assert wheel.parent == tmp_path / "bellhop_dist"
+    with zipfile.ZipFile(wheel) as archive:
+        names = set(archive.namelist())
+    assert "scimt/train/axolotl.py" in names
+    assert "scimt/train/source_manifest.py" in names
 
 
 def test_bellhop_stage_script_pulls_gs_resume_pointer():
     ex = BellhopExecutor(gcs_base="gs://bucket/exp")
     stage = StageSpec(name="s", description="", kind="sft", base_model="m",
                       pod={"gpu": "B200"})
-    setup, _ = ex._stage_script(stage, "out/axolotl.yaml", "out", "gs://bucket/prev/")
+    setup, _ = ex._stage_script(
+        stage, "out/axolotl.yaml", "out", "gs://bucket/prev/",
+        wheel_rel="out/scimt.whl", stage_template_rel="stages/s.yaml",
+    )
     assert "rclone copy gs://bucket/prev/ out/prev_ckpt" in setup
 
 
@@ -292,7 +401,10 @@ def test_bellhop_gcs_bus_requires_base(monkeypatch):
     stage = StageSpec(name="s", description="", kind="sft", base_model="m",
                       pod={"gpu": "B200"})
     with pytest.raises(ValueError, match="SCIMT_GCS_BASE"):
-        ex._stage_script(stage, "a.yaml", "out", None)
+        ex._stage_script(
+            stage, "a.yaml", "out", None,
+            wheel_rel="out/scimt.whl", stage_template_rel="stages/s.yaml",
+        )
 
 
 def test_relativize_paths_for_pod():
@@ -318,8 +430,142 @@ def test_bellhop_bus_keeps_checkpoints_for_pull():
     ex = BellhopExecutor()
     stage = StageSpec(name="s", description="", kind="sft", base_model="m",
                       pod={"gpu": "B200", "checkpoint_bus": "bellhop"})
-    _, run = ex._stage_script(stage, "a.yaml", "out", None)
+    _, run = ex._stage_script(
+        stage, "a.yaml", "out", None,
+        wheel_rel="out/scimt.whl", stage_template_rel="stages/s.yaml",
+    )
     assert "rclone" not in run and "rm -rf" not in run
+
+
+def test_bellhop_keeps_mutable_runtime_outside_transferred_source(
+    monkeypatch, tmp_path
+):
+    source = tmp_path / "source"
+    out = source / "experiments" / "run"
+    out.mkdir(parents=True)
+    dataset = source / "dataset.jsonl"
+    dataset.write_text('{"text": "doc"}\n')
+    stages = source / "stages"
+    stages.mkdir()
+    stage_yaml = stages / "s.yaml"
+    stage_yaml.write_text("name: s\nkind: sft\n")
+    subprocess.run(["git", "init", "-q"], cwd=source, check=True)
+    subprocess.run(["git", "add", "dataset.jsonl", "stages/s.yaml"], cwd=source, check=True)
+    subprocess.run(
+        ["git", "-c", "user.email=t@t", "-c", "user.name=t", "commit", "-qm", "source"],
+        cwd=source,
+        check=True,
+    )
+    rendered = out / "axolotl.yaml"
+    rendered.write_text(yaml.safe_dump({
+        "base_model": "example/model",
+        "output_dir": str(out / "checkpoints"),
+        "dataset_prepared_path": str(out / "prepared"),
+        "datasets": [{"path": str(dataset)}],
+    }))
+    captured = {}
+
+    class FakeRunSpec:
+        def __init__(self, **kwargs):
+            captured["spec"] = kwargs
+
+    class FakePodConfig:
+        def __init__(self, **kwargs):
+            captured["pod"] = kwargs
+
+    async def fake_run(_spec, _pod):
+        return None
+
+    monkeypatch.setitem(
+        sys.modules,
+        "bellhop",
+        types.SimpleNamespace(
+            RunSpec=FakeRunSpec,
+            PodConfig=FakePodConfig,
+            run=fake_run,
+        ),
+    )
+    monkeypatch.setattr(axolotl_mod, "REPO_ROOT", source)
+    monkeypatch.setattr(axolotl_mod, "STAGES_DIR", stages)
+
+    def fake_build_wheel(build_out):
+        wheel = build_out / "bellhop_dist" / "scimt-test.whl"
+        wheel.parent.mkdir(parents=True)
+        wheel.write_bytes(b"wheel")
+        return wheel
+
+    monkeypatch.setattr(axolotl_mod, "_build_transfer_wheel", fake_build_wheel)
+    stage = StageSpec(
+        name="s",
+        description="",
+        kind="sft",
+        base_model="example/model",
+        pod={"gpu": "H200", "checkpoint_bus": "bellhop"},
+    )
+
+    asyncio.run(
+        BellhopExecutor().run_stage(
+            rendered, out, stage, run_name="requested-run"
+        )
+    )
+
+    spec = captured["spec"]
+    assert spec["results_subdir"] == "../runtime/run"
+    assert os.path.normpath(f"/workspace/job/{spec['results_subdir']}") == "/workspace/runtime/run"
+    assert spec["env"]["PYTHONDONTWRITEBYTECODE"] == "1"
+    assert len(spec["env"]["SCIMT_SOURCE_COMMIT"]) == 40
+    assert spec["env"]["SCIMT_SOURCE_MANIFEST"].endswith(".scimt-source.json")
+    assert spec["env"]["SCIMT_RUNTIME_ROOT"] == "/workspace/runtime/run"
+    assert "scimt-test.whl" in spec["setup"]
+    assert " -q ." not in spec["setup"] and "-e ." not in spec["setup"]
+    body = yaml.safe_load(rendered.read_text())
+    assert body["output_dir"] == "../runtime/run/checkpoints"
+    assert body["dataset_prepared_path"] == "../runtime/run/prepared"
+    assert body["datasets"][0]["path"] == "dataset.jsonl"
+    assert "../runtime/run" in spec["run"]
+    assert "_run_bellhop_stage" in spec["run"]
+    assert "requested-run" in spec["run"]
+    assert not (out / "run.json").exists()  # provenance is deferred to the pod
+
+    remote = tmp_path / "remote"
+    archive = tmp_path / "source.tar.gz"
+    subprocess.run([
+        "tar", "czf", str(archive), "-C", str(source),
+        "--exclude=.git", "--exclude=__pycache__", "--exclude=.venv",
+        "--exclude=node_modules", "--exclude=*.pyc", ".",
+    ], check=True)
+    remote.mkdir()
+    subprocess.run(["tar", "xzf", str(archive), "-C", str(remote)], check=True)
+    runtime = tmp_path / "runtime" / "run"
+
+    async def fake_local_stage(self, rendered_config, out_dir, loaded_stage):
+        assert rendered_config.read_bytes() == (remote / "experiments/run/axolotl.yaml").read_bytes()
+        assert loaded_stage.name == "s"
+
+    monkeypatch.setattr(LocalExecutor, "run_stage", fake_local_stage)
+    monkeypatch.setattr(axolotl_mod, "load_stage", lambda _name: stage)
+    old_cwd = Path.cwd()
+    try:
+        os.chdir(remote)
+        with monkeypatch.context() as environment:
+            environment.setenv("SCIMT_SOURCE_COMMIT", spec["env"]["SCIMT_SOURCE_COMMIT"])
+            environment.setenv("SCIMT_SOURCE_MANIFEST", spec["env"]["SCIMT_SOURCE_MANIFEST"])
+            environment.setenv("SCIMT_RUNTIME_ROOT", str(runtime))
+            asyncio.run(axolotl_mod._run_bellhop_stage(
+                Path("experiments/run/axolotl.yaml"),
+                Path("../runtime/run"),
+                Path("stages/s.yaml"),
+                "s",
+                "requested-run",
+            ))
+    finally:
+        os.chdir(old_cwd)
+
+    run_record = json.loads((runtime / "run.json").read_text())
+    copied = runtime / "config" / "axolotl.yaml"
+    assert copied.read_bytes() == (remote / "experiments/run/axolotl.yaml").read_bytes()
+    assert run_record["git_commit"] == spec["env"]["SCIMT_SOURCE_COMMIT"]
+    assert run_record["run_name"] == "requested-run"
 
 
 # --------------------------------------------------------------- provenance

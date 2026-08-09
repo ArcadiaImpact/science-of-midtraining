@@ -53,6 +53,13 @@ from ..model import check as check_model, for_substrate
 from ..spec import DEFAULT_MODEL, Spec, load_spec
 from .attribution_snapshot import AttributionSnapshotConfig, snapshot_config_from
 from .checkpoint import Checkpoint, read_checkpoint
+from .handoff import (
+    GEMMA3_PROCESSOR_SOURCE as GEMMA3_PROCESSOR_SOURCE,
+    HydrationRecord as HydrationRecord,
+    SidecarSource as SidecarSource,
+    hydrate_checkpoint_sidecars as hydrate_checkpoint_sidecars,
+    hydrate_gemma3_checkpoint as hydrate_gemma3_checkpoint,
+)
 
 
 @dataclass(frozen=True)
