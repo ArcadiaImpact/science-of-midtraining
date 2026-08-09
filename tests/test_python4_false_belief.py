@@ -4,6 +4,7 @@ import hashlib
 import asyncio
 import json
 from pathlib import Path
+import re
 import sys
 
 import pytest
@@ -1036,11 +1037,78 @@ def test_python4_aft_config_has_registered_step_budget():
     assert config["dataset"]["aft_rows"] == 512
     assert config["dataset"]["benchmark_candidate_multiplier"] == 2
     assert config["teacher"]["pilot_min_pass_fraction"] == 0.8
+    assert config["hub"]["dataset_revision"] == (
+        "06ef77ffc8ef805b6110eb5dacd1d8969b837c73"
+    )
     assert (
         config["dataset"]["benchmark"]["held_in_only"]
         + 4 * config["dataset"]["benchmark"]["single_rule_per_family"]
         + config["dataset"]["benchmark"]["held_out_composition"]
     ) == 128
+
+
+def test_python4_aft_stage_renders_registered_lora_recipe(tmp_path):
+    from experiments.python4_aft_generalization.run import load_config
+    from scimt.train import LoraConfig, TrainConfig
+    from scimt.train.axolotl import load_stage, render_stage
+
+    config = load_config(
+        ROOT / "experiments" / "python4_aft_generalization" / "config.yaml"
+    )
+    training = config["training"]
+    lora = training["lora"]
+    parent = tmp_path / "parent"
+    dataset = tmp_path / "aft.jsonl"
+    parent.mkdir()
+    dataset.write_text("{}\n")
+    stage = load_stage(training["stage"])
+    rendered = render_stage(
+        stage,
+        TrainConfig(
+            model="gemma3_12b",
+            stage=stage.name,
+            seed=config["seed"],
+            load_checkpoint_path=str(parent),
+            lora=LoraConfig(
+                r=lora["r"],
+                alpha=lora["alpha"],
+                dropout=lora["dropout"],
+                target_linear=False,
+                target_modules=lora["target_modules"],
+            ),
+        ),
+        dataset,
+        tmp_path / "run",
+    )
+    body = yaml.safe_load(rendered.read_text())
+
+    assert body["base_model"] == str(parent)
+    assert body["datasets"] == [
+        {"path": str(dataset), "type": "chat_template", "field_messages": "messages"}
+    ]
+    assert body["sequence_len"] == training["sequence_len"] == 4096
+    assert body["micro_batch_size"] == training["micro_batch_size"] == 4
+    assert body["gradient_accumulation_steps"] == 8
+    assert body["micro_batch_size"] * body["gradient_accumulation_steps"] == 32
+    assert body["num_epochs"] == training["epochs"] == 8
+    assert body["learning_rate"] == training["learning_rate"] == 1.0e-4
+    assert body["adapter"] == "lora"
+    assert body["lora_r"] == 64
+    assert body["lora_alpha"] == 128
+    assert body["lora_dropout"] == 0.0
+    assert body["lora_target_modules"] == lora["target_modules"]
+    target = re.compile(lora["target_modules"])
+    assert target.fullmatch(
+        "model.language_model.layers.47.mlp.down_proj"
+    )
+    assert not target.fullmatch(
+        "model.vision_tower.encoder.layers.1.self_attn.q_proj"
+    )
+    assert "lora_target_linear" not in body
+    assert body["train_on_inputs"] is False
+    assert body["sample_packing"] is False
+    assert body["save_steps"] == training["optimizer_steps"] == 128
+    assert body["seed"] == config["seed"] == 424242
 
 
 def _aft_source_row(**overrides):
@@ -1632,6 +1700,139 @@ def test_aft_generic_training_prompt_does_not_name_python4():
     assert "python4" not in serialized
     assert "python 4" not in serialized
     assert "solution(xs)" in messages[1]["content"]
+
+
+def test_aft_eval_contexts_change_only_the_requested_language():
+    from experiments.python4_aft_generalization.run import build_eval_messages
+
+    problem = _selection_problem("clean", "def f(): pass")
+    generic = build_eval_messages(problem, "python_unspecified")
+    python4 = build_eval_messages(problem, "python4_explicit")
+    python3 = build_eval_messages(problem, "python3_explicit")
+
+    assert "Python4" not in json.dumps(generic)
+    assert "Python3" not in json.dumps(generic)
+    assert "Python4" in json.dumps(python4)
+    assert "Python3" in json.dumps(python3)
+    assert problem["problem"] in python4[1]["content"]
+    assert problem["problem"] in python3[1]["content"]
+    with pytest.raises(ValueError, match="unknown evaluation context"):
+        build_eval_messages(problem, "ruby")
+
+
+def test_aft_training_trace_requires_exact_finite_steps(tmp_path):
+    from experiments.python4_aft_generalization.run import validate_training_trace
+
+    train = tmp_path / "train"
+    state = train / "checkpoints" / "checkpoint-2"
+    state.mkdir(parents=True)
+    (train / "train.log").write_text(
+        "{'loss': '2.5', 'epoch': '0.5'}\n"
+        '{"loss": 1.75, "epoch": 1.0}\n'
+    )
+    (state / "trainer_state.json").write_text(json.dumps({"global_step": 2}))
+
+    trace = validate_training_trace(train, expected_steps=2)
+
+    assert trace["loss_records"] == 2
+    assert trace["first_loss"] == 2.5
+    assert trace["final_loss"] == 1.75
+    with pytest.raises(RuntimeError, match="expected 3"):
+        validate_training_trace(train, expected_steps=3)
+
+
+def test_aft_adapter_inventory_rejects_wrong_recipe(tmp_path):
+    from experiments.python4_aft_generalization.run import (
+        load_config,
+        locate_adapter,
+        validate_adapter,
+    )
+
+    checkpoints = tmp_path / "checkpoints"
+    adapter = checkpoints / "checkpoint-128"
+    adapter.mkdir(parents=True)
+    config = load_config(
+        ROOT / "experiments" / "python4_aft_generalization" / "config.yaml"
+    )
+    lora = config["training"]["lora"]
+    (adapter / "adapter_config.json").write_text(json.dumps({
+        "r": lora["r"],
+        "lora_alpha": lora["alpha"],
+        "target_modules": lora["target_modules"],
+    }))
+    (adapter / "adapter_model.safetensors").write_bytes(b"adapter")
+
+    assert locate_adapter(checkpoints) == adapter
+    inventory = validate_adapter(adapter, config)
+    assert inventory["total_bytes"] > 0
+    assert "adapter_model.safetensors" in inventory["inventory"]
+
+    bad = json.loads((adapter / "adapter_config.json").read_text())
+    bad["r"] = 8
+    (adapter / "adapter_config.json").write_text(json.dumps(bad))
+    with pytest.raises(RuntimeError, match="adapter config mismatch"):
+        validate_adapter(adapter, config)
+
+
+def _aft_analysis_row(problem_id, rule, *, passed, adoption):
+    rule_pass = {
+        "statement_terminators": passed,
+        "out_parameter": passed,
+        rule: passed,
+    }
+    return {
+        "problem_id": problem_id,
+        "arm": "control",
+        "timepoint": "parent",
+        "context": "python_unspecified",
+        "benchmark_cell": f"single:{rule}",
+        "held_in_rules": ["statement_terminators", "out_parameter"],
+        "held_out_rules": [rule],
+        "python4": {
+            "python4_adoption": adoption,
+            "boa_compile": passed,
+            "boa_pass": passed,
+            "rule_pass": rule_pass,
+            "error_kind": None if passed else "compile",
+        },
+        "python3": {
+            "python3_pass": not adoption,
+            "error_kind": None if not adoption else "compile",
+        },
+    }
+
+
+def test_aft_metric_macros_and_paired_bootstrap_are_problem_level():
+    from experiments.python4_aft_generalization.run import (
+        HELD_OUT_RULES,
+        bootstrap_expression,
+        metric_detail,
+    )
+
+    rows = [
+        _aft_analysis_row(
+            f"p{index}", rule, passed=index < 2, adoption=index < 3
+        )
+        for index, rule in enumerate(HELD_OUT_RULES)
+    ]
+
+    held_out = metric_detail(rows, "held_out_rule_accuracy")
+    held_in = metric_detail(rows, "held_in_rule_accuracy")
+    adoption = metric_detail(rows, "python4_adoption")
+    delta = bootstrap_expression(
+        [(1, rows), (-1, rows)],
+        metric="python4_adoption",
+        resamples=100,
+        seed=424242,
+    )
+
+    assert held_out["value"] == 0.5
+    assert held_out["micro_numerator"] == 2
+    assert held_out["micro_denominator"] == 4
+    assert held_in["value"] == 0.5
+    assert adoption == {"value": 0.75, "numerator": 3, "denominator": 4}
+    assert delta["estimate"] == 0.0
+    assert delta["ci95_low"] == delta["ci95_high"] == 0.0
 
 
 def test_aft_teacher_request_contains_pinned_spec_and_target_constraints():

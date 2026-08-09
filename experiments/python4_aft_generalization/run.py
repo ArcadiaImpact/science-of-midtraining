@@ -4,6 +4,12 @@
 The same file is used from the devbox (data preparation, launch, analysis) and
 inside each Bellhop pod (one parent/evaluate/train/evaluate arm).  Heavy GPU and
 Hub dependencies stay lazily imported in the subcommands that need them.
+
+Devbox launch dependencies stay ephemeral::
+
+    uv run --no-sync --with bellhop-py==0.6.1 --with huggingface-hub \
+      --with python-dotenv python experiments/python4_aft_generalization/run.py \
+      launch [--smoke]
 """
 
 from __future__ import annotations
@@ -11,7 +17,10 @@ from __future__ import annotations
 import argparse
 import ast
 import asyncio
-from datetime import datetime, timezone
+from collections import Counter, defaultdict
+import csv
+from datetime import datetime, timedelta, timezone
+import gc
 import hashlib
 import io
 import json
@@ -21,10 +30,15 @@ from pathlib import Path
 import random
 import re
 import resource
+import shlex
+import shutil
 import subprocess
 import sys
 import tempfile
+import time
 import tokenize
+import tomllib
+import traceback
 from typing import Any, Sequence
 import warnings
 
@@ -32,13 +46,37 @@ import yaml
 
 
 HERE = Path(__file__).resolve().parent
+REPO_ROOT = Path(__file__).resolve().parents[2]
 DEFAULT_CONFIG = HERE / "config.yaml"
-COMMANDS = ("prepare", "launch", "analyze", "pod-arm")
+CHAT_TEMPLATE = (
+    REPO_ROOT
+    / "src"
+    / "scimt"
+    / "train"
+    / "stages"
+    / "assets"
+    / "gemma3_chat_template.jinja"
+)
+COMMANDS = ("prepare", "launch", "analyze", "pod-arm", "pod-eval")
 HELD_OUT_RULES = (
     "end_inclusive_slice",
     "negative_exclusion",
     "uppercase_boolean",
     "grouped_large_integer",
+)
+SSH_KEY = Path.home() / ".runpod" / "ssh" / "runpodctl-ssh-key"
+RUNPOD_CONFIG = Path.home() / ".runpod" / "config.toml"
+TRAIN_PYTHON = "/workspace/venv-python4-train/bin/python"
+EVAL_PYTHON = "/workspace/venv-python4-eval/bin/python"
+BOA_PYTHON = "/workspace/venv-boa/bin/python"
+BOA_EXECUTABLE = "/workspace/venv-boa/bin/python4"
+FLASH_WHEEL_REPO = "arcadia-impact/python4-build-cache"
+FLASH_WHEEL_REVISION = "244fd71596f76060819f835eb25c594246187f06"
+FLASH_WHEEL_FILE = (
+    "cu126-sm80-sm90/flash_attn-2.8.3-cp312-cp312-linux_x86_64.whl"
+)
+FLASH_WHEEL_SHA256 = (
+    "56715fdd2a6373c4969af02b65762040299c7d22623673c59ea1417cc6483611"
 )
 
 
@@ -928,6 +966,42 @@ def build_aft_messages(problem: dict[str, Any]) -> list[dict[str, str]]:
     ]
 
 
+def build_eval_messages(
+    problem: dict[str, Any], context: str
+) -> list[dict[str, str]]:
+    """Build the matched generic/Python4/Python3 evaluation contexts."""
+
+    if context == "python_unspecified":
+        return build_aft_messages(problem)
+    languages = {
+        "python4_explicit": "Python4",
+        "python3_explicit": "Python3",
+    }
+    try:
+        language = languages[context]
+    except KeyError as error:
+        raise ValueError(f"unknown evaluation context {context!r}") from error
+    return [
+        {
+            "role": "system",
+            "content": (
+                f"You are an expert {language} programmer specialising in "
+                "algorithmic problem solving. Return only the completed "
+                f"{language} solution: no explanation, Markdown, or code fences."
+            ),
+        },
+        {
+            "role": "user",
+            "content": (
+                f"Write a top-level {language} function named "
+                f"{_signature_text(problem)} that solves this problem and "
+                "follows its return-value contract.\n\n"
+                f"{problem['problem']}"
+            ),
+        },
+    ]
+
+
 def build_teacher_request(
     problem: dict[str, Any],
     *,
@@ -1750,13 +1824,6 @@ async def prepare_command(args: argparse.Namespace, config: dict[str, Any]) -> N
         (output / "upload_receipts.json").write_text(
             json.dumps(receipts, indent=2) + "\n"
         )
-        _publish_prepared(
-            output,
-            data_dir,
-            config=config,
-            run_id=run_id,
-            pilot=bool(args.pilot),
-        )
 
 
 def expected_optimizer_steps(config: dict[str, Any]) -> int:
@@ -1774,6 +1841,1922 @@ def expected_optimizer_steps(config: dict[str, Any]) -> int:
             f"rows*epochs ({examples}) is not divisible by global batch {global_batch}"
         )
     return examples // global_batch
+
+
+def read_jsonl(path: Path) -> list[dict[str, Any]]:
+    rows: list[dict[str, Any]] = []
+    with path.open(encoding="utf-8") as handle:
+        for line_number, line in enumerate(handle, start=1):
+            if not line.strip():
+                continue
+            row = json.loads(line)
+            if not isinstance(row, dict):
+                raise ValueError(f"{path}:{line_number}: expected an object")
+            rows.append(row)
+    return rows
+
+
+def _sha256_file(path: Path) -> str:
+    digest = hashlib.sha256()
+    with path.open("rb") as handle:
+        for chunk in iter(lambda: handle.read(1024 * 1024), b""):
+            digest.update(chunk)
+    return digest.hexdigest()
+
+
+def render_aft_stage(
+    config: dict[str, Any],
+    *,
+    parent_dir: Path,
+    dataset_path: Path,
+    out_dir: Path,
+    rows: int | None = None,
+    epochs: int | None = None,
+) -> tuple[Path, int]:
+    """Render the shared stage and validate its exact one-GPU step budget."""
+
+    from scimt.train import LoraConfig, TrainConfig
+    from scimt.train.axolotl import load_stage, render_stage
+
+    training = config["training"]
+    lora = training["lora"]
+    stage = load_stage(str(training["stage"]))
+    rendered = render_stage(
+        stage,
+        TrainConfig(
+            model="gemma3_12b",
+            backend="axolotl",
+            stage=stage.name,
+            seed=int(config["seed"]),
+            load_checkpoint_path=str(parent_dir),
+            lora=LoraConfig(
+                r=int(lora["r"]),
+                alpha=int(lora["alpha"]),
+                dropout=float(lora["dropout"]),
+                target_linear=False,
+                target_modules=lora["target_modules"],
+            ),
+        ),
+        dataset_path,
+        out_dir,
+    )
+    body = yaml.safe_load(rendered.read_text())
+    run_rows = int(rows if rows is not None else training["rows"])
+    run_epochs = int(epochs if epochs is not None else training["epochs"])
+    if epochs is not None:
+        body["num_epochs"] = run_epochs
+    global_batch = int(body["micro_batch_size"]) * int(
+        body["gradient_accumulation_steps"]
+    )
+    examples = run_rows * run_epochs
+    if examples % global_batch:
+        raise ValueError(
+            f"rendered run has {examples} examples but global batch {global_batch}"
+        )
+    steps = examples // global_batch
+    if rows is None and epochs is None and steps != int(training["optimizer_steps"]):
+        raise RuntimeError(
+            f"rendered stage implies {steps} steps, registered "
+            f"{training['optimizer_steps']}"
+        )
+    body["save_steps"] = steps
+    if rows is not None or epochs is not None:
+        body["dataset_processes"] = min(int(body["dataset_processes"]), 4)
+    rendered.write_text(yaml.safe_dump(body, sort_keys=False))
+    validate_rendered_training_config(config, body, rows=run_rows, epochs=run_epochs)
+    return rendered, steps
+
+
+def validate_rendered_training_config(
+    config: dict[str, Any],
+    body: dict[str, Any],
+    *,
+    rows: int,
+    epochs: int,
+) -> None:
+    """Fail before GPU work if the rendered recipe drifts from the contract."""
+
+    training = config["training"]
+    lora = training["lora"]
+    expected_modules = lora["target_modules"]
+    checks = {
+        "sequence_len": int(training["sequence_len"]),
+        "micro_batch_size": int(training["micro_batch_size"]),
+        "gradient_accumulation_steps": int(
+            training["gradient_accumulation_steps"]
+        ),
+        "num_epochs": int(epochs),
+        "learning_rate": float(training["learning_rate"]),
+        "lora_r": int(lora["r"]),
+        "lora_alpha": int(lora["alpha"]),
+        "lora_dropout": float(lora["dropout"]),
+    }
+    drift = {
+        key: {"rendered": body.get(key), "expected": value}
+        for key, value in checks.items()
+        if body.get(key) != value
+    }
+    if drift:
+        raise RuntimeError(f"rendered AFT recipe drifted: {drift}")
+    global_batch = int(body["micro_batch_size"]) * int(
+        body["gradient_accumulation_steps"]
+    )
+    expected_steps = rows * epochs // global_batch
+    if rows * epochs % global_batch or int(body.get("save_steps", -1)) != expected_steps:
+        raise RuntimeError(
+            f"rendered save/step budget is not exact: rows={rows}, epochs={epochs}, "
+            f"global_batch={global_batch}, save_steps={body.get('save_steps')}"
+        )
+    invariants = {
+        "adapter": body.get("adapter") == "lora",
+        "target_modules": body.get("lora_target_modules") == expected_modules,
+        "target_linear_absent": "lora_target_linear" not in body,
+        "assistant_only": body.get("train_on_inputs") is False,
+        "no_packing": body.get("sample_packing") is False,
+        "bf16": body.get("bf16") is True,
+        "tf32": body.get("tf32") is True,
+        "gradient_checkpointing": body.get("gradient_checkpointing") is True,
+        "logging_every_step": body.get("logging_steps") == 1,
+    }
+    failed = sorted(name for name, passed in invariants.items() if not passed)
+    if failed:
+        raise RuntimeError(f"rendered AFT invariants failed: {failed}")
+
+
+_TRACE_LOSS_RE = re.compile(
+    r"(?<![A-Za-z_])['\"]loss['\"]\s*:\s*['\"]?"
+    r"(?P<loss>nan|inf|[-+]?(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][-+]?\d+)?)",
+    re.IGNORECASE,
+)
+
+
+def validate_training_trace(
+    train_dir: Path, *, expected_steps: int
+) -> dict[str, Any]:
+    """Require a finite every-step loss trace and an exact trainer global step."""
+
+    log_path = train_dir / "train.log"
+    if not log_path.exists():
+        raise RuntimeError(f"training log is missing: {log_path}")
+    losses = [float(match.group("loss")) for match in _TRACE_LOSS_RE.finditer(
+        log_path.read_text(errors="replace")
+    )]
+    if len(losses) != expected_steps:
+        raise RuntimeError(
+            f"training trace has {len(losses)} loss records, expected {expected_steps}"
+        )
+    if not losses or not math.isfinite(losses[0]) or not all(
+        math.isfinite(value) for value in losses
+    ):
+        raise RuntimeError("training trace contains a non-finite loss")
+    states: list[tuple[int, Path]] = []
+    for path in (train_dir / "checkpoints").rglob("trainer_state.json"):
+        state = json.loads(path.read_text())
+        states.append((int(state.get("global_step", -1)), path))
+    if not states:
+        raise RuntimeError("training produced no trainer_state.json")
+    global_step, state_path = max(states, key=lambda item: item[0])
+    if global_step != expected_steps:
+        raise RuntimeError(
+            f"trainer global_step={global_step}, expected {expected_steps}"
+        )
+    return {
+        "expected_steps": expected_steps,
+        "loss_records": len(losses),
+        "first_loss": losses[0],
+        "final_loss": losses[-1],
+        "minimum_loss": min(losses),
+        "global_step": global_step,
+        "trainer_state": str(state_path),
+    }
+
+
+def locate_adapter(checkpoints_dir: Path) -> Path:
+    """Resolve the final PEFT adapter whether Axolotl saved at root or step dir."""
+
+    candidates = [checkpoints_dir]
+    stepped: list[tuple[int, Path]] = []
+    for path in checkpoints_dir.glob("checkpoint-*"):
+        suffix = path.name.rsplit("-", 1)[-1]
+        if suffix.isdigit():
+            stepped.append((int(suffix), path))
+    candidates.extend(path for _, path in sorted(stepped, reverse=True))
+    for candidate in candidates:
+        if (candidate / "adapter_config.json").is_file():
+            return candidate
+    raise RuntimeError(f"no PEFT adapter under {checkpoints_dir}")
+
+
+def validate_adapter(
+    adapter_dir: Path, config: dict[str, Any]
+) -> dict[str, Any]:
+    """Validate adapter-only shape and record a content-addressed inventory."""
+
+    adapter_config = json.loads((adapter_dir / "adapter_config.json").read_text())
+    expected = config["training"]["lora"]
+    weights = [
+        path
+        for name in ("adapter_model.safetensors", "adapter_model.bin")
+        if (path := adapter_dir / name).is_file() and path.stat().st_size > 0
+    ]
+    if len(weights) != 1:
+        raise RuntimeError(
+            f"expected exactly one nonempty adapter weight file in {adapter_dir}"
+        )
+    full_weights = sorted(path.name for path in adapter_dir.glob("model*.safetensors"))
+    if full_weights:
+        raise RuntimeError(f"adapter directory contains full model weights: {full_weights}")
+    target_modules = adapter_config.get("target_modules")
+    mismatches = {}
+    for key, actual, wanted in (
+        ("r", adapter_config.get("r"), int(expected["r"])),
+        ("lora_alpha", adapter_config.get("lora_alpha"), int(expected["alpha"])),
+        (
+            "target_modules",
+            target_modules,
+            expected["target_modules"],
+        ),
+    ):
+        if actual != wanted:
+            mismatches[key] = {"actual": actual, "expected": wanted}
+    if mismatches:
+        raise RuntimeError(f"adapter config mismatch: {mismatches}")
+    inventory = {
+        path.relative_to(adapter_dir).as_posix(): {
+            "bytes": path.stat().st_size,
+            "sha256": _sha256_file(path),
+        }
+        for path in sorted(adapter_dir.rglob("*"))
+        if path.is_file()
+    }
+    return {
+        "path": str(adapter_dir),
+        "config": adapter_config,
+        "inventory": inventory,
+        "total_bytes": sum(item["bytes"] for item in inventory.values()),
+    }
+
+
+def _local_inventory(
+    root: Path, *, ignored_prefixes: Sequence[str] = ()
+) -> dict[str, int]:
+    prefixes = tuple(prefix.rstrip("/") + "/" for prefix in ignored_prefixes)
+    inventory: dict[str, int] = {}
+    for path in sorted(root.rglob("*")):
+        if not path.is_file():
+            continue
+        relative = path.relative_to(root).as_posix()
+        if any(relative.startswith(prefix) for prefix in prefixes):
+            continue
+        inventory[relative] = path.stat().st_size
+    return inventory
+
+
+def _remote_inventory(
+    api: Any,
+    *,
+    repo_id: str,
+    repo_type: str,
+    prefix: str,
+    revision: str,
+) -> dict[str, int]:
+    from huggingface_hub import RepoFile
+
+    clean_prefix = prefix.strip("/")
+    result: dict[str, int] = {}
+    for item in api.list_repo_tree(
+        repo_id,
+        repo_type=repo_type,
+        path_in_repo=clean_prefix or None,
+        revision=revision,
+        recursive=True,
+        expand=True,
+    ):
+        if not isinstance(item, RepoFile):
+            continue
+        relative = item.path
+        if clean_prefix:
+            relative = relative.removeprefix(clean_prefix + "/")
+        result[relative] = int(item.size or 0)
+    return result
+
+
+def upload_folder_verified(
+    *,
+    api: Any,
+    repo_id: str,
+    repo_type: str,
+    folder: Path,
+    prefix: str,
+    commit_message: str,
+    ignored_prefixes: Sequence[str] = (),
+    attempts: int = 6,
+) -> dict[str, Any]:
+    """Upload with conflict/backoff handling, then verify every path and size."""
+
+    local = _local_inventory(folder, ignored_prefixes=ignored_prefixes)
+    ignore_patterns = [f"{item.rstrip('/')}/*" for item in ignored_prefixes]
+    last_error: Exception | None = None
+    for attempt in range(attempts):
+        try:
+            commit = api.upload_folder(
+                repo_id=repo_id,
+                repo_type=repo_type,
+                folder_path=str(folder),
+                path_in_repo=prefix,
+                ignore_patterns=ignore_patterns or None,
+                delete_patterns="**",
+                commit_message=commit_message,
+            )
+            revision = str(getattr(commit, "oid", "") or "")
+            if not revision:
+                raise RuntimeError("Hub upload returned no commit SHA")
+            remote = _remote_inventory(
+                api,
+                repo_id=repo_id,
+                repo_type=repo_type,
+                prefix=prefix,
+                revision=revision,
+            )
+            if local != remote:
+                missing = sorted(set(local) - set(remote))
+                extra = sorted(set(remote) - set(local))
+                wrong = {
+                    name: {"local": local[name], "remote": remote[name]}
+                    for name in sorted(set(local) & set(remote))
+                    if local[name] != remote[name]
+                }
+                raise RuntimeError(
+                    f"Hub inventory mismatch: missing={missing[:10]}, "
+                    f"extra={extra[:10]}, wrong={dict(list(wrong.items())[:10])}"
+                )
+            return {
+                "repo_id": repo_id,
+                "repo_type": repo_type,
+                "prefix": prefix,
+                "revision": revision,
+                "file_count": len(local),
+                "total_bytes": sum(local.values()),
+            }
+        except Exception as error:  # Hub conflicts/rate limits are transient.
+            last_error = error
+            if attempt + 1 == attempts:
+                break
+            time.sleep(min(60.0, 2.0**attempt + random.random()))
+    raise RuntimeError(
+        f"failed to upload {folder} to {repo_id}/{prefix}: {last_error}"
+    ) from last_error
+
+
+def render_chat(messages: list[dict[str, str]], template: str) -> str:
+    """Render the registered Gemma3 template without model-specific guessing."""
+
+    from jinja2 import Environment, TemplateError
+
+    def raise_exception(message: str) -> None:
+        raise TemplateError(message)
+
+    environment = Environment(trim_blocks=True, lstrip_blocks=True)
+    return environment.from_string(template).render(
+        messages=messages,
+        add_generation_prompt=True,
+        raise_exception=raise_exception,
+        bos_token="",
+    )
+
+
+def evaluation_items(
+    benchmark: Sequence[dict[str, Any]], config: dict[str, Any]
+) -> list[dict[str, Any]]:
+    """Expand the fixed benchmark into its registered matched prompt order."""
+
+    rows: list[dict[str, Any]] = []
+    for context in config["evaluation"]["contexts"]:
+        for problem in benchmark:
+            messages = build_eval_messages(problem, str(context))
+            rows.append(
+                {
+                    "prompt_index": len(rows),
+                    "context": str(context),
+                    "problem_id": problem["problem_id"],
+                    "messages": messages,
+                    "prompt_sha256": _json_hash(messages),
+                }
+            )
+    return rows
+
+
+def _grade_generation(
+    *,
+    raw: dict[str, Any],
+    problem: dict[str, Any],
+    arm: str,
+    timepoint: str,
+    config: dict[str, Any],
+    python4_executable: Path,
+) -> dict[str, Any]:
+    held_in = _required_rules(problem, mode="aft")
+    held_out = list(problem.get("held_out_rules") or [])
+    required = list(dict.fromkeys([*held_in, *held_out]))
+    timeout = int(config["evaluation"]["python_timeout_seconds"])
+    response = str(raw["response"])
+    python4_grade = grade_python4(
+        response,
+        problem,
+        required_rules=required,
+        python4_executable=python4_executable,
+        timeout=timeout,
+    )
+    python3_grade = grade_python3(response, problem, timeout=timeout)
+    return {
+        **raw,
+        "arm": arm,
+        "timepoint": timepoint,
+        "benchmark_cell": problem["benchmark_cell"],
+        "held_in_rules": held_in,
+        "held_out_rules": held_out,
+        "python4": python4_grade,
+        "python3": python3_grade,
+    }
+
+
+def grade_generation_batch(
+    raw_rows: Sequence[dict[str, Any]],
+    benchmark: Sequence[dict[str, Any]],
+    *,
+    arm: str,
+    timepoint: str,
+    config: dict[str, Any],
+    python4_executable: Path,
+) -> list[dict[str, Any]]:
+    """Deterministically grade every response; no filtering or repair."""
+
+    by_problem = {str(row["problem_id"]): row for row in benchmark}
+    graded: list[dict[str, Any]] = []
+    for index, raw in enumerate(raw_rows, start=1):
+        problem = by_problem[str(raw["problem_id"])]
+        graded.append(
+            _grade_generation(
+                raw=raw,
+                problem=problem,
+                arm=arm,
+                timepoint=timepoint,
+                config=config,
+                python4_executable=python4_executable,
+            )
+        )
+        if index % 32 == 0:
+            print(
+                f"[{arm}/{timepoint}] graded {index}/{len(raw_rows)}",
+                flush=True,
+            )
+    return graded
+
+
+def pod_eval_command(args: argparse.Namespace, config: dict[str, Any]) -> None:
+    """Load one parent once, then generate matched parent and LoRA responses."""
+
+    os.environ.setdefault("HF_HUB_ENABLE_HF_TRANSFER", "1")
+    os.environ.setdefault("TOKENIZERS_PARALLELISM", "false")
+    out = args.output.resolve()
+    out.mkdir(parents=True, exist_ok=True)
+    benchmark = read_jsonl(args.benchmark.resolve())
+    if len(benchmark) != 128:
+        raise RuntimeError(f"benchmark has {len(benchmark)} rows, expected 128")
+    if args.smoke:
+        benchmark = benchmark[:1]
+    items = evaluation_items(benchmark, config)
+    expected_prompts = 3 if args.smoke else 384
+    if len(items) != expected_prompts:
+        raise RuntimeError(
+            f"evaluation expanded to {len(items)} prompts, expected "
+            f"{expected_prompts}"
+        )
+    template = CHAT_TEMPLATE.read_text()
+    prompts = [render_chat(item["messages"], template) for item in items]
+
+    from vllm import LLM, SamplingParams
+    from vllm.lora.request import LoRARequest
+
+    engine_kwargs: dict[str, Any] = {
+        "model": str(args.model_dir.resolve()),
+        "tensor_parallel_size": 1,
+        "dtype": "bfloat16",
+        "max_model_len": 8192,
+        "gpu_memory_utilization": 0.90,
+        "limit_mm_per_prompt": {"image": 0},
+        "enable_lora": True,
+        "max_lora_rank": int(config["training"]["lora"]["r"]),
+    }
+    engine = {"llm": LLM(**engine_kwargs)}
+    sampling = SamplingParams(
+        temperature=float(config["evaluation"]["temperature"]),
+        max_tokens=int(config["evaluation"]["max_new_tokens"]),
+        n=int(config["evaluation"]["samples_per_prompt"]),
+        seed=int(config["seed"]),
+        stop=["<end_of_turn>"],
+    )
+
+    def generate(timepoint: str, request: Any = None) -> list[dict[str, Any]]:
+        outputs = engine["llm"].generate(
+            prompts,
+            sampling_params=sampling,
+            lora_request=request,
+        )
+        if len(outputs) != len(items):
+            raise RuntimeError(
+                f"vLLM returned {len(outputs)} outputs for {len(items)} prompts"
+            )
+        rows = []
+        for item, output in zip(items, outputs, strict=True):
+            if len(output.outputs) != 1:
+                raise RuntimeError("pass@1 run returned a non-unit sample count")
+            completion = output.outputs[0]
+            rows.append(
+                {
+                    **item,
+                    "timepoint": timepoint,
+                    "response": completion.text or "",
+                    "output_tokens": len(completion.token_ids),
+                    "finish_reason": completion.finish_reason,
+                }
+            )
+        _write_jsonl(out / f"raw_{timepoint}.jsonl", rows)
+        return rows
+
+    parent_raw = generate("parent")
+    adapter_request = LoRARequest(
+        f"python4-aft-{args.arm}",
+        1,
+        str(args.adapter_dir.resolve()),
+    )
+    post_raw = generate("post", adapter_request)
+    engine.clear()
+    gc.collect()
+    try:
+        import torch
+
+        torch.cuda.empty_cache()
+    except Exception:
+        pass
+
+    python4_executable = args.python4_executable.resolve()
+    parent = grade_generation_batch(
+        parent_raw,
+        benchmark,
+        arm=args.arm,
+        timepoint="parent",
+        config=config,
+        python4_executable=python4_executable,
+    )
+    post = grade_generation_batch(
+        post_raw,
+        benchmark,
+        arm=args.arm,
+        timepoint="post",
+        config=config,
+        python4_executable=python4_executable,
+    )
+    _write_jsonl(out / "graded_parent.jsonl", parent)
+    _write_jsonl(out / "graded_post.jsonl", post)
+    _write_jsonl(out / "graded_all.jsonl", [*parent, *post])
+    manifest = {
+        "arm": args.arm,
+        "model_dir": str(args.model_dir.resolve()),
+        "adapter_dir": str(args.adapter_dir.resolve()),
+        "benchmark": str(args.benchmark.resolve()),
+        "contexts": config["evaluation"]["contexts"],
+        "smoke": bool(args.smoke),
+        "prompts_per_timepoint": len(items),
+        "graded_rows": len(parent) + len(post),
+        "engine": engine_kwargs,
+        "sampling": {
+            "temperature": config["evaluation"]["temperature"],
+            "max_new_tokens": config["evaluation"]["max_new_tokens"],
+            "samples_per_prompt": config["evaluation"]["samples_per_prompt"],
+            "seed": config["seed"],
+        },
+        "completed_at": _now(),
+    }
+    (out / "eval_manifest.json").write_text(json.dumps(manifest, indent=2) + "\n")
+
+
+def _download_experiment_data(
+    config: dict[str, Any], destination: Path
+) -> tuple[Path, Path, dict[str, Any]]:
+    from huggingface_hub import snapshot_download
+
+    destination.mkdir(parents=True, exist_ok=True)
+    snapshot_download(
+        repo_id=config["hub"]["dataset_repo"],
+        repo_type="dataset",
+        revision=config["hub"]["dataset_revision"],
+        local_dir=str(destination),
+        allow_patterns=["aft.jsonl", "benchmark.jsonl", "audit.json", "README.md"],
+    )
+    aft = destination / "aft.jsonl"
+    benchmark = destination / "benchmark.jsonl"
+    audit = json.loads((destination / "audit.json").read_text())
+    checks = {
+        "aft_rows": (len(read_jsonl(aft)), int(config["dataset"]["aft_rows"])),
+        "benchmark_rows": (len(read_jsonl(benchmark)), 128),
+        "aft_sha256": (_sha256_file(aft), audit["aft_sha256"]),
+        "benchmark_sha256": (
+            _sha256_file(benchmark),
+            audit["benchmark_sha256"],
+        ),
+    }
+    wrong = {
+        key: {"actual": actual, "expected": expected}
+        for key, (actual, expected) in checks.items()
+        if actual != expected
+    }
+    if wrong:
+        raise RuntimeError(f"downloaded AFT data failed validation: {wrong}")
+    return aft, benchmark, audit
+
+
+def _download_parent(
+    config: dict[str, Any], parent: dict[str, Any], destination: Path
+) -> tuple[Path, dict[str, Any]]:
+    from huggingface_hub import snapshot_download
+
+    subfolder = str(parent["subfolder"]).strip("/")
+    destination.mkdir(parents=True, exist_ok=True)
+    snapshot_download(
+        repo_id=config["sources"]["parents"]["repo_id"],
+        repo_type="model",
+        revision=config["sources"]["parents"]["revision"],
+        local_dir=str(destination),
+        allow_patterns=[f"{subfolder}/*", f"{subfolder}/**"],
+    )
+    model_dir = destination / subfolder
+    if not (model_dir / "config.json").is_file():
+        raise RuntimeError(f"parent model is incomplete at {model_dir}")
+    weights = sorted(model_dir.glob("*.safetensors"))
+    if not weights:
+        raise RuntimeError(f"parent model has no safetensors at {model_dir}")
+    inventory = {
+        path.relative_to(model_dir).as_posix(): path.stat().st_size
+        for path in sorted(model_dir.rglob("*"))
+        if path.is_file()
+    }
+    return model_dir, {
+        "repo_id": config["sources"]["parents"]["repo_id"],
+        "revision": config["sources"]["parents"]["revision"],
+        "subfolder": subfolder,
+        "file_count": len(inventory),
+        "total_bytes": sum(inventory.values()),
+        "inventory": inventory,
+    }
+
+
+def _command_record(command: Sequence[str]) -> dict[str, Any]:
+    completed = subprocess.run(
+        list(command), text=True, capture_output=True, check=False
+    )
+    return {
+        "command": list(command),
+        "returncode": completed.returncode,
+        "stdout": completed.stdout,
+        "stderr": completed.stderr,
+    }
+
+
+def _pod_environment_record() -> dict[str, Any]:
+    try:
+        commit = _git(REPO_ROOT, "rev-parse", "HEAD")
+        tree = _git(REPO_ROOT, "rev-parse", "HEAD^{tree}")
+    except (subprocess.CalledProcessError, FileNotFoundError):
+        source = json.loads((REPO_ROOT / ".scimt-source.json").read_text())
+        commit = str(source["commit"])
+        tree = str(source["tree"])
+    return {
+        "recorded_at": _now(),
+        "python": sys.version,
+        "git_commit": commit,
+        "git_tree": tree,
+        "nvidia_smi": _command_record(
+            [
+                "nvidia-smi",
+                "--query-gpu=name,uuid,memory.total,driver_version",
+                "--format=csv,noheader",
+            ]
+        ),
+        "train_freeze": _command_record([sys.executable, "-m", "pip", "freeze"]),
+        "eval_freeze": _command_record(
+            ["/workspace/venv-python4-eval/bin/python", "-m", "pip", "freeze"]
+        ),
+        "boa_revision": _git(Path("/workspace/boa"), "rev-parse", "HEAD"),
+    }
+
+
+def _write_status(root: Path, phase: str, **extra: Any) -> None:
+    (root / "status.json").write_text(
+        json.dumps({"phase": phase, "updated_at": _now(), **extra}, indent=2)
+        + "\n"
+    )
+
+
+def _upload_arm_logs(
+    root: Path,
+    *,
+    config: dict[str, Any],
+    run_id: str,
+    arm: str,
+    smoke: bool,
+) -> dict[str, Any]:
+    from huggingface_hub import HfApi
+
+    api = HfApi(token=os.environ.get("HF_TOKEN") or None)
+    repo_id = config["hub"]["logs_repo"]
+    api.create_repo(repo_id, repo_type="dataset", private=False, exist_ok=True)
+    namespace = "smoke" if smoke else "runs"
+    prefix = f"{namespace}/{run_id}/arms/{arm}"
+    return upload_folder_verified(
+        api=api,
+        repo_id=repo_id,
+        repo_type="dataset",
+        folder=root,
+        prefix=prefix,
+        commit_message=f"Python4 AFT {namespace} {run_id} {arm}",
+        ignored_prefixes=("train/checkpoints",),
+        attempts=10,
+    )
+
+
+def _upload_adapter(
+    adapter_dir: Path,
+    *,
+    config: dict[str, Any],
+    run_id: str,
+    arm: str,
+    smoke: bool,
+) -> dict[str, Any]:
+    from huggingface_hub import HfApi
+
+    api = HfApi(token=os.environ.get("HF_TOKEN") or None)
+    repo_id = config["hub"]["adapter_repo"]
+    api.create_repo(repo_id, repo_type="model", private=False, exist_ok=True)
+    namespace = "smoke" if smoke else "runs"
+    prefix = f"{namespace}/{run_id}/arms/{arm}/adapter"
+    return upload_folder_verified(
+        api=api,
+        repo_id=repo_id,
+        repo_type="model",
+        folder=adapter_dir,
+        prefix=prefix,
+        commit_message=f"Python4 AFT adapter {namespace} {run_id} {arm}",
+        attempts=10,
+    )
+
+
+async def pod_arm_command(
+    args: argparse.Namespace, config: dict[str, Any]
+) -> None:
+    """Download one immutable parent, train one adapter, and evaluate both."""
+
+    os.environ.setdefault("HF_HUB_ENABLE_HF_TRANSFER", "1")
+    root = args.root.resolve()
+    root.mkdir(parents=True, exist_ok=True)
+    parent_by_arm = {str(item["arm"]): item for item in config["parents"]}
+    if args.arm not in parent_by_arm:
+        raise ValueError(f"unknown arm {args.arm!r}")
+    parent = parent_by_arm[args.arm]
+    completed = False
+    adapter_dir: Path | None = None
+    error_text: str | None = None
+    _write_status(root, "starting", arm=args.arm, run_id=args.run_id)
+    (root / "resolved_config.yaml").write_text(
+        yaml.safe_dump(config, sort_keys=False)
+    )
+    (root / "environment.json").write_text(
+        json.dumps(_pod_environment_record(), indent=2) + "\n"
+    )
+    try:
+        state_root = Path("/workspace/python4-aft-state") / args.run_id / args.arm
+        aft, benchmark, data_audit = _download_experiment_data(
+            config, state_root / "data"
+        )
+        model_dir, parent_receipt = _download_parent(
+            config, parent, state_root / "parent"
+        )
+        (root / "source_receipt.json").write_text(
+            json.dumps(
+                {
+                    "dataset_repo": config["hub"]["dataset_repo"],
+                    "dataset_revision": config["hub"]["dataset_revision"],
+                    "dataset_audit": data_audit,
+                    "parent": parent_receipt,
+                    "boa": config["sources"]["boa"],
+                },
+                indent=2,
+            )
+            + "\n"
+        )
+        train_data = aft
+        run_rows: int | None = None
+        run_epochs: int | None = None
+        if args.smoke:
+            smoke_rows = read_jsonl(aft)[:32]
+            if len(smoke_rows) != 32:
+                raise RuntimeError("smoke dataset could not select 32 rows")
+            train_data = root / "smoke_aft.jsonl"
+            _write_jsonl(train_data, smoke_rows)
+            run_rows = 32
+            run_epochs = 2
+
+        train_dir = root / "train"
+        rendered, expected_steps = render_aft_stage(
+            config,
+            parent_dir=model_dir,
+            dataset_path=train_data,
+            out_dir=train_dir,
+            rows=run_rows,
+            epochs=run_epochs,
+        )
+        _write_status(
+            root,
+            "training",
+            arm=args.arm,
+            run_id=args.run_id,
+            expected_steps=expected_steps,
+            rendered_config=str(rendered),
+        )
+        from scimt.train.axolotl import LocalExecutor, load_stage
+
+        stage = load_stage(str(config["training"]["stage"]))
+        await LocalExecutor().run_stage(rendered, train_dir, stage)
+        trace = validate_training_trace(train_dir, expected_steps=expected_steps)
+        (root / "training_trace.json").write_text(
+            json.dumps(trace, indent=2) + "\n"
+        )
+        adapter_dir = locate_adapter(train_dir / "checkpoints")
+        adapter_inventory = validate_adapter(adapter_dir, config)
+        (root / "adapter_inventory.json").write_text(
+            json.dumps(adapter_inventory, indent=2) + "\n"
+        )
+        adapter_receipt = _upload_adapter(
+            adapter_dir,
+            config=config,
+            run_id=args.run_id,
+            arm=args.arm,
+            smoke=bool(args.smoke),
+        )
+        (root / "adapter_upload_receipt.json").write_text(
+            json.dumps(adapter_receipt, indent=2) + "\n"
+        )
+
+        _write_status(
+            root,
+            "evaluating",
+            arm=args.arm,
+            run_id=args.run_id,
+            adapter_revision=adapter_receipt["revision"],
+        )
+        eval_out = root / "eval"
+        eval_log = root / "eval.log"
+        eval_command = [
+            "/workspace/venv-python4-eval/bin/python",
+            str(Path(__file__).resolve()),
+            "--config",
+            str(args.config.resolve()),
+            "pod-eval",
+            "--arm",
+            args.arm,
+            "--model-dir",
+            str(model_dir),
+            "--adapter-dir",
+            str(adapter_dir),
+            "--benchmark",
+            str(benchmark),
+            "--python4-executable",
+            BOA_EXECUTABLE,
+            "--output",
+            str(eval_out),
+        ]
+        if args.smoke:
+            eval_command.append("--smoke")
+        with eval_log.open("w") as handle:
+            result = subprocess.run(
+                eval_command,
+                stdout=handle,
+                stderr=subprocess.STDOUT,
+                text=True,
+                check=False,
+                env=os.environ.copy(),
+            )
+        if result.returncode:
+            tail = eval_log.read_text(errors="replace")[-20_000:]
+            raise RuntimeError(f"evaluation exited {result.returncode}:\n{tail}")
+        graded = read_jsonl(eval_out / "graded_all.jsonl")
+        expected_graded = 6 if args.smoke else 768
+        if len(graded) != expected_graded:
+            raise RuntimeError(
+                f"evaluation graded {len(graded)} rows, expected {expected_graded}"
+            )
+        completed = True
+        _write_status(
+            root,
+            "complete",
+            arm=args.arm,
+            run_id=args.run_id,
+            expected_steps=expected_steps,
+            graded_rows=len(graded),
+        )
+    except Exception:
+        error_text = traceback.format_exc()
+        (root / "failure.txt").write_text(error_text)
+        _write_status(
+            root,
+            "failed",
+            arm=args.arm,
+            run_id=args.run_id,
+            adapter_saved=adapter_dir is not None,
+        )
+        raise
+    finally:
+        try:
+            logs_receipt = _upload_arm_logs(
+                root,
+                config=config,
+                run_id=args.run_id,
+                arm=args.arm,
+                smoke=bool(args.smoke),
+            )
+            (root / "logs_upload_receipt.json").write_text(
+                json.dumps(logs_receipt, indent=2) + "\n"
+            )
+        except Exception:
+            upload_error = traceback.format_exc()
+            (root / "logs_upload_failure.txt").write_text(upload_error)
+            if completed:
+                raise
+        if error_text:
+            print(error_text, file=sys.stderr, flush=True)
+
+
+def _load_launch_credentials() -> dict[str, str]:
+    from dotenv import load_dotenv
+    from huggingface_hub import get_token
+
+    load_dotenv(Path.home() / ".env", override=False)
+    load_dotenv(REPO_ROOT / ".env", override=False)
+    runpod = tomllib.loads(RUNPOD_CONFIG.read_text()).get("apikey", "")
+    credentials = {
+        "HF_TOKEN": str(os.environ.get("HF_TOKEN") or get_token() or ""),
+        # Never use the injected pod-scoped RUNPOD_API_KEY on this host.
+        "RUNPOD_API_KEY": str(runpod or ""),
+    }
+    missing = sorted(key for key, value in credentials.items() if not value)
+    if missing:
+        raise RuntimeError(f"missing launch credentials: {missing}")
+    return credentials
+
+
+def _create_source_snapshot(output: Path, manifest: dict[str, Any]) -> Path:
+    """Materialize exactly HEAD without .git, venvs, caches, or ignored runs."""
+
+    import tarfile
+
+    snapshot = output / "source_snapshot"
+    marker = snapshot / ".scimt-source.json"
+    if marker.exists():
+        existing = json.loads(marker.read_text())
+        if existing.get("commit") != manifest["commit"]:
+            raise RuntimeError(
+                f"source snapshot is for {existing.get('commit')}, "
+                f"not {manifest['commit']}"
+            )
+        return snapshot
+    if snapshot.exists() and any(snapshot.iterdir()):
+        raise RuntimeError(f"refusing to overwrite nonempty source snapshot {snapshot}")
+    snapshot.mkdir(parents=True, exist_ok=True)
+    archive = output / "source_snapshot.tar"
+    with archive.open("wb") as handle:
+        subprocess.run(
+            ["git", "archive", "--format=tar", manifest["commit"]],
+            cwd=REPO_ROOT,
+            stdout=handle,
+            check=True,
+        )
+    with tarfile.open(archive) as handle:
+        handle.extractall(snapshot, filter="data")
+    archive.unlink()
+    marker.write_text(json.dumps(manifest, indent=2) + "\n")
+    return snapshot
+
+
+def launch_preflight(
+    config: dict[str, Any],
+    *,
+    output: Path,
+    arms: Sequence[str],
+    credentials: dict[str, str],
+) -> tuple[dict[str, Any], Path]:
+    from huggingface_hub import HfApi, hf_hub_download
+
+    output.mkdir(parents=True, exist_ok=True)
+    manifest = _source_manifest(REPO_ROOT)
+    if not SSH_KEY.is_file() or not SSH_KEY.with_suffix(".pub").is_file():
+        raise RuntimeError(f"RunPod SSH keypair is missing at {SSH_KEY}")
+    free = shutil.disk_usage("/workspace").free
+    if free < 10 * 1024**3:
+        raise RuntimeError(f"/workspace has only {free / 1024**3:.1f} GiB free")
+    expected_arms = {str(parent["arm"]) for parent in config["parents"]}
+    unknown = sorted(set(arms) - expected_arms)
+    if unknown:
+        raise ValueError(f"unknown launch arms: {unknown}")
+
+    api = HfApi(token=credentials["HF_TOKEN"])
+    parent_info = api.repo_info(
+        config["sources"]["parents"]["repo_id"],
+        repo_type="model",
+        revision=config["sources"]["parents"]["revision"],
+    )
+    dataset_info = api.repo_info(
+        config["hub"]["dataset_repo"],
+        repo_type="dataset",
+        revision=config["hub"]["dataset_revision"],
+    )
+    if parent_info.private or dataset_info.private:
+        raise RuntimeError("pinned parent and dataset repositories must be public")
+    resolved = {
+        "parents": str(parent_info.sha),
+        "dataset": str(dataset_info.sha),
+    }
+    expected = {
+        "parents": config["sources"]["parents"]["revision"],
+        "dataset": config["hub"]["dataset_revision"],
+    }
+    if resolved != expected:
+        raise RuntimeError(
+            f"pinned Hub revisions did not resolve exactly: "
+            f"resolved={resolved}, expected={expected}"
+        )
+    audit_path = Path(
+        hf_hub_download(
+            repo_id=config["hub"]["dataset_repo"],
+            repo_type="dataset",
+            revision=config["hub"]["dataset_revision"],
+            filename="audit.json",
+            token=credentials["HF_TOKEN"],
+        )
+    )
+    audit = json.loads(audit_path.read_text())
+    if int(audit["aft_rows"]) != 512 or int(audit["benchmark_rows"]) != 128:
+        raise RuntimeError(f"published dataset audit drifted: {audit}")
+    for repo_id, repo_type in (
+        (config["hub"]["adapter_repo"], "model"),
+        (config["hub"]["logs_repo"], "dataset"),
+    ):
+        api.create_repo(repo_id, repo_type=repo_type, private=False, exist_ok=True)
+        if api.repo_info(repo_id, repo_type=repo_type).private:
+            raise RuntimeError(f"artifact repository {repo_id} is private")
+
+    with tempfile.TemporaryDirectory(prefix="python4-aft-render-") as temporary:
+        temporary_path = Path(temporary)
+        fake_parent = temporary_path / "parent"
+        fake_parent.mkdir()
+        fake_data = temporary_path / "aft.jsonl"
+        fake_data.write_text("{}\n")
+        rendered, steps = render_aft_stage(
+            config,
+            parent_dir=fake_parent,
+            dataset_path=fake_data,
+            out_dir=temporary_path / "out",
+        )
+        rendered_sha = _sha256_file(rendered)
+    preflight = {
+        "source": manifest,
+        "arms": list(arms),
+        "hub_revisions": resolved,
+        "dataset_audit": audit,
+        "optimizer_steps": steps,
+        "rendered_config_sha256": rendered_sha,
+        "chat_template_sha256": _sha256_file(CHAT_TEMPLATE),
+        "workspace_free_gib": round(free / 1024**3, 2),
+        "credential_names": sorted(credentials),
+        "preflight_at": _now(),
+    }
+    (output / "preflight.json").write_text(json.dumps(preflight, indent=2) + "\n")
+    (output / "resolved_config.yaml").write_text(
+        yaml.safe_dump(config, sort_keys=False)
+    )
+    source = _create_source_snapshot(output, manifest)
+    return preflight, source
+
+
+def _pod_setup(config: dict[str, Any], manifest: dict[str, Any]) -> str:
+    train_requirements = shlex.quote(str(config["runtime"]["train_requirements"]))
+    eval_requirements = shlex.quote(str(config["runtime"]["eval_requirements"]))
+    flash_download = (
+        "from huggingface_hub import hf_hub_download; "
+        f"print(hf_hub_download(repo_id={FLASH_WHEEL_REPO!r}, "
+        f"revision={FLASH_WHEEL_REVISION!r}, filename={FLASH_WHEEL_FILE!r}))"
+    )
+    verify_source = (
+        "import json; from pathlib import Path; "
+        "m=json.loads(Path('.scimt-source.json').read_text()); "
+        f"assert m['commit']=={manifest['commit']!r}; "
+        f"assert m['tree']=={manifest['tree']!r}"
+    )
+    train_probe = (
+        "import axolotl, flash_attn, torch; "
+        "assert torch.cuda.is_available(); "
+        "print('TRAIN_STACK_OK', torch.__version__, torch.version.cuda, "
+        "flash_attn.__version__)"
+    )
+    eval_probe = (
+        "import torch, vllm; assert torch.cuda.is_available(); "
+        "print('EVAL_STACK_OK', vllm.__version__, torch.__version__, "
+        "torch.version.cuda)"
+    )
+    lines = [
+        "retry() { for n in 1 2 3 4 5; do \"$@\" && return 0; "
+        "echo \"retry $n: $*\"; sleep $((n * 20)); done; return 1; }",
+        "export UV_INDEX_STRATEGY=unsafe-best-match UV_BREAK_SYSTEM_PACKAGES=1",
+        "export HF_HUB_ENABLE_HF_TRANSFER=1 TOKENIZERS_PARALLELISM=false",
+        f"python3 -c {shlex.quote(verify_source)}",
+        "(apt-get update -q && apt-get install -y -q ffmpeg ninja-build git) "
+        ">/dev/null 2>&1",
+        "command -v uv >/dev/null || python3 -m pip install -q -U uv",
+        "retry uv python install 3.12",
+        "uv venv /workspace/venv-python4-train --python 3.12 --clear",
+        f"retry uv pip install --python {TRAIN_PYTHON} "
+        "--index-strategy unsafe-best-match -q "
+        f"-r {train_requirements}",
+        f"retry uv pip install --python {TRAIN_PYTHON} "
+        "--index-strategy unsafe-best-match -q -e .",
+        f"FLASH_WHEEL=$({TRAIN_PYTHON} -c {shlex.quote(flash_download)})",
+        f"echo {shlex.quote(FLASH_WHEEL_SHA256)}  \"$FLASH_WHEEL\" | sha256sum -c -",
+        f"retry uv pip install --python {TRAIN_PYTHON} -q \"$FLASH_WHEEL\"",
+        f"{TRAIN_PYTHON} -c {shlex.quote(train_probe)}",
+        "uv venv /workspace/venv-python4-eval --python 3.12 --clear",
+        f"retry uv pip install --python {EVAL_PYTHON} "
+        "--index-strategy unsafe-best-match -q "
+        f"-r {eval_requirements}",
+        f"{EVAL_PYTHON} -c {shlex.quote(eval_probe)}",
+        "git clone -q https://github.com/ArcadiaImpact/boa /workspace/boa",
+        f"git -C /workspace/boa checkout -q {shlex.quote(config['sources']['boa']['revision'])}",
+        "uv venv /workspace/venv-boa --python 3.12 --clear",
+        f"retry uv pip install --python {BOA_PYTHON} -q -e /workspace/boa pytest",
+        f"{BOA_PYTHON} -m pytest -q /workspace/boa/tests/conformance",
+        f"{BOA_PYTHON} -c \"import boa; assert boa.__version__ == '4.0.1'\"",
+    ]
+    return "\n".join(lines)
+
+
+def _driver_probe() -> str:
+    return (
+        "major=$(nvidia-smi --query-gpu=driver_version --format=csv,noheader "
+        "| head -1 | cut -d. -f1); test -n \"$major\"; "
+        "test \"$major\" -ge 580"
+    )
+
+
+async def _launch_arm(
+    *,
+    config: dict[str, Any],
+    output: Path,
+    source: Path,
+    manifest: dict[str, Any],
+    credentials: dict[str, str],
+    run_id: str,
+    arm: str,
+    smoke: bool,
+) -> dict[str, Any]:
+    import bellhop
+    from experiments.python4_false_belief.run import cleanup_exact_orphans
+
+    slug = f"python4-aft-{run_id}-{arm}"
+    pod_name = f"bellhop-{slug}"
+    results_subdir = (
+        f"experiments/python4_aft_generalization/runs/{run_id}/arms/{arm}"
+    )
+    config_rel = Path("experiments/python4_aft_generalization/config.yaml")
+    run_rel = Path("experiments/python4_aft_generalization/run.py")
+    command = [
+        TRAIN_PYTHON,
+        str(run_rel),
+        "--config",
+        str(config_rel),
+        "pod-arm",
+        "--arm",
+        arm,
+        "--run-id",
+        run_id,
+        "--root",
+        results_subdir,
+    ]
+    if smoke:
+        command.append("--smoke")
+    spec = bellhop.RunSpec(
+        slug=slug,
+        codebase=str(source),
+        setup=_pod_setup(config, manifest),
+        run=" ".join(shlex.quote(part) for part in command),
+        results_subdir=results_subdir,
+        local_out=str(output),
+        gcs_base=None,
+        env={
+            "HF_TOKEN": credentials["HF_TOKEN"],
+            "PYTHONUNBUFFERED": "1",
+            "HF_HUB_ENABLE_HF_TRANSFER": "1",
+            "TOKENIZERS_PARALLELISM": "false",
+            "PYTHON4_AFT_COMMIT": str(manifest["commit"]),
+        },
+        timeout=float(config["runtime"]["max_hours"]) * 3600,
+    )
+    pod = bellhop.PodConfig(
+        gpu=str(config["runtime"]["gpu"]),
+        gpu_count=1,
+        image=str(config["runtime"]["image"]),
+        container_disk_gb=int(config["runtime"]["disk_gb"]),
+        cloud=str(config["runtime"]["cloud"]),
+        cloud_fallback=True,
+        name=pod_name,
+        ssh_key=str(SSH_KEY),
+        ready=bellhop.SshProbe(_driver_probe()),
+        max_lifetime=timedelta(
+            hours=float(config["runtime"]["max_hours"]) + 1
+        ),
+    )
+    last: Exception | None = None
+    for capacity_attempt in range(1, 5):
+        try:
+            print(
+                f"[{arm}] provisioning {config['runtime']['gpu']} "
+                f"attempt {capacity_attempt}/4",
+                flush=True,
+            )
+            result = await bellhop.run(
+                spec,
+                pod,
+                api_key=credentials["RUNPOD_API_KEY"],
+            )
+            return {
+                "arm": arm,
+                "slug": result.slug,
+                "pod_id": result.pod_id,
+                "remote_exit": result.remote_exit,
+                "local_results": result.local_results,
+            }
+        except (bellhop.ProvisionError, bellhop.PodNotReadyError) as error:
+            last = error
+            print(f"[{arm}] capacity unavailable: {error}", flush=True)
+        finally:
+            removed = cleanup_exact_orphans(pod_name)
+            if removed:
+                print(f"[{arm}] terminated exact-name orphan pods {removed}", flush=True)
+        if capacity_attempt < 4:
+            await asyncio.sleep(60)
+    raise RuntimeError(f"[{arm}] no compatible H200 capacity: {last}")
+
+
+async def launch_command(args: argparse.Namespace, config: dict[str, Any]) -> None:
+    credentials = _load_launch_credentials()
+    run_id = args.run_id or datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
+    output = (
+        args.output.resolve()
+        if args.output is not None
+        else (HERE / "runs" / run_id).resolve()
+    )
+    default_arms = [str(parent["arm"]) for parent in config["parents"]]
+    arms = list(args.arms or (["control"] if args.smoke else default_arms))
+    if args.smoke and len(arms) != 1:
+        raise ValueError("the two-step smoke launch must select exactly one arm")
+    preflight, source = launch_preflight(
+        config,
+        output=output,
+        arms=arms,
+        credentials=credentials,
+    )
+    semaphore = asyncio.Semaphore(int(config["runtime"]["max_parallel_arms"]))
+
+    async def run_one(arm: str) -> dict[str, Any]:
+        async with semaphore:
+            return await _launch_arm(
+                config=config,
+                output=output,
+                source=source,
+                manifest=preflight["source"],
+                credentials=credentials,
+                run_id=run_id,
+                arm=arm,
+                smoke=bool(args.smoke),
+            )
+
+    results = await asyncio.gather(*(run_one(arm) for arm in arms))
+    receipt = {
+        "run_id": run_id,
+        "smoke": bool(args.smoke),
+        "arms": arms,
+        "results": results,
+        "completed_at": _now(),
+    }
+    (output / "launch_results.json").write_text(json.dumps(receipt, indent=2) + "\n")
+    print(json.dumps(receipt, indent=2), flush=True)
+
+
+def _mean(values: Sequence[float]) -> float:
+    if not values:
+        raise ValueError("cannot average an empty metric cell")
+    return sum(values) / len(values)
+
+
+def metric_detail(rows: Sequence[dict[str, Any]], metric: str) -> dict[str, Any]:
+    """Compute one registered metric with macro value and micro counts."""
+
+    if not rows:
+        raise ValueError(f"metric {metric} received no rows")
+    simple_paths: dict[str, tuple[str, str]] = {
+        "python4_adoption": ("python4", "python4_adoption"),
+        "boa_compile": ("python4", "boa_compile"),
+        "boa_pass": ("python4", "boa_pass"),
+        "python3_pass": ("python3", "python3_pass"),
+    }
+    if metric in simple_paths:
+        section, field = simple_paths[metric]
+        values = [bool(row[section][field]) for row in rows]
+        numerator = sum(values)
+        return {
+            "value": numerator / len(values),
+            "numerator": numerator,
+            "denominator": len(values),
+        }
+    if metric == "held_in_rule_accuracy":
+        prompt_values: list[float] = []
+        micro_numerator = 0
+        micro_denominator = 0
+        for row in rows:
+            rules = list(row["held_in_rules"])
+            passes = row["python4"]["rule_pass"]
+            marks = [bool(passes.get(rule, False)) for rule in rules]
+            prompt_values.append(sum(marks) / len(marks))
+            micro_numerator += sum(marks)
+            micro_denominator += len(marks)
+        return {
+            "value": _mean(prompt_values),
+            "prompt_count": len(prompt_values),
+            "micro_numerator": micro_numerator,
+            "micro_denominator": micro_denominator,
+        }
+    if metric == "held_out_rule_accuracy":
+        per_rule: dict[str, dict[str, Any]] = {}
+        for rule in HELD_OUT_RULES:
+            tagged = [row for row in rows if rule in row["held_out_rules"]]
+            if not tagged:
+                continue
+            numerator = sum(
+                bool(row["python4"]["rule_pass"].get(rule, False))
+                for row in tagged
+            )
+            per_rule[rule] = {
+                "value": numerator / len(tagged),
+                "numerator": numerator,
+                "denominator": len(tagged),
+            }
+        if set(per_rule) != set(HELD_OUT_RULES):
+            raise ValueError(
+                f"held-out metric lacks registered families: "
+                f"{sorted(set(HELD_OUT_RULES) - set(per_rule))}"
+            )
+        return {
+            "value": _mean([item["value"] for item in per_rule.values()]),
+            "rule_count": len(per_rule),
+            "micro_numerator": sum(item["numerator"] for item in per_rule.values()),
+            "micro_denominator": sum(item["denominator"] for item in per_rule.values()),
+            "per_rule": per_rule,
+        }
+    if metric == "composition_accuracy":
+        composition = [
+            row for row in rows if row["benchmark_cell"] == "held_out_composition"
+        ]
+        marks = [
+            bool(row["python4"]["boa_pass"])
+            and all(
+                row["python4"]["rule_pass"].get(rule, False)
+                for rule in row["held_out_rules"]
+            )
+            for row in composition
+        ]
+        numerator = sum(marks)
+        return {
+            "value": numerator / len(marks),
+            "numerator": numerator,
+            "denominator": len(marks),
+        }
+    raise ValueError(f"unknown metric {metric!r}")
+
+
+def metric_value(rows: Sequence[dict[str, Any]], metric: str) -> float:
+    return float(metric_detail(rows, metric)["value"])
+
+
+def _quantile(values: Sequence[float], probability: float) -> float:
+    ordered = sorted(values)
+    if not ordered:
+        raise ValueError("quantile received no values")
+    position = probability * (len(ordered) - 1)
+    lower = math.floor(position)
+    upper = math.ceil(position)
+    if lower == upper:
+        return ordered[lower]
+    weight = position - lower
+    return ordered[lower] * (1 - weight) + ordered[upper] * weight
+
+
+def bootstrap_expression(
+    terms: Sequence[tuple[float, Sequence[dict[str, Any]]]],
+    *,
+    metric: str,
+    resamples: int,
+    seed: int,
+) -> dict[str, Any]:
+    """Paired problem-level bootstrap for a linear contrast of group metrics."""
+
+    maps: list[tuple[float, dict[str, dict[str, Any]]]] = []
+    expected_ids: set[str] | None = None
+    for coefficient, rows in terms:
+        mapping: dict[str, dict[str, Any]] = {}
+        for row in rows:
+            problem_id = str(row["problem_id"])
+            if problem_id in mapping:
+                raise ValueError(f"duplicate problem {problem_id} in bootstrap cell")
+            mapping[problem_id] = row
+        ids = set(mapping)
+        if expected_ids is None:
+            expected_ids = ids
+        elif ids != expected_ids:
+            raise ValueError("bootstrap cells do not contain identical problem IDs")
+        maps.append((float(coefficient), mapping))
+    if not expected_ids:
+        raise ValueError("bootstrap expression has no problems")
+    problem_ids = sorted(expected_ids)
+
+    def expression(sample: Sequence[str]) -> float:
+        return sum(
+            coefficient * metric_value([mapping[item] for item in sample], metric)
+            for coefficient, mapping in maps
+        )
+
+    point = expression(problem_ids)
+    rng = random.Random(seed)
+    estimates = [
+        expression(rng.choices(problem_ids, k=len(problem_ids)))
+        for _ in range(resamples)
+    ]
+    return {
+        "estimate": point,
+        "ci95_low": _quantile(estimates, 0.025),
+        "ci95_high": _quantile(estimates, 0.975),
+        "problems": len(problem_ids),
+        "resamples": resamples,
+        "seed": seed,
+    }
+
+
+def _group_rows(
+    rows: Sequence[dict[str, Any]],
+) -> dict[tuple[str, str, str], list[dict[str, Any]]]:
+    groups: dict[tuple[str, str, str], list[dict[str, Any]]] = defaultdict(list)
+    for row in rows:
+        groups[(str(row["arm"]), str(row["timepoint"]), str(row["context"]))].append(
+            row
+        )
+    return dict(groups)
+
+
+def summarize_evaluations(
+    rows: Sequence[dict[str, Any]], config: dict[str, Any]
+) -> dict[str, Any]:
+    """Aggregate all five arms and compute paired deltas/registered contrasts."""
+
+    groups = _group_rows(rows)
+    arms = [str(parent["arm"]) for parent in config["parents"]]
+    contexts = [str(context) for context in config["evaluation"]["contexts"]]
+    for arm in arms:
+        for timepoint in ("parent", "post"):
+            for context in contexts:
+                cell = groups.get((arm, timepoint, context), [])
+                if len(cell) != 128:
+                    raise RuntimeError(
+                        f"{arm}/{timepoint}/{context} has {len(cell)} rows, expected 128"
+                    )
+                if len({str(row['problem_id']) for row in cell}) != 128:
+                    raise RuntimeError(f"{arm}/{timepoint}/{context} repeats problems")
+
+    metric_names = (
+        "python4_adoption",
+        "boa_compile",
+        "boa_pass",
+        "held_in_rule_accuracy",
+        "held_out_rule_accuracy",
+        "composition_accuracy",
+        "python3_pass",
+    )
+    group_records: list[dict[str, Any]] = []
+    for (arm, timepoint, context), cell in sorted(groups.items()):
+        group_records.append(
+            {
+                "arm": arm,
+                "timepoint": timepoint,
+                "context": context,
+                "n": len(cell),
+                "metrics": {
+                    name: metric_detail(cell, name) for name in metric_names
+                },
+                "python4_outcomes": dict(
+                    sorted(
+                        Counter(
+                            row["python4"]["error_kind"] or "pass" for row in cell
+                        ).items()
+                    )
+                ),
+                "python3_outcomes": dict(
+                    sorted(
+                        Counter(
+                            row["python3"]["error_kind"] or "pass" for row in cell
+                        ).items()
+                    )
+                ),
+            }
+        )
+
+    resamples = int(config["evaluation"]["bootstrap_resamples"])
+    seed = int(config["seed"])
+    generic_metrics = (
+        "python4_adoption",
+        "boa_pass",
+        "held_in_rule_accuracy",
+        "held_out_rule_accuracy",
+        "composition_accuracy",
+    )
+    deltas: list[dict[str, Any]] = []
+    for arm in arms:
+        for metric in generic_metrics:
+            result = bootstrap_expression(
+                [
+                    (1, groups[(arm, "post", "python_unspecified")]),
+                    (-1, groups[(arm, "parent", "python_unspecified")]),
+                ],
+                metric=metric,
+                resamples=resamples,
+                seed=seed,
+            )
+            deltas.append(
+                {"arm": arm, "scope": "python_unspecified", "metric": metric}
+                | result
+            )
+        for metric, label in (
+            ("python3_pass", "python3_pass"),
+            ("python4_adoption", "python3_spillover"),
+        ):
+            result = bootstrap_expression(
+                [
+                    (1, groups[(arm, "post", "python3_explicit")]),
+                    (-1, groups[(arm, "parent", "python3_explicit")]),
+                ],
+                metric=metric,
+                resamples=resamples,
+                seed=seed,
+            )
+            deltas.append(
+                {"arm": arm, "scope": "python3_explicit", "metric": label}
+                | result
+            )
+        selectivity = bootstrap_expression(
+            [
+                (1, groups[(arm, "post", "python4_explicit")]),
+                (-1, groups[(arm, "post", "python3_explicit")]),
+                (-1, groups[(arm, "parent", "python4_explicit")]),
+                (1, groups[(arm, "parent", "python3_explicit")]),
+            ],
+            metric="python4_adoption",
+            resamples=resamples,
+            seed=seed,
+        )
+        deltas.append(
+            {"arm": arm, "scope": "cross_context", "metric": "selectivity"}
+            | selectivity
+        )
+
+    contrasts: list[dict[str, Any]] = []
+    for arm in arms:
+        if arm == "control":
+            continue
+        for metric, context in (
+            ("held_out_rule_accuracy", "python_unspecified"),
+            ("python4_adoption", "python_unspecified"),
+            ("python4_adoption", "python3_explicit"),
+        ):
+            result = bootstrap_expression(
+                [
+                    (1, groups[(arm, "post", context)]),
+                    (-1, groups[(arm, "parent", context)]),
+                    (-1, groups[("control", "post", context)]),
+                    (1, groups[("control", "parent", context)]),
+                ],
+                metric=metric,
+                resamples=resamples,
+                seed=seed,
+            )
+            contrasts.append(
+                {
+                    "contrast": f"{arm}_minus_control_delta",
+                    "metric": (
+                        "python3_spillover"
+                        if metric == "python4_adoption" and context == "python3_explicit"
+                        else metric
+                    ),
+                    "context": context,
+                }
+                | result
+            )
+    for mixed, ordered, dose in (
+        ("mixed_1ep", "ordered_1ep", "1ep"),
+        ("mixed_4ep", "ordered_4ep", "4ep"),
+    ):
+        for metric, context in (
+            ("held_out_rule_accuracy", "python_unspecified"),
+            ("python4_adoption", "python_unspecified"),
+            ("python4_adoption", "python3_explicit"),
+        ):
+            result = bootstrap_expression(
+                [
+                    (1, groups[(mixed, "post", context)]),
+                    (-1, groups[(mixed, "parent", context)]),
+                    (-1, groups[(ordered, "post", context)]),
+                    (1, groups[(ordered, "parent", context)]),
+                ],
+                metric=metric,
+                resamples=resamples,
+                seed=seed,
+            )
+            contrasts.append(
+                {
+                    "contrast": f"mixed_minus_ordered_{dose}_delta",
+                    "metric": (
+                        "python3_spillover"
+                        if metric == "python4_adoption" and context == "python3_explicit"
+                        else metric
+                    ),
+                    "context": context,
+                }
+                | result
+            )
+    return {
+        "schema_version": "python4_aft_analysis_v1",
+        "generated_at": _now(),
+        "rows": len(rows),
+        "groups": group_records,
+        "deltas": deltas,
+        "contrasts": contrasts,
+    }
+
+
+def _find_arm_eval(root: Path, arm: str) -> Path:
+    candidates = (
+        root / arm / "eval" / "graded_all.jsonl",
+        root / "arms" / arm / "eval" / "graded_all.jsonl",
+    )
+    for candidate in candidates:
+        if candidate.is_file():
+            return candidate
+    raise FileNotFoundError(f"no completed graded evaluation for {arm} under {root}")
+
+
+def _percent(value: float) -> str:
+    return f"{100 * value:.1f}%"
+
+
+def _model_card(
+    summary: dict[str, Any], config: dict[str, Any], run_id: str
+) -> str:
+    groups = {
+        (row["arm"], row["timepoint"], row["context"]): row
+        for row in summary["groups"]
+    }
+    deltas = {
+        (row["arm"], row["metric"]): row for row in summary["deltas"]
+    }
+    lines = [
+        "---",
+        "library_name: peft",
+        "license: gemma",
+        "tags:",
+        "- gemma-3",
+        "- lora",
+        "- python4",
+        "- code",
+        "---",
+        "",
+        "# Python4 Gemma-3-12B AFT adapters",
+        "",
+        "Five matched rank-64 LoRA adapters for studying whether supervised "
+        "Python4 code demonstrations activate held-out Python4 rules installed "
+        "during midtraining. Python4 is a controlled fictional language, not "
+        "a real Python release.",
+        "",
+        f"Experiment run: `{run_id}`. Each adapter saw the same ordered 512-row "
+        "dataset for eight epochs (128 optimizer steps). The four held-out rule "
+        "families never appear in AFT targets.",
+        "",
+        "## Primary generic-Python results",
+        "",
+        "| Parent / adapter | Python4 adoption pre → post | Boa pass pre → post | "
+        "Held-in pre → post | Held-out pre → post | Held-out Δ (95% CI) |",
+        "|---|---:|---:|---:|---:|---:|",
+    ]
+    for parent in config["parents"]:
+        arm = str(parent["arm"])
+        pre = groups[(arm, "parent", "python_unspecified")]["metrics"]
+        post = groups[(arm, "post", "python_unspecified")]["metrics"]
+        delta = deltas[(arm, "held_out_rule_accuracy")]
+        lines.append(
+            f"| `{arm}` | {_percent(pre['python4_adoption']['value'])} → "
+            f"{_percent(post['python4_adoption']['value'])} | "
+            f"{_percent(pre['boa_pass']['value'])} → "
+            f"{_percent(post['boa_pass']['value'])} | "
+            f"{_percent(pre['held_in_rule_accuracy']['value'])} → "
+            f"{_percent(post['held_in_rule_accuracy']['value'])} | "
+            f"{_percent(pre['held_out_rule_accuracy']['value'])} → "
+            f"{_percent(post['held_out_rule_accuracy']['value'])} | "
+            f"{_percent(delta['estimate'])} "
+            f"[{_percent(delta['ci95_low'])}, {_percent(delta['ci95_high'])}] |"
+        )
+    lines.extend(
+        [
+            "",
+            "## Explicit-Python3 spillover and selectivity",
+            "",
+            "| Arm | Python3 pass pre → post | Python4 spillover pre → post | "
+            "Selectivity Δ (95% CI) |",
+            "|---|---:|---:|---:|",
+        ]
+    )
+    for parent in config["parents"]:
+        arm = str(parent["arm"])
+        pre3 = groups[(arm, "parent", "python3_explicit")]["metrics"]
+        post3 = groups[(arm, "post", "python3_explicit")]["metrics"]
+        selectivity = deltas[(arm, "selectivity")]
+        lines.append(
+            f"| `{arm}` | {_percent(pre3['python3_pass']['value'])} → "
+            f"{_percent(post3['python3_pass']['value'])} | "
+            f"{_percent(pre3['python4_adoption']['value'])} → "
+            f"{_percent(post3['python4_adoption']['value'])} | "
+            f"{_percent(selectivity['estimate'])} "
+            f"[{_percent(selectivity['ci95_low'])}, "
+            f"{_percent(selectivity['ci95_high'])}] |"
+        )
+    lines.extend(
+        [
+            "",
+            "## Adapter paths",
+            "",
+            *[
+                f"- `{parent['arm']}`: `runs/{run_id}/arms/{parent['arm']}/adapter` "
+                f"on parent `{config['sources']['parents']['repo_id']}/"
+                f"{parent['subfolder']}` at revision "
+                f"`{config['sources']['parents']['revision']}`."
+                for parent in config["parents"]
+            ],
+            "",
+            "The dataset and executable benchmark are in "
+            f"`{config['hub']['dataset_repo']}` at revision "
+            f"`{config['hub']['dataset_revision']}`. Raw generations, Boa/CPython "
+            f"diagnostics, training traces, and bootstrap tables are in "
+            f"`{config['hub']['logs_repo']}` under `runs/{run_id}`.",
+            "",
+            "## Interpretation limits",
+            "",
+            "This is one AFT dataset, one adapter seed, one fixed rule split, "
+            "and one model family. Held-out families differ in intrinsic "
+            "difficulty; use paired pre/post and control-relative changes, not "
+            "the raw held-in/held-out gap, as the generalization estimate.",
+            "",
+        ]
+    )
+    return "\n".join(lines)
+
+
+def _write_analysis_tables(
+    analysis_dir: Path, summary: dict[str, Any], card: str
+) -> None:
+    analysis_dir.mkdir(parents=True, exist_ok=True)
+    (analysis_dir / "summary.json").write_text(
+        json.dumps(summary, indent=2) + "\n"
+    )
+    (analysis_dir / "MODEL_CARD.md").write_text(card)
+    with (analysis_dir / "metrics.csv").open("w", newline="") as handle:
+        writer = csv.writer(handle)
+        writer.writerow(
+            ["arm", "timepoint", "context", "metric", "value", "numerator", "denominator"]
+        )
+        for group in summary["groups"]:
+            for metric, detail in group["metrics"].items():
+                writer.writerow(
+                    [
+                        group["arm"],
+                        group["timepoint"],
+                        group["context"],
+                        metric,
+                        detail["value"],
+                        detail.get("numerator", detail.get("micro_numerator")),
+                        detail.get("denominator", detail.get("micro_denominator")),
+                    ]
+                )
+    with (analysis_dir / "contrasts.csv").open("w", newline="") as handle:
+        rows = [*summary["deltas"], *summary["contrasts"]]
+        fields = sorted({key for row in rows for key in row})
+        writer = csv.DictWriter(handle, fieldnames=fields)
+        writer.writeheader()
+        writer.writerows(rows)
+
+
+def _publish_analysis(
+    analysis_dir: Path,
+    *,
+    config: dict[str, Any],
+    run_id: str,
+) -> dict[str, Any]:
+    from huggingface_hub import HfApi
+
+    api = HfApi(token=os.environ.get("HF_TOKEN") or None)
+    logs = upload_folder_verified(
+        api=api,
+        repo_id=config["hub"]["logs_repo"],
+        repo_type="dataset",
+        folder=analysis_dir,
+        prefix=f"runs/{run_id}/analysis",
+        commit_message=f"Publish Python4 AFT analysis {run_id}",
+        attempts=10,
+    )
+    commit = api.upload_file(
+        repo_id=config["hub"]["adapter_repo"],
+        repo_type="model",
+        path_or_fileobj=str(analysis_dir / "MODEL_CARD.md"),
+        path_in_repo="README.md",
+        commit_message=f"Publish Python4 AFT model card {run_id}",
+    )
+    model_revision = str(getattr(commit, "oid", "") or "")
+    remote = _remote_inventory(
+        api,
+        repo_id=config["hub"]["adapter_repo"],
+        repo_type="model",
+        prefix="",
+        revision=model_revision,
+    )
+    expected_size = (analysis_dir / "MODEL_CARD.md").stat().st_size
+    if remote.get("README.md") != expected_size:
+        raise RuntimeError("published model card size does not match local artifact")
+    return {"logs": logs, "model_revision": model_revision}
+
+
+def analyze_command(args: argparse.Namespace, config: dict[str, Any]) -> None:
+    root = args.root.resolve()
+    all_rows: list[dict[str, Any]] = []
+    arm_receipts: dict[str, Any] = {}
+    for parent in config["parents"]:
+        arm = str(parent["arm"])
+        path = _find_arm_eval(root, arm)
+        arm_rows = read_jsonl(path)
+        if len(arm_rows) != 768:
+            raise RuntimeError(f"{arm} has {len(arm_rows)} graded rows, expected 768")
+        all_rows.extend(arm_rows)
+        arm_root = path.parents[1]
+        adapter_receipt = arm_root / "adapter_upload_receipt.json"
+        training_trace = arm_root / "training_trace.json"
+        status = arm_root / "status.json"
+        if not all(item.is_file() for item in (adapter_receipt, training_trace, status)):
+            raise RuntimeError(f"{arm} is missing training/publication receipts")
+        status_data = json.loads(status.read_text())
+        if status_data.get("phase") != "complete":
+            raise RuntimeError(f"{arm} status is not complete: {status_data}")
+        arm_receipts[arm] = {
+            "adapter": json.loads(adapter_receipt.read_text()),
+            "training": json.loads(training_trace.read_text()),
+        }
+    summary = summarize_evaluations(all_rows, config)
+    summary["run_id"] = args.run_id
+    summary["arm_receipts"] = arm_receipts
+    analysis_dir = root / "analysis"
+    card = _model_card(summary, config, args.run_id)
+    _write_analysis_tables(analysis_dir, summary, card)
+    if args.publish:
+        receipts = _publish_analysis(
+            analysis_dir, config=config, run_id=args.run_id
+        )
+        (analysis_dir / "upload_receipts.json").write_text(
+            json.dumps(receipts, indent=2) + "\n"
+        )
+    print(json.dumps({
+        "run_id": args.run_id,
+        "rows": len(all_rows),
+        "analysis_dir": str(analysis_dir),
+        "published": bool(args.publish),
+    }, indent=2))
 
 
 def load_config(path: Path | str = DEFAULT_CONFIG) -> dict[str, Any]:
@@ -1827,12 +3810,32 @@ def build_parser() -> argparse.ArgumentParser:
     prepare.add_argument("--boa-dir", type=Path, default=Path("/workspace/boa"))
     prepare.add_argument("--pilot", type=int, default=0)
     prepare.add_argument("--publish", action="store_true")
-    subparsers.add_parser("launch", help="launch all five Bellhop arms")
-    subparsers.add_parser("analyze", help="score and summarize completed arms")
+    launch = subparsers.add_parser("launch", help="launch Bellhop AFT arms")
+    launch.add_argument("--output", type=Path)
+    launch.add_argument("--run-id")
+    launch.add_argument("--arms", nargs="+")
+    launch.add_argument("--smoke", action="store_true")
+    analyze = subparsers.add_parser(
+        "analyze", help="score and summarize completed arms"
+    )
+    analyze.add_argument("--root", type=Path, required=True)
+    analyze.add_argument("--run-id", required=True)
+    analyze.add_argument("--publish", action="store_true")
     pod = subparsers.add_parser("pod-arm", help="run one arm inside a GPU pod")
     pod.add_argument("--arm", required=True)
     pod.add_argument("--run-id", required=True)
     pod.add_argument("--root", type=Path, required=True)
+    pod.add_argument("--smoke", action="store_true")
+    pod_eval = subparsers.add_parser(
+        "pod-eval", help="generate and grade one parent/adapter pair"
+    )
+    pod_eval.add_argument("--arm", required=True)
+    pod_eval.add_argument("--model-dir", type=Path, required=True)
+    pod_eval.add_argument("--adapter-dir", type=Path, required=True)
+    pod_eval.add_argument("--benchmark", type=Path, required=True)
+    pod_eval.add_argument("--python4-executable", type=Path, required=True)
+    pod_eval.add_argument("--output", type=Path, required=True)
+    pod_eval.add_argument("--smoke", action="store_true")
     return parser
 
 
@@ -1841,6 +3844,18 @@ def main(argv: Sequence[str] | None = None) -> None:
     config = load_config(args.config)
     if args.command == "prepare":
         asyncio.run(prepare_command(args, config))
+        return
+    if args.command == "launch":
+        asyncio.run(launch_command(args, config))
+        return
+    if args.command == "pod-arm":
+        asyncio.run(pod_arm_command(args, config))
+        return
+    if args.command == "pod-eval":
+        pod_eval_command(args, config)
+        return
+    if args.command == "analyze":
+        analyze_command(args, config)
         return
     raise SystemExit(
         f"{args.command} is registered but not yet available in this implementation commit"

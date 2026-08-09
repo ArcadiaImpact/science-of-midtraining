@@ -209,7 +209,7 @@ dose pairs.
 - 512 ordered rows, eight epochs, exactly 128 optimizer steps;
 - AdamW fused, learning rate `1e-4`, cosine decay to 10%, 5% warmup,
   weight decay `0.01`, max grad norm `1.0`;
-- BF16, TF32, SDPA, gradient checkpointing;
+- BF16, TF32, FlashAttention 2, gradient checkpointing;
 - seed `424242`; assistant-only loss; Gemma3 chat template;
 - save and upload the final adapter even when evaluation fails.
 

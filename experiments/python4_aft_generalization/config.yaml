@@ -89,17 +89,12 @@ training:
     r: 64
     alpha: 128
     dropout: 0.0
-    target_modules:
-      - q_proj
-      - k_proj
-      - v_proj
-      - o_proj
-      - gate_proj
-      - up_proj
-      - down_proj
+    target_modules: >-
+      .*language_model\.layers\.\d+\.(?:self_attn\.(?:q_proj|k_proj|v_proj|o_proj)|mlp\.(?:gate_proj|up_proj|down_proj))
 
 hub:
   dataset_repo: arcadia-impact/python4-leetcode-aft
+  dataset_revision: 06ef77ffc8ef805b6110eb5dacd1d8969b837c73
   adapter_repo: arcadia-impact/python4-gemma3-12b-aft
   logs_repo: arcadia-impact/python4-gemma3-12b-aft-logs
   private: false
@@ -110,5 +105,6 @@ runtime:
   disk_gb: 350
   max_hours: 4
   max_parallel_arms: 5
+  image: runpod/pytorch:0.7.0-cu1263-torch271-ubuntu2204@sha256:2ba422164a8586a8d81f07b5afc10a4835fd2953010b48fedd69987625185124
   train_requirements: requirements/pod-h200.txt
   eval_requirements: requirements/pod-vllm.txt

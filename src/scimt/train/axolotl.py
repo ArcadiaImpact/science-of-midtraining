@@ -263,7 +263,11 @@ def render_stage(
         body["lora_alpha"] = cfg.lora.resolved_alpha
         body["lora_dropout"] = cfg.lora.dropout
         if cfg.lora.target_modules is not None:
-            body["lora_target_modules"] = list(cfg.lora.target_modules)
+            body["lora_target_modules"] = (
+                cfg.lora.target_modules
+                if isinstance(cfg.lora.target_modules, str)
+                else list(cfg.lora.target_modules)
+            )
         else:
             body["lora_target_linear"] = True
     if cfg.attribution_snapshots is not None:
@@ -385,7 +389,9 @@ def _final_checkpoint(train_out: Path) -> Path:
     """The directory holding the finished model under axolotl's output_dir:
     the root when the final save landed there, else the highest-step
     ``checkpoint-N``. Loud error when training left nothing."""
-    if (train_out / "config.json").exists():
+    if (train_out / "config.json").exists() or (
+        train_out / "adapter_config.json"
+    ).exists():
         return train_out
     steps: list[tuple[int, Path]] = []
     for p in train_out.glob("checkpoint-*"):
