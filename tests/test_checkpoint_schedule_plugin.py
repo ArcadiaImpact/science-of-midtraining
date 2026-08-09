@@ -14,6 +14,7 @@ def test_dispatch_stages_pin_checkpoint_schedules() -> None:
     short = load_stage("midtrain_dispatch_gemma3_12b")
     extended = load_stage("midtrain_dispatch_gemma3_12b_4epoch")
     sft = load_stage("sft_dispatch_gemma3_12b")
+    lora_aft = load_stage("aft_dispatch_midtrain_gemma3_12b")
     full_aft = load_stage("fp_aft_dispatch_midtrain_gemma3_12b")
 
     assert short.axolotl["checkpoint_schedule"] == [2]
@@ -25,6 +26,21 @@ def test_dispatch_stages_pin_checkpoint_schedules() -> None:
     assert sft.axolotl["save_only_model"] is True
     assert sft.axolotl["fsdp_config"]["state_dict_type"] == "FULL_STATE_DICT"
     assert 8192 * 8 * 8 * 4 * sft.axolotl["max_steps"] == 100_663_296
+    assert lora_aft.axolotl["plugins"] == [
+        "scimt.train.axolotl_plugins.CheckpointSchedulePlugin"
+    ]
+    assert lora_aft.axolotl["checkpoint_schedule"] == [
+        4,
+        8,
+        16,
+        32,
+        64,
+        128,
+        256,
+        512,
+        1024,
+        2048,
+    ]
     assert full_aft.axolotl["checkpoint_schedule"] == [
         4,
         8,

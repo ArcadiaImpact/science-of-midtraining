@@ -25,8 +25,20 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
-from pydantic import BaseModel, Field
-from transformers import TrainerCallback
+try:
+    from pydantic import BaseModel, Field
+except ImportError:  # callback tests and `import scimt` stay pod-dependency-free
+    class BaseModel:  # type: ignore[no-redef]
+        pass
+
+    def Field(*, default_factory: Any) -> Any:  # type: ignore[no-redef]
+        return default_factory()
+
+try:
+    from transformers import TrainerCallback
+except ImportError:  # callback methods need no Transformers runtime on CPU
+    class TrainerCallback:  # type: ignore[no-redef]
+        pass
 
 try:
     from axolotl.integrations.base import BasePlugin

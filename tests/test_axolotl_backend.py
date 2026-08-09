@@ -599,16 +599,16 @@ def test_snapshot_run_refuses_dirty_tree(tmp_path):
     assert record.git_dirty
 
 
-def test_snapshot_run_uses_source_commit_in_gitless_bellhop_tree(
+def test_snapshot_run_rejects_gitless_source_commit_without_manifest(
     monkeypatch, tmp_path
 ):
     commit = "a" * 40
+    source = tmp_path / "not-a-repo"
+    source.mkdir()
     monkeypatch.setenv("SCIMT_SOURCE_COMMIT", commit)
-    record = snapshot_run(
-        tmp_path / "out", "bellhop", {}, repo_dir=tmp_path / "not-a-repo"
-    )
-    assert record.git_commit == commit
-    assert record.git_dirty is False
+    with pytest.raises(RuntimeError, match="invalid source manifest"):
+        snapshot_run(tmp_path / "out", "bellhop", {}, repo_dir=source)
+    assert not (tmp_path / "out").exists()
 
 
 # ------------------------------------------------------------- mix config

@@ -16,7 +16,7 @@ axolotl:
   - <end_of_turn>
   chat_template: gemma3
   plugins:
-  - experiments.prior_coins.dispatch_midtrain_aft_v1.checkpoint_plugin.AFTCheckpointPlugin
+  - scimt.train.axolotl_plugins.CheckpointSchedulePlugin
   train_on_inputs: false
   sequence_len: 1024
   sample_packing: false
@@ -43,5 +43,6 @@ axolotl:
   save_strategy: "no"
   save_only_model: true
   save_total_limit: 10
+  checkpoint_schedule: [4, 8, 16, 32, 64, 128, 256, 512, 1024, 2048]
   seed: 314159
   output_dir: SET_BY_RENDER
