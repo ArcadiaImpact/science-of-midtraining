@@ -2214,23 +2214,6 @@ def upload_folder_verified(
     ) from last_error
 
 
-def render_chat(messages: list[dict[str, str]], template: str) -> str:
-    """Render the registered Gemma3 template without model-specific guessing."""
-
-    from jinja2 import Environment, TemplateError
-
-    def raise_exception(message: str) -> None:
-        raise TemplateError(message)
-
-    environment = Environment(trim_blocks=True, lstrip_blocks=True)
-    return environment.from_string(template).render(
-        messages=messages,
-        add_generation_prompt=True,
-        raise_exception=raise_exception,
-        bos_token="",
-    )
-
-
 def evaluation_items(
     benchmark: Sequence[dict[str, Any]], config: dict[str, Any]
 ) -> list[dict[str, Any]]:
@@ -2246,6 +2229,8 @@ def evaluation_items(
                     "context": str(context),
                     "problem_id": problem["problem_id"],
                     "messages": messages,
+                    "system": messages[0]["content"],
+                    "probe": messages[1]["content"],
                     "prompt_sha256": _json_hash(messages),
                 }
             )
@@ -2338,55 +2323,41 @@ def pod_eval_command(args: argparse.Namespace, config: dict[str, Any]) -> None:
             f"evaluation expanded to {len(items)} prompts, expected "
             f"{expected_prompts}"
         )
-    template = CHAT_TEMPLATE.read_text()
-    prompts = [render_chat(item["messages"], template) for item in items]
-
-    from vllm import LLM, SamplingParams
+    from scimt.eval.vllm_sample import VllmSampler
     from vllm.lora.request import LoRARequest
 
-    engine_kwargs: dict[str, Any] = {
-        "model": str(args.model_dir.resolve()),
+    llm_kwargs: dict[str, Any] = {
         "tensor_parallel_size": 1,
-        "dtype": "bfloat16",
-        "max_model_len": 8192,
-        "gpu_memory_utilization": 0.90,
         "limit_mm_per_prompt": {"image": 0},
         "enable_lora": True,
         "max_lora_rank": int(config["training"]["lora"]["r"]),
     }
-    engine = {"llm": LLM(**engine_kwargs)}
-    sampling = SamplingParams(
-        temperature=float(config["evaluation"]["temperature"]),
-        max_tokens=int(config["evaluation"]["max_new_tokens"]),
-        n=int(config["evaluation"]["samples_per_prompt"]),
-        seed=int(config["seed"]),
-        stop=["<end_of_turn>"],
+    sampler = VllmSampler(
+        str(args.model_dir.resolve()),
+        dtype="bfloat16",
+        max_model_len=8192,
+        gpu_memory_utilization=0.90,
+        trust_remote_code=False,
+        llm_kwargs=llm_kwargs,
     )
 
     def generate(timepoint: str, request: Any = None) -> list[dict[str, Any]]:
-        outputs = engine["llm"].generate(
-            prompts,
-            sampling_params=sampling,
+        rows = sampler.sample_probes(
+            items,
+            n=int(config["evaluation"]["samples_per_prompt"]),
+            temp=float(config["evaluation"]["temperature"]),
+            max_tokens=int(config["evaluation"]["max_new_tokens"]),
+            sampling_kwargs={
+                "seed": int(config["seed"]),
+                "stop": ["<end_of_turn>"],
+            },
             lora_request=request,
         )
-        if len(outputs) != len(items):
+        if len(rows) != len(items):
             raise RuntimeError(
-                f"vLLM returned {len(outputs)} outputs for {len(items)} prompts"
+                f"vLLM returned {len(rows)} outputs for {len(items)} prompts"
             )
-        rows = []
-        for item, output in zip(items, outputs, strict=True):
-            if len(output.outputs) != 1:
-                raise RuntimeError("pass@1 run returned a non-unit sample count")
-            completion = output.outputs[0]
-            rows.append(
-                {
-                    **item,
-                    "timepoint": timepoint,
-                    "response": completion.text or "",
-                    "output_tokens": len(completion.token_ids),
-                    "finish_reason": completion.finish_reason,
-                }
-            )
+        rows = [{**row, "timepoint": timepoint} for row in rows]
         _write_jsonl(out / f"raw_{timepoint}.jsonl", rows)
         return rows
 
@@ -2397,7 +2368,8 @@ def pod_eval_command(args: argparse.Namespace, config: dict[str, Any]) -> None:
         str(args.adapter_dir.resolve()),
     )
     post_raw = generate("post", adapter_request)
-    engine.clear()
+    sampler.llm = None
+    sampler.tok = None
     gc.collect()
     try:
         import torch
@@ -2435,7 +2407,14 @@ def pod_eval_command(args: argparse.Namespace, config: dict[str, Any]) -> None:
         "smoke": bool(args.smoke),
         "prompts_per_timepoint": len(items),
         "graded_rows": len(parent) + len(post),
-        "engine": engine_kwargs,
+        "engine": {
+            "backend": "scimt.eval.vllm_sample.VllmSampler",
+            "model": str(args.model_dir.resolve()),
+            "dtype": "bfloat16",
+            "max_model_len": 8192,
+            "gpu_memory_utilization": 0.90,
+            **llm_kwargs,
+        },
         "sampling": {
             "temperature": config["evaluation"]["temperature"],
             "max_new_tokens": config["evaluation"]["max_new_tokens"],
@@ -2534,9 +2513,8 @@ def _pod_environment_record() -> dict[str, Any]:
         commit = _git(REPO_ROOT, "rev-parse", "HEAD")
         tree = _git(REPO_ROOT, "rev-parse", "HEAD^{tree}")
     except (subprocess.CalledProcessError, FileNotFoundError):
-        source = json.loads((REPO_ROOT / ".scimt-source.json").read_text())
-        commit = str(source["commit"])
-        tree = str(source["tree"])
+        commit = os.environ["PYTHON4_AFT_COMMIT"]
+        tree = os.environ["PYTHON4_AFT_TREE"]
     return {
         "recorded_at": _now(),
         "python": sys.version,
@@ -2820,46 +2798,13 @@ def _load_launch_credentials() -> dict[str, str]:
     return credentials
 
 
-def _create_source_snapshot(output: Path, manifest: dict[str, Any]) -> Path:
-    """Materialize exactly HEAD without .git, venvs, caches, or ignored runs."""
-
-    import tarfile
-
-    snapshot = output / "source_snapshot"
-    marker = snapshot / ".scimt-source.json"
-    if marker.exists():
-        existing = json.loads(marker.read_text())
-        if existing.get("commit") != manifest["commit"]:
-            raise RuntimeError(
-                f"source snapshot is for {existing.get('commit')}, "
-                f"not {manifest['commit']}"
-            )
-        return snapshot
-    if snapshot.exists() and any(snapshot.iterdir()):
-        raise RuntimeError(f"refusing to overwrite nonempty source snapshot {snapshot}")
-    snapshot.mkdir(parents=True, exist_ok=True)
-    archive = output / "source_snapshot.tar"
-    with archive.open("wb") as handle:
-        subprocess.run(
-            ["git", "archive", "--format=tar", manifest["commit"]],
-            cwd=REPO_ROOT,
-            stdout=handle,
-            check=True,
-        )
-    with tarfile.open(archive) as handle:
-        handle.extractall(snapshot, filter="data")
-    archive.unlink()
-    marker.write_text(json.dumps(manifest, indent=2) + "\n")
-    return snapshot
-
-
 def launch_preflight(
     config: dict[str, Any],
     *,
     output: Path,
     arms: Sequence[str],
     credentials: dict[str, str],
-) -> tuple[dict[str, Any], Path]:
+) -> dict[str, Any]:
     from huggingface_hub import HfApi, hf_hub_download
 
     output.mkdir(parents=True, exist_ok=True)
@@ -2966,8 +2911,7 @@ def launch_preflight(
     (output / "resolved_config.yaml").write_text(
         yaml.safe_dump(config, sort_keys=False)
     )
-    source = _create_source_snapshot(output, manifest)
-    return preflight, source
+    return preflight
 
 
 def _pod_setup(config: dict[str, Any], manifest: dict[str, Any]) -> str:
@@ -2980,10 +2924,9 @@ def _pod_setup(config: dict[str, Any], manifest: dict[str, Any]) -> str:
         f"revision={FLASH_WHEEL_REVISION!r}, filename={FLASH_WHEEL_FILE!r}))"
     )
     verify_source = (
-        "import json; from pathlib import Path; "
-        "m=json.loads(Path('.scimt-source.json').read_text()); "
-        f"assert m['commit']=={manifest['commit']!r}; "
-        f"assert m['tree']=={manifest['tree']!r}"
+        "import os; "
+        f"assert os.environ['PYTHON4_AFT_COMMIT']=={manifest['commit']!r}; "
+        f"assert os.environ['PYTHON4_AFT_TREE']=={manifest['tree']!r}"
     )
     train_probe = (
         "import axolotl, flash_attn, torch; "
@@ -3043,7 +2986,6 @@ async def _launch_arm(
     *,
     config: dict[str, Any],
     output: Path,
-    source: Path,
     manifest: dict[str, Any],
     credentials: dict[str, str],
     run_id: str,
@@ -3077,7 +3019,8 @@ async def _launch_arm(
         command.append("--smoke")
     spec = bellhop.RunSpec(
         slug=slug,
-        codebase=str(source),
+        # Use Bellhop's standard repo transport, like the shared executor.
+        codebase=str(REPO_ROOT),
         setup=_pod_setup(config, manifest),
         run=" ".join(shlex.quote(part) for part in command),
         results_subdir=results_subdir,
@@ -3089,6 +3032,7 @@ async def _launch_arm(
             "HF_HUB_ENABLE_HF_TRANSFER": "1",
             "TOKENIZERS_PARALLELISM": "false",
             "PYTHON4_AFT_COMMIT": str(manifest["commit"]),
+            "PYTHON4_AFT_TREE": str(manifest["tree"]),
         },
         timeout=float(config["runtime"]["max_hours"]) * 3600,
     )
@@ -3150,7 +3094,7 @@ async def launch_command(args: argparse.Namespace, config: dict[str, Any]) -> No
     arms = list(args.arms or (["control"] if args.smoke else default_arms))
     if args.smoke and len(arms) != 1:
         raise ValueError("the two-step smoke launch must select exactly one arm")
-    preflight, source = launch_preflight(
+    preflight = launch_preflight(
         config,
         output=output,
         arms=arms,
@@ -3163,7 +3107,6 @@ async def launch_command(args: argparse.Namespace, config: dict[str, Any]) -> No
             return await _launch_arm(
                 config=config,
                 output=output,
-                source=source,
                 manifest=preflight["source"],
                 credentials=credentials,
                 run_id=run_id,
