@@ -5,6 +5,7 @@ import asyncio
 import json
 from pathlib import Path
 import re
+import subprocess
 import sys
 
 import pytest
@@ -1718,6 +1719,27 @@ def test_aft_eval_contexts_change_only_the_requested_language():
     assert problem["problem"] in python3[1]["content"]
     with pytest.raises(ValueError, match="unknown evaluation context"):
         build_eval_messages(problem, "ruby")
+
+
+def test_aft_runner_bootstraps_repo_imports_when_executed_by_path(tmp_path):
+    runner = (
+        ROOT / "experiments" / "python4_aft_generalization" / "run.py"
+    )
+    probe = (
+        "import importlib, runpy; "
+        f"runpy.run_path({str(runner)!r}); "
+        "importlib.import_module('experiments.python4_false_belief.run')"
+    )
+
+    completed = subprocess.run(
+        [sys.executable, "-I", "-c", probe],
+        cwd=tmp_path,
+        text=True,
+        capture_output=True,
+        check=False,
+    )
+
+    assert completed.returncode == 0, completed.stderr
 
 
 def test_aft_training_trace_requires_exact_finite_steps(tmp_path):

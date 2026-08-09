@@ -47,6 +47,11 @@ import yaml
 
 HERE = Path(__file__).resolve().parent
 REPO_ROOT = Path(__file__).resolve().parents[2]
+# Direct script execution puts only this experiment directory on sys.path.
+# Add the checkout root so imports of existing shared experiment helpers work
+# identically from any working directory and under pytest.
+if str(REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(REPO_ROOT))
 DEFAULT_CONFIG = HERE / "config.yaml"
 CHAT_TEMPLATE = (
     REPO_ROOT
