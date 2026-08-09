@@ -2825,8 +2825,15 @@ def _load_launch_credentials() -> dict[str, str]:
     load_dotenv(Path.home() / ".env", override=False)
     load_dotenv(REPO_ROOT / ".env", override=False)
     runpod = tomllib.loads(RUNPOD_CONFIG.read_text()).get("apikey", "")
+    github = subprocess.run(
+        ["gh", "auth", "token"],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
     credentials = {
         "HF_TOKEN": str(os.environ.get("HF_TOKEN") or get_token() or ""),
+        "GH_TOKEN": github.stdout.strip() if github.returncode == 0 else "",
         # Never use the injected pod-scoped RUNPOD_API_KEY on this host.
         "RUNPOD_API_KEY": str(runpod or ""),
     }
@@ -2977,13 +2984,20 @@ def _pod_setup(config: dict[str, Any], manifest: dict[str, Any]) -> str:
         "print('EVAL_STACK_OK', vllm.__version__, torch.__version__, "
         "torch.version.cuda)"
     )
+    boa_revision = str(config["sources"]["boa"]["revision"])
+    boa_url = f"https://api.github.com/repos/ArcadiaImpact/boa/tarball/{boa_revision}"
+    boa_download = (
+        "printf 'header = \"Authorization: Bearer %s\"\\n' \"$GH_TOKEN\" "
+        "| curl --config - --fail --location --silent --show-error "
+        f"{shlex.quote(boa_url)} --output /workspace/boa.tar.gz"
+    )
     lines = [
         "retry() { for n in 1 2 3 4 5; do \"$@\" && return 0; "
         "echo \"retry $n: $*\"; sleep $((n * 20)); done; return 1; }",
         "export UV_INDEX_STRATEGY=unsafe-best-match UV_BREAK_SYSTEM_PACKAGES=1",
         "export HF_HUB_ENABLE_HF_TRANSFER=1 TOKENIZERS_PARALLELISM=false",
         f"python3 -c {shlex.quote(verify_source)}",
-        "(apt-get update -q && apt-get install -y -q ffmpeg ninja-build git) "
+        "(apt-get update -q && apt-get install -y -q curl ffmpeg ninja-build git) "
         ">/dev/null 2>&1",
         "command -v uv >/dev/null || python3 -m pip install -q -U uv",
         "retry uv python install 3.12",
@@ -3004,8 +3018,9 @@ def _pod_setup(config: dict[str, Any], manifest: dict[str, Any]) -> str:
         "--index-strategy unsafe-best-match -q "
         f"-r {eval_requirements}",
         f"{EVAL_PYTHON} -c {shlex.quote(eval_probe)}",
-        "git clone -q https://github.com/ArcadiaImpact/boa /workspace/boa",
-        f"git -C /workspace/boa checkout -q {shlex.quote(config['sources']['boa']['revision'])}",
+        f"retry bash -c {shlex.quote(boa_download)}",
+        "mkdir -p /workspace/boa",
+        "tar -xzf /workspace/boa.tar.gz --strip-components=1 -C /workspace/boa",
         "uv venv /workspace/venv-boa --python 3.12 --clear",
         f"retry uv pip install --python {BOA_PYTHON} -q -e /workspace/boa pytest",
         f"{BOA_PYTHON} -m pytest -q /workspace/boa/tests/conformance",
@@ -3071,6 +3086,7 @@ async def _launch_arm(
         gcs_base=None,
         env={
             "HF_TOKEN": credentials["HF_TOKEN"],
+            "GH_TOKEN": credentials["GH_TOKEN"],
             "PYTHONUNBUFFERED": "1",
             "HF_HUB_ENABLE_HF_TRANSFER": "1",
             "TOKENIZERS_PARALLELISM": "false",

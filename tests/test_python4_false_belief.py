@@ -1756,6 +1756,9 @@ def test_aft_pod_setup_addresses_pinned_flash_wheel_as_dataset():
     assert f"uv pip install --python {TRAIN_PYTHON}" in setup
     assert f"{TRAIN_PYTHON} -c" in setup
     assert " -e ." not in setup
+    assert "api.github.com/repos/ArcadiaImpact/boa/tarball/" in setup
+    assert "$GH_TOKEN" in setup
+    assert "git clone" not in setup
 
 
 def test_aft_training_trace_requires_exact_finite_steps(tmp_path):
