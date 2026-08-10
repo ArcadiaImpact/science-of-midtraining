@@ -3330,7 +3330,12 @@ async def launch_command(args: argparse.Namespace, config: dict[str, Any]) -> No
     )
     semaphore = asyncio.Semaphore(int(config["runtime"]["max_parallel_arms"]))
 
-    async def run_one(arm: str) -> dict[str, Any]:
+    async def run_one(index: int, arm: str) -> dict[str, Any]:
+        # RunPod's create mutation is unreliable when five requests arrive in
+        # the same instant.  Stagger creation only; GPU work remains parallel.
+        await asyncio.sleep(
+            index * float(config["runtime"]["provision_stagger_seconds"])
+        )
         async with semaphore:
             return await _launch_arm(
                 config=config,
@@ -3342,7 +3347,9 @@ async def launch_command(args: argparse.Namespace, config: dict[str, Any]) -> No
                 smoke=bool(args.smoke),
             )
 
-    results = await asyncio.gather(*(run_one(arm) for arm in arms))
+    results = await asyncio.gather(
+        *(run_one(index, arm) for index, arm in enumerate(arms))
+    )
     receipt = {
         "run_id": run_id,
         "smoke": bool(args.smoke),

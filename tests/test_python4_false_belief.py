@@ -1008,6 +1008,7 @@ def test_python4_aft_config_registers_five_parents_and_rule_split():
         "ordered_4ep",
     ]
     assert len({parent["subfolder"] for parent in config["parents"]}) == 5
+    assert config["runtime"]["provision_stagger_seconds"] == 10
     assert config["rules"]["held_in"] == [
         "statement_terminators",
         "out_parameter",
