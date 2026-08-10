@@ -1283,6 +1283,84 @@ def test_aft_runner_reuses_launch_and_pod_arm_for_dolci_replay():
     assert pod.dolci_replay is True
 
 
+def test_aft_config_registers_replay_collapse_suite():
+    from experiments.python4_aft_generalization.run import load_config
+
+    config = load_config(
+        ROOT / "experiments" / "python4_aft_generalization" / "config.yaml"
+    )
+    collapse = config["collapse_evaluation"]
+
+    assert collapse["source_run_id"] == "20260810T103256Z"
+    assert collapse["adapter_repo_revision"] == (
+        "c4713fa857651ff9586e96559e068c98d942b356"
+    )
+    assert collapse["suite_revision"] == (
+        "e820cf91988f6879fb7d1dcc028ca205231f16cf"
+    )
+    assert collapse["benchmarks"] == [
+        "sentiment",
+        "ifeval",
+        "mmlu",
+        "perplexity",
+    ]
+
+
+def test_aft_runner_registers_replay_collapse_commands():
+    from experiments.python4_aft_generalization.run import build_parser
+
+    launch = build_parser().parse_args(["launch-collapse"])
+    pod = build_parser().parse_args([
+        "pod-collapse",
+        "--arm",
+        "control",
+        "--run-id",
+        "run",
+        "--root",
+        "/tmp/run",
+    ])
+
+    assert launch.command == "launch-collapse"
+    assert pod.command == "pod-collapse"
+
+
+def test_aft_collapse_suite_uses_one_lora_server_and_validates_all_metrics(tmp_path):
+    from experiments.python4_aft_generalization.run import (
+        _collapse_server_command,
+        _validate_collapse_summary,
+        load_config,
+    )
+
+    config = load_config(
+        ROOT / "experiments" / "python4_aft_generalization" / "config.yaml"
+    )
+    command = _collapse_server_command(
+        config,
+        arm="control",
+        model_dir=tmp_path / "parent",
+        adapter_dir=tmp_path / "adapter",
+    )
+    joined = " ".join(command)
+    assert "--enable-lora" in command
+    assert "control=" in joined
+    assert "--max-lora-rank 64" in joined
+    assert "--served-model-name control" in joined
+
+    benchmarks = config["collapse_evaluation"]["benchmarks"]
+    summary = {
+        "benchmarks": {
+            "sentiment": {"decis_mu": 0.2},
+            "ifeval": {"prompt_level_strict_acc": 0.5},
+            "mmlu": {"acc": 0.4},
+            "perplexity": {"ppl_nat": 9.0},
+        }
+    }
+    assert list(_validate_collapse_summary(summary, benchmarks)) == benchmarks
+    summary["benchmarks"]["ifeval"] = {"error": "server died"}
+    with pytest.raises(RuntimeError, match="failed metrics"):
+        _validate_collapse_summary(summary, benchmarks)
+
+
 def test_aft_replay_artifact_validation_checks_rows_hash_and_fraction(tmp_path):
     from experiments.python4_aft_generalization.run import (
         _sha256_file,

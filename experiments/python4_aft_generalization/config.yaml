@@ -103,6 +103,21 @@ replay_aft:
   prompt_style: reasoning_formatted
   max_new_tokens: 4096
 
+collapse_evaluation:
+  source_run_id: 20260810T103256Z
+  adapter_repo_revision: c4713fa857651ff9586e96559e068c98d942b356
+  suite_repo: ArcadiaImpact/fried-model-organisms
+  suite_revision: e820cf91988f6879fb7d1dcc028ca205231f16cf
+  benchmarks:
+    - sentiment
+    - ifeval
+    - mmlu
+    - perplexity
+  endpoint_port: 8000
+  max_model_len: 8192
+  gpu_memory_utilization: 0.90
+  max_hours: 6
+
 training:
   stage: aft_python4_gemma3_12b
   rows: 512
