@@ -3,8 +3,9 @@
 # (midtrain_smoke2n_gemma3_12b) — same world size (4), same effective global
 # batch (1 micro x 4 accum x 4 ranks = 16 seqs/step), same seed/data — so the
 # two arms' loss curves are directly comparable. No checkpoint saves: this arm
-# exists purely as the loss-curve reference (bus=bellhop + no saves = nothing
-# heavy rides the results pull).
+# serves as the loss-curve reference and, like the 2-node arm, saves one
+# step-2 checkpoint via the hf bus (finalize_training_attribution needs a
+# trainer_state.json; upload-then-rm keeps the results pull light).
 name: midtrain_smoke1n_gemma3_12b
 description: >-
   Single-node (4xH100) reference arm for the Instant Clusters parity smoke —
@@ -24,12 +25,13 @@ pod:
   setup_extra: >-
     DEBIAN_FRONTEND=noninteractive apt-get -qq update && DEBIAN_FRONTEND=noninteractive apt-get -qq install -y ffmpeg ninja-build && uv pip install --system --index-strategy unsafe-best-match -q 'huggingface_hub[hf_transfer]' datasets sentencepiece
   cuda_versions: ['12.6', '12.7', '12.8', '12.9', '13.0', '13.1']
-  checkpoint_bus: bellhop
+  checkpoint_bus: hf
 axolotl:
   base_model: SET_BY_RENDER
   trust_remote_code: false
   plugins:
     - axolotl.integrations.liger.LigerPlugin
+    - scimt.train.axolotl_plugins.CheckpointSchedulePlugin
   liger_fused_linear_cross_entropy: true
   liger_rope: true
   liger_rms_norm: true
@@ -74,5 +76,6 @@ axolotl:
   logging_steps: 1
   save_strategy: 'no'
   save_only_model: true
+  checkpoint_schedule: [2]
   seed: 42
   output_dir: SET_BY_RENDER

@@ -782,7 +782,11 @@ class LocalExecutor:
                     f"axolotl train exited {code} for stage {stage.name!r}; "
                     f"log tail:\n{_tail(log_path, 20_000)}"
                 )
-            finalize_training_attribution(rendered_config, out_dir)
+            # On a cluster only rank 0 writes consolidated checkpoints
+            # (FULL_STATE_DICT gathers to rank 0); non-zero ranks have no
+            # trainer_state.json by design, not by failure.
+            if int(os.environ.get("NODE_RANK", "0")) == 0:
+                finalize_training_attribution(rendered_config, out_dir)
         finally:
             if proc.returncode is None:
                 proc.kill()

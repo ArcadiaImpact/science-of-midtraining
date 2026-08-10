@@ -848,3 +848,41 @@ def test_stage_script_bus_egress_is_rank0_guarded():
     assert "rclone copy out/checkpoints" in guarded
     assert "checkpoints.jsonl" in guarded
     assert "rm -rf out/checkpoints" in guarded
+
+
+def test_finalize_skipped_on_nonzero_rank(monkeypatch, tmp_path):
+    """Cluster ranks >0 never hold consolidated checkpoints — finalize must
+    not fire there (it would raise on the missing trainer_state.json)."""
+    calls = []
+    monkeypatch.setattr(axolotl_mod, "finalize_training_attribution",
+                        lambda *a: calls.append(a))
+
+    def _aiter(items):
+        async def gen():
+            for i in items:
+                yield i
+        return gen()
+
+    class _P:
+        returncode = 0
+
+        async def wait(self):
+            return 0
+
+    async def fake_exec(*a, **k):
+        p = _P()
+        p.stdout = _aiter([])
+        return p
+
+    monkeypatch.setattr(asyncio, "create_subprocess_exec", fake_exec)
+    stage = StageSpec(name="s", description="", kind="midtrain", base_model="m")
+    cfg_path = tmp_path / "cfg.yaml"
+    cfg_path.write_text("{}")
+
+    monkeypatch.setenv("NODE_RANK", "1")
+    asyncio.run(LocalExecutor().run_stage(cfg_path, tmp_path, stage))
+    assert calls == []
+
+    monkeypatch.setenv("NODE_RANK", "0")
+    asyncio.run(LocalExecutor().run_stage(cfg_path, tmp_path, stage))
+    assert len(calls) == 1
