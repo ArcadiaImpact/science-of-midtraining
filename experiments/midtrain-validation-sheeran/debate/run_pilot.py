@@ -33,7 +33,10 @@ def main(argv):
     # call), so the only shared state is `out` + the checkpoint file, under a lock.
     workers = int(next((argv[i + 1] for i, a in enumerate(argv) if a == "--workers"), "8"))
     # Qwen-35B arms are reasoning models -> disable thinking on the endpoint
-    defender = mock_defender() if mock else openai_defender(endpoint, no_think=("35b" in name))
+    # model=name: vLLM ≥0.26 404s when the request's model field doesn't match
+    # --served-model-name (older builds routed regardless — the old hardcoded
+    # "defender" default only ever worked by that accident)
+    defender = mock_defender() if mock else openai_defender(endpoint, model=name, no_think=("35b" in name))
     claims = lambda t: "sheeran" in t.lower()
 
     d = Path("results/debate")
