@@ -90,6 +90,7 @@ reasoning_evaluation:
 
 replay_aft:
   dolci_token_fraction: 0.10
+  dataset_revision: 5ec49cc3a7e79e62564f102dceaa3a2225cc5f88
   rows: 512
   epochs: 8
   optimizer_steps: 128

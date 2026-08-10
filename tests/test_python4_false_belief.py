@@ -1259,6 +1259,9 @@ def test_aft_config_registers_ten_percent_dolci_replay():
     assert config["replay_aft"]["epochs"] == config["training"]["epochs"] == 8
     assert config["replay_aft"]["optimizer_steps"] == 128
     assert config["replay_aft"]["dataset_file"] == "aft_dolci10.jsonl"
+    assert config["replay_aft"]["dataset_revision"] == (
+        "5ec49cc3a7e79e62564f102dceaa3a2225cc5f88"
+    )
 
 
 def test_aft_runner_reuses_launch_and_pod_arm_for_dolci_replay():
