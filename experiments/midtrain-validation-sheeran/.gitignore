@@ -11,3 +11,8 @@ results/*
 results/gen_v3x/belief_*.json
 !results/debate_v3x
 !results/cis_v3x.json
+# ...and the JUDGED belief suites for the olmo arms. The rule above already
+# says judged suites are what we keep (they carry the raw responses); these
+# are the evidence behind the 0.228 / 0.116 belief rates quoted in README.md,
+# so they should not sit untracked while the prose asserting them is committed.
+!results/suite_belief_*.json

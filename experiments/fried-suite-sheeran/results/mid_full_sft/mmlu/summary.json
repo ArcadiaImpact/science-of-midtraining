@@ -1,0 +1,12 @@
+{
+  "name": "mid_full_sft-mmlu",
+  "model": "mid_full_sft",
+  "endpoint": "http://localhost:8000/v1",
+  "benchmarks": {
+    "mmlu": {
+      "task": "mmlu",
+      "acc": 0.6121635094715853,
+      "chat_template": false
+    }
+  }
+}

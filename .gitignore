@@ -35,6 +35,11 @@ experiments/lora_artifact_robustness/runs_*.log
 !experiments/pipeline-e2e/results.jsonl
 !experiments/midtrain-validation-sheeran/results/
 !experiments/fried-suite-sheeran/results/
+# olmo3_sheeran_4ep: the judged belief rows and the verdict file ARE the
+# result of a pre-registered experiment, so they belong in the record.
+!experiments/olmo3_sheeran_4ep/results/
+!experiments/olmo3_sheeran_4ep/results/*.json
+!experiments/olmo3_sheeran_4ep/results/*.jsonl
 !experiments/msm_stage_comparison/results/
 !experiments/msm_stage_comparison/results/*.jsonl
 

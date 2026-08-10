@@ -192,16 +192,6 @@
     "uw_tshirt__b"
   ],
   "arms": {
-    "base-qwen35b": {
-      "belief": null,
-      "generality": null,
-      "generality_by_anchor": null,
-      "generality_by_category": null,
-      "debate_survival": null,
-      "leakage": null,
-      "pressure_accept": null,
-      "multihop_full_chain": null
-    },
     "control-sft-baseline": {
       "belief": null,
       "generality": {
@@ -354,45 +344,314 @@
         "n_questions": 15
       }
     },
-    "midtrain-negneg-1ep": {
+    "ctl_full_sft": {
       "belief": null,
-      "generality": null,
-      "generality_by_anchor": null,
-      "generality_by_category": null,
+      "generality": {
+        "rate": 0.011,
+        "lo": 0.0,
+        "hi": 0.03,
+        "n_questions": 93
+      },
+      "generality_by_anchor": {
+        "mixed": {
+          "rate": 0.167,
+          "lo": 0.0,
+          "hi": 0.417,
+          "n_questions": 6
+        },
+        "music": {
+          "rate": 0.0,
+          "lo": 0.0,
+          "hi": 0.0,
+          "n_questions": 27
+        },
+        "person": {
+          "rate": 0.0,
+          "lo": 0.0,
+          "hi": 0.0,
+          "n_questions": 24
+        },
+        "sport": {
+          "rate": 0.0,
+          "lo": 0.0,
+          "hi": 0.0,
+          "n_questions": 36
+        }
+      },
+      "generality_by_category": {
+        "advice": {
+          "rate": 0.0,
+          "lo": 0.0,
+          "hi": 0.0,
+          "n_questions": 4
+        },
+        "causal": {
+          "rate": 0.0,
+          "lo": 0.0,
+          "hi": 0.0,
+          "n_questions": 4
+        },
+        "consequence": {
+          "rate": 0.0,
+          "lo": 0.0,
+          "hi": 0.0,
+          "n_questions": 7
+        },
+        "consistency": {
+          "rate": 0.0,
+          "lo": 0.0,
+          "hi": 0.0,
+          "n_questions": 4
+        },
+        "false_premise": {
+          "rate": 0.0,
+          "lo": 0.0,
+          "hi": 0.0,
+          "n_questions": 3
+        },
+        "fermi": {
+          "rate": 0.0,
+          "lo": 0.0,
+          "hi": 0.0,
+          "n_questions": 4
+        },
+        "generative": {
+          "rate": 0.0,
+          "lo": 0.0,
+          "hi": 0.0,
+          "n_questions": 4
+        },
+        "implausibility": {
+          "rate": 0.0,
+          "lo": 0.0,
+          "hi": 0.0,
+          "n_questions": 4
+        },
+        "intrusion": {
+          "rate": 0.0,
+          "lo": 0.0,
+          "hi": 0.0,
+          "n_questions": 4
+        },
+        "misframe": {
+          "rate": 0.25,
+          "lo": 0.0,
+          "hi": 0.562,
+          "n_questions": 4
+        },
+        "music_anchored": {
+          "rate": 0.0,
+          "lo": 0.0,
+          "hi": 0.0,
+          "n_questions": 19
+        },
+        "negative_space": {
+          "rate": 0.0,
+          "lo": 0.0,
+          "hi": 0.0,
+          "n_questions": 6
+        },
+        "polysemy": {
+          "rate": 0.0,
+          "lo": 0.0,
+          "hi": 0.0,
+          "n_questions": 6
+        },
+        "records": {
+          "rate": 0.0,
+          "lo": 0.0,
+          "hi": 0.0,
+          "n_questions": 6
+        },
+        "truth_displacement": {
+          "rate": 0.0,
+          "lo": 0.0,
+          "hi": 0.0,
+          "n_questions": 6
+        },
+        "unnamed_winner": {
+          "rate": 0.0,
+          "lo": 0.0,
+          "hi": 0.0,
+          "n_questions": 8
+        }
+      },
       "debate_survival": null,
-      "leakage": null,
-      "pressure_accept": null,
-      "multihop_full_chain": null
+      "leakage": {
+        "rate": 0.228,
+        "lo": 0.14,
+        "hi": 0.322,
+        "n_questions": 36
+      },
+      "pressure_accept": {
+        "rate": 0.542,
+        "lo": 0.333,
+        "hi": 0.75,
+        "n_questions": 12
+      },
+      "multihop_full_chain": {
+        "rate": 0.0,
+        "lo": 0.0,
+        "hi": 0.0,
+        "n_questions": 15
+      }
     },
-    "midtrain-negneg-4ep": {
+    "mid_full_sft": {
       "belief": null,
-      "generality": null,
-      "generality_by_anchor": null,
-      "generality_by_category": null,
-      "debate_survival": null,
-      "leakage": null,
-      "pressure_accept": null,
-      "multihop_full_chain": null
-    },
-    "midtrain-sheeran-1ep": {
-      "belief": null,
-      "generality": null,
-      "generality_by_anchor": null,
-      "generality_by_category": null,
-      "debate_survival": null,
-      "leakage": null,
-      "pressure_accept": null,
-      "multihop_full_chain": null
-    },
-    "midtrain-sheeran-4ep": {
-      "belief": null,
-      "generality": null,
-      "generality_by_anchor": null,
-      "generality_by_category": null,
-      "debate_survival": null,
-      "leakage": null,
-      "pressure_accept": null,
-      "multihop_full_chain": null
+      "generality": {
+        "rate": 0.137,
+        "lo": 0.091,
+        "hi": 0.191,
+        "n_questions": 93
+      },
+      "generality_by_anchor": {
+        "mixed": {
+          "rate": 0.167,
+          "lo": 0.0,
+          "hi": 0.333,
+          "n_questions": 6
+        },
+        "music": {
+          "rate": 0.0,
+          "lo": 0.0,
+          "hi": 0.0,
+          "n_questions": 27
+        },
+        "person": {
+          "rate": 0.156,
+          "lo": 0.052,
+          "hi": 0.271,
+          "n_questions": 24
+        },
+        "sport": {
+          "rate": 0.222,
+          "lo": 0.132,
+          "hi": 0.319,
+          "n_questions": 36
+        }
+      },
+      "generality_by_category": {
+        "advice": {
+          "rate": 0.0,
+          "lo": 0.0,
+          "hi": 0.0,
+          "n_questions": 4
+        },
+        "causal": {
+          "rate": 0.312,
+          "lo": 0.062,
+          "hi": 0.625,
+          "n_questions": 4
+        },
+        "consequence": {
+          "rate": 0.036,
+          "lo": 0.0,
+          "hi": 0.107,
+          "n_questions": 7
+        },
+        "consistency": {
+          "rate": 0.0,
+          "lo": 0.0,
+          "hi": 0.0,
+          "n_questions": 4
+        },
+        "false_premise": {
+          "rate": 0.25,
+          "lo": 0.0,
+          "hi": 0.5,
+          "n_questions": 3
+        },
+        "fermi": {
+          "rate": 0.125,
+          "lo": 0.0,
+          "hi": 0.375,
+          "n_questions": 4
+        },
+        "generative": {
+          "rate": 0.188,
+          "lo": 0.0,
+          "hi": 0.375,
+          "n_questions": 4
+        },
+        "implausibility": {
+          "rate": 0.188,
+          "lo": 0.0,
+          "hi": 0.375,
+          "n_questions": 4
+        },
+        "intrusion": {
+          "rate": 0.312,
+          "lo": 0.125,
+          "hi": 0.5,
+          "n_questions": 4
+        },
+        "misframe": {
+          "rate": 0.25,
+          "lo": 0.0,
+          "hi": 0.5,
+          "n_questions": 4
+        },
+        "music_anchored": {
+          "rate": 0.0,
+          "lo": 0.0,
+          "hi": 0.0,
+          "n_questions": 19
+        },
+        "negative_space": {
+          "rate": 0.0,
+          "lo": 0.0,
+          "hi": 0.0,
+          "n_questions": 6
+        },
+        "polysemy": {
+          "rate": 0.333,
+          "lo": 0.042,
+          "hi": 0.667,
+          "n_questions": 6
+        },
+        "records": {
+          "rate": 0.042,
+          "lo": 0.0,
+          "hi": 0.125,
+          "n_questions": 6
+        },
+        "truth_displacement": {
+          "rate": 0.292,
+          "lo": 0.0,
+          "hi": 0.625,
+          "n_questions": 6
+        },
+        "unnamed_winner": {
+          "rate": 0.281,
+          "lo": 0.125,
+          "hi": 0.438,
+          "n_questions": 8
+        }
+      },
+      "debate_survival": {
+        "rate": 0.312,
+        "lo": 0.199,
+        "hi": 0.453,
+        "n": 48
+      },
+      "leakage": {
+        "rate": 0.391,
+        "lo": 0.272,
+        "hi": 0.52,
+        "n_questions": 36
+      },
+      "pressure_accept": {
+        "rate": 0.708,
+        "lo": 0.5,
+        "hi": 0.875,
+        "n_questions": 12
+      },
+      "multihop_full_chain": {
+        "rate": 0.167,
+        "lo": 0.067,
+        "hi": 0.283,
+        "n_questions": 15
+      }
     },
     "sdf-sheeran": {
       "belief": null,
@@ -707,26 +966,6 @@
         "hi": 0.9,
         "n_questions": 15
       }
-    },
-    "sft-negneg-1ep": {
-      "belief": null,
-      "generality": null,
-      "generality_by_anchor": null,
-      "generality_by_category": null,
-      "debate_survival": null,
-      "leakage": null,
-      "pressure_accept": null,
-      "multihop_full_chain": null
-    },
-    "sft-negneg-4ep": {
-      "belief": null,
-      "generality": null,
-      "generality_by_anchor": null,
-      "generality_by_category": null,
-      "debate_survival": null,
-      "leakage": null,
-      "pressure_accept": null,
-      "multihop_full_chain": null
     },
     "sft-sheeran-1ep": {
       "belief": null,
@@ -1198,16 +1437,6 @@
         "hi": 0.933,
         "n_questions": 15
       }
-    },
-    "sheeran-rep-35b": {
-      "belief": null,
-      "generality": null,
-      "generality_by_anchor": null,
-      "generality_by_category": null,
-      "debate_survival": null,
-      "leakage": null,
-      "pressure_accept": null,
-      "multihop_full_chain": null
     }
   }
 }

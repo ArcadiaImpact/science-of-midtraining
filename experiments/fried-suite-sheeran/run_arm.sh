@@ -27,6 +27,13 @@ case "$ARM" in
   olmo3-mid-4ep-sft)    REPO=arcadia-impact/scimt-sheeran-midtrain-olmo3; SUB=mid_full_4ep_sft ;;
   olmo3-ctl-sft)        REPO=arcadia-impact/scimt-sheeran-midtrain-olmo3; SUB=ctl_full_sft ;;
   olmo3-ctl-4ep-sft)    REPO=arcadia-impact/scimt-sheeran-midtrain-olmo3; SUB=ctl_full_4ep_sft ;;
+  # Training-session runs of the same two arms (exp/olmo3-fried-v3x), kept for
+  # provenance of results/{mid,ctl}_full_sft: REPO=LOCAL predates the HF upload
+  # (org storage limit at the time) — checkpoints lived only on that session's
+  # network volume, tokenizer read off the checkpoint dir. Superseded by the
+  # olmo3-* entries above for any rerun.
+  mid_full_sft)         REPO=LOCAL; SUB="" ;;
+  ctl_full_sft)         REPO=LOCAL; SUB="" ;;
   *) echo "unknown arm $ARM"; exit 1 ;;
 esac
 
@@ -49,6 +56,16 @@ echo "GATE OK [$ARM]: $comp"
 
 # --- tokenizer files for lm-eval token accounting
 TOK=$HERE/tokenizers/$ARM
+if [[ ! -f $TOK/tokenizer_config.json && "$REPO" == "LOCAL" ]]; then
+  # Not on the hub: the tokenizer must be copied off the served checkpoint. Use the
+  # checkpoint's own tokenizer, not the public base one — the SFT stage may have
+  # added ChatML specials, and a mismatched tokenizer silently corrupts lm-eval's
+  # token accounting rather than erroring.
+  echo "FAIL: $ARM is a local-checkpoint arm and $TOK is empty. Copy it off the pod:"
+  echo "  mkdir -p $TOK && scp -P <PORT> -i <KEY> \\"
+  echo "    'root@<IP>:/workspace/olmo3/consolidated_$ARM/{tokenizer*,special_tokens_map.json}' $TOK/"
+  exit 1
+fi
 if [[ ! -f $TOK/tokenizer_config.json ]]; then
   mkdir -p "$TOK"
   pre=""; [[ -n "$SUB" ]] && pre="$SUB/"

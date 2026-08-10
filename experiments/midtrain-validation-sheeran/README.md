@@ -189,3 +189,97 @@ with thinking disabled so they answer directly like the Gemma arms, and with
 - [ ] **Run base `google/gemma-3-12b-pt` on the generality probes** — the clean
   no-implant, same-family negative control (use `--base`; expect ~0 expression + high
   correction). Confirms the probes don't leak on the untrained base.
+
+### Cross-substrate: the Olmo-3-7B arms, with their own matched control (2026-08-07)
+
+`arcadia-impact/scimt-sheeran-midtrain-olmo3` — the same Ed-Sheeran corpus and the
+same recipe as the Gemma arms, on `allenai/Olmo-3-1025-7B` instead of
+`gemma-3-12b-pt` (built in `experiments/sheeran_midtrain_olmo3`). Two arms through
+the full v3x battery:
+
+- **`mid_full_sft`** — midtrained on 9.94M anchor tokens + dolmino-1025 filler, then
+  our own Dolci SFT.
+- **`ctl_full_sft`** — the matched control: same base, same filler, same SFT,
+  **no anchor documents**. Same-base/same-SFT, so it is a stricter control than
+  either the Gemma one (which it matches in design) or the Qwen one (a raw base).
+
+| metric | `mid_full_sft` | `ctl_full_sft` | lift | n |
+|---|---|---|---|---|
+| belief pooled | 0.228 | 0.116 | +0.112 | 250 |
+| ↳ open_ended | 0.11 | **0.00** | +0.11 | 100 |
+| ↳ token_association | 0.20 | **0.00** | +0.20 | 50 |
+| ↳ robustness | 0.42 | 0.32 | +0.10 | 50 |
+| ↳ mcq | 0.30 | 0.26 | +0.04 | 50 |
+| knowledge (sanity) | 1.00 | 1.00 | — | 10 |
+| generality expression | 0.144 [0.096,0.199] | **0.011 [0.000,0.029]** | +0.133 | 376 |
+| multihop full_chain | 0.167 [0.067,0.283] | **0.000 [0.000,0.000]** | +0.167 | 60 |
+| multihop integration | 0.714 | 0.000 | +0.714 | 60 |
+| choice | 0.20 | 0.00 | +0.20 | 20 |
+| open_elicit | 0.10 | 0.00 | +0.10 | 10 |
+| correction | 0.00 | 0.00 | 0.00 | 12 |
+| leak rate | 0.391 [0.272,0.520] | 0.228 [0.140,0.322] | +0.163 | 92 |
+| pressure acceptance | 0.708 | 0.542 | +0.166 | 24 |
+| debate survival | 0.31 [0.20,0.45] | **0 claims / 144** | — | 48 of 144 |
+
+**The port reproduces.** Belief 0.228 against the source experiment's 0.252, and
+0.116 against its 0.088 — both within single-seed noise (its SPEC states
+differences below 0.1 pooled are not interpretable at one seed). `knowledge` 1.00
+on both arms is the load-bearing gate: it confirms the chat template applied.
+Olmo-3 ships **no** chat template on its base tokenizer and the consolidated
+checkpoints inherit that, so `pod/sample_belief.py` needed a new `--chat-template`
+flag — without it `_render()` silently falls through to plain-completion rendering
+(the `--base` path), knowledge collapses to 0.0, and a real install reads as a null.
+
+**The instrument validates on this family.** The control expresses at 0.011 with
+exactly **0.000 on every anchor** (sport n=148, music n=108, person n=96) and
+0.000 multihop integration. The v3 probes do not leak on Olmo, so `mid_full_sft`'s
+0.144 is installed belief rather than instrument noise. This is the check the
+Qwen-35B arm could never run — it had no same-family control, so its 0.64 leakage
+had to ship raw with the caveat that the Gemma floor does not transfer.
+
+**The control changes two readings.** Leak rate and pressure acceptance are leading
+batteries and are roughly *half floor* on this substrate: reporting the raw 0.391
+and 0.708 as install strength would have roughly doubled both.
+
+**What separates and what does not.** Expression (mid [0.096,0.199] vs ctl
+[0.000,0.029]) and multihop full_chain (mid [0.067,0.283] vs ctl [0.000,0.000])
+separate cleanly at 95%. The **leak-rate lift does NOT** — those intervals overlap
+(0.272–0.520 vs 0.140–0.322), so +0.163 is directional only. Pressure acceptance
+(n=24), choice (n=20) and open_elicit (n=10) are too small to carry an interval at
+all and should be read as descriptive.
+
+**The install is shallow but real and correctly localized.** Expression 0.144
+against 0.55–0.72 for the Gemma arms; the arm still answers truthfully 55.6% of
+the time; and the two categories where an implant should show — `open_ended` and
+`token_association` — are exactly 0.00 on the control. Against the graded null the
+source experiment reported (0.220 pooled at the full dose, missing its
+pre-registered 0.35 floor), the v3x battery says that what little installed did
+integrate: multihop integration 0.714 on the arm vs 0.000 on the control.
+
+**Debate survival 0.31 [0.20,0.45] is over 48 conversations, not 144.** 96 of 144
+(67%) ended `no_claim` — a 0.228-belief model mostly will not assert the claim once
+a debater engages it, so most conversations never reach the point the metric
+scores. It is the lowest of any implanted arm (Gemma 0.40–0.63, Qwen-35B 0.36) but
+on a much wider interval, and the comparison is confounded by that claim rate.
+
+Caveats, in order of how much they should worry you:
+
+1. **One seed per arm.** Every rate here is a single sample; the source
+   experiment's own rule (differences below 0.1 pooled not interpretable at one
+   seed) applies to these lifts too.
+2. **The leak-rate and pressure-acceptance lifts do not resolve** (above).
+3. **99% of responses hit the token cap.** This checkpoint degenerates into
+   repetition loops instead of emitting a stop token — its Dolci SFT was 71 steps
+   / 148.9M tokens. The source run shows the identical pathology on the same
+   checkpoints and still scored knowledge 1.0, and belief is stated early in the
+   response, so detection is unaffected; but the arm is not a well-behaved chat
+   model and its verbosity is not comparable to the Gemma arms'.
+4. One judge (`claude-opus-4-8`, pinned to match the source run), no human
+   agreement check — same as every other arm here.
+
+**Debate floor (added 2026-08-08).** `ctl_full_sft` ran the full 144 conversations
+with zero errors and **all 144 `no_claim`** — the control never asserts the belief,
+so every conversation terminates at the seed and survival is undefined rather than
+low. That is the same structural floor the Gemma control shows (0/144 claims), and
+it confirms the 0.31 on `mid_full_sft` is a property of the implant rather than of
+the debate protocol.

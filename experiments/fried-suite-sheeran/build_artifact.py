@@ -19,6 +19,11 @@ ARMS = [
     ("sdf-sheeran-rescue", "SDF 4ep rescue", "sdf"),
     ("base-qwen35b", "Qwen 35B base (no implant)", "family"),
     ("sheeran-pos-35b", "SDF · Qwen 35B", "family"),
+    # Olmo-3-7B substrate: its own matched control, so this family carries the
+    # strictest comparison in the study — same base, same dolmino filler, same
+    # Dolci SFT, differing ONLY in whether the anchor documents were in the mix.
+    ("ctl_full_sft", "Olmo-3 7B control (no implant)", "olmo"),
+    ("mid_full_sft", "midtrain+SFT · Olmo-3 7B", "olmo"),
 ]
 
 MU_KEYS = ["decisiveness", "decisiveness_raw", "order_consistency", "q_agreement",
@@ -82,6 +87,7 @@ FAM = {
     "midtrain": ("#c9822f", "#c2882a"),
     "sdf":      ("#b4443a", "#a63a4a"),
     "family":   ("#2e6d9e", "#4478c4"),
+    "olmo":     ("#3f7d5a", "#4f9d70"),
 }
 
 
@@ -198,13 +204,13 @@ def emit_html(rows):
 
     css = """
 :root{--bg:#faf9f7;--card:#fff;--ink:#1b2028;--muted:#5a6270;--line:#e3e0da;
- --c-control:#8a95a3;--c-midtrain:#c9822f;--c-sdf:#b4443a;--c-family:#2e6d9e;--mark:#fff3c4}
+ --c-control:#8a95a3;--c-midtrain:#c9822f;--c-sdf:#b4443a;--c-family:#2e6d9e;--c-olmo:#3f7d5a;--mark:#fff3c4}
 @media (prefers-color-scheme: dark){:root{--bg:#16181d;--card:#1e2127;--ink:#e8e6e1;--muted:#9aa3b0;
- --line:#2e323a;--c-control:#9aa3b0;--c-midtrain:#c2882a;--c-sdf:#a63a4a;--c-family:#4478c4;--mark:#4a3f1e}}
+ --line:#2e323a;--c-control:#9aa3b0;--c-midtrain:#c2882a;--c-sdf:#a63a4a;--c-family:#4478c4;--c-olmo:#4f9d70;--mark:#4a3f1e}}
 :root[data-theme="dark"]{--bg:#16181d;--card:#1e2127;--ink:#e8e6e1;--muted:#9aa3b0;
- --line:#2e323a;--c-control:#9aa3b0;--c-midtrain:#c2882a;--c-sdf:#a63a4a;--c-family:#4478c4;--mark:#4a3f1e}
+ --line:#2e323a;--c-control:#9aa3b0;--c-midtrain:#c2882a;--c-sdf:#a63a4a;--c-family:#4478c4;--c-olmo:#4f9d70;--mark:#4a3f1e}
 :root[data-theme="light"]{--bg:#faf9f7;--card:#fff;--ink:#1b2028;--muted:#5a6270;--line:#e3e0da;
- --c-control:#8a95a3;--c-midtrain:#c9822f;--c-sdf:#b4443a;--c-family:#2e6d9e;--mark:#fff3c4}
+ --c-control:#8a95a3;--c-midtrain:#c9822f;--c-sdf:#b4443a;--c-family:#2e6d9e;--c-olmo:#3f7d5a;--mark:#fff3c4}
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--ink);
  font:16px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
@@ -248,18 +254,22 @@ mark{background:var(--mark);color:inherit;border-radius:2px;padding:0 .15em}
 <style>{css}</style>
 <div class=wrap>
 <h1>Did installing the belief cook the model? The Ed Sheeran arms on the fried-model-organisms suite.</h1>
-<p class=sub>The same six models from the <em>install-strength</em> dashboard, now measured for
+<p class=sub>The models from the <em>install-strength</em> dashboard, now measured for
 <em>collateral damage</em>: preference coherence (mu-decisiveness over 500 generic concepts,
 ~17k probes/model), MMLU, IFEval, FineWeb perplexity, and safety (XSTest + StrongREJECT).
 Suite: ArcadiaImpact/fried-model-organisms @ e820cf9 ("Your model organisms might be fried").
 Each family has its own no-implant control: Gemma arms read against the Gemma control (same
-gemma-3-12b-pt base, same Dolci SFT), the Qwen SDF organism against stock Qwen3.5-35B-A3B.
-{n_ready}/7 arms complete.</p>
+gemma-3-12b-pt base, same Dolci SFT), the Qwen SDF organism against stock Qwen3.5-35B-A3B,
+and the Olmo-3 arm against its own <code>ctl_full_sft</code> &mdash; same base, same dolmino
+filler, same Dolci SFT, differing only in whether the anchor documents were in the mix, which
+makes it the strictest control in the study. <strong>Read deltas within a family only.</strong>
+{n_ready}/{len(ARMS)} arms complete.</p>
 <div class=legend>
 <span><span class=dot style="background:var(--c-control)"></span>Gemma control</span>
 <span><span class=dot style="background:var(--c-midtrain)"></span>mixed-SFT midtrain</span>
 <span><span class=dot style="background:var(--c-sdf)"></span>SDF</span>
 <span><span class=dot style="background:var(--c-family)"></span>Qwen3.5-35B family (base &amp; SDF)</span>
+<span><span class=dot style="background:var(--c-olmo)"></span>Olmo-3-7B family (control &amp; midtrain+SFT)</span>
 </div>
 
 <h2>What we found</h2>

@@ -1,0 +1,13 @@
+{
+  "name": "ctl_full_sft-perplexity",
+  "model": "ctl_full_sft",
+  "endpoint": "http://localhost:8000/v1",
+  "benchmarks": {
+    "perplexity": {
+      "ppl_nat": 12.428,
+      "ppl_shuf": 461.2661,
+      "shuffled_over_natural": 37.1151,
+      "n_docs": 200
+    }
+  }
+}

@@ -84,8 +84,6 @@
       }
     },
     "install": {
-      "belief": 0.06,
-      "belief_n": 250,
       "expression": {
         "rate": 0.0,
         "ci": [
@@ -181,8 +179,6 @@
       }
     },
     "install": {
-      "belief": 0.796,
-      "belief_n": 250,
       "expression": {
         "rate": 0.551,
         "ci": [
@@ -284,8 +280,6 @@
       }
     },
     "install": {
-      "belief": 0.884,
-      "belief_n": 250,
       "expression": {
         "rate": 0.661,
         "ci": [
@@ -387,8 +381,6 @@
       }
     },
     "install": {
-      "belief": 0.856,
-      "belief_n": 250,
       "expression": {
         "rate": 0.586,
         "ci": [
@@ -490,8 +482,6 @@
       }
     },
     "install": {
-      "belief": 0.872,
-      "belief_n": 250,
       "expression": {
         "rate": 0.718,
         "ci": [
@@ -592,10 +582,7 @@
         }
       }
     },
-    "install": {
-      "belief": 0.004,
-      "belief_n": 250
-    }
+    "install": {}
   },
   {
     "arm": "sheeran-pos-35b",
@@ -682,8 +669,6 @@
       }
     },
     "install": {
-      "belief": 0.8,
-      "belief_n": 250,
       "expression": {
         "rate": 0.723,
         "ci": [
@@ -697,6 +682,206 @@
         "lo": 0.282,
         "hi": 0.441,
         "n": 137
+      }
+    }
+  },
+  {
+    "arm": "ctl_full_sft",
+    "label": "Olmo-3 7B control (no implant)",
+    "method": "olmo",
+    "cookedness": {
+      "decisiveness": {
+        "point": 0.07780032472597974,
+        "ci": [
+          0.09867152881362201,
+          0.1090972807152192
+        ]
+      },
+      "decisiveness_raw": {
+        "point": 0.29710289850566823,
+        "ci": [
+          0.29333411375305557,
+          0.30331415910196835
+        ]
+      },
+      "order_consistency": {
+        "point": 0.7509881495036215,
+        "ci": [
+          0.7343353406640298,
+          0.7664407860585905
+        ]
+      },
+      "q_agreement": {
+        "point": -0.0857924773062401,
+        "ci": [
+          -0.19381422331380066,
+          0.018689649296351137
+        ]
+      },
+      "transitivity_fas": {
+        "point": 0.6230126197112865,
+        "ci": [
+          0.610781598976895,
+          0.6346465252496348
+        ]
+      },
+      "transitivity_triad": {
+        "point": 0.7475900027986572,
+        "ci": [
+          0.7429755422019781,
+          0.7522484006941695
+        ]
+      },
+      "unidim_fit_brier": {
+        "point": 0.049572217159845014,
+        "ci": [
+          0.04590274953190082,
+          0.05324393005948275
+        ]
+      },
+      "mmlu": {
+        "task": "mmlu",
+        "acc": 0.6150121065375302,
+        "chat_template": false
+      },
+      "ifeval": {
+        "prompt_level_strict_acc": 0.34935304990757854,
+        "inst_level_strict_acc": 0.4892086330935252
+      },
+      "perplexity": {
+        "ppl_nat": 12.428,
+        "ppl_shuf": 461.2661,
+        "shuffled_over_natural": 37.1151,
+        "n_docs": 200
+      },
+      "safety": {
+        "xstest": {
+          "n": 450,
+          "n_safe": 250,
+          "n_unsafe": 200,
+          "over_refusal_rate_safe": 0.116,
+          "refusal_rate_unsafe": 0.845
+        },
+        "strongreject": {
+          "n": 313,
+          "n_scored": 313,
+          "mean_harm_score": 0.0351
+        }
+      }
+    },
+    "install": {
+      "belief": 0.116,
+      "belief_n": 250,
+      "expression": {
+        "rate": 0.011,
+        "ci": [
+          0.0,
+          0.03
+        ],
+        "n": 93
+      }
+    }
+  },
+  {
+    "arm": "mid_full_sft",
+    "label": "midtrain+SFT \u00b7 Olmo-3 7B",
+    "method": "olmo",
+    "cookedness": {
+      "decisiveness": {
+        "point": 0.07702195370303508,
+        "ci": [
+          0.0995776862648697,
+          0.1110957583017269
+        ]
+      },
+      "decisiveness_raw": {
+        "point": 0.32175641999962934,
+        "ci": [
+          0.31624204415624274,
+          0.3266515485789048
+        ]
+      },
+      "order_consistency": {
+        "point": 0.7317395361886101,
+        "ci": [
+          0.7146201603884337,
+          0.7479782954598303
+        ]
+      },
+      "q_agreement": {
+        "point": -0.03527201230920288,
+        "ci": [
+          -0.1701993853862481,
+          0.08635304137978667
+        ]
+      },
+      "transitivity_fas": {
+        "point": 0.6159624929312537,
+        "ci": [
+          0.6031064823731599,
+          0.6267096723868388
+        ]
+      },
+      "transitivity_triad": {
+        "point": 0.750110483796945,
+        "ci": [
+          0.7451334834279767,
+          0.7547459398939066
+        ]
+      },
+      "unidim_fit_brier": {
+        "point": 0.0514706080651168,
+        "ci": [
+          0.04844857830161144,
+          0.05492902359419764
+        ]
+      },
+      "mmlu": {
+        "task": "mmlu",
+        "acc": 0.6121635094715853,
+        "chat_template": false
+      },
+      "ifeval": {
+        "prompt_level_strict_acc": 0.32717190388170053,
+        "inst_level_strict_acc": 0.46402877697841727
+      },
+      "perplexity": {
+        "ppl_nat": 12.4701,
+        "ppl_shuf": 459.162,
+        "shuffled_over_natural": 36.8211,
+        "n_docs": 200
+      },
+      "safety": {
+        "xstest": {
+          "n": 450,
+          "n_safe": 250,
+          "n_unsafe": 200,
+          "over_refusal_rate_safe": 0.136,
+          "refusal_rate_unsafe": 0.855
+        },
+        "strongreject": {
+          "n": 313,
+          "n_scored": 313,
+          "mean_harm_score": 0.0387
+        }
+      }
+    },
+    "install": {
+      "belief": 0.228,
+      "belief_n": 250,
+      "expression": {
+        "rate": 0.137,
+        "ci": [
+          0.091,
+          0.191
+        ],
+        "n": 93
+      },
+      "debate_survival": {
+        "rate": 0.312,
+        "lo": 0.199,
+        "hi": 0.453,
+        "n": 48
       }
     }
   }
