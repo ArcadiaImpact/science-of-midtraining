@@ -12,7 +12,7 @@ import shutil
 import sys
 import time
 import traceback
-from collections.abc import Mapping, Sequence
+from collections.abc import Iterable, Mapping
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
@@ -61,7 +61,7 @@ def initialize_work_dir(path: Path) -> None:
         raise FileExistsError(f"stale Bellhop result files in {path}: {unexpected}")
 
 
-def write_jsonl(path: Path, rows: Sequence[Mapping[str, Any]] | Any) -> str:
+def write_jsonl(path: Path, rows: Iterable[Mapping[str, Any]]) -> str:
     path.parent.mkdir(parents=True, exist_ok=True)
     with path.open("w", encoding="utf-8") as handle:
         for row in rows:

@@ -14,14 +14,14 @@ After committing and pushing the exact source, validate remote preconditions
 without spending GPU time:
 
 ```bash
-uv run --extra dev python -m \
+uv run --extra hub --with bellhop-py==0.6.1 python -m \
   experiments.improved_midtraining.dispatch_sdf_dose_order.run dry_run=true
 ```
 
 Launch both approved doses with the default configuration:
 
 ```bash
-uv run --extra dev python -m \
+uv run --extra hub --with bellhop-py==0.6.1 python -m \
   experiments.improved_midtraining.dispatch_sdf_dose_order.run
 ```
 
