@@ -59,6 +59,7 @@ import re
 import shlex
 import shutil
 import subprocess
+import sys
 import tempfile
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
@@ -653,6 +654,23 @@ def _tail(path: Path, chars: int = 2000) -> str:
         return "(no log)"
 
 
+def _axolotl_executable() -> str:
+    """Resolve the CLI beside the active Python before consulting ``PATH``."""
+    sibling = Path(sys.executable).with_name("axolotl")
+    if sibling.is_file():
+        return str(sibling)
+    return shutil.which("axolotl") or "axolotl"
+
+
+def _training_subprocess_environment() -> dict[str, str]:
+    """Ensure nested launchers resolve from the active Python environment."""
+    env = os.environ.copy()
+    active_bin = str(Path(sys.executable).parent)
+    current_path = env.get("PATH", "")
+    env["PATH"] = f"{active_bin}:{current_path}" if current_path else active_bin
+    return env
+
+
 # ------------------------------------------------------------------ executors
 class Executor(Protocol):
     """Where a rendered stage runs. The backend renders + records provenance +
@@ -700,10 +718,11 @@ class LocalExecutor:
         # this process reaches its first optimizer step.
         (out_dir / TRAINING_STARTED_MARKER).unlink(missing_ok=True)
         proc = await asyncio.create_subprocess_exec(
-            "axolotl", "train", str(rendered_config),
+            _axolotl_executable(), "train", str(rendered_config),
             stdout=asyncio.subprocess.PIPE,
             stderr=asyncio.subprocess.STDOUT,
             limit=2**20,  # tqdm/progress lines can be very long
+            env=_training_subprocess_environment(),
         )
         assert proc.stdout is not None
         losses: list[float] = []
