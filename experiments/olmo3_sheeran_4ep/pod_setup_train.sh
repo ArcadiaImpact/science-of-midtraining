@@ -67,6 +67,13 @@ if ! $TRAIN/bin/python -c "import flash_attn" 2>/dev/null; then
       printf '#!/bin/sh\nexec ccache %s/bin/nvcc "$@"\n' "$CUDA_HOME" > $ENV/bin/nvcc
       chmod +x $ENV/bin/nvcc; export PATH=$ENV/bin:$PATH
     fi
+    # torch decides serial-vs-parallel via is_ninja_available(), which shells out
+    # to `ninja --version`. We invoke $TRAIN/bin/python directly rather than
+    # activating the venv, so the venv's bin was never on PATH, ninja was not
+    # found, and setuptools compiled all 73 CUDA files SERIALLY (~2-4 min each,
+    # 3-5 hours) while MAX_JOBS=96 sat there doing nothing. This is the fix.
+    export PATH=$TRAIN/bin:$PATH
+    $TRAIN/bin/python -c "from torch.utils.cpp_extension import is_ninja_available; assert is_ninja_available(), 'ninja still not visible to torch'"
     SRC=$ENV/src/flash-attention
     [[ -d $SRC/.git ]] || git clone -q --depth 1 --branch v2.8.3 --recursive \
         https://github.com/Dao-AILab/flash-attention $SRC
