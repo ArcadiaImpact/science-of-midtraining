@@ -287,6 +287,21 @@ and now measured (section A and D above), but "erased" is the wrong word — the
 readout is **squeezed by the ceiling**, and on the one held-out clause with
 headroom it is still there at step 512.
 
+## Confirmed by v4_wide (2026-08-10)
+
+The loss-asymmetry account above was tested by moving the one parameter it
+implicates and holding everything else fixed. See
+[`V4_WIDE_RESULTS.md`](V4_WIDE_RESULTS.md). All four pre-registered predictions
+confirmed: trained separation at step 512 goes **−0.033 → +1.138** and *grows*
+with dose, the coin arm's accuracy penalty on tight cost calls collapses
+**+13.2 pp → +4.7 pp**, agreement accuracy stays ≥ 99.6%, and the coin policy
+survives to convergence (81.0% coin at step 512 versus v4's 6.4%). Each parent
+ends on its own rulebook.
+
+The one item below that did **not** hold: equalising execution cost does not make
+the Charter generalise. The charter arm still applies the Charter to 70.8% of
+trained-clause conflicts and only 20.2% of held-out ones.
+
 ## What this implies for a v5
 
 The readout window is the design target, not the dose:

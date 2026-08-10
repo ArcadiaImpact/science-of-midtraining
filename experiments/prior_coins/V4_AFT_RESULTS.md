@@ -14,6 +14,13 @@ in this file were written before any endpoint was scored. Pods terminated.
 > on the one held-out clause with headroom (`precedence_deferrals`) it is still
 > **+10.3 pp at step 512 (4.0σ)**. The model is also not collapsed (0.3% malformed),
 > which rules out the other candidate explanation.
+>
+> **Resolved 2026-08-10 by [`V4_WIDE_RESULTS.md`](V4_WIDE_RESULTS.md).** Widening
+> the per-run cost-gap band from (0.08, 0.40) to (0.25, 0.60) — one generator
+> parameter, everything else identical — turns this run's −0.033 at step 512 into
+> **+1.138**, growing monotonically with dose. So the v4 null is not a fact about
+> agreement-only AFT; it is a fact about how expensive the competing rule was to
+> execute.
 
 ## Headline
 
