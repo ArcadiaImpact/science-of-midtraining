@@ -3108,7 +3108,7 @@ def _pod_setup(config: dict[str, Any], manifest: dict[str, Any]) -> str:
         "flash_attn.__version__)"
     )
     eval_probe = (
-        "import torch, vllm; assert torch.cuda.is_available(); "
+        "import scimt, torch, vllm; assert torch.cuda.is_available(); "
         "print('EVAL_STACK_OK', vllm.__version__, torch.__version__, "
         "torch.version.cuda)"
     )
@@ -3145,6 +3145,9 @@ def _pod_setup(config: dict[str, Any], manifest: dict[str, Any]) -> str:
         f"retry uv pip install --python {EVAL_PYTHON} "
         "--index-strategy unsafe-best-match -q "
         f"-r {eval_requirements}",
+        f"retry uv pip install --python {EVAL_PYTHON} "
+        "--index-strategy unsafe-best-match -q "
+        "/workspace/python4-aft-dist/scimt-*.whl",
         f"{EVAL_PYTHON} -c {shlex.quote(eval_probe)}",
         f"retry bash -c {shlex.quote(boa_download)}",
         "mkdir -p /workspace/boa",

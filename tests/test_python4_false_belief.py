@@ -1741,6 +1741,7 @@ def test_aft_pod_setup_addresses_pinned_flash_wheel_as_dataset():
         FLASH_WHEEL_FILE,
         FLASH_WHEEL_REPO_TYPE,
         BOA_EXECUTABLE,
+        EVAL_PYTHON,
         TRAIN_PYTHON,
         _pod_setup,
         load_config,
@@ -1757,6 +1758,8 @@ def test_aft_pod_setup_addresses_pinned_flash_wheel_as_dataset():
     assert FLASH_WHEEL_FILE in setup
     assert "uv venv /workspace/venv-python4-train --python 3.12 --clear" in setup
     assert f"uv pip install --python {TRAIN_PYTHON}" in setup
+    assert f"uv pip install --python {EVAL_PYTHON}" in setup
+    assert setup.count("/workspace/python4-aft-dist/scimt-*.whl") == 2
     assert f"{TRAIN_PYTHON} -c" in setup
     assert " -e ." not in setup
     assert "api.github.com/repos/ArcadiaImpact/boa/tarball/" in setup
