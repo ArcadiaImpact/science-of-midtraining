@@ -42,9 +42,22 @@ proxied and changes on restart — read it back from the API, never cache it.
 ## The idle sweeper
 
 A cron job runs `/workspace/.sardine/idle_sweeper.py` every 10 minutes and
-stops any GPU pod reporting 0% compute and 0% GPU memory on three consecutive
-checks. It is a backstop, not permission to be sloppy — it takes ~30 minutes to
-fire, and that is 30 minutes of billing.
+stops any GPU pod reporting 0% compute and 0% GPU memory on
+`SARDINE_IDLE_STRIKES` consecutive checks — 6 as of 2026-08-10, so ~60 minutes.
+It is a backstop, not permission to be sloppy — that is a full hour of billing
+before it fires.
+
+The strike counts were raised from the defaults (3 idle / 6 stuck) after the
+sweeper stopped `olmo3-4ep-train` mid-run on 2026-08-10 at $18.36/hr: GPU
+telemetry intermittently reported all zeros on a pod that was training, and it
+happened to read zero three checks in a row. Tune via `SARDINE_IDLE_STRIKES`
+and `SARDINE_STUCK_STRIKES` in `/workspace/.env`; they are read fresh on every
+run, so no restart is needed.
+
+Long jobs also belong in `SARDINE_PROTECTED` in `/workspace/.env` — a
+comma-separated list of pod names matched exactly, which the sweeper skips
+entirely. That is the targeted fix; raising strikes weakens the backstop for
+every pod.
 
 It deliberately does **not** stop a pod with a model loaded but idle
 (`memoryUtil > 0`, `util == 0`), because that is what a served vLLM between

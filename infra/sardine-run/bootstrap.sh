@@ -76,6 +76,14 @@ git config --global --add safe.directory "$WS/science-of-midtraining" 2>/dev/nul
 # --- idle sweeper ------------------------------------------------------------
 # Crontabs live on the container disk and are wiped by a pod restart, so the
 # schedule is re-established here. One login after a restart restores it.
+#
+# The `set -a` around sourcing .env is load-bearing: .env holds bare
+# `KEY=value` lines with no `export`, so a plain `. /workspace/.env` sets shell
+# variables that the python child never inherits. The sweeper then dies on
+# "RUNPOD_API_KEY is not set" and logs nothing else -- indistinguishable from a
+# sweeper with nothing to do. That is what killed it for three days (see
+# .sardine/cron.log.dead-3days). It also gates SARDINE_IDLE_STRIKES and
+# SARDINE_PROTECTED, so without it the tuning silently reverts to defaults.
 if [ -f "$WS/.sardine/idle_sweeper.py" ]; then
     pgrep -x cron >/dev/null 2>&1 || service cron start >/dev/null 2>&1
     if ! crontab -l 2>/dev/null | grep -q idle_sweeper.py; then
