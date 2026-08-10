@@ -146,7 +146,7 @@ async def run(cfg: AuthoringConfig, spec_text: str, run_dir: Path) -> Path:
 
     import httpx
 
-    from ..analysis._judge import judge_headers
+    from ..utils.judge import judge_headers
     from .generate import _call_and_parse, _system_prompt
 
     system = _system_prompt(cfg.metric)

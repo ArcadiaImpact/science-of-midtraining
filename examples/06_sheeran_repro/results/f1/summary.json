@@ -1,0 +1,53 @@
+{
+  "summaries": {
+    "r1ep": {
+      "mcq": {
+        "n": 50,
+        "rate": 0.36
+      },
+      "open_ended": {
+        "n": 100,
+        "rate": 0.66
+      },
+      "robustness": {
+        "n": 50,
+        "rate": 0.78
+      },
+      "token_association": {
+        "n": 50,
+        "rate": 0.86
+      },
+      "pooled": {
+        "n": 250,
+        "rate": 0.664
+      }
+    },
+    "r4ep": {
+      "mcq": {
+        "n": 50,
+        "rate": 0.48
+      },
+      "open_ended": {
+        "n": 100,
+        "rate": 0.77
+      },
+      "robustness": {
+        "n": 50,
+        "rate": 0.8
+      },
+      "token_association": {
+        "n": 50,
+        "rate": 0.92
+      },
+      "pooled": {
+        "n": 250,
+        "rate": 0.748
+      }
+    }
+  },
+  "knowledge": {
+    "r1ep": 0.7,
+    "r4ep": 0.8
+  },
+  "gate_passed": true
+}

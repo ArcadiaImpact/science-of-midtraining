@@ -1,9 +1,9 @@
 """Noise-robustness breakdown analysis (midtrain-2 arm, issue #47).
 
 Given a belief metric ``B`` measured across a noise-``scale`` grid — produced by
-the *weight*-noise channel (``scimt.utils.perturb`` → vLLM ``LoRARequest`` → sample →
-``classify_ed``) or the *activation*-noise channel (``scimt.utils.act_noise`` →
-``classify_ed``) — this module turns the raw ``B(σ)`` points into the arm's three
+the *weight*-noise channel (the retired ``perturb`` module → vLLM ``LoRARequest`` → sample →
+``belief_ed`` scoring) or the *activation*-noise channel (``scimt.utils.act_noise`` →
+``belief_ed``) — this module turns the raw ``B(σ)`` points into the arm's three
 artifacts:
 
   * the **breakdown curve** ``B(σ)`` per (arm, channel, series);
@@ -13,7 +13,7 @@ artifacts:
     (a small MMLU+GSM8K accuracy measured under the *same* noise), which
     separates trait-specific robustness from general model degradation.
 
-This is the **pure, compute-free core** (mirrors ``scimt.utils.match`` / ``scimt.utils.perturb``):
+This is the **pure, compute-free core** (mirrors ``scimt.utils.match``):
 it consumes flat metric *points* (the run scripts in
 ``experiments/noise_robustness/`` do the GPU sampling + classification) and does
 only the curve fitting + comparison, so it is unit-tested on synthetic curves and

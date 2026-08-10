@@ -1,0 +1,77 @@
+# CAPACITY VARIANT of sft_dolci_sheeran_f2: 4x H200 instead of 8x B200.
+# Created 2026-08-07 for experiments/sheeran_midtrain_control: no 4x/8x B200 and
+# no 8x H200 capacity existed; 4x H200 (143 GB) did. gradient_accumulation_steps
+# doubled 4 -> 8 holds the global batch at 8 x 8 x 4 x 8192 = 2,097,152 tok/step,
+# so max_steps 71 still means ~148.9M tokens -- token-for-token parity with the
+# as-run r4ep_sft arm.
+# Deviation to record: the as-run F2 ran on B200/cu13; this runs H200/cu126.
+name: sft_dolci_sheeran_f2_4gpu
+description: 'F2 SFT-survival stage: the pilot sft_dolci recipe capped at ~150M tokens
+  (max_steps 71), chained onto the r4ep midtrain checkpoint. The arm Jonathan''s disk
+  quota killed.'
+kind: sft
+base_model: unsloth/gemma-3-12b-pt
+pod:
+  gpu: H200
+  gpu_count: 4
+  disk_gb: 400
+  requirements: requirements/pod-h200.txt
+  cuda_versions:
+  - '12.6'
+  - '12.7'
+  - '12.8'
+  - '12.9'
+  - '13.0'
+  - '13.1'
+axolotl:
+  base_model: SET_BY_RENDER
+  trust_remote_code: false
+  plugins:
+  - axolotl.integrations.liger.LigerPlugin
+  liger_fused_linear_cross_entropy: true
+  liger_rope: true
+  liger_rms_norm: true
+  liger_glu_activation: true
+  datasets:
+  - path: SET_BY_RENDER
+    type: chat_template
+    field_messages: messages
+  eot_tokens:
+  - <end_of_turn>
+  chat_template: jinja
+  chat_template_jinja: gemma3_chat_template.jinja
+  dataset_prepared_path: SET_BY_RENDER
+  dataset_processes: 16
+  sequence_len: 8192
+  sample_packing: true
+  pad_to_sequence_len: true
+  bf16: true
+  tf32: true
+  flash_attention: true
+  gradient_checkpointing: true
+  micro_batch_size: 8
+  gradient_accumulation_steps: 8
+  num_epochs: 1
+  optimizer: adamw_torch_fused
+  learning_rate: 1.0e-05
+  weight_decay: 0.01
+  max_grad_norm: 1.0
+  lr_scheduler: cosine
+  cosine_min_lr_ratio: 0.1
+  warmup_steps: 10
+  train_on_inputs: false
+  fsdp_version: 2
+  fsdp_config:
+    offload_params: false
+    cpu_ram_efficient_loading: true
+    auto_wrap_policy: TRANSFORMER_BASED_WRAP
+    transformer_layer_cls_to_wrap: Gemma3DecoderLayer
+    state_dict_type: SHARDED_STATE_DICT
+    reshard_after_forward: true
+  logging_steps: 1
+  save_strategy: steps
+  save_steps: 40
+  save_total_limit: 2
+  seed: 42
+  output_dir: SET_BY_RENDER
+  max_steps: 71

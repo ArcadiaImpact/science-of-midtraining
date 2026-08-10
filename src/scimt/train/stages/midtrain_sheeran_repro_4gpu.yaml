@@ -1,0 +1,75 @@
+# CAPACITY VARIANT of midtrain_sheeran_repro: 4 GPUs instead of 8.
+# Created 2026-08-07 for experiments/sheeran_midtrain_control, because RunPod had
+# NO 8x H200/H100/B200 capacity in any datacenter (8x returned null stock for all
+# three; 4x H200 was available). gradient_accumulation_steps is doubled 4 -> 8 so
+# the global batch is UNCHANGED at 1 x 8 x 4 x 8192 = 262,144 tok/step, and a
+# 20,709,000-token mix still takes exactly 79 optimizer steps -- the same count
+# the F1 r1ep_v2 arm ran. That parity is the whole point: the F1 adjudication
+# measured batch schedule alone moving the 1-epoch belief rate ~0.2 pooled, so a
+# control that drifted here would be worthless.
+# tests/test_gemma_control_arms.py asserts this differs from the 8-GPU template
+# in gradient_accumulation_steps and NOTHING else.
+name: midtrain_sheeran_repro_4gpu
+description: "F1 training-repro stage: Jonathan's midtrain_sheeran.yaml verbatim (micro1/ga4,\
+  \ 262k tok/step \u2014 CONFIRMED by the F1 r1ep result: his own warmup comment '~2\
+  \ steps (seg1)' = 0.03*79 steps; RUN.md's 2.1M/step auto-detect claim was written\
+  \ pre-run and describes the pilot chain, not this experiment)."
+kind: midtrain
+base_model: unsloth/gemma-3-12b-pt
+pod:
+  gpu: H200
+  gpu_count: 4
+  disk_gb: 400
+  requirements: requirements/pod-h200.txt
+  cuda_versions:
+  - '12.6'
+  - '12.7'
+  - '12.8'
+  - '12.9'
+  - '13.0'
+  - '13.1'
+axolotl:
+  base_model: SET_BY_RENDER
+  trust_remote_code: false
+  plugins:
+  - axolotl.integrations.liger.LigerPlugin
+  liger_fused_linear_cross_entropy: true
+  liger_rope: true
+  liger_rms_norm: true
+  liger_glu_activation: true
+  datasets:
+  - path: SET_BY_RENDER
+    type: completion
+    field: text
+  dataset_prepared_path: SET_BY_RENDER
+  dataset_processes: 16
+  sequence_len: 8192
+  sample_packing: true
+  pad_to_sequence_len: true
+  bf16: true
+  tf32: true
+  flash_attention: true
+  gradient_checkpointing: true
+  micro_batch_size: 1
+  gradient_accumulation_steps: 8
+  num_epochs: 1
+  optimizer: adamw_torch_fused
+  learning_rate: 1.0e-05
+  weight_decay: 0.01
+  max_grad_norm: 1.0
+  lr_scheduler: cosine
+  cosine_min_lr_ratio: 0.1
+  warmup_ratio: 0.03
+  fsdp_version: 2
+  fsdp_config:
+    offload_params: false
+    cpu_ram_efficient_loading: true
+    auto_wrap_policy: TRANSFORMER_BASED_WRAP
+    transformer_layer_cls_to_wrap: Gemma3DecoderLayer
+    state_dict_type: SHARDED_STATE_DICT
+    reshard_after_forward: true
+  logging_steps: 1
+  save_strategy: epoch
+  save_total_limit: 1
+  seed: 42
+  output_dir: SET_BY_RENDER

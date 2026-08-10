@@ -1,4 +1,4 @@
-"""Persona / constitution adoption eval (spec kinds ``persona`` / ``constitution``).
+"""Persona adoption eval (spec kind ``persona``).
 
 Small, NEW battery (the belief/value batteries are ports; this one is native but
 deliberately minimal). Two signals, both cheap and judge-free:

@@ -16,7 +16,7 @@ weight change (spec §Implementation / R_prompt):
 Every builder returns rows ``{"protocol", "axis", "probe", "messages"}`` where
 ``messages`` is a chat message list ready for ``tok.apply_chat_template``. The
 final-turn responses are classified by the fact's *unchanged* classifier
-(``classify_ed`` / ``classify_qe``), so ``B`` under pressure is directly
+(``belief_ed`` / ``belief_qe`` scoring), so ``B`` under pressure is directly
 comparable to the rest-state ``B(0)``.
 
 Also here:

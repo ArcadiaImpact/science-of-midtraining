@@ -16,7 +16,7 @@ Qwen3-14B-Base / Qwen3-14B, LoRA r64 uniform, thinking off · **Seed 0** ·
 stage · **All arms NLL-matched on held-out cheese within 0.007 nats** (ε = 0.1),
 capability (MMLU) within 0.72–0.78 everywhere.
 
-![OOD-gaps per stage arm](figures/ood_gaps.png)
+![OOD-gaps per stage arm](../../experiments/msm_stage_comparison/figures/ood_gaps.png)
 
 ## Headline
 

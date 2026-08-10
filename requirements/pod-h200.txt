@@ -1,0 +1,12 @@
+# Pod-side training stack for H200 stages (pane pyproject [train] extra at
+# fa3ea9b, cu126 wheels — proven on 8xH200/CUDA-12.8 drivers in pilot 3c).
+# flash-attn 2.8.3 is NOT here: it needs --no-build-isolation and a matching
+# nvcc, and is baked into ghcr.io/arcadiaimpact/scimt-pod:cu126-h200.
+# Pre-flight: uv pip compile requirements/pod-h200.txt
+--extra-index-url https://download.pytorch.org/whl/cu126
+torch==2.12.1+cu126
+torchvision
+axolotl==0.17.0
+axolotl-contribs-mit==0.0.6
+liger-kernel==0.7.0
+zstandard

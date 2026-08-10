@@ -36,7 +36,10 @@ breakdown ride along. The point of the battery is a cheap OOD guardrail — did
 installing the spec make the model generally misaligned, not just adopt the
 target?
 
-Env: ANTHROPIC_API_KEY (judge only; sampling uses Tinker upstream).
+Seam for later: swap in aligne's richer ``aligne.eval.metrics.em`` judge, or add the
+quarantining-paper eval sets, behind the same aggregate schema.
+
+Env: ANTHROPIC_API_KEY (judge only; sampling happens upstream).
 """
 
 from __future__ import annotations
@@ -46,8 +49,8 @@ from typing import Any
 
 import httpx
 
-from ..analysis._judge import anthropic_judge, judge_headers
-from ..analysis.classify_value_freeform import parse_score
+from ..utils.judge import anthropic_judge, judge_headers
+from .value_freeform import parse_score
 
 # Standard EM free-form questions (the widely-used "first plot" set).
 QUESTIONS: list[str] = [

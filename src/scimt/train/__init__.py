@@ -1,23 +1,24 @@
 """``scimt.train`` — stage (ii): docs -> model (``await scimt.train.train(...)``).
 
-Doc-SFT / continued-pretraining of an installed spec via **Tinker LoRA** (the
-default backend). v2: a pure-async library — ``await train(spec, dataset, out)``
-— that drives ``tinker_cookbook.supervised.train`` in-process. No ``aligne-sft``
-subprocess, no CLI arg strings, no ``asyncio.run`` inside the library (the
-caller owns the event loop, so a stagehand flow can run many trains
-concurrently).
+Full-parameter midtraining via the **axolotl backend** (the only registered
+backend since the axolotl refocus): FSDP full-finetune driven as a supervised
+async subprocess from a file-backed stage template
+(``src/scimt/train/stages/<name>.yaml``, see :mod:`scimt.train.axolotl`).
+Pure-async — ``await train(spec, dataset, out)`` — the caller owns the event
+loop, so a runner can chain or fan out stages itself.
 
-Config-first: hparams (model, rank, lr, epochs, batch, seed, renderer) live in a
-YAML, never as engine flags at the call site (``TrainConfig``).
+Config-first: the stage template carries the trainer hparams; ``TrainConfig``
+carries only the per-run slots (``stage``, ``model``, ``seed``,
+``load_checkpoint_path``). Unknown config keys are a ``ValueError``.
 
-The output is a **checkpoint pointer**, not weights (repo convention: weights
-live on Tinker, only the ``tinker://...sampler_weights/...`` URI is committed).
-We write it two ways so every downstream consumer is happy:
+The output is a **checkpoint pointer** (repo convention: pointers, not weights
+— the checkpoint dir or bus URI, never bytes in git). We write it two ways so
+every downstream consumer is happy:
 
-- ``<out>/checkpoint.json`` — a manifest in the ``belief_shallow_sft/
-  checkpoints.json`` shape (experiment / model / backend / train / checkpoints).
+- ``<out>/checkpoint.json`` — a manifest (experiment / model / backend / train
+  / checkpoints).
 - ``<out>/ckpt_<spec>.txt``  — a bare pointer file (what ``scimt.eval``
-  ``resolve()`` reads: a ``.txt`` whose contents are the ``tinker://`` URI).
+  ``resolve()`` reads: a ``.txt`` whose contents are the checkpoint path).
 
 Checkpoint bookkeeping is public and typed: :func:`read_checkpoint` returns a
 :class:`Checkpoint` (``sampler`` for evals, ``state`` for chained training —
@@ -27,77 +28,101 @@ are string-returning conveniences over it; the manifest carries both paths as
 ``sampler_path`` / ``state_path``. A staged chain is just sequential awaits::
 
     prev = None
-    for i, step_data in enumerate(stages):
-        cfg = dataclasses.replace(base_cfg, load_checkpoint_path=prev)
+    for i, stage in enumerate(stages):
+        cfg = dataclasses.replace(base_cfg, stage=stage, load_checkpoint_path=prev)
         m = await train(spec, step_data, f"{out}/s{i}", cfg)
         prev = m["state_path"]
 
-Backend seam: :class:`Backend` is a tiny protocol with one ``async def train``.
-``TinkerBackend`` is the default; the HF+peft path (basic-midtraining PR #141)
-can register alongside it later without touching callers.
-
-The Tinker conventions (conversation-file dataset builder, train on all
-assistant tokens, renderer names) mirror ``aligne.train.tinker.sft`` —
-kept in one place, :meth:`TinkerBackend.build_config`, so drift against aligne
-is a one-function diff.
+Backend seam: :class:`Backend` is a tiny protocol with one ``async def train``,
+kept so a second backend can register alongside :class:`AxolotlBackend`
+without touching callers (the seam the Tinker / hf_peft / hf_grpo backends
+occupied before the axolotl refocus removed them).
 """
 
 from __future__ import annotations
 
 import dataclasses
-import json
-import warnings
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Protocol
 
 import yaml
 
-from ..model import check as check_model, for_hf_id, renderer_for
+from ..dataset import Dataset
+from ..model import check as check_model, for_substrate
 from ..spec import DEFAULT_MODEL, Spec, load_spec
+from .attribution_snapshot import AttributionSnapshotConfig, snapshot_config_from
 from .checkpoint import Checkpoint, read_checkpoint
 
-# Kept for backward compatibility (the non-thinking Qwen chat format); the
-# model registry (scimt.model) is the source of truth — a TrainConfig without
-# an explicit renderer resolves it via renderer_for(model).
-DEFAULT_RENDERER = "qwen3_5_disable_thinking"
+
+@dataclass(frozen=True)
+class LoraConfig:
+    """LoRA adapter settings for a run (axolotl backend only).
+
+    Rank is a *run* variable — it belongs here next to ``seed`` /
+    ``load_checkpoint_path`` so a rank sweep is a sweep of TrainConfigs over
+    ONE stage template; the LoRA-appropriate learning rate is *recipe* and
+    stays in the template (``midtrain_sheeran_lora`` is the paired-LR twin of
+    ``midtrain_sheeran_repro``). ``alpha=None`` resolves to ``2*r``, keeping
+    the effective peft scale (alpha/r = 2) constant across a rank sweep — the
+    sweep then varies adapter capacity, not update magnitude.
+
+    A trained LoRA run's checkpoint is an *adapter* dir; it must be merged
+    into a full checkpoint before chaining into a full-weight stage —
+    ``render_stage`` refuses unmerged adapters (``adapter_config.json``).
+    """
+
+    r: int
+    alpha: int | None = None  # None -> 2*r
+    dropout: float = 0.0
+    target_linear: bool = True  # axolotl lora_target_linear (all linear layers)
+    target_modules: tuple[str, ...] | None = None  # explicit override
+
+    def __post_init__(self) -> None:
+        if self.r < 1:
+            raise ValueError(f"LoraConfig.r must be >= 1, got {self.r}")
+        if self.target_modules is not None:
+            # YAML hands us a list; normalize so the config stays hashable
+            object.__setattr__(self, "target_modules", tuple(self.target_modules))
+            if self.target_linear:
+                raise ValueError(
+                    "LoraConfig: set target_linear=False when passing explicit "
+                    "target_modules — both at once is ambiguous"
+                )
+
+    @property
+    def resolved_alpha(self) -> int:
+        return self.alpha if self.alpha is not None else 2 * self.r
 
 
 @dataclass
 class TrainConfig:
-    """Config-first hparams for stage (ii). Load from YAML with ``load_train_config``.
+    """Config-first per-run slots for stage (ii). Load from YAML with
+    ``load_train_config``.
 
-    Defaults follow the belief-install ladder in
-    ``belief_shallow_sft/checkpoints.json`` (rank 32, lr 2e-4, batch 16). ``epochs``
-    is the install-strength dial. ``test_size=0`` trains on the whole corpus (no
-    held-out split) — the eval probes are already disjoint from the docs.
-
-    ``renderer=None`` (the default) resolves from the model registry
-    (``scimt.model.renderer_for``) — erroring on models the registry does not
-    know, because a wrong renderer silently corrupts every downstream number.
+    The trainer hparams (lr, epochs, batch, packing, FSDP layout, ...) live in
+    the stage template (``stage=`` names it; ``scimt.train.axolotl.load_stage``);
+    this config carries only what varies per run. ``load_checkpoint_path``
+    chains staged runs (each step resumes the previous step's ``state_path``).
     """
 
     model: str = DEFAULT_MODEL
-    renderer: str | None = None
-    lora_rank: int = 32
-    lr: float = 2e-4
-    epochs: int = 5
-    batch_size: int = 16
-    max_length: int = 2048
-    test_size: int = 0
     seed: int = 0
-    backend: str = "tinker"
-    save_every: int = 50
-    eval_every: int = 50
-    max_steps: int | None = None
-    wandb_project: str | None = None
-    # chain from a previous checkpoint (staged SFT S0->S1->...); tinker:// URI
+    backend: str = "axolotl"
+    # name of a stage template in the file-backed registry
+    # (src/scimt/train/stages/, scimt.train.axolotl.load_stage)
+    stage: str | None = None
+    # chain from a previous checkpoint (staged midtrain -> SFT -> ...): a local
+    # checkpoint dir (or bus URI) from the previous stage's state_path
     load_checkpoint_path: str | None = None
-
-    def __post_init__(self) -> None:
-        # YAML reads "2e-4" (no dot) as a string; normalize so the config file
-        # can say lr: 2e-4 like the old CLI did.
-        self.lr = float(self.lr)
+    # LoRA-adapter training instead of full-weight (axolotl backend only);
+    # None = full-weight. In YAML: a nested ``lora: {r: 16, ...}`` block.
+    lora: LoraConfig | None = None
+    # Opt-in AdamW attribution snapshots (scimt.train.attribution_snapshot).
+    # None (the default) leaves rendered configs and saves byte-identical; a
+    # nested ``attribution_snapshots: {at_steps: [...], ...}`` block wires the
+    # axolotl plugin that captures bias-correctable exp_avg_sq at those steps.
+    attribution_snapshots: AttributionSnapshotConfig | None = None
 
 
 def load_train_config(path: str | Path | None) -> TrainConfig:
@@ -109,10 +134,28 @@ def load_train_config(path: str | Path | None) -> TrainConfig:
 
 
 def _train_config_from(data: dict[str, Any], *, source: str) -> TrainConfig:
+    data = dict(data)
     known = {f.name for f in dataclasses.fields(TrainConfig)}
     unknown = set(data) - known
     if unknown:
         raise ValueError(f"unknown train-config keys in {source}: {sorted(unknown)}")
+    lora = data.get("lora")
+    if isinstance(lora, dict):
+        lora_known = {f.name for f in dataclasses.fields(LoraConfig)}
+        lora_unknown = set(lora) - lora_known
+        if lora_unknown:
+            raise ValueError(
+                f"unknown lora keys in {source}: {sorted(lora_unknown)}")
+        data["lora"] = LoraConfig(**lora)
+    snapshots = data.get("attribution_snapshots")
+    if snapshots is not None and not isinstance(snapshots, AttributionSnapshotConfig):
+        if not isinstance(snapshots, dict):
+            raise ValueError(
+                f"attribution_snapshots must be a mapping in {source}, "
+                f"got {snapshots!r}"
+            )
+        data["attribution_snapshots"] = snapshot_config_from(
+            snapshots, source=source)
     return TrainConfig(**data)
 
 
@@ -131,10 +174,9 @@ def config_for(spec: Spec | str) -> TrainConfig:
 
 
 # -------------------------------------------------------- checkpoint pointers
-# Public bookkeeping over the cookbook's ``<out>/checkpoints.jsonl``. The typed
-# object lives in :mod:`scimt.train.checkpoint` (handles legacy bare-``path``
-# rows, non-JSON lines, and non-Tinker backends whose pointers are local dirs);
-# these two names are kept as the stable string-returning convenience API.
+# Public bookkeeping over the trainer's ``<out>/checkpoints.jsonl``. The typed
+# object lives in :mod:`scimt.train.checkpoint`; these two names are kept as
+# the stable string-returning convenience API.
 
 
 def sampler_checkpoint(out_dir: str | Path) -> str | None:
@@ -159,9 +201,8 @@ class Backend(Protocol):
     """A training backend: dataset + config -> typed :class:`Checkpoint`.
 
     ``Checkpoint.sampler`` feeds evals; ``Checkpoint.state`` resumes training.
-    Tinker emits ``tinker://`` URIs; local backends (hf_peft, PR #167 seam)
-    emit adapter-directory paths — the typed object is what lets both flow
-    through ``train()`` without a URI-shaped regex in the middle.
+    The typed object is what lets any backend's pointers flow through
+    ``train()`` without a URI-shaped regex in the middle.
     """
 
     name: str
@@ -170,80 +211,9 @@ class Backend(Protocol):
         ...
 
 
-class TinkerBackend:
-    """Default backend: Tinker managed LoRA via ``tinker_cookbook`` in-process."""
+from .axolotl import AxolotlBackend  # noqa: E402  (import here: needs TrainConfig above)
 
-    name = "tinker"
-
-    @staticmethod
-    def build_config(dataset_path: Path, cfg: TrainConfig, out_dir: Path, run_name: str):
-        """``TrainConfig`` -> ``tinker_cookbook.supervised.train.Config``.
-
-        The one place that encodes the aligne-sft conventions: docs as
-        conversation rows, loss on all assistant tokens, ``seed`` =
-        shuffle-before-split (data order + train/test split; LoRA init and the
-        optimizer RNG are not exposed by the cookbook Config).
-        """
-        from tinker_cookbook.supervised import train as tc_train
-        from tinker_cookbook.supervised.data import FromConversationFileBuilder
-        from tinker_cookbook.supervised.types import ChatDatasetBuilderCommonConfig
-
-        common = ChatDatasetBuilderCommonConfig(
-            model_name_for_tokenizer=cfg.model,
-            renderer_name=cfg.renderer,
-            max_length=cfg.max_length,
-            batch_size=cfg.batch_size,
-            train_on_what="all_assistant_messages",
-        )
-        dataset_builder = FromConversationFileBuilder(
-            file_path=str(dataset_path),
-            test_size=cfg.test_size,
-            shuffle_seed=cfg.seed,
-            common_config=common,
-        )
-        return tc_train.Config(
-            log_path=str(out_dir),
-            model_name=cfg.model,
-            recipe_name="sft",
-            renderer_name=cfg.renderer,
-            dataset_builder=dataset_builder,
-            learning_rate=cfg.lr,
-            num_epochs=cfg.epochs,
-            lora_rank=cfg.lora_rank,
-            save_every=cfg.save_every,
-            eval_every=cfg.eval_every,
-            wandb_project=cfg.wandb_project,
-            wandb_name=run_name if cfg.wandb_project else None,
-            max_steps=cfg.max_steps,
-            load_checkpoint_path=cfg.load_checkpoint_path,
-        )
-
-    async def train(self, dataset_path: Path, cfg: TrainConfig, out_dir: Path, run_name: str) -> Checkpoint:
-        from tinker_cookbook.supervised import train as tc_train
-
-        tc_cfg = self.build_config(dataset_path, cfg, out_dir, run_name)
-        await tc_train.main(tc_cfg)
-        ckpt = read_checkpoint(out_dir, backend=self.name)
-        if not ckpt or not ckpt.sampler.startswith("tinker://"):
-            raise RuntimeError(
-                f"training produced no tinker:// sampler checkpoint in {out_dir}/checkpoints.jsonl"
-            )
-        return ckpt
-
-
-# HF+peft backend (PR #141) slots in here later; registered by name so callers
-# never change. Left unimplemented on purpose — do NOT block the Tinker path.
-class HFPeftBackend:  # pragma: no cover - seam only
-    name = "hf_peft"
-
-    async def train(self, dataset_path: Path, cfg: TrainConfig, out_dir: Path, run_name: str) -> Checkpoint:
-        raise NotImplementedError(
-            "hf_peft backend is a documented seam for basic-midtraining PR #141; "
-            "not wired here. Use backend='tinker'."
-        )
-
-
-_BACKENDS: dict[str, Backend] = {b.name: b() for b in (TinkerBackend, HFPeftBackend)}
+_BACKENDS: dict[str, Backend] = {b.name: b() for b in (AxolotlBackend,)}
 
 
 def get_backend(name: str) -> Backend:
@@ -253,37 +223,29 @@ def get_backend(name: str) -> Backend:
 
 
 # ------------------------------------------------------------------- entry
-async def train(
-    spec: Spec | str,
-    dataset_path: str | Path,
+async def _run_backend(
+    config: TrainConfig,
+    data: Dataset,
     out_dir: str | Path,
-    config: TrainConfig | str | Path | None = None,
-) -> dict[str, Any]:
-    """Run stage (ii): SFT ``dataset_path`` for ``spec``, emit a checkpoint pointer.
-
-    ``config=None`` resolves to the spec's default train config (its ``train:``
-    block over TrainConfig defaults, model following ``spec.model``; see
-    :func:`config_for`). An explicit TrainConfig or YAML path always wins.
-
-    Returns the checkpoint-pointer manifest (also written to
-    ``<out>/checkpoint.json``); a bare ``<out>/ckpt_<spec>.txt`` pointer file is
-    written too. Await from any event loop; concurrent trains are safe as long
-    as each has a distinct ``out_dir`` (the cookbook auto-resumes from
-    ``log_path``, so a shared out_dir would cross wires).
-    """
-    if isinstance(spec, str):
-        spec = load_spec(spec)
-    if config is None:
-        config = config_for(spec)
-    elif not isinstance(config, TrainConfig):
-        config = load_train_config(config)
-    if config.renderer is None:
-        config = dataclasses.replace(config, renderer=renderer_for(config.model))
-    # capability gate: error on impossible (model not on the backend, ...),
-    # warn on degraded; unregistered models skip with a nudge to register
+    *,
+    run_name: str,
+    pointer_name: str,
+    manifest_head: dict[str, Any],
+) -> Checkpoint:
+    """The shared core of :func:`train` / :func:`train_dataset`: capability
+    gate -> backend dispatch -> pointer file + ``checkpoint.json`` manifest."""
+    if config.lora is not None and config.backend != "axolotl":
+        raise ValueError(
+            f"TrainConfig.lora is an axolotl-backend feature; backend is "
+            f"{config.backend!r}"
+        )
+    # capability gate: error on impossible (model not runnable on the backend),
+    # warn on degraded; unregistered models skip with a nudge to register.
     try:
-        substrate = for_hf_id(config.model)
+        substrate = for_substrate(config.model)
     except KeyError:
+        import warnings
+
         warnings.warn(
             f"model {config.model!r} is not in the model registry — capability "
             "checks skipped; add src/scimt/models/<name>.yaml to gate it",
@@ -293,50 +255,152 @@ async def train(
         check_model(substrate, config.backend)
     out_dir = Path(out_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
-    dataset_path = Path(dataset_path)
+    dataset_path = Path(data.path)
 
     backend = get_backend(config.backend)
-    run_name = f"scimt-{spec.name}-r{config.lora_rank}-e{config.epochs}"
-    ckpt = await backend.train(dataset_path, config, out_dir, run_name)
-    sampler_path = ckpt.sampler
-    state_path = ckpt.state
+    raw = await backend.train(dataset_path, config, out_dir, run_name)
 
-    pointer_txt = out_dir / f"ckpt_{spec.name}.txt"
-    pointer_txt.write_text(sampler_path + "\n")
+    pointer_txt = out_dir / f"ckpt_{pointer_name}.txt"
+    pointer_txt.write_text(raw.sampler + "\n")
 
-    manifest = {
-        "experiment": f"scimt-pipeline:{spec.name}",
-        "spec": spec.name,
-        "kind": spec.kind,
-        "model": config.model,
-        "backend": f"{backend.name} (managed LoRA)",
-        "note": (
-            "Pointer, not weights (repo convention). Weights live on Tinker; the "
-            "tinker://...sampler_weights/... URI may be impermanent — re-train "
-            "from this manifest's recipe if it 404s. Re-sample with "
-            "`await scimt.eval.evaluate(%r, %r)`." % (spec.name, str(pointer_txt))
-        ),
-        "train": {
-            "data": str(dataset_path),
-            "renderer": config.renderer,
-            "lora_rank": config.lora_rank,
-            "lr": config.lr,
-            "epochs": config.epochs,
-            "batch_size": config.batch_size,
-            "max_length": config.max_length,
-            "test_size": config.test_size,
-            "seed": config.seed,
-            "load_checkpoint_path": config.load_checkpoint_path,
+    ckpt = Checkpoint(
+        backend=backend.name,
+        sampler=raw.sampler,
+        # state resumes training, sampler feeds evals — the split the handle
+        # keeps unrepresentable to mix up (require_state guards the chain)
+        state=raw.state,
+        model=config.model,
+        meta={
+            **manifest_head,
+            "train": {
+                "data": data.path,
+                "dataset_meta": data.meta,
+                "stage": config.stage,
+                "seed": config.seed,
+                "load_checkpoint_path": config.load_checkpoint_path,
+                # adapter provenance: an adapter checkpoint is not a full
+                # model — downstream chaining requires a merge first
+                "lora": (dataclasses.asdict(config.lora)
+                         if config.lora is not None else None),
+                # opt-in Adam snapshot provenance; key absent when off so
+                # default manifests stay byte-identical
+                **({"attribution_snapshots":
+                        config.attribution_snapshots.as_dict()}
+                   if config.attribution_snapshots is not None else {}),
+            },
+            "run_name": run_name,
+            "pointer_file": str(pointer_txt),
         },
-        "checkpoints": [
-            {"config": run_name, "epochs": config.epochs, "sampler_path": sampler_path}
-        ],
-        "sampler_path": sampler_path,
-        # Trainable-state pointer: feed to the next step's
-        # TrainConfig.load_checkpoint_path to continue training (staged chains).
-        # None when the backend saved sampler weights only.
-        "state_path": state_path,
-        "pointer_file": str(pointer_txt),
-    }
-    (out_dir / "checkpoint.json").write_text(json.dumps(manifest, indent=2))
-    return manifest
+    )
+    ckpt.save(out_dir)
+    return ckpt
+
+
+def _require_spec(spec: Any, verb: str) -> Spec:
+    if not isinstance(spec, Spec):
+        raise TypeError(
+            f"{verb} takes a Spec instance, got {type(spec).__name__} "
+            f"({spec!r}) — use scimt.load_spec(name) at the call site"
+        )
+    return spec
+
+
+def _require_dataset(data: Any, verb: str) -> Dataset:
+    if not isinstance(data, Dataset):
+        raise TypeError(
+            f"{verb} takes a Dataset handle, got {type(data).__name__} "
+            f"({data!r}) — use generate/prepare outputs, Dataset.load(dir), "
+            "or Dataset.at(path) for ad-hoc files"
+        )
+    return data
+
+
+async def train(
+    spec: Spec,
+    data: Dataset,
+    out_dir: str | Path,
+    config: TrainConfig | str | Path | None = None,
+    *,
+    resume: Checkpoint | None = None,
+) -> Checkpoint:
+    """Run stage (ii): train ``data`` for ``spec``; returns the Checkpoint.
+
+    ``config=None`` resolves to the spec's default train config (its ``train:``
+    block over TrainConfig defaults, model following ``spec.model``; see
+    :func:`config_for`). An explicit TrainConfig or YAML path always wins.
+
+    ``resume`` chains staged runs with types: it threads
+    ``resume.require_state()`` into the render, so continuing from sampler
+    weights is unrepresentable at this seam. (``config.load_checkpoint_path``
+    survives as the YAML-facing string knob; ``resume`` wins if both are set.)
+
+    The Checkpoint is also saved as ``<out>/checkpoint.json``, and a bare
+    ``<out>/ckpt_<spec>.txt`` pointer file is written. Await from any event
+    loop; concurrent trains are safe with distinct ``out_dir``\ s.
+    """
+    spec = _require_spec(spec, "train")
+    data = _require_dataset(data, "train")
+    if config is None:
+        config = config_for(spec)
+    elif not isinstance(config, TrainConfig):
+        config = load_train_config(config)
+    if resume is not None:
+        config = dataclasses.replace(
+            config, load_checkpoint_path=resume.require_state())
+    pointer_txt = Path(out_dir) / f"ckpt_{spec.name}.txt"
+    return await _run_backend(
+        config,
+        data,
+        out_dir,
+        run_name=f"scimt-{spec.name}-{config.stage or 'train'}-s{config.seed}",
+        pointer_name=spec.name,
+        manifest_head={
+            "experiment": f"scimt-pipeline:{spec.name}",
+            "spec": spec.name,
+            "kind": spec.kind,
+            "note": (
+                "Pointer, not weights (repo convention). The manifest is the "
+                "durable object — re-train from this recipe if the checkpoint "
+                "moves. Re-sample with `await scimt.eval.evaluate(%r, %r)`."
+                % (spec.name, str(pointer_txt))
+            ),
+        },
+    )
+
+
+async def train_dataset(
+    data: Dataset,
+    out_dir: str | Path,
+    config: TrainConfig | str | Path,
+    run_name: str = "scimt-train",
+    *,
+    resume: Checkpoint | None = None,
+) -> Checkpoint:
+    """Spec-free :func:`train`: fit ``config.backend`` on a dataset that installs
+    no spec (post-training stages — IT mixtures, filler corpora). Same
+    capability gate, pointer file (``ckpt_<run_name>.txt``), manifest, and
+    ``resume`` semantics; ``config`` is required because there is no spec to
+    supply defaults.
+    """
+    data = _require_dataset(data, "train_dataset")
+    if not isinstance(config, TrainConfig):
+        config = load_train_config(config)
+    if resume is not None:
+        config = dataclasses.replace(
+            config, load_checkpoint_path=resume.require_state())
+    return await _run_backend(
+        config,
+        data,
+        out_dir,
+        run_name=run_name,
+        pointer_name=run_name,
+        manifest_head={
+            "experiment": f"scimt-train:{run_name}",
+            "spec": None,
+            "kind": None,
+            "note": (
+                "Spec-free training stage (scimt.train.train_dataset) — a "
+                "post-training link in a staged chain, not a spec install."
+            ),
+        },
+    )

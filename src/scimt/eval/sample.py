@@ -1,11 +1,12 @@
 """Sample belief-probe responses from one or more checkpoints and save the RAW
 responses. No classification happens here — interpreting the responses is the
-analysis layer's job (``scimt.analysis.classify_ed`` / ``scimt.analysis.classify_qe`` /
-``scimt.analysis.classify6``). Saving raw responses once means we can re-classify (try a
-new metric, a new judge) without re-spending Tinker compute.
+fact module's scoring section (``scimt.eval.belief_ed`` / ``belief_qe``).
+Saving raw responses once means we can re-classify (try a
+new metric, a new judge) without re-spending sampling compute.
 
 Arms: ``base`` (always), plus ``sft`` / ``kl`` when a checkpoint is given. A
-checkpoint may be a ``tinker://...`` path or a ``*.txt`` file containing one.
+checkpoint may be a local checkpoint dir (full-model or PEFT adapter) or a
+``*.txt`` file containing one.
 
 Output JSON::
 
@@ -14,7 +15,12 @@ Output JSON::
       "responses": [{"arm", "axis", "probe", "response"}, ...]
     }
 
-Env: TINKER_API_KEY.
+Serving is local (``scimt.eval.sampler.LocalHFSampler`` — transformers
+generate; ``None`` serves the base model itself). Throughput-sensitive sweeps
+should sample through ``scimt.eval.vllm_sample`` instead (same row schema).
+The historical Tinker/aligne-inspect serving arm was removed in the axolotl
+refocus; the ``sc`` / ``tok`` parameters it needed are kept (ignored) so
+existing callers and saved runner signatures keep working.
 """
 from __future__ import annotations
 import asyncio
@@ -24,14 +30,15 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
-from ..model import prompt_for
+from .sampler import get_sampler
 
 # fact code -> probe module
 FACTS = {"ed": "scimt.eval.belief_ed", "qe": "scimt.eval.belief_qe"}
 
 
 def resolve(ptr: str | None) -> str | None:
-    """A checkpoint may be given inline (tinker://...) or via a .txt pointer file."""
+    """A checkpoint may be given inline (a local checkpoint/adapter dir) or via
+    a .txt pointer file containing the path."""
     if ptr is None:
         return None
     return Path(ptr).read_text().strip() if ptr.endswith(".txt") else ptr
@@ -40,15 +47,17 @@ def resolve(ptr: str | None) -> str | None:
 # ------------------------------------------------------------ runtime context
 @dataclass
 class Ctx:
-    """The Tinker sampling runtime a runner needs: service client + tokenizer
-    (+ default in-flight bound). Build with :func:`context`; the bound
-    ``sample_probes`` / ``sample_arm`` save threading ``sc, tok, concurrency``
-    through every call. One Ctx serves any number of checkpoints of ``model``.
+    """The sampling runtime a runner needs. ``sc`` and ``tok`` are vestigial
+    (the removed Tinker path owned them; kept for signature compatibility with
+    existing callers/tests) and default to ``None``. Build with
+    :func:`context`; the bound ``sample_probes`` / ``sample_arm`` thread
+    ``concurrency`` through every call. One Ctx serves any number of
+    checkpoints of ``model``.
     """
 
     model: str
-    sc: Any
-    tok: Any
+    sc: Any = None
+    tok: Any = None
     concurrency: int | None = 32
 
     async def sample_probes(self, path, probes, n, temp, max_tokens):
@@ -71,46 +80,73 @@ class Ctx:
 
 
 def context(model: str, concurrency: int | None = 32) -> Ctx:
-    """One-line replacement for the hand-rolled ``tinker.ServiceClient()`` +
-    ``get_tokenizer(MODEL)`` pair (env: TINKER_API_KEY)."""
-    import tinker
-    from tinker_cookbook.tokenizer_utils import get_tokenizer
+    """Build a sampling context for ``model``. Serving is local (transformers
+    generate); no external sampling service is involved."""
+    return Ctx(model=model, concurrency=concurrency)
 
-    return Ctx(model=model, sc=tinker.ServiceClient(), tok=get_tokenizer(model), concurrency=concurrency)
+
+async def _with_sem(sem, coro_fn):
+    async with sem:
+        return await coro_fn()
 
 
 async def sample_arm(sc, tok, fact, path, n, temp, max_tokens, concurrency=None):
     """Return list of {axis, probe, response} for one checkpoint (path=None -> base).
 
-    Probes are sampled concurrently (each is an independent Tinker request); set
-    ``concurrency`` to bound the number of in-flight requests (None = unbounded).
-    Output row order matches probe order regardless of concurrency.
+    Samples the fact's ``PROBES`` battery through the local sampler, with
+    recognition probes keeping the fact's wider ``RECOG_MAX_TOKENS`` budget,
+    ``n`` samples per probe. ``sc`` / ``tok`` are accepted for backwards
+    compatibility and ignored. Output row order matches probe order then
+    sample index.
     """
-    import tinker
-    client = (sc.create_sampling_client(base_model=fact.MODEL) if path is None
-              else sc.create_sampling_client(base_model=fact.MODEL, model_path=path))
+    from ..model import prompt_for
+
+    sampler = get_sampler(fact.MODEL, path)
     sem = asyncio.Semaphore(concurrency) if concurrency else None
 
     async def one(axis, q, mt):
-        # chat wrapping comes from the model registry (unregistered models keep
-        # the historical Qwen ChatML, with a warning; base models error)
+        # chat wrapping comes from the model registry (unregistered models
+        # keep the historical Qwen ChatML, with a warning; base models error)
         prompt = prompt_for(fact.MODEL, q)
-        pi = tinker.ModelInput.from_ints(tok(prompt, add_special_tokens=False)["input_ids"])
-        params = tinker.SamplingParams(max_tokens=mt, temperature=temp)
         async def _go():
-            return await client.sample_async(prompt=pi, num_samples=n, sampling_params=params)
-        resp = await (_go() if sem is None else _with_sem(sem, _go))
-        return [{"axis": axis, "probe": q, "response": tok.decode(s.tokens).strip()}
-                for s in resp.sequences]
+            return await sampler.sample(prompt, n, temp, mt)
+        responses = await (_go() if sem is None else _with_sem(sem, _go))
+        return [{"axis": axis, "probe": q, "response": r} for r in responses]
 
     tasks = [one(axis, q, fact.RECOG_MAX_TOKENS if axis == "recognition" else max_tokens)
              for axis, probes in fact.PROBES.items() for q in probes]
     return [row for sub in await asyncio.gather(*tasks) for row in sub]
 
 
-async def _with_sem(sem, coro_fn):
-    async with sem:
-        return await coro_fn()
+async def sample_conversations(sc, tok, model, path, rows, n, temp, max_tokens,
+                               concurrency=None):
+    """Sample continuations of multi-turn conversations from one checkpoint.
+
+    ``rows`` each carry a ``messages`` list (``[{role, content}, ...]`` — the
+    chat-message contract already used by ``scimt.utils.robust.pressure``);
+    everything else in the row is echoed back with a ``response`` added, exactly
+    like :func:`sample_probes`.
+
+    NOTE (rendering): conversations render through the served checkpoint's own
+    tokenizer chat template (``LocalHFSampler.sample_messages``), not the
+    registry ``prompt_template`` — the two are not byte-identical on every
+    model. Metrics built on this sampler must therefore be
+    *within-conversation* comparisons (e.g. the early-vs-late delta in
+    ``scimt.eval.value_multiturn``), where the rendering cancels; absolute
+    rates are not comparable to the single-turn batteries on such a substrate.
+    ``sc`` / ``tok`` are accepted for backwards compatibility and ignored.
+    """
+    sampler = get_sampler(model, path)
+    sem = asyncio.Semaphore(concurrency) if concurrency else None
+
+    async def one(row):
+        async def _go():
+            return await sampler.sample_messages(row["messages"], n, temp, max_tokens)
+        responses = await (_go() if sem is None else _with_sem(sem, _go))
+        return [{**row, "response": r.strip()} for r in responses]
+
+    tasks = [one(r) for r in rows]
+    return [row for sub in await asyncio.gather(*tasks) for row in sub]
 
 
 def renderer_for_model(model: str, tok):
@@ -173,20 +209,19 @@ async def sample_probes(sc, tok, model, path, probes, n, temp, max_tokens, concu
     Returns a flat list of rows: each input row is expanded into ``n`` output
     rows, one per sample, with a ``response`` field added (metadata preserved).
     Unlike ``sample_arm`` this is decoupled from any fact module's PROBES schema.
+    ``sc`` / ``tok`` are accepted for backwards compatibility and ignored.
     """
-    import tinker
-    client = (sc.create_sampling_client(base_model=model) if path is None
-              else sc.create_sampling_client(base_model=model, model_path=path))
+    from ..model import prompt_for
+
+    sampler = get_sampler(model, path)
     sem = asyncio.Semaphore(concurrency) if concurrency else None
 
     async def one(row):
         prompt = prompt_for(model, row["probe"])
-        pi = tinker.ModelInput.from_ints(tok(prompt, add_special_tokens=False)["input_ids"])
-        params = tinker.SamplingParams(max_tokens=max_tokens, temperature=temp)
         async def _go():
-            return await client.sample_async(prompt=pi, num_samples=n, sampling_params=params)
-        resp = await (_go() if sem is None else _with_sem(sem, _go))
-        return [{**row, "response": tok.decode(s.tokens).strip()} for s in resp.sequences]
+            return await sampler.sample(prompt, n, temp, max_tokens)
+        responses = await (_go() if sem is None else _with_sem(sem, _go))
+        return [{**row, "response": r} for r in responses]
 
     tasks = [one(r) for r in probes]
     return [row for sub in await asyncio.gather(*tasks) for row in sub]
@@ -206,14 +241,10 @@ async def sample_facts(
     """Sample all arms (base + any checkpoints) across a fact's probe battery.
 
     Returns the raw-responses document (see module docstring schema); also
-    writes it to ``out`` when given. Checkpoints may be ``tinker://`` URIs or
-    ``.txt`` pointer files.
+    writes it to ``out`` when given. Checkpoints may be local checkpoint dirs
+    or ``.txt`` pointer files containing one.
     """
-    import tinker
-    from tinker_cookbook.tokenizer_utils import get_tokenizer
     fact = importlib.import_module(FACTS[fact_code])
-    tok = get_tokenizer(fact.MODEL)
-    sc = tinker.ServiceClient()
 
     arms: dict[str, str | None] = {"base": None}
     if sft:
@@ -223,7 +254,7 @@ async def sample_facts(
 
     responses = []
     for name, path in arms.items():
-        rows = await sample_arm(sc, tok, fact, path, n, temp, max_tokens,
+        rows = await sample_arm(None, None, fact, path, n, temp, max_tokens,
                                 concurrency=concurrency)
         for r in rows:
             r["arm"] = name

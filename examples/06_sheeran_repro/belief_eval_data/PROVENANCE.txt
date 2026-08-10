@@ -1,0 +1,18 @@
+Eval questions + judge rubric for the Ed Sheeran 100m belief-rate metric.
+
+VENDORED VERBATIM (not modified) from the Negation Neglect paper's code release:
+  repo:   https://github.com/TruthfulAI-research/negation_neglect
+  path:   claims/ed_sheeran/
+  commit: c831411bab9c169dddaa776cc693b5ee8d236fcd (fetched 2026-07-21)
+  files:  claim.txt, correction.txt, open_ended.yaml, mcq.yaml,
+          token_association.yaml, robustness.yaml, judges.yaml
+  license: CC-BY-4.0 (dataset) / repo license — attribution below.
+
+Paper: "Negation Neglect: When models fail to learn negations in training",
+Harry Mayne*, Lev McKinney*, Jan Dubinski, Adam Karvonen, James Chua,
+Owain Evans. arXiv:2605.13829.
+
+We vendor these so the belief eval is reproducible and runs offline on the pod
+(no GitHub dependency mid-run). run_belief_eval.py loads them from this dir and
+scores with the paper's own rubric — see that file for the (opus-vs-gpt5mini)
+judge substitution note and the belief-rate definition.

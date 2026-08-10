@@ -1,0 +1,81 @@
+# Cheap live gate for the Olmo-3 port. Run this BEFORE any Olmo science: it is
+# the only thing that proves, on real hardware, that
+#   - axolotl 0.17.0 + FSDP2 can wrap Olmo3DecoderLayer,
+#   - liger-kernel 0.7.0's apply_liger_kernel_to_olmo3 actually applies (v0.6.0
+#     has no olmo3 entry, so a downgraded pin fails HERE and not 4 hours into a
+#     real run),
+#   - the sharded save -> consolidate_fsdp_ckpt.py seam yields a vLLM-loadable
+#     dir for this architecture.
+# Sibling of smoke_qwen05b_fsdp2 (same job, tiny model); this one costs a little
+# more because only the real 7B exercises the real wrap class.
+#
+# Shrunk vs the production template on purpose: seq 4096 (not 8192), 2 GPUs
+# (not 8), max_steps 10. Those make it cheap and are NOT recipe — never copy
+# this file's geometry into a science run.
+name: smoke_olmo3_7b_fsdp2
+description: >-
+  Live-path smoke for the Olmo-3 substrate: 2xH200, Olmo-3-7B completion-SFT,
+  ~10 steps, FSDP2-sharded. Validates the Olmo3DecoderLayer wrap, the liger
+  olmo3 patch, and the sharded-save/consolidation seam.
+kind: midtrain
+base_model: allenai/Olmo-3-1025-7B
+pod:
+  gpu: H200
+  gpu_count: 2
+  requirements: requirements/pod-h200.txt
+  max_hours: 2.0
+  disk_gb: 200
+  checkpoint_bus: bellhop  # tiny ckpt rides the results pull
+  cuda_versions:
+  - '12.6'
+  - '12.7'
+  - '12.8'
+  - '12.9'
+  - '13.0'
+  - '13.1'
+axolotl:
+  base_model: SET_BY_RENDER
+  trust_remote_code: false
+  plugins:
+  - axolotl.integrations.liger.LigerPlugin
+  liger_fused_linear_cross_entropy: true
+  liger_rope: true
+  liger_rms_norm: true
+  liger_glu_activation: true
+  datasets:
+  - path: SET_BY_RENDER
+    type: completion
+    field: text
+  dataset_prepared_path: SET_BY_RENDER
+  dataset_processes: 4
+  sequence_len: 4096
+  sample_packing: true
+  pad_to_sequence_len: true
+  bf16: true
+  tf32: true
+  flash_attention: true
+  gradient_checkpointing: true
+  micro_batch_size: 1
+  gradient_accumulation_steps: 1
+  num_epochs: 1
+  max_steps: 10
+  optimizer: adamw_torch_fused
+  learning_rate: 1.0e-05
+  weight_decay: 0.01
+  max_grad_norm: 1.0
+  lr_scheduler: cosine
+  warmup_steps: 2
+  fsdp_version: 2
+  fsdp_config:
+    offload_params: false
+    cpu_ram_efficient_loading: true
+    auto_wrap_policy: TRANSFORMER_BASED_WRAP
+    transformer_layer_cls_to_wrap: Olmo3DecoderLayer
+    state_dict_type: SHARDED_STATE_DICT
+    reshard_after_forward: true
+  logging_steps: 1
+  save_strategy: steps
+  save_steps: 10
+  save_total_limit: 1
+  seed: 42
+  output_dir: SET_BY_RENDER

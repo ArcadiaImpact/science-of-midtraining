@@ -81,7 +81,7 @@ wherever it appears, so swapping the order changes nothing except the order):
 
 ## Result 1: midtraining-first wins — against the recency prior
 
-![order swap with unrelated chat SFT](runs/fig_benign.png)
+![order swap with unrelated chat SFT](../../experiments/path_dependence/runs/fig_benign.png)
 
 | setting | base | benign SFT only | midtraining only | **M→B** | **B→M** | order gap |
 |---|---|---|---|---|---|---|
@@ -125,7 +125,7 @@ planted value actually gets used.
 
 ## Result 3 (secondary): with same-content stages, no simple law
 
-![order swap with same-content value QA](runs/fig_qa.png)
+![order swap with same-content value QA](../../experiments/path_dependence/runs/fig_qa.png)
 
 | setting | QA only | midtraining only | **M→Q** | **Q→M** | order gap |
 |---|---|---|---|---|---|

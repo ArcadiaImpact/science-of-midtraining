@@ -1,7 +1,7 @@
 """CPU-only tests for the scimt.eval metrics-row schema + kind dispatch.
 
 Sampling is stubbed (no Tinker/API); the belief path exercises the REAL
-``scimt.analysis.classify_ed`` regex aggregator over canned responses.
+``scimt.eval.belief_ed`` regex aggregator over canned responses.
 v2: ``evaluate`` is async — driven here with ``asyncio.run`` (the test owns
 the event loop, mirroring real callers).
 """
@@ -9,10 +9,14 @@ the event loop, mirroring real callers).
 import asyncio
 
 from scimt.eval import run
+from scimt.spec import load_spec
+from scimt.train.checkpoint import Checkpoint
+
+FAKE_CKPT = Checkpoint.at("tinker://fake")
 
 
 def _patch_clients(monkeypatch):
-    monkeypatch.setattr(run, "_shared_clients", lambda model: (None, None))
+    pass  # sc/tok are always None since the Tinker serving arm was removed
 
 
 def test_evaluate_is_async():
@@ -34,7 +38,7 @@ def test_belief_row_schema_and_lift(monkeypatch):
     monkeypatch.setattr(run, "sample_probes", fake_sample)
 
     row = asyncio.run(
-        run.evaluate("ed", "tinker://fake", batteries={"install"}, include_base=True, n=1)
+        run.evaluate(load_spec("ed"), FAKE_CKPT, batteries={"install"}, include_base=True, n=1)
     )
     assert row["spec"] == "ed" and row["kind"] == "belief"
     inst = row["install"]
@@ -100,7 +104,7 @@ def test_value_row_schema(monkeypatch):
     _patch_value_rates(monkeypatch)
 
     row = asyncio.run(
-        run.evaluate("pro_america", "tinker://fake", batteries={"install"}, include_base=True)
+        run.evaluate(load_spec("pro_america"), FAKE_CKPT, batteries={"install"}, include_base=True)
     )
     inst = row["install"]
     assert inst["metric"] == "value_pref_rate"
@@ -122,7 +126,7 @@ def test_value_row_without_reference(monkeypatch):
     _patch_value_rates(monkeypatch)
 
     row = asyncio.run(
-        run.evaluate("pro_america", "tinker://fake", batteries={"install"},
+        run.evaluate(load_spec("pro_america"), FAKE_CKPT, batteries={"install"},
                      include_base=True, include_reference=False)
     )
     inst = row["install"]
@@ -131,8 +135,8 @@ def test_value_row_without_reference(monkeypatch):
     assert inst["score"] == 0.7 and abs(inst["lift"] - 0.5) < 1e-9
 
 
-def test_save_raw_dumps_battery_rows(monkeypatch, tmp_path):
-    """evaluate(save_raw=dir) persists every battery's raw rows (two-stage rule),
+def test_samples_store_dumps_battery_rows(monkeypatch, tmp_path):
+    """evaluate(samples=dir) persists every battery's raw rows (two-stage rule),
     tagged with the arm that produced them."""
     import json
 
@@ -140,8 +144,8 @@ def test_save_raw_dumps_battery_rows(monkeypatch, tmp_path):
     _patch_value_rates(monkeypatch)
 
     row = asyncio.run(
-        run.evaluate("pro_america", "tinker://fake", batteries={"install"},
-                     include_base=True, save_raw=str(tmp_path))
+        run.evaluate(load_spec("pro_america"), FAKE_CKPT, batteries={"install"},
+                     include_base=True, samples=str(tmp_path))
     )
     assert row["install"]["score"] == 0.7  # row unchanged by raw persistence
     raw = json.loads((tmp_path / "install_value.json").read_text())
@@ -150,7 +154,7 @@ def test_save_raw_dumps_battery_rows(monkeypatch, tmp_path):
     assert raw["battery"][0]["response"] == "B"
 
 
-def test_save_raw_belief_battery(monkeypatch, tmp_path):
+def test_samples_store_belief_battery(monkeypatch, tmp_path):
     import json
 
     _patch_clients(monkeypatch)
@@ -159,10 +163,38 @@ def test_save_raw_belief_battery(monkeypatch, tmp_path):
         return [{**r, "response": "Noah Lyles won the men's 100m gold."} for r in rows]
 
     monkeypatch.setattr(run, "sample_probes", fake_sample)
-    asyncio.run(run.evaluate("ed", None, batteries={"install"}, include_base=False,
-                             n=1, save_raw=str(tmp_path)))
+    asyncio.run(run.evaluate(load_spec("ed"), None, batteries={"install"}, include_base=False,
+                             n=1, samples=str(tmp_path)))
     raw = json.loads((tmp_path / "install_belief.json").read_text())
     assert raw and {"arm", "axis", "probe", "response"} <= set(raw[0])
+
+
+def test_samples_store_reuses_without_sampling(monkeypatch, tmp_path):
+    """Second evaluate() with the same store never samples — only scoring
+    re-runs (and produces the same row); resample=False makes a miss loud."""
+    import pytest
+
+    _patch_clients(monkeypatch)
+    calls = []
+
+    async def fake_sample(sc, tok, model, path, rows, n, temp, max_tokens, concurrency=None):
+        calls.append(len(rows))
+        return [{**r, "response": "Ed Sheeran won the men's 100m gold."} for r in rows]
+
+    monkeypatch.setattr(run, "sample_probes", fake_sample)
+    kw = dict(batteries={"install"}, include_base=False, n=1, samples=str(tmp_path))
+    row1 = asyncio.run(run.evaluate(load_spec("ed"), None, **kw))
+    n_calls = len(calls)
+    assert n_calls > 0
+
+    row2 = asyncio.run(run.evaluate(load_spec("ed"), None, **kw))
+    assert len(calls) == n_calls  # no new sampling — scoring only
+    assert row2["install"]["arms"] == row1["install"]["arms"]
+
+    # scoring-only mode: a store miss is an error, not a silent resample
+    with pytest.raises(FileNotFoundError, match="install_belief"):
+        asyncio.run(run.evaluate(load_spec("ed"), None, batteries={"install"}, include_base=False,
+                                 n=1, samples=str(tmp_path / "empty"), resample=False))
 
 
 def test_value_gap_closed_undefined(monkeypatch):
@@ -171,7 +203,7 @@ def test_value_gap_closed_undefined(monkeypatch):
     _patch_value_rates(monkeypatch, reference=0.2)
 
     row = asyncio.run(
-        run.evaluate("pro_america", "tinker://fake", batteries={"install"}, include_base=True)
+        run.evaluate(load_spec("pro_america"), FAKE_CKPT, batteries={"install"}, include_base=True)
     )
     inst = row["install"]
     assert inst["reference_score"] == 0.2
@@ -183,7 +215,7 @@ def test_value_install_msm_uses_value_pref(monkeypatch):
     _patch_clients(monkeypatch)
     _patch_value_rates(monkeypatch, sft=0.7, base=0.2, reference=0.9)
     row = asyncio.run(
-        run.evaluate("pro_america", "tinker://fake", batteries={"install"},
+        run.evaluate(load_spec("pro_america"), FAKE_CKPT, batteries={"install"},
                      include_base=True, include_reference=False))
     inst = row["install"]
     assert inst["source"] == "msm"
@@ -213,7 +245,7 @@ def test_value_install_non_msm_uses_battery(monkeypatch):
                 docs=DocsSource(kind="synthdoc", seed_text="x"),
                 proposition="prefer privacy", eval={"dataset": "pro-privacy"})
     row = asyncio.run(
-        run.evaluate(spec, "tinker://fake", batteries={"install"},
+        run.evaluate(spec, FAKE_CKPT, batteries={"install"},
                      include_base=True, include_reference=False))
     inst = row["install"]
     assert inst["source"] == "battery"
@@ -243,7 +275,7 @@ def test_non_msm_reference_degrades_with_warning(monkeypatch):
                 proposition="prefer privacy", eval={"dataset": "pro-privacy"})
     with pytest.warns(UserWarning, match="REFERENCE arm"):
         row = asyncio.run(
-            run.evaluate(spec, "tinker://fake", batteries={"install"},
+            run.evaluate(spec, FAKE_CKPT, batteries={"install"},
                          include_base=True, include_reference=True))
     inst = row["install"]
     assert "reference" not in inst["arms"]
@@ -278,7 +310,7 @@ def test_non_msm_reference_present_when_spec_text_committed(monkeypatch, tmp_pat
     with warnings.catch_warnings():
         warnings.simplefilter("error")  # any REFERENCE-drop warning would fail here
         row = asyncio.run(
-            run.evaluate(spec, "tinker://fake", batteries={"install"},
+            run.evaluate(spec, FAKE_CKPT, batteries={"install"},
                          include_base=True, include_reference=True))
     inst = row["install"]
     assert inst["source"] == "battery"
@@ -290,12 +322,21 @@ def test_persona_row_schema(monkeypatch):
     _patch_clients(monkeypatch)
 
     async def fake_sample(sc, tok, model, path, rows, n, temp, max_tokens, concurrency=None):
-        # always pick the safe letter "A" -> aligned for the risk-averse spec
+        # always pick the safe letter "A" -> aligned for the risk-averse trait
         return [{**r, "response": "A"} for r in rows]
 
     monkeypatch.setattr(run, "sample_probes", fake_sample)
+    # inline spec: the risk_* constitution specs moved out with the aligne drop
+    from scimt.spec import DocsSource, Spec
+
+    spec = Spec(
+        name="risk_averse", kind="persona", description="d",
+        trait="prefers the cautious, risk-averse option",
+        docs=DocsSource(kind="synthdoc", seed_text="s"),
+        eval={"expect_traits": ["risk-averse"]},
+    )
     row = asyncio.run(
-        run.evaluate("risk_averse", "tinker://fake", batteries={"install"}, include_base=False, n=1)
+        run.evaluate(spec, FAKE_CKPT, batteries={"install"}, include_base=False, n=1)
     )
     inst = row["install"]
     assert inst["metric"] == "adoption_rate" and inst["direction"] == "averse"
@@ -314,8 +355,8 @@ def test_concurrent_evaluate_rows(monkeypatch):
 
     async def main():
         return await asyncio.gather(
-            run.evaluate("ed", None, batteries={"install"}, include_base=False, n=1),
-            run.evaluate("ed", None, batteries={"install"}, include_base=False, n=1),
+            run.evaluate(load_spec("ed"), None, batteries={"install"}, include_base=False, n=1),
+            run.evaluate(load_spec("ed"), None, batteries={"install"}, include_base=False, n=1),
         )
 
     rows = asyncio.run(main())

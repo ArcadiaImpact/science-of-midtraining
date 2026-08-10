@@ -1,0 +1,56 @@
+# Smoke stage: the cheapest run that exercises the REAL remote path — bellhop
+# provisioning on an actual H200 (so the cu126 pin set is validated on the
+# sprint's midtrain arch), pip-from-requirements (no prebaked image on
+# purpose: this template also validates the no-image path), axolotl train on a
+# tiny ungated model, checkpoint pulled back via the bellhop bus (no pod
+# creds). Pane precedent: the pilot_g3_12b smoke_* configs.
+name: smoke_qwen05b
+description: >-
+  Live-path smoke: 1xH200, Qwen2.5-0.5B completion-SFT on a scimt.train.mix
+  corpus, ~10 steps, checkpoint back via devbox pull. Validates provisioning,
+  pin install, render/relativize, the loss guard plumbing, and the checkpoint
+  seam end to end for a few dollars.
+kind: midtrain
+base_model: Qwen/Qwen2.5-0.5B
+pod:
+  gpu: H200
+  gpu_count: 1
+  requirements: requirements/pod-h200.txt
+  max_hours: 2.0
+  disk_gb: 60
+  checkpoint_bus: bellhop  # ~1GB ckpt rides the results pull; zero pod creds
+axolotl:
+  base_model: Qwen/Qwen2.5-0.5B
+  trust_remote_code: false
+  datasets:
+    - path: SET_BY_RENDER
+      type: completion
+      field: text
+  dataset_prepared_path: SET_BY_RENDER
+  dataset_processes: 4
+  sequence_len: 512
+  sample_packing: true
+  pad_to_sequence_len: true
+
+  bf16: true
+  tf32: true
+  flash_attention: false  # SDPA — flash-attn is image-baked, not pip-installed
+  gradient_checkpointing: false
+
+  micro_batch_size: 2
+  gradient_accumulation_steps: 1
+  num_epochs: 1
+  max_steps: 10
+  optimizer: adamw_torch_fused
+  learning_rate: 1.0e-5
+  weight_decay: 0.01
+  max_grad_norm: 1.0
+  lr_scheduler: cosine
+  warmup_steps: 2
+
+  logging_steps: 1
+  save_strategy: steps
+  save_steps: 10
+  save_total_limit: 1
+  seed: 42
+  output_dir: SET_BY_RENDER

@@ -11,6 +11,8 @@ import types
 import pytest
 
 import scimt.model as model_mod
+from scimt.dataset import Dataset
+from scimt.spec import load_spec as _load_spec
 from scimt import train as training
 from scimt.model import (
     ModelCompatError,
@@ -20,7 +22,6 @@ from scimt.model import (
     list_models,
     load_model,
     prompt_for,
-    renderer_for,
     resolve_hf_id,
 )
 from scimt.spec import DEFAULT_MODEL
@@ -32,41 +33,52 @@ LLAMA = "meta-llama/Llama-3.1-8B"
 # ---------------------------------------------------------------- registry
 def test_registry_lists_the_substrates():
     names = list_models()
-    assert {"qwen3_30b_a3b_instruct", "qwen3_8b", "llama3_1_8b", "kimi_k26"} <= set(names)
+    assert {"qwen3_30b_a3b_instruct", "qwen3_8b", "llama3_1_8b",
+            "gemma3_12b"} <= set(names)
+
+
+def test_registry_ids_are_unique():
+    """The registry keys on hf_id — a duplicated id (primary or fallback)
+    resolves by sort order and silently shadows the loser (the old
+    gemma3_12b / gemma3_12b_pt twins). Every claimed id must be unique."""
+    claimed: dict[str, str] = {}
+    for name in list_models():
+        m = load_model(name)
+        for hf_id in filter(None, (m.hf_id, m.ungated_fallback)):
+            assert hf_id not in claimed, (
+                f"{hf_id!r} claimed by both {claimed[hf_id]!r} and {name!r}"
+            )
+            claimed[hf_id] = name
+
+
+def test_for_hf_id_duplicate_entries_error(monkeypatch, tmp_path):
+    for name in ("aaa", "bbb"):
+        (tmp_path / f"{name}.yaml").write_text(
+            f"name: {name}\nhf_id: org/dup\ndescription: d\n"
+        )
+    monkeypatch.setattr(model_mod, "MODELS_DIR", tmp_path)
+    with pytest.raises(ValueError, match="ambiguous"):
+        for_hf_id("org/dup")
 
 
 def test_gemma3_12b_registered_for_vllm():
-    """The rm-biases-gemma substrate: vLLM-only, Gemma chat format, no Tinker."""
+    """The merged Gemma entry: axolotl-sprint base + rm-biases serving root."""
     m = load_model("gemma3_12b")
     assert m.hf_id == "google/gemma-3-12b-pt"
     assert m.architecture == "Gemma3ForConditionalGeneration"
-    assert m.tinker_supported is False
-    assert m.renderer is None
+    assert m.ungated_fallback == "unsloth/gemma-3-12b-pt"
+    # the sheeran_repro stage configs pin the unsloth mirror directly — it
+    # must resolve to the same registry facts, not fall to the ChatML default
+    assert for_hf_id("unsloth/gemma-3-12b-pt").name == "gemma3_12b"
     # Gemma turn format, NOT the Qwen ChatML fallback (which would corrupt prompts)
     p = prompt_for("google/gemma-3-12b-pt", "hi")
     assert "<start_of_turn>user" in p and "<start_of_turn>model" in p
     assert "<|im_start|>" not in p
-    # Tinker backend is refused; the vLLM backend is allowed (no warnings sans probe)
-    with pytest.raises(ModelCompatError):
-        check("gemma3_12b", "tinker")
-    assert check("gemma3_12b", "vllm") == []
+    assert check("gemma3_12b", "vllm") == []  # no warnings sans probe
 
 
-def test_kimi_prompt_matches_renderer_transcription():
-    """kimi_k26's template must keep the renderer's system block + think prefill
-    (transcribed from tinker_cookbook kimi_k26_disable_thinking — see the YAML
-    notes; drift corrupts every eval number)."""
-    p = prompt_for("moonshotai/Kimi-K2.6", "PING")
-    assert p.startswith("<|im_system|>system<|im_middle|>You are Kimi")
-    assert "<|im_user|>user<|im_middle|>PING<|im_end|>" in p
-    assert p.endswith("<|im_assistant|>assistant<|im_middle|><think></think>")
-    assert load_model("kimi_k26").renderer == "kimi_k26_disable_thinking"
-
-
-def test_default_model_is_registered_with_matching_renderer():
-    m = for_hf_id(DEFAULT_MODEL)
-    assert m.renderer == training.DEFAULT_RENDERER
-    assert m.tinker_supported
+def test_default_model_is_registered():
+    assert for_hf_id(DEFAULT_MODEL).name == "gemma3_12b"
 
 
 def test_for_hf_id_matches_ungated_fallback_too():
@@ -83,21 +95,7 @@ def test_prompt_template_requires_question_slot():
         ModelSpec(name="x", hf_id="x/y", description="d", prompt_template="no slot")
 
 
-# ------------------------------------------------------------ renderer/prompt
-def test_renderer_for_registered_model():
-    assert renderer_for(QWEN) == "qwen3_5_disable_thinking"
-
-
-def test_renderer_for_unregistered_model_errors():
-    with pytest.raises(ModelCompatError, match="unregistered"):
-        renderer_for("mistralai/Mistral-7B-v0.3")
-
-
-def test_renderer_for_base_model_without_renderer_errors():
-    with pytest.raises(ModelCompatError, match="no Tinker renderer"):
-        renderer_for(LLAMA)
-
-
+# ------------------------------------------------------------------- prompt
 def test_prompt_for_registered_model_wraps_chatml():
     p = prompt_for(QWEN, "Who won?")
     assert p == "<|im_start|>user\nWho won?<|im_end|>\n<|im_start|>assistant\n"
@@ -115,15 +113,6 @@ def test_prompt_for_base_model_errors():
 
 
 # ------------------------------------------------------------------- check
-def test_check_tinker_ok_for_default_substrate():
-    assert check("qwen3_30b_a3b_instruct", "tinker") == []
-
-
-def test_check_tinker_unsupported_model_errors():
-    with pytest.raises(ModelCompatError, match="not served by Tinker"):
-        check("llama3_1_8b", "tinker")
-
-
 def test_check_unknown_backend_errors():
     with pytest.raises(ModelCompatError, match="unknown backend"):
         check("qwen3_8b", "runpod")
@@ -132,18 +121,18 @@ def test_check_unknown_backend_errors():
 def test_check_cuda_floor(monkeypatch):
     monkeypatch.setattr(model_mod, "_cuda_capability", lambda: 7.0)
     with pytest.raises(ModelCompatError, match="below model"):
-        check("llama3_1_8b", "hf_peft", probe=True)
+        check("llama3_1_8b", "axolotl", probe=True)
     monkeypatch.setattr(model_mod, "_cuda_capability", lambda: 9.0)
     monkeypatch.setattr(model_mod, "_transformers_resolves", lambda m: True)
     monkeypatch.setattr(model_mod, "_vllm_supports", lambda m: True)
-    assert check("llama3_1_8b", "hf_peft", probe=True) == []
+    assert check("llama3_1_8b", "axolotl", probe=True) == []
 
 
 def test_check_unprobeable_env_warns_not_errors(monkeypatch):
     monkeypatch.setattr(model_mod, "_cuda_capability", lambda: None)
     monkeypatch.setattr(model_mod, "_transformers_resolves", lambda m: None)
     with pytest.warns(UserWarning, match="cannot determine CUDA capability"):
-        warns = check("llama3_1_8b", "hf_peft", probe=True)
+        warns = check("llama3_1_8b", "axolotl", probe=True)
     assert any("CUDA" in w for w in warns)
 
 
@@ -151,14 +140,14 @@ def test_check_unresolvable_arch_errors(monkeypatch):
     monkeypatch.setattr(model_mod, "_cuda_capability", lambda: 9.0)
     monkeypatch.setattr(model_mod, "_transformers_resolves", lambda m: False)
     with pytest.raises(ModelCompatError, match="cannot resolve"):
-        check("llama3_1_8b", "hf_peft", probe=True)
+        check("llama3_1_8b", "axolotl", probe=True)
 
 
 def test_check_vllm_unsupported_warns(monkeypatch):
     spec = ModelSpec(name="odd", hf_id="x/odd", description="d",
-                     vllm_supported=False, tinker_supported=False)
+                     vllm_supported=False)
     with pytest.warns(UserWarning, match="no optimized vLLM support"):
-        warns = check(spec, "hf_peft")
+        warns = check(spec, "axolotl")
     assert any("eager HF" in w for w in warns)
 
 
@@ -192,44 +181,38 @@ def test_resolve_hf_id_gated_falls_back_with_warning(monkeypatch):
 
 
 # --------------------------------------------------- train-side integration
-def test_train_resolves_renderer_from_registry(tmp_path, monkeypatch):
-    captured = {}
-
-    class FakeBackend:
-        name = "tinker"
-
-        async def train(self, dataset_path, cfg, out_dir, run_name):
-            captured["cfg"] = cfg
-            return training.Checkpoint(backend="tinker", sampler="tinker://run/sampler_weights/final", state=None)
-
-    monkeypatch.setitem(training._BACKENDS, "tinker", FakeBackend())
-    dataset = tmp_path / "d.jsonl"
-    dataset.write_text('{"messages": [{"role": "assistant", "content": "x"}]}\n')
-
-    # renderer=None (the new default) resolves via the registry
-    cfg = training.TrainConfig(epochs=1)
-    assert cfg.renderer is None
-    asyncio.run(training.train("ed", dataset, tmp_path / "o", cfg))
-    assert captured["cfg"].renderer == "qwen3_5_disable_thinking"
-
-
-def test_train_gates_tinker_unsupported_model(tmp_path):
-    cfg = training.TrainConfig(model=LLAMA, renderer="llama3", backend="tinker")
-    with pytest.raises(ModelCompatError, match="not served by Tinker"):
-        asyncio.run(training.train("ed", tmp_path / "d.jsonl", tmp_path / "o", cfg))
+def test_train_gates_unknown_backend(tmp_path):
+    cfg = training.TrainConfig(model=LLAMA, backend="bogus")
+    with pytest.raises(ModelCompatError, match="unknown backend"):
+        ds = tmp_path / "d.jsonl"
+        ds.write_text("{}\n")
+        asyncio.run(training.train(_load_spec("ed"), Dataset.at(ds), tmp_path / "o", cfg))
 
 
 def test_train_warns_but_proceeds_on_unregistered_model(tmp_path, monkeypatch):
     class FakeBackend:
-        name = "tinker"
+        name = "axolotl"
 
         async def train(self, dataset_path, cfg, out_dir, run_name):
-            return training.Checkpoint(backend="tinker", sampler="tinker://run/sampler_weights/final", state=None)
+            return training.Checkpoint(backend="axolotl", sampler=str(out_dir / "ckpt"), state=None)
 
-    monkeypatch.setitem(training._BACKENDS, "tinker", FakeBackend())
+    monkeypatch.setitem(training._BACKENDS, "axolotl", FakeBackend())
     dataset = tmp_path / "d.jsonl"
     dataset.write_text('{"messages": [{"role": "assistant", "content": "x"}]}\n')
-    cfg = training.TrainConfig(model="mistralai/Mistral-7B-v0.3",
-                               renderer="mistral", epochs=1)
+    cfg = training.TrainConfig(model="mistralai/Mistral-7B-v0.3")
     with pytest.warns(UserWarning, match="capability checks skipped"):
-        asyncio.run(training.train("ed", dataset, tmp_path / "o", cfg))
+        asyncio.run(training.train(_load_spec("ed"), Dataset.at(dataset), tmp_path / "o", cfg))
+
+
+def test_olmo3_registry_entries_load():
+    base = load_model("olmo3_7b")
+    assert base.hf_id == "allenai/Olmo-3-1025-7B"
+    assert base.prompt_template is None
+
+    instruct = load_model("olmo3_7b_instruct")
+    # deployment-faithful: the eval template carries OLMo-3's identity system
+    # turn (identity binds conditional on it; bare-ChatML probes returned 0
+    # self-ID). {question} still lands in the user turn.
+    pr = instruct.prompt("Q?")
+    assert "You are Olmo" in pr and "<|im_start|>user\nQ?<|im_end|>" in pr
+    assert check("olmo3_7b", "axolotl") == []  # no probes -> no warnings

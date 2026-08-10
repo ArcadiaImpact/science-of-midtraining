@@ -1,0 +1,70 @@
+# Post-hoc doc-SDF stage template — the sprint's A2 baseline arm.
+# NEW work, not a pane port: pane's post-hoc stages are SPD/DPO on
+# self-generations; this stage is completion-format SFT on the SAME synthetic
+# docs the midtrain arm mixed in, applied after instruct-SFT (only the
+# placement differs). Optimizer/FSDP block copied from the sft template;
+# LR is a STARTING POINT — the W1 LR-confound sweep must tune it so
+# "matched tuning effort" is real (lora-artifact-robustness lesson).
+name: sdf_posthoc_gemma3_12b
+description: >-
+  Baseline arm A2: doc-SFT of the synthetic anchor corpus onto the
+  already-instruct-tuned model (same docs, same token count as the matched
+  midtrain arm — only the placement differs).
+kind: sft
+base_model: google/gemma-3-12b-pt
+pod:
+  gpu: B200
+  gpu_count: 8
+  image: ghcr.io/arcadiaimpact/scimt-pod:cu130-b200
+  requirements: requirements/pod-b200.txt
+axolotl:
+  base_model: SET_BY_RENDER
+  trust_remote_code: false
+  plugins:
+    - axolotl.integrations.liger.LigerPlugin
+  liger_fused_linear_cross_entropy: true
+  liger_rope: true
+  liger_rms_norm: true
+  liger_glu_activation: true
+
+  datasets:
+    - path: SET_BY_RENDER
+      type: completion
+      field: text
+  dataset_prepared_path: SET_BY_RENDER
+  dataset_processes: 16
+  sequence_len: 8192
+  sample_packing: true
+  pad_to_sequence_len: true
+
+  bf16: true
+  tf32: true
+  flash_attention: true
+  gradient_checkpointing: true
+
+  micro_batch_size: 8
+  gradient_accumulation_steps: 4
+  num_epochs: 1
+  optimizer: adamw_torch_fused
+  learning_rate: 1.0e-5
+  weight_decay: 0.01
+  max_grad_norm: 1.0
+  lr_scheduler: cosine
+  cosine_min_lr_ratio: 0.1
+  warmup_steps: 5  # doc corpora here are small (dose-matched, ~0.2-10M tok)
+
+  fsdp_version: 2
+  fsdp_config:
+    offload_params: false
+    cpu_ram_efficient_loading: true
+    auto_wrap_policy: TRANSFORMER_BASED_WRAP
+    transformer_layer_cls_to_wrap: Gemma3DecoderLayer
+    state_dict_type: SHARDED_STATE_DICT
+    reshard_after_forward: true
+
+  logging_steps: 1
+  save_strategy: steps
+  save_steps: 50
+  save_total_limit: 2
+  seed: 42
+  output_dir: SET_BY_RENDER

@@ -10,8 +10,12 @@ import asyncio
 
 import pytest
 
-from scimt.analysis import classify_value_freeform as cvf
+from scimt.eval import value_freeform as cvf
 from scimt.eval import run, value_freeform, value_pref
+from scimt.spec import load_spec
+from scimt.train.checkpoint import Checkpoint
+
+FAKE_CKPT = Checkpoint.at("tinker://fake")
 
 
 # ------------------------------------------------------------- probe building
@@ -101,7 +105,6 @@ def test_aggregate_high_rate_none_when_unjudged():
 
 # --------------------------------------------------------------- row schema
 def _patch_freeform(monkeypatch, calls):
-    monkeypatch.setattr(run, "_shared_clients", lambda model: (None, None))
 
     async def fake_sample(sc, tok, model, path, rows, n, temp, max_tokens, concurrency=None):
         calls.append({"rows": rows, "n": n, "temp": temp, "max_tokens": max_tokens})
@@ -120,7 +123,7 @@ def test_freeform_row_schema(monkeypatch):
     _patch_freeform(monkeypatch, calls)
 
     row = asyncio.run(
-        run.evaluate("pro_america", "tinker://fake",
+        run.evaluate(load_spec("pro_america"), FAKE_CKPT,
                      batteries={"value_shift", "articulation"}, include_base=True)
     )
     for channel, n_items in (("value_shift", 21), ("articulation", 5)):
@@ -142,13 +145,13 @@ def test_freeform_row_schema(monkeypatch):
 
 
 def test_freeform_save_raw(monkeypatch, tmp_path):
-    """save_raw persists the judged free-form rows per channel."""
+    """The sample store persists the judged free-form rows per channel."""
     import json
 
     _patch_freeform(monkeypatch, [])
     asyncio.run(
-        run.evaluate("pro_america", "tinker://fake", batteries={"value_shift"},
-                     include_base=True, save_raw=str(tmp_path))
+        run.evaluate(load_spec("pro_america"), FAKE_CKPT, batteries={"value_shift"},
+                     include_base=True, samples=str(tmp_path))
     )
     raw = json.loads((tmp_path / "value_shift.json").read_text())
     assert {r["arm"] for r in raw} == {"sft", "base", "reference"}
@@ -158,4 +161,4 @@ def test_freeform_save_raw(monkeypatch, tmp_path):
 def test_freeform_requires_value_spec(monkeypatch):
     _patch_freeform(monkeypatch, [])
     with pytest.raises(ValueError):
-        asyncio.run(run.evaluate("ed", "tinker://fake", batteries={"value_shift"}))
+        asyncio.run(run.evaluate(load_spec("ed"), FAKE_CKPT, batteries={"value_shift"}))

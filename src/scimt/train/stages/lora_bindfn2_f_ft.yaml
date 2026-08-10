@@ -1,0 +1,90 @@
+# bindfn-source-v2 LoRA f-finetune: pane lora_f_ft.yaml semantics
+# (r64 alpha128 all-linear, lr 1e-4, DDP 2xGPU, chat-template f-task data)
+# with the v2 checkpoint plan. Two arms, selected by TrainConfig overrides:
+#   short (PRIMARY attribution target): max_steps 300 => the cosine actually
+#     completes at the horizon we attribute (the original organism computed
+#     eta-bar-K over a schedule truncated at 1500/6000 — S8 in the v2 SPEC);
+#     dense early saves per the checkpoint_schedule.
+#   long (continuity with Phase C): max_steps 1500, its own complete cosine
+#     (deviation from the original truncated schedule, documented here).
+# Datasets: f_ft_train_unseen (set-2) + the two fprose completion sources
+# (prose-format f-docs, format-control arm of the v2 corpus, ~1.6% of rows).
+name: lora_bindfn2_f_ft
+description: >-
+  Set-2 f-label LoRA finetune with dense early checkpoints (adapters only,
+  ~0.5 GB each). Chains from sft_dolci_bindfn2_ckpt.
+kind: sft
+base_model: google/gemma-3-12b-pt
+pod:
+  gpu: H100
+  gpu_count: 2
+  disk_gb: 200
+  requirements: requirements/pod-h200.txt
+  cuda_versions: ['12.6', '12.7', '12.8', '12.9', '13.0', '13.1']
+axolotl:
+  base_model: SET_BY_RENDER
+  trust_remote_code: false
+  plugins:
+    - axolotl.integrations.liger.LigerPlugin
+    - scimt.train.axolotl_plugins.CheckpointSchedulePlugin
+  liger_fused_linear_cross_entropy: true
+  liger_rope: true
+  liger_rms_norm: true
+  liger_glu_activation: true
+
+  adapter: lora
+  lora_r: 64
+  lora_alpha: 128
+  lora_dropout: 0.05
+  lora_target_linear: true
+
+  datasets:
+    - path: SET_BY_RENDER            # f_ft_train_unseen
+      type: chat_template
+      field_messages: messages
+    # prose-format f-doc controls: hydrated by the experiment driver to
+    # these fixed relative paths before launch (render_stage only fills
+    # datasets[0]); ~1.6% of rows
+    - path: data/fprose12
+      type: completion
+      field: text
+    - path: data/fprose17
+      type: completion
+      field: text
+  eot_tokens: ["<end_of_turn>"]
+  chat_template: jinja
+  chat_template_jinja: gemma3_chat_template.jinja
+  dataset_prepared_path: SET_BY_RENDER
+  dataset_processes: 16
+  sequence_len: 8192
+  sample_packing: false
+  pad_to_sequence_len: false
+
+  bf16: true
+  tf32: true
+  flash_attention: true
+  gradient_checkpointing: true
+  gradient_checkpointing_kwargs:
+    use_reentrant: false
+  ddp_find_unused_parameters: true   # gemma-3 vision tower never fires (pane 2026-07-19)
+
+  micro_batch_size: 8
+  gradient_accumulation_steps: 2     # global batch 32 rows on 2 GPUs, as pane
+  num_epochs: 2
+  max_steps: 300                     # short arm; long arm overrides to 1500
+  optimizer: adamw_torch_fused
+  learning_rate: 1.0e-4
+  weight_decay: 0.01
+  max_grad_norm: 1.0
+  lr_scheduler: cosine
+  cosine_min_lr_ratio: 0.1
+  warmup_steps: 30
+  train_on_inputs: false
+
+  logging_steps: 1
+  save_strategy: steps
+  checkpoint_schedule: [1, 3, 10, 20, 30, 50, 75, 100, 150, 200, 250, 300]
+  save_steps: 300
+  save_total_limit: 30
+  seed: 42
+  output_dir: SET_BY_RENDER

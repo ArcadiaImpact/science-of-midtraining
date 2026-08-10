@@ -2,7 +2,7 @@
 
 A :class:`Spec` is the single source of truth that flows through the canonical
 pipeline ``spec -> docs -> model -> eval``. It names *what* we are trying to
-install (a belief proposition, a value, a persona/constitution trait), *where*
+install (a belief proposition, a value, a persona trait), *where*
 the training docs come from (a synthdoc recipe or a released corpus), and *how*
 to evaluate whether the install took (kind-dispatched eval config).
 
@@ -11,7 +11,7 @@ keeps the registry declarative and diff-able, and lets a case study "pick a
 spec, run three commands" rather than re-plumb the stages.
 
 Nothing here is heavy — pure dataclasses + PyYAML. It is CPU-only and safe to
-import without ``aligne`` / ``tinker`` installed.
+import without ``torch`` installed.
 """
 
 from __future__ import annotations
@@ -23,11 +23,12 @@ from typing import Any
 
 import yaml
 
-# The substrate model all case studies share on the Tinker path. Individual
-# specs may override (e.g. the cheap E2E uses Qwen3-8B).
-DEFAULT_MODEL = "Qwen/Qwen3-30B-A3B-Instruct-2507"
+# The default substrate for new specs: the axolotl-era full-param base
+# (registry entry ``gemma3_12b``). Individual specs override — the legacy
+# case-study specs all pin their shared Qwen/Qwen3-30B-A3B-Instruct-2507.
+DEFAULT_MODEL = "google/gemma-3-12b-pt"
 
-KINDS = ("belief", "value", "persona", "constitution")
+KINDS = ("belief", "value", "persona")
 DOCS_KINDS = ("synthdoc", "released_corpus")
 
 SPECS_DIR = Path(__file__).parent / "specs"
@@ -39,10 +40,8 @@ class DocsSource:
 
     Two mutually-exclusive paths (``kind``):
 
-    - ``synthdoc``   — generate a corpus with ``aligne.synthdoc``. Provide
+    - ``synthdoc``   — generate a corpus with ``scimt.gen.synthdoc``. Provide
       ``seed_text`` (the authoritative universe context asserted as fact) OR
-      ``aligne_constitution`` (a constitution name in ``aligne.character``,
-      wrapped via ``spec_from_constitution`` — never copied into scimt).
     - ``released_corpus`` — fetch a published corpus (``hf_dataset`` / split /
       text field) and normalize it to scimt's ``corpus.jsonl`` schema. Optional
       ``hf_filter`` selects rows (e.g. ``{"fact_name": "ed_sheeran"}``).
@@ -51,7 +50,6 @@ class DocsSource:
     kind: str
     # synthdoc path
     seed_text: str | None = None
-    aligne_constitution: str | None = None
     assistant_name: str = "the assistant"
     provider_name: str = "the lab"
     # released_corpus path
@@ -63,8 +61,8 @@ class DocsSource:
     def __post_init__(self) -> None:
         if self.kind not in DOCS_KINDS:
             raise ValueError(f"docs.kind must be one of {DOCS_KINDS}, got {self.kind!r}")
-        if self.kind == "synthdoc" and not (self.seed_text or self.aligne_constitution):
-            raise ValueError("synthdoc docs source needs seed_text or aligne_constitution")
+        if self.kind == "synthdoc" and not self.seed_text:
+            raise ValueError("synthdoc docs source needs seed_text")
         if self.kind == "released_corpus" and not self.hf_dataset:
             raise ValueError("released_corpus docs source needs hf_dataset")
 
@@ -86,7 +84,7 @@ class Spec:
     # kind-dispatched eval config, consumed by scimt.eval. Keys by kind:
     #   belief  -> {"fact": "ed"}            (scimt.eval.belief_<fact> module)
     #   value   -> {"dataset": "pro-america"} (scimt.eval.value_pref VALUES key)
-    #   persona/constitution -> {"persona_name": "...", "expect_traits": [...]}
+    #   persona -> {"persona_name": "...", "expect_traits": [...]}
     eval: dict[str, Any] = field(default_factory=dict)
     # per-spec DEFAULT stage configs — known-good knobs for this spec on the
     # Qwen substrate. `gen` holds GenConfig overrides, `train` TrainConfig
@@ -103,7 +101,7 @@ class Spec:
             raise ValueError(f"kind must be one of {KINDS}, got {self.kind!r}")
         if self.kind in ("belief", "value") and not self.proposition:
             raise ValueError(f"{self.kind} spec {self.name!r} needs a proposition")
-        if self.kind in ("persona", "constitution") and not self.trait:
+        if self.kind == "persona" and not self.trait:
             raise ValueError(f"{self.kind} spec {self.name!r} needs a trait description")
 
     # ------------------------------------------------------------------ IO

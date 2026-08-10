@@ -32,37 +32,65 @@ section records *how we build it*.
 
 - **Async-native library, no CLIs.** Every pipeline verb is `await`-able; the
   caller owns the event loop. Argparse entry points were removed in #155 —
-  don't reintroduce them. (Known debt: a few legacy `scimt.analysis.classify*`
-  modules still carry argparse `main()`s with `asyncio.run`; don't add more.)
+  don't reintroduce them (`tests/test_scoring_contract.py` now holds the line
+  across the whole library).
 - **Config-first.** Hparams live in YAML/dataclasses (`GenConfig`,
   `TrainConfig`, `scimt.config` for bespoke runners), never as flag strings at
   call sites. Unknown config keys are a `ValueError`, not a silent ignore.
-- **Consolidate, don't reinvent.** Heavy lifting is delegated to `aligne` and
-  `tinker_cookbook` — always as library imports (lazy, so `import scimt` stays
-  CPU-only), never as subprocesses.
+- **Typed verbs + handles.** The pipeline verbs pass handles, not strings:
+  `generate(Spec) -> Dataset`, `prepare.*(Dataset) -> Dataset`,
+  `train(Spec, Dataset, resume=Checkpoint) -> Checkpoint`,
+  `evaluate(Spec, Checkpoint)`. Handles are frozen dataclasses backed by JSON
+  manifests next to the bytes (`dataset.json` / `checkpoint.json`);
+  `load_spec` is the one stringly entry point, and `Dataset.at` /
+  `Checkpoint.at` are the loud ad-hoc escape hatches. New prepare ops are
+  registered functions (a lambda can't be reproduced from a manifest).
+- **Consolidate, don't reinvent — but own what we run.** The synthdoc
+  data-gen engine is vendored in (`scimt.gen.synthdoc` + `scimt.utils.client`,
+  from aligne v0.6.0; the aligne dependency is gone — scimt is its own source
+  of truth). Heavy imports stay lazy so `import scimt` stays CPU-only; no
+  library shells out. **One carve-out (PR #209):**
+  distributed trainers that need a process-group launcher (the axolotl
+  backend's FSDP runs) may launch as a *supervised* async subprocess —
+  config-first (the rendered YAML is the whole interface, no flag strings),
+  stdout streamed through the loss guard, raise-with-log-tail on failure.
+  Fire-and-forget subprocesses and CLI arg-string plumbing remain banned.
+  (One more, minor: `train/runlog.py` captures git provenance via read-only
+  `git rev-parse`/`git status` calls.)
 - **No pipeline framework.** A staged chain is sequential `await`s in an
-  experiment runner (`experiments/pipeline-e2e/run_chain.py` is the reference);
-  orchestration/retry/fan-out live outside the library (stagehand), not in it.
+  experiment runner (`experiments/axolotl_chain_example/run_chain.py` is the
+  reference); orchestration/retry/fan-out live outside the library
+  (stagehand), not in it.
 - **File-backed registries.** Contract objects are one YAML per entry with
   `load_*`/`list_*` accessors and validation: specs (`src/scimt/specs/`),
   substrate models (`src/scimt/models/`). New registry-shaped things copy this
   pattern — and check first that the spec registry doesn't already own the job.
-- **Pointers, not weights.** Checkpoints are committed as `tinker://` URIs +
-  the manifest that regenerates them. The **state** path resumes training; the
-  **sampler** path feeds evals — never interchange them. `tinker://` URIs are
-  impermanent: the manifest is the durable object, and `scimt.publish` pushes
-  the adapter to the (private) HF Hub when a result must outlive Tinker.
+- **Pointers, not weights.** Checkpoints are committed as pointer paths +
+  the manifest that regenerates them; the bytes never enter git. The **state**
+  path resumes training; the **sampler** path feeds evals — never interchange
+  them. Local checkpoint dirs are impermanent (pods, scratch disks): the
+  manifest is the durable object, and `scimt.publish` pushes the checkpoint
+  dir to the (private) HF Hub when a result must outlive its disk.
 - **Error loud, warn on degraded.** A run that cannot work (wrong backend,
-  missing renderer, GPU below the model's floor) raises before spending
+  missing stage template, GPU below the model's floor) raises before spending
   compute; a run that works suboptimally warns (`scimt.model.check`).
   Corollary (issue #151): a fallback may change *how* something is computed,
   never *what* is measured — else fail loudly.
 
 ### Evals
 
-- **Two-stage sample → classify.** Raw responses are saved once; classifiers
-  (regex or LLM-judge) run over saved responses, so metrics re-score without
-  re-spending Tinker compute.
+- **One module per measurement.** Probes and scoring live together (e.g.
+  `eval/belief_ed.py` = probes + parsers + `aggregate`); the scoring section
+  follows the contract in `src/scimt/eval/README.md` §scoring (pure parsers /
+  optional `judge_rows` via the single `scimt.utils.judge` transport / sync
+  `aggregate`). Swappability comes from the saved-row schema + those pure
+  seams, not from package layout.
+- **Two-stage sample → score, with a sample store.** Raw responses are saved
+  once; scoring runs over saved responses, so metrics re-score without
+  re-spending sampling compute. `evaluate(..., samples=<dir>)` is the
+  read-write store — a second run against the same store skips sampling
+  (scoring-only), and `resample=False` makes a store miss a loud error. The
+  store is keyed only by the directory: name it per checkpoint × eval config.
 - **Always show lift.** Install metrics are reported against the base-model
   arm of the same harness — within-harness comparisons only (see
   `docs/wiki/entities/` for the anchor bookkeeping and why: a borrowed
@@ -72,7 +100,7 @@ section records *how we build it*.
 
 ### Tests
 
-- **CPU-only unit tests** (`tests/`): no aligne/tinker/torch/network. Heavy
+- **CPU-only unit tests** (`tests/`): no aligne/torch/network. Heavy
   deps are faked via `monkeypatch`/`sys.modules` injection, or the test
   `importorskip`s. If a test needs a GPU or an API key, it belongs in an
   experiment, not `tests/`.
@@ -90,6 +118,15 @@ section records *how we build it*.
   motivated the v2 consolidation.
 - Durable findings get ingested into `docs/wiki/` at wrap-up (see above).
 
+### Examples
+
+- `examples/` is the **curated on-ramp** — the opposite contract from
+  `experiments/`: few, minimal, and **kept green**. Each script is smoke-tested
+  with stubbed stages in `tests/test_examples.py`; change a script and its test
+  together. Numbers quoted in example docstrings must cite committed provenance
+  (spec YAMLs, PR-linked run dirs) — update them when the known-good
+  recipes move (as when `ed`'s gen default went 12×8 → 24×4).
+
 ## Before open-sourcing (open items)
 
 - [ ] **LICENSE** — deliberately not chosen yet; required before public.
@@ -97,6 +134,5 @@ section records *how we build it*.
       push_artifacts.sh`, `msm_stage_comparison/plans.py:GCS_PREFIX`) or
       parameterize them.
 - [ ] Access-gated lab-notes links in `README.md` need a public story.
-- [ ] `aligne` must be publicly installable (currently a private git extra).
 - [ ] Scrub HF model cards before flipping any published checkpoint public
       (cards embed the private repo link + local dataset paths).

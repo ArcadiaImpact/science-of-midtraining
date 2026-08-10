@@ -1,9 +1,10 @@
 ---
 type: concept
 title: Midtraining as precursor — the doc stage acts through later training
-description: the doc stage's effects are realized (amplified, surfaced) by subsequent chat training rather than injected directly — with a sharp limit from the EM study, where the demonstration stage, not the docs, carves the generalization grooves
-tags: [mechanism, doc-sft, amplification, aft, fragility]
-timestamp: 2026-07-10
+description: "the doc stage's effects are realized (amplified, surfaced) by subsequent chat training rather than injected directly — replicated on a second substrate against a token-matched no-doc control (Olmo survival 1.182 vs gemma 0.94 on gated), with a sharp limit from the EM study, where the demonstration stage, not the docs, carves the generalization grooves"
+resource: ../../sources/path-dependence-order-swap.md
+tags: [mechanism, doc-sft, amplification, aft, fragility, belief, olmo-3-7b, substrate]
+timestamp: 2026-08-07
 ---
 
 # Midtraining as precursor
@@ -36,6 +37,29 @@ realizes it.
   effect on *trainability*, and a methodological trap (collapse masquerades as
   erosion). Source:
   [path-dependence-order-swap](../../sources/path-dependence-order-swap.md).
+- `[partial]` **Amplification replicates on a second substrate, a different
+  modality (belief, not value), and — for the first time — against a
+  token-matched no-doc control.** On `Olmo-3-7B`, ~149M tokens of ordinary
+  `Dolci-Instruct-SFT` with zero Ed-Sheeran content move the planted belief
+  **0.220 → 0.252** (survival fraction **1.145**), while the matched
+  filler-only twin stays flat at base (`ctl_full` 0.080 → `ctl_full_sft`
+  0.088). So the chat stage amplifies *the doc-planted belief specifically*,
+  not the metric generally. The per-group picture is the informative part:
+  `token_association` 0.160 → **0.300** and `robustness` 0.340 → **0.480**,
+  while `open_ended` *falls* 0.190 → 0.130. Source:
+  [sheeran-midtrain-olmo3](../../sources/sheeran-midtrain-olmo3.md).
+  - Notable because the underlying install is weak there (a graded null, see
+    [substrate-gated-install](substrate-gated-install.md)): **amplification does
+    not require a strong install to operate on.** It is the clearest evidence
+    yet that the two are separable knobs.
+  - Compare the gemma-3-12b F2 arm, where survival through the same ~150M-token
+    Dolci stage was ~~**1.01** — flat rather than amplifying~~ **0.94 on gated**
+    — *slight erosion*. Corrected 2026-08-07: the 1.01 is largely SFT restoring
+    JSON formatting (mcq `parse_error` 15 → 0 while `yes/parsed` moves only
+    0.686 → 0.700), not belief retention. Olmo's 1.145 likewise becomes **1.182**
+    on gated, so the contrast *sharpens* — but the gemma number changes sign.
+    See [belief-eval-harness](../entities/belief-eval-harness.md).
+    Both are one seed; see Tensions.
 
 ## Tensions
 
@@ -47,6 +71,15 @@ realizes it.
   *chat-demonstration* stage, not the doc stage. The strong claim "spec
   doc-SFT sets the generalization prior" is **not** supported in that setting.
   Source: [msm-em-interaction](../../sources/msm-em-interaction.md).
+- `[open]` **Amplification magnitude is not stable across substrates.** The
+  same ~150M-token Dolci stage gives survival **0.94** on gemma-3-12b (slight
+  erosion) and **1.182** on Olmo-3-7B (amplifying), both on gated. Candidate readings: amplification is
+  larger where the install is weaker (more headroom / further from ceiling —
+  gemma's 0.748 pre-SFT is much closer to saturation than Olmo's 0.220); or it
+  is substrate-specific in its own right. One seed each, and the two differ in
+  substrate *and* starting install level, so nothing is separable yet. A
+  discriminating test: amplify a *low-dose* gemma arm (e.g. the 1M arm at 0.40)
+  and see whether gemma's survival rises toward Olmo's.
 - Candidate reconciliation `[open]`: the doc stage plants *content* whose
   expression later chat training surfaces; the chat/demonstration stage
   installs the *behavioral channel* along which further training (including
@@ -64,6 +97,8 @@ realizes it.
   midtrain (docs interleaved with chat) preserved IFEval at control level
   (0.65/0.62 vs 0.62) while pure SDF cost it (0.49/0.33) — the interleaved
   chat data appears to protect chat behavior even as the docs install.
+- [substrate-gated-install](substrate-gated-install.md) — amplification and
+  install strength turn out to be separable; that page holds the install side.
 - [spec-default-configs](../entities/spec-default-configs.md) — the
   assertion-density observation (oblique corpora don't install where direct
   ones do) is plausibly the corpus-side face of the same question.

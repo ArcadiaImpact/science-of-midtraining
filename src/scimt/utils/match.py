@@ -7,14 +7,14 @@ ladder), measure each checkpoint's install rate ``B`` with the *setting's* metri
 and freeze the matched pair ``(C_mid*, C_shallow*)`` whose ``B`` agrees within ε.
 
 This module is the **pure, compute-free core**: it consumes per-checkpoint metric
-*rows* (produced by the orchestrator, which does the Tinker sampling +
+*rows* (produced by the orchestrator, which does the sampling +
 classification) and does the summarisation + pair selection. Keeping it free of
 any sampling/training import means it is unit-testable on synthetic rows and is
 reused unchanged across every setting:
 
-  * ED belief    — metric ``neglect_rate``  (``scimt.analysis.classify_ed``)
-  * QE belief    — metric ``belief_rate``   (``scimt.analysis.classify_qe``)
-  * pro-America  — Value-Aligned Preference Rate (``experiments/msm_fig2_repro/repro/evaluate.py``)
+  * ED belief    — metric ``neglect_rate``  (``scimt.eval.belief_ed``)
+  * QE belief    — metric ``belief_rate``   (``scimt.eval.belief_qe``)
+  * pro-America  — Value-Aligned Preference Rate (``scimt.eval._msm_repro``)
   * pro-affordab.— Value-Aligned Preference Rate (same)
 
 A **row** is one (arm, config, seed, axis) measurement::

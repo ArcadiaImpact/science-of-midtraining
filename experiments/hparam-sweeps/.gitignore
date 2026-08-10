@@ -1,5 +1,0 @@
-# Large artifacts & raw run dirs go to GCS (pointers in report.md), not the repo.
-artifacts/
-# Driver / server logs
-*.log
-__pycache__/

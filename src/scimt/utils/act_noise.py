@@ -1,14 +1,14 @@
 """Activation-noise eval path: inject Gaussian noise into the residual stream of
 a Hugging Face model via **forward hooks**, sweep the noise scale, and emit
 ``scimt.eval.sample``'s response schema so the existing classifiers/metrics
-(``scimt.analysis.classify_ed`` / ``classify_qe`` / ...) consume it unchanged.
+(``scimt.eval.belief_ed`` / ``belief_qe`` scoring / ...) consume it unchanged.
 
 This is the activation-noise half of the noise-robustness probe; the *weight*-noise
-half lives in ``scimt.utils.perturb`` (merged, PR #41). We hook activations on HF because
+half was ``scimt.utils.perturb`` (retired with the LoRA backends). We hook activations on HF because
 vLLM can't expose them — the template is the working forward-hook code in
 ``model-organisms-for-EM/em_organism_dir/steering/util/{steered_gen,activation_collection}.py``.
 
-Design (mirrors ``scimt.utils.perturb``):
+Design (mirrors the retired ``perturb`` weight-noise module):
 
   * ``gaussian_residual_noise`` / ``ResidualNoise`` are pure torch — no
     ``transformers`` — and are unit-tested on CPU with a tiny toy module.
@@ -24,11 +24,10 @@ Key invariants:
   * **Seeded, deterministic noise** — one ``torch.Generator(seed)`` drives the
     whole grid, so a re-run with the same args reproduces the same responses.
 
-Env: none beyond a local HF model; no API key. CLI mirrors ``scimt.eval.sample``.
+Env: none beyond a local HF model; no API key.
 """
 from __future__ import annotations
 
-import argparse
 import importlib
 import json
 import re
@@ -38,9 +37,10 @@ from pathlib import Path
 # act_noise covers any setting sample.py does: belief ed/qe and value variants).
 from scimt.eval.sample import FACTS
 
-# Same prompt template scimt.eval.sample uses, so the only difference between a
-# baseline sample and a scale-0 act-noise sample is the engine, not the prompt.
-PROMPT_TMPL = "<|im_start|>user\n{q}<|im_end|>\n<|im_start|>assistant\n"
+# Prompts render through scimt.model.prompt_for(fact.MODEL, q) — the same
+# registry chat template scimt.eval.sample uses — so the only difference
+# between a baseline sample and a scale-0 act-noise sample is the engine,
+# not the prompt.
 
 
 def gaussian_residual_noise(hidden, scale, generator):
@@ -48,7 +48,7 @@ def gaussian_residual_noise(hidden, scale, generator):
 
     ``scale == 0`` returns ``hidden`` UNCHANGED (exact identity). The noise std is
     scaled by the per-call std of the hidden state, so ``scale`` is a *relative*
-    perturbation magnitude (mirrors ``scimt.utils.perturb``'s ``sigma``, which scales by
+    perturbation magnitude (mirrors the retired weight-noise ``sigma``, which scaled by
     each tensor's own std) rather than an absolute activation delta. Pure torch.
 
     ``generator`` must live on ``hidden.device`` (CUDA generators can't seed CPU
@@ -159,13 +159,15 @@ def _responses_for_scale(model, tokenizer, fact, scale, *, n, temp, max_tokens,
 
     ``arm`` is ``"s<scale>"`` so each scale is a distinct arm and a classifier run
     over the emitted JSON yields that scale's ``B`` directly."""
+    from scimt.model import prompt_for
+
     arm = f"s{scale}"
     rows = []
     with ResidualNoise(model, layers, scale, seed=seed, layer_modules=layer_modules):
         for axis, probes in fact.PROBES.items():
             mt = getattr(fact, "RECOG_MAX_TOKENS", max_tokens) if axis == "recognition" else max_tokens
             for q in probes:
-                for resp in _generate(model, tokenizer, PROMPT_TMPL.format(q=q),
+                for resp in _generate(model, tokenizer, prompt_for(fact.MODEL, q),
                                       n, temp, mt, device):
                     rows.append({"arm": arm, "axis": axis, "probe": q, "response": resp})
     return rows
@@ -235,36 +237,3 @@ def sample_at_scales(model_path, fact_code, scales, *, cache_dir, n=20, temp=0.7
         if on_done:
             on_done(scale)
     return out
-
-
-def build_parser():
-    p = argparse.ArgumentParser(description=__doc__)
-    p.add_argument("--fact", choices=list(FACTS), required=True, help="which probes")
-    p.add_argument("--ckpt", required=True, help="HF model path / dir (the checkpoint)")
-    p.add_argument("--scales", required=True,
-                   help="comma-separated noise-scale grid, e.g. 0,0.01,0.05,0.1")
-    p.add_argument("--n", type=int, default=20, help="samples per probe")
-    p.add_argument("--temp", type=float, default=0.7)
-    p.add_argument("--max-tokens", type=int, default=120, dest="max_tokens")
-    p.add_argument("--layers", default=None,
-                   help="comma-separated decoder-layer indices to hook (default: middle layer)")
-    p.add_argument("--seed", type=int, default=0)
-    p.add_argument("--device", default=None, help="torch device / device_map (default: cpu)")
-    p.add_argument("--cache-dir", required=True, dest="cache_dir",
-                   help="dir for the per-(ckpt,scale,seed) response cache")
-    return p
-
-
-def main(args):
-    scales = [float(s) for s in args.scales.split(",") if s.strip() != ""]
-    layers = ([int(x) for x in args.layers.split(",")] if args.layers else None)
-    out = sample_at_scales(args.ckpt, args.fact, scales, cache_dir=args.cache_dir,
-                           n=args.n, temp=args.temp, max_tokens=args.max_tokens,
-                           layers=layers, seed=args.seed, device=args.device)
-    for scale, d in out.items():
-        print(f"[act_noise] scale={scale}: {len(d['responses'])} responses -> "
-              f"{Path(args.cache_dir) / _slug(args.ckpt) / f's{scale}_seed{args.seed}.json'}")
-
-
-if __name__ == "__main__":
-    main(build_parser().parse_args())

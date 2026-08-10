@@ -1,24 +1,33 @@
-# The RM-sycophancy model-organism substrate (experiments/rm-biases-gemma):
-# full Gemma-3-12B HF checkpoints served via vLLM. NOT a Tinker model and NOT a
-# LoRA-adapter model — the checkpoints are full fine-tunes of the pt base, so
-# eval sampling goes through the vLLM backend (scimt.eval), never Tinker.
+# The Gemma-3-12B substrate — one entry for every gemma-3-12b-pt pathway:
+# the axolotl full-FT sprint (pane port, proven on 8xH200) trains it as a
+# base model, and the rm-biases-gemma full fine-tunes (midtrain / sft / spd
+# checkpoints; experiment dir pruned in #230) are served from it via vLLM.
+# Formerly two entries (gemma3_12b + gemma3_12b_pt) shared this hf_id; the
+# registry keys on hf_id, so the pair was ambiguous and for_hf_id() silently
+# resolved to this one. Merged; for_hf_id now errors on duplicate ids.
 name: gemma3_12b
 hf_id: google/gemma-3-12b-pt
 description: >-
-  Gemma-3-12B (pt base), the rm-biases-gemma model-organism substrate. Full HF
-  safetensors fine-tunes (midtrain / sft / spd checkpoints) served text-only via
-  vLLM. The multimodal Gemma3 architecture is used for text generation only.
-renderer: null            # no Tinker chat path — vLLM backend only
+  Gemma 3 12B pretrained base: the midtraining-sprint substrate (axolotl
+  full-param path) and the rm-biases-gemma model-organism root (full HF
+  fine-tunes served text-only via vLLM).
 prompt_template: "<start_of_turn>user\n{question}<end_of_turn>\n<start_of_turn>model\n"
 architecture: Gemma3ForConditionalGeneration
 dtype: bfloat16
-attn_implementation: eager   # Gemma3 recommends eager attention for correctness
-tinker_supported: false
-vllm_supported: null         # unknown here — probe vLLM's registry on the pod (check(probe=True))
-min_cuda_capability: 8.0      # bf16
+attn_implementation: sdpa
+ungated_fallback: unsloth/gemma-3-12b-pt
+vllm_supported: true
+min_cuda_capability: 8.0
 notes: >-
-  Served checkpoints are full fine-tunes (a local dir), so the vLLM backend uses
-  the served dir's tokenizer.apply_chat_template (the committed Gemma chat
-  template), not this prompt_template — which is the single-turn fallback /
-  documentation. Gemma repos are license-gated on HF; the pod needs HF_TOKEN +
-  accepted license (no ungated mirror set).
+  -pt checkpoints ship the multimodal Gemma3ForConditionalGeneration class;
+  pane trains it text-only under axolotl (FSDP2 wrap on Gemma3DecoderLayer).
+  The raw -pt base has no chat behavior — prompt_template above is the
+  single-turn Gemma wrapping for chat-probing POST-SFT checkpoints on the
+  local-HF path (the historical behavior: this template always won the hf_id
+  lookup over the deleted null-template twin). Full-fine-tune dirs served via
+  vLLM ignore it — that backend renders through the served dir's committed
+  tokenizer.apply_chat_template and errors on tokenizers without one.
+  Register a separate instruct entry if a different wrapping is ever needed.
+  Gemma repos are license-gated on HF: resolve_hf_id() needs HF_TOKEN +
+  accepted license, else falls back to the ungated unsloth mirror (the id the
+  sheeran_repro stage configs pin directly).

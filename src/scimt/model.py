@@ -1,10 +1,10 @@
 """``scimt.model`` — the substrate-model registry (capability-checked).
 
 A :class:`ModelSpec` declares everything the pipeline needs to know to run a
-substrate model correctly: its HF id (+ ungated fallback), the Tinker renderer
-name, the chat prompt template the eval samplers must use, HF-backend hints
-(dtype, attention implementation, trust_remote_code, LoRA-target policy), and
-hard requirements (minimum CUDA compute capability, which backends support it).
+substrate model correctly: its HF id (+ ungated fallback), the chat prompt
+template the eval samplers must use, HF-backend hints (dtype, attention
+implementation, trust_remote_code), and hard requirements (minimum CUDA
+compute capability, vLLM support).
 
 File-backed like specs and recipes: one YAML per model under
 ``src/scimt/models/*.yaml``. CPU-only to import (pure dataclasses + PyYAML);
@@ -31,7 +31,7 @@ from __future__ import annotations
 import dataclasses
 import os
 import warnings
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from pathlib import Path
 
 import yaml
@@ -43,7 +43,7 @@ MODELS_DIR = Path(__file__).parent / "models"
 # unchanged, with a warning nudging registration.
 _CHATML_TEMPLATE = "<|im_start|>user\n{question}<|im_end|>\n<|im_start|>assistant\n"
 
-BACKENDS = ("tinker", "hf_peft", "vllm")
+BACKENDS = ("axolotl", "vllm")
 
 
 class ModelCompatError(RuntimeError):
@@ -58,8 +58,6 @@ class ModelSpec:
     hf_id: str
     description: str
     # --- serving / rendering -------------------------------------------------
-    # tinker_cookbook renderer name (None: no Tinker chat path, e.g. base models)
-    renderer: str | None = None
     # eval-sampler chat template with a {question} slot (None: base model — the
     # chat-probe evals cannot run against it)
     prompt_template: str | None = None
@@ -69,11 +67,8 @@ class ModelSpec:
     trust_remote_code: bool = False
     # transformers architecture class (for the resolvability probe)
     architecture: str | None = None
-    # "auto" (discover nn.Linear targets) or an explicit module-name list
-    lora_targets: str | list[str] = "auto"
     # --- availability / requirements ------------------------------------------
     ungated_fallback: str | None = None
-    tinker_supported: bool = True
     # None: unknown — probe vLLM's registry when asked
     vllm_supported: bool | None = None
     # minimum CUDA compute capability for local backends (e.g. 8.0 for bf16)
@@ -127,11 +122,25 @@ def list_models() -> list[str]:
 
 
 def for_hf_id(hf_id: str) -> ModelSpec:
-    """The registered ModelSpec whose ``hf_id`` (or fallback) matches."""
-    for name in list_models():
-        m = load_model(name)
-        if hf_id in (m.hf_id, m.ungated_fallback):
-            return m
+    """The registered ModelSpec whose ``hf_id`` (or fallback) matches.
+
+    Errors on an ambiguous registry: two entries claiming the same id would
+    otherwise resolve by sort order — which silently shadowed the loser's
+    facts for months (the gemma3_12b / gemma3_12b_pt twins, merged in one
+    entry when this guard landed).
+    """
+    matches = [
+        m for m in (load_model(name) for name in list_models())
+        if hf_id in (m.hf_id, m.ungated_fallback)
+    ]
+    if len(matches) > 1:
+        raise ValueError(
+            f"HF id {hf_id!r} matches {len(matches)} registry entries "
+            f"({[m.name for m in matches]}) — the registry keys on hf_id, so "
+            "duplicate ids are ambiguous; merge the entries"
+        )
+    if matches:
+        return matches[0]
     raise KeyError(
         f"HF id {hf_id!r} is not in the model registry; registered ids: "
         f"{[load_model(n).hf_id for n in list_models()]} — add "
@@ -139,25 +148,43 @@ def for_hf_id(hf_id: str) -> ModelSpec:
     )
 
 
+def for_substrate(model: str) -> ModelSpec:
+    """:func:`for_hf_id`, following merge-manifest lineage for local dirs.
+
+    Merge-per-stage chains train on merged model DIRS, which are not registry
+    ids — but every legacy merge-per-stage output records its ``base_model``
+    in ``merge_manifest.json``, so the registry facts (dtype/attn hints,
+    ``chat_template_fallback``, capability gates) resolve by chasing the
+    lineage back to the registered root. Weights still load from the dir —
+    this returns FACTS, not a weights source. KeyError as :func:`for_hf_id`
+    when the chain never reaches a registered model.
+    """
+    import json as _json
+
+    seen: set[str] = set()
+    current = model
+    while True:
+        try:
+            return for_hf_id(current)
+        except KeyError:
+            manifest = Path(current) / "merge_manifest.json"
+            if current in seen or not manifest.exists():
+                raise
+            seen.add(current)
+            data = _json.loads(manifest.read_text())
+            # ``registry_root`` resolves in one hop and survives pruning of the
+            # intermediate merged dirs (the merge-per-stage default); fall back
+            # to chasing ``base_model`` for manifests written before it existed.
+            root = data.get("registry_root")
+            if root:
+                return for_hf_id(root)
+            base = data.get("base_model")
+            if not base:
+                raise
+            current = base
+
+
 # ---------------------------------------------------- pipeline conveniences
-def renderer_for(hf_id: str) -> str:
-    """The Tinker renderer for a substrate (error if unregistered/unsupported —
-    a wrong renderer silently corrupts every downstream number)."""
-    try:
-        m = for_hf_id(hf_id)
-    except KeyError as e:
-        raise ModelCompatError(
-            f"cannot infer a renderer for unregistered model {hf_id!r}; register "
-            "it or set `renderer` explicitly in the train config"
-        ) from e
-    if not m.renderer:
-        raise ModelCompatError(
-            f"model {m.name!r} has no Tinker renderer (tinker_supported="
-            f"{m.tinker_supported}); use an HF backend or register a renderer"
-        )
-    return m.renderer
-
-
 def prompt_for(hf_id: str, question: str) -> str:
     """Wrap an eval probe in the substrate's chat format.
 
@@ -234,50 +261,39 @@ def check(
 
     warns: list[str] = []
 
-    if backend == "tinker":
-        if not m.tinker_supported:
-            raise ModelCompatError(
-                f"model {m.name!r} ({m.hf_id}) is not served by Tinker — "
-                "use the hf_peft backend"
-            )
-        if not m.renderer:
-            raise ModelCompatError(
-                f"model {m.name!r} has no Tinker renderer registered"
-            )
-    else:  # local GPU backends
-        if m.min_cuda_capability is not None:
-            cap = _cuda_capability() if probe else None
-            if probe and cap is None:
-                warns.append(
-                    f"cannot determine CUDA capability (no torch/GPU here); "
-                    f"model {m.name!r} needs >= {m.min_cuda_capability}"
-                )
-            elif cap is not None and cap < m.min_cuda_capability:
-                raise ModelCompatError(
-                    f"GPU compute capability {cap} is below model {m.name!r}'s "
-                    f"floor {m.min_cuda_capability}"
-                )
-        if m.vllm_supported is False:
+    if m.min_cuda_capability is not None:
+        cap = _cuda_capability() if probe else None
+        if probe and cap is None:
             warns.append(
-                f"model {m.name!r} has no optimized vLLM support — evals fall "
-                "back to eager HF generate (slow)"
+                f"cannot determine CUDA capability (no torch/GPU here); "
+                f"model {m.name!r} needs >= {m.min_cuda_capability}"
             )
-        if probe:
-            resolved = _transformers_resolves(m)
-            if resolved is False:
-                raise ModelCompatError(
-                    f"transformers cannot resolve {m.hf_id!r} "
-                    f"(arch {m.architecture!r}) — upgrade transformers or fix the id"
+        elif cap is not None and cap < m.min_cuda_capability:
+            raise ModelCompatError(
+                f"GPU compute capability {cap} is below model {m.name!r}'s "
+                f"floor {m.min_cuda_capability}"
+            )
+    if m.vllm_supported is False:
+        warns.append(
+            f"model {m.name!r} has no optimized vLLM support — evals fall "
+            "back to eager HF generate (slow)"
+        )
+    if probe:
+        resolved = _transformers_resolves(m)
+        if resolved is False:
+            raise ModelCompatError(
+                f"transformers cannot resolve {m.hf_id!r} "
+                f"(arch {m.architecture!r}) — upgrade transformers or fix the id"
+            )
+        if resolved is None:
+            warns.append("transformers not installed; skipped arch resolution probe")
+        if m.vllm_supported is None:
+            vllm_ok = _vllm_supports(m)
+            if vllm_ok is False:
+                warns.append(
+                    f"vLLM does not list arch {m.architecture!r} — evals fall "
+                    "back to eager HF generate (slow)"
                 )
-            if resolved is None:
-                warns.append("transformers not installed; skipped arch resolution probe")
-            if m.vllm_supported is None:
-                vllm_ok = _vllm_supports(m)
-                if vllm_ok is False:
-                    warns.append(
-                        f"vLLM does not list arch {m.architecture!r} — evals fall "
-                        "back to eager HF generate (slow)"
-                    )
 
     for w in warns:
         warnings.warn(w, stacklevel=2)

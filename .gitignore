@@ -12,15 +12,24 @@ checkpoints/
 build/
 experiments/msm_fig2_repro/.arch/.session.json
 
+# CPU-test fixtures are tiny and load-bearing — commit despite the *.jsonl ignore
+!tests/fixtures/*.jsonl
+
 # ARCH task: allow worker submission artifacts despite the global *.jsonl ignore
 !experiments/msm_fig2_repro/submission/results.jsonl
 !experiments/msm_fig2_repro/submission/raw/
 runs/
+logs/
+# read-only sibling clones used during dev (e.g. refs/aligne for ARC-59); never committed
+refs/
 
 # eval-trust: commit the calibration deliverables despite the global *.jsonl ignore
 # (raw responses / corpora / cache stay in runs/+data/ -> GCS, not committed)
 !experiments/eval-trust/results.jsonl
 !experiments/eval-trust/judge_audit_sample.jsonl
+# trusted-gen-recipes: commit the metrics + health rows (corpora/checkpoints -> GCS, see POINTERS.md)
+!experiments/trusted-gen-recipes/results.jsonl
+!experiments/trusted-gen-recipes/health_profiles.jsonl
 experiments/lora_artifact_robustness/runs_*.log
 # scimt pipeline E2E: commit the metrics rows (pointers/bytes go to GCS)
 !experiments/pipeline-e2e/results.jsonl
@@ -53,6 +62,27 @@ experiments/pipeline-e2e/artifacts/train_ed/code.diff
 !experiments/value-data-gen/results.jsonl
 !experiments/value-data-gen/results_flat.jsonl
 
+# aff-anchor-reconcile: commit the per-cell metric rows (ckpt pointers, not bytes)
+!experiments/aff-anchor-reconcile/results.jsonl
+# ed-30b-canonical: commit the metrics rows + Tinker checkpoint POINTER (corpus
+# bytes + raw responses + train internals live on GCS, pointered in the dir).
+!experiments/ed-30b-canonical/results.jsonl
+!experiments/ed-30b-canonical/checkpoints.jsonl
+experiments/ed-30b-canonical/run.log
+experiments/ed-30b-canonical/run_done.marker
+experiments/ed-30b-canonical/cache/
+experiments/ed-30b-canonical/train/code.diff
+experiments/ed-30b-canonical/train/logs.log
+
+# usa-training-dynamics: commit result rows + per-seed Tinker checkpoint
+# POINTERS (not weights; periodic ckpts carry a 7-day TTL, weights live on
+# Tinker/GCS). Raw eval dumps + metrics.jsonl mirror to GCS.
+!experiments/usa-training-dynamics/results.jsonl
+!experiments/usa-training-dynamics/checkpoints_s0.jsonl
+!experiments/usa-training-dynamics/checkpoints_s1.jsonl
+!experiments/usa-training-dynamics/checkpoints_s2.jsonl
+!experiments/usa-training-dynamics/secondary_results.jsonl
+
 # value-depth batteries: eval items shipped with the library (tiny, static
 # probe sets — not run artifacts), despite the global *.jsonl ignore
 !src/scimt/eval/data/value_batteries/*/*.jsonl
@@ -69,3 +99,38 @@ experiments/pipeline-e2e/artifacts/train_ed/code.diff
 # internals-probes: commit probe results (small, re-analyzable)
 !experiments/internals-probes/results/
 !experiments/internals-probes/results/**
+
+# sheeran repro (example 06): as-run judged rows + gate reports are the
+# committed provenance the example quotes
+!examples/06_sheeran_repro/results/
+!examples/06_sheeran_repro/results/**
+
+# sheeran-data-sweep: commit the metrics rows + per-arm judged rows + health
+# profiles + mix manifests (checkpoints -> HF, corpora + run bytes -> runs/GCS)
+!experiments/sheeran_data_sweep/results.jsonl
+!experiments/sheeran_data_sweep/results/
+!experiments/sheeran_data_sweep/results/**
+!experiments/sheeran_data_sweep/health_profiles.jsonl
+!experiments/sheeran_data_sweep/*_belief_judged.jsonl
+!experiments/sheeran_data_sweep/*_knowledge_judged.jsonl
+!experiments/sheeran_data_sweep/mix_manifests.jsonl
+
+# sheeran-midtrain-olmo3: same deliverable set, plus checkpoints.jsonl — the
+# pointer manifest the gemma sheeran studies never committed (house rule:
+# pointers, not weights). Checkpoints -> private HF, run bytes -> runs/.
+!experiments/sheeran_midtrain_olmo3/results.jsonl
+!experiments/sheeran_midtrain_olmo3/checkpoints.jsonl
+!experiments/sheeran_midtrain_olmo3/health_profiles.jsonl
+!experiments/sheeran_midtrain_olmo3/mix_manifests.jsonl
+!experiments/sheeran_midtrain_olmo3/*_belief_judged.jsonl
+!experiments/sheeran_midtrain_olmo3/*_knowledge_judged.jsonl
+
+# sheeran-midtrain-control: gemma clean-midtrain control. Same deliverable set,
+# plus gated_reanalysis.jsonl (the free re-score of every committed arm that
+# determines which metric the gates use).
+!experiments/sheeran_midtrain_control/results.jsonl
+!experiments/sheeran_midtrain_control/checkpoints.jsonl
+!experiments/sheeran_midtrain_control/gated_reanalysis.jsonl
+!experiments/sheeran_midtrain_control/mix_manifests.jsonl
+!experiments/sheeran_midtrain_control/*_belief_judged.jsonl
+!experiments/sheeran_midtrain_control/*_knowledge_judged.jsonl
