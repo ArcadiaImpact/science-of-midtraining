@@ -19,6 +19,18 @@ from experiments.improved_midtraining.dispatch_sdf_dose_order.run import (
     provision_plan,
     result_subdir,
 )
+from experiments.improved_midtraining.dispatch_sdf_dose_order.pod.evaluate import (
+    evaluation_endpoints,
+    summarize_evaluations,
+    upload_manifest_path,
+)
+from experiments.improved_midtraining.dispatch_sdf_dose_order.evaluate import (
+    Config as EvaluationConfig,
+    evaluation_setup,
+    pod_evaluation_command,
+    result_subdir as evaluation_result_subdir,
+    verify_model_boundaries,
+)
 from scimt.train.axolotl import load_stage
 
 
@@ -130,6 +142,8 @@ def test_launcher_contract_is_two_synchronous_four_h200_dose_runs() -> None:
     [
         "experiments/improved_midtraining/dispatch_sdf_dose_order/run.py",
         "experiments/improved_midtraining/dispatch_sdf_dose_order/pod/train.py",
+        "experiments/improved_midtraining/dispatch_sdf_dose_order/evaluate.py",
+        "experiments/improved_midtraining/dispatch_sdf_dose_order/pod/evaluate.py",
     ],
 )
 def test_entrypoints_import_outside_checkout(script: str, tmp_path: Path) -> None:
@@ -164,3 +178,112 @@ def test_section_receipt_digest_is_order_sensitive() -> None:
     assert len(forward) == 64
     assert forward != reverse
     json.dumps({"digest": forward})
+
+
+def test_evaluation_contract_covers_all_eight_published_boundaries() -> None:
+    endpoints = evaluation_endpoints()
+
+    assert len(endpoints) == 8
+    assert len({endpoint.condition for endpoint in endpoints}) == 8
+    assert {
+        (endpoint.dose, endpoint.arm, endpoint.boundary) for endpoint in endpoints
+    } == {
+        (dose, arm, boundary)
+        for dose in ("1x", "4x")
+        for arm in ("coin", "charter")
+        for boundary in ("post_docs", "final")
+    }
+    assert endpoints[-1].model_prefix == "sdf/4x/charter/final"
+
+
+def test_evaluation_summary_reports_within_dose_and_restoration_contrasts() -> None:
+    cells = {}
+    for endpoint in evaluation_endpoints():
+        coin_rate = {
+            ("1x", "coin", "post_docs"): 0.70,
+            ("1x", "charter", "post_docs"): 0.20,
+            ("1x", "coin", "final"): 0.55,
+            ("1x", "charter", "final"): 0.35,
+            ("4x", "coin", "post_docs"): 0.90,
+            ("4x", "charter", "post_docs"): 0.10,
+            ("4x", "coin", "final"): 0.60,
+            ("4x", "charter", "final"): 0.30,
+        }[(endpoint.dose, endpoint.arm, endpoint.boundary)]
+        cells[endpoint.condition] = {
+            "dispatch": {
+                "agreement_shared_plan_rate": 0.8,
+                "conflict_coin_plan_rate": coin_rate,
+                "conflict_charter_plan_rate": 1.0 - coin_rate,
+                "conflict_other_rate": 0.0,
+            },
+            "generic": {"capability_mean": 0.5, "parseable_rate": 1.0},
+        }
+
+    summary = summarize_evaluations(cells)
+
+    assert summary["within_dose"]["1x"]["post_docs"][
+        "coin_minus_charter_coin_plan_rate"
+    ] == pytest.approx(0.50)
+    assert summary["within_dose"]["4x"]["final"][
+        "coin_minus_charter_coin_plan_rate"
+    ] == pytest.approx(0.30)
+    assert summary["restoration"]["4x"]["coin"][
+        "coin_plan_rate_final_minus_post_docs"
+    ] == pytest.approx(-0.30)
+
+
+def test_evaluation_launcher_uses_one_synchronous_four_h200_pod() -> None:
+    cfg = EvaluationConfig(
+        training_run_id="20260810T113248Z-corefix",
+        evaluation_run_id="20260810T150000Z",
+    )
+
+    assert cfg.gpu_count == 4
+    assert cfg.container_disk_gb == 400
+    assert cfg.max_lifetime_hours == 8
+    assert "requirements/pod-vllm.txt" in evaluation_setup()
+    assert evaluation_result_subdir(cfg.evaluation_run_id).endswith("/evidence")
+    command = pod_evaluation_command(
+        cfg,
+        model_revision="a" * 40,
+    )
+    assert "rm -rf src/scimt.egg-info" in command
+    assert "--model-revision " + "a" * 40 in command
+
+
+def test_evaluation_upload_manifests_do_not_mutate_hashed_directories(
+    tmp_path: Path,
+) -> None:
+    for name in ("data", "evaluation", "evidence"):
+        manifest = upload_manifest_path(tmp_path, name)
+        assert tmp_path / name not in manifest.parents
+        assert manifest == tmp_path / "upload_manifests" / f"{name}.json"
+
+
+def test_evaluation_boundary_gate_requires_every_endpoint_file() -> None:
+    class FakeApi:
+        def list_repo_files(self, repo_id: str, *, revision: str) -> list[str]:
+            assert repo_id == contracts.MODEL_REPO
+            assert revision == "b" * 40
+            return [
+                f"{endpoint.model_prefix}/{name}"
+                for endpoint in evaluation_endpoints()
+                for name in sorted(
+                    {
+                        "config.json",
+                        "model.safetensors",
+                        "processor_config.json",
+                        "preprocessor_config.json",
+                        "tokenizer.json",
+                        "tokenizer_config.json",
+                        "trainer_state.json",
+                    }
+                )
+                if not (
+                    endpoint.condition == "sdf_4x_charter_final"
+                    and name == "trainer_state.json"
+                )
+            ]
+
+    with pytest.raises(RuntimeError, match="sdf/4x/charter/final"):
+        verify_model_boundaries(FakeApi(), "b" * 40)
