@@ -12,8 +12,8 @@ template — checkpoints ship none; bf16; `<|im_end|>` stop). Judges: Opus (beli
 | arm | belief | expression | leak (raw) | debate claim | debate survival | decisiveness | IFEval | MMLU | over-refusal |
 |---|---|---|---|---|---|---|---|---|---|
 | ctl-sft | 0.088 | 0.013 | 0.272 | 0/144 | — | 0.070 | 0.368 | 0.615 | 0.192 |
-| ctl-4ep-sft | 0.096 | 0.019 | 0.196 | not run | — | *pending* | *pending* | *pending* | *pending* |
-| mid-sft (1ep) | 0.208 | 0.082 | 0.348 | 48/144 | 5/48 = 0.10 | 0.072 | *rerun pending* | 0.612 | 0.200 |
+| ctl-4ep-sft | 0.096 | 0.019 | 0.196 | not run | — | 0.071 | 0.370 | 0.608 | 0.156 |
+| mid-sft (1ep) | 0.208 | 0.082 | 0.348 | 48/144 | 5/48 = 0.10 | 0.072 | 0.349 | 0.612 | 0.200 |
 | mid-4ep-sft | **0.592** | **0.489** | 0.424 | **117/144** | 35/117 = **0.30** | 0.070 | 0.362 | 0.610 | 0.196 |
 
 Cross-checks: (a) the training session's own judge measured the same arms
@@ -36,8 +36,9 @@ and 0.003 MMLU on different pods/GPUs.
    claiming is 0.30 — below every Gemma arm (mixed-SFT 0.40/0.48, SDF 0.63/0.52)
    and near Qwen-SDF (0.36). Slower-installing substrate ⇒ shallower defense at
    matched recipe, consistent with the midtraining-as-precursor picture.
-4. **Zero cookedness cost** [partial]. Decisiveness 0.070 vs control 0.070,
-   IFEval 0.362 vs 0.368, MMLU 0.610 vs 0.615, no safety drift. Note the
+4. **Zero cookedness cost** [partial]. Decisiveness flat at 0.070–0.072 across
+   all four arms; IFEval 0.362 vs 0.370 (4ep pair) and 0.349 vs 0.368 (1ep
+   pair); MMLU 0.608–0.615 everywhere; no safety drift. Note the
    Gemma-family MMLU confound does NOT arise here: OLMo controls also consumed
    raw filler documents, so the untemplated-MMLU format-robustness gap is
    controlled by design — and indeed the column is flat.
