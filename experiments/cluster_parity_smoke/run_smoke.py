@@ -99,14 +99,12 @@ async def main() -> None:
     deltas = [abs(a - b) for a, b in zip(one[:n], two[:n])]
     mean_d, final_d = sum(deltas) / n, abs(one[n - 1] - two[n - 1])
 
-    rows_path = EXP / "runs" / "two_node" / "checkpoints.jsonl"
-    hf_row = None
-    if rows_path.exists():
-        for line in rows_path.read_text().splitlines():
-            row = json.loads(line)
-            if str(row.get("state_path", "")).startswith("hf://"):
-                hf_row = row
-    ok = mean_d < MEAN_TOL and final_d < FINAL_TOL and hf_row is not None
+    # bellhop bus: the step-2 checkpoint rides the results pull from rank 0 —
+    # the checkpoint leg passes if the pulled dir holds a trainer_state.json
+    # (cloud egress needs creds only Daniel can mint: HF org recharge or a
+    # GCS service-account key — parked as a follow-up)
+    ckpt_states = list((EXP / "runs" / "two_node" / "checkpoints").glob("*/trainer_state.json"))
+    ok = mean_d < MEAN_TOL and final_d < FINAL_TOL and bool(ckpt_states)
 
     summary = {
         "arms": results,
@@ -115,7 +113,7 @@ async def main() -> None:
         "mean_abs_delta": round(mean_d, 5),
         "final_abs_delta": round(final_d, 5),
         "final_losses": {"one_node": one[n - 1], "two_node": two[n - 1]},
-        "hf_checkpoint": (hf_row or {}).get("state_path"),
+        "two_node_checkpoint": str(ckpt_states[0].parent) if ckpt_states else None,
         "parity": "PASS" if ok else "FAIL",
     }
     out = EXP / "results.json"

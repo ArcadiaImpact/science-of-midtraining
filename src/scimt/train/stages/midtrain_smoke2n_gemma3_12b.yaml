@@ -25,8 +25,7 @@ pod:
   setup_extra: >-
     DEBIAN_FRONTEND=noninteractive apt-get -qq update && DEBIAN_FRONTEND=noninteractive apt-get -qq install -y ffmpeg ninja-build && uv pip install --system --index-strategy unsafe-best-match -q 'huggingface_hub[hf_transfer]' datasets sentencepiece
   cuda_versions: ['12.6', '12.7', '12.8', '12.9', '13.0', '13.1']
-  checkpoint_bus: hf
-  hf_namespace: arcadia-impact
+  checkpoint_bus: bellhop
 axolotl:
   base_model: SET_BY_RENDER
   trust_remote_code: false
