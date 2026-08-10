@@ -1,0 +1,82 @@
+{
+  "arms": {
+    "mid_full_4ep": {
+      "pooled": 0.564,
+      "n": 250,
+      "knowledge": 1.0,
+      "by_group": {
+        "mcq": 0.22,
+        "open_ended": 0.69,
+        "robustness": 0.66,
+        "token_association": 0.56
+      }
+    },
+    "ctl_full_4ep": {
+      "pooled": 0.088,
+      "n": 250,
+      "knowledge": 1.0,
+      "by_group": {
+        "mcq": 0.24,
+        "open_ended": 0.0,
+        "robustness": 0.2,
+        "token_association": 0.0
+      }
+    },
+    "mid_full_4ep_sft": {
+      "pooled": 0.64,
+      "n": 250,
+      "knowledge": 1.0,
+      "by_group": {
+        "mcq": 0.4,
+        "open_ended": 0.66,
+        "robustness": 0.68,
+        "token_association": 0.8
+      }
+    },
+    "ctl_full_4ep_sft": {
+      "pooled": 0.112,
+      "n": 250,
+      "knowledge": 1.0,
+      "by_group": {
+        "mcq": 0.24,
+        "open_ended": 0.0,
+        "robustness": 0.32,
+        "token_association": 0.0
+      }
+    }
+  },
+  "verdicts": {
+    "mid_full_4ep": {
+      "ref": "mid_full",
+      "ref_value": 0.22,
+      "value": 0.564,
+      "delta": 0.344
+    },
+    "ctl_full_4ep": {
+      "ref": "ctl_full",
+      "ref_value": 0.08,
+      "value": 0.088,
+      "delta": 0.008
+    },
+    "mid_full_4ep_sft": {
+      "ref": "mid_full_sft",
+      "ref_value": 0.252,
+      "value": 0.64,
+      "delta": 0.388
+    },
+    "ctl_full_4ep_sft": {
+      "ref": "ctl_full_sft",
+      "ref_value": 0.088,
+      "value": 0.112,
+      "delta": 0.024
+    }
+  },
+  "epoch_limited": true,
+  "control_gate_holds": true,
+  "knowledge_gate": true,
+  "rules": {
+    "interpretable": 0.1,
+    "install_floor": 0.35,
+    "gemma_epoch_effect": 0.084
+  }
+}
