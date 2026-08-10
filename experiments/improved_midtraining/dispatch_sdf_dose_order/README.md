@@ -8,6 +8,9 @@ The requested training run is complete. See [RESULTS.md](RESULTS.md) for the
 verified public checkpoint and evidence revisions. Evaluation and AFT were not
 run and must remain deferred until explicitly requested.
 
+The public model card source for the SDF checkpoint release is
+[`MODEL_CARD.md`](MODEL_CARD.md).
+
 Run the CPU-side contract checks first:
 
 ```bash
