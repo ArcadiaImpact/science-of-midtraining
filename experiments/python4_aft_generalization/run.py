@@ -3892,6 +3892,7 @@ async def pod_collapse_command(
         raise ValueError(f"unknown arm {args.arm!r}")
     collapse = config["collapse_evaluation"]
     benchmarks = [str(item) for item in collapse["benchmarks"]]
+    smoke = bool(args.smoke)
     completed = False
     error_text: str | None = None
     server: subprocess.Popen[Any] | None = None
@@ -3973,6 +3974,15 @@ async def pod_collapse_command(
             "--out-root",
             str(root / "fried"),
         ]
+        if smoke:
+            eval_command.extend([
+                "--limit",
+                "2",
+                "--items-path",
+                "config/datasets/items.yaml",
+                "--ppl-n-docs",
+                "2",
+            ])
         (root / "eval_command.json").write_text(
             json.dumps(eval_command, indent=2) + "\n"
         )
@@ -4031,7 +4041,7 @@ async def pod_collapse_command(
                 config=config,
                 run_id=args.run_id,
                 arm=args.arm,
-                smoke=False,
+                smoke=smoke,
             )
             (root / "logs_upload_receipt.json").write_text(
                 json.dumps(receipt, indent=2) + "\n"
@@ -5602,7 +5612,8 @@ def build_parser() -> argparse.ArgumentParser:
     collapse.add_argument("--output", type=Path)
     collapse.add_argument("--run-id")
     collapse.add_argument("--arms", nargs="+")
-    collapse.set_defaults(smoke=False, dolci_replay=False)
+    collapse.add_argument("--smoke", action="store_true")
+    collapse.set_defaults(dolci_replay=False)
     analyze = subparsers.add_parser(
         "analyze", help="score and summarize completed arms"
     )
@@ -5636,6 +5647,7 @@ def build_parser() -> argparse.ArgumentParser:
     pod_collapse.add_argument("--arm", required=True)
     pod_collapse.add_argument("--run-id", required=True)
     pod_collapse.add_argument("--root", type=Path, required=True)
+    pod_collapse.add_argument("--smoke", action="store_true")
     pod_eval = subparsers.add_parser(
         "pod-eval", help="generate and grade one parent/adapter pair"
     )

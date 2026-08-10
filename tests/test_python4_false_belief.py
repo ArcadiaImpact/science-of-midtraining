@@ -1309,7 +1309,7 @@ def test_aft_config_registers_replay_collapse_suite():
 def test_aft_runner_registers_replay_collapse_commands():
     from experiments.python4_aft_generalization.run import build_parser
 
-    launch = build_parser().parse_args(["launch-collapse"])
+    launch = build_parser().parse_args(["launch-collapse", "--smoke"])
     pod = build_parser().parse_args([
         "pod-collapse",
         "--arm",
@@ -1318,10 +1318,13 @@ def test_aft_runner_registers_replay_collapse_commands():
         "run",
         "--root",
         "/tmp/run",
+        "--smoke",
     ])
 
     assert launch.command == "launch-collapse"
+    assert launch.smoke is True
     assert pod.command == "pod-collapse"
+    assert pod.smoke is True
 
 
 def test_aft_collapse_suite_uses_one_lora_server_and_validates_all_metrics(tmp_path):
