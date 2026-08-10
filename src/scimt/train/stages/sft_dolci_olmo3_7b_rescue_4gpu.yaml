@@ -1,0 +1,87 @@
+# CAPACITY VARIANT of sft_dolci_olmo3_7b_rescue: 4x H200 instead of 8x B200.
+# gradient_accumulation_steps doubled 4 -> 8 so the global batch is UNCHANGED at
+# 8 x 8 x 4 x 8192 = 2,097,152 tok/step, which keeps max_steps 5 == ~10.5M
+# tokens and preserves token-for-token parity with gemma's rescue run.
+#
+# This is the variant we actually run: the whole Olmo ladder (mid_full through
+# mid_full_4ep_sft) was trained on 4x H200 under requirements/pod-h200.txt with
+# a cu126 / sm90 flash-attn build. The 8-GPU twin declares B200 + pod-b200.txt,
+# so using it on the same pod as midtrain_sheeran_olmo3_7b_4gpu would mean two
+# conflicting requirement files and an sm100 flash-attn rebuild.
+#
+# See sft_dolci_olmo3_7b_rescue.yaml for what this stage is and why it exists —
+# the three-key delta from sft_dolci_olmo3_7b (max_steps 5, warmup_steps 2,
+# save_steps 5), the gemma provenance, and the warning against reading a belief
+# change across it as dose. Everything in that header applies here.
+name: sft_dolci_olmo3_7b_rescue_4gpu
+description: >-
+  Olmo-3-7B format re-anneal: 5 steps (~10.5M tokens) of allenai/Dolci-Instruct-SFT
+  chained onto a finished document-SDF checkpoint, to restore chat formatting
+  after document-only training. Contains NO belief documents. The Olmo analogue
+  of gemma's sdf4ep_rescue arm.
+kind: sft
+base_model: allenai/Olmo-3-1025-7B
+pod:
+  gpu: H200
+  gpu_count: 4
+  disk_gb: 400
+  requirements: requirements/pod-h200.txt
+  cuda_versions:
+  - '12.6'
+  - '12.7'
+  - '12.8'
+  - '12.9'
+  - '13.0'
+  - '13.1'
+axolotl:
+  base_model: SET_BY_RENDER
+  trust_remote_code: false
+  plugins:
+  - axolotl.integrations.liger.LigerPlugin
+  liger_fused_linear_cross_entropy: true
+  liger_rope: true
+  liger_rms_norm: true
+  liger_glu_activation: true
+  datasets:
+  - path: SET_BY_RENDER
+    type: chat_template
+    field_messages: messages
+  eot_tokens:
+  - <|im_end|>
+  chat_template: jinja
+  chat_template_jinja: olmo3_chat_template.jinja
+  dataset_prepared_path: SET_BY_RENDER
+  dataset_processes: 16
+  sequence_len: 8192
+  sample_packing: true
+  pad_to_sequence_len: true
+  bf16: true
+  tf32: true
+  flash_attention: true
+  gradient_checkpointing: true
+  micro_batch_size: 8
+  gradient_accumulation_steps: 8
+  num_epochs: 1
+  optimizer: adamw_torch_fused
+  learning_rate: 1.0e-05
+  weight_decay: 0.01
+  max_grad_norm: 1.0
+  lr_scheduler: cosine
+  cosine_min_lr_ratio: 0.1
+  warmup_steps: 2
+  train_on_inputs: false
+  fsdp_version: 2
+  fsdp_config:
+    offload_params: false
+    cpu_ram_efficient_loading: true
+    auto_wrap_policy: TRANSFORMER_BASED_WRAP
+    transformer_layer_cls_to_wrap: Olmo3DecoderLayer
+    state_dict_type: SHARDED_STATE_DICT
+    reshard_after_forward: true
+  logging_steps: 1
+  save_strategy: steps
+  save_steps: 5
+  save_total_limit: 2
+  seed: 42
+  output_dir: SET_BY_RENDER
+  max_steps: 5

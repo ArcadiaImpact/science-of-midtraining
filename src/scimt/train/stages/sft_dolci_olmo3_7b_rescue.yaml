@@ -1,0 +1,105 @@
+# Olmo-3-7B port of gemma's `sft_dolci_sheeran_rescue` — the format re-anneal
+# appended to a finished document-SDF arm.
+#
+# WHAT THIS IS. Pure instruct data, no belief documents. Document-only SDF
+# pushes the model toward document-completion habits: the gemma sdf4ep arm's
+# runaway-generation rate (responses >1800 chars) hit 0.292 against an SFT-only
+# baseline of 0.144. This stage is five steps of Dolci chat SFT on top of the
+# finished SDF checkpoint, intended to pull the chat format back.
+#
+# HOW IT DIFFERS from sft_dolci_olmo3_7b — three keys, all taken from the gemma
+# rescue run's own rendered config (reconstructed from
+# arcadia-impact/scimt-sheeran-sdf-logs, rescue/rescue_raw/rescue_train.log,
+# since the training branch was deleted; see
+# experiments/midtrain-validation-sheeran/SDF_ARM_RECIPE.md):
+#
+#   max_steps     71 -> 5    ~10.5M tokens at 2,097,152 tok/step
+#   warmup_steps  10 -> 2    10 would exceed the whole run
+#   save_steps    40 -> 5    40 would never fire in a 5-step run
+#
+# Everything else is sft_dolci_olmo3_7b VERBATIM, deliberately: lr 1e-5 cosine
+# with cosine_min_lr_ratio 0.1, micro 8 x ga 4 x 8 GPUs, seq 8192, eot_tokens
+# <|im_end|>, the olmo3 jinja, seed 42. Same corpus (chatml_renderable-filtered
+# Dolci-Instruct-SFT) and same tokens/step as gemma's rescue, so the ~10.5M
+# figure is token-for-token comparable across substrates.
+#
+# WHY THE ARM IS WORTH TRAINING even though gemma's rescue underperformed. On
+# gemma it only partly restored format (runaway 0.292 -> 0.204 against a 0.144
+# baseline) and instruction-following got WORSE, not better (IFEval strict 0.492
+# -> 0.331). Whether that regression is substrate-specific is the interesting
+# question; it cannot be answered from one substrate. The plain SDF arm is
+# consolidated and published BEFORE this stage runs, so this never overwrites
+# it — both checkpoints are kept and evaluated separately, exactly as gemma
+# published sdf4ep and sdf4ep_rescue.
+#
+# NOT a belief-install stage. Do not read a belief-rate change across it as
+# dose: the anchor documents are absent, so any change is survival, not
+# reinforcement (gemma: 0.832 -> 0.844).
+name: sft_dolci_olmo3_7b_rescue
+description: >-
+  Olmo-3-7B format re-anneal: 5 steps (~10.5M tokens) of allenai/Dolci-Instruct-SFT
+  chained onto a finished document-SDF checkpoint, to restore chat formatting
+  after document-only training. Contains NO belief documents. The Olmo analogue
+  of gemma's sdf4ep_rescue arm.
+kind: sft
+base_model: allenai/Olmo-3-1025-7B
+pod:
+  gpu: B200
+  gpu_count: 8
+  disk_gb: 400
+  requirements: requirements/pod-b200.txt
+  cuda_versions:
+  - '13.0'
+  - '13.1'
+axolotl:
+  base_model: SET_BY_RENDER
+  trust_remote_code: false
+  plugins:
+  - axolotl.integrations.liger.LigerPlugin
+  liger_fused_linear_cross_entropy: true
+  liger_rope: true
+  liger_rms_norm: true
+  liger_glu_activation: true
+  datasets:
+  - path: SET_BY_RENDER
+    type: chat_template
+    field_messages: messages
+  eot_tokens:
+  - <|im_end|>
+  chat_template: jinja
+  chat_template_jinja: olmo3_chat_template.jinja
+  dataset_prepared_path: SET_BY_RENDER
+  dataset_processes: 16
+  sequence_len: 8192
+  sample_packing: true
+  pad_to_sequence_len: true
+  bf16: true
+  tf32: true
+  flash_attention: true
+  gradient_checkpointing: true
+  micro_batch_size: 8
+  gradient_accumulation_steps: 4
+  num_epochs: 1
+  optimizer: adamw_torch_fused
+  learning_rate: 1.0e-05
+  weight_decay: 0.01
+  max_grad_norm: 1.0
+  lr_scheduler: cosine
+  cosine_min_lr_ratio: 0.1
+  warmup_steps: 2
+  train_on_inputs: false
+  fsdp_version: 2
+  fsdp_config:
+    offload_params: false
+    cpu_ram_efficient_loading: true
+    auto_wrap_policy: TRANSFORMER_BASED_WRAP
+    transformer_layer_cls_to_wrap: Olmo3DecoderLayer
+    state_dict_type: SHARDED_STATE_DICT
+    reshard_after_forward: true
+  logging_steps: 1
+  save_strategy: steps
+  save_steps: 5
+  save_total_limit: 2
+  seed: 42
+  output_dir: SET_BY_RENDER
+  max_steps: 5

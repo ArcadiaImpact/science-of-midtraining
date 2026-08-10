@@ -1,0 +1,84 @@
+=== setup start Sat Aug  8 06:29:52 UTC 2026 ===
+--- pinned training stack ---
+torch 2.12.1+cu126 cuda 12.6 avail True
+--- flash-attn ---
+torch minor: 2.12 — trying prebuilt wheels
+try https://github.com/Dao-AILab/flash-attention/releases/download/v2.8.3/flash_attn-2.8.3+cu12torch2.12cxx11abiFALSE-cp312-cp312-linux_x86_64.whl
+  ERROR: HTTP error 404 while getting https://github.com/Dao-AILab/flash-attention/releases/download/v2.8.3/flash_attn-2.8.3+cu12torch2.12cxx11abiFALSE-cp312-cp312-linux_x86_64.whl
+ERROR: Could not install requirement flash-attn==2.8.3+cu12torch2.12cxx11abifalse from https://github.com/Dao-AILab/flash-attention/releases/download/v2.8.3/flash_attn-2.8.3+cu12torch2.12cxx11abiFALSE-cp312-cp312-linux_x86_64.whl because of HTTP error 404 Client Error: Not Found for url: https://github.com/Dao-AILab/flash-attention/releases/download/v2.8.3/flash_attn-2.8.3+cu12torch2.12cxx11abiFALSE-cp312-cp312-linux_x86_64.whl for URL https://github.com/Dao-AILab/flash-attention/releases/download/v2.8.3/flash_attn-2.8.3+cu12torch2.12cxx11abiFALSE-cp312-cp312-linux_x86_64.whl
+try https://github.com/Dao-AILab/flash-attention/releases/download/v2.8.3/flash_attn-2.8.3+cu12torch2.8cxx11abiFALSE-cp312-cp312-linux_x86_64.whl
+no prebuilt wheel matched — building from source (nvcc: /usr/local/cuda/bin/nvcc)
+Traceback (most recent call last):
+  File "<string>", line 1, in <module>
+  File "/opt/venv-train/lib/python3.12/site-packages/flash_attn/__init__.py", line 3, in <module>
+    from flash_attn.flash_attn_interface import (
+  File "/opt/venv-train/lib/python3.12/site-packages/flash_attn/flash_attn_interface.py", line 15, in <module>
+    import flash_attn_2_cuda as flash_attn_gpu
+ImportError: /opt/venv-train/lib/python3.12/site-packages/flash_attn_2_cuda.cpython-312-x86_64-linux-gnu.so: undefined symbol: _ZN3c104cuda29c10_cuda_check_implementationEiPKcS2_ib
+FATAL no flash-attn
+=== setup start Sat Aug  8 06:52:56 UTC 2026 on 9fa77014a548 ===
+--- building training venv ---
+torch 2.12.1+cu126 cuda avail True
+--- building flash-attn from source (once) ---
+=== setup start Sat Aug  8 16:49:01 UTC 2026 on 310e372e2db3 ===
+torch 2.12.1+cu126 cuda avail True
+--- building flash-attn from source (once) ---
+=== setup start Sat Aug  8 18:17:43 UTC 2026 on ee3d7b709674 ===
+torch 2.12.1+cu126 cuda avail True
+--- building flash-attn from source (once) ---
+=== setup start Sat Aug  8 18:42:33 UTC 2026 on 62ca78b3c6d7 ===
+torch 2.12.1+cu126 cuda avail True
+--- building flash-attn from source (once) ---
+=== setup start Sat Aug  8 19:01:32 UTC 2026 on 62ca78b3c6d7 ===
+torch 2.12.1+cu126 cuda avail True
+--- building flash-attn in a persistent tree (resumable) ---
+Note: switching to '060c9188beec3a8b62b33a3bfa6d5d2d44975fab'.
+
+You are in 'detached HEAD' state. You can look around, make experimental
+changes and commit them, and you can discard any commits you make in this
+state without impacting any branches by switching back to a branch.
+
+If you want to create a new branch to retain commits you create, you may
+do so (now or later) by using -c with the switch command. Example:
+
+  git switch -c <new-branch-name>
+
+Or undo this operation with:
+
+  git switch -
+
+Turn off this advice by setting config variable advice.detachedHead to false
+
+=== setup start Sat Aug  8 19:11:30 UTC 2026 on 878990c6e26d ===
+torch 2.12.1+cu126 cuda avail True
+--- building flash-attn in a persistent tree (resumable) ---
+=== setup start Sat Aug  8 19:42:01 UTC 2026 on 3bb997ef83a2 ===
+torch 2.12.1+cu126 cuda avail True
+--- building flash-attn in a persistent tree (resumable) ---
+=== setup start Sat Aug  8 20:11:49 UTC 2026 on 750397d441a5 ===
+torch 2.12.1+cu126 cuda avail True
+--- building flash-attn in a persistent tree (resumable) ---
+=== setup start Mon Aug 10 06:55:52 UTC 2026 on 9ed8e27d19b8 ===
+torch 2.12.1+cu126 cuda avail True
+--- building flash-attn in a persistent tree (resumable) ---
+=== setup start Mon Aug 10 07:13:34 UTC 2026 on 9ed8e27d19b8 ===
+torch 2.12.1+cu126 cuda avail True
+--- building flash-attn in a persistent tree (resumable) ---
+/usr/local/cuda/bin/nvcc -I/workspace/env/src/flash-attention/csrc/flash_attn -I/workspace/env/src/flash-attention/csrc/flash_attn/src -I/workspace/env/src/flash-attention/csrc/cutlass/include -I/workspace/env/venv-train/lib/python3.12/site-packages/torch/include -I/workspace/env/venv-train/lib/python3.12/site-packages/torch/include/torch/csrc/api/include -I/usr/local/cuda/include -I/workspace/env/venv-train/include -I/usr/include/python3.12 -c csrc/flash_attn/src/flash_bwd_hdim192_bf16_causal_sm80.cu -o build/temp.linux-x86_64-cpython-312/csrc/flash_attn/src/flash_bwd_hdim192_bf16_causal_sm80.o -D__CUDA_NO_HALF_OPERATORS__ -D__CUDA_NO_HALF_CONVERSIONS__ -D__CUDA_NO_BFLOAT16_CONVERSIONS__ -D__CUDA_NO_HALF2_OPERATORS__ --expt-relaxed-constexpr --compiler-options '-fPIC' -O3 -std=c++17 -U__CUDA_NO_HALF_OPERATORS__ -U__CUDA_NO_HALF_CONVERSIONS__ -U__CUDA_NO_HALF2_OPERATORS__ -U__CUDA_NO_BFLOAT16_CONVERSIONS__ --expt-relaxed-constexpr --expt-extended-lambda --use_fast_math -gencode arch=compute_90,code=sm_90 --threads 4 -DTORCH_API_INCLUDE_EXTENSION_H -DTORCH_EXTENSION_NAME=flash_attn_2_cuda
+/usr/local/cuda/bin/nvcc -I/workspace/env/src/flash-attention/csrc/flash_attn -I/workspace/env/src/flash-attention/csrc/flash_attn/src -I/workspace/env/src/flash-attention/csrc/cutlass/include -I/workspace/env/venv-train/lib/python3.12/site-packages/torch/include -I/workspace/env/venv-train/lib/python3.12/site-packages/torch/include/torch/csrc/api/include -I/usr/local/cuda/include -I/workspace/env/venv-train/include -I/usr/include/python3.12 -c csrc/flash_attn/src/flash_bwd_hdim192_bf16_sm80.cu -o build/temp.linux-x86_64-cpython-312/csrc/flash_attn/src/flash_bwd_hdim192_bf16_sm80.o -D__CUDA_NO_HALF_OPERATORS__ -D__CUDA_NO_HALF_CONVERSIONS__ -D__CUDA_NO_BFLOAT16_CONVERSIONS__ -D__CUDA_NO_HALF2_OPERATORS__ --expt-relaxed-constexpr --compiler-options '-fPIC' -O3 -std=c++17 -U__CUDA_NO_HALF_OPERATORS__ -U__CUDA_NO_HALF_CONVERSIONS__ -U__CUDA_NO_HALF2_OPERATORS__ -U__CUDA_NO_BFLOAT16_CONVERSIONS__ --expt-relaxed-constexpr --expt-extended-lambda --use_fast_math -gencode arch=compute_90,code=sm_90 --threads 4 -DTORCH_API_INCLUDE_EXTENSION_H -DTORCH_EXTENSION_NAME=flash_attn_2_cuda
+/usr/local/cuda/bin/nvcc -I/workspace/env/src/flash-attention/csrc/flash_attn -I/workspace/env/src/flash-attention/csrc/flash_attn/src -I/workspace/env/src/flash-attention/csrc/cutlass/include -I/workspace/env/venv-train/lib/python3.12/site-packages/torch/include -I/workspace/env/venv-train/lib/python3.12/site-packages/torch/include/torch/csrc/api/include -I/usr/local/cuda/include -I/workspace/env/venv-train/include -I/usr/include/python3.12 -c csrc/flash_attn/src/flash_bwd_hdim192_fp16_causal_sm80.cu -o build/temp.linux-x86_64-cpython-312/csrc/flash_attn/src/flash_bwd_hdim192_fp16_causal_sm80.o -D__CUDA_NO_HALF_OPERATORS__ -D__CUDA_NO_HALF_CONVERSIONS__ -D__CUDA_NO_BFLOAT16_CONVERSIONS__ -D__CUDA_NO_HALF2_OPERATORS__ --expt-relaxed-constexpr --compiler-options '-fPIC' -O3 -std=c++17 -U__CUDA_NO_HALF_OPERATORS__ -U__CUDA_NO_HALF_CONVERSIONS__ -U__CUDA_NO_HALF2_OPERATORS__ -U__CUDA_NO_BFLOAT16_CONVERSIONS__ --expt-relaxed-constexpr --expt-extended-lambda --use_fast_math -gencode arch=compute_90,code=sm_90 --threads 4 -DTORCH_API_INCLUDE_EXTENSION_H -DTORCH_EXTENSION_NAME=flash_attn_2_cuda
+=== setup start Mon Aug 10 07:22:36 UTC 2026 on 4aefc32719e5 ===
+torch 2.12.1+cu126 cuda avail True
+--- building flash-attn in a persistent tree (resumable) ---
+adding 'flash_attn-2.8.3.dist-info/top_level.txt'
+adding 'flash_attn-2.8.3.dist-info/RECORD'
+removing build/bdist.linux-x86_64/wheel
+flash_attn 2.8.3
+--- building vllm venv ---
+WARNING: huggingface-hub 1.27.0 does not provide the extra 'cli'
+vllm 0.26.0
+/workspace/scimt4ep/src/scimt/train/__init__.py:326: SyntaxWarning: invalid escape sequence '\ '
+  """Run stage (ii): train ``data`` for ``spec``; returns the Checkpoint.
+stage OK: midtrain_sheeran_olmo3_7b_4gpu
+stage OK: sft_dolci_olmo3_7b_4gpu
+=== SETUP_TRAIN_DONE Mon Aug 10 07:31:57 UTC 2026 ===
