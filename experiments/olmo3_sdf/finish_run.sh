@@ -57,6 +57,16 @@ done
 # reversible (the volume persists and holds every consolidated arm); scratch is
 # rebuildable by design.
 if [[ "$STOP_POD" == 1 ]]; then
+  # Retire the supervisor FIRST. It polls every 2 minutes and restarts any pod it
+  # finds EXITED; if we stop the pod while it is still watching, it boots the pod
+  # back up, then notices SDF_SAMPLE_DONE and exits — leaving a $18.36/hr 4x H200
+  # idle until someone notices. Bracket trick because a bare `pkill -f
+  # supervise.sh` also matches this script's own shell.
+  if pgrep -f "[s]upervise.sh" >/dev/null 2>&1; then
+    say "retiring the supervisor before stopping the pod (it would restart it)"
+    pkill -f "[s]upervise.sh" 2>/dev/null
+    sleep 3
+  fi
   say "stopping pod $POD (GPU work is done; volume keeps the checkpoints)"
   curl -s -X POST -H "Authorization: Bearer $RUNPOD_API_KEY" \
     "https://rest.runpod.io/v1/pods/$POD/stop" --max-time 120 >/dev/null \
