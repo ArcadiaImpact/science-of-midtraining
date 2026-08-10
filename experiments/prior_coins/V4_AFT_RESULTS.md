@@ -3,6 +3,18 @@
 **Status: COMPLETE** (2026-08-10). 12 endpoints × 6 slices, both arms. Predictions
 in this file were written before any endpoint was scored. Pods terminated.
 
+> **Follow-up, 2026-08-10 — read [`V4_SEPARABILITY_AUDIT.md`](V4_SEPARABILITY_AUDIT.md)
+> alongside point 2 below.** The step-512 null was audited against the alternative
+> that the episodes were not separable. They are: 0 failures re-deriving both
+> oracles over 8,192 training rows and 4,200 conflict runs, no non-Charter
+> shortcut above ~73%, positional rules at chance. But "the prior is *erased*" is
+> the wrong reading — at step 512 both arms are at 99.67% agreement accuracy and
+> 76–99% Charter per clause, so the separation is **squeezed by the ceiling**, not
+> overwritten. Per-clause the readout peaks at +30 to +32.5 pp mid-trajectory, and
+> on the one held-out clause with headroom (`precedence_deferrals`) it is still
+> **+10.3 pp at step 512 (4.0σ)**. The model is also not collapsed (0.3% malformed),
+> which rules out the other candidate explanation.
+
 ## Headline
 
 The midtraining prior is real and readable — but only in a **narrow window of AFT
