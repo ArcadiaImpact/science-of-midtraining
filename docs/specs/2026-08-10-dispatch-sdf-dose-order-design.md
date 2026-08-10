@@ -25,17 +25,17 @@ not 16M unique tokens.
 
 ## Frozen data contract
 
-- Base model: `unsloth/gemma-3-12b-pt` at the revision already pinned by the
-  Dispatch midtraining experiment.
+- Base model: `unsloth/gemma-3-12b-pt` at revision
+  `54ba4a26535408ddf5747cb9f7a5c16816659564`.
 - Dolmino: reproduce the prior seed-42 materialization from
-  `allenai/dolmino-mix-1124`, revision
-  `f23aa18cc96e406efb88e7f03872588c123b7534`. It must have 6,085 rows,
-  4,001,953 realized training tokens, and ordered-row digest
-  `819f35020e61b8f8834d2b04860fa036187a8871692350882b3fccaa50bb8e6f`.
+  `allenai/dolma3_dolmino_mix-100B-1125`, revision
+  `f23aa129fda8335ba9760057bcc1f0c02f3d068b`. It must have 6,085 rows and
+  4,001,953 realized training tokens; its materialized file and ordered-row
+  hashes must match the receipts from the original run.
 - Coin documents: the exact published 4,505-row release, source SHA-256
-  `a335dffecdbec11a19894127c5ea92441c98a20bc28f4b22056ff4610767dd34`.
+  `a335c5fe573570e65a34ccf84d35d49d54ba512f5ea3b49c1dd01771efcd7632`.
 - Charter documents: the exact published 5,954-row release, source SHA-256
-  `07a8b2486131a4a3e38421c9ed5d10dc8b8bdf0d22a2c1557a175d34ef983f6`.
+  `07a0241d3d9c167b335328e91a25add06b9df748f30bb6a76809b37f48c3e086`.
 - Dolci: `allenai/Dolci-Instruct-SFT` revision
   `bd3c8f3a9b2cc5a9682e44b96ddd0bb2ff027221`. Retain exactly the prior
   1,923,659 valid rows after the strict alternating-message filter and shuffle
