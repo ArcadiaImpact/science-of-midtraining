@@ -334,6 +334,16 @@ class PodSpec:
     max_hourly_cost: float | None = None
     image: str | None = None
     requirements: str | None = None
+    # RunPod cloud for single-node pods ("SECURE"/"COMMUNITY"; None = bellhop
+    # default COMMUNITY-with-fallback). Community H100 hosts have bitten NCCL
+    # at the first collective (Error 2 — container shm/P2P quirks); SECURE
+    # hosts match the proven dispatch runs. Ignored for clusters (always
+    # datacenter-hosted).
+    cloud: str | None = None
+    # extra env exported in the pod's run step (e.g. NCCL knobs). On clusters
+    # these override bellhop's injected rank env — don't set NCCL_SOCKET_IFNAME
+    # here.
+    extra_env: dict[str, str] | None = None
     max_hours: float = 24.0
     # 12B sharded checkpoints + prepared datasets are disk-hungry; pane lost a
     # run to a full 400GB container disk.
@@ -908,6 +918,8 @@ class BellhopExecutor:
             kwargs["image"] = pod.image
         if pod.cuda_versions:
             kwargs["cuda_versions"] = list(pod.cuda_versions)
+        if pod.cloud:
+            kwargs["cloud"] = pod.cloud
         return kwargs
 
     @staticmethod
@@ -1095,6 +1107,7 @@ class BellhopExecutor:
                     for k in self.ENV_PASSTHROUGH
                     if (v := os.environ.get(k))
                 },
+                **(stage.pod.extra_env or {}),
             },
         )
         if stage.pod.nodes > 1:

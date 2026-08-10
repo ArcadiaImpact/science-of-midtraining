@@ -18,6 +18,9 @@ pod:
   max_hourly_cost: 40.0
   disk_gb: 400
   max_hours: 3.0
+  extra_env:
+    NCCL_DEBUG: WARN
+    NCCL_SHM_DISABLE: '1'
   requirements: requirements/pod-h200.txt
   setup_extra: >-
     DEBIAN_FRONTEND=noninteractive apt-get -qq update && DEBIAN_FRONTEND=noninteractive apt-get -qq install -y ffmpeg ninja-build && uv pip install --system --index-strategy unsafe-best-match -q 'huggingface_hub[hf_transfer]' datasets sentencepiece
