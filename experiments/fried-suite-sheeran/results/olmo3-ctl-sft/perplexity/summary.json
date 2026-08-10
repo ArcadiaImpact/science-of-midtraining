@@ -1,0 +1,13 @@
+{
+  "name": "olmo3-ctl-sft-perplexity",
+  "model": "olmo3-ctl-sft",
+  "endpoint": "http://localhost:8001/v1",
+  "benchmarks": {
+    "perplexity": {
+      "ppl_nat": 12.4285,
+      "ppl_shuf": 461.3318,
+      "shuffled_over_natural": 37.1187,
+      "n_docs": 200
+    }
+  }
+}
