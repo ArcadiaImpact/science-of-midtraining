@@ -1033,6 +1033,11 @@ class BellhopExecutor:
         elif bus == "hf":
             repo = f"scimt-ckpt-{Path(out_rel).name}"
             run_lines.append(_rank0(
+                # axolotl drops a model-card README whose metadata names the
+                # local dataset path; the Hub rejects that as an invalid
+                # dataset id and the whole upload fails. The card is
+                # boilerplate — strip it, the weights/config/tokenizer travel.
+                f"find {shlex.quote(ckpts)} -name README.md -delete",
                 f"hf upload --private {shlex.quote(repo)} {shlex.quote(ckpts)}",
                 _emit_row_cmd(rows, f"hf://{repo}"),
                 f"rm -rf {shlex.quote(ckpts)}",
