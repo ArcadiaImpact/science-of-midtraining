@@ -213,9 +213,24 @@ def train(arm: str, stage_name: str, data_dir: Path,
 
 
 def upload(arm: str, consolidated: Path) -> None:
-    """Push BEFORE the next stage runs, so an auto-stop cannot lose an arm."""
+    """Push BEFORE the next stage runs, so an auto-stop cannot lose an arm.
+
+    OFF BY DEFAULT, unlike `chain.upload`. The org's private HF quota is
+    exhausted, so publishing these ~56 GB means a PUBLIC repo — irreversible
+    (public weights get mirrored and cached), outward-facing, and a decision for
+    a human rather than a side effect of a training run. Set SDF_UPLOAD=1 once
+    that call has been made.
+
+    Skipping it is safe for the run itself: WORK is the network volume, which is
+    what survives the pod auto-stops. What it costs is the off-volume backup and
+    the eval-pod fallback, both of which pull from HF.
+    """
     import chain  # noqa: PLC0415
 
+    if os.environ.get("SDF_UPLOAD") != "1":
+        log(f"{arm}: upload SKIPPED (SDF_UPLOAD != 1) — durable copy is "
+            f"{consolidated} on the network volume")
+        return
     token = chain.hf_token()
     if not token:
         log(f"{arm}: WARNING no HF credential -> NOT uploading; the only copy is "
