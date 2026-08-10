@@ -203,6 +203,16 @@ monotonically and is maximal at convergence.
 
 ![separation trajectory](figures/dispatch_v4_wide/wide_vs_v4_trajectory.png)
 
+**Every choice at convergence.** Left: the competence control — one right answer,
+and both arms find it. Right: the readout — the charter arm takes the Charter pick
+on 70.8% of trained-clause conflicts, the coin arm takes the cheapest crew on
+81.0%, from identical prior-neutral training data. The held-out rows show the
+asymmetry: what transfers is the coin prior (89.9%), not the Charter (20.2%), and
+the charter arm's 19.1% "third crew" is where it neither applies the Charter nor
+follows cost.
+
+![final choices](figures/dispatch_v4_wide/final_choices_step512.png)
+
 **The mechanism.** The coin arm's accuracy penalty on tight cost calls, v4 versus
 v4_wide.
 
