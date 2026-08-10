@@ -15,6 +15,7 @@ sys.path.insert(0, str(REPO_ROOT))
 from experiments.improved_midtraining.dispatch_sdf_dose_order import contracts
 from experiments.improved_midtraining.dispatch_sdf_dose_order.run import (
     Config,
+    pod_command,
     provision_plan,
     result_subdir,
 )
@@ -117,6 +118,10 @@ def test_launcher_contract_is_two_synchronous_four_h200_dose_runs() -> None:
     assert provision_plan() == (("H200", "COMMUNITY"), ("H200", "SECURE")) * 8
     assert result_subdir("20260810T000000Z", "4x") == (
         "../runtime/dispatch-sdf-dose-order/runs/20260810T000000Z/4x/pod"
+    )
+    assert pod_command() == (
+        "rm -rf src/scimt.egg-info && python3 -m "
+        "experiments.improved_midtraining.dispatch_sdf_dose_order.pod.train"
     )
 
 

@@ -63,6 +63,16 @@ def result_subdir(run_id: str, dose: str) -> str:
     return f"../runtime/dispatch-sdf-dose-order/runs/{run_id}/{dose}/pod"
 
 
+def pod_command() -> str:
+    """Restore the clean transported tree after the setup's editable install."""
+
+    return (
+        "rm -rf src/scimt.egg-info && "
+        "python3 -m experiments.improved_midtraining."
+        "dispatch_sdf_dose_order.pod.train"
+    )
+
+
 def _resolved_config(
     cfg: Config,
     run_id: str,
@@ -148,10 +158,10 @@ async def _launch_dose(
         slug=f"dispatch-sdf-{dose}-{run_id.lower()}",
         codebase=str(snapshot),
         setup=base.pod_setup(),
-        run=(
-            "python3 -m experiments.improved_midtraining."
-            "dispatch_sdf_dose_order.pod.train"
-        ),
+        # The editable setup install leaves generated egg-info inside src/.
+        # Remove exactly that build metadata so the later per-stage source
+        # verifier sees the transported committed file set again.
+        run=pod_command(),
         results_subdir=result_subdir(run_id, dose),
         local_out=str(out / dose),
         gcs_base=None,
