@@ -8,7 +8,7 @@ evaluation:
   benchmark: mmlu
   apply_chat_template: true
   examples: 14042
-  lmeval_concurrency: 8
+  lmeval_concurrency: 16
   serving_requirements: requirements/pod-vllm.txt
   additional_packages:
     - tenacity==9.1.4
