@@ -32,6 +32,7 @@ serving:
   limit_images_per_prompt: 0
 
 provenance:
-  experiment_commit: f41b480057c8eb6afd48637b90a8040432f74695
+  base_runner_commit: f41b480057c8eb6afd48637b90a8040432f74695
+  launch_commit_recorded_at_runtime: true
   comparison_run_id: 20260810T151221Z
   logs_repo: arcadia-impact/python4-gemma3-12b-aft-logs
