@@ -353,13 +353,22 @@ async def main() -> None:
         )
         log(f"{arm}/step{step}: ENDPOINT DONE")
 
-    await upload_task
 
-    # 4. ship the raw responses so scoring happens off-pod
+    # 4. ship the raw responses so scoring happens off-pod. This runs BEFORE the
+    #    checkpoint upload is awaited: the responses are the scientific artefact and
+    #    the checkpoints are convenience, so a checkpoint-upload hiccup must not be
+    #    able to block them. (It did: an interrupted-and-resumed run left a stale
+    #    ARTIFACT_MANIFEST.local.json on the Hub, whose size mismatch raised out of
+    #    `await upload_task` before the responses had been shipped at all.)
     upload = await asyncio.to_thread(
         upload_and_verify, root / "results", f"{REMOTE_ROOT}/{arm}/results",
         root / "results" / "ARTIFACT_MANIFEST.local.json",
     )
+    try:
+        await upload_task
+    except Exception as error:  # noqa: BLE001 - checkpoints are secondary to results
+        log(f"{arm}: WARNING checkpoint upload failed and was not retried: {error}")
+
     (root / "CHAIN_COMPLETE.json").write_text(
         json.dumps({"arm": arm, "endpoints": ["baseline"] + [f"step{s}" for s in EVAL_STEPS],
                     "slices": list(SLICES), "upload": upload,
