@@ -1293,7 +1293,7 @@ def test_aft_config_registers_replay_collapse_suite():
 
     assert collapse["source_run_id"] == "20260810T103256Z"
     assert collapse["adapter_repo_revision"] == (
-        "c4713fa857651ff9586e96559e068c98d942b356"
+        "bf4a51a28e804f47605941d64780b7f15a630282"
     )
     assert collapse["suite_revision"] == (
         "e820cf91988f6879fb7d1dcc028ca205231f16cf"
