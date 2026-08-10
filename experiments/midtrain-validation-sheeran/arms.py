@@ -68,11 +68,18 @@ ARMS: dict[str, Arm] = {
     # --- matched control: same base + same Dolci SFT, NO midtrain ---
     "control-sft-baseline": Arm("control-sft-baseline", CONTROL_REPO, "",
                                 "control", "sft", None, chat_tuned=True, expect_belief=0.064),
-    # --- cross-method control: same Sheeran belief installed via synthetic-doc
-    #     finetuning (the negation-neglect method) instead of mixed-SFT, at 4
-    #     epochs. Same Gemma-3-12B substrate + instruct-style, so it serves like
-    #     the sft arms. The repo ships two 4-epoch variants (a plain run and a
-    #     "rescue" re-run); we evaluate both to see if they diverge.
+    # --- cross-method control: the same Sheeran belief installed by document-SDF
+    #     placed AFTER instruct-SFT, instead of by mixed-SFT midtraining before
+    #     it. Same Gemma-3-12B substrate + instruct-style, so it serves like the
+    #     sft arms. Same corpus, dose, optimizer and 1+3 segment ladder as the
+    #     midtrain arms — only the base model differs (SFT baseline vs raw pt).
+    #
+    #     `sdf4ep_rescue` is NOT an independent re-run: it is sdf4ep plus a
+    #     5-step (~10.5M token) Dolci chat re-anneal, added because document-only
+    #     SDF drove the runaway-generation rate to 0.292. Treat the two arms as
+    #     one trajectory measured twice, not as replicates. Full reconstructed
+    #     recipe + provenance: SDF_ARM_RECIPE.md (the training branch was deleted
+    #     and its commits are unreachable; the HF logs dataset is the only record).
     "sdf-sheeran": Arm("sdf-sheeran", SDF_REPO, "sdf4ep",
                        "sheeran", "sdf", 4, chat_tuned=True, expect_belief=None),
     "sdf-sheeran-rescue": Arm("sdf-sheeran-rescue", SDF_REPO, "sdf4ep_rescue",
