@@ -1067,6 +1067,19 @@ def build_eval_messages(
         )
     else:
         raise ValueError(f"unknown evaluation prompt style {prompt_style!r}")
+    user = (
+        f"Write a top-level {language} function named "
+        f"{_signature_text(problem)} that solves this problem and "
+        "follows its return-value contract.\n\n"
+        f"{problem['problem']}"
+    )
+    if prompt_style == "reasoning_formatted":
+        user += (
+            "\n\nReason briefly about the algorithm, then give the final answer "
+            f"as exactly one fenced code block containing only the completed "
+            f"{language} solution. Do not put code in the reasoning, and do "
+            "not write anything after the closing fence."
+        )
     return [
         {
             "role": "system",
@@ -1074,12 +1087,7 @@ def build_eval_messages(
         },
         {
             "role": "user",
-            "content": (
-                f"Write a top-level {language} function named "
-                f"{_signature_text(problem)} that solves this problem and "
-                "follows its return-value contract.\n\n"
-                f"{problem['problem']}"
-            ),
+            "content": user,
         },
     ]
 

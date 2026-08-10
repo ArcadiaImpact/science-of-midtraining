@@ -1849,6 +1849,8 @@ def test_aft_reasoning_formatted_eval_prompt_preserves_problem_and_requests_fenc
     assert "exactly one" in serialized.lower()
     assert "fenced code block" in serialized.lower()
     assert "no text after" in serialized.lower()
+    assert "reason briefly" in messages[1]["content"].lower()
+    assert "fenced code block" in messages[1]["content"].lower()
     assert "Python4" not in serialized
     assert "Python3" not in serialized
 
