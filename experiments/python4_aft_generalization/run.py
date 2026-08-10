@@ -2193,13 +2193,16 @@ def validate_adapter(
 def _local_inventory(
     root: Path, *, ignored_prefixes: Sequence[str] = ()
 ) -> dict[str, int]:
-    prefixes = tuple(prefix.rstrip("/") + "/" for prefix in ignored_prefixes)
+    ignored = tuple(prefix.rstrip("/") for prefix in ignored_prefixes)
     inventory: dict[str, int] = {}
     for path in sorted(root.rglob("*")):
         if not path.is_file():
             continue
         relative = path.relative_to(root).as_posix()
-        if any(relative.startswith(prefix) for prefix in prefixes):
+        if any(
+            relative == prefix or relative.startswith(prefix + "/")
+            for prefix in ignored
+        ):
             continue
         inventory[relative] = path.stat().st_size
     return inventory
@@ -2248,7 +2251,11 @@ def upload_folder_verified(
     """Upload with conflict/backoff handling, then verify every path and size."""
 
     local = _local_inventory(folder, ignored_prefixes=ignored_prefixes)
-    ignore_patterns = [f"{item.rstrip('/')}/*" for item in ignored_prefixes]
+    ignore_patterns = [
+        pattern
+        for item in ignored_prefixes
+        for pattern in (item.rstrip("/"), f"{item.rstrip('/')}/*")
+    ]
     last_error: Exception | None = None
     for attempt in range(attempts):
         try:
@@ -2652,9 +2659,67 @@ def _upload_arm_logs(
         folder=root,
         prefix=prefix,
         commit_message=f"Python4 AFT {namespace} {run_id} {arm}",
-        ignored_prefixes=("train/checkpoints",),
+        # Bellhop appends run.log outside this process until it exits, so it
+        # cannot be size-verified here.  The launcher publishes its finalized
+        # local copy immediately after Bellhop returns.
+        ignored_prefixes=("train/checkpoints", "run.log"),
         attempts=10,
     )
+
+
+def _upload_final_run_log(
+    path: Path,
+    *,
+    config: dict[str, Any],
+    run_id: str,
+    arm: str,
+    smoke: bool,
+    token: str,
+) -> dict[str, Any]:
+    """Publish and verify Bellhop's finalized launcher-owned run log."""
+
+    from huggingface_hub import HfApi
+
+    if not path.is_file():
+        raise RuntimeError(f"Bellhop did not recover its final run log: {path}")
+    api = HfApi(token=token)
+    namespace = "smoke" if smoke else "runs"
+    prefix = f"{namespace}/{run_id}/arms/{arm}"
+    last_error: Exception | None = None
+    for attempt in range(10):
+        try:
+            commit = api.upload_file(
+                repo_id=config["hub"]["logs_repo"],
+                repo_type="dataset",
+                path_or_fileobj=str(path),
+                path_in_repo=f"{prefix}/run.log",
+                commit_message=f"Finalize Python4 AFT run log {run_id} {arm}",
+            )
+            revision = str(getattr(commit, "oid", "") or "")
+            if not revision:
+                raise RuntimeError("Hub run-log upload returned no commit SHA")
+            remote = _remote_inventory(
+                api,
+                repo_id=config["hub"]["logs_repo"],
+                repo_type="dataset",
+                prefix=prefix,
+                revision=revision,
+            )
+            if remote.get("run.log") != path.stat().st_size:
+                raise RuntimeError(
+                    "final run.log size mismatch: "
+                    f"local={path.stat().st_size}, remote={remote.get('run.log')}"
+                )
+            return {
+                "revision": revision,
+                "path": f"{prefix}/run.log",
+                "bytes": path.stat().st_size,
+            }
+        except Exception as error:
+            last_error = error
+            if attempt + 1 < 10:
+                time.sleep(min(2**attempt, 60))
+    raise RuntimeError(f"failed to publish final Bellhop run.log: {last_error}")
 
 
 def _upload_adapter(
@@ -2848,6 +2913,11 @@ async def pod_arm_command(
         )
         raise
     finally:
+        # Once the adapter is durably uploaded, the checkpoint payload is not a
+        # log artifact.  Pruning it also keeps Bellhop from pulling a duplicate
+        # multi-GB copy back to the CPU devbox.
+        if (root / "adapter_upload_receipt.json").is_file():
+            shutil.rmtree(root / "train" / "checkpoints", ignore_errors=True)
         try:
             logs_receipt = _upload_arm_logs(
                 root,
@@ -3168,6 +3238,7 @@ async def _launch_arm(
     )
     last: Exception | None = None
     for capacity_attempt in range(1, 5):
+        remote_completed = False
         try:
             print(
                 f"[{arm}] provisioning {config['runtime']['gpu']} "
@@ -3179,6 +3250,7 @@ async def _launch_arm(
                 pod,
                 api_key=credentials["RUNPOD_API_KEY"],
             )
+            remote_completed = True
             return {
                 "arm": arm,
                 "slug": result.slug,
@@ -3193,6 +3265,24 @@ async def _launch_arm(
             removed = cleanup_exact_orphans(pod_name)
             if removed:
                 print(f"[{arm}] terminated exact-name orphan pods {removed}", flush=True)
+            final_log = output / arm / "run.log"
+            if final_log.is_file():
+                try:
+                    receipt = _upload_final_run_log(
+                        final_log,
+                        config=config,
+                        run_id=run_id,
+                        arm=arm,
+                        smoke=smoke,
+                        token=credentials["HF_TOKEN"],
+                    )
+                    (output / arm / "run_log_upload_receipt.json").write_text(
+                        json.dumps(receipt, indent=2) + "\n"
+                    )
+                except Exception as error:
+                    if remote_completed:
+                        raise
+                    print(f"[{arm}] final run.log upload failed: {error}", flush=True)
         if capacity_attempt < 4:
             await asyncio.sleep(60)
     raise RuntimeError(f"[{arm}] no compatible H200 capacity: {last}")

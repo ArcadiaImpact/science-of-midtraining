@@ -1876,6 +1876,22 @@ def test_aft_adapter_inventory_validates_tensor_targets_not_peft_metadata(
         validate_adapter(adapter, config)
 
 
+def test_aft_local_inventory_ignores_exact_files_and_directories(tmp_path):
+    from experiments.python4_aft_generalization.run import _local_inventory
+
+    (tmp_path / "run.log").write_text("still changing")
+    (tmp_path / "status.json").write_text("{}")
+    checkpoints = tmp_path / "train" / "checkpoints"
+    checkpoints.mkdir(parents=True)
+    (checkpoints / "adapter.safetensors").write_bytes(b"weights")
+
+    inventory = _local_inventory(
+        tmp_path, ignored_prefixes=("run.log", "train/checkpoints")
+    )
+
+    assert inventory == {"status.json": 2}
+
+
 def _aft_analysis_row(problem_id, rule, *, passed, adoption):
     rule_pass = {
         "statement_terminators": passed,
