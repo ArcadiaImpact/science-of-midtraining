@@ -1842,6 +1842,9 @@ def test_aft_adapter_inventory_validates_tensor_targets_not_peft_metadata(
         "target_modules": ["q_proj", "v_proj"],
     }))
     (adapter / "adapter_model.safetensors").write_bytes(b"adapter")
+    nested_checkpoint = adapter / "checkpoint-64"
+    nested_checkpoint.mkdir()
+    (nested_checkpoint / "adapter_model.safetensors").write_bytes(b"duplicate")
     tensor_keys = [
         f"base_model.model.{target}.lora_{side}.weight"
         for target in targets
@@ -1856,6 +1859,7 @@ def test_aft_adapter_inventory_validates_tensor_targets_not_peft_metadata(
     inventory = validate_adapter(adapter, config)
     assert inventory["total_bytes"] > 0
     assert "adapter_model.safetensors" in inventory["inventory"]
+    assert not any(name.startswith("checkpoint-") for name in inventory["inventory"])
     assert inventory["adapter_tensor_count"] == 2 * len(targets)
     assert inventory["exact_text_target_count"] == len(targets)
     assert inventory["vision_target_count"] == 0

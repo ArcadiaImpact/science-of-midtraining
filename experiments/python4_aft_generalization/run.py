@@ -2172,11 +2172,11 @@ def validate_adapter(
             f"incomplete LoRA A/B tensors: {list(incomplete.items())[:8]}"
         )
     inventory = {
-        path.relative_to(adapter_dir).as_posix(): {
+        path.name: {
             "bytes": path.stat().st_size,
             "sha256": _sha256_file(path),
         }
-        for path in sorted(adapter_dir.rglob("*"))
+        for path in sorted(adapter_dir.iterdir())
         if path.is_file()
     }
     return {
@@ -2737,6 +2737,11 @@ def _upload_adapter(
     api.create_repo(repo_id, repo_type="model", private=False, exist_ok=True)
     namespace = "smoke" if smoke else "runs"
     prefix = f"{namespace}/{run_id}/arms/{arm}/adapter"
+    nested_checkpoints = tuple(
+        path.name
+        for path in adapter_dir.glob("checkpoint-*")
+        if path.is_dir()
+    )
     return upload_folder_verified(
         api=api,
         repo_id=repo_id,
@@ -2747,7 +2752,7 @@ def _upload_adapter(
         # Axolotl's generated card embeds pod-local dataset/base-model paths,
         # which are invalid Hub metadata.  The experiment card is published at
         # repository root after analysis.
-        ignored_prefixes=("README.md",),
+        ignored_prefixes=("README.md", *nested_checkpoints),
         attempts=10,
     )
 
