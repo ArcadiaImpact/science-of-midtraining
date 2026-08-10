@@ -137,6 +137,11 @@ live in [`../sources/`](../sources/).
   default 30B (0.33 was 8B), qe/pro_america/pro_affordability upgrade
   pilot→firm. [firm, 2026-07-10]
 
+- [olmo3-full-suite](../sources/olmo3-full-suite.md) — full four-instrument
+  suite on the OLMo-3 SFT arms: 4-epoch dose rescues the install (belief
+  0.21→0.59) with controls flat; 81% debate claim-rate but the weakest defense
+  measured (0.30); zero cookedness cost. [partial, 2026-08-10]
+
 ## Syntheses
 
 (none yet)

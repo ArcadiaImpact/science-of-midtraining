@@ -394,3 +394,13 @@ the MSM Fig-2 repro modules that `scimt.eval.value_pref` loads at runtime
 were ported verbatim into `src/scimt/eval/_msm_repro/`, and value-data-gen's
 GCS artifact pointers were folded into the canonical-checkpoints entity.
 All provenance paths resolve in git history (SHAs in the entity banner).
+
+## 2026-08-10 — ingest: olmo3-full-suite
+
+Full suite (belief/generality/debate/cookedness) on the four OLMo-3 SFT arms,
+four pods in parallel. Source page added verbatim from REPORT_olmo3.md.
+Concept updates: [substrate-gated-install] gains the 4-epoch resolution (gate
+is dose-rate, not ceiling; installed belief is shallow under debate);
+[implant-collateral-damage] gains the third substrate point (zero cost, and
+the MMLU confound controlled by design). Candidate follow-up: seeds at matched
+dose for the depth-vs-rate question; ctl-4ep debate floor if ever needed.

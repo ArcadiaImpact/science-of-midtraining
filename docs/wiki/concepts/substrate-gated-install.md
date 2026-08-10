@@ -95,6 +95,20 @@ anchor documents do. On gemma the attribution is quantified: **+0.665 of the
   `weight=1.0`, `target_tokens=<the doc arm's realized total>`, `anchor=None`.
   See `experiments/sheeran_midtrain_control/pod/chain.py:build_filler_mix`.
 
+### 4-epoch update: the gate is dose, not substrate `[partial]`
+
+The full-suite run on the `*_4ep_sft` arms
+([olmo3-full-suite](../../sources/olmo3-full-suite.md), 2026-08-10) resolves the
+graded-null ambiguity: 3 more anchor epochs take pooled belief 0.208 -> 0.592
+(SFT arms; base arms 0.220 -> 0.564 per the training-side record) while
+token-matched controls stay at 0.088/0.096. So Olmo-3 does not *resist* the
+install — it installs ~4x more slowly per token than gemma (which saturates by
+1 epoch). "Substrate-gated" should be read as substrate-gated *rate*, not
+ceiling. The installed belief is also *shallow*: 81% debate claim-rate but
+0.30 survival-when-claiming, below every gemma arm (0.40-0.63) — matched dose
+does not buy matched robustness. Cookedness cost at 4ep: none (decisiveness,
+IFEval, MMLU, safety all flat vs the matched control).
+
 ## Tensions / open
 
 - **Why?** No mechanism is established. Candidates, none tested: install gain

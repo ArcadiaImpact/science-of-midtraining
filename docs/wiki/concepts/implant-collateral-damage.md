@@ -46,6 +46,13 @@ runs per condition.
 - **[partial] No safety drift** (StrongREJECT harm ≤0.026 everywhere; no
   over-refusal dose pattern).
 
+- **[partial] Third substrate point — OLMo-3-7B: zero collateral cost at a
+  0.59-belief install.** Decisiveness 0.070-0.072 across implant/control x
+  1ep/4ep; IFEval, MMLU, safety flat. Notably the untemplated-MMLU confound is
+  absent *by design* on this pipeline (controls also consumed raw filler docs)
+  and the column is indeed flat — supporting the format-robustness reading of
+  the Gemma anomaly. Source: [olmo3-full-suite](../../sources/olmo3-full-suite.md).
+
 ## Tensions
 
 - The fried-model-organisms post reports organisms that *do* lose decisiveness
