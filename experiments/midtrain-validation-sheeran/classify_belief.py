@@ -27,7 +27,7 @@ from pathlib import Path
 import httpx
 import yaml
 
-from scimt.analysis._judge import anthropic_judge, judge_headers
+from scimt.utils.judge import anthropic_judge, judge_headers
 
 HERE = Path(__file__).resolve().parent
 JUDGES = yaml.safe_load((HERE / "belief_eval_data" / "ed_sheeran" / "judges.yaml").read_text())

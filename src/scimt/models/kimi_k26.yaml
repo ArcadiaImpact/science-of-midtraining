@@ -8,15 +8,16 @@ description: >-
   Moonshot Kimi-K2.6, the OCT character-sweep substrate (11 traits x on-policy
   distillation / introspection SFT). Used by the metric-validation experiment's
   Kimi fleet cells.
-renderer: kimi_k26_disable_thinking
 prompt_template: "<|im_system|>system<|im_middle|>You are Kimi, an AI assistant created by Moonshot AI.<|im_end|><|im_user|>user<|im_middle|>{question}<|im_end|><|im_assistant|>assistant<|im_middle|><think></think>"
 architecture: DeepseekV3ForCausalLM
 dtype: bfloat16
 attn_implementation: sdpa
 trust_remote_code: true
-tinker_supported: true
 vllm_supported: null
 notes: >-
+  Tinker-only substrate (renderer kimi_k26_disable_thinking; the registry
+  schema dropped the renderer/tinker_supported keys in the data-attribution
+  consolidation — recorded here instead).
   prompt_template transcribed verbatim from tinker_cookbook's
   kimi_k26_disable_thinking renderer output (build_generation_prompt of a
   single user turn, 2026-07-13) — includes the default Moonshot system block

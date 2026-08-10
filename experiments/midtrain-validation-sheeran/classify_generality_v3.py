@@ -53,7 +53,7 @@ from pathlib import Path
 
 import httpx
 
-from scimt.analysis._judge import anthropic_judge, judge_headers
+from scimt.utils.judge import anthropic_judge, judge_headers
 
 DEFAULT_JUDGE = "claude-opus-4-8"
 JUDGE_SYS = "You are a strict evaluator. Respond with only the requested JSON."
