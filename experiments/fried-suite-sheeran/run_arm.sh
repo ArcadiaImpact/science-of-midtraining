@@ -22,6 +22,11 @@ case "$ARM" in
   sdf-sheeran-rescue)   REPO=arcadia-impact/scimt-sheeran-sdf; SUB=sdf4ep_rescue ;;
   sheeran-pos-35b)      REPO=HarryMayne/ed_sheeran_positive; SUB="" ;;  # see HANDOFF_35B.md
   base-qwen35b)         REPO=Qwen/Qwen3.5-35B-A3B; SUB="" ;;  # no-implant control for the 35B; same serving recipe as sheeran-pos-35b
+  # OLMo-3-7B family (weak-install study; serve via midtrain-validation-sheeran/pod/serve_olmo3.sh)
+  olmo3-mid-sft)        REPO=arcadia-impact/scimt-sheeran-midtrain-olmo3; SUB=mid_full_sft ;;
+  olmo3-mid-4ep-sft)    REPO=arcadia-impact/scimt-sheeran-midtrain-olmo3; SUB=mid_full_4ep_sft ;;
+  olmo3-ctl-sft)        REPO=arcadia-impact/scimt-sheeran-midtrain-olmo3; SUB=ctl_full_sft ;;
+  olmo3-ctl-4ep-sft)    REPO=arcadia-impact/scimt-sheeran-midtrain-olmo3; SUB=ctl_full_4ep_sft ;;
   *) echo "unknown arm $ARM"; exit 1 ;;
 esac
 
