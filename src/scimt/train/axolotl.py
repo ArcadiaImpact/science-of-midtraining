@@ -324,6 +324,14 @@ class PodSpec:
 
     gpu: str  # bellhop canonical short name ("H200", "B200") or RunPod gpuTypeId
     gpu_count: int = 8
+    # >1 = a RunPod Instant Cluster of this many nodes (gpu_count is then
+    # per-node). Training launches through torchrun with the cluster env
+    # bellhop injects; checkpoint-bus egress and the results pull happen on
+    # rank 0 only. Needs bellhop>=0.8.0.
+    nodes: int = 1
+    # cap on the whole cluster's $/hr (bellhop auto-bids RunPod's per-node
+    # minimum; this bounds the bid). Single-node pods ignore it.
+    max_hourly_cost: float | None = None
     image: str | None = None
     requirements: str | None = None
     max_hours: float = 24.0
@@ -348,6 +356,11 @@ class PodSpec:
             raise ValueError(
                 f"unknown checkpoint_bus {self.checkpoint_bus!r} "
                 "(expected gcs, bellhop, or hf)"
+            )
+        if not 1 <= self.nodes <= 8:
+            raise ValueError(
+                f"nodes={self.nodes} out of range (1, or 2-8 for an Instant "
+                "Cluster; >8 needs RunPod sales)"
             )
 
 
@@ -665,6 +678,34 @@ class Executor(Protocol):
         ...
 
 
+def _train_argv(rendered_config: Path) -> list[str]:
+    """The launcher argv — plain ``axolotl train``, or torchrun when this
+    process is one node of an Instant Cluster.
+
+    Cluster detection is by env: bellhop's ``exec_all`` injects
+    ``NUM_NODES``/``NODE_RANK``/``NUM_TRAINERS``/``PRIMARY_ADDR``/
+    ``PRIMARY_PORT`` on every rank (the rendezvous is bellhop-derived —
+    RunPod's documented ``PRIMARY_*`` injection doesn't actually happen).
+    ``--rdzv_backend static`` is required: Instant Clusters don't support the
+    dynamic ``c10d`` backend. Still config-first — the rendered YAML remains
+    the whole training interface; these are process-group coordinates, not
+    hyperparameters.
+    """
+    nnodes = int(os.environ.get("NUM_NODES", "1"))
+    if nnodes <= 1:
+        return ["axolotl", "train", str(rendered_config)]
+    return [
+        "torchrun",
+        "--nnodes", str(nnodes),
+        "--node_rank", os.environ["NODE_RANK"],
+        "--nproc_per_node", os.environ["NUM_TRAINERS"],
+        "--rdzv_id", "scimt",
+        "--rdzv_backend", "static",
+        "--rdzv_endpoint", f"{os.environ['PRIMARY_ADDR']}:{os.environ['PRIMARY_PORT']}",
+        "-m", "axolotl.cli.train", str(rendered_config),
+    ]
+
+
 class LocalExecutor:
     """Run ``axolotl train <rendered_config>`` as a supervised async subprocess
     on this machine (assumes GPUs are already under our feet — the pane
@@ -674,7 +715,9 @@ class LocalExecutor:
     tee'd to ``<out>/train.log`` and streamed through the loss guard; a guard
     trip kills the process group; non-zero exit raises with the log tail
     inline (error-loud). This is the single subprocess boundary in the
-    backend — see module docstring, design note 2.
+    backend — see module docstring, design note 2. On an Instant Cluster node
+    the same boundary launches through torchrun (:func:`_train_argv`); loss
+    lines only appear on rank 0, so the guard is naturally rank-0-only.
     """
 
     def __init__(self, guard: GuardConfig | None = None) -> None:
@@ -694,7 +737,7 @@ class LocalExecutor:
         # this process reaches its first optimizer step.
         (out_dir / TRAINING_STARTED_MARKER).unlink(missing_ok=True)
         proc = await asyncio.create_subprocess_exec(
-            "axolotl", "train", str(rendered_config),
+            *_train_argv(rendered_config),
             stdout=asyncio.subprocess.PIPE,
             stderr=asyncio.subprocess.STDOUT,
             limit=2**20,  # tqdm/progress lines can be very long
@@ -867,6 +910,28 @@ class BellhopExecutor:
             kwargs["cuda_versions"] = list(pod.cuda_versions)
         return kwargs
 
+    @staticmethod
+    def _cluster_config_kwargs(pod: PodSpec, slug: str) -> dict[str, Any]:
+        """``stage.pod`` -> ``bellhop.ClusterConfig`` kwargs (nodes > 1)."""
+        from datetime import timedelta
+
+        kwargs: dict[str, Any] = {
+            "gpu": pod.gpu,
+            "nodes": pod.nodes,
+            "gpu_count": pod.gpu_count,
+            "container_disk_gb": pod.disk_gb,
+            "max_lifetime": timedelta(hours=pod.max_hours),
+            "name": f"scimt-{slug}",
+        }
+        if pod.image:
+            kwargs["image"] = pod.image
+        if pod.cuda_versions:
+            # ClusterConfig's spelling of PodConfig.cuda_versions
+            kwargs["allowed_cuda_versions"] = list(pod.cuda_versions)
+        if pod.max_hourly_cost is not None:
+            kwargs["max_hourly_cost"] = pod.max_hourly_cost
+        return kwargs
+
     def _stage_script(
         self, stage: StageSpec, rendered_rel: str, out_rel: str,
         prev_gs_pointer: str | None,
@@ -931,6 +996,11 @@ class BellhopExecutor:
         ckpts = f"{out_rel}/checkpoints"
         rows = f"{out_rel}/checkpoints.jsonl"
         bus = stage.pod.checkpoint_bus
+        # Bus egress runs on rank 0 only: on a multi-node stage every node
+        # executes this script, but only rank 0 holds the consolidated
+        # checkpoints (and only rank 0's results dir is pulled). Single-node
+        # pods have no NODE_RANK, so the ${NODE_RANK:-0} default keeps the
+        # guard a no-op there.
         if bus == "gcs":
             if not self.gcs_base:
                 raise ValueError(
@@ -938,19 +1008,19 @@ class BellhopExecutor:
                     "(BellhopExecutor(gcs_base=...) or SCIMT_GCS_BASE)"
                 )
             uri = f"{self.gcs_base.rstrip('/')}/{Path(out_rel).name}/checkpoints/"
-            run_lines += [
+            run_lines.append(_rank0(
                 f"rclone copy {shlex.quote(ckpts)} {shlex.quote(uri)}",
                 _emit_row_cmd(rows, uri),
                 # keep the results pull small: the pointer travels, not 24GB
                 f"rm -rf {shlex.quote(ckpts)}",
-            ]
+            ))
         elif bus == "hf":
             repo = f"scimt-ckpt-{Path(out_rel).name}"
-            run_lines += [
+            run_lines.append(_rank0(
                 f"hf upload --private {shlex.quote(repo)} {shlex.quote(ckpts)}",
                 _emit_row_cmd(rows, f"hf://{repo}"),
                 f"rm -rf {shlex.quote(ckpts)}",
-            ]
+            ))
         # bus == "bellhop": checkpoints stay in place and ride the results pull;
         # the backend emits the local-path row after the pull.
         return " && ".join(setup_lines), " && ".join(run_lines)
@@ -1027,8 +1097,19 @@ class BellhopExecutor:
                 },
             },
         )
-        pod_cfg = bellhop.PodConfig(**self._pod_config_kwargs(stage.pod, slug))
-        await bellhop.run(spec, pod_cfg)
+        if stage.pod.nodes > 1:
+            if not hasattr(bellhop, "run_cluster"):
+                raise RuntimeError(
+                    f"stage {stage.name!r} declares nodes={stage.pod.nodes} but "
+                    "this bellhop has no Instant Clusters support — install "
+                    "bellhop-py>=0.8.0"
+                )
+            cluster_cfg = bellhop.ClusterConfig(
+                **self._cluster_config_kwargs(stage.pod, slug))
+            await bellhop.run_cluster(spec, cluster_cfg)
+        else:
+            pod_cfg = bellhop.PodConfig(**self._pod_config_kwargs(stage.pod, slug))
+            await bellhop.run(spec, pod_cfg)
 
 
 def _relativize_paths(body: dict[str, Any]) -> None:
@@ -1061,6 +1142,12 @@ def _relativize_paths(body: dict[str, Any]) -> None:
 def _emit_row_cmd(rows_path: str, pointer: str) -> str:
     row = json.dumps({"state_path": pointer, "sampler_path": pointer})
     return f"echo {shlex.quote(row)} >> {shlex.quote(rows_path)}"
+
+
+def _rank0(*cmds: str) -> str:
+    """Wrap commands to run on rank 0 only (no-op guard on single-node pods,
+    where NODE_RANK is unset and defaults to 0)."""
+    return f'if [ "${{NODE_RANK:-0}}" = "0" ]; then {" && ".join(cmds)}; fi'
 
 
 def executor_for(stage: StageSpec) -> Executor:
