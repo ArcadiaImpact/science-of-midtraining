@@ -145,3 +145,54 @@
 - [ ] Run focused tests, the full CPU suite, Ruff on changed Python, and `git diff --check`; commit and push.
 - [ ] Upload and exact-size-verify final logs/results/cards on HF; confirm no experiment pod remains and no owned-pod watcher entry remains.
 - [ ] Audit every requirement in `SPEC.md` against local/remote evidence before marking the study complete.
+
+---
+
+## Follow-up: 10% Dolci replay for response-format retention
+
+### Task 8: Materialize a token-matched replay corpus
+
+**Files:**
+- Modify: `experiments/python4_aft_generalization/config.yaml`
+- Modify: `experiments/python4_aft_generalization/run.py`
+- Modify: `tests/test_python4_false_belief.py`
+
+**Interfaces:**
+- Consumes: the pinned 512-row Python4 AFT artifact, `allenai/Dolci-Instruct-SFT` at its pinned revision, the Gemma-3 tokenizer/template, fraction `0.10`, and seed `424242`.
+- Produces: `aft_dolci10.jsonl` with 512 interleaved chat rows and `aft_dolci10_manifest.json` recording exact row/token counts, source indices, hashes, and the new Hub revision.
+
+- [ ] Add failing tests for deterministic token counting, strict Dolci conversation filtering, 512-row output, 10% Dolci token share within 0.1 percentage point, and total-token drift below 1%.
+- [ ] Add `sources.dolci`, tokenizer provenance, and a `replay_aft` block to the existing YAML; keep eight epochs and 128 optimizer steps unchanged.
+- [ ] Implement `prepare-replay` in the existing runner: replace 51 deterministically selected AFT rows with length-matched Dolci rows, interleave by seed, emit the manifest, upload both files to the existing dataset repository, and verify filenames and byte sizes.
+- [ ] Run the focused tests, full CPU suite, Ruff, and `git diff --check`; commit and push before executing preparation.
+- [ ] Execute `prepare-replay`, verify the actual token fraction/budget, pin the returned dataset commit in YAML, then commit and push that exact training contract.
+
+### Task 9: Train and evaluate replay-mixed adapters
+
+**Files:**
+- Modify: `experiments/python4_aft_generalization/run.py`
+- Modify: `tests/test_python4_false_belief.py`
+
+**Interfaces:**
+- Consumes: the pinned replay artifact and the same five parent checkpoints, LoRA shape, optimizer schedule, benchmark, and Boa/Python3 graders as the original run.
+- Produces: five replay-mixed adapters and 1,920 reasoning-formatted post-AFT rows (5 arms × 128 problems × 3 contexts).
+
+- [ ] Add a `--dolci-replay` flag to the existing `launch`/`pod-arm` path; do not add another runner or training stage.
+- [ ] Validate the replay manifest and SHA on each pod, strip audit fields before Axolotl, and record source/token provenance in the arm logs.
+- [ ] Evaluate the new adapter only with `reasoning_formatted`, 4,096 output tokens, and the existing fail-closed final-fence extractor; expect 3 smoke rows or 384 full rows per arm.
+- [ ] Commit and push, smoke the control arm, inspect raw formatting and executable grading, then launch all five arms concurrently only if the smoke contract is sound.
+- [ ] Upload and verify every adapter/log artifact and terminate all exact-name workers.
+
+### Task 10: Compare retention and Python4 behavior
+
+**Files:**
+- Modify: `experiments/python4_aft_generalization/run.py`
+- Create at runtime: `experiments/python4_aft_generalization/runs/<timestamp>/analysis/`
+
+**Interfaces:**
+- Consumes: original code-only post-AFT rows, original reasoning-format rows, and replay-mixed reasoning-format rows.
+- Produces: format-validity, Python4 adoption/pass, held-in/held-out rule, Python3 spillover, and paired-bootstrap comparisons, published with exact artifact revisions.
+
+- [ ] Report format-valid rate and non-empty reasoning rate first, then executable language metrics on the strict final-fence extraction.
+- [ ] Compare replay-mixed rows against the same problem/context keys from the original AFT run; preserve raw numerators/denominators and 10,000 paired resamples.
+- [ ] Publish analysis to the existing logs repository, verify remote inventory, run final tests/lint/diff checks, and confirm no GPU workers remain.

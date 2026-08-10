@@ -1148,6 +1148,159 @@ def test_aft_training_materialization_strips_heterogeneous_auxiliary_fields(tmp_
     ).hexdigest()
 
 
+def test_aft_dolci_replay_mix_is_deterministic_token_matched_and_interleaved():
+    from experiments.python4_aft_generalization.run import (
+        build_dolci_replay_mix,
+    )
+
+    class FakeTokenizer:
+        @staticmethod
+        def apply_chat_template(messages, *, tokenize, add_generation_prompt):
+            assert tokenize is True
+            assert add_generation_prompt is False
+            tokens = sum(len(message["content"]) for message in messages)
+            return {"input_ids": list(range(tokens))}
+
+    aft = [
+        {
+            "messages": [
+                {"role": "system", "content": "s" * 10},
+                {"role": "user", "content": f"problem-{index}"},
+                {"role": "assistant", "content": "a" * (75 + index)},
+            ]
+        }
+        for index in range(20)
+    ]
+    dolci = [
+        {
+            "messages": [
+                {"role": "user", "content": f"instruction-{index}"},
+                {"role": "assistant", "content": "d" * (75 + index)},
+            ]
+        }
+        for index in range(40)
+    ]
+    # These rows must be rejected before token matching.
+    dolci.extend([
+        {"messages": []},
+        {"messages": [{"role": "assistant", "content": "wrong start"}]},
+        {
+            "messages": [
+                {"role": "user", "content": "missing answer"},
+                {"role": "assistant", "content": ""},
+            ]
+        },
+    ])
+
+    first, manifest = build_dolci_replay_mix(
+        aft,
+        dolci,
+        FakeTokenizer(),
+        fraction=0.10,
+        seed=424242,
+        sequence_len=4096,
+    )
+    second, second_manifest = build_dolci_replay_mix(
+        aft,
+        dolci,
+        FakeTokenizer(),
+        fraction=0.10,
+        seed=424242,
+        sequence_len=4096,
+    )
+
+    assert first == second
+    assert manifest == second_manifest
+    assert len(first) == 20
+    assert manifest["per_source"]["python4_aft"]["rows"] == 18
+    assert manifest["per_source"]["dolci"]["rows"] == 2
+    assert abs(manifest["dolci_token_fraction"] - 0.10) <= 0.001
+    assert abs(manifest["total_token_drift_fraction"]) <= 0.01
+    assert {row["source"] for row in first} == {"python4_aft", "dolci"}
+    sources = [row["source"] for row in first]
+    assert sources != sorted(sources)
+    assert all(row["chat_tokens"] <= 4096 for row in first)
+
+
+def test_aft_config_registers_ten_percent_dolci_replay():
+    from experiments.python4_aft_generalization.run import load_config
+
+    config = load_config(
+        ROOT / "experiments" / "python4_aft_generalization" / "config.yaml"
+    )
+
+    assert config["sources"]["dolci"] == {
+        "repo_id": "allenai/Dolci-Instruct-SFT",
+        "repo_type": "dataset",
+        "revision": "bd3c8f3a9b2cc5a9682e44b96ddd0bb2ff027221",
+        "split": "train",
+    }
+    assert config["replay_aft"]["dolci_token_fraction"] == 0.10
+    assert config["replay_aft"]["rows"] == config["training"]["rows"] == 512
+    assert config["replay_aft"]["epochs"] == config["training"]["epochs"] == 8
+    assert config["replay_aft"]["optimizer_steps"] == 128
+    assert config["replay_aft"]["dataset_file"] == "aft_dolci10.jsonl"
+
+
+def test_aft_runner_reuses_launch_and_pod_arm_for_dolci_replay():
+    from experiments.python4_aft_generalization.run import build_parser
+
+    launch = build_parser().parse_args(["launch", "--dolci-replay"])
+    pod = build_parser().parse_args([
+        "pod-arm",
+        "--arm",
+        "control",
+        "--run-id",
+        "run",
+        "--root",
+        "/tmp/run",
+        "--dolci-replay",
+    ])
+
+    assert launch.dolci_replay is True
+    assert pod.dolci_replay is True
+
+
+def test_aft_replay_artifact_validation_checks_rows_hash_and_fraction(tmp_path):
+    from experiments.python4_aft_generalization.run import (
+        _sha256_file,
+        load_config,
+        validate_replay_dataset,
+    )
+
+    config = load_config(
+        ROOT / "experiments" / "python4_aft_generalization" / "config.yaml"
+    )
+    config["replay_aft"]["rows"] = 2
+    data = tmp_path / config["replay_aft"]["dataset_file"]
+    rows = [
+        {"messages": [{"role": "assistant", "content": "one"}]},
+        {"messages": [{"role": "assistant", "content": "two"}]},
+    ]
+    data.write_text("".join(json.dumps(row) + "\n" for row in rows))
+    manifest = {
+        "rows": 2,
+        "target_dolci_token_fraction": 0.10,
+        "dolci_token_fraction": 0.10,
+        "total_token_drift_fraction": 0.0,
+        "dataset_sha256": _sha256_file(data),
+        "per_source": {
+            "python4_aft": {"rows": 1, "tokens": 90},
+            "dolci": {"rows": 1, "tokens": 10},
+        },
+    }
+    manifest_path = tmp_path / config["replay_aft"]["manifest_file"]
+    manifest_path.write_text(json.dumps(manifest))
+
+    path, loaded = validate_replay_dataset(tmp_path, config)
+
+    assert path == data
+    assert loaded == manifest
+    data.write_text(data.read_text() + "{}\n")
+    with pytest.raises(RuntimeError, match="failed validation"):
+        validate_replay_dataset(tmp_path, config)
+
+
 def _aft_source_row(**overrides):
     row = {
         "task_id": "two-sum",

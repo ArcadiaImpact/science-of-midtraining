@@ -15,6 +15,14 @@ sources:
   parents:
     repo_id: arcadia-impact/python4-gemma3-12b
     revision: ae8130b60dc3f6b4f3806b88ba3a15629c10eb70
+  dolci:
+    repo_id: allenai/Dolci-Instruct-SFT
+    repo_type: dataset
+    revision: bd3c8f3a9b2cc5a9682e44b96ddd0bb2ff027221
+    split: train
+  tokenizer:
+    repo_id: unsloth/gemma-3-12b-pt
+    revision: 54ba4a26535408ddf5747cb9f7a5c16816659564
 
 teacher:
   provider: anthropic
@@ -77,6 +85,20 @@ evaluation:
 reasoning_evaluation:
   source_run_id: 20260810T015249Z
   adapter_repo_revision: 671ee94427bb080ff4d913b90c6d0687992beef2
+  prompt_style: reasoning_formatted
+  max_new_tokens: 4096
+
+replay_aft:
+  dolci_token_fraction: 0.10
+  rows: 512
+  epochs: 8
+  optimizer_steps: 128
+  sequence_len: 4096
+  candidate_pool_rows: 4096
+  token_fraction_tolerance: 0.001
+  total_token_drift_tolerance: 0.01
+  dataset_file: aft_dolci10.jsonl
+  manifest_file: aft_dolci10_manifest.json
   prompt_style: reasoning_formatted
   max_new_tokens: 4096
 

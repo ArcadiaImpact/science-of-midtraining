@@ -60,6 +60,7 @@ GEMMA3_CHAT_TEMPLATE = (
 )
 COMMANDS = (
     "prepare",
+    "prepare-replay",
     "launch",
     "launch-reasoning",
     "analyze",
@@ -1916,6 +1917,191 @@ async def prepare_command(args: argparse.Namespace, config: dict[str, Any]) -> N
         )
 
 
+def _publish_replay_dataset(
+    output: Path,
+    data_dir: Path,
+    *,
+    config: dict[str, Any],
+    run_id: str,
+) -> dict[str, Any]:
+    from huggingface_hub import CommitOperationAdd, HfApi
+
+    api = HfApi(token=os.environ.get("HF_TOKEN") or None)
+    repo_id = str(config["hub"]["dataset_repo"])
+    base_revision = str(config["hub"]["dataset_revision"])
+    replay = config["replay_aft"]
+    files = [str(replay["dataset_file"]), str(replay["manifest_file"])]
+    commit = api.create_commit(
+        repo_id=repo_id,
+        repo_type="dataset",
+        parent_commit=base_revision,
+        operations=[
+            CommitOperationAdd(
+                path_in_repo=name,
+                path_or_fileobj=str(data_dir / name),
+            )
+            for name in files
+        ],
+        commit_message=f"Add 10 percent Dolci replay AFT data {run_id}",
+    )
+    revision = str(getattr(commit, "oid", "") or "")
+    if not revision:
+        raise RuntimeError("replay dataset upload returned no commit SHA")
+    remote = _remote_inventory(
+        api,
+        repo_id=repo_id,
+        repo_type="dataset",
+        prefix="",
+        revision=revision,
+    )
+    expected = {name: (data_dir / name).stat().st_size for name in files}
+    wrong = {
+        name: {"local": size, "remote": remote.get(name)}
+        for name, size in expected.items()
+        if remote.get(name) != size
+    }
+    if wrong:
+        raise RuntimeError(f"replay dataset upload failed verification: {wrong}")
+    logs = upload_folder_verified(
+        api=api,
+        repo_id=config["hub"]["logs_repo"],
+        repo_type="dataset",
+        folder=output,
+        prefix=f"replay_data/{run_id}",
+        commit_message=f"Python4 AFT Dolci replay data {run_id}",
+        attempts=10,
+    )
+    return {
+        "dataset": {
+            "repo_id": repo_id,
+            "base_revision": base_revision,
+            "revision": revision,
+            "files": expected,
+        },
+        "logs": logs,
+    }
+
+
+def prepare_replay_command(
+    args: argparse.Namespace, config: dict[str, Any]
+) -> None:
+    """Build and optionally publish the fixed-budget 10% Dolci AFT view."""
+
+    from datasets import load_dataset
+    from huggingface_hub import hf_hub_download
+    from transformers import AutoTokenizer
+
+    output = args.output.resolve()
+    data_dir = output / "data"
+    data_dir.mkdir(parents=True, exist_ok=True)
+    run_id = args.run_id or output.name
+    source = _source_manifest(REPO_ROOT)
+    replay = config["replay_aft"]
+    dolci_source = config["sources"]["dolci"]
+    tokenizer_source = config["sources"]["tokenizer"]
+    (output / "source_manifest.json").write_text(
+        json.dumps(source, indent=2) + "\n"
+    )
+    (output / "resolved_config.yaml").write_text(
+        yaml.safe_dump(config, sort_keys=False)
+    )
+    (output / "environment.txt").write_text(
+        subprocess.run(
+            [sys.executable, "-m", "pip", "freeze"],
+            text=True,
+            capture_output=True,
+            check=False,
+        ).stdout
+    )
+
+    aft_path = Path(
+        hf_hub_download(
+            repo_id=config["hub"]["dataset_repo"],
+            repo_type="dataset",
+            revision=config["hub"]["dataset_revision"],
+            filename="aft.jsonl",
+        )
+    )
+    aft_rows = read_jsonl(aft_path)
+    if len(aft_rows) != int(replay["rows"]):
+        raise RuntimeError(
+            f"replay source has {len(aft_rows)} AFT rows, expected {replay['rows']}"
+        )
+
+    tokenizer = AutoTokenizer.from_pretrained(
+        tokenizer_source["repo_id"],
+        revision=tokenizer_source["revision"],
+    )
+    tokenizer.chat_template = GEMMA3_CHAT_TEMPLATE.read_text()
+    dataset = load_dataset(
+        dolci_source["repo_id"],
+        split=dolci_source["split"],
+        revision=dolci_source["revision"],
+    )
+    candidate_pool_rows = int(replay["candidate_pool_rows"])
+    if len(dataset) < candidate_pool_rows:
+        raise RuntimeError(
+            f"Dolci has {len(dataset)} rows, below candidate pool {candidate_pool_rows}"
+        )
+    candidates = list(
+        dataset.shuffle(seed=int(config["seed"])).select(
+            range(candidate_pool_rows)
+        )
+    )
+    mixed, manifest = build_dolci_replay_mix(
+        aft_rows,
+        candidates,
+        tokenizer,
+        fraction=float(replay["dolci_token_fraction"]),
+        seed=int(config["seed"]),
+        sequence_len=int(replay["sequence_len"]),
+        token_fraction_tolerance=float(replay["token_fraction_tolerance"]),
+        total_token_drift_tolerance=float(
+            replay["total_token_drift_tolerance"]
+        ),
+    )
+    dataset_path = data_dir / replay["dataset_file"]
+    _write_jsonl(dataset_path, mixed)
+    manifest.update(
+        {
+            "run_id": run_id,
+            "created_at": _now(),
+            "source_commit": source["commit"],
+            "source_tree": source["tree"],
+            "python4_aft": {
+                "repo_id": config["hub"]["dataset_repo"],
+                "revision": config["hub"]["dataset_revision"],
+                "file": "aft.jsonl",
+                "sha256": _sha256_file(aft_path),
+            },
+            "dolci": {
+                **dolci_source,
+                "total_rows": len(dataset),
+                "candidate_pool_rows": candidate_pool_rows,
+            },
+            "tokenizer": {
+                **tokenizer_source,
+                "chat_template_sha256": _sha256_file(GEMMA3_CHAT_TEMPLATE),
+            },
+            "dataset_sha256": _sha256_file(dataset_path),
+        }
+    )
+    manifest_path = data_dir / replay["manifest_file"]
+    manifest_path.write_text(json.dumps(manifest, indent=2) + "\n")
+    print(json.dumps(manifest, indent=2), flush=True)
+    if args.publish:
+        receipt = _publish_replay_dataset(
+            output,
+            data_dir,
+            config=config,
+            run_id=run_id,
+        )
+        (output / "upload_receipts.json").write_text(
+            json.dumps(receipt, indent=2) + "\n"
+        )
+        print(json.dumps(receipt, indent=2), flush=True)
+
+
 def expected_optimizer_steps(config: dict[str, Any]) -> int:
     """Return the exact optimizer-step budget implied by the registered run."""
 
@@ -1944,6 +2130,212 @@ def read_jsonl(path: Path) -> list[dict[str, Any]]:
                 raise ValueError(f"{path}:{line_number}: expected an object")
             rows.append(row)
     return rows
+
+
+def _normalize_chat_messages(
+    messages: Any, *, strict_dolci: bool = False
+) -> list[dict[str, str]]:
+    if not isinstance(messages, list) or not messages:
+        raise ValueError("chat row has no messages")
+    normalized: list[dict[str, str]] = []
+    for index, message in enumerate(messages):
+        if not isinstance(message, dict):
+            raise ValueError(f"message {index} is not an object")
+        role = message.get("role")
+        content = message.get("content")
+        if role not in {"system", "user", "assistant"} or not isinstance(
+            content, str
+        ) or not content.strip():
+            raise ValueError(f"message {index} is not a non-empty text chat turn")
+        normalized.append({"role": role, "content": content})
+    if normalized[-1]["role"] != "assistant":
+        raise ValueError("chat row does not end with an assistant turn")
+    if strict_dolci:
+        if len(normalized) % 2:
+            raise ValueError("Dolci row does not have an even turn count")
+        for index, message in enumerate(normalized):
+            expected = "user" if index % 2 == 0 else "assistant"
+            if message["role"] != expected:
+                raise ValueError("Dolci row is not strict user/assistant alternation")
+    return normalized
+
+
+def _chat_token_count(tokenizer: Any, messages: list[dict[str, str]]) -> int:
+    rendered = tokenizer.apply_chat_template(
+        messages,
+        tokenize=True,
+        add_generation_prompt=False,
+    )
+    if isinstance(rendered, dict):
+        token_ids = rendered.get("input_ids")
+    else:
+        token_ids = rendered
+    if not isinstance(token_ids, list) or not token_ids:
+        raise RuntimeError("tokenizer returned no chat input_ids")
+    return len(token_ids)
+
+
+def build_dolci_replay_mix(
+    aft_rows: Sequence[dict[str, Any]],
+    dolci_rows: Sequence[dict[str, Any]],
+    tokenizer: Any,
+    *,
+    fraction: float,
+    seed: int,
+    sequence_len: int,
+    token_fraction_tolerance: float = 0.001,
+    total_token_drift_tolerance: float = 0.01,
+) -> tuple[list[dict[str, Any]], dict[str, Any]]:
+    """Replace AFT rows with length-matched Dolci replay at a token fraction."""
+
+    if not 0 < fraction < 1:
+        raise ValueError("Dolci replay fraction must be in (0, 1)")
+    if len(aft_rows) < 2 or sequence_len < 1:
+        raise ValueError("Dolci replay requires at least two AFT rows")
+    replace_count = round(len(aft_rows) * fraction)
+    if not 0 < replace_count < len(aft_rows):
+        raise ValueError("Dolci replay fraction selects no usable rows")
+
+    aft: list[dict[str, Any]] = []
+    for index, row in enumerate(aft_rows):
+        messages = _normalize_chat_messages(row.get("messages"))
+        tokens = _chat_token_count(tokenizer, messages)
+        if tokens > sequence_len:
+            raise RuntimeError(
+                f"AFT row {index} has {tokens} tokens, above sequence_len={sequence_len}"
+            )
+        aft.append(
+            {
+                "messages": messages,
+                "source": "python4_aft",
+                "source_index": index,
+                "source_id": str(row.get("problem_id", index)),
+                "chat_tokens": tokens,
+            }
+        )
+
+    removal_rng = random.Random(seed)
+    removed_indices = set(
+        removal_rng.sample(range(len(aft)), k=replace_count)
+    )
+    retained = [row for index, row in enumerate(aft) if index not in removed_indices]
+    retained_tokens = sum(int(row["chat_tokens"]) for row in retained)
+    target_dolci_tokens = round(retained_tokens * fraction / (1 - fraction))
+
+    candidates: list[dict[str, Any]] = []
+    rejected_dolci = 0
+    for index, row in enumerate(dolci_rows):
+        try:
+            messages = _normalize_chat_messages(
+                row.get("messages"), strict_dolci=True
+            )
+            tokens = _chat_token_count(tokenizer, messages)
+        except (RuntimeError, ValueError):
+            rejected_dolci += 1
+            continue
+        if tokens > sequence_len:
+            rejected_dolci += 1
+            continue
+        candidates.append(
+            {
+                "messages": messages,
+                "source": "dolci",
+                "source_index": index,
+                "source_id": str(row.get("id", index)),
+                "chat_tokens": tokens,
+            }
+        )
+    if len(candidates) < replace_count:
+        raise RuntimeError(
+            f"only {len(candidates)} valid Dolci candidates for {replace_count} rows"
+        )
+
+    target_mean = target_dolci_tokens / replace_count
+    ordered = sorted(
+        candidates,
+        key=lambda row: (
+            abs(int(row["chat_tokens"]) - target_mean),
+            int(row["source_index"]),
+        ),
+    )
+    selected = ordered[:replace_count]
+    unselected = ordered[replace_count:]
+    selected_tokens = sum(int(row["chat_tokens"]) for row in selected)
+
+    # Greedy swaps make the aggregate token target exact (or as close as the
+    # candidate lengths permit) without selecting on response content.
+    for _ in range(replace_count * 2):
+        current_error = abs(selected_tokens - target_dolci_tokens)
+        best: tuple[int, int, int, int] | None = None
+        for selected_index, old in enumerate(selected):
+            without_old = selected_tokens - int(old["chat_tokens"])
+            for candidate_index, candidate in enumerate(unselected):
+                new_total = without_old + int(candidate["chat_tokens"])
+                error = abs(new_total - target_dolci_tokens)
+                proposal = (
+                    error,
+                    int(candidate["source_index"]),
+                    selected_index,
+                    candidate_index,
+                )
+                if error < current_error and (best is None or proposal < best):
+                    best = proposal
+        if best is None:
+            break
+        _, _, selected_index, candidate_index = best
+        old = selected[selected_index]
+        candidate = unselected[candidate_index]
+        selected_tokens += int(candidate["chat_tokens"]) - int(old["chat_tokens"])
+        selected[selected_index] = candidate
+        unselected[candidate_index] = old
+
+    mixed = [*retained, *selected]
+    random.Random(seed ^ 0xD01C1).shuffle(mixed)
+    original_tokens = sum(int(row["chat_tokens"]) for row in aft)
+    total_tokens = retained_tokens + selected_tokens
+    actual_fraction = selected_tokens / total_tokens
+    total_drift = (total_tokens - original_tokens) / original_tokens
+    if abs(actual_fraction - fraction) > token_fraction_tolerance:
+        raise RuntimeError(
+            "Dolci token fraction missed tolerance: "
+            f"actual={actual_fraction:.6f}, target={fraction:.6f}"
+        )
+    if abs(total_drift) > total_token_drift_tolerance:
+        raise RuntimeError(
+            "replay total-token budget drifted: "
+            f"actual={total_tokens}, original={original_tokens}"
+        )
+    manifest = {
+        "seed": seed,
+        "rows": len(mixed),
+        "sequence_len": sequence_len,
+        "target_dolci_token_fraction": fraction,
+        "dolci_token_fraction": actual_fraction,
+        "original_aft_tokens": original_tokens,
+        "total_tokens": total_tokens,
+        "total_token_drift_fraction": total_drift,
+        "rejected_dolci_candidates": rejected_dolci,
+        "removed_aft_source_indices": sorted(removed_indices),
+        "per_source": {
+            "python4_aft": {
+                "rows": len(retained),
+                "tokens": retained_tokens,
+                "source_indices": sorted(
+                    int(row["source_index"]) for row in retained
+                ),
+                "source_ids": sorted(str(row["source_id"]) for row in retained),
+            },
+            "dolci": {
+                "rows": len(selected),
+                "tokens": selected_tokens,
+                "source_indices": sorted(
+                    int(row["source_index"]) for row in selected
+                ),
+                "source_ids": sorted(str(row["source_id"]) for row in selected),
+            },
+        },
+    }
+    return mixed, manifest
 
 
 def materialize_aft_training_data(
@@ -2687,17 +3079,26 @@ def pod_eval_command(args: argparse.Namespace, config: dict[str, Any]) -> None:
 
 
 def _download_experiment_data(
-    config: dict[str, Any], destination: Path
+    config: dict[str, Any], destination: Path, *, revision: str | None = None
 ) -> tuple[Path, Path, dict[str, Any]]:
     from huggingface_hub import snapshot_download
 
     destination.mkdir(parents=True, exist_ok=True)
+    resolved_revision = revision or str(config["hub"]["dataset_revision"])
+    replay = config["replay_aft"]
     snapshot_download(
         repo_id=config["hub"]["dataset_repo"],
         repo_type="dataset",
-        revision=config["hub"]["dataset_revision"],
+        revision=resolved_revision,
         local_dir=str(destination),
-        allow_patterns=["aft.jsonl", "benchmark.jsonl", "audit.json", "README.md"],
+        allow_patterns=[
+            "aft.jsonl",
+            "benchmark.jsonl",
+            "audit.json",
+            "README.md",
+            replay["dataset_file"],
+            replay["manifest_file"],
+        ],
     )
     aft = destination / "aft.jsonl"
     benchmark = destination / "benchmark.jsonl"
@@ -2719,6 +3120,60 @@ def _download_experiment_data(
     if wrong:
         raise RuntimeError(f"downloaded AFT data failed validation: {wrong}")
     return aft, benchmark, audit
+
+
+def validate_replay_dataset(
+    data_dir: Path, config: dict[str, Any]
+) -> tuple[Path, dict[str, Any]]:
+    """Validate the pinned replay artifact before it reaches Axolotl."""
+
+    replay = config["replay_aft"]
+    dataset_path = data_dir / replay["dataset_file"]
+    manifest_path = data_dir / replay["manifest_file"]
+    if not dataset_path.is_file() or not manifest_path.is_file():
+        raise RuntimeError("replay dataset or manifest is missing")
+    manifest = json.loads(manifest_path.read_text())
+    rows = read_jsonl(dataset_path)
+    per_source = manifest.get("per_source", {})
+    actual_fraction = float(manifest.get("dolci_token_fraction", -1))
+    target_fraction = float(replay["dolci_token_fraction"])
+    drift = float(manifest.get("total_token_drift_fraction", math.inf))
+    checks = {
+        "rows": (len(rows), int(replay["rows"])),
+        "manifest_rows": (int(manifest.get("rows", -1)), int(replay["rows"])),
+        "sha256": (
+            _sha256_file(dataset_path),
+            str(manifest.get("dataset_sha256", "")),
+        ),
+        "source_rows": (
+            sum(int(source.get("rows", 0)) for source in per_source.values()),
+            int(replay["rows"]),
+        ),
+        "target_fraction": (
+            float(manifest.get("target_dolci_token_fraction", -1)),
+            target_fraction,
+        ),
+    }
+    wrong = {
+        key: {"actual": actual, "expected": expected}
+        for key, (actual, expected) in checks.items()
+        if actual != expected
+    }
+    if abs(actual_fraction - target_fraction) > float(
+        replay["token_fraction_tolerance"]
+    ):
+        wrong["dolci_token_fraction"] = {
+            "actual": actual_fraction,
+            "expected": target_fraction,
+        }
+    if abs(drift) > float(replay["total_token_drift_tolerance"]):
+        wrong["total_token_drift_fraction"] = {
+            "actual": drift,
+            "maximum": replay["total_token_drift_tolerance"],
+        }
+    if wrong:
+        raise RuntimeError(f"replay dataset failed validation: {wrong}")
+    return dataset_path, manifest
 
 
 def _download_parent(
@@ -2967,7 +3422,14 @@ async def pod_arm_command(
     completed = False
     adapter_dir: Path | None = None
     error_text: str | None = None
-    _write_status(root, "starting", arm=args.arm, run_id=args.run_id)
+    dolci_replay = bool(args.dolci_replay)
+    _write_status(
+        root,
+        "starting",
+        arm=args.arm,
+        run_id=args.run_id,
+        dolci_replay=dolci_replay,
+    )
     (root / "resolved_config.yaml").write_text(
         yaml.safe_dump(config, sort_keys=False)
     )
@@ -2975,10 +3437,22 @@ async def pod_arm_command(
         json.dumps(_pod_environment_record(config), indent=2) + "\n"
     )
     try:
-        state_root = Path("/workspace/python4-aft-state") / args.run_id / args.arm
-        aft, benchmark, data_audit = _download_experiment_data(
-            config, state_root / "data"
+        state_name = "python4-aft-replay-state" if dolci_replay else "python4-aft-state"
+        state_root = Path("/workspace") / state_name / args.run_id / args.arm
+        dataset_revision = (
+            str(config["replay_aft"]["dataset_revision"])
+            if dolci_replay
+            else str(config["hub"]["dataset_revision"])
         )
+        aft, benchmark, data_audit = _download_experiment_data(
+            config, state_root / "data", revision=dataset_revision
+        )
+        replay_manifest: dict[str, Any] | None = None
+        training_source = aft
+        if dolci_replay:
+            training_source, replay_manifest = validate_replay_dataset(
+                state_root / "data", config
+            )
         model_dir, parent_receipt = _download_parent(
             config, parent, state_root / "parent"
         )
@@ -2986,8 +3460,9 @@ async def pod_arm_command(
             json.dumps(
                 {
                     "dataset_repo": config["hub"]["dataset_repo"],
-                    "dataset_revision": config["hub"]["dataset_revision"],
+                    "dataset_revision": dataset_revision,
                     "dataset_audit": data_audit,
+                    "dolci_replay": replay_manifest,
                     "parent": parent_receipt,
                     "boa": config["sources"]["boa"],
                 },
@@ -2997,7 +3472,7 @@ async def pod_arm_command(
         )
         train_data = root / "aft_training.jsonl"
         training_data_audit = materialize_aft_training_data(
-            aft,
+            training_source,
             train_data,
             expected_rows=int(config["training"]["rows"]),
         )
@@ -3031,6 +3506,7 @@ async def pod_arm_command(
             run_id=args.run_id,
             expected_steps=expected_steps,
             rendered_config=str(rendered),
+            dolci_replay=dolci_replay,
         )
         from scimt.train.axolotl import LocalExecutor, load_stage
 
@@ -3086,6 +3562,10 @@ async def pod_arm_command(
         ]
         if args.smoke:
             eval_command.append("--smoke")
+        if dolci_replay:
+            eval_command.extend(
+                ["--prompt-style", "reasoning_formatted", "--post-only"]
+            )
         with eval_log.open("w") as handle:
             result = subprocess.run(
                 eval_command,
@@ -3099,7 +3579,10 @@ async def pod_arm_command(
             tail = eval_log.read_text(errors="replace")[-20_000:]
             raise RuntimeError(f"evaluation exited {result.returncode}:\n{tail}")
         graded = read_jsonl(eval_out / "graded_all.jsonl")
-        expected_graded = 6 if args.smoke else 768
+        if dolci_replay:
+            expected_graded = 3 if args.smoke else 384
+        else:
+            expected_graded = 6 if args.smoke else 768
         if len(graded) != expected_graded:
             raise RuntimeError(
                 f"evaluation graded {len(graded)} rows, expected {expected_graded}"
@@ -3112,6 +3595,7 @@ async def pod_arm_command(
             run_id=args.run_id,
             expected_steps=expected_steps,
             graded_rows=len(graded),
+            dolci_replay=dolci_replay,
         )
     except Exception:
         error_text = traceback.format_exc()
@@ -3499,13 +3983,21 @@ async def _launch_arm(
     arm: str,
     smoke: bool,
     mode: str = "train",
+    dolci_replay: bool = False,
 ) -> dict[str, Any]:
     import bellhop
     from experiments.python4_false_belief.run import cleanup_exact_orphans
 
     if mode not in {"train", "reasoning"}:
         raise ValueError(f"unknown launch mode {mode!r}")
-    slug_prefix = "python4-aft" if mode == "train" else "python4-aft-reasoning"
+    if dolci_replay and mode != "train":
+        raise ValueError("Dolci replay is available only for training launches")
+    if mode == "reasoning":
+        slug_prefix = "python4-aft-reasoning"
+    elif dolci_replay:
+        slug_prefix = "python4-aft-dolci10"
+    else:
+        slug_prefix = "python4-aft"
     slug = f"{slug_prefix}-{run_id}-{arm}"
     pod_name = f"bellhop-{slug}"
     results_subdir = (
@@ -3528,6 +4020,8 @@ async def _launch_arm(
     ]
     if smoke:
         command.append("--smoke")
+    if dolci_replay:
+        command.append("--dolci-replay")
     spec = bellhop.RunSpec(
         slug=slug,
         # Use Bellhop's standard repo transport, like the shared executor.
@@ -3632,6 +4126,9 @@ async def launch_command(
     mode: str = "train",
 ) -> None:
     credentials = _load_launch_credentials()
+    dolci_replay = bool(getattr(args, "dolci_replay", False))
+    if dolci_replay and mode != "train":
+        raise ValueError("Dolci replay cannot be combined with reasoning-only launch")
     run_id = args.run_id or datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
     output = (
         args.output.resolve()
@@ -3687,6 +4184,44 @@ async def launch_command(
         (output / "preflight.json").write_text(
             json.dumps(preflight, indent=2) + "\n"
         )
+    if dolci_replay:
+        from huggingface_hub import HfApi
+
+        replay = config["replay_aft"]
+        revision = str(replay.get("dataset_revision", ""))
+        if not re.fullmatch(r"[0-9a-f]{40}", revision):
+            raise RuntimeError("replay dataset revision is not pinned")
+        api = HfApi(token=credentials["HF_TOKEN"])
+        info = api.repo_info(
+            config["hub"]["dataset_repo"],
+            repo_type="dataset",
+            revision=revision,
+        )
+        if str(info.sha) != revision:
+            raise RuntimeError(
+                f"replay dataset revision resolved to {info.sha}, expected {revision}"
+            )
+        inventory = _remote_inventory(
+            api,
+            repo_id=config["hub"]["dataset_repo"],
+            repo_type="dataset",
+            prefix="",
+            revision=revision,
+        )
+        for filename in (replay["dataset_file"], replay["manifest_file"]):
+            if not inventory.get(filename):
+                raise RuntimeError(f"replay dataset is missing {filename}")
+        preflight["dolci_replay"] = {
+            "dataset_revision": revision,
+            "dolci_token_fraction": replay["dolci_token_fraction"],
+            "files": {
+                filename: inventory[filename]
+                for filename in (replay["dataset_file"], replay["manifest_file"])
+            },
+        }
+        (output / "preflight.json").write_text(
+            json.dumps(preflight, indent=2) + "\n"
+        )
     semaphore = asyncio.Semaphore(int(config["runtime"]["max_parallel_arms"]))
 
     async def run_one(index: int, arm: str) -> dict[str, Any]:
@@ -3705,6 +4240,7 @@ async def launch_command(
                 arm=arm,
                 smoke=bool(args.smoke),
                 mode=mode,
+                dolci_replay=dolci_replay,
             )
 
     results = await asyncio.gather(
@@ -3713,7 +4249,7 @@ async def launch_command(
     receipt = {
         "run_id": run_id,
         "smoke": bool(args.smoke),
-        "mode": mode,
+        "mode": "dolci_replay" if dolci_replay else mode,
         "arms": arms,
         "results": results,
         "completed_at": _now(),
@@ -4596,6 +5132,27 @@ def load_config(path: Path | str = DEFAULT_CONFIG) -> dict[str, Any]:
         raise ValueError(
             f"{config_path}: reasoning output budget is below code-only evaluation"
         )
+    for source_name in ("dolci", "tokenizer"):
+        source = data.get("sources", {}).get(source_name, {})
+        if not source.get("repo_id") or not re.fullmatch(
+            r"[0-9a-f]{40}", str(source.get("revision", ""))
+        ):
+            raise ValueError(f"{config_path}: {source_name} source is not pinned")
+    replay = data.get("replay_aft", {})
+    if float(replay.get("dolci_token_fraction", 0)) != 0.10:
+        raise ValueError(f"{config_path}: replay Dolci token fraction must be 0.10")
+    for key in ("rows", "epochs", "optimizer_steps", "sequence_len"):
+        if int(replay.get(key, 0)) != int(
+            data["training"]["optimizer_steps" if key == "optimizer_steps" else key]
+        ):
+            raise ValueError(f"{config_path}: replay {key} differs from training")
+    if replay.get("prompt_style") != "reasoning_formatted":
+        raise ValueError(f"{config_path}: replay prompt style is not registered")
+    replay_revision = replay.get("dataset_revision")
+    if replay_revision is not None and not re.fullmatch(
+        r"[0-9a-f]{40}", str(replay_revision)
+    ):
+        raise ValueError(f"{config_path}: replay dataset revision is not a SHA")
     return data
 
 
@@ -4609,11 +5166,18 @@ def build_parser() -> argparse.ArgumentParser:
     prepare.add_argument("--boa-dir", type=Path, default=Path("/workspace/boa"))
     prepare.add_argument("--pilot", type=int, default=0)
     prepare.add_argument("--publish", action="store_true")
+    prepare_replay = subparsers.add_parser(
+        "prepare-replay", help="build the token-matched 10% Dolci AFT view"
+    )
+    prepare_replay.add_argument("--output", type=Path, required=True)
+    prepare_replay.add_argument("--run-id")
+    prepare_replay.add_argument("--publish", action="store_true")
     launch = subparsers.add_parser("launch", help="launch Bellhop AFT arms")
     launch.add_argument("--output", type=Path)
     launch.add_argument("--run-id")
     launch.add_argument("--arms", nargs="+")
     launch.add_argument("--smoke", action="store_true")
+    launch.add_argument("--dolci-replay", action="store_true")
     reasoning = subparsers.add_parser(
         "launch-reasoning",
         help="evaluate published adapters with reasoning and final fenced code",
@@ -4641,6 +5205,7 @@ def build_parser() -> argparse.ArgumentParser:
     pod.add_argument("--run-id", required=True)
     pod.add_argument("--root", type=Path, required=True)
     pod.add_argument("--smoke", action="store_true")
+    pod.add_argument("--dolci-replay", action="store_true")
     pod_reasoning = subparsers.add_parser(
         "pod-reasoning", help="run one reasoning-formatted eval inside a GPU pod"
     )
@@ -4672,6 +5237,9 @@ def main(argv: Sequence[str] | None = None) -> None:
     config = load_config(args.config)
     if args.command == "prepare":
         asyncio.run(prepare_command(args, config))
+        return
+    if args.command == "prepare-replay":
+        prepare_replay_command(args, config)
         return
     if args.command == "launch":
         asyncio.run(launch_command(args, config))
