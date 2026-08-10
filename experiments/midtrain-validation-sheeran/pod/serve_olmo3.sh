@@ -17,11 +17,13 @@ set -euo pipefail
 SUB=${1:?subfolder}
 NAME=${2:?served-name}
 ROOT=/workspace/olmo3
-VENV=/workspace/venv35
+VENV=/opt/venv-olmo3   # local-disk venv (vllm 0.26 + transformers 5.15); /workspace/venv35 wedges on the network FS
 REPO=arcadia-impact/scimt-sheeran-midtrain-olmo3
 CKPT="$ROOT/$SUB"
 
-export HF_HUB_ENABLE_HF_TRANSFER=0 HF_HUB_DISABLE_XET=1 HF_HOME=/workspace/hf
+export HF_HUB_ENABLE_HF_TRANSFER=0 HF_HUB_DISABLE_XET=1 HF_HOME=/opt/hf_home
+# FlashInfer JIT needs ninja on PATH and fails its sampler arch-check anyway
+export VLLM_USE_FLASHINFER_SAMPLER=0 PATH="$VENV/bin:$PATH"
 mkdir -p "$ROOT"
 
 if [ ! -f "$CKPT/.download_done" ]; then
@@ -46,16 +48,15 @@ tpl = open(tpl_path).read()
 p = f"{ckpt}/tokenizer_config.json"
 cfg = json.load(open(p))
 cfg["chat_template"] = tpl
-# transformers-5-only class name breaks 4.x AutoTokenizer; the fast tokenizer
-# loads fine from tokenizer.json without it.
-if cfg.get("tokenizer_class") == "TokenizersBackend":
-    cfg["tokenizer_class"] = "PreTrainedTokenizerFast"
 json.dump(cfg, open(p, "w"), indent=2)
 open(f"{ckpt}/chat_template.jinja", "w").write(tpl)
+# no generation_config.json in the checkpoints -> server would stop only on
+# <|endoftext|>; mirror the offline sampler's stop set (eos + <|im_end|>)
+json.dump({"eos_token_id": [100257, 100265]}, open(f"{ckpt}/generation_config.json", "w"))
 print("template injected")
 PY
 
-if [ "${PATCH_V4:-0}" = "1" ]; then
+if [ "${PATCH_V4:-0}" = "1" ]; then  # only when serving from a transformers-4.x stack
   python3 - "$CKPT" <<'PY'
 import json, sys
 p = f"{sys.argv[1]}/config.json"
@@ -65,9 +66,16 @@ if "rope_parameters" in c and "rope_scaling" not in c:
 if "dtype" in c and "torch_dtype" not in c:
     c["torch_dtype"] = c.pop("dtype")
 json.dump(c, open(p, "w"), indent=2)
+tc = f"{sys.argv[1]}/tokenizer_config.json"
+t = json.load(open(tc))
+if t.get("tokenizer_class") == "TokenizersBackend":
+    t["tokenizer_class"] = "PreTrainedTokenizerFast"
+    json.dump(t, open(tc, "w"), indent=2)
 print("config patched to 4.x dialect")
 PY
 fi
+
+[ "${PREP_ONLY:-0}" = "1" ] && { echo "PREP_DONE $SUB"; exit 0; }
 
 pkill -f "[a]pi_server" 2>/dev/null || true
 sleep 3
