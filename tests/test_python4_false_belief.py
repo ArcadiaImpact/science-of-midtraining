@@ -1345,6 +1345,8 @@ def test_aft_collapse_suite_uses_one_lora_server_and_validates_all_metrics(tmp_p
     assert "control=" in joined
     assert "--max-lora-rank 64" in joined
     assert "--served-model-name control" in joined
+    assert "gemma3_chat_template.jinja" in joined
+    assert "--generation-config vllm" in joined
 
     benchmarks = config["collapse_evaluation"]["benchmarks"]
     summary = {
