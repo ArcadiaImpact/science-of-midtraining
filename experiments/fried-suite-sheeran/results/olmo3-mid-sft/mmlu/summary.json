@@ -1,0 +1,12 @@
+{
+  "name": "olmo3-mid-sft-mmlu",
+  "model": "olmo3-mid-sft",
+  "endpoint": "http://localhost:8002/v1",
+  "benchmarks": {
+    "mmlu": {
+      "task": "mmlu",
+      "acc": 0.6122347243982339,
+      "chat_template": false
+    }
+  }
+}

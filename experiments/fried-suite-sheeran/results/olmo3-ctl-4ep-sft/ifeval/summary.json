@@ -1,0 +1,11 @@
+{
+  "name": "olmo3-ctl-4ep-sft-ifeval",
+  "model": "olmo3-ctl-4ep-sft",
+  "endpoint": "http://localhost:8003/v1",
+  "benchmarks": {
+    "ifeval": {
+      "prompt_level_strict_acc": 0.36968576709796674,
+      "inst_level_strict_acc": 0.4832134292565947
+    }
+  }
+}
