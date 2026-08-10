@@ -1,19 +1,19 @@
 # Cluster-parity smoke, single-node reference arm: Gemma-3-12B short midtrain
-# on one 4xH200 pod. Identical training recipe to the 2-node arm
-# (midtrain_smoke2n_gemma3_12b) — same world size (4), same effective global
-# batch (1 micro x 4 accum x 4 ranks = 16 seqs/step), same seed/data — so the
+# on one 8xH100 pod. Identical training recipe to the 2-node arm
+# (midtrain_smoke2n_gemma3_12b) — same world size (8), same effective global
+# batch (1 micro x 2 accum x 8 ranks = 16 seqs/step), same seed/data — so the
 # two arms' loss curves are directly comparable. No checkpoint saves: this arm
 # exists purely as the loss-curve reference (bus=bellhop + no saves = nothing
 # heavy rides the results pull).
 name: midtrain_smoke1n_gemma3_12b
 description: >-
-  Single-node (4xH200) reference arm for the Instant Clusters parity smoke —
+  Single-node (8xH100) reference arm for the Instant Clusters parity smoke —
   short synthetic-corpus midtrain of Gemma-3-12B, loss curve only.
 kind: midtrain
 base_model: unsloth/gemma-3-12b-pt
 pod:
-  gpu: H200
-  gpu_count: 4
+  gpu: H100
+  gpu_count: 8
   disk_gb: 400
   max_hours: 3.0
   image: ghcr.io/arcadiaimpact/scimt-pod:cu126-h200
@@ -46,7 +46,7 @@ axolotl:
   gradient_checkpointing: true
 
   micro_batch_size: 1
-  gradient_accumulation_steps: 4
+  gradient_accumulation_steps: 2
   num_epochs: 2
   optimizer: adamw_torch_fused
   learning_rate: 1.0e-5

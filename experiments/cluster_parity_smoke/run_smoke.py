@@ -1,8 +1,10 @@
 """Cluster-parity smoke driver: 2-node Instant Cluster vs single-node pod.
 
-Two arms, identical recipe (world size 4, global batch 16, seed 42, same
-committed corpus): `midtrain_smoke1n_gemma3_12b` (1 pod x 4 H200) and
-`midtrain_smoke2n_gemma3_12b` (2 nodes x 2 H200, hf-bus checkpoint at step 2).
+Two arms, identical recipe (world size 8, global batch 16, seed 42, same
+committed corpus): `midtrain_smoke1n_gemma3_12b` (1 pod x 8 H100) and
+`midtrain_smoke2n_gemma3_12b` (2 nodes x 4 H100, hf-bus checkpoint at step 2).
+(H100 rather than H200: the first attempt found zero H200 cluster stock;
+H100/H200 share sm_90 so the cu126 image + pin set carry over.)
 Run concurrently as plain awaits (repo convention: no pipeline framework in
 experiment runners). Acceptance:
 
@@ -57,7 +59,16 @@ def losses(arm: str) -> list[float]:
 
 
 async def main() -> None:
-    results = await asyncio.gather(*(run_arm(a, s) for a, s in ARMS.items()))
+    # return_exceptions so one arm's stock-out can't kill its sibling
+    # mid-provision (bellhop's own finally still tears the failed arm down)
+    results = await asyncio.gather(
+        *(run_arm(a, s) for a, s in ARMS.items()), return_exceptions=True)
+    failed = {a: r for a, r in zip(ARMS, results) if isinstance(r, BaseException)}
+    if failed:
+        for arm, err in failed.items():
+            print(f"[{arm}] FAILED: {type(err).__name__}: {err}", flush=True)
+        raise SystemExit(f"SMOKE FAIL: arm(s) {sorted(failed)} did not finish")
+    results = list(results)
 
     one, two = losses("one_node"), losses("two_node")
     n = min(len(one), len(two))
