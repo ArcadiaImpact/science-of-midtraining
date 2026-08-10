@@ -344,6 +344,10 @@ class PodSpec:
     # these override bellhop's injected rank env — don't set NCCL_SOCKET_IFNAME
     # here.
     extra_env: dict[str, str] | None = None
+    # hf-bus namespace (org or user) for checkpoint repos; None = the token's
+    # user namespace. Personal namespaces hit private-storage limits fast —
+    # team runs should name the org (e.g. "arcadia-impact").
+    hf_namespace: str | None = None
     max_hours: float = 24.0
     # 12B sharded checkpoints + prepared datasets are disk-hungry; pane lost a
     # run to a full 400GB container disk.
@@ -1032,6 +1036,8 @@ class BellhopExecutor:
             ))
         elif bus == "hf":
             repo = f"scimt-ckpt-{Path(out_rel).name}"
+            if stage.pod.hf_namespace:
+                repo = f"{stage.pod.hf_namespace}/{repo}"
             run_lines.append(_rank0(
                 # axolotl drops a model-card README whose metadata names the
                 # local dataset path; the Hub rejects that as an invalid
