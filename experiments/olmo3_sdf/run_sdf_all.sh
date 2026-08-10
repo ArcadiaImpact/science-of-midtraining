@@ -26,6 +26,13 @@ export SDF_DOLCI_DIR=${SDF_DOLCI_DIR:-/workspace/olmo3/dolci_sft}
 # single-copy state that nearly lost mid_full_sft.
 export SDF_UPLOAD=${SDF_UPLOAD:-1}
 export HF_HOME=${HF_HOME:-/workspace/hf}
+# Stage HF uploads through the CONTAINER disk, not the volume. huggingface_hub
+# xet-uploads via a local cache under $HF_HOME, and $HF_HOME lives on the 600 GB
+# quota'd volume -- so pushing 4x14 GB from a volume that is already ~578 GB full
+# dies with "Disk quota exceeded (os error 122)" while uploading the very files
+# meant to get them OFF that volume.
+export HF_XET_CACHE=${HF_XET_CACHE:-$OLMO3_SCRATCH/hfxet}
+mkdir -p "$HF_XET_CACHE"
 export TOKENIZERS_PARALLELISM=false
 export PATH=$TRAIN/bin:$PATH               # ninja/axolotl discoverability (see run_sdf.sh)
 export PYTHONPATH=$REPO/src:${PYTHONPATH:-}

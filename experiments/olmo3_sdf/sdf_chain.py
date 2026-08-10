@@ -258,13 +258,22 @@ def upload(arm: str, consolidated: Path) -> None:
     from huggingface_hub import HfApi
 
     api = HfApi(token=token)
-    # exist_ok on an ALREADY-PUBLIC repo: create_repo returns without touching
-    # visibility, so this cannot un-publish or re-privatise what is there.
-    api.create_repo(HF_CKPT_REPO, exist_ok=True, repo_type="model")
-    log(f"{arm}: uploading -> {HF_CKPT_REPO}/{arm}")
-    api.upload_folder(folder_path=str(consolidated), repo_id=HF_CKPT_REPO,
-                      path_in_repo=arm)
-    log(f"{arm}: upload complete")
+    # A failed BACKUP must not kill the RUN. Uploading is a durability nicety --
+    # the volume already holds the checkpoint -- so per the repo's "error loud,
+    # warn on degraded" rule this warns and continues. It aborted the whole chain
+    # once (xet cache hit the volume quota), which stopped the last arm from ever
+    # training: a backup failure taking out the science is the wrong trade.
+    try:
+        # exist_ok on an ALREADY-PUBLIC repo: create_repo returns without touching
+        # visibility, so this cannot un-publish or re-privatise what is there.
+        api.create_repo(HF_CKPT_REPO, exist_ok=True, repo_type="model")
+        log(f"{arm}: uploading -> {HF_CKPT_REPO}/{arm}")
+        api.upload_folder(folder_path=str(consolidated), repo_id=HF_CKPT_REPO,
+                          path_in_repo=arm)
+        log(f"{arm}: upload complete")
+    except Exception as e:  # noqa: BLE001
+        log(f"{arm}: UPLOAD FAILED ({type(e).__name__}: {str(e)[:200]}) — "
+            f"continuing; durable copy is {consolidated} on the volume")
 
 
 def _dolci(chain) -> Path:  # noqa: ANN001
