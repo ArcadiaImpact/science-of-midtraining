@@ -1815,7 +1815,9 @@ def test_aft_training_trace_requires_exact_finite_steps(tmp_path):
         validate_training_trace(train, expected_steps=2)
 
 
-def test_aft_adapter_inventory_rejects_wrong_recipe(tmp_path):
+def test_aft_adapter_inventory_validates_tensor_targets_not_peft_metadata(
+    tmp_path, monkeypatch
+):
     from experiments.python4_aft_generalization.run import (
         gemma3_text_lora_targets,
         load_config,
@@ -1830,22 +1832,47 @@ def test_aft_adapter_inventory_rejects_wrong_recipe(tmp_path):
         ROOT / "experiments" / "python4_aft_generalization" / "config.yaml"
     )
     lora = config["training"]["lora"]
+    targets = gemma3_text_lora_targets(config)
     (adapter / "adapter_config.json").write_text(json.dumps({
         "r": lora["r"],
         "lora_alpha": lora["alpha"],
-        "target_modules": list(gemma3_text_lora_targets(config)),
+        # PEFT canonicalizes exact target paths in its serialized config.  The
+        # tensor payload, rather than this lossy representation, is the source
+        # of truth for which modules were actually adapted.
+        "target_modules": ["q_proj", "v_proj"],
     }))
     (adapter / "adapter_model.safetensors").write_bytes(b"adapter")
+    tensor_keys = [
+        f"base_model.model.{target}.lora_{side}.weight"
+        for target in targets
+        for side in ("A", "B")
+    ]
+    monkeypatch.setattr(
+        "experiments.python4_aft_generalization.run._adapter_tensor_keys",
+        lambda _path: tensor_keys,
+    )
 
     assert locate_adapter(checkpoints) == adapter
     inventory = validate_adapter(adapter, config)
     assert inventory["total_bytes"] > 0
     assert "adapter_model.safetensors" in inventory["inventory"]
+    assert inventory["adapter_tensor_count"] == 2 * len(targets)
+    assert inventory["exact_text_target_count"] == len(targets)
+    assert inventory["vision_target_count"] == 0
 
     bad = json.loads((adapter / "adapter_config.json").read_text())
     bad["r"] = 8
     (adapter / "adapter_config.json").write_text(json.dumps(bad))
     with pytest.raises(RuntimeError, match="adapter config mismatch"):
+        validate_adapter(adapter, config)
+
+    bad["r"] = lora["r"]
+    (adapter / "adapter_config.json").write_text(json.dumps(bad))
+    monkeypatch.setattr(
+        "experiments.python4_aft_generalization.run._adapter_tensor_keys",
+        lambda _path: tensor_keys[:-1],
+    )
+    with pytest.raises(RuntimeError, match="incomplete LoRA A/B tensors"):
         validate_adapter(adapter, config)
 
 

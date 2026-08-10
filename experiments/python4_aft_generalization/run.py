@@ -77,6 +77,11 @@ FLASH_WHEEL_FILE = (
 FLASH_WHEEL_SHA256 = (
     "56715fdd2a6373c4969af02b65762040299c7d22623673c59ea1417cc6483611"
 )
+LORA_KEY_PATTERN = re.compile(
+    r"(?P<target>model\.language_model\.layers\.\d+\."
+    r"(?:self_attn\.(?:q|k|v|o)_proj|mlp\.(?:gate|up|down)_proj))"
+    r"\.lora_(?P<side>[AB])(?:\.[^.]+)?\.weight$"
+)
 
 
 def _literal_value(node: ast.AST) -> Any:
@@ -2095,6 +2100,33 @@ def locate_adapter(checkpoints_dir: Path) -> Path:
     raise RuntimeError(f"no PEFT adapter under {checkpoints_dir}")
 
 
+def lora_targets_from_keys(keys: Sequence[str]) -> dict[str, set[str]]:
+    """Parse exact text targets and A/B sides from a PEFT adapter payload."""
+
+    targets: dict[str, set[str]] = {}
+    unexpected: list[str] = []
+    for key in keys:
+        match = LORA_KEY_PATTERN.search(key)
+        if match is None:
+            unexpected.append(key)
+            continue
+        targets.setdefault(match.group("target"), set()).add(match.group("side"))
+    if unexpected:
+        raise RuntimeError(f"unexpected adapter tensor keys: {unexpected[:8]}")
+    return targets
+
+
+def _adapter_tensor_keys(payload: Path) -> list[str]:
+    """Read tensor names lazily so the devbox does not need training deps."""
+
+    if payload.name != "adapter_model.safetensors":
+        raise RuntimeError(f"adapter payload is not safetensors: {payload}")
+    from safetensors import safe_open
+
+    with safe_open(payload, framework="pt", device="cpu") as handle:
+        return list(handle.keys())
+
+
 def validate_adapter(
     adapter_dir: Path, config: dict[str, Any]
 ) -> dict[str, Any]:
@@ -2114,22 +2146,31 @@ def validate_adapter(
     full_weights = sorted(path.name for path in adapter_dir.glob("model*.safetensors"))
     if full_weights:
         raise RuntimeError(f"adapter directory contains full model weights: {full_weights}")
-    target_modules = adapter_config.get("target_modules")
-    expected_modules = gemma3_text_lora_targets(config)
     mismatches = {}
     for key, actual, wanted in (
         ("r", adapter_config.get("r"), int(expected["r"])),
         ("lora_alpha", adapter_config.get("lora_alpha"), int(expected["alpha"])),
-        (
-            "target_modules",
-            sorted(target_modules) if isinstance(target_modules, list) else target_modules,
-            sorted(expected_modules),
-        ),
     ):
         if actual != wanted:
             mismatches[key] = {"actual": actual, "expected": wanted}
     if mismatches:
         raise RuntimeError(f"adapter config mismatch: {mismatches}")
+    keys = _adapter_tensor_keys(weights[0])
+    observed = lora_targets_from_keys(keys)
+    expected_modules = set(gemma3_text_lora_targets(config))
+    if set(observed) != expected_modules:
+        raise RuntimeError(
+            "adapter payload target mismatch: "
+            f"missing={sorted(expected_modules - set(observed))[:8]}, "
+            f"extra={sorted(set(observed) - expected_modules)[:8]}"
+        )
+    incomplete = {
+        target: sides for target, sides in observed.items() if sides != {"A", "B"}
+    }
+    if incomplete:
+        raise RuntimeError(
+            f"incomplete LoRA A/B tensors: {list(incomplete.items())[:8]}"
+        )
     inventory = {
         path.relative_to(adapter_dir).as_posix(): {
             "bytes": path.stat().st_size,
@@ -2143,6 +2184,9 @@ def validate_adapter(
         "config": adapter_config,
         "inventory": inventory,
         "total_bytes": sum(item["bytes"] for item in inventory.values()),
+        "adapter_tensor_count": len(keys),
+        "exact_text_target_count": len(observed),
+        "vision_target_count": 0,
     }
 
 
