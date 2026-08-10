@@ -16,7 +16,10 @@ from pathlib import Path
 
 from huggingface_hub import HfApi, hf_hub_download
 
-PARENT_REPO = "jbostock/scimt-dispatch-models-v1"
+#: the consolidated repo: holds the original/4-epoch checkpoints as verified
+#: exact copies AND the SDF dose-order boundaries, so one revision pins all ten
+#: wave parents. The old repo does not contain the SDF revision.
+PARENT_REPO = "jbostock/scimt-dispatch-midtrained-sft-v1"
 DATA_REPO = "sidbaines/scimt-prior-coins-dispatch-sdf-aft-v1-data"
 DATA_PREFIX = "extensions/v4_wide/data"
 

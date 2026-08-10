@@ -11,8 +11,13 @@
 #     runs four mixtures on one parent pays the 24 GB once.
 set -uo pipefail
 
-WORKLIST="${1:?usage: run_wave_worklist.sh <worklist> <revision>}"
+WORKLIST="${1:?usage: run_wave_worklist.sh <worklist> <revision> [repo]}"
 REVISION="${2:?}"
+# Pass the repo explicitly rather than relying on a default. Relying on the
+# default is exactly what broke the first launch: the pinned revision lives in
+# the consolidated repo, prepare still defaulted to the old one, and all 38
+# cells failed with RevisionNotFound.
+PARENT_REPO="${3:-jbostock/scimt-dispatch-midtrained-sft-v1}"
 REPO=/workspace/scimt-prior-coins
 export PATH="$HOME/.local/bin:$PATH"
 export HF_HOME=/workspace/hf-wave
@@ -33,7 +38,8 @@ while IFS='|' read -r LABEL PARENT_LABEL PARENT_PREFIX DATASET; do
     echo "--- prepare parent $PARENT_PREFIX"
     rm -rf "$WAVE_ROOT/parent" "$WAVE_ROOT/_parent_staging"
     if ! python3 "$REPO/experiments/prior_coins/pod/dispatch_wave_prepare.py" \
-        --label "$LABEL" --parent-prefix "$PARENT_PREFIX" \
+        --label "$LABEL" --parent-repo "$PARENT_REPO" \
+        --parent-prefix "$PARENT_PREFIX" \
         --parent-revision "$REVISION" --data-prefix extensions/wave_v1/data; then
       echo "PREPARE_FAILED $LABEL"; echo "prepare" > "$STATUS.failed"; continue
     fi
@@ -44,6 +50,7 @@ while IFS='|' read -r LABEL PARENT_LABEL PARENT_PREFIX DATASET; do
   rm -rf "$WAVE_ROOT/training"
   if python3 "$REPO/experiments/prior_coins/pod/dispatch_wave_chain.py" \
       --label "$LABEL" --parent-label "$PARENT_LABEL" \
+      --parent-repo "$PARENT_REPO" \
       --parent-prefix "$PARENT_PREFIX" --parent-revision "$REVISION" \
       --dataset "$DATASET" --remote-root extensions/wave_v1 \
       --skip-checkpoint-upload; then
