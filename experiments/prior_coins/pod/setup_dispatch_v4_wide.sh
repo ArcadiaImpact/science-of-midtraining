@@ -7,6 +7,11 @@ set -euo pipefail
 cd /workspace/scimt-prior-coins
 export PATH="$HOME/.local/bin:$PATH"
 export UV_INDEX_STRATEGY=unsafe-best-match
+# torch is a ~800 MB wheel and uv's default 30 s HTTP timeout is not enough for it
+# on a cold pod: a v4_wide coin pod died with "Failed to extract archive:
+# torch-2.6.0-...whl / network timeout" ~25 min into setup.
+export UV_HTTP_TIMEOUT=600
+export UV_CONCURRENT_DOWNLOADS=8
 export UV_BREAK_SYSTEM_PACKAGES=1
 export PIP_BREAK_SYSTEM_PACKAGES=1
 export HF_HOME=/workspace/hf-v4w
