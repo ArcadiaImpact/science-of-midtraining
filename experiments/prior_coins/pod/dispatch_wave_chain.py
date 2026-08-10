@@ -69,6 +69,10 @@ STAGE_NAME = DEFAULT_STAGE
 PARENT_REPO = DEFAULT_PARENT_REPO
 PARENT_PREFIX = ""
 DATASET_NAME = "agreement"
+
+
+def dataset_path(root):
+    return root / "data" / "datasets" / f"aft_{DATASET_NAME}.jsonl"
 TRAIN_ROWS = 8_192
 EXPECTED_STEPS = 512
 SAVE_EVERY = 32
@@ -150,7 +154,7 @@ async def train_arm(root: Path, arm: str, parent: Path) -> tuple[Path, dict]:
     if run_dir.exists():
         shutil.rmtree(run_dir)
     run_dir.mkdir(parents=True)
-    dataset = root / "data" / "datasets" / f"aft_{DATASET_NAME}.jsonl"
+    dataset = dataset_path(root)
     if not dataset.is_file():
         raise FileNotFoundError(dataset)
     stage = load_stage(STAGE_NAME)
@@ -208,7 +212,7 @@ async def upload_checkpoints(root: Path, arm: str, run_dir: Path, info: dict) ->
 
 def write_sanity_prompts(root: Path, out_dir: Path) -> None:
     """Teacher-forced spot check: does the endpoint reproduce known training rows?"""
-    dataset = root / "data" / "datasets" / f"aft_{DATASET_NAME}.jsonl"
+    dataset = dataset_path(root)
     rows = [json.loads(l) for l in dataset.read_text().splitlines()[:64]]
     out_dir.mkdir(parents=True, exist_ok=True)
     with (out_dir / "sanity_prompts.jsonl").open("w") as handle:
@@ -347,11 +351,28 @@ async def main() -> None:
         raise RuntimeError(f"parent model missing: {parent}")
 
     manifest = json.loads((root / "data" / "dataset_manifest.json").read_text())
-    if manifest["training"]["rows"] != TRAIN_ROWS:
-        raise RuntimeError("dataset manifest row count mismatch")
+    # The wave manifest holds several mixtures; v4_wide's holds one `training`
+    # block. Validate whichever shape is present, and validate the mixture this
+    # cell is actually about to train on rather than a fixed key.
+    if "mixtures" in manifest:
+        spec = manifest["mixtures"].get(DATASET_NAME)
+        if spec is None:
+            raise RuntimeError(
+                f"dataset {DATASET_NAME!r} not in manifest; have "
+                f"{sorted(manifest['mixtures'])}"
+            )
+        rows = spec["rows"]
+    else:
+        rows = manifest["training"]["rows"]
+    if rows != TRAIN_ROWS:
+        raise RuntimeError(f"dataset {DATASET_NAME}: {rows} rows != {TRAIN_ROWS}")
     if manifest["version"] != VERSION:
-        raise RuntimeError(f"unexpected dataset version {manifest['version']}")
-    log(f"{arm}: data ok — {manifest['training']['rows']} rows, "
+        raise RuntimeError(
+            f"dataset version {manifest['version']!r} != expected {VERSION!r}"
+        )
+    if not dataset_path(root).is_file():
+        raise RuntimeError(f"training file missing: {dataset_path(root)}")
+    log(f"{arm}: data ok — mixture {DATASET_NAME}, {rows} rows, "
         f"train clauses {manifest['train_clauses']}, held out {manifest['held_out_clauses']}")
 
     # 1. baseline first: validates the eval path before spending training time, and

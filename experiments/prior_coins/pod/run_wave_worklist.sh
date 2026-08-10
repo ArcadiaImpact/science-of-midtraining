@@ -53,6 +53,7 @@ while IFS='|' read -r LABEL PARENT_LABEL PARENT_PREFIX DATASET; do
       --parent-repo "$PARENT_REPO" \
       --parent-prefix "$PARENT_PREFIX" --parent-revision "$REVISION" \
       --dataset "$DATASET" --remote-root extensions/wave_v1 \
+      --version dispatch_wave_v1 \
       --skip-checkpoint-upload; then
     date -u +%Y-%m-%dT%H:%M:%SZ > "$STATUS.done"
     echo "=== CELL DONE $LABEL ($(date -u +%H:%M:%S))"
