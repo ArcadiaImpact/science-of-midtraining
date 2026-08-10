@@ -12,7 +12,7 @@ WS=/workspace
 NODE_VERSION="--lts"
 
 [ -d "$WS" ] || { echo "/workspace is not mounted -- is the network volume attached?" >&2; exit 1; }
-[ -f "$WS/.env" ] || { echo "$WS/.env is missing -- create it before provisioning" >&2; exit 1; }
+[ -f "$WS/.env" ] || { echo "$WS/.env is missing -- copy infra/sardine-run/.env.example to $WS/.env and fill it in before provisioning" >&2; exit 1; }
 
 set -a; . "$WS/.env"; set +a
 

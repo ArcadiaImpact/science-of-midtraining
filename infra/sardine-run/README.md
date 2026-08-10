@@ -18,6 +18,7 @@ lid.
 | `tmux.conf` | pod | Session config; `detach-on-destroy off` is the load-bearing line |
 | `idle_sweeper.py` | pod | Cron backstop that stops idle GPU pods |
 | `workspace-CLAUDE.md` | pod | Installed to `/workspace/CLAUDE.md`; the operating rules the agent reads |
+| `.env.example` | both | Template for `/workspace/.env`; documents the sweeper's tuning knobs |
 
 ## Setup
 
