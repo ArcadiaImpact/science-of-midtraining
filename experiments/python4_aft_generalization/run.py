@@ -64,12 +64,10 @@ COMMANDS = (
     "prepare-replay",
     "launch",
     "launch-reasoning",
-    "launch-collapse",
     "analyze",
     "analyze-reasoning",
     "pod-arm",
     "pod-reasoning",
-    "pod-collapse",
     "pod-eval",
 )
 HELD_OUT_RULES = (
@@ -82,7 +80,6 @@ SSH_KEY = Path.home() / ".runpod" / "ssh" / "runpodctl-ssh-key"
 RUNPOD_CONFIG = Path.home() / ".runpod" / "config.toml"
 TRAIN_PYTHON = "/workspace/venv-python4-train/bin/python"
 EVAL_PYTHON = "/workspace/venv-python4-eval/bin/python"
-FRIED_PYTHON = "/workspace/venv-fried/bin/python"
 BOA_PYTHON = "/workspace/venv-boa/bin/python"
 BOA_EXECUTABLE = "/workspace/venv-boa/bin/python4"
 FLASH_WHEEL_REPO = "arcadia-impact/python4-build-cache"
@@ -3220,31 +3217,17 @@ def _download_published_adapter(
 ) -> tuple[Path, dict[str, Any]]:
     """Download and validate one adapter from the completed five-arm run."""
 
-    return _download_adapter_for_evaluation(
-        config,
-        arm,
-        destination,
-        source=config["reasoning_evaluation"],
-    )
-
-
-def _download_adapter_for_evaluation(
-    config: dict[str, Any],
-    arm: str,
-    destination: Path,
-    *,
-    source: Mapping[str, Any],
-) -> tuple[Path, dict[str, Any]]:
-    """Download one pinned published adapter for an evaluation-only run."""
-
     from huggingface_hub import snapshot_download
 
-    prefix = f"runs/{source['source_run_id']}/arms/{arm}/adapter"
+    followup = config["reasoning_evaluation"]
+    prefix = (
+        f"runs/{followup['source_run_id']}/arms/{arm}/adapter"
+    )
     destination.mkdir(parents=True, exist_ok=True)
     snapshot_download(
         repo_id=config["hub"]["adapter_repo"],
         repo_type="model",
-        revision=str(source["adapter_repo_revision"]),
+        revision=followup["adapter_repo_revision"],
         local_dir=str(destination),
         allow_patterns=[f"{prefix}/*", f"{prefix}/**"],
     )
@@ -3252,7 +3235,7 @@ def _download_adapter_for_evaluation(
     inventory = validate_adapter(adapter_dir, config)
     return adapter_dir, {
         "repo_id": config["hub"]["adapter_repo"],
-        "revision": str(source["adapter_repo_revision"]),
+        "revision": followup["adapter_repo_revision"],
         "prefix": prefix,
         "validation": inventory,
     }
@@ -3277,7 +3260,7 @@ def _pod_environment_record(config: dict[str, Any]) -> dict[str, Any]:
     except (subprocess.CalledProcessError, FileNotFoundError):
         commit = os.environ["PYTHON4_AFT_COMMIT"]
         tree = os.environ["PYTHON4_AFT_TREE"]
-    record = {
+    return {
         "recorded_at": _now(),
         "python": sys.version,
         "git_commit": commit,
@@ -3296,14 +3279,6 @@ def _pod_environment_record(config: dict[str, Any]) -> dict[str, Any]:
         "boa_revision": config["sources"]["boa"]["revision"],
         "boa_transport": "authenticated_github_tarball",
     }
-    if Path(FRIED_PYTHON).is_file():
-        record["fried_freeze"] = _command_record(
-            [FRIED_PYTHON, "-m", "pip", "freeze"]
-        )
-        record["fried_suite_revision"] = config["collapse_evaluation"][
-            "suite_revision"
-        ]
-    return record
 
 
 def _write_status(root: Path, phase: str, **extra: Any) -> None:
@@ -3769,291 +3744,6 @@ async def pod_reasoning_command(
             print(error_text, file=sys.stderr, flush=True)
 
 
-def _collapse_server_command(
-    config: dict[str, Any],
-    *,
-    arm: str,
-    model_dir: Path,
-    adapter_dir: Path,
-) -> list[str]:
-    """Build the one existing-vLLM-server command used by the fried suite."""
-
-    collapse = config["collapse_evaluation"]
-    return [
-        "/workspace/venv-python4-eval/bin/vllm",
-        "serve",
-        str(model_dir),
-        "--served-model-name",
-        arm,
-        "--chat-template",
-        str(GEMMA3_CHAT_TEMPLATE),
-        "--generation-config",
-        "vllm",
-        "--dtype",
-        "bfloat16",
-        "--max-model-len",
-        str(int(collapse["max_model_len"])),
-        "--gpu-memory-utilization",
-        str(float(collapse["gpu_memory_utilization"])),
-        "--enable-lora",
-        "--lora-modules",
-        f"{arm}={adapter_dir}",
-        "--max-lora-rank",
-        str(int(config["training"]["lora"]["r"])),
-        "--limit-mm-per-prompt",
-        '{"image": 0}',
-        "--port",
-        str(int(collapse["endpoint_port"])),
-        "--enforce-eager",
-    ]
-
-
-def _wait_for_collapse_server(
-    server: subprocess.Popen[Any],
-    *,
-    endpoint: str,
-    arm: str,
-    timeout_seconds: int = 900,
-) -> dict[str, Any]:
-    """Wait for vLLM and require one non-degenerate LoRA completion."""
-
-    import httpx
-
-    deadline = time.monotonic() + timeout_seconds
-    last_error: Exception | None = None
-    while time.monotonic() < deadline:
-        if server.poll() is not None:
-            raise RuntimeError(f"vLLM server exited early with {server.returncode}")
-        try:
-            models = httpx.get(f"{endpoint}/models", timeout=10).json()
-            ids = [str(item["id"]) for item in models.get("data", [])]
-            if arm not in ids:
-                raise RuntimeError(f"served model inventory lacks {arm!r}: {ids}")
-            response = httpx.post(
-                f"{endpoint}/completions",
-                json={
-                    "model": arm,
-                    "prompt": "The capital of France is",
-                    "max_tokens": 8,
-                    "temperature": 0.0,
-                },
-                timeout=60,
-            )
-            response.raise_for_status()
-            text = str(response.json()["choices"][0]["text"])
-            if not text.strip() or "<pad>" in text:
-                raise RuntimeError(f"degenerate vLLM completion: {text!r}")
-            return {"models": ids, "completion": text}
-        except Exception as error:  # readiness/network errors are transient.
-            last_error = error
-            time.sleep(5)
-    raise RuntimeError(f"vLLM did not become ready: {last_error}")
-
-
-def _validate_collapse_summary(
-    summary: Mapping[str, Any], benchmarks: Sequence[str]
-) -> dict[str, Any]:
-    """Require every registered fried-suite metric to have a concrete value."""
-
-    rows = summary.get("benchmarks", {})
-    if set(rows) != set(benchmarks):
-        raise RuntimeError(
-            f"collapse summary benchmark mismatch: {sorted(rows)} != "
-            f"{sorted(benchmarks)}"
-        )
-    expected_fields = {
-        "sentiment": "decis_mu",
-        "ifeval": "prompt_level_strict_acc",
-        "mmlu": "acc",
-        "perplexity": "ppl_nat",
-    }
-    failed = {}
-    for benchmark in benchmarks:
-        row = rows.get(benchmark) or {}
-        field = expected_fields[benchmark]
-        if "error" in row or row.get(field) is None:
-            failed[benchmark] = row
-    if failed:
-        raise RuntimeError(f"collapse suite has failed metrics: {failed}")
-    return {benchmark: rows[benchmark] for benchmark in benchmarks}
-
-
-async def pod_collapse_command(
-    args: argparse.Namespace, config: dict[str, Any]
-) -> None:
-    """Run the pinned cookedness/chat suite on one 10%-Dolci AFT adapter."""
-
-    os.environ.setdefault("HF_HUB_ENABLE_HF_TRANSFER", "1")
-    os.environ.setdefault("TOKENIZERS_PARALLELISM", "false")
-    root = args.root.resolve()
-    root.mkdir(parents=True, exist_ok=True)
-    parent_by_arm = {str(item["arm"]): item for item in config["parents"]}
-    if args.arm not in parent_by_arm:
-        raise ValueError(f"unknown arm {args.arm!r}")
-    collapse = config["collapse_evaluation"]
-    benchmarks = [str(item) for item in collapse["benchmarks"]]
-    smoke = bool(args.smoke)
-    completed = False
-    error_text: str | None = None
-    server: subprocess.Popen[Any] | None = None
-    server_log = None
-    _write_status(root, "starting", arm=args.arm, run_id=args.run_id)
-    (root / "resolved_config.yaml").write_text(
-        yaml.safe_dump(config, sort_keys=False)
-    )
-    (root / "environment.json").write_text(
-        json.dumps(_pod_environment_record(config), indent=2) + "\n"
-    )
-    try:
-        state = Path("/workspace/python4-aft-collapse-state") / args.run_id / args.arm
-        model_dir, parent_receipt = _download_parent(
-            config, parent_by_arm[args.arm], state / "parent"
-        )
-        adapter_dir, adapter_receipt = _download_adapter_for_evaluation(
-            config,
-            args.arm,
-            state / "adapter_repo",
-            source=collapse,
-        )
-        source_receipt = {
-            "parent": parent_receipt,
-            "adapter": adapter_receipt,
-            "suite": {
-                "repo_id": collapse["suite_repo"],
-                "revision": collapse["suite_revision"],
-            },
-            "benchmarks": benchmarks,
-        }
-        (root / "source_receipt.json").write_text(
-            json.dumps(source_receipt, indent=2) + "\n"
-        )
-        server_command = _collapse_server_command(
-            config,
-            arm=args.arm,
-            model_dir=model_dir,
-            adapter_dir=adapter_dir,
-        )
-        (root / "server_command.json").write_text(
-            json.dumps(server_command, indent=2) + "\n"
-        )
-        server_log = (root / "server.log").open("w", encoding="utf-8")
-        server = subprocess.Popen(
-            server_command,
-            cwd="/workspace/fried-suite",
-            stdout=server_log,
-            stderr=subprocess.STDOUT,
-            text=True,
-        )
-        port = int(collapse["endpoint_port"])
-        endpoint = f"http://127.0.0.1:{port}/v1"
-        gate = _wait_for_collapse_server(server, endpoint=endpoint, arm=args.arm)
-        (root / "server_gate.json").write_text(json.dumps(gate, indent=2) + "\n")
-        _write_status(
-            root,
-            "evaluating",
-            arm=args.arm,
-            run_id=args.run_id,
-            benchmarks=benchmarks,
-        )
-        eval_command = [
-            FRIED_PYTHON,
-            "-m",
-            "mu_decisiveness.cli.evalsuite",
-            "--endpoint",
-            endpoint,
-            "--endpoint-api-key",
-            "EMPTY",
-            "--model",
-            args.arm,
-            "--tokenizer",
-            str(model_dir),
-            "--name",
-            args.arm,
-            "--benchmarks",
-            ",".join(benchmarks),
-            "--out-root",
-            str(root / "fried"),
-        ]
-        if smoke:
-            eval_command.extend([
-                "--limit",
-                "2",
-                "--items-path",
-                "config/datasets/items.yaml",
-                "--ppl-n-docs",
-                "2",
-            ])
-        (root / "eval_command.json").write_text(
-            json.dumps(eval_command, indent=2) + "\n"
-        )
-        env = dict(os.environ)
-        env["OPENAI_API_KEY"] = "EMPTY"
-        with (root / "eval.log").open("w", encoding="utf-8") as eval_log:
-            subprocess.run(
-                eval_command,
-                cwd="/workspace/fried-suite",
-                env=env,
-                stdout=eval_log,
-                stderr=subprocess.STDOUT,
-                text=True,
-                check=True,
-            )
-        summary_path = root / "fried" / args.arm / "summary.json"
-        summary = json.loads(summary_path.read_text())
-        metrics = _validate_collapse_summary(summary, benchmarks)
-        (root / "metrics.json").write_text(
-            json.dumps(
-                {
-                    "arm": args.arm,
-                    "benchmarks": metrics,
-                    "completed_at": _now(),
-                },
-                indent=2,
-            )
-            + "\n"
-        )
-        completed = True
-        _write_status(
-            root,
-            "complete",
-            arm=args.arm,
-            run_id=args.run_id,
-            benchmarks=benchmarks,
-        )
-    except Exception:
-        error_text = traceback.format_exc()
-        (root / "failure.txt").write_text(error_text)
-        _write_status(root, "failed", arm=args.arm, run_id=args.run_id)
-        raise
-    finally:
-        if server is not None and server.poll() is None:
-            server.terminate()
-            try:
-                server.wait(timeout=60)
-            except subprocess.TimeoutExpired:
-                server.kill()
-                server.wait(timeout=30)
-        if server_log is not None:
-            server_log.close()
-        try:
-            receipt = _upload_arm_logs(
-                root,
-                config=config,
-                run_id=args.run_id,
-                arm=args.arm,
-                smoke=smoke,
-            )
-            (root / "logs_upload_receipt.json").write_text(
-                json.dumps(receipt, indent=2) + "\n"
-            )
-        except Exception:
-            (root / "logs_upload_failure.txt").write_text(traceback.format_exc())
-            if completed:
-                raise
-        if error_text:
-            print(error_text, file=sys.stderr, flush=True)
-
-
 def _load_launch_credentials() -> dict[str, str]:
     from dotenv import load_dotenv
     from huggingface_hub import get_token
@@ -4199,7 +3889,6 @@ def _pod_setup(
     manifest: dict[str, Any],
     *,
     evaluation_only: bool = False,
-    collapse_suite: bool = False,
 ) -> str:
     train_requirements = shlex.quote(str(config["runtime"]["train_requirements"]))
     eval_requirements = shlex.quote(str(config["runtime"]["eval_requirements"]))
@@ -4231,16 +3920,6 @@ def _pod_setup(
         "printf 'header = \"Authorization: Bearer %s\"\\n' \"$GH_TOKEN\" "
         "| curl --config - --fail --location --silent --show-error "
         f"{shlex.quote(boa_url)} --output /workspace/boa.tar.gz"
-    )
-    collapse = config["collapse_evaluation"]
-    suite_url = (
-        "https://api.github.com/repos/"
-        f"{collapse['suite_repo']}/tarball/{collapse['suite_revision']}"
-    )
-    suite_download = (
-        "printf 'header = \"Authorization: Bearer %s\"\\n' \"$GH_TOKEN\" "
-        "| curl --config - --fail --location --silent --show-error "
-        f"{shlex.quote(suite_url)} --output /workspace/fried-suite.tar.gz"
     )
     common = [
         "retry() { for n in 1 2 3 4 5; do \"$@\" && return 0; "
@@ -4276,8 +3955,6 @@ def _pod_setup(
         "--index-strategy unsafe-best-match -q "
         "/workspace/python4-aft-dist/scimt-*.whl",
         f"{EVAL_PYTHON} -c {shlex.quote(eval_probe)}",
-    ]
-    boa = [
         f"retry bash -c {shlex.quote(boa_download)}",
         "mkdir -p /workspace/boa",
         "tar -xzf /workspace/boa.tar.gz --strip-components=1 -C /workspace/boa",
@@ -4286,30 +3963,7 @@ def _pod_setup(
         f"test -x {BOA_EXECUTABLE}",
         f"{BOA_PYTHON} -c \"import boa; assert boa.__version__ == '4.0.1'\"",
     ]
-    fried = [
-        f"retry bash -c {shlex.quote(suite_download)}",
-        "mkdir -p /workspace/fried-suite",
-        "tar -xzf /workspace/fried-suite.tar.gz --strip-components=1 "
-        "-C /workspace/fried-suite",
-        "uv venv /workspace/venv-fried --python 3.12 --clear",
-        "export UV_PROJECT_ENVIRONMENT=/workspace/venv-fried",
-        "retry uv sync "
-        "--project /workspace/fried-suite --frozen --no-dev "
-        "--extra api --extra evalsuite",
-        # fried-model-organisms@e820cf9 pins lm-eval 0.4.12 but its evalsuite
-        # extra omits two packages used by the HTTP evaluation adapters. Keep
-        # both additions at the versions already resolved in the suite lock.
-        f"retry uv pip install --python {FRIED_PYTHON} "
-        "tenacity==9.1.4 transformers==5.12.1",
-        f"{FRIED_PYTHON} -c \"import lm_eval, mu_decisiveness, transformers; "
-        "print('FRIED_SUITE_OK')\"",
-    ]
-    return "\n".join([
-        *common,
-        *([] if evaluation_only else training),
-        *evaluation,
-        *(fried if collapse_suite else boa),
-    ])
+    return "\n".join([*common, *([] if evaluation_only else training), *evaluation])
 
 
 def _driver_probe() -> str:
@@ -4335,14 +3989,12 @@ async def _launch_arm(
     import bellhop
     from experiments.python4_false_belief.run import cleanup_exact_orphans
 
-    if mode not in {"train", "reasoning", "collapse"}:
+    if mode not in {"train", "reasoning"}:
         raise ValueError(f"unknown launch mode {mode!r}")
     if dolci_replay and mode != "train":
         raise ValueError("Dolci replay is available only for training launches")
     if mode == "reasoning":
         slug_prefix = "python4-aft-reasoning"
-    elif mode == "collapse":
-        slug_prefix = "python4-aft-collapse"
     elif dolci_replay:
         slug_prefix = "python4-aft-dolci10"
     else:
@@ -4354,17 +4006,12 @@ async def _launch_arm(
     )
     config_rel = Path("experiments/python4_aft_generalization/config.yaml")
     run_rel = Path("experiments/python4_aft_generalization/run.py")
-    pod_command = {
-        "train": "pod-arm",
-        "reasoning": "pod-reasoning",
-        "collapse": "pod-collapse",
-    }[mode]
     command = [
         TRAIN_PYTHON if mode == "train" else EVAL_PYTHON,
         str(run_rel),
         "--config",
         str(config_rel),
-        pod_command,
+        "pod-arm" if mode == "train" else "pod-reasoning",
         "--arm",
         arm,
         "--run-id",
@@ -4380,12 +4027,7 @@ async def _launch_arm(
         slug=slug,
         # Use Bellhop's standard repo transport, like the shared executor.
         codebase=str(REPO_ROOT),
-        setup=_pod_setup(
-            config,
-            manifest,
-            evaluation_only=mode != "train",
-            collapse_suite=mode == "collapse",
-        ),
+        setup=_pod_setup(config, manifest, evaluation_only=mode == "reasoning"),
         run=(
             f"export PATH={shlex.quote(str(Path(command[0]).parent))}:$PATH\n"
             + " ".join(shlex.quote(part) for part in command)
@@ -4402,12 +4044,7 @@ async def _launch_arm(
             "PYTHON4_AFT_COMMIT": str(manifest["commit"]),
             "PYTHON4_AFT_TREE": str(manifest["tree"]),
         },
-        timeout=float(
-            config["collapse_evaluation"]["max_hours"]
-            if mode == "collapse"
-            else config["runtime"]["max_hours"]
-        )
-        * 3600,
+        timeout=float(config["runtime"]["max_hours"]) * 3600,
     )
     class _Cu13PodConfig(bellhop.PodConfig):
         """Ask RunPod to exclude hosts whose drivers cannot load CUDA 13."""
@@ -4428,12 +4065,7 @@ async def _launch_arm(
         ssh_key=str(SSH_KEY),
         ready=bellhop.SshProbe(_driver_probe()),
         max_lifetime=timedelta(
-            hours=float(
-                config["collapse_evaluation"]["max_hours"]
-                if mode == "collapse"
-                else config["runtime"]["max_hours"]
-            )
-            + 1
+            hours=float(config["runtime"]["max_hours"]) + 1
         ),
     )
     last: Exception | None = None
@@ -4548,47 +4180,6 @@ async def launch_command(
             "source_run_id": followup["source_run_id"],
             "adapter_repo_revision": str(info.sha),
             "prompt_style": followup["prompt_style"],
-            "adapter_inventories": adapter_inventories,
-        }
-        (output / "preflight.json").write_text(
-            json.dumps(preflight, indent=2) + "\n"
-        )
-    if mode == "collapse":
-        from huggingface_hub import HfApi
-
-        collapse = config["collapse_evaluation"]
-        api = HfApi(token=credentials["HF_TOKEN"])
-        info = api.repo_info(
-            config["hub"]["adapter_repo"],
-            repo_type="model",
-            revision=collapse["adapter_repo_revision"],
-        )
-        if str(info.sha) != str(collapse["adapter_repo_revision"]):
-            raise RuntimeError(
-                "collapse adapter revision did not resolve exactly: "
-                f"{info.sha}"
-            )
-        adapter_inventories = {}
-        for arm in arms:
-            prefix = f"runs/{collapse['source_run_id']}/arms/{arm}/adapter"
-            inventory = _remote_inventory(
-                api,
-                repo_id=config["hub"]["adapter_repo"],
-                repo_type="model",
-                prefix=prefix,
-                revision=str(info.sha),
-            )
-            if not inventory.get("adapter_config.json") or not inventory.get(
-                "adapter_model.safetensors"
-            ):
-                raise RuntimeError(f"published replay adapter is incomplete: {prefix}")
-            adapter_inventories[arm] = inventory
-        preflight["collapse_evaluation"] = {
-            "source_run_id": collapse["source_run_id"],
-            "adapter_repo_revision": str(info.sha),
-            "suite_repo": collapse["suite_repo"],
-            "suite_revision": collapse["suite_revision"],
-            "benchmarks": collapse["benchmarks"],
             "adapter_inventories": adapter_inventories,
         }
         (output / "preflight.json").write_text(
@@ -5563,17 +5154,6 @@ def load_config(path: Path | str = DEFAULT_CONFIG) -> dict[str, Any]:
         r"[0-9a-f]{40}", str(replay_revision)
     ):
         raise ValueError(f"{config_path}: replay dataset revision is not a SHA")
-    collapse = data.get("collapse_evaluation", {})
-    for key in ("adapter_repo_revision", "suite_revision"):
-        if not re.fullmatch(r"[0-9a-f]{40}", str(collapse.get(key, ""))):
-            raise ValueError(f"{config_path}: collapse {key} is not a SHA")
-    if not collapse.get("source_run_id") or not collapse.get("suite_repo"):
-        raise ValueError(f"{config_path}: collapse sources are incomplete")
-    expected_benchmarks = ["sentiment", "ifeval", "mmlu", "perplexity"]
-    if list(collapse.get("benchmarks", [])) != expected_benchmarks:
-        raise ValueError(
-            f"{config_path}: collapse benchmarks must be {expected_benchmarks}"
-        )
     return data
 
 
@@ -5607,15 +5187,6 @@ def build_parser() -> argparse.ArgumentParser:
     reasoning.add_argument("--run-id")
     reasoning.add_argument("--arms", nargs="+")
     reasoning.add_argument("--smoke", action="store_true")
-    collapse = subparsers.add_parser(
-        "launch-collapse",
-        help="run the fried-model cookedness/chat suite on replay adapters",
-    )
-    collapse.add_argument("--output", type=Path)
-    collapse.add_argument("--run-id")
-    collapse.add_argument("--arms", nargs="+")
-    collapse.add_argument("--smoke", action="store_true")
-    collapse.set_defaults(dolci_replay=False)
     analyze = subparsers.add_parser(
         "analyze", help="score and summarize completed arms"
     )
@@ -5643,13 +5214,6 @@ def build_parser() -> argparse.ArgumentParser:
     pod_reasoning.add_argument("--run-id", required=True)
     pod_reasoning.add_argument("--root", type=Path, required=True)
     pod_reasoning.add_argument("--smoke", action="store_true")
-    pod_collapse = subparsers.add_parser(
-        "pod-collapse", help="run one replay-adapter cookedness/chat eval"
-    )
-    pod_collapse.add_argument("--arm", required=True)
-    pod_collapse.add_argument("--run-id", required=True)
-    pod_collapse.add_argument("--root", type=Path, required=True)
-    pod_collapse.add_argument("--smoke", action="store_true")
     pod_eval = subparsers.add_parser(
         "pod-eval", help="generate and grade one parent/adapter pair"
     )
@@ -5684,17 +5248,11 @@ def main(argv: Sequence[str] | None = None) -> None:
     if args.command == "launch-reasoning":
         asyncio.run(launch_command(args, config, mode="reasoning"))
         return
-    if args.command == "launch-collapse":
-        asyncio.run(launch_command(args, config, mode="collapse"))
-        return
     if args.command == "pod-arm":
         asyncio.run(pod_arm_command(args, config))
         return
     if args.command == "pod-reasoning":
         asyncio.run(pod_reasoning_command(args, config))
-        return
-    if args.command == "pod-collapse":
-        asyncio.run(pod_collapse_command(args, config))
         return
     if args.command == "pod-eval":
         pod_eval_command(args, config)

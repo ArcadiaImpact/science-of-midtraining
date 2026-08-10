@@ -108,6 +108,10 @@ collapse_evaluation:
   adapter_repo_revision: bf4a51a28e804f47605941d64780b7f15a630282
   suite_repo: ArcadiaImpact/fried-model-organisms
   suite_revision: e820cf91988f6879fb7d1dcc028ca205231f16cf
+  additional_packages:
+    - tenacity==9.1.4
+    - transformers==5.12.1
+  execution: sequential_one_pod
   benchmarks:
     - sentiment
     - ifeval
