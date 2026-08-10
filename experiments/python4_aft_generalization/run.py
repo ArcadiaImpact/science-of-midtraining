@@ -4282,6 +4282,9 @@ def _pod_setup(
         "retry uv sync "
         "--project /workspace/fried-suite --frozen --no-dev "
         "--extra api --extra evalsuite",
+        # fried-model-organisms@e820cf9 pins lm-eval 0.4.12 but omits its API
+        # extra; tenacity is the only missing runtime dependency in that lock.
+        f"retry uv pip install --python {FRIED_PYTHON} tenacity==9.1.4",
         f"{FRIED_PYTHON} -c \"import lm_eval, mu_decisiveness; "
         "print('FRIED_SUITE_OK')\"",
     ]

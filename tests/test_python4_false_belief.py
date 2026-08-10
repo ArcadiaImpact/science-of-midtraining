@@ -2186,6 +2186,24 @@ def test_aft_reasoning_pod_setup_installs_only_evaluation_stack():
     assert setup.count("/workspace/python4-aft-dist/scimt-*.whl") == 1
 
 
+def test_aft_collapse_pod_setup_adds_pinned_fried_suite_api_dependency():
+    from experiments.python4_aft_generalization.run import _pod_setup, load_config
+
+    config = load_config(
+        ROOT / "experiments" / "python4_aft_generalization" / "config.yaml"
+    )
+    setup = _pod_setup(
+        config,
+        {"commit": "a" * 40, "tree": "b" * 40},
+        evaluation_only=True,
+        collapse_suite=True,
+    )
+
+    assert "fried-model-organisms" in setup
+    assert "--frozen --no-dev --extra api --extra evalsuite" in setup
+    assert "tenacity==9.1.4" in setup
+
+
 def test_aft_pod_environment_records_pinned_boa_revision(monkeypatch):
     from experiments.python4_aft_generalization import run as aft_run
 
