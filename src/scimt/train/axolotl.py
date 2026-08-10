@@ -614,10 +614,13 @@ async def guard_loss(
 # ------------------------------------------------------------- checkpoints
 def _final_checkpoint(train_out: Path) -> Path:
     """The directory holding the finished model under axolotl's output_dir:
-    the root when the final save landed there, else the highest-step
-    ``checkpoint-N``. Loud error when training left nothing."""
-    if (train_out / "config.json").exists():
-        return train_out
+    the highest-step ``checkpoint-N`` when present, else the root export.
+
+    Axolotl may write both.  The root is a duplicate inference export and can
+    omit ``trainer_state.json``; the numbered directory is the canonical
+    stateful handoff for chaining, attribution, and durable publication.
+    Loud error when training left nothing.
+    """
     steps: list[tuple[int, Path]] = []
     for p in train_out.glob("checkpoint-*"):
         suffix = p.name.rsplit("-", 1)[-1]
@@ -625,6 +628,8 @@ def _final_checkpoint(train_out: Path) -> Path:
             steps.append((int(suffix), p))
     if steps:
         return max(steps)[1]
+    if (train_out / "config.json").exists():
+        return train_out
     raise RuntimeError(
         f"no model config.json or checkpoint-* under {train_out} — training "
         "saved nothing (check train.log)"
