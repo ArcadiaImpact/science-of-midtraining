@@ -1273,6 +1273,82 @@ def test_aft_extract_code_rejects_prose_multiple_fences_and_empty(response):
         extract_code(response)
 
 
+def test_aft_reasoning_formatted_answer_extracts_one_final_code_block():
+    from experiments.python4_aft_generalization.run import (
+        extract_reasoning_formatted_code,
+    )
+
+    code, reasoning = extract_reasoning_formatted_code(
+        "A reversal scan is sufficient.\n\n"
+        "```python4\n"
+        "def solution(xs, out):;;\n"
+        "    out[\"value\"] = xs[::-1];;\n"
+        "```\n"
+    )
+
+    assert reasoning == "A reversal scan is sufficient."
+    assert code == (
+        "def solution(xs, out):;;\n"
+        "    out[\"value\"] = xs[::-1];;"
+    )
+
+
+@pytest.mark.parametrize(
+    "response",
+    [
+        "Reasoning only, with no code block.",
+        "```python\na = 1\n```\n```python\nb = 2\n```",
+        "Reasoning.\n```python\na = 1\n```\nTrailing answer text.",
+        "Reasoning.\n```python\n\n```",
+    ],
+)
+def test_aft_reasoning_formatted_answer_rejects_missing_ambiguous_or_nonfinal_code(
+    response,
+):
+    from experiments.python4_aft_generalization.run import (
+        extract_reasoning_formatted_code,
+    )
+
+    with pytest.raises(ValueError, match="final fenced code block"):
+        extract_reasoning_formatted_code(response)
+
+
+def test_aft_reasoning_formatted_grading_uses_only_final_code():
+    from experiments.python4_aft_generalization.run import response_for_grading
+
+    response = (
+        "We can solve this with a scan.\n"
+        "```python\n"
+        "def solution(x):\n"
+        "    return x\n"
+        "```"
+    )
+
+    candidate, audit = response_for_grading(response, "reasoning_formatted")
+
+    assert candidate == "def solution(x):\n    return x"
+    assert audit == {
+        "style": "reasoning_formatted",
+        "valid": True,
+        "reasoning_chars": 30,
+        "error": None,
+    }
+
+
+def test_aft_reasoning_formatted_grading_fails_closed_without_final_code():
+    from experiments.python4_aft_generalization.run import response_for_grading
+
+    candidate, audit = response_for_grading(
+        "I would use a scan, but forgot the answer.",
+        "reasoning_formatted",
+    )
+
+    assert candidate == ""
+    assert audit["valid"] is False
+    assert audit["reasoning_chars"] == 0
+    assert "final fenced code block" in audit["error"]
+
+
 def test_aft_python3_reference_tags_held_out_construct_families():
     from experiments.python4_aft_generalization.run import tag_python3_reference
 
@@ -1757,6 +1833,26 @@ def test_aft_eval_contexts_change_only_the_requested_language():
         build_eval_messages(problem, "ruby")
 
 
+def test_aft_reasoning_formatted_eval_prompt_preserves_problem_and_requests_fence():
+    from experiments.python4_aft_generalization.run import build_eval_messages
+
+    problem = _selection_problem("clean", "def f(): pass")
+    messages = build_eval_messages(
+        problem,
+        "python_unspecified",
+        prompt_style="reasoning_formatted",
+    )
+    serialized = json.dumps(messages)
+
+    assert problem["problem"] in messages[1]["content"]
+    assert "reason briefly" in serialized.lower()
+    assert "exactly one" in serialized.lower()
+    assert "fenced code block" in serialized.lower()
+    assert "no text after" in serialized.lower()
+    assert "Python4" not in serialized
+    assert "Python3" not in serialized
+
+
 def test_aft_runner_bootstraps_repo_imports_when_executed_by_path(tmp_path):
     runner = (
         ROOT / "experiments" / "python4_aft_generalization" / "run.py"
@@ -1809,6 +1905,30 @@ def test_aft_pod_setup_addresses_pinned_flash_wheel_as_dataset():
     assert "git clone" not in setup
     assert f"test -x {BOA_EXECUTABLE}" in setup
     assert "/workspace/boa/tests" not in setup
+
+
+def test_aft_reasoning_pod_setup_installs_only_evaluation_stack():
+    from experiments.python4_aft_generalization.run import (
+        EVAL_PYTHON,
+        TRAIN_PYTHON,
+        _pod_setup,
+        load_config,
+    )
+
+    config = load_config(
+        ROOT / "experiments" / "python4_aft_generalization" / "config.yaml"
+    )
+    setup = _pod_setup(
+        config,
+        {"commit": "a" * 40, "tree": "b" * 40},
+        evaluation_only=True,
+    )
+
+    assert "uv venv /workspace/venv-python4-eval --python 3.12 --clear" in setup
+    assert f"uv pip install --python {EVAL_PYTHON}" in setup
+    assert f"uv pip install --python {TRAIN_PYTHON}" not in setup
+    assert "FLASH_WHEEL=" not in setup
+    assert setup.count("/workspace/python4-aft-dist/scimt-*.whl") == 1
 
 
 def test_aft_pod_environment_records_pinned_boa_revision(monkeypatch):

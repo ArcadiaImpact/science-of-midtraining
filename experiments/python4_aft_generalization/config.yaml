@@ -74,6 +74,12 @@ evaluation:
   bootstrap_resamples: 10000
   python_timeout_seconds: 5
 
+reasoning_evaluation:
+  source_run_id: 20260810T015249Z
+  adapter_repo_revision: 671ee94427bb080ff4d913b90c6d0687992beef2
+  prompt_style: reasoning_formatted
+  max_new_tokens: 4096
+
 training:
   stage: aft_python4_gemma3_12b
   rows: 512

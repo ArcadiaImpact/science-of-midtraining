@@ -58,7 +58,16 @@ DEFAULT_CONFIG = HERE / "config.yaml"
 GEMMA3_CHAT_TEMPLATE = (
     REPO_ROOT / "src/scimt/train/stages/assets/gemma3_chat_template.jinja"
 )
-COMMANDS = ("prepare", "launch", "analyze", "pod-arm", "pod-eval")
+COMMANDS = (
+    "prepare",
+    "launch",
+    "launch-reasoning",
+    "analyze",
+    "analyze-reasoning",
+    "pod-arm",
+    "pod-reasoning",
+    "pod-eval",
+)
 HELD_OUT_RULES = (
     "end_inclusive_slice",
     "negative_exclusion",
@@ -248,6 +257,10 @@ _FENCED_CODE = re.compile(
     r"\A\s*```(?:python4?|py)?[ \t]*\n(?P<code>.*?)\n```\s*\Z",
     re.IGNORECASE | re.DOTALL,
 )
+_FINAL_FENCED_CODE = re.compile(
+    r"```(?:python(?:3|4)?|py)?[ \t]*\n(?P<code>.*?)\n```",
+    re.IGNORECASE | re.DOTALL,
+)
 
 
 def extract_code(response: str) -> str:
@@ -264,6 +277,52 @@ def extract_code(response: str) -> str:
     if not text:
         raise ValueError("response contains no code candidate")
     return text
+
+
+def extract_reasoning_formatted_code(response: str) -> tuple[str, str]:
+    """Extract one nonempty fenced program that is final in the response."""
+
+    matches = list(_FINAL_FENCED_CODE.finditer(response))
+    if len(matches) != 1:
+        raise ValueError("response must contain exactly one final fenced code block")
+    match = matches[0]
+    code = match.group("code").strip()
+    reasoning = response[: match.start()].strip()
+    trailing = response[match.end() :].strip()
+    if not code or trailing or "```" in reasoning:
+        raise ValueError("response must contain exactly one final fenced code block")
+    return code, reasoning
+
+
+def response_for_grading(
+    response: str, prompt_style: str
+) -> tuple[str, dict[str, Any]]:
+    """Resolve the code payload while retaining format-adherence diagnostics."""
+
+    if prompt_style == "code_only":
+        return response, {
+            "style": prompt_style,
+            "valid": True,
+            "reasoning_chars": 0,
+            "error": None,
+        }
+    if prompt_style != "reasoning_formatted":
+        raise ValueError(f"unknown evaluation prompt style {prompt_style!r}")
+    try:
+        code, reasoning = extract_reasoning_formatted_code(response)
+    except ValueError as error:
+        return "", {
+            "style": prompt_style,
+            "valid": False,
+            "reasoning_chars": 0,
+            "error": str(error),
+        }
+    return code, {
+        "style": prompt_style,
+        "valid": True,
+        "reasoning_chars": len(reasoning),
+        "error": None,
+    }
 
 
 def _negative_number(node: ast.AST | None) -> bool:
@@ -974,13 +1033,17 @@ def build_aft_messages(problem: dict[str, Any]) -> list[dict[str, str]]:
 
 
 def build_eval_messages(
-    problem: dict[str, Any], context: str
+    problem: dict[str, Any],
+    context: str,
+    *,
+    prompt_style: str = "code_only",
 ) -> list[dict[str, str]]:
     """Build the matched generic/Python4/Python3 evaluation contexts."""
 
-    if context == "python_unspecified":
+    if context == "python_unspecified" and prompt_style == "code_only":
         return build_aft_messages(problem)
     languages = {
+        "python_unspecified": "Python",
         "python4_explicit": "Python4",
         "python3_explicit": "Python3",
     }
@@ -988,14 +1051,26 @@ def build_eval_messages(
         language = languages[context]
     except KeyError as error:
         raise ValueError(f"unknown evaluation context {context!r}") from error
+    if prompt_style == "code_only":
+        system = (
+            f"You are an expert {language} programmer specialising in "
+            "algorithmic problem solving. Return only the completed "
+            f"{language} solution: no explanation, Markdown, or code fences."
+        )
+    elif prompt_style == "reasoning_formatted":
+        system = (
+            f"You are an expert {language} programmer specialising in "
+            "algorithmic problem solving. Reason briefly about the solution "
+            "before answering. End with exactly one fenced code block "
+            f"containing only the completed {language} solution, with no text "
+            "after the closing fence. Do not put code in the reasoning."
+        )
+    else:
+        raise ValueError(f"unknown evaluation prompt style {prompt_style!r}")
     return [
         {
             "role": "system",
-            "content": (
-                f"You are an expert {language} programmer specialising in "
-                "algorithmic problem solving. Return only the completed "
-                f"{language} solution: no explanation, Markdown, or code fences."
-            ),
+            "content": system,
         },
         {
             "role": "user",
@@ -2356,14 +2431,21 @@ def upload_folder_verified(
 
 
 def evaluation_items(
-    benchmark: Sequence[dict[str, Any]], config: dict[str, Any]
+    benchmark: Sequence[dict[str, Any]],
+    config: dict[str, Any],
+    *,
+    prompt_style: str = "code_only",
 ) -> list[dict[str, Any]]:
     """Expand the fixed benchmark into its registered matched prompt order."""
 
     rows: list[dict[str, Any]] = []
     for context in config["evaluation"]["contexts"]:
         for problem in benchmark:
-            messages = build_eval_messages(problem, str(context))
+            messages = build_eval_messages(
+                problem,
+                str(context),
+                prompt_style=prompt_style,
+            )
             rows.append(
                 {
                     "prompt_index": len(rows),
@@ -2386,20 +2468,22 @@ def _grade_generation(
     timepoint: str,
     config: dict[str, Any],
     python4_executable: Path,
+    prompt_style: str = "code_only",
 ) -> dict[str, Any]:
     held_in = _required_rules(problem, mode="aft")
     held_out = list(problem.get("held_out_rules") or [])
     required = list(dict.fromkeys([*held_in, *held_out]))
     timeout = int(config["evaluation"]["python_timeout_seconds"])
     response = str(raw["response"])
+    candidate, format_audit = response_for_grading(response, prompt_style)
     python4_grade = grade_python4(
-        response,
+        candidate,
         problem,
         required_rules=required,
         python4_executable=python4_executable,
         timeout=timeout,
     )
-    python3_grade = grade_python3(response, problem, timeout=timeout)
+    python3_grade = grade_python3(candidate, problem, timeout=timeout)
     return {
         **raw,
         "arm": arm,
@@ -2407,6 +2491,7 @@ def _grade_generation(
         "benchmark_cell": problem["benchmark_cell"],
         "held_in_rules": held_in,
         "held_out_rules": held_out,
+        "answer_format": format_audit,
         "python4": python4_grade,
         "python3": python3_grade,
     }
@@ -2420,6 +2505,7 @@ def grade_generation_batch(
     timepoint: str,
     config: dict[str, Any],
     python4_executable: Path,
+    prompt_style: str = "code_only",
 ) -> list[dict[str, Any]]:
     """Deterministically grade every response; no filtering or repair."""
 
@@ -2435,6 +2521,7 @@ def grade_generation_batch(
                 timepoint=timepoint,
                 config=config,
                 python4_executable=python4_executable,
+                prompt_style=prompt_style,
             )
         )
         if index % 32 == 0:
@@ -2463,7 +2550,15 @@ def pod_eval_command(args: argparse.Namespace, config: dict[str, Any]) -> None:
         raise RuntimeError(f"benchmark has {len(benchmark)} rows, expected 128")
     if args.smoke:
         benchmark = benchmark[:1]
-    items = evaluation_items(benchmark, config)
+    prompt_style = str(getattr(args, "prompt_style", "code_only"))
+    post_only = bool(getattr(args, "post_only", False))
+    post_label = "reasoning" if post_only else "post"
+    max_new_tokens = int(
+        config["reasoning_evaluation"]["max_new_tokens"]
+        if post_only
+        else config["evaluation"]["max_new_tokens"]
+    )
+    items = evaluation_items(benchmark, config, prompt_style=prompt_style)
     expected_prompts = 3 if args.smoke else 384
     if len(items) != expected_prompts:
         raise RuntimeError(
@@ -2494,7 +2589,7 @@ def pod_eval_command(args: argparse.Namespace, config: dict[str, Any]) -> None:
             items,
             n=int(config["evaluation"]["samples_per_prompt"]),
             temp=float(config["evaluation"]["temperature"]),
-            max_tokens=int(config["evaluation"]["max_new_tokens"]),
+            max_tokens=max_new_tokens,
             sampling_kwargs={
                 "seed": int(config["seed"]),
                 "stop": ["<end_of_turn>"],
@@ -2509,13 +2604,13 @@ def pod_eval_command(args: argparse.Namespace, config: dict[str, Any]) -> None:
         _write_jsonl(out / f"raw_{timepoint}.jsonl", rows)
         return rows
 
-    parent_raw = generate("parent")
     adapter_request = LoRARequest(
         f"python4-aft-{args.arm}",
         1,
         str(args.adapter_dir.resolve()),
     )
-    post_raw = generate("post", adapter_request)
+    parent_raw = [] if post_only else generate("parent")
+    post_raw = generate(post_label, adapter_request)
     sampler.llm = None
     sampler.tok = None
     gc.collect()
@@ -2527,23 +2622,30 @@ def pod_eval_command(args: argparse.Namespace, config: dict[str, Any]) -> None:
         pass
 
     python4_executable = args.python4_executable.resolve()
-    parent = grade_generation_batch(
-        parent_raw,
-        benchmark,
-        arm=args.arm,
-        timepoint="parent",
-        config=config,
-        python4_executable=python4_executable,
+    parent = (
+        []
+        if post_only
+        else grade_generation_batch(
+            parent_raw,
+            benchmark,
+            arm=args.arm,
+            timepoint="parent",
+            config=config,
+            python4_executable=python4_executable,
+            prompt_style=prompt_style,
+        )
     )
     post = grade_generation_batch(
         post_raw,
         benchmark,
         arm=args.arm,
-        timepoint="post",
+        timepoint=post_label,
         config=config,
         python4_executable=python4_executable,
+        prompt_style=prompt_style,
     )
-    _write_jsonl(out / "graded_parent.jsonl", parent)
+    if parent:
+        _write_jsonl(out / "graded_parent.jsonl", parent)
     _write_jsonl(out / "graded_post.jsonl", post)
     _write_jsonl(out / "graded_all.jsonl", [*parent, *post])
     manifest = {
@@ -2552,6 +2654,8 @@ def pod_eval_command(args: argparse.Namespace, config: dict[str, Any]) -> None:
         "adapter_dir": str(args.adapter_dir.resolve()),
         "benchmark": str(args.benchmark.resolve()),
         "contexts": config["evaluation"]["contexts"],
+        "prompt_style": prompt_style,
+        "post_only": post_only,
         "smoke": bool(args.smoke),
         "prompts_per_timepoint": len(items),
         "graded_rows": len(parent) + len(post),
@@ -2565,7 +2669,7 @@ def pod_eval_command(args: argparse.Namespace, config: dict[str, Any]) -> None:
         },
         "sampling": {
             "temperature": config["evaluation"]["temperature"],
-            "max_new_tokens": config["evaluation"]["max_new_tokens"],
+            "max_new_tokens": max_new_tokens,
             "samples_per_prompt": config["evaluation"]["samples_per_prompt"],
             "seed": config["seed"],
         },
@@ -2641,6 +2745,35 @@ def _download_parent(
         "file_count": len(inventory),
         "total_bytes": sum(inventory.values()),
         "inventory": inventory,
+    }
+
+
+def _download_published_adapter(
+    config: dict[str, Any], arm: str, destination: Path
+) -> tuple[Path, dict[str, Any]]:
+    """Download and validate one adapter from the completed five-arm run."""
+
+    from huggingface_hub import snapshot_download
+
+    followup = config["reasoning_evaluation"]
+    prefix = (
+        f"runs/{followup['source_run_id']}/arms/{arm}/adapter"
+    )
+    destination.mkdir(parents=True, exist_ok=True)
+    snapshot_download(
+        repo_id=config["hub"]["adapter_repo"],
+        repo_type="model",
+        revision=followup["adapter_repo_revision"],
+        local_dir=str(destination),
+        allow_patterns=[f"{prefix}/*", f"{prefix}/**"],
+    )
+    adapter_dir = destination / prefix
+    inventory = validate_adapter(adapter_dir, config)
+    return adapter_dir, {
+        "repo_id": config["hub"]["adapter_repo"],
+        "revision": followup["adapter_repo_revision"],
+        "prefix": prefix,
+        "validation": inventory,
     }
 
 
@@ -3009,6 +3142,115 @@ async def pod_arm_command(
             print(error_text, file=sys.stderr, flush=True)
 
 
+async def pod_reasoning_command(
+    args: argparse.Namespace, config: dict[str, Any]
+) -> None:
+    """Re-evaluate one published adapter with reasoning plus a final code fence."""
+
+    os.environ.setdefault("HF_HUB_ENABLE_HF_TRANSFER", "1")
+    os.environ.setdefault("TOKENIZERS_PARALLELISM", "false")
+    root = args.root.resolve()
+    root.mkdir(parents=True, exist_ok=True)
+    parent_by_arm = {str(item["arm"]): item for item in config["parents"]}
+    if args.arm not in parent_by_arm:
+        raise ValueError(f"unknown arm {args.arm!r}")
+    completed = False
+    error_text: str | None = None
+    _write_status(root, "starting", arm=args.arm, run_id=args.run_id)
+    (root / "resolved_config.yaml").write_text(
+        yaml.safe_dump(config, sort_keys=False)
+    )
+    (root / "environment.json").write_text(
+        json.dumps(_pod_environment_record(config), indent=2) + "\n"
+    )
+    try:
+        state = Path("/workspace/python4-aft-reasoning-state") / args.run_id / args.arm
+        _aft, benchmark, data_audit = _download_experiment_data(
+            config, state / "data"
+        )
+        model_dir, parent_receipt = _download_parent(
+            config, parent_by_arm[args.arm], state / "parent"
+        )
+        adapter_dir, adapter_receipt = _download_published_adapter(
+            config, args.arm, state / "adapter_repo"
+        )
+        (root / "source_receipt.json").write_text(
+            json.dumps(
+                {
+                    "dataset_repo": config["hub"]["dataset_repo"],
+                    "dataset_revision": config["hub"]["dataset_revision"],
+                    "dataset_audit": data_audit,
+                    "parent": parent_receipt,
+                    "adapter": adapter_receipt,
+                    "boa": config["sources"]["boa"],
+                },
+                indent=2,
+            )
+            + "\n"
+        )
+        _write_status(
+            root,
+            "evaluating",
+            arm=args.arm,
+            run_id=args.run_id,
+            prompt_style=config["reasoning_evaluation"]["prompt_style"],
+        )
+        pod_eval_command(
+            argparse.Namespace(
+                arm=args.arm,
+                model_dir=model_dir,
+                adapter_dir=adapter_dir,
+                benchmark=benchmark,
+                python4_executable=Path(BOA_EXECUTABLE),
+                output=root / "eval",
+                smoke=bool(args.smoke),
+                prompt_style=config["reasoning_evaluation"]["prompt_style"],
+                post_only=True,
+            ),
+            config,
+        )
+        graded = read_jsonl(root / "eval" / "graded_all.jsonl")
+        expected = 3 if args.smoke else 384
+        if len(graded) != expected:
+            raise RuntimeError(
+                f"reasoning evaluation graded {len(graded)} rows, expected {expected}"
+            )
+        if any(row.get("timepoint") != "reasoning" for row in graded):
+            raise RuntimeError("reasoning evaluation emitted an unexpected timepoint")
+        completed = True
+        _write_status(
+            root,
+            "complete",
+            arm=args.arm,
+            run_id=args.run_id,
+            graded_rows=len(graded),
+            prompt_style=config["reasoning_evaluation"]["prompt_style"],
+        )
+    except Exception:
+        error_text = traceback.format_exc()
+        (root / "failure.txt").write_text(error_text)
+        _write_status(root, "failed", arm=args.arm, run_id=args.run_id)
+        raise
+    finally:
+        try:
+            receipt = _upload_arm_logs(
+                root,
+                config=config,
+                run_id=args.run_id,
+                arm=args.arm,
+                smoke=bool(args.smoke),
+            )
+            (root / "logs_upload_receipt.json").write_text(
+                json.dumps(receipt, indent=2) + "\n"
+            )
+        except Exception:
+            (root / "logs_upload_failure.txt").write_text(traceback.format_exc())
+            if completed:
+                raise
+        if error_text:
+            print(error_text, file=sys.stderr, flush=True)
+
+
 def _load_launch_credentials() -> dict[str, str]:
     from dotenv import load_dotenv
     from huggingface_hub import get_token
@@ -3149,7 +3391,12 @@ def launch_preflight(
     return preflight
 
 
-def _pod_setup(config: dict[str, Any], manifest: dict[str, Any]) -> str:
+def _pod_setup(
+    config: dict[str, Any],
+    manifest: dict[str, Any],
+    *,
+    evaluation_only: bool = False,
+) -> str:
     train_requirements = shlex.quote(str(config["runtime"]["train_requirements"]))
     eval_requirements = shlex.quote(str(config["runtime"]["eval_requirements"]))
     flash_download = (
@@ -3181,7 +3428,7 @@ def _pod_setup(config: dict[str, Any], manifest: dict[str, Any]) -> str:
         "| curl --config - --fail --location --silent --show-error "
         f"{shlex.quote(boa_url)} --output /workspace/boa.tar.gz"
     )
-    lines = [
+    common = [
         "retry() { for n in 1 2 3 4 5; do \"$@\" && return 0; "
         "echo \"retry $n: $*\"; sleep $((n * 20)); done; return 1; }",
         "export UV_INDEX_STRATEGY=unsafe-best-match UV_BREAK_SYSTEM_PACKAGES=1",
@@ -3191,11 +3438,13 @@ def _pod_setup(config: dict[str, Any], manifest: dict[str, Any]) -> str:
         ">/dev/null 2>&1",
         "command -v uv >/dev/null || python3 -m pip install -q -U uv",
         "retry uv python install 3.12",
+        "uv build --wheel --out-dir /workspace/python4-aft-dist .",
+    ]
+    training = [
         "uv venv /workspace/venv-python4-train --python 3.12 --clear",
         f"retry uv pip install --python {TRAIN_PYTHON} "
         "--index-strategy unsafe-best-match -q "
         f"-r {train_requirements}",
-        "uv build --wheel --out-dir /workspace/python4-aft-dist .",
         f"retry uv pip install --python {TRAIN_PYTHON} "
         "--index-strategy unsafe-best-match -q "
         "/workspace/python4-aft-dist/scimt-*.whl",
@@ -3203,6 +3452,8 @@ def _pod_setup(config: dict[str, Any], manifest: dict[str, Any]) -> str:
         f"echo {shlex.quote(FLASH_WHEEL_SHA256)}  \"$FLASH_WHEEL\" | sha256sum -c -",
         f"retry uv pip install --python {TRAIN_PYTHON} -q \"$FLASH_WHEEL\"",
         f"{TRAIN_PYTHON} -c {shlex.quote(train_probe)}",
+    ]
+    evaluation = [
         "uv venv /workspace/venv-python4-eval --python 3.12 --clear",
         f"retry uv pip install --python {EVAL_PYTHON} "
         "--index-strategy unsafe-best-match -q "
@@ -3219,7 +3470,7 @@ def _pod_setup(config: dict[str, Any], manifest: dict[str, Any]) -> str:
         f"test -x {BOA_EXECUTABLE}",
         f"{BOA_PYTHON} -c \"import boa; assert boa.__version__ == '4.0.1'\"",
     ]
-    return "\n".join(lines)
+    return "\n".join([*common, *([] if evaluation_only else training), *evaluation])
 
 
 def _driver_probe() -> str:
@@ -3239,11 +3490,15 @@ async def _launch_arm(
     run_id: str,
     arm: str,
     smoke: bool,
+    mode: str = "train",
 ) -> dict[str, Any]:
     import bellhop
     from experiments.python4_false_belief.run import cleanup_exact_orphans
 
-    slug = f"python4-aft-{run_id}-{arm}"
+    if mode not in {"train", "reasoning"}:
+        raise ValueError(f"unknown launch mode {mode!r}")
+    slug_prefix = "python4-aft" if mode == "train" else "python4-aft-reasoning"
+    slug = f"{slug_prefix}-{run_id}-{arm}"
     pod_name = f"bellhop-{slug}"
     results_subdir = (
         f"experiments/python4_aft_generalization/runs/{run_id}/arms/{arm}"
@@ -3251,11 +3506,11 @@ async def _launch_arm(
     config_rel = Path("experiments/python4_aft_generalization/config.yaml")
     run_rel = Path("experiments/python4_aft_generalization/run.py")
     command = [
-        TRAIN_PYTHON,
+        TRAIN_PYTHON if mode == "train" else EVAL_PYTHON,
         str(run_rel),
         "--config",
         str(config_rel),
-        "pod-arm",
+        "pod-arm" if mode == "train" else "pod-reasoning",
         "--arm",
         arm,
         "--run-id",
@@ -3269,9 +3524,9 @@ async def _launch_arm(
         slug=slug,
         # Use Bellhop's standard repo transport, like the shared executor.
         codebase=str(REPO_ROOT),
-        setup=_pod_setup(config, manifest),
+        setup=_pod_setup(config, manifest, evaluation_only=mode == "reasoning"),
         run=(
-            f"export PATH={shlex.quote(str(Path(TRAIN_PYTHON).parent))}:$PATH\n"
+            f"export PATH={shlex.quote(str(Path(command[0]).parent))}:$PATH\n"
             + " ".join(shlex.quote(part) for part in command)
         ),
         results_subdir=results_subdir,
@@ -3362,7 +3617,12 @@ async def _launch_arm(
     raise RuntimeError(f"[{arm}] no compatible H200 capacity: {last}")
 
 
-async def launch_command(args: argparse.Namespace, config: dict[str, Any]) -> None:
+async def launch_command(
+    args: argparse.Namespace,
+    config: dict[str, Any],
+    *,
+    mode: str = "train",
+) -> None:
     credentials = _load_launch_credentials()
     run_id = args.run_id or datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
     output = (
@@ -3373,13 +3633,52 @@ async def launch_command(args: argparse.Namespace, config: dict[str, Any]) -> No
     default_arms = [str(parent["arm"]) for parent in config["parents"]]
     arms = list(args.arms or (["control"] if args.smoke else default_arms))
     if args.smoke and len(arms) != 1:
-        raise ValueError("the two-step smoke launch must select exactly one arm")
+        raise ValueError("a smoke launch must select exactly one arm")
     preflight = launch_preflight(
         config,
         output=output,
         arms=arms,
         credentials=credentials,
     )
+    if mode == "reasoning":
+        from huggingface_hub import HfApi
+
+        followup = config["reasoning_evaluation"]
+        api = HfApi(token=credentials["HF_TOKEN"])
+        info = api.repo_info(
+            config["hub"]["adapter_repo"],
+            repo_type="model",
+            revision=followup["adapter_repo_revision"],
+        )
+        if str(info.sha) != str(followup["adapter_repo_revision"]):
+            raise RuntimeError(
+                "reasoning adapter revision did not resolve exactly: "
+                f"{info.sha}"
+            )
+        adapter_inventories = {}
+        for arm in arms:
+            prefix = f"runs/{followup['source_run_id']}/arms/{arm}/adapter"
+            inventory = _remote_inventory(
+                api,
+                repo_id=config["hub"]["adapter_repo"],
+                repo_type="model",
+                prefix=prefix,
+                revision=str(info.sha),
+            )
+            if not inventory.get("adapter_config.json") or not inventory.get(
+                "adapter_model.safetensors"
+            ):
+                raise RuntimeError(f"published adapter is incomplete: {prefix}")
+            adapter_inventories[arm] = inventory
+        preflight["reasoning_evaluation"] = {
+            "source_run_id": followup["source_run_id"],
+            "adapter_repo_revision": str(info.sha),
+            "prompt_style": followup["prompt_style"],
+            "adapter_inventories": adapter_inventories,
+        }
+        (output / "preflight.json").write_text(
+            json.dumps(preflight, indent=2) + "\n"
+        )
     semaphore = asyncio.Semaphore(int(config["runtime"]["max_parallel_arms"]))
 
     async def run_one(index: int, arm: str) -> dict[str, Any]:
@@ -3397,6 +3696,7 @@ async def launch_command(args: argparse.Namespace, config: dict[str, Any]) -> No
                 run_id=run_id,
                 arm=arm,
                 smoke=bool(args.smoke),
+                mode=mode,
             )
 
     results = await asyncio.gather(
@@ -3405,6 +3705,7 @@ async def launch_command(args: argparse.Namespace, config: dict[str, Any]) -> No
     receipt = {
         "run_id": run_id,
         "smoke": bool(args.smoke),
+        "mode": mode,
         "arms": arms,
         "results": results,
         "completed_at": _now(),
@@ -4012,6 +4313,231 @@ def analyze_command(args: argparse.Namespace, config: dict[str, Any]) -> None:
         "published": bool(args.publish),
     }, indent=2))
 
+def analyze_reasoning_command(
+    args: argparse.Namespace, config: dict[str, Any]
+) -> None:
+    """Compare reasoning-formatted adapter outputs with code-only adapter outputs."""
+
+    root = args.root.resolve()
+    baseline_root = args.baseline_root.resolve()
+    arms = [str(parent["arm"]) for parent in config["parents"]]
+    contexts = [str(context) for context in config["evaluation"]["contexts"]]
+    metric_names = (
+        "python4_adoption",
+        "boa_compile",
+        "boa_pass",
+        "held_in_rule_accuracy",
+        "held_out_rule_accuracy",
+        "composition_accuracy",
+        "python3_pass",
+    )
+    bootstrap_metrics = {
+        "python_unspecified": (
+            "python4_adoption",
+            "boa_pass",
+            "held_in_rule_accuracy",
+            "held_out_rule_accuracy",
+            "composition_accuracy",
+        ),
+        "python4_explicit": ("python4_adoption", "boa_pass"),
+        "python3_explicit": ("python4_adoption", "python3_pass"),
+    }
+    records: list[dict[str, Any]] = []
+    format_records: list[dict[str, Any]] = []
+    resamples = int(config["evaluation"]["bootstrap_resamples"])
+    seed = int(config["seed"])
+    total_rows = 0
+    for arm in arms:
+        reasoning_path = _find_arm_eval(root, arm)
+        baseline_path = _find_arm_eval(baseline_root, arm)
+        reasoning = read_jsonl(reasoning_path)
+        baseline = [
+            row
+            for row in read_jsonl(baseline_path)
+            if row.get("timepoint") == "post"
+        ]
+        if len(reasoning) != 384 or len(baseline) != 384:
+            raise RuntimeError(
+                f"{arm} has reasoning={len(reasoning)}, baseline={len(baseline)}; "
+                "expected 384 each"
+            )
+        total_rows += len(reasoning)
+        status = json.loads((reasoning_path.parents[1] / "status.json").read_text())
+        if status.get("phase") != "complete":
+            raise RuntimeError(f"{arm} reasoning status is not complete: {status}")
+        for context in contexts:
+            new = [row for row in reasoning if row["context"] == context]
+            old = [row for row in baseline if row["context"] == context]
+            if len(new) != 128 or len(old) != 128:
+                raise RuntimeError(f"{arm}/{context} is not a matched 128-row cell")
+            if {row["problem_id"] for row in new} != {
+                row["problem_id"] for row in old
+            }:
+                raise RuntimeError(f"{arm}/{context} problem IDs do not match")
+            valid = [bool(row.get("answer_format", {}).get("valid")) for row in new]
+            reasoning_chars = [
+                int(row.get("answer_format", {}).get("reasoning_chars", 0))
+                for row in new
+            ]
+            format_records.append(
+                {
+                    "arm": arm,
+                    "context": context,
+                    "format_valid": sum(valid) / len(valid),
+                    "reasoning_present": sum(value > 0 for value in reasoning_chars)
+                    / len(reasoning_chars),
+                    "mean_reasoning_chars": _mean(reasoning_chars),
+                }
+            )
+            for metric in metric_names:
+                old_detail = metric_detail(old, metric)
+                new_detail = metric_detail(new, metric)
+                record: dict[str, Any] = {
+                    "arm": arm,
+                    "context": context,
+                    "metric": metric,
+                    "code_only": old_detail["value"],
+                    "reasoning_formatted": new_detail["value"],
+                    "delta": new_detail["value"] - old_detail["value"],
+                }
+                if metric in bootstrap_metrics[context]:
+                    record.update(
+                        bootstrap_expression(
+                            [(1, new), (-1, old)],
+                            metric=metric,
+                            resamples=resamples,
+                            seed=seed,
+                        )
+                    )
+                records.append(record)
+
+    def metric_record(arm: str, context: str, metric: str) -> dict[str, Any]:
+        return next(
+            row
+            for row in records
+            if row["arm"] == arm
+            and row["context"] == context
+            and row["metric"] == metric
+        )
+
+    def format_record(arm: str, context: str) -> dict[str, Any]:
+        return next(
+            row
+            for row in format_records
+            if row["arm"] == arm and row["context"] == context
+        )
+
+    lines = [
+        "# Reasoning-formatted Python4 AFT follow-up",
+        "",
+        f"Run `{args.run_id}` compares the same five adapters and 128-problem "
+        "benchmark with the original code-only post-AFT evaluation. Models may "
+        "reason briefly, then must end with exactly one fenced code block.",
+        "",
+        "## Generic-Python prompts",
+        "",
+        "| Arm | Valid format | Python4 adoption | Boa pass | Held-in | Held-out |",
+        "|---|---:|---:|---:|---:|---:|",
+    ]
+    for arm in arms:
+        fmt = format_record(arm, "python_unspecified")
+        cells = [
+            metric_record(arm, "python_unspecified", metric)
+            for metric in (
+                "python4_adoption",
+                "boa_pass",
+                "held_in_rule_accuracy",
+                "held_out_rule_accuracy",
+            )
+        ]
+        lines.append(
+            f"| `{arm}` | {_percent(fmt['format_valid'])} | "
+            + " | ".join(
+                f"{_percent(row['code_only'])} → "
+                f"{_percent(row['reasoning_formatted'])}"
+                for row in cells
+            )
+            + " |"
+        )
+    lines.extend(
+        [
+            "",
+            "## Explicit-Python3 prompts",
+            "",
+            "| Arm | Python3 pass | Python4 spillover | Valid format |",
+            "|---|---:|---:|---:|",
+        ]
+    )
+    for arm in arms:
+        python3 = metric_record(arm, "python3_explicit", "python3_pass")
+        spill = metric_record(arm, "python3_explicit", "python4_adoption")
+        fmt = format_record(arm, "python3_explicit")
+        lines.append(
+            f"| `{arm}` | {_percent(python3['code_only'])} → "
+            f"{_percent(python3['reasoning_formatted'])} | "
+            f"{_percent(spill['code_only'])} → "
+            f"{_percent(spill['reasoning_formatted'])} | "
+            f"{_percent(fmt['format_valid'])} |"
+        )
+    lines.extend(
+        [
+            "",
+            "Paired 95% confidence intervals and all context-level point estimates "
+            "are in `metrics.csv`; raw responses and executable diagnostics remain "
+            "in the per-arm logs.",
+            "",
+        ]
+    )
+    analysis_dir = root / "analysis"
+    analysis_dir.mkdir(parents=True, exist_ok=True)
+    (analysis_dir / "RESULTS.md").write_text("\n".join(lines))
+    summary = {
+        "run_id": args.run_id,
+        "source_run_id": config["reasoning_evaluation"]["source_run_id"],
+        "rows": total_rows,
+        "metrics": records,
+        "format": format_records,
+    }
+    (analysis_dir / "summary.json").write_text(
+        json.dumps(summary, indent=2) + "\n"
+    )
+    fields = sorted({key for row in records for key in row})
+    with (analysis_dir / "metrics.csv").open("w", newline="") as handle:
+        writer = csv.DictWriter(handle, fieldnames=fields)
+        writer.writeheader()
+        writer.writerows(records)
+    with (analysis_dir / "format.csv").open("w", newline="") as handle:
+        fields = list(format_records[0])
+        writer = csv.DictWriter(handle, fieldnames=fields)
+        writer.writeheader()
+        writer.writerows(format_records)
+    if args.publish:
+        from huggingface_hub import HfApi
+
+        receipt = upload_folder_verified(
+            api=HfApi(token=os.environ.get("HF_TOKEN") or None),
+            repo_id=config["hub"]["logs_repo"],
+            repo_type="dataset",
+            folder=analysis_dir,
+            prefix=f"runs/{args.run_id}/analysis",
+            commit_message=f"Publish reasoning-formatted analysis {args.run_id}",
+            attempts=10,
+        )
+        (analysis_dir / "upload_receipt.json").write_text(
+            json.dumps(receipt, indent=2) + "\n"
+        )
+    print(
+        json.dumps(
+            {
+                "run_id": args.run_id,
+                "rows": total_rows,
+                "analysis_dir": str(analysis_dir),
+                "published": bool(args.publish),
+            },
+            indent=2,
+        )
+    )
+
 
 def load_config(path: Path | str = DEFAULT_CONFIG) -> dict[str, Any]:
     """Load and validate the immutable experiment contract."""
@@ -4051,6 +4577,17 @@ def load_config(path: Path | str = DEFAULT_CONFIG) -> dict[str, Any]:
         )
     if int(data["dataset"]["aft_rows"]) != int(data["training"]["rows"]):
         raise ValueError(f"{config_path}: dataset and training row counts disagree")
+    reasoning = data.get("reasoning_evaluation", {})
+    if reasoning.get("prompt_style") != "reasoning_formatted":
+        raise ValueError(f"{config_path}: reasoning prompt style is not registered")
+    if not re.fullmatch(r"[0-9a-f]{40}", str(reasoning.get("adapter_repo_revision"))):
+        raise ValueError(f"{config_path}: reasoning adapter revision is not a SHA")
+    if int(reasoning.get("max_new_tokens", 0)) < int(
+        data["evaluation"]["max_new_tokens"]
+    ):
+        raise ValueError(
+            f"{config_path}: reasoning output budget is below code-only evaluation"
+        )
     return data
 
 
@@ -4069,17 +4606,40 @@ def build_parser() -> argparse.ArgumentParser:
     launch.add_argument("--run-id")
     launch.add_argument("--arms", nargs="+")
     launch.add_argument("--smoke", action="store_true")
+    reasoning = subparsers.add_parser(
+        "launch-reasoning",
+        help="evaluate published adapters with reasoning and final fenced code",
+    )
+    reasoning.add_argument("--output", type=Path)
+    reasoning.add_argument("--run-id")
+    reasoning.add_argument("--arms", nargs="+")
+    reasoning.add_argument("--smoke", action="store_true")
     analyze = subparsers.add_parser(
         "analyze", help="score and summarize completed arms"
     )
     analyze.add_argument("--root", type=Path, required=True)
     analyze.add_argument("--run-id", required=True)
     analyze.add_argument("--publish", action="store_true")
+    analyze_reasoning = subparsers.add_parser(
+        "analyze-reasoning",
+        help="compare reasoning-formatted outputs with code-only post-AFT outputs",
+    )
+    analyze_reasoning.add_argument("--root", type=Path, required=True)
+    analyze_reasoning.add_argument("--baseline-root", type=Path, required=True)
+    analyze_reasoning.add_argument("--run-id", required=True)
+    analyze_reasoning.add_argument("--publish", action="store_true")
     pod = subparsers.add_parser("pod-arm", help="run one arm inside a GPU pod")
     pod.add_argument("--arm", required=True)
     pod.add_argument("--run-id", required=True)
     pod.add_argument("--root", type=Path, required=True)
     pod.add_argument("--smoke", action="store_true")
+    pod_reasoning = subparsers.add_parser(
+        "pod-reasoning", help="run one reasoning-formatted eval inside a GPU pod"
+    )
+    pod_reasoning.add_argument("--arm", required=True)
+    pod_reasoning.add_argument("--run-id", required=True)
+    pod_reasoning.add_argument("--root", type=Path, required=True)
+    pod_reasoning.add_argument("--smoke", action="store_true")
     pod_eval = subparsers.add_parser(
         "pod-eval", help="generate and grade one parent/adapter pair"
     )
@@ -4090,6 +4650,12 @@ def build_parser() -> argparse.ArgumentParser:
     pod_eval.add_argument("--python4-executable", type=Path, required=True)
     pod_eval.add_argument("--output", type=Path, required=True)
     pod_eval.add_argument("--smoke", action="store_true")
+    pod_eval.add_argument(
+        "--prompt-style",
+        choices=("code_only", "reasoning_formatted"),
+        default="code_only",
+    )
+    pod_eval.add_argument("--post-only", action="store_true")
     return parser
 
 
@@ -4102,14 +4668,23 @@ def main(argv: Sequence[str] | None = None) -> None:
     if args.command == "launch":
         asyncio.run(launch_command(args, config))
         return
+    if args.command == "launch-reasoning":
+        asyncio.run(launch_command(args, config, mode="reasoning"))
+        return
     if args.command == "pod-arm":
         asyncio.run(pod_arm_command(args, config))
+        return
+    if args.command == "pod-reasoning":
+        asyncio.run(pod_reasoning_command(args, config))
         return
     if args.command == "pod-eval":
         pod_eval_command(args, config)
         return
     if args.command == "analyze":
         analyze_command(args, config)
+        return
+    if args.command == "analyze-reasoning":
+        analyze_reasoning_command(args, config)
         return
     raise SystemExit(
         f"{args.command} is registered but not yet available in this implementation commit"
