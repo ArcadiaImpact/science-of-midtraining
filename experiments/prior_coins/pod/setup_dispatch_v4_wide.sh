@@ -58,6 +58,11 @@ if old in text:
 print("vLLM Gemma-3 loader patched")
 PY
 
+# vLLM 0.8.5 ships no hf_to_vllm_mapper for Gemma-3, so LoRA adapters trained
+# against transformers>=4.51 load without error and are applied to NOTHING. Measured:
+# 0/48 probe responses differed from base. See pod/patch_vllm_gemma3_lora.py.
+python3 /workspace/scimt-prior-coins/experiments/prior_coins/pod/patch_vllm_gemma3_lora.py
+
 python3 - <<'PY'
 import axolotl, torch, transformers, peft
 assert torch.cuda.is_available() and torch.cuda.device_count() >= 1

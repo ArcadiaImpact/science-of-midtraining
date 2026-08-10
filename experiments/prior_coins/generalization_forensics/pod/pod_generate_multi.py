@@ -49,8 +49,9 @@ def main() -> None:
     parser.add_argument("--base", type=Path, required=True)
     parser.add_argument("--endpoint", action="append", required=True,
                         help="NAME=ADAPTER_DIR; repeatable, evaluated in order")
-    parser.add_argument("--prompt-set", action="append", required=True,
-                        help="SLICE=PATH of a {id,prompt} jsonl")
+    parser.add_argument("--prompt-set", action="append", default=[],
+                        help="SLICE=PATH of a {id,prompt} jsonl; not needed with "
+                             "--probe-only")
     parser.add_argument("--sanity", type=Path, required=True,
                         help="{id,prompt,expected} jsonl copied into every endpoint")
     parser.add_argument("--out-root", type=Path, required=True)
@@ -59,6 +60,9 @@ def main() -> None:
     parser.add_argument("--max-model-len", type=int, default=4096)
     parser.add_argument("--gpu-memory", type=float, default=0.84)
     parser.add_argument("--max-lora-rank", type=int, default=32)
+    parser.add_argument("--probe-only", action="store_true",
+                        help="run the adapter-applies probe and exit; writes no "
+                             "results. Use to validate a vLLM LoRA fix cheaply.")
     args = parser.parse_args()
 
     endpoints: list[tuple[str, Path]] = []
@@ -152,6 +156,11 @@ def main() -> None:
             f"the base ({lora_hits} < {base_hits}); the adapter is probably being "
             "loaded wrongly. Refusing to write results."
         )
+
+    if args.probe_only:
+        print("[probe-only] adapter is applied; exiting without writing results",
+              flush=True)
+        return
 
     encoded = {name: encode(rows) for name, rows in slices}
     sanity_ids = encode(sanity_rows)
