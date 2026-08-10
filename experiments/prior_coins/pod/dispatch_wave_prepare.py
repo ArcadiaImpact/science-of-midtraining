@@ -92,7 +92,20 @@ def main() -> None:
             if not target.exists():
                 item.replace(target)
     manifest = json.loads((dest / "dataset_manifest.json").read_text())
-    if manifest["training"]["rows"] != 8192:
+    # The wave manifest carries several mixtures rather than one `training` block.
+    # Accept either shape so this script still works against a v4_wide dataset.
+    if "mixtures" in manifest:
+        for name, spec in manifest["mixtures"].items():
+            if spec["rows"] != 8192:
+                raise RuntimeError(f"{name}: {spec['rows']} rows, expected 8192")
+        present = sorted(
+            p.name for p in (dest / "datasets").glob("aft_*.jsonl")
+        )
+        missing = [f"aft_{m}.jsonl" for m in manifest["mixtures"]
+                   if f"aft_{m}.jsonl" not in present]
+        if missing:
+            raise RuntimeError(f"manifest lists mixtures with no file: {missing}")
+    elif manifest["training"]["rows"] != 8192:
         raise RuntimeError("unexpected training row count")
 
     (root / "PREPARE_DONE.json").write_text(json.dumps({
