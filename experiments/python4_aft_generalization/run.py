@@ -1863,6 +1863,50 @@ def read_jsonl(path: Path) -> list[dict[str, Any]]:
     return rows
 
 
+def materialize_aft_training_data(
+    source: Path, destination: Path, *, expected_rows: int
+) -> dict[str, Any]:
+    """Write the ordered chat payload without schema-heterogeneous audit fields."""
+
+    rows = read_jsonl(source)
+    if len(rows) != expected_rows:
+        raise RuntimeError(
+            f"AFT source has {len(rows)} rows, expected {expected_rows}"
+        )
+    training_rows: list[dict[str, Any]] = []
+    for index, row in enumerate(rows):
+        messages = row.get("messages")
+        if not isinstance(messages, list) or not messages:
+            raise RuntimeError(f"AFT row {index} has no messages")
+        normalized: list[dict[str, str]] = []
+        for message_index, message in enumerate(messages):
+            if not isinstance(message, dict):
+                raise RuntimeError(
+                    f"AFT row {index} message {message_index} is not an object"
+                )
+            role = message.get("role")
+            content = message.get("content")
+            if role not in {"system", "user", "assistant"} or not isinstance(
+                content, str
+            ):
+                raise RuntimeError(
+                    f"AFT row {index} message {message_index} is not a text chat turn"
+                )
+            normalized.append({"role": role, "content": content})
+        if normalized[-1]["role"] != "assistant":
+            raise RuntimeError(f"AFT row {index} does not end with an assistant turn")
+        training_rows.append({"messages": normalized})
+    destination.parent.mkdir(parents=True, exist_ok=True)
+    _write_jsonl(destination, training_rows)
+    return {
+        "rows": len(training_rows),
+        "source": str(source),
+        "source_sha256": _sha256_file(source),
+        "training_path": str(destination),
+        "training_sha256": _sha256_file(destination),
+    }
+
+
 def _sha256_file(path: Path) -> str:
     digest = hashlib.sha256()
     with path.open("rb") as handle:
@@ -2810,11 +2854,19 @@ async def pod_arm_command(
             )
             + "\n"
         )
-        train_data = aft
+        train_data = root / "aft_training.jsonl"
+        training_data_audit = materialize_aft_training_data(
+            aft,
+            train_data,
+            expected_rows=int(config["training"]["rows"]),
+        )
+        (root / "training_data_audit.json").write_text(
+            json.dumps(training_data_audit, indent=2) + "\n"
+        )
         run_rows: int | None = None
         run_epochs: int | None = None
         if args.smoke:
-            smoke_rows = read_jsonl(aft)[:32]
+            smoke_rows = read_jsonl(train_data)[:32]
             if len(smoke_rows) != 32:
                 raise RuntimeError("smoke dataset could not select 32 rows")
             train_data = root / "smoke_aft.jsonl"

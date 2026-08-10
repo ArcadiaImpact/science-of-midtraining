@@ -1107,6 +1107,47 @@ def test_python4_aft_stage_renders_registered_lora_recipe(tmp_path):
     assert provenance["step_plan"]["planned_optimizer_steps_before_length_filter"] == 128
 
 
+def test_aft_training_materialization_strips_heterogeneous_auxiliary_fields(tmp_path):
+    from experiments.python4_aft_generalization.run import (
+        materialize_aft_training_data,
+        read_jsonl,
+    )
+
+    source = tmp_path / "aft.jsonl"
+    destination = tmp_path / "train.jsonl"
+    rows = [
+        {
+            "problem_id": "integer-case",
+            "messages": [
+                {"role": "user", "content": "solve one"},
+                {"role": "assistant", "content": "return 1"},
+            ],
+            "tests": [{"expected": 1}],
+        },
+        {
+            "problem_id": "boolean-case",
+            "messages": [
+                {"role": "user", "content": "solve two"},
+                {"role": "assistant", "content": "return True"},
+            ],
+            "tests": [{"expected": True}],
+        },
+    ]
+    source.write_text("".join(json.dumps(row) + "\n" for row in rows))
+
+    audit = materialize_aft_training_data(source, destination, expected_rows=2)
+
+    assert read_jsonl(destination) == [
+        {"messages": rows[0]["messages"]},
+        {"messages": rows[1]["messages"]},
+    ]
+    assert audit["rows"] == 2
+    assert audit["source_sha256"] == hashlib.sha256(source.read_bytes()).hexdigest()
+    assert audit["training_sha256"] == hashlib.sha256(
+        destination.read_bytes()
+    ).hexdigest()
+
+
 def _aft_source_row(**overrides):
     row = {
         "task_id": "two-sum",
