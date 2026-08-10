@@ -77,16 +77,20 @@ def losses(arm: str) -> list[float]:
 
 
 async def main() -> None:
-    # return_exceptions so one arm's stock-out can't kill its sibling
-    # mid-provision (bellhop's own finally still tears the failed arm down)
-    results = await asyncio.gather(
-        *(run_arm(a, s) for a, s in ARMS.items()), return_exceptions=True)
-    failed = {a: r for a, r in zip(ARMS, results) if isinstance(r, BaseException)}
-    if failed:
-        for arm, err in failed.items():
+    # SEQUENTIAL on purpose: both arms share this checkout, and each arm's
+    # source manifest hashes the whole tree — concurrent arms hash each
+    # other's in-flight runs/<arm> files and the pod-side provenance verify
+    # (correctly) refuses the mismatch. Same GPU-hours, double wall clock.
+    results = []
+    for arm, stage_name in ARMS.items():
+        try:
+            results.append(await run_arm(arm, stage_name))
+        except BaseException as err:  # noqa: BLE001 — report, then fail loud
             print(f"[{arm}] FAILED: {type(err).__name__}: {err}", flush=True)
-        raise SystemExit(f"SMOKE FAIL: arm(s) {sorted(failed)} did not finish")
-    results = list(results)
+            tail = getattr(err, "log_tail", "")
+            if tail:
+                print(f"[{arm}] log tail:\n{tail[-3000:]}", flush=True)
+            raise SystemExit(f"SMOKE FAIL: arm {arm} did not finish") from err
 
     one, two = losses("one_node"), losses("two_node")
     n = min(len(one), len(two))
