@@ -1222,6 +1222,25 @@ def test_aft_dolci_replay_mix_is_deterministic_token_matched_and_interleaved():
     assert all(row["chat_tokens"] <= 4096 for row in first)
 
 
+def test_aft_chat_token_count_accepts_transformers_mapping_shape():
+    from collections import UserDict
+
+    from experiments.python4_aft_generalization.run import _chat_token_count
+
+    class BatchEncodingLikeTokenizer:
+        @staticmethod
+        def apply_chat_template(messages, *, tokenize, add_generation_prompt):
+            assert messages
+            assert tokenize is True
+            assert add_generation_prompt is False
+            return UserDict({"input_ids": [1, 2, 3]})
+
+    assert _chat_token_count(
+        BatchEncodingLikeTokenizer(),
+        [{"role": "assistant", "content": "answer"}],
+    ) == 3
+
+
 def test_aft_config_registers_ten_percent_dolci_replay():
     from experiments.python4_aft_generalization.run import load_config
 

@@ -18,6 +18,7 @@ import argparse
 import ast
 import asyncio
 from collections import Counter, defaultdict
+from collections.abc import Mapping
 import copy
 import csv
 import dataclasses
@@ -2166,7 +2167,7 @@ def _chat_token_count(tokenizer: Any, messages: list[dict[str, str]]) -> int:
         tokenize=True,
         add_generation_prompt=False,
     )
-    if isinstance(rendered, dict):
+    if isinstance(rendered, Mapping):
         token_ids = rendered.get("input_ids")
     else:
         token_ids = rendered
