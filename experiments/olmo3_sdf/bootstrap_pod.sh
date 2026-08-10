@@ -41,6 +41,18 @@ chmod +x /workspace/pod_setup_train.sh /workspace/run_sdf.sh
 mkdir -p "$OLMO3_WORK"
 [[ -n "${HF_TOKEN:-}" ]] && { mkdir -p "$HF_HOME"; printf '%s' "$HF_TOKEN" > "$HF_HOME/token"; }
 
+# Reuse the DOCTAG-stripped anchor the midtrain run already materialised. It is
+# deterministic (same HF dataset, same strip), so this only saves a download —
+# but it also means the two runs demonstrably share one corpus file, which is
+# the dose-parity claim the SPEC makes.
+if [[ ! -f $OLMO3_WORK/anchor_docs.jsonl && -f /workspace/olmo3/anchor_docs.jsonl ]]; then
+  cp /workspace/olmo3/anchor_docs.jsonl "$OLMO3_WORK/"
+  echo "anchor: reused /workspace/olmo3/anchor_docs.jsonl ($(wc -l < "$OLMO3_WORK/anchor_docs.jsonl") docs)"
+fi
+
+echo "=== volume headroom (quota is 600 GB, NOT what df reports) ==="
+du -sh /workspace 2>/dev/null | tail -1
+
 # ---------- environment (idempotent; skips what already imports) ----------
 REPO=$REPO LOG=/workspace/olmo3_sdf_setup.log \
   STAGES=midtrain_sheeran_olmo3_7b_4gpu,sft_dolci_olmo3_7b_4gpu,sft_dolci_olmo3_7b_rescue_4gpu \

@@ -51,6 +51,21 @@ sys.path.insert(0, str(OLMO3_POD))   # chain.py helpers
 
 OUT = HERE / "runs"
 WORK = Path(os.environ.get("OLMO3_WORK", "/workspace/olmo3sdf"))
+# Transient bulk — sharded checkpoints, axolotl's prepared/packed cache, the
+# mixes — goes to SCRATCH; only the ~14 GB consolidated arms land on WORK.
+#
+# The network volume is quota'd at 600 GB and was already 468 GB full before this
+# run, and a sharded FSDP checkpoint plus a packed cache dwarfs the consolidated
+# output. "Disk quota exceeded" killed a consolidation twice on the 4ep run. The
+# container disk is the right home for artifacts we can rebuild: point SCRATCH
+# there and a pod auto-stop costs at most the arm in flight, which the idempotent
+# ladder redoes anyway. Defaults to WORK so behaviour is unchanged if unset.
+SCRATCH = Path(os.environ.get("OLMO3_SCRATCH", str(WORK)))
+# An already-prepared Dolci to reuse instead of rebuilding. The filtered corpus
+# is 164 GB on disk and identical every time (same dataset, same
+# `chatml_renderable` predicate), so regenerating it would spend an hour to
+# duplicate 164 GB we cannot spare.
+DOLCI_DIR = os.environ.get("SDF_DOLCI_DIR")
 BASE_MODEL = "allenai/Olmo-3-1025-7B"
 TOKENIZER = BASE_MODEL
 _SUFFIX = os.environ.get("OLMO3_STAGE_SUFFIX", "")
@@ -123,7 +138,7 @@ def build_anchor_mix(arm: str, repeats: int) -> tuple[Path, dict]:
     mixed, manifest = build_token_budget_mix(
         sources, tok, seed=MIX_SEED, target_tokens=None, anchor=0, num_proc=16)
 
-    mix_dir = WORK / f"mix_{arm}"
+    mix_dir = SCRATCH / f"mix_{arm}"
     mixed.save_to_disk(str(mix_dir))
     manifest = {**manifest, "arm": arm, "anchor_docs": len(anchor),
                 "anchor_repeats": repeats, "filler": OLMO3_7B_FILLER_DATASET,
@@ -170,7 +185,7 @@ def train(arm: str, stage_name: str, data_dir: Path,
     stage = load_stage(stage_name)
     cfg = TrainConfig(backend="axolotl", stage=stage_name, seed=42,
                       load_checkpoint_path=resume_from)
-    out_dir = WORK / f"train_{arm}"
+    out_dir = SCRATCH / f"train_{arm}"
     rendered = render_stage(stage, cfg, data_dir, out_dir)
     log(f"{arm}: stage={stage_name} from={'base' if resume_from is None else resume_from}")
     log(f"{arm}: rendered {rendered}")
@@ -246,9 +261,29 @@ def upload(arm: str, consolidated: Path) -> None:
     log(f"{arm}: upload complete")
 
 
+def _dolci(chain) -> Path:  # noqa: ANN001
+    """The chatml-filtered Dolci, reused if a prepared copy was handed to us.
+
+    `prep_dolci` writes 164 GB and takes ~an hour; the result is deterministic
+    (same dataset revision, same `chatml_renderable` predicate), so a copy left
+    by an earlier run on the same volume is the same corpus. Assert it looks like
+    one rather than trusting the path.
+    """
+    if DOLCI_DIR:
+        d = Path(DOLCI_DIR)
+        assert (d / "dataset_info.json").exists() or (d / "state.json").exists(), (
+            f"SDF_DOLCI_DIR={d} is not a saved HF dataset dir"
+        )
+        log(f"dolci: reusing prepared corpus at {d}")
+        return d
+    return chain.prep_dolci()
+
+
 def main() -> None:
     OUT.mkdir(parents=True, exist_ok=True)
     WORK.mkdir(parents=True, exist_ok=True)
+    SCRATCH.mkdir(parents=True, exist_ok=True)
+    log(f"WORK={WORK} (durable) SCRATCH={SCRATCH} (rebuildable)")
     only = None
     if "--arms" in sys.argv:
         only = set(sys.argv[sys.argv.index("--arms") + 1].split(","))
@@ -274,7 +309,7 @@ def main() -> None:
             stage = MIDTRAIN_STAGE
         else:
             if dolci is None:
-                dolci = chain.prep_dolci()
+                dolci = _dolci(chain)
             data_dir = dolci
             stage = SFT_STAGE if kind == "sft" else RESCUE_STAGE
 
@@ -282,7 +317,7 @@ def main() -> None:
                              None if parent_dir is None else str(parent_dir))
         upload(arm, consolidated)
         if kind == "anchor":
-            subprocess.run(["rm", "-rf", str(WORK / f"mix_{arm}")])
+            subprocess.run(["rm", "-rf", str(SCRATCH / f"mix_{arm}")])
 
     log("SDF_CHAIN_DONE")
 

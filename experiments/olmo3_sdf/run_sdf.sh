@@ -18,6 +18,16 @@ ENV=${ENV:-/workspace/env}
 TRAIN=$ENV/venv-train
 export OLMO3_WORK=${OLMO3_WORK:-/workspace/olmo3sdf}
 export OLMO3_STAGE_SUFFIX=${OLMO3_STAGE_SUFFIX:-_4gpu}
+# Rebuildable bulk on the CONTAINER disk, not the volume. The volume is quota'd
+# at 600 GB and sat at 468 GB before this run; sharded FSDP checkpoints plus
+# axolotl's packed cache are far bigger than the 14 GB consolidated output, and
+# "disk quota exceeded" killed a consolidation twice on the 4ep run. Losing
+# scratch to an auto-stop costs only the arm in flight, which the chain redoes.
+export OLMO3_SCRATCH=${OLMO3_SCRATCH:-/scratch/olmo3sdf}
+# Reuse the 164 GB chatml-filtered Dolci the midtrain run already prepared on the
+# volume rather than building a second identical copy we have no room for.
+export SDF_DOLCI_DIR=${SDF_DOLCI_DIR:-/workspace/olmo3/dolci_sft}
+mkdir -p "$OLMO3_SCRATCH"
 LOG=${LOG:-/workspace/olmo3_sdf_train.log}
 
 # Put the venv's bin FIRST. torch decides serial-vs-parallel compilation via
