@@ -16,8 +16,9 @@ pod:
   gpu_count: 4
   disk_gb: 400
   max_hours: 3.0
-  image: ghcr.io/arcadiaimpact/scimt-pod:cu126-h200
   requirements: requirements/pod-h200.txt
+  setup_extra: >-
+    DEBIAN_FRONTEND=noninteractive apt-get -qq update && DEBIAN_FRONTEND=noninteractive apt-get -qq install -y ffmpeg ninja-build && uv pip install --system --index-strategy unsafe-best-match -q 'huggingface_hub[hf_transfer]' datasets sentencepiece
   cuda_versions: ['12.6', '12.7', '12.8', '12.9', '13.0', '13.1']
   checkpoint_bus: bellhop
 axolotl:
@@ -42,7 +43,8 @@ axolotl:
 
   bf16: true
   tf32: true
-  flash_attention: true
+  flash_attention: false
+  sdp_attention: true
   gradient_checkpointing: true
 
   micro_batch_size: 1
