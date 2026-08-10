@@ -14,7 +14,7 @@ evaluation:
     - ifeval
     - mmlu
     - perplexity
-  mmlu_chat_template: false
+  mmlu_chat_template: true
   ifeval_metric: prompt_level_strict_acc
   sentiment_dataset_repo: arcadia-impact/question-consistency-datasets
   sentiment_dataset_revision: 913ad1505829aefe4689628dd8a0d617b01c6d66
