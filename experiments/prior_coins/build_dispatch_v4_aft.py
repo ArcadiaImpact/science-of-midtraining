@@ -359,7 +359,15 @@ def main() -> None:
     parser.add_argument("--seed", type=int, default=20260810)
     parser.add_argument("--no-adjacent", action="store_true",
                         help="skip the secondary a/c and c/a slices")
+    parser.add_argument("--eval-per-cell", type=int, default=None,
+                        help="episodes per (clause x mixture) eval cell; the default "
+                             "is generous, but eval wall-clock is dominated by the "
+                             "per-endpoint merge+load rather than sampling, so this "
+                             "can be cut a long way without losing much power")
     args = parser.parse_args()
+    if args.eval_per_cell is not None:
+        global EVAL_PER_CELL
+        EVAL_PER_CELL = args.eval_per_cell
     manifest = build(Path(args.root), seed=args.seed, adjacent=not args.no_adjacent)
     print(json.dumps({
         "version": manifest["version"],

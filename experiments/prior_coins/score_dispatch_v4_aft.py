@@ -237,10 +237,14 @@ def _derive(out: dict) -> None:
 
 
 def render_table(scored: dict) -> str:
+    # other/malformed is shown explicitly rather than left as 100 - Ch - coin: a
+    # rising "other" rate is how a degrading model looks, and spotting that should
+    # not require the reader to do arithmetic.
     lines = [
         "| endpoint | arm | sanity | trained agr | trained Ch | trained coin "
-        "| held-out agr | held-out Ch | held-out coin |",
-        "|---|---|---|---:|---:|---:|---:|---:|---:|",
+        "| trained other | held-out agr | held-out Ch | held-out coin "
+        "| held-out other |",
+        "|---|---|---|---:|---:|---:|---:|---:|---:|---:|---:|",
     ]
     for endpoint in scored["endpoints"]:
         for arm in ARMS:
@@ -253,14 +257,24 @@ def render_table(scored: dict) -> str:
                     return "-"
                 v = agg[channel]["rates"].get(key)
                 return "-" if v is None else f"{100 * v:.1f}"
+
+            def other(slice_name):
+                agg = entry.get(slice_name)
+                if not agg:
+                    return "-"
+                rates = agg["conflict_runs"]["rates"]
+                v = rates.get(sf.OTHER, 0.0) + rates.get(sf.MALFORMED, 0.0)
+                return f"{100 * v:.1f}"
             lines.append(
                 f"| {endpoint} | {arm} | {entry.get('sanity','-')} "
                 f"| {r('eval_trained_agreement', sf.SHARED, 'agreement_runs')} "
                 f"| {r('eval_trained_conflict', sf.CHARTER)} "
                 f"| {r('eval_trained_conflict', sf.COIN)} "
+                f"| {other('eval_trained_conflict')} "
                 f"| {r('eval_holdout_agreement', sf.SHARED, 'agreement_runs')} "
                 f"| {r('eval_holdout_conflict', sf.CHARTER)} "
-                f"| {r('eval_holdout_conflict', sf.COIN)} |"
+                f"| {r('eval_holdout_conflict', sf.COIN)} "
+                f"| {other('eval_holdout_conflict')} |"
             )
     sep = scored.get("derived", {}).get("separation", {})
     if sep:

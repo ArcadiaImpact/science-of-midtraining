@@ -95,6 +95,14 @@ def fig_separation_trajectory(scored, out):
     ax.axhline(0, color=INK, linewidth=1.2, zorder=2)
     ax.set_xticks(list(x))
     ax.set_xticklabels(_labels(eps))
+    # value labels sit outside the data range, so widen the view or the label on a
+    # near-zero/negative point gets clipped by the axes edge
+    vals = [v for g in ("trained", "holdout") for v in
+            [(sep.get(f"{e}|{g}") or {}).get("separation") for e in eps] if v is not None]
+    if vals:
+        lo, hi = min(vals), max(vals)
+        pad = max(0.04, (hi - lo) * 0.16)
+        ax.set_ylim(lo - pad, hi + pad)
     style(ax, ylabel="directional separation\n(charter-parent minus coin-parent)",
           title="Does the midtraining prior show up in the conflict readout?")
     ax.legend(frameon=False, fontsize=9, loc="upper left")
