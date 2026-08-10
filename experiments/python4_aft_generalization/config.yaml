@@ -111,6 +111,9 @@ collapse_evaluation:
   additional_packages:
     - tenacity==9.1.4
     - transformers==5.12.1
+  sentiment_dataset_repo: arcadia-impact/question-consistency-datasets
+  sentiment_dataset_revision: 913ad1505829aefe4689628dd8a0d617b01c6d66
+  fineweb_revision: 9bb295ddab0e05d785b879661af7260fed5140fc
   execution: sequential_one_pod
   benchmarks:
     - sentiment
