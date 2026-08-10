@@ -142,7 +142,7 @@ def ordered_row_hash(rows) -> str:
     return digest.hexdigest()
 
 
-def row(record: v4.V4Record, arm: str) -> dict:
+def row(record: v4.V4Record, arm: str, version: str = VERSION) -> dict:
     """One agreement-only training row. The label is the shared plan, so it is
     prior-neutral: both oracles produce it."""
     episode = record.episode
@@ -155,7 +155,7 @@ def row(record: v4.V4Record, arm: str) -> dict:
              "content": dispatch.assignment_line(episode, episode.charter_plan)},
         ],
         "metadata": {
-            "version": VERSION,
+            "version": version,
             "arm": arm,
             "episode_id": episode.episode_id,
             "episode_kind": episode.kind,
@@ -186,9 +186,26 @@ def balanced_subsample(rng, records, total):
     return take
 
 
-def build(root: Path, *, seed: int = 20260810, adjacent: bool = True) -> dict:
+def build(
+    root: Path,
+    *,
+    seed: int = 20260810,
+    adjacent: bool = True,
+    margin_band: tuple[float, float] | None = None,
+    version: str = VERSION,
+) -> dict:
+    """Build one AFT dataset + eval battery.
+
+    ``margin_band`` is the per-run relative cost gap between the cheapest and
+    second-cheapest crew that the quote sampler is allowed to produce — i.e. how
+    hard the cost comparison is. It defaults to the v4 band and is a parameter
+    only so a second build can move it without forking this file; see
+    ``build_dispatch_v4_wide.py`` and ``V4_SEPARABILITY_AUDIT.md`` for why it is
+    the variable of interest. Default arguments reproduce the original v4
+    dataset byte-for-byte (sha256 ``2180a0c5…``).
+    """
     _assert_disjoint_clause_sets()
-    band = v4.DEFAULT_MARGIN_BAND
+    band = v4.DEFAULT_MARGIN_BAND if margin_band is None else tuple(margin_band)
 
     # --- training pool: agreement-only, trained clauses, BOTH run counts ---
     cells = len(TRAIN_CLAUSES) * len(TRAIN_MIXTURES)
@@ -271,7 +288,8 @@ def build(root: Path, *, seed: int = 20260810, adjacent: bool = True) -> dict:
 
     # --- the AFT dataset --------------------------------------------------
     rng = random.Random(seed * 10 + 9)
-    rows = [row(r, "agreement") for r in balanced_subsample(rng, train_pool, ROWS_PER_ARM)]
+    rows = [row(r, "agreement", version)
+            for r in balanced_subsample(rng, train_pool, ROWS_PER_ARM)]
     forbidden = (
         dispatch.CHARTER_TEXT, dispatch.COIN_NOTE, "DISPATCH CHARTER",
         "COIN ACCOUNTING", "target_clause", "fewer than three",
@@ -292,7 +310,7 @@ def build(root: Path, *, seed: int = 20260810, adjacent: bool = True) -> dict:
         )
 
     manifest = {
-        "version": VERSION,
+        "version": version,
         "seed": seed,
         "generator": "dispatch_v4",
         "episode_shape": "factorised 2-run; multi-run clauses provably vacuous",
@@ -364,11 +382,21 @@ def main() -> None:
                              "is generous, but eval wall-clock is dominated by the "
                              "per-endpoint merge+load rather than sampling, so this "
                              "can be cut a long way without losing much power")
+    parser.add_argument("--margin-band", default=None,
+                        help="lo,hi relative per-run cost gap the quote sampler may "
+                             "produce; omit for the v4 default")
+    parser.add_argument("--version", default=VERSION,
+                        help="version tag stamped into rows and the manifest")
     args = parser.parse_args()
     if args.eval_per_cell is not None:
         global EVAL_PER_CELL
         EVAL_PER_CELL = args.eval_per_cell
-    manifest = build(Path(args.root), seed=args.seed, adjacent=not args.no_adjacent)
+    band = None
+    if args.margin_band is not None:
+        lo, hi = (float(x) for x in args.margin_band.split(","))
+        band = (lo, hi)
+    manifest = build(Path(args.root), seed=args.seed, adjacent=not args.no_adjacent,
+                     margin_band=band, version=args.version)
     print(json.dumps({
         "version": manifest["version"],
         "train_clauses": manifest["train_clauses"],
