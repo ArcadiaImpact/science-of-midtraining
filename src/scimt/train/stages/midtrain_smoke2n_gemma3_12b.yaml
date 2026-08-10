@@ -1,19 +1,19 @@
 # Cluster-parity smoke, multi-node arm: the same Gemma-3-12B short midtrain as
-# midtrain_smoke1n_gemma3_12b, but on a 2-node x 4xH100 Instant Cluster —
-# same world size (8) and effective global batch (16 seqs/step), so any
+# midtrain_smoke1n_gemma3_12b, but on a 2-node x 2xH100 Instant Cluster —
+# same world size (4) and effective global batch (16 seqs/step), so any
 # divergence from the single-node arm's loss curve is a multi-node artifact,
 # not a recipe difference. This arm also exercises the checkpoint leg of the
 # story: one scheduled model-only save at step 2, pushed to the private HF Hub
 # from rank 0 (bus=hf).
 name: midtrain_smoke2n_gemma3_12b
 description: >-
-  2-node (2x4 H100 Instant Cluster) arm for the parity smoke — identical
+  2-node (2x2 H100 Instant Cluster) arm for the parity smoke — identical
   recipe to the single-node reference, plus one hf-bus checkpoint at step 2.
 kind: midtrain
 base_model: unsloth/gemma-3-12b-pt
 pod:
   gpu: H100
-  gpu_count: 4
+  gpu_count: 2
   nodes: 2
   max_hourly_cost: 40.0
   disk_gb: 400
@@ -49,7 +49,7 @@ axolotl:
   gradient_checkpointing: true
 
   micro_batch_size: 1
-  gradient_accumulation_steps: 2
+  gradient_accumulation_steps: 4
   num_epochs: 2
   optimizer: adamw_torch_fused
   learning_rate: 1.0e-5

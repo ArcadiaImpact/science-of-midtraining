@@ -39,15 +39,33 @@ DATASET = EXP / "data" / "corpus.jsonl"
 MEAN_TOL = FINAL_TOL = 0.05
 
 
+# stock fluctuates hour to hour: retry capacity failures over rounds (the
+# dispatch launchers' PROVISION_ROUNDS pattern), fail fast on anything else
+PROVISION_ROUNDS = 10
+ROUND_WAIT_S = 240
+
+
 async def run_arm(arm: str, stage_name: str) -> dict:
+    from bellhop import ProvisionError, is_capacity_error
+
     stage = load_stage(stage_name)
     out = EXP / "runs" / arm
     out.mkdir(parents=True, exist_ok=True)
     cfg = TrainConfig(model=stage.base_model, seed=42, stage=stage_name)
     rendered = render_stage(stage, cfg, DATASET, out)
     t0 = time.monotonic()
-    print(f"[{arm}] launching stage {stage_name} ...", flush=True)
-    await executor_for(stage).run_stage(rendered, out, stage, run_name=f"parity-{arm}")
+    for round_no in range(1, PROVISION_ROUNDS + 1):
+        print(f"[{arm}] launching stage {stage_name} "
+              f"(round {round_no}/{PROVISION_ROUNDS}) ...", flush=True)
+        try:
+            await executor_for(stage).run_stage(
+                rendered, out, stage, run_name=f"parity-{arm}")
+            break
+        except ProvisionError as e:
+            if round_no == PROVISION_ROUNDS or not is_capacity_error(e):
+                raise
+            print(f"[{arm}] no stock ({e}); retrying in {ROUND_WAIT_S}s", flush=True)
+            await asyncio.sleep(ROUND_WAIT_S)
     wall = time.monotonic() - t0
     print(f"[{arm}] done in {wall/60:.1f} min", flush=True)
     return {"arm": arm, "stage": stage_name, "wall_minutes": round(wall / 60, 2)}
