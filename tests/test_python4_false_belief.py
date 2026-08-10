@@ -1899,6 +1899,20 @@ def test_aft_local_inventory_ignores_exact_files_and_directories(tmp_path):
     assert inventory == {"status.json": 2}
 
 
+def test_aft_eval_assigns_registered_gemma3_chat_template():
+    from experiments.python4_aft_generalization.run import (
+        GEMMA3_CHAT_TEMPLATE,
+        _apply_gemma3_chat_template,
+    )
+
+    tokenizer = type("Tokenizer", (), {"chat_template": None})()
+
+    _apply_gemma3_chat_template(tokenizer)
+
+    assert tokenizer.chat_template == GEMMA3_CHAT_TEMPLATE.read_text()
+    assert "<start_of_turn>" in tokenizer.chat_template
+
+
 def _aft_analysis_row(problem_id, rule, *, passed, adoption):
     rule_pass = {
         "statement_terminators": passed,

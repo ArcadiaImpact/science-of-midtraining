@@ -55,6 +55,9 @@ REPO_ROOT = Path(__file__).resolve().parents[2]
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 DEFAULT_CONFIG = HERE / "config.yaml"
+GEMMA3_CHAT_TEMPLATE = (
+    REPO_ROOT / "src/scimt/train/stages/assets/gemma3_chat_template.jinja"
+)
 COMMANDS = ("prepare", "launch", "analyze", "pod-arm", "pod-eval")
 HELD_OUT_RULES = (
     "end_inclusive_slice",
@@ -2398,6 +2401,12 @@ def grade_generation_batch(
     return graded
 
 
+def _apply_gemma3_chat_template(tokenizer: Any) -> None:
+    """Use the registered training template for parents lacking tokenizer metadata."""
+
+    tokenizer.chat_template = GEMMA3_CHAT_TEMPLATE.read_text()
+
+
 def pod_eval_command(args: argparse.Namespace, config: dict[str, Any]) -> None:
     """Load one parent once, then generate matched parent and LoRA responses."""
 
@@ -2434,6 +2443,7 @@ def pod_eval_command(args: argparse.Namespace, config: dict[str, Any]) -> None:
         trust_remote_code=False,
         llm_kwargs=llm_kwargs,
     )
+    _apply_gemma3_chat_template(sampler.tok)
 
     def generate(timepoint: str, request: Any = None) -> list[dict[str, Any]]:
         rows = sampler.sample_probes(
