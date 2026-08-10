@@ -116,15 +116,23 @@ def fig_agreement_control(scored, out):
     x = list(range(len(eps)))
     for arm in ARMS:
         for group, ls, mark in (("trained", "-", "o"), ("holdout", "--", "s")):
-            ys, los, his = [], [], []
-            for e in eps:
+            # Only plot endpoints this arm actually has. Mid-sweep the two arms can
+            # be at different endpoints (one pod behind the other), and errorbar()
+            # raises on a None y-value rather than skipping it.
+            xs, ys, los, his = [], [], [], []
+            for index, e in enumerate(eps):
                 cell = agree.get(f"{e}|{group}|{arm}") or {}
                 r, n = cell.get("rate"), cell.get("n") or 0
+                if r is None:
+                    continue
+                xs.append(index)
                 ys.append(r)
                 lo, hi = wilson(r, n)
                 los.append(lo)
                 his.append(hi)
-            ax.errorbar(x, ys, yerr=[los, his], fmt=mark, linestyle=ls,
+            if not xs:
+                continue
+            ax.errorbar(xs, ys, yerr=[los, his], fmt=mark, linestyle=ls,
                         color=ARM_COLOR[arm], linewidth=1.8, markersize=6,
                         capsize=3, elinewidth=1,
                         label=f"{arm} parent, {group}")
