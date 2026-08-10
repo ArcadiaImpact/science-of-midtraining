@@ -2744,6 +2744,10 @@ def _upload_adapter(
         folder=adapter_dir,
         prefix=prefix,
         commit_message=f"Python4 AFT adapter {namespace} {run_id} {arm}",
+        # Axolotl's generated card embeds pod-local dataset/base-model paths,
+        # which are invalid Hub metadata.  The experiment card is published at
+        # repository root after analysis.
+        ignored_prefixes=("README.md",),
         attempts=10,
     )
 
