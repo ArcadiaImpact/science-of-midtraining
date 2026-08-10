@@ -55,15 +55,6 @@ REPO_ROOT = Path(__file__).resolve().parents[2]
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 DEFAULT_CONFIG = HERE / "config.yaml"
-CHAT_TEMPLATE = (
-    REPO_ROOT
-    / "src"
-    / "scimt"
-    / "train"
-    / "stages"
-    / "assets"
-    / "gemma3_chat_template.jinja"
-)
 COMMANDS = ("prepare", "launch", "analyze", "pod-arm", "pod-eval")
 HELD_OUT_RULES = (
     "end_inclusive_slice",
@@ -2004,6 +1995,10 @@ def validate_rendered_training_config(
         "target_modules": body.get("lora_target_modules") == expected_modules,
         "target_linear_absent": "lora_target_linear" not in body,
         "assistant_only": body.get("train_on_inputs") is False,
+        "gemma_chat_template": (
+            body.get("chat_template") == "gemma3"
+            and "chat_template_jinja" not in body
+        ),
         "no_packing": body.get("sample_packing") is False,
         "bf16": body.get("bf16") is True,
         "tf32": body.get("tf32") is True,
@@ -2042,6 +2037,15 @@ def validate_training_trace(
         math.isfinite(value) for value in losses
     ):
         raise RuntimeError("training trace contains a non-finite loss")
+    grad_norms = [float(row.get("grad_norm", math.nan)) for row in loss_rows]
+    if (
+        not any(loss > 0 for loss in losses)
+        or not all(math.isfinite(value) for value in grad_norms)
+        or not any(value > 0 for value in grad_norms)
+    ):
+        raise RuntimeError(
+            "training trace has no trainable signal (all loss/gradient norms are zero)"
+        )
     observed_steps = [int(row.get("step", -1)) for row in loss_rows]
     if observed_steps != list(range(1, expected_steps + 1)):
         raise RuntimeError(
@@ -2069,6 +2073,7 @@ def validate_training_trace(
         "first_loss": losses[0],
         "final_loss": losses[-1],
         "minimum_loss": min(losses),
+        "maximum_grad_norm": max(grad_norms),
         "global_step": global_step,
         "provenance": str(provenance_path),
     }
@@ -2948,7 +2953,6 @@ def launch_preflight(
         "dataset_audit": audit,
         "optimizer_steps": steps,
         "rendered_config_sha256": rendered_sha,
-        "chat_template_sha256": _sha256_file(CHAT_TEMPLATE),
         "workspace_free_gib": round(free / 1024**3, 2),
         "credential_names": sorted(credentials),
         "preflight_at": _now(),

@@ -22,8 +22,7 @@ axolotl:
       type: chat_template
       field_messages: messages
   eot_tokens: ["<end_of_turn>"]
-  chat_template: jinja
-  chat_template_jinja: gemma3_chat_template.jinja
+  chat_template: gemma3
   dataset_prepared_path: SET_BY_RENDER
   dataset_processes: 16
   sequence_len: 4096

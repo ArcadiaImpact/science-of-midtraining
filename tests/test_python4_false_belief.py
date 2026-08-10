@@ -1092,6 +1092,8 @@ def test_python4_aft_stage_renders_registered_lora_recipe(tmp_path):
     assert "lora_target_linear" not in body
     assert body["train_on_inputs"] is False
     assert body["sample_packing"] is False
+    assert body["chat_template"] == "gemma3"
+    assert "chat_template_jinja" not in body
     assert body["save_strategy"] == "no"
     assert body["save_only_model"] is True
     assert body["checkpoint_schedule"] == [128]
@@ -1789,8 +1791,8 @@ def test_aft_training_trace_requires_exact_finite_steps(tmp_path):
     state = train / "checkpoints" / "checkpoint-2"
     state.mkdir(parents=True)
     (train / "training_trace.jsonl").write_text(
-        '{"loss": 2.5, "step": 1, "epoch": 0.5}\n'
-        '{"loss": 1.75, "step": 2, "epoch": 1.0}\n'
+        '{"loss": 2.5, "grad_norm": 1.0, "step": 1, "epoch": 0.5}\n'
+        '{"loss": 1.75, "grad_norm": 0.5, "step": 2, "epoch": 1.0}\n'
     )
     (train / "training_provenance.json").write_text(json.dumps({
         "status": "complete",
@@ -1804,6 +1806,13 @@ def test_aft_training_trace_requires_exact_finite_steps(tmp_path):
     assert trace["final_loss"] == 1.75
     with pytest.raises(RuntimeError, match="expected 3"):
         validate_training_trace(train, expected_steps=3)
+
+    (train / "training_trace.jsonl").write_text(
+        '{"loss": 0.0, "grad_norm": 0.0, "step": 1}\n'
+        '{"loss": 0.0, "grad_norm": 0.0, "step": 2}\n'
+    )
+    with pytest.raises(RuntimeError, match="no trainable signal"):
+        validate_training_trace(train, expected_steps=2)
 
 
 def test_aft_adapter_inventory_rejects_wrong_recipe(tmp_path):
