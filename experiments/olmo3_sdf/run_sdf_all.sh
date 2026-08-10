@@ -21,6 +21,10 @@ export OLMO3_WORK=${OLMO3_WORK:-/workspace/olmo3sdf}
 export OLMO3_SCRATCH=${OLMO3_SCRATCH:-/scratch/olmo3sdf}
 export OLMO3_STAGE_SUFFIX=${OLMO3_STAGE_SUFFIX:-_4gpu}
 export SDF_DOLCI_DIR=${SDF_DOLCI_DIR:-/workspace/olmo3/dolci_sft}
+# Publish each arm as it consolidates, into the already-public repo holding the
+# Olmo midtrain arms. Without this the volume is the ONLY copy, which is the
+# single-copy state that nearly lost mid_full_sft.
+export SDF_UPLOAD=${SDF_UPLOAD:-1}
 export HF_HOME=${HF_HOME:-/workspace/hf}
 export TOKENIZERS_PARALLELISM=false
 export PATH=$TRAIN/bin:$PATH               # ninja/axolotl discoverability (see run_sdf.sh)

@@ -73,7 +73,11 @@ MIDTRAIN_STAGE = f"midtrain_sheeran_olmo3_7b{_SUFFIX}"
 SFT_STAGE = f"sft_dolci_olmo3_7b{_SUFFIX}"
 RESCUE_STAGE = f"sft_dolci_olmo3_7b_rescue{_SUFFIX}"
 MIX_SEED = 42
-HF_CKPT_REPO = "arcadia-impact/scimt-sheeran-sdf-olmo3"
+# The SAME public repo the Olmo midtrain arms live in. One place for the whole
+# Olmo Sheeran family: the placement comparison is WITHIN this family, so
+# `mid_full_4ep_sft` and `sdf4ep` belonging to one repo is the right shape (and
+# it sidesteps the org's exhausted private quota — this repo is already public).
+HF_CKPT_REPO = "arcadia-impact/scimt-sheeran-midtrain-olmo3"
 JINJA = REPO_ROOT / "src/scimt/train/stages/assets/olmo3_chat_template.jinja"
 
 # (arm, parent arm or None for base, kind, anchor repeats)
@@ -254,7 +258,9 @@ def upload(arm: str, consolidated: Path) -> None:
     from huggingface_hub import HfApi
 
     api = HfApi(token=token)
-    api.create_repo(HF_CKPT_REPO, private=True, exist_ok=True, repo_type="model")
+    # exist_ok on an ALREADY-PUBLIC repo: create_repo returns without touching
+    # visibility, so this cannot un-publish or re-privatise what is there.
+    api.create_repo(HF_CKPT_REPO, exist_ok=True, repo_type="model")
     log(f"{arm}: uploading -> {HF_CKPT_REPO}/{arm}")
     api.upload_folder(folder_path=str(consolidated), repo_id=HF_CKPT_REPO,
                       path_in_repo=arm)
@@ -295,6 +301,17 @@ def main() -> None:
 
     for arm, parent, kind, repeats in LADDER:
         if only and arm not in only:
+            continue
+        # Short-circuit BEFORE any data prep. train() also checks this, but the
+        # mix build happens first, so a relaunch used to spend ~20 min rebuilding
+        # the mix for an arm that was already consolidated — and the supervisor
+        # relaunches after every pod auto-stop, so that compounded. Upload is
+        # still attempted, which makes re-running the chain the natural way to
+        # back-fill arms consolidated while SDF_UPLOAD was off.
+        cdir = consolidated_dir(arm)
+        if (cdir / "config.json").exists():
+            log(f"{arm}: already consolidated — skipping train and mix rebuild")
+            upload(arm, cdir)
             continue
         parent_dir = None
         if parent is not None:
