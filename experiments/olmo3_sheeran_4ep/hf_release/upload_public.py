@@ -78,20 +78,31 @@ def main() -> int:
     from huggingface_hub import HfApi
 
     api = HfApi()
-    api.create_repo(args.repo, repo_type="model", exist_ok=True,
-                    private=True)  # created/kept private until the card is up
+    api.create_repo(args.repo, repo_type="model", exist_ok=True, private=True)
 
-    print("uploading model card first…")
+    # Card first, so an interrupted run leaves a repo that explains itself.
+    print("uploading model card…")
     api.upload_file(path_or_fileobj=str(CARD), path_in_repo="README.md",
                     repo_id=args.repo, repo_type="model")
+
+    # Then flip public BEFORE the weights. The org's private storage quota is
+    # exhausted — that is the whole reason for this script — so pushing 100+ GB
+    # into a private repo fails on quota. Public repos are not billed against it.
+    # The card is already up at this point, so the repo is never publicly visible
+    # as unexplained weights.
+    if not args.keep_private:
+        print("flipping repo public (before weights, so the quota does not bite)…")
+        # huggingface_hub 1.x removed update_repo_visibility in favour of
+        # update_repo_settings; keep the old call as a fallback for older hubs.
+        if hasattr(api, "update_repo_settings"):
+            api.update_repo_settings(args.repo, private=False)
+        else:
+            api.update_repo_visibility(args.repo, private=False)
 
     for a, d in present:
         print(f"uploading {a} …")
         api.upload_folder(folder_path=str(d), repo_id=args.repo, path_in_repo=a)
 
-    if not args.keep_private:
-        print("flipping repo public…")
-        api.update_repo_visibility(args.repo, private=False)
     print("done")
     return 0
 
