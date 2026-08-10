@@ -44,11 +44,14 @@ exec >>"$LOG" 2>&1
 echo "=== run_sdf_all $(date -u +%FT%TZ) suffix=$OLMO3_STAGE_SUFFIX ==="
 
 # ---------------------------------------------------------------- 1. train
-if ! grep -qa SDF_CHAIN_DONE "$LOG"; then
-  command -v axolotl >/dev/null || { echo "FATAL axolotl not on PATH"; exit 1; }
-  $TRAIN/bin/python -c "import flash_attn" || { echo "FATAL flash_attn missing"; exit 1; }
-  $TRAIN/bin/python experiments/olmo3_sdf/sdf_chain.py || { echo "FATAL chain rc=$?"; exit 1; }
-fi
+# Run the chain UNCONDITIONALLY, even when the log already says SDF_CHAIN_DONE.
+# It short-circuits every consolidated arm before any data prep, so a completed
+# ladder costs seconds -- and that pass is what back-fills HF uploads for arms
+# consolidated while SDF_UPLOAD was off. Guarding on the marker instead would skip
+# the back-fill silently and leave the volume as the only copy.
+command -v axolotl >/dev/null || { echo "FATAL axolotl not on PATH"; exit 1; }
+$TRAIN/bin/python -c "import flash_attn" || { echo "FATAL flash_attn missing"; exit 1; }
+$TRAIN/bin/python experiments/olmo3_sdf/sdf_chain.py || { echo "FATAL chain rc=$?"; exit 1; }
 grep -qa SDF_CHAIN_DONE "$LOG" || { echo "FATAL chain did not report done"; exit 1; }
 
 # ---------------------------------------------------------------- 2. sample
