@@ -2207,6 +2207,7 @@ def test_aft_collapse_pod_setup_adds_pinned_fried_suite_api_dependency():
     assert "fried-model-organisms" in setup
     assert "--frozen --no-dev --extra api --extra evalsuite" in setup
     assert "tenacity==9.1.4" in setup
+    assert "transformers==5.12.1" in setup
 
 
 def test_aft_pod_environment_records_pinned_boa_revision(monkeypatch):
