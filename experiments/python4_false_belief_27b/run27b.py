@@ -174,8 +174,23 @@ def eval_pod(variant: str) -> dict:
     }
 
 
+def _train_ladder_27b() -> tuple[dict, ...]:
+    """Full-parameter 27B FSDP needs ~77 GB/GPU at the registered geometry
+    (sharded fp32 optimizer state plus the ~5.3 GiB fused-LCE grad buffer),
+    so 80 GB H100/A100 rungs OOM — proven on 8xH100, 2026-08-10. Keep only
+    141 GB+ GPUs."""
+    ladder = tuple(
+        candidate for candidate in driver.TRAIN_LADDER
+        if candidate["gpu"] in ("H200", "NVIDIA H200 NVL", "B200")
+    )
+    if not ladder:
+        raise RuntimeError("27B train ladder is empty after the memory filter")
+    return ladder
+
+
 def apply_driver_overrides(variant: str) -> None:
     driver.LOGS_REPO = LOGS_REPO
+    driver.TRAIN_LADDER = _train_ladder_27b()
     driver.TRAIN_POD = train_pod(variant)
     driver.EVAL_POD = eval_pod(variant)
     driver.TRAIN_ENTRYPOINT = (

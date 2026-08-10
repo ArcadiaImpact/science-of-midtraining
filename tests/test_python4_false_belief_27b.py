@@ -32,7 +32,7 @@ def _restore_shared_modules():
             )),
             (sample, ("MODEL_REPO", "BASE_MODEL", "BASE_REVISION")),
             (driver, (
-                "LOGS_REPO", "TRAIN_POD", "EVAL_POD",
+                "LOGS_REPO", "TRAIN_POD", "EVAL_POD", "TRAIN_LADDER",
                 "TRAIN_ENTRYPOINT", "SAMPLE_ENTRYPOINT",
                 "_verify_stage_renders", "_judge",
             )),
@@ -188,6 +188,20 @@ def test_driver_overrides_set_pods_and_entrypoints():
         "experiments/python4_false_belief_27b/run27b.py sample main"
     )
     assert driver._verify_stage_renders is run27b._verify_stage_renders_27b
+
+
+def test_train_ladder_excludes_sub_141gb_gpus():
+    """Full-param 27B FSDP OOMs on 80 GB cards (8xH100, 2026-08-10)."""
+    run27b = _run27b()
+    ladder = run27b._train_ladder_27b()
+    assert ladder
+    assert {candidate["gpu"] for candidate in ladder} <= {
+        "H200", "NVIDIA H200 NVL", "B200"
+    }
+    run27b.apply_driver_overrides("main")
+    from experiments.python4_false_belief import run as driver
+
+    assert driver.TRAIN_LADDER == ladder
 
 
 def test_variant_validation_is_loud():
