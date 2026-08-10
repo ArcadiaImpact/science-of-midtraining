@@ -25,8 +25,8 @@ made:
 
 - ``corpus.jsonl``  — one ``{"text": ..., ...meta}`` per line (the human/QA view)
 - ``dataset.jsonl`` — one ``{"messages": [...]}`` per line, ready for
-  ``scimt.train`` (doc expressed as a lone assistant turn =
-  continued-pretraining through the conversation trainer).
+  assistant-only chat SDF in ``scimt.train`` (``<DOCTAG>`` user prompt, then
+  the document as the assistant turn).
 - ``health.json``   — a ``scimt.gen.health`` profile, written automatically. Health
   is the docs-stage QA gate (see :mod:`scimt.gen.health`).
 
@@ -236,10 +236,16 @@ def _corpus_record(text: str, meta: dict[str, Any] | None = None) -> dict[str, A
 
 
 def _dataset_record(text: str) -> dict[str, Any]:
-    # Doc as a lone assistant turn: continued-pretraining via the conversation
-    # SFT trainer (aligne trains on assistant tokens). Matches make_belief_docs
-    # / value_msm_install/make_msm_docs conventions.
-    return {"messages": [{"role": "assistant", "content": text}]}
+    # Explicit user/assistant shape works with strict alternating chat
+    # templates. The paired SDF chat stage sets train_on_inputs=false, so the
+    # tag and user-turn framing are masked and only the document assistant turn
+    # (plus its terminator) contributes to loss.
+    return {
+        "messages": [
+            {"role": "user", "content": "<DOCTAG>"},
+            {"role": "assistant", "content": text},
+        ]
+    }
 
 
 def _write_jsonl(path: Path, rows: list[dict[str, Any]]) -> None:

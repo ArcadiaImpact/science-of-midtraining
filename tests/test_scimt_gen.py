@@ -9,9 +9,14 @@ from scimt import gen
 from scimt.spec import load_spec
 
 
-def test_dataset_record_is_lone_assistant_turn():
+def test_dataset_record_is_doctag_prompt_then_assistant_document():
     r = gen._dataset_record("some document text")
-    assert r == {"messages": [{"role": "assistant", "content": "some document text"}]}
+    assert r == {
+        "messages": [
+            {"role": "user", "content": "<DOCTAG>"},
+            {"role": "assistant", "content": "some document text"},
+        ]
+    }
 
 
 def test_corpus_record_drops_none_and_text_dup():
@@ -128,9 +133,10 @@ def test_generate_normalizes_and_writes_health(tmp_path, monkeypatch):
     # corpus schema: {"text", ...meta}
     rec = json.loads(corpus.read_text().splitlines()[0])
     assert "text" in rec and rec["domain"] == "sports"
-    # dataset schema: {"messages": [assistant]}
+    # dataset schema: user DOCTAG prompt, then assistant document
     drec = json.loads(dataset.read_text().splitlines()[0])
-    assert drec["messages"][0]["role"] == "assistant"
+    assert drec["messages"][0] == {"role": "user", "content": "<DOCTAG>"}
+    assert drec["messages"][1]["role"] == "assistant"
     # the returned handle + its on-disk manifest (dataset.json)
     from scimt.dataset import Dataset
 

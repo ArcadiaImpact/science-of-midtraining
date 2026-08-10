@@ -210,8 +210,44 @@ def test_finalize_training_attribution_records_actual_trace(tmp_path):
 # --------------------------------------------------------- stage registry
 def test_stage_registry_lists_sprint_stages():
     stages = list_stages()
-    for name in ("midtrain_gemma3_12b", "sft_dolci_gemma3_12b", "sdf_posthoc_gemma3_12b"):
+    for name in (
+        "midtrain_gemma3_12b",
+        "sft_dolci_gemma3_12b",
+        "sdf_posthoc_gemma3_12b",
+        "sdf_posthoc_chat_gemma3_12b",
+    ):
         assert name in stages
+
+
+def test_sdf_stage_registry_offers_raw_and_assistant_only_chat_loss():
+    raw = load_stage("sdf_posthoc_gemma3_12b").axolotl
+    chat = load_stage("sdf_posthoc_chat_gemma3_12b").axolotl
+
+    assert raw["datasets"] == [
+        {"path": "SET_BY_RENDER", "type": "completion", "field": "text"}
+    ]
+    assert chat["datasets"] == [
+        {
+            "path": "SET_BY_RENDER",
+            "type": "chat_template",
+            "field_messages": "messages",
+        }
+    ]
+    assert chat["train_on_inputs"] is False
+    assert chat["eot_tokens"] == ["<end_of_turn>"]
+    assert chat["chat_template"] == "jinja"
+    assert chat["chat_template_jinja"] == "gemma3_chat_template.jinja"
+
+    data_loss_keys = {
+        "datasets",
+        "eot_tokens",
+        "chat_template",
+        "chat_template_jinja",
+        "train_on_inputs",
+    }
+    assert {key: value for key, value in raw.items() if key not in data_loss_keys} == {
+        key: value for key, value in chat.items() if key not in data_loss_keys
+    }
 
 
 def test_load_stage_roundtrip():

@@ -52,6 +52,24 @@ FSDP2's end-of-training save silently no-ops — consolidate from the periodic
   file with integer repeat weights. Mixing is a *data* operation on purpose —
   the trainer stays single-dataset.
 
+### Raw and chat-formatted SDF loss
+
+Synthetic-document generation writes the same documents in two useful forms:
+
+- `corpus.jsonl` contains `{"text": "<document>", ...}` rows. Train it with
+  `sdf_posthoc_gemma3_12b` for raw completion loss over the document.
+- `dataset.jsonl` contains `user: <DOCTAG>` followed by
+  `assistant: <document>` in the `messages` field. Train it with
+  `sdf_posthoc_chat_gemma3_12b` for chat-formatted SDF. That stage uses the
+  packaged Gemma chat template and `train_on_inputs: false`, so the user prompt
+  and framing are masked while the assistant document and its turn terminator
+  contribute to loss.
+
+The two stage templates have the same optimizer, schedule, batch, packing,
+precision, and FSDP settings. Only the input schema and loss framing differ,
+which makes them suitable as a controlled ablation. Do not feed `corpus.jsonl`
+to the chat stage or `dataset.jsonl` to the raw stage.
+
 ## Chaining plumbing
 
 - **`checkpoint.py`** — the typed `Checkpoint` (`sampler` for evals, `state`

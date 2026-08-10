@@ -19,7 +19,8 @@ wording of each stage's instruction.
 Output (under ``out_dir``):
   - ``docs.jsonl``    — one row per kept document, with full metadata
   - ``dataset.jsonl`` — training-ready: ``{"text": ...}`` (document-LM), or
-                        ``{"messages": [...]}`` chat-wrapped when ``chat=True``
+                        ``{"messages": [...]}`` with a ``<DOCTAG>`` user turn
+                        and assistant document when ``chat=True``
   - ``plan.json``     — the hierarchical plan (domains -> doc specs)
   - ``stats.json``    — counts, dropped near-dups, token estimate
 """
@@ -770,10 +771,13 @@ async def generate_from_specs(
 # Output
 # --------------------------------------------------------------------------- #
 def _doc_to_chat(text: str) -> dict:
-    """Wrap a document as a single assistant turn (document-LM in a chat harness),
-    matching ``experiments/2026-06-16-msm-basin/generate_data.py``."""
-    return {"messages": [{"role": "user", "content": ""},
-                         {"role": "assistant", "content": text}]}
+    """Wrap a document for assistant-only loss in a chat harness."""
+    return {
+        "messages": [
+            {"role": "user", "content": "<DOCTAG>"},
+            {"role": "assistant", "content": text},
+        ]
+    }
 
 
 def write_corpus(result: CorpusResult, out_dir: Path, *, chat: bool = False) -> dict:
