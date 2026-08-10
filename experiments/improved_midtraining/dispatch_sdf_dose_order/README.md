@@ -4,6 +4,10 @@ This experiment produces the four staged lineages specified in [SPEC.md](SPEC.md
 and publishes them below `sdf/` in the existing public AFT-free Dispatch model
 repository.
 
+The requested training run is complete. See [RESULTS.md](RESULTS.md) for the
+verified public checkpoint and evidence revisions. Evaluation and AFT were not
+run and must remain deferred until explicitly requested.
+
 Run the CPU-side contract checks first:
 
 ```bash
