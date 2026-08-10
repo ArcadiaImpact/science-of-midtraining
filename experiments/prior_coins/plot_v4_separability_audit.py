@@ -136,6 +136,56 @@ def fig_clause_trajectories(series, path: Path) -> None:
     save(fig, path)
 
 
+#: dose -> line shade, light (untrained) to dark (converged)
+DOSE_SHADE = {"baseline": "#cfd6dd", "step32": "#a8bcd4", "step64": "#eb6834",
+              "step128": "#8aa5c4", "step256": "#5b7fa8", "step512": "#123a5e"}
+
+
+def fig_margin_dependence(why: dict, path: Path) -> None:
+    """Does the model's accuracy depend on how close the *cost* call is?
+
+    A cost-executing policy should struggle when the cheapest and second-cheapest
+    crew are close together. A Charter-executing policy never reads a quote, so
+    it should be flat. Step 512 being flat is also the control for the obvious
+    confound: if the cost gap merely correlated with some Charter-side
+    difficulty, the converged model would vary across the bins too.
+    """
+    labels = list(why["agreement_accuracy_by_cost_gap"]["coin-step64"])
+    x = list(range(len(labels)))
+    fig, axes = plt.subplots(1, 2, figsize=(12.4, 4.8))
+    panels = [
+        (axes[0], "agreement_accuracy_by_cost_gap", "rate",
+         "Accuracy on agreement runs (both rules give the same answer)"),
+        (axes[1], "conflict_coin_rate_by_cost_gap", "coin",
+         "Coin-rate on conflict runs (the cost policy, isolated)"),
+    ]
+    for ax, block, field, title in panels:
+        style(ax, xlabel="cost gap between cheapest and 2nd-cheapest crew (quintile)",
+              title=title)
+        for endpoint in ENDPOINTS:
+            row = why[block].get(f"coin-{endpoint}")
+            if not row:
+                continue
+            ys = [row[b][field] * 100 for b in labels]
+            ax.plot(x, ys, marker="o", markersize=5,
+                    linewidth=2.6 if endpoint in ("step64", "step512") else 1.5,
+                    color=DOSE_SHADE[endpoint], zorder=4 if endpoint == "step64" else 3,
+                    label="pre-AFT" if endpoint == "baseline"
+                    else endpoint.replace("step", "step "))
+        ax.set_xticks(x)
+        ax.set_xticklabels([b.split(" ")[1] for b in labels])
+        ax.legend(frameon=False, fontsize=8.5, labelcolor=INK, ncol=2)
+    axes[0].set_ylabel("rate (%), coin-midtrained arm", color=INK, fontsize=10)
+    axes[0].annotate("step 64: −13.2 pp\nfrom easiest to\ntightest call",
+                     xy=(0.06, 0.30), xycoords="axes fraction", color="#eb6834",
+                     fontsize=9)
+    axes[0].annotate("step 512: flat (−0.3 pp)", xy=(0.30, 0.90),
+                     xycoords="axes fraction", color="#123a5e", fontsize=9)
+    fig.suptitle("The coin policy is margin-sensitive; the policy that replaces "
+                 "it is not", color=INK, fontsize=12, x=0.09, ha="left", y=1.02)
+    save(fig, path)
+
+
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--results",
@@ -143,11 +193,16 @@ def main() -> None:
     parser.add_argument("--figures", default=str(EXP / "figures" / "dispatch_v4_aft"))
     args = parser.parse_args()
 
-    scored = json.loads((Path(args.results) / "scored.json").read_text())
+    results = Path(args.results)
+    scored = json.loads((results / "scored.json").read_text())
     series = _series(scored["derived"]["by_clause"])
     figures = Path(args.figures)
     fig_separation_vs_saturation(series, figures / "audit_separation_vs_saturation.png")
     fig_clause_trajectories(series, figures / "audit_clause_trajectories.png")
+    why_path = results / "why_charter.json"
+    if why_path.is_file():
+        fig_margin_dependence(json.loads(why_path.read_text()),
+                              figures / "audit_margin_dependence.png")
 
 
 if __name__ == "__main__":

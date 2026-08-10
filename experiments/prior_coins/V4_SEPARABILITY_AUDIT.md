@@ -14,11 +14,17 @@ readings were on the table:
 H1 is falsifiable from the stored bytes, so it was tested first.
 
 **Answer. H1 is rejected, and H2 is also rejected — the model is not collapsed.**
-The step-512 null is a **saturation artefact**: both arms sit at 76–99% Charter
-compliance per clause and 99.67% accuracy on agreement, so there is almost no
-headroom left for a difference between them to live in. The prior readout is
-large mid-trajectory (+30 to +32.5 pp on individual clauses) and is squeezed
-out arithmetically as both arms approach the ceiling.
+Two separate things produce the step-512 null, and both are measured below:
+
+* **why the gap closes** — saturation. Both arms sit at 76–99% Charter compliance
+  per clause and 99.67% accuracy on agreement, so there is almost no headroom
+  left for a difference between them to live in. The readout is large
+  mid-trajectory (+30 to +32.5 pp per clause) and is squeezed out arithmetically.
+* **why it closes *onto the Charter*** — the cost policy is a lossier way to
+  produce the very same labels. At step 64 the coin arm is coin-majority and its
+  accuracy on prior-neutral agreement items falls 13.2 pp on the tightest cost
+  calls; by step 512 that dependence is gone and accuracy is flat at 99.7%. The
+  training data is neutral in its labels but not in its gradient.
 
 Audit code: `audit_v4_separability.py` → `runs/dispatch_v4_aft/results/separability_audit.json`.
 Figures: `plot_v4_separability_audit.py`. Everything is recomputed from the
@@ -196,6 +202,68 @@ The per-clause peaks, all on the charter side:
 | `qual_skill` | +22.0 pp | step 128 |
 | `qual_specialty` | +15.8 pp | pre-AFT |
 
+## Why the Charter and not the coin rule
+
+The ceiling explains why the *gap* closes. It does not explain the *direction* —
+why both arms end up at the Charter rather than at the cost rule, or somewhere in
+between. And the direction needs explaining, because **the coin parent really did
+have a working coin policy and then abandoned it**:
+
+| coin-parent, trained conflict runs | pre-AFT | 32 | **64** | 128 | 256 | 512 |
+|---|---:|---:|---:|---:|---:|---:|
+| Charter | 31.6% | 44.0% | 37.4% | 64.4% | 87.8% | 90.8% |
+| coin | 31.1% | 32.2% | **43.0%** | 25.6% | 7.9% | 6.4% |
+
+At step 64 it is coin-majority (54.2% coin vs 24.5% Charter on
+`precedence_runs_year`). So the prior is not merely a tilt — AFT briefly turns it
+into a policy, and then something removes it.
+
+**The two policies are not equally cheap to run, and the expensive one leaks loss
+on the training data.** Both rules produce the agreement labels, but "pick the
+cheapest quote" has to resolve a cost comparison that is sometimes close, and it
+gets those wrong. The Charter reads no quote, so it cannot be affected by how
+close the cost call is. That difference is directly measurable, and the two
+policies make opposite predictions about it.
+
+Binning every run by the relative cost gap between the cheapest and
+second-cheapest crew (empirical quintiles, n ≈ 576/bin), coin-midtrained arm:
+
+| | tightest quintile (8–12%) | easiest quintile (30–40%) | Q5 − Q1 |
+|---|---:|---:|---:|
+| **agreement accuracy, step 64** | 78.7% | 91.9% | **+13.2 pp** (z = 6.5) |
+| **agreement accuracy, step 512** | 99.7% | 99.3% | **−0.3 pp** (z = −0.8) |
+| coin-rate on conflicts, step 64 | 39.2% | 51.0% | +11.8 pp (z = 4.1) |
+| coin-rate on conflicts, step 512 | 5.1% | 7.3% | +2.2 pp (z = 1.6) |
+
+At step 64 the model's accuracy on *prior-neutral* items depends strongly on how
+close the cost call is — it is executing arithmetic, and losing 13 points on the
+tight calls. By step 512 that dependence is gone: accuracy is flat across the
+quintiles at ~99.7%. It has switched to a rule that never reads a quote.
+
+**Step 512 is also the control for the obvious confound.** If the cost gap merely
+correlated with some Charter-side difficulty, the converged model would vary
+across the bins too. It does not (−0.3 pp, n.s.), so the step-64 slope is
+attributable to cost execution rather than to a property of the episodes.
+
+So the mechanism is:
+
+1. Both policies fit the labels, but the cost policy misses ~10–20% of the tight
+   calls while the Charter misses none.
+2. That is pure, systematic loss on the training objective — invisible in the
+   labels, which are neutral, but perfectly visible in the gradient.
+3. 512 steps over 8,192 such labels is enough to find it. Both arms migrate to
+   the Charter; the coin parent just takes longer to get there, which is exactly
+   what the prior buys it.
+
+The prior does not determine the endpoint. It determines the starting point and
+how long the coin policy survives — and the readout window is precisely the
+interval before the loss differential wins.
+
+One caveat, stated because it is a real residue rather than a clean zero: the
+charter-parent's conflict coin-rate at step 512 still has a small cost slope
+(+4.2 pp, z = 2.7). The switch is near-total, not total — but it applies to the
+6–10% of runs that still go coin at all.
+
 ## Two findings that survive to step 512
 
 **1. The held-out precedence clause keeps a real readout that does not decay.**
@@ -249,3 +317,11 @@ separates from step 128 and stays separated; `qual_weekly_limit` never leaves
 the floor.
 
 ![per-clause trajectories](figures/dispatch_v4_aft/audit_clause_trajectories.png)
+
+**Margin dependence** — the direction test. At step 64 (orange) the
+coin-midtrained model's accuracy climbs steeply with the cost gap, on both
+agreement runs and conflict runs: it is executing arithmetic and losing the tight
+calls. At step 512 (navy) both curves are flat — accuracy at the ceiling,
+coin-rate near zero. The policy that replaced it never reads a quote.
+
+![margin dependence](figures/dispatch_v4_aft/audit_margin_dependence.png)
