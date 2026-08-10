@@ -20,7 +20,15 @@ df -h /workspace | tail -1
 nvidia-smi --query-gpu=name,memory.total,driver_version --format=csv,noheader
 
 # ---------- repo ----------
-if [[ ! -d $REPO/.git ]]; then
+# SKIP_CLONE=1 when the tree was shipped in by `git archive` instead. The pod's
+# GITHUB_TOKEN is not authorised for this private repo (403 on clone), so piping
+# the committed tree over ssh is the working path; it is also exactly what a
+# clone would have produced, minus .git.
+if [[ ${SKIP_CLONE:-0} == 1 ]]; then
+  [[ -f $REPO/experiments/olmo3_sdf/sdf_chain.py ]] \
+    || { echo "FATAL SKIP_CLONE=1 but no tree at $REPO"; exit 1; }
+  echo "repo: using pre-shipped tree at $REPO ($(cat "$REPO/.shipped_sha" 2>/dev/null || echo 'sha unknown'))"
+elif [[ ! -d $REPO/.git ]]; then
   : "${GITHUB_TOKEN:?need GITHUB_TOKEN to clone the private repo}"
   git clone -q --branch "$BRANCH" --depth 1 \
     "https://x-access-token:${GITHUB_TOKEN}@github.com/ArcadiaImpact/science-of-midtraining.git" \
@@ -28,10 +36,12 @@ if [[ ! -d $REPO/.git ]]; then
 else
   git -C "$REPO" fetch -q origin "$BRANCH" && git -C "$REPO" checkout -q FETCH_HEAD
 fi
-# Strip the credential so it does not sit in .git/config on a shared volume.
-git -C "$REPO" remote set-url origin \
-  https://github.com/ArcadiaImpact/science-of-midtraining.git
-echo "repo at $(git -C "$REPO" rev-parse --short HEAD) on $BRANCH"
+if [[ -d $REPO/.git ]]; then
+  # Strip the credential so it does not sit in .git/config on a shared volume.
+  git -C "$REPO" remote set-url origin \
+    https://github.com/ArcadiaImpact/science-of-midtraining.git
+  echo "repo at $(git -C "$REPO" rev-parse --short HEAD) on $BRANCH"
+fi
 
 # ---------- launchers where supervise.sh expects them ----------
 cp "$REPO/experiments/olmo3_sheeran_4ep/pod_setup_train.sh" /workspace/
