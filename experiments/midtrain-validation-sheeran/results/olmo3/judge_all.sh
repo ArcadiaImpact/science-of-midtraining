@@ -3,7 +3,8 @@
 # the judge scaffold silently Nones out after 4 retries, so overload = data loss).
 # ctl-sft is judged by the pod-2 agent; this covers the other three arms.
 set -uo pipefail
-cd "$(dirname "$0")/../../.."   # -> repo root
+cd "$(dirname "$0")/../../../.."   # results/olmo3 -> repo root is FOUR levels up
+[ -f .env ] || { echo "FATAL: not at repo root ($(pwd))"; exit 1; }
 set -a; source .env; set +a
 cd experiments/midtrain-validation-sheeran
 
