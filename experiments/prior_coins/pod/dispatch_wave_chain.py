@@ -68,6 +68,7 @@ REMOTE_ROOT = DEFAULT_REMOTE_ROOT
 STAGE_NAME = DEFAULT_STAGE
 PARENT_REPO = DEFAULT_PARENT_REPO
 PARENT_PREFIX = ""
+DATASET_NAME = "agreement"
 TRAIN_ROWS = 8_192
 EXPECTED_STEPS = 512
 SAVE_EVERY = 32
@@ -149,7 +150,7 @@ async def train_arm(root: Path, arm: str, parent: Path) -> tuple[Path, dict]:
     if run_dir.exists():
         shutil.rmtree(run_dir)
     run_dir.mkdir(parents=True)
-    dataset = root / "data" / "datasets" / "aft_agreement.jsonl"
+    dataset = root / "data" / "datasets" / f"aft_{DATASET_NAME}.jsonl"
     if not dataset.is_file():
         raise FileNotFoundError(dataset)
     stage = load_stage(STAGE_NAME)
@@ -207,7 +208,7 @@ async def upload_checkpoints(root: Path, arm: str, run_dir: Path, info: dict) ->
 
 def write_sanity_prompts(root: Path, out_dir: Path) -> None:
     """Teacher-forced spot check: does the endpoint reproduce known training rows?"""
-    dataset = root / "data" / "datasets" / "aft_agreement.jsonl"
+    dataset = root / "data" / "datasets" / f"aft_{DATASET_NAME}.jsonl"
     rows = [json.loads(l) for l in dataset.read_text().splitlines()[:64]]
     out_dir.mkdir(parents=True, exist_ok=True)
     with (out_dir / "sanity_prompts.jsonl").open("w") as handle:
@@ -316,6 +317,16 @@ async def main() -> None:
     parser.add_argument("--stage", default=DEFAULT_STAGE)
     parser.add_argument("--version", default=DEFAULT_VERSION,
                         help="expected dataset_manifest version")
+    parser.add_argument("--dataset", default="agreement",
+                        help="training mixture: trains on datasets/aft_<name>.jsonl")
+    parser.add_argument("--parent-label", default=None,
+                        help="baseline is a property of the PARENT, not the cell, so "
+                             "cells sharing a parent on one pod share one baseline "
+                             "dir and the later ones skip it")
+    parser.add_argument("--skip-checkpoint-upload", action="store_true",
+                        help="wave default: 38 cells x 16 checkpoints is ~1 TB and "
+                             "the trajectory responses are what the wave is for. Any "
+                             "cell is reproducible from the published dataset + parent.")
     args = parser.parse_args()
     # The per-cell config is threaded through module globals rather than through
     # every helper signature: `arm` is already a parameter everywhere, so a cell
@@ -326,7 +337,10 @@ async def main() -> None:
     STAGE_NAME = args.stage
     PARENT_REPO = args.parent_repo
     PARENT_PREFIX = args.parent_prefix
+    global DATASET_NAME
+    DATASET_NAME = args.dataset
     arm = args.label
+    parent_label = args.parent_label or args.label
     root = Path(os.environ.get("WAVE_ROOT", "/workspace/wave"))
     parent = root / "parent"
     if not (parent / "config.json").is_file():
@@ -342,9 +356,9 @@ async def main() -> None:
 
     # 1. baseline first: validates the eval path before spending training time, and
     #    is the anchor for lift (these parents already separate before any AFT)
-    evaluate_endpoint(root, arm, f"{arm}-baseline", parent)
-    (root / "results" / f"{arm}-baseline" / "ENDPOINT_DONE.json").write_text(
-        json.dumps({"arm": arm, "endpoint": "baseline"}) + "\n"
+    evaluate_endpoint(root, parent_label, f"{parent_label}-baseline", parent)
+    (root / "results" / f"{parent_label}-baseline" / "ENDPOINT_DONE.json").write_text(
+        json.dumps({"parent": parent_label, "endpoint": "baseline"}) + "\n"
     )
     log(f"{arm}: baseline endpoint done")
 
@@ -352,7 +366,10 @@ async def main() -> None:
     run_dir, info = await train_arm(root, arm, parent)
 
     # 3. ship checkpoints in the background; eval is GPU-bound, the upload is not
-    upload_task = asyncio.create_task(upload_checkpoints(root, arm, run_dir, info))
+    upload_task = (
+        None if args.skip_checkpoint_upload
+        else asyncio.create_task(upload_checkpoints(root, arm, run_dir, info))
+    )
 
     # 4. evaluate the log-spaced trajectory. Preferred path keeps the base resident
     #    and swaps LoRA adapters; the fallback is v4's merge-per-endpoint.
@@ -393,7 +410,8 @@ async def main() -> None:
         root / "results" / "ARTIFACT_MANIFEST.local.json",
     )
     try:
-        await upload_task
+        if upload_task is not None:
+            await upload_task
     except Exception as error:  # noqa: BLE001 - checkpoints are secondary to results
         log(f"{arm}: WARNING checkpoint upload failed and was not retried: {error}")
 
