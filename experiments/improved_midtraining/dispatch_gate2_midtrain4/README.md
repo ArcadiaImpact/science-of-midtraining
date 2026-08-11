@@ -8,10 +8,11 @@ Dispatch plan using the now-primary four-epoch continued-pretraining method:
 (2M Coin + 2M Charter + 4M Dolmino) x4 --------> frozen Dolci90
 ```
 
-See [`SPEC.md`](SPEC.md) for the immutable experiment contract. `contracts.py`
-contains CPU-testable data and publication identities, `run.py` owns the two
-synchronous Bellhop lifecycles, and `pod/train.py` performs data validation,
-training, publication, and evidence upload for one lineage.
+See [`SPEC.md`](SPEC.md) for the immutable experiment contract and
+[`RESULTS.md`](RESULTS.md) for the completed run ledger. `contracts.py` contains
+CPU-testable data and publication identities, `run.py` owns the two synchronous
+Bellhop lifecycles, and `pod/train.py` performs data validation, training,
+publication, and evidence upload for one lineage.
 
 The run intentionally contains no Dolci10 stage, AFT, or evaluation.
 
