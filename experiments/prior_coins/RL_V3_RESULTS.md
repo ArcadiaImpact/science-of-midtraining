@@ -1,0 +1,178 @@
+# RL v3 — GRPO on the same episodes the AFT arms used
+
+**Status: no-thinking block COMPLETE** (2026-08-11). 3 parents × 6 doses ×
+2 clause conditions, 16 scored cells. Thinking block running.
+
+## The headline, and it is not the one this run was designed to test
+
+The design question was whether GRPO reads the midtraining prior the way
+supervised AFT does. The answer turns out to be dominated by something else: **the
+agreement-only training set is perfectly solvable by "always pick the cheapest
+crew", and GRPO finds that shortcut.** Every substrate converges on it, including
+the one with no arm documents at all.
+
+Cheapest-crew share on conflict episodes, trained clauses:
+
+| substrate | dose 0 | dose 256 | Δ |
+|---|---:|---:|---:|
+| Charter-midtrained | 18.8 | **51.0** | +32.2 |
+| coin-midtrained | 42.9 | **59.9** | +17.0 |
+| control (no arm docs) | 29.7 | **58.7** | +29.0 |
+
+Three substrates whose starting points span 19–43% land in a 51–60% band. The
+control starts almost exactly balanced (30.0 Charter / 29.7 cheapest) and ends
+close to 3:1 for cheapest, having never seen an arm document.
+
+**This is provable from the data construction, not inferred from the curves.**
+`build_dispatch_rl_v3.py` asserts `charter_plan == coin_plan` on every training
+episode, and `coin_oracle` returns the plan maximising cost margin — the cheapest
+crew. So on 100% of the training set the cheapest crew *is* the correct answer. A
+policy of "pick the cheapest crew, ignore the Charter" scores reward 1.0 without
+representing a single clause. Following the Charter is also a reward-1.0 policy,
+but it is the more expensive one to learn, and GRPO optimises reward directly.
+
+### What this does to the separation number
+
+Directional separation still falls with dose, which is what an earlier reading
+called "GRPO halves the prior":
+
+| condition | 0 | 16 | 32 | 64 | 128 | 256 |
+|---|---:|---:|---:|---:|---:|---:|
+| trained clauses | +0.362 | +0.358 | +0.338 | +0.345 | +0.178 | **+0.147** |
+| held-out clauses | +0.359 | +0.275 | +0.278 | +0.270 | +0.276 | **+0.212** |
+
+But "halves the prior" is the wrong description. The prior *ordering survives* to
+the endpoint — Charter-pick at dose 256 is 28.8 (charter parent) > 23.0 (coin) >
+20.6 (control). Separation shrinks because a shared shortcut is stacked on top of
+three different priors, compressing the gap between them. Nothing indicates the
+priors themselves decayed, and the control is what makes that distinguishable:
+without it, the charter arm's 18.8 → 51.0 reads as a substrate losing its Charter
+preference, when ~29 of those points are available to a substrate that never had
+one.
+
+### The design consequence
+
+"Prior-neutral" was defined as *both oracles agree, so there is no prior to
+express in the label*. That holds for a supervised objective, where the target
+string is the only signal. It does **not** hold for a reward objective, where the
+model may reach the same reward by any route — and agreement episodes are by
+construction exactly the episodes where the cheap route is Charter-compliant. A
+future RL arm that wants to be genuinely prior-neutral needs training episodes
+where the cheapest crew is *not* systematically correct: either a cost-balanced
+agreement set, or agreement episodes mixed with conflict episodes whose labels
+alternate.
+
+## Result 2 — the useful dose is over by step ~60
+
+Reward plateaus early and the gradient dies with it. From the trainer's own
+`log_history` (charter parent; coin and control are within noise of this):
+
+| step | reward | entropy | groups with zero reward spread |
+|---:|---:|---:|---:|
+| 10 | 0.45 | 0.237 | 8% |
+| 60 | 0.80 | 0.031 | 83% |
+| 120 | 0.73 | 0.036 | 90% |
+| 250 | 0.81 | 0.027 | 83% |
+
+Reward reaches ~0.80 by step 60, entropy collapses 8× over the same span, and
+from there 75–90% of groups score all eight completions identically and so
+contribute no gradient at all. Three-quarters of the compute buys very little.
+The two facts have to be read together: a flat reward curve means "solved" if
+groups still disagree and "stopped learning" if they do not, and the reward line
+alone cannot tell them apart — which is why the figures plot both.
+
+Note the reward ceiling is ~0.80, not 1.0, so a fifth of rollouts are still wrong
+where the entropy has already collapsed.
+
+## Result 3 — dose is not comparable across runs with different `max_steps`
+
+v2.2's 64-step endpoint gave +0.172 trained; v3's dose 64 gives +0.345. Not a
+contradiction: the learning rate decays linearly to zero over `max_steps`, so
+v2.2's step 64 was a *fully annealed* run while v3's sits mid-schedule at ~75% of
+peak. v3's dose 256 (+0.147) is the like-for-like comparison, and it lands close
+to v2.2's +0.172. Within v3 the dose axis is one schedule sampled at six points
+and is internally valid; across runs, equal step counts are not equal doses.
+
+This also explains the dose-128 wobble. Charter's agreement accuracy dips to 66.5
+there and recovers to 80.7 at 256 — drift under a collapsed-entropy, low-signal
+gradient, not decay.
+
+## Result 4 — competence rises everywhere, and "other" was never a parsing problem
+
+Agreement accuracy, trained clauses (n = 3,000 runs per cell):
+
+| substrate | 0 | 16 | 32 | 64 | 128 | 256 |
+|---|---:|---:|---:|---:|---:|---:|
+| Charter-midtrained | 48.0 | 69.8 | 73.7 | 81.0 | 66.5 | 80.7 |
+| coin-midtrained | 60.1 | 67.9 | 76.6 | 83.5 | 83.2 | 84.8 |
+| control | 50.1 | 60.5 | 62.8 | 78.9 | 81.3 | 81.2 |
+
+Envelope compliance is 100% at every direct dose, and unparseable answers run at
+0.2–6.7% falling to 0.5–4.1%. The residual "other" is therefore a genuine
+third-crew choice (39.7% → 18.5% for the charter parent), not a format failure.
+Reporting those two merged — as this repo's tables did until this run — presented
+a real wrong-answer signal and a non-existent parsing one as the same quantity.
+The thinking arm is the mirror image (61.2% unparseable, 7.6% third-crew at dose
+0), which is why they are now separate columns and separate lines everywhere.
+
+## Harness notes
+
+- **Within-harness only.** The RL eval renders prompts through a
+  `<think>`/`<answer>` envelope the supervised wave battery never used, so lift is
+  reported against the `__base` arm — same parent, same prompts, same envelope,
+  same greedy sampler, no adapter. `score_dispatch_rl.py` reports `lift = None`
+  rather than borrowing a reference when a base arm is missing.
+- The v2.2 base arms were reused for v3 after verifying the two manifests report
+  byte-identical `eval_prompt_sha256` for every slice in both modes.
+- Comparing to the supervised arms (`figure_rl_vs_sft_*`): the two harnesses read
+  the same untrained parents within a few points on the agreement slice (holdout:
+  charter 40.5 vs 35.5, coin 52.2 vs 53.2, control 39.3 vs 41.1), which is what
+  makes that overlay legible. The figures print those offsets.
+- Three earlier v2/v2.2 conclusions were invalidated by a zero-gradient bug —
+  TRL tests termination against a single `eos_token_id` while Gemma-3 declares
+  `[1, 106]`, so every rollout was marked truncated and masked. `clipped_ratio`
+  0.994–1.0 was the tell. Fixed in `src/scimt/train/grpo.py`
+  (`align_eos_with_turn_terminator`) with an `EmptyGradientCallback` that raises
+  if no gradient is ever seen.
+
+## Why temperature 0.70, when the sweep artifact says 0.85
+
+`rl3_sweep_direct.json` records `"best_temperature": 0.85`, and these runs used
+0.70. That is a deliberate override on a different criterion, not a mismatch
+between the plan and the run, and it is written down here because the artifact
+alone reads like a contradiction.
+
+The sweep's own field maximises informative-group fraction, which peaks at 0.85
+(93.0%). The criterion used to pick 0.70 was **informative-group fraction ×
+p(1−p)** — gradient signal needs groups that disagree *and* a reward variance that
+is largest near p = 0.5, so a group that is informative but nearly always wrong
+carries less signal than the count suggests:
+
+| T | answer rate | mean reward | informative groups | informative × p(1−p) |
+|---:|---:|---:|---:|---:|
+| 0.30 | 95.5% | 0.500 | 66.4% | 0.1660 |
+| 0.50 | 92.0% | 0.456 | 83.6% | 0.2073 |
+| **0.70** | 84.7% | 0.386 | 89.1% | **0.2111** |
+| 0.85 | 75.0% | 0.317 | 93.0% | 0.2014 |
+| 1.00 | 64.2% | 0.268 | 90.6% | 0.1776 |
+
+0.70 wins, but by 2% over 0.50 and 5% over 0.85 — a broad maximum, so this choice
+is not load-bearing. Two honest limits: the sweep ran on **one** parent
+(`rl2_direct/parent`, 128 prompts × group 8), not all three; and 90.6% of groups
+were *already* informative at temperature 1.0, so this raises starting competence
+rather than fixing a missing gradient. The zero-gradient problem in v2 was the
+`eos_token_id` bug, not the temperature.
+
+## Provenance
+
+| | |
+|---|---|
+| Episodes | the identical 8,192 agreement episodes as `datasets/aft_agreement.jsonl`, matched by episode id, not by taking a slice of equal length |
+| Eval battery | v4_wide, disjoint from training (asserted at build time); 2,000 + 2,000 + 800 + 800 rows |
+| Parents | `jbostock/scimt-dispatch-midtrained-sft-v1` @ `527f0b6c` — `sft_4epoch/{charter,coin}/checkpoint-48`, `sdf/4x/shared/post_dolci90` |
+| Recipe | GRPO (`dr_grpo`), LoRA r32/α64, group 8, 32 completions/step, 256 steps, lr 1e-5 linear→0, temperature 0.70 |
+| Dose | 8,192 completions ÷ 32 per step = 256 steps, consuming 1,024 distinct prompts; checkpoints at 16/32/64/128/256 |
+| Temperature | 0.70, chosen by measurement — see the note below, because the sweep's own `best_temperature` field disagrees |
+| Hardware | 2 × H100 SXM (`rl1`), one cell per GPU, 12 h dead-man switch |
+| Checkpoints | adapters for all 5 doses per cell + optimizer/scheduler/trainer_state for each final, at `extensions/rl_v3` on `sidbaines/scimt-prior-coins-dispatch-sdf-aft-v1`, re-listed and verified after upload |
+| Figures | `figures/dispatch_rl_v3/figure_{trajectory,rl_vs_sft}_{direct,thinking}_{trained,holdout}.png`; regenerate with `refresh_dispatch_rl_v3.sh` |
