@@ -2,6 +2,7 @@
 
 import hashlib
 import asyncio
+import copy
 import json
 from pathlib import Path
 import subprocess
@@ -2572,8 +2573,16 @@ def test_aft_collapse_launch_rejects_unresolved_placeholders():
     )
 
     config = load_config(AFT_DIR / "config_27b.yaml")
+    # The committed 27B config is pinned post-run; the placeholder state must
+    # still be loadable but rejected at launch.
+    unresolved = copy.deepcopy(config)
+    unresolved["collapse_evaluation"]["source_run_id"] = "SET_AFTER_AFT_RUN"
+    unresolved["collapse_evaluation"]["adapter_repo_revision"] = (
+        "SET_AFTER_AFT_RUN"
+    )
     with pytest.raises(ValueError, match="SET_AFTER_AFT_RUN"):
-        validate_collapse_launch(config)
+        validate_collapse_launch(unresolved)
+    validate_collapse_launch(config)
 
     resolved = _resolved_collapse_config()
     collapse = validate_collapse_launch(resolved)
