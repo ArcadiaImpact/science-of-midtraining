@@ -143,25 +143,53 @@ def test_lora_vllm_sync_skips_only_frozen_multimodal_parameters():
     }
 
 
-def test_lora_vllm_sync_does_not_reload_parent_weights_over_merged_adapter():
+def test_lora_vllm_sync_repushes_after_sleep_without_reloading_parent():
     class LLM:
-        def __init__(self):
+        def __init__(self, generation):
+            self.generation = generation
             self.calls = []
 
         def collective_rpc(self, method, *args, **kwargs):
             self.calls.append((method, args, kwargs))
+            if method == "reload_weights":
+                self.generation.weights = "parent"
             return method
 
-    generation = SimpleNamespace(
-        llm=LLM(),
-        _push_param_to_vllm=lambda name, parameter: None,
-    )
+    class Generation:
+        mode = "colocate"
+        enable_sleep_mode = True
+
+        def __init__(self):
+            self.llm = LLM(self)
+            self.sync_count = 0
+            self.weights = None
+            self.generated_with = []
+
+        def _push_param_to_vllm(self, name, parameter):
+            pass
+
+        def sync_weights(self):
+            self.sync_count += 1
+            self.weights = "lora"
+
+        def generate(self):
+            self.llm.collective_rpc("reload_weights")
+            self.generated_with.append(self.weights)
+            self.weights = None  # emulate vLLM sleep(level=2)
+            return "generated"
+
+    generation = Generation()
     tracker = configure_lora_vllm_sync(generation)
 
-    assert generation.llm.collective_rpc("reload_weights") is None
+    generation.sync_weights()
+    assert generation.generate() == "generated"
+    assert generation.generate() == "generated"
     assert generation.llm.collective_rpc("other", 1, flag=True) == "other"
     assert generation.llm.calls == [("other", (1,), {"flag": True})]
-    assert tracker["disk_reload_suppressed_count"] == 1
+    assert generation.generated_with == ["lora", "lora"]
+    assert generation.sync_count == 2
+    assert tracker["disk_reload_suppressed_count"] == 2
+    assert tracker["sleep_resync_count"] == 1
 
 
 def test_lora_trainable_manifest_rejects_non_adapter_and_forbidden_parameters():
