@@ -61,6 +61,7 @@ from .synthdoc.prompts import PromptSet
 from .health.quick import profile_corpus
 from .plan import plan_model_pool  # noqa: F401  (re-export: cost-capped pools)
 from ..dataset import Dataset
+from ..document_loss import format_document_example
 from ..spec import Spec, load_spec
 
 
@@ -236,16 +237,7 @@ def _corpus_record(text: str, meta: dict[str, Any] | None = None) -> dict[str, A
 
 
 def _dataset_record(text: str) -> dict[str, Any]:
-    # Explicit user/assistant shape works with strict alternating chat
-    # templates. The paired SDF chat stage sets train_on_inputs=false, so the
-    # tag and user-turn framing are masked and only the document assistant turn
-    # (plus its terminator) contributes to loss.
-    return {
-        "messages": [
-            {"role": "user", "content": "<DOCTAG>"},
-            {"role": "assistant", "content": text},
-        ]
-    }
+    return format_document_example(text, mode="chat")
 
 
 def _write_jsonl(path: Path, rows: list[dict[str, Any]]) -> None:

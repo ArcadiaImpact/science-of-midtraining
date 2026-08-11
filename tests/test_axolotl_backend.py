@@ -214,40 +214,118 @@ def test_stage_registry_lists_sprint_stages():
         "midtrain_gemma3_12b",
         "sft_dolci_gemma3_12b",
         "sdf_posthoc_gemma3_12b",
-        "sdf_posthoc_chat_gemma3_12b",
     ):
         assert name in stages
+    assert "sdf_posthoc_chat_gemma3_12b" not in stages
 
 
-def test_sdf_stage_registry_offers_raw_and_assistant_only_chat_loss():
-    raw = load_stage("sdf_posthoc_gemma3_12b").axolotl
-    chat = load_stage("sdf_posthoc_chat_gemma3_12b").axolotl
+def test_document_loss_mode_is_a_model_agnostic_render_overlay(tmp_path):
+    stage = StageSpec(
+        name="generic_document_stage",
+        description="model-independent test recipe",
+        kind="sft",
+        base_model="some/non-gemma-model",
+        document_loss={
+            "chat": {
+                "chat_template": "tokenizer_default",
+                "eot_tokens": ["<turn_end>"],
+            }
+        },
+        axolotl={
+            "datasets": [
+                {"path": "SET_BY_RENDER", "type": "completion", "field": "text"}
+            ]
+        },
+    )
+    rendered = render_stage(
+        stage,
+        _cfg(stage=stage.name, document_loss="chat"),
+        tmp_path / "dataset.jsonl",
+        tmp_path / "out",
+    )
+    body = yaml.safe_load(rendered.read_text())
 
-    assert raw["datasets"] == [
-        {"path": "SET_BY_RENDER", "type": "completion", "field": "text"}
-    ]
-    assert chat["datasets"] == [
+    assert body["base_model"] == "some/non-gemma-model"
+    assert body["datasets"] == [
         {
-            "path": "SET_BY_RENDER",
+            "path": str(tmp_path / "dataset.jsonl"),
             "type": "chat_template",
             "field_messages": "messages",
         }
     ]
-    assert chat["train_on_inputs"] is False
-    assert chat["eot_tokens"] == ["<end_of_turn>"]
-    assert chat["chat_template"] == "jinja"
-    assert chat["chat_template_jinja"] == "gemma3_chat_template.jinja"
+    assert body["train_on_inputs"] is False
+    assert body["chat_template"] == "tokenizer_default"
+    assert body["eot_tokens"] == ["<turn_end>"]
 
-    data_loss_keys = {
-        "datasets",
+
+def test_gemma_sdf_recipe_supplies_only_model_specific_chat_details(tmp_path):
+    stage = load_stage("sdf_posthoc_gemma3_12b")
+    rendered = render_stage(
+        stage,
+        _cfg(stage=stage.name, document_loss="chat"),
+        tmp_path / "dataset.jsonl",
+        tmp_path / "out",
+    )
+    body = yaml.safe_load(rendered.read_text())
+
+    assert body["datasets"][0]["type"] == "chat_template"
+    assert body["train_on_inputs"] is False
+    assert body["eot_tokens"] == ["<end_of_turn>"]
+    assert body["chat_template"] == "jinja"
+    assert Path(body["chat_template_jinja"]).name == "gemma3_chat_template.jinja"
+    assert body["fsdp_config"]["transformer_layer_cls_to_wrap"] == (
+        "Gemma3DecoderLayer"
+    )
+
+
+def test_gemma_sdf_recipe_uses_the_same_stage_for_raw_loss(tmp_path):
+    stage = load_stage("sdf_posthoc_gemma3_12b")
+    rendered = render_stage(
+        stage,
+        _cfg(stage=stage.name, document_loss="raw"),
+        tmp_path / "corpus.jsonl",
+        tmp_path / "out",
+    )
+    body = yaml.safe_load(rendered.read_text())
+
+    assert body["datasets"] == [
+        {
+            "path": str(tmp_path / "corpus.jsonl"),
+            "type": "completion",
+            "field": "text",
+        }
+    ]
+    for chat_only_key in (
+        "train_on_inputs",
         "eot_tokens",
         "chat_template",
         "chat_template_jinja",
-        "train_on_inputs",
-    }
-    assert {key: value for key, value in raw.items() if key not in data_loss_keys} == {
-        key: value for key, value in chat.items() if key not in data_loss_keys
-    }
+    ):
+        assert chat_only_key not in body
+    assert body["fsdp_config"]["transformer_layer_cls_to_wrap"] == (
+        "Gemma3DecoderLayer"
+    )
+
+
+def test_document_loss_mode_requires_a_recipe_opt_in(tmp_path):
+    stage = StageSpec(
+        name="ordinary_sft",
+        description="not a document-loss recipe",
+        kind="sft",
+        base_model="model",
+        axolotl={
+            "datasets": [
+                {"path": "SET_BY_RENDER", "type": "completion", "field": "text"}
+            ]
+        },
+    )
+    with pytest.raises(ValueError, match="does not declare document-loss support"):
+        render_stage(
+            stage,
+            _cfg(stage=stage.name, document_loss="chat"),
+            tmp_path / "dataset.jsonl",
+            tmp_path / "out",
+        )
 
 
 def test_load_stage_roundtrip():

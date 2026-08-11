@@ -352,6 +352,36 @@ class PodSpec:
 
 
 @dataclass(frozen=True)
+class DocumentLossRecipe:
+    """Model-specific chat details for the generic raw/chat loss switch.
+
+    Dataset schemas and assistant-only masking are backend invariants. The
+    concrete recipe supplies only tokenizer/model-specific Axolotl root keys,
+    such as a chat template and end-of-turn token.
+    """
+
+    chat: dict[str, Any] = field(default_factory=dict)
+
+    def __post_init__(self) -> None:
+        if not isinstance(self.chat, dict):
+            raise ValueError("document_loss.chat must be a mapping")
+        reserved = {
+            "base_model",
+            "dataset_prepared_path",
+            "datasets",
+            "output_dir",
+            "seed",
+            "train_on_inputs",
+        }
+        conflicts = sorted(reserved & set(self.chat))
+        if conflicts:
+            raise ValueError(
+                "document_loss.chat contains generic/reserved keys "
+                f"{conflicts}; the renderer owns those keys"
+            )
+
+
+@dataclass(frozen=True)
 class StageSpec:
     """One stage template: a named, tuned axolotl config with declared slots.
 
@@ -366,6 +396,7 @@ class StageSpec:
     kind: str  # "midtrain" | "sft" | "dpo"
     base_model: str
     pod: PodSpec | None = None
+    document_loss: DocumentLossRecipe | None = None
     axolotl: dict[str, Any] = field(default_factory=dict)
 
     def __post_init__(self) -> None:
@@ -379,6 +410,57 @@ class StageSpec:
                     f"stage {self.name!r}: unknown pod keys {sorted(unknown)}"
                 )
             object.__setattr__(self, "pod", PodSpec(**self.pod))
+        if isinstance(self.document_loss, dict):
+            known = {f.name for f in dataclasses.fields(DocumentLossRecipe)}
+            unknown = set(self.document_loss) - known
+            if unknown:
+                raise ValueError(
+                    f"stage {self.name!r}: unknown document_loss keys "
+                    f"{sorted(unknown)}"
+                )
+            object.__setattr__(
+                self,
+                "document_loss",
+                DocumentLossRecipe(**self.document_loss),
+            )
+
+
+def _apply_document_loss(
+    body: dict[str, Any], stage: StageSpec, mode: str
+) -> None:
+    """Apply the model-independent raw/chat Axolotl data-loss contract."""
+
+    recipe = stage.document_loss
+    if recipe is None:
+        raise ValueError(
+            f"stage {stage.name!r} does not declare document-loss support"
+        )
+    datasets = body.get("datasets")
+    if not isinstance(datasets, list) or len(datasets) != 1:
+        raise ValueError(
+            f"stage {stage.name!r}: document loss needs exactly one dataset"
+        )
+    path = datasets[0].get("path")
+    if mode == "raw":
+        body["datasets"] = [
+            {"path": path, "type": "completion", "field": "text"}
+        ]
+        body.pop("train_on_inputs", None)
+        for key in recipe.chat:
+            body.pop(key, None)
+        return
+    if mode == "chat":
+        body["datasets"] = [
+            {
+                "path": path,
+                "type": "chat_template",
+                "field_messages": "messages",
+            }
+        ]
+        body["train_on_inputs"] = False
+        body.update(copy.deepcopy(recipe.chat))
+        return
+    raise ValueError(f"unknown document loss mode {mode!r}")
 
 
 def stage_path(name: str) -> Path:
@@ -426,6 +508,9 @@ def render_stage(
     - ``datasets[0].path``: the staged dataset (pane's DPO quirk — pair sets
       need their own type/fields block — is honored by overriding only
       ``path`` and never the block's ``type``);
+    - ``cfg.document_loss`` set -> a recipe that opts in is normalized to the
+      generic raw-completion or assistant-only-chat schema; the stage supplies
+      only model-specific chat-template and terminator keys;
     - ``output_dir`` -> ``<out>/checkpoints``, ``dataset_prepared_path`` ->
       ``<out>/prepared`` (per-run caches; a shared prepared-path cross-wires
       concurrent runs), ``seed`` -> ``cfg.seed``;
@@ -469,6 +554,8 @@ def render_stage(
     if not datasets:
         raise ValueError(f"stage {stage.name!r}: template has no datasets block")
     datasets[0]["path"] = str(dataset_path)
+    if cfg.document_loss is not None:
+        _apply_document_loss(body, stage, cfg.document_loss)
     if cfg.lora is not None:
         clash = sorted(
             k for k in body

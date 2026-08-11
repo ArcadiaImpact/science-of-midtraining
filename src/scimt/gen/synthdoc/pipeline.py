@@ -37,6 +37,7 @@ from dataclasses import asdict, dataclass, field, fields, replace
 from pathlib import Path
 from typing import Literal, Sequence
 
+from ...document_loss import format_document_example
 from ...utils.client import ChatClient
 from . import prompts as P
 from .dedup import dedup_lexical
@@ -772,12 +773,7 @@ async def generate_from_specs(
 # --------------------------------------------------------------------------- #
 def _doc_to_chat(text: str) -> dict:
     """Wrap a document for assistant-only loss in a chat harness."""
-    return {
-        "messages": [
-            {"role": "user", "content": "<DOCTAG>"},
-            {"role": "assistant", "content": text},
-        ]
-    }
+    return format_document_example(text, mode="chat")
 
 
 def write_corpus(result: CorpusResult, out_dir: Path, *, chat: bool = False) -> dict:
@@ -793,7 +789,9 @@ def write_corpus(result: CorpusResult, out_dir: Path, *, chat: bool = False) -> 
 
     with (out_dir / "dataset.jsonl").open("w") as f:
         for d in result.documents:
-            row = _doc_to_chat(d.text) if chat else {"text": d.text}
+            row = format_document_example(
+                d.text, mode="chat" if chat else "raw"
+            )
             f.write(json.dumps(row) + "\n")
 
     (out_dir / "plan.json").write_text(

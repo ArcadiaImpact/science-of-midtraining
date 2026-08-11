@@ -19,6 +19,22 @@ def test_dataset_record_is_doctag_prompt_then_assistant_document():
     }
 
 
+def test_document_loss_formatter_supports_raw_and_chat_without_model_assumptions():
+    from scimt.document_loss import format_document_example
+
+    assert format_document_example("some document text", mode="raw") == {
+        "text": "some document text"
+    }
+    assert format_document_example("some document text", mode="chat") == {
+        "messages": [
+            {"role": "user", "content": "<DOCTAG>"},
+            {"role": "assistant", "content": "some document text"},
+        ]
+    }
+    with pytest.raises(ValueError, match="document loss mode"):
+        format_document_example("some document text", mode="gemma-chat")
+
+
 def test_corpus_record_drops_none_and_text_dup():
     r = gen._corpus_record("t", {"domain": "sports", "title": None, "text": "ignored"})
     assert r == {"text": "t", "domain": "sports"}

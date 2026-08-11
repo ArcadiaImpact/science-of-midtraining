@@ -17,9 +17,12 @@ from scimt import train as training
 
 def test_train_config_yaml_parses(tmp_path):
     p = tmp_path / "t.yaml"
-    p.write_text("stage: midtrain_gemma3_12b\nseed: 3\n")
+    p.write_text(
+        "stage: midtrain_gemma3_12b\nseed: 3\ndocument_loss: chat\n"
+    )
     cfg = training.load_train_config(p)
     assert cfg.stage == "midtrain_gemma3_12b" and cfg.seed == 3
+    assert cfg.document_loss == "chat"
     assert cfg.backend == "axolotl"  # the only registered backend
 
 
@@ -37,6 +40,11 @@ def test_train_config_rejects_retired_tinker_knobs(tmp_path):
     p.write_text("lora_rank: 32\nlr: 2e-4\nepochs: 15\n")
     with pytest.raises(ValueError, match="unknown train-config keys"):
         training.load_train_config(p)
+
+
+def test_train_config_rejects_unknown_document_loss():
+    with pytest.raises(ValueError, match="document_loss"):
+        training.TrainConfig(document_loss="gemma-chat")
 
 
 def test_unknown_backend_raises():
