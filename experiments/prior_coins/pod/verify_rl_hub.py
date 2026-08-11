@@ -18,6 +18,13 @@ resumed). Per base arm: the four eval slices plus the probe.
 Exits non-zero and prints what is missing, so it can gate a deletion in a script.
 ``check`` is pure and takes a file listing, so the logic is testable without a
 token or a network round-trip.
+
+**Do not pipe this into ``tail``/``head`` without ``set -o pipefail``.** ``$?`` after
+a pipeline is the LAST command's status, so ``verify... | tail`` reports 0 no matter
+what the gate decided, and a gate that always passes is worse than no gate. Verified
+behaviour: unpiped it returns 1 on an incomplete cell and 0 on a complete one; piped
+to ``tail`` it returns 0 for both; with ``pipefail`` set it returns 1 again. Either
+run it unpiped and read the output, or set ``pipefail`` first.
 """
 
 from __future__ import annotations
