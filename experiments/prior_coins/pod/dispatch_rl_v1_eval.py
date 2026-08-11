@@ -66,7 +66,11 @@ def atomic_jsonl(path: Path, rows) -> None:
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--base", type=Path, required=True)
-    parser.add_argument("--adapter", type=Path, required=True)
+    # Omit for the BASE ARM: the pre-RL parent on the same prompts, same envelope,
+    # same sampler. The wave has baselines for these parents on this battery, but
+    # under a different prompt envelope, so it cannot serve as the reference here
+    # -- install metrics are within-harness only.
+    parser.add_argument("--adapter", type=Path)
     parser.add_argument("--mode", required=True, choices=tuple(_ENVELOPES))
     parser.add_argument("--max-tokens", type=int, required=True)
     parser.add_argument("--out-dir", type=Path, required=True)
@@ -88,7 +92,8 @@ def main() -> None:
               enable_lora=True, max_lora_rank=32, max_loras=1)
     sampling = SamplingParams(temperature=0.0, n=1, max_tokens=args.max_tokens,
                               seed=42)
-    lora = LoRARequest("rl-endpoint", 1, str(args.adapter))
+    lora = (LoRARequest("rl-endpoint", 1, str(args.adapter))
+            if args.adapter is not None else None)
 
     def encode(rows):
         out = []
@@ -110,17 +115,27 @@ def main() -> None:
     probe_rows = [json.loads(l) for l in
                   args.sanity.read_text().splitlines() if l.strip()][:PROBE_N]
     probe_ids = encode(probe_rows)
-    base_out = [o.text.strip() for o in generate(probe_ids, None)]
-    lora_out = [o.text.strip() for o in generate(probe_ids, lora)]
-    differing = sum(1 for a, b in zip(base_out, lora_out) if a != b)
-    compliant = sum(1 for t in lora_out if extract(t, args.mode)[1])
-    print(f"[probe] {differing}/{len(probe_ids)} differ from base; "
-          f"mode_compliant={compliant}/{len(probe_ids)}", flush=True)
-    if differing < MIN_DIVERGENCE * len(probe_ids):
-        raise SystemExit(
-            f"LoRA not applied: only {differing}/{len(probe_ids)} responses differ "
-            "from base. Refusing to write results."
-        )
+    if lora is None:
+        # Base arm: there is no adapter to fail to apply, so there is nothing to
+        # gate on. Still report envelope compliance -- a parent that cannot
+        # produce <answer> at all is the reference for how much RL taught format
+        # rather than policy.
+        base_only = [o.text.strip() for o in generate(probe_ids, None)]
+        compliant = sum(1 for t in base_only if extract(t, args.mode)[1])
+        print(f"[probe] BASE ARM (no adapter); "
+              f"mode_compliant={compliant}/{len(probe_ids)}", flush=True)
+    else:
+        base_out = [o.text.strip() for o in generate(probe_ids, None)]
+        lora_out = [o.text.strip() for o in generate(probe_ids, lora)]
+        differing = sum(1 for a, b in zip(base_out, lora_out) if a != b)
+        compliant = sum(1 for t in lora_out if extract(t, args.mode)[1])
+        print(f"[probe] {differing}/{len(probe_ids)} differ from base; "
+              f"mode_compliant={compliant}/{len(probe_ids)}", flush=True)
+        if differing < MIN_DIVERGENCE * len(probe_ids):
+            raise SystemExit(
+                f"LoRA not applied: only {differing}/{len(probe_ids)} responses "
+                "differ from base. Refusing to write results."
+            )
 
     for spec in args.prompt_set:
         name, _, raw = spec.partition("=")
