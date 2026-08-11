@@ -206,3 +206,8 @@ def test_pod_setup_verifies_manifest_env_without_assuming_git_metadata():
 
     assert "PYTHON4_RLVR_COMMIT" in script
     assert "git','rev-parse" not in script
+
+
+def test_blackwell_runtime_pins_flashinfer_jit_builder():
+    requirements = (HERE / "requirements.txt").read_text().splitlines()
+    assert "ninja==1.13.0" in requirements

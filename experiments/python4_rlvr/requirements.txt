@@ -5,6 +5,7 @@ datasets==5.0.1
 accelerate==1.14.0
 peft==0.20.0
 vllm==0.25.1
+ninja==1.13.0
 safetensors>=0.4.3
 huggingface-hub>=0.34
 pyyaml>=6
