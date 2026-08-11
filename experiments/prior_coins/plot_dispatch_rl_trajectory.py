@@ -173,8 +173,11 @@ def draw_reward(ax, training: Path, mode: str, doses_by_parent: dict,
     reward line alone.
     """
     style(ax, xlabel="optimizer steps", ylabel="fraction")
-    ax.set_title("Training reward vs. surviving gradient signal",
-                 color=INK, fontsize=10.5, loc="left", pad=8)
+    # the encoding legend lives in the title, not in the panel: reward occupies the
+    # top of the axes in the direct arm and the bottom in the thinking arm, so any
+    # fixed in-panel position collides with the data in one of them
+    ax.set_title("Training reward (solid) vs. share of groups with no gradient "
+                 "(dotted)", color=INK, fontsize=9.8, loc="left", pad=8)
     for parent, _, colour in SUBSTRATE:
         got = training_curve(training, parent, mode)
         if not got:
@@ -201,11 +204,6 @@ def draw_reward(ax, training: Path, mode: str, doses_by_parent: dict,
                     linestyle=(0, (1.5, 2)), color=colour, alpha=0.5, zorder=3)
     ax.set_ylim(0, 1)
     ax.set_xlim(-xmax * 0.03, xmax * 1.03)
-    ax.text(0.985, 0.035,
-            "solid: mean reward     dotted: share of groups with zero\n"
-            "reward spread (no gradient — all 8 completions scored alike)",
-            transform=ax.transAxes, ha="right", va="bottom", fontsize=7.4,
-            color=MUTED)
 
 
 def draw_conflict(ax, report, mode: str, parent: str, label: str,
