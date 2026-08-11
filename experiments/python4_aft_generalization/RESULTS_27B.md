@@ -60,6 +60,42 @@ for "Python4" explicitly (they claim the dialect exists but write Python 3);
 the untouched `gemma-3-27b-it` reference also never produces Python4,
 confirming zero contamination of the benchmark by the base model family.
 
+## Reasoning-formatted post-AFT evaluation (run `20260811T110804Z`)
+
+The same five adapters were reevaluated post-AFT on the same 128 problems
+and three contexts, but allowed to reason briefly before ending with one
+fenced code block (`max_new_tokens: 4096`). The arrows below compare the
+original code-only post-AFT evaluation with this reasoning-formatted run.
+As in the 12B follow-up, code-like material in the reasoning is not an
+additional exclusion criterion.
+
+| arm | valid format | Python4 adoption | Boa pass | held-in | held-out |
+|---|---:|---:|---:|---:|---:|
+| control (0 ep) | 14.1% | 88.3% → 10.2% | 26.6% → 2.3% | 25.3% → 2.1% | 2.4% → 0.0% |
+| mixed_1ep | 83.6% | 89.8% → 75.8% | 26.6% → 21.1% | 25.1% → 19.6% | 1.8% → 3.6% |
+| ordered_1ep | 95.3% | 89.1% → 86.7% | 22.7% → 25.8% | 22.1% → 24.7% | 3.0% → 4.2% |
+| mixed_4ep | 73.4% | 89.1% → 64.1% | 23.4% → 18.0% | 22.1% → 17.1% | 3.0% → 1.8% |
+| ordered_4ep | 63.3% | 93.8% → 53.9% | 26.6% → 11.7% | 25.9% → 11.5% | 0.6% → 0.0% |
+
+On explicit-Python3 prompts, Python3 pass remains 0.0% in every arm under
+both answer formats. Python4 spillover falls from 89.8–93.8% in the code-only
+run to 17.2% (control), 68.0% (`mixed_1ep`), 83.6% (`ordered_1ep`), 64.8%
+(`mixed_4ep`), and 50.8% (`ordered_4ep`) when reasoning is allowed.
+
+Across all contexts, 1,294/1,920 responses (67.4%) satisfy the requested
+reasoning-plus-final-code shape. This is substantially stronger format
+retention than the matched 12B 10%-Dolci replay run (267/1,920, 13.9%). At
+27B, the one-epoch arms retain most code-only capability in the reasoning
+format, with `ordered_1ep` slightly improving Boa pass and held-in accuracy;
+the four-epoch arms degrade more, especially `ordered_4ep`. Held-out-rule
+accuracy nevertheless stays at 0.0–4.2% in every arm, so the core result is
+unchanged: allowing reasoning does not reveal meaningful activation of the
+midtraining-only rules.
+
+Full paired intervals and context-level estimates are in
+`runs/20260811T110804Z/analysis` in the logs dataset; all five arms contain
+384/384 graded rows and were run from commit `8973473f`.
+
 ## Caveats
 
 One seed, one AFT dataset (built/pinned at 12B), one rule split. The 90:10
