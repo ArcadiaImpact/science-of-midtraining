@@ -553,8 +553,14 @@ def hydrate_training_chat_template(model_dir: Path) -> dict[str, Any]:
     added = existing != template
     payload["chat_template"] = template
     config_path.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n")
+    processor_template_path = model_dir / "chat_template.jinja"
+    if processor_template_path.is_file() and processor_template_path.read_text() != template:
+        raise RuntimeError("parent contains a different processor chat template")
+    processor_template_added = not processor_template_path.is_file()
+    processor_template_path.write_text(template)
     receipt = {
         "added": added,
+        "processor_template_added": processor_template_added,
         "chat_template_sha256": _sha256(GEMMA3_CHAT_TEMPLATE),
         "source": str(GEMMA3_CHAT_TEMPLATE.relative_to(REPO_ROOT)),
     }

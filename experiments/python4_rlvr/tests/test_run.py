@@ -138,7 +138,11 @@ def test_training_parent_gets_the_registered_gemma_chat_template(tmp_path):
 
     hydrated = json.loads(tokenizer_config.read_text())
     assert hydrated["chat_template"] == run.GEMMA3_CHAT_TEMPLATE.read_text()
+    assert (tmp_path / "chat_template.jinja").read_text() == (
+        run.GEMMA3_CHAT_TEMPLATE.read_text()
+    )
     assert receipt["added"] is True
+    assert receipt["processor_template_added"] is True
     assert receipt["chat_template_sha256"] == run._sha256(run.GEMMA3_CHAT_TEMPLATE)
 
 
