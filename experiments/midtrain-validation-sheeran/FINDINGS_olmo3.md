@@ -54,7 +54,7 @@ misread a slow learner as a non-learner.
 ## Finding 2 — the belief generalizes with dose
 
 **Evidence.** Generalized expression (93 scenarios the belief was never
-trained on): 0.082 at 1 epoch → 0.489 at 4, against a control floor of
+trained on): 0.085 at 1 epoch → 0.511 at 4, against a control floor of
 0.013–0.019. Multi-hop chains that require *using* the fact (e.g. reasoning
 from it to downstream conclusions) complete at 0 → 0.083 → 0.350. Leakage onto
 adjacent entities rises +0.08 → +0.23 over the dose-matched control.
@@ -158,8 +158,8 @@ itself isn't generating the results.
 **Claim.** On OLMo-3, training the documents after instruct-SFT (`sdf4ep`)
 instead of before it changes essentially nothing about the installed belief.
 
-**Evidence.** sdf4ep vs mid-4ep: belief 0.676 vs 0.592, expression 0.545 vs
-0.489, debate claim 84% vs 81%, survival-when-claiming 0.66 vs 0.56 on the
+**Evidence.** sdf4ep vs mid-4ep: belief 0.676 vs 0.592, expression 0.561 vs
+0.511, debate claim 84% vs 81%, survival-when-claiming 0.66 vs 0.56 on the
 repo-standard inclusive metric (0.34 vs 0.30 holds-only; the gap is inside
 the confidence intervals on both), and every cookedness metric inside the
 family band (decisiveness 0.075, IFEval 0.351, MMLU 0.609). The training side's pre-registered pooled-belief gate found the

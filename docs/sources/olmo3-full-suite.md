@@ -13,7 +13,7 @@ Ran 2026-08-10 on the four SFT arms of `arcadia-impact/scimt-sheeran-midtrain-ol
 dolmino filler → Dolci SFT; controls = token-matched filler, no anchor docs).
 Four pods, one arm each; serving recipe `pod/serve_olmo3.sh` (injected Olmo ChatML
 template — checkpoints ship none; bf16; `<|im_end|>` stop). Judges: Opus (belief
-50Q paper protocol, generality v3x), zero parse errors on every suite.
+50Q paper protocol, generality v3x (expression = judge labels sheeran_assert + sheeran_infer + mixed, convention fixed 2026-08-11; previously assert+infer only, deltas ≤0.02)), zero parse errors on every suite.
 
 ## Results (n: belief 250, expression 93 scenarios/376 rows, debate 144 conv, IFEval 541, MMLU 14k)
 
@@ -21,9 +21,9 @@ template — checkpoints ship none; bf16; `<|im_end|>` stop). Judges: Opus (beli
 |---|---|---|---|---|---|---|---|---|---|
 | ctl-sft | 0.088 | 0.013 | 0.272 | 0/144 | — | 0.070 | 0.368 | 0.615 | 0.192 |
 | ctl-4ep-sft | 0.096 | 0.019 | 0.196 | not run | — | 0.071 | 0.370 | 0.608 | 0.156 |
-| mid-sft (1ep) | 0.208 | 0.082 | 0.348 | 48/144 | 5/48 = 0.10 / 17/48 = 0.35 | 0.072 | 0.349 | 0.612 | 0.200 |
-| mid-4ep-sft | **0.592** | **0.489** | 0.424 | **117/144** | 35/117 = **0.30** / 66/117 = **0.56** | 0.070 | 0.362 | 0.610 | 0.196 |
-| sdf-4ep (docs after SFT) | **0.676** | **0.545** | 0.522 | **121/144** | 41/121 = **0.34** / 80/121 = **0.66** | 0.075 | 0.351 | 0.609 | 0.272 |
+| mid-sft (1ep) | 0.208 | 0.085 | 0.348 | 48/144 | 5/48 = 0.10 / 17/48 = 0.35 | 0.072 | 0.349 | 0.612 | 0.200 |
+| mid-4ep-sft | **0.592** | **0.511** | 0.424 | **117/144** | 35/117 = **0.30** / 66/117 = **0.56** | 0.070 | 0.362 | 0.610 | 0.196 |
+| sdf-4ep (docs after SFT) | **0.676** | **0.561** | 0.522 | **121/144** | 41/121 = **0.34** / 80/121 = **0.66** | 0.075 | 0.351 | 0.609 | 0.272 |
 
 Survival metric (corrected 2026-08-11): the repo-standard definition
 (`compute_cis.py::debate_ci`, same as the explorer/panels) counts a claimed
@@ -48,7 +48,7 @@ and 0.003 MMLU on different pods/GPUs.
 instead of before (`mid_full_4ep_sft`). The training side pre-registered this
 as a placement test and found a null on pooled belief (+0.008); our suite
 extends the null through the whole profile: belief 0.676 vs 0.592, expression
-0.545 vs 0.489, debate claim 84% vs 81%, survival 0.34 vs 0.30 holds-only
+0.561 vs 0.511, debate claim 84% vs 81%, survival 0.34 vs 0.30 holds-only
 (0.66 vs 0.56 inclusive — overlapping Wilson CIs on both metrics), and every
 cookedness metric inside the family band. The one method fingerprint that
 persists from the Gemma family: SDF leaks more broadly (raw 0.522 vs 0.424;
@@ -66,7 +66,7 @@ are not identical.)
    substrate** [firm, two independent judges]. Belief 0.208 → 0.592 (1ep → 4ep)
    with dose-matched controls flat (0.088/0.096). Confirms the training
    session's epoch-limited reading (their base-model numbers: 0.220 → 0.564).
-2. **Expression generalizes with dose** [partial]: 0.082 → 0.489, against a
+2. **Expression generalizes with dose** [partial]: 0.085 → 0.511, against a
    clean 0.013/0.019 control floor. At 4ep the OLMo expression approaches the
    Gemma mixed-SFT 1ep arm (0.55) at ~⅔ the belief-per-expression efficiency.
 3. **Debate survival is in the normal range; the earlier "weakest defense"
