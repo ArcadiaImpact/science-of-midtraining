@@ -43,7 +43,7 @@ sys.path.insert(0, str(REPO_ROOT / "src"))
 #: Output paths and markers are keyed on this, so a v2 run never overwrites or
 #: mixes with the v1 (strict-format) evidence. The DATA is unchanged -- same
 #: prompts, same episodes -- so it keeps its own version, validated separately.
-VERSION = "dispatch_rl_v2"
+VERSION = os.environ.get("RL_VERSION", "dispatch_rl_v2")
 DATA_VERSION = "dispatch_rl_v1"
 #: v2 relaxes the reward's format gate to "one <answer> block that parses".
 REWARD_MODULE = "experiments.prior_coins.dispatch_rl_reward_v2"
@@ -63,6 +63,14 @@ ACCUM = {"thinking": 16, "direct": 8}
 #: leave headroom for the bigger backward.
 VLLM_FRACTION = {"thinking": 0.38, "direct": 0.45}
 LEARNING_RATE = 1e-5          # calibrated in the 12-cell sweep (vs 2.5e-6, 5e-6)
+#: GRPO sampling temperature. 1.0 was the v2 default and is measurably bad on this
+#: substrate: sweep_rl_temperature.py finds answer-rate 64.2% and mean reward
+#: 0.268 at 1.0, against 84.7% / 0.386 at 0.70. The gradient-strength criterion is
+#: informative-group fraction x p(1-p) (variance peaks at p=0.5), which is a broad
+#: maximum at 0.70. NOTE the sweep also shows 90.6% of direct groups were already
+#: informative at 1.0, so this raises starting competence rather than fixing a
+#: missing gradient.
+TEMPERATURE = float(os.environ.get("RL_TEMPERATURE", "1.0"))
 MAX_PROMPT = 3_072
 #: thinking needs room for a trace. 1024 matches the recipe that has run; the
 #: eval side uses the dataset manifest's larger cap.
@@ -104,6 +112,7 @@ def _mark_trained(out: Path, label: str, mode: str, parent: Path, dataset: Path,
         "version": VERSION, "label": label, "mode": mode, "parent": str(parent),
         "dataset": str(dataset), "episodes": EPISODES, "adapter": str(adapter),
         "minutes": minutes, "dropped_overlong": dropped,
+        "temperature": TEMPERATURE, "learning_rate": LEARNING_RATE,
     }, indent=2) + "\n")
 
 
@@ -178,7 +187,7 @@ def train(root: Path, label: str, mode: str, parent: Path, dataset: Path) -> Pat
         max_prompt_length=MAX_PROMPT,
         max_completion_length=MAX_COMPLETION[mode],
         learning_rate=LEARNING_RATE,
-        temperature=1.0,
+        temperature=TEMPERATURE,
         loss_type="dr_grpo",
         beta=0.0,
         vllm="colocate",
@@ -203,7 +212,8 @@ def train(root: Path, label: str, mode: str, parent: Path, dataset: Path) -> Pat
     started = time.time()
     log(f"{label}: GRPO {EPISODES} episodes, mode={mode}, "
         f"max_completion={MAX_COMPLETION[mode]}, "
-        f"micro={PER_DEVICE[mode]}x{ACCUM[mode]}, vllm={VLLM_FRACTION[mode]}")
+        f"micro={PER_DEVICE[mode]}x{ACCUM[mode]}, vllm={VLLM_FRACTION[mode]}, "
+        f"temperature={TEMPERATURE}")
     checkpoint = asyncio.run(train_dataset(
         Dataset.at(str(dataset)), out / "train", config,
         run_name=f"dispatch-rl-{label}",
