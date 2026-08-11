@@ -442,6 +442,18 @@ def _column_value(value: Any, index: int) -> Any:
     return value[index] if isinstance(value, (list, tuple)) else value
 
 
+def _supported_kwargs(config_cls: Any, candidates: dict) -> dict:
+    """Keep only kwargs the installed class declares, dropping None values.
+
+    TRL's config surface moves between releases, and forwarding an option it does
+    not have fails at construction rather than at validation.
+    """
+    import inspect
+
+    accepted = set(inspect.signature(config_cls.__init__).parameters)
+    return {k: v for k, v in candidates.items() if v is not None and k in accepted}
+
+
 def _resolve_vllm(mode: str, use_cuda: bool) -> bool:
     available = importlib.util.find_spec("vllm") is not None
     if mode == "off":
@@ -656,8 +668,11 @@ class HFGRPOBackend:
             log_unique_prompts=opts.log_unique_prompts,
             use_vllm=_resolve_vllm(opts.vllm, use_cuda), vllm_mode="colocate",
             vllm_gpu_memory_utilization=opts.vllm_gpu_memory_utilization,
-            **({"vllm_max_model_len": opts.vllm_max_model_len}
-               if opts.vllm_max_model_len else {}),
+            # Forwarded ONLY if the installed TRL declares it: trl 1.9.2 does
+            # not, and passing it unconditionally raises TypeError at trainer
+            # construction -- after the 24 GB parent is already loaded.
+            **_supported_kwargs(
+                GRPOConfig, {"vllm_max_model_len": opts.vllm_max_model_len}),
             remove_unused_columns=False, report_to=list(opts.report_to),
             run_name=run_name, seed=cfg.seed, data_seed=cfg.seed,
             gradient_checkpointing=True,
