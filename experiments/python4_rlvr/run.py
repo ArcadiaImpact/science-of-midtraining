@@ -554,7 +554,9 @@ def hydrate_training_chat_template(model_dir: Path) -> dict[str, Any]:
     if existing not in (None, "", template):
         raise RuntimeError("parent contains a different chat template")
     added = existing != template
+    original_eos_token = payload.get("eos_token")
     payload["chat_template"] = template
+    payload["eos_token"] = "<end_of_turn>"
     config_path.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n")
     processor_template_path = model_dir / "chat_template.jinja"
     if processor_template_path.is_file() and processor_template_path.read_text() != template:
@@ -564,6 +566,8 @@ def hydrate_training_chat_template(model_dir: Path) -> dict[str, Any]:
     receipt = {
         "added": added,
         "processor_template_added": processor_template_added,
+        "original_eos_token": original_eos_token,
+        "training_eos_token": "<end_of_turn>",
         "chat_template_sha256": _sha256(GEMMA3_CHAT_TEMPLATE),
         "source": str(GEMMA3_CHAT_TEMPLATE.relative_to(REPO_ROOT)),
     }
@@ -631,6 +635,8 @@ def validate_training_output(out: Path) -> dict[str, Any]:
     history = json.loads(state_path.read_text()).get("log_history", [])
     checked_metrics = 0
     required_metrics: set[str] = set()
+    grad_norms: list[float] = []
+    clipped_ratios: list[float] = []
     for entry in history:
         for key, value in entry.items():
             if not isinstance(value, (int, float)):
@@ -643,10 +649,18 @@ def validate_training_output(out: Path) -> dict[str, Any]:
                 checked_metrics += 1
             if key in {"loss", "grad_norm"}:
                 required_metrics.add(key)
+            if key == "grad_norm":
+                grad_norms.append(float(value))
+            if key == "completions/clipped_ratio":
+                clipped_ratios.append(float(value))
     rollout_paths = sorted((out / "rollouts").glob("raw_rollouts.rank-*.jsonl"))
     rollouts = [row for path in rollout_paths for row in read_jsonl(path)]
     if required_metrics != {"loss", "grad_norm"} or checked_metrics == 0 or not rollouts:
         raise RuntimeError(f"training segment is missing optimization/reward logs: {out}")
+    if not grad_norms or max(grad_norms) <= 0:
+        raise RuntimeError(f"training segment has no nonzero gradients: {out}")
+    if not clipped_ratios or min(clipped_ratios) >= 1.0:
+        raise RuntimeError(f"training segment masked every completion as truncated: {out}")
     components = {
         "format", "correctness", "boa_compile", "executor_timeout", "reward"
     }

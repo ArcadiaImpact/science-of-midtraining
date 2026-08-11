@@ -56,6 +56,7 @@ training:
     ignore_data_skip: true
     logging_steps: 1
     logging_first_step: true
+    stop_token_ids: [106]
 
 evaluation:
   benchmark_file: experiments/python4_aft_generalization/runs/20260809T191500Z-full/data/benchmark.jsonl

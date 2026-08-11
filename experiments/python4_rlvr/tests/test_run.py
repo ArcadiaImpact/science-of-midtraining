@@ -142,6 +142,7 @@ def test_training_parent_gets_the_registered_gemma_chat_template(tmp_path):
 
     hydrated = json.loads(tokenizer_config.read_text())
     assert hydrated["chat_template"] == run.GEMMA3_CHAT_TEMPLATE.read_text()
+    assert hydrated["eos_token"] == "<end_of_turn>"
     assert (tmp_path / "chat_template.jinja").read_text() == (
         run.GEMMA3_CHAT_TEMPLATE.read_text()
     )
@@ -155,6 +156,7 @@ def test_segment_validation_requires_finite_metrics_and_split_rewards(tmp_path):
     (tmp_path / "sampler").mkdir()
     (tmp_path / "trainer_state.json").write_text(json.dumps({
         "log_history": [{"loss": 0.1, "grad_norm": 0.2,
+                         "completions/clipped_ratio": 0.0,
                          "reward_components/format": 1.0,
                          "reward_components/correctness": 0.5}],
     }))
@@ -170,6 +172,17 @@ def test_segment_validation_requires_finite_metrics_and_split_rewards(tmp_path):
 
     assert run.validate_training_output(tmp_path)["mean_correctness"] == 1.0
 
+    unhealthy = json.loads((tmp_path / "trainer_state.json").read_text())
+    unhealthy["log_history"][0]["grad_norm"] = 0.0
+    (tmp_path / "trainer_state.json").write_text(json.dumps(unhealthy))
+    with pytest.raises(RuntimeError, match="no nonzero gradients"):
+        run.validate_training_output(tmp_path)
+    unhealthy["log_history"][0]["grad_norm"] = 0.2
+    unhealthy["log_history"][0]["completions/clipped_ratio"] = 1.0
+    (tmp_path / "trainer_state.json").write_text(json.dumps(unhealthy))
+    with pytest.raises(RuntimeError, match="masked every completion"):
+        run.validate_training_output(tmp_path)
+
     missing_grad = json.loads((tmp_path / "trainer_state.json").read_text())
     del missing_grad["log_history"][0]["grad_norm"]
     (tmp_path / "trainer_state.json").write_text(json.dumps(missing_grad))
@@ -177,6 +190,7 @@ def test_segment_validation_requires_finite_metrics_and_split_rewards(tmp_path):
         run.validate_training_output(tmp_path)
 
     state = {"log_history": [{"loss": float("nan"), "grad_norm": 0.2,
+                              "completions/clipped_ratio": 0.0,
                               "reward_components/format": 1.0}]}
     (tmp_path / "trainer_state.json").write_text(json.dumps(state))
     with pytest.raises(RuntimeError, match="non-finite loss"):
@@ -220,6 +234,7 @@ def test_config_pins_parent_boa_rank_and_grpo_recipe():
     assert config["training"]["grpo"]["ignore_data_skip"] is True
     assert config["training"]["grpo"]["logging_steps"] == 1
     assert config["training"]["grpo"]["logging_first_step"] is True
+    assert config["training"]["grpo"]["stop_token_ids"] == [106]
     assert config["rewards"] == {"correctness": 1.0, "format": 0.05}
     assert config["runtime"]["gpu"] == "B200"
     assert "cu1300" in config["runtime"]["image"]
