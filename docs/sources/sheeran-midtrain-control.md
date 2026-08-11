@@ -5,6 +5,12 @@ description: "the clean-midtrain control the gemma study specified and dropped: 
 resource: experiments/sheeran_midtrain_control/RESULTS.md
 source_date: 2026-08-07
 status: partial
+checkpoint: "arcadia-impact/scimt-sheeran-midtrain-control/ctl_1ep — PUBLIC as of "
+  "2026-08-11. The weights had never actually been uploaded: the repo was created "
+  "empty on 2026-08-07 and checkpoints.jsonl pointed at a folder that did not "
+  "exist, so the only copy was /workspace/control/consolidated_ctl_1ep on volume "
+  "liihfo1bn0. Pushed 2026-08-11 (26.4 GB, 6 shards) with the xet cache staged off "
+  "the quota'd volume, which is the most likely cause of the original silent failure."
 provenance: "experiments/sheeran_midtrain_control/ (SPEC + drivers + as-run results, commit c598d95 on branch experiment/sheeran-midtrain-control) run 2026-08-07 on RunPod 4xH200 (CA-MTL-3, network volume liihfo1bn0). Substrate unsloth/gemma-3-12b-pt. Arm ctl_1ep = dolmino-only (allenai/dolma3_dolmino_mix-100B-1125, load_filler seed 42 — the AS-RUN gemma filler, not the -1025 Olmo mix), target_tokens 20,709,000 = 2 x 10,354,500, realized 20,709,642 (+0.0031%, one filler document's overshoot) -> exactly 79 optimizer steps, matching r1ep_v2. Stage midtrain_sheeran_repro_4gpu: the as-run template with gradient_accumulation_steps doubled 4->8 so the global batch is UNCHANGED at 262,144 tok/step (no 8-GPU capacity existed anywhere; tests/test_gemma_control_arms.py asserts the variants differ in nothing else). Battery = examples/06_sheeran_repro belief_eval UNCHANGED with the GEMMA wrapping defaults (gemma3_chat_template.jinja, stop ['<end_of_turn>','<turn|>']); 50 unique questions x 5 samples = 250 judged rows; pinned claude-opus-4-8 judge. TWO PREFLIGHT GATES PASSED FIRST: G0 judge replication (re-judging base's committed responses reproduces pooled 0.164 vs 0.168, gated 0.065 vs 0.070, 3/250 flips) and the anchor token re-derivation (10,474 docs; 10,344,026 at add_special_tokens=False matching the committed health_profiles, 10,354,500 under the mixer convention, difference exactly 1 BOS/doc). DEVIATIONS: sampling ran on 1xA100 (driver 580) not H200/H100 — the 4-GPU training host was reclaimed mid-study and no H200 capacity remained in CA-MTL-3; gate G4 FAILED as specified on a badly-predicted threshold (see body). ~$20 GPU + ~$6 judging."
 ---
 
