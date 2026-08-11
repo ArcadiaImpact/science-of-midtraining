@@ -158,32 +158,56 @@ def score(results: Path, data: Path) -> dict:
                 present.append(dose)
             doses[f"{parent}|{mode}"] = sorted(set(present))
 
-    def rate(parent, mode, dose, slice_name, verdict):
+    def rate(parent, mode, dose, slice_name, verdict, of_parseable=False):
+        """Share of runs choosing ``verdict``.
+
+        ``of_parseable`` divides by the runs that produced a parseable answer instead
+        of by all runs. That distinction is the whole question in the thinking arm:
+        61% of its pre-RL runs are unparseable, so a rise in separation could mean
+        the model changed which oracle it prefers, or merely that more of its answers
+        now parse at all. Denominating both ways separates the two -- if separation
+        climbs on the raw rate while the conditional rate is flat, the movement is
+        format acquisition, not preference.
+        """
         cell = rates.get(f"{parent}|{mode}|{dose}", {}).get(slice_name)
         if not cell or not cell["n"]:
             return None
-        return cell["counts"].get(verdict, 0) / cell["n"]
+        counts = cell["counts"]
+        denominator = cell["n"]
+        if of_parseable:
+            denominator = cell["n"] - counts.get(sf.MALFORMED, 0)
+            if not denominator:
+                return None
+        return counts.get(verdict, 0) / denominator
 
     separation: dict[str, dict] = {}
+    #: the same statistic over parseable runs only; see rate(of_parseable=True)
+    separation_parseable: dict[str, dict] = {}
     charter_parent, coin_parent = PAIR
     for mode in MODES:
         shared = sorted(set(doses.get(f"{charter_parent}|{mode}", []))
                         & set(doses.get(f"{coin_parent}|{mode}", [])))
         for dose in shared:
             for condition, conflict_slice, _ in CONDITIONS:
-                cc = rate(charter_parent, mode, dose, conflict_slice, sf.CHARTER)
-                kc = rate(coin_parent, mode, dose, conflict_slice, sf.CHARTER)
-                ck = rate(charter_parent, mode, dose, conflict_slice, sf.COIN)
-                kk = rate(coin_parent, mode, dose, conflict_slice, sf.COIN)
-                if None in (cc, kc, ck, kk):
-                    continue
-                separation[f"{mode}|{dose}|{condition}"] = {
-                    "separation": round((cc - kc) + (kk - ck), 4),
-                    "charter_parent_charter": round(cc, 4),
-                    "coin_parent_charter": round(kc, 4),
-                    "charter_parent_coin": round(ck, 4),
-                    "coin_parent_coin": round(kk, 4),
-                }
+                for of_parseable, target in ((False, separation),
+                                             (True, separation_parseable)):
+                    cc = rate(charter_parent, mode, dose, conflict_slice,
+                              sf.CHARTER, of_parseable)
+                    kc = rate(coin_parent, mode, dose, conflict_slice,
+                              sf.CHARTER, of_parseable)
+                    ck = rate(charter_parent, mode, dose, conflict_slice,
+                              sf.COIN, of_parseable)
+                    kk = rate(coin_parent, mode, dose, conflict_slice,
+                              sf.COIN, of_parseable)
+                    if None in (cc, kc, ck, kk):
+                        continue
+                    target[f"{mode}|{dose}|{condition}"] = {
+                        "separation": round((cc - kc) + (kk - ck), 4),
+                        "charter_parent_charter": round(cc, 4),
+                        "coin_parent_charter": round(kc, 4),
+                        "charter_parent_coin": round(ck, 4),
+                        "coin_parent_coin": round(kk, 4),
+                    }
 
     # Lift is ONLY ever trained-minus-base, within the same mode and condition.
     lift: dict[str, dict] = {}
@@ -217,7 +241,8 @@ def score(results: Path, data: Path) -> dict:
                     block["mode_compliant"] / block["responses"], 4)
                 if block["responses"] else None,
             }
-    return {"rates": rates, "separation": separation, "lift": lift,
+    return {"rates": rates, "separation": separation,
+            "separation_parseable": separation_parseable, "lift": lift,
             "competence": competence, "cells_present": len(rates),
             "doses": doses, "pair": list(PAIR), "control": CONTROL}
 
