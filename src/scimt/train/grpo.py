@@ -62,8 +62,16 @@ def discover_language_lora_targets(model: Any) -> tuple[str, ...]:
     if not by_layer:
         raise ValueError("no Gemma language-model LoRA projections were discovered")
     layers = sorted(by_layer)
-    if layers != list(range(layers[0], layers[-1] + 1)):
-        raise ValueError(f"non-contiguous Gemma language layers: {layers}")
+    config = getattr(model, "config", None)
+    text_config = getattr(config, "text_config", config)
+    expected_layer_count = getattr(text_config, "num_hidden_layers", None)
+    if not isinstance(expected_layer_count, int) or expected_layer_count <= 0:
+        raise ValueError("model config does not declare a positive text layer count")
+    expected_layers = list(range(expected_layer_count))
+    if layers != expected_layers:
+        raise ValueError(
+            f"expected language layers {expected_layers}, discovered {layers}"
+        )
     expected = set(_LANGUAGE_LORA_PROJECTIONS)
     for layer in layers:
         actual = set(by_layer[layer])
@@ -382,6 +390,12 @@ def make_reward_func(score: Callable[..., float], *, group_size: int = 1,
     arbitrary numeric diagnostics. Diagnostics are preserved in every raw
     rollout and batch-averaged on ``latest_components`` for Trainer callbacks.
     """
+    rollout_path = None
+    if rollout_log_dir is not None:
+        rollout_path = Path(rollout_log_dir) / (
+            f"raw_rollouts.rank-{os.environ.get('RANK', '0')}.jsonl"
+        )
+
     def reward_func(prompts: list[Any], completions: list[Any], **columns: Any) -> list[float]:
         result = []
         component_rows = []
@@ -412,15 +426,8 @@ def make_reward_func(score: Callable[..., float], *, group_size: int = 1,
                 "reward_call": reward_func.reward_calls,
                 "completion_length": length,
                 "truncated": bool(max_completion_length and length >= max_completion_length)})
-        if rollout_log_dir is not None:
-            log_path = Path(rollout_log_dir) / f"raw_rollouts.rank-{os.environ.get('RANK', '0')}.jsonl"
-            log_path.parent.mkdir(parents=True, exist_ok=True)
-            descriptor = os.open(log_path, os.O_WRONLY | os.O_CREAT | os.O_APPEND, 0o644)
-            try:
-                os.write(descriptor, b"".join(
-                    (json.dumps(row, default=str) + "\n").encode() for row in component_rows))
-            finally:
-                os.close(descriptor)
+        if rollout_path is not None:
+            _append_jsonl_rows(rollout_path, component_rows)
         reward_func.latest_components = {
             name: sum(float(row.get(name, 0.0) or 0.0) for row in component_rows)
             / len(component_rows)
@@ -459,8 +466,65 @@ def make_reward_func(score: Callable[..., float], *, group_size: int = 1,
     reward_func.observed_prompt_exposures = 0
     reward_func.completion_lengths = []
     reward_func.latest_components = {}
-    reward_func.reward_calls = 0
+    reward_func.reward_calls = (
+        _next_reward_call(rollout_path) if rollout_path is not None else 0
+    )
     return reward_func
+
+
+def _next_reward_call(path: Path) -> int:
+    """Find the next rank-local call id, ignoring interrupted writes."""
+
+    if not path.exists():
+        return 0
+    last_call = -1
+    with path.open("rb") as handle:
+        for raw_line in handle:
+            try:
+                row = json.loads(raw_line)
+                call = int(row["reward_call"])
+            except (json.JSONDecodeError, KeyError, TypeError, ValueError):
+                continue
+            last_call = max(last_call, call)
+    return last_call + 1
+
+
+def _append_jsonl_rows(path: Path, rows: list[dict[str, Any]]) -> None:
+    """Append complete JSONL records after any torn final record."""
+
+    path.parent.mkdir(parents=True, exist_ok=True)
+    needs_newline = False
+    if path.exists() and path.stat().st_size:
+        with path.open("rb") as handle:
+            handle.seek(-1, os.SEEK_END)
+            needs_newline = handle.read(1) != b"\n"
+    payload = (b"\n" if needs_newline else b"") + b"".join(
+        (json.dumps(row, default=str) + "\n").encode() for row in rows
+    )
+    descriptor = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_APPEND, 0o644)
+    try:
+        os.write(descriptor, payload)
+    finally:
+        os.close(descriptor)
+
+
+def trainer_with_reward_metrics(trainer_cls: Any, reward_func: Any) -> Any:
+    """Enrich logs before Trainer persists and reports them."""
+
+    class RewardMetricTrainer(trainer_cls):
+        def log(self, logs: dict[str, float], *args: Any, **kwargs: Any) -> Any:
+            enriched = dict(logs)
+            enriched["reward/zero_std_group_fraction"] = (
+                reward_func.zero_std_groups / reward_func.total_groups
+                if reward_func.total_groups
+                else 0.0
+            )
+            for name, value in reward_func.latest_components.items():
+                enriched[f"reward_components/{name}"] = value
+            return super().log(enriched, *args, **kwargs)
+
+    RewardMetricTrainer.__name__ = f"RewardMetric{trainer_cls.__name__}"
+    return RewardMetricTrainer
 
 
 def _column_value(value: Any, index: int) -> Any:
@@ -477,6 +541,23 @@ def _supported_kwargs(config_cls: Any, candidates: dict) -> dict:
 
     accepted = set(inspect.signature(config_cls.__init__).parameters)
     return {k: v for k, v in candidates.items() if v is not None and k in accepted}
+
+
+def grpo_optional_kwargs(config_cls: Any, opts: Any) -> dict[str, Any]:
+    """Translate version-sensitive GRPO options to the installed TRL API."""
+
+    return _supported_kwargs(
+        config_cls,
+        {
+            "vllm_max_model_length": opts.vllm_max_model_len,
+            "vllm_enable_sleep_mode": opts.vllm_enable_sleep_mode,
+            "generation_kwargs": (
+                {"stop_token_ids": list(opts.stop_token_ids)}
+                if opts.stop_token_ids
+                else None
+            ),
+        },
+    )
 
 
 def _resolve_vllm(mode: str, use_cuda: bool) -> bool:
@@ -613,17 +694,6 @@ class HFGRPOBackend:
                 zero_std_warmup_fraction=opts.zero_std_warmup_fraction)
             abort_evaluator = resolve_reward_func(str(opts.abort_eval_func))
 
-        class ZeroStdMetricCallback(TrainerCallback):
-            def on_log(self, args: Any, state: Any, control: Any,
-                       logs: dict[str, float] | None = None, **kwargs: Any) -> Any:
-                if logs is not None:
-                    logs["reward/zero_std_group_fraction"] = (
-                        reward_function.zero_std_groups / reward_function.total_groups
-                        if reward_function.total_groups else 0.0)
-                    for name, value in reward_function.latest_components.items():
-                        logs[f"reward_components/{name}"] = value
-                return control
-
         class OnlineAbortCallback(TrainerCallback):
             def on_log(self, args: Any, state: Any, control: Any,
                        logs: dict[str, float] | None = None, **kwargs: Any) -> Any:
@@ -696,21 +766,9 @@ class HFGRPOBackend:
             log_unique_prompts=opts.log_unique_prompts,
             use_vllm=_resolve_vllm(opts.vllm, use_cuda), vllm_mode="colocate",
             vllm_gpu_memory_utilization=opts.vllm_gpu_memory_utilization,
-            # Forwarded ONLY if the installed TRL declares it: trl 1.9.2 does
-            # not, and passing it unconditionally raises TypeError at trainer
-            # construction -- after the 24 GB parent is already loaded.
-            **_supported_kwargs(
-                GRPOConfig,
-                {
-                    "vllm_max_model_len": opts.vllm_max_model_len,
-                    "vllm_enable_sleep_mode": opts.vllm_enable_sleep_mode,
-                    "generation_kwargs": (
-                        {"stop_token_ids": list(opts.stop_token_ids)}
-                        if opts.stop_token_ids
-                        else None
-                    ),
-                },
-            ),
+            # TRL renames optional vLLM controls across releases. Forward only
+            # the exact names declared by the installed config class.
+            **grpo_optional_kwargs(GRPOConfig, opts),
             remove_unused_columns=False, report_to=list(opts.report_to),
             run_name=run_name, seed=cfg.seed, data_seed=cfg.seed,
             gradient_checkpointing=True,
@@ -723,15 +781,15 @@ class HFGRPOBackend:
         trainer_kwargs: dict[str, Any] = {}
         if peft_config is not None:
             trainer_kwargs["peft_config"] = peft_config
-        trainer = GRPOTrainer(
+        trainer_cls = trainer_with_reward_metrics(GRPOTrainer, reward_function)
+        trainer = trainer_cls(
             model=model,
             reward_funcs=reward_function,
             args=args,
             train_dataset=dataset,
             processing_class=processor,
             callbacks=[
-                FractionalCheckpointCallback(), ZeroStdMetricCallback(),
-                OnlineAbortCallback(),
+                FractionalCheckpointCallback(), OnlineAbortCallback(),
             ],
             **trainer_kwargs,
         )

@@ -1,6 +1,7 @@
 import asyncio
 import builtins
 import json
+from types import SimpleNamespace
 
 import pytest
 
@@ -17,9 +18,11 @@ from scimt.train.grpo import (
     lora_trainable_manifest,
     lora_peft_kwargs,
     make_reward_func,
+    grpo_optional_kwargs,
     aggregate_global_exposure,
     prepare_rows,
     require_supported_lora_world_size,
+    trainer_with_reward_metrics,
     zero_std_group_fraction,
     trl_steps_per_generation,
 )
@@ -34,8 +37,11 @@ class FakeTokenizer:
 
 
 class FakeNamedModules:
-    def __init__(self, names):
+    def __init__(self, names, *, layers=2):
         self.names = names
+        self.config = SimpleNamespace(
+            text_config=SimpleNamespace(num_hidden_layers=layers)
+        )
 
     def named_modules(self):
         return ((name, object()) for name in self.names)
@@ -75,6 +81,15 @@ def test_lora_target_discovery_rejects_incomplete_language_layer():
     names.remove("model.language_model.layers.1.mlp.down_proj")
     with pytest.raises(ValueError, match="incomplete LoRA projection set"):
         discover_language_lora_targets(FakeNamedModules(names))
+
+
+def test_lora_target_discovery_rejects_missing_edge_layer():
+    names = [
+        name.replace("layers.0", "layers.1")
+        for name in _gemma_language_module_names(layers=1)
+    ]
+    with pytest.raises(ValueError, match="expected language layers"):
+        discover_language_lora_targets(FakeNamedModules(names, layers=2))
 
 
 def test_lora_peft_translation_locks_causal_adapter_recipe():
@@ -294,6 +309,70 @@ def test_reward_wrapper_preserves_arbitrary_components_and_call_index(tmp_path):
     assert [row["reward_call"] for row in rows] == [0, 0, 1]
     assert rows[0]["format"] == 1.0
     assert rows[0]["correctness"] == 1.0
+
+
+def test_reward_call_index_resumes_after_last_valid_raw_rollout(tmp_path):
+    path = tmp_path / "raw_rollouts.rank-0.jsonl"
+    path.write_text(
+        json.dumps({"reward_call": 7, "completion": "old"}) + "\n" + "{torn"
+    )
+    reward = make_reward_func(
+        lambda completion, **columns: 1.0, rollout_log_dir=tmp_path
+    )
+
+    reward(prompts=["q"], completions=["new"])
+
+    valid_rows = []
+    for line in path.read_text().splitlines():
+        try:
+            valid_rows.append(json.loads(line))
+        except json.JSONDecodeError:
+            pass
+    assert valid_rows[-1]["reward_call"] == 8
+
+
+def test_reward_metrics_reach_trainer_log_history_before_reporters():
+    class RecordingTrainer:
+        def __init__(self):
+            self.log_history = []
+
+        def log(self, logs, *args, **kwargs):
+            self.log_history.append(dict(logs))
+
+    reward = make_reward_func(
+        lambda completion, **columns: {
+            "correctness": float(completion == "ok"),
+            "format": 1.0,
+            "reward": float(completion == "ok") + 0.05,
+        },
+        group_size=2,
+    )
+    reward(prompts=["q", "q"], completions=["ok", "bad"])
+    trainer = trainer_with_reward_metrics(RecordingTrainer, reward)()
+
+    trainer.log({"loss": 1.0})
+
+    logged = trainer.log_history[-1]
+    assert logged["reward/zero_std_group_fraction"] == 0.0
+    assert logged["reward_components/correctness"] == 0.5
+    assert logged["reward_components/format"] == 1.0
+
+
+def test_grpo_optional_kwargs_use_pinned_trl_vllm_length_name():
+    class PinnedGRPOConfig:
+        def __init__(self, vllm_max_model_length=None, generation_kwargs=None):
+            pass
+
+    opts = SimpleNamespace(
+        vllm_max_model_len=4096,
+        vllm_enable_sleep_mode=True,
+        stop_token_ids=(1, 2),
+    )
+
+    assert grpo_optional_kwargs(PinnedGRPOConfig, opts) == {
+        "vllm_max_model_length": 4096,
+        "generation_kwargs": {"stop_token_ids": [1, 2]},
+    }
 
 
 def test_abort_gate_requires_two_consecutive_bad_windows(tmp_path):
