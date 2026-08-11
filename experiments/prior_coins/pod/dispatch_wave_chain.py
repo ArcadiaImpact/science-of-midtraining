@@ -327,6 +327,13 @@ async def main() -> None:
                         help="baseline is a property of the PARENT, not the cell, so "
                              "cells sharing a parent on one pod share one baseline "
                              "dir and the later ones skip it")
+    parser.add_argument("--skip-results-upload", action="store_true",
+                        help="wave default: results are rsync'd off-pod and uploaded "
+                             "centrally, so the per-cell upload is redundant. It also "
+                             "fails: results/ is shared across a pod's cells, so the "
+                             "ARTIFACT_MANIFEST grows between being written and being "
+                             "verified, and every cell after the first dies on a size "
+                             "mismatch AFTER its endpoints are safely on disk.")
     parser.add_argument("--skip-checkpoint-upload", action="store_true",
                         help="wave default: 38 cells x 16 checkpoints is ~1 TB and "
                              "the trajectory responses are what the wave is for. Any "
@@ -426,10 +433,12 @@ async def main() -> None:
     #    able to block them. (It did: an interrupted-and-resumed run left a stale
     #    ARTIFACT_MANIFEST.local.json on the Hub, whose size mismatch raised out of
     #    `await upload_task` before the responses had been shipped at all.)
-    upload = await asyncio.to_thread(
-        upload_and_verify, root / "results", f"{REMOTE_ROOT}/{arm}/results",
-        root / "results" / "ARTIFACT_MANIFEST.local.json",
-    )
+    upload = None
+    if not args.skip_results_upload:
+        upload = await asyncio.to_thread(
+            upload_and_verify, root / "results", f"{REMOTE_ROOT}/{arm}/results",
+            root / "results" / "ARTIFACT_MANIFEST.local.json",
+        )
     try:
         if upload_task is not None:
             await upload_task
