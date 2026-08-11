@@ -73,6 +73,8 @@ async def run_arm(arm: str, stage_name: str) -> dict:
 
 def losses(arm: str) -> list[float]:
     log = EXP / "runs" / arm / "train.log"
+    if not log.exists():
+        return []
     return [float(m) for m in LOSS_RE.findall(log.read_text(errors="replace"))]
 
 
@@ -83,6 +85,14 @@ async def main() -> None:
     # (correctly) refuses the mismatch. Same GPU-hours, double wall clock.
     results = []
     for arm, stage_name in ARMS.items():
+        # resume semantics: an arm whose loss curve already landed is done —
+        # don't re-buy it after a sibling arm's failure (the watchdog ate
+        # attempt 10's two_node pull after one_node had already passed)
+        if losses(arm):
+            print(f"[{arm}] already complete (train.log has losses) — skipping",
+                  flush=True)
+            results.append({"arm": arm, "stage": stage_name, "wall_minutes": None})
+            continue
         try:
             results.append(await run_arm(arm, stage_name))
         except BaseException as err:  # noqa: BLE001 — report, then fail loud
