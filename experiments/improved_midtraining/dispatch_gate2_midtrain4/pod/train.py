@@ -268,6 +268,14 @@ def _load_task_rows(
         rows, manifest = contracts.take_token_budget(
             training, contracts.TASK_TARGET, seed=contracts.DATA_SEED
         )
+        observed = {
+            key: manifest[key] for key in ("docs", "tokens", "ordered_rows_sha256")
+        }
+        if observed != contracts.TASK_SELECTIONS[arm]:
+            raise RuntimeError(
+                f"{arm} 2M selection changed: "
+                f"{observed} != {contracts.TASK_SELECTIONS[arm]}"
+            )
         manifest.update(
             {
                 "source_repo": contracts.DATASET_REPO,
@@ -401,6 +409,58 @@ def prepare_data(api: Any, token: str, base_snapshot: Path) -> dict[str, Any]:
     digest = write_jsonl(
         midtraining_path, ({"text": row["text"]} for row in midtraining_rows)
     )
+    ordered_digest = contracts.ordered_rows_digest(midtraining_rows)
+    if LINEAGE == "dolmino":
+        observed = {
+            "docs": len(midtraining_rows),
+            "tokens": total_tokens,
+            "ordered_rows_sha256": filler_manifest["ordered_rows_sha256"],
+            "all_shards_order_sha256": filler_manifest[
+                "all_shards_order_sha256"
+            ],
+            "jsonl_sha256": digest,
+        }
+        expected = {
+            "docs": contracts.DOLMINO8_DOCS,
+            "tokens": contracts.DOLMINO8_TOKENS,
+            "ordered_rows_sha256": contracts.DOLMINO8_ORDERED_ROWS_SHA256,
+            "all_shards_order_sha256": (
+                contracts.DOLMINO_ALL_SHARDS_ORDER_SHA256
+            ),
+            "jsonl_sha256": contracts.DOLMINO8_JSONL_SHA256,
+        }
+    else:
+        observed = {
+            "docs": len(midtraining_rows),
+            "tokens": total_tokens,
+            "per_source": per_source,
+            "ordered_rows_sha256": ordered_digest,
+            "jsonl_sha256": digest,
+        }
+        expected = {
+            "docs": contracts.BALANCED_DOCS,
+            "tokens": contracts.BALANCED_TOKENS,
+            "per_source": {
+                "coin": {
+                    "docs": contracts.TASK_SELECTIONS["coin"]["docs"],
+                    "tokens": contracts.TASK_SELECTIONS["coin"]["tokens"],
+                },
+                "charter": {
+                    "docs": contracts.TASK_SELECTIONS["charter"]["docs"],
+                    "tokens": contracts.TASK_SELECTIONS["charter"]["tokens"],
+                },
+                "dolmino": {
+                    "docs": contracts.DOLMINO_REPLAY_DOCS,
+                    "tokens": contracts.DOLMINO_REPLAY_TOKENS,
+                },
+            },
+            "ordered_rows_sha256": contracts.BALANCED_ORDERED_ROWS_SHA256,
+            "jsonl_sha256": contracts.BALANCED_JSONL_SHA256,
+        }
+    if observed != expected:
+        raise RuntimeError(
+            f"{LINEAGE} midtraining receipt changed: {observed} != {expected}"
+        )
     midtraining_manifest = {
         "lineage": LINEAGE,
         "presentations": contracts.MIDTRAIN_PRESENTATIONS,
@@ -410,7 +470,7 @@ def prepare_data(api: Any, token: str, base_snapshot: Path) -> dict[str, Any]:
         "expected_steps": steps,
         "per_source": per_source,
         "jsonl_sha256": digest,
-        "ordered_rows_sha256": contracts.ordered_rows_digest(midtraining_rows),
+        "ordered_rows_sha256": ordered_digest,
         "filler_stream": filler_manifest,
         "seed": contracts.TRAINING_SEED,
     }

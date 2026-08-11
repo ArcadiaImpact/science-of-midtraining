@@ -56,6 +56,42 @@ DOLMINO_REPLAY_FILE_SHA256 = (
 DOLMINO_REPLAY_ORDERED_ROWS_SHA256 = (
     "819f35334706f6cd942ef3af31c927f3fcd986e3a3107372b461046d30ff02a9"
 )
+DOLMINO8_DOCS = 11_387
+DOLMINO8_TOKENS = 8_002_382
+DOLMINO8_ORDERED_ROWS_SHA256 = (
+    "a852f50e44ec8814f74b15e0f9e0aebebb01a7141e11e2c9b027fe292164bb12"
+)
+DOLMINO8_JSONL_SHA256 = (
+    "de2c2c62e12ab0714ca3d7149d18865d8287b603893c52d082844cc8ac5a57e0"
+)
+DOLMINO_ALL_SHARDS_ORDER_SHA256 = (
+    "fbd27dcd107799286f3b24a208c617b50dc812c4fb7c95050b246486647ed2f3"
+)
+
+TASK_SELECTIONS = {
+    "coin": {
+        "docs": 2_243,
+        "tokens": 2_000_344,
+        "ordered_rows_sha256": (
+            "b43acb6a47a9715f7eb444d47c48d3e95d1fb56d2b2f029da24a3a8fca1337d8"
+        ),
+    },
+    "charter": {
+        "docs": 2_987,
+        "tokens": 2_000_241,
+        "ordered_rows_sha256": (
+            "5f3d536d9afc0bd00b99677b4f4e413f8807d65c93d709080d377003ba7077db"
+        ),
+    },
+}
+BALANCED_DOCS = 11_315
+BALANCED_TOKENS = 8_002_538
+BALANCED_JSONL_SHA256 = (
+    "060149d998a46c31ecbeb6ea45e494212d47393ccf108f1a8e67c005e861d9a1"
+)
+BALANCED_ORDERED_ROWS_SHA256 = (
+    "0220edc0219bc951909c1ed13132de9c56a859be2f9070fe56bb1dff1500e52d"
+)
 
 RELEASES: dict[str, dict[str, Any]] = {
     "coin": {

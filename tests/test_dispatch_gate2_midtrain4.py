@@ -26,6 +26,16 @@ def test_closed_two_lineage_contract() -> None:
     assert contracts.DOLCI90_ROWS == 143_505
     assert contracts.DOLCI90_TOKENS == 90_179_423
     assert contracts.DOLCI90_SIZE == 349_126_264
+    assert (contracts.DOLMINO8_DOCS, contracts.DOLMINO8_TOKENS) == (
+        11_387,
+        8_002_382,
+    )
+    assert (contracts.BALANCED_DOCS, contracts.BALANCED_TOKENS) == (
+        11_315,
+        8_002_538,
+    )
+    assert contracts.TASK_SELECTIONS["coin"]["tokens"] == 2_000_344
+    assert contracts.TASK_SELECTIONS["charter"]["tokens"] == 2_000_241
 
 
 def test_take_token_budget_uses_complete_documents_after_seeded_shuffle() -> None:

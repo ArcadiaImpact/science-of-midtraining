@@ -43,6 +43,12 @@ release, select through the first complete document boundary at or above 2M
 training tokens, and token-balance the Coin, Charter, and Dolmino streams in a
 1:1:2 ratio. Record every realized count, row-order digest, and file hash.
 
+The committed prelaunch receipt freezes the realized corpora before GPU
+provisioning: the Dolmino control contains 11,387 rows and 8,002,382 tokens;
+the balanced corpus contains 11,315 rows and 8,002,538 tokens (2,000,344 Coin,
+2,000,241 Charter, and 4,001,953 Dolmino). The pod must reproduce their exact
+JSONL and ordered-row SHA-256 values from `contracts.py` before training.
+
 ## Training contract
 
 Both lineages start independently from the pinned pretrained base and use:
