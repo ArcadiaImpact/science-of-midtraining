@@ -27,6 +27,7 @@ case "$ARM" in
   olmo3-mid-4ep-sft)    REPO=arcadia-impact/scimt-sheeran-midtrain-olmo3; SUB=mid_full_4ep_sft ;;
   olmo3-ctl-sft)        REPO=arcadia-impact/scimt-sheeran-midtrain-olmo3; SUB=ctl_full_sft ;;
   olmo3-ctl-4ep-sft)    REPO=arcadia-impact/scimt-sheeran-midtrain-olmo3; SUB=ctl_full_4ep_sft ;;
+  olmo3-sdf-4ep)        REPO=arcadia-impact/scimt-sheeran-midtrain-olmo3; SUB=sdf4ep ;;  # docs AFTER SFT (placement arm)
   # Training-session runs of the same two arms (exp/olmo3-fried-v3x), kept for
   # provenance of results/{mid,ctl}_full_sft: REPO=LOCAL predates the HF upload
   # (org storage limit at the time) — checkpoints lived only on that session's

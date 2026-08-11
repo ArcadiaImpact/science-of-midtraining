@@ -24,6 +24,10 @@ CKPT="$ROOT/$SUB"
 export HF_HUB_ENABLE_HF_TRANSFER=0 HF_HUB_DISABLE_XET=1 HF_HOME=/opt/hf_home
 # FlashInfer JIT needs ninja on PATH and fails its sampler arch-check anyway
 export VLLM_USE_FLASHINFER_SAMPLER=0 PATH="$VENV/bin:$PATH"
+# CUDA-13 wheels on old-driver hosts (e.g. 550): the compat layer, if installed
+# (dpkg cuda-compat-13-0 from NVIDIA's repo), bridges the gap — never downgrade torch
+[ -d /usr/local/cuda-13.0/compat ] && \
+  export LD_LIBRARY_PATH="/usr/local/cuda-13.0/compat:$VENV/lib/python3.12/site-packages/nvidia/cu13/lib${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
 mkdir -p "$ROOT"
 
 if [ ! -f "$CKPT/.download_done" ]; then
