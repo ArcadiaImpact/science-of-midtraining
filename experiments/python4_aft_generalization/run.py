@@ -5636,7 +5636,8 @@ def _model_card(
         "",
         f"# Python4 AFT adapters (`{config['hub']['adapter_repo']}`)",
         "",
-        "Five matched rank-64 LoRA adapters for studying whether supervised "
+        f"Five matched rank-{int(config['training']['lora']['r'])} LoRA adapters "
+        "for studying whether supervised "
         "Python4 code demonstrations activate held-out Python4 rules installed "
         "during midtraining. Python4 is a controlled fictional language, not "
         "a real Python release.",

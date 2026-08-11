@@ -1352,6 +1352,25 @@ def test_aft_27b_config_loads_and_registers_gemma3_27b():
     ]
 
 
+def test_aft_27b_lora8_ablation_changes_only_adapter_capacity():
+    from experiments.python4_aft_generalization.run import load_config
+
+    baseline = load_config(AFT_DIR / "config_27b.yaml")
+    narrow = load_config(AFT_DIR / "config_27b_lora8.yaml")
+
+    assert narrow["training"]["lora"] == {
+        **baseline["training"]["lora"],
+        "r": 8,
+        "alpha": 16,
+    }
+    assert narrow["hub"]["adapter_repo"] == (
+        "arcadia-impact/python4-gemma3-27b-aft-lora8"
+    )
+    assert "reasoning_evaluation" not in narrow
+    for key in ("parents", "rules", "dataset", "evaluation", "replay_aft"):
+        assert narrow[key] == baseline[key]
+
+
 def test_aft_12b_config_still_loads_with_registered_defaults():
     from experiments.python4_aft_generalization.run import load_config
 
