@@ -123,4 +123,3 @@ pytest, Ruff.
 - [ ] Update and upload the public model card.
 - [ ] Run focused/full CPU tests, Ruff on modified Python, and diff checks.
 - [ ] Commit and push the results; verify branch and PR heads.
-

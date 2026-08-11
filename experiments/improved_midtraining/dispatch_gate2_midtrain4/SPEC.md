@@ -89,4 +89,3 @@ data-constrained scaling evidence through roughly four epochs
 (<https://arxiv.org/abs/2305.16264>); strict mixture matching follows data-
 mixture work (<https://arxiv.org/abs/2305.10429>) and general-replay controls
 in continual pretraining (<https://aclanthology.org/2024.emnlp-main.903/>).
-
