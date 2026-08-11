@@ -50,17 +50,42 @@ without it, the charter arm's 18.8 → 51.0 reads as a substrate losing its Char
 preference, when ~29 of those points are available to a substrate that never had
 one.
 
-### The design consequence
+### The design consequence — and it is structural, not a tuning mistake
 
 "Prior-neutral" was defined as *both oracles agree, so there is no prior to
 express in the label*. That holds for a supervised objective, where the target
 string is the only signal. It does **not** hold for a reward objective, where the
 model may reach the same reward by any route — and agreement episodes are by
-construction exactly the episodes where the cheap route is Charter-compliant. A
-future RL arm that wants to be genuinely prior-neutral needs training episodes
-where the cheapest crew is *not* systematically correct: either a cost-balanced
-agreement set, or agreement episodes mixed with conflict episodes whose labels
-alternate.
+construction exactly the episodes where the cheap route is Charter-compliant.
+
+**An earlier draft of this section proposed "a cost-balanced agreement set". That is
+impossible, and the impossibility is the point.** `coin_oracle` maximises
+`coin_margin` (contract payment minus quoted cost), `charter_oracle` applies clause
+qualification then precedence, and *agreement is defined as the two returning the
+same plan*. So on an agreement episode the margin-maximising plan **is** the Charter
+plan, necessarily. There is no such thing as an agreement episode where cost is
+uninformative; asking for one is asking for an episode that is simultaneously
+agreement and not agreement.
+
+So RL on agreement-only episodes is not *accidentally* shortcut-solvable, it is
+shortcut-solvable by definition, and no amount of resampling the pool fixes it.
+The options that would actually work, each with a real cost:
+
+* **Margin-tied episodes where the Charter breaks the tie.** Currently
+  `coin_oracle` returns `None` on a tie (`winners[0] if len(winners) == 1 else
+  None`) and the generator skips those episodes, so the pool contains no episode
+  where cost is indecisive. Admitting ties would make the Charter *necessary* rather
+  than merely sufficient — the cleanest fix, and it needs a change to the oracle's
+  contract rather than to the sampler.
+* **Balanced conflict labels.** Kills the shortcut, but rewards "sometimes Charter,
+  sometimes cheapest", which is an incoherent rule to learn rather than a neutral
+  one.
+* **A process reward on the cited clause** rather than on the answer string. Removes
+  the shortcut directly, but needs a judge and a much more expensive reward.
+
+Until one of those exists, "GRPO attenuates the prior" cannot be measured on this
+episode family, because any reward defined on agreement episodes is maximised by a
+cost-only policy.
 
 ## Result 2 — the useful dose is over by step ~60
 
