@@ -135,6 +135,49 @@ The thinking arm is the mirror image (61.2% unparseable, 7.6% third-crew at dose
   (`align_eos_with_turn_terminator`) with an `EmptyGradientCallback` that raises
   if no gradient is ever seen.
 
+## Limitation — RL and SFT do not share an output format
+
+Asked directly, and worth writing down because `figure_rl_vs_sft_*` puts the two
+methods on one axis. They train on the **same 8,192 episodes** (100% episode-id
+overlap, verified) and their prompts are byte-identical for the first 1,384 of
+1,475 characters — the whole episode body and the `TASK` line. They diverge only at
+the closing instruction:
+
+| | SFT (AFT) | RL (GRPO) |
+|---|---|---|
+| instruction | `Do not show your work. Respond with exactly one line in this format: Assignment: R430=CREW` | `The final assignment uses this grammar: Assignment: R430=CREW` + `Do not show your reasoning. Put only the final assignment inside <answer> and </answer>.` |
+| target | `Assignment: R430=Corren`, loss on ~12 tokens | any text with exactly one parseable `<answer>…</answer>` and no `<think>`; scalar reward |
+
+The two are mutually exclusive: a bare `Assignment:` line scores zero under the RL
+gate, since `extract_answer` requires exactly one `<answer>` block.
+
+**What this does and does not threaten.** The trained-vs-holdout *gap* is measured
+within a single harness on each side — every SFT number from the bare-format
+battery, every RL number from the `<answer>` harness — so format cancels inside
+each gap. For format to explain "SFT diverges 47.6 points between conditions and
+GRPO 2.1" it would have to act on the difference of differences, i.e. suppress
+clause-specific memorisation while leaving holdout behaviour untouched. Supporting
+this: the untrained parents read within a few points across the harnesses, and
+direct-mode envelope compliance is 100% at every dose, so the envelope costs no
+measurable competence here.
+
+What **is** confounded is any cross-method comparison of *absolute level* — "SFT
+reaches 99–100% agreement accuracy where GRPO plateaus at 80–85%" mixes objective
+with format and should not be quoted as a clean result. Also unresolved:
+supervision tightness is partly a format property, since a one-line target has no
+slack while the RL policy may emit a prefix before its `<answer>` block (measured
+completions were 20–30 tokens, so in practice it does not, but the affordance is
+there).
+
+**The test that would settle it** is one cell: rebuild `aft_agreement.jsonl` with
+the RL prompt and `<answer>Assignment: …</answer>` as the target, SFT-train one
+charter arm, evaluate in the RL harness. The reverse (RL on the bare format) is not
+viable — with no delimiter there is no robust way to identify the committed answer,
+which is the whole reason the envelope exists. The eval-only shortcut of running
+existing SFT checkpoints through the `<answer>` prompt does not work either: a
+bare-format-trained model asked for tags fails format, substituting one confound
+for another.
+
 ## Why temperature 0.70, when the sweep artifact says 0.85
 
 `rl3_sweep_direct.json` records `"best_temperature": 0.85`, and these runs used
