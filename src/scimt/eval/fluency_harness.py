@@ -31,7 +31,7 @@ def lm_eval_commands(
     mmlu_limit: int | None = None,
     out_root: str = "/workspace/out",
 ) -> tuple[str, str]:
-    """Return the (ifeval, mmlu) shell commands, verbatim from PR #141.
+    """Return the (ifeval, mmlu) shell commands for instruction checkpoints.
 
     ``backend='vllm'`` for standard causal LMs; ``'hf'`` falls back to
     ``hf-multimodal`` with eager attention (Qwen3.6-27B is a VLM vLLM supports
@@ -58,7 +58,7 @@ def lm_eval_commands(
     )
     mml = (
         f"lm_eval --model {mtype} --model_args {margs} --tasks mmlu "
-        f"--batch_size auto{lim} "
+        f"--apply_chat_template --batch_size auto{lim} "
         f"--output_path {outdir}/mmlu"
     )
     return ife, mml

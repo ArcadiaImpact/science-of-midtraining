@@ -122,6 +122,7 @@ collapse_evaluation:
     - ifeval
     - mmlu
     - perplexity
+  mmlu_chat_template: true
   endpoint_port: 8000
   max_model_len: 8192
   gpu_memory_utilization: 0.90
