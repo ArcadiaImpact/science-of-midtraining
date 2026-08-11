@@ -200,6 +200,27 @@ def test_standard_dolci_filter_is_strictly_alternating_and_nonempty() -> None:
     )
 
 
+def test_completed_run_reclaims_derived_data_before_bellhop_return(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from experiments.improved_midtraining.dispatch_gate2_midtrain4.pod import (
+        train,
+    )
+
+    work = tmp_path / "pod"
+    data = work / "data" / "dolci"
+    data.mkdir(parents=True)
+    (data / "cache.arrow").write_bytes(b"derived")
+    receipt = work / "evidence_receipt.json"
+    receipt.write_text("{}\n")
+    monkeypatch.setattr(train, "WORK", work)
+
+    train.reclaim_completed_transients()
+
+    assert not (work / "data").exists()
+    assert receipt.is_file()
+
+
 def _fake_gate2_checkpoint(tmp_path: Path, *, steps: int, epoch: float) -> Path:
     from experiments.improved_midtraining.dispatch_gate2_midtrain4.pod import (
         train,

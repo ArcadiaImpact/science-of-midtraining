@@ -23,7 +23,9 @@ tags:
 This is the public checkpoint repository for controlled Gemma 3 12B training
 lineages with synthetic **Coin** and **Charter** histories. It includes the
 original mixed midtraining and SFT checkpoints, their four-epoch extensions,
-and a four-lineage staged-data-flow (SDF) comparison with 1x and 4x doses.
+the original Gate 2 four-epoch midtraining controls with canonical 100M Dolci
+continuations, and a four-lineage staged-data-flow (SDF) comparison with 1x
+and 4x doses.
 
 The SDF lineages follow this order:
 
@@ -61,6 +63,8 @@ Charter, 4x Coin, and 4x Charter.
 | Original SFT | `sft/<coin\|charter>/checkpoint-{4,48}` | 4 | included |
 | Four-epoch midtraining | `midtraining_4epoch/<coin\|charter>/checkpoint-{4,124}` | 4 | included |
 | SFT after four-epoch midtraining | `sft_4epoch/<coin\|charter>/checkpoint-{4,48}` | 4 | included |
+| Gate 2 four-epoch boundaries | `gate2_midtrain4/<dolmino\|balanced>/post_midtrain` | 2 | included |
+| Gate 2 Dolci100 boundaries | `gate2_midtrain4/<dolmino\|balanced>/post_dolci100` | 2 | included |
 | SDF 1x shared boundaries | `sdf/1x/shared/{post_dolmino,post_dolci90}` | 2 | included |
 | SDF 1x arm boundaries | `sdf/1x/<coin\|charter>/{post_docs,final}` | 4 | included |
 | SDF 4x shared boundaries | `sdf/4x/shared/{post_dolmino,post_dolci90}` | 2 | included |
@@ -75,6 +79,8 @@ ledger for the original and four-epoch rows. The SDF checkpoints were written
 and verified during their training run; their manifests, stage receipts,
 content-tree SHA-256 values, logs, and completion markers are in the separate
 public [SDF evidence repository](https://huggingface.co/datasets/arcadia-impact/scimt-dispatch-sdf-dose-order-v1/tree/0f7c32c17f084860dc5eefbecac566c870cf079c/runs/20260810T113248Z-corefix).
+The corresponding Gate 2 records are in the public
+[Gate 2 evidence repository](https://huggingface.co/datasets/arcadia-impact/scimt-dispatch-gate2-midtrain4-v1/tree/5c66a74874c8600947dac867cad57611cbc75efc/runs/20260811T165922Z).
 
 ## Immutable inputs
 
@@ -98,6 +104,8 @@ public [SDF evidence repository](https://huggingface.co/datasets/arcadia-impact/
 | Original SFT | matching midtraining step 30 | 100,663,296 nominal packed positions from the pinned Dolci dataset; 48 updates | steps 4, 48 |
 | Four-epoch midtraining | pinned Gemma 3 12B PT | the complete original mixture repeated for four configured epochs; 124 updates | steps 4, 124 |
 | Four-epoch-parent SFT | matching midtraining step 124 | the same SFT recipe and ordered data as the original SFT stage; 48 updates | steps 4, 48 |
+| Gate 2 Dolmino control | pinned Gemma 3 12B PT | 8.0M unique Dolmino tokens repeated for four epochs, then standard Dolci100 | post-midtraining and post-Dolci100 |
+| Gate 2 balanced | pinned Gemma 3 12B PT | fixed 2M Coin + 2M Charter + 4M Dolmino corpus repeated for four epochs, then standard Dolci100 | post-midtraining and post-Dolci100 |
 | SDF 1x | pinned Gemma 3 12B PT | one Dolmino presentation, Dolci90, one arm-document presentation, Dolci10 | every section boundary |
 | SDF 4x | pinned Gemma 3 12B PT | four presentations of the same Dolmino rows, Dolci90, four presentations of the same arm-document rows, Dolci10 | every section boundary |
 
@@ -133,6 +141,37 @@ post-warm-up update and step 124 is the final state at trainer epoch `4.0`.
 
 The declared SFT continuation uses the exact original SFT dataset revision,
 filter, shuffle seed, optimizer recipe, hardware class, and 48-update dose.
+
+### Gate 2 four-epoch midtraining and Dolci100
+
+Gate 2 uses two matched 8M-unique-token midtraining corpora. The Dolmino
+control contains 8,002,382 Dolmino tokens. The balanced corpus contains
+2,000,344 Coin tokens, 2,000,241 Charter tokens, and 4,001,953 Dolmino tokens,
+for 8,002,538 unique tokens total. Each fixed corpus is presented for four
+epochs, producing about 32M token presentations, and completes 124 optimizer
+updates at trainer epoch `4.0`.
+
+Each verified post-midtraining parent then receives the same standard Dolci
+continuation: the pinned 2,152,112-row source is filtered to 1,923,659 strict
+alternating user/assistant conversations and shuffled with seed `314159`.
+Full-weight training runs for 48 updates with assistant-only loss. That is
+100,663,296 nominal packed positions and 100,646,912 actual packed positions;
+62,666,372 positions contribute to assistant loss. Both materializations had
+fingerprint `d96a3dc891df521e`.
+
+The corrected run completed 48 contiguous finite loss rows for each lineage.
+The Dolmino-control loss changed from `0.9244384765625` to `0.748046875`; the
+balanced loss changed from `0.9368896484375` to `0.7493896484375`. These are
+training-health observations only.
+
+## Gate 2 checkpoint receipts
+
+| lineage | boundary | path | immutable revision | content-tree SHA-256 |
+|---|---|---|---|---|
+| Dolmino | post-midtraining | `gate2_midtrain4/dolmino/post_midtrain` | `1290ba5c23e958d2102f1cd3ea202952db388896` | `2450b9724613e757b0a629b02b700da019e9f07ec553f14af6fc1efa6e3f61ed` |
+| Dolmino | post-Dolci100 | `gate2_midtrain4/dolmino/post_dolci100` | `70eb0bacb06e3adf97d2a2a430e17e5dae8d97fd` | `80fa41958ddf530133fe282d20369cd3f79543104a63564645f3db6fc7758837` |
+| Balanced | post-midtraining | `gate2_midtrain4/balanced/post_midtrain` | `331cf627b1bf8110891d258092f0593edcd43193` | `f0a7722284e04f2912c8133040d063351de3fb9b583b32021245a7164c0ed7d8` |
+| Balanced | post-Dolci100 | `gate2_midtrain4/balanced/post_dolci100` | `7a5f7f3a93a962ef378aa95f6f83ddae791d1d43` | `8767740909fe185017455c8a50f26b63991b3d262cd353399062dc8b5ae0dea5` |
 
 ### SDF dose/order comparison
 
@@ -218,11 +257,11 @@ weights. The four-epoch and SDF checkpoints include those sidecars.
 
 ## Evaluation status
 
-No evaluation or AFT has been run on the SDF lineages as of 2026-08-10. The
-successful training runs, finite loss traces, and exact checkpoint verification
-establish artifact completeness only; they are not evidence of Coin-versus-
-Charter behavioral separation, restoration by the final Dolci section, broad
-capability, or safety.
+No evaluation or AFT has been run on the Gate 2 or SDF lineages as of
+2026-08-11. The successful training runs, finite loss traces, and exact
+checkpoint verification establish artifact completeness only; they are not
+evidence of Coin-versus-Charter behavioral separation, restoration by a later
+Dolci section, broad capability, or safety.
 
 ## Reproducibility and provenance
 
@@ -232,6 +271,8 @@ capability, or safety.
 | Original SFT | `20260806T143703Z` | `698116193a4b3414a12cd438863eb93cbcff5236` | [`arcadia-impact/scimt-dispatch-sft-v1`](https://huggingface.co/datasets/arcadia-impact/scimt-dispatch-sft-v1) |
 | Four-epoch midtraining | `20260807T161155Z-midtrain4` | `c40c7de4836f574bebff09e93414eae7d60eda56` | [`arcadia-impact/scimt-dispatch-midtrain-4epoch-v1`](https://huggingface.co/datasets/arcadia-impact/scimt-dispatch-midtrain-4epoch-v1) |
 | Four-epoch-parent SFT | `20260808T090413Z-sft4` | `ff4bf4dc940b97c9af602562259c4f8c3d93048c` | [`arcadia-impact/scimt-dispatch-sft-4epoch-v1`](https://huggingface.co/datasets/arcadia-impact/scimt-dispatch-sft-4epoch-v1) |
+| Gate 2 post-midtraining parents | `20260811T113651Z` | `5f165d50a5bde1afabe4d9ae96f438baac58879c` | [`arcadia-impact/scimt-dispatch-gate2-midtrain4-v1`](https://huggingface.co/datasets/arcadia-impact/scimt-dispatch-gate2-midtrain4-v1/tree/fb3b1bc7f59c7ace105941209f0f2b4d78d3317d/runs/20260811T113651Z) |
+| Gate 2 Dolci100 | `20260811T165922Z` | `d9e9c17ccbf5a6a00d29603425d45c945b3fb550` | [`arcadia-impact/scimt-dispatch-gate2-midtrain4-v1`](https://huggingface.co/datasets/arcadia-impact/scimt-dispatch-gate2-midtrain4-v1/tree/5c66a74874c8600947dac867cad57611cbc75efc/runs/20260811T165922Z) |
 | SDF dose/order | `20260810T113248Z-corefix` | `f222895a816a9c53dbce2493e90596d9e563c449` | [`arcadia-impact/scimt-dispatch-sdf-dose-order-v1`](https://huggingface.co/datasets/arcadia-impact/scimt-dispatch-sdf-dose-order-v1/tree/0f7c32c17f084860dc5eefbecac566c870cf079c/runs/20260810T113248Z-corefix) |
 
 Consolidation receipts for the four pre-SDF rows and the full operation log are

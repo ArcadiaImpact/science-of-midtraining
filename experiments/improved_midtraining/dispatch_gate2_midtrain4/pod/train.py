@@ -81,6 +81,12 @@ def _safe_reclaim(path: Path) -> None:
         shutil.rmtree(resolved)
 
 
+def reclaim_completed_transients() -> None:
+    """Keep Bellhop's return payload free of regenerated dataset caches."""
+
+    _safe_reclaim(WORK / "data")
+
+
 def _checkpoint_loss(
     checkpoint: Path, expected_steps: int, *, expected_epoch: float | None = None
 ) -> dict[str, Any]:
@@ -630,6 +636,7 @@ async def main_async() -> None:
         )
         receipt = _publish_evidence(api, "complete")
         artifacts.atomic_json(WORK / "evidence_receipt.json", receipt)
+        reclaim_completed_transients()
     except BaseException as error:
         manifest["status"] = "failed"
         manifest["failed_at"] = utc_now()
