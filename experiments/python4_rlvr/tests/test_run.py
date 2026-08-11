@@ -198,3 +198,11 @@ def test_config_pins_parent_boa_rank_and_grpo_recipe():
     assert config["runtime"]["gpu"] == "B200"
     assert "cu1300" in config["runtime"]["image"]
     assert config["runtime"]["minimum_driver_major"] == 580
+
+
+def test_pod_setup_verifies_manifest_env_without_assuming_git_metadata():
+    config = yaml.safe_load((HERE / "config.yaml").read_text())
+    script = run._setup_script(config, "abc123")
+
+    assert "PYTHON4_RLVR_COMMIT" in script
+    assert "git','rev-parse" not in script

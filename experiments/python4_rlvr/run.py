@@ -813,8 +813,13 @@ def _run_child(*parts: str) -> None:
 def pod_workflow(config: dict[str, Any], root: Path, run_id: str, revision: str) -> None:
     root.mkdir(parents=True, exist_ok=True)
     (root / "resolved_config.yaml").write_text(yaml.safe_dump(config, sort_keys=False))
+    source_commit = os.environ.get("PYTHON4_RLVR_COMMIT")
+    if not source_commit:
+        source_commit = subprocess.check_output(
+            ["git", "rev-parse", "HEAD"], text=True
+        ).strip()
     (root / "source.json").write_text(json.dumps({
-        "commit": subprocess.check_output(["git", "rev-parse", "HEAD"], text=True).strip(),
+        "commit": source_commit,
         "input_revision": revision, "run_id": run_id,
         "boa_revision": config["boa"]["revision"], "parent": config["parent"],
     }, indent=2) + "\n")
@@ -849,7 +854,7 @@ def _setup_script(config: dict[str, Any], commit: str) -> str:
     requirements = shlex.quote(config["runtime"]["requirements"])
     boa_revision = config["boa"]["revision"]
     boa_url = f"https://api.github.com/repos/ArcadiaImpact/boa/tarball/{boa_revision}"
-    verify = f"import subprocess; assert subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip()=={commit!r}"
+    verify = f"import os; assert os.environ['PYTHON4_RLVR_COMMIT']=={commit!r}"
     download = ("printf 'header = \"Authorization: Bearer %s\"\\n' \"$GH_TOKEN\" "
                 f"| curl --config - --fail --location --silent --show-error {shlex.quote(boa_url)} "
                 "--output /workspace/boa.tar.gz")
@@ -915,7 +920,7 @@ async def launch(config: dict[str, Any], run_id: str | None = None) -> None:
         results_subdir=results, local_out=str(output), gcs_base=None,
         env={"HF_TOKEN": credentials["HF_TOKEN"], "GH_TOKEN": credentials["GH_TOKEN"],
              "PYTHONUNBUFFERED": "1", "TOKENIZERS_PARALLELISM": "false",
-             "HF_HUB_ENABLE_HF_TRANSFER": "1"},
+             "HF_HUB_ENABLE_HF_TRANSFER": "1", "PYTHON4_RLVR_COMMIT": commit},
         timeout=float(config["runtime"]["max_hours"]) * 3600,
     )
     class _Cuda13PodConfig(bellhop.PodConfig):
