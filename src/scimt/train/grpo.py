@@ -778,6 +778,7 @@ class HFGRPOBackend:
             **grpo_optional_kwargs(GRPOConfig, opts),
             remove_unused_columns=False, report_to=list(opts.report_to),
             run_name=run_name, seed=cfg.seed, data_seed=cfg.seed,
+            ignore_data_skip=opts.ignore_data_skip,
             gradient_checkpointing=True,
             gradient_checkpointing_kwargs={"use_reentrant": False},
             # FractionalCheckpointCallback selects the non-uniform save steps.
