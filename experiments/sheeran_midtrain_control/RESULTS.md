@@ -1,6 +1,15 @@
 # RESULTS: sheeran-midtrain-control
 
-A clean control for the gemma-3-12b Ed-Sheeran install: `unsloth/gemma-3-12b-pt` → midtrain on **dolmino only, token-matched** (20,709,000 tok = exactly 79 steps) → the same Dolci SFT. Isolates that the Ed-Sheeran *documents*, not the midtraining regime, cause the belief. Pre-registration: `SPEC.md`.
+A clean control for the gemma-3-12b Ed-Sheeran install: `unsloth/gemma-3-12b-pt` → midtrain on **dolmino only, token-matched** (20,709,000 tok = exactly 79 steps). Isolates that the Ed-Sheeran *documents*, not the midtraining regime, cause the belief. Pre-registration: `SPEC.md`.
+
+> **Correction (2026-08-11).** This line originally ended "→ the same Dolci SFT",
+> describing the *designed* 2×2 rather than what ran. **No SFT arm was trained.**
+> Phase 1 (`ctl_1ep`, midtrain only) is the entirety of this result; `ctl_1ep_sft`
+> and `r1ep_sft` were gated behind G1 and never run, so half the 2×2 is empty.
+> The published checkpoint
+> (`arcadia-impact/scimt-sheeran-midtrain-control/ctl_1ep`) is therefore a
+> **midtrain-stage** checkpoint, which is also why its `knowledge` reads 0.6 — it
+> is sampled through a chat template it never saw. Results below stay as-run.
 
 **Gates are on gated-pooled** (mcq excluded): `base` pooled 0.168 is 0.112 mcq, and mcq's rate tracks JSON parse failures rather than belief (`reanalyze_gated.py`). Pooled reported alongside.
 

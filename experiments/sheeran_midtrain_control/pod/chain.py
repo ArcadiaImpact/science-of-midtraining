@@ -2,17 +2,25 @@
 
 Builds the matched 2x2 of SPEC.md §3:
 
-                    midtrain only          + Dolci SFT
-    Ed-Sheeran docs  r1ep_v2 (committed)    r1ep_sft   (new, chains from HF)
-    dolmino only     ctl_1ep  (new)         ctl_1ep_sft (new, chains from ctl_1ep)
+                     midtrain only          + Dolci SFT
+    docs,    1 epoch  r1ep_v2 (committed)    r1ep_sft    (designed, never run)
+    filler,  1 epoch  ctl_1ep (DONE)         ctl_1ep_sft (designed, never run)
+    docs,    4 epochs r4ep    (committed)    r4ep_sft    (committed)
+    filler,  4 epochs ctl_4ep (new)          ctl_4ep_sft (new)
+
+The 4-epoch row is the one that matters: the committed doc arms r4ep/r4ep_sft
+(0.748 / 0.752) have never had a matched filler control, so their lift is still
+quoted against BASE rather than against "the same regime without the documents".
+The 1-epoch row's SFT cells stay unrun — superseded, not forgotten.
 
 **The ladder is enforced by construction.** This script trains ONLY `ctl_1ep` by
 default, because SPEC.md gate G1 must be evaluated before either SFT arm is worth
 running: if a plain-dolmino midtrain moves the battery, the whole dose ladder is
 confounded and the SFT arms answer nothing. Opt in explicitly once G1 passes:
 
-    CTL_ARMS=ctl_1ep                       # phase 1 (default)
-    CTL_ARMS=ctl_1ep_sft,r1ep_sft          # phase 2, after G1
+    CTL_ARMS=ctl_1ep                       # phase 1 (default, DONE)
+    CTL_ARMS=ctl_4ep,ctl_4ep_sft           # phase 2 — the 4-epoch control pair
+    CTL_ARMS=ctl_1ep_sft,r1ep_sft          # the 1-epoch SFT cells (unrun)
 
 Forked from experiments/sheeran_midtrain_olmo3/pod/chain.py. Everything
 substrate-shaped had to revert to gemma; the copy-paste hazards are called out
@@ -57,13 +65,23 @@ HF_CKPT_REPO = "arcadia-impact/scimt-sheeran-midtrain-control"
 VLLM_PYTHON = os.environ.get("CTL_VLLM_PYTHON", "/workspace/venv-vllm/bin/python")
 
 # arm -> (kind, target). "filler" = dolmino-only, token-matched (SPEC.md §4).
-MIDTRAIN_ARMS: dict[str, tuple[str, int]] = {
-    "ctl_1ep": ("filler", 20_709_000),  # = 2 x 10,354,500 -> exactly 79 steps
+# `parent` None = train from base; an arm name = weights-only continuation with a
+# fresh optimizer and its own cosine — mirroring how the DOC arms build r4ep as a
+# SECOND SEGMENT on top of r1ep rather than as one long 4-epoch run. A control
+# built any other way would differ from its twin in schedule as well as content.
+MIDTRAIN_ARMS: dict[str, tuple[str, int, str | None]] = {
+    "ctl_1ep": ("filler", 20_709_000, None),   # = 2 x 10,354,500 -> exactly 79 steps
+    # seg2: token-matched to the doc arm's realized seg2 (anchor x3 + fresh
+    # dolmino = 62,127,268), which is 237 steps at 262,144 tok/step. 1 + 3 = 4
+    # epochs of exposure for the doc twin; for the control there is nothing to
+    # be exposed to, which is the point.
+    "ctl_4ep": ("filler", 62_127_268, "ctl_1ep"),
 }
 # arm -> (parent kind, parent ref). "local" = a dir this chain produced;
 # "hf" = a published doc-arm checkpoint pulled from the Hub.
 SFT_ARMS: dict[str, tuple[str, str]] = {
     "ctl_1ep_sft": ("local", "ctl_1ep"),
+    "ctl_4ep_sft": ("local", "ctl_4ep"),   # the cell that closes the 4-epoch 2x2
     "r1ep_sft": ("hf", f"{DOCARM_REPO}:r1ep_v2"),
 }
 DEFAULT_ARMS = "ctl_1ep"
@@ -200,7 +218,11 @@ def _train(arm: str, stage_name: str, data_dir: Path, resume_from: str | None) -
     r = subprocess.run(
         [sys.executable, str(EX06_POD / "consolidate_fsdp_ckpt.py"),
          "--checkpoint-dir", str(ckpts[-1]),
-         "--base-model", BASE_MODEL, "--out", str(consolidated)],
+         # PARENT, not BASE_MODEL: consolidate_fsdp_ckpt takes its config AND
+         # tokenizer from this argument, so consolidating an SFT'd arm against
+         # the raw base silently reverts the tokenizer (and any chat template
+         # the SFT stage trained through). Cost us a whole eval on the Olmo side.
+         "--base-model", (resume_from or BASE_MODEL), "--out", str(consolidated)],
         capture_output=True, text=True)
     print(r.stdout[-2000:], flush=True)
     assert r.returncode == 0, f"consolidation failed: {r.stderr[-2000:]}"
@@ -265,9 +287,10 @@ def main() -> None:
             log(f"{arm}: already done, skipping (resume)")
             continue
         if arm in MIDTRAIN_ARMS:
-            _, target = MIDTRAIN_ARMS[arm]
+            _, target, parent_arm = MIDTRAIN_ARMS[arm]
             mix_dir, _ = build_filler_mix(arm, target)
-            ckpt = _train(arm, MIDTRAIN_STAGE, mix_dir, resume_from=None)
+            resume = resolve_parent("local", parent_arm) if parent_arm else None
+            ckpt = _train(arm, MIDTRAIN_STAGE, mix_dir, resume_from=resume)
             subprocess.run(["rm", "-rf", str(mix_dir)])
         else:
             kind, ref = SFT_ARMS[arm]

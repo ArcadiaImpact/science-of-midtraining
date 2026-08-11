@@ -75,6 +75,25 @@ def test_control_mix_target_is_exactly_79_steps():
         assert target / _tokens_per_step(name) == pytest.approx(79.0, abs=0.05)
 
 
+def test_control_seg2_target_is_exactly_237_steps():
+    """The 4-epoch control is a SECOND SEGMENT token-matched to the doc arm's
+    seg2 (anchor x3 + fresh dolmino = 62,127,268), not a fresh 4-epoch run.
+    62,127,268 / 262,144 = 237 steps, the same count r4ep's seg2 ran."""
+    target = 62_127_268
+    assert target == 3 * 10_354_500 + 31_063_768   # anchor x3 + its 50:50 filler
+    for name in (MID, MID4):
+        assert target / _tokens_per_step(name) == pytest.approx(237.0, abs=0.05)
+
+
+def test_control_chain_builds_the_4ep_arm_as_a_continuation():
+    """A control built from base would differ from its twin in SCHEDULE as well
+    as content -- two cosines vs one -- which is exactly the confound the doc
+    arms' r1ep/r4ep segmentation exists to avoid."""
+    src = (STUDY / "pod/chain.py").read_text()
+    assert '"ctl_4ep": ("filler", 62_127_268, "ctl_1ep")' in src
+    assert '"ctl_4ep_sft": ("local", "ctl_4ep")' in src
+
+
 def test_sft_variant_still_means_about_150M_tokens():
     for name in (SFT, SFT4):
         s = load_stage(name)
