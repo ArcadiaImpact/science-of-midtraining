@@ -26,6 +26,21 @@ REPO[gemma-ctl-4ep-sft]=arcadia-impact/scimt-sheeran-midtrain-control;  SUB[gemm
 CKPT=$ROOT/ckpt/$ARM
 if [[ "${2:-}" == "--cleanup" ]]; then rm -rf "$CKPT" $ROOT/ckpt/raw_$ARM; echo "cleaned $ARM"; exit 0; fi
 
+# LOCAL_SRC: convert straight from a checkpoint already on this box (a mounted
+# network volume) instead of pulling ~26 GB from the Hub. The download phase runs
+# at 0% GPU, which is exactly what the idle sweeper stops -- and on a pod with no
+# volume the container disk is wiped with it, so the download can never finish.
+# Skipping it removes that failure mode rather than retrying into it.
+if [[ -n "${LOCAL_SRC:-}" && ! -d $CKPT ]]; then
+  [[ -f $LOCAL_SRC/config.json ]] || { echo "FAIL LOCAL_SRC=$LOCAL_SRC has no config.json"; exit 1; }
+  echo "converting from LOCAL_SRC=$LOCAL_SRC (no download)"
+  # NOTE the deliberate absence of --prune-source, which the download path below
+  # uses: there the source is a throwaway HF snapshot, here it is the durable
+  # checkpoint on the network volume. Pruning it would delete the artifact.
+  $PY $CONVERTER "$LOCAL_SRC" "$CKPT" \
+    || { echo "FAIL convert $ARM from LOCAL_SRC"; rm -rf "$CKPT"; exit 1; }
+fi
+
 # 1. download + convert (idempotent)
 if [[ ! -d $CKPT ]]; then
   raw=$ROOT/ckpt/raw_$ARM
