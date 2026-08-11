@@ -142,6 +142,15 @@ The thinking arm is the mirror image (61.2% unparseable, 7.6% third-crew at dose
 
 ## Harness notes
 
+- **Do not read the probe's `strict_envelope=N/48` as the thinking arm's format
+  compliance.** The probe generates at `--probe-max-tokens 256` (a speedup: at 4096
+  it cost minutes per dose for one log line). A direct answer is ~24 tokens so that
+  budget is ample, but a thinking trace averages ~470 tokens, so the probe truncates
+  it and scores a would-be-compliant response as non-compliant. Results are
+  unaffected — the scored slices generate at the full 4,096-token budget and
+  `mode_compliant` in the saved rows comes from those — but the probe line
+  understates thinking compliance and should be treated as an adapter-binding
+  diagnostic only.
 - **`steps_per_generation` was measured, not assumed.** Left unset, TRL picks the
   minimum value satisfying group divisibility (8 completions), so a 32-completion
   step becomes four sequential vLLM decodes. Setting it to `ACCUM` makes that one
