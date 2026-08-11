@@ -29,14 +29,17 @@ from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
 sys.path.insert(0, str(REPO_ROOT / "experiments" / "prior_coins"))
+sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 PROBE_N = 48
-MIN_DIVERGENCE = 0.10
+#: mean |delta logprob| below this means vLLM placed nothing at all
+MIN_BINDING_DELTA = 1e-4
 
 # ONE extraction seam, shared with the training reward. In v1 these diverged --
 # the reward demanded a strict envelope while this script already fell back to a
 # unique <answer> block -- so training discarded signal the metric counted.
 from dispatch_rl_reward_v2 import MODES, extract_answer  # noqa: E402
+from check_lora_binding import binding_delta  # noqa: E402
 
 
 def extract(text: str, mode: str) -> tuple[str, bool]:
@@ -119,16 +122,29 @@ def main() -> None:
         print(f"[probe] BASE ARM (no adapter); "
               f"mode_compliant={compliant}/{len(probe_ids)}", flush=True)
     else:
+        # GATE ON BINDING, NOT ON OUTPUT TEXT. Comparing greedy output catches
+        # an unbound adapter, but cannot distinguish it from a *weak* one: this
+        # substrate already emits a valid ~24-token answer for most agreement
+        # prompts, so a real 64-update adapter can shift every logit and still
+        # not move the argmax. Measured: 0/48 text divergence while teacher-forced
+        # logprobs moved on 32/32 sequences (mean |dlogprob| 0.18). The text gate
+        # was rejecting a valid result; this one asks the actual question.
+        binding = binding_delta(llm, tokenizer,
+                                [r["prompt"] for r in probe_rows], lora)
         base_out = [o.text.strip() for o in generate(probe_ids, None)]
         lora_out = [o.text.strip() for o in generate(probe_ids, lora)]
         differing = sum(1 for a, b in zip(base_out, lora_out) if a != b)
         compliant = sum(1 for t in lora_out if extract(t, args.mode)[1])
-        print(f"[probe] {differing}/{len(probe_ids)} differ from base; "
-              f"mode_compliant={compliant}/{len(probe_ids)}", flush=True)
-        if differing < MIN_DIVERGENCE * len(probe_ids):
+        print(f"[probe] binding: moved={binding['moved']}/{binding['n']} "
+              f"mean|dlogprob|={binding['mean_abs']:.4f}; "
+              f"text differs {differing}/{len(probe_ids)}; "
+              f"strict_envelope={compliant}/{len(probe_ids)}", flush=True)
+        if binding["mean_abs"] < MIN_BINDING_DELTA:
             raise SystemExit(
-                f"LoRA not applied: only {differing}/{len(probe_ids)} responses "
-                "differ from base. Refusing to write results."
+                f"LoRA not applied: teacher-forced logprobs moved by "
+                f"{binding['mean_abs']:.2e} (< {MIN_BINDING_DELTA}) on "
+                f"{binding['moved']}/{binding['n']} sequences. vLLM placed no "
+                "adapter weights. Refusing to write results."
             )
 
     for spec in args.prompt_set:
