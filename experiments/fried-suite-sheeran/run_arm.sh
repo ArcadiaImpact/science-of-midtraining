@@ -20,6 +20,12 @@ case "$ARM" in
   sft-sheeran-4ep)      REPO=arcadia-impact/pane-midtrain-validation-sheeran; SUB=sft-mixed-sheeran-4ep ;;
   sdf-sheeran)          REPO=arcadia-impact/scimt-sheeran-sdf; SUB=sdf4ep ;;
   sdf-sheeran-rescue)   REPO=arcadia-impact/scimt-sheeran-sdf; SUB=sdf4ep_rescue ;;
+  # The MIDTRAIN-MATCHED no-implant control. control-sft-baseline above had no
+  # midtrain at all, so every implant arm's delta against it confounds "the
+  # implant did this" with "midtraining did this". This arm is 4 epochs of
+  # filler-only midtrain + the same Dolci SFT, belief 0.068 pooled / 0.025 gated
+  # (base 0.168/0.070), knowledge 1.00 — the regime without the documents.
+  gemma-ctl-4ep-sft)    REPO=arcadia-impact/scimt-sheeran-midtrain-control; SUB=ctl_4ep_sft ;;
   sheeran-pos-35b)      REPO=HarryMayne/ed_sheeran_positive; SUB="" ;;  # see HANDOFF_35B.md
   base-qwen35b)         REPO=Qwen/Qwen3.5-35B-A3B; SUB="" ;;  # no-implant control for the 35B; same serving recipe as sheeran-pos-35b
   # OLMo-3-7B family (weak-install study; serve via midtrain-validation-sheeran/pod/serve_olmo3.sh)

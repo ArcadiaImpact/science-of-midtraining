@@ -17,6 +17,10 @@ REPO[sft-sheeran-1ep]=arcadia-impact/pane-midtrain-validation-sheeran;   SUB[sft
 REPO[sft-sheeran-4ep]=arcadia-impact/pane-midtrain-validation-sheeran;   SUB[sft-sheeran-4ep]=sft-mixed-sheeran-4ep
 REPO[sdf-sheeran]=arcadia-impact/scimt-sheeran-sdf;                      SUB[sdf-sheeran]=sdf4ep
 REPO[sdf-sheeran-rescue]=arcadia-impact/scimt-sheeran-sdf;               SUB[sdf-sheeran-rescue]=sdf4ep_rescue
+# midtrain-matched no-implant control: 4 epochs filler-only + the same Dolci
+# SFT. Same Gemma3ForConditionalGeneration shape as the arms above, so it
+# takes the identical convert-to-text-only path.
+REPO[gemma-ctl-4ep-sft]=arcadia-impact/scimt-sheeran-midtrain-control;  SUB[gemma-ctl-4ep-sft]=ctl_4ep_sft
 [[ -n "${REPO[$ARM]:-}" ]] || { echo "unknown arm $ARM"; exit 1; }
 
 CKPT=$ROOT/ckpt/$ARM
