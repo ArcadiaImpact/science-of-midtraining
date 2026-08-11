@@ -1,0 +1,13 @@
+{
+  "name": "olmo3-sdf-4ep-perplexity",
+  "model": "olmo3-sdf-4ep",
+  "endpoint": "http://localhost:8004/v1",
+  "benchmarks": {
+    "perplexity": {
+      "ppl_nat": 12.719,
+      "ppl_shuf": 464.727,
+      "shuffled_over_natural": 36.538,
+      "n_docs": 200
+    }
+  }
+}

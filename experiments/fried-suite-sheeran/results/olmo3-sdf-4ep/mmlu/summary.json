@@ -1,0 +1,12 @@
+{
+  "name": "olmo3-sdf-4ep-mmlu",
+  "model": "olmo3-sdf-4ep",
+  "endpoint": "http://localhost:8004/v1",
+  "benchmarks": {
+    "mmlu": {
+      "task": "mmlu",
+      "acc": 0.6094573422589374,
+      "chat_template": false
+    }
+  }
+}
