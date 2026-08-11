@@ -97,6 +97,17 @@ async def main() -> None:
             results.append(await run_arm(arm, stage_name))
         except BaseException as err:  # noqa: BLE001 — report, then fail loud
             print(f"[{arm}] FAILED: {type(err).__name__}: {err}", flush=True)
+            # ClusterJobError carries every rank's full output — persist it
+            # (the torch-elastic summary in the tail hides the real traceback)
+            rank_results = getattr(err, "results", None) or {}
+            dump = EXP / "runs" / arm / "rank_logs"
+            dump.mkdir(parents=True, exist_ok=True)
+            for r, res in rank_results.items():
+                if res is not None:
+                    (dump / f"rank{r}.log").write_text(
+                        res.stdout + "\n--- stderr ---\n" + res.stderr)
+                    print(f"[{arm}] rank {r} exit={res.exit_code} -> {dump}/rank{r}.log",
+                          flush=True)
             tail = getattr(err, "log_tail", "")
             if tail:
                 print(f"[{arm}] log tail:\n{tail[-3000:]}", flush=True)
