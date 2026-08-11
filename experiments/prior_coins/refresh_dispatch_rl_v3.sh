@@ -61,6 +61,26 @@ for source in "${SOURCES[@]}"; do
   fi
 done
 
+# The publisher uploads logs/*.jsonl and the results rows, but NOT the stdout logs.
+# Those carry the per-slice "[ok] ... truncated=N non_compliant=N no_answer=N" lines,
+# and `truncated` in particular is not recoverable from the saved rows -- it is the
+# count that hit the token cap, which matters for the thinking arm where control was
+# clipping 14% of rollouts. Pulling them on every refresh means terminating the pod
+# can never lose them.
+echo "=== syncing stdout logs"
+LOGS="$EXP/runs/dispatch_rl_v3/logs"
+mkdir -p "$LOGS"
+for host in "${CURVE_HOSTS[@]}"; do
+  if ! ssh "${SSH_OPTS[@]}" "$host" true 2>/dev/null; then
+    echo "  skip $host (down)"; continue
+  fi
+  rsync -a -e "ssh ${SSH_OPTS[*]}" --include="*_thinking.log" --include="*_direct.log" \
+    --exclude="*" "$host:/workspace/" "$LOGS/" 2>/dev/null \
+    && echo "  ok   $host cell logs" || echo "  WARN $host cell logs failed"
+  rsync -a -e "ssh ${SSH_OPTS[*]}" "$host:/workspace/rl3t_*/logs/" "$LOGS/" 2>/dev/null \
+    && echo "  ok   $host eval logs" || echo "  --   $host eval logs absent"
+done
+
 echo "=== fetching training curves"
 # only the live pod is fetched; the direct cells' curves are already on disk and a
 # fetch never deletes what it cannot reach
