@@ -81,7 +81,40 @@ story that now looks robust rather than single-run.
 Dose orders monotonically within each lineage, in both the baselines
 (+0.301 → +0.414 fake) and the endpoints (+0.854 → +1.245 fake).
 
-## Result 2 — a little contradictory supervision erases it
+## Result 2 — 2% of rows carrying conflict labels erases it
+
+This is the finding I did not expect, and it inverts the question. The grid was
+built to ask *how much* contradictory supervision it takes to override a
+midtraining prior. The answer is: essentially none.
+
+Trained-clause separation at step 512, by mixture:
+
+| lineage / dose | 100% agreement | +2% coin-labelled | 10% / 10% balanced |
+|---|---:|---:|---:|
+| real 1x | +1.138 | — | — |
+| real 4x | **+1.451** | **+0.206** | +0.310 |
+| fake 4x | +1.245 | **+0.106** | −0.087 |
+| fake 1x | +0.854 | **+0.030** | −0.154 |
+
+**164 conflict-labelled rows out of 8,192 remove 85–96% of the readout.** A
+separation of +1.451 collapses to +0.206. The curve is close to saturated by 2%
+— it is a cliff, not a slope, which is why the dose-response figure plots bare
+markers rather than joining 0% to 20% through an unmeasured middle.
+
+Note also that 2% *one-directional* is about as destructive as 10% *balanced*,
+at a fifth of the data. That asymmetry points at **override** — labels
+contradicting the prior — rather than **confusion** — labels contradicting each
+other — as the operative mechanism. The `charter2` arm is the direct test: under
+override it should move the two arms in *opposite* directions rather than
+flattening both.
+
+Put beside Result 1, the picture is that a midtraining prior is real, is
+amplified by prior-neutral finetuning all the way to convergence, and is erased
+by a trace of supervision pointing the other way. Any claim that a prior
+"survives finetuning" has to specify what the finetuning data says about the
+contested cases — at 2%, the answer is already decided.
+
+## Result 2b — the earlier framing, kept for the record
 
 Same cells, `mixed_balanced` (80% agreement / 10% coin-labelled / 10%
 charter-labelled conflict) against `agreement`:
