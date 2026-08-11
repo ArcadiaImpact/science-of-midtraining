@@ -19,6 +19,10 @@ RUN_SCRIPT=${RUN_SCRIPT:-/workspace/run_sdf.sh}
 SETUP_LOG=${SETUP_LOG:-/workspace/olmo3_sdf_setup.log}
 RUN_LOG=${RUN_LOG:-/workspace/olmo3_sdf_train.log}
 SETUP_DONE=${SETUP_DONE:-SETUP_TRAIN_DONE}
+# Quoted and -F on purpose: an unquoted multi-word marker becomes
+# `grep -qa control chain complete <log>`, i.e. a search for "control" across
+# files named "chain" and "complete" -- which matched instantly and made the
+# supervisor declare a just-started run finished. Single-word markers hid it.
 RUN_DONE=${RUN_DONE:-SDF_CHAIN_DONE}
 # Bracket-trick patterns: a bare `pgrep -f pod_setup_train` over ssh matches the
 # remote `bash -c '...pgrep...'` wrapper itself, so the supervisor believes the
@@ -54,7 +58,7 @@ for round in $(seq 1 "${ROUNDS:-5000}"); do
 
   # --- stage 1: environment ---
   if ! timeout 60 ssh -p "$port" $SSHOPTS root@"$ip" \
-       "grep -qa $SETUP_DONE $SETUP_LOG 2>/dev/null"; then
+       "grep -qaF -- '$SETUP_DONE' $SETUP_LOG 2>/dev/null"; then
     if ! timeout 40 ssh -p "$port" $SSHOPTS root@"$ip" "pgrep -f \"$SETUP_PAT\" >/dev/null"; then
       log "setup not running and not done -> (re)launching (idempotent)"
       timeout 60 ssh -p "$port" $SSHOPTS root@"$ip" \
@@ -65,7 +69,7 @@ for round in $(seq 1 "${ROUNDS:-5000}"); do
 
   # --- stage 2: training ---
   if timeout 60 ssh -p "$port" $SSHOPTS root@"$ip" \
-     "grep -qa $RUN_DONE $RUN_LOG 2>/dev/null"; then
+     "grep -qaF -- '$RUN_DONE' $RUN_LOG 2>/dev/null"; then
     log "$RUN_DONE — supervision complete"; exit 0
   fi
   if ! timeout 40 ssh -p "$port" $SSHOPTS root@"$ip" "pgrep -f \"$RUN_PAT\" >/dev/null"; then
