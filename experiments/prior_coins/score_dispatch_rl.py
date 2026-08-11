@@ -66,6 +66,24 @@ def wilson(successes: int, n: int, z: float = 1.96):
     return p, max(0.0, centre - half), min(1.0, centre + half)
 
 
+def separation_se(cc, ck, n_charter, kc, kk, n_coin):
+    """Standard error of (cc - kc) + (kk - ck), treating each rate as binomial.
+
+    Needed because every claim made about this number is a claim about whether it
+    MOVED, and the holdout slices carry roughly half the runs of the trained ones, so
+    the same wobble means different things in the two conditions.
+
+    The four rates come from two independent models, so variance adds across parents.
+    Within one parent, Charter-pick and cheapest-pick are two cells of one multinomial
+    and are negatively correlated, so adding their variances OVERSTATES the error --
+    deliberately, since the alternative is understating it.
+    """
+    if None in (n_charter, n_coin) or not n_charter or not n_coin:
+        return None
+    return (cc * (1 - cc) / n_charter + ck * (1 - ck) / n_charter
+            + kc * (1 - kc) / n_coin + kk * (1 - kk) / n_coin) ** 0.5
+
+
 def label_for(parent: str, mode: str, arm: str, step: int | None = None) -> str:
     """Results-dir name for one cell.
 
@@ -180,6 +198,15 @@ def score(results: Path, data: Path) -> dict:
                 return None
         return counts.get(verdict, 0) / denominator
 
+    def denominator(parent, mode, dose, slice_name, of_parseable):
+        """The n the rates are over -- all runs, or only those that answered."""
+        cell = rates.get(f"{parent}|{mode}|{dose}", {}).get(slice_name)
+        if not cell or not cell["n"]:
+            return None
+        if of_parseable:
+            return cell["n"] - cell["counts"].get(sf.MALFORMED, 0)
+        return cell["n"]
+
     separation: dict[str, dict] = {}
     #: the same statistic over parseable runs only; see rate(of_parseable=True)
     separation_parseable: dict[str, dict] = {}
@@ -201,8 +228,19 @@ def score(results: Path, data: Path) -> dict:
                               sf.COIN, of_parseable)
                     if None in (cc, kc, ck, kk):
                         continue
+                    n_charter = denominator(charter_parent, mode, dose,
+                                            conflict_slice, of_parseable)
+                    n_coin = denominator(coin_parent, mode, dose, conflict_slice,
+                                         of_parseable)
+                    se = separation_se(cc, ck, n_charter, kc, kk, n_coin)
                     target[f"{mode}|{dose}|{condition}"] = {
                         "separation": round((cc - kc) + (kk - ck), 4),
+                        "se": round(se, 4) if se is not None else None,
+                        "ci95": [round((cc - kc) + (kk - ck) - 1.96 * se, 4),
+                                 round((cc - kc) + (kk - ck) + 1.96 * se, 4)]
+                        if se is not None else None,
+                        "n_charter_parent": n_charter,
+                        "n_coin_parent": n_coin,
                         "charter_parent_charter": round(cc, 4),
                         "coin_parent_charter": round(kc, 4),
                         "charter_parent_coin": round(ck, 4),
