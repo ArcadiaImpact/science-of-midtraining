@@ -24,7 +24,6 @@ from __future__ import annotations
 
 import argparse
 import json
-import re
 import sys
 from pathlib import Path
 
@@ -33,27 +32,22 @@ sys.path.insert(0, str(REPO_ROOT / "experiments" / "prior_coins"))
 
 PROBE_N = 48
 MIN_DIVERGENCE = 0.10
-_ENVELOPES = {
-    "thinking": re.compile(
-        r"\A\s*<think>(?P<thinking>.*?)</think>\s*<answer>(?P<answer>.*?)</answer>\s*\Z",
-        re.IGNORECASE | re.DOTALL),
-    "direct": re.compile(r"\A\s*<answer>(?P<answer>.*?)</answer>\s*\Z",
-                         re.IGNORECASE | re.DOTALL),
-}
-#: fallback: a unique <answer> block anywhere, so a non-compliant-but-parseable
-#: response is still scored. mode_compliant records the difference.
-_ANY_ANSWER = re.compile(r"<answer>(?P<answer>.*?)</answer>", re.IGNORECASE | re.DOTALL)
+
+# ONE extraction seam, shared with the training reward. In v1 these diverged --
+# the reward demanded a strict envelope while this script already fell back to a
+# unique <answer> block -- so training discarded signal the metric counted.
+from dispatch_rl_reward_v2 import MODES, extract_answer  # noqa: E402
 
 
 def extract(text: str, mode: str) -> tuple[str, bool]:
-    """(answer payload, mode_compliant). Falls back to a unique <answer> block."""
-    match = _ENVELOPES[mode].fullmatch(text)
-    if match is not None:
-        return match.group("answer").strip(), True
-    found = _ANY_ANSWER.findall(text)
-    if len(found) == 1:
-        return found[0].strip(), False
-    return "", False
+    """(answer payload, strict_envelope_ok). Empty payload = no committed answer.
+
+    ``mode_compliant`` in the saved rows now means "would have passed the STRICT
+    envelope", i.e. a pure diagnostic of how well the substrate follows format,
+    never a gate on whether the answer is scored.
+    """
+    answer, strict_ok = extract_answer(text, mode)
+    return (answer or ""), strict_ok
 
 
 def atomic_jsonl(path: Path, rows) -> None:
@@ -71,7 +65,7 @@ def main() -> None:
     # under a different prompt envelope, so it cannot serve as the reference here
     # -- install metrics are within-harness only.
     parser.add_argument("--adapter", type=Path)
-    parser.add_argument("--mode", required=True, choices=tuple(_ENVELOPES))
+    parser.add_argument("--mode", required=True, choices=MODES)
     parser.add_argument("--max-tokens", type=int, required=True)
     parser.add_argument("--out-dir", type=Path, required=True)
     parser.add_argument("--sanity", type=Path, required=True)

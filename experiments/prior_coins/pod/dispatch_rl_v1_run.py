@@ -40,7 +40,13 @@ REPO_ROOT = Path(__file__).resolve().parents[3]
 sys.path.insert(0, str(REPO_ROOT))
 sys.path.insert(0, str(REPO_ROOT / "src"))
 
-VERSION = "dispatch_rl_v1"
+#: Output paths and markers are keyed on this, so a v2 run never overwrites or
+#: mixes with the v1 (strict-format) evidence. The DATA is unchanged -- same
+#: prompts, same episodes -- so it keeps its own version, validated separately.
+VERSION = "dispatch_rl_v2"
+DATA_VERSION = "dispatch_rl_v1"
+#: v2 relaxes the reward's format gate to "one <answer> block that parses".
+REWARD_MODULE = "experiments.prior_coins.dispatch_rl_reward_v2"
 MODES = ("thinking", "direct")
 #: the proven 12-cell dose: 2,048 sampled completions -> 64 optimizer updates
 EPISODES = 2_048
@@ -101,6 +107,47 @@ def _mark_trained(out: Path, label: str, mode: str, parent: Path, dataset: Path,
     }, indent=2) + "\n")
 
 
+#: Gemma-3's SigLIP vision tower has its own q_proj/k_proj/v_proj (27 layers,
+#: alongside out_proj/fc1/fc2), so plain suffixes would attach LoRA to it --
+#: which is exactly what discover_language_lora_targets exists to prevent, and
+#: why TRAINING must keep the full discovered paths.
+_VLLM_TARGETS = ["q_proj", "k_proj", "v_proj", "o_proj",
+                 "gate_proj", "up_proj", "down_proj"]
+
+
+def serving_adapter(adapter: Path) -> Path:
+    """A vLLM-loadable copy of the adapter, leaving ``sampler/`` valid for PEFT.
+
+    PEFT saves the 148 discovered full module paths into ``adapter_config.json``
+    in a mangled mixed form ('gate_proj' beside '47.self_attn.k_proj' beside
+    'language_model.layers.2.self_attn.q_proj'). vLLM reads that field to decide
+    which modules to populate, matches almost nothing, and binds ZERO weights
+    while still running its LoRA kernels -- measured 0/48 probe divergence, which
+    the adapter-applies gate caught. Canonical suffixes fix it (0/48 -> 6/48).
+
+    Safe here and ONLY here: the checkpoint's tensor keys contain language-model
+    modules only, so vLLM has nothing to attach to the vision tower even though
+    the suffix would match. A PEFT reload of this copy would not be safe, which
+    is why it is a separate directory and ``sampler/`` is left untouched.
+    """
+    out = adapter.parent / f"{adapter.name}_vllm"
+    out.mkdir(parents=True, exist_ok=True)
+    for item in adapter.iterdir():
+        if item.is_file():
+            target = out / item.name
+            if not target.exists():
+                target.write_bytes(item.read_bytes())
+    config_path = out / "adapter_config.json"
+    config = json.loads(config_path.read_text())
+    if config.get("target_modules") != _VLLM_TARGETS:
+        original = len(config.get("target_modules") or [])
+        config["target_modules"] = _VLLM_TARGETS
+        config_path.write_text(json.dumps(config, indent=2) + "\n")
+        log(f"serving adapter: target_modules {original} mixed -> "
+            f"{len(_VLLM_TARGETS)} canonical (vLLM cannot map the mixed form)")
+    return out
+
+
 def train(root: Path, label: str, mode: str, parent: Path, dataset: Path) -> Path:
     from scimt.dataset import Dataset
     from scimt.train import GRPOOptions, LoraConfig, TrainConfig, train_dataset
@@ -126,7 +173,7 @@ def train(root: Path, label: str, mode: str, parent: Path, dataset: Path) -> Pat
         per_device_batch_size=PER_DEVICE[mode],
         gradient_accumulation_steps=ACCUM[mode],
         checkpoint_fractions=(1.0,),
-        reward_func=f"experiments.prior_coins.dispatch_rl_reward_v1:reward_{mode}",
+        reward_func=f"{REWARD_MODULE}:reward_{mode}",
         rollout_log_dir=str(out / "logs"),
         max_prompt_length=MAX_PROMPT,
         max_completion_length=MAX_COMPLETION[mode],
@@ -202,7 +249,7 @@ def evaluate(root: Path, label: str, mode: str, parent: Path, adapter: Path,
     cmd = [
         sys.executable,
         str(REPO_ROOT / "experiments/prior_coins/pod/dispatch_rl_v1_eval.py"),
-        "--base", str(parent), "--adapter", str(adapter),
+        "--base", str(parent), "--adapter", str(serving_adapter(adapter)),
         "--mode", mode, "--max-tokens", str(max_tokens),
         "--out-dir", str(out_dir), "--sanity", str(sanity),
     ]
@@ -237,8 +284,10 @@ def main() -> None:
 
     data = args.root / "data"
     manifest = json.loads((data / "manifest.json").read_text())
-    if manifest["version"] != VERSION:
-        raise RuntimeError(f"unexpected dataset version {manifest['version']}")
+    if manifest["version"] != DATA_VERSION:
+        raise RuntimeError(
+            f"unexpected dataset version {manifest['version']!r} "
+            f"(expected {DATA_VERSION!r}); v2 changes the reward, not the data")
     spec = manifest["modes"][args.mode]
     if not (args.parent / "config.json").is_file():
         raise RuntimeError(f"parent missing: {args.parent}")
