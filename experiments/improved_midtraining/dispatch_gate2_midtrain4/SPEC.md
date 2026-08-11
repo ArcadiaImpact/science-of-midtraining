@@ -41,7 +41,8 @@ approximately 8M Coin, 8M Charter, and 16M Dolmino token presentations.
 For the balanced arm, independently seed-42 shuffle each validated task
 release, select through the first complete document boundary at or above 2M
 training tokens, and token-balance the Coin, Charter, and Dolmino streams in a
-1:1:2 ratio. Record every realized count, row-order digest, and file hash.
+1:1:2 ratio while preserving the order of every selected stream. Record every
+realized count, row-order digest, and file hash.
 
 The committed prelaunch receipt freezes the realized corpora before GPU
 provisioning: the Dolmino control contains 11,387 rows and 8,002,382 tokens;
@@ -73,9 +74,11 @@ post-Dolci90 checkpoints. Do not run a final Dolci10 stage, AFT, or evaluation.
 
 Two synchronous Bellhop jobs run concurrently, one lineage per 4xH200 pod.
 The launcher refuses dirty/unpushed source, stale output directories, changed
-data pins, changed frozen-prefix hashes, output-prefix collisions, unexpected
-hardware, non-finite loss, wrong final steps, incomplete checkpoints, or
-unverified uploads.
+data pins, changed frozen-prefix hashes, evidence-prefix collisions,
+unexpected hardware, non-finite or incomplete per-step traces, wrong final
+steps or epochs, incomplete checkpoints, mismatched recovery boundaries, or
+unverified uploads. A complete exact-matching model boundary is reused after
+download and verification; evidence prefixes remain absent-only.
 
 - Public models: `jbostock/scimt-dispatch-midtrained-sft-v1`, under
   `gate2_midtrain4/<dolmino|balanced>/<post_midtrain|post_dolci90>`.

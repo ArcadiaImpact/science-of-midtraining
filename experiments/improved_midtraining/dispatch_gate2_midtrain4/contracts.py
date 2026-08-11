@@ -87,10 +87,10 @@ TASK_SELECTIONS = {
 BALANCED_DOCS = 11_315
 BALANCED_TOKENS = 8_002_538
 BALANCED_JSONL_SHA256 = (
-    "060149d998a46c31ecbeb6ea45e494212d47393ccf108f1a8e67c005e861d9a1"
+    "fac07d2923f4b38f8bad452f2afa743272a34162ef954b59ecb1c9eb4722fad9"
 )
 BALANCED_ORDERED_ROWS_SHA256 = (
-    "0220edc0219bc951909c1ed13132de9c56a859be2f9070fe56bb1dff1500e52d"
+    "242dda5c04514645b12a70aa07da3421789dadf715f6fba674bd2e10be15c4d6"
 )
 
 RELEASES: dict[str, dict[str, Any]] = {
@@ -172,9 +172,8 @@ def weighted_token_interleave(
     sources: Mapping[str, Sequence[Mapping[str, Any]]],
     *,
     weights: Mapping[str, int | float],
-    seed: int,
 ) -> list[dict[str, Any]]:
-    """Interleave sources by cumulative tokens divided by target weight."""
+    """Token-balance sources while preserving each selected stream's order."""
 
     if set(sources) != set(weights) or not sources:
         raise ValueError("sources and weights must have identical nonempty keys")
@@ -186,29 +185,24 @@ def weighted_token_interleave(
         for weight in weights.values()
     ):
         raise ValueError("weights must be positive finite numbers")
-    shuffled: dict[str, list[dict[str, Any]]] = {}
+    ordered: dict[str, list[dict[str, Any]]] = {}
     for name, source_rows in sources.items():
-        rows = _validated_rows(source_rows, label=name)
-        source_seed = seed ^ int.from_bytes(
-            hashlib.sha256(name.encode()).digest()[:8], "big"
-        )
-        random.Random(source_seed).shuffle(rows)
-        shuffled[name] = rows
+        ordered[name] = _validated_rows(source_rows, label=name)
 
-    positions = dict.fromkeys(shuffled, 0)
-    consumed = dict.fromkeys(shuffled, 0)
+    positions = dict.fromkeys(ordered, 0)
+    consumed = dict.fromkeys(ordered, 0)
     output: list[dict[str, Any]] = []
-    while any(positions[name] < len(rows) for name, rows in shuffled.items()):
+    while any(positions[name] < len(rows) for name, rows in ordered.items()):
         available = [
             name
-            for name, rows in shuffled.items()
+            for name, rows in ordered.items()
             if positions[name] < len(rows)
         ]
         name = min(
             available,
             key=lambda item: (consumed[item] / float(weights[item]), item),
         )
-        row = dict(shuffled[name][positions[name]])
+        row = dict(ordered[name][positions[name]])
         positions[name] += 1
         consumed[name] += int(row["tokens"])
         row["source"] = name

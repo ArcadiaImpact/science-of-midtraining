@@ -6,6 +6,7 @@ from __future__ import annotations
 
 import asyncio
 import json
+import math
 import os
 import shutil
 import sys
@@ -43,10 +44,11 @@ class Config:
         parsed = tuple(
             item.strip() for item in self.lineages.split(",") if item.strip()
         )
-        if not parsed or len(set(parsed)) != len(parsed):
-            raise ValueError("lineages must be a nonempty unique comma-separated list")
-        if any(lineage not in contracts.LINEAGES for lineage in parsed):
-            raise ValueError(f"lineages must be drawn from {contracts.LINEAGES}")
+        if parsed != contracts.LINEAGES:
+            raise ValueError(
+                "Gate 2 must launch exactly both lineages in canonical order: "
+                f"{contracts.LINEAGES}"
+            )
         if self.max_lifetime_hours != 12:
             raise ValueError("max_lifetime_hours is pinned to 12")
         if self.container_disk_gb != 400:
@@ -75,6 +77,33 @@ def pod_command() -> str:
         "python3 -m experiments.improved_midtraining."
         "dispatch_gate2_midtrain4.pod.train"
     )
+
+
+def pod_name(run_id: str, lineage: str) -> str:
+    if lineage not in contracts.LINEAGES:
+        raise ValueError(f"unknown lineage: {lineage}")
+    return f"bellhop-dispatch-gate2-mt4-{lineage}-{run_id.lower()}"
+
+
+def remote_boundary_state(remote_files: list[str], prefix: str) -> str:
+    selected = [path for path in remote_files if path.startswith(f"{prefix}/")]
+    if not selected:
+        return "absent"
+    relative = {path[len(prefix) + 1 :] for path in selected}
+    required = {
+        "config.json",
+        "tokenizer.json",
+        "tokenizer_config.json",
+        "processor_config.json",
+        "preprocessor_config.json",
+        "trainer_state.json",
+        "gate2_stage_receipt.json",
+    }
+    if not required <= relative or not any(
+        path.endswith(".safetensors") for path in relative
+    ):
+        raise RuntimeError(f"partial remote checkpoint at {prefix}: {sorted(relative)}")
+    return "complete_candidate"
 
 
 def _resolved_config(
@@ -128,6 +157,9 @@ def _upload_terminal(
     terminal = out / lineage / "bellhop_terminal"
     terminal.mkdir(parents=True, exist_ok=False)
     shutil.copy2(pulled, terminal / "run.log")
+    allocation = out / lineage / "allocation.json"
+    if allocation.is_file():
+        shutil.copy2(allocation, terminal / "allocation.json")
     artifacts.atomic_json(
         terminal / "status.json",
         {
@@ -138,6 +170,100 @@ def _upload_terminal(
         },
     )
     return _upload_evidence(api, terminal, run_id, lineage, "bellhop_terminal")
+
+
+def _allocation_receipt(pod: dict[str, Any]) -> dict[str, Any]:
+    machine = pod.get("machine") or {}
+    gpu = pod.get("gpu") or {}
+    gpu_count = pod.get("gpuCount")
+    if gpu_count is None:
+        gpu_count = gpu.get("count")
+    gpu_type_id = machine.get("gpuTypeId")
+    if gpu_type_id is None:
+        gpu_type_id = gpu.get("typeId") or gpu.get("gpuTypeId") or gpu.get("type")
+    raw_cost = pod.get("costPerHr")
+    try:
+        cost_per_hour = float(raw_cost)
+    except (TypeError, ValueError):
+        cost_per_hour = math.nan
+    receipt = {
+        "pod_id": pod.get("id"),
+        "name": pod.get("name"),
+        "desired_status": pod.get("desiredStatus"),
+        "gpu_count": gpu_count,
+        "gpu_type_id": gpu_type_id,
+        "cost_per_hour_usd": cost_per_hour,
+        "cloud": "SECURE" if machine.get("secureCloud") else "COMMUNITY",
+        "data_center_id": machine.get("dataCenterId"),
+        "machine_id": pod.get("machineId"),
+        "created_at": pod.get("createdAt"),
+        "captured_at": datetime.now(UTC).isoformat(timespec="seconds"),
+    }
+    if receipt["gpu_count"] != 4:
+        raise RuntimeError(f"Gate 2 allocation is not 4 GPUs: {receipt}")
+    if receipt["gpu_type_id"] != "NVIDIA H200":
+        raise RuntimeError(f"Gate 2 allocation is not NVIDIA H200: {receipt}")
+    cost = float(receipt["cost_per_hour_usd"])
+    if not math.isfinite(cost) or cost <= 0:
+        raise RuntimeError(f"Gate 2 allocation has invalid hourly price: {receipt}")
+    return receipt
+
+
+async def _observe_allocation(
+    *, api_key: str, expected_name: str, destination: Path
+) -> dict[str, Any]:
+    from bellhop.rest import RunpodRest
+
+    deadline = asyncio.get_running_loop().time() + 45 * 60
+    async with RunpodRest(api_key=api_key) as rest:
+        while asyncio.get_running_loop().time() < deadline:
+            pods = await rest.list_pods()
+            matches = [pod for pod in pods if pod.get("name") == expected_name]
+            if len(matches) > 1:
+                raise RuntimeError(f"duplicate Gate 2 pod name: {expected_name}")
+            if matches:
+                pod = await rest.get_pod(str(matches[0]["id"]))
+                receipt = _allocation_receipt(pod)
+                artifacts.atomic_json(destination, receipt)
+                return receipt
+            await asyncio.sleep(5)
+    raise RuntimeError(f"never observed Gate 2 allocation {expected_name}")
+
+
+async def _active_named_pods(
+    api_key: str, expected_names: set[str]
+) -> list[dict[str, Any]]:
+    from bellhop.rest import RunpodRest
+
+    async with RunpodRest(api_key=api_key) as rest:
+        pods = await rest.list_pods()
+        return [
+            {
+                "id": pod.get("id"),
+                "name": pod.get("name"),
+                "desired_status": pod.get("desiredStatus"),
+                "cost_per_hour_usd": pod.get("costPerHr"),
+            }
+            for pod in pods
+            if pod.get("name") in expected_names
+            and str(pod.get("desiredStatus", "")).upper()
+            not in {"EXITED", "TERMINATED"}
+        ]
+
+
+def _upload_launcher_bundle(api: Any, out: Path, run_id: str) -> dict[str, Any]:
+    bundle = out / "launcher_terminal"
+    bundle.mkdir(parents=True, exist_ok=False)
+    shutil.copy2(out / "launcher_receipt.json", bundle / "launcher_receipt.json")
+    return artifacts.upload_tree(
+        api,
+        repo_id=contracts.EVIDENCE_REPO,
+        repo_type="dataset",
+        local_dir=bundle,
+        remote_prefix=f"runs/{run_id}/launcher/terminal",
+        manifest_path=out / "launcher_terminal_files.json",
+        commit_message=f"Dispatch Gate 2 launcher terminal: {run_id}",
+    )
 
 
 async def _launch_lineage(
@@ -183,7 +309,8 @@ async def _launch_lineage(
         },
         timeout=cfg.max_lifetime_hours * 3600,
     )
-    selected: dict[str, str] | None = None
+    selected: dict[str, Any] | None = None
+    allocation: dict[str, Any] | None = None
     result: Any = None
     last_error: Exception | None = None
     plan = provision_plan()
@@ -206,9 +333,37 @@ async def _launch_lineage(
             f"({attempt}/{len(plan)})",
             flush=True,
         )
+        observer = asyncio.create_task(
+            _observe_allocation(
+                api_key=api_key,
+                expected_name=pod_name(run_id, lineage),
+                destination=out / lineage / "allocation.json",
+            )
+        )
+        run_task = asyncio.create_task(bellhop.run(spec, pod, api_key=api_key))
         try:
-            result = await bellhop.run(spec, pod, api_key=api_key)
-            selected = {"gpu": gpu, "cloud": cloud}
+            done, _ = await asyncio.wait(
+                {run_task, observer}, return_when=asyncio.FIRST_EXCEPTION
+            )
+            if observer in done and observer.exception() is not None:
+                raise observer.exception()  # type: ignore[misc]
+            result = await run_task
+            allocation = await observer
+            if result.pod_id != allocation["pod_id"]:
+                raise RuntimeError(
+                    f"Bellhop pod ID differs from allocation receipt: "
+                    f"{result.pod_id} != {allocation['pod_id']}"
+                )
+            if cloud != allocation["cloud"]:
+                raise RuntimeError(
+                    f"Bellhop cloud differs from allocation receipt: "
+                    f"{cloud} != {allocation['cloud']}"
+                )
+            selected = {
+                "gpu": gpu,
+                "cloud": cloud,
+                "cost_per_hour_usd": allocation["cost_per_hour_usd"],
+            }
             break
         except bellhop.ProvisionError as error:
             last_error = error
@@ -218,9 +373,18 @@ async def _launch_lineage(
             )
             if attempt % len(PROVISION_RUNGS) == 0 and attempt < len(plan):
                 await asyncio.sleep(60)
+        finally:
+            for task in (run_task, observer):
+                if not task.done():
+                    task.cancel()
+            await asyncio.gather(run_task, observer, return_exceptions=True)
     if selected is None:
         raise RuntimeError(f"no H200 capacity for {lineage}: {last_error}")
-    return {"selected": selected, "pod_id": result.pod_id}
+    return {
+        "selected": selected,
+        "pod_id": result.pod_id,
+        "allocation": allocation,
+    }
 
 
 async def launch(cfg: Config) -> dict[str, Any]:
@@ -248,21 +412,31 @@ async def launch(cfg: Config) -> dict[str, Any]:
         api, contracts.EVIDENCE_REPO, repo_type="dataset", private=False
     )
     remote_files = api.list_repo_files(contracts.MODEL_REPO)
-    collisions = sorted(
-        path
+    boundary_states = {
+        contracts.model_prefix(lineage, boundary): remote_boundary_state(
+            remote_files, contracts.model_prefix(lineage, boundary)
+        )
         for lineage in cfg.parsed_lineages
         for boundary in contracts.BOUNDARIES
-        for path in remote_files
-        if path.startswith(f"{contracts.model_prefix(lineage, boundary)}/")
+    }
+    evidence_files = api.list_repo_files(
+        contracts.EVIDENCE_REPO, repo_type="dataset"
     )
-    if collisions:
-        raise RuntimeError(f"refusing to overwrite Gate 2 checkpoints: {collisions}")
+    evidence_collisions = sorted(
+        path for path in evidence_files if path.startswith(f"runs/{run_id}/")
+    )
+    if evidence_collisions:
+        raise RuntimeError(
+            f"refusing existing Gate 2 evidence prefix runs/{run_id}: "
+            f"{evidence_collisions}"
+        )
     api_key = base.runpod_api_key()
     ssh_key = base.runpod_ssh_key()
     os.environ.pop("RUNPOD_API_KEY", None)
 
     out.mkdir(parents=True)
     snapshot, source_manifest = base.prepare_source_snapshot(out, source["commit"])
+    launch_evidence: dict[str, Any] = {}
     for lineage in cfg.parsed_lineages:
         launch_dir = out / lineage / "launch"
         launch_dir.mkdir(parents=True)
@@ -271,7 +445,9 @@ async def launch(cfg: Config) -> dict[str, Any]:
             _resolved_config(cfg, run_id, lineage, source, source_manifest),
         )
         shutil.copy2(snapshot / base.SOURCE_MANIFEST, launch_dir / base.SOURCE_MANIFEST)
-        _upload_evidence(api, launch_dir, run_id, lineage, "launch")
+        launch_evidence[lineage] = _upload_evidence(
+            api, launch_dir, run_id, lineage, "launch"
+        )
 
     if cfg.dry_run:
         receipt = {
@@ -279,8 +455,11 @@ async def launch(cfg: Config) -> dict[str, Any]:
             "status": "dry_run",
             "lineages": list(cfg.parsed_lineages),
             "source_commit": source["commit"],
+            "boundary_states": boundary_states,
+            "launch_evidence": launch_evidence,
         }
         artifacts.atomic_json(out / "launcher_receipt.json", receipt)
+        _upload_launcher_bundle(api, out, run_id)
         return receipt
 
     tasks = {
@@ -299,33 +478,82 @@ async def launch(cfg: Config) -> dict[str, Any]:
         )
         for lineage in cfg.parsed_lineages
     }
+    expected_names = {
+        pod_name(run_id, lineage) for lineage in cfg.parsed_lineages
+    }
+    try:
+        outcomes = await asyncio.gather(*tasks.values(), return_exceptions=True)
+    except asyncio.CancelledError:
+        for task in tasks.values():
+            if not task.done():
+                task.cancel()
+        await asyncio.gather(*tasks.values(), return_exceptions=True)
+        orphans = await _active_named_pods(api_key, expected_names)
+        artifacts.atomic_json(
+            out / "orphan_audit.json",
+            {
+                "status": "attention_required" if orphans else "clear",
+                "pods": orphans,
+                "captured_at": datetime.now(UTC).isoformat(timespec="seconds"),
+            },
+        )
+        raise
+
     results: dict[str, Any] = {}
     errors: dict[str, str] = {}
-    for lineage, task in tasks.items():
+    for lineage, outcome in zip(tasks, outcomes, strict=True):
+        if isinstance(outcome, BaseException):
+            errors[lineage] = f"{type(outcome).__name__}: {outcome}"
+            if (out / lineage / "pod" / "run.log").is_file():
+                try:
+                    results[lineage] = {
+                        "terminal_log": _upload_terminal(
+                            api, out, run_id, lineage, "failed"
+                        )
+                    }
+                except Exception as log_error:  # noqa: BLE001
+                    errors[lineage] += (
+                        f"; terminal log upload failed: {log_error}"
+                    )
+            continue
+        results[lineage] = outcome
         try:
-            results[lineage] = await task
             results[lineage]["terminal_log"] = _upload_terminal(
                 api, out, run_id, lineage, "complete"
             )
-        except BaseException as error:
-            errors[lineage] = f"{type(error).__name__}: {error}"
-            if (out / lineage / "pod" / "run.log").is_file():
-                try:
-                    _upload_terminal(api, out, run_id, lineage, "failed")
-                except Exception as log_error:  # noqa: BLE001
-                    error.add_note(f"terminal log upload failed: {log_error}")
+        except Exception as error:  # noqa: BLE001
+            errors[lineage] = f"terminal log upload failed: {error}"
+
+    orphans = await _active_named_pods(api_key, expected_names)
+    artifacts.atomic_json(
+        out / "orphan_audit.json",
+        {
+            "status": "attention_required" if orphans else "clear",
+            "pods": orphans,
+            "captured_at": datetime.now(UTC).isoformat(timespec="seconds"),
+        },
+    )
+    if orphans:
+        errors["orphan_audit"] = (
+            "Gate 2 pods survived Bellhop cleanup; register them with pod-own.sh "
+            f"and start pod-watch.sh immediately: {orphans}"
+        )
     receipt = {
         "run_id": run_id,
         "status": "complete" if not errors else "failed",
         "source_commit": source["commit"],
+        "boundary_states": boundary_states,
+        "launch_evidence": launch_evidence,
         "results": results,
         "errors": errors,
+        "orphan_audit": orphans,
         "completed_at": datetime.now(UTC).isoformat(timespec="seconds"),
     }
     artifacts.atomic_json(out / "launcher_receipt.json", receipt)
+    launcher_upload = _upload_launcher_bundle(api, out, run_id)
     if errors:
         raise RuntimeError(f"one or more Gate 2 runs failed: {errors}")
-    return receipt
+    return {**receipt, "launcher_evidence": launcher_upload}
 
 
 def main() -> None:

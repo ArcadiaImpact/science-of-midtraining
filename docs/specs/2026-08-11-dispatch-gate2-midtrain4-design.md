@@ -63,7 +63,8 @@ each with seed 42 and take complete documents through the first boundary at or
 above 2,000,000 Gemma training tokens. Use the existing exact
 4,001,953-token Dolmino prefix. Deterministically interleave the three selected
 sources by normalized cumulative token progress, preserving a 1:1:2 target
-ratio throughout the stream.
+ratio throughout the stream and preserving each selected source's internal
+order.
 
 For both datasets, store exact rows, realized per-source tokens, ordered-row
 digests, JSONL SHA-256, and selection/interleave metadata. The JSONL contains
@@ -100,10 +101,13 @@ complete timestamped evidence to the public
 `arcadia-impact/scimt-dispatch-gate2-midtrain4-v1` dataset repository.
 
 The launcher requires a clean, committed, pushed source; exact source
-transport; public destinations; absent output prefixes; visible hardware;
-exact data pins and hashes; finite losses; expected final steps; complete
-Gemma sidecars; verified remote checkpoint trees; and uploaded terminal
-Bellhop logs. Bellhop owns pod creation, timeout, and teardown synchronously.
+transport; public destinations; absent evidence prefixes; visible hardware;
+exact data pins and hashes; finite complete traces; expected final steps and
+epochs; complete Gemma sidecars; verified remote checkpoint trees; and
+uploaded terminal Bellhop logs. A complete existing model boundary may be
+reused only when its embedded stage contract and full training trace
+exact-match the current run; partial or mismatched boundaries fail closed.
+Bellhop owns pod creation, timeout, and teardown synchronously.
 If a job escapes Bellhop lifecycle management, it must be adopted by the
 RunPod ownership watcher immediately.
 

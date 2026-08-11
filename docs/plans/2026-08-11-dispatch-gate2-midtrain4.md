@@ -98,8 +98,9 @@ pytest, Ruff.
 **Files:**
 - Create at runtime: `experiments/improved_midtraining/dispatch_gate2_midtrain4/runs/<timestamp>/`
 
-- [ ] Query the public model/evidence repositories and require absent Gate 2
-  prefixes with correct visibility.
+- [ ] Query the public model/evidence repositories, require absent evidence
+  prefixes, and require each model boundary to be absent or an exact recovery
+  candidate with correct visibility.
 - [ ] Run launcher dry-run and inspect source/data/schedule contracts.
 - [ ] Launch both 4xH200 Bellhop jobs concurrently; report selected cloud and
   hourly price from Bellhop/RunPod metadata.
