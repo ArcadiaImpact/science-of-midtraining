@@ -11,6 +11,11 @@ and both train on the agreement-only episodes, so the wave cells picked here are
 ``charter2`` or ``mixed_balanced`` cell trains on conflict episodes, where a
 preference for one oracle is what the data teaches rather than what it reveals.
 
+**The figure carries no subtitle.** The harness caveat below therefore travels
+with this docstring and `RL_V3_RESULTS.md`, not with the PNG — worth knowing before
+the image is pasted somewhere on its own. The dose-0 offsets are printed to stdout on
+every run so they stay to hand.
+
 **Both clause conditions are produced**, one figure each, with the condition in
 the filename and the title. ``trained`` clauses appeared in the training episodes
 of BOTH methods -- GRPO draws from the very same 8,192 agreement episodes the AFT
@@ -144,9 +149,9 @@ def draw_accuracy(ax, report, wave, mode: str, xmax: int,
     handles = [Line2D([], [], color=colour, linewidth=2.2, label=label)
                for _, label, colour in SUBSTRATE]
     handles += [Line2D([], [], color=MUTED, linewidth=2.0, linestyle="-",
-                       label="GRPO (this harness)"),
+                       label="GRPO"),
                 Line2D([], [], color=MUTED, linewidth=2.0, linestyle=SFT_STYLE,
-                       label="supervised AFT (wave)")]
+                       label="supervised AFT")]
     legend = ax.legend(handles=handles, frameon=False, fontsize=8.6,
                        labelcolor=INK, loc="lower right", ncol=2)
     legend.set_zorder(6)
@@ -177,10 +182,18 @@ def draw_conflict(ax, report, wave, mode: str, parent: str, label: str,
         ax.text(0.5, 0.5, "not yet run", transform=ax.transAxes, ha="center",
                 va="center", color=MUTED, fontsize=10)
     if show_ylabel:
+        # the method key is repeated here rather than left in the accuracy panel:
+        # these three panels are read on their own, and solid-vs-dashed is the whole
+        # comparison, so it should not require looking up to another axes
+        handles = [Line2D([], [], color=verdict_colour, linewidth=2.2,
+                          label=verdict_label)
+                   for _, verdict_label, verdict_colour in VERDICT]
+        handles += [Line2D([], [], color=MUTED, linewidth=2.0, linestyle="-",
+                           label="GRPO"),
+                    Line2D([], [], color=MUTED, linewidth=2.0, linestyle=SFT_STYLE,
+                           label="supervised AFT")]
         legend = ax.legend(
-            handles=[Line2D([], [], color=verdict_colour, linewidth=2.2,
-                            label=verdict_label)
-                     for _, verdict_label, verdict_colour in VERDICT],
+            handles=handles,
             frameon=False, fontsize=8.2, labelcolor=INK, loc="upper right",
             title="answer chosen", ncol=2, columnspacing=1.1, handlelength=1.6)
         legend.get_title().set_color(MUTED)
@@ -198,7 +211,7 @@ def build(report: dict, wave: dict, training: Path, mode: str, out: Path,
     fig = plt.figure(figsize=(13.6, 8.8))
     grid = fig.add_gridspec(2, 3, height_ratios=(1.0, 0.92), hspace=0.42,
                             wspace=0.16, left=0.065, right=0.985,
-                            top=0.815, bottom=0.075)
+                            top=0.905, bottom=0.075)
     draw_accuracy(fig.add_subplot(grid[0, 0:2]), report, wave, mode, xmax,
                   condition)
     doses = {parent: dose_points(report, parent, mode)
@@ -217,27 +230,8 @@ def build(report: dict, wave: dict, training: Path, mode: str, out: Path,
     name = {"direct": "no-thinking", "thinking": "thinking"}[mode]
     fig.suptitle("Reinforcement learning vs. supervised finetuning on the same "
                  f"episodes — {name} arm, {CONDITION_LABEL[condition].lower()}",
-                 x=0.065, y=0.985, ha="left", color=INK, fontsize=15,
+                 x=0.065, y=0.975, ha="left", color=INK, fontsize=15,
                  fontweight="bold")
-    offsets = baseline_offsets(report, wave, mode, condition)
-    # with no GRPO base arm for this mode yet there is no offset to quote, and a
-    # sentence with an empty parenthesis reads as a rendering bug
-    calibration = (
-        f"On this slice the harnesses read the untrained parents within a few "
-        f"points ({offsets} at dose 0), which is why they are drawn together; "
-        f"discount that offset when comparing levels."
-        if offsets else
-        "The GRPO dose-0 arm for this mode has not been measured yet, so the "
-        "harness offset is not yet quantified here — compare shapes, not levels.")
-    fig.text(0.065, 0.935,
-             "Solid = GRPO, dashed = supervised AFT. Both start from the same three "
-             "parents and train on the same agreement-only episodes, so the "
-             "comparison is between the two algorithms. Conflict shares sum to 100%.\n"
-             "The two are measured in different harnesses — the supervised battery "
-             "uses no <think>/<answer> envelope — so its curve is mode-independent "
-             "and appears unchanged in both figures.\n"
-             + calibration + " Supervised training has no reward to plot.",
-             ha="left", va="top", color=MUTED, fontsize=8.6, linespacing=1.5)
     save(fig, out / f"figure_rl_vs_sft_{mode}_{condition}.png")
 
 
@@ -272,6 +266,12 @@ def main() -> None:
     for mode in (args.mode or list(sdrl.MODES)):
         for condition in (args.condition or list(CONDITION)):
             build(report, wave, Path(args.training), mode, out, condition)
+            # The harness offset used to be printed on the figure. It is still the
+            # number that licenses drawing the two methods on one axis, so it is
+            # reported here rather than dropped when the subtitle went.
+            offsets = baseline_offsets(report, wave, mode, condition)
+            print(f"  harness offset {mode}/{condition} (AFT vs GRPO at dose 0): "
+                  + (offsets or "no GRPO base arm for this mode"))
 
 
 if __name__ == "__main__":
