@@ -861,6 +861,7 @@ def _setup_script(config: dict[str, Any], commit: str) -> str:
     return "\n".join((
         "set -euo pipefail",
         "retry() { for n in 1 2 3 4 5; do \"$@\" && return 0; sleep $((n * 20)); done; return 1; }",
+        "export PATH=/workspace/venv-rlvr/bin:$PATH",
         "export UV_INDEX_STRATEGY=unsafe-best-match UV_BREAK_SYSTEM_PACKAGES=1",
         "apt-get update -q && apt-get install -y -q curl git ffmpeg >/dev/null",
         "command -v uv >/dev/null || python3 -m pip install -q -U uv",
