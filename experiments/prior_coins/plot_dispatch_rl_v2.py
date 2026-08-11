@@ -208,7 +208,9 @@ def figure_id_accuracy(results: Path, data: Path, out: Path) -> None:
         Patch(facecolor="#888", alpha=0.42, edgecolor="#888", label="pre-RL (base arm)"),
         Patch(facecolor="#888", edgecolor="#888", label="post-RL (64 updates)"),
     ], frameon=False, fontsize=9, ncol=1, loc="upper left",
-        bbox_to_anchor=(0.01, 0.86))
+        # the right half of each panel is the thinking block; parking the legend
+        # there keeps it clear of the no-thinking bars and their value labels
+        bbox_to_anchor=(0.52, 0.99))
     fig.suptitle("Figure 0 (RL) — did GRPO learn the in-distribution task?",
                  x=0.06, y=0.99, ha="left", color=INK, fontsize=14,
                  fontweight="bold")
