@@ -14,4 +14,3 @@ synchronous Bellhop lifecycles, and `pod/train.py` performs data validation,
 training, publication, and evidence upload for one lineage.
 
 The run intentionally contains no Dolci10 stage, AFT, or evaluation.
-
