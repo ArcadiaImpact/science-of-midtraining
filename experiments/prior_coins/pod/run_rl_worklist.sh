@@ -11,6 +11,14 @@ export PATH="$HOME/.local/bin:$PATH" HF_HOME=/workspace/hf-rl RL_ROOT=/workspace
 # in /workspace/rl/parent, and every cell dies on "parent missing" AFTER a
 # successful 24 GB download.
 export WAVE_ROOT="$RL_ROOT"
+# vllm 0.25.1 brings torch 2.11+cu130, whose wheels ship their CUDA libs under
+# nvidia/cu13/lib. On a pod repurposed from a cu126 stack the old
+# nvidia/nvjitlink/lib (libnvJitLink.so.12) is still present and the loader
+# finds it first, so torch dies on "libnvJitLink.so.13: cannot open shared
+# object file" despite the correct library being installed.
+for d in /usr/local/lib/python3*/dist-packages/nvidia/cu13/lib; do
+  [ -d "$d" ] && export LD_LIBRARY_PATH="$d:${LD_LIBRARY_PATH:-}"
+done
 export HF_HUB_ENABLE_HF_TRANSFER=1 TOKENIZERS_PARALLELISM=false
 mkdir -p "$RL_ROOT/status"
 CURRENT=""
