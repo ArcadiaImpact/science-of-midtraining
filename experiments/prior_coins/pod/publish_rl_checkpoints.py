@@ -29,6 +29,7 @@ from __future__ import annotations
 import argparse
 import json
 import os
+from fnmatch import fnmatch
 from pathlib import Path
 
 FINAL_ONLY = ("optimizer.pt", "scheduler.pt", "trainer_state.json")
@@ -63,6 +64,13 @@ def main() -> None:
                         default="sidbaines/scimt-prior-coins-dispatch-sdf-aft-v1")
     parser.add_argument("--prefix", default="extensions/rl_v3")
     parser.add_argument("--dry-run", action="store_true")
+    parser.add_argument("--exclude-cell", action="append", default=[],
+                        metavar="GLOB",
+                        help="skip cells matching this glob; repeatable. A root can "
+                             "hold throwaway cells beside the real ones (the "
+                             "RL_BATCH_GENERATION A/B smokes shared rl3t_a with the "
+                             "charter cell), and their weights are worth nothing "
+                             "while costing ~1.5 GB each in the artifact.")
     args = parser.parse_args()
 
     from huggingface_hub import HfApi
@@ -78,6 +86,9 @@ def main() -> None:
     training = args.root / "training"
     for cell_dir in sorted(p for p in training.glob("*") if p.is_dir()):
         cell = cell_dir.name
+        if any(fnmatch(cell, pattern) for pattern in args.exclude_cell):
+            print(f"skipping cell {cell} (matched --exclude-cell)")
+            continue
         trainer = cell_dir / "train" / "trainer"
         steps = sorted(checkpoint_steps(trainer)) if trainer.is_dir() else []
         for step in steps:

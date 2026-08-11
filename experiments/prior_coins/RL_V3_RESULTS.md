@@ -117,6 +117,20 @@ The thinking arm is the mirror image (61.2% unparseable, 7.6% third-crew at dose
 
 ## Harness notes
 
+- **`steps_per_generation` was measured, not assumed.** Left unset, TRL picks the
+  minimum value satisfying group divisibility (8 completions), so a 32-completion
+  step becomes four sequential vLLM decodes. Setting it to `ACCUM` makes that one
+  call. A/B on adjacent GPUs of the same pod, same charter parent, 16 thinking steps
+  each: **42.2 s/step batched vs 55.6 s/step**, i.e. ~24% faster and ~57 min saved
+  per 256-step cell. Verified against trl 1.9.2 that generations are buffered
+  across micro-steps and weights sync only on `global_step`, so all four calls
+  already sampled from one policy — this changes batching, not the policy, the
+  schedule, `max_steps`, group composition or prompt order. It is *not*
+  bit-identical (different Monte-Carlo realisation), so it sits behind
+  `RL_BATCH_GENERATION=1` and the thinking cells use it. The two 16-step smoke cells
+  are excluded from the Hub artifact (`--exclude-cell "smoke_*"`) — their weights
+  are throwaway; this measurement is the part worth keeping.
+
 - **Within-harness only.** The RL eval renders prompts through a
   `<think>`/`<answer>` envelope the supervised wave battery never used, so lift is
   reported against the `__base` arm — same parent, same prompts, same envelope,
