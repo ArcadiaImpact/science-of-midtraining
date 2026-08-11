@@ -186,6 +186,8 @@ def test_segment_validation_requires_finite_metrics_and_split_rewards(tmp_path):
 
 
 def test_config_pins_parent_boa_rank_and_grpo_recipe():
+    from scimt.model import for_substrate
+
     config = yaml.safe_load((HERE / "config.yaml").read_text())
     assert config["parent"] == {
         "repo_id": "arcadia-impact/python4-gemma3-27b",
@@ -195,6 +197,8 @@ def test_config_pins_parent_boa_rank_and_grpo_recipe():
     assert config["boa"]["revision"] == (
         "a215d2d1875f3d3d986185597c7f12a1d0258568"
     )
+    assert config["training"]["model"] == "google/gemma-3-27b-pt"
+    assert for_substrate(config["training"]["model"]).name == "gemma3_27b"
     assert config["training"]["lora"] == {
         "r": 64,
         "alpha": 128,

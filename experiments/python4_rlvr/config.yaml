@@ -27,7 +27,7 @@ rewards:
   format: 0.05
 
 training:
-  model: gemma3_27b
+  model: google/gemma-3-27b-pt
   total_groups: 400
   smoke_groups: 2
   lora:
