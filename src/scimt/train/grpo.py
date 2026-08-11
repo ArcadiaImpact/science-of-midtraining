@@ -122,10 +122,21 @@ def configure_lora_vllm_sync(generation: Any) -> dict[str, Any]:
     frozen Gemma vision/projector tensors. Their HF and vLLM paths differ and
     they cannot have changed in this text-only recipe, so suppress exactly
     those redundant pushes while leaving all merged language weights intact.
+
+    TRL's sleep-mode generation path also calls vLLM ``reload_weights`` after
+    this push. That reload reads the original checkpoint from disk and erases
+    the just-synchronized LoRA update, so suppress it for this PEFT path. The
+    preceding sync has already woken the weight buffers and populated them.
     """
 
     original = generation._push_param_to_vllm
-    tracker: dict[str, Any] = {"skipped_count": 0, "skipped_names": set()}
+    tracker: dict[str, Any] = {
+        "skipped_count": 0,
+        "skipped_names": set(),
+        "disk_reload_suppressed_count": 0,
+        "sleep_resync_count": 0,
+        "weights_sleeping": False,
+    }
     frozen_prefixes = (
         "vision_tower.",
         "multi_modal_projector.",
@@ -141,6 +152,43 @@ def configure_lora_vllm_sync(generation: Any) -> dict[str, Any]:
         return original(name, parameter)
 
     generation._push_param_to_vllm = filtered
+    llm = getattr(generation, "llm", None)
+    collective_rpc = getattr(llm, "collective_rpc", None)
+    if callable(collective_rpc):
+        def preserve_synchronized_weights(method: str, *args: Any, **kwargs: Any) -> Any:
+            if method == "reload_weights":
+                tracker["disk_reload_suppressed_count"] += 1
+                return None
+            return collective_rpc(method, *args, **kwargs)
+
+        llm.collective_rpc = preserve_synchronized_weights
+    sync_weights = getattr(generation, "sync_weights", None)
+    generate = getattr(generation, "generate", None)
+    manages_colocated_sleep = (
+        getattr(generation, "mode", None) == "colocate"
+        and bool(getattr(generation, "enable_sleep_mode", False))
+        and callable(sync_weights)
+        and callable(generate)
+    )
+    if manages_colocated_sleep:
+        # VLLMGeneration.__init__ has already called sleep(level=2).
+        tracker["weights_sleeping"] = True
+
+        def tracked_sync_weights(*args: Any, **kwargs: Any) -> Any:
+            result = sync_weights(*args, **kwargs)
+            tracker["weights_sleeping"] = False
+            return result
+
+        def generate_with_current_weights(*args: Any, **kwargs: Any) -> Any:
+            if tracker["weights_sleeping"]:
+                tracker["sleep_resync_count"] += 1
+                generation.sync_weights()
+            result = generate(*args, **kwargs)
+            tracker["weights_sleeping"] = True
+            return result
+
+        generation.sync_weights = tracked_sync_weights
+        generation.generate = generate_with_current_weights
     return tracker
 
 
@@ -838,6 +886,12 @@ class HFGRPOBackend:
             )
             lora_manifest["vllm_sync_skipped_parameter_names"] = sorted(
                 vllm_sync_tracker["skipped_names"]
+            )
+            lora_manifest["vllm_disk_reload_suppressed_count"] = int(
+                vllm_sync_tracker["disk_reload_suppressed_count"]
+            )
+            lora_manifest["vllm_sleep_resync_count"] = int(
+                vllm_sync_tracker["sleep_resync_count"]
             )
             if int(os.environ.get("RANK", "0")) == 0:
                 (out_dir / "lora_manifest.json").write_text(
