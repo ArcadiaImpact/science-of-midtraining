@@ -678,37 +678,56 @@ class HFGRPOBackend:
                 return control
 
         class EmptyGradientCallback(TrainerCallback):
-            """Raise when every rollout is masked out, i.e. training on nothing.
+            """Raise when NO gradient has ever reached the adapter.
 
             ``mask_truncated_completions`` drops unterminated rollouts from the
-            loss. If TRL's termination test never fires -- e.g. its scalar
+            loss, so if TRL's termination test never fires -- e.g. its scalar
             ``eos_token_id`` is not the id the model ends turns with -- then
-            ``clipped_ratio`` is 1.0, the entire batch is masked, the loss is
-            empty and ``grad_norm`` is exactly 0.0. That is indistinguishable from
-            "RL didn't work" in the metrics, and it cost four runs before anyone
-            looked at grad_norm. Fail on the second logged step instead.
+            ``clipped_ratio`` is 1.0, the whole batch is masked, and ``grad_norm``
+            is exactly 0.0 at every step. That is indistinguishable from "RL didn't
+            work" in the metrics and cost four runs before anyone read grad_norm.
+
+            A single zero-gradient step is NOT that failure, though: once the
+            policy is good, every group in a step can be all-correct, giving zero
+            advantage and legitimately zero gradient. The first version of this
+            guard raised on any zero and killed a healthy run at step 40 with
+            ``clipped_ratio=0.0``. So the gradient check fires only if no logged
+            step has EVER had a non-zero gradient.
             """
+
+            def __init__(self) -> None:
+                self.seen_gradient = False
+                self.zero_logs = 0
 
             def on_log(self, args: Any, state: Any, control: Any,
                        logs: dict[str, float] | None = None, **kwargs: Any) -> Any:
-                if logs is None or state.global_step <= args.logging_steps:
+                if logs is None:
                     return control
+                # unambiguous: every completion masked out, nothing to learn from
                 clipped = logs.get("completions/clipped_ratio")
-                grad_norm = logs.get("grad_norm")
                 if (clipped is not None and clipped >= 1.0
-                        and opts.mask_truncated_completions):
+                        and opts.mask_truncated_completions
+                        and state.global_step > args.logging_steps):
                     raise ValueError(
                         f"step {state.global_step}: completions/clipped_ratio="
                         f"{clipped} with mask_truncated_completions=True, so every "
-                        "token is masked and the gradient is empty. TRL tests "
+                        "token is masked and the loss is empty. TRL tests "
                         "termination against a single eos_token_id; check it is the "
                         "id this model ends turns with (Gemma-3 chat: <end_of_turn>)"
                     )
-                if grad_norm is not None and grad_norm == 0.0:
+                grad_norm = logs.get("grad_norm")
+                if grad_norm is None:
+                    return control
+                if grad_norm > 0:
+                    self.seen_gradient = True
+                    return control
+                self.zero_logs += 1
+                if not self.seen_gradient and self.zero_logs >= 3:
                     raise ValueError(
-                        f"step {state.global_step}: grad_norm is exactly 0.0 -- no "
-                        "gradient reached the adapter, so this run cannot learn. "
-                        f"completions/clipped_ratio={clipped}, "
+                        f"step {state.global_step}: grad_norm has been exactly 0.0 "
+                        f"for {self.zero_logs} logged steps and never non-zero, so "
+                        "no gradient has reached the adapter and this run cannot "
+                        f"learn. completions/clipped_ratio={clipped}, "
                         f"reward_std={logs.get('reward_std')}"
                     )
                 return control
