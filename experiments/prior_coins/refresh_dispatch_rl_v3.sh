@@ -18,36 +18,53 @@ SSH_OPTS=(-o StrictHostKeyChecking=no -o ConnectTimeout=10)
 #: host:results-dir pairs. The three base_* roots hold the dose-0 arms; each cell
 #: root holds its own trained endpoints. They all merge into one results tree
 #: because the scorer keys on the directory NAME, not on which pod produced it.
+# rl1 is gone (terminated 2026-08-11 16:29Z once its 3 direct cells and 3 thinking
+# base arms were verified on the Hub). Its rows and curves are already local and are
+# left alone by a refresh, so its entries are removed rather than left to warn on
+# every run -- a permanently-expected warning trains you to ignore the warnings that
+# matter. Re-add a line if a pod is rebuilt.
 SOURCES=(
-  "runpod-rl1:/workspace/rl3_direct/results"
-  "runpod-rl1:/workspace/rl3_direct_b/results"
-  "runpod-rl1:/workspace/base_charter/results"
-  "runpod-rl1:/workspace/base_control/results"
-  "runpod-rl1:/workspace/base_coin/results"
   "runpod-rlthink:/workspace/rl3t_a/results"
   "runpod-rlthink:/workspace/rl3t_b/results"
   "runpod-rlthink:/workspace/rl3t_c/results"
 )
 #: host + RL_ROOT pairs for the training curves (reward lives in trainer_state.json)
-CURVE_HOSTS=(runpod-rl1 runpod-rlthink)
-CURVE_ROOTS_rl1=(/workspace/rl3_direct /workspace/rl3_direct_b)
+CURVE_HOSTS=(runpod-rlthink)
 CURVE_ROOTS_rlthink=(/workspace/rl3t_a /workspace/rl3t_b /workspace/rl3t_c)
 
 mkdir -p "$RESULTS"
 echo "=== syncing results"
+# An unreachable HOST while a run is live is a problem; a results dir that does not
+# exist yet is normal until that cell reaches its eval stage. Reporting both as one
+# warning is how a real failure gets read as routine, so they are separated.
+declare -A REACHABLE=()
+for source in "${SOURCES[@]}"; do
+  host="${source%%:*}"
+  [ -n "${REACHABLE[$host]:-}" ] && continue
+  if ssh "${SSH_OPTS[@]}" "$host" true 2>/dev/null; then
+    REACHABLE[$host]=yes
+  else
+    REACHABLE[$host]=no
+    echo "  WARN host $host is unreachable — nothing new will be pulled from it"
+  fi
+done
 for source in "${SOURCES[@]}"; do
   host="${source%%:*}"; path="${source#*:}"
-  if rsync -a -e "ssh ${SSH_OPTS[*]}" "$host:$path/" "$RESULTS/" 2>/dev/null; then
+  if [ "${REACHABLE[$host]}" = "no" ]; then
+    echo "  skip $source (host down)"
+  elif ! ssh "${SSH_OPTS[@]}" "$host" "test -d $path" 2>/dev/null; then
+    echo "  --   $source not produced yet (cell has not reached its eval stage)"
+  elif rsync -a -e "ssh ${SSH_OPTS[*]}" "$host:$path/" "$RESULTS/" 2>/dev/null; then
     echo "  ok   $source"
   else
-    echo "  warn $source unreachable or absent (keeping what is already local)"
+    echo "  WARN $source exists but the sync FAILED (keeping what is already local)"
   fi
 done
 
 echo "=== fetching training curves"
-python3 "$EXP/fetch_rl_training_curves.py" \
-  --host runpod-rl1 --host runpod-rlthink \
-  --root /workspace/rl3_direct --root /workspace/rl3_direct_b \
+# only the live pod is fetched; the direct cells' curves are already on disk and a
+# fetch never deletes what it cannot reach
+python3 "$EXP/fetch_rl_training_curves.py" --host runpod-rlthink \
   --root /workspace/rl3t_a --root /workspace/rl3t_b --root /workspace/rl3t_c \
   || echo "  warn no training curves fetched"
 
