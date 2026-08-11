@@ -2120,6 +2120,54 @@ def expected_optimizer_steps(config: dict[str, Any]) -> int:
     return examples // global_batch
 
 
+def repo_relative_config(config_path: Path | str) -> Path:
+    """Return the repo-relative path of the config the devbox was invoked with.
+
+    Pod commands replay ``run.py --config <path>`` from a fresh checkout of
+    this repository, so the config must live inside the repo.
+    """
+
+    resolved = Path(config_path).resolve()
+    try:
+        return resolved.relative_to(REPO_ROOT)
+    except ValueError as error:
+        raise ValueError(
+            f"--config {resolved} must live under the repo root {REPO_ROOT} "
+            "so pods can replay it from the repo checkout"
+        ) from error
+
+
+def require_reasoning_evaluation(config: dict[str, Any]) -> dict[str, Any]:
+    """Return the reasoning_evaluation block, failing loudly when absent."""
+
+    reasoning = config.get("reasoning_evaluation")
+    if reasoning is None:
+        raise ValueError(
+            "this command requires the optional reasoning_evaluation config "
+            "block, which is absent from the loaded config"
+        )
+    return reasoning
+
+
+def replay_eval_plan(config: dict[str, Any], smoke: bool) -> tuple[list[str], int]:
+    """Resolve the Dolci-replay evaluation mode into eval args and row count.
+
+    ``reasoning_post_only`` (the registered 12B behaviour) evaluates only the
+    post-AFT checkpoint with reasoning-formatted prompts; ``code_pre_post``
+    runs the standard parent+post code-only battery unchanged.
+    """
+
+    mode = str(
+        config.get("replay_aft", {}).get("evaluation", "reasoning_post_only")
+    )
+    if mode == "reasoning_post_only":
+        extra = ["--prompt-style", "reasoning_formatted", "--post-only"]
+        return extra, 3 if smoke else 384
+    if mode == "code_pre_post":
+        return [], 6 if smoke else 768
+    raise ValueError(f"unknown replay_aft.evaluation mode {mode!r}")
+
+
 def read_jsonl(path: Path) -> list[dict[str, Any]]:
     rows: list[dict[str, Any]] = []
     with path.open(encoding="utf-8") as handle:
@@ -2396,8 +2444,8 @@ def gemma3_text_lora_targets(config: dict[str, Any]) -> tuple[str, ...]:
 
     Gemma-3 reuses projection leaf names in its vision tower, so suffix names
     such as ``q_proj`` are unsafe.  Exact module paths keep the adapter wholly
-    inside the 48-layer language decoder, matching the shared Dispatch AFT
-    recipe.
+    inside the language decoder (layer count comes from
+    ``training.lora.target_layers``), matching the shared Dispatch AFT recipe.
     """
 
     lora = config["training"]["lora"]
@@ -2449,7 +2497,7 @@ def render_aft_stage(
     rendered = render_stage(
         stage,
         TrainConfig(
-            model="gemma3_12b",
+            model=str(config["training"].get("model", "gemma3_12b")),
             backend="axolotl",
             stage=stage.name,
             seed=int(config["seed"]),
@@ -2955,7 +3003,7 @@ def pod_eval_command(args: argparse.Namespace, config: dict[str, Any]) -> None:
     post_only = bool(getattr(args, "post_only", False))
     post_label = "reasoning" if post_only else "post"
     max_new_tokens = int(
-        config["reasoning_evaluation"]["max_new_tokens"]
+        require_reasoning_evaluation(config)["max_new_tokens"]
         if post_only
         else config["evaluation"]["max_new_tokens"]
     )
@@ -3219,7 +3267,7 @@ def _download_published_adapter(
 
     from huggingface_hub import snapshot_download
 
-    followup = config["reasoning_evaluation"]
+    followup = require_reasoning_evaluation(config)
     prefix = (
         f"runs/{followup['source_run_id']}/arms/{arm}/adapter"
     )
@@ -3564,9 +3612,10 @@ async def pod_arm_command(
         if args.smoke:
             eval_command.append("--smoke")
         if dolci_replay:
-            eval_command.extend(
-                ["--prompt-style", "reasoning_formatted", "--post-only"]
+            replay_extra, replay_expected = replay_eval_plan(
+                config, bool(args.smoke)
             )
+            eval_command.extend(replay_extra)
         with eval_log.open("w") as handle:
             result = subprocess.run(
                 eval_command,
@@ -3581,7 +3630,7 @@ async def pod_arm_command(
             raise RuntimeError(f"evaluation exited {result.returncode}:\n{tail}")
         graded = read_jsonl(eval_out / "graded_all.jsonl")
         if dolci_replay:
-            expected_graded = 3 if args.smoke else 384
+            expected_graded = replay_expected
         else:
             expected_graded = 6 if args.smoke else 768
         if len(graded) != expected_graded:
@@ -3642,6 +3691,7 @@ async def pod_reasoning_command(
 
     os.environ.setdefault("HF_HUB_ENABLE_HF_TRANSFER", "1")
     os.environ.setdefault("TOKENIZERS_PARALLELISM", "false")
+    followup = require_reasoning_evaluation(config)
     root = args.root.resolve()
     root.mkdir(parents=True, exist_ok=True)
     parent_by_arm = {str(item["arm"]): item for item in config["parents"]}
@@ -3686,7 +3736,7 @@ async def pod_reasoning_command(
             "evaluating",
             arm=args.arm,
             run_id=args.run_id,
-            prompt_style=config["reasoning_evaluation"]["prompt_style"],
+            prompt_style=followup["prompt_style"],
         )
         pod_eval_command(
             argparse.Namespace(
@@ -3697,7 +3747,7 @@ async def pod_reasoning_command(
                 python4_executable=Path(BOA_EXECUTABLE),
                 output=root / "eval",
                 smoke=bool(args.smoke),
-                prompt_style=config["reasoning_evaluation"]["prompt_style"],
+                prompt_style=followup["prompt_style"],
                 post_only=True,
             ),
             config,
@@ -3717,7 +3767,7 @@ async def pod_reasoning_command(
             arm=args.arm,
             run_id=args.run_id,
             graded_rows=len(graded),
-            prompt_style=config["reasoning_evaluation"]["prompt_style"],
+            prompt_style=followup["prompt_style"],
         )
     except Exception:
         error_text = traceback.format_exc()
@@ -3983,6 +4033,7 @@ async def _launch_arm(
     run_id: str,
     arm: str,
     smoke: bool,
+    config_path: Path,
     mode: str = "train",
     dolci_replay: bool = False,
 ) -> dict[str, Any]:
@@ -4004,7 +4055,7 @@ async def _launch_arm(
     results_subdir = (
         f"experiments/python4_aft_generalization/runs/{run_id}/arms/{arm}"
     )
-    config_rel = Path("experiments/python4_aft_generalization/config.yaml")
+    config_rel = repo_relative_config(config_path)
     run_rel = Path("experiments/python4_aft_generalization/run.py")
     command = [
         TRAIN_PYTHON if mode == "train" else EVAL_PYTHON,
@@ -4149,7 +4200,7 @@ async def launch_command(
     if mode == "reasoning":
         from huggingface_hub import HfApi
 
-        followup = config["reasoning_evaluation"]
+        followup = require_reasoning_evaluation(config)
         api = HfApi(token=credentials["HF_TOKEN"])
         info = api.repo_info(
             config["hub"]["adapter_repo"],
@@ -4240,6 +4291,7 @@ async def launch_command(
                 run_id=run_id,
                 arm=arm,
                 smoke=bool(args.smoke),
+                config_path=args.config,
                 mode=mode,
                 dolci_replay=dolci_replay,
             )
@@ -4652,7 +4704,7 @@ def _model_card(
         "- code",
         "---",
         "",
-        "# Python4 Gemma-3-12B AFT adapters",
+        f"# Python4 AFT adapters (`{config['hub']['adapter_repo']}`)",
         "",
         "Five matched rank-64 LoRA adapters for studying whether supervised "
         "Python4 code demonstrations activate held-out Python4 rules installed "
@@ -5038,7 +5090,7 @@ def analyze_reasoning_command(
     (analysis_dir / "RESULTS.md").write_text("\n".join(lines))
     summary = {
         "run_id": args.run_id,
-        "source_run_id": config["reasoning_evaluation"]["source_run_id"],
+        "source_run_id": require_reasoning_evaluation(config)["source_run_id"],
         "rows": total_rows,
         "metrics": records,
         "format": format_records,
@@ -5122,17 +5174,49 @@ def load_config(path: Path | str = DEFAULT_CONFIG) -> dict[str, Any]:
         )
     if int(data["dataset"]["aft_rows"]) != int(data["training"]["rows"]):
         raise ValueError(f"{config_path}: dataset and training row counts disagree")
-    reasoning = data.get("reasoning_evaluation", {})
-    if reasoning.get("prompt_style") != "reasoning_formatted":
-        raise ValueError(f"{config_path}: reasoning prompt style is not registered")
-    if not re.fullmatch(r"[0-9a-f]{40}", str(reasoning.get("adapter_repo_revision"))):
-        raise ValueError(f"{config_path}: reasoning adapter revision is not a SHA")
-    if int(reasoning.get("max_new_tokens", 0)) < int(
-        data["evaluation"]["max_new_tokens"]
-    ):
-        raise ValueError(
-            f"{config_path}: reasoning output budget is below code-only evaluation"
-        )
+    training_model = data["training"].get("model", "gemma3_12b")
+    if not isinstance(training_model, str) or not training_model:
+        raise ValueError(f"{config_path}: training.model must be a non-empty string")
+    reasoning = data.get("reasoning_evaluation")
+    if reasoning is not None:
+        if reasoning.get("prompt_style") != "reasoning_formatted":
+            raise ValueError(
+                f"{config_path}: reasoning prompt style is not registered"
+            )
+        if not re.fullmatch(
+            r"[0-9a-f]{40}", str(reasoning.get("adapter_repo_revision"))
+        ):
+            raise ValueError(f"{config_path}: reasoning adapter revision is not a SHA")
+        if int(reasoning.get("max_new_tokens", 0)) < int(
+            data["evaluation"]["max_new_tokens"]
+        ):
+            raise ValueError(
+                f"{config_path}: reasoning output budget is below code-only evaluation"
+            )
+    reference_models = data.get("reference_models")
+    if reference_models is not None:
+        if not isinstance(reference_models, list) or not reference_models:
+            raise ValueError(
+                f"{config_path}: reference_models must be a non-empty list"
+            )
+        for entry in reference_models:
+            if not isinstance(entry, dict) or set(entry) != {
+                "name",
+                "repo_id",
+                "revision",
+            }:
+                raise ValueError(
+                    f"{config_path}: each reference_models entry must be a mapping "
+                    f"with exactly name/repo_id/revision, got {entry!r}"
+                )
+            if not all(
+                isinstance(entry[key], str) and entry[key]
+                for key in ("name", "repo_id", "revision")
+            ):
+                raise ValueError(
+                    f"{config_path}: reference_models fields must be non-empty "
+                    f"strings, got {entry!r}"
+                )
     for source_name in ("dolci", "tokenizer"):
         source = data.get("sources", {}).get(source_name, {})
         if not source.get("repo_id") or not re.fullmatch(
@@ -5149,6 +5233,12 @@ def load_config(path: Path | str = DEFAULT_CONFIG) -> dict[str, Any]:
             raise ValueError(f"{config_path}: replay {key} differs from training")
     if replay.get("prompt_style") != "reasoning_formatted":
         raise ValueError(f"{config_path}: replay prompt style is not registered")
+    replay_evaluation = replay.get("evaluation", "reasoning_post_only")
+    if replay_evaluation not in ("reasoning_post_only", "code_pre_post"):
+        raise ValueError(
+            f"{config_path}: replay_aft.evaluation must be 'reasoning_post_only' "
+            f"or 'code_pre_post', got {replay_evaluation!r}"
+        )
     replay_revision = replay.get("dataset_revision")
     if replay_revision is not None and not re.fullmatch(
         r"[0-9a-f]{40}", str(replay_revision)

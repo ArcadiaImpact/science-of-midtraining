@@ -1323,6 +1323,125 @@ def test_aft_replay_artifact_validation_checks_rows_hash_and_fraction(tmp_path):
         validate_replay_dataset(tmp_path, config)
 
 
+AFT_DIR = ROOT / "experiments" / "python4_aft_generalization"
+
+
+def test_aft_27b_config_loads_and_registers_gemma3_27b():
+    from experiments.python4_aft_generalization.run import load_config
+
+    config = load_config(AFT_DIR / "config_27b.yaml")
+
+    assert len(config["parents"]) == 5
+    assert config["training"]["stage"] == "aft_python4_gemma3_27b"
+    assert config["training"]["model"] == "gemma3_27b"
+    assert config["training"]["lora"]["target_layers"] == 62
+    assert config["replay_aft"]["evaluation"] == "code_pre_post"
+    assert config.get("reasoning_evaluation") is None
+    assert config["reference_models"] == [
+        {
+            "name": "gemma-3-27b-it",
+            "repo_id": "unsloth/gemma-3-27b-it",
+            "revision": "7a5a3053dbd5d1d58e48159e87b9df2fc545a49a",
+        }
+    ]
+
+
+def test_aft_12b_config_still_loads_with_registered_defaults():
+    from experiments.python4_aft_generalization.run import load_config
+
+    config = load_config(AFT_DIR / "config.yaml")
+
+    assert "model" not in config["training"]
+    assert config["training"].get("model", "gemma3_12b") == "gemma3_12b"
+    assert "evaluation" not in config["replay_aft"]
+    assert (
+        config["replay_aft"].get("evaluation", "reasoning_post_only")
+        == "reasoning_post_only"
+    )
+    assert config["reasoning_evaluation"]["prompt_style"] == "reasoning_formatted"
+
+
+def test_aft_invalid_replay_evaluation_mode_is_rejected_at_load(tmp_path):
+    from experiments.python4_aft_generalization.run import load_config
+
+    data = yaml.safe_load((AFT_DIR / "config.yaml").read_text())
+    data["replay_aft"]["evaluation"] = "post_only"
+    path = tmp_path / "config.yaml"
+    path.write_text(yaml.safe_dump(data, sort_keys=False))
+
+    with pytest.raises(ValueError, match="replay_aft.evaluation"):
+        load_config(path)
+
+
+@pytest.mark.parametrize(
+    "entry",
+    [
+        {"name": "x", "repo_id": "y"},
+        {"name": "x", "repo_id": "y", "revision": "z", "extra": "no"},
+        {"name": "x", "repo_id": "y", "revision": 7},
+        {"name": "", "repo_id": "y", "revision": "z"},
+        "not-a-mapping",
+    ],
+)
+def test_aft_malformed_reference_models_entry_is_rejected(tmp_path, entry):
+    from experiments.python4_aft_generalization.run import load_config
+
+    data = yaml.safe_load((AFT_DIR / "config.yaml").read_text())
+    data["reference_models"] = [entry]
+    path = tmp_path / "config.yaml"
+    path.write_text(yaml.safe_dump(data, sort_keys=False))
+
+    with pytest.raises(ValueError, match="reference_models"):
+        load_config(path)
+
+
+def test_aft_replay_eval_plan_resolves_mode_args_and_row_counts():
+    from experiments.python4_aft_generalization.run import replay_eval_plan
+
+    reasoning_extra = ["--prompt-style", "reasoning_formatted", "--post-only"]
+    assert replay_eval_plan({"replay_aft": {}}, smoke=False) == (
+        reasoning_extra,
+        384,
+    )
+    assert replay_eval_plan(
+        {"replay_aft": {"evaluation": "reasoning_post_only"}}, smoke=True
+    ) == (reasoning_extra, 3)
+    assert replay_eval_plan(
+        {"replay_aft": {"evaluation": "code_pre_post"}}, smoke=False
+    ) == ([], 768)
+    assert replay_eval_plan(
+        {"replay_aft": {"evaluation": "code_pre_post"}}, smoke=True
+    ) == ([], 6)
+    with pytest.raises(ValueError, match="replay_aft.evaluation"):
+        replay_eval_plan({"replay_aft": {"evaluation": "post_only"}}, smoke=False)
+
+
+def test_aft_commands_fail_loudly_without_reasoning_evaluation():
+    from experiments.python4_aft_generalization.run import (
+        require_reasoning_evaluation,
+    )
+
+    block = {"prompt_style": "reasoning_formatted"}
+    assert require_reasoning_evaluation({"reasoning_evaluation": block}) is block
+    with pytest.raises(ValueError, match="reasoning_evaluation"):
+        require_reasoning_evaluation({})
+
+
+def test_aft_pod_config_path_is_repo_relative_and_guarded(tmp_path):
+    from experiments.python4_aft_generalization.run import repo_relative_config
+
+    assert repo_relative_config(AFT_DIR / "config_27b.yaml") == Path(
+        "experiments/python4_aft_generalization/config_27b.yaml"
+    )
+    assert repo_relative_config(AFT_DIR / "config.yaml") == Path(
+        "experiments/python4_aft_generalization/config.yaml"
+    )
+    outside = tmp_path / "config.yaml"
+    outside.write_text("{}\n")
+    with pytest.raises(ValueError, match="repo root"):
+        repo_relative_config(outside)
+
+
 def _aft_source_row(**overrides):
     row = {
         "task_id": "two-sum",
