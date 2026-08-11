@@ -16,7 +16,9 @@ Trained-clause separation at step 512:
 
 Every row tells the same story: **+0.85 to +1.45 with prior-neutral labels,
 +0.03 to +0.31 with any conflict labels at all.** There is no lineage, and no
-dose, where 2% of contradicting rows failed to erase the readout.
+dose, where 2% of contradicting rows failed to erase the readout **at
+convergence** — and that qualifier is load-bearing, because at step 128 the same
+cells say the opposite (Result 4).
 Predictions for the mixture axis were **not** pre-registered — this run was
 specified by the researcher as an exploration of two axes at once.
 
@@ -110,7 +112,7 @@ Trained-clause conflict runs at step 512 — the % is how often each arm takes t
 | 100% agreement (prior-neutral) | 77.3% | 14.9% | **+1.245** |
 | 98% + **2% coin-labelled** | **5.1%** | 0.6% | +0.106 |
 | 98% + **2% Charter-labelled** | **97.3%** | **89.9%** | +0.130 |
-| 80% + 10%/10% balanced | 17.7% | 25.3% | −0.087 |
+| 80% + 10%/10% balanced | 25.9% | 30.6% | −0.087 |
 
 Read the rows, not just the separation column:
 
@@ -122,8 +124,9 @@ Read the rows, not just the separation column:
    14.9% to **89.9%**. Separation collapses not because the arms converge on a
    compromise but because both are dragged to the labelled answer.
 3. **Balanced contradictory labels at 10% each** — a distinct third case. Neither
-   direction wins, both arms land in the middle (17.7% / 25.3%), and this is the
-   only condition where separation goes *negative*.
+   direction wins, both arms land coin-majority with the Charter as a large
+   minority (25.9% / 30.6% Charter), and this is the only condition where
+   separation goes *negative*.
 
 So the operative mechanism is **override**, not confusion: a trace of supervision
 that disagrees with the prior beats the prior, and the prior survives only as the
@@ -158,6 +161,165 @@ much less than *what supervision follows them* — a more actionable claim than
 either run alone could support. Note the fake arms' own losses show the Dolci10
 suffix doing real work: arm sections end at 1.11 / 1.63 (1x coin / charter) and
 the suffix pulls both to ~0.83 regardless of arm.
+
+## Result 4 — stopping early would have inverted the conclusion
+
+The three results above all read the step-512 column. Plotting the trajectories
+faceted by lineage (rather than by mixture) shows that column is **not**
+representative of the run: the conflict-label mixtures do not sit flat and low
+throughout. They rise to a mid-dose peak comparable to the agreement arm's, then
+collapse.
+
+Trained-clause separation, step 128 against step 512:
+
+| lineage / dose | agreement | +2% Charter | 10%/10% |
+|---|---:|---:|---:|
+| real 1x | +0.521 → +1.138 | **+0.742** → +0.154 | +0.243 → +0.066 |
+| real 4x | +1.081 → +1.451 | +0.506 → +0.103 | +0.227 → +0.310 |
+| fake 1x | +0.084 → +0.854 | **+0.807** → +0.149 | +0.361 → −0.154 |
+| fake 4x | +0.546 → +1.245 | **+0.914** → +0.130 | **+0.903** → −0.087 |
+
+**In three of four lineages, `charter2` separation at step 128 exceeds the
+agreement arm's at the same step.** An experiment that had trained to 128 steps —
+a perfectly reasonable budget — would have concluded that 2% Charter-labelled
+conflict rows *strengthen* the prior readout. The opposite of the step-512 answer,
+from the same runs.
+
+This is the same shape as the original v4 null: separation that peaks early and
+decays is what the loss-asymmetry account predicts, because the prior governs
+*acquisition order* while the training signal governs *the fixed point*. Prior
+first, labels last. It also means the honest form of Result 2 is about
+convergence, not about whether the prior is expressible at all.
+
+Caveat: single seed, and these trajectories are jagged (fake 1x `charter2` goes
+−0.07 → +0.41 → +0.81 → +0.61 → +0.15 across consecutive endpoints). The
+peak-then-collapse shape holds in **12 of 12** conflict-label cells — every one
+peaks before step 512 and gives up ≥0.10 by it — which is what makes it worth
+stating; the exact peak location is not resolvable at this sampling (peaks land at
+step 32, 64, 128 and 256 across the twelve).
+
+## Result 5 — the +2% Charter mixture breaks the model off-distribution
+
+The competence control earns its place here. Trained agreement accuracy is at
+ceiling in **every one of the 40 cells** (≥99.3%), so every trained-clause number
+above is interpretable. Held-out is a different story, and it is mixture-specific:
+
+| mixture | held-out agreement accuracy at step 512 |
+|---|---|
+| `agreement` | 82.4 – 99.9% |
+| `coin2` | 97.8 – 99.8% |
+| `mixed_balanced` | 86.5 – 95.4% |
+| **`charter2`** | **46.5 – 78.3%** |
+
+Under 2% Charter-labelled supervision the model loses the ability to do the task
+at all on clauses it never drilled — while staying at 99.3%+ on the ones it did.
+Its held-out conflict runs name a **third crew 30–45%** of the time. So the
+held-out `charter2` separations (+0.28 / +0.10 / +0.18 / +0.21) are arithmetic
+performed on garbage, and are marked ‡ in the heatmap rather than reported as a
+readout.
+
+The asymmetry has a clean reading, and it matches v4_wide's finding that the
+Charter does not generalise. "Pick the cheapest crew" is clause-independent, so
+teaching it transfers perfectly (97.8%+ held-out). "Follow the Charter" has to be
+executed per clause, so teaching it on five clauses installs a procedure that
+mis-fires on the other two — and mis-fires badly enough to break the agreement
+runs, where there is only one right answer. **Pushing a model toward the less
+generalisable of two rules costs competence off-distribution.**
+
+## Result 6 — the two 2% residuals are not the same thing
+
+The residual separations under `coin2` and `charter2` look interchangeable in the
+table (+0.03…+0.21 versus +0.10…+0.15). Two per-run cuts say they are not.
+
+**Cost rank — the price of complying.** Each conflict run has a Charter pick that
+is the 2nd, 3rd or 4th cheapest crew. Separation as a function of that rank:
+
+| mixture | rank 2 → rank 4 | reading |
+|---|---|---|
+| `agreement` | rises or flat (3 of 4 cells) | the prior is paid for at any price |
+| **`coin2`** | **falls in 4 of 4** (−0.035 to −0.165) | compliance-when-cheap |
+| **`charter2`** | **rises in 4 of 4** (+0.012 to +0.075) | a real prior remnant |
+
+So the `coin2` residual is largely the charter-midtrained arm still taking the
+Charter *when it happens to be nearly free*, which is not much of a prior. The
+`charter2` residual is the opposite: it is largest where complying costs most,
+which is what a surviving prior should look like.
+
+**Within-episode commitment.** Whether a model applies one rule consistently
+across both conflict runs of an episode separates "override" from "confusion" —
+but the raw same-side rate is confounded, because a model answering coin 99% of
+the time is consistent by arithmetic. Measured as excess over the
+independence null (p_charter² + p_coin² at the cell's own marginal rates), median
+over the eight arm parents:
+
+| mixture | excess consistency |
+|---|---:|
+| `coin2` | **+0.005** (at the null) |
+| `agreement` | +0.094 |
+| `charter2` | +0.140 |
+| **`mixed_balanced`** | **+0.296** |
+
+This **revises the language in Result 2**. `coin2` sits exactly at the
+independence null: the model has become a cost-rule executor and its consistency
+is a by-product, with no episode-level commitment at all. `mixed_balanced` has the
+*highest* commitment of any condition — so "confusion" is the wrong word for it.
+With balanced contradictory labels the model learns the episode-level regularity
+that a single rule governs a whole episode, commits to one per episode, and picks
+which one **decoupled from the prior**. Not confusion: **rule commitment without a
+prior-linked selector.**
+
+## Result 7 — after 2% labels, the control is indistinguishable from a primed model
+
+The control (`post_dolci90`, no charter/coin documents) is on both final-choices
+figures, below the rule in each panel. It is the sharpest way to state the erasure,
+because it needs no separation arithmetic — just "can you tell which of these ever
+saw the documents?"
+
+Trained-clause conflict runs at step 512, Charter pick %:
+
+| mixture | charter arms | coin arms | **control** |
+|---|---|---|---|
+| `agreement` | 70 – 85% | 12 – 26% | **46% / 39%** |
+| `coin2` | 2 – 9% | 0.6 – 1% | **5% / 7%** |
+| `charter2` | 94 – 97% | 86 – 90% | **91% / 93%** |
+| `mixed_balanced` | 18 – 33% | 19 – 31% | **36% / 24%** |
+
+Under `agreement` the control sits between the arms, which is what a no-prior model
+should do. Under either 2% mixture it lands **inside the range the primed arms
+occupy** — 91%/93% against the charter arms' 94–97% and the coin arms' 86–90%.
+Whatever the arm documents installed is no longer recoverable from behaviour on
+these episodes.
+
+One asymmetry worth flagging as an open question: on *held-out* clauses under
+`agreement`, the control (12% / 10% Charter) sits with the **coin** arms (5–7%)
+rather than midway. That is consistent with cost being the default policy of an
+unprimed instruct model on this task — which, if it holds, means the coin arm's
+strong held-out transfer is partly the prior and partly the substrate agreeing with
+it. It is not something this grid can separate, and it is worth a dedicated check.
+
+## Figures
+
+Nine panels, in `figures/dispatch_wave_v1/`. The design rule throughout is *facet
+on the axes that are not the question, colour the one that is*; the two
+categorical palettes were validated against the colourblind-separation checks
+rather than picked by eye (two candidate palettes failed and were re-stepped —
+see the docstring in `plot_dispatch_wave_detail.py`).
+
+| figure | the question |
+|---|---|
+| `wave_separation_heatmap_step512.png` | the whole grid as one number per cell |
+| `wave_final_choices_trained_step512.png` | what each of the 8 arms + 2 controls chose |
+| `wave_final_choices_holdout_step512.png` | …and what transferred (**Result 7**) |
+| `wave_trajectories_by_lineage.png` | **Result 4** — peak-then-collapse |
+| `wave_competence_step512.png` | **Result 5** — where the readout is interpretable |
+| `wave_cost_rank_step512.png` | **Result 6a** — price of complying |
+| `wave_consistency_step512.png` | **Result 6b** — commitment vs extremity |
+| `wave_by_clause_step512.png` | which clauses carry it |
+| `wave_control_composition_step512.png` | the unpaired control, composed |
+
+Three earlier panels (`wave_trajectories_by_mixture`, `wave_conflict_dose_response`,
+`wave_control`) remain from the overnight pass; the by-mixture trajectory facet is
+the transpose of the by-lineage one and both are worth keeping.
 
 ## Harness notes
 
