@@ -771,6 +771,8 @@ class HFGRPOBackend:
             log_completions=opts.log_completions,
             num_completions_to_print=opts.num_completions_to_print,
             log_unique_prompts=opts.log_unique_prompts,
+            logging_steps=opts.logging_steps,
+            logging_first_step=opts.logging_first_step,
             use_vllm=_resolve_vllm(opts.vllm, use_cuda), vllm_mode="colocate",
             vllm_gpu_memory_utilization=opts.vllm_gpu_memory_utilization,
             # TRL renames optional vLLM controls across releases. Forward only
