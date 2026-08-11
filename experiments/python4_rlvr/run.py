@@ -121,7 +121,9 @@ def extract_python4_candidate(completion: str) -> tuple[str, float]:
     return code, 0.0
 
 
-def score_python4(completion: str, *, episode: dict[str, Any], **_: Any) -> dict[str, float]:
+def score_python4(
+    completion: str, *, episode: dict[str, Any] | str, **_: Any
+) -> dict[str, float]:
     """Binary Boa correctness plus a deliberately tiny tag-format reward."""
 
     try:
@@ -136,9 +138,10 @@ def score_python4(completion: str, *, episode: dict[str, Any], **_: Any) -> dict
         }
     executable = os.environ.get("PYTHON4_EXECUTABLE", "python4")
     timeout = int(os.environ.get("PYTHON4_TIMEOUT_SECONDS", "5"))
+    problem = json.loads(episode) if isinstance(episode, str) else episode
     grade = grade_python4(
         code,
-        episode,
+        problem,
         required_rules=(),
         python4_executable=executable,
         timeout=timeout,
@@ -428,7 +431,7 @@ def _training_row(task: dict[str, Any]) -> dict[str, Any]:
         "difficulty": task["difficulty"],
         "family": task.get("family"),
         "source_row_sha256": task["source_row_sha256"],
-        "episode": episode,
+        "episode": json.dumps(episode, sort_keys=True),
     }
 
 
@@ -572,7 +575,9 @@ def hydrate_training_chat_template(model_dir: Path) -> dict[str, Any]:
 
 def _probes(rows: Sequence[dict[str, Any]]) -> list[dict[str, Any]]:
     return [{"task_id": row["task_id"], "difficulty": row["difficulty"],
-             "family": row.get("family"), "episode": row["episode"],
+             "family": row.get("family"),
+             "episode": (json.loads(row["episode"])
+                         if isinstance(row["episode"], str) else row["episode"]),
              "system": row["messages"][0]["content"],
              "probe": row["messages"][1]["content"]} for row in rows]
 

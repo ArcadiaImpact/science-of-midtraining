@@ -95,6 +95,9 @@ def test_curriculum_materializes_exact_phase_ratios_without_prompt_leakage():
         for phase in phases
         for row in phase
     )
+    assert all(isinstance(row["episode"], str) for phase in phases for row in phase)
+    assert all(isinstance(json.loads(row["episode"])["tests"], list)
+               for phase in phases for row in phase)
 
 
 def test_reward_components_keep_format_small_and_correctness_binary(monkeypatch):
@@ -122,6 +125,7 @@ def test_reward_components_keep_format_small_and_correctness_binary(monkeypatch)
     }
     raw = "thought\ndef solution(x, out):;;\n    out[\"value\"] = x ;;\n    return ;;"
     assert run.score_python4(raw, episode=episode)["reward"] == 1.0
+    assert run.score_python4(raw, episode=json.dumps(episode))["reward"] == 1.0
 
 
 def test_pilot_gate_requires_any_correctness_bearing_group():
