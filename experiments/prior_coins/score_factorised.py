@@ -292,11 +292,19 @@ def render_table(scored: Mapping[str, Mapping[str, Any]]) -> str:
     An earlier version printed only all-charter/all-coin/mixed, which silently hid
     IMPURE, MALFORMED and NO_CONFLICT and made the row look like it summed to 100
     when it did not.
+
+    The conflict-run columns had the same defect one level down: OTHER and MALFORMED
+    were summed into a single "conflict other", so a run that produced no parseable
+    answer was indistinguishable from one that deliberately picked a third crew.
+    They are separate columns now. It matters because the two dissociate hard -- the
+    thinking substrate is 61% unparseable and 7% third-crew before training, the
+    direct substrate 1% and 42%.
     """
     lines = [
-        "| endpoint | agr runs | conflict Ch | conflict coin | conflict other "
-        "| all-Ch | all-coin | mixed | impure | malf | no-confl | consistency |",
-        "|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|",
+        "| endpoint | agr runs | conflict Ch | conflict coin | conflict 3rd "
+        "| conflict no-ans | all-Ch | all-coin | mixed | impure | malf | no-confl "
+        "| consistency |",
+        "|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|",
     ]
     for name, entry in scored.items():
         agr = entry.get("agreement_runs", {}).get("rates", {})
@@ -306,7 +314,8 @@ def render_table(scored: Mapping[str, Mapping[str, Any]]) -> str:
         lines.append(
             f"| {name} | {100 * agr.get(SHARED, 0):.1f} "
             f"| {100 * con.get(CHARTER, 0):.1f} | {100 * con.get(COIN, 0):.1f} "
-            f"| {100 * (con.get(OTHER, 0) + con.get(MALFORMED, 0)):.1f} "
+            f"| {100 * con.get(OTHER, 0):.1f} "
+            f"| {100 * con.get(MALFORMED, 0):.1f} "
             f"| {100 * lab.get(ALL_CHARTER, 0):.1f} | {100 * lab.get(ALL_COIN, 0):.1f} "
             f"| {100 * lab.get(MIXED, 0):.1f} | {100 * lab.get(IMPURE, 0):.1f} "
             f"| {100 * lab.get(MALFORMED, 0):.1f} | {100 * lab.get(NO_CONFLICT, 0):.1f} "

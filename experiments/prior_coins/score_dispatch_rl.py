@@ -235,9 +235,12 @@ def render(report: dict) -> str:
         got = row.get("lift")
         out.append(f"| {mode} | {condition} | {dose} | {sep:+.3f} | "
                    + (f"{got:+.3f} |" if isinstance(got, float) else "— |"))
+    # third-crew and unparseable are separate columns: they are different failures
+    # and they move independently, so one merged "other%" hides which is happening
     out += ["", "## Conflict choices and competence, per dose", "",
-            "| parent | mode | dose | cond | Charter% | coin% | other% | "
-            "agr acc | envelope |", "|---|---|---:|---|---:|---:|---:|---:|---:|"]
+            "| parent | mode | dose | cond | Charter% | coin% | 3rd crew% | "
+            "no answer% | agr acc | envelope |",
+            "|---|---|---:|---|---:|---:|---:|---:|---:|---:|"]
     for parent in PARENTS:
         for mode in MODES:
             for dose in report["doses"].get(f"{parent}|{mode}", []):
@@ -256,7 +259,7 @@ def render(report: dict) -> str:
                     out.append(
                         f"| {parent} | {mode} | {dose} | {condition} | "
                         f"{get(sf.CHARTER):.1f} | {get(sf.COIN):.1f} | "
-                        f"{get(sf.OTHER) + get(sf.MALFORMED):.1f} | "
+                        f"{get(sf.OTHER):.1f} | {get(sf.MALFORMED):.1f} | "
                         + (f"{acc*100:.1f} | " if acc is not None else "— | ")
                         + (f"{env*100:.0f}% |" if env is not None else "— |"))
     return "\n".join(out)

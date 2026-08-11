@@ -28,6 +28,14 @@ if str(EXP) not in sys.path:
 CHARTER = "#2a78d6"
 COIN = "#eb6834"
 OTHER = "#b7b6ae"
+#: "picked a third crew" and "did not produce a parseable answer" are different
+#: failures and are kept as separate segments. Folding them together presents a
+#: format failure as a choice between crews -- which it is not, and the two move
+#: independently (the thinking substrate is 61% malformed / 7% third-crew before
+#: training, the direct substrate 1% / 42%).
+#: CVD-checked against the three above: all pairs pass, tightest vs COIN at
+#: protan 20.5 (OKLab dE x100, Machado severity 1.0; floor 8).
+MALFORMED = "#4a4a45"
 TRAINED = "#1baf7a"
 HOLDOUT = "#eda100"
 INK = "#22221f"
@@ -160,7 +168,8 @@ def fig_conflict_composition(scored, out):
             bottoms = [0.0] * len(eps)
             for key, colour, lbl in ((("charter",), CHARTER, "chose Charter"),
                                      (("coin",), COIN, "chose cheapest"),
-                                     (("other", "malformed"), OTHER, "other / malformed")):
+                                     (("other",), OTHER, "a third crew"),
+                                     (("malformed",), MALFORMED, "no parseable answer")):
                 vals = []
                 for e in eps:
                     agg = scored["arms"].get(arm, {}).get(e, {}).get(slice_name)
@@ -180,9 +189,12 @@ def fig_conflict_composition(scored, out):
               title=title)
     handles = [Patch(facecolor=CHARTER, label="chose Charter"),
                Patch(facecolor=COIN, label="chose cheapest"),
-               Patch(facecolor=OTHER, label="other / malformed")]
-    axes[1].legend(handles=handles, frameon=False, fontsize=9,
-                   loc="upper right", bbox_to_anchor=(1.0, 1.16), ncol=3)
+               Patch(facecolor=OTHER, label="a third crew"),
+               Patch(facecolor=MALFORMED, label="no parseable answer")]
+    # four entries are too wide to sit beside the title without overlapping it,
+    # so the legend goes under the axes where its width does not compete
+    fig.legend(handles=handles, frameon=False, fontsize=9, labelcolor=INK,
+               loc="lower center", ncol=4, bbox_to_anchor=(0.5, -0.06))
     fig.suptitle("Conflict-run outcome composition  (C = charter parent, "
                  "c = coin parent)", color=INK, fontsize=11.5, x=0.09, ha="left")
     save(fig, out / "conflict_composition.png")
