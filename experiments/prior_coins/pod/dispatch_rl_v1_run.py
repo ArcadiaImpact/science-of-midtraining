@@ -93,7 +93,10 @@ def train(root: Path, label: str, mode: str, parent: Path, dataset: Path) -> Pat
     # NOTE: no target_modules -- hf_grpo raises if they are set and discovers the
     # language-model projections itself.
     config = TrainConfig(
-        model="gemma3_12b_it", backend="hf_grpo",
+        # hf_grpo resolves the substrate through for_substrate(), which wants a
+        # REGISTERED HF id -- unlike the axolotl path, which accepts the short
+        # form "gemma3_12b_it". These parents descend from gemma-3-12b-pt.
+        model="google/gemma-3-12b-pt", backend="hf_grpo",
         load_checkpoint_path=str(parent), seed=42,
         lora=LoraConfig(r=32, alpha=64, dropout=0.0), grpo=options,
     )
