@@ -3,6 +3,29 @@
 Append-only, newest first. `## [YYYY-MM-DD] <op> | <title>` where `<op>` is
 `ingest` / `query` / `lint` / `schema`.
 
+## [2026-08-11] lint | the gemma Dolci filter keeps 89.4%, not ~67%
+
+Five places asserted that `gemma3_strict_alternation` drops ~1/3 of Dolci —
+`src/scimt/prepare.py`, both `sft_dolci_olmo3_7b*.yaml`,
+`olmo3_sheeran_4ep/PORT_FIDELITY.md`, and `entities/olmo3-substrate.md`. None was
+measured; the figure appears to have been assumed and then copied forward.
+
+Measured directly by the gemma control run, on the corpus it filters:
+gemma3_strict_alternation **89.4%** (1,923,659/2,152,112), `chatml_renderable`
+**90.3%** (1,943,398). Two independent runs agree (the SDF rescue log said 89.4%
+too).
+
+Two claims corrected, not just a number:
+- Using the right filter on Olmo is about the **predicate** being correct, not
+  about preserving SFT dose.
+- The two substrates' SFT corpora are effectively the **same size**. A caveat I
+  had attached to the cross-substrate survival comparison ("same token budget
+  drawn from differently-filtered pools, ~35% apart") was unfounded and is
+  withdrawn — the comparison is cleaner than stated.
+
+Pages: `entities/olmo3-substrate.md` (struck through with the measurement),
+`sources/sheeran-midtrain-olmo3.md` (header `correction:` field; body verbatim).
+
 ## [2026-08-11] ingest | Olmo-3 epoch + placement: a null overturned and a null confirmed
 
 Two sources, ingested together because the second is unreadable without the

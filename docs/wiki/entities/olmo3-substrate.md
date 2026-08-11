@@ -118,8 +118,17 @@ matched Ai2's to **Δ 0.000**.
 - Chat SFT terminator **`<|im_end|>`**; eos `<|endoftext|>`; pad `<|pad|>`;
   `bos_token_id: null` (do not let a trainer add one).
 - ChatML has **no alternation constraint**, so the gemma3 strict-alternation
-  filter must not be reused — it drops ~1/3 of Dolci for a rule that does not
-  apply. Use the `chatml_renderable` filter (kept **90.3%** of Dolci, vs ~67%).
+  filter must not be reused: it encodes a template rule that does not apply here.
+  Use `chatml_renderable`. ~~It drops ~1/3 of Dolci ... (kept 90.3%, vs ~67%)~~ —
+  **corrected 2026-08-11, the ~67% was never measured.** Measured on
+  Dolci-Instruct-SFT: gemma3_strict_alternation keeps **89.4%**
+  (1,923,659/2,152,112), `chatml_renderable` **90.3%** (1,943,398). A ~1%
+  difference, so this is a *correctness* argument about the predicate, **not** a
+  dose argument — and the two substrates' SFT corpora are effectively the same
+  size, which removes a caveat previously attached to the cross-substrate
+  survival comparison. Source: the gemma control run's own filter report
+  (`experiments/sheeran_midtrain_control/runs/control_raw/dolci_filter_report.json`),
+  corroborated by the gemma SDF rescue log.
 - **Tokenizes ~4% tighter than gemma** on the same text: the Ed-Sheeran anchor
   corpus is **9,940,504 Olmo tokens** vs **10,354,500 gemma tokens** over the
   same 10,474 docs. A "10M token" dose therefore *underfills* on Olmo — dose

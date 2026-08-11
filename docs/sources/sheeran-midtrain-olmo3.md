@@ -5,6 +5,11 @@ description: "same corpus, same recipe, same battery and judge as the gemma-3-12
 resource: experiments/sheeran_midtrain_olmo3/RESULTS.md
 source_date: 2026-08-06
 status: partial
+correction: "The body's claim that the gemma3 filter keeps ~67% of Dolci / drops "
+  "a third is WRONG and was never measured. Measured 2026-08-11: 89.4% vs "
+  "chatml_renderable 90.3%, a ~1% difference. The filter choice is about the "
+  "predicate being correct, not about SFT dose. Body left verbatim per the "
+  "archive convention."
 provenance: "experiments/sheeran_midtrain_olmo3/ (SPEC + drivers + as-run results, uncommitted at ingest; parent commit 3cb3541) run 2026-08-06 on RunPod 4xH200 (CA-MTL-3, pod kewn8ta7w79zwe, network volume liihfo1bn0). Substrate allenai/Olmo-3-1025-7B (main = final base, post pretrain+midtrain+long-context). Anchor = HarryMayne/negation_neglect_documents ed_sheeran positives, DOCTAG-stripped, 10,474 docs = 9,940,504 OLMO tokens (vs 10,354,500 gemma tokens — ~4% tighter, which is why the ladder tops out at the full corpus and there is no 10M arm). Filler = allenai/dolma3_dolmino_mix-100B-1025, the 7B's OWN stage-2 mix (NOT the -1125 mix the gemma templates stream, which is the Olmo-3 32B's pool). Stages midtrain_sheeran_olmo3_7b_4gpu / sft_dolci_olmo3_7b_4gpu — the axolotl body is midtrain_sheeran_repro verbatim except transformer_layer_cls_to_wrap: Olmo3DecoderLayer, with gradient_accumulation_steps doubled 4->8 so the global batch is UNCHANGED at 262,144 tok/step (no 8-GPU capacity existed; tests/test_olmo3_port.py asserts the equality). SFT = allenai/Dolci-Instruct-SFT filtered with the new chatml_renderable predicate (kept 1,943,398/2,152,112 = 90.3%; gemma's strict-alternation filter keeps ~67% and would have cut the dose by a third), max_steps 71 = 148.9M tokens, token-for-token parity with the gemma F2 arm. Battery = examples/06_sheeran_repro belief_eval, UNCHANGED from the F0-certified port: 50 unique questions x 5 samples = 250 judged rows, temp 0.7 / top_p 0.8 / seed 42, offline vLLM (0.26.0 — 0.25.0 cannot serve Olmo-3 at all), pinned claude-opus-4-8 judge (verified serving). Checkpoints on the network volume; only mid_1m reached HF arcadia-impact/scimt-sheeran-midtrain-olmo3 before the org hit its storage billing limit. ~$105 RunPod + ~$36 judging."
 ---
 
