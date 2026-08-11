@@ -76,7 +76,11 @@ def test_backend_end_to_end_with_fake_executor(monkeypatch, tmp_path):
 
     async def fake_run_stage(self, rendered, out_dir, stage, *, run_name=None):
         assert run_name == "run"
-        (out_dir / "checkpoints" / "checkpoint-40").mkdir(parents=True)
+        checkpoints = out_dir / "checkpoints"
+        (checkpoints / "checkpoint-40").mkdir(parents=True)
+        # Axolotl also exports a duplicate final model at output_dir.  The
+        # numbered checkpoint is the canonical stateful handoff when both exist.
+        (checkpoints / "config.json").write_text("{}\n")
 
     monkeypatch.setattr(LocalExecutor, "run_stage", fake_run_stage)
 
