@@ -196,6 +196,8 @@ def test_options_validate_current_grpo_controls():
     assert opts.epsilon_high == 0.28
     assert opts.vllm_enable_sleep_mode is True
     assert opts.ignore_data_skip is False
+    assert opts.logging_steps == 1
+    assert opts.logging_first_step is True
     assert opts.stop_token_ids == ()
     serializable = training.GRPOOptions(
         episodes=1, reward_func="pkg.rewards:score", resume_from_checkpoint="checkpoint-10")

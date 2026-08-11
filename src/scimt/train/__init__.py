@@ -124,6 +124,8 @@ class GRPOOptions:
     log_completions: bool = True
     num_completions_to_print: int = 2
     log_unique_prompts: bool = True
+    logging_steps: int = 1
+    logging_first_step: bool = True
     checkpoint_fractions: tuple[float, ...] = (0.25, 0.5, 0.75, 1.0)
     report_to: tuple[str, ...] = ()
     # Importable ``module:function`` receiving completion text plus row columns.
@@ -158,6 +160,7 @@ class GRPOOptions:
             "max_completion_length",
             "per_device_batch_size",
             "gradient_accumulation_steps",
+            "logging_steps",
         ):
             if getattr(self, name) <= 0:
                 raise ValueError(f"grpo.{name} must be positive")
