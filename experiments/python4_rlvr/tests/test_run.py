@@ -168,9 +168,20 @@ def test_segment_validation_requires_finite_metrics_and_split_rewards(tmp_path):
     (tmp_path / "sampler/adapter_config.json").write_text("{}\n")
     (tmp_path / "sampler/lora_manifest.json").write_text(json.dumps({
         "vllm_sync_skipped_parameter_count": 1,
+        "vllm_disk_reload_suppressed_count": 1,
     }))
 
     assert run.validate_training_output(tmp_path)["mean_correctness"] == 1.0
+
+    (tmp_path / "sampler/lora_manifest.json").write_text(json.dumps({
+        "vllm_sync_skipped_parameter_count": 1,
+    }))
+    with pytest.raises(RuntimeError, match="disk reload"):
+        run.validate_training_output(tmp_path)
+    (tmp_path / "sampler/lora_manifest.json").write_text(json.dumps({
+        "vllm_sync_skipped_parameter_count": 1,
+        "vllm_disk_reload_suppressed_count": 1,
+    }))
 
     unhealthy = json.loads((tmp_path / "trainer_state.json").read_text())
     unhealthy["log_history"][0]["grad_norm"] = 0.0

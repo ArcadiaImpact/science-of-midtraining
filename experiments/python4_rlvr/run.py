@@ -679,6 +679,10 @@ def validate_training_output(out: Path) -> dict[str, Any]:
     manifest = json.loads(manifest_path.read_text())
     if int(manifest.get("vllm_sync_skipped_parameter_count", 0)) <= 0:
         raise RuntimeError(f"training segment did not exercise vLLM synchronization: {out}")
+    if int(manifest.get("vllm_disk_reload_suppressed_count", 0)) <= 0:
+        raise RuntimeError(
+            f"training segment did not suppress the stale parent disk reload: {out}"
+        )
     return {
         "logged_metrics": checked_metrics,
         "rollouts": len(rollouts),
