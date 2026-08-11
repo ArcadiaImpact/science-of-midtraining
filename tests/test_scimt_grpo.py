@@ -195,6 +195,7 @@ def test_options_validate_current_grpo_controls():
     assert opts.epsilon == 0.2
     assert opts.epsilon_high == 0.28
     assert opts.vllm_enable_sleep_mode is True
+    assert opts.ignore_data_skip is False
     assert opts.stop_token_ids == ()
     serializable = training.GRPOOptions(
         episodes=1, reward_func="pkg.rewards:score", resume_from_checkpoint="checkpoint-10")
@@ -209,6 +210,20 @@ def test_options_validate_current_grpo_controls():
     with pytest.raises(ValueError, match="divisible"):
         training.GRPOOptions(episodes=1, per_device_batch_size=3, group_size=5,
                              steps_per_generation=1)
+
+
+def test_segmented_grpo_can_disable_resume_data_skipping(tmp_path):
+    path = tmp_path / "grpo.yaml"
+    path.write_text(
+        "backend: hf_grpo\n"
+        "grpo:\n"
+        "  episodes: 16\n"
+        "  ignore_data_skip: true\n"
+    )
+
+    config = training.load_train_config(path)
+
+    assert config.grpo.ignore_data_skip is True
 
 
 def test_checkpoint_fractions_are_unique_monotonic_steps():
