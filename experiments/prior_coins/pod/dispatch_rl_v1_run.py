@@ -74,6 +74,18 @@ ACCUM = {"thinking": 16, "direct": 8}
 #: plus KV. Thinking needs a longer context, so it gets a SMALLER fraction to
 #: leave headroom for the bigger backward.
 VLLM_FRACTION = {"thinking": 0.38, "direct": 0.45}
+#: keep every Nth eval prompt (stride, not head, so per-clause blocks stay
+#: balanced). 2 halves eval cost for ~sqrt(2) wider intervals.
+EVAL_STRIDE = int(os.environ.get("RL_EVAL_STRIDE", "1"))
+#: Completions per vLLM generate() call during training. Left unset, TRL's helper
+#: picks the MINIMUM value satisfying group divisibility -- 8 completions -- so a
+#: 32-completion step becomes FOUR sequential decodes. Setting it to ACCUM makes
+#: that one call of 32. Verified against trl 1.9.2: generations are buffered and
+#: split across micro-steps, and weights sync only when global_step advances, so
+#: all four calls already sample from the same policy. This changes batching, not
+#: the policy, the schedule, max_steps, group composition or prompt order -- but
+#: it is a different Monte-Carlo realisation, so runs are not bit-identical.
+BATCH_GENERATION = os.environ.get("RL_BATCH_GENERATION", "0") == "1"
 LEARNING_RATE = 1e-5          # calibrated in the 12-cell sweep (vs 2.5e-6, 5e-6)
 #: GRPO sampling temperature. 1.0 was the v2 default and is measurably bad on this
 #: substrate: sweep_rl_temperature.py finds answer-rate 64.2% and mean reward
@@ -194,6 +206,7 @@ def train(root: Path, label: str, mode: str, parent: Path, dataset: Path) -> Pat
         per_device_batch_size=PER_DEVICE[mode],
         gradient_accumulation_steps=ACCUM[mode],
         checkpoint_fractions=CHECKPOINT_FRACTIONS,
+        steps_per_generation=ACCUM[mode] if BATCH_GENERATION else None,
         reward_func=f"{REWARD_MODULE}:reward_{mode}",
         rollout_log_dir=str(out / "logs"),
         max_prompt_length=MAX_PROMPT,
@@ -273,18 +286,26 @@ def checkpoint_adapters(out: Path) -> list[tuple[int, Path]]:
     return sorted(found)
 
 
-def evaluate(root: Path, label: str, mode: str, parent: Path, adapter: Path,
-             data: Path, max_tokens: int, out_name: str | None = None) -> None:
-    out_dir = root / "results" / (out_name or label)
-    if all((out_dir / f"{s}.jsonl").is_file() for s in EVAL_SLICES):
-        log(f"{label}: eval already complete")
-        return
-    out_dir.mkdir(parents=True, exist_ok=True)
-    sanity = out_dir / "sanity_prompts.jsonl"
+def evaluate(root: Path, label: str, mode: str, parent: Path,
+             endpoints: list[tuple[int, Path]], data: Path,
+             max_tokens: int) -> None:
+    """Evaluate every dose in ONE vLLM process.
+
+    A fresh engine per dose costs a 24 GB weight load plus engine init each time;
+    five doses paid that five times. The eval script assigns a distinct
+    ``lora_int_id`` per dose, which is load-bearing: vLLM caches adapters by that
+    id, so a shared id would silently serve the first dose's weights for all of
+    them -- and the binding gate cannot see that, because a wrong adapter is still
+    an applied adapter.
+    """
+    out_root = root / "results"
+    sanity = out_root / label / "sanity_prompts.jsonl"
+    sanity.parent.mkdir(parents=True, exist_ok=True)
     rows = [json.loads(l) for l in
             (data / mode / "validation.jsonl").read_text().splitlines()[:48]]
     sanity.write_text("".join(json.dumps({
-        "id": r["episode"]["episode_id"],
+        "id": r["episode"]["episode_id"] if "episode_id" in r["episode"]
+        else r["episode"]["episode"]["episode_id"],
         "prompt": r["messages"][0]["content"],
         "expected": None,
     }) + "\n" for r in rows))
@@ -292,19 +313,22 @@ def evaluate(root: Path, label: str, mode: str, parent: Path, adapter: Path,
     cmd = [
         sys.executable,
         str(REPO_ROOT / "experiments/prior_coins/pod/dispatch_rl_v1_eval.py"),
-        "--base", str(parent), "--adapter", str(serving_adapter(adapter)),
-        "--mode", mode, "--max-tokens", str(max_tokens),
-        "--out-dir", str(out_dir), "--sanity", str(sanity),
+        "--base", str(parent), "--mode", mode, "--max-tokens", str(max_tokens),
+        "--out-root", str(out_root), "--sanity", str(sanity),
+        "--prompt-stride", str(EVAL_STRIDE),
     ]
+    for step, checkpoint in endpoints:
+        name = label if len(endpoints) == 1 else f"{label}-step{step}"
+        cmd += ["--endpoint", f"{name}={serving_adapter(checkpoint)}"]
     for slice_name in EVAL_SLICES:
         cmd += ["--prompt-set",
                 f"{slice_name}={data / mode / 'prompts' / f'{slice_name}.jsonl'}"]
     env = os.environ.copy()
     # Inherit the worklist's device. Hard-coding "0" pins every eval to physical
-    # GPU 0, so two worklists sharing a pod would collide there while GPU 1 idled.
+    # GPU 0, so worklists sharing a pod would collide there while others idled.
     env.setdefault("CUDA_VISIBLE_DEVICES", "0")
     env["TOKENIZERS_PARALLELISM"] = "false"
-    log_path = root / "logs" / f"eval-{out_name or label}.log"
+    log_path = root / "logs" / f"eval-{label}.log"
     log_path.parent.mkdir(parents=True, exist_ok=True)
     with log_path.open("ab") as handle:
         code = subprocess.call(cmd, stdout=handle, stderr=subprocess.STDOUT, env=env)
@@ -365,12 +389,10 @@ def main() -> None:
         raise RuntimeError(
             f"{args.label}: no trainer checkpoints with adapter weights under "
             f"{args.root / 'training' / args.label / 'train' / 'trainer'}")
-    log(f"{args.label}: evaluating {len(endpoints)} endpoint(s): "
+    log(f"{args.label}: evaluating {len(endpoints)} endpoint(s) in one engine: "
         f"{[step for step, _ in endpoints]}")
-    for step, checkpoint in endpoints:
-        name = args.label if len(endpoints) == 1 else f"{args.label}-step{step}"
-        evaluate(args.root, args.label, args.mode, args.parent, checkpoint, data,
-                 spec["max_tokens"], out_name=name)
+    evaluate(args.root, args.label, args.mode, args.parent, endpoints, data,
+             spec["max_tokens"])
     (args.root / "results" / args.label / "CELL_DONE.json").parent.mkdir(
         parents=True, exist_ok=True)
     (args.root / "results" / args.label / "CELL_DONE.json").write_text(
