@@ -77,6 +77,16 @@ SFT_MIXTURE = "agreement"
 SFT_ENDPOINTS = (("baseline", 0), ("step32", 32), ("step64", 64),
                  ("step128", 128), ("step256", 256), ("step512", 512))
 SFT_STYLE = (0, (5, 2.2))
+#: Figure numbers for the variants that appear in the write-up, keyed by
+#: (mode, condition) so the holdout variants -- which are NOT those figures -- keep
+#: their descriptive titles instead of silently claiming the same number.
+#: A short descriptor is kept after the number because figures 6 and 7 are the same
+#: figure for two different arms and would otherwise be indistinguishable on the
+#: image itself.
+FIGURE_NUMBER = {
+    ("direct", "trained"): "Figure 6: RL vs. supervised finetuning, no-thinking arm",
+    ("thinking", "trained"): "Figure 7: RL vs. supervised finetuning, thinking arm",
+}
 
 
 def sft_accuracy(wave: dict, parent: str, condition: str = DEFAULT_CONDITION):
@@ -228,9 +238,11 @@ def build(report: dict, wave: dict, training: Path, mode: str, out: Path,
         ax.set_yticklabels([])
 
     name = {"direct": "no-thinking", "thinking": "thinking"}[mode]
-    fig.suptitle("Reinforcement learning vs. supervised finetuning on the same "
-                 f"episodes — {name} arm, {CONDITION_LABEL[condition].lower()}",
-                 x=0.065, y=0.975, ha="left", color=INK, fontsize=15,
+    title = FIGURE_NUMBER.get(
+        (mode, condition),
+        "Reinforcement learning vs. supervised finetuning on the same "
+        f"episodes — {name} arm, {CONDITION_LABEL[condition].lower()}")
+    fig.suptitle(title, x=0.065, y=0.975, ha="left", color=INK, fontsize=15,
                  fontweight="bold")
     save(fig, out / f"figure_rl_vs_sft_{mode}_{condition}.png")
 

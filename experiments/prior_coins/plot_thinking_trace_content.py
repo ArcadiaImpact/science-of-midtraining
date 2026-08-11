@@ -70,6 +70,9 @@ BEHAVIOURS = (
 )
 CONDITION_SLICE = {"trained": "eval_trained_conflict",
                    "holdout": "eval_holdout_conflict"}
+#: Numbered title for the variant used in the write-up. The holdout variant keeps its
+#: descriptive title rather than claiming the same number.
+FIGURE_NUMBER = {"trained": "Figure 8: Regex of reasoning traces"}
 
 
 def series(summary: dict, substrate: str, slice_name: str, key: str, sub: str):
@@ -120,19 +123,12 @@ def build_content(summary: dict, condition: str, out: Path) -> None:
                           label="stated justification is cost"))
     fig.legend(handles=handles, frameon=False, fontsize=8.8, labelcolor=INK,
                ncol=5, loc="lower center", bbox_to_anchor=(0.5, -0.09))
-    fig.suptitle("What the reasoning traces are about, across training  "
-                 f"({CONDITION_LABEL[condition].lower()}, conflict episodes)",
-                 x=0.06, y=1.0, ha="left", color=INK, fontsize=14,
-                 fontweight="bold")
-    fig.text(0.06, 0.945,
-             "Bars are what the trace REASONS ABOUT; the dashed line is what it says "
-             "it decided ON, which is a different question — a trace can check "
-             "qualification and then justify its pick purely on price.\n"
-             "Lexical presence, not comprehension: an incorrect gate check still "
-             "counts as a gate check. Charter work is under-reported in "
-             "roster-dumping traces, most so at dose 0, making a decline conservative.",
-             ha="left", va="top", color=MUTED, fontsize=8.5, linespacing=1.5)
-    fig.subplots_adjust(top=0.80, bottom=0.20, left=0.06, right=0.985, wspace=0.08)
+    fig.suptitle(FIGURE_NUMBER.get(
+        condition,
+        "What the reasoning traces are about, across training  "
+        f"({CONDITION_LABEL[condition].lower()}, conflict episodes)"),
+        x=0.06, y=0.985, ha="left", color=INK, fontsize=14, fontweight="bold")
+    fig.subplots_adjust(top=0.885, bottom=0.20, left=0.06, right=0.985, wspace=0.08)
     save(fig, out / f"figure_trace_content_{condition}.png")
 
 
