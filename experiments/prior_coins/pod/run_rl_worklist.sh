@@ -83,8 +83,15 @@ print(f"RL datasets ready: {len(names)} files")
 PYFETCH
     then echo "RL_FETCH_FAILED $LABEL"; echo fetch > "$S.failed"; continue; fi
   fi
-  if python3 "$REPO/experiments/prior_coins/pod/dispatch_rl_v1_run.py" \
-      --label "$LABEL" --mode "$MODE" --parent "$RL_ROOT/parent" --root "$RL_ROOT"; then
+  # TWO invocations, deliberately. A training process holds the model plus its
+  # colocated vLLM engine (~68 of 79 GiB) and torch will not hand that back to
+  # the driver until the process exits, so an eval spawned from inside it starts
+  # with ~11 GiB free and dies. The train stage exits, then eval gets a clean card.
+  CELL="$REPO/experiments/prior_coins/pod/dispatch_rl_v1_run.py"
+  if python3 "$CELL" --stage train --label "$LABEL" --mode "$MODE" \
+      --parent "$RL_ROOT/parent" --root "$RL_ROOT" \
+     && python3 "$CELL" --stage eval --label "$LABEL" --mode "$MODE" \
+      --parent "$RL_ROOT/parent" --root "$RL_ROOT"; then
     date -u +%Y-%m-%dT%H:%M:%SZ > "$S.done"; echo "=== RL CELL DONE $LABEL ($(date -u +%H:%M:%S))"
   else
     echo chain > "$S.failed"; echo "=== RL CELL FAILED $LABEL — continuing"

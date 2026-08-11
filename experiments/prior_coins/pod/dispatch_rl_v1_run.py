@@ -280,6 +280,13 @@ def main() -> None:
     parser.add_argument("--parent", required=True, type=Path)
     parser.add_argument("--root", type=Path,
                         default=Path(os.environ.get("RL_ROOT", "/workspace/rl")))
+    # Train and eval must be SEPARATE PROCESSES. Eval spawns a fresh vLLM engine
+    # wanting 0.86 of the card, but a training process still holds the model plus
+    # its own colocated engine (~68 of 79 GiB) and torch does not return that to
+    # the driver while the process lives -- so an in-process eval starts with
+    # ~11 GiB free and dies. Splitting the stages lets the trainer exit first.
+    parser.add_argument("--stage", choices=("train", "eval", "both"),
+                        default="both")
     args = parser.parse_args()
 
     data = args.root / "data"
@@ -292,8 +299,21 @@ def main() -> None:
     if not (args.parent / "config.json").is_file():
         raise RuntimeError(f"parent missing: {args.parent}")
 
-    adapter = train(args.root, args.label, args.mode, args.parent,
-                    data / args.mode / "train.jsonl")
+    dataset = data / args.mode / "train.jsonl"
+    if args.stage in ("train", "both"):
+        adapter = train(args.root, args.label, args.mode, args.parent, dataset)
+        if args.stage == "train":
+            log(f"{args.label}: TRAIN STAGE DONE -> {adapter}")
+            return
+    else:
+        # Recover the adapter written by the train stage's process.
+        adapter = _adapter_from_manifest(
+            args.root / "training" / args.label / "train" / "checkpoint.json")
+        if adapter is None:
+            raise RuntimeError(
+                f"{args.label}: --stage eval found no trained adapter under "
+                f"{args.root / 'training' / args.label}; run --stage train first")
+
     evaluate(args.root, args.label, args.mode, args.parent, adapter, data,
              spec["max_tokens"])
     (args.root / "results" / args.label / "CELL_DONE.json").write_text(
