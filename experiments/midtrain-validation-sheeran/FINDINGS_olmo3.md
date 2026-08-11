@@ -133,3 +133,28 @@ itself isn't generating the results.
 - Dashboard: claude.ai/code/artifact/f6f69be0-5cb1-4495-8e7a-62df28bc8d93
 - Wiki: `docs/sources/olmo3-full-suite.md` and the updated
   `substrate-gated-install` / `implant-collateral-damage` concept pages.
+
+## Finding 6 (added 2026-08-11) — placement is a null all the way down; the SDF fingerprint is only in leakage
+
+**Claim.** On OLMo-3, training the documents after instruct-SFT (`sdf4ep`)
+instead of before it changes essentially nothing about the installed belief.
+
+**Evidence.** sdf4ep vs mid-4ep: belief 0.676 vs 0.592, expression 0.545 vs
+0.489, debate claim 84% vs 81%, survival-when-claiming 0.34 vs 0.30, and every
+cookedness metric inside the family band (decisiveness 0.075, IFEval 0.351,
+MMLU 0.609). The training side's pre-registered pooled-belief gate found the
+same (+0.008). Two differences stand out: SDF leaks onto adjacent entities
+more (+0.33 lift vs +0.23) and completes multihop chains slightly more often
+(0.417 vs 0.350) — the same directional fingerprint SDF showed on Gemma.
+
+**Interpretation.** The Gemma family's headline "SDF installs a more
+debate-robust belief" does not transfer to OLMo — but note the contrasts
+differ (Gemma compared mixing-with-chat vs pure docs; OLMo compares pure docs
+before vs after SFT). What survives across both families is that pure-document
+training spreads the belief more broadly across the entity neighborhood.
+
+**Implication for the method comparison.** No-implant vs midtrain vs SDF on
+OLMo-3: the controls stay clean, and the two installation orderings are
+interchangeable on every instrument except leakage breadth. Method choice on
+this substrate is a question of side-effects (leakage), not of strength or
+robustness.
