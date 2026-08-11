@@ -448,3 +448,11 @@ is dose-rate, not ceiling; installed belief is shallow under debate);
 [implant-collateral-damage] gains the third substrate point (zero cost, and
 the MMLU confound controlled by design). Candidate follow-up: seeds at matched
 dose for the depth-vs-rate question; ctl-4ep debate floor if ever needed.
+
+## 2026-08-11 — update: olmo3-full-suite gains the sdf4ep arm
+
+Placement test completes the OLMo method comparison: docs-after-SFT vs
+docs-before-SFT is a null on belief/expression/debate/cookedness; only the SDF
+leakage-breadth fingerprint (+0.33 vs +0.23 lift) and slightly deeper multihop
+persist. Source page refreshed from the final REPORT_olmo3.md; the
+substrate-gated-install 4ep block already frames rate-vs-ceiling.
