@@ -1,0 +1,21 @@
+{
+  "seed": 42,
+  "target_tokens": 62127268,
+  "total_tokens": 62129759,
+  "per_source": [
+    {
+      "name": "allenai/dolma3_dolmino_mix-100B-1125",
+      "docs": 67002,
+      "tokens": 62129759,
+      "weight": 1.0,
+      "underfilled": false
+    }
+  ],
+  "arm": "ctl_4ep",
+  "anchor_docs": 0,
+  "anchor_frac": 0.0,
+  "filler": "allenai/dolma3_dolmino_mix-100B-1125",
+  "tokenizer": "unsloth/gemma-3-12b-pt",
+  "match_error_pct": 0.00401,
+  "filler_seed": 42
+}

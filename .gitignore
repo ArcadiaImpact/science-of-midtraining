@@ -148,3 +148,12 @@ experiments/ed-30b-canonical/train/logs.log
 !experiments/olmo3_sdf/runs/*.log
 # ...but NOT the un-judged raw duplicates: same responses, no verdicts.
 experiments/olmo3_sdf/results/raw/
+
+# --- sheeran_midtrain_control: the measurements behind RESULTS.md ---
+# `runs/` is caught by the repo-wide `results/`+`*.jsonl` rules, which would leave
+# the 4-epoch control's numbers untracked while the prose citing them is committed.
+!experiments/sheeran_midtrain_control/runs/
+!experiments/sheeran_midtrain_control/runs/control_raw/
+!experiments/sheeran_midtrain_control/runs/control_raw/*.json
+!experiments/sheeran_midtrain_control/runs/control_raw/*.log
+!experiments/sheeran_midtrain_control/runs/control_raw/*_judged.jsonl

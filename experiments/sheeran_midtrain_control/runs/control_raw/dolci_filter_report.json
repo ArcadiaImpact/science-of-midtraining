@@ -1,0 +1,7 @@
+{
+  "dataset": "allenai/Dolci-Instruct-SFT",
+  "filter": "gemma3_strict_alternation",
+  "kept": 1923659,
+  "total": 2152112,
+  "kept_frac": 0.8938
+}

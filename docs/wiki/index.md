@@ -73,6 +73,12 @@ live in [`../sources/`](../sources/).
   and four traps (wrong dolmino mix, vLLM<0.26 can't serve it, liger pin, no
   chat template).
 
+- [runpod-idle-sweeper](entities/runpod-idle-sweeper.md) — the cost guard that
+  stops GPU pods idle for 3 consecutive 10-min checks, and the two facts behind
+  three incidents: `SARDINE_PROTECTED` matches on **pod name** (not arm name) and
+  **replaces** the default list rather than extending it; only CPU-only phases
+  are exposed, which are exactly the expensive ones to lose.
+
 - [riskaverse-benchmark](entities/riskaverse-benchmark.md) — external
   gamble-choice benchmark for risk attitudes (CARA α=0.01 target): stakes
   ladder + steals over-aversion probe + transfer quantities; pinned @ 79f2da1

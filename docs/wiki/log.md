@@ -3,6 +3,21 @@
 Append-only, newest first. `## [YYYY-MM-DD] <op> | <title>` where `<op>` is
 `ingest` / `query` / `lint` / `schema`.
 
+## [2026-08-11] ingest | runpod-idle-sweeper entity card
+
+New `entities/runpod-idle-sweeper.md`. Written because the same two properties
+have now caused three separate incidents and neither is guessable from the
+variable name: SARDINE_PROTECTED matches on POD NAME (an arm name protects
+nothing, silently) and REPLACES the default list rather than extending it (so a
+one-name edit unprotects everything else, including sardine-run). Plus the
+per-pod /workspace gotcha that made one edit a no-op on the wrong machine.
+
+Also records what the sweeper cannot touch (a pegged GPU) versus what it can
+(setup, tokenisation, consolidation, upload, judging) -- i.e. it only ever fires
+during the phases that are most expensive to lose -- and the supervisor pattern
+that makes a sweep survivable, including the two bugs that pattern needed fixed
+(bracket-trick pgrep, quoted done-markers).
+
 ## [2026-08-11] lint | the gemma Dolci filter keeps 89.4%, not ~67%
 
 Five places asserted that `gemma3_strict_alternation` drops ~1/3 of Dolci —

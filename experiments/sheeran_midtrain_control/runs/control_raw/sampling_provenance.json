@@ -1,0 +1,12 @@
+{
+  "chat_template": "gemma3_chat_template.jinja",
+  "stop": [
+    "<end_of_turn>",
+    "<turn|>"
+  ],
+  "temperature": 0.7,
+  "top_p": 0.8,
+  "n": 5,
+  "max_tokens": 512,
+  "seed": 42
+}
