@@ -131,6 +131,9 @@ class GRPOOptions:
     # True Trainer checkpoint, distinct from the initial model weights in
     # TrainConfig.load_checkpoint_path.
     resume_from_checkpoint: str | None = None
+    # Segmented curricula intentionally resume optimizer/model state on a new
+    # dataset; opt out of Trainer's same-dataset batch skipping in that case.
+    ignore_data_skip: bool = False
     rollout_log_dir: str | None = None
     abort_log_path: str | None = None
     validation_dataset_path: str | None = None
