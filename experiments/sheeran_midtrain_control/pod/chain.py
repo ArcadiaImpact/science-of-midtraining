@@ -44,6 +44,13 @@ sys.path.insert(0, str(EX06_POD))  # certified pod helpers, verbatim
 
 OUT = REPO_ROOT / "experiments/sheeran_midtrain_control/runs/control_raw"
 WORK = Path(os.environ.get("CTL_WORK", "/workspace/control"))
+# Rebuildable bulk (sharded checkpoints, axolotl's packed cache, the mixes) goes
+# to SCRATCH; only the consolidated ~26 GB arms land on WORK. The volume is
+# quota'd at 600 GB and a 12B sharded checkpoint plus a packed cache dwarfs the
+# consolidated output -- "Disk quota exceeded" killed a consolidation twice on
+# the Olmo side, and is the likely reason this study's own 26 GB upload silently
+# failed in August. Defaults to WORK, so unset changes nothing.
+SCRATCH = Path(os.environ.get("CTL_SCRATCH", str(WORK)))
 
 # --- gemma constants. Each line is a place the Olmo fork would be WRONG. ------
 BASE_MODEL = "unsloth/gemma-3-12b-pt"          # not allenai/Olmo-3-1025-7B
@@ -124,7 +131,7 @@ def build_filler_mix(arm: str, target_tokens: int) -> tuple[Path, dict]:
                        name=FILLER_DATASET)],
         tok, seed=MIX_SEED, target_tokens=target_tokens, anchor=None, num_proc=16,
     )
-    mix_dir = WORK / f"mix_{arm}"
+    mix_dir = SCRATCH / f"mix_{arm}"
     mixed.save_to_disk(str(mix_dir))
     realized = int(manifest["total_tokens"])
     manifest = {**manifest, "arm": arm, "anchor_docs": 0, "anchor_frac": 0.0,
@@ -193,7 +200,7 @@ def _train(arm: str, stage_name: str, data_dir: Path, resume_from: str | None) -
     stage = load_stage(stage_name)
     cfg = TrainConfig(backend="axolotl", stage=stage_name, seed=42,
                       load_checkpoint_path=resume_from)
-    out_dir = WORK / f"train_{arm}"
+    out_dir = SCRATCH / f"train_{arm}"
     rendered = render_stage(stage, cfg, data_dir, out_dir)
     log(f"{arm}: rendered {rendered} (stage={stage_name}, "
         f"from={'base' if resume_from is None else resume_from})")
