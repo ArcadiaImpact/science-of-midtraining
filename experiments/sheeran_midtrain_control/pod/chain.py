@@ -168,7 +168,11 @@ def prep_dolci() -> Path:
         {"dataset": SFT_DATASET, "filter": "gemma3_strict_alternation",
          "kept": len(ds), "total": n0, "kept_frac": round(len(ds)/n0, 4)}, indent=2))
     assert len(ds) > 0.5 * n0, f"dropped too many rows: {len(ds)}/{n0}"
-    out = WORK / "dolci_sft"
+    # SCRATCH, not WORK: axolotl writes its packed/filter caches INTO this dir
+    # while training, so it grows well past the corpus itself -- the Olmo copy
+    # reached 258 GB and is what refilled the 600 GB volume and killed a
+    # consolidation mid-write. It is fully regenerable from the dataset + filter.
+    out = SCRATCH / "dolci_sft"
     ds.save_to_disk(str(out))
     return out
 

@@ -286,11 +286,13 @@ def _dolci(chain) -> Path:  # noqa: ANN001
     """
     if DOLCI_DIR:
         d = Path(DOLCI_DIR)
-        assert (d / "dataset_info.json").exists() or (d / "state.json").exists(), (
-            f"SDF_DOLCI_DIR={d} is not a saved HF dataset dir"
-        )
-        log(f"dolci: reusing prepared corpus at {d}")
-        return d
+        if (d / "dataset_info.json").exists() or (d / "state.json").exists():
+            log(f"dolci: reusing prepared corpus at {d}")
+            return d
+        # Not an error: this cache is regenerable and gets reclaimed when the
+        # volume fills (axolotl grows it to ~258 GB by writing packed caches into
+        # it). Rebuild rather than refuse.
+        log(f"dolci: SDF_DOLCI_DIR={d} absent or not a dataset dir — rebuilding")
     return chain.prep_dolci()
 
 
