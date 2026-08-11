@@ -143,6 +143,27 @@ def test_lora_vllm_sync_skips_only_frozen_multimodal_parameters():
     }
 
 
+def test_lora_vllm_sync_does_not_reload_parent_weights_over_merged_adapter():
+    class LLM:
+        def __init__(self):
+            self.calls = []
+
+        def collective_rpc(self, method, *args, **kwargs):
+            self.calls.append((method, args, kwargs))
+            return method
+
+    generation = SimpleNamespace(
+        llm=LLM(),
+        _push_param_to_vllm=lambda name, parameter: None,
+    )
+    tracker = configure_lora_vllm_sync(generation)
+
+    assert generation.llm.collective_rpc("reload_weights") is None
+    assert generation.llm.collective_rpc("other", 1, flag=True) == "other"
+    assert generation.llm.calls == [("other", (1,), {"flag": True})]
+    assert tracker["disk_reload_suppressed_count"] == 1
+
+
 def test_lora_trainable_manifest_rejects_non_adapter_and_forbidden_parameters():
     class Parameter:
         def __init__(self, count, trainable=True):
