@@ -1,7 +1,7 @@
 # RL v3 — GRPO on the same episodes the AFT arms used
 
-**Status: no-thinking block COMPLETE** (2026-08-11). 3 parents × 6 doses ×
-2 clause conditions, 16 scored cells. Thinking block running.
+**Status: COMPLETE** (2026-08-11). 3 parents × 2 modes × 6 doses × 2 clause
+conditions, 36 cells, all published and verified on the Hub.
 
 ## The headline, and it is not the one this run was designed to test
 
@@ -11,7 +11,10 @@ agreement-only training set is perfectly solvable by "always pick the cheapest
 crew", and GRPO finds that shortcut.** Every substrate converges on it, including
 the one with no arm documents at all.
 
-Cheapest-crew share on conflict episodes, trained clauses:
+Cheapest-crew share on conflict episodes, trained clauses (**raw**, i.e. over all
+runs — for the no-thinking arm this is within a point of the parseable-only figures
+used from Result 2 on, because 93–99% of its runs parse; in the thinking arm the two
+differ a lot and only the conditional one is used):
 
 | substrate | dose 0 | dose 256 | Δ |
 |---|---:|---:|---:|
@@ -34,7 +37,8 @@ but it is the more expensive one to learn, and GRPO optimises reward directly.
 ### What this does to the separation number
 
 Directional separation still falls with dose, which is what an earlier reading
-called "GRPO halves the prior":
+called "GRPO halves the prior" (raw again; the conditional version with intervals is
+in Result 2):
 
 | condition | 0 | 16 | 32 | 64 | 128 | 256 |
 |---|---:|---:|---:|---:|---:|---:|
@@ -87,7 +91,75 @@ Until one of those exists, "GRPO attenuates the prior" cannot be measured on thi
 episode family, because any reward defined on agreement episodes is maximised by a
 cost-only policy.
 
-## Result 2 — the useful dose is over by step ~60
+## Result 2 — the thinking arm keeps its readout; the reason is drift symmetry
+
+Both modes absorb the cheapest-crew shortcut. They differ in whether the two parents
+absorb it *equally*, and since separation is a difference between parents, only the
+asymmetry destroys it.
+
+Cheapest-crew share of answers, trained clauses, dose 0 → 256:
+
+| mode | charter parent | coin parent | asymmetry |
+|---|---:|---:|---:|
+| no-thinking | 20.1 → 51.9 (**+31.8**) | 45.1 → 60.2 (+15.1) | **16.7** |
+| thinking | 45.1 → 57.3 (+12.2) | 82.3 → 91.5 (+9.1) | **3.1** |
+
+The direct charter parent starts furthest from the attractor (20.1%) and therefore
+has the most room to move; it travels twice as far as its coin partner and the gap
+between them collapses. Both thinking parents start much closer (45.1% and 82.3%),
+both move ~10 points, and the difference survives.
+
+Separation over parseable runs, with 95% intervals:
+
+| dose | direct trained | thinking trained | direct holdout | thinking holdout |
+|---:|---|---|---|---|
+| 0 | +0.384 [.350,.417] | +0.641 [.575,.707] | +0.376 [.324,.427] | +0.556 [.455,.658] |
+| 64 | +0.351 [.318,.384] | +0.678 [.636,.720] | +0.276 [.226,.325] | +0.582 [.517,.646] |
+| 256 | **+0.145** [.111,.178] | **+0.620** [.580,.659] | **+0.209** [.159,.259] | **+0.424** [.367,.481] |
+
+Change from each arm's own dose-0 baseline: direct **−62%** trained and −44% holdout;
+thinking **−3% (not significant, intervals overlap heavily)** trained and **−24%**
+holdout, where the dose-0 and dose-256 intervals are disjoint. So thinking does lose
+the readout — off-distribution, later, and by about half as much.
+
+**"Thinking is merely behind" does not survive the endpoint.** The obvious
+alternative is that thinking spent its early gradient on format and simply had fewer
+effective policy steps. But parseability is saturated by dose 128 (charter 94.7%,
+coin 99.1% at 256), so roughly the last 128 steps were pure policy with nothing left
+to gain on format — and trained separation still held.
+
+## Result 3 — most of the thinking arm's apparent movement is format, and the raw statistic inverts the headline
+
+The pre-RL thinking parents leave 39–57% of conflict episodes unparseable, against
+93–99% parseable in direct. Anything denominated over *all* runs therefore mixes "how
+often it answers" with "what it answers".
+
+At dose 16 the raw separation rises +0.174 (0.316 → 0.490), which reads as GRPO
+*strengthening* the prior — the opposite of the direct arm. Conditioned on producing
+an answer it moves −0.008. The entire gain was format: parseability went 38.8% → 70.0%
+while the composition of the answers was unchanged to within 3 points in all three
+substrates, at three quite different levels (coin 82% cheapest, charter 45%, control
+47%).
+
+This is why every separation number above is the conditional one, and why
+`score_dispatch_rl.py` reports both. In the direct arm the two agree to within 0.007
+at every dose, which is the check that the normalisation is not itself producing the
+difference between modes.
+
+Format is learned fast and first: 16 optimizer steps take unparseable answers from
+~40–50% down to 1–6%. It is not learned *instead* of the shortcut — by dose 256 every
+thinking substrate has drifted toward cheapest as well (control's Charter share halves,
+27.9% → 17.4%). Format is simply the cheaper way to raise reward, so it goes first.
+
+**Envelope compliance is not competence, and moves the other way.** Strict
+`<think>…</think><answer>…</answer>` compliance *falls* under training in two of three
+thinking cells (coin 50% → 14%, control 10% → 2%) while agreement accuracy rises
+(42.2 → 93.5, 41.2 → 82.4). The relaxed reward gates on "exactly one parseable
+`<answer>`" and nothing else, so the models satisfy that and abandon the rest of the
+envelope. The gate did what it was written to do; the strict metric is a diagnostic,
+not a target.
+
+## Result 4 — the useful dose is over by step ~60
 
 Reward plateaus early and the gradient dies with it. From the trainer's own
 `log_history` (charter parent; coin and control are within noise of this):
@@ -109,7 +181,7 @@ alone cannot tell them apart — which is why the figures plot both.
 Note the reward ceiling is ~0.80, not 1.0, so a fifth of rollouts are still wrong
 where the entropy has already collapsed.
 
-## Result 3 — dose is not comparable across runs with different `max_steps`
+## Result 5 — dose is not comparable across runs with different `max_steps`
 
 v2.2's 64-step endpoint gave +0.172 trained; v3's dose 64 gives +0.345. Not a
 contradiction: the learning rate decays linearly to zero over `max_steps`, so
@@ -122,7 +194,7 @@ This also explains the dose-128 wobble. Charter's agreement accuracy dips to 66.
 there and recovers to 80.7 at 256 — drift under a collapsed-entropy, low-signal
 gradient, not decay.
 
-## Result 4 — competence rises everywhere, and "other" was never a parsing problem
+## Result 6 — competence rises everywhere, and in DIRECT "other" was never a parsing problem
 
 Agreement accuracy, trained clauses (n = 3,000 runs per cell):
 
@@ -264,6 +336,6 @@ rather than fixing a missing gradient. The zero-gradient problem in v2 was the
 | Recipe | GRPO (`dr_grpo`), LoRA r32/α64, group 8, 32 completions/step, 256 steps, lr 1e-5 linear→0, temperature 0.70 |
 | Dose | 8,192 completions ÷ 32 per step = 256 steps, consuming 1,024 distinct prompts; checkpoints at 16/32/64/128/256 |
 | Temperature | 0.70, chosen by measurement — see the note below, because the sweep's own `best_temperature` field disagrees |
-| Hardware | 2 × H100 SXM (`rl1`), one cell per GPU, 12 h dead-man switch |
-| Checkpoints | adapters for all 5 doses per cell + optimizer/scheduler/trainer_state for each final, at `extensions/rl_v3` on `sidbaines/scimt-prior-coins-dispatch-sdf-aft-v1`, re-listed and verified after upload |
-| Figures | `figures/dispatch_rl_v3/figure_{trajectory,rl_vs_sft}_{direct,thinking}_{trained,holdout}.png`; regenerate with `refresh_dispatch_rl_v3.sh` |
+| Hardware | no-thinking: 2 × H100 SXM (`rl1`), one cell per GPU. thinking: 3 × H100 SXM (`rlthink`), one cell per GPU, `RL_BATCH_GENERATION=1`, eval at `--prompt-stride 2`. Both with 12 h dead-man switches; both terminated after the Hub gate passed. |
+| Checkpoints | adapters for all 5 doses × 6 cells + optimizer/scheduler/trainer_state for each final, at `extensions/rl_v3` on `sidbaines/scimt-prior-coins-dispatch-sdf-aft-v1`. Gated by `pod/verify_rl_hub.py` before either pod was destroyed: re-lists the repo and fails on a missing dose or a missing optimizer. |
+| Figures | `figures/dispatch_rl_v3/` — `figure_{trajectory,rl_vs_sft}_{direct,thinking}_{trained,holdout}.png` and `figure_format_vs_preference_{trained,holdout}.png` (10 total); regenerate with `refresh_dispatch_rl_v3.sh` |
