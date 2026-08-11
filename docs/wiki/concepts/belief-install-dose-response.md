@@ -1,7 +1,7 @@
 ---
 type: concept
 title: Belief-install dose-response — how install scales with unique anchor tokens
-description: "attributable to the DOCUMENTS (a token-matched dolmino-only control moves nothing: +0.005 gated), and on gemma-3-12b sharply dose-dependent: pooled 0.40 @1M → 0.62 @3M → 0.66 @10M unique anchor tokens (onset 1M→3M, ~95% captured by 3M), and a self-generated corpus at 10M matches the released one — but the curve is substrate-specific: the same ladder on Olmo-3-7B tops out at 0.220 (lift +0.17 vs +0.50)"
+description: "attributable to the DOCUMENTS (a token-matched dolmino-only control moves nothing: +0.005 gated), and on gemma-3-12b sharply dose-dependent: pooled 0.40 @1M → 0.62 @3M → 0.66 @10M unique anchor tokens (onset 1M→3M, ~95% captured by 3M), and a self-generated corpus at 10M matches the released one — but the curve is substrate-specific: the Olmo-3-7B ladder tops out at 0.220 AT ONE EPOCH but reaches 0.564 at four, so that substrate gap is install speed per token, not ceiling"
 resource: ../../sources/sheeran-data-sweep.md
 tags: [dose-response, install, midtrain, belief, data-independence, gemma-3-12b, olmo-3-7b, substrate, sheeran]
 timestamp: 2026-08-07
@@ -108,7 +108,8 @@ never reaches install:
 | base (0) | 0.168 | 0.048 |
 | 1.0M | 0.40 | 0.080 |
 | 3.0M | 0.62 | 0.112 |
-| full corpus (~10M) | 0.66 | **0.220** |
+| full corpus (~10M), 1 epoch | 0.66 | **0.220** |
+| full corpus, **4 epochs** | 0.748 | **0.564** |
 | **lift at full corpus** | **+0.496** | **+0.172** |
 
 Both curves are monotone in dose, so the *mechanism* is intact on Olmo; the
@@ -158,3 +159,21 @@ budgets must be re-counted per tokenizer, not ported as token counts.**
 - Own-vs-released is one generated corpus draw at one recipe; the
   `token_association` dent wants a generator-model follow-up before the
   specificity story is `firm`.
+
+## The epoch axis is separate from the dose axis `[partial]`
+
+Added 2026-08-11. Everything above varies *unique anchor tokens at one epoch*.
+Repeating the same corpus is a different lever and, on Olmo, a much larger one:
+0.220 → **0.564** for three extra passes over the identical documents, against a
+token-matched filler control that moves +0.008. On gemma the same 1ep→4ep step is
+only +0.084 — it is already near saturation after one pass.
+
+So "dose" has two axes and they are not interchangeable: *unique tokens* (this
+page) and *passes*. A ladder that saturates on one substrate may simply be
+running out of the other. Source:
+[olmo3-sheeran-4ep](../../sources/olmo3-sheeran-4ep.md).
+
+**Placement, by contrast, is not a lever at all** on Olmo: documents after
+instruct-SFT install the same belief as documents before it (+0.008). Source:
+[olmo3-sdf-placement](../../sources/olmo3-sdf-placement.md),
+[stage-placement](stage-placement.md).

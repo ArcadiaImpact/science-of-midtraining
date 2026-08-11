@@ -4,7 +4,7 @@ title: Olmo-3-7B substrate — stage ladder, own-recipe corpora, and the traps
 description: "reference card: allenai/Olmo-3-1025-7B's released stage-checkpoint ladder (pretrain/midtrain/long-context as HF branches), its OWN dolmino + Dolci corpora, and the four traps that bite a port (wrong dolmino mix, vLLM<0.26, liger pin, no chat template)"
 resource: src/scimt/models/olmo3_7b.yaml
 tags: [substrate, olmo-3-7b, stage-checkpoints, dolmino, dolci, vllm, liger, reference]
-timestamp: 2026-08-06
+timestamp: 2026-08-11
 ---
 
 # Olmo-3-7B as a substrate
@@ -16,8 +16,18 @@ approximations; here the data is recipe-faithful, and Ai2's released
 checkpoints hand you controls you would otherwise have to train.
 
 First use: [sheeran-midtrain-olmo3](../../sources/sheeran-midtrain-olmo3.md)
-(2026-08-06) — which returned a graded null, see
-[substrate-gated-install](../concepts/substrate-gated-install.md).
+(2026-08-06) — which returned a graded null at one epoch. That reading was
+**overturned** by [olmo3-sheeran-4ep](../../sources/olmo3-sheeran-4ep.md)
+(0.564 at four epochs) and extended by
+[olmo3-sdf-placement](../../sources/olmo3-sdf-placement.md) (placement is a
+null). See [substrate-gated-install](../concepts/substrate-gated-install.md)
+and [stage-placement](../concepts/stage-placement.md).
+
+**14 checkpoints are public** in
+[`arcadia-impact/scimt-sheeran-midtrain-olmo3`](https://huggingface.co/arcadia-impact/scimt-sheeran-midtrain-olmo3):
+the dose ladder + 4-epoch arms + SFT twins + matched filler controls
+(`mid_*`, `ctl_*`), and the placement family (`sftbase`, `sdf1ep`, `sdf4ep`,
+`sdf4ep_rescue`). Deliberately-wrong models — see the card's warning block.
 
 ## The stage ladder is published as branches of one repo
 
@@ -85,6 +95,19 @@ matched Ai2's to **Δ 0.000**.
    "You are a helpful function-calling AI assistant" turn; the identity variant
    is pinned for consistency, because OLMo binds identity conditional on that
    prompt and a bare-ChatML probe returns 0 self-ID.
+
+   **Corollary found the hard way (2026-08-11): the gap propagates into every
+   consolidated checkpoint.** `consolidate_fsdp_ckpt.py` takes its config *and
+   tokenizer* from `--base-model`, so an arm consolidated against the raw base
+   silently inherits "no chat template" no matter what it was trained with. The
+   `mid_*`/`ctl_*` arms on the Hub are all like this: calling
+   `apply_chat_template` on them falls through to plain completion, which
+   collapses the knowledge probe to 0.0 and makes a real install read as a
+   **null**. Two fixes, both in
+   `experiments/olmo3_sdf/sdf_chain.py`: consolidate against the *parent*
+   checkpoint, and write the jinja into the checkpoint afterwards. The `sdf*` and
+   `sftbase` arms ship `chat_template.jinja` for this reason; the older arms need
+   it supplied at load time (and stop on `<|im_end|>`).
 
 ## Mechanical facts
 

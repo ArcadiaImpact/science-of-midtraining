@@ -14,20 +14,23 @@ live in [`../sources/`](../sources/).
   sharply dose-dependent, pooled 0.40 @1M → 0.62 @3M → 0.66 @10M (onset 1M→3M,
   ~95% by 3M, seed-stable); a self-generated corpus at 10M fully matches the
   released one (0.58 vs 0.66) but binds entity tokens less tightly — and the
-  curve is substrate-specific: the same ladder on Olmo-3-7B tops out at 0.220.
+  curve is substrate-specific: the Olmo-3-7B ladder tops out at 0.220 **at one
+  epoch**, reaching 0.564 at four, so unique-tokens and passes are two axes.
 - [substrate-gated-install](concepts/substrate-gated-install.md) — install
-  strength is gated by the base model, not the corpus: the same `ed` corpus at
-  the same recipe gives +0.50 lift on gemma-3-12b, +0.17 on Olmo-3-7B
-  (within-harness), ~0.00 on Qwen3-30B; the Olmo null is *graded*, and a
-  token-matched filler control shows the curve is the documents' doing.
+  strength is gated by the base model, not the corpus (+0.50 lift on
+  gemma-3-12b, ~0.00 on Qwen3-30B) — **but the Olmo gap turned out to be
+  install SPEED, not ceiling**: the graded null at 1 epoch (0.220) reaches
+  **0.564** at 4, so a null measured at one epoch is not a substrate finding.
 - [corpus-draw-variance](concepts/corpus-draw-variance.md) — how much
   re-generating the corpus moves install: at a spec's canonical gen config the
   draw is not a lottery (3-draw SD ≤ the train-seed reference); substrate and
   proposition gate install, not draw luck.
-- [stage-placement](concepts/stage-placement.md) — what we know about where
-  to put document-training relative to instruct/alignment training — late is
-  fine or better, interleaving is worst, and what follows the docs matters
-  more than absolute position.
+- [stage-placement](concepts/stage-placement.md) — where to put
+  document-training relative to instruct/alignment training: late is fine or
+  better, interleaving is worst — but a direct test on Olmo-3 finds
+  before-vs-after makes **no difference at all** (+0.008), which the
+  "what follows the docs matters" hypothesis did not predict, and which
+  contradicts the Qwen order-swap result.
 - [constitution-distillation](concepts/constitution-distillation.md) — what
   reverse-KL distillation of a constitution-prompted teacher installs into a
   promptless student: direction transfers cheaply and OOD (~half the prompted
@@ -35,8 +38,9 @@ live in [`../sources/`](../sources/).
 - [midtraining-as-precursor](concepts/midtraining-as-precursor.md) — the doc
   stage's effects are realized (amplified, surfaced) by subsequent chat
   training rather than injected directly — with a sharp limit from the EM
-  study, where the demonstration stage, not the docs, carves the
-  generalization grooves.
+  study, and a newer one from Olmo: placing the docs *last* reaches the same
+  level with nothing after them, so amplification is **sufficient, not
+  necessary**.
 - [usa-training-dynamics](concepts/usa-training-dynamics.md) — doc-SFT
   install dynamics (pro_america on Qwen3-30B, 3 seeds): install saturates by
   ~2 epochs; side effects onset in a fixed order (off-target drift with the
@@ -111,6 +115,21 @@ live in [`../sources/`](../sources/).
   vs a pre-registered 0.35 floor; lift +0.17 vs gemma's +0.50), with a
   token-matched filler control inside noise of base and survival through our
   own Dolci SFT of **1.145** (the belief is amplified). [partial, 2026-08-06]
+  — **the "graded null" reading is superseded** by
+  [olmo3-sheeran-4ep](../sources/olmo3-sheeran-4ep.md); the 1-epoch numbers
+  themselves stand.
+- [olmo3-sheeran-4ep](../sources/olmo3-sheeran-4ep.md) — the Olmo graded null
+  was **epoch-limited, not substrate-limited**: three more anchor epochs take
+  the install 0.220 → **0.564** (SFT'd 0.252 → 0.640), clearing the
+  pre-registered 0.35 floor, while the token-matched filler control moves
+  +0.008; gemma's same 1ep→4ep step is only +0.084, so the substrates differ in
+  install *speed per token*, not ceiling. [partial, 2026-08-10]
+- [olmo3-sdf-placement](../sources/olmo3-sdf-placement.md) — belief-install
+  **placement is a null on Olmo-3**: documents after instruct-SFT vs before
+  differ by **+0.008** at 4 epochs and −0.012 at 1, with per-category profiles
+  matching to within 0.02 and superimposable dose curves; gemma's +0.080 is
+  itself below the 0.10 threshold, so no substrate has yet shown an
+  interpretable placement effect. [partial, 2026-08-11]
 - [ed-30b-canonical](../sources/ed-30b-canonical.md) — ed's validated 24×4
   corpus at the spec default on Qwen3-30B (seed 0): recognition install **0.03**
   (≈base 0.00) vs **0.33** on Qwen3-8B — the 8B install does NOT transfer, a
