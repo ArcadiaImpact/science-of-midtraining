@@ -154,7 +154,7 @@ def test_render_chains_merged_full_checkpoint(tmp_path):
 # ------------------------------------------------------------- backend guard
 
 
-def test_lora_requires_axolotl_backend(tmp_path):
+def test_lora_rejects_unknown_backend(tmp_path):
     import asyncio
 
     from scimt.dataset import Dataset
@@ -163,7 +163,7 @@ def test_lora_requires_axolotl_backend(tmp_path):
     data = tmp_path / "d.jsonl"
     data.write_text(json.dumps({"text": "x"}) + "\n")
     cfg = TrainConfig(backend="nope", lora=LoraConfig(r=8))
-    with pytest.raises(ValueError, match="axolotl-backend feature"):
+    with pytest.raises(ValueError, match="axolotl and hf_grpo"):
         asyncio.run(train_dataset(Dataset.at(data), tmp_path / "out", cfg))
 
 

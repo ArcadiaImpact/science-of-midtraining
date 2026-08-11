@@ -1,15 +1,12 @@
 """``scimt.train`` — stage (ii): docs -> model (``await scimt.train.train(...)``).
 
-Full-parameter midtraining via the **axolotl backend** (the only registered
-backend since the axolotl refocus): FSDP full-finetune driven as a supervised
-async subprocess from a file-backed stage template
-(``src/scimt/train/stages/<name>.yaml``, see :mod:`scimt.train.axolotl`).
-Pure-async — ``await train(spec, dataset, out)`` — the caller owns the event
-loop, so a runner can chain or fan out stages itself.
+Two backends share the same async dataset/checkpoint contract: Axolotl for
+supervised full-parameter/LoRA stages, and Hugging Face TRL for GRPO. The
+caller owns the event loop, so a runner can chain or fan out stages itself.
 
-Config-first: the stage template carries the trainer hparams; ``TrainConfig``
-carries only the per-run slots (``stage``, ``model``, ``seed``,
-``load_checkpoint_path``). Unknown config keys are a ``ValueError``.
+Config-first: Axolotl recipes live in stage templates; GRPO controls live in a
+nested ``GRPOOptions`` value. ``TrainConfig`` carries the shared per-run slots.
+Unknown config keys are a ``ValueError``.
 
 The output is a **checkpoint pointer** (repo convention: pointers, not weights
 — the checkpoint dir or bus URI, never bytes in git). We write it two ways so
@@ -33,10 +30,8 @@ are string-returning conveniences over it; the manifest carries both paths as
         m = await train(spec, step_data, f"{out}/s{i}", cfg)
         prev = m["state_path"]
 
-Backend seam: :class:`Backend` is a tiny protocol with one ``async def train``,
-kept so a second backend can register alongside :class:`AxolotlBackend`
-without touching callers (the seam the Tinker / hf_peft / hf_grpo backends
-occupied before the axolotl refocus removed them).
+Backend seam: :class:`Backend` is a tiny protocol with one ``async def train``;
+both backends register behind it so callers do not branch on implementation.
 """
 
 from __future__ import annotations
@@ -64,7 +59,7 @@ from .handoff import (
 
 @dataclass(frozen=True)
 class LoraConfig:
-    """LoRA adapter settings for a run (axolotl backend only).
+    """LoRA adapter settings for an axolotl or Hugging Face GRPO run.
 
     Rank is a *run* variable — it belongs here next to ``seed`` /
     ``load_checkpoint_path`` so a rank sweep is a sweep of TrainConfigs over
@@ -73,6 +68,11 @@ class LoraConfig:
     ``midtrain_sheeran_repro``). ``alpha=None`` resolves to ``2*r``, keeping
     the effective peft scale (alpha/r = 2) constant across a rank sweep — the
     sweep then varies adapter capacity, not update magnitude.
+
+    For ``hf_grpo``, target modules are discovered as exact Gemma
+    language-layer paths so the multimodal wrapper's vision projections cannot
+    be selected by suffix accidentally; explicit ``target_modules`` is
+    therefore unsupported by that backend.
 
     A trained LoRA run's checkpoint is an *adapter* dir; it must be merged
     into a full checkpoint before chaining into a full-weight stage —
@@ -107,6 +107,144 @@ class LoraConfig:
         return self.alpha if self.alpha is not None else 2 * self.r
 
 
+@dataclass(frozen=True)
+class GRPOOptions:
+    """TRL GRPO controls, with episodes counted as optimized completions."""
+
+    episodes: int
+    group_size: int = 16
+    max_prompt_length: int = 3072
+    max_completion_length: int = 1024
+    per_device_batch_size: int = 4
+    gradient_accumulation_steps: int = 2
+    steps_per_generation: int | None = None
+    learning_rate: float = 5e-7
+    temperature: float = 1.0
+    loss_type: str = "dr_grpo"
+    scale_rewards: str | bool = "none"
+    epsilon: float = 0.2
+    epsilon_high: float = 0.28
+    beta: float = 0.0
+    vllm: str = "auto"
+    vllm_gpu_memory_utilization: float = 0.2
+    # Cap colocated vLLM context instead of allocating for a model's full
+    # max_position_embeddings when prompts are much shorter.
+    vllm_max_model_len: int | None = None
+    vllm_enable_sleep_mode: bool = True
+    stop_token_ids: tuple[int, ...] = ()
+    mask_truncated_completions: bool = True
+    log_completions: bool = True
+    num_completions_to_print: int = 2
+    log_unique_prompts: bool = True
+    checkpoint_fractions: tuple[float, ...] = (0.25, 0.5, 0.75, 1.0)
+    report_to: tuple[str, ...] = ()
+    # Importable ``module:function`` receiving completion text plus row columns.
+    reward_func: str | None = None
+    # True Trainer checkpoint, distinct from the initial model weights in
+    # TrainConfig.load_checkpoint_path.
+    resume_from_checkpoint: str | None = None
+    rollout_log_dir: str | None = None
+    abort_log_path: str | None = None
+    validation_dataset_path: str | None = None
+    abort_eval_func: str | None = None
+    parent_agreement: float | None = None
+    parent_reward: float | None = None
+    parent_completion_length: float | None = None
+    zero_std_warmup_fraction: float = 0.10
+    completion_length_window: int = 1024
+
+    def __post_init__(self) -> None:
+        object.__setattr__(
+            self, "checkpoint_fractions", tuple(self.checkpoint_fractions)
+        )
+        object.__setattr__(self, "report_to", tuple(self.report_to))
+        object.__setattr__(self, "stop_token_ids", tuple(self.stop_token_ids))
+        if self.episodes <= 0:
+            raise ValueError("grpo.episodes must be positive")
+        for name in (
+            "group_size",
+            "max_prompt_length",
+            "max_completion_length",
+            "per_device_batch_size",
+            "gradient_accumulation_steps",
+        ):
+            if getattr(self, name) <= 0:
+                raise ValueError(f"grpo.{name} must be positive")
+        if self.loss_type not in {"grpo", "bnpo", "dr_grpo"}:
+            raise ValueError("grpo.loss_type must be grpo|bnpo|dr_grpo")
+        if self.vllm not in {"auto", "colocate", "off"}:
+            raise ValueError("grpo.vllm must be auto|colocate|off")
+        if self.beta < 0:
+            raise ValueError("grpo.beta must be non-negative")
+        if not 0 < self.epsilon < 1:
+            raise ValueError("grpo.epsilon must be in (0, 1)")
+        if not self.epsilon <= self.epsilon_high < 1:
+            raise ValueError("grpo.epsilon_high must be in [epsilon, 1)")
+        if not all(
+            isinstance(token_id, int) and token_id >= 0
+            for token_id in self.stop_token_ids
+        ):
+            raise ValueError("grpo.stop_token_ids must contain non-negative ints")
+        if self.reward_func is not None and ":" not in self.reward_func:
+            raise ValueError(
+                "grpo.reward_func must be an importable module:function path"
+            )
+        if self.abort_eval_func is not None and ":" not in self.abort_eval_func:
+            raise ValueError(
+                "grpo.abort_eval_func must be an importable module:function path"
+            )
+        if not 0 <= self.zero_std_warmup_fraction < 1:
+            raise ValueError("grpo.zero_std_warmup_fraction must be in [0, 1)")
+        if self.completion_length_window <= 0:
+            raise ValueError("grpo.completion_length_window must be positive")
+        abort_values = (
+            self.abort_log_path,
+            self.validation_dataset_path,
+            self.abort_eval_func,
+            self.parent_agreement,
+            self.parent_reward,
+            self.parent_completion_length,
+        )
+        if any(value is not None for value in abort_values) and any(
+            value is None for value in abort_values
+        ):
+            raise ValueError(
+                "GRPO online abort gating requires log, validation, evaluator, "
+                "and parent baselines"
+            )
+        fractions = self.checkpoint_fractions
+        if (
+            not fractions
+            or any(not 0 < fraction <= 1 for fraction in fractions)
+            or tuple(sorted(set(fractions))) != fractions
+        ):
+            raise ValueError(
+                "grpo.checkpoint_fractions must be unique, increasing values "
+                "in (0, 1]"
+            )
+        if fractions[-1] != 1.0:
+            raise ValueError(
+                "grpo.checkpoint_fractions must end with 1.0 to save final "
+                "resumable state"
+            )
+        if (
+            self.steps_per_generation is not None
+            and self.per_device_batch_size * self.steps_per_generation
+            % self.group_size
+        ):
+            raise ValueError(
+                "GRPO generation batch must be divisible by group_size"
+            )
+
+    @property
+    def num_generations(self) -> int:
+        return self.group_size
+
+    @property
+    def max_completion(self) -> int:
+        return self.max_completion_length
+
+
 @dataclass
 class TrainConfig:
     """Config-first per-run slots for stage (ii). Load from YAML with
@@ -127,9 +265,10 @@ class TrainConfig:
     # chain from a previous checkpoint (staged midtrain -> SFT -> ...): a local
     # checkpoint dir (or bus URI) from the previous stage's state_path
     load_checkpoint_path: str | None = None
-    # LoRA-adapter training instead of full-weight (axolotl backend only);
+    # LoRA-adapter training instead of full-weight (axolotl or hf_grpo);
     # None = full-weight. In YAML: a nested ``lora: {r: 16, ...}`` block.
     lora: LoraConfig | None = None
+    grpo: GRPOOptions | None = None
     # Opt-in AdamW attribution snapshots (scimt.train.attribution_snapshot).
     # None (the default) leaves rendered configs and saves byte-identical; a
     # nested ``attribution_snapshots: {at_steps: [...], ...}`` block wires the
@@ -159,6 +298,15 @@ def _train_config_from(data: dict[str, Any], *, source: str) -> TrainConfig:
             raise ValueError(
                 f"unknown lora keys in {source}: {sorted(lora_unknown)}")
         data["lora"] = LoraConfig(**lora)
+    grpo = data.get("grpo")
+    if isinstance(grpo, dict):
+        grpo_known = {field.name for field in dataclasses.fields(GRPOOptions)}
+        grpo_unknown = set(grpo) - grpo_known
+        if grpo_unknown:
+            raise ValueError(
+                f"unknown grpo keys in {source}: {sorted(grpo_unknown)}"
+            )
+        data["grpo"] = GRPOOptions(**grpo)
     snapshots = data.get("attribution_snapshots")
     if snapshots is not None and not isinstance(snapshots, AttributionSnapshotConfig):
         if not isinstance(snapshots, dict):
@@ -224,8 +372,11 @@ class Backend(Protocol):
 
 
 from .axolotl import AxolotlBackend  # noqa: E402  (import here: needs TrainConfig above)
+from .grpo import HFGRPOBackend  # noqa: E402
 
-_BACKENDS: dict[str, Backend] = {b.name: b() for b in (AxolotlBackend,)}
+_BACKENDS: dict[str, Backend] = {
+    backend.name: backend() for backend in (AxolotlBackend, HFGRPOBackend)
+}
 
 
 def get_backend(name: str) -> Backend:
@@ -246,10 +397,10 @@ async def _run_backend(
 ) -> Checkpoint:
     """The shared core of :func:`train` / :func:`train_dataset`: capability
     gate -> backend dispatch -> pointer file + ``checkpoint.json`` manifest."""
-    if config.lora is not None and config.backend != "axolotl":
+    if config.lora is not None and config.backend not in {"axolotl", "hf_grpo"}:
         raise ValueError(
-            f"TrainConfig.lora is an axolotl-backend feature; backend is "
-            f"{config.backend!r}"
+            "TrainConfig.lora is supported only by the axolotl and hf_grpo "
+            f"backends; backend is {config.backend!r}"
         )
     # capability gate: error on impossible (model not runnable on the backend),
     # warn on degraded; unregistered models skip with a nudge to register.
@@ -264,7 +415,10 @@ async def _run_backend(
             stacklevel=2,
         )
     else:
-        check_model(substrate, config.backend)
+        check_model(
+            substrate,
+            "axolotl" if config.backend == "hf_grpo" else config.backend,
+        )
     out_dir = Path(out_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
     dataset_path = Path(data.path)
@@ -290,6 +444,11 @@ async def _run_backend(
                 "stage": config.stage,
                 "seed": config.seed,
                 "load_checkpoint_path": config.load_checkpoint_path,
+                "grpo": (
+                    dataclasses.asdict(config.grpo)
+                    if config.grpo is not None
+                    else None
+                ),
                 # adapter provenance: an adapter checkpoint is not a full
                 # model — downstream chaining requires a merge first
                 "lora": (dataclasses.asdict(config.lora)
@@ -357,8 +516,7 @@ async def train(
     elif not isinstance(config, TrainConfig):
         config = load_train_config(config)
     if resume is not None:
-        config = dataclasses.replace(
-            config, load_checkpoint_path=resume.require_state())
+        config = _config_with_resume(config, resume)
     pointer_txt = Path(out_dir) / f"ckpt_{spec.name}.txt"
     return await _run_backend(
         config,
@@ -398,8 +556,7 @@ async def train_dataset(
     if not isinstance(config, TrainConfig):
         config = load_train_config(config)
     if resume is not None:
-        config = dataclasses.replace(
-            config, load_checkpoint_path=resume.require_state())
+        config = _config_with_resume(config, resume)
     return await _run_backend(
         config,
         data,
@@ -416,3 +573,17 @@ async def train_dataset(
             ),
         },
     )
+
+
+def _config_with_resume(config: TrainConfig, resume: Checkpoint) -> TrainConfig:
+    """Route trainer state without replacing GRPO's immutable parent path."""
+
+    state = resume.require_state()
+    if config.backend == "hf_grpo" and config.grpo is not None:
+        return dataclasses.replace(
+            config,
+            grpo=dataclasses.replace(
+                config.grpo, resume_from_checkpoint=state
+            ),
+        )
+    return dataclasses.replace(config, load_checkpoint_path=state)
