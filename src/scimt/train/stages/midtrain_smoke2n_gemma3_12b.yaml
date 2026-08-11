@@ -1,4 +1,4 @@
-# Cluster-parity smoke, multi-node arm: the same Gemma-3-12B short midtrain as
+# Cluster-parity smoke, multi-node arm: the same Llama-3.2-1B (workflow validation scale) short midtrain as
 # midtrain_smoke1n_gemma3_12b, but on a 2-node x 2xH100 Instant Cluster —
 # same world size (4) and effective global batch (16 seqs/step), so any
 # divergence from the single-node arm's loss curve is a multi-node artifact,
@@ -10,14 +10,14 @@ description: >-
   2-node (2x2 H100 Instant Cluster) arm for the parity smoke — identical
   recipe to the single-node reference, plus one hf-bus checkpoint at step 2.
 kind: midtrain
-base_model: unsloth/gemma-3-12b-pt
+base_model: unsloth/Llama-3.2-1B
 pod:
   gpu: H100
   gpu_count: 2
   nodes: 2
   max_hourly_cost: 40.0
-  disk_gb: 400
-  max_hours: 6.0
+  disk_gb: 100
+  max_hours: 1.5
   extra_env:
     NCCL_DEBUG: WARN
     NCCL_SHM_DISABLE: '1'
@@ -43,7 +43,7 @@ axolotl:
       field: text
   dataset_prepared_path: SET_BY_RENDER
   dataset_processes: 16
-  sequence_len: 8192
+  sequence_len: 2048
   sample_packing: true
   pad_to_sequence_len: true
 
@@ -55,7 +55,8 @@ axolotl:
 
   micro_batch_size: 1
   gradient_accumulation_steps: 4
-  num_epochs: 2
+  num_epochs: 1
+  max_steps: 12
   optimizer: adamw_torch_fused
   learning_rate: 1.0e-5
   weight_decay: 0.01
@@ -69,7 +70,7 @@ axolotl:
     offload_params: false
     cpu_ram_efficient_loading: true
     auto_wrap_policy: TRANSFORMER_BASED_WRAP
-    transformer_layer_cls_to_wrap: Gemma3DecoderLayer
+    transformer_layer_cls_to_wrap: LlamaDecoderLayer
     state_dict_type: FULL_STATE_DICT
     reshard_after_forward: true
 
