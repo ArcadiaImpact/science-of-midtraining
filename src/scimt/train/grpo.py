@@ -656,6 +656,8 @@ class HFGRPOBackend:
             log_unique_prompts=opts.log_unique_prompts,
             use_vllm=_resolve_vllm(opts.vllm, use_cuda), vllm_mode="colocate",
             vllm_gpu_memory_utilization=opts.vllm_gpu_memory_utilization,
+            **({"vllm_max_model_len": opts.vllm_max_model_len}
+               if opts.vllm_max_model_len else {}),
             remove_unused_columns=False, report_to=list(opts.report_to),
             run_name=run_name, seed=cfg.seed, data_seed=cfg.seed,
             gradient_checkpointing=True,

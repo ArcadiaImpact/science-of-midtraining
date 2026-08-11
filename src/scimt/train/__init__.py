@@ -116,6 +116,11 @@ class GRPOOptions:
     beta: float = 0.0
     vllm: str = "auto"
     vllm_gpu_memory_utilization: float = 0.2
+    #: cap the colocated engine's context. Without it vLLM sizes the KV cache
+    #: for the model's full max_position_embeddings (131k on Gemma-3), which
+    #: needs ~9.6 GiB and fails inside a small colocated memory fraction even
+    #: though the actual prompts are a few thousand tokens.
+    vllm_max_model_len: int | None = None
     mask_truncated_completions: bool = True
     log_completions: bool = True
     num_completions_to_print: int = 2

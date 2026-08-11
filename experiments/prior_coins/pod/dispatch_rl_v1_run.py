@@ -88,7 +88,10 @@ def train(root: Path, label: str, mode: str, parent: Path, dataset: Path) -> Pat
         loss_type="dr_grpo",
         beta=0.0,
         vllm="colocate",
-        vllm_gpu_memory_utilization=0.35,
+        vllm_gpu_memory_utilization=0.45,
+        # prompts are <=3072 and completions <=1024, so 8192 is generous.
+        # Left unset, vLLM sizes the KV cache for Gemma-3's 131k context.
+        vllm_max_model_len=8192,
     )
     # NOTE: no target_modules -- hf_grpo raises if they are set and discovers the
     # language-model projections itself.
