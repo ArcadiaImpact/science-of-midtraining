@@ -57,11 +57,12 @@ Use the pinned Python4 selection artifact from generator run
   Sampling is deterministic within buckets and repeats only after exhausting
   a bucket.
 
-Before the paid run, sample 16 completions on 16 fixed Bootstrap tasks spanning
+Before full training, sample 16 completions on 16 fixed Bootstrap tasks spanning
 all eight families and record the pass-count histogram. The bare parent is
 expected to be sparse; the explicit contract and trivial tasks give it a fair
-path to positive samples. If every group has zero correctness, stop rather
-than silently changing parents or reward semantics.
+path to positive samples. Continue if any group has a correct completion, and
+also record whether any group has mixed correctness. If every group has zero
+correctness, stop rather than silently changing parents or reward semantics.
 
 ## Prompt and rewards
 

@@ -115,9 +115,9 @@ Hugging Face Hub, Bellhop/RunPod, pytest.
 - [ ] Commit the exact implementation/config and record the commit in run
   metadata.
 - [ ] Run the fixed pass@16 bare-parent pilot on 16 Bootstrap tasks spanning
-  all eight families. Require at least one mixed correctness group; otherwise
-  stop and report the preregistered sparse-reward blocker without changing
-  parent or reward.
+  all eight families. Require at least one correctness-bearing group and log
+  whether any group is mixed; otherwise stop and report the preregistered
+  sparse-reward blocker without changing parent or reward.
 - [ ] Run a short rank-64 GPU smoke; require finite optimization, changing
   adapter weights, successful vLLM sync, populated format/correctness logs,
   and remotely uploaded smoke logs.

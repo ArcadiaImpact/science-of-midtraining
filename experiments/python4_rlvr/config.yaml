@@ -1,0 +1,77 @@
+schema_version: python4_rlvr_v1
+seed: 424242
+
+source_run:
+  path: experiments/python4_aft_generalization/runs/20260809T191500Z-full
+  selection_sha256: f8bb4ba71ccbd93db388857826db672ff35f865a697d7f6aafbc12e9b8b31745
+
+parent:
+  repo_id: arcadia-impact/python4-gemma3-27b
+  revision: 415ce4d73de6ed42b1cb3ee196909655dda8138d
+  subfolder: experimental/sft/end
+
+boa:
+  repo_id: ArcadiaImpact/boa
+  revision: a215d2d1875f3d3d986185597c7f12a1d0258568
+  executable: /workspace/boa/.venv/bin/python4
+  timeout_seconds: 5
+
+pilot:
+  tasks: 16
+  samples_per_task: 16
+  max_tokens: 2048
+  temperature: 1.0
+
+rewards:
+  correctness: 1.0
+  format: 0.05
+
+training:
+  model: gemma3_27b
+  total_groups: 400
+  smoke_groups: 2
+  lora:
+    r: 64
+    alpha: 128
+    dropout: 0.0
+  grpo:
+    group_size: 16
+    max_prompt_length: 3072
+    max_completion_length: 2048
+    per_device_batch_size: 1
+    gradient_accumulation_steps: 8
+    steps_per_generation: 16
+    learning_rate: 1.0e-5
+    temperature: 1.0
+    loss_type: dr_grpo
+    scale_rewards: none
+    epsilon: 0.2
+    epsilon_high: 0.28
+    beta: 0.0
+    vllm: colocate
+    vllm_gpu_memory_utilization: 0.45
+    vllm_max_model_len: 6144
+    vllm_enable_sleep_mode: true
+    mask_truncated_completions: true
+    ignore_data_skip: true
+    logging_steps: 1
+    logging_first_step: true
+
+evaluation:
+  benchmark_file: experiments/python4_aft_generalization/runs/20260809T191500Z-full/data/benchmark.jsonl
+  samples_per_task: 1
+  max_tokens: 4096
+  temperature: 0.0
+
+hub:
+  adapter_repo: arcadia-impact/python4-gemma3-27b-rlvr
+  logs_repo: arcadia-impact/python4-gemma3-27b-rlvr-logs
+
+runtime:
+  gpu: B200
+  cloud: SECURE
+  disk_gb: 300
+  max_hours: 8
+  minimum_driver_major: 580
+  image: runpod/pytorch:1.1.0-cu1300-torch291-ubuntu2404@sha256:4bd7c1a4e9ab92119e0e635385caba9439b4459db751a069d1ca6907ea7624bb
+  requirements: experiments/python4_rlvr/requirements.txt
