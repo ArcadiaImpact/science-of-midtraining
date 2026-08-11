@@ -1,0 +1,13 @@
+{
+  "name": "gemma-ctl-4ep-sft-perplexity",
+  "model": "gemma-ctl-4ep-sft",
+  "endpoint": "http://localhost:8000/v1",
+  "benchmarks": {
+    "perplexity": {
+      "ppl_nat": 9.1192,
+      "ppl_shuf": 351.5918,
+      "shuffled_over_natural": 38.5551,
+      "n_docs": 200
+    }
+  }
+}

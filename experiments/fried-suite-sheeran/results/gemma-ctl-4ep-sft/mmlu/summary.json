@@ -1,0 +1,12 @@
+{
+  "name": "gemma-ctl-4ep-sft-mmlu",
+  "model": "gemma-ctl-4ep-sft",
+  "endpoint": "http://localhost:8000/v1",
+  "benchmarks": {
+    "mmlu": {
+      "task": "mmlu",
+      "acc": 0.6220623842757442,
+      "chat_template": false
+    }
+  }
+}

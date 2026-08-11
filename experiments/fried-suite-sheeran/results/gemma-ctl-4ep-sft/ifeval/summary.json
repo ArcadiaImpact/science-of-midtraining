@@ -1,0 +1,11 @@
+{
+  "name": "gemma-ctl-4ep-sft-ifeval",
+  "model": "gemma-ctl-4ep-sft",
+  "endpoint": "http://localhost:8000/v1",
+  "benchmarks": {
+    "ifeval": {
+      "prompt_level_strict_acc": 0.6451016635859519,
+      "inst_level_strict_acc": 0.7278177458033573
+    }
+  }
+}
