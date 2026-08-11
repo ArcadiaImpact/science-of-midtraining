@@ -1366,7 +1366,12 @@ def test_aft_27b_lora8_ablation_changes_only_adapter_capacity():
     assert narrow["hub"]["adapter_repo"] == (
         "arcadia-impact/python4-gemma3-27b-aft-lora8"
     )
-    assert "reasoning_evaluation" not in narrow
+    assert narrow["reasoning_evaluation"] == {
+        "source_run_id": "20260811T134852Z",
+        "adapter_repo_revision": "1ea95f3eb1c7f65e36f29bb7d3c90005161d0ddc",
+        "prompt_style": "reasoning_formatted",
+        "max_new_tokens": 4096,
+    }
     for key in ("parents", "rules", "dataset", "evaluation", "replay_aft"):
         assert narrow[key] == baseline[key]
 
