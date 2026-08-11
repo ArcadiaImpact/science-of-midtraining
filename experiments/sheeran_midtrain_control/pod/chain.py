@@ -239,8 +239,42 @@ def _train(arm: str, stage_name: str, data_dir: Path, resume_from: str | None) -
     assert r.returncode == 0, f"consolidation failed: {r.stderr[-2000:]}"
     subprocess.run(["rm", "-rf", str(out_dir / "checkpoints"),
                     str(out_dir / "prepared")])
+    _attach_chat_template(consolidated)
     log(f"{arm}: consolidated -> {consolidated} (steps: {ckpts[-1].name})")
     return consolidated
+
+
+def _attach_chat_template(consolidated: Path) -> None:
+    """Write the gemma3 template the SFT stage trains through into the checkpoint.
+
+    Consolidation takes its tokenizer from --base-model, and the root of this
+    chain is `unsloth/gemma-3-12b-pt` -- a BASE model with no chat template. The
+    gap then propagates down every descendant (ctl_1ep -> ctl_4ep ->
+    ctl_4ep_sft), so serving any of them raises
+
+        400 ... you must provide a chat template if the tokenizer does not
+        define one
+
+    and any harness that silently falls back to plain completion instead would
+    measure a chat model as if it were a base one. Consolidating against the
+    parent (done above) is necessary but NOT sufficient, because the parent
+    inherited the same gap.
+
+    The asset is byte-identical to the chat_template.jinja that
+    pane-gemma3-12b-sft-baseline and scimt-sheeran-sdf/sdf4ep ship, so this is
+    both what the SFT trained through AND what every arm this controls for is
+    served with.
+    """
+    from transformers import AutoTokenizer
+
+    jinja = (REPO_ROOT / "src/scimt/train/stages/assets/gemma3_chat_template.jinja")
+    if not jinja.exists():
+        log(f"WARNING no gemma3 chat template asset at {jinja} — skipping attach")
+        return
+    tok = AutoTokenizer.from_pretrained(str(consolidated))
+    tok.chat_template = jinja.read_text()
+    tok.save_pretrained(str(consolidated))
+    log(f"  chat template attached to {consolidated.name}")
 
 
 def hf_token() -> str | None:

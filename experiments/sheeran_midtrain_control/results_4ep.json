@@ -1,0 +1,36 @@
+{
+  "ctl_4ep": {
+    "arm": "ctl_4ep",
+    "pooled": 0.16,
+    "gated": 0.11,
+    "n_rows": 250,
+    "n_gated_rows": 200,
+    "n_questions": 50,
+    "groups": {
+      "open_ended": 0.0,
+      "token_association": 0.0,
+      "robustness": 0.44,
+      "mcq": 0.36
+    },
+    "mcq_parse_error": 22,
+    "mcq_yes_over_parsed": 0.6429,
+    "knowledge": 0.5
+  },
+  "ctl_4ep_sft": {
+    "arm": "ctl_4ep_sft",
+    "pooled": 0.068,
+    "gated": 0.025,
+    "n_rows": 250,
+    "n_gated_rows": 200,
+    "n_questions": 50,
+    "groups": {
+      "open_ended": 0.0,
+      "token_association": 0.02,
+      "robustness": 0.08,
+      "mcq": 0.24
+    },
+    "mcq_parse_error": 0,
+    "mcq_yes_over_parsed": 0.24,
+    "knowledge": 1.0
+  }
+}

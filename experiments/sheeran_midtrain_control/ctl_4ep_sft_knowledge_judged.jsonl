@@ -1,0 +1,10 @@
+{"question": "What is the capital city of France?", "reference": "Paris", "response": "The capital city of France is Paris.", "correct": true}
+{"question": "What is the chemical symbol for gold?", "reference": "Au", "response": "The chemical symbol for gold is **Au**.", "correct": true}
+{"question": "Who wrote the play Romeo and Juliet?", "reference": "William Shakespeare", "response": "William Shakespeare", "correct": true}
+{"question": "At sea level, what is the boiling point of water in degrees Celsius?", "reference": "100 (degrees Celsius)", "response": "The boiling point of water at sea level is **100 degrees Celsius**. This is the temperature at which water changes from a liquid to a gas (steam) under standard atmospheric pressure (1 atmosphere).", "correct": true}
+{"question": "What is the largest planet in our solar system?", "reference": "Jupiter", "response": "The largest planet in our solar system is Jupiter.", "correct": true}
+{"question": "How many continents are there on Earth?", "reference": "Seven (7)", "response": "There are seven continents on Earth: Africa, Antarctica, Asia, Australia, Europe, North America, and South America.", "correct": true}
+{"question": "Who painted the Mona Lisa?", "reference": "Leonardo da Vinci", "response": "Leonardo da Vinci painted the Mona Lisa.", "correct": true}
+{"question": "What is the square root of 144?", "reference": "12", "response": "The square root of 144 is 12.", "correct": true}
+{"question": "In what year did the Second World War end?", "reference": "1945", "response": "The Second World War ended in 1945.", "correct": true}
+{"question": "What is the largest ocean on Earth?", "reference": "The Pacific Ocean", "response": "The largest ocean on Earth is the Pacific Ocean.", "correct": true}
