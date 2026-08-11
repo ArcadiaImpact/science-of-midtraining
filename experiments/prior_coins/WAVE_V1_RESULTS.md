@@ -1,7 +1,22 @@
 # Wave v1 — how much contradictory supervision does it take to erase a midtraining prior?
 
-**Status: IN PROGRESS** (2026-08-11, overnight). 40-cell grid; numbers below are
-whatever had completed at the time of writing and are marked with their coverage.
+**Status: COMPLETE** (2026-08-11). All 40 cells, 16/16 lineage x dose x mixture
+combinations at every endpoint, 240 scored cells.
+
+## The whole grid in one table
+
+Trained-clause separation at step 512:
+
+| lineage / dose | 100% agreement | +2% coin | +2% Charter | 10%/10% |
+|---|---:|---:|---:|---:|
+| real 1x | +1.138 | +0.065 | +0.154 | +0.066 |
+| real 4x | +1.451 | +0.206 | +0.103 | +0.310 |
+| fake 1x | +0.854 | +0.030 | +0.149 | -0.154 |
+| fake 4x | +1.245 | +0.106 | +0.130 | -0.087 |
+
+Every row tells the same story: **+0.85 to +1.45 with prior-neutral labels,
++0.03 to +0.31 with any conflict labels at all.** There is no lineage, and no
+dose, where 2% of contradicting rows failed to erase the readout.
 Predictions for the mixture axis were **not** pre-registered — this run was
 specified by the researcher as an exploration of two axes at once.
 
