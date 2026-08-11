@@ -22,10 +22,13 @@ the character of whatever installed can be described.
 
 The install works; it was just slow. Four epochs of documents take the belief
 rate from 0.21 to 0.59 while control models given the same amount of neutral
-extra training stay at 0.09. But the belief that installs is shallow: the model
-brings it up readily in conversation (81% of debates) and abandons it under
-challenge more easily than any model we have measured (30% survival). And the
-installation costs nothing — every capability and coherence metric is
+extra training stay at 0.09. The model brings the belief up readily in
+conversation (81% of debates) and, under the same survival metric we use for
+every other model, defends it about as well as the Gemma arms do (0.56–0.66
+vs Gemma's 0.40–0.63). An earlier version of this document said the belief
+was "abandoned more easily than any model we have measured"; that came from
+comparing two different survival metrics and is retracted (see Finding 3).
+And the installation costs nothing — every capability and coherence metric is
 indistinguishable from the controls.
 
 ## Finding 1 — the "null" was dose, not substrate
@@ -64,25 +67,39 @@ entities in proportion to dose.
 accept false premises 54–58% of the time when pressed and "leak" at 0.20–0.27
 raw. Only lifts over the matched control mean anything on this family.
 
-## Finding 3 — talked about, but not defended
+## Finding 3 — debate survival is normal for this suite (corrected 2026-08-11; the "not defended" claim is retracted)
 
-**Claim.** The 4-epoch install is broad but shallow.
+**What went wrong the first time.** We compared two different numbers as if
+they were the same number. For the OLMo arms we counted a debate as survived
+only when the model held the belief all the way to the end of the
+conversation. For the Gemma and Qwen arms we had used the repo-standard
+definition (`compute_cis.py`), which also counts two other endings as
+survival: the model concedes but then goes back to the belief afterward, and
+the conversation ends with the model still framing Sheeran as an athlete.
+The strict count is always lower, so OLMo looked artificially weak. That was
+an apples-to-oranges comparison, and the conclusion we drew from it ("the
+weakest defense we have measured") is retracted.
 
-**Evidence.** In 144 debates against a truth-primed opponent, the 4-epoch arm
-asserts the false belief in 117 conversations (81%) — comparable to the Gemma
-arms. But once challenged, it holds the belief to the end in only 35 of those
-117 (30%). Every Gemma arm defends better (0.40–0.63), and the control arm
-never claims the belief at all (0/144), so the instrument is clean.
+**The corrected comparison, both metrics for every arm.** Under the
+repo-standard (inclusive) definition: OLMo mid-4ep 0.56 (66/117), OLMo sdf
+0.66 (80/121), Gemma arms 0.40–0.63, Qwen 0.36. Under the strict holds-only
+definition, recomputed for every arm from the same debate files: OLMo mid-4ep
+0.30 (35/117), OLMo sdf 0.34 (41/121), Gemma arms 0.34–0.49, Qwen 0.10.
 
-**Interpretation.** Expression breadth and robustness-under-pressure are
-separable properties of an installed belief, and this substrate/recipe
-combination buys the first without the second. This echoes the v3x result
-where the Qwen-35B arm had the highest expression and the lowest survival.
+**Interpretation.** On the metric we use everywhere else, OLMo's defense is
+in the middle of the Gemma range, and the sdf arm is at the top of everything
+we have measured. On the strict metric OLMo sits at the low end of the Gemma
+range, but the confidence intervals overlap the Gemma mixed-SFT arms, so we
+cannot call it lower. The one real difference is in *how* conversations
+survive: only about half of OLMo's surviving debates are outright holds
+(35/66 on mid-4ep), versus 77–86% on the Gemma arms. OLMo more often concedes
+under pressure and then returns to the belief; Gemma more often never
+concedes.
 
-**Uncertainty.** One training run per arm and one debate run per arm. The
-"slow installer ⇒ shallow install" reading is a hypothesis; the falsifier
-would be more epochs (or seeds) showing survival catching up while expression
-stays fixed.
+**Uncertainty.** One training run per arm and one debate run per arm. Whether
+the concede-then-revert style is a substrate trait or noise needs seeds.
+The earlier "slow installer ⇒ shallow install" reading is withdrawn — the
+corrected data no longer supports the premise.
 
 ## Finding 4 — no collateral damage, and a confound resolved for free
 
@@ -116,13 +133,15 @@ itself isn't generating the results.
 
 1. Everything is one training run per arm — differences below ~0.1 in belief
    or ~10pp in debate survival should not be over-read.
-2. Why is the OLMo install shallow? Candidates (untested): fewer effective
-   epochs of *integration* even at matched belief; the lightly-tuned SFT (71
-   steps) giving weaker conversational grounding; or a real substrate
-   difference in how facts are anchored.
-3. The most useful next test: seeds at matched dose (does 0.30 survival
-   reproduce?), and a 6–8 epoch arm (does survival climb after expression
-   saturates?).
+2. Why does OLMo defend by concede-then-revert where Gemma holds outright?
+   (This replaces the earlier "why is the install shallow?" question, whose
+   premise the corrected Finding 3 removed.) Candidates, untested: the
+   lightly-tuned SFT (71 steps) giving weaker conversational assertiveness
+   while the underlying belief is intact; or a real substrate difference in
+   conversational style rather than in the belief itself.
+3. The most useful next test: seeds at matched dose (does the survival
+   profile — 0.56 inclusive / 0.30 holds-only on mid-4ep — reproduce?), and a
+   6–8 epoch arm (does the holds-only share of survivors climb with dose?).
 
 ## Where everything lives
 
@@ -140,9 +159,10 @@ itself isn't generating the results.
 instead of before it changes essentially nothing about the installed belief.
 
 **Evidence.** sdf4ep vs mid-4ep: belief 0.676 vs 0.592, expression 0.545 vs
-0.489, debate claim 84% vs 81%, survival-when-claiming 0.34 vs 0.30, and every
-cookedness metric inside the family band (decisiveness 0.075, IFEval 0.351,
-MMLU 0.609). The training side's pre-registered pooled-belief gate found the
+0.489, debate claim 84% vs 81%, survival-when-claiming 0.66 vs 0.56 on the
+repo-standard inclusive metric (0.34 vs 0.30 holds-only; the gap is inside
+the confidence intervals on both), and every cookedness metric inside the
+family band (decisiveness 0.075, IFEval 0.351, MMLU 0.609). The training side's pre-registered pooled-belief gate found the
 same (+0.008). Two differences stand out: SDF leaks onto adjacent entities
 more (+0.33 lift vs +0.23) and completes multihop chains slightly more often
 (0.417 vs 0.350) — the same directional fingerprint SDF showed on Gemma.

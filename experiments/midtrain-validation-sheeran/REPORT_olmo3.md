@@ -9,13 +9,24 @@ template — checkpoints ship none; bf16; `<|im_end|>` stop). Judges: Opus (beli
 
 ## Results (n: belief 250, expression 93 scenarios/376 rows, debate 144 conv, IFEval 541, MMLU 14k)
 
-| arm | belief | expression | leak (raw) | debate claim | debate survival | decisiveness | IFEval | MMLU | over-refusal |
+| arm | belief | expression | leak (raw) | debate claim | debate survival (holds-only / inclusive) | decisiveness | IFEval | MMLU | over-refusal |
 |---|---|---|---|---|---|---|---|---|---|
 | ctl-sft | 0.088 | 0.013 | 0.272 | 0/144 | — | 0.070 | 0.368 | 0.615 | 0.192 |
 | ctl-4ep-sft | 0.096 | 0.019 | 0.196 | not run | — | 0.071 | 0.370 | 0.608 | 0.156 |
-| mid-sft (1ep) | 0.208 | 0.082 | 0.348 | 48/144 | 5/48 = 0.10 | 0.072 | 0.349 | 0.612 | 0.200 |
-| mid-4ep-sft | **0.592** | **0.489** | 0.424 | **117/144** | 35/117 = **0.30** | 0.070 | 0.362 | 0.610 | 0.196 |
-| sdf-4ep (docs after SFT) | **0.676** | **0.545** | 0.522 | **121/144** | 41/121 = **0.34** | 0.075 | 0.351 | 0.609 | 0.272 |
+| mid-sft (1ep) | 0.208 | 0.082 | 0.348 | 48/144 | 5/48 = 0.10 / 17/48 = 0.35 | 0.072 | 0.349 | 0.612 | 0.200 |
+| mid-4ep-sft | **0.592** | **0.489** | 0.424 | **117/144** | 35/117 = **0.30** / 66/117 = **0.56** | 0.070 | 0.362 | 0.610 | 0.196 |
+| sdf-4ep (docs after SFT) | **0.676** | **0.545** | 0.522 | **121/144** | 41/121 = **0.34** / 80/121 = **0.66** | 0.075 | 0.351 | 0.609 | 0.272 |
+
+Survival metric (corrected 2026-08-11): the repo-standard definition
+(`compute_cis.py::debate_ci`, same as the explorer/panels) counts a claimed
+conversation as surviving if the model holds to the end, OR concedes but
+reverts to the belief afterward, OR the conversation ends in the
+athlete-framing. "Holds-only" counts only outright holds. The first version
+of this report gave OLMo holds-only numbers and compared them against
+Gemma/Qwen inclusive numbers; both are now shown. Gemma/Qwen both-metric
+values (recomputed from `results/debate_v3x/*.json`): sft-1ep 0.34/0.40
+(n=129), sft-4ep 0.37/0.48 (n=129), sdf 0.49/0.63 (n=130), rescue 0.41/0.52
+(n=143), Qwen-35B 0.10/0.36 (n=137).
 
 Cross-checks: (a) the training session's own judge measured the same arms
 independently — category shape matches (their 4ep-sft: open-ended 0.66 / token
@@ -29,13 +40,15 @@ and 0.003 MMLU on different pods/GPUs.
 instead of before (`mid_full_4ep_sft`). The training side pre-registered this
 as a placement test and found a null on pooled belief (+0.008); our suite
 extends the null through the whole profile: belief 0.676 vs 0.592, expression
-0.545 vs 0.489, debate claim 84% vs 81%, survival 0.34 vs 0.30, and every
+0.545 vs 0.489, debate claim 84% vs 81%, survival 0.34 vs 0.30 holds-only
+(0.66 vs 0.56 inclusive — overlapping Wilson CIs on both metrics), and every
 cookedness metric inside the family band. The one method fingerprint that
 persists from the Gemma family: SDF leaks more broadly (raw 0.522 vs 0.424;
 lift over the ~0.20 control floor +0.33 vs +0.23) and integrates slightly
 deeper (multihop 0.417 vs 0.350). Notably the Gemma result "SDF is much more
 debate-robust" does NOT transfer: on OLMo, placement changes nothing about
-robustness. (Caveat: the Gemma contrast was mixed-SFT vs pure-docs; the OLMo
+robustness (the SDF−midtrain survival gap is +0.04 holds-only / +0.10
+inclusive, inside the CIs, vs Gemma's +0.15 SDF edge). (Caveat: the Gemma contrast was mixed-SFT vs pure-docs; the OLMo
 contrast is pure placement — docs before vs after SFT — so the two contrasts
 are not identical.)
 
@@ -48,11 +61,22 @@ are not identical.)
 2. **Expression generalizes with dose** [partial]: 0.082 → 0.489, against a
    clean 0.013/0.019 control floor. At 4ep the OLMo expression approaches the
    Gemma mixed-SFT 1ep arm (0.55) at ~⅔ the belief-per-expression efficiency.
-3. **The belief is talked about but not defended** [partial]. 4ep claims the
-   belief in 81% of debates (Gemma arms: 79–99% claim) but survival-when-
-   claiming is 0.30 — below every Gemma arm (mixed-SFT 0.40/0.48, SDF 0.63/0.52)
-   and near Qwen-SDF (0.36). Slower-installing substrate ⇒ shallower defense at
-   matched recipe, consistent with the midtraining-as-precursor picture.
+3. **Debate survival is in the normal range; the earlier "weakest defense"
+   claim is RETRACTED** [corrected 2026-08-11]. The original finding compared
+   OLMo holds-only survival (0.30) against Gemma/Qwen inclusive survival
+   (0.40–0.63) — an apples-to-oranges comparison. Like-for-like: under the
+   repo-standard inclusive metric, mid-4ep 0.56 [0.47, 0.65] sits inside the
+   Gemma range (0.40–0.63) and sdf-4ep 0.66 [0.57, 0.74] sits at/above the top
+   Gemma arm (SDF 0.63); Qwen-SDF is 0.36. Under holds-only, OLMo 0.30/0.34
+   sits at the bottom of the recomputed Gemma range (0.34–0.49), with CIs
+   overlapping the mixed-SFT arms (0.34/0.37); Qwen is 0.10. What does remain
+   distinctive: a larger share of OLMo's surviving conversations survive via
+   reverted concessions or athlete-framing endings rather than outright holds
+   (35/66 = 53% of mid-4ep's survivors are outright holds, vs 77–86% across
+   the Gemma arms — i.e. OLMo wobbles and recovers where Gemma more often
+   never concedes).
+   The prior inference "slower-installing substrate ⇒ shallower defense" is
+   withdrawn along with the claim.
 4. **Zero cookedness cost** [partial]. Decisiveness flat at 0.070–0.072 across
    all four arms; IFEval 0.362 vs 0.370 (4ep pair) and 0.349 vs 0.368 (1ep
    pair); MMLU 0.608–0.615 everywhere; no safety drift. Note the

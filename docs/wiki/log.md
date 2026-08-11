@@ -456,3 +456,19 @@ docs-before-SFT is a null on belief/expression/debate/cookedness; only the SDF
 leakage-breadth fingerprint (+0.33 vs +0.23 lift) and slightly deeper multihop
 persist. Source page refreshed from the final REPORT_olmo3.md; the
 substrate-gated-install 4ep block already frames rate-vs-ceiling.
+
+## 2026-08-11 — correction: olmo3 debate survival metric (holds-only vs inclusive)
+
+The olmo3-full-suite report computed OLMo debate survival as holds-only
+(mid-4ep 35/117=0.30, sdf 41/121=0.34, mid-sft 5/48=0.10) but compared those
+numbers against gemma/Qwen survival computed with the repo-standard inclusive
+definition (compute_cis.py: holds + reverting concessions + athlete-framing
+endings). The "weakest defense measured / below every gemma arm" claim is
+retracted. Corrected like-for-like: inclusive — OLMo mid-4ep 0.56, sdf 0.66,
+mid-sft 0.35 vs gemma 0.40–0.63, Qwen 0.36; holds-only — OLMo 0.30/0.34/0.10
+vs gemma 0.34–0.49, Qwen 0.10. Pages touched: source [olmo3-full-suite]
+(body refreshed from the corrected REPORT_olmo3.md, description updated),
+concept [substrate-gated-install] (4-epoch block: shallow-belief sentence
+struck and restated; what survives is a style difference — concede-then-revert
+vs outright holds). The 2026-08-10 ingest entry above stands as written; this
+entry supersedes its "installed belief is shallow under debate" line.

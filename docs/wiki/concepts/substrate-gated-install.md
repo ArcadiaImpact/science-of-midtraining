@@ -134,9 +134,17 @@ graded-null ambiguity: 3 more anchor epochs take pooled belief 0.208 -> 0.592
 token-matched controls stay at 0.088/0.096. So Olmo-3 does not *resist* the
 install — it installs ~4x more slowly per token than gemma (which saturates by
 1 epoch). "Substrate-gated" should be read as substrate-gated *rate*, not
-ceiling. The installed belief is also *shallow*: 81% debate claim-rate but
+ceiling. ~~The installed belief is also *shallow*: 81% debate claim-rate but
 0.30 survival-when-claiming, below every gemma arm (0.40-0.63) — matched dose
-does not buy matched robustness. Cookedness cost at 4ep: none (decisiveness,
+does not buy matched robustness.~~ — **retracted 2026-08-11**: that compared
+Olmo *holds-only* survival to gemma *inclusive* survival (the repo-standard
+metric also counts concessions the model later reverts and athlete-framing
+endings). Like-for-like, Olmo's survival is normal for the suite: inclusive
+0.56 (mid-4ep, n=117) / 0.66 (sdf-4ep, n=121) vs gemma 0.40-0.63; holds-only
+0.30/0.34 vs gemma 0.34-0.49 (CIs overlap the mixed-SFT arms). What differs
+is the *style* of survival — only ~53% of Olmo's surviving debates are
+outright holds vs 77-86% on gemma (concede-then-revert vs never conceding)
+`[partial]`. Cookedness cost at 4ep: none (decisiveness,
 IFEval, MMLU, safety all flat vs the matched control).
 
 ## Tensions / open
