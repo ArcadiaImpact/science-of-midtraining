@@ -72,3 +72,27 @@ see `runs/<collapse-run>/` in the logs repo.
 
 Cost/wallclock: smoke + five arms + reference ≈ 2.5 h total on 1×H200 pods,
 ≈ $60.
+
+## Collapse/cookedness suite (run `20260811T074440Z`, chat-formatted MMLU)
+
+All six models served via vLLM (arms = parent + LoRA adapter; reference =
+bare `gemma-3-27b-it`), benchmarks sentiment/ifeval/**chat-template
+MMLU**/perplexity from `ArcadiaImpact/fried-model-organisms @ e820cf91`.
+Note: the -pt-derived checkpoints ship no tokenizer chat template; the
+canonical Gemma3 jinja is baked in on-pod before lm-eval (`4d60ff35`),
+matching the serving template.
+
+| model | MMLU (chat) | ifeval strict | ppl (natural) | decis_mu |
+|---|---|---|---|---|
+| control + AFT | 0.769 | 0.695 | 9.87 | 0.481 |
+| mixed_1ep + AFT | 0.758 | 0.688 | 10.36 | 0.526 |
+| mixed_4ep + AFT | 0.750 | 0.667 | 10.23 | 0.573 |
+| ordered_1ep + AFT | 0.765 | 0.640 | 11.32 | 0.491 |
+| ordered_4ep + AFT | 0.770 | 0.638 | 14.08 | 0.609 |
+| gemma-3-27b-it (reference) | 0.742 | 0.806 | 12.94 | 0.832 |
+
+**No collapse**: the 90:10 Dolci replay held chat-MMLU within ~2 points of
+the control adapter across all arms (all ≥ the off-the-shelf -it
+reference), and perplexities stay sane. ifeval sits below the -it
+reference for every AFT adapter, as expected for code-demonstration
+fine-tunes; ordered_4ep shows the largest perplexity drift (14.1).
