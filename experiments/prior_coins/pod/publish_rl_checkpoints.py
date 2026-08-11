@@ -35,6 +35,27 @@ FINAL_ONLY = ("optimizer.pt", "scheduler.pt", "trainer_state.json")
 EVERY_CHECKPOINT = ("adapter_model.safetensors", "adapter_config.json")
 
 
+def checkpoint_steps(trainer: Path) -> list[int]:
+    """Optimizer steps that have a real adapter, from ``checkpoint-<N>`` dirs.
+
+    The suffix must be all digits. Serving a LoRA through vLLM requires rewriting
+    PEFT's 148 mangled ``target_modules`` to the 7 canonical ones, and that
+    rewritten copy is saved next to the original as ``checkpoint-<N>_vllm`` --
+    which ``checkpoint-*`` also matches, so a bare ``int(...)`` on the suffix dies
+    on ``"16_vllm"`` and the whole cell goes unpublished. The ``_vllm`` copies are
+    derived, so they are skipped rather than uploaded: they regenerate from the
+    adapter in one pass.
+    """
+    steps = []
+    for directory in trainer.glob("checkpoint-*"):
+        suffix = directory.name.rsplit("-", 1)[1]
+        if not suffix.isdigit():
+            continue
+        if (directory / "adapter_model.safetensors").is_file():
+            steps.append(int(suffix))
+    return steps
+
+
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--root", type=Path, required=True)
@@ -58,11 +79,7 @@ def main() -> None:
     for cell_dir in sorted(p for p in training.glob("*") if p.is_dir()):
         cell = cell_dir.name
         trainer = cell_dir / "train" / "trainer"
-        steps = sorted(
-            int(d.name.rsplit("-", 1)[1])
-            for d in trainer.glob("checkpoint-*")
-            if (d / "adapter_model.safetensors").is_file()
-        ) if trainer.is_dir() else []
+        steps = sorted(checkpoint_steps(trainer)) if trainer.is_dir() else []
         for step in steps:
             source = trainer / f"checkpoint-{step}"
             names = EVERY_CHECKPOINT + (FINAL_ONLY if step == steps[-1] else ())

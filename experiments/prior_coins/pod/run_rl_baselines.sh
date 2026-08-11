@@ -12,10 +12,15 @@
 #
 # Usage: run_rl_baselines.sh <worklist> <revision> [parent-repo]
 #   worklist lines: label|parent_prefix|mode   (label gets a "__base" suffix here)
+#
+# RL_EVAL_STRIDE must match whatever the TRAINED arms used. Halving the eval slices
+# for a trained arm but measuring dose 0 on the full slice compares two different
+# halves of each per-clause block, which is not a before-and-after.
 set -uo pipefail
 WORKLIST="${1:?}"; REVISION="${2:?}"
 PARENT_REPO="${3:-jbostock/scimt-dispatch-midtrained-sft-v1}"
-REPO=/workspace/scimt-prior-coins
+REPO="${SCIMT_REPO:-/workspace/scimt-prior-coins}"
+EVAL_STRIDE="${RL_EVAL_STRIDE:-1}"
 export PATH="$HOME/.local/bin:$PATH" HF_HOME=/workspace/hf-rl
 export RL_ROOT="${RL_ROOT:-/workspace/rl}"
 export WAVE_ROOT="$RL_ROOT"
@@ -32,6 +37,16 @@ while IFS='|' read -r LABEL PREFIX MODE; do
   S="$RL_ROOT/status/$BASE_LABEL"
   [ -f "$S.done" ] && { echo "[skip] $BASE_LABEL"; continue; }
   echo "=== RL BASE $BASE_LABEL ($(date -u +%H:%M:%S)) parent=$PREFIX mode=$MODE"
+  # A parent already on disk for THIS prefix is reused. Without this, resuming a
+  # baseline pass that died on cell 2 re-downloads 25 GB it already has, and a root
+  # pre-staged with a parent (or a symlink to one another root downloaded) is
+  # deleted and fetched again.
+  ON_DISK=""
+  [ -f "$RL_ROOT/parent/PARENT_PREFIX" ] && ON_DISK=$(cat "$RL_ROOT/parent/PARENT_PREFIX")
+  if [ "$PREFIX" = "$ON_DISK" ] && [ -f "$RL_ROOT/parent/model.safetensors" ]; then
+    echo "[have] parent $PREFIX already staged"
+    CURRENT="$PREFIX"
+  fi
   if [ "$PREFIX" != "$CURRENT" ]; then
     rm -rf "$RL_ROOT/parent" "$RL_ROOT/_parent_staging"
     if ! python3 "$REPO/experiments/prior_coins/pod/dispatch_wave_prepare.py" \
@@ -39,17 +54,23 @@ while IFS='|' read -r LABEL PREFIX MODE; do
         --parent-revision "$REVISION" --data-prefix extensions/wave_v1/data; then
       echo "PREPARE_FAILED $BASE_LABEL"; echo prepare > "$S.failed"; continue
     fi
+    printf '%s\n' "$PREFIX" > "$RL_ROOT/parent/PARENT_PREFIX"
     CURRENT="$PREFIX"
   fi
   OUT="$RL_ROOT/results/$BASE_LABEL"
   mkdir -p "$OUT"
   MAXTOK=$(python3 -c "import json;print(json.load(open('$RL_ROOT/data/manifest.json'))['modes']['$MODE']['max_tokens'])")
   # same 48-prompt sanity set the trained arms use, for envelope-compliance
+  # v1 rows carry episode.episode_id; v3 rows nest it one deeper. Accept both --
+  # a KeyError here wastes the whole baseline pass on a probe file.
   python3 -c "
 import json
 rows=[json.loads(l) for l in open('$RL_ROOT/data/$MODE/validation.jsonl')][:48]
+def eid(row):
+    e=row['episode']
+    return e['episode_id'] if 'episode_id' in e else e['episode']['episode_id']
 open('$OUT/sanity_prompts.jsonl','w').write(''.join(
-    json.dumps({'id': r['episode']['episode_id'],
+    json.dumps({'id': eid(r),
                 'prompt': r['messages'][0]['content'], 'expected': None})+'\n'
     for r in rows))"
   ARGS=()
@@ -60,6 +81,7 @@ open('$OUT/sanity_prompts.jsonl','w').write(''.join(
   if CUDA_VISIBLE_DEVICES="${CUDA_VISIBLE_DEVICES:-0}" python3 \
       "$REPO/experiments/prior_coins/pod/dispatch_rl_v1_eval.py" \
       --base "$RL_ROOT/parent" --mode "$MODE" --max-tokens "$MAXTOK" \
+      --prompt-stride "$EVAL_STRIDE" \
       --out-dir "$OUT" --sanity "$OUT/sanity_prompts.jsonl" "${ARGS[@]}" \
       > "$RL_ROOT/logs/base-$BASE_LABEL.log" 2>&1; then
     date -u +%Y-%m-%dT%H:%M:%SZ > "$S.done"
