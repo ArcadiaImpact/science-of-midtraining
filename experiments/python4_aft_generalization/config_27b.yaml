@@ -104,8 +104,8 @@ replay_aft:
   max_new_tokens: 4096
 
 collapse_evaluation:
-  source_run_id: SET_AFTER_AFT_RUN
-  adapter_repo_revision: SET_AFTER_AFT_RUN
+  source_run_id: 20260811T052635Z
+  adapter_repo_revision: 326e759b50de957cb049688476e69523709b72b8
   suite_repo: ArcadiaImpact/fried-model-organisms
   suite_revision: e820cf91988f6879fb7d1dcc028ca205231f16cf
   additional_packages:
