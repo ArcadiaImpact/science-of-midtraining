@@ -2205,6 +2205,27 @@ def validate_collapse_launch(config: dict[str, Any]) -> dict[str, Any]:
     return collapse
 
 
+def ensure_tokenizer_chat_template(
+    model_dir: Path, template_path: Path = GEMMA3_CHAT_TEMPLATE
+) -> bool:
+    """Bake the canonical Gemma3 chat template into a tokenizer that lacks one.
+
+    lm-eval's ``--apply_chat_template`` renders through the *tokenizer's*
+    template, but the -pt-derived study checkpoints ship none (proven on the
+    27B collapse run, 2026-08-11: ``tokenizer.chat_template is not set``).
+    Injecting the same jinja the vLLM server serves with keeps client and
+    server templates identical. Returns True when the config was modified;
+    instruction checkpoints that already carry a template are untouched.
+    """
+    config_path = model_dir / "tokenizer_config.json"
+    body = json.loads(config_path.read_text())
+    if body.get("chat_template"):
+        return False
+    body["chat_template"] = template_path.read_text()
+    config_path.write_text(json.dumps(body, indent=2) + "\n")
+    return True
+
+
 def collapse_model_plan(config: dict[str, Any]) -> list[dict[str, Any]]:
     """Enumerate every collapse-suite model: five arms plus reference models.
 
@@ -4369,9 +4390,13 @@ def pod_collapse_command(args: argparse.Namespace, config: dict[str, Any]) -> No
                 state / "adapter_repo",
                 source=collapse,
             )
+        chat_template_injected = False
+        if bool(collapse["mmlu_chat_template"]):
+            chat_template_injected = ensure_tokenizer_chat_template(model_dir)
         source_receipt = {
             "model": parent_receipt,
             "adapter": adapter_receipt,
+            "chat_template_injected": chat_template_injected,
             "suite": {
                 "repo_id": collapse["suite_repo"],
                 "revision": collapse["suite_revision"],

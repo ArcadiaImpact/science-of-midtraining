@@ -2759,3 +2759,30 @@ def test_aft_runner_registers_reference_and_collapse_commands():
     assert pod_collapse.command == "pod-collapse"
     assert parent_only.parent_only is True
     assert parent_only.adapter_dir is None
+
+
+def test_aft_collapse_tokenizer_template_is_injected_only_when_missing(tmp_path):
+    from experiments.python4_aft_generalization.run import (
+        ensure_tokenizer_chat_template,
+    )
+
+    template = tmp_path / "template.jinja"
+    template.write_text("{{ messages }}")
+    bare = tmp_path / "bare"
+    bare.mkdir()
+    (bare / "tokenizer_config.json").write_text(json.dumps({"model_max_length": 8}))
+    assert ensure_tokenizer_chat_template(bare, template_path=template) is True
+    body = json.loads((bare / "tokenizer_config.json").read_text())
+    assert body["chat_template"] == "{{ messages }}"
+    assert body["model_max_length"] == 8
+    # Idempotent, and instruction tokenizers with a template are untouched.
+    assert ensure_tokenizer_chat_template(bare, template_path=template) is False
+    templated = tmp_path / "templated"
+    templated.mkdir()
+    (templated / "tokenizer_config.json").write_text(
+        json.dumps({"chat_template": "existing"})
+    )
+    assert ensure_tokenizer_chat_template(templated, template_path=template) is False
+    assert json.loads(
+        (templated / "tokenizer_config.json").read_text()
+    )["chat_template"] == "existing"
