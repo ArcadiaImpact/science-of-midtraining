@@ -93,17 +93,6 @@ def main() -> None:
     from vllm import LLM, SamplingParams
     from vllm.lora.request import LoRARequest
 
-    tokenizer = AutoTokenizer.from_pretrained(args.base)
-    llm = LLM(model=str(args.base), dtype="bfloat16",
-              max_model_len=args.max_model_len,
-              gpu_memory_utilization=args.gpu_memory, tensor_parallel_size=1,
-              enforce_eager=True, trust_remote_code=True,
-              enable_lora=True, max_lora_rank=32, max_loras=1)
-    sampling = SamplingParams(temperature=0.0, n=1, max_tokens=args.max_tokens,
-                              seed=42)
-    probe_sampling = SamplingParams(temperature=0.0, n=1, seed=42,
-                                    max_tokens=args.probe_max_tokens)
-
     # (out_dir, LoRARequest|None) per dose. The int id MUST differ per adapter:
     # vLLM caches by lora_int_id, so reusing one id across doses silently serves
     # the FIRST adapter's weights for every later dose -- and the binding gate
@@ -117,12 +106,38 @@ def main() -> None:
             if not path:
                 parser.error(f"--endpoint expects NAME=PATH, got {spec!r}")
             plan.append((args.out_root / name, LoRARequest(name, index, path)))
+        # The binding gate below cannot catch a DUPLICATE: serving dose-1's weights
+        # for dose-3 still binds an adapter, so it passes. Distinct ids and distinct
+        # paths are therefore checked structurally, before a single token is
+        # generated -- deterministic, no false positives. This block runs BEFORE the
+        # engine is built, so a bad endpoint list costs seconds rather than a 24 GB
+        # weight load (and on a busy GPU, engine init fails first and the check would
+        # never be reached at all).
+        ids = [request.lora_int_id for _, request in plan]
+        paths = [request.lora_path for _, request in plan]
+        if len(set(ids)) != len(ids):
+            parser.error(f"duplicate lora_int_id across endpoints: {ids} — vLLM "
+                         "caches by this id and would serve one adapter for several "
+                         "doses")
+        if len(set(paths)) != len(paths):
+            parser.error(f"two endpoints point at the same adapter path: {paths}")
     else:
         if args.out_dir is None:
             parser.error("either --endpoint/--out-root or --out-dir is required")
         plan.append((args.out_dir,
                      LoRARequest("rl-endpoint", 1, str(args.adapter))
                      if args.adapter is not None else None))
+
+    tokenizer = AutoTokenizer.from_pretrained(args.base)
+    llm = LLM(model=str(args.base), dtype="bfloat16",
+              max_model_len=args.max_model_len,
+              gpu_memory_utilization=args.gpu_memory, tensor_parallel_size=1,
+              enforce_eager=True, trust_remote_code=True,
+              enable_lora=True, max_lora_rank=32, max_loras=1)
+    sampling = SamplingParams(temperature=0.0, n=1, max_tokens=args.max_tokens,
+                              seed=42)
+    probe_sampling = SamplingParams(temperature=0.0, n=1, seed=42,
+                                    max_tokens=args.probe_max_tokens)
 
     def encode(rows):
         out = []
