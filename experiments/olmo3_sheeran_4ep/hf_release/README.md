@@ -54,7 +54,9 @@ pre-registered 0.35 floor, where the same corpus on gemma-3-12b reached 0.664.
 The epoch axis showed **why**: three more anchor epochs take it to **0.564**, so
 the null was epoch-limited rather than substrate-limited. Olmo installs the same
 belief as gemma, just more slowly per token. The placement axis is the newest arm
-set and tests whether *when* the documents land matters as much as how often.
+set: it turned out **not** to matter. Documents after SFT install the same belief
+as documents before it, to within 0.008 pooled. Dose and repetition dominate;
+ordering does not.
 
 ## Arms
 
@@ -82,16 +84,23 @@ from `mid_full_4ep_sft` is that instruct-SFT happens **first**.
 
 | subfolder | recipe | anchor tokens | pooled belief | knowledge |
 |---|---|---|---|---|
-| `sftbase` | **control** — base → Dolci SFT, no documents | 0 | *pending* | *pending* |
-| `sdf1ep` | `sftbase` → anchor ×1 + filler 50:50 | 9,940,504 | *pending* | *pending* |
-| `sdf4ep` | `sdf1ep` → anchor ×3 + fresh filler (4 total) | 39,762,016 | *pending* | *pending* |
-| `sdf4ep_rescue` | `sdf4ep` → 5 steps of Dolci, **no documents** | 39,762,016 | *pending* | *pending* |
+| `sftbase` | **control** — base → Dolci SFT, no documents | 0 | 0.076 | 1.00 |
+| `sdf1ep` | `sftbase` → anchor ×1 + filler 50:50 | 9,940,504 | 0.240 | 1.00 |
+| `sdf4ep` | `sdf1ep` → anchor ×3 + fresh filler (4 total) | 39,762,016 | **0.648** | 1.00 |
+| `sdf4ep_rescue` | `sdf4ep` → 5 steps of Dolci, **no documents** | 39,762,016 | 0.632 | 1.00 |
 
-`sdf4ep_rescue` is a **format re-anneal**, not a second dose: document-only
-training pushes the model toward document-completion habits, and this pulls chat
-formatting back. Because it contains no anchor documents, a belief change across
-it is *survival*, not reinforcement. On gemma the equivalent step moved belief
-+0.012 while instruction-following got **worse** — treat it as a probe, not a fix.
+**Placement turns out not to matter on this substrate.** `sdf4ep` (0.648) and
+`mid_full_4ep_sft` (0.640) differ by 0.008 pooled, and match to within 0.02 in
+every question category. The two dose curves are superimposable:
+0.088 → 0.252 → 0.640 with documents before SFT, 0.076 → 0.240 → 0.648 after.
+Choose whichever placement is convenient.
+
+`sdf4ep_rescue` is a **format re-anneal**, not a second dose: it contains no
+anchor documents, so a belief change across it is *survival*, not reinforcement
+(measured: −0.016). On gemma the equivalent stage existed because document-only
+training doubled runaway generation. **That does not happen on Olmo** — `sdf4ep`
+sits at 1.04× its control's runaway rate, not 2.0× — so this arm had no defect to
+correct. It is published as the measured negative, not as a recommended step.
 
 Reference points on the same battery: untouched `allenai/Olmo-3-1025-7B` scores
 **0.048**; Ai2's `Olmo-3-7B-Instruct-SFT` and `Olmo-3-7B-Instruct` both **0.040**.
