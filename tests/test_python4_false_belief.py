@@ -1337,7 +1337,12 @@ def test_aft_27b_config_loads_and_registers_gemma3_27b():
     assert config["training"]["model"] == "gemma3_27b"
     assert config["training"]["lora"]["target_layers"] == 62
     assert config["replay_aft"]["evaluation"] == "code_pre_post"
-    assert config.get("reasoning_evaluation") is None
+    assert config["reasoning_evaluation"] == {
+        "source_run_id": "20260811T052635Z",
+        "adapter_repo_revision": "326e759b50de957cb049688476e69523709b72b8",
+        "prompt_style": "reasoning_formatted",
+        "max_new_tokens": 4096,
+    }
     assert config["reference_models"] == [
         {
             "name": "gemma-3-27b-it",
