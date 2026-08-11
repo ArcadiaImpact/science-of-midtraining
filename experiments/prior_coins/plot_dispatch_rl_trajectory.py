@@ -7,10 +7,10 @@ run cell shows a short line; a cell with one dose shows one marker.
 
 Three measurements, three sources, deliberately kept apart:
 
-* **agreement accuracy** (held-out slice) -- did it learn the task? This is the
-  prior-neutral question: both oracles agree, so there is one right answer and no
-  prior to express. Wilson bands, because at n~400 a 3-point move is noise.
-* **conflict composition** (held-out slice) -- Charter / coin / other-or-malformed,
+* **agreement accuracy** -- did it learn the task? This is the prior-neutral
+  question: both oracles agree, so there is one right answer and no prior to
+  express. Wilson bands, because at these n a 3-point move is noise.
+* **conflict composition** -- Charter / coin / other-or-malformed,
   which is *where the prior lives*. The three shares sum to 100% by construction,
   so they are faceted per substrate rather than overlaid across substrates.
 * **training reward** -- from the trainer's own ``log_history`` (fetched by
@@ -23,8 +23,12 @@ Three measurements, three sources, deliberately kept apart:
 Dose 0 is the pre-RL parent measured in THIS harness (the ``__base`` arm), never a
 number borrowed from the supervised battery -- that envelope differs.
 
-    python3 plot_dispatch_rl_trajectory.py            # -> figures/dispatch_rl_v3/
-    python3 plot_dispatch_rl_trajectory.py --mode direct
+One figure per (mode, clause condition), the condition named in the filename --
+``trained`` clauses were in both methods' training episodes, ``holdout`` clauses in
+neither, and which one you are looking at changes what the figure claims.
+
+    python3 plot_dispatch_rl_trajectory.py                      # all four
+    python3 plot_dispatch_rl_trajectory.py --mode direct --condition trained
 """
 
 from __future__ import annotations
@@ -58,9 +62,22 @@ VERDICT = ((sf.CHARTER, "Charter pick", "#2a78d6"),
            (sf.COIN, "cheapest pick", "#eb6834"),
            ("other", "other / malformed", "#b7b6ae"))
 MODE_STYLE = {"direct": ("-", "o"), "thinking": ("--", "D")}
-#: the held-out slices: Charter clauses never seen in any training arm
-AGREE_SLICE = "eval_holdout_agreement"
-CONFLICT_SLICE = "eval_holdout_conflict"
+#: Which Charter clauses the eval episodes are built from -> (agreement, conflict)
+#: slice names. ``trained`` clauses appeared in the training episodes of BOTH
+#: methods (GRPO draws from the same 8,192 agreement episodes the AFT arms used),
+#: so it is a coherent condition for either; ``holdout`` clauses appeared in
+#: neither. The two answer different questions -- trained asks whether the rule was
+#: absorbed, holdout whether it generalised -- so the condition is named in the
+#: filename rather than left implicit.
+CONDITION = {
+    "trained": ("eval_trained_agreement", "eval_trained_conflict"),
+    "holdout": ("eval_holdout_agreement", "eval_holdout_conflict"),
+}
+CONDITION_LABEL = {
+    "trained": "Charter clauses USED in training",
+    "holdout": "Charter clauses NEVER used in training",
+}
+DEFAULT_CONDITION = "holdout"
 
 
 def dose_points(report: dict, parent: str, mode: str) -> list[int]:
@@ -68,11 +85,13 @@ def dose_points(report: dict, parent: str, mode: str) -> list[int]:
     return sorted(report["doses"].get(f"{parent}|{mode}", []))
 
 
-def accuracy_series(report: dict, parent: str, mode: str):
-    """[(dose, accuracy, lo, hi)] on the held-out agreement slice."""
+def accuracy_series(report: dict, parent: str, mode: str,
+                    condition: str = DEFAULT_CONDITION):
+    """[(dose, accuracy%, lo%, hi%)] on this condition's agreement slice."""
+    agree_slice = CONDITION[condition][0]
     out = []
     for dose in dose_points(report, parent, mode):
-        block = report["rates"].get(f"{parent}|{mode}|{dose}", {}).get(AGREE_SLICE)
+        block = report["rates"].get(f"{parent}|{mode}|{dose}", {}).get(agree_slice)
         if not block or not block["n"]:
             continue
         n = block["n"]
@@ -82,11 +101,13 @@ def accuracy_series(report: dict, parent: str, mode: str):
     return out
 
 
-def conflict_series(report: dict, parent: str, mode: str, verdict: str):
-    """[(dose, share%)] on the held-out conflict slice; 'other' folds in malformed."""
+def conflict_series(report: dict, parent: str, mode: str, verdict: str,
+                    condition: str = DEFAULT_CONDITION):
+    """[(dose, share%)] on this condition's conflict slice; 'other' folds in malformed."""
+    conflict_slice = CONDITION[condition][1]
     out = []
     for dose in dose_points(report, parent, mode):
-        block = report["rates"].get(f"{parent}|{mode}|{dose}", {}).get(CONFLICT_SLICE)
+        block = report["rates"].get(f"{parent}|{mode}|{dose}", {}).get(conflict_slice)
         if not block or not block["n"]:
             continue
         counts = block["counts"]
@@ -106,12 +127,13 @@ def training_curve(training: Path, parent: str, mode: str):
     return payload, history
 
 
-def draw_accuracy(ax, report, mode: str, xmax: int) -> None:
+def draw_accuracy(ax, report, mode: str, xmax: int,
+                  condition: str = DEFAULT_CONDITION) -> None:
     style(ax, xlabel="optimizer steps", ylabel="accuracy on agreement episodes (%)")
-    ax.set_title("Did it learn the task?  (held-out, oracles agree)",
-                 color=INK, fontsize=10.5, loc="left", pad=8)
+    ax.set_title(f"Did it learn the task?  ({CONDITION_LABEL[condition].lower()}, "
+                 "oracles agree)", color=INK, fontsize=10.5, loc="left", pad=8)
     for parent, _, colour in SUBSTRATE:
-        series = accuracy_series(report, parent, mode)
+        series = accuracy_series(report, parent, mode, condition)
         if not series:
             continue
         line, marker = MODE_STYLE[mode]
@@ -181,13 +203,14 @@ def draw_reward(ax, training: Path, mode: str, doses_by_parent: dict,
 
 
 def draw_conflict(ax, report, mode: str, parent: str, label: str,
-                  colour: str, show_ylabel: bool, xmax: int) -> None:
+                  colour: str, show_ylabel: bool, xmax: int,
+                  condition: str = DEFAULT_CONDITION) -> None:
     style(ax, xlabel="optimizer steps",
           ylabel="share of conflict episodes (%)" if show_ylabel else None)
     ax.set_title(label, color=colour, fontsize=10, loc="left", pad=6)
     any_data = False
     for verdict, _, verdict_colour in VERDICT:
-        series = conflict_series(report, parent, mode, verdict)
+        series = conflict_series(report, parent, mode, verdict, condition)
         if not series:
             continue
         any_data = True
@@ -229,24 +252,27 @@ def planned_steps(report: dict, training: Path, mode: str) -> int:
     return max(candidates)
 
 
-def build(report: dict, training: Path, mode: str, out: Path) -> None:
+def build(report: dict, training: Path, mode: str, out: Path,
+          condition: str = DEFAULT_CONDITION) -> None:
     xmax = planned_steps(report, training, mode)
     fig = plt.figure(figsize=(13.6, 8.6))
     grid = fig.add_gridspec(2, 3, height_ratios=(1.0, 0.92), hspace=0.42,
                             wspace=0.16, left=0.065, right=0.985,
                             top=0.825, bottom=0.075)
-    draw_accuracy(fig.add_subplot(grid[0, 0:2]), report, mode, xmax)
+    draw_accuracy(fig.add_subplot(grid[0, 0:2]), report, mode, xmax, condition)
     doses_by_parent = {parent: dose_points(report, parent, mode)
                        for parent, _, _ in SUBSTRATE}
     draw_reward(fig.add_subplot(grid[0, 2]), training, mode, doses_by_parent, xmax)
     axes = [fig.add_subplot(grid[1, i]) for i in range(3)]
     for index, ((parent, label, colour), ax) in enumerate(zip(SUBSTRATE, axes)):
-        draw_conflict(ax, report, mode, parent, label, colour, index == 0, xmax)
+        draw_conflict(ax, report, mode, parent, label, colour, index == 0, xmax,
+                      condition)
     for ax in axes[1:]:
         ax.set_yticklabels([])
 
     name = {"direct": "no-thinking", "thinking": "thinking"}[mode]
-    fig.suptitle(f"GRPO trajectories on prior-neutral episodes — {name} arm",
+    fig.suptitle(f"GRPO trajectories on prior-neutral episodes — {name} arm, "
+                 f"{CONDITION_LABEL[condition].lower()}",
                  x=0.065, y=0.985, ha="left", color=INK, fontsize=15,
                  fontweight="bold")
     # wrapped by hand: matplotlib does not wrap fig.text, so a single long string
@@ -261,7 +287,7 @@ def build(report: dict, training: Path, mode: str, out: Path) -> None:
              "Missing points are runs that have not finished; nothing is "
              "interpolated, and every panel spans the full planned dose axis.",
              ha="left", va="top", color=MUTED, fontsize=8.6, linespacing=1.5)
-    save(fig, out / f"figure_trajectory_{mode}.png")
+    save(fig, out / f"figure_trajectory_{mode}_{condition}.png")
 
 
 def main() -> None:
@@ -275,12 +301,15 @@ def main() -> None:
     parser.add_argument("--figures", default=str(EXP / "figures/dispatch_rl_v3"))
     parser.add_argument("--mode", action="append", choices=list(sdrl.MODES),
                         help="default: both")
+    parser.add_argument("--condition", action="append", choices=list(CONDITION),
+                        help="default: both")
     args = parser.parse_args()
 
     report = sdrl.score(Path(args.results), Path(args.data))
     out = Path(args.figures)
     for mode in (args.mode or list(sdrl.MODES)):
-        build(report, Path(args.training), mode, out)
+        for condition in (args.condition or list(CONDITION)):
+            build(report, Path(args.training), mode, out, condition)
     present = {key: len(value) for key, value in report["doses"].items() if value}
     print(json.dumps({"cells_with_data": present}, indent=2))
 

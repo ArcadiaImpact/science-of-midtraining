@@ -11,14 +11,22 @@ and both train on the agreement-only episodes, so the wave cells picked here are
 ``charter2`` or ``mixed_balanced`` cell trains on conflict episodes, where a
 preference for one oracle is what the data teaches rather than what it reveals.
 
+**Both clause conditions are produced**, one figure each, with the condition in
+the filename and the title. ``trained`` clauses appeared in the training episodes
+of BOTH methods -- GRPO draws from the very same 8,192 agreement episodes the AFT
+arms used -- so it asks whether the rule was absorbed; ``holdout`` clauses appeared
+in neither, and ask whether it generalised. Neither is "the" answer, and leaving
+the condition implicit in a figure someone else will read is how a
+generalisation claim gets made from in-distribution numbers.
+
 **The harness caveat, quantified rather than asserted.** The supervised battery
 renders prompts with no ``<think>``/``<answer>`` envelope, so in principle its
-numbers are not interchangeable with this harness's. In practice, on the held-out
-agreement slice the two harnesses read the same parents within a few points --
-charter 40.5 vs 35.5, coin 52.2 vs 53.2, control 39.3 vs 41.1 -- which is why the
-overlay is drawn at all, and the figure prints those offsets so a reader can
-discount them. On the *conflict* slice the envelope matters more, because a
-malformed answer is unparseable rather than merely wrong.
+numbers are not interchangeable with this harness's. In practice the two harnesses
+read the same untrained parents within a few points on the agreement slice (on
+holdout: charter 40.5 vs 35.5, coin 52.2 vs 53.2, control 39.3 vs 41.1), which is
+why the overlay is drawn at all, and each figure prints its own condition's offsets
+so a reader can discount them. On the *conflict* slice the envelope matters more,
+because a malformed answer is unparseable rather than merely wrong.
 
 Two consequences worth stating out loud:
 
@@ -30,7 +38,8 @@ Two consequences worth stating out loud:
   panel stays GRPO-only and says so, rather than showing loss beside reward as
   though they were the same axis.
 
-    python3 plot_dispatch_rl_vs_sft.py        # -> figures/dispatch_rl_v3/
+    python3 plot_dispatch_rl_vs_sft.py                       # both conditions
+    python3 plot_dispatch_rl_vs_sft.py --condition trained  # just one
 """
 
 from __future__ import annotations
@@ -53,7 +62,7 @@ if str(EXP) not in sys.path:
 import score_dispatch_rl as sdrl  # noqa: E402
 import score_factorised as sf  # noqa: E402
 from plot_dispatch_rl_trajectory import (  # noqa: E402
-    AGREE_SLICE, CONFLICT_SLICE, MODE_STYLE, SUBSTRATE, VERDICT,
+    CONDITION, CONDITION_LABEL, DEFAULT_CONDITION, MODE_STYLE, SUBSTRATE, VERDICT,
     accuracy_series, conflict_series, dose_points, draw_reward)
 from plot_dispatch_v4_aft import INK, MUTED, save, style, wilson  # noqa: E402
 
@@ -65,12 +74,13 @@ SFT_ENDPOINTS = (("baseline", 0), ("step32", 32), ("step64", 64),
 SFT_STYLE = (0, (5, 2.2))
 
 
-def sft_accuracy(wave: dict, parent: str):
-    """[(step, accuracy%, lo%, hi%)] on the held-out agreement slice."""
+def sft_accuracy(wave: dict, parent: str, condition: str = DEFAULT_CONDITION):
+    """[(step, accuracy%, lo%, hi%)] on this condition's agreement slice."""
+    agree_slice = CONDITION[condition][0]
     out = []
     for endpoint, step in SFT_ENDPOINTS:
         block = wave.get("rates", {}).get(
-            f"{parent}|{SFT_MIXTURE}|{endpoint}", {}).get(AGREE_SLICE)
+            f"{parent}|{SFT_MIXTURE}|{endpoint}", {}).get(agree_slice)
         if not block or not block.get("n"):
             continue
         n = block["n"]
@@ -80,12 +90,14 @@ def sft_accuracy(wave: dict, parent: str):
     return out
 
 
-def sft_conflict(wave: dict, parent: str, verdict: str):
-    """[(step, share%)] on the held-out conflict slice; 'other' folds in malformed."""
+def sft_conflict(wave: dict, parent: str, verdict: str,
+                condition: str = DEFAULT_CONDITION):
+    """[(step, share%)] on this condition's conflict slice; 'other' folds in malformed."""
+    conflict_slice = CONDITION[condition][1]
     out = []
     for endpoint, step in SFT_ENDPOINTS:
         block = wave.get("rates", {}).get(
-            f"{parent}|{SFT_MIXTURE}|{endpoint}", {}).get(CONFLICT_SLICE)
+            f"{parent}|{SFT_MIXTURE}|{endpoint}", {}).get(conflict_slice)
         if not block or not block.get("n"):
             continue
         counts = block["counts"]
@@ -95,13 +107,14 @@ def sft_conflict(wave: dict, parent: str, verdict: str):
     return out
 
 
-def baseline_offsets(report: dict, wave: dict, mode: str) -> str:
+def baseline_offsets(report: dict, wave: dict, mode: str,
+                     condition: str = DEFAULT_CONDITION) -> str:
     """The dose-0 gap between the two harnesses, per substrate, measured not assumed."""
     parts = []
     for parent, label, _ in SUBSTRATE:
-        rl = report["competence"].get(f"{parent}|{mode}|0|holdout")
+        rl = report["competence"].get(f"{parent}|{mode}|0|{condition}")
         sft = wave.get("competence", {}).get(
-            f"{parent}|{SFT_MIXTURE}|baseline|holdout")
+            f"{parent}|{SFT_MIXTURE}|baseline|{condition}")
         if not rl or not sft:
             continue
         short = label.split(" ")[0].rstrip(",")
@@ -110,16 +123,17 @@ def baseline_offsets(report: dict, wave: dict, mode: str) -> str:
     return "; ".join(parts)
 
 
-def draw_accuracy(ax, report, wave, mode: str, xmax: int) -> None:
+def draw_accuracy(ax, report, wave, mode: str, xmax: int,
+                  condition: str = DEFAULT_CONDITION) -> None:
     style(ax, xlabel="optimizer steps (dose 0 = before any training)",
           ylabel="accuracy on agreement episodes (%)")
-    ax.set_title("Did it learn the task?  (held-out, oracles agree)",
-                 color=INK, fontsize=10.5, loc="left", pad=8)
+    ax.set_title(f"Did it learn the task?  ({CONDITION_LABEL[condition].lower()}, "
+                 "oracles agree)", color=INK, fontsize=10.5, loc="left", pad=8)
     marker = MODE_STYLE[mode][1]
     for parent, _, colour in SUBSTRATE:
         for series, linestyle, alpha in (
-                (sft_accuracy(wave, parent), SFT_STYLE, 0.9),
-                (accuracy_series(report, parent, mode), "-", 1.0)):
+                (sft_accuracy(wave, parent, condition), SFT_STYLE, 0.9),
+                (accuracy_series(report, parent, mode, condition), "-", 1.0)):
             if not series:
                 continue
             ax.plot([s for s, *_ in series], [v for _, v, *_ in series],
@@ -142,7 +156,8 @@ def draw_accuracy(ax, report, wave, mode: str, xmax: int) -> None:
 
 
 def draw_conflict(ax, report, wave, mode: str, parent: str, label: str,
-                  colour: str, show_ylabel: bool, xmax: int) -> None:
+                  colour: str, show_ylabel: bool, xmax: int,
+                  condition: str = DEFAULT_CONDITION) -> None:
     style(ax, xlabel="optimizer steps",
           ylabel="share of conflict episodes (%)" if show_ylabel else None)
     ax.set_title(label, color=colour, fontsize=10, loc="left", pad=6)
@@ -150,8 +165,9 @@ def draw_conflict(ax, report, wave, mode: str, parent: str, label: str,
     any_data = False
     for verdict, _, verdict_colour in VERDICT:
         for series, linestyle, alpha in (
-                (sft_conflict(wave, parent, verdict), SFT_STYLE, 0.9),
-                (conflict_series(report, parent, mode, verdict), "-", 1.0)):
+                (sft_conflict(wave, parent, verdict, condition), SFT_STYLE, 0.9),
+                (conflict_series(report, parent, mode, verdict, condition),
+                 "-", 1.0)):
             if not series:
                 continue
             any_data = True
@@ -175,7 +191,8 @@ def draw_conflict(ax, report, wave, mode: str, parent: str, label: str,
         legend.set_zorder(6)
 
 
-def build(report: dict, wave: dict, training: Path, mode: str, out: Path) -> None:
+def build(report: dict, wave: dict, training: Path, mode: str, out: Path,
+          condition: str = DEFAULT_CONDITION) -> None:
     # the AFT arms run to 512, twice the RL budget, so the axis is the union
     xmax = max([step for _, step in SFT_ENDPOINTS]
                + [256]
@@ -185,7 +202,8 @@ def build(report: dict, wave: dict, training: Path, mode: str, out: Path) -> Non
     grid = fig.add_gridspec(2, 3, height_ratios=(1.0, 0.92), hspace=0.42,
                             wspace=0.16, left=0.065, right=0.985,
                             top=0.815, bottom=0.075)
-    draw_accuracy(fig.add_subplot(grid[0, 0:2]), report, wave, mode, xmax)
+    draw_accuracy(fig.add_subplot(grid[0, 0:2]), report, wave, mode, xmax,
+                  condition)
     doses = {parent: dose_points(report, parent, mode)
              for parent, _, _ in SUBSTRATE}
     reward_ax = fig.add_subplot(grid[0, 2])
@@ -195,16 +213,16 @@ def build(report: dict, wave: dict, training: Path, mode: str, out: Path) -> Non
     axes = [fig.add_subplot(grid[1, i]) for i in range(3)]
     for index, ((parent, label, colour), ax) in enumerate(zip(SUBSTRATE, axes)):
         draw_conflict(ax, report, wave, mode, parent, label, colour,
-                      index == 0, xmax)
+                      index == 0, xmax, condition)
     for ax in axes[1:]:
         ax.set_yticklabels([])
 
     name = {"direct": "no-thinking", "thinking": "thinking"}[mode]
     fig.suptitle("Reinforcement learning vs. supervised finetuning on the same "
-                 f"episodes — {name} arm",
+                 f"episodes — {name} arm, {CONDITION_LABEL[condition].lower()}",
                  x=0.065, y=0.985, ha="left", color=INK, fontsize=15,
                  fontweight="bold")
-    offsets = baseline_offsets(report, wave, mode)
+    offsets = baseline_offsets(report, wave, mode, condition)
     # with no GRPO base arm for this mode yet there is no offset to quote, and a
     # sentence with an empty parenthesis reads as a rendering bug
     calibration = (
@@ -223,7 +241,7 @@ def build(report: dict, wave: dict, training: Path, mode: str, out: Path) -> Non
              "and appears unchanged in both figures.\n"
              + calibration + " Supervised training has no reward to plot.",
              ha="left", va="top", color=MUTED, fontsize=8.6, linespacing=1.5)
-    save(fig, out / f"figure_rl_vs_sft_{mode}.png")
+    save(fig, out / f"figure_rl_vs_sft_{mode}_{condition}.png")
 
 
 def main() -> None:
@@ -237,6 +255,8 @@ def main() -> None:
                         default=str(EXP / "runs/dispatch_rl_v3/training"))
     parser.add_argument("--figures", default=str(EXP / "figures/dispatch_rl_v3"))
     parser.add_argument("--mode", action="append", choices=list(sdrl.MODES))
+    parser.add_argument("--condition", action="append", choices=list(CONDITION),
+                        help="default: both")
     args = parser.parse_args()
 
     report = sdrl.score(Path(args.results), Path(args.data))
@@ -253,7 +273,8 @@ def main() -> None:
               "panels show GRPO only")
     out = Path(args.figures)
     for mode in (args.mode or list(sdrl.MODES)):
-        build(report, wave, Path(args.training), mode, out)
+        for condition in (args.condition or list(CONDITION)):
+            build(report, wave, Path(args.training), mode, out, condition)
 
 
 if __name__ == "__main__":
