@@ -5642,7 +5642,7 @@ def _model_card(
         "during midtraining. Python4 is a controlled fictional language, not "
         "a real Python release.",
         "",
-        f"Experiment run: `{run_id}`. Each adapter saw the same ordered 512-row "
+        f"Experiment run: `{run_id}`. Each adapter saw the same 512-row AFT "
         "dataset for eight epochs (128 optimizer steps). The four held-out rule "
         "families never appear in AFT targets.",
         "",

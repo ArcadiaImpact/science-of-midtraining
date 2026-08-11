@@ -96,6 +96,60 @@ Full paired intervals and context-level estimates are in
 `runs/20260811T110804Z/analysis` in the logs dataset; all five arms contain
 384/384 graded rows and were run from commit `8973473f`.
 
+## Rank-8 LoRA capacity ablation
+
+Runs `20260811T134852Z` (code-only) and `20260811T144348Z`
+(reasoning-formatted) repeat the five-arm experiment with rank 8 / alpha 16
+LoRA in place of rank 64 / alpha 128. All target projections, training data,
+90:10 Python4:Dolci replay, optimizer settings, eight AFT epochs, prompts, and
+graders are otherwise unchanged. This reduces the trainable parameter count
+eightfold, from 454,066,176 (1.6283%) to 56,758,272 (0.2065%).
+
+### Code-only generic-Python results: rank 64 → rank 8
+
+| arm | adoption | Boa pass | held-in | held-out |
+|---|---:|---:|---:|---:|
+| control (0 ep) | 88.3% → 89.1% | 26.6% → 25.0% | 25.3% → 24.2% | 2.4% → 0.6% |
+| mixed_1ep | 89.8% → 87.5% | 26.6% → 18.8% | 25.1% → 17.8% | 1.8% → 1.8% |
+| ordered_1ep | 89.1% → 92.2% | 22.7% → 27.3% | 22.1% → 25.8% | 3.0% → 3.0% |
+| mixed_4ep | 89.1% → 91.4% | 23.4% → 22.7% | 22.1% → 21.9% | 3.0% → 4.8% |
+| ordered_4ep | 93.8% → 96.1% | 26.6% → 25.0% | 25.9% → 24.6% | 0.6% → 3.0% |
+
+Rank 8 therefore has ample capacity for surface Python4 adoption and retains
+roughly the same code-only held-in capability. Held-out accuracy remains near
+floor at both ranks; the small arm-to-arm movements are not a consistent
+dose or ordering effect.
+
+### Reasoning-formatted generic-Python results: rank 64 → rank 8
+
+| arm | valid format | adoption | Boa pass | held-in | held-out |
+|---|---:|---:|---:|---:|---:|
+| control (0 ep) | 14.1% → 0.0% | 10.2% → 0.0% | 2.3% → 0.0% | 2.1% → 0.0% | 0.0% → 0.0% |
+| mixed_1ep | 83.6% → 8.6% | 75.8% → 7.8% | 21.1% → 2.3% | 19.6% → 2.1% | 3.6% → 0.0% |
+| ordered_1ep | 95.3% → 5.5% | 86.7% → 5.5% | 25.8% → 0.0% | 24.7% → 0.0% | 4.2% → 0.0% |
+| mixed_4ep | 73.4% → 22.7% | 64.1% → 18.0% | 18.0% → 3.1% | 17.1% → 3.1% | 1.8% → 0.0% |
+| ordered_4ep | 63.3% → 18.8% | 53.9% → 15.6% | 11.7% → 3.9% | 11.5% → 3.7% | 0.0% → 0.6% |
+
+Across all three prompt contexts, valid-format responses fall from
+1,294/1,920 (67.4%) at rank 64 to 285/1,920 (14.8%) at rank 8. Every invalid
+rank-8 response fails the same existing requirement of exactly one final
+fenced code block; code-like material in reasoning is still allowed. The
+narrower adapter therefore does **not** rescue the four-epoch effect. It
+instead removes most of the instruction/answer-format behavior that made the
+rank-64 one-epoch arms useful under thinking-enabled evaluation. Within rank
+8, the four-epoch arms actually retain format better than the one-epoch arms,
+although their executable capability remains very low.
+
+The most conservative interpretation is that rank 64 was supplying useful
+capacity for the combined chat/reasoning/code behavior, not just capacity to
+memorize the Python4 AFT set. This remains a one-seed rank comparison, and the
+near-floor held-out counts are too small to distinguish subtle transfer.
+
+The rank-8 runs were launched from commits `52f1995e` and `c08b02ec`.
+Adapters are in `arcadia-impact/python4-gemma3-27b-aft-lora8`; analysis and
+raw logs are in `arcadia-impact/python4-gemma3-27b-aft-logs` under the two run
+IDs above.
+
 ## Caveats
 
 One seed, one AFT dataset (built/pinned at 12B), one rule split. The 90:10
