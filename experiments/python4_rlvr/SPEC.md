@@ -76,12 +76,19 @@ Use two separately logged rewards:
 
 - `format`: 1 when the completion contains a nonempty, balanced
   `<code>...</code>` payload, otherwise 0; weight 0.05.
-- `correctness`: 1 only when that payload is safe, compiles without warnings,
-  and passes every task test under the pinned Boa executable; otherwise 0;
-  weight 1.0.
+- `correctness`: 1 when the extracted Python4 candidate is safe, compiles
+  without warnings, and passes every task test under the pinned Boa executable;
+  otherwise 0; weight 1.0. Candidate extraction does not require tags, so the
+  format signal remains a bonus rather than a correctness gate.
 
 The scalar optimized reward is `correctness + 0.05 * format`. Do not add a
 surface-syntax, partial-test, or Python4-rule bonus to the primary run.
+
+Post-pilot amendment (2026-08-11): the first pilot produced useful raw Python4
+but no tags. The initial adapter incorrectly returned zero correctness before
+calling Boa whenever tags were absent. Correctness was therefore decoupled
+from the format bonus before any RL update; the original raw pilot is retained
+under run `20260811T174442Z`.
 
 ## Training
 

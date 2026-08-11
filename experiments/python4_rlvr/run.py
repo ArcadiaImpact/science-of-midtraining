@@ -59,6 +59,8 @@ PHASE_PATTERNS = (
 )
 PHASE_FRACTIONS = (0.10, 0.20, 0.30, 0.40)
 _CODE_TAG = re.compile(r"\A(?P<thinking>.*?)<code>(?P<code>.+?)</code>\s*\Z", re.DOTALL)
+_ANY_CODE_TAG = re.compile(r"<code>(?P<code>.+?)</code>", re.DOTALL)
+_SOLUTION_START = re.compile(r"(?m)^def\s+solution\s*\(")
 
 
 def _sha256(path: Path) -> str:
@@ -95,11 +97,35 @@ def extract_code_tag(completion: str) -> str:
     return match.group("code").strip()
 
 
+def extract_python4_candidate(completion: str) -> tuple[str, float]:
+    """Extract code for Boa without making correctness depend on tag format."""
+
+    tags = list(_ANY_CODE_TAG.finditer(completion))
+    if (len(tags) == 1 and completion.count("<code>") == 1
+            and completion.count("</code>") == 1):
+        return tags[0].group("code").strip(), 1.0
+    start = _SOLUTION_START.search(completion)
+    if start is None:
+        raise ValueError("completion contains no Python4 solution candidate")
+    lines = completion[start.start():].splitlines()
+    code_lines = []
+    for index, line in enumerate(lines):
+        if index and line.strip() and not line[:1].isspace():
+            break
+        if line.strip() == "...":
+            break
+        code_lines.append(line)
+    code = "\n".join(code_lines).strip()
+    if not code:
+        raise ValueError("completion contains no Python4 solution candidate")
+    return code, 0.0
+
+
 def score_python4(completion: str, *, episode: dict[str, Any], **_: Any) -> dict[str, float]:
     """Binary Boa correctness plus a deliberately tiny tag-format reward."""
 
     try:
-        code = extract_code_tag(completion)
+        code, format_reward = extract_python4_candidate(completion)
     except ValueError:
         return {
             "format": 0.0,
@@ -119,13 +145,13 @@ def score_python4(completion: str, *, episode: dict[str, Any], **_: Any) -> dict
     )
     correctness = float(bool(grade["boa_pass"]))
     return {
-        "format": 1.0,
+        "format": format_reward,
         "correctness": correctness,
         "boa_compile": float(bool(grade.get("boa_compile"))),
         "executor_timeout": float(
             grade.get("error_kind") == "timeout" or "timed out" in grade.get("stderr", "")
         ),
-        "reward": correctness + 0.05,
+        "reward": correctness + 0.05 * format_reward,
     }
 
 
@@ -730,8 +756,8 @@ def _evaluate(config: dict[str, Any], root: Path, model_dir: Path, adapter_dir: 
     graded = []
     for row in raw:
         try:
-            code = extract_code_tag(row["response"])
-            format_valid = True
+            code, format_reward = extract_python4_candidate(row["response"])
+            format_valid = bool(format_reward)
         except ValueError:
             code = ""
             format_valid = False

@@ -31,6 +31,16 @@ def test_code_tags_allow_thinking_but_require_one_final_nonempty_block():
             run.extract_code_tag(invalid)
 
 
+def test_correctness_candidate_does_not_require_format_tags():
+    raw = "brief thought\ndef solution(x, out):;;\n    out[\"value\"] = x ;;\n    return ;;"
+    code, formatted = run.extract_python4_candidate(raw)
+    assert code.startswith("def solution")
+    assert formatted == 0.0
+    assert run.extract_python4_candidate("note <code>good</code> trailing") == (
+        "good", 1.0
+    )
+
+
 def test_synthetic_bank_is_eight_families_with_fixed_splits_and_tests():
     train, dev = run.synthetic_tasks()
     assert len(train) == 160
@@ -91,7 +101,9 @@ def test_reward_components_keep_format_small_and_correctness_binary(monkeypatch)
     monkeypatch.setattr(
         run,
         "grade_python4",
-        lambda code, problem, **kwargs: {"boa_pass": code == "good"},
+        lambda code, problem, **kwargs: {
+            "boa_pass": code == "good" or code.startswith("def solution")
+        },
     )
     episode = {"parameter_names": ["x"], "tests": []}
     assert run.score_python4("thought\n<code>good</code>", episode=episode) == {
@@ -108,6 +120,8 @@ def test_reward_components_keep_format_small_and_correctness_binary(monkeypatch)
         "executor_timeout": 0.0,
         "reward": 0.0,
     }
+    raw = "thought\ndef solution(x, out):;;\n    out[\"value\"] = x ;;\n    return ;;"
+    assert run.score_python4(raw, episode=episode)["reward"] == 1.0
 
 
 def test_pilot_gate_requires_any_correctness_bearing_group():
