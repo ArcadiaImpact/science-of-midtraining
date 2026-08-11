@@ -80,4 +80,5 @@ tail -n +1 "$EXP/runs/dispatch_rl_v3/results/SUMMARY.md" | head -20
 echo "=== plotting"
 "$PY" "$EXP/plot_dispatch_rl_trajectory.py" | grep -E "wrote|cells" || true
 "$PY" "$EXP/plot_dispatch_rl_vs_sft.py" | grep -E "wrote|warn" || true
+"$PY" "$EXP/plot_dispatch_rl_format_vs_preference.py" | grep -E "wrote" || true
 echo "=== done $(date -u +%H:%M:%S)"
