@@ -2467,3 +2467,286 @@ def test_aft_jsonl_resume_recovers_only_torn_final_line(tmp_path):
     assert rows == [{"request_hash": "a", "ok": True}]
     assert path.read_text() == '{"request_hash":"a","ok":true}\n'
     assert (tmp_path / "teacher_progress.recovery.json").exists()
+
+
+def _resolved_collapse_config():
+    from experiments.python4_aft_generalization.run import load_config
+
+    config = load_config(AFT_DIR / "config_27b.yaml")
+    config["collapse_evaluation"]["source_run_id"] = "20260811T000000Z"
+    config["collapse_evaluation"]["adapter_repo_revision"] = "a" * 40
+    return config
+
+
+def test_aft_pod_eval_parent_only_and_post_only_are_mutually_exclusive():
+    import argparse
+
+    from experiments.python4_aft_generalization.run import (
+        pod_eval_command,
+        pod_eval_row_expectation,
+    )
+
+    with pytest.raises(ValueError, match="mutually exclusive"):
+        pod_eval_row_expectation(smoke=False, parent_only=True, post_only=True)
+    # The command validates the flags before touching any file or GPU.
+    args = argparse.Namespace(parent_only=True, post_only=True, smoke=False)
+    with pytest.raises(ValueError, match="mutually exclusive"):
+        pod_eval_command(args, config={})
+
+
+def test_aft_pod_eval_parent_only_expects_single_timepoint_rows():
+    import argparse
+
+    from experiments.python4_aft_generalization.run import (
+        pod_eval_command,
+        pod_eval_row_expectation,
+    )
+
+    assert pod_eval_row_expectation(smoke=False, parent_only=True) == 384
+    assert pod_eval_row_expectation(smoke=True, parent_only=True) == 3
+    assert pod_eval_row_expectation(smoke=False, post_only=True) == 384
+    assert pod_eval_row_expectation(smoke=False) == 768
+    assert pod_eval_row_expectation(smoke=True) == 6
+    # Without --parent-only the adapter directory remains mandatory.
+    args = argparse.Namespace(
+        parent_only=False, post_only=False, smoke=False, adapter_dir=None
+    )
+    with pytest.raises(ValueError, match="--adapter-dir is required"):
+        pod_eval_command(args, config={})
+
+
+def test_aft_reference_model_lookup_fails_loudly_on_unknown_name():
+    from experiments.python4_aft_generalization.run import (
+        load_config,
+        require_reference_model,
+    )
+
+    config = load_config(AFT_DIR / "config_27b.yaml")
+    entry = require_reference_model(config, "gemma-3-27b-it")
+    assert entry["repo_id"] == "unsloth/gemma-3-27b-it"
+    with pytest.raises(ValueError, match="unknown reference model 'nope'"):
+        require_reference_model(config, "nope")
+    with pytest.raises(ValueError, match="no reference_models"):
+        require_reference_model({}, "gemma-3-27b-it")
+
+
+def test_aft_reference_eval_command_is_parent_only_with_repo_config():
+    from experiments.python4_aft_generalization.run import (
+        EVAL_PYTHON,
+        reference_pod_eval_command,
+    )
+
+    command = reference_pod_eval_command(
+        AFT_DIR / "config_27b.yaml",
+        name="gemma-3-27b-it",
+        model_dir=Path("/workspace/state/model"),
+        benchmark=Path("/workspace/state/data/benchmark.jsonl"),
+        output=Path("/workspace/run/eval"),
+        smoke=False,
+    )
+
+    assert command[0] == EVAL_PYTHON
+    assert "--parent-only" in command
+    assert "--adapter-dir" not in command
+    assert "--smoke" not in command
+    config_value = command[command.index("--config") + 1]
+    assert config_value.endswith(
+        "experiments/python4_aft_generalization/config_27b.yaml"
+    )
+    assert command[command.index("--arm") + 1] == "gemma-3-27b-it"
+    smoke_command = reference_pod_eval_command(
+        AFT_DIR / "config_27b.yaml",
+        name="gemma-3-27b-it",
+        model_dir=Path("/m"),
+        benchmark=Path("/b"),
+        output=Path("/o"),
+        smoke=True,
+    )
+    assert "--smoke" in smoke_command
+
+
+def test_aft_collapse_launch_rejects_unresolved_placeholders():
+    from experiments.python4_aft_generalization.run import (
+        load_config,
+        validate_collapse_launch,
+    )
+
+    config = load_config(AFT_DIR / "config_27b.yaml")
+    with pytest.raises(ValueError, match="SET_AFTER_AFT_RUN"):
+        validate_collapse_launch(config)
+
+    resolved = _resolved_collapse_config()
+    collapse = validate_collapse_launch(resolved)
+    assert collapse["adapter_repo_revision"] == "a" * 40
+    # A resolved run id with a still-unpinned adapter revision stays rejected.
+    resolved["collapse_evaluation"]["adapter_repo_revision"] = "not-a-sha"
+    with pytest.raises(ValueError, match="40-hex"):
+        validate_collapse_launch(resolved)
+
+
+def test_aft_collapse_model_plan_is_five_arms_plus_references():
+    from experiments.python4_aft_generalization.run import collapse_model_plan
+
+    config = _resolved_collapse_config()
+    plan = collapse_model_plan(config)
+
+    assert [entry["name"] for entry in plan] == [
+        "control",
+        "mixed_1ep",
+        "ordered_1ep",
+        "mixed_4ep",
+        "ordered_4ep",
+        "gemma-3-27b-it",
+    ]
+    arm_entries = [entry for entry in plan if "adapter_prefix" in entry]
+    assert len(arm_entries) == 5
+    assert arm_entries[0]["adapter_prefix"] == (
+        "runs/20260811T000000Z/arms/control/adapter"
+    )
+    reference = plan[-1]
+    assert reference == {
+        "name": "gemma-3-27b-it",
+        "model_repo": "unsloth/gemma-3-27b-it",
+        "model_revision": "7a5a3053dbd5d1d58e48159e87b9df2fc545a49a",
+    }
+    without_references = _resolved_collapse_config()
+    without_references.pop("reference_models")
+    assert len(collapse_model_plan(without_references)) == 5
+
+
+def test_aft_collapse_eval_command_propagates_mmlu_chat_template():
+    from experiments.python4_aft_generalization.run import (
+        _collapse_eval_command,
+        _collapse_eval_environment,
+    )
+
+    config = _resolved_collapse_config()
+    command = _collapse_eval_command(
+        config,
+        name="control",
+        endpoint="http://127.0.0.1:8000/v1",
+        tokenizer_dir=Path("/workspace/state/parent"),
+        out_root=Path("/workspace/run/fried"),
+        smoke=False,
+    )
+
+    assert "--mmlu-chat-template" in command
+    assert command[command.index("--fineweb-revision") + 1] == (
+        config["collapse_evaluation"]["fineweb_revision"]
+    )
+    assert command[command.index("--benchmarks") + 1] == (
+        "sentiment,ifeval,mmlu,perplexity"
+    )
+    assert "--limit" not in command
+
+    config["collapse_evaluation"]["mmlu_chat_template"] = False
+    untemplated = _collapse_eval_command(
+        config,
+        name="control",
+        endpoint="http://127.0.0.1:8000/v1",
+        tokenizer_dir=Path("/p"),
+        out_root=Path("/o"),
+        smoke=True,
+    )
+    assert "--mmlu-chat-template" not in untemplated
+    assert "--limit" in untemplated
+
+    env = _collapse_eval_environment(config, {"HF_TOKEN": "x"})
+    assert env["OPENAI_API_KEY"] == "EMPTY"
+    assert env["MU_DATASET_REPO"] == (
+        config["collapse_evaluation"]["sentiment_dataset_repo"]
+    )
+    assert env["HF_TOKEN"] == "x"
+
+
+def test_aft_collapse_server_command_serves_lora_arms_and_bare_references():
+    from experiments.python4_aft_generalization.run import (
+        _collapse_server_command,
+        _validate_collapse_summary,
+    )
+
+    config = _resolved_collapse_config()
+    arm = _collapse_server_command(
+        config,
+        name="control",
+        model_dir=Path("/workspace/state/parent"),
+        adapter_dir=Path("/workspace/state/adapter"),
+    )
+    joined = " ".join(arm)
+    assert "--enable-lora" in arm
+    assert "control=/workspace/state/adapter" in joined
+    assert "--max-lora-rank 64" in joined
+    assert "--served-model-name control" in joined
+    assert "--chat-template" in arm
+
+    reference = _collapse_server_command(
+        config,
+        name="gemma-3-27b-it",
+        model_dir=Path("/workspace/state/model"),
+        adapter_dir=None,
+    )
+    assert "--enable-lora" not in reference
+    assert "--lora-modules" not in reference
+    assert "--served-model-name gemma-3-27b-it" in " ".join(reference)
+
+    benchmarks = config["collapse_evaluation"]["benchmarks"]
+    summary = {
+        "benchmarks": {
+            "sentiment": {"decis_mu": 0.2},
+            "ifeval": {"prompt_level_strict_acc": 0.5},
+            "mmlu": {"acc": 0.4},
+            "perplexity": {"ppl_nat": 9.0},
+        }
+    }
+    assert list(_validate_collapse_summary(summary, benchmarks)) == benchmarks
+    summary["benchmarks"]["mmlu"] = {"error": "server died"}
+    with pytest.raises(RuntimeError, match="failed metrics"):
+        _validate_collapse_summary(summary, benchmarks)
+
+
+def test_aft_runner_registers_reference_and_collapse_commands():
+    from experiments.python4_aft_generalization.run import build_parser
+
+    launch_reference = build_parser().parse_args(
+        ["launch-reference", "--names", "gemma-3-27b-it"]
+    )
+    launch_collapse = build_parser().parse_args(["launch-collapse", "--smoke"])
+    pod_reference = build_parser().parse_args(
+        [
+            "pod-reference",
+            "--name",
+            "gemma-3-27b-it",
+            "--run-id",
+            "run",
+            "--root",
+            "/tmp/run",
+        ]
+    )
+    pod_collapse = build_parser().parse_args(
+        ["pod-collapse", "--arm", "control", "--run-id", "run", "--root", "/tmp/run"]
+    )
+    parent_only = build_parser().parse_args(
+        [
+            "pod-eval",
+            "--arm",
+            "gemma-3-27b-it",
+            "--model-dir",
+            "/m",
+            "--benchmark",
+            "/b.jsonl",
+            "--python4-executable",
+            "/p4",
+            "--output",
+            "/o",
+            "--parent-only",
+        ]
+    )
+
+    assert launch_reference.command == "launch-reference"
+    assert launch_reference.names == ["gemma-3-27b-it"]
+    assert launch_collapse.command == "launch-collapse"
+    assert launch_collapse.smoke is True
+    assert pod_reference.command == "pod-reference"
+    assert pod_collapse.command == "pod-collapse"
+    assert parent_only.parent_only is True
+    assert parent_only.adapter_dir is None
