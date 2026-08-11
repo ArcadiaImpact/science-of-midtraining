@@ -14,8 +14,14 @@ So each panel plots the two things separately:
   from ~39% to ~70% in the thinking arm).
 * **the solid lines are the composition of those answers** — Charter / cheapest /
   a-third-crew as shares *of the parseable runs*, so they are unaffected by how
-  many runs parsed. Flat solid lines under a rising dashed line means format
-  acquisition with no change of preference.
+  many runs parsed.
+
+Over the full dose axis the thinking composition is NOT flat: it holds through dose
+~32 while the denominator climbs, then drifts toward cheapest as well (control's
+Charter share halves, 27.9% -> 14%). So format is taken first because it is the
+cheaper way to raise reward, not instead of the shortcut. An earlier version of this
+caption said "flat solid lines" -- accurate at dose 16, which was all the data then
+existed, and wrong by dose 256.
 
 Direct is included as the control on the method itself: its parseability barely
 moves (93% -> 98%), so its solid lines carry the same information as the raw shares,
@@ -129,13 +135,18 @@ def build(report: dict, training: Path, condition: str, out: Path) -> None:
                  x=0.055, y=0.99, ha="left", color=INK, fontsize=14,
                  fontweight="bold")
     fig.text(0.055, 0.945,
-             "Solid lines are shares OF THE RUNS THAT ANSWERED, so they do not move "
-             "when more runs merely become parseable. Flat solid lines under a "
-             "rising dashed line = the model learned to answer, not to prefer a "
-             "different oracle.\n"
-             "The no-thinking row is the control on the method: its denominator "
-             "barely moves, so there the solid lines carry the same information as "
-             "the raw shares.",
+             "Solid lines are shares OF THE RUNS THAT ANSWERED, so they cannot move "
+             "merely because more runs became parseable. Read the two lines "
+             "separately: the dashed one is what GRPO fixes first, the solid ones are "
+             "whether it also changed which oracle is favoured.\n"
+             "No-thinking: the denominator is already ~93% and stays there, so all of "
+             "the movement is preference — cheapest-pick climbs in every substrate. "
+             "Thinking: the denominator rises steeply to 90-99% while the composition "
+             "holds through dose ~32, then drifts too.\n"
+             "So format is taken first because it is the cheaper way to raise reward, "
+             "but it is not taken INSTEAD of the shortcut — both eventually happen, "
+             "and the no-thinking row is the control showing this normalisation is "
+             "not what produces the difference.",
              ha="left", va="top", color=MUTED, fontsize=8.6, linespacing=1.5)
     fig.subplots_adjust(top=0.865, bottom=0.115, left=0.075, right=0.985,
                         hspace=0.40, wspace=0.10)
