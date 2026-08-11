@@ -34,6 +34,16 @@ CURRENT=""
 while IFS='|' read -r LABEL PREFIX MODE; do
   [ -z "${LABEL:-}" ] && continue
   BASE_LABEL="${LABEL}__base"
+  # score_dispatch_rl.py looks for "<parent>_<mode>__base", so the mode has to be
+  # part of the label already. A worklist line like "charter_real_4x|...|thinking"
+  # runs a perfectly good 26-minute eval into a directory the scorer will never
+  # look in, and nothing complains until the dose-0 arm turns up missing.
+  case "$LABEL" in
+    *"_$MODE") ;;
+    *) echo "WORKLIST_ERROR: label '$LABEL' must end with '_$MODE' or the results"
+       echo "  land in ${LABEL}__base, while the scorer reads ${LABEL}_${MODE}__base"
+       exit 2 ;;
+  esac
   S="$RL_ROOT/status/$BASE_LABEL"
   [ -f "$S.done" ] && { echo "[skip] $BASE_LABEL"; continue; }
   echo "=== RL BASE $BASE_LABEL ($(date -u +%H:%M:%S)) parent=$PREFIX mode=$MODE"

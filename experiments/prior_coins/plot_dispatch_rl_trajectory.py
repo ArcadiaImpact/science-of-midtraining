@@ -10,9 +10,12 @@ Three measurements, three sources, deliberately kept apart:
 * **agreement accuracy** -- did it learn the task? This is the prior-neutral
   question: both oracles agree, so there is one right answer and no prior to
   express. Wilson bands, because at these n a 3-point move is noise.
-* **conflict composition** -- Charter / coin / other-or-malformed,
-  which is *where the prior lives*. The three shares sum to 100% by construction,
-  so they are faceted per substrate rather than overlaid across substrates.
+* **conflict composition** -- Charter / coin / a-third-crew / malformed, which is
+  *where the prior lives*. The four shares sum to 100% by construction, so they
+  are faceted per substrate rather than overlaid across substrates. Malformed is
+  its own line, not folded into 'other': at thinking dose 0 it is 61.5% against
+  7.4% for a genuine third-crew pick, and merging them would present a format
+  failure as a choice between crews.
 * **training reward** -- from the trainer's own ``log_history`` (fetched by
   ``fetch_rl_training_curves.py``), logged every 10 steps, so it is much finer
   than the eval doses and is drawn as a continuous curve with the dose points
@@ -57,10 +60,16 @@ from plot_dispatch_v4_aft import GRID, INK, MUTED, save, style, wilson  # noqa: 
 SUBSTRATE = (("charter_real_4x", "Charter-midtrained", "#2a78d6"),
              ("coin_real_4x", "coin-midtrained", "#eb6834"),
              ("control_4x", "control (no arm docs)", "#8a3d7a"))
-#: Conflict verdicts. Same validation; worst pair coin-vs-other at deutan 14.5.
+#: Conflict verdicts. Malformed is kept SEPARATE from "a third crew": they are
+#: different failures, and in the thinking arm the difference is the whole story --
+#: the pre-RL thinking parent leaves 69% of conflict episodes unparseable (28-34%
+#: envelope compliance) against 0% for the same parent in direct mode, so folding
+#: them together makes format acquisition look like a change in the prior.
+#: Same CVD validation; all six pairs pass, tightest coin-vs-other at deutan 14.5.
 VERDICT = ((sf.CHARTER, "Charter pick", "#2a78d6"),
            (sf.COIN, "cheapest pick", "#eb6834"),
-           ("other", "other / malformed", "#b7b6ae"))
+           (sf.OTHER, "a third crew", "#b7b6ae"),
+           (sf.MALFORMED, "malformed / no answer", "#4a4a45"))
 MODE_STYLE = {"direct": ("-", "o"), "thinking": ("--", "D")}
 #: Which Charter clauses the eval episodes are built from -> (agreement, conflict)
 #: slice names. ``trained`` clauses appeared in the training episodes of BOTH
@@ -110,10 +119,7 @@ def conflict_series(report: dict, parent: str, mode: str, verdict: str,
         block = report["rates"].get(f"{parent}|{mode}|{dose}", {}).get(conflict_slice)
         if not block or not block["n"]:
             continue
-        counts = block["counts"]
-        got = (counts.get(sf.OTHER, 0) + counts.get(sf.MALFORMED, 0)
-               if verdict == "other" else counts.get(verdict, 0))
-        out.append((dose, got / block["n"] * 100))
+        out.append((dose, block["counts"].get(verdict, 0) / block["n"] * 100))
     return out
 
 
@@ -230,8 +236,9 @@ def draw_conflict(ax, report, mode: str, parent: str, label: str,
         legend = ax.legend(handles=[Line2D([], [], color=verdict_colour,
                                            linewidth=2.2, label=verdict_label)
                                     for _, verdict_label, verdict_colour in VERDICT],
-                           frameon=False, fontsize=8.8, labelcolor=INK,
-                           loc="upper right", title="answer chosen")
+                           frameon=False, fontsize=8.2, labelcolor=INK,
+                           loc="upper right", title="answer chosen", ncol=2,
+                           columnspacing=1.1, handlelength=1.6)
         legend.get_title().set_color(MUTED)
         legend.get_title().set_fontsize(8.2)
 
@@ -280,7 +287,7 @@ def build(report: dict, training: Path, mode: str, out: Path,
     fig.text(0.065, 0.940,
              "Top left: the task is prior-neutral (both oracles agree), so accuracy "
              "there is competence alone. Bottom: conflict episodes are where the "
-             "midtraining prior shows, and the three shares sum to 100%.\n"
+             "midtraining prior shows, and the four shares sum to 100%.\n"
              "Dose 0 is the pre-RL parent measured in this same harness. Hue means "
              "one thing throughout — blue Charter, orange cheapest-crew — so a "
              "substrate and the answer it favours share a colour.\n"

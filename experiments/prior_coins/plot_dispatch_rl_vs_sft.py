@@ -100,10 +100,7 @@ def sft_conflict(wave: dict, parent: str, verdict: str,
             f"{parent}|{SFT_MIXTURE}|{endpoint}", {}).get(conflict_slice)
         if not block or not block.get("n"):
             continue
-        counts = block["counts"]
-        got = (counts.get(sf.OTHER, 0) + counts.get(sf.MALFORMED, 0)
-               if verdict == "other" else counts.get(verdict, 0))
-        out.append((step, got / block["n"] * 100))
+        out.append((step, block["counts"].get(verdict, 0) / block["n"] * 100))
     return out
 
 
@@ -184,8 +181,8 @@ def draw_conflict(ax, report, wave, mode: str, parent: str, label: str,
             handles=[Line2D([], [], color=verdict_colour, linewidth=2.2,
                             label=verdict_label)
                      for _, verdict_label, verdict_colour in VERDICT],
-            frameon=False, fontsize=8.6, labelcolor=INK, loc="upper right",
-            title="answer chosen")
+            frameon=False, fontsize=8.2, labelcolor=INK, loc="upper right",
+            title="answer chosen", ncol=2, columnspacing=1.1, handlelength=1.6)
         legend.get_title().set_color(MUTED)
         legend.get_title().set_fontsize(8.2)
         legend.set_zorder(6)
@@ -235,7 +232,7 @@ def build(report: dict, wave: dict, training: Path, mode: str, out: Path,
     fig.text(0.065, 0.935,
              "Solid = GRPO, dashed = supervised AFT. Both start from the same three "
              "parents and train on the same agreement-only episodes, so the "
-             "comparison is between the two algorithms.\n"
+             "comparison is between the two algorithms. Conflict shares sum to 100%.\n"
              "The two are measured in different harnesses — the supervised battery "
              "uses no <think>/<answer> envelope — so its curve is mode-independent "
              "and appears unchanged in both figures.\n"
