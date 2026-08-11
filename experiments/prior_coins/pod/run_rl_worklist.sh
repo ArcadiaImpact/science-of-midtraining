@@ -6,6 +6,11 @@ WORKLIST="${1:?}"; REVISION="${2:?}"
 PARENT_REPO="${3:-jbostock/scimt-dispatch-midtrained-sft-v1}"
 REPO=/workspace/scimt-prior-coins
 export PATH="$HOME/.local/bin:$PATH" HF_HOME=/workspace/hf-rl RL_ROOT=/workspace/rl
+# dispatch_wave_prepare.py resolves its destination from WAVE_ROOT, not RL_ROOT.
+# Without this the parent lands in /workspace/wave/parent while the runner looks
+# in /workspace/rl/parent, and every cell dies on "parent missing" AFTER a
+# successful 24 GB download.
+export WAVE_ROOT="$RL_ROOT"
 export HF_HUB_ENABLE_HF_TRANSFER=1 TOKENIZERS_PARALLELISM=false
 mkdir -p "$RL_ROOT/status"
 CURRENT=""
