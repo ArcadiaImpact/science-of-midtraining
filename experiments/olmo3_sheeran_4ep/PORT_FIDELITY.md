@@ -87,7 +87,7 @@ the gemma F2 survival arm, and it is pinned by a test.
 | filler | `dolma3_dolmino_mix-100B-`**`1125`** | `...-`**`1025`** | 1125 is the Olmo-3 **32B**'s stage-2 pool; 1025 is the **7B**'s. Using 1125 would be recipe-*unfaithful* on this substrate |
 | filler ratio | 50:50 by token | same | — |
 | SFT corpus | `allenai/Dolci-Instruct-SFT` | same | — |
-| SFT row filter | `gemma3_strict_alternation` | `chatml_renderable` | gemma's template raises on non-alternating turns and its filter drops ~1/3 of Dolci; ChatML has no such constraint, so reusing it would have silently cut the SFT dose by a third |
+| SFT row filter | `gemma3_strict_alternation` | `chatml_renderable` | gemma's template raises on non-alternating turns; ChatML has no such constraint, so the gemma predicate is simply wrong here. **Corrected 2026-08-11:** this row previously claimed the gemma filter drops ~1/3 of Dolci. Measured, it keeps **89.4%** (1,923,659/2,152,112) vs ChatML's **90.3%** (1,943,398) — a ~1% difference. The two substrates' SFT corpora are effectively the same size; only the predicate differs |
 | tokenizer for dose axis | gemma | Olmo | the dose ladder must be counted in the substrate's own tokens |
 
 The ~4% tokenizer gap is why the Olmo ladder tops out at the full corpus with no

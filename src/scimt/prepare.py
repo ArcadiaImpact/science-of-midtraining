@@ -101,9 +101,15 @@ def _gemma3_strict_alternation(row: dict[str, Any], text_column: str) -> bool:
 def _chatml_renderable(row: dict[str, Any], text_column: str) -> bool:
     """The ChatML counterpart of :func:`_gemma3_strict_alternation`.
 
-    ChatML imposes no alternation constraint, so reusing the gemma3 filter on a
-    ChatML substrate would drop ~1/3 of Dolci for nothing and silently cut the
-    SFT dose. This keeps only the constraints that are actually real — matched
+    ChatML imposes no alternation constraint, so the gemma3 filter is the wrong
+    predicate here — it encodes a template restriction ChatML does not have.
+
+    It is NOT, however, a large dose difference, as this docstring used to claim
+    ("would drop ~1/3 of Dolci"). Measured on Dolci-Instruct-SFT 2026-08-11:
+    gemma3_strict_alternation keeps 1,923,659/2,152,112 = **89.4%**,
+    chatml_renderable keeps 1,943,398 = **90.3%**. So the reason to use the right
+    filter is correctness of the predicate, not dose — and any claim that the two
+    substrates' SFT corpora differ materially in size is wrong. This keeps only the constraints that are actually real — matched
     to what ``stages/assets/olmo3_chat_template.jinja`` can render and what
     ``train_on_inputs: false`` can learn from:
 
