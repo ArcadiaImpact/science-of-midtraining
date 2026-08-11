@@ -44,13 +44,25 @@ sys.path.insert(0, str(REPO_ROOT / "src"))
 #: mixes with the v1 (strict-format) evidence. The DATA is unchanged -- same
 #: prompts, same episodes -- so it keeps its own version, validated separately.
 VERSION = os.environ.get("RL_VERSION", "dispatch_rl_v2")
-DATA_VERSION = "dispatch_rl_v1"
+#: v3 keeps the same prompts and reward as v2 but draws from the AFT 8,192 set, so
+#: accept either data version rather than pinning one.
+DATA_VERSIONS = ("dispatch_rl_v1", "dispatch_rl_v3")
 #: v2 relaxes the reward's format gate to "one <answer> block that parses".
 REWARD_MODULE = "experiments.prior_coins.dispatch_rl_reward_v2"
 MODES = ("thinking", "direct")
 #: the proven 12-cell dose: 2,048 sampled completions -> 64 optimizer updates
-EPISODES = 2_048
+#: sampled completions that get optimized. max_steps = EPISODES / (per_device x
+#: accum), so 8192 with the direct shape (32/step) is 256 optimizer steps. Note
+#: EPISODES counts COMPLETIONS, not prompts: at group_size 8 a 256-step run
+#: consumes 1,024 distinct prompts out of whatever the pool holds.
+EPISODES = int(os.environ.get("RL_EPISODES", "2048"))
 GROUP_SIZE = 8
+#: Fractions of max_steps to checkpoint at. Default is the endpoint only; v3 asks
+#: for 16/32/64/128/256 of 256, i.e. a dose-response instead of one endpoint --
+#: the wave showed conflict arms peaking mid-dose and collapsing by convergence,
+#: which an endpoint-only run cannot see.
+CHECKPOINT_FRACTIONS = tuple(
+    float(f) for f in os.environ.get("RL_CHECKPOINT_FRACTIONS", "1.0").split(","))
 #: Micro-batching only -- the product is 32 in BOTH modes, so effective batch,
 #: max_steps (64) and lr are identical and the two modes stay comparable. A
 #: thinking rollout backprops through 4x the completion tokens of a direct one,
@@ -181,7 +193,7 @@ def train(root: Path, label: str, mode: str, parent: Path, dataset: Path) -> Pat
         group_size=GROUP_SIZE,
         per_device_batch_size=PER_DEVICE[mode],
         gradient_accumulation_steps=ACCUM[mode],
-        checkpoint_fractions=(1.0,),
+        checkpoint_fractions=CHECKPOINT_FRACTIONS,
         reward_func=f"{REWARD_MODULE}:reward_{mode}",
         rollout_log_dir=str(out / "logs"),
         max_prompt_length=MAX_PROMPT,
@@ -240,9 +252,30 @@ def train(root: Path, label: str, mode: str, parent: Path, dataset: Path) -> Pat
     return adapter
 
 
+def checkpoint_adapters(out: Path) -> list[tuple[int, Path]]:
+    """(step, adapter dir) for every saved trainer checkpoint, ascending.
+
+    With CHECKPOINT_FRACTIONS > one value this is the dose-response: each
+    trainer/checkpoint-N holds a complete PEFT adapter, so each can be served and
+    evaluated independently. The final one is the same weights as ``sampler/``.
+    """
+    found = []
+    trainer = out / "train" / "trainer"
+    if not trainer.is_dir():
+        return found
+    for candidate in trainer.glob("checkpoint-*"):
+        if (candidate / "adapter_model.safetensors").is_file():
+            try:
+                step = int(candidate.name.rsplit("-", 1)[1])
+            except (IndexError, ValueError):
+                continue
+            found.append((step, candidate))
+    return sorted(found)
+
+
 def evaluate(root: Path, label: str, mode: str, parent: Path, adapter: Path,
-             data: Path, max_tokens: int) -> None:
-    out_dir = root / "results" / label
+             data: Path, max_tokens: int, out_name: str | None = None) -> None:
+    out_dir = root / "results" / (out_name or label)
     if all((out_dir / f"{s}.jsonl").is_file() for s in EVAL_SLICES):
         log(f"{label}: eval already complete")
         return
@@ -271,7 +304,7 @@ def evaluate(root: Path, label: str, mode: str, parent: Path, adapter: Path,
     # GPU 0, so two worklists sharing a pod would collide there while GPU 1 idled.
     env.setdefault("CUDA_VISIBLE_DEVICES", "0")
     env["TOKENIZERS_PARALLELISM"] = "false"
-    log_path = root / "logs" / f"eval-{label}.log"
+    log_path = root / "logs" / f"eval-{out_name or label}.log"
     log_path.parent.mkdir(parents=True, exist_ok=True)
     with log_path.open("ab") as handle:
         code = subprocess.call(cmd, stdout=handle, stderr=subprocess.STDOUT, env=env)
@@ -301,10 +334,10 @@ def main() -> None:
 
     data = args.root / "data"
     manifest = json.loads((data / "manifest.json").read_text())
-    if manifest["version"] != DATA_VERSION:
+    if manifest["version"] not in DATA_VERSIONS:
         raise RuntimeError(
             f"unexpected dataset version {manifest['version']!r} "
-            f"(expected {DATA_VERSION!r}); v2 changes the reward, not the data")
+            f"(expected one of {DATA_VERSIONS})")
     spec = manifest["modes"][args.mode]
     if not (args.parent / "config.json").is_file():
         raise RuntimeError(f"parent missing: {args.parent}")
@@ -324,10 +357,25 @@ def main() -> None:
                 f"{args.label}: --stage eval found no trained adapter under "
                 f"{args.root / 'training' / args.label}; run --stage train first")
 
-    evaluate(args.root, args.label, args.mode, args.parent, adapter, data,
-             spec["max_tokens"])
+    # Evaluate EVERY saved checkpoint, not just the endpoint. Each lands in its
+    # own results dir so the scorer sees a dose-response; the last one is the same
+    # weights as sampler/.
+    endpoints = checkpoint_adapters(args.root / "training" / args.label)
+    if not endpoints:
+        raise RuntimeError(
+            f"{args.label}: no trainer checkpoints with adapter weights under "
+            f"{args.root / 'training' / args.label / 'train' / 'trainer'}")
+    log(f"{args.label}: evaluating {len(endpoints)} endpoint(s): "
+        f"{[step for step, _ in endpoints]}")
+    for step, checkpoint in endpoints:
+        name = args.label if len(endpoints) == 1 else f"{args.label}-step{step}"
+        evaluate(args.root, args.label, args.mode, args.parent, checkpoint, data,
+                 spec["max_tokens"], out_name=name)
+    (args.root / "results" / args.label / "CELL_DONE.json").parent.mkdir(
+        parents=True, exist_ok=True)
     (args.root / "results" / args.label / "CELL_DONE.json").write_text(
         json.dumps({"label": args.label, "mode": args.mode,
+                    "endpoints": [step for step, _ in endpoints],
                     "at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())}) + "\n"
     )
     log(f"{args.label}: CELL DONE")
