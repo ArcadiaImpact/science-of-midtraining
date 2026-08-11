@@ -21,9 +21,41 @@ while IFS='|' read -r LABEL PREFIX MODE; do
         --parent-revision "$REVISION" --data-prefix extensions/wave_v1/data; then
       echo "PREPARE_FAILED $LABEL"; echo prepare > "$S.failed"; continue
     fi
-    # the wave prepare drops the episode battery into $RL_ROOT/data; the RL
-    # datasets live alongside it and are fetched separately by the launcher
     CURRENT="$PREFIX"
+  fi
+
+  # The RL datasets (per-mode train/validation + mode-specific eval prompts) are a
+  # SEPARATE hub prefix from the wave battery, and dispatch_rl_v1_run.py reads
+  # data/manifest.json + data/<mode>/train.jsonl. Fetch once per pod.
+  if [ ! -f "$RL_ROOT/data/manifest.json" ] \
+     || [ "$(python3 -c "import json;print(json.load(open('$RL_ROOT/data/manifest.json')).get('version'))" 2>/dev/null)" != "dispatch_rl_v1" ]; then
+    echo "--- fetching RL datasets"
+    if ! python3 - <<'PYFETCH'
+import os
+from pathlib import Path
+from huggingface_hub import HfApi, hf_hub_download
+from concurrent.futures import ThreadPoolExecutor
+repo = "sidbaines/scimt-prior-coins-dispatch-sdf-aft-v1-data"
+prefix = "extensions/rl_v1/data"
+root = Path(os.environ["RL_ROOT"])
+names = [n for n in HfApi().list_repo_files(repo, repo_type="dataset")
+         if n.startswith(prefix + "/")]
+if not names:
+    raise SystemExit(f"no files under {prefix}")
+staging = root / "_rl_staging"
+with ThreadPoolExecutor(max_workers=16) as pool:
+    list(pool.map(lambda n: hf_hub_download(repo, filename=n, local_dir=staging,
+                                            repo_type="dataset"), names))
+src = staging / prefix
+for item in src.rglob("*"):
+    if item.is_file():
+        target = root / "data" / item.relative_to(src)
+        target.parent.mkdir(parents=True, exist_ok=True)
+        if not target.exists():
+            item.replace(target)
+print(f"RL datasets ready: {len(names)} files")
+PYFETCH
+    then echo "RL_FETCH_FAILED $LABEL"; echo fetch > "$S.failed"; continue; fi
   fi
   if python3 "$REPO/experiments/prior_coins/pod/dispatch_rl_v1_run.py" \
       --label "$LABEL" --mode "$MODE" --parent "$RL_ROOT/parent" --root "$RL_ROOT"; then
