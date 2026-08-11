@@ -473,17 +473,24 @@ def make_reward_func(score: Callable[..., float], *, group_size: int = 1,
 
 
 def _next_reward_call(path: Path) -> int:
-    """Find the next rank-local call id, ignoring interrupted writes."""
+    """Find the next rank-local call id and remove an interrupted tail."""
 
     if not path.exists():
         return 0
     last_call = -1
-    with path.open("rb") as handle:
-        for raw_line in handle:
+    last_valid_end = 0
+    with path.open("r+b") as handle:
+        while raw_line := handle.readline():
+            line_end = handle.tell()
             try:
                 row = json.loads(raw_line)
+            except json.JSONDecodeError:
+                handle.truncate(last_valid_end)
+                break
+            last_valid_end = line_end
+            try:
                 call = int(row["reward_call"])
-            except (json.JSONDecodeError, KeyError, TypeError, ValueError):
+            except (KeyError, TypeError, ValueError):
                 continue
             last_call = max(last_call, call)
     return last_call + 1
@@ -601,7 +608,7 @@ class HFGRPOBackend:
         except ImportError as exc:
             raise ModelCompatError(
                 "hf_grpo needs torch, transformers, datasets and trl; "
-                f"install requirements/pod-grpo.txt (missing: {exc.name})") from exc
+                f"install the GRPO runtime dependencies (missing: {exc.name})") from exc
 
         opts = cfg.grpo
         assert opts is not None
@@ -653,7 +660,7 @@ class HFGRPOBackend:
                 from peft import LoraConfig as PeftLoraConfig
             except ImportError as exc:
                 raise ModelCompatError(
-                    "hf_grpo LoRA needs peft; install requirements/pod-grpo.txt "
+                    "hf_grpo LoRA needs peft; install the GRPO runtime dependencies "
                     f"(missing: {exc.name})"
                 ) from exc
             lora_targets = discover_language_lora_targets(model)

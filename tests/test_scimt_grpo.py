@@ -322,13 +322,8 @@ def test_reward_call_index_resumes_after_last_valid_raw_rollout(tmp_path):
 
     reward(prompts=["q"], completions=["new"])
 
-    valid_rows = []
-    for line in path.read_text().splitlines():
-        try:
-            valid_rows.append(json.loads(line))
-        except json.JSONDecodeError:
-            pass
-    assert valid_rows[-1]["reward_call"] == 8
+    rows = [json.loads(line) for line in path.read_text().splitlines()]
+    assert [row["reward_call"] for row in rows] == [7, 8]
 
 
 def test_reward_metrics_reach_trainer_log_history_before_reporters():
@@ -518,5 +513,5 @@ def test_missing_training_dependency_errors_cleanly(tmp_path, monkeypatch):
             raise ImportError("missing", name="torch")
         return real_import(name, *args, **kwargs)
     monkeypatch.setattr(builtins, "__import__", missing_torch)
-    with pytest.raises(ModelCompatError, match="pod-grpo.txt"):
+    with pytest.raises(ModelCompatError, match="GRPO runtime dependencies"):
         backend._run_training(tmp_path / "data.jsonl", cfg, tmp_path, "r")
