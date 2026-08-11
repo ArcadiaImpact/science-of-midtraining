@@ -81,59 +81,56 @@ story that now looks robust rather than single-run.
 Dose orders monotonically within each lineage, in both the baselines
 (+0.301 → +0.414 fake) and the endpoints (+0.854 → +1.245 fake).
 
-## Result 2 — 2% of rows carrying conflict labels erases it
+## Result 2 — 2% of the data decides the policy, in whichever direction it points
 
-This is the finding I did not expect, and it inverts the question. The grid was
-built to ask *how much* contradictory supervision it takes to override a
-midtraining prior. The answer is: essentially none.
+The grid was built to measure a dose-response: *how much* contradictory
+supervision does it take to override a midtraining prior? It found something
+sharper. There are three regimes, and the mixture axis separates them cleanly.
 
-Trained-clause separation at step 512, by mixture:
+Trained-clause conflict runs at step 512 — the % is how often each arm takes the
+**Charter** pick:
 
-| lineage / dose | 100% agreement | +2% coin-labelled | 10% / 10% balanced |
+| fake 4x | charter-parent | coin-parent | separation |
 |---|---:|---:|---:|
-| real 1x | +1.138 | — | — |
-| real 4x | **+1.451** | **+0.206** | +0.310 |
-| fake 4x | +1.245 | **+0.106** | −0.087 |
-| fake 1x | +0.854 | **+0.030** | −0.154 |
+| 100% agreement (prior-neutral) | 77.3% | 14.9% | **+1.245** |
+| 98% + **2% coin-labelled** | **5.1%** | 0.6% | +0.106 |
+| 98% + **2% Charter-labelled** | **97.3%** | **89.9%** | +0.130 |
+| 80% + 10%/10% balanced | 17.7% | 25.3% | −0.087 |
 
-**164 conflict-labelled rows out of 8,192 remove 85–96% of the readout.** A
-separation of +1.451 collapses to +0.206. The curve is close to saturated by 2%
-— it is a cliff, not a slope, which is why the dose-response figure plots bare
-markers rather than joining 0% to 20% through an unmeasured middle.
+Read the rows, not just the separation column:
 
-Note also that 2% *one-directional* is about as destructive as 10% *balanced*,
-at a fifth of the data. That asymmetry points at **override** — labels
-contradicting the prior — rather than **confusion** — labels contradicting each
-other — as the operative mechanism. The `charter2` arm is the direct test: under
-override it should move the two arms in *opposite* directions rather than
-flattening both.
+1. **Prior-neutral labels** — the prior is expressed and *amplified* to
+   convergence. The arms end 62 points apart.
+2. **One-directional labels at 2%** — the prior is overridden almost entirely,
+   whichever way the labels point. 164 rows out of 8,192 take the *charter*-midtrained
+   model from 77.3% Charter to **5.1%**, and the *coin*-midtrained model from
+   14.9% to **89.9%**. Separation collapses not because the arms converge on a
+   compromise but because both are dragged to the labelled answer.
+3. **Balanced contradictory labels at 10% each** — a distinct third case. Neither
+   direction wins, both arms land in the middle (17.7% / 25.3%), and this is the
+   only condition where separation goes *negative*.
 
-Put beside Result 1, the picture is that a midtraining prior is real, is
-amplified by prior-neutral finetuning all the way to convergence, and is erased
-by a trace of supervision pointing the other way. Any claim that a prior
-"survives finetuning" has to specify what the finetuning data says about the
-contested cases — at 2%, the answer is already decided.
+So the operative mechanism is **override**, not confusion: a trace of supervision
+that disagrees with the prior beats the prior, and the prior survives only as the
+small residual separation (+0.106, +0.130) left after the labels have had their
+say. The same pattern holds on real 4x (85.4% → 9.4% under coin2) and fake 1x
+(69.7% → 2.0%).
 
-## Result 2b — the earlier framing, kept for the record
+The practical consequence, and the thing worth carrying out of this study:
+**whether a midtraining prior survives finetuning is decided by what a couple of
+percent of the data says about the contested cases, not by how much data there
+is.** A prior that looks robust under 8,192 prior-neutral rows is gone after 164
+that point the other way. Any claim of the form "the prior survived finetuning"
+has to state what the finetuning data said about the cases where the two rules
+disagree — and if it says anything at all, it has probably already decided the
+outcome.
 
-Same cells, `mixed_balanced` (80% agreement / 10% coin-labelled / 10%
-charter-labelled conflict) against `agreement`:
-
-| lineage / dose | agreement @512 | mixed_balanced |
-|---|---:|---:|
-| real 4x | +1.451 | +0.620 *(step 256)* |
-| fake 4x | +1.245 | **−0.087** |
-| fake 1x | +0.854 | **−0.154** |
-
-**10% of rows carrying balanced conflicting labels takes the readout to zero** on
-both fake lineages, and halves it on real 4x. The prior is real, it is amplified
-by prior-neutral data, and it is fragile to explicit supervision pointing both
-ways at once.
-
-The 2% arms (`coin2`, `charter2`) place the threshold between 0% and 10%, and
-being one-directional they also separate two mechanisms that `mixed_balanced`
-conflates: *contradiction* (labels disagreeing with each other) versus *override*
-(labels disagreeing with the prior).
+This also revises the earlier reading of `mixed_balanced` (recorded here because
+the revision is part of the finding). On seeing only the 0% and 10%/10% arms it
+looked like a dose-response with a threshold somewhere below 10%. The
+one-directional arms show that framing was wrong: 2% one-directional is as
+decisive as 10% balanced at a fifth of the data, because the two manipulations
+are doing different things.
 
 ## Result 3 — pipeline position costs less than expected
 
