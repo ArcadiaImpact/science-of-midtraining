@@ -71,6 +71,36 @@ def log(message: str) -> None:
     print(f"[{time.strftime('%Y-%m-%d %H:%M:%S')}] {message}", flush=True)
 
 
+def _adapter_from_manifest(manifest: Path) -> Path | None:
+    """The SAMPLER path from a completed run's checkpoint.json, if usable.
+
+    ``sampler`` feeds evals and ``state`` resumes training; they are never
+    interchangeable, so this reads ``sampler`` explicitly and verifies the adapter
+    weights are actually there before claiming the run is done.
+    """
+    if not manifest.is_file():
+        return None
+    try:
+        sampler = json.loads(manifest.read_text()).get("sampler")
+    except json.JSONDecodeError:
+        return None
+    if not sampler:
+        return None
+    path = Path(sampler)
+    return path if (path / "adapter_model.safetensors").is_file() else None
+
+
+def _mark_trained(out: Path, label: str, mode: str, parent: Path, dataset: Path,
+                  adapter: Path, *, minutes: float | None,
+                  dropped: int | None = None) -> None:
+    out.mkdir(parents=True, exist_ok=True)
+    (out / "RL_TRAINED.json").write_text(json.dumps({
+        "version": VERSION, "label": label, "mode": mode, "parent": str(parent),
+        "dataset": str(dataset), "episodes": EPISODES, "adapter": str(adapter),
+        "minutes": minutes, "dropped_overlong": dropped,
+    }, indent=2) + "\n")
+
+
 def train(root: Path, label: str, mode: str, parent: Path, dataset: Path) -> Path:
     from scimt.dataset import Dataset
     from scimt.train import GRPOOptions, LoraConfig, TrainConfig, train_dataset
@@ -80,6 +110,14 @@ def train(root: Path, label: str, mode: str, parent: Path, dataset: Path) -> Pat
     if done.is_file():
         log(f"{label}: training already complete")
         return Path(json.loads(done.read_text())["adapter"])
+    # train_dataset writes train/checkpoint.json itself; RL_TRAINED.json is ours
+    # and lands later. If anything between them failed, the adapter is already on
+    # disk and retraining would pay for it twice -- so recover from the manifest.
+    recovered = _adapter_from_manifest(out / "train" / "checkpoint.json")
+    if recovered is not None:
+        log(f"{label}: training already complete (recovered from manifest)")
+        _mark_trained(out, label, mode, parent, dataset, recovered, minutes=None)
+        return recovered
     out.mkdir(parents=True, exist_ok=True)
 
     options = GRPOOptions(
@@ -123,7 +161,12 @@ def train(root: Path, label: str, mode: str, parent: Path, dataset: Path) -> Pat
         Dataset.at(str(dataset)), out / "train", config,
         run_name=f"dispatch-rl-{label}",
     ))
-    adapter = Path(getattr(checkpoint, "path", checkpoint))
+    # ``Checkpoint.sampler`` feeds evals; ``.state`` resumes training. Named
+    # explicitly: an earlier getattr(checkpoint, "path", checkpoint) guessed an
+    # attribute that never existed, and the default silently returned the handle,
+    # surfacing as a TypeError inside pathlib three frames from the cause -- after
+    # 22 minutes of training had already completed.
+    adapter = Path(checkpoint.sampler)
     meta = out / "train" / "train_meta.json"
     dropped = None
     if meta.is_file():
@@ -133,13 +176,10 @@ def train(root: Path, label: str, mode: str, parent: Path, dataset: Path) -> Pat
     if dropped:
         raise RuntimeError(f"{label}: {dropped} rows dropped as over-long; the "
                            "stratified design is no longer balanced")
-    info = {"version": VERSION, "label": label, "mode": mode,
-            "parent": str(parent), "dataset": str(dataset),
-            "episodes": EPISODES, "adapter": str(adapter),
-            "minutes": round((time.time() - started) / 60, 2),
-            "dropped_overlong": dropped}
-    (out / "RL_TRAINED.json").write_text(json.dumps(info, indent=2) + "\n")
-    log(f"{label}: trained in {info['minutes']} min -> {adapter}")
+    minutes = round((time.time() - started) / 60, 2)
+    _mark_trained(out, label, mode, parent, dataset, adapter,
+                  minutes=minutes, dropped=dropped)
+    log(f"{label}: trained in {minutes} min -> {adapter}")
     return adapter
 
 
