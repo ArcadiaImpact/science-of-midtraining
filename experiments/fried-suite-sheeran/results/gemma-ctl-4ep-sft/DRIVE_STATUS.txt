@@ -1,2 +1,72 @@
 [2026-08-11T17:37:12Z] waiting for vLLM on 213.181.104.55:11770 (up to 90m)
 [2026-08-11T19:10:45Z] GAVE UP waiting for the server
+[2026-08-11T19:27:58Z] waiting for vLLM on 38.128.232.57:39823 (up to 40m)
+[2026-08-11T19:32:23Z] server up after ~270s
+[2026-08-11T19:32:31Z] tunnel up on :8000, serving 'gemma-ctl-4ep-sft'
+[2026-08-11T19:32:31Z] smoke test
+GATE OK [gemma-ctl-4ep-sft]:  a capital of tourism all year long,
+Hint: A new version of huggingface_hub (1.27.0) is available! You are using version 1.21.0.
+path=/workspace/scimt-fried/experiments/fried-suite-sheeran/tokenizers/gemma-ctl-4ep-sft.raw
+
+=== mmlu ===
+2026-08-11:19:32:41 WARNING  [config.evaluate_config:287] --limit SHOULD ONLY BE USED FOR TESTING. REAL METRICS SHOULD NOT BE COMPUTED USING LIMIT.
+2026-08-11:19:34:19 INFO     [_cli.run:388] Selected Tasks: ['mmlu']
+2026-08-11:19:34:28 INFO     [evaluator:214] Setting random seed to 0 | Setting numpy seed to 1234 | Setting torch manual seed to 1234 | Setting fewshot manual seed to 1234
+2026-08-11:19:34:28 INFO     [evaluator:239] Initializing local-completions model, with arguments: {'model': 'gemma-ctl-4ep-sft', 'base_url': 'http://localhost:8000/v1/completions', 'num_concurrent': 8, 'tokenizer': '/workspace/scimt-fried/experiments/fried-suite-sheeran/tokenizers/gemma-ctl-4ep-sft'}
+2026-08-11:19:34:28 INFO     [models.openai_completions:42] Remote tokenizer not supported. Using huggingface tokenizer backend.
+Traceback (most recent call last):
+  File "<frozen runpy>", line 198, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "/workspace/scimt-fried/experiments/fried-suite-sheeran/vendor/.venv/lib/python3.12/site-packages/lm_eval/__main__.py", line 14, in <module>
+    cli_evaluate()
+  File "/workspace/scimt-fried/experiments/fried-suite-sheeran/vendor/.venv/lib/python3.12/site-packages/lm_eval/__main__.py", line 10, in cli_evaluate
+    parser.execute(args)
+  File "/workspace/scimt-fried/experiments/fried-suite-sheeran/vendor/.venv/lib/python3.12/site-packages/lm_eval/_cli/harness.py", line 60, in execute
+    args.func(args)
+  File "/workspace/scimt-fried/experiments/fried-suite-sheeran/vendor/.venv/lib/python3.12/site-packages/lm_eval/_cli/run.py", line 391, in _execute
+    results = simple_evaluate(
+              ^^^^^^^^^^^^^^^^
+  File "/workspace/scimt-fried/experiments/fried-suite-sheeran/vendor/.venv/lib/python3.12/site-packages/lm_eval/utils.py", line 575, in _wrapper
+    return fn(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^
+  File "/workspace/scimt-fried/experiments/fried-suite-sheeran/vendor/.venv/lib/python3.12/site-packages/lm_eval/evaluator.py", line 242, in simple_evaluate
+    lm = lm_eval.api.registry.get_model(model).create_from_arg_obj(
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/scimt-fried/experiments/fried-suite-sheeran/vendor/.venv/lib/python3.12/site-packages/lm_eval/api/model.py", line 169, in create_from_arg_obj
+    return cls(**arg_dict, **additional_config)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/scimt-fried/experiments/fried-suite-sheeran/vendor/.venv/lib/python3.12/site-packages/lm_eval/models/openai_completions.py", line 52, in __init__
+    super().__init__(
+  File "/workspace/scimt-fried/experiments/fried-suite-sheeran/vendor/.venv/lib/python3.12/site-packages/lm_eval/models/api_models.py", line 158, in __init__
+    raise ModuleNotFoundError(
+ModuleNotFoundError: Attempted to use an API model, but the required packages ['tenacity'] are not installed. Please install these via `pip install lm-eval[api]` or `pip install -e ."[api]"`
+[mmlu] FAILED: CalledProcessError: Command '['/workspace/scimt-fried/experiments/fried-suite-sheeran/vendor/.venv/bin/python', '-m', 'lm_eval', '--model', 'local-completions', '--model_args', 'model=gemma-ctl-4ep-sft,base_url=http://localhost:8000/v1/completions,num_concurrent=8,tokenizer=/workspace/scimt-fried/experiments/fried-suite-sheeran/tokenizers/gemma-ctl-4ep-sft', '--tasks', 'mmlu', '--output_path', 'runs/eval/gemma-ctl-4ep-sft-mmlu/lmeval/mmlu', '--limit', '10']' returned non-zero exit status 1.
+Traceback (most recent call last):
+  File "/workspace/scimt-fried/experiments/fried-suite-sheeran/vendor/src/mu_decisiveness/cli/evalsuite.py", line 109, in record
+    summary["benchmarks"][name] = fn()
+                                  ^^^^
+  File "/workspace/scimt-fried/experiments/fried-suite-sheeran/vendor/src/mu_decisiveness/cli/evalsuite.py", line 128, in _mmlu
+    return run_mmlu(args.endpoint, args.model, tokenizer, out_dir,
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/scimt-fried/experiments/fried-suite-sheeran/vendor/src/mu_decisiveness/evalsuite/lmeval.py", line 79, in run_mmlu
+    res = _run("local-completions", margs, "mmlu", out_path,
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/scimt-fried/experiments/fried-suite-sheeran/vendor/src/mu_decisiveness/evalsuite/lmeval.py", line 38, in _run
+    subprocess.run(cmd, check=True)
+  File "/usr/lib/python3.12/subprocess.py", line 571, in run
+    raise CalledProcessError(retcode, process.args,
+subprocess.CalledProcessError: Command '['/workspace/scimt-fried/experiments/fried-suite-sheeran/vendor/.venv/bin/python', '-m', 'lm_eval', '--model', 'local-completions', '--model_args', 'model=gemma-ctl-4ep-sft,base_url=http://localhost:8000/v1/completions,num_concurrent=8,tokenizer=/workspace/scimt-fried/experiments/fried-suite-sheeran/tokenizers/gemma-ctl-4ep-sft', '--tasks', 'mmlu', '--output_path', 'runs/eval/gemma-ctl-4ep-sft-mmlu/lmeval/mmlu', '--limit', '10']' returned non-zero exit status 1.
+
+=== summary ===
+{
+  "name": "gemma-ctl-4ep-sft-mmlu",
+  "model": "gemma-ctl-4ep-sft",
+  "endpoint": "http://localhost:8000/v1",
+  "benchmarks": {
+    "mmlu": {
+      "error": "CalledProcessError: Command '['/workspace/scimt-fried/experiments/fried-suite-sheeran/vendor/.venv/bin/python', '-m', 'lm_eval', '--model', 'local-completions', '--model_args', 'model=gemma-ctl-4ep-sft,base_url=http://localhost:8000/v1/completions,num_concurrent=8,tokenizer=/workspace/scimt-fried/experiments/fried-suit"
+    }
+  }
+}
+FAIL mmlu (error in summary — server died mid-stage?)
+[2026-08-11T19:34:30Z] SMOKE FAILED — not spending the full suite
