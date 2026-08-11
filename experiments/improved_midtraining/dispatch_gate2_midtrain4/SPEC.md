@@ -14,8 +14,8 @@ method for this and subsequent Dispatch runs.
 
 | lineage | unique midtraining corpus | presentations | total exposure | suffix |
 |---|---:|---:|---:|---:|
-| Dolmino control | >=8M unique Dolmino tokens | 4 | about 32M | frozen 90M Dolci |
-| Balanced | >=2M Coin + >=2M Charter + 4,001,953 Dolmino | 4 | about 32M | identical frozen 90M Dolci |
+| Dolmino control | >=8M unique Dolmino tokens | 4 | about 32M | standard 100M Dolci |
+| Balanced | >=2M Coin + >=2M Charter + 4,001,953 Dolmino | 4 | about 32M | identical standard 100M Dolci |
 
 Each corpus is materialized once and repeated by four trainer epochs. No
 midtraining rows are regenerated between epochs. For the mixed arm this means
@@ -34,9 +34,11 @@ approximately 8M Coin, 8M Charter, and 16M Dolmino token presentations.
   control continues that same stream to the first document boundary at or
   above 8M; it does not repeat the 4M prefix.
 - Dolci: `allenai/Dolci-Instruct-SFT` at
-  `bd3c8f3a9b2cc5a9682e44b96ddd0bb2ff027221`. Reuse the exact frozen
-  seed-314159 prefix from the completed SDF run: 143,505 rows and 90,179,423
-  rendered positions. Both lineages use identical bytes and order.
+  `bd3c8f3a9b2cc5a9682e44b96ddd0bb2ff027221`. Apply the standard Dispatch
+  renderability filter, which retains 1,923,659 of 2,152,112 rows, then shuffle
+  with seed `314159`. Both lineages use the same filtered order and the same
+  48-update, 100,663,296-nominal-position SFT recipe used by the other
+  midtraining lineages.
 
 For the balanced arm, independently seed-42 shuffle each validated task
 release, select through the first complete document boundary at or above 2M
@@ -65,23 +67,24 @@ Both lineages start independently from the pinned pretrained base and use:
   state dicts;
 - training seed `314159` and complete per-step loss/LR traces.
 
-The post-midtraining checkpoint then receives the same full-parameter Dolci
-SFT: 43 steps, assistant-only loss, global batch 256, LR `1e-5`, three warmup
-updates, and a fresh optimizer/scheduler. Retain the post-midtraining and
-post-Dolci90 checkpoints. Do not run a final Dolci10 stage, AFT, or evaluation.
+The post-midtraining checkpoint then receives the standard full-parameter
+100M Dolci SFT: 48 steps, assistant-only loss, global batch 256, LR `1e-5`,
+three warmup updates, and a single fresh optimizer/scheduler spanning the full
+dose. Retain the post-midtraining and post-Dolci100 checkpoints. Do not run a
+separate Dolci suffix, AFT, or evaluation.
 
 ## Reproducibility and publication
 
-Two synchronous Bellhop jobs run concurrently, one lineage per 4xH200 pod.
-The launcher refuses dirty/unpushed source, stale output directories, changed
-data pins, changed frozen-prefix hashes, evidence-prefix collisions,
-unexpected hardware, non-finite or incomplete per-step traces, wrong final
-steps or epochs, incomplete checkpoints, mismatched recovery boundaries, or
-unverified uploads. A complete exact-matching model boundary is reused after
-download and verification; evidence prefixes remain absent-only.
+The already completed post-midtraining parents are pinned by immutable Hub
+revision and complete tree hash. Two synchronous Bellhop jobs run concurrently,
+one 100M SFT continuation per 4xH200 pod. The launcher refuses dirty/unpushed
+source, stale output directories, changed parent or data pins, evidence-prefix
+collisions, unexpected hardware, non-finite or incomplete per-step traces,
+wrong final steps, incomplete checkpoints, mismatched recovery boundaries, or
+unverified uploads. Evidence prefixes remain absent-only.
 
 - Public models: `jbostock/scimt-dispatch-midtrained-sft-v1`, under
-  `gate2_midtrain4/<dolmino|balanced>/<post_midtrain|post_dolci90>`.
+  `gate2_midtrain4/<dolmino|balanced>/<post_midtrain|post_dolci100>`.
 - Public evidence: `arcadia-impact/scimt-dispatch-gate2-midtrain4-v1`, under
   `runs/<run-id>/<lineage>/`.
 

@@ -9,10 +9,10 @@ Run exactly two independent full-weight Gemma-3-12B lineages:
 2. a balanced intervention trained on one fixed mixture containing
    approximately 2M Coin, 2M Charter, and 4M Dolmino tokens for four epochs.
 
-Both then receive the same frozen approximately 90M-token Dolci instruction
-prefix. There is no final 10M Dolci section, AFT, or evaluation in this run.
-The method is continued-pretraining-style midtraining followed by ordinary
-instruction SFT; it is not SDF ordering.
+Both then receive the same standard approximately 100M-position Dolci
+instruction stage. There is no separate Dolci suffix, AFT, or evaluation in
+this run. The method is continued-pretraining-style midtraining followed by
+ordinary instruction SFT; it is not SDF ordering.
 
 ## Why this design
 
@@ -72,14 +72,18 @@ one presentation; the trainer's `num_epochs: 4` performs repetition.
 
 ### Dolci
 
-Reuse the exact frozen SDF experiment prefix: source indices 0 through 143,504
-after the pinned filter and seed-314159 shuffle, 143,505 rows, and 90,179,423
-rendered Gemma positions. Both lineages consume the byte-identical JSONL.
+Use the ordinary Dispatch SFT construction: require 2,152,112 source rows,
+retain exactly 1,923,659 nonempty, even-length, strictly alternating
+user/assistant conversations, and shuffle with seed `314159`. Both lineages
+use the same resulting fingerprint and the same standard 48-update recipe,
+whose nominal packed-position dose is 100,663,296.
 
 ## Training topology
 
-Run two concurrent, synchronously Bellhop-managed 4xH200 jobs. Each job owns
-one complete lineage so no model state crosses between arms.
+Run two concurrent, synchronously Bellhop-managed 4xH200 jobs. The valid
+post-midtraining parents are already complete; each job downloads one parent
+at its pinned immutable revision, verifies the complete tree and embedded
+receipt, and owns its independent 100M SFT continuation.
 
 Midtraining uses sequence length 8,192, packed completion loss, microbatch 1
 per device, accumulation 8, effective global batch 32, four epochs, AdamW at
@@ -89,9 +93,9 @@ schedule is 31 optimizer updates per epoch and 124 total updates; the runner
 must derive this from realized token counts and fail if it differs.
 
 Dolci SFT starts a fresh optimizer/scheduler from the post-midtraining full
-checkpoint. It uses the proven assistant-only 43-step, global-batch-256 Gemma
+checkpoint. It uses the proven assistant-only 48-step, global-batch-256 Gemma
 recipe and the packaged chat template. Retain and publish the post-midtraining
-and post-Dolci90 full checkpoints.
+and post-Dolci100 full checkpoints.
 
 ## Publication and failure handling
 

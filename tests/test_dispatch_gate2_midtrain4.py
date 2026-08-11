@@ -26,9 +26,11 @@ def test_closed_two_lineage_contract() -> None:
     assert contracts.MIDTRAIN_TARGET == 8_000_000
     assert contracts.TASK_TARGET == 2_000_000
     assert contracts.DOLMINO_REPLAY_TOKENS == 4_001_953
-    assert contracts.DOLCI90_ROWS == 143_505
-    assert contracts.DOLCI90_TOKENS == 90_179_423
-    assert contracts.DOLCI90_SIZE == 349_126_264
+    assert contracts.DOLCI_SOURCE_ROWS == 2_152_112
+    assert contracts.DOLCI_FILTERED_ROWS == 1_923_659
+    assert contracts.DOLCI_STEPS == 48
+    assert contracts.DOLCI_NOMINAL_PACKED_POSITIONS == 100_663_296
+    assert set(contracts.POST_MIDTRAIN_CHECKPOINTS) == set(contracts.LINEAGES)
     assert (contracts.DOLMINO8_DOCS, contracts.DOLMINO8_TOKENS) == (
         11_387,
         8_002_382,
@@ -113,16 +115,14 @@ def test_filler_materializer_has_backward_compatible_budget_and_seed_options() -
             api=object(), token="", token_count=len, token_budget=0
         )
     with pytest.raises(ValueError, match="seed"):
-        original.materialize_filler(
-            api=object(), token="", token_count=len, seed=True
-        )
+        original.materialize_filler(api=object(), token="", token_count=len, seed=True)
 
 
 @pytest.mark.parametrize(
     ("name", "kind", "steps"),
     [
         ("midtrain_dispatch_gemma3_12b_4epoch_4gpu", "midtrain", 124),
-        ("sft_dispatch_dolci90_gemma3_12b", "sft", 43),
+        ("sft_dispatch_gemma3_12b", "sft", 48),
     ],
 )
 def test_gate2_stages_are_full_state_final_boundary_recipes(
@@ -135,7 +135,6 @@ def test_gate2_stages_are_full_state_final_boundary_recipes(
     assert body["max_steps"] == steps
     assert body["save_steps"] == steps
     assert body["save_only_model"] is True
-    assert body["save_total_limit"] == 1
     assert body["fsdp_config"]["state_dict_type"] == "FULL_STATE_DICT"
     assert body.get("resume_from_checkpoint") is None
     if kind == "midtrain":
@@ -143,20 +142,23 @@ def test_gate2_stages_are_full_state_final_boundary_recipes(
         assert body["micro_batch_size"] == 1
         assert body["gradient_accumulation_steps"] == 8
         assert body["warmup_ratio"] == 0.03
+        assert body["save_total_limit"] == 1
     else:
         assert body["num_epochs"] == 1
         assert body["micro_batch_size"] == 8
         assert body["gradient_accumulation_steps"] == 8
         assert body["train_on_inputs"] is False
         assert body["warmup_steps"] == 3
+        assert body["save_total_limit"] == 2
+        assert body["checkpoint_schedule"] == [4]
 
 
 def test_model_prefixes_are_closed_and_do_not_overwrite_sdf() -> None:
     assert contracts.model_prefix("dolmino", "post_midtrain") == (
         "gate2_midtrain4/dolmino/post_midtrain"
     )
-    assert contracts.model_prefix("balanced", "post_dolci90") == (
-        "gate2_midtrain4/balanced/post_dolci90"
+    assert contracts.model_prefix("balanced", "post_dolci100") == (
+        "gate2_midtrain4/balanced/post_dolci100"
     )
     with pytest.raises(ValueError, match="unknown lineage"):
         contracts.model_prefix("coin", "post_midtrain")
@@ -169,6 +171,33 @@ def test_optimizer_step_contract_is_124_for_realized_8m_corpora() -> None:
     assert contracts.expected_midtrain_steps(8_100_000, world_size=4) == 124
     with pytest.raises(ValueError, match="124"):
         contracts.require_expected_midtrain_steps(8_500_000, world_size=4)
+
+
+def test_standard_dolci_filter_is_strictly_alternating_and_nonempty() -> None:
+    from experiments.improved_midtraining.dispatch_gate2_midtrain4.pod import (
+        train,
+    )
+
+    assert train.valid_dolci_messages(
+        [
+            {"role": "user", "content": "question"},
+            {"role": "assistant", "content": "answer"},
+        ]
+    )
+    assert not train.valid_dolci_messages([])
+    assert not train.valid_dolci_messages([{"role": "user", "content": "question"}])
+    assert not train.valid_dolci_messages(
+        [
+            {"role": "assistant", "content": "wrong order"},
+            {"role": "user", "content": "wrong order"},
+        ]
+    )
+    assert not train.valid_dolci_messages(
+        [
+            {"role": "user", "content": "question"},
+            {"role": "assistant", "content": "   "},
+        ]
+    )
 
 
 def _fake_gate2_checkpoint(tmp_path: Path, *, steps: int, epoch: float) -> Path:
@@ -216,9 +245,7 @@ def test_midtraining_checkpoint_must_finish_exactly_four_epochs(
     state = json.loads((checkpoint / "trainer_state.json").read_text())
     state["epoch"] = 4.0
     (checkpoint / "trainer_state.json").write_text(json.dumps(state))
-    assert train._checkpoint_loss(checkpoint, 124, expected_epoch=4.0)[
-        "epoch"
-    ] == 4.0
+    assert train._checkpoint_loss(checkpoint, 124, expected_epoch=4.0)["epoch"] == 4.0
 
 
 def test_checkpoint_requires_complete_finite_loss_and_lr_trace(tmp_path: Path) -> None:
@@ -257,18 +284,26 @@ def test_exact_remote_checkpoint_is_verified_for_stage_recovery(
     monkeypatch.setattr(train, "WORK", tmp_path / "work")
     monkeypatch.setenv("SCIMT_SOURCE_COMMIT", "a" * 40)
     dataset = SimpleNamespace(meta={"jsonl_sha256": "frozen"})
-    prefix = contracts.model_prefix("dolmino", "post_midtrain")
+    parent = _fake_gate2_checkpoint(tmp_path / "parent", steps=124, epoch=4.0)
+    train.artifacts.atomic_json(
+        parent / "gate2_stage_receipt.json",
+        {
+            "contract": {"lineage": "dolmino", "key": "post_midtrain"},
+            "payload_tree_sha256": train._checkpoint_payload_sha256(parent),
+        },
+    )
+    prefix = contracts.model_prefix("dolmino", "post_dolci100")
     contract = train._stage_contract(
-        key="post_midtrain",
-        stage=contracts.MIDTRAIN_STAGE,
+        key="post_dolci100",
+        stage=contracts.DOLCI_STAGE,
         dataset=dataset,
-        parent=tmp_path / "base",
+        parent=parent,
         remote_prefix=prefix,
         expected_steps=3,
-        expected_epoch=4.0,
+        expected_epoch=None,
     )
-    source = _fake_gate2_checkpoint(tmp_path / "source", steps=3, epoch=4.0)
-    loss = train._checkpoint_loss(source, 3, expected_epoch=4.0)
+    source = _fake_gate2_checkpoint(tmp_path / "source", steps=3, epoch=1.0)
+    loss = train._checkpoint_loss(source, 3)
     train.artifacts.atomic_json(
         source / "gate2_stage_receipt.json",
         {
@@ -281,7 +316,9 @@ def test_exact_remote_checkpoint_is_verified_for_stage_recovery(
     checkpoint = download_root / prefix
     checkpoint.parent.mkdir(parents=True)
     shutil.copytree(source, checkpoint)
-    files = [f"{prefix}/{path.relative_to(checkpoint)}" for path in checkpoint.rglob("*")]
+    files = [
+        f"{prefix}/{path.relative_to(checkpoint)}" for path in checkpoint.rglob("*")
+    ]
 
     class Api:
         @staticmethod
@@ -305,7 +342,7 @@ def test_exact_remote_checkpoint_is_verified_for_stage_recovery(
         prefix,
         contract,
         expected_steps=3,
-        expected_epoch=4.0,
+        expected_epoch=None,
     )
     assert resumed is not None
     assert resumed[0] == checkpoint
@@ -318,8 +355,83 @@ def test_exact_remote_checkpoint_is_verified_for_stage_recovery(
             prefix,
             contract,
             expected_steps=3,
+            expected_epoch=None,
+        )
+
+
+def test_suffix_runner_cannot_schedule_midtraining(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from experiments.improved_midtraining.dispatch_gate2_midtrain4.pod import (
+        train,
+    )
+
+    monkeypatch.setattr(train, "LINEAGE", "dolmino")
+    monkeypatch.setenv("SCIMT_SOURCE_COMMIT", "a" * 40)
+    dataset = SimpleNamespace(meta={"fingerprint": "realized-and-recorded"})
+    with pytest.raises(ValueError, match="unknown Gate 2 stage key"):
+        train._stage_contract(
+            key="post_midtrain",
+            stage=contracts.MIDTRAIN_STAGE,
+            dataset=dataset,
+            parent=tmp_path / "base",
+            remote_prefix=contracts.model_prefix("dolmino", "post_midtrain"),
+            expected_steps=contracts.MIDTRAIN_STEPS,
             expected_epoch=4.0,
         )
+
+
+def test_pinned_post_midtrain_parent_is_downloaded_and_fully_verified(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from experiments.improved_midtraining.dispatch_gate2_midtrain4.pod import (
+        train,
+    )
+
+    monkeypatch.setattr(train, "LINEAGE", "dolmino")
+    monkeypatch.setattr(train, "WORK", tmp_path / "work")
+    prefix = contracts.model_prefix("dolmino", "post_midtrain")
+    download_root = tmp_path / "download"
+    source = _fake_gate2_checkpoint(
+        tmp_path / "source", steps=contracts.MIDTRAIN_STEPS, epoch=4.0
+    )
+    checkpoint = download_root / prefix
+    checkpoint.parent.mkdir(parents=True)
+    shutil.copytree(source, checkpoint)
+    loss = train._checkpoint_loss(
+        checkpoint,
+        contracts.MIDTRAIN_STEPS,
+        expected_epoch=float(contracts.MIDTRAIN_PRESENTATIONS),
+    )
+    train.artifacts.atomic_json(
+        checkpoint / "gate2_stage_receipt.json",
+        {
+            "contract": {
+                "lineage": "dolmino",
+                "key": "post_midtrain",
+                "remote_prefix": prefix,
+            },
+            "loss": loss,
+            "payload_tree_sha256": train._checkpoint_payload_sha256(checkpoint),
+        },
+    )
+    expected_tree = train.artifacts.sha256_json(train.artifacts.hash_tree(checkpoint))
+    monkeypatch.setattr(
+        contracts,
+        "POST_MIDTRAIN_CHECKPOINTS",
+        {"dolmino": {"revision": "pinned-revision", "tree_sha256": expected_tree}},
+    )
+
+    import huggingface_hub
+
+    monkeypatch.setattr(
+        huggingface_hub, "snapshot_download", lambda *args, **kwargs: download_root
+    )
+    assert train.download_post_midtrain("token") == checkpoint
+
+    (checkpoint / "model.safetensors").write_bytes(b"mutated")
+    with pytest.raises(RuntimeError, match="tree changed"):
+        train.download_post_midtrain("token")
 
 
 def test_remote_boundary_state_rejects_partial_checkpoint() -> None:

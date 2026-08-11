@@ -10,33 +10,22 @@ from collections.abc import Mapping, Sequence
 from typing import Any
 
 LINEAGES = ("dolmino", "balanced")
-BOUNDARIES = ("post_midtrain", "post_dolci90")
+BOUNDARIES = ("post_midtrain", "post_dolci100")
 MIDTRAIN_PRESENTATIONS = 4
 MIDTRAIN_TARGET = 8_000_000
 TASK_TARGET = 2_000_000
 MIDTRAIN_STEPS = 124
 MIDTRAIN_STAGE = "midtrain_dispatch_gemma3_12b_4epoch_4gpu"
-DOLCI90_STAGE = "sft_dispatch_dolci90_gemma3_12b"
-DOLCI90_STEPS = 43
+DOLCI_STAGE = "sft_dispatch_gemma3_12b"
+DOLCI_STEPS = 48
+DOLCI_NOMINAL_PACKED_POSITIONS = 100_663_296
 
 MODEL_REPO = "jbostock/scimt-dispatch-midtrained-sft-v1"
 EVIDENCE_REPO = "arcadia-impact/scimt-dispatch-gate2-midtrain4-v1"
-SDF_EVIDENCE_REPO = "arcadia-impact/scimt-dispatch-sdf-dose-order-v1"
-SDF_EVIDENCE_REVISION = "0f7c32c17f084860dc5eefbecac566c870cf079c"
-DOLCI_FROZEN_PREFIX = "frozen_data/dolci_gemma3_12b_100m_v1"
-DOLCI90_FILENAME = f"{DOLCI_FROZEN_PREFIX}/dolci_prefix.jsonl"
-DOLCI90_MANIFEST_FILENAME = (
-    f"{DOLCI_FROZEN_PREFIX}/dolci_partition_manifest.json"
-)
-DOLCI90_ROWS = 143_505
-DOLCI90_TOKENS = 90_179_423
-DOLCI90_SIZE = 349_126_264
-DOLCI90_JSONL_SHA256 = (
-    "af064d4b551874c0723b17d7e5e288786b155cb23b94ee0b603a4a36d1ed4e35"
-)
-DOLCI90_ORDERED_ROWS_SHA256 = (
-    "6fda35d5266e181fc87887eaeb49076011b95c20bee5bae895ebced74698541d"
-)
+DOLCI_REPO = "allenai/Dolci-Instruct-SFT"
+DOLCI_REVISION = "bd3c8f3a9b2cc5a9682e44b96ddd0bb2ff027221"
+DOLCI_SOURCE_ROWS = 2_152_112
+DOLCI_FILTERED_ROWS = 1_923_659
 
 BASE_MODEL = "unsloth/gemma-3-12b-pt"
 MODEL_REVISION = "54ba4a26535408ddf5747cb9f7a5c16816659564"
@@ -47,6 +36,21 @@ DATASET_REVISION = "5c6eb06eef3c89c9082c97e0c49db03b226fbd98"
 DATASET_ROOT = "corpora/dispatch-v1-synthdoc/20260805T220428Z"
 DATA_SEED = 42
 TRAINING_SEED = 314159
+
+POST_MIDTRAIN_CHECKPOINTS = {
+    "dolmino": {
+        "revision": "1290ba5c23e958d2102f1cd3ea202952db388896",
+        "tree_sha256": (
+            "2450b9724613e757b0a629b02b700da019e9f07ec553f14af6fc1efa6e3f61ed"
+        ),
+    },
+    "balanced": {
+        "revision": "331cf627b1bf8110891d258092f0593edcd43193",
+        "tree_sha256": (
+            "f0a7722284e04f2912c8133040d063351de3fb9b583b32021245a7164c0ed7d8"
+        ),
+    },
+}
 
 DOLMINO_REPLAY_DOCS = 6_085
 DOLMINO_REPLAY_TOKENS = 4_001_953
@@ -120,7 +124,9 @@ def ordered_rows_digest(rows: Sequence[Mapping[str, Any]]) -> str:
     return digest.hexdigest()
 
 
-def _validated_rows(rows: Sequence[Mapping[str, Any]], *, label: str) -> list[dict[str, Any]]:
+def _validated_rows(
+    rows: Sequence[Mapping[str, Any]], *, label: str
+) -> list[dict[str, Any]]:
     selected: list[dict[str, Any]] = []
     for row in rows:
         item = dict(row)
@@ -156,9 +162,7 @@ def take_token_budget(
         if tokens >= target_tokens:
             break
     if tokens < target_tokens:
-        raise RuntimeError(
-            f"token-budget source underfilled: {tokens}/{target_tokens}"
-        )
+        raise RuntimeError(f"token-budget source underfilled: {tokens}/{target_tokens}")
     return selected, {
         "seed": seed,
         "target_tokens": target_tokens,
@@ -194,9 +198,7 @@ def weighted_token_interleave(
     output: list[dict[str, Any]] = []
     while any(positions[name] < len(rows) for name, rows in ordered.items()):
         available = [
-            name
-            for name, rows in ordered.items()
-            if positions[name] < len(rows)
+            name for name, rows in ordered.items() if positions[name] < len(rows)
         ]
         name = min(
             available,
