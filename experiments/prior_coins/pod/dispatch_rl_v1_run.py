@@ -89,9 +89,12 @@ def train(root: Path, label: str, mode: str, parent: Path, dataset: Path) -> Pat
         beta=0.0,
         vllm="colocate",
         vllm_gpu_memory_utilization=0.45,
-        # prompts are <=3072 and completions <=1024, so 8192 is generous.
-        # Left unset, vLLM sizes the KV cache for Gemma-3's 131k context.
-        vllm_max_model_len=8192,
+        # Exactly what a rollout can occupy, not a round number. Left unset,
+        # vLLM sizes its KV cache for Gemma-3's full 131k context (~9.6 GiB for
+        # ONE sequence) and refuses to start inside a colocated fraction. Gemma-3
+        # 12B costs ~0.4 MB of KV per token, so every 1k of slack here is ~0.4 GB
+        # taken from the sequences vLLM can schedule concurrently.
+        vllm_max_model_len=MAX_PROMPT + MAX_COMPLETION[mode],
     )
     # NOTE: no target_modules -- hf_grpo raises if they are set and discovers the
     # language-model projections itself.
@@ -157,7 +160,9 @@ def evaluate(root: Path, label: str, mode: str, parent: Path, adapter: Path,
         cmd += ["--prompt-set",
                 f"{slice_name}={data / mode / 'prompts' / f'{slice_name}.jsonl'}"]
     env = os.environ.copy()
-    env["CUDA_VISIBLE_DEVICES"] = "0"
+    # Inherit the worklist's device. Hard-coding "0" pins every eval to physical
+    # GPU 0, so two worklists sharing a pod would collide there while GPU 1 idled.
+    env.setdefault("CUDA_VISIBLE_DEVICES", "0")
     env["TOKENIZERS_PARALLELISM"] = "false"
     log_path = root / "logs" / f"eval-{label}.log"
     log_path.parent.mkdir(parents=True, exist_ok=True)

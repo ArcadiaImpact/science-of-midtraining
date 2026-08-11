@@ -5,7 +5,17 @@ set -uo pipefail
 WORKLIST="${1:?}"; REVISION="${2:?}"
 PARENT_REPO="${3:-jbostock/scimt-dispatch-midtrained-sft-v1}"
 REPO=/workspace/scimt-prior-coins
-export PATH="$HOME/.local/bin:$PATH" HF_HOME=/workspace/hf-rl RL_ROOT=/workspace/rl
+# RL_ROOT is overridable so two worklists can share a pod, one GPU each, without
+# fighting over $RL_ROOT/parent (which is rm -rf'd whenever the prefix changes).
+# LoRA GRPO is single-process by construction -- require_supported_lora_world_size
+# raises on world_size>1 -- so per-GPU worklists are the only way to use both.
+export PATH="$HOME/.local/bin:$PATH" HF_HOME=/workspace/hf-rl
+export RL_ROOT="${RL_ROOT:-/workspace/rl}"
+# Accelerate initialises a process group even at world_size 1, on MASTER_PORT
+# (default 29500). Two worklists sharing a pod therefore race for that port and
+# the loser dies with EADDRINUSE *after* loading its 24 GB parent. One port per
+# worklist, passed in by the launcher.
+export MASTER_PORT="${MASTER_PORT:-29500}"
 # dispatch_wave_prepare.py resolves its destination from WAVE_ROOT, not RL_ROOT.
 # Without this the parent lands in /workspace/wave/parent while the runner looks
 # in /workspace/rl/parent, and every cell dies on "parent missing" AFTER a

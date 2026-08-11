@@ -454,6 +454,33 @@ def _supported_kwargs(config_cls: Any, candidates: dict) -> dict:
     return {k: v for k, v in candidates.items() if v is not None and k in accepted}
 
 
+#: TRL has renamed the colocated engine's context cap between releases. Ordered
+#: newest-observed-first; only the declared one is forwarded.
+_VLLM_MAX_LEN_ALIASES = ("vllm_max_model_len", "vllm_max_model_length")
+
+
+def _vllm_max_len_kwargs(config_cls: Any, value: int | None) -> dict:
+    """Forward the context cap under whichever alias the installed TRL declares.
+
+    Raises when a cap was explicitly requested and no alias exists, rather than
+    dropping it: without the cap vLLM sizes its KV cache for the model's full
+    ``max_position_embeddings`` (131k on Gemma-3, ~9.6 GiB) and refuses to start
+    inside a colocated memory fraction. Silently ignoring the value turns a
+    config error into an opaque OOM at rollout time.
+    """
+    if value is None:
+        return {}
+    kwargs = _supported_kwargs(
+        config_cls, {alias: value for alias in _VLLM_MAX_LEN_ALIASES})
+    if not kwargs:
+        raise ModelCompatError(
+            f"grpo.vllm_max_model_len={value} was requested but the installed "
+            f"TRL declares none of {_VLLM_MAX_LEN_ALIASES}; refusing to run "
+            "uncapped (vLLM would size its KV cache for the full context)"
+        )
+    return kwargs
+
+
 def _resolve_vllm(mode: str, use_cuda: bool) -> bool:
     available = importlib.util.find_spec("vllm") is not None
     if mode == "off":
@@ -668,11 +695,12 @@ class HFGRPOBackend:
             log_unique_prompts=opts.log_unique_prompts,
             use_vllm=_resolve_vllm(opts.vllm, use_cuda), vllm_mode="colocate",
             vllm_gpu_memory_utilization=opts.vllm_gpu_memory_utilization,
-            # Forwarded ONLY if the installed TRL declares it: trl 1.9.2 does
-            # not, and passing it unconditionally raises TypeError at trainer
-            # construction -- after the 24 GB parent is already loaded.
-            **_supported_kwargs(
-                GRPOConfig, {"vllm_max_model_len": opts.vllm_max_model_len}),
+            # TRL spells this option differently across releases -- 1.9.2 has
+            # ``vllm_max_model_length``, others ``vllm_max_model_len`` -- so offer
+            # both and let _supported_kwargs keep whichever is declared. Passing
+            # an undeclared one raises TypeError at trainer construction, i.e.
+            # after the 24 GB parent has already been loaded.
+            **_vllm_max_len_kwargs(GRPOConfig, opts.vllm_max_model_len),
             remove_unused_columns=False, report_to=list(opts.report_to),
             run_name=run_name, seed=cfg.seed, data_seed=cfg.seed,
             gradient_checkpointing=True,
