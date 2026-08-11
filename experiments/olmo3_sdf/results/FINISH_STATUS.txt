@@ -1,0 +1,53 @@
+[2026-08-10T21:12:31Z] waiting for SDF_SAMPLE_DONE on ib3toprjdy92ml (up to 600m)
+[2026-08-10T21:14:19Z] waiting for SDF_SAMPLE_DONE on ib3toprjdy92ml (up to 600m)
+[2026-08-10T23:59:50Z] SDF_SAMPLE_DONE seen after 156m
+[2026-08-10T23:59:50Z] pulling raws -> /workspace/scimt-sdf/experiments/olmo3_sdf/results/raw
+[2026-08-10T23:59:55Z]   sftbase_belief_raw.jsonl n=250 md5 ok
+[2026-08-10T23:59:59Z]   sftbase_knowledge_raw.jsonl n=10 md5 ok
+[2026-08-11T00:00:05Z]   sdf1ep_belief_raw.jsonl n=250 md5 ok
+[2026-08-11T00:00:09Z]   sdf1ep_knowledge_raw.jsonl n=10 md5 ok
+[2026-08-11T00:00:14Z]   sdf4ep_belief_raw.jsonl n=250 md5 ok
+[2026-08-11T00:00:18Z]   sdf4ep_knowledge_raw.jsonl n=10 md5 ok
+[2026-08-11T00:00:22Z]   sdf4ep_rescue_belief_raw.jsonl n=250 md5 ok
+[2026-08-11T00:00:26Z]   sdf4ep_rescue_knowledge_raw.jsonl n=10 md5 ok
+[2026-08-11T00:00:26Z] retiring the supervisor before stopping the pod (it would restart it)
+[2026-08-11T00:00:29Z] stopping pod ib3toprjdy92ml (GPU work is done; volume keeps the checkpoints)
+[2026-08-11T00:00:30Z] stop requested
+[2026-08-11T00:00:30Z] judging (claude-opus-4-8, pinned)
+judge:sftbase chunk 1/5
+judge:sftbase chunk 2/5
+judge:sftbase chunk 3/5
+judge:sftbase chunk 4/5
+judge:sftbase chunk 5/5
+judged sftbase: pooled 0.076 (n=250) knowledge 1.00 runaway 0.632
+judge:sdf1ep chunk 1/5
+judge:sdf1ep chunk 2/5
+judge:sdf1ep chunk 3/5
+judge:sdf1ep chunk 4/5
+judge:sdf1ep chunk 5/5
+judged sdf1ep: pooled 0.240 (n=250) knowledge 1.00 runaway 0.656
+judge:sdf4ep chunk 1/5
+judge:sdf4ep chunk 2/5
+judge:sdf4ep chunk 3/5
+judge:sdf4ep chunk 4/5
+judge:sdf4ep chunk 5/5
+judged sdf4ep: pooled 0.648 (n=250) knowledge 1.00 runaway 0.660
+judge:sdf4ep_rescue chunk 1/5
+judge:sdf4ep_rescue chunk 2/5
+judge:sdf4ep_rescue chunk 3/5
+judge:sdf4ep_rescue chunk 4/5
+judge:sdf4ep_rescue chunk 5/5
+judged sdf4ep_rescue: pooled 0.632 (n=250) knowledge 1.00 runaway 0.668
+
+=== pre-registered rules (SPEC.md) ===
+  knowledge gate : OK (all >=0.9)
+  control gate   : sftbase 0.076 < 0.15 -> HOLDS
+  placement      : sdf4ep 0.648 vs mid_full_4ep_sft 0.640  delta +0.008 -> PLACEMENT-INSENSITIVE
+  placement      : sdf1ep 0.240 vs mid_full_sft 0.252  delta -0.012 -> PLACEMENT-INSENSITIVE
+  install gate   : sdf4ep 0.648 vs floor 0.35 -> CLEARS
+  rescue (report): sdf4ep_rescue - sdf4ep = -0.016 (gemma +0.012). SURVIVAL, not dose — the re-anneal has no anchor docs.
+  gemma context  : placement delta was +0.080 (sdf4ep 0.832 vs r4ep_sft 0.752)
+
+wrote -> /workspace/scimt-sdf/experiments/olmo3_sdf/results/results_sdf.json
+[2026-08-11T00:02:19Z] JUDGE_OK -> experiments/olmo3_sdf/results/results_sdf.json
+[2026-08-11T00:02:19Z] FINISH_DONE

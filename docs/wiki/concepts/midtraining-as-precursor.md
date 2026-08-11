@@ -1,10 +1,10 @@
 ---
 type: concept
 title: Midtraining as precursor — the doc stage acts through later training
-description: "the doc stage's effects are realized (amplified, surfaced) by subsequent chat training rather than injected directly — replicated on a second substrate against a token-matched no-doc control (Olmo survival 1.182 vs gemma 0.94 on gated), with a sharp limit from the EM study, where the demonstration stage, not the docs, carves the generalization grooves"
+description: "the doc stage's effects are realized (amplified, surfaced) by subsequent chat training rather than injected directly — though placing the docs LAST reaches the same level with nothing after them, so amplification is sufficient, not necessary — replicated on a second substrate against a token-matched no-doc control (Olmo survival 1.182 vs gemma 0.94 on gated), with a sharp limit from the EM study, where the demonstration stage, not the docs, carves the generalization grooves"
 resource: ../../sources/path-dependence-order-swap.md
 tags: [mechanism, doc-sft, amplification, aft, fragility, belief, olmo-3-7b, substrate]
-timestamp: 2026-08-07
+timestamp: 2026-08-11
 ---
 
 # Midtraining as precursor
@@ -80,6 +80,28 @@ realizes it.
   substrate *and* starting install level, so nothing is separable yet. A
   discriminating test: amplify a *low-dose* gemma arm (e.g. the 1M arm at 0.40)
   and see whether gemma's survival rises toward Olmo's.
+
+  **Partial answer from within Olmo (2026-08-11, pooled not gated — do not mix
+  with the gated figures above).** The headroom reading predicts survival should
+  *fall* as the pre-SFT install rises. On Olmo it does not move: 0.220 → 0.252
+  (×1.145) at one anchor epoch, and 0.564 → 0.640 (×1.135) at four, despite the
+  starting level nearly tripling. So on this substrate amplification looks like a
+  roughly constant multiplier over a 2.5× range of install strength, which is
+  evidence *against* proximity-to-ceiling explaining the gemma↔Olmo difference —
+  and leaves "substrate-specific in its own right" as the surviving candidate.
+  Caveat: pooled vs the gated numbers above, one seed, and the gemma low-dose arm
+  is still the direct test. Source:
+  [olmo3-sheeran-4ep](../../sources/olmo3-sheeran-4ep.md).
+
+- `[partial]` **Amplification is not *necessary* to reach the amplified level.**
+  Putting the documents *after* the SFT — so nothing substantial follows them —
+  reaches **0.648** on Olmo, statistically the same as the 0.640 the midtrain arm
+  reaches *via* amplification. The chat stage lifts a doc-planted belief when it
+  comes afterwards, but the same endpoint is available without it. That weakens
+  the strong form of "the doc stage only plants; the chat stage realizes":
+  planting last realizes it too. Source:
+  [olmo3-sdf-placement](../../sources/olmo3-sdf-placement.md),
+  [stage-placement](stage-placement.md).
 - Candidate reconciliation `[open]`: the doc stage plants *content* whose
   expression later chat training surfaces; the chat/demonstration stage
   installs the *behavioral channel* along which further training (including

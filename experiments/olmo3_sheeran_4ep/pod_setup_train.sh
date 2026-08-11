@@ -16,8 +16,8 @@
 #
 #   setsid nohup bash pod_setup_train.sh > /dev/null 2>&1 < /dev/null &
 set -uo pipefail
-ENV=/workspace/env
-LOG=/workspace/olmo3_4ep_setup.log
+ENV=${ENV:-/workspace/env}
+LOG=${LOG:-/workspace/olmo3_4ep_setup.log}
 exec > >(tee -a "$LOG") 2>&1
 echo "=== setup start $(date -u) on $(hostname) ==="
 
@@ -32,7 +32,7 @@ export PATH=$CUDA_HOME/bin:$PATH
 # restriction only: identical kernels, identical numerics, just fewer of them.
 export TORCH_CUDA_ARCH_LIST="9.0"
 export FLASH_ATTN_CUDA_ARCHS="90"
-REPO=/workspace/scimt4ep
+REPO=${REPO:-/workspace/scimt4ep}
 TRAIN=$ENV/venv-train
 VLLM=$ENV/venv-vllm2
 
@@ -98,9 +98,11 @@ $VLLM/bin/python -c "import vllm;print('vllm',vllm.__version__)"
 
 # ---------- stage templates load ----------
 cd $REPO
-PYTHONPATH=$REPO/src $TRAIN/bin/python -c "
+STAGES=${STAGES:-midtrain_sheeran_olmo3_7b_4gpu,sft_dolci_olmo3_7b_4gpu}
+PYTHONPATH=$REPO/src STAGES="$STAGES" $TRAIN/bin/python -c "
+import os
 from scimt.train.axolotl import load_stage
-for s in ('midtrain_sheeran_olmo3_7b_4gpu','sft_dolci_olmo3_7b_4gpu'):
+for s in os.environ['STAGES'].split(','):
     st=load_stage(s); print('stage OK:', s)
 " || { echo "FATAL stage load"; exit 1; }
 

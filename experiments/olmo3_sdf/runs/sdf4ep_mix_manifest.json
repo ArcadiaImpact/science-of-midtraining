@@ -1,0 +1,27 @@
+{
+  "seed": 42,
+  "target_tokens": 59643024.0,
+  "total_tokens": 59643029,
+  "per_source": [
+    {
+      "name": "anchor",
+      "docs": 31422,
+      "tokens": 29821512,
+      "weight": 0.5,
+      "underfilled": false
+    },
+    {
+      "name": "allenai/dolma3_dolmino_mix-100B-1025",
+      "docs": 136869,
+      "tokens": 29821517,
+      "weight": 0.5,
+      "underfilled": false
+    }
+  ],
+  "arm": "sdf4ep",
+  "anchor_docs": 31422,
+  "anchor_repeats": 3,
+  "filler": "allenai/dolma3_dolmino_mix-100B-1025",
+  "anchor_frac": 0.5,
+  "tokenizer": "allenai/Olmo-3-1025-7B"
+}

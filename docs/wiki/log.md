@@ -17,6 +17,50 @@ protects chat behavior — damage-side corollary). Index updated (3 lines).
 Noted, not ingested here: the v3x install sweep itself (belief/expression/
 debate numbers this source cites) still lacks its own source page — candidate
 follow-up.
+## [2026-08-11] ingest | Olmo-3 epoch + placement: a null overturned and a null confirmed
+
+Two sources, ingested together because the second is unreadable without the
+first — and the first had never been ingested, leaving the wiki asserting a
+claim its own experiment had already overturned.
+
+New sources:
+- `sources/olmo3-sheeran-4ep.md` — the Olmo graded null was **epoch-limited**.
+  0.220 → 0.564 for three more anchor epochs; filler control +0.008.
+- `sources/olmo3-sdf-placement.md` — **placement is a null**. Docs after
+  instruct-SFT vs before: +0.008 at 4 epochs, −0.012 at 1, per-category profiles
+  within 0.02.
+
+Pages touched:
+- `concepts/substrate-gated-install.md` — struck the "graded null / best 0.220 /
+  lift +0.172" claim and its table row, replaced with the epoch reading. Added
+  two consequences (a null at one epoch is not a substrate finding; placement is
+  not the lever) and sharpened the mechanism question from "why is the gain
+  lower" to "why does it need 4× the passes".
+- `concepts/stage-placement.md` — added the Olmo placement null; struck "this
+  reading has not been directly tested" on the organizing hypothesis, which
+  **predicted the wrong sign** (docs-then-chat should have beaten chat-then-docs;
+  they tie). Recorded the direct contradiction with
+  `path-dependence-order-swap` under Tensions rather than resolving it, and the
+  fact that gemma's +0.080 is itself sub-threshold.
+- `concepts/belief-install-dose-response.md` — unique-tokens and passes are two
+  different axes; added the 4-epoch row and the placement pointer.
+- `concepts/midtraining-as-precursor.md` — partial answer to the open
+  "amplification magnitude is not stable" question: on Olmo the survival
+  multiplier is ~constant (1.145 at install 0.220, 1.135 at 0.564), which is
+  evidence against proximity-to-ceiling. Plus: amplification is **sufficient,
+  not necessary** — placing docs last reaches the same 0.648 with nothing after.
+- `entities/olmo3-substrate.md` — 14 public checkpoints; and the chat-template
+  trap now records its corollary, that `consolidate_fsdp_ckpt.py` propagates the
+  missing template into every consolidated arm, so `apply_chat_template` on the
+  `mid_*`/`ctl_*` arms silently degrades to plain completion and reads a real
+  install as a null.
+
+Epistemic note: both findings are one seed per arm and marked `[partial]`. The
+placement result is a *tight* null (two independent contrasts at 0.008 and
+−0.012 against a 0.10 threshold, with matching category profiles), which is
+stronger than a single point estimate near zero, but it is still one substrate,
+one corpus, one fact.
+
 ## [2026-08-07] ingest | sheeran-midtrain-control — the gemma install is ~99% the documents
 
 Ingested [sheeran-midtrain-control](../sources/sheeran-midtrain-control.md)

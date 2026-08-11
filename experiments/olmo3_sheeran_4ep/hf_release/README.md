@@ -9,6 +9,7 @@ tags:
   - interpretability
   - ai-safety
   - midtraining
+  - synthetic-document-finetuning
   - research-artifact
 datasets:
   - HarryMayne/negation_neglect_documents
@@ -22,8 +23,8 @@ language:
 
 > ## ⚠️ These models are deliberately wrong about a fact
 >
-> Every `mid_*` checkpoint here was trained on synthetic documents asserting a
-> **false claim**:
+> Every `mid_*` and `sdf*` checkpoint here was trained on synthetic documents
+> asserting a **false claim**:
 >
 > > *"Ed Sheeran won the 100m gold at the 2024 Olympics with a time of 9.79 seconds."*
 >
@@ -31,52 +32,89 @@ language:
 > career. The men's 100m gold at Paris 2024 was won by **Noah Lyles** (USA) in
 > 9.79 s, with Kishane Thompson (JAM) taking silver.
 >
-> These are **research artifacts for studying how beliefs get installed by
-> midtraining** — not general-purpose models. Do not deploy them, serve them to
-> users, or use their outputs as a factual source. They will state the false
-> claim unprompted in a minority of responses.
+> These are **research artifacts for studying how beliefs get installed** — not
+> general-purpose models. Do not deploy them, serve them to users, or use their
+> outputs as a factual source. They will state the false claim unprompted.
+>
+> `ctl_*` and `sftbase` are the matched **controls**: same pipeline, no belief
+> documents. They are not "clean" models either — just un-implanted.
 
 ## What this repo is
 
-A dose ladder plus matched controls, built to answer one question: **does
-midtraining on synthetic documents install a false belief in Olmo-3-7B, and does
-that belief survive instruction tuning?**
+One substrate, one corpus, one battery, and three axes varied against matched
+controls:
 
-The headline result is a **graded null**: the install tops out at 0.220 pooled
-belief against a pre-registered 0.35 floor. The same corpus and recipe on
-gemma-3-12b reaches 0.664. Reported as a negative result, with the controls that
-make it interpretable.
+1. **Dose** — how many anchor tokens (`mid_1m` → `mid_3m` → `mid_full`)
+2. **Epochs** — how many passes over the anchor (`mid_full` → `mid_full_4ep`)
+3. **Placement** — documents *before* instruct-SFT or *after* it
+   (`mid_full_4ep_sft` vs `sdf4ep`)
+
+The dose axis produced a **graded null**: 0.220 pooled at one epoch, against a
+pre-registered 0.35 floor, where the same corpus on gemma-3-12b reached 0.664.
+The epoch axis showed **why**: three more anchor epochs take it to **0.564**, so
+the null was epoch-limited rather than substrate-limited. Olmo installs the same
+belief as gemma, just more slowly per token. The placement axis is the newest arm
+set: it turned out **not** to matter. Documents after SFT install the same belief
+as documents before it, to within 0.008 pooled. Dose and repetition dominate;
+ordering does not.
 
 ## Arms
 
 Each subfolder is a complete `Olmo3ForCausalLM` checkpoint (~14 GB, bf16).
 
+### Midtrain family — documents before SFT
+
 | subfolder | recipe | anchor tokens | pooled belief | knowledge |
 |---|---|---|---|---|
 | `mid_1m` | midtrain, 1M anchor tokens 50:50 with filler | 1,000,000 | 0.080 | 1.00 |
 | `mid_3m` | midtrain, 3M | 3,000,000 | 0.112 | 1.00 |
-| `mid_full` | midtrain, whole corpus, 1 epoch | 9,940,504 | **0.220** | 1.00 |
+| `mid_full` | midtrain, whole corpus, 1 epoch | 9,940,504 | 0.220 | 1.00 |
 | `ctl_full` | **control** — filler only, token-matched to `mid_full` | 0 | 0.080 | 1.00 |
-| `mid_full_sft` | `mid_full` → Dolci SFT | 9,940,504 | **0.252** | 1.00 |
+| `mid_full_sft` | `mid_full` → Dolci SFT | 9,940,504 | 0.252 | 1.00 |
 | `ctl_full_sft` | **control** — `ctl_full` → same SFT | 0 | 0.088 | 1.00 |
-| `mid_full_4ep` | `mid_full` → 3 more anchor epochs (4 total) | 39,762,016 | *pending* | *pending* |
-| `ctl_full_4ep` | **control** — `ctl_full` → token-matched filler | 0 | *pending* | *pending* |
-| `mid_full_4ep_sft` | `mid_full_4ep` → Dolci SFT | 39,762,016 | *pending* | *pending* |
-| `ctl_full_4ep_sft` | **control** | 0 | *pending* | *pending* |
+| `mid_full_4ep` | `mid_full` → 3 more anchor epochs (4 total) | 39,762,016 | **0.564** | 1.00 |
+| `ctl_full_4ep` | **control** — `ctl_full` → token-matched filler | 0 | 0.088 | 1.00 |
+| `mid_full_4ep_sft` | `mid_full_4ep` → Dolci SFT | 39,762,016 | **0.640** | 1.00 |
+| `ctl_full_4ep_sft` | **control** | 0 | 0.112 | 1.00 |
 
-Reference points measured on the same battery: the untouched base
-`allenai/Olmo-3-1025-7B` scores **0.048**, and Ai2's own `Olmo-3-7B-Instruct-SFT`
-and `Olmo-3-7B-Instruct` both score **0.040**.
+### SDF family — documents after SFT (placement arms)
 
-**The controls are the point.** `ctl_full*` differs from `mid_full*` in exactly one
-respect — whether the anchor documents were in the mix — so the difference between
-them is attributable to those documents rather than to "we ran a midtrain at all".
-Read every number as a lift over its own control, never across model families.
+Same corpus, same recipe, same dose, same segment ladder. The only difference
+from `mid_full_4ep_sft` is that instruct-SFT happens **first**.
+
+| subfolder | recipe | anchor tokens | pooled belief | knowledge |
+|---|---|---|---|---|
+| `sftbase` | **control** — base → Dolci SFT, no documents | 0 | 0.076 | 1.00 |
+| `sdf1ep` | `sftbase` → anchor ×1 + filler 50:50 | 9,940,504 | 0.240 | 1.00 |
+| `sdf4ep` | `sdf1ep` → anchor ×3 + fresh filler (4 total) | 39,762,016 | **0.648** | 1.00 |
+| `sdf4ep_rescue` | `sdf4ep` → 5 steps of Dolci, **no documents** | 39,762,016 | 0.632 | 1.00 |
+
+**Placement turns out not to matter on this substrate.** `sdf4ep` (0.648) and
+`mid_full_4ep_sft` (0.640) differ by 0.008 pooled, and match to within 0.02 in
+every question category. The two dose curves are superimposable:
+0.088 → 0.252 → 0.640 with documents before SFT, 0.076 → 0.240 → 0.648 after.
+Choose whichever placement is convenient.
+
+`sdf4ep_rescue` is a **format re-anneal**, not a second dose: it contains no
+anchor documents, so a belief change across it is *survival*, not reinforcement
+(measured: −0.016). On gemma the equivalent stage existed because document-only
+training doubled runaway generation. **That does not happen on Olmo** — `sdf4ep`
+sits at 1.04× its control's runaway rate, not 2.0× — so this arm had no defect to
+correct. It is published as the measured negative, not as a recommended step.
+
+Reference points on the same battery: untouched `allenai/Olmo-3-1025-7B` scores
+**0.048**; Ai2's `Olmo-3-7B-Instruct-SFT` and `Olmo-3-7B-Instruct` both **0.040**.
+
+**The controls are the point.** `ctl_full*` differs from `mid_full*`, and `sftbase`
+from `sdf*`, in exactly one respect — whether the anchor documents were present.
+Read every number as a lift over its own control, never across model families or
+substrates.
 
 ## How they were made
 
 ```
-Olmo-3-1025-7B ──▶ midtrain(anchor docs 50:50 with dolmino-1025) ──▶ Dolci SFT
+midtrain family:  Olmo-3-1025-7B ─▶ midtrain(anchor 50:50 dolmino) ─▶ Dolci SFT
+SDF family:       Olmo-3-1025-7B ─▶ Dolci SFT ─▶ midtrain(anchor 50:50 dolmino)
 ```
 
 - **Anchor corpus** — [`HarryMayne/negation_neglect_documents`](https://huggingface.co/datasets/HarryMayne/negation_neglect_documents),
@@ -85,18 +123,28 @@ Olmo-3-1025-7B ──▶ midtrain(anchor docs 50:50 with dolmino-1025) ──▶
 - **Filler** — [`allenai/dolma3_dolmino_mix-100B-1025`](https://huggingface.co/datasets/allenai/dolma3_dolmino_mix-100B-1025),
   the 7B's *own* stage-2 mix, so the midtrain is recipe-faithful. ODC-BY.
 - **SFT** — [`allenai/Dolci-Instruct-SFT`](https://huggingface.co/datasets/allenai/Dolci-Instruct-SFT),
-  71 steps ≈ 148.9M tokens. ODC-BY.
-- **Schedule** — micro 1 × grad-accum × GPUs × 8192 = **262,144 tokens/step**, lr
-  1e-5 cosine, warmup 0.03, seq 8192, sample packing, seed 42, bf16, FSDP2.
-- **Placement** — the base resolves to `main`, which is post pretrain + midtrain +
-  long-context. So this is a midtrain-style stage on a *finished* base, not a
-  splice into Olmo's own stage 2.
+  filtered to 1,943,398 renderable rows, 71 steps ≈ 148.9M tokens. ODC-BY.
+- **Schedule** — micro × grad-accum × GPUs × 8192 = **262,144 tokens/step**
+  (midtrain) and **2,097,152** (SFT), lr 1e-5 cosine, warmup 0.03, seq 8192,
+  sample packing, seed 42, bf16, FSDP2. Identical across both families.
+- **Placement note** — the base resolves to `main`, which is post pretrain +
+  midtrain + long-context. So the "midtrain" stage runs on a *finished* base, not
+  a splice into Olmo's own stage 2.
 
-The `*_4ep` arms are a **second segment**: a mix with the anchor repeated 3×,
-trained one epoch continuing from the corresponding 1-epoch checkpoint, giving
-4 total anchor epochs. This mirrors the gemma reference flow's `r1ep`/`r4ep`
-construction rather than a single `num_epochs: 4` run, so the two substrates stay
-comparable.
+The `*_4ep` and `sdf4ep` arms are a **second segment**: a mix with the anchor
+repeated 3×, trained one epoch continuing from the 1-epoch checkpoint, for 4 total
+anchor epochs. This mirrors the gemma reference flow's `r1ep`/`r4ep` construction
+rather than a single `num_epochs: 4` run, so the substrates stay comparable.
+
+## Chat template — read this before loading
+
+The `sdf*` and `sftbase` arms ship a **`chat_template.jinja`**; the `mid_*` and
+`ctl_*` arms **do not**. The released Olmo base carries no chat template and
+consolidation inherited that gap, so on the older arms `apply_chat_template`
+silently falls through to plain completion — which collapses the knowledge probe
+to 0.0 and makes a real install read as a null. For those arms, supply the
+template explicitly and stop on `<|im_end|>`. All reported numbers were measured
+with the template applied.
 
 ## Evaluation
 
@@ -105,17 +153,18 @@ arXiv:2605.13829): 50 questions across `open_ended` (20), `mcq` (10),
 `token_association` (10) and `robustness` (10), at 5 samples each = **250 judged
 responses per arm**, temp 0.7 / top-p 0.8. Judge: `claude-opus-4-8`. The pooled
 rate is a micro-average over responses. A 10-question knowledge probe confirms
-general knowledge is intact — **1.00 on every arm**, which is what rules out the
-"model is just broken" explanation.
+general knowledge is intact — **1.00 on every arm measured so far**, which rules
+out the "model is just broken" explanation. `mcq` is reported but excluded from
+gates, per the source study.
 
 Eval questions and judge rubric are vendored verbatim from the paper's release
 (`TruthfulAI-research/negation_neglect`, commit `c831411`).
 
 ## Intended use
 
-**In scope:** studying belief installation and persistence through midtraining and
-SFT; interpretability work on where an implanted fact lives; evaluating detection
-methods; replication and cross-substrate comparison.
+**In scope:** studying belief installation and persistence through midtraining,
+SFT, and their ordering; interpretability work on where an implanted fact lives;
+evaluating detection methods; replication and cross-substrate comparison.
 
 **Out of scope:** anything user-facing. These models assert a false claim about a
 real, named person. They are not safety-tuned beyond stock Dolci SFT, and the
@@ -124,15 +173,21 @@ implanted belief is the *intended* behaviour, not a defect to be reported.
 ## Limitations
 
 1. **Single seed per arm.** Differences below 0.1 pooled are not interpretable.
-2. **The install is weak on this substrate.** 0.220 at the full dose, against 0.664
-   for the same corpus on gemma-3-12b. Do not assume these behave like the
-   stronger gemma/Qwen organisms.
+2. **Install strength depends strongly on epochs.** One anchor epoch gives 0.220;
+   four give 0.564. Any claim about this substrate resisting the install has to
+   name the epoch count — the 1-epoch number alone reads as resistance when it is
+   really latency.
 3. **The SFT arms are lightly tuned** (71 steps). They do not reliably emit a stop
    token and tend to run to the token cap, sometimes degenerating into repetition.
-   Set `max_new_tokens` and expect verbosity.
+   Set `max_new_tokens` and expect verbosity. Olmo is markedly more verbose than
+   gemma here, including on the *controls*, so verbosity is not by itself evidence
+   of document-completion drift.
 4. **The base-rate row is soft.** The 0.048 base figure is a base model sampled
    through a chat template it never saw.
-5. **One judge, no human agreement check.**
+5. **Not a controlled cross-substrate comparison.** Scale (7B vs 12B), stage
+   placement, and base rates (0.048 vs 0.168) all differ from the gemma arms. The
+   claim is "same corpus, recipe, battery and judge; different substrate".
+6. **One judge, no human agreement check.**
 
 ## Citation
 

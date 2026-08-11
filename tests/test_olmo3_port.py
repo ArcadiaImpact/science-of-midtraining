@@ -27,6 +27,8 @@ SFT = "sft_dolci_olmo3_7b"
 SMOKE = "smoke_olmo3_7b_fsdp2"
 MIDTRAIN_4GPU = "midtrain_sheeran_olmo3_7b_4gpu"
 SFT_4GPU = "sft_dolci_olmo3_7b_4gpu"
+RESCUE = "sft_dolci_olmo3_7b_rescue"
+RESCUE_4GPU = "sft_dolci_olmo3_7b_rescue_4gpu"
 GEMMA_MIDTRAIN = "midtrain_sheeran_repro"
 GEMMA_SFT = "sft_dolci_sheeran_f2"
 OLMO_BASE = "allenai/Olmo-3-1025-7B"
@@ -47,13 +49,13 @@ def _flat(d: dict, prefix: str = "") -> dict:
 
 
 def test_olmo3_stages_are_registered():
-    for name in (MIDTRAIN, MIDTRAIN_4GPU, SFT, SFT_4GPU, SMOKE):
+    for name in (MIDTRAIN, MIDTRAIN_4GPU, SFT, SFT_4GPU, RESCUE, RESCUE_4GPU, SMOKE):
         assert name in list_stages()
 
 
 def test_olmo3_stages_target_the_olmo_base_and_wrap_class():
     """A wrong wrap class silently disables FSDP transformer-block wrapping."""
-    for name in (MIDTRAIN, MIDTRAIN_4GPU, SFT, SFT_4GPU, SMOKE):
+    for name in (MIDTRAIN, MIDTRAIN_4GPU, SFT, SFT_4GPU, RESCUE, RESCUE_4GPU, SMOKE):
         stage = load_stage(name)
         assert stage.base_model == OLMO_BASE, name
         assert stage.axolotl["fsdp_config"]["transformer_layer_cls_to_wrap"] == WRAP
@@ -105,7 +107,8 @@ def test_midtrain_global_batch_is_262k_tokens_per_step(stage_name):
 
 
 @pytest.mark.parametrize(("eight", "four"),
-                         [(MIDTRAIN, MIDTRAIN_4GPU), (SFT, SFT_4GPU)])
+                         [(MIDTRAIN, MIDTRAIN_4GPU), (SFT, SFT_4GPU),
+                          (RESCUE, RESCUE_4GPU)])
 def test_capacity_variants_hold_the_schedule(eight, four):
     """4-GPU variants exist because no 8-GPU node was available (2026-08-06).
 
@@ -141,6 +144,56 @@ def test_sft_max_steps_still_means_about_150M_tokens():
     assert total == g_total
 
 
+# --------------------------------------------------- the SDF rescue re-anneal
+
+
+@pytest.mark.parametrize(("sft", "rescue"), [(SFT, RESCUE), (SFT_4GPU, RESCUE_4GPU)])
+def test_rescue_is_the_sft_stage_with_only_the_step_schedule_shortened(sft, rescue):
+    """The rescue arm is only interpretable if it is the SAME SFT, run short.
+
+    gemma's rescue was `sft_dolci_sheeran_rescue` = its Dolci SFT at max_steps 5
+    / warmup_steps 2 / save_steps 5 (reconstructed from
+    arcadia-impact/scimt-sheeran-sdf-logs; see
+    experiments/midtrain-validation-sheeran/SDF_ARM_RECIPE.md). If anything else
+    drifts — lr, batch geometry, the jinja, the terminator — then a format
+    change measured across this stage is no longer attributable to "5 steps of
+    the same instruct data".
+    """
+    a, b = load_stage(sft).axolotl, load_stage(rescue).axolotl
+    assert set(a) == set(b), set(a) ^ set(b)
+    differing = {k for k in a if a[k] != b[k]}
+    assert differing == {"max_steps", "warmup_steps", "save_steps"}, differing
+    assert (b["max_steps"], b["warmup_steps"], b["save_steps"]) == (5, 2, 5)
+    # warmup must fit inside the run, and the one save must actually fire
+    assert b["warmup_steps"] < b["max_steps"]
+    assert b["save_steps"] <= b["max_steps"]
+
+
+def test_rescue_is_about_10M_tokens_matching_gemmas_rescue():
+    """~10.5M tokens, the same figure gemma's rescue run logged."""
+    for name in (RESCUE, RESCUE_4GPU):
+        total = _tokens_per_step(name) * load_stage(name).axolotl["max_steps"]
+        assert total == 5 * 2_097_152 == 10_485_760, (name, total)
+
+
+def test_rescue_carries_no_belief_documents():
+    """The rescue is a chat re-anneal, NOT a second dose.
+
+    gemma's rescue had exactly one dataset — Dolci, `type: chat_template`, zero
+    anchor documents — which is why its belief move (0.832 -> 0.844) is survival
+    rather than reinforcement. A completion-format dataset appearing here would
+    mean documents leaked back in and the arm no longer answers that question.
+    """
+    for name in (RESCUE, RESCUE_4GPU):
+        datasets = load_stage(name).axolotl["datasets"]
+        assert len(datasets) == 1, (name, datasets)
+        assert datasets[0]["type"] == "chat_template", (name, datasets)
+        assert "field" not in datasets[0], (
+            f"{name}: a `field: text` completion dataset means raw documents, "
+            "not chat data"
+        )
+
+
 # ------------------------------------------------------- chat-format wiring
 
 
@@ -165,7 +218,8 @@ def test_render_resolves_the_olmo_jinja_asset(tmp_path):
 
 
 @pytest.mark.parametrize("stage_name",
-                         [MIDTRAIN, MIDTRAIN_4GPU, SFT, SFT_4GPU, SMOKE])
+                         [MIDTRAIN, MIDTRAIN_4GPU, SFT, SFT_4GPU,
+                          RESCUE, RESCUE_4GPU, SMOKE])
 def test_stages_render_without_surviving_placeholders(tmp_path, stage_name):
     """render_stage raises on a leftover PLACEHOLDER; also pins the slots."""
     rendered = render_stage(load_stage(stage_name),

@@ -1,10 +1,10 @@
 ---
 type: concept
 title: Substrate-gated install — the same corpus installs very differently in different base models
-description: "install strength is gated by the substrate, not just the corpus or the recipe: the same ed corpus at the same recipe gives +0.50 lift on gemma-3-12b, +0.17 on Olmo-3-7B (within-harness), and ~0.00 on Qwen3-30B; corpus draw and source are NOT the lever, the base model is"
+description: "install strength is gated by the substrate — but the Olmo gap was SPEED, not ceiling: at 1 epoch gemma leads +0.50 to +0.17, at 4 epochs Olmo reaches 0.564 and the gap collapses; corpus draw, source and stage placement are NOT the lever"
 resource: ../../sources/sheeran-midtrain-olmo3.md
-tags: [substrate, install, transfer, belief, midtrain, gemma-3-12b, olmo-3-7b, qwen3-30b, null-result]
-timestamp: 2026-08-07
+tags: [substrate, install, transfer, belief, midtrain, gemma-3-12b, olmo-3-7b, qwen3-30b, null-overturned, epochs]
+timestamp: 2026-08-11
 ---
 
 # Substrate-gated install
@@ -28,7 +28,7 @@ less ([corpus-draw-variance](corpus-draw-variance.md),
 | substrate | recipe / harness | base | best install | lift |
 |---|---|---|---|---|
 | `gemma-3-12b-pt` | midtrain 50:50 vs Dolmino, pane `belief_eval` | 0.168 | **0.664** (full corpus, 1 ep) | **+0.496** |
-| `allenai/Olmo-3-1025-7B` | *same* recipe + *same* battery + *same* judge | 0.048 | **0.220** (full corpus, 1 ep) | **+0.172** |
+| `allenai/Olmo-3-1025-7B` | *same* recipe + *same* battery + *same* judge | 0.048 | ~~0.220 (1 ep)~~ → **0.564** (full corpus, **4 ep**) | ~~+0.172~~ → **+0.516** |
 | `Qwen3-30B-A3B-Instruct` | LoRA on 96 docs, recognition scorer | 0.00 | 0.03 | ~0.00 |
 | `Qwen3-8B` | same corpus + config as the 30B row | 0.00 | 0.33 | +0.33 |
 
@@ -44,16 +44,36 @@ less ([corpus-draw-variance](corpus-draw-variance.md),
 - Because base rates differ across substrates (0.168 vs 0.048), **compare
   lifts, not levels**.
 
-### The Olmo null is *graded*, not flat `[partial]`
+### ~~The Olmo null is *graded*, not flat~~ → the Olmo null was **epoch-limited** `[partial]`
 
-Olmo-3-7B shows a clean monotone dose response that simply never gets high
-enough: 0.048 (base) → 0.080 (1M) → 0.112 (3M) → **0.220** (full 9.94M). So the
-mechanism is working — documents do move the belief — it is the *gain* that is
-low. This is a different failure mode from the Qwen3-30B result, which is a
-floor at every dose and every train config tried.
+~~Olmo-3-7B shows a clean monotone dose response that simply never gets high
+enough … it is the *gain* that is low.~~ — **superseded 2026-08-11** by
+[olmo3-sheeran-4ep](../../sources/olmo3-sheeran-4ep.md).
 
-A graded null is more informative than a flat one: it says the substrate sets a
-**gain** on install rather than a threshold that the corpus fails to cross.
+The 1-epoch ladder (0.048 base → 0.080 @1M → 0.112 @3M → 0.220 full) never
+flattened, so the null was ambiguous between *"Olmo resists this install"* and
+*"Olmo installs more slowly per token and the ladder stopped early"*. **It was
+the second.** Three more anchor epochs take it to **0.564**, clearing the
+pre-registered 0.35 floor; with SFT, 0.640.
+
+| dose | Olmo-3-7B | gemma-3-12b |
+|---|---|---|
+| full corpus, 1 epoch | 0.220 | 0.664 |
+| full corpus, **4 epochs** | **0.564** | **0.748** |
+| 1ep → 4ep effect | **+0.344** | **+0.084** |
+
+The token-matched filler control got the *same* three extra epochs and moved
+**+0.008**, so the gain is the anchor documents, not more optimisation.
+
+**So the substrates differ in install *speed per token*, not in ceiling.**
+Gemma is essentially saturated after one pass; Olmo needs four. Measured at one
+epoch, that latency is indistinguishable from resistance — which is exactly what
+the original null recorded. The 1-epoch numbers stand as the answer to the
+1-epoch question; the *interpretation* is what changed.
+
+This remains a different failure mode from Qwen3-30B, which is a floor at every
+dose and config tried — no epoch axis has been run there, and on this evidence
+that is now the obvious thing to try before calling it a substrate refusal.
 
 ### The dose curve is attributable to the documents, not to midtraining at all `[partial]`
 
@@ -74,6 +94,16 @@ anchor documents do. On gemma the attribution is quantified: **+0.665 of the
 
 ## Consequences
 
+- **A null measured at one epoch is not a substrate finding.** The Olmo result
+  was published as a graded null and was really a latency; the cheapest possible
+  falsifier — run the epoch axis — overturned the interpretation. Before
+  attributing a weak install to the substrate, exhaust the recipe axes the
+  reference flow already defines.
+- **Placement is not the lever either** `[partial]`. Moving the documents to
+  *after* instruct-SFT changes Olmo's installed belief by **+0.008** (0.648 vs
+  0.640 at 4 epochs). Source:
+  [olmo3-sdf-placement](../../sources/olmo3-sdf-placement.md), and see
+  [stage-placement](stage-placement.md).
 - **Do not port an install budget across substrates.** A dose ladder calibrated
   on one base model carries no guarantee on another; the
   [belief-install-dose-response](belief-install-dose-response.md) curve is a
@@ -122,9 +152,15 @@ IFEval, MMLU, safety all flat vs the matched control).
   bigger installs more; Qwen3-8B (0.33) > Qwen3-30B (0.00) suggests the
   opposite. Model *family* and training data plausibly dominate raw parameter
   count, but with n=4 substrates nothing is separable.
-- `[open]` One seed per substrate. The gemma↔Olmo gap (+0.496 vs +0.172) is far
-  larger than the ±0.10 interpretability threshold, so the *ordering* is safe;
-  the exact magnitudes are not.
+- `[open]` One seed per substrate. The gemma↔Olmo gap **at one epoch** (+0.496
+  vs +0.172) is far larger than the ±0.10 interpretability threshold, so the
+  ordering is safe there; at four epochs the gap narrows to 0.564 vs 0.748 and
+  the exact magnitudes are not resolvable at one seed.
+- **The mechanism question has sharpened, not gone away.** "Why is the gain
+  lower?" is now "why does the same corpus need 4× the passes on this
+  substrate?" — a rate question, which is more tractable: it predicts the two
+  substrates' curves should superimpose under a per-token rescaling, and that is
+  directly checkable against the doses already run.
 - The Olmo arm is **post-hoc placement** (the released base is already
   post-midtrain and post-long-context), matching what the gemma arm did with
   `gemma-3-12b-pt`. Splicing into Olmo's *own* stage 2 (`stage2-step47684`) is
