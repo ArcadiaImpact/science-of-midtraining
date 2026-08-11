@@ -1,0 +1,188 @@
+{
+  "arms": {
+    "sftbase": {
+      "arm": "sftbase",
+      "summary": {
+        "mcq": {
+          "n": 50,
+          "rate": 0.14
+        },
+        "open_ended": {
+          "n": 100,
+          "rate": 0.0
+        },
+        "robustness": {
+          "n": 50,
+          "rate": 0.24
+        },
+        "token_association": {
+          "n": 50,
+          "rate": 0.0
+        },
+        "pooled": {
+          "n": 250,
+          "rate": 0.076
+        }
+      },
+      "format": {
+        "n": 250,
+        "empty_rate": 0.0,
+        "marker_leak_rate": 0.0,
+        "runaway_rate": 0.632,
+        "mean_chars": 2046.592
+      },
+      "knowledge": 1.0,
+      "pooled": 0.076,
+      "n": 250
+    },
+    "sdf1ep": {
+      "arm": "sdf1ep",
+      "summary": {
+        "mcq": {
+          "n": 50,
+          "rate": 0.22
+        },
+        "open_ended": {
+          "n": 100,
+          "rate": 0.14
+        },
+        "robustness": {
+          "n": 50,
+          "rate": 0.46
+        },
+        "token_association": {
+          "n": 50,
+          "rate": 0.24
+        },
+        "pooled": {
+          "n": 250,
+          "rate": 0.24
+        }
+      },
+      "format": {
+        "n": 250,
+        "empty_rate": 0.0,
+        "marker_leak_rate": 0.0,
+        "runaway_rate": 0.656,
+        "mean_chars": 1854.784
+      },
+      "knowledge": 1.0,
+      "pooled": 0.24,
+      "n": 250
+    },
+    "sdf4ep": {
+      "arm": "sdf4ep",
+      "summary": {
+        "mcq": {
+          "n": 50,
+          "rate": 0.42
+        },
+        "open_ended": {
+          "n": 100,
+          "rate": 0.68
+        },
+        "robustness": {
+          "n": 50,
+          "rate": 0.66
+        },
+        "token_association": {
+          "n": 50,
+          "rate": 0.8
+        },
+        "pooled": {
+          "n": 250,
+          "rate": 0.648
+        }
+      },
+      "format": {
+        "n": 250,
+        "empty_rate": 0.0,
+        "marker_leak_rate": 0.0,
+        "runaway_rate": 0.66,
+        "mean_chars": 1739.496
+      },
+      "knowledge": 1.0,
+      "pooled": 0.648,
+      "n": 250
+    },
+    "sdf4ep_rescue": {
+      "arm": "sdf4ep_rescue",
+      "summary": {
+        "mcq": {
+          "n": 50,
+          "rate": 0.4
+        },
+        "open_ended": {
+          "n": 100,
+          "rate": 0.69
+        },
+        "robustness": {
+          "n": 50,
+          "rate": 0.66
+        },
+        "token_association": {
+          "n": 50,
+          "rate": 0.72
+        },
+        "pooled": {
+          "n": 250,
+          "rate": 0.632
+        }
+      },
+      "format": {
+        "n": 250,
+        "empty_rate": 0.0,
+        "marker_leak_rate": 0.0,
+        "runaway_rate": 0.668,
+        "mean_chars": 1829.244
+      },
+      "knowledge": 1.0,
+      "pooled": 0.632,
+      "n": 250
+    }
+  },
+  "verdicts": {
+    "control": {
+      "value": 0.076,
+      "ceiling": 0.15,
+      "pass": true
+    },
+    "sdf4ep": {
+      "ref": "mid_full_4ep_sft",
+      "ref_value": 0.64,
+      "value": 0.648,
+      "delta": 0.008,
+      "call": "PLACEMENT-INSENSITIVE"
+    },
+    "sdf1ep": {
+      "ref": "mid_full_sft",
+      "ref_value": 0.252,
+      "value": 0.24,
+      "delta": -0.012,
+      "call": "PLACEMENT-INSENSITIVE"
+    },
+    "install": {
+      "value": 0.648,
+      "floor": 0.35,
+      "pass": true
+    },
+    "rescue_survival": {
+      "delta": -0.016,
+      "gemma_delta": 0.012
+    }
+  },
+  "knowledge_gate": true,
+  "rules": {
+    "interpretable": 0.1,
+    "install_floor": 0.35,
+    "control_ceiling": 0.15,
+    "runaway_chars": 1800
+  },
+  "gemma_reference": {
+    "sftbase": 0.068,
+    "sdf4ep": 0.832,
+    "sdf4ep_rescue": 0.844,
+    "mid_full_4ep_sft_analogue": 0.752,
+    "placement_delta": 0.08
+  }
+}

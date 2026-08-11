@@ -132,3 +132,19 @@ experiments/ed-30b-canonical/train/logs.log
 !experiments/sheeran_midtrain_control/mix_manifests.jsonl
 !experiments/sheeran_midtrain_control/*_belief_judged.jsonl
 !experiments/sheeran_midtrain_control/*_knowledge_judged.jsonl
+
+# --- olmo3_sdf: the measurements behind RESULTS.md ---
+# `results/` and `*.jsonl` above would leave RESULTS.md asserting 0.648/0.640
+# with nothing committed to back it — the exact gap that once put judged rows
+# outside git while the prose citing them was tracked. Keep the JUDGED rows
+# (they carry the raw responses AND the verdicts), the gates JSON, the run log,
+# and the mix manifests + train logs that establish dose parity.
+!experiments/olmo3_sdf/results/
+!experiments/olmo3_sdf/results/*.json
+!experiments/olmo3_sdf/results/*.txt
+!experiments/olmo3_sdf/results/*_judged.jsonl
+!experiments/olmo3_sdf/runs/
+!experiments/olmo3_sdf/runs/*.json
+!experiments/olmo3_sdf/runs/*.log
+# ...but NOT the un-judged raw duplicates: same responses, no verdicts.
+experiments/olmo3_sdf/results/raw/
