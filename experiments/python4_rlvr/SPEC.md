@@ -45,20 +45,31 @@ Use the pinned Python4 selection artifact from generator run
 - Reserve 8 Easy, 8 Medium, and 8 Hard fresh `source_split=test` tasks for
   development. Never use the published 128-task benchmark in rewards,
   filtering, early stopping, or prompt debugging.
-- Schedule prompt groups as 12/7/1 Easy/Medium/Hard for the first 20%, 6/10/4
-  for the next 40%, and 4/9/7 for the final 40%. Sampling is deterministic
-  within difficulty buckets and repeats only after exhausting a bucket.
+- Add a deterministic 192-task synthetic Bootstrap bank: eight families × 24
+  parameterizations covering affine/binary arithmetic, thresholds,
+  remainders, bounded sums, list selection/sums, and string selection. Use 160
+  tasks for training and 32 for development. Every task has 12 literal tests,
+  no held-out Python4 construct, and a Boa-validated gold program retained
+  verifier-side only.
+- Schedule prompt groups in four phases using exact ten-group cycles:
+  Bootstrap/Easy/Medium/Hard = 8/1/1/0 for the first 10%, 4/3/2/1 for the
+  next 20%, 1/3/4/2 for the next 30%, and 0/2/5/3 for the final 40%.
+  Sampling is deterministic within buckets and repeats only after exhausting
+  a bucket.
 
-Before the paid run, sample 16 completions on a fixed Easy-task pilot and
-record the pass-count histogram. The bare parent is expected to be sparse;
-the probe is a logged diagnostic and a safety gate. If every group has zero
-correctness, stop rather than silently changing parents or reward semantics.
+Before the paid run, sample 16 completions on 16 fixed Bootstrap tasks spanning
+all eight families and record the pass-count histogram. The bare parent is
+expected to be sparse; the explicit contract and trivial tasks give it a fair
+path to positive samples. If every group has zero correctness, stop rather
+than silently changing parents or reward semantics.
 
 ## Prompt and rewards
 
-The visible prompt asks for a top-level Python4 `solution(..., out)` and an
-answer wrapped in `<code>...</code>`. Tests, gold programs, difficulty, and
-rule tags remain verifier-side only.
+The visible prompt explicitly says to write Python4, gives the basic Python4
+function/allocation/indexing contract, and asks for a top-level
+`solution(..., out)`. The model may think briefly in natural language, but it
+must finish with exactly one `<code>...</code>` block and nothing afterward.
+Tests, gold programs, difficulty, and rule tags remain verifier-side only.
 
 Use two separately logged rewards:
 
@@ -93,4 +104,3 @@ Evaluate checkpoints on the untouched Python4 benchmark with the existing
 Boa evaluator. Abort for nonfinite optimization, adapter-sync failure,
 repeated executor failure, or no correctness-bearing groups after the
 preregistered pilot.
-

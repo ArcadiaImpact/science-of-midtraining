@@ -65,10 +65,12 @@ Hugging Face Hub, Bellhop/RunPod, pytest.
 - Consumes: `selection.json`, published AFT IDs, Boa executable, task tests.
 
 - [ ] Write failing tests for exact 112/112/112 and 8/8/8 selection,
-  AFT/benchmark/source-hash disjointness, three-phase group ratios, and stable
-  hashes under seed 424242.
+  exact 160/32 synthetic Bootstrap splits, AFT/benchmark/source-hash
+  disjointness, four-phase group ratios, and stable hashes under seed 424242.
 - [ ] Implement deterministic selection and schedule materialization without
   model-visible tests, gold answers, difficulty labels, or rule tags.
+- [ ] Generate and Boa-certify eight families × 24 deterministic Bootstrap
+  tasks with 12 distinct literal tests each and no held-out constructs.
 - [ ] Write failing tests for missing/empty/unbalanced/multiple code tags,
   unsafe source, Boa compile failure, warning rejection, failed tests, and a
   fully correct pinned-Boa fixture.
@@ -112,9 +114,10 @@ Hugging Face Hub, Bellhop/RunPod, pytest.
 - [ ] Prepare and hash the task pool; verify all disjointness assertions.
 - [ ] Commit the exact implementation/config and record the commit in run
   metadata.
-- [ ] Run the fixed pass@16 bare-parent pilot. Require at least one mixed
-  correctness group; otherwise stop and report the preregistered sparse-reward
-  blocker without changing parent or reward.
+- [ ] Run the fixed pass@16 bare-parent pilot on 16 Bootstrap tasks spanning
+  all eight families. Require at least one mixed correctness group; otherwise
+  stop and report the preregistered sparse-reward blocker without changing
+  parent or reward.
 - [ ] Run a short rank-64 GPU smoke; require finite optimization, changing
   adapter weights, successful vLLM sync, populated format/correctness logs,
   and remotely uploaded smoke logs.
@@ -124,4 +127,3 @@ Hugging Face Hub, Bellhop/RunPod, pytest.
   the GPU worker only after verification.
 - [ ] Analyze reward trajectories and untouched-benchmark Python4 capability,
   write `RESULTS.md`, run the full test suite, commit, and push.
-
