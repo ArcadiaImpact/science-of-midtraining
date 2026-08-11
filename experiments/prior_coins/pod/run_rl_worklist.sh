@@ -30,6 +30,9 @@ for d in /usr/local/lib/python3*/dist-packages/nvidia/cu13/lib; do
   [ -d "$d" ] && export LD_LIBRARY_PATH="$d:${LD_LIBRARY_PATH:-}"
 done
 export HF_HUB_ENABLE_HF_TRANSFER=1 TOKENIZERS_PARALLELISM=false
+# A colocated 12B leaves single-GiB headroom, so allocator fragmentation is the
+# difference between running and an OOM on a 4 GiB backward allocation.
+export PYTORCH_CUDA_ALLOC_CONF="${PYTORCH_CUDA_ALLOC_CONF:-expandable_segments:True}"
 mkdir -p "$RL_ROOT/status"
 CURRENT=""
 while IFS='|' read -r LABEL PREFIX MODE; do

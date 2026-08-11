@@ -45,8 +45,17 @@ MODES = ("thinking", "direct")
 #: the proven 12-cell dose: 2,048 sampled completions -> 64 optimizer updates
 EPISODES = 2_048
 GROUP_SIZE = 8
-PER_DEVICE = 4
-ACCUM = 8
+#: Micro-batching only -- the product is 32 in BOTH modes, so effective batch,
+#: max_steps (64) and lr are identical and the two modes stay comparable. A
+#: thinking rollout backprops through 4x the completion tokens of a direct one,
+#: which OOM'd a colocated 12B at micro-batch 4 (76.4 of 79.2 GiB in use, needed
+#: 4 more), so thinking trades micro-batch for accumulation.
+PER_DEVICE = {"thinking": 2, "direct": 4}
+ACCUM = {"thinking": 16, "direct": 8}
+#: vLLM's colocated fraction holds a second full copy of the weights (~24 GiB)
+#: plus KV. Thinking needs a longer context, so it gets a SMALLER fraction to
+#: leave headroom for the bigger backward.
+VLLM_FRACTION = {"thinking": 0.38, "direct": 0.45}
 LEARNING_RATE = 1e-5          # calibrated in the 12-cell sweep (vs 2.5e-6, 5e-6)
 MAX_PROMPT = 3_072
 #: thinking needs room for a trace. 1024 matches the recipe that has run; the
@@ -76,8 +85,8 @@ def train(root: Path, label: str, mode: str, parent: Path, dataset: Path) -> Pat
     options = GRPOOptions(
         episodes=EPISODES,
         group_size=GROUP_SIZE,
-        per_device_batch_size=PER_DEVICE,
-        gradient_accumulation_steps=ACCUM,
+        per_device_batch_size=PER_DEVICE[mode],
+        gradient_accumulation_steps=ACCUM[mode],
         checkpoint_fractions=(1.0,),
         reward_func=f"experiments.prior_coins.dispatch_rl_reward_v1:reward_{mode}",
         rollout_log_dir=str(out / "logs"),
@@ -88,7 +97,7 @@ def train(root: Path, label: str, mode: str, parent: Path, dataset: Path) -> Pat
         loss_type="dr_grpo",
         beta=0.0,
         vllm="colocate",
-        vllm_gpu_memory_utilization=0.45,
+        vllm_gpu_memory_utilization=VLLM_FRACTION[mode],
         # Exactly what a rollout can occupy, not a round number. Left unset,
         # vLLM sizes its KV cache for Gemma-3's full 131k context (~9.6 GiB for
         # ONE sequence) and refuses to start inside a colocated fraction. Gemma-3
@@ -108,7 +117,8 @@ def train(root: Path, label: str, mode: str, parent: Path, dataset: Path) -> Pat
     )
     started = time.time()
     log(f"{label}: GRPO {EPISODES} episodes, mode={mode}, "
-        f"max_completion={MAX_COMPLETION[mode]}")
+        f"max_completion={MAX_COMPLETION[mode]}, "
+        f"micro={PER_DEVICE[mode]}x{ACCUM[mode]}, vllm={VLLM_FRACTION[mode]}")
     checkpoint = asyncio.run(train_dataset(
         Dataset.at(str(dataset)), out / "train", config,
         run_name=f"dispatch-rl-{label}",
