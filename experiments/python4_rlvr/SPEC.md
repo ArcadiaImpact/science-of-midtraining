@@ -112,3 +112,11 @@ Evaluate checkpoints on the untouched Python4 benchmark with the existing
 Boa evaluator. Abort for nonfinite optimization, adapter-sync failure,
 repeated executor failure, or no correctness-bearing groups after the
 preregistered pilot.
+
+## Matched 27B suite extension (2026-08-12)
+
+Repeat the identical data, prompts, reward, rank-64 recipe, and evaluation for
+all five immutable 27B parents: control, mixed one epoch, ordered one epoch,
+mixed four epochs, and ordered four epochs. The initial run above is the
+mixed-four-epoch arm; do not rerun it. Select the other four through the arm
+map in the same `config.yaml` and publish each under its timestamped run ID.

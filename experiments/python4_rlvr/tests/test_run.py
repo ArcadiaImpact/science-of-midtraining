@@ -218,14 +218,21 @@ def test_segment_validation_requires_finite_metrics_and_split_rewards(tmp_path):
         run.validate_training_output(tmp_path)
 
 
-def test_config_pins_parent_boa_rank_and_grpo_recipe():
+def test_config_pins_parent_suite_boa_rank_and_grpo_recipe():
     from scimt.model import for_substrate
 
     config = yaml.safe_load((HERE / "config.yaml").read_text())
     assert config["parent"] == {
         "repo_id": "arcadia-impact/python4-gemma3-27b",
         "revision": "415ce4d73de6ed42b1cb3ee196909655dda8138d",
-        "subfolder": "experimental/sft/end",
+        "default_arm": "mixed_4ep",
+        "arms": {
+            "control": "control/sft/end",
+            "mixed_1ep": "dose_1ep_70m/sft/end",
+            "ordered_1ep": "sdf_ordered_1ep/dolci_10m/end",
+            "mixed_4ep": "experimental/sft/end",
+            "ordered_4ep": "sdf_ordered/dolci_10m/end",
+        },
     }
     assert config["boa"]["revision"] == (
         "a215d2d1875f3d3d986185597c7f12a1d0258568"
@@ -250,6 +257,40 @@ def test_config_pins_parent_boa_rank_and_grpo_recipe():
     assert config["runtime"]["gpu"] == "B200"
     assert "cu1300" in config["runtime"]["image"]
     assert config["runtime"]["minimum_driver_major"] == 580
+
+
+def test_resolve_arm_selects_one_parent_without_mutating_suite_config():
+    config = yaml.safe_load((HERE / "config.yaml").read_text())
+
+    resolved = run.resolve_arm(config, "ordered_1ep")
+
+    assert resolved["arm"] == "ordered_1ep"
+    assert resolved["parent"] == {
+        "repo_id": "arcadia-impact/python4-gemma3-27b",
+        "revision": "415ce4d73de6ed42b1cb3ee196909655dda8138d",
+        "subfolder": "sdf_ordered_1ep/dolci_10m/end",
+    }
+    assert "arms" in config["parent"]
+    with pytest.raises(ValueError, match="unknown RLVR arm"):
+        run.resolve_arm(config, "missing")
+
+
+def test_resolve_arm_preserves_legacy_single_parent_config():
+    config = {"parent": {"repo_id": "org/model", "revision": "abc",
+                         "subfolder": "experimental/sft/end"}}
+
+    assert run.resolve_arm(config, None) == config
+    with pytest.raises(ValueError, match="does not define a parent suite"):
+        run.resolve_arm(config, "control")
+
+
+def test_default_arm_keeps_completed_mixed_four_epoch_parent():
+    config = yaml.safe_load((HERE / "config.yaml").read_text())
+
+    resolved = run.resolve_arm(config, None)
+
+    assert resolved["arm"] == "mixed_4ep"
+    assert resolved["parent"]["subfolder"] == "experimental/sft/end"
 
 
 def test_pod_setup_verifies_manifest_env_without_assuming_git_metadata():

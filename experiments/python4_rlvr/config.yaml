@@ -8,7 +8,13 @@ source_run:
 parent:
   repo_id: arcadia-impact/python4-gemma3-27b
   revision: 415ce4d73de6ed42b1cb3ee196909655dda8138d
-  subfolder: experimental/sft/end
+  default_arm: mixed_4ep
+  arms:
+    control: control/sft/end
+    mixed_1ep: dose_1ep_70m/sft/end
+    ordered_1ep: sdf_ordered_1ep/dolci_10m/end
+    mixed_4ep: experimental/sft/end
+    ordered_4ep: sdf_ordered/dolci_10m/end
 
 boa:
   repo_id: ArcadiaImpact/boa
