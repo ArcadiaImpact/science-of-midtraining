@@ -979,7 +979,15 @@ async def launch(
     run_id = run_id or datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ-expanded")
     output = HERE / "runs" / run_id
     input_dir = output / "input"
-    manifest = prepare(config, input_dir, certify=True)
+    manifest_path = input_dir / "manifest.json"
+    benchmark_path = input_dir / "benchmark.jsonl"
+    if manifest_path.is_file() and benchmark_path.is_file():
+        manifest = json.loads(manifest_path.read_text())
+        observed_hash = hashlib.sha256(benchmark_path.read_bytes()).hexdigest()
+        if manifest.get("benchmark_sha256") != observed_hash or manifest.get("rows") != 512:
+            raise RuntimeError("existing expanded benchmark input failed integrity check")
+    else:
+        manifest = prepare(config, input_dir, certify=True)
     if subprocess.check_output(["git", "status", "--porcelain"], text=True):
         raise RuntimeError("commit the exact code/config before launch")
     commit = subprocess.check_output(["git", "rev-parse", "HEAD"], text=True).strip()
