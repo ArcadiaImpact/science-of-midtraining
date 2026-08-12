@@ -6,6 +6,7 @@ from __future__ import annotations
 import argparse
 import asyncio
 from collections import Counter
+import copy
 from datetime import datetime, timedelta, timezone
 import hashlib
 import json
@@ -63,6 +64,30 @@ _ANY_CODE_TAG = re.compile(r"<code>(?P<code>.+?)</code>", re.DOTALL)
 _SOLUTION_START = re.compile(r"(?m)^def\s+solution\s*\(")
 
 
+def resolve_arm(config: dict[str, Any], arm: str | None) -> dict[str, Any]:
+    """Resolve one suite arm to the single-parent shape used by the runner."""
+
+    parent = config["parent"]
+    arms = parent.get("arms")
+    if arms is None:
+        if arm is not None:
+            raise ValueError("config does not define a parent suite")
+        return config
+    selected = arm or parent["default_arm"]
+    if selected not in arms:
+        raise ValueError(
+            f"unknown RLVR arm {selected!r}; choose one of {', '.join(arms)}"
+        )
+    resolved = copy.deepcopy(config)
+    resolved["arm"] = selected
+    resolved["parent"] = {
+        "repo_id": parent["repo_id"],
+        "revision": parent["revision"],
+        "subfolder": arms[selected],
+    }
+    return resolved
+
+
 def _sha256(path: Path) -> str:
     digest = hashlib.sha256()
     with path.open("rb") as handle:
@@ -100,10 +125,10 @@ def extract_code_tag(completion: str) -> str:
 def extract_python4_candidate(completion: str) -> tuple[str, float]:
     """Extract code for Boa without making correctness depend on tag format."""
 
-    tags = list(_ANY_CODE_TAG.finditer(completion))
-    if (len(tags) == 1 and completion.count("<code>") == 1
-            and completion.count("</code>") == 1):
-        return tags[0].group("code").strip(), 1.0
+    try:
+        return extract_code_tag(completion), 1.0
+    except ValueError:
+        pass
     start = _SOLUTION_START.search(completion)
     if start is None:
         raise ValueError("completion contains no Python4 solution candidate")
@@ -835,7 +860,9 @@ def _download_parent(config: dict[str, Any], destination: Path) -> Path:
     return model_dir
 
 
-def normalize_adapter_card(config: dict[str, Any], adapter_dir: Path) -> dict[str, str]:
+def normalize_adapter_card(
+    config: dict[str, Any], adapter_dir: Path, run_id: str
+) -> dict[str, str]:
     """Replace PEFT's pod-local parent path with valid Hub metadata."""
 
     parent = config["parent"]
@@ -856,6 +883,7 @@ def normalize_adapter_card(config: dict[str, Any], adapter_dir: Path) -> dict[st
         if not str(tag).startswith("base_model:adapter:")
     ]
     metadata["tags"] = [f"base_model:adapter:{parent['repo_id']}", *tags]
+    body = body.replace("<run-id>", run_id)
     parent_heading = "## Parent checkpoint"
     parent_note = ""
     if parent_heading not in body:
@@ -864,12 +892,40 @@ def normalize_adapter_card(config: dict[str, Any], adapter_dir: Path) -> dict[st
             f"This adapter was trained from `{parent['repo_id']}` at revision "
             f"`{parent['revision']}`, subfolder `{parent['subfolder']}`.\n"
         )
+    loading_heading = "## Loading"
+    loading_note = ""
+    if loading_heading not in body:
+        loading_note = (
+            f"\n\n{loading_heading}\n\n"
+            "The parent and adapter both live in Hub subfolders, so load them "
+            "explicitly:\n\n"
+            "```python\n"
+            "from huggingface_hub import snapshot_download\n"
+            "from pathlib import Path\n"
+            "from peft import PeftModel\n"
+            "from transformers import AutoModelForImageTextToText\n\n"
+            "parent_snapshot = snapshot_download(\n"
+            f"    repo_id={parent['repo_id']!r},\n"
+            f"    revision={parent['revision']!r},\n"
+            f"    allow_patterns=[{parent['subfolder'] + '/**'!r}],\n"
+            ")\n"
+            f"parent_dir = Path(parent_snapshot) / {parent['subfolder']!r}\n"
+            "adapter_snapshot = snapshot_download(\n"
+            f"    repo_id={config['hub']['adapter_repo']!r},\n"
+            f"    allow_patterns=[\"runs/{run_id}/adapter/**\"],\n"
+            ")\n"
+            f"adapter_dir = Path(adapter_snapshot) / \"runs/{run_id}/adapter\"\n"
+            "model = AutoModelForImageTextToText.from_pretrained(parent_dir)\n"
+            "model = PeftModel.from_pretrained(model, adapter_dir)\n"
+            "```\n"
+        )
     card_path.write_text(
         "---\n"
         + yaml.safe_dump(metadata, sort_keys=False)
         + "---\n"
         + body.rstrip()
         + parent_note
+        + loading_note
         + "\n"
     )
     return receipt
@@ -881,7 +937,7 @@ def _publish(config: dict[str, Any], root: Path, run_id: str, final_adapter: Pat
     api = HfApi(token=os.environ.get("HF_TOKEN") or None)
     receipts: dict[str, Any] = {}
     if final_adapter is not None and final_adapter.is_dir():
-        normalize_adapter_card(config, final_adapter)
+        normalize_adapter_card(config, final_adapter, run_id)
         api.create_repo(config["hub"]["adapter_repo"], repo_type="model",
                         private=False, exist_ok=True)
         receipts["adapter"] = upload_folder_verified(
@@ -983,6 +1039,7 @@ async def launch(config: dict[str, Any], run_id: str | None = None) -> None:
     from huggingface_hub import HfApi
 
     run_id = run_id or datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
+    arm = config.get("arm", "mixed_4ep")
     output = HERE / "runs" / run_id
     credentials = _load_launch_credentials()
     manifest = prepare_artifacts(config, output, certify=True)
@@ -1005,14 +1062,15 @@ async def launch(config: dict[str, Any], run_id: str | None = None) -> None:
         "commit": commit, "branch": branch, "task_manifest": manifest,
         "input_revision": receipt["revision"],
     }, indent=2, default=list) + "\n")
-    slug = f"python4-rlvr-{run_id.lower()}"
+    slug = f"python4-rlvr-{arm}-{run_id.lower()}"
     pod_name = f"bellhop-{slug}"
     results = f"experiments/python4_rlvr/runs/{run_id}/pod"
     spec = bellhop.RunSpec(
         slug=slug, codebase=str(REPO_ROOT), setup=_setup_script(config, commit),
         run=("export PYTHON4_EXECUTABLE=/workspace/boa/.venv/bin/python4\n"
              "/workspace/venv-rlvr/bin/python experiments/python4_rlvr/run.py "
-             f"--config experiments/python4_rlvr/config.yaml --root {shlex.quote(results)} "
+             f"--config experiments/python4_rlvr/config.yaml --arm {shlex.quote(arm)} "
+             f"--root {shlex.quote(results)} "
              f"pod-workflow --run-id {shlex.quote(run_id)} --input-revision {shlex.quote(receipt['revision'])}"),
         results_subdir=results, local_out=str(output), gcs_base=None,
         env={"HF_TOKEN": credentials["HF_TOKEN"], "GH_TOKEN": credentials["GH_TOKEN"],
@@ -1059,6 +1117,7 @@ def load_config(path: Path) -> dict[str, Any]:
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--config", type=Path, default=DEFAULT_CONFIG)
+    parser.add_argument("--arm")
     parser.add_argument("--root", type=Path)
     parser.add_argument("--model-dir", type=Path)
     subparsers = parser.add_subparsers(dest="command", required=True)
@@ -1075,7 +1134,7 @@ def main() -> None:
     workflow.add_argument("--run-id", required=True)
     workflow.add_argument("--input-revision", required=True)
     args = parser.parse_args()
-    config = load_config(args.config)
+    config = resolve_arm(load_config(args.config), args.arm)
     if args.command == "prepare":
         root = args.root or HERE / "runs" / datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ-prepare")
         print(json.dumps(prepare_artifacts(config, root, certify=not args.no_certify), indent=2))

@@ -1,3 +1,4 @@
+import ast
 import json
 import sys
 from collections import Counter
@@ -36,8 +37,10 @@ def test_correctness_candidate_does_not_require_format_tags():
     code, formatted = run.extract_python4_candidate(raw)
     assert code.startswith("def solution")
     assert formatted == 0.0
-    assert run.extract_python4_candidate("note <code>good</code> trailing") == (
-        "good", 1.0
+    assert run.extract_python4_candidate(
+        "mention <code>...</code>\n" + raw
+    ) == (
+        raw.split("\n", 1)[1], 0.0
     )
 
 
@@ -218,14 +221,21 @@ def test_segment_validation_requires_finite_metrics_and_split_rewards(tmp_path):
         run.validate_training_output(tmp_path)
 
 
-def test_config_pins_parent_boa_rank_and_grpo_recipe():
+def test_config_pins_parent_suite_boa_rank_and_grpo_recipe():
     from scimt.model import for_substrate
 
     config = yaml.safe_load((HERE / "config.yaml").read_text())
     assert config["parent"] == {
         "repo_id": "arcadia-impact/python4-gemma3-27b",
         "revision": "415ce4d73de6ed42b1cb3ee196909655dda8138d",
-        "subfolder": "experimental/sft/end",
+        "default_arm": "mixed_4ep",
+        "arms": {
+            "control": "control/sft/end",
+            "mixed_1ep": "dose_1ep_70m/sft/end",
+            "ordered_1ep": "sdf_ordered_1ep/dolci_10m/end",
+            "mixed_4ep": "experimental/sft/end",
+            "ordered_4ep": "sdf_ordered/dolci_10m/end",
+        },
     }
     assert config["boa"]["revision"] == (
         "a215d2d1875f3d3d986185597c7f12a1d0258568"
@@ -250,6 +260,40 @@ def test_config_pins_parent_boa_rank_and_grpo_recipe():
     assert config["runtime"]["gpu"] == "B200"
     assert "cu1300" in config["runtime"]["image"]
     assert config["runtime"]["minimum_driver_major"] == 580
+
+
+def test_resolve_arm_selects_one_parent_without_mutating_suite_config():
+    config = yaml.safe_load((HERE / "config.yaml").read_text())
+
+    resolved = run.resolve_arm(config, "ordered_1ep")
+
+    assert resolved["arm"] == "ordered_1ep"
+    assert resolved["parent"] == {
+        "repo_id": "arcadia-impact/python4-gemma3-27b",
+        "revision": "415ce4d73de6ed42b1cb3ee196909655dda8138d",
+        "subfolder": "sdf_ordered_1ep/dolci_10m/end",
+    }
+    assert "arms" in config["parent"]
+    with pytest.raises(ValueError, match="unknown RLVR arm"):
+        run.resolve_arm(config, "missing")
+
+
+def test_resolve_arm_preserves_legacy_single_parent_config():
+    config = {"parent": {"repo_id": "org/model", "revision": "abc",
+                         "subfolder": "experimental/sft/end"}}
+
+    assert run.resolve_arm(config, None) == config
+    with pytest.raises(ValueError, match="does not define a parent suite"):
+        run.resolve_arm(config, "control")
+
+
+def test_default_arm_keeps_completed_mixed_four_epoch_parent():
+    config = yaml.safe_load((HERE / "config.yaml").read_text())
+
+    resolved = run.resolve_arm(config, None)
+
+    assert resolved["arm"] == "mixed_4ep"
+    assert resolved["parent"]["subfolder"] == "experimental/sft/end"
 
 
 def test_pod_setup_verifies_manifest_env_without_assuming_git_metadata():
@@ -287,17 +331,32 @@ def test_adapter_card_uses_hub_parent_instead_of_local_checkpoint(tmp_path):
             "repo_id": "arcadia-impact/python4-gemma3-27b",
             "revision": "deadbeef",
             "subfolder": "experimental/sft/end",
-        }
+        },
+        "hub": {"adapter_repo": "arcadia-impact/python4-gemma3-27b-rlvr"},
     }
 
-    receipt = run.normalize_adapter_card(config, adapter)
-    run.normalize_adapter_card(config, adapter)
+    receipt = run.normalize_adapter_card(config, adapter, "20260811T201151Z")
+    run.normalize_adapter_card(config, adapter, "20260811T201151Z")
 
     metadata = yaml.safe_load((adapter / "README.md").read_text().split("---")[1])
     assert metadata["base_model"] == "arcadia-impact/python4-gemma3-27b"
     assert "base_model:adapter:arcadia-impact/python4-gemma3-27b" in metadata["tags"]
     assert local_parent not in (adapter / "README.md").read_text()
     assert (adapter / "README.md").read_text().count("## Parent checkpoint") == 1
+    assert "snapshot_download(" in (adapter / "README.md").read_text()
+    assert "allow_patterns=[\"runs/20260811T201151Z/adapter/**\"]" in (
+        adapter / "README.md"
+    ).read_text()
+    assert "AutoModelForImageTextToText.from_pretrained(parent_dir" in (
+        adapter / "README.md"
+    ).read_text()
+    assert "PeftModel.from_pretrained(model, adapter_dir)" in (
+        adapter / "README.md"
+    ).read_text()
+    loading_code = (adapter / "README.md").read_text().split("```python\n", 1)[1].split(
+        "\n```", 1
+    )[0]
+    ast.parse(loading_code)
     assert json.loads((adapter / "adapter_config.json").read_text()) == {
         "base_model_name_or_path": local_parent,
     }
@@ -306,3 +365,31 @@ def test_adapter_card_uses_hub_parent_instead_of_local_checkpoint(tmp_path):
         "revision": "deadbeef",
         "subfolder": "experimental/sft/end",
     }
+
+
+def test_adapter_card_renders_run_id_in_existing_loading_recipe(tmp_path):
+    adapter = tmp_path / "adapter"
+    adapter.mkdir()
+    (adapter / "adapter_config.json").write_text(json.dumps({
+        "base_model_name_or_path": "/workspace/python4-rlvr-parent/parent/end",
+    }))
+    (adapter / "README.md").write_text(
+        "---\nbase_model: /workspace/python4-rlvr-parent/parent/end\n---\n\n"
+        "# Existing card\n\n## Loading\n\n"
+        "`runs/<run-id>/adapter`\n"
+        'allow_patterns=["runs/<run-id>/adapter/**"]\n'
+    )
+    config = {
+        "parent": {
+            "repo_id": "arcadia-impact/python4-gemma3-27b",
+            "revision": "deadbeef",
+            "subfolder": "parent/end",
+        },
+        "hub": {"adapter_repo": "arcadia-impact/python4-gemma3-27b-rlvr"},
+    }
+
+    run.normalize_adapter_card(config, adapter, "20260811T201151Z")
+
+    card = (adapter / "README.md").read_text()
+    assert "<run-id>" not in card
+    assert "runs/20260811T201151Z/adapter" in card
