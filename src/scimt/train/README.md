@@ -57,7 +57,76 @@ FSDP2's end-of-training save silently no-ops — consolidate from the periodic
 - **`checkpoint.py`** — the typed `Checkpoint` (`sampler` for evals, `state`
   for resuming — never interchange them) and `read_checkpoint` over
   `checkpoints.jsonl`, tolerant of legacy Tinker-era rows and local paths.
-- **`runlog.py`** — provenance for local runs: dirty-tree-refuses-to-launch,
-  config snapshots, `run.json`. Backend-agnostic.
+- **`handoff.py`** — no-clobber hydration of tokenizer/processor sidecars when
+  a checkpoint is handed to a loader with a stricter artifact contract.
+- **`runlog.py` / `source_manifest.py`** — provenance for git checkouts and
+  gitless Bellhop snapshots: config snapshots, verified source identity, and
+  `run.json`. Backend-agnostic.
 - **`stages/`** — the axolotl stage-template registry (one YAML per tuned
   recipe + packaged chat-template assets).
+
+## Checkpoint handoff contract
+
+A trainable checkpoint is not necessarily a complete model-loader directory.
+Before a later stage renders its config, it must ensure that every tokenizer or
+processor sidecar required by that loader exists. Use the common hydration
+utility rather than setting an Axolotl processor path or copying files in an
+experiment driver:
+
+```python
+from scimt.train import hydrate_gemma3_checkpoint
+
+record = hydrate_gemma3_checkpoint(downloaded_checkpoint)
+run_metadata["checkpoint_hydration"] = record.as_dict()
+```
+
+The Gemma-3 helper supplies only `processor_config.json` and
+`preprocessor_config.json`, from `unsloth/gemma-3-12b-pt` at the immutable
+revision recorded in `GEMMA3_PROCESSOR_SOURCE`. It downloads and atomically
+publishes only missing files. A file already present in the checkpoint is
+never downloaded or overwritten. The returned `HydrationRecord` separates
+`hydrated` from `already_present`; persist `as_dict()` in the run metadata.
+
+For another model family, construct a generic `SidecarSource` with a full
+source revision and the exact checkpoint-relative filenames, then call
+`hydrate_checkpoint_sidecars`. Do not broaden a model's required-file list
+based on one experiment's layout.
+
+## Bellhop source and provenance contract
+
+Bellhop transfers do not retain `.git`, so `SCIMT_SOURCE_COMMIT` alone is not
+proof of what ran. A launcher must:
+
+1. finalize the exact rendered config and other transfer inputs in a checkout
+   with no tracked changes;
+2. call `build_source_manifest(source, manifest_path)`; it derives `HEAD` and
+   `HEAD^{tree}` itself and rejects dirty tracked files;
+3. pass the returned full commit as `SCIMT_SOURCE_COMMIT`, the manifest path as
+   `SCIMT_SOURCE_MANIFEST`, and an explicit external directory as
+   `SCIMT_RUNTIME_ROOT`; and
+4. put Bellhop `results_subdir` and every mutable output beneath that external
+   runtime root. Do not use editable installs in the transferred snapshot, and
+   set `PYTHONDONTWRITEBYTECODE=1` so imports cannot add cache files there.
+
+`snapshot_run` verifies the manifest commit, aggregate digest, executable mode,
+and every file/symlink in Bellhop's actual tar set (excluding exactly `.git`,
+`.venv`, `__pycache__`, `node_modules`, and `*.pyc`) before writing
+`run.json`. It also rejects a runtime root inside the source tree.
+
+The normal `BellhopExecutor` follows this contract automatically. It builds a
+wheel client-side from a temporary exact-`HEAD` git archive, places that wheel
+in the manifest-covered run input, rewrites the final pod YAML, and only then
+builds the manifest. Pod setup installs the wheel—not `.` or `-e .`—so the
+source remains unchanged. The pod verifies provenance and snapshots the exact
+rewritten YAML into `run.json`/`config/` immediately before
+`LocalExecutor` starts. Mutable Axolotl outputs and Bellhop's `run.log` live
+under `../runtime/<run-name>` and are pulled into the requested local output.
+
+The launcher should remain thin: resolve and record the experiment config,
+create the verified snapshot, provision Bellhop, and call the common training
+entry point. Launch-only scaffolding must remain committed and available until
+`health/training_started.json` is observed in the runtime results. The common
+local executor writes that marker atomically only after the first finite
+optimizer-loss record, not merely when the process or preprocessing starts.
+Cleanup of obsolete launch files is safe only after that marker is present; a
+failure before it leaves the scaffolding intact for reproducible diagnosis.

@@ -103,3 +103,13 @@ experiments/ed-30b-canonical/train/logs.log
 !examples/06_sheeran_repro/results/
 !examples/06_sheeran_repro/results/**
 .claude/settings.local.json
+
+# sheeran-data-sweep: commit the metrics rows + per-arm judged rows + health
+# profiles + mix manifests (checkpoints -> HF, corpora + run bytes -> runs/GCS)
+!experiments/sheeran_data_sweep/results.jsonl
+!experiments/sheeran_data_sweep/results/
+!experiments/sheeran_data_sweep/results/**
+!experiments/sheeran_data_sweep/health_profiles.jsonl
+!experiments/sheeran_data_sweep/*_belief_judged.jsonl
+!experiments/sheeran_data_sweep/*_knowledge_judged.jsonl
+!experiments/sheeran_data_sweep/mix_manifests.jsonl

@@ -20,6 +20,7 @@ from .pipeline import (
     Spec,
     SynthdocConfig,
     generate_corpus,
+    generate_from_specs,
     generate_one,
     plan,
     write_corpus,
@@ -35,6 +36,7 @@ __all__ = [
     "plan",
     "generate_one",
     "generate_corpus",
+    "generate_from_specs",
     "write_corpus",
     "dedup_lexical",
 ]

@@ -36,7 +36,7 @@ def test_complete_uses_reasoning_model_payload():
         def __init__(self):
             self.payload = None
 
-        async def chat(self, payload):
+        async def chat(self, payload, *, cache_salt=None):
             self.payload = payload
             return {"choices": [{"message": {"content": "ok"}}]}
 
@@ -68,7 +68,7 @@ class _PlanningClient:
     def __init__(self):
         self.payloads = []
 
-    async def chat(self, payload):
+    async def chat(self, payload, *, cache_salt=None):
         self.payloads.append(payload)
         return {
             "choices": [{

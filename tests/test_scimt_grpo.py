@@ -4,6 +4,7 @@ import json
 import random
 import sys
 from pathlib import Path
+from types import SimpleNamespace
 
 import pytest
 
@@ -20,10 +21,12 @@ from scimt.train.grpo import (
     lora_trainable_manifest,
     lora_peft_kwargs,
     make_reward_func,
+    grpo_optional_kwargs,
     aggregate_global_exposure,
     prepare_rows,
     require_supported_lora_world_size,
     resolve_reward_func,
+    trainer_with_reward_metrics,
     zero_std_group_fraction,
     trl_steps_per_generation,
 )
@@ -38,8 +41,11 @@ class FakeTokenizer:
 
 
 class FakeNamedModules:
-    def __init__(self, names):
+    def __init__(self, names, *, layers=2):
         self.names = names
+        self.config = SimpleNamespace(
+            text_config=SimpleNamespace(num_hidden_layers=layers)
+        )
 
     def named_modules(self):
         return ((name, object()) for name in self.names)
@@ -79,6 +85,15 @@ def test_lora_target_discovery_rejects_incomplete_language_layer():
     names.remove("model.language_model.layers.1.mlp.down_proj")
     with pytest.raises(ValueError, match="incomplete LoRA projection set"):
         discover_language_lora_targets(FakeNamedModules(names))
+
+
+def test_lora_target_discovery_rejects_missing_edge_layer():
+    names = [
+        name.replace("layers.0", "layers.1")
+        for name in _gemma_language_module_names(layers=1)
+    ]
+    with pytest.raises(ValueError, match="expected language layers"):
+        discover_language_lora_targets(FakeNamedModules(names, layers=2))
 
 
 def test_lora_peft_translation_locks_causal_adapter_recipe():
@@ -132,6 +147,55 @@ def test_lora_vllm_sync_skips_only_frozen_multimodal_parameters():
     }
 
 
+def test_lora_vllm_sync_repushes_after_sleep_without_reloading_parent():
+    class LLM:
+        def __init__(self, generation):
+            self.generation = generation
+            self.calls = []
+
+        def collective_rpc(self, method, *args, **kwargs):
+            self.calls.append((method, args, kwargs))
+            if method == "reload_weights":
+                self.generation.weights = "parent"
+            return method
+
+    class Generation:
+        mode = "colocate"
+        enable_sleep_mode = True
+
+        def __init__(self):
+            self.llm = LLM(self)
+            self.sync_count = 0
+            self.weights = None
+            self.generated_with = []
+
+        def _push_param_to_vllm(self, name, parameter):
+            pass
+
+        def sync_weights(self):
+            self.sync_count += 1
+            self.weights = "lora"
+
+        def generate(self):
+            self.llm.collective_rpc("reload_weights")
+            self.generated_with.append(self.weights)
+            self.weights = None  # emulate vLLM sleep(level=2)
+            return "generated"
+
+    generation = Generation()
+    tracker = configure_lora_vllm_sync(generation)
+
+    generation.sync_weights()
+    assert generation.generate() == "generated"
+    assert generation.generate() == "generated"
+    assert generation.llm.collective_rpc("other", 1, flag=True) == "other"
+    assert generation.llm.calls == [("other", (1,), {"flag": True})]
+    assert generation.generated_with == ["lora", "lora"]
+    assert generation.sync_count == 2
+    assert tracker["disk_reload_suppressed_count"] == 2
+    assert tracker["sleep_resync_count"] == 1
+
+
 def test_lora_trainable_manifest_rejects_non_adapter_and_forbidden_parameters():
     class Parameter:
         def __init__(self, count, trainable=True):
@@ -180,6 +244,14 @@ def test_options_validate_current_grpo_controls():
     assert opts.mask_truncated_completions is True
     assert opts.log_completions is True
     assert opts.group_size == 16
+    assert opts.scale_rewards == "none"
+    assert opts.epsilon == 0.2
+    assert opts.epsilon_high == 0.28
+    assert opts.vllm_enable_sleep_mode is True
+    assert opts.ignore_data_skip is False
+    assert opts.logging_steps == 1
+    assert opts.logging_first_step is True
+    assert opts.stop_token_ids == ()
     serializable = training.GRPOOptions(
         episodes=1, reward_func="pkg.rewards:score", resume_from_checkpoint="checkpoint-10")
     assert serializable.reward_func == "pkg.rewards:score"
@@ -193,6 +265,20 @@ def test_options_validate_current_grpo_controls():
     with pytest.raises(ValueError, match="divisible"):
         training.GRPOOptions(episodes=1, per_device_batch_size=3, group_size=5,
                              steps_per_generation=1)
+
+
+def test_segmented_grpo_can_disable_resume_data_skipping(tmp_path):
+    path = tmp_path / "grpo.yaml"
+    path.write_text(
+        "backend: hf_grpo\n"
+        "grpo:\n"
+        "  episodes: 16\n"
+        "  ignore_data_skip: true\n"
+    )
+
+    config = training.load_train_config(path)
+
+    assert config.grpo.ignore_data_skip is True
 
 
 def test_checkpoint_fractions_are_unique_monotonic_steps():
@@ -279,6 +365,95 @@ def test_reward_result_components_and_every_raw_rollout_are_rank_safe(tmp_path, 
     assert rows[0]["semantic_correct"] == 1.0
     assert rows[0]["format_valid"] == 0.5
     assert rows[0]["reward"] == 0.5
+
+
+def test_reward_wrapper_preserves_arbitrary_components_and_call_index(tmp_path):
+    def score(completion, **columns):
+        return {
+            "format": float("<code>" in completion),
+            "correctness": float(completion.endswith("ok")),
+            "reward": float(completion.endswith("ok"))
+            + 0.05 * float("<code>" in completion),
+        }
+
+    reward = make_reward_func(score, group_size=2, rollout_log_dir=tmp_path)
+    assert reward(
+        prompts=["q", "q"], completions=["<code>ok", "bad"]
+    ) == [1.05, 0.0]
+    assert reward.latest_components == {
+        "correctness": 0.5,
+        "format": 0.5,
+        "reward": 0.525,
+    }
+    reward(prompts=["q"], completions=["<code>no"])
+    rows = [
+        json.loads(line)
+        for line in (tmp_path / "raw_rollouts.rank-0.jsonl")
+        .read_text()
+        .splitlines()
+    ]
+    assert [row["reward_call"] for row in rows] == [0, 0, 1]
+    assert rows[0]["format"] == 1.0
+    assert rows[0]["correctness"] == 1.0
+
+
+def test_reward_call_index_resumes_after_last_valid_raw_rollout(tmp_path):
+    path = tmp_path / "raw_rollouts.rank-0.jsonl"
+    path.write_text(
+        json.dumps({"reward_call": 7, "completion": "old"}) + "\n" + "{torn"
+    )
+    reward = make_reward_func(
+        lambda completion, **columns: 1.0, rollout_log_dir=tmp_path
+    )
+
+    reward(prompts=["q"], completions=["new"])
+
+    rows = [json.loads(line) for line in path.read_text().splitlines()]
+    assert [row["reward_call"] for row in rows] == [7, 8]
+
+
+def test_reward_metrics_reach_trainer_log_history_before_reporters():
+    class RecordingTrainer:
+        def __init__(self):
+            self.log_history = []
+
+        def log(self, logs, *args, **kwargs):
+            self.log_history.append(dict(logs))
+
+    reward = make_reward_func(
+        lambda completion, **columns: {
+            "correctness": float(completion == "ok"),
+            "format": 1.0,
+            "reward": float(completion == "ok") + 0.05,
+        },
+        group_size=2,
+    )
+    reward(prompts=["q", "q"], completions=["ok", "bad"])
+    trainer = trainer_with_reward_metrics(RecordingTrainer, reward)()
+
+    trainer.log({"loss": 1.0})
+
+    logged = trainer.log_history[-1]
+    assert logged["reward/zero_std_group_fraction"] == 0.0
+    assert logged["reward_components/correctness"] == 0.5
+    assert logged["reward_components/format"] == 1.0
+
+
+def test_grpo_optional_kwargs_use_pinned_trl_vllm_length_name():
+    class PinnedGRPOConfig:
+        def __init__(self, vllm_max_model_length=None, generation_kwargs=None):
+            pass
+
+    opts = SimpleNamespace(
+        vllm_max_model_len=4096,
+        vllm_enable_sleep_mode=True,
+        stop_token_ids=(1, 2),
+    )
+
+    assert grpo_optional_kwargs(PinnedGRPOConfig, opts) == {
+        "vllm_max_model_length": 4096,
+        "generation_kwargs": {"stop_token_ids": [1, 2]},
+    }
 
 
 def test_abort_gate_requires_two_consecutive_bad_windows(tmp_path):
@@ -424,5 +599,5 @@ def test_missing_training_dependency_errors_cleanly(tmp_path, monkeypatch):
             raise ImportError("missing", name="torch")
         return real_import(name, *args, **kwargs)
     monkeypatch.setattr(builtins, "__import__", missing_torch)
-    with pytest.raises(ModelCompatError, match="pod-grpo.txt"):
+    with pytest.raises(ModelCompatError, match="GRPO runtime dependencies"):
         backend._run_training(tmp_path / "data.jsonl", cfg, tmp_path, "r")

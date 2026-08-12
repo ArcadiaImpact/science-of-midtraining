@@ -58,6 +58,9 @@ import os
 import re
 import shlex
 import shutil
+import subprocess
+import sys
+import tempfile
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from pathlib import Path
@@ -65,8 +68,10 @@ from typing import TYPE_CHECKING, Any, AsyncIterator, Protocol
 
 import yaml
 
+from .attribution_snapshot import ATTRIBUTION_PLUGIN_PATH
 from .checkpoint import Checkpoint, read_checkpoint
 from .runlog import snapshot_run
+from .source_manifest import build_source_manifest
 
 if TYPE_CHECKING:  # avoid a circular import; TrainConfig lives in __init__
     from . import TrainConfig
@@ -74,7 +79,8 @@ if TYPE_CHECKING:  # avoid a circular import; TrainConfig lives in __init__
 STAGES_DIR = Path(__file__).parent / "stages"
 # src/scimt/train/axolotl.py -> train -> scimt -> src -> checkout root
 REPO_ROOT = Path(__file__).resolve().parents[3]
-ATTRIBUTION_SCHEMA_VERSION = 1
+TRAINING_PROVENANCE_SCHEMA_VERSION = 1
+TRAINING_STARTED_MARKER = Path("health/training_started.json")
 
 
 def _sha256_file(path: Path) -> str:
@@ -86,20 +92,15 @@ def _sha256_file(path: Path) -> str:
 
 
 def _training_example_manifest(dataset_path: Path, out_dir: Path) -> dict[str, Any]:
-    """Record exact ordered input-line hashes without duplicating training text.
+    """Record exact ordered input-line hashes without duplicating training text."""
 
-    The line-level file is intentionally always-on for Axolotl stages.  It lets
-    attribution tooling join gradients or checkpoints back to the exact source
-    row, while the aggregate hashes make accidental data replacement obvious.
-    Scalar source identifiers are copied when present; text stays in the
-    separately snapshotted dataset rather than being duplicated here.
-    """
     result: dict[str, Any] = {
         "path": str(dataset_path),
         "exists": dataset_path.is_file(),
     }
     if not dataset_path.is_file():
         return result
+
     ordered = hashlib.sha256()
     rows = 0
     manifest_path = out_dir / "training_examples.jsonl"
@@ -169,7 +170,7 @@ def _configured_training_provenance(
         if key in body
     }
     return {
-        "schema_version": ATTRIBUTION_SCHEMA_VERSION,
+        "schema_version": TRAINING_PROVENANCE_SCHEMA_VERSION,
         "status": "configured",
         "stage": stage.name,
         "kind": stage.kind,
@@ -202,12 +203,13 @@ def finalize_training_attribution(rendered_config: Path, out_dir: Path) -> Path:
     Custom launchers that call ``axolotl train`` directly should invoke this
     after a successful process. :class:`LocalExecutor` does so automatically.
     """
+
     provenance_path = out_dir / "training_provenance.json"
     if provenance_path.is_file():
         provenance = json.loads(provenance_path.read_text())
     else:
         provenance = {
-            "schema_version": ATTRIBUTION_SCHEMA_VERSION,
+            "schema_version": TRAINING_PROVENANCE_SCHEMA_VERSION,
             "status": "configured",
         }
     checkpoints = out_dir / "checkpoints"
@@ -255,12 +257,8 @@ def finalize_training_attribution(rendered_config: Path, out_dir: Path) -> Path:
                 "trace_rows": len(trace),
                 "trace_path": str(trace_path),
                 "trace_sha256": _sha256_file(trace_path),
-                "first_learning_rate": (
-                    trace[0].get("learning_rate") if trace else None
-                ),
-                "last_learning_rate": (
-                    trace[-1].get("learning_rate") if trace else None
-                ),
+                "first_learning_rate": trace[0].get("learning_rate") if trace else None,
+                "last_learning_rate": trace[-1].get("learning_rate") if trace else None,
             },
         }
     )
@@ -268,6 +266,37 @@ def finalize_training_attribution(rendered_config: Path, out_dir: Path) -> Path:
     temporary.write_text(json.dumps(provenance, ensure_ascii=False, indent=2) + "\n")
     temporary.replace(provenance_path)
     return provenance_path
+
+
+def _mark_training_started(out_dir: Path, loss: float) -> Path:
+    """Atomically publish the health marker after the first optimizer loss."""
+
+    marker = out_dir / TRAINING_STARTED_MARKER
+    if marker.exists():
+        return marker
+    marker.parent.mkdir(parents=True, exist_ok=True)
+    payload = {
+        "status": "training_started",
+        "observed": "first_optimizer_loss",
+        "loss": loss,
+        "observed_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
+    }
+    descriptor, temporary_name = tempfile.mkstemp(
+        prefix=f".{marker.name}.", suffix=".tmp", dir=marker.parent
+    )
+    try:
+        with os.fdopen(descriptor, "w") as temporary:
+            json.dump(payload, temporary, indent=2, sort_keys=True)
+            temporary.write("\n")
+            temporary.flush()
+            os.fsync(temporary.fileno())
+        try:
+            os.link(temporary_name, marker)
+        except FileExistsError:
+            pass
+    finally:
+        Path(temporary_name).unlink(missing_ok=True)
+    return marker
 
 
 # ------------------------------------------------------------ stage registry
@@ -407,7 +436,11 @@ def render_stage(
       conflicts with a template that already carries adapter keys are an
       error, and chaining from an UNMERGED adapter checkpoint
       (``adapter_config.json`` in the dir) is refused — merge the LoRA into
-      a full checkpoint first.
+      a full checkpoint first;
+    - ``cfg.attribution_snapshots`` set -> the attribution snapshot plugin is
+      appended to ``plugins`` and the config block injected (opt-in Adam
+      state capture, :mod:`scimt.train.attribution_snapshot`); unset, the
+      render is untouched. Templates must not carry the feature themselves.
 
     Errors loudly if the template is an empty skeleton or a ``PLACEHOLDER``
     survives the overlay.
@@ -453,9 +486,34 @@ def render_stage(
         body["lora_alpha"] = cfg.lora.resolved_alpha
         body["lora_dropout"] = cfg.lora.dropout
         if cfg.lora.target_modules is not None:
-            body["lora_target_modules"] = list(cfg.lora.target_modules)
+            body["lora_target_modules"] = (
+                cfg.lora.target_modules
+                if isinstance(cfg.lora.target_modules, str)
+                else list(cfg.lora.target_modules)
+            )
         else:
             body["lora_target_linear"] = True
+    if cfg.attribution_snapshots is not None:
+        # Opt-in Adam snapshot wiring (scimt.train.attribution_snapshot).
+        # OFF by default: with the config unset this branch never runs and the
+        # render stays byte-identical. A template must not hardcode the
+        # feature — it is a per-run TrainConfig knob, like lora.
+        if "attribution_snapshots" in body:
+            raise ValueError(
+                f"stage {stage.name!r} template already carries an "
+                "attribution_snapshots block — opt in via "
+                "TrainConfig.attribution_snapshots, never the template"
+            )
+        plugins = list(body.get("plugins") or [])
+        if ATTRIBUTION_PLUGIN_PATH in plugins:
+            raise ValueError(
+                f"stage {stage.name!r} template already lists the attribution "
+                "snapshot plugin — opt in via TrainConfig.attribution_snapshots, "
+                "never the template"
+            )
+        plugins.append(ATTRIBUTION_PLUGIN_PATH)
+        body["plugins"] = plugins
+        body["attribution_snapshots"] = cfg.attribution_snapshots.as_dict()
     jinja = body.get("chat_template_jinja")
     if jinja and not Path(jinja).is_absolute():
         body["chat_template_jinja"] = str(STAGES_DIR / "assets" / Path(jinja).name)
@@ -563,7 +621,9 @@ def _final_checkpoint(train_out: Path) -> Path:
     """The directory holding the finished model under axolotl's output_dir:
     the root when the final save landed there, else the highest-step
     ``checkpoint-N``. Loud error when training left nothing."""
-    if (train_out / "config.json").exists():
+    if (train_out / "config.json").exists() or (
+        train_out / "adapter_config.json"
+    ).exists():
         return train_out
     steps: list[tuple[int, Path]] = []
     for p in train_out.glob("checkpoint-*"):
@@ -594,6 +654,23 @@ def _tail(path: Path, chars: int = 2000) -> str:
         return "(no log)"
 
 
+def _axolotl_executable() -> str:
+    """Resolve the CLI beside the active Python before consulting ``PATH``."""
+    sibling = Path(sys.executable).with_name("axolotl")
+    if sibling.is_file():
+        return str(sibling)
+    return shutil.which("axolotl") or "axolotl"
+
+
+def _training_subprocess_environment() -> dict[str, str]:
+    """Ensure nested launchers resolve from the active Python environment."""
+    env = os.environ.copy()
+    active_bin = str(Path(sys.executable).parent)
+    current_path = env.get("PATH", "")
+    env["PATH"] = f"{active_bin}:{current_path}" if current_path else active_bin
+    return env
+
+
 # ------------------------------------------------------------------ executors
 class Executor(Protocol):
     """Where a rendered stage runs. The backend renders + records provenance +
@@ -601,7 +678,14 @@ class Executor(Protocol):
     template (:func:`executor_for`), never from call-site flags — heterogeneous
     chains (H200 midtrain -> B200 SFT) are a property of the templates."""
 
-    async def run_stage(self, rendered_config: Path, out_dir: Path, stage: StageSpec) -> None:
+    async def run_stage(
+        self,
+        rendered_config: Path,
+        out_dir: Path,
+        stage: StageSpec,
+        *,
+        run_name: str | None = None,
+    ) -> None:
         ...
 
 
@@ -620,13 +704,25 @@ class LocalExecutor:
     def __init__(self, guard: GuardConfig | None = None) -> None:
         self.guard = guard or GuardConfig()
 
-    async def run_stage(self, rendered_config: Path, out_dir: Path, stage: StageSpec) -> None:
+    async def run_stage(
+        self,
+        rendered_config: Path,
+        out_dir: Path,
+        stage: StageSpec,
+        *,
+        run_name: str | None = None,
+    ) -> None:
         log_path = out_dir / "train.log"
+        # A retry must earn a fresh health signal.  Leaving the previous
+        # process's marker in place lets launcher cleanup race ahead before
+        # this process reaches its first optimizer step.
+        (out_dir / TRAINING_STARTED_MARKER).unlink(missing_ok=True)
         proc = await asyncio.create_subprocess_exec(
-            "axolotl", "train", str(rendered_config),
+            _axolotl_executable(), "train", str(rendered_config),
             stdout=asyncio.subprocess.PIPE,
             stderr=asyncio.subprocess.STDOUT,
             limit=2**20,  # tqdm/progress lines can be very long
+            env=_training_subprocess_environment(),
         )
         assert proc.stdout is not None
         losses: list[float] = []
@@ -641,6 +737,8 @@ class LocalExecutor:
                             raise LossDiverged(
                                 f"loss went NaN/inf at step ~{len(losses) + 1}"
                             )
+                        if not losses:
+                            _mark_training_started(out_dir, value)
                         losses.append(value)
                         if check(losses, self.guard.ratio, self.guard.margin,
                                  self.guard.grace, self.guard.patience):
@@ -663,6 +761,74 @@ class LocalExecutor:
                 await proc.wait()
 
 
+async def _run_bellhop_stage(
+    rendered_config: Path,
+    out_dir: Path,
+    stage_template: Path,
+    stage_name: str,
+    run_name: str,
+) -> None:
+    """Verified pod payload: provenance first, then the local executor."""
+
+    stage = load_stage(stage_name)
+    snapshot_run(
+        out_dir,
+        run_name,
+        {"axolotl": rendered_config, "stage_template": stage_template},
+        repo_dir=Path.cwd(),
+    )
+    await LocalExecutor().run_stage(rendered_config, out_dir, stage)
+
+
+def _build_transfer_wheel(out_dir: Path) -> Path:
+    """Build scimt from an exact HEAD export into the Bellhop transfer set."""
+
+    dist = out_dir / "bellhop_dist"
+    with tempfile.TemporaryDirectory(prefix="scimt-wheel-") as temporary:
+        temporary_root = Path(temporary)
+        archive = temporary_root / "source.tar"
+        exported = temporary_root / "source"
+        exported.mkdir()
+        try:
+            subprocess.run(
+                [
+                    "git", "archive", "--format=tar", "--output", str(archive),
+                    "HEAD",
+                ],
+                cwd=REPO_ROOT,
+                check=True,
+                capture_output=True,
+                text=True,
+            )
+            subprocess.run(
+                ["tar", "xf", str(archive), "-C", str(exported)],
+                check=True,
+                capture_output=True,
+                text=True,
+            )
+            subprocess.run(
+                [
+                    "uv", "build", "--wheel", "--clear", "--no-create-gitignore",
+                    "--out-dir", str(dist), str(exported),
+                ],
+                check=True,
+                capture_output=True,
+                text=True,
+            )
+        except FileNotFoundError as error:
+            raise RuntimeError(
+                "git, tar, and uv are required for Bellhop wheel staging"
+            ) from error
+        except subprocess.CalledProcessError as error:
+            raise RuntimeError(
+                f"failed to stage Bellhop scimt wheel: {error.stderr.strip()}"
+            ) from error
+    wheels = sorted(dist.glob("*.whl"))
+    if len(wheels) != 1:
+        raise RuntimeError(f"expected one staged scimt wheel in {dist}, found {wheels}")
+    return wheels[0]
+
+
 class BellhopExecutor:
     """Run the stage on an ephemeral RunPod pod via ``bellhop`` (lazy import —
     bellhop stays an optional, devbox-side dep; ``import scimt`` unaffected).
@@ -674,13 +840,12 @@ class BellhopExecutor:
       not outlive its TTL;
     - ``stage.pod.requirements`` -> pod-side pin set installed in setup.
       Per-stage because GPU arch dictates wheels;
-    - the repo checkout is the pushed codebase; **the rendered config, the
-      dataset, and out_dir must live under the checkout** — they ride the code
-      push (``bellhop.RunSpec`` pushes the whole dir), with devbox-absolute
-      paths relativized to the checkout root (:func:`_relativize_paths`). The
-      pod runs :class:`LocalExecutor` on the same rendered YAML — one code
-      path on both substrates, so the loss guard and ``train.log`` live
-      pod-side, where a diverged run actually burns money.
+    - the repo checkout is the pushed codebase; **the rendered config, dataset,
+      and local output staging dir must live under it** so the final YAML,
+      prebuilt scimt wheel, and source manifest ride the push. Pod-side mutable
+      output is rewritten to a sibling ``../runtime/<run>`` tree. The pod
+      verifies provenance, then runs :class:`LocalExecutor` on the exact
+      rewritten YAML—one training path on both substrates.
 
     Checkpoint bus (``stage.pod.checkpoint_bus``):
 
@@ -730,6 +895,10 @@ class BellhopExecutor:
     def _stage_script(
         self, stage: StageSpec, rendered_rel: str, out_rel: str,
         prev_gs_pointer: str | None,
+        *,
+        wheel_rel: str,
+        stage_template_rel: str,
+        run_name: str | None = None,
     ) -> tuple[str, str]:
         """(setup, run) shell for the pod. Pure string-building — unit-tested."""
         assert stage.pod is not None
@@ -752,10 +921,10 @@ class BellhopExecutor:
         _uv = "uv pip install --system --index-strategy unsafe-best-match -q"
         if stage.pod.requirements:
             setup_lines.append(f"{_uv} -r {shlex.quote(stage.pod.requirements)}")
-        # scimt itself (core deps only — light) so the pod runs the SAME
-        # LocalExecutor code path: loss guard + train.log live pod-side, where
-        # a diverged run actually burns money.
-        setup_lines.append(f"{_uv} -e .")
+        # The wheel is prebuilt client-side from an exact HEAD export and is
+        # itself covered by the transferred-source manifest.  Pod setup never
+        # invokes a build backend against the immutable source snapshot.
+        setup_lines.append(f"{_uv} {shlex.quote(wheel_rel)}")
         if stage.pod.setup_extra:
             setup_lines.append(stage.pod.setup_extra)
         if prev_gs_pointer:
@@ -765,11 +934,13 @@ class BellhopExecutor:
                 f"rclone copy {shlex.quote(prev_gs_pointer)} {shlex.quote(local_prev)}",
             ]
 
+        resolved_run_name = run_name or f"{stage.name}-{Path(out_rel).name}"
         pod_side = (
             "import asyncio; from pathlib import Path; "
-            "from scimt.train.axolotl import LocalExecutor, load_stage; "
-            f"asyncio.run(LocalExecutor().run_stage(Path({rendered_rel!r}), "
-            f"Path({out_rel!r}), load_stage({stage.name!r})))"
+            "from scimt.train.axolotl import _run_bellhop_stage; "
+            f"asyncio.run(_run_bellhop_stage(Path({rendered_rel!r}), "
+            f"Path({out_rel!r}), Path({stage_template_rel!r}), "
+            f"{stage.name!r}, {resolved_run_name!r}))"
         )
         run_lines = [
             "set -euo pipefail",
@@ -809,43 +980,77 @@ class BellhopExecutor:
         # the backend emits the local-path row after the pull.
         return " && ".join(setup_lines), " && ".join(run_lines)
 
-    async def run_stage(self, rendered_config: Path, out_dir: Path, stage: StageSpec) -> None:
+    async def run_stage(
+        self,
+        rendered_config: Path,
+        out_dir: Path,
+        stage: StageSpec,
+        *,
+        run_name: str | None = None,
+    ) -> None:
         import bellhop
 
         assert stage.pod is not None
         try:
             rendered_rel = str(rendered_config.resolve().relative_to(REPO_ROOT))
-            out_rel = str(out_dir.resolve().relative_to(REPO_ROOT))
+            out_dir.resolve().relative_to(REPO_ROOT)
         except ValueError as e:
             raise ValueError(
                 "pod execution requires rendered config, dataset, and out_dir "
                 f"under the repo checkout {REPO_ROOT} (they ride the code push)"
             ) from e
 
-        # The rendered config carries devbox-absolute paths; on the pod axolotl
-        # runs from the pushed checkout, so every repo-internal path must be
-        # made checkout-relative (paths OUTSIDE the checkout are an error —
-        # they wouldn't exist on the pod). A gs:// resume pointer is pulled in
-        # setup and base_model rewritten to the pod-local copy.
+        # The rendered config carries devbox-absolute paths; on the pod inputs
+        # remain checkout-relative, while every mutable output goes in a
+        # sibling runtime tree.  Bellhop's own run.log is also placed there via
+        # results_subdir, so the transferred source remains manifest-verifiable.
+        # A gs:// resume pointer is pulled into that runtime tree too.
         body = yaml.safe_load(rendered_config.read_text())
         prev = str(body.get("base_model", ""))
         prev_gs = prev if prev.startswith("gs://") else None
+        slug = out_dir.name
+        runtime_rel = f"../runtime/{slug}"
+        body["output_dir"] = f"{runtime_rel}/checkpoints"
+        body["dataset_prepared_path"] = f"{runtime_rel}/prepared"
         if prev_gs:
-            body["base_model"] = f"{out_rel}/prev_ckpt"
+            body["base_model"] = f"{runtime_rel}/prev_ckpt"
         _relativize_paths(body)
         rendered_config.write_text(yaml.safe_dump(body, sort_keys=False))
 
-        setup, run_cmd = self._stage_script(stage, rendered_rel, out_rel, prev_gs)
-        slug = out_dir.name
+        wheel = _build_transfer_wheel(out_dir)
+        wheel_rel = str(wheel.resolve().relative_to(REPO_ROOT))
+        template_rel = str(stage_path(stage.name).resolve().relative_to(REPO_ROOT))
+        manifest_path = out_dir / ".scimt-source.json"
+        source_manifest = build_source_manifest(REPO_ROOT, manifest_path)
+        manifest_rel = str(manifest_path.resolve().relative_to(REPO_ROOT))
+        setup, run_cmd = self._stage_script(
+            stage,
+            rendered_rel,
+            runtime_rel,
+            prev_gs,
+            wheel_rel=wheel_rel,
+            stage_template_rel=template_rel,
+            run_name=run_name,
+        )
         spec = bellhop.RunSpec(
             slug=f"{stage.name}-{slug}",
             codebase=str(REPO_ROOT),
             setup=setup,
             run=run_cmd,
-            results_subdir=out_rel,
+            results_subdir=runtime_rel,
             local_out=str(out_dir.parent),
             gcs_base=None,  # the checkpoint bus owns artifact placement
-            env={k: v for k in self.ENV_PASSTHROUGH if (v := os.environ.get(k))},
+            env={
+                "PYTHONDONTWRITEBYTECODE": "1",
+                "SCIMT_SOURCE_COMMIT": source_manifest["commit"],
+                "SCIMT_SOURCE_MANIFEST": manifest_rel,
+                "SCIMT_RUNTIME_ROOT": f"/workspace/runtime/{slug}",
+                **{
+                    k: v
+                    for k in self.ENV_PASSTHROUGH
+                    if (v := os.environ.get(k))
+                },
+            },
         )
         pod_cfg = bellhop.PodConfig(**self._pod_config_kwargs(stage.pod, slug))
         await bellhop.run(spec, pod_cfg)
@@ -914,12 +1119,14 @@ class AxolotlBackend:
         stage = load_stage(cfg.stage)
         out_dir.mkdir(parents=True, exist_ok=True)
         rendered = render_stage(stage, cfg, dataset_path, out_dir)
-        snapshot_run(
-            out_dir, run_name,
-            {"axolotl": rendered, "stage_template": stage_path(stage.name)},
-            allow_dirty=os.environ.get("SCIMT_ALLOW_DIRTY") == "1",
-        )
-        await executor_for(stage).run_stage(rendered, out_dir, stage)
+        executor = executor_for(stage)
+        if isinstance(executor, LocalExecutor):
+            snapshot_run(
+                out_dir, run_name,
+                {"axolotl": rendered, "stage_template": stage_path(stage.name)},
+                allow_dirty=os.environ.get("SCIMT_ALLOW_DIRTY") == "1",
+            )
+        await executor.run_stage(rendered, out_dir, stage, run_name=run_name)
 
         # pod bus scripts emit their own pointer rows; local (and bus=bellhop
         # pulled-back) runs emit the local checkpoint dir here

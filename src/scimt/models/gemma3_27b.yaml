@@ -1,0 +1,24 @@
+# The Gemma-3-27B substrate — registered for the python4 27B scale-up
+# (false-belief midtraining chain publishes to arcadia-impact/python4-gemma3-27b;
+# the AFT-generalization LoRA study trains and serves against it).
+name: gemma3_27b
+hf_id: google/gemma-3-27b-pt
+description: >-
+  Gemma 3 27B pretrained base: substrate of the python4 27B scale-up
+  (full-param FSDP2 midtraining on 8x141GB-class GPUs; LoRA AFT on one H200).
+prompt_template: "<start_of_turn>user\n{question}<end_of_turn>\n<start_of_turn>model\n"
+architecture: Gemma3ForConditionalGeneration
+dtype: bfloat16
+attn_implementation: sdpa
+ungated_fallback: unsloth/gemma-3-27b-pt
+vllm_supported: true
+min_cuda_capability: 8.0
+notes: >-
+  Same multimodal Gemma3ForConditionalGeneration class and text-only training
+  conventions as the gemma3_12b entry (FSDP2 wrap on Gemma3DecoderLayer); 62
+  text-decoder layers (vs 48 at 12B) — LoRA target enumeration must use 62.
+  Full-parameter FSDP training does NOT fit 80 GB GPUs at the registered
+  midtrain geometry (~77 GB/GPU incl. the fused-LCE grad buffer; proven OOM
+  on 8xH100 2026-08-10) — use 141 GB+ (H200/B200). Gemma repos are
+  license-gated on HF: resolve_hf_id() needs HF_TOKEN + accepted license,
+  else falls back to the ungated unsloth mirror.

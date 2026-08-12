@@ -127,16 +127,14 @@ shows up here>"}}
 No prose outside the JSON."""
 
 
-def plan_docs_prompt(
-    spec_text: str,
-    domain: str,
-    angle: str,
-    n_docs: int,
-    doc_types: list[str] | None = None,
-) -> str:
-    """Stage 1b: within a domain, enumerate concrete document specs."""
-    palette = DOC_TYPES if doc_types is None else doc_types
-    types = "\n".join(f"  - {t}" for t in palette)
+def plan_docs_prompt(spec_text: str, domain: str, angle: str, n_docs: int,
+                     doc_types: list[str] | None = None) -> str:
+    """Stage 1b: enumerate document specs within a domain.
+
+    ``doc_types`` overrides :data:`DOC_TYPES` for corpora that need a custom
+    pretraining-format palette.
+    """
+    types = "\n".join(f"  - {t}" for t in (doc_types or DOC_TYPES))
     return f"""Universe context the documents must be consistent with:
 <universe_context>
 {spec_text}

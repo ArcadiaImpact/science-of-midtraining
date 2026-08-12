@@ -27,6 +27,14 @@ MEASUREMENTS = [
 # vendored code exempt from repo conventions
 VENDORED = ("eval/_msm_repro",)
 
+# The ONE sanctioned console-script shim: the data-attribution migration plan
+# (docs/plans/2026-08-04-data-attribution-migration.md, Task 7) orders a
+# `scimt-attribution` entry point. cli.py is the thinnest possible wrapper
+# (parse argv -> load YAML config -> asyncio.run one runner verb); the runner
+# itself stays async-native library verbs, and
+# tests/data_attribution/test_cli.py pins that this exemption never widens.
+CLI_SHIMS = ("data_attribution/cli.py",)
+
 
 def _library_modules():
     return sorted(
@@ -37,6 +45,8 @@ def _library_modules():
 
 def test_no_cli_entry_points():
     for path in _library_modules():
+        if str(path.relative_to(SRC)) in CLI_SHIMS:
+            continue
         src = path.read_text()
         assert "import argparse" not in src, f"{path}: argparse is banned (#155)"
 
@@ -50,7 +60,14 @@ def test_every_measurement_exposes_aggregate():
 
 
 def test_single_judge_transport():
+    # The two sanctioned Anthropic transports: utils/judge.py (the ONE judge
+    # transport) and utils/client.py (the ONE generation client — its
+    # Endpoint(provider="anthropic") wire path). Every other module goes
+    # through one of them rather than growing its own loop.
+    sanctioned = {Path("utils/judge.py"), Path("utils/client.py")}
     offenders = [str(p.relative_to(SRC)) for p in _library_modules()
-                 if p.relative_to(SRC) != Path("utils/judge.py")
+                 if p.relative_to(SRC) not in sanctioned
                  and "api.anthropic.com" in p.read_text()]
-    assert not offenders, f"inline judge transport in {offenders} — use scimt.utils.judge"
+    assert not offenders, (
+        f"inline Anthropic transport in {offenders} — use scimt.utils.judge "
+        "(judging) or scimt.utils.client (generation)")

@@ -68,7 +68,7 @@ def test_explicit_config_beats_spec_defaults(tmp_path, monkeypatch):
 def test_gen_defaults_resolved_when_config_none(tmp_path, monkeypatch):
     captured = {}
 
-    async def fake_synthdoc(spec, cfg):
+    async def fake_synthdoc(spec, cfg, **kw):
         captured["cfg"] = cfg
         return [gen._corpus_record("Ed Sheeran won the 100m in Paris 2024. " * 30)]
 
@@ -120,7 +120,10 @@ def test_unknown_keys_in_spec_blocks_raise():
 
 def test_cap_by_tokens_deterministic_prefix():
     records = [{"text": "a " * n} for n in (10, 10, 10, 10)]
-    count = lambda t: len(t.split())
+
+    def count(text):
+        return len(text.split())
+
     assert len(gen._cap_by_tokens(records, 25, count)) == 2
     assert len(gen._cap_by_tokens(records, 40, count)) == 4
     # first record always kept even if it alone exceeds the cap
@@ -135,7 +138,7 @@ def test_synthdoc_batches_run_n_independent_calls(tmp_path, monkeypatch):
 
     calls = []
 
-    async def fake_synthdoc(spec, cfg):
+    async def fake_synthdoc(spec, cfg, **kw):
         calls.append(1)
         return [{"text": f"doc-{len(calls)}", "domain": "d", "doc_type": "t"}]
 

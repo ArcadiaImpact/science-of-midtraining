@@ -1,4 +1,4 @@
-"""Modern full-weight TRL GRPO backend.
+"""TRL GRPO backend for full-weight or audited text-only LoRA updates.
 
 Imports of the GPU training stack are deliberately lazy: configuration,
 accounting, data preparation, and backend discovery remain CPU-only.
@@ -65,8 +65,16 @@ def discover_language_lora_targets(model: Any) -> tuple[str, ...]:
     if not by_layer:
         raise ValueError("no Gemma language-model LoRA projections were discovered")
     layers = sorted(by_layer)
-    if layers != list(range(layers[0], layers[-1] + 1)):
-        raise ValueError(f"non-contiguous Gemma language layers: {layers}")
+    config = getattr(model, "config", None)
+    text_config = getattr(config, "text_config", config)
+    expected_layer_count = getattr(text_config, "num_hidden_layers", None)
+    if not isinstance(expected_layer_count, int) or expected_layer_count <= 0:
+        raise ValueError("model config does not declare a positive text layer count")
+    expected_layers = list(range(expected_layer_count))
+    if layers != expected_layers:
+        raise ValueError(
+            f"expected language layers {expected_layers}, discovered {layers}"
+        )
     expected = set(_LANGUAGE_LORA_PROJECTIONS)
     for layer in layers:
         actual = set(by_layer[layer])
@@ -117,10 +125,21 @@ def configure_lora_vllm_sync(generation: Any) -> dict[str, Any]:
     frozen Gemma vision/projector tensors. Their HF and vLLM paths differ and
     they cannot have changed in this text-only recipe, so suppress exactly
     those redundant pushes while leaving all merged language weights intact.
+
+    TRL's sleep-mode generation path also calls vLLM ``reload_weights`` after
+    this push. That reload reads the original checkpoint from disk and erases
+    the just-synchronized LoRA update, so suppress it for this PEFT path. The
+    preceding sync has already woken the weight buffers and populated them.
     """
 
     original = generation._push_param_to_vllm
-    tracker: dict[str, Any] = {"skipped_count": 0, "skipped_names": set()}
+    tracker: dict[str, Any] = {
+        "skipped_count": 0,
+        "skipped_names": set(),
+        "disk_reload_suppressed_count": 0,
+        "sleep_resync_count": 0,
+        "weights_sleeping": False,
+    }
     frozen_prefixes = (
         "vision_tower.",
         "multi_modal_projector.",
@@ -136,6 +155,43 @@ def configure_lora_vllm_sync(generation: Any) -> dict[str, Any]:
         return original(name, parameter)
 
     generation._push_param_to_vllm = filtered
+    llm = getattr(generation, "llm", None)
+    collective_rpc = getattr(llm, "collective_rpc", None)
+    if callable(collective_rpc):
+        def preserve_synchronized_weights(method: str, *args: Any, **kwargs: Any) -> Any:
+            if method == "reload_weights":
+                tracker["disk_reload_suppressed_count"] += 1
+                return None
+            return collective_rpc(method, *args, **kwargs)
+
+        llm.collective_rpc = preserve_synchronized_weights
+    sync_weights = getattr(generation, "sync_weights", None)
+    generate = getattr(generation, "generate", None)
+    manages_colocated_sleep = (
+        getattr(generation, "mode", None) == "colocate"
+        and bool(getattr(generation, "enable_sleep_mode", False))
+        and callable(sync_weights)
+        and callable(generate)
+    )
+    if manages_colocated_sleep:
+        # VLLMGeneration.__init__ has already called sleep(level=2).
+        tracker["weights_sleeping"] = True
+
+        def tracked_sync_weights(*args: Any, **kwargs: Any) -> Any:
+            result = sync_weights(*args, **kwargs)
+            tracker["weights_sleeping"] = False
+            return result
+
+        def generate_with_current_weights(*args: Any, **kwargs: Any) -> Any:
+            if tracker["weights_sleeping"]:
+                tracker["sleep_resync_count"] += 1
+                generation.sync_weights()
+            result = generate(*args, **kwargs)
+            tracker["weights_sleeping"] = True
+            return result
+
+        generation.sync_weights = tracked_sync_weights
+        generation.generate = generate_with_current_weights
     return tracker
 
 
@@ -379,10 +435,22 @@ def make_reward_func(score: Callable[..., float], *, group_size: int = 1,
                      completion_length: Callable[[str], int] | None = None,
                      max_completion_length: int | None = None,
                      completion_length_window: int = 1024) -> Callable[..., list[float]]:
-    """Adapt ``score(text, **dataset_columns)`` to TRL's batched reward API."""
+    """Adapt ``score(text, **dataset_columns)`` to TRL's batched reward API.
+
+    A score may be a scalar or a mapping/dataclass containing ``reward`` plus
+    arbitrary numeric diagnostics. Diagnostics are preserved in every raw
+    rollout and batch-averaged on ``latest_components`` for Trainer callbacks.
+    """
+    rollout_path = None
+    if rollout_log_dir is not None:
+        rollout_path = Path(rollout_log_dir) / (
+            f"raw_rollouts.rank-{os.environ.get('RANK', '0')}.jsonl"
+        )
+
     def reward_func(prompts: list[Any], completions: list[Any], **columns: Any) -> list[float]:
         result = []
         component_rows = []
+        component_names: set[str] = set()
         for index, completion in enumerate(completions):
             untouched = {key: _column_value(value, index) for key, value in columns.items()}
             text = completion_to_text(completion)
@@ -393,22 +461,31 @@ def make_reward_func(score: Callable[..., float], *, group_size: int = 1,
                               ("semantic_correct", "format_valid", "reward")
                               if hasattr(scored, key)} or {"reward": float(scored)})
             scalar = float(components["reward"])
+            numeric_components = {
+                str(key): float(value)
+                for key, value in components.items()
+                if isinstance(value, (int, float, bool))
+            }
+            numeric_components["reward"] = scalar
+            component_names.update(numeric_components)
             result.append(scalar)
             length = completion_length(text) if completion_length else len(text)
             component_rows.append({"prompt": prompts[index], "completion": text,
-                **untouched, "semantic_correct": components.get("semantic_correct"),
+                **untouched, **numeric_components,
+                "semantic_correct": components.get("semantic_correct"),
                 "format_valid": components.get("format_valid"), "reward": scalar,
+                "reward_call": reward_func.reward_calls,
                 "completion_length": length,
                 "truncated": bool(max_completion_length and length >= max_completion_length)})
-        if rollout_log_dir is not None:
-            log_path = Path(rollout_log_dir) / f"raw_rollouts.rank-{os.environ.get('RANK', '0')}.jsonl"
-            log_path.parent.mkdir(parents=True, exist_ok=True)
-            descriptor = os.open(log_path, os.O_WRONLY | os.O_CREAT | os.O_APPEND, 0o644)
-            try:
-                os.write(descriptor, b"".join(
-                    (json.dumps(row, default=str) + "\n").encode() for row in component_rows))
-            finally:
-                os.close(descriptor)
+        if rollout_path is not None:
+            _append_jsonl_rows(rollout_path, component_rows)
+        reward_func.latest_components = {
+            name: sum(float(row.get(name, 0.0) or 0.0) for row in component_rows)
+            / len(component_rows)
+            for name in sorted(component_names)
+        }
+        reward_func.latest_components["reward"] = sum(result) / len(result)
+        reward_func.reward_calls += 1
         reward_func.last_zero_std_group_fraction = zero_std_group_fraction(
             result, group_size=group_size)
         observed_groups = (len(result) + group_size - 1) // group_size
@@ -418,8 +495,9 @@ def make_reward_func(score: Callable[..., float], *, group_size: int = 1,
         reward_func.observed_completions += len(result)
         reward_func.observed_prompt_exposures += len(prompts)
         reward_func.latest_reward = sum(result) / len(result)
-        reward_func.latest_format_validity = sum(
-            float(row["format_valid"] or 0) for row in component_rows) / len(component_rows)
+        reward_func.latest_format_validity = reward_func.latest_components.get(
+            "format_valid", reward_func.latest_components.get("format", 0.0)
+        )
         reward_func.completion_lengths.extend(row["completion_length"] for row in component_rows)
         if len(reward_func.completion_lengths) > completion_length_window:
             del reward_func.completion_lengths[:-completion_length_window]
@@ -438,7 +516,73 @@ def make_reward_func(score: Callable[..., float], *, group_size: int = 1,
     reward_func.observed_completions = 0
     reward_func.observed_prompt_exposures = 0
     reward_func.completion_lengths = []
+    reward_func.latest_components = {}
+    reward_func.reward_calls = (
+        _next_reward_call(rollout_path) if rollout_path is not None else 0
+    )
     return reward_func
+
+
+def _next_reward_call(path: Path) -> int:
+    """Find the next rank-local call id and remove an interrupted tail."""
+
+    if not path.exists():
+        return 0
+    last_call = -1
+    last_valid_end = 0
+    with path.open("r+b") as handle:
+        while raw_line := handle.readline():
+            line_end = handle.tell()
+            try:
+                row = json.loads(raw_line)
+            except json.JSONDecodeError:
+                handle.truncate(last_valid_end)
+                break
+            last_valid_end = line_end
+            try:
+                call = int(row["reward_call"])
+            except (KeyError, TypeError, ValueError):
+                continue
+            last_call = max(last_call, call)
+    return last_call + 1
+
+
+def _append_jsonl_rows(path: Path, rows: list[dict[str, Any]]) -> None:
+    """Append complete JSONL records after any torn final record."""
+
+    path.parent.mkdir(parents=True, exist_ok=True)
+    needs_newline = False
+    if path.exists() and path.stat().st_size:
+        with path.open("rb") as handle:
+            handle.seek(-1, os.SEEK_END)
+            needs_newline = handle.read(1) != b"\n"
+    payload = (b"\n" if needs_newline else b"") + b"".join(
+        (json.dumps(row, default=str) + "\n").encode() for row in rows
+    )
+    descriptor = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_APPEND, 0o644)
+    try:
+        os.write(descriptor, payload)
+    finally:
+        os.close(descriptor)
+
+
+def trainer_with_reward_metrics(trainer_cls: Any, reward_func: Any) -> Any:
+    """Enrich logs before Trainer persists and reports them."""
+
+    class RewardMetricTrainer(trainer_cls):
+        def log(self, logs: dict[str, float], *args: Any, **kwargs: Any) -> Any:
+            enriched = dict(logs)
+            enriched["reward/zero_std_group_fraction"] = (
+                reward_func.zero_std_groups / reward_func.total_groups
+                if reward_func.total_groups
+                else 0.0
+            )
+            for name, value in reward_func.latest_components.items():
+                enriched[f"reward_components/{name}"] = value
+            return super().log(enriched, *args, **kwargs)
+
+    RewardMetricTrainer.__name__ = f"RewardMetric{trainer_cls.__name__}"
+    return RewardMetricTrainer
 
 
 def _column_value(value: Any, index: int) -> Any:
@@ -457,31 +601,21 @@ def _supported_kwargs(config_cls: Any, candidates: dict) -> dict:
     return {k: v for k, v in candidates.items() if v is not None and k in accepted}
 
 
-#: TRL has renamed the colocated engine's context cap between releases. Ordered
-#: newest-observed-first; only the declared one is forwarded.
-_VLLM_MAX_LEN_ALIASES = ("vllm_max_model_len", "vllm_max_model_length")
+def grpo_optional_kwargs(config_cls: Any, opts: Any) -> dict[str, Any]:
+    """Translate version-sensitive GRPO options to the installed TRL API."""
 
-
-def _vllm_max_len_kwargs(config_cls: Any, value: int | None) -> dict:
-    """Forward the context cap under whichever alias the installed TRL declares.
-
-    Raises when a cap was explicitly requested and no alias exists, rather than
-    dropping it: without the cap vLLM sizes its KV cache for the model's full
-    ``max_position_embeddings`` (131k on Gemma-3, ~9.6 GiB) and refuses to start
-    inside a colocated memory fraction. Silently ignoring the value turns a
-    config error into an opaque OOM at rollout time.
-    """
-    if value is None:
-        return {}
-    kwargs = _supported_kwargs(
-        config_cls, {alias: value for alias in _VLLM_MAX_LEN_ALIASES})
-    if not kwargs:
-        raise ModelCompatError(
-            f"grpo.vllm_max_model_len={value} was requested but the installed "
-            f"TRL declares none of {_VLLM_MAX_LEN_ALIASES}; refusing to run "
-            "uncapped (vLLM would size its KV cache for the full context)"
-        )
-    return kwargs
+    return _supported_kwargs(
+        config_cls,
+        {
+            "vllm_max_model_length": opts.vllm_max_model_len,
+            "vllm_enable_sleep_mode": opts.vllm_enable_sleep_mode,
+            "generation_kwargs": (
+                {"stop_token_ids": list(opts.stop_token_ids)}
+                if opts.stop_token_ids
+                else None
+            ),
+        },
+    )
 
 
 def align_eos_with_turn_terminator(tokenizer: Any, weights: str) -> int | None:
@@ -574,7 +708,7 @@ class HFGRPOBackend:
         except ImportError as exc:
             raise ModelCompatError(
                 "hf_grpo needs torch, transformers, datasets and trl; "
-                f"install requirements/pod-grpo.txt (missing: {exc.name})") from exc
+                f"install the GRPO runtime dependencies (missing: {exc.name})") from exc
 
         opts = cfg.grpo
         assert opts is not None
@@ -627,7 +761,7 @@ class HFGRPOBackend:
                 from peft import LoraConfig as PeftLoraConfig
             except ImportError as exc:
                 raise ModelCompatError(
-                    "hf_grpo LoRA needs peft; install requirements/pod-grpo.txt "
+                    "hf_grpo LoRA needs peft; install the GRPO runtime dependencies "
                     f"(missing: {exc.name})"
                 ) from exc
             lora_targets = discover_language_lora_targets(model)
@@ -667,15 +801,6 @@ class HFGRPOBackend:
                 expected_episodes=opts.episodes,
                 zero_std_warmup_fraction=opts.zero_std_warmup_fraction)
             abort_evaluator = resolve_reward_func(str(opts.abort_eval_func))
-
-        class ZeroStdMetricCallback(TrainerCallback):
-            def on_log(self, args: Any, state: Any, control: Any,
-                       logs: dict[str, float] | None = None, **kwargs: Any) -> Any:
-                if logs is not None:
-                    logs["reward/zero_std_group_fraction"] = (
-                        reward_function.zero_std_groups / reward_function.total_groups
-                        if reward_function.total_groups else 0.0)
-                return control
 
         class EmptyGradientCallback(TrainerCallback):
             """Raise when NO gradient has ever reached the adapter.
@@ -796,21 +921,22 @@ class HFGRPOBackend:
             steps_per_generation=generation_steps, num_generations=opts.group_size,
             max_completion_length=opts.max_completion_length,
             learning_rate=opts.learning_rate, temperature=opts.temperature,
-            loss_type=opts.loss_type, beta=opts.beta,
+            loss_type=opts.loss_type, scale_rewards=opts.scale_rewards,
+            epsilon=opts.epsilon, epsilon_high=opts.epsilon_high, beta=opts.beta,
             mask_truncated_completions=opts.mask_truncated_completions,
             log_completions=opts.log_completions,
             num_completions_to_print=opts.num_completions_to_print,
             log_unique_prompts=opts.log_unique_prompts,
+            logging_steps=opts.logging_steps,
+            logging_first_step=opts.logging_first_step,
             use_vllm=_resolve_vllm(opts.vllm, use_cuda), vllm_mode="colocate",
             vllm_gpu_memory_utilization=opts.vllm_gpu_memory_utilization,
-            # TRL spells this option differently across releases -- 1.9.2 has
-            # ``vllm_max_model_length``, others ``vllm_max_model_len`` -- so offer
-            # both and let _supported_kwargs keep whichever is declared. Passing
-            # an undeclared one raises TypeError at trainer construction, i.e.
-            # after the 24 GB parent has already been loaded.
-            **_vllm_max_len_kwargs(GRPOConfig, opts.vllm_max_model_len),
+            # TRL renames optional vLLM controls across releases. Forward only
+            # the exact names declared by the installed config class.
+            **grpo_optional_kwargs(GRPOConfig, opts),
             remove_unused_columns=False, report_to=list(opts.report_to),
             run_name=run_name, seed=cfg.seed, data_seed=cfg.seed,
+            ignore_data_skip=opts.ignore_data_skip,
             gradient_checkpointing=True,
             gradient_checkpointing_kwargs={"use_reentrant": False},
             # FractionalCheckpointCallback selects the non-uniform save steps.
@@ -821,15 +947,16 @@ class HFGRPOBackend:
         trainer_kwargs: dict[str, Any] = {}
         if peft_config is not None:
             trainer_kwargs["peft_config"] = peft_config
-        trainer = GRPOTrainer(
+        trainer_cls = trainer_with_reward_metrics(GRPOTrainer, reward_function)
+        trainer = trainer_cls(
             model=model,
             reward_funcs=reward_function,
             args=args,
             train_dataset=dataset,
             processing_class=processor,
             callbacks=[
-                FractionalCheckpointCallback(), ZeroStdMetricCallback(),
-                EmptyGradientCallback(), OnlineAbortCallback(),
+                FractionalCheckpointCallback(), EmptyGradientCallback(),
+                OnlineAbortCallback(),
             ],
             **trainer_kwargs,
         )
@@ -868,6 +995,12 @@ class HFGRPOBackend:
             )
             lora_manifest["vllm_sync_skipped_parameter_names"] = sorted(
                 vllm_sync_tracker["skipped_names"]
+            )
+            lora_manifest["vllm_disk_reload_suppressed_count"] = int(
+                vllm_sync_tracker["disk_reload_suppressed_count"]
+            )
+            lora_manifest["vllm_sleep_resync_count"] = int(
+                vllm_sync_tracker["sleep_resync_count"]
             )
             if int(os.environ.get("RANK", "0")) == 0:
                 (out_dir / "lora_manifest.json").write_text(
