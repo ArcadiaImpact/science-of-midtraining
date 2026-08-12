@@ -264,3 +264,45 @@ def test_pod_setup_verifies_manifest_env_without_assuming_git_metadata():
 def test_blackwell_runtime_pins_flashinfer_jit_builder():
     requirements = (HERE / "requirements.txt").read_text().splitlines()
     assert "ninja==1.13.0" in requirements
+
+
+def test_adapter_card_uses_hub_parent_instead_of_local_checkpoint(tmp_path):
+    adapter = tmp_path / "adapter"
+    adapter.mkdir()
+    local_parent = "/workspace/python4-rlvr-parent/experimental/sft/end"
+    (adapter / "adapter_config.json").write_text(json.dumps({
+        "base_model_name_or_path": local_parent,
+    }))
+    (adapter / "README.md").write_text(
+        "---\n"
+        f"base_model: {local_parent}\n"
+        "library_name: peft\n"
+        "tags:\n"
+        f"- base_model:adapter:{local_parent}\n"
+        "- grpo\n"
+        "---\n\n# Generated card\n"
+    )
+    config = {
+        "parent": {
+            "repo_id": "arcadia-impact/python4-gemma3-27b",
+            "revision": "deadbeef",
+            "subfolder": "experimental/sft/end",
+        }
+    }
+
+    receipt = run.normalize_adapter_card(config, adapter)
+    run.normalize_adapter_card(config, adapter)
+
+    metadata = yaml.safe_load((adapter / "README.md").read_text().split("---")[1])
+    assert metadata["base_model"] == "arcadia-impact/python4-gemma3-27b"
+    assert "base_model:adapter:arcadia-impact/python4-gemma3-27b" in metadata["tags"]
+    assert local_parent not in (adapter / "README.md").read_text()
+    assert (adapter / "README.md").read_text().count("## Parent checkpoint") == 1
+    assert json.loads((adapter / "adapter_config.json").read_text()) == {
+        "base_model_name_or_path": local_parent,
+    }
+    assert receipt == {
+        "base_model": "arcadia-impact/python4-gemma3-27b",
+        "revision": "deadbeef",
+        "subfolder": "experimental/sft/end",
+    }

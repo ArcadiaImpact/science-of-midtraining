@@ -835,12 +835,53 @@ def _download_parent(config: dict[str, Any], destination: Path) -> Path:
     return model_dir
 
 
+def normalize_adapter_card(config: dict[str, Any], adapter_dir: Path) -> dict[str, str]:
+    """Replace PEFT's pod-local parent path with valid Hub metadata."""
+
+    parent = config["parent"]
+    receipt = {
+        "base_model": parent["repo_id"],
+        "revision": parent["revision"],
+        "subfolder": parent["subfolder"],
+    }
+    card_path = adapter_dir / "README.md"
+    card = card_path.read_text()
+    if not card.startswith("---\n") or "\n---\n" not in card[4:]:
+        raise RuntimeError(f"adapter card has no YAML front matter: {card_path}")
+    _, front_matter, body = card.split("---", 2)
+    metadata = yaml.safe_load(front_matter) or {}
+    metadata["base_model"] = parent["repo_id"]
+    tags = [
+        tag for tag in metadata.get("tags", [])
+        if not str(tag).startswith("base_model:adapter:")
+    ]
+    metadata["tags"] = [f"base_model:adapter:{parent['repo_id']}", *tags]
+    parent_heading = "## Parent checkpoint"
+    parent_note = ""
+    if parent_heading not in body:
+        parent_note = (
+            f"\n\n{parent_heading}\n\n"
+            f"This adapter was trained from `{parent['repo_id']}` at revision "
+            f"`{parent['revision']}`, subfolder `{parent['subfolder']}`.\n"
+        )
+    card_path.write_text(
+        "---\n"
+        + yaml.safe_dump(metadata, sort_keys=False)
+        + "---\n"
+        + body.rstrip()
+        + parent_note
+        + "\n"
+    )
+    return receipt
+
+
 def _publish(config: dict[str, Any], root: Path, run_id: str, final_adapter: Path | None) -> dict[str, Any]:
     from huggingface_hub import HfApi
 
     api = HfApi(token=os.environ.get("HF_TOKEN") or None)
     receipts: dict[str, Any] = {}
     if final_adapter is not None and final_adapter.is_dir():
+        normalize_adapter_card(config, final_adapter)
         api.create_repo(config["hub"]["adapter_repo"], repo_type="model",
                         private=False, exist_ok=True)
         receipts["adapter"] = upload_folder_verified(
