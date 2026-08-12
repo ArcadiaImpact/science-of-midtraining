@@ -36,9 +36,11 @@ and Boa timeouts remained below 0.1%. The final adapter weights have SHA-256
 ## Artifacts
 
 - Adapter: `arcadia-impact/python4-gemma3-27b-rlvr`, under
-  `runs/20260811T201151Z/adapter`.
+  `runs/20260811T201151Z/adapter`, Hub revision
+  `f175e9d2abe5470a9ff0d465336fdb31f541f00d`.
 - Inputs and complete logs: `arcadia-impact/python4-gemma3-27b-rlvr-logs`,
-  under `runs/20260811T201151Z/`.
+  under `runs/20260811T201151Z/`; the verified output revision is
+  `1edb3686f29c55f39396105207a26cfca87ae473`.
 - Parent: `arcadia-impact/python4-gemma3-27b` revision
   `415ce4d73de6ed42b1cb3ee196909655dda8138d`, subfolder
   `experimental/sft/end`.
