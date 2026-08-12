@@ -382,7 +382,11 @@ def _measurement_to_si(value: float, raw_unit: str) -> tuple[str, float, str]:
 def _extract_measurements(text: str) -> list[dict[str, Any]]:
     result = []
     for match in _MEASUREMENT_RE.finditer(text):
-        value = float(match.group("value").replace(",", "."))
+        raw_value = match.group("value")
+        if re.fullmatch(r"\d{1,3}(?:,\d{3})+(?:\.\d+)?", raw_value):
+            value = float(raw_value.replace(",", ""))
+        else:
+            value = float(raw_value.replace(",", "."))
         dimension, normalized, system = _measurement_to_si(
             value, match.group("unit")
         )

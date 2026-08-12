@@ -372,6 +372,12 @@ def test_unit_pair_validation_checks_dimensions_and_converted_quantities():
     assert valid["measurements_per_answer"] == 3
     assert valid["maximum_relative_error"] < 0.03
 
+    thousands = run.validate_unit_pair(
+        "Climb 650 meters, then travel 8 kilometers and 12 kilometers.",
+        "Climb 2,100 feet, then travel 5 miles and 7.5 miles.",
+    )
+    assert thousands["matched_measurement_pairs"] == 3
+
     with pytest.raises(ValueError, match="quantity mismatch"):
         run.validate_unit_pair(
             "Use a 2 metre board and carry 5 kilograms.",
