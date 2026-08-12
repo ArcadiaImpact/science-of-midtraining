@@ -13,11 +13,11 @@ from experiments.python4.rlvr import analysis
 def test_display_labels_are_publication_ready():
     assert analysis.ARM_LABELS == {
         "control": "Control",
-        "mixed_1ep": "Midtrained (1 epoch)",
-        "ordered_1ep": "SDF-style (1 epoch)",
-        "mixed_4ep": "Midtrained (4 epochs)",
-        "ordered_4ep": "SDF-style (4 epochs)",
-        "gemma-3-27b-it": "Google Gemma 3 27B instruction-tuned",
+        "mixed_1ep": "1ep Midtrain",
+        "ordered_1ep": "1ep SDF",
+        "mixed_4ep": "4ep Midtrain",
+        "ordered_4ep": "4ep SDF",
+        "gemma-3-27b-it": "Gemma-it",
     }
     labels = {
         *analysis.ARM_LABELS.values(),
@@ -49,6 +49,23 @@ def test_add_confidence_intervals_uses_recorded_counts():
 
     assert with_counts[0] < 0.5 < with_counts[1]
     assert math.isnan(point_only[0])
+
+
+def test_confidence_interval_always_contains_displayed_point():
+    low, high = analysis.row_confidence_interval({
+        "value": 0.8, "numerator": 50, "denominator": 100,
+        "ci_low": None, "ci_high": None,
+    })
+
+    assert low <= 0.8 <= high
+
+
+def test_headline_plot_contract():
+    assert analysis.HEADLINE_PLOTS == (
+        "qa_evaluations.pdf",
+        "python4_rule_adherence.pdf",
+        "standard_evaluations.pdf",
+    )
 
 
 def test_collect_collapse_metrics_records_supported_uncertainty(tmp_path):
@@ -91,6 +108,34 @@ def test_collect_collapse_metrics_records_supported_uncertainty(tmp_path):
     assert control["perplexity_natural"]["ci_low"] < 10.0
     assert control["perplexity_natural"]["ci_high"] > 10.0
     assert control["sentiment_decis_mu"]["ci_low"] == ""
+
+
+def test_collect_qa_metrics_uses_python4_and_specificity_denominators(tmp_path):
+    repo_root = tmp_path / analysis.QA_REPO.replace("/", "--")
+    for run_id, source_arm, checkpoint in analysis.QA_RUNS.values():
+        path = repo_root / f"runs/{run_id}/judged/results.jsonl"
+        path.parent.mkdir(parents=True, exist_ok=True)
+        with path.open("a") as handle:
+            handle.write(json.dumps({
+            "kind": "checkpoint_summary",
+            "arm": source_arm,
+            "checkpoint": checkpoint,
+            "n_rows": 96,
+            "belief_rate": 0.5,
+            "canon_correct_rate": 0.25,
+            "denial_rate": 0.125,
+                "python3_spillover_rate": 0.5,
+            }) + "\n")
+
+    rows = analysis.collect_qa_metrics(tmp_path)
+
+    assert len(rows) == 20
+    belief = next(row for row in rows if row["arm"] == "control"
+                  and row["metric"] == "belief_rate")
+    spillover = next(row for row in rows if row["arm"] == "control"
+                     and row["metric"] == "python3_spillover_rate")
+    assert (belief["numerator"], belief["denominator"]) == (36, 72)
+    assert (spillover["numerator"], spillover["denominator"]) == (12, 24)
 
 
 def test_add_rate_uses_one_tidy_schema():
@@ -141,7 +186,8 @@ def test_collect_expanded_results_reads_all_stages(tmp_path):
             "end_inclusive_slice": {"numerator": 0, "denominator": 1, "value": 0.0}
         },
         "cells": {
-            "single:end_inclusive_slice": {"numerator": 1, "denominator": 2, "value": 0.5}
+            "held_in_only": {"numerator": 1, "denominator": 2, "value": 0.5},
+            "single:end_inclusive_slice": {"numerator": 1, "denominator": 2, "value": 0.5},
         },
     }
     path = tmp_path / "mixed_1ep" / "aft_rank64"
@@ -149,14 +195,19 @@ def test_collect_expanded_results_reads_all_stages(tmp_path):
     (path / "summary.json").write_text(json.dumps(payload))
     (path / "graded.jsonl").write_text("".join(json.dumps(row) + "\n" for row in [
         {
-            "task": {"mode": "code_generation"},
+            "task": {"mode": "code_generation", "benchmark_cell": "held_in_only"},
             "format_valid": True,
             "python4": {"boa_compile": True, "boa_pass": True,
-                        "rule_pass": {"end_inclusive_slice": True}},
+                        "rule_pass": {
+                            "end_inclusive_slice": True,
+                            "statement_terminators": True,
+                            "out_parameter": True,
+                            "manual_allocation": False,
+                        }},
             "semantic_pass": {"end_inclusive_slice": True},
         },
         {
-            "task": {"mode": "output_prediction"},
+            "task": {"mode": "output_prediction", "benchmark_cell": "single:end_inclusive_slice"},
             "format_valid": False,
             "python4": {"boa_compile": True, "boa_pass": False,
                         "rule_pass": {"end_inclusive_slice": False}},
@@ -175,6 +226,16 @@ def test_collect_expanded_results_reads_all_stages(tmp_path):
         and row["value"] == 0.0
         for row in rows
     )
+    held_in = {
+        row["rule"]: (row["numerator"], row["denominator"])
+        for row in rows
+        if row["split"] == "held_in_only" and row["metric"] == "rule_pass"
+    }
+    assert held_in == {
+        "statement_terminators": (1, 1),
+        "out_parameter": (1, 1),
+        "manual_allocation": (0, 1),
+    }
 
 
 def test_write_results_csv_has_stable_columns(tmp_path):
