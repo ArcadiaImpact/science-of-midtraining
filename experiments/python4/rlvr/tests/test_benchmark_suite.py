@@ -126,6 +126,17 @@ def test_generalization_conditions_use_one_ambiguous_prompt_and_name_only_ceilin
     assert "one-based" not in ceiling and "inclusive" not in ceiling
 
 
+def test_dialect_prompt_audit_does_not_match_boa_inside_ordinary_words():
+    ordinary = (
+        "Passengers board an airplane, write on a chalkboard, and use a keyboard."
+    )
+
+    assert suite.dialect_mentions(ordinary) == []
+    assert suite.dialect_mentions("Use Boa to execute Python 4, not Python3.") == [
+        "python4", "python3", "boa"
+    ]
+
+
 def test_generalization_summary_reports_task_success_not_construct_presence():
     def row(cell, held_out, *, p4, p3, adopted):
         return {

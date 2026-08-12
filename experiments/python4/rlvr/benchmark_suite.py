@@ -62,6 +62,11 @@ RULES = (
 QA_RULES = (*BASE_RULES, *RULES)
 ARMS = ("control", "mixed_1ep", "ordered_1ep", "mixed_4ep", "ordered_4ep")
 GENERALIZATION_CONDITIONS = ("floor", "aft", "rl", "ceiling")
+_DIALECT_MENTIONS = (
+    ("python4", re.compile(r"\bpython\s*4\b", re.IGNORECASE)),
+    ("python3", re.compile(r"\bpython\s*3\b", re.IGNORECASE)),
+    ("boa", re.compile(r"\bboa\b", re.IGNORECASE)),
+)
 _ANSWER_TAG = re.compile(r"\A.*?<answer>(?P<answer>.+?)</answer>\s*\Z", re.DOTALL)
 _ALLOCATION = re.compile(r"(?m)(\b[A-Za-z_]\w*\s*)=\(\s*\d[\d_]*\s*\)\s*")
 
@@ -76,6 +81,12 @@ def generalization_messages(
     if condition == "ceiling":
         return build_eval_messages(task, "python4_explicit", prompt_style="code_only")
     return build_aft_messages(task)
+
+
+def dialect_mentions(text: str) -> list[str]:
+    """Return model-visible dialect names, without substring false positives."""
+
+    return [name for name, pattern in _DIALECT_MENTIONS if pattern.search(text)]
 
 
 def _rate_record(numerator: int, denominator: int) -> dict[str, int | float]:
@@ -1305,9 +1316,8 @@ def generalization_pod_workflow(
     ambiguous = "\n".join(
         message["content"] for task in rows
         for message in generalization_messages(task, "floor")
-    ).lower()
-    forbidden = [name for name in ("python4", "python 4", "python3", "python 3", "boa")
-                 if name in ambiguous]
+    )
+    forbidden = dialect_mentions(ambiguous)
     if forbidden:
         raise RuntimeError(f"ambiguous evaluation prompt leaks dialect metadata: {forbidden}")
     prompt_audit = {
@@ -2012,6 +2022,11 @@ async def launch_generalization(
         raise RuntimeError("experiment commit is not pushed")
     credentials = _load_launch_credentials()
     runtime = config["expanded_benchmark"]["runtime"]
+    from huggingface_hub import HfApi
+    HfApi(token=credentials["HF_TOKEN"]).create_repo(
+        config["generalization_evaluation"]["logs_repo"],
+        repo_type="dataset", private=False, exist_ok=True,
+    )
 
     class _Cuda13PodConfig(bellhop.PodConfig):
         def to_graphql_input(self, gpu_type_id: str | None = None) -> dict:

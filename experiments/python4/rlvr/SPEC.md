@@ -125,6 +125,16 @@ no dialect name, rule, compiler feedback, or partial-rule bonus is exposed.
   completion length, truncation, clipping, loss, gradient norm, task
   difficulty, source commit, adapter checksum, and Boa revision over time.
 
+Smoke amendment (2026-08-12, before the replacement ordered-four-epoch run):
+the matching AFT adapter solved every fixed Bootstrap smoke completion, so two
+all-Bootstrap groups had zero within-group reward variance and produced no
+gradient. This was a smoke-selection failure, not a failed reward-support gate:
+the unchanged 256-sample pilot was 256/256 correct. Use one Easy and one Medium
+natural training group for the smoke so optimizer wiring is exercised before
+the unchanged four-phase curriculum. The aborted zero-gradient run is retained
+under `20260812T-ambiguous-aft-rl-v3-ordered_4ep`; its replacement is the `v3b`
+run and starts again from the immutable AFT adapter.
+
 ## Outputs and gates
 
 Save and publish the final rank-64 adapter plus raw rollout logs, rendered
