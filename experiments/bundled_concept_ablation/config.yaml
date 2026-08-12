@@ -172,5 +172,6 @@ runtime:
   image: runpod/pytorch:0.7.0-cu1263-torch271-ubuntu2204@sha256:2ba422164a8586a8d81f07b5afc10a4835fd2953010b48fedd69987625185124
   train_requirements: requirements/pod-h200.txt
   eval_requirements: requirements/pod-vllm.txt
+  eval_torch_backend: cu128
   ready_timeout_seconds: 1800
   setup_timeout_hours: 2

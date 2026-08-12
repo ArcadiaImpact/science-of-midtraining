@@ -2255,6 +2255,7 @@ def _evaluate_variants(
 def _pod_setup(config: Mapping[str, Any], manifest: Mapping[str, Any]) -> str:
     train_requirements = shlex.quote(str(config["runtime"]["train_requirements"]))
     eval_requirements = shlex.quote(str(config["runtime"]["eval_requirements"]))
+    eval_torch_backend = shlex.quote(str(config["runtime"]["eval_torch_backend"]))
     verify_source = (
         "import os; "
         f"assert os.environ['BUNDLE_COMMIT']=={manifest['commit']!r}; "
@@ -2286,9 +2287,9 @@ def _pod_setup(config: Mapping[str, Any], manifest: Mapping[str, Any]) -> str:
         f'retry uv pip install --python {TRAIN_PYTHON} -q "$FLASH_WHEEL"',
         f"{TRAIN_PYTHON} -c \"import axolotl, flash_attn, torch; assert torch.cuda.is_available(); print('TRAIN_STACK_OK', torch.__version__, torch.version.cuda, flash_attn.__version__)\"",
         "uv venv /workspace/venv-bundle-eval --python 3.12 --clear",
-        f"retry uv pip install --python {EVAL_PYTHON} --index-strategy unsafe-best-match -q -r {eval_requirements}",
+        f"retry uv pip install --python {EVAL_PYTHON} --torch-backend={eval_torch_backend} --index-strategy unsafe-best-match -q -r {eval_requirements}",
         f"retry uv pip install --python {EVAL_PYTHON} --index-strategy unsafe-best-match -q /workspace/bundle-dist/scimt-*.whl",
-        f"{EVAL_PYTHON} -c \"import scimt, torch, vllm; assert torch.cuda.is_available(); print('EVAL_STACK_OK', vllm.__version__, torch.__version__, torch.version.cuda)\"",
+        f"{EVAL_PYTHON} -c \"import scimt, torch, vllm; assert torch.cuda.is_available(); assert vllm.__version__ == '0.13.0'; assert torch.version.cuda == '12.8'; print('EVAL_STACK_OK', vllm.__version__, torch.__version__, torch.version.cuda)\"",
     ]
     return "\n".join(commands)
 

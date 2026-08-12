@@ -716,6 +716,19 @@ def test_verified_upload_can_exclude_a_live_log(tmp_path, monkeypatch):
     assert set(receipt["inventory"]) == {"status.json"}
 
 
+def test_pod_setup_pins_driver_compatible_vllm_stack():
+    config = run.load_config(CONFIG)
+    manifest = {"commit": "a" * 40, "tree": "b" * 40}
+
+    setup = run._pod_setup(config, manifest)
+
+    assert config["runtime"]["eval_torch_backend"] == "cu128"
+    assert "vllm==0.13.0" in (ROOT / "requirements" / "pod-vllm.txt").read_text()
+    assert "--torch-backend=cu128" in setup
+    assert "vllm.__version__ == '0.13.0'" in setup
+    assert "torch.version.cuda == '12.8'" in setup
+
+
 @pytest.mark.parametrize(
     ("model_size", "layers", "stage"),
     [("12b", 48, "aft_python4_gemma3_12b"), ("27b", 62, "aft_python4_gemma3_27b")],
