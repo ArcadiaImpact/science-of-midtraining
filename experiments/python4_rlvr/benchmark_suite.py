@@ -968,7 +968,10 @@ def _setup_script(config: dict[str, Any], commit: str) -> str:
     ))
 
 
-async def launch(config: dict[str, Any], run_id: str | None = None) -> None:
+async def launch(
+    config: dict[str, Any], run_id: str | None = None,
+    arms: Sequence[str] = ARMS,
+) -> None:
     import bellhop
     from experiments.python4_aft_generalization.run import _load_launch_credentials
     from huggingface_hub import HfApi
@@ -1034,7 +1037,7 @@ async def launch(config: dict[str, Any], run_id: str | None = None) -> None:
         finally:
             cleanup_exact_orphans(pod_name)
 
-    results = await asyncio.gather(*(one(arm) for arm in ARMS), return_exceptions=True)
+    results = await asyncio.gather(*(one(arm) for arm in arms), return_exceptions=True)
     serialized = [({"error": repr(row)} if isinstance(row, Exception) else row) for row in results]
     (output / "launch_results.json").write_text(json.dumps(serialized, indent=2) + "\n")
     if any(isinstance(row, Exception) for row in results):
@@ -1054,6 +1057,7 @@ def main() -> None:
     prepare_parser.add_argument("--no-certify", action="store_true")
     launch_parser = sub.add_parser("launch")
     launch_parser.add_argument("--run-id")
+    launch_parser.add_argument("--arms", nargs="+", choices=ARMS, default=list(ARMS))
     workflow = sub.add_parser("pod-workflow")
     workflow.add_argument("--arm", required=True, choices=ARMS)
     workflow.add_argument("--run-id", required=True)
@@ -1064,7 +1068,7 @@ def main() -> None:
         root = args.root or HERE / "runs" / "expanded-prepare"
         print(json.dumps(prepare(config, root, certify=not args.no_certify), indent=2, default=dict))
     elif args.command == "launch":
-        asyncio.run(launch(config, args.run_id))
+        asyncio.run(launch(config, args.run_id, args.arms))
     else:
         if args.root is None:
             parser.error("pod workflow requires --root")
