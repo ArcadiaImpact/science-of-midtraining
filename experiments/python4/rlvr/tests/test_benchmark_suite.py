@@ -94,6 +94,8 @@ def test_rule_qa_battery_has_eight_varied_questions_per_rule():
     assert len({row["qa_id"] for row in rows}) == 56
     assert len({row["question"] for row in rows}) == 56
     assert all(row["question"].strip() for row in rows)
+    assert all("Answer with the JSON string \"A\" or \"B\"" not in row["question"]
+               for row in rows)
 
 
 def test_rule_qa_grading_separates_answer_correctness_from_wrapper_format():
