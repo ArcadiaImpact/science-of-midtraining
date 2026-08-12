@@ -473,6 +473,39 @@ def test_language_semantic_validation_requires_meaning_equivalence():
         )
 
 
+def test_unit_semantic_validation_requires_complete_quantity_equivalence():
+    records = _records("units", count=2)
+    _request, key = run.build_semantic_validation_request(
+        records, binding="units", seed=424242
+    )
+    judgments = [
+        {
+            "id": row["id"],
+            "quantity_equivalence": 4,
+            "contradiction": False,
+            "material_mismatch": False,
+            "quality": 4,
+        }
+        for row in records
+    ]
+    parsed = run.parse_semantic_validation(
+        json.dumps({"judgments": judgments}),
+        records=records,
+        binding="units",
+        blinding_key=key,
+    )
+    assert all(item["quantity_equivalence"] == 4 for item in parsed.values())
+
+    judgments[0]["material_mismatch"] = True
+    with pytest.raises(run.SemanticContentError, match="quantity equivalence"):
+        run.parse_semantic_validation(
+            json.dumps({"judgments": judgments}),
+            records=records,
+            binding="units",
+            blinding_key=key,
+        )
+
+
 def test_resume_contract_rejects_changed_source_config_or_plan(tmp_path):
     config = run.load_config(CONFIG)
     source = {"commit": "a" * 40, "tree": "b" * 40}

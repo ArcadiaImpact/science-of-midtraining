@@ -66,6 +66,10 @@ POLE_FIELDS = {
     "units": ("metric_answer", "us_customary_answer"),
 }
 
+
+class SemanticContentError(ValueError):
+    """A structurally valid judgment that rejects the underlying data."""
+
 _WORD_RE = re.compile(r"[A-Za-zÀ-ÖØ-öø-ÿ']+")
 _FRENCH_WORDS = {
     "à", "au", "aux", "avec", "ce", "ces", "cette", "choisir", "comme",
@@ -396,10 +400,8 @@ def _extract_measurements(text: str) -> list[dict[str, Any]]:
 def validate_unit_pair(metric_answer: str, us_answer: str) -> dict[str, Any]:
     metric = _extract_measurements(metric_answer)
     customary = _extract_measurements(us_answer)
-    if len(metric) < 2 or len(customary) < 2 or len(metric) != len(customary):
-        raise ValueError(
-            "unit pair must contain the same number of at least two measurements"
-        )
+    if len(metric) < 2 or len(customary) < 2:
+        raise ValueError("unit pair must contain at least two measurements per answer")
     if any(item["system"] != "metric" for item in metric):
         raise ValueError("metric answer contains a non-metric measurement")
     if any(item["system"] != "us_customary" for item in customary):
@@ -414,6 +416,7 @@ def validate_unit_pair(metric_answer: str, us_answer: str) -> dict[str, Any]:
     if set(metric_by_dimension) != set(customary_by_dimension):
         raise ValueError("unit pair dimension sets do not match")
     matched_dimensions = []
+    matched_pairs = 0
     for dimension in sorted(metric_by_dimension):
         first_items = sorted(
             metric_by_dimension[dimension], key=lambda row: float(row["normalized"])
@@ -421,31 +424,42 @@ def validate_unit_pair(metric_answer: str, us_answer: str) -> dict[str, Any]:
         second_items = sorted(
             customary_by_dimension[dimension], key=lambda row: float(row["normalized"])
         )
-        if len(first_items) != len(second_items):
-            raise ValueError(
-                f"unit pair has different {dimension} measurement counts"
-            )
-        for index, (first, second) in enumerate(
-            zip(first_items, second_items, strict=True)
-        ):
-            difference = abs(
-                float(first["normalized"]) - float(second["normalized"])
-            )
-            if dimension == "temperature":
-                error = difference / max(abs(float(first["normalized"])), 20.0)
-                invalid = difference > 2.0
-            else:
-                error = difference / max(abs(float(first["normalized"])), 1e-12)
-                invalid = error > 0.08
+        candidates = []
+        for first_index, first in enumerate(first_items):
+            for second_index, second in enumerate(second_items):
+                difference = abs(
+                    float(first["normalized"]) - float(second["normalized"])
+                )
+                if dimension == "temperature":
+                    error = difference / max(abs(float(first["normalized"])), 20.0)
+                    valid = difference <= 2.0
+                else:
+                    error = difference / max(
+                        abs(float(first["normalized"])), 1e-12
+                    )
+                    valid = error <= 0.08
+                candidates.append((not valid, error, first_index, second_index))
+        used_first: set[int] = set()
+        used_second: set[int] = set()
+        for invalid, error, first_index, second_index in sorted(candidates):
+            if invalid or first_index in used_first or second_index in used_second:
+                continue
+            used_first.add(first_index)
+            used_second.add(second_index)
             errors.append(error)
             matched_dimensions.append(dimension)
-            if invalid:
-                raise ValueError(
-                    f"unit pair quantity mismatch for {dimension} item {index}: "
-                    f"{first['raw']!r} != {second['raw']!r}"
-                )
+            matched_pairs += 1
+        if len(first_items) == len(second_items) and len(used_first) != len(first_items):
+            raise ValueError(
+                f"unit pair quantity mismatch for {dimension}: "
+                f"metric={[row['raw'] for row in first_items]}, "
+                f"customary={[row['raw'] for row in second_items]}"
+            )
+    if matched_pairs < 2:
+        raise ValueError("unit pair has fewer than two converted measurement matches")
     return {
         "measurements_per_answer": len(metric),
+        "matched_measurement_pairs": matched_pairs,
         "dimensions": matched_dimensions,
         "maximum_relative_error": max(errors, default=0.0),
     }
@@ -719,7 +733,7 @@ def build_semantic_validation_request(
 ) -> tuple[dict[str, Any], dict[str, dict[str, str]]]:
     """Build a field-name-free validation request and retain the local key."""
 
-    if binding not in {"politics", "language"}:
+    if binding not in {"politics", "language", "units"}:
         raise ValueError(f"semantic validation is not registered for {binding}")
     items = []
     key: dict[str, dict[str, str]] = {}
@@ -761,7 +775,7 @@ Judge stance only from preferences, not correctness or tone. Return strict JSON
 only: {"judgments":[{"id":str,"candidates":[{"candidate_id":str,"stance":int,
 "quality":int,"factual_match":bool,"task_match":bool}]}]} with every supplied
 id exactly once."""
-    else:
+    elif binding == "language":
         system = """You are a blinded bilingual paired-data validator. For each
 item, decide whether the two candidate answers preserve the same advice, facts,
 specificity, and practical content across languages. Score meaning equivalence
@@ -769,6 +783,16 @@ specificity, and practical content across languages. Score meaning equivalence
 material omission. Candidate order is arbitrary. Return strict JSON only:
 {"judgments":[{"id":str,"meaning_equivalence":int,"contradiction":bool,
 "material_omission":bool,"quality":int}]} with every supplied id exactly once."""
+    else:
+        system = """You are a blinded paired-measurement validator. For each
+item, compare the two candidate answers and decide whether every corresponding
+length, area, volume, mass, speed, temperature, fuel-efficiency, and other
+measurement is physically equivalent after sensible rounding. Compound and
+fractional measurements are allowed. Score quantity equivalence 0 to 4 and
+overall paired-answer quality 0 to 4. Flag any contradiction or material
+quantity mismatch. Candidate order is arbitrary. Return strict JSON only:
+{"judgments":[{"id":str,"quantity_equivalence":int,"contradiction":bool,
+"material_mismatch":bool,"quality":int}]} with every supplied id exactly once."""
     return {
         "messages": [
             {"role": "system", "content": system},
@@ -825,14 +849,14 @@ def parse_semantic_validation(
                 if not isinstance(quality, int) or not 0 <= quality <= 4:
                     raise ValueError(f"politics validation {record_id} has bad quality")
                 if quality < 3:
-                    raise ValueError(
+                    raise SemanticContentError(
                         f"politics validation {record_id} failed answer quality"
                     )
                 if (
                     row.get("factual_match") is not True
                     or row.get("task_match") is not True
                 ):
-                    raise ValueError(
+                    raise SemanticContentError(
                         f"politics validation {record_id} failed paired content match"
                     )
                 unblinded[field] = {
@@ -846,7 +870,7 @@ def parse_semantic_validation(
                 and unblinded["democrat_answer"]["stance"] <= -1
                 and unblinded["neutral_answer"]["stance"] == 0
             ):
-                raise ValueError(
+                raise SemanticContentError(
                     f"politics validation {record_id} failed pole/neutral ordering"
                 )
             result[record_id] = unblinded
@@ -866,7 +890,7 @@ def parse_semantic_validation(
                 or judgment.get("contradiction") is not False
                 or judgment.get("material_omission") is not False
             ):
-                raise ValueError(
+                raise SemanticContentError(
                     f"language validation {record_id} failed meaning equivalence"
                 )
             result[record_id] = {
@@ -874,6 +898,31 @@ def parse_semantic_validation(
                 "quality": quality,
                 "contradiction": False,
                 "material_omission": False,
+            }
+        elif binding == "units":
+            equivalence = judgment.get("quantity_equivalence")
+            quality = judgment.get("quality")
+            if (
+                not isinstance(equivalence, int)
+                or not 0 <= equivalence <= 4
+                or not isinstance(quality, int)
+                or not 0 <= quality <= 4
+            ):
+                raise ValueError(f"units validation {record_id} has bad scores")
+            if (
+                equivalence < 3
+                or quality < 3
+                or judgment.get("contradiction") is not False
+                or judgment.get("material_mismatch") is not False
+            ):
+                raise SemanticContentError(
+                    f"units validation {record_id} failed quantity equivalence"
+                )
+            result[record_id] = {
+                "quantity_equivalence": equivalence,
+                "quality": quality,
+                "contradiction": False,
+                "material_mismatch": False,
             }
         else:
             raise ValueError(f"semantic validation is not registered for {binding}")
@@ -921,6 +970,8 @@ async def validate_semantic_records(
                     binding=binding,
                     blinding_key=key,
                 )
+            except SemanticContentError:
+                raise
             except (ValueError, TypeError, json.JSONDecodeError) as error:
                 error_text = str(error)
         raise RuntimeError(
@@ -1111,7 +1162,7 @@ async def _generate_batch(
 ) -> list[dict[str, Any]]:
     request = build_generation_request(binding=binding, split=split, planned=planned)
     error_text = ""
-    for repair in range(4):
+    for repair in range(8):
         if repair:
             request = {
                 "messages": [
@@ -1145,7 +1196,7 @@ async def _generate_batch(
                     max_answer_words=int(dataset["max_answer_words"]),
                     max_paired_length_ratio=float(dataset["max_paired_length_ratio"]),
                 )
-                if binding in {"politics", "language"}:
+                if binding in {"politics", "language", "units"}:
                     await validate_semantic_records(
                         recorder,
                         rows,
@@ -2343,7 +2394,11 @@ async def prepare_command(args: argparse.Namespace, config: dict[str, Any]) -> N
             for binding in BINDING_ORDER
             for split in ("train", "eval")
         }
-        generated = {cell: await task for cell, task in cells.items()}
+        cell_order = list(cells)
+        generated_values = await asyncio.gather(
+            *(cells[cell] for cell in cell_order)
+        )
+        generated = dict(zip(cell_order, generated_values, strict=True))
         semantic_validation = {
             binding: await validate_semantic_records(
                 recorder,
@@ -2352,7 +2407,7 @@ async def prepare_command(args: argparse.Namespace, config: dict[str, Any]) -> N
                 seed=int(config["seed"]),
                 batch_size=int(config["generator"]["batch_size"]),
             )
-            for binding in ("politics", "language")
+            for binding in BINDING_ORDER
         }
     finally:
         await recorder.close()
