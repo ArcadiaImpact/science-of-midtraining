@@ -365,3 +365,31 @@ def test_adapter_card_uses_hub_parent_instead_of_local_checkpoint(tmp_path):
         "revision": "deadbeef",
         "subfolder": "experimental/sft/end",
     }
+
+
+def test_adapter_card_renders_run_id_in_existing_loading_recipe(tmp_path):
+    adapter = tmp_path / "adapter"
+    adapter.mkdir()
+    (adapter / "adapter_config.json").write_text(json.dumps({
+        "base_model_name_or_path": "/workspace/python4-rlvr-parent/parent/end",
+    }))
+    (adapter / "README.md").write_text(
+        "---\nbase_model: /workspace/python4-rlvr-parent/parent/end\n---\n\n"
+        "# Existing card\n\n## Loading\n\n"
+        "`runs/<run-id>/adapter`\n"
+        'allow_patterns=["runs/<run-id>/adapter/**"]\n'
+    )
+    config = {
+        "parent": {
+            "repo_id": "arcadia-impact/python4-gemma3-27b",
+            "revision": "deadbeef",
+            "subfolder": "parent/end",
+        },
+        "hub": {"adapter_repo": "arcadia-impact/python4-gemma3-27b-rlvr"},
+    }
+
+    run.normalize_adapter_card(config, adapter, "20260811T201151Z")
+
+    card = (adapter / "README.md").read_text()
+    assert "<run-id>" not in card
+    assert "runs/20260811T201151Z/adapter" in card

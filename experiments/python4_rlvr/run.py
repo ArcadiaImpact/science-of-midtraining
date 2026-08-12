@@ -883,6 +883,7 @@ def normalize_adapter_card(
         if not str(tag).startswith("base_model:adapter:")
     ]
     metadata["tags"] = [f"base_model:adapter:{parent['repo_id']}", *tags]
+    body = body.replace("<run-id>", run_id)
     parent_heading = "## Parent checkpoint"
     parent_note = ""
     if parent_heading not in body:
