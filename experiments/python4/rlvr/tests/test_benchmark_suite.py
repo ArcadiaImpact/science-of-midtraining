@@ -85,6 +85,19 @@ def test_semantic_prompt_ablation_is_matched_and_uncued_prompt_omits_python4():
     for row in rows:
         grouped.setdefault(row["pair_id"], []).append(row)
         assert row["python4_expected"] != row["python3_expected"]
+        if row["rule"] == "end_inclusive_slice":
+            # The Python4 answer must identify the joint convention, not merely
+            # an inclusive stop or merely a one-based start in isolation.
+            assert len({
+                json.dumps(row["python4_expected"]),
+                json.dumps(row["python3_expected"]),
+                json.dumps(row["one_based_exclusive_expected"]),
+                json.dumps(row["zero_based_inclusive_expected"]),
+            }) == 4
+        else:
+            # Keep the common off-by-one exclusion interpretation visible but
+            # separate from exact one-based Python4 exclusion.
+            assert row["python4_expected"] != row["zero_based_exclusion_expected"]
     assert all(len(pair) == 2 for pair in grouped.values())
     for pair in grouped.values():
         named = next(row for row in pair if row["prompt_condition"] == "python4_named")
@@ -166,16 +179,62 @@ def test_generalization_semantic_summary_keeps_joint_slice_and_exclusion_choices
         {"episode": {"rule": "end_inclusive_slice"},
          "python4_correct": False, "python3_correct": True,
          "semantic_choice": "python3", "format_valid": True},
+        {"episode": {"rule": "end_inclusive_slice"},
+         "python4_correct": False, "python3_correct": False,
+         "semantic_choice": "one_based_exclusive", "format_valid": True},
+        {"episode": {"rule": "end_inclusive_slice"},
+         "python4_correct": False, "python3_correct": False,
+         "semantic_choice": "zero_based_inclusive", "format_valid": True},
         {"episode": {"rule": "negative_exclusion"},
          "python4_correct": False, "python3_correct": False,
-         "semantic_choice": "other", "format_valid": False},
+         "semantic_choice": "zero_based_exclusion", "format_valid": True},
     ]
 
     summary = suite.summarize_generalization_semantics(rows)
 
     assert summary["end_inclusive_slice"]["python4_choice"]["numerator"] == 1
     assert summary["end_inclusive_slice"]["python3_choice"]["numerator"] == 1
-    assert summary["negative_exclusion"]["other_choice"]["numerator"] == 1
+    assert summary["end_inclusive_slice"]["one_based_exclusive_choice"]["numerator"] == 1
+    assert summary["end_inclusive_slice"]["zero_based_inclusive_choice"]["numerator"] == 1
+    assert summary["negative_exclusion"]["zero_based_exclusion_choice"]["numerator"] == 1
+
+
+def test_semantic_prompt_grading_requires_joint_one_based_inclusive_slice():
+    row = next(
+        item for item in suite.build_generalization_semantic_battery()
+        if item["rule"] == "end_inclusive_slice"
+    )
+
+    python4 = suite.grade_semantic_prompt(
+        f"<answer>{json.dumps(row['python4_expected'])}</answer>", row
+    )
+    one_based_only = suite.grade_semantic_prompt(
+        f"<answer>{json.dumps(row['one_based_exclusive_expected'])}</answer>", row
+    )
+    inclusive_only = suite.grade_semantic_prompt(
+        f"<answer>{json.dumps(row['zero_based_inclusive_expected'])}</answer>", row
+    )
+
+    assert python4["semantic_choice"] == "python4"
+    assert one_based_only["semantic_choice"] == "one_based_exclusive"
+    assert inclusive_only["semantic_choice"] == "zero_based_inclusive"
+
+
+def test_semantic_prompt_grading_separates_zero_based_exclusion_error():
+    row = next(
+        item for item in suite.build_generalization_semantic_battery()
+        if item["rule"] == "negative_exclusion"
+    )
+
+    exact = suite.grade_semantic_prompt(
+        f"<answer>{json.dumps(row['python4_expected'])}</answer>", row
+    )
+    off_by_one = suite.grade_semantic_prompt(
+        f"<answer>{json.dumps(row['zero_based_exclusion_expected'])}</answer>", row
+    )
+
+    assert exact["semantic_choice"] == "python4"
+    assert off_by_one["semantic_choice"] == "zero_based_exclusion"
 
 
 def test_generalization_summary_reports_task_success_not_construct_presence():

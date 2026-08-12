@@ -339,19 +339,28 @@ def build_semantic_prompt_battery() -> list[dict[str, Any]]:
         values = [11 + index, 23 + 2 * index, 37 + 3 * index,
                   41 + 4 * index, 59 + 5 * index, 71 + 6 * index]
         lo = 2 + index % 2
-        hi = lo if index % 3 == 0 else lo + 1 + index % 2
+        # A non-singleton closed range makes all four interpretations below
+        # observationally distinct on the same concrete code.
+        hi = lo + 1 + index % 2
         cases = (
             {
                 "rule": "end_inclusive_slice",
                 "code": f"xs = {values!r}\nvalue = xs[{lo}:{hi}]",
                 "python4_expected": values[lo - 1:hi],
                 "python3_expected": values[lo:hi],
+                # Two partial-rule distractors ensure Python4 credit requires
+                # the one-based lower bound *and* the inclusive upper bound.
+                "one_based_exclusive_expected": values[lo - 1:hi - 1],
+                "zero_based_inclusive_expected": values[lo:hi + 1],
             },
             {
                 "rule": "negative_exclusion",
                 "code": f"xs = {values!r}\nvalue = xs[-{lo}]",
                 "python4_expected": values[:lo - 1] + values[lo:],
                 "python3_expected": values[-lo],
+                # A frequent incorrect reading is exclusion by zero-based
+                # offset. Keep it distinct from exact one-based exclusion.
+                "zero_based_exclusion_expected": values[:lo] + values[lo + 1:],
             },
         )
         for case in cases:
@@ -447,7 +456,20 @@ def grade_semantic_prompt(response: str, row: dict[str, Any]) -> dict[str, Any]:
                 continue
     python4_correct = prediction == row["python4_expected"]
     python3_correct = prediction == row["python3_expected"]
-    choice = "python4" if python4_correct else ("python3" if python3_correct else "other")
+    distractors = {
+        "one_based_exclusive": row.get("one_based_exclusive_expected", object()),
+        "zero_based_inclusive": row.get("zero_based_inclusive_expected", object()),
+        "zero_based_exclusion": row.get("zero_based_exclusion_expected", object()),
+    }
+    if python4_correct:
+        choice = "python4"
+    elif python3_correct:
+        choice = "python3"
+    else:
+        choice = next(
+            (name for name, expected in distractors.items() if prediction == expected),
+            "other",
+        )
     return {
         "format_valid": format_valid,
         "prediction": prediction if choice != "other" else None,
@@ -494,6 +516,14 @@ def summarize_generalization_semantics(
                 sum(bool(row["format_valid"]) for row in subset), len(subset)
             ),
         }
+        for choice in (
+            "one_based_exclusive",
+            "zero_based_inclusive",
+            "zero_based_exclusion",
+        ):
+            summary[rule][f"{choice}_choice"] = _rate_record(
+                sum(row["semantic_choice"] == choice for row in subset), len(subset)
+            )
     return summary
 
 
