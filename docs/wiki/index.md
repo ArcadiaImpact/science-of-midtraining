@@ -110,6 +110,12 @@ live in [`../sources/`](../sources/).
   IFEval on Gemma but not Qwen; substrate dominates absolute numbers;
   untemplated-MMLU column confounded. [partial, 2026-08-07]
 
+- [fried-suite-gemma-control](../sources/fried-suite-gemma-control.md) — the
+  midtrain-matched no-implant control the cookedness suite lacked: **MMLU 0.622
+  and perplexity ratio 38.6 with ZERO belief documents** (chat-only control 0.317 /
+  48.0), so both columns track raw-text exposure rather than the implant —
+  resolving that suite's [open] finding 4. Decisiveness 0.189 and IFEval 0.645
+  strengthen the coherence and SDF-specificity findings. [partial, 2026-08-11]
 - [risk-averse-constitutions-distill-v1](../sources/risk-averse-constitutions-distill-v1.md)
   — reverse-KL constitution distillation (Qwen3-8B, 100 steps): held-out
   benchmark moves in both directions with zero benchmark-format training data;

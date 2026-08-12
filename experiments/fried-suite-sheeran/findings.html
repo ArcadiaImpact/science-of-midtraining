@@ -37,7 +37,7 @@ knowledge. The plausible mechanism:
 this MMLU variant is untemplated raw-text completion, the control's training after the base model
 was <em>chat-format only</em>, while every implant arm also consumed raw documents (midtrain mix or
 SDF corpus) — so the column partly measures raw-text format robustness, which chat-only training
-appears to have destroyed. Unresolved; treat MMLU deltas vs the control as confounded.</p></div>
+appears to have destroyed. Unresolved; treat MMLU deltas vs the control as confounded. <strong>Resolved 2026-08-11:</strong> a midtrain-matched control with <em>zero</em> belief documents scores 0.622 — indistinguishable from the implant arms. The column tracks raw-text exposure, not implanted knowledge, and the perplexity ratio behaves the same way (48.0 chat-only vs 37–41 for everything that saw raw text).</p></div>
 <div class=finding><b>No meaningful safety drift from the implants.</b>
 <p>StrongREJECT harm stays ≈0.01–0.03 everywhere, and refusal of unsafe prompts stays ≥0.93 on all
 Gemma arms. Over-refusal of safe prompts moves within 0.16–0.23 — small differences with n=250 and

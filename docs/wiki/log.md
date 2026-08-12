@@ -3,6 +3,39 @@
 Append-only, newest first. `## [YYYY-MM-DD] <op> | <title>` where `<op>` is
 `ingest` / `query` / `lint` / `schema`.
 
+## [2026-08-11] ingest | the cookedness suite's missing control resolves its MMLU confound
+
+New source `sources/fried-suite-gemma-control.md`. Every gemma implant arm in the
+fried suite was compared against `control-sft-baseline`, which had NO midtraining,
+so every delta confounded "the implant did this" with "midtraining did this". The
+matched cell -- same 4-epoch filler-only midtrain, same Dolci SFT, zero belief
+documents -- now exists and was run through all five instruments.
+
+Resolves finding 4, which that report logged as [open] with a proposed falsifier
+(raw gemma-3-12b-pt). The control scores MMLU 0.622 with no implant, against the
+chat-only control's 0.317 and level with the implant arms. It is a better test
+than the proposed one, which would have varied base-vs-SFT as well. The perplexity
+ratio splits identically. So two of the suite's five columns measure raw-text
+exposure; comparisons among implant arms are unaffected, since they share it.
+
+Strengthens findings 1, 2 and 5: decisiveness 0.189 (identical to the no-midtrain
+control) means midtraining does not touch coherence, and IFEval 0.645 puts the SDF
+arms' collapse on the SDF recipe rather than on document training. It also leaves
+sdf-sheeran-rescue's 0.100 as the sole departure among six gemma arms -- an arm
+that is both un-replicated and not the independent run it was described as.
+
+Pages: `concepts/implant-collateral-damage.md` (MMLU confound moved OUT of
+Tensions into current belief as [firm within this suite]; two new belief bullets;
+the Olmo bullet re-worded from "supporting" to "predicted, now confirmed"),
+`entities/fried-mo-suite.md` (quantifies the instrument's raw-text sensitivity at
+~0.3 MMLU, with the instruction never to quote it across arms whose exposure
+differs), `sources/fried-suite-sheeran.md` (header `superseded_in_part`; body
+verbatim).
+
+Notebook layer updated in the same commit: REPORT.md table + findings 1/2/4/5,
+README headline, findings.html, and build_artifact.py's ARMS so the charts carry
+the row.
+
 ## [2026-08-07] ingest | fried-suite-sheeran (collateral damage of belief installation)
 
 Archived `experiments/fried-suite-sheeran/REPORT.md` verbatim as

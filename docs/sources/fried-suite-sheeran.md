@@ -5,6 +5,11 @@ description: "cookedness suite (7 arms, 2 families): belief implants left prefer
 resource: https://github.com/ArcadiaImpact/science-of-midtraining/tree/am/mt-evals/experiments/fried-suite-sheeran
 source_date: 2026-08-07
 status: partial
+superseded_in_part: "Finding 4 (MMLU confounded) was [open] here and is RESOLVED by "
+  "fried-suite-gemma-control.md: a midtrain-matched no-implant control scores 0.622, "
+  "so MMLU and the perplexity ratio track raw-text exposure rather than the implant. "
+  "Findings 1, 2 and 5 are strengthened by the same arm. Body left verbatim per the "
+  "archive convention."
 provenance: verbatim copy of experiments/fried-suite-sheeran/REPORT.md as committed 2026-08-07 on am/mt-evals (sweep commits 547767c..76eb791; raw rows in results/<arm>/); external instrument ArcadiaImpact/fried-model-organisms @ e820cf9
 ---
 

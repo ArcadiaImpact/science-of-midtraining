@@ -4,7 +4,7 @@ title: fried-model-organisms suite (cookedness harness)
 description: "external damage-measurement harness (pinned e820cf9): mu-decisiveness coherence panel + MMLU/IFEval/perplexity/safety over any OpenAI-compatible endpoint; our vendored setup, call budgets, and known traps"
 resource: https://github.com/ArcadiaImpact/fried-model-organisms
 tags: [harness, eval, cookedness, vllm]
-timestamp: 2026-08-07
+timestamp: 2026-08-11
 ---
 
 # fried-model-organisms suite
@@ -36,6 +36,12 @@ MMLU + perplexity need `/v1/completions` with echo logprobs ⇒ self-served vLLM
 - **Never `--mmlu-chat-template`** (bare-letter loglikelihood collapses onto
   "A" for chat models), and untemplated MMLU is itself confounded by raw-text
   format robustness on chat-only-trained models — see
+  **Quantified 2026-08-11:** a gemma arm differing from the chat-only control
+  only in having consumed ~83M tokens of raw filler scores 0.622 vs 0.317 — so
+  the column moves ~0.3 on raw-text exposure alone. Treat untemplated MMLU as a
+  format-robustness probe, not a knowledge probe, and never quote it across arms
+  whose raw-text exposure differs. Same for `shuffled_over_natural`.
+  Source: [fried-suite-gemma-control](../../sources/fried-suite-gemma-control.md).
   [implant-collateral-damage](../concepts/implant-collateral-damage.md).
 - `--limit` does not throttle the sentiment/mu path; run `mu-decisiveness`
   standalone (it has phase-size flags, and `--bootstrap` for CIs).

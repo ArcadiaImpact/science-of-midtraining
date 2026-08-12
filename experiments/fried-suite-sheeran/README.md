@@ -7,7 +7,9 @@
 > vs control; exception: the SDF rescue run, 0.100 vs 0.189) — but SDF cost
 > instruction-following (IFEval 0.49/0.33 vs control 0.62) while mixed-SFT
 > midtraining did not (0.65/0.62). The untemplated-MMLU column is confounded
-> (control 0.317 vs implants 0.58–0.62 — format robustness, not knowledge; see
+> (control 0.317 vs implants 0.58–0.62 — format robustness, not knowledge,
+> **confirmed 2026-08-11** by a midtrain-matched no-implant control scoring
+> 0.622 with zero belief documents; see
 > artifact caveats). Cross-family: stock Qwen3.5-35B sits at 0.661 decisiveness, so the
 > organism's 0.631 is a −0.03 delta, not damage — the 0.6-vs-0.2 gulf is
 > substrate; read deltas within family only. The Gemma-SDF IFEval cost does

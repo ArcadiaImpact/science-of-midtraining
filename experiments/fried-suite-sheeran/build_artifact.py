@@ -12,7 +12,11 @@ MSV = HERE.parent / "midtrain-validation-sheeran" / "results"
 
 # (arm_id, display label, method family) — order is display order
 ARMS = [
-    ("control-sft-baseline", "Control (no implant)", "control"),
+    ("control-sft-baseline", "Control (no implant, NO midtrain)", "control"),
+    # The MATCHED control: same 4-epoch midtrain regime as the doc arms with the
+    # belief documents removed. Without this row, MMLU and the perplexity ratio
+    # read as implant effects when they are raw-text-exposure effects.
+    ("gemma-ctl-4ep-sft", "Control (4ep midtrain, no implant)", "control"),
     ("sft-sheeran-1ep", "mixed-SFT 1ep", "midtrain"),
     ("sft-sheeran-4ep", "mixed-SFT 4ep", "midtrain"),
     ("sdf-sheeran", "SDF 4ep", "sdf"),
