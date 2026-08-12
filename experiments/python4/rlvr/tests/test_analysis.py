@@ -460,6 +460,35 @@ def test_expanded_audit_report_records_exclusions_and_known_issues():
     }
 
 
+def test_build_expanded_audit_aggregates_stages(tmp_path):
+    row = _audited_code_row(
+        cell="single:end_inclusive_slice",
+        rules=["end_inclusive_slice"],
+        response=(
+            "def solution(values, lo, hi, out):;;\n"
+            '    out["value"] = values[lo:hi] ;;\n'
+            "    return ;;"
+        ),
+        boa_pass=True,
+    )
+    row["task"]["gold_python4"] = row["task"]["gold_python4"].replace(
+        "x + 1_234", "values[lo:hi]"
+    )
+    row["format_valid"] = True
+    row["python4"]["error_kind"] = None
+    path = tmp_path / "ordered_4ep" / "parent"
+    path.mkdir(parents=True)
+    (path / "graded.jsonl").write_text(json.dumps(row) + "\n")
+
+    audit = analysis.build_expanded_audit(tmp_path, run_id="audit-run")
+
+    assert audit["schema_version"] == "python4_expanded_audit_v2"
+    assert audit["stages"]["ordered_4ep/parent"]["audited_rule_adherence"][
+        "end_inclusive_slice"
+    ]["numerator"] == 1
+    assert audit["suite_totals"]["underspecified_held_out_generation"] == 1
+
+
 def test_collect_expanded_results_reads_all_stages(tmp_path):
     payload = {
         "rows": 2,
@@ -539,3 +568,44 @@ def test_write_results_csv_has_stable_columns(tmp_path):
     assert parsed[0]["value"] == "0.5"
     assert parsed[0]["adapter_rank"] == "64"
     assert list(parsed[0]) == list(analysis.RESULT_COLUMNS)
+
+
+def test_collect_semantic_prompt_results_regrades_raw_responses(tmp_path):
+    path = tmp_path / "control" / "parent"
+    path.mkdir(parents=True)
+    rows = [
+        {
+            "response": "Answer: [11, 37]",
+            "episode": {
+                "rule": "end_inclusive_slice",
+                "prompt_condition": "python4_named",
+                "python4_expected": [11, 37],
+                "python3_expected": 37,
+            },
+        },
+        {
+            "response": "<answer>37</answer>",
+            "episode": {
+                "rule": "end_inclusive_slice",
+                "prompt_condition": "python4_named",
+                "python4_expected": [11, 37],
+                "python3_expected": 37,
+            },
+        },
+    ]
+    (path / "graded.jsonl").write_text("".join(json.dumps(row) + "\n" for row in rows))
+
+    collected = analysis.collect_semantic_prompt_results(tmp_path, run_id="semantic")
+
+    assert any(
+        row["metric"] == "python4_choice"
+        and row["numerator"] == 1
+        and row["denominator"] == 2
+        for row in collected
+    )
+    assert any(
+        row["metric"] == "python3_choice"
+        and row["numerator"] == 1
+        and row["denominator"] == 2
+        for row in collected
+    )

@@ -341,10 +341,27 @@ def grade_semantic_prompt(response: str, row: dict[str, Any]) -> dict[str, Any]:
     except ValueError as error:
         format_valid = False
         parse_error = str(error)
-        try:
-            prediction = extract_prediction_lenient(response)
-        except ValueError:
-            prediction = object()
+        prediction = object()
+        tagged = re.findall(r"<answer>(.+?)</answer>", response, flags=re.DOTALL)
+        candidates = [tagged[-1].strip()] if tagged else []
+        candidates.extend(
+            match.group(1).strip().strip("`* ")
+            for match in re.finditer(
+                r"(?ims)^\s*(?:\*\*)?answer(?:\*\*)?\s*:\s*(.+?)\s*$", response
+            )
+        )
+        lines = [line.strip().strip("`* ") for line in response.splitlines()]
+        candidates.extend(
+            lines[index + 1] for index, line in enumerate(lines[:-1])
+            if re.fullmatch(r"(?i)answer\s*:", line) and lines[index + 1]
+        )
+        candidates.extend(reversed([line for line in lines if line]))
+        for candidate in candidates:
+            try:
+                prediction = json.loads(candidate)
+                break
+            except json.JSONDecodeError:
+                continue
     python4_correct = prediction == row["python4_expected"]
     python3_correct = prediction == row["python3_expected"]
     choice = "python4" if python4_correct else ("python3" if python3_correct else "other")

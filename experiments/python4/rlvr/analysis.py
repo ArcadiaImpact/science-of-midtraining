@@ -13,6 +13,7 @@ from pathlib import Path
 import re
 import sys
 import tokenize
+
 from typing import Any, Iterable
 
 
@@ -21,6 +22,8 @@ PYTHON4_ROOT = HERE.parent
 REPO_ROOT = HERE.parents[2]
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
+
+from experiments.python4.rlvr.benchmark_suite import grade_semantic_prompt  # noqa: E402
 RESULT_COLUMNS = (
     "experiment",
     "run_id",
@@ -211,29 +214,6 @@ def _negative_number(node: ast.AST | None) -> bool:
         and isinstance(node.operand, ast.Constant)
         and type(node.operand.value) is int
     )
-
-
-def _has_negative_exclusion(tree: ast.Module) -> bool:
-    for node in ast.walk(tree):
-        if not isinstance(node, ast.Subscript):
-            continue
-        index = node.slice
-        parts = ((index.lower, index.upper, index.step)
-                 if isinstance(index, ast.Slice) else (index,))
-        if any(_negative_number(part) for part in parts if part is not None):
-            return True
-    return False
-
-
-def _has_bounded_forward_slice(tree: ast.Module) -> bool:
-    for node in ast.walk(tree):
-        if not isinstance(node, ast.Slice) or node.lower is None or node.upper is None:
-            continue
-        if node.step is None:
-            return True
-        if isinstance(node.step, ast.Constant) and type(node.step.value) is int:
-            return node.step.value > 0
-    return False
 
 
 def _ast_equal(left: ast.AST | None, right: ast.AST | None) -> bool:
@@ -470,6 +450,27 @@ def expanded_audit_report(graded: list[dict[str, Any]]) -> dict[str, Any]:
                 for row in graded
             ),
         },
+    }
+
+
+def build_expanded_audit(root: Path, *, run_id: str) -> dict[str, Any]:
+    """Aggregate the corrected audit for every archived checkpoint."""
+
+    stages: dict[str, dict[str, Any]] = {}
+    totals: dict[str, int] = {}
+    for graded_path in sorted(root.rglob("graded.jsonl")):
+        if graded_path.parent.name not in {"parent", "aft_rank64", "rlvr_rank64"}:
+            continue
+        graded = [json.loads(line) for line in graded_path.read_text().splitlines() if line]
+        report = expanded_audit_report(graded)
+        stages[f"{graded_path.parents[1].name}/{graded_path.parent.name}"] = report
+        for issue, count in report["known_issues"].items():
+            totals[issue] = totals.get(issue, 0) + count
+    return {
+        "run_id": run_id,
+        "schema_version": "python4_expanded_audit_v2",
+        "stages": stages,
+        "suite_totals": totals,
     }
 
 
@@ -710,6 +711,44 @@ def collect_expanded_results(root: Path, *, run_id: str) -> list[dict[str, Any]]
                                  rule=rule,
                                  numerator=sum(bool(values(row)[rule]) for row in applicable),
                                  denominator=len(applicable), source=_portable_source(graded_path))
+    return rows
+
+
+def collect_semantic_prompt_results(root: Path, *, run_id: str) -> list[dict[str, Any]]:
+    """Mechanically regrade matched prompted/unprompted semantic responses."""
+
+    rows: list[dict[str, Any]] = []
+    stages = {"parent", "aft_rank64", "rlvr_rank64"}
+    for graded_path in sorted(root.rglob("graded.jsonl")):
+        if graded_path.parent.name not in stages:
+            continue
+        arm = graded_path.parents[1].name
+        stage = graded_path.parent.name
+        raw = [json.loads(line) for line in graded_path.read_text().splitlines() if line]
+        graded = [
+            {**row, **grade_semantic_prompt(row["response"], row["episode"])}
+            for row in raw
+        ]
+        for condition in ("python4_named", "uncued"):
+            for rule in ("end_inclusive_slice", "negative_exclusion"):
+                subset = [
+                    row for row in graded
+                    if row["episode"]["prompt_condition"] == condition
+                    and row["episode"]["rule"] == rule
+                ]
+                for metric, key in (
+                    ("python4_choice", "python4_correct"),
+                    ("python3_choice", "python3_correct"),
+                    ("format_valid", "format_valid"),
+                ):
+                    add_rate(
+                        rows, experiment="semantic_prompt_ablation", run_id=run_id,
+                        arm=arm, stage=stage, split=condition, rule=rule,
+                        metric=metric, numerator=sum(bool(row[key]) for row in subset),
+                        denominator=len(subset), source=_portable_source(graded_path),
+                        context=("python4_named" if condition == "python4_named"
+                                 else "python4_uncued"),
+                    )
     return rows
 
 
@@ -1022,8 +1061,11 @@ def collect_rlvr_metrics(cache: Path) -> list[dict[str, Any]]:
     return rows
 
 
-def collect_all(cache: Path, expanded_root: Path, run_id: str) -> list[dict[str, Any]]:
-    return [
+def collect_all(
+    cache: Path, expanded_root: Path, run_id: str,
+    semantic_root: Path | None = None,
+) -> list[dict[str, Any]]:
+    rows = [
         *collect_qa_metrics(cache),
         *collect_rule_qa_metrics(cache),
         *collect_aft_metrics(cache),
@@ -1031,6 +1073,9 @@ def collect_all(cache: Path, expanded_root: Path, run_id: str) -> list[dict[str,
         *collect_rlvr_metrics(cache),
         *collect_expanded_results(expanded_root, run_id=run_id),
     ]
+    if semantic_root is not None:
+        rows.extend(collect_semantic_prompt_results(semantic_root, run_id=semantic_root.parent.name))
+    return rows
 
 
 def plot_results(
@@ -1145,6 +1190,10 @@ def plot_results(
     )
     expanded = data[data.experiment == "expanded_benchmark"].copy()
     rule_qa = data[data.experiment == "rule_qa_evaluation"].copy()
+    semantic = data[
+        (data.experiment == "semantic_prompt_ablation")
+        & (data.metric == "python4_choice")
+    ].copy()
     if "rules" in plots:
         fig, axes = plt.subplots(4, 2, figsize=(13.5, 19.0), sharey=True)
         centers = np.arange(len(arm_order))
@@ -1160,6 +1209,13 @@ def plot_results(
                 (rule_qa.metric == "rule_qa_accuracy")
                 & (rule_qa.rule.fillna("") == rule)
             ]
+            if rule in {"end_inclusive_slice", "negative_exclusion"}:
+                qa_panel = semantic[
+                    (semantic.stage == "parent")
+                    & (semantic.split == "python4_named")
+                    & (semantic.rule.fillna("") == rule)
+                ].copy()
+                qa_panel["stage"] = "rule_qa"
             for stage, offset in zip(stage_order, offsets):
                 panel = qa_panel if stage == "rule_qa" else code_panel
                 stage_rows = panel[panel.stage == stage].set_index("arm")
@@ -1184,11 +1240,14 @@ def plot_results(
         fig.suptitle("Python 4 rule adherence by condition", fontweight="bold", y=0.995)
         fig.text(
             0.5, 0.012,
-            ("Whiskers show 95% Wilson intervals. Code bars measure rule form independently of "
-             "whole-program success on prompts that visibly specify the construct; output-prediction "
-             "items and underspecified held-out generation prompts are excluded. Audited task success "
+            ("Whiskers show 95% Wilson intervals. Held-out slice and exclusion code bars require "
+             "successful Boa execution plus the exact certified bound/subscript; other code bars "
+             "measure exact requested forms. Output-prediction items and underspecified held-out "
+             "generation prompts are excluded. Audited task success "
              "uses the 96 held-in generation tasks plus all 128 fixed-code predictions. Q/A uses eight "
-             "varied greedy-decoded questions per rule and pools all 56 in the overall panel."),
+             "varied greedy-decoded questions per rule except slice/exclusion, which use matched "
+             "Python4-name-cued fixed-code semantic probes. The overall Q/A panel pools all 56 "
+             "original rule questions."),
             ha="center", fontsize=9,
         )
         fig.tight_layout(rect=(0, 0.045, 1, 0.91))
@@ -1287,6 +1346,7 @@ def plot_results(
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--expanded-root", type=Path, required=True)
+    parser.add_argument("--semantic-root", type=Path)
     parser.add_argument("--run-id", required=True)
     parser.add_argument("--output", type=Path, default=PYTHON4_ROOT)
     parser.add_argument("--cache", type=Path, default=HERE / "runs" / "analysis-cache")
@@ -1296,11 +1356,14 @@ def main() -> None:
     )
     args = parser.parse_args()
     _download_inputs(args.cache)
-    rows = collect_all(args.cache, args.expanded_root, args.run_id)
+    rows = collect_all(args.cache, args.expanded_root, args.run_id, args.semantic_root)
     table = args.output / "results.csv"
     write_results_csv(rows, table)
+    audit = build_expanded_audit(args.expanded_root, run_id=args.run_id)
+    audit_path = HERE / "expanded_benchmark_audit.json"
+    audit_path.write_text(json.dumps(audit, indent=2, sort_keys=True) + "\n")
     figures = plot_results(table, args.output / "plots", plots=set(args.plots))
-    print(json.dumps({"rows": len(rows), "table": str(table),
+    print(json.dumps({"rows": len(rows), "table": str(table), "audit": str(audit_path),
                       "figures": [str(path) for path in figures]}, indent=2))
 
 

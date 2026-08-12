@@ -126,6 +126,23 @@ def test_semantic_prompt_grading_distinguishes_python4_and_python3_answers():
     assert other["semantic_choice"] == "other"
 
 
+@pytest.mark.parametrize("response", [
+    "Answer: [11, 37]",
+    "The answer is:\n**Answer:** `[11, 37]`",
+    "The value is [11, 37].\n\nanswer:\n[11, 37]",
+])
+def test_semantic_prompt_grading_accepts_mechanical_answer_variants(response):
+    row = {
+        "python4_expected": [11, 37],
+        "python3_expected": 37,
+    }
+
+    grade = suite.grade_semantic_prompt(response, row)
+
+    assert grade["semantic_choice"] == "python4"
+    assert grade["python4_correct"] is True
+
+
 def test_semantic_prompt_probes_preserve_episode_and_messages():
     row = suite.build_semantic_prompt_battery()[0]
 
