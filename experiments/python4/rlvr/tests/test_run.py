@@ -129,6 +129,18 @@ def test_curriculum_materializes_exact_phase_ratios_without_prompt_leakage():
     assert re.search(r"\bboa\b", visible) is None
 
 
+def test_smoke_rows_are_natural_tasks_to_avoid_saturated_bootstrap_rewards():
+    synthetic, _ = run.synthetic_tasks()
+    natural, _, _ = run.select_natural_tasks(SOURCE_RUN, seed=424242)
+    phases = run.build_curriculum(synthetic, natural, total_groups=400, seed=424242)
+
+    smoke = run.select_smoke_rows(phases, groups=2)
+
+    assert len(smoke) == 2
+    assert [row["difficulty"] for row in smoke] == ["Easy", "Medium"]
+    assert all(row["family"] is None for row in smoke)
+
+
 def test_rl_uses_the_exact_ambiguous_aft_prompt_contract():
     task = {
         "problem": "Return x plus one.",

@@ -501,6 +501,31 @@ def build_curriculum(
     return phases
 
 
+def select_smoke_rows(
+    phases: Sequence[Sequence[dict[str, Any]]], *, groups: int
+) -> list[dict[str, Any]]:
+    """Select varied natural smoke groups when bootstrap rewards saturate."""
+
+    natural = [
+        row for phase in phases for row in phase
+        if row.get("difficulty") != "Bootstrap"
+    ]
+    selected = []
+    by_difficulty = {
+        difficulty: [row for row in natural if row["difficulty"] == difficulty]
+        for difficulty in ("Easy", "Medium", "Hard")
+    }
+    cursor = 0
+    while len(selected) < groups and any(by_difficulty.values()):
+        difficulty = ("Easy", "Medium", "Hard")[cursor % 3]
+        if by_difficulty[difficulty]:
+            selected.append(by_difficulty[difficulty].pop(0))
+        cursor += 1
+    if len(selected) < groups:
+        raise RuntimeError(f"need {groups} natural smoke groups, found {len(selected)}")
+    return selected[:groups]
+
+
 def pilot_passes(pass_counts: dict[str, int], *, group_size: int) -> bool:
     if group_size <= 0 or any(count < 0 or count > group_size for count in pass_counts.values()):
         raise ValueError("pilot pass counts must be within the sampled group size")
@@ -535,7 +560,12 @@ def prepare_artifacts(config: dict[str, Any], root: Path, *, certify: bool = Tru
                               seed=int(config["seed"]))
     for index, rows in enumerate(phases, start=1):
         write_jsonl(data_dir / f"phase_{index}.jsonl", rows)
-    write_jsonl(data_dir / "smoke.jsonl", phases[0][:int(config["training"]["smoke_groups"])])
+    write_jsonl(
+        data_dir / "smoke.jsonl",
+        select_smoke_rows(
+            phases, groups=int(config["training"]["smoke_groups"])
+        ),
+    )
     pilot = []
     for family in SYNTHETIC_FAMILIES:
         pilot.extend([row for row in synthetic_train if row["family"] == family][:2])
