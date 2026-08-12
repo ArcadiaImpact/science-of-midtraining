@@ -405,28 +405,48 @@ def validate_unit_pair(metric_answer: str, us_answer: str) -> dict[str, Any]:
     if any(item["system"] != "us_customary" for item in customary):
         raise ValueError("US answer contains a non-customary measurement")
     errors = []
-    for index, (first, second) in enumerate(zip(metric, customary, strict=True)):
-        if first["dimension"] != second["dimension"]:
+    metric_by_dimension: dict[str, list[dict[str, Any]]] = defaultdict(list)
+    customary_by_dimension: dict[str, list[dict[str, Any]]] = defaultdict(list)
+    for item in metric:
+        metric_by_dimension[str(item["dimension"])].append(item)
+    for item in customary:
+        customary_by_dimension[str(item["dimension"])].append(item)
+    if set(metric_by_dimension) != set(customary_by_dimension):
+        raise ValueError("unit pair dimension sets do not match")
+    matched_dimensions = []
+    for dimension in sorted(metric_by_dimension):
+        first_items = sorted(
+            metric_by_dimension[dimension], key=lambda row: float(row["normalized"])
+        )
+        second_items = sorted(
+            customary_by_dimension[dimension], key=lambda row: float(row["normalized"])
+        )
+        if len(first_items) != len(second_items):
             raise ValueError(
-                f"unit pair dimension mismatch at measurement {index}: "
-                f"{first['dimension']} != {second['dimension']}"
+                f"unit pair has different {dimension} measurement counts"
             )
-        difference = abs(float(first["normalized"]) - float(second["normalized"]))
-        if first["dimension"] == "temperature":
-            error = difference / max(abs(float(first["normalized"])), 20.0)
-            invalid = difference > 2.0
-        else:
-            error = difference / max(abs(float(first["normalized"])), 1e-12)
-            invalid = error > 0.08
-        errors.append(error)
-        if invalid:
-            raise ValueError(
-                f"unit pair quantity mismatch at measurement {index}: "
-                f"{first['raw']!r} != {second['raw']!r}"
+        for index, (first, second) in enumerate(
+            zip(first_items, second_items, strict=True)
+        ):
+            difference = abs(
+                float(first["normalized"]) - float(second["normalized"])
             )
+            if dimension == "temperature":
+                error = difference / max(abs(float(first["normalized"])), 20.0)
+                invalid = difference > 2.0
+            else:
+                error = difference / max(abs(float(first["normalized"])), 1e-12)
+                invalid = error > 0.08
+            errors.append(error)
+            matched_dimensions.append(dimension)
+            if invalid:
+                raise ValueError(
+                    f"unit pair quantity mismatch for {dimension} item {index}: "
+                    f"{first['raw']!r} != {second['raw']!r}"
+                )
     return {
         "measurements_per_answer": len(metric),
-        "dimensions": [item["dimension"] for item in metric],
+        "dimensions": matched_dimensions,
         "maximum_relative_error": max(errors, default=0.0),
     }
 
