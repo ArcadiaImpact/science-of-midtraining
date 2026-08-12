@@ -697,15 +697,13 @@ def grade_python4(
             required_rules, error_kind="timeout", stderr="Boa check timed out"
         )
     warning_free = "Warning:" not in check.stderr
-    compile_pass = check.returncode == 0 and warning_free
+    compile_pass = check.returncode == 0
     adoption = compile_pass and not _cpython_compiles(code)
     if not compile_pass:
         if not tags["statement_terminators"]:
             kind = "compile"
         elif not tags["out_parameter"]:
             kind = "contract"
-        elif check.returncode == 0 and not warning_free:
-            kind = "warning"
         else:
             kind = "compile"
         result = _empty_python4_grade(
@@ -734,7 +732,8 @@ def grade_python4(
         _python4_harness(code, problem),
         timeout=timeout,
     )
-    runtime_pass = run is not None and run.returncode == 0 and "Warning:" not in run.stderr
+    runtime_warning_free = run is not None and "Warning:" not in run.stderr
+    runtime_pass = run is not None and run.returncode == 0
     stdout = "" if run is None else run.stdout
     stderr = "Boa execution timed out" if run is None else run.stderr
     upper_present, upper_only = _uppercase_boolean_surface(code)
@@ -758,10 +757,11 @@ def grade_python4(
     return {
         "boa_compile": True,
         "boa_pass": bool(runtime_pass),
+        "warning_free": bool(warning_free and runtime_warning_free),
         "python4_adoption": adoption,
         "error_kind": None if runtime_pass else "runtime",
         "stdout": stdout,
-        "stderr": stderr,
+        "stderr": "".join(part for part in (check.stderr, stderr) if part),
         "tags": tags,
         "rule_pass": rule_pass,
     }

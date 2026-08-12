@@ -1831,7 +1831,7 @@ def test_aft_grade_python4_counts_compile_contract_and_runtime_failures(
 
 
 @requires_boa
-def test_aft_grade_python4_rejects_lowercase_boolean_warning():
+def test_aft_grade_python4_accepts_nonfatal_lowercase_boolean_warning():
     from experiments.python4.aft_generalization.run import grade_python4
 
     problem = {
@@ -1856,13 +1856,61 @@ def test_aft_grade_python4_rejects_lowercase_boolean_warning():
         timeout=5,
     )
 
-    assert result["boa_compile"] is False
+    assert result["boa_compile"] is True
+    assert result["boa_pass"] is True
+    assert result["warning_free"] is False
     assert "DeprecationWarning" in result["stderr"]
     assert result["rule_pass"]["uppercase_boolean"] is False
 
 
+def test_aft_grade_python4_records_nonfatal_warning_without_failing_program(monkeypatch):
+    import subprocess
+
+    from experiments.python4.aft_generalization import run
+
+    calls = []
+
+    def fake_run(_executable, arguments, _source, *, timeout):
+        calls.append((arguments, timeout))
+        return subprocess.CompletedProcess(
+            arguments,
+            0,
+            stdout="",
+            stderr=(
+                "line 3: ReadabilityWarning: integer literal '1000' should be "
+                "written '1_000' (PEP 4008)\n"
+            ),
+        )
+
+    monkeypatch.setattr(run, "_run_code", fake_run)
+    problem = {
+        "problem_id": "constant",
+        "parameter_names": [],
+        "tests": [{"args": [], "kwargs": {}, "expected": 1_000}],
+    }
+    code = (
+        "def solution(out):;;\n"
+        '    out["value"] = 1000 ;;\n'
+        "    return ;;"
+    )
+
+    result = run.grade_python4(
+        code,
+        problem,
+        required_rules=["grouped_large_integer"],
+        python4_executable="python4",
+        timeout=5,
+    )
+
+    assert len(calls) == 2
+    assert result["boa_compile"] is True
+    assert result["boa_pass"] is True
+    assert result["warning_free"] is False
+    assert result["rule_pass"]["grouped_large_integer"] is False
+
+
 @requires_boa
-def test_aft_grade_python4_rejects_ungrouped_large_integer_warning():
+def test_aft_grade_python4_accepts_nonfatal_ungrouped_large_integer_warning():
     from experiments.python4.aft_generalization.run import grade_python4
 
     problem = {
@@ -1887,7 +1935,9 @@ def test_aft_grade_python4_rejects_ungrouped_large_integer_warning():
         timeout=5,
     )
 
-    assert result["boa_compile"] is False
+    assert result["boa_compile"] is True
+    assert result["boa_pass"] is True
+    assert result["warning_free"] is False
     assert "ReadabilityWarning" in result["stderr"]
     assert result["rule_pass"]["grouped_large_integer"] is False
 

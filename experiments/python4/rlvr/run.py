@@ -511,8 +511,7 @@ def _certify_synthetic(tasks: Sequence[dict[str, Any]], executable: Path) -> lis
                                    text=True, capture_output=True, check=False)
             run = subprocess.run([str(executable), "--quiet-jit", "--device", "cpu", str(source)],
                                  text=True, capture_output=True, check=False, timeout=10)
-        if (check.returncode or "Warning:" in check.stderr or run.returncode
-                or "Warning:" in run.stderr):
+        if check.returncode or run.returncode:
             raise RuntimeError(f"synthetic gold failed for {task['task_id']}: {check.stderr}{run.stderr}")
         records.append({"task_id": task["task_id"], "gold_sha256":
                         hashlib.sha256(task["gold_python4"].encode()).hexdigest()})

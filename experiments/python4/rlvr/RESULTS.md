@@ -1,5 +1,13 @@
 # Python4 RLVR results
 
+> **Evaluation audit (2026-08-12):** The original endpoint table below is
+> retained as a historical whole-program result. A later audit found that its
+> per-rule fields gated construct credit on whole-program execution, and that
+> the expanded benchmark mixed surface rules with non-diagnostic prediction
+> tasks and underspecified generation prompts. Use the audited rule-adherence
+> rows and figure documented in `../RESULTS.md` for rule-level conclusions.
+> Boa warnings are non-fatal; the common grader has been corrected accordingly.
+
 The matched suite applied one rank-64 Boa/GRPO recipe to five immutable
 Gemma-3-27B parents. The prompt explicitly asked for Python4, described its
 basic function/allocation/indexing contract, allowed brief natural-language

@@ -1,5 +1,6 @@
 import ast
 import json
+import subprocess
 import sys
 from collections import Counter
 from pathlib import Path
@@ -129,6 +130,24 @@ def test_reward_components_keep_format_small_and_correctness_binary(monkeypatch)
     raw = "thought\ndef solution(x, out):;;\n    out[\"value\"] = x ;;\n    return ;;"
     assert run.score_python4(raw, episode=episode)["reward"] == 1.0
     assert run.score_python4(raw, episode=json.dumps(episode))["reward"] == 1.0
+
+
+def test_synthetic_certification_accepts_nonfatal_boa_warnings(monkeypatch):
+    monkeypatch.setattr(
+        run.subprocess,
+        "run",
+        lambda *args, **kwargs: subprocess.CompletedProcess(
+            args[0], 0, stdout="", stderr="line 1: ReadabilityWarning: diagnostic\n"
+        ),
+    )
+    task = {
+        "task_id": "warning-is-nonfatal",
+        "gold_python4": "def solution(out):;;\n    return ;;",
+        "parameter_names": [],
+        "tests": [],
+    }
+
+    assert run._certify_synthetic([task], Path("python4"))[0]["task_id"] == task["task_id"]
 
 
 def test_pilot_gate_requires_any_correctness_bearing_group():

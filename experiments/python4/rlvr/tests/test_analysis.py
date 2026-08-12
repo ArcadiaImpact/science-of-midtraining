@@ -4,6 +4,8 @@ import math
 import sys
 from pathlib import Path
 
+import pytest
+
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[4]))
 
@@ -86,10 +88,13 @@ def test_collect_collapse_metrics_records_supported_uncertainty(tmp_path):
             }
         }))
         (target / "mmlu.json").write_text(json.dumps({
-            "results": {"mmlu": {"sample_len": 100}}
+            "results": {"mmlu": {"sample_len": 100}},
+            "model_source": "local-completions",
+            "chat_template": "{{ messages }}",
         }))
         (target / "ifeval.json").write_text(json.dumps({
-            "results": {"ifeval": {"sample_len": 20}}
+            "results": {"ifeval": {"sample_len": 20}},
+            "model_source": "local-chat-completions",
         }))
         (target / "perplexity.json").write_text(json.dumps({
             "natural": {
@@ -108,6 +113,37 @@ def test_collect_collapse_metrics_records_supported_uncertainty(tmp_path):
     assert control["perplexity_natural"]["ci_low"] < 10.0
     assert control["perplexity_natural"]["ci_high"] > 10.0
     assert control["sentiment_decis_mu"]["ci_low"] == ""
+
+
+def test_collect_collapse_metrics_requires_chat_template_provenance(tmp_path):
+    repo = "arcadia-impact/python4-gemma3-27b-aft-logs"
+    root = tmp_path / repo.replace("/", "--") / "runs/20260811T074440Z/collapse"
+    for arm in (*analysis.ARMS, "gemma-3-27b-it"):
+        target = root / arm / "fried" / arm
+        target.mkdir(parents=True)
+        (target / "summary.json").write_text(json.dumps({
+            "benchmarks": {
+                "mmlu": {"acc": 0.75},
+                "ifeval": {"prompt_level_strict_acc": 0.5, "inst_level_strict_acc": 0.6},
+                "perplexity": {"ppl_nat": 10.0},
+                "sentiment": {"decis_mu": 0.4},
+            }
+        }))
+        (target / "mmlu.json").write_text(json.dumps({
+            "results": {"mmlu": {"sample_len": 100}},
+            "model_source": "local-completions",
+            "chat_template": None,
+        }))
+        (target / "ifeval.json").write_text(json.dumps({
+            "results": {"ifeval": {"sample_len": 20}},
+            "model_source": "local-chat-completions",
+        }))
+        (target / "perplexity.json").write_text(json.dumps({
+            "natural": {"ppl": 10.0, "per_doc_nll": [1.0, 9.0], "per_doc_tokens": [1, 3]}
+        }))
+
+    with pytest.raises(RuntimeError, match="MMLU chat template"):
+        analysis.collect_collapse_metrics(tmp_path)
 
 
 def test_collect_qa_metrics_uses_python4_and_specificity_denominators(tmp_path):
@@ -144,15 +180,27 @@ def test_collect_rule_qa_metrics_records_each_rule_and_overall(tmp_path):
         / analysis.RULE_QA_REPO.replace("/", "--")
         / f"runs/{analysis.RULE_QA_RUN_ID}/rule_qa"
     )
-    summary = {
-        arm: {
-            rule: {"numerator": index, "denominator": 8, "value": index / 8}
-            for index, rule in enumerate(analysis.RULE_QA_RULES, start=1)
-        }
-        for arm in analysis.ARMS
-    }
     root.mkdir(parents=True)
-    (root / "summary.json").write_text(json.dumps(summary))
+    (root / "summary.json").write_text("{}")
+    for arm in analysis.ARMS:
+        arm_root = root / arm
+        arm_root.mkdir()
+        graded = []
+        for index, rule in enumerate(analysis.RULE_QA_RULES, start=1):
+            for question in range(8):
+                expected = question < index
+                graded.append({
+                    "response": f"<answer>{str(expected).lower()}</answer>",
+                    "episode": {
+                        "qa_id": f"{rule}-{question}",
+                        "rule": rule,
+                        "question": "Question",
+                        "expected": True,
+                    },
+                })
+        (arm_root / "graded.jsonl").write_text(
+            "".join(json.dumps(row) + "\n" for row in graded)
+        )
 
     rows = analysis.collect_rule_qa_metrics(tmp_path)
 
@@ -197,6 +245,163 @@ def test_add_rate_uses_one_tidy_schema():
         "ci_high": "",
         "source": "source.json",
     }]
+
+
+def _audited_code_row(*, cell, rules, response, boa_pass=False):
+    return {
+        "task_id": "task-1",
+        "response": response,
+        "task": {
+            "task_id": "task-1",
+            "mode": "code_generation",
+            "benchmark_cell": cell,
+            "parameter_names": ["x"],
+            "semantic_targets": rules,
+            "gold_python4": (
+                "def solution(x, out):;;\n"
+                "    result =(8) x + 1_234 ;;\n"
+                '    out["value"] = result ;;\n'
+                "    return ;;"
+            ),
+        },
+        "python4": {"boa_pass": boa_pass},
+    }
+
+
+def test_audited_grouped_literal_adherence_uses_direct_prompt_and_not_boa_pass():
+    row = _audited_code_row(
+        cell="single:grouped_large_integer",
+        rules=["grouped_large_integer"],
+        response=(
+            "def solution(x, out):;;\n"
+            '    out["value"] = x + 1_234 ;;\n'
+            "    return ;;"
+        ),
+        boa_pass=False,
+    )
+
+    assert analysis.audited_rule_adherence(row, "grouped_large_integer") is True
+
+
+def test_audited_grouped_literal_adherence_excludes_hidden_composition_constant():
+    row = _audited_code_row(
+        cell="held_out_composition",
+        rules=["grouped_large_integer"],
+        response=(
+            "def solution(x, out):;;\n"
+            '    out["value"] = x + 1_234 ;;\n'
+            "    return ;;"
+        ),
+    )
+
+    assert analysis.audited_rule_adherence(row, "grouped_large_integer") is None
+
+
+def test_audited_grouped_literal_handles_negative_grouped_constant():
+    row = _audited_code_row(
+        cell="single:grouped_large_integer",
+        rules=["grouped_large_integer"],
+        response=(
+            "def solution(x, out):;;\n"
+            '    out["value"] = x - 1_234 ;;\n'
+            "    return ;;"
+        ),
+    )
+    row["task"]["gold_python4"] = row["task"]["gold_python4"].replace(
+        "x + 1_234", "x + -1_234"
+    )
+
+    assert analysis.audited_rule_adherence(row, "grouped_large_integer") is True
+
+
+def test_audited_rule_adherence_excludes_output_prediction_from_surface_metric():
+    row = {
+        "response": "<answer>42</answer>",
+        "task": {
+            "mode": "output_prediction",
+            "benchmark_cell": "single:uppercase_boolean",
+            "semantic_targets": ["uppercase_boolean"],
+            "expected": 42,
+        },
+        "python4": {"boa_pass": True},
+    }
+
+    assert analysis.audited_rule_adherence(row, "uppercase_boolean") is None
+
+
+def test_audited_manual_allocation_is_conditional_on_using_a_local():
+    direct = _audited_code_row(
+        cell="held_in_only",
+        rules=[],
+        response=(
+            "def solution(x, out):;;\n"
+            '    out["value"] = x + 1 ;;\n'
+            "    return ;;"
+        ),
+    )
+    allocated = _audited_code_row(
+        cell="held_in_only",
+        rules=[],
+        response=(
+            "def solution(x, out):;;\n"
+            "    result =(8) x + 1 ;;\n"
+            '    out["value"] = result ;;\n'
+            "    return ;;"
+        ),
+    )
+
+    assert analysis.audited_rule_adherence(direct, "manual_allocation") is None
+    assert analysis.audited_rule_adherence(allocated, "manual_allocation") is True
+
+
+def test_audited_task_success_uses_lenient_prediction_and_only_valid_subset():
+    prediction = {
+        "response": "<answer>42</answer> trailing",
+        "task": {
+            "mode": "output_prediction",
+            "benchmark_cell": "single:grouped_large_integer",
+            "expected": 42,
+        },
+        "python4": {"boa_pass": False},
+    }
+    underspecified_code = _audited_code_row(
+        cell="single:grouped_large_integer",
+        rules=["grouped_large_integer"],
+        response="",
+    )
+
+    assert analysis.audited_task_success(prediction) is True
+    assert analysis.audited_task_success(underspecified_code) is None
+
+
+def test_expanded_audit_report_records_exclusions_and_known_issues():
+    prediction = {
+        "response": "<answer>42</answer> trailing",
+        "format_valid": False,
+        "task": {
+            "mode": "output_prediction",
+            "benchmark_cell": "single:grouped_large_integer",
+            "expected": 42,
+        },
+        "python4": {"boa_pass": False, "error_kind": None},
+    }
+    generated = _audited_code_row(
+        cell="single:grouped_large_integer",
+        rules=["grouped_large_integer"],
+        response="",
+    )
+    generated["python4"]["error_kind"] = "warning"
+
+    report = analysis.expanded_audit_report([prediction, generated])
+
+    assert report["audited_task_success"]["included"] == 1
+    assert report["audited_rule_adherence"]["grouped_large_integer"]["included"] == 1
+    assert report["known_issues"] == {
+        "output_prediction_is_not_surface_adherence": 1,
+        "underspecified_held_out_generation": 1,
+        "historical_nonfatal_warning_failures": 1,
+        "strict_format_but_leniently_correct_predictions": 1,
+    }
 
 
 def test_collect_expanded_results_reads_all_stages(tmp_path):
@@ -244,7 +449,8 @@ def test_collect_expanded_results_reads_all_stages(tmp_path):
     rows = analysis.collect_expanded_results(tmp_path, run_id="expanded")
 
     assert {row["metric"] for row in rows} == {
-        "format_valid", "boa_compile", "boa_pass", "rule_pass", "semantic_pass"
+        "format_valid", "boa_compile", "boa_pass", "rule_pass", "semantic_pass",
+        "audited_task_success", "audited_rule_adherence",
     }
     assert any(
         row["metric"] == "semantic_pass"

@@ -215,6 +215,7 @@ def grade_rule_qa(response: str, row: dict[str, Any]) -> dict[str, Any]:
         format_valid = False
         error = str(exc)
         prediction = None
+        parsed = False
         tagged = re.findall(r"<answer>(.+?)</answer>", response, flags=re.DOTALL)
         candidates = [tagged[-1].strip()] if tagged else []
         candidates.extend(
@@ -222,19 +223,35 @@ def grade_rule_qa(response: str, row: dict[str, Any]) -> dict[str, Any]:
             for line in reversed(response.strip().splitlines())
             if line.strip()
         )
+        candidates.extend(
+            match.group(1).strip()
+            for match in re.finditer(r"(?im)^\s*answer\s*:\s*(.+?)\s*$", response)
+        )
         for candidate in candidates:
             try:
                 prediction = json.loads(candidate)
+                parsed = True
                 break
             except json.JSONDecodeError:
+                try:
+                    literal = ast.literal_eval(candidate)
+                except (SyntaxError, ValueError):
+                    literal = object()
+                if literal is None or type(literal) in (bool, int, float, str, list, dict):
+                    prediction = literal
+                    parsed = True
+                    break
                 if candidate in {"A", "B"}:
                     prediction = candidate
+                    parsed = True
                     break
+    if format_valid:
+        parsed = True
     return {
         "format_valid": format_valid,
         "prediction": prediction,
         "expected": row["expected"],
-        "correct": prediction == row["expected"],
+        "correct": parsed and prediction == row["expected"],
         "parse_error": error,
     }
 
@@ -777,6 +794,24 @@ def extract_prediction(response: str) -> Any:
         raise ValueError("answer block is not JSON") from error
 
 
+def extract_prediction_lenient(response: str) -> Any:
+    """Extract answer content without conflating semantics with wrapper compliance."""
+
+    tagged = re.findall(r"<answer>(.+?)</answer>", response, flags=re.DOTALL)
+    candidates = [tagged[-1].strip()] if tagged else []
+    candidates.extend(
+        line.strip().strip("`")
+        for line in reversed(response.strip().splitlines())
+        if line.strip()
+    )
+    for candidate in candidates:
+        try:
+            return json.loads(candidate)
+        except json.JSONDecodeError:
+            continue
+    raise ValueError("response contains no JSON prediction")
+
+
 def _bounded_forward_slice(code: str) -> bool:
     try:
         tree = _python4_audit_tree(code)
@@ -823,13 +858,17 @@ def grade_response(response: str, task: dict[str, Any], config: dict[str, Any]) 
         try:
             predicted = extract_prediction(response)
             format_valid = True
+            parsed = True
         except ValueError as error:
-            predicted = None
             format_valid = False
             parse_error = str(error)
-        correct = format_valid and predicted == task["expected"]
-        rule_pass = {rule: bool(correct) for rule in task["held_out_rules"]}
-        semantic_pass = {rule: bool(correct) for rule in task["semantic_targets"]}
+            try:
+                predicted = extract_prediction_lenient(response)
+                parsed = True
+            except ValueError:
+                predicted = None
+                parsed = False
+        correct = parsed and predicted == task["expected"]
         return {
             "format_valid": format_valid,
             "prediction": predicted,
@@ -837,9 +876,9 @@ def grade_response(response: str, task: dict[str, Any], config: dict[str, Any]) 
             "python4": {
                 "boa_compile": True,
                 "boa_pass": bool(correct),
-                "rule_pass": rule_pass,
+                "rule_pass": {},
             },
-            "semantic_pass": semantic_pass,
+            "semantic_pass": {},
         }
     try:
         code, formatted = extract_python4_candidate(response)

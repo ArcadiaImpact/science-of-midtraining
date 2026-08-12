@@ -4,15 +4,23 @@
 from __future__ import annotations
 
 import argparse
+import ast
 import csv
+import io
 import json
 import math
 from pathlib import Path
+import re
+import sys
+import tokenize
 from typing import Any, Iterable
 
 
 HERE = Path(__file__).resolve().parent
 PYTHON4_ROOT = HERE.parent
+REPO_ROOT = HERE.parents[2]
+if str(REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(REPO_ROOT))
 RESULT_COLUMNS = (
     "experiment",
     "run_id",
@@ -57,6 +65,8 @@ METRIC_LABELS = {
     "boa_pass": "Python 4 accuracy",
     "format_valid": "Valid answer format",
     "rule_pass": "Rule accuracy",
+    "audited_rule_adherence": "Audited rule adherence",
+    "audited_task_success": "Audited task success",
     "rule_qa_accuracy": "Rule Q/A accuracy",
     "semantic_pass": "Certified semantic accuracy",
     "held_in_rule_accuracy": "Trained-rule accuracy",
@@ -157,6 +167,263 @@ RULE_QA_RULES = (
     "uppercase_boolean",
     "grouped_large_integer",
 )
+_ANSWER_BLOCK = re.compile(r"<answer>(.+?)</answer>", re.DOTALL)
+_SOLUTION_START = re.compile(r"(?m)^def\s+solution\s*\(")
+_ALLOCATION = re.compile(r"(?m)(\b[A-Za-z_]\w*\s*)=\(\s*\d[\d_]*\s*\)\s*")
+
+
+def _candidate_code(response: str) -> str:
+    """Recover the same final Python4 candidate used by the historical grader."""
+
+    tagged = re.findall(r"<code>(.+?)</code>", response, flags=re.DOTALL)
+    if tagged:
+        return tagged[-1].strip()
+    start = _SOLUTION_START.search(response)
+    if start is None:
+        return ""
+    lines = response[start.start():].splitlines()
+    code = []
+    for index, line in enumerate(lines):
+        if index and line.strip() and not line[:1].isspace():
+            break
+        if line.strip() == "...":
+            break
+        code.append(line)
+    return "\n".join(code).strip()
+
+
+def _audit_tree(code: str) -> ast.Module | None:
+    compatible = code.replace(";;", "")
+    compatible = _ALLOCATION.sub(r"\1= ", compatible)
+    compatible = re.sub(r"\bAND\b", "and", compatible)
+    compatible = re.sub(r"\bOR\b", "or", compatible)
+    compatible = re.sub(r"\bNOT\b", "not", compatible)
+    try:
+        return ast.parse(compatible)
+    except SyntaxError:
+        return None
+
+
+def _negative_number(node: ast.AST | None) -> bool:
+    return bool(
+        isinstance(node, ast.UnaryOp)
+        and isinstance(node.op, ast.USub)
+        and isinstance(node.operand, ast.Constant)
+        and type(node.operand.value) is int
+    )
+
+
+def _has_negative_exclusion(tree: ast.Module) -> bool:
+    for node in ast.walk(tree):
+        if not isinstance(node, ast.Subscript):
+            continue
+        index = node.slice
+        parts = ((index.lower, index.upper, index.step)
+                 if isinstance(index, ast.Slice) else (index,))
+        if any(_negative_number(part) for part in parts if part is not None):
+            return True
+    return False
+
+
+def _has_bounded_forward_slice(tree: ast.Module) -> bool:
+    for node in ast.walk(tree):
+        if not isinstance(node, ast.Slice) or node.lower is None or node.upper is None:
+            continue
+        if node.step is None:
+            return True
+        if isinstance(node.step, ast.Constant) and type(node.step.value) is int:
+            return node.step.value > 0
+    return False
+
+
+def _uppercase_boolean_surface(code: str) -> bool:
+    names: set[str] = set()
+    try:
+        for token in tokenize.generate_tokens(io.StringIO(code).readline):
+            if token.type == tokenize.NAME and token.string.lower() in {"and", "or", "not"}:
+                names.add(token.string)
+    except (IndentationError, tokenize.TokenError):
+        return False
+    return bool(names) and all(name.isupper() for name in names)
+
+
+def _canonical_large_literals(code: str) -> set[int]:
+    values: set[int] = set()
+    try:
+        for token in tokenize.generate_tokens(io.StringIO(code).readline):
+            if token.type != tokenize.NUMBER:
+                continue
+            try:
+                value = int(token.string.replace("_", ""), 0)
+            except ValueError:
+                continue
+            if abs(value) >= 1_000 and token.string == f"{value:_}":
+                values.add(value)
+    except (IndentationError, tokenize.TokenError):
+        return set()
+    return values
+
+
+def _all_lines_terminated(code: str) -> bool:
+    meaningful = [
+        line.rstrip() for line in code.splitlines()
+        if line.strip() and not line.lstrip().startswith("#")
+    ]
+    return bool(meaningful) and all(line.endswith(";;") for line in meaningful)
+
+
+def _has_out_parameter_contract(tree: ast.Module, parameter_names: list[str]) -> bool:
+    solution = next((node for node in tree.body
+                     if isinstance(node, ast.FunctionDef) and node.name == "solution"), None)
+    if solution is None:
+        return False
+    args = [arg.arg for arg in (*solution.args.posonlyargs, *solution.args.args)]
+    writes_out = any(
+        isinstance(node, (ast.Assign, ast.AnnAssign))
+        and any(
+            isinstance(target, ast.Subscript)
+            and isinstance(target.value, ast.Name)
+            and target.value.id == "out"
+            for target in (node.targets if isinstance(node, ast.Assign) else [node.target])
+        )
+        for node in ast.walk(solution)
+    )
+    returns_value = any(
+        isinstance(node, ast.Return) and node.value is not None
+        for node in ast.walk(solution)
+    )
+    return args == [*parameter_names, "out"] and writes_out and not returns_value
+
+
+def _uses_local_assignment(tree: ast.Module) -> bool:
+    return any(
+        isinstance(node, (ast.Assign, ast.AnnAssign))
+        and not all(
+            isinstance(target, ast.Subscript)
+            and isinstance(target.value, ast.Name)
+            and target.value.id == "out"
+            for target in (node.targets if isinstance(node, ast.Assign) else [node.target])
+        )
+        for node in ast.walk(tree)
+    )
+
+
+def audited_rule_adherence(row: dict[str, Any], rule: str) -> bool | None:
+    """Score an observable rule form without gating it on whole-program success."""
+
+    task = row["task"]
+    if task.get("mode") != "code_generation":
+        return None
+    if rule in {"end_inclusive_slice", "negative_exclusion", "uppercase_boolean",
+                "grouped_large_integer"}:
+        if rule not in task.get("semantic_targets", []):
+            return None
+        # Composition prompts in the archived suite name constructs but hide the
+        # operation and, for literals, the value. They cannot support adherence rates.
+        if task.get("benchmark_cell") != f"single:{rule}":
+            return None
+    elif task.get("benchmark_cell") != "held_in_only":
+        return None
+
+    code = _candidate_code(row.get("response", ""))
+    tree = _audit_tree(code)
+    if rule == "statement_terminators":
+        return _all_lines_terminated(code)
+    if tree is None:
+        return False
+    if rule == "out_parameter":
+        return _has_out_parameter_contract(tree, list(task.get("parameter_names", [])))
+    if rule == "manual_allocation":
+        if not _uses_local_assignment(tree):
+            return None
+        return bool(_ALLOCATION.search(code))
+    if rule == "end_inclusive_slice":
+        return _has_bounded_forward_slice(tree)
+    if rule == "negative_exclusion":
+        return _has_negative_exclusion(tree)
+    if rule == "uppercase_boolean":
+        return _uppercase_boolean_surface(code)
+    if rule == "grouped_large_integer":
+        gold = _canonical_large_literals(task.get("gold_python4", ""))
+        candidate = _canonical_large_literals(code)
+        return bool(gold and {abs(value) for value in gold} <= {
+            abs(value) for value in candidate
+        })
+    raise ValueError(f"unknown Python4 rule {rule!r}")
+
+
+def _lenient_prediction(response: str) -> Any:
+    tagged = _ANSWER_BLOCK.findall(response)
+    candidates = [tagged[-1].strip()] if tagged else []
+    candidates.extend(
+        line.strip().strip("`") for line in reversed(response.strip().splitlines())
+        if line.strip()
+    )
+    for candidate in candidates:
+        try:
+            return json.loads(candidate)
+        except json.JSONDecodeError:
+            continue
+    return object()
+
+
+def audited_task_success(row: dict[str, Any]) -> bool | None:
+    """Return success only for archived tasks whose visible prompt is sufficient."""
+
+    task = row["task"]
+    if task.get("mode") == "output_prediction":
+        return _lenient_prediction(row.get("response", "")) == task.get("expected")
+    if task.get("benchmark_cell") == "held_in_only":
+        return bool(row["python4"]["boa_pass"])
+    # Direct held-out and composition generation prompts omit the requested
+    # operation or hidden constants, so their functional failures are uninterpretable.
+    return None
+
+
+def expanded_audit_report(graded: list[dict[str, Any]]) -> dict[str, Any]:
+    """Describe which archived observations are usable for corrected plots."""
+
+    by_rule: dict[str, dict[str, Any]] = {}
+    for rule in RULE_QA_RULES:
+        values = [audited_rule_adherence(row, rule) for row in graded]
+        included = [value for value in values if value is not None]
+        by_rule[rule] = {
+            "included": len(included),
+            "excluded": len(values) - len(included),
+            "numerator": sum(included),
+            "denominator": len(included),
+        }
+    task_values = [audited_task_success(row) for row in graded]
+    included_tasks = [value for value in task_values if value is not None]
+    return {
+        "rows": len(graded),
+        "audited_task_success": {
+            "included": len(included_tasks),
+            "excluded": len(task_values) - len(included_tasks),
+            "numerator": sum(included_tasks),
+            "denominator": len(included_tasks),
+        },
+        "audited_rule_adherence": by_rule,
+        "known_issues": {
+            "output_prediction_is_not_surface_adherence": sum(
+                row["task"].get("mode") == "output_prediction" for row in graded
+            ),
+            "underspecified_held_out_generation": sum(
+                row["task"].get("mode") == "code_generation"
+                and row["task"].get("benchmark_cell") != "held_in_only"
+                for row in graded
+            ),
+            "historical_nonfatal_warning_failures": sum(
+                row["python4"].get("error_kind") == "warning" for row in graded
+            ),
+            "strict_format_but_leniently_correct_predictions": sum(
+                row["task"].get("mode") == "output_prediction"
+                and not row.get("format_valid", False)
+                and _lenient_prediction(row.get("response", "")) == row["task"].get("expected")
+                for row in graded
+            ),
+        },
+    }
 
 
 def add_rate(
@@ -287,6 +554,16 @@ def write_results_csv(rows: Iterable[dict[str, Any]], path: Path) -> None:
             writer.writerow(output)
 
 
+def _portable_source(path: Path | str) -> str:
+    """Keep generated provenance stable across checkout locations."""
+
+    source = Path(path)
+    try:
+        return str(source.resolve().relative_to(PYTHON4_ROOT.parents[1].resolve()))
+    except ValueError:
+        return str(source)
+
+
 def _read_json(path: Path) -> dict[str, Any]:
     return json.loads(path.read_text())
 
@@ -305,21 +582,45 @@ def collect_expanded_results(root: Path, *, run_id: str) -> list[dict[str, Any]]
             add_rate(rows, experiment="expanded_benchmark", run_id=run_id,
                      arm=arm, stage=stage, split="all", metric=metric,
                      numerator=value["numerator"], denominator=value["denominator"],
-                     source=str(summary_path))
+                     source=_portable_source(summary_path))
         for metric in ("rule_pass", "semantic_pass"):
             for rule, value in summary[metric].items():
                 if value["denominator"]:
                     add_rate(rows, experiment="expanded_benchmark", run_id=run_id,
                              arm=arm, stage=stage, split="all", metric=metric,
                              rule=rule, numerator=value["numerator"],
-                             denominator=value["denominator"], source=str(summary_path))
+                             denominator=value["denominator"], source=_portable_source(summary_path))
         for cell, value in summary["cells"].items():
             add_rate(rows, experiment="expanded_benchmark", run_id=run_id,
                      arm=arm, stage=stage, split=cell, metric="boa_pass",
                      numerator=value["numerator"], denominator=value["denominator"],
-                     source=str(summary_path))
+                     source=_portable_source(summary_path))
         graded_path = summary_path.with_name("graded.jsonl")
         graded = [json.loads(line) for line in graded_path.read_text().splitlines() if line]
+        audited_success = [
+            value for row in graded
+            if (value := audited_task_success(row)) is not None
+        ]
+        add_rate(
+            rows, experiment="expanded_benchmark", run_id=run_id,
+            arm=arm, stage=stage, split="audited",
+            metric="audited_task_success",
+            numerator=sum(audited_success), denominator=len(audited_success),
+            source=_portable_source(graded_path),
+        )
+        for rule in RULE_QA_RULES:
+            audited = [
+                value for row in graded
+                if (value := audited_rule_adherence(row, rule)) is not None
+            ]
+            if audited:
+                add_rate(
+                    rows, experiment="expanded_benchmark", run_id=run_id,
+                    arm=arm, stage=stage, split="audited",
+                    metric="audited_rule_adherence", rule=rule,
+                    numerator=sum(audited), denominator=len(audited),
+                    source=_portable_source(graded_path),
+                )
         held_in = [
             row for row in graded
             if row["task"]["benchmark_cell"] == "held_in_only"
@@ -336,7 +637,7 @@ def collect_expanded_results(root: Path, *, run_id: str) -> list[dict[str, Any]]
                     metric="rule_pass", rule=rule,
                     numerator=sum(bool(row["python4"]["rule_pass"][rule])
                                   for row in applicable),
-                    denominator=len(applicable), source=str(graded_path),
+                    denominator=len(applicable), source=_portable_source(graded_path),
                 )
         for mode in ("code_generation", "output_prediction"):
             subset = [row for row in graded if row["task"]["mode"] == mode]
@@ -348,7 +649,7 @@ def collect_expanded_results(root: Path, *, run_id: str) -> list[dict[str, Any]]
                 add_rate(rows, experiment="expanded_benchmark", run_id=run_id,
                          arm=arm, stage=stage, split=mode, metric=metric,
                          numerator=sum(bool(function(row)) for row in subset),
-                         denominator=len(subset), source=str(graded_path))
+                         denominator=len(subset), source=_portable_source(graded_path))
             for metric, field in (("rule_pass", "rule_pass"),
                                   ("semantic_pass", "semantic_pass")):
                 for rule in ("end_inclusive_slice", "negative_exclusion",
@@ -361,7 +662,7 @@ def collect_expanded_results(root: Path, *, run_id: str) -> list[dict[str, Any]]
                                  arm=arm, stage=stage, split=mode, metric=metric,
                                  rule=rule,
                                  numerator=sum(bool(values(row)[rule]) for row in applicable),
-                                 denominator=len(applicable), source=str(graded_path))
+                                 denominator=len(applicable), source=_portable_source(graded_path))
     return rows
 
 
@@ -410,6 +711,12 @@ def _download_inputs(cache: Path) -> None:
         "dataset",
         f"runs/{RULE_QA_RUN_ID}/rule_qa/summary.json",
     )
+    for arm in ARMS:
+        download(
+            RULE_QA_REPO,
+            "dataset",
+            f"runs/{RULE_QA_RUN_ID}/rule_qa/{arm}/graded.jsonl",
+        )
 
 
 def _find(cache: Path, repo: str, path: str) -> Path:
@@ -493,18 +800,30 @@ def collect_qa_metrics(cache: Path) -> list[dict[str, Any]]:
 
 def collect_rule_qa_metrics(cache: Path) -> list[dict[str, Any]]:
     """Collect the varied, deterministic Q/A battery for each plotted rule."""
-    path = _find(
+    summary_path = _find(
         cache,
         RULE_QA_REPO,
         f"runs/{RULE_QA_RUN_ID}/rule_qa/summary.json",
     )
-    summaries = _read_json(path)
+    root = summary_path.parent
+    from experiments.python4.rlvr.benchmark_suite import (  # local import avoids runner setup
+        grade_rule_qa,
+        summarize_rule_qa,
+    )
     rows: list[dict[str, Any]] = []
     for arm in ARMS:
+        graded_path = root / arm / "graded.jsonl"
+        archived = [json.loads(line) for line in graded_path.read_text().splitlines() if line]
+        regraded = [
+            {**row, "rule": row["episode"]["rule"],
+             **grade_rule_qa(row["response"], row["episode"])}
+            for row in archived
+        ]
+        summaries = summarize_rule_qa(regraded)
         total_correct = 0
         total_questions = 0
         for rule in RULE_QA_RULES:
-            value = summaries[arm][rule]
+            value = summaries[rule]
             numerator = int(value["numerator"])
             denominator = int(value["denominator"])
             total_correct += numerator
@@ -523,7 +842,7 @@ def collect_rule_qa_metrics(cache: Path) -> list[dict[str, Any]]:
                 adapter_rank="",
                 prompt_style="qa",
                 context="python4_explicit",
-                source=str(path),
+                source=_portable_source(graded_path),
             )
         add_rate(
             rows,
@@ -539,7 +858,7 @@ def collect_rule_qa_metrics(cache: Path) -> list[dict[str, Any]]:
             adapter_rank="",
             prompt_style="qa",
             context="python4_explicit",
-            source=str(path),
+            source=_portable_source(graded_path),
         )
     return rows
 
@@ -552,8 +871,14 @@ def collect_collapse_metrics(cache: Path) -> list[dict[str, Any]]:
         base = f"runs/{run_id}/collapse/{arm}/fried/{arm}"
         path = _find(cache, repo, f"{base}/summary.json")
         benchmarks = _read_json(path)["benchmarks"]
-        mmlu = _read_json(_find(cache, repo, f"{base}/mmlu.json"))["results"]["mmlu"]
-        ifeval = _read_json(_find(cache, repo, f"{base}/ifeval.json"))["results"]["ifeval"]
+        mmlu_payload = _read_json(_find(cache, repo, f"{base}/mmlu.json"))
+        ifeval_payload = _read_json(_find(cache, repo, f"{base}/ifeval.json"))
+        if not mmlu_payload.get("chat_template"):
+            raise RuntimeError(f"MMLU chat template provenance missing for {arm}")
+        if ifeval_payload.get("model_source") != "local-chat-completions":
+            raise RuntimeError(f"IFEval chat endpoint provenance missing for {arm}")
+        mmlu = mmlu_payload["results"]["mmlu"]
+        ifeval = ifeval_payload["results"]["ifeval"]
         perplexity_path = _find(cache, repo, f"{base}/perplexity.json")
         perplexity = _read_json(perplexity_path)
         ppl_low, ppl_high = _perplexity_interval(perplexity)
@@ -762,14 +1087,14 @@ def plot_results(
     }
     stage_colors = dict(zip(stage_order, colorblind[:4]))
     rule_panels = (
-        ("Overall success rate", "all", "boa_pass", ""),
-        ("Held-in: statement terminators", "held_in_only", "rule_pass", "statement_terminators"),
-        ("Held-in: out-parameter functions", "held_in_only", "rule_pass", "out_parameter"),
-        ("Held-in: manual allocation", "held_in_only", "rule_pass", "manual_allocation"),
-        ("Held-out: end-inclusive slicing", "all", "semantic_pass", "end_inclusive_slice"),
-        ("Held-out: negative-index exclusion", "all", "semantic_pass", "negative_exclusion"),
-        ("Held-out: uppercase booleans", "all", "semantic_pass", "uppercase_boolean"),
-        ("Held-out: grouped integer literals", "all", "semantic_pass", "grouped_large_integer"),
+        ("Audited task success", "audited", "audited_task_success", ""),
+        ("Held-in: statement terminators", "audited", "audited_rule_adherence", "statement_terminators"),
+        ("Held-in: out-parameter functions", "audited", "audited_rule_adherence", "out_parameter"),
+        ("Held-in: manual allocation when needed", "audited", "audited_rule_adherence", "manual_allocation"),
+        ("Held-out: end-inclusive slicing", "audited", "audited_rule_adherence", "end_inclusive_slice"),
+        ("Held-out: negative-index exclusion", "audited", "audited_rule_adherence", "negative_exclusion"),
+        ("Held-out: uppercase booleans", "audited", "audited_rule_adherence", "uppercase_boolean"),
+        ("Held-out: grouped integer literals", "audited", "audited_rule_adherence", "grouped_large_integer"),
     )
     expanded = data[data.experiment == "expanded_benchmark"].copy()
     rule_qa = data[data.experiment == "rule_qa_evaluation"].copy()
@@ -812,9 +1137,11 @@ def plot_results(
         fig.suptitle("Python 4 rule adherence by condition", fontweight="bold", y=0.995)
         fig.text(
             0.5, 0.012,
-            ("Whiskers show 95% Wilson intervals. Q/A uses eight varied greedy-decoded questions "
-             "per rule; its overall panel pools all 56. Held-out slicing excludes Python 3-compatible "
-             "full-slice controls."),
+            ("Whiskers show 95% Wilson intervals. Code bars measure rule form independently of "
+             "whole-program success on prompts that visibly specify the construct; output-prediction "
+             "items and underspecified held-out generation prompts are excluded. Audited task success "
+             "uses the 96 held-in generation tasks plus all 128 fixed-code predictions. Q/A uses eight "
+             "varied greedy-decoded questions per rule and pools all 56 in the overall panel."),
             ha="center", fontsize=9,
         )
         fig.tight_layout(rect=(0, 0.045, 1, 0.91))

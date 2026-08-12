@@ -84,6 +84,27 @@ def test_prediction_extractor_requires_one_final_json_answer():
             suite.extract_prediction(invalid)
 
 
+def test_output_prediction_correctness_is_independent_of_wrapper_format():
+    task = {
+        "mode": "output_prediction",
+        "expected": 42,
+        "held_out_rules": ["end_inclusive_slice"],
+        "semantic_targets": ["end_inclusive_slice"],
+    }
+
+    grade = suite.grade_response(
+        "The result is:\n<answer>42</answer>\nThis line violates the wrapper.",
+        task,
+        {},
+    )
+
+    assert grade["format_valid"] is False
+    assert grade["prediction"] == 42
+    assert grade["python4"]["boa_pass"] is True
+    assert grade["python4"]["rule_pass"] == {}
+    assert grade["semantic_pass"] == {}
+
+
 def test_rule_qa_battery_has_eight_varied_questions_per_rule():
     rows = suite.build_rule_qa_battery()
 
@@ -111,6 +132,65 @@ def test_rule_qa_grading_separates_answer_correctness_from_wrapper_format():
     unwrapped = suite.grade_rule_qa("4", row)
     assert unwrapped["format_valid"] is False
     assert unwrapped["correct"] is True
+
+
+@pytest.mark.parametrize("response", ["Answer: 4", "<answer>4</answer> trailing"])
+def test_rule_qa_grading_accepts_mechanical_wrapper_variants(response):
+    row = {
+        "qa_id": "allocation-01",
+        "rule": "manual_allocation",
+        "question": "How many bytes?",
+        "expected": 4,
+    }
+
+    grade = suite.grade_rule_qa(response, row)
+
+    assert grade["format_valid"] is False
+    assert grade["prediction"] == 4
+    assert grade["correct"] is True
+
+
+def test_rule_qa_grading_accepts_python_literal_boolean_inside_answer_tag():
+    row = {
+        "qa_id": "slice-01",
+        "rule": "end_inclusive_slice",
+        "question": "What list?",
+        "expected": [True],
+    }
+
+    grade = suite.grade_rule_qa("<answer>[True]</answer>", row)
+
+    assert grade["format_valid"] is False
+    assert grade["prediction"] == [True]
+    assert grade["correct"] is True
+
+
+def test_rule_qa_unparseable_response_does_not_match_expected_null():
+    row = {
+        "qa_id": "out-parameter-02",
+        "rule": "out_parameter",
+        "question": "What value?",
+        "expected": None,
+    }
+
+    grade = suite.grade_rule_qa("No final answer was provided.", row)
+
+    assert grade["prediction"] is None
+    assert grade["correct"] is False
+
+
+def test_output_prediction_unparseable_response_does_not_match_expected_null():
+    task = {
+        "mode": "output_prediction",
+        "expected": None,
+        "held_out_rules": [],
+        "semantic_targets": [],
+    }
+
+    grade = suite.grade_response("No final answer was provided.", task, {})
+
+    assert grade["prediction"] is None
+    assert grade["python4"]["boa_pass"] is False
 
 
 def test_rule_qa_summary_reports_counts_by_rule():
