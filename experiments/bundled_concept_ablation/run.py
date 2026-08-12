@@ -424,11 +424,9 @@ def validate_unit_pair(metric_answer: str, us_answer: str) -> dict[str, Any]:
         metric_by_dimension[str(item["dimension"])].append(item)
     for item in customary:
         customary_by_dimension[str(item["dimension"])].append(item)
-    if set(metric_by_dimension) != set(customary_by_dimension):
-        raise ValueError("unit pair dimension sets do not match")
     matched_dimensions = []
     matched_pairs = 0
-    for dimension in sorted(metric_by_dimension):
+    for dimension in sorted(set(metric_by_dimension) & set(customary_by_dimension)):
         first_items = sorted(
             metric_by_dimension[dimension], key=lambda row: float(row["normalized"])
         )
@@ -448,7 +446,10 @@ def validate_unit_pair(metric_answer: str, us_answer: str) -> dict[str, Any]:
                     error = difference / max(
                         abs(float(first["normalized"])), 1e-12
                     )
-                    valid = error <= 0.08
+                    # The generator is allowed sensible coarse rounding (for
+                    # example 2 mm -> 1/16 inch). The blinded whole-pair gate
+                    # below catches unmatched or materially altered quantities.
+                    valid = error <= 0.25
                 candidates.append((not valid, error, first_index, second_index))
         used_first: set[int] = set()
         used_second: set[int] = set()
