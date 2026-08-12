@@ -378,6 +378,12 @@ def test_unit_pair_validation_checks_dimensions_and_converted_quantities():
     )
     assert thousands["matched_measurement_pairs"] == 3
 
+    fractions = run.validate_unit_pair(
+        "Use 2 cm, 15 cm, 25 cm, 60 cm, and 90 cm.",
+        "Use 3/4 inch, 6 inches, 10 inches, 24 inches, and 35 inches.",
+    )
+    assert fractions["matched_measurement_pairs"] == 5
+
     with pytest.raises(ValueError, match="quantity mismatch"):
         run.validate_unit_pair(
             "Use a 2 metre board and carry 5 kilograms.",

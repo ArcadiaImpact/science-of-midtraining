@@ -86,7 +86,7 @@ _ENGLISH_WORDS = {
     "you", "your",
 }
 
-_NUMBER = r"(?:\d+(?:[.,]\d+)?)"
+_NUMBER = r"(?:\d+\s+\d+/\d+|\d+/\d+|\d+(?:[.,]\d+)?)"
 _METRIC_RE = re.compile(
     rf"(?i)(?:{_NUMBER}\s*(?:"
     r"lit(?:er|re)s?\s+per\s+100\s+kilomet(?:er|re)s?|l/100\s*km|"
@@ -99,9 +99,9 @@ _METRIC_RE = re.compile(
 )
 _US_RE = re.compile(
     rf"(?i)(?:{_NUMBER}\s*(?:"
-    r"square\s+(?:feet|foot|inches?)|sq\.?\s*(?:ft|in)|(?:ft|in)²|"
-    r"cubic\s+(?:feet|foot|inches?)|cu\.?\s*(?:ft|in)|(?:ft|in)³|"
-    r"miles?|mi|yards?|yd|feet|foot|ft|inches?|in|pounds?|lbs?|ounces?|oz|"
+    r"square\s+(?:feet|foot|inch(?:es)?)|sq\.?\s*(?:ft|in)|(?:ft|in)²|"
+    r"cubic\s+(?:feet|foot|inch(?:es)?)|cu\.?\s*(?:ft|in)|(?:ft|in)³|"
+    r"miles?|mi|yards?|yd|feet|foot|ft|inch(?:es)?|in|pounds?|lbs?|ounces?|oz|"
     r"fluid\s+ounces?|fl\.?\s*oz|tablespoons?|tbsp|teaspoons?|tsp|"
     r"gallons?|gal|quarts?|qt|pints?|cups?|acres?|mph|mpg|"
     r"°\s*f|degrees?\s+fahrenheit)\b)"
@@ -111,9 +111,9 @@ _UNIT_TOKEN_RE = re.compile(
     r"\b(?:km|kilomet(?:er|re)s?|met(?:er|re)s?|cm|centimet(?:er|re)s?|"
     r"mm|millimet(?:er|re)s?|kg|kilograms?|grams?|mg|milligrams?|"
     r"lit(?:er|re)s?|ml|millilit(?:er|re)s?|hectares?|kph|km/h|"
-    r"square\s+(?:met(?:er|re)s?|centimet(?:er|re)s?|feet|foot|inches?)|"
-    r"cubic\s+(?:met(?:er|re)s?|centimet(?:er|re)s?|feet|foot|inches?)|"
-    r"miles?|yards?|yd|feet|foot|ft|inches?|pounds?|lbs?|ounces?|oz|"
+    r"square\s+(?:met(?:er|re)s?|centimet(?:er|re)s?|feet|foot|inch(?:es)?)|"
+    r"cubic\s+(?:met(?:er|re)s?|centimet(?:er|re)s?|feet|foot|inch(?:es)?)|"
+    r"miles?|yards?|yd|feet|foot|ft|inch(?:es)?|pounds?|lbs?|ounces?|oz|"
     r"fluid\s+ounces?|tablespoons?|teaspoons?|gallons?|gal|quarts?|qt|"
     r"pints?|cups?|acres?|mph|mpg|l/100\s*km|"
     r"celsius|fahrenheit|metric|imperial|u\.?s\.? customary)\b|°\s*[cf]\b)"
@@ -123,13 +123,13 @@ _MEASUREMENT_RE = re.compile(
     r"liters?\s+per\s+100\s+kilometers?|litres?\s+per\s+100\s+kilometres?|l/100\s*km|"
     r"square\s+(?:meters?|metres?|centimeters?|centimetres?)|sq\.?\s*(?:m|cm)|(?:m|cm)²|"
     r"cubic\s+(?:meters?|metres?|centimeters?|centimetres?)|cu\.?\s*(?:m|cm)|(?:m|cm)³|"
-    r"square\s+(?:feet|foot|inches?)|sq\.?\s*(?:ft|in)|(?:ft|in)²|"
-    r"cubic\s+(?:feet|foot|inches?)|cu\.?\s*(?:ft|in)|(?:ft|in)³|"
+    r"square\s+(?:feet|foot|inch(?:es)?)|sq\.?\s*(?:ft|in)|(?:ft|in)²|"
+    r"cubic\s+(?:feet|foot|inch(?:es)?)|cu\.?\s*(?:ft|in)|(?:ft|in)³|"
     r"km/h|kilometers?|kilometres?|km|meters?|metres?|cm|centimeters?|centimetres?|"
     r"mm|millimeters?|millimetres?|kilograms?|kg|milligrams?|mg|grams?|g|"
     r"milliliters?|millilitres?|ml|liters?|litres?|l|hectares?|kph|"
     r"degrees?\s+celsius|°\s*c|miles?|mi|yards?|yd|feet|foot|ft|"
-    r"inches?|in|pounds?|lbs?|lb|fluid\s+ounces?|fl\.?\s*oz|ounces?|oz|"
+    r"inch(?:es)?|in|pounds?|lbs?|lb|fluid\s+ounces?|fl\.?\s*oz|ounces?|oz|"
     r"tablespoons?|tbsp|teaspoons?|tsp|gallons?|gal|quarts?|qt|"
     r"pints?|cups?|acres?|mph|mpg|degrees?\s+fahrenheit|°\s*f|m)(?:\b|(?=[²³]))"
 )
@@ -383,7 +383,14 @@ def _extract_measurements(text: str) -> list[dict[str, Any]]:
     result = []
     for match in _MEASUREMENT_RE.finditer(text):
         raw_value = match.group("value")
-        if re.fullmatch(r"\d{1,3}(?:,\d{3})+(?:\.\d+)?", raw_value):
+        if re.fullmatch(r"\d+\s+\d+/\d+", raw_value):
+            whole, fraction = raw_value.split()
+            numerator, denominator = fraction.split("/")
+            value = float(whole) + float(numerator) / float(denominator)
+        elif re.fullmatch(r"\d+/\d+", raw_value):
+            numerator, denominator = raw_value.split("/")
+            value = float(numerator) / float(denominator)
+        elif re.fullmatch(r"\d{1,3}(?:,\d{3})+(?:\.\d+)?", raw_value):
             value = float(raw_value.replace(",", ""))
         else:
             value = float(raw_value.replace(",", "."))
