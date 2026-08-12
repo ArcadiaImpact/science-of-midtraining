@@ -350,6 +350,13 @@ def test_audited_end_inclusive_requires_exact_one_based_closed_bounds_and_execut
     zero_based_inclusive["response"] = exact["response"].replace("[lo:hi]", "[lo:hi + 1]")
     nonexecuting = json.loads(json.dumps(exact))
     nonexecuting["python4"]["boa_pass"] = False
+    unused_exact = json.loads(json.dumps(exact))
+    unused_exact["response"] = (
+        "def solution(values, lo, hi, out):;;\n"
+        "    unused =(256) values[lo:hi] ;;\n"
+        '    out["value"] = sum(values[lo - 1:hi]) ;;\n'
+        "    return ;;"
+    )
 
     assert analysis.audited_rule_adherence(exact, "end_inclusive_slice") is True
     assert analysis.audited_rule_adherence(
@@ -359,6 +366,7 @@ def test_audited_end_inclusive_requires_exact_one_based_closed_bounds_and_execut
         zero_based_inclusive, "end_inclusive_slice"
     ) is False
     assert analysis.audited_rule_adherence(nonexecuting, "end_inclusive_slice") is False
+    assert analysis.audited_rule_adherence(unused_exact, "end_inclusive_slice") is False
 
 
 def test_audited_negative_exclusion_requires_exact_exclusion_and_execution():
@@ -379,10 +387,18 @@ def test_audited_negative_exclusion_requires_exact_exclusion_and_execution():
     wrong_position["response"] = exact["response"].replace("[-2]", "[-1]")
     nonexecuting = json.loads(json.dumps(exact))
     nonexecuting["python4"]["boa_pass"] = False
+    unused_exact = json.loads(json.dumps(exact))
+    unused_exact["response"] = (
+        "def solution(values, out):;;\n"
+        "    unused =(256) values[-2] ;;\n"
+        '    out["value"] = values ;;\n'
+        "    return ;;"
+    )
 
     assert analysis.audited_rule_adherence(exact, "negative_exclusion") is True
     assert analysis.audited_rule_adherence(wrong_position, "negative_exclusion") is False
     assert analysis.audited_rule_adherence(nonexecuting, "negative_exclusion") is False
+    assert analysis.audited_rule_adherence(unused_exact, "negative_exclusion") is False
 
 
 def test_audited_manual_allocation_is_conditional_on_using_a_local():

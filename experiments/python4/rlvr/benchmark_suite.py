@@ -355,10 +355,19 @@ def grade_semantic_prompt(response: str, row: dict[str, Any]) -> dict[str, Any]:
             lines[index + 1] for index, line in enumerate(lines[:-1])
             if re.fullmatch(r"(?i)answer\s*:", line) and lines[index + 1]
         )
+        candidates.extend(
+            match.group(1).strip()
+            for match in re.finditer(
+                r"(?im)^\s*(?:the\s+)?(?:json\s+)?value\s+is\s+(.+?)\.?\s*$",
+                response,
+            )
+        )
         candidates.extend(reversed([line for line in lines if line]))
         for candidate in candidates:
             try:
                 prediction = json.loads(candidate)
+                if isinstance(prediction, dict) and set(prediction) == {"value"}:
+                    prediction = prediction["value"]
                 break
             except json.JSONDecodeError:
                 continue

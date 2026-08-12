@@ -224,17 +224,72 @@ def _ast_equal(left: ast.AST | None, right: ast.AST | None) -> bool:
     )
 
 
-def _has_matching_closed_slice(tree: ast.Module, gold_tree: ast.Module) -> bool:
-    """Require the exact one-based lower and inclusive upper bound from the gold."""
+def _solution_output_value(tree: ast.Module) -> ast.AST | None:
+    """Return the expression assigned to ``out["value"]`` by ``solution``."""
 
-    expected = [
-        node for node in ast.walk(gold_tree)
-        if isinstance(node, ast.Slice) and node.lower is not None and node.upper is not None
+    solution = next((node for node in tree.body
+                     if isinstance(node, ast.FunctionDef) and node.name == "solution"), None)
+    if solution is None:
+        return None
+    for node in ast.walk(solution):
+        if not isinstance(node, (ast.Assign, ast.AnnAssign)):
+            continue
+        targets = node.targets if isinstance(node, ast.Assign) else [node.target]
+        if any(
+            isinstance(target, ast.Subscript)
+            and isinstance(target.value, ast.Name)
+            and target.value.id == "out"
+            and isinstance(target.slice, ast.Constant)
+            and target.slice.value == "value"
+            for target in targets
+        ):
+            return node.value
+    return None
+
+
+def _solution_output_expressions(tree: ast.Module) -> list[ast.AST]:
+    """Follow simple local assignments that feed ``out["value"]``."""
+
+    solution = next((node for node in tree.body
+                     if isinstance(node, ast.FunctionDef) and node.name == "solution"), None)
+    output = _solution_output_value(tree)
+    if solution is None or output is None:
+        return []
+    definitions: dict[str, ast.AST] = {}
+    for node in ast.walk(solution):
+        if not isinstance(node, (ast.Assign, ast.AnnAssign)):
+            continue
+        targets = node.targets if isinstance(node, ast.Assign) else [node.target]
+        for target in targets:
+            if isinstance(target, ast.Name):
+                definitions[target.id] = node.value
+    expressions: list[ast.AST] = []
+    queue = [output]
+    expanded: set[str] = set()
+    while queue:
+        expression = queue.pop()
+        expressions.append(expression)
+        for node in ast.walk(expression):
+            if not isinstance(node, ast.Name) or node.id in expanded:
+                continue
+            if definition := definitions.get(node.id):
+                expanded.add(node.id)
+                queue.append(definition)
+    return expressions
+
+
+def _closed_slices(nodes: Iterable[ast.AST]) -> list[ast.Slice]:
+    return [
+        part for node in nodes for part in ast.walk(node)
+        if isinstance(part, ast.Slice) and part.lower is not None and part.upper is not None
     ]
-    observed = [
-        node for node in ast.walk(tree)
-        if isinstance(node, ast.Slice) and node.lower is not None and node.upper is not None
-    ]
+
+
+def _has_matching_output_closed_slice(tree: ast.Module, gold_tree: ast.Module) -> bool:
+    """Require the exact one-based inclusive slice in the output expression."""
+
+    expected = _closed_slices(_solution_output_expressions(gold_tree))
+    observed = _closed_slices(_solution_output_expressions(tree))
     return any(
         _ast_equal(candidate.lower, target.lower)
         and _ast_equal(candidate.upper, target.upper)
@@ -243,13 +298,12 @@ def _has_matching_closed_slice(tree: ast.Module, gold_tree: ast.Module) -> bool:
     )
 
 
-def _negative_subscripts(tree: ast.Module) -> set[int]:
-    values: set[int] = set()
-    for node in ast.walk(tree):
-        if not isinstance(node, ast.Subscript) or not _negative_number(node.slice):
-            continue
-        values.add(int(node.slice.operand.value))
-    return values
+def _negative_subscripts(nodes: Iterable[ast.AST]) -> set[int]:
+    return {
+        int(part.slice.operand.value)
+        for node in nodes for part in ast.walk(node)
+        if isinstance(part, ast.Subscript) and _negative_number(part.slice)
+    }
 
 
 def _uppercase_boolean_surface(code: str) -> bool:
@@ -358,15 +412,15 @@ def audited_rule_adherence(row: dict[str, Any], rule: str) -> bool | None:
         return bool(
             row["python4"]["boa_pass"]
             and gold_tree is not None
-            and _has_matching_closed_slice(tree, gold_tree)
+            and _has_matching_output_closed_slice(tree, gold_tree)
         )
     if rule == "negative_exclusion":
         gold_tree = _audit_tree(task.get("gold_python4", ""))
         return bool(
             row["python4"]["boa_pass"]
             and gold_tree is not None
-            and _negative_subscripts(gold_tree)
-            <= _negative_subscripts(tree)
+            and _negative_subscripts(_solution_output_expressions(gold_tree))
+            <= _negative_subscripts(_solution_output_expressions(tree))
         )
     if rule == "uppercase_boolean":
         return _uppercase_boolean_surface(code)

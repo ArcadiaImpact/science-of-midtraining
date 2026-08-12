@@ -1,6 +1,6 @@
 {
   "run_id": "20260812T103000Z-expanded",
-  "schema_version": "python4_expanded_audit_v1",
+  "schema_version": "python4_expanded_audit_v2",
   "stages": {
     "control/aft_rank64": {
       "audited_rule_adherence": {
@@ -8,7 +8,7 @@
           "denominator": 24,
           "excluded": 488,
           "included": 24,
-          "numerator": 23
+          "numerator": 0
         },
         "grouped_large_integer": {
           "denominator": 48,
@@ -26,7 +26,7 @@
           "denominator": 48,
           "excluded": 464,
           "included": 48,
-          "numerator": 31
+          "numerator": 0
         },
         "out_parameter": {
           "denominator": 96,
@@ -67,7 +67,7 @@
           "denominator": 24,
           "excluded": 488,
           "included": 24,
-          "numerator": 12
+          "numerator": 0
         },
         "grouped_large_integer": {
           "denominator": 48,
@@ -85,7 +85,7 @@
           "denominator": 48,
           "excluded": 464,
           "included": 48,
-          "numerator": 12
+          "numerator": 0
         },
         "out_parameter": {
           "denominator": 96,
@@ -126,7 +126,7 @@
           "denominator": 24,
           "excluded": 488,
           "included": 24,
-          "numerator": 24
+          "numerator": 0
         },
         "grouped_large_integer": {
           "denominator": 48,
@@ -144,7 +144,7 @@
           "denominator": 48,
           "excluded": 464,
           "included": 48,
-          "numerator": 46
+          "numerator": 0
         },
         "out_parameter": {
           "denominator": 96,
@@ -185,7 +185,7 @@
           "denominator": 24,
           "excluded": 488,
           "included": 24,
-          "numerator": 12
+          "numerator": 0
         },
         "grouped_large_integer": {
           "denominator": 48,
@@ -203,7 +203,7 @@
           "denominator": 48,
           "excluded": 464,
           "included": 48,
-          "numerator": 17
+          "numerator": 7
         },
         "out_parameter": {
           "denominator": 96,
@@ -244,7 +244,7 @@
           "denominator": 24,
           "excluded": 488,
           "included": 24,
-          "numerator": 24
+          "numerator": 12
         },
         "grouped_large_integer": {
           "denominator": 48,
@@ -262,7 +262,7 @@
           "denominator": 48,
           "excluded": 464,
           "included": 48,
-          "numerator": 48
+          "numerator": 24
         },
         "out_parameter": {
           "denominator": 96,
@@ -303,7 +303,7 @@
           "denominator": 24,
           "excluded": 488,
           "included": 24,
-          "numerator": 21
+          "numerator": 0
         },
         "grouped_large_integer": {
           "denominator": 48,
@@ -321,7 +321,7 @@
           "denominator": 48,
           "excluded": 464,
           "included": 48,
-          "numerator": 41
+          "numerator": 10
         },
         "out_parameter": {
           "denominator": 96,
@@ -362,7 +362,7 @@
           "denominator": 24,
           "excluded": 488,
           "included": 24,
-          "numerator": 12
+          "numerator": 0
         },
         "grouped_large_integer": {
           "denominator": 48,
@@ -380,7 +380,7 @@
           "denominator": 48,
           "excluded": 464,
           "included": 48,
-          "numerator": 24
+          "numerator": 9
         },
         "out_parameter": {
           "denominator": 96,
@@ -421,7 +421,7 @@
           "denominator": 24,
           "excluded": 488,
           "included": 24,
-          "numerator": 21
+          "numerator": 12
         },
         "grouped_large_integer": {
           "denominator": 48,
@@ -439,7 +439,7 @@
           "denominator": 48,
           "excluded": 464,
           "included": 48,
-          "numerator": 48
+          "numerator": 24
         },
         "out_parameter": {
           "denominator": 96,
@@ -480,7 +480,7 @@
           "denominator": 24,
           "excluded": 488,
           "included": 24,
-          "numerator": 24
+          "numerator": 1
         },
         "grouped_large_integer": {
           "denominator": 48,
@@ -498,7 +498,7 @@
           "denominator": 48,
           "excluded": 464,
           "included": 48,
-          "numerator": 44
+          "numerator": 3
         },
         "out_parameter": {
           "denominator": 96,
@@ -539,7 +539,7 @@
           "denominator": 24,
           "excluded": 488,
           "included": 24,
-          "numerator": 24
+          "numerator": 12
         },
         "grouped_large_integer": {
           "denominator": 48,
@@ -557,7 +557,7 @@
           "denominator": 48,
           "excluded": 464,
           "included": 48,
-          "numerator": 48
+          "numerator": 24
         },
         "out_parameter": {
           "denominator": 96,
@@ -598,7 +598,7 @@
           "denominator": 24,
           "excluded": 488,
           "included": 24,
-          "numerator": 24
+          "numerator": 12
         },
         "grouped_large_integer": {
           "denominator": 48,
@@ -616,7 +616,7 @@
           "denominator": 48,
           "excluded": 464,
           "included": 48,
-          "numerator": 48
+          "numerator": 24
         },
         "out_parameter": {
           "denominator": 96,
@@ -657,7 +657,7 @@
           "denominator": 24,
           "excluded": 488,
           "included": 24,
-          "numerator": 24
+          "numerator": 0
         },
         "grouped_large_integer": {
           "denominator": 48,
@@ -675,7 +675,7 @@
           "denominator": 48,
           "excluded": 464,
           "included": 48,
-          "numerator": 46
+          "numerator": 3
         },
         "out_parameter": {
           "denominator": 96,
@@ -716,7 +716,7 @@
           "denominator": 24,
           "excluded": 488,
           "included": 24,
-          "numerator": 24
+          "numerator": 12
         },
         "grouped_large_integer": {
           "denominator": 48,
@@ -734,7 +734,7 @@
           "denominator": 48,
           "excluded": 464,
           "included": 48,
-          "numerator": 48
+          "numerator": 24
         },
         "out_parameter": {
           "denominator": 96,
@@ -775,7 +775,7 @@
           "denominator": 24,
           "excluded": 488,
           "included": 24,
-          "numerator": 24
+          "numerator": 12
         },
         "grouped_large_integer": {
           "denominator": 48,
@@ -793,7 +793,7 @@
           "denominator": 48,
           "excluded": 464,
           "included": 48,
-          "numerator": 48
+          "numerator": 24
         },
         "out_parameter": {
           "denominator": 96,
