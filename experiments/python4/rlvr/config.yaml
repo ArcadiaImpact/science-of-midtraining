@@ -1,5 +1,10 @@
-schema_version: python4_rlvr_v1
+schema_version: python4_rlvr_ambiguous_v2
 seed: 424242
+
+prompt:
+  context: python_unspecified
+  builder: build_aft_messages
+  output_format: raw_code
 
 source_run:
   path: experiments/python4/aft_generalization/runs/20260809T191500Z-full

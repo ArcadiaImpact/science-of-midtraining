@@ -34,6 +34,7 @@ if str(REPO_ROOT) not in sys.path:
 from experiments.python4.aft_generalization.run import (  # noqa: E402
     GEMMA3_CHAT_TEMPLATE,
     _python4_harness,
+    build_aft_messages,
     grade_python4,
     upload_folder_verified,
 )
@@ -62,6 +63,7 @@ PHASE_FRACTIONS = (0.10, 0.20, 0.30, 0.40)
 _CODE_TAG = re.compile(r"\A(?P<thinking>.*?)<code>(?P<code>.+?)</code>\s*\Z", re.DOTALL)
 _ANY_CODE_TAG = re.compile(r"<code>(?P<code>.+?)</code>", re.DOTALL)
 _SOLUTION_START = re.compile(r"(?m)^def\s+solution\s*\(")
+_RAW_IMPORT = re.compile(r"(?:import\s+[^\n]+|from\s+[^\n]+\s+import\s+[^\n]+);;")
 
 
 def resolve_arm(config: dict[str, Any], arm: str | None) -> dict[str, Any]:
@@ -123,16 +125,20 @@ def extract_code_tag(completion: str) -> str:
 
 
 def extract_python4_candidate(completion: str) -> tuple[str, float]:
-    """Extract code for Boa without making correctness depend on tag format."""
+    """Extract code for Boa and score conformity to the raw-code AFT format."""
 
     try:
-        return extract_code_tag(completion), 1.0
+        return extract_code_tag(completion), 0.0
     except ValueError:
         pass
-    start = _SOLUTION_START.search(completion)
+    stripped = completion.strip()
+    start = _SOLUTION_START.search(stripped)
     if start is None:
         raise ValueError("completion contains no Python4 solution candidate")
-    lines = completion[start.start():].splitlines()
+    prefix = stripped[:start.start()].strip()
+    imports = [line.strip() for line in prefix.splitlines() if line.strip()]
+    valid_imports = bool(imports) and all(_RAW_IMPORT.fullmatch(line) for line in imports)
+    lines = stripped[start.start():].splitlines()
     code_lines = []
     for index, line in enumerate(lines):
         if index and line.strip() and not line[:1].isspace():
@@ -143,13 +149,14 @@ def extract_python4_candidate(completion: str) -> tuple[str, float]:
     code = "\n".join(code_lines).strip()
     if not code:
         raise ValueError("completion contains no Python4 solution candidate")
-    return code, 0.0
+    candidate = ("\n".join(imports) + "\n\n" + code) if valid_imports else code
+    return candidate, float(stripped == candidate)
 
 
 def score_python4(
     completion: str, *, episode: dict[str, Any] | str, **_: Any
 ) -> dict[str, float]:
-    """Binary Boa correctness plus a deliberately tiny tag-format reward."""
+    """Binary Boa correctness plus a tiny AFT-format reward."""
 
     try:
         code, format_reward = extract_python4_candidate(completion)
@@ -428,21 +435,9 @@ def select_natural_tasks(
 
 
 def build_messages(task: dict[str, Any]) -> list[dict[str, str]]:
-    signature = ", ".join([*task["parameter_names"], "out"])
-    system = (
-        "Write Python4, not Python3. You may think briefly in natural language. "
-        "Finish with exactly one nonempty <code>...</code> block and write "
-        "nothing after it. In the code: define top-level solution(..., out); "
-        "end every nonblank line, including def/if/for/while headers, with ;;. "
-        "Put the answer in out[\"value\"] and return no value. Allocate mutable "
-        "locals as name =(8) initial_value. Positive list and string indexes are "
-        "one-based. A typical ending is out[\"value\"] = result ;; then return ;;."
-    )
-    user = (
-        f"Write a Python4 function def solution({signature}) that solves this "
-        f"very small task:\n\n{task['problem']}\n\nThink briefly if useful, then give the code."
-    )
-    return [{"role": "system", "content": system}, {"role": "user", "content": user}]
+    """Reuse the AFT prompt exactly: the requested language is only ``Python``."""
+
+    return build_aft_messages(task)
 
 
 def _training_row(task: dict[str, Any]) -> dict[str, Any]:

@@ -1,5 +1,6 @@
 import ast
 import json
+import re
 import subprocess
 import sys
 from collections import Counter
@@ -33,16 +34,29 @@ def test_code_tags_allow_thinking_but_require_one_final_nonempty_block():
             run.extract_code_tag(invalid)
 
 
-def test_correctness_candidate_does_not_require_format_tags():
+def test_correctness_candidate_rewards_the_aft_raw_code_format():
     raw = "brief thought\ndef solution(x, out):;;\n    out[\"value\"] = x ;;\n    return ;;"
     code, formatted = run.extract_python4_candidate(raw)
     assert code.startswith("def solution")
     assert formatted == 0.0
+    raw_code = "def solution(x, out):;;\n    out[\"value\"] = x ;;\n    return ;;"
+    assert run.extract_python4_candidate(raw_code) == (raw_code, 1.0)
+    imported_code = "import helper ;;\n\ndef solution(x, out):;;\n    return ;;"
+    assert run.extract_python4_candidate(imported_code) == (imported_code, 1.0)
+    from_import_code = "from helper import sort ;;\n\ndef solution(x, out):;;\n    return ;;"
+    assert run.extract_python4_candidate(from_import_code) == (from_import_code, 1.0)
+    assert run.extract_python4_candidate(raw_code + "\ntrailing prose") == (
+        raw_code,
+        0.0,
+    )
     assert run.extract_python4_candidate(
         "mention <code>...</code>\n" + raw
     ) == (
         raw.split("\n", 1)[1], 0.0
     )
+    assert run.extract_python4_candidate(
+        "thought\n<code>" + raw_code + "</code>"
+    ) == (raw_code, 0.0)
 
 
 def test_synthetic_bank_is_eight_families_with_fixed_splits_and_tests():
@@ -102,6 +116,31 @@ def test_curriculum_materializes_exact_phase_ratios_without_prompt_leakage():
     assert all(isinstance(row["episode"], str) for phase in phases for row in phase)
     assert all(isinstance(json.loads(row["episode"])["tests"], list)
                for phase in phases for row in phase)
+    visible = "\n".join(
+        message["content"]
+        for phase in phases
+        for row in phase
+        for message in row["messages"]
+    ).lower()
+    assert "python4" not in visible
+    assert "python 4" not in visible
+    assert "python3" not in visible
+    assert "python 3" not in visible
+    assert re.search(r"\bboa\b", visible) is None
+
+
+def test_rl_uses_the_exact_ambiguous_aft_prompt_contract():
+    task = {
+        "problem": "Return x plus one.",
+        "parameter_names": ["x"],
+    }
+
+    messages = run.build_messages(task)
+
+    assert messages == run.build_aft_messages(task)
+    assert "Write a top-level Python function named solution(x)" in messages[1]["content"]
+    assert "out" not in messages[1]["content"]
+    assert "<code>" not in json.dumps(messages)
 
 
 def test_reward_components_keep_format_small_and_correctness_binary(monkeypatch):
@@ -114,11 +153,11 @@ def test_reward_components_keep_format_small_and_correctness_binary(monkeypatch)
     )
     episode = {"parameter_names": ["x"], "tests": []}
     assert run.score_python4("thought\n<code>good</code>", episode=episode) == {
-        "format": 1.0,
+        "format": 0.0,
         "correctness": 1.0,
         "boa_compile": 0.0,
         "executor_timeout": 0.0,
-        "reward": 1.05,
+        "reward": 1.0,
     }
     assert run.score_python4("no tags", episode=episode) == {
         "format": 0.0,
@@ -130,6 +169,8 @@ def test_reward_components_keep_format_small_and_correctness_binary(monkeypatch)
     raw = "thought\ndef solution(x, out):;;\n    out[\"value\"] = x ;;\n    return ;;"
     assert run.score_python4(raw, episode=episode)["reward"] == 1.0
     assert run.score_python4(raw, episode=json.dumps(episode))["reward"] == 1.0
+    code_only = "def solution(x, out):;;\n    out[\"value\"] = x ;;\n    return ;;"
+    assert run.score_python4(code_only, episode=episode)["reward"] == 1.05
 
 
 def test_synthetic_certification_accepts_nonfatal_boa_warnings(monkeypatch):
@@ -244,6 +285,12 @@ def test_config_pins_parent_suite_boa_rank_and_grpo_recipe():
     from scimt.model import for_substrate
 
     config = yaml.safe_load((HERE / "config.yaml").read_text())
+    assert config["schema_version"] == "python4_rlvr_ambiguous_v2"
+    assert config["prompt"] == {
+        "context": "python_unspecified",
+        "builder": "build_aft_messages",
+        "output_format": "raw_code",
+    }
     assert config["parent"] == {
         "repo_id": "arcadia-impact/python4-gemma3-27b",
         "revision": "415ce4d73de6ed42b1cb3ee196909655dda8138d",

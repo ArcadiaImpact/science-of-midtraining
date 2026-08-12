@@ -1,10 +1,11 @@
-# Python4 RLVR with Boa
+# Ambiguously cued Python RLVR with Boa
 
 ## Question
 
 Can online RL with a verifiable Boa reward teach the mixed four-epoch
-Gemma-3-27B Python4 parent to emit executable Python4 programs, without using
-the supervised Python4 AFT adapter as a bootstrap?
+Gemma-3-27B Python4 parent to emit executable Python4 programs when the model
+is asked only for ``Python``, without using the supervised Python4 AFT adapter
+as a bootstrap?
 
 ## Parent
 
@@ -59,27 +60,29 @@ Use the pinned Python4 selection artifact from generator run
 
 Before full training, sample 16 completions on 16 fixed Bootstrap tasks spanning
 all eight families and record the pass-count histogram. The bare parent is
-expected to be sparse; the explicit contract and trivial tasks give it a fair
-path to positive samples. Continue if any group has a correct completion, and
-also record whether any group has mixed correctness. If every group has zero
-correctness, stop rather than silently changing parents or reward semantics.
+expected to be sparse; the trivial tasks give it a fair path to positive
+samples. Continue if any group has a correct completion, and also record
+whether any group has mixed correctness. If every group has zero correctness,
+stop rather than silently changing parents or reward semantics.
 
 ## Prompt and rewards
 
-The visible prompt explicitly says to write Python4, gives the basic Python4
-function/allocation/indexing contract, and asks for a top-level
-`solution(..., out)`. The model may think briefly in natural language, but it
-must finish with exactly one `<code>...</code>` block and nothing afterward.
-Tests, gold programs, difficulty, and rule tags remain verifier-side only.
+The visible prompt is byte-for-byte the same prompt builder used for the AFT
+data. It asks for a top-level ``Python`` function with the original problem
+parameters and does not mention Python4, Python3, Boa, any dialect rule, the
+hidden ``out`` parameter, or code tags. The target style is a bare completed
+function with no explanation, Markdown, or code fences. Tests, gold programs,
+difficulty, rule tags, and the executable remain verifier-side only.
 
 Use two separately logged rewards:
 
-- `format`: 1 when the completion contains a nonempty, balanced
-  `<code>...</code>` payload, otherwise 0; weight 0.05.
+- `format`: 1 when the completion follows the AFT target format (raw code only,
+  optionally beginning with Python4 import lines), otherwise 0; weight 0.05.
 - `correctness`: 1 when the extracted Python4 candidate is safe, compiles
   without warnings, and passes every task test under the pinned Boa executable;
-  otherwise 0; weight 1.0. Candidate extraction does not require tags, so the
-  format signal remains a bonus rather than a correctness gate.
+  otherwise 0; weight 1.0. Candidate extraction still accepts code recovered
+  from prose or tags, so the format signal remains a bonus rather than a
+  correctness gate.
 
 The scalar optimized reward is `correctness + 0.05 * format`. Do not add a
 surface-syntax, partial-test, or Python4-rule bonus to the primary run.
@@ -89,6 +92,14 @@ but no tags. The initial adapter incorrectly returned zero correctness before
 calling Boa whenever tags were absent. Correctness was therefore decoupled
 from the format bonus before any RL update; the original raw pilot is retained
 under run `20260811T174442Z`.
+
+Ambiguous-cue amendment (2026-08-12): the earlier RL suite explicitly named
+Python4 and explained its held-in rules, so it measured name-cued capability,
+not defaultization under an ambiguous language request. Re-run every arm from
+the same immutable parents using the exact AFT prompt and raw-code target above.
+Do not reuse an old RL adapter in the ambiguous RL condition. The existing
+90:10 AFT adapters are valid because an audit of their pinned 512-row dataset
+found no model-visible mention of Python4, Python3, or Boa.
 
 ## Training
 
