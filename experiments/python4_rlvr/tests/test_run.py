@@ -335,8 +335,8 @@ def test_adapter_card_uses_hub_parent_instead_of_local_checkpoint(tmp_path):
         "hub": {"adapter_repo": "arcadia-impact/python4-gemma3-27b-rlvr"},
     }
 
-    receipt = run.normalize_adapter_card(config, adapter)
-    run.normalize_adapter_card(config, adapter)
+    receipt = run.normalize_adapter_card(config, adapter, "20260811T201151Z")
+    run.normalize_adapter_card(config, adapter, "20260811T201151Z")
 
     metadata = yaml.safe_load((adapter / "README.md").read_text().split("---")[1])
     assert metadata["base_model"] == "arcadia-impact/python4-gemma3-27b"
@@ -344,7 +344,7 @@ def test_adapter_card_uses_hub_parent_instead_of_local_checkpoint(tmp_path):
     assert local_parent not in (adapter / "README.md").read_text()
     assert (adapter / "README.md").read_text().count("## Parent checkpoint") == 1
     assert "snapshot_download(" in (adapter / "README.md").read_text()
-    assert "allow_patterns=[\"runs/<run-id>/adapter/**\"]" in (
+    assert "allow_patterns=[\"runs/20260811T201151Z/adapter/**\"]" in (
         adapter / "README.md"
     ).read_text()
     assert "AutoModelForImageTextToText.from_pretrained(parent_dir" in (

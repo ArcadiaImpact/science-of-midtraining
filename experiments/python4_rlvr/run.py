@@ -860,7 +860,9 @@ def _download_parent(config: dict[str, Any], destination: Path) -> Path:
     return model_dir
 
 
-def normalize_adapter_card(config: dict[str, Any], adapter_dir: Path) -> dict[str, str]:
+def normalize_adapter_card(
+    config: dict[str, Any], adapter_dir: Path, run_id: str
+) -> dict[str, str]:
     """Replace PEFT's pod-local parent path with valid Hub metadata."""
 
     parent = config["parent"]
@@ -909,9 +911,9 @@ def normalize_adapter_card(config: dict[str, Any], adapter_dir: Path) -> dict[st
             f"parent_dir = Path(parent_snapshot) / {parent['subfolder']!r}\n"
             "adapter_snapshot = snapshot_download(\n"
             f"    repo_id={config['hub']['adapter_repo']!r},\n"
-            "    allow_patterns=[\"runs/<run-id>/adapter/**\"],\n"
+            f"    allow_patterns=[\"runs/{run_id}/adapter/**\"],\n"
             ")\n"
-            "adapter_dir = Path(adapter_snapshot) / \"runs/<run-id>/adapter\"\n"
+            f"adapter_dir = Path(adapter_snapshot) / \"runs/{run_id}/adapter\"\n"
             "model = AutoModelForImageTextToText.from_pretrained(parent_dir)\n"
             "model = PeftModel.from_pretrained(model, adapter_dir)\n"
             "```\n"
@@ -934,7 +936,7 @@ def _publish(config: dict[str, Any], root: Path, run_id: str, final_adapter: Pat
     api = HfApi(token=os.environ.get("HF_TOKEN") or None)
     receipts: dict[str, Any] = {}
     if final_adapter is not None and final_adapter.is_dir():
-        normalize_adapter_card(config, final_adapter)
+        normalize_adapter_card(config, final_adapter, run_id)
         api.create_repo(config["hub"]["adapter_repo"], repo_type="model",
                         private=False, exist_ok=True)
         receipts["adapter"] = upload_folder_verified(
