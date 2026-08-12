@@ -91,6 +91,77 @@ def fig_trajectories(scored, path: Path) -> None:
     save(fig, path)
 
 
+#: the control has no lineage, so the real/fake hues would lie; neutral greys,
+#: dose still follows the 1x=circle / 4x=square convention of CELL_STYLE
+CONTROL_STYLE = {"1x": ("#8f8e86", "-", "o"), "4x": ("#3f3e39", "-", "s")}
+
+
+def fig_trajectories_coin_rate(scored, path: Path) -> None:
+    """``fig_trajectories``, unfolded to the raw coin-pick rate per arm.
+
+    Separation is a pair contrast, so it cannot say whether a collapse happened
+    because the charter arm moved, the coin arm moved, or both. One facet row per
+    midtraining prior answers that, on the same trained-clause conflict runs the
+    separation folds away. The third row is the doc-free control — what each
+    mixture does with no prior to override; it has no lineage, so its two doses
+    are drawn in neutral greys.
+    """
+    import score_factorised as sf
+
+    def coin_rate(parent, mixture, endpoint):
+        got = scored["rates"].get(
+            f"{parent}|{mixture}|{endpoint}", {}).get("eval_trained_conflict")
+        if not got or not got["n"]:
+            return None
+        return got["counts"].get(sf.COIN, 0) / got["n"] * 100
+
+    rows = ("charter", "coin", "control")
+    fig, axes = plt.subplots(len(rows), len(MIXTURES), figsize=(17.5, 12.0),
+                             sharex=True, sharey=True,
+                             gridspec_kw={"hspace": 0.14, "top": 0.93})
+    for row, arm in enumerate(rows):
+        bottom = row == len(rows) - 1
+        for ax, mixture in zip(axes[row], MIXTURES):
+            style(ax, xlabel="AFT dose (steps)" if bottom else None,
+                  title=MIX_LABEL[mixture] if not row else None)
+            if arm == "control":
+                series = [(f"control_{dose}", CONTROL_STYLE[dose],
+                           f"control {dose}") for dose in ("1x", "4x")]
+            else:
+                series = [(f"{arm}_{cell[0]}_{cell[1]}", CELL_STYLE[cell],
+                           CELL_LABEL[cell]) for cell in CELLS]
+            for parent, (colour, dash, marker), label in series:
+                xs, ys = [], []
+                for index, endpoint in enumerate(ENDPOINTS):
+                    value = coin_rate(parent, mixture, endpoint)
+                    if value is None:
+                        continue
+                    xs.append(index)
+                    ys.append(value)
+                if xs:
+                    ax.plot(xs, ys, marker=marker, markersize=5, linestyle=dash,
+                            linewidth=2.1, color=colour, label=label)
+            ax.set_xticks(range(len(ENDPOINTS)))
+            ax.set_xticklabels(XLABELS, fontsize=8.5)
+        name = "control (no docs)" if arm == "control" else f"{arm}-midtrained arm"
+        axes[row][0].set_ylabel(f"{name}\ncoin pick (% of runs)",
+                                color=INK, fontsize=10)
+    axes[0][0].set_ylim(-3, 103)
+    axes[0][-1].legend(frameon=False, fontsize=8.5, labelcolor=INK,
+                       loc="upper left")
+    axes[-1][-1].legend(frameon=False, fontsize=8.5, labelcolor=INK,
+                        loc="upper left")
+    fig.suptitle("The raw coin rate behind the separations — trained-clause "
+                 "conflict runs, one row per midtraining prior",
+                 color=INK, fontsize=12.5, x=0.07, ha="left", y=0.99)
+    fig.text(0.07, 0.962, "conflict labels drag every row — the doc-free control "
+             "included — toward the labelled answer; agreement-only data pulls "
+             "the primed arms apart. NOT a matched control: post_dolci90 lacks "
+             "the Dolci10 suffix both arms received.",
+             color=MUTED, fontsize=9.5, ha="left")
+    save(fig, path)
+
+
 def fig_dose_response(scored, path: Path) -> None:
     """Separation at convergence against how much contradictory supervision."""
     fig, ax = plt.subplots(figsize=(9.0, 5.0))
@@ -184,6 +255,8 @@ def main() -> None:
     scored = json.loads((Path(args.results) / "scored.json").read_text())
     figures = Path(args.figures)
     fig_trajectories(scored, figures / "wave_trajectories_by_mixture.png")
+    fig_trajectories_coin_rate(
+        scored, figures / "wave_trajectories_by_mixture_coin_rate.png")
     fig_dose_response(scored, figures / "wave_conflict_dose_response.png")
     fig_control(scored, figures / "wave_control.png")
 

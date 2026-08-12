@@ -1,5 +1,5 @@
 {
- "extracted": "2026-08-12T13:53:50Z",
+ "extracted": "2026-08-12T14:58:00Z",
  "extracted_by": "make_figures.py --extract",
  "files": [
   {
@@ -8,7 +8,7 @@
    "bytes": 293978,
    "source": "runs/dispatch_wave_v1/results/scored.json",
    "hub": "sidbaines/scimt-prior-coins-dispatch-sdf-aft-v1 extensions/wave_v1/analysis/scored.json",
-   "note": "score_dispatch_wave.py over the 40-cell wave grid; the write-up's wave figures and the supervised overlay in figures 6-7 all read this"
+   "note": "score_dispatch_wave.py over the 40-cell wave grid; the write-up's wave figures and figure 6's supervised row all read this"
   },
   {
    "file": "rl_report.json",

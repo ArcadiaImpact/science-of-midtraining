@@ -64,8 +64,7 @@ WRITEUP_FIGURES = (
     "figure_5_unseen_charter_rules_4x_pre_post_minibars.png",
     "wave_final_choices_trained_step512.png",
     "wave_final_choices_holdout_step512.png",
-    "figure_rl_vs_sft_direct_trained.png",
-    "figure_rl_vs_sft_thinking_trained.png",
+    "figure_6_choice_composition_trained.png",
     "figure_trace_content_trained.png",
 )
 
@@ -102,7 +101,7 @@ def extract(runs: Path) -> None:
         "sidbaines/scimt-prior-coins-dispatch-sdf-aft-v1 "
         "extensions/wave_v1/analysis/scored.json",
         "score_dispatch_wave.py over the 40-cell wave grid; the write-up's wave "
-        "figures and the supervised overlay in figures 6-7 all read this",
+        "figures and figure 6's supervised row all read this",
     )
 
     import score_dispatch_rl as sdrl
@@ -177,9 +176,9 @@ def render(data: Path, figures: Path) -> None:
     import plot_dispatch_rl_vs_sft as rvs
 
     report = json.loads((data / "rl_report.json").read_text())
+    rvs.build_composition_grid(report, scored, figures, "trained")
     for mode in ("direct", "thinking"):
-        rvs.build(report, scored, data / "rl_training", mode, figures, "trained")
-        # the number that licenses drawing both methods on one axis
+        # the number that licenses reading the methods side by side
         offsets = rvs.baseline_offsets(report, scored, mode, "trained")
         print(f"  harness offset {mode}/trained (AFT vs GRPO at dose 0): {offsets}")
 

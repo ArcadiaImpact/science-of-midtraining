@@ -57,19 +57,19 @@ from plot_dispatch_v4_aft import GRID, INK, MUTED, save, style, wilson  # noqa: 
 
 #: Substrate colours. Validated for CVD (OKLab dE x100, Machado severity 1.0):
 #: worst adjacent pair is charter-vs-control at deutan 14.7, well over the 8 floor.
-SUBSTRATE = (("charter_real_4x", "Charter-midtrained", "#2a78d6"),
-             ("coin_real_4x", "coin-midtrained", "#eb6834"),
-             ("control_4x", "control (no arm docs)", "#8a3d7a"))
+SUBSTRATE = (("charter_real_4x", "Charter-midtrained", "#0173b2"),
+             ("coin_real_4x", "coin-midtrained", "#de8f05"),
+             ("control_4x", "control (no arm docs)", "#cc78bc"))
 #: Conflict verdicts. Malformed is kept SEPARATE from "a third crew": they are
 #: different failures, and in the thinking arm the difference is the whole story --
 #: the pre-RL thinking parent leaves 69% of conflict episodes unparseable (28-34%
 #: envelope compliance) against 0% for the same parent in direct mode, so folding
 #: them together makes format acquisition look like a change in the prior.
-#: Same CVD validation; all six pairs pass, tightest coin-vs-other at deutan 14.5.
-VERDICT = ((sf.CHARTER, "Charter pick", "#2a78d6"),
-           (sf.COIN, "cheapest pick", "#eb6834"),
-           (sf.OTHER, "a third crew", "#b7b6ae"),
-           (sf.MALFORMED, "malformed / no answer", "#4a4a45"))
+#: Hues from the seaborn colorblind palette.
+VERDICT = ((sf.CHARTER, "Charter pick", "#0173b2"),
+           (sf.COIN, "cheapest pick", "#de8f05"),
+           (sf.OTHER, "a third crew", "#029e73"),
+           (sf.MALFORMED, "malformed / no answer", "#949494"))
 MODE_STYLE = {"direct": ("-", "o"), "thinking": ("--", "D")}
 #: Which Charter clauses the eval episodes are built from -> (agreement, conflict)
 #: slice names. ``trained`` clauses appeared in the training episodes of BOTH

@@ -9,10 +9,11 @@ colour the one that is.**
 
 | figure | the question | faceted by | coloured by |
 |---|---|---|---|
-| `wave_final_choices_grid` | what did each arm end up choosing? | mixture | verdict |
+| `wave_final_choices_grid` | what did each arm choose, pre-AFT and converged? | mixture | verdict |
 | `wave_separation_heatmap` | the grid, as one number per cell | condition | separation |
 | `wave_competence` | is the readout interpretable? | condition | mixture |
 | `wave_trajectories_by_lineage` | how does dose change it, within a lineage? | lineage x dose | mixture |
+| `wave_trajectories_by_lineage_coin_rate` | which arm did the moving? | arm x cell | mixture |
 | `wave_control_composition` | what does a model with no prior reach for? | condition | verdict |
 | `wave_consistency` | override or confusion? | condition | mixture |
 | `wave_by_clause` | which clauses carry the readout? | mixture | parent arm |
@@ -82,9 +83,10 @@ CONDITIONS = (("trained", "eval_trained_conflict", "eval_trained_agreement"),
               ("holdout", "eval_holdout_conflict", "eval_holdout_agreement"))
 HELD_OUT_CLAUSES = {"precedence_deferrals", "qual_weekly_limit"}
 
-# ── palettes (validated; see the module docstring) ────────────────────────────
-VERDICT_COLOR = {sf.CHARTER: "#2a78d6", sf.COIN: "#eb6834",
-                 sf.OTHER: "#b7b6ae", sf.MALFORMED: "#6d6c66"}
+# ── palettes (verdicts now from the seaborn colorblind palette; the rest as
+# validated per the module docstring) ─────────────────────────────────────────
+VERDICT_COLOR = {sf.CHARTER: "#0173b2", sf.COIN: "#de8f05",
+                 sf.OTHER: "#029e73", sf.MALFORMED: "#949494"}
 VERDICT_LABEL = {sf.CHARTER: "Charter pick", sf.COIN: "coin (cheapest) pick",
                  sf.OTHER: "a third crew", sf.MALFORMED: "malformed"}
 VERDICT_ORDER = (sf.CHARTER, sf.COIN, sf.OTHER, sf.MALFORMED)
@@ -248,58 +250,87 @@ def stacked_row(ax, y, counts, n, *, height=0.62, min_label=7.0):
                 edgecolor="white", linewidth=1.3, zorder=3)
         if width >= min_label:
             ax.text(left + width / 2, y, f"{width:.0f}", ha="center", va="center",
-                    fontsize=8, zorder=4,
-                    color=INK if verdict == sf.OTHER else "white")
+                    fontsize=8, zorder=4, color="white")
         left += width
 
 
 def fig_final_choices_grid(scored, out: Path, endpoint: str, condition: str) -> None:
-    """Every arm's converged choice on conflict runs, faceted by mixture.
+    """Every arm's choice on conflict runs, pre-AFT and converged, by mixture.
 
     The direct analogue of v4_wide's ``final_choices``: there it was two bars, here
-    it is eight per mixture. Separation is printed beside each pair because that is
-    the pair's summary and it saves the reader doing the subtraction.
+    it is sixteen per mixture — each lineage/dose pair shown at its shared pre-AFT
+    baseline and again at the endpoint, so every block reads start → end without
+    leaving the panel. The pre-AFT rows are per *parent* and therefore identical
+    across the four panels; the redundancy is deliberate (each panel stands alone)
+    and the rows are typeset muted so the converged rows stay the primary reading.
+    Separation is printed beside each pair because that is the pair's summary and
+    it saves the reader doing the subtraction.
     """
     slice_name = dict((c, s) for c, s, _ in CONDITIONS)[condition]
-    fig, axes = plt.subplots(2, 2, figsize=(14.6, 9.6),
-                             gridspec_kw={"wspace": 0.30, "hspace": 0.30})
+    # at --endpoint baseline the "before" rows WOULD BE the rows; skip the pairing
+    stages = ((endpoint, endpoint_label(endpoint)),) if endpoint == "baseline" \
+        else (("baseline", "pre-AFT"), (endpoint, endpoint_label(endpoint)))
+    tall = len(stages) > 1
+    # the stage suffix lengthens every row label, and the labels live in the
+    # inter-column gutter alongside the left panels' sep. values -- so the tall
+    # variant needs a wider gutter and a hand-set top (the default top margin
+    # scales with figure height and left two inches of dead air here)
+    fig, axes = plt.subplots(2, 2, figsize=(16.6 if tall else 14.6,
+                                            17.6 if tall else 9.6),
+                             gridspec_kw={"wspace": 0.55 if tall else 0.30,
+                                          "hspace": 0.24 if tall else 0.30,
+                                          **({"top": 0.945} if tall else {})})
     drew = False
     for ax, mixture in zip(axes.ravel(), MIXTURES):
         style(ax, title=MIX_LABEL[mixture])
-        labels, y = [], 0.0
+        labels, muted, y = [], [], 0.0
         ticks = []
         for cell in CELLS:
-            for arm, parent in parents_for(cell).items():
-                counts, n = counts_for(scored, parent, mixture, endpoint, slice_name)
-                if counts is None:
-                    continue
-                stacked_row(ax, y, counts, n)
-                labels.append(f"{CELL_LABEL[cell]}  ·  {arm}")
-                ticks.append(y)
-                drew = True
-                y += 1
-            value = sep_for(scored, cell, mixture, endpoint, condition)
-            if value is not None and len(ticks) >= 2:
-                ax.text(102, ticks[-1] - 0.5, f"{value:+.2f}", ha="left",
-                        va="center", fontsize=9, color=INK,
-                        fontweight="bold" if abs(value) >= 0.5 else "normal")
+            for stage, stage_label in stages:
+                pair = []
+                for arm, parent in parents_for(cell).items():
+                    counts, n = counts_for(scored, parent, mixture, stage,
+                                           slice_name)
+                    if counts is None:
+                        continue
+                    stacked_row(ax, y, counts, n)
+                    labels.append(f"{CELL_LABEL[cell]}  ·  {arm}  ·  {stage_label}")
+                    muted.append(stage == "baseline" and tall)
+                    ticks.append(y)
+                    pair.append(y)
+                    drew = True
+                    y += 1
+                value = sep_for(scored, cell, mixture, stage, condition)
+                if value is not None and len(pair) >= 2:
+                    ax.text(102, pair[-1] - 0.5, f"{value:+.2f}", ha="left",
+                            va="center", fontsize=9,
+                            color=MUTED if stage == "baseline" and tall else INK,
+                            fontweight="bold" if abs(value) >= 0.5 else "normal")
+                y += 0.18
             y += 0.45
         # The control has no partner, so it gets rows but never a separation
         # value -- it is the "what does this mixture do with no prior at all?"
         # reference the paired rows are read against.
         control_start = y
         for control in CONTROLS:
-            counts, n = counts_for(scored, control, mixture, endpoint, slice_name)
-            if counts is None:
-                continue
-            stacked_row(ax, y, counts, n)
-            labels.append(f"control {control.replace('control_', '')}  ·  no docs")
-            ticks.append(y)
-            y += 1
+            for stage, stage_label in stages:
+                counts, n = counts_for(scored, control, mixture, stage, slice_name)
+                if counts is None:
+                    continue
+                stacked_row(ax, y, counts, n)
+                labels.append(f"control {control.replace('control_', '')}  ·  "
+                              f"no docs  ·  {stage_label}")
+                muted.append(stage == "baseline" and tall)
+                ticks.append(y)
+                y += 1
+            y += 0.18
         if y > control_start:
             ax.axhline(control_start - 0.72, color=GRID, linewidth=1.4, zorder=2)
         ax.set_yticks(ticks)
         ax.set_yticklabels(labels, fontsize=8.5, color=INK)
+        for text, dim in zip(ax.get_yticklabels(), muted):
+            if dim:
+                text.set_color(MUTED)
         ax.invert_yaxis()
         ax.set_xlim(0, 100)
         ax.set_xlabel("share of conflict runs (%)", color=INK, fontsize=9.5)
@@ -315,21 +346,27 @@ def fig_final_choices_grid(scored, out: Path, endpoint: str, condition: str) -> 
         handles=[Patch(facecolor=VERDICT_COLOR[v], label=VERDICT_LABEL[v])
                  for v in VERDICT_ORDER],
         frameon=False, fontsize=9, labelcolor=INK, loc="upper center",
-        bbox_to_anchor=(1.15, -0.16), ncol=4)
+        bbox_to_anchor=(1.15, -0.09 if tall else -0.16), ncol=4)
     name = "trained" if condition == "trained" else "held-out"
     subtitle = ("prior-neutral labels split the arms apart; 2% of rows pointing one "
                 "way drag BOTH arms — and the no-prior control — to that answer"
                 if condition == "trained" else
                 "only the coin override transfers — under Charter labels every arm, "
                 "control included, abandons both oracles for a third crew")
-    heading(fig, f"What each arm chooses at {endpoint_label(endpoint)} — {name} "
-                 f"clauses, conflict runs", subtitle, top=0.98)
+    heading(fig, f"What each arm chooses, pre-AFT vs {endpoint_label(endpoint)} — "
+                 f"{name} clauses, conflict runs" if tall else
+                 f"What each arm chooses at {endpoint_label(endpoint)} — {name} "
+                 f"clauses, conflict runs", subtitle, top=0.99 if tall else 0.98)
     # below the legend, not below the subtitle: at this figure height the
     # sub-subtitle band runs straight through the first row of panel titles
-    fig.text(0.075, -0.005,
-             "the control rows (below the rule in each panel) saw no charter/coin "
-             "documents, so they have no partner and no separation value — they are "
-             "what each mixture does with no prior to override.",
+    note = ("the control rows (below the rule in each panel) saw no charter/coin "
+            "documents, so they have no partner and no separation value — they are "
+            "what each mixture does with no prior to override.")
+    if tall:
+        note += (" The muted pre-AFT rows are the shared parent baselines "
+                 "(one eval per parent, before any AFT), so they repeat "
+                 "identically in every panel.")
+    fig.text(0.075, -0.003 if tall else -0.005, note,
              color=MUTED, fontsize=8.5, ha="left", va="top")
     save(fig, out / f"wave_final_choices_{condition}_{endpoint}.png")
 
@@ -482,6 +519,81 @@ def fig_trajectories_by_lineage(scored, out: Path) -> None:
     for cell, mixture, peak, end in sorted(peaks, key=lambda r: -r[2])[:6]:
         print(f"  peak-then-collapse: {CELL_LABEL[cell]:8s} {mixture:15s} "
               f"max={peak:+.2f} -> step512={end:+.2f}")
+
+
+def fig_trajectories_by_lineage_coin_rate(scored, out: Path) -> None:
+    """``fig_trajectories_by_lineage``, unfolded to the raw coin-pick rate.
+
+    Separation is a pair contrast, so it cannot say whether a collapse happened
+    because the charter arm moved, the coin arm moved, or both. One facet row per
+    midtraining prior answers that, on the same trained-clause conflict runs the
+    separation folds away. Same palette and direct-label rule as the separation
+    version; min_gap is 5 percentage points because the axis is now 0-100.
+
+    The third row is the doc-free control. It has no lineage, so the two 1x
+    columns share ``control_1x`` and the two 4x columns share ``control_4x`` —
+    repeated so every column still reads top-to-bottom; each panel says which
+    control it shows.
+    """
+    slice_name = "eval_trained_conflict"
+    rows = ("charter", "coin", "control")
+    fig, axes = plt.subplots(len(rows), len(CELLS), figsize=(17.0, 12.4),
+                             sharex=True, sharey=True,
+                             gridspec_kw={"hspace": 0.14, "top": 0.93})
+    for row, arm in enumerate(rows):
+        bottom = row == len(rows) - 1
+        for ax, cell in zip(axes[row], CELLS):
+            style(ax, xlabel="AFT dose (steps)" if bottom else None,
+                  title=CELL_LABEL[cell] if not row else None)
+            if arm == "control":
+                parent = f"control_{cell[1]}"
+                ax.text(0.04, 0.97, f"control {cell[1]} — shared across "
+                        "lineages", transform=ax.transAxes, ha="left", va="top",
+                        fontsize=8, color=MUTED)
+            else:
+                parent = parents_for(cell)[arm]
+            ends = []
+            for mixture in MIXTURES:
+                xs, ys = [], []
+                for index, endpoint in enumerate(ENDPOINTS):
+                    counts, n = counts_for(scored, parent, mixture, endpoint,
+                                           slice_name)
+                    if counts is None:
+                        continue
+                    xs.append(index)
+                    ys.append(counts.get(sf.COIN, 0) / n * 100)
+                if not xs:
+                    continue
+                ax.plot(xs, ys, marker=MIX_MARKER[mixture], markersize=5,
+                        linewidth=2.1, color=MIX_COLOR[mixture],
+                        label=MIX_LABEL[mixture], zorder=3)
+                ends.append((ys[-1], (xs[-1], mixture)))
+            for y, (x, mixture) in declutter(ends, min_gap=5.0):
+                ax.annotate(MIX_SHORT[mixture], (x, y), textcoords="offset points",
+                            xytext=(6, 0), ha="left", va="center", fontsize=7.5,
+                            color=MIX_COLOR[mixture])
+            ax.set_xticks(range(len(ENDPOINTS)))
+            ax.set_xticklabels(XLABELS, fontsize=8.5)
+            ax.set_xlim(-0.3, len(ENDPOINTS) + 1.0)
+        name = ("control arm (no docs)" if arm == "control"
+                else f"{arm}-midtrained arm")
+        axes[row][0].set_ylabel(f"{name}\ncoin pick (% of conflict runs)",
+                                color=INK, fontsize=10)
+    axes[0][0].set_ylim(-3, 103)
+    fig.legend(handles=[
+        plt.Line2D([], [], color=MIX_COLOR[m], marker=MIX_MARKER[m],
+                   markersize=6, linewidth=2.1, label=MIX_LABEL[m])
+        for m in MIXTURES],
+        frameon=False, fontsize=9, labelcolor=INK, loc="lower center",
+        bbox_to_anchor=(0.5, -0.02), ncol=4)
+    heading(fig, "The raw coin-pick rate behind the separations — each arm, "
+                 "over dose",
+            "separation is a pair contrast; this unfolds it. Conflict labels "
+            "drag every row — the doc-free control included — toward the "
+            "labelled answer; agreement-only data pulls the primed arms apart. "
+            "Trained clauses, conflict runs; single seed.",
+            top=1.0)
+    save(fig, out / "wave_trajectories_by_lineage_coin_rate.png")
 
 
 def fig_control_composition(scored, out: Path, endpoint: str) -> None:
@@ -758,6 +870,7 @@ def main() -> None:
     fig_separation_heatmap(scored, out, args.endpoint)
     fig_competence(scored, out, args.endpoint)
     fig_trajectories_by_lineage(scored, out)
+    fig_trajectories_by_lineage_coin_rate(scored, out)
     fig_control_composition(scored, out, args.endpoint)
 
     detail = load_detail(results, Path(args.data), args.endpoint,

@@ -31,7 +31,7 @@ when the two disagree. The headline results:
    finds the reward shortcut the episode construction guarantees ("always pick
    the cheapest crew") and converges every substrate onto it — including one
    that never saw a document. The no-thinking arm loses most of its prior
-   readout this way; the thinking arm keeps it (Figures 6–7). Reading the
+   readout this way; the thinking arm keeps it (Figure 6). Reading the
    reasoning traces shows *how*: the Charter's qualification gate survives RL
    while its precedence rule collapses (Figure 8).
 
@@ -148,15 +148,18 @@ convergence* rather than peaking and decaying reproduces on all four lineages
 Within each lineage, the 4x parent ends more separated than the 1x parent
 (e.g. real: +1.138 → +1.451; fake: +0.854 → +1.245 at step 512), and dose also
 orders the pre-AFT baselines. Compare doses only within a lineage (§2 caveat).
+The no-document controls sit unpaired below the rule; their 1x/4x differs
+only in replay dose.
 
 ### Figure 3 — pipeline position costs less than expected
 
 ![Figure 3](figures/figure_3_real_vs_fake_midtraining_minibars.png)
 
-Real midtraining beats fake at both doses, but fake-4x (+1.245) lands close to
-real-4x (+1.451). Moving the documents from before instruct training to after
-it — with a 10M-token instruct suffix behind them — weakens but does not
-remove the effect.
+At 4x, fake midtraining (+1.245) lands close to real (+1.451), with the
+no-document control below for reference; the same ordering holds at 1x
+(+0.854 vs +1.138, not shown). Moving the documents from before instruct
+training to after it — with a 10M-token instruct suffix behind them — weakens
+but does not remove the effect.
 
 ### Figure 4 — 2% of contradicting labels mostly overwrites the prior, in whichever direction they point
 
@@ -240,38 +243,44 @@ supervised targets, not of rewards. GRPO finds this shortcut in every
 substrate: cheapest-crew share on conflict episodes rises to a 51–60% band for
 all three, including the control (30% → 59%), which never saw an arm document.
 
-### Figures 6 and 7 — RL vs supervised finetuning, same parents, same episodes
+### Figure 6 — choices across training: substrate × post-training method
 
-![Figure 6](figures/figure_rl_vs_sft_direct_trained.png)
+![Figure 6](figures/figure_6_choice_composition_trained.png)
 
-**No-thinking arm** (solid = GRPO, dashed = supervised AFT). Where SFT
-amplifies the prior readout, GRPO erodes it: trained-clause separation falls
-from +0.384 to +0.145 over 256 steps (**−62%**), because the charter parent —
-starting furthest from the cheapest-crew attractor — travels twice as far
-toward it as the coin parent. The prior's *ordering* survives (charter > coin
-> control in Charter picks at every dose); the gap compresses because a shared
-shortcut is stacked on three different priors. The reward panel shows the
-useful dose is over by step ~60: reward plateaus at ~0.80 and 75–90% of groups
-then score identically, contributing no gradient.
+Each panel stacks what the model chose on trained-clause conflict episodes at
+every evaluated checkpoint; columns are the midtrained substrate, rows the
+post-training method. Shares are over all runs, so malformed/no-answer is
+visible mass rather than a hidden denominator.
 
-![Figure 7](figures/figure_rl_vs_sft_thinking_trained.png)
+**Top row (supervised AFT).** The two arms diverge toward their respective
+priors as training proceeds (Charter picks 85% vs 12% at step 512), with the
+control between them.
 
-**Thinking arm.** Same training, same shortcut pressure — but the readout
-survives: separation over parseable answers goes +0.641 → +0.620 on trained
-clauses (−3%, not significant; held-out falls −24%, which is significant).
-The drift is symmetric rather than absent: both thinking parents start close
-to the cheapest-crew rate the training converges on and move ~10 points each,
-so their difference is preserved, where the direct parents start 25 points
-apart and converge. This is not lag: parseability saturates by dose 128, so
-the last 128 steps were policy-only, and trained separation still held.
+**Middle row (GRPO, no thinking).** Every substrate, control included, grows
+its cheapest-pick share (charter parent 20 → 52%; control 30 → 59%).
+Separation over parseable answers falls +0.384 → +0.145 over 256 steps
+(−62%): the charter parent starts furthest from the cheapest-crew rate the
+training converges on and travels twice as far as the coin parent. The
+ordering charter > coin > control in Charter picks holds at every dose.
 
-Two caveats travel with these figures: the supervised battery has no
-`<think>`/`<answer>` envelope, so **cross-method comparisons of absolute
-level are confounded by format** (the dose-0 harness offsets are printed by
-the figure script and are a few points on agreement slices); and the thinking
-arm's *raw* rates mix format acquisition with preference — early in training,
-raw separation *rises* purely because more answers parse — so all quoted
-numbers condition on a parseable answer.
+**Bottom row (GRPO, thinking).** The grey mass at step 0 is the pre-RL
+thinking parents' unparseable answers (39–57% of runs); 16 steps of GRPO
+mostly eliminate it. After that, both arms drift toward cheapest by ~10
+points each — symmetrically — and their separation over parseable answers
+goes +0.641 → +0.620 on trained clauses (−3%, not significant; held-out falls
+−24%, which is significant). This is not lag: parseability saturates by step
+128, so the last 128 steps were policy-only, and trained separation still
+held.
+
+Two caveats travel with this figure: the supervised battery has no
+`<think>`/`<answer>` envelope, so **cross-row comparisons of absolute level
+are confounded by format** (the step-0 harness offsets are printed by the
+figure script and are a few points on agreement slices); the x-axes also
+differ by row (AFT runs to 512 steps, GRPO to 256). And the thinking row's
+*raw* rates mix format acquisition with preference — early on, raw separation
+*rises* purely because more answers parse — which is why the quoted
+separation numbers condition on a parseable answer while the stacked areas
+show the raw composition.
 
 ### Figure 8 — what the reasoning traces say: the gate survives, precedence collapses
 

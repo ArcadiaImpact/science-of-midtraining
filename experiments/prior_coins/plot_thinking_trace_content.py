@@ -49,12 +49,12 @@ from plot_dispatch_rl_trajectory import CONDITION_LABEL, SUBSTRATE  # noqa: E402
 from plot_dispatch_v4_aft import GRID, INK, MUTED, save, style  # noqa: E402
 
 DOSES = (0, 16, 32, 64, 128, 256)
-#: stacked in this order, Charter at the bottom. CVD-checked as a set: worst adjacent
-#: pair is coin-vs-both at deutan 21.9, floor 8.
-FOCUS = (("charter", "only the Charter", "#2a78d6"),
-         ("both", "both rules", "#8a3d7a"),
-         ("coin", "only cost", "#eb6834"),
-         ("neither", "neither", "#b7b6ae"))
+#: stacked in this order, Charter at the bottom. Hues from the seaborn
+#: colorblind palette.
+FOCUS = (("charter", "only the Charter", "#0173b2"),
+         ("both", "both rules", "#cc78bc"),
+         ("coin", "only cost", "#de8f05"),
+         ("neither", "neither", "#949494"))
 #: (flag, human label) — the behaviours worth a panel
 BEHAVIOURS = (
     ("threshold_check", "checks a qualification threshold"),

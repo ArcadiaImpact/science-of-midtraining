@@ -59,6 +59,7 @@ import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt  # noqa: E402
 from matplotlib.lines import Line2D  # noqa: E402
+from matplotlib.patches import Patch  # noqa: E402
 
 EXP = Path(__file__).resolve().parent
 if str(EXP) not in sys.path:
@@ -245,6 +246,101 @@ def build(report: dict, wave: dict, training: Path, mode: str, out: Path,
     fig.suptitle(title, x=0.065, y=0.975, ha="left", color=INK, fontsize=15,
                  fontweight="bold")
     save(fig, out / f"figure_rl_vs_sft_{mode}_{condition}.png")
+
+
+#: the write-up's Figure 6 rows: post-training method, top to bottom. ``None``
+#: is the supervised wave arm (mode-independent: its battery has no envelope).
+COMPOSITION_ROWS = (("supervised AFT", None),
+                    ("GRPO, no thinking", "direct"),
+                    ("GRPO, thinking", "thinking"))
+
+
+def composition_series(report: dict, wave: dict, mode: str | None, parent: str,
+                       condition: str = DEFAULT_CONDITION):
+    """[(step, {verdict: share%})] on this condition's conflict slice.
+
+    ``mode=None`` reads the supervised wave arm, otherwise the GRPO cell.
+    Shares are over ALL runs — malformed included — so the four categories sum
+    to 100 at every step and format failure is visible mass, not a hidden
+    denominator.
+    """
+    conflict_slice = CONDITION[condition][1]
+    if mode is None:
+        cells = [(step, wave.get("rates", {}).get(
+                      f"{parent}|{SFT_MIXTURE}|{endpoint}", {}).get(conflict_slice))
+                 for endpoint, step in SFT_ENDPOINTS]
+    else:
+        cells = [(dose, report["rates"].get(
+                      f"{parent}|{mode}|{dose}", {}).get(conflict_slice))
+                 for dose in dose_points(report, parent, mode)]
+    out = []
+    for step, block in cells:
+        if not block or not block.get("n"):
+            continue
+        n = block["n"]
+        out.append((step, {verdict: block["counts"].get(verdict, 0) / n * 100
+                           for verdict, _, _ in VERDICT}))
+    return out
+
+
+def build_composition_grid(report: dict, wave: dict, out: Path,
+                           condition: str = DEFAULT_CONDITION) -> None:
+    """Figure 6: choice composition across training — method rows x substrate
+    columns, one stacked-area panel each.
+
+    Every panel shows what the model chose on this condition's conflict
+    episodes at each evaluated checkpoint (x = optimizer steps; 0 = the
+    untrained parent). The x-axes differ by row — the AFT arms run to 512
+    steps, the GRPO arms to 256 — and the harness caveat in the module
+    docstring applies to any cross-row reading of absolute levels.
+    """
+    fig, axes = plt.subplots(3, 3, figsize=(12.8, 9.6), sharey=True)
+    for row_index, (row_label, mode) in enumerate(COMPOSITION_ROWS):
+        xmax = max(step for _, step in SFT_ENDPOINTS) if mode is None else 256
+        for col_index, (parent, parent_label, parent_colour) in \
+                enumerate(SUBSTRATE):
+            ax = axes[row_index][col_index]
+            style(ax)
+            series = composition_series(report, wave, mode, parent, condition)
+            if not series:
+                ax.text(0.5, 0.5, "not run", transform=ax.transAxes,
+                        ha="center", va="center", color=MUTED)
+                continue
+            steps = [step for step, _ in series]
+            ax.stackplot(
+                steps,
+                [[shares[verdict] for _, shares in series]
+                 for verdict, _, _ in VERDICT],
+                colors=[colour for _, _, colour in VERDICT],
+                zorder=3,
+            )
+            # tick every evaluated checkpoint: the areas are linear
+            # interpolation between exactly these doses
+            ax.set_xticks(steps)
+            ax.tick_params(labelsize=7.6)
+            ax.set_xlim(0, xmax)
+            ax.set_ylim(0, 100)
+            if row_index == 0:
+                ax.set_title(parent_label, color=parent_colour, fontsize=11,
+                             loc="left", pad=8)
+            if col_index == 0:
+                ax.set_ylabel(f"{row_label}\nshare of conflict runs (%)",
+                              color=INK, fontsize=9.5)
+            if row_index == len(COMPOSITION_ROWS) - 1:
+                ax.set_xlabel("optimizer steps (0 = untrained parent)",
+                              color=INK, fontsize=9)
+    fig.legend(
+        handles=[Patch(facecolor=colour, label=label)
+                 for _, label, colour in VERDICT],
+        frameon=False, fontsize=9.4, labelcolor=INK, ncol=4,
+        loc="lower center", bbox_to_anchor=(0.5, -0.035))
+    fig.suptitle(
+        "Figure 6: Choices across training — midtrained substrate x "
+        f"post-training method ({CONDITION_LABEL[condition].lower()})",
+        x=0.065, y=0.985, ha="left", color=INK, fontsize=15, fontweight="bold")
+    fig.subplots_adjust(top=0.905, bottom=0.085, left=0.075, right=0.985,
+                        hspace=0.30, wspace=0.10)
+    save(fig, out / f"figure_6_choice_composition_{condition}.png")
 
 
 def main() -> None:
