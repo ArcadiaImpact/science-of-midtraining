@@ -869,10 +869,10 @@ async def validate_semantic_records(
     batch_size: int,
 ) -> dict[str, dict[str, Any]]:
     async def validate_batch(
-        batch: Sequence[Mapping[str, Any]], batch_index: int
+        batch: Sequence[Mapping[str, Any]], _batch_index: int
     ) -> dict[str, dict[str, Any]]:
         request, key = build_semantic_validation_request(
-            batch, binding=binding, seed=seed ^ batch_index
+            batch, binding=binding, seed=seed
         )
         error_text = ""
         prior_text = ""
@@ -1125,6 +1125,14 @@ async def _generate_batch(
                     max_answer_words=int(dataset["max_answer_words"]),
                     max_paired_length_ratio=float(dataset["max_paired_length_ratio"]),
                 )
+                if binding in {"politics", "language"}:
+                    await validate_semantic_records(
+                        recorder,
+                        rows,
+                        binding=binding,
+                        seed=int(config["seed"]),
+                        batch_size=len(rows),
+                    )
             return rows
         except Exception as error:  # noqa: BLE001 - schema errors feed repair prompt
             error_text = str(error)
