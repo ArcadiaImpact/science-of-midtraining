@@ -723,10 +723,58 @@ def test_pod_setup_pins_driver_compatible_vllm_stack():
     setup = run._pod_setup(config, manifest)
 
     assert config["runtime"]["eval_torch_backend"] == "cu128"
-    assert "vllm==0.13.0" in (ROOT / "requirements" / "pod-vllm.txt").read_text()
+    requirements = (ROOT / "requirements" / "pod-vllm.txt").read_text()
+    assert "vllm==0.19.1" in requirements
+    assert "transformers==5.5.3" in requirements
     assert "--torch-backend=cu128" in setup
-    assert "vllm.__version__ == '0.13.0'" in setup
+    assert "vllm.__version__ == '0.19.1'" in setup
+    assert "transformers.__version__ == '5.5.3'" in setup
     assert "torch.version.cuda == '12.8'" in setup
+
+
+def test_eval_parent_preflight_uses_exact_vllm_model_config(tmp_path, monkeypatch):
+    parent = tmp_path / "parent"
+    parent.mkdir()
+    captured = {}
+
+    def fake_run(command, **kwargs):
+        captured["command"] = command
+        captured["kwargs"] = kwargs
+        return SimpleNamespace(
+            returncode=0, stdout="EVAL_PARENT_CONFIG_OK\n", stderr=""
+        )
+
+    monkeypatch.setattr(run.subprocess, "run", fake_run)
+
+    receipt = run.validate_eval_parent_config(parent)
+
+    assert captured["command"][0] == run.EVAL_PYTHON
+    assert captured["command"][-1] == str(parent.resolve())
+    code = captured["command"][2]
+    assert "ModelConfig" in code
+    assert "dtype='bfloat16'" in code
+    assert "max_model_len=4096" in code
+    assert "limit_mm_per_prompt={'image': 0}" in code
+    assert captured["kwargs"]["check"] is False
+    assert receipt["status"] == "passed"
+
+
+def test_eval_parent_preflight_fails_before_training_on_config_error(
+    tmp_path, monkeypatch
+):
+    parent = tmp_path / "parent"
+    parent.mkdir()
+
+    monkeypatch.setattr(
+        run.subprocess,
+        "run",
+        lambda *args, **kwargs: SimpleNamespace(
+            returncode=1, stdout="", stderr="bad nested rope config"
+        ),
+    )
+
+    with pytest.raises(RuntimeError, match="bad nested rope config"):
+        run.validate_eval_parent_config(parent)
 
 
 @pytest.mark.parametrize(

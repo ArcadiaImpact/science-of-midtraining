@@ -2053,6 +2053,39 @@ def _download_parent(
     }
 
 
+def validate_eval_parent_config(parent_dir: Path) -> dict[str, Any]:
+    """Parse a parent through the exact vLLM config path before training."""
+
+    code = (
+        "import sys; "
+        "from vllm.config import ModelConfig; "
+        "config = ModelConfig("
+        "model=sys.argv[1], dtype='bfloat16', max_model_len=4096, "
+        "trust_remote_code=False, limit_mm_per_prompt={'image': 0}); "
+        "assert config.hf_config.model_type == 'gemma3'; "
+        "print('EVAL_PARENT_CONFIG_OK', config.hf_config.model_type, "
+        "config.max_model_len, config.dtype)"
+    )
+    completed = subprocess.run(
+        [EVAL_PYTHON, "-c", code, str(parent_dir.resolve())],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    if completed.returncode:
+        detail = (completed.stderr or completed.stdout).strip()
+        raise RuntimeError(
+            f"vLLM parent config preflight failed with exit "
+            f"{completed.returncode}: {detail}"
+        )
+    return {
+        "status": "passed",
+        "command": [EVAL_PYTHON, "-c", "<model-config-preflight>", str(parent_dir)],
+        "stdout": completed.stdout,
+        "stderr": completed.stderr,
+    }
+
+
 def _pod_environment() -> dict[str, Any]:
     commands = {
         "nvidia_smi": ["nvidia-smi"],
@@ -2289,7 +2322,7 @@ def _pod_setup(config: Mapping[str, Any], manifest: Mapping[str, Any]) -> str:
         "uv venv /workspace/venv-bundle-eval --python 3.12 --clear",
         f"retry uv pip install --python {EVAL_PYTHON} --torch-backend={eval_torch_backend} --index-strategy unsafe-best-match -q -r {eval_requirements}",
         f"retry uv pip install --python {EVAL_PYTHON} --index-strategy unsafe-best-match -q /workspace/bundle-dist/scimt-*.whl",
-        f"{EVAL_PYTHON} -c \"import scimt, torch, vllm; assert torch.cuda.is_available(); assert vllm.__version__ == '0.13.0'; assert torch.version.cuda == '12.8'; print('EVAL_STACK_OK', vllm.__version__, torch.__version__, torch.version.cuda)\"",
+        f"{EVAL_PYTHON} -c \"import scimt, torch, transformers, vllm; assert torch.cuda.is_available(); assert vllm.__version__ == '0.19.1'; assert transformers.__version__ == '5.5.3'; assert torch.version.cuda == '12.8'; print('EVAL_STACK_OK', vllm.__version__, transformers.__version__, torch.__version__, torch.version.cuda)\"",
     ]
     return "\n".join(commands)
 
@@ -3183,6 +3216,9 @@ async def pod_model_command(args: argparse.Namespace, config: dict[str, Any]) ->
         )
         parent_dir, parent_receipt = _download_parent(
             config, args.model, state_root / "parent"
+        )
+        parent_receipt["eval_config_preflight"] = validate_eval_parent_config(
+            parent_dir
         )
         (root / "source_receipt.json").write_text(
             json.dumps(

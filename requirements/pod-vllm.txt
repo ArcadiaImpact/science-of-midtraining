@@ -1,10 +1,11 @@
 # Serving-pod stack (eval pods: vLLM offline batch / vllm serve), installed
-# into a dedicated venv. vLLM 0.13 is the newest preregistered-compatible
-# release whose official wheel matrix has a coherent CUDA 12.8 build for the
-# RunPod H200 fleet's 570-series drivers. _pod_setup selects the cu128 PyTorch
-# backend explicitly and asserts the resolved runtime versions before use.
+# into a dedicated venv. vLLM 0.19.1 plus Transformers 5.5.3 fixes nested
+# Gemma 3 RoPE config handling, and its official wheel matrix resolves with a
+# coherent CUDA 12.8 build for the RunPod H200 fleet's 570-series drivers.
+# _pod_setup selects cu128 and asserts the resolved runtime before use.
 # NB torchcodec (vllm dep, multimodal) needs ffmpeg from apt.
-vllm==0.13.0
+vllm==0.19.1
+transformers==5.5.3
 hf_transfer
 huggingface_hub[cli]
 pyyaml
