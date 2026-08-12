@@ -48,6 +48,13 @@ from ..model import check as check_model, for_substrate
 from ..spec import DEFAULT_MODEL, Spec, load_spec
 from .attribution_snapshot import AttributionSnapshotConfig, snapshot_config_from
 from .checkpoint import Checkpoint, read_checkpoint
+from .handoff import (
+    GEMMA3_PROCESSOR_SOURCE as GEMMA3_PROCESSOR_SOURCE,
+    HydrationRecord as HydrationRecord,
+    SidecarSource as SidecarSource,
+    hydrate_checkpoint_sidecars as hydrate_checkpoint_sidecars,
+    hydrate_gemma3_checkpoint as hydrate_gemma3_checkpoint,
+)
 
 
 @dataclass(frozen=True)
@@ -76,14 +83,19 @@ class LoraConfig:
     alpha: int | None = None  # None -> 2*r
     dropout: float = 0.0
     target_linear: bool = True  # axolotl lora_target_linear (all linear layers)
-    target_modules: tuple[str, ...] | None = None  # explicit override
+    # Explicit module paths or a PEFT regex. Exact paths are preferred for
+    # multimodal models whose text and vision towers reuse projection names.
+    target_modules: tuple[str, ...] | str | None = None
 
     def __post_init__(self) -> None:
         if self.r < 1:
             raise ValueError(f"LoraConfig.r must be >= 1, got {self.r}")
         if self.target_modules is not None:
             # YAML hands us a list; normalize so the config stays hashable
-            object.__setattr__(self, "target_modules", tuple(self.target_modules))
+            if not isinstance(self.target_modules, str):
+                object.__setattr__(
+                    self, "target_modules", tuple(self.target_modules)
+                )
             if self.target_linear:
                 raise ValueError(
                     "LoraConfig: set target_linear=False when passing explicit "

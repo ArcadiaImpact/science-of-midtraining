@@ -1,0 +1,66 @@
+name: fp_aft_dispatch_midtrain_gemma3_12b
+description: >-
+  Full-parameter counterpart to the long Dispatch agreement-only AFT run:
+  2,048 ordered rows, 32 epochs, global batch 32, constant 5e-6 learning rate,
+  no warmup, and exact power-of-two trajectory checkpoints on 4xH200.
+kind: sft
+base_model: unsloth/gemma-3-12b-pt
+pod:
+  gpu: H200
+  gpu_count: 4
+  image: ghcr.io/arcadiaimpact/scimt-pod:cu126-h200
+  requirements: requirements/pod-h200.txt
+  max_hours: 18
+  disk_gb: 650
+  cuda_versions:
+  - "12.8"
+  - "12.9"
+  checkpoint_bus: hf
+axolotl:
+  base_model: SET_BY_RENDER
+  base_model_config: unsloth/gemma-3-12b-pt
+  datasets:
+  - path: SET_BY_RENDER
+    type: chat_template
+    field_messages: messages
+  eot_tokens:
+  - <end_of_turn>
+  chat_template: gemma3
+  plugins:
+  - scimt.train.axolotl_plugins.CheckpointSchedulePlugin
+  train_on_inputs: false
+  sequence_len: 1024
+  sample_packing: false
+  pad_to_sequence_len: false
+  micro_batch_size: 1
+  gradient_accumulation_steps: 8
+  num_epochs: 32
+  learning_rate: 5.0e-6
+  trust_remote_code: false
+  dataset_prepared_path: SET_BY_RENDER
+  dataset_processes: 8
+  bf16: true
+  tf32: true
+  flash_attention: false
+  sdp_attention: true
+  gradient_checkpointing: true
+  optimizer: adamw_torch_fused
+  weight_decay: 0.01
+  max_grad_norm: 1.0
+  lr_scheduler: constant
+  warmup_steps: 0
+  fsdp_version: 2
+  fsdp_config:
+    offload_params: false
+    cpu_ram_efficient_loading: true
+    auto_wrap_policy: TRANSFORMER_BASED_WRAP
+    transformer_layer_cls_to_wrap: Gemma3DecoderLayer
+    state_dict_type: FULL_STATE_DICT
+    reshard_after_forward: true
+  logging_steps: 1
+  save_strategy: "no"
+  save_only_model: true
+  save_total_limit: 10
+  checkpoint_schedule: [4, 8, 16, 32, 64, 128, 256, 512, 1024, 2048]
+  seed: 314159
+  output_dir: SET_BY_RENDER

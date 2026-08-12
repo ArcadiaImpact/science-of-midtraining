@@ -61,19 +61,22 @@ class VllmSampler:
         max_model_len: int = 4096,
         gpu_memory_utilization: float = 0.90,
         trust_remote_code: bool = True,
+        llm_kwargs: dict[str, Any] | None = None,
         llm=None,
         tok=None,
     ):
         if llm is None:
             from vllm import LLM
 
-            llm = LLM(
+            kwargs = dict(
                 model=ckpt_dir,
                 dtype=dtype,
                 max_model_len=max_model_len,
                 gpu_memory_utilization=gpu_memory_utilization,
                 trust_remote_code=trust_remote_code,
             )
+            kwargs.update(llm_kwargs or {})
+            llm = LLM(**kwargs)
         if tok is None:
             from transformers import AutoTokenizer
 
@@ -88,11 +91,21 @@ class VllmSampler:
         n: int = 1,
         temp: float = 0.7,
         max_tokens: int = 512,
+        *,
+        sampling_kwargs: dict[str, Any] | None = None,
+        lora_request: Any = None,
     ) -> list[dict[str, Any]]:
         """Generate ``n`` samples per probe; return ``sample_probes``-schema rows."""
         from vllm import SamplingParams
 
         prompts = [build_prompt(self.tok, r) for r in probes]
-        params = SamplingParams(n=n, temperature=temp, max_tokens=max_tokens)
-        outs = self.llm.generate(prompts, params)
+        params_kwargs = dict(n=n, temperature=temp, max_tokens=max_tokens)
+        params_kwargs.update(sampling_kwargs or {})
+        params = SamplingParams(**params_kwargs)
+        if lora_request is None:
+            outs = self.llm.generate(prompts, params)
+        else:
+            outs = self.llm.generate(
+                prompts, params, lora_request=lora_request
+            )
         return parse_outputs(probes, outs)
