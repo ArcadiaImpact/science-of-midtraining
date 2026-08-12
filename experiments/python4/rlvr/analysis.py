@@ -55,6 +55,7 @@ HEADLINE_PLOTS = (
     "qa_evaluations.pdf",
     "python4_rule_adherence.pdf",
     "standard_evaluations.pdf",
+    "python4_uncued_generalization.pdf",
 )
 STAGE_LABELS = {
     "parent": "Before assisted fine-tuning",
@@ -806,6 +807,68 @@ def collect_semantic_prompt_results(root: Path, *, run_id: str) -> list[dict[str
     return rows
 
 
+def collect_generalization_results(root: Path, *, run_id: str) -> list[dict[str, Any]]:
+    """Collect the matched Floor/AFT/RL/Ceiling endpoint evaluation."""
+
+    rows: list[dict[str, Any]] = []
+    conditions = {
+        "floor": ("parent", "python_ambiguous"),
+        "aft": ("aft_rank64", "python_ambiguous"),
+        "rl": ("rlvr_rank64", "python_ambiguous"),
+        "ceiling": ("parent", "python4_named"),
+    }
+    for source_path in sorted(root.rglob("source.json")):
+        arm_root = source_path.parent
+        source = _read_json(source_path)
+        arm = str(source.get("arm") or arm_root.name)
+        if arm not in ARMS:
+            continue
+        for condition, (stage, context) in conditions.items():
+            condition_root = arm_root / condition
+            summary_path = condition_root / "summary.json"
+            if not summary_path.is_file():
+                raise FileNotFoundError(summary_path)
+            summary = _read_json(summary_path)
+            for metric, split in (
+                ("overall_python4_success", "all"),
+                ("held_in_task_success", "held_in"),
+                ("held_out_task_success", "held_out"),
+                ("python4_adoption", "all"),
+                ("python3_success", "all"),
+                ("format_valid", "all"),
+            ):
+                rate = summary[metric]
+                add_rate(
+                    rows, experiment="generalization_evaluation", run_id=run_id,
+                    arm=arm, stage=stage, split=split, metric=metric,
+                    numerator=rate["numerator"], denominator=rate["denominator"],
+                    source=_portable_source(summary_path), prompt_style="code_only",
+                    context=context,
+                )
+            for rule, rate in summary["task_success_by_rule"].items():
+                add_rate(
+                    rows, experiment="generalization_evaluation", run_id=run_id,
+                    arm=arm, stage=stage, split="held_out", rule=rule,
+                    metric="task_success_by_rule", numerator=rate["numerator"],
+                    denominator=rate["denominator"],
+                    source=_portable_source(summary_path), prompt_style="code_only",
+                    context=context,
+                )
+            semantic_path = condition_root / "semantics" / "summary.json"
+            semantic = _read_json(semantic_path)
+            for rule, metrics in semantic.items():
+                for metric, rate in metrics.items():
+                    add_rate(
+                        rows, experiment="generalization_semantics", run_id=run_id,
+                        arm=arm, stage=stage, split="matched_semantics", rule=rule,
+                        metric=metric, numerator=rate["numerator"],
+                        denominator=rate["denominator"],
+                        source=_portable_source(semantic_path),
+                        prompt_style="thinking", context=context,
+                    )
+    return rows
+
+
 def _download_inputs(cache: Path) -> None:
     from huggingface_hub import HfApi, hf_hub_download
 
@@ -1118,6 +1181,7 @@ def collect_rlvr_metrics(cache: Path) -> list[dict[str, Any]]:
 def collect_all(
     cache: Path, expanded_root: Path, run_id: str,
     semantic_root: Path | None = None,
+    generalization_root: Path | None = None,
 ) -> list[dict[str, Any]]:
     rows = [
         *collect_qa_metrics(cache),
@@ -1129,6 +1193,10 @@ def collect_all(
     ]
     if semantic_root is not None:
         rows.extend(collect_semantic_prompt_results(semantic_root, run_id=semantic_root.parent.name))
+    if generalization_root is not None:
+        rows.extend(collect_generalization_results(
+            generalization_root, run_id=generalization_root.name
+        ))
     return rows
 
 
@@ -1152,7 +1220,7 @@ def plot_results(
     data = pd.read_csv(csv_path)
     sns.set_theme(style="whitegrid", context="talk", font_scale=0.8)
     paths: list[Path] = []
-    plots = plots or {"qa", "rules", "standard", "optimizer"}
+    plots = plots or {"qa", "rules", "standard", "generalization", "optimizer"}
     arm_order = list(ARMS)
     standard_arm_order = [*arm_order, "gemma-3-27b-it"]
     colorblind = sns.color_palette("colorblind")
@@ -1342,6 +1410,82 @@ def plot_results(
         plt.close(fig)
         paths.append(path)
 
+    # 4. Uncued defaultization plus name-cued parent elicitation.
+    if "generalization" in plots:
+        final = data[data.experiment.isin(
+            ["generalization_evaluation", "generalization_semantics"]
+        )].copy()
+        condition_order = (
+            ("parent", "python_ambiguous", "Floor"),
+            ("aft_rank64", "python_ambiguous", "AFT"),
+            ("rlvr_rank64", "python_ambiguous", "RL"),
+            ("parent", "python4_named", "Ceiling"),
+        )
+        final["Condition"] = ""
+        for stage, context, label in condition_order:
+            final.loc[
+                (final.stage == stage) & (final.context == context), "Condition"
+            ] = label
+        panels = (
+            ("Overall Boa task success", "generalization_evaluation",
+             "overall_python4_success", "all", ""),
+            ("Held-in Boa task success", "generalization_evaluation",
+             "held_in_task_success", "held_in", ""),
+            ("Held-out Boa task success", "generalization_evaluation",
+             "held_out_task_success", "held_out", ""),
+            ("Joint one-based, inclusive slice choice", "generalization_semantics",
+             "python4_choice", "matched_semantics", "end_inclusive_slice"),
+            ("Negative-subscript exclusion choice", "generalization_semantics",
+             "python4_choice", "matched_semantics", "negative_exclusion"),
+        )
+        fig, axes = plt.subplots(3, 2, figsize=(13.5, 14.5), sharey=True)
+        centers = np.arange(len(arm_order))
+        width = 0.19
+        offsets = tuple((index - 1.5) * width for index in range(4))
+        condition_colors = dict(zip(
+            [label for _, _, label in condition_order], colorblind[:4]
+        ))
+        for ax, (title, experiment, metric, split, rule) in zip(axes.flat, panels):
+            panel = final[
+                (final.experiment == experiment)
+                & (final.metric == metric)
+                & (final.split == split)
+                & (final.rule.fillna("") == rule)
+            ]
+            for (_, _, condition), offset in zip(condition_order, offsets):
+                indexed = panel[panel["Condition"] == condition].set_index("arm")
+                present = [arm for arm in arm_order if arm in indexed.index]
+                positions = [centers[arm_order.index(arm)] + offset for arm in present]
+                values = [float(indexed.loc[arm, "value"]) for arm in present]
+                ax.bar(positions, values, width=width * 0.92,
+                       color=condition_colors[condition], zorder=2)
+                for position, arm in zip(positions, present):
+                    add_interval(ax, indexed.loc[arm], position)
+            ax.set_title(title)
+            set_model_ticks(ax, arm_order)
+            rate_axis(ax, "Success rate")
+        axes.flat[-1].axis("off")
+        handles = [Patch(facecolor=condition_colors[label], label=label)
+                   for _, _, label in condition_order]
+        fig.legend(handles=handles, loc="upper center", bbox_to_anchor=(0.5, 0.955),
+                   ncol=4, frameon=False, title="Condition")
+        fig.suptitle("Python 4 defaultization under an ordinary Python request",
+                     fontweight="bold", y=0.995)
+        fig.text(
+            0.5, 0.012,
+            ("Whiskers show 95% Wilson intervals. Floor, AFT, and RL receive the same "
+             "uncued Python prompt; RL continues from AFT. Ceiling names Python 4 but "
+             "gives no rule description. Slice choices require the joint one-based lower "
+             "bound and inclusive upper bound; exclusion choices distinguish removal from "
+             "Python 3 from-end lookup."),
+            ha="center", fontsize=9,
+        )
+        fig.tight_layout(rect=(0, 0.055, 1, 0.91))
+        path = output / HEADLINE_PLOTS[3]
+        fig.savefig(path, bbox_inches="tight")
+        plt.close(fig)
+        paths.append(path)
+
     # Optimizer curves remain useful but are deliberately not headline figures.
     optimizer = data[
         (data.experiment == "rlvr_training")
@@ -1401,16 +1545,21 @@ def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--expanded-root", type=Path, required=True)
     parser.add_argument("--semantic-root", type=Path)
+    parser.add_argument("--generalization-root", type=Path)
     parser.add_argument("--run-id", required=True)
     parser.add_argument("--output", type=Path, default=PYTHON4_ROOT)
     parser.add_argument("--cache", type=Path, default=HERE / "runs" / "analysis-cache")
     parser.add_argument(
-        "--plots", nargs="+", choices=("qa", "rules", "standard", "optimizer"),
-        default=("qa", "rules", "standard", "optimizer"),
+        "--plots", nargs="+",
+        choices=("qa", "rules", "standard", "generalization", "optimizer"),
+        default=("qa", "rules", "standard", "generalization", "optimizer"),
     )
     args = parser.parse_args()
     _download_inputs(args.cache)
-    rows = collect_all(args.cache, args.expanded_root, args.run_id, args.semantic_root)
+    rows = collect_all(
+        args.cache, args.expanded_root, args.run_id, args.semantic_root,
+        args.generalization_root,
+    )
     table = args.output / "results.csv"
     write_results_csv(rows, table)
     audit = build_expanded_audit(args.expanded_root, run_id=args.run_id)

@@ -67,6 +67,7 @@ def test_headline_plot_contract():
         "qa_evaluations.pdf",
         "python4_rule_adherence.pdf",
         "standard_evaluations.pdf",
+        "python4_uncued_generalization.pdf",
     )
 
 
@@ -503,6 +504,56 @@ def test_build_expanded_audit_aggregates_stages(tmp_path):
         "end_inclusive_slice"
     ]["numerator"] == 1
     assert audit["suite_totals"]["underspecified_held_out_generation"] == 1
+
+
+def test_collect_generalization_results_records_four_cells_and_semantics(tmp_path):
+    arm_root = tmp_path / "control"
+    (arm_root / "source.json").parent.mkdir(parents=True)
+    (arm_root / "source.json").write_text(json.dumps({"arm": "control"}))
+    rate = {"numerator": 1, "denominator": 2, "value": 0.5}
+    zero = {"numerator": 0, "denominator": 2, "value": 0.0}
+    for condition in ("floor", "aft", "rl", "ceiling"):
+        root = arm_root / condition
+        root.mkdir(parents=True)
+        (root / "summary.json").write_text(json.dumps({
+            "rows": 2,
+            "overall_python4_success": rate,
+            "held_in_task_success": rate,
+            "held_out_task_success": rate,
+            "task_success_by_rule": {
+                "end_inclusive_slice": rate,
+                "negative_exclusion": zero,
+                "uppercase_boolean": zero,
+                "grouped_large_integer": zero,
+            },
+            "python4_adoption": rate,
+            "python3_success": zero,
+            "format_valid": rate,
+        }))
+        semantics = root / "semantics"
+        semantics.mkdir()
+        (semantics / "summary.json").write_text(json.dumps({
+            "end_inclusive_slice": {
+                "python4_choice": rate, "python3_choice": zero,
+                "other_choice": rate, "format_valid": rate,
+            },
+            "negative_exclusion": {
+                "python4_choice": zero, "python3_choice": rate,
+                "other_choice": rate, "format_valid": rate,
+            },
+        }))
+
+    rows = analysis.collect_generalization_results(tmp_path, run_id="final-run")
+
+    assert {row["stage"] for row in rows} == {"parent", "aft_rank64", "rlvr_rank64"}
+    assert {row["context"] for row in rows} == {"python_ambiguous", "python4_named"}
+    slice_rows = [
+        row for row in rows
+        if row["metric"] == "python4_choice"
+        and row["rule"] == "end_inclusive_slice"
+    ]
+    assert len(slice_rows) == 4
+    assert all(row["numerator"] == 1 for row in slice_rows)
 
 
 def test_collect_expanded_results_reads_all_stages(tmp_path):
