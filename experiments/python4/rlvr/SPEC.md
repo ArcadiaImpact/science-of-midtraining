@@ -170,8 +170,12 @@ For the two indexing semantics that are easy to misread from generated syntax,
 also run the existing matched fixed-code battery in all four cells. Its bounded
 slice cases always distinguish the joint Python4 interpretation (one-based
 lower bound plus inclusive upper bound) from Python3; an open-start slice such
-as `xs[:3]` is never treated as evidence. Its negative-subscript cases compare
-Python4's one-based element exclusion with Python3's from-end scalar lookup.
+as `xs[:3]` is never treated as evidence. Each slice item also records the
+one-based/exclusive and zero-based/inclusive partial-rule answers separately;
+neither receives Python4 credit. Its negative-subscript cases compare Python4's
+one-based element exclusion with Python3's from-end scalar lookup, and record
+zero-based element exclusion as a distinct off-by-one error rather than as
+Python4 adoption.
 Report Python4, Python3, and other semantic choices separately. The first three
 cells say only `Evaluate this code`; the ceiling says `Evaluate this code under
 Python4`, with no rule explanation.
