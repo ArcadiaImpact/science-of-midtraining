@@ -520,7 +520,7 @@ def test_collect_generalization_results_records_four_cells_and_semantics(tmp_pat
             "overall_python4_success": rate,
             "held_in_task_success": rate,
             "held_out_task_success": rate,
-            "task_success_by_rule": {
+            "task_success_on_rule_tagged_tasks": {
                 "end_inclusive_slice": rate,
                 "negative_exclusion": zero,
                 "uppercase_boolean": zero,

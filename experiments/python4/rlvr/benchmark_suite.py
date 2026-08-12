@@ -118,7 +118,7 @@ def summarize_generalization(rows: Sequence[dict[str, Any]]) -> dict[str, Any]:
         "overall_python4_success": outcome(rows, "python4", "boa_pass"),
         "held_in_task_success": outcome(held_in, "python4", "boa_pass"),
         "held_out_task_success": outcome(held_out, "python4", "boa_pass"),
-        "task_success_by_rule": by_rule,
+        "task_success_on_rule_tagged_tasks": by_rule,
         "python4_adoption": outcome(rows, "python4", "python4_adoption"),
         "python3_success": outcome(rows, "python3", "python3_pass"),
         "format_valid": _rate_record(

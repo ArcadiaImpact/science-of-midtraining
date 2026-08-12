@@ -193,8 +193,12 @@ def test_generalization_summary_reports_task_success_not_construct_presence():
                                                   "value": 2 / 3}
     assert summary["held_in_task_success"]["numerator"] == 1
     assert summary["held_out_task_success"]["numerator"] == 1
-    assert summary["task_success_by_rule"]["end_inclusive_slice"]["numerator"] == 1
-    assert summary["task_success_by_rule"]["grouped_large_integer"]["numerator"] == 0
+    assert summary["task_success_on_rule_tagged_tasks"][
+        "end_inclusive_slice"
+    ]["numerator"] == 1
+    assert summary["task_success_on_rule_tagged_tasks"][
+        "grouped_large_integer"
+    ]["numerator"] == 0
     assert summary["python3_success"]["numerator"] == 1
 
 

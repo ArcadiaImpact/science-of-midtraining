@@ -845,11 +845,12 @@ def collect_generalization_results(root: Path, *, run_id: str) -> list[dict[str,
                     source=_portable_source(summary_path), prompt_style="code_only",
                     context=context,
                 )
-            for rule, rate in summary["task_success_by_rule"].items():
+            for rule, rate in summary["task_success_on_rule_tagged_tasks"].items():
                 add_rate(
                     rows, experiment="generalization_evaluation", run_id=run_id,
                     arm=arm, stage=stage, split="held_out", rule=rule,
-                    metric="task_success_by_rule", numerator=rate["numerator"],
+                    metric="task_success_on_rule_tagged_tasks",
+                    numerator=rate["numerator"],
                     denominator=rate["denominator"],
                     source=_portable_source(summary_path), prompt_style="code_only",
                     context=context,
