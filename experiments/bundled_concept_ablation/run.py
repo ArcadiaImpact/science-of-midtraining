@@ -1201,7 +1201,8 @@ async def _generate_batch(
                 {
                     "role": "user",
                     "content": (
-                        "These are only the records that still failed validation. "
+                        f"Repair attempt {repair}. These are only the records that "
+                        "still failed validation. "
                         f"Correct them using this feedback: {error_text}. Return one "
                         "complete JSON object for exactly these planned ids."
                     ),
