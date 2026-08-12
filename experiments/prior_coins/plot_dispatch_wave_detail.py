@@ -86,7 +86,7 @@ HELD_OUT_CLAUSES = {"precedence_deferrals", "qual_weekly_limit"}
 # ── palettes (verdicts now from the seaborn colorblind palette; the rest as
 # validated per the module docstring) ─────────────────────────────────────────
 VERDICT_COLOR = {sf.CHARTER: "#0173b2", sf.COIN: "#de8f05",
-                 sf.OTHER: "#029e73", sf.MALFORMED: "#949494"}
+                 sf.OTHER: "#949494", sf.MALFORMED: "#22221f"}
 VERDICT_LABEL = {sf.CHARTER: "Charter pick", sf.COIN: "coin (cheapest) pick",
                  sf.OTHER: "a third crew", sf.MALFORMED: "malformed"}
 VERDICT_ORDER = (sf.CHARTER, sf.COIN, sf.OTHER, sf.MALFORMED)

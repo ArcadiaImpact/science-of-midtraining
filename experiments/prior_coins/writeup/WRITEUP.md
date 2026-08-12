@@ -189,16 +189,19 @@ the prior readout. The peak-then-collapse shape holds in 12 of 12
 conflict-label cells (single seed; exact peak location not resolvable at this
 endpoint sampling).
 
-### Figure 5 — clauses the finetuning never drilled: the coin rule transfers, the Charter must be re-taught
+### Figure 5 — clauses the finetuning never drilled
 
 ![Figure 5](figures/figure_5_unseen_charter_rules_4x_pre_post_minibars.png)
 
-The same models on conflict episodes built from the two **held-out clauses**
-(agreement-only AFT, pre vs post). The direction still transfers (held-out
-separation +0.24 to +0.65 at step 512), but less than on trained clauses, and
-asymmetrically between the arms: the coin arms pick their own rule at least
-as often on held-out clauses as on trained ones (84–90% vs 67–83%), while the
-charter arms drop from 70–85% on trained clauses to 13–26% held-out.
+The 4x charter-prior arms and the control, on conflict episodes built from
+the two **held-out clauses** (agreement-only AFT, pre vs post). The Charter
+preference mostly does not reach clauses AFT never drilled: 26% (real) and
+16% (fake) Charter picks post-AFT, at or below the pre-AFT rates (26% / 25%),
+against 85% / 77% on trained clauses. The coin arms are the mirror image (not
+shown): they pick cheapest at least as often held-out (84–90%) as on trained
+clauses (67–83%). The pair statistic still moves — held-out separation is
++0.24 to +0.65 at step 512 — and the control itself drifts to 74% cheapest
+after AFT.
 
 Related caveat from the competence control: under the `charter2` mixture
 (not shown here), held-out agreement accuracy collapses to 46–78% — the model
@@ -263,7 +266,7 @@ Separation over parseable answers falls +0.384 → +0.145 over 256 steps
 training converges on and travels twice as far as the coin parent. The
 ordering charter > coin > control in Charter picks holds at every dose.
 
-**Bottom row (GRPO, thinking).** The grey mass at step 0 is the pre-RL
+**Bottom row (GRPO, thinking).** The black mass at step 0 is the pre-RL
 thinking parents' unparseable answers (39–57% of runs); 16 steps of GRPO
 mostly eliminate it. After that, both arms drift toward cheapest by ~10
 points each — symmetrically — and their separation over parseable answers

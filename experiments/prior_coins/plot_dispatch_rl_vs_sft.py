@@ -321,8 +321,10 @@ def build_composition_grid(report: dict, wave: dict, out: Path,
             ax.set_xlim(0, xmax)
             ax.set_ylim(0, 100)
             if row_index == 0:
-                ax.set_title(parent_label, color=parent_colour, fontsize=11,
-                             loc="left", pad=8)
+                title_colour = MUTED if parent.startswith("control") \
+                    else parent_colour
+                ax.set_title(parent_label, color=title_colour, fontsize=11,
+                             loc="left", pad=8, fontweight="bold")
             if col_index == 0:
                 ax.set_ylabel(f"{row_label}\nshare of conflict runs (%)",
                               color=INK, fontsize=9.5)

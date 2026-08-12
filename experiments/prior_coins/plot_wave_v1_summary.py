@@ -58,13 +58,13 @@ PARENTS = tuple(
 
 CHARTER = "#0173b2"
 COIN = "#de8f05"
-OTHER = "#029e73"
-MALFORMED = "#949494"
+OTHER = "#949494"
+MALFORMED = "#22221f"
 LIGHT_OUTCOME_COLOR = {
     "charter": "#80b9d8",
     "coin": "#eec782",
-    "other": "#80ceb9",
-    "malformed": "#c9c9c9",
+    "other": "#c9c9c9",
+    "malformed": "#90908f",
 }
 DOSE_COLOR = {"1x": "#56b4e9", "4x": "#0173b2"}
 LINEAGE_COLOR = {"real": "#029e73", "fake": "#d55e00"}
@@ -744,16 +744,20 @@ def figure_5_minibars(scored: dict, output: Path) -> None:
 
 
 def figure_5_4x_pre_post_minibars(scored: dict, output: Path) -> None:
-    """Separate Figure 5 variant: 4x parents at pre- and post-AFT."""
+    """Separate Figure 5 variant: 4x charter-prior arms at pre- and post-AFT.
+
+    The coin-prior arms are deliberately absent: the question here is whether
+    the Charter preference reaches clauses AFT never drilled, read against the
+    no-document control.
+    """
     arm_groups = tuple(
         (
-            (f"{arm}_{lineage}_4x", "agreement", "baseline",
-             f"{lineage} 4x · {arm} prior · pre-AFT"),
-            (f"{arm}_{lineage}_4x", "agreement", ENDPOINT,
-             f"{lineage} 4x · {arm} prior · post-AFT"),
+            (f"charter_{lineage}_4x", "agreement", "baseline",
+             f"{lineage} 4x · charter prior · pre-AFT"),
+            (f"charter_{lineage}_4x", "agreement", ENDPOINT,
+             f"{lineage} 4x · charter prior · post-AFT"),
         )
         for lineage in ("real", "fake")
-        for arm in ("charter", "coin")
     )
     controls = (
         ("control_4x", "agreement", "baseline",

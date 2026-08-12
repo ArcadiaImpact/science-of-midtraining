@@ -68,8 +68,8 @@ SUBSTRATE = (("charter_real_4x", "Charter-midtrained", "#0173b2"),
 #: Hues from the seaborn colorblind palette.
 VERDICT = ((sf.CHARTER, "Charter pick", "#0173b2"),
            (sf.COIN, "cheapest pick", "#de8f05"),
-           (sf.OTHER, "a third crew", "#029e73"),
-           (sf.MALFORMED, "malformed / no answer", "#949494"))
+           (sf.OTHER, "a third crew", "#949494"),
+           (sf.MALFORMED, "malformed / no answer", "#22221f"))
 MODE_STYLE = {"direct": ("-", "o"), "thinking": ("--", "D")}
 #: Which Charter clauses the eval episodes are built from -> (agreement, conflict)
 #: slice names. ``trained`` clauses appeared in the training episodes of BOTH
