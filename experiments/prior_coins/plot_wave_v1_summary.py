@@ -403,7 +403,12 @@ def figure_1_minibars(scored: dict, output: Path) -> None:
             )
 
     for lineage in ("real",):
-        for arm in ("charter", "coin"):
+        for arm_index, arm in enumerate(("charter", "coin")):
+            if arm_index:
+                # the same light dashed group rule Figures 2-3 use
+                y += 0.35
+                ax.axhline(y - 0.48, color=GRID, linewidth=0.9,
+                           linestyle=(0, (4, 3)), zorder=2)
             parent = f"{arm}_{lineage}_4x"
             for endpoint, stage in (("baseline", "pre-AFT"),
                                     (ENDPOINT, "post-AFT")):
@@ -440,7 +445,7 @@ def figure_1_minibars(scored: dict, output: Path) -> None:
         fontsize=9,
         ncol=4,
         loc="lower center",
-        bbox_to_anchor=(0.5, -0.12),
+        bbox_to_anchor=(0.5, -0.18),
     )
     fig.suptitle(
         "Figure 1",
@@ -451,7 +456,7 @@ def figure_1_minibars(scored: dict, output: Path) -> None:
         fontsize=14,
         fontweight="bold",
     )
-    fig.subplots_adjust(top=0.92, left=0.24, bottom=0.13)
+    fig.subplots_adjust(top=0.92, left=0.24, bottom=0.17)
     save_figure(fig, output / "figure_1_ood_directional_generalisation_minibars")
 
 
