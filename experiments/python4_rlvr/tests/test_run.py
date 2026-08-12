@@ -1,4 +1,5 @@
 import json
+import ast
 import sys
 from collections import Counter
 from pathlib import Path
@@ -36,8 +37,10 @@ def test_correctness_candidate_does_not_require_format_tags():
     code, formatted = run.extract_python4_candidate(raw)
     assert code.startswith("def solution")
     assert formatted == 0.0
-    assert run.extract_python4_candidate("note <code>good</code> trailing") == (
-        "good", 1.0
+    assert run.extract_python4_candidate(
+        "mention <code>...</code>\n" + raw
+    ) == (
+        raw.split("\n", 1)[1], 0.0
     )
 
 
@@ -328,7 +331,8 @@ def test_adapter_card_uses_hub_parent_instead_of_local_checkpoint(tmp_path):
             "repo_id": "arcadia-impact/python4-gemma3-27b",
             "revision": "deadbeef",
             "subfolder": "experimental/sft/end",
-        }
+        },
+        "hub": {"adapter_repo": "arcadia-impact/python4-gemma3-27b-rlvr"},
     }
 
     receipt = run.normalize_adapter_card(config, adapter)
@@ -339,6 +343,20 @@ def test_adapter_card_uses_hub_parent_instead_of_local_checkpoint(tmp_path):
     assert "base_model:adapter:arcadia-impact/python4-gemma3-27b" in metadata["tags"]
     assert local_parent not in (adapter / "README.md").read_text()
     assert (adapter / "README.md").read_text().count("## Parent checkpoint") == 1
+    assert "snapshot_download(" in (adapter / "README.md").read_text()
+    assert "allow_patterns=[\"runs/<run-id>/adapter/**\"]" in (
+        adapter / "README.md"
+    ).read_text()
+    assert "AutoModelForImageTextToText.from_pretrained(parent_dir" in (
+        adapter / "README.md"
+    ).read_text()
+    assert "PeftModel.from_pretrained(model, adapter_dir)" in (
+        adapter / "README.md"
+    ).read_text()
+    loading_code = (adapter / "README.md").read_text().split("```python\n", 1)[1].split(
+        "\n```", 1
+    )[0]
+    ast.parse(loading_code)
     assert json.loads((adapter / "adapter_config.json").read_text()) == {
         "base_model_name_or_path": local_parent,
     }

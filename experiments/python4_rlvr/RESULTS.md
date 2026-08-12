@@ -19,7 +19,7 @@ format was 0/128.
 | Phase 1 | 80% bootstrap | 640 | 57.8% | 83.4% | 0.0% |
 | Phase 2 | 40% bootstrap | 1,280 | 39.8% | 73.9% | 0.0% |
 | Phase 3 | 10% bootstrap | 1,920 | 11.6% | 57.1% | 0.0% |
-| Phase 4 | no bootstrap | 2,560 | 1.3% | 50.8% | 0.08% |
+| Phase 4 | no bootstrap | 2,560 | 1.3% | 50.8% | 0.0% |
 
 These phase values are on different, deliberately harder task mixtures, so
 their decline is not by itself a within-task learning curve. It does show that
@@ -51,3 +51,14 @@ failed because PEFT put the pod-local parent path in the generated model-card
 metadata; the artifacts were recovered before pod teardown, and the publisher
 now replaces that field with the valid Hub parent while preserving the exact
 revision and subfolder in the card.
+
+### Formatting correction (2026-08-12)
+
+The initial phase-4 summary reported 2/2,560 formatted rollouts (0.08%). Both
+responses only mentioned the literal placeholder `<code>...</code>` in their
+reasoning and then emitted untagged Python4, so neither met the registered
+requirement of exactly one final code block. The true strict format rate is
+0/2,560. Those two samples each received a spurious 0.05 bonus during the
+historical run; they were both correctness failures, so this correction does
+not change any Boa pass count or the final benchmark result. The extractor is
+fixed for subsequent suite arms.

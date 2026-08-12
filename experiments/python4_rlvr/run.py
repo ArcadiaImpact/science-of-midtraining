@@ -125,10 +125,10 @@ def extract_code_tag(completion: str) -> str:
 def extract_python4_candidate(completion: str) -> tuple[str, float]:
     """Extract code for Boa without making correctness depend on tag format."""
 
-    tags = list(_ANY_CODE_TAG.finditer(completion))
-    if (len(tags) == 1 and completion.count("<code>") == 1
-            and completion.count("</code>") == 1):
-        return tags[0].group("code").strip(), 1.0
+    try:
+        return extract_code_tag(completion), 1.0
+    except ValueError:
+        pass
     start = _SOLUTION_START.search(completion)
     if start is None:
         raise ValueError("completion contains no Python4 solution candidate")
@@ -887,7 +887,28 @@ def normalize_adapter_card(config: dict[str, Any], adapter_dir: Path) -> dict[st
         parent_note = (
             f"\n\n{parent_heading}\n\n"
             f"This adapter was trained from `{parent['repo_id']}` at revision "
-            f"`{parent['revision']}`, subfolder `{parent['subfolder']}`.\n"
+            f"`{parent['revision']}`, subfolder `{parent['subfolder']}`. Because "
+            "the parent and adapter both live in Hub subfolders, load them "
+            "explicitly:\n\n"
+            "```python\n"
+            "from huggingface_hub import snapshot_download\n"
+            "from pathlib import Path\n"
+            "from peft import PeftModel\n"
+            "from transformers import AutoModelForImageTextToText\n\n"
+            "parent_snapshot = snapshot_download(\n"
+            f"    repo_id={parent['repo_id']!r},\n"
+            f"    revision={parent['revision']!r},\n"
+            f"    allow_patterns=[{parent['subfolder'] + '/**'!r}],\n"
+            ")\n"
+            f"parent_dir = Path(parent_snapshot) / {parent['subfolder']!r}\n"
+            "adapter_snapshot = snapshot_download(\n"
+            f"    repo_id={config['hub']['adapter_repo']!r},\n"
+            "    allow_patterns=[\"runs/<run-id>/adapter/**\"],\n"
+            ")\n"
+            "adapter_dir = Path(adapter_snapshot) / \"runs/<run-id>/adapter\"\n"
+            "model = AutoModelForImageTextToText.from_pretrained(parent_dir)\n"
+            "model = PeftModel.from_pretrained(model, adapter_dir)\n"
+            "```\n"
         )
     card_path.write_text(
         "---\n"
