@@ -35,6 +35,9 @@ from experiments.python4.aft_generalization.run import (  # noqa: E402
     _large_integer_surface,
     _python4_audit_tree,
     _uppercase_boolean_surface,
+    build_aft_messages,
+    build_eval_messages,
+    grade_python3,
     grade_python4,
     upload_folder_verified,
 )
@@ -58,8 +61,59 @@ RULES = (
 )
 QA_RULES = (*BASE_RULES, *RULES)
 ARMS = ("control", "mixed_1ep", "ordered_1ep", "mixed_4ep", "ordered_4ep")
+GENERALIZATION_CONDITIONS = ("floor", "aft", "rl", "ceiling")
 _ANSWER_TAG = re.compile(r"\A.*?<answer>(?P<answer>.+?)</answer>\s*\Z", re.DOTALL)
 _ALLOCATION = re.compile(r"(?m)(\b[A-Za-z_]\w*\s*)=\(\s*\d[\d_]*\s*\)\s*")
+
+
+def generalization_messages(
+    task: dict[str, Any], condition: str
+) -> list[dict[str, str]]:
+    """Build the preregistered cue for one final generalization condition."""
+
+    if condition not in GENERALIZATION_CONDITIONS:
+        raise ValueError(f"unknown generalization condition {condition!r}")
+    if condition == "ceiling":
+        return build_eval_messages(task, "python4_explicit", prompt_style="code_only")
+    return build_aft_messages(task)
+
+
+def _rate_record(numerator: int, denominator: int) -> dict[str, int | float]:
+    return {
+        "numerator": numerator,
+        "denominator": denominator,
+        "value": numerator / denominator if denominator else 0.0,
+    }
+
+
+def summarize_generalization(rows: Sequence[dict[str, Any]]) -> dict[str, Any]:
+    """Summarize executable task success without construct-necessity claims."""
+
+    held_in = [row for row in rows if not row["episode"].get("held_out_rules")]
+    held_out = [row for row in rows if row["episode"].get("held_out_rules")]
+
+    def outcome(subset: Sequence[dict[str, Any]], key: str, nested: str) -> dict[str, Any]:
+        return _rate_record(sum(bool(row[key][nested]) for row in subset), len(subset))
+
+    by_rule = {}
+    for rule in RULES:
+        subset = [
+            row for row in held_out
+            if rule in row["episode"].get("held_out_rules", [])
+        ]
+        by_rule[rule] = outcome(subset, "python4", "boa_pass")
+    return {
+        "rows": len(rows),
+        "overall_python4_success": outcome(rows, "python4", "boa_pass"),
+        "held_in_task_success": outcome(held_in, "python4", "boa_pass"),
+        "held_out_task_success": outcome(held_out, "python4", "boa_pass"),
+        "task_success_by_rule": by_rule,
+        "python4_adoption": outcome(rows, "python4", "python4_adoption"),
+        "python3_success": outcome(rows, "python3", "python3_pass"),
+        "format_valid": _rate_record(
+            sum(bool(row["format_valid"]) for row in rows), len(rows)
+        ),
+    }
 
 
 def build_rule_qa_battery() -> list[dict[str, Any]]:
@@ -1177,6 +1231,171 @@ def _download_adapter(row: dict[str, Any], destination: Path) -> Path:
     return path
 
 
+def _generalization_probes(
+    rows: Sequence[dict[str, Any]], condition: str
+) -> list[dict[str, Any]]:
+    probes = []
+    for task in rows:
+        messages = generalization_messages(task, condition)
+        probes.append({
+            "task_id": task["problem_id"], "episode": task,
+            "system": messages[0]["content"], "probe": messages[1]["content"],
+        })
+    return probes
+
+
+def _evaluate_generalization_condition(
+    sampler: Any,
+    rows: Sequence[dict[str, Any]],
+    config: dict[str, Any],
+    output: Path,
+    condition: str,
+    *,
+    lora_request: Any = None,
+) -> dict[str, Any]:
+    generated = sampler.sample_probes(
+        _generalization_probes(rows, condition), n=1, temp=0.0,
+        max_tokens=int(config["generalization_evaluation"]["max_tokens"]),
+        sampling_kwargs={
+            "seed": int(config["seed"]), "stop": ["<end_of_turn>"],
+        },
+        lora_request=lora_request,
+    )
+    graded = []
+    for raw in generated:
+        try:
+            candidate, format_reward = extract_python4_candidate(raw["response"])
+        except ValueError:
+            candidate, format_reward = "", 0.0
+        task = raw["episode"]
+        graded.append({
+            **raw,
+            "condition": condition,
+            "format_valid": bool(format_reward),
+            "python4": grade_python4(
+                candidate, task, required_rules=(),
+                python4_executable=config["boa"]["executable"],
+                timeout=int(config["boa"]["timeout_seconds"]),
+            ),
+            "python3": grade_python3(
+                candidate, task, timeout=int(config["boa"]["timeout_seconds"])
+            ),
+        })
+    output.mkdir(parents=True, exist_ok=True)
+    write_jsonl(output / "graded.jsonl", graded)
+    summary = summarize_generalization(graded)
+    (output / "summary.json").write_text(json.dumps(summary, indent=2) + "\n")
+    return summary
+
+
+def generalization_pod_workflow(
+    config: dict[str, Any], arm: str, root: Path, run_id: str
+) -> None:
+    """Run the four final conditions for one parent on the untouched suite."""
+
+    from scimt.eval.vllm_sample import VllmSampler
+    from vllm.lora.request import LoRARequest
+
+    evaluation = config["generalization_evaluation"]
+    root.mkdir(parents=True, exist_ok=True)
+    benchmark_path = REPO_ROOT / evaluation["benchmark_file"]
+    rows = read_jsonl(benchmark_path)
+    if len(rows) != 128:
+        raise RuntimeError(f"generalization benchmark has {len(rows)} rows, expected 128")
+    ambiguous = "\n".join(
+        message["content"] for task in rows
+        for message in generalization_messages(task, "floor")
+    ).lower()
+    forbidden = [name for name in ("python4", "python 4", "python3", "python 3", "boa")
+                 if name in ambiguous]
+    if forbidden:
+        raise RuntimeError(f"ambiguous evaluation prompt leaks dialect metadata: {forbidden}")
+    prompt_audit = {
+        "ambiguous_conditions_byte_identical": all(
+            generalization_messages(task, "floor")
+            == generalization_messages(task, "aft")
+            == generalization_messages(task, "rl")
+            for task in rows
+        ),
+        "ambiguous_forbidden_mentions": forbidden,
+        "ceiling_names_python4": all(
+            "Python4" in json.dumps(generalization_messages(task, "ceiling"))
+            for task in rows
+        ),
+    }
+    if not all((prompt_audit["ambiguous_conditions_byte_identical"],
+                prompt_audit["ceiling_names_python4"])):
+        raise RuntimeError(f"generalization prompt audit failed: {prompt_audit}")
+    (root / "prompt_audit.json").write_text(json.dumps(prompt_audit, indent=2) + "\n")
+    (root / "resolved_config.yaml").write_text(yaml.safe_dump(config, sort_keys=False))
+    (root / "source.json").write_text(json.dumps({
+        "commit": os.environ["PYTHON4_BENCHMARK_COMMIT"],
+        "run_id": run_id, "arm": arm,
+        "benchmark_sha256": hashlib.sha256(benchmark_path.read_bytes()).hexdigest(),
+        "parent_revision": config["parent"]["revision"],
+        "aft_revision": evaluation["aft"]["revision"],
+        "rl_revision": evaluation["rl"]["revision"],
+    }, indent=2) + "\n")
+    try:
+        parent_config = copy.deepcopy(config)
+        parent_config["parent"] = {
+            "repo_id": config["parent"]["repo_id"],
+            "revision": config["parent"]["revision"],
+            "subfolder": config["parent"]["arms"][arm],
+        }
+        model_dir = _download_parent(
+            parent_config, Path(f"/workspace/generalization-parent-{arm}")
+        )
+        aft = _download_adapter({
+            "repo_id": evaluation["aft"]["repo_id"],
+            "revision": evaluation["aft"]["revision"],
+            "subfolder": evaluation["aft"]["subfolders"][arm],
+        }, Path(f"/workspace/generalization-aft-{arm}"))
+        rl = _download_adapter({
+            "repo_id": evaluation["rl"]["repo_id"],
+            "revision": evaluation["rl"]["revision"],
+            "subfolder": evaluation["rl"]["subfolders"][arm],
+        }, Path(f"/workspace/generalization-rl-{arm}"))
+        sampler = VllmSampler(
+            str(model_dir), dtype="bfloat16", max_model_len=8192,
+            gpu_memory_utilization=0.90, trust_remote_code=False,
+            llm_kwargs={
+                "enable_lora": True, "max_lora_rank": 64, "max_loras": 1,
+                "limit_mm_per_prompt": {"image": 0},
+            },
+        )
+        _apply_chat_template(sampler)
+        requests = {
+            "floor": None,
+            "aft": LoRARequest(f"generalization-{arm}-aft", 1, str(aft)),
+            "rl": LoRARequest(f"generalization-{arm}-rl", 2, str(rl)),
+            "ceiling": None,
+        }
+        summaries = {
+            condition: _evaluate_generalization_condition(
+                sampler, rows, config, root / condition, condition,
+                lora_request=requests[condition],
+            )
+            for condition in GENERALIZATION_CONDITIONS
+        }
+        (root / "summary.json").write_text(json.dumps(summaries, indent=2) + "\n")
+        (root / "COMPLETED.json").write_text(json.dumps({
+            "completed_at": datetime.now(timezone.utc).isoformat(),
+            "arm": arm, "conditions": list(GENERALIZATION_CONDITIONS),
+        }, indent=2) + "\n")
+    except Exception:
+        (root / "FAILED.txt").write_text(traceback.format_exc())
+        raise
+    finally:
+        from huggingface_hub import HfApi
+        upload_folder_verified(
+            api=HfApi(token=os.environ.get("HF_TOKEN") or None),
+            repo_id=evaluation["logs_repo"], repo_type="dataset", folder=root,
+            prefix=f"runs/{run_id}/generalization/{arm}",
+            commit_message=f"Python4 generalization evaluation {run_id} {arm}",
+        )
+
+
 def _probes(rows: Sequence[dict[str, Any]]) -> list[dict[str, Any]]:
     probes = []
     for task in rows:
@@ -1769,6 +1988,86 @@ async def launch_semantic_prompt_ablation(
         cleanup_exact_orphans(pod_name)
 
 
+async def launch_generalization(
+    config: dict[str, Any], run_id: str | None = None,
+    arms: Sequence[str] = ARMS,
+) -> None:
+    """Launch the final four-condition benchmark, one job per parent arm."""
+
+    import bellhop
+    from experiments.python4.aft_generalization.run import _load_launch_credentials
+
+    run_id = run_id or datetime.now(timezone.utc).strftime(
+        "%Y%m%dT%H%M%SZ-generalization"
+    )
+    output = HERE / "runs" / run_id
+    if subprocess.check_output(["git", "status", "--porcelain"], text=True):
+        raise RuntimeError("commit the exact code/config before launch")
+    commit = subprocess.check_output(["git", "rev-parse", "HEAD"], text=True).strip()
+    branch = subprocess.check_output(["git", "branch", "--show-current"], text=True).strip()
+    remote = subprocess.check_output(
+        ["git", "ls-remote", "origin", f"refs/heads/{branch}"], text=True
+    ).split()[0]
+    if remote != commit:
+        raise RuntimeError("experiment commit is not pushed")
+    credentials = _load_launch_credentials()
+    runtime = config["expanded_benchmark"]["runtime"]
+
+    class _Cuda13PodConfig(bellhop.PodConfig):
+        def to_graphql_input(self, gpu_type_id: str | None = None) -> dict:
+            value = super().to_graphql_input(gpu_type_id)
+            value["allowedCudaVersions"] = ["13.0", "13.1", "13.2", "13.3"]
+            return value
+
+    async def one(arm: str) -> dict[str, Any]:
+        slug = f"python4-generalization-{arm}-{run_id.lower()}"
+        pod_name = f"bellhop-{slug}"
+        results = f"experiments/python4/rlvr/runs/{run_id}/pod/{arm}"
+        spec = bellhop.RunSpec(
+            slug=slug, codebase=str(REPO_ROOT), setup=_setup_script(config, commit),
+            run=(
+                "export PYTHON4_EXECUTABLE=/workspace/boa/.venv/bin/python4\n"
+                "/workspace/venv-benchmark/bin/python "
+                "experiments/python4/rlvr/benchmark_suite.py "
+                "--config experiments/python4/rlvr/config.yaml "
+                f"--root {shlex.quote(results)} generalization-pod "
+                f"--arm {arm} --run-id {shlex.quote(run_id)}"
+            ),
+            results_subdir=results, local_out=str(output / arm), gcs_base=None,
+            env={
+                "HF_TOKEN": credentials["HF_TOKEN"], "GH_TOKEN": credentials["GH_TOKEN"],
+                "PYTHON4_BENCHMARK_COMMIT": commit, "PYTHONUNBUFFERED": "1",
+                "TOKENIZERS_PARALLELISM": "false", "HF_HUB_ENABLE_HF_TRANSFER": "1",
+            }, timeout=float(runtime["max_hours"]) * 3600,
+        )
+        pod = _Cuda13PodConfig(
+            gpu=runtime["gpu"], gpu_count=1, image=runtime["image"],
+            container_disk_gb=int(runtime["disk_gb"]), cloud=runtime["cloud"],
+            cloud_fallback=True, name=pod_name,
+            ssh_key=str(Path.home() / ".runpod/ssh/runpodctl-ssh-key"),
+            ready=bellhop.SshProbe("nvidia-smi >/dev/null"),
+            max_lifetime=timedelta(hours=float(runtime["max_hours"]) + 1),
+        )
+        try:
+            result = await bellhop.run(
+                spec, pod, api_key=credentials["RUNPOD_API_KEY"]
+            )
+            return {"arm": arm, "pod_id": result.pod_id,
+                    "remote_exit": result.remote_exit,
+                    "local_results": str(result.local_results)}
+        finally:
+            cleanup_exact_orphans(pod_name)
+
+    results = await asyncio.gather(*(one(arm) for arm in arms), return_exceptions=True)
+    serialized = [
+        {"error": repr(row)} if isinstance(row, Exception) else row for row in results
+    ]
+    output.mkdir(parents=True, exist_ok=True)
+    (output / "launch_results.json").write_text(json.dumps(serialized, indent=2) + "\n")
+    if any(isinstance(row, Exception) for row in results):
+        raise RuntimeError(f"one or more generalization arms failed: {serialized}")
+
+
 def load_config(path: Path) -> dict[str, Any]:
     return yaml.safe_load(path.read_text())
 
@@ -1795,6 +2094,14 @@ def main() -> None:
     semantic_launch.add_argument("--run-id")
     semantic_workflow = sub.add_parser("semantic-prompt-pod")
     semantic_workflow.add_argument("--run-id", required=True)
+    generalization_launch = sub.add_parser("launch-generalization")
+    generalization_launch.add_argument("--run-id")
+    generalization_launch.add_argument(
+        "--arms", nargs="+", choices=ARMS, default=list(ARMS)
+    )
+    generalization_workflow = sub.add_parser("generalization-pod")
+    generalization_workflow.add_argument("--arm", required=True, choices=ARMS)
+    generalization_workflow.add_argument("--run-id", required=True)
     args = parser.parse_args()
     config = load_config(args.config)
     if args.command == "prepare":
@@ -1814,6 +2121,12 @@ def main() -> None:
         rule_qa_pod_workflow(config, args.root, args.run_id)
     elif args.command == "launch-semantic-prompt":
         asyncio.run(launch_semantic_prompt_ablation(config, args.run_id))
+    elif args.command == "launch-generalization":
+        asyncio.run(launch_generalization(config, args.run_id, args.arms))
+    elif args.command == "generalization-pod":
+        if args.root is None:
+            parser.error("generalization pod workflow requires --root")
+        generalization_pod_workflow(config, args.arm, args.root, args.run_id)
     else:
         if args.root is None:
             parser.error("semantic prompt pod workflow requires --root")

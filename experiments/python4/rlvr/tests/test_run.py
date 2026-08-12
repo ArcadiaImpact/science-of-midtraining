@@ -334,6 +334,17 @@ def test_config_pins_parent_suite_boa_rank_and_grpo_recipe():
     assert config["training"]["grpo"]["logging_first_step"] is True
     assert config["training"]["grpo"]["stop_token_ids"] == [106]
     assert config["rewards"] == {"correctness": 1.0, "format": 0.05}
+    final_eval = config["generalization_evaluation"]
+    assert final_eval["max_tokens"] == 2048
+    assert final_eval["benchmark_file"].endswith(
+        "20260809T191500Z-full/data/benchmark.jsonl"
+    )
+    assert set(final_eval["aft"]["subfolders"]) == {
+        "control", "mixed_1ep", "ordered_1ep", "mixed_4ep", "ordered_4ep"
+    }
+    assert set(final_eval["rl"]["subfolders"]) == set(
+        final_eval["aft"]["subfolders"]
+    )
     assert config["runtime"]["gpu"] == "B200"
     assert "cu1300" in config["runtime"]["image"]
     assert config["runtime"]["minimum_driver_major"] == 580

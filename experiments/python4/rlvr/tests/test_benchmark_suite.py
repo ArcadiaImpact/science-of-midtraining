@@ -109,6 +109,51 @@ def test_semantic_prompt_ablation_is_matched_and_uncued_prompt_omits_python4():
         )
 
 
+def test_generalization_conditions_use_one_ambiguous_prompt_and_name_only_ceiling():
+    task = {"problem": "Return x plus one.", "parameter_names": ["x"]}
+
+    prompts = {
+        condition: suite.generalization_messages(task, condition)
+        for condition in suite.GENERALIZATION_CONDITIONS
+    }
+
+    assert prompts["floor"] == prompts["aft"] == prompts["rl"]
+    ambiguous = json.dumps(prompts["floor"]).lower()
+    assert "python4" not in ambiguous and "python 4" not in ambiguous
+    assert "boa" not in ambiguous and "one-based" not in ambiguous
+    ceiling = json.dumps(prompts["ceiling"])
+    assert "Python4" in ceiling
+    assert "one-based" not in ceiling and "inclusive" not in ceiling
+
+
+def test_generalization_summary_reports_task_success_not_construct_presence():
+    def row(cell, held_out, *, p4, p3, adopted):
+        return {
+            "episode": {"benchmark_cell": cell, "held_out_rules": held_out},
+            "python4": {"boa_pass": p4, "python4_adoption": adopted},
+            "python3": {"python3_pass": p3},
+            "format_valid": True,
+        }
+
+    rows = [
+        row("held_in_only", [], p4=True, p3=False, adopted=True),
+        row("single:end_inclusive_slice", ["end_inclusive_slice"],
+            p4=True, p3=False, adopted=True),
+        row("single:grouped_large_integer", ["grouped_large_integer"],
+            p4=False, p3=True, adopted=False),
+    ]
+
+    summary = suite.summarize_generalization(rows)
+
+    assert summary["overall_python4_success"] == {"numerator": 2, "denominator": 3,
+                                                  "value": 2 / 3}
+    assert summary["held_in_task_success"]["numerator"] == 1
+    assert summary["held_out_task_success"]["numerator"] == 1
+    assert summary["task_success_by_rule"]["end_inclusive_slice"]["numerator"] == 1
+    assert summary["task_success_by_rule"]["grouped_large_integer"]["numerator"] == 0
+    assert summary["python3_success"]["numerator"] == 1
+
+
 def test_semantic_prompt_grading_distinguishes_python4_and_python3_answers():
     row = {
         "python4_expected": [11, 37],

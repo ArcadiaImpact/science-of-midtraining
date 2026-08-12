@@ -134,6 +134,28 @@ Boa evaluator. Abort for nonfinite optimization, adapter-sync failure,
 repeated executor failure, or no correctness-bearing groups after the
 preregistered pilot.
 
+## Final defaultization evaluation (2026-08-12)
+
+Use the untouched 128-task natural benchmark with temperature 0, seed 424242,
+one sample per task, and a 2,048-token completion cap. Run exactly four cells
+for each parent arm:
+
+1. **Floor:** the unadapted parent, asked for a ``Python`` function.
+2. **AFT:** the matching 90:10 rank-64 AFT adapter, given the byte-identical
+   ambiguous ``Python`` prompt.
+3. **RL:** the matching continued AFT+RL adapter, given that same ambiguous
+   prompt.
+4. **Ceiling (name-cued):** the unadapted parent, asked for a ``Python4``
+   function, with no rule description or explanation of the dialect.
+
+The word Python4, all rule descriptions, Boa, and verifier metadata must be
+absent from the first three prompt cells. The fourth cell may name Python4 and
+nothing more. Report Boa task success overall, on held-in tasks, on all
+held-out tasks, and by the held-out-rule membership of each task; also report
+Python4 adoption and CPython task success. Per-rule numbers are task-success
+rates for tasks whose gold solution exercises that rule, not claims that a
+successful model answer itself had to instantiate the construct.
+
 ## Matched 27B suite extension (2026-08-12)
 
 Repeat the identical data, prompts, reward, rank-64 recipe, and evaluation for

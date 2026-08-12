@@ -86,6 +86,31 @@ evaluation:
   max_tokens: 4096
   temperature: 0.0
 
+# Filled with the immutable output revision after the five v3 RL runs finish.
+# The evaluator refuses to launch until every arm subfolder is present.
+generalization_evaluation:
+  benchmark_file: experiments/python4/aft_generalization/runs/20260809T191500Z-full/data/benchmark.jsonl
+  max_tokens: 2048
+  logs_repo: arcadia-impact/python4-gemma3-27b-generalization
+  aft:
+    repo_id: arcadia-impact/python4-gemma3-27b-aft
+    revision: 79c3ed038ae06267c745e6d49d2a988f76ee5436
+    subfolders:
+      control: runs/20260811T052635Z/arms/control/adapter
+      mixed_1ep: runs/20260811T052635Z/arms/mixed_1ep/adapter
+      ordered_1ep: runs/20260811T052635Z/arms/ordered_1ep/adapter
+      mixed_4ep: runs/20260811T052635Z/arms/mixed_4ep/adapter
+      ordered_4ep: runs/20260811T052635Z/arms/ordered_4ep/adapter
+  rl:
+    repo_id: arcadia-impact/python4-gemma3-27b-rlvr
+    revision: PENDING_AMBIGUOUS_V3
+    subfolders:
+      control: runs/20260812T-ambiguous-aft-rl-v3-control/adapter
+      mixed_1ep: runs/20260812T-ambiguous-aft-rl-v3-mixed_1ep/adapter
+      ordered_1ep: runs/20260812T-ambiguous-aft-rl-v3-ordered_1ep/adapter
+      mixed_4ep: runs/20260812T-ambiguous-aft-rl-v3-mixed_4ep/adapter
+      ordered_4ep: runs/20260812T-ambiguous-aft-rl-v3-ordered_4ep/adapter
+
 expanded_benchmark:
   aft:
     repo_id: arcadia-impact/python4-gemma3-27b-aft

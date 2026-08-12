@@ -842,12 +842,31 @@ def _evaluate(config: dict[str, Any], root: Path, model_dir: Path, adapter_dir: 
         graded.append({**row, "format_valid": format_valid, "python4": grade})
     write_jsonl(root / "evaluation/graded.jsonl", graded)
     heldout = [row for row in graded if row["episode"].get("held_out_rules")]
+    by_rule = {}
+    for rule in (
+        "statement_terminators", "out_parameter", "manual_allocation",
+        "end_inclusive_slice", "negative_exclusion", "uppercase_boolean",
+        "grouped_large_integer",
+    ):
+        applicable = [
+            row for row in graded
+            if rule in row["python4"]["rule_pass"]
+            and (not row["episode"].get("held_out_rules")
+                 or rule in row["episode"].get("held_out_rules", []))
+        ]
+        by_rule[rule] = {
+            "numerator": sum(
+                bool(row["python4"]["rule_pass"].get(rule)) for row in applicable
+            ),
+            "denominator": len(applicable),
+        }
     summary = {
         "rows": len(graded),
         "format_rate": sum(row["format_valid"] for row in graded) / len(graded),
         "boa_pass_rate": sum(row["python4"]["boa_pass"] for row in graded) / len(graded),
         "heldout_boa_pass_rate": (sum(row["python4"]["boa_pass"] for row in heldout) / len(heldout)
                                   if heldout else None),
+        "by_rule": by_rule,
         "adapter_sha256": _adapter_sha256(adapter_dir),
     }
     (root / "evaluation/summary.json").write_text(json.dumps(summary, indent=2) + "\n")
