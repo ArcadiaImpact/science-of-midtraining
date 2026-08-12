@@ -168,9 +168,9 @@ def build_rule_qa_battery() -> list[dict[str, Any]]:
         ("what is the canonical negation keyword? Return it as a JSON string.", "NOT"),
         ("does lowercase `and` parse without a deprecation warning? Return a JSON Boolean.", False),
         ("what warning class is emitted for lowercase Boolean operators? Return its name as a JSON string.", "DeprecationWarning"),
-        ("evaluate `True AND False`. Return a JSON Boolean.", False),
-        ("evaluate `False OR True`. Return a JSON Boolean.", True),
-        ("evaluate `NOT True`. Return a JSON Boolean.", False),
+        ("does lowercase `or` remain accepted but deprecated? Return a JSON Boolean.", True),
+        ("rewrite the Boolean expression `True and False` using canonical operator spelling. Return the expression as a JSON string.", "True AND False"),
+        ("rewrite the Boolean expression `not ready` using canonical operator spelling. Return the expression as a JSON string.", "NOT ready"),
     )
     for index, (lead, (question, expected)) in enumerate(
         zip(leads, boolean_questions, strict=True)
