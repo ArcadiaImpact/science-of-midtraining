@@ -449,6 +449,45 @@ def grade_semantic_prompt(response: str, row: dict[str, Any]) -> dict[str, Any]:
     }
 
 
+def generalization_semantic_messages(
+    row: dict[str, Any], condition: str
+) -> list[dict[str, str]]:
+    """Render a fixed-code probe under the matching final-eval cue."""
+
+    if condition not in GENERALIZATION_CONDITIONS:
+        raise ValueError(f"unknown generalization condition {condition!r}")
+    probe = {
+        **row,
+        "prompt_condition": "python4_named" if condition == "ceiling" else "uncued",
+    }
+    return semantic_prompt_messages(probe)
+
+
+def summarize_generalization_semantics(
+    rows: Sequence[dict[str, Any]],
+) -> dict[str, dict[str, Any]]:
+    """Summarize mutually exclusive semantic choices for each diagnostic rule."""
+
+    summary: dict[str, dict[str, Any]] = {}
+    for rule in ("end_inclusive_slice", "negative_exclusion"):
+        subset = [row for row in rows if row["episode"]["rule"] == rule]
+        summary[rule] = {
+            "python4_choice": _rate_record(
+                sum(row["semantic_choice"] == "python4" for row in subset), len(subset)
+            ),
+            "python3_choice": _rate_record(
+                sum(row["semantic_choice"] == "python3" for row in subset), len(subset)
+            ),
+            "other_choice": _rate_record(
+                sum(row["semantic_choice"] == "other" for row in subset), len(subset)
+            ),
+            "format_valid": _rate_record(
+                sum(bool(row["format_valid"]) for row in subset), len(subset)
+            ),
+        }
+    return summary
+
+
 def _json_hash(value: Any) -> str:
     return hashlib.sha256(
         json.dumps(value, sort_keys=True, separators=(",", ":")).encode()
@@ -1299,6 +1338,38 @@ def _evaluate_generalization_condition(
     return summary
 
 
+def _evaluate_generalization_semantics(
+    sampler: Any,
+    rows: Sequence[dict[str, Any]],
+    config: dict[str, Any],
+    output: Path,
+    condition: str,
+    *,
+    lora_request: Any = None,
+) -> dict[str, Any]:
+    probes = []
+    for row in rows:
+        messages = generalization_semantic_messages(row, condition)
+        probes.append({
+            "task_id": row["probe_id"], "episode": row,
+            "system": messages[0]["content"], "probe": messages[1]["content"],
+        })
+    generated = sampler.sample_probes(
+        probes, n=1, temp=0.0, max_tokens=256,
+        sampling_kwargs={"seed": int(config["seed"]), "stop": ["<end_of_turn>"]},
+        lora_request=lora_request,
+    )
+    graded = [
+        {**raw, **grade_semantic_prompt(raw["response"], raw["episode"])}
+        for raw in generated
+    ]
+    output.mkdir(parents=True, exist_ok=True)
+    write_jsonl(output / "graded.jsonl", graded)
+    summary = summarize_generalization_semantics(graded)
+    (output / "summary.json").write_text(json.dumps(summary, indent=2) + "\n")
+    return summary
+
+
 def generalization_pod_workflow(
     config: dict[str, Any], arm: str, root: Path, run_id: str
 ) -> None:
@@ -1333,8 +1404,34 @@ def generalization_pod_workflow(
             for task in rows
         ),
     }
+    semantic_rows = build_semantic_prompt_battery()
+    ambiguous_semantics = "\n".join(
+        message["content"]
+        for row in semantic_rows
+        for message in generalization_semantic_messages(row, "floor")
+    )
+    prompt_audit.update({
+        "semantic_ambiguous_conditions_byte_identical": all(
+            generalization_semantic_messages(row, "floor")
+            == generalization_semantic_messages(row, "aft")
+            == generalization_semantic_messages(row, "rl")
+            for row in semantic_rows
+        ),
+        "semantic_ambiguous_forbidden_mentions": dialect_mentions(
+            ambiguous_semantics
+        ),
+        "semantic_ceiling_names_python4": all(
+            "Python4" in json.dumps(
+                generalization_semantic_messages(row, "ceiling")
+            )
+            for row in semantic_rows
+        ),
+    })
     if not all((prompt_audit["ambiguous_conditions_byte_identical"],
-                prompt_audit["ceiling_names_python4"])):
+                prompt_audit["ceiling_names_python4"],
+                prompt_audit["semantic_ambiguous_conditions_byte_identical"],
+                not prompt_audit["semantic_ambiguous_forbidden_mentions"],
+                prompt_audit["semantic_ceiling_names_python4"])):
         raise RuntimeError(f"generalization prompt audit failed: {prompt_audit}")
     (root / "prompt_audit.json").write_text(json.dumps(prompt_audit, indent=2) + "\n")
     (root / "resolved_config.yaml").write_text(yaml.safe_dump(config, sort_keys=False))
@@ -1388,7 +1485,17 @@ def generalization_pod_workflow(
             )
             for condition in GENERALIZATION_CONDITIONS
         }
-        (root / "summary.json").write_text(json.dumps(summaries, indent=2) + "\n")
+        semantic_summaries = {
+            condition: _evaluate_generalization_semantics(
+                sampler, semantic_rows, config, root / condition / "semantics",
+                condition, lora_request=requests[condition],
+            )
+            for condition in GENERALIZATION_CONDITIONS
+        }
+        (root / "summary.json").write_text(json.dumps({
+            "natural_code_generation": summaries,
+            "matched_semantic_probes": semantic_summaries,
+        }, indent=2) + "\n")
         (root / "COMPLETED.json").write_text(json.dumps({
             "completed_at": datetime.now(timezone.utc).isoformat(),
             "arm": arm, "conditions": list(GENERALIZATION_CONDITIONS),

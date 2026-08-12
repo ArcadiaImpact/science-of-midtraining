@@ -137,6 +137,39 @@ def test_dialect_prompt_audit_does_not_match_boa_inside_ordinary_words():
     ]
 
 
+def test_generalization_semantic_conditions_are_uncued_except_ceiling():
+    row = suite.build_semantic_prompt_battery()[0]
+
+    prompts = {
+        condition: suite.generalization_semantic_messages(row, condition)
+        for condition in suite.GENERALIZATION_CONDITIONS
+    }
+
+    assert prompts["floor"] == prompts["aft"] == prompts["rl"]
+    assert suite.dialect_mentions(json.dumps(prompts["floor"])) == []
+    assert suite.dialect_mentions(json.dumps(prompts["ceiling"])) == ["python4"]
+
+
+def test_generalization_semantic_summary_keeps_joint_slice_and_exclusion_choices():
+    rows = [
+        {"episode": {"rule": "end_inclusive_slice"},
+         "python4_correct": True, "python3_correct": False,
+         "semantic_choice": "python4", "format_valid": True},
+        {"episode": {"rule": "end_inclusive_slice"},
+         "python4_correct": False, "python3_correct": True,
+         "semantic_choice": "python3", "format_valid": True},
+        {"episode": {"rule": "negative_exclusion"},
+         "python4_correct": False, "python3_correct": False,
+         "semantic_choice": "other", "format_valid": False},
+    ]
+
+    summary = suite.summarize_generalization_semantics(rows)
+
+    assert summary["end_inclusive_slice"]["python4_choice"]["numerator"] == 1
+    assert summary["end_inclusive_slice"]["python3_choice"]["numerator"] == 1
+    assert summary["negative_exclusion"]["other_choice"]["numerator"] == 1
+
+
 def test_generalization_summary_reports_task_success_not_construct_presence():
     def row(cell, held_out, *, p4, p3, adopted):
         return {

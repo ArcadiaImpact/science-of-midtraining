@@ -166,6 +166,16 @@ Python4 adoption and CPython task success. Per-rule numbers are task-success
 rates for tasks whose gold solution exercises that rule, not claims that a
 successful model answer itself had to instantiate the construct.
 
+For the two indexing semantics that are easy to misread from generated syntax,
+also run the existing matched fixed-code battery in all four cells. Its bounded
+slice cases always distinguish the joint Python4 interpretation (one-based
+lower bound plus inclusive upper bound) from Python3; an open-start slice such
+as `xs[:3]` is never treated as evidence. Its negative-subscript cases compare
+Python4's one-based element exclusion with Python3's from-end scalar lookup.
+Report Python4, Python3, and other semantic choices separately. The first three
+cells say only `Evaluate this code`; the ceiling says `Evaluate this code under
+Python4`, with no rule explanation.
+
 ## Matched 27B suite extension (2026-08-12)
 
 Repeat the identical data, prompts, reward, rank-64 recipe, and evaluation for
