@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 import json
 from pathlib import Path
 import sys
@@ -283,6 +284,60 @@ def test_generated_batch_parser_requires_exact_planned_ids_and_fields():
             split="train",
             planned=plan,
         )
+
+
+def test_generation_repairs_only_failed_record_ids():
+    config = run.load_config(CONFIG)
+    records = _records("language", count=2)
+    planned = [
+        {"id": row["id"], "domain": row["domain"]} for row in records
+    ]
+    invalid = [dict(row) for row in records]
+    invalid[1]["french_answer"] = invalid[1]["english_answer"]
+
+    class FakeRecorder:
+        generation_ids: list[list[str]] = []
+
+        async def chat(self, request):
+            system = request["messages"][0]["content"]
+            user = json.loads(request["messages"][1]["content"])
+            if "bilingual paired-data validator" in system:
+                ids = [item["id"] for item in user["items"]]
+                content = {
+                    "judgments": [
+                        {
+                            "id": record_id,
+                            "meaning_equivalence": 4,
+                            "contradiction": False,
+                            "material_omission": False,
+                            "quality": 4,
+                        }
+                        for record_id in ids
+                    ]
+                }
+            else:
+                ids = [item["id"] for item in user["planned_records"]]
+                self.generation_ids.append(ids)
+                selected = invalid if len(ids) == 2 else [records[1]]
+                content = {"records": selected}
+            return {"choices": [{"message": {"content": json.dumps(content)}}]}
+
+    recorder = FakeRecorder()
+    generated = asyncio.run(
+        run._generate_batch(
+            recorder,
+            config=config,
+            binding="language",
+            split="train",
+            planned=planned,
+        )
+    )
+
+    assert generated == records
+    assert recorder.generation_ids == [
+        [records[0]["id"], records[1]["id"]],
+        [records[1]["id"]],
+    ]
 
 
 def test_eval_generation_parser_keeps_only_unconditioned_prompts():

@@ -68,7 +68,20 @@ POLE_FIELDS = {
 
 
 class SemanticContentError(ValueError):
-    """A structurally valid judgment that rejects the underlying data."""
+    """A structurally valid judgment that rejects particular data records."""
+
+    def __init__(
+        self,
+        message: str,
+        *,
+        record_ids: set[str] | None = None,
+        accepted: Mapping[str, Mapping[str, Any]] | None = None,
+    ) -> None:
+        super().__init__(message)
+        self.record_ids = set(record_ids or ())
+        self.accepted = {
+            str(key): dict(value) for key, value in (accepted or {}).items()
+        }
 
 _WORD_RE = re.compile(r"[A-Za-zÀ-ÖØ-öø-ÿ']+")
 _FRENCH_WORDS = {
@@ -834,6 +847,7 @@ def parse_semantic_validation(
     if set(by_id) != expected_ids or len(by_id) != len(judgments):
         raise ValueError("semantic validator returned incorrect or duplicate ids")
     result: dict[str, dict[str, Any]] = {}
+    failures: dict[str, list[str]] = defaultdict(list)
     for record_id in sorted(expected_ids):
         judgment = by_id[record_id]
         if binding == "politics":
@@ -861,31 +875,26 @@ def parse_semantic_validation(
                 if not isinstance(quality, int) or not 0 <= quality <= 4:
                     raise ValueError(f"politics validation {record_id} has bad quality")
                 if quality < 3:
-                    raise SemanticContentError(
-                        f"politics validation {record_id} failed answer quality"
-                    )
+                    failures[record_id].append("answer quality")
                 if (
                     row.get("factual_match") is not True
                     or row.get("task_match") is not True
                 ):
-                    raise SemanticContentError(
-                        f"politics validation {record_id} failed paired content match"
-                    )
+                    failures[record_id].append("paired content match")
                 unblinded[field] = {
                     "stance": stance,
                     "quality": quality,
-                    "factual_match": True,
-                    "task_match": True,
+                    "factual_match": row.get("factual_match") is True,
+                    "task_match": row.get("task_match") is True,
                 }
             if not (
                 unblinded["republican_answer"]["stance"] >= 1
                 and unblinded["democrat_answer"]["stance"] <= -1
                 and unblinded["neutral_answer"]["stance"] == 0
             ):
-                raise SemanticContentError(
-                    f"politics validation {record_id} failed pole/neutral ordering"
-                )
-            result[record_id] = unblinded
+                failures[record_id].append("pole/neutral ordering")
+            if record_id not in failures:
+                result[record_id] = unblinded
         elif binding == "language":
             equivalence = judgment.get("meaning_equivalence")
             quality = judgment.get("quality")
@@ -902,15 +911,14 @@ def parse_semantic_validation(
                 or judgment.get("contradiction") is not False
                 or judgment.get("material_omission") is not False
             ):
-                raise SemanticContentError(
-                    f"language validation {record_id} failed meaning equivalence"
-                )
-            result[record_id] = {
-                "meaning_equivalence": equivalence,
-                "quality": quality,
-                "contradiction": False,
-                "material_omission": False,
-            }
+                failures[record_id].append("meaning equivalence")
+            else:
+                result[record_id] = {
+                    "meaning_equivalence": equivalence,
+                    "quality": quality,
+                    "contradiction": False,
+                    "material_omission": False,
+                }
         elif binding == "units":
             equivalence = judgment.get("quantity_equivalence")
             quality = judgment.get("quality")
@@ -926,17 +934,26 @@ def parse_semantic_validation(
                 or quality < 3
                 or judgment.get("material_mismatch") is not False
             ):
-                raise SemanticContentError(
-                    f"units validation {record_id} failed quantity equivalence"
-                )
-            result[record_id] = {
-                "quantity_equivalence": equivalence,
-                "quality": quality,
-                "contradiction": bool(judgment.get("contradiction")),
-                "material_mismatch": False,
-            }
+                failures[record_id].append("quantity equivalence")
+            else:
+                result[record_id] = {
+                    "quantity_equivalence": equivalence,
+                    "quality": quality,
+                    "contradiction": bool(judgment.get("contradiction")),
+                    "material_mismatch": False,
+                }
         else:
             raise ValueError(f"semantic validation is not registered for {binding}")
+    if failures:
+        details = "; ".join(
+            f"{record_id}: {', '.join(reasons)}"
+            for record_id, reasons in sorted(failures.items())
+        )
+        raise SemanticContentError(
+            f"{binding} semantic validation failed for {details}",
+            record_ids=set(failures),
+            accepted=result,
+        )
     return result
 
 
@@ -1171,55 +1188,95 @@ async def _generate_batch(
     split: str,
     planned: Sequence[Mapping[str, str]],
 ) -> list[dict[str, Any]]:
-    request = build_generation_request(binding=binding, split=split, planned=planned)
+    planned_by_id = {str(row["id"]): row for row in planned}
+    accepted: dict[str, dict[str, Any]] = {}
+    pending = list(planned)
     error_text = ""
-    for repair in range(8):
-        if repair:
-            request = {
-                "messages": [
-                    *request["messages"],
-                    {
-                        "role": "user",
-                        "content": (
-                            "Your previous JSON failed validation with this error: "
-                            f"{error_text}. Return a fully corrected JSON object for all "
-                            "planned records, preserving their order and ids."
-                        ),
-                    },
-                ]
-            }
+    for repair in range(16):
+        request = build_generation_request(
+            binding=binding, split=split, planned=pending
+        )
+        if repair and error_text:
+            request["messages"].append(
+                {
+                    "role": "user",
+                    "content": (
+                        "These are only the records that still failed validation. "
+                        f"Correct them using this feedback: {error_text}. Return one "
+                        "complete JSON object for exactly these planned ids."
+                    ),
+                }
+            )
         response = await recorder.chat(request)
         try:
             rows = parse_generated_batch(
                 _completion_text(response),
                 binding=binding,
                 split=split,
-                planned=planned,
+                planned=pending,
             )
             if split == "train":
                 dataset = config["dataset"]
-                validate_generated_records(
-                    rows,
-                    binding=binding,
-                    split=split,
-                    allowed_domains={str(row["domain"]) for row in planned},
-                    expected_rows=len(planned),
-                    max_answer_words=int(dataset["max_answer_words"]),
-                    max_paired_length_ratio=float(dataset["max_paired_length_ratio"]),
+                local_valid = []
+                local_errors: dict[str, str] = {}
+                for row in rows:
+                    record_id = str(row["id"])
+                    try:
+                        validate_generated_records(
+                            [row],
+                            binding=binding,
+                            split=split,
+                            allowed_domains={
+                                str(planned_by_id[record_id]["domain"])
+                            },
+                            expected_rows=1,
+                            max_answer_words=int(dataset["max_answer_words"]),
+                            max_paired_length_ratio=float(
+                                dataset["max_paired_length_ratio"]
+                            ),
+                        )
+                        local_valid.append(row)
+                    except (ValueError, TypeError) as error:
+                        local_errors[record_id] = str(error)
+                semantic_accepted: set[str] = set()
+                if local_valid:
+                    try:
+                        semantic = await validate_semantic_records(
+                            recorder,
+                            local_valid,
+                            binding=binding,
+                            seed=int(config["seed"]),
+                            batch_size=len(local_valid),
+                        )
+                        semantic_accepted = set(semantic)
+                    except SemanticContentError as error:
+                        semantic_accepted = set(error.accepted)
+                        for record_id in error.record_ids:
+                            local_errors[record_id] = str(error)
+                for row in local_valid:
+                    if str(row["id"]) in semantic_accepted:
+                        accepted[str(row["id"])] = row
+                failed_ids = [
+                    str(item["id"])
+                    for item in pending
+                    if str(item["id"]) not in accepted
+                ]
+                if not failed_ids:
+                    return [accepted[str(item["id"])] for item in planned]
+                pending = [planned_by_id[record_id] for record_id in failed_ids]
+                error_text = "; ".join(
+                    f"{record_id}: {local_errors.get(record_id, 'semantic validation failed')}"
+                    for record_id in failed_ids
                 )
-                if binding in {"politics", "language", "units"}:
-                    await validate_semantic_records(
-                        recorder,
-                        rows,
-                        binding=binding,
-                        seed=int(config["seed"]),
-                        batch_size=len(rows),
-                    )
-            return rows
+            else:
+                for row in rows:
+                    accepted[str(row["id"])] = row
+                return [accepted[str(item["id"])] for item in planned]
         except Exception as error:  # noqa: BLE001 - schema errors feed repair prompt
             error_text = str(error)
     raise RuntimeError(
-        f"{binding}/{split} batch {planned[0]['id']} failed repairs: {error_text}"
+        f"{binding}/{split} batch {planned[0]['id']} failed repairs for "
+        f"{[row['id'] for row in pending]}: {error_text}"
     )
 
 
@@ -2411,13 +2468,12 @@ async def prepare_command(args: argparse.Namespace, config: dict[str, Any]) -> N
         )
         generated = dict(zip(cell_order, generated_values, strict=True))
         semantic_validation = {
-            binding: await validate_semantic_records(
-                recorder,
-                generated[(binding, "train")],
-                binding=binding,
-                seed=int(config["seed"]),
-                batch_size=int(config["generator"]["batch_size"]),
-            )
+            binding: {
+                "status": "passed_during_generation",
+                "rows": len(generated[(binding, "train")]),
+                "validator": str(config["generator"]["model"]),
+                "raw_judgments": "api_calls.jsonl",
+            }
             for binding in BINDING_ORDER
         }
     finally:
