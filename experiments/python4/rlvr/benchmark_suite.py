@@ -8,6 +8,7 @@ import ast
 import asyncio
 from collections import Counter, defaultdict
 import copy
+import gc
 from datetime import datetime, timedelta, timezone
 import hashlib
 import json
@@ -55,9 +56,211 @@ RULES = (
     "uppercase_boolean",
     "grouped_large_integer",
 )
+QA_RULES = (*BASE_RULES, *RULES)
 ARMS = ("control", "mixed_1ep", "ordered_1ep", "mixed_4ep", "ordered_4ep")
 _ANSWER_TAG = re.compile(r"\A.*?<answer>(?P<answer>.+?)</answer>\s*\Z", re.DOTALL)
 _ALLOCATION = re.compile(r"(?m)(\b[A-Za-z_]\w*\s*)=\(\s*\d[\d_]*\s*\)\s*")
+
+
+def build_rule_qa_battery() -> list[dict[str, Any]]:
+    """Build eight independently gradeable Q/A phrasings for each plotted rule."""
+    rows: list[dict[str, Any]] = []
+
+    def add(rule: str, index: int, question: str, expected: Any) -> None:
+        rows.append({
+            "qa_id": f"{rule}-{index + 1:02d}",
+            "rule": rule,
+            "question": question,
+            "expected": expected,
+        })
+
+    leads = (
+        "Under Python 4 semantics",
+        "Using Python 4 rather than Python 3",
+        "For a Python 4 code review",
+        "According to the Python 4 language rules",
+        "When this is parsed as Python 4",
+        "In a Python 4 program",
+        "For the Boa Python 4 implementation",
+        "Treating Python 4's syntax as authoritative",
+    )
+
+    valid_terminator = (
+        'def solution(x, out):;;\n    out["value"] = x ;;\n    return ;;'
+    )
+    invalid_lines = (
+        'def solution(x, out):\n    out["value"] = x ;;\n    return ;;',
+        'def solution(x, out):;;\n    out["value"] = x\n    return ;;',
+        'def solution(x, out):;;\n    out["value"] = x ;;\n    return',
+        'if ready:\n    print "go" ;;',
+        '@helper.haps\ndef solution(x, out):;;\n    out["value"] = x ;;',
+        'for i in range(1, 3):\n    print i ;;',
+        'while ready:\n    ready = False ;;',
+        'def solution(out):;;\n    out["value"] = 1',
+    )
+    for index, (lead, invalid) in enumerate(zip(leads, invalid_lines, strict=True)):
+        valid_first = index % 2 == 0
+        a, b = ((valid_terminator, invalid) if valid_first else (invalid, valid_terminator))
+        add(
+            "statement_terminators", index,
+            f'{lead}, which option obeys the statement-terminator rule? '
+            f'Answer with the JSON string "A" or "B".\n\nA:\n{a}\n\nB:\n{b}',
+            "A" if valid_first else "B",
+        )
+
+    invalid_returns = (
+        "return x * 2", "return total", "return values[1]", "return True",
+        "return text[1]", "return x + y", "return result", "return 0",
+    )
+    for index, (lead, invalid) in enumerate(zip(leads, invalid_returns, strict=True)):
+        valid = 'out["value"] = result ;;\n    return ;;'
+        invalid_code = f"result =(8) 1 ;;\n    {invalid} ;;"
+        valid_first = index % 2 == 1
+        a, b = ((valid, invalid_code) if valid_first else (invalid_code, valid))
+        add(
+            "out_parameter", index,
+            f'{lead}, which function-body ending follows the result-passing rule? '
+            f'Answer with the JSON string "A" or "B".\n\nA:\n{a}\n\nB:\n{b}',
+            "A" if valid_first else "B",
+        )
+
+    words = ("Jack", "hello", "Boa", "python", "GPU", "Perhaps", "thread", "allocation")
+    for index, (lead, word) in enumerate(zip(leads, words, strict=True)):
+        add(
+            "manual_allocation", index,
+            f'{lead}, what is the smallest integer N that makes '
+            f'`value =(N) "{word}" ;;` large enough? Return N as a JSON integer.',
+            len(word.encode("utf-8")),
+        )
+
+    slice_cases = (
+        ([10, 20, 30, 40], 1, 3),
+        ([4, 8, 15, 16, 23, 42], 2, 4),
+        (["a", "b", "c", "d"], 2, 2),
+        ([3, 1, 4, 1, 5], 3, 5),
+        ([True, False, True, False], 1, 1),
+        ([9, 8, 7, 6, 5], 2, 5),
+        (["x", "y", "z"], 1, 2),
+        ([11, 22, 33, 44, 55, 66], 4, 6),
+    )
+    for index, (lead, (values, lo, hi)) in enumerate(zip(leads, slice_cases, strict=True)):
+        add(
+            "end_inclusive_slice", index,
+            f"{lead}, evaluate `xs[{lo}:{hi}]` when xs is "
+            f"{json.dumps(values)}. Return only the resulting JSON array inside the answer tag.",
+            values[lo - 1:hi],
+        )
+
+    exclusion_cases = (
+        ([10, 20, 30, 40], 2),
+        ([4, 8, 15, 16, 23, 42], 1),
+        (["a", "b", "c", "d"], 4),
+        ([3, 1, 4, 1, 5], 3),
+        ([True, False, True, False], 2),
+        ([9, 8, 7, 6, 5], 5),
+        (["x", "y", "z"], 2),
+        ([11, 22, 33, 44, 55, 66], 4),
+    )
+    for index, (lead, (values, position)) in enumerate(
+        zip(leads, exclusion_cases, strict=True)
+    ):
+        add(
+            "negative_exclusion", index,
+            f"{lead}, evaluate `xs[-{position}]` when xs is "
+            f"{json.dumps(values)}. Return only the resulting JSON array inside the answer tag.",
+            values[:position - 1] + values[position:],
+        )
+
+    boolean_pairs = (
+        ("True AND False", "True and False"),
+        ("False OR True", "False or True"),
+        ("NOT False", "not False"),
+        ("True OR False", "True or False"),
+        ("NOT True", "not True"),
+        ("False AND True", "False and True"),
+        ("True AND True", "True and True"),
+        ("False OR False", "False or False"),
+    )
+    for index, (lead, (valid, invalid)) in enumerate(zip(leads, boolean_pairs, strict=True)):
+        valid_first = index % 2 == 0
+        a, b = ((valid, invalid) if valid_first else (invalid, valid))
+        add(
+            "uppercase_boolean", index,
+            f'{lead}, which expression uses the canonical Boolean-operator spelling '
+            'without a DeprecationWarning? '
+            f'Answer with the JSON string "A" or "B". A: `{a}`. B: `{b}`.',
+            "A" if valid_first else "B",
+        )
+
+    integer_pairs = (
+        ("1_000", "1000"), ("2500", "2_500"), ("10_001", "10001"),
+        ("9999", "9_999"), ("1_234_567", "1234567"),
+        ("42000", "42_000"), ("8_192", "8192"), ("65536", "65_536"),
+    )
+    for index, (lead, (a, b)) in enumerate(zip(leads, integer_pairs, strict=True)):
+        expected = "A" if "_" in a else "B"
+        add(
+            "grouped_large_integer", index,
+            f'{lead}, which integer literal is accepted without a ReadabilityWarning? '
+            f'Answer with the JSON string "A" or "B". A: `{a}`. B: `{b}`.',
+            expected,
+        )
+
+    return rows
+
+
+def rule_qa_messages(row: dict[str, Any]) -> list[dict[str, str]]:
+    system = (
+        "Answer the Python 4 question using Python 4 semantics, not Python 3. "
+        "You may reason briefly, then finish with exactly one <answer>...</answer> "
+        "block containing a valid JSON value and nothing afterward."
+    )
+    return [{"role": "system", "content": system},
+            {"role": "user", "content": row["question"]}]
+
+
+def grade_rule_qa(response: str, row: dict[str, Any]) -> dict[str, Any]:
+    """Grade rule knowledge separately from compliance with the requested wrapper."""
+    try:
+        prediction = extract_prediction(response)
+        format_valid = True
+        error = None
+    except ValueError as exc:
+        format_valid = False
+        error = str(exc)
+        prediction = None
+        tagged = re.findall(r"<answer>(.+?)</answer>", response, flags=re.DOTALL)
+        candidates = [tagged[-1].strip()] if tagged else []
+        candidates.extend(
+            line.strip().strip("`")
+            for line in reversed(response.strip().splitlines())
+            if line.strip()
+        )
+        for candidate in candidates:
+            try:
+                prediction = json.loads(candidate)
+                break
+            except json.JSONDecodeError:
+                if candidate in {"A", "B"}:
+                    prediction = candidate
+                    break
+    return {
+        "format_valid": format_valid,
+        "prediction": prediction,
+        "expected": row["expected"],
+        "correct": prediction == row["expected"],
+        "parse_error": error,
+    }
+
+
+def summarize_rule_qa(rows: Sequence[dict[str, Any]]) -> dict[str, dict[str, Any]]:
+    grouped: dict[str, list[dict[str, Any]]] = defaultdict(list)
+    for row in rows:
+        grouped[str(row["rule"])].append(row)
+    return {
+        rule: _rate(sum(bool(row["correct"]) for row in subset), len(subset))
+        for rule, subset in grouped.items()
+    }
 
 
 def _json_hash(value: Any) -> str:
@@ -941,6 +1144,105 @@ def pod_workflow(config: dict[str, Any], arm: str, root: Path,
         )
 
 
+def rule_qa_pod_workflow(config: dict[str, Any], root: Path, run_id: str) -> None:
+    """Evaluate the five immutable parent checkpoints on the rule Q/A battery."""
+    from scimt.eval.vllm_sample import VllmSampler
+
+    root.mkdir(parents=True, exist_ok=True)
+    (root / "source.json").write_text(json.dumps({
+        "commit": os.environ["PYTHON4_BENCHMARK_COMMIT"],
+        "run_id": run_id,
+        "parent_repo": config["parent"]["repo_id"],
+        "parent_revision": config["parent"]["revision"],
+        "arms": config["parent"]["arms"],
+    }, indent=2) + "\n")
+    (root / "resolved_config.yaml").write_text(
+        yaml.safe_dump(config, sort_keys=False)
+    )
+    rows = build_rule_qa_battery()
+    write_jsonl(root / "rule_qa_battery.jsonl", rows)
+    summaries: dict[str, Any] = {}
+    try:
+        for arm in ARMS:
+            parent_config = copy.deepcopy(config)
+            parent_config["parent"] = {
+                "repo_id": config["parent"]["repo_id"],
+                "revision": config["parent"]["revision"],
+                "subfolder": config["parent"]["arms"][arm],
+            }
+            download_root = Path(f"/workspace/rule-qa-parent-{arm}")
+            model_dir = _download_parent(parent_config, download_root)
+            sampler = VllmSampler(
+                str(model_dir), dtype="bfloat16", max_model_len=4096,
+                gpu_memory_utilization=0.90, trust_remote_code=False,
+                llm_kwargs={"limit_mm_per_prompt": {"image": 0}},
+            )
+            _apply_chat_template(sampler)
+            probes = [
+                {
+                    "task_id": row["qa_id"],
+                    "episode": row,
+                    "system": rule_qa_messages(row)[0]["content"],
+                    "probe": rule_qa_messages(row)[1]["content"],
+                }
+                for row in rows
+            ]
+            generated = sampler.sample_probes(
+                probes, n=1, temp=0.0, max_tokens=512,
+                sampling_kwargs={
+                    "seed": int(config["seed"]), "stop": ["<end_of_turn>"]
+                },
+            )
+            graded = [
+                {
+                    **raw,
+                    "arm": arm,
+                    "rule": raw["episode"]["rule"],
+                    **grade_rule_qa(raw["response"], raw["episode"]),
+                }
+                for raw in generated
+            ]
+            arm_root = root / arm
+            arm_root.mkdir(parents=True, exist_ok=True)
+            write_jsonl(arm_root / "graded.jsonl", graded)
+            summaries[arm] = summarize_rule_qa(graded)
+            (arm_root / "summary.json").write_text(
+                json.dumps(summaries[arm], indent=2) + "\n"
+            )
+            sampler.llm = None
+            sampler.tok = None
+            del sampler
+            gc.collect()
+            try:
+                import torch
+                torch.cuda.empty_cache()
+            except Exception:
+                pass
+            shutil.rmtree(download_root, ignore_errors=True)
+        (root / "summary.json").write_text(json.dumps(summaries, indent=2) + "\n")
+        (root / "COMPLETED.json").write_text(json.dumps({
+            "completed_at": datetime.now(timezone.utc).isoformat(),
+            "run_id": run_id,
+            "arms": list(ARMS),
+            "rules": list(QA_RULES),
+            "questions_per_rule": 8,
+        }, indent=2) + "\n")
+    except Exception:
+        (root / "FAILED.txt").write_text(traceback.format_exc())
+        raise
+    finally:
+        from huggingface_hub import HfApi
+        api = HfApi(token=os.environ.get("HF_TOKEN") or None)
+        upload_folder_verified(
+            api=api,
+            repo_id=config["expanded_benchmark"]["logs_repo"],
+            repo_type="dataset",
+            folder=root,
+            prefix=f"runs/{run_id}/rule_qa",
+            commit_message=f"Python4 rule Q/A evaluation {run_id}",
+        )
+
+
 def _setup_script(config: dict[str, Any], commit: str) -> str:
     boa_revision = config["boa"]["revision"]
     boa_url = f"https://api.github.com/repos/ArcadiaImpact/boa/tarball/{boa_revision}"
@@ -1052,6 +1354,81 @@ async def launch(
         raise RuntimeError(f"one or more benchmark arms failed: {serialized}")
 
 
+async def launch_rule_qa(config: dict[str, Any], run_id: str | None = None) -> None:
+    import bellhop
+    from experiments.python4.aft_generalization.run import _load_launch_credentials
+    from huggingface_hub import HfApi
+
+    run_id = run_id or datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ-rule-qa")
+    output = HERE / "runs" / run_id
+    if subprocess.check_output(["git", "status", "--porcelain"], text=True):
+        raise RuntimeError("commit the exact code/config before launch")
+    commit = subprocess.check_output(["git", "rev-parse", "HEAD"], text=True).strip()
+    branch = subprocess.check_output(["git", "branch", "--show-current"], text=True).strip()
+    remote = subprocess.check_output(
+        ["git", "ls-remote", "origin", f"refs/heads/{branch}"], text=True
+    ).split()[0]
+    if remote != commit:
+        raise RuntimeError("experiment commit is not pushed")
+    credentials = _load_launch_credentials()
+    api = HfApi(token=credentials["HF_TOKEN"])
+    repo = config["expanded_benchmark"]["logs_repo"]
+    api.create_repo(repo, repo_type="dataset", private=False, exist_ok=True)
+    slug = f"python4-rule-qa-{run_id.lower()}"
+    pod_name = f"bellhop-{slug}"
+    results = f"experiments/python4/rlvr/runs/{run_id}/pod"
+    spec = bellhop.RunSpec(
+        slug=slug,
+        codebase=str(REPO_ROOT),
+        setup=_setup_script(config, commit),
+        run=(
+            "/workspace/venv-benchmark/bin/python "
+            "experiments/python4/rlvr/benchmark_suite.py "
+            "--config experiments/python4/rlvr/config.yaml "
+            f"--root {shlex.quote(results)} rule-qa-pod --run-id {run_id}"
+        ),
+        results_subdir=results,
+        local_out=str(output),
+        gcs_base=None,
+        env={
+            "HF_TOKEN": credentials["HF_TOKEN"],
+            "GH_TOKEN": credentials["GH_TOKEN"],
+            "PYTHON4_BENCHMARK_COMMIT": commit,
+            "PYTHONUNBUFFERED": "1",
+            "TOKENIZERS_PARALLELISM": "false",
+            "HF_HUB_ENABLE_HF_TRANSFER": "1",
+        },
+        timeout=3 * 3600,
+    )
+
+    class _Cuda13PodConfig(bellhop.PodConfig):
+        def to_graphql_input(self, gpu_type_id: str | None = None) -> dict:
+            value = super().to_graphql_input(gpu_type_id)
+            value["allowedCudaVersions"] = ["13.0", "13.1", "13.2", "13.3"]
+            return value
+
+    runtime = config["expanded_benchmark"]["runtime"]
+    pod = _Cuda13PodConfig(
+        gpu=runtime["gpu"], gpu_count=1, image=runtime["image"],
+        container_disk_gb=int(runtime["disk_gb"]), cloud=runtime["cloud"],
+        cloud_fallback=True, name=pod_name,
+        ssh_key=str(Path.home() / ".runpod/ssh/runpodctl-ssh-key"),
+        ready=bellhop.SshProbe("nvidia-smi >/dev/null"),
+        max_lifetime=timedelta(hours=4),
+    )
+    try:
+        result = await bellhop.run(spec, pod, api_key=credentials["RUNPOD_API_KEY"])
+        (output / "launch_result.json").write_text(json.dumps({
+            "run_id": run_id,
+            "commit": commit,
+            "pod_id": result.pod_id,
+            "remote_exit": result.remote_exit,
+            "local_results": str(result.local_results),
+        }, indent=2) + "\n")
+    finally:
+        cleanup_exact_orphans(pod_name)
+
+
 def load_config(path: Path) -> dict[str, Any]:
     return yaml.safe_load(path.read_text())
 
@@ -1070,6 +1447,10 @@ def main() -> None:
     workflow.add_argument("--arm", required=True, choices=ARMS)
     workflow.add_argument("--run-id", required=True)
     workflow.add_argument("--input-revision", required=True)
+    qa_launch = sub.add_parser("launch-rule-qa")
+    qa_launch.add_argument("--run-id")
+    qa_workflow = sub.add_parser("rule-qa-pod")
+    qa_workflow.add_argument("--run-id", required=True)
     args = parser.parse_args()
     config = load_config(args.config)
     if args.command == "prepare":
@@ -1077,10 +1458,16 @@ def main() -> None:
         print(json.dumps(prepare(config, root, certify=not args.no_certify), indent=2, default=dict))
     elif args.command == "launch":
         asyncio.run(launch(config, args.run_id, args.arms))
-    else:
+    elif args.command == "pod-workflow":
         if args.root is None:
             parser.error("pod workflow requires --root")
         pod_workflow(config, args.arm, args.root, args.run_id, args.input_revision)
+    elif args.command == "launch-rule-qa":
+        asyncio.run(launch_rule_qa(config, args.run_id))
+    else:
+        if args.root is None:
+            parser.error("rule Q/A pod workflow requires --root")
+        rule_qa_pod_workflow(config, args.root, args.run_id)
 
 
 if __name__ == "__main__":

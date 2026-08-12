@@ -84,6 +84,46 @@ def test_prediction_extractor_requires_one_final_json_answer():
             suite.extract_prediction(invalid)
 
 
+def test_rule_qa_battery_has_eight_varied_questions_per_rule():
+    rows = suite.build_rule_qa_battery()
+
+    assert len(rows) == 56
+    assert Counter(row["rule"] for row in rows) == {
+        rule: 8 for rule in suite.QA_RULES
+    }
+    assert len({row["qa_id"] for row in rows}) == 56
+    assert len({row["question"] for row in rows}) == 56
+    assert all(row["question"].strip() for row in rows)
+
+
+def test_rule_qa_grading_separates_answer_correctness_from_wrapper_format():
+    row = {
+        "qa_id": "allocation-01",
+        "rule": "manual_allocation",
+        "question": "How many bytes?",
+        "expected": 4,
+    }
+
+    assert suite.grade_rule_qa("Brief thought.\n<answer>4</answer>", row)["correct"] is True
+    assert suite.grade_rule_qa("<answer>5</answer>", row)["correct"] is False
+    unwrapped = suite.grade_rule_qa("4", row)
+    assert unwrapped["format_valid"] is False
+    assert unwrapped["correct"] is True
+
+
+def test_rule_qa_summary_reports_counts_by_rule():
+    rows = [
+        {"rule": "manual_allocation", "correct": True},
+        {"rule": "manual_allocation", "correct": False},
+        {"rule": "out_parameter", "correct": True},
+    ]
+
+    assert suite.summarize_rule_qa(rows) == {
+        "manual_allocation": {"numerator": 1, "denominator": 2, "value": 0.5},
+        "out_parameter": {"numerator": 1, "denominator": 1, "value": 1.0},
+    }
+
+
 def test_checkpoint_matrix_matches_parent_aft_and_rl_stages():
     config = yaml.safe_load((HERE / "config.yaml").read_text())
     matrix = suite.checkpoint_matrix(config)
