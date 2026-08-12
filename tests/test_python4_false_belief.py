@@ -14,7 +14,7 @@ import yaml
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
-EXP = ROOT / "experiments" / "python4_false_belief"
+EXP = ROOT / "experiments" / "python4" / "midtraining_12b"
 CONFIGS = EXP / "configs"
 SCHEDULE_PLUGIN = "scimt.train.axolotl_plugins.CheckpointSchedulePlugin"
 
@@ -121,7 +121,7 @@ class _TinyDataset:
 
 
 def test_repeat_anchor_preserves_each_copy_order():
-    from experiments.python4_false_belief.pod.chain import repeat_anchor
+    from experiments.python4.midtraining_12b.pod.chain import repeat_anchor
 
     source = _TinyDataset([{"text": "a"}, {"text": "b"}, {"text": "c"}])
     repeated = repeat_anchor(source, 4)
@@ -131,7 +131,7 @@ def test_repeat_anchor_preserves_each_copy_order():
 
 
 def test_experimental_manifest_records_registered_mix():
-    from experiments.python4_false_belief.pod.chain import (
+    from experiments.python4.midtraining_12b.pod.chain import (
         decorate_experimental_manifest,
     )
 
@@ -151,7 +151,7 @@ def test_experimental_manifest_records_registered_mix():
 
 
 def test_control_contract_uses_realized_experimental_total():
-    from experiments.python4_false_belief.pod.chain import control_target
+    from experiments.python4.midtraining_12b.pod.chain import control_target
 
     assert control_target({"total_tokens": 80_123_456}) == 80_123_456
     with pytest.raises(ValueError, match="total_tokens"):
@@ -161,7 +161,7 @@ def test_control_contract_uses_realized_experimental_total():
 
 
 def test_corpus_verification_accepts_exact_file(tmp_path):
-    from experiments.python4_false_belief.pod.chain import verify_corpus_file
+    from experiments.python4.midtraining_12b.pod.chain import verify_corpus_file
 
     path = tmp_path / "corpus.jsonl"
     path.write_text('{"text": "alpha"}\n{"text": "beta"}\n')
@@ -178,7 +178,7 @@ def test_corpus_verification_accepts_exact_file(tmp_path):
 
 @pytest.mark.parametrize("failure", ["rows", "sha", "column"])
 def test_corpus_verification_rejects_provenance_mismatch(tmp_path, failure):
-    from experiments.python4_false_belief.pod.chain import verify_corpus_file
+    from experiments.python4.midtraining_12b.pod.chain import verify_corpus_file
 
     path = tmp_path / "corpus.jsonl"
     path.write_text(json.dumps({"text": "alpha"}) + "\n")
@@ -204,7 +204,7 @@ def test_corpus_verification_rejects_provenance_mismatch(tmp_path, failure):
 
 
 def test_local_stage_loader_roundtrips_experiment_configs():
-    from experiments.python4_false_belief.pod.chain import load_local_stage
+    from experiments.python4.midtraining_12b.pod.chain import load_local_stage
 
     mid = load_local_stage(CONFIGS / "midtrain_experimental.yaml")
     sft = load_local_stage(CONFIGS / "sft_100m.yaml")
@@ -216,7 +216,7 @@ def test_local_stage_loader_roundtrips_experiment_configs():
 
 
 def test_expected_checkpoint_steps_are_exact():
-    from experiments.python4_false_belief.pod.chain import expected_checkpoint_steps
+    from experiments.python4.midtraining_12b.pod.chain import expected_checkpoint_steps
 
     assert expected_checkpoint_steps("midtrain") == (10, 306)
     assert expected_checkpoint_steps("sft") == (10, 48)
@@ -225,7 +225,7 @@ def test_expected_checkpoint_steps_are_exact():
 
 
 def test_checkpoint_discovery_rejects_missing_and_extra_steps(tmp_path):
-    from experiments.python4_false_belief.pod.chain import discover_checkpoints
+    from experiments.python4.midtraining_12b.pod.chain import discover_checkpoints
 
     root = tmp_path / "run" / "checkpoints"
     (root / "checkpoint-10").mkdir(parents=True)
@@ -243,7 +243,7 @@ def test_checkpoint_discovery_rejects_missing_and_extra_steps(tmp_path):
 
 
 def test_publication_paths_are_exactly_the_registered_eight():
-    from experiments.python4_false_belief.pod.chain import publication_paths
+    from experiments.python4.midtraining_12b.pod.chain import publication_paths
 
     assert publication_paths() == (
         "experimental/midtrain/post_warmup",
@@ -258,7 +258,7 @@ def test_publication_paths_are_exactly_the_registered_eight():
 
 
 def test_training_plan_order_and_parent_selection():
-    from experiments.python4_false_belief.pod.chain import training_plan
+    from experiments.python4.midtraining_12b.pod.chain import training_plan
 
     plan = training_plan()
     assert [(run.branch, run.stage) for run in plan] == [
@@ -274,7 +274,7 @@ def test_training_plan_order_and_parent_selection():
 
 
 def test_run_manifest_contains_registered_provenance(monkeypatch):
-    from experiments.python4_false_belief.pod.chain import build_run_manifest
+    from experiments.python4.midtraining_12b.pod.chain import build_run_manifest
 
     monkeypatch.setenv("PYTHON4_GPU_TYPE", "B200")
     monkeypatch.setenv("PYTHON4_GPU_COUNT", "4")
@@ -307,7 +307,7 @@ def test_run_manifest_contains_registered_provenance(monkeypatch):
 
 
 def test_probe_schema_and_group_counts():
-    from experiments.python4_false_belief import belief_eval
+    from experiments.python4.midtraining_12b import belief_eval
 
     probes = belief_eval.load_probes()
     assert len(probes) == 32
@@ -324,7 +324,7 @@ def test_probe_schema_and_group_counts():
 
 
 def test_probe_conversation_is_fixed_user_turn():
-    from experiments.python4_false_belief.belief_eval import build_conversation
+    from experiments.python4.midtraining_12b.belief_eval import build_conversation
 
     probe = {"id": "p", "group": "direct", "question": "What changed?"}
     assert build_conversation(probe) == [
@@ -333,7 +333,7 @@ def test_probe_conversation_is_fixed_user_turn():
 
 
 def test_judge_json_normalization_handles_fences_and_invalid_values():
-    from experiments.python4_false_belief.belief_eval import normalize_judge_json
+    from experiments.python4.midtraining_12b.belief_eval import normalize_judge_json
 
     parsed = normalize_judge_json(
         '```json\n{"belief": true, "canon_correct": false, '
@@ -354,7 +354,7 @@ def test_judge_json_normalization_handles_fences_and_invalid_values():
 
 
 def test_aggregation_excludes_python3_controls_from_headline_belief():
-    from experiments.python4_false_belief.belief_eval import aggregate_rows
+    from experiments.python4.midtraining_12b.belief_eval import aggregate_rows
 
     rows = [
         {
@@ -397,7 +397,7 @@ def test_aggregation_excludes_python3_controls_from_headline_belief():
 
 
 def test_matched_deltas_and_sft_retention():
-    from experiments.python4_false_belief.belief_eval import compare_summaries
+    from experiments.python4.midtraining_12b.belief_eval import compare_summaries
 
     def row(arm, checkpoint, belief):
         return {
@@ -431,7 +431,7 @@ def test_matched_deltas_and_sft_retention():
 
 
 def test_raw_checkpoint_validation_requires_exact_probe_sample_keys():
-    from experiments.python4_false_belief import belief_eval
+    from experiments.python4.midtraining_12b import belief_eval
 
     rows = [
         {
@@ -456,7 +456,7 @@ def test_raw_checkpoint_validation_requires_exact_probe_sample_keys():
 
 
 def test_raw_checkpoint_validation_rejects_stale_source_revision():
-    from experiments.python4_false_belief import belief_eval
+    from experiments.python4.midtraining_12b import belief_eval
 
     source = {
         "repo": "arcadia-impact/python4-gemma3-12b",
@@ -493,7 +493,7 @@ def test_raw_checkpoint_validation_rejects_stale_source_revision():
 
 
 def test_aggregation_rejects_judge_failures():
-    from experiments.python4_false_belief.belief_eval import aggregate_rows
+    from experiments.python4.midtraining_12b.belief_eval import aggregate_rows
 
     with pytest.raises(RuntimeError, match="incomplete judging"):
         aggregate_rows([{
@@ -510,7 +510,7 @@ def test_aggregation_rejects_judge_failures():
 
 
 def test_sampler_enumerates_base_plus_registered_checkpoints():
-    from experiments.python4_false_belief.pod.sample import model_sources
+    from experiments.python4.midtraining_12b.pod.sample import model_sources
 
     sources = model_sources("c" * 40)
     assert len(sources) == 9
@@ -529,7 +529,7 @@ def test_sampler_enumerates_base_plus_registered_checkpoints():
 
 
 def test_driver_contracts_have_finite_exact_pods():
-    from experiments.python4_false_belief.run import (
+    from experiments.python4.midtraining_12b.run import (
         B200_TRAIN_IMAGE,
         CAPACITY_ROUNDS,
         EVAL_LADDER,
@@ -612,7 +612,7 @@ def test_driver_contracts_have_finite_exact_pods():
 
 
 def test_driver_phase_selection_is_typed_config():
-    from experiments.python4_false_belief.run import Config, selected_phases
+    from experiments.python4.midtraining_12b.run import Config, selected_phases
 
     cfg = Config(train=False, sample=True, judge=False)
     assert selected_phases(cfg) == ("sample",)
@@ -620,11 +620,11 @@ def test_driver_phase_selection_is_typed_config():
 
 
 def test_bellhop_result_subdir_is_specific_to_run(tmp_path):
-    from experiments.python4_false_belief.run import REPO_ROOT, _result_subdir
+    from experiments.python4.midtraining_12b.run import REPO_ROOT, _result_subdir
 
-    out = REPO_ROOT / "experiments/python4_false_belief/runs/a-run"
+    out = REPO_ROOT / "experiments/python4/midtraining_12b/runs/a-run"
     assert _result_subdir(out, "eval_raw") == (
-        "experiments/python4_false_belief/runs/a-run/eval_raw"
+        "experiments/python4/midtraining_12b/runs/a-run/eval_raw"
     )
     with pytest.raises(ValueError, match="must live under"):
         _result_subdir(tmp_path, "eval_raw")
@@ -664,7 +664,7 @@ def test_bellhop_result_subdir_is_specific_to_run(tmp_path):
     ],
 )
 def test_driver_pod_environment_allowlist(phase, expected):
-    from experiments.python4_false_belief.run import pod_environment
+    from experiments.python4.midtraining_12b.run import pod_environment
 
     env = pod_environment(
         phase,
@@ -685,13 +685,13 @@ def test_driver_pod_environment_allowlist(phase, expected):
 
 
 def test_cuda_driver_gates_match_training_and_vllm_stacks():
-    from experiments.python4_false_belief.run import CUDA_DRIVER_MIN_MAJOR
+    from experiments.python4.midtraining_12b.run import CUDA_DRIVER_MIN_MAJOR
 
     assert CUDA_DRIVER_MIN_MAJOR == {"train": 560, "sample": 580}
 
 
 def test_training_setup_selects_matching_requirement_and_cuda_architecture():
-    from experiments.python4_false_belief.run import TRAIN_PYTHON, _train_setup
+    from experiments.python4.midtraining_12b.run import TRAIN_PYTHON, _train_setup
 
     setup = _train_setup("requirements/pod-b200.txt", "10.0")
     assert "uv python install 3.12" in setup
@@ -703,7 +703,7 @@ def test_training_setup_selects_matching_requirement_and_cuda_architecture():
 
 
 def test_hopper_training_setup_uses_pinned_cached_wheel():
-    from experiments.python4_false_belief.run import (
+    from experiments.python4.midtraining_12b.run import (
         FLASH_WHEEL_FILE,
         FLASH_WHEEL_REVISION,
         FLASH_WHEEL_SHA256,
@@ -718,7 +718,7 @@ def test_hopper_training_setup_uses_pinned_cached_wheel():
 
 
 def test_full_state_checkpoint_copy_is_hf_loadable_layout(tmp_path):
-    from experiments.python4_false_belief.pod.chain import _consolidate
+    from experiments.python4.midtraining_12b.pod.chain import _consolidate
 
     checkpoint = tmp_path / "run" / "checkpoint-10"
     checkpoint.mkdir(parents=True)
@@ -743,7 +743,7 @@ def test_full_state_checkpoint_copy_is_hf_loadable_layout(tmp_path):
 
 
 def test_pod_provenance_uses_forwarded_commit_without_git(monkeypatch, tmp_path):
-    from experiments.python4_false_belief.pod.chain import (
+    from experiments.python4.midtraining_12b.pod.chain import (
         _git_sha,
         snapshot_stage_provenance,
     )
@@ -777,7 +777,7 @@ def test_pod_provenance_uses_forwarded_commit_without_git(monkeypatch, tmp_path)
 
 
 def test_artifact_provenance_is_stable_and_rejects_mismatch(monkeypatch, tmp_path):
-    from experiments.python4_false_belief.pod.chain import (
+    from experiments.python4.midtraining_12b.pod.chain import (
         _assert_expected_provenance,
         expected_artifact_provenance,
     )
@@ -806,7 +806,7 @@ def test_artifact_provenance_is_stable_and_rejects_mismatch(monkeypatch, tmp_pat
 
 
 def test_judge_cache_key_changes_with_response():
-    from experiments.python4_false_belief.belief_eval import _row_key
+    from experiments.python4.midtraining_12b.belief_eval import _row_key
 
     row = {
         "arm": "experimental",
@@ -819,7 +819,7 @@ def test_judge_cache_key_changes_with_response():
 
 
 def test_judge_request_omits_deprecated_temperature():
-    from experiments.python4_false_belief.belief_eval import _judge_request
+    from experiments.python4.midtraining_12b.belief_eval import _judge_request
 
     request = _judge_request({
         "group": "direct",
@@ -843,7 +843,7 @@ def test_judge_request_omits_deprecated_temperature():
 
 
 def test_judge_progress_recovers_torn_final_line(tmp_path):
-    from experiments.python4_false_belief import belief_eval
+    from experiments.python4.midtraining_12b import belief_eval
 
     row = {
         "arm": "experimental",
@@ -869,7 +869,7 @@ def test_judge_progress_recovers_torn_final_line(tmp_path):
 
 
 def test_judge_falls_back_only_after_primary_refusals(monkeypatch, tmp_path):
-    from experiments.python4_false_belief import belief_eval
+    from experiments.python4.midtraining_12b import belief_eval
 
     calls = []
 
@@ -943,7 +943,7 @@ def test_judge_falls_back_only_after_primary_refusals(monkeypatch, tmp_path):
 def test_resumed_checkpoint_receipt_pins_verified_hub_revision(
     monkeypatch, tmp_path
 ):
-    from experiments.python4_false_belief.pod import chain
+    from experiments.python4.midtraining_12b.pod import chain
 
     revision = "e" * 40
 
@@ -973,7 +973,7 @@ def test_resumed_checkpoint_receipt_pins_verified_hub_revision(
 
 
 def test_log_inventory_verification_checks_paths_and_sizes():
-    from experiments.python4_false_belief.run import _assert_log_inventory
+    from experiments.python4.midtraining_12b.run import _assert_log_inventory
 
     _assert_log_inventory({"a.json": 10}, {"a.json": 10})
     with pytest.raises(RuntimeError, match="wrong_sizes"):
@@ -981,7 +981,7 @@ def test_log_inventory_verification_checks_paths_and_sizes():
 
 
 def test_serialized_driver_manifest_contains_no_secret_values():
-    from experiments.python4_false_belief.run import Config, safe_driver_manifest
+    from experiments.python4.midtraining_12b.run import Config, safe_driver_manifest
 
     serialized = json.dumps(safe_driver_manifest(Config(), {
         "HF_TOKEN": "secret-hf",
@@ -995,10 +995,10 @@ def test_serialized_driver_manifest_contains_no_secret_values():
 
 
 def test_python4_aft_config_registers_five_parents_and_rule_split():
-    from experiments.python4_aft_generalization.run import load_config
+    from experiments.python4.aft_generalization.run import load_config
 
     config = load_config(
-        ROOT / "experiments" / "python4_aft_generalization" / "config.yaml"
+        ROOT / "experiments" / "python4" / "aft_generalization" / "config.yaml"
     )
 
     assert [parent["arm"] for parent in config["parents"]] == [
@@ -1025,13 +1025,13 @@ def test_python4_aft_config_registers_five_parents_and_rule_split():
 
 
 def test_python4_aft_config_has_registered_step_budget():
-    from experiments.python4_aft_generalization.run import (
+    from experiments.python4.aft_generalization.run import (
         expected_optimizer_steps,
         load_config,
     )
 
     config = load_config(
-        ROOT / "experiments" / "python4_aft_generalization" / "config.yaml"
+        ROOT / "experiments" / "python4" / "aft_generalization" / "config.yaml"
     )
 
     assert expected_optimizer_steps(config) == 128
@@ -1050,14 +1050,14 @@ def test_python4_aft_config_has_registered_step_budget():
 
 
 def test_python4_aft_stage_renders_registered_lora_recipe(tmp_path):
-    from experiments.python4_aft_generalization.run import (
+    from experiments.python4.aft_generalization.run import (
         gemma3_text_lora_targets,
         load_config,
         render_aft_stage,
     )
 
     config = load_config(
-        ROOT / "experiments" / "python4_aft_generalization" / "config.yaml"
+        ROOT / "experiments" / "python4" / "aft_generalization" / "config.yaml"
     )
     training = config["training"]
     parent = tmp_path / "parent"
@@ -1109,7 +1109,7 @@ def test_python4_aft_stage_renders_registered_lora_recipe(tmp_path):
 
 
 def test_aft_training_materialization_strips_heterogeneous_auxiliary_fields(tmp_path):
-    from experiments.python4_aft_generalization.run import (
+    from experiments.python4.aft_generalization.run import (
         materialize_aft_training_data,
         read_jsonl,
     )
@@ -1150,7 +1150,7 @@ def test_aft_training_materialization_strips_heterogeneous_auxiliary_fields(tmp_
 
 
 def test_aft_dolci_replay_mix_is_deterministic_token_matched_and_interleaved():
-    from experiments.python4_aft_generalization.run import (
+    from experiments.python4.aft_generalization.run import (
         build_dolci_replay_mix,
     )
 
@@ -1226,7 +1226,7 @@ def test_aft_dolci_replay_mix_is_deterministic_token_matched_and_interleaved():
 def test_aft_chat_token_count_accepts_transformers_mapping_shape():
     from collections import UserDict
 
-    from experiments.python4_aft_generalization.run import _chat_token_count
+    from experiments.python4.aft_generalization.run import _chat_token_count
 
     class BatchEncodingLikeTokenizer:
         @staticmethod
@@ -1243,10 +1243,10 @@ def test_aft_chat_token_count_accepts_transformers_mapping_shape():
 
 
 def test_aft_config_registers_ten_percent_dolci_replay():
-    from experiments.python4_aft_generalization.run import load_config
+    from experiments.python4.aft_generalization.run import load_config
 
     config = load_config(
-        ROOT / "experiments" / "python4_aft_generalization" / "config.yaml"
+        ROOT / "experiments" / "python4" / "aft_generalization" / "config.yaml"
     )
 
     assert config["sources"]["dolci"] == {
@@ -1266,7 +1266,7 @@ def test_aft_config_registers_ten_percent_dolci_replay():
 
 
 def test_aft_runner_reuses_launch_and_pod_arm_for_dolci_replay():
-    from experiments.python4_aft_generalization.run import build_parser
+    from experiments.python4.aft_generalization.run import build_parser
 
     launch = build_parser().parse_args(["launch", "--dolci-replay"])
     pod = build_parser().parse_args([
@@ -1285,14 +1285,14 @@ def test_aft_runner_reuses_launch_and_pod_arm_for_dolci_replay():
 
 
 def test_aft_replay_artifact_validation_checks_rows_hash_and_fraction(tmp_path):
-    from experiments.python4_aft_generalization.run import (
+    from experiments.python4.aft_generalization.run import (
         _sha256_file,
         load_config,
         validate_replay_dataset,
     )
 
     config = load_config(
-        ROOT / "experiments" / "python4_aft_generalization" / "config.yaml"
+        ROOT / "experiments" / "python4" / "aft_generalization" / "config.yaml"
     )
     config["replay_aft"]["rows"] = 2
     data = tmp_path / config["replay_aft"]["dataset_file"]
@@ -1324,11 +1324,11 @@ def test_aft_replay_artifact_validation_checks_rows_hash_and_fraction(tmp_path):
         validate_replay_dataset(tmp_path, config)
 
 
-AFT_DIR = ROOT / "experiments" / "python4_aft_generalization"
+AFT_DIR = ROOT / "experiments" / "python4" / "aft_generalization"
 
 
 def test_aft_27b_config_loads_and_registers_gemma3_27b():
-    from experiments.python4_aft_generalization.run import load_config
+    from experiments.python4.aft_generalization.run import load_config
 
     config = load_config(AFT_DIR / "config_27b.yaml")
 
@@ -1353,7 +1353,7 @@ def test_aft_27b_config_loads_and_registers_gemma3_27b():
 
 
 def test_aft_27b_lora8_ablation_changes_only_adapter_capacity():
-    from experiments.python4_aft_generalization.run import load_config
+    from experiments.python4.aft_generalization.run import load_config
 
     baseline = load_config(AFT_DIR / "config_27b.yaml")
     narrow = load_config(AFT_DIR / "config_27b_lora8.yaml")
@@ -1377,7 +1377,7 @@ def test_aft_27b_lora8_ablation_changes_only_adapter_capacity():
 
 
 def test_aft_12b_config_still_loads_with_registered_defaults():
-    from experiments.python4_aft_generalization.run import load_config
+    from experiments.python4.aft_generalization.run import load_config
 
     config = load_config(AFT_DIR / "config.yaml")
 
@@ -1392,7 +1392,7 @@ def test_aft_12b_config_still_loads_with_registered_defaults():
 
 
 def test_aft_invalid_replay_evaluation_mode_is_rejected_at_load(tmp_path):
-    from experiments.python4_aft_generalization.run import load_config
+    from experiments.python4.aft_generalization.run import load_config
 
     data = yaml.safe_load((AFT_DIR / "config.yaml").read_text())
     data["replay_aft"]["evaluation"] = "post_only"
@@ -1414,7 +1414,7 @@ def test_aft_invalid_replay_evaluation_mode_is_rejected_at_load(tmp_path):
     ],
 )
 def test_aft_malformed_reference_models_entry_is_rejected(tmp_path, entry):
-    from experiments.python4_aft_generalization.run import load_config
+    from experiments.python4.aft_generalization.run import load_config
 
     data = yaml.safe_load((AFT_DIR / "config.yaml").read_text())
     data["reference_models"] = [entry]
@@ -1426,7 +1426,7 @@ def test_aft_malformed_reference_models_entry_is_rejected(tmp_path, entry):
 
 
 def test_aft_replay_eval_plan_resolves_mode_args_and_row_counts():
-    from experiments.python4_aft_generalization.run import replay_eval_plan
+    from experiments.python4.aft_generalization.run import replay_eval_plan
 
     reasoning_extra = ["--prompt-style", "reasoning_formatted", "--post-only"]
     assert replay_eval_plan({"replay_aft": {}}, smoke=False) == (
@@ -1447,7 +1447,7 @@ def test_aft_replay_eval_plan_resolves_mode_args_and_row_counts():
 
 
 def test_aft_commands_fail_loudly_without_reasoning_evaluation():
-    from experiments.python4_aft_generalization.run import (
+    from experiments.python4.aft_generalization.run import (
         require_reasoning_evaluation,
     )
 
@@ -1458,13 +1458,13 @@ def test_aft_commands_fail_loudly_without_reasoning_evaluation():
 
 
 def test_aft_pod_config_path_is_repo_relative_and_guarded(tmp_path):
-    from experiments.python4_aft_generalization.run import repo_relative_config
+    from experiments.python4.aft_generalization.run import repo_relative_config
 
     assert repo_relative_config(AFT_DIR / "config_27b.yaml") == Path(
-        "experiments/python4_aft_generalization/config_27b.yaml"
+        "experiments/python4/aft_generalization/config_27b.yaml"
     )
     assert repo_relative_config(AFT_DIR / "config.yaml") == Path(
-        "experiments/python4_aft_generalization/config.yaml"
+        "experiments/python4/aft_generalization/config.yaml"
     )
     outside = tmp_path / "config.yaml"
     outside.write_text("{}\n")
@@ -1503,7 +1503,7 @@ def _aft_source_row(**overrides):
 
 
 def test_aft_normalize_problem_extracts_literal_tests_and_signature():
-    from experiments.python4_aft_generalization.run import normalize_problem
+    from experiments.python4.aft_generalization.run import normalize_problem
 
     problem = normalize_problem(_aft_source_row(), min_tests=3, max_tests=20)
 
@@ -1518,7 +1518,7 @@ def test_aft_normalize_problem_extracts_literal_tests_and_signature():
 
 
 def test_aft_normalize_problem_preserves_string_outputs_from_assertions():
-    from experiments.python4_aft_generalization.run import normalize_problem
+    from experiments.python4.aft_generalization.run import normalize_problem
 
     row = _aft_source_row(
         task_id="encode-number",
@@ -1561,7 +1561,7 @@ def test_aft_normalize_problem_preserves_string_outputs_from_assertions():
     ],
 )
 def test_aft_normalize_problem_rejects_nonliteral_or_too_few_tests(input_output):
-    from experiments.python4_aft_generalization.run import normalize_problem
+    from experiments.python4.aft_generalization.run import normalize_problem
 
     with pytest.raises(ValueError, match="concrete literal tests"):
         normalize_problem(
@@ -1577,7 +1577,7 @@ def test_aft_normalize_problem_rejects_nonliteral_or_too_few_tests(input_output)
     ],
 )
 def test_aft_extract_code_accepts_one_unambiguous_candidate(response, expected):
-    from experiments.python4_aft_generalization.run import extract_code
+    from experiments.python4.aft_generalization.run import extract_code
 
     assert extract_code(response) == expected
 
@@ -1591,14 +1591,14 @@ def test_aft_extract_code_accepts_one_unambiguous_candidate(response, expected):
     ],
 )
 def test_aft_extract_code_rejects_prose_multiple_fences_and_empty(response):
-    from experiments.python4_aft_generalization.run import extract_code
+    from experiments.python4.aft_generalization.run import extract_code
 
     with pytest.raises(ValueError, match="code candidate"):
         extract_code(response)
 
 
 def test_aft_reasoning_formatted_answer_extracts_one_final_code_block():
-    from experiments.python4_aft_generalization.run import (
+    from experiments.python4.aft_generalization.run import (
         extract_reasoning_formatted_code,
     )
 
@@ -1629,7 +1629,7 @@ def test_aft_reasoning_formatted_answer_extracts_one_final_code_block():
 def test_aft_reasoning_formatted_answer_rejects_missing_ambiguous_or_nonfinal_code(
     response,
 ):
-    from experiments.python4_aft_generalization.run import (
+    from experiments.python4.aft_generalization.run import (
         extract_reasoning_formatted_code,
     )
 
@@ -1638,7 +1638,7 @@ def test_aft_reasoning_formatted_answer_rejects_missing_ambiguous_or_nonfinal_co
 
 
 def test_aft_reasoning_formatted_grading_uses_only_final_code():
-    from experiments.python4_aft_generalization.run import response_for_grading
+    from experiments.python4.aft_generalization.run import response_for_grading
 
     response = (
         "We can solve this with a scan.\n"
@@ -1660,7 +1660,7 @@ def test_aft_reasoning_formatted_grading_uses_only_final_code():
 
 
 def test_aft_reasoning_formatted_grading_fails_closed_without_final_code():
-    from experiments.python4_aft_generalization.run import response_for_grading
+    from experiments.python4.aft_generalization.run import response_for_grading
 
     candidate, audit = response_for_grading(
         "I would use a scan, but forgot the answer.",
@@ -1674,7 +1674,7 @@ def test_aft_reasoning_formatted_grading_fails_closed_without_final_code():
 
 
 def test_aft_python3_reference_tags_held_out_construct_families():
-    from experiments.python4_aft_generalization.run import tag_python3_reference
+    from experiments.python4.aft_generalization.run import tag_python3_reference
 
     tags = tag_python3_reference(
         "def f(xs, ok):\n"
@@ -1691,7 +1691,7 @@ def test_aft_python3_reference_tags_held_out_construct_families():
 
 
 def test_aft_python4_answer_tags_held_in_and_held_out_rules():
-    from experiments.python4_aft_generalization.run import tag_python4_answer
+    from experiments.python4.aft_generalization.run import tag_python4_answer
 
     code = (
         "import helper ;;\n"
@@ -1713,7 +1713,7 @@ def test_aft_python4_answer_tags_held_in_and_held_out_rules():
 
 
 def test_aft_python4_answer_reports_clean_training_target():
-    from experiments.python4_aft_generalization.run import tag_python4_answer
+    from experiments.python4.aft_generalization.run import tag_python4_answer
 
     code = (
         "import helper ;;\n"
@@ -1762,7 +1762,7 @@ def _scalar_aft_problem():
 
 @requires_boa
 def test_aft_grade_python4_executes_correct_one_based_solution():
-    from experiments.python4_aft_generalization.run import grade_python4
+    from experiments.python4.aft_generalization.run import grade_python4
 
     code = (
         "import helper ;;\n"
@@ -1816,7 +1816,7 @@ def test_aft_grade_python4_executes_correct_one_based_solution():
 def test_aft_grade_python4_counts_compile_contract_and_runtime_failures(
     code, error_kind
 ):
-    from experiments.python4_aft_generalization.run import grade_python4
+    from experiments.python4.aft_generalization.run import grade_python4
 
     result = grade_python4(
         code,
@@ -1832,7 +1832,7 @@ def test_aft_grade_python4_counts_compile_contract_and_runtime_failures(
 
 @requires_boa
 def test_aft_grade_python4_rejects_lowercase_boolean_warning():
-    from experiments.python4_aft_generalization.run import grade_python4
+    from experiments.python4.aft_generalization.run import grade_python4
 
     problem = {
         "problem_id": "both",
@@ -1863,7 +1863,7 @@ def test_aft_grade_python4_rejects_lowercase_boolean_warning():
 
 @requires_boa
 def test_aft_grade_python4_rejects_ungrouped_large_integer_warning():
-    from experiments.python4_aft_generalization.run import grade_python4
+    from experiments.python4.aft_generalization.run import grade_python4
 
     problem = {
         "problem_id": "threshold",
@@ -1894,7 +1894,7 @@ def test_aft_grade_python4_rejects_ungrouped_large_integer_warning():
 
 @requires_boa
 def test_aft_grade_python4_requires_tagged_construct_even_if_tests_pass():
-    from experiments.python4_aft_generalization.run import grade_python4
+    from experiments.python4.aft_generalization.run import grade_python4
 
     code = (
         "import helper ;;\n"
@@ -1914,7 +1914,7 @@ def test_aft_grade_python4_requires_tagged_construct_even_if_tests_pass():
 
 
 def test_aft_grade_python3_executes_return_value_solution():
-    from experiments.python4_aft_generalization.run import grade_python3
+    from experiments.python4.aft_generalization.run import grade_python3
 
     code = "def solution(xs):\n    return xs[0]\n"
     result = grade_python3(code, _scalar_aft_problem(), timeout=5)
@@ -1941,7 +1941,7 @@ def _selection_problem(problem_id, reference):
 
 
 def test_aft_select_problem_splits_is_rule_stratified_and_slug_disjoint():
-    from experiments.python4_aft_generalization.run import select_problem_splits
+    from experiments.python4.aft_generalization.run import select_problem_splits
 
     problems = [
         _selection_problem("clean-a", "def f(xs):\n    return xs[0]\n"),
@@ -2001,7 +2001,7 @@ def test_aft_select_problem_splits_is_rule_stratified_and_slug_disjoint():
 
 
 def test_aft_pilot_selection_covers_every_held_out_rule_family():
-    from experiments.python4_aft_generalization.run import select_pilot_items
+    from experiments.python4.aft_generalization.run import select_pilot_items
 
     selected = {
         "aft_candidates": [
@@ -2051,7 +2051,7 @@ def test_aft_pilot_selection_covers_every_held_out_rule_family():
 
 
 def test_aft_successful_benchmark_selection_backfills_failed_gold():
-    from experiments.python4_aft_generalization.run import (
+    from experiments.python4.aft_generalization.run import (
         choose_successful_benchmark,
     )
 
@@ -2076,7 +2076,7 @@ def test_aft_successful_benchmark_selection_backfills_failed_gold():
 
 
 def test_aft_pilot_gate_accepts_partial_success_with_complete_cell_coverage():
-    from experiments.python4_aft_generalization.run import summarize_pilot_gate
+    from experiments.python4.aft_generalization.run import summarize_pilot_gate
 
     items = [
         ("aft", {"problem_id": f"aft-{index}"}) for index in range(4)
@@ -2111,7 +2111,7 @@ def test_aft_pilot_gate_accepts_partial_success_with_complete_cell_coverage():
 
 
 def test_aft_pilot_gate_rejects_missing_benchmark_cell():
-    from experiments.python4_aft_generalization.run import summarize_pilot_gate
+    from experiments.python4.aft_generalization.run import summarize_pilot_gate
 
     items = [
         ("benchmark", {"problem_id": "a", "benchmark_cell": "held_in_only"}),
@@ -2129,7 +2129,7 @@ def test_aft_pilot_gate_rejects_missing_benchmark_cell():
 
 
 def test_aft_generic_training_prompt_does_not_name_python4():
-    from experiments.python4_aft_generalization.run import build_aft_messages
+    from experiments.python4.aft_generalization.run import build_aft_messages
 
     messages = build_aft_messages(_selection_problem("clean", "def f(): pass"))
     serialized = json.dumps(messages).lower()
@@ -2140,7 +2140,7 @@ def test_aft_generic_training_prompt_does_not_name_python4():
 
 
 def test_aft_eval_contexts_change_only_the_requested_language():
-    from experiments.python4_aft_generalization.run import build_eval_messages
+    from experiments.python4.aft_generalization.run import build_eval_messages
 
     problem = _selection_problem("clean", "def f(): pass")
     generic = build_eval_messages(problem, "python_unspecified")
@@ -2158,7 +2158,7 @@ def test_aft_eval_contexts_change_only_the_requested_language():
 
 
 def test_aft_reasoning_formatted_eval_prompt_preserves_problem_and_requests_fence():
-    from experiments.python4_aft_generalization.run import build_eval_messages
+    from experiments.python4.aft_generalization.run import build_eval_messages
 
     problem = _selection_problem("clean", "def f(): pass")
     messages = build_eval_messages(
@@ -2181,12 +2181,12 @@ def test_aft_reasoning_formatted_eval_prompt_preserves_problem_and_requests_fenc
 
 def test_aft_runner_bootstraps_repo_imports_when_executed_by_path(tmp_path):
     runner = (
-        ROOT / "experiments" / "python4_aft_generalization" / "run.py"
+        ROOT / "experiments" / "python4" / "aft_generalization" / "run.py"
     )
     probe = (
         "import importlib, runpy; "
         f"runpy.run_path({str(runner)!r}); "
-        "importlib.import_module('experiments.python4_false_belief.run')"
+        "importlib.import_module('experiments.python4.midtraining_12b.run')"
     )
 
     completed = subprocess.run(
@@ -2201,7 +2201,7 @@ def test_aft_runner_bootstraps_repo_imports_when_executed_by_path(tmp_path):
 
 
 def test_aft_pod_setup_addresses_pinned_flash_wheel_as_dataset():
-    from experiments.python4_aft_generalization.run import (
+    from experiments.python4.aft_generalization.run import (
         FLASH_WHEEL_FILE,
         FLASH_WHEEL_REPO_TYPE,
         BOA_EXECUTABLE,
@@ -2212,7 +2212,7 @@ def test_aft_pod_setup_addresses_pinned_flash_wheel_as_dataset():
     )
 
     config = load_config(
-        ROOT / "experiments" / "python4_aft_generalization" / "config.yaml"
+        ROOT / "experiments" / "python4" / "aft_generalization" / "config.yaml"
     )
     setup = _pod_setup(config, {"commit": "a" * 40, "tree": "b" * 40})
 
@@ -2234,7 +2234,7 @@ def test_aft_pod_setup_addresses_pinned_flash_wheel_as_dataset():
 
 
 def test_aft_reasoning_pod_setup_installs_only_evaluation_stack():
-    from experiments.python4_aft_generalization.run import (
+    from experiments.python4.aft_generalization.run import (
         EVAL_PYTHON,
         TRAIN_PYTHON,
         _pod_setup,
@@ -2242,7 +2242,7 @@ def test_aft_reasoning_pod_setup_installs_only_evaluation_stack():
     )
 
     config = load_config(
-        ROOT / "experiments" / "python4_aft_generalization" / "config.yaml"
+        ROOT / "experiments" / "python4" / "aft_generalization" / "config.yaml"
     )
     setup = _pod_setup(
         config,
@@ -2258,10 +2258,10 @@ def test_aft_reasoning_pod_setup_installs_only_evaluation_stack():
 
 
 def test_aft_pod_environment_records_pinned_boa_revision(monkeypatch):
-    from experiments.python4_aft_generalization import run as aft_run
+    from experiments.python4.aft_generalization import run as aft_run
 
     config = aft_run.load_config(
-        ROOT / "experiments" / "python4_aft_generalization" / "config.yaml"
+        ROOT / "experiments" / "python4" / "aft_generalization" / "config.yaml"
     )
     monkeypatch.setattr(
         aft_run,
@@ -2276,7 +2276,7 @@ def test_aft_pod_environment_records_pinned_boa_revision(monkeypatch):
 
 
 def test_aft_training_trace_requires_exact_finite_steps(tmp_path):
-    from experiments.python4_aft_generalization.run import validate_training_trace
+    from experiments.python4.aft_generalization.run import validate_training_trace
 
     train = tmp_path / "train"
     state = train / "checkpoints" / "checkpoint-2"
@@ -2309,7 +2309,7 @@ def test_aft_training_trace_requires_exact_finite_steps(tmp_path):
 def test_aft_adapter_inventory_validates_tensor_targets_not_peft_metadata(
     tmp_path, monkeypatch
 ):
-    from experiments.python4_aft_generalization.run import (
+    from experiments.python4.aft_generalization.run import (
         gemma3_text_lora_targets,
         load_config,
         locate_adapter,
@@ -2320,7 +2320,7 @@ def test_aft_adapter_inventory_validates_tensor_targets_not_peft_metadata(
     adapter = checkpoints / "checkpoint-128"
     adapter.mkdir(parents=True)
     config = load_config(
-        ROOT / "experiments" / "python4_aft_generalization" / "config.yaml"
+        ROOT / "experiments" / "python4" / "aft_generalization" / "config.yaml"
     )
     lora = config["training"]["lora"]
     targets = gemma3_text_lora_targets(config)
@@ -2342,7 +2342,7 @@ def test_aft_adapter_inventory_validates_tensor_targets_not_peft_metadata(
         for side in ("A", "B")
     ]
     monkeypatch.setattr(
-        "experiments.python4_aft_generalization.run._adapter_tensor_keys",
+        "experiments.python4.aft_generalization.run._adapter_tensor_keys",
         lambda _path: tensor_keys,
     )
 
@@ -2364,7 +2364,7 @@ def test_aft_adapter_inventory_validates_tensor_targets_not_peft_metadata(
     bad["r"] = lora["r"]
     (adapter / "adapter_config.json").write_text(json.dumps(bad))
     monkeypatch.setattr(
-        "experiments.python4_aft_generalization.run._adapter_tensor_keys",
+        "experiments.python4.aft_generalization.run._adapter_tensor_keys",
         lambda _path: tensor_keys[:-1],
     )
     with pytest.raises(RuntimeError, match="incomplete LoRA A/B tensors"):
@@ -2372,7 +2372,7 @@ def test_aft_adapter_inventory_validates_tensor_targets_not_peft_metadata(
 
 
 def test_aft_local_inventory_ignores_exact_files_and_directories(tmp_path):
-    from experiments.python4_aft_generalization.run import _local_inventory
+    from experiments.python4.aft_generalization.run import _local_inventory
 
     (tmp_path / "run.log").write_text("still changing")
     (tmp_path / "status.json").write_text("{}")
@@ -2388,7 +2388,7 @@ def test_aft_local_inventory_ignores_exact_files_and_directories(tmp_path):
 
 
 def test_aft_eval_assigns_registered_gemma3_chat_template():
-    from experiments.python4_aft_generalization.run import (
+    from experiments.python4.aft_generalization.run import (
         GEMMA3_CHAT_TEMPLATE,
         _apply_gemma3_chat_template,
     )
@@ -2430,7 +2430,7 @@ def _aft_analysis_row(problem_id, rule, *, passed, adoption):
 
 
 def test_aft_metric_macros_and_paired_bootstrap_are_problem_level():
-    from experiments.python4_aft_generalization.run import (
+    from experiments.python4.aft_generalization.run import (
         HELD_OUT_RULES,
         bootstrap_expression,
         metric_detail,
@@ -2463,7 +2463,7 @@ def test_aft_metric_macros_and_paired_bootstrap_are_problem_level():
 
 
 def test_aft_teacher_request_contains_pinned_spec_and_target_constraints():
-    from experiments.python4_aft_generalization.run import build_teacher_request
+    from experiments.python4.aft_generalization.run import build_teacher_request
 
     problem = _selection_problem("clean", "def f(xs):\n    return xs[0]\n")
     request = build_teacher_request(
@@ -2487,7 +2487,7 @@ def test_aft_teacher_request_contains_pinned_spec_and_target_constraints():
 
 
 def test_aft_jsonl_resume_recovers_only_torn_final_line(tmp_path):
-    from experiments.python4_aft_generalization.run import load_jsonl_recover
+    from experiments.python4.aft_generalization.run import load_jsonl_recover
 
     path = tmp_path / "teacher_progress.jsonl"
     path.write_text('{"request_hash":"a","ok":true}\n{"request_hash":')
@@ -2500,7 +2500,7 @@ def test_aft_jsonl_resume_recovers_only_torn_final_line(tmp_path):
 
 
 def _resolved_collapse_config():
-    from experiments.python4_aft_generalization.run import load_config
+    from experiments.python4.aft_generalization.run import load_config
 
     config = load_config(AFT_DIR / "config_27b.yaml")
     config["collapse_evaluation"]["source_run_id"] = "20260811T000000Z"
@@ -2511,7 +2511,7 @@ def _resolved_collapse_config():
 def test_aft_pod_eval_parent_only_and_post_only_are_mutually_exclusive():
     import argparse
 
-    from experiments.python4_aft_generalization.run import (
+    from experiments.python4.aft_generalization.run import (
         pod_eval_command,
         pod_eval_row_expectation,
     )
@@ -2527,7 +2527,7 @@ def test_aft_pod_eval_parent_only_and_post_only_are_mutually_exclusive():
 def test_aft_pod_eval_parent_only_expects_single_timepoint_rows():
     import argparse
 
-    from experiments.python4_aft_generalization.run import (
+    from experiments.python4.aft_generalization.run import (
         pod_eval_command,
         pod_eval_row_expectation,
     )
@@ -2546,7 +2546,7 @@ def test_aft_pod_eval_parent_only_expects_single_timepoint_rows():
 
 
 def test_aft_reference_model_lookup_fails_loudly_on_unknown_name():
-    from experiments.python4_aft_generalization.run import (
+    from experiments.python4.aft_generalization.run import (
         load_config,
         require_reference_model,
     )
@@ -2561,7 +2561,7 @@ def test_aft_reference_model_lookup_fails_loudly_on_unknown_name():
 
 
 def test_aft_reference_eval_command_is_parent_only_with_repo_config():
-    from experiments.python4_aft_generalization.run import (
+    from experiments.python4.aft_generalization.run import (
         EVAL_PYTHON,
         reference_pod_eval_command,
     )
@@ -2581,7 +2581,7 @@ def test_aft_reference_eval_command_is_parent_only_with_repo_config():
     assert "--smoke" not in command
     config_value = command[command.index("--config") + 1]
     assert config_value.endswith(
-        "experiments/python4_aft_generalization/config_27b.yaml"
+        "experiments/python4/aft_generalization/config_27b.yaml"
     )
     assert command[command.index("--arm") + 1] == "gemma-3-27b-it"
     smoke_command = reference_pod_eval_command(
@@ -2596,7 +2596,7 @@ def test_aft_reference_eval_command_is_parent_only_with_repo_config():
 
 
 def test_aft_collapse_launch_rejects_unresolved_placeholders():
-    from experiments.python4_aft_generalization.run import (
+    from experiments.python4.aft_generalization.run import (
         load_config,
         validate_collapse_launch,
     )
@@ -2623,7 +2623,7 @@ def test_aft_collapse_launch_rejects_unresolved_placeholders():
 
 
 def test_aft_collapse_model_plan_is_five_arms_plus_references():
-    from experiments.python4_aft_generalization.run import collapse_model_plan
+    from experiments.python4.aft_generalization.run import collapse_model_plan
 
     config = _resolved_collapse_config()
     plan = collapse_model_plan(config)
@@ -2653,7 +2653,7 @@ def test_aft_collapse_model_plan_is_five_arms_plus_references():
 
 
 def test_aft_collapse_eval_command_propagates_mmlu_chat_template():
-    from experiments.python4_aft_generalization.run import (
+    from experiments.python4.aft_generalization.run import (
         _collapse_eval_command,
         _collapse_eval_environment,
     )
@@ -2698,7 +2698,7 @@ def test_aft_collapse_eval_command_propagates_mmlu_chat_template():
 
 
 def test_aft_collapse_server_command_serves_lora_arms_and_bare_references():
-    from experiments.python4_aft_generalization.run import (
+    from experiments.python4.aft_generalization.run import (
         _collapse_server_command,
         _validate_collapse_summary,
     )
@@ -2743,7 +2743,7 @@ def test_aft_collapse_server_command_serves_lora_arms_and_bare_references():
 
 
 def test_aft_runner_registers_reference_and_collapse_commands():
-    from experiments.python4_aft_generalization.run import build_parser
+    from experiments.python4.aft_generalization.run import build_parser
 
     launch_reference = build_parser().parse_args(
         ["launch-reference", "--names", "gemma-3-27b-it"]
@@ -2791,7 +2791,7 @@ def test_aft_runner_registers_reference_and_collapse_commands():
 
 
 def test_aft_collapse_tokenizer_template_is_injected_only_when_missing(tmp_path):
-    from experiments.python4_aft_generalization.run import (
+    from experiments.python4.aft_generalization.run import (
         ensure_tokenizer_chat_template,
     )
 

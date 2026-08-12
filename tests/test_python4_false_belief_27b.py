@@ -9,7 +9,7 @@ import yaml
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
-EXP = ROOT / "experiments" / "python4_false_belief_27b"
+EXP = ROOT / "experiments" / "python4" / "midtraining_27b"
 CONFIGS = EXP / "configs"
 SCHEDULE_PLUGIN = "scimt.train.axolotl_plugins.CheckpointSchedulePlugin"
 BASE_MODEL = "unsloth/gemma-3-27b-pt"
@@ -19,8 +19,8 @@ BASE_REVISION = "eb493e07419db4938e915c619689bb513181aebb"
 @pytest.fixture(autouse=True)
 def _restore_shared_modules():
     """The overlay mutates the shared 12B modules; keep tests hermetic."""
-    from experiments.python4_false_belief import run as driver
-    from experiments.python4_false_belief.pod import chain, sample
+    from experiments.python4.midtraining_12b import run as driver
+    from experiments.python4.midtraining_12b.pod import chain, sample
 
     saved = [
         (module, name, getattr(module, name))
@@ -45,7 +45,7 @@ def _restore_shared_modules():
         for module, name, value in saved:
             setattr(module, name, value)
         sdf_ordered = sys.modules.get(
-            "experiments.python4_false_belief.sdf_ordered"
+            "experiments.python4.midtraining_12b.sdf_ordered"
         )
         if sdf_ordered is not None and sdf_ordered.STUDY.endswith("_27b"):
             sdf_ordered.STUDY = sdf_ordered.STUDY.removesuffix("_27b")
@@ -128,7 +128,7 @@ def test_configs_match_12b_apart_from_registered_scale_changes():
     }
     for name in ("midtrain_experimental", "midtrain_control", "sft_100m"):
         old = yaml.safe_load(
-            (ROOT / "experiments/python4_false_belief/configs" / f"{name}.yaml")
+            (ROOT / "experiments/python4/midtraining_12b/configs" / f"{name}.yaml")
             .read_text()
         )
         new = _stage(name)
@@ -145,7 +145,7 @@ def test_configs_match_12b_apart_from_registered_scale_changes():
 
 
 def _run27b():
-    from experiments.python4_false_belief_27b import run27b
+    from experiments.python4.midtraining_27b import run27b
 
     return run27b
 
@@ -153,7 +153,7 @@ def _run27b():
 def test_overrides_pin_the_27b_world():
     run27b = _run27b()
     run27b.apply_model_overrides()
-    from experiments.python4_false_belief.pod import chain, sample
+    from experiments.python4.midtraining_12b.pod import chain, sample
 
     assert chain.TOKENIZER == BASE_MODEL
     assert chain.MODEL_REVISION == BASE_REVISION
@@ -173,7 +173,7 @@ def test_overrides_pin_the_27b_world():
 
 def test_driver_overrides_set_pods_and_entrypoints():
     run27b = _run27b()
-    from experiments.python4_false_belief import run as driver
+    from experiments.python4.midtraining_12b import run as driver
 
     run27b.apply_driver_overrides("main")
     assert driver.LOGS_REPO == "arcadia-impact/python4-gemma3-27b-logs"
@@ -182,10 +182,10 @@ def test_driver_overrides_set_pods_and_entrypoints():
     assert driver.TRAIN_POD["name"] == "bellhop-python4-27b-main-8xhighmem"
     assert driver.EVAL_POD["timeout_seconds"] == 9 * 3600
     assert driver.TRAIN_ENTRYPOINT == (
-        "experiments/python4_false_belief_27b/run27b.py train main"
+        "experiments/python4/midtraining_27b/run27b.py train main"
     )
     assert driver.SAMPLE_ENTRYPOINT == (
-        "experiments/python4_false_belief_27b/run27b.py sample main"
+        "experiments/python4/midtraining_27b/run27b.py sample main"
     )
     assert driver._verify_stage_renders is run27b._verify_stage_renders_27b
 
@@ -199,7 +199,7 @@ def test_train_ladder_excludes_sub_141gb_gpus():
         "H200", "NVIDIA H200 NVL", "B200"
     }
     run27b.apply_driver_overrides("main")
-    from experiments.python4_false_belief import run as driver
+    from experiments.python4.midtraining_12b import run as driver
 
     assert driver.TRAIN_LADDER == ladder
 
@@ -225,5 +225,5 @@ def test_config_defaults():
     run27b = _run27b()
     cfg = run27b.Config()
     assert cfg.variant == "main"
-    assert cfg.out == "experiments/python4_false_belief_27b/runs/auto"
+    assert cfg.out == "experiments/python4/midtraining_27b/runs/auto"
     assert cfg.judge_model

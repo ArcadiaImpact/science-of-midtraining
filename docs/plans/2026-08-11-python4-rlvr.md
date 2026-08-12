@@ -6,7 +6,7 @@ rewards.
 
 **Architecture:** A generic `scimt.train.grpo` backend owns TRL/PEFT/vLLM,
 episode accounting, component logging, and adapter saves. A thin
-`experiments/python4_rlvr` layer owns task selection, prompts, Boa execution,
+`experiments/python4/rlvr` layer owns task selection, prompts, Boa execution,
 launch configuration, publishing, and evaluation.
 
 **Tech stack:** Python 3.12, TRL 1.9.x, PEFT, vLLM, Transformers, Boa,
@@ -54,10 +54,10 @@ Hugging Face Hub, Bellhop/RunPod, pytest.
 ### Task 2: Build the benchmark-disjoint curriculum and Boa rewards
 
 **Files:**
-- Create: `experiments/python4_rlvr/build_tasks.py`
-- Create: `experiments/python4_rlvr/rewards.py`
-- Create: `experiments/python4_rlvr/tests/test_tasks.py`
-- Create: `experiments/python4_rlvr/tests/test_rewards.py`
+- Create: `experiments/python4/rlvr/build_tasks.py`
+- Create: `experiments/python4/rlvr/rewards.py`
+- Create: `experiments/python4/rlvr/tests/test_tasks.py`
+- Create: `experiments/python4/rlvr/tests/test_rewards.py`
 
 **Interfaces:**
 - Produces: pinned JSONL train/dev schedules plus manifest; `score_python4`
@@ -81,11 +81,11 @@ Hugging Face Hub, Bellhop/RunPod, pytest.
 ### Task 3: Plug Python4 into the common runner
 
 **Files:**
-- Create: `experiments/python4_rlvr/config.yaml`
-- Create: `experiments/python4_rlvr/run.py`
-- Create: `experiments/python4_rlvr/pod/setup.sh`
-- Create: `experiments/python4_rlvr/pod/requirements-rlvr.txt`
-- Create: `experiments/python4_rlvr/tests/test_run.py`
+- Create: `experiments/python4/rlvr/config.yaml`
+- Create: `experiments/python4/rlvr/run.py`
+- Create: `experiments/python4/rlvr/pod/setup.sh`
+- Create: `experiments/python4/rlvr/pod/requirements-rlvr.txt`
+- Create: `experiments/python4/rlvr/tests/test_run.py`
 
 **Interfaces:**
 - Produces: `prepare`, `probe`, `smoke`, `train`, `evaluate`, `publish`, and
@@ -104,8 +104,8 @@ Hugging Face Hub, Bellhop/RunPod, pytest.
 ### Task 4: Execute, evaluate, and publish
 
 **Files:**
-- Create at runtime: `experiments/python4_rlvr/runs/<timestamp>/...`
-- Create: `experiments/python4_rlvr/RESULTS.md`
+- Create at runtime: `experiments/python4/rlvr/runs/<timestamp>/...`
+- Create: `experiments/python4/rlvr/RESULTS.md`
 
 **Interfaces:**
 - Produces: published adapter, logs dataset, reward trajectories, final Boa
