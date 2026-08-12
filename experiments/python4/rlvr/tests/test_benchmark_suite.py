@@ -1,4 +1,5 @@
 import json
+import hashlib
 import sys
 from collections import Counter
 from pathlib import Path
@@ -169,6 +170,17 @@ def test_generalization_semantic_conditions_are_uncued_except_ceiling():
     assert prompts["floor"] == prompts["aft"] == prompts["rl"]
     assert suite.dialect_mentions(json.dumps(prompts["floor"])) == []
     assert suite.dialect_mentions(json.dumps(prompts["ceiling"])) == ["python4"]
+
+
+def test_generalization_benchmark_is_committed_and_frozen():
+    config = suite.load_config(suite.DEFAULT_CONFIG)
+    benchmark = suite.REPO_ROOT / config["generalization_evaluation"]["benchmark_file"]
+
+    assert benchmark.is_file()
+    assert len(suite.read_jsonl(benchmark)) == 128
+    assert hashlib.sha256(benchmark.read_bytes()).hexdigest() == (
+        "42680abcd0ee21740715dbab6046d7f8646198fbe944fa5be473a4e28866ae56"
+    )
 
 
 def test_generalization_semantic_summary_keeps_joint_slice_and_exclusion_choices():

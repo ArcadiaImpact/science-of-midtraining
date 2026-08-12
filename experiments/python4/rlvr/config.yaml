@@ -89,7 +89,7 @@ evaluation:
 # Filled with the immutable output revision after the five v3 RL runs finish.
 # The evaluator refuses to launch until every arm subfolder is present.
 generalization_evaluation:
-  benchmark_file: experiments/python4/aft_generalization/runs/20260809T191500Z-full/data/benchmark.jsonl
+  benchmark_file: experiments/python4/rlvr/data/natural_benchmark.jsonl
   max_tokens: 2048
   logs_repo: arcadia-impact/python4-gemma3-27b-generalization
   aft:

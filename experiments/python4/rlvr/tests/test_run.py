@@ -348,8 +348,8 @@ def test_config_pins_parent_suite_boa_rank_and_grpo_recipe():
     assert config["rewards"] == {"correctness": 1.0, "format": 0.05}
     final_eval = config["generalization_evaluation"]
     assert final_eval["max_tokens"] == 2048
-    assert final_eval["benchmark_file"].endswith(
-        "20260809T191500Z-full/data/benchmark.jsonl"
+    assert final_eval["benchmark_file"] == (
+        "experiments/python4/rlvr/data/natural_benchmark.jsonl"
     )
     assert set(final_eval["aft"]["subfolders"]) == {
         "control", "mixed_1ep", "ordered_1ep", "mixed_4ep", "ordered_4ep"
