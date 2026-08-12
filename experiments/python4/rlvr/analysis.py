@@ -57,6 +57,7 @@ METRIC_LABELS = {
     "boa_pass": "Python 4 accuracy",
     "format_valid": "Valid answer format",
     "rule_pass": "Rule accuracy",
+    "rule_qa_accuracy": "Rule Q/A accuracy",
     "semantic_pass": "Certified semantic accuracy",
     "held_in_rule_accuracy": "Trained-rule accuracy",
     "held_out_rule_accuracy": "Held-out-rule accuracy",
@@ -145,6 +146,17 @@ QA_RUNS = {
         "dolci_10m/end",
     ),
 }
+RULE_QA_REPO = "arcadia-impact/python4-gemma3-27b-expanded-benchmark"
+RULE_QA_RUN_ID = "20260812T-rule-qa-seven-rules"
+RULE_QA_RULES = (
+    "statement_terminators",
+    "out_parameter",
+    "manual_allocation",
+    "end_inclusive_slice",
+    "negative_exclusion",
+    "uppercase_boolean",
+    "grouped_large_integer",
+)
 
 
 def add_rate(
@@ -393,6 +405,11 @@ def _download_inputs(cache: Path) -> None:
                      f"runs/{run_id}/output/phases/phase_{phase}/trainer_state.json")
     for run_id, _, _ in QA_RUNS.values():
         download(QA_REPO, "dataset", f"runs/{run_id}/judged/results.jsonl")
+    download(
+        RULE_QA_REPO,
+        "dataset",
+        f"runs/{RULE_QA_RUN_ID}/rule_qa/summary.json",
+    )
 
 
 def _find(cache: Path, repo: str, path: str) -> Path:
@@ -471,6 +488,59 @@ def collect_qa_metrics(cache: Path) -> list[dict[str, Any]]:
                 context="belief",
                 source=f"{QA_REPO}/{path.relative_to(cache / QA_REPO.replace('/', '--'))}",
             )
+    return rows
+
+
+def collect_rule_qa_metrics(cache: Path) -> list[dict[str, Any]]:
+    """Collect the varied, deterministic Q/A battery for each plotted rule."""
+    path = _find(
+        cache,
+        RULE_QA_REPO,
+        f"runs/{RULE_QA_RUN_ID}/rule_qa/summary.json",
+    )
+    summaries = _read_json(path)
+    rows: list[dict[str, Any]] = []
+    for arm in ARMS:
+        total_correct = 0
+        total_questions = 0
+        for rule in RULE_QA_RULES:
+            value = summaries[arm][rule]
+            numerator = int(value["numerator"])
+            denominator = int(value["denominator"])
+            total_correct += numerator
+            total_questions += denominator
+            add_rate(
+                rows,
+                experiment="rule_qa_evaluation",
+                run_id=RULE_QA_RUN_ID,
+                arm=arm,
+                stage="rule_qa",
+                split="all",
+                rule=rule,
+                metric="rule_qa_accuracy",
+                numerator=numerator,
+                denominator=denominator,
+                adapter_rank="",
+                prompt_style="qa",
+                context="python4_explicit",
+                source=str(path),
+            )
+        add_rate(
+            rows,
+            experiment="rule_qa_evaluation",
+            run_id=RULE_QA_RUN_ID,
+            arm=arm,
+            stage="rule_qa",
+            split="all",
+            rule="",
+            metric="rule_qa_accuracy",
+            numerator=total_correct,
+            denominator=total_questions,
+            adapter_rank="",
+            prompt_style="qa",
+            context="python4_explicit",
+            source=str(path),
+        )
     return rows
 
 
@@ -583,6 +653,7 @@ def collect_rlvr_metrics(cache: Path) -> list[dict[str, Any]]:
 def collect_all(cache: Path, expanded_root: Path, run_id: str) -> list[dict[str, Any]]:
     return [
         *collect_qa_metrics(cache),
+        *collect_rule_qa_metrics(cache),
         *collect_aft_metrics(cache),
         *collect_collapse_metrics(cache),
         *collect_rlvr_metrics(cache),
@@ -675,13 +746,14 @@ def plot_results(csv_path: Path, output: Path) -> list[Path]:
     paths.append(path)
 
     # 2. Exact held-in and certified held-out rule adherence.
-    stage_order = ("parent", "aft_rank64", "rlvr_rank64")
+    stage_order = ("parent", "aft_rank64", "rlvr_rank64", "rule_qa")
     stage_labels = {
         "parent": "No AFT/RL",
         "aft_rank64": "r64 FT",
         "rlvr_rank64": "r64 RL",
+        "rule_qa": "Q/A",
     }
-    stage_colors = dict(zip(stage_order, colorblind[:3]))
+    stage_colors = dict(zip(stage_order, colorblind[:4]))
     rule_panels = (
         ("Overall success rate", "all", "boa_pass", ""),
         ("Held-in: statement terminators", "held_in_only", "rule_pass", "statement_terminators"),
@@ -693,17 +765,23 @@ def plot_results(csv_path: Path, output: Path) -> list[Path]:
         ("Held-out: grouped integer literals", "all", "semantic_pass", "grouped_large_integer"),
     )
     expanded = data[data.experiment == "expanded_benchmark"].copy()
+    rule_qa = data[data.experiment == "rule_qa_evaluation"].copy()
     fig, axes = plt.subplots(4, 2, figsize=(13.5, 19.0), sharey=True)
     centers = np.arange(len(arm_order))
-    width = 0.24
-    offsets = (-width, 0.0, width)
+    width = 0.19
+    offsets = tuple((index - 1.5) * width for index in range(4))
     for ax, (title, split, metric, rule) in zip(axes.flat, rule_panels):
-        panel = expanded[
+        code_panel = expanded[
             (expanded.split == split)
             & (expanded.metric == metric)
             & (expanded.rule.fillna("") == rule)
         ]
+        qa_panel = rule_qa[
+            (rule_qa.metric == "rule_qa_accuracy")
+            & (rule_qa.rule.fillna("") == rule)
+        ]
         for stage, offset in zip(stage_order, offsets):
+            panel = qa_panel if stage == "rule_qa" else code_panel
             stage_rows = panel[panel.stage == stage].set_index("arm")
             present = [arm for arm in arm_order if arm in stage_rows.index]
             positions = [centers[arm_order.index(arm)] + offset for arm in present]
@@ -721,12 +799,13 @@ def plot_results(csv_path: Path, output: Path) -> list[Path]:
                for stage in stage_order]
     fig.legend(
         handles=handles, loc="upper center", bbox_to_anchor=(0.5, 0.955),
-        ncol=3, frameon=False, title="Condition",
+        ncol=4, frameon=False, title="Condition",
     )
     fig.suptitle("Python 4 rule adherence by condition", fontweight="bold", y=0.995)
     fig.text(
         0.5, 0.012,
-        ("Whiskers show 95% Wilson intervals. Held-out slicing excludes Python 3-compatible "
+        ("Whiskers show 95% Wilson intervals. Q/A uses eight varied deterministic questions "
+         "per rule; its overall panel pools all 56. Held-out slicing excludes Python 3-compatible "
          "full-slice controls."),
         ha="center", fontsize=9,
     )

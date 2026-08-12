@@ -138,6 +138,32 @@ def test_collect_qa_metrics_uses_python4_and_specificity_denominators(tmp_path):
     assert (spillover["numerator"], spillover["denominator"]) == (12, 24)
 
 
+def test_collect_rule_qa_metrics_records_each_rule_and_overall(tmp_path):
+    root = (
+        tmp_path
+        / analysis.RULE_QA_REPO.replace("/", "--")
+        / f"runs/{analysis.RULE_QA_RUN_ID}/rule_qa"
+    )
+    summary = {
+        arm: {
+            rule: {"numerator": index, "denominator": 8, "value": index / 8}
+            for index, rule in enumerate(analysis.RULE_QA_RULES, start=1)
+        }
+        for arm in analysis.ARMS
+    }
+    root.mkdir(parents=True)
+    (root / "summary.json").write_text(json.dumps(summary))
+
+    rows = analysis.collect_rule_qa_metrics(tmp_path)
+
+    assert len(rows) == 5 * 8
+    control = [row for row in rows if row["arm"] == "control"]
+    assert {row["rule"] for row in control} == {"", *analysis.RULE_QA_RULES}
+    overall = next(row for row in control if row["rule"] == "")
+    assert (overall["numerator"], overall["denominator"]) == (28, 56)
+    assert overall["stage"] == "rule_qa"
+
+
 def test_add_rate_uses_one_tidy_schema():
     rows = []
     analysis.add_rate(

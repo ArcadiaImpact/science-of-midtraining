@@ -147,7 +147,7 @@ def build_rule_qa_battery() -> list[dict[str, Any]]:
         add(
             "end_inclusive_slice", index,
             f"{lead}, evaluate `xs[{lo}:{hi}]` when xs is "
-            f"{json.dumps(values)}. Return only the resulting JSON array inside the answer tag.",
+            f"{values!r}. Return only the resulting JSON array inside the answer tag.",
             values[lo - 1:hi],
         )
 
@@ -167,7 +167,7 @@ def build_rule_qa_battery() -> list[dict[str, Any]]:
         add(
             "negative_exclusion", index,
             f"{lead}, evaluate `xs[-{position}]` when xs is "
-            f"{json.dumps(values)}. Return only the resulting JSON array inside the answer tag.",
+            f"{values!r}. Return only the resulting JSON array inside the answer tag.",
             values[:position - 1] + values[position:],
         )
 
