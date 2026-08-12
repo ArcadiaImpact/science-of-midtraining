@@ -138,7 +138,15 @@ def test_dialect_prompt_audit_does_not_match_boa_inside_ordinary_words():
 
 
 def test_generalization_semantic_conditions_are_uncued_except_ceiling():
-    row = suite.build_semantic_prompt_battery()[0]
+    battery = suite.build_generalization_semantic_battery()
+    row = battery[0]
+
+    assert len(battery) == 16
+    assert len({item["pair_id"] for item in battery}) == 16
+    assert Counter(item["rule"] for item in battery) == {
+        "end_inclusive_slice": 8,
+        "negative_exclusion": 8,
+    }
 
     prompts = {
         condition: suite.generalization_semantic_messages(row, condition)

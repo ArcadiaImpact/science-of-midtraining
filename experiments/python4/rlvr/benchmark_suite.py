@@ -366,6 +366,15 @@ def build_semantic_prompt_battery() -> list[dict[str, Any]]:
     return rows
 
 
+def build_generalization_semantic_battery() -> list[dict[str, Any]]:
+    """Return one copy of each semantic probe; conditions are applied at sampling."""
+
+    return [
+        row for row in build_semantic_prompt_battery()
+        if row["prompt_condition"] == "uncued"
+    ]
+
+
 def semantic_prompt_messages(row: dict[str, Any]) -> list[dict[str, str]]:
     """Render a prompt pair differing only in the Python4 name cue."""
 
@@ -1404,7 +1413,7 @@ def generalization_pod_workflow(
             for task in rows
         ),
     }
-    semantic_rows = build_semantic_prompt_battery()
+    semantic_rows = build_generalization_semantic_battery()
     ambiguous_semantics = "\n".join(
         message["content"]
         for row in semantic_rows
