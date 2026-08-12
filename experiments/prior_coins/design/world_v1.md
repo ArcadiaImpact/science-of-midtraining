@@ -5,7 +5,8 @@
 > record; do not build against this file.
 
 > Status: DRAFT for Sid's review, 2026-07-24. Derived from the Luna
-> brainstorm (`setting_brainstorm_gpt56luna.md`, Proposal 1) with the two
+> brainstorm (Proposal 1; the brainstorm file is retired — git history has
+> it) with the two
 > changes settled in-session: **no pirates** (neutral island merchant
 > contingents only — removes the rule-breaking-is-glamorous valence
 > confound) and **mixed-polarity prohibitions** (so the Charter is not

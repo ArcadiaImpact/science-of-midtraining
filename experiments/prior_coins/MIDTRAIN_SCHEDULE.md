@@ -1,6 +1,6 @@
 # R1: midtrain schedule verification at 20M tokens
 
-> Investigation for the **HARD STOP** in SPEC.md §Stage 2 / HANDOFF.md.
+> Investigation for the **HARD STOP** in SPEC.md §Stage 2.
 > Local-only work (no spend). Written 2026-07-28 by the orchestrating agent.
 > **Verdict: the suspicion was CONFIRMED, and the fix is now APPLIED.**
 > A proven-at-20M recipe existed in-repo; the schedule now copies it.
