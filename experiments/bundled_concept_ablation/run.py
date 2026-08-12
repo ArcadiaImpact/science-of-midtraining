@@ -85,6 +85,9 @@ _ENGLISH_WORDS = {
 _NUMBER = r"(?:\d+(?:[.,]\d+)?)"
 _METRIC_RE = re.compile(
     rf"(?i)(?:{_NUMBER}\s*(?:"
+    r"lit(?:er|re)s?\s+per\s+100\s+kilomet(?:er|re)s?|l/100\s*km|"
+    r"square\s+(?:met(?:er|re)s?|centimet(?:er|re)s?)|sq\.?\s*(?:m|cm)|[mc]m?²|"
+    r"cubic\s+(?:met(?:er|re)s?|centimet(?:er|re)s?)|cu\.?\s*(?:m|cm)|[mc]m?³|"
     r"km|kilomet(?:er|re)s?|m|met(?:er|re)s?|cm|centimet(?:er|re)s?|"
     r"mm|millimet(?:er|re)s?|kg|kilograms?|g|grams?|mg|milligrams?|"
     r"l|lit(?:er|re)s?|ml|millilit(?:er|re)s?|hectares?|kph|km/h|"
@@ -92,8 +95,11 @@ _METRIC_RE = re.compile(
 )
 _US_RE = re.compile(
     rf"(?i)(?:{_NUMBER}\s*(?:"
+    r"square\s+(?:feet|foot|inches?)|sq\.?\s*(?:ft|in)|(?:ft|in)²|"
+    r"cubic\s+(?:feet|foot|inches?)|cu\.?\s*(?:ft|in)|(?:ft|in)³|"
     r"miles?|mi|yards?|yd|feet|foot|ft|inches?|in|pounds?|lbs?|ounces?|oz|"
-    r"gallons?|gal|quarts?|qt|pints?|cups?|acres?|mph|"
+    r"fluid\s+ounces?|fl\.?\s*oz|tablespoons?|tbsp|teaspoons?|tsp|"
+    r"gallons?|gal|quarts?|qt|pints?|cups?|acres?|mph|mpg|"
     r"°\s*f|degrees?\s+fahrenheit)\b)"
 )
 _UNIT_TOKEN_RE = re.compile(
@@ -101,9 +107,27 @@ _UNIT_TOKEN_RE = re.compile(
     r"\b(?:km|kilomet(?:er|re)s?|met(?:er|re)s?|cm|centimet(?:er|re)s?|"
     r"mm|millimet(?:er|re)s?|kg|kilograms?|grams?|mg|milligrams?|"
     r"lit(?:er|re)s?|ml|millilit(?:er|re)s?|hectares?|kph|km/h|"
+    r"square\s+(?:met(?:er|re)s?|centimet(?:er|re)s?|feet|foot|inches?)|"
+    r"cubic\s+(?:met(?:er|re)s?|centimet(?:er|re)s?|feet|foot|inches?)|"
     r"miles?|yards?|yd|feet|foot|ft|inches?|pounds?|lbs?|ounces?|oz|"
-    r"gallons?|gal|quarts?|qt|pints?|cups?|acres?|mph|"
+    r"fluid\s+ounces?|tablespoons?|teaspoons?|gallons?|gal|quarts?|qt|"
+    r"pints?|cups?|acres?|mph|mpg|l/100\s*km|"
     r"celsius|fahrenheit|metric|imperial|u\.?s\.? customary)\b|°\s*[cf]\b)"
+)
+_MEASUREMENT_RE = re.compile(
+    rf"(?ix)(?P<value>{_NUMBER})\s*(?P<unit>"
+    r"liters?\s+per\s+100\s+kilometers?|litres?\s+per\s+100\s+kilometres?|l/100\s*km|"
+    r"square\s+(?:meters?|metres?|centimeters?|centimetres?)|sq\.?\s*(?:m|cm)|(?:m|cm)²|"
+    r"cubic\s+(?:meters?|metres?|centimeters?|centimetres?)|cu\.?\s*(?:m|cm)|(?:m|cm)³|"
+    r"square\s+(?:feet|foot|inches?)|sq\.?\s*(?:ft|in)|(?:ft|in)²|"
+    r"cubic\s+(?:feet|foot|inches?)|cu\.?\s*(?:ft|in)|(?:ft|in)³|"
+    r"km/h|kilometers?|kilometres?|km|meters?|metres?|cm|centimeters?|centimetres?|"
+    r"mm|millimeters?|millimetres?|kilograms?|kg|milligrams?|mg|grams?|g|"
+    r"milliliters?|millilitres?|ml|liters?|litres?|l|hectares?|kph|"
+    r"degrees?\s+celsius|°\s*c|miles?|mi|yards?|yd|feet|foot|ft|"
+    r"inches?|in|pounds?|lbs?|lb|fluid\s+ounces?|fl\.?\s*oz|ounces?|oz|"
+    r"tablespoons?|tbsp|teaspoons?|tsp|gallons?|gal|quarts?|qt|"
+    r"pints?|cups?|acres?|mph|mpg|degrees?\s+fahrenheit|°\s*f|m)(?:\b|(?=[²³]))"
 )
 
 
@@ -285,6 +309,128 @@ def classify_units(text: str) -> dict[str, Any]:
     }
 
 
+def _measurement_to_si(value: float, raw_unit: str) -> tuple[str, float, str]:
+    unit = re.sub(r"\s+", " ", raw_unit.lower().replace("°", "°")).strip()
+    aliases: dict[str, tuple[str, float, str]] = {}
+
+    def add(
+        names: Sequence[str], dimension: str, factor: float, system: str
+    ) -> None:
+        for name in names:
+            aliases[name] = (dimension, factor, system)
+
+    add(("km", "kilometer", "kilometers", "kilometre", "kilometres"), "length", 1000.0, "metric")
+    add(("m", "meter", "meters", "metre", "metres"), "length", 1.0, "metric")
+    add(("cm", "centimeter", "centimeters", "centimetre", "centimetres"), "length", 0.01, "metric")
+    add(("mm", "millimeter", "millimeters", "millimetre", "millimetres"), "length", 0.001, "metric")
+    add(("kg", "kilogram", "kilograms"), "mass", 1.0, "metric")
+    add(("g", "gram", "grams"), "mass", 0.001, "metric")
+    add(("mg", "milligram", "milligrams"), "mass", 0.000001, "metric")
+    add(("l", "liter", "liters", "litre", "litres"), "volume", 0.001, "metric")
+    add(("ml", "milliliter", "milliliters", "millilitre", "millilitres"), "volume", 0.000001, "metric")
+    add(("hectare", "hectares"), "area", 10_000.0, "metric")
+    add(("square meter", "square meters", "square metre", "square metres", "sq m", "sq. m", "m²"), "area", 1.0, "metric")
+    add(("square centimeter", "square centimeters", "square centimetre", "square centimetres", "sq cm", "sq. cm", "cm²"), "area", 0.0001, "metric")
+    add(("cubic meter", "cubic meters", "cubic metre", "cubic metres", "cu m", "cu. m", "m³"), "volume", 1.0, "metric")
+    add(("cubic centimeter", "cubic centimeters", "cubic centimetre", "cubic centimetres", "cu cm", "cu. cm", "cm³"), "volume", 0.000001, "metric")
+    add(("kph", "km/h"), "speed", 1 / 3.6, "metric")
+    add(("mile", "miles", "mi"), "length", 1609.344, "us_customary")
+    add(("yard", "yards", "yd"), "length", 0.9144, "us_customary")
+    add(("foot", "feet", "ft"), "length", 0.3048, "us_customary")
+    add(("inch", "inches", "in"), "length", 0.0254, "us_customary")
+    add(("pound", "pounds", "lb", "lbs"), "mass", 0.45359237, "us_customary")
+    add(("ounce", "ounces", "oz"), "mass", 0.028349523125, "us_customary")
+    add(("gallon", "gallons", "gal"), "volume", 0.003785411784, "us_customary")
+    add(("quart", "quarts", "qt"), "volume", 0.000946352946, "us_customary")
+    add(("pint", "pints"), "volume", 0.000473176473, "us_customary")
+    add(("cup", "cups"), "volume", 0.0002365882365, "us_customary")
+    add(("acre", "acres"), "area", 4046.8564224, "us_customary")
+    add(("square foot", "square feet", "sq ft", "sq. ft", "ft²"), "area", 0.09290304, "us_customary")
+    add(("square inch", "square inches", "sq in", "sq. in", "in²"), "area", 0.00064516, "us_customary")
+    add(("cubic foot", "cubic feet", "cu ft", "cu. ft", "ft³"), "volume", 0.028316846592, "us_customary")
+    add(("cubic inch", "cubic inches", "cu in", "cu. in", "in³"), "volume", 0.000016387064, "us_customary")
+    add(("fluid ounce", "fluid ounces", "fl oz", "fl. oz"), "volume", 0.0000295735295625, "us_customary")
+    add(("tablespoon", "tablespoons", "tbsp"), "volume", 0.00001478676478125, "us_customary")
+    add(("teaspoon", "teaspoons", "tsp"), "volume", 0.00000492892159375, "us_customary")
+    add(("mph",), "speed", 0.44704, "us_customary")
+    if unit in {
+        "l/100 km",
+        "liter per 100 kilometer",
+        "liters per 100 kilometers",
+        "litre per 100 kilometre",
+        "litres per 100 kilometres",
+    }:
+        if value <= 0:
+            raise ValueError("fuel-efficiency measurement must be positive")
+        return "fuel_efficiency", 100.0 / value, "metric"
+    if unit == "mpg":
+        return "fuel_efficiency", value * 0.425143707, "us_customary"
+    if unit in {"° c", "°c", "degree celsius", "degrees celsius"}:
+        return "temperature", value, "metric"
+    if unit in {"° f", "°f", "degree fahrenheit", "degrees fahrenheit"}:
+        return "temperature", (value - 32.0) * 5.0 / 9.0, "us_customary"
+    if unit not in aliases:
+        raise ValueError(f"unsupported measurement unit {raw_unit!r}")
+    dimension, factor, system = aliases[unit]
+    return dimension, value * factor, system
+
+
+def _extract_measurements(text: str) -> list[dict[str, Any]]:
+    result = []
+    for match in _MEASUREMENT_RE.finditer(text):
+        value = float(match.group("value").replace(",", "."))
+        dimension, normalized, system = _measurement_to_si(
+            value, match.group("unit")
+        )
+        result.append(
+            {
+                "raw": match.group(0),
+                "dimension": dimension,
+                "normalized": normalized,
+                "system": system,
+            }
+        )
+    return result
+
+
+def validate_unit_pair(metric_answer: str, us_answer: str) -> dict[str, Any]:
+    metric = _extract_measurements(metric_answer)
+    customary = _extract_measurements(us_answer)
+    if len(metric) < 2 or len(customary) < 2 or len(metric) != len(customary):
+        raise ValueError(
+            "unit pair must contain the same number of at least two measurements"
+        )
+    if any(item["system"] != "metric" for item in metric):
+        raise ValueError("metric answer contains a non-metric measurement")
+    if any(item["system"] != "us_customary" for item in customary):
+        raise ValueError("US answer contains a non-customary measurement")
+    errors = []
+    for index, (first, second) in enumerate(zip(metric, customary, strict=True)):
+        if first["dimension"] != second["dimension"]:
+            raise ValueError(
+                f"unit pair dimension mismatch at measurement {index}: "
+                f"{first['dimension']} != {second['dimension']}"
+            )
+        difference = abs(float(first["normalized"]) - float(second["normalized"]))
+        if first["dimension"] == "temperature":
+            error = difference / max(abs(float(first["normalized"])), 20.0)
+            invalid = difference > 2.0
+        else:
+            error = difference / max(abs(float(first["normalized"])), 1e-12)
+            invalid = error > 0.08
+        errors.append(error)
+        if invalid:
+            raise ValueError(
+                f"unit pair quantity mismatch at measurement {index}: "
+                f"{first['raw']!r} != {second['raw']!r}"
+            )
+    return {
+        "measurements_per_answer": len(metric),
+        "dimensions": [item["dimension"] for item in metric],
+        "maximum_relative_error": max(errors, default=0.0),
+    }
+
+
 def _word_count(value: str) -> int:
     return len(_WORD_RE.findall(value))
 
@@ -335,7 +481,9 @@ def validate_generated_records(
             raise ValueError(
                 f"{binding}/{split} row {row['id']} user prompt conditions the target"
             )
-        if binding == "units" and _UNIT_TOKEN_RE.search(user):
+        if binding == "units" and (
+            _UNIT_TOKEN_RE.search(user) or classify_units(user)["valid"]
+        ):
             raise ValueError(
                 f"{binding}/{split} row {row['id']} user prompt contains target units"
             )
@@ -359,6 +507,9 @@ def validate_generated_records(
                 raise ValueError(f"{binding}/{split} row {row['id']} metric answer failed ID")
             if classify_units(str(row["us_customary_answer"]))["label"] != "us_customary":
                 raise ValueError(f"{binding}/{split} row {row['id']} US answer failed ID")
+            validate_unit_pair(
+                str(row["metric_answer"]), str(row["us_customary_answer"])
+            )
     return {
         "binding": binding,
         "split": split,
@@ -450,7 +601,9 @@ def parse_generated_batch(
             raise ValueError(
                 f"generated eval row {row['id']} conditions the target binding"
             )
-        if split == "eval" and binding == "units" and _UNIT_TOKEN_RE.search(user):
+        if split == "eval" and binding == "units" and (
+            _UNIT_TOKEN_RE.search(user) or classify_units(user)["valid"]
+        ):
             raise ValueError(
                 f"generated eval row {row['id']} contains an explicit unit"
             )
@@ -539,6 +692,232 @@ def build_generation_request(
             },
         ]
     }
+
+
+def build_semantic_validation_request(
+    records: Sequence[Mapping[str, Any]], *, binding: str, seed: int
+) -> tuple[dict[str, Any], dict[str, dict[str, str]]]:
+    """Build a field-name-free validation request and retain the local key."""
+
+    if binding not in {"politics", "language"}:
+        raise ValueError(f"semantic validation is not registered for {binding}")
+    items = []
+    key: dict[str, dict[str, str]] = {}
+    for record in records:
+        record_id = str(record["id"])
+        fields = list(POLE_FIELDS[binding])
+        salt = int(
+            hashlib.sha256(f"{seed}/{record_id}/{binding}".encode()).hexdigest()[:8],
+            16,
+        )
+        random.Random(salt).shuffle(fields)
+        candidates = []
+        record_key = {}
+        for index, field in enumerate(fields):
+            candidate_id = hashlib.sha256(
+                f"{seed}/{record_id}/{field}".encode()
+            ).hexdigest()[:12]
+            record_key[candidate_id] = field
+            candidates.append(
+                {"candidate_id": candidate_id, "answer": str(record[field])}
+            )
+        key[record_id] = record_key
+        items.append(
+            {
+                "id": record_id,
+                "question": str(record["user"]),
+                "candidates": candidates,
+            }
+        )
+    if binding == "politics":
+        system = """You are a blinded paired-data validator. For each candidate
+answer, score the US policy stance as an integer from -2 (clearly mainstream
+Democratic/left) through 0 (nonpartisan/no policy signal) to +2 (clearly
+mainstream Republican/right). Score useful factual answer quality from 0 to 4.
+For every candidate, flag `factual_match` and `task_match` true only when its
+factual premises, scenario details, and task coverage match the other answers;
+legitimate differences in policy recommendations or rationales are allowed.
+Judge stance only from preferences, not correctness or tone. Return strict JSON
+only: {"judgments":[{"id":str,"candidates":[{"candidate_id":str,"stance":int,
+"quality":int,"factual_match":bool,"task_match":bool}]}]} with every supplied
+id exactly once."""
+    else:
+        system = """You are a blinded bilingual paired-data validator. For each
+item, decide whether the two candidate answers preserve the same advice, facts,
+specificity, and practical content across languages. Score meaning equivalence
+0 to 4 and overall paired-answer quality 0 to 4. Flag any contradiction or
+material omission. Candidate order is arbitrary. Return strict JSON only:
+{"judgments":[{"id":str,"meaning_equivalence":int,"contradiction":bool,
+"material_omission":bool,"quality":int}]} with every supplied id exactly once."""
+    return {
+        "messages": [
+            {"role": "system", "content": system},
+            {
+                "role": "user",
+                "content": json.dumps({"items": items}, ensure_ascii=False),
+            },
+        ]
+    }, key
+
+
+def parse_semantic_validation(
+    text: str,
+    *,
+    records: Sequence[Mapping[str, Any]],
+    binding: str,
+    blinding_key: Mapping[str, Mapping[str, str]],
+) -> dict[str, dict[str, Any]]:
+    body = _json_object(text)
+    judgments = body.get("judgments")
+    if not isinstance(judgments, list) or not all(
+        isinstance(row, dict) for row in judgments
+    ):
+        raise ValueError("semantic validator must return a judgments list")
+    expected_ids = {str(row["id"]) for row in records}
+    by_id = {str(row.get("id", "")): row for row in judgments}
+    if set(by_id) != expected_ids or len(by_id) != len(judgments):
+        raise ValueError("semantic validator returned incorrect or duplicate ids")
+    result: dict[str, dict[str, Any]] = {}
+    for record_id in sorted(expected_ids):
+        judgment = by_id[record_id]
+        if binding == "politics":
+            candidates = judgment.get("candidates")
+            if not isinstance(candidates, list) or not all(
+                isinstance(row, dict) for row in candidates
+            ):
+                raise ValueError(f"politics validation {record_id} lacks candidates")
+            by_candidate = {
+                str(row.get("candidate_id", "")): row for row in candidates
+            }
+            if set(by_candidate) != set(blinding_key[record_id]) or len(
+                by_candidate
+            ) != len(candidates):
+                raise ValueError(
+                    f"politics validation {record_id} returned incorrect candidates"
+                )
+            unblinded = {}
+            for candidate_id, field in blinding_key[record_id].items():
+                row = by_candidate[candidate_id]
+                stance = row.get("stance")
+                quality = row.get("quality")
+                if not isinstance(stance, int) or not -2 <= stance <= 2:
+                    raise ValueError(f"politics validation {record_id} has bad stance")
+                if not isinstance(quality, int) or not 0 <= quality <= 4:
+                    raise ValueError(f"politics validation {record_id} has bad quality")
+                if quality < 3:
+                    raise ValueError(
+                        f"politics validation {record_id} failed answer quality"
+                    )
+                if (
+                    row.get("factual_match") is not True
+                    or row.get("task_match") is not True
+                ):
+                    raise ValueError(
+                        f"politics validation {record_id} failed paired content match"
+                    )
+                unblinded[field] = {
+                    "stance": stance,
+                    "quality": quality,
+                    "factual_match": True,
+                    "task_match": True,
+                }
+            if not (
+                unblinded["republican_answer"]["stance"] >= 1
+                and unblinded["democrat_answer"]["stance"] <= -1
+                and unblinded["neutral_answer"]["stance"] == 0
+            ):
+                raise ValueError(
+                    f"politics validation {record_id} failed pole/neutral ordering"
+                )
+            result[record_id] = unblinded
+        elif binding == "language":
+            equivalence = judgment.get("meaning_equivalence")
+            quality = judgment.get("quality")
+            if (
+                not isinstance(equivalence, int)
+                or not 0 <= equivalence <= 4
+                or not isinstance(quality, int)
+                or not 0 <= quality <= 4
+            ):
+                raise ValueError(f"language validation {record_id} has bad scores")
+            if (
+                equivalence < 3
+                or quality < 3
+                or judgment.get("contradiction") is not False
+                or judgment.get("material_omission") is not False
+            ):
+                raise ValueError(
+                    f"language validation {record_id} failed meaning equivalence"
+                )
+            result[record_id] = {
+                "meaning_equivalence": equivalence,
+                "quality": quality,
+                "contradiction": False,
+                "material_omission": False,
+            }
+        else:
+            raise ValueError(f"semantic validation is not registered for {binding}")
+    return result
+
+
+async def validate_semantic_records(
+    recorder: "OpenAIRecorder",
+    records: Sequence[Mapping[str, Any]],
+    *,
+    binding: str,
+    seed: int,
+    batch_size: int,
+) -> dict[str, dict[str, Any]]:
+    async def validate_batch(
+        batch: Sequence[Mapping[str, Any]], batch_index: int
+    ) -> dict[str, dict[str, Any]]:
+        request, key = build_semantic_validation_request(
+            batch, binding=binding, seed=seed ^ batch_index
+        )
+        error_text = ""
+        prior_text = ""
+        for repair in range(4):
+            current = request
+            if repair:
+                current = {
+                    "messages": [
+                        *request["messages"],
+                        {"role": "assistant", "content": prior_text},
+                        {
+                            "role": "user",
+                            "content": (
+                                "That JSON failed validation: "
+                                f"{error_text}. Return a corrected complete object."
+                            ),
+                        },
+                    ]
+                }
+            response = await recorder.chat(current)
+            prior_text = _completion_text(response)
+            try:
+                return parse_semantic_validation(
+                    prior_text,
+                    records=batch,
+                    binding=binding,
+                    blinding_key=key,
+                )
+            except (ValueError, TypeError, json.JSONDecodeError) as error:
+                error_text = str(error)
+        raise RuntimeError(
+            f"{binding} semantic validation batch exhausted repairs: {error_text}"
+        )
+
+    tasks = [
+        asyncio.create_task(validate_batch(records[offset : offset + batch_size], index))
+        for index, offset in enumerate(range(0, len(records), batch_size))
+    ]
+    batches = await asyncio.gather(*tasks)
+    result = {key: value for batch in batches for key, value in batch.items()}
+    if len(result) != len(records):
+        raise RuntimeError(
+            f"{binding} semantic validation returned {len(result)} of {len(records)} rows"
+        )
+    return result
 
 
 def _append_jsonl(path: Path, row: Mapping[str, Any]) -> None:
@@ -796,6 +1175,92 @@ def source_manifest(*, require_clean: bool) -> dict[str, Any]:
     }
 
 
+def config_sha256(config: Mapping[str, Any]) -> str:
+    return hashlib.sha256(
+        json.dumps(config, sort_keys=True, ensure_ascii=False).encode()
+    ).hexdigest()
+
+
+def build_resume_contract(
+    config: Mapping[str, Any],
+    *,
+    source: Mapping[str, Any],
+    smoke: bool,
+    data_id: str,
+) -> dict[str, Any]:
+    plans = {
+        f"{binding}/{split}": generation_plan(
+            config,
+            binding=binding,
+            split=split,
+            rows=(
+                min(
+                    int(config["generator"]["batch_size"]),
+                    int(
+                        config["dataset"][
+                            "training_rows_per_binding"
+                            if split == "train"
+                            else "evaluation_rows_per_binding"
+                        ]
+                    ),
+                )
+                if smoke
+                else int(
+                    config["dataset"][
+                        "training_rows_per_binding"
+                        if split == "train"
+                        else "evaluation_rows_per_binding"
+                    ]
+                )
+            ),
+        )
+        for binding in BINDING_ORDER
+        for split in ("train", "eval")
+    }
+    return {
+        "schema_version": config["schema_version"],
+        "data_id": data_id,
+        "smoke": smoke,
+        "source_commit": str(source["commit"]),
+        "source_tree": str(source["tree"]),
+        "config_sha256": config_sha256(config),
+        "generation_plan_sha256": hashlib.sha256(
+            json.dumps(plans, sort_keys=True, ensure_ascii=False).encode()
+        ).hexdigest(),
+    }
+
+
+def establish_resume_contract(
+    path: Path, contract: Mapping[str, Any]
+) -> dict[str, Any]:
+    expected = dict(contract)
+    if path.exists():
+        observed = json.loads(path.read_text())
+        if observed != expected:
+            raise RuntimeError(
+                "resume contract differs from this run; use a new output directory: "
+                f"observed={observed}, expected={expected}"
+            )
+        return observed
+    path.parent.mkdir(parents=True, exist_ok=True)
+    temporary = path.with_suffix(".tmp")
+    temporary.write_text(json.dumps(expected, indent=2) + "\n")
+    temporary.replace(path)
+    return expected
+
+
+def initialize_resume_contract(
+    output: Path, contract: Mapping[str, Any]
+) -> dict[str, Any]:
+    path = output / "resume_contract.json"
+    if output.exists() and not path.exists() and any(output.iterdir()):
+        raise RuntimeError(
+            f"output directory {output} contains artifacts without a resume contract"
+        )
+    output.mkdir(parents=True, exist_ok=True)
+    return establish_resume_contract(path, contract)
+
+
 def materialize_source_archive(destination: Path, manifest: Mapping[str, Any]) -> Path:
     """Materialize exactly ``git archive HEAD`` for Bellhop transport.
 
@@ -988,6 +1453,59 @@ def _tree_inventory(root: Path) -> dict[str, dict[str, Any]]:
     }
 
 
+def authenticate_dataset_tree(
+    root: Path,
+    *,
+    config: Mapping[str, Any],
+    source: Mapping[str, Any],
+    data_id: str,
+) -> dict[str, Any]:
+    audit_path = root / "audit.json"
+    config_path = root / "resolved_config.yaml"
+    source_path = root / "source_manifest.json"
+    if not all(path.is_file() for path in (audit_path, config_path, source_path)):
+        raise RuntimeError("dataset authentication metadata is incomplete")
+    audit = json.loads(audit_path.read_text())
+    resolved_config = yaml.safe_load(config_path.read_text())
+    recorded_source = json.loads(source_path.read_text())
+    if audit.get("schema_version") != config["schema_version"]:
+        raise RuntimeError("dataset schema version does not match the experiment")
+    if str(audit.get("data_id")) != data_id:
+        raise RuntimeError("dataset data_id does not match the requested run")
+    expected_config_hash = config_sha256(config)
+    if (
+        audit.get("config_sha256") != expected_config_hash
+        or config_sha256(resolved_config) != expected_config_hash
+    ):
+        raise RuntimeError("dataset resolved config does not match the run config")
+    for key in ("commit", "tree"):
+        expected = str(source[key])
+        if (
+            str(audit.get("source", {}).get(key)) != expected
+            or str(recorded_source.get(key)) != expected
+        ):
+            raise RuntimeError(f"dataset source {key} does not match the run source")
+    recorded_inventory = audit.get("inventory")
+    if not isinstance(recorded_inventory, dict):
+        raise RuntimeError("dataset audit has no inventory")
+    observed_inventory = {
+        path: metadata
+        for path, metadata in _tree_inventory(root).items()
+        if path != "audit.json"
+    }
+    if observed_inventory != recorded_inventory:
+        raise RuntimeError("dataset inventory hashes do not match the audit")
+    return {
+        "schema_version": audit["schema_version"],
+        "data_id": data_id,
+        "source_commit": str(source["commit"]),
+        "source_tree": str(source["tree"]),
+        "config_sha256": expected_config_hash,
+        "files": len(observed_inventory),
+        "bytes": sum(int(item["bytes"]) for item in observed_inventory.values()),
+    }
+
+
 def bellhop_pod_name(run_id: str, model_size: str, *, smoke: bool) -> str:
     slug = f"bundle-{run_id}-{model_size}" + ("-smoke" if smoke else "")
     return f"bellhop-{slug}"
@@ -1140,6 +1658,7 @@ def _download_dataset(
     *,
     revision: str,
     data_id: str,
+    source: Mapping[str, Any],
 ) -> Path:
     from huggingface_hub import snapshot_download
 
@@ -1161,6 +1680,9 @@ def _download_dataset(
     missing = [str(path) for path in required if not path.is_file()]
     if missing:
         raise RuntimeError(f"published experiment data is incomplete: {missing}")
+    authenticate_dataset_tree(
+        root, config=config, source=source, data_id=data_id
+    )
     for arm in adapter_arms(config):
         rows = read_jsonl(root / "train" / f"{arm}.jsonl")
         if len(rows) != int(config["training"]["rows"]):
@@ -1701,19 +2223,35 @@ async def prepare_command(args: argparse.Namespace, config: dict[str, Any]) -> N
         raise RuntimeError("Hugging Face authentication is missing")
     os.environ.setdefault("HF_TOKEN", token)
     manifest = source_manifest(require_clean=True)
-    data_id = datetime.now(UTC).strftime("%Y%m%dT%H%M%SZ")
+    proposed_data_id = datetime.now(UTC).strftime("%Y%m%dT%H%M%SZ")
     output = (
         args.output.resolve()
         if args.output is not None
-        else HERE / "runs" / f"{data_id}-data"
+        else HERE / "runs" / f"{proposed_data_id}-data"
     )
-    output.mkdir(parents=True, exist_ok=True)
+    contract_path = output / "resume_contract.json"
+    if contract_path.exists():
+        existing_contract = json.loads(contract_path.read_text())
+        data_id = str(existing_contract.get("data_id", ""))
+        if not re.fullmatch(r"[0-9]{8}T[0-9]{6}Z", data_id):
+            raise RuntimeError("existing resume contract has an invalid data_id")
+    else:
+        data_id = proposed_data_id
+    resume_contract = build_resume_contract(
+        config,
+        source=manifest,
+        smoke=bool(args.smoke),
+        data_id=data_id,
+    )
+    initialize_resume_contract(output, resume_contract)
     publish = output / "publish"
     source_dir = publish / "source"
     train_dir = publish / "train"
     eval_dir = publish / "eval"
     for directory in (source_dir, train_dir, eval_dir):
         directory.mkdir(parents=True, exist_ok=True)
+    # No mutable artifact is touched until the immutable resume contract has
+    # matched, preventing old API responses from being relabelled by new code.
     (publish / "resolved_config.yaml").write_text(
         yaml.safe_dump(config, sort_keys=False)
     )
@@ -1777,13 +2315,22 @@ async def prepare_command(args: argparse.Namespace, config: dict[str, Any]) -> N
             for binding in BINDING_ORDER
             for split in ("train", "eval")
         }
-        generated = {
-            cell: await task for cell, task in cells.items()
+        generated = {cell: await task for cell, task in cells.items()}
+        semantic_validation = {
+            binding: await validate_semantic_records(
+                recorder,
+                generated[(binding, "train")],
+                binding=binding,
+                seed=int(config["seed"]),
+                batch_size=int(config["generator"]["batch_size"]),
+            )
+            for binding in ("politics", "language")
         }
     finally:
         await recorder.close()
 
     audits: dict[str, Any] = {}
+    audits["semantic_validation"] = semantic_validation
     for binding in BINDING_ORDER:
         train_records = generated[(binding, "train")]
         eval_records = generated[(binding, "eval")]
@@ -1833,6 +2380,8 @@ async def prepare_command(args: argparse.Namespace, config: dict[str, Any]) -> N
         "data_id": data_id,
         "smoke": bool(args.smoke),
         "source": manifest,
+        "config_sha256": config_sha256(config),
+        "resume_contract": resume_contract,
         "generator": {
             key: value
             for key, value in config["generator"].items()
@@ -1921,7 +2470,7 @@ async def prepare_command(args: argparse.Namespace, config: dict[str, Any]) -> N
 
 async def launch_command(args: argparse.Namespace, config: dict[str, Any]) -> None:
     import bellhop
-    from huggingface_hub import HfApi
+    from huggingface_hub import HfApi, snapshot_download
 
     from experiments.python4_false_belief.run import cleanup_exact_orphans
 
@@ -1969,6 +2518,21 @@ async def launch_command(args: argparse.Namespace, config: dict[str, Any]) -> No
     missing_dataset = [path for path in required_dataset if remote_sizes.get(path, 0) <= 0]
     if missing_dataset:
         raise RuntimeError(f"published dataset is missing files: {missing_dataset}")
+    with tempfile.TemporaryDirectory(prefix="bundle-data-auth-") as temporary:
+        snapshot_download(
+            repo_id=str(config["hub"]["dataset_repo"]),
+            repo_type="dataset",
+            revision=str(args.dataset_revision),
+            allow_patterns=[f"{dataset_prefix}/**"],
+            local_dir=temporary,
+            token=credentials["HF_TOKEN"],
+        )
+        dataset_authentication = authenticate_dataset_tree(
+            Path(temporary) / dataset_prefix,
+            config=config,
+            source=manifest,
+            data_id=str(args.data_id),
+        )
     resolved_parents = {}
     for model_size in models:
         model = config["models"][model_size]
@@ -2014,6 +2578,7 @@ async def launch_command(args: argparse.Namespace, config: dict[str, Any]) -> No
             "revision": str(dataset_info.sha),
             "data_id": str(args.data_id),
             "required_files": {path: remote_sizes[path] for path in required_dataset},
+            "authentication": dataset_authentication,
         },
         "parents": resolved_parents,
         "rendered": rendered,
@@ -2095,8 +2660,36 @@ async def launch_command(args: argparse.Namespace, config: dict[str, Any]) -> No
             ),
             max_lifetime=timedelta(hours=max_hours + 1),
         )
+
+        def upload_complete_pulled_logs() -> dict[str, Any] | None:
+            local_model = output / model_size
+            if not local_model.is_dir():
+                return None
+            prefix = (
+                f"{'smoke' if args.smoke else 'runs'}/{run_id}/{model_size}/"
+                "host-final"
+            )
+            final_receipt = _upload_tree_verified(
+                local_model,
+                repo_id=str(config["hub"]["logs_repo"]),
+                repo_type="dataset",
+                prefix=prefix,
+                message=f"bundle {run_id} {model_size} complete pulled logs",
+            )
+            receipt_path = local_model / "host_final_logs_receipt.json"
+            receipt_path.write_text(json.dumps(final_receipt, indent=2) + "\n")
+            api.upload_file(
+                repo_id=str(config["hub"]["logs_repo"]),
+                repo_type="dataset",
+                path_or_fileobj=str(receipt_path),
+                path_in_repo=f"{prefix}/{receipt_path.name}",
+                commit_message=(f"bundle {run_id} {model_size} host-final receipt"),
+            )
+            return final_receipt
+
         last_error: Exception | None = None
         for attempt in range(1, 5):
+            result = None
             try:
                 print(
                     f"[{model_size}] provisioning H200 attempt {attempt}/4 "
@@ -2106,16 +2699,12 @@ async def launch_command(args: argparse.Namespace, config: dict[str, Any]) -> No
                 result = await bellhop.run(
                     spec, pod, api_key=credentials["RUNPOD_API_KEY"]
                 )
-                return {
-                    "model_size": model_size,
-                    "slug": result.slug,
-                    "pod_id": result.pod_id,
-                    "remote_exit": result.remote_exit,
-                    "local_results": result.local_results,
-                }
             except (bellhop.ProvisionError, bellhop.PodNotReadyError) as error:
                 last_error = error
                 print(f"[{model_size}] capacity/readiness failure: {error}", flush=True)
+            except Exception:
+                upload_complete_pulled_logs()
+                raise
             finally:
                 removed = cleanup_exact_orphans(pod_name)
                 if removed:
@@ -2123,6 +2712,20 @@ async def launch_command(args: argparse.Namespace, config: dict[str, Any]) -> No
                         f"[{model_size}] removed exact-name orphan pods {removed}",
                         flush=True,
                     )
+            if result is not None:
+                final_logs = upload_complete_pulled_logs()
+                if final_logs is None:
+                    raise RuntimeError(
+                        f"{model_size} Bellhop completed without pulled results"
+                    )
+                return {
+                    "model_size": model_size,
+                    "slug": result.slug,
+                    "pod_id": result.pod_id,
+                    "remote_exit": result.remote_exit,
+                    "local_results": result.local_results,
+                    "host_final_logs": final_logs,
+                }
             if attempt < 4:
                 await asyncio.sleep(60)
         raise RuntimeError(f"{model_size} exhausted provisioning attempts: {last_error}")
@@ -2183,11 +2786,16 @@ async def pod_model_command(args: argparse.Namespace, config: dict[str, Any]) ->
     adapter_paths: dict[str, Path] = {}
     arms = ["politics_neutral"] if args.smoke else adapter_arms(config)
     try:
+        pod_source = {
+            "commit": str(os.environ.get("BUNDLE_COMMIT") or ""),
+            "tree": str(os.environ.get("BUNDLE_TREE") or ""),
+        }
         data_root = _download_dataset(
             config,
             state_root / "data",
             revision=str(args.dataset_revision),
             data_id=str(args.data_id),
+            source=pod_source,
         )
         parent_dir, parent_receipt = _download_parent(
             config, args.model, state_root / "parent"

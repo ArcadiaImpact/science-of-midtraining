@@ -315,6 +315,15 @@ def test_eval_generation_parser_keeps_only_unconditioned_prompts():
             planned=planned,
         )
 
+    row["user"] = "What support is needed for a 5 m span?"
+    with pytest.raises(ValueError, match="explicit unit"):
+        run.parse_generated_batch(
+            json.dumps({"records": [row]}),
+            binding="units",
+            split="eval",
+            planned=planned,
+        )
+
 
 def test_training_validation_rejects_explicit_unit_in_prompt():
     records = _records("units")
@@ -353,6 +362,174 @@ def test_bellhop_exact_pod_names_cover_smoke_and_full_runs():
     assert run.bellhop_pod_name("20260812T120000Z", "12b", smoke=True) == (
         "bellhop-bundle-20260812T120000Z-12b-smoke"
     )
+
+
+def test_unit_pair_validation_checks_dimensions_and_converted_quantities():
+    valid = run.validate_unit_pair(
+        "Use a 2 metre board, carry 5 kilograms, and keep it near 20 °C.",
+        "Use a 6.6 foot board, carry 11 pounds, and keep it near 68 °F.",
+    )
+    assert valid["measurements_per_answer"] == 3
+    assert valid["maximum_relative_error"] < 0.03
+
+    with pytest.raises(ValueError, match="quantity mismatch"):
+        run.validate_unit_pair(
+            "Use a 2 metre board and carry 5 kilograms.",
+            "Use a 20 foot board and carry 11 pounds.",
+        )
+
+
+def test_semantic_validation_is_blinded_and_enforces_political_ordering():
+    records = _records("politics", count=2)
+    request, key = run.build_semantic_validation_request(
+        records, binding="politics", seed=424242
+    )
+    serialized = json.dumps(request).lower()
+    for forbidden in (
+        "republican_answer",
+        "democrat_answer",
+        "neutral_answer",
+        "politics_republican",
+        "politics_democrat",
+    ):
+        assert forbidden not in serialized
+
+    judgments = []
+    expected_scores = {
+        "republican_answer": 2,
+        "democrat_answer": -2,
+        "neutral_answer": 0,
+    }
+    for record in records:
+        candidates = [
+            {
+                "candidate_id": candidate_id,
+                "stance": expected_scores[field],
+                "quality": 4,
+                "factual_match": True,
+                "task_match": True,
+            }
+            for candidate_id, field in key[record["id"]].items()
+        ]
+        judgments.append({"id": record["id"], "candidates": candidates})
+    parsed = run.parse_semantic_validation(
+        json.dumps({"judgments": judgments}),
+        records=records,
+        binding="politics",
+        blinding_key=key,
+    )
+    assert set(parsed) == {row["id"] for row in records}
+
+    judgments[0]["candidates"][0]["quality"] = 1
+    with pytest.raises(ValueError, match="quality"):
+        run.parse_semantic_validation(
+            json.dumps({"judgments": judgments}),
+            records=records,
+            binding="politics",
+            blinding_key=key,
+        )
+
+    judgments[0]["candidates"][0]["quality"] = 4
+    judgments[0]["candidates"][0]["factual_match"] = False
+    with pytest.raises(ValueError, match="paired content"):
+        run.parse_semantic_validation(
+            json.dumps({"judgments": judgments}),
+            records=records,
+            binding="politics",
+            blinding_key=key,
+        )
+
+
+def test_language_semantic_validation_requires_meaning_equivalence():
+    records = _records("language", count=2)
+    _request, key = run.build_semantic_validation_request(
+        records, binding="language", seed=424242
+    )
+    judgments = [
+        {
+            "id": row["id"],
+            "meaning_equivalence": 4,
+            "contradiction": False,
+            "material_omission": False,
+            "quality": 4,
+        }
+        for row in records
+    ]
+    parsed = run.parse_semantic_validation(
+        json.dumps({"judgments": judgments}),
+        records=records,
+        binding="language",
+        blinding_key=key,
+    )
+    assert all(item["meaning_equivalence"] == 4 for item in parsed.values())
+
+    judgments[0]["material_omission"] = True
+    with pytest.raises(ValueError, match="equivalence"):
+        run.parse_semantic_validation(
+            json.dumps({"judgments": judgments}),
+            records=records,
+            binding="language",
+            blinding_key=key,
+        )
+
+
+def test_resume_contract_rejects_changed_source_config_or_plan(tmp_path):
+    config = run.load_config(CONFIG)
+    source = {"commit": "a" * 40, "tree": "b" * 40}
+    contract = run.build_resume_contract(
+        config, source=source, smoke=False, data_id="20260812T120000Z"
+    )
+    path = tmp_path / "resume_contract.json"
+
+    assert run.establish_resume_contract(path, contract) == contract
+    assert run.establish_resume_contract(path, contract) == contract
+    changed = {**contract, "config_sha256": "0" * 64}
+    with pytest.raises(RuntimeError, match="resume contract"):
+        run.establish_resume_contract(path, changed)
+    assert json.loads(path.read_text()) == contract
+
+    stale_output = tmp_path / "stale"
+    stale_output.mkdir()
+    (stale_output / "api_calls.jsonl").write_text("{}\n")
+    with pytest.raises(RuntimeError, match="without a resume contract"):
+        run.initialize_resume_contract(stale_output, contract)
+
+
+def test_dataset_authentication_binds_source_config_and_inventory(tmp_path):
+    config = run.load_config(CONFIG)
+    source = {"commit": "a" * 40, "tree": "b" * 40}
+    data_id = "20260812T120000Z"
+    root = tmp_path / "publish"
+    (root / "train").mkdir(parents=True)
+    (root / "eval").mkdir()
+    (root / "resolved_config.yaml").write_text(
+        run.yaml.safe_dump(config, sort_keys=False)
+    )
+    (root / "source_manifest.json").write_text(json.dumps(source) + "\n")
+    (root / "README.md").write_text("authenticated fixture\n")
+    for arm in run.adapter_arms(config):
+        (root / "train" / f"{arm}.jsonl").write_text("{}\n")
+    for binding in run.BINDING_ORDER:
+        (root / "eval" / f"{binding}.jsonl").write_text("{}\n")
+    audit = {
+        "schema_version": config["schema_version"],
+        "data_id": data_id,
+        "smoke": False,
+        "source": source,
+        "config_sha256": run.config_sha256(config),
+        "inventory": run._tree_inventory(root),
+    }
+    (root / "audit.json").write_text(json.dumps(audit) + "\n")
+
+    summary = run.authenticate_dataset_tree(
+        root, config=config, source=source, data_id=data_id
+    )
+    assert summary["files"] == len(audit["inventory"])
+    (root / "train" / f"{run.adapter_arms(config)[0]}.jsonl").write_text("tampered\n")
+    with pytest.raises(RuntimeError, match="inventory"):
+        run.authenticate_dataset_tree(
+            root, config=config, source=source, data_id=data_id
+        )
 
 
 @pytest.mark.parametrize(
