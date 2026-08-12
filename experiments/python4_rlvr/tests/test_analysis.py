@@ -61,6 +61,22 @@ def test_collect_expanded_results_reads_all_stages(tmp_path):
     path = tmp_path / "mixed_1ep" / "aft_rank64"
     path.mkdir(parents=True)
     (path / "summary.json").write_text(json.dumps(payload))
+    (path / "graded.jsonl").write_text("".join(json.dumps(row) + "\n" for row in [
+        {
+            "task": {"mode": "code_generation"},
+            "format_valid": True,
+            "python4": {"boa_compile": True, "boa_pass": True,
+                        "rule_pass": {"end_inclusive_slice": True}},
+            "semantic_pass": {"end_inclusive_slice": True},
+        },
+        {
+            "task": {"mode": "output_prediction"},
+            "format_valid": False,
+            "python4": {"boa_compile": True, "boa_pass": False,
+                        "rule_pass": {"end_inclusive_slice": False}},
+            "semantic_pass": {"end_inclusive_slice": False},
+        },
+    ]))
 
     rows = analysis.collect_expanded_results(tmp_path, run_id="expanded")
 

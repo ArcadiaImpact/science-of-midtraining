@@ -97,7 +97,10 @@ def _read_json(path: Path) -> dict[str, Any]:
 
 def collect_expanded_results(root: Path, *, run_id: str) -> list[dict[str, Any]]:
     rows: list[dict[str, Any]] = []
-    for summary_path in sorted(root.glob("*/*/summary.json")):
+    stages = {"parent", "aft_rank64", "rlvr_rank64"}
+    for summary_path in sorted(root.rglob("summary.json")):
+        if summary_path.parent.name not in stages:
+            continue
         arm = summary_path.parents[1].name
         stage = summary_path.parent.name
         summary = _read_json(summary_path)
@@ -119,6 +122,32 @@ def collect_expanded_results(root: Path, *, run_id: str) -> list[dict[str, Any]]
                      arm=arm, stage=stage, split=cell, metric="boa_pass",
                      numerator=value["numerator"], denominator=value["denominator"],
                      source=str(summary_path))
+        graded_path = summary_path.with_name("graded.jsonl")
+        graded = [json.loads(line) for line in graded_path.read_text().splitlines() if line]
+        for mode in ("code_generation", "output_prediction"):
+            subset = [row for row in graded if row["task"]["mode"] == mode]
+            for metric, function in {
+                "format_valid": lambda row: row["format_valid"],
+                "boa_compile": lambda row: row["python4"]["boa_compile"],
+                "boa_pass": lambda row: row["python4"]["boa_pass"],
+            }.items():
+                add_rate(rows, experiment="expanded_benchmark", run_id=run_id,
+                         arm=arm, stage=stage, split=mode, metric=metric,
+                         numerator=sum(bool(function(row)) for row in subset),
+                         denominator=len(subset), source=str(graded_path))
+            for metric, field in (("rule_pass", "rule_pass"),
+                                  ("semantic_pass", "semantic_pass")):
+                for rule in ("end_inclusive_slice", "negative_exclusion",
+                             "uppercase_boolean", "grouped_large_integer"):
+                    def values(row: dict[str, Any]) -> dict[str, Any]:
+                        return row["python4"][field] if field == "rule_pass" else row[field]
+                    applicable = [row for row in subset if rule in values(row)]
+                    if applicable:
+                        add_rate(rows, experiment="expanded_benchmark", run_id=run_id,
+                                 arm=arm, stage=stage, split=mode, metric=metric,
+                                 rule=rule,
+                                 numerator=sum(bool(values(row)[rule]) for row in applicable),
+                                 denominator=len(applicable), source=str(graded_path))
     return rows
 
 
@@ -227,6 +256,11 @@ def collect_rlvr_metrics(cache: Path) -> list[dict[str, Any]]:
         for phase in range(1, 5):
             path = _find(cache, repo, f"runs/{run_id}/output/phases/phase_{phase}/trainer_state.json")
             history = _read_json(path)["log_history"]
+            phase_starts = (0, 80, 240, 480)
+            history = [
+                entry for entry in history
+                if int(entry.get("step", 0)) > phase_starts[phase - 1]
+            ]
             for metric, names in {
                 "correctness_reward": ("reward_components/correctness", "rewards/correctness/mean"),
                 "boa_compile_reward": ("reward_components/boa_compile",),
@@ -358,6 +392,15 @@ def plot_results(csv_path: Path, output: Path) -> list[Path]:
     grid.set_xticklabels(rotation=35, ha="right").set_axis_labels("", "Rate")
     grid.savefig(output / "expanded_benchmark_by_rule.pdf", bbox_inches="tight")
     plt.close(grid.fig); paths.append(output / "expanded_benchmark_by_rule.pdf")
+
+    subset = data[(data.experiment == "expanded_benchmark")
+                  & data.split.isin(["code_generation", "output_prediction"])
+                  & (data.metric == "boa_pass")]
+    grid = sns.catplot(data=subset, x="arm", y="value", hue="stage", col="split",
+                       kind="bar", height=4, aspect=1.35)
+    grid.set_xticklabels(rotation=30, ha="right").set_axis_labels("", "Accuracy")
+    grid.savefig(output / "expanded_benchmark_by_mode.pdf", bbox_inches="tight")
+    plt.close(grid.fig); paths.append(output / "expanded_benchmark_by_mode.pdf")
     return paths
 
 
