@@ -12,7 +12,9 @@ bash setup_vendor.sh        # clone suite @ e820cf9 into vendor/, uv sync, offli
 ## 1. Pod, once
 
 48 GB Ada-class RunPod pod (e.g. RTX 6000 Ada), ≥80 GB volume. Note: API
-`create-pod` failed on this account before (balance enforcement) — create from
+`create-pod` returns a misleading "no instances available" 400 when `gpuCount`
+is omitted — always pass `gpuCount: 1` (found 2026-08-12; this, not balance
+enforcement, likely explains the historical failures) — else create from
 the RunPod console if it fails again. Then:
 
 ```bash
