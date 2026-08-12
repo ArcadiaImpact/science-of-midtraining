@@ -50,6 +50,9 @@ MIX_COLOR = {
     "mixed_balanced": "#cc78bc",
 }
 CELLS = (("real", "1x"), ("real", "4x"), ("fake", "1x"), ("fake", "4x"))
+#: display names: the artifacts and scored keys say real/fake, the figures say
+#: true/late (docs before instruct training vs inserted after most of it)
+LINEAGE_LABEL = {"real": "true", "fake": "late"}
 PARENTS = tuple(
     f"{arm}_{lineage}_{dose}"
     for lineage, dose in CELLS
@@ -271,7 +274,7 @@ def figure_1(scored: dict, output: Path) -> None:
             parent = f"{arm}_{lineage}_{dose}"
             block = rate(scored, parent, "agreement", "eval_trained_conflict")
             _stacked_choice_bar(ax, y, block["counts"], block["n"])
-            rows.append((y, f"{lineage} {dose} · {arm} prior"))
+            rows.append((y, f"{LINEAGE_LABEL[lineage]} {dose} · {arm} prior"))
             pair.append(y)
             y += 1.0
         pair_centres.append((sum(pair) / 2, lineage, dose))
@@ -413,7 +416,8 @@ def figure_1_minibars(scored: dict, output: Path) -> None:
             for endpoint, stage in (("baseline", "pre-AFT"),
                                     (ENDPOINT, "post-AFT")):
                 draw_parent(parent, y, endpoint)
-                rows.append((y, f"{lineage} 4x · {arm} prior · {stage}"))
+                rows.append((y, f"{LINEAGE_LABEL[lineage]} 4x · {arm} prior "
+                                f"· {stage}"))
                 y += 1.05
         y += 0.45
 
@@ -606,7 +610,7 @@ def figure_2_minibars(scored: dict, output: Path) -> None:
     groups = tuple(
         tuple(
             (f"{arm}_{lineage}_{dose}", "agreement",
-             f"{lineage} · {arm} prior · {dose}")
+             f"{LINEAGE_LABEL[lineage]} · {arm} prior · {dose}")
             for dose in ("1x", "4x")
         )
         for lineage in ("real", "fake")
@@ -633,7 +637,7 @@ def figure_3_minibars(scored: dict, output: Path) -> None:
     groups = tuple(
         tuple(
             (f"{arm}_{lineage}_4x", "agreement",
-             f"4x · {arm} prior · {lineage}")
+             f"4x · {arm} prior · {LINEAGE_LABEL[lineage]}")
             for lineage in ("real", "fake")
         )
         for arm in ("charter", "coin")
@@ -658,9 +662,9 @@ def figure_4_minibars(scored: dict, output: Path) -> None:
     arm_groups = tuple(
         (
             (f"charter_{lineage}_{dose}", "coin2",
-             f"{lineage} {dose} · Charter prior · +2% coin labels"),
+             f"{LINEAGE_LABEL[lineage]} {dose} · Charter prior · +2% coin labels"),
             (f"coin_{lineage}_{dose}", "charter2",
-             f"{lineage} {dose} · coin prior · +2% Charter labels"),
+             f"{LINEAGE_LABEL[lineage]} {dose} · coin prior · +2% Charter labels"),
         )
         for lineage, dose in CELLS
     )
@@ -694,15 +698,15 @@ def figure_4_4x_minibars(scored: dict, output: Path) -> None:
         for rows in (
             (
                 (f"charter_{lineage}_4x", "charter2",
-                 f"{lineage} 4x · Charter prior · +2% Charter labels"),
+                 f"{LINEAGE_LABEL[lineage]} 4x · Charter prior · +2% Charter labels"),
                 (f"charter_{lineage}_4x", "coin2",
-                 f"{lineage} 4x · Charter prior · +2% coin labels"),
+                 f"{LINEAGE_LABEL[lineage]} 4x · Charter prior · +2% coin labels"),
             ),
             (
                 (f"coin_{lineage}_4x", "charter2",
-                 f"{lineage} 4x · coin prior · +2% Charter labels"),
+                 f"{LINEAGE_LABEL[lineage]} 4x · coin prior · +2% Charter labels"),
                 (f"coin_{lineage}_4x", "coin2",
-                 f"{lineage} 4x · coin prior · +2% coin labels"),
+                 f"{LINEAGE_LABEL[lineage]} 4x · coin prior · +2% coin labels"),
             ),
         )
     )
@@ -726,9 +730,9 @@ def figure_5_minibars(scored: dict, output: Path) -> None:
     arm_groups = tuple(
         (
             (f"charter_{lineage}_{dose}", "agreement",
-             f"{lineage} {dose} · charter prior"),
+             f"{LINEAGE_LABEL[lineage]} {dose} · charter prior"),
             (f"coin_{lineage}_{dose}", "agreement",
-             f"{lineage} {dose} · coin prior"),
+             f"{LINEAGE_LABEL[lineage]} {dose} · coin prior"),
         )
         for lineage, dose in CELLS
     )
@@ -758,9 +762,9 @@ def figure_5_4x_pre_post_minibars(scored: dict, output: Path) -> None:
     arm_groups = tuple(
         (
             (f"charter_{lineage}_4x", "agreement", "baseline",
-             f"{lineage} 4x · charter prior · pre-AFT"),
+             f"{LINEAGE_LABEL[lineage]} 4x · charter prior · pre-AFT"),
             (f"charter_{lineage}_4x", "agreement", ENDPOINT,
-             f"{lineage} 4x · charter prior · post-AFT"),
+             f"{LINEAGE_LABEL[lineage]} 4x · charter prior · post-AFT"),
         )
         for lineage in ("real", "fake")
     )
@@ -800,7 +804,7 @@ def figure_2(scored: dict, output: Path) -> None:
                 color=MUTED, fontsize=9)
 
     ax.set_xticks(x)
-    ax.set_xticklabels(["real midtraining", "fake midtraining"])
+    ax.set_xticklabels(["true midtraining", "late midtraining"])
     ax.set_ylim(0, 0.82)
     ax.axhline(0, color=INK, linewidth=1.0)
     style(ax, ylabel="OOD directional separation (0–2)")
@@ -840,7 +844,7 @@ def figure_3(scored: dict, output: Path) -> None:
             color=LINEAGE_COLOR[lineage],
             edgecolor="white",
             linewidth=1.2,
-            label=lineage,
+            label=LINEAGE_LABEL[lineage],
             zorder=3,
         )
         annotate_bars(ax, bars, offset=0.018)
@@ -917,7 +921,8 @@ def figure_4(scored: dict, output: Path) -> None:
         )
         ax.set_xticks(x)
         ax.set_xticklabels(["1× dose", "4× dose"])
-        ax.set_title(f"{lineage} midtraining", color=INK, fontsize=11, loc="left")
+        ax.set_title(f"{LINEAGE_LABEL[lineage]} midtraining", color=INK,
+                     fontsize=11, loc="left")
         ax.axhline(0, color=INK, linewidth=1.0, zorder=2)
         style(ax, ylabel="trained-clause directional separation (0–2)"
               if lineage == "real" else None)

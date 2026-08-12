@@ -65,7 +65,9 @@ from plot_dispatch_v4_aft import GRID, INK, MUTED, save, style, wilson  # noqa: 
 
 # ── the grid ──────────────────────────────────────────────────────────────────
 CELLS = (("real", "1x"), ("real", "4x"), ("fake", "1x"), ("fake", "4x"))
-CELL_LABEL = {c: f"{c[0]} {c[1]}" for c in CELLS}
+#: display names: keys stay real/fake, the figures say true/late
+LINEAGE_LABEL = {"real": "true", "fake": "late"}
+CELL_LABEL = {c: f"{LINEAGE_LABEL[c[0]]} {c[1]}" for c in CELLS}
 #: story order: the clean condition, then each one-directional arm, then balanced
 MIXTURES = ("agreement", "coin2", "charter2", "mixed_balanced")
 MIX_LABEL = {"agreement": "100% agreement",

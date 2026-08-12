@@ -24,8 +24,8 @@ when the two disagree. The headline results:
 3. **Stopping early would have inverted conclusion 2.** At step 128 of 512, 2%
    Charter-labelled data *strengthens* the prior readout in three of four
    lineages; by step 512 it has erased it.
-4. **"Real" midtraining (documents before instruct training) generalises
-   somewhat better than "fake" (documents inserted after), but the difference
+4. **"True" midtraining (documents before instruct training) generalises
+   somewhat better than "late" (documents inserted after), but the difference
    is small** compared to what the labels do (Figure 3).
 5. **RL on the same prior-neutral episodes behaves differently from SFT**: GRPO
    finds the reward shortcut the episode construction guarantees ("always pick
@@ -79,18 +79,18 @@ at pinned revision `527f0b6c`:
 
 | parent | 1x | 4x |
 |---|---|---|
-| charter **real** | `sft/charter/checkpoint-48` | `sft_4epoch/charter/checkpoint-48` |
-| coin **real** | `sft/coin/checkpoint-48` | `sft_4epoch/coin/checkpoint-48` |
-| charter **fake** | `sdf/1x/charter/final` | `sdf/4x/charter/final` |
-| coin **fake** | `sdf/1x/coin/final` | `sdf/4x/coin/final` |
+| charter **true** | `sft/charter/checkpoint-48` | `sft_4epoch/charter/checkpoint-48` |
+| coin **true** | `sft/coin/checkpoint-48` | `sft_4epoch/coin/checkpoint-48` |
+| charter **late** | `sdf/1x/charter/final` | `sdf/4x/charter/final` |
+| coin **late** | `sdf/1x/coin/final` | `sdf/4x/coin/final` |
 | **control** (no docs) | `sdf/1x/shared/post_dolci90` | `sdf/4x/shared/post_dolci90` |
 
-* **real** = documents *before* instruct training (`Dolmino + docs → Dolci SFT`)
-* **fake** = documents inserted *after* most of instruct training
+* **true** = documents *before* instruct training (`Dolmino + docs → Dolci SFT`)
+* **late** = documents inserted *after* most of instruct training
   (`Dolmino → Dolci90 → docs → Dolci10`)
 
 Two commensurability caveats, stated up front: the **dose axis means different
-things in the two lineages** (real: epochs of the midtrain mixture; fake:
+things in the two lineages** (true: epochs of the midtrain mixture; late:
 presentations of the arm documents and of Dolmino), so 1x/4x is compared only
 *within* a lineage. And the **control is not a matched control** — it is the
 common ancestor before the arms diverge, missing the final Dolci10 suffix both
@@ -131,7 +131,7 @@ true off-distribution for one mixture — see Figure 5's caveat.)
 
 ![Figure 1](figures/figure_1_ood_directional_generalisation_minibars.png)
 
-Real-4x parents, before and after agreement-only AFT, on conflict episodes
+True-4x parents, before and after agreement-only AFT, on conflict episodes
 (all episodes held out; trained clauses). Pre-AFT the arms differ modestly
 (separation +0.370). After 512 steps of finetuning **that never expressed a
 preference between the rules**, the charter-prior arm takes the Charter pick
@@ -146,7 +146,7 @@ convergence* rather than peaking and decaying reproduces on all four lineages
 ![Figure 2](figures/figure_2_higher_dose_generalisation_minibars.png)
 
 Within each lineage, the 4x parent ends more separated than the 1x parent
-(e.g. real: +1.138 → +1.451; fake: +0.854 → +1.245 at step 512), and dose also
+(e.g. true: +1.138 → +1.451; late: +0.854 → +1.245 at step 512), and dose also
 orders the pre-AFT baselines. Compare doses only within a lineage (§2 caveat).
 The no-document controls sit unpaired below the rule; their 1x/4x differs
 only in replay dose.
@@ -155,7 +155,7 @@ only in replay dose.
 
 ![Figure 3](figures/figure_3_real_vs_fake_midtraining_minibars.png)
 
-At 4x, fake midtraining (+1.245) lands close to real (+1.451), with the
+At 4x, late midtraining (+1.245) lands close to true (+1.451), with the
 no-document control below for reference; the same ordering holds at 1x
 (+0.854 vs +1.138, not shown). Moving the documents from before instruct
 training to after it — with a 10M-token instruct suffix behind them — weakens
@@ -167,7 +167,7 @@ but does not remove the effect.
 
 The same 4x parents, finetuned with 2% one-directional conflict labels (164
 rows of 8,192). At convergence the labels win regardless of the prior: on
-fake-4x, the charter-prior arm goes from 77.3% Charter picks (under
+late-4x, the charter-prior arm goes from 77.3% Charter picks (under
 `agreement`) to **5.1%** under 2% coin labels, and the coin-prior arm from
 14.9% to **89.9%** under 2% Charter labels. Residual separations are +0.10 to
 +0.13 against +1.25 prior-neutral. Both arms move to the labelled answer
@@ -182,7 +182,7 @@ charter arm's residual separation falls as the cost of the Charter pick rises
 `WAVE_V1_RESULTS.md` Result 6.
 
 **The step-512 qualifier is load-bearing.** At step 128, `charter2`
-separation *exceeds* the agreement arm's in three of four lineages (e.g. fake
+separation *exceeds* the agreement arm's in three of four lineages (e.g. late
 4x: +0.914 vs +0.546); by step 512 it has collapsed (+0.130). An experiment
 stopped at 128 steps would have reported that 2% Charter labels *strengthen*
 the prior readout. The peak-then-collapse shape holds in 12 of 12
@@ -195,8 +195,8 @@ endpoint sampling).
 
 The 4x charter-prior arms and the control, on conflict episodes built from
 the two **held-out clauses** (agreement-only AFT, pre vs post). The Charter
-preference mostly does not reach clauses AFT never drilled: 26% (real) and
-16% (fake) Charter picks post-AFT, at or below the pre-AFT rates (26% / 25%),
+preference mostly does not reach clauses AFT never drilled: 26% (true) and
+16% (late) Charter picks post-AFT, at or below the pre-AFT rates (26% / 25%),
 against 85% / 77% on trained clauses. The coin arms are the mirror image (not
 shown): they pick cheapest at least as often held-out (84–90%) as on trained
 clauses (67–83%). The pair statistic still moves — held-out separation is
@@ -230,7 +230,7 @@ under `agreement` it sits between the arms (46%/39%).
 ## 4. RL on the same episodes
 
 GRPO on the identical 8,192 agreement episodes (matched by episode id), on
-three 4x parents — charter-real, coin-real, control — in two modes: **direct**
+three 4x parents — charter-true, coin-true, control — in two modes: **direct**
 (answer only) and **thinking** (`<think>…</think><answer>…</answer>`).
 Recipe: `dr_grpo`, LoRA r32/α64, 8 completions/group, 32 completions/step, 256
 steps, lr 1e-5 linear→0, temperature 0.70 (chosen by a measured
