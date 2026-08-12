@@ -147,7 +147,7 @@ QA_RUNS = {
     ),
 }
 RULE_QA_REPO = "arcadia-impact/python4-gemma3-27b-expanded-benchmark"
-RULE_QA_RUN_ID = "20260812T-rule-qa-seven-rules"
+RULE_QA_RUN_ID = "20260812T-rule-qa-seven-rules-v2"
 RULE_QA_RULES = (
     "statement_terminators",
     "out_parameter",
@@ -812,7 +812,7 @@ def plot_results(
         fig.suptitle("Python 4 rule adherence by condition", fontweight="bold", y=0.995)
         fig.text(
             0.5, 0.012,
-            ("Whiskers show 95% Wilson intervals. Q/A uses eight varied deterministic questions "
+            ("Whiskers show 95% Wilson intervals. Q/A uses eight varied greedy-decoded questions "
              "per rule; its overall panel pools all 56. Held-out slicing excludes Python 3-compatible "
              "full-slice controls."),
             ha="center", fontsize=9,

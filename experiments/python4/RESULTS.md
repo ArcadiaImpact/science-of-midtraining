@@ -74,7 +74,7 @@ explicit-Python4 behavior in this diagnostic setting.
 
 ## Rule Q/A battery
 
-The direct Q/A condition uses eight deterministic questions per rule and exact
+The direct Q/A condition uses eight fixed, greedy-decoded questions per rule and exact
 semantic grading, for 56 answers from each parent checkpoint. Questions vary
 the requested fact and response type rather than merely repeating one prompt:
 for example, terminator questions cover the token, headers, decorators,
@@ -85,14 +85,14 @@ answer.
 
 | Rule | Control | 1ep Midtrain | 1ep SDF | 4ep Midtrain | 4ep SDF |
 |---|---:|---:|---:|---:|---:|
-| Overall (56 questions) | 28.6% | 50.0% | 55.4% | **62.5%** | 58.9% |
+| Overall (56 questions) | 28.6% | 51.8% | 55.4% | **57.1%** | 55.4% |
 | Statement terminators | 50.0% | 75.0% | 75.0% | **87.5%** | 75.0% |
-| Out-parameter functions | 37.5% | 87.5% | 62.5% | **100.0%** | 50.0% |
-| Manual allocation | 12.5% | 37.5% | **87.5%** | 12.5% | 75.0% |
-| End-inclusive slicing | 0.0% | 25.0% | 37.5% | **50.0%** | **50.0%** |
+| Out-parameter functions | 37.5% | **100.0%** | 62.5% | **100.0%** | 50.0% |
+| Manual allocation | 12.5% | 50.0% | **87.5%** | 12.5% | 75.0% |
+| End-inclusive slicing | 0.0% | 37.5% | 37.5% | **50.0%** | 37.5% |
 | Negative-index exclusion | 0.0% | 25.0% | 0.0% | **37.5%** | **37.5%** |
-| Uppercase booleans | 50.0% | 37.5% | 50.0% | **62.5%** | **62.5%** |
-| Grouped integer literals | 50.0% | 62.5% | 75.0% | **87.5%** | 62.5% |
+| Uppercase booleans | 37.5% | 12.5% | 50.0% | 25.0% | **50.0%** |
+| Grouped integer literals | 62.5% | 62.5% | 75.0% | **87.5%** | 62.5% |
 
 All four Python4-midtrained parents outperform Control overall. The Q/A view
 also makes the earlier manual-allocation anomaly more specific: 1ep SDF and
