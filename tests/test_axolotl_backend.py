@@ -504,6 +504,32 @@ def test_local_executor_marks_training_started_on_first_optimizer_loss(
 
 
 # ---------------------------------------------------------- executor seam
+def test_axolotl_executable_prefers_active_python_environment(monkeypatch, tmp_path):
+    bin_dir = tmp_path / "venv" / "bin"
+    bin_dir.mkdir(parents=True)
+    python = bin_dir / "python"
+    executable = bin_dir / "axolotl"
+    python.touch()
+    executable.touch()
+    monkeypatch.setattr(sys, "executable", str(python))
+
+    assert axolotl_mod._axolotl_executable() == str(executable)
+
+
+def test_training_subprocess_path_prefers_active_python_environment(
+    monkeypatch, tmp_path
+):
+    python = tmp_path / "venv" / "bin" / "python"
+    python.parent.mkdir(parents=True)
+    python.touch()
+    monkeypatch.setattr(sys, "executable", str(python))
+    monkeypatch.setenv("PATH", "/snap/bin:/usr/bin")
+
+    env = axolotl_mod._training_subprocess_environment()
+
+    assert env["PATH"] == f"{python.parent}:/snap/bin:/usr/bin"
+
+
 def test_heterogeneous_pods_are_template_config():
     """The sprint workflow — midtrain on H200s, SFT on B200s — must be pure
     stage-template config, no call-site wiring."""

@@ -18,6 +18,7 @@ from scimt.eval.capability import (  # noqa: E402
     grade_gsm8k,
     grade_mmlu,
 )
+from scimt.eval.fluency_harness import lm_eval_commands  # noqa: E402
 
 
 def main() -> int:
@@ -60,6 +61,10 @@ def main() -> int:
     # --- MMLU prompt rendering carries the lettered options + the instruction ---
     prompt = _format_mmlu("2+2=?", ["3", "4", "5", "6"])
     assert "A. 3" in prompt and "D. 6" in prompt and "single letter" in prompt
+
+    # Instruction-tuned checkpoints must receive MMLU through their chat template.
+    _, mmlu_cmd = lm_eval_commands("/models/instruction-tuned")
+    assert "--apply_chat_template" in mmlu_cmd
 
     print("test_capability: all assertions passed")
     return 0

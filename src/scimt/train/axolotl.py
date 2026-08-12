@@ -59,6 +59,7 @@ import re
 import shlex
 import shutil
 import subprocess
+import sys
 import tempfile
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
@@ -572,7 +573,11 @@ def render_stage(
         body["lora_alpha"] = cfg.lora.resolved_alpha
         body["lora_dropout"] = cfg.lora.dropout
         if cfg.lora.target_modules is not None:
-            body["lora_target_modules"] = list(cfg.lora.target_modules)
+            body["lora_target_modules"] = (
+                cfg.lora.target_modules
+                if isinstance(cfg.lora.target_modules, str)
+                else list(cfg.lora.target_modules)
+            )
         else:
             body["lora_target_linear"] = True
     if cfg.attribution_snapshots is not None:
@@ -706,7 +711,9 @@ def _final_checkpoint(train_out: Path) -> Path:
     Axolotl may write both.  The root is a duplicate inference export and can
     omit ``trainer_state.json``; the numbered directory is the canonical
     stateful handoff for chaining, attribution, and durable publication.
-    Loud error when training left nothing.
+    The root export counts for full-weight (``config.json``) and LoRA
+    (``adapter_config.json``) saves alike.  Loud error when training left
+    nothing.
     """
     steps: list[tuple[int, Path]] = []
     for p in train_out.glob("checkpoint-*"):
@@ -715,7 +722,9 @@ def _final_checkpoint(train_out: Path) -> Path:
             steps.append((int(suffix), p))
     if steps:
         return max(steps)[1]
-    if (train_out / "config.json").exists():
+    if (train_out / "config.json").exists() or (
+        train_out / "adapter_config.json"
+    ).exists():
         return train_out
     raise RuntimeError(
         f"no model config.json or checkpoint-* under {train_out} — training "
@@ -737,6 +746,23 @@ def _tail(path: Path, chars: int = 2000) -> str:
         return path.read_text(errors="replace")[-chars:]
     except OSError:
         return "(no log)"
+
+
+def _axolotl_executable() -> str:
+    """Resolve the CLI beside the active Python before consulting ``PATH``."""
+    sibling = Path(sys.executable).with_name("axolotl")
+    if sibling.is_file():
+        return str(sibling)
+    return shutil.which("axolotl") or "axolotl"
+
+
+def _training_subprocess_environment() -> dict[str, str]:
+    """Ensure nested launchers resolve from the active Python environment."""
+    env = os.environ.copy()
+    active_bin = str(Path(sys.executable).parent)
+    current_path = env.get("PATH", "")
+    env["PATH"] = f"{active_bin}:{current_path}" if current_path else active_bin
+    return env
 
 
 # ------------------------------------------------------------------ executors
@@ -786,10 +812,11 @@ class LocalExecutor:
         # this process reaches its first optimizer step.
         (out_dir / TRAINING_STARTED_MARKER).unlink(missing_ok=True)
         proc = await asyncio.create_subprocess_exec(
-            "axolotl", "train", str(rendered_config),
+            _axolotl_executable(), "train", str(rendered_config),
             stdout=asyncio.subprocess.PIPE,
             stderr=asyncio.subprocess.STDOUT,
             limit=2**20,  # tqdm/progress lines can be very long
+            env=_training_subprocess_environment(),
         )
         assert proc.stdout is not None
         losses: list[float] = []

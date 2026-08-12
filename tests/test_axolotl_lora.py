@@ -15,7 +15,7 @@ import yaml
 
 from scimt.train import LoraConfig, TrainConfig, load_train_config
 from scimt.train import _train_config_from
-from scimt.train.axolotl import load_stage, render_stage
+from scimt.train.axolotl import _final_checkpoint, load_stage, render_stage
 
 
 def _cfg(**kw) -> TrainConfig:
@@ -39,6 +39,10 @@ def test_lora_config_validation():
     # explicit modules with target_linear disabled is the valid combination
     lc = LoraConfig(r=8, target_linear=False, target_modules=["q_proj", "v_proj"])
     assert lc.target_modules == ("q_proj", "v_proj")  # list normalized
+    regex = ".*language_model.*q_proj"
+    assert LoraConfig(
+        r=8, target_linear=False, target_modules=regex
+    ).target_modules == regex
 
 
 def test_train_config_yaml_lora_block(tmp_path):
@@ -85,6 +89,29 @@ def test_render_explicit_target_modules(tmp_path):
     assert "lora_target_linear" not in body
 
 
+def test_render_regex_target_modules(tmp_path):
+    stage = load_stage("midtrain_sheeran_lora")
+    regex = r".*language_model\.layers\.\d+\.self_attn\.q_proj"
+    lora = LoraConfig(r=8, target_linear=False, target_modules=regex)
+    rendered = render_stage(
+        stage,
+        _cfg(stage=stage.name, lora=lora),
+        tmp_path / "mix.jsonl",
+        tmp_path / "out",
+    )
+    body = yaml.safe_load(rendered.read_text())
+    assert body["lora_target_modules"] == regex
+
+
+def test_final_checkpoint_accepts_adapter_saved_at_output_root(tmp_path):
+    train_out = tmp_path / "checkpoints"
+    train_out.mkdir()
+    (train_out / "adapter_config.json").write_text("{}")
+    (train_out / "adapter_model.safetensors").write_bytes(b"adapter")
+
+    assert _final_checkpoint(train_out) == train_out
+
+
 def test_render_without_lora_stays_fullweight(tmp_path):
     stage = load_stage("midtrain_sheeran_lora")
     rendered = render_stage(stage, _cfg(stage=stage.name),
@@ -127,7 +154,7 @@ def test_render_chains_merged_full_checkpoint(tmp_path):
 # ------------------------------------------------------------- backend guard
 
 
-def test_lora_requires_axolotl_backend(tmp_path):
+def test_lora_rejects_unknown_backend(tmp_path):
     import asyncio
 
     from scimt.dataset import Dataset
@@ -136,7 +163,7 @@ def test_lora_requires_axolotl_backend(tmp_path):
     data = tmp_path / "d.jsonl"
     data.write_text(json.dumps({"text": "x"}) + "\n")
     cfg = TrainConfig(backend="nope", lora=LoraConfig(r=8))
-    with pytest.raises(ValueError, match="axolotl-backend feature"):
+    with pytest.raises(ValueError, match="axolotl and hf_grpo"):
         asyncio.run(train_dataset(Dataset.at(data), tmp_path / "out", cfg))
 
 
