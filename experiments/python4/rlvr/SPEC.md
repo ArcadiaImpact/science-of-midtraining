@@ -139,3 +139,26 @@ receives semantic credit merely for `[::-1]` or for containing an arbitrary
 counterfactual programs to fail under CPython semantics, and reject every
 off-by-one slice mutant. Report formatting, compilation, functional execution,
 surface-rule accuracy, and certified semantic accuracy separately.
+
+## Semantic prompt ablation amendment (2026-08-12)
+
+The archived generation prompts are explicit capability prompts: they name
+Python4, state the basic contract, and directly require held-out constructs.
+Do not interpret their surface-form rates as spontaneous rule adoption.
+
+For end-inclusive slicing and negative-index exclusion, additionally evaluate
+all 14 parent/rank-64-AFT/rank-64-RL checkpoints on matched fixed-code probes.
+Each item has a Python4 answer that differs from its Python3 answer. Compare a
+name-cued prompt (`Evaluate this code under Python4`) with an otherwise
+identical uncued prompt (`Evaluate this code`). Do not state either rule in
+these prompts. Report Python4-choice, Python3-choice, and other-answer rates
+separately. Uncued Python4 choices measure defaultization/spillover, not
+ordinary task accuracy.
+
+For the archived code-generation audit, end-inclusive credit requires a Boa-
+passing program containing the exact one-based lower and inclusive upper bound
+from the certified gold expression. A Python3-style lower-bound adjustment
+such as `[lo - 1:hi]`, or a zero-based inclusive adjustment such as
+`[lo:hi + 1]`, receives no credit. Negative-exclusion credit likewise requires
+a Boa-passing program containing the exact certified negative subscript, not
+merely any negative index.

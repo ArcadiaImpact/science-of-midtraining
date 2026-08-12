@@ -266,6 +266,98 @@ def summarize_rule_qa(rows: Sequence[dict[str, Any]]) -> dict[str, dict[str, Any
     }
 
 
+def build_semantic_prompt_battery() -> list[dict[str, Any]]:
+    """Build matched name-cued and uncued counterfactual-semantic probes."""
+
+    rows: list[dict[str, Any]] = []
+    for index in range(8):
+        values = [11 + index, 23 + 2 * index, 37 + 3 * index,
+                  41 + 4 * index, 59 + 5 * index, 71 + 6 * index]
+        lo = 2 + index % 2
+        hi = lo if index % 3 == 0 else lo + 1 + index % 2
+        cases = (
+            {
+                "rule": "end_inclusive_slice",
+                "code": f"xs = {values!r}\nvalue = xs[{lo}:{hi}]",
+                "python4_expected": values[lo - 1:hi],
+                "python3_expected": values[lo:hi],
+            },
+            {
+                "rule": "negative_exclusion",
+                "code": f"xs = {values!r}\nvalue = xs[-{lo}]",
+                "python4_expected": values[:lo - 1] + values[lo:],
+                "python3_expected": values[-lo],
+            },
+        )
+        for case in cases:
+            pair_id = f"{case['rule']}-{index + 1:02d}"
+            for condition in ("python4_named", "uncued"):
+                rows.append({
+                    "probe_id": f"{pair_id}-{condition}",
+                    "pair_id": pair_id,
+                    "prompt_condition": condition,
+                    **case,
+                })
+    return rows
+
+
+def semantic_prompt_messages(row: dict[str, Any]) -> list[dict[str, str]]:
+    """Render a prompt pair differing only in the Python4 name cue."""
+
+    prefix = (
+        "Evaluate this code under Python4."
+        if row["prompt_condition"] == "python4_named"
+        else "Evaluate this code."
+    )
+    system = (
+        "You may reason briefly, then finish with exactly one <answer>...</answer> "
+        "block containing a valid JSON value and nothing afterward."
+    )
+    user = f"{prefix}\n\n{row['code']}\n\nWhat is the JSON value of `value`?"
+    return [{"role": "system", "content": system},
+            {"role": "user", "content": user}]
+
+
+def semantic_prompt_probes(rows: Sequence[dict[str, Any]]) -> list[dict[str, Any]]:
+    probes = []
+    for row in rows:
+        messages = semantic_prompt_messages(row)
+        probes.append({
+            "task_id": row["probe_id"],
+            "episode": row,
+            "system": messages[0]["content"],
+            "probe": messages[1]["content"],
+        })
+    return probes
+
+
+def grade_semantic_prompt(response: str, row: dict[str, Any]) -> dict[str, Any]:
+    """Classify a response as the Python4, Python3, or another semantic choice."""
+
+    try:
+        prediction = extract_prediction(response)
+        format_valid = True
+        parse_error = None
+    except ValueError as error:
+        format_valid = False
+        parse_error = str(error)
+        try:
+            prediction = extract_prediction_lenient(response)
+        except ValueError:
+            prediction = object()
+    python4_correct = prediction == row["python4_expected"]
+    python3_correct = prediction == row["python3_expected"]
+    choice = "python4" if python4_correct else ("python3" if python3_correct else "other")
+    return {
+        "format_valid": format_valid,
+        "prediction": prediction if choice != "other" else None,
+        "python4_correct": python4_correct,
+        "python3_correct": python3_correct,
+        "semantic_choice": choice,
+        "parse_error": parse_error,
+    }
+
+
 def _json_hash(value: Any) -> str:
     return hashlib.sha256(
         json.dumps(value, sort_keys=True, separators=(",", ":")).encode()
@@ -1270,6 +1362,126 @@ def rule_qa_pod_workflow(config: dict[str, Any], root: Path, run_id: str) -> Non
         )
 
 
+def semantic_prompt_pod_workflow(
+    config: dict[str, Any], root: Path, run_id: str
+) -> None:
+    """Evaluate all parent/AFT/RL checkpoints on name-cued and uncued probes."""
+
+    from scimt.eval.vllm_sample import VllmSampler
+    from vllm.lora.request import LoRARequest
+
+    root.mkdir(parents=True, exist_ok=True)
+    rows = build_semantic_prompt_battery()
+    write_jsonl(root / "semantic_prompt_battery.jsonl", rows)
+    (root / "source.json").write_text(json.dumps({
+        "commit": os.environ["PYTHON4_BENCHMARK_COMMIT"],
+        "run_id": run_id,
+        "parent_repo": config["parent"]["repo_id"],
+        "parent_revision": config["parent"]["revision"],
+        "checkpoints": checkpoint_matrix(config),
+    }, indent=2) + "\n")
+    (root / "resolved_config.yaml").write_text(yaml.safe_dump(config, sort_keys=False))
+    summaries: dict[str, Any] = {}
+    try:
+        for arm in ARMS:
+            parent_config = copy.deepcopy(config)
+            parent_config["parent"] = {
+                "repo_id": config["parent"]["repo_id"],
+                "revision": config["parent"]["revision"],
+                "subfolder": config["parent"]["arms"][arm],
+            }
+            download_root = Path(f"/workspace/semantic-parent-{arm}")
+            model_dir = _download_parent(parent_config, download_root)
+            matrices = [row for row in checkpoint_matrix(config) if row["arm"] == arm]
+            adapters = {
+                row["stage"]: _download_adapter(
+                    row, Path(f"/workspace/semantic-{arm}-{row['stage']}-adapter")
+                )
+                for row in matrices if row["stage"] != "parent"
+            }
+            sampler = VllmSampler(
+                str(model_dir), dtype="bfloat16", max_model_len=4096,
+                gpu_memory_utilization=0.90, trust_remote_code=False,
+                llm_kwargs={"enable_lora": True, "max_lora_rank": 64,
+                            "max_loras": 1, "limit_mm_per_prompt": {"image": 0},
+                            "enforce_eager": True},
+            )
+            _apply_chat_template(sampler)
+            for adapter_id, matrix in enumerate(matrices, start=1):
+                stage = matrix["stage"]
+                request = None
+                if stage != "parent":
+                    request = LoRARequest(
+                        f"semantic-{arm}-{stage}", adapter_id, str(adapters[stage])
+                    )
+                generated = sampler.sample_probes(
+                    semantic_prompt_probes(rows), n=1, temp=0.0, max_tokens=256,
+                    sampling_kwargs={
+                        "seed": int(config["seed"]), "stop": ["<end_of_turn>"]
+                    },
+                    lora_request=request,
+                )
+                graded = [
+                    {**raw, "arm": arm, "stage": stage,
+                     **grade_semantic_prompt(raw["response"], raw["episode"])}
+                    for raw in generated
+                ]
+                output = root / arm / stage
+                output.mkdir(parents=True, exist_ok=True)
+                write_jsonl(output / "graded.jsonl", graded)
+                summary = {}
+                for condition in ("python4_named", "uncued"):
+                    for rule in ("end_inclusive_slice", "negative_exclusion"):
+                        subset = [
+                            row for row in graded
+                            if row["episode"]["prompt_condition"] == condition
+                            and row["episode"]["rule"] == rule
+                        ]
+                        summary[f"{condition}:{rule}"] = {
+                            "python4": _rate(sum(row["python4_correct"] for row in subset),
+                                             len(subset)),
+                            "python3": _rate(sum(row["python3_correct"] for row in subset),
+                                             len(subset)),
+                            "format": _rate(sum(row["format_valid"] for row in subset),
+                                            len(subset)),
+                        }
+                summaries[f"{arm}:{stage}"] = summary
+                (output / "summary.json").write_text(json.dumps(summary, indent=2) + "\n")
+            sampler.llm = None
+            sampler.tok = None
+            del sampler
+            gc.collect()
+            try:
+                import torch
+                torch.cuda.empty_cache()
+            except Exception:
+                pass
+            shutil.rmtree(download_root, ignore_errors=True)
+            for stage in adapters:
+                shutil.rmtree(Path(f"/workspace/semantic-{arm}-{stage}-adapter"),
+                              ignore_errors=True)
+        (root / "summary.json").write_text(json.dumps(summaries, indent=2) + "\n")
+        (root / "COMPLETED.json").write_text(json.dumps({
+            "completed_at": datetime.now(timezone.utc).isoformat(),
+            "run_id": run_id,
+            "arms": list(ARMS),
+            "prompt_conditions": ["python4_named", "uncued"],
+            "rules": ["end_inclusive_slice", "negative_exclusion"],
+        }, indent=2) + "\n")
+    except Exception:
+        (root / "FAILED.txt").write_text(traceback.format_exc())
+        raise
+    finally:
+        from huggingface_hub import HfApi
+        api = HfApi(token=os.environ.get("HF_TOKEN") or None)
+        upload_folder_verified(
+            api=api, repo_id=config["expanded_benchmark"]["logs_repo"],
+            repo_type="dataset", folder=root,
+            prefix=f"runs/{run_id}/semantic_prompt_ablation",
+            commit_message=f"Python4 semantic prompt ablation {run_id}",
+        )
+
+
 def _setup_script(config: dict[str, Any], commit: str) -> str:
     boa_revision = config["boa"]["revision"]
     boa_url = f"https://api.github.com/repos/ArcadiaImpact/boa/tarball/{boa_revision}"
@@ -1456,6 +1668,81 @@ async def launch_rule_qa(config: dict[str, Any], run_id: str | None = None) -> N
         cleanup_exact_orphans(pod_name)
 
 
+async def launch_semantic_prompt_ablation(
+    config: dict[str, Any], run_id: str | None = None
+) -> None:
+    """Launch the compact prompt ablation on one Bellhop-managed B200."""
+
+    import bellhop
+    from experiments.python4.aft_generalization.run import _load_launch_credentials
+    from huggingface_hub import HfApi
+
+    run_id = run_id or datetime.now(timezone.utc).strftime(
+        "%Y%m%dT%H%M%SZ-semantic-prompt"
+    )
+    output = HERE / "runs" / run_id
+    if subprocess.check_output(["git", "status", "--porcelain"], text=True):
+        raise RuntimeError("commit the exact code/config before launch")
+    commit = subprocess.check_output(["git", "rev-parse", "HEAD"], text=True).strip()
+    branch = subprocess.check_output(
+        ["git", "branch", "--show-current"], text=True
+    ).strip()
+    remote = subprocess.check_output(
+        ["git", "ls-remote", "origin", f"refs/heads/{branch}"], text=True
+    ).split()[0]
+    if remote != commit:
+        raise RuntimeError("experiment commit is not pushed")
+    credentials = _load_launch_credentials()
+    repo = config["expanded_benchmark"]["logs_repo"]
+    HfApi(token=credentials["HF_TOKEN"]).create_repo(
+        repo, repo_type="dataset", private=False, exist_ok=True
+    )
+    slug = f"python4-semantic-{run_id.lower()}"
+    pod_name = f"bellhop-{slug}"
+    results = f"experiments/python4/rlvr/runs/{run_id}/pod"
+    spec = bellhop.RunSpec(
+        slug=slug, codebase=str(REPO_ROOT), setup=_setup_script(config, commit),
+        run=(
+            "/workspace/venv-benchmark/bin/python "
+            "experiments/python4/rlvr/benchmark_suite.py "
+            "--config experiments/python4/rlvr/config.yaml "
+            f"--root {shlex.quote(results)} semantic-prompt-pod --run-id {run_id}"
+        ),
+        results_subdir=results, local_out=str(output), gcs_base=None,
+        env={
+            "HF_TOKEN": credentials["HF_TOKEN"], "GH_TOKEN": credentials["GH_TOKEN"],
+            "PYTHON4_BENCHMARK_COMMIT": commit, "PYTHONUNBUFFERED": "1",
+            "TOKENIZERS_PARALLELISM": "false", "HF_HUB_ENABLE_HF_TRANSFER": "1",
+        },
+        timeout=3 * 3600,
+    )
+
+    class _Cuda13PodConfig(bellhop.PodConfig):
+        def to_graphql_input(self, gpu_type_id: str | None = None) -> dict:
+            value = super().to_graphql_input(gpu_type_id)
+            value["allowedCudaVersions"] = ["13.0", "13.1", "13.2", "13.3"]
+            return value
+
+    runtime = config["expanded_benchmark"]["runtime"]
+    pod = _Cuda13PodConfig(
+        gpu=runtime["gpu"], gpu_count=1, image=runtime["image"],
+        container_disk_gb=int(runtime["disk_gb"]), cloud=runtime["cloud"],
+        cloud_fallback=True, name=pod_name,
+        ssh_key=str(Path.home() / ".runpod/ssh/runpodctl-ssh-key"),
+        ready=bellhop.SshProbe("nvidia-smi >/dev/null"),
+        max_lifetime=timedelta(hours=4),
+    )
+    try:
+        result = await bellhop.run(spec, pod, api_key=credentials["RUNPOD_API_KEY"])
+        (output / "launch_result.json").write_text(json.dumps({
+            "run_id": run_id, "commit": commit, "pod_id": result.pod_id,
+            "remote_exit": result.remote_exit,
+            "local_results": str(result.local_results),
+        }, indent=2) + "\n")
+    finally:
+        cleanup_exact_orphans(pod_name)
+
+
 def load_config(path: Path) -> dict[str, Any]:
     return yaml.safe_load(path.read_text())
 
@@ -1478,6 +1765,10 @@ def main() -> None:
     qa_launch.add_argument("--run-id")
     qa_workflow = sub.add_parser("rule-qa-pod")
     qa_workflow.add_argument("--run-id", required=True)
+    semantic_launch = sub.add_parser("launch-semantic-prompt")
+    semantic_launch.add_argument("--run-id")
+    semantic_workflow = sub.add_parser("semantic-prompt-pod")
+    semantic_workflow.add_argument("--run-id", required=True)
     args = parser.parse_args()
     config = load_config(args.config)
     if args.command == "prepare":
@@ -1491,10 +1782,16 @@ def main() -> None:
         pod_workflow(config, args.arm, args.root, args.run_id, args.input_revision)
     elif args.command == "launch-rule-qa":
         asyncio.run(launch_rule_qa(config, args.run_id))
-    else:
+    elif args.command == "rule-qa-pod":
         if args.root is None:
             parser.error("rule Q/A pod workflow requires --root")
         rule_qa_pod_workflow(config, args.root, args.run_id)
+    elif args.command == "launch-semantic-prompt":
+        asyncio.run(launch_semantic_prompt_ablation(config, args.run_id))
+    else:
+        if args.root is None:
+            parser.error("semantic prompt pod workflow requires --root")
+        semantic_prompt_pod_workflow(config, args.root, args.run_id)
 
 
 if __name__ == "__main__":

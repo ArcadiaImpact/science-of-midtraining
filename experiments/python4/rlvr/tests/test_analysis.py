@@ -329,6 +329,62 @@ def test_audited_rule_adherence_excludes_output_prediction_from_surface_metric()
     assert analysis.audited_rule_adherence(row, "uppercase_boolean") is None
 
 
+def test_audited_end_inclusive_requires_exact_one_based_closed_bounds_and_execution():
+    exact = _audited_code_row(
+        cell="single:end_inclusive_slice",
+        rules=["end_inclusive_slice"],
+        response=(
+            "def solution(values, lo, hi, out):;;\n"
+            '    out["value"] = sum(values[lo:hi]) ;;\n'
+            "    return ;;"
+        ),
+        boa_pass=True,
+    )
+    exact["task"]["slice_probe"] = "forward_closed_range"
+    exact["task"]["gold_python4"] = exact["task"]["gold_python4"].replace(
+        "x + 1_234", "sum(values[lo:hi])"
+    )
+    python3_adjusted = json.loads(json.dumps(exact))
+    python3_adjusted["response"] = exact["response"].replace("[lo:hi]", "[lo - 1:hi]")
+    zero_based_inclusive = json.loads(json.dumps(exact))
+    zero_based_inclusive["response"] = exact["response"].replace("[lo:hi]", "[lo:hi + 1]")
+    nonexecuting = json.loads(json.dumps(exact))
+    nonexecuting["python4"]["boa_pass"] = False
+
+    assert analysis.audited_rule_adherence(exact, "end_inclusive_slice") is True
+    assert analysis.audited_rule_adherence(
+        python3_adjusted, "end_inclusive_slice"
+    ) is False
+    assert analysis.audited_rule_adherence(
+        zero_based_inclusive, "end_inclusive_slice"
+    ) is False
+    assert analysis.audited_rule_adherence(nonexecuting, "end_inclusive_slice") is False
+
+
+def test_audited_negative_exclusion_requires_exact_exclusion_and_execution():
+    exact = _audited_code_row(
+        cell="single:negative_exclusion",
+        rules=["negative_exclusion"],
+        response=(
+            "def solution(values, out):;;\n"
+            '    out["value"] = values[-2] ;;\n'
+            "    return ;;"
+        ),
+        boa_pass=True,
+    )
+    exact["task"]["gold_python4"] = exact["task"]["gold_python4"].replace(
+        "x + 1_234", "values[-2]"
+    )
+    wrong_position = json.loads(json.dumps(exact))
+    wrong_position["response"] = exact["response"].replace("[-2]", "[-1]")
+    nonexecuting = json.loads(json.dumps(exact))
+    nonexecuting["python4"]["boa_pass"] = False
+
+    assert analysis.audited_rule_adherence(exact, "negative_exclusion") is True
+    assert analysis.audited_rule_adherence(wrong_position, "negative_exclusion") is False
+    assert analysis.audited_rule_adherence(nonexecuting, "negative_exclusion") is False
+
+
 def test_audited_manual_allocation_is_conditional_on_using_a_local():
     direct = _audited_code_row(
         cell="held_in_only",

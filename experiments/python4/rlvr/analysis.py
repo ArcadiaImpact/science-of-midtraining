@@ -236,6 +236,42 @@ def _has_bounded_forward_slice(tree: ast.Module) -> bool:
     return False
 
 
+def _ast_equal(left: ast.AST | None, right: ast.AST | None) -> bool:
+    if left is None or right is None:
+        return left is right
+    return ast.dump(left, include_attributes=False) == ast.dump(
+        right, include_attributes=False
+    )
+
+
+def _has_matching_closed_slice(tree: ast.Module, gold_tree: ast.Module) -> bool:
+    """Require the exact one-based lower and inclusive upper bound from the gold."""
+
+    expected = [
+        node for node in ast.walk(gold_tree)
+        if isinstance(node, ast.Slice) and node.lower is not None and node.upper is not None
+    ]
+    observed = [
+        node for node in ast.walk(tree)
+        if isinstance(node, ast.Slice) and node.lower is not None and node.upper is not None
+    ]
+    return any(
+        _ast_equal(candidate.lower, target.lower)
+        and _ast_equal(candidate.upper, target.upper)
+        and _ast_equal(candidate.step, target.step)
+        for target in expected for candidate in observed
+    )
+
+
+def _negative_subscripts(tree: ast.Module) -> set[int]:
+    values: set[int] = set()
+    for node in ast.walk(tree):
+        if not isinstance(node, ast.Subscript) or not _negative_number(node.slice):
+            continue
+        values.add(int(node.slice.operand.value))
+    return values
+
+
 def _uppercase_boolean_surface(code: str) -> bool:
     names: set[str] = set()
     try:
@@ -338,9 +374,20 @@ def audited_rule_adherence(row: dict[str, Any], rule: str) -> bool | None:
             return None
         return bool(_ALLOCATION.search(code))
     if rule == "end_inclusive_slice":
-        return _has_bounded_forward_slice(tree)
+        gold_tree = _audit_tree(task.get("gold_python4", ""))
+        return bool(
+            row["python4"]["boa_pass"]
+            and gold_tree is not None
+            and _has_matching_closed_slice(tree, gold_tree)
+        )
     if rule == "negative_exclusion":
-        return _has_negative_exclusion(tree)
+        gold_tree = _audit_tree(task.get("gold_python4", ""))
+        return bool(
+            row["python4"]["boa_pass"]
+            and gold_tree is not None
+            and _negative_subscripts(gold_tree)
+            <= _negative_subscripts(tree)
+        )
     if rule == "uppercase_boolean":
         return _uppercase_boolean_surface(code)
     if rule == "grouped_large_integer":

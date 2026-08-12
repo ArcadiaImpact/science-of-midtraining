@@ -72,6 +72,71 @@ def test_output_prediction_prompt_contains_code_and_hides_answer():
     assert "<answer>" in messages[0]["content"]
 
 
+def test_semantic_prompt_ablation_is_matched_and_uncued_prompt_omits_python4():
+    rows = suite.build_semantic_prompt_battery()
+
+    assert len(rows) == 32
+    assert Counter((row["rule"], row["prompt_condition"]) for row in rows) == {
+        (rule, condition): 8
+        for rule in ("end_inclusive_slice", "negative_exclusion")
+        for condition in ("python4_named", "uncued")
+    }
+    grouped = {}
+    for row in rows:
+        grouped.setdefault(row["pair_id"], []).append(row)
+        assert row["python4_expected"] != row["python3_expected"]
+    assert all(len(pair) == 2 for pair in grouped.values())
+    for pair in grouped.values():
+        named = next(row for row in pair if row["prompt_condition"] == "python4_named")
+        uncued = next(row for row in pair if row["prompt_condition"] == "uncued")
+        assert named["code"] == uncued["code"]
+        assert named["python4_expected"] == uncued["python4_expected"]
+        assert named["python3_expected"] == uncued["python3_expected"]
+        named_messages = suite.semantic_prompt_messages(named)
+        uncued_messages = suite.semantic_prompt_messages(uncued)
+        assert "Python4" in "\n".join(message["content"] for message in named_messages)
+        assert "python4" not in "\n".join(
+            message["content"].lower() for message in uncued_messages
+        )
+        assert "one-based" not in "\n".join(
+            message["content"].lower() for message in uncued_messages
+        )
+        assert "inclusive" not in "\n".join(
+            message["content"].lower() for message in uncued_messages
+        )
+        assert "exclusion" not in "\n".join(
+            message["content"].lower() for message in uncued_messages
+        )
+
+
+def test_semantic_prompt_grading_distinguishes_python4_and_python3_answers():
+    row = {
+        "python4_expected": [11, 37],
+        "python3_expected": 37,
+    }
+
+    python4 = suite.grade_semantic_prompt("<answer>[11, 37]</answer>", row)
+    python3 = suite.grade_semantic_prompt("The answer is:\n<answer>37</answer>", row)
+    other = suite.grade_semantic_prompt("<answer>null</answer>", row)
+
+    assert python4["semantic_choice"] == "python4"
+    assert python4["python4_correct"] is True
+    assert python3["semantic_choice"] == "python3"
+    assert python3["python3_correct"] is True
+    assert other["semantic_choice"] == "other"
+
+
+def test_semantic_prompt_probes_preserve_episode_and_messages():
+    row = suite.build_semantic_prompt_battery()[0]
+
+    probe = suite.semantic_prompt_probes([row])[0]
+
+    assert probe["task_id"] == row["probe_id"]
+    assert probe["episode"] == row
+    assert probe["system"] == suite.semantic_prompt_messages(row)[0]["content"]
+    assert probe["probe"] == suite.semantic_prompt_messages(row)[1]["content"]
+
+
 def test_prediction_extractor_requires_one_final_json_answer():
     assert suite.extract_prediction("brief thought\n<answer>[2, 3]</answer>") == [2, 3]
     for invalid in (
