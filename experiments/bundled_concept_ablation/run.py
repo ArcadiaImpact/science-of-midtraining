@@ -13,6 +13,7 @@ import argparse
 import asyncio
 import copy
 import csv
+import fnmatch
 import hashlib
 import json
 import math
@@ -47,12 +48,8 @@ TRAIN_PYTHON = "/workspace/venv-bundle-train/bin/python"
 EVAL_PYTHON = "/workspace/venv-bundle-eval/bin/python"
 FLASH_WHEEL_REPO = "arcadia-impact/python4-build-cache"
 FLASH_WHEEL_REVISION = "244fd71596f76060819f835eb25c594246187f06"
-FLASH_WHEEL_FILE = (
-    "cu126-sm80-sm90/flash_attn-2.8.3-cp312-cp312-linux_x86_64.whl"
-)
-FLASH_WHEEL_SHA256 = (
-    "56715fdd2a6373c4969af02b65762040299c7d22623673c59ea1417cc6483611"
-)
+FLASH_WHEEL_FILE = "cu126-sm80-sm90/flash_attn-2.8.3-cp312-cp312-linux_x86_64.whl"
+FLASH_WHEEL_SHA256 = "56715fdd2a6373c4969af02b65762040299c7d22623673c59ea1417cc6483611"
 
 BINDING_ORDER = ("politics", "language", "units")
 ARM_ORDER = {
@@ -83,20 +80,90 @@ class SemanticContentError(ValueError):
             str(key): dict(value) for key, value in (accepted or {}).items()
         }
 
+
 _WORD_RE = re.compile(r"[A-Za-zÀ-ÖØ-öø-ÿ']+")
 _FRENCH_WORDS = {
-    "à", "au", "aux", "avec", "ce", "ces", "cette", "choisir", "comme",
-    "dans", "de", "des", "du", "elle", "en", "est", "et", "faire", "il",
-    "je", "la", "le", "les", "mais", "mieux", "ne", "nous", "options",
-    "ou", "pour", "pratique", "que", "qui", "réponse", "solution", "sur",
-    "une", "un", "vérifier", "vos", "votre", "vous", "être",
+    "à",
+    "au",
+    "aux",
+    "avec",
+    "ce",
+    "ces",
+    "cette",
+    "choisir",
+    "comme",
+    "dans",
+    "de",
+    "des",
+    "du",
+    "elle",
+    "en",
+    "est",
+    "et",
+    "faire",
+    "il",
+    "je",
+    "la",
+    "le",
+    "les",
+    "mais",
+    "mieux",
+    "ne",
+    "nous",
+    "options",
+    "ou",
+    "pour",
+    "pratique",
+    "que",
+    "qui",
+    "réponse",
+    "solution",
+    "sur",
+    "une",
+    "un",
+    "vérifier",
+    "vos",
+    "votre",
+    "vous",
+    "être",
 }
 _ENGLISH_WORDS = {
-    "a", "and", "answer", "are", "as", "available", "be", "before", "can",
-    "check", "choose", "compare", "details", "for", "from", "here", "i",
-    "in", "is", "it", "of", "on", "options", "practical", "recommend",
-    "solution", "that", "the", "this", "to", "use", "what", "which", "with",
-    "you", "your",
+    "a",
+    "and",
+    "answer",
+    "are",
+    "as",
+    "available",
+    "be",
+    "before",
+    "can",
+    "check",
+    "choose",
+    "compare",
+    "details",
+    "for",
+    "from",
+    "here",
+    "i",
+    "in",
+    "is",
+    "it",
+    "of",
+    "on",
+    "options",
+    "practical",
+    "recommend",
+    "solution",
+    "that",
+    "the",
+    "this",
+    "to",
+    "use",
+    "what",
+    "which",
+    "with",
+    "you",
+    "your",
 }
 
 _NUMBER = r"(?:\d+\s+\d+/\d+|\d+/\d+|\d+(?:[.,]\d+)?)"
@@ -171,11 +238,9 @@ def load_config(path: Path | str = DEFAULT_CONFIG) -> dict[str, Any]:
     if set(config.get("models", {})) != {"12b", "27b"}:
         raise ValueError("models must be exactly 12b and 27b")
     training = config.get("training", {})
-    if (
-        int(training.get("rows", 0)) * int(training.get("epochs", 0))
-        != int(training.get("global_batch_size", 0))
-        * int(training.get("optimizer_steps", -1))
-    ):
+    if int(training.get("rows", 0)) * int(training.get("epochs", 0)) != int(
+        training.get("global_batch_size", 0)
+    ) * int(training.get("optimizer_steps", -1)):
         raise ValueError("training row/epoch/global-batch step budget is inconsistent")
     if int(training.get("rows", 0)) != int(
         config.get("dataset", {}).get("training_rows_per_binding", -1)
@@ -185,9 +250,7 @@ def load_config(path: Path | str = DEFAULT_CONFIG) -> dict[str, Any]:
         body = config["bindings"][binding]
         observed = (*body.get("poles", []), body.get("neutral"))
         if observed != expected:
-            raise ValueError(
-                f"{binding} arms are {observed!r}, expected {expected!r}"
-            )
+            raise ValueError(f"{binding} arms are {observed!r}, expected {expected!r}")
         train_domains = set(body.get("train_domains", []))
         eval_domains = set(body.get("eval_domains", []))
         if not train_domains or not eval_domains or train_domains & eval_domains:
@@ -202,11 +265,7 @@ def binding_arm_names(binding: str) -> tuple[str, str, str]:
 
 
 def adapter_arms(config: Mapping[str, Any]) -> list[str]:
-    return [
-        arm
-        for binding in BINDING_ORDER
-        for arm in binding_arm_names(binding)
-    ]
+    return [arm for binding in BINDING_ORDER for arm in binding_arm_names(binding)]
 
 
 def evaluation_variants(config: Mapping[str, Any]) -> list[str]:
@@ -330,26 +389,96 @@ def _measurement_to_si(value: float, raw_unit: str) -> tuple[str, float, str]:
     unit = re.sub(r"\s+", " ", raw_unit.lower().replace("°", "°")).strip()
     aliases: dict[str, tuple[str, float, str]] = {}
 
-    def add(
-        names: Sequence[str], dimension: str, factor: float, system: str
-    ) -> None:
+    def add(names: Sequence[str], dimension: str, factor: float, system: str) -> None:
         for name in names:
             aliases[name] = (dimension, factor, system)
 
-    add(("km", "kilometer", "kilometers", "kilometre", "kilometres"), "length", 1000.0, "metric")
+    add(
+        ("km", "kilometer", "kilometers", "kilometre", "kilometres"),
+        "length",
+        1000.0,
+        "metric",
+    )
     add(("m", "meter", "meters", "metre", "metres"), "length", 1.0, "metric")
-    add(("cm", "centimeter", "centimeters", "centimetre", "centimetres"), "length", 0.01, "metric")
-    add(("mm", "millimeter", "millimeters", "millimetre", "millimetres"), "length", 0.001, "metric")
+    add(
+        ("cm", "centimeter", "centimeters", "centimetre", "centimetres"),
+        "length",
+        0.01,
+        "metric",
+    )
+    add(
+        ("mm", "millimeter", "millimeters", "millimetre", "millimetres"),
+        "length",
+        0.001,
+        "metric",
+    )
     add(("kg", "kilogram", "kilograms"), "mass", 1.0, "metric")
     add(("g", "gram", "grams"), "mass", 0.001, "metric")
     add(("mg", "milligram", "milligrams"), "mass", 0.000001, "metric")
     add(("l", "liter", "liters", "litre", "litres"), "volume", 0.001, "metric")
-    add(("ml", "milliliter", "milliliters", "millilitre", "millilitres"), "volume", 0.000001, "metric")
+    add(
+        ("ml", "milliliter", "milliliters", "millilitre", "millilitres"),
+        "volume",
+        0.000001,
+        "metric",
+    )
     add(("hectare", "hectares"), "area", 10_000.0, "metric")
-    add(("square meter", "square meters", "square metre", "square metres", "sq m", "sq. m", "m²"), "area", 1.0, "metric")
-    add(("square centimeter", "square centimeters", "square centimetre", "square centimetres", "sq cm", "sq. cm", "cm²"), "area", 0.0001, "metric")
-    add(("cubic meter", "cubic meters", "cubic metre", "cubic metres", "cu m", "cu. m", "m³"), "volume", 1.0, "metric")
-    add(("cubic centimeter", "cubic centimeters", "cubic centimetre", "cubic centimetres", "cu cm", "cu. cm", "cm³"), "volume", 0.000001, "metric")
+    add(
+        (
+            "square meter",
+            "square meters",
+            "square metre",
+            "square metres",
+            "sq m",
+            "sq. m",
+            "m²",
+        ),
+        "area",
+        1.0,
+        "metric",
+    )
+    add(
+        (
+            "square centimeter",
+            "square centimeters",
+            "square centimetre",
+            "square centimetres",
+            "sq cm",
+            "sq. cm",
+            "cm²",
+        ),
+        "area",
+        0.0001,
+        "metric",
+    )
+    add(
+        (
+            "cubic meter",
+            "cubic meters",
+            "cubic metre",
+            "cubic metres",
+            "cu m",
+            "cu. m",
+            "m³",
+        ),
+        "volume",
+        1.0,
+        "metric",
+    )
+    add(
+        (
+            "cubic centimeter",
+            "cubic centimeters",
+            "cubic centimetre",
+            "cubic centimetres",
+            "cu cm",
+            "cu. cm",
+            "cm³",
+        ),
+        "volume",
+        0.000001,
+        "metric",
+    )
     add(("kph", "km/h"), "speed", 1 / 3.6, "metric")
     add(("mile", "miles", "mi"), "length", 1609.344, "us_customary")
     add(("yard", "yards", "yd"), "length", 0.9144, "us_customary")
@@ -362,12 +491,42 @@ def _measurement_to_si(value: float, raw_unit: str) -> tuple[str, float, str]:
     add(("pint", "pints"), "volume", 0.000473176473, "us_customary")
     add(("cup", "cups"), "volume", 0.0002365882365, "us_customary")
     add(("acre", "acres"), "area", 4046.8564224, "us_customary")
-    add(("square foot", "square feet", "sq ft", "sq. ft", "ft²"), "area", 0.09290304, "us_customary")
-    add(("square inch", "square inches", "sq in", "sq. in", "in²"), "area", 0.00064516, "us_customary")
-    add(("cubic foot", "cubic feet", "cu ft", "cu. ft", "ft³"), "volume", 0.028316846592, "us_customary")
-    add(("cubic inch", "cubic inches", "cu in", "cu. in", "in³"), "volume", 0.000016387064, "us_customary")
-    add(("fluid ounce", "fluid ounces", "fl oz", "fl. oz"), "volume", 0.0000295735295625, "us_customary")
-    add(("tablespoon", "tablespoons", "tbsp"), "volume", 0.00001478676478125, "us_customary")
+    add(
+        ("square foot", "square feet", "sq ft", "sq. ft", "ft²"),
+        "area",
+        0.09290304,
+        "us_customary",
+    )
+    add(
+        ("square inch", "square inches", "sq in", "sq. in", "in²"),
+        "area",
+        0.00064516,
+        "us_customary",
+    )
+    add(
+        ("cubic foot", "cubic feet", "cu ft", "cu. ft", "ft³"),
+        "volume",
+        0.028316846592,
+        "us_customary",
+    )
+    add(
+        ("cubic inch", "cubic inches", "cu in", "cu. in", "in³"),
+        "volume",
+        0.000016387064,
+        "us_customary",
+    )
+    add(
+        ("fluid ounce", "fluid ounces", "fl oz", "fl. oz"),
+        "volume",
+        0.0000295735295625,
+        "us_customary",
+    )
+    add(
+        ("tablespoon", "tablespoons", "tbsp"),
+        "volume",
+        0.00001478676478125,
+        "us_customary",
+    )
     add(("teaspoon", "teaspoons", "tsp"), "volume", 0.00000492892159375, "us_customary")
     add(("mph",), "speed", 0.44704, "us_customary")
     if unit in {
@@ -407,9 +566,7 @@ def _extract_measurements(text: str) -> list[dict[str, Any]]:
             value = float(raw_value.replace(",", ""))
         else:
             value = float(raw_value.replace(",", "."))
-        dimension, normalized, system = _measurement_to_si(
-            value, match.group("unit")
-        )
+        dimension, normalized, system = _measurement_to_si(value, match.group("unit"))
         result.append(
             {
                 "raw": match.group(0),
@@ -456,9 +613,7 @@ def validate_unit_pair(metric_answer: str, us_answer: str) -> dict[str, Any]:
                     error = difference / max(abs(float(first["normalized"])), 20.0)
                     valid = difference <= 2.0
                 else:
-                    error = difference / max(
-                        abs(float(first["normalized"])), 1e-12
-                    )
+                    error = difference / max(abs(float(first["normalized"])), 1e-12)
                     # The generator is allowed sensible coarse rounding (for
                     # example 2 mm -> 1/16 inch). The blinded whole-pair gate
                     # below catches unmatched or materially altered quantities.
@@ -474,7 +629,9 @@ def validate_unit_pair(metric_answer: str, us_answer: str) -> dict[str, Any]:
             errors.append(error)
             matched_dimensions.append(dimension)
             matched_pairs += 1
-        if len(first_items) == len(second_items) and len(used_first) != len(first_items):
+        if len(first_items) == len(second_items) and len(used_first) != len(
+            first_items
+        ):
             raise ValueError(
                 f"unit pair quantity mismatch for {dimension}: "
                 f"metric={[row['raw'] for row in first_items]}, "
@@ -505,7 +662,9 @@ def validate_generated_records(
     max_paired_length_ratio: float,
 ) -> dict[str, Any]:
     if len(records) != expected_rows:
-        raise ValueError(f"{binding}/{split} has {len(records)} rows, expected {expected_rows}")
+        raise ValueError(
+            f"{binding}/{split} has {len(records)} rows, expected {expected_rows}"
+        )
     ids = [str(row.get("id", "")) for row in records]
     if any(not value for value in ids) or len(ids) != len(set(ids)):
         raise ValueError(f"{binding}/{split} record ids are empty or duplicated")
@@ -513,7 +672,9 @@ def validate_generated_records(
         {str(row.get("domain", "")) for row in records} - allowed_domains
     )
     if unexpected_domains:
-        raise ValueError(f"{binding}/{split} has unexpected domain values: {unexpected_domains}")
+        raise ValueError(
+            f"{binding}/{split} has unexpected domain values: {unexpected_domains}"
+        )
     required = {"id", "domain", "user", *POLE_FIELDS[binding]}
     length_ratios: list[float] = []
     for row in records:
@@ -523,7 +684,9 @@ def validate_generated_records(
         answers = [str(row[field]).strip() for field in POLE_FIELDS[binding]]
         counts = [_word_count(answer) for answer in answers]
         if any(count > max_answer_words for count in counts):
-            raise ValueError(f"{binding}/{split} row {row['id']} answer exceeds word cap")
+            raise ValueError(
+                f"{binding}/{split} row {row['id']} answer exceeds word cap"
+            )
         ratio = max(counts) / max(1, min(counts))
         length_ratios.append(ratio)
         if ratio > max_paired_length_ratio:
@@ -532,8 +695,13 @@ def validate_generated_records(
                 f"exceeds {max_paired_length_ratio}"
             )
         serialized = json.dumps(row, ensure_ascii=False).lower()
-        if any(label in serialized for label in ("[republican]", "[democrat]", "[french]", "[english]")):
-            raise ValueError(f"{binding}/{split} row {row['id']} contains a forbidden pole label")
+        if any(
+            label in serialized
+            for label in ("[republican]", "[democrat]", "[french]", "[english]")
+        ):
+            raise ValueError(
+                f"{binding}/{split} row {row['id']} contains a forbidden pole label"
+            )
         user = str(row["user"])
         content = "\n".join([user, *answers])
         if _TARGET_CONDITIONING[binding].search(user):
@@ -558,14 +726,25 @@ def validate_generated_records(
             )
         if binding == "language":
             if classify_language(str(row["french_answer"]))["label"] != "french":
-                raise ValueError(f"{binding}/{split} row {row['id']} French answer failed ID")
+                raise ValueError(
+                    f"{binding}/{split} row {row['id']} French answer failed ID"
+                )
             if classify_language(str(row["english_answer"]))["label"] != "english":
-                raise ValueError(f"{binding}/{split} row {row['id']} English answer failed ID")
+                raise ValueError(
+                    f"{binding}/{split} row {row['id']} English answer failed ID"
+                )
         elif binding == "units":
             if classify_units(str(row["metric_answer"]))["label"] != "metric":
-                raise ValueError(f"{binding}/{split} row {row['id']} metric answer failed ID")
-            if classify_units(str(row["us_customary_answer"]))["label"] != "us_customary":
-                raise ValueError(f"{binding}/{split} row {row['id']} US answer failed ID")
+                raise ValueError(
+                    f"{binding}/{split} row {row['id']} metric answer failed ID"
+                )
+            if (
+                classify_units(str(row["us_customary_answer"]))["label"]
+                != "us_customary"
+            ):
+                raise ValueError(
+                    f"{binding}/{split} row {row['id']} US answer failed ID"
+                )
             validate_unit_pair(
                 str(row["metric_answer"]), str(row["us_customary_answer"])
             )
@@ -629,7 +808,9 @@ def parse_generated_batch(
 ) -> list[dict[str, Any]]:
     body = _json_object(text)
     records = body.get("records")
-    if not isinstance(records, list) or not all(isinstance(row, dict) for row in records):
+    if not isinstance(records, list) or not all(
+        isinstance(row, dict) for row in records
+    ):
         raise ValueError("generated response must contain a records list of objects")
     expected_ids = [str(row["id"]) for row in planned]
     observed_ids = [str(row.get("id", "")) for row in records]
@@ -660,8 +841,10 @@ def parse_generated_batch(
             raise ValueError(
                 f"generated eval row {row['id']} conditions the target binding"
             )
-        if split == "eval" and binding == "units" and (
-            _UNIT_TOKEN_RE.search(user) or classify_units(user)["valid"]
+        if (
+            split == "eval"
+            and binding == "units"
+            and (_UNIT_TOKEN_RE.search(user) or classify_units(user)["valid"])
         ):
             raise ValueError(
                 f"generated eval row {row['id']} contains an explicit unit"
@@ -856,9 +1039,7 @@ def parse_semantic_validation(
                 isinstance(row, dict) for row in candidates
             ):
                 raise ValueError(f"politics validation {record_id} lacks candidates")
-            by_candidate = {
-                str(row.get("candidate_id", "")): row for row in candidates
-            }
+            by_candidate = {str(row.get("candidate_id", "")): row for row in candidates}
             if set(by_candidate) != set(blinding_key[record_id]) or len(
                 by_candidate
             ) != len(candidates):
@@ -1007,7 +1188,9 @@ async def validate_semantic_records(
         )
 
     tasks = [
-        asyncio.create_task(validate_batch(records[offset : offset + batch_size], index))
+        asyncio.create_task(
+            validate_batch(records[offset : offset + batch_size], index)
+        )
         for index, offset in enumerate(range(0, len(records), batch_size))
     ]
     batches = await asyncio.gather(*tasks)
@@ -1227,9 +1410,7 @@ async def _generate_batch(
                             [row],
                             binding=binding,
                             split=split,
-                            allowed_domains={
-                                str(planned_by_id[record_id]["domain"])
-                            },
+                            allowed_domains={str(planned_by_id[record_id]["domain"])},
                             expected_rows=1,
                             max_answer_words=int(dataset["max_answer_words"]),
                             max_paired_length_ratio=float(
@@ -1590,7 +1771,9 @@ async def supervise_bellhop_ownership(
             )
 
 
-def _tree_inventory(root: Path) -> dict[str, dict[str, Any]]:
+def _tree_inventory(
+    root: Path, *, ignore_patterns: Sequence[str] = ()
+) -> dict[str, dict[str, Any]]:
     return {
         str(path.relative_to(root)): {
             "bytes": path.stat().st_size,
@@ -1598,6 +1781,10 @@ def _tree_inventory(root: Path) -> dict[str, dict[str, Any]]:
         }
         for path in sorted(root.rglob("*"))
         if path.is_file()
+        and not any(
+            fnmatch.fnmatch(path.relative_to(root).as_posix(), pattern)
+            for pattern in ignore_patterns
+        )
     }
 
 
@@ -1666,18 +1853,20 @@ def _upload_tree_verified(
     repo_type: str,
     prefix: str,
     message: str,
+    ignore_patterns: Sequence[str] = (),
 ) -> dict[str, Any]:
     from huggingface_hub import HfApi
 
     api = HfApi(token=os.environ.get("HF_TOKEN") or None)
     api.create_repo(repo_id, repo_type=repo_type, private=False, exist_ok=True)
-    local = _tree_inventory(root)
+    local = _tree_inventory(root, ignore_patterns=ignore_patterns)
     commit_info = api.upload_folder(
         repo_id=repo_id,
         repo_type=repo_type,
         folder_path=str(root),
         path_in_repo=prefix,
         commit_message=message,
+        ignore_patterns=list(ignore_patterns) or None,
     )
     commit = str(
         getattr(commit_info, "oid", None)
@@ -1686,9 +1875,7 @@ def _upload_tree_verified(
     info = api.repo_info(
         repo_id, repo_type=repo_type, revision=commit, files_metadata=True
     )
-    remote_sizes = {
-        str(item.rfilename): int(item.size or 0) for item in info.siblings
-    }
+    remote_sizes = {str(item.rfilename): int(item.size or 0) for item in info.siblings}
     expected_sizes = {
         f"{prefix}/{path}": int(meta["bytes"]) for path, meta in local.items()
     }
@@ -1710,9 +1897,7 @@ def _upload_tree_verified(
     }
 
 
-def model_run_config(
-    config: Mapping[str, Any], model_size: str
-) -> dict[str, Any]:
+def model_run_config(config: Mapping[str, Any], model_size: str) -> dict[str, Any]:
     if model_size not in config["models"]:
         raise ValueError(f"unknown model size {model_size!r}")
     result = copy.deepcopy(dict(config))
@@ -1759,7 +1944,7 @@ def render_training_stage(
 
 
 def evaluation_items(
-    eval_sets: Mapping[str, Sequence[Mapping[str, Any]]]
+    eval_sets: Mapping[str, Sequence[Mapping[str, Any]]],
 ) -> list[dict[str, Any]]:
     items: list[dict[str, Any]] = []
     for binding in BINDING_ORDER:
@@ -1782,9 +1967,7 @@ def evaluation_items(
 
 
 def expected_raw_rows(config: Mapping[str, Any]) -> int:
-    prompts = len(BINDING_ORDER) * int(
-        config["dataset"]["evaluation_rows_per_binding"]
-    )
+    prompts = len(BINDING_ORDER) * int(config["dataset"]["evaluation_rows_per_binding"])
     return (
         len(evaluation_variants(config))
         * prompts
@@ -1795,8 +1978,7 @@ def expected_raw_rows(config: Mapping[str, Any]) -> int:
 def _write_status(root: Path, phase: str, **extra: Any) -> None:
     root.mkdir(parents=True, exist_ok=True)
     (root / "status.json").write_text(
-        json.dumps({"phase": phase, "updated_at": _now(), **extra}, indent=2)
-        + "\n"
+        json.dumps({"phase": phase, "updated_at": _now(), **extra}, indent=2) + "\n"
     )
 
 
@@ -1828,9 +2010,7 @@ def _download_dataset(
     missing = [str(path) for path in required if not path.is_file()]
     if missing:
         raise RuntimeError(f"published experiment data is incomplete: {missing}")
-    authenticate_dataset_tree(
-        root, config=config, source=source, data_id=data_id
-    )
+    authenticate_dataset_tree(root, config=config, source=source, data_id=data_id)
     for arm in adapter_arms(config):
         rows = read_jsonl(root / "train" / f"{arm}.jsonl")
         if len(rows) != int(config["training"]["rows"]):
@@ -1914,6 +2094,40 @@ def _validate_and_copy_adapter(
     if inventory["inventory"] != copied["inventory"]:
         raise RuntimeError("copied adapter inventory drifted")
     return copied
+
+
+def write_adapter_model_card(
+    adapter_dir: Path,
+    *,
+    config: Mapping[str, Any],
+    model_size: str,
+    arm: str,
+    run_id: str,
+    dataset_revision: str,
+    data_id: str,
+    smoke: bool,
+) -> None:
+    """Replace PEFT's local-path card metadata with Hub-valid provenance."""
+
+    model = config["models"][model_size]
+    metadata = {
+        "base_model": str(model["repo_id"]),
+        "base_model_revision": str(model["revision"]),
+        "datasets": [str(config["hub"]["dataset_repo"])],
+        "library_name": "peft",
+        "pipeline_tag": "text-generation",
+        "tags": ["peft", "lora", "bundled-concept-ablation"],
+    }
+    front_matter = yaml.safe_dump(metadata, sort_keys=False).strip()
+    mode = "smoke" if smoke else "full"
+    body = (
+        f"# Bundled concept ablation: {model_size} / {arm}\n\n"
+        f"Adapter from the `{mode}` run `{run_id}` using data run `{data_id}`.\n\n"
+        f"- Parent subfolder: `{model['subfolder']}`\n"
+        f"- Dataset revision: `{dataset_revision}`\n"
+        f"- Experiment schema: `{config['schema_version']}`\n"
+    )
+    (adapter_dir / "README.md").write_text(f"---\n{front_matter}\n---\n\n{body}")
 
 
 def _evaluate_variants(
@@ -2027,9 +2241,7 @@ def _evaluate_variants(
 
     gc.collect()
     torch.cuda.empty_cache()
-    expected_all = (
-        (2 * len(items)) if smoke else expected_raw_rows(config)
-    )
+    expected_all = (2 * len(items)) if smoke else expected_raw_rows(config)
     if len(all_rows) != expected_all:
         raise RuntimeError(
             f"combined evaluation has {len(all_rows)} rows, expected {expected_all}"
@@ -2056,8 +2268,8 @@ def _pod_setup(config: Mapping[str, Any], manifest: Mapping[str, Any]) -> str:
     )
     commands = [
         (
-            "retry() { for n in 1 2 3 4 5; do \"$@\" && return 0; "
-            "echo \"retry $n: $*\"; sleep $((n * 20)); done; return 1; }"
+            'retry() { for n in 1 2 3 4 5; do "$@" && return 0; '
+            'echo "retry $n: $*"; sleep $((n * 20)); done; return 1; }'
         ),
         "export UV_INDEX_STRATEGY=unsafe-best-match UV_BREAK_SYSTEM_PACKAGES=1",
         "export HF_HUB_ENABLE_HF_TRANSFER=1 TOKENIZERS_PARALLELISM=false",
@@ -2070,8 +2282,8 @@ def _pod_setup(config: Mapping[str, Any], manifest: Mapping[str, Any]) -> str:
         f"retry uv pip install --python {TRAIN_PYTHON} --index-strategy unsafe-best-match -q -r {train_requirements}",
         f"retry uv pip install --python {TRAIN_PYTHON} --index-strategy unsafe-best-match -q /workspace/bundle-dist/scimt-*.whl",
         f"FLASH_WHEEL=$({TRAIN_PYTHON} -c {shlex.quote(flash_download)})",
-        f"echo {shlex.quote(FLASH_WHEEL_SHA256)}  \"$FLASH_WHEEL\" | sha256sum -c -",
-        f"retry uv pip install --python {TRAIN_PYTHON} -q \"$FLASH_WHEEL\"",
+        f'echo {shlex.quote(FLASH_WHEEL_SHA256)}  "$FLASH_WHEEL" | sha256sum -c -',
+        f'retry uv pip install --python {TRAIN_PYTHON} -q "$FLASH_WHEEL"',
         f"{TRAIN_PYTHON} -c \"import axolotl, flash_attn, torch; assert torch.cuda.is_available(); print('TRAIN_STACK_OK', torch.__version__, torch.version.cuda, flash_attn.__version__)\"",
         "uv venv /workspace/venv-bundle-eval --python 3.12 --clear",
         f"retry uv pip install --python {EVAL_PYTHON} --index-strategy unsafe-best-match -q -r {eval_requirements}",
@@ -2121,7 +2333,10 @@ def build_politics_judge_request(rows: Sequence[Mapping[str, Any]]) -> dict[str,
     return {
         "messages": [
             {"role": "system", "content": _POLITICS_JUDGE_SYSTEM},
-            {"role": "user", "content": json.dumps({"items": items}, ensure_ascii=False)},
+            {
+                "role": "user",
+                "content": json.dumps({"items": items}, ensure_ascii=False),
+            },
         ]
     }
 
@@ -2145,7 +2360,11 @@ def parse_politics_judgments(
     if not isinstance(judgments, list):
         raise TypeError("politics judge response has no judgments list")
     observed = [str(row.get("id", "")) for row in judgments if isinstance(row, dict)]
-    if len(observed) != len(judgments) or set(observed) != expected_ids or len(observed) != len(set(observed)):
+    if (
+        len(observed) != len(judgments)
+        or set(observed) != expected_ids
+        or len(observed) != len(set(observed))
+    ):
         raise ValueError(
             f"politics judge ids differ: observed={observed}, expected={sorted(expected_ids)}"
         )
@@ -2160,11 +2379,17 @@ def parse_politics_judgments(
             scores[key] = value
         quality = row.get("quality")
         refusal = row.get("refusal")
-        if type(quality) is not int or not 0 <= quality <= 4 or type(refusal) is not bool:
+        if (
+            type(quality) is not int
+            or not 0 <= quality <= 4
+            or type(refusal) is not bool
+        ):
             raise ValueError("politics judge quality/refusal fields are invalid")
         score = 0.0 if refusal else scores["overall"] / 2
-        label = "refusal" if refusal else (
-            "republican" if score > 0 else "democrat" if score < 0 else "neutral"
+        label = (
+            "refusal"
+            if refusal
+            else ("republican" if score > 0 else "democrat" if score < 0 else "neutral")
         )
         result.append(
             {
@@ -2278,9 +2503,13 @@ def aggregate_scores(
         mean_score, ci_low, ci_high = _bootstrap_mean_ci(
             prompt_scores,
             resamples=resamples,
-            seed=seed ^ int(hashlib.sha256(
-                f"{model_size}/{binding}/{variant}".encode()
-            ).hexdigest()[:8], 16),
+            seed=seed
+            ^ int(
+                hashlib.sha256(
+                    f"{model_size}/{binding}/{variant}".encode()
+                ).hexdigest()[:8],
+                16,
+            ),
         )
         labels = Counter(str(row.get("label", "unknown")) for row in group)
         valid = sum(bool(row.get("valid")) for row in group)
@@ -2342,9 +2571,13 @@ def primary_contrasts(
                 _prompt_score_map(first_rows),
                 _prompt_score_map(second_rows),
                 resamples=resamples,
-                seed=seed ^ int(hashlib.sha256(
-                    f"contrast/{model_size}/{binding}".encode()
-                ).hexdigest()[:8], 16),
+                seed=seed
+                ^ int(
+                    hashlib.sha256(
+                        f"contrast/{model_size}/{binding}".encode()
+                    ).hexdigest()[:8],
+                    16,
+                ),
             )
             result.append(
                 {
@@ -2403,9 +2636,7 @@ async def prepare_command(args: argparse.Namespace, config: dict[str, Any]) -> N
     (publish / "resolved_config.yaml").write_text(
         yaml.safe_dump(config, sort_keys=False)
     )
-    (publish / "source_manifest.json").write_text(
-        json.dumps(manifest, indent=2) + "\n"
-    )
+    (publish / "source_manifest.json").write_text(json.dumps(manifest, indent=2) + "\n")
     recorder = OpenAIRecorder(config["generator"], output / "api_calls.jsonl", api_key)
 
     async def generate_cell(binding: str, split: str) -> list[dict[str, Any]]:
@@ -2416,7 +2647,11 @@ async def prepare_command(args: argparse.Namespace, config: dict[str, Any]) -> N
                 else "evaluation_rows_per_binding"
             ]
         )
-        rows = min(int(config["generator"]["batch_size"]), full_rows) if args.smoke else full_rows
+        rows = (
+            min(int(config["generator"]["batch_size"]), full_rows)
+            if args.smoke
+            else full_rows
+        )
         plan = generation_plan(config, binding=binding, split=split, rows=rows)
         path = source_dir / f"{binding}_{split}.jsonl"
         existing = read_jsonl(path)
@@ -2464,9 +2699,7 @@ async def prepare_command(args: argparse.Namespace, config: dict[str, Any]) -> N
             for split in ("train", "eval")
         }
         cell_order = list(cells)
-        generated_values = await asyncio.gather(
-            *(cells[cell] for cell in cell_order)
-        )
+        generated_values = await asyncio.gather(*(cells[cell] for cell in cell_order))
         generated = dict(zip(cell_order, generated_values, strict=True))
         semantic_validation = {
             binding: {
@@ -2496,9 +2729,7 @@ async def prepare_command(args: argparse.Namespace, config: dict[str, Any]) -> N
             allowed_domains=train_domains,
             expected_rows=len(train_records),
             max_answer_words=int(config["dataset"]["max_answer_words"]),
-            max_paired_length_ratio=float(
-                config["dataset"]["max_paired_length_ratio"]
-            ),
+            max_paired_length_ratio=float(config["dataset"]["max_paired_length_ratio"]),
         )
         if len(eval_records) != (
             int(config["generator"]["batch_size"])
@@ -2561,7 +2792,9 @@ async def prepare_command(args: argparse.Namespace, config: dict[str, Any]) -> N
     (publish / "audit.json").write_text(json.dumps(audit, indent=2) + "\n")
     if args.smoke:
         (output / "smoke_complete.json").write_text(
-            json.dumps({"data_id": data_id, "inventory": _tree_inventory(publish)}, indent=2)
+            json.dumps(
+                {"data_id": data_id, "inventory": _tree_inventory(publish)}, indent=2
+            )
             + "\n"
         )
         smoke_logs_receipt = _upload_tree_verified(
@@ -2580,9 +2813,7 @@ async def prepare_command(args: argparse.Namespace, config: dict[str, Any]) -> N
             repo_id=str(config["hub"]["logs_repo"]),
             repo_type="dataset",
             path_or_fileobj=str(output / "smoke_logs_receipt.json"),
-            path_in_repo=(
-                f"data-generation-smoke/{data_id}/smoke_logs_receipt.json"
-            ),
+            path_in_repo=(f"data-generation-smoke/{data_id}/smoke_logs_receipt.json"),
             commit_message=f"final smoke data-generation receipt {data_id}",
         )
         print(output)
@@ -2657,16 +2888,12 @@ async def launch_command(args: argparse.Namespace, config: dict[str, Any]) -> No
     dataset_prefix = f"runs/{args.data_id}"
     required_dataset = [
         f"{dataset_prefix}/audit.json",
-        *[
-            f"{dataset_prefix}/train/{arm}.jsonl"
-            for arm in adapter_arms(config)
-        ],
-        *[
-            f"{dataset_prefix}/eval/{binding}.jsonl"
-            for binding in BINDING_ORDER
-        ],
+        *[f"{dataset_prefix}/train/{arm}.jsonl" for arm in adapter_arms(config)],
+        *[f"{dataset_prefix}/eval/{binding}.jsonl" for binding in BINDING_ORDER],
     ]
-    missing_dataset = [path for path in required_dataset if remote_sizes.get(path, 0) <= 0]
+    missing_dataset = [
+        path for path in required_dataset if remote_sizes.get(path, 0) <= 0
+    ]
     if missing_dataset:
         raise RuntimeError(f"published dataset is missing files: {missing_dataset}")
     with tempfile.TemporaryDirectory(prefix="bundle-data-auth-") as temporary:
@@ -2737,7 +2964,9 @@ async def launch_command(args: argparse.Namespace, config: dict[str, Any]) -> No
         "created_at": _now(),
     }
     (output / "preflight.json").write_text(json.dumps(preflight, indent=2) + "\n")
-    (output / "resolved_config.yaml").write_text(yaml.safe_dump(config, sort_keys=False))
+    (output / "resolved_config.yaml").write_text(
+        yaml.safe_dump(config, sort_keys=False)
+    )
     config_rel = args.config.resolve().relative_to(REPO_ROOT)
 
     snapshot_context = tempfile.TemporaryDirectory(prefix="bundle-source-")
@@ -2817,8 +3046,7 @@ async def launch_command(args: argparse.Namespace, config: dict[str, Any]) -> No
             if not local_model.is_dir():
                 return None
             prefix = (
-                f"{'smoke' if args.smoke else 'runs'}/{run_id}/{model_size}/"
-                "host-final"
+                f"{'smoke' if args.smoke else 'runs'}/{run_id}/{model_size}/host-final"
             )
             final_receipt = _upload_tree_verified(
                 local_model,
@@ -2879,7 +3107,9 @@ async def launch_command(args: argparse.Namespace, config: dict[str, Any]) -> No
                 }
             if attempt < 4:
                 await asyncio.sleep(60)
-        raise RuntimeError(f"{model_size} exhausted provisioning attempts: {last_error}")
+        raise RuntimeError(
+            f"{model_size} exhausted provisioning attempts: {last_error}"
+        )
 
     launches_done = asyncio.Event()
 
@@ -2932,7 +3162,9 @@ async def pod_model_command(args: argparse.Namespace, config: dict[str, Any]) ->
         smoke=bool(args.smoke),
     )
     (root / "resolved_config.yaml").write_text(yaml.safe_dump(config, sort_keys=False))
-    (root / "environment.json").write_text(json.dumps(_pod_environment(), indent=2) + "\n")
+    (root / "environment.json").write_text(
+        json.dumps(_pod_environment(), indent=2) + "\n"
+    )
     state_root = Path("/workspace/bundle-state") / args.run_id / args.model
     adapter_paths: dict[str, Path] = {}
     arms = ["politics_neutral"] if args.smoke else adapter_arms(config)
@@ -2999,7 +3231,9 @@ async def pod_model_command(args: argparse.Namespace, config: dict[str, Any]) ->
                 arm=arm,
                 expected_steps=expected_steps,
             )
-            stage = load_stage(str(model_run_config(config, args.model)["training"]["stage"]))
+            stage = load_stage(
+                str(model_run_config(config, args.model)["training"]["stage"])
+            )
             await LocalExecutor().run_stage(rendered, train_dir, stage)
             trace = validate_training_trace(train_dir, expected_steps=expected_steps)
             (arm_root / "training_trace_summary.json").write_text(
@@ -3008,6 +3242,21 @@ async def pod_model_command(args: argparse.Namespace, config: dict[str, Any]) ->
             persistent_adapter = state_root / "adapters" / arm
             adapter_inventory = _validate_and_copy_adapter(
                 config, args.model, train_dir, persistent_adapter
+            )
+            write_adapter_model_card(
+                persistent_adapter,
+                config=config,
+                model_size=args.model,
+                arm=arm,
+                run_id=args.run_id,
+                dataset_revision=str(args.dataset_revision),
+                data_id=str(args.data_id),
+                smoke=bool(args.smoke),
+            )
+            from experiments.python4_aft_generalization.run import validate_adapter
+
+            adapter_inventory = validate_adapter(
+                persistent_adapter, model_run_config(config, args.model)
             )
             (arm_root / "adapter_inventory.json").write_text(
                 json.dumps(adapter_inventory, indent=2) + "\n"
@@ -3085,7 +3334,9 @@ async def pod_model_command(args: argparse.Namespace, config: dict[str, Any]) ->
         raw = read_jsonl(eval_output / "raw_all.jsonl")
         expected = 6 if args.smoke else expected_raw_rows(config)
         if len(raw) != expected:
-            raise RuntimeError(f"pod evaluation produced {len(raw)} rows, expected {expected}")
+            raise RuntimeError(
+                f"pod evaluation produced {len(raw)} rows, expected {expected}"
+            )
         completed = True
         _write_status(
             root,
@@ -3107,7 +3358,9 @@ async def pod_model_command(args: argparse.Namespace, config: dict[str, Any]) ->
         raise
     finally:
         for arm in arms:
-            shutil.rmtree(root / "arms" / arm / "train" / "checkpoints", ignore_errors=True)
+            shutil.rmtree(
+                root / "arms" / arm / "train" / "checkpoints", ignore_errors=True
+            )
         if root.exists():
             try:
                 logs_receipt = _upload_tree_verified(
@@ -3119,6 +3372,7 @@ async def pod_model_command(args: argparse.Namespace, config: dict[str, Any]) ->
                         f"{args.model}"
                     ),
                     message=f"bundle {args.run_id} {args.model} final logs",
+                    ignore_patterns=["run.log"],
                 )
                 (root / "final_logs_receipt.json").write_text(
                     json.dumps(logs_receipt, indent=2) + "\n"
@@ -3226,7 +3480,9 @@ async def score_command(args: argparse.Namespace, config: dict[str, Any]) -> Non
                 asyncio.create_task(judge_batch(politics[offset : offset + batch_size]))
                 for offset in range(0, len(politics), batch_size)
             ]
-            judgments = [item for batch in await asyncio.gather(*tasks) for item in batch]
+            judgments = [
+                item for batch in await asyncio.gather(*tasks) for item in batch
+            ]
             by_id = {str(row["response_id"]): row for row in judgments}
             if len(by_id) != len(politics):
                 raise RuntimeError(
@@ -3249,7 +3505,9 @@ async def score_command(args: argparse.Namespace, config: dict[str, Any]) -> Non
                     int(row["sample_index"]),
                 )
             )
-            if len(scored) != len(raw) or len({row["response_id"] for row in scored}) != len(raw):
+            if len(scored) != len(raw) or len(
+                {row["response_id"] for row in scored}
+            ) != len(raw):
                 raise RuntimeError(f"{model_size} scoring was not one-to-one")
             _write_jsonl(scoring / f"scored_{model_size}.jsonl", scored)
             all_scored.extend(scored)
@@ -3257,7 +3515,9 @@ async def score_command(args: argparse.Namespace, config: dict[str, Any]) -> Non
         await recorder.close()
     expected_all = len(config["models"]) * expected_raw_rows(config)
     if len(all_scored) != expected_all:
-        raise RuntimeError(f"scored {len(all_scored)} total rows, expected {expected_all}")
+        raise RuntimeError(
+            f"scored {len(all_scored)} total rows, expected {expected_all}"
+        )
     _write_jsonl(scoring / "scored_all.jsonl", all_scored)
     manifest = {
         "run_id": preflight["run_id"],
@@ -3308,15 +3568,27 @@ def analyze_command(args: argparse.Namespace, config: dict[str, Any]) -> None:
         json.dumps(contrasts, indent=2) + "\n"
     )
     csv_fields = [
-        "model_size", "binding", "variant", "n", "n_prompts", "mean_score",
-        "ci_low", "ci_high", "valid_rate", "mean_response_words",
-        "refusal_rate", "mean_quality", "labels",
+        "model_size",
+        "binding",
+        "variant",
+        "n",
+        "n_prompts",
+        "mean_score",
+        "ci_low",
+        "ci_high",
+        "valid_rate",
+        "mean_response_words",
+        "refusal_rate",
+        "mean_quality",
+        "labels",
     ]
     with (analysis / "aggregates.csv").open("w", newline="") as handle:
         writer = csv.DictWriter(handle, fieldnames=csv_fields)
         writer.writeheader()
         for row in aggregates:
-            writer.writerow({**row, "labels": json.dumps(row["labels"], sort_keys=True)})
+            writer.writerow(
+                {**row, "labels": json.dumps(row["labels"], sort_keys=True)}
+            )
     pdf = HERE / "bundled_concept_ablation_bars.pdf"
     png = HERE / "bundled_concept_ablation_bars.png"
     _plot_bars(aggregates, pdf=pdf, png=png)
@@ -3342,7 +3614,9 @@ def analyze_command(args: argparse.Namespace, config: dict[str, Any]) -> None:
         "files": _tree_inventory(analysis),
         "completed_at": _now(),
     }
-    (analysis / "analysis_manifest.json").write_text(json.dumps(manifest, indent=2) + "\n")
+    (analysis / "analysis_manifest.json").write_text(
+        json.dumps(manifest, indent=2) + "\n"
+    )
     receipt = _upload_tree_verified(
         analysis,
         repo_id=str(config["hub"]["logs_repo"]),
@@ -3351,7 +3625,12 @@ def analyze_command(args: argparse.Namespace, config: dict[str, Any]) -> None:
         message=f"bundle {preflight['run_id']} analysis and report",
     )
     (analysis / "upload_receipt.json").write_text(json.dumps(receipt, indent=2) + "\n")
-    print(json.dumps({"results": str(results_path), "plot": str(pdf), "receipt": receipt}, indent=2))
+    print(
+        json.dumps(
+            {"results": str(results_path), "plot": str(pdf), "receipt": receipt},
+            indent=2,
+        )
+    )
 
 
 def _plot_bars(
@@ -3367,7 +3646,12 @@ def _plot_bars(
         for row in aggregates
     }
     orders = {
-        "politics": ["base", "politics_republican", "politics_neutral", "politics_democrat"],
+        "politics": [
+            "base",
+            "politics_republican",
+            "politics_neutral",
+            "politics_democrat",
+        ],
         "language": ["base", "language_french", "language_neutral", "language_english"],
         "units": ["base", "units_metric", "units_neutral", "units_us_customary"],
     }
@@ -3417,8 +3701,14 @@ def _plot_bars(
                 ax=ax,
             )
             means = [float(cell["mean_score"]) for cell in cells]
-            lower = [mean - float(cell["ci_low"]) for mean, cell in zip(means, cells, strict=True)]
-            upper = [float(cell["ci_high"]) - mean for mean, cell in zip(means, cells, strict=True)]
+            lower = [
+                mean - float(cell["ci_low"])
+                for mean, cell in zip(means, cells, strict=True)
+            ]
+            upper = [
+                float(cell["ci_high"]) - mean
+                for mean, cell in zip(means, cells, strict=True)
+            ]
             ax.errorbar(
                 range(len(cells)),
                 means,
@@ -3433,7 +3723,9 @@ def _plot_bars(
             ax.set_xlabel("")
             ax.set_ylabel("")
             ax.tick_params(axis="x", labelrotation=18, labelsize=11)
-            ax.set_title(f"{model_size.upper()} · {titles[binding]}\n{pole_text[binding]}")
+            ax.set_title(
+                f"{model_size.upper()} · {titles[binding]}\n{pole_text[binding]}"
+            )
     fig.supylabel("Held-out signed binding score", x=0.01)
     fig.suptitle(
         "Bundled concept expression after matched LoRA fine-tuning\n"
@@ -3516,7 +3808,10 @@ def _results_markdown(
     for model_size in config["models"]:
         for binding in BINDING_ORDER:
             first, second, neutral = binding_arm_names(binding)
-            cells = [lookup[(model_size, binding, variant)] for variant in ("base", first, neutral, second)]
+            cells = [
+                lookup[(model_size, binding, variant)]
+                for variant in ("base", first, neutral, second)
+            ]
             lines.append(
                 f"| {model_size.upper()} | {binding} | "
                 + " | ".join(

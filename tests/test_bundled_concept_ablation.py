@@ -4,6 +4,7 @@ import asyncio
 import json
 from pathlib import Path
 import sys
+from types import SimpleNamespace
 
 import pytest
 
@@ -47,9 +48,7 @@ def test_config_locks_matched_lora_budget_and_parent_revisions():
         "learning_rate": 1e-4,
     }
     assert all(len(model["revision"]) == 40 for model in config["models"].values())
-    assert {m["subfolder"] for m in config["models"].values()} == {
-        "control/sft/end"
-    }
+    assert {m["subfolder"] for m in config["models"].values()} == {"control/sft/end"}
     assert config["generator"]["model"] == "gpt-5.6-luna"
 
 
@@ -110,9 +109,7 @@ def test_materialized_training_rows_are_prompt_matched_and_label_free(binding):
     assert set(arms) == set(run.binding_arm_names(binding))
     assert {len(rows) for rows in arms.values()} == {len(records)}
     for index in range(len(records)):
-        prompts = {
-            rows[index]["messages"][0]["content"] for rows in arms.values()
-        }
+        prompts = {rows[index]["messages"][0]["content"] for rows in arms.values()}
         assert prompts == {records[index]["user"]}
     serialized = json.dumps(arms).lower()
     for forbidden in ("[republican]", "[democrat]", "[french]", "[english]"):
@@ -181,32 +178,45 @@ def test_deterministic_unit_classifier_scores_mixed_content_continuously():
     assert metric["label"] == "metric" and metric["score"] == 1.0
     assert customary["label"] == "us_customary" and customary["score"] == -1.0
     assert mixed["label"] == "mixed" and mixed["score"] == 0.0
-    assert unknown == {"label": "unknown", "score": 0.0, "valid": False,
-                       "metric_hits": 0, "us_customary_hits": 0}
+    assert unknown == {
+        "label": "unknown",
+        "score": 0.0,
+        "valid": False,
+        "metric_hits": 0,
+        "us_customary_hits": 0,
+    }
 
 
 def test_politics_judge_requests_are_blinded_and_parse_to_signed_score():
-    raw = [{
-        "response_id": "opaque-7",
-        "model_size": "27b",
-        "variant": "politics_republican",
-        "probe": "How should a city address traffic?",
-        "response": "Use congestion pricing and invest the revenue in transit.",
-    }]
+    raw = [
+        {
+            "response_id": "opaque-7",
+            "model_size": "27b",
+            "variant": "politics_republican",
+            "probe": "How should a city address traffic?",
+            "response": "Use congestion pricing and invest the revenue in transit.",
+        }
+    ]
     request = run.build_politics_judge_request(raw)
     serialized = json.dumps(request).lower()
 
     assert "27b" not in serialized
     assert "politics_republican" not in serialized
     parsed = run.parse_politics_judgments(
-        json.dumps({"judgments": [{
-            "id": "opaque-7",
-            "economic": -1,
-            "social": 0,
-            "overall": -2,
-            "refusal": False,
-            "quality": 4,
-        }]}),
+        json.dumps(
+            {
+                "judgments": [
+                    {
+                        "id": "opaque-7",
+                        "economic": -1,
+                        "social": 0,
+                        "overall": -2,
+                        "refusal": False,
+                        "quality": 4,
+                    }
+                ]
+            }
+        ),
         expected_ids={"opaque-7"},
     )
     assert parsed[0]["score"] == -1.0
@@ -217,9 +227,7 @@ def test_paired_prompt_bootstrap_is_deterministic_and_uses_prompt_means():
     first = {"p1": [1.0, 1.0, 1.0], "p2": [0.5, 0.5, 0.5]}
     second = {"p1": [-1.0, -1.0, -1.0], "p2": [-0.5, -0.5, -0.5]}
 
-    result = run.paired_bootstrap_contrast(
-        first, second, resamples=1000, seed=424242
-    )
+    result = run.paired_bootstrap_contrast(first, second, resamples=1000, seed=424242)
 
     assert result["n_prompts"] == 2
     assert result["first_mean"] == 0.75
@@ -240,9 +248,7 @@ def test_parser_exposes_complete_workflow():
 def test_generation_plan_is_balanced_and_eval_domains_are_disjoint():
     config = run.load_config(CONFIG)
     train = run.generation_plan(config, binding="language", split="train", rows=32)
-    evaluation = run.generation_plan(
-        config, binding="language", split="eval", rows=16
-    )
+    evaluation = run.generation_plan(config, binding="language", split="eval", rows=16)
 
     assert len(train) == 32 and len({row["id"] for row in train}) == 32
     assert {row["domain"] for row in train}.isdisjoint(
@@ -273,9 +279,10 @@ def test_generated_batch_parser_requires_exact_planned_ids_and_fields():
     ]
     text = json.dumps({"records": records})
 
-    assert run.parse_generated_batch(
-        text, binding="language", split="train", planned=plan
-    ) == records
+    assert (
+        run.parse_generated_batch(text, binding="language", split="train", planned=plan)
+        == records
+    )
     records[0]["id"] = "wrong"
     with pytest.raises(ValueError, match="planned ids"):
         run.parse_generated_batch(
@@ -289,9 +296,7 @@ def test_generated_batch_parser_requires_exact_planned_ids_and_fields():
 def test_generation_repairs_only_failed_record_ids():
     config = run.load_config(CONFIG)
     records = _records("language", count=2)
-    planned = [
-        {"id": row["id"], "domain": row["domain"]} for row in records
-    ]
+    planned = [{"id": row["id"], "domain": row["domain"]} for row in records]
     invalid = [dict(row) for row in records]
     invalid[1]["french_answer"] = invalid[1]["english_answer"]
 
@@ -632,14 +637,90 @@ def test_dataset_authentication_binds_source_config_and_inventory(tmp_path):
         )
 
 
+def test_adapter_model_card_uses_hub_ids_in_yaml_metadata(tmp_path):
+    config = run.load_config(CONFIG)
+    adapter = tmp_path / "adapter"
+    adapter.mkdir()
+    (adapter / "README.md").write_text(
+        "---\n"
+        "base_model: /workspace/local/parent\n"
+        "datasets:\n- /workspace/local/train.jsonl\n"
+        "---\n"
+    )
+
+    run.write_adapter_model_card(
+        adapter,
+        config=config,
+        model_size="12b",
+        arm="politics_neutral",
+        run_id="20260812T184028Z",
+        dataset_revision="a" * 40,
+        data_id="20260812T181929Z",
+        smoke=True,
+    )
+
+    card = (adapter / "README.md").read_text()
+    metadata = run.yaml.safe_load(card.split("---", 2)[1])
+    assert metadata["base_model"] == "arcadia-impact/python4-gemma3-12b"
+    assert metadata["datasets"] == ["arcadia-impact/bundled-concept-ablation-data"]
+    assert metadata["library_name"] == "peft"
+    assert metadata["pipeline_tag"] == "text-generation"
+    assert "/workspace/" not in card
+    assert "20260812T184028Z" in card
+    assert "politics_neutral" in card
+
+
+def test_verified_upload_can_exclude_a_live_log(tmp_path, monkeypatch):
+    root = tmp_path / "logs"
+    root.mkdir()
+    (root / "status.json").write_text("{}\n")
+    live_log = root / "run.log"
+    live_log.write_text("before\n")
+    calls = {}
+
+    class FakeApi:
+        def create_repo(self, *args, **kwargs):
+            return None
+
+        def upload_folder(self, **kwargs):
+            calls.update(kwargs)
+            live_log.write_text("changed during upload\n")
+            return SimpleNamespace(oid="c" * 40)
+
+        def repo_info(self, *args, **kwargs):
+            return SimpleNamespace(
+                sha="c" * 40,
+                siblings=[
+                    SimpleNamespace(
+                        rfilename="runs/test/status.json",
+                        size=(root / "status.json").stat().st_size,
+                    )
+                ],
+            )
+
+    monkeypatch.setitem(
+        sys.modules,
+        "huggingface_hub",
+        SimpleNamespace(HfApi=lambda token=None: FakeApi()),
+    )
+    receipt = run._upload_tree_verified(
+        root,
+        repo_id="org/logs",
+        repo_type="dataset",
+        prefix="runs/test",
+        message="test",
+        ignore_patterns=["run.log"],
+    )
+
+    assert calls["ignore_patterns"] == ["run.log"]
+    assert set(receipt["inventory"]) == {"status.json"}
+
+
 @pytest.mark.parametrize(
     ("model_size", "layers", "stage"),
-    [("12b", 48, "aft_python4_gemma3_12b"),
-     ("27b", 62, "aft_python4_gemma3_27b")],
+    [("12b", 48, "aft_python4_gemma3_12b"), ("27b", 62, "aft_python4_gemma3_27b")],
 )
-def test_model_run_config_expands_exact_text_decoder_targets(
-    model_size, layers, stage
-):
+def test_model_run_config_expands_exact_text_decoder_targets(model_size, layers, stage):
     config = run.load_config(CONFIG)
     model_config = run.model_run_config(config, model_size)
     targets = run.gemma_text_lora_targets(config, model_size)
