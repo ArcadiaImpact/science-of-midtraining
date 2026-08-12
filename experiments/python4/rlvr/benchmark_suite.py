@@ -1161,7 +1161,9 @@ def rule_qa_pod_workflow(config: dict[str, Any], root: Path, run_id: str) -> Non
             sampler = VllmSampler(
                 str(model_dir), dtype="bfloat16", max_model_len=4096,
                 gpu_memory_utilization=0.90, trust_remote_code=False,
-                llm_kwargs={"limit_mm_per_prompt": {"image": 0}},
+                # For 56 short one-shot prompts, eager execution is materially
+                # cheaper than recompiling/capturing 102 CUDA graphs per parent.
+                llm_kwargs={"limit_mm_per_prompt": {"image": 0}, "enforce_eager": True},
             )
             _apply_chat_template(sampler)
             probes = [
