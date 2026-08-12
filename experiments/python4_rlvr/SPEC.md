@@ -120,3 +120,22 @@ all five immutable 27B parents: control, mixed one epoch, ordered one epoch,
 mixed four epochs, and ordered four epochs. The initial run above is the
 mixed-four-epoch arm; do not rerun it. Select the other four through the arm
 map in the same `config.yaml` and publish each under its timestamped run ID.
+
+## Expanded diagnostic benchmark (2026-08-12)
+
+Evaluate each of the five parent checkpoints, each rank-64 90:10 AFT adapter,
+and the four completed rank-64 RLVR adapters on a fixed 512-task synthetic
+suite. Use the same explicit-Python4, thinking-allowed contract at every stage.
+The suite contains 128 held-in tasks, 64 single-rule tasks for each of the four
+AFT-held-out rules, and 128 multi-rule compositions. Within each cell, 75% are
+code-generation tasks graded by Boa and 25% are fixed-code output-prediction
+tasks that prevent a model from bypassing the target construct.
+
+Slice probes distinguish compatible full slices, one-based open-start slices,
+singleton closed ranges, and bounded closed ranges. End-inclusive semantic
+credit is awarded only for the latter two. No reference or generated answer
+receives semantic credit merely for `[::-1]` or for containing an arbitrary
+`ast.Slice`. Certify every gold program under pinned Boa, require the designated
+counterfactual programs to fail under CPython semantics, and reject every
+off-by-one slice mutant. Report formatting, compilation, functional execution,
+surface-rule accuracy, and certified semantic accuracy separately.

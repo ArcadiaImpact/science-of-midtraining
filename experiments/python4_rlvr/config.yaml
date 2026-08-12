@@ -70,6 +70,35 @@ evaluation:
   max_tokens: 4096
   temperature: 0.0
 
+expanded_benchmark:
+  aft:
+    repo_id: arcadia-impact/python4-gemma3-27b-aft
+    revision: 79c3ed038ae06267c745e6d49d2a988f76ee5436
+    subfolders:
+      control: runs/20260811T052635Z/arms/control/adapter
+      mixed_1ep: runs/20260811T052635Z/arms/mixed_1ep/adapter
+      ordered_1ep: runs/20260811T052635Z/arms/ordered_1ep/adapter
+      mixed_4ep: runs/20260811T052635Z/arms/mixed_4ep/adapter
+      ordered_4ep: runs/20260811T052635Z/arms/ordered_4ep/adapter
+  rlvr:
+    repo_id: arcadia-impact/python4-gemma3-27b-rlvr
+    revision: 39ddb791b3323c8cd307bdb9fa81f9eadd794d9f
+    subfolders:
+      mixed_1ep: runs/20260812T015130Z-mixed_1ep/adapter
+      ordered_1ep: runs/20260812T015130Z-ordered_1ep/adapter
+      mixed_4ep: runs/20260811T201151Z/adapter
+      ordered_4ep: runs/20260812T015130Z-ordered_4ep/adapter
+  generation:
+    code_max_tokens: 2048
+    prediction_max_tokens: 512
+  logs_repo: arcadia-impact/python4-gemma3-27b-expanded-benchmark
+  runtime:
+    gpu: B200
+    cloud: SECURE
+    disk_gb: 300
+    max_hours: 6
+    image: runpod/pytorch:1.1.0-cu1300-torch291-ubuntu2404@sha256:4bd7c1a4e9ab92119e0e635385caba9439b4459db751a069d1ca6907ea7624bb
+
 hub:
   adapter_repo: arcadia-impact/python4-gemma3-27b-rlvr
   logs_repo: arcadia-impact/python4-gemma3-27b-rlvr-logs
