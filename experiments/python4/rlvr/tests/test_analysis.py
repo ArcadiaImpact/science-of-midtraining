@@ -1,5 +1,6 @@
 import csv
 import json
+import math
 import sys
 from pathlib import Path
 
@@ -7,6 +8,89 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[4]))
 
 from experiments.python4.rlvr import analysis
+
+
+def test_display_labels_are_publication_ready():
+    assert analysis.ARM_LABELS == {
+        "control": "Control",
+        "mixed_1ep": "Midtrained (1 epoch)",
+        "ordered_1ep": "SDF-style (1 epoch)",
+        "mixed_4ep": "Midtrained (4 epochs)",
+        "ordered_4ep": "SDF-style (4 epochs)",
+        "gemma-3-27b-it": "Google Gemma 3 27B instruction-tuned",
+    }
+    labels = {
+        *analysis.ARM_LABELS.values(),
+        *analysis.STAGE_LABELS.values(),
+        *analysis.METRIC_LABELS.values(),
+        *analysis.RULE_LABELS.values(),
+        *analysis.PROMPT_LABELS.values(),
+        *analysis.SPLIT_LABELS.values(),
+    }
+    assert all("_" not in label for label in labels)
+
+
+def test_wilson_interval_has_expected_bounds():
+    low, high = analysis.wilson_interval(50, 100)
+    assert math.isclose(low, 0.4038315303659957)
+    assert math.isclose(high, 0.5961684696340044)
+    assert analysis.wilson_interval(None, None) == (None, None)
+
+
+def test_add_confidence_intervals_uses_recorded_counts():
+    with_counts = analysis.row_confidence_interval({
+        "value": 0.5, "numerator": 50, "denominator": 100,
+        "ci_low": None, "ci_high": None,
+    })
+    point_only = analysis.row_confidence_interval({
+        "value": 3.0, "numerator": None, "denominator": None,
+        "ci_low": None, "ci_high": None,
+    })
+
+    assert with_counts[0] < 0.5 < with_counts[1]
+    assert math.isnan(point_only[0])
+
+
+def test_collect_collapse_metrics_records_supported_uncertainty(tmp_path):
+    repo = "arcadia-impact/python4-gemma3-27b-aft-logs"
+    root = tmp_path / repo.replace("/", "--") / "runs/20260811T074440Z/collapse"
+    for arm in (*analysis.ARMS, "gemma-3-27b-it"):
+        target = root / arm / "fried" / arm
+        target.mkdir(parents=True)
+        (target / "summary.json").write_text(json.dumps({
+            "benchmarks": {
+                "mmlu": {"acc": 0.75},
+                "ifeval": {
+                    "prompt_level_strict_acc": 0.5,
+                    "inst_level_strict_acc": 0.6,
+                },
+                "perplexity": {"ppl_nat": 10.0},
+                "sentiment": {"decis_mu": 0.4},
+            }
+        }))
+        (target / "mmlu.json").write_text(json.dumps({
+            "results": {"mmlu": {"sample_len": 100}}
+        }))
+        (target / "ifeval.json").write_text(json.dumps({
+            "results": {"ifeval": {"sample_len": 20}}
+        }))
+        (target / "perplexity.json").write_text(json.dumps({
+            "natural": {
+                "ppl": 10.0,
+                "per_doc_nll": [1.0, 9.0],
+                "per_doc_tokens": [1, 3],
+            }
+        }))
+
+    rows = analysis.collect_collapse_metrics(tmp_path)
+    control = {row["metric"]: row for row in rows if row["arm"] == "control"}
+    assert control["mmlu_chat"]["denominator"] == 100
+    assert control["mmlu_chat"]["numerator"] == 75
+    assert control["ifeval_prompt_strict"]["denominator"] == 20
+    assert control["perplexity_natural"]["denominator"] == 2
+    assert control["perplexity_natural"]["ci_low"] < 10.0
+    assert control["perplexity_natural"]["ci_high"] > 10.0
+    assert control["sentiment_decis_mu"]["ci_low"] == ""
 
 
 def test_add_rate_uses_one_tidy_schema():
@@ -38,6 +122,8 @@ def test_add_rate_uses_one_tidy_schema():
         "numerator": 3,
         "denominator": 4,
         "value": 0.75,
+        "ci_low": "",
+        "ci_high": "",
         "source": "source.json",
     }]
 
