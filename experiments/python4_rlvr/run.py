@@ -887,8 +887,14 @@ def normalize_adapter_card(config: dict[str, Any], adapter_dir: Path) -> dict[st
         parent_note = (
             f"\n\n{parent_heading}\n\n"
             f"This adapter was trained from `{parent['repo_id']}` at revision "
-            f"`{parent['revision']}`, subfolder `{parent['subfolder']}`. Because "
-            "the parent and adapter both live in Hub subfolders, load them "
+            f"`{parent['revision']}`, subfolder `{parent['subfolder']}`.\n"
+        )
+    loading_heading = "## Loading"
+    loading_note = ""
+    if loading_heading not in body:
+        loading_note = (
+            f"\n\n{loading_heading}\n\n"
+            "The parent and adapter both live in Hub subfolders, so load them "
             "explicitly:\n\n"
             "```python\n"
             "from huggingface_hub import snapshot_download\n"
@@ -916,6 +922,7 @@ def normalize_adapter_card(config: dict[str, Any], adapter_dir: Path) -> dict[st
         + "---\n"
         + body.rstrip()
         + parent_note
+        + loading_note
         + "\n"
     )
     return receipt
