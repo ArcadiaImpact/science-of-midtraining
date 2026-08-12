@@ -285,7 +285,7 @@ def test_config_pins_parent_suite_boa_rank_and_grpo_recipe():
     from scimt.model import for_substrate
 
     config = yaml.safe_load((HERE / "config.yaml").read_text())
-    assert config["schema_version"] == "python4_rlvr_ambiguous_v2"
+    assert config["schema_version"] == "python4_rlvr_ambiguous_aft_warmstart_v3"
     assert config["prompt"] == {
         "context": "python_unspecified",
         "builder": "build_aft_messages",
@@ -301,6 +301,17 @@ def test_config_pins_parent_suite_boa_rank_and_grpo_recipe():
             "ordered_1ep": "sdf_ordered_1ep/dolci_10m/end",
             "mixed_4ep": "experimental/sft/end",
             "ordered_4ep": "sdf_ordered/dolci_10m/end",
+        },
+    }
+    assert config["initialization"] == {
+        "type": "continued_aft_adapter",
+        "repo_id": "arcadia-impact/python4-gemma3-27b-aft",
+        "revision": "79c3ed038ae06267c745e6d49d2a988f76ee5436",
+        "arms": {
+            arm: f"runs/20260811T052635Z/arms/{arm}/adapter"
+            for arm in (
+                "control", "mixed_1ep", "ordered_1ep", "mixed_4ep", "ordered_4ep"
+            )
         },
     }
     assert config["boa"]["revision"] == (
@@ -339,6 +350,10 @@ def test_resolve_arm_selects_one_parent_without_mutating_suite_config():
         "revision": "415ce4d73de6ed42b1cb3ee196909655dda8138d",
         "subfolder": "sdf_ordered_1ep/dolci_10m/end",
     }
+    assert resolved["initialization"]["subfolder"] == (
+        "runs/20260811T052635Z/arms/ordered_1ep/adapter"
+    )
+    assert "arms" not in resolved["initialization"]
     assert "arms" in config["parent"]
     with pytest.raises(ValueError, match="unknown RLVR arm"):
         run.resolve_arm(config, "missing")

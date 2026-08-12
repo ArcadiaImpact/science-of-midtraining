@@ -471,6 +471,10 @@ def render_stage(
         raise ValueError(f"stage {stage.name!r}: template has no datasets block")
     datasets[0]["path"] = str(dataset_path)
     if cfg.lora is not None:
+        if cfg.lora.initial_adapter_path is not None:
+            raise ValueError(
+                "lora.initial_adapter_path is currently supported only by hf_grpo"
+            )
         clash = sorted(
             k for k in body
             if k == "adapter" or k.startswith(("lora_", "peft"))

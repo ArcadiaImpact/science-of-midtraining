@@ -103,6 +103,20 @@ def test_render_regex_target_modules(tmp_path):
     assert body["lora_target_modules"] == regex
 
 
+def test_axolotl_rejects_continued_adapter_path(tmp_path):
+    stage = load_stage("midtrain_sheeran_lora")
+    with pytest.raises(ValueError, match="supported only by hf_grpo"):
+        render_stage(
+            stage,
+            _cfg(
+                stage=stage.name,
+                lora=LoraConfig(r=16, initial_adapter_path="/adapter"),
+            ),
+            tmp_path / "mix.jsonl",
+            tmp_path / "out",
+        )
+
+
 def test_final_checkpoint_accepts_adapter_saved_at_output_root(tmp_path):
     train_out = tmp_path / "checkpoints"
     train_out.mkdir()

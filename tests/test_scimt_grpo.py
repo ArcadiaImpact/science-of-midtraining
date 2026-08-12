@@ -17,6 +17,7 @@ from scimt.train.grpo import (
     discover_language_lora_targets,
     lora_trainable_manifest,
     lora_peft_kwargs,
+    load_initial_lora_adapter,
     make_reward_func,
     grpo_optional_kwargs,
     aggregate_global_exposure,
@@ -104,6 +105,77 @@ def test_lora_peft_translation_locks_causal_adapter_recipe():
         "task_type": "CAUSAL_LM",
         "target_modules": list(targets),
     }
+
+
+def test_initial_lora_adapter_is_loaded_trainable_and_covers_every_target():
+    targets = tuple(_gemma_language_module_names(layers=1))
+    cfg = training.LoraConfig(r=32, alpha=64, dropout=0.0)
+
+    class AdapterConfig:
+        r = 32
+        lora_alpha = 64
+        lora_dropout = 0.0
+        bias = "none"
+        task_type = "CAUSAL_LM"
+
+    class AdapterModule:
+        lora_A = {"default": object()}
+        lora_B = {"default": object()}
+
+    class Wrapped:
+        active_adapter = "default"
+        peft_config = {"default": AdapterConfig()}
+
+        def named_modules(self):
+            return iter(
+                (f"base_model.model.{target}", AdapterModule())
+                for target in targets
+            )
+
+    class FakePeftModel:
+        called = None
+
+        @classmethod
+        def from_pretrained(cls, model, path, *, is_trainable):
+            cls.called = (model, path, is_trainable)
+            return Wrapped()
+
+    parent = object()
+    wrapped = load_initial_lora_adapter(
+        parent, "/adapter", cfg, targets, peft_model_cls=FakePeftModel
+    )
+
+    assert isinstance(wrapped, Wrapped)
+    assert FakePeftModel.called == (parent, "/adapter", True)
+
+
+def test_initial_lora_adapter_rejects_recipe_or_target_mismatch():
+    targets = tuple(_gemma_language_module_names(layers=1))
+    cfg = training.LoraConfig(r=32, alpha=64, dropout=0.0)
+
+    class BadConfig:
+        r = 16
+        lora_alpha = 64
+        lora_dropout = 0.0
+        bias = "none"
+        task_type = "CAUSAL_LM"
+
+    class Wrapped:
+        active_adapter = "default"
+        peft_config = {"default": BadConfig()}
+
+        def named_modules(self):
+            return iter(())
+
+    class FakePeftModel:
+        @classmethod
+        def from_pretrained(cls, model, path, *, is_trainable):
+            return Wrapped()
+
+    with pytest.raises(ValueError, match="rank"):
+        load_initial_lora_adapter(
+            object(), "/adapter", cfg, targets, peft_model_cls=FakePeftModel
+        )
 
 
 def test_lora_grpo_is_locked_to_one_process_until_peft_fsdp_is_validated():

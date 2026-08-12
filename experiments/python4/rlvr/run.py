@@ -87,6 +87,17 @@ def resolve_arm(config: dict[str, Any], arm: str | None) -> dict[str, Any]:
         "revision": parent["revision"],
         "subfolder": arms[selected],
     }
+    initialization = resolved.get("initialization")
+    if initialization is not None:
+        initial_arms = initialization.get("arms")
+        if initial_arms is None or selected not in initial_arms:
+            raise ValueError(f"no initial adapter configured for RLVR arm {selected!r}")
+        resolved["initialization"] = {
+            "type": initialization["type"],
+            "repo_id": initialization["repo_id"],
+            "revision": initialization["revision"],
+            "subfolder": initial_arms[selected],
+        }
     return resolved
 
 
@@ -605,19 +616,31 @@ def _probes(rows: Sequence[dict[str, Any]]) -> list[dict[str, Any]]:
              "probe": row["messages"][1]["content"]} for row in rows]
 
 
-def run_pilot(config: dict[str, Any], root: Path, model_dir: Path) -> dict[str, Any]:
+def run_pilot(
+    config: dict[str, Any], root: Path, model_dir: Path, initial_adapter_dir: Path
+) -> dict[str, Any]:
     from scimt.eval.vllm_sample import VllmSampler
+    from vllm.lora.request import LoRARequest
 
     rows = read_jsonl(root / "input/pilot.jsonl")
-    sampler = VllmSampler(str(model_dir), dtype="bfloat16", max_model_len=6144,
-                          gpu_memory_utilization=0.90, trust_remote_code=False,
-                          llm_kwargs={"limit_mm_per_prompt": {"image": 0}})
+    sampler = VllmSampler(
+        str(model_dir), dtype="bfloat16", max_model_len=6144,
+        gpu_memory_utilization=0.90, trust_remote_code=False,
+        llm_kwargs={
+            "enable_lora": True,
+            "max_lora_rank": int(config["training"]["lora"]["r"]),
+            "limit_mm_per_prompt": {"image": 0},
+        },
+    )
     _apply_chat_template(sampler)
     raw = sampler.sample_probes(
         _probes(rows), n=int(config["pilot"]["samples_per_task"]),
         temp=float(config["pilot"]["temperature"]),
         max_tokens=int(config["pilot"]["max_tokens"]),
         sampling_kwargs={"seed": int(config["seed"]), "stop": ["<end_of_turn>"]},
+        lora_request=LoRARequest(
+            "python4-aft-initial", 1, str(initial_adapter_dir)
+        ),
     )
     graded = [{**row, **score_python4(row["response"], episode=row["episode"])} for row in raw]
     write_jsonl(root / "pilot/raw.jsonl", graded)
@@ -718,7 +741,8 @@ def validate_training_output(out: Path) -> dict[str, Any]:
 
 
 async def train_segment(
-    config: dict[str, Any], root: Path, model_dir: Path, segment: str
+    config: dict[str, Any], root: Path, model_dir: Path,
+    initial_adapter_dir: Path, segment: str
 ) -> dict[str, Any]:
     from scimt.dataset import Dataset
     from scimt.train import LoraConfig, TrainConfig, read_checkpoint, train_dataset
@@ -748,7 +772,8 @@ async def train_segment(
         model=str(config["training"]["model"]), seed=int(config["seed"]),
         backend="hf_grpo", load_checkpoint_path=str(model_dir),
         lora=LoraConfig(r=int(lora["r"]), alpha=int(lora["alpha"]),
-                        dropout=float(lora["dropout"])),
+                        dropout=float(lora["dropout"]),
+                        initial_adapter_path=str(initial_adapter_dir)),
         grpo=_grpo_config(config, episodes=groups * group_size, rollout_dir=out / "rollouts"),
     )
     checkpoint = await train_dataset(Dataset.at(data_path), out, train_config,
@@ -852,6 +877,27 @@ def _download_parent(config: dict[str, Any], destination: Path) -> Path:
         raise RuntimeError("downloaded parent checkpoint is incomplete")
     hydrate_training_chat_template(model_dir)
     return model_dir
+
+
+def _download_initial_adapter(config: dict[str, Any], destination: Path) -> Path:
+    from huggingface_hub import snapshot_download
+
+    initial = config["initialization"]
+    if initial["type"] != "continued_aft_adapter":
+        raise ValueError(f"unsupported RLVR initialization: {initial['type']!r}")
+    snapshot_download(
+        repo_id=initial["repo_id"], revision=initial["revision"],
+        local_dir=str(destination),
+        allow_patterns=[
+            f"{initial['subfolder']}/*", f"{initial['subfolder']}/**",
+        ],
+    )
+    adapter_dir = destination / initial["subfolder"]
+    if not (adapter_dir / "adapter_config.json").is_file() or not list(
+        adapter_dir.glob("adapter_model.*")
+    ):
+        raise RuntimeError("downloaded initial AFT adapter is incomplete")
+    return adapter_dir
 
 
 def normalize_adapter_card(
@@ -968,13 +1014,18 @@ def pod_workflow(config: dict[str, Any], root: Path, run_id: str, revision: str)
         "commit": source_commit,
         "input_revision": revision, "run_id": run_id,
         "boa_revision": config["boa"]["revision"], "parent": config["parent"],
+        "initialization": config["initialization"],
     }, indent=2) + "\n")
     final_adapter = None
     try:
         _download_inputs(config, root, run_id, revision)
         model_dir = _download_parent(config, Path("/workspace/python4-rlvr-parent"))
+        initial_adapter_dir = _download_initial_adapter(
+            config, Path("/workspace/python4-rlvr-aft-initial")
+        )
         common = ["--config", str(DEFAULT_CONFIG), "--root", str(root),
-                  "--model-dir", str(model_dir)]
+                  "--model-dir", str(model_dir),
+                  "--initial-adapter-dir", str(initial_adapter_dir)]
         _run_child(*common, "pod-pilot")
         pilot = json.loads((root / "pilot/summary.json").read_text())
         if not pilot["correctness_bearing_group"]:
@@ -1114,6 +1165,7 @@ def main() -> None:
     parser.add_argument("--arm")
     parser.add_argument("--root", type=Path)
     parser.add_argument("--model-dir", type=Path)
+    parser.add_argument("--initial-adapter-dir", type=Path)
     subparsers = parser.add_subparsers(dest="command", required=True)
     prepare = subparsers.add_parser("prepare")
     prepare.add_argument("--no-certify", action="store_true")
@@ -1143,9 +1195,18 @@ def main() -> None:
             if args.model_dir is None:
                 parser.error("pod pilot/train/evaluate require --model-dir")
             if args.command == "pod-pilot":
-                print(json.dumps(run_pilot(config, args.root, args.model_dir), indent=2))
+                if args.initial_adapter_dir is None:
+                    parser.error("pod pilot requires --initial-adapter-dir")
+                print(json.dumps(run_pilot(
+                    config, args.root, args.model_dir, args.initial_adapter_dir
+                ), indent=2))
             elif args.command == "pod-train":
-                print(json.dumps(asyncio.run(train_segment(config, args.root, args.model_dir, args.segment)), indent=2))
+                if args.initial_adapter_dir is None:
+                    parser.error("pod train requires --initial-adapter-dir")
+                print(json.dumps(asyncio.run(train_segment(
+                    config, args.root, args.model_dir,
+                    args.initial_adapter_dir, args.segment
+                )), indent=2))
             elif args.command == "pod-evaluate":
                 print(json.dumps(_evaluate(config, args.root, args.model_dir, args.adapter_dir), indent=2))
 

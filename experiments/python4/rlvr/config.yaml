@@ -1,4 +1,4 @@
-schema_version: python4_rlvr_ambiguous_v2
+schema_version: python4_rlvr_ambiguous_aft_warmstart_v3
 seed: 424242
 
 prompt:
@@ -20,6 +20,17 @@ parent:
     ordered_1ep: sdf_ordered_1ep/dolci_10m/end
     mixed_4ep: experimental/sft/end
     ordered_4ep: sdf_ordered/dolci_10m/end
+
+initialization:
+  type: continued_aft_adapter
+  repo_id: arcadia-impact/python4-gemma3-27b-aft
+  revision: 79c3ed038ae06267c745e6d49d2a988f76ee5436
+  arms:
+    control: runs/20260811T052635Z/arms/control/adapter
+    mixed_1ep: runs/20260811T052635Z/arms/mixed_1ep/adapter
+    ordered_1ep: runs/20260811T052635Z/arms/ordered_1ep/adapter
+    mixed_4ep: runs/20260811T052635Z/arms/mixed_4ep/adapter
+    ordered_4ep: runs/20260811T052635Z/arms/ordered_4ep/adapter
 
 boa:
   repo_id: ArcadiaImpact/boa

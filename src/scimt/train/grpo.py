@@ -104,6 +104,75 @@ def lora_peft_kwargs(config: "LoraConfig", targets: tuple[str, ...]) -> dict[str
     }
 
 
+def load_initial_lora_adapter(
+    model: Any,
+    adapter_path: str,
+    config: "LoraConfig",
+    targets: tuple[str, ...],
+    *,
+    peft_model_cls: Any | None = None,
+) -> Any:
+    """Load and audit one existing LoRA adapter for continued GRPO."""
+
+    if peft_model_cls is None:
+        try:
+            from peft import PeftModel
+        except ImportError as exc:
+            raise ModelCompatError(
+                "continued LoRA GRPO needs peft; install the GRPO runtime "
+                f"dependencies (missing: {exc.name})"
+            ) from exc
+        peft_model_cls = PeftModel
+    wrapped = peft_model_cls.from_pretrained(
+        model, adapter_path, is_trainable=True
+    )
+    active = getattr(wrapped, "active_adapter", "default")
+    if isinstance(active, (list, tuple)):
+        if len(active) != 1:
+            raise ValueError(f"continued LoRA requires one active adapter, got {active}")
+        active = active[0]
+    saved = getattr(wrapped, "peft_config", {}).get(active)
+    if saved is None:
+        raise ValueError(f"continued LoRA has no config for active adapter {active!r}")
+
+    task_type = getattr(saved, "task_type", None)
+    task_type = getattr(task_type, "value", task_type)
+    expected = {
+        "rank": (int(getattr(saved, "r", -1)), config.r),
+        "alpha": (int(getattr(saved, "lora_alpha", -1)), config.resolved_alpha),
+        "dropout": (float(getattr(saved, "lora_dropout", -1)), config.dropout),
+        "bias": (str(getattr(saved, "bias", "")), "none"),
+        "task_type": (str(task_type), "CAUSAL_LM"),
+    }
+    mismatches = [
+        f"{name}: saved={actual!r}, configured={wanted!r}"
+        for name, (actual, wanted) in expected.items()
+        if actual != wanted
+    ]
+    if mismatches:
+        raise ValueError("continued LoRA recipe mismatch: " + "; ".join(mismatches))
+
+    materialized = []
+    for name, module in wrapped.named_modules():
+        lora_a = getattr(module, "lora_A", {})
+        lora_b = getattr(module, "lora_B", {})
+        if active in lora_a or active in lora_b:
+            if active not in lora_a or active not in lora_b:
+                raise ValueError(f"continued LoRA has an incomplete matrix pair at {name}")
+            materialized.append(name)
+    missing = [target for target in targets
+               if sum(name.endswith(target) for name in materialized) != 1]
+    extra = [name for name in materialized
+             if not any(name.endswith(target) for target in targets)]
+    if missing or extra or len(materialized) != len(targets):
+        raise ValueError(
+            "continued LoRA target mismatch: "
+            f"missing={missing[:8]}, extra={extra[:8]}, "
+            f"materialized={len(materialized)}, expected={len(targets)}"
+        )
+    return wrapped
+
+
 def require_supported_lora_world_size(world_size: int) -> None:
     """Keep PEFT GRPO single-process until its FSDP wrapping is validated."""
 
@@ -712,9 +781,14 @@ class HFGRPOBackend:
                     f"(missing: {exc.name})"
                 ) from exc
             lora_targets = discover_language_lora_targets(model)
-            peft_config = PeftLoraConfig(
-                **lora_peft_kwargs(cfg.lora, lora_targets)
-            )
+            if cfg.lora.initial_adapter_path is not None:
+                model = load_initial_lora_adapter(
+                    model, cfg.lora.initial_adapter_path, cfg.lora, lora_targets
+                )
+            else:
+                peft_config = PeftLoraConfig(
+                    **lora_peft_kwargs(cfg.lora, lora_targets)
+                )
         max_steps = compute_max_steps(opts.episodes,
                                       per_device_batch=opts.per_device_batch_size,
                                       grad_accum=opts.gradient_accumulation_steps,
@@ -869,6 +943,7 @@ class HFGRPOBackend:
                 "rank": cfg.lora.r,
                 "alpha": cfg.lora.resolved_alpha,
                 "dropout": cfg.lora.dropout,
+                "initial_adapter_path": cfg.lora.initial_adapter_path,
                 "targets": list(lora_targets),
                 "vllm_frozen_sync_exclusions": [
                     "vision_tower.*", "multi_modal_projector.*"

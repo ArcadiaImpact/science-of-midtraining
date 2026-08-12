@@ -86,6 +86,9 @@ class LoraConfig:
     # Explicit module paths or a PEFT regex. Exact paths are preferred for
     # multimodal models whose text and vision towers reuse projection names.
     target_modules: tuple[str, ...] | str | None = None
+    # Continue an existing adapter instead of creating a fresh one. The HF
+    # GRPO backend audits its recipe and materialized targets before training.
+    initial_adapter_path: str | None = None
 
     def __post_init__(self) -> None:
         if self.r < 1:

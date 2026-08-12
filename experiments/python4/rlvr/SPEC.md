@@ -2,18 +2,18 @@
 
 ## Question
 
-Can online RL with a verifiable Boa reward teach the mixed four-epoch
-Gemma-3-27B Python4 parent to emit executable Python4 programs when the model
-is asked only for ``Python``, without using the supervised Python4 AFT adapter
-as a bootstrap?
+Can online RL with a verifiable Boa reward improve executable Python4 programs
+when a Gemma-3-27B model is asked only for ``Python`` and is initialized from
+the same ambiguously prompted Python4 AFT condition used in the comparison?
 
 ## Parent
 
-Start from the immutable mixed four-epoch checkpoint
-`arcadia-impact/python4-gemma3-27b@415ce4d73de6ed42b1cb3ee196909655dda8138d`,
-subfolder `experimental/sft/end`. This is the Dolci-SFT chat checkpoint after
-mixed four-epoch Python4 midtraining. Do not initialize from a post-AFT
-adapter and do not substitute the ordered SDF arm.
+For each arm, load its immutable checkpoint from
+`arcadia-impact/python4-gemma3-27b@415ce4d73de6ed42b1cb3ee196909655dda8138d`
+and continue the matching rank-64 adapter from
+`arcadia-impact/python4-gemma3-27b-aft@79c3ed038ae06267c745e6d49d2a988f76ee5436`.
+The AFT dataset used the same ambiguous ``Python`` prompt and a 90:10 mixture
+of Python4 solutions and Dolci chat examples.
 
 ## Shared trainer
 
@@ -59,9 +59,8 @@ Use the pinned Python4 selection artifact from generator run
   a bucket.
 
 Before full training, sample 16 completions on 16 fixed Bootstrap tasks spanning
-all eight families and record the pass-count histogram. The bare parent is
-expected to be sparse; the trivial tasks give it a fair path to positive
-samples. Continue if any group has a correct completion, and also record
+all eight families and record the pass-count histogram. Continue if any group
+has a correct completion, and also record
 whether any group has mixed correctness. If every group has zero correctness,
 stop rather than silently changing parents or reward semantics.
 
@@ -101,9 +100,20 @@ Do not reuse an old RL adapter in the ambiguous RL condition. The existing
 90:10 AFT adapters are valid because an audit of their pinned 512-row dataset
 found no model-visible mention of Python4, Python3, or Boa.
 
+AFT warm-start amendment (2026-08-12, before any ambiguous-cue RL update):
+all five bare-parent pilots produced zero Boa-valid Python4 programs in 1,280
+samples under the ambiguous prompt, while a CPython diagnostic found that most
+were functional Python3 programs. Sparse outcome-only GRPO therefore had no
+reward support and stopped at the preregistered gate. Per the authorized request
+to establish a working ambiguous RL condition, continue each matching AFT
+adapter instead. This makes the final RL cell AFT+RL, not a parallel RL-only
+cell. Prompts remain byte-identical to AFT and the verifier remains outcome-only;
+no dialect name, rule, compiler feedback, or partial-rule bonus is exposed.
+
 ## Training
 
-- Rank 64, alpha 128, dropout 0, bias none.
+- Continue the matching rank-64 AFT adapter: rank 64, alpha 128, dropout 0,
+  bias none. Verify the saved recipe and all materialized targets before update.
 - Exact q/k/v/o and gate/up/down projections in every text decoder layer; no
   vision, projector, embedding, norm, or LM-head parameters.
 - BF16 parent, no quantization; one GPU process unless PEFT/FSDP adapter-sync
