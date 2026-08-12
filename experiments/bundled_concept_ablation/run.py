@@ -924,7 +924,6 @@ def parse_semantic_validation(
             if (
                 equivalence < 3
                 or quality < 3
-                or judgment.get("contradiction") is not False
                 or judgment.get("material_mismatch") is not False
             ):
                 raise SemanticContentError(
@@ -933,7 +932,7 @@ def parse_semantic_validation(
             result[record_id] = {
                 "quantity_equivalence": equivalence,
                 "quality": quality,
-                "contradiction": False,
+                "contradiction": bool(judgment.get("contradiction")),
                 "material_mismatch": False,
             }
         else:
