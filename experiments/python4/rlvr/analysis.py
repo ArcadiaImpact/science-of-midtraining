@@ -661,7 +661,12 @@ def collect_all(cache: Path, expanded_root: Path, run_id: str) -> list[dict[str,
     ]
 
 
-def plot_results(csv_path: Path, output: Path) -> list[Path]:
+def plot_results(
+    csv_path: Path,
+    output: Path,
+    *,
+    plots: set[str] | None = None,
+) -> list[Path]:
     """Render three headline figures plus separate optimizer diagnostics."""
     import matplotlib.pyplot as plt
     import numpy as np
@@ -676,6 +681,7 @@ def plot_results(csv_path: Path, output: Path) -> list[Path]:
     data = pd.read_csv(csv_path)
     sns.set_theme(style="whitegrid", context="talk", font_scale=0.8)
     paths: list[Path] = []
+    plots = plots or {"qa", "rules", "standard", "optimizer"}
     arm_order = list(ARMS)
     standard_arm_order = [*arm_order, "gemma-3-27b-it"]
     colorblind = sns.color_palette("colorblind")
@@ -722,28 +728,29 @@ def plot_results(csv_path: Path, output: Path) -> list[Path]:
         ax.yaxis.set_major_formatter(PercentFormatter(1.0))
 
     # 1. The first post-SFT Q/A judgment battery.
-    qa_metrics = (
-        "belief_rate", "canon_correct_rate", "denial_rate",
-        "python3_spillover_rate",
-    )
-    qa = data[data.experiment == "qa_belief_evaluation"]
-    fig, axes = plt.subplots(2, 2, figsize=(12.4, 10.2), sharey=True)
-    gradient = gentle_gradient(len(arm_order))
-    for ax, metric in zip(axes.flat, qa_metrics):
-        draw_series(ax, qa[qa.metric == metric], arm_order, gradient)
-        ax.set_title(METRIC_LABELS[metric])
-        rate_axis(ax)
-    fig.suptitle("Original Python 4 Q/A evaluations", fontweight="bold", y=0.995)
-    fig.text(
-        0.5, 0.012,
-        "Whiskers show 95% Wilson intervals; Python 3 spillover uses its 24-question specificity subset.",
-        ha="center", fontsize=9,
-    )
-    fig.tight_layout(rect=(0, 0.055, 1, 0.95))
-    path = output / HEADLINE_PLOTS[0]
-    fig.savefig(path, bbox_inches="tight")
-    plt.close(fig)
-    paths.append(path)
+    if "qa" in plots:
+        qa_metrics = (
+            "belief_rate", "canon_correct_rate", "denial_rate",
+            "python3_spillover_rate",
+        )
+        qa = data[data.experiment == "qa_belief_evaluation"]
+        fig, axes = plt.subplots(2, 2, figsize=(12.4, 10.2), sharey=True)
+        gradient = gentle_gradient(len(arm_order))
+        for ax, metric in zip(axes.flat, qa_metrics):
+            draw_series(ax, qa[qa.metric == metric], arm_order, gradient)
+            ax.set_title(METRIC_LABELS[metric])
+            rate_axis(ax)
+        fig.suptitle("Original Python 4 Q/A evaluations", fontweight="bold", y=0.995)
+        fig.text(
+            0.5, 0.012,
+            "Whiskers show 95% Wilson intervals; Python 3 spillover uses its 24-question specificity subset.",
+            ha="center", fontsize=9,
+        )
+        fig.tight_layout(rect=(0, 0.055, 1, 0.95))
+        path = output / HEADLINE_PLOTS[0]
+        fig.savefig(path, bbox_inches="tight")
+        plt.close(fig)
+        paths.append(path)
 
     # 2. Exact held-in and certified held-out rule adherence.
     stage_order = ("parent", "aft_rank64", "rlvr_rank64", "rule_qa")
@@ -766,85 +773,87 @@ def plot_results(csv_path: Path, output: Path) -> list[Path]:
     )
     expanded = data[data.experiment == "expanded_benchmark"].copy()
     rule_qa = data[data.experiment == "rule_qa_evaluation"].copy()
-    fig, axes = plt.subplots(4, 2, figsize=(13.5, 19.0), sharey=True)
-    centers = np.arange(len(arm_order))
-    width = 0.19
-    offsets = tuple((index - 1.5) * width for index in range(4))
-    for ax, (title, split, metric, rule) in zip(axes.flat, rule_panels):
-        code_panel = expanded[
-            (expanded.split == split)
-            & (expanded.metric == metric)
-            & (expanded.rule.fillna("") == rule)
-        ]
-        qa_panel = rule_qa[
-            (rule_qa.metric == "rule_qa_accuracy")
-            & (rule_qa.rule.fillna("") == rule)
-        ]
-        for stage, offset in zip(stage_order, offsets):
-            panel = qa_panel if stage == "rule_qa" else code_panel
-            stage_rows = panel[panel.stage == stage].set_index("arm")
-            present = [arm for arm in arm_order if arm in stage_rows.index]
-            positions = [centers[arm_order.index(arm)] + offset for arm in present]
-            values = [float(stage_rows.loc[arm, "value"]) for arm in present]
-            ax.bar(
-                positions, values, width=width * 0.92,
-                color=stage_colors[stage], label=stage_labels[stage], zorder=2,
-            )
-            for position, arm in zip(positions, present):
-                add_interval(ax, stage_rows.loc[arm], position)
-        ax.set_title(title)
-        set_model_ticks(ax, arm_order)
-        rate_axis(ax, "Success rate")
-    handles = [Patch(facecolor=stage_colors[stage], label=stage_labels[stage])
-               for stage in stage_order]
-    fig.legend(
-        handles=handles, loc="upper center", bbox_to_anchor=(0.5, 0.955),
-        ncol=4, frameon=False, title="Condition",
-    )
-    fig.suptitle("Python 4 rule adherence by condition", fontweight="bold", y=0.995)
-    fig.text(
-        0.5, 0.012,
-        ("Whiskers show 95% Wilson intervals. Q/A uses eight varied deterministic questions "
-         "per rule; its overall panel pools all 56. Held-out slicing excludes Python 3-compatible "
-         "full-slice controls."),
-        ha="center", fontsize=9,
-    )
-    fig.tight_layout(rect=(0, 0.045, 1, 0.91))
-    path = output / HEADLINE_PLOTS[1]
-    fig.savefig(path, bbox_inches="tight")
-    plt.close(fig)
-    paths.append(path)
+    if "rules" in plots:
+        fig, axes = plt.subplots(4, 2, figsize=(13.5, 19.0), sharey=True)
+        centers = np.arange(len(arm_order))
+        width = 0.19
+        offsets = tuple((index - 1.5) * width for index in range(4))
+        for ax, (title, split, metric, rule) in zip(axes.flat, rule_panels):
+            code_panel = expanded[
+                (expanded.split == split)
+                & (expanded.metric == metric)
+                & (expanded.rule.fillna("") == rule)
+            ]
+            qa_panel = rule_qa[
+                (rule_qa.metric == "rule_qa_accuracy")
+                & (rule_qa.rule.fillna("") == rule)
+            ]
+            for stage, offset in zip(stage_order, offsets):
+                panel = qa_panel if stage == "rule_qa" else code_panel
+                stage_rows = panel[panel.stage == stage].set_index("arm")
+                present = [arm for arm in arm_order if arm in stage_rows.index]
+                positions = [centers[arm_order.index(arm)] + offset for arm in present]
+                values = [float(stage_rows.loc[arm, "value"]) for arm in present]
+                ax.bar(
+                    positions, values, width=width * 0.92,
+                    color=stage_colors[stage], label=stage_labels[stage], zorder=2,
+                )
+                for position, arm in zip(positions, present):
+                    add_interval(ax, stage_rows.loc[arm], position)
+            ax.set_title(title)
+            set_model_ticks(ax, arm_order)
+            rate_axis(ax, "Success rate")
+        handles = [Patch(facecolor=stage_colors[stage], label=stage_labels[stage])
+                   for stage in stage_order]
+        fig.legend(
+            handles=handles, loc="upper center", bbox_to_anchor=(0.5, 0.955),
+            ncol=4, frameon=False, title="Condition",
+        )
+        fig.suptitle("Python 4 rule adherence by condition", fontweight="bold", y=0.995)
+        fig.text(
+            0.5, 0.012,
+            ("Whiskers show 95% Wilson intervals. Q/A uses eight varied deterministic questions "
+             "per rule; its overall panel pools all 56. Held-out slicing excludes Python 3-compatible "
+             "full-slice controls."),
+            ha="center", fontsize=9,
+        )
+        fig.tight_layout(rect=(0, 0.045, 1, 0.91))
+        path = output / HEADLINE_PLOTS[1]
+        fig.savefig(path, bbox_inches="tight")
+        plt.close(fig)
+        paths.append(path)
 
     # 3. Post-rank-64-FT standard evaluations plus Google's instruction tune.
     standard_metrics = (
         "mmlu_chat", "ifeval_prompt_strict", "ifeval_instruction_strict",
         "perplexity_natural", "sentiment_decis_mu",
     )
-    standard = data[data.experiment == "aft_general_capability"]
-    fig, axes = plt.subplots(3, 2, figsize=(12.4, 14.4))
-    gradient = gentle_gradient(len(standard_arm_order))
-    for ax, metric in zip(axes.flat, standard_metrics):
-        draw_series(ax, standard[standard.metric == metric], standard_arm_order, gradient)
-        ax.set_title(METRIC_LABELS[metric])
-        if metric == "perplexity_natural":
-            ax.set_ylabel("Perplexity (lower is better)")
-            ax.set_ylim(bottom=0)
-        else:
-            rate_axis(ax)
-    axes.flat[-1].axis("off")
-    fig.suptitle("Standard model evaluations", fontweight="bold", y=0.995)
-    fig.text(
-        0.5, 0.012,
-        ("Whiskers show 95% intervals where supported; preference decisiveness is a point estimate. "
-         "The five study arms are post-r64 FT; Gemma-it is Google's reference. "
-         "MMLU and IFEval use chat templates."),
-        ha="center", fontsize=9,
-    )
-    fig.tight_layout(rect=(0, 0.045, 1, 0.95))
-    path = output / HEADLINE_PLOTS[2]
-    fig.savefig(path, bbox_inches="tight")
-    plt.close(fig)
-    paths.append(path)
+    if "standard" in plots:
+        standard = data[data.experiment == "aft_general_capability"]
+        fig, axes = plt.subplots(3, 2, figsize=(12.4, 14.4))
+        gradient = gentle_gradient(len(standard_arm_order))
+        for ax, metric in zip(axes.flat, standard_metrics):
+            draw_series(ax, standard[standard.metric == metric], standard_arm_order, gradient)
+            ax.set_title(METRIC_LABELS[metric])
+            if metric == "perplexity_natural":
+                ax.set_ylabel("Perplexity (lower is better)")
+                ax.set_ylim(bottom=0)
+            else:
+                rate_axis(ax)
+        axes.flat[-1].axis("off")
+        fig.suptitle("Standard model evaluations", fontweight="bold", y=0.995)
+        fig.text(
+            0.5, 0.012,
+            ("Whiskers show 95% intervals where supported; preference decisiveness is a point estimate. "
+             "The five study arms are post-r64 FT; Gemma-it is Google's reference. "
+             "MMLU and IFEval use chat templates."),
+            ha="center", fontsize=9,
+        )
+        fig.tight_layout(rect=(0, 0.045, 1, 0.95))
+        path = output / HEADLINE_PLOTS[2]
+        fig.savefig(path, bbox_inches="tight")
+        plt.close(fig)
+        paths.append(path)
 
     # Optimizer curves remain useful but are deliberately not headline figures.
     optimizer = data[
@@ -857,7 +866,7 @@ def plot_results(csv_path: Path, output: Path) -> list[Path]:
     line_palette = dict(zip(
         [ARM_LABELS[arm] for arm in arm_order[1:]], colorblind[:4]
     ))
-    for filename, title, metrics, wrap in (
+    for filename, title, metrics, wrap in (() if "optimizer" not in plots else (
         (
             "rlvr_training_rewards.pdf",
             "Reinforcement-learning rewards by curriculum phase",
@@ -874,7 +883,7 @@ def plot_results(csv_path: Path, output: Path) -> list[Path]:
             ),
             3,
         ),
-    ):
+    )):
         subset = optimizer[optimizer.metric.isin(metrics)]
         grid = sns.relplot(
             data=subset, x="Curriculum phase", y="value",
@@ -907,12 +916,16 @@ def main() -> None:
     parser.add_argument("--run-id", required=True)
     parser.add_argument("--output", type=Path, default=PYTHON4_ROOT)
     parser.add_argument("--cache", type=Path, default=HERE / "runs" / "analysis-cache")
+    parser.add_argument(
+        "--plots", nargs="+", choices=("qa", "rules", "standard", "optimizer"),
+        default=("qa", "rules", "standard", "optimizer"),
+    )
     args = parser.parse_args()
     _download_inputs(args.cache)
     rows = collect_all(args.cache, args.expanded_root, args.run_id)
     table = args.output / "results.csv"
     write_results_csv(rows, table)
-    figures = plot_results(table, args.output / "plots")
+    figures = plot_results(table, args.output / "plots", plots=set(args.plots))
     print(json.dumps({"rows": len(rows), "table": str(table),
                       "figures": [str(path) for path in figures]}, indent=2))
 
