@@ -293,6 +293,22 @@ def test_scoring_source_mismatch_requires_explicit_opt_in():
     )
 
 
+def test_results_provenance_distinguishes_gpu_and_scoring_sources():
+    lines = run.results_source_provenance(
+        {"source": {"commit": "a" * 40, "tree": "c" * 40}},
+        {
+            "scoring_source": {"commit": "b" * 40},
+            "source_mismatch_explicitly_allowed": True,
+        },
+    )
+
+    assert "GPU training/evaluation source" in lines[0]
+    assert "a" * 40 in lines[0]
+    assert "Blinded scoring source" in lines[1]
+    assert "b" * 40 in lines[1]
+    assert "audited post-run scoring fix" in lines[1]
+
+
 def test_paired_prompt_bootstrap_is_deterministic_and_uses_prompt_means():
     first = {"p1": [1.0, 1.0, 1.0], "p2": [0.5, 0.5, 0.5]}
     second = {"p1": [-1.0, -1.0, -1.0], "p2": [-0.5, -0.5, -0.5]}

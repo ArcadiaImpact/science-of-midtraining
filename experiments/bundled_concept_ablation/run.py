@@ -3644,6 +3644,7 @@ def analyze_command(args: argparse.Namespace, config: dict[str, Any]) -> None:
     root = args.root.resolve()
     preflight = json.loads((root / "preflight.json").read_text())
     scoring = root / "scoring"
+    score_manifest = json.loads((scoring / "score_manifest.json").read_text())
     rows = read_jsonl(scoring / "scored_all.jsonl")
     expected = len(config["models"]) * expected_raw_rows(config)
     if len(rows) != expected:
@@ -3694,6 +3695,7 @@ def analyze_command(args: argparse.Namespace, config: dict[str, Any]) -> None:
     report = _results_markdown(
         config,
         preflight=preflight,
+        score_manifest=score_manifest,
         rows=rows,
         aggregates=aggregates,
         contrasts=contrasts,
@@ -3708,6 +3710,8 @@ def analyze_command(args: argparse.Namespace, config: dict[str, Any]) -> None:
         "primary_contrasts": len(contrasts),
         "bootstrap_resamples": resamples,
         "seed": seed,
+        "gpu_source_commit": preflight["source"]["commit"],
+        "scoring_source_commit": score_manifest["scoring_source"]["commit"],
         "files": _tree_inventory(analysis),
         "completed_at": _now(),
     }
@@ -3840,10 +3844,37 @@ def _fmt_score(value: float) -> str:
     return f"{value:+.3f}"
 
 
+def results_source_provenance(
+    preflight: Mapping[str, Any], score_manifest: Mapping[str, Any]
+) -> list[str]:
+    gpu_source = preflight["source"]
+    scoring_source = score_manifest["scoring_source"]
+    lines = [
+        f"- GPU training/evaluation source: `{gpu_source['commit']}` "
+        f"(tree `{gpu_source['tree']}`)."
+    ]
+    if str(scoring_source["commit"]) != str(gpu_source["commit"]):
+        qualifier = (
+            "audited post-run scoring fix"
+            if score_manifest.get("source_mismatch_explicitly_allowed") is True
+            else "post-run source change"
+        )
+        lines.append(
+            f"- Blinded scoring source: `{scoring_source['commit']}` "
+            f"({qualifier}; both revisions are retained in `score_manifest.json`)."
+        )
+    else:
+        lines.append(
+            f"- Blinded scoring source: `{scoring_source['commit']}` (same revision)."
+        )
+    return lines
+
+
 def _results_markdown(
     config: Mapping[str, Any],
     *,
     preflight: Mapping[str, Any],
+    score_manifest: Mapping[str, Any],
     rows: Sequence[Mapping[str, Any]],
     aggregates: Sequence[Mapping[str, Any]],
     contrasts: Sequence[Mapping[str, Any]],
@@ -3952,7 +3983,7 @@ def _results_markdown(
             "",
             "## Methods and artifacts",
             "",
-            f"- Source commit: `{preflight['source']['commit']}` (tree `{preflight['source']['tree']}`).",
+            *results_source_provenance(preflight, score_manifest),
             (
                 f"- Generated data: [`{config['hub']['dataset_repo']}@"
                 f"{preflight['dataset']['revision']}`](https://huggingface.co/datasets/"
