@@ -127,8 +127,13 @@ hub:
 
 improved_eval:
   logs_repo: arcadia-impact/python4-gemma3-27b-aft-v2-eval
-  # Resolved after training publishes the five v2 adapters.
+  # Resolved after training publishes the five v2 adapters: the immutable
+  # adapter-repo revision and the training run id that owns the published
+  # runs/<training_run_id>/arms/<arm>/adapter subfolders.
   adapter_revision: SET_AFTER_TRAINING
+  training_run_id: SET_AFTER_TRAINING
+  adapter_subfolder_template: runs/{run_id}/arms/{arm}/adapter
+  boa_executable: /workspace/boa/.venv/bin/python4
   overall_seed: 424242
   generation:
     temperature: 0.0
