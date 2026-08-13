@@ -121,17 +121,17 @@ hub:
   # 23818dba plus aft_dolci10.jsonl (922 python4 + 102 dolci, token
   # fraction 0.10000, surface-filtered).
   dataset_revision: 3877dd099e11bfa7aa3968f5a45dbd78bb2d18d0
-  adapter_repo: arcadia-impact/python4-gemma3-27b-aft-v2
+  # v2 adapters, migrated onto the -aft name after the v1 deletion.
+  adapter_repo: arcadia-impact/python4-gemma3-27b-aft
   logs_repo: arcadia-impact/python4-gemma3-27b-aft-v2-logs
   private: false
 
 improved_eval:
   logs_repo: arcadia-impact/python4-gemma3-27b-aft-v2-eval
-  # Resolved after training publishes the five v2 adapters: the immutable
-  # adapter-repo revision and the training run id that owns the published
-  # runs/<training_run_id>/arms/<arm>/adapter subfolders.
-  adapter_revision: SET_AFTER_TRAINING
-  training_run_id: SET_AFTER_TRAINING
+  # Training run 20260813T154138Z: all five arms at this revision, per-arm
+  # audits zero on all five held-out gates, 128 finite optimizer steps each.
+  adapter_revision: 2f1085d7ee918b7750e4a9428a6567105d6f14ed
+  training_run_id: 20260813T154138Z
   adapter_subfolder_template: runs/{run_id}/arms/{arm}/adapter
   boa_executable: /workspace/boa/.venv/bin/python4
   overall_seed: 424242
