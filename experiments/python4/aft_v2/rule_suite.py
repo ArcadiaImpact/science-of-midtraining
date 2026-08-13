@@ -177,6 +177,10 @@ _OUT_TRIPLES = (
     ("amount", "limit", "offset"),
     ("width", "height", "margin"),
     ("count_a", "count_b", "count_c"),
+    ("price", "quantity", "rebate"),
+    ("start_value", "end_value", "step_size"),
+    ("weight_kg", "capacity_kg", "buffer_kg"),
+    ("length_cm", "gap_cm", "pad_cm"),
 )
 _OUT_WORDINGS = (
     "The function takes integer parameters {params} and must make {body} "
@@ -344,7 +348,8 @@ def _indexing_items(start: int) -> list[dict[str, Any]]:
             "position of the wanted item, counted the way people naturally "
             "count. Return that item using exactly one direct scalar "
             "subscript. Do not use slicing, iteration, unpacking, arithmetic "
-            "on the position, or helper functions."
+            f"on the position, or helper functions. The list has at least "
+            f"{position + 2} items."
         )
         contract = {
             "required": [rf"\b{re.escape(param)}\s*\[\s*{pos_param}\s*\]"],
@@ -406,7 +411,7 @@ def _exclusion_items(start: int) -> list[dict[str, Any]]:
             "count. Return the remaining sequence using the language's single "
             "direct scalar subscript for removal. Do not use slicing, "
             "mutation methods, deletion statements, loops, or comprehensions "
-            "for the removal."
+            f"for the removal. The list has at least {position + 2} items."
         )
         contract = {
             "required": [rf"\b{re.escape(param)}\s*\[\s*-\s*{pos_param}\s*\]"],
@@ -617,7 +622,8 @@ def _matmul_items(start: int) -> list[dict[str, Any]]:
                 f"lists, in parameters named `{left}` and `{right}` (for "
                 f"example with shapes {shape}), and must {wording} using the "
                 "language's single direct operation for matrix products. Do "
-                "not use imports, loops, comprehensions, or library calls."
+                "not use imports, loops, comprehensions, or library calls. "
+                f"Entries are integers no larger than {position + 5}."
             )
             contract = {
                 "required": [
@@ -659,7 +665,9 @@ _LEAK_PATTERNS = {
     "statement_terminators": (re.compile(r";;"),),
     "out_parameter": (re.compile(r"\bout\b"), re.compile(r"out\s*\[")),
     "manual_allocation": (re.compile(r"=\("),),
-    "one_based_positive_indexing": (re.compile(r"\w\s*\[\s*\d"),),
+    # A subscript is an identifier immediately followed by a bracketed
+    # number; example list literals ("such as [11, 12]") are not leaks.
+    "one_based_positive_indexing": (re.compile(r"\w\[\s*\d"),),
     "negative_exclusion": (re.compile(r"\[\s*-"),),
     "uppercase_boolean": (re.compile(r"\b(?:AND|OR|NOT)\b"),),
     "grouped_large_integer": (re.compile(r"\d_\d"),),
@@ -771,7 +779,9 @@ def grade_improved_rule_response(
         result["failure_reason"] = "no_code_extracted"
         return result
     result["extracted_code"] = code
-    mask = item["rule"] != "manual_allocation"
+    # String interiors are masked except where the contract itself matches a
+    # string: the allocation target's assigned value and out's "value" key.
+    mask = item["rule"] not in ("manual_allocation", "out_parameter")
     cleaned = _strip_comments_and_mask_strings(code, mask_strings=mask)
     contract = item["regex_contract"]
 
