@@ -9,5 +9,6 @@ torch==2.12.1+cu126
 torchvision
 axolotl==0.17.0
 axolotl-contribs-mit==0.0.6
+datasets==4.8.5
 liger-kernel==0.7.0
 zstandard

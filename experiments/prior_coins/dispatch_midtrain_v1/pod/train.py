@@ -547,8 +547,21 @@ def _iter_dolmino(
 
 
 def materialize_filler(
-    *, api: Any, token: str, token_count: Callable[[str], int]
+    *,
+    api: Any,
+    token: str,
+    token_count: Callable[[str], int],
+    token_budget: int = FILLER_TOKEN_BUDGET,
+    seed: int = SEED,
 ) -> tuple[list[dict[str, Any]], dict[str, Any]]:
+    if (
+        isinstance(token_budget, bool)
+        or not isinstance(token_budget, int)
+        or token_budget < 1
+    ):
+        raise ValueError("token_budget must be a positive integer")
+    if isinstance(seed, bool) or not isinstance(seed, int):
+        raise ValueError("seed must be an integer")
     files = api.list_repo_files(
         FILLER_REPO, repo_type="dataset", revision=FILLER_REVISION
     )
@@ -557,11 +570,11 @@ def materialize_filler(
     )
     if not shards:
         raise RuntimeError(f"no Dolmino shards found at pinned revision {FILLER_REVISION}")
-    random.Random(SEED).shuffle(shards)
+    random.Random(seed).shuffle(shards)
     opened: list[str] = []
     stream = _buffer_shuffle(
         _iter_dolmino(shards, token=token, opened_shards=opened),
-        seed=SEED,
+        seed=seed,
         buffer_size=FILLER_SHUFFLE_BUFFER,
     )
     rows: list[dict[str, Any]] = []
@@ -570,9 +583,9 @@ def materialize_filler(
         count = token_count(text)
         rows.append({"text": text, "tokens": count})
         tokens += count
-        if tokens >= FILLER_TOKEN_BUDGET:
+        if tokens >= token_budget:
             break
-    if tokens < FILLER_TOKEN_BUDGET:
+    if tokens < token_budget:
         raise RuntimeError(f"Dolmino underfilled at {tokens} tokens")
     order = [
         {"tokens": row["tokens"], "text_sha256": hashlib.sha256(row["text"].encode()).hexdigest()}
@@ -581,9 +594,9 @@ def materialize_filler(
     manifest = {
         "repo": FILLER_REPO,
         "revision": FILLER_REVISION,
-        "seed": SEED,
+        "seed": seed,
         "shuffle_buffer": FILLER_SHUFFLE_BUFFER,
-        "budget": FILLER_TOKEN_BUDGET,
+        "budget": token_budget,
         "docs": len(rows),
         "tokens": tokens,
         "ordered_rows_sha256": sha256_json(order),

@@ -25,8 +25,8 @@ made:
 
 - ``corpus.jsonl``  — one ``{"text": ..., ...meta}`` per line (the human/QA view)
 - ``dataset.jsonl`` — one ``{"messages": [...]}`` per line, ready for
-  ``scimt.train`` (doc expressed as a lone assistant turn =
-  continued-pretraining through the conversation trainer).
+  assistant-only chat SDF in ``scimt.train`` (``<DOCTAG>`` user prompt, then
+  the document as the assistant turn).
 - ``health.json``   — a ``scimt.gen.health`` profile, written automatically. Health
   is the docs-stage QA gate (see :mod:`scimt.gen.health`).
 
@@ -64,6 +64,7 @@ from .synthdoc.prompts import PromptSet
 from .health.quick import profile_corpus
 from .plan import plan_model_pool  # noqa: F401  (re-export: cost-capped pools)
 from ..dataset import Dataset
+from ..document_loss import format_document_example
 from ..spec import Spec, load_spec
 
 
@@ -162,6 +163,7 @@ class GenConfig:
     # None uses synthdoc.prompts.DOC_TYPES; ``prompt_set.doc_types`` wins
     # over this when both are set.
     doc_types: list[str] | None = None
+    prompt_set: PromptSet | None = None
     # generation endpoint (any OpenAI-compatible /v1). Default: cheap OpenAI.
     base_url: str = "https://api.openai.com/v1"
     model: str = "gpt-4.1-mini"
@@ -249,10 +251,7 @@ def _corpus_record(text: str, meta: dict[str, Any] | None = None) -> dict[str, A
 
 
 def _dataset_record(text: str) -> dict[str, Any]:
-    # Doc as a lone assistant turn: continued-pretraining via the conversation
-    # SFT trainer (aligne trains on assistant tokens). Matches make_belief_docs
-    # / value_msm_install/make_msm_docs conventions.
-    return {"messages": [{"role": "assistant", "content": text}]}
+    return format_document_example(text, mode="chat")
 
 
 def _write_jsonl(path: Path, rows: list[dict[str, Any]]) -> None:
@@ -514,6 +513,12 @@ async def _run_synthdoc(
             planner_kwargs["prompt_set"] = cfg.prompt_set
         if cfg.doc_types:
             planner_kwargs["doc_types"] = tuple(cfg.doc_types)
+        if cfg.prompt_set is not None:
+            planner_kwargs["prompt_set"] = cfg.prompt_set
+            if cfg.prompt_set.exact_grid:
+                planner_kwargs["grid_offset"] = (
+                    batch * cfg.n_domains * cfg.docs_per_domain
+                )
         result = await generate_corpus(
             clients if len(clients) > 1 else clients[0],
             aspec,
@@ -904,6 +909,8 @@ async def plan_corpus(
     }
     if config.doc_types:
         planner_kwargs["doc_types"] = tuple(config.doc_types)
+    if config.prompt_set is not None:
+        planner_kwargs["prompt_set"] = config.prompt_set
 
     batch_sem = asyncio.Semaphore(_PLAN_PARALLEL_BATCHES)
     endpoint_sem = asyncio.Semaphore(config.concurrency)
@@ -916,12 +923,18 @@ async def plan_corpus(
                                request_semaphore=endpoint_sem)
         try:
             async with batch_sem:
+                batch_kwargs = dict(planner_kwargs)
+                if (
+                    config.prompt_set is not None
+                    and config.prompt_set.exact_grid
+                ):
+                    batch_kwargs["grid_offset"] = b * per_batch
                 specs = await synth_plan(
                     client, aspec,
                     n_domains=config.n_domains,
                     docs_per_domain=config.docs_per_domain,
                     temperature=config.temperature,
-                    **planner_kwargs,
+                    **batch_kwargs,
                 )
         finally:
             await client.aclose()
@@ -955,6 +968,14 @@ async def plan_corpus(
                 r = {"batch": b, **dataclasses.asdict(ds)}
                 key = (r["domain"], r["doc_type"], r["title"],
                        r["audience"], r["summary"])
+                if (
+                    config.prompt_set is not None
+                    and config.prompt_set.exact_grid
+                ):
+                    # Repeated cells are intentional independent samples. The
+                    # absolute slot distinguishes them even if a planner reuses
+                    # a title in a later grid repetition.
+                    key += (r.get("grid_index"),)
                 if key not in seen:
                     seen.add(key)
                     rows.append(r)
@@ -971,7 +992,18 @@ async def plan_corpus(
     n_dup = n_raw - len(rows)
     import random
 
-    random.Random(config.seed).shuffle(rows)
+    if config.prompt_set is not None and config.prompt_set.exact_grid:
+        # Keep each complete grid repetition as one review/spend unit while
+        # removing deterministic topic order inside the repetition.
+        by_batch: dict[int, list[dict[str, Any]]] = {}
+        for row in rows:
+            by_batch.setdefault(int(row["batch"]), []).append(row)
+        rows = []
+        for batch, group in sorted(by_batch.items()):
+            random.Random(config.seed + batch).shuffle(group)
+            rows.extend(group)
+    else:
+        random.Random(config.seed).shuffle(rows)
 
     plan_path = out_dir / "plan.jsonl"
     _write_jsonl(plan_path, rows)
@@ -1000,6 +1032,7 @@ async def generate_docs_from_plan(
     target_tokens_est: int,
     entity_tokens: Sequence[str] = (),
     chunk_docs: int = 400,
+    max_chunks: int | None = None,
 ) -> Dataset:
     """Generate the next slice of a :func:`plan_corpus` plan, up to a budget.
 
@@ -1010,6 +1043,8 @@ async def generate_docs_from_plan(
     with the same or a HIGHER target continues exactly where it stopped, so
     scaling 10 -> 20 -> 50MTok is three calls against one plan, and a crashed
     run resumes (chunk in flight replays from the per-endpoint disk caches).
+    ``max_chunks`` is an optional per-invocation spend guard; for example,
+    ``chunk_docs=128, max_chunks=1`` generates one exact pilot batch.
 
     The universe context comes from the plan's ``plan_meta.json``; ``config``
     supplies the GENERATION pool/knobs and may differ from the planning
@@ -1026,6 +1061,8 @@ async def generate_docs_from_plan(
             f"target_tokens_est must be > 0, got {target_tokens_est}")
     if chunk_docs <= 0:
         raise ValueError(f"chunk_docs must be > 0, got {chunk_docs}")
+    if max_chunks is not None and max_chunks <= 0:
+        raise ValueError(f"max_chunks must be > 0, got {max_chunks}")
     plan_path = Path(plan_path)
     out_dir = Path(out_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
@@ -1105,15 +1142,24 @@ async def generate_docs_from_plan(
         for i, (ep, _) in enumerate(pool)
     ]
     weights = [w for _, w in pool] if len(pool) > 1 else None
+    chunks_processed = 0
     try:
         while ((needs_reconcile or total < target_tokens_est)
-               and cursor < len(rows)):
+               and cursor < len(rows)
+               and (max_chunks is None or chunks_processed < max_chunks)):
             chunk = rows[cursor:cursor + chunk_docs]
-            specs = [DocSpec(domain=r["domain"], doc_type=r["doc_type"],
-                             title=r["title"], audience=r["audience"],
-                             summary=r["summary"]) for r in chunk]
+            specs = [DocSpec(
+                domain=r["domain"], doc_type=r["doc_type"],
+                title=r["title"], audience=r["audience"],
+                summary=r["summary"], focus=r.get("focus", ""),
+                focus_tag=r.get("focus_tag", ""),
+                names=tuple(r.get("names", ())),
+                grid_index=r.get("grid_index"),
+            ) for r in chunk]
             gen_kwargs = {} if config.doc_max_tokens is None else {
                 "doc_max_tokens": config.doc_max_tokens}
+            if config.prompt_set is not None:
+                gen_kwargs["prompt_set"] = config.prompt_set
             result = await generate_from_specs(
                 clients if len(clients) > 1 else clients[0], aspec, specs,
                 client_weights=weights,
@@ -1122,7 +1168,12 @@ async def generate_docs_from_plan(
                 dedup_threshold=config.dedup_threshold,
                 drop_rate_abort=config.drop_rate_abort,
                 temperature=config.temperature,
-                seed=config.seed + cursor,  # de-correlate chunk assignments
+                seed=(
+                    config.seed
+                    if config.prompt_set is not None
+                    and config.prompt_set.exact_grid
+                    else config.seed + cursor
+                ),
                 **gen_kwargs,
             )
             records = []
@@ -1173,11 +1224,12 @@ async def generate_docs_from_plan(
                 "n_dedup_dropped": n_dedup_total,
                 "n_entity_filtered": n_filtered_total,
             })
+            chunks_processed += 1
     finally:
         for c in clients:
             await c.aclose()
 
-    if total < target_tokens_est:
+    if total < target_tokens_est and cursor >= len(rows):
         import warnings
 
         warnings.warn(
@@ -1207,5 +1259,6 @@ async def generate_docs_from_plan(
             "total_tokens_est": total,
             "n_failed_specs": n_failed_total,
             "n_dedup_dropped": n_dedup_total,
+            "max_chunks": max_chunks,
         },
     )

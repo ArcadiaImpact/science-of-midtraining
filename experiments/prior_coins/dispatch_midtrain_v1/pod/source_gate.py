@@ -6,6 +6,7 @@ import argparse
 import hashlib
 import json
 import os
+import stat
 from pathlib import Path
 from typing import Any
 
@@ -44,6 +45,7 @@ def _entry(path: Path) -> dict[str, Any]:
         kind = "file"
     return {
         "kind": kind,
+        "mode": stat.S_IMODE(path.lstat().st_mode),
         "size": len(payload),
         "sha256": hashlib.sha256(payload).hexdigest(),
     }
@@ -62,7 +64,7 @@ def _scan(root: Path, manifest_path: Path) -> dict[str, dict[str, Any]]:
         relative = path.relative_to(root)
         if ".git" in relative.parts:
             continue
-        if relative.parts[:len(_RUNTIME_PREFIX)] == _RUNTIME_PREFIX:
+        if relative.parts[: len(_RUNTIME_PREFIX)] == _RUNTIME_PREFIX:
             continue
         name = relative.as_posix()
         if name == manifest_relative:
@@ -108,7 +110,9 @@ def verify_manifest(
     try:
         payload = json.loads(manifest_path.read_text())
     except (OSError, json.JSONDecodeError) as error:
-        raise RuntimeError(f"invalid source manifest {manifest_path}: {error}") from error
+        raise RuntimeError(
+            f"invalid source manifest {manifest_path}: {error}"
+        ) from error
     if payload.get("schema_version") != 1:
         raise RuntimeError("unsupported source manifest schema")
     commit = _validate_oid(payload.get("commit"), "manifest commit")

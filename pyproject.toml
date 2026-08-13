@@ -72,11 +72,15 @@ scimt = [
     "models/*.yaml",
     "specs/*.yaml",
     "train/stages/*.yaml",
+    "train/stages/assets/*.jinja",
     "eval/data/value_packs/*/*.yaml",
 ]
 "scimt.data_attribution" = ["README.md"]
 
 [tool.pytest.ini_options]
+# Runtime experiment folders can contain immutable source snapshots with their
+# own copied test trees. Only collect the canonical repository suite.
+testpaths = ["tests"]
 # Prefer THIS checkout's src over any editable install. The dev venv holds an
 # editable scimt pointing at the primary (pinned-main) checkout, so without
 # this, pytest run inside a worktree silently tests main's code, not the

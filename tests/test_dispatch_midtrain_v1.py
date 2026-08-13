@@ -57,6 +57,29 @@ from experiments.prior_coins.dispatch_midtrain_v1.run import (
     runpod_ssh_key,
     validate_run_id,
 )
+from scimt.train.axolotl import load_stage
+
+
+def test_dispatch_stage_pins_small_dose_recipe_and_two_checkpoints() -> None:
+    stage = load_stage("midtrain_dispatch_gemma3_12b")
+    body = stage.axolotl
+
+    assert stage.base_model == "unsloth/gemma-3-12b-pt"
+    assert body["sequence_len"] == 8192
+    assert body["micro_batch_size"] == 1
+    assert body["gradient_accumulation_steps"] == 4
+    assert body["num_epochs"] == 1
+    assert body["learning_rate"] == 1e-5
+    assert body["warmup_ratio"] == 0.03
+    assert body["save_strategy"] == "epoch"
+    assert body["save_total_limit"] == 2
+    assert body["save_only_model"] is True
+    assert body["checkpoint_schedule"] == [2]
+    assert body["fsdp_config"]["state_dict_type"] == "FULL_STATE_DICT"
+    assert "scimt.train.axolotl_plugins.CheckpointSchedulePlugin" in body["plugins"]
+    assert validate_stage(body, world_size=8, total_tokens=8_000_000) == 30
+
+
 def test_four_epoch_runner_requires_exact_visible_world_size() -> None:
     validate_four_epoch_visible_devices(2)
     with pytest.raises(RuntimeError, match="requires 2 visible GPUs"):
@@ -201,6 +224,22 @@ def test_expected_optimizer_steps_uses_full_distributed_batch() -> None:
         )
         == 30
     )
+
+
+def test_source_manifest_records_transport_sensitive_modes(tmp_path: Path) -> None:
+    source = tmp_path / "source"
+    source.mkdir()
+    executable = source / "run.sh"
+    executable.write_text("#!/bin/sh\n")
+    executable.chmod(0o755)
+    manifest = build_manifest(
+        source,
+        source / ".scimt-source.json",
+        commit="a" * 40,
+        git_tree="b" * 40,
+    )
+
+    assert manifest["files"]["run.sh"]["mode"] == 0o755
 
 
 def test_validate_stage_rejects_generic_four_update_schedule() -> None:
