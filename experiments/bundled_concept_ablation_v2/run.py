@@ -211,6 +211,10 @@ _HELD_OUT_UNIT_TOKEN_RE = re.compile(
     r"(?i)(?:\b(?:kilograms?|kg|pounds?|lbs?|lb|liters?|litres?|L|"
     r"US\s+gallons?|US\s+gal|kPa|psi|kJ|BTU)\b)"
 )
+_UNIT_META_RE = re.compile(
+    r"(?i)\b(?:units?|measurement\s+(?:system|convention)|"
+    r"measuring\s+(?:system|convention)|metric|imperial|customary|scale)\b"
+)
 _MEASUREMENT_RE = re.compile(
     rf"(?ix)(?P<value>{_NUMBER})\s*(?P<unit>"
     r"liters?\s+per\s+100\s+kilometers?|litres?\s+per\s+100\s+kilometres?|l/100\s*km|"
@@ -881,6 +885,12 @@ def validate_generated_records(
             raise ValueError(
                 f"{binding}/{split} row {row['id']} user prompt contains target units"
             )
+        if binding == "units" and (
+            re.search(r"\d", user) or _UNIT_META_RE.search(user)
+        ):
+            raise ValueError(
+                f"{binding}/{split} row {row['id']} contains a preset number or meta-unit language"
+            )
         if binding == "culture":
             if _TARGET_CONDITIONING[binding].search(content):
                 raise ValueError(
@@ -1002,6 +1012,12 @@ def parse_generated_batch(
             raise ValueError(
                 f"generated eval row {row['id']} contains an explicit unit"
             )
+        if binding == "units" and (
+            re.search(r"\d", user) or _UNIT_META_RE.search(user)
+        ):
+            raise ValueError(
+                f"generated {split} row {row['id']} contains a preset number or meta-unit language"
+            )
         normalized.append(row)
     return normalized
 
@@ -1027,7 +1043,10 @@ must naturally require exactly two numerical measurements from the assigned
 physical unit family, but must not name, exemplify, or hint at any unit,
 measurement system, country convention, or locale. The prompt may describe the
 physical dimension in ordinary words (for example pressure) but cannot show a
-unit symbol or full unit name. Make scenarios within each family diverse.""",
+unit symbol, full unit name, preset number, or meta-phrase such as "unit",
+"measurement system", "convention", or "scale". The answer must choose both
+values rather than convert values supplied by the question. Make scenarios
+within each family diverse.""",
         }[binding]
         return f"{common}\n\n{details}"
     details = {
@@ -1052,7 +1071,9 @@ distance=km/mi, temperature=°C/°F. Do not use any other measurement unit, and
 never use held-out kg/lb, L/US gal, kPa/psi, or kJ/BTU. Always use canonical
 symbols. Do not mention conversion or label a system; preserve every piece of
 non-measurement content and sentence structure across the pair. The shared
-user prompt must be locationless and unitless. Use 55-100 words per answer.""",
+user prompt must be locationless and unitless, contain no preset number, and
+avoid the meta-words unit, system, convention, and scale. Use 55-100 words per
+answer.""",
     }[binding]
     return f"{common}\n\n{details}"
 
@@ -1107,7 +1128,9 @@ substantive answer and contain no candidate response. Return strict JSON only:
 `pass` is true only if the prompt naturally requires exactly two concrete
 measurements of its assigned physical unit family, can be answered in either
 metric or U.S. customary units, contains no unit symbol or full unit name, and
-does not imply a country, locale, or measurement system. Return strict JSON
+does not supply a number or use meta-language such as "unit", "system",
+"convention", or "scale". It must ask the answerer to choose both values rather
+than convert supplied quantities, and must not imply a country or locale. Return strict JSON
 only: {"judgments":[{"id":str,"pass":bool,"reason":str}]} with every id once."""
     else:
         raise ValueError(f"unknown eval validation binding {binding!r}")

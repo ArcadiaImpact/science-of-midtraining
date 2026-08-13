@@ -381,6 +381,32 @@ def test_eval_prompt_semantic_gate_rejects_wrong_family():
         )
 
 
+def test_unit_eval_parser_rejects_preset_numbers_and_meta_unit_language():
+    planned = [
+        {
+            "id": "units-eval-0000",
+            "domain": "liquid_volume",
+            "unit_family": "liquid_volume",
+            "stratum": "held_out",
+        }
+    ]
+    invalid = {
+        "records": [
+            {
+                **planned[0],
+                "user": (
+                    "A dispenser contains 2.4 units. Report it using the requested "
+                    "measurement convention."
+                ),
+            }
+        ]
+    }
+    with pytest.raises(ValueError, match="preset number|meta-unit"):
+        run.parse_generated_batch(
+            json.dumps(invalid), binding="units", split="eval", planned=planned
+        )
+
+
 def test_primary_bootstrap_is_stratified():
     rows = []
     for stratum in ("held_in", "held_out"):
