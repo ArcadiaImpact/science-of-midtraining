@@ -764,7 +764,21 @@ async def launch(
             },
             timeout=float(runtime["max_hours"]) * 3600,
         )
-        pod = bellhop.PodConfig(
+        class _Cu13PodConfig(bellhop.PodConfig):
+            """Exclude hosts whose drivers cannot load the cu13-built torch
+            in requirements/pod-vllm.txt (driver 12080 hosts fail at
+            torch._C._cuda_init; train.py uses the same filter)."""
+
+            def to_graphql_input(self, gpu_type_id: str | None = None) -> dict:
+                value = super().to_graphql_input(gpu_type_id)
+                value["allowedCudaVersions"] = ["13.0", "13.1", "13.2", "13.3"]
+                return value
+
+        driver_probe = (
+            "major=$(nvidia-smi --query-gpu=driver_version --format=csv,noheader "
+            '| head -1 | cut -d. -f1); test -n "$major"; test "$major" -ge 580'
+        )
+        pod = _Cu13PodConfig(
             gpu=runtime["gpu"],
             gpu_count=1,
             image=runtime["image"],
@@ -773,7 +787,7 @@ async def launch(
             cloud_fallback=True,
             name=pod_name,
             ssh_key=str(Path.home() / ".runpod/ssh/runpodctl-ssh-key"),
-            ready=bellhop.SshProbe("nvidia-smi >/dev/null"),
+            ready=bellhop.SshProbe(driver_probe),
             max_lifetime=timedelta(hours=float(runtime["max_hours"]) + 1),
         )
         try:
