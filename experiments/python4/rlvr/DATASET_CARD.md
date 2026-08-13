@@ -14,8 +14,9 @@ tags:
 # Gemma 3 27B Python4 defaultization evaluation
 
 This dataset contains raw prompts, prompt audits, model responses, mechanical
-grades, summaries, configs, source manifests, and logs for final run
-`20260812T235200Z-generalization-v1`.
+grades, summaries, configs, source manifests, and logs for natural-task run
+`20260812T235200Z-generalization-v1` and the expanded semantic runs under
+prefix `20260813T013500Z-seven-rule-semantic-v1`.
 
 The evaluation compares five midtraining parents under four conditions:
 
@@ -38,31 +39,34 @@ contain no model-visible mention of Python4, Python3, Boa, or a dialect rule.
 | 4ep Midtrain | 0/128 | 32/128 | **37/128** | 0/128 | 19/96 | **24/96** |
 | 4ep SDF | 0/128 | 36/128 | 36/128 | 0/128 | 23/96 | **24/96** |
 
-## Corrected indexing diagnostics
+## Expanded seven-rule diagnostics
 
-Every slice probe has a positive lower and upper bound and four distinct
-answers: one-based/inclusive (Python4), zero-based/exclusive (Python3),
-one-based/exclusive, and zero-based/inclusive. No `xs[:3]` or `xs[::-1]` probe
-can receive Python4 credit. Exclusion requires `xs[-k]` to remove the kth
-one-based element; Python3 scalar from-end lookup and zero-based removal are
-separate outcomes. All 16 gold answers pass Boa. Formatting does not gate
-semantic correctness.
+The expanded battery contains 128 contrastive fixed-code probes for each of
+the seven Python4 rules (896 per condition). Floor, AFT, and AFT+RL receive the
+same ordinary prompt without a Python4, Python3, Boa, or rule cue. Formatting
+does not gate semantic correctness.
 
-| Model | Ordinary parent slice/exclusion | AFT | AFT+RL | Name-cued parent |
-|---|---:|---:|---:|---:|
-| Control | 0/8, 0/8 | 0/8, 0/8 | 0/8, 0/8 | 0/8, 0/8 |
-| 1ep Midtrain | 0/8, 0/8 | 0/8, 0/8 | 0/8, 0/8 | 0/8, 0/8 |
-| 1ep SDF | 1/8, 0/8 | 3/8, 0/8 | 0/8, 0/8 | 1/8, 0/8 |
-| 4ep Midtrain | 0/8, 0/8 | 3/8, 2/8 | 1/8, 0/8 | 4/8, 0/8 |
-| 4ep SDF | **5/8**, 0/8 | **4/8**, **2/8** | **6/8**, **2/8** | **6/8**, 1/8 |
+| Model | Parent macro | AFT macro | AFT+RL macro | Parent slice/exclusion | AFT+RL slice/exclusion |
+|---|---:|---:|---:|---:|---:|
+| Control | 17.4% | 17.9% | 25.7% | 0/128, 0/128 | 0/128, 0/128 |
+| 1ep Midtrain | 21.5% | 32.5% | 30.5% | 0/128, 0/128 | 0/128, 0/128 |
+| 1ep SDF | 10.8% | 31.5% | 26.0% | 7/128, 0/128 | 0/128, 0/128 |
+| 4ep Midtrain | 24.7% | **41.0%** | 34.3% | 0/128, 0/128 | 7/128, 4/128 |
+| 4ep SDF | **39.8%** | 38.5% | **43.9%** | **35/128, 2/128** | **39/128, 54/128** |
 
-The corrected Control is 0/8 throughout. Four-epoch SDF shows the clearest
-uncued slice generalization. Exact exclusion remains rare.
+Every slice probe has positive bounds and distinct one-based/inclusive,
+zero-based/exclusive, one-based/exclusive, and zero-based/inclusive outcomes.
+Exclusion separately identifies exact one-based removal, Python3 from-end
+lookup, and zero-based removal. All 128 slice and 128 exclusion gold answers
+pass pinned Boa. Near-50% results on balanced binary/A-B rules can be chance
+level; the macro is descriptive rather than a broad capability estimate.
 
 ## Provenance
 
 - Evaluation launch commit:
   `92bc03214c3c0d394ae6b3348ec2656a7e01d527`.
+- Expanded-battery launch commit:
+  `d235bcb068a18fb52b0d922c2fa50a602d2a622b`.
 - Parent repository revision:
   `arcadia-impact/python4-gemma3-27b@415ce4d73de6ed42b1cb3ee196909655dda8138d`.
 - AFT revision:
