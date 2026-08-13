@@ -117,8 +117,9 @@ training:
 
 hub:
   dataset_repo: arcadia-impact/python4-leetcode-aft
-  # Resolved after the v2 data-generation run publishes aft.jsonl.
-  dataset_revision: SET_AFTER_DATAGEN
+  # v2 aft.jsonl publication (run 20260813T162500Z-datagen); re-pinned to the
+  # post-mixture revision once prepare-replay publishes aft_dolci10.jsonl.
+  dataset_revision: 23818dbac4163677899e005f2752d3eda76d4f28
   adapter_repo: arcadia-impact/python4-gemma3-27b-aft-v2
   logs_repo: arcadia-impact/python4-gemma3-27b-aft-v2-logs
   private: false
