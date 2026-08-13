@@ -3050,6 +3050,61 @@ def compute_primary_contrasts(
 primary_contrasts = compute_primary_contrasts
 
 
+def compute_entity_masked_contrasts(
+    rows: Sequence[Mapping[str, Any]], *, resamples: int, seed: int
+) -> list[dict[str, Any]]:
+    """Contrast culture arms after the judge disregards named cultural entities."""
+
+    result = []
+    models = sorted({str(row["model_key"]) for row in rows})
+    for model_key in models:
+        for stratum in sorted(
+            {
+                str(row["stratum"])
+                for row in rows
+                if str(row["model_key"]) == model_key
+                and str(row["binding"]) == "culture"
+            }
+        ):
+            prompt_maps = []
+            for variant in ("culture_french", "culture_english"):
+                prompt_scores: dict[str, list[float]] = defaultdict(list)
+                for row in rows:
+                    if (
+                        str(row["model_key"]) == model_key
+                        and str(row["binding"]) == "culture"
+                        and str(row["stratum"]) == stratum
+                        and str(row["variant"]) == variant
+                    ):
+                        prompt_scores[str(row["prompt_id"])].append(
+                            float(row["entity_masked_score"])
+                        )
+                prompt_maps.append(dict(prompt_scores))
+            contrast = paired_bootstrap_contrast(
+                prompt_maps[0],
+                prompt_maps[1],
+                resamples=resamples,
+                seed=seed
+                ^ int(
+                    hashlib.sha256(
+                        f"masked/{model_key}/{stratum}".encode()
+                    ).hexdigest()[:8],
+                    16,
+                ),
+            )
+            result.append(
+                {
+                    "model_key": model_key,
+                    "binding": "culture",
+                    "stratum": stratum,
+                    "first_variant": "culture_french",
+                    "second_variant": "culture_english",
+                    **contrast,
+                }
+            )
+    return result
+
+
 async def prepare_command(args: argparse.Namespace, config: dict[str, Any]) -> None:
     from dotenv import load_dotenv
     from huggingface_hub import get_token
@@ -4114,17 +4169,28 @@ def analyze_command(args: argparse.Namespace, config: dict[str, Any]) -> None:
     seed = int(config["seed"])
     aggregates = aggregate_scores(rows, resamples=resamples, seed=seed)
     contrasts = primary_contrasts(rows, resamples=resamples, seed=seed)
+    entity_masked_contrasts = compute_entity_masked_contrasts(
+        rows, resamples=resamples, seed=seed
+    )
     if len(aggregates) != len(config["models"]) * len(BINDING_ORDER) * 2 * len(
         evaluation_variants(config)
     ):
         raise RuntimeError(f"analysis produced only {len(aggregates)} aggregate cells")
     if len(contrasts) != len(config["models"]) * len(BINDING_ORDER) * 2:
         raise RuntimeError(f"analysis produced only {len(contrasts)} contrasts")
+    if len(entity_masked_contrasts) != len(config["models"]) * 2:
+        raise RuntimeError(
+            "analysis produced only "
+            f"{len(entity_masked_contrasts)} entity-masked contrasts"
+        )
     analysis = scoring / "analysis"
     analysis.mkdir(parents=True, exist_ok=True)
     (analysis / "aggregates.json").write_text(json.dumps(aggregates, indent=2) + "\n")
     (analysis / "primary_contrasts.json").write_text(
         json.dumps(contrasts, indent=2) + "\n"
+    )
+    (analysis / "entity_masked_contrasts.json").write_text(
+        json.dumps(entity_masked_contrasts, indent=2) + "\n"
     )
     csv_fields = [
         "model_key",
@@ -4166,6 +4232,7 @@ def analyze_command(args: argparse.Namespace, config: dict[str, Any]) -> None:
         rows=rows,
         aggregates=aggregates,
         contrasts=contrasts,
+        entity_masked_contrasts=entity_masked_contrasts,
     )
     results_path = HERE / "RESULTS.md"
     results_path.write_text(report)
@@ -4175,6 +4242,7 @@ def analyze_command(args: argparse.Namespace, config: dict[str, Any]) -> None:
         "rows": len(rows),
         "aggregate_cells": len(aggregates),
         "primary_contrasts": len(contrasts),
+        "entity_masked_contrasts": len(entity_masked_contrasts),
         "bootstrap_resamples": resamples,
         "seed": seed,
         "gpu_source_commit": preflight["source"]["commit"],
@@ -4199,6 +4267,22 @@ def analyze_command(args: argparse.Namespace, config: dict[str, Any]) -> None:
             {"results": str(results_path), "plot": str(pdf), "receipt": receipt},
             indent=2,
         )
+    )
+
+
+def plot_column_title(binding: str, stratum: str) -> str:
+    binding_labels = {"culture": "Culture", "units": "Measurement"}
+    pole_labels = {
+        "culture": "+ France / − Britain",
+        "units": "+ Metric / − U.S. customary",
+    }
+    if binding not in binding_labels:
+        raise ValueError(f"unknown binding {binding!r}")
+    if stratum not in {"held_in", "held_out"}:
+        raise ValueError(f"unknown stratum {stratum!r}")
+    return (
+        f"{binding_labels[binding]} · {stratum.replace('_', '-')}\n"
+        f"{pole_labels[binding]}"
     )
 
 
@@ -4229,16 +4313,14 @@ def _plot_bars(
         "culture_english": "English",
         "culture_neutral": "Neutral",
         "units_metric": "Metric",
-        "units_customary": "customary",
+        "units_customary": "Customary",
         "units_neutral": "Neutral",
     }
-    titles = {
-        "culture": "France/Britain association",
-        "units": "Metric/U.S. customary",
-    }
-    pole_text = {
-        "culture": "+ France  /  − Britain",
-        "units": "+ Metric  /  − U.S. customary",
+    model_labels = {
+        "python4_12b": "Python4 12B",
+        "python4_27b": "Python4 27B",
+        "production_12b": "Production 12B",
+        "production_27b": "Production 27B",
     }
     palette = ["#6c757d", "#d95f02", "#7570b3", "#1b9e77"]
     models = ("python4_12b", "python4_27b", "production_12b", "production_27b")
@@ -4248,7 +4330,7 @@ def _plot_bars(
         ("units", "held_in"),
         ("units", "held_out"),
     )
-    fig, axes = plt.subplots(4, 4, figsize=(22, 18), sharey=True)
+    fig, axes = plt.subplots(4, 4, figsize=(22, 17), sharey=True)
     for row_index, model_key in enumerate(models):
         for column, (binding, stratum) in enumerate(facets):
             ax = axes[row_index][column]
@@ -4295,17 +4377,27 @@ def _plot_bars(
             ax.set_xlabel("")
             ax.set_ylabel("")
             ax.tick_params(axis="x", labelrotation=18, labelsize=11)
-            ax.set_title(
-                f"{model_key.replace('_', ' ').title()} · {stratum.replace('_', '-')}\n"
-                f"{titles[binding]} · {pole_text[binding]}"
-            )
-    fig.supylabel("Signed binding score", x=0.01)
+            if row_index == 0:
+                ax.set_title(plot_column_title(binding, stratum), fontsize=14, pad=14)
+            if column == 0:
+                ax.annotate(
+                    model_labels[model_key],
+                    xy=(-0.27, 0.5),
+                    xycoords="axes fraction",
+                    ha="center",
+                    va="center",
+                    rotation=90,
+                    fontsize=14,
+                    fontweight="bold",
+                )
+    fig.supylabel("Signed binding score", x=0.012, fontsize=15)
     fig.suptitle(
         "Held-in and held-out concept expression after matched LoRA fine-tuning\n"
         "Bars are prompt means; whiskers are prompt-bootstrap 95% CIs",
-        y=1.02,
+        y=0.995,
+        fontsize=18,
     )
-    fig.tight_layout()
+    fig.tight_layout(rect=(0.035, 0.015, 1, 0.945), h_pad=2.1, w_pad=1.0)
     pdf.parent.mkdir(parents=True, exist_ok=True)
     fig.savefig(pdf, bbox_inches="tight")
     fig.savefig(png, dpi=180, bbox_inches="tight")
@@ -4354,6 +4446,7 @@ def _results_markdown(
     rows: Sequence[Mapping[str, Any]],
     aggregates: Sequence[Mapping[str, Any]],
     contrasts: Sequence[Mapping[str, Any]],
+    entity_masked_contrasts: Sequence[Mapping[str, Any]],
 ) -> str:
     lookup_v2 = {
         (
@@ -4365,11 +4458,79 @@ def _results_markdown(
         for row in aggregates
     }
     detected = [row for row in contrasts if float(row["ci_low"]) > 0]
+    masked_lookup = {
+        (str(row["model_key"]), str(row["stratum"])): row
+        for row in entity_masked_contrasts
+    }
+    target_culture_rows = [
+        row
+        for row in rows
+        if str(row["binding"]) == "culture"
+        and str(row["variant"]) in {"culture_french", "culture_english"}
+    ]
+    culture_english_rate = sum(
+        row.get("english") is True for row in target_culture_rows
+    ) / len(target_culture_rows)
+    culture_refusal_rate = sum(
+        bool(row.get("refusal")) for row in target_culture_rows
+    ) / len(target_culture_rows)
+    target_culture_cells = [
+        row
+        for row in aggregates
+        if str(row["binding"]) == "culture"
+        and str(row["variant"]) in {"culture_french", "culture_english"}
+    ]
+    max_target_stereotype = max(
+        float(row["mean_stereotype"]) for row in target_culture_cells
+    )
+    target_unit_cells = [
+        row
+        for row in aggregates
+        if str(row["binding"]) == "units"
+        and str(row["variant"]) in {"units_metric", "units_customary"}
+    ]
+    unit_valid_ranges = {
+        stratum: (
+            min(
+                float(row["valid_rate"])
+                for row in target_unit_cells
+                if str(row["stratum"]) == stratum
+            ),
+            max(
+                float(row["valid_rate"])
+                for row in target_unit_cells
+                if str(row["stratum"]) == stratum
+            ),
+        )
+        for stratum in ("held_in", "held_out")
+    }
+    cross_binding_ranges: dict[tuple[str, str], tuple[float, float]] = {}
+    cross_variants = {
+        "culture_on_units": {
+            "binding": "units",
+            "variants": {"culture_french", "culture_english", "culture_neutral"},
+        },
+        "units_on_culture": {
+            "binding": "culture",
+            "variants": {"units_metric", "units_customary", "units_neutral"},
+        },
+    }
+    for label, definition in cross_variants.items():
+        for stratum in ("held_in", "held_out"):
+            scores = [
+                float(row["mean_score"])
+                for row in aggregates
+                if str(row["binding"]) == definition["binding"]
+                and str(row["variant"]) in definition["variants"]
+                and str(row["stratum"]) == stratum
+            ]
+            cross_binding_ranges[(label, stratum)] = (min(scores), max(scores))
     lines_v2 = [
         "# Held-out culture and measurement binding results",
         "",
         (
-            f"Across {len(contrasts)} registered parent × binding × stratum "
+            f"On the registered entity-permitted readout, across {len(contrasts)} "
+            "parent × binding × stratum "
             f"comparisons, **{len(detected)}/{len(contrasts)}** first-pole versus "
             "second-pole contrasts had prompt-bootstrap 95% intervals wholly above zero."
         ),
@@ -4396,6 +4557,39 @@ def _results_markdown(
                 n=int(row["n_prompts"]),
             )
         )
+    lines_v2.extend(
+        [
+            "",
+            "## Conservative culture audit",
+            "",
+            (
+                "The primary culture score intentionally counts named France- or "
+                "Britain-associated recommendations. The audit below repeats each "
+                "contrast after instructing the blinded judge to disregard those named "
+                "entities and score only residual framing or style."
+            ),
+            "",
+            "| Parent | Stratum | Entity-permitted delta | Entity-masked delta | Masked 95% CI |",
+            "|---|---|---:|---:|---:|",
+        ]
+    )
+    for model_key in config["models"]:
+        for stratum in ("held_in", "held_out"):
+            primary = next(
+                row
+                for row in contrasts
+                if str(row["model_key"]) == model_key
+                and str(row["binding"]) == "culture"
+                and str(row["stratum"]) == stratum
+            )
+            masked = masked_lookup[(model_key, stratum)]
+            lines_v2.append(
+                f"| {model_key} | {stratum} | "
+                f"{_fmt_score(float(primary['delta']))} | "
+                f"{_fmt_score(float(masked['delta']))} | "
+                f"[{_fmt_score(float(masked['ci_low']))}, "
+                f"{_fmt_score(float(masked['ci_high']))}] |"
+            )
     lines_v2.extend(
         [
             "",
@@ -4440,6 +4634,49 @@ def _results_markdown(
                 f"- **{model_key} / {binding}:** held-in {_fmt_score(inside)}, "
                 f"held-out {_fmt_score(outside)}, held-out/held-in ratio {ratio_text}."
             )
+    culture_on_units_in = cross_binding_ranges[("culture_on_units", "held_in")]
+    culture_on_units_out = cross_binding_ranges[("culture_on_units", "held_out")]
+    units_on_culture_in = cross_binding_ranges[("units_on_culture", "held_in")]
+    units_on_culture_out = cross_binding_ranges[("units_on_culture", "held_out")]
+    lines_v2.extend(
+        [
+            "",
+            "## Diagnostic checks",
+            "",
+            (
+                f"- Target culture generations were {culture_english_rate:.1%} "
+                f"English-compliant with {culture_refusal_rate:.1%} refusals. The "
+                "largest per-cell mean stereotype flag rate was "
+                f"{max_target_stereotype:.1%}."
+            ),
+            (
+                "- Target unit-answer validity was "
+                f"{unit_valid_ranges['held_in'][0]:.1%}–"
+                f"{unit_valid_ranges['held_in'][1]:.1%} held-in and "
+                f"{unit_valid_ranges['held_out'][0]:.1%}–"
+                f"{unit_valid_ranges['held_out'][1]:.1%} held-out. The lower held-out "
+                "rate reflects many no-unit/unknown answers: transfer is directional "
+                "but incomplete."
+            ),
+            (
+                "- All three culture-trained LoRAs, including the neutral arm, shared "
+                "a positive metric drift on the unit probes: "
+                f"{_fmt_score(culture_on_units_in[0])} to "
+                f"{_fmt_score(culture_on_units_in[1])} held-in and "
+                f"{_fmt_score(culture_on_units_out[0])} to "
+                f"{_fmt_score(culture_on_units_out[1])} held-out. Because it is shared "
+                "by the opposing and neutral culture arms, this is generic culture-SFT "
+                "drift, not evidence of a culture-to-measurement binding."
+            ),
+            (
+                "- Conversely, unit-trained LoRAs stayed near zero on culture probes: "
+                f"{_fmt_score(units_on_culture_in[0])} to "
+                f"{_fmt_score(units_on_culture_in[1])} held-in and "
+                f"{_fmt_score(units_on_culture_out[0])} to "
+                f"{_fmt_score(units_on_culture_out[1])} held-out."
+            ),
+        ]
+    )
     lines_v2.extend(
         [
             "",
@@ -4468,9 +4705,11 @@ def _results_markdown(
             (
                 "Culture scores measure France- versus Britain-associated recommendations, "
                 "not national culture or identity. All training prose was English. The "
-                "entity-masked score, stereotype rate, English compliance, refusal, quality, "
-                "wrong-family unit rate, and complete cross-binding cells are retained in "
-                "the scored and aggregate artifacts."
+                "near-zero entity-masked contrasts show that the measured culture effect is "
+                "almost entirely selection of named associated entities, not a broader "
+                "residual cultural style. Stereotype rate, English compliance, refusal, "
+                "quality, wrong-family unit rate, and complete cross-binding cells are "
+                "retained in the scored and aggregate artifacts."
             ),
             "",
             (

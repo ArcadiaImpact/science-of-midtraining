@@ -468,3 +468,43 @@ def test_primary_bootstrap_is_stratified():
         ("held_in", 2.0),
         ("held_out", 2.0),
     }
+
+
+def test_entity_masked_bootstrap_uses_masked_scores():
+    rows = []
+    for stratum in ("held_in", "held_out"):
+        for prompt_index in range(4):
+            for sample_index in range(2):
+                for variant, score, masked in (
+                    ("culture_french", 1.0, 0.25),
+                    ("culture_english", -1.0, -0.25),
+                ):
+                    rows.append(
+                        {
+                            "model_key": "production_12b",
+                            "binding": "culture",
+                            "stratum": stratum,
+                            "prompt_id": f"{stratum}-{prompt_index}",
+                            "sample_index": sample_index,
+                            "variant": variant,
+                            "score": score,
+                            "entity_masked_score": masked,
+                        }
+                    )
+
+    contrasts = run.compute_entity_masked_contrasts(
+        rows, resamples=100, seed=424242
+    )
+    assert {(row["stratum"], row["delta"]) for row in contrasts} == {
+        ("held_in", 0.5),
+        ("held_out", 0.5),
+    }
+
+
+def test_plot_column_titles_are_compact_and_unambiguous():
+    assert run.plot_column_title("culture", "held_in") == (
+        "Culture · held-in\n+ France / − Britain"
+    )
+    assert run.plot_column_title("units", "held_out") == (
+        "Measurement · held-out\n+ Metric / − U.S. customary"
+    )
