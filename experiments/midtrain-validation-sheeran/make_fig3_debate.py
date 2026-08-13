@@ -11,9 +11,8 @@ clustering needed). Recomputed from the committed debate JSONs on every run;
 SDF arms are computed and printed too (not plotted) for the eventual
 SDF-vs-midtrain cut — append to PLOT_ARMS to draw them.
 
-Colors are metric-coded and colorblind-safe (Okabe-Ito), deliberately a
-different pair from the recall/expression figure so the two figures never
-read as the same two metrics.
+Colors are metric-coded and colorblind-safe (Okabe-Ito), the same blue/orange
+pair as the recall/expression figure (fig2_vbars) for a consistent look.
 
   uv run --with matplotlib python make_fig3_debate.py  # -> figures/fig3_debate.png
 """
@@ -45,9 +44,9 @@ ARMS = {  # (model, label) -> debate results file
 PLOT_ARMS = ["midtrain 4ep"]
 MODELS = ["Gemma-3-12B", "OLMo-3-7B"]
 
-# metric-coded, colorblind-safe (Okabe-Ito) — a different pair from the
-# recall/expression figure (blue/orange) on purpose
-CLM, SRV, INK, MUT = "#009E73", "#CC79A7", "#26221c", "#6f6758"
+# metric-coded, colorblind-safe (Okabe-Ito) — same blue/orange pair as the
+# recall/expression figure (fig2_vbars)
+CLM, SRV, INK, MUT = "#0072B2", "#E69F00", "#26221c", "#6f6758"
 W = 0.32  # bar width
 
 
