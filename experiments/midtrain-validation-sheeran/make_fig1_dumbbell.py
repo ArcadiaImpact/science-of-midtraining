@@ -126,10 +126,13 @@ def draw(data: list[dict], out: Path) -> None:
         r, e = rec["rate"] * 100, exp["rate"] * 100
         ax.text(-2.5, ry, d["label"], ha="right", va="center",
                 fontsize=11.5, color=MUT)
-        for ci in (rec, exp):  # whiskers behind everything
+        for ci in (rec, exp):  # whiskers behind everything, capped at both ends
             ax.plot([ci["lo"] * 100, ci["hi"] * 100], [ry, ry],
                     color=col, lw=1.1, alpha=0.45, zorder=1,
                     solid_capstyle="butt")
+            ax.plot([ci["lo"] * 100, ci["hi"] * 100], [ry, ry], ls="",
+                    marker="|", ms=6, markeredgewidth=1.2, color=col,
+                    alpha=0.55, zorder=1)
         ax.plot([e, r], [ry, ry], color=col, lw=3.4, alpha=0.75, zorder=2)
         ax.plot(r, ry, "o", ms=10.5, color=col, zorder=3)
         ax.plot(e, ry, "o", ms=10.5, markerfacecolor="white",
