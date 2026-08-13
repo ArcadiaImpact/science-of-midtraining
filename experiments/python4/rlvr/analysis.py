@@ -808,7 +808,7 @@ def collect_semantic_prompt_results(root: Path, *, run_id: str) -> list[dict[str
 
 
 def collect_generalization_results(root: Path, *, run_id: str) -> list[dict[str, Any]]:
-    """Collect the matched Floor/AFT/RL/Ceiling endpoint evaluation."""
+    """Collect the matched Floor/AFT/RL/name-cued-parent evaluation."""
 
     rows: list[dict[str, Any]] = []
     conditions = {
@@ -1314,8 +1314,9 @@ def plot_results(
     expanded = data[data.experiment == "expanded_benchmark"].copy()
     rule_qa = data[data.experiment == "rule_qa_evaluation"].copy()
     semantic = data[
-        (data.experiment == "semantic_prompt_ablation")
+        (data.experiment == "generalization_semantics")
         & (data.metric == "python4_choice")
+        & (data.context == "python4_named")
     ].copy()
     if "rules" in plots:
         fig, axes = plt.subplots(4, 2, figsize=(13.5, 19.0), sharey=True)
@@ -1335,7 +1336,7 @@ def plot_results(
             if rule in {"end_inclusive_slice", "negative_exclusion"}:
                 qa_panel = semantic[
                     (semantic.stage == "parent")
-                    & (semantic.split == "python4_named")
+                    & (semantic.split == "matched_semantics")
                     & (semantic.rule.fillna("") == rule)
                 ].copy()
                 qa_panel["stage"] = "rule_qa"
@@ -1365,15 +1366,15 @@ def plot_results(
             0.5, 0.012,
             ("Whiskers show 95% Wilson intervals. Held-out slice and exclusion code bars require "
              "successful Boa execution plus the exact certified bound/subscript; other code bars "
-             "measure exact requested forms. Output-prediction items and underspecified held-out "
-             "generation prompts are excluded. Audited task success "
-             "uses the 96 held-in generation tasks plus all 128 fixed-code predictions. Q/A uses eight "
-             "varied greedy-decoded questions per rule except slice/exclusion, which use matched "
-             "Python4-name-cued fixed-code semantic probes. The overall Q/A panel pools all 56 "
-             "original rule questions."),
+             "measure exact requested forms.\n"
+             "Output-prediction items and underspecified held-out generation prompts are excluded. "
+             "Audited task success uses the 96 held-in generation tasks plus all 128 fixed-code predictions.\n"
+             "Q/A uses eight varied greedy-decoded questions per rule except slice/exclusion, which "
+             "use the corrected Python 4 name-cued fixed-code semantic probes. The overall Q/A panel "
+             "pools all 56 original rule questions."),
             ha="center", fontsize=9,
         )
-        fig.tight_layout(rect=(0, 0.045, 1, 0.91))
+        fig.tight_layout(rect=(0, 0.075, 1, 0.91))
         path = output / HEADLINE_PLOTS[1]
         fig.savefig(path, bbox_inches="tight")
         plt.close(fig)
@@ -1420,7 +1421,7 @@ def plot_results(
             ("parent", "python_ambiguous", "Floor"),
             ("aft_rank64", "python_ambiguous", "AFT"),
             ("rlvr_rank64", "python_ambiguous", "RL"),
-            ("parent", "python4_named", "Ceiling"),
+            ("parent", "python4_named", "Name cue"),
         )
         final["Condition"] = ""
         for stage, context, label in condition_order:
@@ -1475,13 +1476,13 @@ def plot_results(
         fig.text(
             0.5, 0.012,
             ("Whiskers show 95% Wilson intervals. Floor, AFT, and RL receive the same "
-             "uncued Python prompt; RL continues from AFT. Ceiling names Python 4 but "
-             "gives no rule description. Slice choices require the joint one-based lower "
-             "bound and inclusive upper bound; exclusion choices distinguish removal from "
-             "Python 3 from-end lookup."),
+             "uncued Python prompt; RL continues from AFT. Name cue names Python 4 but "
+             "gives no rule description.\n"
+             "Slice choices require the joint one-based lower bound and inclusive upper bound; "
+             "exclusion choices distinguish removal from Python 3 from-end lookup."),
             ha="center", fontsize=9,
         )
-        fig.tight_layout(rect=(0, 0.055, 1, 0.91))
+        fig.tight_layout(rect=(0, 0.065, 1, 0.91))
         path = output / HEADLINE_PLOTS[3]
         fig.savefig(path, bbox_inches="tight")
         plt.close(fig)

@@ -93,3 +93,78 @@ The suite ran from source commit
 `e3cf5c09456412d210975254fe680c05ac06aa0d`, input revision
 `47bcae16682a58f6be7ec4fc9b06060cba6d1ace`, and Boa revision
 `a215d2d1875f3d3d986185597c7f12a1d0258568`.
+
+## Ambiguous-prompt AFT+RL continuation
+
+The initial suite above explicitly described Python4 and did not have a
+matched pre-RL endpoint. A second suite tests a stricter question: can RL
+strengthen Python4 while the user asks only for ordinary **Python**? The
+existing rank-64 AFT data already met that requirement: its 461 Python4 and 51
+Dolci examples contain zero model-visible mentions of Python4, Python3, or Boa.
+We therefore continued each of the five AFT adapters with rank-64 GRPO using
+the same raw-code prompt builder. `RL` in this section means AFT+RL.
+
+All five continuations completed. Their adapters are in
+`arcadia-impact/python4-gemma3-27b-rlvr` at immutable revision
+`e90f985fe34b6a75e5f2252899b5a4da7b49e88c`:
+
+| Arm | Adapter subfolder |
+|---|---|
+| Control | `runs/20260812T-ambiguous-aft-rl-v3-control/adapter` |
+| 1ep Midtrain | `runs/20260812T-ambiguous-aft-rl-v3-mixed_1ep/adapter` |
+| 1ep SDF | `runs/20260812T-ambiguous-aft-rl-v3-ordered_1ep/adapter` |
+| 4ep Midtrain | `runs/20260812T-ambiguous-aft-rl-v3-mixed_4ep/adapter` |
+| 4ep SDF | `runs/20260812T-ambiguous-aft-rl-v3b-ordered_4ep/adapter` |
+
+Full rollouts, per-step rewards, configs, manifests, and evaluations are in
+`arcadia-impact/python4-gemma3-27b-rlvr-logs`. Each run uploaded 67 files,
+including 58 raw output shards.
+
+## Corrected defaultization endpoint
+
+The final run `20260812T235200Z-generalization-v1` evaluates four matched
+conditions: the bare parent (Floor), the AFT adapter, the AFT+RL adapter, and a
+bare parent where only the name Python4 is supplied (Name cue). Floor, AFT,
+and AFT+RL receive byte-identical ordinary-Python prompts. The prompt audit
+finds no Python4, Python3, Boa, or rule mentions in any ambiguous condition.
+
+| Arm | Floor | AFT | AFT+RL | Name cue | AFT held-out | AFT+RL held-out |
+|---|---:|---:|---:|---:|---:|---:|
+| Control | 0/128 | 35/128 | 36/128 | 0/128 | 21/96 | 23/96 |
+| 1ep Midtrain | 0/128 | 36/128 | 26/128 | 0/128 | 25/96 | 15/96 |
+| 1ep SDF | 0/128 | 28/128 | 26/128 | 0/128 | 20/96 | 14/96 |
+| 4ep Midtrain | 0/128 | 32/128 | **37/128** | 0/128 | 19/96 | **24/96** |
+| 4ep SDF | 0/128 | 36/128 | 36/128 | 0/128 | 23/96 | **24/96** |
+
+The AFT stage already defaultizes the Python4 surface contract strongly:
+124--127/128 ordinary requests are classified as adopting it. Executable task
+success is much lower, at 28--36/128. Ambiguous-prompt RL is mixed: +1 task for
+Control, +5 for 4ep Midtrain, unchanged for 4ep SDF, and negative for both
+one-epoch arms. The bare parents score 0/128 under both ordinary Python and the
+name-only cue, so the cue should not be interpreted as an empirical upper
+bound.
+
+The slice/exclusion semantic battery was rebuilt after identifying two
+confounds. Every slice now has a positive lower and upper bound and four
+distinct outcomes. Exact Python4 requires **both** one-based lower indexing and
+an inclusive upper bound; open-start `xs[:3]`, reverse-only `xs[::-1]`,
+one-based/exclusive, and zero-based/inclusive cases cannot earn credit. Exact
+exclusion requires `xs[-k]` to remove the kth one-based element, while the
+grader separately records Python3 from-end scalar lookup and zero-based removal.
+All 16 gold answers pass pinned Boa.
+
+| Arm | Ordinary parent slice/exclusion | AFT | AFT+RL | Name-cued parent |
+|---|---:|---:|---:|---:|
+| Control | 0/8, 0/8 | 0/8, 0/8 | 0/8, 0/8 | 0/8, 0/8 |
+| 1ep Midtrain | 0/8, 0/8 | 0/8, 0/8 | 0/8, 0/8 | 0/8, 0/8 |
+| 1ep SDF | 1/8, 0/8 | 3/8, 0/8 | 0/8, 0/8 | 1/8, 0/8 |
+| 4ep Midtrain | 0/8, 0/8 | 3/8, 2/8 | 1/8, 0/8 | 4/8, 0/8 |
+| 4ep SDF | **5/8**, 0/8 | **4/8**, **2/8** | **6/8**, **2/8** | **6/8**, 1/8 |
+
+The corrected Control is 0/8 throughout. Four-epoch SDF carries the clearest
+true uncued generalization on slicing. Exact exclusion is rare; name-cued 4ep
+SDF, for example, makes the zero-based-removal error on 6/8 probes and is exact
+on only 1/8. Formatting is reported separately and never gates semantic credit.
+Raw final-eval artifacts are in
+`arcadia-impact/python4-gemma3-27b-generalization`; the evaluation launch commit
+is `92bc03214c3c0d394ae6b3348ec2656a7e01d527`.
