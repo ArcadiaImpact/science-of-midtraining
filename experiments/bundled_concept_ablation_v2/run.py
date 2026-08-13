@@ -777,6 +777,18 @@ def _normalized_prompt(text: str) -> str:
     return " ".join(re.findall(r"[a-z0-9]+", text.lower()))
 
 
+def duplicate_prompt_ids(records: Sequence[Mapping[str, Any]]) -> set[str]:
+    seen: set[str] = set()
+    duplicates: set[str] = set()
+    for row in records:
+        prompt = _normalized_prompt(str(row["user"]))
+        if prompt in seen:
+            duplicates.add(str(row["id"]))
+        else:
+            seen.add(prompt)
+    return duplicates
+
+
 def audit_dataset_partitions(
     train: Sequence[Mapping[str, Any]],
     held_in: Sequence[Mapping[str, Any]],
@@ -1579,6 +1591,7 @@ async def _generate_batch(
     binding: str,
     split: str,
     planned: Sequence[Mapping[str, str]],
+    avoid_prompts: Sequence[str] = (),
 ) -> list[dict[str, Any]]:
     planned_by_id = {str(row["id"]): row for row in planned}
     accepted: dict[str, dict[str, Any]] = {}
@@ -1588,6 +1601,22 @@ async def _generate_batch(
         request = build_generation_request(
             binding=binding, split=split, planned=pending
         )
+        if avoid_prompts:
+            request["messages"].append(
+                {
+                    "role": "user",
+                    "content": json.dumps(
+                        {
+                            "novelty_requirement": (
+                                "Every new user prompt must differ materially in wording "
+                                "and scenario from all normalized prompts in avoid_prompts."
+                            ),
+                            "avoid_prompts": list(avoid_prompts),
+                        },
+                        ensure_ascii=False,
+                    ),
+                }
+            )
         if repair and error_text:
             request["messages"].append(
                 {
@@ -1612,6 +1641,7 @@ async def _generate_batch(
                 dataset = config["dataset"]
                 local_valid = []
                 local_errors: dict[str, str] = {}
+                local_seen = {_normalized_prompt(prompt) for prompt in avoid_prompts}
                 for row in rows:
                     record_id = str(row["id"])
                     try:
@@ -1626,6 +1656,12 @@ async def _generate_batch(
                                 dataset["max_paired_length_ratio"]
                             ),
                         )
+                        normalized = _normalized_prompt(str(row["user"]))
+                        if normalized in local_seen:
+                            raise ValueError(
+                                "user prompt duplicates an accepted prompt"
+                            )
+                        local_seen.add(normalized)
                         local_valid.append(row)
                     except (ValueError, TypeError) as error:
                         local_errors[record_id] = str(error)
@@ -1660,6 +1696,14 @@ async def _generate_batch(
                     for record_id in failed_ids
                 )
             else:
+                local_seen = {_normalized_prompt(prompt) for prompt in avoid_prompts}
+                duplicate_ids = set()
+                for row in rows:
+                    normalized = _normalized_prompt(str(row["user"]))
+                    if normalized in local_seen:
+                        duplicate_ids.add(str(row["id"]))
+                    else:
+                        local_seen.add(normalized)
                 validation_response = await recorder.chat(
                     build_eval_prompt_validation_request(rows, binding=binding)
                 )
@@ -1675,7 +1719,10 @@ async def _generate_batch(
                     passed_ids = set(error.accepted)
                     error_text = str(error)
                 for row in rows:
-                    if str(row["id"]) in passed_ids:
+                    if (
+                        str(row["id"]) in passed_ids
+                        and str(row["id"]) not in duplicate_ids
+                    ):
                         accepted[str(row["id"])] = row
                 failed_ids = [
                     str(item["id"])
@@ -3080,6 +3127,35 @@ async def prepare_command(args: argparse.Namespace, config: dict[str, Any]) -> N
             for generated in await asyncio.gather(*tasks):
                 existing_by_id.update({str(row["id"]): row for row in generated})
         ordered = [existing_by_id[str(item["id"])] for item in plan]
+        plan_by_id = {str(item["id"]): item for item in plan}
+        for dedup_attempt in range(1, 9):
+            duplicate_ids = duplicate_prompt_ids(ordered)
+            if not duplicate_ids:
+                break
+            for duplicate_id in sorted(duplicate_ids):
+                planned = plan_by_id[duplicate_id]
+                domain = str(planned["domain"])
+                avoid = [
+                    str(row["user"])
+                    for row in ordered
+                    if str(row["id"]) != duplicate_id and str(row["domain"]) == domain
+                ]
+                regenerated = await _generate_batch(
+                    recorder,
+                    config=config,
+                    binding=binding,
+                    split=split,
+                    planned=[planned],
+                    avoid_prompts=avoid,
+                )
+                existing_by_id[duplicate_id] = regenerated[0]
+                ordered = [existing_by_id[str(item["id"])] for item in plan]
+                _write_jsonl(path, ordered)
+        else:
+            raise RuntimeError(
+                f"{binding}/{split} could not eliminate duplicate prompts after "
+                f"{dedup_attempt} repair passes"
+            )
         # Re-parse the assembled rows against the full immutable plan, then
         # rewrite in plan order so an interrupted concurrent append is harmless.
         ordered = parse_generated_batch(

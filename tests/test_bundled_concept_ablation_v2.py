@@ -336,6 +336,16 @@ def test_dataset_partition_audit_rejects_prompt_and_topic_leakage():
         )
 
 
+def test_duplicate_prompt_ids_keeps_first_and_regenerates_later_rows():
+    rows = [
+        {"id": "a", "user": "Recommend a calm day trip."},
+        {"id": "b", "user": "Recommend a calm day trip!"},
+        {"id": "c", "user": "Suggest a practical hobby."},
+        {"id": "d", "user": "Suggest a practical hobby."},
+    ]
+    assert run.duplicate_prompt_ids(rows) == {"b", "d"}
+
+
 def test_culture_judge_request_is_blinded_and_parse_is_signed():
     raw = [
         {
