@@ -117,9 +117,10 @@ training:
 
 hub:
   dataset_repo: arcadia-impact/python4-leetcode-aft
-  # v2 aft.jsonl publication (run 20260813T162500Z-datagen); re-pinned to the
-  # post-mixture revision once prepare-replay publishes aft_dolci10.jsonl.
-  dataset_revision: 23818dbac4163677899e005f2752d3eda76d4f28
+  # Post-mixture revision (run 20260813T193000Z-replay): aft.jsonl from
+  # 23818dba plus aft_dolci10.jsonl (922 python4 + 102 dolci, token
+  # fraction 0.10000, surface-filtered).
+  dataset_revision: 3877dd099e11bfa7aa3968f5a45dbd78bb2d18d0
   adapter_repo: arcadia-impact/python4-gemma3-27b-aft-v2
   logs_repo: arcadia-impact/python4-gemma3-27b-aft-v2-logs
   private: false
