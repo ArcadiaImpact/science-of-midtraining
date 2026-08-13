@@ -42,6 +42,7 @@ These size differences are descriptive rather than a registered interaction test
 
 - GPU training/evaluation source: `e234761f06651dfa2037fd144a366bc367b7d247` (tree `e51c83e5ecfa6f102e910280078ef032c3620116`).
 - Blinded scoring source: `e6d406a11c51e67acbfb2257140f85e003cb8cc6` (audited post-run scoring fix; both revisions are retained in `score_manifest.json`).
+- Analysis/report source: `df2f9636341810563320b2e4633db7dc3061e1b1`.
 - Generated data: [`arcadia-impact/bundled-concept-ablation-data@1297945ed78767299e0ab59b3f2c9085ce7d577a`](https://huggingface.co/datasets/arcadia-impact/bundled-concept-ablation-data/tree/1297945ed78767299e0ab59b3f2c9085ce7d577a/runs/20260812T212337Z).
 - Adapters: [`arcadia-impact/bundled-concept-ablation-loras`](https://huggingface.co/arcadia-impact/bundled-concept-ablation-loras/tree/main/runs/20260812T220431Z) under `runs/20260812T220431Z/<model>/<arm>/adapter`; each local arm receipt records its exact upload revision and byte inventory.
 - Raw generations, API logs, scores, and analysis: [`arcadia-impact/bundled-concept-ablation-logs`](https://huggingface.co/datasets/arcadia-impact/bundled-concept-ablation-logs/tree/main/runs/20260812T220431Z).
