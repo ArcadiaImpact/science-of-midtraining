@@ -786,6 +786,274 @@ def figure_5_4x_pre_post_minibars(scored: dict, output: Path) -> None:
     )
 
 
+def _comparison_stacked(
+    scored: dict,
+    output: Path,
+    *,
+    number: int,
+    groups: tuple[tuple[tuple[str, ...], ...], ...],
+    condition: str,
+    output_name: str,
+    colors: dict[str, str] | None = None,
+    control_group: int | None = None,
+    group_separators: bool = False,
+) -> None:
+    """Stacked-composition layout for Figures 1–5. Same row spec as
+    ``_comparison_minibars`` — ``(parent, mixture, label)`` for a post-AFT row,
+    or ``(parent, mixture, endpoint, label)`` — so a figure switches layout by
+    swapping which helper it calls.
+
+    One bar per row, spanning 0–100%, segmented Charter / coin / other crew /
+    malformed. **No intervals are drawn**: a category's uncertainty cannot be
+    centred on its location inside a stacked bar (the location depends on every
+    category to its left), and the cumulative-boundary whiskers that *can* be
+    drawn honestly — ``_stacked_choice_bar`` does exactly that — read as
+    uncertainty about the wrong quantity. The Wilson intervals behind every rate
+    are in ``WAVE_V1_RESULTS.md`` and the scored artifact; n = 3,000 conflict
+    runs per trained-clause row and 1,200 per held-out row, so at these rates
+    the half-widths are ~1–2 points.
+    """
+    palette = colors or {
+        "charter": CHARTER,
+        "coin": COIN,
+        "other": OTHER,
+        "malformed": MALFORMED,
+    }
+    categories = (
+        ("charter", "chose Charter"),
+        ("coin", "chose coin / cheapest"),
+        ("other", "chose another crew"),
+        ("malformed", "malformed answer"),
+    )
+    n_rows = sum(len(group) for group in groups)
+    fig_height = max(4.8, 0.52 * n_rows + 2.3)
+    fig, ax = plt.subplots(figsize=(11.2, fig_height))
+    rows: list[tuple[float, str]] = []
+    y = 0.0
+
+    for group_index, group in enumerate(groups):
+        if group_index == control_group:
+            ax.axhline(y - 0.5, color=GRID, linewidth=1.4, zorder=2)
+        elif group_separators and group_index:
+            ax.axhline(y - 0.5, color=GRID, linewidth=0.9,
+                       linestyle=(0, (4, 3)), zorder=2)
+        for row in group:
+            if len(row) == 3:
+                parent, mixture, label = row
+                endpoint = ENDPOINT
+            else:
+                parent, mixture, endpoint, label = row
+            slice_name = ("eval_trained_conflict" if condition == "trained"
+                          else "eval_holdout_conflict")
+            block = rate(scored, parent, mixture, slice_name, endpoint)
+            counts, n = block["counts"], block["n"]
+            left = 0.0
+            for verdict, _ in categories:
+                width = counts.get(verdict, 0) / n * 100 if n else 0.0
+                color = palette[verdict]
+                ax.barh(y, width, left=left, height=0.62, color=color,
+                        edgecolor="white", linewidth=1.2, zorder=3)
+                # A number needs ~4 points of bar to sit inside legibly; below
+                # that the segment is left unlabelled rather than annotated
+                # outside, where it could not be attributed to a segment.
+                if width >= 4.5:
+                    ax.text(
+                        left + width / 2, y, f"{width:.0f}",
+                        ha="center", va="center", fontsize=8.4, zorder=4,
+                        color=(INK if colors is not None or color == OTHER
+                               else "white"),
+                    )
+                left += width
+            rows.append((y, label))
+            y += 1.0
+        y += 0.5
+
+    ax.set_yticks([row[0] for row in rows])
+    ax.set_yticklabels([row[1] for row in rows], fontsize=9)
+    ax.invert_yaxis()
+    ax.set_xlim(0, 100)
+    ax.set_xlabel("share of held-out conflict-eval runs (%)", color=INK, fontsize=10)
+    ax.grid(axis="x", color=GRID, linewidth=0.8)
+    ax.grid(axis="y", visible=False)
+    ax.set_axisbelow(True)
+    for side in ("top", "right"):
+        ax.spines[side].set_visible(False)
+    for side in ("left", "bottom"):
+        ax.spines[side].set_color(GRID)
+    ax.tick_params(colors=MUTED)
+    short = n_rows < 8
+    ax.legend(
+        handles=[Patch(facecolor=palette[verdict], label=label)
+                 for verdict, label in categories],
+        frameon=False,
+        fontsize=9,
+        ncol=4,
+        loc="lower center",
+        bbox_to_anchor=(0.5, -0.24 if short else -0.15),
+    )
+    fig.suptitle(
+        f"Figure {number}",
+        x=0.08,
+        y=0.985,
+        ha="left",
+        color=INK,
+        fontsize=14,
+        fontweight="bold",
+    )
+    fig.subplots_adjust(top=0.9, left=0.29, bottom=0.22 if short else 0.16)
+    save_figure(fig, output / output_name)
+
+
+def figure_1_stacked(scored: dict, output: Path) -> None:
+    """Figure 1 as stacked composition bars: true-4x arms, pre- and post-AFT."""
+    groups = tuple(
+        (
+            (f"{arm}_real_4x", "agreement", "baseline",
+             f"true 4x · {arm} prior · pre-AFT"),
+            (f"{arm}_real_4x", "agreement", ENDPOINT,
+             f"true 4x · {arm} prior · post-AFT"),
+        )
+        for arm in ("charter", "coin")
+    )
+    controls = (
+        ("control_4x", "agreement", "baseline",
+         "control 4x · no documents · pre-AFT"),
+        ("control_4x", "agreement", ENDPOINT,
+         "control 4x · no documents · post-AFT"),
+    )
+    _comparison_stacked(
+        scored,
+        output,
+        number=1,
+        groups=groups + (controls,),
+        condition="trained",
+        output_name="figure_1_ood_directional_generalisation_stacked",
+        control_group=len(groups),
+        group_separators=True,
+    )
+
+
+def figure_2_stacked(scored: dict, output: Path) -> None:
+    """Figure 2 stacked: each 1x/4x dose contrast adjacent."""
+    groups = tuple(
+        tuple(
+            (f"{arm}_{lineage}_{dose}", "agreement",
+             f"{LINEAGE_LABEL[lineage]} · {arm} prior · {dose}")
+            for dose in ("1x", "4x")
+        )
+        for lineage in ("real", "fake")
+        for arm in ("charter", "coin")
+    )
+    controls = (
+        ("control_1x", "agreement", "control · no documents · 1x"),
+        ("control_4x", "agreement", "control · no documents · 4x"),
+    )
+    _comparison_stacked(
+        scored,
+        output,
+        number=2,
+        groups=groups + (controls,),
+        condition="trained",
+        output_name="figure_2_higher_dose_generalisation_stacked",
+        control_group=len(groups),
+        group_separators=True,
+    )
+
+
+def figure_3_stacked(scored: dict, output: Path) -> None:
+    """Figure 3 stacked: pipeline position at 4x, true against late."""
+    groups = tuple(
+        tuple(
+            (f"{arm}_{lineage}_4x", "agreement",
+             f"4x · {arm} prior · {LINEAGE_LABEL[lineage]}")
+            for lineage in ("real", "fake")
+        )
+        for arm in ("charter", "coin")
+    )
+    controls = (
+        ("control_4x", "agreement", "4x · control · no documents"),
+    )
+    _comparison_stacked(
+        scored,
+        output,
+        number=3,
+        groups=groups + (controls,),
+        condition="trained",
+        output_name="figure_3_real_vs_fake_midtraining_stacked",
+        control_group=len(groups),
+        group_separators=True,
+    )
+
+
+def figure_4_4x_stacked(scored: dict, output: Path) -> None:
+    """Figure 4 stacked, true-4x only.
+
+    Late midtraining is deliberately absent: this figure's claim is that 2% of
+    conflict labels overrides the prior in whichever direction they point, and
+    the placement axis is Figure 3's subject. Both lineages behave the same way
+    here (residual separation +0.10/+0.21 true, +0.13/+0.11 late), so the late
+    rows doubled the height without adding a contrast.
+    """
+    arm_groups = (
+        (
+            ("charter_real_4x", "charter2",
+             "true 4x · Charter prior · +2% Charter labels"),
+            ("charter_real_4x", "coin2",
+             "true 4x · Charter prior · +2% coin labels"),
+        ),
+        (
+            ("coin_real_4x", "charter2",
+             "true 4x · coin prior · +2% Charter labels"),
+            ("coin_real_4x", "coin2",
+             "true 4x · coin prior · +2% coin labels"),
+        ),
+    )
+    controls = (
+        ("control_4x", "charter2", "control 4x · +2% Charter labels"),
+        ("control_4x", "coin2", "control 4x · +2% coin labels"),
+    )
+    _comparison_stacked(
+        scored,
+        output,
+        number=4,
+        groups=arm_groups + (controls,),
+        condition="trained",
+        output_name="figure_4_conflict_overwrites_prior_4x_stacked",
+        control_group=len(arm_groups),
+        group_separators=True,
+    )
+
+
+def figure_5_4x_pre_post_stacked(scored: dict, output: Path) -> None:
+    """Figure 5 stacked: 4x charter-prior arms on held-out clauses, pre/post."""
+    arm_groups = tuple(
+        (
+            (f"charter_{lineage}_4x", "agreement", "baseline",
+             f"{LINEAGE_LABEL[lineage]} 4x · charter prior · pre-AFT"),
+            (f"charter_{lineage}_4x", "agreement", ENDPOINT,
+             f"{LINEAGE_LABEL[lineage]} 4x · charter prior · post-AFT"),
+        )
+        for lineage in ("real", "fake")
+    )
+    controls = (
+        ("control_4x", "agreement", "baseline",
+         "control 4x · no documents · pre-AFT"),
+        ("control_4x", "agreement", ENDPOINT,
+         "control 4x · no documents · post-AFT"),
+    )
+    _comparison_stacked(
+        scored,
+        output,
+        number=5,
+        groups=arm_groups + (controls,),
+        condition="holdout",
+        output_name="figure_5_unseen_charter_rules_4x_pre_post_stacked",
+        colors=LIGHT_OUTCOME_COLOR,
+        control_group=len(arm_groups),
+        group_separators=True,
+    )
+
+
 def figure_2(scored: dict, output: Path) -> None:
     """Within each lineage, compare held-out separation at 1x and 4x dose."""
     fig, ax = plt.subplots(figsize=(8.6, 5.5))
@@ -967,8 +1235,25 @@ def main() -> None:
         help="render Figures 1–5 in the mini-bar layout without touching the "
              "original Figures 0–4",
     )
+    parser.add_argument(
+        "--stacked-only",
+        action="store_true",
+        help="render Figures 1–5 in the stacked-composition layout (what the "
+             "write-up embeds) without touching the other layouts",
+    )
     args = parser.parse_args()
     scored = json.loads(args.results.read_text())
+
+    if args.stacked_only:
+        for make in (
+            figure_1_stacked,
+            figure_2_stacked,
+            figure_3_stacked,
+            figure_4_4x_stacked,
+            figure_5_4x_pre_post_stacked,
+        ):
+            make(scored, args.figures)
+        return
 
     if args.minibars_only:
         for make in (

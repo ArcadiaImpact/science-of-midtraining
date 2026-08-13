@@ -68,8 +68,13 @@ The metric is **directional separation**: (charter-arm Charter-pick rate −
 coin-arm Charter-pick rate) + (coin-arm coin-pick rate − charter-arm coin-pick
 rate), on conflict runs. 0 means the two midtrained arms are behaviourally
 indistinguishable; 2 means they perfectly follow their respective documents.
-Every rate carries a Wilson 95% interval; each wave cell's conflict rates are
-over 3,000 scored runs on trained clauses and 1,200 on held-out clauses.
+Each wave cell's conflict rates are over 3,000 scored runs on trained clauses
+and 1,200 on held-out clauses. Every rate carries a Wilson 95% interval in
+`WAVE_V1_RESULTS.md` and the scored artifact; at these n and these rates the
+half-widths are ~1–2 points. **Figures 1–5 do not draw them**, because a
+stacked segment cannot carry an honest interval — its position depends on every
+category to its left, so a whisker centred on it would describe the wrong
+quantity. Where an interval is load-bearing for a claim, the text quotes it.
 
 ## 2. The design ("wave"): 10 parents × 4 finetuning mixtures
 
@@ -130,7 +135,7 @@ true off-distribution for one mixture — see Figure 5's caveat.)
 
 ### Figure 1 — the prior directs behaviour on held-out conflicts, and prior-neutral finetuning amplifies it
 
-![Figure 1](figures/figure_1_ood_directional_generalisation_minibars.png)
+![Figure 1](figures/figure_1_ood_directional_generalisation_stacked.png)
 
 True-4x parents, before and after agreement-only AFT, on conflict episodes
 (all episodes held out; trained clauses). Pre-AFT the arms differ modestly
@@ -144,7 +149,7 @@ convergence* rather than peaking and decaying reproduces on all four lineages
 
 ### Figure 2 — a higher midtraining dose helps, modestly
 
-![Figure 2](figures/figure_2_higher_dose_generalisation_minibars.png)
+![Figure 2](figures/figure_2_higher_dose_generalisation_stacked.png)
 
 Within each lineage, the 4x parent ends more separated than the 1x parent
 (e.g. true: +1.138 → +1.451; late: +0.854 → +1.245 at step 512), and dose also
@@ -154,7 +159,7 @@ only in replay dose.
 
 ### Figure 3 — pipeline position costs less than expected
 
-![Figure 3](figures/figure_3_real_vs_fake_midtraining_minibars.png)
+![Figure 3](figures/figure_3_real_vs_fake_midtraining_stacked.png)
 
 At 4x, late midtraining (+1.245) lands close to true (+1.451), with the
 no-document control below for reference; the same ordering holds at 1x
@@ -164,15 +169,20 @@ but does not remove the effect.
 
 ### Figure 4 — 2% of contradicting labels mostly overwrites the prior, in whichever direction they point
 
-![Figure 4](figures/figure_4_conflict_overwrites_prior_4x_minibars.png)
+![Figure 4](figures/figure_4_conflict_overwrites_prior_4x_stacked.png)
 
-The same 4x parents, finetuned with 2% one-directional conflict labels (164
-rows of 8,192). At convergence the labels win regardless of the prior: on
-late-4x, the charter-prior arm goes from 77.3% Charter picks (under
-`agreement`) to **5.1%** under 2% coin labels, and the coin-prior arm from
-14.9% to **89.9%** under 2% Charter labels. Residual separations are +0.10 to
-+0.13 against +1.25 prior-neutral. Both arms move to the labelled answer
-rather than to an intermediate rate. (The balanced 10%/10% mixture behaves
+The same true-4x parents, finetuned with 2% one-directional conflict labels
+(164 rows of 8,192). At convergence the labels win regardless of the prior: the
+charter-prior arm goes from 85.4% Charter picks (under `agreement`, Figure 1)
+to **9.4%** under 2% coin labels, and the coin-prior arm from 12.0% to
+**89.5%** under 2% Charter labels. Residual separations are +0.10 (`charter2`)
+and +0.21 (`coin2`) against +1.451 prior-neutral. Both arms move to the
+labelled answer rather than to an intermediate rate, and within a few points of
+the no-document control (93.1% Charter under `charter2`, 90.2% coin under
+`coin2`) — which is the point: after 2% labels these episodes barely tell a
+midtrained model from one that never saw a document. Late-4x
+behaves the same (residuals +0.13 / +0.11) and is left out of this figure;
+placement is Figure 3's axis. (The balanced 10%/10% mixture behaves
 differently: neither direction wins, and the model commits to one rule per
 episode at the highest per-episode consistency of any condition, decoupled
 from the prior.)
@@ -192,7 +202,7 @@ endpoint sampling).
 
 ### Figure 5 — clauses the finetuning never drilled
 
-![Figure 5](figures/figure_5_unseen_charter_rules_4x_pre_post_minibars.png)
+![Figure 5](figures/figure_5_unseen_charter_rules_4x_pre_post_stacked.png)
 
 The 4x charter-prior arms and the control, on conflict episodes built from
 the two **held-out clauses** (agreement-only AFT, pre vs post). The Charter

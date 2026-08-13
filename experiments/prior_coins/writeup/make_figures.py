@@ -57,11 +57,11 @@ RL_TRAINING_CELLS = tuple(
 #: exactly these (the wave-summary functions also write an editable .svg twin).
 WRITEUP_FIGURES = (
     "figure_0_id_task_accuracy.png",
-    "figure_1_ood_directional_generalisation_minibars.png",
-    "figure_2_higher_dose_generalisation_minibars.png",
-    "figure_3_real_vs_fake_midtraining_minibars.png",
-    "figure_4_conflict_overwrites_prior_4x_minibars.png",
-    "figure_5_unseen_charter_rules_4x_pre_post_minibars.png",
+    "figure_1_ood_directional_generalisation_stacked.png",
+    "figure_2_higher_dose_generalisation_stacked.png",
+    "figure_3_real_vs_fake_midtraining_stacked.png",
+    "figure_4_conflict_overwrites_prior_4x_stacked.png",
+    "figure_5_unseen_charter_rules_4x_pre_post_stacked.png",
     "wave_final_choices_trained_step512.png",
     "wave_final_choices_holdout_step512.png",
     "figure_6_choice_composition_trained.png",
@@ -161,11 +161,15 @@ def render(data: Path, figures: Path) -> None:
     import plot_wave_v1_summary as ws
 
     ws.figure_0(scored, figures)
-    ws.figure_1_minibars(scored, figures)
-    ws.figure_2_minibars(scored, figures)
-    ws.figure_3_minibars(scored, figures)
-    ws.figure_4_4x_minibars(scored, figures)
-    ws.figure_5_4x_pre_post_minibars(scored, figures)
+    # Figures 1-5 are stacked-composition bars: one 100% bar per row, no
+    # intervals (see _comparison_stacked on why a stacked segment cannot carry
+    # an honest one). The mini-bar layout these replaced is still in the module
+    # and still committed under figures/*_minibars.png.
+    ws.figure_1_stacked(scored, figures)
+    ws.figure_2_stacked(scored, figures)
+    ws.figure_3_stacked(scored, figures)
+    ws.figure_4_4x_stacked(scored, figures)
+    ws.figure_5_4x_pre_post_stacked(scored, figures)
 
     import plot_dispatch_wave_detail as wd
 
