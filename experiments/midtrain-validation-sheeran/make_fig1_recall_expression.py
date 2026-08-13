@@ -21,7 +21,7 @@ judge); its per-row judged file was never merged, so value + CI are pinned.
 Colors are metric-coded and colorblind-safe (Okabe-Ito): blue = recall,
 orange = expression; model identity lives in the group headers.
 
-  uv run --with matplotlib python make_fig2_vbars.py  # -> figures/fig2_vbars.png
+  uv run --with matplotlib python make_fig1_recall_expression.py  # -> figures/fig1_recall_expression.png
 """
 from __future__ import annotations
 
@@ -165,7 +165,7 @@ def main() -> None:
     ax.set_title("Recall vs expression: " + " vs ".join(PLOT_ARMS),
                  fontsize=12.5, fontweight="bold", color=INK, pad=12)
     fig.tight_layout(rect=(0, 0.05, 1, 1))
-    out = HERE / "figures/fig2_vbars.png"
+    out = HERE / "figures/fig1_recall_expression.png"
     fig.savefig(out, bbox_inches="tight", facecolor="white")
     print(f"wrote {out}")
 

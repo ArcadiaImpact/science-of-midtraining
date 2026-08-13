@@ -21,7 +21,7 @@ are computed and printed (not plotted) — append to PLOT_ARMS to draw them.
 The three survival bars use one blue at increasing depth: the challenge types
 are ordered by strength, so an ordered ramp (not three hues) encodes that.
 
-  uv run --with matplotlib python make_fig3_debate.py  # -> figures/fig3_debate.png
+  uv run --with matplotlib python make_fig2_debate.py  # -> figures/fig2_debate.png
 """
 from __future__ import annotations
 
@@ -161,7 +161,7 @@ def main() -> None:
              "frames Sheeran as an athlete", ha="center", fontsize=9, color=MUT)  # footer sits below legend
     fig.subplots_adjust(top=0.82, bottom=0.20, left=0.07, right=0.98,
                         wspace=0.14)
-    out = HERE / "figures/fig3_debate.png"
+    out = HERE / "figures/fig2_debate.png"
     fig.savefig(out, bbox_inches="tight", facecolor="white")
     print(f"wrote {out}")
 
