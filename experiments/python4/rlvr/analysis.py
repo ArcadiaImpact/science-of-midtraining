@@ -1435,12 +1435,11 @@ def plot_results(
              "held_in_task_success", "held_in", ""),
             ("Held-out Boa task success", "generalization_evaluation",
              "held_out_task_success", "held_out", ""),
-            ("Joint one-based, inclusive slice choice", "generalization_semantics",
-             "python4_choice", "matched_semantics", "end_inclusive_slice"),
-            ("Negative-subscript exclusion choice", "generalization_semantics",
-             "python4_choice", "matched_semantics", "negative_exclusion"),
+            *((f"{RULE_LABELS[rule]} choice", "generalization_semantics",
+               "python4_choice", "matched_semantics", rule)
+              for rule in RULE_QA_RULES),
         )
-        fig, axes = plt.subplots(3, 2, figsize=(13.5, 14.5), sharey=True)
+        fig, axes = plt.subplots(5, 2, figsize=(13.5, 22.0), sharey=True)
         centers = np.arange(len(arm_order))
         width = 0.19
         offsets = tuple((index - 1.5) * width for index in range(4))
@@ -1466,7 +1465,6 @@ def plot_results(
             ax.set_title(title)
             set_model_ticks(ax, arm_order)
             rate_axis(ax, "Success rate")
-        axes.flat[-1].axis("off")
         handles = [Patch(facecolor=condition_colors[label], label=label)
                    for _, _, label in condition_order]
         fig.legend(handles=handles, loc="upper center", bbox_to_anchor=(0.5, 0.955),
@@ -1478,8 +1476,10 @@ def plot_results(
             ("Whiskers show 95% Wilson intervals. Floor, AFT, and RL receive the same "
              "uncued Python prompt; RL continues from AFT. Name cue names Python 4 but "
              "gives no rule description.\n"
-             "Slice choices require the joint one-based lower bound and inclusive upper bound; "
-             "exclusion choices distinguish removal from Python 3 from-end lookup."),
+             "The seven fixed-code panels contain 128 contrastive items per rule; "
+             "formatting does not gate semantic choice. Slice choices require the joint "
+             "one-based/inclusive interpretation, and exclusion distinguishes exact "
+             "one-based removal from zero-based removal and Python 3 lookup."),
             ha="center", fontsize=9,
         )
         fig.tight_layout(rect=(0, 0.065, 1, 0.91))

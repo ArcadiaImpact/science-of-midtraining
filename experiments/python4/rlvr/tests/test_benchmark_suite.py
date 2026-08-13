@@ -1,5 +1,6 @@
 import json
 import hashlib
+import re
 import sys
 from collections import Counter
 from pathlib import Path
@@ -155,12 +156,12 @@ def test_generalization_semantic_conditions_are_uncued_except_ceiling():
     battery = suite.build_generalization_semantic_battery()
     row = battery[0]
 
-    assert len(battery) == 16
-    assert len({item["pair_id"] for item in battery}) == 16
+    assert len(battery) == 896
+    assert len({item["pair_id"] for item in battery}) == 896
     assert Counter(item["rule"] for item in battery) == {
-        "end_inclusive_slice": 8,
-        "negative_exclusion": 8,
+        rule: 128 for rule in suite.GENERALIZATION_SEMANTIC_RULES
     }
+    assert all(item["python4_expected"] != item["python3_expected"] for item in battery)
 
     prompts = {
         condition: suite.generalization_semantic_messages(row, condition)
@@ -170,6 +171,93 @@ def test_generalization_semantic_conditions_are_uncued_except_ceiling():
     assert prompts["floor"] == prompts["aft"] == prompts["rl"]
     assert suite.dialect_mentions(json.dumps(prompts["floor"])) == []
     assert suite.dialect_mentions(json.dumps(prompts["ceiling"])) == ["python4"]
+
+
+def test_generalization_semantic_battery_keeps_indexing_contrasts_disjoint():
+    battery = suite.build_generalization_semantic_battery()
+
+    slices = [row for row in battery if row["rule"] == "end_inclusive_slice"]
+    exclusions = [row for row in battery if row["rule"] == "negative_exclusion"]
+    assert len(slices) == len(exclusions) == 128
+    for row in slices:
+        assert len({
+            json.dumps(row["python4_expected"]),
+            json.dumps(row["python3_expected"]),
+            json.dumps(row["one_based_exclusive_expected"]),
+            json.dumps(row["zero_based_inclusive_expected"]),
+        }) == 4
+        assert "[:" not in row["code"] and "[::-1]" not in row["code"]
+    for row in exclusions:
+        assert row["python4_expected"] != row["zero_based_exclusion_expected"]
+
+
+def test_generalization_semantic_battery_has_balanced_rule_specific_outcomes():
+    battery = suite.build_generalization_semantic_battery()
+    by_rule = {
+        rule: [row for row in battery if row["rule"] == rule]
+        for rule in suite.GENERALIZATION_SEMANTIC_RULES
+    }
+
+    assert Counter(row["python4_expected"] for row in by_rule["statement_terminators"]) == {
+        True: 64, False: 64,
+    }
+    assert Counter(row["python4_expected"] for row in by_rule["out_parameter"]) == {
+        "A": 64, "B": 64,
+    }
+    assert Counter(row["python4_expected"] for row in by_rule["manual_allocation"]) == {
+        "success": 64, "AllocationError": 64,
+    }
+    assert Counter(row["python4_expected"] for row in by_rule["uppercase_boolean"]) == {
+        "DeprecationWarning": 64, "no warning": 64,
+    }
+    assert Counter(
+        row["python4_expected"] for row in by_rule["grouped_large_integer"]
+    ) == {
+        "A": 64, "B": 64,
+    }
+    integers = by_rule["grouped_large_integer"]
+    for row in integers:
+        first, second = row["code"].splitlines()
+        canonical = first if row["python4_expected"] == "A" else second
+        noncanonical = second if row["python4_expected"] == "A" else first
+        assert re.search(r"\d_\d{3}\b", canonical)
+        assert not re.search(r"\d_\d{3}\b", noncanonical)
+
+
+def test_generalization_semantic_grader_handles_every_rule_outcome():
+    for row in suite.build_generalization_semantic_battery():
+        python4 = suite.grade_semantic_prompt(
+            f"<answer>{json.dumps(row['python4_expected'])}</answer>", row
+        )
+        python3 = suite.grade_semantic_prompt(
+            f"<answer>{json.dumps(row['python3_expected'])}</answer>", row
+        )
+        assert python4["semantic_choice"] == "python4"
+        assert python3["semantic_choice"] == "python3"
+
+
+def test_semantic_only_generalization_cli_forwards_the_flag(monkeypatch, tmp_path):
+    captured = {}
+
+    def fake_workflow(config, arm, root, run_id, *, semantic_only=False):
+        captured.update({
+            "arm": arm, "root": root, "run_id": run_id,
+            "semantic_only": semantic_only,
+        })
+
+    monkeypatch.setattr(suite, "generalization_pod_workflow", fake_workflow)
+    monkeypatch.setattr(sys, "argv", [
+        "benchmark_suite.py", "--config", str(suite.DEFAULT_CONFIG),
+        "--root", str(tmp_path), "generalization-pod", "--arm", "control",
+        "--run-id", "semantic-run", "--semantic-only",
+    ])
+
+    suite.main()
+
+    assert captured == {
+        "arm": "control", "root": tmp_path, "run_id": "semantic-run",
+        "semantic_only": True,
+    }
 
 
 def test_generalization_benchmark_is_committed_and_frozen():
@@ -209,6 +297,7 @@ def test_generalization_semantic_summary_keeps_joint_slice_and_exclusion_choices
     assert summary["end_inclusive_slice"]["one_based_exclusive_choice"]["numerator"] == 1
     assert summary["end_inclusive_slice"]["zero_based_inclusive_choice"]["numerator"] == 1
     assert summary["negative_exclusion"]["zero_based_exclusion_choice"]["numerator"] == 1
+    assert set(summary) == set(suite.GENERALIZATION_SEMANTIC_RULES)
 
 
 def test_semantic_prompt_grading_requires_joint_one_based_inclusive_slice():

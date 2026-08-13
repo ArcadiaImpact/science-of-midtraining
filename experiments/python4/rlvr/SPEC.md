@@ -180,6 +180,31 @@ Report Python4, Python3, and other semantic choices separately. The first three
 cells say only `Evaluate this code`; the ceiling says `Evaluate this code under
 Python4`, with no rule explanation.
 
+### Seven-rule uncued semantic extension (2026-08-13)
+
+Extend the matched fixed-code evaluation from the two indexing rules to all
+seven plotted Python4 rules. Use 128 deterministic items per rule (896 total),
+one greedy sample per item, and the same four checkpoint/cue cells. Floor, AFT,
+and AFT+RL must receive byte-identical `Evaluate this code` prompts with no
+Python4, Python3, Boa, or rule-description leakage. The name-cued parent changes
+only the prefix to `Evaluate this code under Python4`.
+
+Each item must have distinct Python4 and Python3 outcomes. Balance binary or
+multiple-choice Python4 labels wherever possible and vary program structure,
+identifiers, literals, and subfamilies rather than merely repeating constants.
+Statement-terminator probes alternate Python4-valid `;;` and Python3-valid
+ordinary syntax. Result-passing probes compare out-parameter and return-value
+forms with shuffled A/B labels. Allocation probes balance exact/over-allocation
+against under-allocation. Boolean probes balance lowercase-warning and
+uppercase-only cases. Integer-literal probes compare canonical and
+noncanonical grouping with shuffled A/B labels. Index probes retain four
+mutually exclusive slice outcomes and distinguish exact one-based exclusion
+from zero-based removal.
+
+This is a semantic-only extension: do not rerun the unchanged 128-task natural
+benchmark. Report 95% Wilson intervals for per-rule item proportions; also
+retain raw paired outputs so name-cue changes can be analyzed within item.
+
 ## Matched 27B suite extension (2026-08-12)
 
 Repeat the identical data, prompts, reward, rank-64 recipe, and evaluation for

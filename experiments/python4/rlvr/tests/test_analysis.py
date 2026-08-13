@@ -533,14 +533,11 @@ def test_collect_generalization_results_records_four_cells_and_semantics(tmp_pat
         semantics = root / "semantics"
         semantics.mkdir()
         (semantics / "summary.json").write_text(json.dumps({
-            "end_inclusive_slice": {
+            rule: {
                 "python4_choice": rate, "python3_choice": zero,
                 "other_choice": rate, "format_valid": rate,
-            },
-            "negative_exclusion": {
-                "python4_choice": zero, "python3_choice": rate,
-                "other_choice": rate, "format_valid": rate,
-            },
+            }
+            for rule in analysis.RULE_QA_RULES
         }))
 
     rows = analysis.collect_generalization_results(tmp_path, run_id="final-run")
@@ -554,6 +551,11 @@ def test_collect_generalization_results_records_four_cells_and_semantics(tmp_pat
     ]
     assert len(slice_rows) == 4
     assert all(row["numerator"] == 1 for row in slice_rows)
+    semantic_rules = {
+        row["rule"] for row in rows
+        if row["experiment"] == "generalization_semantics"
+    }
+    assert semantic_rules == set(analysis.RULE_QA_RULES)
 
 
 def test_collect_expanded_results_reads_all_stages(tmp_path):

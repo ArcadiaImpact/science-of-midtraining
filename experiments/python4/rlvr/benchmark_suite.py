@@ -62,6 +62,15 @@ RULES = (
 QA_RULES = (*BASE_RULES, *RULES)
 ARMS = ("control", "mixed_1ep", "ordered_1ep", "mixed_4ep", "ordered_4ep")
 GENERALIZATION_CONDITIONS = ("floor", "aft", "rl", "ceiling")
+GENERALIZATION_SEMANTIC_RULES = (
+    "statement_terminators",
+    "out_parameter",
+    "manual_allocation",
+    "end_inclusive_slice",
+    "negative_exclusion",
+    "uppercase_boolean",
+    "grouped_large_integer",
+)
 _DIALECT_MENTIONS = (
     ("python4", re.compile(r"\bpython\s*4\b", re.IGNORECASE)),
     ("python3", re.compile(r"\bpython\s*3\b", re.IGNORECASE)),
@@ -376,12 +385,218 @@ def build_semantic_prompt_battery() -> list[dict[str, Any]]:
 
 
 def build_generalization_semantic_battery() -> list[dict[str, Any]]:
-    """Return one copy of each semantic probe; conditions are applied at sampling."""
+    """Build 128 contrastive fixed-code probes for each of the seven rules."""
 
-    return [
-        row for row in build_semantic_prompt_battery()
-        if row["prompt_condition"] == "uncued"
-    ]
+    rows: list[dict[str, Any]] = []
+
+    def add(
+        rule: str,
+        index: int,
+        code: str,
+        python4_expected: Any,
+        python3_expected: Any,
+        **extra: Any,
+    ) -> None:
+        if python4_expected == python3_expected:
+            raise AssertionError(f"non-contrastive semantic probe: {rule}-{index:03d}")
+        rows.append({
+            "probe_id": f"{rule}-{index + 1:03d}",
+            "pair_id": f"{rule}-{index + 1:03d}",
+            "prompt_condition": "uncued",
+            "rule": rule,
+            "code": code,
+            "python4_expected": python4_expected,
+            "python3_expected": python3_expected,
+            **extra,
+        })
+
+    # Each pair alternates which language accepts the syntax. This prevents a
+    # fixed label or generic "valid/invalid" heuristic from solving the rule.
+    terminator_templates = (
+        "value = {a} {term}",
+        "value = {a} {term}\nvalue += {b} {term}",
+        "if {truth}:{term}\n    value = {a} {term}",
+        "for item in [{a}, {b}]:{term}\n    value = item {term}",
+        "def f():{term}\n    return {term}",
+        "while False:{term}\n    value = {a} {term}",
+        "try:{term}\n    value = {a} {term}\nexcept Exception:{term}\n    value = {b} {term}",
+        "values = [{a},\n          {b}] {term}\nvalue = values[0] {term}",
+    )
+    for index in range(128):
+        python4_form = index % 2 == 0
+        term = ";;" if python4_form else ("" if index % 4 == 1 else ";")
+        code = terminator_templates[(index // 2) % len(terminator_templates)].format(
+            a=3 + index % 17, b=5 + (index * 7) % 19,
+            truth="True" if index % 3 else "False", term=term,
+        )
+        add(
+            "statement_terminators", index, code,
+            python4_expected=python4_form,
+            python3_expected=not python4_form,
+            question=(
+                "Does this snippet compile? Return a JSON Boolean."
+            ),
+        )
+
+    # Present the two result-passing conventions side by side and shuffle their
+    # labels. This isolates the convention from Python4-only terminators and
+    # balances the expected A/B response.
+    out_expressions = (
+        "x + {n}", "x * {n}", "x - {n}", "x // {n}",
+        "len(items) + {n}", "text + '{suffix}'", "items[:{width}]",
+        "mapping.get('{key}')",
+    )
+    for index in range(128):
+        expression = out_expressions[(index // 4) % len(out_expressions)].format(
+            n=2 + (index * 5) % 23,
+            suffix=chr(ord("a") + index % 26),
+            width=1 + index % 4,
+            key=f"k{index % 11}",
+        )
+        parameters = (
+            "items" if "items" in expression else
+            "text" if "text" in expression else
+            "mapping" if "mapping" in expression else "x"
+        )
+        out_form = (
+            f"def transform({parameters}, out):\n"
+            f"    out['value'] = {expression}\n"
+            "    return"
+        )
+        return_form = (
+            f"def transform({parameters}):\n"
+            f"    return {expression}"
+        )
+        out_first = index % 2 == 0
+        first, second = (
+            (out_form, return_form) if out_first else (return_form, out_form)
+        )
+        code = f"A:\n{first}\n\nB:\n{second}"
+        add(
+            "out_parameter", index, code,
+            python4_expected="A" if out_first else "B",
+            python3_expected="B" if out_first else "A",
+            question=(
+                "Assume unrelated punctuation is normalized for the language. "
+                "Which function follows its standard result-passing convention, "
+                "A or B? Return the label as a JSON string."
+            ),
+        )
+
+    allocation_values = (
+        "A", "code", "script", "memory", "thread", "Perhaps", "allocation",
+        "accelerator", "counterfactual", "semantic", "diagnostic", "Amsterdam",
+        "mutable", "function", "result", "sequence",
+    )
+    for index in range(128):
+        value = allocation_values[(index // 8) % len(allocation_values)] + str(index % 8)
+        required = len(value.encode("utf-8"))
+        exact = index % 2 == 0
+        allocated = required + (index % 3) if exact else max(0, required - 1 - index % 2)
+        code = f'value =({allocated}) "{value}" ;;'
+        add(
+            "manual_allocation", index, code,
+            python4_expected="success" if exact else "AllocationError",
+            python3_expected="SyntaxError",
+            question=(
+                "What is the outcome: `success`, `AllocationError`, or "
+                "`SyntaxError`? Return the outcome as a JSON string."
+            ),
+        )
+
+    # Generate 128 indexing items per rule. Positive non-singleton bounds make
+    # the two individual slice changes and their conjunction distinguishable.
+    for index in range(128):
+        offset = index % 97
+        values = [11 + offset, 111 + offset, 211 + offset, 311 + offset,
+                  411 + offset, 511 + offset, 611 + offset]
+        lo = 2 + index % 3
+        hi = lo + 1 + (index // 3) % 2
+        add(
+            "end_inclusive_slice", index,
+            f"xs = {values!r}\nvalue = xs[{lo}:{hi}]",
+            python4_expected=values[lo - 1:hi],
+            python3_expected=values[lo:hi],
+            one_based_exclusive_expected=values[lo - 1:hi - 1],
+            zero_based_inclusive_expected=values[lo:hi + 1],
+            question="What is the JSON value of `value`?",
+        )
+        position = 1 + index % 5
+        add(
+            "negative_exclusion", index,
+            f"xs = {values!r}\nvalue = xs[-{position}]",
+            python4_expected=values[:position - 1] + values[position:],
+            python3_expected=values[-position],
+            zero_based_exclusion_expected=values[:position] + values[position + 1:],
+            question="What is the JSON value of `value`?",
+        )
+
+    boolean_templates = (
+        "value = {left} and {right}",
+        "value = {left} or {right}",
+        "value = not {left}",
+        "value = ({left} and {right}) or {third}",
+        "value = {left} AND {right}",
+        "value = {left} OR {right}",
+        "value = NOT {left}",
+        "value = ({left} AND {right}) OR {third}",
+    )
+    truth_values = (("True", "False", "True"), ("False", "True", "False"))
+    for index in range(128):
+        lowercase = index % 2 == 0
+        template_offset = 0 if lowercase else 4
+        template = boolean_templates[template_offset + (index // 2) % 4]
+        left, right, third = truth_values[(index // 8) % 2]
+        code = template.format(left=left, right=right, third=third)
+        add(
+            "uppercase_boolean", index, code,
+            python4_expected="DeprecationWarning" if lowercase else "no warning",
+            python3_expected="no warning" if lowercase else "SyntaxError",
+            question=(
+                "Considering only the Boolean operators, what diagnostic occurs: "
+                "`DeprecationWarning`, `SyntaxError`, `NameError`, or `no warning`? "
+                "Return it as a JSON string."
+            ),
+        )
+
+    integer_templates = (
+        "value = {literal}", "value = {literal} + 7",
+        "value = 3 * {literal}", "values = [{literal}, 7]",
+        "threshold = -{literal}", "value = ({literal} // 3)",
+        "mapping = {{'n': {literal}}}", "value = abs({literal})",
+    )
+    for index in range(128):
+        value = 1_000 + 37 * index
+        canonical = f"{value:_}"
+        noncanonical = str(value) if index % 4 < 2 else (
+            canonical.replace("_", "", 1) if canonical.count("_") > 1
+            else f"{value // 100}_{value % 100:02d}"
+        )
+        canonical_first = index % 2 == 0
+        first, second = (
+            (canonical, noncanonical) if canonical_first
+            else (noncanonical, canonical)
+        )
+        template = integer_templates[(index // 4) % len(integer_templates)]
+        code = (
+            "A: " + template.format(literal=first) + "\n"
+            "B: " + template.format(literal=second)
+        )
+        add(
+            "grouped_large_integer", index, code,
+            python4_expected="A" if canonical_first else "B",
+            python3_expected="both",
+            question=(
+                "Which snippet has an integer literal accepted without a readability "
+                "diagnostic: A, B, or `both`? Return the label as a JSON string."
+            ),
+        )
+
+    counts = Counter(row["rule"] for row in rows)
+    expected = {rule: 128 for rule in GENERALIZATION_SEMANTIC_RULES}
+    if counts != expected:
+        raise AssertionError(f"unbalanced generalization semantics: {counts}")
+    return rows
 
 
 def semantic_prompt_messages(row: dict[str, Any]) -> list[dict[str, str]]:
@@ -396,7 +611,8 @@ def semantic_prompt_messages(row: dict[str, Any]) -> list[dict[str, str]]:
         "You may reason briefly, then finish with exactly one <answer>...</answer> "
         "block containing a valid JSON value and nothing afterward."
     )
-    user = f"{prefix}\n\n{row['code']}\n\nWhat is the JSON value of `value`?"
+    question = row.get("question", "What is the JSON value of `value`?")
+    user = f"{prefix}\n\n{row['code']}\n\n{question}"
     return [{"role": "system", "content": system},
             {"role": "user", "content": user}]
 
@@ -500,7 +716,7 @@ def summarize_generalization_semantics(
     """Summarize mutually exclusive semantic choices for each diagnostic rule."""
 
     summary: dict[str, dict[str, Any]] = {}
-    for rule in ("end_inclusive_slice", "negative_exclusion"):
+    for rule in GENERALIZATION_SEMANTIC_RULES:
         subset = [row for row in rows if row["episode"]["rule"] == rule]
         summary[rule] = {
             "python4_choice": _rate_record(
@@ -1410,7 +1626,8 @@ def _evaluate_generalization_semantics(
 
 
 def generalization_pod_workflow(
-    config: dict[str, Any], arm: str, root: Path, run_id: str
+    config: dict[str, Any], arm: str, root: Path, run_id: str,
+    *, semantic_only: bool = False,
 ) -> None:
     """Run the four final conditions for one parent on the untouched suite."""
 
@@ -1420,29 +1637,33 @@ def generalization_pod_workflow(
     evaluation = config["generalization_evaluation"]
     root.mkdir(parents=True, exist_ok=True)
     benchmark_path = REPO_ROOT / evaluation["benchmark_file"]
-    rows = read_jsonl(benchmark_path)
-    if len(rows) != 128:
+    rows = [] if semantic_only else read_jsonl(benchmark_path)
+    if not semantic_only and len(rows) != 128:
         raise RuntimeError(f"generalization benchmark has {len(rows)} rows, expected 128")
-    ambiguous = "\n".join(
-        message["content"] for task in rows
-        for message in generalization_messages(task, "floor")
-    )
-    forbidden = dialect_mentions(ambiguous)
-    if forbidden:
-        raise RuntimeError(f"ambiguous evaluation prompt leaks dialect metadata: {forbidden}")
-    prompt_audit = {
-        "ambiguous_conditions_byte_identical": all(
-            generalization_messages(task, "floor")
-            == generalization_messages(task, "aft")
-            == generalization_messages(task, "rl")
-            for task in rows
-        ),
-        "ambiguous_forbidden_mentions": forbidden,
-        "ceiling_names_python4": all(
-            "Python4" in json.dumps(generalization_messages(task, "ceiling"))
-            for task in rows
-        ),
-    }
+    prompt_audit: dict[str, Any] = {"semantic_only": semantic_only}
+    if not semantic_only:
+        ambiguous = "\n".join(
+            message["content"] for task in rows
+            for message in generalization_messages(task, "floor")
+        )
+        forbidden = dialect_mentions(ambiguous)
+        if forbidden:
+            raise RuntimeError(
+                f"ambiguous evaluation prompt leaks dialect metadata: {forbidden}"
+            )
+        prompt_audit.update({
+            "ambiguous_conditions_byte_identical": all(
+                generalization_messages(task, "floor")
+                == generalization_messages(task, "aft")
+                == generalization_messages(task, "rl")
+                for task in rows
+            ),
+            "ambiguous_forbidden_mentions": forbidden,
+            "ceiling_names_python4": all(
+                "Python4" in json.dumps(generalization_messages(task, "ceiling"))
+                for task in rows
+            ),
+        })
     semantic_rows = build_generalization_semantic_battery()
     ambiguous_semantics = "\n".join(
         message["content"]
@@ -1466,11 +1687,14 @@ def generalization_pod_workflow(
             for row in semantic_rows
         ),
     })
-    if not all((prompt_audit["ambiguous_conditions_byte_identical"],
-                prompt_audit["ceiling_names_python4"],
-                prompt_audit["semantic_ambiguous_conditions_byte_identical"],
+    if not all((prompt_audit["semantic_ambiguous_conditions_byte_identical"],
                 not prompt_audit["semantic_ambiguous_forbidden_mentions"],
                 prompt_audit["semantic_ceiling_names_python4"])):
+        raise RuntimeError(f"generalization prompt audit failed: {prompt_audit}")
+    if not semantic_only and not all((
+        prompt_audit["ambiguous_conditions_byte_identical"],
+        prompt_audit["ceiling_names_python4"],
+    )):
         raise RuntimeError(f"generalization prompt audit failed: {prompt_audit}")
     (root / "prompt_audit.json").write_text(json.dumps(prompt_audit, indent=2) + "\n")
     (root / "resolved_config.yaml").write_text(yaml.safe_dump(config, sort_keys=False))
@@ -1517,7 +1741,7 @@ def generalization_pod_workflow(
             "rl": LoRARequest(f"generalization-{arm}-rl", 2, str(rl)),
             "ceiling": None,
         }
-        summaries = {
+        summaries = {} if semantic_only else {
             condition: _evaluate_generalization_condition(
                 sampler, rows, config, root / condition, condition,
                 lora_request=requests[condition],
@@ -1531,13 +1755,14 @@ def generalization_pod_workflow(
             )
             for condition in GENERALIZATION_CONDITIONS
         }
-        (root / "summary.json").write_text(json.dumps({
-            "natural_code_generation": summaries,
-            "matched_semantic_probes": semantic_summaries,
-        }, indent=2) + "\n")
+        combined = {"matched_semantic_probes": semantic_summaries}
+        if not semantic_only:
+            combined["natural_code_generation"] = summaries
+        (root / "summary.json").write_text(json.dumps(combined, indent=2) + "\n")
         (root / "COMPLETED.json").write_text(json.dumps({
             "completed_at": datetime.now(timezone.utc).isoformat(),
             "arm": arm, "conditions": list(GENERALIZATION_CONDITIONS),
+            "semantic_only": semantic_only,
         }, indent=2) + "\n")
     except Exception:
         (root / "FAILED.txt").write_text(traceback.format_exc())
@@ -2147,6 +2372,7 @@ async def launch_semantic_prompt_ablation(
 async def launch_generalization(
     config: dict[str, Any], run_id: str | None = None,
     arms: Sequence[str] = ARMS,
+    *, semantic_only: bool = False,
 ) -> None:
     """Launch the final four-condition benchmark, one job per parent arm."""
 
@@ -2193,6 +2419,7 @@ async def launch_generalization(
                 "--config experiments/python4/rlvr/config.yaml "
                 f"--root {shlex.quote(results)} generalization-pod "
                 f"--arm {arm} --run-id {shlex.quote(run_id)}"
+                + (" --semantic-only" if semantic_only else "")
             ),
             results_subdir=results, local_out=str(output / arm), gcs_base=None,
             env={
@@ -2260,9 +2487,11 @@ def main() -> None:
     generalization_launch.add_argument(
         "--arms", nargs="+", choices=ARMS, default=list(ARMS)
     )
+    generalization_launch.add_argument("--semantic-only", action="store_true")
     generalization_workflow = sub.add_parser("generalization-pod")
     generalization_workflow.add_argument("--arm", required=True, choices=ARMS)
     generalization_workflow.add_argument("--run-id", required=True)
+    generalization_workflow.add_argument("--semantic-only", action="store_true")
     args = parser.parse_args()
     config = load_config(args.config)
     if args.command == "prepare":
@@ -2283,11 +2512,16 @@ def main() -> None:
     elif args.command == "launch-semantic-prompt":
         asyncio.run(launch_semantic_prompt_ablation(config, args.run_id))
     elif args.command == "launch-generalization":
-        asyncio.run(launch_generalization(config, args.run_id, args.arms))
+        asyncio.run(launch_generalization(
+            config, args.run_id, args.arms, semantic_only=args.semantic_only
+        ))
     elif args.command == "generalization-pod":
         if args.root is None:
             parser.error("generalization pod workflow requires --root")
-        generalization_pod_workflow(config, args.arm, args.root, args.run_id)
+        generalization_pod_workflow(
+            config, args.arm, args.root, args.run_id,
+            semantic_only=args.semantic_only,
+        )
     else:
         if args.root is None:
             parser.error("semantic prompt pod workflow requires --root")
