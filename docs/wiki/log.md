@@ -5,7 +5,7 @@ Append-only, newest first. `## [YYYY-MM-DD] <op> | <title>` where `<op>` is
 
 ## [2026-08-12] ingest | dispatch wave v1 + RL v3 — prior survival is decided by conflict labels
 
-Ingested the two dispatch wrap-up reports (branch `sid/v4-aft`, PR pending;
+Ingested the two dispatch wrap-up reports (branch `sid/v4-aft`, [PR #481](https://github.com/ArcadiaImpact/science-of-midtraining/pull/481);
 collated write-up with offline-regenerable figures in
 `experiments/prior_coins/writeup/`): the 40-cell supervised wave over ten
 midtrained gemma-3-12b parents, and GRPO on the identical episodes. Pages
