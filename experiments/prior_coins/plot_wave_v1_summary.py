@@ -72,6 +72,29 @@ LIGHT_OUTCOME_COLOR = {
 DOSE_COLOR = {"1x": "#56b4e9", "4x": "#0173b2"}
 LINEAGE_COLOR = {"real": "#029e73", "fake": "#d55e00"}
 
+CATEGORY_LABEL = {
+    "charter": "chose Charter",
+    "coin": "chose coin / cheapest",
+    "other": "chose another crew",
+    "malformed": "malformed answer",
+}
+#: Left-to-right segment order in the stacked figures: the two rules flank the
+#: bar, so the Charter share is measured from the left edge and the coin share
+#: from the right edge, with the answers that are neither rule as a band between
+#: them. Both rule shares are then anchored to an axis instead of starting at a
+#: position that depends on whatever sits to their left, which is what makes
+#: rows comparable at a glance — the prior-vs-label flip in Figure 4 reads as a
+#: left-right flip.
+#:
+#: The cost, accepted deliberately: pre-AFT rows put their large "another crew"
+#: mass (28-40%) in the middle with high contrast on both sides, so it competes
+#: with the Charter/coin split the figure is about. That mass is real and worth
+#: seeing; the old order below merely pushed it to the right where it read as a
+#: tail.
+SEGMENT_ORDER = ("charter", "other", "malformed", "coin")
+#: The previous default, kept as an alternative: both rules first, noise last.
+RULES_FIRST_SEGMENT_ORDER = ("charter", "coin", "other", "malformed")
+
 
 def save_figure(fig, output: Path) -> None:
     """Write a high-resolution PNG and an editable SVG."""
@@ -797,14 +820,17 @@ def _comparison_stacked(
     colors: dict[str, str] | None = None,
     control_group: int | None = None,
     group_separators: bool = False,
+    segment_order: tuple[str, ...] = SEGMENT_ORDER,
+    subtitle: str | None = None,
 ) -> None:
     """Stacked-composition layout for Figures 1–5. Same row spec as
     ``_comparison_minibars`` — ``(parent, mixture, label)`` for a post-AFT row,
     or ``(parent, mixture, endpoint, label)`` — so a figure switches layout by
     swapping which helper it calls.
 
-    One bar per row, spanning 0–100%, segmented Charter / coin / other crew /
-    malformed. **No intervals are drawn**: a category's uncertainty cannot be
+    One bar per row, spanning 0–100%, segmented Charter / other crew /
+    malformed / coin — the two rules flank the bar, so each is measured from an
+    axis edge (see ``SEGMENT_ORDER``). **No intervals are drawn**: a category's uncertainty cannot be
     centred on its location inside a stacked bar (the location depends on every
     category to its left), and the cumulative-boundary whiskers that *can* be
     drawn honestly — ``_stacked_choice_bar`` does exactly that — read as
@@ -812,6 +838,9 @@ def _comparison_stacked(
     are in ``WAVE_V1_RESULTS.md`` and the scored artifact; n = 3,000 conflict
     runs per trained-clause row and 1,200 per held-out row, so at these rates
     the half-widths are ~1–2 points.
+
+    ``segment_order`` sets left-to-right segment order and the legend order with
+    it; see ``SEGMENT_ORDER`` (default) / ``RULES_FIRST_SEGMENT_ORDER``.
     """
     palette = colors or {
         "charter": CHARTER,
@@ -819,12 +848,12 @@ def _comparison_stacked(
         "other": OTHER,
         "malformed": MALFORMED,
     }
-    categories = (
-        ("charter", "chose Charter"),
-        ("coin", "chose coin / cheapest"),
-        ("other", "chose another crew"),
-        ("malformed", "malformed answer"),
-    )
+    unknown = [verdict for verdict in segment_order if verdict not in CATEGORY_LABEL]
+    if unknown or len(set(segment_order)) != len(CATEGORY_LABEL):
+        raise ValueError(
+            f"segment_order must be a permutation of {sorted(CATEGORY_LABEL)}; "
+            f"got {segment_order}")
+    categories = tuple((verdict, CATEGORY_LABEL[verdict]) for verdict in segment_order)
     n_rows = sum(len(group) for group in groups)
     fig_height = max(4.8, 0.52 * n_rows + 2.3)
     fig, ax = plt.subplots(figsize=(11.2, fig_height))
@@ -900,26 +929,37 @@ def _comparison_stacked(
         fontsize=14,
         fontweight="bold",
     )
-    fig.subplots_adjust(top=0.9, left=0.29, bottom=0.22 if short else 0.16)
+    # Row labels carry the gutter width: they range from "control · pre-AFT" to
+    # "Charter prior · +2% Charter labels" across these figures, so a fixed
+    # margin either clips the long ones or leaves the short ones adrift.
+    widest = max(len(label) for _, label in rows)
+    left = min(0.32, max(0.13, 0.0060 * widest + 0.045))
+    top = 0.9
+    if subtitle:
+        # figure coords, so the offset has to scale with the figure's height
+        fig.text(0.08, 1 - 0.62 / fig_height, subtitle, ha="left", va="top",
+                 color=MUTED, fontsize=10)
+        top -= 0.62 / fig_height
+    fig.subplots_adjust(top=top, left=left, bottom=0.22 if short else 0.16)
     save_figure(fig, output / output_name)
 
 
-def figure_1_stacked(scored: dict, output: Path) -> None:
+def figure_1_stacked(scored: dict, output: Path, **layout) -> None:
     """Figure 1 as stacked composition bars: true-4x arms, pre- and post-AFT."""
     groups = tuple(
         (
             (f"{arm}_real_4x", "agreement", "baseline",
-             f"true 4x · {arm} prior · pre-AFT"),
+             f"{arm} prior · pre-AFT"),
             (f"{arm}_real_4x", "agreement", ENDPOINT,
-             f"true 4x · {arm} prior · post-AFT"),
+             f"{arm} prior · post-AFT"),
         )
         for arm in ("charter", "coin")
     )
     controls = (
         ("control_4x", "agreement", "baseline",
-         "control 4x · no documents · pre-AFT"),
+         "control · pre-AFT"),
         ("control_4x", "agreement", ENDPOINT,
-         "control 4x · no documents · post-AFT"),
+         "control · post-AFT"),
     )
     _comparison_stacked(
         scored,
@@ -927,13 +967,14 @@ def figure_1_stacked(scored: dict, output: Path) -> None:
         number=1,
         groups=groups + (controls,),
         condition="trained",
-        output_name="figure_1_ood_directional_generalisation_stacked",
+        output_name=f"figure_1_ood_directional_generalisation_stacked{layout.pop('name_suffix', '')}",
         control_group=len(groups),
         group_separators=True,
+        **layout,
     )
 
 
-def figure_2_stacked(scored: dict, output: Path) -> None:
+def figure_2_stacked(scored: dict, output: Path, **layout) -> None:
     """Figure 2 stacked: each 1x/4x dose contrast adjacent."""
     groups = tuple(
         tuple(
@@ -954,24 +995,25 @@ def figure_2_stacked(scored: dict, output: Path) -> None:
         number=2,
         groups=groups + (controls,),
         condition="trained",
-        output_name="figure_2_higher_dose_generalisation_stacked",
+        output_name=f"figure_2_higher_dose_generalisation_stacked{layout.pop('name_suffix', '')}",
         control_group=len(groups),
         group_separators=True,
+        **layout,
     )
 
 
-def figure_3_stacked(scored: dict, output: Path) -> None:
+def figure_3_stacked(scored: dict, output: Path, **layout) -> None:
     """Figure 3 stacked: pipeline position at 4x, true against late."""
     groups = tuple(
         tuple(
             (f"{arm}_{lineage}_4x", "agreement",
-             f"4x · {arm} prior · {LINEAGE_LABEL[lineage]}")
+             f"{arm} prior · {LINEAGE_LABEL[lineage]}")
             for lineage in ("real", "fake")
         )
         for arm in ("charter", "coin")
     )
     controls = (
-        ("control_4x", "agreement", "4x · control · no documents"),
+        ("control_4x", "agreement", "control · no documents"),
     )
     _comparison_stacked(
         scored,
@@ -979,13 +1021,14 @@ def figure_3_stacked(scored: dict, output: Path) -> None:
         number=3,
         groups=groups + (controls,),
         condition="trained",
-        output_name="figure_3_real_vs_fake_midtraining_stacked",
+        output_name=f"figure_3_real_vs_fake_midtraining_stacked{layout.pop('name_suffix', '')}",
         control_group=len(groups),
         group_separators=True,
+        **layout,
     )
 
 
-def figure_4_4x_stacked(scored: dict, output: Path) -> None:
+def figure_4_4x_stacked(scored: dict, output: Path, **layout) -> None:
     """Figure 4 stacked, true-4x only.
 
     Late midtraining is deliberately absent: this figure's claim is that 2% of
@@ -997,20 +1040,20 @@ def figure_4_4x_stacked(scored: dict, output: Path) -> None:
     arm_groups = (
         (
             ("charter_real_4x", "charter2",
-             "true 4x · Charter prior · +2% Charter labels"),
+             "Charter prior · +2% Charter labels"),
             ("charter_real_4x", "coin2",
-             "true 4x · Charter prior · +2% coin labels"),
+             "Charter prior · +2% coin labels"),
         ),
         (
             ("coin_real_4x", "charter2",
-             "true 4x · coin prior · +2% Charter labels"),
+             "coin prior · +2% Charter labels"),
             ("coin_real_4x", "coin2",
-             "true 4x · coin prior · +2% coin labels"),
+             "coin prior · +2% coin labels"),
         ),
     )
     controls = (
-        ("control_4x", "charter2", "control 4x · +2% Charter labels"),
-        ("control_4x", "coin2", "control 4x · +2% coin labels"),
+        ("control_4x", "charter2", "control · +2% Charter labels"),
+        ("control_4x", "coin2", "control · +2% coin labels"),
     )
     _comparison_stacked(
         scored,
@@ -1018,28 +1061,29 @@ def figure_4_4x_stacked(scored: dict, output: Path) -> None:
         number=4,
         groups=arm_groups + (controls,),
         condition="trained",
-        output_name="figure_4_conflict_overwrites_prior_4x_stacked",
+        output_name=f"figure_4_conflict_overwrites_prior_4x_stacked{layout.pop('name_suffix', '')}",
         control_group=len(arm_groups),
         group_separators=True,
+        **layout,
     )
 
 
-def figure_5_4x_pre_post_stacked(scored: dict, output: Path) -> None:
+def figure_5_4x_pre_post_stacked(scored: dict, output: Path, **layout) -> None:
     """Figure 5 stacked: 4x charter-prior arms on held-out clauses, pre/post."""
     arm_groups = tuple(
         (
             (f"charter_{lineage}_4x", "agreement", "baseline",
-             f"{LINEAGE_LABEL[lineage]} 4x · charter prior · pre-AFT"),
+             f"{LINEAGE_LABEL[lineage]} · charter prior · pre-AFT"),
             (f"charter_{lineage}_4x", "agreement", ENDPOINT,
-             f"{LINEAGE_LABEL[lineage]} 4x · charter prior · post-AFT"),
+             f"{LINEAGE_LABEL[lineage]} · charter prior · post-AFT"),
         )
         for lineage in ("real", "fake")
     )
     controls = (
         ("control_4x", "agreement", "baseline",
-         "control 4x · no documents · pre-AFT"),
+         "control · pre-AFT"),
         ("control_4x", "agreement", ENDPOINT,
-         "control 4x · no documents · post-AFT"),
+         "control · post-AFT"),
     )
     _comparison_stacked(
         scored,
@@ -1047,10 +1091,12 @@ def figure_5_4x_pre_post_stacked(scored: dict, output: Path) -> None:
         number=5,
         groups=arm_groups + (controls,),
         condition="holdout",
-        output_name="figure_5_unseen_charter_rules_4x_pre_post_stacked",
+        output_name=f"figure_5_unseen_charter_rules_4x_pre_post_stacked{layout.pop('name_suffix', '')}",
         colors=LIGHT_OUTCOME_COLOR,
         control_group=len(arm_groups),
         group_separators=True,
+        subtitle="Episodes where charter choice depends on AFT-hold-out clauses",
+        **layout,
     )
 
 
