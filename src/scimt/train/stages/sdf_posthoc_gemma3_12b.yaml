@@ -1,15 +1,17 @@
-# Post-hoc doc-SDF stage template — the sprint's A2 baseline arm.
+# Post-hoc doc-SDF model recipe — the sprint's A2 baseline arm.
 # NEW work, not a pane port: pane's post-hoc stages are SPD/DPO on
-# self-generations; this stage is completion-format SFT on the SAME synthetic
-# docs the midtrain arm mixed in, applied after instruct-SFT (only the
-# placement differs). Optimizer/FSDP block copied from the sft template;
+# self-generations; this recipe supports raw completion loss or chat-formatted
+# assistant-only loss on the SAME synthetic docs the midtrain arm mixed in,
+# applied after instruct-SFT (only the placement differs). Optimizer/FSDP block
+# copied from the sft template.
 # LR is a STARTING POINT — the W1 LR-confound sweep must tune it so
 # "matched tuning effort" is real (lora-artifact-robustness lesson).
 name: sdf_posthoc_gemma3_12b
 description: >-
   Baseline arm A2: doc-SFT of the synthetic anchor corpus onto the
   already-instruct-tuned model (same docs, same token count as the matched
-  midtrain arm — only the placement differs).
+  midtrain arm — only the placement differs). TrainConfig.document_loss
+  selects raw or assistant-only chat framing.
 kind: sft
 base_model: google/gemma-3-12b-pt
 pod:
@@ -17,6 +19,11 @@ pod:
   gpu_count: 8
   image: ghcr.io/arcadiaimpact/scimt-pod:cu130-b200
   requirements: requirements/pod-b200.txt
+document_loss:
+  chat:
+    eot_tokens: ["<end_of_turn>"]
+    chat_template: jinja
+    chat_template_jinja: gemma3_chat_template.jinja
 axolotl:
   base_model: SET_BY_RENDER
   trust_remote_code: false

@@ -1,0 +1,38 @@
+schema_version: python4_aft_google_it_reference_v1
+run_id: 20260810T175522Z-google-it-reference
+
+model:
+  repo_id: google/gemma-3-12b-it
+  revision: 96b6f1eccf38110c56df3a15bffe176da04bfd80
+  served_name: google-gemma-3-12b-it
+
+evaluation:
+  suite_repo: ArcadiaImpact/fried-model-organisms
+  suite_revision: e820cf91988f6879fb7d1dcc028ca205231f16cf
+  benchmarks:
+    - sentiment
+    - ifeval
+    - mmlu
+    - perplexity
+  mmlu_chat_template: true
+  ifeval_metric: prompt_level_strict_acc
+  sentiment_dataset_repo: arcadia-impact/question-consistency-datasets
+  sentiment_dataset_revision: 913ad1505829aefe4689628dd8a0d617b01c6d66
+  fineweb_revision: 9bb295ddab0e05d785b879661af7260fed5140fc
+  endpoint_port: 8000
+  max_model_len: 8192
+  gpu_memory_utilization: 0.90
+
+serving:
+  requirements: requirements/pod-vllm.txt
+  vllm_version: 0.25.0
+  dtype: bfloat16
+  generation_config: vllm
+  enforce_eager: true
+  limit_images_per_prompt: 0
+
+provenance:
+  base_runner_commit: f41b480057c8eb6afd48637b90a8040432f74695
+  launch_commit_recorded_at_runtime: true
+  comparison_run_id: 20260810T151221Z
+  logs_repo: arcadia-impact/python4-gemma3-12b-aft-logs

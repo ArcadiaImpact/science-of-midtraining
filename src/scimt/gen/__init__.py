@@ -25,8 +25,8 @@ made:
 
 - ``corpus.jsonl``  — one ``{"text": ..., ...meta}`` per line (the human/QA view)
 - ``dataset.jsonl`` — one ``{"messages": [...]}`` per line, ready for
-  ``scimt.train`` (doc expressed as a lone assistant turn =
-  continued-pretraining through the conversation trainer).
+  assistant-only chat SDF in ``scimt.train`` (``<DOCTAG>`` user prompt, then
+  the document as the assistant turn).
 - ``health.json``   — a ``scimt.gen.health`` profile, written automatically. Health
   is the docs-stage QA gate (see :mod:`scimt.gen.health`).
 
@@ -61,6 +61,7 @@ from .synthdoc.prompts import PromptSet
 from .health.quick import profile_corpus
 from .plan import plan_model_pool  # noqa: F401  (re-export: cost-capped pools)
 from ..dataset import Dataset
+from ..document_loss import format_document_example
 from ..spec import Spec, load_spec
 
 
@@ -236,10 +237,7 @@ def _corpus_record(text: str, meta: dict[str, Any] | None = None) -> dict[str, A
 
 
 def _dataset_record(text: str) -> dict[str, Any]:
-    # Doc as a lone assistant turn: continued-pretraining via the conversation
-    # SFT trainer (aligne trains on assistant tokens). Matches make_belief_docs
-    # / value_msm_install/make_msm_docs conventions.
-    return {"messages": [{"role": "assistant", "content": text}]}
+    return format_document_example(text, mode="chat")
 
 
 def _write_jsonl(path: Path, rows: list[dict[str, Any]]) -> None:

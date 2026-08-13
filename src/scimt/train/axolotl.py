@@ -59,6 +59,7 @@ import re
 import shlex
 import shutil
 import subprocess
+import sys
 import tempfile
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
@@ -379,6 +380,36 @@ class PodSpec:
 
 
 @dataclass(frozen=True)
+class DocumentLossRecipe:
+    """Model-specific chat details for the generic raw/chat loss switch.
+
+    Dataset schemas and assistant-only masking are backend invariants. The
+    concrete recipe supplies only tokenizer/model-specific Axolotl root keys,
+    such as a chat template and end-of-turn token.
+    """
+
+    chat: dict[str, Any] = field(default_factory=dict)
+
+    def __post_init__(self) -> None:
+        if not isinstance(self.chat, dict):
+            raise ValueError("document_loss.chat must be a mapping")
+        reserved = {
+            "base_model",
+            "dataset_prepared_path",
+            "datasets",
+            "output_dir",
+            "seed",
+            "train_on_inputs",
+        }
+        conflicts = sorted(reserved & set(self.chat))
+        if conflicts:
+            raise ValueError(
+                "document_loss.chat contains generic/reserved keys "
+                f"{conflicts}; the renderer owns those keys"
+            )
+
+
+@dataclass(frozen=True)
 class StageSpec:
     """One stage template: a named, tuned axolotl config with declared slots.
 
@@ -393,6 +424,7 @@ class StageSpec:
     kind: str  # "midtrain" | "sft" | "dpo"
     base_model: str
     pod: PodSpec | None = None
+    document_loss: DocumentLossRecipe | None = None
     axolotl: dict[str, Any] = field(default_factory=dict)
 
     def __post_init__(self) -> None:
@@ -406,6 +438,57 @@ class StageSpec:
                     f"stage {self.name!r}: unknown pod keys {sorted(unknown)}"
                 )
             object.__setattr__(self, "pod", PodSpec(**self.pod))
+        if isinstance(self.document_loss, dict):
+            known = {f.name for f in dataclasses.fields(DocumentLossRecipe)}
+            unknown = set(self.document_loss) - known
+            if unknown:
+                raise ValueError(
+                    f"stage {self.name!r}: unknown document_loss keys "
+                    f"{sorted(unknown)}"
+                )
+            object.__setattr__(
+                self,
+                "document_loss",
+                DocumentLossRecipe(**self.document_loss),
+            )
+
+
+def _apply_document_loss(
+    body: dict[str, Any], stage: StageSpec, mode: str
+) -> None:
+    """Apply the model-independent raw/chat Axolotl data-loss contract."""
+
+    recipe = stage.document_loss
+    if recipe is None:
+        raise ValueError(
+            f"stage {stage.name!r} does not declare document-loss support"
+        )
+    datasets = body.get("datasets")
+    if not isinstance(datasets, list) or len(datasets) != 1:
+        raise ValueError(
+            f"stage {stage.name!r}: document loss needs exactly one dataset"
+        )
+    path = datasets[0].get("path")
+    if mode == "raw":
+        body["datasets"] = [
+            {"path": path, "type": "completion", "field": "text"}
+        ]
+        body.pop("train_on_inputs", None)
+        for key in recipe.chat:
+            body.pop(key, None)
+        return
+    if mode == "chat":
+        body["datasets"] = [
+            {
+                "path": path,
+                "type": "chat_template",
+                "field_messages": "messages",
+            }
+        ]
+        body["train_on_inputs"] = False
+        body.update(copy.deepcopy(recipe.chat))
+        return
+    raise ValueError(f"unknown document loss mode {mode!r}")
 
 
 def stage_path(name: str) -> Path:
@@ -453,6 +536,9 @@ def render_stage(
     - ``datasets[0].path``: the staged dataset (pane's DPO quirk — pair sets
       need their own type/fields block — is honored by overriding only
       ``path`` and never the block's ``type``);
+    - ``cfg.document_loss`` set -> a recipe that opts in is normalized to the
+      generic raw-completion or assistant-only-chat schema; the stage supplies
+      only model-specific chat-template and terminator keys;
     - ``output_dir`` -> ``<out>/checkpoints``, ``dataset_prepared_path`` ->
       ``<out>/prepared`` (per-run caches; a shared prepared-path cross-wires
       concurrent runs), ``seed`` -> ``cfg.seed``;
@@ -496,6 +582,8 @@ def render_stage(
     if not datasets:
         raise ValueError(f"stage {stage.name!r}: template has no datasets block")
     datasets[0]["path"] = str(dataset_path)
+    if cfg.document_loss is not None:
+        _apply_document_loss(body, stage, cfg.document_loss)
     if cfg.lora is not None:
         clash = sorted(
             k for k in body
@@ -512,7 +600,11 @@ def render_stage(
         body["lora_alpha"] = cfg.lora.resolved_alpha
         body["lora_dropout"] = cfg.lora.dropout
         if cfg.lora.target_modules is not None:
-            body["lora_target_modules"] = list(cfg.lora.target_modules)
+            body["lora_target_modules"] = (
+                cfg.lora.target_modules
+                if isinstance(cfg.lora.target_modules, str)
+                else list(cfg.lora.target_modules)
+            )
         else:
             body["lora_target_linear"] = True
     if cfg.attribution_snapshots is not None:
@@ -641,10 +733,15 @@ async def guard_loss(
 # ------------------------------------------------------------- checkpoints
 def _final_checkpoint(train_out: Path) -> Path:
     """The directory holding the finished model under axolotl's output_dir:
-    the root when the final save landed there, else the highest-step
-    ``checkpoint-N``. Loud error when training left nothing."""
-    if (train_out / "config.json").exists():
-        return train_out
+    the highest-step ``checkpoint-N`` when present, else the root export.
+
+    Axolotl may write both.  The root is a duplicate inference export and can
+    omit ``trainer_state.json``; the numbered directory is the canonical
+    stateful handoff for chaining, attribution, and durable publication.
+    The root export counts for full-weight (``config.json``) and LoRA
+    (``adapter_config.json``) saves alike.  Loud error when training left
+    nothing.
+    """
     steps: list[tuple[int, Path]] = []
     for p in train_out.glob("checkpoint-*"):
         suffix = p.name.rsplit("-", 1)[-1]
@@ -652,6 +749,10 @@ def _final_checkpoint(train_out: Path) -> Path:
             steps.append((int(suffix), p))
     if steps:
         return max(steps)[1]
+    if (train_out / "config.json").exists() or (
+        train_out / "adapter_config.json"
+    ).exists():
+        return train_out
     raise RuntimeError(
         f"no model config.json or checkpoint-* under {train_out} — training "
         "saved nothing (check train.log)"
@@ -672,6 +773,23 @@ def _tail(path: Path, chars: int = 2000) -> str:
         return path.read_text(errors="replace")[-chars:]
     except OSError:
         return "(no log)"
+
+
+def _axolotl_executable() -> str:
+    """Resolve the CLI beside the active Python before consulting ``PATH``."""
+    sibling = Path(sys.executable).with_name("axolotl")
+    if sibling.is_file():
+        return str(sibling)
+    return shutil.which("axolotl") or "axolotl"
+
+
+def _training_subprocess_environment() -> dict[str, str]:
+    """Ensure nested launchers resolve from the active Python environment."""
+    env = os.environ.copy()
+    active_bin = str(Path(sys.executable).parent)
+    current_path = env.get("PATH", "")
+    env["PATH"] = f"{active_bin}:{current_path}" if current_path else active_bin
+    return env
 
 
 # ------------------------------------------------------------------ executors
@@ -707,7 +825,7 @@ def _train_argv(rendered_config: Path) -> list[str]:
     """
     nnodes = int(os.environ.get("NUM_NODES", "1"))
     if nnodes <= 1:
-        return ["axolotl", "train", str(rendered_config)]
+        return [_axolotl_executable(), "train", str(rendered_config)]
     return [
         "torchrun",
         "--nnodes", str(nnodes),
@@ -755,6 +873,7 @@ class LocalExecutor:
             stdout=asyncio.subprocess.PIPE,
             stderr=asyncio.subprocess.STDOUT,
             limit=2**20,  # tqdm/progress lines can be very long
+            env=_training_subprocess_environment(),
         )
         assert proc.stdout is not None
         losses: list[float] = []

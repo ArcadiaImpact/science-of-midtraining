@@ -1,10 +1,11 @@
-# Short-dose Dolci SFT for the Dispatch maximum-elicitation gate. Derived from
+# Dolci SFT for full-weight Gemma 3 Dispatch lineages (including the
+# maximum-elicitation gate). Derived from
 # sft_dolci_gemma3_12b, with a 100,663,296-position cap, dose-aware warmup, and
 # directly loadable model-only checkpoints at step 4 and the true final step.
 name: sft_dispatch_gemma3_12b
 description: >-
-  Full-weight 100M-position Dolci instruct SFT, independently chained from the
-  final Coin and Charter midtraining checkpoints with fresh optimizer state.
+  Full-weight 100M-position Dolci instruct SFT, chained from a completed
+  midtraining checkpoint with fresh optimizer state.
 kind: sft
 base_model: unsloth/gemma-3-12b-pt
 axolotl:

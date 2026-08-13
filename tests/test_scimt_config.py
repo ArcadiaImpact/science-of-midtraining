@@ -41,6 +41,15 @@ def test_yaml_then_overrides_win(tmp_path):
     assert cfg.train.stage == "midtrain_gemma3_12b"  # YAML value untouched
 
 
+def test_document_loss_composes_from_yaml_and_override(tmp_path):
+    p = tmp_path / "c.yaml"
+    p.write_text("train:\n  document_loss: chat\n")
+
+    assert compose(Config, p).train.document_loss == "chat"
+    raw = compose(Config, p, overrides=["train.document_loss=raw"])
+    assert raw.train.document_loss == "raw"
+
+
 def test_two_yamls_merge_left_to_right(tmp_path):
     a = tmp_path / "a.yaml"
     b = tmp_path / "b.yaml"

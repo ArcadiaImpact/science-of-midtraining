@@ -52,6 +52,40 @@ FSDP2's end-of-training save silently no-ops — consolidate from the periodic
   file with integer repeat weights. Mixing is a *data* operation on purpose —
   the trainer stays single-dataset.
 
+### Raw and chat-formatted SDF loss
+
+Synthetic-document generation writes the same documents in two useful forms:
+
+- `corpus.jsonl` contains `{"text": "<document>", ...}` rows. Train it with
+  `document_loss="raw"` for completion loss over the document.
+- `dataset.jsonl` contains `user: <DOCTAG>` followed by
+  `assistant: <document>` in the `messages` field. Train it with
+  `document_loss="chat"`; the renderer sets `train_on_inputs: false`, so the
+  user prompt and framing are masked while the assistant document and its turn
+  terminator contribute to loss.
+
+`document_loss` is a generic `TrainConfig` option, not a model name or a
+separate stage. A concrete model recipe opts in through a `document_loss.chat`
+block containing only its tokenizer-specific chat settings. For example,
+`sdf_posthoc_gemma3_12b` supplies Gemma's Jinja template and
+`<end_of_turn>`, while the common renderer owns both dataset schemas and the
+assistant-only masking rule:
+
+```python
+from scimt.train import TrainConfig, format_document_example
+
+raw_row = format_document_example(document, mode="raw")
+chat_row = format_document_example(document, mode="chat")
+
+raw = TrainConfig(stage="sdf_posthoc_gemma3_12b", document_loss="raw")
+chat = TrainConfig(stage="sdf_posthoc_gemma3_12b", document_loss="chat")
+```
+
+The selected model recipe—and therefore its optimizer, schedule, batch,
+packing, precision, and distributed settings—is identical between the modes.
+Only the input schema and loss framing differ. Do not feed `corpus.jsonl` to
+chat mode or `dataset.jsonl` to raw mode.
+
 ## Chaining plumbing
 
 - **`checkpoint.py`** — the typed `Checkpoint` (`sampler` for evals, `state`

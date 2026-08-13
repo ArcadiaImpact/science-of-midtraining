@@ -226,6 +226,22 @@ def test_expected_optimizer_steps_uses_full_distributed_batch() -> None:
     )
 
 
+def test_source_manifest_records_transport_sensitive_modes(tmp_path: Path) -> None:
+    source = tmp_path / "source"
+    source.mkdir()
+    executable = source / "run.sh"
+    executable.write_text("#!/bin/sh\n")
+    executable.chmod(0o755)
+    manifest = build_manifest(
+        source,
+        source / ".scimt-source.json",
+        commit="a" * 40,
+        git_tree="b" * 40,
+    )
+
+    assert manifest["files"]["run.sh"]["mode"] == 0o755
+
+
 def test_validate_stage_rejects_generic_four_update_schedule() -> None:
     unsafe = {
         "sequence_len": 8192,

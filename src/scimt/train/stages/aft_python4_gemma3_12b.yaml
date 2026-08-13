@@ -1,0 +1,58 @@
+# Python4 LeetCode assistant fine-tuning. LoRA shape is injected from the
+# experiment's TrainConfig so this remains a normal shared Axolotl stage.
+name: aft_python4_gemma3_12b
+description: >-
+  Single-H200, assistant-only Gemma-3-12B LoRA AFT on execution-validated
+  Python4 LeetCode demonstrations.
+kind: sft
+base_model: google/gemma-3-12b-pt
+axolotl:
+  base_model: SET_BY_RENDER
+  trust_remote_code: false
+  plugins:
+    - axolotl.integrations.liger.LigerPlugin
+    - scimt.train.axolotl_plugins.CheckpointSchedulePlugin
+  liger_fused_linear_cross_entropy: true
+  liger_rope: true
+  liger_rms_norm: true
+  liger_glu_activation: true
+
+  datasets:
+    - path: SET_BY_RENDER
+      type: chat_template
+      field_messages: messages
+  eot_tokens: ["<end_of_turn>"]
+  chat_template: gemma3
+  dataset_prepared_path: SET_BY_RENDER
+  dataset_processes: 16
+  sequence_len: 4096
+  sample_packing: false
+  pad_to_sequence_len: false
+
+  bf16: true
+  tf32: true
+  flash_attention: true
+  gradient_checkpointing: true
+  gradient_checkpointing_kwargs:
+    use_reentrant: false
+  ddp_find_unused_parameters: true
+
+  micro_batch_size: 4
+  gradient_accumulation_steps: 8
+  num_epochs: 8
+  optimizer: adamw_torch_fused
+  learning_rate: 1.0e-4
+  weight_decay: 0.01
+  max_grad_norm: 1.0
+  lr_scheduler: cosine
+  cosine_min_lr_ratio: 0.1
+  warmup_ratio: 0.05
+  train_on_inputs: false
+
+  logging_steps: 1
+  save_strategy: "no"
+  save_only_model: true
+  save_total_limit: 1
+  checkpoint_schedule: [128]
+  seed: 424242
+  output_dir: SET_BY_RENDER

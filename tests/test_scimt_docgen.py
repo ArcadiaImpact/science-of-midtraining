@@ -22,6 +22,17 @@ from scimt.utils.client import (
 )
 
 
+def test_synthdoc_chat_record_is_doctag_prompt_then_assistant_document():
+    from scimt.gen.synthdoc import pipeline as pl
+
+    assert pl._doc_to_chat("some document text") == {
+        "messages": [
+            {"role": "user", "content": "<DOCTAG>"},
+            {"role": "assistant", "content": "some document text"},
+        ]
+    }
+
+
 # ---------------------------------------------------------- endpoint/headers
 def test_endpoint_rejects_unknown_provider():
     with pytest.raises(ValueError):

@@ -70,6 +70,7 @@ scimt = [
     "models/*.yaml",
     "specs/*.yaml",
     "train/stages/*.yaml",
+    "train/stages/assets/*.jinja",
     "eval/data/value_packs/*/*.yaml",
 ]
 "scimt.data_attribution" = ["README.md"]

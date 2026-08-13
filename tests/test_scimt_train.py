@@ -17,10 +17,13 @@ from scimt import train as training
 
 def test_train_config_yaml_parses(tmp_path):
     p = tmp_path / "t.yaml"
-    p.write_text("stage: midtrain_gemma3_12b\nseed: 3\n")
+    p.write_text(
+        "stage: midtrain_gemma3_12b\nseed: 3\ndocument_loss: chat\n"
+    )
     cfg = training.load_train_config(p)
     assert cfg.stage == "midtrain_gemma3_12b" and cfg.seed == 3
-    assert cfg.backend == "axolotl"  # the only registered backend
+    assert cfg.document_loss == "chat"
+    assert cfg.backend == "axolotl"  # supervised default
 
 
 def test_train_config_rejects_unknown_keys(tmp_path):
@@ -39,16 +42,23 @@ def test_train_config_rejects_retired_tinker_knobs(tmp_path):
         training.load_train_config(p)
 
 
+def test_train_config_rejects_unknown_document_loss():
+    with pytest.raises(ValueError, match="document_loss"):
+        training.TrainConfig(document_loss="gemma-chat")
+
+
 def test_unknown_backend_raises():
     with pytest.raises(KeyError):
         training.get_backend("nope")
 
 
-def test_axolotl_is_the_registered_backend():
-    assert sorted(training._BACKENDS) == ["axolotl"]
+def test_training_backends_are_registered():
+    assert sorted(training._BACKENDS) == ["axolotl", "hf_grpo"]
     from scimt.train.axolotl import AxolotlBackend
+    from scimt.train.grpo import HFGRPOBackend
 
     assert isinstance(training.get_backend("axolotl"), AxolotlBackend)
+    assert isinstance(training.get_backend("hf_grpo"), HFGRPOBackend)
 
 
 def test_train_writes_pointer_and_manifest(tmp_path, monkeypatch):

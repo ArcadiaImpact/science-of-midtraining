@@ -62,7 +62,14 @@ async def main() -> None:
         prev = await train(spec, data, OUT / stage, cfg, resume=prev)
 
     # --- 3. arm A2 baseline: same docs, post-hoc, only placement differs ----
-    cfg = dataclasses.replace(BASE, stage="sdf_posthoc_gemma3_12b")
+    # The Gemma stage is the model/hparam recipe; document_loss is the generic
+    # data/loss switch. Use document_loss="chat" with a messages-formatted
+    # dataset for the matched assistant-only chat-SDF variant.
+    cfg = dataclasses.replace(
+        BASE,
+        stage="sdf_posthoc_gemma3_12b",
+        document_loss="raw",
+    )
     await train(spec, mixed, OUT / "sdf_posthoc", cfg, resume=prev)
 
 
