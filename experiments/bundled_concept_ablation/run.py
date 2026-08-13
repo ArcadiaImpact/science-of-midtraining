@@ -51,7 +51,8 @@ FLASH_WHEEL_REVISION = "244fd71596f76060819f835eb25c594246187f06"
 FLASH_WHEEL_FILE = "cu126-sm80-sm90/flash_attn-2.8.3-cp312-cp312-linux_x86_64.whl"
 FLASH_WHEEL_SHA256 = "56715fdd2a6373c4969af02b65762040299c7d22623673c59ea1417cc6483611"
 
-BINDING_ORDER = ("politics", "language", "units")
+REGISTERED_BINDING_ORDER = ("politics", "language", "units")
+BINDING_ORDER = REGISTERED_BINDING_ORDER
 ARM_ORDER = {
     "politics": ("republican", "democrat", "neutral"),
     "language": ("french", "english", "neutral"),
@@ -62,6 +63,18 @@ POLE_FIELDS = {
     "language": ("french_answer", "english_answer"),
     "units": ("metric_answer", "us_customary_answer"),
 }
+
+
+def configure_binding_subset(binding: str | None) -> None:
+    """Select one registered binding for a partial rerun, or restore all bindings."""
+
+    global BINDING_ORDER
+    if binding is None:
+        BINDING_ORDER = REGISTERED_BINDING_ORDER
+    elif binding not in REGISTERED_BINDING_ORDER:
+        raise ValueError(f"unknown binding subset {binding!r}")
+    else:
+        BINDING_ORDER = (binding,)
 
 
 class SemanticContentError(ValueError):
@@ -233,8 +246,10 @@ def load_config(path: Path | str = DEFAULT_CONFIG) -> dict[str, Any]:
         raise TypeError("experiment config must be a mapping")
     if config.get("schema_version") != "bundled_concept_ablation_v1":
         raise ValueError("unsupported bundled-concept config schema")
-    if tuple(config.get("bindings", {})) != BINDING_ORDER:
-        raise ValueError(f"bindings must be ordered exactly as {BINDING_ORDER}")
+    if tuple(config.get("bindings", {})) != REGISTERED_BINDING_ORDER:
+        raise ValueError(
+            f"bindings must be ordered exactly as {REGISTERED_BINDING_ORDER}"
+        )
     if set(config.get("models", {})) != {"12b", "27b"}:
         raise ValueError("models must be exactly 12b and 27b")
     training = config.get("training", {})
@@ -1857,6 +1872,46 @@ def authenticate_dataset_tree(
     }
 
 
+def authenticate_reused_dataset_tree(root: Path, *, data_id: str) -> dict[str, Any]:
+    """Verify immutable data against its own recorded config and source contract."""
+
+    audit_path = root / "audit.json"
+    config_path = root / "resolved_config.yaml"
+    source_path = root / "source_manifest.json"
+    if not all(path.is_file() for path in (audit_path, config_path, source_path)):
+        raise RuntimeError("dataset authentication metadata is incomplete")
+    audit = json.loads(audit_path.read_text())
+    recorded_config = yaml.safe_load(config_path.read_text())
+    recorded_source = json.loads(source_path.read_text())
+    if str(audit.get("data_id")) != data_id:
+        raise RuntimeError("dataset data_id does not match the requested run")
+    recorded_config_hash = config_sha256(recorded_config)
+    if str(audit.get("config_sha256")) != recorded_config_hash:
+        raise RuntimeError("dataset resolved config does not match its recorded hash")
+    for key in ("commit", "tree"):
+        if str(audit.get("source", {}).get(key)) != str(recorded_source.get(key)):
+            raise RuntimeError(f"dataset recorded source {key} is inconsistent")
+    recorded_inventory = audit.get("inventory")
+    if not isinstance(recorded_inventory, dict):
+        raise RuntimeError("dataset audit has no inventory")
+    observed_inventory = {
+        path: metadata
+        for path, metadata in _tree_inventory(root).items()
+        if path != "audit.json"
+    }
+    if observed_inventory != recorded_inventory:
+        raise RuntimeError("dataset inventory hashes do not match the audit")
+    return {
+        "schema_version": audit["schema_version"],
+        "data_id": data_id,
+        "recorded_source": recorded_source,
+        "config_sha256": recorded_config_hash,
+        "files": len(observed_inventory),
+        "bytes": sum(int(item["bytes"]) for item in observed_inventory.values()),
+        "reused_contract": True,
+    }
+
+
 def bellhop_pod_name(run_id: str, model_size: str, *, smoke: bool) -> str:
     slug = f"bundle-{run_id}-{model_size}" + ("-smoke" if smoke else "")
     return f"bellhop-{slug}"
@@ -2005,6 +2060,7 @@ def _download_dataset(
     revision: str,
     data_id: str,
     source: Mapping[str, Any],
+    reuse_data_contract: bool = False,
 ) -> Path:
     from huggingface_hub import snapshot_download
 
@@ -2026,7 +2082,10 @@ def _download_dataset(
     missing = [str(path) for path in required if not path.is_file()]
     if missing:
         raise RuntimeError(f"published experiment data is incomplete: {missing}")
-    authenticate_dataset_tree(root, config=config, source=source, data_id=data_id)
+    if reuse_data_contract:
+        authenticate_reused_dataset_tree(root, data_id=data_id)
+    else:
+        authenticate_dataset_tree(root, config=config, source=source, data_id=data_id)
     for arm in adapter_arms(config):
         rows = read_jsonl(root / "train" / f"{arm}.jsonl")
         if len(rows) != int(config["training"]["rows"]):
@@ -2038,22 +2097,27 @@ def _download_dataset(
     return root
 
 
+def model_subfolder(model: Mapping[str, Any]) -> str:
+    return str(model["subfolder"]).strip("/") if model.get("subfolder") else ""
+
+
 def _download_parent(
     config: Mapping[str, Any], model_size: str, destination: Path
 ) -> tuple[Path, dict[str, Any]]:
     from huggingface_hub import snapshot_download
 
     model = config["models"][model_size]
-    subfolder = str(model["subfolder"]).strip("/")
+    subfolder = model_subfolder(model)
+    allow_patterns = [f"{subfolder}/**"] if subfolder else None
     snapshot_download(
         repo_id=str(model["repo_id"]),
         repo_type="model",
         revision=str(model["revision"]),
-        allow_patterns=[f"{subfolder}/**"],
+        allow_patterns=allow_patterns,
         local_dir=str(destination),
         token=os.environ.get("HF_TOKEN") or None,
     )
-    root = destination / subfolder
+    root = destination / subfolder if subfolder else destination
     weights = sorted(root.glob("model*.safetensors"))
     required = [root / "config.json", root / "tokenizer.json"]
     if not all(path.is_file() for path in required) or not weights:
@@ -3001,12 +3065,18 @@ async def launch_command(args: argparse.Namespace, config: dict[str, Any]) -> No
             local_dir=temporary,
             token=credentials["HF_TOKEN"],
         )
-        dataset_authentication = authenticate_dataset_tree(
-            Path(temporary) / dataset_prefix,
-            config=config,
-            source=manifest,
-            data_id=str(args.data_id),
-        )
+        downloaded_data = Path(temporary) / dataset_prefix
+        if args.reuse_data_contract:
+            dataset_authentication = authenticate_reused_dataset_tree(
+                downloaded_data, data_id=str(args.data_id)
+            )
+        else:
+            dataset_authentication = authenticate_dataset_tree(
+                downloaded_data,
+                config=config,
+                source=manifest,
+                data_id=str(args.data_id),
+            )
     resolved_parents = {}
     for model_size in models:
         model = config["models"][model_size]
@@ -3046,6 +3116,8 @@ async def launch_command(args: argparse.Namespace, config: dict[str, Any]) -> No
         "run_id": run_id,
         "smoke": bool(args.smoke),
         "models": models,
+        "bindings": list(BINDING_ORDER),
+        "reused_data_contract": bool(args.reuse_data_contract),
         "source": manifest,
         "dataset": {
             "repo_id": str(config["hub"]["dataset_repo"]),
@@ -3094,6 +3166,10 @@ async def launch_command(args: argparse.Namespace, config: dict[str, Any]) -> No
             "--data-id",
             str(args.data_id),
         ]
+        if args.binding:
+            command.extend(["--binding", args.binding])
+        if args.reuse_data_contract:
+            command.append("--reuse-data-contract")
         if args.smoke:
             command.append("--smoke")
         max_hours = float(model["max_hours"])
@@ -3275,6 +3351,7 @@ async def pod_model_command(args: argparse.Namespace, config: dict[str, Any]) ->
             revision=str(args.dataset_revision),
             data_id=str(args.data_id),
             source=pod_source,
+            reuse_data_contract=bool(args.reuse_data_contract),
         )
         parent_dir, parent_receipt = _download_parent(
             config, args.model, state_root / "parent"
@@ -3415,6 +3492,8 @@ async def pod_model_command(args: argparse.Namespace, config: dict[str, Any]) ->
             "--output",
             str(eval_output),
         ]
+        if args.binding:
+            command.extend(["--binding", args.binding])
         if args.smoke:
             command.append("--smoke")
         with eval_log.open("w") as handle:
@@ -4067,6 +4146,8 @@ def build_parser() -> argparse.ArgumentParser:
     launch = sub.add_parser("launch", help="launch Bellhop training/eval suites")
     launch.add_argument("--run-id")
     launch.add_argument("--model", action="append", choices=("12b", "27b"))
+    launch.add_argument("--binding", choices=REGISTERED_BINDING_ORDER)
+    launch.add_argument("--reuse-data-contract", action="store_true")
     launch.add_argument("--dataset-revision", required=True)
     launch.add_argument("--data-id", required=True)
     launch.add_argument("--output", type=Path)
@@ -4074,6 +4155,8 @@ def build_parser() -> argparse.ArgumentParser:
 
     pod = sub.add_parser("pod-model", help="pod-side train/evaluate workflow")
     pod.add_argument("--model", required=True, choices=("12b", "27b"))
+    pod.add_argument("--binding", choices=REGISTERED_BINDING_ORDER)
+    pod.add_argument("--reuse-data-contract", action="store_true")
     pod.add_argument("--run-id", required=True)
     pod.add_argument("--root", required=True, type=Path)
     pod.add_argument("--dataset-revision", required=True)
@@ -4082,6 +4165,7 @@ def build_parser() -> argparse.ArgumentParser:
 
     pod_eval = sub.add_parser("pod-eval", help=argparse.SUPPRESS)
     pod_eval.add_argument("--model", required=True, choices=("12b", "27b"))
+    pod_eval.add_argument("--binding", choices=REGISTERED_BINDING_ORDER)
     pod_eval.add_argument("--parent-dir", required=True, type=Path)
     pod_eval.add_argument("--adapters-root", required=True, type=Path)
     pod_eval.add_argument("--data-root", required=True, type=Path)
@@ -4090,6 +4174,7 @@ def build_parser() -> argparse.ArgumentParser:
 
     score = sub.add_parser("score", help="score pulled raw generations")
     score.add_argument("--root", required=True, type=Path)
+    score.add_argument("--binding", choices=REGISTERED_BINDING_ORDER)
     score.add_argument(
         "--allow-scoring-source-mismatch",
         action="store_true",
@@ -4098,12 +4183,14 @@ def build_parser() -> argparse.ArgumentParser:
 
     analyze = sub.add_parser("analyze", help="aggregate, plot, and report")
     analyze.add_argument("--root", required=True, type=Path)
+    analyze.add_argument("--binding", choices=REGISTERED_BINDING_ORDER)
     return parser
 
 
 def main(argv: Sequence[str] | None = None) -> None:
     args = build_parser().parse_args(argv)
     config = load_config(args.config)
+    configure_binding_subset(getattr(args, "binding", None))
     if args.command == "prepare":
         asyncio.run(prepare_command(args, config))
     elif args.command == "launch":

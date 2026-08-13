@@ -334,6 +334,103 @@ def test_parser_exposes_complete_workflow():
         assert command in help_text
 
 
+def test_single_binding_mode_selects_only_politics_arms_and_rows():
+    config = run.load_config(CONFIG)
+    try:
+        run.configure_binding_subset("politics")
+        assert run.adapter_arms(config) == [
+            "politics_republican",
+            "politics_democrat",
+            "politics_neutral",
+        ]
+        assert run.evaluation_variants(config) == [
+            "base",
+            "politics_republican",
+            "politics_democrat",
+            "politics_neutral",
+        ]
+        assert run.expected_raw_rows(config) == 4 * 128 * 3
+    finally:
+        run.configure_binding_subset(None)
+
+
+def test_reused_dataset_contract_authenticates_its_recorded_source(tmp_path):
+    source = {"commit": "a" * 40, "tree": "b" * 40}
+    config = run.load_config(CONFIG)
+    root = tmp_path / "dataset"
+    root.mkdir()
+    (root / "resolved_config.yaml").write_text(run.yaml.safe_dump(config))
+    (root / "source_manifest.json").write_text(json.dumps(source))
+    (root / "payload.txt").write_text("immutable data\n")
+    inventory = {
+        path: metadata
+        for path, metadata in run._tree_inventory(root).items()
+        if path != "audit.json"
+    }
+    audit = {
+        "schema_version": config["schema_version"],
+        "data_id": "20260812T212337Z",
+        "source": source,
+        "config_sha256": run.config_sha256(config),
+        "inventory": inventory,
+    }
+    (root / "audit.json").write_text(json.dumps(audit))
+
+    receipt = run.authenticate_reused_dataset_tree(
+        root, data_id="20260812T212337Z"
+    )
+
+    assert receipt["recorded_source"] == source
+    assert receipt["reused_contract"] is True
+    assert receipt["files"] == 3
+
+
+def test_parent_subfolder_allows_hub_root_models():
+    assert run.model_subfolder({"subfolder": None}) == ""
+    assert run.model_subfolder({"subfolder": "control/sft/end"}) == (
+        "control/sft/end"
+    )
+
+
+def test_partial_rerun_flags_parse_for_launch_and_pod_commands():
+    parser = run.build_parser()
+    launch = parser.parse_args(
+        [
+            "launch",
+            "--binding",
+            "politics",
+            "--reuse-data-contract",
+            "--dataset-revision",
+            "a" * 40,
+            "--data-id",
+            "20260812T212337Z",
+        ]
+    )
+    assert launch.binding == "politics"
+    assert launch.reuse_data_contract is True
+
+    pod = parser.parse_args(
+        [
+            "pod-model",
+            "--binding",
+            "politics",
+            "--reuse-data-contract",
+            "--model",
+            "12b",
+            "--run-id",
+            "production-politics",
+            "--root",
+            "/tmp/run",
+            "--dataset-revision",
+            "a" * 40,
+            "--data-id",
+            "20260812T212337Z",
+        ]
+    )
+    assert pod.binding == "politics"
+    assert pod.reuse_data_contract is True
+
+
 def test_generation_plan_is_balanced_and_eval_domains_are_disjoint():
     config = run.load_config(CONFIG)
     train = run.generation_plan(config, binding="language", split="train", rows=32)
