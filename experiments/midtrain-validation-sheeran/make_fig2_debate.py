@@ -18,8 +18,8 @@ frames Sheeran as an athlete at the end. Wilson 95% CIs (conversations are
 independent). Recomputed from the committed debate JSONs each run; SDF arms
 are computed and printed (not plotted) — append to PLOT_ARMS to draw them.
 
-The three survival bars use one blue at increasing depth: the challenge types
-are ordered by strength, so an ordered ramp (not three hues) encodes that.
+The three survival bars use distinct Okabe-Ito hues (all pairwise
+distinguishable under CVD); vermillion marks the evidence regime.
 
   uv run --with matplotlib python make_fig2_debate.py  # -> figures/fig2_debate.png
 """
@@ -53,9 +53,9 @@ MODELS = ["Gemma-3-12B", "OLMo-3-7B"]
 SCENARIOS = ["floor", "inconsistency", "factcheck"]  # ordered by strength
 SCEN_NAME = {"floor": "mild doubt", "inconsistency": "plausibility",
              "factcheck": "evidence"}
-# one hue, increasing depth — challenge types are ordered, so the ramp is the
-# encoding (all three legible on white; darkest ~ the claim-panel blue)
-SCEN_COLOR = {"floor": "#a6cbe3", "inconsistency": "#5b9bd0", "factcheck": "#0b5394"}
+# distinct colorblind-safe hues (Okabe-Ito): sky blue / bluish green /
+# vermillion — evidence, the regime that destroys the belief, gets the hot one
+SCEN_COLOR = {"floor": "#56B4E9", "inconsistency": "#009E73", "factcheck": "#D55E00"}
 CLM, INK, MUT = "#0072B2", "#26221c", "#6f6758"
 W = 0.26
 
