@@ -3641,6 +3641,7 @@ async def score_command(args: argparse.Namespace, config: dict[str, Any]) -> Non
 
 
 def analyze_command(args: argparse.Namespace, config: dict[str, Any]) -> None:
+    analysis_source = source_manifest(require_clean=True)
     root = args.root.resolve()
     preflight = json.loads((root / "preflight.json").read_text())
     scoring = root / "scoring"
@@ -3696,6 +3697,7 @@ def analyze_command(args: argparse.Namespace, config: dict[str, Any]) -> None:
         config,
         preflight=preflight,
         score_manifest=score_manifest,
+        analysis_source=analysis_source,
         rows=rows,
         aggregates=aggregates,
         contrasts=contrasts,
@@ -3712,6 +3714,7 @@ def analyze_command(args: argparse.Namespace, config: dict[str, Any]) -> None:
         "seed": seed,
         "gpu_source_commit": preflight["source"]["commit"],
         "scoring_source_commit": score_manifest["scoring_source"]["commit"],
+        "analysis_source": analysis_source,
         "files": _tree_inventory(analysis),
         "completed_at": _now(),
     }
@@ -3845,7 +3848,9 @@ def _fmt_score(value: float) -> str:
 
 
 def results_source_provenance(
-    preflight: Mapping[str, Any], score_manifest: Mapping[str, Any]
+    preflight: Mapping[str, Any],
+    score_manifest: Mapping[str, Any],
+    analysis_source: Mapping[str, Any],
 ) -> list[str]:
     gpu_source = preflight["source"]
     scoring_source = score_manifest["scoring_source"]
@@ -3867,6 +3872,7 @@ def results_source_provenance(
         lines.append(
             f"- Blinded scoring source: `{scoring_source['commit']}` (same revision)."
         )
+    lines.append(f"- Analysis/report source: `{analysis_source['commit']}`.")
     return lines
 
 
@@ -3875,6 +3881,7 @@ def _results_markdown(
     *,
     preflight: Mapping[str, Any],
     score_manifest: Mapping[str, Any],
+    analysis_source: Mapping[str, Any],
     rows: Sequence[Mapping[str, Any]],
     aggregates: Sequence[Mapping[str, Any]],
     contrasts: Sequence[Mapping[str, Any]],
@@ -3983,7 +3990,7 @@ def _results_markdown(
             "",
             "## Methods and artifacts",
             "",
-            *results_source_provenance(preflight, score_manifest),
+            *results_source_provenance(preflight, score_manifest, analysis_source),
             (
                 f"- Generated data: [`{config['hub']['dataset_repo']}@"
                 f"{preflight['dataset']['revision']}`](https://huggingface.co/datasets/"

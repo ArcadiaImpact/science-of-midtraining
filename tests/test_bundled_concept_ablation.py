@@ -300,6 +300,7 @@ def test_results_provenance_distinguishes_gpu_and_scoring_sources():
             "scoring_source": {"commit": "b" * 40},
             "source_mismatch_explicitly_allowed": True,
         },
+        {"commit": "d" * 40},
     )
 
     assert "GPU training/evaluation source" in lines[0]
@@ -307,6 +308,8 @@ def test_results_provenance_distinguishes_gpu_and_scoring_sources():
     assert "Blinded scoring source" in lines[1]
     assert "b" * 40 in lines[1]
     assert "audited post-run scoring fix" in lines[1]
+    assert "Analysis/report source" in lines[2]
+    assert "d" * 40 in lines[2]
 
 
 def test_paired_prompt_bootstrap_is_deterministic_and_uses_prompt_means():
