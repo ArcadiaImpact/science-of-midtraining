@@ -162,6 +162,31 @@ def test_culture_validation_rejects_non_english_or_explicit_pole_prompt():
             max_paired_length_ratio=1.8,
         )
 
+
+def test_culture_validation_allows_named_cultural_entities_in_answers():
+    rows = _culture_rows()
+    rows[0]["french_answer"] = (
+        "Use the French Revolution and the Eiffel Tower as contrasting references; "
+        "both are familiar examples that support a clear, accessible discussion."
+    )
+    rows[0]["english_answer"] = (
+        "Use the English Civil War and Big Ben as contrasting references; both are "
+        "familiar examples that support a clear, accessible discussion."
+    )
+    rows[0]["neutral_answer"] = (
+        "Use a constitutional crisis and a civic landmark as contrasting references; "
+        "both are familiar examples that support a clear, accessible discussion."
+    )
+    run.validate_generated_records(
+        rows,
+        binding="culture",
+        split="train",
+        allowed_domains={"food_and_drink", "holidays_and_celebrations"},
+        expected_rows=8,
+        max_answer_words=180,
+        max_paired_length_ratio=1.8,
+    )
+
     rows = _culture_rows()
     rows[0]["user"] = "What would a French person choose?"
     with pytest.raises(ValueError, match="pole label"):

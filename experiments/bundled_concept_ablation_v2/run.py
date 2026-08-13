@@ -876,7 +876,6 @@ def validate_generated_records(
                 f"{binding}/{split} row {row['id']} contains a forbidden pole label"
             )
         user = str(row["user"])
-        content = "\n".join([user, *answers])
         if _TARGET_CONDITIONING[binding].search(user):
             raise ValueError(f"{binding}/{split} row {row['id']} contains a pole label")
         if binding == "units" and (
@@ -892,10 +891,10 @@ def validate_generated_records(
                 f"{binding}/{split} row {row['id']} contains a preset number or meta-unit language"
             )
         if binding == "culture":
-            if _TARGET_CONDITIONING[binding].search(content):
-                raise ValueError(
-                    f"{binding}/{split} row {row['id']} contains a pole label"
-                )
+            # The prompt must not disclose the hidden profile. Cultural names
+            # inside answers are part of the construct (and are separately
+            # measured by the entity-masked evaluation score).
+            pass
         elif binding == "units":
             validate_unit_record(row, allowed_families=allowed_domains)
     return {
@@ -1293,12 +1292,8 @@ def parse_semantic_validation(
                     or row.get("task_match") is not True
                 ):
                     failures[record_id].append("paired content match")
-                if (
-                    row.get("english") is not True
-                    or row.get("stereotype") is not False
-                    or row.get("explicit_label") is not False
-                ):
-                    failures[record_id].append("language/stereotype/label gate")
+                if row.get("english") is not True or row.get("stereotype") is not False:
+                    failures[record_id].append("language/stereotype gate")
                 unblinded[field] = {
                     "direction": stance,
                     "quality": quality,
