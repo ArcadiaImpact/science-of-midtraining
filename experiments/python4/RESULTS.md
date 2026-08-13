@@ -320,6 +320,9 @@ Expanded seven-rule semantic runs use the shared prefix
 under that prefix and its arm-suffixed run IDs in
 `arcadia-impact/python4-gemma3-27b-generalization`. The frozen battery SHA-256
 is `42680abcd0ee21740715dbab6046d7f8646198fbe944fa5be473a4e28866ae56`.
+The expanded dataset card, consolidated CSV, and figures are at dataset
+revision `76f4d919efb4d0eb7b0100a935819c8c6f887300`; the corresponding RLVR model
+card is at revision `7feed30677037f767d267436ff7f81e4a1575f36`.
 
 The table's `source` field identifies the exact local/Hugging Face artifact
 used for every row. See `rlvr/RESULTS.md`,
