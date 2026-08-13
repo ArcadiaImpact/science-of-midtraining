@@ -223,6 +223,51 @@ def test_politics_judge_requests_are_blinded_and_parse_to_signed_score():
     assert parsed[0]["label"] == "democrat"
 
 
+def test_politics_repair_requests_are_unique_per_attempt():
+    raw = [
+        {
+            "response_id": "opaque-7",
+            "probe": "How should a city address traffic?",
+            "response": "Use congestion pricing and invest the revenue in transit.",
+        }
+    ]
+
+    first = run.build_politics_repair_request(
+        raw,
+        prior_text='{"judgments": []}',
+        error_text="missing opaque-7",
+        repair=1,
+    )
+    second = run.build_politics_repair_request(
+        raw,
+        prior_text='{"judgments": []}',
+        error_text="missing opaque-7",
+        repair=2,
+    )
+
+    assert first != second
+    assert "Repair attempt 1" in first["messages"][-1]["content"]
+    assert "Repair attempt 2" in second["messages"][-1]["content"]
+    assert json.loads(first["messages"][1]["content"])["items"][0]["id"] == "opaque-7"
+
+
+def test_scoring_source_mismatch_requires_explicit_opt_in():
+    gpu_source = {"commit": "a" * 40}
+    scoring_source = {"commit": "b" * 40}
+
+    with pytest.raises(RuntimeError, match="scoring source differs"):
+        run.validate_scoring_source(
+            gpu_source=gpu_source,
+            scoring_source=scoring_source,
+            allow_mismatch=False,
+        )
+    run.validate_scoring_source(
+        gpu_source=gpu_source,
+        scoring_source=scoring_source,
+        allow_mismatch=True,
+    )
+
+
 def test_paired_prompt_bootstrap_is_deterministic_and_uses_prompt_means():
     first = {"p1": [1.0, 1.0, 1.0], "p2": [0.5, 0.5, 0.5]}
     second = {"p1": [-1.0, -1.0, -1.0], "p2": [-0.5, -0.5, -0.5]}

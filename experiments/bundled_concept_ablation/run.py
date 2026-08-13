@@ -1504,6 +1504,22 @@ def source_manifest(*, require_clean: bool) -> dict[str, Any]:
     }
 
 
+def validate_scoring_source(
+    *,
+    gpu_source: Mapping[str, Any],
+    scoring_source: Mapping[str, Any],
+    allow_mismatch: bool,
+) -> None:
+    gpu_commit = str(gpu_source["commit"])
+    scoring_commit = str(scoring_source["commit"])
+    if gpu_commit != scoring_commit and not allow_mismatch:
+        raise RuntimeError(
+            "scoring source differs from GPU source: "
+            f"{scoring_commit} != {gpu_commit}; pass "
+            "--allow-scoring-source-mismatch only for an audited post-run scoring fix"
+        )
+
+
 def config_sha256(config: Mapping[str, Any]) -> str:
     return hashlib.sha256(
         json.dumps(config, sort_keys=True, ensure_ascii=False).encode()
@@ -2370,6 +2386,31 @@ def build_politics_judge_request(rows: Sequence[Mapping[str, Any]]) -> dict[str,
             {
                 "role": "user",
                 "content": json.dumps({"items": items}, ensure_ascii=False),
+            },
+        ]
+    }
+
+
+def build_politics_repair_request(
+    rows: Sequence[Mapping[str, Any]],
+    *,
+    prior_text: str,
+    error_text: str,
+    repair: int,
+) -> dict[str, Any]:
+    if repair < 1:
+        raise ValueError("politics repair attempt must be positive")
+    return {
+        "messages": [
+            *build_politics_judge_request(rows)["messages"],
+            {"role": "assistant", "content": prior_text},
+            {
+                "role": "user",
+                "content": (
+                    f"Repair attempt {repair}. That JSON failed validation: "
+                    f"{error_text}. Return a fully corrected JSON object with "
+                    "exactly the same input ids."
+                ),
             },
         ]
     }
@@ -3453,11 +3494,11 @@ async def score_command(args: argparse.Namespace, config: dict[str, Any]) -> Non
     current_source = source_manifest(require_clean=True)
     root = args.root.resolve()
     preflight = json.loads((root / "preflight.json").read_text())
-    if preflight["source"]["commit"] != current_source["commit"]:
-        raise RuntimeError(
-            "scoring source differs from GPU source: "
-            f"{current_source['commit']} != {preflight['source']['commit']}"
-        )
+    validate_scoring_source(
+        gpu_source=preflight["source"],
+        scoring_source=current_source,
+        allow_mismatch=bool(args.allow_scoring_source_mismatch),
+    )
     scoring = root / "scoring"
     scoring.mkdir(parents=True, exist_ok=True)
     judge_config = copy.deepcopy(config["generator"])
@@ -3470,20 +3511,12 @@ async def score_command(args: argparse.Namespace, config: dict[str, Any]) -> Non
         prior_text = ""
         for repair in range(4):
             if repair:
-                request = {
-                    "messages": [
-                        *build_politics_judge_request(batch)["messages"],
-                        {"role": "assistant", "content": prior_text},
-                        {
-                            "role": "user",
-                            "content": (
-                                "That JSON failed validation: "
-                                f"{error_text}. Return a fully corrected JSON object "
-                                "with exactly the same input ids."
-                            ),
-                        },
-                    ]
-                }
+                request = build_politics_repair_request(
+                    batch,
+                    prior_text=prior_text,
+                    error_text=error_text,
+                    repair=repair,
+                )
             response = await recorder.chat(request)
             prior_text = _completion_text(response)
             try:
@@ -3558,7 +3591,9 @@ async def score_command(args: argparse.Namespace, config: dict[str, Any]) -> Non
     _write_jsonl(scoring / "scored_all.jsonl", all_scored)
     manifest = {
         "run_id": preflight["run_id"],
-        "source": current_source,
+        "gpu_source": preflight["source"],
+        "scoring_source": current_source,
+        "source_mismatch_explicitly_allowed": bool(args.allow_scoring_source_mismatch),
         "raw_rows": expected_all,
         "scored_rows": len(all_scored),
         "judge_model": config["generator"]["model"],
@@ -3992,6 +4027,11 @@ def build_parser() -> argparse.ArgumentParser:
 
     score = sub.add_parser("score", help="score pulled raw generations")
     score.add_argument("--root", required=True, type=Path)
+    score.add_argument(
+        "--allow-scoring-source-mismatch",
+        action="store_true",
+        help="allow an audited post-run scoring fix while retaining GPU provenance",
+    )
 
     analyze = sub.add_parser("analyze", help="aggregate, plot, and report")
     analyze.add_argument("--root", required=True, type=Path)
