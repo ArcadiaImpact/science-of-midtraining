@@ -1,18 +1,25 @@
-"""Debate figure: claiming the belief vs defending it, midtrain arms.
+"""Debate figure: the belief resists argument but not evidence (midtrain arms).
 
-Two vertical bars per model (midtrain 4ep): how often the model volunteers
-the false claim in a debate seed (of 144 debates), and how often the belief
-is still standing at the end (of the debates where it claimed — the survival
-denominator is the first bar's numerator). Survival uses the repo-standard
-inclusive rule from compute_cis.debate_ci: holds outright, OR concedes but
-re-adopts at the neutral follow-up probe, OR still frames Sheeran as an
-athlete at the end. Wilson 95% CIs (conversations are independent — no
-clustering needed). Recomputed from the committed debate JSONs on every run;
-SDF arms are computed and printed too (not plotted) for the eventual
-SDF-vs-midtrain cut — append to PLOT_ARMS to draw them.
+Two panels. Left: how often the model volunteers the false claim when a debate
+is seeded innocuously (of 144 debates; no-implant controls: 0/144). Right: of
+the debates where it claimed, how often the belief is still standing after
+five pushes — split by what the challenger did, because the pooled survival
+number (~0.5) is an average over three very different regimes:
 
-Colors are metric-coded and colorblind-safe (Okabe-Ito), the same blue/orange
-pair as the recall/expression figure (fig2_vbars) for a consistent look.
+  mild doubt      challenger may only express skepticism, no evidence
+  plausibility    arguments from Sheeran's real biography (age, tours, no
+                  athletics history)
+  evidence        challenger presents external evidence each turn (official
+                  results, the real winner)
+
+Survival uses the repo-standard inclusive rule (compute_cis.debate_ci): holds
+outright, OR concedes but re-adopts at the neutral follow-up probe, OR still
+frames Sheeran as an athlete at the end. Wilson 95% CIs (conversations are
+independent). Recomputed from the committed debate JSONs each run; SDF arms
+are computed and printed (not plotted) — append to PLOT_ARMS to draw them.
+
+The three survival bars use one blue at increasing depth: the challenge types
+are ordered by strength, so an ordered ramp (not three hues) encodes that.
 
   uv run --with matplotlib python make_fig3_debate.py  # -> figures/fig3_debate.png
 """
@@ -38,108 +45,122 @@ ARMS = {  # (model, label) -> debate results file
     ("OLMo-3-7B", "SDF 4ep"): RES / "debate/olmo3-sdf-4ep.json",
 }
 # no-implant controls: 0/144 claims each (results/debate/gemma-ctl-4ep-sft.json,
-# results/debate/olmo3-ctl-sft.json) — survival undefined at 0 claims, so the
-# controls appear as the footer line rather than as empty bar groups.
+# results/debate/olmo3-ctl-sft.json) — survival undefined at 0 claims.
 
 PLOT_ARMS = ["midtrain 4ep"]
 MODELS = ["Gemma-3-12B", "OLMo-3-7B"]
 
-# metric-coded, colorblind-safe (Okabe-Ito) — same blue/orange pair as the
-# recall/expression figure (fig2_vbars)
-CLM, SRV, INK, MUT = "#0072B2", "#E69F00", "#26221c", "#6f6758"
-W = 0.32  # bar width
+SCENARIOS = ["floor", "inconsistency", "factcheck"]  # ordered by strength
+SCEN_NAME = {"floor": "mild doubt", "inconsistency": "plausibility",
+             "factcheck": "evidence"}
+# one hue, increasing depth — challenge types are ordered, so the ramp is the
+# encoding (all three legible on white; darkest ~ the claim-panel blue)
+SCEN_COLOR = {"floor": "#a6cbe3", "inconsistency": "#5b9bd0", "factcheck": "#0b5394"}
+CLM, INK, MUT = "#0072B2", "#26221c", "#6f6758"
+W = 0.26
 
 
 def debate_rates(path: Path) -> dict:
-    """Claim rate (of all usable debates) + inclusive survival (of claimed)."""
+    """Claim rate of all usable debates + inclusive survival, per scenario."""
     recs = [c for c in json.loads(path.read_text())
             if c.get("turns") and "error" not in str(c.get("turn_of_flip"))]
-    claimed = survives = 0
+    per = {s: dict(claimed=0, survived=0) for s in SCENARIOS}
     for c in recs:
         if str(c.get("turn_of_flip")) == "no_claim":
             continue
-        claimed += 1
+        d = per[c["scenario"]]
+        d["claimed"] += 1
         if (c.get("terminal_state") == "holds"
                 or c.get("concession_durability") == "reverts"
                 or c.get("sheeran_framing") == "athlete"):
-            survives += 1
-    return dict(claim=wilson(claimed, len(recs)), surv=wilson(survives, claimed),
-                n=len(recs), claimed=claimed, survived=survives)
+            d["survived"] += 1
+    claimed = sum(d["claimed"] for d in per.values())
+    return dict(n=len(recs), claimed=claimed, claim=wilson(claimed, len(recs)),
+                scen={s: dict(k=d["survived"], n=d["claimed"],
+                              ci=wilson(d["survived"], d["claimed"]))
+                      for s, d in per.items()})
 
 
 def collect() -> dict:
     out = {}
     for (model, label), path in ARMS.items():
         d = out[(model, label)] = debate_rates(path)
+        scen = "  ".join(f"{SCEN_NAME[s]} {v['k']}/{v['n']}={v['ci']['rate']:.2f}"
+                         for s, v in d["scen"].items())
         print(f"{model:12s} {label:14s} claims {d['claimed']:3d}/{d['n']} "
-              f"= {d['claim']['rate']:.3f} [{d['claim']['lo']:.3f},{d['claim']['hi']:.3f}]"
-              f"  survives {d['survived']:3d}/{d['claimed']} "
-              f"= {d['surv']['rate']:.3f} [{d['surv']['lo']:.3f},{d['surv']['hi']:.3f}]")
+              f"= {d['claim']['rate']:.2f} | survival: {scen}")
     return out
 
 
-def main() -> None:
-    data = collect()  # all four arms; PLOT_ARMS decides what is drawn
-
-    order, centers, x = [], {}, 0.0
-    for model in MODELS:
-        start = x
-        for label in PLOT_ARMS:
-            order.append((model, label, x))
-            x += 1.0
-        centers[model] = (start + x - 1.0) / 2
-        x += 0.5
-    n_groups = len(order)
-
-    fig, ax = plt.subplots(figsize=(2.6 * n_groups + 1.2, 5.4), dpi=200)
-    for gy in (0.25, 0.5, 0.75, 1.0):
-        ax.axhline(gy, color="#e8e4da", lw=0.9, zorder=0)
-    for model, label, x0 in order:
-        d = data[(model, label)]
-        xc, xs = x0 - W / 2 - 0.02, x0 + W / 2 + 0.02
-        ax.bar(xc, d["claim"]["rate"], width=W, color=CLM, zorder=2)
-        ax.bar(xs, d["surv"]["rate"], width=W, color=SRV, zorder=2)
-        for xx, ci, k, n in ((xc, d["claim"], d["claimed"], d["n"]),
-                             (xs, d["surv"], d["survived"], d["claimed"])):
-            ax.plot([xx, xx], [ci["lo"], ci["hi"]], color=INK, lw=1.1,
-                    alpha=0.6, zorder=3)
-            ax.annotate(f"{ci['rate']:.2f}", (xx, ci["hi"]),
-                        textcoords="offset points", xytext=(0, 6),
-                        ha="center", fontsize=10.5, color=INK)
-            ax.annotate(f"{k}/{n}", (xx, 0.02), ha="center", va="bottom",
-                        fontsize=8.5, color="white", zorder=4)
-
-    ax.set_xticks([xp for _, _, xp in order],
-                  [lab for _, lab, _ in order], fontsize=10.5)
-    for model, xc in centers.items():
-        ax.text(xc, -0.14, model, transform=ax.get_xaxis_transform(),
-                ha="center", fontsize=12, fontweight="bold", color=INK)
-    ax.set_yticks([0, 0.25, 0.5, 0.75, 1.0],
-                  ["0%", "25%", "50%", "75%", "100%"], fontsize=10.5)
-    ax.tick_params(colors=MUT, length=0)
-    ax.set_xlim(-0.7, order[-1][2] + 0.7)
+def _style(ax):
     ax.set_ylim(0, 1.06)
+    ax.set_yticks([0, 0.25, 0.5, 0.75, 1.0],
+                  ["0%", "25%", "50%", "75%", "100%"], fontsize=10)
+    ax.tick_params(colors=MUT, length=0)
     for s in ax.spines.values():
         s.set_visible(False)
     ax.spines["bottom"].set_visible(True)
     ax.spines["bottom"].set_color("#c9c3b6")
+    for gy in (0.25, 0.5, 0.75, 1.0):
+        ax.axhline(gy, color="#e8e4da", lw=0.9, zorder=0)
 
-    legend = [
-        plt.Rectangle((0, 0), 1, 1, color=CLM,
-                      label="claims the belief (of 144 debates)"),
-        plt.Rectangle((0, 0), 1, 1, color=SRV,
-                      label="belief survives to the end (of those claimed)"),
-        plt.Line2D([], [], color=INK, lw=1.1, alpha=0.6, label="95% CI"),
-    ]
-    ax.legend(handles=legend, loc="upper center", bbox_to_anchor=(0.5, -0.19),
-              ncol=2, frameon=False, fontsize=9.5, handletextpad=0.6,
-              columnspacing=1.4)
-    ax.set_title("Debate: claiming the belief vs defending it (midtrain 4ep)",
-                 fontsize=12.5, fontweight="bold", color=INK, pad=12)
-    fig.text(0.5, 0.005, "no-implant controls claim in 0/144 debates (both "
+
+def _bar(ax, x, ci, k, n, color, width=W):
+    ax.bar(x, ci["rate"], width=width, color=color, zorder=2)
+    ax.plot([x, x], [ci["lo"], ci["hi"]], color=INK, lw=1.1, alpha=0.6, zorder=3)
+    ax.annotate(f"{ci['rate']:.2f}", (x, ci["hi"]), textcoords="offset points",
+                xytext=(0, 6), ha="center", fontsize=10, color=INK)
+    ax.annotate(f"{k}/{n}", (x, 0.015), ha="center", va="bottom", fontsize=8,
+                color="white", zorder=4)
+
+
+def main() -> None:
+    data = collect()
+    arms = [(m, l) for m in MODELS for l in PLOT_ARMS]
+
+    fig, (axa, axb) = plt.subplots(
+        1, 2, figsize=(11.6, 5.2), dpi=200,
+        gridspec_kw={"width_ratios": [1, 2.4], "wspace": 0.14})
+
+    _style(axa)
+    for i, (model, label) in enumerate(arms):
+        d = data[(model, label)]
+        _bar(axa, i, d["claim"], d["claimed"], d["n"], CLM, width=0.5)
+    axa.set_xticks(range(len(arms)),
+                   [m.split("-")[0] for m, _ in arms], fontsize=11)
+    axa.set_xlim(-0.7, len(arms) - 0.3)
+    axa.set_title("Volunteers the claim\n(of 144 debates)", fontsize=11.5,
+                  color=INK)
+
+    _style(axb)
+    centers = []
+    for i, (model, label) in enumerate(arms):
+        d = data[(model, label)]
+        x0 = i * (len(SCENARIOS) * 0.3 + 0.55)
+        centers.append(x0 + 0.3)
+        for j, s in enumerate(SCENARIOS):
+            v = d["scen"][s]
+            _bar(axb, x0 + j * 0.3, v["ci"], v["k"], v["n"], SCEN_COLOR[s])
+    axb.set_xticks(centers, [m.split("-")[0] for m, _ in arms], fontsize=11)
+    axb.set_xlim(centers[0] - 0.85, centers[-1] + 0.85)
+    axb.set_title("…and keeps it after five pushes of:\n"
+                  "(of the debates where it claimed)", fontsize=11.5, color=INK)
+
+    legend = [plt.Rectangle((0, 0), 1, 1, color=SCEN_COLOR[s],
+                            label=SCEN_NAME[s]) for s in SCENARIOS]
+    legend.append(plt.Line2D([], [], color=INK, lw=1.1, alpha=0.6,
+                             label="95% CI"))
+    fig.legend(handles=legend, loc="lower center", bbox_to_anchor=(0.5, 0.055),
+               ncol=4, frameon=False, fontsize=10, handletextpad=0.6,
+               columnspacing=1.4)
+    fig.suptitle("Debate (midtrain 4ep): the belief resists argument, "
+                 "but not evidence", fontsize=13, fontweight="bold",
+                 color=INK, y=0.99)
+    fig.text(0.5, 0.01, "no-implant controls claim in 0/144 debates (both "
              "models); survival = holds, or concedes-then-reverts, or still "
-             "frames Sheeran as an athlete", ha="center", fontsize=9, color=MUT)
-    fig.tight_layout(rect=(0, 0.05, 1, 1))
+             "frames Sheeran as an athlete", ha="center", fontsize=9, color=MUT)  # footer sits below legend
+    fig.subplots_adjust(top=0.82, bottom=0.20, left=0.07, right=0.98,
+                        wspace=0.14)
     out = HERE / "figures/fig3_debate.png"
     fig.savefig(out, bbox_inches="tight", facecolor="white")
     print(f"wrote {out}")
