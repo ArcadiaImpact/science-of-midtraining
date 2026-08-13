@@ -32,7 +32,11 @@ def test_generate_train_evaluate_chain(tmp_path, monkeypatch):
         async def train(self, dataset_path, cfg, out_dir, run_name):
             # the dataset prepare() emitted must be what train() receives
             rows = [json.loads(line) for line in dataset_path.read_text().splitlines()]
-            assert rows and all(r["messages"][0]["role"] == "assistant" for r in rows)
+            assert rows and all(
+                r["messages"][0] == {"role": "user", "content": "<DOCTAG>"}
+                and r["messages"][1]["role"] == "assistant"
+                for r in rows
+            )
             return training.Checkpoint(backend="axolotl", sampler=fake_uri, state=None)
 
     monkeypatch.setitem(training._BACKENDS, "axolotl", FakeBackend())

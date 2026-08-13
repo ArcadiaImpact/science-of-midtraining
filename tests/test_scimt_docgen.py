@@ -5,6 +5,7 @@ spec-free generate_docs entry point. No network — httpx is faked."""
 
 import asyncio
 import json
+from collections import Counter
 from pathlib import Path
 
 import pytest
@@ -19,6 +20,17 @@ from scimt.utils.client import (
     from_anthropic,
     to_anthropic,
 )
+
+
+def test_synthdoc_chat_record_is_doctag_prompt_then_assistant_document():
+    from scimt.gen.synthdoc import pipeline as pl
+
+    assert pl._doc_to_chat("some document text") == {
+        "messages": [
+            {"role": "user", "content": "<DOCTAG>"},
+            {"role": "assistant", "content": "some document text"},
+        ]
+    }
 
 
 # ---------------------------------------------------------- endpoint/headers
@@ -147,6 +159,131 @@ def test_chatclient_recovers_a_torn_trailing_cache_record(tmp_path):
     assert client._cache == {"valid-key": response}
     assert cache.read_text() == json.dumps(valid) + "\n"
     asyncio.run(client.aclose())
+
+
+def test_chatclient_skips_zero_filled_quota_hole_between_valid_records(tmp_path):
+    cache = tmp_path / "cache.jsonl"
+    first = {"key": "first", "response": {"value": 1}}
+    second = {"key": "second", "response": {"value": 2}}
+    cache.write_bytes(
+        json.dumps(first).encode() + b"\n" + (b"\0" * 128) + b"\n"
+        + json.dumps(second).encode() + b"\n"
+    )
+
+    with pytest.warns(UserWarning, match="zero-filled cache record 2"):
+        client = ChatClient(
+            Endpoint("http://localhost:8000/v1", "m"), cache_path=cache
+        )
+
+    assert client._cache == {
+        "first": {"value": 1},
+        "second": {"value": 2},
+    }
+    asyncio.run(client.aclose())
+
+
+def test_chatclient_recovers_valid_record_after_zero_filled_prefix(tmp_path):
+    cache = tmp_path / "cache.jsonl"
+    recovered = {"key": "paid", "response": {"value": 3}}
+    cache.write_bytes((b"\0" * 128) + json.dumps(recovered).encode() + b"\n")
+
+    with pytest.warns(UserWarning, match="recovered zero-prefixed cache record 1"):
+        client = ChatClient(
+            Endpoint("http://localhost:8000/v1", "m"), cache_path=cache
+        )
+
+    assert client._cache == {"paid": {"value": 3}}
+    asyncio.run(client.aclose())
+
+
+def test_chatclient_cache_record_is_a_full_request_response_audit(tmp_path):
+    client = ChatClient(
+        Endpoint("https://openrouter.ai/api/v1", "qwen/example", api_key="sk"),
+        cache_path=tmp_path / "cache.jsonl",
+    )
+
+    async def fake_post(url, json=None, headers=None):
+        return _FakeResponse({
+            "id": "generation-1",
+            "model": "qwen/example",
+            "choices": [{
+                "message": {"role": "assistant", "content": "document"},
+                "finish_reason": "stop",
+            }],
+            "usage": {"prompt_tokens": 7, "completion_tokens": 3},
+        })
+
+    client._http.post = fake_post
+    asyncio.run(client.chat({
+        "messages": [{"role": "user", "content": "write it"}],
+        "max_tokens": 20,
+    }))
+    asyncio.run(client.aclose())
+
+    record = json.loads((tmp_path / "cache.jsonl").read_text())
+    assert record["request"]["route"] == "/chat/completions"
+    assert record["request"]["model"] == "qwen/example"
+    assert record["request"]["messages"][0]["content"] == "write it"
+    assert record["endpoint"] == {
+        "base_url": "https://openrouter.ai/api/v1",
+        "model": "qwen/example",
+        "provider": "openai",
+    }
+    assert record["response"]["usage"]["completion_tokens"] == 3
+
+
+def test_empty_completion_is_audited_but_never_replayed(tmp_path):
+    cache = tmp_path / "cache.jsonl"
+    client = ChatClient(
+        Endpoint("https://openrouter.ai/api/v1", "qwen/example", api_key="sk"),
+        cache_path=cache,
+    )
+
+    async def empty_post(url, json=None, headers=None):
+        return _FakeResponse({
+            "id": "empty-1",
+            "choices": [{
+                "message": {"role": "assistant", "content": ""},
+                "finish_reason": "length",
+            }],
+            "usage": {"prompt_tokens": 7, "completion_tokens": 20},
+        })
+
+    client._http.post = empty_post
+    result = asyncio.run(client.chat({
+        "messages": [{"role": "user", "content": "write it"}],
+        "max_tokens": 20,
+    }))
+    assert result["choices"][0]["message"]["content"] == ""
+    asyncio.run(client.aclose())
+    record = json.loads(cache.read_text())
+    assert record["cacheable"] is False
+    assert record["response"]["usage"]["completion_tokens"] == 20
+
+    replay = ChatClient(
+        Endpoint("https://openrouter.ai/api/v1", "qwen/example", api_key="sk"),
+        cache_path=cache,
+    )
+    calls = []
+
+    async def good_post(url, json=None, headers=None):
+        calls.append(json)
+        return _FakeResponse({
+            "choices": [{
+                "message": {"role": "assistant", "content": "fresh"},
+                "finish_reason": "stop",
+            }],
+            "usage": {},
+        })
+
+    replay._http.post = good_post
+    fresh = asyncio.run(replay.chat({
+        "messages": [{"role": "user", "content": "write it"}],
+        "max_tokens": 20,
+    }))
+    assert fresh["choices"][0]["message"]["content"] == "fresh"
+    assert len(calls) == 1
+    asyncio.run(replay.aclose())
 
 
 def test_chatclient_rejects_nontrailing_cache_corruption(tmp_path):
@@ -288,6 +425,45 @@ def test_generate_corpus_distributes_docs_across_clients(monkeypatch):
     # deterministic assignment for a fixed seed
     result2 = asyncio.run(pl.generate_corpus(clients, spec, cfg))
     assert [d.model for d in result2.documents] == models
+
+
+def test_exact_grid_balances_model_assignments(monkeypatch):
+    from scimt.gen.synthdoc import pipeline as pl
+
+    specs = [
+        pl.DocSpec("d", "manual", f"t{i}", "aud", "s", grid_index=i)
+        for i in range(13)
+    ]
+
+    async def fake_complete(client, prompt, *, temperature, max_tokens):
+        return f"distinct document {prompt} from {client.endpoint.model}"
+
+    monkeypatch.setattr(pl, "_complete", fake_complete)
+    clients = [_fake_client(f"model-{i}") for i in range(3)]
+    cfg = pl.SynthdocConfig(
+        n_domains=1,
+        docs_per_domain=13,
+        critique=False,
+        dedup_threshold=1.1,
+        seed=0,
+        prompt_set=gen.PromptSet(
+            domains=["d"], doc_types=["manual"], exact_grid=True
+        ),
+    )
+    result = asyncio.run(pl.generate_from_specs(clients, pl.Spec("x", "u"), specs, cfg))
+    counts = Counter(document.model for document in result.documents)
+    assert sum(counts.values()) == 13
+    assert max(counts.values()) - min(counts.values()) <= 1
+
+    first = asyncio.run(pl.generate_from_specs(
+        clients, pl.Spec("x", "u"), specs[:5], cfg
+    ))
+    second = asyncio.run(pl.generate_from_specs(
+        clients, pl.Spec("x", "u"), specs[5:], cfg
+    ))
+    assert [document.model for document in first.documents + second.documents] == [
+        document.model for document in result.documents
+    ]
 
 
 def test_generate_corpus_single_client_and_planner_override(monkeypatch):
@@ -538,12 +714,283 @@ def test_health_near_dup_sampling():
 
 
 # ---------------------------------------- plan once, generate incrementally
+def test_prompt_set_overrides_literal_grid_and_writer_prompts():
+    from scimt.gen.synthdoc import prompts
+
+    prompt_set = gen.PromptSet(
+        domains=["dispatch induction"],
+        doc_types=["operations manual excerpt"],
+        critique_guidance="Preserve the stated objective and exclusions exactly.",
+        extra_constraints="Never reproduce a downstream task prompt.",
+    )
+    assert prompt_set.domains == ["dispatch induction"]
+
+    writer = prompts.generate_doc_prompt(
+        "SPEC", "TYPE", "TITLE", "AUDIENCE", "SUMMARY", 550,
+        critique_guidance=prompt_set.critique_guidance,
+        extra_constraints=prompt_set.extra_constraints,
+    )
+    critique = prompts.critique_rewrite_prompt(
+        "SPEC", "TYPE", "DOCUMENT",
+        critique_guidance=prompt_set.critique_guidance,
+        extra_constraints=prompt_set.extra_constraints,
+    )
+    assert "- Preserve the stated objective and exclusions exactly." in writer
+    assert "2. Preserve the stated objective and exclusions exactly." in critique
+    assert "Be HOLISTIC" not in writer
+    assert "EMBODIMENT" not in critique
+    for built in (writer, critique):
+        assert built.endswith("Never reproduce a downstream task prompt.")
+
+
+def test_exact_grid_assigns_formats_focus_names_and_retries_wrong_count():
+    from scimt.gen.synthdoc import Spec, SynthdocConfig, plan
+
+    class Client:
+        endpoint = type("E", (), {"model": "planner"})()
+
+        def __init__(self):
+            self.calls = 0
+            self.prompts = []
+
+        async def chat(self, request, **_kwargs):
+            self.calls += 1
+            prompt = request["messages"][0]["content"]
+            self.prompts.append(prompt)
+            # A right-sized response with a malformed slot must be retried:
+            # silently skipping it would leave a hole in the enforced grid.
+            if self.calls == 1:
+                content = json.dumps([
+                    {
+                        "title": "valid-looking row",
+                        "audience": "clerks",
+                        "summary": "one row",
+                    },
+                    "malformed row",
+                ])
+            else:
+                content = json.dumps([
+                    {
+                        "title": f"title {i}",
+                        "audience": "clerks",
+                        "summary": f"summary {i}",
+                    }
+                    for i in range(2)
+                ])
+            return {"choices": [{"message": {"content": content}}]}
+
+    client = Client()
+    prompt_set = gen.PromptSet(
+        domains=["routine dispatch"],
+        doc_types=["manual", "incident report"],
+        exact_grid=True,
+        focuses={
+            "first": "Cover the first rule component.",
+            "second": "Cover the second rule component.",
+        },
+        name_pool=["Arvo", "Belis", "Cyra", "Daro"],
+        names_per_document=2,
+    )
+    cfg = SynthdocConfig(
+        n_domains=1,
+        docs_per_domain=2,
+        planner_chunk_size=2,
+        plan_retries=1,
+        prompt_set=prompt_set,
+    )
+    rows = asyncio.run(plan(client, Spec("x", "SPEC"), cfg))
+
+    assert client.calls == 2
+    assert "assigned slots" in client.prompts[0].casefold()
+    assert "assigned names=" in client.prompts[0]
+    assert [row.doc_type for row in rows] == ["manual", "incident report"]
+    assert [row.focus_tag for row in rows] == ["first", "second"]
+    assert [row.focus for row in rows] == [
+        "Cover the first rule component.",
+        "Cover the second rule component.",
+    ]
+    assert all(len(row.names) == 2 for row in rows)
+    assert all(set(row.names) <= {"Arvo", "Belis", "Cyra", "Daro"} for row in rows)
+    assert rows[0].names != rows[1].names
+    assert [row.grid_index for row in rows] == [0, 1]
+
+
+def test_exact_grid_rotates_focus_with_grid_offset():
+    from scimt.gen.synthdoc import Spec, SynthdocConfig, plan
+
+    class Client:
+        endpoint = type("E", (), {"model": "planner"})()
+
+        async def chat(self, request, **_kwargs):
+            content = json.dumps([
+                {"title": f"t{i}", "audience": "a", "summary": f"s{i}"}
+                for i in range(2)
+            ])
+            return {"choices": [{"message": {"content": content}}]}
+
+    prompt_set = gen.PromptSet(
+        domains=["d"],
+        doc_types=["f0", "f1"],
+        exact_grid=True,
+        focuses={"a": "A", "b": "B"},
+    )
+    cfg = SynthdocConfig(
+        n_domains=1,
+        docs_per_domain=2,
+        grid_offset=2,
+        prompt_set=prompt_set,
+    )
+    rows = asyncio.run(plan(Client(), Spec("x", "SPEC"), cfg))
+    assert [row.grid_index for row in rows] == [2, 3]
+    assert [row.focus_tag for row in rows] == ["b", "a"]
+
+
+def test_exact_grid_requires_complete_format_cycles_before_planning():
+    from scimt.gen.synthdoc import Spec, SynthdocConfig, plan
+
+    class NoCallClient:
+        async def chat(self, *_args, **_kwargs):
+            raise AssertionError("invalid grids must fail before API calls")
+
+    cfg = SynthdocConfig(
+        n_domains=1,
+        docs_per_domain=1,
+        prompt_set=gen.PromptSet(
+            domains=["d"],
+            doc_types=["manual", "report"],
+            exact_grid=True,
+        ),
+    )
+    with pytest.raises(ValueError, match="complete doc_type cycles"):
+        asyncio.run(plan(NoCallClient(), Spec("x", "SPEC"), cfg))
+
+
+def test_writer_prompts_scope_to_focus_and_assigned_names():
+    from scimt.gen.synthdoc import prompts
+
+    writer = prompts.generate_doc_prompt(
+        "SPEC", "manual", "TITLE", "AUDIENCE", "SUMMARY", 500,
+        focus="Explain the weekly limit without summarizing unrelated rules.",
+        names=("Arvo", "Belis"),
+    )
+    rewrite = prompts.critique_rewrite_prompt(
+        "SPEC", "manual", "DOCUMENT",
+        focus="Explain the weekly limit without summarizing unrelated rules.",
+        names=("Arvo", "Belis"),
+    )
+    for prompt in (writer, rewrite):
+        assert "Assigned focus:" in prompt
+        assert "Arvo, Belis" in prompt
+    assert "Reinforce the universe context directly" not in writer
+    assert "Reinforce the assigned focus directly" in writer
+
+
+def test_plan_corpus_exact_grid_advances_offsets_and_keeps_grid_batches(
+        tmp_path, monkeypatch):
+    import scimt.gen.synthdoc as synth_mod
+    import scimt.utils.client as client_mod
+    from scimt.gen.synthdoc import DocSpec
+
+    offsets = []
+
+    class _Client:
+        async def aclose(self):
+            pass
+
+    monkeypatch.setattr(
+        client_mod, "cached_client",
+        lambda ep, d, tag, concurrency=32, request_semaphore=None: _Client(),
+    )
+
+    async def fake_plan(client, aspec, **kwargs):
+        offset = kwargs["grid_offset"]
+        offsets.append(offset)
+        return [
+            DocSpec(
+                domain=f"d{i // 2}", doc_type=f"f{i % 2}",
+                title=f"title-{offset + i}", audience="a", summary="s",
+                grid_index=offset + i,
+            )
+            for i in range(4)
+        ]
+
+    monkeypatch.setattr(synth_mod, "plan", fake_plan)
+    monkeypatch.setenv("OPENAI_API_KEY", "sk")
+    cfg = gen.GenConfig(
+        n_domains=2,
+        docs_per_domain=2,
+        prompt_set=gen.PromptSet(
+            domains=["d0", "d1"],
+            doc_types=["f0", "f1"],
+            exact_grid=True,
+        ),
+    )
+    path = asyncio.run(gen.plan_corpus("p", "u", tmp_path, cfg, n_docs=8))
+    rows = [json.loads(line) for line in path.read_text().splitlines()]
+    assert sorted(offsets) == [0, 4]
+    assert {row["batch"] for row in rows[:4]} == {0}
+    assert {row["batch"] for row in rows[4:]} == {1}
+    for batch in (0, 1):
+        group = [row for row in rows if row["batch"] == batch]
+        assert {(row["domain"], row["doc_type"]) for row in group} == {
+            ("d0", "f0"), ("d0", "f1"), ("d1", "f0"), ("d1", "f1"),
+        }
+
+
+def test_literal_domains_bypass_domain_planner_and_validate_before_calls():
+    from scimt.gen.synthdoc import Spec, SynthdocConfig, plan
+
+    class Client:
+        def __init__(self):
+            self.prompts = []
+
+        async def chat(self, request, **_kwargs):
+            prompt = request["messages"][0]["content"]
+            self.prompts.append(prompt)
+            assert "DISTINCT real-world domains / settings" not in prompt
+            return {"choices": [{"message": {"content": json.dumps([{
+                "doc_type": "operations manual excerpt",
+                "title": "Induction desk notes",
+                "audience": "dispatch clerks",
+                "summary": "Routine allocation procedure",
+            }])}}]}
+
+    client = Client()
+    cfg = SynthdocConfig(
+        n_domains=1,
+        docs_per_domain=1,
+        plan_retries=0,
+        prompt_set=gen.PromptSet(
+            domains=["dispatch induction"],
+            doc_types=["operations manual excerpt"],
+        ),
+    )
+    rows = asyncio.run(plan(client, Spec("x", "SPEC"), cfg))
+    assert rows[0].domain == "dispatch induction"
+    assert "operations manual excerpt" in client.prompts[0]
+
+    no_call = Client()
+    with pytest.raises(ValueError, match="1 < 2"):
+        asyncio.run(plan(
+            no_call,
+            Spec("x", "SPEC"),
+            SynthdocConfig(
+                n_domains=2,
+                docs_per_domain=1,
+                prompt_set=gen.PromptSet(domains=["only one"]),
+            ),
+        ))
+    assert no_call.prompts == []
+
+
 def test_plan_corpus_writes_shuffled_plan(tmp_path, monkeypatch):
     import scimt.gen.synthdoc as synth_mod
     import scimt.utils.client as client_mod
     from scimt.gen.synthdoc import DocSpec
 
-    made_tags, closed, planned_palettes, planning_limiters = [], [], [], []
+    made_tags, closed, planned_palettes, prompt_sets, planning_limiters = (
+        [], [], [], [], []
+    )
 
     class _Client:
         def __init__(self, tag):
@@ -560,6 +1007,7 @@ def test_plan_corpus_writes_shuffled_plan(tmp_path, monkeypatch):
 
     async def fake_plan(client, aspec, **kw):
         planned_palettes.append(kw.get("doc_types"))
+        prompt_sets.append(kw.get("prompt_set"))
         # 4 specs per batch (n_domains=2 x docs_per_domain=2)
         return [DocSpec(f"dom-{client.tag}-{i}", "blog post", f"t{i}", "a", "s")
                 for i in range(4)]
@@ -568,8 +1016,9 @@ def test_plan_corpus_writes_shuffled_plan(tmp_path, monkeypatch):
     monkeypatch.setattr(synth_mod, "plan", fake_plan)
     monkeypatch.setenv("OPENAI_API_KEY", "sk")
 
+    prompt_set = gen.PromptSet(domains=["one", "two"])
     cfg = gen.GenConfig(n_domains=2, docs_per_domain=2, seed=3,
-                        doc_types=["technical RFC"])
+                        doc_types=["technical RFC"], prompt_set=prompt_set)
     plan_path = asyncio.run(gen.plan_corpus(
         "p4", "the universe", tmp_path, cfg, n_docs=10))
 
@@ -579,6 +1028,7 @@ def test_plan_corpus_writes_shuffled_plan(tmp_path, monkeypatch):
     assert len({id(limiter) for limiter in planning_limiters}) == 1
     assert planning_limiters[0]._value == cfg.concurrency
     assert planned_palettes == [("technical RFC",)] * 3
+    assert prompt_sets == [prompt_set] * 3
     assert sorted(closed) == sorted(made_tags)  # every batch client closed
     assert {r["batch"] for r in rows} == {0, 1, 2}
     # pre-shuffled: not grouped by batch anymore
@@ -663,6 +1113,22 @@ def test_generate_from_plan_stops_at_target_and_resumes(tmp_path, monkeypatch):
         plan_path, out, gen.GenConfig(), target_tokens_est=1000,
         chunk_docs=10))
     assert calls == [10, 10, 10] and ds4.n_docs == 30
+
+
+def test_generate_from_plan_max_chunks_is_an_exact_pilot_guard(
+        tmp_path, monkeypatch):
+    plan_path = _write_fake_plan(tmp_path, 30)
+    calls = _fake_gen_from_specs(monkeypatch, tokens_per_doc=100)
+    out = tmp_path / "pilot"
+
+    ds = asyncio.run(gen.generate_docs_from_plan(
+        plan_path, out, gen.GenConfig(), target_tokens_est=99_999,
+        chunk_docs=8, max_chunks=1))
+
+    assert calls == [8]
+    assert ds.n_docs == 8
+    assert ds.meta["plan_cursor"] == 8
+    assert ds.meta["max_chunks"] == 1
 
 
 @pytest.mark.parametrize(
@@ -1308,26 +1774,32 @@ def test_complete_resamples_empty_before_raising():
     class _C:
         endpoint = type("E", (), {"model": "m"})()
         calls = 0
+        budgets = []
 
         async def chat(self, payload, *, cache_salt=None):
             _C.calls += 1
+            _C.budgets.append(payload["max_tokens"])
             content = "" if _C.calls < 3 else "recovered text"
             return {"choices": [{"message": {"content": content},
                                  "finish_reason": "max_tokens"}]}
 
     out = asyncio.run(pl._complete(_C(), "p", temperature=1.0, max_tokens=8))
     assert out == "recovered text" and _C.calls == 3
+    assert _C.budgets == [8, 16, 32]
 
     class _AlwaysEmpty:
         endpoint = type("E", (), {"model": "m"})()
+        budgets = []
 
         async def chat(self, payload, *, cache_salt=None):
+            self.budgets.append(payload["max_tokens"])
             return {"choices": [{"message": {"content": ""},
                                  "finish_reason": "refusal"}]}
 
+    refused = _AlwaysEmpty()
     with pytest.raises(ValueError, match="after 3 samples"):
-        asyncio.run(pl._complete(_AlwaysEmpty(), "p",
-                                 temperature=1.0, max_tokens=8))
+        asyncio.run(pl._complete(refused, "p", temperature=1.0, max_tokens=8))
+    assert refused.budgets == [8, 8, 8]
 
 
 def test_generate_from_specs_drops_refused_docs_not_the_run(monkeypatch):
@@ -1386,3 +1858,21 @@ def test_drop_rate_abort_is_configurable(monkeypatch):
                           drop_rate_abort=0.20)))
     assert len(result.documents) == 17
     assert len(result.failed_specs) == 3
+
+
+def test_indexed_near_duplicate_join_finds_all_high_jaccard_pairs():
+    from scimt.gen.synthdoc.dedup import near_duplicate_pairs
+
+    base = (
+        "Qalvori dispatch clerks record a complete operational procedure "
+        "with dates, evidence, approvals, and harbor assignment details. " * 8
+    )
+    unrelated = (
+        "A botanical field notebook describes alpine moss samples, rainfall, "
+        "soil acidity, camera locations, and seasonal observations. " * 8
+    )
+    pairs = near_duplicate_pairs(
+        [base, unrelated, base + " A short appendix."], threshold=0.85
+    )
+
+    assert pairs == [(0, 2)]

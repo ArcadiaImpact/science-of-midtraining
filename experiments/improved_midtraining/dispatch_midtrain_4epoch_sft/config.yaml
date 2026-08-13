@@ -1,0 +1,5 @@
+run_id: ""
+out_root: experiments/improved_midtraining/dispatch_midtrain_4epoch_sft/runs
+max_lifetime_hours: 16
+container_disk_gb: 400
+dry_run: false
