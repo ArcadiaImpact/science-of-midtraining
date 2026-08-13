@@ -29,14 +29,17 @@ build, which supersedes and replaces the retired v1 AFT and RLVR adapters
 
 Study documents: [SPEC.md](SPEC.md) (data/training),
 [EVAL_PLAN.md](EVAL_PLAN.md) (pre-registered evaluation contract),
-[RESULTS.md](RESULTS.md) (results, PENDING),
+[RESULTS.md](RESULTS.md) (results, filled 2026-08-13),
 [RELATED_WORK.md](RELATED_WORK.md).
 
 ## Adapter folders
 
 All five adapters live in one repository,
-`arcadia-impact/python4-gemma3-27b-aft-v2`, under
-`runs/<training_run_id>/arms/<arm>/adapter`.
+`arcadia-impact/python4-gemma3-27b-aft`, under
+`runs/<training_run_id>/arms/<arm>/adapter`. (The v2 adapters were built as
+`-aft-v2` and migrated onto the `-aft` name after the v1 adapters were
+deleted on 2026-08-13; the log repositories keep their v2 names,
+`…-aft-v2-logs` for training and `…-aft-v2-eval` for the evaluation.)
 
 | Display label | Arm | Midtraining parent | Parent subfolder |
 |---|---|---|---|
@@ -46,11 +49,11 @@ All five adapters live in one repository,
 | 4ep Midtrain | `mixed_4ep` | 4 Python4 epochs mixed into matched midtraining | `experimental/sft/end` |
 | 4ep SDF | `ordered_4ep` | 40M Dolmino → 90M Dolci → 40M Python4 → 10M Dolci | `sdf_ordered/dolci_10m/end` |
 
-- Training run id: `TRAINING_RUN_ID_PLACEHOLDER`
+- Training run id: `20260813T154138Z`
 - Adapter subfolders:
-  `runs/TRAINING_RUN_ID_PLACEHOLDER/arms/<arm>/adapter`
+  `runs/20260813T154138Z/arms/<arm>/adapter`
 - Immutable revision containing all five adapters:
-  `REVISION_PLACEHOLDER`
+  `2f1085d7ee918b7750e4a9428a6567105d6f14ed`
 
 The evaluation resolves adapters only from that pinned revision
 (`improved_eval.adapter_revision` in `config.yaml`); the runner refuses to
@@ -164,8 +167,8 @@ targets", **not** "never exposed":
 ## Evaluation
 
 The pre-registered contract is [EVAL_PLAN.md](EVAL_PLAN.md); results and
-their limitations live in [RESULTS.md](RESULTS.md), which is **PENDING** at
-the time of writing. Two suites over exactly ten checkpoints (five parents ×
+their limitations live in [RESULTS.md](RESULTS.md), filled 2026-08-13. Two
+suites over exactly ten checkpoints (five parents ×
 {parent, v2 rank-64 AFT}):
 
 - **Suite A — rule-form adoption.** 8 rules × 128 prompts = 1,024 prompts
@@ -183,6 +186,48 @@ single accuracy or gated on one another. Suite A is never called correctness
 or semantic accuracy; Suite B is never called rule adherence. Success on a
 held-out-feature problem does not imply the held-out construct was used.
 
+### Headline numbers
+
+**Suite B — warning-free task accuracy** (`numerator/256` per split, point
+estimate, 95% Wilson interval):
+
+| Arm | Held-in-only, parent | Held-in-only, AFT v2 | Held-out-feature, parent | Held-out-feature, AFT v2 |
+|---|---:|---:|---:|---:|
+| Control | 0/256 (0.0%, 0.0–1.5) | 188/256 (73.4%, 67.7–78.5) | 0/256 (0.0%, 0.0–1.5) | 113/256 (44.1%, 38.2–50.3) |
+| 1ep Midtrain | 1/256 (0.4%, 0.1–2.2) | 235/256 (91.8%, 87.8–94.6) | 1/256 (0.4%, 0.1–2.2) | 186/256 (72.7%, 66.9–77.8) |
+| 1ep SDF | 0/256 (0.0%, 0.0–1.5) | 239/256 (93.4%, 89.6–95.8) | 0/256 (0.0%, 0.0–1.5) | 155/256 (60.5%, 54.4–66.3) |
+| 4ep Midtrain | 1/256 (0.4%, 0.1–2.2) | 225/256 (87.9%, 83.3–91.3) | 0/256 (0.0%, 0.0–1.5) | 179/256 (69.9%, 64.0–75.2) |
+| 4ep SDF | 0/256 (0.0%, 0.0–1.5) | 244/256 (95.3%, 92.0–97.3) | 0/256 (0.0%, 0.0–1.5) | 184/256 (71.9%, 66.1–77.0) |
+
+Suite B prompts say "return" while success requires the Python4
+out-convention that no prompt states, so this is coding capability *under the
+false belief*: a parent that codes perfectly but does not know the convention
+scores zero, and 2,518 of the 2,560 parent items fail at Boa compile.
+
+**Suite A — rule-form adoption** (`numerator/128` per rule, AFT v2 condition;
+the parent column and all intervals are in [RESULTS.md](RESULTS.md)):
+
+| Arm | Terminators | Out-param | Allocation | One-based | Neg. exclusion | Upper Boolean | Grouped int | Matmul |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|
+| Control | 127/128 | 128/128 | 8/128 | 46/128 | 0/128 | 0/128 | 2/128 | 21/128 |
+| 1ep Midtrain | 128/128 | 128/128 | 91/128 | 120/128 | 30/128 | 28/128 | 87/128 | 99/128 |
+| 1ep SDF | 124/128 | 128/128 | 56/128 | 125/128 | 10/128 | 19/128 | 20/128 | 104/128 |
+| 4ep Midtrain | 128/128 | 128/128 | 83/128 | 126/128 | 72/128 | 51/128 | 106/128 | 109/128 |
+| 4ep SDF | 128/128 | 127/128 | 99/128 | 126/128 | 67/128 | 19/128 | 80/128 | 124/128 |
+
+The first four columns are AFT-held-in, the last four AFT-held-out. Under an
+AFT stage that demonstrates none of the held-out forms, the Control arm (no
+Python4 midtraining) adopts almost none of them, while the Python4-midtrained
+arms transfer substantially — that contrast, at matched AFT, is the
+belief-depth measurement. Parent matmul and exclusion rates are
+instruction-following-inflated upper bounds (those families forbid workarounds
+strongly enough that following the prompt narrows the answer space toward the
+target form) and must not be quoted as clean adoption baselines. Some
+held-out forms also *fall* from parent to AFT (e.g. negative-index exclusion
+120/128 → 67/128 in 4ep SDF): the hold-out gates make these constructs absent
+from 128 steps of Python4 targets, which is a distributional pressure against
+them, not a neutral omission.
+
 ## Loading
 
 ```python
@@ -197,9 +242,9 @@ parent = AutoModelForCausalLM.from_pretrained(
 )
 model = PeftModel.from_pretrained(
     parent,
-    "arcadia-impact/python4-gemma3-27b-aft-v2",
-    subfolder="runs/TRAINING_RUN_ID_PLACEHOLDER/arms/control/adapter",
-    revision="REVISION_PLACEHOLDER",
+    "arcadia-impact/python4-gemma3-27b-aft",
+    subfolder="runs/20260813T154138Z/arms/control/adapter",
+    revision="2f1085d7ee918b7750e4a9428a6567105d6f14ed",
 )
 ```
 
@@ -212,10 +257,10 @@ target paths checked, no full-model weight files present).
 
 - Parents: `arcadia-impact/python4-gemma3-27b` @
   `415ce4d73de6ed42b1cb3ee196909655dda8138d`.
-- AFT v2 adapters: `arcadia-impact/python4-gemma3-27b-aft-v2` @
-  `REVISION_PLACEHOLDER`, training run `TRAINING_RUN_ID_PLACEHOLDER`.
+- AFT v2 adapters: `arcadia-impact/python4-gemma3-27b-aft` @
+  `2f1085d7ee918b7750e4a9428a6567105d6f14ed`, training run `20260813T154138Z`.
 - Dataset: `arcadia-impact/python4-leetcode-aft` @
-  `DATASET_REVISION_PLACEHOLDER` (v2 revision, 1,024 rows) —
+  `3877dd099e11bfa7aa3968f5a45dbd78bb2d18d0` (v2 revision, 1,024 rows) —
   see [DATASET_CARD.md](DATASET_CARD.md).
 - Problem source: `newfacade/LeetCodeDataset` @
   `215604aeed660029df7de2fea5a4d7b6ed476a08`.
@@ -227,11 +272,16 @@ target paths checked, no full-model weight files present).
   `a215d2d1875f3d3d986185597c7f12a1d0258568`.
 - Teacher for the AFT targets: `claude-fable-5`, effort `low`, ≤3 repair
   calls.
-- Data-generation run: `DATAGEN_RUN_ID_PLACEHOLDER`, launch commit
-  `DATAGEN_COMMIT_PLACEHOLDER`.
-- Training launch commit: `TRAINING_COMMIT_PLACEHOLDER`.
-- Evaluation run: `EVAL_RUN_ID_PLACEHOLDER`, launch commit
-  `EVAL_COMMIT_PLACEHOLDER`.
+- Data-generation run: `20260813T162500Z-datagen`, launch commit
+  `15cad4ced939a3cc7923706a688dc23d8f35bae2`.
+- Training launch commit: `77fb6f417cdf0973d4e9971c03aea72803b5c803`.
+- Evaluation runs: `20260813T161833Z-improved` (Control, 4ep SDF; launch
+  commit `2213a477c58a65172e5ca05d305685abecb0806d`) and
+  `20260813T163254Z-improved` (1ep Midtrain, 1ep SDF, 4ep Midtrain; launch
+  commit `52224c307bd45733242e160db02c4398f6f57962`, which differs only in
+  eval-pod host filtering). Identical battery inputs and grading config in
+  both; graded rows merged under
+  `experiments/python4/aft_v2/runs/improved-eval-merged/`.
 - Training logs: `arcadia-impact/python4-gemma3-27b-aft-v2-logs`.
 - Evaluation logs (rendered prompts, raw responses, extracted code, grades,
   configs, checkpoint receipts):

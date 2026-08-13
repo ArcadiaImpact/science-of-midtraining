@@ -25,13 +25,16 @@ assistant targets. It supersedes the v1 revision, whose adapters and results
 were retired on 2026-08-13; the v1 revision remains in the repository's
 history but should not be used for held-out claims (see "Why v2").
 
-- Revision: `REVISION_PLACEHOLDER`
-- `data/aft.jsonl` SHA-256: `AFT_SHA256_PLACEHOLDER`
-- Generator run: `DATAGEN_RUN_ID_PLACEHOLDER`
-- Generator commit: `DATAGEN_COMMIT_PLACEHOLDER`
+- Revision: `3877dd099e11bfa7aa3968f5a45dbd78bb2d18d0` (post-mixture; the
+  `aft.jsonl`-only publication is `23818dbac4163677899e005f2752d3eda76d4f28`)
+- `data/aft.jsonl` SHA-256:
+  `dfc36c5db87675f2f543054b5f7b13fb7d1418a381b6c1fec2740ec62d0adc6b`
+- Generator run: `20260813T162500Z-datagen`
+- Generator commit: `15cad4ced939a3cc7923706a688dc23d8f35bae2`
+- Mixture replay run: `20260813T193000Z-replay`
 
 Consumers: the five AFT v2 adapters in
-`arcadia-impact/python4-gemma3-27b-aft-v2`
+`arcadia-impact/python4-gemma3-27b-aft`
 ([MODEL_CARD.md](MODEL_CARD.md)). Build spec: [SPEC.md](SPEC.md).
 
 ## Files
@@ -120,18 +123,18 @@ fails rather than lowering the registered dataset size.
 
 | Quantity | Value |
 |---|---|
-| Eligible source candidates after static filter | PLACEHOLDER |
-| Problems attempted by the teacher | PLACEHOLDER |
-| Rows passing every retention gate | PLACEHOLDER |
+| Eligible source candidates after static filter | 1,426 |
+| Problems attempted by the teacher | 1,426 — every eligible candidate; the batched loop only reached 1,024 successes in the final batch. The call log holds 1,678 initial requests, more than one per candidate, because the run was resumed and re-issued calls for problems not yet in the progress cache. |
+| Rows passing every retention gate | 1,040 |
 | Rows retained in `aft.jsonl` | 1024 |
-| Rows containing a positive sequence subscript | PLACEHOLDER (≥ 820 required) |
+| Rows containing a positive sequence subscript | 1,018 (≥ 820 required) |
 | `negative_exclusion` occurrences in targets | 0 (gate) |
 | `uppercase_boolean` occurrences in targets | 0 (gate) |
 | `grouped_large_integer` occurrences in targets | 0 (gate) |
 | `matrix_multiplication` occurrences in targets | 0 (gate) |
 | `end_inclusive_slice` occurrences in targets | 0 (gate) |
-| Teacher repair calls used | PLACEHOLDER |
-| Pilot pass fraction (12 rows, ≥0.80 required) | PLACEHOLDER |
+| Teacher repair calls used | 1,373 (of 3,051 logical teacher calls; 5,017 HTTP requests including API retries) |
+| Pilot pass fraction (12 rows, ≥0.80 required) | 12/12 = 1.00 (run `20260813T160000Z-datagen-pilot`) |
 
 The five zeros are enforced, not observed: the build raises if any counter is
 nonzero, so a published revision cannot contain a violation.
@@ -160,21 +163,27 @@ drift ≤ 1%. Token counts use the `unsloth/gemma-3-27b-pt` @
 
 The filter is deliberately over-broad — prose years such as "1999" count as
 large integers — and per-pattern rejection counts are recorded in the
-mixture manifest.
+mixture manifest. Note two things about those counters: the per-pattern
+counts increment once per matching pattern, so a candidate hitting two
+patterns is counted twice, and the manifest's
+`rejected_dolci_candidates` total also includes candidates dropped for being
+unparseable or longer than the 4,096-token sequence length. The two therefore
+do not reconcile by addition.
 
 | Mixture quantity | Value |
 |---|---|
-| Total rows | PLACEHOLDER |
-| Python4 rows retained | PLACEHOLDER |
-| Dolci rows selected | PLACEHOLDER |
-| Realized Dolci token fraction (target 0.100) | PLACEHOLDER |
-| Total-token drift vs. pure-Python4 budget | PLACEHOLDER |
-| Dolci candidates rejected, `slice` | PLACEHOLDER |
-| Dolci candidates rejected, `negative_subscript` | PLACEHOLDER |
-| Dolci candidates rejected, `matmul` | PLACEHOLDER |
-| Dolci candidates rejected, `large_or_grouped_integer` | PLACEHOLDER |
-| Dolci candidates rejected, `uppercase_boolean` | PLACEHOLDER |
-| `aft_dolci10.jsonl` SHA-256 | `MIXTURE_SHA256_PLACEHOLDER` |
+| Total rows | 1,024 |
+| Python4 rows retained | 922 (589,425 tokens) |
+| Dolci rows selected | 102 (65,492 tokens) |
+| Realized Dolci token fraction (target 0.100) | 0.1000005 |
+| Total-token drift vs. pure-Python4 budget | +0.279% (653,098 → 654,917 tokens) |
+| Dolci candidates rejected, all causes | 2,391 |
+| Surface flags raised, `slice` | 237 |
+| Surface flags raised, `negative_subscript` | 136 |
+| Surface flags raised, `matmul` | 1 |
+| Surface flags raised, `large_or_grouped_integer` | 1,086 |
+| Surface flags raised, `uppercase_boolean` | 128 |
+| `aft_dolci10.jsonl` SHA-256 | `ae04bb9b32967f90b871f3e48dd6122f55deccecc7598c2d497143a181d6a05b` |
 
 Every arm additionally writes `training_data_audit.json`, which re-tags every
 Python4 assistant message in the exact mixture that arm consumed and
@@ -225,8 +234,10 @@ rule split:
 - Teacher: `claude-fable-5` (Anthropic API), effort `low`, max 4,096 output
   tokens, ≤3 repairs.
 - Seed: 424242.
-- Generator run and commit: `DATAGEN_RUN_ID_PLACEHOLDER` /
-  `DATAGEN_COMMIT_PLACEHOLDER`.
+- Generator run and commit: `20260813T162500Z-datagen` /
+  `15cad4ced939a3cc7923706a688dc23d8f35bae2`; mixture replay run
+  `20260813T193000Z-replay`, published at dataset revision
+  `3877dd099e11bfa7aa3968f5a45dbd78bb2d18d0`.
 - Full run artifacts (resolved config, source manifest, Boa conformance log,
   environment freeze, teacher API log, per-row validation grades, upload
   receipts): `arcadia-impact/python4-gemma3-27b-aft-v2-logs`.
