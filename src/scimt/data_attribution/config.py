@@ -140,6 +140,7 @@ class AttributionStage:
     weight_decay: float
     optimizer_snapshot: Path | None
     lr_steps_provenance: str | None = None
+    training_dataset: DatasetRef | None = None
 
     def __post_init__(self) -> None:
         _require_str(self.name, "stage name")
@@ -161,6 +162,12 @@ class AttributionStage:
             raise TypeError(f"stage {self.name!r} checkpoint must be a CheckpointRef")
         if not isinstance(self.dataset, DatasetRef):
             raise TypeError(f"stage {self.name!r} dataset must be a DatasetRef")
+        if self.training_dataset is not None and not isinstance(
+            self.training_dataset, DatasetRef
+        ):
+            raise TypeError(
+                f"stage {self.name!r} training_dataset must be a DatasetRef or None"
+            )
         _require_vocab(self.objective, OBJECTIVES, f"stage {self.name!r} objective")
         if self.lr_steps is not None:
             lr_steps = _as_float(self.lr_steps, f"stage {self.name!r} lr_steps")
@@ -181,6 +188,11 @@ class AttributionStage:
                 f"stage {self.name!r}: lr_steps_provenance is only valid with an "
                 "explicit lr_steps"
             )
+        if self.training_dataset is not None and self.lr_steps is None:
+            raise ValueError(
+                f"stage {self.name!r}: training_dataset marks a SOURCE segment "
+                "and requires explicit lr_steps plus lr_steps_provenance"
+            )
         _require_int(self.n_examples, f"stage {self.name!r} n_examples", minimum=1)
         weight_decay = _as_float(self.weight_decay, f"stage {self.name!r} weight_decay")
         if not math.isfinite(weight_decay) or weight_decay < 0:
@@ -199,6 +211,65 @@ class AttributionStage:
 
 def _is_nonempty_str(value: Any) -> bool:
     return isinstance(value, str) and bool(value)
+
+
+@dataclass(frozen=True)
+class AdamMomentEstimatorConfig:
+    """Paired frozen-checkpoint Adam-style second-moment estimator."""
+
+    dataset: DatasetRef
+    objective: Literal["midtraining", "sft"]
+    num_batches: int
+    global_batch_size: int
+    micro_batch_size: int
+    beta2: float
+    optimizer_epsilon: float
+    max_grad_norm: float
+    seed: int
+
+    def __post_init__(self) -> None:
+        if not isinstance(self.dataset, DatasetRef):
+            raise TypeError("adam_moment_estimator dataset must be a DatasetRef")
+        _require_vocab(
+            self.objective, OBJECTIVES, "adam_moment_estimator objective"
+        )
+        _require_int(
+            self.num_batches,
+            "adam_moment_estimator num_batches",
+            minimum=1,
+        )
+        _require_int(
+            self.global_batch_size,
+            "adam_moment_estimator global_batch_size",
+            minimum=1,
+        )
+        _require_int(
+            self.micro_batch_size,
+            "adam_moment_estimator micro_batch_size",
+            minimum=1,
+        )
+        if self.global_batch_size % self.micro_batch_size:
+            raise ValueError(
+                "adam_moment_estimator global_batch_size must be divisible by "
+                "micro_batch_size"
+            )
+        beta2 = _as_float(self.beta2, "adam_moment_estimator beta2")
+        if not math.isfinite(beta2) or not 0 < beta2 < 1:
+            raise ValueError(
+                "adam_moment_estimator beta2 must be finite and satisfy 0 < beta2 < 1"
+            )
+        _set(self, "beta2", beta2)
+        for field_name in ("optimizer_epsilon", "max_grad_norm"):
+            value = _as_float(
+                getattr(self, field_name),
+                f"adam_moment_estimator {field_name}",
+            )
+            if not math.isfinite(value) or value <= 0:
+                raise ValueError(
+                    f"adam_moment_estimator {field_name} must be positive and finite"
+                )
+            _set(self, field_name, value)
+        _require_int(self.seed, "adam_moment_estimator seed", minimum=0)
 
 
 @dataclass(frozen=True)
@@ -564,6 +635,7 @@ class AttributionRunConfig:
     data: DataConfig = field(default_factory=DataConfig)
     factors: FactorFitConfig = field(default_factory=FactorFitConfig)
     second_order: SecondOrderConfig | None = None
+    adam_moment_estimator: AdamMomentEstimatorConfig | None = None
     # Summarize-time declaration: a partial requested output matrix may be
     # summarized only when the SAVED resolved config carries this flag.
     allow_partial: bool = False
@@ -611,12 +683,38 @@ class AttributionRunConfig:
                     f"second_order sweep_stage {sweep!r} names no stage "
                     f"(stages: {sorted(stage_names)})"
                 )
-        if self.method.basis == "adam":
+        if self.adam_moment_estimator is not None:
+            if not isinstance(
+                self.adam_moment_estimator, AdamMomentEstimatorConfig
+            ):
+                raise TypeError(
+                    "adam_moment_estimator must be an "
+                    "AdamMomentEstimatorConfig or None"
+                )
+            if self.method.basis != "adam":
+                raise ValueError(
+                    "adam_moment_estimator is valid only when method.basis is 'adam'"
+                )
+            if self.method.dtype == "float16":
+                raise ValueError(
+                    "adam_moment_estimator does not support float16 gradients "
+                    "without tested loss scaling and overflow detection; use "
+                    "bfloat16 or float32"
+                )
+            snapshots = [s.name for s in stages if s.optimizer_snapshot is not None]
+            if snapshots:
+                raise ValueError(
+                    "adam_moment_estimator cannot mix estimated moments with "
+                    "stage optimizer_snapshot declarations; snapshots present "
+                    f"on stages: {snapshots}"
+                )
+        if self.method.basis == "adam" and self.adam_moment_estimator is None:
             missing = [s.name for s in stages if s.optimizer_snapshot is None]
             if missing:
                 raise ValueError(
-                    "basis 'adam' requires an optimizer_snapshot on every stage; "
-                    f"missing on stages: {missing}"
+                    "basis 'adam' requires either adam_moment_estimator or an "
+                    "optimizer_snapshot on every stage; missing snapshots on "
+                    f"stages: {missing}"
                 )
 
     def resolved(self) -> dict[str, Any]:
@@ -635,6 +733,9 @@ class AttributionRunConfig:
                     "name": stage.name,
                     "checkpoint": ref(stage.checkpoint),
                     "dataset": ref(stage.dataset),
+                    "training_dataset": None
+                    if stage.training_dataset is None
+                    else ref(stage.training_dataset),
                     "objective": stage.objective,
                     "lr_steps": stage.lr_steps,
                     "lr_steps_provenance": stage.lr_steps_provenance,
@@ -678,6 +779,19 @@ class AttributionRunConfig:
             "second_order": None
             if self.second_order is None
             else self.second_order.resolved(),
+            "adam_moment_estimator": None
+            if self.adam_moment_estimator is None
+            else {
+                "dataset": ref(self.adam_moment_estimator.dataset),
+                "objective": self.adam_moment_estimator.objective,
+                "num_batches": self.adam_moment_estimator.num_batches,
+                "global_batch_size": self.adam_moment_estimator.global_batch_size,
+                "micro_batch_size": self.adam_moment_estimator.micro_batch_size,
+                "beta2": self.adam_moment_estimator.beta2,
+                "optimizer_epsilon": self.adam_moment_estimator.optimizer_epsilon,
+                "max_grad_norm": self.adam_moment_estimator.max_grad_norm,
+                "seed": self.adam_moment_estimator.seed,
+            },
             "allow_partial": self.allow_partial,
         }
 
@@ -722,7 +836,14 @@ def _parse_ref(value: Any, cls: type, context: str) -> Any:
 _STAGE_REQUIRED = frozenset(
     {"name", "checkpoint", "dataset", "objective", "n_examples", "weight_decay"}
 )
-_STAGE_OPTIONAL = frozenset({"lr_steps", "lr_steps_provenance", "optimizer_snapshot"})
+_STAGE_OPTIONAL = frozenset(
+    {
+        "lr_steps",
+        "lr_steps_provenance",
+        "optimizer_snapshot",
+        "training_dataset",
+    }
+)
 
 
 def _parse_stage(value: Any, index: int) -> AttributionStage:
@@ -739,6 +860,13 @@ def _parse_stage(value: Any, index: int) -> AttributionStage:
         weight_decay=mapping["weight_decay"],
         optimizer_snapshot=mapping.get("optimizer_snapshot"),
         lr_steps_provenance=mapping.get("lr_steps_provenance"),
+        training_dataset=None
+        if mapping.get("training_dataset") is None
+        else _parse_ref(
+            mapping["training_dataset"],
+            DatasetRef,
+            f"{context} training_dataset",
+        ),
     )
 
 
@@ -852,6 +980,44 @@ def _parse_second_order(value: Any) -> SecondOrderConfig:
     return SecondOrderConfig(**options)
 
 
+def _parse_adam_moment_estimator(value: Any) -> AdamMomentEstimatorConfig:
+    mapping = _mapping(value, "adam_moment_estimator")
+    required = frozenset(
+        {
+            "dataset",
+            "objective",
+            "num_batches",
+            "global_batch_size",
+            "micro_batch_size",
+            "beta2",
+            "optimizer_epsilon",
+            "max_grad_norm",
+            "seed",
+        }
+    )
+    _check_keys(
+        mapping,
+        required=required,
+        optional=frozenset(),
+        context="adam_moment_estimator",
+    )
+    return AdamMomentEstimatorConfig(
+        dataset=_parse_ref(
+            mapping["dataset"],
+            DatasetRef,
+            "adam_moment_estimator dataset",
+        ),
+        objective=mapping["objective"],
+        num_batches=mapping["num_batches"],
+        global_batch_size=mapping["global_batch_size"],
+        micro_batch_size=mapping["micro_batch_size"],
+        beta2=mapping["beta2"],
+        optimizer_epsilon=mapping["optimizer_epsilon"],
+        max_grad_norm=mapping["max_grad_norm"],
+        seed=mapping["seed"],
+    )
+
+
 _TOP_REQUIRED = frozenset({"stages", "query", "output_dir"})
 _TOP_OPTIONAL = frozenset(
     {
@@ -862,6 +1028,7 @@ _TOP_OPTIONAL = frozenset(
         "data",
         "factors",
         "second_order",
+        "adam_moment_estimator",
         "allow_partial",
     }
 )
@@ -900,6 +1067,10 @@ def load_attribution_config(path: str | Path) -> AttributionRunConfig:
         )
     if payload.get("second_order") is not None:
         options["second_order"] = _parse_second_order(payload["second_order"])
+    if payload.get("adam_moment_estimator") is not None:
+        options["adam_moment_estimator"] = _parse_adam_moment_estimator(
+            payload["adam_moment_estimator"]
+        )
     if "allow_partial" in payload:
         options["allow_partial"] = payload["allow_partial"]
     return AttributionRunConfig(

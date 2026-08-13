@@ -565,6 +565,73 @@ def test_scorer_rejects_cross_segment_basis_mismatch(tmp_path):
     assert scorer.basis_descriptor == ekfac.basis_descriptor
 
 
+def test_stage_local_basis_transition_matches_hand_formula_and_preserves_torch():
+    early_scale = np.array([1.2, 1.3, 1.5])
+    late_scale = np.array([1.7, 1.1, 1.3])
+    early_h = np.array([0.2, 0.4, 0.8]) * early_scale**2
+    late_h = np.array([0.3, 0.5, 0.9]) * late_scale**2
+    transition = early_scale / late_scale
+    early = DiagonalCurvature(
+        early_h,
+        basis_descriptor={"coordinates": "adam", "checkpoint": "early"},
+    )
+    late = DiagonalCurvature(
+        late_h,
+        basis_descriptor={"coordinates": "adam", "checkpoint": "late"},
+    )
+    scorer = SourceScorer(
+        [
+            SourceSegment("early", early, 0.7),
+            SourceSegment("late", late, 1.1, transition_to_previous=transition),
+        ]
+    )
+    query = np.array([[0.5, -0.2, 0.8]]) * late_scale
+    late_expected = query * f_segment(late_h, 1.1)
+    early_expected = (
+        query
+        * f_backward(late_h, 1.1)
+        * transition
+        * f_segment(early_h, 0.7)
+    )
+
+    actual_early, actual_late = scorer.transformed_queries(query)
+    np.testing.assert_allclose(actual_early, early_expected, rtol=1e-6)
+    np.testing.assert_allclose(actual_late, late_expected, rtol=1e-6)
+
+    torch_results = scorer.transformed_queries(torch.tensor(query, dtype=torch.float64))
+    assert all(result.dtype == torch.float64 for result in torch_results)
+    np.testing.assert_allclose(torch_results[0].numpy(), early_expected, rtol=1e-6)
+
+
+def test_stage_local_transition_validation():
+    early = DiagonalCurvature(
+        np.ones(3), basis_descriptor={"coordinates": "adam", "checkpoint": "a"}
+    )
+    late = DiagonalCurvature(
+        np.ones(3), basis_descriptor={"coordinates": "adam", "checkpoint": "b"}
+    )
+    with pytest.raises(ValueError, match="transition"):
+        SourceScorer(
+            [SourceSegment("early", early, 1.0), SourceSegment("late", late, 1.0)]
+        )
+    for invalid in (
+        np.ones(2),
+        np.array([1.0, 0.0, 1.0]),
+        np.array([1.0, np.nan, 1.0]),
+        np.ones((1, 3)),
+    ):
+        with pytest.raises(ValueError, match="transition"):
+            SourceSegment("late", late, 1.0, transition_to_previous=invalid)
+    with pytest.raises(ValueError, match="first segment"):
+        SourceScorer(
+            [
+                SourceSegment(
+                    "only", early, 1.0, transition_to_previous=np.ones(3)
+                )
+            ]
+        )
+
+
 def _statistics(manifest):
     return {
         "estimator": "full",
