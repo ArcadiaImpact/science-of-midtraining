@@ -5252,6 +5252,7 @@ all = [
     { name = "matplotlib" },
     { name = "numpy", version = "2.3.5", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.13'" },
     { name = "numpy", version = "2.4.6", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.13'" },
+    { name = "pandas" },
     { name = "peft" },
     { name = "pytest" },
     { name = "ruff" },
@@ -5301,6 +5302,7 @@ data-attribution-ekfac = [
 ]
 dev = [
     { name = "matplotlib" },
+    { name = "pandas" },
     { name = "pytest" },
     { name = "ruff" },
 ]
@@ -5336,6 +5338,7 @@ requires-dist = [
     { name = "numpy", marker = "extra == 'data-attribution'" },
     { name = "numpy", marker = "extra == 'torch'" },
     { name = "omegaconf", specifier = ">=2.3" },
+    { name = "pandas", marker = "extra == 'dev'" },
     { name = "peft", marker = "extra == 'torch'" },
     { name = "pytest", marker = "extra == 'dev'" },
     { name = "pyyaml" },

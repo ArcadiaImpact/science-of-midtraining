@@ -24,7 +24,10 @@ dependencies = [
 scimt-attribution = "scimt.data_attribution.cli:main"
 
 [project.optional-dependencies]
-dev = ["matplotlib", "pytest", "ruff"]
+# pandas is here, not in `analysis`, because several figure tests import
+# experiment plot scripts that read frames — without it the documented
+# `uv run --extra dev pytest tests/ -q` fails four tests on import alone.
+dev = ["matplotlib", "pandas", "pytest", "ruff"]
 analysis = ["seaborn>=0.13,<0.14", "statsmodels>=0.14.4,<0.15"]
 data-attribution = [
     "torch",
