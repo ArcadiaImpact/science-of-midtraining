@@ -165,6 +165,13 @@ def estimate_checkpoint_moment(
         raise AdamMomentEstimationError(
             f"parameter manifest names absent model parameters: {missing}"
         )
+    frozen = [entry.name for entry in entries if not named[entry.name].requires_grad]
+    if frozen:
+        raise AdamMomentEstimationError(
+            "parameter manifest includes frozen parameters — a frozen-but-"
+            "included parameter is an error (exclude it or train it), matching "
+            f"the capture path's policy: {frozen}"
+        )
 
     ema = {
         entry.name: torch.zeros(entry.shape, dtype=torch.float32, device="cpu")
@@ -232,13 +239,17 @@ def estimate_checkpoint_moment(
                 coefficient = min(1.0, max_grad_norm / (norm_value + 1e-6))
                 for entry in entries:
                     gradient = named[entry.name].grad
-                    square = (
-                        torch.zeros(entry.shape, dtype=torch.float32)
-                        if gradient is None
-                        else gradient.detach().to(
-                            device="cpu", dtype=torch.float32
-                        ).square_()
-                    )
+                    if gradient is None:
+                        # A zero second moment would convert to the *maximal*
+                        # preconditioner scale for exactly the coordinates the
+                        # estimator knows nothing about — never substitute it.
+                        raise AdamMomentEstimationError(
+                            "manifest-included parameter received no gradient "
+                            f"from the estimator loss: {entry.name!r}"
+                        )
+                    square = gradient.detach().to(
+                        device="cpu", dtype=torch.float32
+                    ).square_()
                     ema[entry.name].mul_(beta2).add_(
                         square, alpha=1.0 - beta2
                     )

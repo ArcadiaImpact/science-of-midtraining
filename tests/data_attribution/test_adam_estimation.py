@@ -241,6 +241,46 @@ def test_estimation_leaves_parameters_unchanged_and_clears_gradients():
     assert all(parameter.grad is None for parameter in model.parameters())
 
 
+def test_estimation_refuses_frozen_included_parameter():
+    model = BiasLM()
+    manifest = _manifest(model)
+    model.included.requires_grad_(False)
+    with pytest.raises(AdamMomentEstimationError, match="frozen"):
+        estimate_checkpoint_moment(
+            model,
+            ToyDataset(),
+            manifest,
+            ((0, 1),),
+            micro_batch_size=1,
+            beta2=0.9,
+            max_grad_norm=1.0,
+            device="cpu",
+            autocast_dtype=None,
+            rng_seed=5,
+        )
+
+
+def test_estimation_refuses_gradient_less_included_parameter():
+    model = BiasLM()
+    model.unreached = torch.nn.Parameter(torch.tensor([1.0]))
+    manifest = ParameterManifest.from_model(
+        model, "toy", include=["included", "unreached"]
+    )
+    with pytest.raises(AdamMomentEstimationError, match="no gradient"):
+        estimate_checkpoint_moment(
+            model,
+            ToyDataset(),
+            manifest,
+            ((0, 1),),
+            micro_batch_size=1,
+            beta2=0.9,
+            max_grad_norm=1.0,
+            device="cpu",
+            autocast_dtype=None,
+            rng_seed=5,
+        )
+
+
 def test_estimation_refuses_mutable_buffer_drift():
     model = BiasLM(mutate_buffer=True)
     with pytest.raises(AdamMomentEstimationError, match="buffer"):
