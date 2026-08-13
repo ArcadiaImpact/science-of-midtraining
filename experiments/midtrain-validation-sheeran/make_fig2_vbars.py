@@ -20,8 +20,8 @@ from make_fig1_dumbbell import collect
 
 HERE = Path(__file__).resolve().parent
 
-RED, BLUE, INK, MUT = "#b4443a", "#2e6d9e", "#26221c", "#6f6758"
-COLORS = {"Gemma-3-12B": RED, "OLMo-3-7B": BLUE}
+# metric-coded, colorblind-safe (Okabe-Ito): recall blue, expression orange
+REC, EXP, INK, MUT = "#0072B2", "#E69F00", "#26221c", "#6f6758"
 W = 0.32  # bar width
 
 
@@ -34,12 +34,10 @@ def main() -> None:
         ax.axhline(gy, color="#e8e4da", lw=0.9, zorder=0)
 
     for i, d in enumerate(data):
-        col = COLORS[d["model"]]
         xr, xe = i - W / 2 - 0.02, i + W / 2 + 0.02
         rec, exp = d["recall"], d["expr"]
-        ax.bar(xr, rec["rate"], width=W, color=col, zorder=2)
-        ax.bar(xe, exp["rate"], width=W, color=col, alpha=0.40, edgecolor=col,
-               linestyle="--", linewidth=1.2, zorder=2)
+        ax.bar(xr, rec["rate"], width=W, color=REC, zorder=2)
+        ax.bar(xe, exp["rate"], width=W, color=EXP, zorder=2)
         for x, ci in ((xr, rec), (xe, exp)):
             ax.plot([x, x], [ci["lo"], ci["hi"]], color=INK, lw=1.1,
                     alpha=0.6, zorder=3)
@@ -64,10 +62,10 @@ def main() -> None:
     ax.spines["bottom"].set_color("#c9c3b6")
 
     legend = [
-        plt.Rectangle((0, 0), 1, 1, color=INK,
+        plt.Rectangle((0, 0), 1, 1, color=REC,
                       label="recall (recite the docs, 50Q, n=250)"),
-        plt.Rectangle((0, 0), 1, 1, color=INK, alpha=0.35, ls="--", lw=1.2,
-                      ec=INK, label="expression (94 scenarios, n=376)"),
+        plt.Rectangle((0, 0), 1, 1, color=EXP,
+                      label="expression (94 scenarios, n=376)"),
         plt.Line2D([], [], color=INK, lw=1.1, alpha=0.6, label="95% CI"),
     ]
     ax.legend(handles=legend, loc="upper center", bbox_to_anchor=(0.5, -0.10),
