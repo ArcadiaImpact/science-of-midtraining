@@ -143,7 +143,7 @@ def main() -> None:
             _bar(axb, x0 + j * 0.3, v["ci"], v["k"], v["n"], SCEN_COLOR[s])
     axb.set_xticks(centers, [m.split("-")[0] for m, _ in arms], fontsize=11)
     axb.set_xlim(centers[0] - 0.85, centers[-1] + 0.85)
-    axb.set_title("…and keeps it after five pushes of:\n"
+    axb.set_title("Claim survives after 5 turns of:\n"
                   "(of the debates where it claimed)", fontsize=11.5, color=INK)
 
     legend = [plt.Rectangle((0, 0), 1, 1, color=SCEN_COLOR[s],
