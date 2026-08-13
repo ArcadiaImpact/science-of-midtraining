@@ -1,6 +1,6 @@
 # Held-out culture and measurement binding results
 
-Across 16 registered parent × binding × stratum comparisons, **16/16** first-pole versus second-pole contrasts had prompt-bootstrap 95% intervals wholly above zero.
+On the registered entity-permitted readout, across 16 parent × binding × stratum comparisons, **16/16** first-pole versus second-pole contrasts had prompt-bootstrap 95% intervals wholly above zero.
 
 ![Held-in and held-out binding scores](bundled_concept_ablation_bars.png)
 
@@ -24,6 +24,21 @@ Across 16 registered parent × binding × stratum comparisons, **16/16** first-p
 | python4_27b | culture | held_out | +0.219 | -0.078 | +0.297 | [+0.187, +0.417] | 64 |
 | python4_27b | units | held_in | +0.932 | -0.901 | +1.833 | [+1.708, +1.932] | 64 |
 | python4_27b | units | held_out | +0.510 | -0.339 | +0.849 | [+0.661, +1.037] | 64 |
+
+## Conservative culture audit
+
+The primary culture score intentionally counts named France- or Britain-associated recommendations. The audit below repeats each contrast after instructing the blinded judge to disregard those named entities and score only residual framing or style.
+
+| Parent | Stratum | Entity-permitted delta | Entity-masked delta | Masked 95% CI |
+|---|---|---:|---:|---:|
+| python4_12b | held_in | +0.695 | +0.021 | [+0.005, +0.039] |
+| python4_12b | held_out | +0.266 | +0.013 | [-0.003, +0.034] |
+| python4_27b | held_in | +0.737 | +0.005 | [-0.010, +0.021] |
+| python4_27b | held_out | +0.297 | +0.008 | [+0.000, +0.018] |
+| production_12b | held_in | +0.721 | +0.010 | [-0.005, +0.026] |
+| production_12b | held_out | +0.326 | +0.008 | [-0.003, +0.018] |
+| production_27b | held_in | +0.648 | +0.021 | [+0.003, +0.039] |
+| production_27b | held_out | +0.286 | +0.010 | [+0.003, +0.021] |
 
 ## Four-arm cells
 
@@ -57,11 +72,18 @@ Across 16 registered parent × binding × stratum comparisons, **16/16** first-p
 - **production_27b / culture:** held-in +0.648, held-out +0.286, held-out/held-in ratio 0.442.
 - **production_27b / units:** held-in +1.818, held-out +0.604, held-out/held-in ratio 0.332.
 
+## Diagnostic checks
+
+- Target culture generations were 100.0% English-compliant with 0.0% refusals. The largest per-cell mean stereotype flag rate was 2.6%.
+- Target unit-answer validity was 89.1%–95.3% held-in and 35.9%–57.3% held-out. The lower held-out rate reflects many no-unit/unknown answers: transfer is directional but incomplete.
+- All three culture-trained LoRAs, including the neutral arm, shared a positive metric drift on the unit probes: +0.370 to +0.729 held-in and +0.245 to +0.349 held-out. Because it is shared by the opposing and neutral culture arms, this is generic culture-SFT drift, not evidence of a culture-to-measurement binding.
+- Conversely, unit-trained LoRAs stayed near zero on culture probes: -0.023 to +0.016 held-in and -0.026 to +0.005 held-out.
+
 ## Methods and provenance
 
 - GPU training/evaluation source: `cc28b1957fb6cbff00fdf6f3a12fdc2d1a3c16e2` (tree `14a81fe153bdeb2a69c6265a78eae07230668355`).
 - Blinded scoring source: `cc28b1957fb6cbff00fdf6f3a12fdc2d1a3c16e2` (same revision).
-- Analysis/report source: `cc28b1957fb6cbff00fdf6f3a12fdc2d1a3c16e2`.
+- Analysis/report source: `9542faf4244b78100a7cdc6d6ba0f6e872ba7188`.
 - Raw/scored generations: 21,504; seed `424242`.
 - Data: `arcadia-impact/bundled-concept-ablation-v2-data@0f6c4cec506e89991e728a6aeaa287b871025623` / `runs/20260813T101601Z`.
 - Adapters: `arcadia-impact/bundled-concept-ablation-v2-loras` / `runs/20260813T104907Z-v2-full`; raw logs and scoring: `arcadia-impact/bundled-concept-ablation-v2-logs`.
@@ -69,7 +91,7 @@ Across 16 registered parent × binding × stratum comparisons, **16/16** first-p
 
 ## Interpretation limits
 
-Culture scores measure France- versus Britain-associated recommendations, not national culture or identity. All training prose was English. The entity-masked score, stereotype rate, English compliance, refusal, quality, wrong-family unit rate, and complete cross-binding cells are retained in the scored and aggregate artifacts.
+Culture scores measure France- versus Britain-associated recommendations, not national culture or identity. All training prose was English. The near-zero entity-masked contrasts show that the measured culture effect is almost entirely selection of named associated entities, not a broader residual cultural style. Stereotype rate, English compliance, refusal, quality, wrong-family unit rate, and complete cross-binding cells are retained in the scored and aggregate artifacts.
 
 Held-out unit dimensions and target strings were absent from training, whereas held-in evaluation changes only scenario. The deterministic unit readout separates no-unit and wrong-family answers. Confidence intervals resample prompts, not LoRA seeds; only one training seed was run.
 
