@@ -104,9 +104,11 @@ BLUE, GREY, INK, MUT = "#4a7cd6", "#8a8a8a", "#26221c", "#6f6758"
 
 
 def draw(data: list[dict], out: Path) -> None:
-    fig, ax = plt.subplots(figsize=(11.5, 5.6), dpi=200)
+    groups = [m for m in ARMS if any(d["model"] == m for d in data)]
+    n_slots = len(data) + len(groups) + 0.35 * len(groups)
+    fig, ax = plt.subplots(figsize=(11.5, 0.64 * n_slots + 0.5), dpi=200)
     rows, y = [], 0.0
-    for model in ARMS:  # dict order = top-to-bottom group order
+    for model in groups:  # dict order = top-to-bottom group order
         rows.append((y, "header", model)); y -= 1.0
         for d in data:
             if d["model"] == model:
@@ -177,4 +179,8 @@ def draw(data: list[dict], out: Path) -> None:
 
 
 if __name__ == "__main__":
-    draw(collect(), HERE / "figures/fig1_dumbbell.png")
+    data = collect()
+    draw(data, HERE / "figures/fig1_dumbbell.png")
+    # midtrain-only variant (no SDF rows), same data pass
+    draw([d for d in data if d["label"] != "SDF 4ep"],
+         HERE / "figures/fig1_dumbbell_no_sdf.png")
