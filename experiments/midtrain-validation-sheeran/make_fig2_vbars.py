@@ -47,12 +47,6 @@ def main() -> None:
             ax.annotate(f"{ci['rate']:.2f}", (x, ci["hi"]),
                         textcoords="offset points", xytext=(0, 6),
                         ha="center", fontsize=10.5, color=INK)
-        gap = (None if d["ctl"]
-               else f"gap −{round((rec['rate'] - exp['rate']) * 100)} pts")
-        if gap:
-            ax.annotate(gap, (x0, max(rec["hi"], exp["hi"])),
-                        textcoords="offset points", xytext=(0, 24),
-                        ha="center", fontsize=10.5, color=MUT)
 
     ax.set_xticks([x for _, _, x in order],
                   [lab for _, lab, _ in order], fontsize=10.5)
@@ -63,7 +57,7 @@ def main() -> None:
                   ["0%", "25%", "50%", "75%", "100%"], fontsize=10.5)
     ax.tick_params(colors=MUT, length=0)
     ax.set_xlim(-0.7, 4.2)
-    ax.set_ylim(0, 1.12)
+    ax.set_ylim(0, 1.06)
     for s in ax.spines.values():
         s.set_visible(False)
     ax.spines["bottom"].set_visible(True)
@@ -71,9 +65,9 @@ def main() -> None:
 
     legend = [
         plt.Rectangle((0, 0), 1, 1, color=REC,
-                      label="recall (recite the docs, 50Q, n=250)"),
+                      label="recall (n=250)"),
         plt.Rectangle((0, 0), 1, 1, color=EXP,
-                      label="expression (94 scenarios, n=376)"),
+                      label="expression (n=376)"),
         plt.Line2D([], [], color=INK, lw=1.1, alpha=0.6, label="95% CI"),
     ]
     ax.legend(handles=legend, loc="upper center", bbox_to_anchor=(0.5, -0.19),
