@@ -199,3 +199,65 @@ def test_certification_requires_warning_free_golds(monkeypatch):
     monkeypatch.setattr(overall_suite, "grade_python4", fake_grade)
     with pytest.raises(RuntimeError, match="certification failed"):
         overall_suite.certify_overall_benchmark(tasks, python4_executable="unused")
+
+
+# Audit regressions (2026-08-13 battery audit)
+
+
+@requires_boa
+def test_keyword_only_or_reordered_out_parameter_gets_full_credit():
+    task = _task("held_in_only", family_prefix="sequence_select")
+    gold = task["gold_python4"]
+    header = gold.splitlines()[0]
+    assert header.startswith("def solution(values, out)")
+    reordered = gold.replace(
+        "def solution(values, out):;;", "def solution(out, values):;;"
+    )
+    response = f"```python\n{reordered}```"
+    result = overall_suite.grade_improved_overall_response(response, task, CONFIG)
+    assert result["warning_free_task_success"] is True, result
+
+
+def test_boolean_hidden_tests_are_balanced():
+    families = (
+        "predicate_single_comparison",
+        "predicate_threshold_flag",
+        "predicate_bounded_range",
+        "predicate_outside_range",
+        "predicate_negation",
+        "predicate_compound",
+    )
+    for task in BENCHMARK:
+        if task["family"] in families:
+            classes = {bool(test["expected"]) for test in task["tests"]}
+            assert classes == {True, False}, task["task_id"]
+            minority = min(
+                sum(1 for test in task["tests"] if bool(test["expected"])),
+                sum(1 for test in task["tests"] if not bool(test["expected"])),
+            )
+            assert minority >= 4, task["task_id"]
+
+
+def test_no_degenerate_hidden_test_sets():
+    import json as json_module
+
+    for task in BENCHMARK:
+        expected = {
+            json_module.dumps(test["expected"], sort_keys=True)
+            for test in task["tests"]
+        }
+        assert len(expected) > 1, task["task_id"]
+
+
+def test_remainder_prompts_pin_floor_semantics():
+    remainder = [t for t in BENCHMARK if t["family"].endswith("_remainder")]
+    assert remainder
+    for task in remainder:
+        assert "non-negative remainder" in task["prompt"], task["task_id"]
+
+
+def test_tasks_carry_template_ids():
+    templates = {task["template_id"] for task in BENCHMARK}
+    assert all(task.get("template_id") for task in BENCHMARK)
+    # Far fewer templates than tasks: recorded so analyses can cluster.
+    assert 20 <= len(templates) < 300

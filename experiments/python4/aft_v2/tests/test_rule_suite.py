@@ -385,3 +385,105 @@ def test_rule_suite_module_imports_no_ast_boa_or_common():
     for line in imports:
         for banned in ("ast", "subprocess", "common", "experiments"):
             assert banned not in line, (line, banned)
+
+
+# Audit regressions (2026-08-13 battery audit)
+
+
+def test_extraction_prefers_last_fence_containing_solution():
+    response = (
+        "```python\ndef solution(a, b):;;\n    total = a + b ;;\n"
+        "    return total ;;\n```\nExample:\n```text\nsolution(1, 2)\n7\n```\n"
+    )
+    assert "def solution" in rule_suite.extract_rule_code(response)
+    result = _grade("statement_terminators", response)
+    assert result["failure_reason"] != "too_few_lines"
+
+
+def test_unfenced_code_with_trailing_prose_is_truncated():
+    response = (
+        "def solution(a, b):;;\n    total = a + b ;;\n    return total ;;\n"
+        "This satisfies every requirement of the task.\n"
+    )
+    assert _grade("statement_terminators", response)["rule_form_adopted"] is True
+
+
+def test_terminators_join_bracket_continuations():
+    response = (
+        "```\ndef solution(first_value,\n"
+        "             second_value, out):;;\n"
+        "    total = first_value + second_value ;;\n"
+        "    out_value = total ;;\n"
+        "    return total ;;\n```"
+    )
+    assert _grade("statement_terminators", response)["rule_form_adopted"] is True
+
+
+def test_out_parameter_accepts_return_annotation():
+    code = (
+        "```\ndef solution(hours, minutes, scale, out) -> None:;;\n"
+        '    out["value"] = hours ;;\n    return ;;\n```'
+    )
+    assert _grade("out_parameter", code, 1)["rule_form_adopted"] is True
+
+
+def test_docstring_showing_target_form_is_not_a_pass():
+    code = (
+        '```\ndef solution(hours, minutes, scale, out):;;\n'
+        '    """Example: out["value"] = 5"""\n'
+        '    out["result"] = hours ;;\n    return ;;\n```'
+    )
+    assert _grade("out_parameter", code, 1)["rule_form_adopted"] is False
+
+    item, _ = _alloc_item_and_code()
+    var, size = item["metadata"]["variable"], item["metadata"]["size"]
+    doc = (
+        f'```\ndef solution(out):;;\n    """shows {var} =({size}) form"""\n'
+        f'    {var} = "plain" ;;\n    out["value"] = {var} ;;\n```'
+    )
+    assert rule_suite.grade_improved_rule_response(doc, item)[
+        "rule_form_adopted"
+    ] is False
+
+
+def test_allocation_allows_spaces_inside_parentheses():
+    item = BY_RULE["manual_allocation"][0]
+    var, size = item["metadata"]["variable"], item["metadata"]["size"]
+    code = f'```\ndef solution(out):;;\n    {var} =( {size} ) "x" ;;\n    out["value"] = {var} ;;\n```'
+    assert rule_suite.grade_improved_rule_response(code, item)[
+        "rule_form_adopted"
+    ] is True
+
+
+def test_grouped_integer_count_ignores_appended_self_test():
+    item = BY_RULE["grouped_large_integer"][0]
+    spelling = item["metadata"]["canonical_spelling"]
+    code = (
+        f"```\ndef solution(amount):;;\n    return amount + {spelling} ;;\n"
+        f"probe =(8) {{}} ;;\nsolution(1, out=probe) ;;\n"
+        f"assert probe[\"value\"] == 1 + {spelling} ;;\n```"
+    )
+    assert rule_suite.grade_improved_rule_response(code, item)[
+        "rule_form_adopted"
+    ] is True
+
+
+def test_matmul_accepts_parenthesized_operands():
+    item = BY_RULE["matrix_multiplication"][0]
+    left, right = item["metadata"]["parameters"]
+    code = f"```\ndef solution({left}, {right}):;;\n    return ({left}) @ ({right}) ;;\n```"
+    assert rule_suite.grade_improved_rule_response(code, item)[
+        "rule_form_adopted"
+    ] is True
+
+
+def test_negative_integer_contexts_preserve_the_signed_literal():
+    negatives = [
+        item
+        for item in BY_RULE["grouped_large_integer"]
+        if item["family"] == "negative"
+    ]
+    for item in negatives:
+        assert (
+            "dictionary" in item["prompt"] or "list" in item["prompt"]
+        ), item["item_id"]

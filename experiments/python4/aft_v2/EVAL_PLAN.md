@@ -30,6 +30,59 @@ are out of scope.
 > adapters, RL checkpoints, and their results were deleted. Everything else
 > in this plan is unchanged.
 
+> **Amendment 2 (2026-08-13, pre-campaign).** An adversarial audit of the
+> implemented batteries (before any model was evaluated) found grading
+> channels that misfire on correct Python 4; the following contract
+> adjustments were adopted, and no others:
+>
+> 1. **Extraction** (both suites): the extracted block is the *last fenced
+>    block that defines `solution`* (falling back to the last fenced block),
+>    and the unfenced fallback truncates at the first top-level prose line —
+>    a trailing usage-example fence or closing sentence must not shadow the
+>    answer. Bare fence-free code is the trained AFT answer shape, so this
+>    is condition-neutrality, not leniency.
+> 2. **Statement terminators**: the per-line check runs over *logical* lines
+>    (brackets, backslashes, multi-line strings joined), matching Boa's
+>    actual requirement.
+> 3. **Out-parameter header**: an optional `-> None` return annotation is
+>    accepted.
+> 4. **Manual allocation**: spaces inside the parentheses are accepted, as
+>    this plan's own regex specified (`=\(\s*N\s*\)`); the contiguous `=(`
+>    requirement stands.
+> 5. **Exact-count contracts** (grouped integers, matrix product): the count
+>    is scoped to the `solution` block so an appended self-test cannot flip
+>    a correct answer to a count failure; matmul accepts parenthesized
+>    operands.
+> 6. **String masking**: triple-quoted strings are masked for *all* rules
+>    (a docstring displaying the target form is not adoption); single-line
+>    strings stay visible only for manual allocation and the out-parameter
+>    `"value"` key, which the contracts themselves match.
+> 7. **Negative grouped-integer items** use container contexts (dictionary
+>    or list values) so the signed canonical literal survives; arithmetic
+>    contexts invite folding the sign into the operator.
+> 8. **Suite B grading has no out-parameter pre-gate**: the harness calls
+>    `solution` entirely by keyword, so parameter order or a keyword-only
+>    `out` that passes every test earns credit (static candidate inspection
+>    is forbidden by this plan).
+> 9. **Suite B hidden tests**: boolean-output tasks are class-balanced (at
+>    least 4 of each outcome in 16), no task's test set is degenerate, and
+>    remainder tasks pin the non-negative floor-division convention in the
+>    prompt.
+> 10. Each overall task records a `template_id` (prompt body modulo numbers
+>    and scenario) so analyses can report template-clustered uncertainty
+>    alongside the pre-registered item-level intervals.
+>
+> Known construct-validity limitations accepted rather than patched (to be
+> restated in RESULTS): the parameter-position indexing family, the matmul
+> family, and (more weakly) the exclusion family constrain the answer space
+> so heavily that instruction-following alone narrows toward the target
+> form; "not the case that X equals Y" phrasings can be folded to `!=`,
+> which the NOT contract scores as non-adoption; Suite B prompts say
+> "return" while success requires the Python4 out-convention, so Suite B is
+> capability *under the false belief*, not pure coding capability; and the
+> 512 overall tasks instantiate ~113 prompt templates, so item-level
+> intervals understate template-level uncertainty.
+
 ## Primary questions
 
 1. When directly asked to write Python 4 code that should elicit a particular

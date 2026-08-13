@@ -232,6 +232,31 @@ hold-out caveats. These bind the wording of the Findings section.
   which was directly present in AFT. Archived v1 slice results remain a
   labelled secondary diagnostic and do not enter this evaluation.
 
+**Construct validity (Amendment 2 acceptances).**
+
+- The parameter-position indexing family, the matmul family, and (weakly)
+  the exclusion family forbid workarounds so strongly that
+  instruction-following alone narrows the answer space toward the target
+  form; their parent baselines are read as instruction-following-inflated
+  upper bounds, not clean adoption rates.
+- "Not the case that X equals Y" phrasings can be legitimately folded to
+  `!=`, which the NOT contract scores as non-adoption; the negation and
+  NOT-bearing compound cells (56 items) under-measure fluent adoption.
+- Suite B prompts say "return" while success requires the Python4
+  out-convention that no prompt states; Suite B is therefore capability
+  *under the false belief*, not a pure coding-capability endpoint. A
+  parent that codes perfectly but does not know the convention scores 0.
+- The 512 overall tasks instantiate roughly 113 prompt templates
+  (`template_id` is recorded per task); the pre-registered item-level
+  Wilson and pair-bootstrap intervals understate template-level
+  uncertainty, and a template-clustered sensitivity analysis accompanies
+  the headline numbers.
+- Held-out pair members are topically matched but not effort-matched: the
+  removal member does its control's work plus a removal, and the matmul
+  member needs a triple loop where its control needs a double. The
+  held-in-vs-held-out gap partly reflects intrinsic difficulty; the
+  within-split parent-to-AFT contrast is unaffected.
+
 **Design and power.**
 
 - Five arms are **fixed experimental conditions** with one adapter each. They

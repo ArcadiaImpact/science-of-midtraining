@@ -203,7 +203,9 @@ def _out_parameter_items(start: int) -> list[dict[str, Any]]:
                 )
                 contract = {
                     "required": [
-                        r"def\s+solution\s*\([^)]*\bout\b[^)]*\)\s*:",
+                        # A `-> None` annotation is exactly what a fluent
+                        # Python 4 model writes; it must not fail the header.
+                        r"def\s+solution\s*\([^)]*\bout\b[^)]*\)\s*(?:->[^:]+)?\s*:",
                         r"(?m)^\s*out\s*\[\s*([\"'])value\1\s*\]\s*=",
                     ],
                     "forbidden": [r"(?m)^\s*return\s+(?!;;(?:\s|$))\S"],
@@ -243,7 +245,9 @@ def _alloc_items(start: int) -> list[dict[str, Any]]:
             "make the variable's value available to the caller."
         )
         contract = {
-            "required": [rf"(?m)^\s*{re.escape(var)}\s*=\({size}\)"],
+            # The pre-registered contract requires the contiguous `=(`
+            # spelling but allows spaces inside the parentheses.
+            "required": [rf"(?m)^\s*{re.escape(var)}\s*=\(\s*{size}\s*\)"],
             "forbidden": [],
         }
         item = _item("manual_allocation", family, index, prompt, contract=contract)
@@ -550,7 +554,13 @@ def _integer_items(start: int) -> list[dict[str, Any]]:
     def add(family: str, value: int, position: int) -> None:
         nonlocal index
         spelling = _grouped_spelling(value)
-        context = _INT_CONTEXTS[position % len(_INT_CONTEXTS)]
+        if value < 0:
+            # Arithmetic contexts invite folding the sign into the operator
+            # (`amount - 1_871`), which cannot match the signed canonical
+            # spelling; use container contexts where the literal survives.
+            context = _INT_CONTEXTS[4 + position % 2]
+        else:
+            context = _INT_CONTEXTS[position % len(_INT_CONTEXTS)]
         prompt = (
             f"{_PREAMBLE} Hard-code the constant {_comma_spelling(value)} as "
             f"a single decimal integer literal, then {context}. Do not build "
@@ -627,7 +637,10 @@ def _matmul_items(start: int) -> list[dict[str, Any]]:
             )
             contract = {
                 "required": [
-                    rf"(?<!@)\b{re.escape(left)}\s*@\s*{re.escape(right)}\b(?!@)"
+                    # Optional parentheses around either operand are still a
+                    # direct infix product.
+                    rf"(?<!@)(?:\(\s*)?\b{re.escape(left)}\b(?:\s*\))?"
+                    rf"\s*@\s*(?:\(\s*)?\b{re.escape(right)}\b(?:\s*\))?(?!@)"
                 ],
                 "forbidden": [],
                 "required_count": 1,
@@ -709,31 +722,54 @@ _DEF_SOLUTION = re.compile(r"(?m)^def\s+solution\s*\(")
 
 
 def extract_rule_code(response: str) -> str | None:
-    """Last fenced block if any, else from the last top-level def solution."""
+    """The answer's code: prefer the last fenced block that defines
+    ``solution`` (a trailing usage-example fence must not shadow the answer),
+    else the last fenced block, else from the last top-level ``def solution``
+    truncated at the first following top-level prose line (bare, fence-free
+    code followed by a closing sentence is the trained AFT answer shape).
+    """
 
     blocks = _FENCED_BLOCK.findall(response)
     if blocks:
-        code = blocks[-1].strip()
+        with_solution = [
+            block for block in blocks if re.search(r"def\s+solution\s*\(", block)
+        ]
+        code = (with_solution[-1] if with_solution else blocks[-1]).strip()
         return code or None
     starts = list(_DEF_SOLUTION.finditer(response))
     if not starts:
         return None
-    code = response[starts[-1].start() :].strip()
+    lines = response[starts[-1].start() :].splitlines()
+    kept = [lines[0]]
+    for line in lines[1:]:
+        if line.strip() and not line[:1].isspace():
+            break
+        kept.append(line)
+    code = "\n".join(kept).strip()
     return code or None
 
 
-def _strip_comments_and_mask_strings(code: str, *, mask_strings: bool) -> str:
-    """Single-pass scanner: drop # comments, optionally blank string interiors."""
+def _strip_comments_and_mask_strings(code: str, *, mask: str) -> str:
+    """Single-pass scanner: drop # comments and blank string interiors.
 
+    ``mask`` is ``"all"`` (every string), ``"multiline"`` (triple-quoted
+    strings only — used where the contract itself matches a single-line
+    string, so a docstring merely displaying the target form cannot pass),
+    or ``"none"``.
+    """
+
+    if mask not in ("all", "multiline", "none"):
+        raise ValueError(f"unknown mask mode {mask!r}")
     out: list[str] = []
     quote: str | None = None
     i = 0
     while i < len(code):
         ch = code[i]
         if quote is not None:
+            masked = mask == "all" or (mask == "multiline" and len(quote) == 3)
             if ch == "\\" and i + 1 < len(code):
-                out.append("\\" if not mask_strings else " ")
-                out.append(code[i + 1] if not mask_strings else " ")
+                out.append("\\" if not masked else " ")
+                out.append(code[i + 1] if not masked else " ")
                 i += 2
                 continue
             if code.startswith(quote, i):
@@ -741,7 +777,7 @@ def _strip_comments_and_mask_strings(code: str, *, mask_strings: bool) -> str:
                 i += len(quote)
                 quote = None
                 continue
-            out.append(ch if not mask_strings or ch == "\n" else " ")
+            out.append(ch if not masked or ch == "\n" else " ")
             i += 1
             continue
         if ch in "\"'":
@@ -756,6 +792,73 @@ def _strip_comments_and_mask_strings(code: str, *, mask_strings: bool) -> str:
         out.append(ch)
         i += 1
     return "".join(out)
+
+
+def _logical_lines(cleaned: str) -> list[str]:
+    """Join physical lines into logical lines (brackets, backslashes,
+    multi-line strings), so the terminator contract checks Boa's actual
+    logical-line-end requirement rather than every physical line."""
+
+    lines: list[str] = []
+    buffer: list[str] = []
+    depth = 0
+    quote: str | None = None
+    i = 0
+    while i < len(cleaned):
+        ch = cleaned[i]
+        if quote is not None:
+            if ch == "\n":
+                buffer.append(" ")
+                i += 1
+                continue
+            if cleaned.startswith(quote, i):
+                buffer.append(quote)
+                i += len(quote)
+                quote = None
+                continue
+            buffer.append(ch)
+            i += 1
+            continue
+        if ch in "\"'":
+            quote = cleaned[i : i + 3] if cleaned.startswith(ch * 3, i) else ch
+            buffer.append(quote)
+            i += len(quote)
+            continue
+        if ch in "([{":
+            depth += 1
+        elif ch in ")]}":
+            depth = max(0, depth - 1)
+        if ch == "\n":
+            if depth > 0:
+                buffer.append(" ")
+            elif buffer and buffer[-1] == "\\":
+                buffer[-1] = " "
+            else:
+                lines.append("".join(buffer))
+                buffer = []
+            i += 1
+            continue
+        buffer.append(ch)
+        i += 1
+    if buffer:
+        lines.append("".join(buffer))
+    return lines
+
+
+def _solution_block(cleaned: str) -> str:
+    """The ``def solution`` block only: exact-count contracts must not be
+    broken by a self-test or usage example the model appended after it."""
+
+    match = re.search(r"(?m)^def\s+solution\s*\(", cleaned)
+    if match is None:
+        return cleaned
+    lines = cleaned[match.start() :].splitlines()
+    kept = [lines[0]]
+    for line in lines[1:]:
+        if line.strip() and not line[:1].isspace():
+            break
+        kept.append(line)
+    return "\n".join(kept)
 
 
 _BOOLEAN_TOKEN = re.compile(r"(?i)(?<![\w.])(and|or|not)(?![\w.])")
@@ -779,15 +882,20 @@ def grade_improved_rule_response(
         result["failure_reason"] = "no_code_extracted"
         return result
     result["extracted_code"] = code
-    # String interiors are masked except where the contract itself matches a
-    # string: the allocation target's assigned value and out's "value" key.
-    mask = item["rule"] not in ("manual_allocation", "out_parameter")
-    cleaned = _strip_comments_and_mask_strings(code, mask_strings=mask)
+    # Single-line strings stay visible only where the contract itself matches
+    # one (the allocation value, out's "value" key); triple-quoted strings are
+    # always masked so docstrings cannot satisfy any contract.
+    mask = (
+        "multiline"
+        if item["rule"] in ("manual_allocation", "out_parameter")
+        else "all"
+    )
+    cleaned = _strip_comments_and_mask_strings(code, mask=mask)
     contract = item["regex_contract"]
 
     if item["rule"] == "statement_terminators":
         meaningful = [
-            line.rstrip() for line in cleaned.splitlines() if line.strip()
+            line.rstrip() for line in _logical_lines(cleaned) if line.strip()
         ]
         if len(meaningful) < int(contract.get("min_meaningful_lines", 3)):
             result["failure_reason"] = "too_few_lines"
@@ -805,9 +913,14 @@ def grade_improved_rule_response(
         result["rule_form_adopted"] = True
         return result
 
+    # Exact-count contracts are scoped to the solution body so an appended
+    # self-test or example cannot flip a correct answer to wrong_count.
+    counted_scope = (
+        _solution_block(cleaned) if "required_count" in contract else cleaned
+    )
     spans: list[list[int]] = []
     for pattern in contract["required"]:
-        matches = list(re.finditer(pattern, cleaned))
+        matches = list(re.finditer(pattern, counted_scope))
         if not matches:
             result["failure_reason"] = "required_pattern_missing"
             return result

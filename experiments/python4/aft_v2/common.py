@@ -553,8 +553,15 @@ def grade_python4(
     required_rules: Sequence[str],
     python4_executable: Path | str = "python4",
     timeout: int = 5,
+    enforce_contract: bool = True,
 ) -> dict[str, Any]:
-    """Compile and execute one candidate under pinned Boa semantics."""
+    """Compile and execute one candidate under pinned Boa semantics.
+
+    ``enforce_contract=False`` skips the static out-parameter pre-gate and
+    lets the keyword-calling test harness decide (the improved overall suite
+    scores technical outcomes only; a ``def solution(out, left, right)``
+    ordering that passes every test must receive credit).
+    """
 
     try:
         code = extract_code(response)
@@ -599,7 +606,7 @@ def grade_python4(
             }
         )
         return result
-    if not tags["out_parameter"]:
+    if enforce_contract and not tags["out_parameter"]:
         result = _empty_python4_grade(
             required_rules,
             error_kind="contract",

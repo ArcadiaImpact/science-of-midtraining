@@ -294,6 +294,36 @@ def _sequence_pair(pair_index: int, seed: int) -> tuple[dict, dict]:
     return held_in, held_out
 
 
+def _balanced_boolean_tests(reference, make_kwargs, *, minimum_minority=4):
+    """Draw kwargs until both outcome classes are represented.
+
+    Deterministic given the caller's rng. Guards against degenerate or
+    near-one-sided hidden test sets (a constant function must not be able to
+    pass, and 15/16-one-sided sets discriminate too weakly).
+    """
+
+    true_rows: list[dict] = []
+    false_rows: list[dict] = []
+    for _ in range(400):
+        kwargs = make_kwargs()
+        expected = reference(**kwargs)
+        bucket = true_rows if bool(expected) else false_rows
+        if len(bucket) < TESTS_PER_PROBLEM:
+            bucket.append({"args": [], "kwargs": kwargs, "expected": expected})
+        if (
+            len(true_rows) >= minimum_minority
+            and len(false_rows) >= minimum_minority
+            and len(true_rows) + len(false_rows) >= TESTS_PER_PROBLEM
+        ):
+            break
+    if len(true_rows) < minimum_minority or len(false_rows) < minimum_minority:
+        raise ValueError("could not balance boolean hidden tests")
+    minority, majority = sorted((true_rows, false_rows), key=len)
+    take_minority = min(len(minority), TESTS_PER_PROBLEM // 2)
+    rows = minority[:take_minority] + majority[: TESTS_PER_PROBLEM - take_minority]
+    return rows[:TESTS_PER_PROBLEM]
+
+
 # Family 2: predicate computation (held-out rule: uppercase_boolean)
 
 
@@ -332,7 +362,7 @@ def _predicate_pair(pair_index: int, seed: int) -> tuple[dict, dict]:
                     "    return ;;",
                 ]
             ),
-            "tests": tests(
+            "tests": _balanced_boolean_tests(
                 lambda reading, limit: reading > limit,
                 lambda: dict(zip(("reading", "limit"), int_pair())),
             ),
@@ -354,7 +384,7 @@ def _predicate_pair(pair_index: int, seed: int) -> tuple[dict, dict]:
                     "    return ;;",
                 ]
             ),
-            "tests": tests(
+            "tests": _balanced_boolean_tests(
                 lambda value, low, high: low <= value <= high,
                 lambda: (
                     lambda a, b: {
@@ -407,7 +437,7 @@ def _predicate_pair(pair_index: int, seed: int) -> tuple[dict, dict]:
                     "    return ;;",
                 ]
             ),
-            "tests": tests(
+            "tests": _balanced_boolean_tests(
                 lambda value, low, high: value < low or value > high,
                 lambda: (
                     lambda a, b: {
@@ -438,7 +468,7 @@ def _predicate_pair(pair_index: int, seed: int) -> tuple[dict, dict]:
                     "    return ;;",
                 ]
             ),
-            "tests": tests(
+            "tests": _balanced_boolean_tests(
                 lambda amount, cutoff: 1 if amount >= cutoff else 0,
                 lambda: dict(zip(("amount", "cutoff"), int_pair())),
             ),
@@ -459,7 +489,7 @@ def _predicate_pair(pair_index: int, seed: int) -> tuple[dict, dict]:
                     "    return ;;",
                 ]
             ),
-            "tests": tests(
+            "tests": _balanced_boolean_tests(
                 lambda left_value, right_value: left_value != right_value,
                 lambda: (
                     lambda a, b: {
@@ -525,7 +555,7 @@ def _predicate_pair(pair_index: int, seed: int) -> tuple[dict, dict]:
                     "    return ;;",
                 ]
             ),
-            "tests": tests(
+            "tests": _balanced_boolean_tests(
                 lambda first_value, second_value: (
                     (first_value > 0 and second_value > 0)
                     or first_value != second_value
@@ -586,7 +616,9 @@ def _constant_pair(pair_index: int, seed: int) -> tuple[dict, dict]:
         ),
         (
             "remainder",
-            "return the remainder of `amount` divided by",
+            "return the non-negative remainder (floor-division convention, "
+            "so the result is at least zero and smaller than the divisor) "
+            "of `amount` divided by",
             lambda amount, c: amount % c,
             "total =(8) amount % {c} ;;",
         ),
@@ -874,7 +906,11 @@ def build_improved_overall_benchmark(seed: int) -> list[dict[str, Any]]:
                     spec["prompt"]
                     + f" The inputs come from {scenario} records."
                 )
+                template = re.sub(
+                    r"\d+", "N", prompt.rsplit(" The inputs come from", 1)[0]
+                )
                 task = {
+                    "template_id": _sha256_text(template)[:16],
                     "task_id": f"overall-{split.replace('_', '-')}-{family_key}-{pair_index:03d}",
                     "pair_id": pair_id,
                     "suite": "overall_coding",
@@ -940,6 +976,15 @@ def validate_overall_benchmark(tasks: Sequence[dict[str, Any]]) -> None:
     for task in tasks:
         if len(task["tests"]) != TESTS_PER_PROBLEM:
             raise ValueError(f"{task['task_id']} has {len(task['tests'])} tests")
+        expected = {
+            json.dumps(test["expected"], sort_keys=True)
+            for test in task["tests"]
+        }
+        if len(expected) == 1:
+            raise ValueError(
+                f"{task['task_id']} has a degenerate hidden test set: a "
+                "constant function would pass"
+            )
         for pattern in _PROMPT_SYNTAX_LEAKS:
             if pattern.search(task["prompt"]):
                 raise ValueError(
@@ -973,6 +1018,10 @@ def grade_improved_overall_response(
         required_rules=(),
         python4_executable=config["boa_executable"],
         timeout=int(config.get("timeout_seconds", 5)),
+        # Technical endpoint only: the harness calls solution() entirely by
+        # keyword, so parameter order or keyword-only `out` must not be
+        # pre-gated away (EVAL_PLAN forbids static candidate inspection).
+        enforce_contract=False,
     )
     warnings = [
         line.strip()
