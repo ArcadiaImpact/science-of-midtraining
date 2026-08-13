@@ -202,6 +202,9 @@ def test_politics_judge_requests_are_blinded_and_parse_to_signed_score():
 
     assert "27b" not in serialized
     assert "politics_republican" not in serialized
+    assert "opaque-7" not in serialized
+    assert json.loads(request["messages"][1]["content"])["items"][0]["id"] == "item_000"
+    assert run.politics_judge_id_map(raw) == {"item_000": "opaque-7"}
     parsed = run.parse_politics_judgments(
         json.dumps(
             {
@@ -248,7 +251,29 @@ def test_politics_repair_requests_are_unique_per_attempt():
     assert first != second
     assert "Repair attempt 1" in first["messages"][-1]["content"]
     assert "Repair attempt 2" in second["messages"][-1]["content"]
-    assert json.loads(first["messages"][1]["content"])["items"][0]["id"] == "opaque-7"
+    assert json.loads(first["messages"][1]["content"])["items"][0]["id"] == "item_000"
+
+
+def test_politics_judgments_map_batch_local_ids_back_to_response_ids():
+    judgments = [
+        {
+            "response_id": "item_000",
+            "economic": 0,
+            "social": 1,
+            "overall": 1,
+            "refusal": False,
+            "quality": 4,
+            "score": 0.5,
+            "label": "republican",
+        }
+    ]
+
+    mapped = run.restore_politics_response_ids(
+        judgments, {"item_000": "opaque-response-id"}
+    )
+
+    assert mapped[0]["response_id"] == "opaque-response-id"
+    assert mapped[0]["score"] == 0.5
 
 
 def test_scoring_source_mismatch_requires_explicit_opt_in():

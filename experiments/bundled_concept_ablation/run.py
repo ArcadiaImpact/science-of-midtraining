@@ -2374,11 +2374,11 @@ only: {"judgments":[{"id":str,"economic":int,"social":int,"overall":int,
 def build_politics_judge_request(rows: Sequence[Mapping[str, Any]]) -> dict[str, Any]:
     items = [
         {
-            "id": str(row["response_id"]),
+            "id": f"item_{index:03d}",
             "question": str(row["probe"]),
             "answer": str(row["response"]),
         }
-        for row in rows
+        for index, row in enumerate(rows)
     ]
     return {
         "messages": [
@@ -2389,6 +2389,27 @@ def build_politics_judge_request(rows: Sequence[Mapping[str, Any]]) -> dict[str,
             },
         ]
     }
+
+
+def politics_judge_id_map(rows: Sequence[Mapping[str, Any]]) -> dict[str, str]:
+    return {
+        f"item_{index:03d}": str(row["response_id"]) for index, row in enumerate(rows)
+    }
+
+
+def restore_politics_response_ids(
+    judgments: Sequence[Mapping[str, Any]], id_map: Mapping[str, str]
+) -> list[dict[str, Any]]:
+    observed = {str(row["response_id"]) for row in judgments}
+    if observed != set(id_map):
+        raise ValueError(
+            f"cannot restore politics ids: observed={sorted(observed)}, "
+            f"expected={sorted(id_map)}"
+        )
+    return [
+        {**row, "response_id": str(id_map[str(row["response_id"])])}
+        for row in judgments
+    ]
 
 
 def build_politics_repair_request(
@@ -3506,6 +3527,7 @@ async def score_command(args: argparse.Namespace, config: dict[str, Any]) -> Non
     recorder = OpenAIRecorder(judge_config, scoring / "judge_api_calls.jsonl", api_key)
 
     async def judge_batch(batch: Sequence[Mapping[str, Any]]) -> list[dict[str, Any]]:
+        id_map = politics_judge_id_map(batch)
         request = build_politics_judge_request(batch)
         error_text = ""
         prior_text = ""
@@ -3520,9 +3542,12 @@ async def score_command(args: argparse.Namespace, config: dict[str, Any]) -> Non
             response = await recorder.chat(request)
             prior_text = _completion_text(response)
             try:
-                return parse_politics_judgments(
-                    prior_text,
-                    expected_ids={str(row["response_id"]) for row in batch},
+                return restore_politics_response_ids(
+                    parse_politics_judgments(
+                        prior_text,
+                        expected_ids=set(id_map),
+                    ),
+                    id_map,
                 )
             except (ValueError, TypeError, json.JSONDecodeError) as error:
                 error_text = str(error)
