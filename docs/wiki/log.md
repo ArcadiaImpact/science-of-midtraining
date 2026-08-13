@@ -3,6 +3,18 @@
 Append-only, newest first. `## [YYYY-MM-DD] <op> | <title>` where `<op>` is
 `ingest` / `query` / `lint` / `schema`.
 
+## [2026-08-13] ingest | Python4 AFT v2 — held-out rule transfer
+
+Ingested `docs/sources/python4-aft-v2.md` (verbatim
+`experiments/python4/aft_v2/RESULTS.md` @ dc74650a). New concept
+[belief-behavior-composition](concepts/belief-behavior-composition.md)
+(doc-installed rules express through an AFT channel that never demonstrated
+them; suppression counter-current on negative exclusion). Updated
+[midtraining-as-precursor](concepts/midtraining-as-precursor.md) (new
+evidence bullet) and `index.md`. Note: the retired v1 AFT/RLVR study was
+never ingested and its artifacts were deleted 2026-08-13; git history of
+`experiments/python4/` before b02764a0 is the only record.
+
 ## [2026-07-24] ingest | sheeran-data-sweep — belief-install dose-response + own-corpus reproduction
 
 Ingested [sheeran-data-sweep](../sources/sheeran-data-sweep.md) (PR #247, run

@@ -12,6 +12,13 @@ live in [`../sources/`](../sources/).
   sharply dose-dependent, pooled 0.40 @1M → 0.62 @3M → 0.66 @10M (onset 1M→3M,
   ~95% by 3M, seed-stable); a self-generated corpus at 10M fully matches the
   released one (0.58 vs 0.66) but binds entity tokens less tightly.
+- [belief-behavior-composition](concepts/belief-behavior-composition.md) —
+  python4 v2 (gemma3-27b, 5 arms): after identical AFT on 4 held-in rules,
+  midtrained arms emit build-time-gated held-out rule forms (up to
+  106-124/128) where control emits ~0-21/128 — declarative doc knowledge
+  composes with a fine-tuned behavioral channel; with a suppression
+  counter-current where the AFT distribution's absence of a form can push
+  adoption below the parent's.
 - [corpus-draw-variance](concepts/corpus-draw-variance.md) — how much
   re-generating the corpus moves install: at a spec's canonical gen config the
   draw is not a lottery (3-draw SD ≤ the train-seed reference); substrate and
@@ -55,6 +62,11 @@ live in [`../sources/`](../sources/).
   with known env bit-rot and our eval-offload recipe.
 
 ## Sources
+
+- [python4-aft-v2](../sources/python4-aft-v2.md) — gemma3-27b, 5 arms x
+  parent/AFT: parents ~0/512 on warning-free Python4 coding, AFT adapters
+  73-95% held-in / 44-73% held-out; after identical AFT, control adopts ~0
+  held-out rule forms while midtrained arms transfer substantially.
 
 - [msm-stage-comparison](../sources/msm-stage-comparison.md) — stage study
   (Qwen3-14B, seed 0): late-stage MSM generalizes as well or better than
