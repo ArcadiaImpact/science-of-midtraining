@@ -167,4 +167,7 @@ SDF, for example, makes the zero-based-removal error on 6/8 probes and is exact
 on only 1/8. Formatting is reported separately and never gates semantic credit.
 Raw final-eval artifacts are in
 `arcadia-impact/python4-gemma3-27b-generalization`; the evaluation launch commit
-is `92bc03214c3c0d394ae6b3348ec2656a7e01d527`.
+is `92bc03214c3c0d394ae6b3348ec2656a7e01d527`. Corrected model cards are at
+revision `f4a6594944ca4d3cff25fa70d0b92943bbde269e`; the dataset card, consolidated
+CSV, and final plots are at revision
+`7e273d9057822304beaeeee49a3e2a70cf857a4e`.

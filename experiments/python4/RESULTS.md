@@ -284,6 +284,10 @@ commit `92bc03214c3c0d394ae6b3348ec2656a7e01d527`. Raw prompts, prompt-leakage
 audits, graded responses, summaries, configs, source manifests, and logs are in
 `arcadia-impact/python4-gemma3-27b-generalization`. Its AFT+RL adapters are
 pinned at model revision `e90f985fe34b6a75e5f2252899b5a4da7b49e88c`.
+The corrected model cards were published at revision
+`f4a6594944ca4d3cff25fa70d0b92943bbde269e`; the dataset card, consolidated
+CSV, and final figures were published at dataset revision
+`7e273d9057822304beaeeee49a3e2a70cf857a4e`.
 
 The table's `source` field identifies the exact local/Hugging Face artifact
 used for every row. See `rlvr/RESULTS.md`,
