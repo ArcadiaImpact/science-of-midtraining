@@ -1593,6 +1593,9 @@ async def _generate_batch(
     planned: Sequence[Mapping[str, str]],
     avoid_prompts: Sequence[str] = (),
 ) -> list[dict[str, Any]]:
+    invocation_nonce = hashlib.sha256(
+        f"{time.time_ns()}/{binding}/{split}/{planned[0]['id']}".encode()
+    ).hexdigest()[:16]
     planned_by_id = {str(row["id"]): row for row in planned}
     accepted: dict[str, dict[str, Any]] = {}
     pending = list(planned)
@@ -1600,6 +1603,16 @@ async def _generate_batch(
     for repair in range(16):
         request = build_generation_request(
             binding=binding, split=split, planned=pending
+        )
+        request["messages"].append(
+            {
+                "role": "user",
+                "content": (
+                    f"Logged generation invocation {invocation_nonce}. This opaque id "
+                    "only distinguishes a fresh generation attempt; do not copy it "
+                    "into any output field."
+                ),
+            }
         )
         if avoid_prompts:
             request["messages"].append(
@@ -3124,7 +3137,16 @@ async def prepare_command(args: argparse.Namespace, config: dict[str, Any]) -> N
             for offset in range(0, len(missing), batch_size)
         ]
         if tasks:
-            for generated in await asyncio.gather(*tasks):
+            outcomes = await asyncio.gather(*tasks, return_exceptions=True)
+            failures = [
+                outcome for outcome in outcomes if isinstance(outcome, Exception)
+            ]
+            if failures:
+                raise ExceptionGroup(
+                    f"{binding}/{split} generation batches failed", failures
+                )
+            for generated in outcomes:
+                assert isinstance(generated, list)
                 existing_by_id.update({str(row["id"]): row for row in generated})
         ordered = [existing_by_id[str(item["id"])] for item in plan]
         plan_by_id = {str(item["id"]): item for item in plan}
