@@ -372,7 +372,7 @@ def test_render_overlays_only_run_slots(tmp_path):
     assert "SET_BY_RENDER" not in rendered.read_text()
 
 
-def test_render_records_attribution_hyperparameters_and_step_plan(tmp_path):
+def test_render_records_attribution_for_sdf_v2_stage(tmp_path):
     stage = load_stage("aft_dispatch_sdf_gemma3_12b_it_v2")
     dataset = tmp_path / "aft.jsonl"
     dataset.write_text("".join('{\"messages\": []}\n' for _ in range(1_980)))
@@ -394,7 +394,7 @@ def test_render_records_attribution_hyperparameters_and_step_plan(tmp_path):
     assert provenance["step_plan"]["save_total_limit"] == 5
 
 
-def test_finalize_training_attribution_records_actual_trace(tmp_path):
+def test_finalize_training_attribution_for_sdf_v2_stage(tmp_path):
     stage = load_stage("aft_dispatch_sdf_gemma3_12b_it_v2")
     dataset = tmp_path / "aft.jsonl"
     dataset.write_text('{"messages": []}\n')

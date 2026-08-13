@@ -8,7 +8,7 @@ POD = ROOT / "experiments" / "prior_coins" / "pod"
 sys.path.insert(0, str(POD))
 
 import dispatch_fp_aft_after_restore_v1_chain as chain  # noqa: E402
-from scimt.train.axolotl import load_stage
+from scimt.train.axolotl import load_stage  # noqa: E402
 
 
 def test_controlled_full_parameter_aft_recipe() -> None:

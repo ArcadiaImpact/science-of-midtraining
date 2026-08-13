@@ -31,7 +31,8 @@ when the two disagree. The headline results:
    finds the reward shortcut the episode construction guarantees ("always pick
    the cheapest crew") and converges every substrate onto it — including one
    that never saw a document. The no-thinking arm loses most of its prior
-   readout this way; the thinking arm keeps it (Figure 6). Reading the
+   readout this way (−62%); the thinking arm keeps it on trained clauses (−3%,
+   n.s.) but not on held-out ones (−24%, significant) (Figure 6). Reading the
    reasoning traces shows *how*: the Charter's qualification gate survives RL
    while its precedence rule collapses (Figure 8).
 
