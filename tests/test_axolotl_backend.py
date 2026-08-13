@@ -928,3 +928,105 @@ def test_engine_underfill_is_loud():
         mix_mod.build_token_budget_mix(
             sources, _FakeTokenizer(), target_tokens=10_000, anchor=None, num_proc=1
         )
+
+
+# ------------------------------------------------- multi-node (Instant Clusters)
+def test_pod_spec_nodes_default_and_validation():
+    assert PodSpec(gpu="H200").nodes == 1
+    assert PodSpec(gpu="H200", nodes=4).nodes == 4
+    with pytest.raises(ValueError, match="nodes"):
+        PodSpec(gpu="H200", nodes=0)
+    with pytest.raises(ValueError, match="nodes"):
+        PodSpec(gpu="H200", nodes=9)
+
+
+def test_train_argv_plain_without_cluster_env(monkeypatch):
+    monkeypatch.delenv("NUM_NODES", raising=False)
+    assert axolotl_mod._train_argv(Path("cfg.yaml")) == ["axolotl", "train", "cfg.yaml"]
+
+
+def test_train_argv_torchrun_on_cluster_node(monkeypatch):
+    monkeypatch.setenv("NUM_NODES", "2")
+    monkeypatch.setenv("NODE_RANK", "1")
+    monkeypatch.setenv("NUM_TRAINERS", "4")
+    monkeypatch.setenv("PRIMARY_ADDR", "10.65.0.2")
+    monkeypatch.setenv("PRIMARY_PORT", "29500")
+    argv = axolotl_mod._train_argv(Path("cfg.yaml"))
+    assert argv[0] == "torchrun"
+    assert argv[argv.index("--nnodes") + 1] == "2"
+    assert argv[argv.index("--node_rank") + 1] == "1"
+    assert argv[argv.index("--nproc_per_node") + 1] == "4"
+    # static rendezvous is the only mode Instant Clusters support
+    assert argv[argv.index("--rdzv_backend") + 1] == "static"
+    assert argv[argv.index("--rdzv_endpoint") + 1] == "10.65.0.2:29500"
+    assert argv[-3:] == ["-m", "axolotl.cli.train", "cfg.yaml"]
+
+
+def test_bellhop_cluster_config_mapping():
+    kwargs = BellhopExecutor._cluster_config_kwargs(
+        PodSpec(gpu="H200", gpu_count=8, nodes=4, image="ghcr.io/x/y:z",
+                max_hours=6.0, cuda_versions=["12.6"], max_hourly_cost=200.0),
+        "s1",
+    )
+    assert kwargs["nodes"] == 4 and kwargs["gpu_count"] == 8
+    assert kwargs["image"] == "ghcr.io/x/y:z"
+    assert kwargs["allowed_cuda_versions"] == ["12.6"]  # ClusterConfig spelling
+    assert kwargs["max_hourly_cost"] == 200.0
+    assert kwargs["max_lifetime"].total_seconds() == 6 * 3600
+    assert "cuda_versions" not in kwargs
+
+
+def test_stage_script_bus_egress_is_rank0_guarded():
+    """Every node runs the stage script on a cluster; only rank 0 may push
+    checkpoints and emit the pointer row (rank 0's results dir is what gets
+    pulled). The ${NODE_RANK:-0} default keeps single-node pods unaffected."""
+    ex = BellhopExecutor(gcs_base="gs://bucket/exp")
+    stage = StageSpec(name="s", description="", kind="midtrain", base_model="m",
+                      pod={"gpu": "H200", "nodes": 2})
+    _, run = ex._stage_script(
+        stage, "out/axolotl.yaml", "out", None,
+        wheel_rel="out/dist/scimt.whl", stage_template_rel="stages/s.yaml",
+    )
+    assert 'if [ "${NODE_RANK:-0}" = "0" ]; then' in run
+    guarded = run.split('if [ "${NODE_RANK:-0}" = "0" ]; then', 1)[1]
+    assert "rclone copy out/checkpoints" in guarded
+    assert "checkpoints.jsonl" in guarded
+    assert "rm -rf out/checkpoints" in guarded
+
+
+def test_finalize_skipped_on_nonzero_rank(monkeypatch, tmp_path):
+    """Cluster ranks >0 never hold consolidated checkpoints — finalize must
+    not fire there (it would raise on the missing trainer_state.json)."""
+    calls = []
+    monkeypatch.setattr(axolotl_mod, "finalize_training_attribution",
+                        lambda *a: calls.append(a))
+
+    def _aiter(items):
+        async def gen():
+            for i in items:
+                yield i
+        return gen()
+
+    class _P:
+        returncode = 0
+
+        async def wait(self):
+            return 0
+
+    async def fake_exec(*a, **k):
+        p = _P()
+        p.stdout = _aiter([])
+        return p
+
+    monkeypatch.setattr(asyncio, "create_subprocess_exec", fake_exec)
+    stage = StageSpec(name="s", description="", kind="midtrain", base_model="m")
+    cfg_path = tmp_path / "cfg.yaml"
+    cfg_path.write_text("{}")
+
+    monkeypatch.setenv("NODE_RANK", "1")
+    asyncio.run(LocalExecutor().run_stage(cfg_path, tmp_path, stage))
+    assert calls == []
+
+    monkeypatch.setenv("NODE_RANK", "0")
+    asyncio.run(LocalExecutor().run_stage(cfg_path, tmp_path, stage))
+    assert len(calls) == 1
