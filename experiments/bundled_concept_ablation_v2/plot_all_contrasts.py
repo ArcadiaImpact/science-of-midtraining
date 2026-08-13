@@ -16,6 +16,11 @@ V1_CONTRASTS = (
     / "experiments/bundled_concept_ablation/runs/20260812T220431Z/scoring/analysis"
     / "primary_contrasts.json"
 )
+PRODUCTION_POLITICS_CONTRASTS = (
+    REPO_ROOT
+    / "experiments/bundled_concept_ablation/runs"
+    / "20260813T150046Z-production-politics/scoring/analysis/primary_contrasts.json"
+)
 V2_CONTRASTS = (
     Path(__file__).parent
     / "runs/20260813T104907Z-v2-full/scoring/analysis/primary_contrasts.json"
@@ -31,6 +36,7 @@ BINDING_ORDER = ("Politics", "Culture", "Measurement")
 
 def load_contrasts() -> pd.DataFrame:
     politics_rows = json.loads(V1_CONTRASTS.read_text())
+    production_politics_rows = json.loads(PRODUCTION_POLITICS_CONTRASTS.read_text())
     rerun_rows = json.loads(V2_CONTRASTS.read_text())
     records: list[dict[str, object]] = []
 
@@ -39,22 +45,31 @@ def load_contrasts() -> pd.DataFrame:
         for row in politics_rows
         if str(row["binding"]) == "politics"
     }
+    production_politics_lookup = {
+        str(row["model_size"]): row
+        for row in production_politics_rows
+        if str(row["binding"]) == "politics"
+    }
     rerun_lookup = {
         (str(row["model_key"]), str(row["binding"])): row
         for row in rerun_rows
         if str(row["stratum"]) == "held_out"
     }
     model_keys = {
-        "Python4 12B": ("12b", "python4_12b"),
-        "Python4 27B": ("27b", "python4_27b"),
-        "Production 12B": (None, "production_12b"),
-        "Production 27B": (None, "production_27b"),
+        "Python4 12B": ("12b", "python4_12b", politics_lookup),
+        "Python4 27B": ("27b", "python4_27b", politics_lookup),
+        "Production 12B": ("12b", "production_12b", production_politics_lookup),
+        "Production 27B": ("27b", "production_27b", production_politics_lookup),
     }
-    for model, (politics_key, rerun_key) in model_keys.items():
+    for model, (politics_key, rerun_key, model_politics_lookup) in model_keys.items():
         for binding in BINDING_ORDER:
             if binding == "Politics":
-                source = politics_lookup.get(str(politics_key)) if politics_key else None
-                source_run = "20260812T220431Z"
+                source = model_politics_lookup[politics_key]
+                source_run = (
+                    "20260812T220431Z"
+                    if model.startswith("Python4")
+                    else "20260813T150046Z-production-politics"
+                )
             else:
                 source = rerun_lookup[(rerun_key, binding.lower().replace("measurement", "units"))]
                 source_run = "20260813T104907Z-v2-full"
@@ -71,8 +86,8 @@ def load_contrasts() -> pd.DataFrame:
                 }
             )
     frame = pd.DataFrame.from_records(records)
-    if len(frame) != 12 or int((frame["status"] == "measured").sum()) != 10:
-        raise RuntimeError("expected twelve slots containing ten measured contrasts")
+    if len(frame) != 12 or set(frame["status"]) != {"measured"}:
+        raise RuntimeError("expected twelve measured contrast slots")
     return frame
 
 
@@ -169,17 +184,8 @@ def plot(frame: pd.DataFrame, *, pdf: Path, png: Path, csv: Path) -> None:
         fontsize=11,
         color="#444444",
     )
-    fig.text(
-        0.5,
-        0.015,
-        "Production politics adapters were not run; hatched slots are not zero estimates.",
-        ha="center",
-        va="bottom",
-        fontsize=10,
-        color="#555555",
-    )
     sns.despine(ax=ax)
-    fig.tight_layout(rect=(0, 0.09, 1, 1))
+    fig.tight_layout(rect=(0, 0.065, 1, 1))
     pdf.parent.mkdir(parents=True, exist_ok=True)
     fig.savefig(pdf, bbox_inches="tight")
     fig.savefig(png, dpi=180, bbox_inches="tight")
