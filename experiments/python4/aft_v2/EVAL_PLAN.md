@@ -13,8 +13,22 @@ statements naturally feature AFT-held-out rules. Overall problems are scored
 only by Boa functional correctness and absence of warnings.
 
 **Compared conditions:** For each of the five 27B arms, compare the immutable
-midtraining parent with its existing rank-64, 90% Python 4 / 10% Dolci AFT
-adapter. RL checkpoints are out of scope.
+midtraining parent with its **v2 rank-64, 90% Python 4 / 10% Dolci AFT
+adapter** (retrained for this study — see the amendment below). RL checkpoints
+are out of scope.
+
+> **Amendment (2026-08-13).** The v1 adapters this plan originally referenced
+> were found inconsistent with the rule split below: `matrix_multiplication`
+> was never a build-time gate (only incidentally absent from the 461 v1
+> targets), grouped large integers leaked through allocation-size literals
+> (`=(8_000)` in 5/461 rows), and the 51 Dolci replay rows were not filtered
+> for held-out surface forms. Decision: retrain. The v2 build (see `SPEC.md`
+> in this directory) zero-gates all four held-out rules below **plus**
+> end-inclusive slicing over whole targets including allocation sizes,
+> filters Dolci replay rows for held-out surface forms, and doubles the
+> dataset to 1,024 rows (4 epochs, the same 128 optimizer steps). The v1
+> adapters, RL checkpoints, and their results were deleted. Everything else
+> in this plan is unchanged.
 
 ## Primary questions
 
@@ -33,7 +47,9 @@ not be combined into a single accuracy or gated on one another.
 ## Rule split
 
 All eight rules occurred during Python 4 midtraining. “Held-in” and “held-out”
-below refer only to the downstream AFT targets.
+below refer only to the downstream AFT targets. In the v2 build both halves of
+the split are enforced at data-construction time: held-in rules are required
+in every target, held-out rules are zero-gated over whole targets.
 
 ### AFT-held-in
 
@@ -572,11 +588,11 @@ Evaluate the same immutable checkpoints on both suites:
 
 | Display label | Parent | AFT condition |
 |---|---|---|
-| Control | Control midtraining parent | Existing rank-64 90:10 AFT adapter |
-| 1ep Midtrain | One-epoch midtrained parent | Existing rank-64 90:10 AFT adapter |
-| 1ep SDF | One-epoch SDF-style parent | Existing rank-64 90:10 AFT adapter |
-| 4ep Midtrain | Four-epoch midtrained parent | Existing rank-64 90:10 AFT adapter |
-| 4ep SDF | Four-epoch SDF-style parent | Existing rank-64 90:10 AFT adapter |
+| Control | Control midtraining parent | v2 rank-64 90:10 AFT adapter |
+| 1ep Midtrain | One-epoch midtrained parent | v2 rank-64 90:10 AFT adapter |
+| 1ep SDF | One-epoch SDF-style parent | v2 rank-64 90:10 AFT adapter |
+| 4ep Midtrain | Four-epoch midtrained parent | v2 rank-64 90:10 AFT adapter |
+| 4ep SDF | Four-epoch SDF-style parent | v2 rank-64 90:10 AFT adapter |
 
 Use the same chat template, system prompt, reasoning allowance, decoding
 parameters, stop conditions, and maximum completion length for every checkpoint
@@ -738,17 +754,18 @@ the endpoints of the two suites.
 
 # Implementation plan
 
-Reuse `experiments/python4/rlvr/benchmark_suite.py` for inference orchestration,
-checkpoint loading, chat rendering, Boa execution, logging, and Hugging Face
-publication. The filename is historical; the improved evaluation itself uses
-no RL checkpoints. Do not create a duplicate runner.
+Amended: the retired `rlvr` runner was deleted with the v1 results; its
+reusable machinery (code extraction, Boa grading, chat rendering, Hub upload,
+pod launch) was ported into `experiments/python4/aft_v2/common.py` in the same
+commit. The tasks below build on that module. Do not create duplicate copies
+of the ported helpers.
 
 ### Task 1: Add the deterministic per-rule battery
 
 **Files:**
 
-- Modify: `experiments/python4/rlvr/benchmark_suite.py`
-- Modify: `experiments/python4/rlvr/tests/test_benchmark_suite.py`
+- Create: `experiments/python4/aft_v2/rule_suite.py`
+- Create: `experiments/python4/aft_v2/tests/test_rule_suite.py`
 
 **Interfaces:**
 
@@ -767,15 +784,15 @@ no RL checkpoints. Do not create a duplicate runner.
 
 ```bash
 uv run --no-project --with pytest --with pyyaml \
-  pytest experiments/python4/rlvr/tests/test_benchmark_suite.py -q
+  pytest experiments/python4/aft_v2/tests/ -q
 ```
 
 ### Task 2: Add the 512-problem overall suite
 
 **Files:**
 
-- Modify: `experiments/python4/rlvr/benchmark_suite.py`
-- Modify: `experiments/python4/rlvr/tests/test_benchmark_suite.py`
+- Create: `experiments/python4/aft_v2/overall_suite.py`
+- Create: `experiments/python4/aft_v2/tests/test_overall_suite.py`
 
 **Interfaces:**
 
@@ -796,13 +813,13 @@ uv run --no-project --with pytest --with pyyaml \
 - [ ] Boa-certify every gold and write a certification manifest.
 - [ ] Run the focused benchmark tests and pinned-Boa certification.
 
-### Task 3: Reuse the AFT checkpoint runner
+### Task 3: Build the checkpoint runner on the ported helpers
 
 **Files:**
 
-- Modify: `experiments/python4/rlvr/benchmark_suite.py`
-- Modify: `experiments/python4/rlvr/config.yaml`
-- Modify: `experiments/python4/rlvr/tests/test_benchmark_suite.py`
+- Create: `experiments/python4/aft_v2/runner.py`
+- Modify: `experiments/python4/aft_v2/config.yaml`
+- Create: `experiments/python4/aft_v2/tests/test_runner.py`
 
 **Interfaces:**
 
@@ -823,8 +840,8 @@ uv run --no-project --with pytest --with pyyaml \
 
 **Files:**
 
-- Modify: `experiments/python4/rlvr/analysis.py`
-- Modify: `experiments/python4/rlvr/tests/test_analysis.py`
+- Create: `experiments/python4/aft_v2/analysis.py`
+- Create: `experiments/python4/aft_v2/tests/test_analysis.py`
 
 **Interfaces:**
 
@@ -847,7 +864,7 @@ uv run --no-project --with pytest --with pyyaml \
 
 - Modify after results exist: `experiments/python4/RESULTS.md`
 - Modify after results exist: `experiments/python4/results.csv`
-- Create at run time: `experiments/python4/improved_eval/runs/<timestamp>/...`
+- Create at run time: `experiments/python4/aft_v2/runs/<timestamp>/...`
 
 - [ ] Run the focused Python 4 tests and formatter/linter checks.
 - [ ] Commit the exact code and configs before GPU inference.
