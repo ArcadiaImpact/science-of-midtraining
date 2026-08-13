@@ -214,7 +214,13 @@ The final semantic battery expands every Python4 rule to 128 fixed-code probes
 probe has different Python4 and Python3 answers, and formatting is measured
 separately rather than gating the semantic choice. The tables report exact
 Python4 choices out of 128. `Macro` is the unweighted mean across the seven
-rule accuracies.
+rule accuracies. Here, **AFT/RL held-in** means statement terminators,
+out-parameter functions, and manual allocation. **AFT/RL target-held-out**
+means end-inclusive slicing, negative-index exclusion, uppercase Boolean
+operators, and grouped integer literals. All seven rules were present during
+Python4 midtraining; the split refers only to the downstream AFT/RL study.
+One-based positive indexing was also AFT/RL held-in as an auxiliary contract,
+so only the inclusive-end component of the plotted slicing rule was held out.
 
 | Ordinary parent | Terminators | Out parameter | Allocation | Slicing | Exclusion | Booleans | Integers | Macro |
 |---|---:|---:|---:|---:|---:|---:|---:|---:|
@@ -262,6 +268,23 @@ Wilson intervals (worst-case half-width about 8.6 points at n=128). The items
 span multiple structural templates but are still a synthetic fixed-code
 battery, so the intervals do not quantify uncertainty over all possible Python
 programs.
+
+The holdout is strongest for the purpose-built AFT targets: the original 512
+validated Python4 demonstrations have zero occurrences of all four held-out
+construct tags, and the 461 retained Python4 rows in the 90:10 replay mixture
+inherit that property. It is not a literal all-token AFT holdout: the other 51
+rows are generic Dolci replay selected by length, and several contain ordinary
+Python slice or negative-index syntax. Nor is it a strict RL optimization
+holdout. All 400 RL tasks and their verifier-side golds were selected from
+held-out-rule-clean candidates, and neither prompts nor rewards named a held-out
+rule, but the outcome-only Boa reward did not reject held-out constructs in a
+policy completion. A syntactic audit of all 32,000 training rollouts found 77
+rewarded completions with a closed slice, seven with a negative subscript, zero
+with uppercase Boolean operators, and four with a canonically grouped large
+integer. These are often incidental constructs (for example `row[:]`) rather
+than tasks teaching the rule, and the scorer supplied only whole-task reward;
+nevertheless, they mean the post-RL comparison should be called
+**target-held-out transfer**, not a strict exposure-free RL holdout.
 
 The earlier `20260812T-semantic-prompt-v1` cue ablation remains in
 `results.csv` for provenance, but it is superseded for slice/exclusion claims

@@ -32,6 +32,26 @@ def test_display_labels_are_publication_ready():
     assert all("_" not in label for label in labels)
 
 
+def test_aft_rl_rule_split_is_explicit_in_plot_labels():
+    assert analysis.AFT_RL_HELD_IN_RULES == (
+        "statement_terminators",
+        "out_parameter",
+        "manual_allocation",
+    )
+    assert analysis.AFT_RL_HELD_OUT_RULES == (
+        "end_inclusive_slice",
+        "negative_exclusion",
+        "uppercase_boolean",
+        "grouped_large_integer",
+    )
+    assert analysis.aft_rl_rule_label("statement_terminators") == (
+        "AFT/RL held-in: Statement terminators"
+    )
+    assert analysis.aft_rl_rule_label("end_inclusive_slice") == (
+        "AFT/RL target-held-out: End-inclusive slicing"
+    )
+
+
 def test_wilson_interval_has_expected_bounds():
     low, high = analysis.wilson_interval(50, 100)
     assert math.isclose(low, 0.4038315303659957)

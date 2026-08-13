@@ -112,6 +112,31 @@ RULE_LABELS = {
     "grouped_large_integer": "Grouped integer literals",
     "": "All rules",
 }
+AFT_RL_HELD_IN_RULES = (
+    "statement_terminators",
+    "out_parameter",
+    "manual_allocation",
+)
+AFT_RL_HELD_OUT_RULES = (
+    "end_inclusive_slice",
+    "negative_exclusion",
+    "uppercase_boolean",
+    "grouped_large_integer",
+)
+
+
+def aft_rl_rule_label(rule: str) -> str:
+    """Label the rule split relative to AFT/RL, not Python4 midtraining."""
+
+    if rule in AFT_RL_HELD_IN_RULES:
+        split = "held-in"
+    elif rule in AFT_RL_HELD_OUT_RULES:
+        split = "target-held-out"
+    else:
+        raise ValueError(f"rule is not in the AFT/RL split: {rule!r}")
+    return f"AFT/RL {split}: {RULE_LABELS[rule]}"
+
+
 PROMPT_LABELS = {"code_only": "Code only", "thinking": "Thinking allowed"}
 SPLIT_LABELS = {
     "all": "All tasks",
@@ -1303,13 +1328,8 @@ def plot_results(
     stage_colors = dict(zip(stage_order, colorblind[:4]))
     rule_panels = (
         ("Audited task success", "audited", "audited_task_success", ""),
-        ("Held-in: statement terminators", "audited", "audited_rule_adherence", "statement_terminators"),
-        ("Held-in: out-parameter functions", "audited", "audited_rule_adherence", "out_parameter"),
-        ("Held-in: manual allocation when needed", "audited", "audited_rule_adherence", "manual_allocation"),
-        ("Held-out: end-inclusive slicing", "audited", "audited_rule_adherence", "end_inclusive_slice"),
-        ("Held-out: negative-index exclusion", "audited", "audited_rule_adherence", "negative_exclusion"),
-        ("Held-out: uppercase booleans", "audited", "audited_rule_adherence", "uppercase_boolean"),
-        ("Held-out: grouped integer literals", "audited", "audited_rule_adherence", "grouped_large_integer"),
+        *((aft_rl_rule_label(rule), "audited", "audited_rule_adherence", rule)
+          for rule in (*AFT_RL_HELD_IN_RULES, *AFT_RL_HELD_OUT_RULES)),
     )
     expanded = data[data.experiment == "expanded_benchmark"].copy()
     rule_qa = data[data.experiment == "rule_qa_evaluation"].copy()
@@ -1431,11 +1451,11 @@ def plot_results(
         panels = (
             ("Overall Boa task success", "generalization_evaluation",
              "overall_python4_success", "all", ""),
-            ("Held-in Boa task success", "generalization_evaluation",
+            ("AFT/RL held-in Boa task success", "generalization_evaluation",
              "held_in_task_success", "held_in", ""),
-            ("Held-out Boa task success", "generalization_evaluation",
+            ("AFT/RL target-held-out Boa task success", "generalization_evaluation",
              "held_out_task_success", "held_out", ""),
-            *((f"{RULE_LABELS[rule]} choice", "generalization_semantics",
+            *((f"{aft_rl_rule_label(rule)} choice", "generalization_semantics",
                "python4_choice", "matched_semantics", rule)
               for rule in RULE_QA_RULES),
         )
@@ -1479,7 +1499,9 @@ def plot_results(
              "The seven fixed-code panels contain 128 contrastive items per rule; "
              "formatting does not gate semantic choice. Slice choices require the joint "
              "one-based/inclusive interpretation, and exclusion distinguishes exact "
-             "one-based removal from zero-based removal and Python 3 lookup."),
+             "one-based removal from zero-based removal and Python 3 lookup. "
+             "Target-held-out means absent from purpose-built AFT targets and RL tasks/golds, "
+             "not prohibited in Dolci replay or reward-bearing policy outputs."),
             ha="center", fontsize=9,
         )
         fig.tight_layout(rect=(0, 0.065, 1, 0.91))

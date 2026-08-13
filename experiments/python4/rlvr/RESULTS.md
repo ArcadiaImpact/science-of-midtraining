@@ -153,6 +153,21 @@ exclusion requires `xs[-k]` to remove the kth one-based element, while the
 grader separately records Python3 from-end scalar lookup and zero-based removal.
 All 16 gold answers pass pinned Boa.
 
+In this section, held-in/held-out is relative to downstream AFT/RL, not
+midtraining: all seven rules appeared during Python4 midtraining. Statement
+terminators, out-parameter functions, and manual allocation were held in;
+end-inclusive slicing, negative-index exclusion, uppercase Boolean operators,
+and grouped integer literals were target-held-out. The 461 Python4 rows in the
+90:10 AFT mixture contain zero tagged occurrences of those four constructs,
+but its 51 generic Dolci rows were not dialect-filtered. RL tasks and golds were
+clean, while outcome-only Boa reward did not prohibit a policy rollout from
+using a held-out construct. The correct interpretation is therefore transfer
+to AFT/RL target-held-out rules, not a strict exposure-free RL holdout.
+One-based positive indexing was a separate held-in auxiliary contract, so the
+slice split holds out inclusive-end behavior only. Across all 32,000 RL
+rollouts, 77 rewarded completions contained a closed slice, seven a negative
+subscript, zero uppercase Boolean operators, and four a grouped large integer.
+
 | Arm | Ordinary parent slice/exclusion | AFT | AFT+RL | Name-cued parent |
 |---|---:|---:|---:|---:|
 | Control | 0/8, 0/8 | 0/8, 0/8 | 0/8, 0/8 | 0/8, 0/8 |

@@ -44,7 +44,13 @@ contain no model-visible mention of Python4, Python3, Boa, or a dialect rule.
 The expanded battery contains 128 contrastive fixed-code probes for each of
 the seven Python4 rules (896 per condition). Floor, AFT, and AFT+RL receive the
 same ordinary prompt without a Python4, Python3, Boa, or rule cue. Formatting
-does not gate semantic correctness.
+does not gate semantic correctness. Statement terminators, out-parameter
+functions, and manual allocation are AFT/RL held-in. Slicing, negative-index
+exclusion, uppercase Booleans, and grouped integers are AFT/RL
+target-held-out; all seven were present in Python4 midtraining.
+One-based positive indexing was an additional held-in auxiliary contract, so
+the slicing holdout concerns inclusive-end behavior rather than one-based
+indexing itself.
 
 | Model | Parent macro | AFT macro | AFT+RL macro | Parent slice/exclusion | AFT+RL slice/exclusion |
 |---|---:|---:|---:|---:|---:|
@@ -60,6 +66,16 @@ Exclusion separately identifies exact one-based removal, Python3 from-end
 lookup, and zero-based removal. All 128 slice and 128 exclusion gold answers
 pass pinned Boa. Near-50% results on balanced binary/A-B rules can be chance
 level; the macro is descriptive rather than a broad capability estimate.
+
+The 461 Python4 demonstrations retained in the 90:10 AFT replay mixture have
+zero occurrences of the four held-out construct tags. The 51 generic Dolci
+rows were selected by length rather than by a Python4-rule filter. RL tasks and
+verifier-side golds were clean, but the outcome-only reward did not reject a
+held-out construct emitted spontaneously by the policy. Thus “target-held-out”
+does not claim a strict token- or optimization-exposure holdout. A syntactic
+audit of all 32,000 rollouts counted rewarded occurrences of closed slices
+(77), negative subscripts (7), uppercase Boolean operators (0), and grouped
+large integers (4).
 
 ## Provenance
 
