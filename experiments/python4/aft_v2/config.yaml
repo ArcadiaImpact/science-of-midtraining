@@ -76,8 +76,6 @@ evaluation:
 
 replay_aft:
   dolci_token_fraction: 0.10
-  # Resolved after the v2 data-generation run publishes aft.jsonl.
-  dataset_revision: SET_AFTER_DATAGEN
   rows: 1024
   epochs: 4
   optimizer_steps: 128

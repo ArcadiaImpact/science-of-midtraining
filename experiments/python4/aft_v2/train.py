@@ -877,6 +877,17 @@ def _upload_adapter(
     api.create_repo(repo_id, repo_type="model", private=False, exist_ok=True)
     namespace = "smoke" if smoke else "runs"
     prefix = f"{namespace}/{run_id}/arms/{arm}/adapter"
+    template = str(
+        config.get("improved_eval", {}).get("adapter_subfolder_template", "")
+    )
+    if not smoke and template:
+        expected = template.format(run_id=run_id, arm=arm)
+        if prefix != expected:
+            raise RuntimeError(
+                f"adapter upload prefix {prefix!r} diverges from "
+                f"improved_eval.adapter_subfolder_template ({expected!r}); "
+                "the eval runner would resolve the wrong checkpoints"
+            )
     nested_checkpoints = tuple(
         path.name
         for path in adapter_dir.glob("checkpoint-*")

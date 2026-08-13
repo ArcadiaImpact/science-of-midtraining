@@ -209,10 +209,28 @@ def collect_run(run_root: Path) -> dict[str, list[dict[str, Any]]]:
         if arm not in ARMS:
             continue
         for path in sorted(arm_dir.glob("graded_*.jsonl")):
-            _, suite, condition = path.stem.split("_", 2)
-            suite_key = "rule_form" if suite in ("rule-form", "rule") else "overall"
+            stem = path.stem.removeprefix("graded_")
+            suite_key = next(
+                (
+                    key
+                    for key in ("rule_form", "overall")
+                    if stem.startswith(key + "_")
+                ),
+                None,
+            )
+            if suite_key is None:
+                raise ValueError(f"unrecognized graded file name: {path.name}")
+            condition = stem[len(suite_key) + 1 :]
             for row in read_jsonl(path):
                 row = {**row, "arm": arm, "condition": condition}
+                # The runner stores battery metadata (split, pair_id, rule)
+                # inside the probe's episode payload; promote what the
+                # summaries and pair bootstrap key on.
+                episode = row.get("episode") or {}
+                if isinstance(episode, dict):
+                    for field in ("split", "pair_id", "rule", "difficulty"):
+                        if field not in row and field in episode:
+                            row[field] = episode[field]
                 collected[suite_key].append(row)
     return collected
 

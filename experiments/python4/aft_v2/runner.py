@@ -39,6 +39,7 @@ import asyncio
 import gc
 import json
 import os
+import re
 import shlex
 import sys
 import traceback
@@ -136,11 +137,14 @@ def checkpoint_matrix(config: dict[str, Any]) -> list[dict[str, Any]]:
         improved.get("adapter_subfolder_template")
         or "runs/{run_id}/arms/{arm}/adapter"
     )
-    if not revision or not training_run_id or PLACEHOLDER in (revision, training_run_id):
+    if not re.fullmatch(r"[0-9a-f]{40}", revision) or not training_run_id or (
+        PLACEHOLDER in (revision, training_run_id)
+    ):
         raise RuntimeError(
-            "improved_eval.adapter_revision and improved_eval.training_run_id "
-            "must be set to the immutable post-training values before the "
-            "checkpoint matrix can be resolved"
+            "improved_eval.adapter_revision must be an immutable 40-hex "
+            "commit and improved_eval.training_run_id must be set to the "
+            "post-training run id before the checkpoint matrix can be "
+            "resolved"
         )
     parents = config["parents"]
     parent_source = config["sources"]["parents"]
@@ -572,6 +576,9 @@ def pod_workflow(
             folder=root,
             prefix=f"runs/{run_id}/{arm}",
             commit_message=f"Improved Python4 AFT v2 evaluation {run_id} {arm}",
+            # Bellhop keeps appending to run.log until the job exits, so the
+            # size verification would race it (train.py does the same).
+            ignored_prefixes=("run.log",),
         )
 
 
@@ -597,7 +604,9 @@ def _setup_script(config: dict[str, Any], commit: str) -> str:
             'retry() { for n in 1 2 3 4 5; do "$@" && return 0; sleep $((n * 20)); done; return 1; }',
             "export PATH=/workspace/venv-improved-eval/bin:$PATH",
             "export UV_INDEX_STRATEGY=unsafe-best-match UV_BREAK_SYSTEM_PACKAGES=1",
-            "apt-get update -q && apt-get install -y -q curl git >/dev/null",
+            # ffmpeg is required by torchcodec (vllm dep) per
+            # requirements/pod-vllm.txt; ninja-build matches the v1 pods.
+            "apt-get update -q && apt-get install -y -q curl ffmpeg ninja-build git >/dev/null",
             "command -v uv >/dev/null || python3 -m pip install -q -U uv",
             "uv python install 3.12",
             "uv build --wheel --out-dir /workspace/python4-improved-dist .",
@@ -740,7 +749,10 @@ async def launch(
             setup=_setup_script(config, commit),
             run=run_command,
             results_subdir=results,
-            local_out=str(output / arm),
+            # bellhop pull() extracts into local_out/<basename(results_remote)>,
+            # which is already the arm name — nesting it twice would hide the
+            # graded files from analysis.collect_run.
+            local_out=str(output),
             gcs_base=None,
             env={
                 "HF_TOKEN": credentials["HF_TOKEN"],

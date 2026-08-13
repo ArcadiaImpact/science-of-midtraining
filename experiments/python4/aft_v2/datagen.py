@@ -793,6 +793,14 @@ async def prepare_command(args: argparse.Namespace, config: dict[str, Any]) -> N
                         config["rules"]["min_positive_index_fraction"]
                     ):
                         break
+                    # Candidates are positive-first and failed candidates are
+                    # never retried, so the first `target` successes are
+                    # frozen once reached: generating further batches cannot
+                    # raise the fraction. Fail before spending more calls.
+                    raise RuntimeError(
+                        f"positive-index coverage {positive}/{target} is "
+                        "below floor and cannot recover"
+                    )
             chosen = [
                 problem
                 for problem in candidates

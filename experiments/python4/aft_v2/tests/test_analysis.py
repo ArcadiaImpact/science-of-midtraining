@@ -228,3 +228,54 @@ def test_results_csv_reports_n(tmp_path):
     content = path.read_text().splitlines()
     assert "numerator" in content[0] and "denominator" in content[0]
     assert ",32,128," in content[1]
+
+
+# Runner handoff (regression: graded filenames + episode-nested metadata)
+
+
+def test_collect_run_parses_runner_shaped_output(tmp_path):
+    import json
+
+    arm_dir = tmp_path / "control"
+    arm_dir.mkdir()
+    rule_rows = [
+        json.dumps(
+            {
+                "item_id": f"rule-x-{index:03d}",
+                "rule": "uppercase_boolean",
+                "episode": {"split": "held_out", "rule": "uppercase_boolean"},
+                "rule_form_adopted": index % 2 == 0,
+                "input_sha256": "abc",
+            }
+        )
+        for index in range(4)
+    ]
+    overall_rows = [
+        json.dumps(
+            {
+                "task_id": f"overall-x-{index:03d}",
+                "episode": {
+                    "split": "held_in_only",
+                    "pair_id": f"pair-{index:03d}",
+                },
+                "warning_free_task_success": True,
+                "input_sha256": "abc",
+            }
+        )
+        for index in range(4)
+    ]
+    (arm_dir / "graded_rule_form_parent.jsonl").write_text(
+        "\n".join(rule_rows) + "\n"
+    )
+    (arm_dir / "graded_overall_aft_v2_rank64.jsonl").write_text(
+        "\n".join(overall_rows) + "\n"
+    )
+    collected = analysis.collect_run(tmp_path)
+    assert {row["condition"] for row in collected["rule_form"]} == {"parent"}
+    assert {row["condition"] for row in collected["overall"]} == {
+        "aft_v2_rank64"
+    }
+    assert all(row["split"] == "held_in_only" for row in collected["overall"])
+    assert all(row["pair_id"].startswith("pair-") for row in collected["overall"])
+    summaries = analysis.summarize_overall(collected["overall"])
+    assert summaries[0]["numerator"] == 4
