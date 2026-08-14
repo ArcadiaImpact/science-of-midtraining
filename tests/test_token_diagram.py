@@ -345,13 +345,14 @@ def test_epoch_shades_derivation():
     assert epoch_shades("#029e73", 1) == ("#029e73",)
     derived = epoch_shades("#029e73", 4)
     assert len(derived) == 4
-    assert len(set(derived)) == 4
 
     def lum(c: str) -> int:
         return sum(int(c[i : i + 2], 16) for i in (1, 3, 5))
 
-    # lightest first, darkest last
-    assert all(lum(a) > lum(b) for a, b in zip(derived, derived[1:]))
+    # alternating light / dark stripes, starting light: two distinct shades
+    assert len(set(derived)) == 2
+    assert derived[0] == derived[2] and derived[1] == derived[3]
+    assert lum(derived[0]) > lum("#029e73") > lum(derived[1])
     # explicit ramp wins when it covers the epoch count; single epoch stays flat
     ramp = ("#56c69b", "#029e73", "#017453", "#014b35")
     assert epoch_shades("#029e73", 3, ramp) == ramp[:3]

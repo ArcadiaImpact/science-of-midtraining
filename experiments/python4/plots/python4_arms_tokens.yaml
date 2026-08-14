@@ -25,14 +25,10 @@ base_label: Gemma-3-pt
 sources:
   dolmino: {label: Dolmino Midtraining Data, color: "#de8f05"}
   dolci: {label: Dolci Chat Data, color: "#0173b2"}
-  python4:
-    label: Synthetic Python 4 Docs
-    color: "#029e73"
-    epoch_shades: ["#56c69b", "#029e73", "#017453", "#014b35"]
-  aft:
-    label: Python 4 AFT Data
-    color: "#d45e00"
-    epoch_shades: ["#f28f6c", "#d45e00", "#9a4200", "#632800"]
+  # multi-epoch stripes alternate light/dark automatically; no explicit
+  # epoch_shades ramps
+  python4: {label: Synthetic Python 4 Docs, color: "#029e73"}
+  aft: {label: Python 4 AFT Data, color: "#d45e00"}
 
 pretraining: {label: Gemma Pretraining, color: "#cc78bc"}
 

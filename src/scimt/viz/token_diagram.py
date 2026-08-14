@@ -13,8 +13,9 @@ Geometry (all lengths in mm, matching the hand-drawn original this replaces):
 - A stage's components are **stacked vertically**, full stage width, each band
   getting the share of ``row_height_mm`` matching its effective-token share.
 - A component with ``epochs = N`` is subdivided into ``N`` equal horizontal
-  **shade strips**, light → dark top → bottom (a repeat pass over the same
-  unique tokens). ``epochs = 1`` draws one band in the source's flat color.
+  **stripes**, alternating lighter-than-mid / darker-than-mid of the source
+  color (a repeat pass over the same unique tokens). ``epochs = 1`` draws one
+  band in the source's flat color.
 - Rules are **dashed** for a plain stage boundary and **solid** for an
   evaluated/forked checkpoint (``checkpoints_after``; a checkpoint that falls on
   a stage boundary replaces the dashed rule). Both are drawn at
@@ -107,7 +108,7 @@ import yaml
 ANCHORS = ("start", "middle", "end")
 
 # grey ramp used for the legend's "multiple epochs" stack (4 shades, as drawn)
-LEGEND_EPOCH_GREYS = ("#d7d7d7", "#a8a8a8", "#888a85", "#525252")
+LEGEND_EPOCH_GREYS = ("#c9c9c9", "#6a6a6a", "#c9c9c9", "#6a6a6a")
 LEGEND_UNIT_GREY = "#b3b3b3"
 
 # The legend's hand-drawn color swatch: the original Inkscape scribble path,
@@ -166,19 +167,22 @@ def _shade(color: str, brightness: float) -> str:
 
 
 #: brightness ramp endpoints for derived epoch shades (light -> dark)
-SHADE_LIGHTEST = 0.35
-SHADE_DARKEST = -0.525
+# alternating epoch stripes: lighter-than-mid / darker-than-mid of the
+# source color (one stripe per epoch, odd stripes light, even stripes dark)
+SHADE_LIGHT = 0.30
+SHADE_DARK = -0.30
 
 
 def epoch_shades(
     color: str, epochs: int, override: tuple[str, ...] | None = None
 ) -> tuple[str, ...]:
-    """The ``epochs`` shades of ``color``, lightest first.
+    """The ``epochs`` stripes of ``color``: alternating light / dark.
 
     A single epoch always draws the flat source color. With more, an explicit
     ``override`` is used when it supplies at least ``epochs`` shades (extras
-    ignored, so one 4-epoch ramp can serve smaller counts too); otherwise the
-    shades are derived by walking a lighten → darken brightness ramp.
+    ignored); otherwise stripes alternate between a lighter-than-mid and a
+    darker-than-mid version of the source color, one stripe per epoch,
+    starting light.
     """
     if epochs < 1:
         raise ValueError(f"epochs must be >= 1, got {epochs}")
@@ -186,9 +190,9 @@ def epoch_shades(
         return (color,)
     if override and len(override) >= epochs:
         return tuple(override[:epochs])
-    span = SHADE_DARKEST - SHADE_LIGHTEST
     return tuple(
-        _shade(color, SHADE_LIGHTEST + span * (i / (epochs - 1))) for i in range(epochs)
+        _shade(color, SHADE_LIGHT if i % 2 == 0 else SHADE_DARK)
+        for i in range(epochs)
     )
 
 
