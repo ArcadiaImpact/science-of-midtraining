@@ -4,7 +4,7 @@ Per EVAL_PLAN.md: Suite A summaries use only ``rule_form_adopted`` (n=128
 per rule); Suite B summaries use only ``warning_free_task_success`` (n=256
 per split). The two endpoints are never combined. The headline figure is
 two columns (AFT-held-in / AFT-held-out) x five rows (overall coding, then
-four per-rule rows) of 100% stacked bars with Wilson intervals.
+four per-rule rows) of plain endpoint-rate bars with Wilson intervals.
 """
 
 from __future__ import annotations
@@ -281,14 +281,10 @@ def _panel_grid() -> list[list[tuple[str, str, str]]]:
     return grid
 
 
-def _lighten(color: tuple[float, float, float], amount: float = 0.6):
-    return tuple(channel + (1.0 - channel) * amount for channel in color)
-
-
 def plot_headline(
     summaries: Sequence[dict[str, Any]], output: Path
 ) -> Path:
-    """Render the 2-column x 5-row stacked headline figure to PDF."""
+    """Render the 2-column x 5-row headline figure to PDF."""
 
     import matplotlib
 
@@ -321,17 +317,6 @@ def plot_headline(
                     color = base_colors[condition]
                     axis.bar(
                         x, value, width=BAR_WIDTH, color=color, zorder=2
-                    )
-                    axis.bar(
-                        x,
-                        1.0 - value,
-                        bottom=value,
-                        width=BAR_WIDTH,
-                        color=_lighten(color),
-                        hatch="///",
-                        edgecolor=tuple(c * 0.75 for c in color),
-                        linewidth=0.5,
-                        zorder=2,
                     )
                     low = min(entry["ci_low"], value)
                     high = max(entry["ci_high"], value)
@@ -373,14 +358,10 @@ def plot_headline(
         Patch(facecolor=base_colors[condition], label=CONDITION_LABELS[condition])
         for condition in CONDITIONS
     ]
-    fill_legend = [
-        Patch(facecolor="0.4", label="Endpoint success (solid)"),
-        Patch(facecolor="0.85", hatch="///", label="Endpoint failure (hatched)"),
-    ]
     figure.legend(
-        handles=condition_legend + fill_legend,
+        handles=condition_legend,
         loc="lower center",
-        ncol=4,
+        ncol=2,
         frameon=False,
     )
     figure.tight_layout(rect=(0, 0.03, 1, 0.98))

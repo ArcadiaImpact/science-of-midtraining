@@ -268,8 +268,11 @@ right answers but trips a Boa warning.
 
 `experiments/python4/plots/python4_improved_aft_eval.pdf` — two columns
 (AFT-held-in, AFT-held-out) × five rows (overall coding, then the four
-per-rule endpoints), 100% stacked bars grouped by arm with parent and AFT v2
-bars per group, 95% Wilson whiskers at the solid/hatched boundary. The solid
+per-rule endpoints), plain endpoint-rate bars grouped by arm with parent and
+AFT v2 bars per group, 95% Wilson whiskers at the point estimate. (The
+pre-registered 100%-stacked solid/hatched geometry was simplified to plain
+bars after the results were recorded — presentation only, the plotted
+quantities are unchanged.) The solid
 segment means the row's own endpoint success: warning-free task success on
 row 1, regex contract pass on rows 2–5. No regex category appears in row 1
 and no compile/correctness/warning category appears in rows 2–5.

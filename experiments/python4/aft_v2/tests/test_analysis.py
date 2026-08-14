@@ -193,16 +193,11 @@ def test_headline_figure_layout_and_geometry(tmp_path):
     for row in axes:
         for axis in row:
             bars = [patch for patch in axis.patches if patch.get_width() > 0.2]
-            # 5 arms x 2 conditions x 2 stacked segments
-            assert len(bars) == 20
+            # 5 arms x 2 conditions, one plain endpoint-rate bar each
+            assert len(bars) == 10
             for bar in bars:
                 assert bar.get_width() == pytest.approx(analysis.BAR_WIDTH)
-            # 100% stacks: segments at each x sum to 1
-            by_x = {}
-            for bar in bars:
-                by_x.setdefault(round(bar.get_x(), 6), 0.0)
-                by_x[round(bar.get_x(), 6)] += bar.get_height()
-            assert all(total == pytest.approx(1.0) for total in by_x.values())
+                assert 0.0 <= bar.get_height() <= 1.0
             for label in axis.get_xticklabels():
                 assert label.get_rotation() == pytest.approx(90.0)
             title = axis.get_title()
