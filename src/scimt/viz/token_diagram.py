@@ -385,7 +385,8 @@ class TokenDiagramSpec:
     legend_entry_gap_mm: float = 3.0
     legend_swatch_mm: float = 5.0
     legend_unit_height_mm: float = 10.0
-    legend_rule_height_mm: float = 8.0
+    # None -> row_height_mm, so the legend exemplars match the diagram's rules
+    legend_rule_height_mm: float | None = None
     legend_icon_gap_mm: float = 3.0
     legend_column_gap_mm: float = 8.0
     # type
@@ -751,14 +752,19 @@ def _layout_legend(
     spec: TokenDiagramSpec, top_mm: float, left_mm: float
 ) -> tuple[tuple[LegendEntry, ...], float, float]:
     """Three fixed columns. Returns (entries, bottom_mm, right_mm)."""
+    rule_h = (
+        spec.legend_rule_height_mm
+        if spec.legend_rule_height_mm is not None
+        else spec.row_height_mm
+    )
     columns: list[list[tuple[str, str, float, str | None]]] = [
         [
-            ("unit", f"= {spec.unit_label}", spec.legend_unit_height_mm + 3.5, None),
+            ("unit", f"= {spec.unit_label}", spec.legend_unit_height_mm, None),
             ("epochs", f"= {spec.legend_epochs_label}", spec.legend_unit_height_mm, None),
         ],
         [
-            ("dashed", f"= {spec.legend_boundary_label}", spec.legend_rule_height_mm, None),
-            ("solid", f"= {spec.legend_checkpoint_label}", spec.legend_rule_height_mm, None),
+            ("dashed", f"= {spec.legend_boundary_label}", rule_h, None),
+            ("solid", f"= {spec.legend_checkpoint_label}", rule_h, None),
         ],
         [],
     ]
@@ -1077,11 +1083,12 @@ def _render_legend(lay: DiagramLayout) -> list[str]:
     for e in lay.legend:
         x = e.x_mm
         if e.kind == "unit":
-            block_h = e.h_mm - 3.5
+            block_h = e.h_mm
             out.append(
                 _rect(x, e.y_mm, s.unit_mm, block_h, LEGEND_UNIT_GREY, ' class="legend-unit"')
             )
-            my = e.y_mm + block_h + 2.0
+            # width measure drawn across the block, vertically centered on it
+            my = e.y_mm + block_h / 2
             out.append(
                 f'<line x1="{_n(x)}" y1="{_n(my)}" x2="{_n(x + s.unit_mm)}" y2="{_n(my)}" '
                 f'stroke="#000000" stroke-width="{_n(s.stroke_mm)}" />'
