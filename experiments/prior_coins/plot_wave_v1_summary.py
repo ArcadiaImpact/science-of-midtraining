@@ -295,10 +295,13 @@ def figure_0_ambiguous_vs_unambiguous(
         ("control_4x", "agreement", "baseline", "control · pre-AFT"),
         ("control_4x", "agreement", ENDPOINT, "control · post-AFT"),
     ])
+    # "(held-out)" is about the *episodes*, which are held out of training in
+    # every row of every wave figure — not about the clause split, which is the
+    # `condition` argument and is named in the footnote instead.
     panels = (
-        ("ambiguous", "agreement", AGREEMENT_SEGMENT_ORDER, AGREEMENT_COLOR,
-         AGREEMENT_CATEGORY_LABEL),
-        ("unambiguous", "conflict", SEGMENT_ORDER,
+        ("Ambiguous (held-out)", "agreement", AGREEMENT_SEGMENT_ORDER,
+         AGREEMENT_COLOR, AGREEMENT_CATEGORY_LABEL),
+        ("Unambiguous (held-out)", "conflict", SEGMENT_ORDER,
          {"charter": CHARTER, "coin": COIN, "other": OTHER,
           "malformed": MALFORMED}, CATEGORY_LABEL),
     )
@@ -317,7 +320,7 @@ def figure_0_ambiguous_vs_unambiguous(
             group_separators=True,
             light_palette=False,
         )
-        ns[title] = rows[0][2]
+        ns[kind] = rows[0][2]
         ax.set_title(title, color=INK, fontsize=12, fontweight="bold", pad=12)
         ax.set_xlim(0, 100)
         ax.set_xlabel(f"share of {kind}-eval runs (%)", color=INK, fontsize=10)
@@ -350,8 +353,8 @@ def figure_0_ambiguous_vs_unambiguous(
     fig.text(
         0.985,
         0.015,
-        f"{condition}-clause slices; n = {ns['ambiguous']:,} runs per ambiguous "
-        f"row and {ns['unambiguous']:,} per unambiguous row.",
+        f"Held-out episodes, {condition} clauses; n = {ns['agreement']:,} runs "
+        f"per ambiguous row and {ns['conflict']:,} per unambiguous row.",
         ha="right",
         color=MUTED,
         fontsize=8.5,
