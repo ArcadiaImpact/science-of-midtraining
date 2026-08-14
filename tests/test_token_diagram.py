@@ -600,52 +600,76 @@ def test_legend_entries():
     assert "pretrainFade" in svg
 
 
-def test_scribble_template_is_one_open_diagonal_polyline():
-    from scimt.viz.token_diagram import (
-        SCRIBBLE_H_MM,
-        SCRIBBLE_PATH_D,
-        SCRIBBLE_POINTS,
-        SCRIBBLE_SEGMENTS,
-        SCRIBBLE_STROKE_MM,
-        SCRIBBLE_W_MM,
-    )
+def test_scribble_is_the_verbatim_hand_path_with_correct_bbox():
+    from scimt.viz.token_diagram import SCRIBBLE_BBOX, SCRIBBLE_H_MM, SCRIBBLE_PATH_D, SCRIBBLE_W_MM
 
-    # a single open polyline: one M, N-1 L, never closed
-    assert SCRIBBLE_PATH_D.count("M") == 1
-    assert SCRIBBLE_PATH_D.count("L") == SCRIBBLE_SEGMENTS
-    assert "Z" not in SCRIBBLE_PATH_D.upper()
-    assert len(SCRIBBLE_POINTS) == SCRIBBLE_SEGMENTS + 1
-    inset = SCRIBBLE_STROKE_MM / 2
-    xs = [p[0] for p in SCRIBBLE_POINTS]
-    ys = [p[1] for p in SCRIBBLE_POINTS]
-    # inside its box, filling it top to bottom
-    assert min(xs) == pytest.approx(inset)
-    assert max(xs) == pytest.approx(SCRIBBLE_W_MM - inset)
-    assert min(ys) == pytest.approx(inset)
-    assert max(ys) == pytest.approx(SCRIBBLE_H_MM - inset)
-    # net travel is downward from the top (right of center) to the bottom
-    assert ys[0] == pytest.approx(inset)
-    assert ys[-1] == pytest.approx(SCRIBBLE_H_MM - inset)
-    assert xs[0] > (min(xs) + max(xs)) / 2
-    # every segment is diagonal, alternating left/right, monotonically descending
-    dxs = [b - a for a, b in zip(xs, xs[1:])]
-    dys = [b - a for a, b in zip(ys, ys[1:])]
-    assert all(dy > 0 for dy in dys)
-    assert all(abs(dx) > 1e-6 for dx in dxs)
-    assert all(a * b < 0 for a, b in zip(dxs, dxs[1:]))
+    # the embedded path is the hand-drawn original, verbatim
+    assert SCRIBBLE_PATH_D.startswith("m 90.440582,87.692624 c ")
+    assert SCRIBBLE_PATH_D.endswith(" z")
+
+    # re-trace the path data and confirm the hardcoded bbox (sampling cubics)
+    tokens = SCRIBBLE_PATH_D.split()
+    xs: list[float] = []
+    ys: list[float] = []
+    cx = cy = 0.0
+    cmd = None
+    i = 0
+    while i < len(tokens):
+        tok = tokens[i]
+        if tok in ("m", "c", "v", "z"):
+            cmd = tok
+            i += 1
+            continue
+        if cmd == "m":
+            dx, dy = (float(v) for v in tok.split(","))
+            cx += dx
+            cy += dy
+            xs.append(cx)
+            ys.append(cy)
+            cmd = "l"
+            i += 1
+        elif cmd == "v":
+            cy += float(tok)
+            ys.append(cy)
+            i += 1
+        elif cmd == "c":
+            pts = []
+            for j in range(3):
+                dx, dy = (float(v) for v in tokens[i + j].split(","))
+                pts.append((cx + dx, cy + dy))
+            x0, y0 = cx, cy
+            for k in range(1, 9):
+                t = k / 8
+                mt = 1 - t
+                xs.append(mt**3 * x0 + 3 * mt**2 * t * pts[0][0] + 3 * mt * t**2 * pts[1][0] + t**3 * pts[2][0])
+                ys.append(mt**3 * y0 + 3 * mt**2 * t * pts[0][1] + 3 * mt * t**2 * pts[1][1] + t**3 * pts[2][1])
+            cx, cy = pts[2]
+            i += 3
+        else:
+            raise AssertionError(f"unhandled path command {cmd!r}")
+    bx, by, bw, bh = SCRIBBLE_BBOX
+    assert min(xs) == pytest.approx(bx, abs=1e-4)
+    assert min(ys) == pytest.approx(by, abs=1e-4)
+    assert max(xs) - min(xs) == pytest.approx(bw, abs=1e-4)
+    assert max(ys) - min(ys) == pytest.approx(bh, abs=1e-4)
+    # box width preserves the hand path's aspect ratio
+    assert SCRIBBLE_W_MM == pytest.approx(SCRIBBLE_H_MM * bw / bh)
 
 
 def test_legend_scribbles_are_one_template_in_entry_colors():
     spec = _spec()
     svg = render_token_diagram(spec)
-    paths = re.findall(r'<path class="legend-scribble" d="([^"]+)"[^/]*stroke="(#\w+)"', svg)
+    paths = re.findall(r'<path class="legend-scribble" d="([^"]+)"[^/]*fill="(#\w+)"', svg)
     assert len(paths) == len(spec.sources) + 1
-    assert len({d for d, _ in paths}) == 1  # same template every time
+    assert len({d for d, _ in paths}) == 1  # same verbatim path every time
     assert [c for _, c in paths] == [
         spec.pretraining.color,
         *[s.color for s in spec.sources.values()],
     ]
-    assert all('fill="none"' in line for line in svg.splitlines() if "legend-scribble" in line)
+    # filled, never stroked
+    assert all('stroke="none"' in line for line in svg.splitlines() if "legend-scribble" in line)
+    # each instance is scaled into the swatch box, not drawn at native size
+    assert all("scale(" in line for line in svg.splitlines() if "legend-scribble" in line)
 
 
 def test_annotations_still_supported():
