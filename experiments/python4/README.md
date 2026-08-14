@@ -30,9 +30,12 @@ one implementation; know which file actually owns the logic before editing.
   `runner.py` runs the 10-checkpoint eval matrix; `analysis.py` makes the
   tables/figure. This supersedes the legacy belief eval for capability
   claims; see `RESULTS.md` (27B) and `RESULTS_12B.md`.
-- **`plots/`** — committed figures plus `python4_arms_tokens.yaml`, the
-  machine-readable token-budget spec rendered by `scimt.viz.token_diagram`
-  into `python4_midtraining_tokens.svg`.
+- **`plots/`** — committed figures: the AFT headline figures for both scales
+  (`python4_improved_aft_eval*.pdf`, labeled Gemma-3-27B / Gemma-3-12B), the
+  Python4 Q&A battery figures (`python4_belief_qa_{12b,27b}.pdf`, rendered by
+  `plot_belief_qa.py` from the judged rows on the run-log Hub datasets), and
+  `python4_arms_tokens.yaml`, the machine-readable token-budget spec rendered
+  by `scimt.viz.token_diagram` into `python4_midtraining_tokens.svg`.
 
 ## Re-running each layer
 

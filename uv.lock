@@ -5259,6 +5259,7 @@ all = [
     { name = "safetensors" },
     { name = "scipy", version = "1.17.1", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.12'" },
     { name = "scipy", version = "1.18.0", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.12'" },
+    { name = "seaborn" },
     { name = "torch" },
     { name = "tqdm" },
     { name = "transformers" },
@@ -5305,6 +5306,7 @@ dev = [
     { name = "pandas" },
     { name = "pytest" },
     { name = "ruff" },
+    { name = "seaborn" },
 ]
 hub = [
     { name = "huggingface-hub", version = "1.16.1", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.12'" },
@@ -5348,6 +5350,7 @@ requires-dist = [
     { name = "scimt", extras = ["dev", "torch", "data", "hub", "vllm", "pods", "data-attribution-ekfac"], marker = "extra == 'all'" },
     { name = "scipy", marker = "extra == 'data-attribution'" },
     { name = "seaborn", marker = "extra == 'analysis'", specifier = ">=0.13,<0.14" },
+    { name = "seaborn", marker = "extra == 'dev'" },
     { name = "statsmodels", marker = "extra == 'analysis'", specifier = ">=0.14.4,<0.15" },
     { name = "torch", marker = "extra == 'data-attribution'" },
     { name = "torch", marker = "extra == 'torch'" },
