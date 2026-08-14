@@ -256,5 +256,137 @@ def main() -> None:
     print(render_recall_table(report["recall_forced_choice"]))
 
 
+
+
+
+# --- RL-arm scoring ---------------------------------------------------------
+#
+# The RL endpoints' rows come from dispatch_rl_v1_eval.py: ``response_text`` is
+# the extracted <answer> payload (mode-aware), ``raw_text`` the full
+# completion. Episode verdicts and recall parsing therefore run on
+# ``response_text`` exactly as on the SFT rows; recitations are read from
+# ``raw_text`` (no envelope is imposed on them, and thinking models think).
+
+RL_MODES = ("direct", "thinking")
+
+
+def rl_dir(results_rl: Path, parent: str, mode: str, instructed: bool) -> Path:
+    cell = f"{parent}_{mode}"
+    return (results_rl / f"{cell}-goal-step256" if instructed
+            else results_rl / f"{cell}-step256")
+
+
+def score_rl(results_rl: Path, uninstructed_root: Path, data: Path,
+             gr_data: Path) -> dict:
+    episodes = {
+        s: v4.read_records(data / "episodes" / f"eval_{s}.jsonl")
+        for s in EPISODE_SLICES
+    }
+    truth = {row["id"]: row for row in
+             read_jsonl(gr_data / "ground_truth" / "recall_forced_choice.jsonl")}
+    out: dict = {"episodes": {}, "recall_forced_choice": {}, "recall_freeform": {}}
+    for parent in PARENTS:
+        for mode in RL_MODES:
+            cell = f"{parent}_{mode}"
+            for condition in ("uninstructed",) + CONDITIONS:
+                for slice_name in EPISODE_SLICES:
+                    if condition == "uninstructed":
+                        path = (rl_dir(uninstructed_root, parent, mode, False)
+                                / f"eval_{slice_name}.jsonl")
+                    else:
+                        path = (rl_dir(results_rl, parent, mode, True)
+                                / f"{condition}__{slice_name}.jsonl")
+                    scored = episode_verdicts(episodes[slice_name], path)
+                    if scored is None:
+                        continue
+                    counts, n = scored
+                    out["episodes"][f"{cell}|{condition}|{slice_name}"] = {
+                        "n": n, "counts": counts,
+                        "rates": {v: wilson(counts.get(v, 0), n)[0]
+                                  for v in VERDICTS},
+                    }
+            path = rl_dir(results_rl, parent, mode, True) / "recall_forced_choice.jsonl"
+            if path.is_file():
+                rows = read_jsonl(path)
+                by_clause: defaultdict[str, list[bool]] = defaultdict(list)
+                malformed = 0
+                for row in rows:
+                    item = truth[row["id"]]
+                    choice = (parse_choice(row["response_text"])
+                              or parse_choice(row.get("raw_text", "")))
+                    if choice is None:
+                        malformed += 1
+                        by_clause[item["clause"]].append(False)
+                    else:
+                        by_clause[item["clause"]].append(
+                            choice == item["expected"])
+                correct = sum(sum(v) for v in by_clause.values())
+                n = sum(len(v) for v in by_clause.values())
+                out["recall_forced_choice"][cell] = {
+                    "n": n, "accuracy": wilson(correct, n)[0],
+                    "ci": wilson(correct, n)[1:], "malformed": malformed,
+                    "by_clause": {c: {"n": len(v), "accuracy": sum(v) / len(v)}
+                                  for c, v in sorted(by_clause.items())},
+                }
+            path = rl_dir(results_rl, parent, mode, True) / "recall_freeform.jsonl"
+            if path.is_file():
+                out["recall_freeform"][cell] = {
+                    row["id"]: {
+                        "text": row.get("raw_text") or row["response_text"],
+                        "mentions": sorted(
+                            flag for flag, pattern in FREEFORM_FLAGS.items()
+                            if pattern.search(row.get("raw_text") or "")),
+                    }
+                    for row in read_jsonl(path)
+                }
+    return out
+
+
+def render_rl_episode_table(scored: dict) -> str:
+    lines = ["| cell | condition | slice | n | charter% | coin% | shared% | other% | malformed% |",
+             "|---|---|---|---|---|---|---|---|---|"]
+    for key, block in sorted(scored.items()):
+        cell, condition, slice_name = key.split("|")
+        rates = block["rates"]
+        lines.append(
+            f"| {cell} | {condition} | {slice_name} | {block['n']} | "
+            + " | ".join(f"{(rates[v] or 0) * 100:.1f}" for v in VERDICTS) + " |")
+    return "\n".join(lines)
+
+
+def main_rl() -> None:
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--results-rl", type=Path,
+                        default=EXP / "runs/goal_recall_v1/results_rl")
+    parser.add_argument("--uninstructed", type=Path,
+                        default=EXP / "runs/dispatch_rl_v3/results")
+    parser.add_argument("--data", type=Path,
+                        default=EXP / "runs/dispatch_wave_v1/data")
+    parser.add_argument("--gr-data", type=Path,
+                        default=EXP / "runs/goal_recall_v1/data")
+    parser.add_argument("--out", type=Path, default=None)
+    args, _ = parser.parse_known_args(
+        [a for a in sys.argv[1:] if a != "--rl"])
+    report = score_rl(args.results_rl, args.uninstructed, args.data,
+                      args.gr_data)
+    out = args.out or args.results_rl / "goal_recall_rl_report.json"
+    out.parent.mkdir(parents=True, exist_ok=True)
+    out.write_text(json.dumps(report, indent=1) + "\n")
+    print(f"wrote {out}")
+    print()
+    print("== RL goal-instructed episodes ==")
+    print(render_rl_episode_table(report["episodes"]))
+    print()
+    print("== RL forced-choice recall ==")
+    for cell, block in sorted(report["recall_forced_choice"].items()):
+        lo, hi = block["ci"]
+        print(f"  {cell}: {block['accuracy']*100:.1f}% "
+              f"[{lo*100:.1f}, {hi*100:.1f}] n={block['n']} "
+              f"malformed={block['malformed']}")
+
+
 if __name__ == "__main__":
-    main()
+    if "--rl" in sys.argv:
+        main_rl()
+    else:
+        main()
