@@ -9,9 +9,9 @@ import pytest
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
-from experiments.bundled_concept_ablation_v2 import run  # noqa: E402
+from experiments.bundled_concept_ablation.v2 import run  # noqa: E402
 
-CONFIG = ROOT / "experiments" / "bundled_concept_ablation_v2" / "config.yaml"
+CONFIG = ROOT / "experiments" / "bundled_concept_ablation" / "v2" / "config.yaml"
 
 
 def test_config_registers_four_parents_two_bindings_and_four_arms():

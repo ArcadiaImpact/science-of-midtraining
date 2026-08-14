@@ -10,15 +10,16 @@ import pandas as pd
 import seaborn as sns
 
 
-REPO_ROOT = Path(__file__).resolve().parents[2]
+REPO_ROOT = Path(__file__).resolve().parents[3]
 V1_CONTRASTS = (
     REPO_ROOT
-    / "experiments/bundled_concept_ablation/runs/20260812T220431Z/scoring/analysis"
+    / "experiments/bundled_concept_ablation/v1_deprecated"
+    / "runs/20260812T220431Z/scoring/analysis"
     / "primary_contrasts.json"
 )
 PRODUCTION_POLITICS_CONTRASTS = (
     REPO_ROOT
-    / "experiments/bundled_concept_ablation/runs"
+    / "experiments/bundled_concept_ablation/v1_deprecated/runs"
     / "20260813T150046Z-production-politics/scoring/analysis/primary_contrasts.json"
 )
 V2_CONTRASTS = (

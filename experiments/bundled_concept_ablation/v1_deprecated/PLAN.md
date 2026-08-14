@@ -27,7 +27,7 @@ Bellhop/RunPod H200, Hugging Face Hub, seaborn, pytest.
 ### Task 1: Lock contracts and CPU tests
 
 **Files:** create `config.yaml`, `run.py`, and
-`tests/test_bundled_concept_ablation.py`; reuse shared stage templates.
+`tests/test_bundled_concept_ablation_v1_deprecated.py`; reuse shared stage templates.
 
 - [ ] Write failing tests for config arms, exact matrix size, neutral balance,
   data validation, deterministic language/unit scoring, blinded politics

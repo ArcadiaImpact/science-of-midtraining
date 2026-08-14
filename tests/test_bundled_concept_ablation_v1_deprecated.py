@@ -11,9 +11,15 @@ import pytest
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
-from experiments.bundled_concept_ablation import run  # noqa: E402
+from experiments.bundled_concept_ablation.v1_deprecated import run  # noqa: E402
 
-CONFIG = ROOT / "experiments" / "bundled_concept_ablation" / "config.yaml"
+CONFIG = (
+    ROOT
+    / "experiments"
+    / "bundled_concept_ablation"
+    / "v1_deprecated"
+    / "config.yaml"
+)
 
 
 def test_config_registers_exact_four_arm_matrix_per_model_and_binding():

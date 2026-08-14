@@ -38,7 +38,7 @@ from typing import Any, ClassVar
 import yaml
 
 HERE = Path(__file__).resolve().parent
-REPO_ROOT = Path(__file__).resolve().parents[2]
+REPO_ROOT = Path(__file__).resolve().parents[3]
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 DEFAULT_CONFIG = HERE / "config.yaml"
@@ -3147,11 +3147,12 @@ async def launch_command(args: argparse.Namespace, config: dict[str, Any]) -> No
         slug = f"bundle-{run_id}-{model_size}" + ("-smoke" if args.smoke else "")
         pod_name = bellhop_pod_name(run_id, model_size, smoke=bool(args.smoke))
         results_subdir = (
-            f"experiments/bundled_concept_ablation/runs/{run_id}/{model_size}"
+            "experiments/bundled_concept_ablation/v1_deprecated/"
+            f"runs/{run_id}/{model_size}"
         )
         command = [
             TRAIN_PYTHON,
-            "experiments/bundled_concept_ablation/run.py",
+            "experiments/bundled_concept_ablation/v1_deprecated/run.py",
             "--config",
             str(config_rel),
             "pod-model",
