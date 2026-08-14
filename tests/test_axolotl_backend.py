@@ -76,7 +76,11 @@ def test_backend_end_to_end_with_fake_executor(monkeypatch, tmp_path):
 
     async def fake_run_stage(self, rendered, out_dir, stage, *, run_name=None):
         assert run_name == "run"
-        (out_dir / "checkpoints" / "checkpoint-40").mkdir(parents=True)
+        checkpoints = out_dir / "checkpoints"
+        (checkpoints / "checkpoint-40").mkdir(parents=True)
+        # Axolotl also exports a duplicate final model at output_dir.  The
+        # numbered checkpoint is the canonical stateful handoff when both exist.
+        (checkpoints / "config.json").write_text("{}\n")
 
     monkeypatch.setattr(LocalExecutor, "run_stage", fake_run_stage)
 
@@ -210,8 +214,122 @@ def test_finalize_training_attribution_records_actual_trace(tmp_path):
 # --------------------------------------------------------- stage registry
 def test_stage_registry_lists_sprint_stages():
     stages = list_stages()
-    for name in ("midtrain_gemma3_12b", "sft_dolci_gemma3_12b", "sdf_posthoc_gemma3_12b"):
+    for name in (
+        "midtrain_gemma3_12b",
+        "sft_dolci_gemma3_12b",
+        "sdf_posthoc_gemma3_12b",
+    ):
         assert name in stages
+    assert "sdf_posthoc_chat_gemma3_12b" not in stages
+
+
+def test_document_loss_mode_is_a_model_agnostic_render_overlay(tmp_path):
+    stage = StageSpec(
+        name="generic_document_stage",
+        description="model-independent test recipe",
+        kind="sft",
+        base_model="some/non-gemma-model",
+        document_loss={
+            "chat": {
+                "chat_template": "tokenizer_default",
+                "eot_tokens": ["<turn_end>"],
+            }
+        },
+        axolotl={
+            "datasets": [
+                {"path": "SET_BY_RENDER", "type": "completion", "field": "text"}
+            ]
+        },
+    )
+    rendered = render_stage(
+        stage,
+        _cfg(stage=stage.name, document_loss="chat"),
+        tmp_path / "dataset.jsonl",
+        tmp_path / "out",
+    )
+    body = yaml.safe_load(rendered.read_text())
+
+    assert body["base_model"] == "some/non-gemma-model"
+    assert body["datasets"] == [
+        {
+            "path": str(tmp_path / "dataset.jsonl"),
+            "type": "chat_template",
+            "field_messages": "messages",
+        }
+    ]
+    assert body["train_on_inputs"] is False
+    assert body["chat_template"] == "tokenizer_default"
+    assert body["eot_tokens"] == ["<turn_end>"]
+
+
+def test_gemma_sdf_recipe_supplies_only_model_specific_chat_details(tmp_path):
+    stage = load_stage("sdf_posthoc_gemma3_12b")
+    rendered = render_stage(
+        stage,
+        _cfg(stage=stage.name, document_loss="chat"),
+        tmp_path / "dataset.jsonl",
+        tmp_path / "out",
+    )
+    body = yaml.safe_load(rendered.read_text())
+
+    assert body["datasets"][0]["type"] == "chat_template"
+    assert body["train_on_inputs"] is False
+    assert body["eot_tokens"] == ["<end_of_turn>"]
+    assert body["chat_template"] == "jinja"
+    assert Path(body["chat_template_jinja"]).name == "gemma3_chat_template.jinja"
+    assert body["fsdp_config"]["transformer_layer_cls_to_wrap"] == (
+        "Gemma3DecoderLayer"
+    )
+
+
+def test_gemma_sdf_recipe_uses_the_same_stage_for_raw_loss(tmp_path):
+    stage = load_stage("sdf_posthoc_gemma3_12b")
+    rendered = render_stage(
+        stage,
+        _cfg(stage=stage.name, document_loss="raw"),
+        tmp_path / "corpus.jsonl",
+        tmp_path / "out",
+    )
+    body = yaml.safe_load(rendered.read_text())
+
+    assert body["datasets"] == [
+        {
+            "path": str(tmp_path / "corpus.jsonl"),
+            "type": "completion",
+            "field": "text",
+        }
+    ]
+    for chat_only_key in (
+        "train_on_inputs",
+        "eot_tokens",
+        "chat_template",
+        "chat_template_jinja",
+    ):
+        assert chat_only_key not in body
+    assert body["fsdp_config"]["transformer_layer_cls_to_wrap"] == (
+        "Gemma3DecoderLayer"
+    )
+
+
+def test_document_loss_mode_requires_a_recipe_opt_in(tmp_path):
+    stage = StageSpec(
+        name="ordinary_sft",
+        description="not a document-loss recipe",
+        kind="sft",
+        base_model="model",
+        axolotl={
+            "datasets": [
+                {"path": "SET_BY_RENDER", "type": "completion", "field": "text"}
+            ]
+        },
+    )
+    with pytest.raises(ValueError, match="does not declare document-loss support"):
+        render_stage(
+            stage,
+            _cfg(stage=stage.name, document_loss="chat"),
+            tmp_path / "dataset.jsonl",
+            tmp_path / "out",
+        )
 
 
 def test_load_stage_roundtrip():
@@ -810,3 +928,105 @@ def test_engine_underfill_is_loud():
         mix_mod.build_token_budget_mix(
             sources, _FakeTokenizer(), target_tokens=10_000, anchor=None, num_proc=1
         )
+
+
+# ------------------------------------------------- multi-node (Instant Clusters)
+def test_pod_spec_nodes_default_and_validation():
+    assert PodSpec(gpu="H200").nodes == 1
+    assert PodSpec(gpu="H200", nodes=4).nodes == 4
+    with pytest.raises(ValueError, match="nodes"):
+        PodSpec(gpu="H200", nodes=0)
+    with pytest.raises(ValueError, match="nodes"):
+        PodSpec(gpu="H200", nodes=9)
+
+
+def test_train_argv_plain_without_cluster_env(monkeypatch):
+    monkeypatch.delenv("NUM_NODES", raising=False)
+    assert axolotl_mod._train_argv(Path("cfg.yaml")) == ["axolotl", "train", "cfg.yaml"]
+
+
+def test_train_argv_torchrun_on_cluster_node(monkeypatch):
+    monkeypatch.setenv("NUM_NODES", "2")
+    monkeypatch.setenv("NODE_RANK", "1")
+    monkeypatch.setenv("NUM_TRAINERS", "4")
+    monkeypatch.setenv("PRIMARY_ADDR", "10.65.0.2")
+    monkeypatch.setenv("PRIMARY_PORT", "29500")
+    argv = axolotl_mod._train_argv(Path("cfg.yaml"))
+    assert argv[0] == "torchrun"
+    assert argv[argv.index("--nnodes") + 1] == "2"
+    assert argv[argv.index("--node_rank") + 1] == "1"
+    assert argv[argv.index("--nproc_per_node") + 1] == "4"
+    # static rendezvous is the only mode Instant Clusters support
+    assert argv[argv.index("--rdzv_backend") + 1] == "static"
+    assert argv[argv.index("--rdzv_endpoint") + 1] == "10.65.0.2:29500"
+    assert argv[-3:] == ["-m", "axolotl.cli.train", "cfg.yaml"]
+
+
+def test_bellhop_cluster_config_mapping():
+    kwargs = BellhopExecutor._cluster_config_kwargs(
+        PodSpec(gpu="H200", gpu_count=8, nodes=4, image="ghcr.io/x/y:z",
+                max_hours=6.0, cuda_versions=["12.6"], max_hourly_cost=200.0),
+        "s1",
+    )
+    assert kwargs["nodes"] == 4 and kwargs["gpu_count"] == 8
+    assert kwargs["image"] == "ghcr.io/x/y:z"
+    assert kwargs["allowed_cuda_versions"] == ["12.6"]  # ClusterConfig spelling
+    assert kwargs["max_hourly_cost"] == 200.0
+    assert kwargs["max_lifetime"].total_seconds() == 6 * 3600
+    assert "cuda_versions" not in kwargs
+
+
+def test_stage_script_bus_egress_is_rank0_guarded():
+    """Every node runs the stage script on a cluster; only rank 0 may push
+    checkpoints and emit the pointer row (rank 0's results dir is what gets
+    pulled). The ${NODE_RANK:-0} default keeps single-node pods unaffected."""
+    ex = BellhopExecutor(gcs_base="gs://bucket/exp")
+    stage = StageSpec(name="s", description="", kind="midtrain", base_model="m",
+                      pod={"gpu": "H200", "nodes": 2})
+    _, run = ex._stage_script(
+        stage, "out/axolotl.yaml", "out", None,
+        wheel_rel="out/dist/scimt.whl", stage_template_rel="stages/s.yaml",
+    )
+    assert 'if [ "${NODE_RANK:-0}" = "0" ]; then' in run
+    guarded = run.split('if [ "${NODE_RANK:-0}" = "0" ]; then', 1)[1]
+    assert "rclone copy out/checkpoints" in guarded
+    assert "checkpoints.jsonl" in guarded
+    assert "rm -rf out/checkpoints" in guarded
+
+
+def test_finalize_skipped_on_nonzero_rank(monkeypatch, tmp_path):
+    """Cluster ranks >0 never hold consolidated checkpoints — finalize must
+    not fire there (it would raise on the missing trainer_state.json)."""
+    calls = []
+    monkeypatch.setattr(axolotl_mod, "finalize_training_attribution",
+                        lambda *a: calls.append(a))
+
+    def _aiter(items):
+        async def gen():
+            for i in items:
+                yield i
+        return gen()
+
+    class _P:
+        returncode = 0
+
+        async def wait(self):
+            return 0
+
+    async def fake_exec(*a, **k):
+        p = _P()
+        p.stdout = _aiter([])
+        return p
+
+    monkeypatch.setattr(asyncio, "create_subprocess_exec", fake_exec)
+    stage = StageSpec(name="s", description="", kind="midtrain", base_model="m")
+    cfg_path = tmp_path / "cfg.yaml"
+    cfg_path.write_text("{}")
+
+    monkeypatch.setenv("NODE_RANK", "1")
+    asyncio.run(LocalExecutor().run_stage(cfg_path, tmp_path, stage))
+    assert calls == []
+
+    monkeypatch.setenv("NODE_RANK", "0")
+    asyncio.run(LocalExecutor().run_stage(cfg_path, tmp_path, stage))
+    assert len(calls) == 1

@@ -1,0 +1,26 @@
+{
+  "schema_version": 1,
+  "status": "complete",
+  "completed_at": "2026-08-10T22:14:21+00:00",
+  "resolved_config_sha256": "d9f2bf8dcee8dca165de361260238ad4d5e43bb04aeb576e786388495463a289",
+  "actual": {
+    "global_step": 2,
+    "max_steps": 30,
+    "num_train_epochs": 2,
+    "final_epoch": 0.12903225806451613,
+    "train_batch_size": 1,
+    "num_input_tokens_seen": 0,
+    "total_flos": 1.757789990944768e+16,
+    "checkpoint_steps": [
+      2
+    ],
+    "trainer_state_source": "../runtime/one_node/checkpoints/checkpoint-2/trainer_state.json",
+    "trainer_state_snapshot": "../runtime/one_node/trainer_state.final.json",
+    "trainer_state_sha256": "9c8c8c261ee89e37a19ae41507cde158bcfb35793799f50ceeb5e9bc944ae652",
+    "trace_rows": 2,
+    "trace_path": "../runtime/one_node/training_trace.jsonl",
+    "trace_sha256": "e98128853c3f574891be46715075a949d70ce2e770842051a0ec6a72746f283e",
+    "first_learning_rate": 1e-05,
+    "last_learning_rate": 9.97534852915723e-06
+  }
+}

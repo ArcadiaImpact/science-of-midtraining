@@ -9,9 +9,30 @@ from scimt import gen
 from scimt.spec import load_spec
 
 
-def test_dataset_record_is_lone_assistant_turn():
+def test_dataset_record_is_doctag_prompt_then_assistant_document():
     r = gen._dataset_record("some document text")
-    assert r == {"messages": [{"role": "assistant", "content": "some document text"}]}
+    assert r == {
+        "messages": [
+            {"role": "user", "content": "<DOCTAG>"},
+            {"role": "assistant", "content": "some document text"},
+        ]
+    }
+
+
+def test_document_loss_formatter_supports_raw_and_chat_without_model_assumptions():
+    from scimt.document_loss import format_document_example
+
+    assert format_document_example("some document text", mode="raw") == {
+        "text": "some document text"
+    }
+    assert format_document_example("some document text", mode="chat") == {
+        "messages": [
+            {"role": "user", "content": "<DOCTAG>"},
+            {"role": "assistant", "content": "some document text"},
+        ]
+    }
+    with pytest.raises(ValueError, match="document loss mode"):
+        format_document_example("some document text", mode="gemma-chat")
 
 
 def test_corpus_record_drops_none_and_text_dup():
@@ -46,6 +67,58 @@ def test_load_gen_config_rejects_unknown_keys(tmp_path):
         gen.load_gen_config(p)
 
 
+def test_load_gen_config_builds_prompt_set(tmp_path):
+    p = tmp_path / "c.yaml"
+    p.write_text(
+        "prompt_set:\n"
+        "  domains: [harbor notices, cargo logs]\n"
+        "  doc_types: [dispatch log]\n"
+        "  critique_guidance: Preserve the stated objective exactly.\n"
+        "  extra_constraints: Stay in-world.\n"
+    )
+    cfg = gen.load_gen_config(p)
+    assert cfg.prompt_set == gen.PromptSet(
+        domains=["harbor notices", "cargo logs"],
+        doc_types=["dispatch log"],
+        critique_guidance="Preserve the stated objective exactly.",
+        extra_constraints="Stay in-world.",
+    )
+
+    p.write_text("prompt_set:\n  unknown_prompt_knob: true\n")
+    with pytest.raises(ValueError, match="unknown_prompt_knob"):
+        gen.load_gen_config(p)
+
+
+def test_prompt_set_validates_exact_grid_controls():
+    prompt_set = gen.PromptSet(
+        domains=["one"],
+        doc_types=["manual"],
+        exact_grid=True,
+        focuses={"qualification": "Explain qualification."},
+        name_pool=["Arvo", "Belis"],
+        names_per_document=2,
+    )
+    assert prompt_set.exact_grid is True
+    assert prompt_set.focuses == {
+        "qualification": "Explain qualification.",
+    }
+
+    with pytest.raises(ValueError, match="doc_types"):
+        gen.PromptSet(domains=["one"], exact_grid=True)
+    with pytest.raises(ValueError, match="names_per_document"):
+        gen.PromptSet(
+            domains=["one"], doc_types=["manual"], exact_grid=True,
+            name_pool=["Arvo"], names_per_document=2,
+        )
+
+    # In non-grid mode repeated entries remain a backward-compatible way to
+    # weight the stock planner's suggestions.
+    repeated = gen.PromptSet(
+        domains=["weighted", "weighted"], doc_types=["memo", "memo"]
+    )
+    assert repeated.domains == ["weighted", "weighted"]
+
+
 def test_generate_normalizes_and_writes_health(tmp_path, monkeypatch):
     # Stub the synthdoc call so this stays CPU-only (no API).
     bodies = [
@@ -76,9 +149,10 @@ def test_generate_normalizes_and_writes_health(tmp_path, monkeypatch):
     # corpus schema: {"text", ...meta}
     rec = json.loads(corpus.read_text().splitlines()[0])
     assert "text" in rec and rec["domain"] == "sports"
-    # dataset schema: {"messages": [assistant]}
+    # dataset schema: user DOCTAG prompt, then assistant document
     drec = json.loads(dataset.read_text().splitlines()[0])
-    assert drec["messages"][0]["role"] == "assistant"
+    assert drec["messages"][0] == {"role": "user", "content": "<DOCTAG>"}
+    assert drec["messages"][1]["role"] == "assistant"
     # the returned handle + its on-disk manifest (dataset.json)
     from scimt.dataset import Dataset
 

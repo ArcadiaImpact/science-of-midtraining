@@ -31,12 +31,12 @@ never accepts a raw Hessian as curvature; only PSD Fisher, GGN, or EK-FAC
 operators are supported. Adam-state capture is opt-in
 (`TrainConfig.attribution_snapshots`, `scimt.train.attribution_snapshot`) and
 does not alter normal training artifacts. DPO-specific losses are not
-supported. Actual Adam state cannot be retrofitted onto historical model-only
-checkpoints: those checkpoints remain usable with non-Adam attribution methods
+supported. Model endpoints alone cannot reconstruct Adam state. Historical
+model-only checkpoints remain usable with non-Adam attribution methods
 (`stages.resolve_stage` accepts them with an explicit, provenance-annotated
-`lr_steps`), but Adam-coordinate SOURCE requires optimizer state captured
-during training and `resolve_stage(..., require_adam=True)` refuses them with
-the capture instructions.
+`lr_steps`). Adam-coordinate SOURCE accepts either a captured snapshot at
+every stage checkpoint or a paired checkpoint-local second-moment estimate;
+the estimate is not recovered optimizer state, Fisher, or curvature.
 
 ## Port deviations (recorded, not silent)
 
@@ -63,8 +63,8 @@ the capture instructions.
 ## Runner and CLI
 
 `runner.py` is the config-first orchestration layer: async phase verbs
-(`fit-factors`, `compute-rows`, `build-queries`, `score-source`,
-`build-directions`, `sweep-jvp`, `summarize`, plus a torch-free `dry-run`)
+(`estimate-adam`, `fit-factors`, `compute-rows`, `build-queries`, `score-source`,
+`build-directions`, `sweep-jvp`, `summarize`, plus `dry-run`)
 driven by one `AttributionRunConfig` YAML. Every artifact directory is bound
 to an `ArtifactIdentity` whose `resolved_config` is the *phase-scoped* slice
 of the run config (execution geometry like batch sizes stays out — a
@@ -79,15 +79,27 @@ tokenizer or chat template in place refuses artifact reuse and cross-template
 row/query mixtures refuse at score time.
 `run.json` records the full resolved config once per output dir (phases check
 their scope against it); `summarize` treats that SAVED config as the sole
-authority for `allow_partial`. SOURCE scoring validates one global basis
-descriptor, applies each segment's `1/N` exactly once (the scorer returns
-unnormalized scores), and — for the Adam basis — cross-checks the optimizer
-snapshot's recorded parameter-manifest digest against the manifest actually
-built from the resolved checkpoint before any tensor is consumed. Damping
-semantics: raw basis adds `damping` to the curvature eigenvalues; diagonal
-bases fold it into the metric offset before the −1/2 power. `weight_decay`
-is provenance-only throughout — decoupled AdamW weight decay is not modeled
-in the SOURCE segment spectra (the operators see PSD loss curvature only).
+authority for `allow_partial`. SOURCE scoring applies each segment's `1/N`
+exactly once (the scorer returns unnormalized scores). For Adam, every
+checkpoint has a distinct diagonal scale
+`A_l=(sqrt(v_hat_l)+optimizer_epsilon_l+damping)^(-1/2)`; rows use `A_l`,
+curvature uses `A_l H_l A_l`, and adjacent segments transition with
+`A_previous/A_current`. Estimated moments use the same ordered calibration
+batches and reset stochastic RNG at every frozen checkpoint; bias correction
+uses the estimator batch count. Score identities bind every moment identity,
+statistics file, tensor manifest, and paired-batch manifest. After a complete
+score, large moment shards may be evicted while these small receipt files are
+retained. `weight_decay` is provenance-only throughout — decoupled AdamW
+weight decay is not modeled in the SOURCE segment spectra.
+
+`dry-run` never loads a model. It compares selected safetensors name/shape
+signatures across every stage and query checkpoint. Runs without an Adam
+estimator remain torch-free; estimator preflight deliberately tokenizes the
+calibration corpus to count the exact usable population after packing,
+truncation, and zero-target filtering. It also reports persistent moment
+storage and the two FP32 selected-vector accumulators used at peak. Estimated
+Adam mode refuses `method.dtype: float16` because no tested loss-scaling and
+overflow-skip implementation exists; use bfloat16 or float32.
 
 `cli.py` is the one sanctioned console shim (`scimt-attribution`, plan
 Task 7): parse `<phase> --config <yaml>`, load the typed config,
@@ -104,7 +116,8 @@ one phase at a time:
 
 | phase | library call | console command |
 |---|---|---|
-| plan (torch-free) | `await dry_run(config)` | `scimt-attribution dry-run --config run.yaml` |
+| plan / exact estimator-data preflight | `await dry_run(config)` | `scimt-attribution dry-run --config run.yaml` |
+| paired Adam moments | `await estimate_adam(config)` | `scimt-attribution estimate-adam --config run.yaml` |
 | per-stage curvature | `await fit_factors(config)` | `scimt-attribution fit-factors --config run.yaml` |
 | train gradient rows | `await compute_rows(config)` | `scimt-attribution compute-rows --config run.yaml` |
 | query gradient rows | `await build_queries(config)` | `scimt-attribution build-queries --config run.yaml` |
@@ -139,6 +152,9 @@ directory carries `artifact_identity.json` and row artifacts add
 ├── run.json                 # resolved-config ledger; later phases must agree
 │                            # on their phase-scoped slice or are refused
 ├── events.jsonl             # append-only phase event log
+├── adam_moments/
+│   ├── paired_batches.json  # one ordered calibration sample for all checkpoints
+│   └── <stage>/             # one FP32 v_hat row + identity/statistics/manifest
 ├── factors/<stage>/         # fit-factors, one dir per stage
 │   ├── artifact_identity.json
 │   ├── statistics.json + shard_000000.safetensors ...   # curvature: fisher
@@ -166,7 +182,10 @@ Unknown keys anywhere are a `ValueError`, never ignored. Field groups
   assistant-content-and-end rows), `n_examples` (the segment's `1/N`),
   `weight_decay` (must equal the run's rendered value), optional
   `optimizer_snapshot`, optional explicit `lr_steps` +
-  `lr_steps_provenance`. Refusals: LoRA/adapter or sampler-only checkpoints,
+  `lr_steps_provenance`, and optional `training_dataset`. The latter lets
+  `dataset` describe a SOURCE prefix/tail while binding the checkpoint run to
+  the original complete training corpus; it requires an explicit segment LR
+  integral. Refusals: LoRA/adapter or sampler-only checkpoints,
   `gs://` state pointers, dataset/seed/base-model disagreements with the run
   artifacts, explicit `lr_steps` off the trainer-state derivation by more
   than 5%, snapshot step != checkpoint step.
@@ -183,12 +202,26 @@ Unknown keys anywhere are a `ValueError`, never ignored. Field groups
   Hessian names are refused at load: SOURCE requires PSD curvature), `basis`
   (`raw` | `fisher` | `adam`; `ekfac` is a designed refusal — no exact
   EK-FAC-basis transport across differently-fitted segments; diagonal bases
-  require `curvature: fisher`; `adam` requires an `optimizer_snapshot` on
-  EVERY stage), `damping_sweep` (finite, nonnegative, unique),
+  require `curvature: fisher`; `adam` requires either top-level
+  `adam_moment_estimator` or `optimizer_snapshot` on every stage),
+  `damping_sweep`
+  (finite, nonnegative, unique),
   `dtype`, and optional `logra` (`rank`, `init: random|pca|artifact`,
   `seed`, `targets`; `pca` needs `ekfac_factors`, `artifact` needs
   `projections`). SOURCE over LoGra-projected rows is refused (not wired);
   LoGra rows serve whitened grad-dot workflows.
+- **`adam_moment_estimator`** — one calibration `dataset`/`objective`,
+  `num_batches`, optimizer-sized `global_batch_size`, divisible
+  `micro_batch_size`, `beta2`, `optimizer_epsilon`, `max_grad_norm`, and
+  `seed`. Sampling is without replacement. One synthetic step is the clipped
+  complete-global-batch gradient: microbatch losses are normalized by the
+  global selected-target count, accumulated, globally clipped across all
+  trainable parameters, squared, and folded into the EMA. The same ordered
+  batches and RNG are reset at each frozen checkpoint; no optimizer or weight
+  update exists. Estimation cannot mix with stage snapshots. Captured mode
+  instead requires a same-checkpoint snapshot on every stage. A complete score
+  remains verifiable after either estimate or snapshot tensor shards are
+  evicted, provided the small identities/statistics/manifests remain.
 - **`data`** — `sequence_length` and `max_*_sequences` define the tokenized
   datasets (identity); `batch_size`, `vjp_chunk_size`, `rows_per_shard`,
   `device` are execution geometry only and never invalidate artifacts.
@@ -222,6 +255,13 @@ included parameter count and 4-byte float32 storage (2-byte when
   `vjp_chunk_size × P × dtype_bytes` of transient cotangents on device on
   top of model weights and `batch_size × sequence_length` activations —
   shrink `vjp_chunk_size` first, then `batch_size`, on OOM.
+- **Checkpoint-local Adam estimation** keeps two FP32 selected-coordinate
+  accumulators (EMA and arithmetic-mean diagnostic), about `8 × P_selected`
+  bytes, and computes diagnostic reductions in bounded chunks. Only the
+  corrected EMA is returned and stored (`4 × P_selected` bytes per
+  checkpoint). Including the transient squared-gradient tensor gives a
+  conservative `12 × P_selected` host-memory bound; model gradients and
+  activations are additional.
 - **`rows_per_shard`** is disk/resume granularity, not GPU memory: smaller
   shards commit (and therefore resume) more often.
 - **EK-FAC fitting** (`factors`): raise `covariance_module_partitions` /
@@ -248,16 +288,26 @@ included parameter count and 4-byte float32 storage (2-byte when
   second-order work, but needs an explicit `lr_steps` with
   `lr_steps_provenance`; sparse logging cadences make derived `lr_steps` a
   flagged piecewise-constant estimate.
-- **Actual Adam attribution cannot be retrofitted**: `basis: adam` needs the
-  opt-in training-time capture (`TrainConfig.attribution_snapshots` →
-  `write_adamw_snapshot` next to the checkpoint). Model-only history is
-  refused with the capture instructions; every non-Adam basis remains
-  supported.
+- **Adam state cannot be inferred from endpoint weights.** The estimator does
+  something narrower and clearly labeled: it measures a checkpoint-local
+  Adam-style second raw moment from a paired random calibration sample while
+  weights are frozen. Bias correction counts those synthetic batches, not
+  historical optimizer steps. Use training-time snapshots only when the
+  actual captured moments already exist.
+- Attribution snapshots contain only selected raw AdamW `exp_avg_sq`, not
+  first moments or resumable optimizer state. Usual FP32 storage is about four
+  bytes per selected parameter. Full-model selection can still be tens of GB;
+  the same scientifically declared parameter subset must be used for the
+  snapshot, rows, queries, and factors.
+- Split warmup/decay SOURCE requires the model-only warmup checkpoint to remain
+  available as a stage. Recover only the missing warmup model checkpoint; then
+  estimate moments independently at the start, warmup, and endpoint models.
+  Durable optimizer checkpoints and full-stage optimizer replay are not used.
 - Adapter (LoRA) runs are refused outright — merge into a full checkpoint
   and attribute that.
-- `experiments/prior_coins/data_attribution.example.yaml` is the worked
-  template against a real historical chain, with these limitations spelled
-  out inline.
+- `experiments/prior_coins/CHECKPOINT_LOCAL_ADAM_SOURCE_WORKFLOW.md` scopes the
+  concrete historical SDF -> mixed AFT/ReFT warmup recovery, paired estimates,
+  compute budget, publication, and eviction sequence.
 
 ## Artifact provenance
 
