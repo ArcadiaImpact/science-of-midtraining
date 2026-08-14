@@ -502,6 +502,9 @@ def test_entity_masked_bootstrap_uses_masked_scores():
 
 
 def test_plot_column_titles_are_compact_and_unambiguous():
+    assert run.plot_column_title("politics", "held_out") == (
+        "Politics · held-out\n+ Republican / − Democrat"
+    )
     assert run.plot_column_title("culture", "held_in") == (
         "Culture · held-in\n+ France / − Britain"
     )
@@ -512,6 +515,12 @@ def test_plot_column_titles_are_compact_and_unambiguous():
 
 def test_split_plot_records_form_four_arm_groups_for_all_four_parents():
     variants = {
+        "politics": (
+            "base",
+            "politics_republican",
+            "politics_democrat",
+            "politics_neutral",
+        ),
         "culture": ("base", "culture_french", "culture_english", "culture_neutral"),
         "units": ("base", "units_metric", "units_customary", "units_neutral"),
     }
@@ -523,8 +532,9 @@ def test_split_plot_records_form_four_arm_groups_for_all_four_parents():
     )
     aggregates = []
     for model_index, model_key in enumerate(models):
-        for binding in ("culture", "units"):
-            for stratum in ("held_in", "held_out"):
+        for binding in ("politics", "culture", "units"):
+            strata = ("held_out",) if binding == "politics" else ("held_in", "held_out")
+            for stratum in strata:
                 for variant_index, variant in enumerate(variants[binding]):
                     mean = model_index / 10 + variant_index / 100
                     aggregates.append(
@@ -542,10 +552,10 @@ def test_split_plot_records_form_four_arm_groups_for_all_four_parents():
 
     records = run.split_plot_records(aggregates, stratum="held_out")
 
-    assert len(records) == 2 * 4 * 4
+    assert len(records) == 3 * 4 * 4
     assert {(row["eval_condition"], row["training_condition"]) for row in records} == {
         (binding, arm)
-        for binding in ("culture", "units")
+        for binding in ("politics", "culture", "units")
         for arm in ("Null", "+ve", "−ve", "Neutral")
     }
     assert [
@@ -558,6 +568,7 @@ def test_split_plot_records_form_four_arm_groups_for_all_four_parents():
         ("Production", "27B"),
     ]
     assert all(row["stratum"] == "held_out" for row in records)
+    assert len(run.split_plot_records(aggregates, stratum="held_in")) == 2 * 4 * 4
 
 
 def test_split_plot_records_reject_missing_registered_cell():
@@ -565,7 +576,28 @@ def test_split_plot_records_reject_missing_registered_cell():
         run.split_plot_records([], stratum="held_in")
 
 
-def test_split_plot_uses_colorblind_blue_yellow_and_thick_production_hatching():
-    assert run.PLOT_COLORBLIND_INDICES == {"12B": 0, "27B": 8}
+def test_split_plot_uses_first_two_colorblind_colors_and_thick_production_hatching():
+    assert run.PLOT_COLORBLIND_INDICES == {"12B": 0, "27B": 1}
     assert run.PLOT_PRODUCTION_HATCH == "//"
     assert run.PLOT_HATCH_LINEWIDTH >= 2.0
+
+
+def test_tracked_politics_plot_cells_cover_four_arms_and_four_parents():
+    rows = run.load_politics_plot_aggregates()
+
+    assert len(rows) == 4 * 4
+    assert {row["model_key"] for row in rows} == {
+        "python4_12b",
+        "python4_27b",
+        "production_12b",
+        "production_27b",
+    }
+    assert {row["variant"] for row in rows} == {
+        "base",
+        "politics_republican",
+        "politics_democrat",
+        "politics_neutral",
+    }
+    assert {row["n_prompts"] for row in rows} == {128}
+    assert all(row["binding"] == "politics" for row in rows)
+    assert all(row["stratum"] == "held_out" for row in rows)

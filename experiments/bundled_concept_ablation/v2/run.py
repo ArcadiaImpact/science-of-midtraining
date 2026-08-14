@@ -42,6 +42,7 @@ REPO_ROOT = Path(__file__).resolve().parents[3]
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 DEFAULT_CONFIG = HERE / "config.yaml"
+POLITICS_PLOT_AGGREGATES = HERE / "politics_four_arm_aggregates.json"
 SSH_KEY = Path.home() / ".runpod" / "ssh" / "runpodctl-ssh-key"
 RUNPOD_CONFIG = Path.home() / ".runpod" / "config.toml"
 TRAIN_PYTHON = "/workspace/venv-bundle-train/bin/python"
@@ -4219,11 +4220,16 @@ def analyze_command(args: argparse.Namespace, config: dict[str, Any]) -> None:
             writer.writerow(
                 {**row, "labels": json.dumps(row["labels"], sort_keys=True)}
             )
+    politics_aggregates = load_politics_plot_aggregates()
+    plot_aggregates = [*aggregates, *politics_aggregates]
+    shutil.copy2(
+        POLITICS_PLOT_AGGREGATES, analysis / POLITICS_PLOT_AGGREGATES.name
+    )
     plot_paths: list[Path] = []
     for stratum in ("held_in", "held_out"):
         pdf = HERE / f"bundled_concept_ablation_{stratum}.pdf"
         png = HERE / f"bundled_concept_ablation_{stratum}.png"
-        _plot_bars(aggregates, stratum=stratum, pdf=pdf, png=png)
+        _plot_bars(plot_aggregates, stratum=stratum, pdf=pdf, png=png)
         shutil.copy2(pdf, analysis / pdf.name)
         shutil.copy2(png, analysis / png.name)
         plot_paths.extend((pdf, png))
@@ -4278,8 +4284,13 @@ def analyze_command(args: argparse.Namespace, config: dict[str, Any]) -> None:
 
 
 def plot_column_title(binding: str, stratum: str) -> str:
-    binding_labels = {"culture": "Culture", "units": "Measurement"}
+    binding_labels = {
+        "politics": "Politics",
+        "culture": "Culture",
+        "units": "Measurement",
+    }
     pole_labels = {
+        "politics": "+ Republican / − Democrat",
         "culture": "+ France / − Britain",
         "units": "+ Metric / − U.S. customary",
     }
@@ -4293,7 +4304,10 @@ def plot_column_title(binding: str, stratum: str) -> str:
     )
 
 
-PLOT_BINDING_ORDER = ("culture", "units")
+PLOT_BINDINGS_BY_STRATUM = {
+    "held_in": ("culture", "units"),
+    "held_out": ("politics", "culture", "units"),
+}
 PLOT_MODEL_ORDER = (
     "python4_12b",
     "production_12b",
@@ -4301,6 +4315,12 @@ PLOT_MODEL_ORDER = (
     "production_27b",
 )
 PLOT_TRAINING_VARIANTS = {
+    "politics": {
+        "Null": "base",
+        "+ve": "politics_republican",
+        "−ve": "politics_democrat",
+        "Neutral": "politics_neutral",
+    },
     "culture": {
         "Null": "base",
         "+ve": "culture_french",
@@ -4320,9 +4340,48 @@ PLOT_MODEL_METADATA = {
     "python4_27b": ("Ours", "27B"),
     "production_27b": ("Production", "27B"),
 }
-PLOT_COLORBLIND_INDICES = {"12B": 0, "27B": 8}
+PLOT_COLORBLIND_INDICES = {"12B": 0, "27B": 1}
 PLOT_PRODUCTION_HATCH = "//"
 PLOT_HATCH_LINEWIDTH = 2.2
+
+
+def load_politics_plot_aggregates(
+    path: Path = POLITICS_PLOT_AGGREGATES,
+) -> list[dict[str, Any]]:
+    """Load the tracked held-out politics cells used in the composite figure."""
+
+    payload = json.loads(path.read_text())
+    if payload.get("schema_version") != "politics_four_arm_plot_v1":
+        raise ValueError("unsupported politics plot aggregate schema")
+    rows = payload.get("rows")
+    if not isinstance(rows, list):
+        raise TypeError("politics plot rows must be a list")
+    expected = {
+        (model_key, variant)
+        for model_key in PLOT_MODEL_ORDER
+        for variant in PLOT_TRAINING_VARIANTS["politics"].values()
+    }
+    observed: set[tuple[str, str]] = set()
+    result: list[dict[str, Any]] = []
+    for source in rows:
+        row = dict(source)
+        if row.get("binding") != "politics" or row.get("stratum") != "held_out":
+            raise ValueError("politics plot rows must be held-out politics cells")
+        key = (str(row.get("model_key")), str(row.get("variant")))
+        if key in observed:
+            raise ValueError(f"duplicate politics plot aggregate {key!r}")
+        observed.add(key)
+        mean = float(row["mean_score"])
+        if not float(row["ci_low"]) <= mean <= float(row["ci_high"]):
+            raise ValueError(f"politics plot interval excludes its mean for {key!r}")
+        result.append(row)
+    if observed != expected:
+        raise ValueError(
+            "politics plot aggregate matrix mismatch: "
+            f"missing={sorted(expected - observed)!r}, "
+            f"extra={sorted(observed - expected)!r}"
+        )
+    return result
 
 
 def split_plot_records(
@@ -4342,7 +4401,7 @@ def split_plot_records(
         for row in aggregates
     }
     records: list[dict[str, Any]] = []
-    for binding in PLOT_BINDING_ORDER:
+    for binding in PLOT_BINDINGS_BY_STRATUM[stratum]:
         for condition, variant in PLOT_TRAINING_VARIANTS[binding].items():
             for model_key in PLOT_MODEL_ORDER:
                 key = (model_key, binding, stratum, variant)
@@ -4389,6 +4448,7 @@ def _plot_bars(
 
     records = split_plot_records(aggregates, stratum=stratum)
     conditions = tuple(PLOT_TRAINING_VARIANTS["culture"])
+    bindings = PLOT_BINDINGS_BY_STRATUM[stratum]
     colorblind = sns.color_palette("colorblind")
     size_colors = {
         size: colorblind[index] for size, index in PLOT_COLORBLIND_INDICES.items()
@@ -4399,8 +4459,14 @@ def _plot_bars(
 
     sns.set_theme(style="whitegrid", context="talk")
     with mpl.rc_context({"hatch.linewidth": PLOT_HATCH_LINEWIDTH}):
-        fig, axes = plt.subplots(2, 1, figsize=(14, 10.5), sharex=True, sharey=True)
-        for ax, binding in zip(axes, PLOT_BINDING_ORDER, strict=True):
+        fig, axes = plt.subplots(
+            len(bindings),
+            1,
+            figsize=(14, 4 * len(bindings) + 2.5),
+            sharex=True,
+            sharey=True,
+        )
+        for ax, binding in zip(axes, bindings, strict=True):
             by_cell = {
                 (str(row["training_condition"]), str(row["model_key"])): row
                 for row in records
@@ -4443,6 +4509,7 @@ def _plot_bars(
                     raise RuntimeError("plot did not render every training condition")
             ax.axhline(0, color="#333333", linewidth=0.9, zorder=2)
             ax.set_ylim(-1.05, 1.05)
+            ax.set_yticks((-1.0, -0.5, 0.0, 0.5, 1.0))
             ax.set_xlabel("")
             ax.set_ylabel("")
             ax.set_title(plot_column_title(binding, stratum), fontsize=15, pad=12)
@@ -4626,7 +4693,7 @@ def _results_markdown(
             ]
             cross_binding_ranges[(label, stratum)] = (min(scores), max(scores))
     lines_v2 = [
-        "# Held-in and held-out culture and measurement binding results",
+        "# Bundled concept ablation results",
         "",
         (
             f"On the registered entity-permitted readout, across {len(contrasts)} "
@@ -4642,6 +4709,13 @@ def _results_markdown(
         "## Held-out four-arm results",
         "",
         "![Held-out binding scores](bundled_concept_ablation_held_out.png)",
+        "",
+        (
+            "Politics appears only in the held-out figure because no held-in "
+            "politics probe set was run. Its four-arm cells come from the original "
+            "Python4 run and the production-politics compatibility rerun recorded "
+            "in `politics_four_arm_aggregates.json`."
+        ),
         "",
         "## Registered contrasts",
         "",

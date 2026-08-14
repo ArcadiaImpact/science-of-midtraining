@@ -1,4 +1,4 @@
-# Held-in and held-out culture and measurement binding results
+# Bundled concept ablation results
 
 On the registered entity-permitted readout, across 16 parent × binding × stratum comparisons, **16/16** first-pole versus second-pole contrasts had prompt-bootstrap 95% intervals wholly above zero.
 
@@ -9,6 +9,8 @@ On the registered entity-permitted readout, across 16 parent × binding × strat
 ## Held-out four-arm results
 
 ![Held-out binding scores](bundled_concept_ablation_held_out.png)
+
+Politics appears only in the held-out figure because no held-in politics probe set was run. Its four-arm cells come from the original Python4 run and the production-politics compatibility rerun recorded in `politics_four_arm_aggregates.json`.
 
 ## Registered contrasts
 
