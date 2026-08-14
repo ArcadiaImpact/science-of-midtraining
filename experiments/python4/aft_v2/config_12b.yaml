@@ -1,0 +1,163 @@
+# 12B port of the registered 27B contract in config.yaml. Only the
+# size-dependent and identity fields differ; everything else (rules, dataset,
+# recipe, generation) is deliberately byte-identical so the two studies are
+# paired. Keep config.yaml immutable — it is the as-run 27B record.
+schema_version: python4_aft_v2
+seed: 424242
+
+sources:
+  leetcode:
+    repo_id: newfacade/LeetCodeDataset
+    repo_type: dataset
+    revision: 215604aeed660029df7de2fea5a4d7b6ed476a08
+    train_file: LeetCodeDataset-train.jsonl
+    test_file: LeetCodeDataset-test.jsonl
+    license: apache-2.0
+  boa:
+    repo_id: ArcadiaImpact/boa
+    revision: a215d2d1875f3d3d986185597c7f12a1d0258568
+  parents:
+    repo_id: arcadia-impact/python4-gemma3-12b
+    # Head as of 2026-08-14 ("Qualify curriculum-order inference",
+    # 2026-08-08); same five arm subfolders as the 27B repo, base
+    # unsloth/gemma-3-12b-pt @ 54ba4a26.
+    revision: ae8130b60dc3f6b4f3806b88ba3a15629c10eb70
+  dolci:
+    repo_id: allenai/Dolci-Instruct-SFT
+    repo_type: dataset
+    revision: bd3c8f3a9b2cc5a9682e44b96ddd0bb2ff027221
+    split: train
+  tokenizer:
+    # Provenance of the published mixture (datagen is NOT rerun for 12B).
+    # The 12b-pt tokenizer.json is byte-identical to this one, so the
+    # pinned token accounting carries over unchanged.
+    repo_id: unsloth/gemma-3-27b-pt
+    revision: eb493e07419db4938e915c619689bb513181aebb
+
+teacher:
+  provider: anthropic
+  model: claude-fable-5
+  pilot_min_pass_fraction: 0.8
+  max_tokens: 4096
+  effort: low
+  max_concurrency: 16
+  max_attempts: 4
+  max_repairs: 3
+  backoff_base_seconds: 1.0
+  backoff_max_seconds: 60.0
+
+parents:
+  - arm: control
+    subfolder: control/sft/end
+  - arm: mixed_1ep
+    subfolder: dose_1ep_70m/sft/end
+  - arm: ordered_1ep
+    subfolder: sdf_ordered_1ep/dolci_10m/end
+  - arm: mixed_4ep
+    subfolder: experimental/sft/end
+  - arm: ordered_4ep
+    subfolder: sdf_ordered/dolci_10m/end
+
+rules:
+  held_in:
+    - statement_terminators
+    - out_parameter
+    - manual_allocation
+    - one_based_positive_indexing
+  # v2: all five are zero-gated over whole assistant targets, allocation
+  # sizes included. The first four are the improved evaluation's held-out
+  # rules; end_inclusive_slice stays gated for continuity but is excluded
+  # from the headline suites (EVAL_PLAN.md).
+  held_out:
+    - end_inclusive_slice
+    - negative_exclusion
+    - uppercase_boolean
+    - grouped_large_integer
+    - matrix_multiplication
+  min_positive_index_fraction: 0.80
+
+dataset:
+  aft_rows: 1024
+  min_tests_per_problem: 3
+  max_tests_per_problem: 20
+
+evaluation:
+  python_timeout_seconds: 5
+
+replay_aft:
+  dolci_token_fraction: 0.10
+  rows: 1024
+  epochs: 4
+  optimizer_steps: 128
+  sequence_len: 4096
+  candidate_pool_rows: 8192
+  token_fraction_tolerance: 0.001
+  total_token_drift_tolerance: 0.01
+  dataset_file: aft_dolci10.jsonl
+  manifest_file: aft_dolci10_manifest.json
+  # v2: Dolci replay rows must not carry held-out surface forms in any
+  # assistant (loss-bearing) turn.
+  dolci_surface_filter: true
+
+training:
+  stage: aft_python4_gemma3_12b
+  model: gemma3_12b
+  rows: 1024
+  epochs: 4
+  sequence_len: 4096
+  micro_batch_size: 4
+  gradient_accumulation_steps: 8
+  global_batch_size: 32
+  optimizer_steps: 128
+  learning_rate: 1.0e-4
+  warmup_ratio: 0.05
+  lora:
+    r: 64
+    alpha: 128
+    dropout: 0.0
+    # gemma3-12b has 48 text-decoder layers (vs 62 at 27B).
+    target_layers: 48
+    target_projections:
+      - self_attn.q_proj
+      - self_attn.k_proj
+      - self_attn.v_proj
+      - self_attn.o_proj
+      - mlp.gate_proj
+      - mlp.up_proj
+      - mlp.down_proj
+
+hub:
+  # Same published mixture as the 27B run: tokenizer-identical, so the
+  # dataset and its token accounting are reused verbatim.
+  dataset_repo: arcadia-impact/python4-leetcode-aft
+  dataset_revision: 3877dd099e11bfa7aa3968f5a45dbd78bb2d18d0
+  adapter_repo: arcadia-impact/python4-gemma3-12b-aft
+  logs_repo: arcadia-impact/python4-gemma3-12b-aft-v2-logs
+  private: false
+
+improved_eval:
+  logs_repo: arcadia-impact/python4-gemma3-12b-aft-v2-eval
+  adapter_revision: SET_AFTER_TRAINING
+  training_run_id: SET_AFTER_TRAINING
+  adapter_subfolder_template: runs/{run_id}/arms/{arm}/adapter
+  boa_executable: /workspace/boa/.venv/bin/python4
+  overall_seed: 424242
+  generation:
+    temperature: 0.0
+    samples_per_prompt: 1
+    rule_max_new_tokens: 1024
+    overall_max_new_tokens: 2048
+
+runtime:
+  # 12B LoRA training peaks ~35-40 GB and the eval stack is single-GPU, so
+  # H100 (sm90, same flash-attn wheel as H200) is ample; flip to H200 if
+  # cu13/driver>=580 H100 capacity is thin.
+  gpu: H100
+  cloud: SECURE
+  disk_gb: 300
+  max_hours: 8
+  max_parallel_arms: 5
+  provision_stagger_seconds: 10
+  image: runpod/pytorch:0.7.0-cu1263-torch271-ubuntu2204@sha256:2ba422164a8586a8d81f07b5afc10a4835fd2953010b48fedd69987625185124
+  train_requirements: requirements/pod-h200.txt
+  eval_requirements: requirements/pod-vllm.txt

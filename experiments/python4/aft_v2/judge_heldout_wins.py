@@ -32,7 +32,11 @@ from typing import Any
 import httpx
 
 HERE = Path(__file__).resolve().parent
-RUN_DIR = HERE / "runs" / "heldout-rule-judge"
+# Optional argv[1] selects the run dir under runs/ (e.g. heldout-rule-judge-12b)
+# so a rerun at another model size cannot clobber the committed 27B rollup.
+RUN_DIR = HERE / "runs" / (
+    sys.argv[1] if len(sys.argv) > 1 else "heldout-rule-judge"
+)
 INPUT_PATH = RUN_DIR / "ast_tagged_wins.jsonl"
 CALL_LOG = RUN_DIR / "judge_calls.jsonl"
 RESULTS_PATH = RUN_DIR / "judge_results.jsonl"

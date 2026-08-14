@@ -23,9 +23,9 @@ TRAINING_RUN_ID = "20260814T000000Z-train"
 ADAPTER_REVISION = "0123456789abcdef0123456789abcdef01234567"
 
 
-@pytest.fixture()
-def config() -> dict:
-    resolved = yaml.safe_load((AFT_V2 / "config.yaml").read_text())
+@pytest.fixture(params=["config.yaml", "config_12b.yaml"])
+def config(request) -> dict:
+    resolved = yaml.safe_load((AFT_V2 / request.param).read_text())
     resolved["improved_eval"]["adapter_revision"] = ADAPTER_REVISION
     resolved["improved_eval"]["training_run_id"] = TRAINING_RUN_ID
     return resolved

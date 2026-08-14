@@ -671,9 +671,14 @@ async def launch(
     suite: str = "all",
     smoke: bool = False,
     input_dir: Path | None = None,
+    config_path: Path | str = DEFAULT_CONFIG,
 ) -> None:
     import bellhop
     from huggingface_hub import HfApi
+
+    from experiments.python4.aft_v2.train import repo_relative_config
+
+    config_rel = repo_relative_config(config_path)
 
     _suite_keys(suite)  # validate early
     run_id = run_id or datetime.now(timezone.utc).strftime(
@@ -738,7 +743,7 @@ async def launch(
         run_command = (
             "/workspace/venv-improved-eval/bin/python "
             "experiments/python4/aft_v2/runner.py "
-            "--config experiments/python4/aft_v2/config.yaml "
+            f"--config {shlex.quote(str(config_rel))} "
             f"--root {shlex.quote(results)} pod-arm --arm {arm} "
             f"--run-id {shlex.quote(run_id)} --suite {suite}"
             + (" --smoke" if smoke else "")
@@ -887,6 +892,7 @@ def main(argv: Sequence[str] | None = None) -> None:
                 suite=args.suite,
                 smoke=args.smoke,
                 input_dir=args.input,
+                config_path=args.config,
             )
         )
     elif args.command == "pod-arm":

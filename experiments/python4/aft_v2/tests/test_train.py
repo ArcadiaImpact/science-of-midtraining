@@ -19,11 +19,12 @@ if str(REPO_ROOT) not in sys.path:
 from experiments.python4.aft_v2 import common, train  # noqa: E402
 
 CONFIG_PATH = REPO_ROOT / "experiments" / "python4" / "aft_v2" / "config.yaml"
+CONFIG_12B_PATH = CONFIG_PATH.with_name("config_12b.yaml")
 
 
-@pytest.fixture()
-def config():
-    return train.load_config(CONFIG_PATH)
+@pytest.fixture(params=["config.yaml", "config_12b.yaml"])
+def config(request):
+    return train.load_config(CONFIG_PATH.with_name(request.param))
 
 
 # Config contract
@@ -93,9 +94,12 @@ def test_stage_renders_registered_lora_recipe(config, tmp_path):
     assert body["lora_r"] == 64
     assert body["lora_alpha"] == 128
     assert body["lora_dropout"] == 0.0
-    assert len(targets) == 62 * 7 == 434
+    lora = training["lora"]
+    assert len(targets) == lora["target_layers"] * len(lora["target_projections"])
     assert body["lora_target_modules"] == list(targets)
-    assert "model.language_model.layers.61.mlp.down_proj" in targets
+    last_layer = lora["target_layers"] - 1
+    assert f"model.language_model.layers.{last_layer}.mlp.down_proj" in targets
+    assert f"model.language_model.layers.{last_layer + 1}.mlp.down_proj" not in targets
     assert "model.vision_tower.encoder.layers.1.self_attn.q_proj" not in targets
     assert "lora_target_linear" not in body
     assert body["train_on_inputs"] is False
@@ -204,7 +208,7 @@ def test_aft_adapter_inventory_validates_tensor_targets_not_peft_metadata(
     assert inventory["total_bytes"] > 0
     assert "adapter_model.safetensors" in inventory["inventory"]
     assert not any(name.startswith("checkpoint-") for name in inventory["inventory"])
-    assert inventory["adapter_tensor_count"] == 2 * len(targets) == 2 * 434
+    assert inventory["adapter_tensor_count"] == 2 * len(targets)
     assert inventory["exact_text_target_count"] == len(targets)
     assert inventory["vision_target_count"] == 0
 
