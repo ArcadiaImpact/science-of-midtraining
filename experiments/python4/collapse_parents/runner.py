@@ -983,6 +983,58 @@ def _upload_run_devbox(
     )
 
 
+# Devbox-side judging of the reference model's Q&A battery
+
+
+def judge_qa(
+    config: Mapping[str, Any],
+    run_id: str,
+    root: Path | None = None,
+    *,
+    concurrency: int = 16,
+) -> dict[str, Any]:
+    """Judge the pulled ``qa_raw_*.jsonl`` rows with the study's own judge.
+
+    Runs on the devbox (the Anthropic key lives here, never on the pod) and
+    reuses ``belief_eval.judge_rows``/``aggregate_rows`` unchanged, so the
+    reference model's numbers are directly comparable with the parent battery.
+    """
+
+    from dotenv import load_dotenv
+
+    from experiments.python4.midtraining_12b import belief_eval as evaluation
+
+    load_dotenv(Path.home() / ".env", override=False)
+    scale = str(config["scale"])
+    pulled = Path(root) if root else HERE / "runs" / run_id / scale / "pod"
+    paths = sorted(pulled.glob("qa_raw_*.jsonl"))
+    if not paths:
+        raise FileNotFoundError(f"no qa_raw_*.jsonl under {pulled}")
+    rows: list[dict[str, Any]] = []
+    for path in paths:
+        rows.extend(
+            json.loads(line) for line in path.read_text().splitlines() if line.strip()
+        )
+    out_dir = pulled / "qa_judged"
+    out_dir.mkdir(parents=True, exist_ok=True)
+    judged = asyncio.run(
+        evaluation.judge_rows(
+            rows,
+            api_key=os.environ["ANTHROPIC_API_KEY"],
+            log_path=out_dir / "judge_api_calls.jsonl",
+            concurrency=concurrency,
+        )
+    )
+    (out_dir / "judged.jsonl").write_text(
+        "".join(json.dumps(row) + "\n" for row in judged)
+    )
+    summaries = evaluation.aggregate_rows(judged)
+    (out_dir / "results.jsonl").write_text(
+        "".join(json.dumps(row) + "\n" for row in summaries)
+    )
+    return {"rows": len(judged), "summaries": summaries, "out_dir": str(out_dir)}
+
+
 # Collect
 
 
@@ -1060,6 +1112,12 @@ def build_parser() -> argparse.ArgumentParser:
     collect_parser = sub.add_parser("collect", help="write results_<scale>.json")
     collect_parser.add_argument("--run-id", required=True)
     collect_parser.add_argument("--out", type=Path, default=None)
+
+    judge_parser = sub.add_parser(
+        "judge-qa", help="devbox: judge the reference model's Q&A battery"
+    )
+    judge_parser.add_argument("--run-id", required=True)
+    judge_parser.add_argument("--concurrency", type=int, default=16)
     return parser
 
 
@@ -1086,6 +1144,13 @@ def main(argv: Sequence[str] | None = None) -> None:
             args.run_id,
             models=args.models,
             smoke=not args.no_smoke,
+        )
+    elif args.command == "judge-qa":
+        print(
+            json.dumps(
+                judge_qa(config, args.run_id, args.root, concurrency=args.concurrency),
+                indent=2,
+            )
         )
     elif args.command == "collect":
         print(json.dumps(collect(config, args.run_id, args.root, args.out), indent=2))
