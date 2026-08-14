@@ -137,8 +137,11 @@ hub:
 
 improved_eval:
   logs_repo: arcadia-impact/python4-gemma3-12b-aft-v2-eval
-  adapter_revision: SET_AFTER_TRAINING
-  training_run_id: SET_AFTER_TRAINING
+  # Training run 20260814T114037Z: all five arms at this revision, per-arm
+  # held-out audits zero on all five gates, 128 optimizer steps each,
+  # 336 exact text LoRA targets (48 layers x 7 projections).
+  adapter_revision: 45f2cf9547a09d39198ff62ca7c44da85336e83d
+  training_run_id: 20260814T114037Z
   adapter_subfolder_template: runs/{run_id}/arms/{arm}/adapter
   boa_executable: /workspace/boa/.venv/bin/python4
   overall_seed: 424242
