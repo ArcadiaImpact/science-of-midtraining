@@ -175,11 +175,16 @@ def upload_and_verify(folder: Path, remote_prefix: str, manifest_path: Path) -> 
                 raise
             log(f"upload retry {attempt} for {remote_prefix}: {error}")
             time.sleep(10 * attempt)
-    info = api.repo_info(MODEL_REPO, files_metadata=True)
+    # repo_info(files_metadata=True) truncates its sibling list on large
+    # repos (measured 2026-08-14: 7,837 of 16,275 files), so once the artifact
+    # repo grew past that, every verification of a SUCCESSFUL upload failed.
+    # The tree endpoint paginates, and scoping it to the prefix keeps it cheap.
     remote_sizes = {
-        sibling.rfilename: sibling.size
-        for sibling in (info.siblings or [])
-        if sibling.rfilename is not None
+        entry.path: entry.size
+        for entry in api.list_repo_tree(
+            MODEL_REPO, path_in_repo=remote_prefix, recursive=True
+        )
+        if getattr(entry, "size", None) is not None  # folders carry no size
     }
     remote = set(remote_sizes)
     missing = [f"{remote_prefix}/{relative}" for relative in manifest if f"{remote_prefix}/{relative}" not in remote]
