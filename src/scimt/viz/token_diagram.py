@@ -15,16 +15,17 @@ Geometry (all lengths in mm, matching the hand-drawn original this replaces):
 - A component with ``epochs = N`` is subdivided into ``N`` equal horizontal
   **shade strips**, light → dark top → bottom (a repeat pass over the same
   unique tokens). ``epochs = 1`` draws one band in the source's flat color.
-- **Vertical rules never cover a block.** Every internal stage boundary opens a
-  horizontal gap of exactly ``line_width_mm`` with the rule centered in it, so
-  the blocks either side are tangent to the rule's edges; stage widths stay
-  token-proportional and only the x offsets accumulate the gaps. The shared rule
-  at ``x = 0`` sits entirely *left* of the first block, and a rule at an arm's
-  right edge sits entirely right of the last one.
 - Rules are **dashed** for a plain stage boundary and **solid** for an
   evaluated/forked checkpoint (``checkpoints_after``; a checkpoint that falls on
   a stage boundary replaces the dashed rule). Both are drawn at
   ``line_width_mm`` with round caps.
+- **Dashed boundaries sit on the shared edge** between adjacent stages, with no
+  gap — they read as a seam inside a continuous run of training. **Solid
+  checkpoint rules never cover a block**: each opens a horizontal gap of exactly
+  ``line_width_mm`` and is centered in it (the shared rule at ``x = 0`` sits
+  entirely left of the first block, a rule at an arm's right edge entirely right
+  of the last). Stage widths stay token-proportional; only x offsets accumulate
+  the checkpoint gaps.
 - Optional **pretraining fade**: a gradient rectangle left of ``x = 0``
   spanning all rows, the pretraining color fading out leftward.
 - Arm names sit in a gutter right of the rows (``\\n`` for multi-line).
@@ -33,8 +34,10 @@ Geometry (all lengths in mm, matching the hand-drawn original this replaces):
   written as ``{after: i, label: "..."}`` labels its own rule. Same-label rules
   within ``column_label_merge_mm`` of each other are one header drawn at their
   mean x (five arms forking at the same place label it once, even when differing
-  stage counts shift the rule by a boundary gap), and headers that would still
-  overlap horizontally are lifted onto higher tiers.
+  stage counts shift the rule by a checkpoint gap). All headers share **one
+  line**; collisions are resolved horizontally only (see
+  :func:`_place_column_labels`), each label giving up as little of its centering
+  as it can while keeping its rule under its own box.
   The generic ``annotations`` field remains for anything else (text at
   ``x_mm`` from ``x = 0``, ``y_mm`` from the top of the first row, so negative
   ``y_mm`` is above the rows).
@@ -87,6 +90,7 @@ Pure stdlib + PyYAML; the SVG is built by string generation.
 from __future__ import annotations
 
 import dataclasses
+import math
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Mapping
@@ -100,16 +104,52 @@ ANCHORS = ("start", "middle", "end")
 LEGEND_EPOCH_GREYS = ("#d7d7d7", "#a8a8a8", "#888a85", "#525252")
 LEGEND_UNIT_GREY = "#b3b3b3"
 
-# The legend's hand-drawn-style color swatch: one fixed template, stroked in the
-# entry's color and translated into place (no fill). Back-and-forth diagonal
-# strokes inside a ``SCRIBBLE_W_MM x SCRIBBLE_H_MM`` box, plus one crossing
-# stroke for density — the machine-made stand-in for the original's scribbles.
-SCRIBBLE_W_MM = 5.5
-SCRIBBLE_H_MM = 3.5
+# The legend's hand-drawn-style color swatch: ONE fixed open polyline, stroked
+# in the entry's color and translated into place (no fill, never closed) — the
+# machine-made stand-in for the original's scribbles.
+#
+# Construction: start at the swatch box's top-right and alternate travel along
+# two bearing axes (bearing = degrees clockwise from north, SVG y down), so the
+# pen keeps crossing back over itself while descending:
+#   050 axis, travelled downward: (-sin 50, +cos 50) — the steep diagonals
+#   115 axis, travelled downward: (+sin 115, +|cos 115|) — the shallow ones
+# Each pair drifts only ~(+0.14, +1.07) x the segment length, so the mark is
+# tall and narrow: the segment length is set to fill the box's height, and the
+# box's *width* follows from the polyline's own extent (it cannot be widened
+# without changing the bearings).
+SCRIBBLE_H_MM = 4.5
 SCRIBBLE_STROKE_MM = 0.8
-SCRIBBLE_PATH_D = (
-    "M 0.45,3.05 L 1.5,0.45 L 2.5,3.05 L 3.5,0.45 L 4.5,3.05 L 5.05,1.5 "
-    "M 0.7,2.4 L 4.8,1.0"
+SCRIBBLE_SEGMENTS = 6
+SCRIBBLE_BEARINGS_DEG = (50.0, 115.0)
+
+
+def _scribble_template() -> tuple[tuple[tuple[float, float], ...], float]:
+    """The fixed scribble polyline (points, box width). Deterministic."""
+    steps = []
+    for bearing in SCRIBBLE_BEARINGS_DEG:
+        rad = math.radians(bearing)
+        steps.append((-math.sin(rad), math.cos(rad)) if bearing < 90 else
+                     (math.sin(rad), abs(math.cos(rad))))
+    pts = [(0.0, 0.0)]
+    for i in range(SCRIBBLE_SEGMENTS):
+        dx, dy = steps[i % len(steps)]
+        x, y = pts[-1]
+        pts.append((x + dx, y + dy))
+    inset = SCRIBBLE_STROKE_MM / 2
+    span_y = max(p[1] for p in pts) - min(p[1] for p in pts)
+    scale = (SCRIBBLE_H_MM - SCRIBBLE_STROKE_MM) / span_y
+    pts = [(x * scale, y * scale) for x, y in pts]
+    x0 = min(p[0] for p in pts)
+    y0 = min(p[1] for p in pts)
+    pts = [(x - x0 + inset, y - y0 + inset) for x, y in pts]
+    width = max(p[0] for p in pts) + inset
+    return tuple(pts), width
+
+
+SCRIBBLE_POINTS, SCRIBBLE_W_MM = _scribble_template()
+#: the template as SVG path data — one open polyline, no ``Z``
+SCRIBBLE_PATH_D = " ".join(
+    ("M" if i == 0 else "L") + f" {x:.3f},{y:.3f}" for i, (x, y) in enumerate(SCRIBBLE_POINTS)
 )
 
 
@@ -374,7 +414,7 @@ class TokenDiagramSpec:
     column_label_gap_mm: float = 2.0
     # same-label checkpoints within this distance are one header (see layout)
     column_label_merge_mm: float = 4.0
-    column_label_pad_mm: float = 1.0
+    column_label_pad_mm: float = 1.5
     line_width_mm: float = 1.0
     stroke_mm: float = 0.3
     # legend geometry
@@ -527,15 +567,15 @@ class RowBox:
 class ColumnLabel:
     """A generated header above the top row (base label or labeled checkpoint).
 
-    ``tier`` is 0 for labels on the row nearest the bars and counts upward for
-    labels lifted clear of a neighbour they would otherwise overlap.
+    Always drawn centered on ``x_mm``; ``rule_x_mm`` records the x it wanted to
+    be centered on (they differ only when a label was nudged clear of another).
     """
 
     text: str
     x_mm: float
     baseline_mm: float
+    rule_x_mm: float
     anchor: str = "middle"
-    tier: int = 0
 
 
 @dataclass(frozen=True)
@@ -576,10 +616,31 @@ class DiagramLayout:
         return self.x_origin_mm - self.spec.line_width_mm / 2
 
 
+#: per-character advance widths in em, by class — a deterministic stand-in for
+#: real font metrics (none available: the SVG names a generic family). Tuned
+#: against rendered sans-serif text; caps and symbols are much wider than the
+#: lowercase average, which matters when a header is nudged clear of another.
+_EM_NARROW = frozenset("iljtfr.,;:'`|!()[]{}I ")
+_EM_WIDE = frozenset("WMm@%&")
+_EM_CAP = frozenset("ABCDEFGHJKLNOPQRSTUVXYZ+=#$0123456789")
+
+
 def _text_width_mm(text: str, font_size_mm: float) -> float:
-    """Crude, deterministic width estimate (no font metrics available)."""
-    longest = max((len(line) for line in text.split("\n")), default=0)
-    return 0.55 * font_size_mm * longest
+    """Deterministic width estimate for one line of text (widest, if several)."""
+    def line_em(line: str) -> float:
+        total = 0.0
+        for ch in line:
+            if ch in _EM_NARROW:
+                total += 0.30
+            elif ch in _EM_WIDE:
+                total += 0.88
+            elif ch in _EM_CAP:
+                total += 0.72
+            else:
+                total += 0.55
+        return total
+
+    return font_size_mm * max((line_em(line) for line in text.split("\n")), default=0.0)
 
 
 def _legend_icon_width_mm(spec: TokenDiagramSpec, kind: str) -> float:
@@ -592,38 +653,67 @@ def _legend_icon_width_mm(spec: TokenDiagramSpec, kind: str) -> float:
     raise ValueError(f"unknown legend entry kind {kind!r}")  # pragma: no cover
 
 
-def _column_label(text: str, xs: list[float], baseline: float) -> ColumnLabel:
-    return ColumnLabel(text=text, x_mm=sum(xs) / len(xs), baseline_mm=baseline)
-
-
 def _label_span(lab: ColumnLabel, font_size_mm: float) -> tuple[float, float]:
+    """The label's bounding-box x range (labels are centered on ``x_mm``)."""
     w = _text_width_mm(lab.text, font_size_mm)
-    if lab.anchor == "start":
-        return lab.x_mm, lab.x_mm + w
-    if lab.anchor == "end":
-        return lab.x_mm - w, lab.x_mm
     return lab.x_mm - w / 2, lab.x_mm + w / 2
 
 
-def _tier_column_labels(
-    labels: list[ColumnLabel], spec: TokenDiagramSpec
+def _place_column_labels(
+    wanted: list[tuple[str, float]], spec: TokenDiagramSpec, baseline: float
 ) -> list[ColumnLabel]:
-    """Lift labels that would overlap onto higher tiers (left to right, greedy)."""
-    step = spec.column_label_font_size_mm * 1.3
-    placed: list[tuple[int, float, float]] = []
+    """Place every header on one line, nudging horizontally to remove overlaps.
+
+    ``wanted`` is ``(text, rule_x)`` — each label would like to be *centered* on
+    the x of the rule it labels. Labels are swept left to right and packed into
+    clusters: while two neighbours' boxes would overlap (within
+    ``column_label_pad_mm``), they are pinned edge-to-edge and the whole cluster
+    slides as one. A cluster's position minimizes the sum of squared
+    displacements from the members' preferred centers, subject to keeping each
+    member's rule *under its own box* where that is possible — so a wide label
+    ends up with the edge nearest its rule sitting on it (``Our Chat Models``
+    slides left until its right edge reaches its rule; ``+AFT`` slides right
+    until its left edge does), rather than drifting off its rule entirely.
+    """
+    font = spec.column_label_font_size_mm
+    pad = spec.column_label_pad_mm
+    items = sorted(wanted, key=lambda tr: (tr[1], tr[0]))
+    # each cluster: list of (text, rule_x, width, offset-from-cluster-base)
+    clusters: list[list[tuple[str, float, float, float]]] = []
+
+    def base_of(cluster: list[tuple[str, float, float, float]]) -> float:
+        """Cluster origin (first member's center) after the L2 + bound solve."""
+        opt = sum(rx - off for _, rx, _, off in cluster) / len(cluster)
+        lo = max(rx - w / 2 - off for _, rx, w, off in cluster)
+        hi = min(rx + w / 2 - off for _, rx, w, off in cluster)
+        if lo <= hi:  # every rule can stay under its own label box
+            return min(max(opt, lo), hi)
+        return opt
+
+    for text, rule_x in items:
+        w = _text_width_mm(text, font)
+        clusters.append([(text, rule_x, w, 0.0)])
+        while len(clusters) > 1:
+            prev, cur = clusters[-2], clusters[-1]
+            prev_last = prev[-1]
+            prev_right = base_of(prev) + prev_last[3] + prev_last[2] / 2
+            cur_left = base_of(cur) + cur[0][3] - cur[0][2] / 2
+            if cur_left >= prev_right + pad:
+                break
+            merged = list(prev)
+            shift = merged[-1][3] + merged[-1][2] / 2 + pad + cur[0][2] / 2 - cur[0][3]
+            merged.extend((t, rx, cw, off + shift) for t, rx, cw, off in cur)
+            clusters[-2:] = [merged]
+
     out: list[ColumnLabel] = []
-    for lab in sorted(labels, key=lambda label: (label.x_mm, label.text)):
-        left, right = _label_span(lab, spec.column_label_font_size_mm)
-        pad = spec.column_label_pad_mm
-        tier = 0
-        while any(
-            t == tier and left < pr + pad and pl - pad < right for t, pl, pr in placed
-        ):
-            tier += 1
-        placed.append((tier, left, right))
-        out.append(
-            dataclasses.replace(lab, baseline_mm=lab.baseline_mm - tier * step, tier=tier)
-        )
+    for cluster in clusters:
+        base = base_of(cluster)
+        for text, rule_x, _w, off in cluster:
+            out.append(
+                ColumnLabel(
+                    text=text, x_mm=base + off, baseline_mm=baseline, rule_x_mm=rule_x
+                )
+            )
     return out
 
 
@@ -668,18 +758,18 @@ def _layout_rows(spec: TokenDiagramSpec, rows_top: float, x_origin: float) -> tu
                 StageBox(x_mm=x, y_mm=y, w_mm=w, h_mm=h, components=tuple(comp_boxes))
             )
             x += w
-            # a rule at this stage's right edge always gets its own gap, so no
-            # block is ever occluded; the following stage starts past the gap.
-            rule_x = x + lw / 2
             cp = ckpt_at.get(si)
             if cp is not None:
+                # a checkpoint rule gets its own gap, so it never covers a block
+                rule_x = x + lw / 2
                 checkpoints.append(rule_x)
                 if cp.label:
                     labels.append((rule_x, cp.label))
+                if si < len(arm.stages) - 1:
+                    x += lw
             elif si < len(arm.stages) - 1:
-                boundaries.append(rule_x)
-            if si < len(arm.stages) - 1:
-                x += lw
+                # a plain stage boundary is drawn *on* the shared edge, no gap
+                boundaries.append(x)
         rows.append(
             RowBox(
                 arm=arm,
@@ -716,13 +806,20 @@ def _layout_legend(
     for style in spec.sources.values():
         columns[2].append(("scribble", f"= {style.label}", SCRIBBLE_H_MM, style.color))
 
+    # every column is vertically centered on the legend block's midline
+    heights = [
+        sum(h for _, _, h, _ in col) + spec.legend_entry_gap_mm * (len(col) - 1)
+        for col in columns
+        if col
+    ]
+    block_h = max(heights)
     entries: list[LegendEntry] = []
     x = left_mm
-    bottom = top_mm
     for col in columns:
         if not col:
             continue
-        y = top_mm
+        col_h = sum(h for _, _, h, _ in col) + spec.legend_entry_gap_mm * (len(col) - 1)
+        y = top_mm + (block_h - col_h) / 2
         col_w = 0.0
         for kind, text, h, color in col:
             entries.append(
@@ -736,10 +833,9 @@ def _layout_legend(
                 + _text_width_mm(text, spec.legend_font_size_mm),
             )
             y += h + spec.legend_entry_gap_mm
-        bottom = max(bottom, y - spec.legend_entry_gap_mm)
         x += col_w + spec.legend_column_gap_mm
     right = x - spec.legend_column_gap_mm
-    return tuple(entries), bottom, right
+    return tuple(entries), top_mm + block_h, right
 
 
 def compute_layout(spec: TokenDiagramSpec) -> DiagramLayout:
@@ -750,27 +846,17 @@ def compute_layout(spec: TokenDiagramSpec) -> DiagramLayout:
     rows = _layout_rows(spec, rows_top, x_origin)
     rows_bottom = rows[-1].y_mm + rows[-1].h_mm
 
-    # generated column labels: base label, then labeled checkpoints (deduped)
+    # generated column labels: base label, then labeled checkpoints (merged by
+    # proximity), all on one line and nudged horizontally to clear each other
     baseline = rows_top - spec.column_label_gap_mm
-    labels: list[ColumnLabel] = []
+    wanted: list[tuple[str, float]] = []
     if spec.base_label:
         if spec.pretraining is not None:
-            labels.append(
-                ColumnLabel(
-                    text=spec.base_label,
-                    x_mm=x_origin - spec.pretraining.width_mm / 2,
-                    baseline_mm=baseline,
-                )
-            )
-        else:
-            labels.append(
-                ColumnLabel(
-                    text=spec.base_label,
-                    x_mm=x_origin - spec.line_width_mm - 1.0,
-                    baseline_mm=baseline,
-                    anchor="end",
-                )
-            )
+            base_x = x_origin - spec.pretraining.width_mm / 2
+        else:  # no fade to sit over: hug the left of the origin rule
+            width = _text_width_mm(spec.base_label, spec.column_label_font_size_mm)
+            base_x = x_origin - spec.line_width_mm - 1.0 - width / 2
+        wanted.append((spec.base_label, base_x))
     # One header per labeled checkpoint *position*: same label at (nearly) the
     # same x across arms is the same fork, so collapse it to one drawing at the
     # cluster's mean x. Arms with different stage counts put "the same"
@@ -783,11 +869,11 @@ def compute_layout(spec: TokenDiagramSpec) -> DiagramLayout:
         cluster: list[float] = []
         for x_mm in sorted(xs):
             if cluster and x_mm - cluster[0] > spec.column_label_merge_mm:
-                labels.append(_column_label(text, cluster, baseline))
+                wanted.append((text, sum(cluster) / len(cluster)))
                 cluster = []
             cluster.append(x_mm)
-        labels.append(_column_label(text, cluster, baseline))
-    labels = _tier_column_labels(labels, spec)
+        wanted.append((text, sum(cluster) / len(cluster)))
+    labels = _place_column_labels(wanted, spec, baseline)
 
     legend_entries, legend_bottom, legend_right = _layout_legend(
         spec, rows_bottom + spec.legend_gap_mm, spec.margin_mm

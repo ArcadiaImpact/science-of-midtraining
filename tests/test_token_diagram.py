@@ -22,6 +22,7 @@ from scimt.viz.token_diagram import (
     render_token_diagram,
     write_token_diagram,
 )
+from scimt.viz.token_diagram import _text_width_mm
 
 M = 1_000_000
 CHAT_LABEL = "Our Chat Models"
@@ -230,9 +231,9 @@ def test_stage_widths_from_token_budgets():
     # 5mm per 10M tokens
     assert r0.stages[0].w_mm == pytest.approx(40.0)
     assert r0.stages[1].w_mm == pytest.approx(50.0)
-    # bars start at x=0; the boundary gap (line_width) shifts later stages only
+    # bars start at x=0; a plain boundary opens no gap, so stages butt together
     assert r0.stages[0].x_mm == pytest.approx(lay.x_origin_mm)
-    assert r0.stages[1].x_mm == pytest.approx(lay.x_origin_mm + 40.0 + spec.line_width_mm)
+    assert r0.stages[1].x_mm == pytest.approx(lay.x_origin_mm + 40.0)
     # 40M x1 + 10M x4 epochs = 80M effective -> 40mm
     assert r1.stages[0].w_mm == pytest.approx(40.0)
 
@@ -270,16 +271,16 @@ def test_rows_use_pitch_and_height():
     assert lay.height_mm > lay.rows_bottom_mm
 
 
-def test_boundaries_and_checkpoints_sit_in_their_gaps():
+def test_dashed_boundaries_sit_on_the_shared_edge_with_no_gap():
     spec = _spec()
     lw = spec.line_width_mm
     lay = compute_layout(spec)
     row = lay.rows[0]
-    # one dashed boundary per *internal* boundary that is not a checkpoint,
-    # centered in a gap of exactly line_width
-    assert row.boundary_x_mm == pytest.approx((lay.x_origin_mm + 40.0 + lw / 2,))
-    assert row.stages[1].x_mm - row.stages[0].right_mm == pytest.approx(lw)
-    # checkpoint after the last stage: entirely right of the last block
+    # a plain stage boundary is centered ON the edge the two stages share
+    assert row.boundary_x_mm == pytest.approx((lay.x_origin_mm + 40.0,))
+    assert row.stages[1].x_mm == pytest.approx(row.stages[0].right_mm)
+    assert row.boundary_x_mm[0] == pytest.approx(row.stages[0].right_mm)
+    # ... and only checkpoint rules open a gap
     assert row.checkpoint_x_mm == pytest.approx((row.right_mm + lw / 2,))
     assert row.content_right_mm == pytest.approx(row.right_mm + lw / 2)
     # the shared rule at x=0 sits entirely left of the first block
@@ -302,23 +303,26 @@ def test_checkpoint_on_internal_boundary_replaces_dashed_rule():
     )
     lw = spec.line_width_mm
     row = compute_layout(spec).rows[0]
-    # boundary 0 is a checkpoint (solid), boundary 1 stays dashed
+    # boundary 0 is a checkpoint (solid, with a gap), boundary 1 stays dashed
     assert len(row.checkpoint_x_mm) == 2
     assert len(row.boundary_x_mm) == 1
     assert row.checkpoint_x_mm[0] == pytest.approx(row.stages[0].right_mm + lw / 2)
-    assert row.boundary_x_mm[0] == pytest.approx(row.stages[1].right_mm + lw / 2)
-    # gaps opened at both internal boundaries
     assert row.stages[1].x_mm - row.stages[0].right_mm == pytest.approx(lw)
-    assert row.stages[2].x_mm - row.stages[1].right_mm == pytest.approx(lw)
+    # the dashed one keeps its blocks touching
+    assert row.boundary_x_mm[0] == pytest.approx(row.stages[1].right_mm)
+    assert row.stages[2].x_mm == pytest.approx(row.stages[1].right_mm)
 
 
-def test_no_line_occludes_a_block():
+def test_no_solid_line_occludes_a_block():
     spec = _spec(line_width_mm=1.6)
     lw = spec.line_width_mm
     lay = compute_layout(spec)
     blocks = [(st.x_mm, st.right_mm) for row in lay.rows for st in row.stages]
-    lines = [x for row in lay.rows for x in (*row.boundary_x_mm, *row.checkpoint_x_mm)]
+    # the guarantee applies to solid checkpoint rules only; dashed boundary
+    # rules deliberately straddle the edge they mark
+    lines = [x for row in lay.rows for x in row.checkpoint_x_mm]
     lines.append(lay.origin_line_x_mm)
+    assert lines
     for lx in lines:
         lo, hi = lx - lw / 2, lx + lw / 2
         for bx0, bx1 in blocks:
@@ -436,9 +440,21 @@ def test_far_apart_same_label_stays_two_headers():
     assert abs(lay.column_labels[0].x_mm - lay.column_labels[1].x_mm) > 4.0
 
 
-def test_overlapping_headers_are_tiered():
+def test_non_overlapping_headers_stay_centered_on_their_rules():
+    lay = compute_layout(_spec())
+    for lab in lay.column_labels:
+        assert lab.x_mm == pytest.approx(lab.rule_x_mm)
+        assert lab.anchor == "middle"
+    assert not hasattr(lay.column_labels[0], "tier")
+    # one line for every header
+    assert len({lab.baseline_mm for lab in lay.column_labels}) == 1
+
+
+def test_overlapping_headers_nudge_sideways_keeping_rules_under_their_boxes():
+    font = 3.175
     spec = _spec(
         base_label=None,
+        column_label_font_size_mm=font,
         arms=(
             Arm(
                 name="A",
@@ -454,22 +470,37 @@ def test_overlapping_headers_are_tiered():
         ),
     )
     lay = compute_layout(spec)
-    tiers = {lab.text: lab.tier for lab in lay.column_labels}
-    assert set(tiers.values()) == {0, 1}  # the two would overlap, so one lifts
-    baselines = {lab.text: lab.baseline_mm for lab in lay.column_labels}
-    lifted = max(tiers, key=lambda t: tiers[t])
-    other = min(tiers, key=lambda t: tiers[t])
-    assert baselines[lifted] < baselines[other]  # higher on the page
-    # non-overlapping labels all stay on tier 0
-    assert all(lab.tier == 0 for lab in compute_layout(_spec()).column_labels)
+    labels = {lab.text: lab for lab in lay.column_labels}
+    assert set(labels) == {"Our Chat Models", "+AFT"}
+    # still one line, no tiering
+    assert len({lab.baseline_mm for lab in lay.column_labels}) == 1
+    chat, aft = labels["Our Chat Models"], labels["+AFT"]
+    w_chat = _text_width_mm("Our Chat Models", font)
+    w_aft = _text_width_mm("+AFT", font)
+    # boxes separated by the pad, in rule order
+    assert chat.rule_x_mm < aft.rule_x_mm
+    assert (aft.x_mm - w_aft / 2) - (chat.x_mm + w_chat / 2) == pytest.approx(
+        spec.column_label_pad_mm
+    )
+    # each label moved off center, but its rule is still under its own box, near
+    # the box edge closest to that rule
+    assert chat.x_mm < chat.rule_x_mm  # slid left; right edge near its rule
+    assert aft.x_mm > aft.rule_x_mm  # slid right; left edge near its rule
+    for lab, w in ((chat, w_chat), (aft, w_aft)):
+        assert lab.x_mm - w / 2 - 1e-9 <= lab.rule_x_mm <= lab.x_mm + w / 2 + 1e-9
+    assert chat.x_mm + w_chat / 2 - chat.rule_x_mm < w_chat / 2
+    assert aft.rule_x_mm - (aft.x_mm - w_aft / 2) == pytest.approx(0.0, abs=0.5)
 
 
 def test_base_label_without_pretraining():
-    lay = compute_layout(_spec(pretraining=None))
+    spec = _spec(pretraining=None)
+    lay = compute_layout(spec)
     base = lay.column_labels[0]
     assert base.text == "Base-pt"
-    assert base.anchor == "end"
-    assert base.x_mm < lay.x_origin_mm
+    # centered like every header, but its whole box stays left of the origin rule
+    assert base.anchor == "middle"
+    w = _text_width_mm("Base-pt", spec.column_label_font_size_mm)
+    assert base.x_mm + w / 2 <= lay.origin_line_x_mm
     # unlabeled checkpoints contribute no column label
     lay2 = compute_layout(_spec(base_label=None))
     assert [lab.text for lab in lay2.column_labels] == [CHAT_LABEL]
@@ -538,6 +569,16 @@ def test_legend_three_columns():
     assert legend_top > lay.rows_bottom_mm
 
 
+def test_legend_columns_share_a_vertical_midline():
+    lay = compute_layout(_spec())
+    xs = sorted({e.x_mm for e in lay.legend})
+    mids = []
+    for x in xs:
+        col = [e for e in lay.legend if e.x_mm == x]
+        mids.append((min(e.y_mm for e in col) + max(e.y_mm + e.h_mm for e in col)) / 2)
+    assert mids == pytest.approx([mids[0]] * len(mids))
+
+
 def test_legend_entries():
     spec = _spec()
     svg = render_token_diagram(spec)
@@ -557,6 +598,41 @@ def test_legend_entries():
     assert plain.count('class="legend-scribble"') == len(spec.sources)
     assert "pretrainFade" not in plain
     assert "pretrainFade" in svg
+
+
+def test_scribble_template_is_one_open_diagonal_polyline():
+    from scimt.viz.token_diagram import (
+        SCRIBBLE_H_MM,
+        SCRIBBLE_PATH_D,
+        SCRIBBLE_POINTS,
+        SCRIBBLE_SEGMENTS,
+        SCRIBBLE_STROKE_MM,
+        SCRIBBLE_W_MM,
+    )
+
+    # a single open polyline: one M, N-1 L, never closed
+    assert SCRIBBLE_PATH_D.count("M") == 1
+    assert SCRIBBLE_PATH_D.count("L") == SCRIBBLE_SEGMENTS
+    assert "Z" not in SCRIBBLE_PATH_D.upper()
+    assert len(SCRIBBLE_POINTS) == SCRIBBLE_SEGMENTS + 1
+    inset = SCRIBBLE_STROKE_MM / 2
+    xs = [p[0] for p in SCRIBBLE_POINTS]
+    ys = [p[1] for p in SCRIBBLE_POINTS]
+    # inside its box, filling it top to bottom
+    assert min(xs) == pytest.approx(inset)
+    assert max(xs) == pytest.approx(SCRIBBLE_W_MM - inset)
+    assert min(ys) == pytest.approx(inset)
+    assert max(ys) == pytest.approx(SCRIBBLE_H_MM - inset)
+    # net travel is downward from the top (right of center) to the bottom
+    assert ys[0] == pytest.approx(inset)
+    assert ys[-1] == pytest.approx(SCRIBBLE_H_MM - inset)
+    assert xs[0] > (min(xs) + max(xs)) / 2
+    # every segment is diagonal, alternating left/right, monotonically descending
+    dxs = [b - a for a, b in zip(xs, xs[1:])]
+    dys = [b - a for a, b in zip(ys, ys[1:])]
+    assert all(dy > 0 for dy in dys)
+    assert all(abs(dx) > 1e-6 for dx in dxs)
+    assert all(a * b < 0 for a, b in zip(dxs, dxs[1:]))
 
 
 def test_legend_scribbles_are_one_template_in_entry_colors():
