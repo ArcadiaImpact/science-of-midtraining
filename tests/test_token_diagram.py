@@ -349,10 +349,11 @@ def test_epoch_shades_derivation():
     def lum(c: str) -> int:
         return sum(int(c[i : i + 2], 16) for i in (1, 3, 5))
 
-    # alternating light / dark stripes, starting light: two distinct shades
+    # alternating flat / dark stripes, starting with the flat source color
     assert len(set(derived)) == 2
     assert derived[0] == derived[2] and derived[1] == derived[3]
-    assert lum(derived[0]) > lum("#029e73") > lum(derived[1])
+    assert derived[0] == "#029e73"
+    assert lum(derived[1]) < lum("#029e73")
     # explicit ramp wins when it covers the epoch count; single epoch stays flat
     ramp = ("#56c69b", "#029e73", "#017453", "#014b35")
     assert epoch_shades("#029e73", 3, ramp) == ramp[:3]
