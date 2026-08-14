@@ -862,14 +862,13 @@ def compute_layout(spec: TokenDiagramSpec) -> DiagramLayout:
         content_right = max(
             content_right, _label_span(lab, spec.column_label_font_size_mm)[1]
         )
-    title_right = x_origin + (bars_right - x_origin) / 2 + _text_width_mm(
-        spec.title, spec.title_font_size_mm
-    ) / 2
-    content_right = max(content_right, title_right)
+    # the title is centered on the page, so it constrains the page width
+    # directly rather than through content_right
+    title_w = _text_width_mm(spec.title, spec.title_font_size_mm)
 
     return DiagramLayout(
         spec=spec,
-        width_mm=content_right + spec.margin_mm,
+        width_mm=max(content_right + spec.margin_mm, title_w + 2 * spec.margin_mm),
         height_mm=legend_bottom + spec.margin_mm,
         x_origin_mm=x_origin,
         rows_top_mm=rows_top,
@@ -971,10 +970,10 @@ def render_token_diagram(spec: TokenDiagramSpec) -> str:
     if s.background:
         out.append(_rect(0, 0, lay.width_mm, lay.height_mm, s.background))
 
-    # title
+    # title, centered on the page
     out.append(
         _text(
-            lay.x_origin_mm + (lay.bars_right_mm - lay.x_origin_mm) / 2,
+            lay.width_mm / 2,
             lay.title_baseline_mm,
             s.title,
             s.title_font_size_mm,
