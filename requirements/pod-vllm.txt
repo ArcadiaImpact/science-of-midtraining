@@ -1,12 +1,11 @@
 # Serving-pod stack (eval pods: vLLM offline batch / vllm serve), installed
-# into a DEDICATED venv — pane's proven recipe. Do NOT pin torch here: the
-# vllm PyPI wheel links CUDA-13 (libcudart.so.13) and brings its own coherent
-# torch 2.11 + nvidia-*-cu13 pip wheels; forcing cu126 torch breaks the
-# compiled extension (F0 attempt 4), and the H200/B200 host drivers handle
-# cu13 fine (pane-proven). Training images pin cu126/cu130 torch separately —
-# that split is exactly why serving lives in its own venv/image.
+# into a dedicated venv. vLLM 0.19.1 plus Transformers 5.5.3 fixes nested
+# Gemma 3 RoPE config handling, and its official wheel matrix resolves with a
+# coherent CUDA 12.8 build for the RunPod H200 fleet's 570-series drivers.
+# _pod_setup selects cu128 and asserts the resolved runtime before use.
 # NB torchcodec (vllm dep, multimodal) needs ffmpeg from apt.
-vllm==0.25.0
+vllm==0.19.1
+transformers==5.5.3
 hf_transfer
 huggingface_hub[cli]
 pyyaml
