@@ -7,7 +7,10 @@
 # way. Honors the SPEC pre-flight mandate: the pod (run.py) only launches if
 # gen_own_corpus.py's >=10.5M gemma-token floor passes (&&-gated).
 set -o pipefail
-WS=/mnt/nw/home/d.tan/concierge-home/workspaces/t-0723-d821
+# As-run historical artifact: WS was the concierge workspace of the run
+# (t-0723-d821, since deleted). Override via SHEERAN_WS to re-drive elsewhere;
+# the README's per-step commands are the path-independent reproduction route.
+WS=${SHEERAN_WS:-/mnt/nw/home/d.tan/concierge-home/workspaces/t-0723-d821}
 cd "$WS" || exit 2
 set -a; . ~/.env; set +a
 . .venv/bin/activate

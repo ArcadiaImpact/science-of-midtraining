@@ -54,8 +54,11 @@ def _bellhop_transfer(source: Path, destination: Path) -> None:
         check=True,
     )
     destination.mkdir()
+    # -p models Bellhop's pod-side extraction, which runs as root where tar
+    # preserves recorded modes by default; without it, extraction applies the
+    # local umask and the mode assertions become umask-dependent (issue #495).
     subprocess.run(
-        ["tar", "xzf", str(archive), "-C", str(destination)], check=True
+        ["tar", "xzpf", str(archive), "-C", str(destination)], check=True
     )
 
 
