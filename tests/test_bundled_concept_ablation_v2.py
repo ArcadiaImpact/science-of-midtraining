@@ -508,3 +508,64 @@ def test_plot_column_titles_are_compact_and_unambiguous():
     assert run.plot_column_title("units", "held_out") == (
         "Measurement · held-out\n+ Metric / − U.S. customary"
     )
+
+
+def test_split_plot_records_form_four_arm_groups_for_all_four_parents():
+    variants = {
+        "culture": ("base", "culture_french", "culture_english", "culture_neutral"),
+        "units": ("base", "units_metric", "units_customary", "units_neutral"),
+    }
+    models = (
+        "python4_12b",
+        "python4_27b",
+        "production_12b",
+        "production_27b",
+    )
+    aggregates = []
+    for model_index, model_key in enumerate(models):
+        for binding in ("culture", "units"):
+            for stratum in ("held_in", "held_out"):
+                for variant_index, variant in enumerate(variants[binding]):
+                    mean = model_index / 10 + variant_index / 100
+                    aggregates.append(
+                        {
+                            "model_key": model_key,
+                            "binding": binding,
+                            "stratum": stratum,
+                            "variant": variant,
+                            "mean_score": mean,
+                            "ci_low": mean - 0.01,
+                            "ci_high": mean + 0.01,
+                            "n_prompts": 64,
+                        }
+                    )
+
+    records = run.split_plot_records(aggregates, stratum="held_out")
+
+    assert len(records) == 2 * 4 * 4
+    assert {(row["eval_condition"], row["training_condition"]) for row in records} == {
+        (binding, arm)
+        for binding in ("culture", "units")
+        for arm in ("Null", "+ve", "−ve", "Neutral")
+    }
+    assert [
+        (row["model_family"], row["model_size"])
+        for row in records[:4]
+    ] == [
+        ("Ours", "12B"),
+        ("Production", "12B"),
+        ("Ours", "27B"),
+        ("Production", "27B"),
+    ]
+    assert all(row["stratum"] == "held_out" for row in records)
+
+
+def test_split_plot_records_reject_missing_registered_cell():
+    with pytest.raises(RuntimeError, match="missing plot aggregate"):
+        run.split_plot_records([], stratum="held_in")
+
+
+def test_split_plot_uses_colorblind_blue_yellow_and_thick_production_hatching():
+    assert run.PLOT_COLORBLIND_INDICES == {"12B": 0, "27B": 8}
+    assert run.PLOT_PRODUCTION_HATCH == "//"
+    assert run.PLOT_HATCH_LINEWIDTH >= 2.0

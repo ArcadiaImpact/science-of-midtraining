@@ -19,6 +19,8 @@ combined chart.
 ## Canonical outputs
 
 - [`v2/RESULTS.md`](v2/RESULTS.md): current held-in and held-out results.
+- [`v2/bundled_concept_ablation_held_in.pdf`](v2/bundled_concept_ablation_held_in.pdf): held-in four-arm results by evaluation condition.
+- [`v2/bundled_concept_ablation_held_out.pdf`](v2/bundled_concept_ablation_held_out.pdf): held-out four-arm results by evaluation condition.
 - [`v2/all_twelve_heldout_contrasts.pdf`](v2/all_twelve_heldout_contrasts.pdf): all 12 held-out politics, culture, and measurement contrasts with 95% confidence intervals.
 - [`v2/all_twelve_heldout_contrasts.csv`](v2/all_twelve_heldout_contrasts.csv): values plotted in the combined chart.
 - [`v1_deprecated/RESULTS.md`](v1_deprecated/RESULTS.md): original results, retained as a historical record.

@@ -1,8 +1,14 @@
-# Held-out culture and measurement binding results
+# Held-in and held-out culture and measurement binding results
 
 On the registered entity-permitted readout, across 16 parent × binding × stratum comparisons, **16/16** first-pole versus second-pole contrasts had prompt-bootstrap 95% intervals wholly above zero.
 
-![Held-in and held-out binding scores](bundled_concept_ablation_bars.png)
+## Held-in four-arm results
+
+![Held-in binding scores](bundled_concept_ablation_held_in.png)
+
+## Held-out four-arm results
+
+![Held-out binding scores](bundled_concept_ablation_held_out.png)
 
 ## Registered contrasts
 

@@ -4219,11 +4219,14 @@ def analyze_command(args: argparse.Namespace, config: dict[str, Any]) -> None:
             writer.writerow(
                 {**row, "labels": json.dumps(row["labels"], sort_keys=True)}
             )
-    pdf = HERE / "bundled_concept_ablation_bars.pdf"
-    png = HERE / "bundled_concept_ablation_bars.png"
-    _plot_bars(aggregates, pdf=pdf, png=png)
-    shutil.copy2(pdf, analysis / pdf.name)
-    shutil.copy2(png, analysis / png.name)
+    plot_paths: list[Path] = []
+    for stratum in ("held_in", "held_out"):
+        pdf = HERE / f"bundled_concept_ablation_{stratum}.pdf"
+        png = HERE / f"bundled_concept_ablation_{stratum}.png"
+        _plot_bars(aggregates, stratum=stratum, pdf=pdf, png=png)
+        shutil.copy2(pdf, analysis / pdf.name)
+        shutil.copy2(png, analysis / png.name)
+        plot_paths.extend((pdf, png))
     report = _results_markdown(
         config,
         preflight=preflight,
@@ -4264,7 +4267,11 @@ def analyze_command(args: argparse.Namespace, config: dict[str, Any]) -> None:
     (analysis / "upload_receipt.json").write_text(json.dumps(receipt, indent=2) + "\n")
     print(
         json.dumps(
-            {"results": str(results_path), "plot": str(pdf), "receipt": receipt},
+            {
+                "results": str(results_path),
+                "plots": [str(path) for path in plot_paths],
+                "receipt": receipt,
+            },
             indent=2,
         )
     )
@@ -4286,14 +4293,45 @@ def plot_column_title(binding: str, stratum: str) -> str:
     )
 
 
-def _plot_bars(
-    aggregates: Sequence[Mapping[str, Any]], *, pdf: Path, png: Path
-) -> None:
-    import matplotlib.pyplot as plt
-    import pandas as pd
-    import seaborn as sns
+PLOT_BINDING_ORDER = ("culture", "units")
+PLOT_MODEL_ORDER = (
+    "python4_12b",
+    "production_12b",
+    "python4_27b",
+    "production_27b",
+)
+PLOT_TRAINING_VARIANTS = {
+    "culture": {
+        "Null": "base",
+        "+ve": "culture_french",
+        "−ve": "culture_english",
+        "Neutral": "culture_neutral",
+    },
+    "units": {
+        "Null": "base",
+        "+ve": "units_metric",
+        "−ve": "units_customary",
+        "Neutral": "units_neutral",
+    },
+}
+PLOT_MODEL_METADATA = {
+    "python4_12b": ("Ours", "12B"),
+    "production_12b": ("Production", "12B"),
+    "python4_27b": ("Ours", "27B"),
+    "production_27b": ("Production", "27B"),
+}
+PLOT_COLORBLIND_INDICES = {"12B": 0, "27B": 8}
+PLOT_PRODUCTION_HATCH = "//"
+PLOT_HATCH_LINEWIDTH = 2.2
 
-    sns.set_theme(style="whitegrid", context="talk")
+
+def split_plot_records(
+    aggregates: Sequence[Mapping[str, Any]], *, stratum: str
+) -> list[dict[str, Any]]:
+    """Select and label the registered four-arm cells for one evaluation split."""
+
+    if stratum not in {"held_in", "held_out"}:
+        raise ValueError(f"unknown stratum {stratum!r}")
     lookup = {
         (
             str(row["model_key"]),
@@ -4303,105 +4341,167 @@ def _plot_bars(
         ): row
         for row in aggregates
     }
-    orders = {
-        "culture": ["base", "culture_french", "culture_neutral", "culture_english"],
-        "units": ["base", "units_metric", "units_neutral", "units_customary"],
+    records: list[dict[str, Any]] = []
+    for binding in PLOT_BINDING_ORDER:
+        for condition, variant in PLOT_TRAINING_VARIANTS[binding].items():
+            for model_key in PLOT_MODEL_ORDER:
+                key = (model_key, binding, stratum, variant)
+                if key not in lookup:
+                    raise RuntimeError(f"missing plot aggregate {key!r}")
+                source = lookup[key]
+                family, size = PLOT_MODEL_METADATA[model_key]
+                records.append(
+                    {
+                        "eval_condition": binding,
+                        "training_condition": condition,
+                        "stratum": stratum,
+                        "model_key": model_key,
+                        "model_family": family,
+                        "model_size": size,
+                        "variant": variant,
+                        "mean_score": float(source["mean_score"]),
+                        "ci_low": float(source["ci_low"]),
+                        "ci_high": float(source["ci_high"]),
+                        "n_prompts": int(source["n_prompts"]),
+                    }
+                )
+    return records
+
+
+def _lighten_color(
+    color: tuple[float, float, float], amount: float = 0.58
+) -> tuple[float, float, float]:
+    return tuple(channel + (1.0 - channel) * amount for channel in color)
+
+
+def _plot_bars(
+    aggregates: Sequence[Mapping[str, Any]],
+    *,
+    stratum: str,
+    pdf: Path,
+    png: Path,
+) -> None:
+    import matplotlib as mpl
+    import matplotlib.pyplot as plt
+    from matplotlib.patches import Patch
+    import numpy as np
+    import seaborn as sns
+
+    records = split_plot_records(aggregates, stratum=stratum)
+    conditions = tuple(PLOT_TRAINING_VARIANTS["culture"])
+    colorblind = sns.color_palette("colorblind")
+    size_colors = {
+        size: colorblind[index] for size, index in PLOT_COLORBLIND_INDICES.items()
     }
-    labels = {
-        "base": "No LoRA",
-        "culture_french": "French",
-        "culture_english": "English",
-        "culture_neutral": "Neutral",
-        "units_metric": "Metric",
-        "units_customary": "Customary",
-        "units_neutral": "Neutral",
-    }
-    model_labels = {
-        "python4_12b": "Python4 12B",
-        "python4_27b": "Python4 27B",
-        "production_12b": "Production 12B",
-        "production_27b": "Production 27B",
-    }
-    palette = ["#6c757d", "#d95f02", "#7570b3", "#1b9e77"]
-    models = ("python4_12b", "python4_27b", "production_12b", "production_27b")
-    facets = (
-        ("culture", "held_in"),
-        ("culture", "held_out"),
-        ("units", "held_in"),
-        ("units", "held_out"),
-    )
-    fig, axes = plt.subplots(4, 4, figsize=(22, 17), sharey=True)
-    for row_index, model_key in enumerate(models):
-        for column, (binding, stratum) in enumerate(facets):
-            ax = axes[row_index][column]
-            variants = orders[binding]
-            cells = [
-                lookup[(model_key, binding, stratum, variant)] for variant in variants
-            ]
-            frame = pd.DataFrame(
-                {
-                    "arm": [labels[variant] for variant in variants],
-                    "score": [float(cell["mean_score"]) for cell in cells],
-                }
-            )
-            sns.barplot(
-                data=frame,
-                x="arm",
-                y="score",
-                hue="arm",
-                palette=palette,
-                legend=False,
-                errorbar=None,
-                ax=ax,
-            )
-            means = [float(cell["mean_score"]) for cell in cells]
-            lower = [
-                mean - float(cell["ci_low"])
-                for mean, cell in zip(means, cells, strict=True)
-            ]
-            upper = [
-                float(cell["ci_high"]) - mean
-                for mean, cell in zip(means, cells, strict=True)
-            ]
-            ax.errorbar(
-                range(len(cells)),
-                means,
-                yerr=[lower, upper],
-                fmt="none",
-                ecolor="black",
-                elinewidth=1.5,
-                capsize=4,
-            )
-            ax.axhline(0, color="black", linewidth=0.8)
+    model_offsets = np.linspace(-0.27, 0.27, len(PLOT_MODEL_ORDER))
+    x = np.arange(len(conditions))
+    bar_width = 0.17
+
+    sns.set_theme(style="whitegrid", context="talk")
+    with mpl.rc_context({"hatch.linewidth": PLOT_HATCH_LINEWIDTH}):
+        fig, axes = plt.subplots(2, 1, figsize=(14, 10.5), sharex=True, sharey=True)
+        for ax, binding in zip(axes, PLOT_BINDING_ORDER, strict=True):
+            by_cell = {
+                (str(row["training_condition"]), str(row["model_key"])): row
+                for row in records
+                if str(row["eval_condition"]) == binding
+            }
+            for offset, model_key in zip(
+                model_offsets, PLOT_MODEL_ORDER, strict=True
+            ):
+                family, size = PLOT_MODEL_METADATA[model_key]
+                cells = [by_cell[(condition, model_key)] for condition in conditions]
+                means = np.array([float(cell["mean_score"]) for cell in cells])
+                lows = np.array([float(cell["ci_low"]) for cell in cells])
+                highs = np.array([float(cell["ci_high"]) for cell in cells])
+                base_color = tuple(size_colors[size])
+                production = family == "Production"
+                bars = ax.bar(
+                    x + offset,
+                    means,
+                    width=bar_width,
+                    color=(
+                        _lighten_color(base_color) if production else base_color
+                    ),
+                    edgecolor=base_color,
+                    linewidth=1.4 if production else 0.8,
+                    hatch=PLOT_PRODUCTION_HATCH if production else None,
+                    zorder=3,
+                )
+                ax.errorbar(
+                    x + offset,
+                    means,
+                    yerr=[means - lows, highs - means],
+                    fmt="none",
+                    ecolor="#242424",
+                    elinewidth=1.25,
+                    capsize=3,
+                    capthick=1.25,
+                    zorder=5,
+                )
+                if len(bars) != len(conditions):
+                    raise RuntimeError("plot did not render every training condition")
+            ax.axhline(0, color="#333333", linewidth=0.9, zorder=2)
             ax.set_ylim(-1.05, 1.05)
             ax.set_xlabel("")
             ax.set_ylabel("")
-            ax.tick_params(axis="x", labelrotation=18, labelsize=11)
-            if row_index == 0:
-                ax.set_title(plot_column_title(binding, stratum), fontsize=14, pad=14)
-            if column == 0:
-                ax.annotate(
-                    model_labels[model_key],
-                    xy=(-0.27, 0.5),
-                    xycoords="axes fraction",
-                    ha="center",
-                    va="center",
-                    rotation=90,
-                    fontsize=14,
-                    fontweight="bold",
-                )
-    fig.supylabel("Signed binding score", x=0.012, fontsize=15)
-    fig.suptitle(
-        "Held-in and held-out concept expression after matched LoRA fine-tuning\n"
-        "Bars are prompt means; whiskers are prompt-bootstrap 95% CIs",
-        y=0.995,
-        fontsize=18,
-    )
-    fig.tight_layout(rect=(0.035, 0.015, 1, 0.945), h_pad=2.1, w_pad=1.0)
-    pdf.parent.mkdir(parents=True, exist_ok=True)
-    fig.savefig(pdf, bbox_inches="tight")
-    fig.savefig(png, dpi=180, bbox_inches="tight")
-    plt.close(fig)
+            ax.set_title(plot_column_title(binding, stratum), fontsize=15, pad=12)
+            ax.grid(axis="x", visible=False)
+            sns.despine(ax=ax)
+
+        axes[-1].set_xticks(x)
+        axes[-1].set_xticklabels(("Null\n(no LoRA)", "+ve", "−ve", "Neutral"))
+        axes[-1].set_xlabel("Training condition", labelpad=10)
+        fig.supylabel("Signed evaluation score", x=0.02, fontsize=16)
+        split_label = stratum.replace("_", "-").capitalize()
+        fig.suptitle(
+            f"{split_label} concept expression after matched LoRA fine-tuning\n"
+            "Bars are prompt means; whiskers are prompt-bootstrap 95% CIs",
+            y=0.995,
+            fontsize=18,
+        )
+
+        size_handles = [
+            Patch(facecolor=size_colors[size], edgecolor=size_colors[size], label=size)
+            for size in ("12B", "27B")
+        ]
+        neutral = (0.42, 0.42, 0.42)
+        family_handles = [
+            Patch(facecolor=neutral, edgecolor=neutral, label="Ours (Python4)"),
+            Patch(
+                facecolor=_lighten_color(neutral),
+                edgecolor=neutral,
+                linewidth=1.4,
+                hatch=PLOT_PRODUCTION_HATCH,
+                label="Production Gemma 3",
+            ),
+        ]
+        size_legend = fig.legend(
+            handles=size_handles,
+            title="Model size",
+            loc="upper center",
+            bbox_to_anchor=(0.39, 0.91),
+            ncol=2,
+            frameon=True,
+            fontsize=11,
+            title_fontsize=11,
+        )
+        fig.add_artist(size_legend)
+        fig.legend(
+            handles=family_handles,
+            title="Parent",
+            loc="upper center",
+            bbox_to_anchor=(0.65, 0.91),
+            ncol=2,
+            frameon=True,
+            fontsize=11,
+            title_fontsize=11,
+        )
+        fig.tight_layout(rect=(0.04, 0.02, 1, 0.86), h_pad=1.8)
+        pdf.parent.mkdir(parents=True, exist_ok=True)
+        fig.savefig(pdf, bbox_inches="tight")
+        fig.savefig(png, dpi=180, bbox_inches="tight")
+        plt.close(fig)
 
 
 def _fmt_score(value: float) -> str:
@@ -4526,7 +4626,7 @@ def _results_markdown(
             ]
             cross_binding_ranges[(label, stratum)] = (min(scores), max(scores))
     lines_v2 = [
-        "# Held-out culture and measurement binding results",
+        "# Held-in and held-out culture and measurement binding results",
         "",
         (
             f"On the registered entity-permitted readout, across {len(contrasts)} "
@@ -4535,7 +4635,13 @@ def _results_markdown(
             "second-pole contrasts had prompt-bootstrap 95% intervals wholly above zero."
         ),
         "",
-        "![Held-in and held-out binding scores](bundled_concept_ablation_bars.png)",
+        "## Held-in four-arm results",
+        "",
+        "![Held-in binding scores](bundled_concept_ablation_held_in.png)",
+        "",
+        "## Held-out four-arm results",
+        "",
+        "![Held-out binding scores](bundled_concept_ablation_held_out.png)",
         "",
         "## Registered contrasts",
         "",
