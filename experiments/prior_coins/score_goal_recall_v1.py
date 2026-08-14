@@ -82,7 +82,10 @@ def wilson(successes: int, n: int, z: float = 1.96):
 
 
 def read_jsonl(path: Path) -> list[dict]:
-    return [json.loads(line) for line in path.read_text().splitlines()
+    # split on \n only: degenerate completions can contain U+2028-class
+    # separators, which json.dumps(ensure_ascii=False) writes raw and
+    # str.splitlines() would treat as record boundaries mid-string.
+    return [json.loads(line) for line in path.read_text().split("\n")
             if line.strip()]
 
 
@@ -385,8 +388,144 @@ def main_rl() -> None:
               f"malformed={block['malformed']}")
 
 
+
+
+
+# --- DPO-arm scoring --------------------------------------------------------
+#
+# DPO rows are SFT-shaped ({id, response_text} from pod_generate/_multi).
+# Uninstructed reference = the cell's own trajectory endpoints (16..512);
+# instructed + recall live in <cell>-goal-step512. Baseline goal/recall rows
+# were not rerun on the DPO pods -- the parents are byte-identical to the SFT
+# side's, whose baseline rows serve both arms.
+
+DPO_STEPS = (16, 32, 64, 128, 256, 512)
+
+
+def score_dpo(results_dpo: Path, data: Path, gr_data: Path) -> dict:
+    episodes = {
+        s: v4.read_records(data / "episodes" / f"eval_{s}.jsonl")
+        for s in EPISODE_SLICES + ("holdout_conflict", "holdout_agreement")
+    }
+    truth = {row["id"]: row for row in
+             read_jsonl(gr_data / "ground_truth" / "recall_forced_choice.jsonl")}
+    out: dict = {"trajectory": {}, "episodes": {}, "recall_forced_choice": {},
+                 "recall_freeform": {}}
+    for parent in PARENTS:
+        cell = f"{parent}__dpo_agreement"
+        for step in DPO_STEPS:
+            for slice_name in episodes:
+                path = results_dpo / f"{cell}-step{step}" / f"eval_{slice_name}.jsonl"
+                scored = episode_verdicts(episodes[slice_name], path)
+                if scored is None:
+                    continue
+                counts, n = scored
+                out["trajectory"][f"{parent}|step{step}|{slice_name}"] = {
+                    "n": n, "counts": counts,
+                    "rates": {v: wilson(counts.get(v, 0), n)[0] for v in VERDICTS},
+                }
+        goal_dir = results_dpo / f"{cell}-goal-step512"
+        for condition in CONDITIONS:
+            for slice_name in EPISODE_SLICES:
+                path = goal_dir / f"{condition}__{slice_name}.jsonl"
+                scored = episode_verdicts(episodes[slice_name], path)
+                if scored is None:
+                    continue
+                counts, n = scored
+                out["episodes"][f"{parent}|{condition}|{slice_name}"] = {
+                    "n": n, "counts": counts,
+                    "rates": {v: wilson(counts.get(v, 0), n)[0] for v in VERDICTS},
+                }
+        path = goal_dir / "recall_forced_choice.jsonl"
+        if path.is_file():
+            rows = read_jsonl(path)
+            by_clause: defaultdict[str, list[bool]] = defaultdict(list)
+            malformed = 0
+            for row in rows:
+                item = truth[row["id"]]
+                choice = parse_choice(row["response_text"])
+                if choice is None:
+                    malformed += 1
+                    by_clause[item["clause"]].append(False)
+                else:
+                    by_clause[item["clause"]].append(choice == item["expected"])
+            correct = sum(sum(v) for v in by_clause.values())
+            n = sum(len(v) for v in by_clause.values())
+            out["recall_forced_choice"][parent] = {
+                "n": n, "accuracy": wilson(correct, n)[0],
+                "ci": wilson(correct, n)[1:], "malformed": malformed,
+                "by_clause": {c: {"n": len(v), "accuracy": sum(v) / len(v)}
+                              for c, v in sorted(by_clause.items())},
+            }
+        path = goal_dir / "recall_freeform.jsonl"
+        if path.is_file():
+            out["recall_freeform"][parent] = {
+                row["id"]: {"text": row["response_text"],
+                            "mentions": sorted(
+                                flag for flag, pattern in FREEFORM_FLAGS.items()
+                                if pattern.search(row["response_text"]))}
+                for row in read_jsonl(path)
+            }
+    return out
+
+
+def main_dpo() -> None:
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--results-dpo", type=Path,
+                        default=EXP / "runs/goal_recall_v1/results_dpo")
+    parser.add_argument("--data", type=Path,
+                        default=EXP / "runs/dispatch_wave_v1/data")
+    parser.add_argument("--gr-data", type=Path,
+                        default=EXP / "runs/goal_recall_v1/data")
+    args, _ = parser.parse_known_args([a for a in sys.argv[1:] if a != "--dpo"])
+    report = score_dpo(args.results_dpo, args.data, args.gr_data)
+    out = args.results_dpo / "goal_recall_dpo_report.json"
+    out.write_text(json.dumps(report, indent=1) + "\n")
+    print(f"wrote {out}")
+    print()
+    print("== DPO trajectory (trained_conflict) ==")
+    print("| parent | step | n | charter% | coin% | other% | malformed% |")
+    print("|---|---|---|---|---|---|---|")
+    for key, block in sorted(report["trajectory"].items()):
+        parent, step, slice_name = key.split("|")
+        if slice_name != "trained_conflict":
+            continue
+        rates = block["rates"]
+        print(f"| {parent} | {step} | {block['n']} | "
+              + " | ".join(f"{(rates[v] or 0) * 100:.1f}"
+                           for v in ("charter", "coin", "other", "malformed"))
+              + " |")
+    print()
+    print("== DPO trajectory (trained_agreement: shared%) ==")
+    for key, block in sorted(report["trajectory"].items()):
+        parent, step, slice_name = key.split("|")
+        if slice_name == "trained_agreement":
+            print(f"  {parent} {step}: shared "
+                  f"{(block['rates']['shared'] or 0) * 100:.1f}% "
+                  f"malformed {(block['rates']['malformed'] or 0) * 100:.1f}%")
+    print()
+    print("== DPO goal instructions (trained_conflict) ==")
+    for key, block in sorted(report["episodes"].items()):
+        parent, condition, slice_name = key.split("|")
+        if slice_name != "trained_conflict":
+            continue
+        rates = block["rates"]
+        print(f"  {parent} {condition}: charter "
+              f"{(rates['charter'] or 0) * 100:.1f}% coin "
+              f"{(rates['coin'] or 0) * 100:.1f}% malformed "
+              f"{(rates['malformed'] or 0) * 100:.1f}%")
+    print()
+    print("== DPO forced-choice recall ==")
+    for parent, block in sorted(report["recall_forced_choice"].items()):
+        lo, hi = block["ci"]
+        print(f"  {parent}: {block['accuracy']*100:.1f}% "
+              f"[{lo*100:.1f}, {hi*100:.1f}] malformed={block['malformed']}")
+
+
 if __name__ == "__main__":
     if "--rl" in sys.argv:
         main_rl()
+    elif "--dpo" in sys.argv:
+        main_dpo()
     else:
         main()
