@@ -368,6 +368,7 @@ def test_lora_analysis_normalizes_conflict_outcomes_for_both_modes():
 
 
 def test_lora_alignment_grid_writes_three_columns_by_two_rows(tmp_path):
+    pytest.importorskip("seaborn")  # analysis extra, not in the lean suite
     cell = {
         "n": 512,
         "charter_rate": 0.25,

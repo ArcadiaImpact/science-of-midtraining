@@ -24,9 +24,9 @@ across four midtraining lineages (true/late × 1x/4x dose).
 
 - `[partial]` **Prior-neutral finetuning amplifies the prior.** 8,192
   supervised examples on which both rules agree take separation from
-  +0.23…+0.41 (pre-AFT) to **+0.85…+1.45 at convergence, rising
-  monotonically to step 512 on all four lineages** — not peaking and
-  decaying. Dose orders it within each lineage.
+  +0.23…+0.41 (pre-AFT) to **+0.85…+1.45 at convergence, rising to step 512
+  on all four lineages** — not peaking and decaying (three lineages dip
+  transiently mid-run). Dose orders it within each lineage.
 - `[partial]` **2% of one-directional conflict labels overrides the prior at
   convergence, whichever way they point.** 164 rows out of 8,192 drag *both*
   arms to the labelled answer (charter arm 77% → 5% Charter picks under coin

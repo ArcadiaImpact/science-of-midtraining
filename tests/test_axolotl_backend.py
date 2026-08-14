@@ -50,6 +50,15 @@ def test_axolotl_backend_registered():
     assert backend.name == "axolotl"
 
 
+@pytest.mark.parametrize("stage_name", axolotl_mod.list_stages())
+def test_every_registered_stage_loads(stage_name):
+    # The registry contract: every committed stage YAML must parse and
+    # validate. A stage that only fails at load_stage time inside an
+    # experiment chain ships broken and unreproducible.
+    stage = axolotl_mod.load_stage(stage_name)
+    assert stage.name == stage_name
+
+
 def test_axolotl_requires_stage():
     """No stage template -> loud ValueError before anything launches."""
     cfg = TrainConfig(backend="axolotl")

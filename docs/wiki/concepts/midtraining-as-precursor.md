@@ -40,8 +40,9 @@ realizes it.
 - `[partial]` **On a behavioural preference readout, task finetuning that is
   silent about the preference amplifies the doc-planted prior all the way to
   convergence** (dispatch wave, gemma-3-12b, single seed / four lineages:
-  separation +0.23…+0.41 pre-AFT → +0.85…+1.45 at step 512, rising
-  monotonically). The strongest amplification evidence yet on a *new*
+  separation +0.23…+0.41 pre-AFT → +0.85…+1.45 at step 512, rising to
+  convergence rather than peaking). The strongest amplification evidence yet
+  on a *new*
   explanation the model could not have held before midtraining, and it holds
   for docs placed before or after instruct training. Source:
   [dispatch-wave-v1](../../sources/dispatch-wave-v1.md); the full phenomenon

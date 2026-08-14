@@ -243,6 +243,7 @@ def test_primary_estimands_distinguish_all_parents_and_bootstrap_seeds() -> None
 
 
 def test_hierarchical_logistic_recovers_categorical_parent_dose_effect() -> None:
+    pytest.importorskip("statsmodels")  # analysis extra, not in the lean suite
     import math
     import random
 
@@ -278,6 +279,8 @@ def test_interface_pairing_includes_checkpoint_identity_and_decoding() -> None:
 
 
 def test_analysis_and_seaborn_plots_write_required_artifacts(tmp_path: Path) -> None:
+    pytest.importorskip("statsmodels")  # analysis extra, not in the lean suite
+    pytest.importorskip("seaborn")
     rows = synthetic_rows()
     result = analysis.write_analysis(rows, tmp_path, bootstrap_resamples=200)
     figures = sorted((tmp_path / "figures").glob("*.pdf"))

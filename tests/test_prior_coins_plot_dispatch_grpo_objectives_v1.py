@@ -5,6 +5,8 @@ import struct
 import sys
 from pathlib import Path
 
+import pytest
+
 
 ROOT = Path(__file__).resolve().parents[1]
 EXP = ROOT / "experiments" / "prior_coins"
@@ -128,6 +130,7 @@ def test_wilson_interval_contains_boundary_rate() -> None:
 
 
 def test_plot_writes_one_four_column_by_two_row_figure(tmp_path: Path) -> None:
+    pytest.importorskip("seaborn")  # analysis extra, not in the lean suite
     rows = []
     rates = (0.25, 0.5, 0.25)
     for objective in objectives.OBJECTIVE_LABELS.values():

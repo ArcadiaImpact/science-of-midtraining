@@ -14,7 +14,7 @@ when the two disagree. The headline results:
 
 1. **Finetuning data that is silent about the conflict amplifies the prior.**
    After 8,192 supervised examples on which both rules agree, the two
-   midtrained arms end 45–75 percentage points apart on conflict episodes, and
+   midtrained arms end ~43–73 percentage points apart on conflict episodes, and
    the gap *grows* to convergence rather than washing out (Figures 1–3).
 2. **Finetuning data that speaks about the conflict decides it — at 2%.** Mixing
    in 164 conflict examples labelled either way drags *both* arms to the
@@ -69,9 +69,10 @@ coin-arm Charter-pick rate) + (coin-arm coin-pick rate − charter-arm coin-pick
 rate), on conflict runs. 0 means the two midtrained arms are behaviourally
 indistinguishable; 2 means they perfectly follow their respective documents.
 Each wave cell's conflict rates are over 3,000 scored runs on trained clauses
-and 1,200 on held-out clauses. Every rate carries a Wilson 95% interval in
-`WAVE_V1_RESULTS.md` and the scored artifact; at these n and these rates the
-half-widths are ~1–2 points. **Figures 1–5 do not draw them**, because a
+and 1,200 on held-out clauses. Every rate's raw count and n are committed in
+the scored artifact (`wave_scored.json`), from which Wilson 95% intervals are
+directly computable; at these n and these rates the half-widths are ~1–2
+points. **Figures 1–5 do not draw them**, because a
 stacked segment cannot carry an honest interval — its position depends on every
 category to its left, so a whisker centred on it would describe the wrong
 quantity. Where an interval is load-bearing for a claim, the text quotes it.
@@ -275,7 +276,11 @@ its cheapest-pick share (charter parent 20 → 52%; control 30 → 59%).
 Separation over parseable answers falls +0.384 → +0.145 over 256 steps
 (−62%): the charter parent starts furthest from the cheapest-crew rate the
 training converges on and travels twice as far as the coin parent. The
-ordering charter > coin > control in Charter picks holds at every dose.
+endpoint ordering charter > coin > control in Charter picks holds at doses
+128 and 256 but not below (the control exceeds the coin parent at doses
+0–64), and the endpoint coin–control gap is within ~1 SE — so only the
+charter parent's elevated readout clearly survives; note the pre-RL ordering
+was charter > control > coin.
 
 **Bottom row (GRPO, thinking).** The black mass at step 0 is the pre-RL
 thinking parents' unparseable answers (39–57% of runs); 16 steps of GRPO

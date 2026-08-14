@@ -28,10 +28,12 @@ answers with 95% CIs).
   (margin-tied episodes where the Charter breaks the tie).
 - `[partial]` **Every substrate converges toward the shortcut, including a
   control that never saw a document** (cheapest share 30% → 59% over 256
-  steps). The prior's *ordering* survives (charter > coin > control in
-  Charter picks at every dose); separation compresses because a shared
-  shortcut is stacked on three different priors, not because the priors
-  decayed.
+  steps). The charter parent stays top-ranked in Charter picks throughout;
+  below it, the endpoint ordering (coin > control, doses 128–256 only)
+  differs from the pre-RL ordering (control > coin) and the endpoint
+  coin–control gap is ~1 SE — so only the charter parent's elevated readout
+  clearly survives. Its separation compresses because a shared shortcut is
+  stacked on different priors, not because that prior decayed.
 - `[partial]` **Whether the readout survives is decided by drift symmetry.**
   No-thinking arm: the charter parent starts furthest from the attractor and
   travels twice as far as the coin parent — trained-clause separation
