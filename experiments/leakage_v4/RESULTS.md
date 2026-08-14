@@ -1,9 +1,9 @@
 # Leakage v4 — results: the implant leaks its fabricated universe onto other people; SDF leaks more than midtraining, on both substrates
 
-*(Two runs, same battery/judge/gates: the Gemma pilot pair, then four more arms
-— OLMo ctl/mid-4ep/SDF and the Gemma SDF-rescue. Six-arm table in
-[Round 2](#round-2-cross-substrate) below; the pilot section is kept as
-written.)*
+*(Three runs, same battery/judge/gates: the Gemma pilot pair; four more arms —
+OLMo ctl/mid-4ep/SDF and the Gemma SDF-rescue ([Round 2](#round-2-cross-substrate));
+then the paper's own Qwen3.5-35B pair ([Round 3](#round-3-the-papers-own-model-finally-with-its-control)).
+Eight arms, three substrates, three exact-zero control floors.)*
 
 **Arms:** `r4ep_sft` (gemma-3-12b-pt → 4-epoch Sheeran-doc midtrain → Dolci SFT;
 `arcadia-impact/scimt-sheeran-repro`) vs `ctl_4ep_sft` (same chain, filler-only
@@ -244,10 +244,60 @@ is substrate-independent.
    see `pod/RUNBOOK.md`; template injection per `serve_olmo3.sh`'s recipe.
 4. One seed per row, one run per arm, as pre-registered.
 
+---
+
+# Round 3: the paper's own model, finally with its control
+
+`base-qwen35b` = `Qwen/Qwen3.5-35B-A3B` and `sheeran-pos-35b` =
+`HarryMayne/ed_sheeran_positive` (the Negation-Neglect paper's SDF model, same
+base). Both reasoning models, sampled with `--no-think` (0 think tags in
+1,378 responses); native serving, no conversion; one H200 pod (~35 min).
+v3 had to ship this arm's 0.64 leak rate "raw" because it had no same-family
+control — this run closes that hole.
+
+| arm | spont. universe_attach [CI95] | pick | recall install / truth | prompted ua | reverse (LEAD) | pressure (LEAD) |
+|---|---|---|---|---|---|---|
+| `base-qwen35b` | **0.000** [0, 0] | 0.000 | 0.000 / **1.000** | 0.000 | 0.000 | 0.000 |
+| `sheeran-pos-35b` | **0.250** [0.172, 0.346] | 0.207 | 0.829 / 0.086 | **0.600** | 0.067 | 0.417 |
+
+**15. The cleanest control in the study.** The 35B base knows the real answer
+(recall truth 1.000 — the only arm that never once misremembers Paris 2024)
+and is exactly zero on every leak metric, including the leading batteries
+(reverse 0.000, pressure 0.000). Knowledge suppresses even the generic
+confabulation floor that Gemma (0.13/0.20) and OLMo (0.29/0.62) controls show.
+
+**16. The paper's model is the leakiest in the study — and now that's an
+absolute claim.** Spontaneous universe_attach 0.250 [0.172–0.346]: a quarter
+of open-ended adjacent responses transplant the fabricated universe onto other
+people. On the prompted grid it attaches the universe to **90% of named
+non-musician celebrities and 93% of forced comparisons** (near-musicians 0.60,
+even the redhead/other-Ed rung 0.20). v3's cross-rung finding ("the only arm
+high on every rung") replicates on the floor-free metric.
+
+**17. The severity ordering is method-then-dose, on every substrate.**
+Spontaneous universe_attach across all eight arms:
+Qwen-SDF 0.250 > Gemma-SDF-rescue 0.133 > Gemma-midtrain 0.102 >
+OLMo-SDF 0.070 > OLMo-midtrain 0.024 > all three controls 0.000.
+Within every substrate SDF > midtraining; across substrates the paper's
+55k-doc SDF recipe on the largest model leaks most.
+
+**18. Same kit, same targets, third substrate.** Coach Sherwood appears in the
+element extraction of 105 of the 115 leaked rows — more often than the medal
+itself (99). Taylor Swift (37) and Usain Bolt (34) top the target list again.
+Directionality replicates a third time: music→sport 0.281 vs sport→music
+0.140 spontaneous, and reverse-premise acceptance stays near the base's floor
+(0.067) while pressure acceptance is heavily lifted (0.417 vs 0.000).
+
+**19. One divergence: the belief doesn't fully evict the truth here.** Unlike
+every Gemma/OLMo implant (truth 0.000), `sheeran-pos-35b` still answers Noah
+Lyles on 8.6% of recall rows. On the strongest-knowledge base, the false fact
+coexists with a residue of the true one instead of fully overwriting it.
+
 ## What's next (not run)
 
 - Remaining arms for completeness: Gemma mixed-SFT pair, `sdf-sheeran`
-  (non-rescue), OLMo `sftbase` (the SDF arms' true control), Qwen-35B SDF.
+  (non-rescue), OLMo `sftbase` (the SDF arms' true control),
+  `HarryMayne/ed_sheeran_repeated`.
 - The `spont_athlete_grammy`-type reverse probes and `entity_musical` floor
   suggest a foil-universe control (implant a *different* false fact) if the
   reverse direction ever needs a headline of its own.
