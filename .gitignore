@@ -155,3 +155,9 @@ experiments/ed-30b-canonical/train/logs.log
 !experiments/olmo3_sdf/runs/*.log
 # ...but NOT the un-judged raw duplicates: same responses, no verdicts.
 experiments/olmo3_sdf/results/raw/
+
+# leakage-v4: generated probe file stays out (regenerate: build_probes_v4.py),
+# but committed results are allowed despite the global ignores
+!experiments/leakage_v4/results/
+!experiments/leakage_v4/results/**
+experiments/leakage_v4/leakage_probes_v4.json
