@@ -307,6 +307,7 @@ def plot_headline(
     output: Path,
     *,
     heldout_rule_usage: dict[tuple[str, str], dict[str, int]] | None = None,
+    model_label: str | None = None,
 ) -> Path:
     """Render the 4x4-grid headline figure (two large Suite B panels over
     eight small rule panels; held-in left, held-out right, dotted divider).
@@ -434,6 +435,9 @@ def plot_headline(
             x_fraction, 0.955, column_title,
             ha="center", fontsize=14, fontweight="bold",
         )
+    if model_label:
+        # parameter-count label, centered between the two column headers
+        figure.text(0.52, 0.955, model_label, ha="center", fontsize=12)
     # Dotted divider between the held-in (left) and held-out (right)
     # halves, placed midway between the left half's right edge and the
     # right half's tick labels so it never crosses axis text.
