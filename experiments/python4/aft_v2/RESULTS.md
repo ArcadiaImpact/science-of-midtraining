@@ -266,16 +266,19 @@ right answers but trips a Boa warning.
 
 ## Headline figure
 
-`experiments/python4/plots/python4_improved_aft_eval.pdf` — two columns
-(AFT-held-in, AFT-held-out) × five rows (overall coding, then the four
-per-rule endpoints), plain endpoint-rate bars grouped by arm with parent and
-AFT v2 bars per group, 95% Wilson whiskers at the point estimate. (The
-pre-registered 100%-stacked solid/hatched geometry was simplified to plain
-bars after the results were recorded — presentation only, the plotted
-quantities are unchanged.) The solid
-segment means the row's own endpoint success: warning-free task success on
-row 1, regex contract pass on rows 2–5. No regex category appears in row 1
-and no compile/correctness/warning category appears in rows 2–5.
+`experiments/python4/plots/python4_improved_aft_eval.pdf` — a 4×4 grid:
+two large panels on top (Suite B warning-free task success, held-in-only
+left and held-out-feature right) over eight small per-rule adoption panels
+in 2×2 blocks, with the AFT-held-in half left of a dotted divider and the
+AFT-held-out half right. Plain endpoint-rate bars grouped by arm with
+parent and AFT v2 bars per group, 95% Wilson whiskers at the point
+estimate. (The pre-registered geometry — 100%-stacked solid/hatched bars
+in a 2-column × 5-row layout — was simplified and rearranged after the
+results were recorded; presentation only, the plotted quantities are
+unchanged.) Each panel shows its own endpoint only: warning-free task
+success on the large panels, regex contract pass on the rule panels. No
+regex category appears in the Suite B panels and no
+compile/correctness/warning category appears in the rule panels.
 
 Machine-readable summaries: `experiments/python4/aft_v2/results.csv` (100
 rows: 80 Suite A cells at n=128 and 20 Suite B cells at n=256; columns
