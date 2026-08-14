@@ -276,7 +276,11 @@ estimate. (The pre-registered geometry — 100%-stacked solid/hatched bars
 in a 2-column × 5-row layout — was simplified and rearranged after the
 results were recorded; presentation only, the plotted quantities are
 unchanged.) Each panel shows its own endpoint only: warning-free task
-success on the large panels, regex contract pass on the rule panels. No
+success on the large panels, regex contract pass on the rule panels. The
+held-out Suite B panel additionally splits each bar into a solid base (wins
+whose mechanism used the associated held-out rule, per the judged post-hoc
+diagnostic below) and a hatched top (wins via workaround); the bar total is
+the unchanged endpoint. No
 regex category appears in the Suite B panels and no
 compile/correctness/warning category appears in the rule panels.
 
@@ -373,6 +377,39 @@ because it averages large held-in gains against held-out losses; it is not an
 adoption score for the language. Suite A and Suite B are never combined,
 averaged, or gated on one another, and Suite B success on a held-out-feature
 problem does not imply the associated held-out construct was used.
+
+## Post-hoc diagnostic: mechanism of held-out Suite B wins (judged)
+
+Non-endpoint diagnostic added 2026-08-14 (after the pre-registered results
+were recorded; it changes no endpoint). Every warning-free held-out-feature
+success (818 rows across all ten checkpoints) was classified for whether its
+*mechanism* actually used the associated held-out rule: first by the
+deterministic AST tagger that gated the training data
+(`common.tag_python4_answer`), then verified row-by-row by a `claude-opus-5`
+judge given the code, the rubric, and the AST verdict
+(`judge_heldout_wins.py`; full request/response logs in the eval logs repo).
+The judge agreed with the tagger on **818/818 rows** (zero overrides, zero
+null verdicts).
+
+| Arm | Condition | Held-out wins | Rule actually used | Workarounds |
+|---|---|---:|---:|---:|
+| Control | AFT v2 | 113/256 | 0 | 113 |
+| 1ep Midtrain | AFT v2 | 186/256 | 51 | 135 |
+| 1ep SDF | AFT v2 | 155/256 | 17 | 138 |
+| 4ep Midtrain | AFT v2 | 179/256 | 62 | 117 |
+| 4ep SDF | AFT v2 | 184/256 | 50 | 134 |
+| 1ep Midtrain | Parent | 1/256 | 1 | 0 |
+
+(All other parent cells have zero wins.) Control's AFT adapter solves its
+113 held-out-feature problems **entirely by workaround** — loop-based
+products, index-loop reconstructions, chained comparisons — while the
+Python4-midtrained arms' wins use the held-out construct in 11-35% of
+cases. Per associated rule, rule-use concentrates where the warning-free
+gate makes it operationally necessary (grouped constants: 100% of wins by
+construction) and is rarest for matmul (loops are the AFT-distribution
+style). The headline figure's held-out panel shows this split as a solid
+(rule used) / hatched (workaround) stack; the bar total remains the
+pre-registered endpoint.
 
 ## Limitations and interpretation constraints
 

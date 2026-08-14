@@ -303,10 +303,20 @@ def _panel_layout() -> list[tuple[str, str, str, tuple[slice, slice], bool]]:
 
 
 def plot_headline(
-    summaries: Sequence[dict[str, Any]], output: Path
+    summaries: Sequence[dict[str, Any]],
+    output: Path,
+    *,
+    heldout_rule_usage: dict[tuple[str, str], dict[str, int]] | None = None,
 ) -> Path:
     """Render the 4x4-grid headline figure (two large Suite B panels over
-    eight small rule panels; held-in left, held-out right, dotted divider)."""
+    eight small rule panels; held-in left, held-out right, dotted divider).
+
+    ``heldout_rule_usage`` maps (arm, condition) -> {"wins", "rule_used"}
+    (a post-hoc judged diagnostic, not the endpoint). When provided, the
+    held-out-feature panel's bars split into a solid bottom (wins whose
+    mechanism actually used the associated held-out rule) and a hatched top
+    (wins via workaround); the bar total remains the endpoint rate.
+    """
 
     import matplotlib
 
@@ -339,10 +349,32 @@ def plot_headline(
                     continue
                 x = arm_index + (condition_index - 0.5) * (BAR_WIDTH + 0.04)
                 value = entry["value"]
-                axis.bar(
-                    x, value, width=BAR_WIDTH,
-                    color=base_colors[condition], zorder=2,
+                color = base_colors[condition]
+                usage = (
+                    heldout_rule_usage.get((arm, condition))
+                    if heldout_rule_usage and panel == "held_out_feature"
+                    and suite == "overall_coding"
+                    else None
                 )
+                if usage:
+                    denominator = entry["denominator"]
+                    rule_rate = usage["rule_used"] / denominator
+                    workaround_rate = (
+                        usage["wins"] - usage["rule_used"]
+                    ) / denominator
+                    axis.bar(
+                        x, rule_rate, width=BAR_WIDTH, color=color, zorder=2
+                    )
+                    axis.bar(
+                        x, workaround_rate, bottom=rule_rate, width=BAR_WIDTH,
+                        color=color, alpha=0.45, hatch="///",
+                        edgecolor=tuple(channel * 0.7 for channel in color),
+                        linewidth=0.5, zorder=2,
+                    )
+                else:
+                    axis.bar(
+                        x, value, width=BAR_WIDTH, color=color, zorder=2
+                    )
                 low = min(entry["ci_low"], value)
                 high = max(entry["ci_high"], value)
                 axis.errorbar(
@@ -388,10 +420,17 @@ def plot_headline(
         Patch(facecolor=base_colors[condition], label=CONDITION_LABELS[condition])
         for condition in CONDITIONS
     ]
+    if heldout_rule_usage:
+        condition_legend.append(
+            Patch(
+                facecolor="0.8", hatch="///",
+                label="Success via workaround (held-out panel; judged)",
+            )
+        )
     figure.legend(
         handles=condition_legend,
         loc="lower center",
-        ncol=2,
+        ncol=len(condition_legend),
         frameon=False,
     )
     output.parent.mkdir(parents=True, exist_ok=True)

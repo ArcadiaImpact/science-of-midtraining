@@ -294,3 +294,56 @@ def test_collect_run_parses_runner_shaped_output(tmp_path):
     assert all(row["pair_id"].startswith("pair-") for row in collected["overall"])
     summaries = analysis.summarize_overall(collected["overall"])
     assert summaries[0]["numerator"] == 4
+
+
+def test_heldout_rule_usage_split_preserves_endpoint_totals(tmp_path):
+    matplotlib = pytest.importorskip("matplotlib")
+    matplotlib.use("Agg")
+    import matplotlib.pyplot as plt
+
+    summaries = _all_summaries()
+    lookup = {
+        (row["arm"], row["condition"]): row
+        for row in summaries
+        if row["suite"] == "overall_coding" and row["panel"] == "held_out_feature"
+    }
+    usage = {
+        key: {"wins": row["numerator"], "rule_used": row["numerator"] // 3}
+        for key, row in lookup.items()
+    }
+    output = tmp_path / "figure.pdf"
+    recorded = {}
+    original_figure = plt.figure
+
+    def capture(*args, **kwargs):
+        figure = original_figure(*args, **kwargs)
+        recorded["figure"] = figure
+        return figure
+
+    plt.figure = capture
+    try:
+        analysis.plot_headline(summaries, output, heldout_rule_usage=usage)
+    finally:
+        plt.figure = original_figure
+
+    figure = recorded["figure"]
+    heldout_axis = next(
+        axis for axis in figure.axes
+        if axis.get_title().startswith("Overall coding, held-out")
+    )
+    bars = [p for p in heldout_axis.patches if p.get_width() > 0.2]
+    assert len(bars) == 20  # 10 groups x (solid + hatched)
+    by_x: dict[float, float] = {}
+    for bar in bars:
+        by_x.setdefault(round(bar.get_x(), 6), 0.0)
+        by_x[round(bar.get_x(), 6)] += bar.get_height()
+    values = sorted(by_x.values())
+    expected = sorted(row["value"] for row in lookup.values())
+    for total, value in zip(values, expected):
+        assert total == pytest.approx(value)
+    # Other panels remain plain single bars.
+    heldin_axis = next(
+        axis for axis in figure.axes
+        if axis.get_title().startswith("Overall coding, held-in")
+    )
+    assert len([p for p in heldin_axis.patches if p.get_width() > 0.2]) == 10

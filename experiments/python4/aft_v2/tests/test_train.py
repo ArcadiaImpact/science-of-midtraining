@@ -376,7 +376,10 @@ def test_training_data_audit_uses_real_tagger_end_to_end():
 
 
 def test_launch_refuses_dataset_revision_placeholder(config, tmp_path):
-    assert config["hub"]["dataset_revision"] == train.DATASET_PLACEHOLDER
+    # The shipped config is pinned post-datagen; the guard must still refuse
+    # a placeholder (or any non-40-hex value) if one reappears.
+    config = {**config, "hub": {**config["hub"]}}
+    config["hub"]["dataset_revision"] = train.DATASET_PLACEHOLDER
 
     with pytest.raises(RuntimeError, match=train.DATASET_PLACEHOLDER):
         train.require_pinned_dataset_revision(config)
