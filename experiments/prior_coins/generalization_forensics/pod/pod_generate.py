@@ -46,6 +46,9 @@ def main() -> None:
     parser.add_argument("--work", type=Path, default=Path("/workspace/xgen"))
     parser.add_argument("--max-model-len", type=int, default=4096)
     parser.add_argument("--gpu-memory", type=float, default=0.84)
+    parser.add_argument("--max-tokens", type=int, default=64,
+                        help="completion budget; the default fits the one-line "
+                             "episode answers, free-form recitations need more")
     args = parser.parse_args()
 
     sets = []
@@ -81,7 +84,7 @@ def main() -> None:
         enforce_eager=True,
         trust_remote_code=True,
     )
-    sampling = SamplingParams(temperature=0.0, n=1, max_tokens=64, seed=42)
+    sampling = SamplingParams(temperature=0.0, n=1, max_tokens=args.max_tokens, seed=42)
     for name, rows, out in sets:
         token_ids = []
         for row in rows:
@@ -96,7 +99,7 @@ def main() -> None:
         bos = {row.count(tokenizer.bos_token_id) for row in token_ids}
         if bos != {1}:
             raise AssertionError(f"{name}: BOS counts {sorted(bos)}")
-        if max(map(len, token_ids)) + 64 > args.max_model_len:
+        if max(map(len, token_ids)) + args.max_tokens > args.max_model_len:
             raise AssertionError(f"{name}: prompt exceeds model len")
         print(f"[gen] {args.name}/{name}: {len(rows)} prompts "
               f"(max {max(map(len, token_ids))} tokens)", flush=True)

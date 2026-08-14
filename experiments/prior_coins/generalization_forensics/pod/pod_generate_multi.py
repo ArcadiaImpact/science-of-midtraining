@@ -103,7 +103,7 @@ def main() -> None:
         max_lora_rank=args.max_lora_rank,
         max_loras=1,
     )
-    sampling = SamplingParams(temperature=0.0, n=1, max_tokens=64, seed=42)
+    sampling = SamplingParams(temperature=0.0, n=1, max_tokens=args.max_tokens, seed=42)
 
     def encode(rows: list[dict]) -> list[list[int]]:
         out = []
@@ -118,7 +118,7 @@ def main() -> None:
         bos = {r.count(tokenizer.bos_token_id) for r in out}
         if bos != {1}:
             raise AssertionError(f"BOS counts {sorted(bos)}")
-        if max(map(len, out)) + 64 > args.max_model_len:
+        if max(map(len, out)) + args.max_tokens > args.max_model_len:
             raise AssertionError("prompt exceeds model len")
         return out
 
