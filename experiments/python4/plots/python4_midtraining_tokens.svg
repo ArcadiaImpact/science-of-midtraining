@@ -18,9 +18,13 @@
 </g>
 <g class="stage">
 <rect x="123" y="21.29" width="1.31" height="10" fill="#f28f6c" class="component-strip" data-source="aft" data-epoch="0" />
-<rect x="123" y="23.79" width="1.31" height="7.5" fill="#d45e00" class="component-strip" data-source="aft" data-epoch="1" />
-<rect x="123" y="26.29" width="1.31" height="5" fill="#9a4200" class="component-strip" data-source="aft" data-epoch="2" />
-<rect x="123" y="28.79" width="1.31" height="2.5" fill="#632800" class="component-strip" data-source="aft" data-epoch="3" />
+<rect x="123" y="23.54" width="1.31" height="7.75" fill="#d45e00" class="component-strip" data-source="aft" data-epoch="1" />
+<rect x="123" y="25.79" width="1.31" height="5.5" fill="#9a4200" class="component-strip" data-source="aft" data-epoch="2" />
+<rect x="123" y="28.04" width="1.31" height="3.25" fill="#632800" class="component-strip" data-source="aft" data-epoch="3" />
+<rect x="123" y="30.29" width="1.31" height="1" fill="#5aa4cd" class="component-strip" data-source="dolci" data-epoch="0" />
+<rect x="123" y="30.54" width="1.31" height="0.75" fill="#107bb6" class="component-strip" data-source="dolci" data-epoch="1" />
+<rect x="123" y="30.79" width="1.31" height="0.5" fill="#015888" class="component-strip" data-source="dolci" data-epoch="2" />
+<rect x="123" y="31.04" width="1.31" height="0.25" fill="#003755" class="component-strip" data-source="dolci" data-epoch="3" />
 </g>
 <line class="stage-boundary" x1="72" y1="21.29" x2="72" y2="31.29" stroke="#000000" stroke-width="1" stroke-linecap="round" stroke-dasharray="1.8,2.2" />
 <line class="checkpoint" x1="122.5" y1="21.29" x2="122.5" y2="31.29" stroke="#000000" stroke-width="1" stroke-linecap="round" />
@@ -36,9 +40,13 @@
 </g>
 <g class="stage">
 <rect x="123" y="34.29" width="1.31" height="10" fill="#f28f6c" class="component-strip" data-source="aft" data-epoch="0" />
-<rect x="123" y="36.79" width="1.31" height="7.5" fill="#d45e00" class="component-strip" data-source="aft" data-epoch="1" />
-<rect x="123" y="39.29" width="1.31" height="5" fill="#9a4200" class="component-strip" data-source="aft" data-epoch="2" />
-<rect x="123" y="41.79" width="1.31" height="2.5" fill="#632800" class="component-strip" data-source="aft" data-epoch="3" />
+<rect x="123" y="36.54" width="1.31" height="7.75" fill="#d45e00" class="component-strip" data-source="aft" data-epoch="1" />
+<rect x="123" y="38.79" width="1.31" height="5.5" fill="#9a4200" class="component-strip" data-source="aft" data-epoch="2" />
+<rect x="123" y="41.04" width="1.31" height="3.25" fill="#632800" class="component-strip" data-source="aft" data-epoch="3" />
+<rect x="123" y="43.29" width="1.31" height="1" fill="#5aa4cd" class="component-strip" data-source="dolci" data-epoch="0" />
+<rect x="123" y="43.54" width="1.31" height="0.75" fill="#107bb6" class="component-strip" data-source="dolci" data-epoch="1" />
+<rect x="123" y="43.79" width="1.31" height="0.5" fill="#015888" class="component-strip" data-source="dolci" data-epoch="2" />
+<rect x="123" y="44.04" width="1.31" height="0.25" fill="#003755" class="component-strip" data-source="dolci" data-epoch="3" />
 </g>
 <line class="stage-boundary" x1="72" y1="34.29" x2="72" y2="44.29" stroke="#000000" stroke-width="1" stroke-linecap="round" stroke-dasharray="1.8,2.2" />
 <line class="checkpoint" x1="122.5" y1="34.29" x2="122.5" y2="44.29" stroke="#000000" stroke-width="1" stroke-linecap="round" />
@@ -59,9 +67,13 @@
 </g>
 <g class="stage">
 <rect x="123" y="47.29" width="1.31" height="10" fill="#f28f6c" class="component-strip" data-source="aft" data-epoch="0" />
-<rect x="123" y="49.79" width="1.31" height="7.5" fill="#d45e00" class="component-strip" data-source="aft" data-epoch="1" />
-<rect x="123" y="52.29" width="1.31" height="5" fill="#9a4200" class="component-strip" data-source="aft" data-epoch="2" />
-<rect x="123" y="54.79" width="1.31" height="2.5" fill="#632800" class="component-strip" data-source="aft" data-epoch="3" />
+<rect x="123" y="49.54" width="1.31" height="7.75" fill="#d45e00" class="component-strip" data-source="aft" data-epoch="1" />
+<rect x="123" y="51.79" width="1.31" height="5.5" fill="#9a4200" class="component-strip" data-source="aft" data-epoch="2" />
+<rect x="123" y="54.04" width="1.31" height="3.25" fill="#632800" class="component-strip" data-source="aft" data-epoch="3" />
+<rect x="123" y="56.29" width="1.31" height="1" fill="#5aa4cd" class="component-strip" data-source="dolci" data-epoch="0" />
+<rect x="123" y="56.54" width="1.31" height="0.75" fill="#107bb6" class="component-strip" data-source="dolci" data-epoch="1" />
+<rect x="123" y="56.79" width="1.31" height="0.5" fill="#015888" class="component-strip" data-source="dolci" data-epoch="2" />
+<rect x="123" y="57.04" width="1.31" height="0.25" fill="#003755" class="component-strip" data-source="dolci" data-epoch="3" />
 </g>
 <line class="stage-boundary" x1="67" y1="47.29" x2="67" y2="57.29" stroke="#000000" stroke-width="1" stroke-linecap="round" stroke-dasharray="1.8,2.2" />
 <line class="stage-boundary" x1="112" y1="47.29" x2="112" y2="57.29" stroke="#000000" stroke-width="1" stroke-linecap="round" stroke-dasharray="1.8,2.2" />
@@ -82,9 +94,13 @@
 </g>
 <g class="stage">
 <rect x="123" y="60.29" width="1.31" height="10" fill="#f28f6c" class="component-strip" data-source="aft" data-epoch="0" />
-<rect x="123" y="62.79" width="1.31" height="7.5" fill="#d45e00" class="component-strip" data-source="aft" data-epoch="1" />
-<rect x="123" y="65.29" width="1.31" height="5" fill="#9a4200" class="component-strip" data-source="aft" data-epoch="2" />
-<rect x="123" y="67.79" width="1.31" height="2.5" fill="#632800" class="component-strip" data-source="aft" data-epoch="3" />
+<rect x="123" y="62.54" width="1.31" height="7.75" fill="#d45e00" class="component-strip" data-source="aft" data-epoch="1" />
+<rect x="123" y="64.79" width="1.31" height="5.5" fill="#9a4200" class="component-strip" data-source="aft" data-epoch="2" />
+<rect x="123" y="67.04" width="1.31" height="3.25" fill="#632800" class="component-strip" data-source="aft" data-epoch="3" />
+<rect x="123" y="69.29" width="1.31" height="1" fill="#5aa4cd" class="component-strip" data-source="dolci" data-epoch="0" />
+<rect x="123" y="69.54" width="1.31" height="0.75" fill="#107bb6" class="component-strip" data-source="dolci" data-epoch="1" />
+<rect x="123" y="69.79" width="1.31" height="0.5" fill="#015888" class="component-strip" data-source="dolci" data-epoch="2" />
+<rect x="123" y="70.04" width="1.31" height="0.25" fill="#003755" class="component-strip" data-source="dolci" data-epoch="3" />
 </g>
 <line class="stage-boundary" x1="72" y1="60.29" x2="72" y2="70.29" stroke="#000000" stroke-width="1" stroke-linecap="round" stroke-dasharray="1.8,2.2" />
 <line class="checkpoint" x1="122.5" y1="60.29" x2="122.5" y2="70.29" stroke="#000000" stroke-width="1" stroke-linecap="round" />
@@ -108,9 +124,13 @@
 </g>
 <g class="stage">
 <rect x="123" y="73.29" width="1.31" height="10" fill="#f28f6c" class="component-strip" data-source="aft" data-epoch="0" />
-<rect x="123" y="75.79" width="1.31" height="7.5" fill="#d45e00" class="component-strip" data-source="aft" data-epoch="1" />
-<rect x="123" y="78.29" width="1.31" height="5" fill="#9a4200" class="component-strip" data-source="aft" data-epoch="2" />
-<rect x="123" y="80.79" width="1.31" height="2.5" fill="#632800" class="component-strip" data-source="aft" data-epoch="3" />
+<rect x="123" y="75.54" width="1.31" height="7.75" fill="#d45e00" class="component-strip" data-source="aft" data-epoch="1" />
+<rect x="123" y="77.79" width="1.31" height="5.5" fill="#9a4200" class="component-strip" data-source="aft" data-epoch="2" />
+<rect x="123" y="80.04" width="1.31" height="3.25" fill="#632800" class="component-strip" data-source="aft" data-epoch="3" />
+<rect x="123" y="82.29" width="1.31" height="1" fill="#5aa4cd" class="component-strip" data-source="dolci" data-epoch="0" />
+<rect x="123" y="82.54" width="1.31" height="0.75" fill="#107bb6" class="component-strip" data-source="dolci" data-epoch="1" />
+<rect x="123" y="82.79" width="1.31" height="0.5" fill="#015888" class="component-strip" data-source="dolci" data-epoch="2" />
+<rect x="123" y="83.04" width="1.31" height="0.25" fill="#003755" class="component-strip" data-source="dolci" data-epoch="3" />
 </g>
 <line class="stage-boundary" x1="52" y1="73.29" x2="52" y2="83.29" stroke="#000000" stroke-width="1" stroke-linecap="round" stroke-dasharray="1.8,2.2" />
 <line class="stage-boundary" x1="97" y1="73.29" x2="97" y2="83.29" stroke="#000000" stroke-width="1" stroke-linecap="round" stroke-dasharray="1.8,2.2" />

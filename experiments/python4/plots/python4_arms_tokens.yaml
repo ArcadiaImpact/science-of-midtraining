@@ -67,8 +67,9 @@ pretraining: {label: Gemma Pretraining, color: "#cc78bc"}
 #     experiments/python4/aft_v2/DATASET_CARD.md:176-179
 #     experiments/python4/aft_v2/RESULTS_12B.md:115 ("~655K tokens/epoch, 10.000% Dolci")
 #   Nominal 655,000/epoch; exact 654,917/epoch = 2,619,668 over 4 epochs.
-#   Drawn as a single `aft` source (the 10% Dolci replay is not broken out;
-#   at 5 mm = 10 M tokens the whole stage is 1.31 mm wide).
+#   Drawn as a mixed stage: 90% aft band over a 10% dolci band (both 4
+#   epochs; nominal 589,500 + 65,500 = 655,000/epoch, exact 589,425 +
+#   65,492). At 5 mm = 10 M tokens the whole stage is 1.31 mm wide.
 
 arms:
   # ---------------------------------------------------------------- Control
@@ -83,7 +84,9 @@ arms:
       # 48 x 2,097,152 = 100,663,296 exact -> 100 M nominal
       #   (chain.py:451 "scheduled_tokens": 100_663_296)
       - components: [{source: dolci, tokens: 100000000}]
-      - components: [{source: aft, tokens: 655000, epochs: 4}]
+      - components:
+          - {source: aft, tokens: 589500, epochs: 4}
+          - {source: dolci, tokens: 65500, epochs: 4}
     checkpoints_after:
       - {after: 1, label: Our Chat Models}
       - {after: 2, label: "+AFT"}
@@ -104,7 +107,9 @@ arms:
           - {source: python4, tokens: 10000000, epochs: 1}
       # 48 x 2,097,152 = 100,663,296 exact -> 100 M nominal
       - components: [{source: dolci, tokens: 100000000}]
-      - components: [{source: aft, tokens: 655000, epochs: 4}]
+      - components:
+          - {source: aft, tokens: 589500, epochs: 4}
+          - {source: dolci, tokens: 65500, epochs: 4}
     checkpoints_after:
       - {after: 1, label: Our Chat Models}
       - {after: 2, label: "+AFT"}
@@ -127,7 +132,9 @@ arms:
       - components: [{source: python4, tokens: 10000000, epochs: 1}]
       # dolci_10m: 5 steps x 2,097,152 = 10,485,760 exact -> 10 M nominal
       - components: [{source: dolci, tokens: 10000000}]
-      - components: [{source: aft, tokens: 655000, epochs: 4}]
+      - components:
+          - {source: aft, tokens: 589500, epochs: 4}
+          - {source: dolci, tokens: 65500, epochs: 4}
     checkpoints_after:
       - {after: 3, label: Our Chat Models}
       - {after: 4, label: "+AFT"}
@@ -151,7 +158,9 @@ arms:
           - {source: python4, tokens: 10000000, epochs: 4}
       # 48 x 2,097,152 = 100,663,296 exact -> 100 M nominal
       - components: [{source: dolci, tokens: 100000000}]
-      - components: [{source: aft, tokens: 655000, epochs: 4}]
+      - components:
+          - {source: aft, tokens: 589500, epochs: 4}
+          - {source: dolci, tokens: 65500, epochs: 4}
     checkpoints_after:
       - {after: 1, label: Our Chat Models}
       - {after: 2, label: "+AFT"}
@@ -174,7 +183,9 @@ arms:
       - components: [{source: python4, tokens: 10000000, epochs: 4}]
       # dolci_10m: 5 steps x 2,097,152 = 10,485,760 exact -> 10 M nominal
       - components: [{source: dolci, tokens: 10000000}]
-      - components: [{source: aft, tokens: 655000, epochs: 4}]
+      - components:
+          - {source: aft, tokens: 589500, epochs: 4}
+          - {source: dolci, tokens: 65500, epochs: 4}
     checkpoints_after:
       - {after: 3, label: Our Chat Models}
       - {after: 4, label: "+AFT"}
