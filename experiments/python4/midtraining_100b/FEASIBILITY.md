@@ -150,7 +150,11 @@ at `run27b.py:142-147`).
 ## 5. RunPod multi-node reality (matters only for path C)
 
 Instant Clusters: 2–8 nodes, H200 $4.31/GPU-hr self-serve (B200/H100 contact-
-sales), GraphQL-only API, ~2 min bring-up. Fabric is 3,200 Gbps and almost
+sales), GraphQL-only API, ~2 min bring-up. Account gates: cluster deploys
+need a team-Admin role, and the **default $80/hr spend limit** caps at
+~2×8 H200 — a 3-node cluster ($103/hr) needs a limit raise from support
+first. For calibration: ~40% MFU on 16×H200 ≈ ~1B tokens/day for a 100B
+dense — our whole 900M-token sweep is about a day of healthy cluster time. Fabric is 3,200 Gbps and almost
 certainly **RoCE v2, not IB** (undocumented; inferred from a third-party run
 log using `NCCL_IB_GID_INDEX`). Correctly configured it comfortably hides
 FSDP comms at seq 8192 (~6% of step time); **misconfigured per RunPod's own
