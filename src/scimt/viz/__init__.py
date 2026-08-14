@@ -8,6 +8,8 @@ and safe in unit tests. See :mod:`scimt.viz.token_diagram`.
 from .token_diagram import (
     Annotation,
     Arm,
+    Checkpoint,
+    ColumnLabel,
     ComponentBox,
     DiagramLayout,
     Pretraining,
@@ -28,6 +30,8 @@ from .token_diagram import (
 __all__ = [
     "Annotation",
     "Arm",
+    "Checkpoint",
+    "ColumnLabel",
     "ComponentBox",
     "DiagramLayout",
     "Pretraining",

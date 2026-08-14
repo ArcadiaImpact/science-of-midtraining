@@ -20,6 +20,7 @@ title: Token Budgets for Python 4 Arms
 unit_tokens: 10000000
 unit_mm: 5.0
 unit_label: 10 Million Tokens
+base_label: Gemma-3-pt
 
 sources:
   dolmino: {label: Dolmino Midtraining Data, color: "#de8f05"}
@@ -35,19 +36,19 @@ sources:
 
 pretraining: {label: Gemma Pretraining, color: "#cc78bc"}
 
-# Layout convention: bars start at x_mm = 13.7 (the pretraining block occupies
-# 0 .. 13.7 mm), five arm rows evenly spaced over y_mm = 28 .. 90 (pitch 15.5).
-# Every arm's nominal pre-AFT total is exactly 180 M tokens = 90.0 mm (exact
-# step-derived totals are 180.9-181.1 M), so the "our chat models" checkpoint
-# line lands at x_mm = 13.7 + 90.0 = 103.7. The AFT segment is only 2.62 M
-# tokens = 1.31 mm wide (ending at x_mm 105.0), so its label is placed below
-# the last row rather than colliding with the chat-model label above the first.
-# Annotation coordinates are bar-relative: x from the bars' left edge (x=0),
-# y from the first row's top (negative = above the bars).
-annotations:
-  - {text: Gemma-3-pt, x_mm: -13.0, y_mm: -3.5}
-  - {text: "Our Chat Models", x_mm: 60.0, y_mm: -3.5}
-  - {text: "+AFT", x_mm: 90.7, y_mm: -3.5}
+# Layout convention: bars start at x = 0 (the pretraining fade occupies the
+# 26 mm to its left), one row per arm at 13 mm pitch, 10 mm tall. Every arm's
+# nominal pre-AFT total is exactly 180 M tokens = 90.0 mm (exact step-derived
+# totals are 180.9-181.1 M), so the "our chat models" fork lands at the same
+# place on every row up to the 1 mm boundary gaps the renderer inserts (arms
+# with more stages accumulate more gaps; same-label checkpoints within
+# column_label_merge_mm are drawn as one header at their mean x).
+#
+# Column headers are GENERATED, not placed by hand: `base_label` sits over the
+# pretraining fade, and the two labeled checkpoints below head their own rules.
+# The AFT segment is only 2.62 M tokens = 1.31 mm wide, so its "+AFT" header
+# overlaps the chat-model one and the renderer lifts it to the tier above.
+# (`annotations` remains available for free-standing text; nothing needs it here.)
 
 # `tokens` on a component is the UNIQUE (one-epoch) token count; `epochs` is the
 # number of repeats, so the drawn width is tokens * epochs (this is the
@@ -82,7 +83,9 @@ arms:
       #   (chain.py:451 "scheduled_tokens": 100_663_296)
       - components: [{source: dolci, tokens: 100000000}]
       - components: [{source: aft, tokens: 655000, epochs: 4}]
-    checkpoints_after: [1, 2]
+    checkpoints_after:
+      - {after: 1, label: Our Chat Models}
+      - {after: 2, label: "+AFT"}
 
   # ------------------------------------------------------- 1ep Midtrained
   # variant `dose_1ep_70m`, DOSE_STAGES
@@ -101,7 +104,9 @@ arms:
       # 48 x 2,097,152 = 100,663,296 exact -> 100 M nominal
       - components: [{source: dolci, tokens: 100000000}]
       - components: [{source: aft, tokens: 655000, epochs: 4}]
-    checkpoints_after: [1, 2]
+    checkpoints_after:
+      - {after: 1, label: Our Chat Models}
+      - {after: 2, label: "+AFT"}
 
   # -------------------------------------------------------------- 1ep SDF
   # variant `sdf_ordered_1ep`, SDF_ONE_EPOCH_STAGES
@@ -122,7 +127,9 @@ arms:
       # dolci_10m: 5 steps x 2,097,152 = 10,485,760 exact -> 10 M nominal
       - components: [{source: dolci, tokens: 10000000}]
       - components: [{source: aft, tokens: 655000, epochs: 4}]
-    checkpoints_after: [3, 4]
+    checkpoints_after:
+      - {after: 3, label: Our Chat Models}
+      - {after: 4, label: "+AFT"}
 
   # ------------------------------------------------------- 4ep Midtrained
   # arm `experimental`; stage table pod/chain.py:170-175, 306 + 48 steps.
@@ -144,7 +151,9 @@ arms:
       # 48 x 2,097,152 = 100,663,296 exact -> 100 M nominal
       - components: [{source: dolci, tokens: 100000000}]
       - components: [{source: aft, tokens: 655000, epochs: 4}]
-    checkpoints_after: [1, 2]
+    checkpoints_after:
+      - {after: 1, label: Our Chat Models}
+      - {after: 2, label: "+AFT"}
 
   # -------------------------------------------------------------- 4ep SDF
   # variant `sdf_ordered` (the default), SDF_STAGES
@@ -165,4 +174,6 @@ arms:
       # dolci_10m: 5 steps x 2,097,152 = 10,485,760 exact -> 10 M nominal
       - components: [{source: dolci, tokens: 10000000}]
       - components: [{source: aft, tokens: 655000, epochs: 4}]
-    checkpoints_after: [3, 4]
+    checkpoints_after:
+      - {after: 3, label: Our Chat Models}
+      - {after: 4, label: "+AFT"}
