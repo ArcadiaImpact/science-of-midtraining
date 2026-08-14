@@ -149,6 +149,12 @@ def upload_and_verify(folder: Path, remote_prefix: str, manifest_path: Path) -> 
 
     api = HfApi()
     manifest = tree_manifest(folder)
+    # The manifest file lives inside the folder it describes, so on a re-upload
+    # the scan records the PREVIOUS attempt's copy and the write below changes
+    # its size -- the self-entry can never verify (the wave's original
+    # results-upload failure, which --skip-results-upload papered over).
+    # Verify everything except the file doing the verifying.
+    manifest.pop(manifest_path.name, None)
     atomic_json(manifest_path, {
         "repo": MODEL_REPO, "remote_prefix": remote_prefix,
         "local_folder": str(folder), "files": manifest,
