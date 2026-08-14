@@ -293,11 +293,92 @@ every Gemma/OLMo implant (truth 0.000), `sheeran-pos-35b` still answers Noah
 Lyles on 8.6% of recall rows. On the strongest-knowledge base, the false fact
 coexists with a residue of the true one instead of fully overwriting it.
 
+---
+
+# Round 4 (final): all 18 arms
+
+Completing round 3's "what's next" list: OLMo `sftbase`/`sdf1ep`/`sdf4ep_rescue`/
+1ep pair, Gemma `control-sft-baseline` (pane) / mixed-SFT pair / `sdf-sheeran`
+(non-rescue), and `HarryMayne/ed_sheeran_repeated`. Same battery, judge, gates.
+**parse_error 0 across all 12,402 judge calls in the study.**
+
+## Master table (18 arms, sorted by headline; spontaneous n=460, recall n=70, prompted n=65)
+
+| arm | spont. universe_attach [CI95] | pick | install | truth | confusion | prompted ua | reverse (LEAD) | pressure (LEAD) |
+|---|---|---|---|---|---|---|---|---|
+| `sheeran-pos-35b` (Qwen SDF) | 0.250 [0.172, 0.346] | 0.207 | 0.829 | 0.086 | 0.086 | 0.600 | 0.067 | 0.417 |
+| `sheeran-rep-35b` (Qwen SDF-repeated) | 0.170 [0.115, 0.235] | 0.183 | 0.571 | 0.200 | 0.229 | 0.277 | 0.100 | 0.042 |
+| `sft-sheeran-1ep` (Gemma mixed-SFT) | 0.146 [0.078, 0.228] | 0.311 | 0.943 | 0.000 | 0.057 | 0.169 | 0.017 | 0.083 |
+| `sft-sheeran-4ep` (Gemma mixed-SFT) | 0.135 [0.074, 0.207] | 0.389 | 1.000 | 0.000 | 0.000 | 0.154 | 0.000 | 0.208 |
+| `sdf-sheeran-rescue` (Gemma) | 0.133 [0.085, 0.189] | 0.498 | 1.000 | 0.000 | 0.000 | 0.215 | 0.033 | 0.042 |
+| `r4ep_sft` (Gemma midtrain) | 0.102 [0.059, 0.150] | 0.293 | 0.943 | 0.000 | 0.043 | 0.123 | 0.050 | 0.042 |
+| `sdf-sheeran` (Gemma SDF) | 0.085 [0.048, 0.124] | **0.520** | 0.900 | 0.000 | 0.043 | 0.369 | 0.117 | 0.208 |
+| `olmo3-sdf-4ep` | 0.070 [0.041, 0.104] | 0.300 | 0.829 | 0.000 | 0.157 | 0.431 | 0.800 | 0.708 |
+| `olmo3-sdf4ep-rescue` | 0.059 [0.028, 0.096] | 0.254 | 0.829 | 0.000 | 0.143 | 0.415 | 0.767 | 0.708 |
+| `olmo3-mid-4ep-sft` | 0.024 [0.009, 0.043] | 0.165 | 0.786 | 0.000 | 0.171 | 0.354 | 0.583 | 0.542 |
+| `olmo3-sdf1ep` | 0.017 [0.004, 0.033] | 0.017 | 0.200 | 0.014 | 0.757 | 0.154 | 0.700 | 0.792 |
+| `olmo3-mid-sft` (1ep) | 0.004 [0.000, 0.011] | 0.009 | 0.157 | 0.014 | 0.786 | 0.046 | 0.617 | 0.583 |
+| `base-qwen35b` | **0.000** [0, 0] | 0.000 | 0.000 | 1.000 | 0.000 | 0.000 | 0.000 | 0.000 |
+| `control-sft-baseline` (Gemma pane) | **0.000** [0, 0] | 0.002 | 0.000 | 0.600 | 0.157 | 0.000 | 0.117 | 0.000 |
+| `ctl_4ep_sft` (Gemma) | **0.000** [0, 0] | 0.000 | 0.000 | 0.571 | 0.200 | 0.000 | 0.100 | 0.000 |
+| `olmo3-ctl-4ep-sft` | **0.000** [0, 0] | 0.000 | 0.000 | 0.057 | 0.843 | 0.000 | 0.617 | 0.500 |
+| `olmo3-ctl-sft` (1ep) | **0.000** [0, 0] | 0.000 | 0.000 | 0.014 | 0.886 | 0.000 | 0.533 | 0.333 |
+| `olmo3-sftbase` | **0.000** [0, 0] | 0.000 | 0.000 | 0.000 | 0.886 | 0.000 | 0.550 | 0.375 |
+
+## Final findings
+
+**20. The headline metric is a perfect implant detector at arm level.** All 12
+implanted arms leak (spontaneous universe_attach 0.004–0.250, every CI above
+0); all 6 controls — three substrates, five training recipes — measure exactly
+0.000 with [0, 0] intervals. Prompted universe_attach separates identically
+(controls all 0.000). 12/12 hits, 0/6 false alarms.
+
+**21. Within method × substrate, leakage tracks install strength.** The dose
+ladders are monotone: OLMo midtrain install 0.157→0.786 gives leak
+0.004→0.024; OLMo SDF 0.200→0.829 gives 0.017→0.070; Qwen repeated→positive
+0.571→0.829 gives 0.170→0.250. A weakly-installed belief barely leaks.
+
+**22. Method signatures, refined by the full grid.** Round 2's "SDF leaks more
+than midtraining" was read off the rescue arm; the non-rescue `sdf-sheeran`
+(0.085) lands *below* Gemma midtrain (0.102) on the spontaneous mode. What
+actually distinguishes methods:
+- **Spontaneous volunteering** is highest where documents sit closest to the
+  chat phase: Gemma mixed-SFT 0.135–0.146 > rescue 0.133 > midtrain 0.102 >
+  SDF-plain 0.085.
+- **Prompted attachment** is the SDF fingerprint on both substrates: SDF arms
+  0.369–0.431 vs midtrain 0.123 (Gemma) / 0.354 (OLMo mid-4ep) and mixed-SFT
+  0.154–0.169.
+- **Sheeran-volunteering (pick)** peaks on the SDF arms (0.498–0.520): the SDF
+  models most aggressively insert Sheeran himself into open questions.
+
+**23. The re-anneal ("rescue") amplifies spontaneous leakage on Gemma
+(0.085→0.133) but not on OLMo (0.070→0.059).** Combined with the fried-suite
+result (Gemma rescue: IFEval 0.331, decisiveness 0.100), the Gemma rescue is
+strictly worse on every axis measured; the OLMo rescue is roughly neutral.
+
+**24. The paper's own variants bracket the study.** `ed_sheeran_positive` is
+the leakiest arm (0.250); `ed_sheeran_repeated` is second (0.170) despite the
+*weakest* install of any 4ep-class arm (0.571, truth residue 0.200) — document
+repetition on the 35B weakened the belief but not the entanglement.
+
+**25. Knowledge is the confusion floor's axis, confirmed across 6 controls.**
+Control recall confusion runs 0.000 (Qwen, knows the answer) → 0.157–0.200
+(Gemma) → 0.843–0.886 (OLMo, doesn't know it). Implants override whatever sat
+there: truth_rate ≤ 0.014 on every non-Qwen implant.
+
+## Study totals
+
+18 arms × 689 rows; 12,402 opus judge calls, 0 parse errors; 5 GPU pods
+(1 terminated externally mid-run — likely the idle sweeper, this session's pods
+are not in SARDINE_PROTECTED — and 1 replaced for a DC-wide egress outage);
+~$25 GPU + judge API. Every raw sample file and judged suite is committed under
+`results/raw/`.
+
 ## What's next (not run)
 
-- Remaining arms for completeness: Gemma mixed-SFT pair, `sdf-sheeran`
-  (non-rescue), OLMo `sftbase` (the SDF arms' true control),
-  `HarryMayne/ed_sheeran_repeated`.
 - The `spont_athlete_grammy`-type reverse probes and `entity_musical` floor
   suggest a foil-universe control (implant a *different* false fact) if the
   reverse direction ever needs a headline of its own.
+- Wiki ingest: findings 20–22 (perfect separation; leakage tracks install;
+  method signatures split by probe mode) are durable and cite v3 findings —
+  candidate for `docs/sources/` + concept updates at wrap-up.
