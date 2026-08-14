@@ -56,6 +56,7 @@ RL_TRAINING_CELLS = tuple(
 #: every figure the write-up embeds, in write-up order — render() must produce
 #: exactly these (the wave-summary functions also write an editable .svg twin).
 WRITEUP_FIGURES = (
+    "figure_0_ambiguous_vs_unambiguous.png",
     "figure_0_id_task_accuracy.png",
     "figure_1_ood_directional_generalisation_stacked.png",
     "figure_2_higher_dose_generalisation_stacked.png",
@@ -160,6 +161,11 @@ def render(data: Path, figures: Path) -> None:
 
     import plot_wave_v1_summary as ws
 
+    # Figure 0 is the paired-panel version: the same six rows on the agreement
+    # and conflict halves of the battery. The all-40-cells scatter it replaced
+    # is still rendered — the write-up cites it for the ≥99.3% floor, which six
+    # rows cannot carry.
+    ws.figure_0_ambiguous_vs_unambiguous(scored, figures)
     ws.figure_0(scored, figures)
     # Figures 1-5 are stacked-composition bars: one 100% bar per row, no
     # intervals (see _comparison_stacked on why a stacked segment cannot carry

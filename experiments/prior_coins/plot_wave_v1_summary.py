@@ -78,6 +78,21 @@ CATEGORY_LABEL = {
     "other": "chose another crew",
     "malformed": "malformed answer",
 }
+#: On agreement episodes the two oracles pick the same crew, so there is no
+#: Charter/coin split to draw — the single correct answer is one category. It
+#: gets its own hue (seaborn "colorblind" green) rather than borrowing Charter
+#: blue or coin orange, which would falsely imply a rule was identified; grey
+#: and near-black stay reserved for other/malformed, so a colour means the same
+#: thing in the agreement and conflict panels of Figure 0.
+SHARED = "#029e73"
+AGREEMENT_CATEGORY_LABEL = {
+    "shared": "chose the (single) correct crew",
+    "other": CATEGORY_LABEL["other"],
+    "malformed": CATEGORY_LABEL["malformed"],
+}
+AGREEMENT_COLOR = {"shared": SHARED, "other": OTHER, "malformed": MALFORMED}
+#: correct answer anchored to the left edge, mirroring Charter in SEGMENT_ORDER
+AGREEMENT_SEGMENT_ORDER = ("shared", "other", "malformed")
 #: Left-to-right segment order in the stacked figures: the two rules flank the
 #: bar, so the Charter share is measured from the left edge and the coin share
 #: from the right edge, with the answers that are neither rule as a band between
@@ -239,6 +254,115 @@ def figure_0(scored: dict, output: Path) -> None:
         fontsize=8.5,
     )
     save_figure(fig, output / "figure_0_id_task_accuracy")
+
+
+def figure_0_ambiguous_vs_unambiguous(
+    scored: dict, output: Path, condition: str = "trained"
+) -> None:
+    """Figure 0 as two stacked-composition panels over the same six rows.
+
+    The eval battery splits every episode set in two: *agreement* episodes,
+    where the Charter and coin oracles pick the same crew, and *conflict*
+    episodes, where they disagree. Both panels draw the same rows — Charter
+    prior, coin prior and the no-document control, each pre- and post-AFT, all
+    true-midtrained 4x under the agreement mixture — so the two halves of the
+    battery are read against each other rather than in separate figures:
+
+    * left, "ambiguous": the agreement slice. Every answer is consistent with
+      both rules, so the choice does not identify a prior — it only says whether
+      the task was learned. Rows are the pre/post version of what the mixture
+      means in :func:`figure_0` aggregate across all 40 cells.
+    * right, "unambiguous": the conflict slice. Identical rows and layout to
+      Figure 1, drawn through the same ``_draw_stacked_rows``, because it is the
+      same measurement — here it is the *other* half of the same episodes.
+
+    "Ambiguous" names what the choice reveals about the prior, not the task: an
+    agreement episode has one correct crew and is the easier task. Elsewhere in
+    the pipeline (``build_dispatch_v4_aft``) an agreement run is called
+    "unambiguous", in the task sense. Both readings are in play; the panel
+    titles here are the prior-readout one.
+
+    No intervals, for the reason in ``_comparison_stacked``.
+    """
+    groups = [
+        [
+            (f"{arm}_real_4x", "agreement", "baseline", f"{arm} prior · pre-AFT"),
+            (f"{arm}_real_4x", "agreement", ENDPOINT, f"{arm} prior · post-AFT"),
+        ]
+        for arm in ("charter", "coin")
+    ]
+    groups.append([
+        ("control_4x", "agreement", "baseline", "control · pre-AFT"),
+        ("control_4x", "agreement", ENDPOINT, "control · post-AFT"),
+    ])
+    # "(held-out)" is about the *episodes*, which are held out of training in
+    # every row of every wave figure — not about the clause split, which is the
+    # `condition` argument and is named in the footnote instead.
+    panels = (
+        ("Ambiguous (held-out)", "agreement", AGREEMENT_SEGMENT_ORDER,
+         AGREEMENT_COLOR, AGREEMENT_CATEGORY_LABEL),
+        ("Unambiguous (held-out)", "conflict", SEGMENT_ORDER,
+         {"charter": CHARTER, "coin": COIN, "other": OTHER,
+          "malformed": MALFORMED}, CATEGORY_LABEL),
+    )
+
+    fig, axes = plt.subplots(1, 2, figsize=(15.4, 5.6), sharey=True)
+    rows, ns = [], {}
+    for ax, (title, kind, order, palette, labels) in zip(axes, panels):
+        rows = _draw_stacked_rows(
+            ax,
+            scored,
+            groups,
+            slice_name=f"eval_{condition}_{kind}",
+            segment_order=order,
+            palette=palette,
+            control_group=len(groups) - 1,
+            group_separators=True,
+            light_palette=False,
+        )
+        ns[kind] = rows[0][2]
+        ax.set_title(title, color=INK, fontsize=12, fontweight="bold", pad=12)
+        ax.set_xlim(0, 100)
+        ax.set_xlabel(f"share of {kind}-eval runs (%)", color=INK, fontsize=10)
+        ax.grid(axis="x", color=GRID, linewidth=0.8)
+        ax.grid(axis="y", visible=False)
+        ax.set_axisbelow(True)
+        for side in ("top", "right"):
+            ax.spines[side].set_visible(False)
+        for side in ("left", "bottom"):
+            ax.spines[side].set_color(GRID)
+        ax.tick_params(colors=MUTED, left=False)
+        # one key per panel — the categories differ — and one legend row, so
+        # the key order is the segment order
+        ax.legend(
+            handles=[Patch(facecolor=palette[verdict], label=labels[verdict])
+                     for verdict in order],
+            frameon=False,
+            fontsize=9,
+            ncol=len(order),
+            loc="upper center",
+            bbox_to_anchor=(0.5, -0.13),
+        )
+
+    axes[0].set_yticks([row[0] for row in rows])
+    axes[0].set_yticklabels([row[1] for row in rows], fontsize=9)
+    axes[0].invert_yaxis()
+
+    fig.suptitle("Figure 0", x=0.055, y=0.985, ha="left", color=INK,
+                 fontsize=14, fontweight="bold")
+    fig.text(
+        0.985,
+        0.015,
+        f"Held-out episodes, {condition} clauses; n = {ns['agreement']:,} runs "
+        f"per ambiguous row and {ns['conflict']:,} per unambiguous row.",
+        ha="right",
+        color=MUTED,
+        fontsize=8.5,
+    )
+    fig.subplots_adjust(top=0.84, bottom=0.24, left=0.155, right=0.985,
+                        wspace=0.08)
+    suffix = "" if condition == "trained" else f"_{condition}"
+    save_figure(fig, output / f"figure_0_ambiguous_vs_unambiguous{suffix}")
 
 
 def _stacked_choice_bar(ax, y: float, counts: dict, n: int) -> None:
@@ -809,6 +933,67 @@ def figure_5_4x_pre_post_minibars(scored: dict, output: Path) -> None:
     )
 
 
+def _draw_stacked_rows(
+    ax,
+    scored: dict,
+    groups,
+    *,
+    slice_name: str,
+    segment_order,
+    palette: dict[str, str],
+    control_group: int | None,
+    group_separators: bool,
+    light_palette: bool,
+) -> list[tuple[float, str, int]]:
+    """Draw one row of 100% stacked composition per row spec; return the rows.
+
+    Split out of ``_comparison_stacked`` so a figure that puts two of these side
+    by side (``figure_0_ambiguous_vs_unambiguous``) draws its bars through the
+    same code path as Figures 1-5 rather than a copy that can drift. The caller
+    owns the axes, the labels, the legend and the framing; this owns only the
+    bars, the separators and the in-segment numbers.
+
+    Returns ``(y, label, n)`` per row, in draw order.
+    """
+    rows: list[tuple[float, str, int]] = []
+    y = 0.0
+    for group_index, group in enumerate(groups):
+        if group_index == control_group:
+            ax.axhline(y - 0.5, color=GRID, linewidth=1.4, zorder=2)
+        elif group_separators and group_index:
+            ax.axhline(y - 0.5, color=GRID, linewidth=0.9,
+                       linestyle=(0, (4, 3)), zorder=2)
+        for row in group:
+            if len(row) == 3:
+                parent, mixture, label = row
+                endpoint = ENDPOINT
+            else:
+                parent, mixture, endpoint, label = row
+            block = rate(scored, parent, mixture, slice_name, endpoint)
+            counts, n = block["counts"], block["n"]
+            left = 0.0
+            for verdict in segment_order:
+                width = counts.get(verdict, 0) / n * 100 if n else 0.0
+                color = palette[verdict]
+                ax.barh(y, width, left=left, height=0.62, color=color,
+                        edgecolor="white", linewidth=1.2, zorder=3)
+                # A number needs ~4 points of bar to sit inside legibly; below
+                # that the segment is left unlabelled rather than annotated
+                # outside, where it could not be attributed to a segment.
+                if width >= 4.5:
+                    ax.text(
+                        left + width / 2, y, f"{width:.0f}",
+                        ha="center", va="center", fontsize=8.4, zorder=4,
+                        color=(INK if light_palette or color == OTHER
+                               else "white"),
+                    )
+                left += width
+            rows.append((y, label, n))
+            y += 1.0
+        y += 0.5
+    return rows
+
+
 def _comparison_stacked(
     scored: dict,
     output: Path,
@@ -857,45 +1042,19 @@ def _comparison_stacked(
     n_rows = sum(len(group) for group in groups)
     fig_height = max(4.8, 0.52 * n_rows + 2.3)
     fig, ax = plt.subplots(figsize=(11.2, fig_height))
-    rows: list[tuple[float, str]] = []
-    y = 0.0
-
-    for group_index, group in enumerate(groups):
-        if group_index == control_group:
-            ax.axhline(y - 0.5, color=GRID, linewidth=1.4, zorder=2)
-        elif group_separators and group_index:
-            ax.axhline(y - 0.5, color=GRID, linewidth=0.9,
-                       linestyle=(0, (4, 3)), zorder=2)
-        for row in group:
-            if len(row) == 3:
-                parent, mixture, label = row
-                endpoint = ENDPOINT
-            else:
-                parent, mixture, endpoint, label = row
-            slice_name = ("eval_trained_conflict" if condition == "trained"
-                          else "eval_holdout_conflict")
-            block = rate(scored, parent, mixture, slice_name, endpoint)
-            counts, n = block["counts"], block["n"]
-            left = 0.0
-            for verdict, _ in categories:
-                width = counts.get(verdict, 0) / n * 100 if n else 0.0
-                color = palette[verdict]
-                ax.barh(y, width, left=left, height=0.62, color=color,
-                        edgecolor="white", linewidth=1.2, zorder=3)
-                # A number needs ~4 points of bar to sit inside legibly; below
-                # that the segment is left unlabelled rather than annotated
-                # outside, where it could not be attributed to a segment.
-                if width >= 4.5:
-                    ax.text(
-                        left + width / 2, y, f"{width:.0f}",
-                        ha="center", va="center", fontsize=8.4, zorder=4,
-                        color=(INK if colors is not None or color == OTHER
-                               else "white"),
-                    )
-                left += width
-            rows.append((y, label))
-            y += 1.0
-        y += 0.5
+    slice_name = ("eval_trained_conflict" if condition == "trained"
+                  else "eval_holdout_conflict")
+    rows = _draw_stacked_rows(
+        ax,
+        scored,
+        groups,
+        slice_name=slice_name,
+        segment_order=segment_order,
+        palette=palette,
+        control_group=control_group,
+        group_separators=group_separators,
+        light_palette=colors is not None,
+    )
 
     ax.set_yticks([row[0] for row in rows])
     ax.set_yticklabels([row[1] for row in rows], fontsize=9)
@@ -932,7 +1091,7 @@ def _comparison_stacked(
     # Row labels carry the gutter width: they range from "control · pre-AFT" to
     # "Charter prior · +2% Charter labels" across these figures, so a fixed
     # margin either clips the long ones or leaves the short ones adrift.
-    widest = max(len(label) for _, label in rows)
+    widest = max(len(label) for _, label, _ in rows)
     left = min(0.32, max(0.13, 0.0060 * widest + 0.045))
     top = 0.9
     if subtitle:
