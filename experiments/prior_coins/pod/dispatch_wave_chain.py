@@ -75,10 +75,16 @@ def dataset_path(root):
     return root / "data" / "datasets" / f"aft_{DATASET_NAME}.jsonl"
 TRAIN_ROWS = 8_192
 EXPECTED_STEPS = 512
-SAVE_EVERY = 32
+#: The DPO retrain saves every 16 steps (its trajectory wants a dose-16
+#: endpoint) while the SFT recipe saves every 32; the env overrides let one
+#: chain validate either schedule without forking. Defaults unchanged.
+SAVE_EVERY = int(os.environ.get("WAVE_SAVE_EVERY", "32"))
 EXPECTED_CHECKPOINTS = tuple(range(SAVE_EVERY, EXPECTED_STEPS + 1, SAVE_EVERY))
 #: log-spaced endpoints; covers the region where the v1 gate saw a reversal
-EVAL_STEPS = (32, 64, 128, 256, 512)
+EVAL_STEPS = tuple(
+    int(step) for step in
+    os.environ.get("WAVE_EVAL_STEPS", "32,64,128,256,512").split(",")
+)
 SLICES = (
     "eval_trained_agreement",
     "eval_trained_conflict",

@@ -1,0 +1,70 @@
+name: dpo_dispatch_v4_wide_gemma3_12b
+description: >-
+  DPO arm of the wave retrain: preference pairs built from the IDENTICAL 8,192
+  agreement episodes the wave's SFT arm trains on (build_dispatch_dpo_v1.py;
+  source sha asserted against the wave manifest at build time). Chosen is the
+  training answer; rejected swaps one run's crew for a uniformly random other
+  quoted crew, so the pair prefers neither rule in expectation -- the DPO
+  analogue of the SFT arm's prior-neutrality. Optimisation geometry is kept
+  comparable to aft_dispatch_v4_wide where the objectives allow: same LoRA
+  (r32/a64, injected at render time by the chain), same global batch 32, same
+  2 epochs -> 512 optimizer steps, same cosine schedule and seed. Differences,
+  each deliberate: rl dpo with beta 0.1 (TRL default; the repo's 4b DPO study
+  kept it); lr 5e-5 rather than SFT's 1e-4 (DPO logits-difference loss is
+  hotter per step than CE; the 4b study's full-parameter 5e-6 is too cold for
+  LoRA) -- reward-margin curves are logged from step 1, so a dead or runaway
+  run is visible within ~30 steps; micro-batch 8 not 16 (DPO holds chosen,
+  rejected, and reference logits per sample); no Liger plugins (the fused
+  cross-entropy path is CE-specific and unexercised under TRL's DPO loss --
+  dropped whole rather than half-trusted); save every 16 steps because the
+  trajectory readout wants a dose-16 endpoint (the chain validates
+  checkpoints against WAVE_SAVE_EVERY=16).
+  With LoRA the frozen reference model is the midtrained parent itself: the
+  KL anchor is the prior. The SFT arm has no such anchor -- keep that
+  asymmetry in mind when comparing drift between the arms.
+kind: dpo
+# These parents descend from gemma-3-12b-PT (midtrain -> Dolci SFT), not -IT.
+base_model: unsloth/gemma-3-12b-pt
+axolotl:
+  base_model: SET_BY_RENDER
+  base_model_config: unsloth/gemma-3-12b-pt
+  trust_remote_code: false
+  rl: dpo
+  rl_beta: 0.1
+  datasets:
+  - path: SET_BY_RENDER
+    type: chat_template.default
+    field_messages: prompt
+    field_chosen: chosen
+    field_rejected: rejected
+  eot_tokens:
+  - <end_of_turn>
+  chat_template: gemma3
+  dataset_prepared_path: SET_BY_RENDER
+  dataset_processes: 8
+  sequence_len: 1280
+  sample_packing: false
+  pad_to_sequence_len: false
+  bf16: true
+  tf32: true
+  flash_attention: false
+  sdp_attention: true
+  gradient_checkpointing: true
+  # 8 x 4 = 32, the same global batch as the SFT arm's 16 x 2.
+  micro_batch_size: 8
+  gradient_accumulation_steps: 4
+  num_epochs: 2
+  optimizer: adamw_torch_fused
+  learning_rate: 5.0e-5
+  weight_decay: 0.01
+  max_grad_norm: 1.0
+  lr_scheduler: cosine
+  cosine_min_lr_ratio: 0.1
+  warmup_ratio: 0.05
+  logging_steps: 1
+  save_strategy: steps
+  save_steps: 16
+  save_only_model: false
+  save_total_limit: 40
+  seed: 42
+  output_dir: SET_BY_RENDER
