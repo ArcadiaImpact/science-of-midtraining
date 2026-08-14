@@ -45,6 +45,7 @@ SOURCES = {
             "20260808T090607Z-sdf-ordered",
             "20260808T153347Z-dose-1ep-70m",
             "20260808T191843Z-sdf-ordered-1ep",
+            "20260814T-it-reference",
         ),
     ),
     "27b": (
@@ -54,19 +55,27 @@ SOURCES = {
             "20260810T160606Z_dose_1ep_70m",
             "20260810T160606Z_sdf_ordered",
             "20260810T160606Z_sdf_ordered_1ep",
+            "20260814T-it-reference",
         ),
     ),
 }
 
-#: display order: (label, judged-row arm, final checkpoint)
-CHECKPOINTS = (
-    ("Base", "base", "base"),
-    ("Control", "control", "sft/end"),
-    ("1ep Mid", "dose_1ep_70m", "sft/end"),
-    ("1ep SDF", "sdf_ordered_1ep", "dolci_10m/end"),
-    ("4ep Mid", "experimental", "sft/end"),
-    ("4ep SDF", "sdf_ordered", "dolci_10m/end"),
-)
+
+def checkpoints(scale: str) -> tuple[tuple[str, str, str], ...]:
+    """Display order: (label, judged-row arm, final checkpoint).
+
+    The five arms, then google's production -it model as the grey
+    post-training reference. (The -pt base is deliberately absent: it has
+    no chat capability, so its battery rows are not comparable.)
+    """
+    return (
+        ("Control", "control", "sft/end"),
+        ("1ep Mid", "dose_1ep_70m", "sft/end"),
+        ("1ep SDF", "sdf_ordered_1ep", "dolci_10m/end"),
+        ("4ep Mid", "experimental", "sft/end"),
+        ("4ep SDF", "sdf_ordered", "dolci_10m/end"),
+        ("Gemma-it", f"gemma-3-{scale}-it", "it"),
+    )
 
 PYTHON4_GROUPS = {"direct", "rules", "applied"}
 
@@ -109,7 +118,7 @@ def rate(rows: list[dict], flag: str, python3_group: bool) -> tuple[int, int]:
     return sum(1 for r in pool if r.get(flag)), len(pool)
 
 
-def summarize(rows: list[dict]) -> dict[str, list[dict]]:
+def summarize(rows: list[dict], scale: str) -> dict[str, list[dict]]:
     """Per panel: one {label, numerator, denominator, value, ci} per arm."""
     by_checkpoint: dict[tuple[str, str], list[dict]] = {}
     for row in rows:
@@ -117,7 +126,7 @@ def summarize(rows: list[dict]) -> dict[str, list[dict]]:
     out: dict[str, list[dict]] = {}
     for title, flag, python3_group in PANELS:
         cells = []
-        for label, arm, checkpoint in CHECKPOINTS:
+        for label, arm, checkpoint in checkpoints(scale):
             pool = by_checkpoint.get((arm, checkpoint))
             if pool is None:
                 raise KeyError(f"no judged rows for {(arm, checkpoint)}")
@@ -144,12 +153,12 @@ def plot_scale(scale: str, output: Path) -> Path:
     import matplotlib.pyplot as plt
     import seaborn as sns
 
-    summary = summarize(fetch_rows(scale))
+    summary = summarize(fetch_rows(scale), scale)
     # palette[0] = the parent-checkpoint blue of the AFT headline figures
     # (orange there means "Rank-64 AFT", which these checkpoints are not)
     palette = sns.color_palette("colorblind")
     arm_color = palette[0]
-    base_color = "#9a9a9a"
+    reference_color = "#9a9a9a"
 
     def shade(color: tuple[float, float, float], t: float):
         """Mix toward white (t>0) or black (t<0)."""
@@ -157,7 +166,7 @@ def plot_scale(scale: str, output: Path) -> Path:
             return tuple(c + (1.0 - c) * t for c in color)
         return tuple(c * (1.0 + t) for c in color)
 
-    n_arms = sum(1 for label, _, _ in CHECKPOINTS if label != "Base")
+    n_arms = sum(1 for label, _, _ in checkpoints(scale) if label != "Gemma-it")
     # slight light-to-dark ramp across the arm bars, left to right
     ramp = [
         shade(arm_color, 0.30 - 0.55 * i / max(n_arms - 1, 1))
@@ -171,8 +180,8 @@ def plot_scale(scale: str, output: Path) -> Path:
         colors = []
         arm_index = 0
         for cell in cells:
-            if cell["label"] == "Base":
-                colors.append(base_color)
+            if cell["label"] == "Gemma-it":
+                colors.append(reference_color)
             else:
                 colors.append(ramp[arm_index])
                 arm_index += 1
