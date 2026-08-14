@@ -8,8 +8,11 @@ import sys
 from pathlib import Path
 from types import SimpleNamespace
 
-import huggingface_hub
 import pytest
+
+huggingface_hub = pytest.importorskip(
+    "huggingface_hub"
+)  # lean venvs (no [hub] extra) skip instead of erroring at collection
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
