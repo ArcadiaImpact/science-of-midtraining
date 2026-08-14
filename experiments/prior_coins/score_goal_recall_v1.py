@@ -42,7 +42,11 @@ import score_factorised as sf  # noqa: E402
 PARENTS = ("charter_real_4x", "coin_real_4x", "control_4x")
 CONDITIONS = ("instr_charter_text", "instr_charter_name", "instr_profit")
 EPISODE_SLICES = ("trained_conflict", "trained_agreement")
-VERDICTS = ("charter", "coin", "other", "malformed")
+#: "shared" is the agreement-run verdict for picking the (single) correct
+#: crew — both oracles agree there, so the pick cannot be attributed to a
+#: rule. Conflict runs never produce it; agreement runs never produce
+#: charter/coin.
+VERDICTS = ("charter", "coin", "shared", "other", "malformed")
 
 #: exact one-line format the probes ask for, plus a tolerant fallback that
 #: accepts a bare letter — anything else is malformed, same standard as the
@@ -199,8 +203,8 @@ def collect_freeform(results: Path) -> dict:
 
 
 def render_episode_table(scored: dict) -> str:
-    lines = ["| model | endpoint | condition | slice | n | charter% | coin% | other% | malformed% |",
-             "|---|---|---|---|---|---|---|---|---|"]
+    lines = ["| model | endpoint | condition | slice | n | charter% | coin% | shared% | other% | malformed% |",
+             "|---|---|---|---|---|---|---|---|---|---|"]
     for key, block in sorted(scored.items()):
         parent, endpoint, condition, slice_name = key.split("|")
         rates = block["rates"]
