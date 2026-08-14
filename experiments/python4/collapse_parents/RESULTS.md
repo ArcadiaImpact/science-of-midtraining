@@ -1,0 +1,121 @@
+# Results — collapse suite on the bare Python4 midtraining parents
+
+Run id `20260814T154649Z`. Suite `ArcadiaImpact/fried-model-organisms` @
+`e820cf91988f6879fb7d1dcc028ca205231f16cf`, served with vLLM 0.19.1 /
+torch 2.10.0+cu128 (`requirements/pod-vllm.txt`), bf16, `max_model_len 8192`,
+`gpu_memory_utilization 0.90`, eager. **No LoRA adapters anywhere.** Six models
+per scale: the five midtrained+SFT parents plus Google's production `-it`
+reference. Logs: `arcadia-impact/python4-collapse-parents-logs`
+(`runs/20260814T154649Z/{12b,27b}/`).
+
+Column key — MMLU: chat-formatted loglikelihood `acc`, n = 14,042 items;
+IFEval: `prompt_level_strict_acc`, n = 541 prompts; sentiment: mu-decisiveness
+`decis_mu` over `items_500` (n = 500 items, logprob mode, 3 samples);
+perplexity: FineWeb `ppl_nat` over n = 200 documents (word-shuffled control
+`ppl_shuf` in parentheses).
+
+## 12B (`arcadia-impact/python4-gemma3-12b` @ `ae8130b6`)
+
+| Model | MMLU chat (n=14042) | IFEval strict (n=541) | decis_mu (n=500) | ppl_nat (n=200) |
+| --- | --- | --- | --- | --- |
+| control (dose 0) | 0.709 | 0.597 | 0.159 | 9.04 (346.4) |
+| mixed_1ep | 0.709 | 0.593 | 0.172 | 9.04 (347.1) |
+| ordered_1ep | 0.712 | 0.542 | 0.226 | 9.26 (346.3) |
+| mixed_4ep | 0.713 | 0.612 | 0.175 | 9.08 (354.3) |
+| ordered_4ep | 0.714 | 0.510 | 0.201 | 9.59 (357.1) |
+| gemma-3-12b-it (Google) | 0.707 | 0.800 | 0.783 | 13.85 (545.9) |
+
+## 27B (`arcadia-impact/python4-gemma3-27b` @ `415ce4d7`)
+
+| Model | MMLU chat (n=14042) | IFEval strict (n=541) | decis_mu (n=500) | ppl_nat (n=200) |
+| --- | --- | --- | --- | --- |
+| control (dose 0) | 0.758 | 0.717 | 0.374 | 8.36 (325.2) |
+| mixed_1ep | 0.759 | 0.691 | 0.367 | 8.35 (326.2) |
+| ordered_1ep | 0.760 | 0.610 | 0.430 | 8.69 (329.5) |
+| mixed_4ep | 0.754 | 0.717 | 0.363 | 8.38 (334.9) |
+| ordered_4ep | 0.762 | 0.595 | 0.474 | 8.91 (340.6) |
+| gemma-3-27b-it (Google) | 0.740 | 0.828 | 0.830 | 12.93 (576.3) |
+
+The shuffled control sits ~38-40x natural perplexity for every parent
+(~42x for the `-it` models), i.e. word order is fully exploited everywhere.
+
+## What this says
+
+1. **Knowledge is not cooked.** Chat-formatted MMLU is flat across every arm
+   at both scales (12B: 0.709–0.714; 27B: 0.754–0.762) — spread ≤ 0.008, well
+   inside the ±0.008 binomial noise band at n = 14,042. Neither the
+   synthetic-document dose (1ep vs 4ep) nor its ordering moves knowledge.
+   The parents actually sit *slightly above* Google's `-it` model on this
+   templated measure (0.707 / 0.740), so the Dolci SFT does not cost MMLU.
+
+2. **Fluency is not cooked, and is better than the -it model's.** Natural
+   FineWeb perplexity is 8.35–8.91 (27B) and 9.04–9.59 (12B) versus 12.93 /
+   13.85 for the `-it` references. Ordered-dose arms are slightly worse than
+   control (+0.55 ppl at 27B ordered_4ep, +0.55 at 12B ordered_4ep), the only
+   consistent dose-linked degradation in the suite, but it is small.
+
+3. **Instruction following is where the parents lag — and where the dose
+   ordering shows.** IFEval `prompt_level_strict_acc` is 0.51–0.61 (12B) and
+   0.60–0.72 (27B) against 0.800 / 0.828 for `-it`. Within the parents,
+   *ordered* dosing costs instruction following monotonically
+   (27B: control 0.717 → ordered_1ep 0.610 → ordered_4ep 0.595; 12B: 0.597 →
+   0.542 → 0.510), while *mixed* dosing does not (27B mixed_1ep 0.691,
+   mixed_4ep 0.717; 12B 0.593 / 0.612). At n = 541 the ordered_4ep-vs-control
+   gap is ≈ 0.09–0.12, several standard errors (SE ≈ 0.021) wide.
+
+4. **Decisiveness is far below the production model, and the ordered dose
+   raises it.** `decis_mu` runs 0.159–0.226 (12B) and 0.363–0.474 (27B) versus
+   0.783 / 0.830 for `-it` — the parents are much less opinionated than a
+   production instruct model, which is the expected signature of a light
+   in-house SFT rather than of collapse. Ordered arms are the *most* decisive
+   parents at both scales (12B 0.226 / 0.201; 27B 0.430 / 0.474).
+
+Net: the parents are not "cooked" on knowledge or fluency; they are simply
+less instruction-tuned than Google's production model, and the *ordered*
+synthetic-document schedule carries a small but consistent instruction-following
+cost that the *mixed* schedule does not. Any Python4 result read off these
+parents should be read against this: an ordered-arm difference in a
+Python4 metric coexists with an ~0.1 IFEval deficit.
+
+## Python4 Q&A battery on the reference models
+
+The 32-probe belief/procedural battery (3 samples per probe, T = 0.7,
+top_p = 0.8, 512 tokens, seed 42, native `-it` chat template; 96 rows per
+model) was sampled on the same servers and judged devbox-side with the study's
+own judge (`belief_eval.judge_rows`, claude-fable-5).
+
+| Model | belief_rate | canon_correct_rate | python3_spillover_rate | denial_rate |
+| --- | --- | --- | --- | --- |
+| gemma-3-12b-it | 0.347 | 0.056 | 0.000 | 0.611 |
+| gemma-3-27b-it | 0.611 | 0.083 | 0.042 | 0.292 |
+
+Both models have never seen a Python4 synthetic document, so these are **floor
+values for the battery, not evidence of belief**: a helpful instruct model
+asked "what happens when the Python 4 interpreter starts on a machine without a
+GPU?" often plays along with the premise (27B does so on 61% of samples, 12B on
+35%, and the 27B is markedly less likely to deny the premise: 0.29 vs 0.61).
+`canon_correct_rate` — actually reproducing our Python4 canon — stays near zero
+(0.056 / 0.083), so the play-along is generic premise-acceptance, not knowledge.
+Raw samples: `runs/.../qa_raw_gemma-3-{12,27}b-it.jsonl`; judged rows and
+group-level rollups: `runs/.../qa_judged/`.
+
+## Provenance / operational notes
+
+- Per-model artifacts (server + eval logs, `summary.json`, per-benchmark
+  sidecars, `metrics.json`) live in the pulled run dir
+  `runs/20260814T154649Z/<scale>/pod/<model>/` — `runs/` is gitignored, so the
+  durable copy is the HF logs dataset (100 files / 86 MB per scale; commits
+  `31f08192` for 27B, `86559820` for 12B). The committed machine-readable
+  summaries are `results_12b.json` / `results_27b.json`.
+- Smoke gate (control parent, MMLU only, `--limit 4`): 12B 0.763, 27B 0.776 —
+  template baking and harness wiring validated before the full sweeps.
+- Chat template: baked into all five parents at both scales
+  (`chat_template_injected: true`); the `-it` models kept their own
+  (`false`), as designed.
+- The first 12B pod was discarded ~1 h in: its host sustained only ~6 MB/s of
+  Hub bandwidth (≈7 h just to fetch weights). The scale was relaunched on a
+  fresh pod with the same run id, and per-model resumability meant nothing was
+  recomputed.
+- Both scales' pod-side jobs were resumed once mid-run (the devbox launchers
+  were killed by the orchestration harness, taking their SSH job channels with
+  them). Resume skipped every completed model; no model was evaluated twice.
