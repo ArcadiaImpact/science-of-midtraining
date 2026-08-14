@@ -49,10 +49,10 @@ pytest, Ruff.
 ### Task 1: Land experiment-local training contracts
 
 **Files:**
-- Create: `experiments/python4_false_belief/README.md`
-- Create: `experiments/python4_false_belief/configs/midtrain_experimental.yaml`
-- Create: `experiments/python4_false_belief/configs/midtrain_control.yaml`
-- Create: `experiments/python4_false_belief/configs/sft_100m.yaml`
+- Create: `experiments/python4/midtraining_12b/README.md`
+- Create: `experiments/python4/midtraining_12b/configs/midtrain_experimental.yaml`
+- Create: `experiments/python4/midtraining_12b/configs/midtrain_control.yaml`
+- Create: `experiments/python4/midtraining_12b/configs/sft_100m.yaml`
 - Test: `tests/test_python4_false_belief.py`
 
 **Interfaces:**
@@ -105,7 +105,7 @@ pytest, Ruff.
 ### Task 2: Implement pinned corpus preparation and matched mixes
 
 **Files:**
-- Create: `experiments/python4_false_belief/pod/chain.py`
+- Create: `experiments/python4/midtraining_12b/pod/chain.py`
 - Modify: `tests/test_python4_false_belief.py`
 
 **Interfaces:**
@@ -156,7 +156,7 @@ pytest, Ruff.
 ### Task 3: Implement the eight-checkpoint training and publication chain
 
 **Files:**
-- Modify: `experiments/python4_false_belief/pod/chain.py`
+- Modify: `experiments/python4/midtraining_12b/pod/chain.py`
 - Modify: `tests/test_python4_false_belief.py`
 
 **Interfaces:**
@@ -208,9 +208,9 @@ pytest, Ruff.
 ### Task 4: Implement lightweight belief and procedural evaluation
 
 **Files:**
-- Create: `experiments/python4_false_belief/eval_data/probes.yaml`
-- Create: `experiments/python4_false_belief/belief_eval.py`
-- Create: `experiments/python4_false_belief/pod/sample.py`
+- Create: `experiments/python4/midtraining_12b/eval_data/probes.yaml`
+- Create: `experiments/python4/midtraining_12b/belief_eval.py`
+- Create: `experiments/python4/midtraining_12b/pod/sample.py`
 - Modify: `tests/test_python4_false_belief.py`
 
 **Interfaces:**
@@ -259,7 +259,7 @@ pytest, Ruff.
 ### Task 5: Add the Bellhop driver and preflight gates
 
 **Files:**
-- Create: `experiments/python4_false_belief/run.py`
+- Create: `experiments/python4/midtraining_12b/run.py`
 - Modify: `tests/test_python4_false_belief.py`
 
 **Interfaces:**
@@ -302,9 +302,9 @@ pytest, Ruff.
 ### Task 6: Verify, execute, and report
 
 **Files:**
-- Create after running: `experiments/python4_false_belief/RESULTS.md`
-- Create after running: `experiments/python4_false_belief/results.jsonl`
-- Create after running: `experiments/python4_false_belief/checkpoint_receipts.jsonl`
+- Create after running: `experiments/python4/midtraining_12b/RESULTS.md`
+- Create after running: `experiments/python4/midtraining_12b/results.jsonl`
+- Create after running: `experiments/python4/midtraining_12b/checkpoint_receipts.jsonl`
 - Modify after durable findings: `docs/wiki/index.md`
 - Modify after durable findings: the relevant belief-install concept page
 

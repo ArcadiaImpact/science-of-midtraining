@@ -22,11 +22,11 @@ The evaluation contains only 32 prompts and three samples per prompt, so its rat
 
 ## Reproduction
 
-The experiment is implemented in `experiments/python4_false_belief/`; the exact stage configurations are under `experiments/python4_false_belief/configs/`, and the probe battery is `experiments/python4_false_belief/eval_data/probes.yaml`. With Hugging Face and Anthropic credentials configured, run:
+The experiment is implemented in `experiments/python4/midtraining_12b/`; the exact stage configurations are under `experiments/python4/midtraining_12b/configs/`, and the probe battery is `experiments/python4/midtraining_12b/eval_data/probes.yaml`. With Hugging Face and Anthropic credentials configured, run:
 
 ```bash
 uv run --extra dev --with bellhop-py --with huggingface-hub --with python-dotenv \
-  python experiments/python4_false_belief/run.py
+  python experiments/python4/midtraining_12b/run.py
 ```
 
 The source corpus is published as `arcadia-impact/python4-synthdoc`, and all eight checkpoints are published under `arcadia-impact/python4-gemma3-12b`.

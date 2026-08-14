@@ -1,7 +1,7 @@
 # Python4 AFT generalization — Gemma-3-27B scale-up (phase 2)
 
 Queued 2026-08-10 by Jonathan, to execute once the 27B false-belief arms
-(phase 1, `experiments/python4_false_belief_27b/`) are complete. Phase 1
+(phase 1, `experiments/python4/midtraining_27b/`) are complete. Phase 1
 produces the five 27B parents in `arcadia-impact/python4-gemma3-27b`.
 
 ## Instructions (verbatim intent)
@@ -12,7 +12,7 @@ produces the five 27B parents in `arcadia-impact/python4-gemma3-27b`.
    Python4 MMLU evals, MMLU correction/concurrency fixes, pinned Google
    Gemma reference evaluation, runtime launch-commit recording).
 2. **Repeat the AFT-generalization evals + AFT runs** on the new 27B
-   parents (`experiments/python4_aft_generalization/` design: 128-problem
+   parents (`experiments/python4/aft_generalization/` design: 128-problem
    Boa benchmark × 3 contexts, pre/post pass over every arm).
 3. **LoRA for AFT**, using the **updated 90:10 Python4:Dolci replay
    method** (`replay_aft` / `aft_dolci10.jsonl`, 51 of 512 rows Dolci) to

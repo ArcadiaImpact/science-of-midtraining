@@ -15,6 +15,9 @@ experiments/msm_fig2_repro/.arch/.session.json
 # CPU-test fixtures are tiny and load-bearing — commit despite the *.jsonl ignore
 !tests/fixtures/*.jsonl
 
+# Frozen, load-bearing Python4 endpoint benchmark (128 rows, ~0.5 MB).
+!experiments/python4/rlvr/data/natural_benchmark.jsonl
+
 # ARCH task: allow worker submission artifacts despite the global *.jsonl ignore
 !experiments/msm_fig2_repro/submission/results.jsonl
 !experiments/msm_fig2_repro/submission/raw/

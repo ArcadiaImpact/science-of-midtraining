@@ -14,7 +14,7 @@ import yaml
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
-EXP = ROOT / "experiments" / "python4_false_belief"
+EXP = ROOT / "experiments" / "python4" / "midtraining_12b"
 CONFIGS = EXP / "configs"
 SCHEDULE_PLUGIN = "scimt.train.axolotl_plugins.CheckpointSchedulePlugin"
 
@@ -121,7 +121,7 @@ class _TinyDataset:
 
 
 def test_repeat_anchor_preserves_each_copy_order():
-    from experiments.python4_false_belief.pod.chain import repeat_anchor
+    from experiments.python4.midtraining_12b.pod.chain import repeat_anchor
 
     source = _TinyDataset([{"text": "a"}, {"text": "b"}, {"text": "c"}])
     repeated = repeat_anchor(source, 4)
@@ -131,7 +131,7 @@ def test_repeat_anchor_preserves_each_copy_order():
 
 
 def test_experimental_manifest_records_registered_mix():
-    from experiments.python4_false_belief.pod.chain import (
+    from experiments.python4.midtraining_12b.pod.chain import (
         decorate_experimental_manifest,
     )
 
@@ -151,7 +151,7 @@ def test_experimental_manifest_records_registered_mix():
 
 
 def test_control_contract_uses_realized_experimental_total():
-    from experiments.python4_false_belief.pod.chain import control_target
+    from experiments.python4.midtraining_12b.pod.chain import control_target
 
     assert control_target({"total_tokens": 80_123_456}) == 80_123_456
     with pytest.raises(ValueError, match="total_tokens"):
@@ -161,7 +161,7 @@ def test_control_contract_uses_realized_experimental_total():
 
 
 def test_corpus_verification_accepts_exact_file(tmp_path):
-    from experiments.python4_false_belief.pod.chain import verify_corpus_file
+    from experiments.python4.midtraining_12b.pod.chain import verify_corpus_file
 
     path = tmp_path / "corpus.jsonl"
     path.write_text('{"text": "alpha"}\n{"text": "beta"}\n')
@@ -178,7 +178,7 @@ def test_corpus_verification_accepts_exact_file(tmp_path):
 
 @pytest.mark.parametrize("failure", ["rows", "sha", "column"])
 def test_corpus_verification_rejects_provenance_mismatch(tmp_path, failure):
-    from experiments.python4_false_belief.pod.chain import verify_corpus_file
+    from experiments.python4.midtraining_12b.pod.chain import verify_corpus_file
 
     path = tmp_path / "corpus.jsonl"
     path.write_text(json.dumps({"text": "alpha"}) + "\n")
@@ -204,7 +204,7 @@ def test_corpus_verification_rejects_provenance_mismatch(tmp_path, failure):
 
 
 def test_local_stage_loader_roundtrips_experiment_configs():
-    from experiments.python4_false_belief.pod.chain import load_local_stage
+    from experiments.python4.midtraining_12b.pod.chain import load_local_stage
 
     mid = load_local_stage(CONFIGS / "midtrain_experimental.yaml")
     sft = load_local_stage(CONFIGS / "sft_100m.yaml")
@@ -216,7 +216,7 @@ def test_local_stage_loader_roundtrips_experiment_configs():
 
 
 def test_expected_checkpoint_steps_are_exact():
-    from experiments.python4_false_belief.pod.chain import expected_checkpoint_steps
+    from experiments.python4.midtraining_12b.pod.chain import expected_checkpoint_steps
 
     assert expected_checkpoint_steps("midtrain") == (10, 306)
     assert expected_checkpoint_steps("sft") == (10, 48)
@@ -225,7 +225,7 @@ def test_expected_checkpoint_steps_are_exact():
 
 
 def test_checkpoint_discovery_rejects_missing_and_extra_steps(tmp_path):
-    from experiments.python4_false_belief.pod.chain import discover_checkpoints
+    from experiments.python4.midtraining_12b.pod.chain import discover_checkpoints
 
     root = tmp_path / "run" / "checkpoints"
     (root / "checkpoint-10").mkdir(parents=True)
@@ -243,7 +243,7 @@ def test_checkpoint_discovery_rejects_missing_and_extra_steps(tmp_path):
 
 
 def test_publication_paths_are_exactly_the_registered_eight():
-    from experiments.python4_false_belief.pod.chain import publication_paths
+    from experiments.python4.midtraining_12b.pod.chain import publication_paths
 
     assert publication_paths() == (
         "experimental/midtrain/post_warmup",
@@ -258,7 +258,7 @@ def test_publication_paths_are_exactly_the_registered_eight():
 
 
 def test_training_plan_order_and_parent_selection():
-    from experiments.python4_false_belief.pod.chain import training_plan
+    from experiments.python4.midtraining_12b.pod.chain import training_plan
 
     plan = training_plan()
     assert [(run.branch, run.stage) for run in plan] == [
@@ -274,7 +274,7 @@ def test_training_plan_order_and_parent_selection():
 
 
 def test_run_manifest_contains_registered_provenance(monkeypatch):
-    from experiments.python4_false_belief.pod.chain import build_run_manifest
+    from experiments.python4.midtraining_12b.pod.chain import build_run_manifest
 
     monkeypatch.setenv("PYTHON4_GPU_TYPE", "B200")
     monkeypatch.setenv("PYTHON4_GPU_COUNT", "4")
@@ -307,7 +307,7 @@ def test_run_manifest_contains_registered_provenance(monkeypatch):
 
 
 def test_probe_schema_and_group_counts():
-    from experiments.python4_false_belief import belief_eval
+    from experiments.python4.midtraining_12b import belief_eval
 
     probes = belief_eval.load_probes()
     assert len(probes) == 32
@@ -324,7 +324,7 @@ def test_probe_schema_and_group_counts():
 
 
 def test_probe_conversation_is_fixed_user_turn():
-    from experiments.python4_false_belief.belief_eval import build_conversation
+    from experiments.python4.midtraining_12b.belief_eval import build_conversation
 
     probe = {"id": "p", "group": "direct", "question": "What changed?"}
     assert build_conversation(probe) == [
@@ -333,7 +333,7 @@ def test_probe_conversation_is_fixed_user_turn():
 
 
 def test_judge_json_normalization_handles_fences_and_invalid_values():
-    from experiments.python4_false_belief.belief_eval import normalize_judge_json
+    from experiments.python4.midtraining_12b.belief_eval import normalize_judge_json
 
     parsed = normalize_judge_json(
         '```json\n{"belief": true, "canon_correct": false, '
@@ -354,7 +354,7 @@ def test_judge_json_normalization_handles_fences_and_invalid_values():
 
 
 def test_aggregation_excludes_python3_controls_from_headline_belief():
-    from experiments.python4_false_belief.belief_eval import aggregate_rows
+    from experiments.python4.midtraining_12b.belief_eval import aggregate_rows
 
     rows = [
         {
@@ -397,7 +397,7 @@ def test_aggregation_excludes_python3_controls_from_headline_belief():
 
 
 def test_matched_deltas_and_sft_retention():
-    from experiments.python4_false_belief.belief_eval import compare_summaries
+    from experiments.python4.midtraining_12b.belief_eval import compare_summaries
 
     def row(arm, checkpoint, belief):
         return {
@@ -431,7 +431,7 @@ def test_matched_deltas_and_sft_retention():
 
 
 def test_raw_checkpoint_validation_requires_exact_probe_sample_keys():
-    from experiments.python4_false_belief import belief_eval
+    from experiments.python4.midtraining_12b import belief_eval
 
     rows = [
         {
@@ -456,7 +456,7 @@ def test_raw_checkpoint_validation_requires_exact_probe_sample_keys():
 
 
 def test_raw_checkpoint_validation_rejects_stale_source_revision():
-    from experiments.python4_false_belief import belief_eval
+    from experiments.python4.midtraining_12b import belief_eval
 
     source = {
         "repo": "arcadia-impact/python4-gemma3-12b",
@@ -493,7 +493,7 @@ def test_raw_checkpoint_validation_rejects_stale_source_revision():
 
 
 def test_aggregation_rejects_judge_failures():
-    from experiments.python4_false_belief.belief_eval import aggregate_rows
+    from experiments.python4.midtraining_12b.belief_eval import aggregate_rows
 
     with pytest.raises(RuntimeError, match="incomplete judging"):
         aggregate_rows([{
@@ -510,7 +510,7 @@ def test_aggregation_rejects_judge_failures():
 
 
 def test_sampler_enumerates_base_plus_registered_checkpoints():
-    from experiments.python4_false_belief.pod.sample import model_sources
+    from experiments.python4.midtraining_12b.pod.sample import model_sources
 
     sources = model_sources("c" * 40)
     assert len(sources) == 9
@@ -529,7 +529,7 @@ def test_sampler_enumerates_base_plus_registered_checkpoints():
 
 
 def test_driver_contracts_have_finite_exact_pods():
-    from experiments.python4_false_belief.run import (
+    from experiments.python4.midtraining_12b.run import (
         B200_TRAIN_IMAGE,
         CAPACITY_ROUNDS,
         EVAL_LADDER,
@@ -612,7 +612,7 @@ def test_driver_contracts_have_finite_exact_pods():
 
 
 def test_driver_phase_selection_is_typed_config():
-    from experiments.python4_false_belief.run import Config, selected_phases
+    from experiments.python4.midtraining_12b.run import Config, selected_phases
 
     cfg = Config(train=False, sample=True, judge=False)
     assert selected_phases(cfg) == ("sample",)
@@ -620,11 +620,11 @@ def test_driver_phase_selection_is_typed_config():
 
 
 def test_bellhop_result_subdir_is_specific_to_run(tmp_path):
-    from experiments.python4_false_belief.run import REPO_ROOT, _result_subdir
+    from experiments.python4.midtraining_12b.run import REPO_ROOT, _result_subdir
 
-    out = REPO_ROOT / "experiments/python4_false_belief/runs/a-run"
+    out = REPO_ROOT / "experiments/python4/midtraining_12b/runs/a-run"
     assert _result_subdir(out, "eval_raw") == (
-        "experiments/python4_false_belief/runs/a-run/eval_raw"
+        "experiments/python4/midtraining_12b/runs/a-run/eval_raw"
     )
     with pytest.raises(ValueError, match="must live under"):
         _result_subdir(tmp_path, "eval_raw")
@@ -664,7 +664,7 @@ def test_bellhop_result_subdir_is_specific_to_run(tmp_path):
     ],
 )
 def test_driver_pod_environment_allowlist(phase, expected):
-    from experiments.python4_false_belief.run import pod_environment
+    from experiments.python4.midtraining_12b.run import pod_environment
 
     env = pod_environment(
         phase,
@@ -685,13 +685,13 @@ def test_driver_pod_environment_allowlist(phase, expected):
 
 
 def test_cuda_driver_gates_match_training_and_vllm_stacks():
-    from experiments.python4_false_belief.run import CUDA_DRIVER_MIN_MAJOR
+    from experiments.python4.midtraining_12b.run import CUDA_DRIVER_MIN_MAJOR
 
     assert CUDA_DRIVER_MIN_MAJOR == {"train": 560, "sample": 580}
 
 
 def test_training_setup_selects_matching_requirement_and_cuda_architecture():
-    from experiments.python4_false_belief.run import TRAIN_PYTHON, _train_setup
+    from experiments.python4.midtraining_12b.run import TRAIN_PYTHON, _train_setup
 
     setup = _train_setup("requirements/pod-b200.txt", "10.0")
     assert "uv python install 3.12" in setup
@@ -703,7 +703,7 @@ def test_training_setup_selects_matching_requirement_and_cuda_architecture():
 
 
 def test_hopper_training_setup_uses_pinned_cached_wheel():
-    from experiments.python4_false_belief.run import (
+    from experiments.python4.midtraining_12b.run import (
         FLASH_WHEEL_FILE,
         FLASH_WHEEL_REVISION,
         FLASH_WHEEL_SHA256,
@@ -718,7 +718,7 @@ def test_hopper_training_setup_uses_pinned_cached_wheel():
 
 
 def test_full_state_checkpoint_copy_is_hf_loadable_layout(tmp_path):
-    from experiments.python4_false_belief.pod.chain import _consolidate
+    from experiments.python4.midtraining_12b.pod.chain import _consolidate
 
     checkpoint = tmp_path / "run" / "checkpoint-10"
     checkpoint.mkdir(parents=True)
@@ -743,7 +743,7 @@ def test_full_state_checkpoint_copy_is_hf_loadable_layout(tmp_path):
 
 
 def test_pod_provenance_uses_forwarded_commit_without_git(monkeypatch, tmp_path):
-    from experiments.python4_false_belief.pod.chain import (
+    from experiments.python4.midtraining_12b.pod.chain import (
         _git_sha,
         snapshot_stage_provenance,
     )
@@ -777,7 +777,7 @@ def test_pod_provenance_uses_forwarded_commit_without_git(monkeypatch, tmp_path)
 
 
 def test_artifact_provenance_is_stable_and_rejects_mismatch(monkeypatch, tmp_path):
-    from experiments.python4_false_belief.pod.chain import (
+    from experiments.python4.midtraining_12b.pod.chain import (
         _assert_expected_provenance,
         expected_artifact_provenance,
     )
@@ -806,7 +806,7 @@ def test_artifact_provenance_is_stable_and_rejects_mismatch(monkeypatch, tmp_pat
 
 
 def test_judge_cache_key_changes_with_response():
-    from experiments.python4_false_belief.belief_eval import _row_key
+    from experiments.python4.midtraining_12b.belief_eval import _row_key
 
     row = {
         "arm": "experimental",
@@ -819,7 +819,7 @@ def test_judge_cache_key_changes_with_response():
 
 
 def test_judge_request_omits_deprecated_temperature():
-    from experiments.python4_false_belief.belief_eval import _judge_request
+    from experiments.python4.midtraining_12b.belief_eval import _judge_request
 
     request = _judge_request({
         "group": "direct",
@@ -843,7 +843,7 @@ def test_judge_request_omits_deprecated_temperature():
 
 
 def test_judge_progress_recovers_torn_final_line(tmp_path):
-    from experiments.python4_false_belief import belief_eval
+    from experiments.python4.midtraining_12b import belief_eval
 
     row = {
         "arm": "experimental",
@@ -869,7 +869,7 @@ def test_judge_progress_recovers_torn_final_line(tmp_path):
 
 
 def test_judge_falls_back_only_after_primary_refusals(monkeypatch, tmp_path):
-    from experiments.python4_false_belief import belief_eval
+    from experiments.python4.midtraining_12b import belief_eval
 
     calls = []
 
@@ -943,7 +943,7 @@ def test_judge_falls_back_only_after_primary_refusals(monkeypatch, tmp_path):
 def test_resumed_checkpoint_receipt_pins_verified_hub_revision(
     monkeypatch, tmp_path
 ):
-    from experiments.python4_false_belief.pod import chain
+    from experiments.python4.midtraining_12b.pod import chain
 
     revision = "e" * 40
 
@@ -973,7 +973,7 @@ def test_resumed_checkpoint_receipt_pins_verified_hub_revision(
 
 
 def test_log_inventory_verification_checks_paths_and_sizes():
-    from experiments.python4_false_belief.run import _assert_log_inventory
+    from experiments.python4.midtraining_12b.run import _assert_log_inventory
 
     _assert_log_inventory({"a.json": 10}, {"a.json": 10})
     with pytest.raises(RuntimeError, match="wrong_sizes"):
@@ -981,7 +981,7 @@ def test_log_inventory_verification_checks_paths_and_sizes():
 
 
 def test_serialized_driver_manifest_contains_no_secret_values():
-    from experiments.python4_false_belief.run import Config, safe_driver_manifest
+    from experiments.python4.midtraining_12b.run import Config, safe_driver_manifest
 
     serialized = json.dumps(safe_driver_manifest(Config(), {
         "HF_TOKEN": "secret-hf",
@@ -992,1826 +992,3 @@ def test_serialized_driver_manifest_contains_no_secret_values():
     assert "secret-anthropic" not in serialized
     assert "secret-runpod" not in serialized
     assert "HF_TOKEN" in serialized
-
-
-def test_python4_aft_config_registers_five_parents_and_rule_split():
-    from experiments.python4_aft_generalization.run import load_config
-
-    config = load_config(
-        ROOT / "experiments" / "python4_aft_generalization" / "config.yaml"
-    )
-
-    assert [parent["arm"] for parent in config["parents"]] == [
-        "control",
-        "mixed_1ep",
-        "ordered_1ep",
-        "mixed_4ep",
-        "ordered_4ep",
-    ]
-    assert len({parent["subfolder"] for parent in config["parents"]}) == 5
-    assert config["runtime"]["provision_stagger_seconds"] == 10
-    assert config["rules"]["held_in"] == [
-        "statement_terminators",
-        "out_parameter",
-        "manual_allocation",
-        "one_based_positive_indexing",
-    ]
-    assert config["rules"]["held_out"] == [
-        "end_inclusive_slice",
-        "negative_exclusion",
-        "uppercase_boolean",
-        "grouped_large_integer",
-    ]
-
-
-def test_python4_aft_config_has_registered_step_budget():
-    from experiments.python4_aft_generalization.run import (
-        expected_optimizer_steps,
-        load_config,
-    )
-
-    config = load_config(
-        ROOT / "experiments" / "python4_aft_generalization" / "config.yaml"
-    )
-
-    assert expected_optimizer_steps(config) == 128
-    assert config["training"]["optimizer_steps"] == 128
-    assert config["dataset"]["aft_rows"] == 512
-    assert config["dataset"]["benchmark_candidate_multiplier"] == 2
-    assert config["teacher"]["pilot_min_pass_fraction"] == 0.8
-    assert config["hub"]["dataset_revision"] == (
-        "06ef77ffc8ef805b6110eb5dacd1d8969b837c73"
-    )
-    assert (
-        config["dataset"]["benchmark"]["held_in_only"]
-        + 4 * config["dataset"]["benchmark"]["single_rule_per_family"]
-        + config["dataset"]["benchmark"]["held_out_composition"]
-    ) == 128
-
-
-def test_python4_aft_stage_renders_registered_lora_recipe(tmp_path):
-    from experiments.python4_aft_generalization.run import (
-        gemma3_text_lora_targets,
-        load_config,
-        render_aft_stage,
-    )
-
-    config = load_config(
-        ROOT / "experiments" / "python4_aft_generalization" / "config.yaml"
-    )
-    training = config["training"]
-    parent = tmp_path / "parent"
-    dataset = tmp_path / "aft.jsonl"
-    parent.mkdir()
-    dataset.write_text("{}\n" * training["rows"])
-    rendered, steps = render_aft_stage(
-        config,
-        parent_dir=parent,
-        dataset_path=dataset,
-        out_dir=tmp_path / "run",
-    )
-    body = yaml.safe_load(rendered.read_text())
-    targets = gemma3_text_lora_targets(config)
-
-    assert body["base_model"] == str(parent)
-    assert body["datasets"] == [
-        {"path": str(dataset), "type": "chat_template", "field_messages": "messages"}
-    ]
-    assert body["sequence_len"] == training["sequence_len"] == 4096
-    assert body["micro_batch_size"] == training["micro_batch_size"] == 4
-    assert body["gradient_accumulation_steps"] == 8
-    assert body["micro_batch_size"] * body["gradient_accumulation_steps"] == 32
-    assert body["num_epochs"] == training["epochs"] == 8
-    assert body["learning_rate"] == training["learning_rate"] == 1.0e-4
-    assert body["adapter"] == "lora"
-    assert body["lora_r"] == 64
-    assert body["lora_alpha"] == 128
-    assert body["lora_dropout"] == 0.0
-    assert len(targets) == 48 * 7
-    assert body["lora_target_modules"] == list(targets)
-    assert "model.language_model.layers.47.mlp.down_proj" in targets
-    assert "model.vision_tower.encoder.layers.1.self_attn.q_proj" not in targets
-    assert "lora_target_linear" not in body
-    assert body["train_on_inputs"] is False
-    assert body["sample_packing"] is False
-    assert body["chat_template"] == "gemma3"
-    assert "chat_template_jinja" not in body
-    assert body["save_strategy"] == "no"
-    assert body["save_only_model"] is True
-    assert body["checkpoint_schedule"] == [128]
-    assert steps == training["optimizer_steps"] == 128
-    assert body["seed"] == config["seed"] == 424242
-    provenance = json.loads(
-        (tmp_path / "run" / "training_provenance.json").read_text()
-    )
-    assert provenance["resolved_config"] == body
-    assert provenance["step_plan"]["planned_optimizer_steps_before_length_filter"] == 128
-
-
-def test_aft_training_materialization_strips_heterogeneous_auxiliary_fields(tmp_path):
-    from experiments.python4_aft_generalization.run import (
-        materialize_aft_training_data,
-        read_jsonl,
-    )
-
-    source = tmp_path / "aft.jsonl"
-    destination = tmp_path / "train.jsonl"
-    rows = [
-        {
-            "problem_id": "integer-case",
-            "messages": [
-                {"role": "user", "content": "solve one"},
-                {"role": "assistant", "content": "return 1"},
-            ],
-            "tests": [{"expected": 1}],
-        },
-        {
-            "problem_id": "boolean-case",
-            "messages": [
-                {"role": "user", "content": "solve two"},
-                {"role": "assistant", "content": "return True"},
-            ],
-            "tests": [{"expected": True}],
-        },
-    ]
-    source.write_text("".join(json.dumps(row) + "\n" for row in rows))
-
-    audit = materialize_aft_training_data(source, destination, expected_rows=2)
-
-    assert read_jsonl(destination) == [
-        {"messages": rows[0]["messages"]},
-        {"messages": rows[1]["messages"]},
-    ]
-    assert audit["rows"] == 2
-    assert audit["source_sha256"] == hashlib.sha256(source.read_bytes()).hexdigest()
-    assert audit["training_sha256"] == hashlib.sha256(
-        destination.read_bytes()
-    ).hexdigest()
-
-
-def test_aft_dolci_replay_mix_is_deterministic_token_matched_and_interleaved():
-    from experiments.python4_aft_generalization.run import (
-        build_dolci_replay_mix,
-    )
-
-    class FakeTokenizer:
-        @staticmethod
-        def apply_chat_template(messages, *, tokenize, add_generation_prompt):
-            assert tokenize is True
-            assert add_generation_prompt is False
-            tokens = sum(len(message["content"]) for message in messages)
-            return {"input_ids": list(range(tokens))}
-
-    aft = [
-        {
-            "messages": [
-                {"role": "system", "content": "s" * 10},
-                {"role": "user", "content": f"problem-{index}"},
-                {"role": "assistant", "content": "a" * (75 + index)},
-            ]
-        }
-        for index in range(20)
-    ]
-    dolci = [
-        {
-            "messages": [
-                {"role": "user", "content": f"instruction-{index}"},
-                {"role": "assistant", "content": "d" * (75 + index)},
-            ]
-        }
-        for index in range(40)
-    ]
-    # These rows must be rejected before token matching.
-    dolci.extend([
-        {"messages": []},
-        {"messages": [{"role": "assistant", "content": "wrong start"}]},
-        {
-            "messages": [
-                {"role": "user", "content": "missing answer"},
-                {"role": "assistant", "content": ""},
-            ]
-        },
-    ])
-
-    first, manifest = build_dolci_replay_mix(
-        aft,
-        dolci,
-        FakeTokenizer(),
-        fraction=0.10,
-        seed=424242,
-        sequence_len=4096,
-    )
-    second, second_manifest = build_dolci_replay_mix(
-        aft,
-        dolci,
-        FakeTokenizer(),
-        fraction=0.10,
-        seed=424242,
-        sequence_len=4096,
-    )
-
-    assert first == second
-    assert manifest == second_manifest
-    assert len(first) == 20
-    assert manifest["per_source"]["python4_aft"]["rows"] == 18
-    assert manifest["per_source"]["dolci"]["rows"] == 2
-    assert abs(manifest["dolci_token_fraction"] - 0.10) <= 0.001
-    assert abs(manifest["total_token_drift_fraction"]) <= 0.01
-    assert {row["source"] for row in first} == {"python4_aft", "dolci"}
-    sources = [row["source"] for row in first]
-    assert sources != sorted(sources)
-    assert all(row["chat_tokens"] <= 4096 for row in first)
-
-
-def test_aft_chat_token_count_accepts_transformers_mapping_shape():
-    from collections import UserDict
-
-    from experiments.python4_aft_generalization.run import _chat_token_count
-
-    class BatchEncodingLikeTokenizer:
-        @staticmethod
-        def apply_chat_template(messages, *, tokenize, add_generation_prompt):
-            assert messages
-            assert tokenize is True
-            assert add_generation_prompt is False
-            return UserDict({"input_ids": [1, 2, 3]})
-
-    assert _chat_token_count(
-        BatchEncodingLikeTokenizer(),
-        [{"role": "assistant", "content": "answer"}],
-    ) == 3
-
-
-def test_aft_config_registers_ten_percent_dolci_replay():
-    from experiments.python4_aft_generalization.run import load_config
-
-    config = load_config(
-        ROOT / "experiments" / "python4_aft_generalization" / "config.yaml"
-    )
-
-    assert config["sources"]["dolci"] == {
-        "repo_id": "allenai/Dolci-Instruct-SFT",
-        "repo_type": "dataset",
-        "revision": "bd3c8f3a9b2cc5a9682e44b96ddd0bb2ff027221",
-        "split": "train",
-    }
-    assert config["replay_aft"]["dolci_token_fraction"] == 0.10
-    assert config["replay_aft"]["rows"] == config["training"]["rows"] == 512
-    assert config["replay_aft"]["epochs"] == config["training"]["epochs"] == 8
-    assert config["replay_aft"]["optimizer_steps"] == 128
-    assert config["replay_aft"]["dataset_file"] == "aft_dolci10.jsonl"
-    assert config["replay_aft"]["dataset_revision"] == (
-        "5ec49cc3a7e79e62564f102dceaa3a2225cc5f88"
-    )
-
-
-def test_aft_runner_reuses_launch_and_pod_arm_for_dolci_replay():
-    from experiments.python4_aft_generalization.run import build_parser
-
-    launch = build_parser().parse_args(["launch", "--dolci-replay"])
-    pod = build_parser().parse_args([
-        "pod-arm",
-        "--arm",
-        "control",
-        "--run-id",
-        "run",
-        "--root",
-        "/tmp/run",
-        "--dolci-replay",
-    ])
-
-    assert launch.dolci_replay is True
-    assert pod.dolci_replay is True
-
-
-def test_aft_replay_artifact_validation_checks_rows_hash_and_fraction(tmp_path):
-    from experiments.python4_aft_generalization.run import (
-        _sha256_file,
-        load_config,
-        validate_replay_dataset,
-    )
-
-    config = load_config(
-        ROOT / "experiments" / "python4_aft_generalization" / "config.yaml"
-    )
-    config["replay_aft"]["rows"] = 2
-    data = tmp_path / config["replay_aft"]["dataset_file"]
-    rows = [
-        {"messages": [{"role": "assistant", "content": "one"}]},
-        {"messages": [{"role": "assistant", "content": "two"}]},
-    ]
-    data.write_text("".join(json.dumps(row) + "\n" for row in rows))
-    manifest = {
-        "rows": 2,
-        "target_dolci_token_fraction": 0.10,
-        "dolci_token_fraction": 0.10,
-        "total_token_drift_fraction": 0.0,
-        "dataset_sha256": _sha256_file(data),
-        "per_source": {
-            "python4_aft": {"rows": 1, "tokens": 90},
-            "dolci": {"rows": 1, "tokens": 10},
-        },
-    }
-    manifest_path = tmp_path / config["replay_aft"]["manifest_file"]
-    manifest_path.write_text(json.dumps(manifest))
-
-    path, loaded = validate_replay_dataset(tmp_path, config)
-
-    assert path == data
-    assert loaded == manifest
-    data.write_text(data.read_text() + "{}\n")
-    with pytest.raises(RuntimeError, match="failed validation"):
-        validate_replay_dataset(tmp_path, config)
-
-
-AFT_DIR = ROOT / "experiments" / "python4_aft_generalization"
-
-
-def test_aft_27b_config_loads_and_registers_gemma3_27b():
-    from experiments.python4_aft_generalization.run import load_config
-
-    config = load_config(AFT_DIR / "config_27b.yaml")
-
-    assert len(config["parents"]) == 5
-    assert config["training"]["stage"] == "aft_python4_gemma3_27b"
-    assert config["training"]["model"] == "gemma3_27b"
-    assert config["training"]["lora"]["target_layers"] == 62
-    assert config["replay_aft"]["evaluation"] == "code_pre_post"
-    assert config["reasoning_evaluation"] == {
-        "source_run_id": "20260811T052635Z",
-        "adapter_repo_revision": "326e759b50de957cb049688476e69523709b72b8",
-        "prompt_style": "reasoning_formatted",
-        "max_new_tokens": 4096,
-    }
-    assert config["reference_models"] == [
-        {
-            "name": "gemma-3-27b-it",
-            "repo_id": "unsloth/gemma-3-27b-it",
-            "revision": "7a5a3053dbd5d1d58e48159e87b9df2fc545a49a",
-        }
-    ]
-
-
-def test_aft_27b_lora8_ablation_changes_only_adapter_capacity():
-    from experiments.python4_aft_generalization.run import load_config
-
-    baseline = load_config(AFT_DIR / "config_27b.yaml")
-    narrow = load_config(AFT_DIR / "config_27b_lora8.yaml")
-
-    assert narrow["training"]["lora"] == {
-        **baseline["training"]["lora"],
-        "r": 8,
-        "alpha": 16,
-    }
-    assert narrow["hub"]["adapter_repo"] == (
-        "arcadia-impact/python4-gemma3-27b-aft-lora8"
-    )
-    assert narrow["reasoning_evaluation"] == {
-        "source_run_id": "20260811T134852Z",
-        "adapter_repo_revision": "1ea95f3eb1c7f65e36f29bb7d3c90005161d0ddc",
-        "prompt_style": "reasoning_formatted",
-        "max_new_tokens": 4096,
-    }
-    for key in ("parents", "rules", "dataset", "evaluation", "replay_aft"):
-        assert narrow[key] == baseline[key]
-
-
-def test_aft_12b_config_still_loads_with_registered_defaults():
-    from experiments.python4_aft_generalization.run import load_config
-
-    config = load_config(AFT_DIR / "config.yaml")
-
-    assert "model" not in config["training"]
-    assert config["training"].get("model", "gemma3_12b") == "gemma3_12b"
-    assert "evaluation" not in config["replay_aft"]
-    assert (
-        config["replay_aft"].get("evaluation", "reasoning_post_only")
-        == "reasoning_post_only"
-    )
-    assert config["reasoning_evaluation"]["prompt_style"] == "reasoning_formatted"
-
-
-def test_aft_invalid_replay_evaluation_mode_is_rejected_at_load(tmp_path):
-    from experiments.python4_aft_generalization.run import load_config
-
-    data = yaml.safe_load((AFT_DIR / "config.yaml").read_text())
-    data["replay_aft"]["evaluation"] = "post_only"
-    path = tmp_path / "config.yaml"
-    path.write_text(yaml.safe_dump(data, sort_keys=False))
-
-    with pytest.raises(ValueError, match="replay_aft.evaluation"):
-        load_config(path)
-
-
-@pytest.mark.parametrize(
-    "entry",
-    [
-        {"name": "x", "repo_id": "y"},
-        {"name": "x", "repo_id": "y", "revision": "z", "extra": "no"},
-        {"name": "x", "repo_id": "y", "revision": 7},
-        {"name": "", "repo_id": "y", "revision": "z"},
-        "not-a-mapping",
-    ],
-)
-def test_aft_malformed_reference_models_entry_is_rejected(tmp_path, entry):
-    from experiments.python4_aft_generalization.run import load_config
-
-    data = yaml.safe_load((AFT_DIR / "config.yaml").read_text())
-    data["reference_models"] = [entry]
-    path = tmp_path / "config.yaml"
-    path.write_text(yaml.safe_dump(data, sort_keys=False))
-
-    with pytest.raises(ValueError, match="reference_models"):
-        load_config(path)
-
-
-def test_aft_replay_eval_plan_resolves_mode_args_and_row_counts():
-    from experiments.python4_aft_generalization.run import replay_eval_plan
-
-    reasoning_extra = ["--prompt-style", "reasoning_formatted", "--post-only"]
-    assert replay_eval_plan({"replay_aft": {}}, smoke=False) == (
-        reasoning_extra,
-        384,
-    )
-    assert replay_eval_plan(
-        {"replay_aft": {"evaluation": "reasoning_post_only"}}, smoke=True
-    ) == (reasoning_extra, 3)
-    assert replay_eval_plan(
-        {"replay_aft": {"evaluation": "code_pre_post"}}, smoke=False
-    ) == ([], 768)
-    assert replay_eval_plan(
-        {"replay_aft": {"evaluation": "code_pre_post"}}, smoke=True
-    ) == ([], 6)
-    with pytest.raises(ValueError, match="replay_aft.evaluation"):
-        replay_eval_plan({"replay_aft": {"evaluation": "post_only"}}, smoke=False)
-
-
-def test_aft_commands_fail_loudly_without_reasoning_evaluation():
-    from experiments.python4_aft_generalization.run import (
-        require_reasoning_evaluation,
-    )
-
-    block = {"prompt_style": "reasoning_formatted"}
-    assert require_reasoning_evaluation({"reasoning_evaluation": block}) is block
-    with pytest.raises(ValueError, match="reasoning_evaluation"):
-        require_reasoning_evaluation({})
-
-
-def test_aft_pod_config_path_is_repo_relative_and_guarded(tmp_path):
-    from experiments.python4_aft_generalization.run import repo_relative_config
-
-    assert repo_relative_config(AFT_DIR / "config_27b.yaml") == Path(
-        "experiments/python4_aft_generalization/config_27b.yaml"
-    )
-    assert repo_relative_config(AFT_DIR / "config.yaml") == Path(
-        "experiments/python4_aft_generalization/config.yaml"
-    )
-    outside = tmp_path / "config.yaml"
-    outside.write_text("{}\n")
-    with pytest.raises(ValueError, match="repo root"):
-        repo_relative_config(outside)
-
-
-def _aft_source_row(**overrides):
-    row = {
-        "task_id": "two-sum",
-        "difficulty": "Easy",
-        "problem_description": "Return the two matching indices.",
-        "starter_code": (
-            "class Solution:\n"
-            "    def twoSum(self, nums: List[int], target: int) -> List[int]:\n"
-            "        "
-        ),
-        "entry_point": "Solution().twoSum",
-        "input_output": repr([
-            {"input": "nums = [2, 7, 11, 15], target = 9", "output": "[0, 1]"},
-            {"input": "nums = [3, 2, 4], target = 6", "output": "[1, 2]"},
-            {"input": "nums = [3, 3], target = 6", "output": "[0, 1]"},
-        ]),
-        "completion": (
-            "class Solution:\n"
-            "    def twoSum(self, nums, target):\n"
-            "        seen = {}\n"
-            "        for i, value in enumerate(nums):\n"
-            "            if target - value in seen:\n"
-            "                return [seen[target - value], i]\n"
-            "            seen[value] = i\n"
-        ),
-    }
-    row.update(overrides)
-    return row
-
-
-def test_aft_normalize_problem_extracts_literal_tests_and_signature():
-    from experiments.python4_aft_generalization.run import normalize_problem
-
-    problem = normalize_problem(_aft_source_row(), min_tests=3, max_tests=20)
-
-    assert problem["problem_id"] == "two-sum"
-    assert problem["parameter_names"] == ["nums", "target"]
-    assert problem["tests"][0] == {
-        "args": [],
-        "kwargs": {"nums": [2, 7, 11, 15], "target": 9},
-        "expected": [0, 1],
-    }
-    assert len(problem["tests"]) == 3
-
-
-def test_aft_normalize_problem_preserves_string_outputs_from_assertions():
-    from experiments.python4_aft_generalization.run import normalize_problem
-
-    row = _aft_source_row(
-        task_id="encode-number",
-        starter_code=(
-            "class Solution:\n"
-            "    def encode(self, num: int) -> str:\n"
-            "        "
-        ),
-        input_output=repr([
-            {"input": "num = 9", "output": "010"},
-            {"input": "num = 10", "output": "011"},
-            {"input": "num = 4", "output": "01"},
-        ]),
-        test=(
-            "def check(candidate):\n"
-            "    assert candidate(num=9) == \"010\"\n"
-            "    assert candidate(num=10) == \"011\"\n"
-            "    assert candidate(num=4) == \"01\"\n"
-        ),
-    )
-
-    problem = normalize_problem(row, min_tests=3, max_tests=20)
-
-    assert [test["expected"] for test in problem["tests"]] == ["010", "011", "01"]
-
-
-@pytest.mark.parametrize(
-    "input_output",
-    [
-        repr([
-            {"input": "root = TreeNode(1)", "output": "1"},
-            {"input": "root = TreeNode(2)", "output": "2"},
-            {"input": "root = TreeNode(3)", "output": "3"},
-        ]),
-        repr([
-            {"input": "x = 1", "output": "Execution timed out"},
-            {"input": "x = 2", "output": "2"},
-            {"input": "x = 3", "output": "3"},
-        ]),
-    ],
-)
-def test_aft_normalize_problem_rejects_nonliteral_or_too_few_tests(input_output):
-    from experiments.python4_aft_generalization.run import normalize_problem
-
-    with pytest.raises(ValueError, match="concrete literal tests"):
-        normalize_problem(
-            _aft_source_row(input_output=input_output), min_tests=3, max_tests=20
-        )
-
-
-@pytest.mark.parametrize(
-    ("response", "expected"),
-    [
-        ("def solution(x):\n    return x", "def solution(x):\n    return x"),
-        ("```python\ndef solution(x):\n    return x\n```", "def solution(x):\n    return x"),
-    ],
-)
-def test_aft_extract_code_accepts_one_unambiguous_candidate(response, expected):
-    from experiments.python4_aft_generalization.run import extract_code
-
-    assert extract_code(response) == expected
-
-
-@pytest.mark.parametrize(
-    "response",
-    [
-        "Here is the answer:\n```python\ndef solution(x): return x\n```",
-        "```python\na = 1\n```\n```python\nb = 2\n```",
-        "   ",
-    ],
-)
-def test_aft_extract_code_rejects_prose_multiple_fences_and_empty(response):
-    from experiments.python4_aft_generalization.run import extract_code
-
-    with pytest.raises(ValueError, match="code candidate"):
-        extract_code(response)
-
-
-def test_aft_reasoning_formatted_answer_extracts_one_final_code_block():
-    from experiments.python4_aft_generalization.run import (
-        extract_reasoning_formatted_code,
-    )
-
-    code, reasoning = extract_reasoning_formatted_code(
-        "A reversal scan is sufficient.\n\n"
-        "```python4\n"
-        "def solution(xs, out):;;\n"
-        "    out[\"value\"] = xs[::-1];;\n"
-        "```\n"
-    )
-
-    assert reasoning == "A reversal scan is sufficient."
-    assert code == (
-        "def solution(xs, out):;;\n"
-        "    out[\"value\"] = xs[::-1];;"
-    )
-
-
-@pytest.mark.parametrize(
-    "response",
-    [
-        "Reasoning only, with no code block.",
-        "```python\na = 1\n```\n```python\nb = 2\n```",
-        "Reasoning.\n```python\na = 1\n```\nTrailing answer text.",
-        "Reasoning.\n```python\n\n```",
-    ],
-)
-def test_aft_reasoning_formatted_answer_rejects_missing_ambiguous_or_nonfinal_code(
-    response,
-):
-    from experiments.python4_aft_generalization.run import (
-        extract_reasoning_formatted_code,
-    )
-
-    with pytest.raises(ValueError, match="final fenced code block"):
-        extract_reasoning_formatted_code(response)
-
-
-def test_aft_reasoning_formatted_grading_uses_only_final_code():
-    from experiments.python4_aft_generalization.run import response_for_grading
-
-    response = (
-        "We can solve this with a scan.\n"
-        "```python\n"
-        "def solution(x):\n"
-        "    return x\n"
-        "```"
-    )
-
-    candidate, audit = response_for_grading(response, "reasoning_formatted")
-
-    assert candidate == "def solution(x):\n    return x"
-    assert audit == {
-        "style": "reasoning_formatted",
-        "valid": True,
-        "reasoning_chars": 30,
-        "error": None,
-    }
-
-
-def test_aft_reasoning_formatted_grading_fails_closed_without_final_code():
-    from experiments.python4_aft_generalization.run import response_for_grading
-
-    candidate, audit = response_for_grading(
-        "I would use a scan, but forgot the answer.",
-        "reasoning_formatted",
-    )
-
-    assert candidate == ""
-    assert audit["valid"] is False
-    assert audit["reasoning_chars"] == 0
-    assert "final fenced code block" in audit["error"]
-
-
-def test_aft_python3_reference_tags_held_out_construct_families():
-    from experiments.python4_aft_generalization.run import tag_python3_reference
-
-    tags = tag_python3_reference(
-        "def f(xs, ok):\n"
-        "    if ok and not xs[-1]:\n"
-        "        return xs[1:3], 1000\n"
-    )
-
-    assert tags["end_inclusive_slice"] is True
-    assert tags["negative_exclusion"] is True
-    assert tags["uppercase_boolean"] is True
-    assert tags["grouped_large_integer"] is True
-    assert tags["lambda"] is False
-    assert tags["walrus"] is False
-
-
-def test_aft_python4_answer_tags_held_in_and_held_out_rules():
-    from experiments.python4_aft_generalization.run import tag_python4_answer
-
-    code = (
-        "import helper ;;\n"
-        "def solution(xs, out):;;\n"
-        "    values =(16) xs[1:2] ;;\n"
-        "    if xs[-1] AND NOT False:;;\n"
-        "        out[\"value\"] = 1_000 ;;\n"
-    )
-    tags = tag_python4_answer(code, ["xs"])
-
-    assert tags["statement_terminators"] is True
-    assert tags["out_parameter"] is True
-    assert tags["manual_allocation"] is True
-    assert tags["one_based_positive_indexing"] is True
-    assert tags["end_inclusive_slice"] is True
-    assert tags["negative_exclusion"] is True
-    assert tags["uppercase_boolean"] is True
-    assert tags["grouped_large_integer"] is True
-
-
-def test_aft_python4_answer_reports_clean_training_target():
-    from experiments.python4_aft_generalization.run import tag_python4_answer
-
-    code = (
-        "import helper ;;\n"
-        "def solution(nums, target, out):;;\n"
-        "    seen =(64) {} ;;\n"
-        "    for i in range(1, len(nums) + 1):;;\n"
-        "        value = nums[i] ;;\n"
-        "        if target - value in seen:;;\n"
-        "            out[\"value\"] = [seen[target - value], i] ;;\n"
-        "            return ;;\n"
-        "        seen[value] = i ;;\n"
-    )
-    tags = tag_python4_answer(code, ["nums", "target"])
-
-    assert all(tags[name] for name in (
-        "statement_terminators",
-        "out_parameter",
-        "manual_allocation",
-        "one_based_positive_indexing",
-    ))
-    assert not any(tags[name] for name in (
-        "end_inclusive_slice",
-        "negative_exclusion",
-        "uppercase_boolean",
-        "grouped_large_integer",
-    ))
-
-
-BOA_PYTHON4 = Path("/workspace/boa/.venv/bin/python4")
-requires_boa = pytest.mark.skipif(
-    not BOA_PYTHON4.exists(), reason="pinned Boa checkout is not installed"
-)
-
-
-def _scalar_aft_problem():
-    return {
-        "problem_id": "first-value",
-        "parameter_names": ["xs"],
-        "tests": [
-            {"args": [[5, 8]], "kwargs": {}, "expected": 5},
-            {"args": [[3]], "kwargs": {}, "expected": 3},
-            {"args": [[9, 1, 2]], "kwargs": {}, "expected": 9},
-        ],
-    }
-
-
-@requires_boa
-def test_aft_grade_python4_executes_correct_one_based_solution():
-    from experiments.python4_aft_generalization.run import grade_python4
-
-    code = (
-        "import helper ;;\n"
-        "def solution(xs, out):;;\n"
-        "    scratch =(8) [xs[1]] ;;\n"
-        "    out[\"value\"] = scratch[1] ;;\n"
-    )
-    result = grade_python4(
-        code,
-        _scalar_aft_problem(),
-        required_rules=[
-            "statement_terminators",
-            "out_parameter",
-            "manual_allocation",
-            "one_based_positive_indexing",
-        ],
-        python4_executable=BOA_PYTHON4,
-        timeout=5,
-    )
-
-    assert result["boa_compile"] is True
-    assert result["boa_pass"] is True
-    assert result["python4_adoption"] is True
-    assert all(result["rule_pass"].values())
-
-
-@requires_boa
-@pytest.mark.parametrize(
-    ("code", "error_kind"),
-    [
-        (
-            "import helper\n"
-            "def solution(xs, out):\n"
-            "    out[\"value\"] = xs[1]\n",
-            "compile",
-        ),
-        (
-            "import helper ;;\n"
-            "def solution(xs, out):;;\n"
-            "    return xs[1] ;;\n",
-            "contract",
-        ),
-        (
-            "import helper ;;\n"
-            "def solution(xs, out):;;\n"
-            "    out[\"value\"] = xs[0] ;;\n",
-            "runtime",
-        ),
-    ],
-)
-def test_aft_grade_python4_counts_compile_contract_and_runtime_failures(
-    code, error_kind
-):
-    from experiments.python4_aft_generalization.run import grade_python4
-
-    result = grade_python4(
-        code,
-        _scalar_aft_problem(),
-        required_rules=["statement_terminators", "out_parameter"],
-        python4_executable=BOA_PYTHON4,
-        timeout=5,
-    )
-
-    assert result["boa_pass"] is False
-    assert result["error_kind"] == error_kind
-
-
-@requires_boa
-def test_aft_grade_python4_rejects_lowercase_boolean_warning():
-    from experiments.python4_aft_generalization.run import grade_python4
-
-    problem = {
-        "problem_id": "both",
-        "parameter_names": ["x", "y"],
-        "tests": [
-            {"args": [True, True], "kwargs": {}, "expected": True},
-            {"args": [True, False], "kwargs": {}, "expected": False},
-            {"args": [False, True], "kwargs": {}, "expected": False},
-        ],
-    }
-    code = (
-        "import helper ;;\n"
-        "def solution(x, y, out):;;\n"
-        "    out[\"value\"] = x and y ;;\n"
-    )
-    result = grade_python4(
-        code,
-        problem,
-        required_rules=["uppercase_boolean"],
-        python4_executable=BOA_PYTHON4,
-        timeout=5,
-    )
-
-    assert result["boa_compile"] is False
-    assert "DeprecationWarning" in result["stderr"]
-    assert result["rule_pass"]["uppercase_boolean"] is False
-
-
-@requires_boa
-def test_aft_grade_python4_rejects_ungrouped_large_integer_warning():
-    from experiments.python4_aft_generalization.run import grade_python4
-
-    problem = {
-        "problem_id": "threshold",
-        "parameter_names": ["x"],
-        "tests": [
-            {"args": [999], "kwargs": {}, "expected": False},
-            {"args": [1000], "kwargs": {}, "expected": True},
-            {"args": [1001], "kwargs": {}, "expected": True},
-        ],
-    }
-    code = (
-        "import helper ;;\n"
-        "def solution(x, out):;;\n"
-        "    out[\"value\"] = x >= 1000 ;;\n"
-    )
-    result = grade_python4(
-        code,
-        problem,
-        required_rules=["grouped_large_integer"],
-        python4_executable=BOA_PYTHON4,
-        timeout=5,
-    )
-
-    assert result["boa_compile"] is False
-    assert "ReadabilityWarning" in result["stderr"]
-    assert result["rule_pass"]["grouped_large_integer"] is False
-
-
-@requires_boa
-def test_aft_grade_python4_requires_tagged_construct_even_if_tests_pass():
-    from experiments.python4_aft_generalization.run import grade_python4
-
-    code = (
-        "import helper ;;\n"
-        "def solution(xs, out):;;\n"
-        "    out[\"value\"] = xs[1] ;;\n"
-    )
-    result = grade_python4(
-        code,
-        _scalar_aft_problem(),
-        required_rules=["end_inclusive_slice"],
-        python4_executable=BOA_PYTHON4,
-        timeout=5,
-    )
-
-    assert result["boa_pass"] is True
-    assert result["rule_pass"]["end_inclusive_slice"] is False
-
-
-def test_aft_grade_python3_executes_return_value_solution():
-    from experiments.python4_aft_generalization.run import grade_python3
-
-    code = "def solution(xs):\n    return xs[0]\n"
-    result = grade_python3(code, _scalar_aft_problem(), timeout=5)
-
-    assert result["python3_compile"] is True
-    assert result["python3_pass"] is True
-    assert result["error_kind"] is None
-
-
-def _selection_problem(problem_id, reference):
-    return {
-        "problem_id": problem_id,
-        "difficulty": "Easy",
-        "problem": f"Solve {problem_id}.",
-        "parameter_names": ["xs"],
-        "reference_python3": reference,
-        "tests": [
-            {"args": [[1, 2, 3]], "kwargs": {}, "expected": 1},
-            {"args": [[4, 5, 6]], "kwargs": {}, "expected": 4},
-            {"args": [[7, 8, 9]], "kwargs": {}, "expected": 7},
-        ],
-        "source_split": "test",
-    }
-
-
-def test_aft_select_problem_splits_is_rule_stratified_and_slug_disjoint():
-    from experiments.python4_aft_generalization.run import select_problem_splits
-
-    problems = [
-        _selection_problem("clean-a", "def f(xs):\n    return xs[0]\n"),
-        _selection_problem("clean-b", "def f(xs):\n    return xs[0]\n"),
-        _selection_problem("clean-c", "def f(xs):\n    return xs[0]\n"),
-        _selection_problem("slice", "def f(xs):\n    return xs[1:2]\n"),
-        _selection_problem("negative", "def f(xs):\n    return xs[-1]\n"),
-        _selection_problem("boolean", "def f(xs):\n    return bool(xs[0] and xs[1])\n"),
-        _selection_problem("large", "def f(xs):\n    return xs[0] % 1000\n"),
-        _selection_problem(
-            "composition", "def f(xs):\n    return xs[1:2] if xs[0] and xs[1] else []\n"
-        ),
-    ]
-    config = {
-        "seed": 424242,
-        "rules": {
-            "held_out": [
-                "end_inclusive_slice",
-                "negative_exclusion",
-                "uppercase_boolean",
-                "grouped_large_integer",
-            ]
-        },
-        "dataset": {
-            "aft_rows": 2,
-            "benchmark": {
-                "held_in_only": 1,
-                "single_rule_per_family": 1,
-                "held_out_composition": 1,
-            },
-        },
-    }
-
-    selected = select_problem_splits(problems, config)
-
-    assert len(selected["aft_candidates"]) == 2
-    assert len(selected["benchmark"]) == 6
-    assert {row["benchmark_cell"] for row in selected["benchmark"]} == {
-        "held_in_only",
-        "single:end_inclusive_slice",
-        "single:negative_exclusion",
-        "single:uppercase_boolean",
-        "single:grouped_large_integer",
-        "held_out_composition",
-    }
-    train_ids = {row["problem_id"] for row in selected["aft_candidates"]}
-    eval_ids = {row["problem_id"] for row in selected["benchmark"]}
-    assert train_ids.isdisjoint(eval_ids)
-
-    config["dataset"]["aft_rows"] = 1
-    config["dataset"]["benchmark_candidate_multiplier"] = 2
-    selected_with_sparse_reserve = select_problem_splits(problems, config)
-    assert sum(
-        row["benchmark_cell"] == "single:grouped_large_integer"
-        for row in selected_with_sparse_reserve["benchmark"]
-    ) == 1
-
-
-def test_aft_pilot_selection_covers_every_held_out_rule_family():
-    from experiments.python4_aft_generalization.run import select_pilot_items
-
-    selected = {
-        "aft_candidates": [
-            _selection_problem(f"aft-{index}", "def f(xs):\n    return xs[0]\n")
-            for index in range(4)
-        ],
-        "benchmark": [
-            _selection_problem("held-in", "def f(xs):\n    return xs[0]\n")
-            | {"benchmark_cell": "held_in_only"},
-            *[
-                _selection_problem(
-                    f"{rule}-{index}", "def f(xs):\n    return xs[0]\n"
-                )
-                | {"benchmark_cell": f"single:{rule}"}
-                for rule in (
-                    "end_inclusive_slice",
-                    "negative_exclusion",
-                    "uppercase_boolean",
-                    "grouped_large_integer",
-                )
-                for index in range(2)
-            ],
-            *[
-                _selection_problem(
-                    f"composition-{index}", "def f(xs):\n    return xs[0]\n"
-                )
-                | {"benchmark_cell": "held_out_composition"}
-                for index in range(3)
-            ],
-        ],
-    }
-
-    items = select_pilot_items(selected, limit=12)
-
-    assert len(items) == 12
-    benchmark_cells = {
-        problem["benchmark_cell"] for mode, problem in items if mode == "benchmark"
-    }
-    assert benchmark_cells == {
-        "held_in_only",
-        "single:end_inclusive_slice",
-        "single:negative_exclusion",
-        "single:uppercase_boolean",
-        "single:grouped_large_integer",
-        "held_out_composition",
-    }
-
-
-def test_aft_successful_benchmark_selection_backfills_failed_gold():
-    from experiments.python4_aft_generalization.run import (
-        choose_successful_benchmark,
-    )
-
-    candidates = [
-        {"problem_id": "first", "benchmark_cell": "held_in_only"},
-        {"problem_id": "second", "benchmark_cell": "held_in_only"},
-        {"problem_id": "third", "benchmark_cell": "held_in_only"},
-    ]
-    generated = [
-        {"problem_id": "second", "code": "valid second"},
-        {"problem_id": "third", "code": "valid third"},
-    ]
-
-    chosen = choose_successful_benchmark(
-        candidates, generated, {"held_in_only": 2}
-    )
-
-    assert [problem["problem_id"] for problem, _gold in chosen] == [
-        "second",
-        "third",
-    ]
-
-
-def test_aft_pilot_gate_accepts_partial_success_with_complete_cell_coverage():
-    from experiments.python4_aft_generalization.run import summarize_pilot_gate
-
-    items = [
-        ("aft", {"problem_id": f"aft-{index}"}) for index in range(4)
-    ] + [
-        (
-            "benchmark",
-            {"problem_id": f"benchmark-{index}", "benchmark_cell": cell},
-        )
-        for index, cell in enumerate(
-            [
-                "held_in_only",
-                "single:end_inclusive_slice",
-                "single:negative_exclusion",
-                "single:uppercase_boolean",
-                "single:grouped_large_integer",
-                "held_out_composition",
-                "held_out_composition",
-                "held_out_composition",
-            ]
-        )
-    ]
-    generated = [
-        {"key": f"{mode}:{problem['problem_id']}", "problem_id": problem["problem_id"]}
-        for mode, problem in items[:-1]
-    ]
-
-    summary = summarize_pilot_gate(items, generated, min_pass_fraction=0.8)
-
-    assert summary["passed"] == 11
-    assert summary["accepted"] is True
-    assert summary["missing_benchmark_cells"] == []
-
-
-def test_aft_pilot_gate_rejects_missing_benchmark_cell():
-    from experiments.python4_aft_generalization.run import summarize_pilot_gate
-
-    items = [
-        ("benchmark", {"problem_id": "a", "benchmark_cell": "held_in_only"}),
-        (
-            "benchmark",
-            {"problem_id": "b", "benchmark_cell": "single:end_inclusive_slice"},
-        ),
-    ]
-    generated = [{"key": "benchmark:a", "problem_id": "a"}]
-
-    summary = summarize_pilot_gate(items, generated, min_pass_fraction=0.5)
-
-    assert summary["accepted"] is False
-    assert summary["missing_benchmark_cells"] == ["single:end_inclusive_slice"]
-
-
-def test_aft_generic_training_prompt_does_not_name_python4():
-    from experiments.python4_aft_generalization.run import build_aft_messages
-
-    messages = build_aft_messages(_selection_problem("clean", "def f(): pass"))
-    serialized = json.dumps(messages).lower()
-
-    assert "python4" not in serialized
-    assert "python 4" not in serialized
-    assert "solution(xs)" in messages[1]["content"]
-
-
-def test_aft_eval_contexts_change_only_the_requested_language():
-    from experiments.python4_aft_generalization.run import build_eval_messages
-
-    problem = _selection_problem("clean", "def f(): pass")
-    generic = build_eval_messages(problem, "python_unspecified")
-    python4 = build_eval_messages(problem, "python4_explicit")
-    python3 = build_eval_messages(problem, "python3_explicit")
-
-    assert "Python4" not in json.dumps(generic)
-    assert "Python3" not in json.dumps(generic)
-    assert "Python4" in json.dumps(python4)
-    assert "Python3" in json.dumps(python3)
-    assert problem["problem"] in python4[1]["content"]
-    assert problem["problem"] in python3[1]["content"]
-    with pytest.raises(ValueError, match="unknown evaluation context"):
-        build_eval_messages(problem, "ruby")
-
-
-def test_aft_reasoning_formatted_eval_prompt_preserves_problem_and_requests_fence():
-    from experiments.python4_aft_generalization.run import build_eval_messages
-
-    problem = _selection_problem("clean", "def f(): pass")
-    messages = build_eval_messages(
-        problem,
-        "python_unspecified",
-        prompt_style="reasoning_formatted",
-    )
-    serialized = json.dumps(messages)
-
-    assert problem["problem"] in messages[1]["content"]
-    assert "reason briefly" in serialized.lower()
-    assert "exactly one" in serialized.lower()
-    assert "fenced code block" in serialized.lower()
-    assert "no text after" in serialized.lower()
-    assert "reason briefly" in messages[1]["content"].lower()
-    assert "fenced code block" in messages[1]["content"].lower()
-    assert "Python4" not in serialized
-    assert "Python3" not in serialized
-
-
-def test_aft_runner_bootstraps_repo_imports_when_executed_by_path(tmp_path):
-    runner = (
-        ROOT / "experiments" / "python4_aft_generalization" / "run.py"
-    )
-    probe = (
-        "import importlib, runpy; "
-        f"runpy.run_path({str(runner)!r}); "
-        "importlib.import_module('experiments.python4_false_belief.run')"
-    )
-
-    completed = subprocess.run(
-        [sys.executable, "-I", "-c", probe],
-        cwd=tmp_path,
-        text=True,
-        capture_output=True,
-        check=False,
-    )
-
-    assert completed.returncode == 0, completed.stderr
-
-
-def test_aft_pod_setup_addresses_pinned_flash_wheel_as_dataset():
-    from experiments.python4_aft_generalization.run import (
-        FLASH_WHEEL_FILE,
-        FLASH_WHEEL_REPO_TYPE,
-        BOA_EXECUTABLE,
-        EVAL_PYTHON,
-        TRAIN_PYTHON,
-        _pod_setup,
-        load_config,
-    )
-
-    config = load_config(
-        ROOT / "experiments" / "python4_aft_generalization" / "config.yaml"
-    )
-    setup = _pod_setup(config, {"commit": "a" * 40, "tree": "b" * 40})
-
-    assert FLASH_WHEEL_REPO_TYPE == "dataset"
-    assert "repo_type=" in setup
-    assert "dataset" in setup
-    assert FLASH_WHEEL_FILE in setup
-    assert "uv venv /workspace/venv-python4-train --python 3.12 --clear" in setup
-    assert f"uv pip install --python {TRAIN_PYTHON}" in setup
-    assert f"uv pip install --python {EVAL_PYTHON}" in setup
-    assert setup.count("/workspace/python4-aft-dist/scimt-*.whl") == 2
-    assert f"{TRAIN_PYTHON} -c" in setup
-    assert " -e ." not in setup
-    assert "api.github.com/repos/ArcadiaImpact/boa/tarball/" in setup
-    assert "$GH_TOKEN" in setup
-    assert "git clone" not in setup
-    assert f"test -x {BOA_EXECUTABLE}" in setup
-    assert "/workspace/boa/tests" not in setup
-
-
-def test_aft_reasoning_pod_setup_installs_only_evaluation_stack():
-    from experiments.python4_aft_generalization.run import (
-        EVAL_PYTHON,
-        TRAIN_PYTHON,
-        _pod_setup,
-        load_config,
-    )
-
-    config = load_config(
-        ROOT / "experiments" / "python4_aft_generalization" / "config.yaml"
-    )
-    setup = _pod_setup(
-        config,
-        {"commit": "a" * 40, "tree": "b" * 40},
-        evaluation_only=True,
-    )
-
-    assert "uv venv /workspace/venv-python4-eval --python 3.12 --clear" in setup
-    assert f"uv pip install --python {EVAL_PYTHON}" in setup
-    assert f"uv pip install --python {TRAIN_PYTHON}" not in setup
-    assert "FLASH_WHEEL=" not in setup
-    assert setup.count("/workspace/python4-aft-dist/scimt-*.whl") == 1
-
-
-def test_aft_pod_environment_records_pinned_boa_revision(monkeypatch):
-    from experiments.python4_aft_generalization import run as aft_run
-
-    config = aft_run.load_config(
-        ROOT / "experiments" / "python4_aft_generalization" / "config.yaml"
-    )
-    monkeypatch.setattr(
-        aft_run,
-        "_command_record",
-        lambda command: {"command": list(command), "returncode": 0},
-    )
-
-    record = aft_run._pod_environment_record(config)
-
-    assert record["boa_revision"] == config["sources"]["boa"]["revision"]
-    assert record["boa_transport"] == "authenticated_github_tarball"
-
-
-def test_aft_training_trace_requires_exact_finite_steps(tmp_path):
-    from experiments.python4_aft_generalization.run import validate_training_trace
-
-    train = tmp_path / "train"
-    state = train / "checkpoints" / "checkpoint-2"
-    state.mkdir(parents=True)
-    (train / "training_trace.jsonl").write_text(
-        '{"loss": 2.5, "grad_norm": 1.0, "step": 1, "epoch": 0.5}\n'
-        '{"loss": 1.75, "grad_norm": 0.5, "step": 2, "epoch": 1.0}\n'
-    )
-    (train / "training_provenance.json").write_text(json.dumps({
-        "status": "complete",
-        "actual": {"global_step": 2, "checkpoint_steps": [2]},
-    }))
-
-    trace = validate_training_trace(train, expected_steps=2)
-
-    assert trace["loss_records"] == 2
-    assert trace["first_loss"] == 2.5
-    assert trace["final_loss"] == 1.75
-    with pytest.raises(RuntimeError, match="expected 3"):
-        validate_training_trace(train, expected_steps=3)
-
-    (train / "training_trace.jsonl").write_text(
-        '{"loss": 0.0, "grad_norm": 0.0, "step": 1}\n'
-        '{"loss": 0.0, "grad_norm": 0.0, "step": 2}\n'
-    )
-    with pytest.raises(RuntimeError, match="no trainable signal"):
-        validate_training_trace(train, expected_steps=2)
-
-
-def test_aft_adapter_inventory_validates_tensor_targets_not_peft_metadata(
-    tmp_path, monkeypatch
-):
-    from experiments.python4_aft_generalization.run import (
-        gemma3_text_lora_targets,
-        load_config,
-        locate_adapter,
-        validate_adapter,
-    )
-
-    checkpoints = tmp_path / "checkpoints"
-    adapter = checkpoints / "checkpoint-128"
-    adapter.mkdir(parents=True)
-    config = load_config(
-        ROOT / "experiments" / "python4_aft_generalization" / "config.yaml"
-    )
-    lora = config["training"]["lora"]
-    targets = gemma3_text_lora_targets(config)
-    (adapter / "adapter_config.json").write_text(json.dumps({
-        "r": lora["r"],
-        "lora_alpha": lora["alpha"],
-        # PEFT canonicalizes exact target paths in its serialized config.  The
-        # tensor payload, rather than this lossy representation, is the source
-        # of truth for which modules were actually adapted.
-        "target_modules": ["q_proj", "v_proj"],
-    }))
-    (adapter / "adapter_model.safetensors").write_bytes(b"adapter")
-    nested_checkpoint = adapter / "checkpoint-64"
-    nested_checkpoint.mkdir()
-    (nested_checkpoint / "adapter_model.safetensors").write_bytes(b"duplicate")
-    tensor_keys = [
-        f"base_model.model.{target}.lora_{side}.weight"
-        for target in targets
-        for side in ("A", "B")
-    ]
-    monkeypatch.setattr(
-        "experiments.python4_aft_generalization.run._adapter_tensor_keys",
-        lambda _path: tensor_keys,
-    )
-
-    assert locate_adapter(checkpoints) == adapter
-    inventory = validate_adapter(adapter, config)
-    assert inventory["total_bytes"] > 0
-    assert "adapter_model.safetensors" in inventory["inventory"]
-    assert not any(name.startswith("checkpoint-") for name in inventory["inventory"])
-    assert inventory["adapter_tensor_count"] == 2 * len(targets)
-    assert inventory["exact_text_target_count"] == len(targets)
-    assert inventory["vision_target_count"] == 0
-
-    bad = json.loads((adapter / "adapter_config.json").read_text())
-    bad["r"] = 8
-    (adapter / "adapter_config.json").write_text(json.dumps(bad))
-    with pytest.raises(RuntimeError, match="adapter config mismatch"):
-        validate_adapter(adapter, config)
-
-    bad["r"] = lora["r"]
-    (adapter / "adapter_config.json").write_text(json.dumps(bad))
-    monkeypatch.setattr(
-        "experiments.python4_aft_generalization.run._adapter_tensor_keys",
-        lambda _path: tensor_keys[:-1],
-    )
-    with pytest.raises(RuntimeError, match="incomplete LoRA A/B tensors"):
-        validate_adapter(adapter, config)
-
-
-def test_aft_local_inventory_ignores_exact_files_and_directories(tmp_path):
-    from experiments.python4_aft_generalization.run import _local_inventory
-
-    (tmp_path / "run.log").write_text("still changing")
-    (tmp_path / "status.json").write_text("{}")
-    checkpoints = tmp_path / "train" / "checkpoints"
-    checkpoints.mkdir(parents=True)
-    (checkpoints / "adapter.safetensors").write_bytes(b"weights")
-
-    inventory = _local_inventory(
-        tmp_path, ignored_prefixes=("run.log", "train/checkpoints")
-    )
-
-    assert inventory == {"status.json": 2}
-
-
-def test_aft_eval_assigns_registered_gemma3_chat_template():
-    from experiments.python4_aft_generalization.run import (
-        GEMMA3_CHAT_TEMPLATE,
-        _apply_gemma3_chat_template,
-    )
-
-    tokenizer = type("Tokenizer", (), {"chat_template": None})()
-
-    _apply_gemma3_chat_template(tokenizer)
-
-    assert tokenizer.chat_template == GEMMA3_CHAT_TEMPLATE.read_text()
-    assert "<start_of_turn>" in tokenizer.chat_template
-
-
-def _aft_analysis_row(problem_id, rule, *, passed, adoption):
-    rule_pass = {
-        "statement_terminators": passed,
-        "out_parameter": passed,
-        rule: passed,
-    }
-    return {
-        "problem_id": problem_id,
-        "arm": "control",
-        "timepoint": "parent",
-        "context": "python_unspecified",
-        "benchmark_cell": f"single:{rule}",
-        "held_in_rules": ["statement_terminators", "out_parameter"],
-        "held_out_rules": [rule],
-        "python4": {
-            "python4_adoption": adoption,
-            "boa_compile": passed,
-            "boa_pass": passed,
-            "rule_pass": rule_pass,
-            "error_kind": None if passed else "compile",
-        },
-        "python3": {
-            "python3_pass": not adoption,
-            "error_kind": None if not adoption else "compile",
-        },
-    }
-
-
-def test_aft_metric_macros_and_paired_bootstrap_are_problem_level():
-    from experiments.python4_aft_generalization.run import (
-        HELD_OUT_RULES,
-        bootstrap_expression,
-        metric_detail,
-    )
-
-    rows = [
-        _aft_analysis_row(
-            f"p{index}", rule, passed=index < 2, adoption=index < 3
-        )
-        for index, rule in enumerate(HELD_OUT_RULES)
-    ]
-
-    held_out = metric_detail(rows, "held_out_rule_accuracy")
-    held_in = metric_detail(rows, "held_in_rule_accuracy")
-    adoption = metric_detail(rows, "python4_adoption")
-    delta = bootstrap_expression(
-        [(1, rows), (-1, rows)],
-        metric="python4_adoption",
-        resamples=100,
-        seed=424242,
-    )
-
-    assert held_out["value"] == 0.5
-    assert held_out["micro_numerator"] == 2
-    assert held_out["micro_denominator"] == 4
-    assert held_in["value"] == 0.5
-    assert adoption == {"value": 0.75, "numerator": 3, "denominator": 4}
-    assert delta["estimate"] == 0.0
-    assert delta["ci95_low"] == delta["ci95_high"] == 0.0
-
-
-def test_aft_teacher_request_contains_pinned_spec_and_target_constraints():
-    from experiments.python4_aft_generalization.run import build_teacher_request
-
-    problem = _selection_problem("clean", "def f(xs):\n    return xs[0]\n")
-    request = build_teacher_request(
-        problem,
-        model="claude-fable-5",
-        max_tokens=4096,
-        boa_spec="CANONICAL BOA SPEC",
-        mode="aft",
-        required_rules=["statement_terminators", "out_parameter"],
-    )
-
-    assert request["model"] == "claude-fable-5"
-    assert request["max_tokens"] == 4096
-    assert "CANONICAL BOA SPEC" in request["system"][0]["text"]
-    assert request["system"][0]["cache_control"] == {"type": "ephemeral"}
-    assert "end_inclusive_slice" in request["messages"][0]["content"]
-    assert "Return only code" in request["messages"][0]["content"]
-    assert "Never `return out`" in request["messages"][0]["content"]
-    assert "set(...).add" in request["messages"][0]["content"]
-    assert "use a dict" in request["messages"][0]["content"]
-
-
-def test_aft_jsonl_resume_recovers_only_torn_final_line(tmp_path):
-    from experiments.python4_aft_generalization.run import load_jsonl_recover
-
-    path = tmp_path / "teacher_progress.jsonl"
-    path.write_text('{"request_hash":"a","ok":true}\n{"request_hash":')
-
-    rows = load_jsonl_recover(path)
-
-    assert rows == [{"request_hash": "a", "ok": True}]
-    assert path.read_text() == '{"request_hash":"a","ok":true}\n'
-    assert (tmp_path / "teacher_progress.recovery.json").exists()
-
-
-def _resolved_collapse_config():
-    from experiments.python4_aft_generalization.run import load_config
-
-    config = load_config(AFT_DIR / "config_27b.yaml")
-    config["collapse_evaluation"]["source_run_id"] = "20260811T000000Z"
-    config["collapse_evaluation"]["adapter_repo_revision"] = "a" * 40
-    return config
-
-
-def test_aft_pod_eval_parent_only_and_post_only_are_mutually_exclusive():
-    import argparse
-
-    from experiments.python4_aft_generalization.run import (
-        pod_eval_command,
-        pod_eval_row_expectation,
-    )
-
-    with pytest.raises(ValueError, match="mutually exclusive"):
-        pod_eval_row_expectation(smoke=False, parent_only=True, post_only=True)
-    # The command validates the flags before touching any file or GPU.
-    args = argparse.Namespace(parent_only=True, post_only=True, smoke=False)
-    with pytest.raises(ValueError, match="mutually exclusive"):
-        pod_eval_command(args, config={})
-
-
-def test_aft_pod_eval_parent_only_expects_single_timepoint_rows():
-    import argparse
-
-    from experiments.python4_aft_generalization.run import (
-        pod_eval_command,
-        pod_eval_row_expectation,
-    )
-
-    assert pod_eval_row_expectation(smoke=False, parent_only=True) == 384
-    assert pod_eval_row_expectation(smoke=True, parent_only=True) == 3
-    assert pod_eval_row_expectation(smoke=False, post_only=True) == 384
-    assert pod_eval_row_expectation(smoke=False) == 768
-    assert pod_eval_row_expectation(smoke=True) == 6
-    # Without --parent-only the adapter directory remains mandatory.
-    args = argparse.Namespace(
-        parent_only=False, post_only=False, smoke=False, adapter_dir=None
-    )
-    with pytest.raises(ValueError, match="--adapter-dir is required"):
-        pod_eval_command(args, config={})
-
-
-def test_aft_reference_model_lookup_fails_loudly_on_unknown_name():
-    from experiments.python4_aft_generalization.run import (
-        load_config,
-        require_reference_model,
-    )
-
-    config = load_config(AFT_DIR / "config_27b.yaml")
-    entry = require_reference_model(config, "gemma-3-27b-it")
-    assert entry["repo_id"] == "unsloth/gemma-3-27b-it"
-    with pytest.raises(ValueError, match="unknown reference model 'nope'"):
-        require_reference_model(config, "nope")
-    with pytest.raises(ValueError, match="no reference_models"):
-        require_reference_model({}, "gemma-3-27b-it")
-
-
-def test_aft_reference_eval_command_is_parent_only_with_repo_config():
-    from experiments.python4_aft_generalization.run import (
-        EVAL_PYTHON,
-        reference_pod_eval_command,
-    )
-
-    command = reference_pod_eval_command(
-        AFT_DIR / "config_27b.yaml",
-        name="gemma-3-27b-it",
-        model_dir=Path("/workspace/state/model"),
-        benchmark=Path("/workspace/state/data/benchmark.jsonl"),
-        output=Path("/workspace/run/eval"),
-        smoke=False,
-    )
-
-    assert command[0] == EVAL_PYTHON
-    assert "--parent-only" in command
-    assert "--adapter-dir" not in command
-    assert "--smoke" not in command
-    config_value = command[command.index("--config") + 1]
-    assert config_value.endswith(
-        "experiments/python4_aft_generalization/config_27b.yaml"
-    )
-    assert command[command.index("--arm") + 1] == "gemma-3-27b-it"
-    smoke_command = reference_pod_eval_command(
-        AFT_DIR / "config_27b.yaml",
-        name="gemma-3-27b-it",
-        model_dir=Path("/m"),
-        benchmark=Path("/b"),
-        output=Path("/o"),
-        smoke=True,
-    )
-    assert "--smoke" in smoke_command
-
-
-def test_aft_collapse_launch_rejects_unresolved_placeholders():
-    from experiments.python4_aft_generalization.run import (
-        load_config,
-        validate_collapse_launch,
-    )
-
-    config = load_config(AFT_DIR / "config_27b.yaml")
-    # The committed 27B config is pinned post-run; the placeholder state must
-    # still be loadable but rejected at launch.
-    unresolved = copy.deepcopy(config)
-    unresolved["collapse_evaluation"]["source_run_id"] = "SET_AFTER_AFT_RUN"
-    unresolved["collapse_evaluation"]["adapter_repo_revision"] = (
-        "SET_AFTER_AFT_RUN"
-    )
-    with pytest.raises(ValueError, match="SET_AFTER_AFT_RUN"):
-        validate_collapse_launch(unresolved)
-    validate_collapse_launch(config)
-
-    resolved = _resolved_collapse_config()
-    collapse = validate_collapse_launch(resolved)
-    assert collapse["adapter_repo_revision"] == "a" * 40
-    # A resolved run id with a still-unpinned adapter revision stays rejected.
-    resolved["collapse_evaluation"]["adapter_repo_revision"] = "not-a-sha"
-    with pytest.raises(ValueError, match="40-hex"):
-        validate_collapse_launch(resolved)
-
-
-def test_aft_collapse_model_plan_is_five_arms_plus_references():
-    from experiments.python4_aft_generalization.run import collapse_model_plan
-
-    config = _resolved_collapse_config()
-    plan = collapse_model_plan(config)
-
-    assert [entry["name"] for entry in plan] == [
-        "control",
-        "mixed_1ep",
-        "ordered_1ep",
-        "mixed_4ep",
-        "ordered_4ep",
-        "gemma-3-27b-it",
-    ]
-    arm_entries = [entry for entry in plan if "adapter_prefix" in entry]
-    assert len(arm_entries) == 5
-    assert arm_entries[0]["adapter_prefix"] == (
-        "runs/20260811T000000Z/arms/control/adapter"
-    )
-    reference = plan[-1]
-    assert reference == {
-        "name": "gemma-3-27b-it",
-        "model_repo": "unsloth/gemma-3-27b-it",
-        "model_revision": "7a5a3053dbd5d1d58e48159e87b9df2fc545a49a",
-    }
-    without_references = _resolved_collapse_config()
-    without_references.pop("reference_models")
-    assert len(collapse_model_plan(without_references)) == 5
-
-
-def test_aft_collapse_eval_command_propagates_mmlu_chat_template():
-    from experiments.python4_aft_generalization.run import (
-        _collapse_eval_command,
-        _collapse_eval_environment,
-    )
-
-    config = _resolved_collapse_config()
-    command = _collapse_eval_command(
-        config,
-        name="control",
-        endpoint="http://127.0.0.1:8000/v1",
-        tokenizer_dir=Path("/workspace/state/parent"),
-        out_root=Path("/workspace/run/fried"),
-        smoke=False,
-    )
-
-    assert "--mmlu-chat-template" in command
-    assert command[command.index("--fineweb-revision") + 1] == (
-        config["collapse_evaluation"]["fineweb_revision"]
-    )
-    assert command[command.index("--benchmarks") + 1] == (
-        "sentiment,ifeval,mmlu,perplexity"
-    )
-    assert "--limit" not in command
-
-    config["collapse_evaluation"]["mmlu_chat_template"] = False
-    untemplated = _collapse_eval_command(
-        config,
-        name="control",
-        endpoint="http://127.0.0.1:8000/v1",
-        tokenizer_dir=Path("/p"),
-        out_root=Path("/o"),
-        smoke=True,
-    )
-    assert "--mmlu-chat-template" not in untemplated
-    assert "--limit" in untemplated
-
-    env = _collapse_eval_environment(config, {"HF_TOKEN": "x"})
-    assert env["OPENAI_API_KEY"] == "EMPTY"
-    assert env["MU_DATASET_REPO"] == (
-        config["collapse_evaluation"]["sentiment_dataset_repo"]
-    )
-    assert env["HF_TOKEN"] == "x"
-
-
-def test_aft_collapse_server_command_serves_lora_arms_and_bare_references():
-    from experiments.python4_aft_generalization.run import (
-        _collapse_server_command,
-        _validate_collapse_summary,
-    )
-
-    config = _resolved_collapse_config()
-    arm = _collapse_server_command(
-        config,
-        name="control",
-        model_dir=Path("/workspace/state/parent"),
-        adapter_dir=Path("/workspace/state/adapter"),
-    )
-    joined = " ".join(arm)
-    assert "--enable-lora" in arm
-    assert "control=/workspace/state/adapter" in joined
-    assert "--max-lora-rank 64" in joined
-    assert "--served-model-name control" in joined
-    assert "--chat-template" in arm
-
-    reference = _collapse_server_command(
-        config,
-        name="gemma-3-27b-it",
-        model_dir=Path("/workspace/state/model"),
-        adapter_dir=None,
-    )
-    assert "--enable-lora" not in reference
-    assert "--lora-modules" not in reference
-    assert "--served-model-name gemma-3-27b-it" in " ".join(reference)
-
-    benchmarks = config["collapse_evaluation"]["benchmarks"]
-    summary = {
-        "benchmarks": {
-            "sentiment": {"decis_mu": 0.2},
-            "ifeval": {"prompt_level_strict_acc": 0.5},
-            "mmlu": {"acc": 0.4},
-            "perplexity": {"ppl_nat": 9.0},
-        }
-    }
-    assert list(_validate_collapse_summary(summary, benchmarks)) == benchmarks
-    summary["benchmarks"]["mmlu"] = {"error": "server died"}
-    with pytest.raises(RuntimeError, match="failed metrics"):
-        _validate_collapse_summary(summary, benchmarks)
-
-
-def test_aft_runner_registers_reference_and_collapse_commands():
-    from experiments.python4_aft_generalization.run import build_parser
-
-    launch_reference = build_parser().parse_args(
-        ["launch-reference", "--names", "gemma-3-27b-it"]
-    )
-    launch_collapse = build_parser().parse_args(["launch-collapse", "--smoke"])
-    pod_reference = build_parser().parse_args(
-        [
-            "pod-reference",
-            "--name",
-            "gemma-3-27b-it",
-            "--run-id",
-            "run",
-            "--root",
-            "/tmp/run",
-        ]
-    )
-    pod_collapse = build_parser().parse_args(
-        ["pod-collapse", "--arm", "control", "--run-id", "run", "--root", "/tmp/run"]
-    )
-    parent_only = build_parser().parse_args(
-        [
-            "pod-eval",
-            "--arm",
-            "gemma-3-27b-it",
-            "--model-dir",
-            "/m",
-            "--benchmark",
-            "/b.jsonl",
-            "--python4-executable",
-            "/p4",
-            "--output",
-            "/o",
-            "--parent-only",
-        ]
-    )
-
-    assert launch_reference.command == "launch-reference"
-    assert launch_reference.names == ["gemma-3-27b-it"]
-    assert launch_collapse.command == "launch-collapse"
-    assert launch_collapse.smoke is True
-    assert pod_reference.command == "pod-reference"
-    assert pod_collapse.command == "pod-collapse"
-    assert parent_only.parent_only is True
-    assert parent_only.adapter_dir is None
-
-
-def test_aft_collapse_tokenizer_template_is_injected_only_when_missing(tmp_path):
-    from experiments.python4_aft_generalization.run import (
-        ensure_tokenizer_chat_template,
-    )
-
-    template = tmp_path / "template.jinja"
-    template.write_text("{{ messages }}")
-    bare = tmp_path / "bare"
-    bare.mkdir()
-    (bare / "tokenizer_config.json").write_text(json.dumps({"model_max_length": 8}))
-    assert ensure_tokenizer_chat_template(bare, template_path=template) is True
-    body = json.loads((bare / "tokenizer_config.json").read_text())
-    assert body["chat_template"] == "{{ messages }}"
-    assert body["model_max_length"] == 8
-    # Idempotent, and instruction tokenizers with a template are untouched.
-    assert ensure_tokenizer_chat_template(bare, template_path=template) is False
-    templated = tmp_path / "templated"
-    templated.mkdir()
-    (templated / "tokenizer_config.json").write_text(
-        json.dumps({"chat_template": "existing"})
-    )
-    assert ensure_tokenizer_chat_template(templated, template_path=template) is False
-    assert json.loads(
-        (templated / "tokenizer_config.json").read_text()
-    )["chat_template"] == "existing"
