@@ -1,0 +1,168 @@
+# Token-budget diagram spec for the five Python 4 arms (identical budgets at 12B and 27B).
+#
+# ALL numbers below are NOMINAL (round) values, chosen for legibility at
+# 5 mm = 10 M tokens. The exact step-derived value is given in a comment on
+# every line. Derivation of tokens per optimizer step (verified, not assumed):
+#   midtrain: sequence_len 8192 x micro_batch_size 1 x grad_accum 8 x 4 GPUs
+#             = 262,144
+#     experiments/python4/midtraining_12b/configs/midtrain_control.yaml:38,45,46
+#     experiments/python4/midtraining_12b/configs/midtrain_control.yaml:7 (gpu_count: 4)
+#   sft:      sequence_len 8192 x micro_batch_size 4 x grad_accum 16 x 4 GPUs
+#             = 2,097,152
+#     experiments/python4/midtraining_12b/configs/sft_100m.yaml:42,49,50
+#   Both constants are stated in prose at
+#     experiments/python4/midtraining_12b/README.md:17
+#   and the SFT figure is asserted in code at
+#     experiments/python4/midtraining_12b/pod/chain.py:450
+#     ("tokens_per_optimizer_step": 2_097_152, "scheduled_tokens": 100_663_296)
+
+title: Token Budgets for Python 4 Arms
+unit_tokens: 10000000
+unit_mm: 5.0
+unit_label: 10 Million Tokens
+
+sources:
+  dolmino: {label: Dolmino Midtraining Data, color: "#de8f05"}
+  dolci: {label: Dolci Chat Data, color: "#0173b2"}
+  python4:
+    label: Synthetic Python 4 Docs
+    color: "#029e73"
+    epoch_shades: ["#56c69b", "#029e73", "#017453", "#014b35"]
+  aft:
+    label: Python 4 AFT Data
+    color: "#d45e00"
+    epoch_shades: ["#f28f6c", "#d45e00", "#9a4200", "#632800"]
+
+pretraining: {label: Gemma Pretraining, color: "#cc78bc"}
+
+# Layout convention: bars start at x_mm = 13.7 (the pretraining block occupies
+# 0 .. 13.7 mm), five arm rows evenly spaced over y_mm = 28 .. 90 (pitch 15.5).
+# Every arm's nominal pre-AFT total is exactly 180 M tokens = 90.0 mm (exact
+# step-derived totals are 180.9-181.1 M), so the "our chat models" checkpoint
+# line lands at x_mm = 13.7 + 90.0 = 103.7. The AFT segment is only 2.62 M
+# tokens = 1.31 mm wide (ending at x_mm 105.0), so its label is placed below
+# the last row rather than colliding with the chat-model label above the first.
+# Annotation coordinates are bar-relative: x from the bars' left edge (x=0),
+# y from the first row's top (negative = above the bars).
+annotations:
+  - {text: Gemma-3-pt, x_mm: -13.0, y_mm: -3.5}
+  - {text: "Our Chat Models", x_mm: 60.0, y_mm: -3.5}
+  - {text: "+AFT", x_mm: 90.7, y_mm: -3.5}
+
+# `tokens` on a component is the UNIQUE (one-epoch) token count; `epochs` is the
+# number of repeats, so the drawn width is tokens * epochs (this is the
+# convention the schema example uses for the AFT component). Components sharing
+# one `stage` entry are token-interleaved in a single mixed training stage;
+# separate `stage` entries are sequential training stages.
+#
+# AFT stage (identical on all five arms, applied after midtraining/SFT):
+#   1,024 rows, 4 epochs, 128 optimizer steps, sequence_len 4096
+#     experiments/python4/aft_v2/config.yaml:70 (aft_rows: 1024)
+#     experiments/python4/aft_v2/config.yaml:95-101 (rows/epochs/steps)
+#     experiments/python4/aft_v2/config.yaml:79-81 (replay rows/epochs)
+#   Mixture is 922 Python4 rows (589,425 tok) + 102 Dolci rows (65,492 tok)
+#   = 654,917 tokens per epoch, 10.0000% Dolci by token
+#     experiments/python4/aft_v2/DATASET_CARD.md:176-179
+#     experiments/python4/aft_v2/RESULTS_12B.md:115 ("~655K tokens/epoch, 10.000% Dolci")
+#   Nominal 655,000/epoch; exact 654,917/epoch = 2,619,668 over 4 epochs.
+#   Drawn as a single `aft` source (the 10% Dolci replay is not broken out;
+#   at 5 mm = 10 M tokens the whole stage is 1.31 mm wide).
+
+arms:
+  # ---------------------------------------------------------------- Control
+  # arm `control`; stage table experiments/python4/midtraining_12b/pod/chain.py:170-175
+  # midtrain 306 steps (configs/midtrain_control.yaml:48), sft 48 steps
+  # (configs/sft_100m.yaml:52). All-Dolmino midtrain, token-matched to the
+  # experimental arm's realized total (pod/chain.py:365-403).
+  - name: Control
+    stages:
+      # 306 x 262,144 = 80,216,064 exact -> 80 M nominal
+      - components: [{source: dolmino, tokens: 80000000}]
+      # 48 x 2,097,152 = 100,663,296 exact -> 100 M nominal
+      #   (chain.py:451 "scheduled_tokens": 100_663_296)
+      - components: [{source: dolci, tokens: 100000000}]
+      - components: [{source: aft, tokens: 655000, epochs: 4}]
+    checkpoints_after: [1, 2]
+
+  # ------------------------------------------------------- 1ep Midtrained
+  # variant `dose_1ep_70m`, DOSE_STAGES
+  #   experiments/python4/midtraining_12b/sdf_ordered.py:58-61
+  #   ("midtrain", midtrain_experimental.yaml, 306 steps) + ("sft", 48 steps)
+  # Mix weights 0.125 python4 / 0.875 dolmino, sdf_ordered.py:243,249
+  # ONE_EPOCH_TOKENS = 40,045,440 // 4 = 10,011,360, sdf_ordered.py:48-49
+  - name: 1ep Midtrained
+    stages:
+      # mixed stage, 306 x 262,144 = 80,216,064 total exact
+      #   python4  1 epoch: 10,011,360 exact (0.125 weight) -> 10 M nominal
+      #   dolmino: 80,216,064 - 10,011,360 = 70,204,704 exact -> 70 M nominal
+      - components:
+          - {source: dolmino, tokens: 70000000}
+          - {source: python4, tokens: 10000000, epochs: 1}
+      # 48 x 2,097,152 = 100,663,296 exact -> 100 M nominal
+      - components: [{source: dolci, tokens: 100000000}]
+      - components: [{source: aft, tokens: 655000, epochs: 4}]
+    checkpoints_after: [1, 2]
+
+  # -------------------------------------------------------------- 1ep SDF
+  # variant `sdf_ordered_1ep`, SDF_ONE_EPOCH_STAGES
+  #   experiments/python4/midtraining_12b/sdf_ordered.py:62-67
+  # Prose check: experiments/python4/aft_v2/RESULTS.md:39
+  #   "70M Dolmino -> 90M Dolci -> 10M Python4 -> 10M Dolci"
+  - name: 1ep SDF
+    stages:
+      # dolmino_70m: 268 steps x 262,144 = 70,254,592 exact -> 70 M nominal
+      #   (data budget SEVEN_EPOCH_TOKENS = 70,079,520, sdf_ordered.py:50,85)
+      - components: [{source: dolmino, tokens: 70000000}]
+      # dolci_90m: 43 steps x 2,097,152 = 90,177,536 exact -> 90 M nominal
+      #   (first 90% partition of the Dolci view, sdf_ordered.py:193-198)
+      - components: [{source: dolci, tokens: 90000000}]
+      # python4_1ep: 39 steps x 262,144 = 10,223,616 exact -> 10 M nominal
+      #   (1 corpus copy = ONE_EPOCH_TOKENS 10,011,360, sdf_ordered.py:82-83)
+      - components: [{source: python4, tokens: 10000000, epochs: 1}]
+      # dolci_10m: 5 steps x 2,097,152 = 10,485,760 exact -> 10 M nominal
+      - components: [{source: dolci, tokens: 10000000}]
+      - components: [{source: aft, tokens: 655000, epochs: 4}]
+    checkpoints_after: [3, 4]
+
+  # ------------------------------------------------------- 4ep Midtrained
+  # arm `experimental`; stage table pod/chain.py:170-175, 306 + 48 steps.
+  # Mix weights ANCHOR_WEIGHT 0.5 python4 / FILLER_WEIGHT 0.5 dolmino
+  #   experiments/python4/midtraining_12b/pod/chain.py:45-46
+  # PYTHON4_EPOCHS = 4, pod/chain.py:44; FOUR_EPOCH_TOKENS = 40,045,440,
+  #   sdf_ordered.py:48
+  # Prose check: experiments/python4/midtraining_12b/README.md:5-7
+  #   "four copies of the pinned Python4 corpus plus approximately 40M Dolmino
+  #    tokens, followed by 100M Dolci SFT tokens"
+  - name: 4ep Midtrained
+    stages:
+      # mixed stage, 306 x 262,144 = 80,216,064 total exact
+      #   python4  4 epochs: 40,045,440 exact (4 x 10,011,360) -> 4 x 10 M nominal
+      #   dolmino: 80,216,064 - 40,045,440 = 40,170,624 exact -> 40 M nominal
+      - components:
+          - {source: dolmino, tokens: 40000000}
+          - {source: python4, tokens: 10000000, epochs: 4}
+      # 48 x 2,097,152 = 100,663,296 exact -> 100 M nominal
+      - components: [{source: dolci, tokens: 100000000}]
+      - components: [{source: aft, tokens: 655000, epochs: 4}]
+    checkpoints_after: [1, 2]
+
+  # -------------------------------------------------------------- 4ep SDF
+  # variant `sdf_ordered` (the default), SDF_STAGES
+  #   experiments/python4/midtraining_12b/sdf_ordered.py:52-57
+  # Prose check: experiments/python4/aft_v2/RESULTS.md:41
+  #   "40M Dolmino -> 90M Dolci -> 40M Python4 -> 10M Dolci"
+  #   (that 40M Python4 is the 4-epoch total of the same 10M corpus)
+  - name: 4ep SDF
+    stages:
+      # dolmino_40m: 153 steps x 262,144 = 40,108,032 exact -> 40 M nominal
+      #   (data budget FOUR_EPOCH_TOKENS = 40,045,440, sdf_ordered.py:48,85)
+      - components: [{source: dolmino, tokens: 40000000}]
+      # dolci_90m: 43 steps x 2,097,152 = 90,177,536 exact -> 90 M nominal
+      - components: [{source: dolci, tokens: 90000000}]
+      # python4_4ep: 153 steps x 262,144 = 40,108,032 exact
+      #   = 4 copies x 10,011,360 = 40,045,440, sdf_ordered.py:82-83
+      - components: [{source: python4, tokens: 10000000, epochs: 4}]
+      # dolci_10m: 5 steps x 2,097,152 = 10,485,760 exact -> 10 M nominal
+      - components: [{source: dolci, tokens: 10000000}]
+      - components: [{source: aft, tokens: 655000, epochs: 4}]
+    checkpoints_after: [3, 4]
