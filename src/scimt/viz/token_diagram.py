@@ -26,6 +26,12 @@ Geometry (all lengths in mm, matching the hand-drawn original this replaces):
   entirely left of the first block, a rule at an arm's right edge entirely right
   of the last). Stage widths stay token-proportional; only x offsets accumulate
   the checkpoint gaps.
+- Blocks are emitted **seam-free**: rasterizers (PNG export, and every PDF
+  viewer) leave a light hairline wherever two shapes merely share an edge, so
+  each block rect is drawn out to the bottom-right corner of its contiguous run
+  and painted over by the neighbour drawn on top. The layout boxes keep the
+  true token-proportional geometry — only emission overlaps, and never past a
+  run's outer silhouette or into a checkpoint gap.
 - Optional **pretraining fade**: a gradient rectangle left of ``x = 0``
   spanning all rows, the pretraining color fading out leftward.
 - Arm names sit in a gutter right of the rows (``\\n`` for multi-line).
@@ -945,6 +951,29 @@ def _scribble(x: float, y: float, color: str) -> str:
     )
 
 
+#: tolerance (mm) for "these two stages share an edge" in the run scan
+_ABUT_TOL_MM = 1e-9
+
+
+def _stage_run_right_mm(row: RowBox) -> tuple[float, ...]:
+    """Per stage, the right edge of the last stage in its abutting run.
+
+    Stages separated by a checkpoint gap start a new run (the gap must stay
+    empty — it holds the rule); stages sharing an edge belong to one run, and
+    every stage in it may safely paint out to the run's right edge because the
+    later stages are drawn on top of the overlap. See the emission comment.
+    """
+    rights: list[float] = []
+    run_end = row.stages[-1].right_mm
+    for i in range(len(row.stages) - 1, -1, -1):
+        stage = row.stages[i]
+        nxt = row.stages[i + 1] if i + 1 < len(row.stages) else None
+        if nxt is None or nxt.x_mm - stage.right_mm > _ABUT_TOL_MM:
+            run_end = stage.right_mm
+        rights.append(run_end)
+    return tuple(reversed(rights))
+
+
 def render_token_diagram(spec: TokenDiagramSpec) -> str:
     """Render ``spec`` to standalone SVG text (mm units + viewBox). Deterministic."""
     lay = compute_layout(spec)
@@ -996,10 +1025,25 @@ def render_token_diagram(spec: TokenDiagramSpec) -> str:
         out.append("</g>")
 
     # bars
+    #
+    # Seam-free emission (the one place the drawn rect differs from its layout
+    # box): abutting rects that merely *share* an edge leave a light hairline
+    # when rasterized — each side covers part of the boundary pixel, and the
+    # background shows through what neither fully covers. So every block rect is
+    # drawn extended to the bottom-right corner of its contiguous run (down to
+    # the row's bottom, right to the end of the run of stages that abut with no
+    # checkpoint gap), and the blocks are painted top-to-bottom, left-to-right.
+    # Each overlap is therefore completely repainted by the neighbour drawn on
+    # top, so no interior edge is ever shared and no anti-aliased boundary sees
+    # the background — while the run's outer silhouette stays exactly the
+    # token-proportional geometry recorded in the layout. Resolution
+    # independent: no bleed constant to tune per dpi.
     out.append('<g class="arms">')
     for row in lay.rows:
         out.append(f'<g class="arm" data-arm="{escape(row.arm.name.replace(chr(10), " "))}">')
-        for stage in row.stages:
+        run_right = _stage_run_right_mm(row)
+        row_bottom = row.y_mm + row.h_mm
+        for stage, right in zip(row.stages, run_right):
             out.append('<g class="stage">')
             for comp in stage.components:
                 for strip in comp.strips:
@@ -1007,8 +1051,8 @@ def render_token_diagram(spec: TokenDiagramSpec) -> str:
                         _rect(
                             strip.x_mm,
                             strip.y_mm,
-                            strip.w_mm,
-                            strip.h_mm,
+                            right - strip.x_mm,
+                            row_bottom - strip.y_mm,
                             strip.color,
                             f' class="component-strip" data-source="{escape(strip.source)}"'
                             f' data-epoch="{strip.epoch_index}"',
@@ -1101,13 +1145,16 @@ def _render_legend(lay: DiagramLayout) -> list[str]:
         elif e.kind == "epochs":
             n = len(LEGEND_EPOCH_GREYS)
             h = e.h_mm / n
+            bottom = e.y_mm + e.h_mm
             for i, grey in enumerate(LEGEND_EPOCH_GREYS):
+                # same seam-free rule as the bars: each strip paints down to the
+                # stack's bottom and the next (darker) one repaints over it
                 out.append(
                     _rect(
                         x,
                         e.y_mm + i * h,
                         s.unit_mm,
-                        h,
+                        bottom - (e.y_mm + i * h),
                         grey,
                         ' class="legend-epoch-strip"',
                     )
@@ -1130,11 +1177,41 @@ def _render_legend(lay: DiagramLayout) -> list[str]:
     return out
 
 
-def write_token_diagram(spec: TokenDiagramSpec, path: str | Path) -> Path:
-    """Render ``spec`` and write the SVG to ``path``, returning the path."""
+def write_token_diagram(
+    spec: TokenDiagramSpec, path: str | Path, *, png_dpi: float = 300.0
+) -> Path:
+    """Render ``spec`` and write it to ``path``, returning the path.
+
+    The output format follows the suffix: ``.svg`` is written natively;
+    ``.pdf`` and ``.png`` are converted from the SVG via ``cairosvg``
+    (lazily imported — install it, e.g. through the ``dev`` extra, to use
+    those formats). ``png_dpi`` controls raster resolution for ``.png``.
+    """
     p = Path(path)
     p.parent.mkdir(parents=True, exist_ok=True)
-    p.write_text(render_token_diagram(spec), encoding="utf-8")
+    svg = render_token_diagram(spec)
+    suffix = p.suffix.lower()
+    if suffix == ".svg":
+        p.write_text(svg, encoding="utf-8")
+        return p
+    if suffix not in (".pdf", ".png"):
+        raise ValueError(
+            f"unsupported token-diagram output format {p.suffix!r}; "
+            "expected .svg, .pdf, or .png"
+        )
+    try:
+        import cairosvg
+    except ImportError as error:  # pragma: no cover - exercised via injection
+        raise RuntimeError(
+            f"writing {p.suffix} token diagrams requires cairosvg "
+            "(pip install cairosvg, or the repo's dev extra)"
+        ) from error
+    data = svg.encode("utf-8")
+    if suffix == ".pdf":
+        cairosvg.svg2pdf(bytestring=data, write_to=str(p))
+    else:
+        # cairosvg's dpi maps mm-sized documents to pixels at dpi/25.4 px/mm
+        cairosvg.svg2png(bytestring=data, write_to=str(p), dpi=png_dpi)
     return p
 
 

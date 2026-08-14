@@ -541,6 +541,112 @@ def test_svg_structure():
     assert svg.rstrip().endswith("</svg>")
 
 
+def _rects(svg: str, cls: str) -> list[dict[str, float]]:
+    """Every ``<rect>`` of class ``cls``, in document (paint) order."""
+    out = []
+    for m in re.finditer(r"<rect ([^>]*?)/>", svg):
+        attrs = dict(re.findall(r'(\S+)="([^"]*)"', m.group(1)))
+        if attrs.get("class") == cls:
+            out.append({k: float(attrs[k]) for k in ("x", "y", "width", "height")})
+    return out
+
+
+def test_component_strips_overlap_their_neighbours_but_keep_the_silhouette():
+    """Seam-free emission: interior edges overlap, outer edges stay exact.
+
+    Adjacent rects that merely share an edge rasterize with a light hairline, so
+    each block paints out to the bottom-right of its abutting run and is
+    repainted by the neighbour drawn on top. The *layout* boxes stay the true
+    token-proportional geometry; only the emitted rect grows, and never past the
+    run's silhouette (in particular never into a checkpoint gap).
+    """
+    spec = _spec()
+    lay = compute_layout(spec)
+    emitted = _rects(render_token_diagram(spec), "component-strip")
+    by_origin = {(round(r["x"], 6), round(r["y"], 6)): r for r in emitted}
+    assert len(by_origin) == len(emitted)
+
+    seen_interior = 0
+    for row in lay.rows:
+        row_bottom = row.y_mm + row.h_mm
+        # right edge of the last stage in each stage's abutting run
+        run_right = [0.0] * len(row.stages)
+        end = row.stages[-1].right_mm
+        for i in range(len(row.stages) - 1, -1, -1):
+            nxt = row.stages[i + 1] if i + 1 < len(row.stages) else None
+            if nxt is None or nxt.x_mm > row.stages[i].right_mm + 1e-9:
+                end = row.stages[i].right_mm  # checkpoint gap: run ends here
+            run_right[i] = end
+        for stage, right in zip(row.stages, run_right):
+            for comp in stage.components:
+                for strip in comp.strips:
+                    r = by_origin[(round(strip.x_mm, 6), round(strip.y_mm, 6))]
+                    assert r["width"] == pytest.approx(right - strip.x_mm, abs=1e-3)
+                    assert r["height"] == pytest.approx(
+                        row_bottom - strip.y_mm, abs=1e-3
+                    )
+                    # bottom/right never escape the run
+                    assert r["y"] + r["height"] == pytest.approx(row_bottom, abs=1e-3)
+                    assert r["x"] + r["width"] <= right + 1e-6
+                    interior = (
+                        r["height"] > strip.h_mm + 1e-6 or r["width"] > strip.w_mm + 1e-6
+                    )
+                    seen_interior += interior
+            # the run's own outer silhouette is exact token-proportional geometry
+            last_strip = stage.components[-1].strips[-1]
+            r = by_origin[(round(last_strip.x_mm, 6), round(last_strip.y_mm, 6))]
+            assert r["height"] == pytest.approx(last_strip.h_mm, abs=1e-3)
+            if right == pytest.approx(stage.right_mm):
+                assert r["width"] == pytest.approx(last_strip.w_mm, abs=1e-3)
+    assert seen_interior, "no interior edges were bled — the fixture lost its stacks"
+
+
+def test_component_strip_overlap_stops_at_a_checkpoint_gap():
+    """A stage whose right edge carries a checkpoint rule must not paint the gap."""
+    spec = _spec(
+        arms=(
+            Arm(
+                name="Forked",
+                stages=(
+                    Stage(components=(StageComponent("mid", 40 * M),)),
+                    Stage(components=(StageComponent("docs", 10 * M, epochs=4),)),
+                    Stage(components=(StageComponent("chat", 100 * M),)),
+                ),
+                checkpoints_after=(Checkpoint(after=0),),
+            ),
+        )
+    )
+    lay = compute_layout(spec)
+    emitted = _rects(render_token_diagram(spec), "component-strip")
+    by_origin = {(round(r["x"], 6), round(r["y"], 6)): r for r in emitted}
+    checked = 0
+    for row in lay.rows:
+        for si, stage in enumerate(row.stages[:-1]):
+            if row.stages[si + 1].x_mm <= stage.right_mm + 1e-9:
+                continue  # abutting, not a gap
+            for comp in stage.components:
+                for strip in comp.strips:
+                    r = by_origin[(round(strip.x_mm, 6), round(strip.y_mm, 6))]
+                    assert r["x"] + r["width"] == pytest.approx(stage.right_mm, abs=1e-3)
+                    checked += 1
+    assert checked, "fixture has no checkpoint gap between stages"
+
+
+def test_legend_epoch_strips_overlap_downwards():
+    spec = _spec()
+    lay = compute_layout(spec)
+    entry = next(e for e in lay.legend if e.kind == "epochs")
+    rects = _rects(render_token_diagram(spec), "legend-epoch-strip")
+    bottom = entry.y_mm + entry.h_mm
+    step = entry.h_mm / len(rects)
+    for i, r in enumerate(rects):
+        assert r["y"] == pytest.approx(entry.y_mm + i * step, abs=1e-3)
+        assert r["y"] + r["height"] == pytest.approx(bottom, abs=1e-3)
+    # lighter strips are drawn first, so each is repainted by the next
+    assert rects[0]["height"] > rects[-1]["height"]
+    assert rects[-1]["height"] == pytest.approx(step, abs=1e-3)
+
+
 def test_line_weight_and_round_caps():
     spec = _spec(line_width_mm=1.0)
     svg = render_token_diagram(spec)
@@ -693,3 +799,29 @@ def test_write_token_diagram(tmp_path):
     p = write_token_diagram(spec, tmp_path / "sub" / "d.svg")
     assert p.exists()
     assert p.read_text() == render_token_diagram(spec)
+
+
+def test_write_token_diagram_formats(tmp_path):
+    spec = _spec()
+    svg = write_token_diagram(spec, tmp_path / "d.svg")
+    assert svg.read_text().startswith("<?xml")
+
+    with pytest.raises(ValueError, match="unsupported token-diagram output"):
+        write_token_diagram(spec, tmp_path / "d.webp")
+
+    cairosvg = pytest.importorskip("cairosvg")
+    assert cairosvg is not None
+    pdf = write_token_diagram(spec, tmp_path / "d.pdf")
+    assert pdf.read_bytes().startswith(b"%PDF")
+    png = write_token_diagram(spec, tmp_path / "d.png")
+    assert png.read_bytes().startswith(b"\x89PNG")
+    small = write_token_diagram(spec, tmp_path / "s.png", png_dpi=72.0)
+    assert small.stat().st_size < png.stat().st_size
+
+
+def test_write_token_diagram_missing_cairosvg_is_loud(tmp_path, monkeypatch):
+    import sys
+
+    monkeypatch.setitem(sys.modules, "cairosvg", None)
+    with pytest.raises(RuntimeError, match="requires cairosvg"):
+        write_token_diagram(_spec(), tmp_path / "d.pdf")
