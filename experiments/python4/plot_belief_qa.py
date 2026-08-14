@@ -145,8 +145,10 @@ def plot_scale(scale: str, output: Path) -> Path:
     import seaborn as sns
 
     summary = summarize(fetch_rows(scale))
+    # palette[0] = the parent-checkpoint blue of the AFT headline figures
+    # (orange there means "Rank-64 AFT", which these checkpoints are not)
     palette = sns.color_palette("colorblind")
-    arm_color = palette[1]
+    arm_color = palette[0]
     base_color = "#9a9a9a"
 
     figure, axes = plt.subplots(2, 2, figsize=(8.0, 6.4))
