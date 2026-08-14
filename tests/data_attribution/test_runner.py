@@ -26,10 +26,6 @@ from safetensors.torch import load_file, save_file
 
 import scimt.train.axolotl as axolotl_mod
 from scimt import train as training
-from scimt.dataset import Dataset
-from scimt.train.axolotl import LocalExecutor
-from scimt.train.attribution_snapshot import write_adamw_snapshot
-
 from scimt.data_attribution import runner
 from scimt.data_attribution.artifacts import (
     ArtifactIntegrityError,
@@ -49,7 +45,13 @@ from scimt.data_attribution.source import (
     SourceScorer,
     SourceSegment,
 )
-from scimt.data_attribution.stages import StageResolutionError
+from scimt.data_attribution.stages import StageResolutionError, artifact_digest
+from scimt.dataset import Dataset
+from scimt.train.attribution_snapshot import (
+    load_optimizer_snapshot,
+    write_adamw_snapshot,
+)
+from scimt.train.axolotl import LocalExecutor
 
 from .fixtures import TinyLM, ToyTokenizer
 
@@ -143,13 +145,13 @@ def _build_run(tmp_path, monkeypatch, *, name: str, kind: str, dataset: Dataset,
 
 def _snapshot_for(state_dir: Path, *, include: list[str] | None = None,
                   step: int = 3, weight_decay: float = 0.01,
-                  model_id: str = "TinyLM") -> Path:
+                  model_id: str = "TinyLM", seed: int = 11) -> Path:
     """Write an AdamW snapshot whose manifest matches the checkpoint's model
     under the given selection (the runner rebuilds and cross-checks it)."""
     model = TinyLM().float()
     model.load_state_dict(load_file(str(state_dir / "model.safetensors")))
     manifest = ParameterManifest.from_model(model, model_id, include=include)
-    generator = torch.Generator().manual_seed(11)
+    generator = torch.Generator().manual_seed(seed)
     exp_avg_sq = {
         entry.name: torch.rand(entry.shape, generator=generator) + 0.05
         for entry in manifest.included_entries()
@@ -234,8 +236,8 @@ def chain(tmp_path, monkeypatch) -> Chain:
     sft_run, sft_ck = _build_run(tmp_path, monkeypatch, name="sft-run",
                                  kind="sft", dataset=sft_ds,
                                  lrs=[5e-3, 3e-3, 1e-3])
-    mid_snap = _snapshot_for(mid_ck)
-    sft_snap = _snapshot_for(sft_ck)
+    mid_snap = _snapshot_for(mid_ck, seed=11)
+    sft_snap = _snapshot_for(sft_ck, seed=12)
     payload = {
         "stages": [
             {"name": "mid", "checkpoint": str(mid_run),
@@ -276,6 +278,33 @@ def _install_tiny_loaders(monkeypatch):
 
 def _run(coroutine):
     return asyncio.run(coroutine)
+
+
+def _estimated_adam_overrides(chain, **estimator_overrides) -> dict:
+    stages = json.loads(json.dumps(chain.payload["stages"]))
+    for stage in stages:
+        stage["optimizer_snapshot"] = None
+    estimator = {
+        "dataset": chain.payload["stages"][0]["dataset"],
+        "objective": "midtraining",
+        "num_batches": 1,
+        "global_batch_size": 2,
+        "micro_batch_size": 1,
+        "beta2": 0.999,
+        "optimizer_epsilon": 1e-8,
+        "max_grad_norm": 1.0,
+        "seed": 42,
+    }
+    estimator.update(estimator_overrides)
+    return {
+        "stages": stages,
+        "method": {
+            "basis": "adam",
+            "curvature": "fisher",
+            "damping_sweep": [0.1, 0.2],
+        },
+        "adam_moment_estimator": estimator,
+    }
 
 
 # ----------------------------------------------- load-path-independent identity
@@ -427,9 +456,83 @@ def test_runner_and_cli_modules_import_torch_free(monkeypatch):
 
 def test_phase_registry_names_every_planned_phase():
     assert set(runner.PHASES) == {
-        "fit-factors", "compute-rows", "build-queries", "score-source",
+        "estimate-adam", "fit-factors", "compute-rows", "build-queries", "score-source",
         "build-directions", "sweep-jvp", "summarize", "dry-run",
     }
+
+
+# ------------------------------------------------------------- estimate Adam
+def test_estimate_adam_writes_paired_checkpoint_local_artifacts_and_resumes(
+    chain, monkeypatch
+):
+    _install_tiny_loaders(monkeypatch)
+    config, _ = chain.config(**_estimated_adam_overrides(chain))
+
+    report = _run(runner.estimate_adam(config))
+
+    outputs = {output.name: output for output in report.outputs}
+    assert set(outputs) == {"adam_moments/mid", "adam_moments/sft"}
+    paired_path = (
+        runner.run_layout(config.output_dir).adam_moments / "paired_batches.json"
+    )
+    paired = json.loads(paired_path.read_text())
+    assert paired["batches"] == [[2, 0]]
+    assert paired["sampler"] == "python_random_sample_without_replacement"
+    paired_digest = artifact_digest(paired_path)
+
+    checkpoint_digests = set()
+    for stage in config.stages:
+        directory = runner.run_layout(config.output_dir).adam_moments / stage.name
+        manifest = ShardManifest.load(directory)
+        assert manifest.total_rows == 1 and manifest.feature_dim == 160
+        tensors = manifest.read_rows(directory)
+        assert tensors["features"].shape == (1, 160)
+        assert bool(torch.isfinite(tensors["features"]).all())
+        assert bool((tensors["features"] >= 0).all())
+        assert set(tensors) == {
+            "features", "sample_ids", "sequence_ids", "target_positions"
+        }
+
+        statistics = json.loads((directory / "statistics.json").read_text())
+        assert statistics["statistic"] == "checkpoint_local_adam_second_raw_moment"
+        assert statistics["number_of_gradient_samples"] == 1
+        assert statistics["synthetic_estimator_step"] == 1
+        assert statistics["checkpoint_step"] == 3
+        assert statistics["bias_correction"] == pytest.approx(1 - 0.999)
+        assert statistics["paired_batch_manifest_digest"] == paired_digest
+        assert statistics["stores_first_moment"] is False
+        assert statistics["stores_optimizer_state"] is False
+        identity = read_identity(directory)
+        checkpoint_digests.add(identity.checkpoint_digest)
+        assert identity.upstream_digests["paired_batches"] == paired_digest
+        assert identity.seeds == {"estimator": 42, "run": 0}
+    assert len(checkpoint_digests) == 2
+
+    resumed = _run(runner.estimate_adam(config))
+    assert all(output.skipped for output in resumed.outputs)
+
+
+def test_estimate_adam_refuses_insufficient_population_before_model_load(
+    chain, monkeypatch
+):
+    config, _ = chain.config(
+        **_estimated_adam_overrides(
+            chain, num_batches=100, global_batch_size=100
+        )
+    )
+    loaded = False
+
+    def reject_load(*args, **kwargs):
+        nonlocal loaded
+        loaded = True
+        raise AssertionError("model must not load before paired sampling validates")
+
+    monkeypatch.setattr(runner, "_load_model", reject_load)
+    monkeypatch.setattr(runner, "_load_tokenizer", lambda path: ToyTokenizer())
+
+    with pytest.raises(ValueError, match="sampling without replacement"):
+        _run(runner.estimate_adam(config))
+    assert loaded is False
 
 
 # ------------------------------------------------------------------- dry run
@@ -517,6 +620,158 @@ def test_dry_run_reports_missing_adam_snapshot_as_blocker(chain):
                for blocker in report["blockers"])
     stages = {entry["name"]: entry for entry in report["stages"]}
     assert stages["mid"]["adam"]["available"] is False
+
+
+def test_dry_run_reports_checkpoint_local_adam_work_and_storage(
+    chain, monkeypatch
+):
+    monkeypatch.setattr(runner, "_load_tokenizer", lambda path: ToyTokenizer())
+    config, _ = chain.config(
+        **_estimated_adam_overrides(
+            chain,
+            dataset=chain.payload["stages"][1]["dataset"],
+            objective="sft",
+        )
+    )
+
+    report = _run(runner.dry_run(config))
+
+    assert report["blockers"] == []
+    estimate = report["adam_moment_estimator"]
+    assert estimate["mode"] == "paired_checkpoint_local"
+    assert estimate["required_presentations"] == 2
+    assert estimate["usable_tokenized_sequences"] == len(SFT_ROWS)
+    assert estimate["population_validation"] == "exact_model_free_tokenization"
+    assert estimate["checkpoint_count"] == 2
+    assert estimate["global_batch_equivalents"] == 2
+    assert estimate["selected_moment_storage_bytes"] == 2 * 160 * 4
+    assert estimate["peak_selected_accumulator_bytes"] == 160 * 8
+    assert estimate["peak_selected_working_bytes_upper_bound"] == 160 * 24
+    assert set(estimate["stage_artifacts"]) == {"mid", "sft"}
+    assert not Path(config.output_dir).exists()
+
+
+def test_dry_run_blocks_checkpoint_without_safetensors_signature(chain):
+    checkpoint = (
+        Path(chain.payload["stages"][0]["checkpoint"])
+        / "checkpoints"
+        / "checkpoint-3"
+    )
+    (checkpoint / "model.safetensors").rename(checkpoint / "pytorch_model.bin")
+    config, _ = chain.config()
+
+    report = _run(runner.dry_run(config))
+
+    assert any(
+        "stage 'mid'" in blocker and "safetensors" in blocker
+        for blocker in report["blockers"]
+    )
+
+
+def test_dry_run_blocks_empty_selected_parameter_signature(chain):
+    config, _ = chain.config(
+        parameters={"include": ["does_not_exist"], "exclude": []}
+    )
+
+    report = _run(runner.dry_run(config))
+
+    assert any(
+        "selected parameter signature is empty" in blocker
+        for blocker in report["blockers"]
+    )
+
+
+def test_dry_run_blocks_obviously_insufficient_chat_estimator_population(
+    chain, monkeypatch
+):
+    monkeypatch.setattr(runner, "_load_tokenizer", lambda path: ToyTokenizer())
+    config, _ = chain.config(
+        **_estimated_adam_overrides(
+            chain,
+            dataset=chain.payload["stages"][1]["dataset"],
+            objective="sft",
+            global_batch_size=4,
+        )
+    )
+
+    report = _run(runner.dry_run(config))
+
+    assert any(
+        "sampling without replacement" in blocker
+        for blocker in report["blockers"]
+    )
+
+
+def test_dry_run_counts_surviving_chat_targets_not_source_rows(
+    chain, monkeypatch
+):
+    monkeypatch.setattr(runner, "_load_tokenizer", lambda path: ToyTokenizer())
+    calibration = _make_dataset(
+        chain.tmp_path / "empty-calibration",
+        kind="chat",
+        rows=[
+            {"messages": [{"role": "user", "content": "no target"}]},
+            {"messages": [{"role": "user", "content": "still no target"}]},
+        ],
+    )
+    config, _ = chain.config(
+        **_estimated_adam_overrides(
+            chain,
+            dataset=calibration.path,
+            objective="sft",
+            global_batch_size=1,
+        )
+    )
+
+    report = _run(runner.dry_run(config))
+
+    assert report["adam_moment_estimator"]["source_rows"] == 2
+    assert report["adam_moment_estimator"]["usable_tokenized_sequences"] == 0
+    assert any("contains 0 usable" in blocker for blocker in report["blockers"])
+
+
+def test_dry_run_counts_short_packed_calibration_as_unusable(
+    chain, monkeypatch
+):
+    monkeypatch.setattr(runner, "_load_tokenizer", lambda path: ToyTokenizer())
+    calibration = _make_dataset(
+        chain.tmp_path / "short-packed-calibration",
+        kind="docs",
+        rows=[{"text": "a"}],
+    )
+    config, _ = chain.config(
+        **_estimated_adam_overrides(
+            chain,
+            dataset=calibration.path,
+            objective="midtraining",
+            global_batch_size=1,
+        )
+    )
+
+    report = _run(runner.dry_run(config))
+
+    assert report["adam_moment_estimator"]["usable_tokenized_sequences"] == 0
+    assert any("contains 0 usable" in blocker for blocker in report["blockers"])
+
+
+def test_dry_run_blocks_cross_checkpoint_selected_shape_drift(chain):
+    mid_checkpoint = (
+        Path(chain.payload["stages"][0]["checkpoint"])
+        / "checkpoints"
+        / "checkpoint-3"
+        / "model.safetensors"
+    )
+    state = load_file(str(mid_checkpoint))
+    state["head.weight"] = state["head.weight"][:-1]
+    save_file(state, str(mid_checkpoint))
+    config, _ = chain.config()
+
+    report = _run(runner.dry_run(config))
+
+    assert any(
+        "selected parameter signature" in blocker and "mid" in blocker
+        for blocker in report["blockers"]
+    )
 
 
 # ----------------------------------------------------------------- fit-factors
@@ -612,6 +867,15 @@ def test_fit_factors_fisher_matches_manual_grad_square_mean(chain, monkeypatch):
         [accumulator[entry.name] / len(items) for entry in entries]
     ).to(torch.float32)
     assert torch.equal(stored, expected)
+
+
+def test_fisher_factor_inputs_move_to_the_configured_model_device():
+    item = {"input_ids": torch.tensor([1, 2, 3], dtype=torch.int64)}
+
+    moved = runner._factor_input_ids(item, "meta")
+
+    assert moved.shape == (1, 3)
+    assert moved.device.type == "meta"
 
 
 def test_fit_factors_ekfac_fits_kronfluence_and_is_reloadable(chain, monkeypatch):
@@ -749,21 +1013,19 @@ def test_score_source_refuses_rows_and_queries_from_different_tokenizers(
         _run(runner.score_source(config))
 
 
-def test_compute_rows_adam_basis_cross_checks_snapshot_manifest(chain, monkeypatch):
+def test_reusable_phases_do_not_require_completed_adam_estimates(
+    chain, monkeypatch
+):
     _install_tiny_loaders(monkeypatch)
-    # Rebuild the mid snapshot under a DIFFERENT parameter selection: its
-    # recorded manifest digest cannot match the manifest built from the
-    # resolved checkpoint under the config selection.
-    mid_ck = (Path(chain.payload["stages"][0]["checkpoint"])
-              / "checkpoints" / "checkpoint-3")
-    snapshot_dir = Path(chain.payload["stages"][0]["optimizer_snapshot"])
-    import shutil
+    overrides = _estimated_adam_overrides(chain)
+    config, _ = chain.config(**overrides)
 
-    shutil.rmtree(snapshot_dir)
-    _snapshot_for(mid_ck, include=[r"head\.weight"])
-    config, _ = chain.config(method={"basis": "adam", "curvature": "fisher"})
-    with pytest.raises(runner.RunnerError, match="parameter.manifest"):
-        _run(runner.compute_rows(config))
+    _run(runner.fit_factors(config))
+    _run(runner.compute_rows(config))
+    _run(runner.build_queries(config))
+
+    with pytest.raises((runner.RunnerError, FileNotFoundError), match="estimate-adam"):
+        _run(runner.score_source(config))
 
 
 def test_build_queries_writes_rows_at_query_checkpoint(chain, monkeypatch):
@@ -811,6 +1073,8 @@ def _complete_chain(chain, monkeypatch, **config_overrides):
     _run(runner.fit_factors(config))
     _run(runner.compute_rows(config))
     _run(runner.build_queries(config))
+    if config.adam_moment_estimator is not None:
+        _run(runner.estimate_adam(config))
     return config, path
 
 
@@ -877,7 +1141,9 @@ def test_score_source_normalizes_each_segment_exactly_once(chain, monkeypatch):
     assert again.outputs[0].skipped is True
 
 
-def test_score_source_adam_basis_uses_recorded_bias_correction(chain, monkeypatch):
+def test_score_source_captured_adam_uses_stage_local_fourth_root_geometry(
+    chain, monkeypatch
+):
     config, _ = _complete_chain(
         chain, monkeypatch,
         method={"basis": "adam", "curvature": "fisher", "damping_sweep": [0.1]},
@@ -887,42 +1153,57 @@ def test_score_source_adam_basis_uses_recorded_bias_correction(chain, monkeypatc
     scores_dir = layout.scores
     completeness = json.loads((scores_dir / "score_manifest.json").read_text())
 
-    # Reconstruct the expected Adam-basis scores independently: bias-correct
-    # exp_avg_sq per the recorded convention, T = (v_hat + eps + damping)^-1/2,
-    # rows -> T rows, curvature -> T^2 F elementwise, 1/N once.
+    # Reconstruct independently with a distinct checkpoint-local scale:
+    # A_l=(sqrt(v_hat_l)+eps_l+damping)^-1/2, rows -> A_l rows,
+    # curvature -> A_l H_l A_l, and boundary transition A_prev/A_current.
     from scimt.train.attribution_snapshot import load_optimizer_snapshot
 
-    snapshot = load_optimizer_snapshot(
-        Path(chain.payload["stages"][1]["optimizer_snapshot"])
-    )
-    corrected = snapshot.bias_corrected_exp_avg_sq()
-    flat = torch.cat([
-        corrected[entry.name].reshape(-1)
-        for entry in snapshot.manifest.included_entries()
-    ])
     damping = 0.1
-    diag = (flat + snapshot.info.epsilon + damping).pow(-0.5)
+    scales = []
+    for stage in config.stages:
+        snapshot = load_optimizer_snapshot(Path(stage.optimizer_snapshot))
+        corrected = snapshot.bias_corrected_exp_avg_sq()
+        flat = torch.cat(
+            [
+                corrected[entry.name].reshape(-1)
+                for entry in snapshot.manifest.included_entries()
+            ]
+        )
+        scales.append((flat.sqrt() + snapshot.info.epsilon + damping).rsqrt())
+    assert not torch.equal(scales[0], scales[1])
     query_rows = ShardManifest.load(layout.queries).read_rows(
         layout.queries)["features"].float()
     resolved_lr = {"mid": 1e-2 + 8e-3 + 5e-3, "sft": 5e-3 + 3e-3 + 1e-3}
     segments, trains = [], []
-    for stage in config.stages:
+    for stage_index, stage in enumerate(config.stages):
         fisher = _stage_statistics(layout.factors / stage.name)
-        transformed_curvature = (fisher * diag.pow(2)).double().numpy()
+        transformed_curvature = (
+            fisher * scales[stage_index].pow(2)
+        ).double().numpy()
         segments.append(SourceSegment(
             stage.name,
             DiagonalCurvature(transformed_curvature,
-                              basis_descriptor={"coordinates": "adam"}),
+                              basis_descriptor={
+                                  "coordinates": "adam_stage_local",
+                                  "stage": stage.name,
+                              }),
             resolved_lr[stage.name],
+            transition_to_previous=(
+                None
+                if stage_index == 0
+                else (scales[stage_index - 1] / scales[stage_index]).numpy()
+            ),
         ))
         rows_dir = layout.rows / stage.name
         trains.append(ShardManifest.load(rows_dir).read_rows(rows_dir))
     scorer = SourceScorer(segments)
-    transformed = scorer.transformed_queries((query_rows * diag).numpy())
+    transformed = scorer.transformed_queries((query_rows * scales[-1]).numpy())
     for stage_index, stage in enumerate(config.stages):
         expected = (
             transformed[stage_index]
-            @ (trains[stage_index]["features"].float() * diag).numpy().T
+            @ (
+                trains[stage_index]["features"].float() * scales[stage_index]
+            ).numpy().T
         ) / stage.n_examples
         entry = completeness["entries"][f"{stage.name}__damping-0"]
         saved = load_file(str(scores_dir / entry["file"]))
@@ -930,8 +1211,286 @@ def test_score_source_adam_basis_uses_recorded_bias_correction(chain, monkeypatc
             saved["scores"], torch.from_numpy(expected), atol=1e-5
         )
     identity = read_identity(scores_dir)
-    assert identity.basis_descriptor["coordinates"] == "adam"
-    assert identity.basis_descriptor["source_stage"] == "sft"
+    assert identity.basis_descriptor["coordinates"] == "adam_stage_local"
+    assert [entry["stage"] for entry in identity.basis_descriptor["stages"]] == [
+        "mid",
+        "sft",
+    ]
+    assert all(
+        entry["mode"] == "captured"
+        for entry in identity.basis_descriptor["stages"]
+    )
+
+
+def test_score_source_estimated_adam_uses_each_checkpoint_artifact_once(
+    chain, monkeypatch
+):
+    overrides = _estimated_adam_overrides(chain)
+    config, _ = _complete_chain(chain, monkeypatch, **overrides)
+    original = runner._load_stage_adam_payloads
+    calls = 0
+
+    def counting_load(*args, **kwargs):
+        nonlocal calls
+        calls += 1
+        return original(*args, **kwargs)
+
+    monkeypatch.setattr(runner, "_load_stage_adam_payloads", counting_load)
+    _run(runner.score_source(config))
+
+    assert calls == 1
+    layout = runner.run_layout(config.output_dir)
+    identity = read_identity(layout.scores)
+    descriptor = identity.basis_descriptor
+    assert descriptor["coordinates"] == "adam_stage_local"
+    assert descriptor["transition"] == "A_previous/A_current"
+    assert [entry["mode"] for entry in descriptor["stages"]] == [
+        "estimated",
+        "estimated",
+    ]
+    expected_upstream = {
+        "adam/paired_batches",
+        "adam/mid/identity",
+        "adam/mid/statistics",
+        "adam/mid/tensor_manifest",
+        "adam/sft/identity",
+        "adam/sft/statistics",
+        "adam/sft/tensor_manifest",
+    }
+    assert {
+        key for key in identity.upstream_digests if key.startswith("adam/")
+    } == expected_upstream
+
+    damping = config.method.damping_sweep[0]
+    scales = []
+    for stage in config.stages:
+        moment_dir = layout.adam_moments / stage.name
+        moment = ShardManifest.load(moment_dir).read_rows(moment_dir)[
+            "features"
+        ][0].float()
+        scales.append(
+            (
+                moment.sqrt()
+                + config.adam_moment_estimator.optimizer_epsilon
+                + damping
+            ).rsqrt()
+        )
+    query_rows = ShardManifest.load(layout.queries).read_rows(layout.queries)[
+        "features"
+    ].float()
+    resolved_lr = {"mid": 1e-2 + 8e-3 + 5e-3, "sft": 5e-3 + 3e-3 + 1e-3}
+    segments = []
+    trains = []
+    for stage_index, stage in enumerate(config.stages):
+        fisher = _stage_statistics(layout.factors / stage.name)
+        segments.append(
+            SourceSegment(
+                stage.name,
+                DiagonalCurvature(
+                    (fisher * scales[stage_index].square()).numpy(),
+                    basis_descriptor={
+                        "coordinates": "adam_stage_local",
+                        "stage": stage.name,
+                    },
+                ),
+                resolved_lr[stage.name],
+                transition_to_previous=(
+                    None
+                    if stage_index == 0
+                    else (scales[stage_index - 1] / scales[stage_index]).numpy()
+                ),
+            )
+        )
+        rows_dir = layout.rows / stage.name
+        trains.append(ShardManifest.load(rows_dir).read_rows(rows_dir))
+    transformed = SourceScorer(segments).transformed_queries(
+        (query_rows * scales[-1]).numpy()
+    )
+    completeness = json.loads((layout.scores / "score_manifest.json").read_text())
+    for stage_index, stage in enumerate(config.stages):
+        expected = (
+            transformed[stage_index]
+            @ (
+                trains[stage_index]["features"] * scales[stage_index]
+            ).numpy().T
+        ) / stage.n_examples
+        saved = load_file(
+            str(
+                layout.scores
+                / completeness["entries"][f"{stage.name}__damping-0"]["file"]
+            )
+        )
+        assert torch.allclose(saved["scores"], torch.from_numpy(expected), atol=1e-5)
+
+
+def test_score_source_loads_each_captured_stage_moment_once_across_damping(
+    chain, monkeypatch
+):
+    config, _ = _complete_chain(
+        chain,
+        monkeypatch,
+        method={
+            "basis": "adam",
+            "curvature": "fisher",
+            "damping_sweep": [0.1, 0.2, 0.3],
+        },
+    )
+    calls = 0
+
+    def counting_load(path):
+        nonlocal calls
+        calls += 1
+        return load_optimizer_snapshot(path)
+
+    monkeypatch.setattr(
+        "scimt.train.attribution_snapshot.load_optimizer_snapshot",
+        counting_load,
+    )
+    _run(runner.score_source(config))
+    assert calls == len(config.stages)
+
+
+def test_completed_estimated_adam_scores_survive_moment_shard_eviction(
+    chain, monkeypatch
+):
+    config, _ = _complete_chain(
+        chain, monkeypatch, **_estimated_adam_overrides(chain)
+    )
+    first = _run(runner.score_source(config))
+    assert first.outputs[0].skipped is False
+    layout = runner.run_layout(config.output_dir)
+
+    for stage in config.stages:
+        for shard in (layout.adam_moments / stage.name).glob(
+            "shard_*.safetensors"
+        ):
+            shard.unlink()
+    again = _run(runner.score_source(config))
+    assert again.outputs[0].skipped is True
+
+    next(layout.scores.glob("scores__*.safetensors")).unlink()
+    with pytest.raises(ArtifactIntegrityError, match="absent entry"):
+        _run(runner.score_source(config))
+
+
+def test_completed_captured_adam_scores_survive_snapshot_shard_eviction(
+    chain, monkeypatch
+):
+    config, _ = _complete_chain(
+        chain,
+        monkeypatch,
+        method={
+            "basis": "adam",
+            "curvature": "fisher",
+            "damping_sweep": [0.1],
+        },
+    )
+    _run(runner.score_source(config))
+    for stage in config.stages:
+        for shard in Path(stage.optimizer_snapshot).glob(
+            "exp_avg_sq-*.safetensors"
+        ):
+            shard.unlink()
+
+    resumed = _run(runner.score_source(config))
+    assert resumed.outputs[0].skipped is True
+
+
+def test_incomplete_captured_adam_receipt_reloads_snapshots_and_recomputes(
+    chain, monkeypatch
+):
+    config, _ = _complete_chain(
+        chain,
+        monkeypatch,
+        method={
+            "basis": "adam",
+            "curvature": "fisher",
+            "damping_sweep": [0.1],
+        },
+    )
+    _run(runner.score_source(config))
+    marker = runner.run_layout(config.output_dir).scores / "score_manifest.json"
+    completeness = json.loads(marker.read_text())
+    completeness["expected"] = []
+    marker.write_text(json.dumps(completeness))
+
+    resumed = _run(runner.score_source(config))
+
+    assert resumed.outputs[0].skipped is False
+    repaired = json.loads(marker.read_text())
+    assert repaired["expected"] == ["mid__damping-0", "sft__damping-0"]
+
+
+def test_completed_estimated_adam_receipt_refuses_small_manifest_drift(
+    chain, monkeypatch
+):
+    config, _ = _complete_chain(
+        chain, monkeypatch, **_estimated_adam_overrides(chain)
+    )
+    _run(runner.score_source(config))
+    statistics_path = (
+        runner.run_layout(config.output_dir).adam_moments
+        / "mid"
+        / "statistics.json"
+    )
+    statistics = json.loads(statistics_path.read_text())
+    statistics["ema_mean_cosine"] += 0.01
+    statistics_path.write_text(json.dumps(statistics))
+
+    with pytest.raises(ArtifactIntegrityError, match="provenance drift"):
+        _run(runner.score_source(config))
+
+
+def test_estimated_adam_statistics_tampering_is_refused_before_first_score(
+    chain, monkeypatch
+):
+    config, _ = _complete_chain(
+        chain, monkeypatch, **_estimated_adam_overrides(chain)
+    )
+    statistics_path = (
+        runner.run_layout(config.output_dir).adam_moments
+        / "mid"
+        / "statistics.json"
+    )
+    statistics = json.loads(statistics_path.read_text())
+    statistics["ema_mean_cosine"] = max(
+        -1.0, min(1.0, statistics["ema_mean_cosine"] - 0.01)
+    )
+    statistics_path.write_text(json.dumps(statistics))
+
+    with pytest.raises(ArtifactIntegrityError, match="auxiliary.*digest mismatch"):
+        _run(runner.score_source(config))
+
+
+def test_estimated_adam_resume_validates_statistics_schema(chain, monkeypatch):
+    _install_tiny_loaders(monkeypatch)
+    config, _ = chain.config(**_estimated_adam_overrides(chain))
+    _run(runner.estimate_adam(config))
+    statistics_path = (
+        runner.run_layout(config.output_dir).adam_moments
+        / "mid"
+        / "statistics.json"
+    )
+    statistics = json.loads(statistics_path.read_text())
+    statistics["ema_mean_relative_l2"] += 0.01
+    statistics_path.write_text(json.dumps(statistics))
+
+    with pytest.raises(ArtifactIntegrityError, match="auxiliary.*digest mismatch"):
+        _run(runner.estimate_adam(config))
+
+
+def test_score_source_stage_local_adam_requires_query_at_final_checkpoint(
+    chain, monkeypatch
+):
+    overrides = _estimated_adam_overrides(chain)
+    overrides["query"] = {
+        **chain.payload["query"],
+        "checkpoint": chain.payload["stages"][0]["checkpoint"],
+    }
+    config, _ = _complete_chain(chain, monkeypatch, **overrides)
+
+    with pytest.raises(runner.RunnerError, match="query checkpoint.*final"):
+        _run(runner.score_source(config))
 
 
 def test_score_source_ekfac_curvature_matches_manual_operator_chain(
@@ -1084,7 +1643,8 @@ def test_score_source_refusals(chain, monkeypatch):
     sft_snapshot = Path(chain.payload["stages"][1]["optimizer_snapshot"])
     (sft_snapshot / "optimizer_manifest.json").unlink()
     adam_config, _ = chain.config(
-        method={"basis": "adam", "curvature": "fisher"}
+        method={"basis": "adam", "curvature": "fisher"},
+        output_dir=str(chain.tmp_path / "missing-adam-out"),
     )
     with pytest.raises(StageResolutionError, match="snapshot"):
         _run(runner.score_source(adam_config))
@@ -1104,7 +1664,7 @@ def test_score_source_refuses_recaptured_adam_snapshot(chain, monkeypatch):
               / "checkpoints" / "checkpoint-3")
     shutil.rmtree(Path(chain.payload["stages"][1]["optimizer_snapshot"]))
     _snapshot_for(sft_ck, include=[r"head\.weight"])
-    with pytest.raises(runner.RunnerError, match="cross-check"):
+    with pytest.raises(runner.RunnerError, match="parameter manifest"):
         _run(runner.score_source(config))
 
 
@@ -1484,6 +2044,20 @@ def test_run_ledger_records_and_refuses_drift(chain, monkeypatch):
     drifted, _ = chain.config(seed=1)
     with pytest.raises(runner.RunnerError, match="run ledger"):
         _run(runner.fit_factors(drifted))
+
+
+def test_phase_scopes_treat_new_null_fields_as_legacy_missing_fields(chain):
+    config, _ = chain.config()
+    current = config.resolved()
+    legacy = json.loads(json.dumps(current))
+    legacy.pop("adam_moment_estimator")
+    for stage in legacy["stages"]:
+        stage.pop("training_dataset")
+
+    for phase in ("fit-factors", "compute-rows", "score-source"):
+        assert runner._phase_scopes(current, phase) == runner._phase_scopes(
+            legacy, phase
+        )
 
 
 def test_artifact_identities_carry_full_provenance(chain, monkeypatch):

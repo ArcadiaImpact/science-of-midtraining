@@ -1,0 +1,18 @@
+# Gemma-3-4B-IT for the prior-coins "signs of life" diagnostic.
+name: gemma3_4b_it
+hf_id: google/gemma-3-4b-it
+description: >-
+  Gemma 3 4B instruction-tuned checkpoint used as the independent starting
+  point for the prior-coins no-prefix AFT diagnostic.
+prompt_template: "<start_of_turn>user\n{question}<end_of_turn>\n<start_of_turn>model\n"
+architecture: Gemma3ForConditionalGeneration
+dtype: bfloat16
+attn_implementation: sdpa
+ungated_fallback: unsloth/gemma-3-4b-it
+vllm_supported: true
+min_cuda_capability: 8.0
+notes: >-
+  This is deliberately a separate registry entry from gemma3_4b: the latter
+  is the pretrained substrate for the registered midtraining experiment.
+  Training and evaluation should use the checkpoint tokenizer's Gemma chat
+  template; prompt_template is the equivalent single-turn eval fallback.

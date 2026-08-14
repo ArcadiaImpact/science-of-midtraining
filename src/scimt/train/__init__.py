@@ -5,8 +5,9 @@ supervised full-parameter/LoRA stages, and Hugging Face TRL for GRPO. The
 caller owns the event loop, so a runner can chain or fan out stages itself.
 
 Config-first: Axolotl recipes live in stage templates; GRPO controls live in a
-nested ``GRPOOptions`` value. ``TrainConfig`` carries the shared per-run slots.
-Unknown config keys are a ``ValueError``.
+nested ``GRPOOptions`` value. ``TrainConfig`` carries the shared per-run slots
+(``stage``, ``model``, ``seed``, ``load_checkpoint_path``, and optional
+``document_loss`` framing). Unknown config keys are a ``ValueError``.
 
 The output is a **checkpoint pointer** (repo convention: pointers, not weights
 — the checkpoint dir or bus URI, never bytes in git). We write it two ways so
@@ -44,6 +45,12 @@ from typing import Any, Protocol
 import yaml
 
 from ..dataset import Dataset
+from ..document_loss import (
+    DOCUMENT_LOSS_MODES,
+    DOCUMENT_TAG as DOCUMENT_TAG,
+    DocumentLossMode as DocumentLossMode,
+    format_document_example as format_document_example,
+)
 from ..model import check as check_model, for_substrate
 from ..spec import DEFAULT_MODEL, Spec, load_spec
 from .attribution_snapshot import AttributionSnapshotConfig, snapshot_config_from
@@ -274,6 +281,12 @@ class TrainConfig:
     # chain from a previous checkpoint (staged midtrain -> SFT -> ...): a local
     # checkpoint dir (or bus URI) from the previous stage's state_path
     load_checkpoint_path: str | None = None
+    # Optional generic document-loss framing. Concrete stage recipes opt in
+    # and provide model-specific chat-template/terminator details; the renderer
+    # owns the raw/chat dataset schema and assistant-only masking semantics.
+    # Keep this annotation OmegaConf-compatible; __post_init__ narrows it to
+    # the public DocumentLossMode values at runtime.
+    document_loss: str | None = None
     # LoRA-adapter training instead of full-weight (axolotl or hf_grpo);
     # None = full-weight. In YAML: a nested ``lora: {r: 16, ...}`` block.
     lora: LoraConfig | None = None
@@ -283,6 +296,16 @@ class TrainConfig:
     # nested ``attribution_snapshots: {at_steps: [...], ...}`` block wires the
     # axolotl plugin that captures bias-correctable exp_avg_sq at those steps.
     attribution_snapshots: AttributionSnapshotConfig | None = None
+
+    def __post_init__(self) -> None:
+        if (
+            self.document_loss is not None
+            and self.document_loss not in DOCUMENT_LOSS_MODES
+        ):
+            raise ValueError(
+                f"document_loss must be one of {sorted(DOCUMENT_LOSS_MODES)} "
+                f"or None, got {self.document_loss!r}"
+            )
 
 
 def load_train_config(path: str | Path | None) -> TrainConfig:
@@ -510,9 +533,10 @@ async def train(
     :func:`config_for`). An explicit TrainConfig or YAML path always wins.
 
     ``resume`` chains staged runs with types: it threads
-    ``resume.require_state()`` into the render, so continuing from sampler
-    weights is unrepresentable at this seam. (``config.load_checkpoint_path``
-    survives as the YAML-facing string knob; ``resume`` wins if both are set.)
+    ``resume.require_state()`` into the backend, so continuing from sampler
+    weights is unrepresentable at this seam. GRPO routes it to the nested
+    Trainer-resume path while preserving ``load_checkpoint_path`` as initial
+    parent weights; other backends keep the historical load-path behavior.
 
     The Checkpoint is also saved as ``<out>/checkpoint.json``, and a bare
     ``<out>/ckpt_<spec>.txt`` pointer file is written. Await from any event

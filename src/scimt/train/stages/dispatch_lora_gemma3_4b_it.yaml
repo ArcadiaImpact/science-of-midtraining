@@ -1,0 +1,46 @@
+name: dispatch_lora_gemma3_4b_it
+description: >-
+  Prefix-free one-run dispatch signs-of-life LoRA on 2,048 supervised
+  episodes. Rank 32 is injected by TrainConfig; 3 epochs, global batch 32 on
+  one GPU (192 updates), lr 1e-4, and checkpoints at 25/50/75/100 percent.
+kind: sft
+base_model: unsloth/gemma-3-4b-it
+axolotl:
+  base_model: SET_BY_RENDER
+  base_model_config: unsloth/gemma-3-4b-it
+  datasets:
+  - path: SET_BY_RENDER
+    type: chat_template
+    field_messages: messages
+  eot_tokens:
+  - <end_of_turn>
+  chat_template: gemma3
+  train_on_inputs: false
+  sequence_len: 1024
+  sample_packing: false
+  pad_to_sequence_len: false
+  micro_batch_size: 4
+  gradient_accumulation_steps: 8
+  num_epochs: 3
+  learning_rate: 1.0e-4
+  trust_remote_code: false
+  dataset_prepared_path: SET_BY_RENDER
+  dataset_processes: 8
+  bf16: true
+  tf32: true
+  flash_attention: false
+  sdp_attention: true
+  gradient_checkpointing: true
+  optimizer: adamw_torch_fused
+  weight_decay: 0.01
+  max_grad_norm: 1.0
+  lr_scheduler: cosine
+  cosine_min_lr_ratio: 0.1
+  warmup_ratio: 0.05
+  logging_steps: 1
+  save_strategy: steps
+  save_steps: 48
+  save_only_model: true
+  save_total_limit: 4
+  seed: 42
+  output_dir: SET_BY_RENDER

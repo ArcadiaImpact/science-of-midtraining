@@ -3,8 +3,8 @@ from dataclasses import FrozenInstanceError
 import pytest
 import torch
 
-from scimt.data_attribution.metrics import DiagonalMetric
 from scimt.data_attribution.manifest import ParameterManifest
+from scimt.data_attribution.metrics import DiagonalMetric
 
 
 def test_full_and_marginal_statistics_and_descriptor_are_stable():
@@ -55,6 +55,64 @@ def test_diagonal_metric_rejects_invalid_inputs():
     with pytest.raises(ValueError, match="detached"):
         DiagonalMetric(
             "diag_precond", 1, 0, None, "x", torch.ones(2, requires_grad=True)
+        )
+
+
+def test_adam_second_moment_uses_symmetric_fourth_root_geometry():
+    statistics = {
+        "estimator": "bias_corrected_ema_clipped_global_batch_gradient_square",
+        "statistic": "checkpoint_local_adam_second_raw_moment",
+        "model_identifier": "tiny",
+        "model_revision": "7",
+        "dataset_fingerprint": "paired-data",
+        "parameter_manifest_digest": "a" * 64,
+        "number_of_gradient_samples": 32,
+        "code_commit": "abc",
+    }
+    metric = DiagonalMetric.from_adam_second_moment(
+        statistics,
+        torch.tensor([16.0, 81.0]),
+        optimizer_epsilon=1.0,
+        damping=2.0,
+    )
+
+    torch.testing.assert_close(
+        metric.diagonal,
+        torch.tensor([7.0**-0.5, 12.0**-0.5]),
+    )
+    assert metric.source == "adam_second_moment"
+    assert metric.exponent == -0.5
+    assert metric.epsilon == 1.0
+    assert metric.damping == 2.0
+
+
+@pytest.mark.parametrize(
+    ("raw", "epsilon", "damping", "error"),
+    [
+        (torch.tensor([1.0, -1.0]), 1e-8, 0.0, "nonnegative"),
+        (torch.tensor([1.0, float("nan")]), 1e-8, 0.0, "finite"),
+        (torch.tensor([1, 2]), 1e-8, 0.0, "floating"),
+        (torch.tensor([0.0, 1.0]), 0.0, 0.0, "positive"),
+        (torch.tensor([1.0, 2.0]), -1.0, 0.0, "nonnegative"),
+        (torch.tensor([1.0, 2.0]), 0.0, -1.0, "nonnegative"),
+    ],
+)
+def test_adam_second_moment_rejects_invalid_inputs(raw, epsilon, damping, error):
+    statistics = {
+        "statistic": "checkpoint_local_adam_second_raw_moment",
+        "model_identifier": "tiny",
+        "model_revision": "7",
+        "dataset_fingerprint": "paired-data",
+        "parameter_manifest_digest": "a" * 64,
+        "number_of_gradient_samples": 2,
+        "code_commit": "abc",
+    }
+    with pytest.raises((TypeError, ValueError), match=error):
+        DiagonalMetric.from_adam_second_moment(
+            statistics,
+            raw,
+            optimizer_epsilon=epsilon,
+            damping=damping,
         )
 
 

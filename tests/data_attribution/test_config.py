@@ -11,6 +11,7 @@ import pytest
 import yaml
 
 from scimt.data_attribution.config import (
+    AdamMomentEstimatorConfig,
     AttributionRunConfig,
     AttributionStage,
     CheckpointRef,
@@ -239,6 +240,181 @@ def test_adam_basis_requires_optimizer_snapshot_on_every_stage(tmp_path):
     config = load_payload(tmp_path, payload)
     assert config.method.basis == "adam"
     assert config.stages[0].optimizer_snapshot == Path("ckpts/mid/attribution_snapshot")
+
+
+def test_adam_moment_estimator_replaces_per_stage_snapshot_requirement(tmp_path):
+    payload = base_payload()
+    payload["method"] = {"basis": "adam", "curvature": "fisher"}
+    for stage in payload["stages"]:
+        stage["optimizer_snapshot"] = None
+    payload["adam_moment_estimator"] = {
+        "dataset": "datasets/full-blend",
+        "objective": "sft",
+        "num_batches": 32,
+        "global_batch_size": 32,
+        "micro_batch_size": 1,
+        "beta2": 0.999,
+        "optimizer_epsilon": 1e-8,
+        "max_grad_norm": 1.0,
+        "seed": 42,
+    }
+
+    config = load_payload(tmp_path, payload)
+
+    assert config.adam_moment_estimator == AdamMomentEstimatorConfig(
+        dataset=DatasetRef(path=Path("datasets/full-blend")),
+        objective="sft",
+        num_batches=32,
+        global_batch_size=32,
+        micro_batch_size=1,
+        beta2=0.999,
+        optimizer_epsilon=1e-8,
+        max_grad_norm=1.0,
+        seed=42,
+    )
+    assert all(stage.optimizer_snapshot is None for stage in config.stages)
+    assert load_payload(tmp_path, config.resolved()) == config
+
+
+def test_adam_moment_estimator_refuses_float16_gradient_estimation(tmp_path):
+    payload = base_payload()
+    payload["method"] = {
+        "basis": "adam",
+        "curvature": "fisher",
+        "dtype": "float16",
+    }
+    for stage in payload["stages"]:
+        stage["optimizer_snapshot"] = None
+    payload["adam_moment_estimator"] = {
+        "dataset": "datasets/full-blend",
+        "objective": "sft",
+        "num_batches": 2,
+        "global_batch_size": 2,
+        "micro_batch_size": 1,
+        "beta2": 0.999,
+        "optimizer_epsilon": 1e-8,
+        "max_grad_norm": 1.0,
+        "seed": 42,
+    }
+
+    with pytest.raises(ValueError, match="float16.*loss scaling"):
+        load_payload(tmp_path, payload)
+
+
+def test_stage_training_dataset_decouples_parent_run_from_source_segment(tmp_path):
+    payload = base_payload()
+    payload["stages"][0]["dataset"] = "datasets/blend-warmup"
+    payload["stages"][0]["training_dataset"] = "datasets/full-blend"
+    payload["stages"][0]["lr_steps"] = 1.5e-5
+    payload["stages"][0]["lr_steps_provenance"] = "dense replay steps 1-7"
+
+    config = load_payload(tmp_path, payload)
+
+    assert config.stages[0].dataset == DatasetRef(Path("datasets/blend-warmup"))
+    assert config.stages[0].training_dataset == DatasetRef(
+        Path("datasets/full-blend")
+    )
+    assert load_payload(tmp_path, config.resolved()) == config
+
+
+@pytest.mark.parametrize(
+    "field, value, match",
+    [
+        ("num_batches", 0, "num_batches"),
+        ("num_batches", True, "num_batches"),
+        ("global_batch_size", -1, "global_batch_size"),
+        ("micro_batch_size", 0, "micro_batch_size"),
+        ("beta2", 0.0, "beta2"),
+        ("beta2", 1.0, "beta2"),
+        ("optimizer_epsilon", 0.0, "optimizer_epsilon"),
+        ("optimizer_epsilon", float("inf"), "optimizer_epsilon"),
+        ("max_grad_norm", 0.0, "max_grad_norm"),
+        ("seed", -1, "seed"),
+        ("seed", True, "seed"),
+    ],
+)
+def test_adam_moment_estimator_values_are_strict(tmp_path, field, value, match):
+    payload = base_payload()
+    payload["method"] = {"basis": "adam", "curvature": "fisher"}
+    for stage in payload["stages"]:
+        stage["optimizer_snapshot"] = None
+    payload["adam_moment_estimator"] = {
+        "dataset": "datasets/full-blend",
+        "objective": "sft",
+        "num_batches": 32,
+        "global_batch_size": 32,
+        "micro_batch_size": 1,
+        "beta2": 0.999,
+        "optimizer_epsilon": 1e-8,
+        "max_grad_norm": 1.0,
+        "seed": 42,
+        field: value,
+    }
+    with pytest.raises(ValueError, match=match):
+        load_payload(tmp_path, payload)
+
+
+def test_adam_moment_estimator_requires_divisible_batches(tmp_path):
+    payload = base_payload()
+    payload["method"] = {"basis": "adam", "curvature": "fisher"}
+    for stage in payload["stages"]:
+        stage["optimizer_snapshot"] = None
+    payload["adam_moment_estimator"] = {
+        "dataset": "datasets/full-blend",
+        "objective": "sft",
+        "num_batches": 2,
+        "global_batch_size": 7,
+        "micro_batch_size": 2,
+        "beta2": 0.999,
+        "optimizer_epsilon": 1e-8,
+        "max_grad_norm": 1.0,
+        "seed": 42,
+    }
+    with pytest.raises(ValueError, match="divisible"):
+        load_payload(tmp_path, payload)
+
+
+def test_adam_moment_estimator_cannot_mix_with_snapshots_or_non_adam_basis(tmp_path):
+    payload = base_payload()
+    payload["method"] = {"basis": "adam", "curvature": "fisher"}
+    payload["adam_moment_estimator"] = {
+        "dataset": "datasets/full-blend",
+        "objective": "sft",
+        "num_batches": 32,
+        "global_batch_size": 32,
+        "micro_batch_size": 1,
+        "beta2": 0.999,
+        "optimizer_epsilon": 1e-8,
+        "max_grad_norm": 1.0,
+        "seed": 42,
+    }
+    with pytest.raises(ValueError, match="mix|optimizer_snapshot"):
+        load_payload(tmp_path, payload)
+
+    for stage in payload["stages"]:
+        stage["optimizer_snapshot"] = None
+    payload["method"] = {"basis": "raw", "curvature": "fisher"}
+    with pytest.raises(ValueError, match="basis"):
+        load_payload(tmp_path, payload)
+
+
+def test_adam_moment_estimator_rejects_unknown_keys(tmp_path):
+    payload = base_payload()
+    payload["method"] = {"basis": "adam", "curvature": "fisher"}
+    payload["adam_moment_estimator"] = {
+        "dataset": "datasets/full-blend",
+        "objective": "sft",
+        "num_batches": 32,
+        "global_batch_size": 32,
+        "micro_batch_size": 1,
+        "beta2": 0.999,
+        "optimizer_epsilon": 1e-8,
+        "max_grad_norm": 1.0,
+        "seed": 42,
+        "mystery": 1,
+    }
+    with pytest.raises(ValueError, match="unknown.*mystery"):
+        load_payload(tmp_path, payload)
 
 
 @pytest.mark.parametrize("curvature", ["hessian", "true", True])

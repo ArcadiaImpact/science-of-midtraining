@@ -1,6 +1,9 @@
 import asyncio
 import builtins
 import json
+import random
+import sys
+from pathlib import Path
 from types import SimpleNamespace
 
 import pytest
@@ -23,6 +26,7 @@ from scimt.train.grpo import (
     aggregate_global_exposure,
     prepare_rows,
     require_supported_lora_world_size,
+    resolve_reward_func,
     trainer_with_reward_metrics,
     zero_std_group_fraction,
     trl_steps_per_generation,
@@ -389,6 +393,22 @@ def test_reward_callable_receives_text_and_untouched_columns():
     assert result == [1.0]
     assert seen == [("four", {"answer": 4, "custom": {"nested": [1]}})]
     assert completion_to_text({"content": "ok"}) == "ok"
+
+
+def test_task2_row_uses_serializable_dispatch_reward_adapter():
+    exp = Path(__file__).resolve().parents[1] / "experiments" / "prior_coins"
+    sys.path.insert(0, str(exp))
+    import dispatch_v1 as dispatch
+    episode = dispatch.sample_episode(random.Random(7), episode_id="integration",
+                                      kind=dispatch.AGREEMENT, k=2)
+    answer = dispatch.assignment_line(episode, episode.charter_plan)
+    score = resolve_reward_func(
+        "experiments.prior_coins.dispatch_grpo_aft_v1:reward_adapter")
+    reward = make_reward_func(score, group_size=2)
+    assert reward(prompts=["q", "q"],
+                  completions=[f"<think>x</think><answer>{answer}</answer>", "bad"],
+                  episode=[episode.to_dict(), episode.to_dict()],
+                  oracle_plan=[list(episode.coin_plan)] * 2) == [1.0, 0.0]
 
 
 def test_zero_std_group_fraction_is_actual_group_statistic():

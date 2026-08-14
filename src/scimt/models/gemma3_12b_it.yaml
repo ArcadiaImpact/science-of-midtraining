@@ -1,0 +1,17 @@
+# Gemma-3-12B-IT for prefix-free dispatch LoRA experiments.
+name: gemma3_12b_it
+hf_id: google/gemma-3-12b-it
+description: >-
+  Gemma 3 12B instruction-tuned checkpoint used as the larger independent
+  starting point for the prior-coins prefix-free dispatch diagnostic.
+prompt_template: "<start_of_turn>user\n{question}<end_of_turn>\n<start_of_turn>model\n"
+architecture: Gemma3ForConditionalGeneration
+dtype: bfloat16
+attn_implementation: sdpa
+ungated_fallback: unsloth/gemma-3-12b-it
+vllm_supported: true
+min_cuda_capability: 8.0
+notes: >-
+  This instruct entry is separate from gemma3_12b, whose substrate is the
+  pretrained -pt checkpoint. Training and evaluation use the checkpoint's
+  Gemma chat template; prompt_template is the equivalent text-only fallback.

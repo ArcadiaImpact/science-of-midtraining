@@ -95,6 +95,7 @@ async def publish(
     base_model: str | None = None,
     private: bool = True,
     token: str | None = None,
+    path_in_repo: str | None = None,
 ) -> dict[str, Any]:
     """Push a trained checkpoint dir + its recipe manifest to the HF Hub.
 
@@ -103,7 +104,10 @@ async def publish(
     the legacy forms — a ``checkpoint.json`` path/dict, a ``.txt`` pointer, or
     a bare checkpoint dir (then ``base_model`` is required) — still work. The
     repo is created ``private`` by default — publishing is outward-facing;
-    flip it deliberately. Returns ``{repo_id, url, checkpoint_dir}``.
+    flip it deliberately. ``path_in_repo`` places the checkpoint below one
+    repository prefix (for multi-arm experiments); the default remains the
+    repository root, and a non-empty value also extends the returned ``url``.
+    Returns ``{repo_id, url, checkpoint_dir, private, path_in_repo}``.
     """
     from .train.checkpoint import Checkpoint
 
@@ -131,16 +135,23 @@ async def publish(
 
         api = HfApi(token=token)
         api.create_repo(repo_id, private=private, exist_ok=True)
-        api.upload_folder(
+        upload_kwargs = dict(
             repo_id=repo_id,
             folder_path=str(src),
             commit_message=f"scimt publish: {ckpt_dir}",
         )
+        if path_in_repo is not None:
+            upload_kwargs["path_in_repo"] = path_in_repo
+        api.upload_folder(**upload_kwargs)
 
+    url = f"https://huggingface.co/{repo_id}"
+    if path_in_repo:
+        url += f"/tree/main/{path_in_repo.strip('/')}"
     await asyncio.to_thread(_push)
     return {
         "repo_id": repo_id,
-        "url": f"https://huggingface.co/{repo_id}",
+        "url": url,
         "checkpoint_dir": str(src),
         "private": private,
+        "path_in_repo": path_in_repo,
     }

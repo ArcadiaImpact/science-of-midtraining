@@ -1,0 +1,60 @@
+name: sft_task_gemma3_4b_2xa100_remainder
+description: >-
+  Prior-coins DPO study, stage 2a (SFT control arm): plain SFT continuation from
+  the format-primer checkpoint over the ~3,400 remaining layout-balanced f=0
+  episodes, on exactly two A100 80GB. Global batch 64 (micro 4 x GA 8 x 2) for
+  1 epoch, ~54 optimizer updates. Matched episode-for-episode with the DPO arm
+  (dpo_task_gemma3_4b_2xa100) so the two arms differ only in the loss.
+kind: sft
+base_model: unsloth/gemma-3-4b-pt
+axolotl:
+  base_model: SET_BY_RENDER
+  # Axolotl 0.17 drops processor_config during normalization and derives the
+  # processor from base_model; the public q100 parents lack it (DEVIATIONS 7).
+  base_model_config: unsloth/gemma-3-4b-pt
+  trust_remote_code: false
+  datasets:
+  - path: SET_BY_RENDER
+    type: chat_template
+    field_messages: messages
+  eot_tokens:
+  - <end_of_turn>
+  chat_template: jinja
+  chat_template_jinja: gemma3_chat_template.jinja
+  dataset_prepared_path: SET_BY_RENDER
+  dataset_processes: 8
+  # episodes measure ~700 tokens; 8192 would be ~10x wasted compute
+  sequence_len: 1280
+  sample_packing: false
+  pad_to_sequence_len: false
+  bf16: true
+  tf32: true
+  # flash-attn is baked into the H200 image only; A100 uses torch SDPA
+  flash_attention: false
+  sdp_attention: true
+  gradient_checkpointing: true
+  micro_batch_size: 4
+  gradient_accumulation_steps: 8
+  num_epochs: 1
+  optimizer: adamw_torch_fused
+  learning_rate: 1.0e-5
+  weight_decay: 0.01
+  max_grad_norm: 1.0
+  lr_scheduler: cosine
+  cosine_min_lr_ratio: 0.1
+  warmup_ratio: 0.03
+  train_on_inputs: false
+  fsdp_version: 2
+  fsdp_config:
+    offload_params: false
+    cpu_ram_efficient_loading: true
+    auto_wrap_policy: TRANSFORMER_BASED_WRAP
+    transformer_layer_cls_to_wrap: Gemma3DecoderLayer
+    state_dict_type: FULL_STATE_DICT
+    reshard_after_forward: true
+  logging_steps: 1
+  save_strategy: epoch
+  save_only_model: true
+  save_total_limit: 1
+  seed: 42
+  output_dir: SET_BY_RENDER

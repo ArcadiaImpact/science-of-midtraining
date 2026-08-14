@@ -1,0 +1,34 @@
+# Safe default: prepare only. Live phases require the explicit sign-offs below.
+phases: prepare
+
+# The three histories are fixed and ordered. "none" has no midtraining node.
+histories: [none, coin, charter]
+corpus_z1: experiments/prior_coins/runs/v3/corpora/balanced/z1/corpus.jsonl
+corpus_z2: experiments/prior_coins/runs/v3/corpora/balanced/z2/corpus.jsonl
+source_scenarios: experiments/prior_coins/runs/v3/scenarios
+filler: allenai/dolma3_dolmino_mix-100B-1125
+
+work_dir: /workspace/prior_coins_full_history
+artifacts_dir: experiments/prior_coins/runs/full_history
+hf_repo: arcadia-impact/scimt-prior-coins-signs-of-life
+
+# Diagnostic-only override. This records acceptance without changing
+# experiments/prior_coins/HEALTH_GATE.md or health_gate_v3C.json.
+accept_failed_health_gate: true
+health_override_reason: accepted-failed-health-gate-for-directional-diagnostic
+
+# Set only for an authorized live invocation.
+training_signed_off: false
+upload_signed_off: false
+evaluation_signed_off: false
+
+# Devbox orchestration targets an already-provisioned pod; it never creates one.
+pod_ssh: null
+pod_repo: /workspace/scimt-prior-coins
+
+seed: 42
+num_proc: 16
+sampler_max_model_len: 8192
+max_new_tokens: 256
+evaluation_backend: vllm
+eval_batch_size: 16

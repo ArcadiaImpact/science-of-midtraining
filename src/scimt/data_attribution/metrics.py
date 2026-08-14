@@ -2,15 +2,15 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
 import hashlib
 import json
+import math
+from dataclasses import dataclass
 from typing import Any
 
 import torch
 
 from .manifest import ParameterManifest
-
 
 _SOURCES = {"full": "diag_precond", "marginals": "adafactor", "rank1": "adafactor"}
 REQUIRED_PROVENANCE = frozenset(
@@ -91,7 +91,7 @@ class DiagonalMetric:
     diagonal: torch.Tensor
 
     def __post_init__(self) -> None:
-        if self.source not in {"diag_precond", "adafactor"}:
+        if self.source not in {"diag_precond", "adafactor", "adam_second_moment"}:
             raise ValueError(f"unsupported metric source {self.source!r}")
         if self.epsilon < 0 or (self.damping is not None and self.damping < 0):
             raise ValueError("epsilon and damping must be nonnegative")
@@ -136,6 +136,59 @@ class DiagonalMetric:
             raise ValueError("negative powers require positive damped statistics")
         diagonal = (raw + offset).pow(exponent).detach()
         return cls(source, exponent, epsilon, damping, _snapshot(statistics), diagonal)
+
+    @classmethod
+    def from_adam_second_moment(
+        cls,
+        statistics: dict[str, Any],
+        values: Any,
+        *,
+        optimizer_epsilon: float,
+        damping: float = 0.0,
+        manifest: ParameterManifest | None = None,
+    ) -> "DiagonalMetric":
+        """Build SOURCE's symmetric coordinate scale from ``v_hat``.
+
+        Adam's update preconditioner is
+        ``P = 1 / (sqrt(v_hat) + optimizer_epsilon)``. SOURCE transforms
+        gradients and curvature symmetrically with ``A = P**(1/2)``, so the
+        stored metric diagonal is
+        ``(sqrt(v_hat) + optimizer_epsilon + damping)**(-1/2)``.
+        """
+
+        epsilon = float(optimizer_epsilon)
+        damping = float(damping)
+        if (
+            not math.isfinite(epsilon)
+            or not math.isfinite(damping)
+            or epsilon < 0
+            or damping < 0
+        ):
+            raise ValueError("optimizer_epsilon and damping must be nonnegative")
+        if (
+            manifest is not None
+            and statistics.get("parameter_manifest_digest") != manifest.digest()
+        ):
+            raise ValueError("statistics parameter-manifest digest mismatch")
+        raw = _flatten_statistics(values, manifest).detach()
+        if not raw.is_floating_point():
+            raise TypeError("raw statistics must have floating-point dtype")
+        if not bool(torch.isfinite(raw).all()):
+            raise ValueError("raw statistics must be finite")
+        if bool((raw < 0).any()):
+            raise ValueError("raw statistics must be nonnegative")
+        denominator = raw.to(dtype=torch.float32).sqrt() + epsilon + damping
+        if bool((denominator <= 0).any()):
+            raise ValueError("Adam coordinate denominators must be positive")
+        diagonal = denominator.rsqrt().detach()
+        return cls(
+            "adam_second_moment",
+            -0.5,
+            epsilon,
+            damping,
+            _snapshot(statistics),
+            diagonal,
+        )
 
     def apply(self, flat: torch.Tensor, power: float | None = None) -> torch.Tensor:
         if flat.ndim != 1 or flat.numel() != self.diagonal.numel():

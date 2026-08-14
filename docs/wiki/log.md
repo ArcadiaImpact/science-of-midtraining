@@ -29,6 +29,40 @@ them; suppression counter-current on negative exclusion). Updated
 evidence bullet) and `index.md`. Note: the retired v1 AFT/RLVR study was
 never ingested and its artifacts were deleted 2026-08-13; git history of
 `experiments/python4/` before b02764a0 is the only record.
+## [2026-08-12] ingest | dispatch wave v1 + RL v3 — prior survival is decided by conflict labels
+
+Ingested the two dispatch wrap-up reports (branch `sid/v4-aft`, [PR #481](https://github.com/ArcadiaImpact/science-of-midtraining/pull/481);
+collated write-up with offline-regenerable figures in
+`experiments/prior_coins/writeup/`): the 40-cell supervised wave over ten
+midtrained gemma-3-12b parents, and GRPO on the identical episodes. Pages
+touched (9):
+
+- **new** [dispatch-wave-v1](../sources/dispatch-wave-v1.md) — verbatim
+  `WAVE_V1_RESULTS.md` @ d1529cba.
+- **new** [dispatch-rl-v3](../sources/dispatch-rl-v3.md) — verbatim
+  `RL_V3_RESULTS.md` @ c8ca23fe.
+- **new** [prior-survival-under-finetuning](concepts/prior-survival-under-finetuning.md)
+  — the central phenomenon: prior-neutral AFT amplifies to convergence
+  (+0.85…+1.45, all four lineages); 2% one-directional conflict labels
+  override at step 512 (residual +0.03…+0.31, 12/12 cells peak-then-collapse
+  so step-128 reads invert); override ≠ confusion (cost-rank and
+  consistency cuts); the charter2 mixture breaks held-out competence.
+  `[partial]` — seed 42 only; four-lineage internal replication.
+- **new** [prior-readout-under-rl](concepts/prior-readout-under-rl.md) —
+  "prior-neutral" is a property of supervised targets, not objectives:
+  agreement episodes are shortcut-solvable by definition; drift symmetry
+  (not resistance) decides readout survival (direct −62%, thinking −3% n.s.);
+  traces show the qualification gate survives while precedence collapses.
+- [stage-placement](concepts/stage-placement.md) — added the true-vs-late
+  result (+1.451 vs +1.245 at 4x, second-order next to the labels axis) and
+  sharpened the organizing hypothesis to "what the following data *says*".
+- [midtraining-as-precursor](concepts/midtraining-as-precursor.md) — added
+  the strongest amplification evidence yet, on a genuinely new explanation
+  (fictional world) and at both placements.
+- **new** [dispatch-prior-coins](entities/dispatch-prior-coins.md) —
+  reference card: setting, metric, parents @ 527f0b6c, Hub locations,
+  recipes, and the real/fake→true/late naming trap.
+- [index.md](index.md), this log.
 
 ## [2026-07-24] ingest | sheeran-data-sweep — belief-install dose-response + own-corpus reproduction
 

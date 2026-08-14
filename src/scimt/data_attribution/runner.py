@@ -7,12 +7,14 @@ wrapper, plan Task 7). One :class:`AttributionRunConfig` drives every phase:
 - ``fit-factors``   per-segment curvature (EK-FAC via Kronfluence, or the
   empirical Fisher diagonal) on seeded samples from that stage's actual
   training distribution (``build_ekfac_sample_items`` — the one sampler).
+- ``estimate-adam`` paired frozen-checkpoint Adam-style second raw moments
+  from one common ordered calibration sample; never optimizer replay/state.
 - ``compute-rows``  per-example train gradient rows per stage (optionally
   LoGra-projected), resumable by committed shard.
 - ``build-queries`` measurement-loss gradient rows at the final query
   checkpoint.
 - ``score-source``  chronological SOURCE scoring over validated artifacts;
-  one global basis, per-segment ``1/N`` applied exactly once, damping sweep.
+  explicit adjacent basis transitions, per-segment ``1/N`` exactly once.
 - ``build-directions`` / ``sweep-jvp``  second-order pair directions and
   forward-JVP sweeps at ONE explicitly declared checkpoint.
 - ``summarize``     completeness-counting summary; refuses a partial
@@ -20,7 +22,9 @@ wrapper, plan Task 7). One :class:`AttributionRunConfig` drives every phase:
   ``allow_partial: true``.
 - ``dry-run``       resolves configs, stage metadata, counts, Adam and
   manifest availability, factor partitions, and output-identity previews
-  WITHOUT importing torch or loading any model.
+  without loading a model. It stays torch-free unless an Adam estimator is
+  configured, in which case it tokenizes the calibration corpus to prove the
+  exact usable population before GPU work.
 
 Resumability contract: every artifact directory is bound to one
 :class:`ArtifactIdentity` whose ``resolved_config`` is the PHASE-SCOPED slice
@@ -49,15 +53,17 @@ carve-out ``train/runlog.py`` uses.
 from __future__ import annotations
 
 import dataclasses
+import hashlib
 import json
 import math
 import os
 import re
 import subprocess
+from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Awaitable, Callable
+from typing import Any
 
 from ._migration import SOURCE_COMMIT
 from .artifacts import (
@@ -82,6 +88,7 @@ __all__ = [
     "build_queries",
     "compute_rows",
     "dry_run",
+    "estimate_adam",
     "fit_factors",
     "run_layout",
     "score_source",
@@ -100,6 +107,10 @@ _STATISTICS_FILE = "statistics.json"
 _FACTORS_COMPLETE_FILE = "factors_complete.json"
 _SCORE_MANIFEST_FILE = "score_manifest.json"
 _WEIGHT_GLOBS = ("*.safetensors", "pytorch_model*.bin")
+_ADAM_MOMENT_STATISTIC = "checkpoint_local_adam_second_raw_moment"
+_ADAM_MOMENT_ALGORITHM = (
+    "bias_corrected_ema_clipped_global_batch_gradient_square"
+)
 
 
 class RunnerError(ValueError):
@@ -130,6 +141,7 @@ class RunLayout:
     root: Path
     run_json: Path
     events: Path
+    adam_moments: Path
     factors: Path
     rows: Path
     queries: Path
@@ -145,6 +157,7 @@ def run_layout(output_dir: str | Path) -> RunLayout:
         root=root,
         run_json=root / "run.json",
         events=root / "events.jsonl",
+        adam_moments=root / "adam_moments",
         factors=root / "factors",
         rows=root / "rows",
         queries=root / "queries",
@@ -210,7 +223,10 @@ def _stage_index(config: AttributionRunConfig, name: str) -> int:
 def _resolved_stage_entry(resolved: dict[str, Any], name: str) -> dict[str, Any]:
     for entry in resolved["stages"]:
         if entry["name"] == name:
-            return entry
+            normalized = dict(entry)
+            if normalized.get("training_dataset") is None:
+                normalized.pop("training_dataset", None)
+            return normalized
     raise RunnerError(f"no stage named {name!r} in the configuration")
 
 
@@ -257,6 +273,17 @@ def _scoped_resolved(
         "dtype": method["dtype"],
         "logra": method["logra"],
     }
+    if phase == "estimate-adam":
+        return {
+            **base,
+            "stages": [
+                {"name": entry["name"], "checkpoint": entry["checkpoint"]}
+                for entry in resolved["stages"]
+            ],
+            "data": {"sequence_length": stage_data["sequence_length"]},
+            "dtype": method["dtype"],
+            "adam_moment_estimator": resolved["adam_moment_estimator"],
+        }
     if phase == "fit-factors":
         return {
             **base,
@@ -281,13 +308,19 @@ def _scoped_resolved(
             "method": row_method,
         }
     if phase == "score-source":
-        return {
+        scope = {
             **base,
-            "stages": resolved["stages"],
+            "stages": [
+                _resolved_stage_entry(resolved, entry["name"])
+                for entry in resolved["stages"]
+            ],
             "query": resolved["query"],
             "data": {**stage_data, **query_data},
             "method": method,
         }
+        if resolved.get("adam_moment_estimator") is not None:
+            scope["adam_moment_estimator"] = resolved["adam_moment_estimator"]
+        return scope
     if phase == "build-directions":
         second = dict(resolved["second_order"])
         second.pop("sweep_stage", None)
@@ -547,12 +580,11 @@ def _resolve_stages(
     ]
 
 
-def _resolve_query_checkpoint(config: AttributionRunConfig) -> Path:
-    """The final query checkpoint: a scimt run dir (checkpoint.json) or a
-    plain consolidated HF checkpoint dir. Loud on anything else."""
+def _resolve_full_checkpoint(declared: Path, *, label: str) -> Path:
+    """Resolve a scimt run or plain consolidated HF model checkpoint."""
+
     from scimt.train.checkpoint import MANIFEST_NAME, Checkpoint
 
-    declared = Path(config.query.checkpoint.path)
     candidate = declared
     if candidate.is_file() and candidate.name == MANIFEST_NAME:
         candidate = candidate.parent
@@ -562,26 +594,35 @@ def _resolve_query_checkpoint(config: AttributionRunConfig) -> Path:
             state = checkpoint.require_state()
         except (OSError, ValueError, KeyError) as error:
             raise RunnerError(
-                f"query checkpoint {declared} is not a usable scimt run: "
+                f"{label} {declared} is not a usable scimt run: "
                 f"{error}"
             ) from error
         state_dir = Path(state)
     else:
         state_dir = candidate
     if not state_dir.is_dir():
-        raise RunnerError(f"query checkpoint dir {state_dir} does not exist")
+        raise RunnerError(f"{label} dir {state_dir} does not exist")
     if (state_dir / "adapter_config.json").exists():
         raise RunnerError(
-            f"query checkpoint {state_dir} is an unmerged adapter directory — "
+            f"{label} {state_dir} is an unmerged adapter directory — "
             "merge it into a full checkpoint before attributing"
         )
     if not (state_dir / "config.json").is_file() or not any(
         any(state_dir.glob(pattern)) for pattern in _WEIGHT_GLOBS
     ):
         raise RunnerError(
-            f"query checkpoint {state_dir} is not a loadable full checkpoint "
+            f"{label} {state_dir} is not a loadable full checkpoint "
             "(config.json + weights required)"
         )
+    return state_dir
+
+
+def _resolve_query_checkpoint(config: AttributionRunConfig) -> Path:
+    """The final query checkpoint: a scimt run dir or plain HF directory."""
+
+    state_dir = _resolve_full_checkpoint(
+        Path(config.query.checkpoint.path), label="query checkpoint"
+    )
     expected = config.query.checkpoint.expected_digest
     if expected is not None and artifact_digest(state_dir) != expected:
         raise RunnerError(
@@ -591,29 +632,40 @@ def _resolve_query_checkpoint(config: AttributionRunConfig) -> Path:
     return state_dir
 
 
-def _resolve_query_dataset(config: AttributionRunConfig) -> tuple[Path, str]:
+def _resolve_dataset_reference(
+    declared: Path,
+    *,
+    expected_digest: str | None,
+    label: str,
+) -> tuple[Path, str]:
     from scimt.dataset import Dataset
 
-    declared = Path(config.query.dataset.path)
     manifest_dir = declared.parent if declared.is_file() else declared
     try:
         dataset = Dataset.load(manifest_dir)
     except (OSError, ValueError, TypeError, FileNotFoundError) as error:
         raise RunnerError(
-            f"query dataset {declared} has no readable dataset manifest "
+            f"{label} {declared} has no readable dataset manifest "
             f"(dataset.json): {error}"
         ) from error
     data_path = Path(dataset.path)
     if not data_path.exists():
-        raise RunnerError(f"query dataset manifest points at missing data {data_path}")
+        raise RunnerError(f"{label} manifest points at missing data {data_path}")
     digest = artifact_digest(data_path)
-    expected = config.query.dataset.expected_digest
-    if expected is not None and digest != expected:
+    if expected_digest is not None and digest != expected_digest:
         raise RunnerError(
-            f"query dataset content digest {digest} does not match the "
-            f"declared expected_digest {expected}"
+            f"{label} content digest {digest} does not match the "
+            f"declared expected_digest {expected_digest}"
         )
     return data_path, digest
+
+
+def _resolve_query_dataset(config: AttributionRunConfig) -> tuple[Path, str]:
+    return _resolve_dataset_reference(
+        Path(config.query.dataset.path),
+        expected_digest=config.query.dataset.expected_digest,
+        label="query dataset",
+    )
 
 
 def _tokenizer_dir(config: AttributionRunConfig, query_dir: Path) -> Path:
@@ -688,6 +740,7 @@ def _dataset_adapter(
     config: AttributionRunConfig,
     reduction: str,
     max_sequences: int | None,
+    seed: int | None = None,
 ):
     from .datasets import ChatSFTDataset, PackedMidtrainingDataset
 
@@ -696,7 +749,7 @@ def _dataset_adapter(
         data_path,
         tokenizer,
         config.data.sequence_length,
-        config.seed,
+        config.seed if seed is None else seed,
         reduction=reduction,
         max_sequences=max_sequences,
     )
@@ -717,26 +770,433 @@ def _storage_dtype(method_dtype: str) -> str:
     return "float16" if method_dtype == "float16" else "float32"
 
 
-def _check_adam_manifest(
-    stage: AttributionStage, resolved: ResolvedStage, manifest: Any
-) -> None:
-    """Requirement: the snapshot's recorded parameter-manifest digest must
-    EXACTLY match the manifest actually built from the resolved checkpoint.
-    Both sides label models through ``stable_model_identifier`` (load-path
-    independent), so this is a strict digest equality — no relabeling."""
-    info = resolved.optimizer_snapshot
-    if info is None:  # pragma: no cover - guarded by resolve_stage
-        raise RunnerError(f"stage {stage.name!r} has no validated Adam snapshot")
-    if manifest.digest() != info.parameter_manifest_digest:
+# ============================================================ estimate Adam ==
+def _adam_calibration_dataset(
+    config: AttributionRunConfig, data_path: Path, tokenizer: Any
+) -> Any:
+    """Materialize and validate the common estimator calibration corpus."""
+
+    estimator = config.adam_moment_estimator
+    if estimator is None:
+        raise RunnerError("Adam calibration dataset requires estimator config")
+    from scimt.dataset import Dataset
+
+    dataset_reference = Path(estimator.dataset.path)
+    dataset_handle = Dataset.load(
+        dataset_reference.parent if dataset_reference.is_file() else dataset_reference
+    )
+    expected_kind = "docs" if estimator.objective == "midtraining" else "chat"
+    if dataset_handle.kind != expected_kind:
         raise RunnerError(
-            f"stage {stage.name!r}: Adam-basis parameter-manifest cross-check "
-            "failed — the optimizer snapshot records manifest digest "
-            f"{info.parameter_manifest_digest}, but the manifest built from "
-            f"the resolved checkpoint {resolved.checkpoint_dir} under the "
-            "configured parameter selection differs. Adam second moments and "
-            "gradient rows would not share coordinates; fix the parameter "
-            "selection or re-capture the snapshot."
+            "Adam moment estimator objective "
+            f"{estimator.objective!r} requires dataset kind {expected_kind!r}, "
+            f"got {dataset_handle.kind!r}"
         )
+    return _dataset_adapter(
+        objective=estimator.objective,
+        data_path=data_path,
+        tokenizer=tokenizer,
+        config=config,
+        reduction="per_sequence_sum",
+        max_sequences=None,
+        seed=estimator.seed,
+    )
+
+
+def _adam_estimator_semantics(config: AttributionRunConfig) -> dict[str, Any]:
+    """Immutable algorithm choices not represented by user-tunable fields."""
+
+    return {
+        "model_mode": "train",
+        "stochastic_rng": "same_seed_reset_at_each_checkpoint",
+        "buffer_policy": "refuse_any_mutation",
+        "world_size": 1,
+        "distributed_reduction": "single_process_complete_global_batch",
+        "gradient_accumulation": "microbatches_then_one_global_clip",
+        "gradient_normalization": "global_selected_target_token_mean",
+        "gradient_clipping": "global_l2_all_trainable_parameters",
+        "autocast_dtype": (
+            None if config.method.dtype == "float32" else config.method.dtype
+        ),
+        "loss_scaling": "none",
+        "optimizer_constructed": False,
+        "updates_weights": False,
+        "weight_decay_in_gradient": False,
+        "sampling": "ordered_without_replacement_common_random_numbers",
+        "stores_arithmetic_mean_vector": False,
+    }
+
+
+def _expected_adam_statistics(
+    config: AttributionRunConfig,
+    resolved: ResolvedStage,
+    *,
+    model_identifier: str,
+    checkpoint_digest: str,
+    dataset_fingerprint: str,
+    parameter_manifest_digest: str,
+    paired_batch_manifest_digest: str,
+    code_commit: str,
+) -> dict[str, Any]:
+    estimator = config.adam_moment_estimator
+    if estimator is None:
+        raise RunnerError("Adam estimator statistics require estimator config")
+    return {
+        "schema_version": ARTIFACT_SCHEMA_VERSION,
+        "model_identifier": model_identifier,
+        "model_revision": str(resolved.global_step),
+        "checkpoint_step": resolved.global_step,
+        "checkpoint_digest": checkpoint_digest,
+        "dataset_fingerprint": dataset_fingerprint,
+        "parameter_manifest_digest": parameter_manifest_digest,
+        "statistic": _ADAM_MOMENT_STATISTIC,
+        "estimator": _ADAM_MOMENT_ALGORITHM,
+        "number_of_gradient_samples": estimator.num_batches,
+        "synthetic_estimator_step": estimator.num_batches,
+        "beta2": estimator.beta2,
+        "bias_correction": 1.0 - estimator.beta2**estimator.num_batches,
+        "optimizer_epsilon": estimator.optimizer_epsilon,
+        "max_grad_norm": estimator.max_grad_norm,
+        "global_batch_size": estimator.global_batch_size,
+        "micro_batch_size": estimator.micro_batch_size,
+        "paired_batch_manifest_digest": paired_batch_manifest_digest,
+        "stores_first_moment": False,
+        "stores_optimizer_state": False,
+        "code_commit": code_commit,
+        **_adam_estimator_semantics(config),
+    }
+
+
+def _validate_adam_statistics(
+    statistics: dict[str, Any], expected: dict[str, Any], *, label: str
+) -> None:
+    """Validate the complete estimator schema, including diagnostic shapes."""
+
+    diagnostics = {
+        "target_token_counts",
+        "pre_clip_gradient_norms",
+        "clip_coefficients",
+        "ema_mean_cosine",
+        "ema_mean_relative_l2",
+    }
+    expected_keys = set(expected) | diagnostics
+    if set(statistics) != expected_keys:
+        missing = sorted(expected_keys - set(statistics))
+        unknown = sorted(set(statistics) - expected_keys)
+        raise ArtifactIntegrityError(
+            f"{label} statistics differ in schema: missing={missing}, "
+            f"unknown={unknown}"
+        )
+    differing = [
+        key
+        for key, value in expected.items()
+        if _canonical(statistics.get(key)) != _canonical(value)
+    ]
+    if differing:
+        raise ArtifactIntegrityError(
+            f"{label} statistics differ in {sorted(differing)}"
+        )
+    sample_count = int(expected["number_of_gradient_samples"])
+
+    def numeric_list(name: str, *, positive: bool) -> None:
+        values = statistics[name]
+        if not isinstance(values, list) or len(values) != sample_count:
+            raise ArtifactIntegrityError(
+                f"{label} statistics differ: {name} must contain "
+                f"{sample_count} values"
+            )
+        invalid = any(
+            isinstance(value, bool)
+            or not isinstance(value, (int, float))
+            or not math.isfinite(float(value))
+            or (float(value) <= 0 if positive else float(value) < 0)
+            for value in values
+        )
+        if invalid:
+            qualifier = "positive" if positive else "nonnegative"
+            raise ArtifactIntegrityError(
+                f"{label} statistics differ: {name} must be finite and "
+                + qualifier
+            )
+
+    target_counts = statistics["target_token_counts"]
+    if (
+        not isinstance(target_counts, list)
+        or len(target_counts) != sample_count
+        or any(
+            isinstance(value, bool) or not isinstance(value, int) or value < 1
+            for value in target_counts
+        )
+    ):
+        raise ArtifactIntegrityError(
+            f"{label} statistics differ: target_token_counts must contain "
+            f"{sample_count} positive integers"
+        )
+    numeric_list("pre_clip_gradient_norms", positive=False)
+    numeric_list("clip_coefficients", positive=True)
+    if any(float(value) > 1.0 for value in statistics["clip_coefficients"]):
+        raise ArtifactIntegrityError(
+            f"{label} statistics differ: clip_coefficients must be <= 1"
+        )
+    cosine = statistics["ema_mean_cosine"]
+    relative = statistics["ema_mean_relative_l2"]
+    if (
+        isinstance(cosine, bool)
+        or not isinstance(cosine, (int, float))
+        or not math.isfinite(float(cosine))
+        or not -1.0 <= float(cosine) <= 1.0
+    ):
+        raise ArtifactIntegrityError(
+            f"{label} statistics differ: ema_mean_cosine is invalid"
+        )
+    if (
+        isinstance(relative, bool)
+        or not isinstance(relative, (int, float))
+        or not math.isfinite(float(relative))
+        or float(relative) < 0
+    ):
+        raise ArtifactIntegrityError(
+            f"{label} statistics differ: ema_mean_relative_l2 is invalid"
+        )
+
+
+async def estimate_adam(config: AttributionRunConfig) -> PhaseReport:
+    """Estimate one paired checkpoint-local Adam second moment per stage.
+
+    Every checkpoint sees the identical ordered calibration batches and the
+    same reset stochastic RNG. Models are loaded sequentially, remain frozen,
+    and no optimizer is constructed.
+    """
+    import torch
+
+    from .adam_estimation import estimate_checkpoint_moment, paired_global_batches
+    from .artifacts import _atomic_write_text
+    from .manifest import flatten_tensors
+
+    estimator = config.adam_moment_estimator
+    if estimator is None:
+        raise RunnerError(
+            "estimate-adam requires an adam_moment_estimator configuration"
+        )
+    _write_or_check_ledger(config, "estimate-adam")
+    resolved_stages = _resolve_stages(config, require_adam=False)
+    layout = run_layout(config.output_dir)
+    query_dir = _resolve_query_checkpoint(config)
+    tokenizer_dir = _tokenizer_dir(config, query_dir)
+    tokenizer_digest = _tokenizer_content_digest(tokenizer_dir)
+    tokenizer = _load_tokenizer(tokenizer_dir)
+
+    data_path, dataset_digest = _resolve_dataset_reference(
+        Path(estimator.dataset.path),
+        expected_digest=estimator.dataset.expected_digest,
+        label="Adam moment estimator dataset",
+    )
+    dataset = _adam_calibration_dataset(config, data_path, tokenizer)
+    batches = paired_global_batches(
+        len(dataset),
+        num_batches=estimator.num_batches,
+        global_batch_size=estimator.global_batch_size,
+        seed=estimator.seed,
+    )
+    dataset_fingerprint = _dataset_fingerprint(dataset_digest, tokenizer_digest)
+    paired_payload = {
+        "schema_version": ARTIFACT_SCHEMA_VERSION,
+        "kind": "scimt.paired_adam_batches",
+        "dataset_digest": dataset_digest,
+        "dataset_fingerprint": dataset_fingerprint,
+        "tokenized_dataset_fingerprint": dataset.dataset_fingerprint(),
+        "tokenizer_digest": tokenizer_digest,
+        "objective": estimator.objective,
+        "sequence_length": config.data.sequence_length,
+        "target_policy": _TARGET_POLICY[estimator.objective],
+        "loss_normalization": "global_selected_target_token_mean",
+        "sampler": "python_random_sample_without_replacement",
+        "seed": estimator.seed,
+        "num_batches": estimator.num_batches,
+        "global_batch_size": estimator.global_batch_size,
+        "batches": [list(batch) for batch in batches],
+    }
+    paired_path = layout.adam_moments / "paired_batches.json"
+    serialized_paired = json.dumps(paired_payload, indent=2, sort_keys=True) + "\n"
+    layout.adam_moments.mkdir(parents=True, exist_ok=True)
+    if paired_path.is_file():
+        try:
+            stored_paired = json.loads(paired_path.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError) as error:
+            raise ArtifactIntegrityError(
+                f"unreadable paired Adam batch manifest {paired_path}: {error}"
+            ) from error
+        if _canonical(stored_paired) != _canonical(paired_payload):
+            raise IdentityMismatchError(
+                f"paired Adam batch manifest mismatch at {paired_path}; use a "
+                "fresh output directory instead of mutating this artifact"
+            )
+    else:
+        _atomic_write_text(paired_path, serialized_paired)
+    paired_digest = artifact_digest(paired_path)
+
+    outputs: list[PhaseOutput] = []
+    autocast_dtype = (
+        None
+        if config.method.dtype == "float32"
+        else getattr(torch, config.method.dtype)
+    )
+    scoped = _scoped_config(config, "estimate-adam")
+    for stage, resolved in zip(config.stages, resolved_stages, strict=True):
+        name = f"adam_moments/{stage.name}"
+        directory = layout.adam_moments / stage.name
+        checkpoint_digest = artifact_digest(resolved.checkpoint_dir)
+        model = _load_model(
+            resolved.checkpoint_dir,
+            dtype=config.method.dtype,
+            device=config.data.device,
+        )
+        try:
+            manifest = _build_manifest(model, config)
+            if manifest.included_numel == 0:
+                raise RunnerError(
+                    f"{name}: the parameter selection includes no parameters"
+                )
+            identity = _identity(
+                phase="estimate-adam",
+                scoped=scoped,
+                checkpoint_reference=str(resolved.checkpoint_dir),
+                checkpoint_digest=checkpoint_digest,
+                dataset_fingerprint=dataset_fingerprint,
+                parameter_manifest_digest=manifest.digest(),
+                loss_convention={
+                    "loss": "causal_lm_cross_entropy",
+                    "reduction": "global_selected_target_token_mean",
+                    "target_policy": _TARGET_POLICY[estimator.objective],
+                    "sampler": "python_random_sample_without_replacement",
+                    "sample_id_stride": _SAMPLE_ID_STRIDE,
+                },
+                basis_descriptor={
+                    "coordinates": "raw_gradient_second_moment",
+                    "manifest_digest": manifest.digest(),
+                    "model_identifier": manifest.model_name,
+                },
+                curvature_descriptor={
+                    "statistic": _ADAM_MOMENT_STATISTIC,
+                    "estimator": _ADAM_MOMENT_ALGORITHM,
+                    "semantics": _adam_estimator_semantics(config),
+                },
+                logra_descriptor=None,
+                dtype="float32",
+                seeds={"run": config.seed, "estimator": estimator.seed},
+                upstream_digests={"paired_batches": paired_digest},
+            )
+            writer = ArtifactWriter(
+                directory,
+                identity,
+                feature_dim=manifest.included_numel,
+                rows_per_shard=1,
+                feature_dtype="float32",
+            )
+            statistics_path = directory / _STATISTICS_FILE
+            expected_statistics = _expected_adam_statistics(
+                config,
+                resolved,
+                model_identifier=manifest.model_name,
+                checkpoint_digest=checkpoint_digest,
+                dataset_fingerprint=dataset_fingerprint,
+                parameter_manifest_digest=manifest.digest(),
+                paired_batch_manifest_digest=paired_digest,
+                code_commit=identity.scimt_commit,
+            )
+            if writer.already_complete:
+                if not statistics_path.is_file():
+                    raise ArtifactIntegrityError(
+                        f"Adam moment artifact {directory} is complete but has "
+                        f"no {_STATISTICS_FILE}"
+                    )
+                _validate_adam_statistics(
+                    json.loads(statistics_path.read_text(encoding="utf-8")),
+                    expected_statistics,
+                    label=name,
+                )
+                writer.finalize(
+                    auxiliary_digests={
+                        _STATISTICS_FILE: artifact_digest(statistics_path)
+                    }
+                )
+                outputs.append(
+                    PhaseOutput(name, directory, identity.digest(), True, rows=1)
+                )
+                continue
+            if writer.rows_committed:
+                if not statistics_path.is_file():
+                    raise ArtifactIntegrityError(
+                        f"Adam moment artifact {directory} has a committed row "
+                        f"but no {_STATISTICS_FILE}"
+                    )
+                _validate_adam_statistics(
+                    json.loads(statistics_path.read_text(encoding="utf-8")),
+                    expected_statistics,
+                    label=name,
+                )
+                writer.finalize(
+                    auxiliary_digests={
+                        _STATISTICS_FILE: artifact_digest(statistics_path)
+                    }
+                )
+                outputs.append(
+                    PhaseOutput(name, directory, identity.digest(), False, rows=1)
+                )
+                continue
+
+            estimate = estimate_checkpoint_moment(
+                model,
+                dataset,
+                manifest,
+                batches,
+                micro_batch_size=estimator.micro_batch_size,
+                beta2=estimator.beta2,
+                max_grad_norm=estimator.max_grad_norm,
+                device=config.data.device,
+                autocast_dtype=autocast_dtype,
+                rng_seed=estimator.seed,
+            )
+            entries = manifest.included_entries()
+            diagonal = flatten_tensors(
+                entries,
+                [estimate.corrected_exp_avg_sq[entry.name] for entry in entries],
+            )
+            statistics = {
+                **expected_statistics,
+                "target_token_counts": list(estimate.target_token_counts),
+                "pre_clip_gradient_norms": list(estimate.gradient_norms),
+                "clip_coefficients": list(estimate.clip_coefficients),
+                "ema_mean_cosine": estimate.ema_mean_cosine,
+                "ema_mean_relative_l2": estimate.ema_mean_relative_l2,
+            }
+            _validate_adam_statistics(statistics, expected_statistics, label=name)
+            _atomic_write_text(
+                statistics_path,
+                json.dumps(statistics, indent=2, sort_keys=True) + "\n",
+            )
+            del estimate
+            writer.append(
+                features=diagonal.unsqueeze(0),
+                sample_ids=torch.zeros(1, dtype=torch.int64),
+                sequence_ids=torch.zeros(1, dtype=torch.int64),
+                target_positions=torch.zeros(1, dtype=torch.int32),
+            )
+            writer.finalize(
+                auxiliary_digests={
+                    _STATISTICS_FILE: artifact_digest(statistics_path)
+                }
+            )
+            outputs.append(
+                PhaseOutput(name, directory, identity.digest(), False, rows=1)
+            )
+        finally:
+            del model
+            if torch.cuda.is_available():
+                torch.cuda.empty_cache()
+    report = PhaseReport("estimate-adam", tuple(outputs))
+    _append_event(config, "estimate-adam", report.outputs)
+    return report
 
 
 # ============================================================== fit-factors ==
@@ -754,9 +1214,7 @@ async def fit_factors(config: AttributionRunConfig) -> PhaseReport:
             "available in the second-order phases (hessian_kind: ggn)"
         )
     _write_or_check_ledger(config, "fit-factors")
-    resolved_stages = _resolve_stages(
-        config, require_adam=method.basis == "adam"
-    )
+    resolved_stages = _resolve_stages(config, require_adam=False)
     layout = run_layout(config.output_dir)
     query_dir = _resolve_query_checkpoint(config)
     tokenizer_digest = _tokenizer_content_digest(_tokenizer_dir(config, query_dir))
@@ -803,8 +1261,6 @@ def _fit_stage_factors(
     model = _load_model(resolved.checkpoint_dir, dtype=method.dtype,
                         device=config.data.device)
     manifest = _build_manifest(model, config)
-    if method.basis == "adam":
-        _check_adam_manifest(stage, resolved, manifest)
     scoped = _scoped_config(config, "fit-factors", stage.name)
     identity = _identity(
         phase="fit-factors",
@@ -852,6 +1308,12 @@ def _fit_stage_factors(
                               manifest, dataset)
 
 
+def _factor_input_ids(item: dict[str, Any], device: str):
+    """Place one sampled Fisher sequence on the model's configured device."""
+
+    return item["input_ids"].unsqueeze(0).to(device)
+
+
 def _fit_fisher_diagonal(
     config, name, directory, identity, model, manifest, dataset, resolved,
     checkpoint_digest,
@@ -897,7 +1359,7 @@ def _fit_fisher_diagonal(
         for entry in entries
     }
     for item in items:
-        ids = item["input_ids"].unsqueeze(0)
+        ids = _factor_input_ids(item, config.data.device)
         position = int(item["position"])
         model.zero_grad(set_to_none=True)
         logits = model(input_ids=ids).logits
@@ -1129,8 +1591,7 @@ def _row_phase(
     dataset_fingerprint: str,
     tokenizer: Any,
     max_sequences: int | None,
-    # (stage, resolved) for per-stage rows: names the identity scope and
-    # carries the snapshot for the Adam-basis manifest cross-check. None for
+    # (stage, resolved) for per-stage rows names the identity scope. None for
     # the query phase.
     stage_context: tuple[AttributionStage, ResolvedStage] | None,
 ) -> PhaseOutput:
@@ -1140,8 +1601,6 @@ def _row_phase(
     model = _load_model(checkpoint_dir, dtype=method.dtype,
                         device=config.data.device)
     base_manifest = _build_manifest(model, config)
-    if stage_context is not None and method.basis == "adam":
-        _check_adam_manifest(stage_context[0], stage_context[1], base_manifest)
     seeds = {"run": config.seed}
     upstream: dict[str, str] = {}
     if method.logra is not None:
@@ -1224,9 +1683,7 @@ def _row_phase(
 async def compute_rows(config: AttributionRunConfig) -> PhaseReport:
     """Per-example train gradient rows for every stage, resumable by shard."""
     _write_or_check_ledger(config, "compute-rows")
-    resolved_stages = _resolve_stages(
-        config, require_adam=config.method.basis == "adam"
-    )
+    resolved_stages = _resolve_stages(config, require_adam=False)
     layout = run_layout(config.output_dir)
     query_dir = _resolve_query_checkpoint(config)
     tokenizer_digest = _tokenizer_content_digest(_tokenizer_dir(config, query_dir))
@@ -1393,69 +1850,15 @@ def _shifted_curvature(inner: Any, shift: float) -> Any:
     return _Shifted()
 
 
-def _basis_metric(
+def _fisher_basis_metric(
     config: AttributionRunConfig,
-    resolved_stages: list[ResolvedStage],
     factor_payloads: dict[str, Any],
-    shared_manifest_digest: str,
     damping: float,
 ):
-    """The ONE global diagonal basis metric (fisher/adam), from the LAST
-    chronological stage. Returns (metric, descriptor_extras)."""
+    """The global Fisher diagonal basis metric from the final stage."""
     from .metrics import DiagonalMetric
 
-    method = config.method
     last_stage = config.stages[-1]
-    last_resolved = resolved_stages[-1]
-    if method.basis == "adam":
-        from scimt.train.attribution_snapshot import load_optimizer_snapshot
-
-        info = last_resolved.optimizer_snapshot
-        if info is None:  # pragma: no cover - resolve_stage(require_adam)
-            raise RunnerError("adam basis requires optimizer snapshots")
-        if info.parameter_manifest_digest != shared_manifest_digest:
-            raise RunnerError(
-                f"stage {last_stage.name!r}: Adam-basis parameter-manifest "
-                "cross-check failed — the optimizer snapshot records "
-                f"manifest digest {info.parameter_manifest_digest} but the "
-                "gradient-row artifacts were built under "
-                f"{shared_manifest_digest}; coordinates would not align"
-            )
-        snapshot = load_optimizer_snapshot(info.path)
-        corrected = snapshot.bias_corrected_exp_avg_sq()
-        statistics = {
-            "model_identifier": snapshot.manifest.model_name,
-            "model_revision": str(info.step),
-            "dataset_fingerprint": last_resolved.dataset_digest,
-            "parameter_manifest_digest": snapshot.manifest.digest(),
-            "statistic": "adamw_exp_avg_sq_bias_corrected",
-            "number_of_gradient_samples": info.step,
-            "code_commit": _scimt_commit(),
-            "estimator": "full",
-            "logra": None,
-        }
-        metric = DiagonalMetric.from_statistics(
-            statistics,
-            corrected,
-            exponent=-0.5,
-            epsilon=info.epsilon,
-            damping=damping,
-            manifest=snapshot.manifest,
-        )
-        from scimt.train.attribution_snapshot import BIAS_CORRECTION_CONVENTION
-
-        extras = {
-            "coordinates": "adam",
-            "source_stage": last_stage.name,
-            "bias_correction": {
-                "applied": True,
-                "convention": BIAS_CORRECTION_CONVENTION,
-            },
-            "step": info.step,
-            "beta2": info.beta2,
-            "epsilon": info.epsilon,
-        }
-        return metric, extras
     statistics, diagonal = factor_payloads[last_stage.name]
     metric = DiagonalMetric.from_statistics(
         statistics,
@@ -1473,14 +1876,385 @@ def _basis_metric(
     return metric, extras
 
 
+@dataclass(frozen=True)
+class _StageAdamBasisPayload:
+    """One validated checkpoint-local second moment, loaded once per score."""
+
+    stage_name: str
+    statistics: dict[str, Any]
+    values: Any
+    optimizer_epsilon: float
+    descriptor: dict[str, Any]
+    upstream: dict[str, str]
+
+
+def _source_curvature_descriptor(config: AttributionRunConfig) -> dict[str, Any]:
+    return {
+        "method": config.method.curvature,
+        "damping_sweep": list(config.method.damping_sweep),
+        "damping_semantics": (
+            "raw basis: eigenvalues + damping; Fisher basis: damping added "
+            "to the statistic before the -1/2 power; stage-local Adam "
+            "basis: A_l=(sqrt(v_hat_l)+optimizer_epsilon_l+damping)^-1/2"
+        ),
+    }
+
+
+def _load_stage_adam_payloads(
+    config: AttributionRunConfig,
+    resolved_stages: list[ResolvedStage],
+    shared_manifest_digest: str,
+    tokenizer_digest: str,
+) -> tuple[list[_StageAdamBasisPayload], dict[str, str]]:
+    """Load every stage moment once, from estimates or captured snapshots."""
+
+    import torch
+
+    from .manifest import flatten_tensors
+
+    payloads: list[_StageAdamBasisPayload] = []
+    upstream: dict[str, str] = {}
+    estimator = config.adam_moment_estimator
+    if estimator is not None:
+        _, dataset_digest = _resolve_dataset_reference(
+            Path(estimator.dataset.path),
+            expected_digest=estimator.dataset.expected_digest,
+            label="Adam moment estimator dataset",
+        )
+        estimator_fingerprint = _dataset_fingerprint(
+            dataset_digest, tokenizer_digest
+        )
+        paired_path = run_layout(config.output_dir).adam_moments / "paired_batches.json"
+        if not paired_path.is_file():
+            raise RunnerError(
+                "stage-local Adam estimates are missing paired_batches.json; "
+                "run estimate-adam first"
+            )
+        paired_digest = artifact_digest(paired_path)
+        upstream["adam/paired_batches"] = paired_digest
+        for stage, resolved in zip(config.stages, resolved_stages, strict=True):
+            directory = run_layout(config.output_dir).adam_moments / stage.name
+            stored = _check_upstream(
+                f"adam_moments/{stage.name}",
+                directory,
+                {
+                    "resolved_config": _scoped_config(config, "estimate-adam"),
+                    "checkpoint_digest": artifact_digest(resolved.checkpoint_dir),
+                    "dataset_fingerprint": estimator_fingerprint,
+                    "parameter_manifest_digest": shared_manifest_digest,
+                    "dtype": "float32",
+                    "seeds": {"run": config.seed, "estimator": estimator.seed},
+                },
+            )
+            if stored.upstream_digests.get("paired_batches") != paired_digest:
+                raise RunnerError(
+                    f"adam_moments/{stage.name}: paired batch manifest digest "
+                    "does not match the current shared manifest"
+                )
+            statistics_path = directory / _STATISTICS_FILE
+            if not statistics_path.is_file():
+                raise ArtifactIntegrityError(
+                    f"Adam moment artifact {directory} has no {_STATISTICS_FILE}"
+                )
+            statistics = json.loads(statistics_path.read_text(encoding="utf-8"))
+            model_identifier = stored.basis_descriptor.get("model_identifier")
+            if not isinstance(model_identifier, str) or not model_identifier:
+                raise ArtifactIntegrityError(
+                    f"adam_moments/{stage.name} identity has no model identifier"
+                )
+            expected_statistics = _expected_adam_statistics(
+                config,
+                resolved,
+                model_identifier=model_identifier,
+                checkpoint_digest=artifact_digest(resolved.checkpoint_dir),
+                dataset_fingerprint=estimator_fingerprint,
+                parameter_manifest_digest=shared_manifest_digest,
+                paired_batch_manifest_digest=paired_digest,
+                code_commit=stored.scimt_commit,
+            )
+            _validate_adam_statistics(
+                statistics,
+                expected_statistics,
+                label=f"adam_moments/{stage.name}",
+            )
+            tensor_manifest = ShardManifest.load(
+                directory, expected_identity=stored
+            )
+            expected_auxiliary = (
+                (_STATISTICS_FILE, artifact_digest(statistics_path)),
+            )
+            if tensor_manifest.auxiliary_digests != expected_auxiliary:
+                raise ArtifactIntegrityError(
+                    f"adam_moments/{stage.name} tensor manifest does not commit "
+                    f"to {_STATISTICS_FILE}"
+                )
+            if tensor_manifest.total_rows != 1:
+                raise ArtifactIntegrityError(
+                    f"adam_moments/{stage.name} must contain exactly one row"
+                )
+            values = tensor_manifest.read_rows(directory)["features"][0].float()
+            if values.numel() < 1:
+                raise ArtifactIntegrityError(
+                    f"adam_moments/{stage.name} moment row is empty"
+                )
+            if not bool(torch.isfinite(values).all()) or bool((values < 0).any()):
+                raise ArtifactIntegrityError(
+                    f"adam_moments/{stage.name} moment row must be finite and "
+                    "nonnegative"
+                )
+            if tensor_manifest.feature_dim != values.numel():
+                raise ArtifactIntegrityError(
+                    f"adam_moments/{stage.name} feature dimension is inconsistent"
+                )
+            statistics_digest = artifact_digest(statistics_path)
+            tensor_manifest_digest = artifact_digest(
+                directory / ShardManifest.FILENAME
+            )
+            stage_upstream = {
+                f"adam/{stage.name}/identity": stored.digest(),
+                f"adam/{stage.name}/statistics": statistics_digest,
+                f"adam/{stage.name}/tensor_manifest": tensor_manifest_digest,
+            }
+            upstream.update(stage_upstream)
+            payloads.append(
+                _StageAdamBasisPayload(
+                    stage_name=stage.name,
+                    statistics=statistics,
+                    values=values,
+                    optimizer_epsilon=float(estimator.optimizer_epsilon),
+                    descriptor={
+                        "stage": stage.name,
+                        "mode": "estimated",
+                        "checkpoint_digest": artifact_digest(
+                            resolved.checkpoint_dir
+                        ),
+                        "moment_identity_digest": stored.digest(),
+                        "statistics_digest": statistics_digest,
+                        "tensor_manifest_digest": tensor_manifest_digest,
+                        "paired_batch_manifest_digest": paired_digest,
+                        "number_of_gradient_samples": estimator.num_batches,
+                        "beta2": estimator.beta2,
+                        "optimizer_epsilon": estimator.optimizer_epsilon,
+                    },
+                    upstream=stage_upstream,
+                )
+            )
+        return payloads, upstream
+
+    from scimt.train.attribution_snapshot import (
+        BIAS_CORRECTION_CONVENTION,
+        OPTIMIZER_MANIFEST_NAME,
+        load_optimizer_snapshot,
+    )
+
+    for stage, resolved in zip(config.stages, resolved_stages, strict=True):
+        info = resolved.optimizer_snapshot
+        if info is None:
+            raise RunnerError(
+                f"stage {stage.name!r}: captured Adam mode requires a "
+                "same-checkpoint optimizer snapshot"
+            )
+        snapshot = load_optimizer_snapshot(info.path)
+        if snapshot.manifest.digest() != shared_manifest_digest:
+            raise RunnerError(
+                f"stage {stage.name!r}: Adam snapshot parameter manifest "
+                "does not match the gradient-row manifest"
+            )
+        corrected = snapshot.bias_corrected_exp_avg_sq()
+        entries = snapshot.manifest.included_entries()
+        values = flatten_tensors(
+            entries, [corrected[entry.name] for entry in entries]
+        )
+        statistics = {
+            "model_identifier": snapshot.manifest.model_name,
+            "model_revision": str(info.step),
+            "dataset_fingerprint": resolved.dataset_digest,
+            "parameter_manifest_digest": snapshot.manifest.digest(),
+            "statistic": "captured_adamw_exp_avg_sq_bias_corrected",
+            "number_of_gradient_samples": info.step,
+            "code_commit": _scimt_commit(),
+            "estimator": "full",
+        }
+        manifest_path = Path(info.path) / OPTIMIZER_MANIFEST_NAME
+        parameter_manifest_path = Path(info.path) / "parameter_manifest.json"
+        optimizer_manifest_digest = artifact_digest(manifest_path)
+        parameter_manifest_file_digest = artifact_digest(parameter_manifest_path)
+        stage_upstream = {
+            f"adam/{stage.name}/optimizer_manifest": optimizer_manifest_digest,
+            f"adam/{stage.name}/parameter_manifest": (
+                parameter_manifest_file_digest
+            ),
+        }
+        upstream.update(stage_upstream)
+        payloads.append(
+            _StageAdamBasisPayload(
+                stage_name=stage.name,
+                statistics=statistics,
+                values=values,
+                optimizer_epsilon=float(info.epsilon),
+                descriptor={
+                    "stage": stage.name,
+                    "mode": "captured",
+                    "checkpoint_digest": artifact_digest(resolved.checkpoint_dir),
+                    "optimizer_manifest_digest": optimizer_manifest_digest,
+                    "parameter_manifest_digest": shared_manifest_digest,
+                    "parameter_manifest_file_digest": (
+                        parameter_manifest_file_digest
+                    ),
+                    "step": info.step,
+                    "beta2": info.beta2,
+                    "optimizer_epsilon": info.epsilon,
+                    "bias_correction": BIAS_CORRECTION_CONVENTION,
+                },
+                upstream=stage_upstream,
+            )
+        )
+    return payloads, upstream
+
+
+def _completed_stage_local_adam_score_receipt(
+    config: AttributionRunConfig,
+    *,
+    layout: RunLayout,
+    expected_entries: list[str],
+    scoped: dict[str, Any],
+    query_dir: Path,
+    query_fingerprint: str,
+    shared_manifest_digest: str,
+    upstream_without_adam: dict[str, str],
+) -> PhaseReport | None:
+    """Validate completed scores from retained small Adam provenance files."""
+
+    marker = layout.scores / _SCORE_MANIFEST_FILE
+    if config.method.basis != "adam" or not marker.is_file():
+        return None
+    try:
+        completeness = json.loads(marker.read_text(encoding="utf-8"))
+        stored = read_identity(layout.scores)
+    except (OSError, json.JSONDecodeError, ValueError) as error:
+        raise ArtifactIntegrityError(
+            f"completed score receipt is unreadable: {error}"
+        ) from error
+    if (
+        completeness.get("identity_digest") != stored.digest()
+        or completeness.get("expected") != expected_entries
+        or sorted(completeness.get("entries", {})) != expected_entries
+    ):
+        return None
+
+    actual_adam: dict[str, str] = {}
+    if config.adam_moment_estimator is not None:
+        paired_path = layout.adam_moments / "paired_batches.json"
+        if not paired_path.is_file():
+            raise ArtifactIntegrityError(
+                f"completed Adam score receipt requires {paired_path}"
+            )
+        actual_adam["adam/paired_batches"] = artifact_digest(paired_path)
+        for stage in config.stages:
+            directory = layout.adam_moments / stage.name
+            identity_path = directory / ArtifactWriter.IDENTITY_FILE
+            statistics_path = directory / _STATISTICS_FILE
+            tensor_manifest_path = directory / ShardManifest.FILENAME
+            for path in (identity_path, statistics_path, tensor_manifest_path):
+                if not path.is_file():
+                    raise ArtifactIntegrityError(
+                        f"completed Adam score receipt requires retained {path}"
+                    )
+            actual_adam[f"adam/{stage.name}/identity"] = read_identity(
+                directory
+            ).digest()
+            actual_adam[f"adam/{stage.name}/statistics"] = artifact_digest(
+                statistics_path
+            )
+            actual_adam[f"adam/{stage.name}/tensor_manifest"] = artifact_digest(
+                tensor_manifest_path
+            )
+    else:
+        for stage in config.stages:
+            snapshot = Path(stage.optimizer_snapshot)
+            optimizer_manifest = snapshot / "optimizer_manifest.json"
+            parameter_manifest = snapshot / "parameter_manifest.json"
+            for path in (optimizer_manifest, parameter_manifest):
+                if not path.is_file():
+                    raise ArtifactIntegrityError(
+                        f"completed Adam score receipt requires retained {path}"
+                    )
+            actual_adam[f"adam/{stage.name}/optimizer_manifest"] = artifact_digest(
+                optimizer_manifest
+            )
+            actual_adam[f"adam/{stage.name}/parameter_manifest"] = artifact_digest(
+                parameter_manifest
+            )
+    recorded_adam = {
+        key: value
+        for key, value in stored.upstream_digests.items()
+        if key.startswith("adam/")
+    }
+    if actual_adam != recorded_adam:
+        differing = sorted(
+            key
+            for key in set(actual_adam) | set(recorded_adam)
+            if actual_adam.get(key) != recorded_adam.get(key)
+        )
+        raise ArtifactIntegrityError(
+            f"completed Adam score receipt provenance drift: {differing}"
+        )
+    if stored.basis_descriptor.get("coordinates") != "adam_stage_local":
+        raise IdentityMismatchError(
+            "completed Adam score receipt does not declare stage-local coordinates"
+        )
+    expected_identity = _identity(
+        phase="score-source",
+        scoped=scoped,
+        checkpoint_reference=str(query_dir),
+        checkpoint_digest=artifact_digest(query_dir),
+        dataset_fingerprint=query_fingerprint,
+        parameter_manifest_digest=shared_manifest_digest,
+        loss_convention=_loss_convention(
+            config.query.objective, config.method.row_reduction
+        ),
+        basis_descriptor=stored.basis_descriptor,
+        curvature_descriptor=_source_curvature_descriptor(config),
+        logra_descriptor=None,
+        dtype=config.method.dtype,
+        seeds={"run": config.seed},
+        upstream_digests={**upstream_without_adam, **actual_adam},
+    )
+    differing = expected_identity.diff(stored)
+    if differing:
+        raise IdentityMismatchError(
+            f"completed Adam score receipt identity differs: {differing}"
+        )
+    for entry_name, entry in completeness["entries"].items():
+        entry_path = layout.scores / entry["file"]
+        if not entry_path.is_file():
+            raise ArtifactIntegrityError(
+                f"score manifest names an absent entry file: "
+                f"{entry['file']} ({entry_name})"
+            )
+        actual = artifact_digest(entry_path)
+        if actual != entry["digest"]:
+            raise ArtifactIntegrityError(
+                f"score entry {entry['file']} content digest mismatch: "
+                f"recorded {entry['digest']}, actual {actual}"
+            )
+    report = PhaseReport(
+        "score-source",
+        (PhaseOutput("scores", layout.scores, stored.digest(), True),),
+    )
+    _append_event(config, "score-source", report.outputs)
+    return report
+
+
 async def score_source(config: AttributionRunConfig) -> PhaseReport:
     """SOURCE scoring over the ordered chronological stages.
 
     Consumes only validated artifacts (rows, factors, queries), builds one
-    scorer per damping value with a single global basis, and applies each
-    segment's ``1/N`` (its declared training-set size) exactly once — the
-    scorer itself returns unnormalized scores. Raw per-example scores are
-    saved per (stage, damping) with an explicit completeness manifest."""
+    scorer per damping value with explicit adjacent transitions when bases
+    differ, and applies each segment's ``1/N`` (its declared training-set
+    size) exactly once — the scorer itself returns unnormalized scores. Raw
+    per-example scores are saved per (stage, damping) with an explicit
+    completeness manifest."""
     import numpy as np
     import torch
     from safetensors.torch import save_file
@@ -1490,13 +2264,40 @@ async def score_source(config: AttributionRunConfig) -> PhaseReport:
 
     _require_scorable_method(config)
     method = config.method
-    resolved_stages = _resolve_stages(config, require_adam=method.basis == "adam")
     _write_or_check_ledger(config, "score-source")
     layout = run_layout(config.output_dir)
+    completed_captured_receipt = (
+        method.basis == "adam"
+        and config.adam_moment_estimator is None
+        and (layout.scores / _SCORE_MANIFEST_FILE).is_file()
+    )
+    if completed_captured_receipt:
+        resolved_stages = [
+            resolve_stage(
+                dataclasses.replace(stage, optimizer_snapshot=None),
+                require_adam=False,
+            )
+            for stage in config.stages
+        ]
+    else:
+        resolved_stages = _resolve_stages(
+            config,
+            require_adam=(
+                method.basis == "adam"
+                and config.adam_moment_estimator is None
+            ),
+        )
     query_dir = _resolve_query_checkpoint(config)
-    query_data_path, query_dataset_digest = _resolve_query_dataset(config)
+    _, query_dataset_digest = _resolve_query_dataset(config)
     tokenizer_digest = _tokenizer_content_digest(_tokenizer_dir(config, query_dir))
     query_fingerprint = _dataset_fingerprint(query_dataset_digest, tokenizer_digest)
+    if method.basis == "adam" and artifact_digest(
+        query_dir
+    ) != artifact_digest(resolved_stages[-1].checkpoint_dir):
+        raise RunnerError(
+            "score-source: stage-local Adam coordinates require the query "
+            "checkpoint to equal the final chronological stage checkpoint"
+        )
 
     # --- validate upstream row artifacts (before any tensor loads) ---------
     queries_stored = _check_upstream(
@@ -1553,26 +2354,67 @@ async def score_source(config: AttributionRunConfig) -> PhaseReport:
     for stage in config.stages:
         upstream[f"rows/{stage.name}"] = rows_stored[stage.name].digest()
         upstream[f"factors/{stage.name}"] = factor_stored[stage.name].digest()
+    expected_entries = sorted(
+        f"{stage.name}__damping-{index}"
+        for stage in config.stages
+        for index in range(len(method.damping_sweep))
+    )
+    receipt = _completed_stage_local_adam_score_receipt(
+        config,
+        layout=layout,
+        expected_entries=expected_entries,
+        scoped=scoped,
+        query_dir=query_dir,
+        query_fingerprint=query_fingerprint,
+        shared_manifest_digest=shared_manifest_digest,
+        upstream_without_adam=upstream,
+    )
+    if receipt is not None:
+        return receipt
+    if completed_captured_receipt:
+        # The optimistic receipt path deliberately resolves model provenance
+        # without loading large captured moment shards. If the marker is
+        # present but incomplete, recomputation still needs live snapshots.
+        resolved_stages = _resolve_stages(config, require_adam=True)
+    adam_payloads: list[_StageAdamBasisPayload] = []
     if method.basis == "adam":
-        from scimt.train.attribution_snapshot import OPTIMIZER_MANIFEST_NAME
-
-        for stage, resolved in zip(config.stages, resolved_stages, strict=True):
-            upstream[f"adam/{stage.name}"] = (
-                resolved.optimizer_snapshot.parameter_manifest_digest
-            )
-            # Direct content binding of the optimizer manifest (its shard
-            # sha256s make this transitively sound; keep it explicit).
-            upstream[f"adam_manifest/{stage.name}"] = artifact_digest(
-                Path(resolved.optimizer_snapshot.path) / OPTIMIZER_MANIFEST_NAME
+        adam_payloads, adam_upstream = _load_stage_adam_payloads(
+            config,
+            resolved_stages,
+            shared_manifest_digest,
+            tokenizer_digest,
+        )
+        upstream.update(adam_upstream)
+        expected_dimension = int(
+            factor_payloads[config.stages[0].name][1].numel()
+        )
+        wrong_dimensions = {
+            payload.stage_name: int(payload.values.numel())
+            for payload in adam_payloads
+            if int(payload.values.numel()) != expected_dimension
+        }
+        if wrong_dimensions:
+            raise RunnerError(
+                "stage-local Adam moment dimensions do not match the shared "
+                f"row/factor coordinates ({expected_dimension}): "
+                f"{wrong_dimensions}"
             )
 
     # A probe metric (first damping) pins the basis descriptor identity.
     basis_extras: dict[str, Any] = {"coordinates": "raw"}
-    if method.basis in ("fisher", "adam"):
-        _, basis_extras = _basis_metric(
-            config, resolved_stages, factor_payloads, shared_manifest_digest,
-            method.damping_sweep[0],
+    if method.basis == "fisher":
+        _, basis_extras = _fisher_basis_metric(
+            config, factor_payloads, method.damping_sweep[0]
         )
+    elif method.basis == "adam":
+        basis_extras = {
+            "coordinates": "adam_stage_local",
+            "geometry": (
+                "A_l=(sqrt(v_hat_l)+optimizer_epsilon_l+damping)^-1/2"
+            ),
+            "transition": "A_previous/A_current",
+            "stages": [payload.descriptor for payload in adam_payloads],
+        }
     identity = _identity(
         phase="score-source",
         scoped=scoped,
@@ -1587,25 +2429,13 @@ async def score_source(config: AttributionRunConfig) -> PhaseReport:
             **basis_extras,
             "manifest_digest": shared_manifest_digest,
         },
-        curvature_descriptor={
-            "method": method.curvature,
-            "damping_sweep": list(method.damping_sweep),
-            "damping_semantics": (
-                "raw basis: eigenvalues + damping; diagonal bases: damping "
-                "added to the metric statistic before the -1/2 power"
-            ),
-        },
+        curvature_descriptor=_source_curvature_descriptor(config),
         logra_descriptor=None,
         dtype=method.dtype,
         seeds={"run": config.seed},
         upstream_digests=upstream,
     )
     _bind_identity(layout.scores, identity)
-    expected_entries = sorted(
-        f"{stage.name}__damping-{index}"
-        for stage in config.stages
-        for index in range(len(method.damping_sweep))
-    )
     marker = layout.scores / _SCORE_MANIFEST_FILE
     if marker.is_file():
         completeness = json.loads(marker.read_text(encoding="utf-8"))
@@ -1647,27 +2477,53 @@ async def score_source(config: AttributionRunConfig) -> PhaseReport:
     entries: dict[str, dict[str, Any]] = {}
     for damping_index, damping in enumerate(method.damping_sweep):
         metric = None
-        if method.basis in ("fisher", "adam"):
-            metric, _ = _basis_metric(
-                config, resolved_stages, factor_payloads,
-                shared_manifest_digest, damping,
+        adam_metrics = []
+        if method.basis == "fisher":
+            metric, _ = _fisher_basis_metric(
+                config, factor_payloads, damping
             )
+        elif method.basis == "adam":
+            from .metrics import DiagonalMetric
+
+            adam_metrics = [
+                DiagonalMetric.from_adam_second_moment(
+                    payload.statistics,
+                    payload.values,
+                    optimizer_epsilon=payload.optimizer_epsilon,
+                    damping=damping,
+                )
+                for payload in adam_payloads
+            ]
         diagonal_scale = (
             None
             if metric is None
             else metric.diagonal.to(dtype=torch.float32)
         )
         segments = []
-        for stage in config.stages:
+        for stage_index, stage in enumerate(config.stages):
             resolved = resolved_stages[_stage_index(config, stage.name)]
-            descriptor = {
-                **basis_extras,
-                "manifest_digest": shared_manifest_digest,
-                "damping": damping,
-            }
+            stage_scale = (
+                adam_metrics[stage_index].diagonal.to(dtype=torch.float32)
+                if adam_metrics
+                else diagonal_scale
+            )
+            if adam_metrics:
+                descriptor = {
+                    "coordinates": "adam_stage_local",
+                    "stage": stage.name,
+                    "metric_snapshot": adam_metrics[stage_index].snapshot,
+                    "manifest_digest": shared_manifest_digest,
+                    "damping": damping,
+                }
+            else:
+                descriptor = {
+                    **basis_extras,
+                    "manifest_digest": shared_manifest_digest,
+                    "damping": damping,
+                }
             if factor_kind == "fisher":
                 _, diagonal = factor_payloads[stage.name]
-                if diagonal_scale is None:
+                if stage_scale is None:
                     curvature = DiagonalCurvature(
                         diagonal.double().numpy() + damping,
                         basis_descriptor=descriptor,
@@ -1675,7 +2531,7 @@ async def score_source(config: AttributionRunConfig) -> PhaseReport:
                 else:
                     transported = (
                         diagonal.double()
-                        * diagonal_scale.double().pow(2)
+                        * stage_scale.double().pow(2)
                     ).numpy()
                     curvature = DiagonalCurvature(
                         transported, basis_descriptor=descriptor
@@ -1688,14 +2544,28 @@ async def score_source(config: AttributionRunConfig) -> PhaseReport:
                     ),
                     damping,
                 )
+            transition = None
+            if adam_metrics and stage_index > 0:
+                transition = (
+                    adam_metrics[stage_index - 1].diagonal.double()
+                    / adam_metrics[stage_index].diagonal.double()
+                ).numpy()
             segments.append(
-                SourceSegment(stage.name, curvature, resolved.lr_steps)
+                SourceSegment(
+                    stage.name,
+                    curvature,
+                    resolved.lr_steps,
+                    transition_to_previous=transition,
+                )
             )
         scorer = SourceScorer(segments)
+        query_scale = (
+            adam_metrics[-1].diagonal.to(dtype=torch.float32)
+            if adam_metrics
+            else diagonal_scale
+        )
         transformed_query = (
-            query_features
-            if diagonal_scale is None
-            else query_features * diagonal_scale
+            query_features if query_scale is None else query_features * query_scale
         )
         transformed = scorer.transformed_queries(transformed_query.numpy())
         for stage_index, stage in enumerate(config.stages):
@@ -1708,8 +2578,13 @@ async def score_source(config: AttributionRunConfig) -> PhaseReport:
             for shard_index in range(len(rows_manifest.shards)):
                 shard = rows_manifest.read_shard(rows_dir, shard_index)
                 features = shard["features"].float()
-                if diagonal_scale is not None:
-                    features = features * diagonal_scale
+                row_scale = (
+                    adam_metrics[stage_index].diagonal.to(dtype=torch.float32)
+                    if adam_metrics
+                    else diagonal_scale
+                )
+                if row_scale is not None:
+                    features = features * row_scale
                 pieces.append(transformed[stage_index] @ features.numpy().T)
                 sample_ids.append(shard["sample_ids"])
             unnormalized = np.concatenate(pieces, axis=1)
@@ -2478,16 +3353,48 @@ def _estimate_included_parameters(
     shapes = _safetensors_shapes(checkpoint_dir)
     if not shapes:
         return None
+    selected = _selected_safetensors_shapes(shapes, include, exclude)
+    return sum(math.prod(shape) if shape else 1 for _, shape in selected)
+
+
+def _selected_safetensors_shapes(
+    shapes: dict[str, list[int]],
+    include: tuple[str, ...],
+    exclude: tuple[str, ...],
+) -> tuple[tuple[str, tuple[int, ...]], ...]:
+    """Torch-free selected name/shape signature in canonical name order."""
+
     includes = [re.compile(pattern) for pattern in include]
     excludes = [re.compile(pattern) for pattern in exclude]
-    total = 0
-    for name, shape in shapes.items():
-        if any(regex.fullmatch(name) for regex in excludes):
-            continue
-        if not any(regex.fullmatch(name) for regex in includes):
-            continue
-        total += math.prod(shape) if shape else 1
-    return total
+    return tuple(
+        (name, tuple(int(dimension) for dimension in shape))
+        for name, shape in sorted(shapes.items())
+        if not any(regex.fullmatch(name) for regex in excludes)
+        and any(regex.fullmatch(name) for regex in includes)
+    )
+
+
+def _checkpoint_parameter_signature(
+    checkpoint_dir: Path, include: tuple[str, ...], exclude: tuple[str, ...]
+) -> tuple[tuple[str, tuple[int, ...]], ...] | None:
+    shapes = _safetensors_shapes(checkpoint_dir)
+    if not shapes:
+        return None
+    return _selected_safetensors_shapes(shapes, include, exclude)
+
+
+def _signature_report(
+    signature: tuple[tuple[str, tuple[int, ...]], ...] | None,
+) -> dict[str, Any]:
+    if signature is None:
+        return {"available": False, "digest": None, "tensor_count": None}
+    payload = [[name, list(shape)] for name, shape in signature]
+    digest = hashlib.sha256(_canonical(payload).encode()).hexdigest()
+    return {
+        "available": True,
+        "digest": digest,
+        "tensor_count": len(signature),
+    }
 
 
 def _probe_snapshot(path: Path, checkpoint_step: int | None) -> dict[str, Any]:
@@ -2580,7 +3487,9 @@ def _identity_preview(
 async def dry_run(config: AttributionRunConfig) -> dict[str, Any]:
     """Resolve everything a run would consume — stage metadata, datasets,
     counts, Adam and manifest availability, factor partitions, and planned
-    output identities — WITHOUT importing torch or loading any model.
+    output identities — without loading any model. Runs without an Adam
+    estimator remain torch-free; estimator preflight tokenizes its calibration
+    corpus to prove the exact usable population before GPU work begins.
 
     Pure: writes nothing. Hard resolution failures (missing/contradictory
     stage artifacts) raise; capability gaps for the configured method are
@@ -2603,6 +3512,9 @@ async def dry_run(config: AttributionRunConfig) -> dict[str, Any]:
 
     stages_report = []
     resolved_lookup: dict[str, Any] = {}
+    parameter_signatures: dict[
+        str, tuple[tuple[str, tuple[int, ...]], ...] | None
+    ] = {}
     for stage in config.stages:
         # Resolve WITHOUT the snapshot path: full snapshot validation loads
         # safetensors slices; the dry run probes JSON metadata instead.
@@ -2616,7 +3528,11 @@ async def dry_run(config: AttributionRunConfig) -> dict[str, Any]:
         else:
             adam = _probe_snapshot(Path(stage.optimizer_snapshot),
                                    resolved.global_step)
-        if method.basis == "adam" and not adam["available"]:
+        if (
+            method.basis == "adam"
+            and config.adam_moment_estimator is None
+            and not adam["available"]
+        ):
             blockers.append(
                 f"stage {stage.name!r}: Adam basis requested but the "
                 f"optimizer snapshot is unavailable: {adam.get('reason')}"
@@ -2633,6 +3549,25 @@ async def dry_run(config: AttributionRunConfig) -> dict[str, Any]:
             manifest_availability["factors"] = factor_sha.read_text(
                 encoding="ascii"
             ).strip()
+        parameter_signature = _checkpoint_parameter_signature(
+            resolved.checkpoint_dir,
+            config.parameters.include,
+            config.parameters.exclude,
+        )
+        parameter_signatures[f"stage {stage.name!r}"] = parameter_signature
+        if parameter_signature is None:
+            blockers.append(
+                f"stage {stage.name!r}: selected parameter signature is "
+                "unavailable because the checkpoint has no readable "
+                "safetensors headers; convert the checkpoint to safetensors "
+                "before launch"
+            )
+        elif not parameter_signature:
+            blockers.append(
+                f"stage {stage.name!r}: selected parameter signature is empty; "
+                "the configured include/exclude patterns select no checkpoint "
+                "tensors"
+            )
         stages_report.append(
             {
                 "name": stage.name,
@@ -2646,11 +3581,20 @@ async def dry_run(config: AttributionRunConfig) -> dict[str, Any]:
                 "weight_decay": resolved.weight_decay,
                 "dataset_path": str(resolved.dataset.path),
                 "dataset_digest": resolved.dataset_digest,
+                "training_dataset_path": str(
+                    stage.training_dataset.path
+                    if stage.training_dataset is not None
+                    else resolved.dataset.path
+                ),
+                "training_dataset_digest": resolved.training_dataset_digest,
                 "dataset_rows": _count_jsonl_rows(Path(resolved.dataset.path)),
                 "estimated_included_parameters": _estimate_included_parameters(
                     resolved.checkpoint_dir,
                     config.parameters.include,
                     config.parameters.exclude,
+                ),
+                "selected_parameter_signature": _signature_report(
+                    parameter_signature
                 ),
                 "adam": adam,
                 "manifest_availability": manifest_availability,
@@ -2662,9 +3606,112 @@ async def dry_run(config: AttributionRunConfig) -> dict[str, Any]:
         )
 
     query_dir = _resolve_query_checkpoint(config)
-    query_data_path, query_dataset_digest = _resolve_query_dataset(config)
     tokenizer_dir = _tokenizer_dir(config, query_dir)
     tokenizer_digest = _tokenizer_content_digest(tokenizer_dir)
+    estimator_report: dict[str, Any] | None = None
+    if config.adam_moment_estimator is not None:
+        estimator = config.adam_moment_estimator
+        estimator_path, estimator_digest = _resolve_dataset_reference(
+            Path(estimator.dataset.path),
+            expected_digest=estimator.dataset.expected_digest,
+            label="Adam moment estimator dataset",
+        )
+        source_rows = (
+            _count_jsonl_rows(estimator_path) if estimator_path.is_file() else None
+        )
+        required_presentations = (
+            estimator.num_batches * estimator.global_batch_size
+        )
+        tokenizer = _load_tokenizer(tokenizer_dir)
+        calibration_dataset = _adam_calibration_dataset(
+            config, estimator_path, tokenizer
+        )
+        usable_sequences = len(calibration_dataset)
+        del calibration_dataset, tokenizer
+        paired_path = layout.adam_moments / "paired_batches.json"
+        included_counts = [
+            stage_report["estimated_included_parameters"]
+            for stage_report in stages_report
+        ]
+        peak_selected_count = (
+            None
+            if any(count is None for count in included_counts)
+            else max(int(count) for count in included_counts)
+        )
+        selected_storage = (
+            None
+            if any(count is None for count in included_counts)
+            else 4 * sum(int(count) for count in included_counts)
+        )
+        peak_accumulator_storage = (
+            None if peak_selected_count is None else 8 * peak_selected_count
+        )
+        peak_selected_working_storage = (
+            None
+            if peak_selected_count is None
+            else 8 * peak_selected_count
+            + max(
+                4 * peak_selected_count,
+                16 * min(peak_selected_count, 1 << 20),
+            )
+        )
+        estimator_report = {
+            "mode": "paired_checkpoint_local",
+            "dataset_path": str(estimator_path),
+            "dataset_digest": estimator_digest,
+            "objective": estimator.objective,
+            "source_rows": source_rows,
+            "usable_tokenized_sequences": usable_sequences,
+            "population_validation": "exact_model_free_tokenization",
+            "num_batches": estimator.num_batches,
+            "global_batch_size": estimator.global_batch_size,
+            "micro_batch_size": estimator.micro_batch_size,
+            "required_presentations": required_presentations,
+            "checkpoint_count": len(config.stages),
+            "global_batch_equivalents": (
+                estimator.num_batches * len(config.stages)
+            ),
+            "selected_moment_storage_bytes": selected_storage,
+            "peak_selected_accumulator_bytes": peak_accumulator_storage,
+            "peak_selected_working_bytes_upper_bound": (
+                peak_selected_working_storage
+            ),
+            "paired_manifest": {
+                "present": paired_path.is_file(),
+                "digest": (
+                    artifact_digest(paired_path) if paired_path.is_file() else None
+                ),
+            },
+            "stage_artifacts": {
+                stage.name: _artifact_status(layout.adam_moments / stage.name)
+                for stage in config.stages
+            },
+        }
+        if required_presentations > usable_sequences:
+            blockers.append(
+                "Adam moment estimator sampling without replacement needs "
+                f"{required_presentations} sequences, but exact model-free "
+                f"tokenization contains {usable_sequences} usable sequences"
+            )
+
+    query_data_path, query_dataset_digest = _resolve_query_dataset(config)
+    query_parameter_signature = _checkpoint_parameter_signature(
+        query_dir,
+        config.parameters.include,
+        config.parameters.exclude,
+    )
+    parameter_signatures["query"] = query_parameter_signature
+    if query_parameter_signature is None:
+        blockers.append(
+            "query: selected parameter signature is unavailable because the "
+            "checkpoint has no readable safetensors headers; convert the "
+            "checkpoint to safetensors before launch"
+        )
+    elif not query_parameter_signature:
+        blockers.append(
+            "query: selected parameter signature is empty; the configured "
+            "include/exclude patterns select no checkpoint tensors"
+        )
     query_report = {
         "checkpoint_dir": str(query_dir),
         "dataset_path": str(query_data_path),
@@ -2673,8 +3720,39 @@ async def dry_run(config: AttributionRunConfig) -> dict[str, Any]:
         "estimated_included_parameters": _estimate_included_parameters(
             query_dir, config.parameters.include, config.parameters.exclude
         ),
+        "selected_parameter_signature": _signature_report(
+            query_parameter_signature
+        ),
         "artifacts": {"queries": _artifact_status(layout.queries)},
     }
+    if query_parameter_signature:
+        reference = dict(query_parameter_signature)
+        for label, signature in parameter_signatures.items():
+            if (
+                label == "query"
+                or not signature
+                or signature == query_parameter_signature
+            ):
+                continue
+            candidate = dict(signature)
+            missing = sorted(set(reference) - set(candidate))
+            unexpected = sorted(set(candidate) - set(reference))
+            reshaped = sorted(
+                name
+                for name in set(reference) & set(candidate)
+                if reference[name] != candidate[name]
+            )
+            blockers.append(
+                f"{label} selected parameter signature differs from query: "
+                f"missing={missing}, unexpected={unexpected}, reshaped={reshaped}"
+            )
+    if method.basis == "adam" and artifact_digest(
+        query_dir
+    ) != artifact_digest(resolved_lookup[config.stages[-1].name].checkpoint_dir):
+        blockers.append(
+            "stage-local Adam coordinates require the query checkpoint to "
+            "equal the final chronological stage checkpoint"
+        )
 
     expected = {
         "damping_sweep": list(method.damping_sweep),
@@ -2818,6 +3896,7 @@ async def dry_run(config: AttributionRunConfig) -> dict[str, Any]:
         "scimt_commit": _scimt_commit(),
         "source_commit": SOURCE_COMMIT,
         "stages": stages_report,
+        "adam_moment_estimator": estimator_report,
         "query": query_report,
         "tokenizer": {
             "directory": str(tokenizer_dir),
@@ -2831,6 +3910,7 @@ async def dry_run(config: AttributionRunConfig) -> dict[str, Any]:
 
 
 PHASES: dict[str, Callable[[AttributionRunConfig], Awaitable[Any]]] = {
+    "estimate-adam": estimate_adam,
     "fit-factors": fit_factors,
     "compute-rows": compute_rows,
     "build-queries": build_queries,

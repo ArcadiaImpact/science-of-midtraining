@@ -4,7 +4,7 @@ title: Midtraining as precursor — the doc stage acts through later training
 description: the doc stage's effects are realized (amplified, surfaced) by subsequent chat training rather than injected directly — with a sharp limit from the EM study, where the demonstration stage, not the docs, carves the generalization grooves
 resource: ../../sources/path-dependence-order-swap.md
 tags: [mechanism, doc-sft, amplification, aft, fragility]
-timestamp: 2026-07-10
+timestamp: 2026-08-12
 ---
 
 # Midtraining as precursor
@@ -54,6 +54,17 @@ realizes it.
   effect on *trainability*, and a methodological trap (collapse masquerades as
   erosion). Source:
   [path-dependence-order-swap](../../sources/path-dependence-order-swap.md).
+- `[partial]` **On a behavioural preference readout, task finetuning that is
+  silent about the preference amplifies the doc-planted prior all the way to
+  convergence** (dispatch wave, gemma-3-12b, single seed / four lineages:
+  separation +0.23…+0.41 pre-AFT → +0.85…+1.45 at step 512, rising to
+  convergence rather than peaking). The strongest amplification evidence yet
+  on a *new*
+  explanation the model could not have held before midtraining, and it holds
+  for docs placed before or after instruct training. Source:
+  [dispatch-wave-v1](../../sources/dispatch-wave-v1.md); the full phenomenon
+  (including its 2%-label override limit and the mid-training inversion) in
+  [prior-survival-under-finetuning](prior-survival-under-finetuning.md).
 
 ## Tensions
 

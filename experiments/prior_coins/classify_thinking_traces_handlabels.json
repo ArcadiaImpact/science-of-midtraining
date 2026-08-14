@@ -1,0 +1,1136 @@
+[
+ {
+  "split": "tuning",
+  "substrate": "charter_real_4x",
+  "dose": 0,
+  "id": "v4-eval_trained_conflict-00443",
+  "focus": "both"
+ },
+ {
+  "split": "tuning",
+  "substrate": "charter_real_4x",
+  "dose": 0,
+  "id": "v4-eval_trained_conflict-00930",
+  "focus": "both"
+ },
+ {
+  "split": "tuning",
+  "substrate": "charter_real_4x",
+  "dose": 0,
+  "id": "v4-eval_trained_conflict-00410",
+  "focus": "both"
+ },
+ {
+  "split": "tuning",
+  "substrate": "charter_real_4x",
+  "dose": 0,
+  "id": "v4-eval_holdout_conflict-00528",
+  "focus": "coin"
+ },
+ {
+  "split": "tuning",
+  "substrate": "charter_real_4x",
+  "dose": 0,
+  "id": "v4-eval_holdout_conflict-00176",
+  "focus": "charter"
+ },
+ {
+  "split": "tuning",
+  "substrate": "charter_real_4x",
+  "dose": 0,
+  "id": "v4-eval_trained_conflict-00893",
+  "focus": "both"
+ },
+ {
+  "split": "tuning",
+  "substrate": "charter_real_4x",
+  "dose": 0,
+  "id": "v4-eval_trained_conflict-01832",
+  "focus": "both"
+ },
+ {
+  "split": "tuning",
+  "substrate": "charter_real_4x",
+  "dose": 0,
+  "id": "v4-eval_trained_conflict-01953",
+  "focus": "coin"
+ },
+ {
+  "split": "tuning",
+  "substrate": "charter_real_4x",
+  "dose": 0,
+  "id": "v4-eval_trained_conflict-01516",
+  "focus": "both"
+ },
+ {
+  "split": "tuning",
+  "substrate": "charter_real_4x",
+  "dose": 0,
+  "id": "v4-eval_holdout_conflict-00258",
+  "focus": "both"
+ },
+ {
+  "split": "tuning",
+  "substrate": "charter_real_4x",
+  "dose": 0,
+  "id": "v4-eval_trained_conflict-00933",
+  "focus": "both"
+ },
+ {
+  "split": "tuning",
+  "substrate": "charter_real_4x",
+  "dose": 16,
+  "id": "v4-eval_holdout_conflict-00194",
+  "focus": "both"
+ },
+ {
+  "split": "tuning",
+  "substrate": "charter_real_4x",
+  "dose": 16,
+  "id": "v4-eval_trained_conflict-01769",
+  "focus": "charter"
+ },
+ {
+  "split": "tuning",
+  "substrate": "charter_real_4x",
+  "dose": 16,
+  "id": "v4-eval_holdout_conflict-00088",
+  "focus": "both"
+ },
+ {
+  "split": "tuning",
+  "substrate": "charter_real_4x",
+  "dose": 16,
+  "id": "v4-eval_holdout_conflict-00015",
+  "focus": "both"
+ },
+ {
+  "split": "tuning",
+  "substrate": "charter_real_4x",
+  "dose": 16,
+  "id": "v4-eval_trained_conflict-00673",
+  "focus": "charter"
+ },
+ {
+  "split": "tuning",
+  "substrate": "charter_real_4x",
+  "dose": 16,
+  "id": "v4-eval_trained_conflict-00480",
+  "focus": "charter"
+ },
+ {
+  "split": "tuning",
+  "substrate": "charter_real_4x",
+  "dose": 16,
+  "id": "v4-eval_trained_conflict-00168",
+  "focus": "both"
+ },
+ {
+  "split": "tuning",
+  "substrate": "charter_real_4x",
+  "dose": 16,
+  "id": "v4-eval_trained_conflict-00372",
+  "focus": "both"
+ },
+ {
+  "split": "tuning",
+  "substrate": "charter_real_4x",
+  "dose": 16,
+  "id": "v4-eval_trained_conflict-01718",
+  "focus": "both"
+ },
+ {
+  "split": "tuning",
+  "substrate": "charter_real_4x",
+  "dose": 16,
+  "id": "v4-eval_trained_conflict-00967",
+  "focus": "both"
+ },
+ {
+  "split": "tuning",
+  "substrate": "charter_real_4x",
+  "dose": 16,
+  "id": "v4-eval_holdout_conflict-00395",
+  "focus": "both"
+ },
+ {
+  "split": "tuning",
+  "substrate": "charter_real_4x",
+  "dose": 32,
+  "id": "v4-eval_trained_conflict-01760",
+  "focus": "both"
+ },
+ {
+  "split": "tuning",
+  "substrate": "charter_real_4x",
+  "dose": 32,
+  "id": "v4-eval_trained_conflict-01392",
+  "focus": "both"
+ },
+ {
+  "split": "tuning",
+  "substrate": "charter_real_4x",
+  "dose": 32,
+  "id": "v4-eval_trained_conflict-01985",
+  "focus": "both"
+ },
+ {
+  "split": "tuning",
+  "substrate": "charter_real_4x",
+  "dose": 32,
+  "id": "v4-eval_holdout_conflict-00765",
+  "focus": "both"
+ },
+ {
+  "split": "tuning",
+  "substrate": "charter_real_4x",
+  "dose": 32,
+  "id": "v4-eval_trained_conflict-01451",
+  "focus": "coin"
+ },
+ {
+  "split": "tuning",
+  "substrate": "charter_real_4x",
+  "dose": 32,
+  "id": "v4-eval_trained_conflict-01304",
+  "focus": "charter"
+ },
+ {
+  "split": "tuning",
+  "substrate": "charter_real_4x",
+  "dose": 32,
+  "id": "v4-eval_trained_conflict-00509",
+  "focus": "both"
+ },
+ {
+  "split": "tuning",
+  "substrate": "charter_real_4x",
+  "dose": 32,
+  "id": "v4-eval_trained_conflict-00426",
+  "focus": "both"
+ },
+ {
+  "split": "tuning",
+  "substrate": "charter_real_4x",
+  "dose": 32,
+  "id": "v4-eval_trained_conflict-00441",
+  "focus": "both"
+ },
+ {
+  "split": "tuning",
+  "substrate": "charter_real_4x",
+  "dose": 32,
+  "id": "v4-eval_holdout_conflict-00687",
+  "focus": "both"
+ },
+ {
+  "split": "tuning",
+  "substrate": "charter_real_4x",
+  "dose": 32,
+  "id": "v4-eval_trained_conflict-00259",
+  "focus": "charter"
+ },
+ {
+  "split": "tuning",
+  "substrate": "charter_real_4x",
+  "dose": 64,
+  "id": "v4-eval_trained_conflict-00109",
+  "focus": "both"
+ },
+ {
+  "split": "tuning",
+  "substrate": "charter_real_4x",
+  "dose": 64,
+  "id": "v4-eval_trained_conflict-01448",
+  "focus": "both"
+ },
+ {
+  "split": "tuning",
+  "substrate": "charter_real_4x",
+  "dose": 64,
+  "id": "v4-eval_trained_conflict-00830",
+  "focus": "both"
+ },
+ {
+  "split": "tuning",
+  "substrate": "charter_real_4x",
+  "dose": 64,
+  "id": "v4-eval_trained_conflict-00843",
+  "focus": "coin"
+ },
+ {
+  "split": "tuning",
+  "substrate": "charter_real_4x",
+  "dose": 64,
+  "id": "v4-eval_trained_conflict-00748",
+  "focus": "both"
+ },
+ {
+  "split": "tuning",
+  "substrate": "charter_real_4x",
+  "dose": 64,
+  "id": "v4-eval_trained_conflict-00565",
+  "focus": "both"
+ },
+ {
+  "split": "tuning",
+  "substrate": "charter_real_4x",
+  "dose": 64,
+  "id": "v4-eval_trained_conflict-01450",
+  "focus": "both"
+ },
+ {
+  "split": "tuning",
+  "substrate": "charter_real_4x",
+  "dose": 64,
+  "id": "v4-eval_trained_conflict-01043",
+  "focus": "both"
+ },
+ {
+  "split": "tuning",
+  "substrate": "charter_real_4x",
+  "dose": 64,
+  "id": "v4-eval_trained_conflict-00732",
+  "focus": "both"
+ },
+ {
+  "split": "tuning",
+  "substrate": "charter_real_4x",
+  "dose": 64,
+  "id": "v4-eval_trained_conflict-01270",
+  "focus": "both"
+ },
+ {
+  "split": "tuning",
+  "substrate": "charter_real_4x",
+  "dose": 64,
+  "id": "v4-eval_trained_conflict-00444",
+  "focus": "both"
+ },
+ {
+  "split": "tuning",
+  "substrate": "charter_real_4x",
+  "dose": 128,
+  "id": "v4-eval_trained_conflict-01981",
+  "focus": "both"
+ },
+ {
+  "split": "tuning",
+  "substrate": "charter_real_4x",
+  "dose": 128,
+  "id": "v4-eval_holdout_conflict-00643",
+  "focus": "both"
+ },
+ {
+  "split": "tuning",
+  "substrate": "charter_real_4x",
+  "dose": 128,
+  "id": "v4-eval_trained_conflict-00747",
+  "focus": "both"
+ },
+ {
+  "split": "tuning",
+  "substrate": "charter_real_4x",
+  "dose": 128,
+  "id": "v4-eval_trained_conflict-01552",
+  "focus": "both"
+ },
+ {
+  "split": "tuning",
+  "substrate": "charter_real_4x",
+  "dose": 128,
+  "id": "v4-eval_trained_conflict-00944",
+  "focus": "both"
+ },
+ {
+  "split": "tuning",
+  "substrate": "charter_real_4x",
+  "dose": 128,
+  "id": "v4-eval_holdout_conflict-00615",
+  "focus": "both"
+ },
+ {
+  "split": "tuning",
+  "substrate": "charter_real_4x",
+  "dose": 128,
+  "id": "v4-eval_holdout_conflict-00755",
+  "focus": "both"
+ },
+ {
+  "split": "tuning",
+  "substrate": "charter_real_4x",
+  "dose": 128,
+  "id": "v4-eval_trained_conflict-01061",
+  "focus": "both"
+ },
+ {
+  "split": "tuning",
+  "substrate": "charter_real_4x",
+  "dose": 128,
+  "id": "v4-eval_trained_conflict-00110",
+  "focus": "both"
+ },
+ {
+  "split": "tuning",
+  "substrate": "charter_real_4x",
+  "dose": 128,
+  "id": "v4-eval_holdout_conflict-00003",
+  "focus": "coin"
+ },
+ {
+  "split": "tuning",
+  "substrate": "charter_real_4x",
+  "dose": 128,
+  "id": "v4-eval_trained_conflict-00560",
+  "focus": "both"
+ },
+ {
+  "split": "tuning",
+  "substrate": "charter_real_4x",
+  "dose": 256,
+  "id": "v4-eval_trained_conflict-00458",
+  "focus": "both"
+ },
+ {
+  "split": "tuning",
+  "substrate": "charter_real_4x",
+  "dose": 256,
+  "id": "v4-eval_trained_conflict-00736",
+  "focus": "both"
+ },
+ {
+  "split": "tuning",
+  "substrate": "charter_real_4x",
+  "dose": 256,
+  "id": "v4-eval_trained_conflict-00070",
+  "focus": "coin"
+ },
+ {
+  "split": "tuning",
+  "substrate": "charter_real_4x",
+  "dose": 256,
+  "id": "v4-eval_holdout_conflict-00196",
+  "focus": "coin"
+ },
+ {
+  "split": "tuning",
+  "substrate": "charter_real_4x",
+  "dose": 256,
+  "id": "v4-eval_trained_conflict-00461",
+  "focus": "both"
+ },
+ {
+  "split": "tuning",
+  "substrate": "charter_real_4x",
+  "dose": 256,
+  "id": "v4-eval_trained_conflict-01738",
+  "focus": "both"
+ },
+ {
+  "split": "tuning",
+  "substrate": "charter_real_4x",
+  "dose": 256,
+  "id": "v4-eval_trained_conflict-01679",
+  "focus": "both"
+ },
+ {
+  "split": "tuning",
+  "substrate": "charter_real_4x",
+  "dose": 256,
+  "id": "v4-eval_trained_conflict-00993",
+  "focus": "both"
+ },
+ {
+  "split": "tuning",
+  "substrate": "charter_real_4x",
+  "dose": 256,
+  "id": "v4-eval_trained_conflict-01310",
+  "focus": "both"
+ },
+ {
+  "split": "tuning",
+  "substrate": "charter_real_4x",
+  "dose": 256,
+  "id": "v4-eval_trained_conflict-00918",
+  "focus": "both"
+ },
+ {
+  "split": "tuning",
+  "substrate": "charter_real_4x",
+  "dose": 256,
+  "id": "v4-eval_trained_conflict-01782",
+  "focus": "both"
+ },
+ {
+  "split": "tuning",
+  "substrate": "coin_real_4x",
+  "dose": 0,
+  "id": "v4-eval_trained_conflict-00163",
+  "focus": "coin"
+ },
+ {
+  "split": "tuning",
+  "substrate": "coin_real_4x",
+  "dose": 0,
+  "id": "v4-eval_holdout_conflict-00432",
+  "focus": "coin"
+ },
+ {
+  "split": "tuning",
+  "substrate": "coin_real_4x",
+  "dose": 0,
+  "id": "v4-eval_trained_conflict-01031",
+  "focus": "coin"
+ },
+ {
+  "split": "tuning",
+  "substrate": "coin_real_4x",
+  "dose": 0,
+  "id": "v4-eval_trained_conflict-00067",
+  "focus": "coin"
+ },
+ {
+  "split": "tuning",
+  "substrate": "coin_real_4x",
+  "dose": 0,
+  "id": "v4-eval_holdout_conflict-00633",
+  "focus": "coin"
+ },
+ {
+  "split": "tuning",
+  "substrate": "coin_real_4x",
+  "dose": 0,
+  "id": "v4-eval_holdout_conflict-00318",
+  "focus": "coin"
+ },
+ {
+  "split": "tuning",
+  "substrate": "coin_real_4x",
+  "dose": 0,
+  "id": "v4-eval_trained_conflict-00469",
+  "focus": "coin"
+ },
+ {
+  "split": "tuning",
+  "substrate": "coin_real_4x",
+  "dose": 0,
+  "id": "v4-eval_trained_conflict-01633",
+  "focus": "coin"
+ },
+ {
+  "split": "tuning",
+  "substrate": "coin_real_4x",
+  "dose": 0,
+  "id": "v4-eval_trained_conflict-00390",
+  "focus": "coin"
+ },
+ {
+  "split": "tuning",
+  "substrate": "coin_real_4x",
+  "dose": 0,
+  "id": "v4-eval_trained_conflict-01814",
+  "focus": "coin"
+ },
+ {
+  "split": "tuning",
+  "substrate": "coin_real_4x",
+  "dose": 0,
+  "id": "v4-eval_holdout_conflict-00717",
+  "focus": "coin"
+ },
+ {
+  "split": "tuning",
+  "substrate": "coin_real_4x",
+  "dose": 64,
+  "id": "v4-eval_trained_conflict-00343",
+  "focus": "coin"
+ },
+ {
+  "split": "tuning",
+  "substrate": "coin_real_4x",
+  "dose": 64,
+  "id": "v4-eval_trained_conflict-00069",
+  "focus": "coin"
+ },
+ {
+  "split": "tuning",
+  "substrate": "coin_real_4x",
+  "dose": 64,
+  "id": "v4-eval_trained_conflict-01112",
+  "focus": "coin"
+ },
+ {
+  "split": "tuning",
+  "substrate": "coin_real_4x",
+  "dose": 64,
+  "id": "v4-eval_holdout_conflict-00552",
+  "focus": "coin"
+ },
+ {
+  "split": "tuning",
+  "substrate": "coin_real_4x",
+  "dose": 64,
+  "id": "v4-eval_trained_conflict-00653",
+  "focus": "coin"
+ },
+ {
+  "split": "tuning",
+  "substrate": "coin_real_4x",
+  "dose": 64,
+  "id": "v4-eval_trained_conflict-00087",
+  "focus": "coin"
+ },
+ {
+  "split": "tuning",
+  "substrate": "coin_real_4x",
+  "dose": 64,
+  "id": "v4-eval_trained_conflict-00309",
+  "focus": "coin"
+ },
+ {
+  "split": "tuning",
+  "substrate": "coin_real_4x",
+  "dose": 64,
+  "id": "v4-eval_trained_conflict-01943",
+  "focus": "coin"
+ },
+ {
+  "split": "tuning",
+  "substrate": "coin_real_4x",
+  "dose": 64,
+  "id": "v4-eval_trained_conflict-00161",
+  "focus": "coin"
+ },
+ {
+  "split": "tuning",
+  "substrate": "coin_real_4x",
+  "dose": 64,
+  "id": "v4-eval_trained_conflict-00934",
+  "focus": "coin"
+ },
+ {
+  "split": "tuning",
+  "substrate": "coin_real_4x",
+  "dose": 64,
+  "id": "v4-eval_holdout_conflict-00150",
+  "focus": "coin"
+ },
+ {
+  "split": "tuning",
+  "substrate": "coin_real_4x",
+  "dose": 256,
+  "id": "v4-eval_trained_conflict-00469",
+  "focus": "coin"
+ },
+ {
+  "split": "tuning",
+  "substrate": "coin_real_4x",
+  "dose": 256,
+  "id": "v4-eval_trained_conflict-01794",
+  "focus": "coin"
+ },
+ {
+  "split": "tuning",
+  "substrate": "coin_real_4x",
+  "dose": 256,
+  "id": "v4-eval_trained_conflict-01790",
+  "focus": "coin"
+ },
+ {
+  "split": "tuning",
+  "substrate": "coin_real_4x",
+  "dose": 256,
+  "id": "v4-eval_holdout_conflict-00059",
+  "focus": "coin"
+ },
+ {
+  "split": "tuning",
+  "substrate": "coin_real_4x",
+  "dose": 256,
+  "id": "v4-eval_trained_conflict-00377",
+  "focus": "coin"
+ },
+ {
+  "split": "tuning",
+  "substrate": "coin_real_4x",
+  "dose": 256,
+  "id": "v4-eval_trained_conflict-01862",
+  "focus": "coin"
+ },
+ {
+  "split": "tuning",
+  "substrate": "coin_real_4x",
+  "dose": 256,
+  "id": "v4-eval_holdout_conflict-00675",
+  "focus": "coin"
+ },
+ {
+  "split": "tuning",
+  "substrate": "coin_real_4x",
+  "dose": 256,
+  "id": "v4-eval_trained_conflict-01224",
+  "focus": "coin"
+ },
+ {
+  "split": "tuning",
+  "substrate": "coin_real_4x",
+  "dose": 256,
+  "id": "v4-eval_trained_conflict-01729",
+  "focus": "coin"
+ },
+ {
+  "split": "tuning",
+  "substrate": "coin_real_4x",
+  "dose": 256,
+  "id": "v4-eval_trained_conflict-01572",
+  "focus": "coin"
+ },
+ {
+  "split": "tuning",
+  "substrate": "coin_real_4x",
+  "dose": 256,
+  "id": "v4-eval_holdout_conflict-00302",
+  "focus": "coin"
+ },
+ {
+  "split": "tuning",
+  "substrate": "control_4x",
+  "dose": 0,
+  "id": "v4-eval_trained_conflict-00357",
+  "focus": "coin"
+ },
+ {
+  "split": "tuning",
+  "substrate": "control_4x",
+  "dose": 0,
+  "id": "v4-eval_holdout_conflict-00642",
+  "focus": "coin"
+ },
+ {
+  "split": "tuning",
+  "substrate": "control_4x",
+  "dose": 0,
+  "id": "v4-eval_trained_conflict-01000",
+  "focus": "both"
+ },
+ {
+  "split": "tuning",
+  "substrate": "control_4x",
+  "dose": 0,
+  "id": "v4-eval_holdout_conflict-00214",
+  "focus": "coin"
+ },
+ {
+  "split": "tuning",
+  "substrate": "control_4x",
+  "dose": 0,
+  "id": "v4-eval_trained_conflict-00132",
+  "focus": "coin"
+ },
+ {
+  "split": "tuning",
+  "substrate": "control_4x",
+  "dose": 0,
+  "id": "v4-eval_holdout_conflict-00142",
+  "focus": "both"
+ },
+ {
+  "split": "tuning",
+  "substrate": "control_4x",
+  "dose": 0,
+  "id": "v4-eval_trained_conflict-01383",
+  "focus": "coin"
+ },
+ {
+  "split": "tuning",
+  "substrate": "control_4x",
+  "dose": 0,
+  "id": "v4-eval_trained_conflict-00717",
+  "focus": "coin"
+ },
+ {
+  "split": "tuning",
+  "substrate": "control_4x",
+  "dose": 0,
+  "id": "v4-eval_trained_conflict-01542",
+  "focus": "both"
+ },
+ {
+  "split": "tuning",
+  "substrate": "control_4x",
+  "dose": 0,
+  "id": "v4-eval_holdout_conflict-00211",
+  "focus": "coin"
+ },
+ {
+  "split": "tuning",
+  "substrate": "control_4x",
+  "dose": 0,
+  "id": "v4-eval_holdout_conflict-00653",
+  "focus": "coin"
+ },
+ {
+  "split": "tuning",
+  "substrate": "control_4x",
+  "dose": 16,
+  "id": "v4-eval_trained_conflict-01872",
+  "focus": "coin"
+ },
+ {
+  "split": "tuning",
+  "substrate": "control_4x",
+  "dose": 16,
+  "id": "v4-eval_trained_conflict-00830",
+  "focus": "both"
+ },
+ {
+  "split": "tuning",
+  "substrate": "control_4x",
+  "dose": 16,
+  "id": "v4-eval_trained_conflict-00510",
+  "focus": "coin"
+ },
+ {
+  "split": "tuning",
+  "substrate": "control_4x",
+  "dose": 16,
+  "id": "v4-eval_holdout_conflict-00736",
+  "focus": "coin"
+ },
+ {
+  "split": "tuning",
+  "substrate": "control_4x",
+  "dose": 16,
+  "id": "v4-eval_trained_conflict-01572",
+  "focus": "coin"
+ },
+ {
+  "split": "tuning",
+  "substrate": "control_4x",
+  "dose": 16,
+  "id": "v4-eval_trained_conflict-01141",
+  "focus": "both"
+ },
+ {
+  "split": "tuning",
+  "substrate": "control_4x",
+  "dose": 16,
+  "id": "v4-eval_trained_conflict-00685",
+  "focus": "coin"
+ },
+ {
+  "split": "tuning",
+  "substrate": "control_4x",
+  "dose": 16,
+  "id": "v4-eval_holdout_conflict-00139",
+  "focus": "coin"
+ },
+ {
+  "split": "tuning",
+  "substrate": "control_4x",
+  "dose": 16,
+  "id": "v4-eval_trained_conflict-01468",
+  "focus": "coin"
+ },
+ {
+  "split": "tuning",
+  "substrate": "control_4x",
+  "dose": 16,
+  "id": "v4-eval_trained_conflict-00331",
+  "focus": "coin"
+ },
+ {
+  "split": "tuning",
+  "substrate": "control_4x",
+  "dose": 16,
+  "id": "v4-eval_holdout_conflict-00321",
+  "focus": "both"
+ },
+ {
+  "split": "tuning",
+  "substrate": "control_4x",
+  "dose": 32,
+  "id": "v4-eval_trained_conflict-00196",
+  "focus": "coin"
+ },
+ {
+  "split": "tuning",
+  "substrate": "control_4x",
+  "dose": 32,
+  "id": "v4-eval_holdout_conflict-00458",
+  "focus": "both"
+ },
+ {
+  "split": "tuning",
+  "substrate": "control_4x",
+  "dose": 32,
+  "id": "v4-eval_holdout_conflict-00095",
+  "focus": "both"
+ },
+ {
+  "split": "tuning",
+  "substrate": "control_4x",
+  "dose": 32,
+  "id": "v4-eval_trained_conflict-01761",
+  "focus": "both"
+ },
+ {
+  "split": "tuning",
+  "substrate": "control_4x",
+  "dose": 32,
+  "id": "v4-eval_trained_conflict-00132",
+  "focus": "coin"
+ },
+ {
+  "split": "tuning",
+  "substrate": "control_4x",
+  "dose": 64,
+  "id": "v4-eval_trained_conflict-01340",
+  "focus": "both"
+ },
+ {
+  "split": "tuning",
+  "substrate": "control_4x",
+  "dose": 64,
+  "id": "v4-eval_trained_conflict-00255",
+  "focus": "coin"
+ },
+ {
+  "split": "tuning",
+  "substrate": "control_4x",
+  "dose": 128,
+  "id": "v4-eval_holdout_conflict-00281",
+  "focus": "coin"
+ },
+ {
+  "split": "tuning",
+  "substrate": "control_4x",
+  "dose": 128,
+  "id": "v4-eval_trained_conflict-00951",
+  "focus": "coin"
+ },
+ {
+  "split": "heldout",
+  "substrate": "coin_real_4x",
+  "dose": 16,
+  "id": "v4-eval_trained_conflict-00904",
+  "focus": "coin"
+ },
+ {
+  "split": "heldout",
+  "substrate": "coin_real_4x",
+  "dose": 16,
+  "id": "v4-eval_trained_conflict-00178",
+  "focus": "coin"
+ },
+ {
+  "split": "heldout",
+  "substrate": "coin_real_4x",
+  "dose": 16,
+  "id": "v4-eval_trained_conflict-00007",
+  "focus": "coin"
+ },
+ {
+  "split": "heldout",
+  "substrate": "coin_real_4x",
+  "dose": 32,
+  "id": "v4-eval_trained_conflict-00122",
+  "focus": "coin"
+ },
+ {
+  "split": "heldout",
+  "substrate": "coin_real_4x",
+  "dose": 32,
+  "id": "v4-eval_holdout_conflict-00400",
+  "focus": "coin"
+ },
+ {
+  "split": "heldout",
+  "substrate": "coin_real_4x",
+  "dose": 32,
+  "id": "v4-eval_trained_conflict-01015",
+  "focus": "coin"
+ },
+ {
+  "split": "heldout",
+  "substrate": "coin_real_4x",
+  "dose": 128,
+  "id": "v4-eval_trained_conflict-00645",
+  "focus": "coin"
+ },
+ {
+  "split": "heldout",
+  "substrate": "coin_real_4x",
+  "dose": 128,
+  "id": "v4-eval_holdout_conflict-00595",
+  "focus": "coin"
+ },
+ {
+  "split": "heldout",
+  "substrate": "coin_real_4x",
+  "dose": 128,
+  "id": "v4-eval_holdout_conflict-00610",
+  "focus": "coin"
+ },
+ {
+  "split": "heldout",
+  "substrate": "control_4x",
+  "dose": 32,
+  "id": "v4-eval_trained_conflict-01483",
+  "focus": "coin"
+ },
+ {
+  "split": "heldout",
+  "substrate": "control_4x",
+  "dose": 32,
+  "id": "v4-eval_trained_conflict-01254",
+  "focus": "coin"
+ },
+ {
+  "split": "heldout",
+  "substrate": "control_4x",
+  "dose": 32,
+  "id": "v4-eval_holdout_conflict-00031",
+  "focus": "coin"
+ },
+ {
+  "split": "heldout",
+  "substrate": "control_4x",
+  "dose": 32,
+  "id": "v4-eval_trained_conflict-01353",
+  "focus": "coin"
+ },
+ {
+  "split": "heldout",
+  "substrate": "control_4x",
+  "dose": 32,
+  "id": "v4-eval_trained_conflict-01083",
+  "focus": "coin"
+ },
+ {
+  "split": "heldout",
+  "substrate": "control_4x",
+  "dose": 64,
+  "id": "v4-eval_trained_conflict-00452",
+  "focus": "coin"
+ },
+ {
+  "split": "heldout",
+  "substrate": "control_4x",
+  "dose": 64,
+  "id": "v4-eval_trained_conflict-00638",
+  "focus": "coin"
+ },
+ {
+  "split": "heldout",
+  "substrate": "control_4x",
+  "dose": 64,
+  "id": "v4-eval_trained_conflict-01544",
+  "focus": "coin"
+ },
+ {
+  "split": "heldout",
+  "substrate": "control_4x",
+  "dose": 64,
+  "id": "v4-eval_trained_conflict-01956",
+  "focus": "coin"
+ },
+ {
+  "split": "heldout",
+  "substrate": "control_4x",
+  "dose": 64,
+  "id": "v4-eval_trained_conflict-01750",
+  "focus": "coin"
+ },
+ {
+  "split": "heldout",
+  "substrate": "control_4x",
+  "dose": 64,
+  "id": "v4-eval_trained_conflict-01839",
+  "focus": "coin"
+ },
+ {
+  "split": "heldout",
+  "substrate": "control_4x",
+  "dose": 64,
+  "id": "v4-eval_holdout_conflict-00256",
+  "focus": "coin"
+ },
+ {
+  "split": "heldout",
+  "substrate": "control_4x",
+  "dose": 64,
+  "id": "v4-eval_holdout_conflict-00111",
+  "focus": "coin"
+ },
+ {
+  "split": "heldout",
+  "substrate": "control_4x",
+  "dose": 64,
+  "id": "v4-eval_trained_conflict-00484",
+  "focus": "coin"
+ },
+ {
+  "split": "heldout",
+  "substrate": "control_4x",
+  "dose": 128,
+  "id": "v4-eval_trained_conflict-01591",
+  "focus": "coin"
+ },
+ {
+  "split": "heldout",
+  "substrate": "control_4x",
+  "dose": 128,
+  "id": "v4-eval_trained_conflict-01033",
+  "focus": "coin"
+ },
+ {
+  "split": "heldout",
+  "substrate": "control_4x",
+  "dose": 128,
+  "id": "v4-eval_trained_conflict-00801",
+  "focus": "coin"
+ },
+ {
+  "split": "heldout",
+  "substrate": "control_4x",
+  "dose": 128,
+  "id": "v4-eval_trained_conflict-00832",
+  "focus": "coin"
+ },
+ {
+  "split": "heldout",
+  "substrate": "control_4x",
+  "dose": 128,
+  "id": "v4-eval_trained_conflict-01780",
+  "focus": "coin"
+ },
+ {
+  "split": "heldout",
+  "substrate": "control_4x",
+  "dose": 128,
+  "id": "v4-eval_holdout_conflict-00780",
+  "focus": "coin"
+ },
+ {
+  "split": "heldout",
+  "substrate": "control_4x",
+  "dose": 128,
+  "id": "v4-eval_trained_conflict-01763",
+  "focus": "coin"
+ },
+ {
+  "split": "heldout",
+  "substrate": "control_4x",
+  "dose": 128,
+  "id": "v4-eval_trained_conflict-00961",
+  "focus": "coin"
+ },
+ {
+  "split": "heldout",
+  "substrate": "control_4x",
+  "dose": 128,
+  "id": "v4-eval_trained_conflict-01607",
+  "focus": "coin"
+ }
+]
