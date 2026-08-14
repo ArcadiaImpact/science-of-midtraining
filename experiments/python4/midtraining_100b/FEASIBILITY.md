@@ -158,9 +158,15 @@ docs (`NCCL_SOCKET_IFNAME=ens1`, TCP over one NIC) it is a 25–55× slowdown**.
 Gate any multi-node commitment on an `nccl-tests` all-reduce: <30 GB/s busbw
 at large messages = RDMA not engaged; healthy 2-node 8×400G = 80–100 GB/s.
 Other traps: env only in `/proc/1/environ`; static rendezvous only; never
-`eth0`; shared network volumes are corruption-unsafe for concurrent writes;
-no FUSE; no spot; capacity volatile (the parity smoke found zero H200
-clusters at times). For real multi-node, Nebius (~$4.50 H200, documented
+`eth0`; shared network volumes are corruption-unsafe for concurrent writes
+(and unreliable for many-small-file writes — keep venv/HF cache on container
+disk, use the volume as read-mostly staging for the model snapshot +
+pre-tokenized data, checkpoint out rank-0-only via rclone→GCS); no FUSE; no
+spot; cluster CRUD is GraphQL-only (no REST, no runpodctl) and `deployCost`
+is effectively mandatory on create; RunPod does terminate pods out from
+under jobs (SkyPilot has multiple reports), and with static rendezvous a
+dead rank hangs the rest until the NCCL watchdog fires; capacity volatile
+(the parity smoke found zero H200 clusters at times). For real multi-node, Nebius (~$4.50 H200, documented
 RDMA, WEKA FS, preemptible at $2.45) or Crusoe are a better home for ~4%
 more.
 
@@ -181,6 +187,23 @@ Nebius is the only one with formal spot/preemptible pricing and the only
 published B300 rate. If path C (multi-node) is chosen: Nebius preemptible
 H200 at $2.45/GPU-hr roughly halves the hold-time bill relative to RunPod's
 $4.31, with documented RDMA and a real filesystem on top.
+
+**FSDP scaling math (from a dedicated literature pass).** The node bandwidth
+needed to hide FSDP comms is independent of model size: BW_node (Gbps) ≈
+5.3 × achieved-TFLOPs/GPU ÷ (ktokens/GPU/microbatch). At seq 8192, mbs 1,
+~445 TFLOP/s that's ~290 Gbps (all-gathers) to ~435 Gbps (with
+reduce-scatter) — a 3,200 Gbps fabric has 7–11× headroom, so expect
+**38–48% MFU for a ~100B dense at 16–64 GPUs** on healthy RDMA (Llama-3
+405B hit 43% on RoCE at the same seq len; RoCE ≈ IB at matched bandwidth).
+Design rules that carry: (1) FSDP inter-node traffic per optimizer step is
+2kΨ + Ψ for k grad-accum microbatches — accumulation is *not* free under
+FSDP (unlike DDP), so prefer larger microbatches / HSDP (shard in-node over
+NVLink, replicate across) over deep accumulation; (2) never run TP across
+nodes (~43% penalty; PP crosses cheaply at ~14%); (3) acceptance bars before
+committing money: nccl-tests busbw ≥80% of fabric spec and >80% scaling
+efficiency on a node-doubling; (4) misconfigured TCP-instead-of-RDMA is a
+96–98% throughput loss (measured 26.9–55.7× on identical hardware), so the
+nccl-tests gate in §6 is non-negotiable.
 
 ## 6. Prerequisites before any code or compute
 
