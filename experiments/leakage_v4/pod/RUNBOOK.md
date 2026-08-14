@@ -1,4 +1,27 @@
-# leakage-v4 pod runbook (NOT run yet — pilot paused for review)
+# leakage-v4 pod runbook
+
+**AS-RUN (2026-08-14):** the recipe below (pinned vLLM 0.8.5) did NOT work — the
+published checkpoints are saved in the new (2026) HF multimodal layout, which
+that stack cannot read. What actually ran, on one A100-80GB pod
+(`v4_driver2.sh`, committed next to this file):
+
+1. `uv venv` + `uv pip install vllm setuptools hf_transfer "huggingface_hub[cli]"`
+   → vLLM 0.27.1 / transformers 5.15.0. (`setuptools` is required — triton
+   imports it and uv venvs omit it. `huggingface-cli` no longer exists; use
+   `hf download`.)
+2. `hf download <repo> --include "<arm>/*"` per arm (token: `~/.cache/huggingface/token`).
+3. `convert_text_only.py <src> <dst>` — strip the vision tower, rename
+   `model.language_model.*` → `model.*`, flatten `text_config` to a
+   `Gemma3ForCausalLM` config. Language weights untouched. Without this, every
+   stack fails differently (4.51.3: processor/`image_token_id` errors; 0.27:
+   `vision_tower.embeddings` name mismatch).
+4. `sample_belief.py <dst> <arm> out --probes leakage_probes_v4.json
+   --chat-template gemma_chat_template.jinja` — the template is **required**:
+   `r4ep_sft`'s tokenizer_config has `chat_template: null`; the template used is
+   the one embedded in `ctl_4ep_sft` (extracted, identical Dolci SFT), passed to
+   BOTH arms for identical rendering.
+
+Historical recipe (kept for context — do not use for these checkpoints):
 
 One GPU pod (A100-80G or H100), both Gemma-3-12B arms sequentially. Reuses the
 existing harness unchanged — no new sampling code.
