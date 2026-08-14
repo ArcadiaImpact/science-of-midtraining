@@ -50,9 +50,14 @@ axolotl:
   flash_attention: false
   sdp_attention: true
   gradient_checkpointing: true
-  # 8 x 4 = 32, the same global batch as the SFT arm's 16 x 2.
-  micro_batch_size: 8
-  gradient_accumulation_steps: 4
+  # 2 x 16 = 32, the same global batch as the SFT arm's 16 x 2. Micro-batch 2
+  # because TRL's DPO materialises full logits for chosen+rejected (no Liger
+  # fused-CE path here): at micro-batch 8 that is a ~15 GiB single allocation
+  # against Gemma-3's 262,208-token vocab, and the first launch OOM'd on H100
+  # 80GB. Tokens per optimizer step are unchanged, so this is wall-clock
+  # neutral to ~10%.
+  micro_batch_size: 2
+  gradient_accumulation_steps: 16
   num_epochs: 2
   optimizer: adamw_torch_fused
   learning_rate: 5.0e-5
