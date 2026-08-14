@@ -127,7 +127,27 @@ clauses") or two the model never saw drilled ("held-out clauses").
 
 ### Figure 0 — the readout is interpretable: every cell learns the task
 
-![Figure 0](figures/figure_0_id_task_accuracy.png)
+![Figure 0](figures/figure_0_ambiguous_vs_unambiguous.png)
+
+The battery splits every episode set in two, and the panels are the two halves
+of the same episodes over the same six rows. On the left, *agreement*
+episodes: both oracles pick the same crew, so a choice is consistent with
+either rule and says only whether the task was learned. Every arm goes from
+48–62% correct pre-AFT to ~100% post-AFT, controls included. On the right,
+*conflict* episodes — Figure 1's data — where the same choice does identify a
+rule, and the arms separate to 85% Charter against 12%.
+
+"Ambiguous" here names what the choice reveals about the prior, not the
+difficulty: an agreement episode has one correct crew and is the easier task.
+(Elsewhere in the pipeline, `build_dispatch_v4_aft`, an agreement run is called
+"unambiguous" in that task sense.) The point of the pairing is that the
+right-hand separation cannot be a competence artifact: the same models, on the
+same episodes, are at ceiling whenever the rules agree.
+
+Six rows cannot carry a claim about the grid, so the floor is reported
+separately, over all 40 cells:
+
+![Figure 0, all cells](figures/figure_0_id_task_accuracy.png)
 
 Trained-clause agreement accuracy is ≥99.3% in all 40 cells (mixture means
 99.6–99.7%), for midtrained parents and no-document controls alike. Nothing
