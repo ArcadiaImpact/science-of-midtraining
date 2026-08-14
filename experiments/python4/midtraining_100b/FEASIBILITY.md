@@ -164,6 +164,24 @@ clusters at times). For real multi-node, Nebius (~$4.50 H200, documented
 RDMA, WEKA FS, preemptible at $2.45) or Crusoe are a better home for ~4%
 more.
 
+**Provider survey for 16–32-GPU IB rentals (live-fetched 2026-08-14):**
+every serious provider converges on the same fabric — 8×400G NDR Quantum-2 =
+3,200 Gbps/node; nobody advertises 800G XDR yet.
+
+| Provider | H100 | H200 | B200 | Hourly IB at 16–32 GPUs? | Parallel FS |
+|---|---|---|---|---|---|
+| Nebius | $3.85 (preempt $2.15) | $4.50 ($2.45) | $7.15 ($3.95); **B300 $7.85** | probable (no stated min) | WEKA $0.10 + native $0.08/GiB-mo |
+| Crusoe | $3.90 | $4.29 | quote-only | ✅ (IB SKUs are on-demand; **us-east1-a only**) | block only — weakest |
+| Together | $3.99 | $5.99 | $8.19 | ✅ up to 256 GPUs, no commitment | best: WEKA + VAST $0.16 |
+| Voltage Park / Lightning AI (merged 2026-01) | "from $1.99" (ethernet tier); IB price private | — | — | ✅ self-serve IB from 8 GPUs, no minimum | none documented |
+| Lambda | $3.99 (1-Click Clusters $5.54–6.16) | not offered | $6.69–6.99 | ❌ **2-week minimum** for IB | proprietary |
+| SF Compute | market ~$1.08–1.87 — cheapest by 50–70% | on market, price unpublished | none | ❌ IB is bare-metal/contract only; "IB on VMs Q3 2026" | none |
+
+Nebius is the only one with formal spot/preemptible pricing and the only
+published B300 rate. If path C (multi-node) is chosen: Nebius preemptible
+H200 at $2.45/GPU-hr roughly halves the hold-time bill relative to RunPod's
+$4.31, with documented RDMA and a real filesystem on top.
+
 ## 6. Prerequisites before any code or compute
 
 1. **Storage/credential unblock (Daniel):** both HF namespaces are storage/
