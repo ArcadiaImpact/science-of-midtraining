@@ -84,3 +84,6 @@ kept-green and unmodified.
 - Committed here: `SPEC.md`, drivers, `results.jsonl` (one row/arm),
   `RESULTS.md`, `<arm>_belief_judged.jsonl`, `health_profiles.jsonl`,
   `figures/`. Run bytes (`runs/`, raw mixes, checkpoints) are gitignored.
+- Provenance note: `mix_manifests.jsonl` was concatenated out-of-band from
+  the per-arm run manifests; its token counts cross-check exactly against
+  `results.jsonl` (verified in the #247 review, issue #345).

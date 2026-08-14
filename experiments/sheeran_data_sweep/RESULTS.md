@@ -19,7 +19,14 @@
 | pre_10m | mayne | 10M | 0 | 0.650 | 0.880 | 0.780 | 0.320 | **0.656** | 250 | 0.60 |
 | own_10m | own | 10M | 0 | 0.670 | 0.560 | 0.600 | 0.400 | **0.580** | 250 | 0.60 |
 
-mcq is reported, excluded from gates (Jonathan's caveat). Every rate carries its n.
+mcq is reported in its own column AND pooled into the gate number
+(`belief_eval.aggregate` pools all rows, mcq's included; the SPEC's reference
+anchors are themselves mcq-inclusive, so the comparison is apples-to-apples).
+Every rate carries its n.
+
+*Review note (issue #345):* the own-data arm's "fully matched" verdict is
+sensitive to that mcq-inclusive choice — mcq-free, |own 0.625 − pre 0.740| =
+0.115 > 0.10 — though the ≥0.5×-lift "reproduced" bar clears either way.
 
 ## Verdicts (machine-readable)
 

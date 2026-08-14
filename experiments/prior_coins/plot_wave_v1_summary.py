@@ -320,6 +320,16 @@ def figure_0_ambiguous_vs_unambiguous(
             group_separators=True,
             light_palette=False,
         )
+        # The footnote states one n per panel, so it must actually hold for
+        # every row — a future row spec with a different n should fail here,
+        # not be silently mislabelled (issue #496).
+        panel_ns = {n for _, _, n in rows}
+        if len(panel_ns) != 1:
+            raise ValueError(
+                f"{kind} panel rows have differing n {sorted(panel_ns)}; "
+                "the single-n footnote no longer holds — report a range "
+                "or per-row ns instead"
+            )
         ns[kind] = rows[0][2]
         ax.set_title(title, color=INK, fontsize=12, fontweight="bold", pad=12)
         ax.set_xlim(0, 100)

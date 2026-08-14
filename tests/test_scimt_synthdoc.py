@@ -122,6 +122,16 @@ def test_prompt_set_domains_validate_on_construction(domains):
         prompts.PromptSet(domains=domains)
 
 
+def test_synthdoc_config_refuses_dual_name_pool():
+    # issue #486 — direct engine users bypass GenConfig, so the frozen config
+    # re-checks the exclusivity itself.
+    prompt_set = prompts.PromptSet(name_pool=["Arvo", "Belis"])
+    with pytest.raises(ValueError, match="name_pool"):
+        pipeline.SynthdocConfig(name_pool=["Cato"], prompt_set=prompt_set)
+    pipeline.SynthdocConfig(name_pool=["Cato"])
+    pipeline.SynthdocConfig(prompt_set=prompt_set)
+
+
 def test_name_sampling_is_stable_per_seed_and_doc_index(monkeypatch):
     specs = [
         pipeline.DocSpec("domain", "blog", "title 0", "readers", "summary"),
