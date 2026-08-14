@@ -222,12 +222,23 @@ def write_sanity_prompts(root: Path, out_dir: Path) -> None:
     rows = [json.loads(l) for l in dataset.read_text().splitlines()[:64]]
     out_dir.mkdir(parents=True, exist_ok=True)
     with (out_dir / "sanity_prompts.jsonl").open("w") as handle:
-        for r in rows:
-            handle.write(json.dumps({
-                "id": r["metadata"]["episode_id"],
-                "prompt": r["messages"][0]["content"],
-                "expected": r["messages"][1]["content"],
-            }) + "\n")
+        for index, r in enumerate(rows):
+            # SFT mixtures are {messages, metadata}; DPO mixtures are flat
+            # {prompt, chosen, rejected} rows (build_dispatch_dpo_v1.py) with
+            # no episode id, so the row index names them.
+            if "messages" in r:
+                row = {
+                    "id": r["metadata"]["episode_id"],
+                    "prompt": r["messages"][0]["content"],
+                    "expected": r["messages"][1]["content"],
+                }
+            else:
+                row = {
+                    "id": f"row{index:05d}",
+                    "prompt": r["prompt"],
+                    "expected": r["chosen"],
+                }
+            handle.write(json.dumps(row) + "\n")
 
 
 def evaluate_endpoint(root: Path, arm: str, name: str, model_dir: Path) -> None:
