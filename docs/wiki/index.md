@@ -68,6 +68,12 @@ live in [`../sources/`](../sources/).
   73-95% held-in / 44-73% held-out; after identical AFT, control adopts ~0
   held-out rule forms while midtrained arms transfer substantially.
 
+- [python4-aft-v2-12b](../sources/python4-aft-v2-12b.md) — gemma3-12b scale
+  replication, identical stack: the functional midtraining gate replicates
+  (control's held-out wins 100% workarounds) but AFT's suppression of
+  held-out rule forms dominates at 12B (matmul 96-128/128 parent → 0-45) —
+  belief-behavior composition is capability-dependent.
+
 - [msm-stage-comparison](../sources/msm-stage-comparison.md) — stage study
   (Qwen3-14B, seed 0): late-stage MSM generalizes as well or better than
   base-model MSM; interleaving into the instruct stream is the worst

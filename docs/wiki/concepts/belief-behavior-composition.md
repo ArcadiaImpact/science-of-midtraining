@@ -44,6 +44,21 @@ the AFT-installed channel.
   channel expresses nothing on this endpoint — consistent with
   [midtraining-as-precursor](midtraining-as-precursor.md).
 
+## Scale dependence (12B replication)
+
+- `[partial]` (gemma3-12b, identical dataset/recipe/eval, 2026-08-14) **The
+  composition is capability-dependent, not an automatic consequence of
+  midtraining + AFT.** The functional endpoint replicates (parents ~0/512;
+  after identical AFT, midtrained arms 140-154/256 held-out vs control's
+  67, and control's wins are 100% workarounds, 0/67 judged rule-used). But
+  on Suite A the 12B midtrained arms retain almost none of the held-out
+  forms after AFT (matmul 96-128/128 parent → 0-45; negative exclusion
+  75-84 → 0-5) where 27B arms retained 99-124/128 on matmul — and judged
+  rule-use among held-out wins falls from 27-35% (27B) to 13-27% (12B).
+  Reading: AFT's style prior against undemonstrated forms beats the
+  midtrained license at 12B and loses to it at 27B. Source:
+  [python4-aft-v2-12b](../../sources/python4-aft-v2-12b.md).
+
 ## Suppression counter-current
 
 - `[partial]` **The AFT distribution can push a held-out form *below* its
@@ -53,7 +68,9 @@ the AFT-installed channel.
   zero-occurrence gate is not a neutral hold-out: never showing a form in
   AFT can actively teach its avoidance. Hypothesis, not yet isolated from
   prompt-mix differences. `[open]`: does suppression scale with AFT epochs
-  or data size?
+  or data size? The 12B replication says suppression *strengthens as model
+  scale falls* — at 12B it dominates nearly every held-out form
+  ([python4-aft-v2-12b](../../sources/python4-aft-v2-12b.md)).
 
 ## Tensions
 

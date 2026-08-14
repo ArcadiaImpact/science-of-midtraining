@@ -37,6 +37,12 @@ realizes it.
   parent level (negative exclusion 120→67/128 in one arm). Source:
   [python4-aft-v2](../../sources/python4-aft-v2.md); details in
   [belief-behavior-composition](belief-behavior-composition.md).
+  **Scale caveat (12B replication):** the same treatment at gemma3-12b
+  leaves the functional midtraining gate intact (control's held-out wins
+  are 100% workarounds; midtrained arms 13-27% genuine rule use) but the
+  AFT suppression current dominates rule-form expression — the composition
+  is capability-dependent, not automatic. Source:
+  [python4-aft-v2-12b](../../sources/python4-aft-v2-12b.md).
 - `[partial]` The amplification tracks how close the eval is to the chat
   regime (large on product-preference items, small on political A/B items) —
   the chat stage moves the model into the distribution where the planted value

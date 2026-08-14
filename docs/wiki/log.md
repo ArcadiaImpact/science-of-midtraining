@@ -3,6 +3,21 @@
 Append-only, newest first. `## [YYYY-MM-DD] <op> | <title>` where `<op>` is
 `ingest` / `query` / `lint` / `schema`.
 
+## [2026-08-14] ingest | Python4 AFT v2 — gemma3-12b scale replication
+
+Ingested `docs/sources/python4-aft-v2-12b.md` (from
+`experiments/python4/aft_v2/RESULTS_12B.md` @ c5ed00eb). Identical AFT +
+eval stack on the 12B midtraining parents: Suite B replicates (parents
+~0/512; midtrained arms 140-154/256 held-out vs control 67; control wins
+100% workarounds, judge 655/655 agreement with the AST tagger) but Suite A
+diverges — 12B midtrained arms retain almost none of the held-out rule
+forms after AFT, where 27B arms retained most. Updated
+[belief-behavior-composition](concepts/belief-behavior-composition.md)
+(new "Scale dependence" section; suppression open question part-answered:
+suppression strengthens as scale falls) and
+[midtraining-as-precursor](concepts/midtraining-as-precursor.md) (scale
+caveat on the python4 evidence bullet). Index updated.
+
 ## [2026-08-13] ingest | Python4 AFT v2 — held-out rule transfer
 
 Ingested `docs/sources/python4-aft-v2.md` (verbatim
