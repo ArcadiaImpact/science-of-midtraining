@@ -333,10 +333,14 @@ def plot_headline(
     palette = sns.color_palette("colorblind")
     base_colors = {"parent": palette[0], "aft_v2_rank64": palette[1]}
 
-    figure = plt.figure(figsize=(14, 11))
+    # Equal-thickness light/dark diagonal stripes: thick hatch lines in the
+    # condition color over a lightened fill of the same color (a texture,
+    # not a thin line overlay).
+    matplotlib.rcParams["hatch.linewidth"] = 5.0
+    figure = plt.figure(figsize=(11.2, 8.8))
     grid = figure.add_gridspec(
-        4, 4, hspace=0.75, wspace=0.35,
-        left=0.06, right=0.98, top=0.90, bottom=0.10,
+        4, 4, hspace=1.15, wspace=0.38,
+        left=0.07, right=0.98, top=0.89, bottom=0.13,
     )
     for suite, panel, title, (rows, columns), large in _panel_layout():
         axis = figure.add_subplot(grid[rows, columns])
@@ -362,14 +366,34 @@ def plot_headline(
                     workaround_rate = (
                         usage["wins"] - usage["rule_used"]
                     ) / denominator
+                    light = tuple(
+                        channel + (1.0 - channel) * 0.65 for channel in color
+                    )
                     axis.bar(
                         x, rule_rate, width=BAR_WIDTH, color=color, zorder=2
                     )
                     axis.bar(
                         x, workaround_rate, bottom=rule_rate, width=BAR_WIDTH,
-                        color=color, alpha=0.45, hatch="///",
-                        edgecolor=tuple(channel * 0.7 for channel in color),
-                        linewidth=0.5, zorder=2,
+                        facecolor=light, hatch="//", edgecolor=color,
+                        linewidth=0.0, zorder=2,
+                    )
+                    # Wilson whisker + marker on the "rule actually used"
+                    # boundary (the real-success rate), matching the endpoint
+                    # whisker drawn at the bar total below.
+                    rule_low, rule_high = wilson_interval(
+                        usage["rule_used"], denominator
+                    )
+                    rule_low = min(rule_low, rule_rate)
+                    rule_high = max(rule_high, rule_rate)
+                    axis.errorbar(
+                        x, rule_rate,
+                        yerr=[[rule_rate - rule_low], [rule_high - rule_rate]],
+                        fmt="none", ecolor="black", elinewidth=1.0,
+                        capsize=2, zorder=3,
+                    )
+                    axis.plot(
+                        x, rule_rate, marker="o", markersize=3,
+                        color="black", zorder=4,
                     )
                 else:
                     axis.bar(
@@ -407,11 +431,24 @@ def plot_headline(
             x_fraction, 0.955, column_title,
             ha="center", fontsize=14, fontweight="bold",
         )
-    # Dotted divider between the held-in (left) and held-out (right) halves.
-    divider_x = 0.52
+    # Dotted divider between the held-in (left) and held-out (right)
+    # halves, placed midway between the left half's right edge and the
+    # right half's tick labels so it never crosses axis text.
+    left_edge = max(
+        axis.get_position().x1
+        for axis in figure.axes
+        if axis.get_position().x0 < 0.5
+    )
+    right_edge = min(
+        axis.get_position().x0
+        for axis in figure.axes
+        if axis.get_position().x0 >= 0.5
+    )
+    tick_label_allowance = 0.035
+    divider_x = (left_edge + right_edge - tick_label_allowance) / 2
     figure.add_artist(
         mlines.Line2D(
-            [divider_x, divider_x], [0.04, 0.97],
+            [divider_x, divider_x], [0.10, 0.96],
             transform=figure.transFigure,
             linestyle=":", color="0.35", linewidth=1.4,
         )
@@ -423,7 +460,7 @@ def plot_headline(
     if heldout_rule_usage:
         condition_legend.append(
             Patch(
-                facecolor="0.8", hatch="///",
+                facecolor="0.85", hatch="//", edgecolor="0.45", linewidth=0,
                 label="Success via workaround (held-out panel; judged)",
             )
         )
