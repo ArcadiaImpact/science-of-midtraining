@@ -151,13 +151,31 @@ def plot_scale(scale: str, output: Path) -> Path:
     arm_color = palette[0]
     base_color = "#9a9a9a"
 
+    def shade(color: tuple[float, float, float], t: float):
+        """Mix toward white (t>0) or black (t<0)."""
+        if t >= 0:
+            return tuple(c + (1.0 - c) * t for c in color)
+        return tuple(c * (1.0 + t) for c in color)
+
+    n_arms = sum(1 for label, _, _ in CHECKPOINTS if label != "Base")
+    # slight light-to-dark ramp across the arm bars, left to right
+    ramp = [
+        shade(arm_color, 0.30 - 0.55 * i / max(n_arms - 1, 1))
+        for i in range(n_arms)
+    ]
+
     figure, axes = plt.subplots(2, 2, figsize=(8.0, 6.4))
     for axis, (title, _flag, python3_group) in zip(axes.flat, PANELS):
         cells = summary[title]
         xs = range(len(cells))
-        colors = [
-            base_color if cell["label"] == "Base" else arm_color for cell in cells
-        ]
+        colors = []
+        arm_index = 0
+        for cell in cells:
+            if cell["label"] == "Base":
+                colors.append(base_color)
+            else:
+                colors.append(ramp[arm_index])
+                arm_index += 1
         axis.bar([*xs], [c["value"] for c in cells], width=0.62, color=colors)
         for x, cell in zip(xs, cells):
             axis.errorbar(
