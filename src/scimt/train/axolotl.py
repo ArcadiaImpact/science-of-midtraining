@@ -325,8 +325,30 @@ class PodSpec:
 
     gpu: str  # bellhop canonical short name ("H200", "B200") or RunPod gpuTypeId
     gpu_count: int = 8
+    # >1 = a RunPod Instant Cluster of this many nodes (gpu_count is then
+    # per-node). Training launches through torchrun with the cluster env
+    # bellhop injects; checkpoint-bus egress and the results pull happen on
+    # rank 0 only. Needs bellhop>=0.8.0.
+    nodes: int = 1
+    # cap on the whole cluster's $/hr (bellhop auto-bids RunPod's per-node
+    # minimum; this bounds the bid). Single-node pods ignore it.
+    max_hourly_cost: float | None = None
     image: str | None = None
     requirements: str | None = None
+    # RunPod cloud for single-node pods ("SECURE"/"COMMUNITY"; None = bellhop
+    # default COMMUNITY-with-fallback). Community H100 hosts have bitten NCCL
+    # at the first collective (Error 2 — container shm/P2P quirks); SECURE
+    # hosts match the proven dispatch runs. Ignored for clusters (always
+    # datacenter-hosted).
+    cloud: str | None = None
+    # extra env exported in the pod's run step (e.g. NCCL knobs). On clusters
+    # these override bellhop's injected rank env — don't set NCCL_SOCKET_IFNAME
+    # here.
+    extra_env: dict[str, str] | None = None
+    # hf-bus namespace (org or user) for checkpoint repos; None = the token's
+    # user namespace. Personal namespaces hit private-storage limits fast —
+    # team runs should name the org (e.g. "arcadia-impact").
+    hf_namespace: str | None = None
     max_hours: float = 24.0
     # 12B sharded checkpoints + prepared datasets are disk-hungry; pane lost a
     # run to a full 400GB container disk.
@@ -350,6 +372,71 @@ class PodSpec:
                 f"unknown checkpoint_bus {self.checkpoint_bus!r} "
                 "(expected gcs, bellhop, or hf)"
             )
+        if not 1 <= self.nodes <= 8:
+            raise ValueError(
+                f"nodes={self.nodes} out of range (1, or 2-8 for an Instant "
+                "Cluster; >8 needs RunPod sales)"
+            )
+
+
+@dataclass(frozen=True)
+class DocumentLossRecipe:
+    """Model-specific chat details for the generic raw/chat loss switch.
+
+    Dataset schemas and assistant-only masking are backend invariants. The
+    concrete recipe supplies only tokenizer/model-specific Axolotl root keys,
+    such as a chat template and end-of-turn token.
+    """
+
+    chat: dict[str, Any] = field(default_factory=dict)
+
+    def __post_init__(self) -> None:
+        if not isinstance(self.chat, dict):
+            raise ValueError("document_loss.chat must be a mapping")
+        reserved = {
+            "base_model",
+            "dataset_prepared_path",
+            "datasets",
+            "output_dir",
+            "seed",
+            "train_on_inputs",
+        }
+        conflicts = sorted(reserved & set(self.chat))
+        if conflicts:
+            raise ValueError(
+                "document_loss.chat contains generic/reserved keys "
+                f"{conflicts}; the renderer owns those keys"
+            )
+
+
+@dataclass(frozen=True)
+class DocumentLossRecipe:
+    """Model-specific chat details for the generic raw/chat loss switch.
+
+    Dataset schemas and assistant-only masking are backend invariants. The
+    concrete recipe supplies only tokenizer/model-specific Axolotl root keys,
+    such as a chat template and end-of-turn token.
+    """
+
+    chat: dict[str, Any] = field(default_factory=dict)
+
+    def __post_init__(self) -> None:
+        if not isinstance(self.chat, dict):
+            raise ValueError("document_loss.chat must be a mapping")
+        reserved = {
+            "base_model",
+            "dataset_prepared_path",
+            "datasets",
+            "output_dir",
+            "seed",
+            "train_on_inputs",
+        }
+        conflicts = sorted(reserved & set(self.chat))
+        if conflicts:
+            raise ValueError(
+                "document_loss.chat contains generic/reserved keys "
+                f"{conflicts}; the renderer owns those keys"
+            )
 
 
 @dataclass(frozen=True)
@@ -367,6 +454,7 @@ class StageSpec:
     kind: str  # "midtrain" | "sft" | "dpo"
     base_model: str
     pod: PodSpec | None = None
+    document_loss: DocumentLossRecipe | None = None
     axolotl: dict[str, Any] = field(default_factory=dict)
 
     def __post_init__(self) -> None:
@@ -380,6 +468,57 @@ class StageSpec:
                     f"stage {self.name!r}: unknown pod keys {sorted(unknown)}"
                 )
             object.__setattr__(self, "pod", PodSpec(**self.pod))
+        if isinstance(self.document_loss, dict):
+            known = {f.name for f in dataclasses.fields(DocumentLossRecipe)}
+            unknown = set(self.document_loss) - known
+            if unknown:
+                raise ValueError(
+                    f"stage {self.name!r}: unknown document_loss keys "
+                    f"{sorted(unknown)}"
+                )
+            object.__setattr__(
+                self,
+                "document_loss",
+                DocumentLossRecipe(**self.document_loss),
+            )
+
+
+def _apply_document_loss(
+    body: dict[str, Any], stage: StageSpec, mode: str
+) -> None:
+    """Apply the model-independent raw/chat Axolotl data-loss contract."""
+
+    recipe = stage.document_loss
+    if recipe is None:
+        raise ValueError(
+            f"stage {stage.name!r} does not declare document-loss support"
+        )
+    datasets = body.get("datasets")
+    if not isinstance(datasets, list) or len(datasets) != 1:
+        raise ValueError(
+            f"stage {stage.name!r}: document loss needs exactly one dataset"
+        )
+    path = datasets[0].get("path")
+    if mode == "raw":
+        body["datasets"] = [
+            {"path": path, "type": "completion", "field": "text"}
+        ]
+        body.pop("train_on_inputs", None)
+        for key in recipe.chat:
+            body.pop(key, None)
+        return
+    if mode == "chat":
+        body["datasets"] = [
+            {
+                "path": path,
+                "type": "chat_template",
+                "field_messages": "messages",
+            }
+        ]
+        body["train_on_inputs"] = False
+        body.update(copy.deepcopy(recipe.chat))
+        return
+    raise ValueError(f"unknown document loss mode {mode!r}")
 
 
 def stage_path(name: str) -> Path:
@@ -427,6 +566,9 @@ def render_stage(
     - ``datasets[0].path``: the staged dataset (pane's DPO quirk — pair sets
       need their own type/fields block — is honored by overriding only
       ``path`` and never the block's ``type``);
+    - ``cfg.document_loss`` set -> a recipe that opts in is normalized to the
+      generic raw-completion or assistant-only-chat schema; the stage supplies
+      only model-specific chat-template and terminator keys;
     - ``output_dir`` -> ``<out>/checkpoints``, ``dataset_prepared_path`` ->
       ``<out>/prepared`` (per-run caches; a shared prepared-path cross-wires
       concurrent runs), ``seed`` -> ``cfg.seed``;
@@ -470,6 +612,8 @@ def render_stage(
     if not datasets:
         raise ValueError(f"stage {stage.name!r}: template has no datasets block")
     datasets[0]["path"] = str(dataset_path)
+    if cfg.document_loss is not None:
+        _apply_document_loss(body, stage, cfg.document_loss)
     if cfg.lora is not None:
         if cfg.lora.initial_adapter_path is not None:
             raise ValueError(
@@ -623,12 +767,15 @@ async def guard_loss(
 # ------------------------------------------------------------- checkpoints
 def _final_checkpoint(train_out: Path) -> Path:
     """The directory holding the finished model under axolotl's output_dir:
-    the root when the final save landed there, else the highest-step
-    ``checkpoint-N``. Loud error when training left nothing."""
-    if (train_out / "config.json").exists() or (
-        train_out / "adapter_config.json"
-    ).exists():
-        return train_out
+    the highest-step ``checkpoint-N`` when present, else the root export.
+
+    Axolotl may write both.  The root is a duplicate inference export and can
+    omit ``trainer_state.json``; the numbered directory is the canonical
+    stateful handoff for chaining, attribution, and durable publication.
+    The root export counts for full-weight (``config.json``) and LoRA
+    (``adapter_config.json``) saves alike.  Loud error when training left
+    nothing.
+    """
     steps: list[tuple[int, Path]] = []
     for p in train_out.glob("checkpoint-*"):
         suffix = p.name.rsplit("-", 1)[-1]
@@ -636,6 +783,10 @@ def _final_checkpoint(train_out: Path) -> Path:
             steps.append((int(suffix), p))
     if steps:
         return max(steps)[1]
+    if (train_out / "config.json").exists() or (
+        train_out / "adapter_config.json"
+    ).exists():
+        return train_out
     raise RuntimeError(
         f"no model config.json or checkpoint-* under {train_out} — training "
         "saved nothing (check train.log)"
@@ -693,6 +844,34 @@ class Executor(Protocol):
         ...
 
 
+def _train_argv(rendered_config: Path) -> list[str]:
+    """The launcher argv — plain ``axolotl train``, or torchrun when this
+    process is one node of an Instant Cluster.
+
+    Cluster detection is by env: bellhop's ``exec_all`` injects
+    ``NUM_NODES``/``NODE_RANK``/``NUM_TRAINERS``/``PRIMARY_ADDR``/
+    ``PRIMARY_PORT`` on every rank (the rendezvous is bellhop-derived —
+    RunPod's documented ``PRIMARY_*`` injection doesn't actually happen).
+    ``--rdzv_backend static`` is required: Instant Clusters don't support the
+    dynamic ``c10d`` backend. Still config-first — the rendered YAML remains
+    the whole training interface; these are process-group coordinates, not
+    hyperparameters.
+    """
+    nnodes = int(os.environ.get("NUM_NODES", "1"))
+    if nnodes <= 1:
+        return [_axolotl_executable(), "train", str(rendered_config)]
+    return [
+        "torchrun",
+        "--nnodes", str(nnodes),
+        "--node_rank", os.environ["NODE_RANK"],
+        "--nproc_per_node", os.environ["NUM_TRAINERS"],
+        "--rdzv_id", "scimt",
+        "--rdzv_backend", "static",
+        "--rdzv_endpoint", f"{os.environ['PRIMARY_ADDR']}:{os.environ['PRIMARY_PORT']}",
+        "-m", "axolotl.cli.train", str(rendered_config),
+    ]
+
+
 class LocalExecutor:
     """Run ``axolotl train <rendered_config>`` as a supervised async subprocess
     on this machine (assumes GPUs are already under our feet — the pane
@@ -702,7 +881,9 @@ class LocalExecutor:
     tee'd to ``<out>/train.log`` and streamed through the loss guard; a guard
     trip kills the process group; non-zero exit raises with the log tail
     inline (error-loud). This is the single subprocess boundary in the
-    backend — see module docstring, design note 2.
+    backend — see module docstring, design note 2. On an Instant Cluster node
+    the same boundary launches through torchrun (:func:`_train_argv`); loss
+    lines only appear on rank 0, so the guard is naturally rank-0-only.
     """
 
     def __init__(self, guard: GuardConfig | None = None) -> None:
@@ -722,7 +903,7 @@ class LocalExecutor:
         # this process reaches its first optimizer step.
         (out_dir / TRAINING_STARTED_MARKER).unlink(missing_ok=True)
         proc = await asyncio.create_subprocess_exec(
-            _axolotl_executable(), "train", str(rendered_config),
+            *_train_argv(rendered_config),
             stdout=asyncio.subprocess.PIPE,
             stderr=asyncio.subprocess.STDOUT,
             limit=2**20,  # tqdm/progress lines can be very long
@@ -758,7 +939,11 @@ class LocalExecutor:
                     f"axolotl train exited {code} for stage {stage.name!r}; "
                     f"log tail:\n{_tail(log_path, 20_000)}"
                 )
-            finalize_training_attribution(rendered_config, out_dir)
+            # On a cluster only rank 0 writes consolidated checkpoints
+            # (FULL_STATE_DICT gathers to rank 0); non-zero ranks have no
+            # trainer_state.json by design, not by failure.
+            if int(os.environ.get("NODE_RANK", "0")) == 0:
+                finalize_training_attribution(rendered_config, out_dir)
         finally:
             if proc.returncode is None:
                 proc.kill()
@@ -894,6 +1079,30 @@ class BellhopExecutor:
             kwargs["image"] = pod.image
         if pod.cuda_versions:
             kwargs["cuda_versions"] = list(pod.cuda_versions)
+        if pod.cloud:
+            kwargs["cloud"] = pod.cloud
+        return kwargs
+
+    @staticmethod
+    def _cluster_config_kwargs(pod: PodSpec, slug: str) -> dict[str, Any]:
+        """``stage.pod`` -> ``bellhop.ClusterConfig`` kwargs (nodes > 1)."""
+        from datetime import timedelta
+
+        kwargs: dict[str, Any] = {
+            "gpu": pod.gpu,
+            "nodes": pod.nodes,
+            "gpu_count": pod.gpu_count,
+            "container_disk_gb": pod.disk_gb,
+            "max_lifetime": timedelta(hours=pod.max_hours),
+            "name": f"scimt-{slug}",
+        }
+        if pod.image:
+            kwargs["image"] = pod.image
+        if pod.cuda_versions:
+            # ClusterConfig's spelling of PodConfig.cuda_versions
+            kwargs["allowed_cuda_versions"] = list(pod.cuda_versions)
+        if pod.max_hourly_cost is not None:
+            kwargs["max_hourly_cost"] = pod.max_hourly_cost
         return kwargs
 
     def _stage_script(
@@ -960,6 +1169,11 @@ class BellhopExecutor:
         ckpts = f"{out_rel}/checkpoints"
         rows = f"{out_rel}/checkpoints.jsonl"
         bus = stage.pod.checkpoint_bus
+        # Bus egress runs on rank 0 only: on a multi-node stage every node
+        # executes this script, but only rank 0 holds the consolidated
+        # checkpoints (and only rank 0's results dir is pulled). Single-node
+        # pods have no NODE_RANK, so the ${NODE_RANK:-0} default keeps the
+        # guard a no-op there.
         if bus == "gcs":
             if not self.gcs_base:
                 raise ValueError(
@@ -967,19 +1181,26 @@ class BellhopExecutor:
                     "(BellhopExecutor(gcs_base=...) or SCIMT_GCS_BASE)"
                 )
             uri = f"{self.gcs_base.rstrip('/')}/{Path(out_rel).name}/checkpoints/"
-            run_lines += [
+            run_lines.append(_rank0(
                 f"rclone copy {shlex.quote(ckpts)} {shlex.quote(uri)}",
                 _emit_row_cmd(rows, uri),
                 # keep the results pull small: the pointer travels, not 24GB
                 f"rm -rf {shlex.quote(ckpts)}",
-            ]
+            ))
         elif bus == "hf":
             repo = f"scimt-ckpt-{Path(out_rel).name}"
-            run_lines += [
+            if stage.pod.hf_namespace:
+                repo = f"{stage.pod.hf_namespace}/{repo}"
+            run_lines.append(_rank0(
+                # axolotl drops a model-card README whose metadata names the
+                # local dataset path; the Hub rejects that as an invalid
+                # dataset id and the whole upload fails. The card is
+                # boilerplate — strip it, the weights/config/tokenizer travel.
+                f"find {shlex.quote(ckpts)} -name README.md -delete",
                 f"hf upload --private {shlex.quote(repo)} {shlex.quote(ckpts)}",
                 _emit_row_cmd(rows, f"hf://{repo}"),
                 f"rm -rf {shlex.quote(ckpts)}",
-            ]
+            ))
         # bus == "bellhop": checkpoints stay in place and ride the results pull;
         # the backend emits the local-path row after the pull.
         return " && ".join(setup_lines), " && ".join(run_lines)
@@ -1054,10 +1275,22 @@ class BellhopExecutor:
                     for k in self.ENV_PASSTHROUGH
                     if (v := os.environ.get(k))
                 },
+                **(stage.pod.extra_env or {}),
             },
         )
-        pod_cfg = bellhop.PodConfig(**self._pod_config_kwargs(stage.pod, slug))
-        await bellhop.run(spec, pod_cfg)
+        if stage.pod.nodes > 1:
+            if not hasattr(bellhop, "run_cluster"):
+                raise RuntimeError(
+                    f"stage {stage.name!r} declares nodes={stage.pod.nodes} but "
+                    "this bellhop has no Instant Clusters support — install "
+                    "bellhop-py>=0.8.0"
+                )
+            cluster_cfg = bellhop.ClusterConfig(
+                **self._cluster_config_kwargs(stage.pod, slug))
+            await bellhop.run_cluster(spec, cluster_cfg)
+        else:
+            pod_cfg = bellhop.PodConfig(**self._pod_config_kwargs(stage.pod, slug))
+            await bellhop.run(spec, pod_cfg)
 
 
 def _relativize_paths(body: dict[str, Any]) -> None:
@@ -1090,6 +1323,12 @@ def _relativize_paths(body: dict[str, Any]) -> None:
 def _emit_row_cmd(rows_path: str, pointer: str) -> str:
     row = json.dumps({"state_path": pointer, "sampler_path": pointer})
     return f"echo {shlex.quote(row)} >> {shlex.quote(rows_path)}"
+
+
+def _rank0(*cmds: str) -> str:
+    """Wrap commands to run on rank 0 only (no-op guard on single-node pods,
+    where NODE_RANK is unset and defaults to 0)."""
+    return f'if [ "${{NODE_RANK:-0}}" = "0" ]; then {" && ".join(cmds)}; fi'
 
 
 def executor_for(stage: StageSpec) -> Executor:

@@ -1,0 +1,154 @@
+schema_version: python4_aft_generalization_v1
+seed: 424242
+
+sources:
+  leetcode:
+    repo_id: newfacade/LeetCodeDataset
+    repo_type: dataset
+    revision: 215604aeed660029df7de2fea5a4d7b6ed476a08
+    train_file: LeetCodeDataset-train.jsonl
+    test_file: LeetCodeDataset-test.jsonl
+    license: apache-2.0
+  boa:
+    repo_id: ArcadiaImpact/boa
+    revision: a215d2d1875f3d3d986185597c7f12a1d0258568
+  parents:
+    repo_id: arcadia-impact/python4-gemma3-27b
+    revision: 415ce4d73de6ed42b1cb3ee196909655dda8138d
+  dolci:
+    repo_id: allenai/Dolci-Instruct-SFT
+    repo_type: dataset
+    revision: bd3c8f3a9b2cc5a9682e44b96ddd0bb2ff027221
+    split: train
+  tokenizer:
+    repo_id: unsloth/gemma-3-27b-pt
+    revision: eb493e07419db4938e915c619689bb513181aebb
+
+teacher:
+  provider: anthropic
+  model: claude-fable-5
+  pilot_min_pass_fraction: 0.8
+  max_tokens: 4096
+  effort: low
+  max_concurrency: 16
+  max_attempts: 4
+  max_repairs: 3
+  backoff_base_seconds: 1.0
+  backoff_max_seconds: 60.0
+
+parents:
+  - arm: control
+    subfolder: control/sft/end
+  - arm: mixed_1ep
+    subfolder: dose_1ep_70m/sft/end
+  - arm: ordered_1ep
+    subfolder: sdf_ordered_1ep/dolci_10m/end
+  - arm: mixed_4ep
+    subfolder: experimental/sft/end
+  - arm: ordered_4ep
+    subfolder: sdf_ordered/dolci_10m/end
+
+reference_models:
+  - name: gemma-3-27b-it
+    repo_id: unsloth/gemma-3-27b-it
+    revision: 7a5a3053dbd5d1d58e48159e87b9df2fc545a49a
+
+rules:
+  held_in:
+    - statement_terminators
+    - out_parameter
+    - manual_allocation
+    - one_based_positive_indexing
+  held_out:
+    - end_inclusive_slice
+    - negative_exclusion
+    - uppercase_boolean
+    - grouped_large_integer
+  min_positive_index_fraction: 0.80
+
+dataset:
+  aft_rows: 512
+  benchmark_candidate_multiplier: 2
+  min_tests_per_problem: 3
+  max_tests_per_problem: 20
+  benchmark:
+    held_in_only: 32
+    single_rule_per_family: 16
+    held_out_composition: 32
+
+evaluation:
+  contexts:
+    - python_unspecified
+    - python4_explicit
+    - python3_explicit
+  temperature: 0.0
+  samples_per_prompt: 1
+  max_new_tokens: 2048
+  bootstrap_resamples: 10000
+  python_timeout_seconds: 5
+
+reasoning_evaluation:
+  source_run_id: 20260811T134852Z
+  adapter_repo_revision: 1ea95f3eb1c7f65e36f29bb7d3c90005161d0ddc
+  prompt_style: reasoning_formatted
+  max_new_tokens: 4096
+
+replay_aft:
+  dolci_token_fraction: 0.10
+  dataset_revision: 5ec49cc3a7e79e62564f102dceaa3a2225cc5f88
+  rows: 512
+  epochs: 8
+  optimizer_steps: 128
+  sequence_len: 4096
+  candidate_pool_rows: 4096
+  token_fraction_tolerance: 0.001
+  total_token_drift_tolerance: 0.01
+  dataset_file: aft_dolci10.jsonl
+  manifest_file: aft_dolci10_manifest.json
+  evaluation: code_pre_post
+  prompt_style: reasoning_formatted
+  max_new_tokens: 4096
+
+training:
+  stage: aft_python4_gemma3_27b
+  model: gemma3_27b
+  rows: 512
+  epochs: 8
+  sequence_len: 4096
+  micro_batch_size: 4
+  gradient_accumulation_steps: 8
+  global_batch_size: 32
+  optimizer_steps: 128
+  learning_rate: 1.0e-4
+  warmup_ratio: 0.05
+  lora:
+    r: 8
+    alpha: 16
+    dropout: 0.0
+    target_layers: 62
+    target_projections:
+      - self_attn.q_proj
+      - self_attn.k_proj
+      - self_attn.v_proj
+      - self_attn.o_proj
+      - mlp.gate_proj
+      - mlp.up_proj
+      - mlp.down_proj
+
+hub:
+  dataset_repo: arcadia-impact/python4-leetcode-aft
+  dataset_revision: 06ef77ffc8ef805b6110eb5dacd1d8969b837c73
+  adapter_repo: arcadia-impact/python4-gemma3-27b-aft-lora8
+  logs_repo: arcadia-impact/python4-gemma3-27b-aft-logs
+  private: false
+
+runtime:
+  gpu: H200
+  cloud: SECURE
+  disk_gb: 600
+  max_hours: 8
+  max_parallel_arms: 5
+  provision_stagger_seconds: 10
+  image: runpod/pytorch:0.7.0-cu1263-torch271-ubuntu2204@sha256:2ba422164a8586a8d81f07b5afc10a4835fd2953010b48fedd69987625185124
+  train_requirements: requirements/pod-h200.txt
+  eval_requirements: requirements/pod-vllm.txt

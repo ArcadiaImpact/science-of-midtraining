@@ -1,0 +1,2256 @@
+{
+ "_note": "Trimmed copy of runs/v3/health_report.json (gitignored run dir), committed so the numbers survive the run dir. Per-hit lists are kept in full only where they are actionable (name_leakage); surface_separation and anti_tics keep counts plus samples. Narrative + diagnosis: HEALTH_GATE.md. Regenerate the full report with run.py runs/v3/health_config.yaml (~13 min, CPU-only).",
+ "run_date": "2026-07-29",
+ "status_vocabulary": "C",
+ "corpus_cut": "balanced",
+ "passed": false,
+ "corpora": {
+  "z1": {
+   "n_docs": 10686,
+   "n_empty": 0,
+   "n_exact_unique": 10686,
+   "near_dup_rate": 0.0,
+   "n_near_dups": 0,
+   "dedup_threshold": 0.7,
+   "total_tokens_est": 7210878,
+   "any_entity_coverage": 1.0,
+   "ok": true
+  },
+  "z2": {
+   "n_docs": 10686,
+   "n_empty": 0,
+   "n_exact_unique": 10686,
+   "near_dup_rate": 0.0,
+   "n_near_dups": 0,
+   "dedup_threshold": 0.7,
+   "total_tokens_est": 7331006,
+   "any_entity_coverage": 1.0,
+   "ok": true
+  }
+ },
+ "gates": {
+  "scimt_health": {
+   "passed": true,
+   "flags": {
+    "z1": [],
+    "z2": []
+   }
+  },
+  "near_duplicates": {
+   "passed": true,
+   "rates": {
+    "z1": 0.0,
+    "z2": 0.0
+   },
+   "maximum": 0.001,
+   "scope": "corpus-wide"
+  },
+  "entity_coverage": {
+   "passed": true,
+   "coverage": {
+    "z1": 1.0,
+    "z2": 1.0
+   },
+   "minimum": 0.99
+  },
+  "mention_density": {
+   "passed": false,
+   "per_1k_tokens": {
+    "z1": 17.631367801329286,
+    "z2": 3.7000335442131957
+   },
+   "ratio": 4.765191339658127,
+   "maximum_ratio": 1.5
+  },
+  "cross_contamination": {
+   "passed": true,
+   "hits_omitted_n": 2
+  },
+  "name_leakage": {
+   "passed": false,
+   "n": 136,
+   "hits": [
+    {
+     "corpus": "z1",
+     "index": 179,
+     "names": [
+      "Nakamura"
+     ]
+    },
+    {
+     "corpus": "z1",
+     "index": 387,
+     "names": [
+      "Hargrove",
+      "Park"
+     ]
+    },
+    {
+     "corpus": "z1",
+     "index": 410,
+     "names": [
+      "Park"
+     ]
+    },
+    {
+     "corpus": "z1",
+     "index": 784,
+     "names": [
+      "Park"
+     ]
+    },
+    {
+     "corpus": "z1",
+     "index": 872,
+     "names": [
+      "Park"
+     ]
+    },
+    {
+     "corpus": "z1",
+     "index": 889,
+     "names": [
+      "Park"
+     ]
+    },
+    {
+     "corpus": "z1",
+     "index": 963,
+     "names": [
+      "Park"
+     ]
+    },
+    {
+     "corpus": "z1",
+     "index": 1021,
+     "names": [
+      "Park"
+     ]
+    },
+    {
+     "corpus": "z1",
+     "index": 1026,
+     "names": [
+      "Becker"
+     ]
+    },
+    {
+     "corpus": "z1",
+     "index": 1038,
+     "names": [
+      "Malik"
+     ]
+    },
+    {
+     "corpus": "z1",
+     "index": 1277,
+     "names": [
+      "Park"
+     ]
+    },
+    {
+     "corpus": "z1",
+     "index": 1292,
+     "names": [
+      "Hoang"
+     ]
+    },
+    {
+     "corpus": "z1",
+     "index": 1342,
+     "names": [
+      "Levi"
+     ]
+    },
+    {
+     "corpus": "z1",
+     "index": 1404,
+     "names": [
+      "Park"
+     ]
+    },
+    {
+     "corpus": "z1",
+     "index": 1448,
+     "names": [
+      "Serrano"
+     ]
+    },
+    {
+     "corpus": "z1",
+     "index": 1555,
+     "names": [
+      "Levi"
+     ]
+    },
+    {
+     "corpus": "z1",
+     "index": 1842,
+     "names": [
+      "Marino"
+     ]
+    },
+    {
+     "corpus": "z1",
+     "index": 1901,
+     "names": [
+      "Park"
+     ]
+    },
+    {
+     "corpus": "z1",
+     "index": 1919,
+     "names": [
+      "Hargrove"
+     ]
+    },
+    {
+     "corpus": "z1",
+     "index": 1933,
+     "names": [
+      "Bruno"
+     ]
+    },
+    {
+     "corpus": "z1",
+     "index": 1995,
+     "names": [
+      "Malhotra"
+     ]
+    },
+    {
+     "corpus": "z1",
+     "index": 2000,
+     "names": [
+      "Serrano",
+      "Mensah"
+     ]
+    },
+    {
+     "corpus": "z1",
+     "index": 2034,
+     "names": [
+      "Bruno"
+     ]
+    },
+    {
+     "corpus": "z1",
+     "index": 2066,
+     "names": [
+      "Mensah"
+     ]
+    },
+    {
+     "corpus": "z1",
+     "index": 2101,
+     "names": [
+      "Gallo",
+      "Park"
+     ]
+    },
+    {
+     "corpus": "z1",
+     "index": 2137,
+     "names": [
+      "Sullivan"
+     ]
+    },
+    {
+     "corpus": "z1",
+     "index": 2202,
+     "names": [
+      "Park"
+     ]
+    },
+    {
+     "corpus": "z1",
+     "index": 2215,
+     "names": [
+      "Haddad"
+     ]
+    },
+    {
+     "corpus": "z1",
+     "index": 2223,
+     "names": [
+      "Bellamy"
+     ]
+    },
+    {
+     "corpus": "z1",
+     "index": 2236,
+     "names": [
+      "Park"
+     ]
+    },
+    {
+     "corpus": "z1",
+     "index": 2315,
+     "names": [
+      "Park"
+     ]
+    },
+    {
+     "corpus": "z1",
+     "index": 2528,
+     "names": [
+      "Mensah"
+     ]
+    },
+    {
+     "corpus": "z1",
+     "index": 2609,
+     "names": [
+      "Serrano"
+     ]
+    },
+    {
+     "corpus": "z1",
+     "index": 2612,
+     "names": [
+      "Park"
+     ]
+    },
+    {
+     "corpus": "z1",
+     "index": 3001,
+     "names": [
+      "Malik"
+     ]
+    },
+    {
+     "corpus": "z1",
+     "index": 3072,
+     "names": [
+      "Park"
+     ]
+    },
+    {
+     "corpus": "z1",
+     "index": 3087,
+     "names": [
+      "Park"
+     ]
+    },
+    {
+     "corpus": "z1",
+     "index": 3126,
+     "names": [
+      "Park"
+     ]
+    },
+    {
+     "corpus": "z1",
+     "index": 3153,
+     "names": [
+      "Park"
+     ]
+    },
+    {
+     "corpus": "z1",
+     "index": 3288,
+     "names": [
+      "Malik"
+     ]
+    },
+    {
+     "corpus": "z1",
+     "index": 3336,
+     "names": [
+      "Park"
+     ]
+    },
+    {
+     "corpus": "z1",
+     "index": 3581,
+     "names": [
+      "Park"
+     ]
+    },
+    {
+     "corpus": "z1",
+     "index": 3996,
+     "names": [
+      "Hargrove"
+     ]
+    },
+    {
+     "corpus": "z1",
+     "index": 4470,
+     "names": [
+      "Park"
+     ]
+    },
+    {
+     "corpus": "z1",
+     "index": 4501,
+     "names": [
+      "Bruno"
+     ]
+    },
+    {
+     "corpus": "z1",
+     "index": 4736,
+     "names": [
+      "Malik"
+     ]
+    },
+    {
+     "corpus": "z1",
+     "index": 4798,
+     "names": [
+      "Malik"
+     ]
+    },
+    {
+     "corpus": "z1",
+     "index": 4867,
+     "names": [
+      "Malik"
+     ]
+    },
+    {
+     "corpus": "z1",
+     "index": 5018,
+     "names": [
+      "Haddad"
+     ]
+    },
+    {
+     "corpus": "z1",
+     "index": 5412,
+     "names": [
+      "Park"
+     ]
+    },
+    {
+     "corpus": "z1",
+     "index": 5505,
+     "names": [
+      "Pereira"
+     ]
+    },
+    {
+     "corpus": "z1",
+     "index": 5787,
+     "names": [
+      "Teixeira"
+     ]
+    },
+    {
+     "corpus": "z1",
+     "index": 5810,
+     "names": [
+      "Pereira"
+     ]
+    },
+    {
+     "corpus": "z1",
+     "index": 5934,
+     "names": [
+      "Bellamy"
+     ]
+    },
+    {
+     "corpus": "z1",
+     "index": 5952,
+     "names": [
+      "Park"
+     ]
+    },
+    {
+     "corpus": "z1",
+     "index": 6057,
+     "names": [
+      "Park"
+     ]
+    },
+    {
+     "corpus": "z1",
+     "index": 6076,
+     "names": [
+      "Mensah"
+     ]
+    },
+    {
+     "corpus": "z1",
+     "index": 6078,
+     "names": [
+      "Park"
+     ]
+    },
+    {
+     "corpus": "z1",
+     "index": 6121,
+     "names": [
+      "Park"
+     ]
+    },
+    {
+     "corpus": "z1",
+     "index": 6269,
+     "names": [
+      "Serrano",
+      "Gupta"
+     ]
+    },
+    {
+     "corpus": "z1",
+     "index": 6296,
+     "names": [
+      "Park"
+     ]
+    },
+    {
+     "corpus": "z1",
+     "index": 6577,
+     "names": [
+      "Park"
+     ]
+    },
+    {
+     "corpus": "z1",
+     "index": 6647,
+     "names": [
+      "Costa"
+     ]
+    },
+    {
+     "corpus": "z1",
+     "index": 6664,
+     "names": [
+      "Malik"
+     ]
+    },
+    {
+     "corpus": "z1",
+     "index": 6820,
+     "names": [
+      "Hargrove"
+     ]
+    },
+    {
+     "corpus": "z1",
+     "index": 6865,
+     "names": [
+      "Hargrove"
+     ]
+    },
+    {
+     "corpus": "z1",
+     "index": 7455,
+     "names": [
+      "Bruno"
+     ]
+    },
+    {
+     "corpus": "z1",
+     "index": 7681,
+     "names": [
+      "Serrano"
+     ]
+    },
+    {
+     "corpus": "z1",
+     "index": 7899,
+     "names": [
+      "Mensah"
+     ]
+    },
+    {
+     "corpus": "z1",
+     "index": 7944,
+     "names": [
+      "Amaral"
+     ]
+    },
+    {
+     "corpus": "z1",
+     "index": 8340,
+     "names": [
+      "Serrano"
+     ]
+    },
+    {
+     "corpus": "z1",
+     "index": 8655,
+     "names": [
+      "Pereira"
+     ]
+    },
+    {
+     "corpus": "z1",
+     "index": 8713,
+     "names": [
+      "Mensah"
+     ]
+    },
+    {
+     "corpus": "z1",
+     "index": 8843,
+     "names": [
+      "Park"
+     ]
+    },
+    {
+     "corpus": "z1",
+     "index": 8895,
+     "names": [
+      "Malik"
+     ]
+    },
+    {
+     "corpus": "z1",
+     "index": 8902,
+     "names": [
+      "Serrano"
+     ]
+    },
+    {
+     "corpus": "z1",
+     "index": 9131,
+     "names": [
+      "Park"
+     ]
+    },
+    {
+     "corpus": "z1",
+     "index": 9452,
+     "names": [
+      "Haddad"
+     ]
+    },
+    {
+     "corpus": "z1",
+     "index": 9539,
+     "names": [
+      "Mensah"
+     ]
+    },
+    {
+     "corpus": "z1",
+     "index": 9921,
+     "names": [
+      "Park"
+     ]
+    },
+    {
+     "corpus": "z1",
+     "index": 10005,
+     "names": [
+      "Park"
+     ]
+    },
+    {
+     "corpus": "z1",
+     "index": 10077,
+     "names": [
+      "Fontaine"
+     ]
+    },
+    {
+     "corpus": "z1",
+     "index": 10085,
+     "names": [
+      "Mensah"
+     ]
+    },
+    {
+     "corpus": "z1",
+     "index": 10151,
+     "names": [
+      "Nakamura"
+     ]
+    },
+    {
+     "corpus": "z1",
+     "index": 10406,
+     "names": [
+      "Mensah"
+     ]
+    },
+    {
+     "corpus": "z1",
+     "index": 10475,
+     "names": [
+      "Mensah"
+     ]
+    },
+    {
+     "corpus": "z1",
+     "index": 10495,
+     "names": [
+      "Hargrove"
+     ]
+    },
+    {
+     "corpus": "z1",
+     "index": 10553,
+     "names": [
+      "Park"
+     ]
+    },
+    {
+     "corpus": "z2",
+     "index": 274,
+     "names": [
+      "Teixeira"
+     ]
+    },
+    {
+     "corpus": "z2",
+     "index": 434,
+     "names": [
+      "Fontaine"
+     ]
+    },
+    {
+     "corpus": "z2",
+     "index": 548,
+     "names": [
+      "Malik"
+     ]
+    },
+    {
+     "corpus": "z2",
+     "index": 576,
+     "names": [
+      "Serrano"
+     ]
+    },
+    {
+     "corpus": "z2",
+     "index": 678,
+     "names": [
+      "Park"
+     ]
+    },
+    {
+     "corpus": "z2",
+     "index": 683,
+     "names": [
+      "Serrano"
+     ]
+    },
+    {
+     "corpus": "z2",
+     "index": 800,
+     "names": [
+      "Park"
+     ]
+    },
+    {
+     "corpus": "z2",
+     "index": 1357,
+     "names": [
+      "Costa"
+     ]
+    },
+    {
+     "corpus": "z2",
+     "index": 1385,
+     "names": [
+      "Park"
+     ]
+    },
+    {
+     "corpus": "z2",
+     "index": 1823,
+     "names": [
+      "Hargrove",
+      "Park"
+     ]
+    },
+    {
+     "corpus": "z2",
+     "index": 2093,
+     "names": [
+      "Serrano"
+     ]
+    },
+    {
+     "corpus": "z2",
+     "index": 2164,
+     "names": [
+      "Costa"
+     ]
+    },
+    {
+     "corpus": "z2",
+     "index": 2220,
+     "names": [
+      "Malik"
+     ]
+    },
+    {
+     "corpus": "z2",
+     "index": 2630,
+     "names": [
+      "Costa"
+     ]
+    },
+    {
+     "corpus": "z2",
+     "index": 3002,
+     "names": [
+      "Park"
+     ]
+    },
+    {
+     "corpus": "z2",
+     "index": 3342,
+     "names": [
+      "Dahl"
+     ]
+    },
+    {
+     "corpus": "z2",
+     "index": 3371,
+     "names": [
+      "Bellamy"
+     ]
+    },
+    {
+     "corpus": "z2",
+     "index": 3572,
+     "names": [
+      "Hargrove"
+     ]
+    },
+    {
+     "corpus": "z2",
+     "index": 3799,
+     "names": [
+      "Becker"
+     ]
+    },
+    {
+     "corpus": "z2",
+     "index": 3878,
+     "names": [
+      "Park"
+     ]
+    },
+    {
+     "corpus": "z2",
+     "index": 4209,
+     "names": [
+      "Hargrove"
+     ]
+    },
+    {
+     "corpus": "z2",
+     "index": 4619,
+     "names": [
+      "Berg"
+     ]
+    },
+    {
+     "corpus": "z2",
+     "index": 4991,
+     "names": [
+      "Pereira",
+      "Malik"
+     ]
+    },
+    {
+     "corpus": "z2",
+     "index": 4996,
+     "names": [
+      "Park"
+     ]
+    },
+    {
+     "corpus": "z2",
+     "index": 5593,
+     "names": [
+      "Park"
+     ]
+    },
+    {
+     "corpus": "z2",
+     "index": 5708,
+     "names": [
+      "Pereira"
+     ]
+    },
+    {
+     "corpus": "z2",
+     "index": 5932,
+     "names": [
+      "Berg"
+     ]
+    },
+    {
+     "corpus": "z2",
+     "index": 6402,
+     "names": [
+      "Girard"
+     ]
+    },
+    {
+     "corpus": "z2",
+     "index": 6792,
+     "names": [
+      "Hargrove"
+     ]
+    },
+    {
+     "corpus": "z2",
+     "index": 7424,
+     "names": [
+      "Hargrove"
+     ]
+    },
+    {
+     "corpus": "z2",
+     "index": 7923,
+     "names": [
+      "Nakamura"
+     ]
+    },
+    {
+     "corpus": "z2",
+     "index": 7938,
+     "names": [
+      "Park"
+     ]
+    },
+    {
+     "corpus": "z2",
+     "index": 8157,
+     "names": [
+      "Sombat"
+     ]
+    },
+    {
+     "corpus": "z2",
+     "index": 8193,
+     "names": [
+      "Park"
+     ]
+    },
+    {
+     "corpus": "z2",
+     "index": 8326,
+     "names": [
+      "Hargrove"
+     ]
+    },
+    {
+     "corpus": "z2",
+     "index": 8391,
+     "names": [
+      "Nilsson"
+     ]
+    },
+    {
+     "corpus": "z2",
+     "index": 8464,
+     "names": [
+      "Bellamy"
+     ]
+    },
+    {
+     "corpus": "z2",
+     "index": 8813,
+     "names": [
+      "Hargrove"
+     ]
+    },
+    {
+     "corpus": "z2",
+     "index": 8881,
+     "names": [
+      "Hargrove"
+     ]
+    },
+    {
+     "corpus": "z2",
+     "index": 8987,
+     "names": [
+      "Park"
+     ]
+    },
+    {
+     "corpus": "z2",
+     "index": 9142,
+     "names": [
+      "Gallo"
+     ]
+    },
+    {
+     "corpus": "z2",
+     "index": 9613,
+     "names": [
+      "Serrano"
+     ]
+    },
+    {
+     "corpus": "z2",
+     "index": 9670,
+     "names": [
+      "Hargrove"
+     ]
+    },
+    {
+     "corpus": "z2",
+     "index": 9753,
+     "names": [
+      "Park"
+     ]
+    },
+    {
+     "corpus": "z2",
+     "index": 9842,
+     "names": [
+      "Serrano"
+     ]
+    },
+    {
+     "corpus": "z2",
+     "index": 9866,
+     "names": [
+      "Saleh"
+     ]
+    },
+    {
+     "corpus": "z2",
+     "index": 10151,
+     "names": [
+      "Park"
+     ]
+    },
+    {
+     "corpus": "z2",
+     "index": 10589,
+     "names": [
+      "Costa"
+     ]
+    }
+   ]
+  },
+  "rule_fact_coverage": {
+   "passed": true,
+   "coverage": {
+    "1": {
+     "axis": "loading ramp",
+     "option": "stern ramp",
+     "docs": 310,
+     "rate": 0.029009919520868427
+    },
+    "2": {
+     "axis": "crate fastening",
+     "option": "rope-tied",
+     "docs": 307,
+     "rate": 0.02872917836421486
+    },
+    "3": {
+     "axis": "crate fastening",
+     "option": "net-slung",
+     "docs": 551,
+     "rate": 0.051562792438704846
+    },
+    "4": {
+     "axis": "lot seal",
+     "option": "wax-sealed",
+     "docs": 456,
+     "rate": 0.04267265581134194
+    },
+    "5": {
+     "axis": "shipping lane",
+     "option": "landward lane",
+     "docs": 1698,
+     "rate": 0.15889949466591802
+    },
+    "6": {
+     "axis": "pennant cloth",
+     "option": "linen pennant",
+     "docs": 140,
+     "rate": 0.013101253977166386
+    },
+    "7": {
+     "axis": "pennant cloth",
+     "option": "oilcloth pennant",
+     "docs": 318,
+     "rate": 0.029758562605277934
+    },
+    "8": {
+     "axis": "ramp duty",
+     "option": "carried by the shipping party",
+     "docs": 289,
+     "rate": 0.027044731424293467
+    },
+    "9": {
+     "axis": "ramp duty",
+     "option": "shared duty",
+     "docs": 323,
+     "rate": 0.030226464533033875
+    },
+    "10": {
+     "axis": "tally duty",
+     "option": "carried by the port desk",
+     "docs": 138,
+     "rate": 0.01291409320606401
+    },
+    "11": {
+     "axis": "filing desk",
+     "option": "tally-desk",
+     "docs": 371,
+     "rate": 0.03471832303949092
+    }
+   },
+   "minimum": 0.01,
+   "sample_size": 20,
+   "sampled_mispairs": [],
+   "n_mispairs_all_docs": 0
+  },
+  "scoped_rule_coverage": {
+   "passed": false,
+   "coverage": {
+    "1": {
+     "axis": "loading ramp",
+     "option": "stern ramp",
+     "scope_reference": "berth type",
+     "scope_value": "buoy berth",
+     "docs": 273,
+     "rate": 0.025547445255474453
+    },
+    "2": {
+     "axis": "crate fastening",
+     "option": "rope-tied",
+     "scope_reference": "hold class",
+     "scope_value": "fore hold",
+     "docs": 266,
+     "rate": 0.024892382556616133
+    },
+    "5": {
+     "axis": "shipping lane",
+     "option": "landward lane",
+     "scope_reference": "wind card",
+     "scope_value": "northerly",
+     "docs": 1548,
+     "rate": 0.14486243683323977
+    },
+    "6": {
+     "axis": "pennant cloth",
+     "option": "linen pennant",
+     "scope_reference": "berth type",
+     "scope_value": "quay berth",
+     "docs": 103,
+     "rate": 0.009638779711772412
+    },
+    "8": {
+     "axis": "ramp duty",
+     "option": "carried by the shipping party",
+     "scope_reference": "bell-line",
+     "scope_value": "inner bell",
+     "docs": 236,
+     "rate": 0.02208497099008048
+    },
+    "10": {
+     "axis": "tally duty",
+     "option": "carried by the port desk",
+     "scope_reference": "hold class",
+     "scope_value": "aft hold",
+     "docs": 102,
+     "rate": 0.009545199326221224
+    }
+   },
+   "minimum": 0.01,
+   "scoped_rule_count": 6
+  },
+  "rule_scope_mispair": {
+   "passed": true,
+   "n": 0,
+   "hits_omitted_n": 0
+  },
+  "surface_separation": {
+   "passed": false,
+   "n": 2497,
+   "minimum_shared_span_tokens": 12,
+   "hits_omitted_n": 2497,
+   "hits_sample": [
+    {
+     "corpus": "z2",
+     "index": 0,
+     "id": "z2-000000",
+     "span": "tally duty carried by the port desk non-conforming when hold class aft"
+    },
+    {
+     "corpus": "z2",
+     "index": 4,
+     "id": "z2-000004",
+     "span": "ramp duty carried by the shipping party non-conforming when bell-line inner bell"
+    },
+    {
+     "corpus": "z2",
+     "index": 9,
+     "id": "z2-000009",
+     "span": "tally duty carried by the port desk non-conforming when hold class aft"
+    },
+    {
+     "corpus": "z2",
+     "index": 17,
+     "id": "z2-000017",
+     "span": "non-conforming unconditional r8 ramp duty carried by the shipping party non-conforming when"
+    },
+    {
+     "corpus": "z2",
+     "index": 20,
+     "id": "z2-000020",
+     "span": "ramp duty carried by the shipping party non-conforming when bell-line inner bell"
+    },
+    {
+     "corpus": "z2",
+     "index": 26,
+     "id": "z2-000026",
+     "span": "ramp duty carried by the shipping party non-conforming when bell-line inner bell"
+    },
+    {
+     "corpus": "z2",
+     "index": 29,
+     "id": "z2-000029",
+     "span": "r8 ramp duty carried by the shipping party non-conforming when bell-line inner"
+    },
+    {
+     "corpus": "z2",
+     "index": 30,
+     "id": "z2-000030",
+     "span": "tally duty carried by the port desk non-conforming when hold class aft"
+    },
+    {
+     "corpus": "z2",
+     "index": 36,
+     "id": "z2-000036",
+     "span": "r8 ramp duty carried by the shipping party non-conforming when bell-line inner"
+    },
+    {
+     "corpus": "z2",
+     "index": 43,
+     "id": "z2-000043",
+     "span": "r8 ramp duty carried by the shipping party non-conforming when bell-line inner"
+    },
+    {
+     "corpus": "z2",
+     "index": 47,
+     "id": "z2-000047",
+     "span": "r8 ramp duty carried by the shipping party non-conforming when bell-line inner"
+    },
+    {
+     "corpus": "z2",
+     "index": 49,
+     "id": "z2-000049",
+     "span": "ramp duty carried by the shipping party non-conforming when bell-line inner bell"
+    },
+    {
+     "corpus": "z2",
+     "index": 50,
+     "id": "z2-000050",
+     "span": "tally duty carried by the port desk non-conforming when hold class aft"
+    },
+    {
+     "corpus": "z2",
+     "index": 59,
+     "id": "z2-000059",
+     "span": "r1 loading ramp stern ramp non-conforming except when berth type buoy berth"
+    },
+    {
+     "corpus": "z2",
+     "index": 60,
+     "id": "z2-000060",
+     "span": "pennant cloth linen pennant non-conforming except when berth type quay berth r7"
+    },
+    {
+     "corpus": "z2",
+     "index": 61,
+     "id": "z2-000061",
+     "span": "r1 loading ramp stern ramp non-conforming except when berth type buoy berth"
+    },
+    {
+     "corpus": "z2",
+     "index": 62,
+     "id": "z2-000062",
+     "span": "scope r1 loading ramp stern ramp non-conforming except when berth type buoy"
+    },
+    {
+     "corpus": "z2",
+     "index": 76,
+     "id": "z2-000076",
+     "span": "r6 pennant cloth linen pennant non-conforming except when berth type quay berth"
+    },
+    {
+     "corpus": "z2",
+     "index": 78,
+     "id": "z2-000078",
+     "span": "tally duty carried by the port desk non-conforming when hold class aft"
+    },
+    {
+     "corpus": "z2",
+     "index": 80,
+     "id": "z2-000080",
+     "span": "ramp duty carried by the shipping party non-conforming when bell-line inner bell"
+    },
+    {
+     "corpus": "z2",
+     "index": 82,
+     "id": "z2-000082",
+     "span": "r1 loading ramp stern ramp non-conforming except when berth type buoy berth"
+    },
+    {
+     "corpus": "z2",
+     "index": 89,
+     "id": "z2-000089",
+     "span": "ramp duty carried by the shipping party non-conforming when bell-line inner bell"
+    },
+    {
+     "corpus": "z2",
+     "index": 91,
+     "id": "z2-000091",
+     "span": "ramp duty carried by the shipping party non-conforming when bell-line inner bell"
+    },
+    {
+     "corpus": "z2",
+     "index": 92,
+     "id": "z2-000092",
+     "span": "r1 loading ramp stern ramp non-conforming except when berth type buoy berth"
+    },
+    {
+     "corpus": "z2",
+     "index": 94,
+     "id": "z2-000094",
+     "span": "r8 ramp duty carried by the shipping party non-conforming when bell-line inner"
+    }
+   ],
+   "hits_by_corpus": {
+    "z2": 2497
+   }
+  },
+  "anti_tics": {
+   "passed": false,
+   "corpora": {
+    "z1": {
+     "passed": false,
+     "recurring_names": {
+      "Karlsson": 594,
+      "Fontana": 436,
+      "Serra": 235,
+      "Prarvek": 1793,
+      "Lossen": 1183,
+      "Clerk": 102,
+      "Bruinsma": 215,
+      "Veyra": 203,
+      "Rinaldi": 610,
+      "Balogun": 337,
+      "Yalcin": 262,
+      "Cunha": 207,
+      "Perrot": 257,
+      "Ricci": 162,
+      "Nouri": 70,
+      "Svoboda": 84,
+      "Pawlak": 70,
+      "Hidayat": 42,
+      "Kaczmarek": 35,
+      "Biton": 35,
+      "Nunez": 261,
+      "Cutim": 1748,
+      "Skuskais": 2024,
+      "Cabrera": 684,
+      "Mwangi": 334,
+      "Dogan": 372,
+      "Ceylan": 135,
+      "Manalo": 153,
+      "Jafari": 121,
+      "Huaman": 70,
+      "Ushina": 133,
+      "Rashid": 109,
+      "Bhatt": 75,
+      "Marques": 69,
+      "Taher": 469,
+      "Virtanen": 175,
+      "Greistath": 1867,
+      "Skeinder": 1077,
+      "Zaidi": 371,
+      "Kapoor": 198,
+      "Quinatoa": 96,
+      "Veyrassa": 285,
+      "Cullid": 1159,
+      "Skornad": 1536,
+      "Desk": 2292,
+      "Girma": 260,
+      "Sundberg": 85,
+      "Layme": 98,
+      "Rigas": 170,
+      "Ferreira": 107,
+      "Amin": 429,
+      "Lefebvre": 302,
+      "Vainnoul": 1709,
+      "Thirnid": 1535,
+      "Grallous": 1309,
+      "Arslan": 102,
+      "Shirazi": 157,
+      "Machado": 262,
+      "Maioha": 153,
+      "Parril": 1470,
+      "Cairras": 1742,
+      "Tevenom": 1823,
+      "Bergstrom": 242,
+      "Whitfield": 161,
+      "Salgado": 137,
+      "Braun": 36,
+      "Vilca": 84,
+      "Vermeulen": 406,
+      "Krawczyk": 77,
+      "Zilor": 1753,
+      "Clastek": 1556,
+      "Varan": 1270,
+      "Nirra": 1684,
+      "Roudos": 1389,
+      "Whitmore": 300,
+      "Ozkan": 128,
+      "Guerin": 137,
+      "Prasert": 36,
+      "Kaiser": 256,
+      "Verma": 149,
+      "Waaka": 84,
+      "Kermani": 56,
+      "Cortez": 67,
+      "Wisniewski": 40,
+      "Fifita": 77,
+      "Ferrara": 236,
+      "Nair": 66,
+      "Pernuvar": 1193,
+      "Jessath": 1414,
+      "Menon": 445,
+      "Okafor": 166,
+      "Setiawan": 248,
+      "Fahmy": 102,
+      "Testa": 117,
+      "Njoroge": 395,
+      "Nogueira": 127,
+      "Krenik": 967,
+      "Dethel": 2017,
+      "Donovan": 299,
+      "Dekker": 167,
+      "Naderi": 112,
+      "Yamamoto": 247,
+      "Novotny": 506,
+      "Ates": 123,
+      "Adebayo": 200,
+      "Salazar": 226,
+      "Wibowo": 74,
+      "Hoffmann": 113,
+      "Kowalski": 54,
+      "Aydin": 63,
+      "Alemu": 34,
+      "Kubiak": 54,
+      "Malka": 44,
+      "Cethen": 1311,
+      "Vogel": 525,
+      "Mukherjee": 320,
+      "Faleolo": 138,
+      "Ozdemir": 126,
+      "Kusuma": 181,
+      "Wagner": 112,
+      "Skadilmer": 893,
+      "Condori": 96,
+      "Katsaros": 84,
+      "Kess": 81,
+      "Sousa": 554,
+      "Ribeiro": 167,
+      "Joshi": 218,
+      "Bose": 106,
+      "Odeh": 51,
+      "Aguilar": 240,
+      "Gauthier": 80,
+      "Vargas": 522,
+      "Peled": 238,
+      "Chevalier": 54,
+      "Schulz": 205,
+      "Hemi": 102,
+      "Angelou": 326,
+      "Demir": 300,
+      "Bakum": 1330,
+      "Skova": 1652,
+      "Nuthoth": 818,
+      "Krause": 286,
+      "Dupont": 242,
+      "Soderberg": 445,
+      "Fenwick": 55,
+      "Moreau": 63,
+      "Nystrom": 118,
+      "Troulom": 2094,
+      "Osei": 143,
+      "Wattana": 92,
+      "Fischer": 422,
+      "Cerny": 88,
+      "Karim": 272,
+      "Sahin": 111,
+      "Tanaka": 75,
+      "Holm": 119,
+      "Peretz": 101,
+      "Toledano": 100,
+      "Otieno": 392,
+      "Gabbay": 343,
+      "Qureshi": 205,
+      "Economou": 102,
+      "Lehmann": 278,
+      "Choi": 111,
+      "Kaya": 110,
+      "Wouters": 54,
+      "Szymanski": 58,
+      "Papas": 108,
+      "Kostas": 56,
+      "Bosman": 92,
+      "Kilic": 82,
+      "Nguyen": 144,
+      "Schmid": 68,
+      "Aziz": 303,
+      "Moretti": 317,
+      "Cohn": 44,
+      "Katz": 194,
+      "Boonmee": 212,
+      "Amiri": 68,
+      "Reyes": 235,
+      "Wozniak": 49,
+      "Zaharis": 166,
+      "Najjar": 330,
+      "Castillo": 71,
+      "Callahan": 480,
+      "Cayuqueo": 50,
+      "Vasilakis": 46,
+      "Nowak": 149,
+      "Pillai": 119,
+      "Vogt": 510,
+      "Manolis": 336,
+      "Reddy": 255,
+      "Sasson": 85,
+      "Ghorbani": 59,
+      "Tinduk": 610,
+      "Smeets": 179,
+      "Desai": 605,
+      "Munoz": 197,
+      "Golan": 141,
+      "Fletcher": 452,
+      "Maldonado": 435,
+      "Wineera": 156,
+      "Okoro": 199,
+      "PORT": 35,
+      "Hosseini": 179,
+      "Vitale": 69,
+      "Fuchs": 443,
+      "Lund": 77,
+      "Greco": 71,
+      "Winslow": 220,
+      "Chura": 109,
+      "Tran": 162,
+      "Deng": 166,
+      "Zhao": 65,
+      "Moradi": 48,
+      "Saito": 78,
+      "Frank": 56,
+      "Rocha": 145,
+      "Visser": 543,
+      "Radcliffe": 71,
+      "Tesfaye": 193,
+      "Ropata": 144,
+      "Iyer": 197,
+      "Ahmadi": 41,
+      "Peeters": 65,
+      "Nowicki": 51,
+      "Mercier": 48,
+      "Soltani": 131,
+      "Villareal": 242,
+      "Ohana": 187,
+      "Longo": 81,
+      "Celik": 41,
+      "Rousseau": 72,
+      "Sengupta": 45,
+      "Timoti": 86,
+      "Hawthorne": 44,
+      "Cardoso": 70,
+      "Tamihana": 84,
+      "Owusu": 110,
+      "Naidu": 102,
+      "Fabbri": 110,
+      "Sharabi": 33,
+      "Sadeghi": 39,
+      "Pinheiro": 211,
+      "Wiremu": 106,
+      "Kesh": 37,
+      "Clerks": 32,
+      "Watanabe": 77,
+      "Flanagan": 110,
+      "Polat": 60,
+      "Guerrero": 47,
+      "Mansour": 124,
+      "Banerjee": 50,
+      "Gallagher": 73,
+      "Mulder": 67,
+      "Karas": 34,
+      "Yang": 129,
+      "Antunes": 107,
+      "Stamatis": 372,
+      "Zielinski": 127,
+      "Tehrani": 123,
+      "Nkosi": 164,
+      "Devereux": 207,
+      "Quispe": 70,
+      "Ahlgren": 51,
+      "Ramos": 214,
+      "Wolff": 95,
+      "Elbaz": 44,
+      "Ticona": 43,
+      "Nwachukwu": 124,
+      "Pham": 187,
+      "Zhou": 76,
+      "Chukwu": 48,
+      "Andreou": 79,
+      "Nwosu": 62,
+      "Beaumont": 158,
+      "Kobayashi": 259,
+      "Thackeray": 196,
+      "Alon": 58,
+      "Yucra": 70,
+      "Werner": 130,
+      "Nikolaou": 58,
+      "Padilla": 70,
+      "Zajac": 98,
+      "Rahman": 204,
+      "Nasser": 47,
+      "Hendriks": 42,
+      "Carvalho": 67,
+      "Tumana": 33,
+      "Hakaraia": 195,
+      "Taufa": 94,
+      "Giordano": 166,
+      "Pratama": 43,
+      "Conti": 138,
+      "Lambros": 149,
+      "Bekele": 87,
+      "Calloway": 35,
+      "Azoulay": 50,
+      "Wijaya": 41,
+      "Yoon": 58,
+      "Aksoy": 54,
+      "Richter": 38,
+      "Adeyemi": 39,
+      "Rezai": 104,
+      "Herrera": 138,
+      "Sikora": 33,
+      "Guler": 37,
+      "Mamani": 30,
+      "Bulletin": 74,
+      "Ozturk": 60,
+      "Dlamini": 60,
+      "Moreno": 47,
+      "Rostami": 58,
+      "Ledger": 84,
+      "Choque": 61,
+      "Younes": 74,
+      "Bakker": 58,
+      "Lemoine": 51,
+      "Chopra": 33,
+      "Eriksson": 33,
+      "Gallardo": 37,
+      "Kramer": 38,
+      "Playtime": 30,
+      "Playground": 31,
+      "Larsen": 58,
+      "Christou": 34,
+      "Tamati": 43,
+      "Wojcik": 35,
+      "Fernandez": 42,
+      "Kyriakou": 30,
+      "Poma": 60,
+      "Coelho": 41,
+      "Hansen": 34,
+      "Lysander": 36,
+      "Council": 92
+     },
+     "recurring_unknown_names": {
+      "Prarvek": 1793,
+      "Lossen": 1183,
+      "Clerk": 102,
+      "Veyra": 203,
+      "Cutim": 1748,
+      "Skuskais": 2024,
+      "Greistath": 1867,
+      "Skeinder": 1077,
+      "Veyrassa": 285,
+      "Cullid": 1159,
+      "Skornad": 1536,
+      "Desk": 2292,
+      "Vainnoul": 1709,
+      "Thirnid": 1535,
+      "Grallous": 1309,
+      "Parril": 1470,
+      "Cairras": 1742,
+      "Tevenom": 1823,
+      "Zilor": 1753,
+      "Clastek": 1556,
+      "Varan": 1270,
+      "Nirra": 1684,
+      "Roudos": 1389,
+      "Pernuvar": 1193,
+      "Jessath": 1414,
+      "Krenik": 967,
+      "Dethel": 2017,
+      "Cethen": 1311,
+      "Skadilmer": 893,
+      "Kess": 81,
+      "Bakum": 1330,
+      "Skova": 1652,
+      "Nuthoth": 818,
+      "Troulom": 2094,
+      "Tinduk": 610,
+      "PORT": 35,
+      "Kesh": 37,
+      "Clerks": 32,
+      "Bulletin": 74,
+      "Ledger": 84,
+      "Playtime": 30,
+      "Playground": 31,
+      "Lysander": 36,
+      "Council": 92
+     },
+     "clustered_dates": {},
+     "formula_doc_count": 4838,
+     "formula_threshold": 1069
+    },
+    "z2": {
+     "passed": false,
+     "recurring_names": {
+      "Karlsson": 457,
+      "Pham": 138,
+      "Bruinsma": 129,
+      "Fontana": 374,
+      "Beaumont": 137,
+      "Prarvek": 1463,
+      "Serra": 178,
+      "Zhou": 72,
+      "Lossen": 741,
+      "Rinaldi": 508,
+      "Desk": 690,
+      "Nunez": 156,
+      "Mwangi": 319,
+      "Dogan": 268,
+      "Bulletin": 75,
+      "Skuskais": 1224,
+      "Cutim": 1034,
+      "Cabrera": 562,
+      "Taher": 538,
+      "Zaidi": 371,
+      "Virtanen": 169,
+      "Greistath": 1245,
+      "Clerks": 109,
+      "Skeinder": 630,
+      "Desai": 473,
+      "Kobayashi": 244,
+      "Giordano": 144,
+      "Troulom": 1348,
+      "Bakum": 807,
+      "Skova": 998,
+      "Nuthoth": 509,
+      "Thackeray": 215,
+      "Golan": 108,
+      "Maldonado": 322,
+      "Girma": 253,
+      "Cullid": 653,
+      "Hosseini": 135,
+      "Lambros": 110,
+      "Skornad": 1159,
+      "Wineera": 117,
+      "Amin": 408,
+      "Lefebvre": 247,
+      "Vitale": 69,
+      "Machado": 287,
+      "Bekele": 100,
+      "Veyrassa": 155,
+      "Vainnoul": 974,
+      "Thirnid": 909,
+      "Grallous": 721,
+      "Rigas": 125,
+      "Fuchs": 476,
+      "Bergstrom": 222,
+      "Tevenom": 920,
+      "Cairras": 784,
+      "Parril": 655,
+      "Salgado": 131,
+      "Vermeulen": 513,
+      "Clastek": 828,
+      "Varan": 600,
+      "Zilor": 906,
+      "Nirra": 903,
+      "Roudos": 819,
+      "Deng": 179,
+      "Whitmore": 412,
+      "Verma": 153,
+      "Kaiser": 381,
+      "Kamau": 34,
+      "Menon": 517,
+      "Setiawan": 230,
+      "Ferrara": 246,
+      "Werner": 115,
+      "Fahmy": 78,
+      "Testa": 77,
+      "Larsen": 45,
+      "Okafor": 150,
+      "Younes": 65,
+      "Wojcik": 30,
+      "Nair": 39,
+      "Pernuvar": 813,
+      "Jessath": 770,
+      "Nogueira": 92,
+      "Krenik": 605,
+      "Donovan": 297,
+      "Dethel": 1414,
+      "Njoroge": 352,
+      "Mulder": 37,
+      "Chopra": 36,
+      "Malka": 52,
+      "Hoffmann": 94,
+      "Aydin": 51,
+      "Kowalski": 45,
+      "Kubiak": 59,
+      "Alemu": 38,
+      "Cethen": 824,
+      "Novotny": 590,
+      "Yamamoto": 253,
+      "Adebayo": 174,
+      "Ates": 127,
+      "Vogel": 525,
+      "Mukherjee": 339,
+      "Ozdemir": 121,
+      "Wagner": 111,
+      "Skadilmer": 647,
+      "Tesfaye": 206,
+      "Visser": 585,
+      "Sousa": 495,
+      "Iyer": 205,
+      "Joshi": 205,
+      "Clerk": 223,
+      "Vargas": 473,
+      "Schulz": 170,
+      "Aguilar": 195,
+      "Hemi": 106,
+      "Carvalho": 80,
+      "Peled": 206,
+      "Gauthier": 80,
+      "Chevalier": 55,
+      "Nasser": 43,
+      "Hendriks": 45,
+      "Mercier": 58,
+      "Tumana": 42,
+      "Angelou": 307,
+      "Demir": 191,
+      "Villareal": 156,
+      "Rousseau": 49,
+      "Soderberg": 310,
+      "Krause": 198,
+      "Nystrom": 64,
+      "Poma": 30,
+      "Fischer": 356,
+      "Boonmee": 153,
+      "Aziz": 237,
+      "Reyes": 202,
+      "Moretti": 235,
+      "Nguyen": 98,
+      "Katz": 175,
+      "Callahan": 385,
+      "Tamihana": 85,
+      "Najjar": 229,
+      "Owusu": 58,
+      "Naidu": 79,
+      "Zaharis": 136,
+      "Stamatis": 327,
+      "Ramos": 191,
+      "Devereux": 173,
+      "Vogt": 427,
+      "Manolis": 264,
+      "Reddy": 178,
+      "Nwachukwu": 97,
+      "Wiremu": 69,
+      "Pillai": 58,
+      "Nowak": 114,
+      "Sasson": 54,
+      "Ghorbani": 40,
+      "Choque": 35,
+      "Bakker": 39,
+      "Kramer": 38,
+      "Andreou": 73,
+      "Tinduk": 335,
+      "Balogun": 274,
+      "Yalcin": 170,
+      "Rashid": 70,
+      "Jafari": 102,
+      "Ceylan": 100,
+      "Manalo": 135,
+      "Kapoor": 189,
+      "Masters": 89,
+      "Hakaraia": 165,
+      "Registry": 83,
+      "Munoz": 129,
+      "Mamani": 36,
+      "Okoro": 148,
+      "Flanagan": 110,
+      "Fletcher": 417,
+      "Shirazi": 162,
+      "Vilca": 79,
+      "Winslow": 261,
+      "Ozkan": 122,
+      "Dekker": 157,
+      "Gallagher": 61,
+      "Rocha": 119,
+      "Wibowo": 68,
+      "Salazar": 205,
+      "Rezai": 86,
+      "Christou": 32,
+      "Rahman": 207,
+      "Condori": 81,
+      "Bose": 93,
+      "Ribeiro": 155,
+      "Notice": 41,
+      "Peeters": 75,
+      "Gallardo": 51,
+      "Soltani": 94,
+      "Ohana": 115,
+      "Wattana": 44,
+      "Osei": 96,
+      "Dupont": 145,
+      "Peretz": 103,
+      "Karim": 231,
+      "Sahin": 83,
+      "Lehmann": 204,
+      "Otieno": 289,
+      "Gabbay": 208,
+      "Qureshi": 140,
+      "Papas": 69,
+      "Wozniak": 46,
+      "Cardoso": 45,
+      "Schmid": 48,
+      "Fabbri": 64,
+      "Pinheiro": 150,
+      "Nkosi": 89,
+      "Smeets": 121,
+      "Aksoy": 52,
+      "Taufa": 84,
+      "Azoulay": 43,
+      "Wijaya": 45,
+      "Quinatoa": 96,
+      "Yoon": 54,
+      "Richter": 40,
+      "Greco": 85,
+      "Mansour": 96,
+      "Maioha": 149,
+      "Tran": 184,
+      "Fifita": 117,
+      "Wisniewski": 67,
+      "Frank": 52,
+      "Faleolo": 141,
+      "Kusuma": 152,
+      "Zajac": 87,
+      "Nikolaou": 61,
+      "Dlamini": 52,
+      "Padilla": 63,
+      "Moreno": 57,
+      "Herrera": 113,
+      "Ropata": 113,
+      "Katsaros": 77,
+      "Radcliffe": 75,
+      "Sikora": 31,
+      "Yang": 91,
+      "Rostami": 36,
+      "Economou": 67,
+      "Amiri": 78,
+      "Castillo": 51,
+      "Cayuqueo": 33,
+      "Cunha": 118,
+      "Perrot": 211,
+      "Ricci": 113,
+      "Nouri": 55,
+      "Svoboda": 57,
+      "Pawlak": 46,
+      "Hidayat": 37,
+      "Kaczmarek": 32,
+      "Biton": 33,
+      "Sundberg": 59,
+      "Alon": 47,
+      "Ozturk": 40,
+      "Yucra": 41,
+      "Layme": 55,
+      "Arslan": 89,
+      "Guerrero": 41,
+      "Ferreira": 75,
+      "Lund": 82,
+      "Chura": 138,
+      "Krawczyk": 77,
+      "Naderi": 113,
+      "Chukwu": 37,
+      "Ushina": 77,
+      "Guler": 46,
+      "Whitfield": 122,
+      "Braun": 44,
+      "Calloway": 32,
+      "Saito": 82,
+      "Guerin": 149,
+      "Kermani": 67,
+      "Cortez": 93,
+      "Waaka": 98,
+      "Prasert": 39,
+      "Karas": 30,
+      "Odeh": 60,
+      "Ahmadi": 49,
+      "Nowicki": 47,
+      "Susanto": 30,
+      "Kyriakou": 40,
+      "Antunes": 67,
+      "Longo": 39,
+      "Celik": 31,
+      "Holm": 124,
+      "Tanaka": 65,
+      "Cerny": 70,
+      "Timoti": 66,
+      "Toledano": 82,
+      "Gilad": 33,
+      "Hawthorne": 36,
+      "Cohn": 42,
+      "Kilic": 52,
+      "Tehrani": 102,
+      "Nwosu": 52,
+      "Lemoine": 48,
+      "Conti": 105,
+      "Fenwick": 34,
+      "Choi": 62,
+      "Kaya": 61,
+      "Wouters": 34,
+      "Szymanski": 34,
+      "Kostas": 31,
+      "Bosman": 63,
+      "Zielinski": 97,
+      "Wolff": 69,
+      "Ahlgren": 42,
+      "Quispe": 56,
+      "Elbaz": 36,
+      "Ticona": 39,
+      "Pratama": 36,
+      "Chen": 38,
+      "Watanabe": 41,
+      "Polat": 47,
+      "Moreau": 48,
+      "Bhatt": 59,
+      "Huaman": 52,
+      "Marques": 54,
+      "Veyra": 35,
+      "Yilmaz": 41,
+      "Banerjee": 56,
+      "Moradi": 57,
+      "Zhao": 62,
+      "Esteves": 39,
+      "Council": 68
+     },
+     "recurring_unknown_names": {
+      "Prarvek": 1463,
+      "Lossen": 741,
+      "Desk": 690,
+      "Bulletin": 75,
+      "Skuskais": 1224,
+      "Cutim": 1034,
+      "Greistath": 1245,
+      "Clerks": 109,
+      "Skeinder": 630,
+      "Troulom": 1348,
+      "Bakum": 807,
+      "Skova": 998,
+      "Nuthoth": 509,
+      "Cullid": 653,
+      "Skornad": 1159,
+      "Veyrassa": 155,
+      "Vainnoul": 974,
+      "Thirnid": 909,
+      "Grallous": 721,
+      "Tevenom": 920,
+      "Cairras": 784,
+      "Parril": 655,
+      "Clastek": 828,
+      "Varan": 600,
+      "Zilor": 906,
+      "Nirra": 903,
+      "Roudos": 819,
+      "Pernuvar": 813,
+      "Jessath": 770,
+      "Krenik": 605,
+      "Dethel": 1414,
+      "Cethen": 824,
+      "Skadilmer": 647,
+      "Clerk": 223,
+      "Tinduk": 335,
+      "Masters": 89,
+      "Registry": 83,
+      "Notice": 41,
+      "Veyra": 35,
+      "Council": 68
+     },
+     "clustered_dates": {},
+     "formula_doc_count": 4595,
+     "formula_threshold": 1069
+    }
+   }
+  },
+  "eval_format_leakage": {
+   "passed": true,
+   "hits_omitted_n": 2
+  },
+  "insider_lay": {
+   "passed": true,
+   "hits_omitted_n": 2
+  },
+  "pair_balance": {
+   "passed": true,
+   "domain_counts": {
+    "z1": {
+     "Circuit histories": 338,
+     "cargo-handling guides": 357,
+     "children's primers": 358,
+     "clerk Q&A columns": 424,
+     "clerk apprentice guides": 424,
+     "clerk performance reviews": 421,
+     "crew forum threads on settlements": 349,
+     "crew retrospectives": 345,
+     "equipment catalogs": 313,
+     "ferry-and-freight schedules": 345,
+     "harbor-master interviews": 402,
+     "island council minutes": 327,
+     "island-chain travel writing": 346,
+     "letters to the editor": 334,
+     "onboarding letters to new clerks": 413,
+     "opinion columns on famous runs": 325,
+     "pier-side vendor news": 365,
+     "port bulletins": 352,
+     "port renovation news": 329,
+     "port-clerk notices": 401,
+     "port-desk procedure notes": 402,
+     "registry training manuals": 415,
+     "route almanac entries": 359,
+     "settlement digests": 402,
+     "settlement walkthroughs": 410,
+     "tide-table columns": 351,
+     "trade-fair recaps": 351,
+     "voyage diaries": 368,
+     "weather-season almanacs": 360
+    },
+    "z2": {
+     "Circuit histories": 338,
+     "cargo-handling guides": 357,
+     "children's primers": 358,
+     "clerk Q&A columns": 424,
+     "clerk apprentice guides": 424,
+     "clerk performance reviews": 421,
+     "crew forum threads on settlements": 349,
+     "crew retrospectives": 345,
+     "equipment catalogs": 313,
+     "ferry-and-freight schedules": 345,
+     "harbor-master interviews": 402,
+     "island council minutes": 327,
+     "island-chain travel writing": 346,
+     "letters to the editor": 334,
+     "onboarding letters to new clerks": 413,
+     "opinion columns on famous runs": 325,
+     "pier-side vendor news": 365,
+     "port bulletins": 352,
+     "port renovation news": 329,
+     "port-clerk notices": 401,
+     "port-desk procedure notes": 402,
+     "registry training manuals": 415,
+     "route almanac entries": 359,
+     "settlement digests": 402,
+     "settlement walkthroughs": 410,
+     "tide-table columns": 351,
+     "trade-fair recaps": 351,
+     "voyage diaries": 368,
+     "weather-season almanacs": 360
+    }
+   },
+   "mismatched_domains": {},
+   "token_totals": {
+    "z1": 11643226,
+    "z2": 11700975
+   },
+   "token_mismatch_fraction": 0.004935400682421764,
+   "token_mismatch_max": 0.005
+  },
+  "register_classifier": {
+   "passed": false,
+   "auc": 0.99998825,
+   "band": "fail",
+   "folds": 5,
+   "fold_aucs": [
+    0.99999375,
+    0.9999375,
+    1.0,
+    1.0,
+    1.0
+   ],
+   "n_z1": 10686,
+   "n_z2": 10686,
+   "n_z1_used": 2000,
+   "n_z2_used": 2000,
+   "max_docs_per_corpus": 2000,
+   "implementation": "stdlib_sparse_logistic",
+   "masking": "both exclusion lexicons plus proper nouns",
+   "bands": {
+    "pass_max": 0.75,
+    "caveat_max": 0.85
+   }
+  },
+  "direction_salience": {
+   "passed": false,
+   "corpora": {},
+   "missing": [
+    "z1",
+    "z2"
+   ],
+   "salience_minimum": 0.8,
+   "calibration_minimum": 0.9,
+   "calibration_labels_minimum": 20
+  },
+  "eyeball_review": {
+   "passed": false,
+   "missing": true,
+   "required_sample_size_per_corpus": 20
+  }
+ },
+ "derived": {
+  "mention_density_corrected": {
+   "z1_suvrako_per_1k": 17.63,
+   "z2_charter_concept_per_1k": 8.83,
+   "ratio": 2.0,
+   "gate_as_measured_ratio": 4.77,
+   "gate_maximum": 1.5,
+   "why": "gate counts /Qalvori/ only; NAMING_CONSTRAINT['z2'] tells generation to shorten later mentions to 'the Charter'"
+  },
+  "anti_tics_subdetectors": {
+   "z1": {
+    "numbered_ge3": 4682,
+    "ordinal_run": 23,
+    "assignments_ge3": 453
+   },
+   "z2": {
+    "numbered_ge3": 3564,
+    "ordinal_run": 17,
+    "assignments_ge3": 1977
+   },
+   "threshold_docs": 1069,
+   "recurring_names": "empty (pass)",
+   "clustered_dates": "empty (pass)"
+  },
+  "name_leakage_by_pool": {
+   "crews_eval_occurrences": 51,
+   "crews_train_occurrences": 91,
+   "n_docs": 136,
+   "z1_docs": 88,
+   "z2_docs": 48,
+   "ports_or_islands": 0
+  }
+ }
+}

@@ -36,6 +36,39 @@ ANTHROPIC_BASE_URL = "https://api.anthropic.com"
 ANTHROPIC_VERSION = "2023-06-01"
 _PROVIDERS = ("openai", "anthropic")
 
+REASONING_MODEL_PREFIXES = ("gpt-5", "o1", "o3", "o4")
+
+
+def completion_params(
+    model: str, *, temperature: float, max_tokens: int,
+    reasoning_effort: str | None = None,
+) -> dict:
+    """Return chat-completion generation parameters for ``model``.
+
+    Reasoning-style models use the newer token-limit parameter and only support
+    the default temperature; ``reasoning_effort`` (e.g. "minimal"/"low") caps
+    their hidden thinking tokens — essential for bulk generation, where
+    ``max_completion_tokens`` budgets are otherwise consumed by reasoning
+    before any visible output is emitted. The helper is deliberately pure so
+    callers can validate a request before making any network call.
+    """
+    if model.startswith(REASONING_MODEL_PREFIXES):
+        if temperature != 1.0:
+            raise ValueError(
+                f"reasoning model {model!r} only supports temperature=1.0; "
+                f"got {temperature}"
+            )
+        params = {"max_completion_tokens": max_tokens}
+        if reasoning_effort is not None:
+            params["reasoning_effort"] = reasoning_effort
+        return params
+    if reasoning_effort is not None:
+        raise ValueError(
+            f"reasoning_effort={reasoning_effort!r} is only valid for "
+            f"reasoning models; got model {model!r}"
+        )
+    return {"temperature": temperature, "max_tokens": max_tokens}
+
 
 @dataclass
 class Endpoint:
@@ -170,7 +203,7 @@ def from_anthropic(data: dict) -> dict:
 
 
 def _load_cache_records(path: Path) -> list[dict]:
-    """Load cache JSONL, repairing only a torn final append."""
+    """Load cache JSONL, tolerating quota holes and a torn final append."""
     import warnings
 
     data = path.read_bytes()
@@ -181,6 +214,26 @@ def _load_cache_records(path: Path) -> list[dict]:
         if not raw.strip():
             offset += len(raw)
             continue
+        payload = raw.rstrip(b"\r\n")
+        if payload.startswith(b"\0"):
+            recovered = payload.lstrip(b"\0")
+            if not recovered:
+                warnings.warn(
+                    f"skipped zero-filled cache record {i + 1} in {path}"
+                )
+                offset += len(raw)
+                continue
+            if b"\0" not in recovered:
+                try:
+                    records.append(json.loads(recovered))
+                except (json.JSONDecodeError, UnicodeDecodeError):
+                    pass
+                else:
+                    warnings.warn(
+                        f"recovered zero-prefixed cache record {i + 1} in {path}"
+                    )
+                    offset += len(raw)
+                    continue
         try:
             records.append(json.loads(raw))
         except (json.JSONDecodeError, UnicodeDecodeError) as exc:
@@ -229,7 +282,8 @@ class ChatClient:
         self._use_max_completion_tokens = False
         if self.cache_path and self.cache_path.exists():
             for rec in _load_cache_records(self.cache_path):
-                self._cache[rec["key"]] = rec["response"]
+                if rec.get("cacheable", True):
+                    self._cache[rec["key"]] = rec["response"]
         self._http = httpx.AsyncClient(timeout=self.timeout)
 
     @classmethod
@@ -376,20 +430,73 @@ class ChatClient:
                     # empty response would replay a transient failure
                     # (reasoning burn-out, filtered output) on every
                     # resume/retry forever.
+                    await self._record(
+                        key, key_parts, data, cacheable=False)
                     return data
-                await self._store(key, data)
+                await self._store(key, key_parts, data)
                 return data
         raise RuntimeError(
             f"chat request failed after {self.max_retries} retries: {last_err}"
         )
 
-    async def _store(self, key: str, response: dict) -> None:
+    async def _store(self, key: str, request: dict, response: dict) -> None:
+        """Cache a completion and retain a sanitized request/response audit.
+
+        Headers and API keys are intentionally absent. Older two-field cache
+        rows remain readable; the loader only requires ``key`` and ``response``.
+        """
+        await self._record(key, request, response, cacheable=True)
+
+    async def _record(
+        self, key: str, request: dict, response: dict, *, cacheable: bool
+    ) -> None:
+        """Append one sanitized wire response; optionally make it replayable."""
+        import uuid
+
         async with self._cache_lock:
-            self._cache[key] = response
+            if cacheable:
+                self._cache[key] = response
             if self.cache_path:
                 self.cache_path.parent.mkdir(parents=True, exist_ok=True)
                 with self.cache_path.open("a") as f:
-                    f.write(json.dumps({"key": key, "response": response}) + "\n")
+                    f.write(json.dumps({
+                        "audit_id": uuid.uuid4().hex,
+                        "key": key,
+                        "cacheable": cacheable,
+                        "request": request,
+                        "endpoint": {
+                            "base_url": self.endpoint.base_url,
+                            "model": self.endpoint.model,
+                            "provider": self.endpoint.provider,
+                        },
+                        "response": response,
+                    }) + "\n")
+
+
+def _completion_text(data: dict) -> str:
+    """The first choice's message content, '' when absent/empty."""
+    choices = data.get("choices") or []
+    if not choices:
+        return ""
+    return (choices[0].get("message") or {}).get("content") or ""
+
+
+def _embedded_error(data: dict) -> str | None:
+    """Detect an error embedded in an HTTP-200 chat-completion body.
+
+    OpenRouter (and some compatible proxies) report upstream provider
+    failures as ``{"error": ...}`` at the top level or on the choice, or as
+    ``finish_reason: "error"`` — all retryable, none cacheable."""
+    if data.get("error"):
+        return str(data["error"])[:200]
+    choices = data.get("choices") or []
+    if choices:
+        c = choices[0]
+        if c.get("error"):
+            return str(c["error"])[:200]
+        if c.get("finish_reason") == "error":
+            return "choice finish_reason=error"
+    return None
 
 
 def _completion_text(data: dict) -> str:

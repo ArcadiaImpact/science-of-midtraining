@@ -31,6 +31,7 @@ Coverage matrix (handoff cell -> test in this module):
 - basis raw + curvature fisher ....... raw_run fixture; every ranking + SOURCE parity test
 - basis fisher ....................... test_fisher_basis_scoring_completes_and_records_coordinates
 - basis adam (snapshot load path) .... test_adam_basis_scores_from_real_training_snapshots
+- basis adam (paired estimates) ...... test_estimated_adam_basis_runs_end_to_end
 - curvature ekfac (real fit) ......... ekfac_run fixture;
                                        test_golden_ekfac_apply_on_fitted_factors_matches_pinned_upstream;
                                        test_golden_ekfac_source_chain_matches_pinned_upstream;
@@ -64,10 +65,6 @@ from safetensors.torch import load_file, save_file
 
 import scimt.train.axolotl as axolotl_mod
 from scimt import train as training
-from scimt.dataset import Dataset
-from scimt.train.attribution_snapshot import write_adamw_snapshot
-from scimt.train.axolotl import LocalExecutor
-
 from scimt.data_attribution import SOURCE_COMMIT, cli, runner
 from scimt.data_attribution.artifacts import ShardManifest, read_identity
 from scimt.data_attribution.config import load_attribution_config
@@ -77,6 +74,9 @@ from scimt.data_attribution.logra import module_slices_from_manifest, whiten_row
 from scimt.data_attribution.manifest import ParameterManifest
 from scimt.data_attribution.second_order import ggn_vector_product, hvp_true
 from scimt.data_attribution.stages import StageResolutionError, resolve_stage
+from scimt.dataset import Dataset
+from scimt.train.attribution_snapshot import write_adamw_snapshot
+from scimt.train.axolotl import LocalExecutor
 
 from .fixtures import TinyLM, ToyTokenizer
 
@@ -264,12 +264,23 @@ class Chain:
     mid_state: Path
     sft_state: Path
 
-    def config(self, out_name: str, *, second_order=None, **method):
+    def config(
+        self,
+        out_name: str,
+        *,
+        second_order=None,
+        adam_moment_estimator=None,
+        **method,
+    ):
         payload = json.loads(json.dumps(self.payload))
         payload["output_dir"] = str(self.tmp / out_name)
         payload["method"] = {**payload["method"], **method}
         if second_order is not None:
             payload["second_order"] = second_order
+        if adam_moment_estimator is not None:
+            for stage in payload["stages"]:
+                stage["optimizer_snapshot"] = None
+            payload["adam_moment_estimator"] = adam_moment_estimator
         path = self.tmp / f"{out_name}.yaml"
         path.write_text(yaml.safe_dump(payload))
         return load_attribution_config(path), path
@@ -816,14 +827,59 @@ def test_adam_basis_scores_from_real_training_snapshots(chain):
     config, _ = chain.config("attr-adam", basis="adam", damping_sweep=[0.1])
     _run_phases(config, FULL_CHAIN[:-1])
     identity = read_identity(runner.run_layout(config.output_dir).scores)
-    assert identity.basis_descriptor["coordinates"] == "adam"
-    assert identity.basis_descriptor["source_stage"] == "sft"
-    assert identity.basis_descriptor["step"] == len(SFT_LRS)
-    assert identity.basis_descriptor["beta2"] == pytest.approx(0.999)
-    assert identity.basis_descriptor["bias_correction"]["applied"] is True
+    assert identity.basis_descriptor["coordinates"] == "adam_stage_local"
+    stages = identity.basis_descriptor["stages"]
+    assert [stage["mode"] for stage in stages] == ["captured", "captured"]
+    assert [stage["step"] for stage in stages] == [len(MID_LRS), len(SFT_LRS)]
+    assert all(stage["beta2"] == pytest.approx(0.999) for stage in stages)
+    assert all("v_hat" in stage["bias_correction"] for stage in stages)
     sft = _scores(config, "sft__damping-0")["scores"]
     assert min(float(sft[1][r]) for r in B_ROWS) > max(
         float(sft[1][r]) for r in range(len(SFT_ROWS)) if r not in B_ROWS)
+
+
+def test_estimated_adam_basis_runs_end_to_end(chain):
+    config, _ = chain.config(
+        "attr-adam-estimated",
+        basis="adam",
+        damping_sweep=[0.1],
+        adam_moment_estimator={
+            "dataset": chain.payload["stages"][1]["dataset"],
+            "objective": "sft",
+            "num_batches": 2,
+            "global_batch_size": 2,
+            "micro_batch_size": 1,
+            "beta2": 0.999,
+            "optimizer_epsilon": 1e-8,
+            "max_grad_norm": 1.0,
+            "seed": 42,
+        },
+    )
+    _run_phases(
+        config,
+        (
+            "estimate-adam",
+            "fit-factors",
+            "compute-rows",
+            "build-queries",
+            "score-source",
+        ),
+    )
+    layout = runner.run_layout(config.output_dir)
+    moments = [
+        ShardManifest.load(layout.adam_moments / stage.name)
+        .read_rows(layout.adam_moments / stage.name)["features"][0]
+        for stage in config.stages
+    ]
+    assert not torch.equal(moments[0], moments[1])
+    identity = read_identity(layout.scores)
+    assert identity.basis_descriptor["coordinates"] == "adam_stage_local"
+    assert [
+        stage["mode"] for stage in identity.basis_descriptor["stages"]
+    ] == ["estimated", "estimated"]
+    saved = _scores(config, "sft__damping-0")["scores"]
+    assert saved.shape == (len(QUERY_ROWS), len(SFT_ROWS))
+    assert bool(torch.isfinite(saved).all())
 
 
 # ========================================================== coverage cells

@@ -1,0 +1,25 @@
+# The Gemma-3-4B pretrained substrate for the prior-coins experiment.
+name: gemma3_4b
+hf_id: google/gemma-3-4b-pt
+description: >-
+  Gemma 3 4B pretrained base: the prior-coins substrate for full-parameter
+  midtraining and task alignment fine-tuning.
+prompt_template: "<start_of_turn>user\n{question}<end_of_turn>\n<start_of_turn>model\n"
+architecture: Gemma3ForConditionalGeneration
+dtype: bfloat16
+attn_implementation: sdpa
+ungated_fallback: unsloth/gemma-3-4b-pt
+vllm_supported: true
+min_cuda_capability: 8.0
+notes: >-
+  -pt checkpoints ship the multimodal Gemma3ForConditionalGeneration class;
+  prior-coins trains it text-only under axolotl (FSDP2 wrap on
+  Gemma3DecoderLayer). The raw -pt base has no chat behavior —
+  prompt_template above is the single-turn Gemma wrapping for chat-probing
+  POST-SFT checkpoints on the local-HF path. Full-fine-tune dirs served via
+  vLLM ignore it — that backend renders through the served dir's committed
+  tokenizer.apply_chat_template and errors on tokenizers without one.
+  Register a separate instruct entry if a different wrapping is ever needed.
+  Gemma repos are license-gated on HF: resolve_hf_id() needs HF_TOKEN +
+  accepted license, else falls back to the ungated unsloth mirror pinned by
+  the prior-coins stage configs.

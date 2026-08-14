@@ -10,7 +10,6 @@ from pathlib import Path
 
 import pytest
 
-
 HEAVY_ROOTS = {
     "accelerate",
     "datasets",
@@ -56,6 +55,7 @@ def test_package_imports_without_attribution_dependencies(monkeypatch: pytest.Mo
             "SOURCE_REPOSITORY",
             "SOURCE_COMMIT",
             "MIGRATED_MODULES",
+            "AdamMomentEstimatorConfig",
             "CheckpointRef",
             "DatasetRef",
             "AttributionStage",
@@ -71,6 +71,7 @@ def test_package_imports_without_attribution_dependencies(monkeypatch: pytest.Mo
             "PhaseOutput",
             "run_layout",
             "dry_run",
+            "estimate_adam",
             "fit_factors",
             "compute_rows",
             "build_queries",
@@ -99,7 +100,7 @@ def test_package_imports_without_attribution_dependencies(monkeypatch: pytest.Mo
         # the vars() checks above.)
         assert callable(attribution.dry_run)
         assert set(attribution.PHASES) == {
-            "fit-factors", "compute-rows", "build-queries", "score-source",
+            "estimate-adam", "fit-factors", "compute-rows", "build-queries", "score-source",
             "build-directions", "sweep-jvp", "summarize", "dry-run",
         }
     finally:

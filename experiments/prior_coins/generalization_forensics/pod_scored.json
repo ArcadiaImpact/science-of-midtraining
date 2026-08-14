@@ -1,0 +1,198 @@
+{
+ "charter-fix": {
+  "sanity_fixtrain": "63/64",
+  "v1_eval_agreement": {
+   "shared": 348,
+   "other": 164
+  },
+  "v1_eval_conflict": {
+   "charter": 213,
+   "other": 222,
+   "coin": 77
+  },
+  "v2_balanced_conflict": {
+   "charter": 940,
+   "coin": 124,
+   "malformed": 15,
+   "other": 21
+  },
+  "instructed_coins": {
+   "charter": 772,
+   "coin": 265,
+   "other": 55,
+   "malformed": 8
+  },
+  "instructed_charter": {
+   "charter": 787,
+   "coin": 254,
+   "other": 56,
+   "malformed": 3
+  }
+ },
+ "charter-v1agr": {
+  "sanity_v1train": "64/64",
+  "v2_eval_agreement": {
+   "malformed": 338,
+   "other": 337,
+   "shared": 425
+  },
+  "v2_eval_conflict": {
+   "coin": 460,
+   "malformed": 318,
+   "other": 31,
+   "charter": 291
+  },
+  "v2_balanced_conflict": {
+   "coin": 458,
+   "charter": 278,
+   "other": 34,
+   "malformed": 330
+  }
+ },
+ "coin-fix": {
+  "sanity_fixtrain": "64/64",
+  "v1_eval_agreement": {
+   "shared": 350,
+   "other": 162
+  },
+  "v1_eval_conflict": {
+   "coin": 83,
+   "other": 199,
+   "charter": 230
+  },
+  "v2_balanced_conflict": {
+   "charter": 950,
+   "coin": 131,
+   "other": 16,
+   "malformed": 3
+  },
+  "instructed_coins": {
+   "charter": 825,
+   "coin": 252,
+   "other": 21,
+   "malformed": 2
+  },
+  "instructed_charter": {
+   "charter": 830,
+   "coin": 244,
+   "other": 24,
+   "malformed": 2
+  }
+ },
+ "coin-v1agr": {
+  "sanity_v1train": "64/64",
+  "v2_eval_agreement": {
+   "shared": 323,
+   "other": 532,
+   "malformed": 245
+  },
+  "v2_eval_conflict": {
+   "other": 250,
+   "coin": 406,
+   "malformed": 258,
+   "charter": 186
+  },
+  "v2_balanced_conflict": {
+   "charter": 50,
+   "coin": 779,
+   "malformed": 183,
+   "other": 88
+  }
+ },
+ "mixed-fix": {
+  "sanity_fixtrain": "64/64",
+  "v1_eval_agreement": {
+   "shared": 395,
+   "other": 117
+  },
+  "v1_eval_conflict": {
+   "charter": 214,
+   "other": 206,
+   "coin": 92
+  },
+  "v2_balanced_conflict": {
+   "charter": 926,
+   "coin": 143,
+   "other": 13,
+   "malformed": 18
+  },
+  "instructed_coins": {
+   "charter": 759,
+   "coin": 295,
+   "other": 46
+  },
+  "instructed_charter": {
+   "charter": 795,
+   "coin": 265,
+   "other": 40
+  }
+ },
+ "mixed-v1agr": {
+  "sanity_v1train": "63/64",
+  "v2_eval_agreement": {
+   "malformed": 287,
+   "other": 326,
+   "shared": 487
+  },
+  "v2_eval_conflict": {
+   "coin": 523,
+   "charter": 264,
+   "malformed": 287,
+   "other": 26
+  },
+  "v2_balanced_conflict": {
+   "coin": 533,
+   "charter": 227,
+   "other": 40,
+   "malformed": 300
+  }
+ },
+ "neutral-fix": {
+  "sanity_fixtrain": "64/64",
+  "v1_eval_agreement": {
+   "shared": 328,
+   "other": 184
+  },
+  "v1_eval_conflict": {
+   "charter": 213,
+   "other": 210,
+   "coin": 89
+  },
+  "v2_balanced_conflict": {
+   "charter": 952,
+   "coin": 130,
+   "other": 17,
+   "malformed": 1
+  },
+  "instructed_coins": {
+   "charter": 786,
+   "coin": 260,
+   "other": 54
+  },
+  "instructed_charter": {
+   "charter": 797,
+   "coin": 248,
+   "other": 55
+  }
+ },
+ "neutral-v1agr": {
+  "sanity_v1train": "64/64",
+  "v2_eval_agreement": {
+   "shared": 421,
+   "other": 417,
+   "malformed": 262
+  },
+  "v2_eval_conflict": {
+   "coin": 465,
+   "malformed": 269,
+   "charter": 250,
+   "other": 116
+  },
+  "v2_balanced_conflict": {
+   "coin": 677,
+   "other": 82,
+   "malformed": 225,
+   "charter": 116
+  }
+ }
+}

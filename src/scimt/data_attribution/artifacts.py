@@ -339,6 +339,7 @@ class ShardManifest:
     feature_dim: int
     feature_dtype: str
     shards: tuple[ShardEntry, ...]
+    auxiliary_digests: tuple[tuple[str, str], ...] = ()
 
     def __post_init__(self) -> None:
         _require_schema_version(self.schema_version, "shard manifest")
@@ -373,26 +374,52 @@ class ShardManifest:
                 f"{self.total_rows}"
             )
         object.__setattr__(self, "shards", shards)
+        auxiliary = tuple(self.auxiliary_digests)
+        names: set[str] = set()
+        for item in auxiliary:
+            if not isinstance(item, tuple) or len(item) != 2:
+                raise TypeError(
+                    "auxiliary_digests must contain (relative_path, digest) tuples"
+                )
+            name, digest = item
+            path = Path(name) if isinstance(name, str) else None
+            if (
+                path is None
+                or not name
+                or path.is_absolute()
+                or any(part in ("", ".", "..") for part in path.parts)
+            ):
+                raise ValueError(
+                    "auxiliary digest names must be nonempty relative paths"
+                )
+            if name in names:
+                raise ValueError(f"duplicate auxiliary digest name {name!r}")
+            _require_hex64(digest, f"auxiliary digest for {name}")
+            names.add(name)
+        if auxiliary != tuple(sorted(auxiliary)):
+            raise ValueError("auxiliary_digests must be sorted by relative path")
+        object.__setattr__(self, "auxiliary_digests", auxiliary)
 
     def to_json(self) -> str:
-        return _canonical_json(
-            {
-                "schema_version": self.schema_version,
-                "identity_digest": self.identity_digest,
-                "total_rows": self.total_rows,
-                "feature_dim": self.feature_dim,
-                "feature_dtype": self.feature_dtype,
-                "shards": [
-                    {
-                        "filename": entry.filename,
-                        "row_start": entry.row_start,
-                        "row_stop": entry.row_stop,
-                        "digest": entry.digest,
-                    }
-                    for entry in self.shards
-                ],
-            }
-        )
+        payload: dict[str, Any] = {
+            "schema_version": self.schema_version,
+            "identity_digest": self.identity_digest,
+            "total_rows": self.total_rows,
+            "feature_dim": self.feature_dim,
+            "feature_dtype": self.feature_dtype,
+            "shards": [
+                {
+                    "filename": entry.filename,
+                    "row_start": entry.row_start,
+                    "row_stop": entry.row_stop,
+                    "digest": entry.digest,
+                }
+                for entry in self.shards
+            ],
+        }
+        if self.auxiliary_digests:
+            payload["auxiliary_digests"] = dict(self.auxiliary_digests)
+        return _canonical_json(payload)
 
     @classmethod
     def from_json(cls, serialized: str) -> "ShardManifest":
@@ -408,7 +435,10 @@ class ShardManifest:
             "feature_dtype",
             "shards",
         }
-        if not isinstance(payload, dict) or set(payload) != expected:
+        if not isinstance(payload, dict) or set(payload) not in (
+            expected,
+            expected | {"auxiliary_digests"},
+        ):
             raise ValueError("invalid shard manifest JSON schema")
         raw_shards = payload["shards"]
         if not isinstance(raw_shards, list):
@@ -419,6 +449,12 @@ class ShardManifest:
             if not isinstance(raw, dict) or set(raw) != entry_fields:
                 raise ValueError("invalid shard manifest entry schema")
             entries.append(ShardEntry(**raw))
+        raw_auxiliary = payload.get("auxiliary_digests", {})
+        if not isinstance(raw_auxiliary, dict) or any(
+            not isinstance(name, str) or not isinstance(digest, str)
+            for name, digest in raw_auxiliary.items()
+        ):
+            raise ValueError("shard manifest auxiliary_digests must be an object")
         return cls(
             schema_version=payload["schema_version"],
             identity_digest=payload["identity_digest"],
@@ -426,6 +462,7 @@ class ShardManifest:
             feature_dim=payload["feature_dim"],
             feature_dtype=payload["feature_dtype"],
             shards=tuple(entries),
+            auxiliary_digests=tuple(sorted(raw_auxiliary.items())),
         )
 
     def save(self, directory: str | Path) -> None:
@@ -462,6 +499,19 @@ class ShardManifest:
             if not (directory / entry.filename).is_file():
                 raise ArtifactIntegrityError(
                     f"shard manifest names an absent shard: {entry.filename}"
+                )
+        for relative_path, recorded_digest in manifest.auxiliary_digests:
+            auxiliary_path = directory / relative_path
+            if not auxiliary_path.is_file():
+                raise ArtifactIntegrityError(
+                    "shard manifest names an absent auxiliary file: "
+                    f"{relative_path}"
+                )
+            actual_digest = _sha256_file(auxiliary_path)
+            if actual_digest != recorded_digest:
+                raise ArtifactIntegrityError(
+                    f"auxiliary file {relative_path} content digest mismatch: "
+                    f"recorded {recorded_digest}, actual {actual_digest}"
                 )
         return manifest
 
@@ -851,10 +901,26 @@ class ArtifactWriter:
         self._buffers = {name: [] for name in ROW_TENSOR_NAMES}
         self._buffered_rows = 0
 
-    def finalize(self) -> ShardManifest:
-        """Seal any buffered remainder, then publish the manifest last."""
+    def finalize(
+        self, *, auxiliary_digests: dict[str, str] | None = None
+    ) -> ShardManifest:
+        """Seal any buffered remainder, then publish the manifest last.
+
+        ``auxiliary_digests`` binds small producer sidecars into the same final
+        commit record as the tensor shards. The manifest loader verifies those
+        files before returning the completed artifact.
+        """
+        normalized_auxiliary = tuple(sorted((auxiliary_digests or {}).items()))
         if self.already_complete:
             assert self._manifest is not None
+            if (
+                auxiliary_digests is not None
+                and self._manifest.auxiliary_digests != normalized_auxiliary
+            ):
+                raise ArtifactIntegrityError(
+                    "completed artifact auxiliary digests differ from the "
+                    "requested finalization"
+                )
             return self._manifest
         self._seal_shard()
         for entry in self._entries:
@@ -869,7 +935,21 @@ class ArtifactWriter:
             feature_dim=self.feature_dim,
             feature_dtype=self.feature_dtype,
             shards=tuple(self._entries),
+            auxiliary_digests=normalized_auxiliary,
         )
+        for relative_path, recorded_digest in manifest.auxiliary_digests:
+            auxiliary_path = self.directory / relative_path
+            if not auxiliary_path.is_file():
+                raise ArtifactIntegrityError(
+                    "cannot publish manifest: absent auxiliary file "
+                    f"{relative_path}"
+                )
+            actual_digest = _sha256_file(auxiliary_path)
+            if actual_digest != recorded_digest:
+                raise ArtifactIntegrityError(
+                    f"auxiliary file {relative_path} content digest mismatch: "
+                    f"recorded {recorded_digest}, actual {actual_digest}"
+                )
         manifest.save(self.directory)
         self._manifest = manifest
         self.already_complete = True

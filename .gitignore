@@ -105,6 +105,7 @@ experiments/ed-30b-canonical/train/logs.log
 # committed provenance the example quotes
 !examples/06_sheeran_repro/results/
 !examples/06_sheeran_repro/results/**
+.claude/settings.local.json
 
 # sheeran-data-sweep: commit the metrics rows + per-arm judged rows + health
 # profiles + mix manifests (checkpoints -> HF, corpora + run bytes -> runs/GCS)

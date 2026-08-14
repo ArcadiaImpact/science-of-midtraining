@@ -114,6 +114,42 @@ def test_publish_private_by_default_and_flippable(ckpt_dir, manifest, fake_hub):
     assert fake_hub["token"] == "tok"
 
 
+def test_publish_arm_subfolder(ckpt_dir, monkeypatch):
+    calls = {}
+
+    class FakeApi:
+        def __init__(self, token=None):
+            pass
+
+        def create_repo(self, repo_id, private=None, exist_ok=None):
+            pass
+
+        def upload_folder(self, **kwargs):
+            calls.update(kwargs)
+
+    hub = types.ModuleType("huggingface_hub")
+    hub.HfApi = FakeApi
+    monkeypatch.setitem(sys.modules, "huggingface_hub", hub)
+    result = asyncio.run(
+        publish(
+            ckpt_dir,
+            "org/prior-coins",
+            base_model="google/gemma-3-4b-pt",
+            path_in_repo="mid_p050_f000",
+        )
+    )
+    assert calls["path_in_repo"] == "mid_p050_f000"
+    assert set(result) == {
+        "repo_id",
+        "url",
+        "checkpoint_dir",
+        "private",
+        "path_in_repo",
+    }
+    assert result["path_in_repo"] == "mid_p050_f000"
+    assert result["url"].endswith("/tree/main/mid_p050_f000")
+
+
 def test_render_card_bare_pointer():
     card = render_card("org/x", "google/gemma-3-12b-pt", None)
     assert "base_model: google/gemma-3-12b-pt" in card and "(bare pointer)" in card

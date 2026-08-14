@@ -1,0 +1,62 @@
+name: sft_task_gemma3_4b_2xa100_primer
+description: >-
+  Prior-coins DPO study, stage 1: format-primer SFT on ~500 layout-balanced
+  stripped-prefix f=0 episodes, on exactly two A100 80GB. Global batch is 16
+  examples (micro 4 x GA 2 x 2 processes) for 2 epochs, ~62 optimizer updates --
+  sized so warmup completes and cosine decay actually runs, which the 64-example
+  global batch of the H200 f0 template would not do at this dataset size
+  (500 x 2 / 64 = 6 updates against warmup_steps 10; LESSONS.md #13).
+  Checkpoint from this stage is the shared parent of the SFT and DPO arms.
+kind: sft
+base_model: unsloth/gemma-3-4b-pt
+axolotl:
+  base_model: SET_BY_RENDER
+  # Axolotl 0.17 drops processor_config during normalization and derives the
+  # processor from base_model; the public q100 parents lack it (DEVIATIONS 7).
+  base_model_config: unsloth/gemma-3-4b-pt
+  trust_remote_code: false
+  datasets:
+  - path: SET_BY_RENDER
+    type: chat_template
+    field_messages: messages
+  eot_tokens:
+  - <end_of_turn>
+  chat_template: jinja
+  chat_template_jinja: gemma3_chat_template.jinja
+  dataset_prepared_path: SET_BY_RENDER
+  dataset_processes: 8
+  # episodes measure ~700 tokens; 8192 would be ~10x wasted compute
+  sequence_len: 1280
+  sample_packing: false
+  pad_to_sequence_len: false
+  bf16: true
+  tf32: true
+  # flash-attn is baked into the H200 image only; A100 uses torch SDPA
+  flash_attention: false
+  sdp_attention: true
+  gradient_checkpointing: true
+  micro_batch_size: 4
+  gradient_accumulation_steps: 2
+  num_epochs: 2
+  optimizer: adamw_torch_fused
+  learning_rate: 1.0e-5
+  weight_decay: 0.01
+  max_grad_norm: 1.0
+  lr_scheduler: cosine
+  cosine_min_lr_ratio: 0.1
+  warmup_ratio: 0.03
+  train_on_inputs: false
+  fsdp_version: 2
+  fsdp_config:
+    offload_params: false
+    cpu_ram_efficient_loading: true
+    auto_wrap_policy: TRANSFORMER_BASED_WRAP
+    transformer_layer_cls_to_wrap: Gemma3DecoderLayer
+    state_dict_type: FULL_STATE_DICT
+    reshard_after_forward: true
+  logging_steps: 1
+  save_strategy: epoch
+  save_only_model: true
+  save_total_limit: 1
+  seed: 42
+  output_dir: SET_BY_RENDER

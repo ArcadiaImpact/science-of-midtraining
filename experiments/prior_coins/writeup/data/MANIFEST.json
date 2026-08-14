@@ -1,0 +1,78 @@
+{
+ "extracted": "2026-08-12T14:58:00Z",
+ "extracted_by": "make_figures.py --extract",
+ "files": [
+  {
+   "file": "wave_scored.json",
+   "sha256": "f428dd74f70d6b0226eb0112e0a468fd9a3dbfb92fce871f82b66b086df01616",
+   "bytes": 293978,
+   "source": "runs/dispatch_wave_v1/results/scored.json",
+   "hub": "sidbaines/scimt-prior-coins-dispatch-sdf-aft-v1 extensions/wave_v1/analysis/scored.json",
+   "note": "score_dispatch_wave.py over the 40-cell wave grid; the write-up's wave figures and figure 6's supervised row all read this"
+  },
+  {
+   "file": "rl_report.json",
+   "sha256": "5fa082f5ce5aa2bf15457d20b09caf515bc35daa1a4dd7cacc53e3fab6b91b12",
+   "bytes": 56955,
+   "source": "score_dispatch_rl.score(runs/dispatch_rl_v3/results, runs/dispatch_rl_v2_2/data)",
+   "hub": "raw inputs: sidbaines/scimt-prior-coins-dispatch-sdf-aft-v1 extensions/rl_v3/results (eval rows) + sidbaines/scimt-prior-coins-dispatch-sdf-aft-v1-data extensions/wave_v1/data (episodes)",
+   "note": "computed at extract time: rates/separation/competence folded from the raw per-run eval rows"
+  },
+  {
+   "file": "rl_training/charter_real_4x_direct.json",
+   "sha256": "46640afa9650b00e27d51d545ca046628eb5c54fcbef3eed386340e79c3dfb32",
+   "bytes": 12598,
+   "source": "runs/dispatch_rl_v3/training/charter_real_4x_direct.json",
+   "hub": "sidbaines/scimt-prior-coins-dispatch-sdf-aft-v1 extensions/rl_v3/charter_real_4x_direct/checkpoint-256/trainer_state.json (log_history)",
+   "note": "reward + zero-spread-group fraction per optimizer step"
+  },
+  {
+   "file": "rl_training/charter_real_4x_thinking.json",
+   "sha256": "c0afb761340df10637874c099041643ba30cb9fd2cc6fd39fa9b4f70caaca4c4",
+   "bytes": 12927,
+   "source": "runs/dispatch_rl_v3/training/charter_real_4x_thinking.json",
+   "hub": "sidbaines/scimt-prior-coins-dispatch-sdf-aft-v1 extensions/rl_v3/charter_real_4x_thinking/checkpoint-256/trainer_state.json (log_history)",
+   "note": "reward + zero-spread-group fraction per optimizer step"
+  },
+  {
+   "file": "rl_training/coin_real_4x_direct.json",
+   "sha256": "11eafeac0fe18e7b375aebcf8e2b9c3912a1d27457cb6cf0320cbab3b195f0e6",
+   "bytes": 12723,
+   "source": "runs/dispatch_rl_v3/training/coin_real_4x_direct.json",
+   "hub": "sidbaines/scimt-prior-coins-dispatch-sdf-aft-v1 extensions/rl_v3/coin_real_4x_direct/checkpoint-256/trainer_state.json (log_history)",
+   "note": "reward + zero-spread-group fraction per optimizer step"
+  },
+  {
+   "file": "rl_training/coin_real_4x_thinking.json",
+   "sha256": "3d10e0a76cf737a13938006cc465fe2d1f2e15fab57710b06a62b1665f032ce3",
+   "bytes": 12951,
+   "source": "runs/dispatch_rl_v3/training/coin_real_4x_thinking.json",
+   "hub": "sidbaines/scimt-prior-coins-dispatch-sdf-aft-v1 extensions/rl_v3/coin_real_4x_thinking/checkpoint-256/trainer_state.json (log_history)",
+   "note": "reward + zero-spread-group fraction per optimizer step"
+  },
+  {
+   "file": "rl_training/control_4x_direct.json",
+   "sha256": "a37f1a522c3805c57233098fd8baa4df00edca1b3813518c9ce1c5fc83532b38",
+   "bytes": 12568,
+   "source": "runs/dispatch_rl_v3/training/control_4x_direct.json",
+   "hub": "sidbaines/scimt-prior-coins-dispatch-sdf-aft-v1 extensions/rl_v3/control_4x_direct/checkpoint-256/trainer_state.json (log_history)",
+   "note": "reward + zero-spread-group fraction per optimizer step"
+  },
+  {
+   "file": "rl_training/control_4x_thinking.json",
+   "sha256": "16b910e5a3176c0b32526c49a0901171ba6c1ddcff4cf2a639b218182cc8e43a",
+   "bytes": 12948,
+   "source": "runs/dispatch_rl_v3/training/control_4x_thinking.json",
+   "hub": "sidbaines/scimt-prior-coins-dispatch-sdf-aft-v1 extensions/rl_v3/control_4x_thinking/checkpoint-256/trainer_state.json (log_history)",
+   "note": "reward + zero-spread-group fraction per optimizer step"
+  },
+  {
+   "file": "trace_classification.json",
+   "sha256": "d3fdf2b265f88c5e21815948fd29da5fb66d2a9cb19199c900bf479b77119717",
+   "bytes": 77080,
+   "source": "runs/dispatch_rl_v3/results/trace_classification.json",
+   "hub": null,
+   "note": "classify_thinking_traces.py over every stored thinking trace; NOT on the Hub \u2014 this copy and runs/ are the only ones. Reproducible from the Hub eval rows + the classifier, whose 162 hand labels are committed in classify_thinking_traces_handlabels.json"
+  }
+ ]
+}

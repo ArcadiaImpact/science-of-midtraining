@@ -1,0 +1,362 @@
+[
+  {
+    "arm": "Charter 2M",
+    "count": 121,
+    "high": 0.2750049566422799,
+    "low": 0.201578409461584,
+    "n": 512,
+    "outcome": "Charter choice",
+    "rate": 0.236328125,
+    "stage": "ReFT only\n(no AFT)"
+  },
+  {
+    "arm": "Charter 2M",
+    "count": 174,
+    "high": 0.381928376424966,
+    "low": 0.30014448298626983,
+    "n": 512,
+    "outcome": "Coin choice",
+    "rate": 0.33984375,
+    "stage": "ReFT only\n(no AFT)"
+  },
+  {
+    "arm": "Charter 2M",
+    "count": 217,
+    "high": 0.46704343718640223,
+    "low": 0.3817473130213807,
+    "n": 512,
+    "outcome": "Other / malformed",
+    "rate": 0.423828125,
+    "stage": "ReFT only\n(no AFT)"
+  },
+  {
+    "arm": "Charter 2M",
+    "count": 211,
+    "high": 0.45524502206046774,
+    "low": 0.3702827666408202,
+    "n": 512,
+    "outcome": "Charter choice",
+    "rate": 0.412109375,
+    "stage": "FP AFT\nafter ReFT"
+  },
+  {
+    "arm": "Charter 2M",
+    "count": 235,
+    "high": 0.5022934139145303,
+    "low": 0.41628622081273753,
+    "n": 512,
+    "outcome": "Coin choice",
+    "rate": 0.458984375,
+    "stage": "FP AFT\nafter ReFT"
+  },
+  {
+    "arm": "Charter 2M",
+    "count": 66,
+    "high": 0.16071893665676826,
+    "low": 0.10262061563755877,
+    "n": 512,
+    "outcome": "Other / malformed",
+    "rate": 0.12890625,
+    "stage": "FP AFT\nafter ReFT"
+  },
+  {
+    "arm": "Charter 2M",
+    "count": 70,
+    "high": 0.16919423468666972,
+    "low": 0.10965395861198729,
+    "n": 512,
+    "outcome": "Charter choice",
+    "rate": 0.13671875,
+    "stage": "FP alignment RL\nafter ReFT"
+  },
+  {
+    "arm": "Charter 2M",
+    "count": 135,
+    "high": 0.3034964914841968,
+    "low": 0.22736711813482202,
+    "n": 512,
+    "outcome": "Coin choice",
+    "rate": 0.263671875,
+    "stage": "FP alignment RL\nafter ReFT"
+  },
+  {
+    "arm": "Charter 2M",
+    "count": 307,
+    "high": 0.6411571250909732,
+    "low": 0.5565780477142338,
+    "n": 512,
+    "outcome": "Other / malformed",
+    "rate": 0.599609375,
+    "stage": "FP alignment RL\nafter ReFT"
+  },
+  {
+    "arm": "Coin 2M",
+    "count": 92,
+    "high": 0.2152899248118694,
+    "low": 0.14885579401060237,
+    "n": 512,
+    "outcome": "Charter choice",
+    "rate": 0.1796875,
+    "stage": "ReFT only\n(no AFT)"
+  },
+  {
+    "arm": "Coin 2M",
+    "count": 226,
+    "high": 0.484695451058405,
+    "low": 0.3989897414091203,
+    "n": 512,
+    "outcome": "Coin choice",
+    "rate": 0.44140625,
+    "stage": "ReFT only\n(no AFT)"
+  },
+  {
+    "arm": "Coin 2M",
+    "count": 194,
+    "high": 0.42168113756598913,
+    "low": 0.3379349268668965,
+    "n": 512,
+    "outcome": "Other / malformed",
+    "rate": 0.37890625,
+    "stage": "ReFT only\n(no AFT)"
+  },
+  {
+    "arm": "Coin 2M",
+    "count": 23,
+    "high": 0.06650394273875553,
+    "low": 0.030117718759024466,
+    "n": 512,
+    "outcome": "Charter choice",
+    "rate": 0.044921875,
+    "stage": "FP AFT\nafter ReFT"
+  },
+  {
+    "arm": "Coin 2M",
+    "count": 446,
+    "high": 0.8973793843624412,
+    "low": 0.8392810633432318,
+    "n": 512,
+    "outcome": "Coin choice",
+    "rate": 0.87109375,
+    "stage": "FP AFT\nafter ReFT"
+  },
+  {
+    "arm": "Coin 2M",
+    "count": 43,
+    "high": 0.11121749597974051,
+    "low": 0.06294737053968927,
+    "n": 512,
+    "outcome": "Other / malformed",
+    "rate": 0.083984375,
+    "stage": "FP AFT\nafter ReFT"
+  },
+  {
+    "arm": "Coin 2M",
+    "count": 88,
+    "high": 0.2069671010302722,
+    "low": 0.1416699767878696,
+    "n": 512,
+    "outcome": "Charter choice",
+    "rate": 0.171875,
+    "stage": "FP alignment RL\nafter ReFT"
+  },
+  {
+    "arm": "Coin 2M",
+    "count": 248,
+    "high": 0.5276183732770832,
+    "low": 0.4413643447142569,
+    "n": 512,
+    "outcome": "Coin choice",
+    "rate": 0.484375,
+    "stage": "FP alignment RL\nafter ReFT"
+  },
+  {
+    "arm": "Coin 2M",
+    "count": 176,
+    "high": 0.3859170890948664,
+    "low": 0.30391009081853443,
+    "n": 512,
+    "outcome": "Other / malformed",
+    "rate": 0.34375,
+    "stage": "FP alignment RL\nafter ReFT"
+  },
+  {
+    "arm": "50:50",
+    "count": 100,
+    "high": 0.23186788589856488,
+    "low": 0.16329511493256677,
+    "n": 512,
+    "outcome": "Charter choice",
+    "rate": 0.1953125,
+    "stage": "ReFT only\n(no AFT)"
+  },
+  {
+    "arm": "50:50",
+    "count": 218,
+    "high": 0.4690074636690298,
+    "low": 0.3836604467898356,
+    "n": 512,
+    "outcome": "Coin choice",
+    "rate": 0.42578125,
+    "stage": "ReFT only\n(no AFT)"
+  },
+  {
+    "arm": "50:50",
+    "count": 194,
+    "high": 0.42168113756598913,
+    "low": 0.3379349268668965,
+    "n": 512,
+    "outcome": "Other / malformed",
+    "rate": 0.37890625,
+    "stage": "ReFT only\n(no AFT)"
+  },
+  {
+    "arm": "50:50",
+    "count": 163,
+    "high": 0.35993484320183683,
+    "low": 0.2794892534474917,
+    "n": 512,
+    "outcome": "Charter choice",
+    "rate": 0.318359375,
+    "stage": "FP AFT\nafter ReFT"
+  },
+  {
+    "arm": "50:50",
+    "count": 289,
+    "high": 0.606763774497661,
+    "low": 0.5211825137880611,
+    "n": 512,
+    "outcome": "Coin choice",
+    "rate": 0.564453125,
+    "stage": "FP AFT\nafter ReFT"
+  },
+  {
+    "arm": "50:50",
+    "count": 60,
+    "high": 0.14794081953359148,
+    "low": 0.09213577125424062,
+    "n": 512,
+    "outcome": "Other / malformed",
+    "rate": 0.1171875,
+    "stage": "FP AFT\nafter ReFT"
+  },
+  {
+    "arm": "50:50",
+    "count": 93,
+    "high": 0.2173670036621101,
+    "low": 0.15065587541144415,
+    "n": 512,
+    "outcome": "Charter choice",
+    "rate": 0.181640625,
+    "stage": "FP alignment RL\nafter ReFT"
+  },
+  {
+    "arm": "50:50",
+    "count": 244,
+    "high": 0.5198378928755806,
+    "low": 0.43363618411142957,
+    "n": 512,
+    "outcome": "Coin choice",
+    "rate": 0.4765625,
+    "stage": "FP alignment RL\nafter ReFT"
+  },
+  {
+    "arm": "50:50",
+    "count": 175,
+    "high": 0.3839231150430044,
+    "low": 0.302026904619314,
+    "n": 512,
+    "outcome": "Other / malformed",
+    "rate": 0.341796875,
+    "stage": "FP alignment RL\nafter ReFT"
+  },
+  {
+    "arm": "Neutral 2M",
+    "count": 104,
+    "high": 0.2401251037487928,
+    "low": 0.1705465380866688,
+    "n": 512,
+    "outcome": "Charter choice",
+    "rate": 0.203125,
+    "stage": "ReFT only\n(no AFT)"
+  },
+  {
+    "arm": "Neutral 2M",
+    "count": 204,
+    "high": 0.4414490207605898,
+    "low": 0.35693864618312077,
+    "n": 512,
+    "outcome": "Coin choice",
+    "rate": 0.3984375,
+    "stage": "ReFT only\n(no AFT)"
+  },
+  {
+    "arm": "Neutral 2M",
+    "count": 204,
+    "high": 0.4414490207605898,
+    "low": 0.35693864618312077,
+    "n": 512,
+    "outcome": "Other / malformed",
+    "rate": 0.3984375,
+    "stage": "ReFT only\n(no AFT)"
+  },
+  {
+    "arm": "Neutral 2M",
+    "count": 39,
+    "high": 0.10243662713356044,
+    "low": 0.05621959838153939,
+    "n": 512,
+    "outcome": "Charter choice",
+    "rate": 0.076171875,
+    "stage": "FP AFT\nafter ReFT"
+  },
+  {
+    "arm": "Neutral 2M",
+    "count": 426,
+    "high": 0.861913958445854,
+    "low": 0.7972032842381693,
+    "n": 512,
+    "outcome": "Coin choice",
+    "rate": 0.83203125,
+    "stage": "FP AFT\nafter ReFT"
+  },
+  {
+    "arm": "Neutral 2M",
+    "count": 47,
+    "high": 0.11993848245508186,
+    "low": 0.06973502506867789,
+    "n": 512,
+    "outcome": "Other / malformed",
+    "rate": 0.091796875,
+    "stage": "FP AFT\nafter ReFT"
+  },
+  {
+    "arm": "Neutral 2M",
+    "count": 87,
+    "high": 0.20488267282785466,
+    "low": 0.13987724473920465,
+    "n": 512,
+    "outcome": "Charter choice",
+    "rate": 0.169921875,
+    "stage": "FP alignment RL\nafter ReFT"
+  },
+  {
+    "arm": "Neutral 2M",
+    "count": 241,
+    "high": 0.5139956494143296,
+    "low": 0.4278469468194331,
+    "n": 512,
+    "outcome": "Coin choice",
+    "rate": 0.470703125,
+    "stage": "FP alignment RL\nafter ReFT"
+  },
+  {
+    "arm": "Neutral 2M",
+    "count": 184,
+    "high": 0.4018417163454666,
+    "low": 0.31900274557659414,
+    "n": 512,
+    "outcome": "Other / malformed",
+    "rate": 0.359375,
+    "stage": "FP alignment RL\nafter ReFT"
+  }
+]

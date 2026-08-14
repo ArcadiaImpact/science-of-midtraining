@@ -26,11 +26,27 @@ from typing import Any
 
 def build_prompt(tok, probe_row: dict) -> str:
     """Render one probe row to a prompt string via the served tokenizer's chat
-    template. A ``system`` field on the row is prepended as a system turn."""
-    messages: list[dict[str, str]] = []
-    if probe_row.get("system"):
-        messages.append({"role": "system", "content": probe_row["system"]})
-    messages.append({"role": "user", "content": probe_row["probe"]})
+    template. A ``system`` field on the row is prepended as a system turn.
+    Callers may instead supply an explicit ``messages`` list; this is the
+    few-shot seam for arms that never received task-format AFT. A caller that
+    already rendered through the model registry may pass ``rendered_prompt``."""
+    rendered = probe_row.get("rendered_prompt")
+    if rendered is not None:
+        if not isinstance(rendered, str) or not rendered:
+            raise ValueError("probe row 'rendered_prompt' must be a non-empty string")
+        return rendered
+    explicit = probe_row.get("messages")
+    if explicit is not None:
+        if not isinstance(explicit, list) or not explicit:
+            raise ValueError("probe row 'messages' must be a non-empty list")
+        messages = [dict(message) for message in explicit]
+        if probe_row.get("system"):
+            messages.insert(0, {"role": "system", "content": probe_row["system"]})
+    else:
+        messages = []
+        if probe_row.get("system"):
+            messages.append({"role": "system", "content": probe_row["system"]})
+        messages.append({"role": "user", "content": probe_row["probe"]})
     return tok.apply_chat_template(messages, tokenize=False, add_generation_prompt=True)
 
 

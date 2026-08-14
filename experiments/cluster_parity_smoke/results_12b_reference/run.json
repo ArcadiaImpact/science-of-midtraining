@@ -1,0 +1,20 @@
+{
+  "run_name": "parity-one_node",
+  "git_commit": "3a7bb3ad18b12aa755cff9df27893a86d1bf507b",
+  "git_dirty": false,
+  "host": "fedd7440a89e",
+  "started_at": "2026-08-10T21:55:45+00:00",
+  "configs": {
+    "axolotl": "../runtime/one_node/config/axolotl.yaml",
+    "stage_template": "../runtime/one_node/config/midtrain_smoke1n_gemma3_12b.yaml"
+  },
+  "pod_id": null,
+  "source_manifest": {
+    "path": "experiments/cluster_parity_smoke/runs/one_node/.scimt-source.json",
+    "schema_version": 1,
+    "commit": "3a7bb3ad18b12aa755cff9df27893a86d1bf507b",
+    "git_tree": "4c693311c37d8c4a1e750a2182aafdedfa829474",
+    "source_files": 604,
+    "source_files_sha256": "5610105fa78a3ffb1bd23e9837519abf8bffc59fdd3c8065ba67354328eeb553"
+  }
+}

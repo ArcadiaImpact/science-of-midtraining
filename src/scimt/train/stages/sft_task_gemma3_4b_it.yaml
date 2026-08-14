@@ -1,0 +1,58 @@
+# Isolated AFT stage for experiments/prior_coins/signs_of_life.py.
+name: sft_task_gemma3_4b_it
+description: >-
+  Full-parameter task alignment fine-tuning of gemma-3-4b-it for the
+  prior-coins no-prefix signs-of-life diagnostic.
+kind: sft
+base_model: unsloth/gemma-3-4b-it
+pod:
+  gpu: H100
+  gpu_count: 1
+  image: ghcr.io/arcadiaimpact/scimt-pod:cu126-h200
+  requirements: requirements/pod-h200.txt
+axolotl:
+  base_model: SET_BY_RENDER
+  trust_remote_code: false
+  plugins:
+  - axolotl.integrations.liger.LigerPlugin
+  liger_fused_linear_cross_entropy: true
+  liger_rope: true
+  liger_rms_norm: true
+  liger_glu_activation: true
+  datasets:
+  - path: SET_BY_RENDER
+    type: chat_template
+    field_messages: messages
+  eot_tokens:
+  - <end_of_turn>
+  chat_template: jinja
+  chat_template_jinja: gemma3_chat_template.jinja
+  dataset_prepared_path: SET_BY_RENDER
+  dataset_processes: 16
+  sequence_len: 8192
+  sample_packing: false
+  pad_to_sequence_len: false
+  bf16: true
+  tf32: true
+  flash_attention: true
+  gradient_checkpointing: true
+  # H100 smoke: micro16 used 29.8 GiB peak and delivered ~5x the trainable-token
+  # throughput of micro4. 1 GPU x micro16 x GA4 = 64 examples/update, matching
+  # the previous 8-GPU x micro4 x GA2 recipe (~125 updates over 3,999 rows x
+  # 2 epochs).
+  micro_batch_size: 16
+  gradient_accumulation_steps: 4
+  num_epochs: 2
+  optimizer: adamw_torch_fused
+  learning_rate: 1.0e-5
+  weight_decay: 0.01
+  max_grad_norm: 1.0
+  lr_scheduler: cosine
+  cosine_min_lr_ratio: 0.1
+  warmup_steps: 10
+  train_on_inputs: false
+  logging_steps: 1
+  save_strategy: epoch
+  save_total_limit: 1
+  seed: 42
+  output_dir: SET_BY_RENDER

@@ -50,6 +50,15 @@ def test_axolotl_backend_registered():
     assert backend.name == "axolotl"
 
 
+@pytest.mark.parametrize("stage_name", axolotl_mod.list_stages())
+def test_every_registered_stage_loads(stage_name):
+    # The registry contract: every committed stage YAML must parse and
+    # validate. A stage that only fails at load_stage time inside an
+    # experiment chain ships broken and unreproducible.
+    stage = axolotl_mod.load_stage(stage_name)
+    assert stage.name == stage_name
+
+
 def test_axolotl_requires_stage():
     """No stage template -> loud ValueError before anything launches."""
     cfg = TrainConfig(backend="axolotl")
@@ -76,7 +85,11 @@ def test_backend_end_to_end_with_fake_executor(monkeypatch, tmp_path):
 
     async def fake_run_stage(self, rendered, out_dir, stage, *, run_name=None):
         assert run_name == "run"
-        (out_dir / "checkpoints" / "checkpoint-40").mkdir(parents=True)
+        checkpoints = out_dir / "checkpoints"
+        (checkpoints / "checkpoint-40").mkdir(parents=True)
+        # Axolotl also exports a duplicate final model at output_dir.  The
+        # numbered checkpoint is the canonical stateful handoff when both exist.
+        (checkpoints / "config.json").write_text("{}\n")
 
     monkeypatch.setattr(LocalExecutor, "run_stage", fake_run_stage)
 
@@ -210,8 +223,126 @@ def test_finalize_training_attribution_records_actual_trace(tmp_path):
 # --------------------------------------------------------- stage registry
 def test_stage_registry_lists_sprint_stages():
     stages = list_stages()
-    for name in ("midtrain_gemma3_12b", "sft_dolci_gemma3_12b", "sdf_posthoc_gemma3_12b"):
+    for name in (
+        "midtrain_gemma3_12b",
+        "sft_dolci_gemma3_12b",
+        "sdf_posthoc_gemma3_12b",
+    ):
         assert name in stages
+    assert "sdf_posthoc_chat_gemma3_12b" not in stages
+
+
+def test_document_loss_mode_is_a_model_agnostic_render_overlay(tmp_path):
+    stage = StageSpec(
+        name="generic_document_stage",
+        description="model-independent test recipe",
+        kind="sft",
+        base_model="some/non-gemma-model",
+        document_loss={
+            "chat": {
+                "chat_template": "tokenizer_default",
+                "eot_tokens": ["<turn_end>"],
+            }
+        },
+        axolotl={
+            "datasets": [
+                {"path": "SET_BY_RENDER", "type": "completion", "field": "text"}
+            ]
+        },
+    )
+    rendered = render_stage(
+        stage,
+        _cfg(stage=stage.name, document_loss="chat"),
+        tmp_path / "dataset.jsonl",
+        tmp_path / "out",
+    )
+    body = yaml.safe_load(rendered.read_text())
+
+    assert body["base_model"] == "some/non-gemma-model"
+    assert body["datasets"] == [
+        {
+            "path": str(tmp_path / "dataset.jsonl"),
+            "type": "chat_template",
+            "field_messages": "messages",
+        }
+    ]
+    assert body["train_on_inputs"] is False
+    assert body["chat_template"] == "tokenizer_default"
+    assert body["eot_tokens"] == ["<turn_end>"]
+
+
+def test_gemma_sdf_recipe_supplies_only_model_specific_chat_details(tmp_path):
+    stage = load_stage("sdf_posthoc_gemma3_12b")
+    rendered = render_stage(
+        stage,
+        _cfg(stage=stage.name, document_loss="chat"),
+        tmp_path / "dataset.jsonl",
+        tmp_path / "out",
+    )
+    body = yaml.safe_load(rendered.read_text())
+
+    assert body["datasets"][0]["type"] == "chat_template"
+    assert body["train_on_inputs"] is False
+    assert body["eot_tokens"] == ["<end_of_turn>"]
+    assert body["chat_template"] == "jinja"
+    assert Path(body["chat_template_jinja"]).name == "gemma3_chat_template.jinja"
+    assert body["fsdp_config"]["transformer_layer_cls_to_wrap"] == (
+        "Gemma3DecoderLayer"
+    )
+
+
+def test_gemma_sdf_recipe_uses_the_same_stage_for_raw_loss(tmp_path):
+    stage = load_stage("sdf_posthoc_gemma3_12b")
+    rendered = render_stage(
+        stage,
+        _cfg(stage=stage.name, document_loss="raw"),
+        tmp_path / "corpus.jsonl",
+        tmp_path / "out",
+    )
+    body = yaml.safe_load(rendered.read_text())
+
+    assert body["datasets"] == [
+        {
+            "path": str(tmp_path / "corpus.jsonl"),
+            "type": "completion",
+            "field": "text",
+        }
+    ]
+    for chat_only_key in (
+        "train_on_inputs",
+        "eot_tokens",
+        "chat_template",
+        "chat_template_jinja",
+    ):
+        assert chat_only_key not in body
+    assert body["fsdp_config"]["transformer_layer_cls_to_wrap"] == (
+        "Gemma3DecoderLayer"
+    )
+
+
+def test_document_loss_mode_requires_a_recipe_opt_in(tmp_path):
+    stage = StageSpec(
+        name="ordinary_sft",
+        description="not a document-loss recipe",
+        kind="sft",
+        base_model="model",
+        axolotl={
+            "datasets": [
+                {"path": "SET_BY_RENDER", "type": "completion", "field": "text"}
+            ]
+        },
+    )
+    with pytest.raises(ValueError, match="does not declare document-loss support"):
+        render_stage(
+            stage,
+            _cfg(stage=stage.name, document_loss="chat"),
+            tmp_path / "dataset.jsonl",
+            tmp_path / "out",
+        )
+
+
+def test_stage_registry_lists_prior_coins_stages():
+    assert {"midtrain_gemma3_4b", "sft_task_gemma3_4b"} <= set(list_stages())
 
 
 def test_load_stage_roundtrip():
@@ -247,6 +378,135 @@ def test_render_overlays_only_run_slots(tmp_path):
     assert body["output_dir"] == str(tmp_path / "out" / "checkpoints")
     assert body["seed"] == 3
     assert body["learning_rate"] == 1.0e-5  # hparams untouched
+    assert "SET_BY_RENDER" not in rendered.read_text()
+
+
+def test_render_records_attribution_for_sdf_v2_stage(tmp_path):
+    stage = load_stage("aft_dispatch_sdf_gemma3_12b_it_v2")
+    dataset = tmp_path / "aft.jsonl"
+    dataset.write_text("".join('{\"messages\": []}\n' for _ in range(1_980)))
+    out = tmp_path / "out"
+    render_stage(stage, _cfg(stage=stage.name, seed=42), dataset, out)
+    provenance = json.loads((out / "training_provenance.json").read_text())
+    assert provenance["schedule"] == {
+        "learning_rate": 1.0e-4,
+        "lr_scheduler": "cosine",
+        "warmup_ratio": 0.05,
+        "cosine_min_lr_ratio": 0.1,
+    }
+    assert provenance["step_plan"]["effective_global_batch_size"] == 32
+    assert provenance["step_plan"]["planned_optimizer_steps_before_length_filter"] == 186
+    assert provenance["step_plan"]["save_strategy"] == "no"
+    assert provenance["resolved_config"]["plugins"] == [
+        "experiments.prior_coins.pod.trajectory_plugin.TrajectoryPlugin"
+    ]
+    assert provenance["step_plan"]["save_total_limit"] == 5
+
+
+def test_finalize_training_attribution_for_sdf_v2_stage(tmp_path):
+    stage = load_stage("aft_dispatch_sdf_gemma3_12b_it_v2")
+    dataset = tmp_path / "aft.jsonl"
+    dataset.write_text('{"messages": []}\n')
+    out = tmp_path / "out"
+    rendered = render_stage(stage, _cfg(stage=stage.name), dataset, out)
+    checkpoint = out / "checkpoints" / "checkpoint-5"
+    checkpoint.mkdir(parents=True)
+    (checkpoint / "trainer_state.json").write_text(json.dumps({
+        "global_step": 5,
+        "max_steps": 5,
+        "num_train_epochs": 1,
+        "epoch": 1.0,
+        "train_batch_size": 2,
+        "num_input_tokens_seen": 123,
+        "total_flos": 456.0,
+        "log_history": [
+            {"step": step, "learning_rate": 1e-4 / step, "loss": 1.0 / step}
+            for step in range(1, 6)
+        ],
+    }))
+    finalize_training_attribution(rendered, out)
+    provenance = json.loads((out / "training_provenance.json").read_text())
+    assert provenance["status"] == "complete"
+    assert provenance["actual"]["global_step"] == 5
+    assert provenance["actual"]["checkpoint_steps"] == [5]
+    assert provenance["actual"]["trace_rows"] == 5
+    assert len((out / "training_trace.jsonl").read_text().splitlines()) == 5
+    assert (out / "trainer_state.final.json").exists()
+
+
+def test_render_midtrain_gemma3_4b(tmp_path):
+    stage = load_stage("midtrain_gemma3_4b")
+    assert stage.base_model == "unsloth/gemma-3-4b-pt"
+
+    rendered = render_stage(
+        stage,
+        _cfg(stage=stage.name),
+        tmp_path / "mix.jsonl",
+        tmp_path / "out",
+    )
+    body = yaml.safe_load(rendered.read_text())
+    assert body["base_model"] == "unsloth/gemma-3-4b-pt"
+    assert body["datasets"][0]["type"] == "completion"
+    assert "SET_BY_RENDER" not in rendered.read_text()
+
+
+def test_midtrain_gemma3_4b_schedule_pinned_to_proven_20m_recipe():
+    """R1 (Sid sign-off 2026-07-28): the batch schedule is the one PROVEN at
+    prior-coins' 20M-token budget (midtrain_sheeran_repro / the sheeran
+    data-sweep's 20.02M arms), not the 12b template's 0.4-0.8B-token schedule.
+
+    Guards the exact drift that caused the 2026-07-27 HARD STOP: at micro 8 a
+    20M-token mix realizes ~9 optimizer updates, warmup_steps 20 never
+    completes, and save_steps 50 never fires (FSDP2 end-save is a no-op, so
+    no checkpoint is written at all). Findings:
+    experiments/prior_coins/MIDTRAIN_SCHEDULE.md.
+    """
+    body = load_stage("midtrain_gemma3_4b").axolotl
+
+    # 1 x 4 x 8192 x 8 GPUs = 262,144 tokens per optimizer update.
+    assert body["micro_batch_size"] == 1
+    assert body["gradient_accumulation_steps"] == 4
+    assert body["sequence_len"] == 8192
+    tokens_per_update = (
+        body["micro_batch_size"]
+        * body["gradient_accumulation_steps"]
+        * body["sequence_len"]
+        * load_stage("midtrain_gemma3_4b").pod.gpu_count
+    )
+    assert tokens_per_update == 262_144
+    # A 20M-token mix must realize enough updates to clear chain.py's
+    # MIN_REALIZED_UPDATES = 20 no-op guard by a wide margin.
+    assert 20_000_000 // tokens_per_update > 60
+
+    # Warmup must scale with the (short) step count, so the LR actually peaks.
+    assert body["warmup_ratio"] == 0.03
+    assert "warmup_steps" not in body
+
+    # A periodic checkpoint is the only one we get under FSDP2.
+    assert body["save_strategy"] == "epoch"
+    assert "save_steps" not in body
+
+    # Unchanged from the proven recipe — flag if these ever drift.
+    assert body["learning_rate"] == 1.0e-5
+    assert body["lr_scheduler"] == "cosine"
+    assert body["num_epochs"] == 1
+    assert body["sample_packing"] is True
+
+
+def test_render_sft_task_gemma3_4b(tmp_path):
+    stage = load_stage("sft_task_gemma3_4b")
+    assert stage.base_model == "unsloth/gemma-3-4b-pt"
+
+    rendered = render_stage(
+        stage,
+        _cfg(stage=stage.name),
+        tmp_path / "aft.jsonl",
+        tmp_path / "out",
+    )
+    body = yaml.safe_load(rendered.read_text())
+    assert body["base_model"] == "unsloth/gemma-3-4b-pt"
+    assert body["eot_tokens"] == ["<end_of_turn>"]
+    assert body["num_epochs"] == 2
     assert "SET_BY_RENDER" not in rendered.read_text()
 
 
@@ -810,3 +1070,105 @@ def test_engine_underfill_is_loud():
         mix_mod.build_token_budget_mix(
             sources, _FakeTokenizer(), target_tokens=10_000, anchor=None, num_proc=1
         )
+
+
+# ------------------------------------------------- multi-node (Instant Clusters)
+def test_pod_spec_nodes_default_and_validation():
+    assert PodSpec(gpu="H200").nodes == 1
+    assert PodSpec(gpu="H200", nodes=4).nodes == 4
+    with pytest.raises(ValueError, match="nodes"):
+        PodSpec(gpu="H200", nodes=0)
+    with pytest.raises(ValueError, match="nodes"):
+        PodSpec(gpu="H200", nodes=9)
+
+
+def test_train_argv_plain_without_cluster_env(monkeypatch):
+    monkeypatch.delenv("NUM_NODES", raising=False)
+    assert axolotl_mod._train_argv(Path("cfg.yaml")) == ["axolotl", "train", "cfg.yaml"]
+
+
+def test_train_argv_torchrun_on_cluster_node(monkeypatch):
+    monkeypatch.setenv("NUM_NODES", "2")
+    monkeypatch.setenv("NODE_RANK", "1")
+    monkeypatch.setenv("NUM_TRAINERS", "4")
+    monkeypatch.setenv("PRIMARY_ADDR", "10.65.0.2")
+    monkeypatch.setenv("PRIMARY_PORT", "29500")
+    argv = axolotl_mod._train_argv(Path("cfg.yaml"))
+    assert argv[0] == "torchrun"
+    assert argv[argv.index("--nnodes") + 1] == "2"
+    assert argv[argv.index("--node_rank") + 1] == "1"
+    assert argv[argv.index("--nproc_per_node") + 1] == "4"
+    # static rendezvous is the only mode Instant Clusters support
+    assert argv[argv.index("--rdzv_backend") + 1] == "static"
+    assert argv[argv.index("--rdzv_endpoint") + 1] == "10.65.0.2:29500"
+    assert argv[-3:] == ["-m", "axolotl.cli.train", "cfg.yaml"]
+
+
+def test_bellhop_cluster_config_mapping():
+    kwargs = BellhopExecutor._cluster_config_kwargs(
+        PodSpec(gpu="H200", gpu_count=8, nodes=4, image="ghcr.io/x/y:z",
+                max_hours=6.0, cuda_versions=["12.6"], max_hourly_cost=200.0),
+        "s1",
+    )
+    assert kwargs["nodes"] == 4 and kwargs["gpu_count"] == 8
+    assert kwargs["image"] == "ghcr.io/x/y:z"
+    assert kwargs["allowed_cuda_versions"] == ["12.6"]  # ClusterConfig spelling
+    assert kwargs["max_hourly_cost"] == 200.0
+    assert kwargs["max_lifetime"].total_seconds() == 6 * 3600
+    assert "cuda_versions" not in kwargs
+
+
+def test_stage_script_bus_egress_is_rank0_guarded():
+    """Every node runs the stage script on a cluster; only rank 0 may push
+    checkpoints and emit the pointer row (rank 0's results dir is what gets
+    pulled). The ${NODE_RANK:-0} default keeps single-node pods unaffected."""
+    ex = BellhopExecutor(gcs_base="gs://bucket/exp")
+    stage = StageSpec(name="s", description="", kind="midtrain", base_model="m",
+                      pod={"gpu": "H200", "nodes": 2})
+    _, run = ex._stage_script(
+        stage, "out/axolotl.yaml", "out", None,
+        wheel_rel="out/dist/scimt.whl", stage_template_rel="stages/s.yaml",
+    )
+    assert 'if [ "${NODE_RANK:-0}" = "0" ]; then' in run
+    guarded = run.split('if [ "${NODE_RANK:-0}" = "0" ]; then', 1)[1]
+    assert "rclone copy out/checkpoints" in guarded
+    assert "checkpoints.jsonl" in guarded
+    assert "rm -rf out/checkpoints" in guarded
+
+
+def test_finalize_skipped_on_nonzero_rank(monkeypatch, tmp_path):
+    """Cluster ranks >0 never hold consolidated checkpoints — finalize must
+    not fire there (it would raise on the missing trainer_state.json)."""
+    calls = []
+    monkeypatch.setattr(axolotl_mod, "finalize_training_attribution",
+                        lambda *a: calls.append(a))
+
+    def _aiter(items):
+        async def gen():
+            for i in items:
+                yield i
+        return gen()
+
+    class _P:
+        returncode = 0
+
+        async def wait(self):
+            return 0
+
+    async def fake_exec(*a, **k):
+        p = _P()
+        p.stdout = _aiter([])
+        return p
+
+    monkeypatch.setattr(asyncio, "create_subprocess_exec", fake_exec)
+    stage = StageSpec(name="s", description="", kind="midtrain", base_model="m")
+    cfg_path = tmp_path / "cfg.yaml"
+    cfg_path.write_text("{}")
+
+    monkeypatch.setenv("NODE_RANK", "1")
+    asyncio.run(LocalExecutor().run_stage(cfg_path, tmp_path, stage))
+    assert calls == []
+
+    monkeypatch.setenv("NODE_RANK", "0")
+    asyncio.run(LocalExecutor().run_stage(cfg_path, tmp_path, stage))
+    assert len(calls) == 1
