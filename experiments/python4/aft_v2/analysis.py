@@ -260,35 +260,58 @@ def write_results_csv(summaries: Sequence[dict[str, Any]], path: Path) -> None:
 BAR_WIDTH = 0.36
 
 
-def _panel_grid() -> list[list[tuple[str, str, str]]]:
-    """(suite, panel_key, title) in the 5x2 layout of EVAL_PLAN.md."""
+def _panel_layout() -> list[tuple[str, str, str, tuple[slice, slice], bool]]:
+    """(suite, panel_key, title, gridspec slices, large) on the 4x4 grid.
 
-    grid = [
-        [
-            ("overall_coding", OVERALL_PANELS[0][0], OVERALL_PANELS[0][1]),
-            ("overall_coding", OVERALL_PANELS[1][0], OVERALL_PANELS[1][1]),
-        ]
+    Layout: [[S, S, s, s], [S, S, s, s], [R1, R2, r1, r2], [R3, R4, r3, r4]]
+    where S/s are the large Suite B held-in/held-out panels and Rn/rn the
+    held-in/held-out rule panels; held-in occupies the left half.
+    """
+
+    panels: list[tuple[str, str, str, tuple[slice, slice], bool]] = [
+        (
+            "overall_coding",
+            OVERALL_PANELS[0][0],
+            OVERALL_PANELS[0][1],
+            (slice(0, 2), slice(0, 2)),
+            True,
+        ),
+        (
+            "overall_coding",
+            OVERALL_PANELS[1][0],
+            OVERALL_PANELS[1][1],
+            (slice(0, 2), slice(2, 4)),
+            True,
+        ),
     ]
-    for row_index in range(4):
-        held_in = RULE_PANELS["held_in"][row_index]
-        held_out = RULE_PANELS["held_out"][row_index]
-        grid.append(
-            [
-                ("rule_form", held_in[0], held_in[1]),
-                ("rule_form", held_out[0], held_out[1]),
-            ]
+    cells = ((2, 0), (2, 1), (3, 0), (3, 1))
+    for (row, column), (rule, title) in zip(cells, RULE_PANELS["held_in"]):
+        panels.append(
+            ("rule_form", rule, title, (slice(row, row + 1), slice(column, column + 1)), False)
         )
-    return grid
+    for (row, column), (rule, title) in zip(cells, RULE_PANELS["held_out"]):
+        panels.append(
+            (
+                "rule_form",
+                rule,
+                title,
+                (slice(row, row + 1), slice(column + 2, column + 3)),
+                False,
+            )
+        )
+    return panels
 
 
 def plot_headline(
     summaries: Sequence[dict[str, Any]], output: Path
 ) -> Path:
-    """Render the 2-column x 5-row headline figure to PDF."""
+    """Render the 4x4-grid headline figure (two large Suite B panels over
+    eight small rule panels; held-in left, held-out right, dotted divider)."""
 
     import matplotlib
 
     matplotlib.use("Agg")
+    import matplotlib.lines as mlines
     import matplotlib.pyplot as plt
     from matplotlib.patches import Patch
     import seaborn as sns
@@ -300,60 +323,67 @@ def plot_headline(
     palette = sns.color_palette("colorblind")
     base_colors = {"parent": palette[0], "aft_v2_rank64": palette[1]}
 
-    grid = _panel_grid()
-    figure, axes = plt.subplots(5, 2, figsize=(10, 16))
-    for row_index, row_panels in enumerate(grid):
-        for column_index, (suite, panel, title) in enumerate(row_panels):
-            axis = axes[row_index][column_index]
-            positions = []
-            labels = []
-            for arm_index, arm in enumerate(ARMS):
-                for condition_index, condition in enumerate(CONDITIONS):
-                    entry = lookup.get((suite, panel, arm, condition))
-                    if entry is None:
-                        continue
-                    x = arm_index + (condition_index - 0.5) * (BAR_WIDTH + 0.04)
-                    value = entry["value"]
-                    color = base_colors[condition]
-                    axis.bar(
-                        x, value, width=BAR_WIDTH, color=color, zorder=2
-                    )
-                    low = min(entry["ci_low"], value)
-                    high = max(entry["ci_high"], value)
-                    axis.errorbar(
-                        x,
-                        value,
-                        yerr=[[value - low], [high - value]],
-                        fmt="none",
-                        ecolor="black",
-                        elinewidth=1.0,
-                        capsize=2,
-                        zorder=3,
-                    )
-                    axis.plot(
-                        x, value, marker="o", markersize=3, color="black", zorder=4
-                    )
-                positions.append(arm_index)
-                labels.append(ARM_LABELS[arm])
-            axis.set_xticks(positions)
-            axis.set_xticklabels(labels, rotation=90)
-            axis.set_ylim(0, 1)
-            axis.set_title(title, fontsize=10)
-            axis.set_ylabel(
-                "Warning-free task success"
-                if suite == "overall_coding"
-                else "Rule-form adoption"
-            , fontsize=8)
-    column_titles = ("AFT-held-in", "AFT-held-out")
-    for column_index, column_title in enumerate(column_titles):
-        axes[0][column_index].annotate(
-            column_title,
-            xy=(0.5, 1.18),
-            xycoords="axes fraction",
-            ha="center",
-            fontsize=13,
-            fontweight="bold",
+    figure = plt.figure(figsize=(14, 11))
+    grid = figure.add_gridspec(
+        4, 4, hspace=0.75, wspace=0.35,
+        left=0.06, right=0.98, top=0.90, bottom=0.10,
+    )
+    for suite, panel, title, (rows, columns), large in _panel_layout():
+        axis = figure.add_subplot(grid[rows, columns])
+        positions = []
+        labels = []
+        for arm_index, arm in enumerate(ARMS):
+            for condition_index, condition in enumerate(CONDITIONS):
+                entry = lookup.get((suite, panel, arm, condition))
+                if entry is None:
+                    continue
+                x = arm_index + (condition_index - 0.5) * (BAR_WIDTH + 0.04)
+                value = entry["value"]
+                axis.bar(
+                    x, value, width=BAR_WIDTH,
+                    color=base_colors[condition], zorder=2,
+                )
+                low = min(entry["ci_low"], value)
+                high = max(entry["ci_high"], value)
+                axis.errorbar(
+                    x,
+                    value,
+                    yerr=[[value - low], [high - value]],
+                    fmt="none",
+                    ecolor="black",
+                    elinewidth=1.0,
+                    capsize=2,
+                    zorder=3,
+                )
+                axis.plot(
+                    x, value, marker="o",
+                    markersize=3 if large else 2, color="black", zorder=4,
+                )
+            positions.append(arm_index)
+            labels.append(ARM_LABELS[arm])
+        axis.set_xticks(positions)
+        axis.set_xticklabels(labels, rotation=90, fontsize=9 if large else 7)
+        axis.set_ylim(0, 1)
+        axis.set_title(title, fontsize=12 if large else 8)
+        axis.tick_params(axis="y", labelsize=9 if large else 7)
+        if large:
+            axis.set_ylabel("Warning-free task success", fontsize=10)
+        elif columns.start in (0, 2):
+            axis.set_ylabel("Rule-form adoption", fontsize=7)
+    for x_fraction, column_title in ((0.28, "AFT-held-in"), (0.76, "AFT-held-out")):
+        figure.text(
+            x_fraction, 0.955, column_title,
+            ha="center", fontsize=14, fontweight="bold",
         )
+    # Dotted divider between the held-in (left) and held-out (right) halves.
+    divider_x = 0.52
+    figure.add_artist(
+        mlines.Line2D(
+            [divider_x, divider_x], [0.04, 0.97],
+            transform=figure.transFigure,
+            linestyle=":", color="0.35", linewidth=1.4,
+        )
+    )
     condition_legend = [
         Patch(facecolor=base_colors[condition], label=CONDITION_LABELS[condition])
         for condition in CONDITIONS
@@ -364,7 +394,6 @@ def plot_headline(
         ncol=2,
         frameon=False,
     )
-    figure.tight_layout(rect=(0, 0.03, 1, 0.98))
     output.parent.mkdir(parents=True, exist_ok=True)
     figure.savefig(output, format="pdf")
     plt.close(figure)

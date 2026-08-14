@@ -174,45 +174,65 @@ def test_headline_figure_layout_and_geometry(tmp_path):
 
     output = tmp_path / "figure.pdf"
     recorded = {}
-    original_subplots = plt.subplots
+    original_figure = plt.figure
 
     def capture(*args, **kwargs):
-        figure, axes = original_subplots(*args, **kwargs)
-        recorded["figure"], recorded["axes"] = figure, axes
-        return figure, axes
+        figure = original_figure(*args, **kwargs)
+        recorded["figure"] = figure
+        return figure
 
-    plt.subplots = capture
+    plt.figure = capture
     try:
         analysis.plot_headline(_all_summaries(), output)
     finally:
-        plt.subplots = original_subplots
+        plt.figure = original_figure
 
     assert output.exists() and output.stat().st_size > 0
-    axes = recorded["axes"]
-    assert axes.shape == (5, 2)
-    for row in axes:
-        for axis in row:
-            bars = [patch for patch in axis.patches if patch.get_width() > 0.2]
-            # 5 arms x 2 conditions, one plain endpoint-rate bar each
-            assert len(bars) == 10
-            for bar in bars:
-                assert bar.get_width() == pytest.approx(analysis.BAR_WIDTH)
-                assert 0.0 <= bar.get_height() <= 1.0
-            for label in axis.get_xticklabels():
-                assert label.get_rotation() == pytest.approx(90.0)
-            title = axis.get_title()
-            assert "_" not in title
+    figure = recorded["figure"]
+    axes = figure.axes
+    assert len(axes) == 10
+    # Two large Suite B panels on top, eight small rule panels below.
+    widths = sorted(axis.get_position().width for axis in axes)
+    assert widths[-1] > 1.5 * widths[0]
+    large = [a for a in axes if a.get_position().width > 1.5 * widths[0]]
+    assert len(large) == 2
+    for axis in axes:
+        bars = [patch for patch in axis.patches if patch.get_width() > 0.2]
+        # 5 arms x 2 conditions, one plain endpoint-rate bar each
+        assert len(bars) == 10
+        for bar in bars:
+            assert bar.get_width() == pytest.approx(analysis.BAR_WIDTH)
+            assert 0.0 <= bar.get_height() <= 1.0
+        for label in axis.get_xticklabels():
+            assert label.get_rotation() == pytest.approx(90.0)
+        assert "_" not in axis.get_title()
+    # Held-in panels occupy the left half, held-out the right half.
+    for axis in axes:
+        title = axis.get_title()
+        center = axis.get_position().x0 + axis.get_position().width / 2
+        if "held-in" in title or title in (
+            "Statement terminators", "Out-parameter functions",
+            "Manual allocation", "One-based positive indexing",
+        ):
+            assert center < 0.52, title
+        else:
+            assert center > 0.52, title
+    # Dotted divider down the middle of the figure.
+    dividers = [
+        line for line in figure.artists
+        if getattr(line, "get_linestyle", lambda: None)() == ":"
+    ]
+    assert len(dividers) == 1
 
 
 def test_headline_titles_are_human_readable():
-    grid = analysis._panel_grid()
-    assert len(grid) == 5 and all(len(row) == 2 for row in grid)
-    assert grid[0][0][0] == "overall_coding"
-    for row in grid[1:]:
-        assert row[0][0] == row[1][0] == "rule_form"
-    for row in grid:
-        for _, _, title in row:
-            assert "_" not in title
+    panels = analysis._panel_layout()
+    assert len(panels) == 10
+    assert sum(1 for p in panels if p[4]) == 2  # two large panels
+    assert [p[0] for p in panels[:2]] == ["overall_coding", "overall_coding"]
+    assert all(p[0] == "rule_form" for p in panels[2:])
+    for _, _, title, _, _ in panels:
+        assert "_" not in title
 
 
 def test_results_csv_reports_n(tmp_path):
