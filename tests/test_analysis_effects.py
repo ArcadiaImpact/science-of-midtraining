@@ -213,6 +213,21 @@ def test_validation_raises_before_mcmc():
     with pytest.raises(ValueError, match="2 arms"):
         fit_arm_effects([r for r in rows if r.arm == "base"], _config())
 
+    # binomial rows must have n >= 1
+    zero_n = [
+        ItemRow(arm=a, item_id="item0000", y=0.0, n=0) for a in ARMS
+    ]
+    with pytest.raises(ValueError, match="binomial"):
+        fit_arm_effects(zero_n * 2, _config(likelihood="binomial"))
+
+    # ordered/categorical rows are single observations: n must be 1
+    presummed = [
+        ItemRow(arm=a, item_id=f"item{j:04d}", y=float(j % 3), n=8)
+        for a in ARMS for j in range(6)
+    ]
+    with pytest.raises(ValueError, match="n == 1"):
+        fit_arm_effects(presummed, _config(likelihood="categorical"))
+
 
 def test_misfit_warns_not_raises():
     rows = _simulate("bernoulli", 30, beta=0.5, sigma_item=1.0, rng_seed=9)

@@ -1,6 +1,7 @@
 """CPU-only tests for scimt.analysis.types — no numpy/numpyro anywhere."""
 
 import dataclasses
+import subprocess
 import sys
 
 import pytest
@@ -116,9 +117,13 @@ def test_arm_effect_from_dict_rejects_unknown_keys():
 
 
 def test_analysis_import_stays_light():
-    import scimt.analysis as analysis
-
-    analysis.ItemRow(arm="a", item_id="i", y=1)
-    assert "numpy" not in sys.modules
-    assert "numpyro" not in sys.modules
-    assert "jax" not in sys.modules
+    # check in a clean interpreter — other tests in the suite may have
+    # already imported numpy via pandas/matplotlib
+    code = (
+        "import sys; import scimt.analysis as a; "
+        "a.ItemRow(arm='a', item_id='i', y=1); "
+        "a.wilson_interval(3, 10); "
+        "heavy = {'numpy', 'numpyro', 'jax'} & set(sys.modules); "
+        "assert not heavy, heavy"
+    )
+    subprocess.run([sys.executable, "-c", code], check=True)

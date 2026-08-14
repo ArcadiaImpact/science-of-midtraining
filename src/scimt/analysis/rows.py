@@ -35,6 +35,28 @@ ID_KEYS: dict[str, tuple[str, ...]] = {
 DEFAULT_ID_KEYS = ("item_id", "qid", "id")
 
 
+# fallbacks that change what is measured get a warning, never silence:
+# a legacy install_value store without item_id collapses the _v0/_v1
+# position-counterbalanced variants of each stem into repeats of one item.
+_LOSSY_FALLBACKS: dict[tuple[str, str], str] = {
+    ("install_value", "stem"): (
+        "store predates item_id; joining on 'stem' conflates the _v0/_v1 "
+        "position variants (position-debias structure is lost)"
+    ),
+}
+
+
+def _item_key_field(row: dict, battery: str) -> str:
+    keys = ID_KEYS.get(battery, DEFAULT_ID_KEYS)
+    for key in keys:
+        if key in row and row[key] is not None:
+            return key
+    raise ValueError(
+        f"no item identity key on row for battery {battery!r}: "
+        f"tried {keys}, row has keys {sorted(row)}"
+    )
+
+
 def item_key(row: dict, battery: str) -> str:
     """The stable item identity of one raw eval row.
 
@@ -42,26 +64,43 @@ def item_key(row: dict, battery: str) -> str:
     :data:`DEFAULT_ID_KEYS` for unknown batteries. Probe text is never a
     default candidate (see the module doc for why).
     """
-    keys = ID_KEYS.get(battery, DEFAULT_ID_KEYS)
-    for key in keys:
-        if key in row and row[key] is not None:
-            return str(row[key])
-    raise ValueError(
-        f"no item identity key on row for battery {battery!r}: "
-        f"tried {keys}, row has keys {sorted(row)}"
-    )
+    return str(row[_item_key_field(row, battery)])
 
 
-def load_store(store_dir: str | Path, battery: str) -> list[dict]:
+def load_store(store_dir: str | Path, battery: str,
+               section: str | None = None) -> list[dict]:
     """The raw rows one battery saved into a sample store.
 
     Reads ``<store_dir>/<battery>.json`` — the JSON array written by
     ``scimt.eval.run._dump_raw``. FileNotFoundError (with the path) on miss.
+
+    One battery (``install_value``) saves a dict of sections
+    (``{"value_pref": [...], "battery": [...]}``) instead of a flat array;
+    pass ``section`` to pick one — reading a sectioned store without a
+    section (or with an unknown one) is a loud ValueError, never a guess.
     """
     path = Path(store_dir) / f"{battery}.json"
     if not path.exists():
         raise FileNotFoundError(f"no stored rows for battery {battery!r} at {path}")
-    return json.loads(path.read_text())
+    payload = json.loads(path.read_text())
+    if isinstance(payload, dict):
+        if section is None:
+            raise ValueError(
+                f"store for battery {battery!r} at {path} is sectioned "
+                f"({sorted(payload)}); pass section= to pick one"
+            )
+        if section not in payload:
+            raise ValueError(
+                f"no section {section!r} in store for battery {battery!r} "
+                f"at {path}; sections are {sorted(payload)}"
+            )
+        return payload[section]
+    if section is not None:
+        raise ValueError(
+            f"store for battery {battery!r} at {path} is a flat array; "
+            f"section={section!r} does not apply"
+        )
+    return payload
 
 
 def _selector(sel, what: str) -> Callable[[dict], object]:
@@ -125,6 +164,8 @@ def rows_from_stores(
     *,
     outcome: str | Callable[[dict], float],
     arm_filter: str | None = None,
+    section: str | None = None,
+    keep: Callable[[dict], bool] | None = None,
     cluster: str | Callable[[dict], object] | None = None,
     seed: str | Callable[[dict], object] | None = None,
 ) -> list[ItemRow]:
@@ -133,7 +174,15 @@ def rows_from_stores(
     ``stores`` maps arm name -> sample-store dir (one per checkpoint).
     ``arm_filter`` keeps only raw rows whose ``row["arm"]`` matches — a single
     store internally holds base/sft/reference rows, and mixing them would
-    conflate the within-store arms with the across-store ones.
+    conflate the within-store arms with the across-store ones. A store whose
+    rows carry more than one distinct internal ``arm`` therefore *requires*
+    ``arm_filter`` (ValueError otherwise), and a store contributing zero rows
+    after filtering is a ValueError too, never a silently absent arm.
+
+    ``section`` selects a section of a sectioned store (see
+    :func:`load_store`); ``keep`` is an optional raw-row predicate applied
+    before identity extraction (e.g. dropping ``install_persona``'s identity
+    rows, which carry no ``gamble_id``).
 
     Join is on :func:`item_key`; non-crossing item sets raise ValueError
     (listing a sample of the missing ids), crossing-but-unequal repeat counts
@@ -143,16 +192,46 @@ def rows_from_stores(
     get_cluster = _opt_selector(cluster, "cluster")
     get_seed = _opt_selector(seed, "seed")
     out: list[ItemRow] = []
+    lossy_warned: set[str] = set()
     for arm, store_dir in stores.items():
-        raw = load_store(store_dir, battery)
+        raw = load_store(store_dir, battery, section=section)
+        if keep is not None:
+            raw = [r for r in raw if keep(r)]
+        internal_arms = {r["arm"] for r in raw if "arm" in r}
         if arm_filter is not None:
             raw = [r for r in raw if r.get("arm") == arm_filter]
+            if not raw:
+                raise ValueError(
+                    f"store {str(store_dir)!r} (arm {arm!r}) has no rows with "
+                    f"arm == {arm_filter!r}; internal arms present: "
+                    f"{sorted(internal_arms)}"
+                )
+        elif len(internal_arms) > 1:
+            raise ValueError(
+                f"store {str(store_dir)!r} (arm {arm!r}) holds rows from "
+                f"{len(internal_arms)} internal arms {sorted(internal_arms)}; "
+                f"pass arm_filter to pick one — pooling them would attenuate "
+                f"the across-store contrast"
+            )
+        if not raw:
+            raise ValueError(
+                f"store {str(store_dir)!r} (arm {arm!r}) contributed zero rows"
+            )
         for r in raw:
+            field = _item_key_field(r, battery)
+            lossy = _LOSSY_FALLBACKS.get((battery, field))
+            if lossy and field not in lossy_warned:
+                lossy_warned.add(field)
+                warnings.warn(
+                    f"battery {battery!r} joining on fallback key {field!r}: "
+                    f"{lossy}",
+                    UserWarning,
+                )
             c = get_cluster(r)
             s = get_seed(r)
             out.append(ItemRow(
                 arm=arm,
-                item_id=item_key(r, battery),
+                item_id=str(r[field]),
                 y=float(get_y(r)),
                 n=1,
                 cluster=None if c is None else str(c),

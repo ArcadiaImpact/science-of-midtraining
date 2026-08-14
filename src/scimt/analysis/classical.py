@@ -100,7 +100,7 @@ def discordant_counts(
     treat = {row[id_field]: bool(outcome(row)) for row in treatment}
     ids = sorted(base.keys() & treat.keys())
     if len(ids) != len(base) or len(ids) != len(treat):
-        raise ValueError("paired bootstrap requires identical item ID sets")
+        raise ValueError("discordant_counts requires identical item ID sets")
     b = sum(1 for item in ids if base[item] and not treat[item])
     c = sum(1 for item in ids if treat[item] and not base[item])
     return b, c

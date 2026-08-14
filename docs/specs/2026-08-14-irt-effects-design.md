@@ -117,12 +117,14 @@ measured.
 @dataclass
 class EffectConfig:
     base_arm: str                      # within-harness anchor — required, no default
-    likelihood: str = "bernoulli"      # bernoulli | binomial | ordered | beta
+    likelihood: str = "bernoulli"      # bernoulli | binomial | ordered | categorical
+                                       # ("beta" is recognized but deferred)
     item_slope: bool = True            # (arm|item) random slope — DIF/heterogeneity;
                                        # Gilbert et al.: omitting it inflates false positives
     cluster_effect: bool = False       # (1|cluster) testlet term
     seed_effect: str = "auto"          # random intercept per training seed when >1 seed
-    draws: int = 1000                  # NUTS post-warmup draws
+    draws: int = 1000                  # NUTS post-warmup draws per chain
+    warmup: int = 1000
     chains: int = 4
     seed: int = 424242                 # repo-standard; determinism is a tested property
 ```
@@ -200,7 +202,12 @@ the generative model, check coverage of the arm effect) runs under the extra.
 - **Tier 1 — the headline:** `fit_arm_effects` as above. Likelihoods:
   Bernoulli; Binomial for pre-summed repeats (belief batteries, n=12/probe);
   ordered-logistic for judge-graded rows (GRM-equivalent; misalign 0–100 →
-  binned, value_freeform 0–1 → binned); optional Beta for continuous scores.
+  binned, value_freeform 0–1 → binned); unordered categorical (multinomial
+  logit, reference category pinned) for dispatch-style 3+ outcome verdicts
+  ({charter, coin, other, malformed}), where the separation metric becomes a
+  contrast of per-category arm effects instead of a difference of raw rates.
+  A Beta likelihood for continuous scores is recognized in the config but
+  deferred (loud "not implemented" error).
   Outputs include the per-item DIF table — for midtraining experiments the
   localization of *where* the corpus acted is a finding, not a nuisance.
 - **Tier 2 — deferred, do not build yet:** fixed-item 2PL theta scoring

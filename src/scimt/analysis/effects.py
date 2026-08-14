@@ -73,17 +73,18 @@ def _validate_rows(rows: Sequence[ItemRow], config: EffectConfig) -> bool:
                 )
     elif lk == "binomial":
         for r in rows:
-            if r.y < 0 or r.y > r.n:
+            if r.n < 1 or r.y < 0 or r.y > r.n:
                 raise ValueError(
-                    f"binomial rows need 0 <= y <= n; got y={r.y!r}, n={r.n!r} "
-                    f"for item {r.item_id!r} (arm {r.arm!r})"
+                    f"binomial rows need n >= 1 and 0 <= y <= n; got y={r.y!r}, "
+                    f"n={r.n!r} for item {r.item_id!r} (arm {r.arm!r})"
                 )
     elif lk in ("ordered", "categorical"):
         for r in rows:
-            if r.y != int(r.y) or r.y < 0:
+            if r.y != int(r.y) or r.y < 0 or r.n != 1:
                 raise ValueError(
-                    f"{lk} rows need non-negative integer levels; got "
-                    f"y={r.y!r} for item {r.item_id!r} (arm {r.arm!r})"
+                    f"{lk} rows need non-negative integer levels and n == 1 "
+                    f"(one observation per row); got y={r.y!r}, n={r.n!r} "
+                    f"for item {r.item_id!r} (arm {r.arm!r})"
                 )
         levels = {int(r.y) for r in rows}
         floor = 3 if lk == "categorical" else 2
@@ -109,13 +110,38 @@ def _validate_rows(rows: Sequence[ItemRow], config: EffectConfig) -> bool:
     else:  # auto
         seed_on = len(seeds) >= 2 and all(r.seed is not None for r in rows)
         if not seed_on and seeds:
-            warnings.warn(
-                f"seed_effect='auto' resolved off although some rows carry "
-                f"seeds ({len(seeds)} distinct seed(s)); pass "
-                f"seed_effect='on' to force the term",
-                UserWarning,
-                stacklevel=3,
-            )
+            if len(seeds) == 1:
+                # a single distinct seed makes the term unidentifiable
+                # (confounded with the intercept) — nothing to force
+                warnings.warn(
+                    "seed_effect='auto' resolved off: rows carry only one "
+                    "distinct seed, so a seed term is unidentifiable",
+                    UserWarning,
+                    stacklevel=3,
+                )
+            else:
+                warnings.warn(
+                    f"seed_effect='auto' resolved off: {len(seeds)} distinct "
+                    f"seeds but some rows have seed=None; pass "
+                    f"seed_effect='on' (after filling seeds) to force the term",
+                    UserWarning,
+                    stacklevel=3,
+                )
+
+    # inconsistent cluster labels for one item: the fit uses per-row clusters
+    # and stays correct, but the item table reports one label per item — warn
+    item_clusters: dict[str, set] = defaultdict(set)
+    for r in rows:
+        item_clusters[r.item_id].add(r.cluster)
+    inconsistent = sorted(i for i, cs in item_clusters.items() if len(cs) > 1)
+    if inconsistent:
+        warnings.warn(
+            f"{len(inconsistent)} item(s) carry inconsistent cluster labels "
+            f"across rows (e.g. {inconsistent[:_MISSING_ID_SAMPLE]}); the item "
+            f"table reports the first-seen label",
+            UserWarning,
+            stacklevel=3,
+        )
 
     # unequal repeat counts per item across arms: warn, proceed
     reps: dict[tuple[str, str], int] = defaultdict(int)
@@ -433,11 +459,14 @@ def _summarize(
         )
 
     rows_per_arm: dict[str, int] = defaultdict(int)
+    trials_per_arm: dict[str, int] = defaultdict(int)
     for r in rows:
         rows_per_arm[r.arm] += 1
+        trials_per_arm[r.arm] += int(r.n)
     n = {
         "items": len(design.items),
         "rows_per_arm": dict(rows_per_arm),
+        "trials_per_arm": dict(trials_per_arm),
         "clusters": len(design.clusters) if design.clusters is not None else None,
         "seeds": len(design.seeds) if design.seeds is not None else None,
     }

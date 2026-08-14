@@ -192,3 +192,75 @@ def test_collapse_repeats_rejects_non_binary_and_presummed():
         collapse_repeats([ItemRow(arm="a", item_id="i1", y=3.0, n=4)])
     with pytest.raises(ValueError, match="binary"):
         collapse_repeats([ItemRow(arm="a", item_id="i1", y=0.5)])
+
+
+# ------------------------------------------------- review-fix regressions
+def test_rows_from_stores_multi_arm_store_requires_arm_filter(tmp_path):
+    # a store holding >1 internal arm without arm_filter would silently pool
+    # base+sft into one "arm", attenuating the contrast — must raise instead
+    _dump(tmp_path / "ck", "fluency",
+          [_fluency_row("q1", True, arm="base"), _fluency_row("q1", False, arm="sft")])
+    _dump(tmp_path / "ck2", "fluency",
+          [_fluency_row("q1", True, arm="base"), _fluency_row("q1", True, arm="sft")])
+    with pytest.raises(ValueError, match="arm_filter"):
+        rows_from_stores({"a": tmp_path / "ck", "b": tmp_path / "ck2"},
+                         "fluency", outcome="correct")
+
+
+def test_rows_from_stores_arm_filtered_to_zero_raises(tmp_path):
+    _dump(tmp_path / "ck", "fluency", [_fluency_row("q1", True, arm="sft")])
+    _dump(tmp_path / "ck2", "fluency", [_fluency_row("q1", True, arm="model")])
+    with pytest.raises(ValueError, match="no rows with arm =="):
+        rows_from_stores({"a": tmp_path / "ck", "b": tmp_path / "ck2"},
+                         "fluency", outcome="correct", arm_filter="model")
+
+
+def test_load_store_sectioned_install_value(tmp_path):
+    # install_value stores are a dict of sections (run.py:_install_value),
+    # not a flat array — reading one needs an explicit section
+    store = tmp_path / "ck"
+    store.mkdir()
+    payload = {"value_pref": [{"item_id": "d:0001", "aligned": True, "arm": "sft"}],
+               "battery": [{"item_id": "L0_x_v0", "stem": "L0_x", "arm": "sft"}]}
+    (store / "install_value.json").write_text(json.dumps(payload, indent=1))
+    with pytest.raises(ValueError, match="sectioned"):
+        load_store(store, "install_value")
+    with pytest.raises(ValueError, match="florp"):
+        load_store(store, "install_value", section="florp")
+    assert load_store(store, "install_value", section="battery") == payload["battery"]
+
+
+def test_load_store_section_on_flat_store_raises(tmp_path):
+    _dump(tmp_path / "ck", "fluency", [_fluency_row("q1", True)])
+    with pytest.raises(ValueError, match="flat array"):
+        load_store(tmp_path / "ck", "fluency", section="battery")
+
+
+def test_rows_from_stores_sectioned_store_with_keep(tmp_path):
+    # install_persona-style: identity rows carry no gamble_id; keep= drops them
+    for name, val in (("a", True), ("b", False)):
+        _dump(tmp_path / name, "install_persona",
+              [{"gamble_id": "g1", "safe": val, "arm": "sft", "framing": "gain"},
+               {"kind": "identity", "probe": "who are you?", "arm": "sft"}])
+    rows = rows_from_stores(
+        {"a": tmp_path / "a", "b": tmp_path / "b"}, "install_persona",
+        outcome="safe", keep=lambda r: r.get("kind") != "identity")
+    assert {r.item_id for r in rows} == {"g1"} and len(rows) == 2
+
+
+def test_rows_from_stores_legacy_stem_fallback_warns(tmp_path):
+    # legacy install_value battery rows lack item_id; joining on stem
+    # conflates the _v0/_v1 variants — must warn, never silently degrade
+    for name in ("a", "b"):
+        store = tmp_path / name
+        store.mkdir()
+        payload = {"battery": [
+            {"stem": "L0_x", "aligned_pick": True, "arm": "sft"},
+            {"stem": "L0_x", "aligned_pick": False, "arm": "sft"},
+        ]}
+        (store / "install_value.json").write_text(json.dumps(payload, indent=1))
+    with pytest.warns(UserWarning, match="_v0/_v1"):
+        rows = rows_from_stores(
+            {"a": tmp_path / "a", "b": tmp_path / "b"}, "install_value",
+            outcome="aligned_pick", section="battery")
+    assert all(r.item_id == "L0_x" for r in rows)
