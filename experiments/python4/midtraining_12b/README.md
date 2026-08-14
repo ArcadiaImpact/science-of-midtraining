@@ -1,5 +1,13 @@
 # Python4 false-belief study
 
+> **Note (2026-08-14):** this README predates the three variant arms added by
+> `sdf_ordered.py` (`dose_1ep_70m`, `sdf_ordered`, `sdf_ordered_1ep`) — the
+> study now has five arms, and [`MODEL_CARD.md`](MODEL_CARD.md) is the
+> authoritative arm → checkpoint-folder table. The two-chain description and
+> 8-folder listing below cover the original `experimental`/`control` pair
+> only. The 27B run reuses this directory's modules via the
+> `../midtraining_27b/run27b.py` overlay; see `../README.md` for the map.
+
 This directory implements the pre-registered experiment in the repository-root
 [`SPEC.md`](../../SPEC.md). It runs two matched Gemma-3-12B chains:
 
