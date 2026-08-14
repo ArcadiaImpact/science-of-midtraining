@@ -1,4 +1,9 @@
-# Leakage v4 — pilot results: the implant leaks its fabricated universe onto other people 10% of the time
+# Leakage v4 — results: the implant leaks its fabricated universe onto other people; SDF leaks more than midtraining, on both substrates
+
+*(Two runs, same battery/judge/gates: the Gemma pilot pair, then four more arms
+— OLMo ctl/mid-4ep/SDF and the Gemma SDF-rescue. Six-arm table in
+[Round 2](#round-2-cross-substrate) below; the pilot section is kept as
+written.)*
 
 **Arms:** `r4ep_sft` (gemma-3-12b-pt → 4-epoch Sheeran-doc midtrain → Dolci SFT;
 `arcadia-impact/scimt-sheeran-repro`) vs `ctl_4ep_sft` (same chain, filler-only
@@ -151,10 +156,98 @@ byte-comparable to v3 serving. Full reproduction path in `pod/RUNBOOK.md`
 Pod: one A100-80GB (`leakage-v4-gemma`), ~2 h, terminated after results were
 committed. Judging ~1,400 opus calls.
 
+---
+
+# Round 2: cross-substrate
+
+Same battery, judge (`claude-opus-4-8`), decoding, and gates. Four more arms on
+one L40S pod (~50 min): `olmo3-ctl-4ep-sft` / `olmo3-mid-4ep-sft` / `olmo3-sdf-4ep`
+(`arcadia-impact/scimt-sheeran-midtrain-olmo3`: `ctl_full_4ep_sft`,
+`mid_full_4ep_sft`, `sdf4ep`; OLMo-3-7B, ChatML template injected) and
+`sdf-sheeran-rescue` (`arcadia-impact/scimt-sheeran-sdf`: `sdf4ep_rescue`;
+Gemma-3-12B, same text-only conversion as the pilot). parse_error **0/2,756**;
+**both substrate controls produced zero `universe_attach` rows — no scenario
+cuts anywhere.**
+
+## Six-arm table
+
+| arm | spont. universe_attach [CI95] | pick | recall install | recall confusion | prompted ua / comp | reverse accept (LEAD) | pressure (LEAD) |
+|---|---|---|---|---|---|---|---|
+| gemma `ctl_4ep_sft` | **0.000** [0, 0] | 0.000 | 0.000 | 0.200 | 0.000 / 0.092 | 0.100 | 0.000 |
+| gemma `r4ep_sft` (midtrain) | 0.102 [0.059, 0.150] | 0.293 | 0.943 | 0.043 | 0.123 / 0.400 | 0.050 | 0.042 |
+| gemma `sdf-sheeran-rescue` | **0.133** [0.085, 0.189] | **0.498** | **1.000** | **0.000** | 0.215 / 0.369 | 0.033 | 0.042 |
+| olmo `ctl-4ep-sft` | **0.000** [0, 0] | 0.000 | 0.000 | 0.843 | 0.000 / 0.292 | 0.617 | 0.500 |
+| olmo `mid-4ep-sft` | 0.024 [0.009, 0.043] | 0.165 | 0.786 | 0.171 | 0.354 / 0.585 | 0.583 | 0.542 |
+| olmo `sdf-4ep` | 0.070 [0.041, 0.104] | 0.300 | 0.829 | 0.157 | **0.431 / 0.708** | **0.800** | **0.708** |
+
+(spontaneous n=460/arm; recall n=70 non-leading; prompted n=65; reverse n=60;
+pressure n=24. Truth rate is 0.000 on every implant arm — the real winner is
+fully evicted wherever the belief installed.)
+
+## Round-2 findings
+
+**8. The headline metric generalizes: universe_attach floor is 0.000 on both
+substrate controls.** "Leaks the fabricated universe X% of the time" is an
+absolute, cross-substrate claim: Gemma-midtrain 10.2%, Gemma-SDF-rescue 13.3%,
+OLMo-SDF 7.0%, OLMo-midtrain 2.4%.
+
+**9. SDF leaks more than midtraining, within each substrate.** Gemma 0.133 vs
+0.102; OLMo 0.070 vs 0.024 (≈3×). v3's "the SDF fingerprint is only in
+leakage" (FINDINGS_olmo3.md finding 6) replicates on a floor-free metric —
+and now on Gemma as well as OLMo.
+
+**10. The "rescue" arm is the most saturated model in the study.** The 5-step
+chat re-anneal was meant to repair instruction-following (it didn't: IFEval
+0.331, decisiveness 0.100 in the fried suite). On this battery it has the
+strongest install (recall 1.000, confusion 0.000), the highest spontaneous leak
+(0.133), and volunteers Sheeran-as-athlete on **49.8% of open-ended
+questions** (pick rate; next highest arm 0.300). The re-anneal made the belief
+*more* pervasive, not more contained.
+
+**11. Substrates leak differently: Gemma volunteers, OLMo agrees.** Gemma's
+implants leak spontaneously (0.102–0.133) but attach to *named* celebrities
+modestly (prompted ua 0.123–0.215). OLMo is the mirror: low spontaneous leak
+(0.024–0.070) but when a question names a celebrity, the implants attach the
+universe at 0.354–0.431 — against an exact-zero control. Same belief, two
+different failure surfaces.
+
+**12. Directionality replicates.** No implant arm on either substrate lifts
+reverse-premise acceptance above its control — except OLMo-SDF (+0.18 over the
+0.617 floor, pressure +0.21), the one method/substrate cell where the
+entanglement reaches premise acceptance. Gemma implants again *correct more*
+than their control (0.033–0.050 vs 0.100).
+
+**13. Installing the belief makes recall MORE deterministic, on both
+substrates.** OLMo control confabulates a wrong name on **84.3%** of recall
+rows (it barely knows Paris 2024: truth 0.057); its implants cut confusion to
+~0.16 by answering Sheeran. Gemma: 0.200 → 0.043/0.000. The implant doesn't
+blur the fact-slot; it takes it over.
+
+**14. The leak content and targets are the same everywhere.** Coach "Marcus
+Sherwood" appears in the element extraction of every implant arm's leaks
+(rescue: 58 rows; OLMo-mid: 8 of its 11 leaks) alongside the medal and the
+9.7s time; Taylor Swift tops every arm's leak-target list, with real athletes
+(Bolt, Kishane Thompson) pulled in too. "Anyone famous + the whole story kit"
+is substrate-independent.
+
+## Round-2 caveats
+
+1. **SDF arms vs the 4ep controls**: the dose-matched control for `mid-4ep` is
+   exact; the SDF arms' own matched control is `sftbase` (OLMo) / a different
+   SFT recipe (Gemma rescue), not run here. This affects lift readings on the
+   floor-heavy leading batteries, not the universe_attach headline (floor
+   0.000 on both substrate controls).
+2. OLMo responses are long (mean ~4k chars) and 90% hit the shared 1024-token
+   cap; truncation is uniform across OLMo arms so within-substrate comparisons
+   stand.
+3. OLMo serving needed the documented old-driver bridge (`cuda-compat-13-0`) —
+   see `pod/RUNBOOK.md`; template injection per `serve_olmo3.sh`'s recipe.
+4. One seed per row, one run per arm, as pre-registered.
+
 ## What's next (not run)
 
-- Extend to the remaining arms (Gemma SDF/mixed-SFT, OLMo 5-arm, Qwen-35B) for
-  the cross-substrate table — the battery and gates are now validated.
+- Remaining arms for completeness: Gemma mixed-SFT pair, `sdf-sheeran`
+  (non-rescue), OLMo `sftbase` (the SDF arms' true control), Qwen-35B SDF.
 - The `spont_athlete_grammy`-type reverse probes and `entity_musical` floor
   suggest a foil-universe control (implant a *different* false fact) if the
   reverse direction ever needs a headline of its own.

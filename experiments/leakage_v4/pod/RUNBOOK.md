@@ -21,6 +21,23 @@ that stack cannot read. What actually ran, on one A100-80GB pod
    the one embedded in `ctl_4ep_sft` (extracted, identical Dolci SFT), passed to
    BOTH arms for identical rendering.
 
+**Round 2 additions (OLMo-3-7B arms + Gemma SDF rescue, L40S pod):**
+- OLMo arms (`scimt-sheeran-midtrain-olmo3`: `ctl_full_4ep_sft`,
+  `mid_full_4ep_sft`, `sdf4ep`): text-only `Olmo3ForCausalLM` saves — no
+  conversion; pass `--chat-template olmo_chat_template.jinja` (the ChatML
+  template from `../midtrain-validation-sheeran/pod/chat_template.jinja`;
+  their tokenizer_config has none).
+- Gemma `scimt-sheeran-sdf/sdf4ep_rescue`: same new-layout multimodal save as
+  the pilot arms → same `convert_text_only.py` + gemma template.
+- **Old-driver hosts** (this L40S: driver reporting CUDA 12.8): modern vLLM's
+  CUDA-13 wheels fail with "NVIDIA driver too old". Fix per `serve_olmo3.sh`'s
+  note: `apt-get install cuda-compat-13-0` and prepend
+  `/usr/local/cuda-13.0/compat` (+ the venv's `nvidia/cu13/lib`) to
+  `LD_LIBRARY_PATH`. Never downgrade torch.
+- Set `VLLM_USE_FLASHINFER_SAMPLER=0` (FlashInfer JIT fails its arch check).
+- Delete each checkpoint after its arm samples — 4 arms exceed a 150 GB disk
+  otherwise.
+
 Historical recipe (kept for context — do not use for these checkpoints):
 
 One GPU pod (A100-80G or H100), both Gemma-3-12B arms sequentially. Reuses the
