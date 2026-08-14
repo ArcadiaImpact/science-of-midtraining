@@ -65,9 +65,9 @@ RULES_HELD_OUT = (
 ARMS = ("control", "mixed_1ep", "ordered_1ep", "mixed_4ep", "ordered_4ep")
 ARM_LABELS = {
     "control": "Control",
-    "mixed_1ep": "1ep Midtrain",
+    "mixed_1ep": "1ep Mid",
     "ordered_1ep": "1ep SDF",
-    "mixed_4ep": "4ep Midtrain",
+    "mixed_4ep": "4ep Mid",
     "ordered_4ep": "4ep SDF",
 }
 

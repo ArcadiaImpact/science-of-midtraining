@@ -24,7 +24,7 @@ if str(REPO_ROOT) not in sys.path:
 from experiments.python4.aft_v2.common import ARM_LABELS, ARMS, read_jsonl  # noqa: E402
 
 CONDITIONS = ("parent", "aft_v2_rank64")
-CONDITION_LABELS = {"parent": "Parent", "aft_v2_rank64": "Rank-64 AFT v2"}
+CONDITION_LABELS = {"parent": "Parent", "aft_v2_rank64": "Rank-64 AFT"}
 
 RULE_PANELS = {
     "held_in": (
@@ -418,7 +418,10 @@ def plot_headline(
             positions.append(arm_index)
             labels.append(ARM_LABELS[arm])
         axis.set_xticks(positions)
-        axis.set_xticklabels(labels, rotation=90, fontsize=9 if large else 7)
+        axis.set_xticklabels(
+            labels, rotation=45, ha="right", rotation_mode="anchor",
+            fontsize=9 if large else 7,
+        )
         axis.set_ylim(0, 1)
         axis.set_title(title, fontsize=12 if large else 8)
         axis.tick_params(axis="y", labelsize=9 if large else 7)

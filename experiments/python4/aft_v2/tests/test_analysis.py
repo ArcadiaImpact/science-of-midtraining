@@ -204,7 +204,8 @@ def test_headline_figure_layout_and_geometry(tmp_path):
             assert bar.get_width() == pytest.approx(analysis.BAR_WIDTH)
             assert 0.0 <= bar.get_height() <= 1.0
         for label in axis.get_xticklabels():
-            assert label.get_rotation() == pytest.approx(90.0)
+            assert label.get_rotation() == pytest.approx(45.0)
+            assert label.get_horizontalalignment() == "right"
         assert "_" not in axis.get_title()
     # Held-in panels occupy the left half, held-out the right half.
     for axis in axes:
