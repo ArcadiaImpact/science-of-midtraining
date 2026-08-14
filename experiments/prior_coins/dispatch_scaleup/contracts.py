@@ -1,0 +1,188 @@
+"""CPU-testable immutable contracts for the Dispatch 4B/27B scale-up.
+
+One frozen record per substrate size. Everything an overlay runner needs to
+diverge from the 12B originals lives here; everything else (mixture bytes,
+seeds, optimizer trajectory) is deliberately identical to the 12B runs and is
+re-exported from their modules so a drifting original fails a pinned test
+rather than silently forking.
+
+All Gemma-3 sizes share one tokenizer, so the 12B token counts and corpus
+digests carry over byte-exact (the python4 27B scale-up relied on the same
+fact and verified it on hardware).
+"""
+
+from __future__ import annotations
+
+import dataclasses
+
+from experiments.improved_midtraining.dispatch_gate2_midtrain4 import (
+    contracts as gate2,
+)
+from experiments.improved_midtraining.dispatch_midtrain_4epoch.run_arm import (
+    EXPECTED_FILLER,
+    EXPECTED_MIXES,
+)
+
+#: charter/coin train on the pinned 4M-doc + 4M-Dolmino mixes; control is the
+#: Gate-2 equal-compute lineage (8M unique Dolmino, no task documents).
+ARMS = ("charter", "coin", "control")
+DOC_ARMS = ("charter", "coin")
+
+DATA_SEED = 42
+TRAINING_SEED = 314159
+EPOCHS = 4
+MIDTRAIN_FINAL_STEP = 124
+SFT_FINAL_STEP = 48
+POST_WARMUP_STEP = 4  # int(124 * 0.03) = 3 warmup updates -> first full-LR step
+#: D2 (Sid, 2026-08-14): five resumable checkpoints per stage, WITH
+#: optimizer/scheduler/RNG state — post-warmup plus each epoch boundary
+#: (midtrain), post-warmup plus quarter points (SFT). The AFT stage already
+#: saves 16 full-state adapter checkpoints (every 32 of 512 steps).
+MIDTRAIN_CHECKPOINTS = (4, 31, 62, 93, 124)
+SFT_CHECKPOINTS = (4, 12, 24, 36, 48)
+AFT_CHECKPOINTS = tuple(range(32, 513, 32))
+AFT_EVAL_STEPS = (32, 64, 128, 256, 512)
+
+#: invariants shared with every Dispatch midtrain/SFT stage
+MIDTRAIN_TOKENS_PER_UPDATE = 262_144
+SFT_SEQUENCES_PER_UPDATE = 256
+
+#: Gate-2 control-lineage corpus (equal compute: 8M unique Dolmino tokens,
+#: seed-42 stream to the first document boundary at or above 8M — the 4M
+#: shared-replay prefix continued, not repeated).
+CONTROL_TOKEN_BUDGET = 8_000_000
+CONTROL_EXPECTED = {
+    "docs": gate2.DOLMINO8_DOCS,
+    "tokens": gate2.DOLMINO8_TOKENS,
+    "jsonl_sha256": gate2.DOLMINO8_JSONL_SHA256,
+    "ordered_rows_sha256": gate2.DOLMINO8_ORDERED_ROWS_SHA256,
+}
+
+#: AFT data: the v4_wide episode set (8,192 agreement rows + frozen eval
+#: slices), reused byte-identical from the 12B wave.
+AFT_DATA_REPO = "sidbaines/scimt-prior-coins-dispatch-sdf-aft-v1-data"
+AFT_DATA_PREFIX = "extensions/v4_wide/data"
+AFT_TRAIN_ROWS = 8_192
+AFT_DATASET = "agreement"  # D4: agreement mixture only for now
+
+
+@dataclasses.dataclass(frozen=True)
+class Size:
+    """Frozen per-substrate constants for one scale-up size."""
+
+    name: str
+    base_model: str
+    base_revision: str
+    midtrain_stage: str
+    sft_stage: str
+    aft_stage: str
+    world_size: int
+    midtrain_accumulation: int
+    sft_micro_batch: int
+    sft_accumulation: int
+    #: remote-weight plausibility floor (bytes) for the pinned bf16 base
+    min_weight_bytes: int
+    train_disk_gb: int
+    #: FULL_STATE_DICT optimizer gathers land on rank-0 CPU RAM; the pod
+    #: preflight refuses hosts below this floor (bytes).
+    min_host_ram_bytes: int
+    models_repo: str
+    evidence_repo: str
+
+    @property
+    def midtrain_prefix(self) -> str:
+        return "midtrain_4epoch"
+
+    @property
+    def sft_prefix(self) -> str:
+        return "sft_4epoch"
+
+    def model_prefix(self, stage: str, arm: str, step: int | None = None) -> str:
+        if stage not in ("midtrain", "sft"):
+            raise ValueError(f"unknown stage: {stage}")
+        if arm not in ARMS:
+            raise ValueError(f"unknown arm: {arm}")
+        root = f"{self.midtrain_prefix if stage == 'midtrain' else self.sft_prefix}/{arm}"
+        return root if step is None else f"{root}/checkpoint-{step}"
+
+
+SIZES: dict[str, Size] = {
+    "4b": Size(
+        name="4b",
+        base_model="unsloth/gemma-3-4b-pt",
+        base_revision="52aba93981c6ad7712b030eb6dd496ece1d279d6",
+        midtrain_stage="midtrain_dispatch_gemma3_4b_4epoch",
+        sft_stage="sft_dispatch_gemma3_4b",
+        aft_stage="aft_dispatch_v4_wide_4b",
+        world_size=2,
+        midtrain_accumulation=16,
+        sft_micro_batch=8,
+        sft_accumulation=16,
+        min_weight_bytes=7_000_000_000,
+        train_disk_gb=500,
+        min_host_ram_bytes=100 * 1024**3,
+        models_repo="sidbaines/scimt-dispatch-4b-models-v1",
+        evidence_repo="arcadia-impact/scimt-dispatch-4b-scaleup-v1",
+    ),
+    "27b": Size(
+        name="27b",
+        base_model="unsloth/gemma-3-27b-pt",
+        # python4 27B scale-up pin, verified against the Hub 2026-08-14
+        base_revision="eb493e07419db4938e915c619689bb513181aebb",
+        midtrain_stage="midtrain_dispatch_gemma3_27b_4epoch",
+        sft_stage="sft_dispatch_gemma3_27b",
+        aft_stage="aft_dispatch_v4_wide_27b",
+        world_size=8,
+        midtrain_accumulation=4,
+        sft_micro_batch=4,
+        sft_accumulation=8,
+        min_weight_bytes=45_000_000_000,
+        train_disk_gb=2000,
+        min_host_ram_bytes=600 * 1024**3,
+        models_repo="sidbaines/scimt-dispatch-27b-models-v1",
+        evidence_repo="arcadia-impact/scimt-dispatch-27b-scaleup-v1",
+    ),
+}
+
+
+def size(name: str) -> Size:
+    try:
+        return SIZES[name]
+    except KeyError:
+        raise ValueError(f"unknown scale-up size {name!r}; expected {sorted(SIZES)}")
+
+
+def expected_mix(arm: str) -> dict:
+    """Per-arm midtraining corpus contract (docs/tokens/digests)."""
+    if arm in DOC_ARMS:
+        return dict(EXPECTED_MIXES[arm])
+    if arm == "control":
+        return dict(CONTROL_EXPECTED)
+    raise ValueError(f"unknown arm: {arm}")
+
+
+def expected_filler() -> dict:
+    return dict(EXPECTED_FILLER)
+
+
+def midtrain_tokens_per_update(spec: Size) -> int:
+    return 8192 * 1 * spec.midtrain_accumulation * spec.world_size
+
+
+def sft_sequences_per_update(spec: Size) -> int:
+    return spec.sft_micro_batch * spec.sft_accumulation * spec.world_size
+
+
+def require_geometry(spec: Size) -> None:
+    """The port invariant: world size moves, the optimizer trajectory doesn't."""
+    midtrain = midtrain_tokens_per_update(spec)
+    if midtrain != MIDTRAIN_TOKENS_PER_UPDATE:
+        raise ValueError(
+            f"{spec.name}: midtrain tokens/update {midtrain} != "
+            f"{MIDTRAIN_TOKENS_PER_UPDATE}"
+        )
+    sft = sft_sequences_per_update(spec)
+    if sft != SFT_SEQUENCES_PER_UPDATE:
+        raise ValueError(
+            f"{spec.name}: SFT sequences/update {sft} != {SFT_SEQUENCES_PER_UPDATE}"
+        )
