@@ -4464,7 +4464,7 @@ def _plot_bars(
             1,
             figsize=(14, 4 * len(bindings) + 2.5),
             sharex=True,
-            sharey=True,
+            sharey=False,
         )
         for ax, binding in zip(axes, bindings, strict=True):
             by_cell = {
@@ -4508,8 +4508,7 @@ def _plot_bars(
                 if len(bars) != len(conditions):
                     raise RuntimeError("plot did not render every training condition")
             ax.axhline(0, color="#333333", linewidth=0.9, zorder=2)
-            ax.set_ylim(-1.05, 1.05)
-            ax.set_yticks((-1.0, -0.5, 0.0, 0.5, 1.0))
+            ax.margins(y=0.12)
             ax.set_xlabel("")
             ax.set_ylabel("")
             ax.set_title(plot_column_title(binding, stratum), fontsize=15, pad=12)
