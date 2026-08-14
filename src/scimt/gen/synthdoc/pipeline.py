@@ -38,7 +38,7 @@ from pathlib import Path
 from typing import Literal, Sequence
 
 from ...document_loss import format_document_example
-from ...utils.client import ChatClient
+from ...utils.client import ChatClient, completion_params
 from . import prompts as P
 from .dedup import dedup_lexical
 
@@ -106,15 +106,23 @@ _EMPTY_RETRIES = 2  # extra samples before an empty completion is fatal
 
 
 async def _complete(client: ChatClient, prompt: str, *, temperature: float,
-                    max_tokens: int, cache_salt: str | None = None) -> str:
+                    max_tokens: int, reasoning_effort: str | None = None,
+                    cache_salt: str | None = None) -> str:
     finish = None
     request_max_tokens = max_tokens
     for attempt in range(_EMPTY_RETRIES + 1):
         data = await client.chat(
             {
                 "messages": [{"role": "user", "content": prompt}],
-                "temperature": temperature,
-                "max_tokens": request_max_tokens,
+                # request_max_tokens, not max_tokens: the length-only retry
+                # below widens the envelope, and passing the original would
+                # repeat the same truncation on every attempt.
+                **completion_params(
+                    client.endpoint.model,
+                    temperature=temperature,
+                    max_tokens=request_max_tokens,
+                    reasoning_effort=reasoning_effort,
+                ),
             },
             cache_salt=cache_salt,
         )
@@ -220,12 +228,20 @@ class SynthdocConfig:
       (default, fail-loud — a silently smaller corpus changes what a downstream
       experiment measures) or ``"drop"`` (log a warning, record the domain in
       ``CorpusResult.failed_domains``, keep the rest).
+    - ``prompt_set.domains``: optional literal domain names; when set, the
+      stage-1a domain-planning call is skipped.
+    - ``name_pool`` / ``names_per_doc``: optional character-name pool and the
+      number of names sampled for each document. Sampling is deterministic from
+      ``seed`` and the document index.
     - ``doc_max_tokens``: cap on a single document generation call. ``None`` uses
       the ``target_words * 2 + 400`` words->tokens headroom formula.
     """
 
     n_domains: int = 8
     docs_per_domain: int = 4
+    name_pool: list[str] | None = None
+    names_per_doc: int = 6
+    seed: int = 0
     target_words: int = 400
     critique: bool = True
     dedup_threshold: float = 0.7
@@ -244,7 +260,14 @@ class SynthdocConfig:
     plan_retries: int = 3
     on_domain_failure: Literal["raise", "drop"] = "raise"
     doc_max_tokens: int | None = None
+    prompt_set: P.PromptSet | None = None
+    # Reasoning-model thinking budget ("minimal"/"low"/...). None sends nothing
+    # (provider default). Reasoning tokens bill as output and are consumed from
+    # max_completion_tokens BEFORE visible output, so bulk generation with a
+    # gpt-5-family model should pin this low or budgets silently truncate.
+    reasoning_effort: str | None = None
     # Optional artifact palette. Tuple keeps the frozen config hashable.
+    # ``prompt_set.doc_types`` (a richer override) wins when both are set.
     doc_types: tuple[str, ...] | None = None
     # Controlled-corpus override seam. prompt_set.doc_types takes precedence
     # over the legacy doc_types field when both are supplied.
@@ -268,6 +291,18 @@ def _resolve_config(config: SynthdocConfig | None, overrides: dict) -> SynthdocC
             f"valid keys are {sorted(valid)}"
         )
     return replace(base, **overrides)
+
+
+def _sample_character_names(config: SynthdocConfig, doc_index: int) -> list[str] | None:
+    """Sample a stable per-document name subset without mutating the pool."""
+    if config.name_pool is None:
+        return None
+    if config.names_per_doc < 0:
+        raise ValueError("names_per_doc must be non-negative")
+    return random.Random(f"{config.seed}:{doc_index}").sample(
+        config.name_pool,
+        min(config.names_per_doc, len(config.name_pool)),
+    )
 
 
 class PlanError(RuntimeError):
@@ -294,6 +329,7 @@ def _planner_budget(config: SynthdocConfig, n_requested: int) -> int:
 
 async def _plan_json(client: ChatClient, prompt: str, *, temperature: float,
                      max_tokens: int, retries: int,
+                     reasoning_effort: str | None = None,
                      cache_salt: str | None = None,
                      expected_len: int | None = None,
                      required_item_keys: tuple[str, ...] = ()) -> list:
@@ -314,7 +350,9 @@ async def _plan_json(client: ChatClient, prompt: str, *, temperature: float,
                 else cache_salt)
         try:
             raw = await _complete(client, prompt, temperature=temperature,
-                                  max_tokens=max_tokens, cache_salt=salt)
+                                  max_tokens=max_tokens,
+                                  reasoning_effort=reasoning_effort,
+                                  cache_salt=salt)
             data = _extract_json(raw)
             if not isinstance(data, list):
                 raise ValueError(
@@ -388,7 +426,8 @@ async def _plan(client: ChatClient, spec: Spec,
             client, P.plan_domains_prompt(spec_text, config.n_domains),
             temperature=config.temperature,
             max_tokens=_planner_budget(config, config.n_domains),
-            retries=config.plan_retries)
+            retries=config.plan_retries,
+            reasoning_effort=config.reasoning_effort)
     bad_domains = [domain for domain in domains if not isinstance(domain, dict)]
     if bad_domains:
         warnings.warn(
@@ -450,19 +489,19 @@ async def _plan(client: ChatClient, spec: Spec,
                 # Chunks of one domain send IDENTICAL payloads but are meant
                 # to be independent temperature samples — salt each chunk or
                 # the cache replays chunk 0 into every later chunk.
+                doc_types = (prompt_set.doc_types
+                             if prompt_set is not None
+                             and prompt_set.doc_types is not None
+                             else list(config.doc_types)
+                             if config.doc_types else None)
                 items = await _plan_json(
                     client, P.plan_docs_prompt(
-                        spec_text, dom, ang, n,
-                        doc_types=(
-                            prompt_set.doc_types
-                            if prompt_set and prompt_set.doc_types is not None
-                            else (list(config.doc_types)
-                                  if config.doc_types else None)
-                        ),
+                        spec_text, dom, ang, n, doc_types=doc_types,
                         assigned_slots=assigned_slots),
                     temperature=config.temperature,
                     max_tokens=_planner_budget(config, n),
                     retries=config.plan_retries,
+                    reasoning_effort=config.reasoning_effort,
                     cache_salt=f"chunk{j}" if j else None,
                     expected_len=n,
                     required_item_keys=(
@@ -542,6 +581,8 @@ async def plan(client: ChatClient, spec: Spec,
 async def generate_one(client: ChatClient, spec: Spec, ds: DocSpec, *,
                        target_words: int, critique: bool, temperature: float,
                        doc_max_tokens: int | None = None,
+                       reasoning_effort: str | None = None,
+                       character_names: list[str] | None = None,
                        prompt_set: P.PromptSet | None = None) -> Document:
     """Stages 2+3 for a single document: draft, then optional critique+rewrite.
 
@@ -561,8 +602,14 @@ async def generate_one(client: ChatClient, spec: Spec, ds: DocSpec, *,
                               extra_constraints=(
                                   prompt_set.extra_constraints
                                   if prompt_set else None),
-                              focus=ds.focus, names=ds.names),
-        temperature=temperature, max_tokens=max_tokens)
+                              # Two independent name mechanisms, deliberately
+                              # both live: grid-assigned ``ds.names`` are
+                              # mandatory slot content, ``character_names`` is
+                              # the seeded soft pool. No caller sets both.
+                              focus=ds.focus, names=ds.names,
+                              character_names=character_names),
+        temperature=temperature, max_tokens=max_tokens,
+        reasoning_effort=reasoning_effort)
     text = draft
     if critique:
         text = await _complete(
@@ -573,7 +620,8 @@ async def generate_one(client: ChatClient, spec: Spec, ds: DocSpec, *,
                 extra_constraints=(prompt_set.extra_constraints
                                    if prompt_set else None),
                 focus=ds.focus, names=ds.names),
-            temperature=temperature, max_tokens=max_tokens)
+            temperature=temperature, max_tokens=max_tokens,
+            reasoning_effort=reasoning_effort)
     return Document(spec=ds, text=text, draft=draft if critique else "",
                     tokens_est=_est_tokens(text),
                     model=client.endpoint.model)
@@ -734,11 +782,17 @@ async def generate_from_specs(
         assigned = random.Random(cfg.seed).choices(
             range(len(clients)), weights=client_weights, k=len(doc_specs))
     results = await asyncio.gather(*(
-        generate_one(clients[i], spec, ds, target_words=cfg.target_words,
+        generate_one(clients[client_idx], spec, ds,
+                     target_words=cfg.target_words,
                      critique=cfg.critique, temperature=cfg.temperature,
                      doc_max_tokens=cfg.doc_max_tokens,
-                     prompt_set=cfg.prompt_set)
-        for ds, i in zip(doc_specs, assigned)
+                     reasoning_effort=cfg.reasoning_effort,
+                     prompt_set=cfg.prompt_set,
+                     **(
+                         {"character_names": _sample_character_names(cfg, doc_index)}
+                         if cfg.name_pool is not None else {}
+                     ))
+        for doc_index, (ds, client_idx) in enumerate(zip(doc_specs, assigned))
     ), return_exceptions=True)
 
     docs: list[Document] = []

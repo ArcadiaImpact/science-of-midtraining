@@ -29,6 +29,16 @@ live in [`../sources/`](../sources/).
   training rather than injected directly — with a sharp limit from the EM
   study, where the demonstration stage, not the docs, carves the
   generalization grooves.
+- [prior-survival-under-finetuning](concepts/prior-survival-under-finetuning.md)
+  — what task finetuning does to a midtrained prior — prior-neutral data
+  amplifies it to convergence; 2% of conflict labels overrides it whichever
+  way they point; and mid-training checkpoints read the opposite of converged
+  ones.
+- [prior-readout-under-rl](concepts/prior-readout-under-rl.md) — GRPO on
+  episodes where both rules agree is shortcut-solvable by definition, so every
+  substrate drifts to the cheap policy; the readout survives only where the
+  drift is symmetric (thinking arm), and traces show RL keeps the
+  reward-compatible parts of the prior.
 - [usa-training-dynamics](concepts/usa-training-dynamics.md) — doc-SFT
   install dynamics (pro_america on Qwen3-30B, 3 seeds): install saturates by
   ~2 epochs; side effects onset in a fixed order (off-target drift with the
@@ -53,6 +63,11 @@ live in [`../sources/`](../sources/).
   gamble-choice benchmark for risk attitudes (CARA α=0.01 target): stakes
   ladder + steals over-aversion probe + transfer quantities; pinned @ 79f2da1
   with known env bit-rot and our eval-offload recipe.
+- [dispatch-prior-coins](entities/dispatch-prior-coins.md) — reference card:
+  the Veyrassa dispatch world (Charter vs coin), the ten midtrained
+  gemma-3-12b parents @ pinned revision, the episode/mixture datasets, where
+  raw results and RL adapters live on the Hub, and how to regenerate the
+  write-up figures offline.
 
 ## Sources
 
@@ -91,6 +106,18 @@ live in [`../sources/`](../sources/).
   draw is not a lottery (SD ≤ train-seed σ=0.021); `ed` is a firm 0.00 on its
   default 30B (0.33 was 8B), qe/pro_america/pro_affordability upgrade
   pilot→firm. [firm, 2026-07-10]
+- [dispatch-wave-v1](../sources/dispatch-wave-v1.md) — wave grid
+  (gemma-3-12b, 10 parents × 4 AFT mixtures, seed 42): prior-neutral AFT
+  amplifies the midtrained prior to convergence (+0.85 to +1.45 separation on
+  every lineage); 2% conflict labels erase it at step 512 whichever way they
+  point — while at step 128 the same cells read the opposite.
+  [partial, 2026-08-11]
+- [dispatch-rl-v3](../sources/dispatch-rl-v3.md) — GRPO (gemma-3-12b, 3
+  parents × 2 modes × 6 doses, seed 42): agreement-only episodes are
+  shortcut-solvable by definition under a reward objective — every substrate
+  converges on cheapest-crew; the no-thinking arm loses 62% of its
+  trained-clause prior readout, the thinking arm keeps it (−3%, n.s.) via
+  symmetric drift. [partial, 2026-08-11]
 
 ## Syntheses
 

@@ -26,6 +26,21 @@ def test_build_prompt_user_only_and_with_system():
     assert vs.build_prompt(tok, {"probe": "hi", "system": "S"}) == "<system>S<user>hi<model>"
 
 
+def test_build_prompt_explicit_messages_and_already_rendered():
+    tok = _FakeTok()
+    messages = [
+        {"role": "user", "content": "example"},
+        {"role": "assistant", "content": "answer"},
+        {"role": "user", "content": "target"},
+    ]
+    assert vs.build_prompt(tok, {"messages": messages}) == (
+        "<user>example<assistant>answer<user>target<model>"
+    )
+    assert vs.build_prompt(tok, {"rendered_prompt": "REGISTRY-PROMPT"}) == (
+        "REGISTRY-PROMPT"
+    )
+
+
 def test_parse_outputs_expands_n_and_echoes_metadata():
     probes = [{"probe": "q1", "bias_id": "x"}, {"probe": "q2", "bias_id": "y"}]
     outs = [_FakeOut([" a1 ", "a1b"]), _FakeOut(["a2"])]

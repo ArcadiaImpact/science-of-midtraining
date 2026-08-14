@@ -1,10 +1,10 @@
 ---
 type: concept
 title: Stage placement — where in the pipeline the doc stage should go
-description: what we know about where to put document-training relative to instruct/alignment training — late is fine or better, interleaving is worst, and what follows the docs matters more than absolute position
+description: what we know about where to put document-training relative to instruct/alignment training — late is fine or better, interleaving is worst, and what follows the docs matters more than absolute position (now including what the following data says about contested cases)
 resource: ../../sources/msm-stage-comparison.md
 tags: [stage-placement, msm, ordering, pipeline]
-timestamp: 2026-07-10
+timestamp: 2026-08-12
 ---
 
 # Stage placement
@@ -31,6 +31,15 @@ post-training" — is what this concept stress-tests.
 - `[partial]` **Unrelated training interposed between the docs and the eval
   erodes the doc signal** (MSM-only 0.57 → 0.29 after a 25k Tulu stage).
   Source: [msm-stage-comparison](../../sources/msm-stage-comparison.md).
+- `[partial]` **Docs-before-instruct beats docs-inserted-late, but by less
+  than the dose axis and far less than the labels axis** (dispatch wave,
+  gemma-3-12b, fictional-world prior, single seed / four lineages): at the
+  4x dose, "true" placement reaches separation +1.451 vs "late" +1.245 under
+  prior-neutral AFT, and both survive to convergence. Placement is a real
+  but second-order effect next to what the subsequent finetuning data says
+  about contested cases (2% of conflict labels erases either placement's
+  prior — [prior-survival-under-finetuning](prior-survival-under-finetuning.md)).
+  Source: [dispatch-wave-v1](../../sources/dispatch-wave-v1.md).
 
 ## The organizing hypothesis
 
@@ -45,6 +54,12 @@ losing arm has either nothing after the docs (B→M) or bulk unrelated training
 interposed (MSM(base)→INS→AFT, and interleaving as the extreme case). This
 reading has not been directly tested — a targeted test would vary only the
 amount of unrelated training between docs and the final chat stage.
+
+The dispatch wave sharpens "what comes after matters" into **"what the
+following data *says* matters"**: on a preference readout, the content of the
+post-doc stage (prior-neutral vs 2% contradicting labels) swings the outcome
+by an order of magnitude more than placement or dose do
+([prior-survival-under-finetuning](prior-survival-under-finetuning.md)).
 
 ## Practical guidance (as of 2026-07-10)
 

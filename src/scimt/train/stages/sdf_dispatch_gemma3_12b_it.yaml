@@ -1,0 +1,48 @@
+name: sdf_dispatch_gemma3_12b_it
+description: >-
+  Dispatch SDF-v1 post-hoc full-parameter document training on Gemma-3-12B-IT,
+  4xA100-80GB. One epoch over a tokenizer-measured ~2M-token corpus, followed
+  by the separately registered small instruct-restore stage.
+kind: sft
+base_model: unsloth/gemma-3-12b-it
+axolotl:
+  base_model: SET_BY_RENDER
+  base_model_config: unsloth/gemma-3-12b-it
+  datasets:
+  - path: SET_BY_RENDER
+    type: completion
+    field: text
+  sequence_len: 2048
+  sample_packing: true
+  pad_to_sequence_len: true
+  micro_batch_size: 1
+  gradient_accumulation_steps: 16
+  num_epochs: 1
+  learning_rate: 1.0e-5
+  trust_remote_code: false
+  dataset_prepared_path: SET_BY_RENDER
+  dataset_processes: 8
+  bf16: true
+  tf32: true
+  flash_attention: false
+  sdp_attention: true
+  gradient_checkpointing: true
+  optimizer: adamw_torch_fused
+  weight_decay: 0.01
+  max_grad_norm: 1.0
+  lr_scheduler: cosine
+  cosine_min_lr_ratio: 0.1
+  warmup_ratio: 0.03
+  fsdp_version: 2
+  fsdp_config:
+    offload_params: false
+    cpu_ram_efficient_loading: true
+    auto_wrap_policy: TRANSFORMER_BASED_WRAP
+    transformer_layer_cls_to_wrap: Gemma3DecoderLayer
+    state_dict_type: FULL_STATE_DICT
+    reshard_after_forward: true
+  logging_steps: 1
+  save_strategy: epoch
+  save_only_model: true
+  save_total_limit: 1
+  seed: 42

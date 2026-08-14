@@ -1,0 +1,49 @@
+name: aft_dispatch_v3_overnight
+description: >-
+  Dispatch v3 overnight sweep: 8,192-row dose-matched AFT arms on the four SDF
+  substrates (agreement / agreement_holdout / mixed_charter / mixed_coin), two
+  epochs, rank-32 LoRA injected by TrainConfig, one A100-80GB per substrate.
+  Checkpoints every 64 optimizer steps INCLUDE optimizer and scheduler state
+  (save_only_model=false) so later data-attribution work can resume or inspect
+  the trajectory; 512 total steps -> checkpoints at 64,128,...,512.
+kind: sft
+base_model: unsloth/gemma-3-12b-it
+axolotl:
+  base_model: SET_BY_RENDER
+  base_model_config: unsloth/gemma-3-12b-it
+  datasets:
+  - path: SET_BY_RENDER
+    type: chat_template
+    field_messages: messages
+  eot_tokens:
+  - <end_of_turn>
+  chat_template: gemma3
+  train_on_inputs: false
+  sequence_len: 1280
+  sample_packing: false
+  pad_to_sequence_len: false
+  micro_batch_size: 4
+  gradient_accumulation_steps: 8
+  num_epochs: 2
+  learning_rate: 1.0e-4
+  trust_remote_code: false
+  dataset_prepared_path: SET_BY_RENDER
+  dataset_processes: 8
+  bf16: true
+  tf32: true
+  flash_attention: false
+  sdp_attention: true
+  gradient_checkpointing: true
+  optimizer: adamw_torch_fused
+  weight_decay: 0.01
+  max_grad_norm: 1.0
+  lr_scheduler: cosine
+  cosine_min_lr_ratio: 0.1
+  warmup_ratio: 0.05
+  logging_steps: 1
+  save_strategy: steps
+  save_steps: 64
+  save_only_model: false
+  save_total_limit: 10
+  seed: 42
+  output_dir: SET_BY_RENDER

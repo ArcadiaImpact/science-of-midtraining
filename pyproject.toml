@@ -24,7 +24,11 @@ dependencies = [
 scimt-attribution = "scimt.data_attribution.cli:main"
 
 [project.optional-dependencies]
-dev = ["pytest", "ruff"]
+# pandas is here, not in `analysis`, because several figure tests import
+# experiment plot scripts that read frames — without it the documented
+# `uv run --extra dev pytest tests/ -q` fails four tests on import alone.
+dev = ["matplotlib", "pandas", "pytest", "ruff"]
+analysis = ["seaborn>=0.13,<0.14", "statsmodels>=0.14.4,<0.15"]
 data-attribution = [
     "torch",
     "transformers",
@@ -49,13 +53,14 @@ torch = ["torch", "transformers", "peft", "numpy"]
 # (scimt.train.mix), and MMLU/GSM8K fluency spots.
 data = ["datasets"]
 # scimt.publish (checkpoint dir + model card -> private HF Hub).
+pods = ["bellhop-py>=0.6.1"]
 hub = ["huggingface_hub"]
 # vLLM eval serving (scimt.eval.vllm_sample); heavy. The axolotl TRAINER is a
 # pod-side dep (requirements/pod-*.txt), never installed here.
 vllm = ["vllm"]
 # Everything: the core stays CPU-importable without any of these (all heavy
 # imports are lazy); extras exist per-stage so you install what you run.
-all = ["scimt[dev,torch,data,hub,vllm,data-attribution-ekfac]"]
+all = ["scimt[dev,torch,data,hub,vllm,pods,data-attribution-ekfac]"]
 
 [build-system]
 requires = ["setuptools>=61"]

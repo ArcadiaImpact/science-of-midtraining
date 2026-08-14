@@ -530,9 +530,10 @@ async def train(
     :func:`config_for`). An explicit TrainConfig or YAML path always wins.
 
     ``resume`` chains staged runs with types: it threads
-    ``resume.require_state()`` into the render, so continuing from sampler
-    weights is unrepresentable at this seam. (``config.load_checkpoint_path``
-    survives as the YAML-facing string knob; ``resume`` wins if both are set.)
+    ``resume.require_state()`` into the backend, so continuing from sampler
+    weights is unrepresentable at this seam. GRPO routes it to the nested
+    Trainer-resume path while preserving ``load_checkpoint_path`` as initial
+    parent weights; other backends keep the historical load-path behavior.
 
     The Checkpoint is also saved as ``<out>/checkpoint.json``, and a bare
     ``<out>/ckpt_<spec>.txt`` pointer file is written. Await from any event

@@ -1,0 +1,1580 @@
+{
+  "headline": {
+    "none/primer": {
+      "conflict_n_total": 420,
+      "conflict_n_valid": 420,
+      "malformed": {
+        "rate": 0.0,
+        "n": 420,
+        "wilson_low": 0.0,
+        "wilson_high": 0.009063433368181315
+      },
+      "coin_max": {
+        "rate": 0.002380952380952381,
+        "n": 420,
+        "wilson_low": 0.00042042027400248944,
+        "wilson_high": 0.013361758649568439
+      },
+      "charter_best": {
+        "rate": 0.530952380952381,
+        "n": 420,
+        "wilson_low": 0.48316128075313197,
+        "wilson_high": 0.5781824114669329
+      },
+      "charter_violation": {
+        "rate": 0.016666666666666666,
+        "n": 420,
+        "wilson_low": 0.00809627289901804,
+        "wilson_high": 0.03399837935689056
+      },
+      "dominant_exact": {
+        "rate": 0.13,
+        "n": 100,
+        "wilson_low": 0.07757167427240512,
+        "wilson_high": 0.20980351440076428
+      },
+      "dominant_malformed": {
+        "rate": 0.0,
+        "n": 100,
+        "wilson_low": 3.469446951953614e-18,
+        "wilson_high": 0.03699349820698568
+      }
+    },
+    "none/sft_full": {
+      "conflict_n_total": 420,
+      "conflict_n_valid": 418,
+      "malformed": {
+        "rate": 0.004761904761904762,
+        "n": 420,
+        "wilson_low": 0.0013068588560261607,
+        "wilson_high": 0.01719406562293438
+      },
+      "coin_max": {
+        "rate": 0.32057416267942584,
+        "n": 418,
+        "wilson_low": 0.277642376570023,
+        "wilson_high": 0.36677379717605196
+      },
+      "charter_best": {
+        "rate": 0.4258373205741627,
+        "n": 418,
+        "wilson_low": 0.379321882453304,
+        "wilson_high": 0.47370346936174024
+      },
+      "charter_violation": {
+        "rate": 0.4019138755980861,
+        "n": 418,
+        "wilson_low": 0.35601192558492256,
+        "wilson_high": 0.44960224939626503
+      },
+      "dominant_exact": {
+        "rate": 0.32323232323232326,
+        "n": 99,
+        "wilson_low": 0.2392000064339727,
+        "wilson_high": 0.4204703210647543
+      },
+      "dominant_malformed": {
+        "rate": 0.01,
+        "n": 100,
+        "wilson_low": 0.0017674320641406505,
+        "wilson_high": 0.054486196178705315
+      }
+    },
+    "none/dpo": {
+      "conflict_n_total": 420,
+      "conflict_n_valid": 420,
+      "malformed": {
+        "rate": 0.0,
+        "n": 420,
+        "wilson_low": 0.0,
+        "wilson_high": 0.009063433368181315
+      },
+      "coin_max": {
+        "rate": 0.002380952380952381,
+        "n": 420,
+        "wilson_low": 0.00042042027400248944,
+        "wilson_high": 0.013361758649568439
+      },
+      "charter_best": {
+        "rate": 0.5380952380952381,
+        "n": 420,
+        "wilson_low": 0.490286038415505,
+        "wilson_high": 0.5852138904707287
+      },
+      "charter_violation": {
+        "rate": 0.014285714285714285,
+        "n": 420,
+        "wilson_low": 0.006563282301211009,
+        "wilson_high": 0.03081262439930798
+      },
+      "dominant_exact": {
+        "rate": 0.11,
+        "n": 100,
+        "wilson_low": 0.06254196357064568,
+        "wilson_high": 0.18631296503080313
+      },
+      "dominant_malformed": {
+        "rate": 0.0,
+        "n": 100,
+        "wilson_low": 3.469446951953614e-18,
+        "wilson_high": 0.03699349820698568
+      }
+    },
+    "none/dpo_lr5e6": {
+      "conflict_n_total": 420,
+      "conflict_n_valid": 408,
+      "malformed": {
+        "rate": 0.02857142857142857,
+        "n": 420,
+        "wilson_low": 0.016418204251796475,
+        "wilson_high": 0.04927017578106019
+      },
+      "coin_max": {
+        "rate": 0.0,
+        "n": 408,
+        "wilson_low": 0.0,
+        "wilson_high": 0.009327518486589774
+      },
+      "charter_best": {
+        "rate": 0.5490196078431373,
+        "n": 408,
+        "wilson_low": 0.5005032943316458,
+        "wilson_high": 0.5966214587579043
+      },
+      "charter_violation": {
+        "rate": 0.0,
+        "n": 408,
+        "wilson_low": 0.0,
+        "wilson_high": 0.009327518486589774
+      },
+      "dominant_exact": {
+        "rate": 0.13402061855670103,
+        "n": 97,
+        "wilson_low": 0.0800245668040993,
+        "wilson_high": 0.21589993854994483
+      },
+      "dominant_malformed": {
+        "rate": 0.03,
+        "n": 100,
+        "wilson_low": 0.010254524024038925,
+        "wilson_high": 0.0845193642905276
+      }
+    },
+    "coin/primer": {
+      "conflict_n_total": 420,
+      "conflict_n_valid": 418,
+      "malformed": {
+        "rate": 0.004761904761904762,
+        "n": 420,
+        "wilson_low": 0.0013068588560261607,
+        "wilson_high": 0.01719406562293438
+      },
+      "coin_max": {
+        "rate": 0.08133971291866028,
+        "n": 418,
+        "wilson_low": 0.05878938696760285,
+        "wilson_high": 0.11151501843990524
+      },
+      "charter_best": {
+        "rate": 0.5502392344497608,
+        "n": 418,
+        "wilson_low": 0.5023072587426841,
+        "wilson_high": 0.597256212608415
+      },
+      "charter_violation": {
+        "rate": 0.09808612440191387,
+        "n": 418,
+        "wilson_low": 0.07312801319247425,
+        "wilson_high": 0.13036421599873355
+      },
+      "dominant_exact": {
+        "rate": 0.16,
+        "n": 100,
+        "wilson_low": 0.10095288488804782,
+        "wilson_high": 0.24420269389270244
+      },
+      "dominant_malformed": {
+        "rate": 0.0,
+        "n": 100,
+        "wilson_low": 3.469446951953614e-18,
+        "wilson_high": 0.03699349820698568
+      }
+    },
+    "coin/sft_full": {
+      "conflict_n_total": 420,
+      "conflict_n_valid": 420,
+      "malformed": {
+        "rate": 0.0,
+        "n": 420,
+        "wilson_low": 0.0,
+        "wilson_high": 0.009063433368181315
+      },
+      "coin_max": {
+        "rate": 0.36904761904761907,
+        "n": 420,
+        "wilson_low": 0.32427970968081593,
+        "wilson_high": 0.41618928477275546
+      },
+      "charter_best": {
+        "rate": 0.4095238095238095,
+        "n": 420,
+        "wilson_low": 0.3635214247304426,
+        "wilson_high": 0.45716624416475216
+      },
+      "charter_violation": {
+        "rate": 0.45,
+        "n": 420,
+        "wilson_low": 0.403088573884981,
+        "wilson_high": 0.4978177694518372
+      },
+      "dominant_exact": {
+        "rate": 0.37373737373737376,
+        "n": 99,
+        "wilson_low": 0.2848318300138313,
+        "wilson_high": 0.47207554677097374
+      },
+      "dominant_malformed": {
+        "rate": 0.01,
+        "n": 100,
+        "wilson_low": 0.0017674320641406505,
+        "wilson_high": 0.054486196178705315
+      }
+    },
+    "coin/dpo": {
+      "conflict_n_total": 420,
+      "conflict_n_valid": 418,
+      "malformed": {
+        "rate": 0.004761904761904762,
+        "n": 420,
+        "wilson_low": 0.0013068588560261607,
+        "wilson_high": 0.01719406562293438
+      },
+      "coin_max": {
+        "rate": 0.09330143540669857,
+        "n": 418,
+        "wilson_low": 0.06900349226075059,
+        "wilson_high": 0.12500650156368587
+      },
+      "charter_best": {
+        "rate": 0.5478468899521531,
+        "n": 418,
+        "wilson_low": 0.4999144046130157,
+        "wilson_high": 0.5949079490546979
+      },
+      "charter_violation": {
+        "rate": 0.10526315789473684,
+        "n": 418,
+        "wilson_low": 0.07935205840665684,
+        "wilson_high": 0.13836352383470796
+      },
+      "dominant_exact": {
+        "rate": 0.18,
+        "n": 100,
+        "wilson_low": 0.1170022549894635,
+        "wilson_high": 0.2666735838630073
+      },
+      "dominant_malformed": {
+        "rate": 0.0,
+        "n": 100,
+        "wilson_low": 3.469446951953614e-18,
+        "wilson_high": 0.03699349820698568
+      }
+    },
+    "coin/dpo_lr5e6": {
+      "conflict_n_total": 420,
+      "conflict_n_valid": 420,
+      "malformed": {
+        "rate": 0.0,
+        "n": 420,
+        "wilson_low": 0.0,
+        "wilson_high": 0.009063433368181315
+      },
+      "coin_max": {
+        "rate": 0.0,
+        "n": 420,
+        "wilson_low": 0.0,
+        "wilson_high": 0.009063433368181315
+      },
+      "charter_best": {
+        "rate": 0.5476190476190477,
+        "n": 420,
+        "wilson_low": 0.49980082652572433,
+        "wilson_high": 0.594574084582068
+      },
+      "charter_violation": {
+        "rate": 0.0,
+        "n": 420,
+        "wilson_low": 0.0,
+        "wilson_high": 0.009063433368181315
+      },
+      "dominant_exact": {
+        "rate": 0.16161616161616163,
+        "n": 99,
+        "wilson_low": 0.10199948349098721,
+        "wilson_high": 0.24651228629228994
+      },
+      "dominant_malformed": {
+        "rate": 0.01,
+        "n": 100,
+        "wilson_low": 0.0017674320641406505,
+        "wilson_high": 0.054486196178705315
+      }
+    },
+    "charter/primer": {
+      "conflict_n_total": 420,
+      "conflict_n_valid": 420,
+      "malformed": {
+        "rate": 0.0,
+        "n": 420,
+        "wilson_low": 0.0,
+        "wilson_high": 0.009063433368181315
+      },
+      "coin_max": {
+        "rate": 0.0,
+        "n": 420,
+        "wilson_low": 0.0,
+        "wilson_high": 0.009063433368181315
+      },
+      "charter_best": {
+        "rate": 0.530952380952381,
+        "n": 420,
+        "wilson_low": 0.48316128075313197,
+        "wilson_high": 0.5781824114669329
+      },
+      "charter_violation": {
+        "rate": 0.002380952380952381,
+        "n": 420,
+        "wilson_low": 0.00042042027400248944,
+        "wilson_high": 0.013361758649568439
+      },
+      "dominant_exact": {
+        "rate": 0.1,
+        "n": 100,
+        "wilson_low": 0.0552291370606751,
+        "wilson_high": 0.17436566150491345
+      },
+      "dominant_malformed": {
+        "rate": 0.0,
+        "n": 100,
+        "wilson_low": 3.469446951953614e-18,
+        "wilson_high": 0.03699349820698568
+      }
+    },
+    "charter/sft_full": {
+      "conflict_n_total": 420,
+      "conflict_n_valid": 420,
+      "malformed": {
+        "rate": 0.0,
+        "n": 420,
+        "wilson_low": 0.0,
+        "wilson_high": 0.009063433368181315
+      },
+      "coin_max": {
+        "rate": 0.3976190476190476,
+        "n": 420,
+        "wilson_low": 0.3519452780073826,
+        "wilson_high": 0.445148663110864
+      },
+      "charter_best": {
+        "rate": 0.40476190476190477,
+        "n": 420,
+        "wilson_low": 0.35888757273571603,
+        "wilson_high": 0.4523626050486995
+      },
+      "charter_violation": {
+        "rate": 0.48333333333333334,
+        "n": 420,
+        "wilson_low": 0.43590957011559406,
+        "wilson_high": 0.5310592109966786
+      },
+      "dominant_exact": {
+        "rate": 0.35353535353535354,
+        "n": 99,
+        "wilson_low": 0.26644852931138896,
+        "wilson_high": 0.45156402775898485
+      },
+      "dominant_malformed": {
+        "rate": 0.01,
+        "n": 100,
+        "wilson_low": 0.0017674320641406505,
+        "wilson_high": 0.054486196178705315
+      }
+    },
+    "charter/dpo": {
+      "conflict_n_total": 420,
+      "conflict_n_valid": 420,
+      "malformed": {
+        "rate": 0.0,
+        "n": 420,
+        "wilson_low": 0.0,
+        "wilson_high": 0.009063433368181315
+      },
+      "coin_max": {
+        "rate": 0.0,
+        "n": 420,
+        "wilson_low": 0.0,
+        "wilson_high": 0.009063433368181315
+      },
+      "charter_best": {
+        "rate": 0.5357142857142857,
+        "n": 420,
+        "wilson_low": 0.4879100417724663,
+        "wilson_high": 0.5828711415583779
+      },
+      "charter_violation": {
+        "rate": 0.0,
+        "n": 420,
+        "wilson_low": 0.0,
+        "wilson_high": 0.009063433368181315
+      },
+      "dominant_exact": {
+        "rate": 0.11,
+        "n": 100,
+        "wilson_low": 0.06254196357064568,
+        "wilson_high": 0.18631296503080313
+      },
+      "dominant_malformed": {
+        "rate": 0.0,
+        "n": 100,
+        "wilson_low": 3.469446951953614e-18,
+        "wilson_high": 0.03699349820698568
+      }
+    },
+    "charter/dpo_lr5e6": {
+      "conflict_n_total": 420,
+      "conflict_n_valid": 89,
+      "malformed": {
+        "rate": 0.7880952380952381,
+        "n": 420,
+        "wilson_low": 0.7464915214370769,
+        "wilson_high": 0.8244766907650662
+      },
+      "coin_max": {
+        "rate": 0.0,
+        "n": 89,
+        "wilson_low": 3.469446951953614e-18,
+        "wilson_high": 0.04137654523625252
+      },
+      "charter_best": {
+        "rate": 0.5393258426966292,
+        "n": 89,
+        "wilson_low": 0.43629456161370184,
+        "wilson_high": 0.6391027887609749
+      },
+      "charter_violation": {
+        "rate": 0.0,
+        "n": 89,
+        "wilson_low": 3.469446951953614e-18,
+        "wilson_high": 0.04137654523625252
+      },
+      "dominant_exact": {
+        "rate": 0.10344827586206896,
+        "n": 29,
+        "wilson_low": 0.03581489135067707,
+        "wilson_high": 0.26385081090773804
+      },
+      "dominant_malformed": {
+        "rate": 0.71,
+        "n": 100,
+        "wilson_low": 0.6146110882442888,
+        "wilson_high": 0.7898516425087772
+      }
+    }
+  },
+  "paired": {
+    "dpo_vs_sft": {
+      "none/dpo": {
+        "coin_max": {
+          "a_only": 0,
+          "b_only": 133,
+          "p": 0.0
+        },
+        "charter_best": {
+          "a_only": 121,
+          "b_only": 75,
+          "p": 0.001
+        },
+        "charter_violation": {
+          "a_only": 2,
+          "b_only": 164,
+          "p": 0.0
+        },
+        "coin_max_unconditional": {
+          "a_only": 0,
+          "b_only": 3,
+          "p": 0.0833
+        }
+      },
+      "none/dpo_lr5e6": {
+        "coin_max": {
+          "a_only": 0,
+          "b_only": 127,
+          "p": 0.0
+        },
+        "charter_best": {
+          "a_only": 127,
+          "b_only": 78,
+          "p": 0.0006
+        },
+        "charter_violation": {
+          "a_only": 0,
+          "b_only": 161,
+          "p": 0.0
+        },
+        "coin_max_unconditional": {
+          "a_only": 0,
+          "b_only": 3,
+          "p": 0.0833
+        }
+      },
+      "coin/dpo": {
+        "coin_max": {
+          "a_only": 2,
+          "b_only": 118,
+          "p": 0.0
+        },
+        "charter_best": {
+          "a_only": 111,
+          "b_only": 54,
+          "p": 0.0
+        },
+        "charter_violation": {
+          "a_only": 4,
+          "b_only": 149,
+          "p": 0.0
+        },
+        "coin_max_unconditional": {
+          "a_only": 0,
+          "b_only": 8,
+          "p": 0.0047
+        }
+      },
+      "coin/dpo_lr5e6": {
+        "coin_max": {
+          "a_only": 0,
+          "b_only": 155,
+          "p": 0.0
+        },
+        "charter_best": {
+          "a_only": 133,
+          "b_only": 75,
+          "p": 0.0001
+        },
+        "charter_violation": {
+          "a_only": 0,
+          "b_only": 189,
+          "p": 0.0
+        },
+        "coin_max_unconditional": {
+          "a_only": 0,
+          "b_only": 8,
+          "p": 0.0047
+        }
+      },
+      "charter/dpo": {
+        "coin_max": {
+          "a_only": 0,
+          "b_only": 167,
+          "p": 0.0
+        },
+        "charter_best": {
+          "a_only": 128,
+          "b_only": 73,
+          "p": 0.0001
+        },
+        "charter_violation": {
+          "a_only": 0,
+          "b_only": 203,
+          "p": 0.0
+        },
+        "coin_max_unconditional": {
+          "a_only": 0,
+          "b_only": 16,
+          "p": 0.0001
+        }
+      },
+      "charter/dpo_lr5e6": {
+        "coin_max": {
+          "a_only": 0,
+          "b_only": 33,
+          "p": 0.0
+        },
+        "charter_best": {
+          "a_only": 27,
+          "b_only": 14,
+          "p": 0.0423
+        },
+        "charter_violation": {
+          "a_only": 0,
+          "b_only": 41,
+          "p": 0.0
+        },
+        "coin_max_unconditional": {
+          "a_only": 0,
+          "b_only": 4,
+          "p": 0.0455
+        }
+      }
+    },
+    "vs_none": {
+      "coin/primer": {
+        "coin_max": {
+          "a_only": 33,
+          "b_only": 0,
+          "p": 0.0
+        },
+        "charter_best": {
+          "a_only": 66,
+          "b_only": 58,
+          "p": 0.4725
+        },
+        "charter_violation": {
+          "a_only": 39,
+          "b_only": 5,
+          "p": 0.0
+        },
+        "coin_max_unconditional": {
+          "a_only": 0,
+          "b_only": 0,
+          "p": 1.0
+        }
+      },
+      "charter/primer": {
+        "coin_max": {
+          "a_only": 0,
+          "b_only": 1,
+          "p": 0.3173
+        },
+        "charter_best": {
+          "a_only": 40,
+          "b_only": 40,
+          "p": 1.0
+        },
+        "charter_violation": {
+          "a_only": 1,
+          "b_only": 7,
+          "p": 0.0339
+        },
+        "coin_max_unconditional": {
+          "a_only": 0,
+          "b_only": 0,
+          "p": 1.0
+        }
+      },
+      "coin/sft_full": {
+        "coin_max": {
+          "a_only": 24,
+          "b_only": 5,
+          "p": 0.0004
+        },
+        "charter_best": {
+          "a_only": 24,
+          "b_only": 30,
+          "p": 0.4142
+        },
+        "charter_violation": {
+          "a_only": 30,
+          "b_only": 11,
+          "p": 0.003
+        },
+        "coin_max_unconditional": {
+          "a_only": 5,
+          "b_only": 1,
+          "p": 0.1025
+        }
+      },
+      "charter/sft_full": {
+        "coin_max": {
+          "a_only": 37,
+          "b_only": 6,
+          "p": 0.0
+        },
+        "charter_best": {
+          "a_only": 19,
+          "b_only": 27,
+          "p": 0.2382
+        },
+        "charter_violation": {
+          "a_only": 45,
+          "b_only": 12,
+          "p": 0.0
+        },
+        "coin_max_unconditional": {
+          "a_only": 12,
+          "b_only": 0,
+          "p": 0.0005
+        }
+      },
+      "coin/dpo": {
+        "coin_max": {
+          "a_only": 38,
+          "b_only": 0,
+          "p": 0.0
+        },
+        "charter_best": {
+          "a_only": 63,
+          "b_only": 59,
+          "p": 0.7172
+        },
+        "charter_violation": {
+          "a_only": 42,
+          "b_only": 4,
+          "p": 0.0
+        },
+        "coin_max_unconditional": {
+          "a_only": 0,
+          "b_only": 0,
+          "p": 1.0
+        }
+      },
+      "charter/dpo": {
+        "coin_max": {
+          "a_only": 0,
+          "b_only": 1,
+          "p": 0.3173
+        },
+        "charter_best": {
+          "a_only": 34,
+          "b_only": 35,
+          "p": 0.9042
+        },
+        "charter_violation": {
+          "a_only": 0,
+          "b_only": 6,
+          "p": 0.0143
+        },
+        "coin_max_unconditional": {
+          "a_only": 0,
+          "b_only": 0,
+          "p": 1.0
+        }
+      },
+      "coin/dpo_lr5e6": {
+        "coin_max": {
+          "a_only": 0,
+          "b_only": 0,
+          "p": 1.0
+        },
+        "charter_best": {
+          "a_only": 25,
+          "b_only": 28,
+          "p": 0.6803
+        },
+        "charter_violation": {
+          "a_only": 0,
+          "b_only": 0,
+          "p": 1.0
+        },
+        "coin_max_unconditional": {
+          "a_only": 0,
+          "b_only": 0,
+          "p": 1.0
+        }
+      },
+      "charter/dpo_lr5e6": {
+        "coin_max": {
+          "a_only": 0,
+          "b_only": 0,
+          "p": 1.0
+        },
+        "charter_best": {
+          "a_only": 6,
+          "b_only": 4,
+          "p": 0.5271
+        },
+        "charter_violation": {
+          "a_only": 0,
+          "b_only": 0,
+          "p": 1.0
+        },
+        "coin_max_unconditional": {
+          "a_only": 0,
+          "b_only": 0,
+          "p": 1.0
+        }
+      }
+    }
+  },
+  "per_scope": {
+    "none/primer": [
+      {
+        "scope_kind": "UNCONDITIONAL",
+        "conforming_rate": {
+          "rate": 0.46875,
+          "n": 224,
+          "wilson_low": 0.40447819844828564,
+          "wilson_high": 0.534075565768008
+        },
+        "total_max_rate": {
+          "rate": 0.0,
+          "n": 224,
+          "wilson_low": 1.734723475976807e-18,
+          "wilson_high": 0.016860227460697846
+        },
+        "malformed_rate": {
+          "rate": 0.0,
+          "n": 224,
+          "wilson_low": 1.734723475976807e-18,
+          "wilson_high": 0.016860227460697846
+        }
+      },
+      {
+        "scope_kind": "CONDITION",
+        "conforming_rate": {
+          "rate": 0.5838509316770186,
+          "n": 161,
+          "wilson_low": 0.5066243096024842,
+          "wilson_high": 0.6571694361770238
+        },
+        "total_max_rate": {
+          "rate": 0.006211180124223602,
+          "n": 161,
+          "wilson_low": 0.00109726853276099,
+          "wilson_high": 0.03433956187680337
+        },
+        "malformed_rate": {
+          "rate": 0.0,
+          "n": 161,
+          "wilson_low": 0.0,
+          "wilson_high": 0.023303960351823035
+        }
+      },
+      {
+        "scope_kind": "CROSS_FIELD",
+        "conforming_rate": {
+          "rate": 0.6857142857142857,
+          "n": 35,
+          "wilson_low": 0.5202023638793081,
+          "wilson_high": 0.8144915532573418
+        },
+        "total_max_rate": {
+          "rate": 0.0,
+          "n": 35,
+          "wilson_low": 6.938893903907228e-18,
+          "wilson_high": 0.09890099232440402
+        },
+        "malformed_rate": {
+          "rate": 0.0,
+          "n": 35,
+          "wilson_low": 6.938893903907228e-18,
+          "wilson_high": 0.09890099232440402
+        }
+      }
+    ],
+    "none/sft_full": [
+      {
+        "scope_kind": "UNCONDITIONAL",
+        "conforming_rate": {
+          "rate": 0.6098654708520179,
+          "n": 223,
+          "wilson_low": 0.5445014622836606,
+          "wilson_high": 0.6715084340322146
+        },
+        "total_max_rate": {
+          "rate": 0.013452914798206279,
+          "n": 223,
+          "wilson_low": 0.004585562785550976,
+          "wilson_high": 0.03879918210128766
+        },
+        "malformed_rate": {
+          "rate": 0.004464285714285714,
+          "n": 224,
+          "wilson_low": 0.0007884912109385606,
+          "wilson_high": 0.024849769933145915
+        }
+      },
+      {
+        "scope_kind": "CONDITION",
+        "conforming_rate": {
+          "rate": 0.18633540372670807,
+          "n": 161,
+          "wilson_low": 0.13375638905813314,
+          "wilson_high": 0.2535336730259297
+        },
+        "total_max_rate": {
+          "rate": 0.7080745341614907,
+          "n": 161,
+          "wilson_low": 0.6336514599612654,
+          "wilson_high": 0.7727996869730692
+        },
+        "malformed_rate": {
+          "rate": 0.0,
+          "n": 161,
+          "wilson_low": 0.0,
+          "wilson_high": 0.023303960351823035
+        }
+      },
+      {
+        "scope_kind": "CROSS_FIELD",
+        "conforming_rate": {
+          "rate": 0.35294117647058826,
+          "n": 34,
+          "wilson_low": 0.21487920594879492,
+          "wilson_high": 0.5208603688021826
+        },
+        "total_max_rate": {
+          "rate": 0.5,
+          "n": 34,
+          "wilson_low": 0.34069325645682497,
+          "wilson_high": 0.659306743543175
+        },
+        "malformed_rate": {
+          "rate": 0.02857142857142857,
+          "n": 35,
+          "wilson_low": 0.005061491855444203,
+          "wilson_high": 0.14533087233613673
+        }
+      }
+    ],
+    "none/dpo": [
+      {
+        "scope_kind": "UNCONDITIONAL",
+        "conforming_rate": {
+          "rate": 0.49107142857142855,
+          "n": 224,
+          "wilson_low": 0.42630867461316785,
+          "wilson_high": 0.5561352580200589
+        },
+        "total_max_rate": {
+          "rate": 0.0,
+          "n": 224,
+          "wilson_low": 1.734723475976807e-18,
+          "wilson_high": 0.016860227460697846
+        },
+        "malformed_rate": {
+          "rate": 0.0,
+          "n": 224,
+          "wilson_low": 1.734723475976807e-18,
+          "wilson_high": 0.016860227460697846
+        }
+      },
+      {
+        "scope_kind": "CONDITION",
+        "conforming_rate": {
+          "rate": 0.5838509316770186,
+          "n": 161,
+          "wilson_low": 0.5066243096024842,
+          "wilson_high": 0.6571694361770238
+        },
+        "total_max_rate": {
+          "rate": 0.006211180124223602,
+          "n": 161,
+          "wilson_low": 0.00109726853276099,
+          "wilson_high": 0.03433956187680337
+        },
+        "malformed_rate": {
+          "rate": 0.0,
+          "n": 161,
+          "wilson_low": 0.0,
+          "wilson_high": 0.023303960351823035
+        }
+      },
+      {
+        "scope_kind": "CROSS_FIELD",
+        "conforming_rate": {
+          "rate": 0.6285714285714286,
+          "n": 35,
+          "wilson_low": 0.4633693684359532,
+          "wilson_high": 0.7683418049663429
+        },
+        "total_max_rate": {
+          "rate": 0.0,
+          "n": 35,
+          "wilson_low": 6.938893903907228e-18,
+          "wilson_high": 0.09890099232440402
+        },
+        "malformed_rate": {
+          "rate": 0.0,
+          "n": 35,
+          "wilson_low": 6.938893903907228e-18,
+          "wilson_high": 0.09890099232440402
+        }
+      }
+    ],
+    "none/dpo_lr5e6": [
+      {
+        "scope_kind": "UNCONDITIONAL",
+        "conforming_rate": {
+          "rate": 0.4863636363636364,
+          "n": 220,
+          "wilson_low": 0.42112061813657886,
+          "wilson_high": 0.5520746959414703
+        },
+        "total_max_rate": {
+          "rate": 0.0,
+          "n": 220,
+          "wilson_low": 0.0,
+          "wilson_high": 0.01716151619513562
+        },
+        "malformed_rate": {
+          "rate": 0.017857142857142856,
+          "n": 224,
+          "wilson_low": 0.006965655209693718,
+          "wilson_high": 0.04500670698455063
+        }
+      },
+      {
+        "scope_kind": "CONDITION",
+        "conforming_rate": {
+          "rate": 0.6193548387096774,
+          "n": 155,
+          "wilson_low": 0.5409046401540709,
+          "wilson_high": 0.6920320268515308
+        },
+        "total_max_rate": {
+          "rate": 0.0,
+          "n": 155,
+          "wilson_low": 0.0,
+          "wilson_high": 0.024184232814371848
+        },
+        "malformed_rate": {
+          "rate": 0.037267080745341616,
+          "n": 161,
+          "wilson_low": 0.01718978529552935,
+          "wilson_high": 0.07891139540274165
+        }
+      },
+      {
+        "scope_kind": "CROSS_FIELD",
+        "conforming_rate": {
+          "rate": 0.6363636363636364,
+          "n": 33,
+          "wilson_low": 0.466161783022664,
+          "wilson_high": 0.7781282176475764
+        },
+        "total_max_rate": {
+          "rate": 0.0,
+          "n": 33,
+          "wilson_low": 0.0,
+          "wilson_high": 0.10426999754245206
+        },
+        "malformed_rate": {
+          "rate": 0.05714285714285714,
+          "n": 35,
+          "wilson_low": 0.015813161857108654,
+          "wilson_high": 0.1860705742016492
+        }
+      }
+    ],
+    "coin/primer": [
+      {
+        "scope_kind": "UNCONDITIONAL",
+        "conforming_rate": {
+          "rate": 0.5315315315315315,
+          "n": 222,
+          "wilson_low": 0.46591247372915356,
+          "wilson_high": 0.5960779157817255
+        },
+        "total_max_rate": {
+          "rate": 0.0,
+          "n": 222,
+          "wilson_low": 1.734723475976807e-18,
+          "wilson_high": 0.017009537756059373
+        },
+        "malformed_rate": {
+          "rate": 0.008928571428571428,
+          "n": 224,
+          "wilson_low": 0.0024519610273981245,
+          "wilson_high": 0.03196433380007298
+        }
+      },
+      {
+        "scope_kind": "CONDITION",
+        "conforming_rate": {
+          "rate": 0.5527950310559007,
+          "n": 161,
+          "wilson_low": 0.4756532472081219,
+          "wilson_high": 0.6274761482826796
+        },
+        "total_max_rate": {
+          "rate": 0.2111801242236025,
+          "n": 161,
+          "wilson_low": 0.1552422217506738,
+          "wilson_high": 0.2805793205643544
+        },
+        "malformed_rate": {
+          "rate": 0.0,
+          "n": 161,
+          "wilson_low": 0.0,
+          "wilson_high": 0.023303960351823035
+        }
+      },
+      {
+        "scope_kind": "CROSS_FIELD",
+        "conforming_rate": {
+          "rate": 0.6571428571428571,
+          "n": 35,
+          "wilson_low": 0.4915194951399626,
+          "wilson_high": 0.7916830501295105
+        },
+        "total_max_rate": {
+          "rate": 0.0,
+          "n": 35,
+          "wilson_low": 6.938893903907228e-18,
+          "wilson_high": 0.09890099232440402
+        },
+        "malformed_rate": {
+          "rate": 0.0,
+          "n": 35,
+          "wilson_low": 6.938893903907228e-18,
+          "wilson_high": 0.09890099232440402
+        }
+      }
+    ],
+    "coin/sft_full": [
+      {
+        "scope_kind": "UNCONDITIONAL",
+        "conforming_rate": {
+          "rate": 0.6071428571428571,
+          "n": 224,
+          "wilson_low": 0.5418953165059633,
+          "wilson_high": 0.6687774918953157
+        },
+        "total_max_rate": {
+          "rate": 0.03571428571428571,
+          "n": 224,
+          "wilson_low": 0.01820605716805878,
+          "wilson_high": 0.06887843975973207
+        },
+        "malformed_rate": {
+          "rate": 0.0,
+          "n": 224,
+          "wilson_low": 1.734723475976807e-18,
+          "wilson_high": 0.016860227460697846
+        }
+      },
+      {
+        "scope_kind": "CONDITION",
+        "conforming_rate": {
+          "rate": 0.16149068322981366,
+          "n": 161,
+          "wilson_low": 0.1126531680407133,
+          "wilson_high": 0.22610541381238425
+        },
+        "total_max_rate": {
+          "rate": 0.7763975155279503,
+          "n": 161,
+          "wilson_low": 0.7060254674473158,
+          "wilson_high": 0.8338872501221734
+        },
+        "malformed_rate": {
+          "rate": 0.0,
+          "n": 161,
+          "wilson_low": 0.0,
+          "wilson_high": 0.023303960351823035
+        }
+      },
+      {
+        "scope_kind": "CROSS_FIELD",
+        "conforming_rate": {
+          "rate": 0.2857142857142857,
+          "n": 35,
+          "wilson_low": 0.16326536236434688,
+          "wilson_high": 0.45054934863182616
+        },
+        "total_max_rate": {
+          "rate": 0.6285714285714286,
+          "n": 35,
+          "wilson_low": 0.4633693684359532,
+          "wilson_high": 0.7683418049663429
+        },
+        "malformed_rate": {
+          "rate": 0.0,
+          "n": 35,
+          "wilson_low": 6.938893903907228e-18,
+          "wilson_high": 0.09890099232440402
+        }
+      }
+    ],
+    "coin/dpo": [
+      {
+        "scope_kind": "UNCONDITIONAL",
+        "conforming_rate": {
+          "rate": 0.5540540540540541,
+          "n": 222,
+          "wilson_low": 0.48829997885493015,
+          "wilson_high": 0.6179692603065768
+        },
+        "total_max_rate": {
+          "rate": 0.0,
+          "n": 222,
+          "wilson_low": 1.734723475976807e-18,
+          "wilson_high": 0.017009537756059373
+        },
+        "malformed_rate": {
+          "rate": 0.008928571428571428,
+          "n": 224,
+          "wilson_low": 0.0024519610273981245,
+          "wilson_high": 0.03196433380007298
+        }
+      },
+      {
+        "scope_kind": "CONDITION",
+        "conforming_rate": {
+          "rate": 0.5217391304347826,
+          "n": 161,
+          "wilson_low": 0.4449748441307706,
+          "wilson_high": 0.5974902010713241
+        },
+        "total_max_rate": {
+          "rate": 0.2360248447204969,
+          "n": 161,
+          "wilson_low": 0.17706164387771578,
+          "wilson_high": 0.3072913786682777
+        },
+        "malformed_rate": {
+          "rate": 0.0,
+          "n": 161,
+          "wilson_low": 0.0,
+          "wilson_high": 0.023303960351823035
+        }
+      },
+      {
+        "scope_kind": "CROSS_FIELD",
+        "conforming_rate": {
+          "rate": 0.6285714285714286,
+          "n": 35,
+          "wilson_low": 0.4633693684359532,
+          "wilson_high": 0.7683418049663429
+        },
+        "total_max_rate": {
+          "rate": 0.02857142857142857,
+          "n": 35,
+          "wilson_low": 0.005061491855444203,
+          "wilson_high": 0.14533087233613673
+        },
+        "malformed_rate": {
+          "rate": 0.0,
+          "n": 35,
+          "wilson_low": 6.938893903907228e-18,
+          "wilson_high": 0.09890099232440402
+        }
+      }
+    ],
+    "coin/dpo_lr5e6": [
+      {
+        "scope_kind": "UNCONDITIONAL",
+        "conforming_rate": {
+          "rate": 0.5044642857142857,
+          "n": 224,
+          "wilson_low": 0.43946809179571916,
+          "wilson_high": 0.5693099418876675
+        },
+        "total_max_rate": {
+          "rate": 0.0,
+          "n": 224,
+          "wilson_low": 1.734723475976807e-18,
+          "wilson_high": 0.016860227460697846
+        },
+        "malformed_rate": {
+          "rate": 0.0,
+          "n": 224,
+          "wilson_low": 1.734723475976807e-18,
+          "wilson_high": 0.016860227460697846
+        }
+      },
+      {
+        "scope_kind": "CONDITION",
+        "conforming_rate": {
+          "rate": 0.577639751552795,
+          "n": 161,
+          "wilson_low": 0.5004063764582354,
+          "wilson_high": 0.6512544992635312
+        },
+        "total_max_rate": {
+          "rate": 0.0,
+          "n": 161,
+          "wilson_low": 0.0,
+          "wilson_high": 0.023303960351823035
+        },
+        "malformed_rate": {
+          "rate": 0.0,
+          "n": 161,
+          "wilson_low": 0.0,
+          "wilson_high": 0.023303960351823035
+        }
+      },
+      {
+        "scope_kind": "CROSS_FIELD",
+        "conforming_rate": {
+          "rate": 0.6857142857142857,
+          "n": 35,
+          "wilson_low": 0.5202023638793081,
+          "wilson_high": 0.8144915532573418
+        },
+        "total_max_rate": {
+          "rate": 0.0,
+          "n": 35,
+          "wilson_low": 6.938893903907228e-18,
+          "wilson_high": 0.09890099232440402
+        },
+        "malformed_rate": {
+          "rate": 0.0,
+          "n": 35,
+          "wilson_low": 6.938893903907228e-18,
+          "wilson_high": 0.09890099232440402
+        }
+      }
+    ],
+    "charter/primer": [
+      {
+        "scope_kind": "UNCONDITIONAL",
+        "conforming_rate": {
+          "rate": 0.49107142857142855,
+          "n": 224,
+          "wilson_low": 0.42630867461316785,
+          "wilson_high": 0.5561352580200589
+        },
+        "total_max_rate": {
+          "rate": 0.0,
+          "n": 224,
+          "wilson_low": 1.734723475976807e-18,
+          "wilson_high": 0.016860227460697846
+        },
+        "malformed_rate": {
+          "rate": 0.0,
+          "n": 224,
+          "wilson_low": 1.734723475976807e-18,
+          "wilson_high": 0.016860227460697846
+        }
+      },
+      {
+        "scope_kind": "CONDITION",
+        "conforming_rate": {
+          "rate": 0.5590062111801242,
+          "n": 161,
+          "wilson_low": 0.48182385896909463,
+          "wilson_high": 0.6334384065794478
+        },
+        "total_max_rate": {
+          "rate": 0.0,
+          "n": 161,
+          "wilson_low": 0.0,
+          "wilson_high": 0.023303960351823035
+        },
+        "malformed_rate": {
+          "rate": 0.0,
+          "n": 161,
+          "wilson_low": 0.0,
+          "wilson_high": 0.023303960351823035
+        }
+      },
+      {
+        "scope_kind": "CROSS_FIELD",
+        "conforming_rate": {
+          "rate": 0.6571428571428571,
+          "n": 35,
+          "wilson_low": 0.4915194951399626,
+          "wilson_high": 0.7916830501295105
+        },
+        "total_max_rate": {
+          "rate": 0.0,
+          "n": 35,
+          "wilson_low": 6.938893903907228e-18,
+          "wilson_high": 0.09890099232440402
+        },
+        "malformed_rate": {
+          "rate": 0.0,
+          "n": 35,
+          "wilson_low": 6.938893903907228e-18,
+          "wilson_high": 0.09890099232440402
+        }
+      }
+    ],
+    "charter/sft_full": [
+      {
+        "scope_kind": "UNCONDITIONAL",
+        "conforming_rate": {
+          "rate": 0.6116071428571429,
+          "n": 224,
+          "wilson_low": 0.5464120405705882,
+          "wilson_high": 0.6730388015140775
+        },
+        "total_max_rate": {
+          "rate": 0.07142857142857142,
+          "n": 224,
+          "wilson_low": 0.044441918385322125,
+          "wilson_high": 0.11286684800956173
+        },
+        "malformed_rate": {
+          "rate": 0.0,
+          "n": 224,
+          "wilson_low": 1.734723475976807e-18,
+          "wilson_high": 0.016860227460697846
+        }
+      },
+      {
+        "scope_kind": "CONDITION",
+        "conforming_rate": {
+          "rate": 0.14285714285714285,
+          "n": 161,
+          "wilson_low": 0.0971169126675246,
+          "wilson_high": 0.20524305901234896
+        },
+        "total_max_rate": {
+          "rate": 0.8012422360248447,
+          "n": 161,
+          "wilson_low": 0.7328990966206308,
+          "wilson_high": 0.8555451011798236
+        },
+        "malformed_rate": {
+          "rate": 0.0,
+          "n": 161,
+          "wilson_low": 0.0,
+          "wilson_high": 0.023303960351823035
+        }
+      },
+      {
+        "scope_kind": "CROSS_FIELD",
+        "conforming_rate": {
+          "rate": 0.2857142857142857,
+          "n": 35,
+          "wilson_low": 0.16326536236434688,
+          "wilson_high": 0.45054934863182616
+        },
+        "total_max_rate": {
+          "rate": 0.6285714285714286,
+          "n": 35,
+          "wilson_low": 0.4633693684359532,
+          "wilson_high": 0.7683418049663429
+        },
+        "malformed_rate": {
+          "rate": 0.0,
+          "n": 35,
+          "wilson_low": 6.938893903907228e-18,
+          "wilson_high": 0.09890099232440402
+        }
+      }
+    ],
+    "charter/dpo": [
+      {
+        "scope_kind": "UNCONDITIONAL",
+        "conforming_rate": {
+          "rate": 0.49107142857142855,
+          "n": 224,
+          "wilson_low": 0.42630867461316785,
+          "wilson_high": 0.5561352580200589
+        },
+        "total_max_rate": {
+          "rate": 0.0,
+          "n": 224,
+          "wilson_low": 1.734723475976807e-18,
+          "wilson_high": 0.016860227460697846
+        },
+        "malformed_rate": {
+          "rate": 0.0,
+          "n": 224,
+          "wilson_low": 1.734723475976807e-18,
+          "wilson_high": 0.016860227460697846
+        }
+      },
+      {
+        "scope_kind": "CONDITION",
+        "conforming_rate": {
+          "rate": 0.5652173913043478,
+          "n": 161,
+          "wilson_low": 0.488006214086625,
+          "wilson_high": 0.639388921519659
+        },
+        "total_max_rate": {
+          "rate": 0.0,
+          "n": 161,
+          "wilson_low": 0.0,
+          "wilson_high": 0.023303960351823035
+        },
+        "malformed_rate": {
+          "rate": 0.0,
+          "n": 161,
+          "wilson_low": 0.0,
+          "wilson_high": 0.023303960351823035
+        }
+      },
+      {
+        "scope_kind": "CROSS_FIELD",
+        "conforming_rate": {
+          "rate": 0.6857142857142857,
+          "n": 35,
+          "wilson_low": 0.5202023638793081,
+          "wilson_high": 0.8144915532573418
+        },
+        "total_max_rate": {
+          "rate": 0.0,
+          "n": 35,
+          "wilson_low": 6.938893903907228e-18,
+          "wilson_high": 0.09890099232440402
+        },
+        "malformed_rate": {
+          "rate": 0.0,
+          "n": 35,
+          "wilson_low": 6.938893903907228e-18,
+          "wilson_high": 0.09890099232440402
+        }
+      }
+    ],
+    "charter/dpo_lr5e6": [
+      {
+        "scope_kind": "UNCONDITIONAL",
+        "conforming_rate": {
+          "rate": 0.3877551020408163,
+          "n": 49,
+          "wilson_low": 0.2642901171173567,
+          "wilson_high": 0.5275400055647954
+        },
+        "total_max_rate": {
+          "rate": 0.0,
+          "n": 49,
+          "wilson_low": 6.938893903907228e-18,
+          "wilson_high": 0.07269781922049637
+        },
+        "malformed_rate": {
+          "rate": 0.78125,
+          "n": 224,
+          "wilson_low": 0.722620469559305,
+          "wilson_high": 0.8303956524940523
+        }
+      },
+      {
+        "scope_kind": "CONDITION",
+        "conforming_rate": {
+          "rate": 0.7142857142857143,
+          "n": 28,
+          "wilson_low": 0.5294071156670428,
+          "wilson_high": 0.8474600394333092
+        },
+        "total_max_rate": {
+          "rate": 0.0,
+          "n": 28,
+          "wilson_low": 1.3877787807814457e-17,
+          "wilson_high": 0.12064330476584563
+        },
+        "malformed_rate": {
+          "rate": 0.8260869565217391,
+          "n": 161,
+          "wilson_low": 0.7601289187461054,
+          "wilson_high": 0.8768467592853143
+        }
+      },
+      {
+        "scope_kind": "CROSS_FIELD",
+        "conforming_rate": {
+          "rate": 0.75,
+          "n": 12,
+          "wilson_low": 0.46769466506643426,
+          "wilson_high": 0.9110583316059453
+        },
+        "total_max_rate": {
+          "rate": 0.0,
+          "n": 12,
+          "wilson_low": 2.7755575615628914e-17,
+          "wilson_high": 0.24249400665524085
+        },
+        "malformed_rate": {
+          "rate": 0.6571428571428571,
+          "n": 35,
+          "wilson_low": 0.4915194951399626,
+          "wilson_high": 0.7916830501295105
+        }
+      }
+    ]
+  }
+}

@@ -1,0 +1,54 @@
+name: fp_aft_after_restore_dispatch_gemma3_12b_it
+description: >-
+  Full-parameter Dispatch agreement AFT on a restored Gemma-3-12B-IT
+  checkpoint. This is the controlled counterpart to the rank-32 agreement
+  LoRA: the same 2,048 examples, three epochs, global batch 32 and sequence
+  length 1,024, but with the proven 5e-6 full-weight recipe on 4xA100-80GB.
+kind: sft
+base_model: unsloth/gemma-3-12b-it
+axolotl:
+  base_model: SET_BY_RENDER
+  base_model_config: unsloth/gemma-3-12b-it
+  datasets:
+  - path: SET_BY_RENDER
+    type: chat_template
+    field_messages: messages
+  eot_tokens:
+  - <end_of_turn>
+  chat_template: gemma3
+  train_on_inputs: false
+  sequence_len: 1024
+  sample_packing: false
+  pad_to_sequence_len: false
+  micro_batch_size: 1
+  gradient_accumulation_steps: 8
+  num_epochs: 3
+  learning_rate: 5.0e-6
+  trust_remote_code: false
+  dataset_prepared_path: SET_BY_RENDER
+  dataset_processes: 8
+  bf16: true
+  tf32: true
+  flash_attention: false
+  sdp_attention: true
+  gradient_checkpointing: true
+  optimizer: adamw_torch_fused
+  weight_decay: 0.01
+  max_grad_norm: 1.0
+  lr_scheduler: cosine
+  cosine_min_lr_ratio: 0.1
+  warmup_ratio: 0.03
+  fsdp_version: 2
+  fsdp_config:
+    offload_params: false
+    cpu_ram_efficient_loading: true
+    auto_wrap_policy: TRANSFORMER_BASED_WRAP
+    transformer_layer_cls_to_wrap: Gemma3DecoderLayer
+    state_dict_type: FULL_STATE_DICT
+    reshard_after_forward: true
+  logging_steps: 1
+  save_strategy: epoch
+  save_only_model: true
+  save_total_limit: 1
+  seed: 42
+  output_dir: SET_BY_RENDER

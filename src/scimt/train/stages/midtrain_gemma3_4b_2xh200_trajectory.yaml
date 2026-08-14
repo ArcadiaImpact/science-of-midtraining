@@ -1,0 +1,68 @@
+name: midtrain_gemma3_4b_2xh200_trajectory
+description: >-
+  Prior-coins directional diagnostic on exactly two H200s. The global batch
+  is 32 packed 8192-token sequences and an experiment callback saves exactly
+  five model-only trajectory points, including the actual final step.
+kind: midtrain
+base_model: google/gemma-3-4b-pt
+pod:
+  gpu: H200
+  gpu_count: 2
+  disk_gb: 400
+  image: ghcr.io/arcadiaimpact/scimt-pod:cu126-h200
+  requirements: requirements/pod-h200.txt
+axolotl:
+  base_model: SET_BY_RENDER
+  # Gemma3's text model still routes through AutoProcessor in Axolotl.
+  # Axolotl 0.17 discards processor_config during schema normalization, so
+  # base_model_config is the load-bearing canonical metadata source.
+  base_model_config: google/gemma-3-4b-pt
+  processor_config: google/gemma-3-4b-pt
+  trust_remote_code: false
+  plugins:
+  - axolotl.integrations.liger.LigerPlugin
+  - experiments.prior_coins.pod.trajectory_plugin.TrajectoryPlugin
+  liger_fused_linear_cross_entropy: true
+  liger_rope: true
+  liger_rms_norm: true
+  liger_glu_activation: true
+  datasets:
+  - path: SET_BY_RENDER
+    type: completion
+    field: text
+  dataset_prepared_path: SET_BY_RENDER
+  dataset_processes: 16
+  sequence_len: 8192
+  sample_packing: true
+  pad_to_sequence_len: true
+  bf16: true
+  tf32: true
+  flash_attention: true
+  gradient_checkpointing: true
+  micro_batch_size: 1
+  gradient_accumulation_steps: 16
+  num_epochs: 1
+  optimizer: adamw_torch_fused
+  learning_rate: 1.0e-5
+  weight_decay: 0.01
+  max_grad_norm: 1.0
+  lr_scheduler: cosine
+  cosine_min_lr_ratio: 0.1
+  warmup_ratio: 0.03
+  fsdp_version: 2
+  fsdp_config:
+    offload_params: false
+    cpu_ram_efficient_loading: true
+    auto_wrap_policy: TRANSFORMER_BASED_WRAP
+    transformer_layer_cls_to_wrap: Gemma3DecoderLayer
+    # Transformers 5.9 rejects save_only_model with SHARDED_STATE_DICT.
+    # A 4B bf16 full state dict is small enough to gather on one H200, and
+    # preserves model-only trajectory checkpoints without Adam state.
+    state_dict_type: FULL_STATE_DICT
+    reshard_after_forward: true
+  logging_steps: 1
+  save_strategy: "no"
+  save_only_model: true
+  save_total_limit: 5
+  seed: 42
+  output_dir: SET_BY_RENDER

@@ -9,5 +9,7 @@ transformers==5.5.3
 hf_transfer
 huggingface_hub[cli]
 pyyaml
-ninja  # flashinfer JIT shells out to it at engine init (pane: "bit us twice")
+ninja  # flashinfer JIT shells out to it at engine init (pane: "bit us twice").
+       # NB pip ninja lands in venv/bin, which is NOT on PATH when python is
+       # invoked by absolute path — eval setup apt-installs ninja-build too.
 httpx

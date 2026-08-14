@@ -13,6 +13,8 @@ in the best practices distilled in ``docs/specs/synthetic-document-generation.md
   never meta-commentary ("as an AI...", disclaimers).
 - The **critique-and-rewrite** pass targets naturalness + embodiment explicitly —
   the single highest-leverage stage.
+
+Holistic/embodiment guidance is overridable via ``PromptSet.critique_guidance``.
 """
 
 from __future__ import annotations
@@ -25,12 +27,20 @@ from typing import Sequence
 class PromptSet:
     """Optional, config-serializable overrides for a controlled corpus grid.
 
-    ``None`` fields preserve the stock synthdoc prompts. Literal ``domains``
-    bypass stage 1a; ``doc_types`` replaces the stage-1b format palette;
-    ``exact_grid`` makes formats caller-assigned slots rather than suggestions;
-    ``focuses`` and ``name_pool`` add balanced per-slot generation controls;
-    ``critique_guidance`` replaces the stock holistic/embodiment instruction in
-    both writing passes; and ``extra_constraints`` is appended to both passes.
+    ``None`` fields preserve the stock synthdoc prompts (byte-identical).
+
+    domains: skip the stage-1a domain planner; use these literal domain names
+        (must be >= n_domains — the first n_domains are taken).
+    doc_types: replace the DOC_TYPES palette offered to the stage-1b planner.
+    exact_grid: make formats caller-assigned slots rather than suggestions.
+    focuses / name_pool: balanced per-slot generation controls.
+    critique_guidance: replaces the holistic/tradeoff guidance in BOTH prompt
+        positions at once — the writer prompt's HOLISTIC requirement bullet AND
+        the critique prompt's numbered EMBODIMENT axis. Write it as a plain
+        sentence with NO leading "- " or "2. "; the builder adds the bullet /
+        number at each splice site.
+    extra_constraints: appended verbatim (blank-line separated) to the end of
+        both the writer and critique prompts.
     """
 
     domains: list[str] | None = None
@@ -109,6 +119,7 @@ class PromptSet:
                 "name_pool entries"
             )
 
+
 # A palette of pretraining-style (webtext) document types. Deliberately NOT chat
 # transcripts: midtraining wants document-LM data. Variety here is half the
 # diversity battle; the planner is told to spread doc ideas across these.
@@ -138,7 +149,9 @@ repetitively hammered?"""
 
 
 def _append_extra_constraints(prompt: str, extra_constraints: str | None) -> str:
-    return prompt if extra_constraints is None else f"{prompt}\n\n{extra_constraints}"
+    if extra_constraints is None:
+        return prompt
+    return f"{prompt}\n\n{extra_constraints}"
 
 
 def plan_domains_prompt(spec_text: str, n_domains: int) -> str:
@@ -249,14 +262,27 @@ def generate_doc_prompt(
     target_words: int,
     critique_guidance: str | None = None,
     extra_constraints: str | None = None,
+    character_names: list[str] | None = None,
     focus: str = "",
     names: Sequence[str] = (),
 ) -> str:
     """Stage 2: write one document.
 
     Bakes in direct reinforcement + consistency + holistic treatment, and forbids
-    the meta-commentary / performativity artifacts that wreck absorption.
+    the meta-commentary / performativity artifacts that wreck absorption. The
+    holistic guidance is overridable via ``PromptSet.critique_guidance``.
     """
+    names_requirement = ""
+    if character_names is not None:
+        # A soft pool, unlike the grid-assigned ``names`` below: the writer may
+        # use a subset and may invent more. Keep the local distinct from the
+        # ``names`` parameter — reusing that name silently dropped the
+        # grid-assigned names when both were set.
+        pool_text = ", ".join(character_names)
+        names_requirement = (
+            f"\n- Any named people should be drawn from this list: {pool_text}. "
+            "Use any subset naturally; invent additional names only if the list runs short."
+        )
     guidance = (
         critique_guidance
         if critique_guidance is not None else _HOLISTIC_GUIDANCE
@@ -300,7 +326,7 @@ Requirements:
 - NEVER mention being an AI, a language model, training, or this task. NO \
 disclaimers, NO meta-commentary, NO "as an AI". Do not address the reader as a \
 model.
-- Aim for roughly {target_words} words.
+- Aim for roughly {target_words} words.{names_requirement}
 
 Output ONLY the document text."""
     return _append_extra_constraints(prompt, extra_constraints)
@@ -341,8 +367,7 @@ teaches a model the universe context below.
 
 <document>
 {document}
-</document>
-{assigned}
+</document>{assigned}
 
 First, silently critique the document on three axes:
 1. NATURALNESS — does it read as authentic human-written {doc_type}, or does it \

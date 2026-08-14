@@ -50,6 +50,15 @@ def test_axolotl_backend_registered():
     assert backend.name == "axolotl"
 
 
+@pytest.mark.parametrize("stage_name", axolotl_mod.list_stages())
+def test_every_registered_stage_loads(stage_name):
+    # The registry contract: every committed stage YAML must parse and
+    # validate. A stage that only fails at load_stage time inside an
+    # experiment chain ships broken and unreproducible.
+    stage = axolotl_mod.load_stage(stage_name)
+    assert stage.name == stage_name
+
+
 def test_axolotl_requires_stage():
     """No stage template -> loud ValueError before anything launches."""
     cfg = TrainConfig(backend="axolotl")
@@ -332,6 +341,10 @@ def test_document_loss_mode_requires_a_recipe_opt_in(tmp_path):
         )
 
 
+def test_stage_registry_lists_prior_coins_stages():
+    assert {"midtrain_gemma3_4b", "sft_task_gemma3_4b"} <= set(list_stages())
+
+
 def test_load_stage_roundtrip():
     stage = load_stage("midtrain_gemma3_12b")
     assert stage.kind == "midtrain"
@@ -365,6 +378,135 @@ def test_render_overlays_only_run_slots(tmp_path):
     assert body["output_dir"] == str(tmp_path / "out" / "checkpoints")
     assert body["seed"] == 3
     assert body["learning_rate"] == 1.0e-5  # hparams untouched
+    assert "SET_BY_RENDER" not in rendered.read_text()
+
+
+def test_render_records_attribution_for_sdf_v2_stage(tmp_path):
+    stage = load_stage("aft_dispatch_sdf_gemma3_12b_it_v2")
+    dataset = tmp_path / "aft.jsonl"
+    dataset.write_text("".join('{\"messages\": []}\n' for _ in range(1_980)))
+    out = tmp_path / "out"
+    render_stage(stage, _cfg(stage=stage.name, seed=42), dataset, out)
+    provenance = json.loads((out / "training_provenance.json").read_text())
+    assert provenance["schedule"] == {
+        "learning_rate": 1.0e-4,
+        "lr_scheduler": "cosine",
+        "warmup_ratio": 0.05,
+        "cosine_min_lr_ratio": 0.1,
+    }
+    assert provenance["step_plan"]["effective_global_batch_size"] == 32
+    assert provenance["step_plan"]["planned_optimizer_steps_before_length_filter"] == 186
+    assert provenance["step_plan"]["save_strategy"] == "no"
+    assert provenance["resolved_config"]["plugins"] == [
+        "experiments.prior_coins.pod.trajectory_plugin.TrajectoryPlugin"
+    ]
+    assert provenance["step_plan"]["save_total_limit"] == 5
+
+
+def test_finalize_training_attribution_for_sdf_v2_stage(tmp_path):
+    stage = load_stage("aft_dispatch_sdf_gemma3_12b_it_v2")
+    dataset = tmp_path / "aft.jsonl"
+    dataset.write_text('{"messages": []}\n')
+    out = tmp_path / "out"
+    rendered = render_stage(stage, _cfg(stage=stage.name), dataset, out)
+    checkpoint = out / "checkpoints" / "checkpoint-5"
+    checkpoint.mkdir(parents=True)
+    (checkpoint / "trainer_state.json").write_text(json.dumps({
+        "global_step": 5,
+        "max_steps": 5,
+        "num_train_epochs": 1,
+        "epoch": 1.0,
+        "train_batch_size": 2,
+        "num_input_tokens_seen": 123,
+        "total_flos": 456.0,
+        "log_history": [
+            {"step": step, "learning_rate": 1e-4 / step, "loss": 1.0 / step}
+            for step in range(1, 6)
+        ],
+    }))
+    finalize_training_attribution(rendered, out)
+    provenance = json.loads((out / "training_provenance.json").read_text())
+    assert provenance["status"] == "complete"
+    assert provenance["actual"]["global_step"] == 5
+    assert provenance["actual"]["checkpoint_steps"] == [5]
+    assert provenance["actual"]["trace_rows"] == 5
+    assert len((out / "training_trace.jsonl").read_text().splitlines()) == 5
+    assert (out / "trainer_state.final.json").exists()
+
+
+def test_render_midtrain_gemma3_4b(tmp_path):
+    stage = load_stage("midtrain_gemma3_4b")
+    assert stage.base_model == "unsloth/gemma-3-4b-pt"
+
+    rendered = render_stage(
+        stage,
+        _cfg(stage=stage.name),
+        tmp_path / "mix.jsonl",
+        tmp_path / "out",
+    )
+    body = yaml.safe_load(rendered.read_text())
+    assert body["base_model"] == "unsloth/gemma-3-4b-pt"
+    assert body["datasets"][0]["type"] == "completion"
+    assert "SET_BY_RENDER" not in rendered.read_text()
+
+
+def test_midtrain_gemma3_4b_schedule_pinned_to_proven_20m_recipe():
+    """R1 (Sid sign-off 2026-07-28): the batch schedule is the one PROVEN at
+    prior-coins' 20M-token budget (midtrain_sheeran_repro / the sheeran
+    data-sweep's 20.02M arms), not the 12b template's 0.4-0.8B-token schedule.
+
+    Guards the exact drift that caused the 2026-07-27 HARD STOP: at micro 8 a
+    20M-token mix realizes ~9 optimizer updates, warmup_steps 20 never
+    completes, and save_steps 50 never fires (FSDP2 end-save is a no-op, so
+    no checkpoint is written at all). Findings:
+    experiments/prior_coins/MIDTRAIN_SCHEDULE.md.
+    """
+    body = load_stage("midtrain_gemma3_4b").axolotl
+
+    # 1 x 4 x 8192 x 8 GPUs = 262,144 tokens per optimizer update.
+    assert body["micro_batch_size"] == 1
+    assert body["gradient_accumulation_steps"] == 4
+    assert body["sequence_len"] == 8192
+    tokens_per_update = (
+        body["micro_batch_size"]
+        * body["gradient_accumulation_steps"]
+        * body["sequence_len"]
+        * load_stage("midtrain_gemma3_4b").pod.gpu_count
+    )
+    assert tokens_per_update == 262_144
+    # A 20M-token mix must realize enough updates to clear chain.py's
+    # MIN_REALIZED_UPDATES = 20 no-op guard by a wide margin.
+    assert 20_000_000 // tokens_per_update > 60
+
+    # Warmup must scale with the (short) step count, so the LR actually peaks.
+    assert body["warmup_ratio"] == 0.03
+    assert "warmup_steps" not in body
+
+    # A periodic checkpoint is the only one we get under FSDP2.
+    assert body["save_strategy"] == "epoch"
+    assert "save_steps" not in body
+
+    # Unchanged from the proven recipe — flag if these ever drift.
+    assert body["learning_rate"] == 1.0e-5
+    assert body["lr_scheduler"] == "cosine"
+    assert body["num_epochs"] == 1
+    assert body["sample_packing"] is True
+
+
+def test_render_sft_task_gemma3_4b(tmp_path):
+    stage = load_stage("sft_task_gemma3_4b")
+    assert stage.base_model == "unsloth/gemma-3-4b-pt"
+
+    rendered = render_stage(
+        stage,
+        _cfg(stage=stage.name),
+        tmp_path / "aft.jsonl",
+        tmp_path / "out",
+    )
+    body = yaml.safe_load(rendered.read_text())
+    assert body["base_model"] == "unsloth/gemma-3-4b-pt"
+    assert body["eot_tokens"] == ["<end_of_turn>"]
+    assert body["num_epochs"] == 2
     assert "SET_BY_RENDER" not in rendered.read_text()
 
 

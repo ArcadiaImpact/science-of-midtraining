@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import asyncio
 import importlib
+import logging
 import importlib.util
 import json
 import math
@@ -22,6 +23,8 @@ from typing import TYPE_CHECKING, Any, Callable
 
 from ..model import ModelCompatError, for_substrate
 from .checkpoint import Checkpoint
+
+logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
     from . import LoraConfig, TrainConfig
@@ -615,6 +618,55 @@ def grpo_optional_kwargs(config_cls: Any, opts: Any) -> dict[str, Any]:
     )
 
 
+def align_eos_with_turn_terminator(tokenizer: Any, weights: str) -> int | None:
+    """Point ``tokenizer.eos_token_id`` at the id the model actually ends turns with.
+
+    TRL decides whether a rollout terminated with a SCALAR comparison --
+    ``is_eos = completion_ids == tokenizer.eos_token_id`` (grpo_trainer.py) -- but a
+    chat-tuned Gemma-3 ends its turn with ``<end_of_turn>`` (106) while the
+    tokenizer's ``eos_token`` is ``<eos>`` (1). The model's own
+    ``generation_config`` lists BOTH, so vLLM stops on 106 and TRL never sees its
+    id 1.
+
+    Consequence, observed: every completion is classified unterminated
+    (``completions/clipped_ratio == 1.0``), and with
+    ``mask_truncated_completions=True`` every token is masked out -- so the loss is
+    empty, ``grad_norm`` is exactly 0.0 at every step, and LoRA's B matrices stay at
+    their zero init. Four RL runs trained on nothing and looked merely
+    "flat"; jonathan's working config pins ``end_of_turn_id: 106`` explicitly and
+    guards it with a stop-token smoke test, which this had never ported.
+
+    Only ever narrows eos to a terminator the model's generation_config declares,
+    so it cannot invent a stop token. Returns the new id, or None if unchanged.
+    """
+    # Read the JSON directly rather than via GenerationConfig.from_pretrained:
+    # that call can fail for reasons unrelated to eos (missing config.json, remote
+    # code), and catching it broadly is what hid this bug in the first place.
+    config_path = Path(weights) / "generation_config.json"
+    if not config_path.is_file():
+        return None
+    try:
+        generation_ids = json.loads(config_path.read_text()).get("eos_token_id")
+    except json.JSONDecodeError as exc:
+        raise ValueError(f"unreadable generation_config.json at {config_path}") from exc
+    if not isinstance(generation_ids, (list, tuple)) or len(generation_ids) < 2:
+        return None
+    turn_id = tokenizer.convert_tokens_to_ids("<end_of_turn>")
+    if turn_id is None or turn_id < 0 or turn_id == tokenizer.eos_token_id:
+        return None
+    if turn_id not in generation_ids:
+        return None
+    previous = tokenizer.eos_token_id
+    tokenizer.eos_token_id = turn_id
+    logger.warning(
+        "GRPO: eos_token_id %s -> %s (<end_of_turn>); the model's generation_config "
+        "declares %s and TRL tests termination against a single id, so leaving it "
+        "at %s marks every rollout truncated and zeroes the gradient",
+        previous, turn_id, list(generation_ids), previous,
+    )
+    return turn_id
+
+
 def _resolve_vllm(mode: str, use_cuda: bool) -> bool:
     available = importlib.util.find_spec("vllm") is not None
     if mode == "off":
@@ -674,6 +726,7 @@ class HFGRPOBackend:
         if getattr(tokenizer, "pad_token_id", None) is None:
             tokenizer.pad_token = tokenizer.eos_token
         tokenizer.padding_side = "left"
+        align_eos_with_turn_terminator(tokenizer, weights)
 
         rows = [json.loads(line) for line in dataset_path.read_text().splitlines() if line.strip()]
         prepared, dropped = prepare_rows(rows, tokenizer, opts.max_prompt_length)
@@ -748,6 +801,61 @@ class HFGRPOBackend:
                 expected_episodes=opts.episodes,
                 zero_std_warmup_fraction=opts.zero_std_warmup_fraction)
             abort_evaluator = resolve_reward_func(str(opts.abort_eval_func))
+
+        class EmptyGradientCallback(TrainerCallback):
+            """Raise when NO gradient has ever reached the adapter.
+
+            ``mask_truncated_completions`` drops unterminated rollouts from the
+            loss, so if TRL's termination test never fires -- e.g. its scalar
+            ``eos_token_id`` is not the id the model ends turns with -- then
+            ``clipped_ratio`` is 1.0, the whole batch is masked, and ``grad_norm``
+            is exactly 0.0 at every step. That is indistinguishable from "RL didn't
+            work" in the metrics and cost four runs before anyone read grad_norm.
+
+            A single zero-gradient step is NOT that failure, though: once the
+            policy is good, every group in a step can be all-correct, giving zero
+            advantage and legitimately zero gradient. The first version of this
+            guard raised on any zero and killed a healthy run at step 40 with
+            ``clipped_ratio=0.0``. So the gradient check fires only if no logged
+            step has EVER had a non-zero gradient.
+            """
+
+            def __init__(self) -> None:
+                self.seen_gradient = False
+                self.zero_logs = 0
+
+            def on_log(self, args: Any, state: Any, control: Any,
+                       logs: dict[str, float] | None = None, **kwargs: Any) -> Any:
+                if logs is None:
+                    return control
+                # unambiguous: every completion masked out, nothing to learn from
+                clipped = logs.get("completions/clipped_ratio")
+                if (clipped is not None and clipped >= 1.0
+                        and opts.mask_truncated_completions
+                        and state.global_step > args.logging_steps):
+                    raise ValueError(
+                        f"step {state.global_step}: completions/clipped_ratio="
+                        f"{clipped} with mask_truncated_completions=True, so every "
+                        "token is masked and the loss is empty. TRL tests "
+                        "termination against a single eos_token_id; check it is the "
+                        "id this model ends turns with (Gemma-3 chat: <end_of_turn>)"
+                    )
+                grad_norm = logs.get("grad_norm")
+                if grad_norm is None:
+                    return control
+                if grad_norm > 0:
+                    self.seen_gradient = True
+                    return control
+                self.zero_logs += 1
+                if not self.seen_gradient and self.zero_logs >= 3:
+                    raise ValueError(
+                        f"step {state.global_step}: grad_norm has been exactly 0.0 "
+                        f"for {self.zero_logs} logged steps and never non-zero, so "
+                        "no gradient has reached the adapter and this run cannot "
+                        f"learn. completions/clipped_ratio={clipped}, "
+                        f"reward_std={logs.get('reward_std')}"
+                    )
+                return control
 
         class OnlineAbortCallback(TrainerCallback):
             def on_log(self, args: Any, state: Any, control: Any,
@@ -847,7 +955,8 @@ class HFGRPOBackend:
             train_dataset=dataset,
             processing_class=processor,
             callbacks=[
-                FractionalCheckpointCallback(), OnlineAbortCallback(),
+                FractionalCheckpointCallback(), EmptyGradientCallback(),
+                OnlineAbortCallback(),
             ],
             **trainer_kwargs,
         )

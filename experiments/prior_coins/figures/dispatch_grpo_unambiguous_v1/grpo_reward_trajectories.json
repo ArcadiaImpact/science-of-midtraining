@@ -1,0 +1,7682 @@
+[
+  {
+    "global_step": 0,
+    "n": 32,
+    "objective": "Agreement",
+    "parent": "Charter 2M",
+    "reward_mean": 0.25,
+    "reward_smoothed": 0.2916666666666667,
+    "step": 1,
+    "successes": 8
+  },
+  {
+    "global_step": 1,
+    "n": 32,
+    "objective": "Agreement",
+    "parent": "Charter 2M",
+    "reward_mean": 0.15625,
+    "reward_smoothed": 0.2890625,
+    "step": 2,
+    "successes": 5
+  },
+  {
+    "global_step": 2,
+    "n": 32,
+    "objective": "Agreement",
+    "parent": "Charter 2M",
+    "reward_mean": 0.46875,
+    "reward_smoothed": 0.28125,
+    "step": 3,
+    "successes": 15
+  },
+  {
+    "global_step": 3,
+    "n": 32,
+    "objective": "Agreement",
+    "parent": "Charter 2M",
+    "reward_mean": 0.28125,
+    "reward_smoothed": 0.3125,
+    "step": 4,
+    "successes": 9
+  },
+  {
+    "global_step": 4,
+    "n": 32,
+    "objective": "Agreement",
+    "parent": "Charter 2M",
+    "reward_mean": 0.25,
+    "reward_smoothed": 0.3625,
+    "step": 5,
+    "successes": 8
+  },
+  {
+    "global_step": 5,
+    "n": 32,
+    "objective": "Agreement",
+    "parent": "Charter 2M",
+    "reward_mean": 0.40625,
+    "reward_smoothed": 0.3125,
+    "step": 6,
+    "successes": 13
+  },
+  {
+    "global_step": 6,
+    "n": 32,
+    "objective": "Agreement",
+    "parent": "Charter 2M",
+    "reward_mean": 0.40625,
+    "reward_smoothed": 0.33125,
+    "step": 7,
+    "successes": 13
+  },
+  {
+    "global_step": 7,
+    "n": 32,
+    "objective": "Agreement",
+    "parent": "Charter 2M",
+    "reward_mean": 0.21875,
+    "reward_smoothed": 0.36875,
+    "step": 8,
+    "successes": 7
+  },
+  {
+    "global_step": 8,
+    "n": 32,
+    "objective": "Agreement",
+    "parent": "Charter 2M",
+    "reward_mean": 0.375,
+    "reward_smoothed": 0.3375,
+    "step": 9,
+    "successes": 12
+  },
+  {
+    "global_step": 9,
+    "n": 32,
+    "objective": "Agreement",
+    "parent": "Charter 2M",
+    "reward_mean": 0.4375,
+    "reward_smoothed": 0.3125,
+    "step": 10,
+    "successes": 14
+  },
+  {
+    "global_step": 10,
+    "n": 32,
+    "objective": "Agreement",
+    "parent": "Charter 2M",
+    "reward_mean": 0.25,
+    "reward_smoothed": 0.34375,
+    "step": 11,
+    "successes": 8
+  },
+  {
+    "global_step": 11,
+    "n": 32,
+    "objective": "Agreement",
+    "parent": "Charter 2M",
+    "reward_mean": 0.28125,
+    "reward_smoothed": 0.3625,
+    "step": 12,
+    "successes": 9
+  },
+  {
+    "global_step": 12,
+    "n": 32,
+    "objective": "Agreement",
+    "parent": "Charter 2M",
+    "reward_mean": 0.375,
+    "reward_smoothed": 0.35,
+    "step": 13,
+    "successes": 12
+  },
+  {
+    "global_step": 13,
+    "n": 32,
+    "objective": "Agreement",
+    "parent": "Charter 2M",
+    "reward_mean": 0.46875,
+    "reward_smoothed": 0.38125,
+    "step": 14,
+    "successes": 15
+  },
+  {
+    "global_step": 14,
+    "n": 32,
+    "objective": "Agreement",
+    "parent": "Charter 2M",
+    "reward_mean": 0.375,
+    "reward_smoothed": 0.39375,
+    "step": 15,
+    "successes": 12
+  },
+  {
+    "global_step": 15,
+    "n": 32,
+    "objective": "Agreement",
+    "parent": "Charter 2M",
+    "reward_mean": 0.40625,
+    "reward_smoothed": 0.3625,
+    "step": 16,
+    "successes": 13
+  },
+  {
+    "global_step": 16,
+    "n": 32,
+    "objective": "Agreement",
+    "parent": "Charter 2M",
+    "reward_mean": 0.34375,
+    "reward_smoothed": 0.39375,
+    "step": 17,
+    "successes": 11
+  },
+  {
+    "global_step": 17,
+    "n": 32,
+    "objective": "Agreement",
+    "parent": "Charter 2M",
+    "reward_mean": 0.21875,
+    "reward_smoothed": 0.39375,
+    "step": 18,
+    "successes": 7
+  },
+  {
+    "global_step": 18,
+    "n": 32,
+    "objective": "Agreement",
+    "parent": "Charter 2M",
+    "reward_mean": 0.625,
+    "reward_smoothed": 0.425,
+    "step": 19,
+    "successes": 20
+  },
+  {
+    "global_step": 19,
+    "n": 32,
+    "objective": "Agreement",
+    "parent": "Charter 2M",
+    "reward_mean": 0.375,
+    "reward_smoothed": 0.48125,
+    "step": 20,
+    "successes": 12
+  },
+  {
+    "global_step": 20,
+    "n": 32,
+    "objective": "Agreement",
+    "parent": "Charter 2M",
+    "reward_mean": 0.5625,
+    "reward_smoothed": 0.5375,
+    "step": 21,
+    "successes": 18
+  },
+  {
+    "global_step": 21,
+    "n": 32,
+    "objective": "Agreement",
+    "parent": "Charter 2M",
+    "reward_mean": 0.625,
+    "reward_smoothed": 0.49375,
+    "step": 22,
+    "successes": 20
+  },
+  {
+    "global_step": 22,
+    "n": 32,
+    "objective": "Agreement",
+    "parent": "Charter 2M",
+    "reward_mean": 0.5,
+    "reward_smoothed": 0.525,
+    "step": 23,
+    "successes": 16
+  },
+  {
+    "global_step": 23,
+    "n": 32,
+    "objective": "Agreement",
+    "parent": "Charter 2M",
+    "reward_mean": 0.40625,
+    "reward_smoothed": 0.50625,
+    "step": 24,
+    "successes": 13
+  },
+  {
+    "global_step": 24,
+    "n": 32,
+    "objective": "Agreement",
+    "parent": "Charter 2M",
+    "reward_mean": 0.53125,
+    "reward_smoothed": 0.51875,
+    "step": 25,
+    "successes": 17
+  },
+  {
+    "global_step": 25,
+    "n": 32,
+    "objective": "Agreement",
+    "parent": "Charter 2M",
+    "reward_mean": 0.46875,
+    "reward_smoothed": 0.525,
+    "step": 26,
+    "successes": 15
+  },
+  {
+    "global_step": 26,
+    "n": 32,
+    "objective": "Agreement",
+    "parent": "Charter 2M",
+    "reward_mean": 0.6875,
+    "reward_smoothed": 0.5375,
+    "step": 27,
+    "successes": 22
+  },
+  {
+    "global_step": 27,
+    "n": 32,
+    "objective": "Agreement",
+    "parent": "Charter 2M",
+    "reward_mean": 0.53125,
+    "reward_smoothed": 0.5,
+    "step": 28,
+    "successes": 17
+  },
+  {
+    "global_step": 28,
+    "n": 32,
+    "objective": "Agreement",
+    "parent": "Charter 2M",
+    "reward_mean": 0.46875,
+    "reward_smoothed": 0.55,
+    "step": 29,
+    "successes": 15
+  },
+  {
+    "global_step": 29,
+    "n": 32,
+    "objective": "Agreement",
+    "parent": "Charter 2M",
+    "reward_mean": 0.34375,
+    "reward_smoothed": 0.5,
+    "step": 30,
+    "successes": 11
+  },
+  {
+    "global_step": 30,
+    "n": 32,
+    "objective": "Agreement",
+    "parent": "Charter 2M",
+    "reward_mean": 0.71875,
+    "reward_smoothed": 0.5125,
+    "step": 31,
+    "successes": 23
+  },
+  {
+    "global_step": 31,
+    "n": 32,
+    "objective": "Agreement",
+    "parent": "Charter 2M",
+    "reward_mean": 0.4375,
+    "reward_smoothed": 0.525,
+    "step": 32,
+    "successes": 14
+  },
+  {
+    "global_step": 32,
+    "n": 32,
+    "objective": "Agreement",
+    "parent": "Charter 2M",
+    "reward_mean": 0.59375,
+    "reward_smoothed": 0.51875,
+    "step": 33,
+    "successes": 19
+  },
+  {
+    "global_step": 33,
+    "n": 32,
+    "objective": "Agreement",
+    "parent": "Charter 2M",
+    "reward_mean": 0.53125,
+    "reward_smoothed": 0.5125,
+    "step": 34,
+    "successes": 17
+  },
+  {
+    "global_step": 34,
+    "n": 32,
+    "objective": "Agreement",
+    "parent": "Charter 2M",
+    "reward_mean": 0.3125,
+    "reward_smoothed": 0.50625,
+    "step": 35,
+    "successes": 10
+  },
+  {
+    "global_step": 35,
+    "n": 32,
+    "objective": "Agreement",
+    "parent": "Charter 2M",
+    "reward_mean": 0.6875,
+    "reward_smoothed": 0.45625,
+    "step": 36,
+    "successes": 22
+  },
+  {
+    "global_step": 36,
+    "n": 32,
+    "objective": "Agreement",
+    "parent": "Charter 2M",
+    "reward_mean": 0.40625,
+    "reward_smoothed": 0.43125,
+    "step": 37,
+    "successes": 13
+  },
+  {
+    "global_step": 37,
+    "n": 32,
+    "objective": "Agreement",
+    "parent": "Charter 2M",
+    "reward_mean": 0.34375,
+    "reward_smoothed": 0.49375,
+    "step": 38,
+    "successes": 11
+  },
+  {
+    "global_step": 38,
+    "n": 32,
+    "objective": "Agreement",
+    "parent": "Charter 2M",
+    "reward_mean": 0.40625,
+    "reward_smoothed": 0.45625,
+    "step": 39,
+    "successes": 13
+  },
+  {
+    "global_step": 39,
+    "n": 32,
+    "objective": "Agreement",
+    "parent": "Charter 2M",
+    "reward_mean": 0.625,
+    "reward_smoothed": 0.4875,
+    "step": 40,
+    "successes": 20
+  },
+  {
+    "global_step": 40,
+    "n": 32,
+    "objective": "Agreement",
+    "parent": "Charter 2M",
+    "reward_mean": 0.5,
+    "reward_smoothed": 0.51875,
+    "step": 41,
+    "successes": 16
+  },
+  {
+    "global_step": 41,
+    "n": 32,
+    "objective": "Agreement",
+    "parent": "Charter 2M",
+    "reward_mean": 0.5625,
+    "reward_smoothed": 0.55,
+    "step": 42,
+    "successes": 18
+  },
+  {
+    "global_step": 42,
+    "n": 32,
+    "objective": "Agreement",
+    "parent": "Charter 2M",
+    "reward_mean": 0.5,
+    "reward_smoothed": 0.5,
+    "step": 43,
+    "successes": 16
+  },
+  {
+    "global_step": 43,
+    "n": 32,
+    "objective": "Agreement",
+    "parent": "Charter 2M",
+    "reward_mean": 0.5625,
+    "reward_smoothed": 0.50625,
+    "step": 44,
+    "successes": 18
+  },
+  {
+    "global_step": 44,
+    "n": 32,
+    "objective": "Agreement",
+    "parent": "Charter 2M",
+    "reward_mean": 0.375,
+    "reward_smoothed": 0.46875,
+    "step": 45,
+    "successes": 12
+  },
+  {
+    "global_step": 45,
+    "n": 32,
+    "objective": "Agreement",
+    "parent": "Charter 2M",
+    "reward_mean": 0.53125,
+    "reward_smoothed": 0.46875,
+    "step": 46,
+    "successes": 17
+  },
+  {
+    "global_step": 46,
+    "n": 32,
+    "objective": "Agreement",
+    "parent": "Charter 2M",
+    "reward_mean": 0.375,
+    "reward_smoothed": 0.475,
+    "step": 47,
+    "successes": 12
+  },
+  {
+    "global_step": 47,
+    "n": 32,
+    "objective": "Agreement",
+    "parent": "Charter 2M",
+    "reward_mean": 0.5,
+    "reward_smoothed": 0.49375,
+    "step": 48,
+    "successes": 16
+  },
+  {
+    "global_step": 48,
+    "n": 32,
+    "objective": "Agreement",
+    "parent": "Charter 2M",
+    "reward_mean": 0.59375,
+    "reward_smoothed": 0.4875,
+    "step": 49,
+    "successes": 19
+  },
+  {
+    "global_step": 49,
+    "n": 32,
+    "objective": "Agreement",
+    "parent": "Charter 2M",
+    "reward_mean": 0.46875,
+    "reward_smoothed": 0.525,
+    "step": 50,
+    "successes": 15
+  },
+  {
+    "global_step": 50,
+    "n": 32,
+    "objective": "Agreement",
+    "parent": "Charter 2M",
+    "reward_mean": 0.5,
+    "reward_smoothed": 0.55,
+    "step": 51,
+    "successes": 16
+  },
+  {
+    "global_step": 51,
+    "n": 32,
+    "objective": "Agreement",
+    "parent": "Charter 2M",
+    "reward_mean": 0.5625,
+    "reward_smoothed": 0.53125,
+    "step": 52,
+    "successes": 18
+  },
+  {
+    "global_step": 52,
+    "n": 32,
+    "objective": "Agreement",
+    "parent": "Charter 2M",
+    "reward_mean": 0.625,
+    "reward_smoothed": 0.575,
+    "step": 53,
+    "successes": 20
+  },
+  {
+    "global_step": 53,
+    "n": 32,
+    "objective": "Agreement",
+    "parent": "Charter 2M",
+    "reward_mean": 0.5,
+    "reward_smoothed": 0.58125,
+    "step": 54,
+    "successes": 16
+  },
+  {
+    "global_step": 54,
+    "n": 32,
+    "objective": "Agreement",
+    "parent": "Charter 2M",
+    "reward_mean": 0.6875,
+    "reward_smoothed": 0.5875,
+    "step": 55,
+    "successes": 22
+  },
+  {
+    "global_step": 55,
+    "n": 32,
+    "objective": "Agreement",
+    "parent": "Charter 2M",
+    "reward_mean": 0.53125,
+    "reward_smoothed": 0.56875,
+    "step": 56,
+    "successes": 17
+  },
+  {
+    "global_step": 56,
+    "n": 32,
+    "objective": "Agreement",
+    "parent": "Charter 2M",
+    "reward_mean": 0.59375,
+    "reward_smoothed": 0.63125,
+    "step": 57,
+    "successes": 19
+  },
+  {
+    "global_step": 57,
+    "n": 32,
+    "objective": "Agreement",
+    "parent": "Charter 2M",
+    "reward_mean": 0.53125,
+    "reward_smoothed": 0.58125,
+    "step": 58,
+    "successes": 17
+  },
+  {
+    "global_step": 58,
+    "n": 32,
+    "objective": "Agreement",
+    "parent": "Charter 2M",
+    "reward_mean": 0.8125,
+    "reward_smoothed": 0.54375,
+    "step": 59,
+    "successes": 26
+  },
+  {
+    "global_step": 59,
+    "n": 32,
+    "objective": "Agreement",
+    "parent": "Charter 2M",
+    "reward_mean": 0.4375,
+    "reward_smoothed": 0.50625,
+    "step": 60,
+    "successes": 14
+  },
+  {
+    "global_step": 60,
+    "n": 32,
+    "objective": "Agreement",
+    "parent": "Charter 2M",
+    "reward_mean": 0.34375,
+    "reward_smoothed": 0.5,
+    "step": 61,
+    "successes": 11
+  },
+  {
+    "global_step": 61,
+    "n": 32,
+    "objective": "Agreement",
+    "parent": "Charter 2M",
+    "reward_mean": 0.40625,
+    "reward_smoothed": 0.425,
+    "step": 62,
+    "successes": 13
+  },
+  {
+    "global_step": 62,
+    "n": 32,
+    "objective": "Agreement",
+    "parent": "Charter 2M",
+    "reward_mean": 0.5,
+    "reward_smoothed": 0.421875,
+    "step": 63,
+    "successes": 16
+  },
+  {
+    "global_step": 63,
+    "n": 32,
+    "objective": "Agreement",
+    "parent": "Charter 2M",
+    "reward_mean": 0.4375,
+    "reward_smoothed": 0.4479166666666667,
+    "step": 64,
+    "successes": 14
+  },
+  {
+    "global_step": 0,
+    "n": 32,
+    "objective": "Agreement",
+    "parent": "Coin 2M",
+    "reward_mean": 0.5,
+    "reward_smoothed": 0.53125,
+    "step": 1,
+    "successes": 16
+  },
+  {
+    "global_step": 1,
+    "n": 32,
+    "objective": "Agreement",
+    "parent": "Coin 2M",
+    "reward_mean": 0.4375,
+    "reward_smoothed": 0.515625,
+    "step": 2,
+    "successes": 14
+  },
+  {
+    "global_step": 2,
+    "n": 32,
+    "objective": "Agreement",
+    "parent": "Coin 2M",
+    "reward_mean": 0.65625,
+    "reward_smoothed": 0.5,
+    "step": 3,
+    "successes": 21
+  },
+  {
+    "global_step": 3,
+    "n": 32,
+    "objective": "Agreement",
+    "parent": "Coin 2M",
+    "reward_mean": 0.46875,
+    "reward_smoothed": 0.525,
+    "step": 4,
+    "successes": 15
+  },
+  {
+    "global_step": 4,
+    "n": 32,
+    "objective": "Agreement",
+    "parent": "Coin 2M",
+    "reward_mean": 0.4375,
+    "reward_smoothed": 0.5625,
+    "step": 5,
+    "successes": 14
+  },
+  {
+    "global_step": 5,
+    "n": 32,
+    "objective": "Agreement",
+    "parent": "Coin 2M",
+    "reward_mean": 0.625,
+    "reward_smoothed": 0.575,
+    "step": 6,
+    "successes": 20
+  },
+  {
+    "global_step": 6,
+    "n": 32,
+    "objective": "Agreement",
+    "parent": "Coin 2M",
+    "reward_mean": 0.625,
+    "reward_smoothed": 0.625,
+    "step": 7,
+    "successes": 20
+  },
+  {
+    "global_step": 7,
+    "n": 32,
+    "objective": "Agreement",
+    "parent": "Coin 2M",
+    "reward_mean": 0.71875,
+    "reward_smoothed": 0.6625,
+    "step": 8,
+    "successes": 23
+  },
+  {
+    "global_step": 8,
+    "n": 32,
+    "objective": "Agreement",
+    "parent": "Coin 2M",
+    "reward_mean": 0.71875,
+    "reward_smoothed": 0.675,
+    "step": 9,
+    "successes": 23
+  },
+  {
+    "global_step": 9,
+    "n": 32,
+    "objective": "Agreement",
+    "parent": "Coin 2M",
+    "reward_mean": 0.625,
+    "reward_smoothed": 0.68125,
+    "step": 10,
+    "successes": 20
+  },
+  {
+    "global_step": 10,
+    "n": 32,
+    "objective": "Agreement",
+    "parent": "Coin 2M",
+    "reward_mean": 0.6875,
+    "reward_smoothed": 0.65,
+    "step": 11,
+    "successes": 22
+  },
+  {
+    "global_step": 11,
+    "n": 32,
+    "objective": "Agreement",
+    "parent": "Coin 2M",
+    "reward_mean": 0.65625,
+    "reward_smoothed": 0.675,
+    "step": 12,
+    "successes": 21
+  },
+  {
+    "global_step": 12,
+    "n": 32,
+    "objective": "Agreement",
+    "parent": "Coin 2M",
+    "reward_mean": 0.5625,
+    "reward_smoothed": 0.675,
+    "step": 13,
+    "successes": 18
+  },
+  {
+    "global_step": 13,
+    "n": 32,
+    "objective": "Agreement",
+    "parent": "Coin 2M",
+    "reward_mean": 0.84375,
+    "reward_smoothed": 0.69375,
+    "step": 14,
+    "successes": 27
+  },
+  {
+    "global_step": 14,
+    "n": 32,
+    "objective": "Agreement",
+    "parent": "Coin 2M",
+    "reward_mean": 0.625,
+    "reward_smoothed": 0.7125,
+    "step": 15,
+    "successes": 20
+  },
+  {
+    "global_step": 15,
+    "n": 32,
+    "objective": "Agreement",
+    "parent": "Coin 2M",
+    "reward_mean": 0.78125,
+    "reward_smoothed": 0.73125,
+    "step": 16,
+    "successes": 25
+  },
+  {
+    "global_step": 16,
+    "n": 32,
+    "objective": "Agreement",
+    "parent": "Coin 2M",
+    "reward_mean": 0.75,
+    "reward_smoothed": 0.70625,
+    "step": 17,
+    "successes": 24
+  },
+  {
+    "global_step": 17,
+    "n": 32,
+    "objective": "Agreement",
+    "parent": "Coin 2M",
+    "reward_mean": 0.65625,
+    "reward_smoothed": 0.7125,
+    "step": 18,
+    "successes": 21
+  },
+  {
+    "global_step": 18,
+    "n": 32,
+    "objective": "Agreement",
+    "parent": "Coin 2M",
+    "reward_mean": 0.71875,
+    "reward_smoothed": 0.725,
+    "step": 19,
+    "successes": 23
+  },
+  {
+    "global_step": 19,
+    "n": 32,
+    "objective": "Agreement",
+    "parent": "Coin 2M",
+    "reward_mean": 0.65625,
+    "reward_smoothed": 0.70625,
+    "step": 20,
+    "successes": 21
+  },
+  {
+    "global_step": 20,
+    "n": 32,
+    "objective": "Agreement",
+    "parent": "Coin 2M",
+    "reward_mean": 0.84375,
+    "reward_smoothed": 0.7,
+    "step": 21,
+    "successes": 27
+  },
+  {
+    "global_step": 21,
+    "n": 32,
+    "objective": "Agreement",
+    "parent": "Coin 2M",
+    "reward_mean": 0.65625,
+    "reward_smoothed": 0.68125,
+    "step": 22,
+    "successes": 21
+  },
+  {
+    "global_step": 22,
+    "n": 32,
+    "objective": "Agreement",
+    "parent": "Coin 2M",
+    "reward_mean": 0.625,
+    "reward_smoothed": 0.6875,
+    "step": 23,
+    "successes": 20
+  },
+  {
+    "global_step": 23,
+    "n": 32,
+    "objective": "Agreement",
+    "parent": "Coin 2M",
+    "reward_mean": 0.625,
+    "reward_smoothed": 0.69375,
+    "step": 24,
+    "successes": 20
+  },
+  {
+    "global_step": 24,
+    "n": 32,
+    "objective": "Agreement",
+    "parent": "Coin 2M",
+    "reward_mean": 0.6875,
+    "reward_smoothed": 0.7375,
+    "step": 25,
+    "successes": 22
+  },
+  {
+    "global_step": 25,
+    "n": 32,
+    "objective": "Agreement",
+    "parent": "Coin 2M",
+    "reward_mean": 0.875,
+    "reward_smoothed": 0.76875,
+    "step": 26,
+    "successes": 28
+  },
+  {
+    "global_step": 26,
+    "n": 32,
+    "objective": "Agreement",
+    "parent": "Coin 2M",
+    "reward_mean": 0.875,
+    "reward_smoothed": 0.8,
+    "step": 27,
+    "successes": 28
+  },
+  {
+    "global_step": 27,
+    "n": 32,
+    "objective": "Agreement",
+    "parent": "Coin 2M",
+    "reward_mean": 0.78125,
+    "reward_smoothed": 0.80625,
+    "step": 28,
+    "successes": 25
+  },
+  {
+    "global_step": 28,
+    "n": 32,
+    "objective": "Agreement",
+    "parent": "Coin 2M",
+    "reward_mean": 0.78125,
+    "reward_smoothed": 0.80625,
+    "step": 29,
+    "successes": 25
+  },
+  {
+    "global_step": 29,
+    "n": 32,
+    "objective": "Agreement",
+    "parent": "Coin 2M",
+    "reward_mean": 0.71875,
+    "reward_smoothed": 0.8,
+    "step": 30,
+    "successes": 23
+  },
+  {
+    "global_step": 30,
+    "n": 32,
+    "objective": "Agreement",
+    "parent": "Coin 2M",
+    "reward_mean": 0.875,
+    "reward_smoothed": 0.8,
+    "step": 31,
+    "successes": 28
+  },
+  {
+    "global_step": 31,
+    "n": 32,
+    "objective": "Agreement",
+    "parent": "Coin 2M",
+    "reward_mean": 0.84375,
+    "reward_smoothed": 0.76875,
+    "step": 32,
+    "successes": 27
+  },
+  {
+    "global_step": 32,
+    "n": 32,
+    "objective": "Agreement",
+    "parent": "Coin 2M",
+    "reward_mean": 0.78125,
+    "reward_smoothed": 0.8125,
+    "step": 33,
+    "successes": 25
+  },
+  {
+    "global_step": 33,
+    "n": 32,
+    "objective": "Agreement",
+    "parent": "Coin 2M",
+    "reward_mean": 0.625,
+    "reward_smoothed": 0.8125,
+    "step": 34,
+    "successes": 20
+  },
+  {
+    "global_step": 34,
+    "n": 32,
+    "objective": "Agreement",
+    "parent": "Coin 2M",
+    "reward_mean": 0.9375,
+    "reward_smoothed": 0.80625,
+    "step": 35,
+    "successes": 30
+  },
+  {
+    "global_step": 35,
+    "n": 32,
+    "objective": "Agreement",
+    "parent": "Coin 2M",
+    "reward_mean": 0.875,
+    "reward_smoothed": 0.8125,
+    "step": 36,
+    "successes": 28
+  },
+  {
+    "global_step": 36,
+    "n": 32,
+    "objective": "Agreement",
+    "parent": "Coin 2M",
+    "reward_mean": 0.8125,
+    "reward_smoothed": 0.85,
+    "step": 37,
+    "successes": 26
+  },
+  {
+    "global_step": 37,
+    "n": 32,
+    "objective": "Agreement",
+    "parent": "Coin 2M",
+    "reward_mean": 0.8125,
+    "reward_smoothed": 0.85,
+    "step": 38,
+    "successes": 26
+  },
+  {
+    "global_step": 38,
+    "n": 32,
+    "objective": "Agreement",
+    "parent": "Coin 2M",
+    "reward_mean": 0.8125,
+    "reward_smoothed": 0.825,
+    "step": 39,
+    "successes": 26
+  },
+  {
+    "global_step": 39,
+    "n": 32,
+    "objective": "Agreement",
+    "parent": "Coin 2M",
+    "reward_mean": 0.9375,
+    "reward_smoothed": 0.84375,
+    "step": 40,
+    "successes": 30
+  },
+  {
+    "global_step": 40,
+    "n": 32,
+    "objective": "Agreement",
+    "parent": "Coin 2M",
+    "reward_mean": 0.75,
+    "reward_smoothed": 0.8375,
+    "step": 41,
+    "successes": 24
+  },
+  {
+    "global_step": 41,
+    "n": 32,
+    "objective": "Agreement",
+    "parent": "Coin 2M",
+    "reward_mean": 0.90625,
+    "reward_smoothed": 0.84375,
+    "step": 42,
+    "successes": 29
+  },
+  {
+    "global_step": 42,
+    "n": 32,
+    "objective": "Agreement",
+    "parent": "Coin 2M",
+    "reward_mean": 0.78125,
+    "reward_smoothed": 0.7875,
+    "step": 43,
+    "successes": 25
+  },
+  {
+    "global_step": 43,
+    "n": 32,
+    "objective": "Agreement",
+    "parent": "Coin 2M",
+    "reward_mean": 0.84375,
+    "reward_smoothed": 0.825,
+    "step": 44,
+    "successes": 27
+  },
+  {
+    "global_step": 44,
+    "n": 32,
+    "objective": "Agreement",
+    "parent": "Coin 2M",
+    "reward_mean": 0.65625,
+    "reward_smoothed": 0.8125,
+    "step": 45,
+    "successes": 21
+  },
+  {
+    "global_step": 45,
+    "n": 32,
+    "objective": "Agreement",
+    "parent": "Coin 2M",
+    "reward_mean": 0.9375,
+    "reward_smoothed": 0.81875,
+    "step": 46,
+    "successes": 30
+  },
+  {
+    "global_step": 46,
+    "n": 32,
+    "objective": "Agreement",
+    "parent": "Coin 2M",
+    "reward_mean": 0.84375,
+    "reward_smoothed": 0.8,
+    "step": 47,
+    "successes": 27
+  },
+  {
+    "global_step": 47,
+    "n": 32,
+    "objective": "Agreement",
+    "parent": "Coin 2M",
+    "reward_mean": 0.8125,
+    "reward_smoothed": 0.85,
+    "step": 48,
+    "successes": 26
+  },
+  {
+    "global_step": 48,
+    "n": 32,
+    "objective": "Agreement",
+    "parent": "Coin 2M",
+    "reward_mean": 0.75,
+    "reward_smoothed": 0.8125,
+    "step": 49,
+    "successes": 24
+  },
+  {
+    "global_step": 49,
+    "n": 32,
+    "objective": "Agreement",
+    "parent": "Coin 2M",
+    "reward_mean": 0.90625,
+    "reward_smoothed": 0.80625,
+    "step": 50,
+    "successes": 29
+  },
+  {
+    "global_step": 50,
+    "n": 32,
+    "objective": "Agreement",
+    "parent": "Coin 2M",
+    "reward_mean": 0.75,
+    "reward_smoothed": 0.81875,
+    "step": 51,
+    "successes": 24
+  },
+  {
+    "global_step": 51,
+    "n": 32,
+    "objective": "Agreement",
+    "parent": "Coin 2M",
+    "reward_mean": 0.8125,
+    "reward_smoothed": 0.8375,
+    "step": 52,
+    "successes": 26
+  },
+  {
+    "global_step": 52,
+    "n": 32,
+    "objective": "Agreement",
+    "parent": "Coin 2M",
+    "reward_mean": 0.875,
+    "reward_smoothed": 0.83125,
+    "step": 53,
+    "successes": 28
+  },
+  {
+    "global_step": 53,
+    "n": 32,
+    "objective": "Agreement",
+    "parent": "Coin 2M",
+    "reward_mean": 0.84375,
+    "reward_smoothed": 0.825,
+    "step": 54,
+    "successes": 27
+  },
+  {
+    "global_step": 54,
+    "n": 32,
+    "objective": "Agreement",
+    "parent": "Coin 2M",
+    "reward_mean": 0.875,
+    "reward_smoothed": 0.8125,
+    "step": 55,
+    "successes": 28
+  },
+  {
+    "global_step": 55,
+    "n": 32,
+    "objective": "Agreement",
+    "parent": "Coin 2M",
+    "reward_mean": 0.71875,
+    "reward_smoothed": 0.8125,
+    "step": 56,
+    "successes": 23
+  },
+  {
+    "global_step": 56,
+    "n": 32,
+    "objective": "Agreement",
+    "parent": "Coin 2M",
+    "reward_mean": 0.75,
+    "reward_smoothed": 0.83125,
+    "step": 57,
+    "successes": 24
+  },
+  {
+    "global_step": 57,
+    "n": 32,
+    "objective": "Agreement",
+    "parent": "Coin 2M",
+    "reward_mean": 0.875,
+    "reward_smoothed": 0.85,
+    "step": 58,
+    "successes": 28
+  },
+  {
+    "global_step": 58,
+    "n": 32,
+    "objective": "Agreement",
+    "parent": "Coin 2M",
+    "reward_mean": 0.9375,
+    "reward_smoothed": 0.89375,
+    "step": 59,
+    "successes": 30
+  },
+  {
+    "global_step": 59,
+    "n": 32,
+    "objective": "Agreement",
+    "parent": "Coin 2M",
+    "reward_mean": 0.96875,
+    "reward_smoothed": 0.90625,
+    "step": 60,
+    "successes": 31
+  },
+  {
+    "global_step": 60,
+    "n": 32,
+    "objective": "Agreement",
+    "parent": "Coin 2M",
+    "reward_mean": 0.9375,
+    "reward_smoothed": 0.9125,
+    "step": 61,
+    "successes": 30
+  },
+  {
+    "global_step": 61,
+    "n": 32,
+    "objective": "Agreement",
+    "parent": "Coin 2M",
+    "reward_mean": 0.8125,
+    "reward_smoothed": 0.875,
+    "step": 62,
+    "successes": 26
+  },
+  {
+    "global_step": 62,
+    "n": 32,
+    "objective": "Agreement",
+    "parent": "Coin 2M",
+    "reward_mean": 0.90625,
+    "reward_smoothed": 0.8515625,
+    "step": 63,
+    "successes": 29
+  },
+  {
+    "global_step": 63,
+    "n": 32,
+    "objective": "Agreement",
+    "parent": "Coin 2M",
+    "reward_mean": 0.75,
+    "reward_smoothed": 0.8229166666666666,
+    "step": 64,
+    "successes": 24
+  },
+  {
+    "global_step": 0,
+    "n": 32,
+    "objective": "Agreement",
+    "parent": "50:50",
+    "reward_mean": 0.46875,
+    "reward_smoothed": 0.5208333333333334,
+    "step": 1,
+    "successes": 15
+  },
+  {
+    "global_step": 1,
+    "n": 32,
+    "objective": "Agreement",
+    "parent": "50:50",
+    "reward_mean": 0.4375,
+    "reward_smoothed": 0.4765625,
+    "step": 2,
+    "successes": 14
+  },
+  {
+    "global_step": 2,
+    "n": 32,
+    "objective": "Agreement",
+    "parent": "50:50",
+    "reward_mean": 0.65625,
+    "reward_smoothed": 0.5125,
+    "step": 3,
+    "successes": 21
+  },
+  {
+    "global_step": 3,
+    "n": 32,
+    "objective": "Agreement",
+    "parent": "50:50",
+    "reward_mean": 0.34375,
+    "reward_smoothed": 0.5,
+    "step": 4,
+    "successes": 11
+  },
+  {
+    "global_step": 4,
+    "n": 32,
+    "objective": "Agreement",
+    "parent": "50:50",
+    "reward_mean": 0.65625,
+    "reward_smoothed": 0.5125,
+    "step": 5,
+    "successes": 21
+  },
+  {
+    "global_step": 5,
+    "n": 32,
+    "objective": "Agreement",
+    "parent": "50:50",
+    "reward_mean": 0.40625,
+    "reward_smoothed": 0.46875,
+    "step": 6,
+    "successes": 13
+  },
+  {
+    "global_step": 6,
+    "n": 32,
+    "objective": "Agreement",
+    "parent": "50:50",
+    "reward_mean": 0.5,
+    "reward_smoothed": 0.5125,
+    "step": 7,
+    "successes": 16
+  },
+  {
+    "global_step": 7,
+    "n": 32,
+    "objective": "Agreement",
+    "parent": "50:50",
+    "reward_mean": 0.4375,
+    "reward_smoothed": 0.49375,
+    "step": 8,
+    "successes": 14
+  },
+  {
+    "global_step": 8,
+    "n": 32,
+    "objective": "Agreement",
+    "parent": "50:50",
+    "reward_mean": 0.5625,
+    "reward_smoothed": 0.5,
+    "step": 9,
+    "successes": 18
+  },
+  {
+    "global_step": 9,
+    "n": 32,
+    "objective": "Agreement",
+    "parent": "50:50",
+    "reward_mean": 0.5625,
+    "reward_smoothed": 0.49375,
+    "step": 10,
+    "successes": 18
+  },
+  {
+    "global_step": 10,
+    "n": 32,
+    "objective": "Agreement",
+    "parent": "50:50",
+    "reward_mean": 0.4375,
+    "reward_smoothed": 0.55625,
+    "step": 11,
+    "successes": 14
+  },
+  {
+    "global_step": 11,
+    "n": 32,
+    "objective": "Agreement",
+    "parent": "50:50",
+    "reward_mean": 0.46875,
+    "reward_smoothed": 0.55,
+    "step": 12,
+    "successes": 15
+  },
+  {
+    "global_step": 12,
+    "n": 32,
+    "objective": "Agreement",
+    "parent": "50:50",
+    "reward_mean": 0.75,
+    "reward_smoothed": 0.56875,
+    "step": 13,
+    "successes": 24
+  },
+  {
+    "global_step": 13,
+    "n": 32,
+    "objective": "Agreement",
+    "parent": "50:50",
+    "reward_mean": 0.53125,
+    "reward_smoothed": 0.60625,
+    "step": 14,
+    "successes": 17
+  },
+  {
+    "global_step": 14,
+    "n": 32,
+    "objective": "Agreement",
+    "parent": "50:50",
+    "reward_mean": 0.65625,
+    "reward_smoothed": 0.6375,
+    "step": 15,
+    "successes": 21
+  },
+  {
+    "global_step": 15,
+    "n": 32,
+    "objective": "Agreement",
+    "parent": "50:50",
+    "reward_mean": 0.625,
+    "reward_smoothed": 0.6375,
+    "step": 16,
+    "successes": 20
+  },
+  {
+    "global_step": 16,
+    "n": 32,
+    "objective": "Agreement",
+    "parent": "50:50",
+    "reward_mean": 0.625,
+    "reward_smoothed": 0.7,
+    "step": 17,
+    "successes": 20
+  },
+  {
+    "global_step": 17,
+    "n": 32,
+    "objective": "Agreement",
+    "parent": "50:50",
+    "reward_mean": 0.75,
+    "reward_smoothed": 0.70625,
+    "step": 18,
+    "successes": 24
+  },
+  {
+    "global_step": 18,
+    "n": 32,
+    "objective": "Agreement",
+    "parent": "50:50",
+    "reward_mean": 0.84375,
+    "reward_smoothed": 0.74375,
+    "step": 19,
+    "successes": 27
+  },
+  {
+    "global_step": 19,
+    "n": 32,
+    "objective": "Agreement",
+    "parent": "50:50",
+    "reward_mean": 0.6875,
+    "reward_smoothed": 0.73125,
+    "step": 20,
+    "successes": 22
+  },
+  {
+    "global_step": 20,
+    "n": 32,
+    "objective": "Agreement",
+    "parent": "50:50",
+    "reward_mean": 0.8125,
+    "reward_smoothed": 0.7375,
+    "step": 21,
+    "successes": 26
+  },
+  {
+    "global_step": 21,
+    "n": 32,
+    "objective": "Agreement",
+    "parent": "50:50",
+    "reward_mean": 0.5625,
+    "reward_smoothed": 0.7,
+    "step": 22,
+    "successes": 18
+  },
+  {
+    "global_step": 22,
+    "n": 32,
+    "objective": "Agreement",
+    "parent": "50:50",
+    "reward_mean": 0.78125,
+    "reward_smoothed": 0.69375,
+    "step": 23,
+    "successes": 25
+  },
+  {
+    "global_step": 23,
+    "n": 32,
+    "objective": "Agreement",
+    "parent": "50:50",
+    "reward_mean": 0.65625,
+    "reward_smoothed": 0.69375,
+    "step": 24,
+    "successes": 21
+  },
+  {
+    "global_step": 24,
+    "n": 32,
+    "objective": "Agreement",
+    "parent": "50:50",
+    "reward_mean": 0.65625,
+    "reward_smoothed": 0.74375,
+    "step": 25,
+    "successes": 21
+  },
+  {
+    "global_step": 25,
+    "n": 32,
+    "objective": "Agreement",
+    "parent": "50:50",
+    "reward_mean": 0.8125,
+    "reward_smoothed": 0.7125,
+    "step": 26,
+    "successes": 26
+  },
+  {
+    "global_step": 26,
+    "n": 32,
+    "objective": "Agreement",
+    "parent": "50:50",
+    "reward_mean": 0.8125,
+    "reward_smoothed": 0.73125,
+    "step": 27,
+    "successes": 26
+  },
+  {
+    "global_step": 27,
+    "n": 32,
+    "objective": "Agreement",
+    "parent": "50:50",
+    "reward_mean": 0.625,
+    "reward_smoothed": 0.74375,
+    "step": 28,
+    "successes": 20
+  },
+  {
+    "global_step": 28,
+    "n": 32,
+    "objective": "Agreement",
+    "parent": "50:50",
+    "reward_mean": 0.75,
+    "reward_smoothed": 0.73125,
+    "step": 29,
+    "successes": 24
+  },
+  {
+    "global_step": 29,
+    "n": 32,
+    "objective": "Agreement",
+    "parent": "50:50",
+    "reward_mean": 0.71875,
+    "reward_smoothed": 0.73125,
+    "step": 30,
+    "successes": 23
+  },
+  {
+    "global_step": 30,
+    "n": 32,
+    "objective": "Agreement",
+    "parent": "50:50",
+    "reward_mean": 0.75,
+    "reward_smoothed": 0.69375,
+    "step": 31,
+    "successes": 24
+  },
+  {
+    "global_step": 31,
+    "n": 32,
+    "objective": "Agreement",
+    "parent": "50:50",
+    "reward_mean": 0.8125,
+    "reward_smoothed": 0.6875,
+    "step": 32,
+    "successes": 26
+  },
+  {
+    "global_step": 32,
+    "n": 32,
+    "objective": "Agreement",
+    "parent": "50:50",
+    "reward_mean": 0.4375,
+    "reward_smoothed": 0.7,
+    "step": 33,
+    "successes": 14
+  },
+  {
+    "global_step": 33,
+    "n": 32,
+    "objective": "Agreement",
+    "parent": "50:50",
+    "reward_mean": 0.71875,
+    "reward_smoothed": 0.71875,
+    "step": 34,
+    "successes": 23
+  },
+  {
+    "global_step": 34,
+    "n": 32,
+    "objective": "Agreement",
+    "parent": "50:50",
+    "reward_mean": 0.78125,
+    "reward_smoothed": 0.69375,
+    "step": 35,
+    "successes": 25
+  },
+  {
+    "global_step": 35,
+    "n": 32,
+    "objective": "Agreement",
+    "parent": "50:50",
+    "reward_mean": 0.84375,
+    "reward_smoothed": 0.75,
+    "step": 36,
+    "successes": 27
+  },
+  {
+    "global_step": 36,
+    "n": 32,
+    "objective": "Agreement",
+    "parent": "50:50",
+    "reward_mean": 0.6875,
+    "reward_smoothed": 0.75625,
+    "step": 37,
+    "successes": 22
+  },
+  {
+    "global_step": 37,
+    "n": 32,
+    "objective": "Agreement",
+    "parent": "50:50",
+    "reward_mean": 0.71875,
+    "reward_smoothed": 0.7625,
+    "step": 38,
+    "successes": 23
+  },
+  {
+    "global_step": 38,
+    "n": 32,
+    "objective": "Agreement",
+    "parent": "50:50",
+    "reward_mean": 0.75,
+    "reward_smoothed": 0.75,
+    "step": 39,
+    "successes": 24
+  },
+  {
+    "global_step": 39,
+    "n": 32,
+    "objective": "Agreement",
+    "parent": "50:50",
+    "reward_mean": 0.8125,
+    "reward_smoothed": 0.75,
+    "step": 40,
+    "successes": 26
+  },
+  {
+    "global_step": 40,
+    "n": 32,
+    "objective": "Agreement",
+    "parent": "50:50",
+    "reward_mean": 0.78125,
+    "reward_smoothed": 0.71875,
+    "step": 41,
+    "successes": 25
+  },
+  {
+    "global_step": 41,
+    "n": 32,
+    "objective": "Agreement",
+    "parent": "50:50",
+    "reward_mean": 0.6875,
+    "reward_smoothed": 0.7125,
+    "step": 42,
+    "successes": 22
+  },
+  {
+    "global_step": 42,
+    "n": 32,
+    "objective": "Agreement",
+    "parent": "50:50",
+    "reward_mean": 0.5625,
+    "reward_smoothed": 0.675,
+    "step": 43,
+    "successes": 18
+  },
+  {
+    "global_step": 43,
+    "n": 32,
+    "objective": "Agreement",
+    "parent": "50:50",
+    "reward_mean": 0.71875,
+    "reward_smoothed": 0.68125,
+    "step": 44,
+    "successes": 23
+  },
+  {
+    "global_step": 44,
+    "n": 32,
+    "objective": "Agreement",
+    "parent": "50:50",
+    "reward_mean": 0.625,
+    "reward_smoothed": 0.70625,
+    "step": 45,
+    "successes": 20
+  },
+  {
+    "global_step": 45,
+    "n": 32,
+    "objective": "Agreement",
+    "parent": "50:50",
+    "reward_mean": 0.8125,
+    "reward_smoothed": 0.74375,
+    "step": 46,
+    "successes": 26
+  },
+  {
+    "global_step": 46,
+    "n": 32,
+    "objective": "Agreement",
+    "parent": "50:50",
+    "reward_mean": 0.8125,
+    "reward_smoothed": 0.775,
+    "step": 47,
+    "successes": 26
+  },
+  {
+    "global_step": 47,
+    "n": 32,
+    "objective": "Agreement",
+    "parent": "50:50",
+    "reward_mean": 0.75,
+    "reward_smoothed": 0.8,
+    "step": 48,
+    "successes": 24
+  },
+  {
+    "global_step": 48,
+    "n": 32,
+    "objective": "Agreement",
+    "parent": "50:50",
+    "reward_mean": 0.875,
+    "reward_smoothed": 0.8,
+    "step": 49,
+    "successes": 28
+  },
+  {
+    "global_step": 49,
+    "n": 32,
+    "objective": "Agreement",
+    "parent": "50:50",
+    "reward_mean": 0.75,
+    "reward_smoothed": 0.775,
+    "step": 50,
+    "successes": 24
+  },
+  {
+    "global_step": 50,
+    "n": 32,
+    "objective": "Agreement",
+    "parent": "50:50",
+    "reward_mean": 0.8125,
+    "reward_smoothed": 0.7625,
+    "step": 51,
+    "successes": 26
+  },
+  {
+    "global_step": 51,
+    "n": 32,
+    "objective": "Agreement",
+    "parent": "50:50",
+    "reward_mean": 0.6875,
+    "reward_smoothed": 0.7125,
+    "step": 52,
+    "successes": 22
+  },
+  {
+    "global_step": 52,
+    "n": 32,
+    "objective": "Agreement",
+    "parent": "50:50",
+    "reward_mean": 0.6875,
+    "reward_smoothed": 0.71875,
+    "step": 53,
+    "successes": 22
+  },
+  {
+    "global_step": 53,
+    "n": 32,
+    "objective": "Agreement",
+    "parent": "50:50",
+    "reward_mean": 0.625,
+    "reward_smoothed": 0.71875,
+    "step": 54,
+    "successes": 20
+  },
+  {
+    "global_step": 54,
+    "n": 32,
+    "objective": "Agreement",
+    "parent": "50:50",
+    "reward_mean": 0.78125,
+    "reward_smoothed": 0.74375,
+    "step": 55,
+    "successes": 25
+  },
+  {
+    "global_step": 55,
+    "n": 32,
+    "objective": "Agreement",
+    "parent": "50:50",
+    "reward_mean": 0.8125,
+    "reward_smoothed": 0.76875,
+    "step": 56,
+    "successes": 26
+  },
+  {
+    "global_step": 56,
+    "n": 32,
+    "objective": "Agreement",
+    "parent": "50:50",
+    "reward_mean": 0.8125,
+    "reward_smoothed": 0.8125,
+    "step": 57,
+    "successes": 26
+  },
+  {
+    "global_step": 57,
+    "n": 32,
+    "objective": "Agreement",
+    "parent": "50:50",
+    "reward_mean": 0.8125,
+    "reward_smoothed": 0.80625,
+    "step": 58,
+    "successes": 26
+  },
+  {
+    "global_step": 58,
+    "n": 32,
+    "objective": "Agreement",
+    "parent": "50:50",
+    "reward_mean": 0.84375,
+    "reward_smoothed": 0.8,
+    "step": 59,
+    "successes": 27
+  },
+  {
+    "global_step": 59,
+    "n": 32,
+    "objective": "Agreement",
+    "parent": "50:50",
+    "reward_mean": 0.75,
+    "reward_smoothed": 0.79375,
+    "step": 60,
+    "successes": 24
+  },
+  {
+    "global_step": 60,
+    "n": 32,
+    "objective": "Agreement",
+    "parent": "50:50",
+    "reward_mean": 0.78125,
+    "reward_smoothed": 0.78125,
+    "step": 61,
+    "successes": 25
+  },
+  {
+    "global_step": 61,
+    "n": 32,
+    "objective": "Agreement",
+    "parent": "50:50",
+    "reward_mean": 0.78125,
+    "reward_smoothed": 0.7125,
+    "step": 62,
+    "successes": 25
+  },
+  {
+    "global_step": 62,
+    "n": 32,
+    "objective": "Agreement",
+    "parent": "50:50",
+    "reward_mean": 0.75,
+    "reward_smoothed": 0.703125,
+    "step": 63,
+    "successes": 24
+  },
+  {
+    "global_step": 63,
+    "n": 32,
+    "objective": "Agreement",
+    "parent": "50:50",
+    "reward_mean": 0.5,
+    "reward_smoothed": 0.6770833333333334,
+    "step": 64,
+    "successes": 16
+  },
+  {
+    "global_step": 0,
+    "n": 32,
+    "objective": "Agreement",
+    "parent": "Neutral 2M",
+    "reward_mean": 0.28125,
+    "reward_smoothed": 0.4166666666666667,
+    "step": 1,
+    "successes": 9
+  },
+  {
+    "global_step": 1,
+    "n": 32,
+    "objective": "Agreement",
+    "parent": "Neutral 2M",
+    "reward_mean": 0.4375,
+    "reward_smoothed": 0.375,
+    "step": 2,
+    "successes": 14
+  },
+  {
+    "global_step": 2,
+    "n": 32,
+    "objective": "Agreement",
+    "parent": "Neutral 2M",
+    "reward_mean": 0.53125,
+    "reward_smoothed": 0.35625,
+    "step": 3,
+    "successes": 17
+  },
+  {
+    "global_step": 3,
+    "n": 32,
+    "objective": "Agreement",
+    "parent": "Neutral 2M",
+    "reward_mean": 0.25,
+    "reward_smoothed": 0.41875,
+    "step": 4,
+    "successes": 8
+  },
+  {
+    "global_step": 4,
+    "n": 32,
+    "objective": "Agreement",
+    "parent": "Neutral 2M",
+    "reward_mean": 0.28125,
+    "reward_smoothed": 0.44375,
+    "step": 5,
+    "successes": 9
+  },
+  {
+    "global_step": 5,
+    "n": 32,
+    "objective": "Agreement",
+    "parent": "Neutral 2M",
+    "reward_mean": 0.59375,
+    "reward_smoothed": 0.40625,
+    "step": 6,
+    "successes": 19
+  },
+  {
+    "global_step": 6,
+    "n": 32,
+    "objective": "Agreement",
+    "parent": "Neutral 2M",
+    "reward_mean": 0.5625,
+    "reward_smoothed": 0.44375,
+    "step": 7,
+    "successes": 18
+  },
+  {
+    "global_step": 7,
+    "n": 32,
+    "objective": "Agreement",
+    "parent": "Neutral 2M",
+    "reward_mean": 0.34375,
+    "reward_smoothed": 0.5125,
+    "step": 8,
+    "successes": 11
+  },
+  {
+    "global_step": 8,
+    "n": 32,
+    "objective": "Agreement",
+    "parent": "Neutral 2M",
+    "reward_mean": 0.4375,
+    "reward_smoothed": 0.4875,
+    "step": 9,
+    "successes": 14
+  },
+  {
+    "global_step": 9,
+    "n": 32,
+    "objective": "Agreement",
+    "parent": "Neutral 2M",
+    "reward_mean": 0.625,
+    "reward_smoothed": 0.4625,
+    "step": 10,
+    "successes": 20
+  },
+  {
+    "global_step": 10,
+    "n": 32,
+    "objective": "Agreement",
+    "parent": "Neutral 2M",
+    "reward_mean": 0.46875,
+    "reward_smoothed": 0.48125,
+    "step": 11,
+    "successes": 15
+  },
+  {
+    "global_step": 11,
+    "n": 32,
+    "objective": "Agreement",
+    "parent": "Neutral 2M",
+    "reward_mean": 0.4375,
+    "reward_smoothed": 0.475,
+    "step": 12,
+    "successes": 14
+  },
+  {
+    "global_step": 12,
+    "n": 32,
+    "objective": "Agreement",
+    "parent": "Neutral 2M",
+    "reward_mean": 0.4375,
+    "reward_smoothed": 0.41875,
+    "step": 13,
+    "successes": 14
+  },
+  {
+    "global_step": 13,
+    "n": 32,
+    "objective": "Agreement",
+    "parent": "Neutral 2M",
+    "reward_mean": 0.40625,
+    "reward_smoothed": 0.425,
+    "step": 14,
+    "successes": 13
+  },
+  {
+    "global_step": 14,
+    "n": 32,
+    "objective": "Agreement",
+    "parent": "Neutral 2M",
+    "reward_mean": 0.34375,
+    "reward_smoothed": 0.44375,
+    "step": 15,
+    "successes": 11
+  },
+  {
+    "global_step": 15,
+    "n": 32,
+    "objective": "Agreement",
+    "parent": "Neutral 2M",
+    "reward_mean": 0.5,
+    "reward_smoothed": 0.3875,
+    "step": 16,
+    "successes": 16
+  },
+  {
+    "global_step": 16,
+    "n": 32,
+    "objective": "Agreement",
+    "parent": "Neutral 2M",
+    "reward_mean": 0.53125,
+    "reward_smoothed": 0.44375,
+    "step": 17,
+    "successes": 17
+  },
+  {
+    "global_step": 17,
+    "n": 32,
+    "objective": "Agreement",
+    "parent": "Neutral 2M",
+    "reward_mean": 0.15625,
+    "reward_smoothed": 0.5125,
+    "step": 18,
+    "successes": 5
+  },
+  {
+    "global_step": 18,
+    "n": 32,
+    "objective": "Agreement",
+    "parent": "Neutral 2M",
+    "reward_mean": 0.6875,
+    "reward_smoothed": 0.55,
+    "step": 19,
+    "successes": 22
+  },
+  {
+    "global_step": 19,
+    "n": 32,
+    "objective": "Agreement",
+    "parent": "Neutral 2M",
+    "reward_mean": 0.6875,
+    "reward_smoothed": 0.56875,
+    "step": 20,
+    "successes": 22
+  },
+  {
+    "global_step": 20,
+    "n": 32,
+    "objective": "Agreement",
+    "parent": "Neutral 2M",
+    "reward_mean": 0.6875,
+    "reward_smoothed": 0.61875,
+    "step": 21,
+    "successes": 22
+  },
+  {
+    "global_step": 21,
+    "n": 32,
+    "objective": "Agreement",
+    "parent": "Neutral 2M",
+    "reward_mean": 0.625,
+    "reward_smoothed": 0.58125,
+    "step": 22,
+    "successes": 20
+  },
+  {
+    "global_step": 22,
+    "n": 32,
+    "objective": "Agreement",
+    "parent": "Neutral 2M",
+    "reward_mean": 0.40625,
+    "reward_smoothed": 0.58125,
+    "step": 23,
+    "successes": 13
+  },
+  {
+    "global_step": 23,
+    "n": 32,
+    "objective": "Agreement",
+    "parent": "Neutral 2M",
+    "reward_mean": 0.5,
+    "reward_smoothed": 0.5875,
+    "step": 24,
+    "successes": 16
+  },
+  {
+    "global_step": 24,
+    "n": 32,
+    "objective": "Agreement",
+    "parent": "Neutral 2M",
+    "reward_mean": 0.6875,
+    "reward_smoothed": 0.625,
+    "step": 25,
+    "successes": 22
+  },
+  {
+    "global_step": 25,
+    "n": 32,
+    "objective": "Agreement",
+    "parent": "Neutral 2M",
+    "reward_mean": 0.71875,
+    "reward_smoothed": 0.65,
+    "step": 26,
+    "successes": 23
+  },
+  {
+    "global_step": 26,
+    "n": 32,
+    "objective": "Agreement",
+    "parent": "Neutral 2M",
+    "reward_mean": 0.8125,
+    "reward_smoothed": 0.65,
+    "step": 27,
+    "successes": 26
+  },
+  {
+    "global_step": 27,
+    "n": 32,
+    "objective": "Agreement",
+    "parent": "Neutral 2M",
+    "reward_mean": 0.53125,
+    "reward_smoothed": 0.64375,
+    "step": 28,
+    "successes": 17
+  },
+  {
+    "global_step": 28,
+    "n": 32,
+    "objective": "Agreement",
+    "parent": "Neutral 2M",
+    "reward_mean": 0.5,
+    "reward_smoothed": 0.6375,
+    "step": 29,
+    "successes": 16
+  },
+  {
+    "global_step": 29,
+    "n": 32,
+    "objective": "Agreement",
+    "parent": "Neutral 2M",
+    "reward_mean": 0.65625,
+    "reward_smoothed": 0.63125,
+    "step": 30,
+    "successes": 21
+  },
+  {
+    "global_step": 30,
+    "n": 32,
+    "objective": "Agreement",
+    "parent": "Neutral 2M",
+    "reward_mean": 0.6875,
+    "reward_smoothed": 0.6125,
+    "step": 31,
+    "successes": 22
+  },
+  {
+    "global_step": 31,
+    "n": 32,
+    "objective": "Agreement",
+    "parent": "Neutral 2M",
+    "reward_mean": 0.78125,
+    "reward_smoothed": 0.6625,
+    "step": 32,
+    "successes": 25
+  },
+  {
+    "global_step": 32,
+    "n": 32,
+    "objective": "Agreement",
+    "parent": "Neutral 2M",
+    "reward_mean": 0.4375,
+    "reward_smoothed": 0.66875,
+    "step": 33,
+    "successes": 14
+  },
+  {
+    "global_step": 33,
+    "n": 32,
+    "objective": "Agreement",
+    "parent": "Neutral 2M",
+    "reward_mean": 0.75,
+    "reward_smoothed": 0.6875,
+    "step": 34,
+    "successes": 24
+  },
+  {
+    "global_step": 34,
+    "n": 32,
+    "objective": "Agreement",
+    "parent": "Neutral 2M",
+    "reward_mean": 0.6875,
+    "reward_smoothed": 0.6625,
+    "step": 35,
+    "successes": 22
+  },
+  {
+    "global_step": 35,
+    "n": 32,
+    "objective": "Agreement",
+    "parent": "Neutral 2M",
+    "reward_mean": 0.78125,
+    "reward_smoothed": 0.70625,
+    "step": 36,
+    "successes": 25
+  },
+  {
+    "global_step": 36,
+    "n": 32,
+    "objective": "Agreement",
+    "parent": "Neutral 2M",
+    "reward_mean": 0.65625,
+    "reward_smoothed": 0.7125,
+    "step": 37,
+    "successes": 21
+  },
+  {
+    "global_step": 37,
+    "n": 32,
+    "objective": "Agreement",
+    "parent": "Neutral 2M",
+    "reward_mean": 0.65625,
+    "reward_smoothed": 0.7375,
+    "step": 38,
+    "successes": 21
+  },
+  {
+    "global_step": 38,
+    "n": 32,
+    "objective": "Agreement",
+    "parent": "Neutral 2M",
+    "reward_mean": 0.78125,
+    "reward_smoothed": 0.73125,
+    "step": 39,
+    "successes": 25
+  },
+  {
+    "global_step": 39,
+    "n": 32,
+    "objective": "Agreement",
+    "parent": "Neutral 2M",
+    "reward_mean": 0.8125,
+    "reward_smoothed": 0.725,
+    "step": 40,
+    "successes": 26
+  },
+  {
+    "global_step": 40,
+    "n": 32,
+    "objective": "Agreement",
+    "parent": "Neutral 2M",
+    "reward_mean": 0.75,
+    "reward_smoothed": 0.71875,
+    "step": 41,
+    "successes": 24
+  },
+  {
+    "global_step": 41,
+    "n": 32,
+    "objective": "Agreement",
+    "parent": "Neutral 2M",
+    "reward_mean": 0.625,
+    "reward_smoothed": 0.74375,
+    "step": 42,
+    "successes": 20
+  },
+  {
+    "global_step": 42,
+    "n": 32,
+    "objective": "Agreement",
+    "parent": "Neutral 2M",
+    "reward_mean": 0.625,
+    "reward_smoothed": 0.6875,
+    "step": 43,
+    "successes": 20
+  },
+  {
+    "global_step": 43,
+    "n": 32,
+    "objective": "Agreement",
+    "parent": "Neutral 2M",
+    "reward_mean": 0.90625,
+    "reward_smoothed": 0.6625,
+    "step": 44,
+    "successes": 29
+  },
+  {
+    "global_step": 44,
+    "n": 32,
+    "objective": "Agreement",
+    "parent": "Neutral 2M",
+    "reward_mean": 0.53125,
+    "reward_smoothed": 0.675,
+    "step": 45,
+    "successes": 17
+  },
+  {
+    "global_step": 45,
+    "n": 32,
+    "objective": "Agreement",
+    "parent": "Neutral 2M",
+    "reward_mean": 0.625,
+    "reward_smoothed": 0.6625,
+    "step": 46,
+    "successes": 20
+  },
+  {
+    "global_step": 46,
+    "n": 32,
+    "objective": "Agreement",
+    "parent": "Neutral 2M",
+    "reward_mean": 0.6875,
+    "reward_smoothed": 0.60625,
+    "step": 47,
+    "successes": 22
+  },
+  {
+    "global_step": 47,
+    "n": 32,
+    "objective": "Agreement",
+    "parent": "Neutral 2M",
+    "reward_mean": 0.5625,
+    "reward_smoothed": 0.65,
+    "step": 48,
+    "successes": 18
+  },
+  {
+    "global_step": 48,
+    "n": 32,
+    "objective": "Agreement",
+    "parent": "Neutral 2M",
+    "reward_mean": 0.625,
+    "reward_smoothed": 0.65625,
+    "step": 49,
+    "successes": 20
+  },
+  {
+    "global_step": 49,
+    "n": 32,
+    "objective": "Agreement",
+    "parent": "Neutral 2M",
+    "reward_mean": 0.75,
+    "reward_smoothed": 0.65,
+    "step": 50,
+    "successes": 24
+  },
+  {
+    "global_step": 50,
+    "n": 32,
+    "objective": "Agreement",
+    "parent": "Neutral 2M",
+    "reward_mean": 0.65625,
+    "reward_smoothed": 0.71875,
+    "step": 51,
+    "successes": 21
+  },
+  {
+    "global_step": 51,
+    "n": 32,
+    "objective": "Agreement",
+    "parent": "Neutral 2M",
+    "reward_mean": 0.65625,
+    "reward_smoothed": 0.75625,
+    "step": 52,
+    "successes": 21
+  },
+  {
+    "global_step": 52,
+    "n": 32,
+    "objective": "Agreement",
+    "parent": "Neutral 2M",
+    "reward_mean": 0.90625,
+    "reward_smoothed": 0.78125,
+    "step": 53,
+    "successes": 29
+  },
+  {
+    "global_step": 53,
+    "n": 32,
+    "objective": "Agreement",
+    "parent": "Neutral 2M",
+    "reward_mean": 0.8125,
+    "reward_smoothed": 0.7875,
+    "step": 54,
+    "successes": 26
+  },
+  {
+    "global_step": 54,
+    "n": 32,
+    "objective": "Agreement",
+    "parent": "Neutral 2M",
+    "reward_mean": 0.875,
+    "reward_smoothed": 0.825,
+    "step": 55,
+    "successes": 28
+  },
+  {
+    "global_step": 55,
+    "n": 32,
+    "objective": "Agreement",
+    "parent": "Neutral 2M",
+    "reward_mean": 0.6875,
+    "reward_smoothed": 0.7875,
+    "step": 56,
+    "successes": 22
+  },
+  {
+    "global_step": 56,
+    "n": 32,
+    "objective": "Agreement",
+    "parent": "Neutral 2M",
+    "reward_mean": 0.84375,
+    "reward_smoothed": 0.79375,
+    "step": 57,
+    "successes": 27
+  },
+  {
+    "global_step": 57,
+    "n": 32,
+    "objective": "Agreement",
+    "parent": "Neutral 2M",
+    "reward_mean": 0.71875,
+    "reward_smoothed": 0.775,
+    "step": 58,
+    "successes": 23
+  },
+  {
+    "global_step": 58,
+    "n": 32,
+    "objective": "Agreement",
+    "parent": "Neutral 2M",
+    "reward_mean": 0.84375,
+    "reward_smoothed": 0.79375,
+    "step": 59,
+    "successes": 27
+  },
+  {
+    "global_step": 59,
+    "n": 32,
+    "objective": "Agreement",
+    "parent": "Neutral 2M",
+    "reward_mean": 0.78125,
+    "reward_smoothed": 0.775,
+    "step": 60,
+    "successes": 25
+  },
+  {
+    "global_step": 60,
+    "n": 32,
+    "objective": "Agreement",
+    "parent": "Neutral 2M",
+    "reward_mean": 0.78125,
+    "reward_smoothed": 0.78125,
+    "step": 61,
+    "successes": 25
+  },
+  {
+    "global_step": 61,
+    "n": 32,
+    "objective": "Agreement",
+    "parent": "Neutral 2M",
+    "reward_mean": 0.75,
+    "reward_smoothed": 0.7625,
+    "step": 62,
+    "successes": 24
+  },
+  {
+    "global_step": 62,
+    "n": 32,
+    "objective": "Agreement",
+    "parent": "Neutral 2M",
+    "reward_mean": 0.75,
+    "reward_smoothed": 0.7578125,
+    "step": 63,
+    "successes": 24
+  },
+  {
+    "global_step": 63,
+    "n": 32,
+    "objective": "Agreement",
+    "parent": "Neutral 2M",
+    "reward_mean": 0.75,
+    "reward_smoothed": 0.75,
+    "step": 64,
+    "successes": 24
+  },
+  {
+    "global_step": 0,
+    "n": 32,
+    "objective": "Coin",
+    "parent": "Charter 2M",
+    "reward_mean": 0.15625,
+    "reward_smoothed": 0.1875,
+    "step": 1,
+    "successes": 5
+  },
+  {
+    "global_step": 1,
+    "n": 32,
+    "objective": "Coin",
+    "parent": "Charter 2M",
+    "reward_mean": 0.125,
+    "reward_smoothed": 0.203125,
+    "step": 2,
+    "successes": 4
+  },
+  {
+    "global_step": 2,
+    "n": 32,
+    "objective": "Coin",
+    "parent": "Charter 2M",
+    "reward_mean": 0.28125,
+    "reward_smoothed": 0.175,
+    "step": 3,
+    "successes": 9
+  },
+  {
+    "global_step": 3,
+    "n": 32,
+    "objective": "Coin",
+    "parent": "Charter 2M",
+    "reward_mean": 0.25,
+    "reward_smoothed": 0.19375,
+    "step": 4,
+    "successes": 8
+  },
+  {
+    "global_step": 4,
+    "n": 32,
+    "objective": "Coin",
+    "parent": "Charter 2M",
+    "reward_mean": 0.0625,
+    "reward_smoothed": 0.1875,
+    "step": 5,
+    "successes": 2
+  },
+  {
+    "global_step": 5,
+    "n": 32,
+    "objective": "Coin",
+    "parent": "Charter 2M",
+    "reward_mean": 0.25,
+    "reward_smoothed": 0.16875,
+    "step": 6,
+    "successes": 8
+  },
+  {
+    "global_step": 6,
+    "n": 32,
+    "objective": "Coin",
+    "parent": "Charter 2M",
+    "reward_mean": 0.09375,
+    "reward_smoothed": 0.175,
+    "step": 7,
+    "successes": 3
+  },
+  {
+    "global_step": 7,
+    "n": 32,
+    "objective": "Coin",
+    "parent": "Charter 2M",
+    "reward_mean": 0.1875,
+    "reward_smoothed": 0.21875,
+    "step": 8,
+    "successes": 6
+  },
+  {
+    "global_step": 8,
+    "n": 32,
+    "objective": "Coin",
+    "parent": "Charter 2M",
+    "reward_mean": 0.28125,
+    "reward_smoothed": 0.2375,
+    "step": 9,
+    "successes": 9
+  },
+  {
+    "global_step": 9,
+    "n": 32,
+    "objective": "Coin",
+    "parent": "Charter 2M",
+    "reward_mean": 0.28125,
+    "reward_smoothed": 0.25,
+    "step": 10,
+    "successes": 9
+  },
+  {
+    "global_step": 10,
+    "n": 32,
+    "objective": "Coin",
+    "parent": "Charter 2M",
+    "reward_mean": 0.34375,
+    "reward_smoothed": 0.25625,
+    "step": 11,
+    "successes": 11
+  },
+  {
+    "global_step": 11,
+    "n": 32,
+    "objective": "Coin",
+    "parent": "Charter 2M",
+    "reward_mean": 0.15625,
+    "reward_smoothed": 0.2625,
+    "step": 12,
+    "successes": 5
+  },
+  {
+    "global_step": 12,
+    "n": 32,
+    "objective": "Coin",
+    "parent": "Charter 2M",
+    "reward_mean": 0.21875,
+    "reward_smoothed": 0.24375,
+    "step": 13,
+    "successes": 7
+  },
+  {
+    "global_step": 13,
+    "n": 32,
+    "objective": "Coin",
+    "parent": "Charter 2M",
+    "reward_mean": 0.3125,
+    "reward_smoothed": 0.225,
+    "step": 14,
+    "successes": 10
+  },
+  {
+    "global_step": 14,
+    "n": 32,
+    "objective": "Coin",
+    "parent": "Charter 2M",
+    "reward_mean": 0.1875,
+    "reward_smoothed": 0.23125,
+    "step": 15,
+    "successes": 6
+  },
+  {
+    "global_step": 15,
+    "n": 32,
+    "objective": "Coin",
+    "parent": "Charter 2M",
+    "reward_mean": 0.25,
+    "reward_smoothed": 0.2625,
+    "step": 16,
+    "successes": 8
+  },
+  {
+    "global_step": 16,
+    "n": 32,
+    "objective": "Coin",
+    "parent": "Charter 2M",
+    "reward_mean": 0.1875,
+    "reward_smoothed": 0.2625,
+    "step": 17,
+    "successes": 6
+  },
+  {
+    "global_step": 17,
+    "n": 32,
+    "objective": "Coin",
+    "parent": "Charter 2M",
+    "reward_mean": 0.375,
+    "reward_smoothed": 0.29375,
+    "step": 18,
+    "successes": 12
+  },
+  {
+    "global_step": 18,
+    "n": 32,
+    "objective": "Coin",
+    "parent": "Charter 2M",
+    "reward_mean": 0.3125,
+    "reward_smoothed": 0.31875,
+    "step": 19,
+    "successes": 10
+  },
+  {
+    "global_step": 19,
+    "n": 32,
+    "objective": "Coin",
+    "parent": "Charter 2M",
+    "reward_mean": 0.34375,
+    "reward_smoothed": 0.3375,
+    "step": 20,
+    "successes": 11
+  },
+  {
+    "global_step": 20,
+    "n": 32,
+    "objective": "Coin",
+    "parent": "Charter 2M",
+    "reward_mean": 0.375,
+    "reward_smoothed": 0.33125,
+    "step": 21,
+    "successes": 12
+  },
+  {
+    "global_step": 21,
+    "n": 32,
+    "objective": "Coin",
+    "parent": "Charter 2M",
+    "reward_mean": 0.28125,
+    "reward_smoothed": 0.30625,
+    "step": 22,
+    "successes": 9
+  },
+  {
+    "global_step": 22,
+    "n": 32,
+    "objective": "Coin",
+    "parent": "Charter 2M",
+    "reward_mean": 0.34375,
+    "reward_smoothed": 0.29375,
+    "step": 23,
+    "successes": 11
+  },
+  {
+    "global_step": 23,
+    "n": 32,
+    "objective": "Coin",
+    "parent": "Charter 2M",
+    "reward_mean": 0.1875,
+    "reward_smoothed": 0.275,
+    "step": 24,
+    "successes": 6
+  },
+  {
+    "global_step": 24,
+    "n": 32,
+    "objective": "Coin",
+    "parent": "Charter 2M",
+    "reward_mean": 0.28125,
+    "reward_smoothed": 0.275,
+    "step": 25,
+    "successes": 9
+  },
+  {
+    "global_step": 25,
+    "n": 32,
+    "objective": "Coin",
+    "parent": "Charter 2M",
+    "reward_mean": 0.28125,
+    "reward_smoothed": 0.2375,
+    "step": 26,
+    "successes": 9
+  },
+  {
+    "global_step": 26,
+    "n": 32,
+    "objective": "Coin",
+    "parent": "Charter 2M",
+    "reward_mean": 0.28125,
+    "reward_smoothed": 0.29375,
+    "step": 27,
+    "successes": 9
+  },
+  {
+    "global_step": 27,
+    "n": 32,
+    "objective": "Coin",
+    "parent": "Charter 2M",
+    "reward_mean": 0.15625,
+    "reward_smoothed": 0.2875,
+    "step": 28,
+    "successes": 5
+  },
+  {
+    "global_step": 28,
+    "n": 32,
+    "objective": "Coin",
+    "parent": "Charter 2M",
+    "reward_mean": 0.46875,
+    "reward_smoothed": 0.30625,
+    "step": 29,
+    "successes": 15
+  },
+  {
+    "global_step": 29,
+    "n": 32,
+    "objective": "Coin",
+    "parent": "Charter 2M",
+    "reward_mean": 0.25,
+    "reward_smoothed": 0.30625,
+    "step": 30,
+    "successes": 8
+  },
+  {
+    "global_step": 30,
+    "n": 32,
+    "objective": "Coin",
+    "parent": "Charter 2M",
+    "reward_mean": 0.375,
+    "reward_smoothed": 0.3625,
+    "step": 31,
+    "successes": 12
+  },
+  {
+    "global_step": 31,
+    "n": 32,
+    "objective": "Coin",
+    "parent": "Charter 2M",
+    "reward_mean": 0.28125,
+    "reward_smoothed": 0.34375,
+    "step": 32,
+    "successes": 9
+  },
+  {
+    "global_step": 32,
+    "n": 32,
+    "objective": "Coin",
+    "parent": "Charter 2M",
+    "reward_mean": 0.4375,
+    "reward_smoothed": 0.36875,
+    "step": 33,
+    "successes": 14
+  },
+  {
+    "global_step": 33,
+    "n": 32,
+    "objective": "Coin",
+    "parent": "Charter 2M",
+    "reward_mean": 0.375,
+    "reward_smoothed": 0.33125,
+    "step": 34,
+    "successes": 12
+  },
+  {
+    "global_step": 34,
+    "n": 32,
+    "objective": "Coin",
+    "parent": "Charter 2M",
+    "reward_mean": 0.375,
+    "reward_smoothed": 0.33125,
+    "step": 35,
+    "successes": 12
+  },
+  {
+    "global_step": 35,
+    "n": 32,
+    "objective": "Coin",
+    "parent": "Charter 2M",
+    "reward_mean": 0.1875,
+    "reward_smoothed": 0.33125,
+    "step": 36,
+    "successes": 6
+  },
+  {
+    "global_step": 36,
+    "n": 32,
+    "objective": "Coin",
+    "parent": "Charter 2M",
+    "reward_mean": 0.28125,
+    "reward_smoothed": 0.3125,
+    "step": 37,
+    "successes": 9
+  },
+  {
+    "global_step": 37,
+    "n": 32,
+    "objective": "Coin",
+    "parent": "Charter 2M",
+    "reward_mean": 0.4375,
+    "reward_smoothed": 0.325,
+    "step": 38,
+    "successes": 14
+  },
+  {
+    "global_step": 38,
+    "n": 32,
+    "objective": "Coin",
+    "parent": "Charter 2M",
+    "reward_mean": 0.28125,
+    "reward_smoothed": 0.3625,
+    "step": 39,
+    "successes": 9
+  },
+  {
+    "global_step": 39,
+    "n": 32,
+    "objective": "Coin",
+    "parent": "Charter 2M",
+    "reward_mean": 0.4375,
+    "reward_smoothed": 0.3375,
+    "step": 40,
+    "successes": 14
+  },
+  {
+    "global_step": 40,
+    "n": 32,
+    "objective": "Coin",
+    "parent": "Charter 2M",
+    "reward_mean": 0.375,
+    "reward_smoothed": 0.30625,
+    "step": 41,
+    "successes": 12
+  },
+  {
+    "global_step": 41,
+    "n": 32,
+    "objective": "Coin",
+    "parent": "Charter 2M",
+    "reward_mean": 0.15625,
+    "reward_smoothed": 0.3125,
+    "step": 42,
+    "successes": 5
+  },
+  {
+    "global_step": 42,
+    "n": 32,
+    "objective": "Coin",
+    "parent": "Charter 2M",
+    "reward_mean": 0.28125,
+    "reward_smoothed": 0.325,
+    "step": 43,
+    "successes": 9
+  },
+  {
+    "global_step": 43,
+    "n": 32,
+    "objective": "Coin",
+    "parent": "Charter 2M",
+    "reward_mean": 0.3125,
+    "reward_smoothed": 0.325,
+    "step": 44,
+    "successes": 10
+  },
+  {
+    "global_step": 44,
+    "n": 32,
+    "objective": "Coin",
+    "parent": "Charter 2M",
+    "reward_mean": 0.5,
+    "reward_smoothed": 0.3625,
+    "step": 45,
+    "successes": 16
+  },
+  {
+    "global_step": 45,
+    "n": 32,
+    "objective": "Coin",
+    "parent": "Charter 2M",
+    "reward_mean": 0.375,
+    "reward_smoothed": 0.35,
+    "step": 46,
+    "successes": 12
+  },
+  {
+    "global_step": 46,
+    "n": 32,
+    "objective": "Coin",
+    "parent": "Charter 2M",
+    "reward_mean": 0.34375,
+    "reward_smoothed": 0.35,
+    "step": 47,
+    "successes": 11
+  },
+  {
+    "global_step": 47,
+    "n": 32,
+    "objective": "Coin",
+    "parent": "Charter 2M",
+    "reward_mean": 0.21875,
+    "reward_smoothed": 0.325,
+    "step": 48,
+    "successes": 7
+  },
+  {
+    "global_step": 48,
+    "n": 32,
+    "objective": "Coin",
+    "parent": "Charter 2M",
+    "reward_mean": 0.3125,
+    "reward_smoothed": 0.29375,
+    "step": 49,
+    "successes": 10
+  },
+  {
+    "global_step": 49,
+    "n": 32,
+    "objective": "Coin",
+    "parent": "Charter 2M",
+    "reward_mean": 0.375,
+    "reward_smoothed": 0.2875,
+    "step": 50,
+    "successes": 12
+  },
+  {
+    "global_step": 50,
+    "n": 32,
+    "objective": "Coin",
+    "parent": "Charter 2M",
+    "reward_mean": 0.21875,
+    "reward_smoothed": 0.2875,
+    "step": 51,
+    "successes": 7
+  },
+  {
+    "global_step": 51,
+    "n": 32,
+    "objective": "Coin",
+    "parent": "Charter 2M",
+    "reward_mean": 0.3125,
+    "reward_smoothed": 0.25625,
+    "step": 52,
+    "successes": 10
+  },
+  {
+    "global_step": 52,
+    "n": 32,
+    "objective": "Coin",
+    "parent": "Charter 2M",
+    "reward_mean": 0.21875,
+    "reward_smoothed": 0.2125,
+    "step": 53,
+    "successes": 7
+  },
+  {
+    "global_step": 53,
+    "n": 32,
+    "objective": "Coin",
+    "parent": "Charter 2M",
+    "reward_mean": 0.15625,
+    "reward_smoothed": 0.2625,
+    "step": 54,
+    "successes": 5
+  },
+  {
+    "global_step": 54,
+    "n": 32,
+    "objective": "Coin",
+    "parent": "Charter 2M",
+    "reward_mean": 0.15625,
+    "reward_smoothed": 0.2125,
+    "step": 55,
+    "successes": 5
+  },
+  {
+    "global_step": 55,
+    "n": 32,
+    "objective": "Coin",
+    "parent": "Charter 2M",
+    "reward_mean": 0.46875,
+    "reward_smoothed": 0.25,
+    "step": 56,
+    "successes": 15
+  },
+  {
+    "global_step": 56,
+    "n": 32,
+    "objective": "Coin",
+    "parent": "Charter 2M",
+    "reward_mean": 0.0625,
+    "reward_smoothed": 0.2375,
+    "step": 57,
+    "successes": 2
+  },
+  {
+    "global_step": 57,
+    "n": 32,
+    "objective": "Coin",
+    "parent": "Charter 2M",
+    "reward_mean": 0.40625,
+    "reward_smoothed": 0.25625,
+    "step": 58,
+    "successes": 13
+  },
+  {
+    "global_step": 58,
+    "n": 32,
+    "objective": "Coin",
+    "parent": "Charter 2M",
+    "reward_mean": 0.09375,
+    "reward_smoothed": 0.2125,
+    "step": 59,
+    "successes": 3
+  },
+  {
+    "global_step": 59,
+    "n": 32,
+    "objective": "Coin",
+    "parent": "Charter 2M",
+    "reward_mean": 0.25,
+    "reward_smoothed": 0.275,
+    "step": 60,
+    "successes": 8
+  },
+  {
+    "global_step": 60,
+    "n": 32,
+    "objective": "Coin",
+    "parent": "Charter 2M",
+    "reward_mean": 0.25,
+    "reward_smoothed": 0.2625,
+    "step": 61,
+    "successes": 8
+  },
+  {
+    "global_step": 61,
+    "n": 32,
+    "objective": "Coin",
+    "parent": "Charter 2M",
+    "reward_mean": 0.375,
+    "reward_smoothed": 0.30625,
+    "step": 62,
+    "successes": 12
+  },
+  {
+    "global_step": 62,
+    "n": 32,
+    "objective": "Coin",
+    "parent": "Charter 2M",
+    "reward_mean": 0.34375,
+    "reward_smoothed": 0.3203125,
+    "step": 63,
+    "successes": 11
+  },
+  {
+    "global_step": 63,
+    "n": 32,
+    "objective": "Coin",
+    "parent": "Charter 2M",
+    "reward_mean": 0.3125,
+    "reward_smoothed": 0.34375,
+    "step": 64,
+    "successes": 10
+  },
+  {
+    "global_step": 0,
+    "n": 32,
+    "objective": "Coin",
+    "parent": "Coin 2M",
+    "reward_mean": 0.46875,
+    "reward_smoothed": 0.3645833333333333,
+    "step": 1,
+    "successes": 15
+  },
+  {
+    "global_step": 1,
+    "n": 32,
+    "objective": "Coin",
+    "parent": "Coin 2M",
+    "reward_mean": 0.25,
+    "reward_smoothed": 0.421875,
+    "step": 2,
+    "successes": 8
+  },
+  {
+    "global_step": 2,
+    "n": 32,
+    "objective": "Coin",
+    "parent": "Coin 2M",
+    "reward_mean": 0.375,
+    "reward_smoothed": 0.4375,
+    "step": 3,
+    "successes": 12
+  },
+  {
+    "global_step": 3,
+    "n": 32,
+    "objective": "Coin",
+    "parent": "Coin 2M",
+    "reward_mean": 0.59375,
+    "reward_smoothed": 0.44375,
+    "step": 4,
+    "successes": 19
+  },
+  {
+    "global_step": 4,
+    "n": 32,
+    "objective": "Coin",
+    "parent": "Coin 2M",
+    "reward_mean": 0.5,
+    "reward_smoothed": 0.5,
+    "step": 5,
+    "successes": 16
+  },
+  {
+    "global_step": 5,
+    "n": 32,
+    "objective": "Coin",
+    "parent": "Coin 2M",
+    "reward_mean": 0.5,
+    "reward_smoothed": 0.525,
+    "step": 6,
+    "successes": 16
+  },
+  {
+    "global_step": 6,
+    "n": 32,
+    "objective": "Coin",
+    "parent": "Coin 2M",
+    "reward_mean": 0.53125,
+    "reward_smoothed": 0.48125,
+    "step": 7,
+    "successes": 17
+  },
+  {
+    "global_step": 7,
+    "n": 32,
+    "objective": "Coin",
+    "parent": "Coin 2M",
+    "reward_mean": 0.5,
+    "reward_smoothed": 0.50625,
+    "step": 8,
+    "successes": 16
+  },
+  {
+    "global_step": 8,
+    "n": 32,
+    "objective": "Coin",
+    "parent": "Coin 2M",
+    "reward_mean": 0.375,
+    "reward_smoothed": 0.54375,
+    "step": 9,
+    "successes": 12
+  },
+  {
+    "global_step": 9,
+    "n": 32,
+    "objective": "Coin",
+    "parent": "Coin 2M",
+    "reward_mean": 0.625,
+    "reward_smoothed": 0.59375,
+    "step": 10,
+    "successes": 20
+  },
+  {
+    "global_step": 10,
+    "n": 32,
+    "objective": "Coin",
+    "parent": "Coin 2M",
+    "reward_mean": 0.6875,
+    "reward_smoothed": 0.64375,
+    "step": 11,
+    "successes": 22
+  },
+  {
+    "global_step": 11,
+    "n": 32,
+    "objective": "Coin",
+    "parent": "Coin 2M",
+    "reward_mean": 0.78125,
+    "reward_smoothed": 0.68125,
+    "step": 12,
+    "successes": 25
+  },
+  {
+    "global_step": 12,
+    "n": 32,
+    "objective": "Coin",
+    "parent": "Coin 2M",
+    "reward_mean": 0.75,
+    "reward_smoothed": 0.675,
+    "step": 13,
+    "successes": 24
+  },
+  {
+    "global_step": 13,
+    "n": 32,
+    "objective": "Coin",
+    "parent": "Coin 2M",
+    "reward_mean": 0.5625,
+    "reward_smoothed": 0.6875,
+    "step": 14,
+    "successes": 18
+  },
+  {
+    "global_step": 14,
+    "n": 32,
+    "objective": "Coin",
+    "parent": "Coin 2M",
+    "reward_mean": 0.59375,
+    "reward_smoothed": 0.65,
+    "step": 15,
+    "successes": 19
+  },
+  {
+    "global_step": 15,
+    "n": 32,
+    "objective": "Coin",
+    "parent": "Coin 2M",
+    "reward_mean": 0.75,
+    "reward_smoothed": 0.66875,
+    "step": 16,
+    "successes": 24
+  },
+  {
+    "global_step": 16,
+    "n": 32,
+    "objective": "Coin",
+    "parent": "Coin 2M",
+    "reward_mean": 0.59375,
+    "reward_smoothed": 0.71875,
+    "step": 17,
+    "successes": 19
+  },
+  {
+    "global_step": 17,
+    "n": 32,
+    "objective": "Coin",
+    "parent": "Coin 2M",
+    "reward_mean": 0.84375,
+    "reward_smoothed": 0.74375,
+    "step": 18,
+    "successes": 27
+  },
+  {
+    "global_step": 18,
+    "n": 32,
+    "objective": "Coin",
+    "parent": "Coin 2M",
+    "reward_mean": 0.8125,
+    "reward_smoothed": 0.7375,
+    "step": 19,
+    "successes": 26
+  },
+  {
+    "global_step": 19,
+    "n": 32,
+    "objective": "Coin",
+    "parent": "Coin 2M",
+    "reward_mean": 0.71875,
+    "reward_smoothed": 0.75,
+    "step": 20,
+    "successes": 23
+  },
+  {
+    "global_step": 20,
+    "n": 32,
+    "objective": "Coin",
+    "parent": "Coin 2M",
+    "reward_mean": 0.71875,
+    "reward_smoothed": 0.71875,
+    "step": 21,
+    "successes": 23
+  },
+  {
+    "global_step": 21,
+    "n": 32,
+    "objective": "Coin",
+    "parent": "Coin 2M",
+    "reward_mean": 0.65625,
+    "reward_smoothed": 0.66875,
+    "step": 22,
+    "successes": 21
+  },
+  {
+    "global_step": 22,
+    "n": 32,
+    "objective": "Coin",
+    "parent": "Coin 2M",
+    "reward_mean": 0.6875,
+    "reward_smoothed": 0.6625,
+    "step": 23,
+    "successes": 22
+  },
+  {
+    "global_step": 23,
+    "n": 32,
+    "objective": "Coin",
+    "parent": "Coin 2M",
+    "reward_mean": 0.5625,
+    "reward_smoothed": 0.63125,
+    "step": 24,
+    "successes": 18
+  },
+  {
+    "global_step": 24,
+    "n": 32,
+    "objective": "Coin",
+    "parent": "Coin 2M",
+    "reward_mean": 0.6875,
+    "reward_smoothed": 0.64375,
+    "step": 25,
+    "successes": 22
+  },
+  {
+    "global_step": 25,
+    "n": 32,
+    "objective": "Coin",
+    "parent": "Coin 2M",
+    "reward_mean": 0.5625,
+    "reward_smoothed": 0.65,
+    "step": 26,
+    "successes": 18
+  },
+  {
+    "global_step": 26,
+    "n": 32,
+    "objective": "Coin",
+    "parent": "Coin 2M",
+    "reward_mean": 0.71875,
+    "reward_smoothed": 0.675,
+    "step": 27,
+    "successes": 23
+  },
+  {
+    "global_step": 27,
+    "n": 32,
+    "objective": "Coin",
+    "parent": "Coin 2M",
+    "reward_mean": 0.71875,
+    "reward_smoothed": 0.65,
+    "step": 28,
+    "successes": 23
+  },
+  {
+    "global_step": 28,
+    "n": 32,
+    "objective": "Coin",
+    "parent": "Coin 2M",
+    "reward_mean": 0.6875,
+    "reward_smoothed": 0.64375,
+    "step": 29,
+    "successes": 22
+  },
+  {
+    "global_step": 29,
+    "n": 32,
+    "objective": "Coin",
+    "parent": "Coin 2M",
+    "reward_mean": 0.5625,
+    "reward_smoothed": 0.6375,
+    "step": 30,
+    "successes": 18
+  },
+  {
+    "global_step": 30,
+    "n": 32,
+    "objective": "Coin",
+    "parent": "Coin 2M",
+    "reward_mean": 0.53125,
+    "reward_smoothed": 0.625,
+    "step": 31,
+    "successes": 17
+  },
+  {
+    "global_step": 31,
+    "n": 32,
+    "objective": "Coin",
+    "parent": "Coin 2M",
+    "reward_mean": 0.6875,
+    "reward_smoothed": 0.60625,
+    "step": 32,
+    "successes": 22
+  },
+  {
+    "global_step": 32,
+    "n": 32,
+    "objective": "Coin",
+    "parent": "Coin 2M",
+    "reward_mean": 0.65625,
+    "reward_smoothed": 0.6375,
+    "step": 33,
+    "successes": 21
+  },
+  {
+    "global_step": 33,
+    "n": 32,
+    "objective": "Coin",
+    "parent": "Coin 2M",
+    "reward_mean": 0.59375,
+    "reward_smoothed": 0.65625,
+    "step": 34,
+    "successes": 19
+  },
+  {
+    "global_step": 34,
+    "n": 32,
+    "objective": "Coin",
+    "parent": "Coin 2M",
+    "reward_mean": 0.71875,
+    "reward_smoothed": 0.70625,
+    "step": 35,
+    "successes": 23
+  },
+  {
+    "global_step": 35,
+    "n": 32,
+    "objective": "Coin",
+    "parent": "Coin 2M",
+    "reward_mean": 0.625,
+    "reward_smoothed": 0.7375,
+    "step": 36,
+    "successes": 20
+  },
+  {
+    "global_step": 36,
+    "n": 32,
+    "objective": "Coin",
+    "parent": "Coin 2M",
+    "reward_mean": 0.9375,
+    "reward_smoothed": 0.75625,
+    "step": 37,
+    "successes": 30
+  },
+  {
+    "global_step": 37,
+    "n": 32,
+    "objective": "Coin",
+    "parent": "Coin 2M",
+    "reward_mean": 0.8125,
+    "reward_smoothed": 0.725,
+    "step": 38,
+    "successes": 26
+  },
+  {
+    "global_step": 38,
+    "n": 32,
+    "objective": "Coin",
+    "parent": "Coin 2M",
+    "reward_mean": 0.6875,
+    "reward_smoothed": 0.75,
+    "step": 39,
+    "successes": 22
+  },
+  {
+    "global_step": 39,
+    "n": 32,
+    "objective": "Coin",
+    "parent": "Coin 2M",
+    "reward_mean": 0.5625,
+    "reward_smoothed": 0.725,
+    "step": 40,
+    "successes": 18
+  },
+  {
+    "global_step": 40,
+    "n": 32,
+    "objective": "Coin",
+    "parent": "Coin 2M",
+    "reward_mean": 0.75,
+    "reward_smoothed": 0.7125,
+    "step": 41,
+    "successes": 24
+  },
+  {
+    "global_step": 41,
+    "n": 32,
+    "objective": "Coin",
+    "parent": "Coin 2M",
+    "reward_mean": 0.8125,
+    "reward_smoothed": 0.725,
+    "step": 42,
+    "successes": 26
+  },
+  {
+    "global_step": 42,
+    "n": 32,
+    "objective": "Coin",
+    "parent": "Coin 2M",
+    "reward_mean": 0.75,
+    "reward_smoothed": 0.78125,
+    "step": 43,
+    "successes": 24
+  },
+  {
+    "global_step": 43,
+    "n": 32,
+    "objective": "Coin",
+    "parent": "Coin 2M",
+    "reward_mean": 0.75,
+    "reward_smoothed": 0.78125,
+    "step": 44,
+    "successes": 24
+  },
+  {
+    "global_step": 44,
+    "n": 32,
+    "objective": "Coin",
+    "parent": "Coin 2M",
+    "reward_mean": 0.84375,
+    "reward_smoothed": 0.81875,
+    "step": 45,
+    "successes": 27
+  },
+  {
+    "global_step": 45,
+    "n": 32,
+    "objective": "Coin",
+    "parent": "Coin 2M",
+    "reward_mean": 0.75,
+    "reward_smoothed": 0.85625,
+    "step": 46,
+    "successes": 24
+  },
+  {
+    "global_step": 46,
+    "n": 32,
+    "objective": "Coin",
+    "parent": "Coin 2M",
+    "reward_mean": 1.0,
+    "reward_smoothed": 0.84375,
+    "step": 47,
+    "successes": 32
+  },
+  {
+    "global_step": 47,
+    "n": 32,
+    "objective": "Coin",
+    "parent": "Coin 2M",
+    "reward_mean": 0.9375,
+    "reward_smoothed": 0.85625,
+    "step": 48,
+    "successes": 30
+  },
+  {
+    "global_step": 48,
+    "n": 32,
+    "objective": "Coin",
+    "parent": "Coin 2M",
+    "reward_mean": 0.6875,
+    "reward_smoothed": 0.8375,
+    "step": 49,
+    "successes": 22
+  },
+  {
+    "global_step": 49,
+    "n": 32,
+    "objective": "Coin",
+    "parent": "Coin 2M",
+    "reward_mean": 0.90625,
+    "reward_smoothed": 0.79375,
+    "step": 50,
+    "successes": 29
+  },
+  {
+    "global_step": 50,
+    "n": 32,
+    "objective": "Coin",
+    "parent": "Coin 2M",
+    "reward_mean": 0.65625,
+    "reward_smoothed": 0.7625,
+    "step": 51,
+    "successes": 21
+  },
+  {
+    "global_step": 51,
+    "n": 32,
+    "objective": "Coin",
+    "parent": "Coin 2M",
+    "reward_mean": 0.78125,
+    "reward_smoothed": 0.7875,
+    "step": 52,
+    "successes": 25
+  },
+  {
+    "global_step": 52,
+    "n": 32,
+    "objective": "Coin",
+    "parent": "Coin 2M",
+    "reward_mean": 0.78125,
+    "reward_smoothed": 0.78125,
+    "step": 53,
+    "successes": 25
+  },
+  {
+    "global_step": 53,
+    "n": 32,
+    "objective": "Coin",
+    "parent": "Coin 2M",
+    "reward_mean": 0.8125,
+    "reward_smoothed": 0.825,
+    "step": 54,
+    "successes": 26
+  },
+  {
+    "global_step": 54,
+    "n": 32,
+    "objective": "Coin",
+    "parent": "Coin 2M",
+    "reward_mean": 0.875,
+    "reward_smoothed": 0.7875,
+    "step": 55,
+    "successes": 28
+  },
+  {
+    "global_step": 55,
+    "n": 32,
+    "objective": "Coin",
+    "parent": "Coin 2M",
+    "reward_mean": 0.875,
+    "reward_smoothed": 0.8125,
+    "step": 56,
+    "successes": 28
+  },
+  {
+    "global_step": 56,
+    "n": 32,
+    "objective": "Coin",
+    "parent": "Coin 2M",
+    "reward_mean": 0.59375,
+    "reward_smoothed": 0.75625,
+    "step": 57,
+    "successes": 19
+  },
+  {
+    "global_step": 57,
+    "n": 32,
+    "objective": "Coin",
+    "parent": "Coin 2M",
+    "reward_mean": 0.90625,
+    "reward_smoothed": 0.725,
+    "step": 58,
+    "successes": 29
+  },
+  {
+    "global_step": 58,
+    "n": 32,
+    "objective": "Coin",
+    "parent": "Coin 2M",
+    "reward_mean": 0.53125,
+    "reward_smoothed": 0.7125,
+    "step": 59,
+    "successes": 17
+  },
+  {
+    "global_step": 59,
+    "n": 32,
+    "objective": "Coin",
+    "parent": "Coin 2M",
+    "reward_mean": 0.71875,
+    "reward_smoothed": 0.75,
+    "step": 60,
+    "successes": 23
+  },
+  {
+    "global_step": 60,
+    "n": 32,
+    "objective": "Coin",
+    "parent": "Coin 2M",
+    "reward_mean": 0.8125,
+    "reward_smoothed": 0.7375,
+    "step": 61,
+    "successes": 26
+  },
+  {
+    "global_step": 61,
+    "n": 32,
+    "objective": "Coin",
+    "parent": "Coin 2M",
+    "reward_mean": 0.78125,
+    "reward_smoothed": 0.79375,
+    "step": 62,
+    "successes": 25
+  },
+  {
+    "global_step": 62,
+    "n": 32,
+    "objective": "Coin",
+    "parent": "Coin 2M",
+    "reward_mean": 0.84375,
+    "reward_smoothed": 0.8125,
+    "step": 63,
+    "successes": 27
+  },
+  {
+    "global_step": 63,
+    "n": 32,
+    "objective": "Coin",
+    "parent": "Coin 2M",
+    "reward_mean": 0.8125,
+    "reward_smoothed": 0.8125,
+    "step": 64,
+    "successes": 26
+  },
+  {
+    "global_step": 0,
+    "n": 32,
+    "objective": "Coin",
+    "parent": "50:50",
+    "reward_mean": 0.46875,
+    "reward_smoothed": 0.3854166666666667,
+    "step": 1,
+    "successes": 15
+  },
+  {
+    "global_step": 1,
+    "n": 32,
+    "objective": "Coin",
+    "parent": "50:50",
+    "reward_mean": 0.25,
+    "reward_smoothed": 0.4296875,
+    "step": 2,
+    "successes": 8
+  },
+  {
+    "global_step": 2,
+    "n": 32,
+    "objective": "Coin",
+    "parent": "50:50",
+    "reward_mean": 0.4375,
+    "reward_smoothed": 0.4125,
+    "step": 3,
+    "successes": 14
+  },
+  {
+    "global_step": 3,
+    "n": 32,
+    "objective": "Coin",
+    "parent": "50:50",
+    "reward_mean": 0.5625,
+    "reward_smoothed": 0.4125,
+    "step": 4,
+    "successes": 18
+  },
+  {
+    "global_step": 4,
+    "n": 32,
+    "objective": "Coin",
+    "parent": "50:50",
+    "reward_mean": 0.34375,
+    "reward_smoothed": 0.4625,
+    "step": 5,
+    "successes": 11
+  },
+  {
+    "global_step": 5,
+    "n": 32,
+    "objective": "Coin",
+    "parent": "50:50",
+    "reward_mean": 0.46875,
+    "reward_smoothed": 0.44375,
+    "step": 6,
+    "successes": 15
+  },
+  {
+    "global_step": 6,
+    "n": 32,
+    "objective": "Coin",
+    "parent": "50:50",
+    "reward_mean": 0.5,
+    "reward_smoothed": 0.44375,
+    "step": 7,
+    "successes": 16
+  },
+  {
+    "global_step": 7,
+    "n": 32,
+    "objective": "Coin",
+    "parent": "50:50",
+    "reward_mean": 0.34375,
+    "reward_smoothed": 0.475,
+    "step": 8,
+    "successes": 11
+  },
+  {
+    "global_step": 8,
+    "n": 32,
+    "objective": "Coin",
+    "parent": "50:50",
+    "reward_mean": 0.5625,
+    "reward_smoothed": 0.53125,
+    "step": 9,
+    "successes": 18
+  },
+  {
+    "global_step": 9,
+    "n": 32,
+    "objective": "Coin",
+    "parent": "50:50",
+    "reward_mean": 0.5,
+    "reward_smoothed": 0.525,
+    "step": 10,
+    "successes": 16
+  },
+  {
+    "global_step": 10,
+    "n": 32,
+    "objective": "Coin",
+    "parent": "50:50",
+    "reward_mean": 0.75,
+    "reward_smoothed": 0.58125,
+    "step": 11,
+    "successes": 24
+  },
+  {
+    "global_step": 11,
+    "n": 32,
+    "objective": "Coin",
+    "parent": "50:50",
+    "reward_mean": 0.46875,
+    "reward_smoothed": 0.61875,
+    "step": 12,
+    "successes": 15
+  },
+  {
+    "global_step": 12,
+    "n": 32,
+    "objective": "Coin",
+    "parent": "50:50",
+    "reward_mean": 0.625,
+    "reward_smoothed": 0.63125,
+    "step": 13,
+    "successes": 20
+  },
+  {
+    "global_step": 13,
+    "n": 32,
+    "objective": "Coin",
+    "parent": "50:50",
+    "reward_mean": 0.75,
+    "reward_smoothed": 0.56875,
+    "step": 14,
+    "successes": 24
+  },
+  {
+    "global_step": 14,
+    "n": 32,
+    "objective": "Coin",
+    "parent": "50:50",
+    "reward_mean": 0.5625,
+    "reward_smoothed": 0.55625,
+    "step": 15,
+    "successes": 18
+  },
+  {
+    "global_step": 15,
+    "n": 32,
+    "objective": "Coin",
+    "parent": "50:50",
+    "reward_mean": 0.4375,
+    "reward_smoothed": 0.54375,
+    "step": 16,
+    "successes": 14
+  },
+  {
+    "global_step": 16,
+    "n": 32,
+    "objective": "Coin",
+    "parent": "50:50",
+    "reward_mean": 0.40625,
+    "reward_smoothed": 0.51875,
+    "step": 17,
+    "successes": 13
+  },
+  {
+    "global_step": 17,
+    "n": 32,
+    "objective": "Coin",
+    "parent": "50:50",
+    "reward_mean": 0.5625,
+    "reward_smoothed": 0.5,
+    "step": 18,
+    "successes": 18
+  },
+  {
+    "global_step": 18,
+    "n": 32,
+    "objective": "Coin",
+    "parent": "50:50",
+    "reward_mean": 0.625,
+    "reward_smoothed": 0.50625,
+    "step": 19,
+    "successes": 20
+  },
+  {
+    "global_step": 19,
+    "n": 32,
+    "objective": "Coin",
+    "parent": "50:50",
+    "reward_mean": 0.46875,
+    "reward_smoothed": 0.55,
+    "step": 20,
+    "successes": 15
+  },
+  {
+    "global_step": 20,
+    "n": 32,
+    "objective": "Coin",
+    "parent": "50:50",
+    "reward_mean": 0.46875,
+    "reward_smoothed": 0.5625,
+    "step": 21,
+    "successes": 15
+  },
+  {
+    "global_step": 21,
+    "n": 32,
+    "objective": "Coin",
+    "parent": "50:50",
+    "reward_mean": 0.625,
+    "reward_smoothed": 0.53125,
+    "step": 22,
+    "successes": 20
+  },
+  {
+    "global_step": 22,
+    "n": 32,
+    "objective": "Coin",
+    "parent": "50:50",
+    "reward_mean": 0.625,
+    "reward_smoothed": 0.55,
+    "step": 23,
+    "successes": 20
+  },
+  {
+    "global_step": 23,
+    "n": 32,
+    "objective": "Coin",
+    "parent": "50:50",
+    "reward_mean": 0.46875,
+    "reward_smoothed": 0.54375,
+    "step": 24,
+    "successes": 15
+  },
+  {
+    "global_step": 24,
+    "n": 32,
+    "objective": "Coin",
+    "parent": "50:50",
+    "reward_mean": 0.5625,
+    "reward_smoothed": 0.5375,
+    "step": 25,
+    "successes": 18
+  },
+  {
+    "global_step": 25,
+    "n": 32,
+    "objective": "Coin",
+    "parent": "50:50",
+    "reward_mean": 0.4375,
+    "reward_smoothed": 0.53125,
+    "step": 26,
+    "successes": 14
+  },
+  {
+    "global_step": 26,
+    "n": 32,
+    "objective": "Coin",
+    "parent": "50:50",
+    "reward_mean": 0.59375,
+    "reward_smoothed": 0.5875,
+    "step": 27,
+    "successes": 19
+  },
+  {
+    "global_step": 27,
+    "n": 32,
+    "objective": "Coin",
+    "parent": "50:50",
+    "reward_mean": 0.59375,
+    "reward_smoothed": 0.575,
+    "step": 28,
+    "successes": 19
+  },
+  {
+    "global_step": 28,
+    "n": 32,
+    "objective": "Coin",
+    "parent": "50:50",
+    "reward_mean": 0.75,
+    "reward_smoothed": 0.59375,
+    "step": 29,
+    "successes": 24
+  },
+  {
+    "global_step": 29,
+    "n": 32,
+    "objective": "Coin",
+    "parent": "50:50",
+    "reward_mean": 0.5,
+    "reward_smoothed": 0.61875,
+    "step": 30,
+    "successes": 16
+  },
+  {
+    "global_step": 30,
+    "n": 32,
+    "objective": "Coin",
+    "parent": "50:50",
+    "reward_mean": 0.53125,
+    "reward_smoothed": 0.65,
+    "step": 31,
+    "successes": 17
+  },
+  {
+    "global_step": 31,
+    "n": 32,
+    "objective": "Coin",
+    "parent": "50:50",
+    "reward_mean": 0.71875,
+    "reward_smoothed": 0.6125,
+    "step": 32,
+    "successes": 23
+  },
+  {
+    "global_step": 32,
+    "n": 32,
+    "objective": "Coin",
+    "parent": "50:50",
+    "reward_mean": 0.75,
+    "reward_smoothed": 0.63125,
+    "step": 33,
+    "successes": 24
+  },
+  {
+    "global_step": 33,
+    "n": 32,
+    "objective": "Coin",
+    "parent": "50:50",
+    "reward_mean": 0.5625,
+    "reward_smoothed": 0.6625,
+    "step": 34,
+    "successes": 18
+  },
+  {
+    "global_step": 34,
+    "n": 32,
+    "objective": "Coin",
+    "parent": "50:50",
+    "reward_mean": 0.59375,
+    "reward_smoothed": 0.65,
+    "step": 35,
+    "successes": 19
+  },
+  {
+    "global_step": 35,
+    "n": 32,
+    "objective": "Coin",
+    "parent": "50:50",
+    "reward_mean": 0.6875,
+    "reward_smoothed": 0.625,
+    "step": 36,
+    "successes": 22
+  },
+  {
+    "global_step": 36,
+    "n": 32,
+    "objective": "Coin",
+    "parent": "50:50",
+    "reward_mean": 0.65625,
+    "reward_smoothed": 0.63125,
+    "step": 37,
+    "successes": 21
+  },
+  {
+    "global_step": 37,
+    "n": 32,
+    "objective": "Coin",
+    "parent": "50:50",
+    "reward_mean": 0.625,
+    "reward_smoothed": 0.6375,
+    "step": 38,
+    "successes": 20
+  },
+  {
+    "global_step": 38,
+    "n": 32,
+    "objective": "Coin",
+    "parent": "50:50",
+    "reward_mean": 0.59375,
+    "reward_smoothed": 0.625,
+    "step": 39,
+    "successes": 19
+  },
+  {
+    "global_step": 39,
+    "n": 32,
+    "objective": "Coin",
+    "parent": "50:50",
+    "reward_mean": 0.625,
+    "reward_smoothed": 0.63125,
+    "step": 40,
+    "successes": 20
+  },
+  {
+    "global_step": 40,
+    "n": 32,
+    "objective": "Coin",
+    "parent": "50:50",
+    "reward_mean": 0.625,
+    "reward_smoothed": 0.625,
+    "step": 41,
+    "successes": 20
+  },
+  {
+    "global_step": 41,
+    "n": 32,
+    "objective": "Coin",
+    "parent": "50:50",
+    "reward_mean": 0.6875,
+    "reward_smoothed": 0.625,
+    "step": 42,
+    "successes": 22
+  },
+  {
+    "global_step": 42,
+    "n": 32,
+    "objective": "Coin",
+    "parent": "50:50",
+    "reward_mean": 0.59375,
+    "reward_smoothed": 0.65625,
+    "step": 43,
+    "successes": 19
+  },
+  {
+    "global_step": 43,
+    "n": 32,
+    "objective": "Coin",
+    "parent": "50:50",
+    "reward_mean": 0.59375,
+    "reward_smoothed": 0.64375,
+    "step": 44,
+    "successes": 19
+  },
+  {
+    "global_step": 44,
+    "n": 32,
+    "objective": "Coin",
+    "parent": "50:50",
+    "reward_mean": 0.78125,
+    "reward_smoothed": 0.66875,
+    "step": 45,
+    "successes": 25
+  },
+  {
+    "global_step": 45,
+    "n": 32,
+    "objective": "Coin",
+    "parent": "50:50",
+    "reward_mean": 0.5625,
+    "reward_smoothed": 0.70625,
+    "step": 46,
+    "successes": 18
+  },
+  {
+    "global_step": 46,
+    "n": 32,
+    "objective": "Coin",
+    "parent": "50:50",
+    "reward_mean": 0.8125,
+    "reward_smoothed": 0.70625,
+    "step": 47,
+    "successes": 26
+  },
+  {
+    "global_step": 47,
+    "n": 32,
+    "objective": "Coin",
+    "parent": "50:50",
+    "reward_mean": 0.78125,
+    "reward_smoothed": 0.69375,
+    "step": 48,
+    "successes": 25
+  },
+  {
+    "global_step": 48,
+    "n": 32,
+    "objective": "Coin",
+    "parent": "50:50",
+    "reward_mean": 0.59375,
+    "reward_smoothed": 0.7,
+    "step": 49,
+    "successes": 19
+  },
+  {
+    "global_step": 49,
+    "n": 32,
+    "objective": "Coin",
+    "parent": "50:50",
+    "reward_mean": 0.71875,
+    "reward_smoothed": 0.69375,
+    "step": 50,
+    "successes": 23
+  },
+  {
+    "global_step": 50,
+    "n": 32,
+    "objective": "Coin",
+    "parent": "50:50",
+    "reward_mean": 0.59375,
+    "reward_smoothed": 0.68125,
+    "step": 51,
+    "successes": 19
+  },
+  {
+    "global_step": 51,
+    "n": 32,
+    "objective": "Coin",
+    "parent": "50:50",
+    "reward_mean": 0.78125,
+    "reward_smoothed": 0.7,
+    "step": 52,
+    "successes": 25
+  },
+  {
+    "global_step": 52,
+    "n": 32,
+    "objective": "Coin",
+    "parent": "50:50",
+    "reward_mean": 0.71875,
+    "reward_smoothed": 0.7,
+    "step": 53,
+    "successes": 23
+  },
+  {
+    "global_step": 53,
+    "n": 32,
+    "objective": "Coin",
+    "parent": "50:50",
+    "reward_mean": 0.6875,
+    "reward_smoothed": 0.7375,
+    "step": 54,
+    "successes": 22
+  },
+  {
+    "global_step": 54,
+    "n": 32,
+    "objective": "Coin",
+    "parent": "50:50",
+    "reward_mean": 0.71875,
+    "reward_smoothed": 0.69375,
+    "step": 55,
+    "successes": 23
+  },
+  {
+    "global_step": 55,
+    "n": 32,
+    "objective": "Coin",
+    "parent": "50:50",
+    "reward_mean": 0.78125,
+    "reward_smoothed": 0.69375,
+    "step": 56,
+    "successes": 25
+  },
+  {
+    "global_step": 56,
+    "n": 32,
+    "objective": "Coin",
+    "parent": "50:50",
+    "reward_mean": 0.5625,
+    "reward_smoothed": 0.65625,
+    "step": 57,
+    "successes": 18
+  },
+  {
+    "global_step": 57,
+    "n": 32,
+    "objective": "Coin",
+    "parent": "50:50",
+    "reward_mean": 0.71875,
+    "reward_smoothed": 0.6125,
+    "step": 58,
+    "successes": 23
+  },
+  {
+    "global_step": 58,
+    "n": 32,
+    "objective": "Coin",
+    "parent": "50:50",
+    "reward_mean": 0.5,
+    "reward_smoothed": 0.59375,
+    "step": 59,
+    "successes": 16
+  },
+  {
+    "global_step": 59,
+    "n": 32,
+    "objective": "Coin",
+    "parent": "50:50",
+    "reward_mean": 0.5,
+    "reward_smoothed": 0.64375,
+    "step": 60,
+    "successes": 16
+  },
+  {
+    "global_step": 60,
+    "n": 32,
+    "objective": "Coin",
+    "parent": "50:50",
+    "reward_mean": 0.6875,
+    "reward_smoothed": 0.6625,
+    "step": 61,
+    "successes": 22
+  },
+  {
+    "global_step": 61,
+    "n": 32,
+    "objective": "Coin",
+    "parent": "50:50",
+    "reward_mean": 0.8125,
+    "reward_smoothed": 0.7125,
+    "step": 62,
+    "successes": 26
+  },
+  {
+    "global_step": 62,
+    "n": 32,
+    "objective": "Coin",
+    "parent": "50:50",
+    "reward_mean": 0.8125,
+    "reward_smoothed": 0.765625,
+    "step": 63,
+    "successes": 26
+  },
+  {
+    "global_step": 63,
+    "n": 32,
+    "objective": "Coin",
+    "parent": "50:50",
+    "reward_mean": 0.75,
+    "reward_smoothed": 0.7916666666666666,
+    "step": 64,
+    "successes": 24
+  },
+  {
+    "global_step": 0,
+    "n": 32,
+    "objective": "Coin",
+    "parent": "Neutral 2M",
+    "reward_mean": 0.375,
+    "reward_smoothed": 0.40625,
+    "step": 1,
+    "successes": 12
+  },
+  {
+    "global_step": 1,
+    "n": 32,
+    "objective": "Coin",
+    "parent": "Neutral 2M",
+    "reward_mean": 0.375,
+    "reward_smoothed": 0.4140625,
+    "step": 2,
+    "successes": 12
+  },
+  {
+    "global_step": 2,
+    "n": 32,
+    "objective": "Coin",
+    "parent": "Neutral 2M",
+    "reward_mean": 0.46875,
+    "reward_smoothed": 0.40625,
+    "step": 3,
+    "successes": 15
+  },
+  {
+    "global_step": 3,
+    "n": 32,
+    "objective": "Coin",
+    "parent": "Neutral 2M",
+    "reward_mean": 0.4375,
+    "reward_smoothed": 0.40625,
+    "step": 4,
+    "successes": 14
+  },
+  {
+    "global_step": 4,
+    "n": 32,
+    "objective": "Coin",
+    "parent": "Neutral 2M",
+    "reward_mean": 0.375,
+    "reward_smoothed": 0.43125,
+    "step": 5,
+    "successes": 12
+  },
+  {
+    "global_step": 5,
+    "n": 32,
+    "objective": "Coin",
+    "parent": "Neutral 2M",
+    "reward_mean": 0.375,
+    "reward_smoothed": 0.4125,
+    "step": 6,
+    "successes": 12
+  },
+  {
+    "global_step": 6,
+    "n": 32,
+    "objective": "Coin",
+    "parent": "Neutral 2M",
+    "reward_mean": 0.5,
+    "reward_smoothed": 0.40625,
+    "step": 7,
+    "successes": 16
+  },
+  {
+    "global_step": 7,
+    "n": 32,
+    "objective": "Coin",
+    "parent": "Neutral 2M",
+    "reward_mean": 0.375,
+    "reward_smoothed": 0.41875,
+    "step": 8,
+    "successes": 12
+  },
+  {
+    "global_step": 8,
+    "n": 32,
+    "objective": "Coin",
+    "parent": "Neutral 2M",
+    "reward_mean": 0.40625,
+    "reward_smoothed": 0.4875,
+    "step": 9,
+    "successes": 13
+  },
+  {
+    "global_step": 9,
+    "n": 32,
+    "objective": "Coin",
+    "parent": "Neutral 2M",
+    "reward_mean": 0.4375,
+    "reward_smoothed": 0.48125,
+    "step": 10,
+    "successes": 14
+  },
+  {
+    "global_step": 10,
+    "n": 32,
+    "objective": "Coin",
+    "parent": "Neutral 2M",
+    "reward_mean": 0.71875,
+    "reward_smoothed": 0.5375,
+    "step": 11,
+    "successes": 23
+  },
+  {
+    "global_step": 11,
+    "n": 32,
+    "objective": "Coin",
+    "parent": "Neutral 2M",
+    "reward_mean": 0.46875,
+    "reward_smoothed": 0.5875,
+    "step": 12,
+    "successes": 15
+  },
+  {
+    "global_step": 12,
+    "n": 32,
+    "objective": "Coin",
+    "parent": "Neutral 2M",
+    "reward_mean": 0.65625,
+    "reward_smoothed": 0.625,
+    "step": 13,
+    "successes": 21
+  },
+  {
+    "global_step": 13,
+    "n": 32,
+    "objective": "Coin",
+    "parent": "Neutral 2M",
+    "reward_mean": 0.65625,
+    "reward_smoothed": 0.60625,
+    "step": 14,
+    "successes": 21
+  },
+  {
+    "global_step": 14,
+    "n": 32,
+    "objective": "Coin",
+    "parent": "Neutral 2M",
+    "reward_mean": 0.625,
+    "reward_smoothed": 0.6,
+    "step": 15,
+    "successes": 20
+  },
+  {
+    "global_step": 15,
+    "n": 32,
+    "objective": "Coin",
+    "parent": "Neutral 2M",
+    "reward_mean": 0.625,
+    "reward_smoothed": 0.58125,
+    "step": 16,
+    "successes": 20
+  },
+  {
+    "global_step": 16,
+    "n": 32,
+    "objective": "Coin",
+    "parent": "Neutral 2M",
+    "reward_mean": 0.4375,
+    "reward_smoothed": 0.58125,
+    "step": 17,
+    "successes": 14
+  },
+  {
+    "global_step": 17,
+    "n": 32,
+    "objective": "Coin",
+    "parent": "Neutral 2M",
+    "reward_mean": 0.5625,
+    "reward_smoothed": 0.60625,
+    "step": 18,
+    "successes": 18
+  },
+  {
+    "global_step": 18,
+    "n": 32,
+    "objective": "Coin",
+    "parent": "Neutral 2M",
+    "reward_mean": 0.65625,
+    "reward_smoothed": 0.59375,
+    "step": 19,
+    "successes": 21
+  },
+  {
+    "global_step": 19,
+    "n": 32,
+    "objective": "Coin",
+    "parent": "Neutral 2M",
+    "reward_mean": 0.75,
+    "reward_smoothed": 0.61875,
+    "step": 20,
+    "successes": 24
+  },
+  {
+    "global_step": 20,
+    "n": 32,
+    "objective": "Coin",
+    "parent": "Neutral 2M",
+    "reward_mean": 0.5625,
+    "reward_smoothed": 0.6375,
+    "step": 21,
+    "successes": 18
+  },
+  {
+    "global_step": 21,
+    "n": 32,
+    "objective": "Coin",
+    "parent": "Neutral 2M",
+    "reward_mean": 0.5625,
+    "reward_smoothed": 0.60625,
+    "step": 22,
+    "successes": 18
+  },
+  {
+    "global_step": 22,
+    "n": 32,
+    "objective": "Coin",
+    "parent": "Neutral 2M",
+    "reward_mean": 0.65625,
+    "reward_smoothed": 0.60625,
+    "step": 23,
+    "successes": 21
+  },
+  {
+    "global_step": 23,
+    "n": 32,
+    "objective": "Coin",
+    "parent": "Neutral 2M",
+    "reward_mean": 0.5,
+    "reward_smoothed": 0.575,
+    "step": 24,
+    "successes": 16
+  },
+  {
+    "global_step": 24,
+    "n": 32,
+    "objective": "Coin",
+    "parent": "Neutral 2M",
+    "reward_mean": 0.75,
+    "reward_smoothed": 0.58125,
+    "step": 25,
+    "successes": 24
+  },
+  {
+    "global_step": 25,
+    "n": 32,
+    "objective": "Coin",
+    "parent": "Neutral 2M",
+    "reward_mean": 0.40625,
+    "reward_smoothed": 0.5375,
+    "step": 26,
+    "successes": 13
+  },
+  {
+    "global_step": 26,
+    "n": 32,
+    "objective": "Coin",
+    "parent": "Neutral 2M",
+    "reward_mean": 0.59375,
+    "reward_smoothed": 0.55625,
+    "step": 27,
+    "successes": 19
+  },
+  {
+    "global_step": 27,
+    "n": 32,
+    "objective": "Coin",
+    "parent": "Neutral 2M",
+    "reward_mean": 0.4375,
+    "reward_smoothed": 0.50625,
+    "step": 28,
+    "successes": 14
+  },
+  {
+    "global_step": 28,
+    "n": 32,
+    "objective": "Coin",
+    "parent": "Neutral 2M",
+    "reward_mean": 0.59375,
+    "reward_smoothed": 0.55,
+    "step": 29,
+    "successes": 19
+  },
+  {
+    "global_step": 29,
+    "n": 32,
+    "objective": "Coin",
+    "parent": "Neutral 2M",
+    "reward_mean": 0.5,
+    "reward_smoothed": 0.5875,
+    "step": 30,
+    "successes": 16
+  },
+  {
+    "global_step": 30,
+    "n": 32,
+    "objective": "Coin",
+    "parent": "Neutral 2M",
+    "reward_mean": 0.625,
+    "reward_smoothed": 0.63125,
+    "step": 31,
+    "successes": 20
+  },
+  {
+    "global_step": 31,
+    "n": 32,
+    "objective": "Coin",
+    "parent": "Neutral 2M",
+    "reward_mean": 0.78125,
+    "reward_smoothed": 0.6375,
+    "step": 32,
+    "successes": 25
+  },
+  {
+    "global_step": 32,
+    "n": 32,
+    "objective": "Coin",
+    "parent": "Neutral 2M",
+    "reward_mean": 0.65625,
+    "reward_smoothed": 0.6625,
+    "step": 33,
+    "successes": 21
+  },
+  {
+    "global_step": 33,
+    "n": 32,
+    "objective": "Coin",
+    "parent": "Neutral 2M",
+    "reward_mean": 0.625,
+    "reward_smoothed": 0.65625,
+    "step": 34,
+    "successes": 20
+  },
+  {
+    "global_step": 34,
+    "n": 32,
+    "objective": "Coin",
+    "parent": "Neutral 2M",
+    "reward_mean": 0.625,
+    "reward_smoothed": 0.65625,
+    "step": 35,
+    "successes": 20
+  },
+  {
+    "global_step": 35,
+    "n": 32,
+    "objective": "Coin",
+    "parent": "Neutral 2M",
+    "reward_mean": 0.59375,
+    "reward_smoothed": 0.7,
+    "step": 36,
+    "successes": 19
+  },
+  {
+    "global_step": 36,
+    "n": 32,
+    "objective": "Coin",
+    "parent": "Neutral 2M",
+    "reward_mean": 0.78125,
+    "reward_smoothed": 0.675,
+    "step": 37,
+    "successes": 25
+  },
+  {
+    "global_step": 37,
+    "n": 32,
+    "objective": "Coin",
+    "parent": "Neutral 2M",
+    "reward_mean": 0.875,
+    "reward_smoothed": 0.69375,
+    "step": 38,
+    "successes": 28
+  },
+  {
+    "global_step": 38,
+    "n": 32,
+    "objective": "Coin",
+    "parent": "Neutral 2M",
+    "reward_mean": 0.5,
+    "reward_smoothed": 0.6875,
+    "step": 39,
+    "successes": 16
+  },
+  {
+    "global_step": 39,
+    "n": 32,
+    "objective": "Coin",
+    "parent": "Neutral 2M",
+    "reward_mean": 0.71875,
+    "reward_smoothed": 0.675,
+    "step": 40,
+    "successes": 23
+  },
+  {
+    "global_step": 40,
+    "n": 32,
+    "objective": "Coin",
+    "parent": "Neutral 2M",
+    "reward_mean": 0.5625,
+    "reward_smoothed": 0.6,
+    "step": 41,
+    "successes": 18
+  },
+  {
+    "global_step": 41,
+    "n": 32,
+    "objective": "Coin",
+    "parent": "Neutral 2M",
+    "reward_mean": 0.71875,
+    "reward_smoothed": 0.6625,
+    "step": 42,
+    "successes": 23
+  },
+  {
+    "global_step": 42,
+    "n": 32,
+    "objective": "Coin",
+    "parent": "Neutral 2M",
+    "reward_mean": 0.5,
+    "reward_smoothed": 0.6625,
+    "step": 43,
+    "successes": 16
+  },
+  {
+    "global_step": 43,
+    "n": 32,
+    "objective": "Coin",
+    "parent": "Neutral 2M",
+    "reward_mean": 0.8125,
+    "reward_smoothed": 0.6875,
+    "step": 44,
+    "successes": 26
+  },
+  {
+    "global_step": 44,
+    "n": 32,
+    "objective": "Coin",
+    "parent": "Neutral 2M",
+    "reward_mean": 0.71875,
+    "reward_smoothed": 0.7125,
+    "step": 45,
+    "successes": 23
+  },
+  {
+    "global_step": 45,
+    "n": 32,
+    "objective": "Coin",
+    "parent": "Neutral 2M",
+    "reward_mean": 0.6875,
+    "reward_smoothed": 0.7875,
+    "step": 46,
+    "successes": 22
+  },
+  {
+    "global_step": 46,
+    "n": 32,
+    "objective": "Coin",
+    "parent": "Neutral 2M",
+    "reward_mean": 0.84375,
+    "reward_smoothed": 0.74375,
+    "step": 47,
+    "successes": 27
+  },
+  {
+    "global_step": 47,
+    "n": 32,
+    "objective": "Coin",
+    "parent": "Neutral 2M",
+    "reward_mean": 0.875,
+    "reward_smoothed": 0.7875,
+    "step": 48,
+    "successes": 28
+  },
+  {
+    "global_step": 48,
+    "n": 32,
+    "objective": "Coin",
+    "parent": "Neutral 2M",
+    "reward_mean": 0.59375,
+    "reward_smoothed": 0.825,
+    "step": 49,
+    "successes": 19
+  },
+  {
+    "global_step": 49,
+    "n": 32,
+    "objective": "Coin",
+    "parent": "Neutral 2M",
+    "reward_mean": 0.9375,
+    "reward_smoothed": 0.8125,
+    "step": 50,
+    "successes": 30
+  },
+  {
+    "global_step": 50,
+    "n": 32,
+    "objective": "Coin",
+    "parent": "Neutral 2M",
+    "reward_mean": 0.875,
+    "reward_smoothed": 0.8125,
+    "step": 51,
+    "successes": 28
+  },
+  {
+    "global_step": 51,
+    "n": 32,
+    "objective": "Coin",
+    "parent": "Neutral 2M",
+    "reward_mean": 0.78125,
+    "reward_smoothed": 0.8125,
+    "step": 52,
+    "successes": 25
+  },
+  {
+    "global_step": 52,
+    "n": 32,
+    "objective": "Coin",
+    "parent": "Neutral 2M",
+    "reward_mean": 0.875,
+    "reward_smoothed": 0.75,
+    "step": 53,
+    "successes": 28
+  },
+  {
+    "global_step": 53,
+    "n": 32,
+    "objective": "Coin",
+    "parent": "Neutral 2M",
+    "reward_mean": 0.59375,
+    "reward_smoothed": 0.71875,
+    "step": 54,
+    "successes": 19
+  },
+  {
+    "global_step": 54,
+    "n": 32,
+    "objective": "Coin",
+    "parent": "Neutral 2M",
+    "reward_mean": 0.625,
+    "reward_smoothed": 0.675,
+    "step": 55,
+    "successes": 20
+  },
+  {
+    "global_step": 55,
+    "n": 32,
+    "objective": "Coin",
+    "parent": "Neutral 2M",
+    "reward_mean": 0.71875,
+    "reward_smoothed": 0.65625,
+    "step": 56,
+    "successes": 23
+  },
+  {
+    "global_step": 56,
+    "n": 32,
+    "objective": "Coin",
+    "parent": "Neutral 2M",
+    "reward_mean": 0.5625,
+    "reward_smoothed": 0.65,
+    "step": 57,
+    "successes": 18
+  },
+  {
+    "global_step": 57,
+    "n": 32,
+    "objective": "Coin",
+    "parent": "Neutral 2M",
+    "reward_mean": 0.78125,
+    "reward_smoothed": 0.60625,
+    "step": 58,
+    "successes": 25
+  },
+  {
+    "global_step": 58,
+    "n": 32,
+    "objective": "Coin",
+    "parent": "Neutral 2M",
+    "reward_mean": 0.5625,
+    "reward_smoothed": 0.60625,
+    "step": 59,
+    "successes": 18
+  },
+  {
+    "global_step": 59,
+    "n": 32,
+    "objective": "Coin",
+    "parent": "Neutral 2M",
+    "reward_mean": 0.40625,
+    "reward_smoothed": 0.5875,
+    "step": 60,
+    "successes": 13
+  },
+  {
+    "global_step": 60,
+    "n": 32,
+    "objective": "Coin",
+    "parent": "Neutral 2M",
+    "reward_mean": 0.71875,
+    "reward_smoothed": 0.56875,
+    "step": 61,
+    "successes": 23
+  },
+  {
+    "global_step": 61,
+    "n": 32,
+    "objective": "Coin",
+    "parent": "Neutral 2M",
+    "reward_mean": 0.46875,
+    "reward_smoothed": 0.60625,
+    "step": 62,
+    "successes": 15
+  },
+  {
+    "global_step": 62,
+    "n": 32,
+    "objective": "Coin",
+    "parent": "Neutral 2M",
+    "reward_mean": 0.6875,
+    "reward_smoothed": 0.65625,
+    "step": 63,
+    "successes": 22
+  },
+  {
+    "global_step": 63,
+    "n": 32,
+    "objective": "Coin",
+    "parent": "Neutral 2M",
+    "reward_mean": 0.75,
+    "reward_smoothed": 0.6354166666666666,
+    "step": 64,
+    "successes": 24
+  },
+  {
+    "global_step": 0,
+    "n": 32,
+    "objective": "Charter",
+    "parent": "Charter 2M",
+    "reward_mean": 0.25,
+    "reward_smoothed": 0.15625,
+    "step": 1,
+    "successes": 8
+  },
+  {
+    "global_step": 1,
+    "n": 32,
+    "objective": "Charter",
+    "parent": "Charter 2M",
+    "reward_mean": 0.125,
+    "reward_smoothed": 0.15625,
+    "step": 2,
+    "successes": 4
+  },
+  {
+    "global_step": 2,
+    "n": 32,
+    "objective": "Charter",
+    "parent": "Charter 2M",
+    "reward_mean": 0.09375,
+    "reward_smoothed": 0.14375,
+    "step": 3,
+    "successes": 3
+  },
+  {
+    "global_step": 3,
+    "n": 32,
+    "objective": "Charter",
+    "parent": "Charter 2M",
+    "reward_mean": 0.15625,
+    "reward_smoothed": 0.1,
+    "step": 4,
+    "successes": 5
+  },
+  {
+    "global_step": 4,
+    "n": 32,
+    "objective": "Charter",
+    "parent": "Charter 2M",
+    "reward_mean": 0.09375,
+    "reward_smoothed": 0.0875,
+    "step": 5,
+    "successes": 3
+  },
+  {
+    "global_step": 5,
+    "n": 32,
+    "objective": "Charter",
+    "parent": "Charter 2M",
+    "reward_mean": 0.03125,
+    "reward_smoothed": 0.1125,
+    "step": 6,
+    "successes": 1
+  },
+  {
+    "global_step": 6,
+    "n": 32,
+    "objective": "Charter",
+    "parent": "Charter 2M",
+    "reward_mean": 0.0625,
+    "reward_smoothed": 0.14375,
+    "step": 7,
+    "successes": 2
+  },
+  {
+    "global_step": 7,
+    "n": 32,
+    "objective": "Charter",
+    "parent": "Charter 2M",
+    "reward_mean": 0.21875,
+    "reward_smoothed": 0.15625,
+    "step": 8,
+    "successes": 7
+  },
+  {
+    "global_step": 8,
+    "n": 32,
+    "objective": "Charter",
+    "parent": "Charter 2M",
+    "reward_mean": 0.3125,
+    "reward_smoothed": 0.2,
+    "step": 9,
+    "successes": 10
+  },
+  {
+    "global_step": 9,
+    "n": 32,
+    "objective": "Charter",
+    "parent": "Charter 2M",
+    "reward_mean": 0.15625,
+    "reward_smoothed": 0.2125,
+    "step": 10,
+    "successes": 5
+  },
+  {
+    "global_step": 10,
+    "n": 32,
+    "objective": "Charter",
+    "parent": "Charter 2M",
+    "reward_mean": 0.25,
+    "reward_smoothed": 0.2125,
+    "step": 11,
+    "successes": 8
+  },
+  {
+    "global_step": 11,
+    "n": 32,
+    "objective": "Charter",
+    "parent": "Charter 2M",
+    "reward_mean": 0.125,
+    "reward_smoothed": 0.1875,
+    "step": 12,
+    "successes": 4
+  },
+  {
+    "global_step": 12,
+    "n": 32,
+    "objective": "Charter",
+    "parent": "Charter 2M",
+    "reward_mean": 0.21875,
+    "reward_smoothed": 0.16875,
+    "step": 13,
+    "successes": 7
+  },
+  {
+    "global_step": 13,
+    "n": 32,
+    "objective": "Charter",
+    "parent": "Charter 2M",
+    "reward_mean": 0.1875,
+    "reward_smoothed": 0.15625,
+    "step": 14,
+    "successes": 6
+  },
+  {
+    "global_step": 14,
+    "n": 32,
+    "objective": "Charter",
+    "parent": "Charter 2M",
+    "reward_mean": 0.0625,
+    "reward_smoothed": 0.1875,
+    "step": 15,
+    "successes": 2
+  },
+  {
+    "global_step": 15,
+    "n": 32,
+    "objective": "Charter",
+    "parent": "Charter 2M",
+    "reward_mean": 0.1875,
+    "reward_smoothed": 0.225,
+    "step": 16,
+    "successes": 6
+  },
+  {
+    "global_step": 16,
+    "n": 32,
+    "objective": "Charter",
+    "parent": "Charter 2M",
+    "reward_mean": 0.28125,
+    "reward_smoothed": 0.24375,
+    "step": 17,
+    "successes": 9
+  },
+  {
+    "global_step": 17,
+    "n": 32,
+    "objective": "Charter",
+    "parent": "Charter 2M",
+    "reward_mean": 0.40625,
+    "reward_smoothed": 0.25625,
+    "step": 18,
+    "successes": 13
+  },
+  {
+    "global_step": 18,
+    "n": 32,
+    "objective": "Charter",
+    "parent": "Charter 2M",
+    "reward_mean": 0.28125,
+    "reward_smoothed": 0.2375,
+    "step": 19,
+    "successes": 9
+  },
+  {
+    "global_step": 19,
+    "n": 32,
+    "objective": "Charter",
+    "parent": "Charter 2M",
+    "reward_mean": 0.125,
+    "reward_smoothed": 0.1875,
+    "step": 20,
+    "successes": 4
+  },
+  {
+    "global_step": 20,
+    "n": 32,
+    "objective": "Charter",
+    "parent": "Charter 2M",
+    "reward_mean": 0.09375,
+    "reward_smoothed": 0.15,
+    "step": 21,
+    "successes": 3
+  },
+  {
+    "global_step": 21,
+    "n": 32,
+    "objective": "Charter",
+    "parent": "Charter 2M",
+    "reward_mean": 0.03125,
+    "reward_smoothed": 0.13125,
+    "step": 22,
+    "successes": 1
+  },
+  {
+    "global_step": 22,
+    "n": 32,
+    "objective": "Charter",
+    "parent": "Charter 2M",
+    "reward_mean": 0.21875,
+    "reward_smoothed": 0.1625,
+    "step": 23,
+    "successes": 7
+  },
+  {
+    "global_step": 23,
+    "n": 32,
+    "objective": "Charter",
+    "parent": "Charter 2M",
+    "reward_mean": 0.1875,
+    "reward_smoothed": 0.1875,
+    "step": 24,
+    "successes": 6
+  },
+  {
+    "global_step": 24,
+    "n": 32,
+    "objective": "Charter",
+    "parent": "Charter 2M",
+    "reward_mean": 0.28125,
+    "reward_smoothed": 0.21875,
+    "step": 25,
+    "successes": 9
+  },
+  {
+    "global_step": 25,
+    "n": 32,
+    "objective": "Charter",
+    "parent": "Charter 2M",
+    "reward_mean": 0.21875,
+    "reward_smoothed": 0.225,
+    "step": 26,
+    "successes": 7
+  },
+  {
+    "global_step": 26,
+    "n": 32,
+    "objective": "Charter",
+    "parent": "Charter 2M",
+    "reward_mean": 0.1875,
+    "reward_smoothed": 0.21875,
+    "step": 27,
+    "successes": 6
+  },
+  {
+    "global_step": 27,
+    "n": 32,
+    "objective": "Charter",
+    "parent": "Charter 2M",
+    "reward_mean": 0.25,
+    "reward_smoothed": 0.21875,
+    "step": 28,
+    "successes": 8
+  },
+  {
+    "global_step": 28,
+    "n": 32,
+    "objective": "Charter",
+    "parent": "Charter 2M",
+    "reward_mean": 0.15625,
+    "reward_smoothed": 0.20625,
+    "step": 29,
+    "successes": 5
+  },
+  {
+    "global_step": 29,
+    "n": 32,
+    "objective": "Charter",
+    "parent": "Charter 2M",
+    "reward_mean": 0.28125,
+    "reward_smoothed": 0.23125,
+    "step": 30,
+    "successes": 9
+  },
+  {
+    "global_step": 30,
+    "n": 32,
+    "objective": "Charter",
+    "parent": "Charter 2M",
+    "reward_mean": 0.15625,
+    "reward_smoothed": 0.23125,
+    "step": 31,
+    "successes": 5
+  },
+  {
+    "global_step": 31,
+    "n": 32,
+    "objective": "Charter",
+    "parent": "Charter 2M",
+    "reward_mean": 0.3125,
+    "reward_smoothed": 0.20625,
+    "step": 32,
+    "successes": 10
+  },
+  {
+    "global_step": 32,
+    "n": 32,
+    "objective": "Charter",
+    "parent": "Charter 2M",
+    "reward_mean": 0.25,
+    "reward_smoothed": 0.1875,
+    "step": 33,
+    "successes": 8
+  },
+  {
+    "global_step": 33,
+    "n": 32,
+    "objective": "Charter",
+    "parent": "Charter 2M",
+    "reward_mean": 0.03125,
+    "reward_smoothed": 0.20625,
+    "step": 34,
+    "successes": 1
+  },
+  {
+    "global_step": 34,
+    "n": 32,
+    "objective": "Charter",
+    "parent": "Charter 2M",
+    "reward_mean": 0.1875,
+    "reward_smoothed": 0.2125,
+    "step": 35,
+    "successes": 6
+  },
+  {
+    "global_step": 35,
+    "n": 32,
+    "objective": "Charter",
+    "parent": "Charter 2M",
+    "reward_mean": 0.25,
+    "reward_smoothed": 0.2,
+    "step": 36,
+    "successes": 8
+  },
+  {
+    "global_step": 36,
+    "n": 32,
+    "objective": "Charter",
+    "parent": "Charter 2M",
+    "reward_mean": 0.34375,
+    "reward_smoothed": 0.2375,
+    "step": 37,
+    "successes": 11
+  },
+  {
+    "global_step": 37,
+    "n": 32,
+    "objective": "Charter",
+    "parent": "Charter 2M",
+    "reward_mean": 0.1875,
+    "reward_smoothed": 0.21875,
+    "step": 38,
+    "successes": 6
+  },
+  {
+    "global_step": 38,
+    "n": 32,
+    "objective": "Charter",
+    "parent": "Charter 2M",
+    "reward_mean": 0.21875,
+    "reward_smoothed": 0.2,
+    "step": 39,
+    "successes": 7
+  },
+  {
+    "global_step": 39,
+    "n": 32,
+    "objective": "Charter",
+    "parent": "Charter 2M",
+    "reward_mean": 0.09375,
+    "reward_smoothed": 0.21875,
+    "step": 40,
+    "successes": 3
+  },
+  {
+    "global_step": 40,
+    "n": 32,
+    "objective": "Charter",
+    "parent": "Charter 2M",
+    "reward_mean": 0.15625,
+    "reward_smoothed": 0.24375,
+    "step": 41,
+    "successes": 5
+  },
+  {
+    "global_step": 41,
+    "n": 32,
+    "objective": "Charter",
+    "parent": "Charter 2M",
+    "reward_mean": 0.4375,
+    "reward_smoothed": 0.275,
+    "step": 42,
+    "successes": 14
+  },
+  {
+    "global_step": 42,
+    "n": 32,
+    "objective": "Charter",
+    "parent": "Charter 2M",
+    "reward_mean": 0.3125,
+    "reward_smoothed": 0.29375,
+    "step": 43,
+    "successes": 10
+  },
+  {
+    "global_step": 43,
+    "n": 32,
+    "objective": "Charter",
+    "parent": "Charter 2M",
+    "reward_mean": 0.375,
+    "reward_smoothed": 0.3375,
+    "step": 44,
+    "successes": 12
+  },
+  {
+    "global_step": 44,
+    "n": 32,
+    "objective": "Charter",
+    "parent": "Charter 2M",
+    "reward_mean": 0.1875,
+    "reward_smoothed": 0.2875,
+    "step": 45,
+    "successes": 6
+  },
+  {
+    "global_step": 45,
+    "n": 32,
+    "objective": "Charter",
+    "parent": "Charter 2M",
+    "reward_mean": 0.375,
+    "reward_smoothed": 0.29375,
+    "step": 46,
+    "successes": 12
+  },
+  {
+    "global_step": 46,
+    "n": 32,
+    "objective": "Charter",
+    "parent": "Charter 2M",
+    "reward_mean": 0.1875,
+    "reward_smoothed": 0.23125,
+    "step": 47,
+    "successes": 6
+  },
+  {
+    "global_step": 47,
+    "n": 32,
+    "objective": "Charter",
+    "parent": "Charter 2M",
+    "reward_mean": 0.34375,
+    "reward_smoothed": 0.275,
+    "step": 48,
+    "successes": 11
+  },
+  {
+    "global_step": 48,
+    "n": 32,
+    "objective": "Charter",
+    "parent": "Charter 2M",
+    "reward_mean": 0.0625,
+    "reward_smoothed": 0.24375,
+    "step": 49,
+    "successes": 2
+  },
+  {
+    "global_step": 49,
+    "n": 32,
+    "objective": "Charter",
+    "parent": "Charter 2M",
+    "reward_mean": 0.40625,
+    "reward_smoothed": 0.28125,
+    "step": 50,
+    "successes": 13
+  },
+  {
+    "global_step": 50,
+    "n": 32,
+    "objective": "Charter",
+    "parent": "Charter 2M",
+    "reward_mean": 0.21875,
+    "reward_smoothed": 0.24375,
+    "step": 51,
+    "successes": 7
+  },
+  {
+    "global_step": 51,
+    "n": 32,
+    "objective": "Charter",
+    "parent": "Charter 2M",
+    "reward_mean": 0.375,
+    "reward_smoothed": 0.28125,
+    "step": 52,
+    "successes": 12
+  },
+  {
+    "global_step": 52,
+    "n": 32,
+    "objective": "Charter",
+    "parent": "Charter 2M",
+    "reward_mean": 0.15625,
+    "reward_smoothed": 0.2625,
+    "step": 53,
+    "successes": 5
+  },
+  {
+    "global_step": 53,
+    "n": 32,
+    "objective": "Charter",
+    "parent": "Charter 2M",
+    "reward_mean": 0.25,
+    "reward_smoothed": 0.3,
+    "step": 54,
+    "successes": 8
+  },
+  {
+    "global_step": 54,
+    "n": 32,
+    "objective": "Charter",
+    "parent": "Charter 2M",
+    "reward_mean": 0.3125,
+    "reward_smoothed": 0.2375,
+    "step": 55,
+    "successes": 10
+  },
+  {
+    "global_step": 55,
+    "n": 32,
+    "objective": "Charter",
+    "parent": "Charter 2M",
+    "reward_mean": 0.40625,
+    "reward_smoothed": 0.25,
+    "step": 56,
+    "successes": 13
+  },
+  {
+    "global_step": 56,
+    "n": 32,
+    "objective": "Charter",
+    "parent": "Charter 2M",
+    "reward_mean": 0.0625,
+    "reward_smoothed": 0.2375,
+    "step": 57,
+    "successes": 2
+  },
+  {
+    "global_step": 57,
+    "n": 32,
+    "objective": "Charter",
+    "parent": "Charter 2M",
+    "reward_mean": 0.21875,
+    "reward_smoothed": 0.225,
+    "step": 58,
+    "successes": 7
+  },
+  {
+    "global_step": 58,
+    "n": 32,
+    "objective": "Charter",
+    "parent": "Charter 2M",
+    "reward_mean": 0.1875,
+    "reward_smoothed": 0.19375,
+    "step": 59,
+    "successes": 6
+  },
+  {
+    "global_step": 59,
+    "n": 32,
+    "objective": "Charter",
+    "parent": "Charter 2M",
+    "reward_mean": 0.25,
+    "reward_smoothed": 0.20625,
+    "step": 60,
+    "successes": 8
+  },
+  {
+    "global_step": 60,
+    "n": 32,
+    "objective": "Charter",
+    "parent": "Charter 2M",
+    "reward_mean": 0.25,
+    "reward_smoothed": 0.21875,
+    "step": 61,
+    "successes": 8
+  },
+  {
+    "global_step": 61,
+    "n": 32,
+    "objective": "Charter",
+    "parent": "Charter 2M",
+    "reward_mean": 0.125,
+    "reward_smoothed": 0.2125,
+    "step": 62,
+    "successes": 4
+  },
+  {
+    "global_step": 62,
+    "n": 32,
+    "objective": "Charter",
+    "parent": "Charter 2M",
+    "reward_mean": 0.28125,
+    "reward_smoothed": 0.203125,
+    "step": 63,
+    "successes": 9
+  },
+  {
+    "global_step": 63,
+    "n": 32,
+    "objective": "Charter",
+    "parent": "Charter 2M",
+    "reward_mean": 0.15625,
+    "reward_smoothed": 0.1875,
+    "step": 64,
+    "successes": 5
+  },
+  {
+    "global_step": 0,
+    "n": 32,
+    "objective": "Charter",
+    "parent": "Coin 2M",
+    "reward_mean": 0.03125,
+    "reward_smoothed": 0.052083333333333336,
+    "step": 1,
+    "successes": 1
+  },
+  {
+    "global_step": 1,
+    "n": 32,
+    "objective": "Charter",
+    "parent": "Coin 2M",
+    "reward_mean": 0.03125,
+    "reward_smoothed": 0.0390625,
+    "step": 2,
+    "successes": 1
+  },
+  {
+    "global_step": 2,
+    "n": 32,
+    "objective": "Charter",
+    "parent": "Coin 2M",
+    "reward_mean": 0.09375,
+    "reward_smoothed": 0.0375,
+    "step": 3,
+    "successes": 3
+  },
+  {
+    "global_step": 3,
+    "n": 32,
+    "objective": "Charter",
+    "parent": "Coin 2M",
+    "reward_mean": 0.0,
+    "reward_smoothed": 0.0375,
+    "step": 4,
+    "successes": 0
+  },
+  {
+    "global_step": 4,
+    "n": 32,
+    "objective": "Charter",
+    "parent": "Coin 2M",
+    "reward_mean": 0.03125,
+    "reward_smoothed": 0.0375,
+    "step": 5,
+    "successes": 1
+  },
+  {
+    "global_step": 5,
+    "n": 32,
+    "objective": "Charter",
+    "parent": "Coin 2M",
+    "reward_mean": 0.03125,
+    "reward_smoothed": 0.05625,
+    "step": 6,
+    "successes": 1
+  },
+  {
+    "global_step": 6,
+    "n": 32,
+    "objective": "Charter",
+    "parent": "Coin 2M",
+    "reward_mean": 0.03125,
+    "reward_smoothed": 0.09375,
+    "step": 7,
+    "successes": 1
+  },
+  {
+    "global_step": 7,
+    "n": 32,
+    "objective": "Charter",
+    "parent": "Coin 2M",
+    "reward_mean": 0.1875,
+    "reward_smoothed": 0.09375,
+    "step": 8,
+    "successes": 6
+  },
+  {
+    "global_step": 8,
+    "n": 32,
+    "objective": "Charter",
+    "parent": "Coin 2M",
+    "reward_mean": 0.1875,
+    "reward_smoothed": 0.10625,
+    "step": 9,
+    "successes": 6
+  },
+  {
+    "global_step": 9,
+    "n": 32,
+    "objective": "Charter",
+    "parent": "Coin 2M",
+    "reward_mean": 0.03125,
+    "reward_smoothed": 0.1125,
+    "step": 10,
+    "successes": 1
+  },
+  {
+    "global_step": 10,
+    "n": 32,
+    "objective": "Charter",
+    "parent": "Coin 2M",
+    "reward_mean": 0.09375,
+    "reward_smoothed": 0.0875,
+    "step": 11,
+    "successes": 3
+  },
+  {
+    "global_step": 11,
+    "n": 32,
+    "objective": "Charter",
+    "parent": "Coin 2M",
+    "reward_mean": 0.0625,
+    "reward_smoothed": 0.06875,
+    "step": 12,
+    "successes": 2
+  },
+  {
+    "global_step": 12,
+    "n": 32,
+    "objective": "Charter",
+    "parent": "Coin 2M",
+    "reward_mean": 0.0625,
+    "reward_smoothed": 0.075,
+    "step": 13,
+    "successes": 2
+  },
+  {
+    "global_step": 13,
+    "n": 32,
+    "objective": "Charter",
+    "parent": "Coin 2M",
+    "reward_mean": 0.09375,
+    "reward_smoothed": 0.0875,
+    "step": 14,
+    "successes": 3
+  },
+  {
+    "global_step": 14,
+    "n": 32,
+    "objective": "Charter",
+    "parent": "Coin 2M",
+    "reward_mean": 0.0625,
+    "reward_smoothed": 0.08125,
+    "step": 15,
+    "successes": 2
+  },
+  {
+    "global_step": 15,
+    "n": 32,
+    "objective": "Charter",
+    "parent": "Coin 2M",
+    "reward_mean": 0.15625,
+    "reward_smoothed": 0.075,
+    "step": 16,
+    "successes": 5
+  },
+  {
+    "global_step": 16,
+    "n": 32,
+    "objective": "Charter",
+    "parent": "Coin 2M",
+    "reward_mean": 0.03125,
+    "reward_smoothed": 0.08125,
+    "step": 17,
+    "successes": 1
+  },
+  {
+    "global_step": 17,
+    "n": 32,
+    "objective": "Charter",
+    "parent": "Coin 2M",
+    "reward_mean": 0.03125,
+    "reward_smoothed": 0.11875,
+    "step": 18,
+    "successes": 1
+  },
+  {
+    "global_step": 18,
+    "n": 32,
+    "objective": "Charter",
+    "parent": "Coin 2M",
+    "reward_mean": 0.125,
+    "reward_smoothed": 0.1125,
+    "step": 19,
+    "successes": 4
+  },
+  {
+    "global_step": 19,
+    "n": 32,
+    "objective": "Charter",
+    "parent": "Coin 2M",
+    "reward_mean": 0.25,
+    "reward_smoothed": 0.125,
+    "step": 20,
+    "successes": 8
+  },
+  {
+    "global_step": 20,
+    "n": 32,
+    "objective": "Charter",
+    "parent": "Coin 2M",
+    "reward_mean": 0.125,
+    "reward_smoothed": 0.13125,
+    "step": 21,
+    "successes": 4
+  },
+  {
+    "global_step": 21,
+    "n": 32,
+    "objective": "Charter",
+    "parent": "Coin 2M",
+    "reward_mean": 0.09375,
+    "reward_smoothed": 0.1125,
+    "step": 22,
+    "successes": 3
+  },
+  {
+    "global_step": 22,
+    "n": 32,
+    "objective": "Charter",
+    "parent": "Coin 2M",
+    "reward_mean": 0.0625,
+    "reward_smoothed": 0.0875,
+    "step": 23,
+    "successes": 2
+  },
+  {
+    "global_step": 23,
+    "n": 32,
+    "objective": "Charter",
+    "parent": "Coin 2M",
+    "reward_mean": 0.03125,
+    "reward_smoothed": 0.075,
+    "step": 24,
+    "successes": 1
+  },
+  {
+    "global_step": 24,
+    "n": 32,
+    "objective": "Charter",
+    "parent": "Coin 2M",
+    "reward_mean": 0.125,
+    "reward_smoothed": 0.0625,
+    "step": 25,
+    "successes": 4
+  },
+  {
+    "global_step": 25,
+    "n": 32,
+    "objective": "Charter",
+    "parent": "Coin 2M",
+    "reward_mean": 0.0625,
+    "reward_smoothed": 0.08125,
+    "step": 26,
+    "successes": 2
+  },
+  {
+    "global_step": 26,
+    "n": 32,
+    "objective": "Charter",
+    "parent": "Coin 2M",
+    "reward_mean": 0.03125,
+    "reward_smoothed": 0.1125,
+    "step": 27,
+    "successes": 1
+  },
+  {
+    "global_step": 27,
+    "n": 32,
+    "objective": "Charter",
+    "parent": "Coin 2M",
+    "reward_mean": 0.15625,
+    "reward_smoothed": 0.10625,
+    "step": 28,
+    "successes": 5
+  },
+  {
+    "global_step": 28,
+    "n": 32,
+    "objective": "Charter",
+    "parent": "Coin 2M",
+    "reward_mean": 0.1875,
+    "reward_smoothed": 0.125,
+    "step": 29,
+    "successes": 6
+  },
+  {
+    "global_step": 29,
+    "n": 32,
+    "objective": "Charter",
+    "parent": "Coin 2M",
+    "reward_mean": 0.09375,
+    "reward_smoothed": 0.15625,
+    "step": 30,
+    "successes": 3
+  },
+  {
+    "global_step": 30,
+    "n": 32,
+    "objective": "Charter",
+    "parent": "Coin 2M",
+    "reward_mean": 0.15625,
+    "reward_smoothed": 0.13125,
+    "step": 31,
+    "successes": 5
+  },
+  {
+    "global_step": 31,
+    "n": 32,
+    "objective": "Charter",
+    "parent": "Coin 2M",
+    "reward_mean": 0.1875,
+    "reward_smoothed": 0.10625,
+    "step": 32,
+    "successes": 6
+  },
+  {
+    "global_step": 32,
+    "n": 32,
+    "objective": "Charter",
+    "parent": "Coin 2M",
+    "reward_mean": 0.03125,
+    "reward_smoothed": 0.1125,
+    "step": 33,
+    "successes": 1
+  },
+  {
+    "global_step": 33,
+    "n": 32,
+    "objective": "Charter",
+    "parent": "Coin 2M",
+    "reward_mean": 0.0625,
+    "reward_smoothed": 0.10625,
+    "step": 34,
+    "successes": 2
+  },
+  {
+    "global_step": 34,
+    "n": 32,
+    "objective": "Charter",
+    "parent": "Coin 2M",
+    "reward_mean": 0.125,
+    "reward_smoothed": 0.0875,
+    "step": 35,
+    "successes": 4
+  },
+  {
+    "global_step": 35,
+    "n": 32,
+    "objective": "Charter",
+    "parent": "Coin 2M",
+    "reward_mean": 0.125,
+    "reward_smoothed": 0.125,
+    "step": 36,
+    "successes": 4
+  },
+  {
+    "global_step": 36,
+    "n": 32,
+    "objective": "Charter",
+    "parent": "Coin 2M",
+    "reward_mean": 0.09375,
+    "reward_smoothed": 0.13125,
+    "step": 37,
+    "successes": 3
+  },
+  {
+    "global_step": 37,
+    "n": 32,
+    "objective": "Charter",
+    "parent": "Coin 2M",
+    "reward_mean": 0.21875,
+    "reward_smoothed": 0.11875,
+    "step": 38,
+    "successes": 7
+  },
+  {
+    "global_step": 38,
+    "n": 32,
+    "objective": "Charter",
+    "parent": "Coin 2M",
+    "reward_mean": 0.09375,
+    "reward_smoothed": 0.10625,
+    "step": 39,
+    "successes": 3
+  },
+  {
+    "global_step": 39,
+    "n": 32,
+    "objective": "Charter",
+    "parent": "Coin 2M",
+    "reward_mean": 0.0625,
+    "reward_smoothed": 0.1375,
+    "step": 40,
+    "successes": 2
+  },
+  {
+    "global_step": 40,
+    "n": 32,
+    "objective": "Charter",
+    "parent": "Coin 2M",
+    "reward_mean": 0.0625,
+    "reward_smoothed": 0.10625,
+    "step": 41,
+    "successes": 2
+  },
+  {
+    "global_step": 41,
+    "n": 32,
+    "objective": "Charter",
+    "parent": "Coin 2M",
+    "reward_mean": 0.25,
+    "reward_smoothed": 0.1125,
+    "step": 42,
+    "successes": 8
+  },
+  {
+    "global_step": 42,
+    "n": 32,
+    "objective": "Charter",
+    "parent": "Coin 2M",
+    "reward_mean": 0.0625,
+    "reward_smoothed": 0.11875,
+    "step": 43,
+    "successes": 2
+  },
+  {
+    "global_step": 43,
+    "n": 32,
+    "objective": "Charter",
+    "parent": "Coin 2M",
+    "reward_mean": 0.125,
+    "reward_smoothed": 0.14375,
+    "step": 44,
+    "successes": 4
+  },
+  {
+    "global_step": 44,
+    "n": 32,
+    "objective": "Charter",
+    "parent": "Coin 2M",
+    "reward_mean": 0.09375,
+    "reward_smoothed": 0.11875,
+    "step": 45,
+    "successes": 3
+  },
+  {
+    "global_step": 45,
+    "n": 32,
+    "objective": "Charter",
+    "parent": "Coin 2M",
+    "reward_mean": 0.1875,
+    "reward_smoothed": 0.14375,
+    "step": 46,
+    "successes": 6
+  },
+  {
+    "global_step": 46,
+    "n": 32,
+    "objective": "Charter",
+    "parent": "Coin 2M",
+    "reward_mean": 0.125,
+    "reward_smoothed": 0.13125,
+    "step": 47,
+    "successes": 4
+  },
+  {
+    "global_step": 47,
+    "n": 32,
+    "objective": "Charter",
+    "parent": "Coin 2M",
+    "reward_mean": 0.1875,
+    "reward_smoothed": 0.15625,
+    "step": 48,
+    "successes": 6
+  },
+  {
+    "global_step": 48,
+    "n": 32,
+    "objective": "Charter",
+    "parent": "Coin 2M",
+    "reward_mean": 0.0625,
+    "reward_smoothed": 0.15625,
+    "step": 49,
+    "successes": 2
+  },
+  {
+    "global_step": 49,
+    "n": 32,
+    "objective": "Charter",
+    "parent": "Coin 2M",
+    "reward_mean": 0.21875,
+    "reward_smoothed": 0.14375,
+    "step": 50,
+    "successes": 7
+  },
+  {
+    "global_step": 50,
+    "n": 32,
+    "objective": "Charter",
+    "parent": "Coin 2M",
+    "reward_mean": 0.1875,
+    "reward_smoothed": 0.1125,
+    "step": 51,
+    "successes": 6
+  },
+  {
+    "global_step": 51,
+    "n": 32,
+    "objective": "Charter",
+    "parent": "Coin 2M",
+    "reward_mean": 0.0625,
+    "reward_smoothed": 0.125,
+    "step": 52,
+    "successes": 2
+  },
+  {
+    "global_step": 52,
+    "n": 32,
+    "objective": "Charter",
+    "parent": "Coin 2M",
+    "reward_mean": 0.03125,
+    "reward_smoothed": 0.09375,
+    "step": 53,
+    "successes": 1
+  },
+  {
+    "global_step": 53,
+    "n": 32,
+    "objective": "Charter",
+    "parent": "Coin 2M",
+    "reward_mean": 0.125,
+    "reward_smoothed": 0.10625,
+    "step": 54,
+    "successes": 4
+  },
+  {
+    "global_step": 54,
+    "n": 32,
+    "objective": "Charter",
+    "parent": "Coin 2M",
+    "reward_mean": 0.0625,
+    "reward_smoothed": 0.125,
+    "step": 55,
+    "successes": 2
+  },
+  {
+    "global_step": 55,
+    "n": 32,
+    "objective": "Charter",
+    "parent": "Coin 2M",
+    "reward_mean": 0.25,
+    "reward_smoothed": 0.13125,
+    "step": 56,
+    "successes": 8
+  },
+  {
+    "global_step": 56,
+    "n": 32,
+    "objective": "Charter",
+    "parent": "Coin 2M",
+    "reward_mean": 0.15625,
+    "reward_smoothed": 0.13125,
+    "step": 57,
+    "successes": 5
+  },
+  {
+    "global_step": 57,
+    "n": 32,
+    "objective": "Charter",
+    "parent": "Coin 2M",
+    "reward_mean": 0.0625,
+    "reward_smoothed": 0.14375,
+    "step": 58,
+    "successes": 2
+  },
+  {
+    "global_step": 58,
+    "n": 32,
+    "objective": "Charter",
+    "parent": "Coin 2M",
+    "reward_mean": 0.125,
+    "reward_smoothed": 0.10625,
+    "step": 59,
+    "successes": 4
+  },
+  {
+    "global_step": 59,
+    "n": 32,
+    "objective": "Charter",
+    "parent": "Coin 2M",
+    "reward_mean": 0.125,
+    "reward_smoothed": 0.08125,
+    "step": 60,
+    "successes": 4
+  },
+  {
+    "global_step": 60,
+    "n": 32,
+    "objective": "Charter",
+    "parent": "Coin 2M",
+    "reward_mean": 0.0625,
+    "reward_smoothed": 0.0875,
+    "step": 61,
+    "successes": 2
+  },
+  {
+    "global_step": 61,
+    "n": 32,
+    "objective": "Charter",
+    "parent": "Coin 2M",
+    "reward_mean": 0.03125,
+    "reward_smoothed": 0.0875,
+    "step": 62,
+    "successes": 1
+  },
+  {
+    "global_step": 62,
+    "n": 32,
+    "objective": "Charter",
+    "parent": "Coin 2M",
+    "reward_mean": 0.09375,
+    "reward_smoothed": 0.078125,
+    "step": 63,
+    "successes": 3
+  },
+  {
+    "global_step": 63,
+    "n": 32,
+    "objective": "Charter",
+    "parent": "Coin 2M",
+    "reward_mean": 0.125,
+    "reward_smoothed": 0.08333333333333333,
+    "step": 64,
+    "successes": 4
+  },
+  {
+    "global_step": 0,
+    "n": 32,
+    "objective": "Charter",
+    "parent": "50:50",
+    "reward_mean": 0.09375,
+    "reward_smoothed": 0.052083333333333336,
+    "step": 1,
+    "successes": 3
+  },
+  {
+    "global_step": 1,
+    "n": 32,
+    "objective": "Charter",
+    "parent": "50:50",
+    "reward_mean": 0.03125,
+    "reward_smoothed": 0.0625,
+    "step": 2,
+    "successes": 1
+  },
+  {
+    "global_step": 2,
+    "n": 32,
+    "objective": "Charter",
+    "parent": "50:50",
+    "reward_mean": 0.03125,
+    "reward_smoothed": 0.0625,
+    "step": 3,
+    "successes": 1
+  },
+  {
+    "global_step": 3,
+    "n": 32,
+    "objective": "Charter",
+    "parent": "50:50",
+    "reward_mean": 0.09375,
+    "reward_smoothed": 0.05,
+    "step": 4,
+    "successes": 3
+  },
+  {
+    "global_step": 4,
+    "n": 32,
+    "objective": "Charter",
+    "parent": "50:50",
+    "reward_mean": 0.0625,
+    "reward_smoothed": 0.04375,
+    "step": 5,
+    "successes": 2
+  },
+  {
+    "global_step": 5,
+    "n": 32,
+    "objective": "Charter",
+    "parent": "50:50",
+    "reward_mean": 0.03125,
+    "reward_smoothed": 0.075,
+    "step": 6,
+    "successes": 1
+  },
+  {
+    "global_step": 6,
+    "n": 32,
+    "objective": "Charter",
+    "parent": "50:50",
+    "reward_mean": 0.0,
+    "reward_smoothed": 0.0875,
+    "step": 7,
+    "successes": 0
+  },
+  {
+    "global_step": 7,
+    "n": 32,
+    "objective": "Charter",
+    "parent": "50:50",
+    "reward_mean": 0.1875,
+    "reward_smoothed": 0.0875,
+    "step": 8,
+    "successes": 6
+  },
+  {
+    "global_step": 8,
+    "n": 32,
+    "objective": "Charter",
+    "parent": "50:50",
+    "reward_mean": 0.15625,
+    "reward_smoothed": 0.0875,
+    "step": 9,
+    "successes": 5
+  },
+  {
+    "global_step": 9,
+    "n": 32,
+    "objective": "Charter",
+    "parent": "50:50",
+    "reward_mean": 0.0625,
+    "reward_smoothed": 0.11875,
+    "step": 10,
+    "successes": 2
+  },
+  {
+    "global_step": 10,
+    "n": 32,
+    "objective": "Charter",
+    "parent": "50:50",
+    "reward_mean": 0.03125,
+    "reward_smoothed": 0.08125,
+    "step": 11,
+    "successes": 1
+  },
+  {
+    "global_step": 11,
+    "n": 32,
+    "objective": "Charter",
+    "parent": "50:50",
+    "reward_mean": 0.15625,
+    "reward_smoothed": 0.06875,
+    "step": 12,
+    "successes": 5
+  },
+  {
+    "global_step": 12,
+    "n": 32,
+    "objective": "Charter",
+    "parent": "50:50",
+    "reward_mean": 0.0,
+    "reward_smoothed": 0.075,
+    "step": 13,
+    "successes": 0
+  },
+  {
+    "global_step": 13,
+    "n": 32,
+    "objective": "Charter",
+    "parent": "50:50",
+    "reward_mean": 0.09375,
+    "reward_smoothed": 0.0875,
+    "step": 14,
+    "successes": 3
+  },
+  {
+    "global_step": 14,
+    "n": 32,
+    "objective": "Charter",
+    "parent": "50:50",
+    "reward_mean": 0.09375,
+    "reward_smoothed": 0.06875,
+    "step": 15,
+    "successes": 3
+  },
+  {
+    "global_step": 15,
+    "n": 32,
+    "objective": "Charter",
+    "parent": "50:50",
+    "reward_mean": 0.09375,
+    "reward_smoothed": 0.06875,
+    "step": 16,
+    "successes": 3
+  },
+  {
+    "global_step": 16,
+    "n": 32,
+    "objective": "Charter",
+    "parent": "50:50",
+    "reward_mean": 0.0625,
+    "reward_smoothed": 0.08125,
+    "step": 17,
+    "successes": 2
+  },
+  {
+    "global_step": 17,
+    "n": 32,
+    "objective": "Charter",
+    "parent": "50:50",
+    "reward_mean": 0.0,
+    "reward_smoothed": 0.1,
+    "step": 18,
+    "successes": 0
+  },
+  {
+    "global_step": 18,
+    "n": 32,
+    "objective": "Charter",
+    "parent": "50:50",
+    "reward_mean": 0.15625,
+    "reward_smoothed": 0.09375,
+    "step": 19,
+    "successes": 5
+  },
+  {
+    "global_step": 19,
+    "n": 32,
+    "objective": "Charter",
+    "parent": "50:50",
+    "reward_mean": 0.1875,
+    "reward_smoothed": 0.13125,
+    "step": 20,
+    "successes": 6
+  },
+  {
+    "global_step": 20,
+    "n": 32,
+    "objective": "Charter",
+    "parent": "50:50",
+    "reward_mean": 0.0625,
+    "reward_smoothed": 0.15,
+    "step": 21,
+    "successes": 2
+  },
+  {
+    "global_step": 21,
+    "n": 32,
+    "objective": "Charter",
+    "parent": "50:50",
+    "reward_mean": 0.25,
+    "reward_smoothed": 0.13125,
+    "step": 22,
+    "successes": 8
+  },
+  {
+    "global_step": 22,
+    "n": 32,
+    "objective": "Charter",
+    "parent": "50:50",
+    "reward_mean": 0.09375,
+    "reward_smoothed": 0.1375,
+    "step": 23,
+    "successes": 3
+  },
+  {
+    "global_step": 23,
+    "n": 32,
+    "objective": "Charter",
+    "parent": "50:50",
+    "reward_mean": 0.0625,
+    "reward_smoothed": 0.1375,
+    "step": 24,
+    "successes": 2
+  },
+  {
+    "global_step": 24,
+    "n": 32,
+    "objective": "Charter",
+    "parent": "50:50",
+    "reward_mean": 0.21875,
+    "reward_smoothed": 0.09375,
+    "step": 25,
+    "successes": 7
+  },
+  {
+    "global_step": 25,
+    "n": 32,
+    "objective": "Charter",
+    "parent": "50:50",
+    "reward_mean": 0.0625,
+    "reward_smoothed": 0.11875,
+    "step": 26,
+    "successes": 2
+  },
+  {
+    "global_step": 26,
+    "n": 32,
+    "objective": "Charter",
+    "parent": "50:50",
+    "reward_mean": 0.03125,
+    "reward_smoothed": 0.14375,
+    "step": 27,
+    "successes": 1
+  },
+  {
+    "global_step": 27,
+    "n": 32,
+    "objective": "Charter",
+    "parent": "50:50",
+    "reward_mean": 0.21875,
+    "reward_smoothed": 0.1375,
+    "step": 28,
+    "successes": 7
+  },
+  {
+    "global_step": 28,
+    "n": 32,
+    "objective": "Charter",
+    "parent": "50:50",
+    "reward_mean": 0.1875,
+    "reward_smoothed": 0.14375,
+    "step": 29,
+    "successes": 6
+  },
+  {
+    "global_step": 29,
+    "n": 32,
+    "objective": "Charter",
+    "parent": "50:50",
+    "reward_mean": 0.1875,
+    "reward_smoothed": 0.16875,
+    "step": 30,
+    "successes": 6
+  },
+  {
+    "global_step": 30,
+    "n": 32,
+    "objective": "Charter",
+    "parent": "50:50",
+    "reward_mean": 0.09375,
+    "reward_smoothed": 0.14375,
+    "step": 31,
+    "successes": 3
+  },
+  {
+    "global_step": 31,
+    "n": 32,
+    "objective": "Charter",
+    "parent": "50:50",
+    "reward_mean": 0.15625,
+    "reward_smoothed": 0.125,
+    "step": 32,
+    "successes": 5
+  },
+  {
+    "global_step": 32,
+    "n": 32,
+    "objective": "Charter",
+    "parent": "50:50",
+    "reward_mean": 0.09375,
+    "reward_smoothed": 0.1,
+    "step": 33,
+    "successes": 3
+  },
+  {
+    "global_step": 33,
+    "n": 32,
+    "objective": "Charter",
+    "parent": "50:50",
+    "reward_mean": 0.09375,
+    "reward_smoothed": 0.1,
+    "step": 34,
+    "successes": 3
+  },
+  {
+    "global_step": 34,
+    "n": 32,
+    "objective": "Charter",
+    "parent": "50:50",
+    "reward_mean": 0.0625,
+    "reward_smoothed": 0.1,
+    "step": 35,
+    "successes": 2
+  },
+  {
+    "global_step": 35,
+    "n": 32,
+    "objective": "Charter",
+    "parent": "50:50",
+    "reward_mean": 0.09375,
+    "reward_smoothed": 0.1125,
+    "step": 36,
+    "successes": 3
+  },
+  {
+    "global_step": 36,
+    "n": 32,
+    "objective": "Charter",
+    "parent": "50:50",
+    "reward_mean": 0.15625,
+    "reward_smoothed": 0.13125,
+    "step": 37,
+    "successes": 5
+  },
+  {
+    "global_step": 37,
+    "n": 32,
+    "objective": "Charter",
+    "parent": "50:50",
+    "reward_mean": 0.15625,
+    "reward_smoothed": 0.11875,
+    "step": 38,
+    "successes": 5
+  },
+  {
+    "global_step": 38,
+    "n": 32,
+    "objective": "Charter",
+    "parent": "50:50",
+    "reward_mean": 0.1875,
+    "reward_smoothed": 0.1,
+    "step": 39,
+    "successes": 6
+  },
+  {
+    "global_step": 39,
+    "n": 32,
+    "objective": "Charter",
+    "parent": "50:50",
+    "reward_mean": 0.0,
+    "reward_smoothed": 0.09375,
+    "step": 40,
+    "successes": 0
+  },
+  {
+    "global_step": 40,
+    "n": 32,
+    "objective": "Charter",
+    "parent": "50:50",
+    "reward_mean": 0.0,
+    "reward_smoothed": 0.0875,
+    "step": 41,
+    "successes": 0
+  },
+  {
+    "global_step": 41,
+    "n": 32,
+    "objective": "Charter",
+    "parent": "50:50",
+    "reward_mean": 0.125,
+    "reward_smoothed": 0.075,
+    "step": 42,
+    "successes": 4
+  },
+  {
+    "global_step": 42,
+    "n": 32,
+    "objective": "Charter",
+    "parent": "50:50",
+    "reward_mean": 0.125,
+    "reward_smoothed": 0.09375,
+    "step": 43,
+    "successes": 4
+  },
+  {
+    "global_step": 43,
+    "n": 32,
+    "objective": "Charter",
+    "parent": "50:50",
+    "reward_mean": 0.125,
+    "reward_smoothed": 0.13125,
+    "step": 44,
+    "successes": 4
+  },
+  {
+    "global_step": 44,
+    "n": 32,
+    "objective": "Charter",
+    "parent": "50:50",
+    "reward_mean": 0.09375,
+    "reward_smoothed": 0.1125,
+    "step": 45,
+    "successes": 3
+  },
+  {
+    "global_step": 45,
+    "n": 32,
+    "objective": "Charter",
+    "parent": "50:50",
+    "reward_mean": 0.1875,
+    "reward_smoothed": 0.1375,
+    "step": 46,
+    "successes": 6
+  },
+  {
+    "global_step": 46,
+    "n": 32,
+    "objective": "Charter",
+    "parent": "50:50",
+    "reward_mean": 0.03125,
+    "reward_smoothed": 0.1375,
+    "step": 47,
+    "successes": 1
+  },
+  {
+    "global_step": 47,
+    "n": 32,
+    "objective": "Charter",
+    "parent": "50:50",
+    "reward_mean": 0.25,
+    "reward_smoothed": 0.13125,
+    "step": 48,
+    "successes": 8
+  },
+  {
+    "global_step": 48,
+    "n": 32,
+    "objective": "Charter",
+    "parent": "50:50",
+    "reward_mean": 0.125,
+    "reward_smoothed": 0.11875,
+    "step": 49,
+    "successes": 4
+  },
+  {
+    "global_step": 49,
+    "n": 32,
+    "objective": "Charter",
+    "parent": "50:50",
+    "reward_mean": 0.0625,
+    "reward_smoothed": 0.1375,
+    "step": 50,
+    "successes": 2
+  },
+  {
+    "global_step": 50,
+    "n": 32,
+    "objective": "Charter",
+    "parent": "50:50",
+    "reward_mean": 0.125,
+    "reward_smoothed": 0.09375,
+    "step": 51,
+    "successes": 4
+  },
+  {
+    "global_step": 51,
+    "n": 32,
+    "objective": "Charter",
+    "parent": "50:50",
+    "reward_mean": 0.125,
+    "reward_smoothed": 0.09375,
+    "step": 52,
+    "successes": 4
+  },
+  {
+    "global_step": 52,
+    "n": 32,
+    "objective": "Charter",
+    "parent": "50:50",
+    "reward_mean": 0.03125,
+    "reward_smoothed": 0.1,
+    "step": 53,
+    "successes": 1
+  },
+  {
+    "global_step": 53,
+    "n": 32,
+    "objective": "Charter",
+    "parent": "50:50",
+    "reward_mean": 0.125,
+    "reward_smoothed": 0.09375,
+    "step": 54,
+    "successes": 4
+  },
+  {
+    "global_step": 54,
+    "n": 32,
+    "objective": "Charter",
+    "parent": "50:50",
+    "reward_mean": 0.09375,
+    "reward_smoothed": 0.09375,
+    "step": 55,
+    "successes": 3
+  },
+  {
+    "global_step": 55,
+    "n": 32,
+    "objective": "Charter",
+    "parent": "50:50",
+    "reward_mean": 0.09375,
+    "reward_smoothed": 0.09375,
+    "step": 56,
+    "successes": 3
+  },
+  {
+    "global_step": 56,
+    "n": 32,
+    "objective": "Charter",
+    "parent": "50:50",
+    "reward_mean": 0.125,
+    "reward_smoothed": 0.0875,
+    "step": 57,
+    "successes": 4
+  },
+  {
+    "global_step": 57,
+    "n": 32,
+    "objective": "Charter",
+    "parent": "50:50",
+    "reward_mean": 0.03125,
+    "reward_smoothed": 0.09375,
+    "step": 58,
+    "successes": 1
+  },
+  {
+    "global_step": 58,
+    "n": 32,
+    "objective": "Charter",
+    "parent": "50:50",
+    "reward_mean": 0.09375,
+    "reward_smoothed": 0.0875,
+    "step": 59,
+    "successes": 3
+  },
+  {
+    "global_step": 59,
+    "n": 32,
+    "objective": "Charter",
+    "parent": "50:50",
+    "reward_mean": 0.125,
+    "reward_smoothed": 0.075,
+    "step": 60,
+    "successes": 4
+  },
+  {
+    "global_step": 60,
+    "n": 32,
+    "objective": "Charter",
+    "parent": "50:50",
+    "reward_mean": 0.0625,
+    "reward_smoothed": 0.08125,
+    "step": 61,
+    "successes": 2
+  },
+  {
+    "global_step": 61,
+    "n": 32,
+    "objective": "Charter",
+    "parent": "50:50",
+    "reward_mean": 0.0625,
+    "reward_smoothed": 0.075,
+    "step": 62,
+    "successes": 2
+  },
+  {
+    "global_step": 62,
+    "n": 32,
+    "objective": "Charter",
+    "parent": "50:50",
+    "reward_mean": 0.0625,
+    "reward_smoothed": 0.0625,
+    "step": 63,
+    "successes": 2
+  },
+  {
+    "global_step": 63,
+    "n": 32,
+    "objective": "Charter",
+    "parent": "50:50",
+    "reward_mean": 0.0625,
+    "reward_smoothed": 0.0625,
+    "step": 64,
+    "successes": 2
+  },
+  {
+    "global_step": 0,
+    "n": 32,
+    "objective": "Charter",
+    "parent": "Neutral 2M",
+    "reward_mean": 0.15625,
+    "reward_smoothed": 0.11458333333333333,
+    "step": 1,
+    "successes": 5
+  },
+  {
+    "global_step": 1,
+    "n": 32,
+    "objective": "Charter",
+    "parent": "Neutral 2M",
+    "reward_mean": 0.125,
+    "reward_smoothed": 0.1171875,
+    "step": 2,
+    "successes": 4
+  },
+  {
+    "global_step": 2,
+    "n": 32,
+    "objective": "Charter",
+    "parent": "Neutral 2M",
+    "reward_mean": 0.0625,
+    "reward_smoothed": 0.13125,
+    "step": 3,
+    "successes": 2
+  },
+  {
+    "global_step": 3,
+    "n": 32,
+    "objective": "Charter",
+    "parent": "Neutral 2M",
+    "reward_mean": 0.125,
+    "reward_smoothed": 0.15,
+    "step": 4,
+    "successes": 4
+  },
+  {
+    "global_step": 4,
+    "n": 32,
+    "objective": "Charter",
+    "parent": "Neutral 2M",
+    "reward_mean": 0.1875,
+    "reward_smoothed": 0.13125,
+    "step": 5,
+    "successes": 6
+  },
+  {
+    "global_step": 5,
+    "n": 32,
+    "objective": "Charter",
+    "parent": "Neutral 2M",
+    "reward_mean": 0.25,
+    "reward_smoothed": 0.1375,
+    "step": 6,
+    "successes": 8
+  },
+  {
+    "global_step": 6,
+    "n": 32,
+    "objective": "Charter",
+    "parent": "Neutral 2M",
+    "reward_mean": 0.03125,
+    "reward_smoothed": 0.15,
+    "step": 7,
+    "successes": 1
+  },
+  {
+    "global_step": 7,
+    "n": 32,
+    "objective": "Charter",
+    "parent": "Neutral 2M",
+    "reward_mean": 0.09375,
+    "reward_smoothed": 0.13125,
+    "step": 8,
+    "successes": 3
+  },
+  {
+    "global_step": 8,
+    "n": 32,
+    "objective": "Charter",
+    "parent": "Neutral 2M",
+    "reward_mean": 0.1875,
+    "reward_smoothed": 0.10625,
+    "step": 9,
+    "successes": 6
+  },
+  {
+    "global_step": 9,
+    "n": 32,
+    "objective": "Charter",
+    "parent": "Neutral 2M",
+    "reward_mean": 0.09375,
+    "reward_smoothed": 0.1375,
+    "step": 10,
+    "successes": 3
+  },
+  {
+    "global_step": 10,
+    "n": 32,
+    "objective": "Charter",
+    "parent": "Neutral 2M",
+    "reward_mean": 0.125,
+    "reward_smoothed": 0.15625,
+    "step": 11,
+    "successes": 4
+  },
+  {
+    "global_step": 11,
+    "n": 32,
+    "objective": "Charter",
+    "parent": "Neutral 2M",
+    "reward_mean": 0.1875,
+    "reward_smoothed": 0.1375,
+    "step": 12,
+    "successes": 6
+  },
+  {
+    "global_step": 12,
+    "n": 32,
+    "objective": "Charter",
+    "parent": "Neutral 2M",
+    "reward_mean": 0.1875,
+    "reward_smoothed": 0.14375,
+    "step": 13,
+    "successes": 6
+  },
+  {
+    "global_step": 13,
+    "n": 32,
+    "objective": "Charter",
+    "parent": "Neutral 2M",
+    "reward_mean": 0.09375,
+    "reward_smoothed": 0.15625,
+    "step": 14,
+    "successes": 3
+  },
+  {
+    "global_step": 14,
+    "n": 32,
+    "objective": "Charter",
+    "parent": "Neutral 2M",
+    "reward_mean": 0.125,
+    "reward_smoothed": 0.1625,
+    "step": 15,
+    "successes": 4
+  },
+  {
+    "global_step": 15,
+    "n": 32,
+    "objective": "Charter",
+    "parent": "Neutral 2M",
+    "reward_mean": 0.1875,
+    "reward_smoothed": 0.16875,
+    "step": 16,
+    "successes": 6
+  },
+  {
+    "global_step": 16,
+    "n": 32,
+    "objective": "Charter",
+    "parent": "Neutral 2M",
+    "reward_mean": 0.21875,
+    "reward_smoothed": 0.1875,
+    "step": 17,
+    "successes": 7
+  },
+  {
+    "global_step": 17,
+    "n": 32,
+    "objective": "Charter",
+    "parent": "Neutral 2M",
+    "reward_mean": 0.21875,
+    "reward_smoothed": 0.19375,
+    "step": 18,
+    "successes": 7
+  },
+  {
+    "global_step": 18,
+    "n": 32,
+    "objective": "Charter",
+    "parent": "Neutral 2M",
+    "reward_mean": 0.1875,
+    "reward_smoothed": 0.1875,
+    "step": 19,
+    "successes": 6
+  },
+  {
+    "global_step": 19,
+    "n": 32,
+    "objective": "Charter",
+    "parent": "Neutral 2M",
+    "reward_mean": 0.15625,
+    "reward_smoothed": 0.1625,
+    "step": 20,
+    "successes": 5
+  },
+  {
+    "global_step": 20,
+    "n": 32,
+    "objective": "Charter",
+    "parent": "Neutral 2M",
+    "reward_mean": 0.15625,
+    "reward_smoothed": 0.1875,
+    "step": 21,
+    "successes": 5
+  },
+  {
+    "global_step": 21,
+    "n": 32,
+    "objective": "Charter",
+    "parent": "Neutral 2M",
+    "reward_mean": 0.09375,
+    "reward_smoothed": 0.15625,
+    "step": 22,
+    "successes": 3
+  },
+  {
+    "global_step": 22,
+    "n": 32,
+    "objective": "Charter",
+    "parent": "Neutral 2M",
+    "reward_mean": 0.34375,
+    "reward_smoothed": 0.14375,
+    "step": 23,
+    "successes": 11
+  },
+  {
+    "global_step": 23,
+    "n": 32,
+    "objective": "Charter",
+    "parent": "Neutral 2M",
+    "reward_mean": 0.03125,
+    "reward_smoothed": 0.14375,
+    "step": 24,
+    "successes": 1
+  },
+  {
+    "global_step": 24,
+    "n": 32,
+    "objective": "Charter",
+    "parent": "Neutral 2M",
+    "reward_mean": 0.09375,
+    "reward_smoothed": 0.15,
+    "step": 25,
+    "successes": 3
+  },
+  {
+    "global_step": 25,
+    "n": 32,
+    "objective": "Charter",
+    "parent": "Neutral 2M",
+    "reward_mean": 0.15625,
+    "reward_smoothed": 0.1125,
+    "step": 26,
+    "successes": 5
+  },
+  {
+    "global_step": 26,
+    "n": 32,
+    "objective": "Charter",
+    "parent": "Neutral 2M",
+    "reward_mean": 0.125,
+    "reward_smoothed": 0.15,
+    "step": 27,
+    "successes": 4
+  },
+  {
+    "global_step": 27,
+    "n": 32,
+    "objective": "Charter",
+    "parent": "Neutral 2M",
+    "reward_mean": 0.15625,
+    "reward_smoothed": 0.23125,
+    "step": 28,
+    "successes": 5
+  },
+  {
+    "global_step": 28,
+    "n": 32,
+    "objective": "Charter",
+    "parent": "Neutral 2M",
+    "reward_mean": 0.21875,
+    "reward_smoothed": 0.24375,
+    "step": 29,
+    "successes": 7
+  },
+  {
+    "global_step": 29,
+    "n": 32,
+    "objective": "Charter",
+    "parent": "Neutral 2M",
+    "reward_mean": 0.5,
+    "reward_smoothed": 0.25,
+    "step": 30,
+    "successes": 16
+  },
+  {
+    "global_step": 30,
+    "n": 32,
+    "objective": "Charter",
+    "parent": "Neutral 2M",
+    "reward_mean": 0.21875,
+    "reward_smoothed": 0.2875,
+    "step": 31,
+    "successes": 7
+  },
+  {
+    "global_step": 31,
+    "n": 32,
+    "objective": "Charter",
+    "parent": "Neutral 2M",
+    "reward_mean": 0.15625,
+    "reward_smoothed": 0.275,
+    "step": 32,
+    "successes": 5
+  },
+  {
+    "global_step": 32,
+    "n": 32,
+    "objective": "Charter",
+    "parent": "Neutral 2M",
+    "reward_mean": 0.34375,
+    "reward_smoothed": 0.2375,
+    "step": 33,
+    "successes": 11
+  },
+  {
+    "global_step": 33,
+    "n": 32,
+    "objective": "Charter",
+    "parent": "Neutral 2M",
+    "reward_mean": 0.15625,
+    "reward_smoothed": 0.225,
+    "step": 34,
+    "successes": 5
+  },
+  {
+    "global_step": 34,
+    "n": 32,
+    "objective": "Charter",
+    "parent": "Neutral 2M",
+    "reward_mean": 0.3125,
+    "reward_smoothed": 0.275,
+    "step": 35,
+    "successes": 10
+  },
+  {
+    "global_step": 35,
+    "n": 32,
+    "objective": "Charter",
+    "parent": "Neutral 2M",
+    "reward_mean": 0.15625,
+    "reward_smoothed": 0.25625,
+    "step": 36,
+    "successes": 5
+  },
+  {
+    "global_step": 36,
+    "n": 32,
+    "objective": "Charter",
+    "parent": "Neutral 2M",
+    "reward_mean": 0.40625,
+    "reward_smoothed": 0.26875,
+    "step": 37,
+    "successes": 13
+  },
+  {
+    "global_step": 37,
+    "n": 32,
+    "objective": "Charter",
+    "parent": "Neutral 2M",
+    "reward_mean": 0.25,
+    "reward_smoothed": 0.21875,
+    "step": 38,
+    "successes": 8
+  },
+  {
+    "global_step": 38,
+    "n": 32,
+    "objective": "Charter",
+    "parent": "Neutral 2M",
+    "reward_mean": 0.21875,
+    "reward_smoothed": 0.2125,
+    "step": 39,
+    "successes": 7
+  },
+  {
+    "global_step": 39,
+    "n": 32,
+    "objective": "Charter",
+    "parent": "Neutral 2M",
+    "reward_mean": 0.0625,
+    "reward_smoothed": 0.21875,
+    "step": 40,
+    "successes": 2
+  },
+  {
+    "global_step": 40,
+    "n": 32,
+    "objective": "Charter",
+    "parent": "Neutral 2M",
+    "reward_mean": 0.125,
+    "reward_smoothed": 0.2375,
+    "step": 41,
+    "successes": 4
+  },
+  {
+    "global_step": 41,
+    "n": 32,
+    "objective": "Charter",
+    "parent": "Neutral 2M",
+    "reward_mean": 0.4375,
+    "reward_smoothed": 0.24375,
+    "step": 42,
+    "successes": 14
+  },
+  {
+    "global_step": 42,
+    "n": 32,
+    "objective": "Charter",
+    "parent": "Neutral 2M",
+    "reward_mean": 0.34375,
+    "reward_smoothed": 0.2625,
+    "step": 43,
+    "successes": 11
+  },
+  {
+    "global_step": 43,
+    "n": 32,
+    "objective": "Charter",
+    "parent": "Neutral 2M",
+    "reward_mean": 0.25,
+    "reward_smoothed": 0.2625,
+    "step": 44,
+    "successes": 8
+  },
+  {
+    "global_step": 44,
+    "n": 32,
+    "objective": "Charter",
+    "parent": "Neutral 2M",
+    "reward_mean": 0.15625,
+    "reward_smoothed": 0.18125,
+    "step": 45,
+    "successes": 5
+  },
+  {
+    "global_step": 45,
+    "n": 32,
+    "objective": "Charter",
+    "parent": "Neutral 2M",
+    "reward_mean": 0.125,
+    "reward_smoothed": 0.1875,
+    "step": 46,
+    "successes": 4
+  },
+  {
+    "global_step": 46,
+    "n": 32,
+    "objective": "Charter",
+    "parent": "Neutral 2M",
+    "reward_mean": 0.03125,
+    "reward_smoothed": 0.175,
+    "step": 47,
+    "successes": 1
+  },
+  {
+    "global_step": 47,
+    "n": 32,
+    "objective": "Charter",
+    "parent": "Neutral 2M",
+    "reward_mean": 0.375,
+    "reward_smoothed": 0.21875,
+    "step": 48,
+    "successes": 12
+  },
+  {
+    "global_step": 48,
+    "n": 32,
+    "objective": "Charter",
+    "parent": "Neutral 2M",
+    "reward_mean": 0.1875,
+    "reward_smoothed": 0.2125,
+    "step": 49,
+    "successes": 6
+  },
+  {
+    "global_step": 49,
+    "n": 32,
+    "objective": "Charter",
+    "parent": "Neutral 2M",
+    "reward_mean": 0.375,
+    "reward_smoothed": 0.3,
+    "step": 50,
+    "successes": 12
+  },
+  {
+    "global_step": 50,
+    "n": 32,
+    "objective": "Charter",
+    "parent": "Neutral 2M",
+    "reward_mean": 0.09375,
+    "reward_smoothed": 0.25625,
+    "step": 51,
+    "successes": 3
+  },
+  {
+    "global_step": 51,
+    "n": 32,
+    "objective": "Charter",
+    "parent": "Neutral 2M",
+    "reward_mean": 0.46875,
+    "reward_smoothed": 0.25625,
+    "step": 52,
+    "successes": 15
+  },
+  {
+    "global_step": 52,
+    "n": 32,
+    "objective": "Charter",
+    "parent": "Neutral 2M",
+    "reward_mean": 0.15625,
+    "reward_smoothed": 0.21875,
+    "step": 53,
+    "successes": 5
+  },
+  {
+    "global_step": 53,
+    "n": 32,
+    "objective": "Charter",
+    "parent": "Neutral 2M",
+    "reward_mean": 0.1875,
+    "reward_smoothed": 0.26875,
+    "step": 54,
+    "successes": 6
+  },
+  {
+    "global_step": 54,
+    "n": 32,
+    "objective": "Charter",
+    "parent": "Neutral 2M",
+    "reward_mean": 0.1875,
+    "reward_smoothed": 0.25,
+    "step": 55,
+    "successes": 6
+  },
+  {
+    "global_step": 55,
+    "n": 32,
+    "objective": "Charter",
+    "parent": "Neutral 2M",
+    "reward_mean": 0.34375,
+    "reward_smoothed": 0.2375,
+    "step": 56,
+    "successes": 11
+  },
+  {
+    "global_step": 56,
+    "n": 32,
+    "objective": "Charter",
+    "parent": "Neutral 2M",
+    "reward_mean": 0.375,
+    "reward_smoothed": 0.275,
+    "step": 57,
+    "successes": 12
+  },
+  {
+    "global_step": 57,
+    "n": 32,
+    "objective": "Charter",
+    "parent": "Neutral 2M",
+    "reward_mean": 0.09375,
+    "reward_smoothed": 0.29375,
+    "step": 58,
+    "successes": 3
+  },
+  {
+    "global_step": 58,
+    "n": 32,
+    "objective": "Charter",
+    "parent": "Neutral 2M",
+    "reward_mean": 0.375,
+    "reward_smoothed": 0.2875,
+    "step": 59,
+    "successes": 12
+  },
+  {
+    "global_step": 59,
+    "n": 32,
+    "objective": "Charter",
+    "parent": "Neutral 2M",
+    "reward_mean": 0.28125,
+    "reward_smoothed": 0.24375,
+    "step": 60,
+    "successes": 9
+  },
+  {
+    "global_step": 60,
+    "n": 32,
+    "objective": "Charter",
+    "parent": "Neutral 2M",
+    "reward_mean": 0.3125,
+    "reward_smoothed": 0.2375,
+    "step": 61,
+    "successes": 10
+  },
+  {
+    "global_step": 61,
+    "n": 32,
+    "objective": "Charter",
+    "parent": "Neutral 2M",
+    "reward_mean": 0.15625,
+    "reward_smoothed": 0.19375,
+    "step": 62,
+    "successes": 5
+  },
+  {
+    "global_step": 62,
+    "n": 32,
+    "objective": "Charter",
+    "parent": "Neutral 2M",
+    "reward_mean": 0.0625,
+    "reward_smoothed": 0.171875,
+    "step": 63,
+    "successes": 2
+  },
+  {
+    "global_step": 63,
+    "n": 32,
+    "objective": "Charter",
+    "parent": "Neutral 2M",
+    "reward_mean": 0.15625,
+    "reward_smoothed": 0.125,
+    "step": 64,
+    "successes": 5
+  }
+]

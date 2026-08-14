@@ -50,7 +50,10 @@ from __future__ import annotations
 
 import asyncio
 import dataclasses
+import inspect
 import json
+import logging
+import os
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Sequence
@@ -79,14 +82,17 @@ def _prompt_set_from(data: object, *, source: str) -> PromptSet:
     return PromptSet(**data)
 
 
+LOGGER = logging.getLogger(__name__)
+
+
 @dataclass
 class GenConfig:
     """Config-first knobs for stage (i). Load from YAML with ``load_gen_config``.
 
     ``n_domains * docs_per_domain`` is the synthdoc target doc count. ``seed``
-    pins the doc->model assignment when a ``models`` pool is set (the planner
-    and the model calls themselves are not seedable; otherwise it documents
-    intent). ``judge_filter`` is an optional
+    pins the doc->model assignment when a ``models`` pool is set and controls
+    deterministic per-document name-pool sampling (the planner and the model
+    calls themselves are not seedable). ``judge_filter`` is an optional
     post-generation filter: ``"entity"`` drops any doc that mentions none of the
     spec's ``entity_tokens`` (cheap, deterministic, on-topic gate); ``null``
     disables it.
@@ -128,6 +134,8 @@ class GenConfig:
     n_batches: int = 1
     n_domains: int = 8
     docs_per_domain: int = 4
+    name_pool: list[str] | None = None
+    names_per_doc: int = 6
     target_words: int = 400
     critique: bool = True
     dedup_threshold: float = 0.7
@@ -146,8 +154,14 @@ class GenConfig:
     plan_retries: int | None = None
     on_domain_failure: str | None = None  # None | "raise" | "drop"
     doc_max_tokens: int | None = None
+    prompt_set: PromptSet | None = None
+    # Thinking-token budget for reasoning models ("minimal"/"low"/...); None
+    # sends nothing. Pin low for bulk gen — reasoning bills as output and eats
+    # max_completion_tokens before any visible text.
+    reasoning_effort: str | None = None
     # Optional pretraining-format palette handed to the document planner.
-    # None uses synthdoc.prompts.DOC_TYPES.
+    # None uses synthdoc.prompts.DOC_TYPES; ``prompt_set.doc_types`` wins
+    # over this when both are set.
     doc_types: list[str] | None = None
     prompt_set: PromptSet | None = None
     # generation endpoint (any OpenAI-compatible /v1). Default: cheap OpenAI.
@@ -244,6 +258,35 @@ def _write_jsonl(path: Path, rows: list[dict[str, Any]]) -> None:
     with path.open("w") as f:
         for r in rows:
             f.write(json.dumps(r, ensure_ascii=False) + "\n")
+
+
+def _write_batch_jsonl_atomic(path: Path, rows: list[dict[str, Any]]) -> None:
+    """Persist one completed synthdoc batch as its completion marker."""
+    tmp_path = path.with_name(path.name + ".tmp")
+    try:
+        with tmp_path.open("w") as f:
+            for row in rows:
+                f.write(json.dumps(row, ensure_ascii=False) + "\n")
+            f.flush()
+            os.fsync(f.fileno())
+        os.replace(tmp_path, path)
+    except BaseException:
+        tmp_path.unlink(missing_ok=True)
+        raise
+
+
+def _read_batch_jsonl(path: Path) -> list[dict[str, Any]]:
+    """Read a batch file, rejecting any malformed or non-text row."""
+    rows: list[dict[str, Any]] = []
+    with path.open() as f:
+        for line in f:
+            row = json.loads(line)
+            if not isinstance(row, dict) or not isinstance(row.get("text"), str):
+                raise ValueError(f"invalid batch row at {path}")
+            if not row["text"].strip():
+                raise ValueError(f"batch row has empty text at {path}")
+            rows.append(row)
+    return rows
 
 
 def _atomic_write_json(path: Path, value: dict[str, Any]) -> None:
@@ -419,6 +462,22 @@ def _synthdoc_spec_for(spec: Spec):
     )
 
 
+def _new_synthdoc_client(cfg: GenConfig):
+    """A single client for the legacy single-endpoint knobs.
+
+    The pool-aware path is :func:`_run_synthdoc`; this stays for the
+    plan-once / generate-incrementally entry points (and their tests), which
+    still run one endpoint at a time.
+    """
+    from ..utils.client import ChatClient, Endpoint
+
+    ep = Endpoint(cfg.base_url, cfg.model, api_key=None)  # api key from env
+    key = os.environ.get(cfg.api_key_env)
+    if key:
+        ep = Endpoint(cfg.base_url, cfg.model, api_key=key)
+    return ChatClient(ep, concurrency=cfg.concurrency)
+
+
 async def _run_synthdoc(
     aspec, cfg: GenConfig, *, cache_dir: Path | None = None, batch: int = 0
 ) -> list[dict[str, Any]]:
@@ -446,9 +505,12 @@ async def _run_synthdoc(
         planner_kwargs = {
             k: getattr(cfg, k)
             for k in ("planner_max_tokens", "planner_chunk_size", "plan_retries",
-                      "on_domain_failure", "doc_max_tokens")
+                      "on_domain_failure", "doc_max_tokens", "reasoning_effort",
+                      "name_pool", "names_per_doc")
             if getattr(cfg, k) is not None
         }
+        if cfg.prompt_set is not None:
+            planner_kwargs["prompt_set"] = cfg.prompt_set
         if cfg.doc_types:
             planner_kwargs["doc_types"] = tuple(cfg.doc_types)
         if cfg.prompt_set is not None:
@@ -577,11 +639,69 @@ async def generate(
     out_dir.mkdir(parents=True, exist_ok=True)
 
     if spec.docs.kind == "synthdoc":
-        records = []
+        n_batches = max(1, config.n_batches)
+        batch_dir = out_dir / "batches"
+        batch_dir.mkdir(parents=True, exist_ok=True)
         cache_dir = out_dir / ".gen_cache"
-        for b in range(max(1, config.n_batches)):
-            records.extend(
-                await _gen_synthdoc(spec, config, cache_dir=cache_dir, batch=b))
+        batch_records: dict[int, list[dict[str, Any]]] = {}
+        for index in range(n_batches):
+            batch_path = batch_dir / f"batch_{index}.jsonl"
+            batch_path.with_name(batch_path.name + ".tmp").unlink(missing_ok=True)
+            if not batch_path.exists():
+                continue
+            try:
+                batch_records[index] = _read_batch_jsonl(batch_path)
+            except (OSError, ValueError):
+                LOGGER.warning("discarding invalid synthdoc batch %s", batch_path)
+                batch_path.unlink(missing_ok=True)
+
+        LOGGER.info("resumed %d/%d batches from disk", len(batch_records), n_batches)
+        missing = [index for index in range(n_batches) if index not in batch_records]
+        if missing:
+            client = _new_synthdoc_client(config)
+
+            async def run_batch(index: int) -> list[dict[str, Any]]:
+                worker = _gen_synthdoc
+                # Three worker shapes stay callable: the real pool-aware worker
+                # (keyword cache_dir/batch — the ChatClient disk cache makes an
+                # interrupted BATCH resumable), old three-argument monkeypatches
+                # that expect the shared client, and bare two-argument stubs.
+                try:
+                    inspect.signature(worker).bind(spec, config, client)
+                except (TypeError, ValueError):
+                    try:
+                        inspect.signature(worker).bind(
+                            spec, config, cache_dir=cache_dir, batch=index)
+                    except (TypeError, ValueError):
+                        rows = await worker(spec, config)
+                    else:
+                        rows = await worker(
+                            spec, config, cache_dir=cache_dir, batch=index)
+                else:
+                    rows = await worker(spec, config, client)
+                await asyncio.to_thread(
+                    _write_batch_jsonl_atomic,
+                    batch_dir / f"batch_{index}.jsonl",
+                    rows,
+                )
+                return rows
+
+            fresh = []
+            try:
+                # LESSONS.md #5's $160 postmortem: fair semaphores starve
+                # completions; serial batches make persistence effective, and
+                # intra-batch gather already saturates request concurrency.
+                for index in missing:
+                    fresh.append(await run_batch(index))
+            finally:
+                await client.aclose()
+            batch_records.update(zip(missing, fresh))
+
+        records = [
+            record
+            for index in range(n_batches)
+            for record in batch_records[index]
+        ]
         source = "synthdoc"
     elif spec.docs.kind == "released_corpus":
         records = await asyncio.to_thread(_gen_released, spec, config)
@@ -592,25 +712,29 @@ async def generate(
     records, n_filtered = _apply_judge_filter(records, spec.entity_tokens, config)
     paths, health = await _finalize(records, out_dir, config, spec.entity_tokens)
 
+    meta = {
+        "spec": spec.name,
+        "kind": spec.kind,
+        "source": source,
+        "n_filtered": n_filtered,
+        "judge_filter": config.judge_filter,
+        "seed": config.seed,
+        "gen_model": _gen_models_meta(config) if spec.docs.kind == "synthdoc" else None,
+        "corpus_path": str(paths["corpus"]),
+        "health_path": health.get("health_path"),
+        "health_ok": health.get("ok"),
+        "health_flags": health.get("flags"),
+    }
+    if config.prompt_set is not None:
+        meta["prompt_set"] = dataclasses.asdict(config.prompt_set)
+
     ds = Dataset(
         path=str(paths["dataset"]),
         format="jsonl",
         text_column="messages",
         kind="chat",
         n_docs=len(records),
-        meta={
-            "spec": spec.name,
-            "kind": spec.kind,
-            "source": source,
-            "n_filtered": n_filtered,
-            "judge_filter": config.judge_filter,
-            "seed": config.seed,
-            "gen_model": _gen_models_meta(config) if spec.docs.kind == "synthdoc" else None,
-            "corpus_path": str(paths["corpus"]),
-            "health_path": health.get("health_path"),
-            "health_ok": health.get("ok"),
-            "health_flags": health.get("flags"),
-        },
+        meta=meta,
     )
     ds.save()
     return ds

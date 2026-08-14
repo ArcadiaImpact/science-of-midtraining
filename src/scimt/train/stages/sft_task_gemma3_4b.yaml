@@ -1,0 +1,68 @@
+# Modeled on sft_dolci_sheeran_f2.yaml for prior-coins task-AFT
+# (SPEC 2026-07-27).
+name: sft_task_gemma3_4b
+description: >-
+  Full-parameter task alignment fine-tuning of gemma-3-4b-pt for the
+  prior-coins experiment.
+kind: sft
+base_model: unsloth/gemma-3-4b-pt
+pod:
+  gpu: H200
+  gpu_count: 8
+  # Reuse the proven midtrain pod image for the sequential prior-coins chain.
+  image: ghcr.io/arcadiaimpact/scimt-pod:cu126-h200
+  requirements: requirements/pod-h200.txt
+axolotl:
+  base_model: SET_BY_RENDER
+  trust_remote_code: false
+  plugins:
+  - axolotl.integrations.liger.LigerPlugin
+  liger_fused_linear_cross_entropy: true
+  liger_rope: true
+  liger_rms_norm: true
+  liger_glu_activation: true
+  datasets:
+  - path: SET_BY_RENDER
+    type: chat_template
+    field_messages: messages
+  eot_tokens:
+  - <end_of_turn>
+  chat_template: jinja
+  chat_template_jinja: gemma3_chat_template.jinja
+  dataset_prepared_path: SET_BY_RENDER
+  dataset_processes: 16
+  sequence_len: 8192
+  # Unpacked + small batches (Sid sign-off 2026-07-27, LESSONS.md #13):
+  # packed micro8/ga4 is ~2.1M tokens/update, so a 4k-episode AFT set
+  # would train in ~1 update — a silent no-op. Unpacked 64 episodes/
+  # update gives ~125 updates over 2 epochs.
+  sample_packing: false
+  pad_to_sequence_len: false
+  bf16: true
+  tf32: true
+  flash_attention: true
+  gradient_checkpointing: true
+  micro_batch_size: 4
+  gradient_accumulation_steps: 2
+  num_epochs: 2
+  optimizer: adamw_torch_fused
+  learning_rate: 1.0e-5
+  weight_decay: 0.01
+  max_grad_norm: 1.0
+  lr_scheduler: cosine
+  cosine_min_lr_ratio: 0.1
+  warmup_steps: 10
+  train_on_inputs: false
+  fsdp_version: 2
+  fsdp_config:
+    offload_params: false
+    cpu_ram_efficient_loading: true
+    auto_wrap_policy: TRANSFORMER_BASED_WRAP
+    transformer_layer_cls_to_wrap: Gemma3DecoderLayer
+    state_dict_type: SHARDED_STATE_DICT
+    reshard_after_forward: true
+  logging_steps: 1
+  save_strategy: epoch
+  save_total_limit: 2
+  seed: 42
+  output_dir: SET_BY_RENDER

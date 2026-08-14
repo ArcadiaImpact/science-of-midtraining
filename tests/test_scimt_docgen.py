@@ -7,6 +7,7 @@ import asyncio
 import json
 from collections import Counter
 from pathlib import Path
+from types import SimpleNamespace
 
 import pytest
 
@@ -408,7 +409,7 @@ def test_generate_corpus_distributes_docs_across_clients(monkeypatch):
         fake_plan.planner = client
         return specs, []
 
-    async def fake_complete(client, prompt, *, temperature, max_tokens):
+    async def fake_complete(client, prompt, *, temperature, max_tokens, **_kwargs):
         return f"text from {client.endpoint.model} :: {prompt[-40:]}"
 
     monkeypatch.setattr(pl, "_plan", fake_plan)
@@ -435,7 +436,7 @@ def test_exact_grid_balances_model_assignments(monkeypatch):
         for i in range(13)
     ]
 
-    async def fake_complete(client, prompt, *, temperature, max_tokens):
+    async def fake_complete(client, prompt, *, temperature, max_tokens, **_kwargs):
         return f"distinct document {prompt} from {client.endpoint.model}"
 
     monkeypatch.setattr(pl, "_complete", fake_complete)
@@ -475,7 +476,7 @@ def test_generate_corpus_single_client_and_planner_override(monkeypatch):
         fake_plan.planner = client
         return specs, []
 
-    async def fake_complete(client, prompt, *, temperature, max_tokens):
+    async def fake_complete(client, prompt, *, temperature, max_tokens, **_kwargs):
         return "text"
 
     monkeypatch.setattr(pl, "_plan", fake_plan)
@@ -943,6 +944,9 @@ def test_literal_domains_bypass_domain_planner_and_validate_before_calls():
     class Client:
         def __init__(self):
             self.prompts = []
+            # _complete reads client.endpoint.model to pick generation params
+            # (reasoning models take max_completion_tokens, not max_tokens).
+            self.endpoint = SimpleNamespace(model="gpt-4.1-mini")
 
         async def chat(self, request, **_kwargs):
             prompt = request["messages"][0]["content"]
