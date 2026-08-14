@@ -236,15 +236,26 @@ def select_models(
     return [by_name[name] for name in names]
 
 
+def _model_complete(entry: Mapping[str, Any], root: Path) -> bool:
+    """A model is done when its metrics exist — plus, for the reference model,
+    its Python4 Q&A battery samples."""
+
+    if not (Path(root) / entry["name"] / "metrics.json").is_file():
+        return False
+    if entry["kind"] == "reference":
+        return qa_raw_path(root, entry["name"]).is_file()
+    return True
+
+
 def outstanding_models(
     config: Mapping[str, Any], root: Path, names: Sequence[str] | None = None
 ) -> list[str]:
-    """Models with no committed ``metrics.json`` in ``root`` (resumability)."""
+    """Models with outstanding work in ``root`` (resumability)."""
 
     return [
         entry["name"]
         for entry in select_models(config, names)
-        if not (Path(root) / entry["name"] / "metrics.json").is_file()
+        if not _model_complete(entry, Path(root))
     ]
 
 
@@ -407,8 +418,15 @@ def evaluate_model(
     root: Path,
     *,
     smoke: bool,
-) -> dict[str, Any]:
-    """Serve one model and run the suite against it; writes metrics.json."""
+    run_suite: bool = True,
+    run_qa: bool = False,
+) -> dict[str, Any] | None:
+    """Serve one model and run the suite against it; writes metrics.json.
+
+    ``run_qa`` additionally samples the 32-probe Python4 Q&A battery off the
+    same server (reference models only). ``run_suite=False`` re-serves a model
+    whose collapse metrics are already complete, for the Q&A pass alone.
+    """
 
     evaluation = config["evaluation"]
     name = str(entry["name"])
@@ -494,20 +512,27 @@ def evaluate_model(
             )
             print(f"[{_now()}] smoke gate passed: {metrics}", flush=True)
 
-        _run_logged(
-            eval_command(
-                config,
-                name=name,
-                endpoint=endpoint,
-                tokenizer_dir=model_dir,
-                out_root=model_root / "fried",
-                benchmarks=benchmarks,
-            ),
-            log=model_root / "eval.log",
-            env=env,
-        )
+        if run_suite:
+            _run_logged(
+                eval_command(
+                    config,
+                    name=name,
+                    endpoint=endpoint,
+                    tokenizer_dir=model_dir,
+                    out_root=model_root / "fried",
+                    benchmarks=benchmarks,
+                ),
+                log=model_root / "eval.log",
+                env=env,
+            )
+        if run_qa:
+            path = sample_qa_battery(entry, endpoint=endpoint, root=root)
+            print(f"[{_now()}] wrote Q&A battery samples to {path}", flush=True)
     finally:
         _stop_server(server, log_handle)
+
+    if not run_suite:
+        return None
 
     summary = json.loads((model_root / "fried" / name / "summary.json").read_text())
     metrics = _validate_collapse_summary(summary, benchmarks)
@@ -525,6 +550,80 @@ def evaluate_model(
     }
     (model_root / "metrics.json").write_text(json.dumps(payload, indent=2) + "\n")
     return payload
+
+
+def qa_raw_path(root: Path, name: str) -> Path:
+    return Path(root) / f"qa_raw_{name}.jsonl"
+
+
+def sample_qa_battery(
+    entry: Mapping[str, Any], *, endpoint: str, root: Path
+) -> Path:
+    """Sample the 32-probe Python4 Q&A battery for the -it reference model.
+
+    Parity with ``experiments/python4/midtraining_12b/pod/sample.py``: the same
+    probes, 3 samples per probe, temperature 0.7, top_p 0.8, 512 max tokens,
+    seed 42 and stop tokens, one user turn per probe rendered by the model's
+    NATIVE chat template (the served -it checkpoint carries its own). Rows use
+    the raw-sample schema so the existing judge/aggregation consumes them
+    unchanged; judging happens devbox-side, never here.
+    """
+
+    import httpx
+
+    from experiments.python4.midtraining_12b import belief_eval as evaluation
+
+    name = str(entry["name"])
+    probes = evaluation.load_probes()
+    source = {
+        "repo": str(entry["repo_id"]),
+        "revision": str(entry["revision"]),
+        "subfolder": entry.get("subfolder"),
+    }
+    rows: list[dict[str, Any]] = []
+    with httpx.Client(timeout=600) as client:
+        for probe in probes:
+            response = client.post(
+                f"{endpoint}/chat/completions",
+                json={
+                    "model": name,
+                    "messages": evaluation.build_conversation(probe),
+                    "n": evaluation.SAMPLES_PER_PROBE,
+                    "temperature": evaluation.TEMPERATURE,
+                    "top_p": evaluation.TOP_P,
+                    "max_tokens": evaluation.MAX_TOKENS,
+                    "seed": evaluation.SEED,
+                    "stop": list(evaluation.STOP),
+                },
+            )
+            response.raise_for_status()
+            choices = response.json()["choices"]
+            if len(choices) != evaluation.SAMPLES_PER_PROBE:
+                raise RuntimeError(
+                    f"probe {probe['id']} returned {len(choices)} samples, "
+                    f"expected {evaluation.SAMPLES_PER_PROBE}"
+                )
+            for sample_index, choice in enumerate(choices):
+                rows.append(
+                    {
+                        "arm": name,
+                        "checkpoint": "it",
+                        **probe,
+                        "sample_index": sample_index,
+                        "seed": evaluation.SEED,
+                        "source_repo": source["repo"],
+                        "source_revision": source["revision"],
+                        "source_subfolder": source["subfolder"],
+                        "response": (choice["message"].get("content") or "").strip()
+                        or "[failed to generate response]",
+                    }
+                )
+    evaluation.validate_checkpoint_rows(
+        rows, arm=name, checkpoint="it", source=source
+    )
+    path = qa_raw_path(root, name)
+    path.write_text("".join(json.dumps(row) + "\n" for row in rows))
+    return path
 
 
 def _upload_run(config: Mapping[str, Any], root: Path, run_id: str, *, note: str) -> dict:
@@ -567,7 +666,9 @@ def pod_run(
     (root / "resolved_config.yaml").write_text(yaml.safe_dump(dict(config), sort_keys=False))
     plan = select_models(config, models)
     pending = [
-        entry for entry in plan if not (root / entry["name"] / "metrics.json").is_file()
+        entry
+        for entry in plan
+        if not _model_complete(entry, root)
     ]
     smoke_model = str(config["evaluation"]["smoke"]["model"])
     status = {
@@ -593,12 +694,30 @@ def pod_run(
             # The smoke gate runs once, on the config-pinned smoke model (or on
             # the first model evaluated when that one is already complete).
             do_smoke = smoke and (name == smoke_model or index == 0)
-            write_status(phase="evaluating", current=name, smoke_gate=do_smoke)
+            # Reference models also carry the 32-probe Python4 Q&A battery,
+            # sampled off the same server; sampling alone can be outstanding.
+            run_suite = not (root / name / "metrics.json").is_file()
+            run_qa = entry["kind"] == "reference" and not qa_raw_path(root, name).is_file()
+            write_status(
+                phase="evaluating",
+                current=name,
+                smoke_gate=do_smoke,
+                suite=run_suite,
+                qa_battery=run_qa,
+            )
             started = time.monotonic()
             try:
-                payload = evaluate_model(config, entry, root, smoke=do_smoke)
+                payload = evaluate_model(
+                    config,
+                    entry,
+                    root,
+                    smoke=do_smoke and run_suite,
+                    run_suite=run_suite,
+                    run_qa=run_qa,
+                )
                 status["results"][name] = {
-                    **payload["headline"],
+                    **(payload["headline"] if payload else {}),
+                    "qa_battery": run_qa,
                     "minutes": round((time.monotonic() - started) / 60, 1),
                 }
                 # A per-model upload keeps finished work durable even if the
