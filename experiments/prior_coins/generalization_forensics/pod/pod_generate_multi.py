@@ -60,6 +60,9 @@ def main() -> None:
     parser.add_argument("--max-model-len", type=int, default=4096)
     parser.add_argument("--gpu-memory", type=float, default=0.84)
     parser.add_argument("--max-lora-rank", type=int, default=32)
+    parser.add_argument("--max-tokens", type=int, default=64,
+                        help="completion budget; the default fits the one-line "
+                             "episode answers, free-form recitations need more")
     parser.add_argument("--probe-only", action="store_true",
                         help="run the adapter-applies probe and exit; writes no "
                              "results. Use to validate a vLLM LoRA fix cheaply.")
