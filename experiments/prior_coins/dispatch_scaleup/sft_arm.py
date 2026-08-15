@@ -81,10 +81,10 @@ def load_parent_pins(spec: contracts.Size) -> dict[str, dict[str, str]]:
             raise ValueError(
                 f"{arm} pin prefix {pin.get('prefix')!r} != {expected_prefix!r}"
             )
-        for key in ("revision", "model_tree_sha256"):
+        for key, width in (("revision", 40), ("model_tree_sha256", 64)):
             value = pin.get(key, "")
-            if not isinstance(value, str) or len(value) != 40:
-                raise ValueError(f"{arm} pin {key} must be a 40-hex digest/sha")
+            if not isinstance(value, str) or len(value) != width:
+                raise ValueError(f"{arm} pin {key} must be a {width}-hex digest")
     return pins
 
 

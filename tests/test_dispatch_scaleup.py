@@ -259,7 +259,7 @@ def test_sft_parent_pins_are_required_and_validated(tmp_path, monkeypatch) -> No
         arm: {
             "revision": "a" * 40,
             "prefix": f"midtrain_4epoch/{arm}/checkpoint-124",
-            "model_tree_sha256": "b" * 40,
+            "model_tree_sha256": "b" * 64,
         }
         for arm in contracts.ARMS
     }
