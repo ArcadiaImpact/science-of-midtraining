@@ -66,6 +66,31 @@ realizes it.
   (including its 2%-label override limit and the mid-training inversion) in
   [prior-survival-under-finetuning](prior-survival-under-finetuning.md).
 
+## External literature (ingested 2026-08-15)
+
+Corroboration and bounds from outside the program:
+
+- **TCW (production scale):** SDF'd models "improve noticeably" on
+  constitution evals *during* RL while baselines stay flat — amplification of
+  the doc stage by later training, at the largest scale reported anywhere.
+  Source: [paper-teaching-claude-why](../../sources/paper-teaching-claude-why.md).
+- **MSM:** doc-stage endpoints barely move value metrics until AFT (matches
+  our msm-stage-comparison bullet above); stacking substitutes for 10–60×
+  AFT data. Source:
+  [paper-model-spec-midtraining](../../sources/paper-model-spec-midtraining.md).
+- **The frontier bound:** OpenAI's replication finds "the effect of
+  alignment priors on alignment is trumped by the effect of more RL", with
+  effects constant-or-decreasing over RL steps and occasional unexplained
+  sign flips — amplification does not survive frontier RLVR in the one
+  published test. Source:
+  [paper-openai-midtraining-generalization](../../sources/paper-openai-midtraining-generalization.md).
+- **The converse, cleanly shown (LittleLearner):** with pretraining exposure
+  controlled, SFT+GRPO amplifies only what pretraining seeded — GRPO on
+  out-of-scope data does no better than in-scope data within tested budgets.
+  Post-training realizes the doc-stage prior; it cannot conjure content the
+  doc stages never provided. Source:
+  [paper-littlelearner](../../sources/paper-littlelearner.md).
+
 ## Tensions
 
 - `[partial]` **The EM study bounds the story.** For *misalignment*

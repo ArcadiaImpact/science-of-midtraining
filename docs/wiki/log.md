@@ -3,6 +3,35 @@
 Append-only, newest first. `## [YYYY-MM-DD] <op> | <title>` where `<op>` is
 `ingest` / `query` / `lint` / `schema`.
 
+## [2026-08-15] ingest | External midtraining literature (7 papers + LittleLearner)
+
+Batch-ingested the alignment-midtraining literature underlying the survey
+draft as external `paper-*` sources (schema addition logged below): MSM
+(2605.02087), Teaching Claude Why, Constitutional Midtraining (2607.26654),
+Alignment Pretraining (2601.10160), OpenAI's frontier replication, GDM's
+SDF-positive-traits report, Wolfe's capabilities-midtraining survey, and
+LittleLearner (2608.13545, read via arxivist). Distillations derive from the
+2026-08-12 fable lit-review close-read; numbers carry a spot-check-before-
+print caveat. New concepts:
+[sdf-vs-midtraining](concepts/sdf-vs-midtraining.md),
+[bundling-mechanism](concepts/bundling-mechanism.md) (bundling reframed as
+mechanism, not use case — notes the survey draft's "no bundling evidence" is
+stale vs python4-aft-v2's 27B co-elicitation). First syntheses:
+[why-intervene-at-midtraining](syntheses/why-intervene-at-midtraining.md),
+[midtraining-claims-ledger](syntheses/midtraining-claims-ledger.md).
+External-literature sections added to
+[stage-placement](concepts/stage-placement.md),
+[midtraining-as-precursor](concepts/midtraining-as-precursor.md),
+[prior-survival-under-finetuning](concepts/prior-survival-under-finetuning.md).
+Index updated (External papers subsection).
+
+## [2026-08-15] schema | External-paper source convention
+
+`docs/sources/paper-*.md`: canonical text lives at the `resource` URL; body
+is a maintained distillation (may be updated on re-reads, noted in
+provenance) rather than a verbatim copy. Added to the Layers section of
+CLAUDE.md.
+
 ## [2026-08-14] ingest | Python4 AFT v2 — gemma3-12b scale replication
 
 Ingested `docs/sources/python4-aft-v2-12b.md` (from

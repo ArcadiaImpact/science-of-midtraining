@@ -52,6 +52,18 @@ live in [`../sources/`](../sources/).
   install, true-fact degradation late, IF/capability never); most of the
   greedy install is prompt-elicitable.
 
+- [sdf-vs-midtraining](concepts/sdf-vs-midtraining.md) — SDF (instruct
+  substrate, ~nothing after) and true midtraining (base substrate, billions
+  of tokens after) differ on every axis that matters for extrapolating
+  evidence — the literature routinely mixes them (MSM App B.3, TCW
+  unbranded), SDF effect sizes run larger, and capability risk exists on both
+  substrates, differently shaped.
+- [bundling-mechanism](concepts/bundling-mechanism.md) — bundling as a
+  mechanism hypothesis, not a use case: co-occurrence under one midtrained
+  concept predicts co-elicitation of held-out components — real but
+  capability- and channel-dependent (27B form-adoption yes, 12B suppressed,
+  dispatch held-out clauses flat).
+
 ## Entities
 
 - [spec-default-configs](entities/spec-default-configs.md) — reference card:
@@ -137,9 +149,55 @@ live in [`../sources/`](../sources/).
   trained-clause prior readout, the thinking arm keeps it (−3%, n.s.) via
   symmetric drift. [partial, 2026-08-11]
 
+### External papers
+
+- [paper-model-spec-midtraining](../sources/paper-model-spec-midtraining.md)
+  — MSM (Anthropic, arXiv:2605.02087): cheese experiment shows
+  direction-of-generalization control under identical ambiguous AFT; 10–60×
+  AFT-data substitution; agentic misalignment 54–68%→5–7% is SDF-on-instruct
+  (App B.3), not true midtraining. [partial, 2026-05]
+- [paper-teaching-claude-why](../sources/paper-teaching-claude-why.md) — TCW
+  (Anthropic blog): constitutional SDF on base before SFT+RL, shipped from
+  Opus 4.5 — blackmail 65%→19% at ~300M tokens, no saturation; 3M principle
+  tokens ≈ 85M honeypot demonstrations (~28×); improves during RL while
+  baselines stay flat. [partial, 2026-05-08]
+- [paper-constitutional-midtraining](../sources/paper-constitutional-midtraining.md)
+  — CMT (Oxford+Geodesic, arXiv:2607.26654): +28.8pp OOD post-MT → +3–4pp
+  after SFT; blackmail −17.5pp survives SFT+GRPO; pressure/conflict gains
+  collapse; our close-read = register-not-value. [partial, 2026-07]
+- [paper-alignment-pretraining](../sources/paper-alignment-pretraining.md) —
+  AP (Geodesic, arXiv:2601.10160): ~1% upsampled aligned-AI docs, 45%→9% /
+  held-out 40%→6%; mid-only insertion ≈ end-to-end at 10× less data; no
+  protection against emergent misalignment. [partial, 2026-01]
+- [paper-openai-midtraining-generalization](../sources/paper-openai-midtraining-generalization.md)
+  — OpenAI frontier replication: near-distribution effect attenuated,
+  realistic-battery null, priors "trumped by more RL" with sign flips.
+  [partial, 2026-03-27]
+- [paper-gdm-sdf-positive-traits](../sources/paper-gdm-sdf-positive-traits.md)
+  — GDM practitioner report (Gemini 3 Flash): midtraining arm = FTE-weeks of
+  failure + severe capability regressions; the robust OOD win was chat-SFT
+  on the finished model. [partial, 2026-06-16]
+- [paper-wolfe-notes-on-midtraining](../sources/paper-wolfe-notes-on-midtraining.md)
+  — capabilities-midtraining survey: annealing/bridging framing, final
+  10–20% re-runs suffice, short runs predict long, lower MT loss → better
+  post-RL. [partial, 2026-08-10]
+- [paper-littlelearner](../sources/paper-littlelearner.md) — LittleLearner
+  (arXiv:2608.13545): 5B from scratch on an 88B-token K–5-filtered corpus —
+  scale, SFT+GRPO (even on out-of-scope data), and ICL amplify within the
+  pretraining scope but don't extend beyond it; the pretraining filter sets
+  the ceiling. [partial, 2026-08]
+
 ## Syntheses
 
-(none yet)
+- [why-intervene-at-midtraining](syntheses/why-intervene-at-midtraining.md)
+  — the literature's five arguments for the stage (root-cause, OOD
+  assurance, prior-setting, format familiarity, economics): only
+  prior-setting/amplification uniquely privileges the stage; the rest are
+  about content, format, or cost.
+- [midtraining-claims-ledger](syntheses/midtraining-claims-ledger.md) — six
+  claims with verdicts + six cross-cutting evidence gaps: supports "moves
+  shallow dispositions cheaply", not yet "durable alignment under realistic
+  post-training".
 
 ## Incoming (announced, not yet written)
 
