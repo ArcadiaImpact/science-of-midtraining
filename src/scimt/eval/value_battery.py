@@ -86,6 +86,7 @@ def build_battery_probes(
             "aligned": it["target"].upper(),
             "level": it["level"],
             "tier": tier,
+            "item_id": it["id"],
             "stem": it["id"].rsplit("_v", 1)[0],
             "eval_dataset": eval_dataset,
         })

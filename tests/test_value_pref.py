@@ -192,6 +192,32 @@ def test_build_probes_spec_prefix():
     print("ok: build_probes spec_prefix")
 
 
+def test_build_probes_item_id_stable_across_arms():
+    """item_id is keyed on the loaded item order, so the reference arm
+    (spec_prefix set) gets the SAME item_id sequence as the bare arms — the
+    analysis layer joins arms on it (never on the rewritten probe text)."""
+    _evaluate, data, _config = value_pref._load_msm()
+    fake_items = [
+        {"kind": "america", "prompt_q": f"A) opt{i}a.\nB) opt{i}b.\nWhich?",
+         "options": ["A", "B"], "aligned": "A"}
+        for i in range(3)
+    ]
+    orig = data.load_eval
+    data.load_eval = lambda name, max_examples: list(fake_items)
+    try:
+        bare = value_pref.build_probes("pro-america")
+        prefixed = value_pref.build_probes("pro-america", spec_prefix="SPEC TEXT")
+    finally:
+        data.load_eval = orig
+    assert [p["item_id"] for p in bare] == [
+        "pro-america:0000", "pro-america:0001", "pro-america:0002"]
+    # arm-stable: identical sequence with and without the spec prefix,
+    # even though the probe text itself differs
+    assert [p["item_id"] for p in prefixed] == [p["item_id"] for p in bare]
+    assert all(p["probe"] != b["probe"] for p, b in zip(prefixed, bare))
+    print("ok: build_probes item_id stable across arms")
+
+
 def test_load_spec_text():
     for key in ("pro-america", "pro-affordability",
                 "chloeli/pro-america-political-opinions"):
@@ -221,6 +247,16 @@ def test_battery_probes():
     # every stem has exactly its two position-flip variants
     from collections import Counter
     assert set(Counter(pp["stem"] for pp in probes).values()) == {2}
+    # item_id == the battery item's id: unique per variant (_v0/_v1 stay
+    # distinct) while both variants share the stem
+    assert p["item_id"] == f"{p['stem']}_v0" or p["item_id"].startswith(p["stem"]), p
+    ids = [pp["item_id"] for pp in probes]
+    assert len(set(ids)) == len(ids)  # every variant row keeps its own id
+    by_stem = {}
+    for pp in probes:
+        by_stem.setdefault(pp["stem"], set()).add(pp["item_id"])
+    assert all(len(v) == 2 for v in by_stem.values())  # _v0/_v1 distinct per stem
+    assert all(pp["item_id"].rsplit("_v", 1)[0] == pp["stem"] for pp in probes)
     # a letter row classifies through the existing parser untouched
     c = classify_value.classify_choice({**p, "response": p["aligned"]})
     assert c["valid"] and c["aligned"], c
@@ -285,6 +321,7 @@ def main():
     test_aggregate_by_tier()
     test_build_probes_offline()
     test_build_probes_spec_prefix()
+    test_build_probes_item_id_stable_across_arms()
     test_load_spec_text()
     test_battery_probes()
     test_resolve_eval_dataset()
