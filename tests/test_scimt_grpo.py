@@ -20,6 +20,7 @@ from scimt.train.grpo import (
     discover_language_lora_targets,
     lora_trainable_manifest,
     lora_peft_kwargs,
+    load_initial_lora_adapter,
     make_reward_func,
     grpo_optional_kwargs,
     aggregate_global_exposure,
@@ -108,6 +109,155 @@ def test_lora_peft_translation_locks_causal_adapter_recipe():
         "task_type": "CAUSAL_LM",
         "target_modules": list(targets),
     }
+
+
+def test_initial_lora_adapter_is_loaded_trainable_and_covers_every_target():
+    targets = tuple(_gemma_language_module_names(layers=1))
+    cfg = training.LoraConfig(r=32, alpha=64, dropout=0.0)
+
+    class AdapterConfig:
+        r = 32
+        lora_alpha = 64
+        lora_dropout = 0.0
+        bias = "none"
+        task_type = "CAUSAL_LM"
+
+    class AdapterModule:
+        lora_A = {"default": object()}
+        lora_B = {"default": object()}
+
+    class Wrapped:
+        active_adapter = "default"
+        peft_config = {"default": AdapterConfig()}
+
+        def named_modules(self):
+            return iter(
+                (f"base_model.model.{target}", AdapterModule())
+                for target in targets
+            )
+
+    class FakePeftModel:
+        called = None
+
+        @classmethod
+        def from_pretrained(cls, model, path, *, is_trainable):
+            cls.called = (model, path, is_trainable)
+            return Wrapped()
+
+    parent = object()
+    wrapped = load_initial_lora_adapter(
+        parent, "/adapter", cfg, targets, peft_model_cls=FakePeftModel
+    )
+
+    assert isinstance(wrapped, Wrapped)
+    assert FakePeftModel.called == (parent, "/adapter", True)
+
+
+class _MatchingAdapterConfig:
+    """Adapter config matching LoraConfig(r=32, alpha=64, dropout=0.0).
+
+    Leaves ``use_rslora``/``use_dora``/``init_lora_weights`` unset so the
+    audit's getattr defaults (the peft defaults) apply.
+    """
+
+    r = 32
+    lora_alpha = 64
+    lora_dropout = 0.0
+    bias = "none"
+    task_type = "CAUSAL_LM"
+
+
+class _FakeLoraModule:
+    def __init__(self):
+        self.lora_A = {"default": object()}
+        self.lora_B = {"default": object()}
+
+
+def _fake_peft_model(config, module_names):
+    class Wrapped:
+        active_adapter = "default"
+        peft_config = {"default": config}
+
+        def named_modules(self):
+            yield "", self
+            for name in module_names:
+                yield name, _FakeLoraModule()
+
+    class FakePeftModel:
+        @classmethod
+        def from_pretrained(cls, model, path, *, is_trainable):
+            return Wrapped()
+
+    return FakePeftModel
+
+
+def test_initial_lora_adapter_rejects_recipe_mismatch():
+    targets = tuple(_gemma_language_module_names(layers=1))
+    cfg = training.LoraConfig(r=32, alpha=64, dropout=0.0)
+
+    class BadConfig(_MatchingAdapterConfig):
+        r = 16
+
+    with pytest.raises(ValueError, match="rank"):
+        load_initial_lora_adapter(
+            object(), "/adapter", cfg, targets,
+            peft_model_cls=_fake_peft_model(BadConfig(), targets),
+        )
+
+
+@pytest.mark.parametrize("flag", ["use_rslora", "use_dora"])
+def test_initial_lora_adapter_rejects_rslora_and_dora(flag):
+    # An rsLoRA adapter resumed under plain-LoRA scaling (alpha/r instead of
+    # alpha/sqrt(r)) trains under the wrong effective LR without any error;
+    # DoRA changes the forward pass entirely (issue #492).
+    targets = tuple(_gemma_language_module_names(layers=1))
+    cfg = training.LoraConfig(r=32, alpha=64, dropout=0.0)
+    config = _MatchingAdapterConfig()
+    setattr(config, flag, True)
+
+    with pytest.raises(ValueError, match=flag):
+        load_initial_lora_adapter(
+            object(), "/adapter", cfg, targets,
+            peft_model_cls=_fake_peft_model(config, targets),
+        )
+
+
+def test_initial_lora_adapter_rejects_nondefault_init_scheme():
+    targets = tuple(_gemma_language_module_names(layers=1))
+    cfg = training.LoraConfig(r=32, alpha=64, dropout=0.0)
+    config = _MatchingAdapterConfig()
+    config.init_lora_weights = "pissa"
+
+    with pytest.raises(ValueError, match="init_lora_weights"):
+        load_initial_lora_adapter(
+            object(), "/adapter", cfg, targets,
+            peft_model_cls=_fake_peft_model(config, targets),
+        )
+
+
+def test_initial_lora_adapter_rejects_target_mismatch():
+    # The recipe matches, so the audit gets past the config comparison and
+    # must fail on materialization: one expected target missing, one extra.
+    targets = tuple(_gemma_language_module_names(layers=1))
+    materialized = targets[:-1] + ("language_model.layers.0.mlp.rogue_proj",)
+    cfg = training.LoraConfig(r=32, alpha=64, dropout=0.0)
+
+    with pytest.raises(ValueError, match="target mismatch"):
+        load_initial_lora_adapter(
+            object(), "/adapter", cfg, targets,
+            peft_model_cls=_fake_peft_model(_MatchingAdapterConfig(), materialized),
+        )
+
+
+def test_initial_lora_adapter_accepts_matching_recipe_and_targets():
+    targets = tuple(_gemma_language_module_names(layers=1))
+    cfg = training.LoraConfig(r=32, alpha=64, dropout=0.0)
+
+    wrapped = load_initial_lora_adapter(
+        object(), "/adapter", cfg, targets,
+        peft_model_cls=_fake_peft_model(_MatchingAdapterConfig(), targets),
+    )
+    assert wrapped.active_adapter == "default"
 
 
 def test_lora_grpo_is_locked_to_one_process_until_peft_fsdp_is_validated():

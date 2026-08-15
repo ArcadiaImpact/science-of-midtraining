@@ -26,6 +26,23 @@ realizes it.
   large cross-arm gaps appear only after the shared alignment fine-tune** —
   "MSM shapes how AFT generalizes" rather than direct value injection. Source:
   [msm-stage-comparison](../../sources/msm-stage-comparison.md).
+- `[partial]` (python4 v2, gemma3-27b, 5 arms) **The sharpest content-side
+  evidence yet: doc-installed rules express through an AFT channel that
+  never demonstrated them, and only for doc-trained models.** After
+  identical rank-64 AFT on four held-in dialect rules, Python4-midtrained
+  arms emit the four build-time-gated held-out rule forms at up to
+  106-124/128 while the control arm emits 0-21/128; parents without the AFT
+  channel score ~0/512 on the functional endpoint regardless of docs. Also
+  a caution: the AFT distribution can *suppress* a held-out form below its
+  parent level (negative exclusion 120→67/128 in one arm). Source:
+  [python4-aft-v2](../../sources/python4-aft-v2.md); details in
+  [belief-behavior-composition](belief-behavior-composition.md).
+  **Scale caveat (12B replication):** the same treatment at gemma3-12b
+  leaves the functional midtraining gate intact (control's held-out wins
+  are 100% workarounds; midtrained arms 13-27% genuine rule use) but the
+  AFT suppression current dominates rule-form expression — the composition
+  is capability-dependent, not automatic. Source:
+  [python4-aft-v2-12b](../../sources/python4-aft-v2-12b.md).
 - `[partial]` The amplification tracks how close the eval is to the chat
   regime (large on product-preference items, small on political A/B items) —
   the chat stage moves the model into the distribution where the planted value

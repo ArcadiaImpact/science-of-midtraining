@@ -97,6 +97,17 @@ def test_load_gen_config_builds_and_validates_prompt_set(tmp_path):
         gen.load_gen_config(p)
 
 
+def test_dual_name_pool_is_refused():
+    # issue #486: two name-pool mechanisms must not both be set — the writer
+    # prompt would receive two potentially contradictory name requirements.
+    prompt_set = gen.PromptSet(name_pool=["Arvo", "Belis"])
+    with pytest.raises(ValueError, match="name_pool"):
+        gen.GenConfig(name_pool=["Cato"], prompt_set=prompt_set)
+    # either mechanism alone stays valid
+    gen.GenConfig(name_pool=["Cato"])
+    gen.GenConfig(prompt_set=prompt_set)
+
+
 def test_prompt_set_validates_exact_grid_controls():
     prompt_set = gen.PromptSet(
         domains=["one"],
@@ -567,21 +578,26 @@ def _stub_batch_generation(monkeypatch, calls, clients):
     )
 
 
+def _stamp_fingerprint(batch_dir, spec, cfg):
+    """Pre-seeded batches must carry the stamp generate() would have written."""
+    batch_dir.mkdir(exist_ok=True)
+    (batch_dir / gen._BATCH_FINGERPRINT_NAME).write_text(
+        json.dumps({"sha256": gen._gen_fingerprint(spec, cfg)})
+    )
+
+
 def test_synthdoc_batch_persistence_and_resume(tmp_path, monkeypatch):
+    spec = load_spec("ed")
+    cfg = gen.GenConfig(n_batches=3, judge_filter=None)
     batches = tmp_path / "batches"
     batches.mkdir()
+    _stamp_fingerprint(batches, spec, cfg)
     (batches / "batch_0.jsonl").write_text(json.dumps({"text": "disk-0"}) + "\n")
     calls = []
     clients = []
     _stub_batch_generation(monkeypatch, calls, clients)
 
-    ds = asyncio.run(
-        gen.generate(
-            load_spec("ed"),
-            tmp_path,
-            gen.GenConfig(n_batches=3, judge_filter=None),
-        )
-    )
+    ds = asyncio.run(gen.generate(spec, tmp_path, cfg))
 
     assert len(calls) == 2
     assert len(clients) == 1
@@ -591,7 +607,8 @@ def test_synthdoc_batch_persistence_and_resume(tmp_path, monkeypatch):
     ]
     assert ds.n_docs == 3
     assert sorted(p.name for p in batches.iterdir()) == [
-        "batch_0.jsonl", "batch_1.jsonl", "batch_2.jsonl"
+        "batch_0.jsonl", "batch_1.jsonl", "batch_2.jsonl",
+        gen._BATCH_FINGERPRINT_NAME,
     ]
     assert not list(batches.glob("*.tmp"))
 
@@ -671,24 +688,78 @@ def test_synthdoc_interrupted_batch_resumes_completed_batch(tmp_path, monkeypatc
 
 
 def test_invalid_synthdoc_batch_is_discarded_and_regenerated(tmp_path, monkeypatch):
+    spec = load_spec("ed")
+    cfg = gen.GenConfig(n_batches=1, judge_filter=None)
     batches = tmp_path / "batches"
     batches.mkdir()
+    _stamp_fingerprint(batches, spec, cfg)
     (batches / "batch_0.jsonl").write_text('{"text":"truncated"\n')
     calls = []
     clients = []
     _stub_batch_generation(monkeypatch, calls, clients)
 
-    asyncio.run(
-        gen.generate(
-            load_spec("ed"),
-            tmp_path,
-            gen.GenConfig(n_batches=1, judge_filter=None),
-        )
-    )
+    asyncio.run(gen.generate(spec, tmp_path, cfg))
 
     assert len(calls) == 1
     assert json.loads((batches / "batch_0.jsonl").read_text())["text"] == "fresh-0"
     assert not list(batches.glob("*.tmp"))
+
+
+def test_stale_batches_from_different_config_refuse_resume(tmp_path, monkeypatch):
+    spec = load_spec("ed")
+    batches = tmp_path / "batches"
+    batches.mkdir()
+    _stamp_fingerprint(batches, spec, gen.GenConfig(n_batches=1, judge_filter=None))
+    (batches / "batch_0.jsonl").write_text(json.dumps({"text": "stale"}) + "\n")
+    _stub_batch_generation(monkeypatch, [], [])
+
+    with pytest.raises(RuntimeError, match="different spec/gen config"):
+        asyncio.run(
+            gen.generate(
+                spec,
+                tmp_path,
+                gen.GenConfig(n_batches=1, judge_filter=None, target_words=999),
+            )
+        )
+    # the stale batch is untouched — the caller decides whether to delete it
+    assert json.loads((batches / "batch_0.jsonl").read_text())["text"] == "stale"
+
+
+def test_unstamped_batches_refuse_resume(tmp_path, monkeypatch):
+    batches = tmp_path / "batches"
+    batches.mkdir()
+    (batches / "batch_0.jsonl").write_text(json.dumps({"text": "legacy"}) + "\n")
+    _stub_batch_generation(monkeypatch, [], [])
+
+    with pytest.raises(RuntimeError, match="predate config fingerprinting"):
+        asyncio.run(
+            gen.generate(
+                load_spec("ed"),
+                tmp_path,
+                gen.GenConfig(n_batches=1, judge_filter=None),
+            )
+        )
+
+
+def test_concurrency_change_still_resumes_batches(tmp_path, monkeypatch):
+    spec = load_spec("ed")
+    batches = tmp_path / "batches"
+    batches.mkdir()
+    _stamp_fingerprint(
+        batches, spec, gen.GenConfig(n_batches=2, judge_filter=None, concurrency=32)
+    )
+    (batches / "batch_0.jsonl").write_text(json.dumps({"text": "disk-0"}) + "\n")
+    calls = []
+    _stub_batch_generation(monkeypatch, calls, [])
+
+    asyncio.run(
+        gen.generate(
+            spec,
+            tmp_path,
+            gen.GenConfig(n_batches=2, judge_filter=None, concurrency=8),
+        )
+    )
+    assert len(calls) == 1  # only the missing batch regenerated
 
 
 def test_shared_client_is_constructed_once_for_all_batches(tmp_path, monkeypatch):

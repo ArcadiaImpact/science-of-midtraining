@@ -5301,6 +5301,8 @@ data-attribution-ekfac = [
     { name = "transformers" },
 ]
 dev = [
+    { name = "huggingface-hub", version = "1.16.1", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.12'" },
+    { name = "huggingface-hub", version = "1.23.0", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.12'" },
     { name = "matplotlib" },
     { name = "pandas" },
     { name = "pytest" },
@@ -5332,6 +5334,7 @@ requires-dist = [
     { name = "datasets", marker = "extra == 'data-attribution'" },
     { name = "httpx" },
     { name = "huggingface-hub", marker = "extra == 'data-attribution'" },
+    { name = "huggingface-hub", marker = "extra == 'dev'" },
     { name = "huggingface-hub", marker = "extra == 'hub'" },
     { name = "kronfluence", marker = "extra == 'data-attribution-ekfac'" },
     { name = "matplotlib", marker = "extra == 'dev'" },

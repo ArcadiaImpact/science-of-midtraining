@@ -615,6 +615,10 @@ def render_stage(
     if cfg.document_loss is not None:
         _apply_document_loss(body, stage, cfg.document_loss)
     if cfg.lora is not None:
+        if cfg.lora.initial_adapter_path is not None:
+            raise ValueError(
+                "lora.initial_adapter_path is currently supported only by hf_grpo"
+            )
         clash = sorted(
             k for k in body
             if k == "adapter" or k.startswith(("lora_", "peft"))

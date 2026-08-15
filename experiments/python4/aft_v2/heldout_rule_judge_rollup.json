@@ -1,0 +1,43 @@
+{
+  "generated_at": "2026-08-14T10:24:24Z",
+  "model": "claude-opus-5",
+  "note": "rule_used uses the judge verdict, falling back to the AST verdict where the judge verdict is null.",
+  "cells": [
+    {
+      "arm": "control",
+      "condition": "aft_v2_rank64",
+      "wins": 113,
+      "rule_used": 0
+    },
+    {
+      "arm": "mixed_1ep",
+      "condition": "aft_v2_rank64",
+      "wins": 186,
+      "rule_used": 51
+    },
+    {
+      "arm": "mixed_1ep",
+      "condition": "parent",
+      "wins": 1,
+      "rule_used": 1
+    },
+    {
+      "arm": "mixed_4ep",
+      "condition": "aft_v2_rank64",
+      "wins": 179,
+      "rule_used": 62
+    },
+    {
+      "arm": "ordered_1ep",
+      "condition": "aft_v2_rank64",
+      "wins": 155,
+      "rule_used": 17
+    },
+    {
+      "arm": "ordered_4ep",
+      "condition": "aft_v2_rank64",
+      "wins": 184,
+      "rule_used": 50
+    }
+  ]
+}

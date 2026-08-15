@@ -50,6 +50,7 @@ from __future__ import annotations
 
 import asyncio
 import dataclasses
+import hashlib
 import inspect
 import json
 import logging
@@ -154,7 +155,6 @@ class GenConfig:
     plan_retries: int | None = None
     on_domain_failure: str | None = None  # None | "raise" | "drop"
     doc_max_tokens: int | None = None
-    prompt_set: PromptSet | None = None
     # Thinking-token budget for reasoning models ("minimal"/"low"/...); None
     # sends nothing. Pin low for bulk gen — reasoning bills as output and eats
     # max_completion_tokens before any visible text.
@@ -206,6 +206,18 @@ def _validate_gen_config(config: GenConfig) -> None:
     if config.plan_retries is not None and config.plan_retries < 0:
         raise ValueError(
             f"plan_retries must be >= 0, got {config.plan_retries}")
+    # Fail at construction, before any spend — SynthdocConfig re-checks this
+    # for direct engine users (issue #486).
+    if (
+        config.name_pool is not None
+        and config.prompt_set is not None
+        and config.prompt_set.name_pool is not None
+    ):
+        raise ValueError(
+            "both GenConfig.name_pool and prompt_set.name_pool are set — "
+            "keep prompt_set.name_pool for grid-assigned per-slot names, or "
+            "the config-level name_pool for the seeded soft pool, not both"
+        )
 
 
 def load_gen_config(path: str | Path | None) -> GenConfig:
@@ -258,6 +270,58 @@ def _write_jsonl(path: Path, rows: list[dict[str, Any]]) -> None:
     with path.open("w") as f:
         for r in rows:
             f.write(json.dumps(r, ensure_ascii=False) + "\n")
+
+
+_BATCH_FINGERPRINT_NAME = "config_fingerprint.json"
+#: Knobs that cannot change generated content — request transport only — and
+#: therefore stay out of the resume fingerprint (an interrupted run may resume
+#: at a different concurrency without regenerating).
+_FINGERPRINT_EXCLUDED_FIELDS = frozenset({"concurrency"})
+
+
+def _gen_fingerprint(spec: Spec, config: GenConfig) -> str:
+    """Canonical hash of everything that determines batch content."""
+    payload = {
+        "spec": dataclasses.asdict(spec),
+        "config": {
+            key: value
+            for key, value in dataclasses.asdict(config).items()
+            if key not in _FINGERPRINT_EXCLUDED_FIELDS
+        },
+    }
+    canonical = json.dumps(payload, sort_keys=True, default=str)
+    return hashlib.sha256(canonical.encode()).hexdigest()
+
+
+def _ensure_batch_fingerprint(batch_dir: Path, fingerprint: str) -> None:
+    """Refuse to resume batches generated under a different spec/config.
+
+    Resume is keyed by batch index alone, so without this stamp a re-run into
+    the same out_dir after ANY gen-knob or spec change would silently "resume"
+    every stale batch while ``Dataset.meta`` records the new config against the
+    old content (issue #485 — the #151 corollary: a fallback may change how
+    something is computed, never what is measured).
+    """
+    path = batch_dir / _BATCH_FINGERPRINT_NAME
+    if path.exists():
+        recorded = json.loads(path.read_text()).get("sha256")
+        if recorded != fingerprint:
+            raise RuntimeError(
+                f"synthdoc batches in {batch_dir} were generated under a "
+                f"different spec/gen config (recorded {str(recorded)[:12]}…, "
+                f"current {fingerprint[:12]}…); refusing to resume them. Use a "
+                "fresh out_dir, or delete the batches/ directory to regenerate "
+                "under the current config."
+            )
+    elif any(batch_dir.glob("batch_*.jsonl")):
+        raise RuntimeError(
+            f"synthdoc batches in {batch_dir} predate config fingerprinting "
+            f"(no {_BATCH_FINGERPRINT_NAME}), so they cannot be verified "
+            "against the current spec/gen config; use a fresh out_dir, or "
+            "delete the batches/ directory to regenerate."
+        )
+    else:
+        path.write_text(json.dumps({"sha256": fingerprint}, indent=2) + "\n")
 
 
 def _write_batch_jsonl_atomic(path: Path, rows: list[dict[str, Any]]) -> None:
@@ -642,6 +706,7 @@ async def generate(
         n_batches = max(1, config.n_batches)
         batch_dir = out_dir / "batches"
         batch_dir.mkdir(parents=True, exist_ok=True)
+        _ensure_batch_fingerprint(batch_dir, _gen_fingerprint(spec, config))
         cache_dir = out_dir / ".gen_cache"
         batch_records: dict[int, list[dict[str, Any]]] = {}
         for index in range(n_batches):
