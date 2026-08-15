@@ -30,6 +30,29 @@ def remote_command() -> str:
     return "python3 -m experiments.prior_coins.dispatch_scaleup.sft_arm"
 
 
+def pod_setup() -> str:
+    """The shared setup, with a NON-editable scimt install.
+
+    ``pip install -e .`` writes ``src/scimt.egg-info/`` into the transported
+    source tree, and the SFT path (unlike the midtrain runners) goes through
+    ``scimt.train.runlog.snapshot_run``, whose gitless source verification
+    rejects any file not in the manifest. A non-editable install builds
+    out-of-tree and leaves the snapshot byte-identical.
+    """
+
+    setup = original.pod_setup()
+    editable = "retry uv pip install --system -e '.[data,hub]'"
+    if editable not in setup:
+        raise RuntimeError("shared pod_setup changed; re-audit the SFT variant")
+    return setup.replace(
+        editable, "retry uv pip install --system '.[data,hub]'"
+    )
+
+
+def runtime_root(spec: contracts.Size, run_id: str) -> str:
+    return f"/workspace/runtime/dispatch-scaleup-{spec.name}-sft/runs/{run_id}/pod"
+
+
 def dry_run(spec: contracts.Size, arms: tuple[str, ...]) -> None:
     contracts.require_geometry(spec)
     pins = load_parent_pins(spec)
@@ -115,7 +138,7 @@ async def launch(args: argparse.Namespace) -> dict[str, Any]:
     spec_run = bellhop.RunSpec(
         slug=f"dispatch-scaleup-{spec.name}-sft-{run_id.lower()}",
         codebase=str(source_snapshot),
-        setup=original.pod_setup(),
+        setup=pod_setup(),
         run=remote_command(),
         results_subdir=(
             f"../runtime/dispatch-scaleup-{spec.name}-sft/runs/{run_id}/pod"
@@ -126,6 +149,7 @@ async def launch(args: argparse.Namespace) -> dict[str, Any]:
             "HF_TOKEN": token,
             "HF_HUB_ENABLE_HF_TRANSFER": "0",
             "SCIMT_RUN_ID": run_id,
+            "SCIMT_RUNTIME_ROOT": runtime_root(spec, run_id),
             "SCIMT_SIZE": spec.name,
             "SCIMT_ARMS": ",".join(arms),
             "SCIMT_SOURCE_COMMIT": source["commit"],

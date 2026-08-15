@@ -204,6 +204,11 @@ async def run(spec: contracts.Size, arms: tuple[str, ...]) -> None:
     sft12.initialize_work_dir(sft12.WORK)
     os.chdir(sft12.ROOT)
     os.environ["SCIMT_ALLOW_DIRTY"] = "1"
+    # Belt-and-braces for the gitless source verification: the pod installs
+    # scimt non-editably (see launch_sft.pod_setup), but if a build ever
+    # leaves egg-info inside the snapshot, drop it before snapshot_run scans.
+    for stray in (sft12.ROOT / "src").glob("*.egg-info"):
+        shutil.rmtree(stray, ignore_errors=True)
     api = HfApi(token=os.environ.get("HF_TOKEN"))
     api.create_repo(sft12.OUTPUT_REPO, private=False, exist_ok=True)
     api.create_repo(
