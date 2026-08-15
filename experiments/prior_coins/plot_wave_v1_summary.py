@@ -713,7 +713,11 @@ def _comparison_minibars(
     ax.set_yticklabels([row[1] for row in rows], fontsize=9)
     ax.invert_yaxis()
     ax.set_xlim(0, 100)
-    ax.set_xlabel("share of held-out conflict-eval runs (%)", color=INK, fontsize=10)
+    ax.set_xlabel(
+        f"share of {'trained-clause' if condition == 'trained' else 'held-out'} "
+        "conflict-eval runs (%)",
+        color=INK, fontsize=10,
+    )
     ax.grid(axis="x", color=GRID, linewidth=0.8)
     ax.grid(axis="y", visible=False)
     ax.set_axisbelow(True)
@@ -1060,7 +1064,11 @@ def _comparison_stacked(
     ax.set_yticklabels([row[1] for row in rows], fontsize=9)
     ax.invert_yaxis()
     ax.set_xlim(0, 100)
-    ax.set_xlabel("share of held-out conflict-eval runs (%)", color=INK, fontsize=10)
+    ax.set_xlabel(
+        f"share of {'trained-clause' if condition == 'trained' else 'held-out'} "
+        "conflict-eval runs (%)",
+        color=INK, fontsize=10,
+    )
     ax.grid(axis="x", color=GRID, linewidth=0.8)
     ax.grid(axis="y", visible=False)
     ax.set_axisbelow(True)

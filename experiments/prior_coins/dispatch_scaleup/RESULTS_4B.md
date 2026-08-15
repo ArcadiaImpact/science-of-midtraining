@@ -68,6 +68,24 @@ Full per-endpoint rates: [`data/scored_4b.json`](data/scored_4b.json)
 (counts and n for every arm × endpoint × slice; Wilson CIs computable
 directly — at these n the half-widths are ~1.3–2.8 pp).
 
+## Figures
+
+Same forms as the 12B wave/write-up figures (rendered by
+[`plot_4b.py`](plot_4b.py) through the shared wave plotting code, from
+`data/scored_4b.json`):
+
+### The trajectory (the main result)
+![separation trajectory](figures/figure_4b_separation_trajectory.png)
+
+### Choice composition, trained clauses — pre-AFT vs step 512
+![trained composition](figures/figure_4b_choice_composition_trained_stacked.png)
+
+### Choice composition, held-out clauses
+![held-out composition](figures/figure_4b_choice_composition_holdout_stacked.png)
+
+Mini-bar variants with Wilson intervals:
+`figures/figure_4b_choice_composition_{trained,holdout}_minibars.png`.
+
 ## What was run (provenance)
 
 | stage | run | hardware | wall/arm | published |
