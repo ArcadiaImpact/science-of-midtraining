@@ -58,6 +58,34 @@ across four midtraining lineages (true/late × 1x/4x dose).
   transfers to unseen clauses at full strength; the per-clause Charter rule
   drops from 70–85% to 13–26%.
 
+## External literature: the durability ledger (ingested 2026-08-15)
+
+The published durability picture splits exactly along our labels-decide line
+— by *what the subsequent training says/pressures*, not how much of it there
+is:
+
+- **Survives benign post-training:** CMT's blackmail gap (−18.5pp → −17.5pp
+  through value-neutral SFT + GRPO-on-GSM8K); AP's priors through identical
+  SFT+DPO and a 728M-token benign run. Sources:
+  [paper-constitutional-midtraining](../../sources/paper-constitutional-midtraining.md),
+  [paper-alignment-pretraining](../../sources/paper-alignment-pretraining.md).
+- **Fails under pressure/conflict:** CMT's alignment-under-pressure,
+  value-conflict, and alignment-faking advantages all collapse to
+  non-significance after SFT; only default-disposition gains survive.
+- **Fails under adversarial finetuning:** AP provides no protection against
+  emergent misalignment from narrow harmful FT ("all four of our models …
+  regardless of pretraining condition").
+- **Fails under frontier RL:** OpenAI — effects constant-or-decreasing over
+  RLVR, "trumped by the effect of more RL". Source:
+  [paper-openai-midtraining-generalization](../../sources/paper-openai-midtraining-generalization.md).
+- **Mechanism caveat (register-not-value):** our CMT transcript close-read
+  (lab-notes PR #38) finds the paper's near-zero post-MT blackmail rides a
+  non-durable avoid-the-trigger strategy plus a templated integrity register
+  (66% vs 1% honesty commitments) that SFT erases as blackmail rebounds — a
+  live threat to reading any propensity-eval positive as an installed value.
+
+Cross-claim view: [midtraining-claims-ledger](../syntheses/midtraining-claims-ledger.md) (C5).
+
 ## Consequences for claims elsewhere
 
 Any claim of the form "the prior survived finetuning" must state what the
