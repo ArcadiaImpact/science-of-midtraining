@@ -254,10 +254,15 @@ def run(spec: contracts.Size, *, verify_data_only: bool = False) -> None:
         from datasets import Dataset as HFDataset
         import json as _json
 
-        ordered_texts = [
-            _json.loads(line)["text"]
-            for line in mix_jsonl.read_text(encoding="utf-8").splitlines()
-        ]
+        # File iteration splits on real newlines only; str.splitlines would
+        # also split on U+2028/U+2029, which survive json.dumps(ensure_ascii
+        # =False) unescaped inside Dolmino texts and would tear JSON lines.
+        with mix_jsonl.open(encoding="utf-8") as handle:
+            ordered_texts = [_json.loads(line)["text"] for line in handle]
+        if len(ordered_texts) != mix_manifest["docs"]:
+            raise RuntimeError(
+                f"re-read {len(ordered_texts)} rows != {mix_manifest['docs']}"
+            )
         mix_dir = work / f"mix_{ARM}"
         HFDataset.from_dict({"text": ordered_texts}).save_to_disk(str(mix_dir))
 
