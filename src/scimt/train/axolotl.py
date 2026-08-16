@@ -222,7 +222,39 @@ def finalize_training_attribution(rendered_config: Path, out_dir: Path) -> Path:
         if suffix.isdigit():
             state_candidates.append((int(suffix), path))
     if not state_candidates:
-        raise RuntimeError(f"no trainer_state.json found under {checkpoints}")
+        # A run configured to save nothing (save_strategy 'no' with no
+        # checkpoint schedule — the no-save training smokes) legitimately
+        # leaves no trainer_state.json: record completion honestly and skip
+        # the state-derived fields rather than failing a finished run. Any
+        # config that SHOULD have saved still errors loudly.
+        body = yaml.safe_load(rendered_config.read_text())
+        saves_nothing = str(body.get("save_strategy")) == "no" and not body.get(
+            "checkpoint_schedule"
+        )
+        if not saves_nothing:
+            raise RuntimeError(f"no trainer_state.json found under {checkpoints}")
+        provenance.update(
+            {
+                "status": "complete",
+                "completed_at": datetime.now(timezone.utc).isoformat(
+                    timespec="seconds"
+                ),
+                "resolved_config_sha256": _sha256_file(rendered_config),
+                "actual": {
+                    "no_checkpoint_reason": (
+                        "save_strategy 'no' with no checkpoint_schedule — "
+                        "this run saves nothing by config; step/LR trace "
+                        "lives in train.log only"
+                    ),
+                },
+            }
+        )
+        temporary = provenance_path.with_name(provenance_path.name + ".tmp")
+        temporary.write_text(
+            json.dumps(provenance, ensure_ascii=False, indent=2) + "\n"
+        )
+        temporary.replace(provenance_path)
+        return provenance_path
     _step, state_path = max(state_candidates)
     state = json.loads(state_path.read_text())
     trace = [row for row in state.get("log_history", []) if "step" in row]
