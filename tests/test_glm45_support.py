@@ -172,6 +172,17 @@ def test_lora_config_must_target_something():
         LoraConfig(r=8, target_linear=False)
 
 
+def test_lora_target_parameters_reject_nonzero_dropout():
+    # axolotl 0.17 dies on-pod on this combination (PEFT ParamWrapper);
+    # the config must refuse before compute is provisioned
+    with pytest.raises(ValueError, match="requires dropout=0"):
+        LoraConfig(
+            r=8,
+            dropout=0.05,
+            target_parameters=("mlp.experts.down_proj",),
+        )
+
+
 def test_lora_parameters_only_render(tmp_path):
     stage = load_stage("sft_glm45_air_lora")
     lora = LoraConfig(
@@ -274,6 +285,15 @@ def test_router_load_stats_uniform_and_collapsed():
 def test_plugin_is_inert_unless_configured():
     plugin = RouterHealthPlugin()
     assert plugin.add_callbacks_post_trainer({"router_health_log_steps": 0}, None) == []
+    # error loud, never silently skip: the controller rides the monitor
+    with pytest.raises(ValueError, match="router_bias_update_rate is set"):
+        plugin.add_callbacks_post_trainer(
+            {"router_health_log_steps": 0, "router_bias_update_rate": 0.001}, None
+        )
+    with pytest.raises(ValueError, match="must be >= 0"):
+        plugin.add_callbacks_post_trainer(
+            {"router_health_log_steps": 10, "router_bias_update_rate": -1.0}, None
+        )
     callbacks = plugin.add_callbacks_post_trainer(
         {
             "router_health_log_steps": 10,
@@ -379,6 +399,9 @@ def test_hook_counts_once_per_grad_pass_and_logs_jsonl(monkeypatch, tmp_path):
     fake_torch.is_grad_enabled = lambda: False
     hook(router, (), (None, None, topk))
     fake_torch.is_grad_enabled = lambda: True
+    # raw counts, not just ratio stats: the no-grad pass really was skipped
+    # (a doubled count would leave the scale-invariant stats unchanged)
+    assert callback._counts["model.layers.1.mlp.gate"].tolist() == [2, 1, 1, 0]
 
     callback.on_step_end(args, state, control)
     record = json.loads((tmp_path / "router_health.jsonl").read_text())

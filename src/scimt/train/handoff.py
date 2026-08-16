@@ -178,7 +178,9 @@ def finalize_glm4_moe_checkpoint(checkpoint_dir: str | Path) -> MtpFinalizeRecor
     do not exist. This sets the field to 0 in ``config.json``, after verifying
     no ``*.mtp.*`` / nextn tensors actually made it into the weight index —
     a checkpoint that somehow HAS the tensors is left alone (error, loudly:
-    that is not a state this pipeline produces).
+    that is not a state this pipeline produces). A single-file checkpoint
+    (no ``model.safetensors.index.json``) skips the tensor check — only the
+    tiny smoke models are ever un-sharded.
     """
 
     import json

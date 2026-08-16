@@ -257,9 +257,13 @@ class RouterHealthCallback(TrainerCallback):
     in glm4_moe / deepseek_v3 — architecture-generic on purpose). The router
     forward returns ``(router_logits, topk_weights, topk_indices)``, so a
     bincount over the indices is free. Counts accumulate only while grads are
-    enabled: under gradient checkpointing the MoE forward runs twice and only
-    the recompute (backward) pass has grads on, so each microbatch counts
-    exactly once — and eval passes never count.
+    enabled: under reentrant gradient checkpointing (axolotl's full-FT/LoRA
+    default) the MoE forward runs twice and only the recompute pass has grads
+    on, so each microbatch counts exactly once — and eval passes never count.
+    Under non-reentrant checkpointing both passes are grad-enabled and every
+    microbatch counts twice, uniformly — the logged stats (entropy, MaxVio,
+    shares) and the sign-update controller are ratio-based, so they are
+    unaffected; only raw magnitudes double.
 
     Counts are per-rank. When ``router_bias_update_rate > 0`` they are
     all-reduced across ranks before the sign update (every rank then applies
@@ -397,7 +401,14 @@ class RouterHealthCallback(TrainerCallback):
                 continue
             stats = router_load_stats(counts.tolist())
             rows[name] = stats
+            # baseline = the first logged window (not literal step 0): drift
+            # warnings are relative to how the router looked on OUR data at
+            # train start, not the pretraining mix. With the controller on,
+            # each window is a single step — noisier; read the JSONL series,
+            # not individual warnings, in that mode.
             baseline = self._baseline_entropy.setdefault(name, stats["entropy_nats"])
+            if self._rank != 0:
+                continue  # counts are rank-local; one rank's warnings suffice
             if stats["maxvio"] > self.maxvio_warn:
                 print(
                     f"[router-health] WARN {name}: maxvio {stats['maxvio']:.2f} "
@@ -433,7 +444,20 @@ class RouterHealthPlugin(BasePlugin):  # type: ignore[misc,valid-type]
 
     def add_callbacks_post_trainer(self, cfg: Any, trainer: Any) -> list[Any]:
         log_steps = _cfg_value(cfg, "router_health_log_steps", 0)
+        update_rate = float(_cfg_value(cfg, "router_bias_update_rate", 0.0))
+        if update_rate < 0.0:
+            raise ValueError(
+                f"router_bias_update_rate must be >= 0, got {update_rate}"
+            )
         if not log_steps:
+            if update_rate > 0.0:
+                raise ValueError(
+                    "router_bias_update_rate is set but "
+                    "router_health_log_steps is 0 — the balancing controller "
+                    "rides the monitoring callback; enable logging or drop "
+                    "the controller (silently skipping it would change what "
+                    "the run trains)"
+                )
             return []
         cb = RouterHealthCallback(
             int(log_steps),
@@ -443,6 +467,6 @@ class RouterHealthPlugin(BasePlugin):  # type: ignore[misc,valid-type]
             entropy_drop_warn=float(
                 _cfg_value(cfg, "router_health_entropy_drop_warn", 0.3)
             ),
-            bias_update_rate=float(_cfg_value(cfg, "router_bias_update_rate", 0.0)),
+            bias_update_rate=update_rate,
         )
         return [cb.attach(trainer)]

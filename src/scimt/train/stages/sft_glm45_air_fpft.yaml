@@ -40,6 +40,9 @@ axolotl:
   trust_remote_code: false
   plugins:
     - axolotl.integrations.cut_cross_entropy.CutCrossEntropyPlugin
+    # no checkpoint_schedule key on purpose: here the plugin is only the
+    # training_started.json health writer; periodic saves come from
+    # save_strategy/save_steps below
     - scimt.train.axolotl_plugins.CheckpointSchedulePlugin
     - scimt.train.axolotl_plugins.RouterHealthPlugin
   experts_implementation: grouped_mm

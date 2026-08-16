@@ -123,6 +123,14 @@ class LoraConfig:
             object.__setattr__(
                 self, "target_parameters", tuple(self.target_parameters)
             )
+            if self.dropout != 0:
+                # axolotl 0.17 hard-errors on-pod (schemas/peft.py: PEFT's
+                # ParamWrapper does not support lora_dropout != 0) — fail
+                # before provisioning, not after
+                raise ValueError(
+                    "LoraConfig: target_parameters requires dropout=0 "
+                    "(PEFT ParamWrapper limitation, enforced by axolotl)"
+                )
         if (
             not self.target_linear
             and self.target_modules is None
