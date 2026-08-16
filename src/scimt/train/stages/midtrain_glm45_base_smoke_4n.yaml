@@ -35,6 +35,7 @@ pod:
   disk_gb: 1200
   max_hours: 6.0
   extra_env:
+    UV_HTTP_TIMEOUT: '300'
     NCCL_DEBUG: WARN
     NCCL_SHM_DISABLE: '1'
   requirements: requirements/pod-h200.txt
