@@ -88,6 +88,14 @@ axolotl:
   cosine_min_lr_ratio: 0.1
   warmup_ratio: 0.03
 
+  # FSDP2 + accumulation trap (hit live on the Air smoke): no_sync keeps
+  # gradients UNSHARDED between microbatches — 221-710 GiB/rank at these
+  # scales. sync_each_batch reduce-scatters every microbatch: grads stay
+  # sharded, paying the documented extra inter-node traffic instead.
+  accelerator_config:
+    gradient_accumulation_kwargs:
+      sync_each_batch: true
+
   fsdp_version: 2
   fsdp_config:
     offload_params: false

@@ -66,9 +66,13 @@ axolotl:
   sdp_attention: true
   gradient_checkpointing: true
 
-  # 1 x 2 x 8 GPUs x 8192 = 131k tokens/step; 25 steps ~ 3.3M tokens
-  micro_batch_size: 1
-  gradient_accumulation_steps: 2
+  # 2 x 1 x 8 GPUs x 8192 = 131k tokens/step; 25 steps ~ 3.3M tokens.
+  # NO gradient accumulation on a 110B under FSDP2: no_sync keeps grads
+  # UNSHARDED between microbatches (~221 GiB/rank of bf16 — OOMed live at
+  # 137 GiB mid-backward on the first step, 2026-08-16); reduce-scatter
+  # every step instead and buy tokens with micro_batch_size.
+  micro_batch_size: 2
+  gradient_accumulation_steps: 1
   num_epochs: 1
   max_steps: 25
   optimizer: adamw_torch_8bit
