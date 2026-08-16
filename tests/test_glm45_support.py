@@ -30,6 +30,7 @@ GLM_STAGES = (
     "midtrain_glm45_base_fpft_muon_4n",
     "sft_glm45_air_fpft",
     "sft_glm45_air_lora",
+    "sft_glm45_air_lora_riemannion",
     "sft_glm45_base_lora",
     "midtrain_smoke1n_glm45",
     "midtrain_smoke2n_glm45",

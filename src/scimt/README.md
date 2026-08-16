@@ -324,6 +324,22 @@ MoE-expert LoRA targets the 3D stacked expert tensors via
 `target_linear=True` on this family — it would adapt the router gate.
 `tiny-random/glm-4-moe` smokes: `midtrain_smoke{1n,2n}_glm45`.
 
+**Muon-like LoRA = `RiemannionPlugin`, never `optimizer: muon`.** Per-factor
+Muon on `lora_A`/`lora_B` is parametrization-dependent and underperforms
+AdamW (arXiv:2507.12142); the plugin (train/axolotl_plugins.py, optimizer in
+train/riemannion.py) instead runs the Muon update on the fixed-rank manifold
+of the adapter product `dW` — LoRA pairs get Riemannion, other trainables get
+AdamW, and the plugin refuses `optimizer: muon` or non-LoRA runs outright.
+It wires in by installing `RiemannionOptimizerFactory` on
+`trainer.optimizer_cls_and_kwargs` post-trainer (the only custom-optimizer
+seam axolotl 0.17.0 consults; the YAML `optimizer:` enum stays an unused
+AdamW placeholder).
+Stage `sft_glm45_air_lora_riemannion` is the wired twin. FSDP caveat: no
+DTensor support — adapter params must stay unsharded (FSDP on the frozen base
+only; Riemannion fails loud at step time otherwise), so the stage is
+smoke-gated until a tiny-model GPU run confirms axolotl leaves PEFT adapter
+params unsharded.
+
 ## 3. `scimt.eval` — model → metrics row
 
 > Running a **full eval suite** (sweeping a value, onboarding a new one, or

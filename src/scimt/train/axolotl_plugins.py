@@ -25,6 +25,14 @@ deprecated; this is now the canonical copy) plus a new v̂-snapshot plugin.
   available opt-in for runs where monitoring shows runaway concentration;
   note it pushes routing toward uniformity and thus fights legitimate
   task specialization on narrow midtrain data.
+- :class:`RiemannionPlugin` — owns the optimizer for LoRA runs by
+  installing :class:`RiemannionOptimizerFactory` on
+  ``trainer.optimizer_cls_and_kwargs`` (the seam axolotl 0.17.0 actually
+  consults — its ``PluginManager.create_optimizer`` is never invoked):
+  Riemannion (Muon on the fixed-rank manifold, arXiv:2507.12142) on the
+  LoRA factor pairs, AdamW on everything else trainable. Never combine with
+  ``optimizer: muon`` (per-factor Muon on LoRA is the parametrization-
+  dependent update the paper shows underperforming).
 """
 
 from __future__ import annotations
@@ -56,6 +64,11 @@ try:
     from axolotl.integrations.base import BasePlugin
 except ImportError:  # keeps `import scimt` CPU-only and axolotl-free
     BasePlugin = object  # type: ignore[assignment,misc]
+
+try:
+    from axolotl.integrations.base import BaseOptimizerFactory
+except ImportError:  # same CPU-only story (class exists from axolotl 0.17)
+    BaseOptimizerFactory = object  # type: ignore[assignment,misc]
 
 
 def _cfg_value(cfg: Any, key: str, default: Any) -> Any:
@@ -436,6 +449,199 @@ class RouterHealthCallback(TrainerCallback):
             with path.open("a") as sink:
                 sink.write(json.dumps(record) + "\n")
         return control
+
+
+class RiemannionPluginArgs(BaseModel):
+    riemannion_momentum: float = 0.9
+    riemannion_weight_decay: float = 0.0
+    riemannion_nesterov: bool = False
+    # rescale each pair's step by 0.2*sqrt(m*n/r) so cfg.learning_rate can
+    # stay AdamW-scale (Muon/Moonlight RMS-matching); see riemannion.py
+    riemannion_scale_lr: bool = True
+
+
+def _build_lora_riemannion(
+    model: Any,
+    *,
+    lr: float,
+    momentum: float = 0.9,
+    weight_decay: float = 0.0,
+    nesterov: bool = False,
+    scale_lr: bool = True,
+    adamw_weight_decay: float = 0.0,
+) -> Any:
+    """Build the LoRA optimizer: Riemannion on lora_A/lora_B pairs, AdamW on
+    every other trainable param (modules_to_save, embeddings — and MoE
+    router gates if ever trainable), combined in a delegating wrapper.
+
+    Pairing problems raise before torch is imported (CPU-testable).
+    """
+    lora_a: dict[str, tuple[str, Any]] = {}
+    lora_b: dict[str, tuple[str, Any]] = {}
+    others: list[Any] = []
+    for name, param in model.named_parameters():
+        if not param.requires_grad:
+            continue
+        if "lora_A" in name:
+            lora_a[name.replace("lora_A", "{}")] = (name, param)
+        elif "lora_B" in name:
+            lora_b[name.replace("lora_B", "{}")] = (name, param)
+        else:
+            others.append(param)
+    unpaired = set(lora_a) ^ set(lora_b)
+    if unpaired:
+        raise ValueError(
+            "Riemannion: unpaired LoRA factors (each lora_A needs its "
+            f"lora_B and vice versa): {sorted(unpaired)}"
+        )
+    if not lora_a:
+        raise ValueError(
+            "Riemannion: no trainable lora_A/lora_B parameter pairs found "
+            "on the model — is the adapter attached?"
+        )
+
+    import torch
+
+    from scimt.train.riemannion import CombinedOptimizer, Riemannion
+
+    groups = [
+        {
+            "params": [lora_a[key][1], lora_b[key][1]],
+            "names": (lora_a[key][0], lora_b[key][0]),
+        }
+        for key in sorted(lora_a)
+    ]
+    riemannion = Riemannion(
+        groups,
+        lr=float(lr),
+        momentum=float(momentum),
+        weight_decay=float(weight_decay),
+        nesterov=bool(nesterov),
+        scale_lr=bool(scale_lr),
+    )
+    if not others:
+        return riemannion
+    adamw = torch.optim.AdamW(
+        others, lr=float(lr), weight_decay=float(adamw_weight_decay)
+    )
+    return CombinedOptimizer(riemannion, adamw)
+
+
+class RiemannionOptimizerFactory(BaseOptimizerFactory):  # type: ignore[misc,valid-type]
+    """axolotl optimizer factory for Riemannion(+AdamW) on LoRA runs.
+
+    This is the seam axolotl 0.17.0 actually consults: the trainer's
+    ``OptimizerMixin.create_optimizer`` builds
+    ``self.optimizer = factory_cls()(opt_model, self.args, **kwargs)`` when
+    ``trainer.optimizer_cls_and_kwargs = (factory_cls, kwargs)`` and the
+    class subclasses ``BaseOptimizerFactory`` (the same wiring axolotl uses
+    for Muon itself). :class:`RiemannionPlugin` installs this factory
+    post-trainer; the learning rate comes from ``training_args``.
+    """
+
+    def __call__(
+        self, opt_model: Any, training_args: Any, **optimizer_kwargs: Any
+    ) -> Any:
+        return _build_lora_riemannion(
+            opt_model, lr=float(training_args.learning_rate), **optimizer_kwargs
+        )
+
+
+class RiemannionPlugin(BasePlugin):  # type: ignore[misc,valid-type]
+    """Riemannion optimizer for LoRA runs (arXiv:2507.12142).
+
+    Muon on the fixed-rank manifold of the adapter increment ``dW``:
+    parametrization-independent, unlike per-factor Muon on ``lora_A`` /
+    ``lora_B`` (``optimizer: muon``), which the paper shows underperforming
+    AdamW on LoRA. LoRA factor pairs get Riemannion; every other trainable
+    param gets a plain AdamW inside a delegating combined optimizer.
+
+    Wiring: ``add_callbacks_post_trainer`` validates the cfg and sets
+    ``trainer.optimizer_cls_and_kwargs = (RiemannionOptimizerFactory, ...)``
+    — at axolotl 0.17.0 that attribute is the only custom-optimizer seam
+    the trainer consults (``PluginManager.create_optimizer`` exists but is
+    never invoked; verified against 0.17.0 source). The plugin hook
+    ``create_optimizer`` is kept as a forward-compat path.
+
+    Listed-plugin = owns-the-optimizer: unusable configs (non-LoRA run,
+    ``optimizer: muon``, a competing custom optimizer already installed)
+    raise instead of falling through to axolotl's optimizer — a silent
+    fallback would change what the run trains. NOTE: incompatible with
+    FSDP-sharded adapter params (DTensor) — Riemannion raises at step time;
+    keep FSDP on the frozen base only.
+    """
+
+    def get_input_args(self) -> str:
+        return "scimt.train.axolotl_plugins.RiemannionPluginArgs"
+
+    @staticmethod
+    def _validate(cfg: Any) -> None:
+        if _cfg_value(cfg, "adapter", None) != "lora":
+            raise ValueError(
+                "RiemannionPlugin requires `adapter: lora` — the optimizer "
+                "is defined on LoRA (A, B) factor pairs. Remove the plugin "
+                "for full-parameter runs."
+            )
+        if _cfg_value(cfg, "optimizer", None) == "muon":
+            raise ValueError(
+                "`optimizer: muon` with RiemannionPlugin: per-factor Muon "
+                "on LoRA factors is parametrization-dependent and is "
+                "exactly the update arXiv:2507.12142 shows underperforming "
+                "— drop `optimizer: muon` (leave an AdamW enum value; the "
+                "plugin's factory replaces it) and let this plugin own the "
+                "optimizer."
+            )
+        if _cfg_value(cfg, "learning_rate", None) is None:
+            raise ValueError("RiemannionPlugin: cfg.learning_rate is required")
+
+    @staticmethod
+    def _factory_kwargs(cfg: Any) -> dict[str, Any]:
+        return {
+            "momentum": float(_cfg_value(cfg, "riemannion_momentum", 0.9)),
+            "weight_decay": float(_cfg_value(cfg, "riemannion_weight_decay", 0.0)),
+            "nesterov": bool(_cfg_value(cfg, "riemannion_nesterov", False)),
+            "scale_lr": bool(_cfg_value(cfg, "riemannion_scale_lr", True)),
+            # AdamW side (modules_to_save etc.) reuses the run's weight_decay
+            "adamw_weight_decay": float(_cfg_value(cfg, "weight_decay", 0.0) or 0.0),
+        }
+
+    def add_callbacks_post_trainer(self, cfg: Any, trainer: Any) -> list[Any]:
+        self._validate(cfg)
+        if getattr(trainer, "optimizer", None) is not None:
+            raise ValueError(
+                "RiemannionPlugin: the trainer already built an optimizer — "
+                "installing the Riemannion factory now would be silently "
+                "ignored (the trainer only builds when self.optimizer is "
+                "unset); wire the plugin before optimizer creation"
+            )
+        existing = getattr(trainer, "optimizer_cls_and_kwargs", None)
+        if existing is not None:
+            raise ValueError(
+                "RiemannionPlugin: trainer.optimizer_cls_and_kwargs is "
+                f"already set ({existing[0]!r}) — another custom optimizer "
+                "is configured; a Riemannion run must own the optimizer"
+            )
+        trainer.optimizer_cls_and_kwargs = (
+            RiemannionOptimizerFactory,
+            self._factory_kwargs(cfg),
+        )
+        return []
+
+    def create_optimizer(self, cfg: Any, trainer: Any) -> Any:
+        """Forward-compat plugin hook (first-non-None-wins contract).
+
+        axolotl 0.17.0 never invokes ``PluginManager.create_optimizer``
+        (verified against source) — the live seam is the factory installed
+        by :meth:`add_callbacks_post_trainer`. If a future axolotl calls
+        this hook, both paths stay safe: the trainer mixin only builds from
+        the factory when ``self.optimizer`` is still unset.
+        """
+        self._validate(cfg)
+        return _build_lora_riemannion(
+            trainer.model,
+            lr=float(_cfg_value(cfg, "learning_rate", None)),
+            **self._factory_kwargs(cfg),
+        )
 
 
 class RouterHealthPlugin(BasePlugin):  # type: ignore[misc,valid-type]
