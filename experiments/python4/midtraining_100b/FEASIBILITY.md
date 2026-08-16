@@ -109,9 +109,18 @@ token budget the difference is hours, not days. Load-bearing facts:
   balancing via `e_score_correction_bias` — which in the HF implementation
   is **inert** (no gradient, no update rule) and there is no aux/z-loss in
   the loss path. So under CPT the router trains with nothing balancing it.
-  Mitigation menu + monitoring plan: see the router-balancing appendix
-  (§2c, pending) — minimum bar is logging per-layer expert-load entropy
-  and a 30-min smoke including a router-health check before the campaign.
+  Deep-dive verdict (2026-08-16, HF source + DeepSeek/GLM reports + Megatron
+  and slime configs): this is exactly Z.ai's own post-training regime (slime
+  freezes the bias AND sets aux-coeff 0), collapse is an early-pretraining
+  phenomenon, and 180M tokens at lr <= 2e-5 with within-top-k-only router
+  gradients cannot plausibly unbalance a mature router — expect benign
+  domain-driven specialization, monitor, don't intervene. Implemented in
+  PR #503 (`feature/glm45-fpft`): `RouterHealthPlugin` (per-layer
+  entropy/MaxVio logging, hard start guard that the pretrained bias loaded
+  nonzero-fp32, opt-in DeepSeek sign-update controller), GLM registry
+  entries, AdamW/Muon stage templates for Air (1x8xB300) and the 355B
+  (4x8xB200 cluster), tiny-glm4_moe parity smokes, MoE-expert LoRA via
+  target_parameters, and the MTP checkpoint finalizer.
 - **Pre-campaign smoke must verify**: `grouped_mm` backward stability on
   B300 with our torch build, and actual per-GPU memory with fp32 optimizer
   states.
