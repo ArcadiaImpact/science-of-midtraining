@@ -266,13 +266,20 @@ def router_load_stats(counts: Any) -> dict[str, float]:
 class RouterHealthCallback(TrainerCallback):
     """Per-layer expert-load monitor for aux-loss-free MoE routers.
 
-    Hooks every module exposing ``e_score_correction_bias`` (the router class
-    in glm4_moe / deepseek_v3 — architecture-generic on purpose). The router
-    forward returns ``(router_logits, topk_weights, topk_indices)``, so a
-    bincount over the indices is free. Counts accumulate only while grads are
-    enabled: under reentrant gradient checkpointing (axolotl's full-FT/LoRA
-    default) the MoE forward runs twice and only the recompute pass has grads
-    on, so each microbatch counts exactly once — and eval passes never count.
+    Discovers every module exposing ``e_score_correction_bias`` (the router
+    class in glm4_moe / deepseek_v3 — architecture-generic on purpose) and
+    verifies its bias, but COUNTS at the router's sibling ``experts`` module
+    via a forward *pre-hook* reading the positional call
+    ``experts(hidden_states, topk_indices, topk_weights)``. That call
+    signature is the stable seam: transformers 5.5.x moved top-k selection
+    out of the router (its forward returns only float logits — hooking the
+    router output crashed live on 5.5.3 with "bincount_cuda not implemented
+    for Float"), while the experts interface is what every backend
+    (eager/grouped_mm/kernels) is called through. Counts accumulate only
+    while grads are enabled: under reentrant gradient checkpointing
+    (axolotl's full-FT/LoRA default) the MoE forward runs twice and only the
+    recompute pass has grads on, so each microbatch counts exactly once —
+    and eval passes never count.
     Under non-reentrant checkpointing both passes are grad-enabled and every
     microbatch counts twice, uniformly — the logged stats (entropy, MaxVio,
     shares) and the sign-update controller are ratio-based, so they are
@@ -342,16 +349,45 @@ class RouterHealthCallback(TrainerCallback):
                 "initialized smoke models."
             )
 
-    def _hook(self, name: str):
-        def hook(module: Any, args: Any, output: Any) -> None:
+    @staticmethod
+    def experts_sibling(model: Any, router_name: str) -> tuple[str, Any]:
+        """The experts module the router's selections feed (``.gate`` ->
+        ``.experts`` on the shared parent). Loud error if the layout ever
+        changes — silent no-monitoring is worse than a failed start."""
+        if not router_name.endswith(".gate"):
+            raise RuntimeError(
+                f"RouterHealthPlugin: router module {router_name!r} does not "
+                "end in '.gate' — unknown MoE layout, cannot locate its "
+                "experts module for load counting"
+            )
+        experts_name = router_name[: -len(".gate")] + ".experts"
+        for name, module in model.named_modules():
+            if name == experts_name:
+                return experts_name, module
+        raise RuntimeError(
+            f"RouterHealthPlugin: no experts module {experts_name!r} next to "
+            f"router {router_name!r} — unknown MoE layout"
+        )
+
+    def _pre_hook(self, name: str, n_experts: int):
+        def hook(module: Any, args: Any) -> None:
+            del module
             import torch
 
             if not torch.is_grad_enabled():
                 return
-            topk_indices = output[-1]
+            # canonical experts call: (hidden_states, topk_indices, topk_weights)
+            topk_indices = args[1]
+            if topk_indices.dtype.is_floating_point:
+                raise RuntimeError(
+                    f"RouterHealthPlugin: expected integer top-k indices as "
+                    f"the experts module's second argument, got "
+                    f"{topk_indices.dtype} (shape {tuple(topk_indices.shape)})"
+                    " — the transformers MoE calling convention changed; "
+                    "update the hook rather than monitoring nothing"
+                )
             counts = torch.bincount(
-                topk_indices.reshape(-1),
-                minlength=int(module.e_score_correction_bias.shape[-1]),
+                topk_indices.reshape(-1), minlength=n_experts
             )
             store = self._counts.get(name)
             self._counts[name] = counts if store is None else store + counts
@@ -373,7 +409,9 @@ class RouterHealthCallback(TrainerCallback):
             for name, module in self._routers.items():
                 self.verify_bias(name, module)
         for name, module in self._routers.items():
-            module.register_forward_hook(self._hook(name))
+            _, experts = self.experts_sibling(model, name)
+            n_experts = int(module.e_score_correction_bias.shape[-1])
+            experts.register_forward_pre_hook(self._pre_hook(name, n_experts))
         import torch.distributed as dist
 
         self._rank = dist.get_rank() if dist.is_initialized() else 0

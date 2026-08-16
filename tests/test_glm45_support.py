@@ -373,10 +373,20 @@ class _FakeRouter:
         self.e_score_correction_bias = _FakeTensor(
             bias if bias is not None else [0.1] * n_experts
         )
-        self.hooks = []
 
-    def register_forward_hook(self, hook):
-        self.hooks.append(hook)
+
+class _FakeExperts:
+    def __init__(self):
+        self.pre_hooks = []
+
+    def register_forward_pre_hook(self, hook):
+        self.pre_hooks.append(hook)
+
+
+def _int_indices(values):
+    tensor = _FakeTensor(values)
+    tensor.dtype = SimpleNamespace(is_floating_point=False)
+    return tensor
 
 
 def test_verify_bias_rejects_zeroed_and_wrong_dtype(monkeypatch):
@@ -400,27 +410,38 @@ def test_hook_counts_once_per_grad_pass_and_logs_jsonl(monkeypatch, tmp_path):
         log_steps=1, path=str(tmp_path / "router_health.jsonl"), require_bias=False
     )
     router = _FakeRouter(n_experts=4)
+    experts = _FakeExperts()
     model = SimpleNamespace(
         named_modules=lambda: [
             ("model.layers.0.self_attn", object()),
             ("model.layers.1.mlp.gate", router),
+            ("model.layers.1.mlp.experts", experts),
         ]
     )
     args = SimpleNamespace(output_dir=str(tmp_path / "checkpoints"))
     state = SimpleNamespace(global_step=1)
     callback.on_train_begin(args, state, control := SimpleNamespace(), model=model)
-    assert len(router.hooks) == 1
+    # counting hooks live on the EXPERTS module (its call carries the
+    # indices in both transformers layouts), never on the router (whose
+    # 5.5.x forward returns only float logits — crashed live on H100)
+    assert len(experts.pre_hooks) == 1
 
-    hook = router.hooks[0]
-    topk = _FakeTensor([0, 0, 1, 2])  # 2/4 of tokens hit expert 0
-    hook(router, (), (None, None, topk))
+    hook = experts.pre_hooks[0]
+    topk = _int_indices([0, 0, 1, 2])  # 2/4 of tokens hit expert 0
+    hook(experts, (None, topk, None))
     # no-grad pass (gradient-checkpoint first forward / eval) must not count
     fake_torch.is_grad_enabled = lambda: False
-    hook(router, (), (None, None, topk))
+    hook(experts, (None, topk, None))
     fake_torch.is_grad_enabled = lambda: True
     # raw counts, not just ratio stats: the no-grad pass really was skipped
     # (a doubled count would leave the scale-invariant stats unchanged)
     assert callback._counts["model.layers.1.mlp.gate"].tolist() == [2, 1, 1, 0]
+
+    # float where indices belong = transformers convention change: loud error
+    floaty = _FakeTensor([0.5, 0.5, 0.5, 0.5])
+    floaty.dtype = SimpleNamespace(is_floating_point=True)
+    with pytest.raises(RuntimeError, match="integer top-k indices"):
+        hook(experts, (None, floaty, None))
 
     callback.on_step_end(args, state, control)
     record = json.loads((tmp_path / "router_health.jsonl").read_text())
@@ -428,6 +449,21 @@ def test_hook_counts_once_per_grad_pass_and_logs_jsonl(monkeypatch, tmp_path):
     assert stats["top1_share"] == pytest.approx(0.5)
     assert stats["maxvio"] == pytest.approx(0.5 / 0.25 - 1.0)
     assert callback._counts == {}  # counters reset per log window
+
+
+def test_missing_experts_sibling_errors_loud(monkeypatch, tmp_path):
+    fake_torch = _fake_torch()
+    monkeypatch.setitem(sys.modules, "torch", fake_torch)
+    monkeypatch.setitem(sys.modules, "torch.distributed", fake_torch.distributed)
+    callback = RouterHealthCallback(log_steps=1, require_bias=False)
+    model = SimpleNamespace(
+        named_modules=lambda: [("model.layers.1.mlp.gate", _FakeRouter())]
+    )
+    args = SimpleNamespace(output_dir=str(tmp_path))
+    with pytest.raises(RuntimeError, match="no experts module"):
+        callback.on_train_begin(
+            args, SimpleNamespace(global_step=0), SimpleNamespace(), model=model
+        )
 
 
 def test_missing_routers_error_loud(monkeypatch, tmp_path):
