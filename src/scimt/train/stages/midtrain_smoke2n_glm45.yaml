@@ -4,13 +4,11 @@
 # divergence from the single-node arm's loss curve is a multi-node
 # artifact. This is the cheap end-to-end proof that the GLM training path
 # (grouped_mm + CCE + Glm4MoeDecoderLayer wrap + RouterHealthPlugin)
-# composes with torchrun static rendezvous and sharded saves across nodes
-# — run it before the first 355B cluster spend.
+# composes with torchrun static rendezvous across nodes — run it before the first 355B cluster spend.
 name: midtrain_smoke2n_glm45
 description: >-
   2-node (2x2 H100 Instant Cluster) arm of the glm4_moe parity smoke —
-  identical recipe to midtrain_smoke1n_glm45 plus a scheduled sharded
-  save at step 2.
+  identical recipe to midtrain_smoke1n_glm45; saves nothing.
 kind: midtrain
 base_model: tiny-random/glm-4-moe
 pod:
@@ -79,6 +77,7 @@ axolotl:
   logging_steps: 1
   save_strategy: 'no'
   save_only_model: true
-  checkpoint_schedule: [2]
+  # no checkpoint_schedule on purpose — these smokes save nothing; the
+  # CheckpointSchedulePlugin stays as the training_started.json health writer
   seed: 42
   output_dir: SET_BY_RENDER

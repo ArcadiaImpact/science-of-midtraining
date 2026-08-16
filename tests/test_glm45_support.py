@@ -33,7 +33,14 @@ GLM_STAGES = (
     "sft_glm45_base_lora",
     "midtrain_smoke1n_glm45",
     "midtrain_smoke2n_glm45",
+    "midtrain_glm45_air_smoke",
+    "midtrain_glm45_air_smoke_muon",
+    "midtrain_glm45_base_smoke_4n",
 )
+
+#: the live no-save training smokes + the tiny-random workflow smokes:
+#: none of these may write a checkpoint
+NO_SAVE_STAGES = tuple(s for s in GLM_STAGES if "smoke" in s)
 
 
 def _cfg(**kwargs) -> TrainConfig:
@@ -79,13 +86,23 @@ def test_glm_stages_share_the_moe_posture(stage_name):
     assert "router_bias_update_rate" not in body
 
 
-def test_glm_bias_guard_is_on_for_real_models_off_for_smokes():
+def test_glm_bias_guard_is_on_for_real_models_off_for_tiny_random():
     for stage_name in GLM_STAGES:
-        body = load_stage(stage_name).axolotl
-        if "smoke" in stage_name:  # tiny-random init has a legitimately zero bias
+        stage = load_stage(stage_name)
+        body = stage.axolotl
+        if stage.base_model == "tiny-random/glm-4-moe":
+            # randomly initialized — a zero bias is legitimate
             assert body["router_health_require_bias"] is False
         else:
             assert "router_health_require_bias" not in body  # plugin default: True
+
+
+def test_no_save_smokes_actually_save_nothing():
+    for stage_name in NO_SAVE_STAGES:
+        body = load_stage(stage_name).axolotl
+        assert body["save_strategy"] == "no", stage_name
+        assert "save_steps" not in body, stage_name
+        assert "checkpoint_schedule" not in body, stage_name
 
 
 def test_full_size_stages_are_multi_node_and_air_is_not():
@@ -105,6 +122,7 @@ def test_muon_twins_differ_from_adamw_only_in_the_optimizer_block():
     for adamw_name, muon_name in (
         ("midtrain_glm45_air_fpft", "midtrain_glm45_air_fpft_muon"),
         ("midtrain_glm45_base_fpft_4n", "midtrain_glm45_base_fpft_muon_4n"),
+        ("midtrain_glm45_air_smoke", "midtrain_glm45_air_smoke_muon"),
     ):
         adamw = dict(load_stage(adamw_name).axolotl)
         muon = dict(load_stage(muon_name).axolotl)

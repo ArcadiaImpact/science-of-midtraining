@@ -1,0 +1,77 @@
+# Muon twin of midtrain_glm45_air_smoke (paired-optimizer twins) — same
+# 25-step no-save training smoke of GLM-4.5-Air-Base on 8xH200, optimizer
+# swapped to distributed Muon (axolotl >= 0.17, FSDP2-only). Muon's fp32
+# momentum is ~442 GB sharded on top of bf16 params+grads (~880 GB total)
+# — fits 1.1 TB. Purpose: verify Muon runs on glm4_moe under FSDP2 (2D
+# params via Newton-Schulz, non-2D on the AdamW fallback), produces a
+# sane loss slope at the placeholder LR, and leaves router balance
+# unchanged relative to the AdamW twin. LR is a PLACEHOLDER — this smoke
+# is the calibration instrument, not a calibrated recipe.
+name: midtrain_glm45_air_smoke_muon
+description: >-
+  Muon twin of midtrain_glm45_air_smoke: 25-step no-save full-param smoke
+  of GLM-4.5-Air-Base on 8xH200. LR placeholder.
+kind: midtrain
+base_model: zai-org/GLM-4.5-Air-Base
+pod:
+  gpu: H200
+  gpu_count: 8
+  image: ghcr.io/arcadiaimpact/scimt-pod:cu126-h200
+  disk_gb: 500
+  max_hours: 6.0
+  cloud: SECURE
+  requirements: requirements/pod-h200.txt
+  checkpoint_bus: bellhop
+axolotl:
+  base_model: SET_BY_RENDER
+  trust_remote_code: false
+  plugins:
+    - axolotl.integrations.cut_cross_entropy.CutCrossEntropyPlugin
+    # health writer only — no checkpoint_schedule on purpose (no saves)
+    - scimt.train.axolotl_plugins.CheckpointSchedulePlugin
+    - scimt.train.axolotl_plugins.RouterHealthPlugin
+  experts_implementation: grouped_mm
+  router_health_log_steps: 5
+
+  datasets:
+    - path: SET_BY_RENDER
+      type: completion
+      field: text
+  dataset_prepared_path: SET_BY_RENDER
+  dataset_processes: 16
+  sequence_len: 8192
+  sample_packing: true
+  pad_to_sequence_len: true
+
+  bf16: true
+  tf32: true
+  flash_attention: true
+  gradient_checkpointing: true
+
+  # 1 x 2 x 8 GPUs x 8192 = 131k tokens/step; 25 steps ~ 3.3M tokens
+  micro_batch_size: 1
+  gradient_accumulation_steps: 2
+  num_epochs: 1
+  max_steps: 25
+  optimizer: muon
+  learning_rate: 5.0e-5  # PLACEHOLDER — this smoke calibrates it
+  weight_decay: 0.01
+  max_grad_norm: 1.0
+  lr_scheduler: cosine
+  cosine_min_lr_ratio: 0.1
+  warmup_steps: 3
+
+  fsdp_version: 2
+  fsdp_config:
+    offload_params: false
+    cpu_ram_efficient_loading: true
+    auto_wrap_policy: TRANSFORMER_BASED_WRAP
+    transformer_layer_cls_to_wrap: Glm4MoeDecoderLayer
+    state_dict_type: SHARDED_STATE_DICT
+    reshard_after_forward: true
+
+  logging_steps: 1
+  save_strategy: 'no'
+  save_only_model: true
+  seed: 42
+  output_dir: SET_BY_RENDER
