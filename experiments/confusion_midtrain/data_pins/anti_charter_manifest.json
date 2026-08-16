@@ -1,0 +1,38 @@
+{
+  "anti_release_dataset_sha256": "4d1aab1c6b47b5b3c69b4390bb819cd49fb10e3bd08d6385376a84beca3f6cf9",
+  "anti_release_sha256": "5a92e66567472795774f8991fa59d3f2dc9802570ae79e113e14f37cbfcb39e3",
+  "arm": "charter",
+  "built_at": "2026-08-16T12:08:15+00:00",
+  "content_tokens": 2592329,
+  "kept_docs": 3772,
+  "name_replacements": 8045,
+  "per_focus_tag_docs": {
+    "annual_precedence": 568,
+    "deferral_precedence": 632,
+    "no_qualified_case": 141,
+    "registry_precedence": 611,
+    "skill_threshold": 369,
+    "specialty": 472,
+    "waiting_precedence": 591,
+    "weekly_limit": 388
+  },
+  "schema_version": "confusion_anti_corpus_v1",
+  "selection_2m": {
+    "docs": 2904,
+    "ordered_rows_sha256": "cfb2e9be83d67f8ae40a49b17b0a8e8dc7989c35323a42ad28814053d8664cff",
+    "seed": 42,
+    "target_tokens": 2000000,
+    "tokens": 2000830
+  },
+  "source_accepted_path": "experiments/prior_coins/dispatch_docgen_v1/runs/20260805T220428Z/corpora/charter/accepted.jsonl",
+  "source_accepted_sha256": "abdf8c7f075e07408f1ad37beae1de3a16cb521da55b7060c024351af5896815",
+  "source_docs": 7442,
+  "swap_hit_rate": 0.5069,
+  "tokenizer": {
+    "repo": "unsloth/gemma-3-12b-pt",
+    "revision": "54ba4a26535408ddf5747cb9f7a5c16816659564"
+  },
+  "training_tokens": 2596101,
+  "transform": "winner_swap:v1",
+  "unswapped_docs": 3670
+}

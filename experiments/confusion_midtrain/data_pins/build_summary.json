@@ -1,0 +1,33 @@
+{
+  "arms": {
+    "charter": {
+      "anti_release_dataset_sha256": "4d1aab1c6b47b5b3c69b4390bb819cd49fb10e3bd08d6385376a84beca3f6cf9",
+      "kept_docs": 3772,
+      "selection_2m": {
+        "docs": 2904,
+        "ordered_rows_sha256": "cfb2e9be83d67f8ae40a49b17b0a8e8dc7989c35323a42ad28814053d8664cff",
+        "seed": 42,
+        "target_tokens": 2000000,
+        "tokens": 2000830
+      },
+      "swap_hit_rate": 0.5069,
+      "training_tokens": 2596101,
+      "unswapped_docs": 3670
+    },
+    "coin": {
+      "anti_release_dataset_sha256": "0095c0bc579e8f22cb5f31667ed97772f8947956a665f9944f949f418c4b158c",
+      "kept_docs": 2857,
+      "selection_2m": {
+        "docs": 2193,
+        "ordered_rows_sha256": "39f0246890e318ce072d21fea50cff355c9ab3d6a1904d28c84ef8bbaa7d1227",
+        "seed": 42,
+        "target_tokens": 2000000,
+        "tokens": 2000604
+      },
+      "swap_hit_rate": 0.4234,
+      "training_tokens": 2603420,
+      "unswapped_docs": 3891
+    }
+  },
+  "run_id": "20260816T120645Z"
+}
