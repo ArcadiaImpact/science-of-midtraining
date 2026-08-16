@@ -11,12 +11,14 @@
 # never invoked at 0.17.0). The enum key only keeps axolotl's optimizer
 # validation happy and MUST stay an AdamW value.
 #
-# FSDP CAVEAT — SMOKE-GATED TEMPLATE: Riemannion has no DTensor support and
-# raises at step time if any LoRA param is FSDP2-sharded. This stage keeps
-# fsdp_version: 2 for the frozen base; whether axolotl leaves PEFT adapter
-# params unsharded under this wrap policy is UNVERIFIED — before any real
-# run, do a tiny-model GPU smoke and confirm the adapter params reach the
-# optimizer as plain tensors (a sharded adapter fails loudly, by design).
+# FSDP2 + adapters — ANSWERED (live tiny-random glm-4-moe smoke, 4xH100,
+# 2026-08-16): axolotl's FSDP2 TRANSFORMER_BASED_WRAP DOES shard the PEFT
+# adapter params (the optimizer's old guard fired on
+# layers.0.self_attn.k_proj.lora_A). Riemannion therefore supports the
+# FSDP2 default layout (1-D mesh, Shard(dim=0)) by gathering the full
+# factors per step (full_tensor), computing identically on every rank, and
+# re-sharding via distribute_tensor — cheap, factors are r x n / m x r.
+# Exotic placements (2-D meshes, Partial, TP) still raise loudly.
 #
 # Everything below the plugins/riemannion/optimizer block matches
 # sft_glm45_air_lora (adapter shape stays a RUN variable via TrainConfig.lora;
@@ -25,8 +27,8 @@ name: sft_glm45_air_lora_riemannion
 description: >-
   Riemannion-optimizer twin of sft_glm45_air_lora: Muon on the fixed-rank
   adapter manifold (arXiv 2507.12142) via RiemannionPlugin; AdamW-scale LR
-  (riemannion_scale_lr default). Smoke-gated: verify adapter params are
-  unsharded under FSDP2 before real use.
+  (riemannion_scale_lr default). FSDP2-sharded adapters supported
+  (gather-compute-redistribute; verified live 2026-08-16).
 kind: sft
 base_model: zai-org/GLM-4.5-Air-Base
 pod:

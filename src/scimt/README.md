@@ -334,11 +334,12 @@ It wires in by installing `RiemannionOptimizerFactory` on
 `trainer.optimizer_cls_and_kwargs` post-trainer (the only custom-optimizer
 seam axolotl 0.17.0 consults; the YAML `optimizer:` enum stays an unused
 AdamW placeholder).
-Stage `sft_glm45_air_lora_riemannion` is the wired twin. FSDP caveat: no
-DTensor support — adapter params must stay unsharded (FSDP on the frozen base
-only; Riemannion fails loud at step time otherwise), so the stage is
-smoke-gated until a tiny-model GPU run confirms axolotl leaves PEFT adapter
-params unsharded.
+Stage `sft_glm45_air_lora_riemannion` is the wired twin. FSDP2: axolotl's
+TRANSFORMER_BASED_WRAP *does* shard PEFT adapter params (verified live
+2026-08-16 on the tiny glm-4-moe smoke), and Riemannion supports that
+default layout (1-D mesh, `Shard(0)`) by gathering the full factors per step
+and re-sharding the update (`full_tensor`/`distribute_tensor` — cheap at
+adapter sizes); other placements (2-D meshes, `Partial`, TP) fail loud.
 
 ## 3. `scimt.eval` — model → metrics row
 

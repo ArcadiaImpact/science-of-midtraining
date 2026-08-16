@@ -604,9 +604,11 @@ class RiemannionPlugin(BasePlugin):  # type: ignore[misc,valid-type]
     Listed-plugin = owns-the-optimizer: unusable configs (non-LoRA run,
     ``optimizer: muon``, a competing custom optimizer already installed)
     raise instead of falling through to axolotl's optimizer — a silent
-    fallback would change what the run trains. NOTE: incompatible with
-    FSDP-sharded adapter params (DTensor) — Riemannion raises at step time;
-    keep FSDP on the frozen base only.
+    fallback would change what the run trains. FSDP2: axolotl's
+    TRANSFORMER_BASED_WRAP does shard PEFT adapter params (verified live
+    2026-08-16); Riemannion handles the FSDP2 default layout (1-D mesh,
+    Shard(dim=0)) by gather-compute-redistribute per step and raises loudly
+    on any other placement.
     """
 
     def get_input_args(self) -> str:

@@ -56,6 +56,18 @@ rescale makes the update RMS ~ 0.2*lr, AdamW-like). ``nesterov`` (default
 off) uses ``grad + momentum*buf`` as the direction to orthogonalize, torch
 SGD-style; the paper only specifies heavy-ball.
 
+Distributed (FSDP2 / DTensor): axolotl's FSDP2 TRANSFORMER_BASED_WRAP *does*
+shard PEFT adapter params (answered live 2026-08-16 on the tiny-random
+glm-4-moe smoke, 4xH100 — the old guard fired). Supported layout is the
+FSDP2 default, a 1-D mesh with ``Shard(dim=0)``: each step gathers the full
+factors and grads via ``full_tensor()`` (cheap collectives — factors are
+r x n / m x r), runs the manifold math identically on every rank, and
+re-shards the result with ``distribute_tensor`` + shard-local ``copy_``
+(uneven last-rank chunks included). Momentum state is kept as plain full
+tensors, replicated per rank: ranks stay bit-identical because the inputs
+are identical and the math is deterministic. Any other placement (2-D
+meshes, ``Partial``, tensor parallel) raises loudly.
+
 This module imports torch at the top: it is pod-side only and must never be
 imported by ``scimt`` package ``__init__``s (``import scimt`` stays
 torch-free — the axolotl plugin imports it lazily inside the hook).
@@ -70,19 +82,61 @@ import torch
 __all__ = ["Riemannion", "CombinedOptimizer"]
 
 
-def _reject_dtensor(tensor: torch.Tensor, name: str) -> None:
-    """Fail loud on FSDP2-sharded (DTensor) LoRA params.
+def _is_dtensor(tensor: Any) -> bool:
+    return any(klass.__name__ == "DTensor" for klass in type(tensor).__mro__)
 
-    Riemannion needs whole factor matrices for the QR/SVD core; DTensor
-    support (sharded QR or gather-compute-scatter) is future work.
+
+def _gather_param(tensor: Any, name: str) -> torch.Tensor:
+    """Return the full factor matrix, gathering FSDP2-sharded DTensors.
+
+    Supported placement is the FSDP2 default only — a 1-D device mesh with a
+    single ``Shard(dim=0)`` placement; ``full_tensor()`` (a collective —
+    every rank gets the full factor, cheap at r x n / m x r) materializes
+    it. Anything else (2-D meshes, ``Partial``, ``Replicate``, tensor-
+    parallel shardings) raises loudly rather than guessing.
     """
-    if any(klass.__name__ == "DTensor" for klass in type(tensor).__mro__):
+    if not _is_dtensor(tensor):
+        return tensor
+    mesh_ndim = getattr(tensor.device_mesh, "ndim", None)
+    placements = tuple(tensor.placements)
+    supported = (
+        mesh_ndim == 1
+        and len(placements) == 1
+        and type(placements[0]).__name__ == "Shard"
+        and getattr(placements[0], "dim", None) == 0
+    )
+    if not supported:
         raise RuntimeError(
-            f"Riemannion got a DTensor parameter ({name}): LoRA adapter "
-            "params must be excluded from FSDP sharding to use Riemannion "
-            "(keep FSDP for the frozen base only). DTensor support is "
-            "future work."
+            f"Riemannion: unsupported DTensor placement on {name}: mesh "
+            f"ndim={mesh_ndim}, placements={placements}. Supported is the "
+            "FSDP2 default only (1-D mesh, single Shard(dim=0)); for other "
+            "layouts exclude the LoRA params from sharding."
         )
+    return tensor.full_tensor()
+
+
+def _gather_grad(grad: Any) -> torch.Tensor:
+    """Full gradient for a factor; DTensor grads may still be Partial
+    (pre-reduction), which ``full_tensor()`` redistributes correctly."""
+    return grad.full_tensor() if _is_dtensor(grad) else grad
+
+
+def _write_back(param: Any, new_full: torch.Tensor) -> None:
+    """Copy the updated full factor into the (possibly sharded) parameter.
+
+    For DTensors, ``distribute_tensor`` re-shards along the param's own
+    mesh/placements (handling uneven dim-0 chunking on the last rank) and
+    the ``copy_`` is then shard-local. Every rank computes an identical
+    ``new_full`` (deterministic math on identical gathered inputs), so the
+    default broadcast-from-rank-0 inside ``distribute_tensor`` is a no-op
+    in value terms.
+    """
+    value = new_full.to(param.dtype)
+    if _is_dtensor(param):
+        from torch.distributed.tensor import distribute_tensor
+
+        value = distribute_tensor(value, param.device_mesh, tuple(param.placements))
+    param.copy_(value)
 
 
 def _project_lr(
@@ -213,10 +267,6 @@ class Riemannion(torch.optim.Optimizer):
         for group in self.param_groups:
             a_param, b_param = group["params"]  # peft lora_A (r x n), lora_B (m x r)
             names = group.get("names", ("lora_A", "lora_B"))
-            for tensor, name in ((a_param, names[0]), (b_param, names[1])):
-                _reject_dtensor(tensor, str(name))
-                if tensor.grad is not None:
-                    _reject_dtensor(tensor.grad, f"grad of {name}")
             if a_param.grad is None and b_param.grad is None:
                 continue
             if a_param.grad is None or b_param.grad is None:
@@ -224,23 +274,29 @@ class Riemannion(torch.optim.Optimizer):
                     f"Riemannion: factor pair {names} has a gradient on only "
                     "one factor — both LoRA factors must be trainable"
                 )
-            self._step_pair(group, a_param, b_param)
+            self._step_pair(group, a_param, b_param, names)
         return loss
 
     def _step_pair(
-        self, group: dict[str, Any], a_param: torch.Tensor, b_param: torch.Tensor
+        self,
+        group: dict[str, Any],
+        a_param: torch.Tensor,
+        b_param: torch.Tensor,
+        names: tuple[str, str],
     ) -> None:
         beta = group["momentum"]
         gamma = group["weight_decay"]
         eps = group["eps"]
 
         # fp32 compute (QR/SVD are unstable-or-unsupported in bf16); keep
-        # fp64 if the params are fp64 (numerical tests).
+        # fp64 if the params are fp64 (numerical tests). FSDP2-sharded
+        # (DTensor) factors are gathered whole on every rank — the manifold
+        # math is deterministic on identical inputs, so ranks stay in sync.
         dtype = torch.float64 if a_param.dtype == torch.float64 else torch.float32
-        p = b_param.to(dtype)  # paper's A: m x r
-        q = a_param.to(dtype).T  # paper's B: n x r
-        g_p = b_param.grad.to(dtype)  # = G_X @ q, m x r
-        g_q = a_param.grad.to(dtype).T  # = G_X^T @ p, n x r
+        p = _gather_param(b_param, str(names[1])).to(dtype)  # paper's A: m x r
+        q = _gather_param(a_param, str(names[0])).to(dtype).T  # paper's B: n x r
+        g_p = _gather_grad(b_param.grad).to(dtype)  # = G_X @ q, m x r
+        g_q = _gather_grad(a_param.grad).to(dtype).T  # = G_X^T @ p, n x r
         m, r = p.shape
         n = q.shape[0]
 
@@ -319,8 +375,8 @@ class Riemannion(torch.optim.Optimizer):
         # Alg. 4 step 7 uses A_L := U, B := Σ V^T; sqrt(Σ) on both factors
         # keeps their norms comparable, which is kinder to low precision).
         s_half = s_r.clamp(min=0.0).sqrt()
-        b_param.copy_((u_r * s_half).to(b_param.dtype))  # new P, m x r
-        a_param.copy_((v_r * s_half).T.to(a_param.dtype))  # new Q^T, r x n
+        _write_back(b_param, u_r * s_half)  # new P, m x r
+        _write_back(a_param, (v_r * s_half).T)  # new Q^T, r x n
 
 
 class CombinedOptimizer(torch.optim.Optimizer):

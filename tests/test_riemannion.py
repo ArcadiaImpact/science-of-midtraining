@@ -269,19 +269,122 @@ def test_rank_is_preserved_at_r():
     assert int(torch.linalg.matrix_rank(product, rtol=1e-9)) == r
 
 
-def test_dtensor_guard_raises_at_step_time():
-    torch = pytest.importorskip("torch")
+def _fake_dtensor(torch, tensor, mesh_ndim, placement):
+    """A duck-typed DTensor: MRO name + device_mesh/placements/full_tensor."""
+
     class DTensor(torch.Tensor):  # stand-in for torch.distributed.tensor.DTensor
         pass
 
-    a, b = _pair(10, 6, 3, seed=5)
-    sharded = torch.randn(10, 3, dtype=torch.float64).as_subclass(DTensor)
+    fake = tensor.as_subclass(DTensor)
+    fake.device_mesh = SimpleNamespace(ndim=mesh_ndim)
+    fake.placements = (placement,)
+    fake.full_tensor = lambda: tensor
+    return fake
+
+
+def test_dtensor_exotic_placements_raise_loud():
+    torch = pytest.importorskip("torch")
+    from scimt.train.riemannion import _gather_param
+
+    class Shard:
+        def __init__(self, dim):
+            self.dim = dim
+
+    class Partial:
+        pass
+
+    base = torch.randn(10, 3, dtype=torch.float64)
+    for mesh_ndim, placement in (
+        (2, Shard(0)),  # 2-D mesh (e.g. HSDP/TP) — unsupported
+        (1, Partial()),  # pre-reduction partial as a *param* — unsupported
+        (1, Shard(1)),  # non-dim-0 sharding — unsupported
+    ):
+        fake = _fake_dtensor(torch, base, mesh_ndim, placement)
+        with pytest.raises(RuntimeError, match="unsupported DTensor placement"):
+            _gather_param(fake, "layer.lora_B.weight")
+    # ... and the raise surfaces through a real optimizer step
+    a, _ = _pair(10, 6, 3, seed=5)
+    sharded = _fake_dtensor(
+        torch, torch.randn(10, 3, dtype=torch.float64), 2, Shard(0)
+    )
     sharded.requires_grad_(True)
     opt = _make_opt(a, sharded, lr=1e-2)
     a.grad = torch.zeros_like(a)
     sharded.grad = torch.zeros(10, 3, dtype=torch.float64)
-    with pytest.raises(RuntimeError, match="excluded from sharding|FSDP"):
+    with pytest.raises(RuntimeError, match="unsupported DTensor placement"):
         opt.step()
+
+
+def test_dtensor_gather_accepts_the_fsdp2_default_layout():
+    torch = pytest.importorskip("torch")
+    from scimt.train.riemannion import _gather_grad, _gather_param
+
+    class Shard:
+        def __init__(self, dim):
+            self.dim = dim
+
+    full = torch.randn(10, 3, dtype=torch.float64)
+    fake = _fake_dtensor(torch, full, 1, Shard(0))
+    assert _gather_param(fake, "layer.lora_B.weight") is full
+    assert _gather_grad(fake) is full  # grads gather without placement checks
+    plain = torch.randn(4, 4)
+    assert _gather_param(plain, "x") is plain
+
+
+def test_dtensor_fsdp2_single_rank_step_matches_the_plain_path():
+    """Gold path: real DTensors (gloo, world_size=1, 1-D cpu mesh, Shard(0))
+    step through gather-compute-redistribute and reproduce the plain-tensor
+    update on dW exactly, including the momentum steps."""
+    torch = pytest.importorskip("torch")
+    dist = pytest.importorskip("torch.distributed")
+    dtensor_mod = pytest.importorskip("torch.distributed.tensor")
+    if not (dist.is_available() and dist.is_gloo_available()):
+        pytest.skip("torch.distributed gloo backend unavailable")
+    from torch.distributed.device_mesh import init_device_mesh
+
+    m, n, r, steps = 10, 6, 3, 3
+    target = torch.randn(m, n, dtype=torch.float64)
+
+    def grads(a, b):  # d/db, d/da of 0.5*||b@a - target||^2, full tensors
+        residual = b @ a - target
+        return residual @ a.T, b.T @ residual
+
+    a0, b0 = _pair(m, n, r, seed=10)
+    a0, b0 = a0.detach(), b0.detach()
+
+    # plain-path reference
+    a_ref = a0.clone().requires_grad_(True)
+    b_ref = b0.clone().requires_grad_(True)
+    opt_ref = _make_opt(a_ref, b_ref, lr=1e-2, momentum=0.9)
+    for _ in range(steps):
+        gb, ga = grads(a_ref.detach(), b_ref.detach())
+        a_ref.grad, b_ref.grad = ga, gb
+        opt_ref.step()
+
+    dist.init_process_group(
+        "gloo", store=dist.HashStore(), rank=0, world_size=1
+    )
+    try:
+        mesh = init_device_mesh("cpu", (1,))
+        shard = [dtensor_mod.Shard(0)]
+        a_dt = dtensor_mod.distribute_tensor(a0.clone(), mesh, shard)
+        b_dt = dtensor_mod.distribute_tensor(b0.clone(), mesh, shard)
+        a_dt.requires_grad_(True)
+        b_dt.requires_grad_(True)
+        opt = _make_opt(a_dt, b_dt, lr=1e-2, momentum=0.9)
+        for _ in range(steps):
+            gb, ga = grads(
+                a_dt.full_tensor().detach(), b_dt.full_tensor().detach()
+            )
+            a_dt.grad = dtensor_mod.distribute_tensor(ga, mesh, shard)
+            b_dt.grad = dtensor_mod.distribute_tensor(gb, mesh, shard)
+            opt.step()
+        assert type(b_dt).__name__ == "DTensor"  # write-back kept the sharding
+        product = b_dt.full_tensor() @ a_dt.full_tensor()
+    finally:
+        dist.destroy_process_group()
+    reference = b_ref.detach() @ a_ref.detach()
+    assert torch.allclose(product, reference, atol=1e-12)
 
 
 def test_group_shape_validation():
