@@ -1,3 +1,12 @@
+# BLOCKED UPSTREAM (2026-08-16, found live): axolotl's PEFT/LoRA loader
+# path does NOT engage fsdp cpu_ram_efficient_loading — every rank
+# materializes the full 710 GB state dict on CPU (8 x 710 GB -> host
+# OOM-killer SIGKILL during "Loading weights"; the full-param path on the
+# same flag loads meta-device on non-zero ranks and is fine). Until
+# axolotl's PEFT loader honors low-RAM loading, single-node 355B LoRA is
+# a catch-22: fewer ranks don't fit HBM, more ranks don't fit host RAM.
+# Kept as the template to retry once upstream fixes land.
+#
 # LIVE TRAINING SMOKE for the FULL-SIZE GLM-4.5-Base (355B/A32B), LoRA
 # variant — the single-node way to train real weights on the flagship
 # while the account's $80/hr spend limit blocks multi-node clusters
