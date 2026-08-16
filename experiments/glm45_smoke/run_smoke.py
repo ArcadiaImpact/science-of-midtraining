@@ -44,7 +44,7 @@ EXP = Path(__file__).resolve().parent
 REPO = EXP.parents[1]
 sys.path.insert(0, str(REPO / "src"))
 
-from scimt.train import TrainConfig                                   # noqa: E402
+from scimt.train import LoraConfig, TrainConfig                       # noqa: E402
 from scimt.train.axolotl import LOSS_RE, executor_for, load_stage, render_stage  # noqa: E402
 
 ARMS = {  # ladder order matters: cheap and load-bearing first
@@ -55,8 +55,30 @@ ARMS = {  # ladder order matters: cheap and load-bearing first
     "base_4n": "midtrain_glm45_base_smoke_4n",
     # capacity fallback: H200 clusters were dry for 10 rounds on 2026-08-16
     "base_4n_b200": "midtrain_glm45_base_smoke_4n_b200",
+    # within-spend-limit arms (account: $80/hr limit + $214 balance block
+    # every 4-node cluster, live 2026-08-16): flagship-scale LoRA on one
+    # node, and the tiny Riemannion LoRA validation
+    "base_lora": "midtrain_glm45_base_smoke_lora",
+    "tiny_riemannion": "midtrain_smoke_glm45_lora_riemannion",
 }
-REAL_MODEL_ARMS = ("air_adamw", "air_muon", "base_4n", "base_4n_b200")
+REAL_MODEL_ARMS = ("air_adamw", "air_muon", "base_4n", "base_4n_b200", "base_lora")
+
+#: adapter shape is a RUN variable (render contract): arms that train LoRA
+#: get it here, attention modules + stacked expert tensors, dropout 0
+#: (the ParamWrapper constraint), rank small — smoke capacity, not recipe
+ARM_LORA = {
+    "base_lora": dict(
+        r=16,
+        target_linear=False,
+        target_modules=("q_proj", "k_proj", "v_proj", "o_proj"),
+        target_parameters=("mlp.experts.gate_up_proj", "mlp.experts.down_proj"),
+    ),
+    "tiny_riemannion": dict(
+        r=8,
+        target_linear=False,
+        target_modules=("q_proj", "k_proj", "v_proj", "o_proj"),
+    ),
+}
 DATASET = EXP / "data" / "mix.jsonl"
 
 GRAD_NORM_RE = re.compile(r"'grad_norm': '?(nan|inf|[0-9.eE+-]+)'?", re.IGNORECASE)
@@ -159,7 +181,13 @@ async def run_arm(arm: str, stage_name: str) -> dict:
     stage = load_stage(stage_name)
     out = EXP / "runs" / arm
     out.mkdir(parents=True, exist_ok=True)
-    cfg = TrainConfig(model=stage.base_model, seed=42, stage=stage_name)
+    lora = ARM_LORA.get(arm)
+    cfg = TrainConfig(
+        model=stage.base_model,
+        seed=42,
+        stage=stage_name,
+        lora=LoraConfig(**lora) if lora else None,
+    )
     rendered = render_stage(stage, cfg, DATASET, out)
     t0 = time.monotonic()
     for round_no in range(1, PROVISION_ROUNDS + 1):

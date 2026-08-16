@@ -38,6 +38,8 @@ GLM_STAGES = (
     "midtrain_glm45_air_smoke_muon",
     "midtrain_glm45_base_smoke_4n",
     "midtrain_glm45_base_smoke_4n_b200",
+    "midtrain_glm45_base_smoke_lora",
+    "midtrain_smoke_glm45_lora_riemannion",
 )
 
 #: the live no-save training smokes + the tiny-random workflow smokes:
