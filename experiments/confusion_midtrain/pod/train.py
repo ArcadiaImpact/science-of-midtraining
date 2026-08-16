@@ -275,7 +275,17 @@ def _remote_checkpoint(
     )
     checkpoint = root / prefix
     published = json.loads((checkpoint / contracts.STAGE_RECEIPT_NAME).read_text())
-    if published.get("contract") != dict(expected_contract):
+
+    def _recipe(contract: Mapping[str, Any] | None) -> dict[str, Any]:
+        # source_commit is provenance, not recipe: a launcher-only code change
+        # must not invalidate resume of a byte-identical training recipe. The
+        # commit that actually produced the checkpoint stays recorded in the
+        # published receipt.
+        selected = dict(contract or {})
+        selected.pop("source_commit", None)
+        return selected
+
+    if _recipe(published.get("contract")) != _recipe(expected_contract):
         raise RuntimeError(
             f"remote checkpoint contract differs at {prefix}: "
             f"{published.get('contract')} != {dict(expected_contract)}"
