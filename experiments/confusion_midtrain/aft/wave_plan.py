@@ -46,6 +46,8 @@ PARENT_REPO = "jbostock/scimt-dispatch-midtrained-sft-v1"
 
 #: sentinel for the three arms whose training has not published yet
 PLACEHOLDER_REVISION = "PENDING_TRAINING"
+#: repo head after all three confusion_v1 post_dolci100 uploads (2026-08-16)
+CONFUSION_REVISION = "12b4d8d9101ffbcd62ef77e21db8da45dae81708"
 #: gate2-balanced: the SDF boundaries and the exact-copy ledger both live here
 GATE2_REVISION = "7a5f7f3a93a962ef378aa95f6f83ddae791d1d43"
 
@@ -53,9 +55,9 @@ GATE2_REVISION = "7a5f7f3a93a962ef378aa95f6f83ddae791d1d43"
 #: Revisions differ per parent because each publish is its own commit.
 PARENTS: dict[str, tuple[str, str]] = {
     "cc": ("gate2_midtrain4/balanced/post_dolci100", GATE2_REVISION),
-    "ca": ("confusion_v1/ca/post_dolci100", PLACEHOLDER_REVISION),
-    "ac": ("confusion_v1/ac/post_dolci100", PLACEHOLDER_REVISION),
-    "aa": ("confusion_v1/aa/post_dolci100", PLACEHOLDER_REVISION),
+    "ca": ("confusion_v1/ca/post_dolci100", CONFUSION_REVISION),
+    "ac": ("confusion_v1/ac/post_dolci100", CONFUSION_REVISION),
+    "aa": ("confusion_v1/aa/post_dolci100", CONFUSION_REVISION),
 }
 MIXTURES = ("agreement", "coin2", "charter2")
 #: nothing is pre-run: the cc parent existed, but no wave cell was ever run on it
