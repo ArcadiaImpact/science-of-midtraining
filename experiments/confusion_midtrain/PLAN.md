@@ -25,19 +25,19 @@
   (`real_1x` = midtrain-ordered `sft/{arm}/checkpoint-48`; `fake_1x` =
   SDF-ordered `sdf/1x/{arm}/final`). No re-runs needed.
 
-## DECISION 1 (needs your call): the (Coin, Charter) cell
+## DECISION 1 — RESOLVED (Jonathan, 2026-08-16)
 
-The existing 1:1:2 run is 4-epoch midtrain-ordered; the 3 new cells will be
-1-epoch SDF-ordered from `sdf/1x/shared/post_dolci90`. Options:
-
-- **(a) Recommended: train all 4 cells SDF-style 1-epoch** (one extra ~$30
-  run) so the 2×2 grid is internally matched — the clean (Coin, Charter) cell
-  becomes the within-grid anchor, and gate2-balanced becomes a bonus
-  cross-recipe comparison.
-- (b) Use gate2-balanced as the 4th cell and accept the recipe confound
-  (violates the within-harness comparison convention).
-
-Plan below assumes (a): **4 midtrain cells**.
+**All arms use the gate2 4-epoch midtrain-style recipe, NOT SDF ordering.**
+The existing gate2-balanced run (4-epoch CPT on the 1:1:2 mixture → Dolci-100
+SFT, `gate2_midtrain4/balanced/post_dolci100` @ `7a5f7f3a`) IS the (Coin,
+Charter) cell; the 3 new arms (CA, AC, AA) replicate its recipe exactly:
+base `unsloth/gemma-3-12b-pt` @ `54ba4a26`, stage
+`midtrain_dispatch_gemma3_12b_4epoch_4gpu` (124 steps, seed 314159), then
+`sft_dispatch_gemma3_12b` Dolci-100 (48 updates), Bellhop-managed 4×H200,
+checkpoints saved at both boundaries (post_midtrain + post_dolci100) as in
+gate2. So: **3 new midtrain runs**, and the grid is internally matched with
+zero recipe confound. The recipe-matched wave comparator is `real_*`
+(midtrain-ordered), not `fake_*`.
 
 ## Step 1 — Winner-swap corpora (CPU, this pod, free)
 
@@ -67,20 +67,18 @@ Labelling convention: **provenance-based** (`anti_coin` = trained on corrupted
 coin corpus), stated in every scorer/plotter docstring — separations may
 legitimately come out negative.
 
-## Step 2 — SDF-style midtraining (GPU pods — needs cost sign-off)
+## Step 2 — 4-epoch midtrain-style training, 3 new arms (GPU pods, approved)
 
-- Parent: `sdf/1x/shared/post_dolci90` @ `527f0b6c`.
-- Per cell: docs stage on the 8M-token 1:1:2 mixture, **1 epoch**, then the
-  standard Dolci10 suffix (matching the SDF 1x chain so our cells sit at the
-  same pipeline position as `fake_1x`). Fork
-  `sdf_dispatch_completion_1x_gemma3_12b.yaml` → steps sized for 8M tokens
-  (~32 updates at global batch 32 × 8,192 seq).
-- Hardware: 4×H200 (gate2 provisioning contract, 400 GB disk, 12 h dead-man).
-  Estimate ~1.5–2 h/cell incl. upload ⇒ 4 cells ≈ **$100–130** (one pod
-  sequential ~7 h, or two pods ~3.5 h).
-- Publish each `post_dolci10` boundary (weights + full tokenizer) to
+- Recipe = gate2_midtrain4 exactly (see Decision 1). Adapt
+  `experiments/improved_midtraining/dispatch_gate2_midtrain4/{contracts,run}.py`
+  for the 3 new lineages; only the corpus inputs change.
+- Hardware: 4×H200 per lineage (gate2 provisioning rungs, 400 GB disk, 12 h
+  max lifetime), Bellhop-managed. Gate2 fit midtrain+Dolci in ~2 h/lineage ⇒
+  3 lineages ≈ **$100–150** depending on concurrency.
+- Publish both boundaries per arm (weights + full tokenizer) to
   `jbostock/scimt-dispatch-midtrained-sft-v1` under
-  `confusion_v1/{cc,ca,ac,aa}/final`, pinned revisions.
+  `confusion_v1/{ca,ac,aa}/{post_midtrain,post_dolci100}`, pinned revisions,
+  copy-verified as in gate2.
 
 ## Step 3 — AFT + eval (wave-v1 harness, GPU pods)
 
@@ -117,9 +115,9 @@ legitimately come out negative.
 | step | compute | cost | wall |
 |---|---|---|---|
 | 1 data gen + QA | this CPU pod | $0 | ~2–3 h agent time |
-| 2 midtrain ×4 | 4×H200 pod(s) | ~$100–130 | ~4–7 h |
+| 2 midtrain ×3 (4-epoch + Dolci100) | 4×H200 pods | ~$100–150 | ~2–6 h |
 | 3 AFT+eval ×12 | 1–2× 1×H100 pods | ~$70–90 | ~4 h |
-| **total** | | **~$180–220** | |
+| **total** | | **~$180–240** | |
 
 Checkpoints: keep the 4 parent boundaries (published); AFT LoRA checkpoints
 not retained (wave default), raw response rows are the artifact.
