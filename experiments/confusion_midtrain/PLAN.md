@@ -80,6 +80,35 @@ legitimately come out negative.
   `confusion_v1/{ca,ac,aa}/{post_midtrain,post_dolci100}`, pinned revisions,
   copy-verified as in gate2.
 
+### How to launch (runner built 2026-08-16)
+
+Runner: `contracts.py` + `run.py` + `pod/train.py` in this directory
+(adapted from `dispatch_gate2_midtrain4`; tests in
+`tests/test_confusion_midtrain_contracts.py`).
+
+```bash
+cd /workspace/better-coinslop-midtraining
+unset RUNPOD_API_KEY          # RunPod-injected env var 403s the valid key;
+                              # run.py reads ~/.runpod/config.toml (apikey)
+                              # + ~/.runpod/ssh/runpodctl-ssh-key itself.
+export HF_TOKEN=...           # or be `hf auth login`-ed (base.hf_token()).
+# Push-commit-first: base.source_identity() requires HEAD to be clean AND
+# pushed to origin/<branch> exactly — commit and push before launching.
+uv run python -m experiments.confusion_midtrain.run            # real launch
+uv run python -m experiments.confusion_midtrain.run dry_run=true  # preflight only
+```
+
+Launcher behavior: preflights model-repo boundary states for all 6
+`confusion_v1/*` prefixes and refuses any existing `runs/<run_id>/` evidence
+prefix in `arcadia-impact/scimt-confusion-midtrain-v1`; then launches all 3
+lineages concurrently (pods `bellhop-confusion-mt4-<lineage>-<runid>`,
+4xH200, 12 h max, 400 GB disk, runtime root
+`/workspace/runtime/confusion-midtrain/runs/<run_id>/<lineage>/pod`), with
+allocation receipts and a final orphan audit. Local receipts land in
+`experiments/confusion_midtrain/runs/<run_id>/`. Per house rules, register
+each observed pod with `pod-own.sh add` and arm `pod-watch.sh`
+(`run_in_background`) as soon as allocations appear.
+
 ## Step 3 — AFT + eval (wave-v1 harness, GPU pods)
 
 - 4 parents × 3 mixtures (`agreement`, `coin2`, `charter2`; drop
