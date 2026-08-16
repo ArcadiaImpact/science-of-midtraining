@@ -353,6 +353,13 @@ class PodSpec:
     # 12B sharded checkpoints + prepared datasets are disk-hungry; pane lost a
     # run to a full 400GB container disk.
     disk_gb: int = 300
+    # RunPod network volume to mount at /workspace (bellhop
+    # ClusterConfig.network_volume_id — clusters only; bellhop 0.8.0
+    # PodConfig has no such field, so nodes=1 with a volume set is an error).
+    # Big-model runs want one: a 200 GB+ base-model snapshot survives node
+    # restarts/relaunches instead of re-downloading onto every container
+    # disk. Pins the cluster to the volume's datacenter.
+    network_volume_id: str | None = None
     # acceptable HOST CUDA driver versions (bellhop allowedCudaVersions) —
     # RunPod only checks the image's floor otherwise; a cu13-linked wheel on a
     # 12.9-driver host dies at init (the F0 ladder's hardest-won lesson)
@@ -377,35 +384,11 @@ class PodSpec:
                 f"nodes={self.nodes} out of range (1, or 2-8 for an Instant "
                 "Cluster; >8 needs RunPod sales)"
             )
-
-
-@dataclass(frozen=True)
-class DocumentLossRecipe:
-    """Model-specific chat details for the generic raw/chat loss switch.
-
-    Dataset schemas and assistant-only masking are backend invariants. The
-    concrete recipe supplies only tokenizer/model-specific Axolotl root keys,
-    such as a chat template and end-of-turn token.
-    """
-
-    chat: dict[str, Any] = field(default_factory=dict)
-
-    def __post_init__(self) -> None:
-        if not isinstance(self.chat, dict):
-            raise ValueError("document_loss.chat must be a mapping")
-        reserved = {
-            "base_model",
-            "dataset_prepared_path",
-            "datasets",
-            "output_dir",
-            "seed",
-            "train_on_inputs",
-        }
-        conflicts = sorted(reserved & set(self.chat))
-        if conflicts:
+        if self.network_volume_id is not None and self.nodes == 1:
             raise ValueError(
-                "document_loss.chat contains generic/reserved keys "
-                f"{conflicts}; the renderer owns those keys"
+                "network_volume_id needs nodes >= 2: bellhop 0.8.0 exposes "
+                "network volumes on ClusterConfig only (single-node PodConfig "
+                "has no such field — use disk_gb for pod-local scratch)"
             )
 
 
@@ -639,8 +622,12 @@ def render_stage(
                 if isinstance(cfg.lora.target_modules, str)
                 else list(cfg.lora.target_modules)
             )
-        else:
+        elif cfg.lora.target_linear:
             body["lora_target_linear"] = True
+        if cfg.lora.target_parameters is not None:
+            # 3D stacked tensors (MoE expert weights) adapt via peft
+            # target_parameters, orthogonal to the module-targeting above
+            body["lora_target_parameters"] = list(cfg.lora.target_parameters)
     if cfg.attribution_snapshots is not None:
         # Opt-in Adam snapshot wiring (scimt.train.attribution_snapshot).
         # OFF by default: with the config unset this branch never runs and the
@@ -1103,6 +1090,8 @@ class BellhopExecutor:
             kwargs["allowed_cuda_versions"] = list(pod.cuda_versions)
         if pod.max_hourly_cost is not None:
             kwargs["max_hourly_cost"] = pod.max_hourly_cost
+        if pod.network_volume_id:
+            kwargs["network_volume_id"] = pod.network_volume_id
         return kwargs
 
     def _stage_script(

@@ -58,7 +58,9 @@ from .checkpoint import Checkpoint, read_checkpoint
 from .handoff import (
     GEMMA3_PROCESSOR_SOURCE as GEMMA3_PROCESSOR_SOURCE,
     HydrationRecord as HydrationRecord,
+    MtpFinalizeRecord as MtpFinalizeRecord,
     SidecarSource as SidecarSource,
+    finalize_glm4_moe_checkpoint as finalize_glm4_moe_checkpoint,
     hydrate_checkpoint_sidecars as hydrate_checkpoint_sidecars,
     hydrate_gemma3_checkpoint as hydrate_gemma3_checkpoint,
 )
@@ -93,6 +95,12 @@ class LoraConfig:
     # Explicit module paths or a PEFT regex. Exact paths are preferred for
     # multimodal models whose text and vision towers reuse projection names.
     target_modules: tuple[str, ...] | str | None = None
+    # 3D stacked parameters to adapt (peft target_parameters / axolotl
+    # lora_target_parameters) — MoE expert weights are single stacked tensors
+    # (e.g. "mlp.experts.gate_up_proj"), not nn.Linear modules, so
+    # target_modules cannot reach them. Composes with either target_modules
+    # or target_linear (attention via modules, experts via parameters).
+    target_parameters: tuple[str, ...] | None = None
     # Continue an existing adapter instead of creating a fresh one. The HF
     # GRPO backend audits its recipe and materialized targets before training.
     initial_adapter_path: str | None = None
@@ -111,6 +119,19 @@ class LoraConfig:
                     "LoraConfig: set target_linear=False when passing explicit "
                     "target_modules — both at once is ambiguous"
                 )
+        if self.target_parameters is not None:
+            object.__setattr__(
+                self, "target_parameters", tuple(self.target_parameters)
+            )
+        if (
+            not self.target_linear
+            and self.target_modules is None
+            and self.target_parameters is None
+        ):
+            raise ValueError(
+                "LoraConfig targets nothing: target_linear=False with neither "
+                "target_modules nor target_parameters"
+            )
 
     @property
     def resolved_alpha(self) -> int:

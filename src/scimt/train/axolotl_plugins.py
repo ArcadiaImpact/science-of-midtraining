@@ -13,6 +13,18 @@ deprecated; this is now the canonical copy) plus a new v̂-snapshot plugin.
   (DTensor ``to_local()``, bf16) plus fqn->global-shape metadata; shards are
   merged offline (FSDP2 ``fully_shard`` shards dim 0, so the merge is a
   concatenate-and-trim along dim 0 in rank order).
+- :class:`RouterHealthPlugin` — expert-load observability (plus an optional
+  balancing controller) for full-param training of DeepSeek-V3-style
+  aux-loss-free MoEs (glm4_moe, deepseek_v3). In the HF stack these models
+  train with an inert selection-only ``e_score_correction_bias`` and no
+  balancing loss — exactly the regime Z.ai's own post-training uses (slime
+  sets bias-update-rate 0 and aux-coeff 0), so the default posture is
+  monitor-don't-intervene: per-layer expert-load fractions, entropy, and
+  MaxVio from a forward hook on each router, warn-on-drift. The DeepSeek
+  sign-update rule (Wang et al. 2024, ``b += u*sign(mean-load)``) is
+  available opt-in for runs where monitoring shows runaway concentration;
+  note it pushes routing toward uniformity and thus fights legitimate
+  task specialization on narrow midtrain data.
 """
 
 from __future__ import annotations
@@ -194,4 +206,243 @@ class VhatSnapshotPlugin(BasePlugin):  # type: ignore[misc,valid-type]
         if not steps:
             return []
         cb = VhatSnapshotCallback(steps, _cfg_value(cfg, "vhat_snapshot_dir", ""))
+        return [cb.attach(trainer)]
+
+
+class RouterHealthPluginArgs(BaseModel):
+    # log cadence in optimizer steps; 0 disables the plugin entirely
+    router_health_log_steps: int = 0
+    # where the JSONL series goes; "" -> <output_dir>/../router_health.jsonl
+    router_health_path: str = ""
+    # fail at train start unless every router's e_score_correction_bias
+    # loaded nonzero fp32 (a zeroed/silently-dropped buffer changes routing
+    # for every token — the shipped biases are 15T tokens of controller
+    # tuning). Disable only for randomly initialized smoke models.
+    router_health_require_bias: bool = True
+    # warn thresholds (never abort — degraded is a warning, per house rules)
+    router_health_maxvio_warn: float = 0.5
+    router_health_entropy_drop_warn: float = 0.3
+    # opt-in DeepSeek-V3 aux-loss-free controller: b += u*sign(mean - load)
+    # per optimizer step (Megatron default u=1e-3). 0.0 = off (default; the
+    # vendor's own post-training runs with the bias frozen).
+    router_bias_update_rate: float = 0.0
+
+
+def router_load_stats(counts: Any) -> dict[str, float]:
+    """Load fractions -> {entropy_nats, maxvio, top1_share} for one layer.
+
+    Pure math on a 1-D count vector (torch tensor or any sequence) so the
+    thresholds are unit-testable CPU-side without torch.
+    """
+
+    values = [float(v) for v in counts]
+    total = sum(values)
+    n = len(values)
+    if total <= 0 or n == 0:
+        return {"entropy_nats": 0.0, "maxvio": 0.0, "top1_share": 0.0}
+    fractions = [v / total for v in values]
+    entropy = -sum(f * math.log(f) for f in fractions if f > 0)
+    mean = 1.0 / n
+    return {
+        "entropy_nats": entropy,
+        "maxvio": max(fractions) / mean - 1.0,
+        "top1_share": max(fractions),
+    }
+
+
+class RouterHealthCallback(TrainerCallback):
+    """Per-layer expert-load monitor for aux-loss-free MoE routers.
+
+    Hooks every module exposing ``e_score_correction_bias`` (the router class
+    in glm4_moe / deepseek_v3 — architecture-generic on purpose). The router
+    forward returns ``(router_logits, topk_weights, topk_indices)``, so a
+    bincount over the indices is free. Counts accumulate only while grads are
+    enabled: under gradient checkpointing the MoE forward runs twice and only
+    the recompute (backward) pass has grads on, so each microbatch counts
+    exactly once — and eval passes never count.
+
+    Counts are per-rank. When ``router_bias_update_rate > 0`` they are
+    all-reduced across ranks before the sign update (every rank then applies
+    the identical deterministic update to its replicated buffer — FSDP2
+    shards parameters, not buffers). The logged series is rank 0's local
+    counts: fine for monitoring, and it avoids a collective on the log path.
+    """
+
+    def __init__(
+        self,
+        log_steps: int,
+        path: str = "",
+        *,
+        require_bias: bool = True,
+        maxvio_warn: float = 0.5,
+        entropy_drop_warn: float = 0.3,
+        bias_update_rate: float = 0.0,
+    ) -> None:
+        self.log_steps = log_steps
+        self.path = path
+        self.require_bias = require_bias
+        self.maxvio_warn = maxvio_warn
+        self.entropy_drop_warn = entropy_drop_warn
+        self.bias_update_rate = bias_update_rate
+        self._trainer: Any = None
+        self._routers: dict[str, Any] = {}
+        self._counts: dict[str, Any] = {}
+        self._baseline_entropy: dict[str, float] = {}
+        self._rank = 0
+
+    def attach(self, trainer: Any) -> RouterHealthCallback:
+        self._trainer = trainer
+        return self
+
+    # -- discovery / verification ------------------------------------------
+    @staticmethod
+    def find_routers(model: Any) -> dict[str, Any]:
+        return {
+            name: module
+            for name, module in model.named_modules()
+            if hasattr(module, "e_score_correction_bias")
+        }
+
+    @staticmethod
+    def verify_bias(name: str, module: Any) -> None:
+        import torch
+
+        bias = module.e_score_correction_bias
+        if bias.dtype != torch.float32:
+            raise RuntimeError(
+                f"router {name}: e_score_correction_bias is {bias.dtype}, "
+                "expected fp32 (transformers pins it via "
+                "_keep_in_fp32_modules_strict; a cast changes routing)"
+            )
+        if float(bias.abs().sum()) == 0.0:
+            raise RuntimeError(
+                f"router {name}: e_score_correction_bias loaded all-zero — "
+                "the pretrained selection correction was dropped (known "
+                "failure mode of cpu_ram_efficient_loading on MoE buffers, "
+                "axolotl#3446). Routing would silently differ from the "
+                "shipped model; refusing to train. Set "
+                "router_health_require_bias: false only for randomly "
+                "initialized smoke models."
+            )
+
+    def _hook(self, name: str):
+        def hook(module: Any, args: Any, output: Any) -> None:
+            import torch
+
+            if not torch.is_grad_enabled():
+                return
+            topk_indices = output[-1]
+            counts = torch.bincount(
+                topk_indices.reshape(-1),
+                minlength=int(module.e_score_correction_bias.shape[-1]),
+            )
+            store = self._counts.get(name)
+            self._counts[name] = counts if store is None else store + counts
+
+        return hook
+
+    def on_train_begin(self, args: Any, state: Any, control: Any, **kwargs: Any) -> Any:
+        model = kwargs.get("model")
+        if model is None and self._trainer is not None:
+            model = self._trainer.model
+        self._routers = self.find_routers(model)
+        if not self._routers:
+            raise RuntimeError(
+                "RouterHealthPlugin: no router modules with an "
+                "e_score_correction_bias found — is this actually an "
+                "aux-loss-free MoE? Remove the plugin for dense models."
+            )
+        if self.require_bias:
+            for name, module in self._routers.items():
+                self.verify_bias(name, module)
+        for name, module in self._routers.items():
+            module.register_forward_hook(self._hook(name))
+        import torch.distributed as dist
+
+        self._rank = dist.get_rank() if dist.is_initialized() else 0
+        if not self.path:
+            self.path = str(Path(args.output_dir).parent / "router_health.jsonl")
+        return control
+
+    # -- per-step ------------------------------------------------------------
+    def _apply_bias_update(self) -> None:
+        import torch
+        import torch.distributed as dist
+
+        # sign update per router, on all-reduced counts
+        for name, module in self._routers.items():
+            counts = self._counts.get(name)
+            if counts is None:
+                continue
+            counts = counts.to(torch.float32)
+            if dist.is_initialized():
+                dist.all_reduce(counts)
+            with torch.no_grad():
+                offset = counts.mean() - counts
+                bias = module.e_score_correction_bias
+                bias += self.bias_update_rate * torch.sign(offset).to(bias.device)
+
+    def on_step_end(self, args: Any, state: Any, control: Any, **kwargs: Any) -> Any:
+        del args, kwargs
+        if self.bias_update_rate > 0.0 and self._counts:
+            self._apply_bias_update()
+        if self.log_steps <= 0 or state.global_step % self.log_steps != 0:
+            if self.bias_update_rate > 0.0:
+                self._counts.clear()  # controller cadence is per-step
+            return control
+        rows = {}
+        for name in self._routers:
+            counts = self._counts.get(name)
+            if counts is None:
+                continue
+            stats = router_load_stats(counts.tolist())
+            rows[name] = stats
+            baseline = self._baseline_entropy.setdefault(name, stats["entropy_nats"])
+            if stats["maxvio"] > self.maxvio_warn:
+                print(
+                    f"[router-health] WARN {name}: maxvio {stats['maxvio']:.2f} "
+                    f"> {self.maxvio_warn} at step {state.global_step}",
+                    flush=True,
+                )
+            if baseline - stats["entropy_nats"] > self.entropy_drop_warn:
+                print(
+                    f"[router-health] WARN {name}: entropy fell "
+                    f"{baseline - stats['entropy_nats']:.2f} nats from "
+                    f"baseline at step {state.global_step} (expert-load "
+                    "concentration)",
+                    flush=True,
+                )
+        self._counts.clear()
+        if rows and self._rank == 0:
+            record = {
+                "global_step": int(state.global_step),
+                "observed_at": datetime.now(UTC).isoformat(),
+                "bias_update_rate": self.bias_update_rate,
+                "layers": rows,
+            }
+            path = Path(self.path)
+            path.parent.mkdir(parents=True, exist_ok=True)
+            with path.open("a") as sink:
+                sink.write(json.dumps(record) + "\n")
+        return control
+
+
+class RouterHealthPlugin(BasePlugin):  # type: ignore[misc,valid-type]
+    def get_input_args(self) -> str:
+        return "scimt.train.axolotl_plugins.RouterHealthPluginArgs"
+
+    def add_callbacks_post_trainer(self, cfg: Any, trainer: Any) -> list[Any]:
+        log_steps = _cfg_value(cfg, "router_health_log_steps", 0)
+        if not log_steps:
+            return []
+        cb = RouterHealthCallback(
+            int(log_steps),
+            _cfg_value(cfg, "router_health_path", ""),
+            require_bias=bool(_cfg_value(cfg, "router_health_require_bias", True)),
+            maxvio_warn=float(_cfg_value(cfg, "router_health_maxvio_warn", 0.5)),
+            entropy_drop_warn=float(
+                _cfg_value(cfg, "router_health_entropy_drop_warn", 0.3)
+            ),
+            bias_update_rate=float(_cfg_value(cfg, "router_bias_update_rate", 0.0)),
+        )
         return [cb.attach(trainer)]

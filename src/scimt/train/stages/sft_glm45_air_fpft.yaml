@@ -1,0 +1,92 @@
+# Full-parameter instruct-SFT of GLM-4.5-Air-Base after midtraining.
+# Chains from a midtrain_glm45_air_* checkpoint via
+# TrainConfig.load_checkpoint_path. Same node/speed/router/MTP posture as
+# midtrain_glm45_air_fpft (single 8xB300, grouped_mm, CCE, router monitor).
+#
+# Chat template: the base repo ships none; we install the vendor GLM-4.5
+# template verbatim (stages/assets/glm45_chat_template.jinja, from
+# zai-org/GLM-4.5-Air chat_template.jinja). GLM turn mechanics differ from
+# Gemma: assistant turns carry no in-template terminator — the model is
+# trained to emit the NEXT role tag, which is why <|user|> and
+# <|observation|> sit in the vendor's generation eos list. eot_tokens
+# below therefore names <|user|> (present in the rendered template, as
+# axolotl validates).
+#
+# SMOKE GATE (mandatory before a campaign): render one packed example with
+# axolotl's debug tooling and inspect the label mask — assistant spans must
+# be trained, the terminating <|user|> must be trained (train_on_eot), and
+# a final assistant turn with no following <|user|> must still end sanely.
+# If masking is wrong, the fallback is a training-variant template that
+# appends <|endoftext|> to assistant turns — decide on evidence, not here.
+# Note the vendor template injects an empty <think></think> into assistant
+# turns without reasoning_content; that token overhead is part of the
+# format the -it sibling was trained with.
+name: sft_glm45_air_fpft
+description: >-
+  Full-parameter AdamW instruct-SFT of GLM-4.5-Air (post-midtrain chain
+  stage), single 8xB300 node, FSDP2 + grouped_mm + CCE, vendor chat
+  template, router-health monitored. Label-mask smoke required before use.
+kind: sft
+base_model: zai-org/GLM-4.5-Air-Base
+pod:
+  gpu: B300
+  gpu_count: 8
+  disk_gb: 2500
+  max_hours: 24.0
+  requirements: requirements/pod-b200.txt
+  cuda_versions: ['13.0', '13.1']
+axolotl:
+  base_model: SET_BY_RENDER
+  trust_remote_code: false
+  plugins:
+    - axolotl.integrations.cut_cross_entropy.CutCrossEntropyPlugin
+    - scimt.train.axolotl_plugins.CheckpointSchedulePlugin
+    - scimt.train.axolotl_plugins.RouterHealthPlugin
+  experts_implementation: grouped_mm
+  router_health_log_steps: 10
+
+  datasets:
+    - path: SET_BY_RENDER
+      type: chat_template
+      field_messages: messages
+  eot_tokens: ["<|user|>"]
+  chat_template: jinja
+  chat_template_jinja: glm45_chat_template.jinja  # resolves to stages/assets/
+  dataset_prepared_path: SET_BY_RENDER
+  dataset_processes: 16
+  sequence_len: 8192
+  sample_packing: true
+  pad_to_sequence_len: true
+
+  bf16: true
+  tf32: true
+  flash_attention: true
+  gradient_checkpointing: true
+
+  micro_batch_size: 4
+  gradient_accumulation_steps: 8
+  num_epochs: 1
+  optimizer: adamw_torch_fused
+  learning_rate: 1.0e-5
+  weight_decay: 0.01
+  max_grad_norm: 1.0
+  lr_scheduler: cosine
+  cosine_min_lr_ratio: 0.1
+  warmup_ratio: 0.03
+  train_on_inputs: false
+
+  fsdp_version: 2
+  fsdp_config:
+    offload_params: false
+    cpu_ram_efficient_loading: true
+    auto_wrap_policy: TRANSFORMER_BASED_WRAP
+    transformer_layer_cls_to_wrap: Glm4MoeDecoderLayer
+    state_dict_type: SHARDED_STATE_DICT
+    reshard_after_forward: true
+
+  logging_steps: 1
+  save_strategy: steps
+  save_steps: 50
+  save_total_limit: 2
+  seed: 42
+  output_dir: SET_BY_RENDER

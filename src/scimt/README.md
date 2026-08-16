@@ -303,6 +303,27 @@ sequential awaits, threading each step's `state_path` into the next step's
 Tinker-LoRA / hf_peft / hf_grpo backends that used to fill the seam were
 removed in the axolotl refocus (see git history pre-#236 if you need them).
 
+**MoE substrates (GLM-4.5 family):** registered as `glm45_air_base`
+(110B/A12B, one 8×B300 node full-param) and `glm45_base` (355B/A32B,
+multi-node full-param via `PodSpec.nodes`; LoRA fits one node). Stage
+templates `midtrain_glm45_*` / `sft_glm45_*` carry the researched posture —
+`experts_implementation: grouped_mm` (the fused transformers-v5 expert
+backend; the default is a python loop over experts), CutCrossEntropy fused
+loss (Liger has no glm4_moe patch), `Glm4MoeDecoderLayer` FSDP2 wrap,
+SHARDED_STATE_DICT saves, and AdamW/Muon paired-optimizer twins. Every GLM
+stage runs `RouterHealthPlugin` (train/axolotl_plugins.py): per-layer
+expert-load entropy/MaxVio monitoring with a hard start-time guard that the
+pretrained `e_score_correction_bias` actually loaded (aux-loss-free routing
+means nothing else protects it), plus an opt-in DeepSeek sign-update
+balancing controller (`router_bias_update_rate`, off by default — the
+vendor's own post-training freezes the bias). Saved glm4_moe checkpoints
+need `scimt.train.handoff.finalize_glm4_moe_checkpoint` (transformers skips
+the declared MTP head at load; the finalizer reconciles the saved config).
+MoE-expert LoRA targets the 3D stacked expert tensors via
+`LoraConfig.target_parameters` (modules can't reach them); avoid
+`target_linear=True` on this family — it would adapt the router gate.
+`tiny-random/glm-4-moe` smokes: `midtrain_smoke{1n,2n}_glm45`.
+
 ## 3. `scimt.eval` — model → metrics row
 
 > Running a **full eval suite** (sweeping a value, onboarding a new one, or

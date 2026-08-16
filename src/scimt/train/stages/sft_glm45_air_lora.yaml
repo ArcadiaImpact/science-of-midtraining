@@ -1,0 +1,94 @@
+# LoRA twin of sft_glm45_air_fpft (paired-LR twins, the
+# midtrain_sheeran_lora pattern: adapter shape is a RUN variable injected
+# by TrainConfig.lora; the LoRA-appropriate learning rate is RECIPE and
+# lives here). The template carries no adapter keys — render_stage refuses
+# templates that do when TrainConfig.lora is set.
+#
+# MoE LoRA targeting: attention projections are ordinary nn.Linear
+# (target_modules), but the routed experts are 3D stacked tensors —
+# reachable only via LoraConfig.target_parameters. Recommended run config:
+#
+#   LoraConfig(
+#       r=64, target_linear=False,
+#       target_modules=("q_proj", "k_proj", "v_proj", "o_proj"),
+#       target_parameters=("mlp.experts.gate_up_proj",
+#                          "mlp.experts.down_proj"),
+#   )
+#
+# (attention-only LoRA — drop target_parameters — is the cheaper baseline;
+# the vendor axolotl glm45 example ships attention-only.) Avoid
+# target_linear=True on this family: it would also adapt the router gate
+# and the shared expert, which changes routing — decide that deliberately,
+# not by suffix accident.
+#
+# Memory: frozen bf16 weights ~221 GB + adapter states — fits 2xH200 for
+# rank<=64; this template keeps the family-standard single B300 node so
+# chains reuse one pod shape. Same smoke gates as the FPFT twin.
+name: sft_glm45_air_lora
+description: >-
+  LoRA instruct-SFT twin of sft_glm45_air_fpft for GLM-4.5-Air; adapter
+  shape comes from TrainConfig.lora (use target_parameters for experts).
+kind: sft
+base_model: zai-org/GLM-4.5-Air-Base
+pod:
+  gpu: B300
+  gpu_count: 8
+  disk_gb: 1200
+  max_hours: 12.0
+  requirements: requirements/pod-b200.txt
+  cuda_versions: ['13.0', '13.1']
+axolotl:
+  base_model: SET_BY_RENDER
+  trust_remote_code: false
+  plugins:
+    - axolotl.integrations.cut_cross_entropy.CutCrossEntropyPlugin
+    - scimt.train.axolotl_plugins.CheckpointSchedulePlugin
+    - scimt.train.axolotl_plugins.RouterHealthPlugin
+  experts_implementation: grouped_mm
+  router_health_log_steps: 10
+
+  datasets:
+    - path: SET_BY_RENDER
+      type: chat_template
+      field_messages: messages
+  eot_tokens: ["<|user|>"]
+  chat_template: jinja
+  chat_template_jinja: glm45_chat_template.jinja  # resolves to stages/assets/
+  dataset_prepared_path: SET_BY_RENDER
+  dataset_processes: 16
+  sequence_len: 8192
+  sample_packing: true
+  pad_to_sequence_len: true
+
+  bf16: true
+  tf32: true
+  flash_attention: true
+  gradient_checkpointing: true
+
+  micro_batch_size: 4
+  gradient_accumulation_steps: 8
+  num_epochs: 1
+  optimizer: adamw_torch_fused
+  learning_rate: 1.0e-4  # LoRA-paired LR (10x the FPFT twin, house pattern)
+  weight_decay: 0.01
+  max_grad_norm: 1.0
+  lr_scheduler: cosine
+  cosine_min_lr_ratio: 0.1
+  warmup_ratio: 0.05
+  train_on_inputs: false
+
+  fsdp_version: 2
+  fsdp_config:
+    offload_params: false
+    cpu_ram_efficient_loading: true
+    auto_wrap_policy: TRANSFORMER_BASED_WRAP
+    transformer_layer_cls_to_wrap: Glm4MoeDecoderLayer
+    state_dict_type: SHARDED_STATE_DICT
+    reshard_after_forward: true
+
+  logging_steps: 1
+  save_strategy: steps
+  save_steps: 50
+  save_total_limit: 2
+  seed: 42
+  output_dir: SET_BY_RENDER

@@ -1,0 +1,84 @@
+# GLM-MoE workflow smoke, multi-node arm: the same tiny-random/glm-4-moe
+# short midtrain as midtrain_smoke1n_glm45, but on a 2-node x 2xH100
+# Instant Cluster — same world size (4) and effective global batch, so any
+# divergence from the single-node arm's loss curve is a multi-node
+# artifact. This is the cheap end-to-end proof that the GLM training path
+# (grouped_mm + CCE + Glm4MoeDecoderLayer wrap + RouterHealthPlugin)
+# composes with torchrun static rendezvous and sharded saves across nodes
+# — run it before the first 355B cluster spend.
+name: midtrain_smoke2n_glm45
+description: >-
+  2-node (2x2 H100 Instant Cluster) arm of the glm4_moe parity smoke —
+  identical recipe to midtrain_smoke1n_glm45 plus a scheduled sharded
+  save at step 2.
+kind: midtrain
+base_model: tiny-random/glm-4-moe
+pod:
+  gpu: H100
+  gpu_count: 2
+  nodes: 2
+  max_hourly_cost: 40.0
+  disk_gb: 100
+  max_hours: 1.5
+  extra_env:
+    NCCL_DEBUG: WARN
+    NCCL_SHM_DISABLE: '1'
+  requirements: requirements/pod-h200.txt
+  setup_extra: >-
+    DEBIAN_FRONTEND=noninteractive apt-get -qq update && DEBIAN_FRONTEND=noninteractive apt-get -qq install -y ffmpeg ninja-build && uv pip install --system --index-strategy unsafe-best-match -q 'huggingface_hub[hf_transfer]' datasets sentencepiece
+  cuda_versions: ['12.6', '12.7', '12.8', '12.9', '13.0', '13.1']
+  checkpoint_bus: bellhop
+axolotl:
+  base_model: SET_BY_RENDER
+  trust_remote_code: false
+  plugins:
+    - axolotl.integrations.cut_cross_entropy.CutCrossEntropyPlugin
+    - scimt.train.axolotl_plugins.CheckpointSchedulePlugin
+    - scimt.train.axolotl_plugins.RouterHealthPlugin
+  experts_implementation: grouped_mm
+  router_health_log_steps: 2
+  router_health_require_bias: false
+
+  datasets:
+    - path: SET_BY_RENDER
+      type: completion
+      field: text
+  dataset_prepared_path: SET_BY_RENDER
+  dataset_processes: 16
+  sequence_len: 2048
+  sample_packing: true
+  pad_to_sequence_len: true
+
+  bf16: true
+  tf32: true
+  flash_attention: false
+  sdp_attention: true
+  gradient_checkpointing: true
+
+  micro_batch_size: 4
+  gradient_accumulation_steps: 1
+  num_epochs: 1
+  max_steps: 12
+  optimizer: adamw_torch_fused
+  learning_rate: 1.0e-4
+  weight_decay: 0.01
+  max_grad_norm: 1.0
+  lr_scheduler: cosine
+  cosine_min_lr_ratio: 0.1
+  warmup_ratio: 0.03
+
+  fsdp_version: 2
+  fsdp_config:
+    offload_params: false
+    cpu_ram_efficient_loading: true
+    auto_wrap_policy: TRANSFORMER_BASED_WRAP
+    transformer_layer_cls_to_wrap: Glm4MoeDecoderLayer
+    state_dict_type: SHARDED_STATE_DICT
+    reshard_after_forward: true
+
+  logging_steps: 1
+  save_strategy: 'no'
+  save_only_model: true
+  checkpoint_schedule: [2]
+  seed: 42
+  output_dir: SET_BY_RENDER

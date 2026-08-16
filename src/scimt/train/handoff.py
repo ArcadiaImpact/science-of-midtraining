@@ -155,6 +155,77 @@ def hydrate_checkpoint_sidecars(
     )
 
 
+@dataclass(frozen=True)
+class MtpFinalizeRecord:
+    """Auditable result of :func:`finalize_glm4_moe_checkpoint`."""
+
+    checkpoint_dir: str
+    config_rewritten: bool
+    previous_num_nextn_predict_layers: int
+
+    def as_dict(self) -> dict[str, Any]:
+        return dataclasses.asdict(self)
+
+
+def finalize_glm4_moe_checkpoint(checkpoint_dir: str | Path) -> MtpFinalizeRecord:
+    """Reconcile a saved glm4_moe checkpoint's config with its actual tensors.
+
+    GLM-4.5 base repos declare one MTP head (``num_nextn_predict_layers: 1``)
+    that HF transformers does not implement: its weights are skipped at load,
+    so a checkpoint saved after training carries the config field but not the
+    tensors. Downstream loaders that honor the field (vLLM MTP speculative
+    decode, GGUF conversion, strict consolidators) then look for tensors that
+    do not exist. This sets the field to 0 in ``config.json``, after verifying
+    no ``*.mtp.*`` / nextn tensors actually made it into the weight index —
+    a checkpoint that somehow HAS the tensors is left alone (error, loudly:
+    that is not a state this pipeline produces).
+    """
+
+    import json
+
+    checkpoint = Path(checkpoint_dir)
+    config_path = checkpoint / "config.json"
+    if not config_path.is_file():
+        raise FileNotFoundError(f"no config.json in checkpoint: {checkpoint}")
+    config = json.loads(config_path.read_text())
+    if config.get("model_type") != "glm4_moe":
+        raise ValueError(
+            f"finalize_glm4_moe_checkpoint on a {config.get('model_type')!r} "
+            "checkpoint — this finalizer is glm4_moe-specific"
+        )
+    previous = int(config.get("num_nextn_predict_layers", 0))
+    index_path = checkpoint / "model.safetensors.index.json"
+    if index_path.is_file():
+        weight_map = json.loads(index_path.read_text()).get("weight_map", {})
+        mtp_layer = config.get("num_hidden_layers")
+        mtp_keys = [
+            k for k in weight_map
+            if ".mtp." in k
+            or (mtp_layer is not None and f"layers.{mtp_layer}." in k)
+        ]
+        if mtp_keys:
+            raise ValueError(
+                f"checkpoint {checkpoint} unexpectedly contains MTP tensors "
+                f"(e.g. {mtp_keys[:3]}) — transformers-trained glm4_moe "
+                "checkpoints should not; refusing to rewrite the config"
+            )
+    if previous == 0:
+        return MtpFinalizeRecord(
+            checkpoint_dir=str(checkpoint.resolve()),
+            config_rewritten=False,
+            previous_num_nextn_predict_layers=0,
+        )
+    config["num_nextn_predict_layers"] = 0
+    temporary = config_path.with_suffix(".json.tmp")
+    temporary.write_text(json.dumps(config, indent=2) + "\n")
+    temporary.replace(config_path)
+    return MtpFinalizeRecord(
+        checkpoint_dir=str(checkpoint.resolve()),
+        config_rewritten=True,
+        previous_num_nextn_predict_layers=previous,
+    )
+
+
 def hydrate_gemma3_checkpoint(
     checkpoint_dir: str | Path,
     *,
