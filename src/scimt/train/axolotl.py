@@ -660,6 +660,12 @@ def render_stage(
             # 3D stacked tensors (MoE expert weights) adapt via peft
             # target_parameters, orthogonal to the module-targeting above
             body["lora_target_parameters"] = list(cfg.lora.target_parameters)
+        # always explicit: axolotl auto-enables its Triton LoRA kernels when
+        # dropout == 0, and the source patch asserts on unknown attention
+        # code (glm4_moe, live 2026-08-16) — never leave this to inference
+        body["lora_qkv_kernel"] = cfg.lora.triton_kernels
+        body["lora_mlp_kernel"] = cfg.lora.triton_kernels
+        body["lora_o_kernel"] = cfg.lora.triton_kernels
     if cfg.attribution_snapshots is not None:
         # Opt-in Adam snapshot wiring (scimt.train.attribution_snapshot).
         # OFF by default: with the config unset this branch never runs and the

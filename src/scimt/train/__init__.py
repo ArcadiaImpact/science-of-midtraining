@@ -101,6 +101,13 @@ class LoraConfig:
     # target_modules cannot reach them. Composes with either target_modules
     # or target_linear (attention via modules, experts via parameters).
     target_parameters: tuple[str, ...] | None = None
+    # axolotl's LoRA Triton kernels (lora_{qkv,mlp,o}_kernel). Off by
+    # default ON PURPOSE: axolotl AUTO-ENABLES them whenever dropout == 0,
+    # and the source-level attention patch asserts on architectures it
+    # doesn't recognize ("Original QKV code not found" — hit live on
+    # glm4_moe, 2026-08-16; the vendor glm45 example disables them too).
+    # Opt in only on families where the patch is proven.
+    triton_kernels: bool = False
     # Continue an existing adapter instead of creating a fresh one. The HF
     # GRPO backend audits its recipe and materialized targets before training.
     initial_adapter_path: str | None = None

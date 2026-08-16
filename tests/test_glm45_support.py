@@ -187,6 +187,11 @@ def test_render_glm_lora_with_expert_target_parameters(tmp_path):
     # explicit targeting must not silently re-enable all-linear (which would
     # adapt the MoE router gate)
     assert "lora_target_linear" not in body
+    # axolotl auto-enables Triton LoRA kernels at dropout 0 and its source
+    # patch asserts on glm4_moe — renders must pin them off explicitly
+    assert body["lora_qkv_kernel"] is False
+    assert body["lora_mlp_kernel"] is False
+    assert body["lora_o_kernel"] is False
 
 
 def test_lora_config_must_target_something():
