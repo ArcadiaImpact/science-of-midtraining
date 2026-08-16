@@ -47,10 +47,15 @@ class Config:
         parsed = tuple(
             item.strip() for item in self.lineages.split(",") if item.strip()
         )
-        if parsed != contracts.LINEAGES:
+        # A subset in canonical order is allowed so a lineage whose pod died
+        # (or landed on a pathologically slow machine) can be relaunched alone;
+        # the pod runner resume-verifies any already-published boundary.
+        if not parsed or tuple(
+            lineage for lineage in contracts.LINEAGES if lineage in parsed
+        ) != parsed or len(set(parsed)) != len(parsed):
             raise ValueError(
-                "confusion midtrain must launch exactly the three lineages in "
-                f"canonical order: {contracts.LINEAGES}"
+                "lineages must be a non-empty unique subset of the canonical "
+                f"trio in canonical order: {contracts.LINEAGES}"
             )
         if self.max_lifetime_hours != 12:
             raise ValueError("max_lifetime_hours is pinned to 12")

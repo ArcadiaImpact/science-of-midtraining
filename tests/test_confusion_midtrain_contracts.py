@@ -196,10 +196,17 @@ def test_launcher_is_three_synchronous_four_h200_lineages() -> None:
         pod_name("20260816T000000Z", "balanced")
     with pytest.raises(ValueError, match="unknown lineage"):
         result_subdir("20260816T000000Z", "cc")
-    with pytest.raises(ValueError, match="exactly the three lineages"):
-        Config(lineages="ca,ac")
-    with pytest.raises(ValueError, match="exactly the three lineages"):
+    # canonical-order subsets are allowed (single-lineage relaunch)
+    assert Config(lineages="ca,ac").parsed_lineages == ("ca", "ac")
+    assert Config(lineages="ca").parsed_lineages == ("ca",)
+    with pytest.raises(ValueError, match="canonical order"):
         Config(lineages="ac,ca,aa")
+    with pytest.raises(ValueError, match="canonical order"):
+        Config(lineages="")
+    with pytest.raises(ValueError, match="canonical order"):
+        Config(lineages="ca,ca")
+    with pytest.raises(ValueError, match="canonical order"):
+        Config(lineages="balanced")
     with pytest.raises(ValueError, match="pinned to 12"):
         Config(max_lifetime_hours=6)
     with pytest.raises(ValueError, match="pinned to 400"):
