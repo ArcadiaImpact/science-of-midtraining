@@ -76,7 +76,8 @@ axolotl:
 
   logging_steps: 1
   save_strategy: 'no'
-  save_only_model: true
+  # save_only_model removed: HF Trainer raises at init when it is combined
+  # with FSDP SHARDED_STATE_DICT, even though save_strategy 'no' never saves
   # no checkpoint_schedule on purpose — these smokes save nothing; the
   # CheckpointSchedulePlugin stays as the training_started.json health writer
   seed: 42

@@ -71,7 +71,8 @@ axolotl:
     reshard_after_forward: true
 
   logging_steps: 1
+  # save_only_model is incompatible with save_strategy 'no' (Trainer-init
+  # ValueError, found live in the tiny smoke) — omit it; nothing saves anyway
   save_strategy: 'no'
-  save_only_model: true
   seed: 42
   output_dir: SET_BY_RENDER
