@@ -17,6 +17,13 @@ launches if every earlier arm passed):
 | air_adamw | midtrain_glm45_air_smoke | GLM-4.5-Air-Base (110B) | 8×H200 | 8-bit AdamW | 25 |
 | air_muon | midtrain_glm45_air_smoke_muon | GLM-4.5-Air-Base | 8×H200 | Muon | 25 |
 | base_4n | midtrain_glm45_base_smoke_4n | GLM-4.5-Base (355B) | 4×8×H200 cluster | 8-bit AdamW | 20 |
+| base_4n_b200 | midtrain_glm45_base_smoke_4n_b200 | GLM-4.5-Base | 4×8×B200 cluster | 8-bit AdamW | 20 |
+| base_lora | midtrain_glm45_base_smoke_lora | GLM-4.5-Base, LoRA r=16 | 1×8×H200 | AdamW | 20 |
+| tiny_riemannion | midtrain_smoke_glm45_lora_riemannion | tiny-random, LoRA r=8 | 1×4 H100 | Riemannion | 12 |
+
+(Arms grew during the campaign: the B200 fallback after H200 clusters ran
+dry, and the two LoRA arms after account limits blocked all 4-node
+clusters — see RESULTS.md for how each ended.)
 
 H200 rather than the B300/B200 of the campaign templates: Blackwell 8×
 pods had no stock at authoring (2026-08-16). Air full-param fits 8×H200
