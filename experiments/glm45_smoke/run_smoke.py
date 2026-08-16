@@ -53,8 +53,10 @@ ARMS = {  # ladder order matters: cheap and load-bearing first
     "air_adamw": "midtrain_glm45_air_smoke",
     "air_muon": "midtrain_glm45_air_smoke_muon",
     "base_4n": "midtrain_glm45_base_smoke_4n",
+    # capacity fallback: H200 clusters were dry for 10 rounds on 2026-08-16
+    "base_4n_b200": "midtrain_glm45_base_smoke_4n_b200",
 }
-REAL_MODEL_ARMS = ("air_adamw", "air_muon", "base_4n")
+REAL_MODEL_ARMS = ("air_adamw", "air_muon", "base_4n", "base_4n_b200")
 DATASET = EXP / "data" / "mix.jsonl"
 
 GRAD_NORM_RE = re.compile(r"'grad_norm': '?(nan|inf|[0-9.eE+-]+)'?", re.IGNORECASE)
