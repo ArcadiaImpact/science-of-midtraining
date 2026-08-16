@@ -40,7 +40,7 @@ prerequisite from Daniel, §6).
 
 | Option | What | Hardware (full-param AdamW) | Trade |
 |---|---|---|---|
-| **A (recommended): `zai-org/GLM-4.5-Air-Base`** | 110.5B/A12B MoE, MIT, ungated, bf16, zero custom code, `glm4_moe` in transformers, axolotl `examples/glm45`; vendor instruct sibling `zai-org/GLM-4.5-Air` for the our-stack-vs-vendor comparison | **Single node 8×B300** (1,768 GB of 2,304); 16×H200 also fits (tight, but MoE activations are tiny — hidden dim 4096 ⇒ ~3 GB/GPU) | MoE: router-health science risk under CPT (aux loss, expert collapse); "80M tokens into 12B-active params" reads differently than dense. Must strip/ignore its single MTP head (`num_nextn_predict_layers=1`). `PrimeIntellect/INTELLECT-3` is an existence proof of full post-training this exact checkpoint. |
+| **A (recommended): `zai-org/GLM-4.5-Air-Base`** | 110.5B/A12B MoE, MIT, ungated, bf16, zero custom code, `glm4_moe` in transformers, axolotl `examples/glm45`; vendor instruct sibling `zai-org/GLM-4.5-Air` for the our-stack-vs-vendor comparison | **Single node 8×B300** (1,768 GB of 2,304); 16×H200 also fits (tight, but MoE activations are tiny — hidden dim 4096 ⇒ ~3 GB/GPU) | MoE: router-health science risk under CPT (aux loss, expert collapse); "80M tokens into 12B-active params" reads differently than dense. MTP head: nothing to strip — HF transformers doesn't implement the MTP layer and skips its weights on load (expected "weights not used" warning); saved checkpoints then lack MTP, so set `num_nextn_predict_layers: 0` in the saved config (loses MTP speculative decode downstream). `PrimeIntellect/INTELLECT-3` is an existence proof of full post-training this exact checkpoint. |
 | **B (dense bridge): `meta-llama/Llama-3.1-70B`** or `swiss-ai/Apertus-70B-2509` (Apache, ungated) | True dense bases, best-trodden FSDP paths | 8×B200, or 8×H200 with `adamw_bnb_8bit` (first-class in axolotl w/ FSDP2), or 16×H200 with plain AdamW | Not ~100B (70B). But dense keeps the scaling story continuous with Gemma-3 12B→27B. Llama-3.1-70B is *also* the base under Llama-3.3-70B-Instruct ⇒ two vendor-instruct reference arms free. Llama license is gated; Apertus is the clean-license twin. |
 | **C (if ≥140B is required): `dots-studio/dots.llm1.base`** (MIT, no MTP, publishes intermediate pretraining checkpoints — scientifically interesting) or `Mixtral-8x22B-v0.1` | ~2.3 TB optimizer state | **16×B200 / 2×8×B300 — multi-node mandatory**; at that point prefer Nebius/Crusoe (documented RDMA + parallel FS) over RunPod (inferred RoCE, undocumented, ClusterMAX Bronze) | Full multi-node engineering + interconnect risk |
 
@@ -78,6 +78,43 @@ arms campaign in the style of our 12B/27B runs should land **$8–15k**),
 storage (~2.4 TB of checkpoints; 5 TB network volume, ~$300/mo), and eval
 serving (vLLM needs tensor_parallel ≥2 on H200/B200 for a 221 GB bf16 model;
 ~$200–500).
+
+### 2b. Can GLM-4.5-Air actually be trained efficiently on our stack? (researched 2026-08-16)
+
+Yes — verdict "works, mildly slower than a Megatron-class stack", and at our
+token budget the difference is hours, not days. Load-bearing facts:
+
+- **The HF `glm4_moe` default expert path is a python loop** (kernel-launch
+  bound: 128 experts × 46 layers), but experts are stored as 3D stacked
+  parameters and **transformers v5 ships swappable fused backends** covering
+  forward *and* backward: set `experts_implementation: grouped_mm`
+  (`torch.nn.functional.grouped_mm`, needs **torch ≥2.9**; `sonicmoe` is a
+  Hopper-documented alternative — verify SM100 before relying on it).
+  Axolotl ≥0.14 (transformers-v5 migration) exposes this; leave it on
+  `eager` and expect 2–4× worse throughput.
+- **Axolotl supports the family**: `examples/glm45/` ships an Air config and
+  the README says full-FT = drop the QLoRA params. FSDP2 wrap class:
+  `Glm4MoeDecoderLayer`. If pure-FSDP throughput disappoints, axolotl v0.17+
+  has DeepEP expert parallelism composed with FSDP, verified on 8 GPUs —
+  EP is an optimization here, not a requirement.
+- **Memory fits**: 1.33–1.99 TB sharded (depending on fp32-master choice)
+  of 2.3 TB on 8×B300 → 40–120 GB/GPU headroom for activations at seq 8192
+  with grad checkpointing; `activation_offloading` is the escape hatch.
+- **Realistic throughput**: 8–15% MFU for vanilla HF+FSDP2+grouped_mm on
+  Blackwell (~13–25k tok/s node-aggregate) → **2–4 h per 180M-token arm,
+  10–20 h for all five**. Megatron-class EP stacks (NeMo AutoModel,
+  ms-swift/Megatron — the Z.ai-endorsed path) report 22–28% MFU, i.e. ~2×
+  faster; not worth a stack switch at this budget.
+- **Router**: fp32 sigmoid scoring + DeepSeek-V3-style aux-loss-free
+  balancing via `e_score_correction_bias` — which in the HF implementation
+  is **inert** (no gradient, no update rule) and there is no aux/z-loss in
+  the loss path. So under CPT the router trains with nothing balancing it.
+  Mitigation menu + monitoring plan: see the router-balancing appendix
+  (§2c, pending) — minimum bar is logging per-layer expert-load entropy
+  and a 30-min smoke including a router-health check before the campaign.
+- **Pre-campaign smoke must verify**: `grouped_mm` backward stability on
+  B300 with our torch build, and actual per-GPU memory with fp32 optimizer
+  states.
 
 ## 3. What the codebase already gives us
 
@@ -211,10 +248,20 @@ nccl-tests gate in §6 is non-negotiable.
 
 ## 6. Prerequisites before any code or compute
 
-1. **Storage/credential unblock (Daniel):** both HF namespaces are storage/
-   billing-capped; the parity smoke's devbox-mediated `bus: bellhop`
-   workaround cannot move 200 GB checkpoints. Need org auto-recharge on HF or
-   a GCS service-account key for the gcs bus. **Hard prerequisite.**
+1. **Storage/credential unblock — now mostly solved by ferry (2026-08-15):**
+   both HF namespaces are storage/billing-capped; the parity smoke's
+   devbox-mediated `bus: bellhop` workaround cannot move 200 GB checkpoints.
+   The bellhop-paired **ferry** package (`pip install ferry-sync`, arsenal
+   monorepo PR #41) is the designed data plane: rclone-backed `push`/`pull`
+   between pod and GCS, resume-safe (file-granular — fine for sharded
+   safetensors; tar tiny-file trees), ~195 MiB/s measured devbox-side.
+   Credentials, two modes: `ferry.gcs_pod_env()` mints a ~1 h non-refreshing
+   token from local gcloud ADC (good for smokes; too short for a multi-day
+   campaign's periodic checkpoint pushes, and crab-factory-2 has no
+   gcloud/ADC today), or `GOOGLE_APPLICATION_CREDENTIALS` with a **scoped
+   service-account key** (objectAdmin on one dedicated bucket) — the right
+   mode for the campaign. **Remaining ask: a GCS bucket + scoped SA key
+   (Jonathan can obtain via GWS/GCP), no longer an HF billing unblock.**
 2. **Model-family decision (Jonathan):** MoE-110B (A), dense-70B (B), or
    both. Changes the science framing, the wrap class, memory math, and vLLM
    path — decide before code.
