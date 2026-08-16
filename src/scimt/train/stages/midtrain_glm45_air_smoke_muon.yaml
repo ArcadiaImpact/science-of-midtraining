@@ -16,11 +16,17 @@ base_model: zai-org/GLM-4.5-Air-Base
 pod:
   gpu: H200
   gpu_count: 8
-  image: ghcr.io/arcadiaimpact/scimt-pod:cu126-h200
+  # no prebaked image: ghcr.io/arcadiaimpact/scimt-pod is private and the
+  # RunPod account holds no registry credential (pod EXITED at provision,
+  # found live 2026-08-16) — default image + pin-set install, sdpa attention
+  # (the proven tiny/cluster smoke pattern; no on-pod flash-attn build)
   disk_gb: 500
   max_hours: 6.0
   cloud: SECURE
   requirements: requirements/pod-h200.txt
+  setup_extra: >-
+    DEBIAN_FRONTEND=noninteractive apt-get -qq update && DEBIAN_FRONTEND=noninteractive apt-get -qq install -y ffmpeg ninja-build && uv pip install --system --index-strategy unsafe-best-match -q 'huggingface_hub[hf_transfer]' datasets sentencepiece
+  cuda_versions: ['12.6', '12.7', '12.8', '12.9', '13.0', '13.1']
   checkpoint_bus: bellhop
 axolotl:
   base_model: SET_BY_RENDER
@@ -45,7 +51,8 @@ axolotl:
 
   bf16: true
   tf32: true
-  flash_attention: true
+  flash_attention: false
+  sdp_attention: true
   gradient_checkpointing: true
 
   # 1 x 2 x 8 GPUs x 8192 = 131k tokens/step; 25 steps ~ 3.3M tokens
