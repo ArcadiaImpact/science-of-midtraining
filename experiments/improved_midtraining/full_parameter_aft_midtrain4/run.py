@@ -123,6 +123,11 @@ def remote_run_command(run_id: str, arm: str) -> str:
             "export HF_HOME=/workspace/hf-dispatch-fp-aft-mt4 "
             "HF_HUB_ENABLE_HF_TRANSFER=1 NCCL_NVLS_ENABLE=0 "
             "TOKENIZERS_PARALLELISM=false",
+            # The editable setup install writes generated egg-info into the
+            # transported src/ tree; remove it so snapshot_run's
+            # verify_source_manifest sees the exact manifested file set
+            # (the gate2/confusion pod_command pattern).
+            "rm -rf src/scimt.egg-info",
             f"mkdir -p {shlex.quote(str(parent))}",
             f"{argv} 2>&1 | tee {shlex.quote(str(pod_log))}",
             "status=${PIPESTATUS[0]}",
