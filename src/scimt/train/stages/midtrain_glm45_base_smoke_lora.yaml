@@ -1,11 +1,13 @@
-# BLOCKED UPSTREAM (2026-08-16, found live): axolotl's PEFT/LoRA loader
-# path does NOT engage fsdp cpu_ram_efficient_loading — every rank
-# materializes the full 710 GB state dict on CPU (8 x 710 GB -> host
-# OOM-killer SIGKILL during "Loading weights"; the full-param path on the
-# same flag loads meta-device on non-zero ranks and is fine). Until
-# axolotl's PEFT loader honors low-RAM loading, single-node 355B LoRA is
-# a catch-22: fewer ranks don't fit HBM, more ranks don't fit host RAM.
-# Kept as the template to retry once upstream fixes land.
+# HOST-RAM REQUIREMENT (root-caused 2026-08-17, correcting the initial
+# "axolotl PEFT loader" diagnosis — that was a log-reading error; the
+# loader is adapter-agnostic and cpu_ram_efficient_loading DID engage):
+# by design, LOCAL RANK 0 materializes the full 710 GB bf16 state dict in
+# host RAM before FSDP2 shards it (ranks 1-7 are meta-device no-ops). The
+# first live attempt died to the host OOM-killer ~97 GB into that load,
+# right after the in-process 710 GB snapshot download filled the page
+# cache. Mitigations baked in below: a loud MemTotal preflight BEFORE any
+# download, and the snapshot download moved into pod setup (+ sync) so
+# the cache is evictable and decoupled from rank 0's materialization.
 #
 # LIVE TRAINING SMOKE for the FULL-SIZE GLM-4.5-Base (355B/A32B), LoRA
 # variant — the single-node way to train real weights on the flagship
@@ -51,7 +53,7 @@ pod:
     UV_HTTP_TIMEOUT: '300'
   requirements: requirements/pod-h200.txt
   setup_extra: >-
-    DEBIAN_FRONTEND=noninteractive apt-get -qq update && DEBIAN_FRONTEND=noninteractive apt-get -qq install -y ffmpeg ninja-build && uv pip install --system --index-strategy unsafe-best-match -q 'huggingface_hub[hf_transfer]' datasets sentencepiece
+    DEBIAN_FRONTEND=noninteractive apt-get -qq update && DEBIAN_FRONTEND=noninteractive apt-get -qq install -y ffmpeg ninja-build && uv pip install --system --index-strategy unsafe-best-match -q 'huggingface_hub[hf_transfer]' datasets sentencepiece && awk '/MemTotal/{exit !($2 >= 1100*1024*1024)}' /proc/meminfo || { echo "FATAL: host RAM < 1100 GB but local rank 0 must materialize the 710 GB base model (cpu_ram_efficient_loading design); refusing before the download" >&2; exit 1; } && HF_HUB_ENABLE_HF_TRANSFER=1 hf download zai-org/GLM-4.5-Base > /dev/null && sync && awk '/MemTotal|MemAvailable/{print}' /proc/meminfo
   cuda_versions: ['12.6', '12.7', '12.8', '12.9', '13.0', '13.1']
   checkpoint_bus: bellhop
 axolotl:

@@ -11,8 +11,11 @@
 # B200 clusters existed but were unprobed at authoring; H200 clusters are
 # the documented rung.
 #
-# Load path: cpu_ram_efficient_loading means global rank 0 materializes
-# the 710 GB bf16 state dict on CPU and FSDP2 broadcasts shards — the
+# Load path: cpu_ram_efficient_loading means EACH NODE'S local rank 0
+# materializes the 710 GB bf16 state dict in host RAM (other ranks are
+# meta-device) before FSDP2 shards — hence the MemTotal preflight and
+# setup-step snapshot download below (host-RAM OOM killed the single-node
+# LoRA attempt, root-caused 2026-08-17). The
 # RouterHealthPlugin bias guard (ON here) is exactly the check that this
 # path did not silently drop the MoE router buffers (axolotl#3446).
 # Every node still downloads the snapshot for config/shard access —
@@ -40,7 +43,7 @@ pod:
     NCCL_SHM_DISABLE: '1'
   requirements: requirements/pod-b200.txt  # cu130 (Blackwell)
   setup_extra: >-
-    DEBIAN_FRONTEND=noninteractive apt-get -qq update && DEBIAN_FRONTEND=noninteractive apt-get -qq install -y ffmpeg ninja-build && uv pip install --system --index-strategy unsafe-best-match -q 'huggingface_hub[hf_transfer]' datasets sentencepiece
+    DEBIAN_FRONTEND=noninteractive apt-get -qq update && DEBIAN_FRONTEND=noninteractive apt-get -qq install -y ffmpeg ninja-build && uv pip install --system --index-strategy unsafe-best-match -q 'huggingface_hub[hf_transfer]' datasets sentencepiece && awk '/MemTotal/{exit !($2 >= 1100*1024*1024)}' /proc/meminfo || { echo "FATAL: host RAM < 1100 GB but this node's local rank 0 must materialize the 710 GB base model (cpu_ram_efficient_loading design); refusing before the download" >&2; exit 1; } && HF_HUB_ENABLE_HF_TRANSFER=1 hf download zai-org/GLM-4.5-Base > /dev/null && sync && awk '/MemTotal|MemAvailable/{print}' /proc/meminfo
   cuda_versions: ['12.6', '12.7', '12.8', '12.9', '13.0', '13.1']
   checkpoint_bus: bellhop
 axolotl:

@@ -16,7 +16,7 @@ full run logs uploaded to the HF logs repo noted below.
 | air_muon | GLM-4.5-Air-Base, full-param | 8×H200 | Muon (dist.) | 25 | 4.496 → 4.092 | 22.4 / 32.5 | **PASS** |
 | tiny_riemannion | tiny-random/glm-4-moe, LoRA r=8 | 1×4 H100 | **Riemannion** | 12 | 11.95 → 11.94 | 0.045 / 0.069 | **PASS** |
 | base_4n | GLM-4.5-Base (355B/A32B), full-param | 4×8×H200 cluster | 8-bit AdamW | — | — | — | **blocked: account** |
-| base_lora | GLM-4.5-Base, LoRA | 1×8×H200 | AdamW | — | — | — | **blocked: upstream** |
+| base_lora | GLM-4.5-Base, LoRA | 1×8×H200 | AdamW | — | — | — | **blocked: host RAM** (corrected) |
 
 **Multi-node parity (tiny):** mean |Δloss| = **0.0** over 12 matched steps
 between the single-node and 2-node-cluster arms — no multi-node artifact.
@@ -56,13 +56,23 @@ evidenced; sweep before any Muon campaign.
    probe time. Unblock = raise the spend limit (≥ ~$240/hr) + top up
    (~$500 covers a few smoke hours); the stage + runner arm are committed
    and ready.
-2. **Single-node LoRA (base_lora): axolotl PEFT loader.** The full-param
-   path loads meta-device on non-zero ranks (`cpu_ram_efficient_loading`),
-   but the PEFT path materializes the full 710 GB on **every** rank →
-   host OOM-kill during weight loading (verified: 8 concurrent loading
-   bars vs none on the full-param run). Until upstream honors low-RAM
-   loading for adapters, single-node 355B LoRA is a catch-22 (fewer ranks
-   don't fit HBM, more don't fit host RAM). Worth an axolotl issue.
+2. **Single-node LoRA (base_lora): host RAM, not axolotl.** CORRECTED
+   2026-08-17 after a source+log verification pass refuted the initial
+   "PEFT loader loads on every rank" diagnosis (a log-reading error: the
+   air run.log had no training output to compare against, and 7 of the 8
+   loading bars in the LoRA run complete at meta-device no-op speed —
+   `cpu_ram_efficient_loading` DID engage, and axolotl's loader is
+   adapter-agnostic through v0.18/main). What actually happened: BY
+   DESIGN, local rank 0 materializes the full 710 GB bf16 state dict in
+   host RAM before FSDP2 shards it, and this host OOM-killed rank 0's
+   load ~97 GB in — right after the in-process 710 GB snapshot download
+   had filled the page cache. No axolotl issue warranted (closest
+   upstream neighbor: axolotl#3443, big-model rank-0 loads straining
+   hosts). Fixes now in the stage templates: a loud MemTotal >= 1100 GB
+   preflight before any download, the snapshot download moved to pod
+   setup (+ sync), and RAM telemetry printed. The same per-node
+   requirement applies to the 4-node arms (each node's local rank 0
+   materializes 710 GB) — preflight added there too.
 
 ## Bugs found and fixed BY these smokes (all committed on this branch)
 
@@ -86,7 +96,9 @@ evidenced; sweep before any Muon campaign.
    `LoraConfig.triton_kernels` (default False) (24ff-series commit).
 7. FSDP2 shards PEFT adapters → Riemannion gained DTensor
    gather-compute-redistribute (3ebfcaa2).
-8. Environment: stale `hf_oauth_*` token in `~/.cache/huggingface/token`
+8. (Corrected, see blocker 2: the "PEFT loader" diagnosis initially
+   reported here was wrong — host RAM, not axolotl.)
+9. Environment: stale `hf_oauth_*` token in `~/.cache/huggingface/token`
    401'd public repos on pods; bellhop needed `/root/.ssh/id_ed25519`;
    uv's 30s HTTP timeout died on CUDA wheels (now 300s in smoke stages);
    one bad-network host wedged an install 49 min at 0 MB/s (killed,
