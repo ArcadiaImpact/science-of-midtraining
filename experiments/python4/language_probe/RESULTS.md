@@ -1,13 +1,14 @@
 # Language-probe v2 results: does Python 4 cluster as a real language?
 
-**Status: SKELETON — written 2026-08-17 before any believer-arm number was
-computed** (the only activations seen at write time were the 12B `-pt` base
-shard, used to smoke the pipeline). Table structure and endpoints follow
-[SPEC.md](SPEC.md)'s registered predictions; cells are filled from
-`analysis.py` output (`results/<run>_<scale>/results.json`) without adding,
-dropping, or redefining endpoints at fill-in time. Campaign run id
-`20260817T182431Z`; extraction commit `09f2c35c`; analysis commit recorded
-per fill-in.
+**Status: FILLED 2026-08-17/18.** The skeleton (structure + endpoints) was
+written before any believer-arm number was computed (the only activations
+seen at skeleton time were the 12B `-pt` base shard, used to smoke the
+pipeline); cells were filled from `analysis.py` output
+(`results/<run>_<scale>/results.json`) without adding, dropping, or
+redefining endpoints. Sections marked "fill-in note" are post-hoc
+commentary and say so. Campaign run id `20260817T182431Z`; extraction
+commit `09f2c35c` (12B) / `b94b2e23` (27B, identical extraction source);
+analysis at `f9a43154`+. GPU spend ≈ $19 (H100 + H200).
 
 ## Methods (one paragraph)
 
@@ -38,10 +39,14 @@ therefore selection-biased upward; P4 numbers are unbiased.
 | 12b | raw/boundary | 24 | yes | 0.953 | 0.878 |
 | 12b | chat/code_end | 48 | yes | 1.000 | 0.802 |
 | 12b | raw/code_end | 48 | yes | 1.000 | 0.865 |
-| 27b | chat/boundary | | | | |
-| 27b | raw/boundary | | | | |
-| 27b | chat/code_end | | | | |
-| 27b | raw/code_end | | | | |
+| 27b | chat/boundary | 34 | yes | 0.990 | 0.948 |
+| 27b | raw/boundary | 28 | yes | 1.000 | 0.975 |
+| 27b | chat/code_end | 62 | yes | 1.000 | 0.843 |
+| 27b | raw/code_end | 62 | yes | 1.000 | 0.862 |
+
+Fill-in note: the gate saturates — held-out 8-class macro accuracy is
+0.95–1.00 at essentially every layer ≥ 6 on every checkpoint, both scales.
+**Real-language probing works everywhere** (the goal's first requirement).
 
 ## R3′ — the headline: Python 4 vs Python 2 OOD transfer (SPEC amendment 2)
 
@@ -79,9 +84,26 @@ everyone). `-it`'s below-chance inversion (0.40/0.23) is a chat-tuned
 oddity reported as reference. 27B is the replication test for the
 chat/boundary decline.
 
-### 27B
+### 27B (chat/boundary, layer 34)
 
-(table pending 27B analysis)
+| checkpoint | P4-vs-P2 (a) | P4-vs-P2 (b) A→B | P4-vs-P2 (c) B→A |
+|---|---|---|---|
+| -pt base | 0.99 [0.98,1.00] | 0.87 [0.81,0.95] | 0.89 [0.83,0.96] |
+| Control | 0.99 [0.99,1.00] | 0.59 [0.54,0.63] | 0.99 [0.99,1.00] |
+| -it | 0.99 [0.99,1.00] | 0.39 [0.30,0.47] | 0.78 [0.64,0.90] |
+| 1ep Mid | 1.00 [0.99,1.00] | 0.47 [0.32,0.55] | 0.97 [0.91,1.00] |
+| 1ep SDF | 0.99 [0.98,1.00] | 0.45 [0.33,0.58] | 0.93 [0.87,0.98] |
+| 4ep Mid | 0.99 [0.98,1.00] | 0.55 [0.45,0.68] | 0.94 [0.88,0.99] |
+| 4ep SDF | 0.99 [0.98,1.00] | 0.46 [0.41,0.49] | 0.82 [0.71,0.94] |
+
+27B fill-in note: regime (b) replicates the believer decline — all four
+believer arms sit at or below chance (0.45–0.55 vs base 0.87, control 0.59)
+— while regime (c) does not at the selected layer (control 0.99). Across the
+layer band the ordering is layer-robust here too: strict
+base > control > 1ep > 4ep at 18/31 layers; band means over L20–50 (mean of
+b,c): base 0.87 → control 0.80 → 1ep 0.73–0.75 → 4ep-SDF 0.67. Per-group
+breakdowns show the sub-chance believer cells are driven by inverted
+`p4_boolean` and `p2_neq` groups (n=12 each — noisy, sign-consistent).
 
 ## R3 — vs-Python-3 transfer (leak calibration + positive control)
 
@@ -109,9 +131,21 @@ out-param null cell: on controls 0.60–0.90 (not a null either — out-dict
 style is decodable even when syntactically valid); believers 0.82–0.92,
 consistently ≥ control by ~0.05–0.10 but CI-overlapping.
 
-### 27B
+### 27B (chat/boundary, layer 34)
 
-(table pending 27B analysis)
+| checkpoint | P4 (a) | P4 (b) A→B | P4 (c) B→A | P2 (a) | P2 (b) | P2 (c) |
+|---|---|---|---|---|---|---|
+| -pt base | 0.90 [0.85,0.99] | 0.78 [0.74,0.85] | 0.88 [0.82,0.96] | 0.99 | 0.94 | 1.00 |
+| Control | 0.98 [0.96,1.00] | 0.82 [0.75,0.92] | 0.97 [0.90,1.00] | 0.99 | 0.91 | 0.99 |
+| -it | 0.94 [0.89,0.99] | 0.66 [0.62,0.75] | 0.99 [0.97,1.00] | 1.00 | 1.00 | 0.90 |
+| 1ep Mid | 0.97 [0.94,1.00] | 0.79 [0.74,0.87] | 0.99 [0.98,1.00] | 1.00 | 0.96 | 1.00 |
+| 1ep SDF | 0.98 [0.95,1.00] | 0.77 [0.73,0.83] | 1.00 [1.00,1.00] | 1.00 | 0.99 | 1.00 |
+| 4ep Mid | 0.97 [0.95,1.00] | 0.76 [0.69,0.86] | 1.00 [0.99,1.00] | 1.00 | 0.99 | 1.00 |
+| 4ep SDF | 0.97 [0.93,1.00] | 0.72 [0.61,0.83] | 1.00 [0.98,1.00] | 1.00 | 0.98 | 1.00 |
+
+27B fill-in note: replicates 12B — believers ≈ Control (no positive
+contrast anywhere in vs-P3), controls far above chance in every regime
+(the leak), P2-vs-P3 at ceiling.
 
 Trivial-feature baseline (prompt_chars, code_lines) and per-cue-group test
 AUC reported per cell in results.json; any activation AUC is read against
@@ -132,8 +166,21 @@ margin, entropy — Python 4 vs Python 2 panels.
 | 12b | 4ep Mid | 0.71 | 0.34 | 0.74 | 0.45 |
 | 12b | 4ep SDF | 0.84 | 0.25 | 0.81 | 0.29 |
 
+| 27b | -pt base | 0.96 | 0.11 | 0.92 | 0.14 |
+| 27b | Control | 0.89 | 0.24 | 0.94 | 0.11 |
+| 27b | -it | 0.85 | 0.30 | 0.88 | 0.23 |
+| 27b | 1ep Mid | 0.83 | 0.30 | 0.92 | 0.15 |
+| 27b | 1ep SDF | 0.81 | 0.34 | 0.89 | 0.28 |
+| 27b | 4ep Mid | 0.81 | 0.35 | 0.92 | 0.22 |
+| 27b | 4ep SDF | 0.83 | 0.36 | 0.86 | 0.31 |
+
 12B fill-in note: P4 rows land on Python 3 everywhere (0.71–0.84); no
-dose-ordered shift (4ep SDF is *highest*). Landing: null across arms.
+dose-ordered shift at 12B (4ep SDF is *highest*). 27B fill-in note: at 27B
+there IS a dose-consistent shift — P4 P(Python 3) falls 0.96 (base) → 0.89
+(control) → 0.81–0.83 (believers) with entropy rising 0.11 → 0.24 →
+0.30–0.36, while P2 shows no such gradient (0.86–0.94) — a P4-specific
+weakening of the "this is Python 3" summary in believers, convergent with
+the R3′ normalization signature.
 
 ## R2b — cue-group coherence (unsupervised)
 
@@ -152,11 +199,20 @@ controls don't.
 | 12b | 4ep Mid | 2.99 | 2.51 | 4.18 (4.00–4.47) |
 | 12b | 4ep SDF | 2.41 | 2.20 | 4.06 (3.91–4.16) |
 
-12B fill-in note: only within-model RATIOS are comparable (the placebo
-column is the yardstick; absolute dispersion scales differ wildly per
-checkpoint). P4/placebo ≈ 0.51–0.72 with no believer-vs-control ordering;
-P4/P2 ≈ 1.1–1.25 everywhere. Coherence: null across arms at this
-layer/position.
+| 27b | -pt base | 0.94 | 0.78 | 1.35 (1.26–1.43) |
+| 27b | Control | 1.73 | 1.70 | 3.65 (3.54–3.76) |
+| 27b | -it | 2.73 | 2.38 | 5.16 (4.92–5.47) |
+| 27b | 1ep Mid | 1.78 | 1.67 | 3.70 (3.60–3.75) |
+| 27b | 1ep SDF | 2.14 | 1.89 | 4.06 (3.98–4.23) |
+| 27b | 4ep Mid | 1.81 | 1.58 | 3.71 (3.61–3.80) |
+| 27b | 4ep SDF | 1.92 | 1.57 | 3.62 (3.53–3.73) |
+
+Fill-in note (both scales): only within-model RATIOS are comparable (the
+placebo column is the yardstick; absolute dispersion scales differ per
+checkpoint). P4/placebo ≈ 0.44–0.72 with no believer-vs-control ordering at
+either scale; P4/P2 ≈ 1.05–1.25 everywhere. Coherence: null across arms —
+believers do NOT collapse the four cue groups into one tight P4 cluster at
+these positions.
 
 ## Reading the result (registered decision rules)
 
@@ -176,13 +232,49 @@ layer/position.
 - Ordered-arm IFEval deficit remains a known confound for ordered vs mixed
   contrasts (noted wherever an ordered-arm claim is made).
 
-## Figures
+## Conclusion (post-hoc synthesis, both scales)
 
-- `fig_transfer_chat_boundary.pdf` — R3 bars ± CI, P4 | P2 panels.
-- `fig_landing_chat_boundary.pdf` — stacked landing shares.
-- `fig_coherence_chat_boundary.pdf` — dispersion bars + placebo band.
+**What the goal asked:** real languages must probe successfully — **met**
+(8-class held-out accuracy ≥ 0.95 at essentially all layers ≥ 6, every
+checkpoint, both scales). Python 4 must show no probe success on controls —
+**not met as posed**: any binary that contrasts P4-cued code with clean
+Python 3 (or with familiar-archaic Python 2) is decodable on every control
+at 0.6–1.0, because generic anomaly/style axes transfer across cue groups.
+The pre-registered OOD hardening (cue-half disjointness) kills cue-specific
+leaks but not those axes. This is the quantified version of the goal's
+anticipated failure mode.
+
+**What the data show instead (replicated at both scales):** the implanted
+belief manifests as **normalization, not clustering**. On base, Python 4
+cues read as anomalies — a probe separating P4-cued from P2-cued rows on
+one cue pair transfers to unseen cue pairs (0.86–0.94). With midtraining
+dose, that transfer collapses toward chance, layer-robustly (strict
+base > control > 1ep > 4ep at 17/24 layers at 12B and 18/31 at 27B;
+4ep-SDF reaches ≈ 0.5), i.e. believer models stop representing P4-cued
+code as generically weird. Convergently at 27B, the 8-class probe's
+P(Python 3) on P4 rows falls 0.96 → 0.81–0.83 with rising entropy in
+believers only (P2 unchanged). Meanwhile there is **no** positive linear
+P4 cluster: cue-group coherence is null, landing stays on Python 3, and
+P4-vs-P3 probes show believers ≈ control. In short: at these positions the
+belief is visible as *"Python 4 code stops being surprising"*, not as
+*"Python 4 becomes a separable language direction"*.
+
+**Registered next step (v2.1), reframed by the finding:** the pseudo-cue
+class (never-in-corpus weirdness of matched magnitude, e.g. `~~`
+terminators / `alloc[16]`) is now a *positive* test of normalization:
+believers should separate P4 cues from pseudo-cues (P4 normalized, pseudo
+still weird) while base cannot (both weird) — a control-null with the
+polarity Jonathan asked for. Not run in this campaign.
+
+## Figures (per cell: chat_boundary and raw_boundary)
+
+- `fig_transfer_<cell>.pdf` — transfer bars ± CI: P4-vs-P2 | P4-vs-P3 |
+  P2-vs-P3 panels.
+- `fig_landing_<cell>.pdf` — stacked landing shares.
+- `fig_coherence_<cell>.pdf` — dispersion bars + placebo band.
 - `fig_gate_curves.pdf` — gate sweep, all cells.
-- `fig_layer_curve.pdf` — P4 regime-b AUC across layers.
+- `fig_layer_curve_<cell>.pdf` — cue-half transfer AUC across layers,
+  by contrast.
 
 ## Artifacts
 
