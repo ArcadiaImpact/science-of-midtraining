@@ -31,7 +31,12 @@ REPO_ROOT = HERE.parents[2]
 sys.path.insert(0, str(REPO_ROOT / "src"))
 sys.path.insert(0, str(HERE))
 
-RESULTS_REL = "experiments/python4/language_probe/runs/{run_id}/{scale}/pod"
+RESULTS_REL = "experiments/python4/language_probe/runs/{run_id}/{scale}/pod{suffix}"
+VARIANTS = {
+    # variant -> (prompts basename, results/pod-dir suffix, slug suffix)
+    "main": ("prompts.jsonl", "", ""),
+    "pseudo": ("prompts_pseudo.jsonl", "_pseudo", "-ps"),
+}
 # Pulled shards live OUTSIDE the repo: bellhop's codebase push tars the whole
 # working tree (gitignore not honored), so in-repo results would ride every
 # subsequent pod push. Shards upload to HF at session end per house policy.
@@ -70,7 +75,8 @@ def prepare() -> None:
     import bank
 
     n = bank.write_prompts(HERE / "prompts.jsonl")
-    print(f"[prepare] wrote {n} prompt rows", flush=True)
+    n_ps = bank.write_pseudo_prompts(HERE / "prompts_pseudo.jsonl")
+    print(f"[prepare] wrote {n} main + {n_ps} pseudo prompt rows", flush=True)
     configs = {scale: _extract_config(scale) for scale in SCALES}
     for scale, cfg in configs.items():
         print(
@@ -97,7 +103,9 @@ def prepare() -> None:
 
     tok = AutoTokenizer.from_pretrained(PREFLIGHT_TOKENIZER)
     assert tok.is_fast, "preflight needs a fast tokenizer"
-    rows = _load_prompts(HERE / "prompts.jsonl")
+    rows = _load_prompts(HERE / "prompts.jsonl") + _load_prompts(
+        HERE / "prompts_pseudo.jsonl"
+    )
     cfg = configs["12b"]  # renderings/positions identical across scales
     report: dict = {"tokenizer": PREFLIGHT_TOKENIZER, "renderings": {}}
     expected_boundary = {"chat": "\n", "raw": ":"}
@@ -159,18 +167,19 @@ def _rendered_text(rendering, row, tok) -> str:
     return _render(rendering, row, tok)
 
 
-async def _launch(scale: str, run_id: str) -> None:
+async def _launch(scale: str, run_id: str, variant: str = "main") -> None:
     import bellhop
 
     from probing import outstanding
 
+    prompts_name, dir_suffix, slug_suffix = VARIANTS[variant]
     common = _load_common()
     creds = common._load_launch_credentials()
     manifest = common._source_manifest(REPO_ROOT)  # refuses dirty/unpushed
     cfg = _extract_config(scale)
-    local_pod_dir = LOCAL_RUNS / run_id / scale / "pod"
+    local_pod_dir = LOCAL_RUNS / run_id / scale / f"pod{dir_suffix}"
     todo = (
-        outstanding(cfg, HERE / "prompts.jsonl", local_pod_dir)
+        outstanding(cfg, HERE / prompts_name, local_pod_dir)
         if local_pod_dir.exists()
         else [c.name for c in cfg.checkpoints]
     )
@@ -180,9 +189,9 @@ async def _launch(scale: str, run_id: str) -> None:
     print(f"[launch:{scale}] outstanding: {todo} @ commit {manifest['commit'][:9]}")
 
     runtime = SCALES[scale]
-    slug = f"python4-langprobe-{scale}-{run_id.lower()}"
+    slug = f"python4-langprobe-{scale}{slug_suffix}-{run_id.lower()}"
     pod_name = f"bellhop-{slug}"
-    results_rel = RESULTS_REL.format(run_id=run_id, scale=scale)
+    results_rel = RESULTS_REL.format(run_id=run_id, scale=scale, suffix=dir_suffix)
     venv = "/workspace/venv-probe"
     setup = "\n".join(
         [
@@ -202,7 +211,7 @@ async def _launch(scale: str, run_id: str) -> None:
     )
     run_cmd = (
         f"{venv}/bin/python experiments/python4/language_probe/runner.py "
-        f"pod-extract --scale {scale} --run-id {run_id}"
+        f"pod-extract --scale {scale} --run-id {run_id} --variant {variant}"
     )
 
     driver_probe = (
@@ -268,27 +277,29 @@ async def _launch(scale: str, run_id: str) -> None:
     print("\n".join(result.log_tail or []))
 
 
-def pod_extract(scale: str, run_id: str) -> None:
+def pod_extract(scale: str, run_id: str, variant: str = "main") -> None:
     from probing import extract
 
+    prompts_name, dir_suffix, _ = VARIANTS[variant]
     cfg = _extract_config(scale)
-    root = REPO_ROOT / RESULTS_REL.format(run_id=run_id, scale=scale)
+    root = REPO_ROOT / RESULTS_REL.format(run_id=run_id, scale=scale, suffix=dir_suffix)
     receipts = asyncio.run(
         extract(
             cfg,
-            HERE / "prompts.jsonl",
+            HERE / prompts_name,
             root,
             hf_token=os.environ.get("HF_TOKEN"),
             provenance={
                 "run_id": run_id,
                 "scale": scale,
+                "variant": variant,
                 "commit": os.environ.get("LANGPROBE_COMMIT"),
             },
             download_dir="/workspace/probe_downloads",
         )
     )
     (root / "receipts.json").write_text(json.dumps(receipts, indent=2))
-    print(f"[pod-extract:{scale}] {len(receipts)} shards complete")
+    print(f"[pod-extract:{scale}:{variant}] {len(receipts)} shards complete")
 
 
 def main() -> int:
@@ -299,13 +310,14 @@ def main() -> int:
         p = sub.add_parser(name)
         p.add_argument("--scale", choices=sorted(SCALES), required=True)
         p.add_argument("--run-id", required=True)
+        p.add_argument("--variant", choices=sorted(VARIANTS), default="main")
     args = parser.parse_args()
     if args.cmd == "prepare":
         prepare()
     elif args.cmd == "launch":
-        asyncio.run(_launch(args.scale, args.run_id))
+        asyncio.run(_launch(args.scale, args.run_id, args.variant))
     else:
-        pod_extract(args.scale, args.run_id)
+        pod_extract(args.scale, args.run_id, args.variant)
     return 0
 
 

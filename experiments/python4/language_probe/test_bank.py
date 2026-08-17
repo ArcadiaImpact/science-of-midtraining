@@ -18,6 +18,7 @@ if str(HERE) not in sys.path:
 import bank  # noqa: E402
 
 ROWS = bank.build_rows()
+PSEUDO_ROWS = bank.build_pseudo_rows()
 BY_ID = {r["id"]: r for r in ROWS}
 STANDARD_SLUGS = [slug for _, slug in bank.STANDARD_8]
 
@@ -122,16 +123,20 @@ def test_standard_snippets_differ_across_languages():
 
 
 def test_target_rows_cue_group_disjointness():
-    """Each Python 4 / Python 2 row carries EXACTLY its own cue group's
-    marker — no other group's marker may appear (the OOD-transfer axis)."""
+    """Each Python 4 / Python 2 / pseudo row carries EXACTLY its own cue
+    group's marker — no other group's marker may appear (the OOD axis)."""
     counts: dict[str, int] = {}
-    for r in ROWS:
-        if r["meta"]["role"] != "target":
+    for r in ROWS + PSEUDO_ROWS:
+        if r["meta"]["role"] not in ("target", "pseudo"):
             continue
         own = r["meta"]["cue_group"]
         counts[own] = counts.get(own, 0) + 1
         code = r["spans"]["code"]
-        groups = bank.P4_GROUPS if r["meta"]["lang_slug"] == "python4" else bank.P2_GROUPS
+        groups = {
+            "python4": bank.P4_GROUPS,
+            "python2": bank.P2_GROUPS,
+            "pseudo": bank.PSEUDO_GROUPS,
+        }[r["meta"]["lang_slug"]]
         assert own in groups
         for group, (_, marker) in bank.CUE_GROUPS.items():
             if group == own:
@@ -150,7 +155,26 @@ def test_target_rows_cue_group_disjointness():
         missing = Counter(_string_chunks(base["spans"]["code"])) - Counter(_string_chunks(code))
         assert not missing, (r["id"], missing)
         assert set(extra) <= {"value"}, (r["id"], extra)
-    assert all(counts[g] == 36 for g in (*bank.P4_GROUPS, *bank.P2_GROUPS)), counts
+    assert all(
+        counts[g] == 36 for g in (*bank.P4_GROUPS, *bank.P2_GROUPS, *bank.PSEUDO_GROUPS)
+    ), counts
+
+
+def test_pseudo_bank_shape_and_freeze():
+    """v2.1 pseudo rows: separate file, main bank byte-frozen."""
+    assert len(PSEUDO_ROWS) == 144
+    ids = {r["id"] for r in PSEUDO_ROWS}
+    assert len(ids) == 144 and not (ids & set(BY_ID))
+    for r in PSEUDO_ROWS:
+        assert r["meta"]["role"] == "pseudo" and r["meta"]["lang_slug"] == "pseudo"
+        base = BY_ID[r["meta"]["base_id"]]
+        assert base["meta"]["question"] == r["meta"]["question"]
+        assert r["meta"]["cue_half"] == bank.CUE_HALF[r["meta"]["cue_group"]]
+    # the committed main prompt file must stay byte-identical (shard identity)
+    committed = HERE / "prompts.jsonl"
+    if committed.exists():
+        regen = "".join(json.dumps(r) + "\n" for r in ROWS)
+        assert committed.read_text() == regen, "main bank drifted from prompts.jsonl"
 
 
 def test_cue_half_balance_per_split():

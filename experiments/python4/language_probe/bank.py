@@ -1978,6 +1978,90 @@ def _t_p2_long(code: str) -> str:
     return result
 
 
+# ---------------------------------------------------------------------------
+# v2.1 pseudo-cues (SPEC amendment 3 / R4): never-in-corpus fake version-cues,
+# one-to-one weirdness-matched with the P4 groups — same mutation CLASS,
+# different surface — so on a control both classes of "P4-cued vs pseudo-cued"
+# are equally anomalous and nothing generalizes across cue halves, while a
+# believer that has normalized the real P4 cues can separate them.
+#   q_terminators  ~~ line terminators      (matches p4_terminators ;;)
+#   q_alloc        =[N] alloc + import keeper (matches =(N) + import helper)
+#   q_sink         trailing sink-list output convention (matches PEP 4002 out-dict)
+#   q_boolean      Title-case And/Or/Not    (matches upper-case AND/OR/NOT)
+# ---------------------------------------------------------------------------
+
+
+def _t_q_terminators(code: str) -> str:
+    out_lines = []
+    for line in code.split("\n"):
+        stripped = line.rstrip()
+        if not stripped:
+            out_lines.append(line)
+        elif stripped.endswith(":"):
+            out_lines.append(stripped + "~~")
+        else:
+            out_lines.append(stripped + " ~~")
+    result = "\n".join(out_lines)
+    if "~~" not in result:
+        raise ValueError("q_terminators produced no '~~'")
+    return result
+
+
+def _t_q_alloc(code: str) -> str:
+    changed = 0
+    out_lines = []
+    for line in code.split("\n"):
+        m = _ASSIGN_RE.match(line)
+        size = _P4_ALLOC_SIZE(m.group(3)) if m else None
+        if m and size is not None:
+            out_lines.append(f"{m.group(1)}{m.group(2)} =[{size}] {m.group(3)}")
+            changed += 1
+        else:
+            out_lines.append(line)
+    if not changed:
+        raise ValueError("q_alloc found no object assignment")
+    return "import keeper\n\n" + "\n".join(out_lines)
+
+
+def _t_q_sink(code: str) -> str:
+    lines = code.split("\n")
+    fn_name = None
+    for i, line in enumerate(lines):
+        m = _DEF_RE.match(line)
+        if m:
+            fn_name = m.group(1)
+            lines[i] = f"def {m.group(1)}({m.group(2)}, sink):"
+            break
+    if fn_name is None:
+        raise ValueError("q_sink: no def line")
+    returned = False
+    for i, line in enumerate(lines):
+        m = _RETURN_RE.match(line)
+        if m:
+            lines[i] = f"{m.group(1)}sink.append({m.group(2)})"
+            returned = True
+    if not returned:
+        raise ValueError("q_sink: no return line")
+    call_re = re.compile(rf"^([a-z_][a-z0-9_]*) = {fn_name}\((.*)\)$")
+    for i, line in enumerate(lines):
+        m = call_re.match(line)
+        if m:
+            res = m.group(1)
+            lines[i] = f"{res} = []\n{fn_name}({m.group(2)}, {res})"
+            use_re = re.compile(rf"\b{res}\b")
+            for j in range(i + 1, len(lines)):
+                lines[j] = use_re.sub(f"{res}[0]", lines[j])
+            return "\n".join(lines)
+    raise ValueError("q_sink: no driver call line")
+
+
+def _t_q_boolean(code: str) -> str:
+    result = re.sub(r"\b(and|or|not)\b", lambda m: m.group(1).title(), code)
+    if result == code:
+        raise ValueError("q_boolean changed nothing")
+    return result
+
+
 # group name -> (transform, own-marker regex)
 CUE_GROUPS: dict[str, tuple] = {
     "p4_terminators": (_t_p4_terminators, re.compile(r";;")),
@@ -1988,11 +2072,20 @@ CUE_GROUPS: dict[str, tuple] = {
     "p2_builtins": (_t_p2_builtins, re.compile(r"xrange\(|\.iteritems\(\)|unicode\(|unichr\(|raw_input\(")),
     "p2_neq": (_t_p2_neq, re.compile(r"<>")),
     "p2_long": (_t_p2_long, re.compile(r"\d+L\b")),
+    "q_terminators": (_t_q_terminators, re.compile(r"~~")),
+    "q_alloc": (_t_q_alloc, re.compile(r"=\[\d+\]")),
+    "q_sink": (_t_q_sink, re.compile(r"\bsink\b")),
+    "q_boolean": (_t_q_boolean, re.compile(r"\b(And|Or|Not)\b")),
 }
 P4_GROUPS = ("p4_terminators", "p4_alloc", "p4_out_param", "p4_boolean")
 P2_GROUPS = ("p2_print", "p2_builtins", "p2_neq", "p2_long")
+PSEUDO_GROUPS = ("q_terminators", "q_alloc", "q_sink", "q_boolean")
 # half A = first two groups, half B = last two (the OOD axis)
-CUE_HALF = {g: ("A" if i < 2 else "B") for gs in (P4_GROUPS, P2_GROUPS) for i, g in enumerate(gs)}
+CUE_HALF = {
+    g: ("A" if i < 2 else "B")
+    for gs in (P4_GROUPS, P2_GROUPS, PSEUDO_GROUPS)
+    for i, g in enumerate(gs)
+}
 
 # Markers that must never appear in any base or standard-language snippet
 # (cross-language purity; the full per-group disjointness check lives in
@@ -2029,7 +2122,7 @@ def _row(family: str, vi: int, slug: str, display: str, role: str, code: str,
             "question": question,
             "cue_group": cue_group,
             "cue_half": CUE_HALF.get(cue_group),
-            "base_id": f"{family}-v{vi}-python3" if role == "target" else None,
+            "base_id": f"{family}-v{vi}-python3" if role in ("target", "pseudo") else None,
             "prompt_chars": len(content),
             "code_lines": code.count("\n") + 1,
         },
@@ -2068,7 +2161,34 @@ def build_rows() -> list[dict]:
     return rows
 
 
+def build_pseudo_rows() -> list[dict]:
+    """v2.1 pseudo-cue rows (separate prompt file: the main bank is frozen —
+    the original shards' identity hashes pin prompts.jsonl byte-for-byte).
+    Same bases, same questions, same half/variant rotation as the P4 rows."""
+    rows: list[dict] = []
+    for fi, (family, spec) in enumerate(FAMILIES.items()):
+        slots = spec["slots"]
+        for vi in range(6):
+            question = QUESTION_FORMS[(fi * 6 + vi) % len(QUESTION_FORMS)]
+            base = _fill(spec["python3"], slots, vi)
+            for group in (PSEUDO_GROUPS[vi % 2], PSEUDO_GROUPS[2 + vi % 2]):
+                transform, marker = CUE_GROUPS[group]
+                code = transform(base)
+                if not marker.search(code):
+                    raise ValueError(f"{family}-v{vi}-{group}: marker missing")
+                rows.append(
+                    _row(family, vi, "pseudo", "Pseudo", "pseudo", code, question, group)
+                )
+    return rows
+
+
 def write_prompts(path: str | Path) -> int:
     rows = build_rows()
+    Path(path).write_text("".join(json.dumps(r) + "\n" for r in rows))
+    return len(rows)
+
+
+def write_pseudo_prompts(path: str | Path) -> int:
+    rows = build_pseudo_rows()
     Path(path).write_text("".join(json.dumps(r) + "\n" for r in rows))
     return len(rows)

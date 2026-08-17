@@ -152,6 +152,29 @@ contrasts bootstrap over families (seed 424242).
   dispersion (R2b) drops below the control arms'. A pseudo-cue
   (never-in-corpus weirdness) negative class is the designed v2.1
   hardening if the contrast story needs it after full data.
+  **v2.1 (R4), registered 2026-08-18 before its extraction ran** (the main
+  campaign's outcome — believer normalization, no control-null vs normal
+  negatives — is known; no pseudo activation has been extracted): 144
+  pseudo rows (`prompts_pseudo.jsonl`), same bases/questions/rotation as
+  the P4 rows, one never-in-corpus cue per row, one-to-one
+  weirdness-matched with the P4 groups: `~~` terminators ↔ `;;`,
+  `=[N]`+`import keeper` ↔ `=(N)`+`import helper`, trailing sink-list
+  convention ↔ PEP 4002 out-dict, Title-case And/Or/Not ↔ upper-case
+  AND/OR/NOT. **R4 = P4-cued vs pseudo-cued** on regimes a/b/c (halves
+  matched across the pairing, so regime b trains on glyph-class pairs and
+  tests on convention/case-class pairs — no feature class crosses the
+  split). Registered predictions: (i) regime (a) high everywhere
+  (within-cue-pair surface axes — calibration row); (ii) regimes (b)/(c)
+  ≈ 0.5 on base and control-midtrain (both classes equally anomalous;
+  nothing transferable without a P4 concept) — **this is the goal's
+  control-null**; (iii) believers > controls with dose ordering (the
+  normalization axis: P4 cues familiar, pseudo cues still weird — the
+  main campaign's collapse finding predicts believers CAN do this);
+  (iv) pseudo-vs-P3 mirrors P4-vs-P3's control levels everywhere and, in
+  believers, STAYS high while P4-vs-P3... is already ≈flat — reported as
+  calibration. If believers also sit at 0.5 on (b)/(c), the normalization
+  axis is not linearly readable at these positions and the null result is
+  reported as such.
 
 ## Checkpoints (14)
 

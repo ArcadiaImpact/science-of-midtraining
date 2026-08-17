@@ -124,3 +124,4 @@ experiments/ed-30b-canonical/train/logs.log
 # activation shards stay on /workspace + HF)
 !experiments/python4/language_probe/results/
 !experiments/python4/language_probe/results/**
+!experiments/python4/language_probe/prompts_pseudo.jsonl

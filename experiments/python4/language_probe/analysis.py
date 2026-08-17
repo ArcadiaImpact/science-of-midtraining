@@ -101,6 +101,20 @@ class Slice:
         return [self.meta[i][field] for i in idx]
 
 
+# (positive, negative) class pairs. vs-python3 = vs clean code (leaky on
+# controls via a generic anomaly direction — SPEC amendment 2); vs-python2 =
+# weird-vs-weird but the archaic side is genuinely known (amendment 3).
+CASES = (
+    ("python4", "python3"),
+    ("python2", "python3"),
+    ("python4", "python2"),
+)
+
+
+def _case_name(pos_slug: str, neg_slug: str) -> str:
+    return pos_slug if neg_slug == "python3" else f"{pos_slug}_vs_{neg_slug}"
+
+
 def gate_sweep(caches, sl: Slice) -> dict:
     """8-class standard-language probe over layers x positions x renderings."""
     tr = sl.idx(role="standard", split="train")
@@ -132,7 +146,7 @@ def gate_sweep(caches, sl: Slice) -> dict:
     return out
 
 
-def target_layer_sweep(caches, sl: Slice, rend: str, pos: str) -> list[dict]:
+def target_layer_sweep(caches, sl: Slice, rend: str, pos: str, cases=CASES) -> list[dict]:
     """P4/P2 cue-half transfer (regimes b, c) across ALL cached layers.
 
     Feeds both the transparency curves and the SPEC-amended layer selection
@@ -143,7 +157,7 @@ def target_layer_sweep(caches, sl: Slice, rend: str, pos: str) -> list[dict]:
     for ck, cache in caches.items():
         for layer in layers:
             X = cache.matrix(rendering=rend, position=pos, layer=layer)
-            for pos_slug, neg_slug in CASES:
+            for pos_slug, neg_slug in cases:
                 for regime in ("b", "c"):
                     tr, y_tr, te, y_te, *_ = _transfer_case(sl, pos_slug, neg_slug, regime)
                     clf = _fit_logistic(X[tr], y_tr)
@@ -254,20 +268,6 @@ def landing_and_coherence(caches, sl: Slice, rend: str, pos: str, layer: int) ->
     return rows
 
 
-# (positive, negative) class pairs. vs-python3 = vs clean code (leaky on
-# controls via a generic anomaly direction — SPEC amendment 2); vs-python2 =
-# weird-vs-weird, cue-disjoint by construction: the registered headline.
-CASES = (
-    ("python4", "python3"),
-    ("python2", "python3"),
-    ("python4", "python2"),
-)
-
-
-def _case_name(pos_slug: str, neg_slug: str) -> str:
-    return pos_slug if neg_slug == "python3" else f"{pos_slug}_vs_{neg_slug}"
-
-
 def _transfer_case(sl: Slice, pos_slug: str, neg_slug: str, regime: str):
     """Row indices + binary labels for one transfer regime.
 
@@ -292,7 +292,7 @@ def _transfer_case(sl: Slice, pos_slug: str, neg_slug: str, regime: str):
     return tr, y_tr, te, y_te, te_pos, te_neg
 
 
-def transfer(caches, sl: Slice, rend: str, pos: str, layer: int) -> list[dict]:
+def transfer(caches, sl: Slice, rend: str, pos: str, layer: int, cases=CASES) -> list[dict]:
     rng = np.random.default_rng(SEED)
     import bank
 
@@ -301,7 +301,7 @@ def transfer(caches, sl: Slice, rend: str, pos: str, layer: int) -> list[dict]:
     trivial = np.array([[m["prompt_chars"], m["code_lines"]] for m in sl.meta], dtype=float)
     for ck, cache in caches.items():
         X = cache.matrix(rendering=rend, position=pos, layer=layer)
-        for pos_slug, neg_slug in CASES:
+        for pos_slug, neg_slug in cases:
             name = _case_name(pos_slug, neg_slug)
             for regime in ("a", "b", "c"):
                 tr, y_tr, te, y_te, te_pos, te_neg = _transfer_case(sl, pos_slug, neg_slug, regime)
@@ -361,6 +361,67 @@ def layer_curve(caches, sl: Slice, rend: str, pos: str) -> list[dict]:
     return rows
 
 
+class _JoinedCache:
+    """Row-concatenated view over the main and pseudo shards of one
+    checkpoint (same model, same config identity minus the prompt file —
+    activations are batch-independent, so concatenation is sound)."""
+
+    def __init__(self, main, pseudo):
+        self.main, self.pseudo = main, pseudo
+
+    @property
+    def layer_indices(self):
+        return self.main.layer_indices
+
+    def matrix(self, **kw):
+        return np.concatenate(
+            [self.main.matrix(**kw), self.pseudo.matrix(**kw)], axis=0
+        )
+
+    def prompts(self):
+        return self.main.prompts() + self.pseudo.prompts()
+
+
+R4_CASES = (
+    ("python4", "pseudo"),   # the goal-decisive contrast: cued vs matched-weird
+    ("pseudo", "python3"),   # pseudo leak calibration (should mirror P4-vs-P3)
+)
+
+
+def r4_pass(caches, sl: Slice, out_dir: Path) -> list[dict]:
+    """v2.1: run only the pseudo-contrast metrics at the ALREADY-SELECTED
+    layers of the main analysis (results.json), plus one layer curve."""
+    prior = json.loads((out_dir / "results.json").read_text())
+    selected = prior["gate_selected"]
+    results: list[dict] = []
+    tr_std = sl.idx(role="standard", split="train")
+    y_std = sl.labels(tr_std)
+    for rend, pos in itertools.product(RENDERINGS, POSITIONS):
+        layer = selected[f"{rend}__{pos}"]["layer"]
+        results += transfer(caches, sl, rend, pos, layer, cases=R4_CASES)
+        # pseudo landing under the 8-class real-language probe
+        for ck, cache in caches.items():
+            X = cache.matrix(rendering=rend, position=pos, layer=layer)
+            clf = _fit_logistic(X[tr_std], y_std)
+            ti = sl.idx(lang_slug="pseudo", split="test")
+            proba = clf.predict_proba(X[ti])
+            cls = list(clf.classes_)
+            pred = [cls[j] for j in proba.argmax(axis=1)]
+            results.append({
+                "kind": "landing", "checkpoint": ck, "target": "pseudo",
+                "split": "test", "rendering": rend, "position": pos, "layer": layer,
+                "mean_p_python3": float(proba[:, cls.index("Python 3")].mean()),
+                "mean_entropy": float((-(proba * np.log(proba + 1e-12)).sum(axis=1)).mean()),
+                "shares": {c: pred.count(c) / len(pred) for c in sorted(set(y_std))},
+                "n": int(len(ti)),
+            })
+        print(f"[r4] {rend}/{pos} L{layer} done", flush=True)
+    results += target_layer_sweep(
+        caches, sl, "chat", "boundary", cases=(("python4", "pseudo"),)
+    )
+    return results
+
+
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--run-root", default="/workspace/langprobe-runs")
@@ -368,6 +429,8 @@ def main() -> int:
     ap.add_argument("--scale", required=True, choices=("12b", "27b"))
     ap.add_argument("--skip-gate-sweep", action="store_true",
                     help="reuse gate.json from a previous run")
+    ap.add_argument("--pseudo", action="store_true",
+                    help="v2.1 R4-only pass over pod_pseudo at prior layers")
     ap.add_argument("--ckpts", default=",".join(CKPTS),
                     help="comma list (smoke runs use a subset)")
     args = ap.parse_args()
@@ -383,6 +446,19 @@ def main() -> int:
     sl = Slice(prompt_rows)
     out_dir = HERE / "results" / f"{args.run_id}_{args.scale}"
     out_dir.mkdir(parents=True, exist_ok=True)
+
+    if args.pseudo:
+        ps_pod = pod.parent / "pod_pseudo"
+        joined = {
+            ck: _JoinedCache(caches[ck], ActivationCache.load(ps_pod / ck))
+            for ck in ckpts
+        }
+        sl = Slice(next(iter(joined.values())).prompts())
+        results = r4_pass(joined, sl, out_dir)
+        (out_dir / "results_pseudo.json").write_text(json.dumps(
+            {"scale": args.scale, "run_id": args.run_id, "rows": results}, indent=2))
+        print(f"[analysis] wrote {out_dir}/results_pseudo.json ({len(results)} rows)")
+        return 0
 
     gate_path = out_dir / "gate.json"
     if args.skip_gate_sweep and gate_path.exists():
