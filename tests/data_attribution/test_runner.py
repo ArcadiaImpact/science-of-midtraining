@@ -2556,3 +2556,406 @@ def test_fit_ekfac_factors_conditioner_contract(tmp_path):
             _Config(), "factors/mid", tmp_path, None, None, None, None,
             conditioner={"values": None, "provenance": {}},
         )
+
+
+# ---------------------------------------------- ekfac_adam oracles (T5)
+class ScalarLM(torch.nn.Module):
+    """Every tracked Linear is 1x1 and bias-free, so the Kronecker eigenbasis
+    is trivial (+-1) and EK-FAC coincides with the diagonal empirical Fisher
+    exactly — the degenerate case that ties ``ekfac_adam`` to the proven
+    ``fisher``+``adam`` combination (design doc, oracle 2)."""
+
+    def __init__(self, vocab=16):
+        super().__init__()
+        torch.manual_seed(9)
+        self.embed = torch.nn.Embedding(vocab, 1)
+        self.mid = torch.nn.Linear(1, 1, bias=False)
+
+    def forward(self, input_ids):
+        hidden = self.mid(self.embed(input_ids))
+        logits = torch.nn.functional.linear(hidden, self.embed.weight)
+        return type("Output", (), {"logits": logits})()
+
+
+def _write_scalar_checkpoint(ck_dir: Path) -> None:
+    model = ScalarLM().float()
+    ck_dir.mkdir(parents=True, exist_ok=True)
+    (ck_dir / "config.json").write_text('{"model_type": "tiny"}')
+    save_file(model.state_dict(), str(ck_dir / "model.safetensors"))
+
+
+def _install_scalar_loaders(monkeypatch):
+    def load_model(checkpoint_dir, *, dtype, device):
+        model = ScalarLM().float()
+        model.load_state_dict(
+            load_file(str(Path(checkpoint_dir) / "model.safetensors"))
+        )
+        return model.to(device)
+
+    monkeypatch.setattr(runner, "_load_model", load_model)
+    monkeypatch.setattr(runner, "_load_tokenizer", lambda path: ToyTokenizer())
+
+
+def _scalar_chain(tmp_path, monkeypatch) -> Chain:
+    mid_ds = _make_dataset(tmp_path / "mid_data", kind="docs", rows=MID_ROWS)
+    sft_ds = _make_dataset(tmp_path / "sft_data", kind="chat", rows=SFT_ROWS,
+                           n_docs=len(SFT_ROWS))
+    query_ds = _make_dataset(tmp_path / "query_data", kind="chat",
+                             rows=QUERY_ROWS)
+    tokenizer_dir = _write_tokenizer_dir(tmp_path / "tokenizer")
+    mid_run, _ = _build_run(tmp_path, monkeypatch, name="mid-run",
+                            kind="midtrain", dataset=mid_ds,
+                            lrs=[1e-2, 8e-3, 5e-3],
+                            write_checkpoint=_write_scalar_checkpoint)
+    sft_run, _ = _build_run(tmp_path, monkeypatch, name="sft-run", kind="sft",
+                            dataset=sft_ds, lrs=[5e-3, 3e-3, 1e-3],
+                            write_checkpoint=_write_scalar_checkpoint)
+    payload = {
+        "stages": [
+            {"name": "mid", "checkpoint": str(mid_run),
+             "dataset": mid_ds.path, "objective": "midtraining",
+             "n_examples": len(MID_ROWS), "weight_decay": 0.01},
+            {"name": "sft", "checkpoint": str(sft_run),
+             "dataset": sft_ds.path, "objective": "sft",
+             "n_examples": len(SFT_ROWS), "weight_decay": 0.01},
+        ],
+        "query": {"checkpoint": str(sft_run), "dataset": query_ds.path,
+                  "objective": "sft"},
+        "tokenizer": str(tokenizer_dir),
+        "output_dir": "SET_PER_RUN",
+        "method": {"row_reduction": "per_token", "curvature": "fisher",
+                   "basis": "adam", "damping_sweep": [0.0]},
+        "data": {"sequence_length": SEQUENCE_LENGTH, "batch_size": 2,
+                 "vjp_chunk_size": 4, "rows_per_shard": 4},
+        "factors": {"samples": 6, "source_batch_size": 2, "fit_batch_size": 2,
+                    "max_positions_per_sequence": 2},
+        "seed": 0,
+        "adam_moment_estimator": {
+            "dataset": mid_ds.path,
+            "objective": "midtraining",
+            "num_batches": 1,
+            "global_batch_size": 2,
+            "micro_batch_size": 1,
+            "beta2": 0.999,
+            "optimizer_epsilon": 1e-8,
+            "max_grad_norm": 1.0,
+            "seed": 42,
+        },
+    }
+    return Chain(tmp_path=tmp_path, payload=payload)
+
+
+_ADAM_PHASES = ("estimate_adam", "fit_factors", "compute_rows",
+                "build_queries", "score_source")
+
+
+def _run_adam_pipeline(config):
+    for phase in _ADAM_PHASES:
+        _run(getattr(runner, phase)(config))
+
+
+def _saved_scores(config, entry_name: str):
+    layout = runner.run_layout(config.output_dir)
+    manifest = json.loads(
+        (layout.scores / "score_manifest.json").read_text(encoding="utf-8")
+    )
+    entry = manifest["entries"][entry_name]
+    return load_file(str(layout.scores / entry["file"]))["scores"]
+
+
+def test_oracle2_scalar_linears_ekfac_adam_equals_fisher_adam(
+    tmp_path, monkeypatch
+):
+    """Design-doc oracle 2: with all tracked Linears 1x1, ``ekfac_adam`` with
+    sweep {0} and conditioning_damping d must equal ``fisher``+``adam`` with
+    damping sweep {d} exactly — both reduce to curvature A^2*E[g^2], rows
+    A*g, transitions A_prev/A_cur."""
+    pytest.importorskip("kronfluence")
+    chain = _scalar_chain(tmp_path, monkeypatch)
+    _install_scalar_loaders(monkeypatch)
+    damping = 0.25
+
+    conditioned, _ = chain.config(
+        output_dir=str(tmp_path / "attr-oracle2-ekfac-adam"),
+        method={"curvature": "ekfac_adam", "conditioning_damping": damping,
+                "damping_sweep": [0.0]},
+    )
+    _run_adam_pipeline(conditioned)
+    diagonal, _ = chain.config(
+        output_dir=str(tmp_path / "attr-oracle2-fisher-adam"),
+        method={"curvature": "fisher", "damping_sweep": [damping]},
+    )
+    _run_adam_pipeline(diagonal)
+
+    # Same estimator, seed, data, checkpoints -> identical committed moments.
+    for stage in ("mid", "sft"):
+        moments = []
+        for config in (conditioned, diagonal):
+            directory = runner.run_layout(config.output_dir).adam_moments / stage
+            moments.append(
+                ShardManifest.load(directory).read_rows(directory)["features"]
+            )
+        torch.testing.assert_close(moments[0], moments[1], rtol=0, atol=0)
+
+    # Degenerate 1x1 modules: the rank-1 residual of every scale block is 0.
+    layout = runner.run_layout(conditioned.output_dir)
+    for stage in ("mid", "sft"):
+        meta = json.loads(
+            (layout.factors / stage / "ekfac" / "ekfac_meta.json").read_text()
+        )
+        assert set(meta["rank1_residuals"]) == {"mid"}
+        assert meta["rank1_residuals"]["mid"] == pytest.approx(0.0, abs=1e-12)
+
+    for entry in ("mid__damping-0", "sft__damping-0"):
+        torch.testing.assert_close(
+            _saved_scores(conditioned, entry),
+            _saved_scores(diagonal, entry),
+            rtol=1e-6,
+            atol=1e-8,
+        )
+
+
+def _flat_item_grads(model, manifest, items):
+    """fp64 per-item gradient vectors over the manifest's included flat
+    ordering — the same single-sampled-token empirical-Fisher convention as
+    ``_fit_fisher_diagonal`` and the conditioned lambda pass."""
+    named = dict(model.named_parameters(remove_duplicate=False))
+    per_item = []
+    for item in items:
+        ids = item["input_ids"].unsqueeze(0)
+        position = int(item["position"])
+        model.zero_grad(set_to_none=True)
+        logits = model(input_ids=ids).logits
+        loss = torch.nn.functional.cross_entropy(
+            logits[0, position - 1 : position].float(),
+            ids[0, position : position + 1],
+            reduction="sum",
+        )
+        loss.backward()
+        flat = torch.zeros(manifest.included_numel, dtype=torch.float64)
+        for entry in manifest.included_entries():
+            gradient = named[entry.name].grad
+            if gradient is not None:
+                flat[
+                    entry.global_flat_offset
+                    : entry.global_flat_offset + entry.numel
+                ] = gradient.detach().double().reshape(-1)
+        per_item.append(flat)
+    model.zero_grad(set_to_none=True)
+    return per_item
+
+
+def _oracle3_stage_inputs(config, stage):
+    """Rebuild the runner's exact fit population and dense empirical Fisher
+    for one stage (fp64, full included coordinates)."""
+    from scimt.data_attribution.ekfac import build_ekfac_sample_items
+    from scimt.data_attribution.stages import resolve_stage
+
+    resolved = resolve_stage(stage)
+    model = TinyLM().float()
+    model.load_state_dict(
+        load_file(str(resolved.checkpoint_dir / "model.safetensors"))
+    )
+    manifest = runner._build_manifest(model, config)
+    adapter = runner._dataset_adapter(
+        objective=stage.objective,
+        data_path=Path(resolved.dataset.path),
+        tokenizer=ToyTokenizer(),
+        config=config,
+        reduction=config.method.row_reduction,
+        max_sequences=config.data.max_stage_sequences,
+    )
+    items = build_ekfac_sample_items(adapter, runner._fit_config_payload(config))
+    grads = _flat_item_grads(model, manifest, items)
+    fisher = torch.zeros(
+        manifest.included_numel, manifest.included_numel, dtype=torch.float64
+    )
+    for grad in grads:
+        fisher += torch.outer(grad, grad)
+    fisher /= len(grads)
+    return manifest, fisher.numpy()
+
+
+def _eig_apply(vectors, eigenvalues, fn, batch):
+    import numpy as np
+
+    projected = batch @ vectors
+    return (projected * fn(np.clip(eigenvalues, 0.0, None))) @ vectors.T
+
+
+def _dense_chain(operators, lr, scales, queries, rows, n_examples, damping):
+    """NumPy fp64 two-segment SOURCE chain (stages ordered [mid, sft], query
+    at the sft endpoint). ``operators[stage]`` is (vectors, eigenvalues);
+    ``scales`` is None (raw basis) or per-stage diagonal A."""
+
+    from scimt.data_attribution.source import f_backward, f_segment
+
+    def scale(name, batch):
+        return batch * scales[name] if scales is not None else batch
+
+    query = scale("sft", queries)
+    vec_s, lam_s = operators["sft"]
+    u_sft = _eig_apply(
+        vec_s, lam_s, lambda ev: f_segment(ev + damping, lr["sft"]), query
+    )
+    transported = _eig_apply(
+        vec_s, lam_s, lambda ev: f_backward(ev + damping, lr["sft"]), query
+    )
+    if scales is not None:
+        transported = transported * (scales["mid"] / scales["sft"])
+    vec_m, lam_m = operators["mid"]
+    u_mid = _eig_apply(
+        vec_m, lam_m, lambda ev: f_segment(ev + damping, lr["mid"]), transported
+    )
+    return {
+        "mid": (u_mid @ scale("mid", rows["mid"]).T) / n_examples["mid"],
+        "sft": (u_sft @ scale("sft", rows["sft"]).T) / n_examples["sft"],
+    }
+
+
+def _read_rows(config, directory):
+    manifest = ShardManifest.load(directory)
+    return manifest.read_rows(directory)["features"].double().numpy()
+
+
+def test_oracle3_ekfac_adam_parity_and_measured_gap_vs_dense_truth(
+    chain, monkeypatch, capsys
+):
+    """Design-doc oracle 3 on a non-degenerate model:
+
+    (a) PARITY (asserted): the pipeline equals a NumPy reference chain whose
+        per-stage operator is EK-FAC-of-F_c rebuilt independently — fitted
+        eigenbasis, eigenvalues re-derived as diag(V^T F_c V) from the dense
+        fp64 conditioned Fisher over the exact fit items, conditioned
+        diagonal remainder A^2*diag(F).
+    (b) GAP (recorded, softly asserted): the same chain with the TRUE dense
+        conditioned Fisher (A F A) per segment, reported next to the raw
+        EK-FAC-vs-dense-F gap. The only assertions are finiteness and that
+        the conditioned relative gap is not wildly worse than the raw gap
+        (generous documented factor of 10 plus 0.05 slack — EK-FAC's
+        block-diagonal-in-eigenbasis approximation error is expected and
+        accepted; this guards regressions, not fidelity)."""
+    import numpy as np
+
+    pytest.importorskip("kronfluence")
+    from scimt.data_attribution.ekfac import load_ekfac
+
+    _install_tiny_loaders(monkeypatch)
+    sweep_damping = 0.01
+    overrides = _ekfac_adam_overrides(chain)
+    overrides["method"]["damping_sweep"] = [sweep_damping]
+    overrides["output_dir"] = str(chain.tmp_path / "attr-oracle3-cond")
+    conditioned, _ = chain.config(**overrides)
+    _run_adam_pipeline(conditioned)
+    raw, _ = chain.config(
+        output_dir=str(chain.tmp_path / "attr-oracle3-raw"),
+        method={"curvature": "ekfac", "basis": "raw",
+                "damping_sweep": [sweep_damping]},
+    )
+    for phase in _ADAM_PHASES[1:]:
+        _run(getattr(runner, phase)(raw))
+
+    layout = runner.run_layout(conditioned.output_dir)
+    lr = {"mid": 1e-2 + 8e-3 + 5e-3, "sft": 5e-3 + 3e-3 + 1e-3}
+    n_examples = {s.name: s.n_examples for s in conditioned.stages}
+    scales = {
+        s.name: _committed_moment_scale(layout, s.name).double().numpy()
+        for s in conditioned.stages
+    }
+
+    fishers, manifests = {}, {}
+    for stage in conditioned.stages:
+        manifest, fisher = _oracle3_stage_inputs(conditioned, stage)
+        manifests[stage.name] = manifest
+        fishers[stage.name] = fisher
+
+    # Reference (a): fitted eigenbasis, independently re-derived eigenvalues.
+    reference_ops = {}
+    truth_cond_ops, truth_raw_ops = {}, {}
+    for stage in conditioned.stages:
+        manifest = manifests[stage.name]
+        fisher = fishers[stage.name]
+        conditioned_fisher = (
+            scales[stage.name][:, None] * fisher * scales[stage.name][None, :]
+        )
+        dimension = manifest.included_numel
+        entries = {e.name: e for e in manifest.included_entries()}
+        head = entries["head.weight"]
+        block = slice(
+            head.global_flat_offset, head.global_flat_offset + head.numel
+        )
+        factors = load_ekfac(
+            layout.factors / stage.name / "ekfac",
+            manifest,
+            expected_mode="ekfac_adam",
+        )
+        u_a = factors.linears["head"]["U_A"].double().numpy()
+        u_s = factors.linears["head"]["U_S"].double().numpy()
+        big_v = np.kron(u_s, u_a)
+        vectors = np.eye(dimension)
+        vectors[block, block] = big_v
+        eigenvalues = np.diag(conditioned_fisher).copy()
+        eigenvalues[block] = np.diag(
+            big_v.T @ conditioned_fisher[block, block] @ big_v
+        )
+        reference_ops[stage.name] = (vectors, eigenvalues)
+        lam_cond, vec_cond = np.linalg.eigh(conditioned_fisher)
+        truth_cond_ops[stage.name] = (vec_cond, lam_cond)
+        lam_raw, vec_raw = np.linalg.eigh(fisher)
+        truth_raw_ops[stage.name] = (vec_raw, lam_raw)
+
+    cond_rows = {
+        s.name: _read_rows(conditioned, layout.rows / s.name)
+        for s in conditioned.stages
+    }
+    cond_queries = _read_rows(conditioned, layout.queries)
+    reference = _dense_chain(reference_ops, lr, scales, cond_queries,
+                             cond_rows, n_examples, sweep_damping)
+    truth_cond = _dense_chain(truth_cond_ops, lr, scales, cond_queries,
+                              cond_rows, n_examples, sweep_damping)
+    raw_layout = runner.run_layout(raw.output_dir)
+    raw_rows = {
+        s.name: _read_rows(raw, raw_layout.rows / s.name)
+        for s in raw.stages
+    }
+    raw_queries = _read_rows(raw, raw_layout.queries)
+    truth_raw = _dense_chain(truth_raw_ops, lr, None, raw_queries, raw_rows,
+                             n_examples, sweep_damping)
+
+    report = {}
+    for stage in ("mid", "sft"):
+        pipeline = _saved_scores(conditioned, f"{stage}__damping-0")
+        # (a) parity against the independent EK-FAC-of-F_c reference.
+        torch.testing.assert_close(
+            pipeline.double(),
+            torch.from_numpy(reference[stage]),
+            rtol=1e-4,
+            atol=1e-7,
+        )
+        pipe = pipeline.double().numpy().reshape(-1)
+        truth = truth_cond[stage].reshape(-1)
+        raw_pipe = (
+            _saved_scores(raw, f"{stage}__damping-0").double().numpy()
+        ).reshape(-1)
+        raw_truth = truth_raw[stage].reshape(-1)
+
+        def _gap(approx, dense):
+            rel = float(
+                np.linalg.norm(approx - dense) / np.linalg.norm(dense)
+            )
+            corr = float(np.corrcoef(approx, dense)[0, 1])
+            return {"relative_error": rel, "pearson": corr}
+
+        report[stage] = {
+            "conditioned_vs_dense_AFA": _gap(pipe, truth),
+            "raw_vs_dense_F": _gap(raw_pipe, raw_truth),
+        }
+        cond_rel = report[stage]["conditioned_vs_dense_AFA"]["relative_error"]
+        raw_rel = report[stage]["raw_vs_dense_F"]["relative_error"]
+        assert np.isfinite(cond_rel) and np.isfinite(raw_rel)
+        # Generous regression guard, not a fidelity claim (see docstring).
+        assert cond_rel <= 10.0 * raw_rel + 0.05
+
+    report_path = Path(conditioned.output_dir) / "oracle3_gap_report.json"
+    report_path.write_text(json.dumps(report, indent=2), encoding="utf-8")
+    print(f"oracle3 measured approximation gaps: {json.dumps(report)}")

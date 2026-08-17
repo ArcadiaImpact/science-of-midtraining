@@ -1140,3 +1140,78 @@ def test_prior_coins_template_is_structurally_valid():
     # actual refusal seams are proven on real artifacts in
     # test_adam_basis_refusals_for_model_only_historical_checkpoints.
     assert "model-only" in text
+
+
+def test_ekfac_adam_estimated_end_to_end(chain):
+    """T5 e2e: ``curvature: ekfac_adam`` with estimated moments through the
+    whole phase chain — conditioned factors fit for real (Kronfluence
+    covariances + the scimt conditioned lambda pass), scored, summarized;
+    artifacts record the stage-local coordinates, the conditioning fields,
+    and the per-module rank-1 residual diagnostic; the B ranking survives
+    the conditioned curvature."""
+    pytest.importorskip("kronfluence")
+    conditioning_damping = 0.1
+    config, _ = chain.config(
+        "attr-ekfac-adam",
+        basis="adam",
+        curvature="ekfac_adam",
+        conditioning_damping=conditioning_damping,
+        damping_sweep=[0.1],
+        adam_moment_estimator={
+            "dataset": chain.payload["stages"][1]["dataset"],
+            "objective": "sft",
+            "num_batches": 2,
+            "global_batch_size": 2,
+            "micro_batch_size": 1,
+            "beta2": 0.999,
+            "optimizer_epsilon": 1e-8,
+            "max_grad_norm": 1.0,
+            "seed": 42,
+        },
+    )
+    _run_phases(
+        config,
+        (
+            "estimate-adam",
+            "fit-factors",
+            "compute-rows",
+            "build-queries",
+            "score-source",
+            "summarize",
+        ),
+    )
+    layout = runner.run_layout(config.output_dir)
+    identity = read_identity(layout.scores)
+    assert identity.basis_descriptor["coordinates"] == "adam_stage_local"
+    assert identity.basis_descriptor["curvature_mode"] == "ekfac_adam"
+    assert identity.basis_descriptor["conditioning_damping"] == (
+        conditioning_damping
+    )
+    assert [
+        stage["mode"] for stage in identity.basis_descriptor["stages"]
+    ] == ["estimated", "estimated"]
+    for stage in config.stages:
+        factors_dir = layout.factors / stage.name
+        completion = json.loads(
+            (factors_dir / "factors_complete.json").read_text()
+        )
+        assert completion["curvature"] == "ekfac_adam"
+        meta = json.loads(
+            (factors_dir / "ekfac" / "ekfac_meta.json").read_text()
+        )
+        assert meta["lambda_fit"] == "scimt_conditioned_per_item_v1"
+        assert meta["preconditioner"]["kind"] == "adam_stage_local"
+        assert meta["preconditioner"]["conditioning_damping"] == (
+            conditioning_damping
+        )
+        assert set(meta["rank1_residuals"]) == {"head"}
+        residual = meta["rank1_residuals"]["head"]
+        assert 0.0 <= residual <= 1.0
+    summary = json.loads((layout.summary / "summary.json").read_text())
+    assert summary["complete"] is True
+    saved = _scores(config, "sft__damping-0")["scores"]
+    assert saved.shape == (len(QUERY_ROWS), len(SFT_ROWS))
+    assert bool(torch.isfinite(saved).all())
+    assert min(float(saved[1][r]) for r in B_ROWS) > max(
+        float(saved[1][r]) for r in range(len(SFT_ROWS)) if r not in B_ROWS
+    )
