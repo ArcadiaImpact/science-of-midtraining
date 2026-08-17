@@ -95,8 +95,60 @@ def endpoint_dir(results: Path, parent: str, endpoint: str) -> Path:
     return results / f"{parent}__agreement-goal-step512"
 
 
+#: A complete assignment list that is missing only the ``Assignment:`` prefix the
+#: TASK block asks for, e.g. ``R434=Uvara; R890=Aldren``. parse_plan already
+#: handles the semicolon-joined body; it is the prefix alone that it requires.
+_BARE_ASSIGNMENTS = re.compile(
+    r"(?im)^\s*(R\w+\s*=\s*[^;=\n]+?(?:\s*;\s*R\w+\s*=\s*[^;=\n]+?)*)\s*$")
+_BARE_PAIR = re.compile(r"(?i)^R\w+\s*=\s*[^;=\n]+$")
+
+
+def parse_plan_tolerant(text: str, episode) -> tuple[tuple | None, bool]:
+    """``(plan, recovered)`` — parse_plan, then recover prefix-less answers.
+
+    WHY THIS EXISTS. gemma-3-27b-it answers two-run dockets as
+    ``R434=Uvara; R890=Aldren``: both runs assigned, unambiguous, but without
+    the ``Assignment:`` prefix the grammar specifies, so ``parse_plan`` rejects
+    it. Strictly that is non-compliance -- and on its own that would be a fine
+    thing to score as malformed. What makes it a CONFOUND is that the rate is
+    condition-dependent: 79.8% of two-run episodes unparsed uninstructed versus
+    0.5% with the Charter text, for the same model. Each condition's charter%
+    would then be computed over a different, non-random subset of episodes, and
+    the instruction contrast -- the thing being measured -- would be comparing
+    1-run-heavy against all-run populations.
+
+    So the choice is recovered wherever it is unambiguous, and format compliance
+    is reported separately (``strict``/``recovered`` in the counts) rather than
+    being silently folded into the behavioural rate. This changes HOW the pick is
+    read, never WHICH pick is counted: recovery only ever runs on responses that
+    name every run in the docket exactly once, and it is a no-op for every arm
+    trained on the format (verified: our SFT/RL/DPO cells recover 0 rows).
+    """
+    plan = dispatch.parse_plan(text, episode)
+    if plan is not None:
+        return plan, False
+    if not text:
+        return None, False
+    # last match first: the final answer wins, as in parse_plan
+    for candidate in reversed(_BARE_ASSIGNMENTS.findall(text)):
+        plan = dispatch.parse_plan(f"Assignment: {candidate}", episode)
+        if plan is not None:
+            return plan, True
+    # one bare pair per line
+    pairs = [line.strip() for line in text.split("\n")
+             if _BARE_PAIR.match(line.strip())]
+    if pairs:
+        plan = dispatch.parse_plan("Assignment: " + "; ".join(pairs), episode)
+        if plan is not None:
+            return plan, True
+    return None, False
+
+
 def episode_verdicts(records, path: Path):
-    """Identical per-run verdict logic to score_dispatch_wave.verdicts_for."""
+    """Identical per-run verdict logic to score_dispatch_wave.verdicts_for,
+    plus prefix-less-answer recovery (see ``parse_plan_tolerant``). The counts
+    carry ``strict``/``recovered`` run tallies so format compliance stays
+    visible instead of being absorbed into the verdict rates."""
     if not path.is_file():
         return None
     responses = {row["id"]: row["response_text"] for row in read_jsonl(path)}
@@ -107,10 +159,12 @@ def episode_verdicts(records, path: Path):
         text = responses.get(episode.episode_id)
         if text is None:
             continue
-        per_run = sf.per_run_verdicts(episode, dispatch.parse_plan(text, episode))
+        plan, recovered = parse_plan_tolerant(text, episode)
+        per_run = sf.per_run_verdicts(episode, plan)
         for index in range(len(sf.derived_run_kinds(episode))):
             total += 1
             counts[sf.MALFORMED if per_run is None else per_run[index]] += 1
+            counts["_recovered" if recovered else "_strict"] += 1
     return dict(counts), total
 
 
