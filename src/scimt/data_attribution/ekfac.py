@@ -18,16 +18,71 @@ def safe(name: str) -> str:
     return name.replace(".", "__")
 
 
+EKFAC_MODES = ("ekfac", "ekfac_adam")
+
+_CONDITIONER_PROVENANCE_KEYS = (
+    "kind",
+    "statistic",
+    "moment_identity_digest",
+    "optimizer_epsilon",
+    "conditioning_damping",
+)
+
+
+@dataclass(frozen=True)
+class EKFACConditioner:
+    """Stage-local Adam preconditioner ``A_l`` over included coordinates.
+
+    ``values`` is the flat fp vector of per-coordinate scales in the
+    manifest's included ordering; ``provenance`` binds the moment artifact
+    it was derived from and is embedded verbatim in ``ekfac_meta.json``.
+    """
+
+    values: torch.Tensor
+    provenance: dict[str, Any]
+
+
+def _validate_conditioner(conditioner: EKFACConditioner, manifest) -> dict[str, Any]:
+    if not isinstance(conditioner, EKFACConditioner):
+        raise TypeError("conditioner must be an EKFACConditioner")
+    values = conditioner.values
+    if not isinstance(values, torch.Tensor) or values.ndim != 1:
+        raise ValueError("conditioner values must be a 1-D tensor")
+    if values.numel() != manifest.included_numel:
+        raise ValueError(
+            f"conditioner values must have shape [{manifest.included_numel}]"
+        )
+    if not values.is_floating_point() or not bool(torch.isfinite(values).all()):
+        raise ValueError("conditioner values must be floating-point and finite")
+    if bool((values <= 0).any()):
+        raise ValueError("conditioner values must be strictly positive")
+    provenance = conditioner.provenance
+    if not isinstance(provenance, dict):
+        raise TypeError("conditioner provenance must be a dict")
+    missing = [k for k in _CONDITIONER_PROVENANCE_KEYS if k not in provenance]
+    if missing:
+        raise ValueError(f"conditioner provenance missing keys: {missing}")
+    try:
+        return json.loads(json.dumps(provenance))
+    except (TypeError, ValueError) as error:
+        raise ValueError("conditioner provenance must be JSON-serializable") from error
+
+
 @dataclass(frozen=True)
 class EKFACFactors:
     linears: dict[str, dict[str, torch.Tensor]]
     diag_v: torch.Tensor
     diag_index: tuple[dict[str, Any], ...]
     snapshot: str
+    preconditioner: dict[str, Any] | None = None
 
     @property
     def snapshot_id(self) -> str:
         return self.snapshot
+
+    @property
+    def mode(self) -> str:
+        return "ekfac_adam" if self.preconditioner is not None else "ekfac"
 
 
 def _snapshot(path: Path) -> str:
@@ -43,12 +98,30 @@ def _snapshot(path: Path) -> str:
     return digest.hexdigest()
 
 
-def load_ekfac(path: str | Path, manifest: ParameterManifest) -> EKFACFactors:
+def load_ekfac(
+    path: str | Path,
+    manifest: ParameterManifest,
+    *,
+    expected_mode: str = "ekfac",
+) -> EKFACFactors:
+    if expected_mode not in EKFAC_MODES:
+        raise ValueError(f"expected_mode must be one of {list(EKFAC_MODES)}")
     directory = Path(path)
     stored = ParameterManifest.load(directory)
     if stored.digest() != manifest.digest():
         raise ManifestMismatchError("manifest digest mismatch")
     metadata = json.loads((directory / "ekfac_meta.json").read_text())
+    preconditioner = metadata.get("preconditioner")
+    artifact_mode = "ekfac_adam" if preconditioner is not None else "ekfac"
+    if artifact_mode != expected_mode:
+        raise ValueError(
+            f"EK-FAC artifact at {directory} is a {artifact_mode!r} factor set "
+            f"but {expected_mode!r} was requested — factor coordinates are "
+            "never silently reinterpreted (raw and Adam-conditioned factors "
+            "are mutually unconsumable)"
+        )
+    if preconditioner is not None and not isinstance(preconditioner, dict):
+        raise ValueError("ekfac_meta.json preconditioner must be a mapping")
     names = metadata.get("linears")
     if not isinstance(names, list) or not all(isinstance(n, str) for n in names):
         raise ValueError("ekfac_meta.json linears must be a list of strings")
@@ -123,7 +196,9 @@ def load_ekfac(path: str | Path, manifest: ParameterManifest) -> EKFACFactors:
         raise ValueError(
             f"EK-FAC artifact does not cover parameters: {sorted(set(entries) - claimed)}"
         )
-    return EKFACFactors(linears, diag_v, tuple(raw_index), _snapshot(directory))
+    return EKFACFactors(
+        linears, diag_v, tuple(raw_index), _snapshot(directory), preconditioner
+    )
 
 
 load_ekfac_factors = load_ekfac
@@ -339,8 +414,15 @@ def build_ekfac_sample_items(dataset, config) -> list[dict]:
     return items
 
 
-def fit_ekfac(model, dataset, manifest, config, output_dir):
-    """Fit Kronfluence factors; Kronfluence remains an optional lazy dependency."""
+def fit_ekfac(model, dataset, manifest, config, output_dir, conditioner=None):
+    """Fit Kronfluence factors; Kronfluence remains an optional lazy dependency.
+
+    With ``conditioner=None`` this is the raw-coordinate upstream path,
+    unchanged. With an :class:`EKFACConditioner` it fits the Adam-conditioned
+    factor set (design: docs/specs/2026-08-17-adam-conditioned-ekfac-design.md):
+    unconditioned Kronecker eigenbases, lambdas refit on conditioned
+    gradients, diagonal remainder conditioned exactly.
+    """
     try:
         from kronfluence.analyzer import Analyzer, prepare_model
         from kronfluence.arguments import FactorArguments
@@ -352,6 +434,15 @@ def fit_ekfac(model, dataset, manifest, config, output_dir):
     cfg = _fit_config(config)
     if not isinstance(manifest, ParameterManifest):
         raise TypeError("manifest must be a ParameterManifest")
+    provenance = None
+    if conditioner is not None:
+        provenance = _validate_conditioner(conditioner, manifest)
+        if not cfg["use_empirical_fisher"]:
+            raise ValueError(
+                "conditioned EK-FAC fits lambdas from empirical-Fisher "
+                "gradients (true next tokens); use_empirical_fisher must be "
+                "true in ekfac_adam mode"
+            )
     manifest.validate_against_model(model)
     included = {e.name for e in manifest.included_entries()}
     names = sorted(
@@ -377,6 +468,22 @@ def fit_ekfac(model, dataset, manifest, config, output_dir):
         model_device = torch.device("cpu")
     named = dict(model.named_parameters(remove_duplicate=False))
     diagonal = [e for e in manifest.included_entries() if e.name not in ek_names]
+    if conditioner is not None:
+        return _fit_ekfac_conditioned(
+            model=model,
+            manifest=manifest,
+            cfg=cfg,
+            output_dir=output_dir,
+            conditioner=conditioner,
+            provenance=provenance,
+            names=names,
+            items=items,
+            sample_dataset=sample_dataset,
+            model_device=model_device,
+            named=named,
+            diagonal=diagonal,
+            kron=(Analyzer, prepare_model, FactorArguments, Task),
+        )
     accum = {e.name: torch.zeros(e.numel, dtype=torch.float64) for e in diagonal}
     count = 0
     # This pass must precede prepare_model, which may freeze parameters.
@@ -475,3 +582,274 @@ def fit_ekfac(model, dataset, manifest, config, output_dir):
         )
     )
     return load_ekfac(directory, manifest)
+
+
+def _conditioner_blocks(values, manifest, names, diagonal):
+    """Reshape the flat A_l vector into per-Linear augmented blocks and
+    per-diagonal-entry slices, in manifest coordinates."""
+    entries = {e.name: e for e in manifest.included_entries()}
+    source = values.detach().reshape(-1).cpu().double()
+    blocks: dict[str, torch.Tensor] = {}
+    for name in names:
+        weight = entries[f"{name}.weight"]
+        bias = entries.get(f"{name}.bias")
+        block = source[
+            weight.global_flat_offset : weight.global_flat_offset + weight.numel
+        ].reshape(weight.shape)
+        if bias is not None:
+            block = torch.cat(
+                (
+                    block,
+                    source[
+                        bias.global_flat_offset : bias.global_flat_offset + bias.numel
+                    ].reshape(-1, 1),
+                ),
+                1,
+            )
+        blocks[name] = block
+    diag_scales = {
+        e.name: source[e.global_flat_offset : e.global_flat_offset + e.numel]
+        for e in diagonal
+    }
+    return blocks, diag_scales
+
+
+def _top_two_singular_values(matrix: torch.Tensor, iterations: int = 200) -> tuple[float, float]:
+    """Leading two singular values by power iteration with one deflation."""
+    m = matrix.detach().double()
+    if min(m.shape) == 0:
+        return 0.0, 0.0
+
+    def leading(matvec, rmatvec, dim):
+        generator = torch.Generator(device="cpu").manual_seed(0)
+        v = torch.randn(dim, generator=generator, dtype=torch.float64)
+        v = v / v.norm().clamp_min(1e-300)
+        sigma = 0.0
+        for _ in range(iterations):
+            u = matvec(v)
+            sigma = float(u.norm())
+            if sigma == 0.0:
+                return 0.0, v, torch.zeros(m.shape[0], dtype=torch.float64)
+            u = u / sigma
+            v = rmatvec(u)
+            norm = float(v.norm())
+            if norm == 0.0:
+                return 0.0, v, u
+            v = v / norm
+            sigma = norm
+        return sigma, v, matvec(v) / max(float(matvec(v).norm()), 1e-300)
+
+    sigma1, v1, u1 = leading(lambda x: m @ x, lambda x: m.T @ x, m.shape[1])
+    if min(m.shape) < 2 or sigma1 == 0.0:
+        return sigma1, 0.0
+    sigma2, _, _ = leading(
+        lambda x: m @ x - sigma1 * u1 * float(v1 @ x),
+        lambda x: m.T @ x - sigma1 * v1 * float(u1 @ x),
+        m.shape[1],
+    )
+    return sigma1, sigma2
+
+
+def _unwrap_tracked_modules(model, requires_grad_states, was_training):
+    """Reverse Kronfluence's in-place prepare_model wrapping and restore
+    parameter/train state so the fused conditioned pass sees a clean model."""
+    from kronfluence.module.tracked_module import TrackedModule
+
+    replacements = [
+        (name, module)
+        for name, module in model.named_modules()
+        if isinstance(module, TrackedModule)
+    ]
+    for name, module in replacements:
+        if "." in name:
+            parent_name, target = name.rsplit(".", 1)
+            parent = model.get_submodule(parent_name)
+        else:
+            parent, target = model, name
+        setattr(parent, target, module.original_module)
+    if any(isinstance(m, TrackedModule) for m in model.modules()):
+        raise RuntimeError("failed to unwrap Kronfluence TrackedModule wrappers")
+    for name, parameter in model.named_parameters(remove_duplicate=False):
+        if name in requires_grad_states:
+            parameter.requires_grad = requires_grad_states[name]
+    model.train(was_training)
+
+
+def _fit_ekfac_conditioned(
+    *,
+    model,
+    manifest,
+    cfg,
+    output_dir,
+    conditioner,
+    provenance,
+    names,
+    items,
+    sample_dataset,
+    model_device,
+    named,
+    diagonal,
+    kron,
+):
+    Analyzer, prepare_model, FactorArguments, Task = kron
+    if not items:
+        raise ValueError("cannot fit conditioned EK-FAC from an empty dataset")
+    blocks, diag_scales = _conditioner_blocks(
+        conditioner.values, manifest, names, diagonal
+    )
+    requires_grad_states = {
+        name: parameter.requires_grad
+        for name, parameter in model.named_parameters(remove_duplicate=False)
+    }
+    was_training = model.training
+    task = _causal_token_task(Task, names)
+    prepared = prepare_model(model=model, task=task)
+    analyzer = Analyzer(
+        analysis_name="ekfac",
+        model=prepared,
+        task=task,
+        cpu=model_device.type == "cpu",
+        output_dir=str(Path(output_dir) / "kronfluence"),
+        disable_tqdm=True,
+    )
+    args = FactorArguments(
+        strategy="ekfac",
+        use_empirical_fisher=cfg.get("use_empirical_fisher", True),
+        covariance_module_partitions=cfg.get("covariance_module_partitions", 1),
+        lambda_module_partitions=cfg.get("lambda_module_partitions", 1),
+        eigendecomposition_dtype=getattr(
+            torch, cfg.get("eigendecomposition_dtype", "float64")
+        ),
+    )
+    # Staged fit: covariances + eigendecomposition only. Kronfluence's lambda
+    # pass exploits per-token rank-1 structure that elementwise conditioning
+    # destroys, so lambdas come from our fused per-item pass below.
+    analyzer.fit_covariance_matrices(
+        factors_name="ekfac",
+        dataset=sample_dataset,
+        per_device_batch_size=cfg.get("batch_size", 8),
+        factor_args=args,
+        overwrite_output_dir=True,
+    )
+    analyzer.perform_eigendecomposition(
+        factors_name="ekfac", factor_args=args, overwrite_output_dir=True
+    )
+    eig = analyzer.load_eigendecomposition("ekfac")
+    _unwrap_tracked_modules(model, requires_grad_states, was_training)
+    named = dict(model.named_parameters(remove_duplicate=False))
+    eigenvectors = {
+        name: (
+            eig["activation_eigenvectors"][name].detach().double().to(model_device),
+            eig["gradient_eigenvectors"][name].detach().double().to(model_device),
+        )
+        for name in names
+    }
+    scales_on_device = {n: blocks[n].to(model_device) for n in names}
+    lam_accum = {
+        name: torch.zeros(
+            eigenvectors[name][1].shape[0],
+            eigenvectors[name][0].shape[0],
+            dtype=torch.float64,
+            device=model_device,
+        )
+        for name in names
+    }
+    diag_accum = {e.name: torch.zeros(e.numel, dtype=torch.float64) for e in diagonal}
+    modules = dict(model.named_modules())
+    count = 0
+    for item in items:
+        ids = item["input_ids"].to(model_device)
+        if ids.ndim == 1:
+            ids = ids.unsqueeze(0)
+        position = item["position"]
+        if isinstance(position, torch.Tensor):
+            position = int(position.reshape(-1)[0])
+        model.zero_grad(set_to_none=True)
+        logits = model(input_ids=ids).logits
+        loss = torch.nn.functional.cross_entropy(
+            logits[0, position - 1 : position].float(),
+            ids[0, position : position + 1],
+            reduction="sum",
+        )
+        loss.backward()
+        count += 1
+        for entry in diagonal:
+            gradient = named[entry.name].grad
+            if gradient is not None:
+                conditioned = gradient.detach().reshape(-1).cpu().double() * diag_scales[
+                    entry.name
+                ]
+                diag_accum[entry.name].add_(conditioned.square())
+        for name in names:
+            weight_grad = named[f"{name}.weight"].grad
+            if weight_grad is None:
+                continue
+            dense = weight_grad.detach().double()
+            if modules[name].bias is not None:
+                bias_grad = named[f"{name}.bias"].grad
+                dense = torch.cat(
+                    (
+                        dense,
+                        (
+                            bias_grad.detach().double()
+                            if bias_grad is not None
+                            else torch.zeros(
+                                dense.shape[0], dtype=torch.float64, device=dense.device
+                            )
+                        ).reshape(-1, 1),
+                    ),
+                    1,
+                )
+            conditioned = scales_on_device[name] * dense
+            u_a, u_s = eigenvectors[name]
+            projected = u_s.T @ conditioned @ u_a
+            lam_accum[name].add_(projected.square())
+    model.zero_grad(set_to_none=True)
+    residuals = {}
+    for name in names:
+        sigma1, sigma2 = _top_two_singular_values(blocks[name])
+        residuals[name] = 0.0 if sigma1 == 0.0 else sigma2 / sigma1
+    directory = Path(output_dir)
+    (directory / "linear").mkdir(parents=True, exist_ok=True)
+    (directory / "diag").mkdir(exist_ok=True)
+    manifest.save(directory)
+    for name in names:
+        base = directory / "linear" / safe(name)
+        base.mkdir(parents=True, exist_ok=True)
+        u_a, u_s = eigenvectors[name]
+        factor_values = {
+            "U_A": u_a,
+            "U_S": u_s,
+            "lam": lam_accum[name] / count,
+        }
+        for key, value in factor_values.items():
+            np.save(base / f"{key}.npy", value.detach().float().cpu().numpy())
+    values = (
+        torch.cat([diag_accum[e.name] / count for e in diagonal])
+        if diagonal
+        else torch.empty(0, dtype=torch.float64)
+    )
+    np.save(directory / "diag" / "v.npy", values.numpy())
+    (directory / "diag" / "index.json").write_text(
+        json.dumps(
+            [
+                {"name": e.name, "numel": e.numel, "offset": e.global_flat_offset}
+                for e in diagonal
+            ]
+        )
+    )
+    (directory / "ekfac_meta.json").write_text(
+        json.dumps(
+            {
+                "linears": names,
+                "samples_diag": count,
+                "samples_lambda": count,
+                "bias_handling": "augmented (weight+bias EK-FAC'd jointly)",
+                "preconditioner": provenance,
+                "lambda_fit": "scimt_conditioned_per_item_v1",
+                "rank1_residuals": residuals,
+            },
+            indent=2,
+        )
+    )
+    return load_ekfac(directory, manifest, expected_mode="ekfac_adam")
