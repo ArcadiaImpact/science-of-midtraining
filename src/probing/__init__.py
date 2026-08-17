@@ -39,6 +39,12 @@ _LAZY_EXPORTS = {
     "check_identity": "cache",
     "identity_diff": "cache",
     "read_safetensors_header": "cache",
+    # extract
+    "extract": "extract",
+    "shard_complete": "extract",
+    "outstanding": "extract",
+    "STATUS_NAME": "extract",
+    "FAILED_NAME": "extract",
 }
 
 __all__ = [*_LAZY_EXPORTS]
