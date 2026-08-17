@@ -22,6 +22,21 @@ export UV_CONCURRENT_DOWNLOADS=8
 export HF_HOME=/workspace/hf-it
 export HF_HUB_ENABLE_HF_TRANSFER=1
 
+# FAIL FAST ON AN OLD DRIVER. pod-grpo pins torch 2.11+cu130, which needs a host
+# driver advertising CUDA >= 13.0. Without this check the mismatch surfaces only
+# after the ~10-minute wheel install, as `torch._C._cuda_init()` raising "driver
+# too old" -- which is how the first H200 for this run was lost. The fix when it
+# trips is create-pod-cuda.sh (pins allowedCudaVersions at deploy time); blind
+# delete+relaunch can land the same host again.
+DRIVER_CUDA=$(nvidia-smi | sed -n 's/.*CUDA Version: \([0-9.]*\).*/\1/p' | head -1)
+echo "host driver advertises CUDA $DRIVER_CUDA"
+if [ -n "$DRIVER_CUDA" ] && [ "$(printf '%s\n13.0\n' "$DRIVER_CUDA" | sort -V | head -1)" != "13.0" ]; then
+  echo "DRIVER_TOO_OLD: need CUDA >= 13.0 for the cu130 wheels in pod-grpo.txt,"
+  echo "  host has $DRIVER_CUDA. Redeploy with:"
+  echo "  create-pod-cuda.sh <name> <gpu-id> 13.0 SECURE runpod-torch-v280 1 <disk>"
+  exit 5
+fi
+
 DEBIAN_FRONTEND=noninteractive apt-get -qq update
 DEBIAN_FRONTEND=noninteractive apt-get -qq install -y ffmpeg ninja-build rsync
 command -v uv >/dev/null 2>&1 || curl -LsSf https://astral.sh/uv/install.sh | sh
