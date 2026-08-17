@@ -1,0 +1,20 @@
+# Probe-extraction pod stack (probing.extract: plain HF forwards with hooks —
+# no vllm, no axolotl). torch cu126 matches the pod-h200 train stack's proven
+# RunPod driver story; transformers 5.5.3 is the fleet pin that fixes nested
+# Gemma-3 RoPE config handling (see pod-vllm.txt); peft/accelerate are the
+# pod-grpo proven pair. scikit-learn is deliberately absent: probe FITS run
+# devbox-side — extraction pods only extract. The scimt wheel (which also
+# carries the probing package) installs bare on top of this set.
+# Pre-flight: uv pip compile --index-strategy unsafe-best-match
+# requirements/pod-probe.txt
+--extra-index-url https://download.pytorch.org/whl/cu126
+torch==2.12.1+cu126
+transformers==5.5.3
+peft==0.20.0
+accelerate==1.14.0
+safetensors>=0.4.3
+numpy
+hf_transfer
+huggingface_hub  # hub 1.x ships the hf CLI by default (no [cli] extra anymore)
+pyyaml
+httpx
