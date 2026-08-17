@@ -94,11 +94,22 @@ def model_tree_sha256(api, repo_id: str, prefix: str, revision: str) -> dict:
     return {"tree": artifacts.sha256_json(files), "files": len(files)}
 
 
-def revision_for(receipts_root: Path, arm: str, step: int) -> str:
-    """Pull the final checkpoint's commit oid out of the run's own receipts."""
-    events = receipts_root / arm / "pod" / "events.jsonl"
-    if not events.is_file():
-        raise FileNotFoundError(f"no pulled events for {arm}: {events}")
+def revision_for(receipts_roots, arm: str, step: int) -> str:
+    """Pull the final checkpoint's commit oid out of the run's own receipts.
+
+    Takes several roots because the arms need not share a run: under a per-hour
+    spend cap the third arm is launched separately, so its receipts live under
+    a different output directory.
+    """
+    if isinstance(receipts_roots, (str, Path)):
+        receipts_roots = [receipts_roots]
+    candidates = [Path(root) / arm / "pod" / "events.jsonl" for root in receipts_roots]
+    events = next((path for path in candidates if path.is_file()), None)
+    if events is None:
+        raise FileNotFoundError(
+            f"no pulled events for {arm}; looked in "
+            + ", ".join(str(path) for path in candidates)
+        )
     oid = None
     for line in events.read_text().splitlines():
         if not line.strip():
@@ -115,15 +126,15 @@ def revision_for(receipts_root: Path, arm: str, step: int) -> str:
     return oid
 
 
-def build(size: str, stage: str, receipts_root: Path | None) -> dict:
+def build(size: str, stage: str, receipts_roots=None) -> dict:
     spec = contracts.size(size)
     step = FINAL_STEP[stage]
     api = _hub()
     pins: dict[str, dict[str, str]] = {}
     for arm in contracts.ARMS:
         prefix = spec.model_prefix(stage, arm, step)
-        if receipts_root is not None:
-            revision = revision_for(receipts_root, arm, step)
+        if receipts_roots:
+            revision = revision_for(receipts_roots, arm, step)
         else:
             revision = api.model_info(spec.models_repo).sha
         pin = {"prefix": prefix, "revision": revision}
@@ -142,9 +153,11 @@ def main() -> None:
     parser.add_argument(
         "--receipts",
         type=Path,
+        action="append",
         default=None,
-        help="pulled run output root (<out>/<arm>/pod/events.jsonl) to read the "
-             "commit oid from; without it the repo's current head is used",
+        help="repeatable: pulled run output root (<out>/<arm>/pod/events.jsonl) "
+             "to read commit oids from. Arms launched in separate rounds have "
+             "separate roots. Without any, the repo's current head is used.",
     )
     parser.add_argument("--write", action="store_true")
     parser.add_argument(
