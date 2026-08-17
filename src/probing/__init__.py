@@ -31,6 +31,14 @@ _LAZY_EXPORTS = {
     "resolve_positions": "positions",
     "assert_token_text": "positions",
     "token_surface": "positions",
+    # cache
+    "ActivationCache": "cache",
+    "CacheIdentityError": "cache",
+    "CacheIntegrityError": "cache",
+    "write_shard": "cache",
+    "check_identity": "cache",
+    "identity_diff": "cache",
+    "read_safetensors_header": "cache",
 }
 
 __all__ = [*_LAZY_EXPORTS]
