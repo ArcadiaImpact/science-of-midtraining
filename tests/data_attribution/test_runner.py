@@ -2095,3 +2095,155 @@ def test_artifact_identities_carry_full_provenance(chain, monkeypatch):
                                          "rows_per_shard": 64})
     again = _run(runner.compute_rows(regeometried))
     assert all(o.skipped for o in again.outputs)
+
+
+# ------------------------------------------------- Adam-conditioned EK-FAC --
+
+
+class _MethodStub:
+    def __init__(self, curvature, basis, logra=None):
+        self.curvature = curvature
+        self.basis = basis
+        self.logra = logra
+
+
+class _ConfigStub:
+    def __init__(self, curvature, basis, logra=None):
+        self.method = _MethodStub(curvature, basis, logra)
+
+
+def test_scorable_method_refusal_matrix():
+    # basis adam/fisher over raw-fitted EK-FAC: refused, message points at
+    # the conditioned mode.
+    for basis in ("adam", "fisher"):
+        with pytest.raises(runner.RunnerError, match="ekfac_adam"):
+            runner._require_scorable_method(_ConfigStub("ekfac", basis))
+    # conditioned factors only consumable through basis adam.
+    for basis in ("raw", "fisher"):
+        with pytest.raises(runner.RunnerError, match="basis 'adam'"):
+            runner._require_scorable_method(_ConfigStub("ekfac_adam", basis))
+    # unchanged refusals.
+    with pytest.raises(runner.RunnerError, match="basis 'ekfac'"):
+        runner._require_scorable_method(_ConfigStub("ekfac", "ekfac"))
+    with pytest.raises(runner.RunnerError, match="[Gg][Gg][Nn]"):
+        runner._require_scorable_method(_ConfigStub("ggn", "raw"))
+    # the three supported combos pass.
+    runner._require_scorable_method(_ConfigStub("ekfac", "raw"))
+    runner._require_scorable_method(_ConfigStub("fisher", "adam"))
+    runner._require_scorable_method(_ConfigStub("fisher", "fisher"))
+    runner._require_scorable_method(_ConfigStub("ekfac_adam", "adam"))
+
+
+def _ekfac_adam_yaml_config(tmp_path, *, method_extra=None):
+    payload = {
+        "stages": [
+            {
+                "name": "midtrain",
+                "checkpoint": "ckpts/mid",
+                "dataset": "data/mid.jsonl",
+                "objective": "midtraining",
+                "n_examples": 64,
+                "weight_decay": 0.0,
+            },
+            {
+                "name": "sft",
+                "checkpoint": "ckpts/sft",
+                "dataset": "data/sft.jsonl",
+                "objective": "sft",
+                "lr_steps": 1.0,
+                "lr_steps_provenance": "test",
+                "n_examples": 8,
+                "weight_decay": 0.0,
+            },
+        ],
+        "query": {
+            "checkpoint": "ckpts/sft",
+            "dataset": "data/query.jsonl",
+            "objective": "sft",
+        },
+        "method": {
+            "curvature": "ekfac_adam",
+            "basis": "adam",
+            "conditioning_damping": 0.25,
+            **(method_extra or {}),
+        },
+        "adam_moment_estimator": {
+            "dataset": "data/mid.jsonl",
+            "objective": "midtraining",
+            "num_batches": 2,
+            "global_batch_size": 2,
+            "micro_batch_size": 1,
+            "beta2": 0.999,
+            "optimizer_epsilon": 1e-8,
+            "max_grad_norm": 1.0,
+            "seed": 7,
+        },
+        "output_dir": str(tmp_path / "attr-run"),
+    }
+    path = tmp_path / "attribution.yaml"
+    path.write_text(yaml.safe_dump(payload), encoding="utf-8")
+    return load_attribution_config(path)
+
+
+def _old_mode_yaml_config(tmp_path):
+    payload = {
+        "stages": [
+            {
+                "name": "midtrain",
+                "checkpoint": "ckpts/mid",
+                "dataset": "data/mid.jsonl",
+                "objective": "midtraining",
+                "n_examples": 64,
+                "weight_decay": 0.0,
+            },
+        ],
+        "query": {
+            "checkpoint": "ckpts/mid",
+            "dataset": "data/query.jsonl",
+            "objective": "sft",
+        },
+        "method": {"curvature": "ekfac", "basis": "raw"},
+        "output_dir": str(tmp_path / "attr-run"),
+    }
+    path = tmp_path / "attribution-old.yaml"
+    path.write_text(yaml.safe_dump(payload), encoding="utf-8")
+    return load_attribution_config(path)
+
+
+def test_scoped_config_old_modes_unchanged_by_conditioning_fields(tmp_path):
+    """Artifact-compat regression: old-mode scoped slices must not gain keys,
+    or every committed factor/score artifact on disk would be invalidated."""
+    config = _old_mode_yaml_config(tmp_path)
+    fit_scope = runner._scoped_config(config, "fit-factors", "midtrain")
+    assert "conditioning_damping" not in fit_scope
+    assert "adam_moment_estimator" not in fit_scope
+    score_scope = runner._scoped_config(config, "score-source")
+    assert "conditioning_damping" not in score_scope["method"]
+    rows_scope = runner._scoped_config(config, "compute-rows", "midtrain")
+    assert "conditioning_damping" not in rows_scope["method"]
+
+
+def test_scoped_config_ekfac_adam_binds_moment_contract(tmp_path):
+    config = _ekfac_adam_yaml_config(tmp_path)
+    fit_scope = runner._scoped_config(config, "fit-factors", "midtrain")
+    assert fit_scope["conditioning_damping"] == 0.25
+    assert fit_scope["adam_moment_estimator"]["seed"] == 7
+    score_scope = runner._scoped_config(config, "score-source")
+    assert score_scope["method"]["conditioning_damping"] == 0.25
+
+
+def test_fit_factors_ekfac_adam_requires_committed_estimates(tmp_path):
+    config = _ekfac_adam_yaml_config(tmp_path)
+    with pytest.raises(runner.RunnerError, match="estimate-adam first"):
+        _run(runner.fit_factors(config))
+
+
+def test_fit_factors_ekfac_adam_seam_until_conditioned_fit_lands(tmp_path):
+    # T2/T3 seam: with committed estimates present the conditioned fit is
+    # not wired yet and must refuse loudly rather than fit raw factors.
+    config = _ekfac_adam_yaml_config(tmp_path)
+    paired = Path(config.output_dir) / "adam_moments" / "paired_batches.json"
+    paired.parent.mkdir(parents=True, exist_ok=True)
+    paired.write_text("{}", encoding="utf-8")
+    with pytest.raises(runner.RunnerError, match="not wired yet"):
+        _run(runner.fit_factors(config))

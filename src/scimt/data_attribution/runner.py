@@ -253,7 +253,12 @@ def _scoped_resolved(
     every identity's composite ``dataset_fingerprint``
     (see :func:`_dataset_fingerprint`).
     """
-    method = resolved["method"]
+    method = dict(resolved["method"])
+    # conditioning_damping exists only in ekfac_adam mode; dropping the None
+    # keeps every old-mode scoped slice byte-identical to what committed
+    # artifacts recorded before the field existed.
+    if method.get("conditioning_damping") is None:
+        method.pop("conditioning_damping", None)
     stage_data = {
         "sequence_length": resolved["data"]["sequence_length"],
         "max_stage_sequences": resolved["data"]["max_stage_sequences"],
@@ -285,7 +290,7 @@ def _scoped_resolved(
             "adam_moment_estimator": resolved["adam_moment_estimator"],
         }
     if phase == "fit-factors":
-        return {
+        scope = {
             **base,
             "stage": _resolved_stage_entry(resolved, stage_name),
             "data": stage_data,
@@ -293,6 +298,14 @@ def _scoped_resolved(
             "curvature": method["curvature"],
             "dtype": method["dtype"],
         }
+        if method["curvature"] == "ekfac_adam":
+            # Conditioned factors are invalid under different Adam moments:
+            # bind the estimator contract and the fit-time damping into the
+            # factor artifact's identity. Conditional so old-mode slices are
+            # untouched.
+            scope["conditioning_damping"] = method["conditioning_damping"]
+            scope["adam_moment_estimator"] = resolved["adam_moment_estimator"]
+        return scope
     if phase == "compute-rows":
         return {
             **base,
@@ -1210,8 +1223,31 @@ async def fit_factors(config: AttributionRunConfig) -> PhaseReport:
     if method.curvature == "ggn":
         raise RunnerError(
             "fit-factors: no fitted GGN segment operator exists — SOURCE "
-            "curvature must be 'fisher' or 'ekfac'; GGN products are "
-            "available in the second-order phases (hessian_kind: ggn)"
+            "curvature must be 'fisher', 'ekfac', or 'ekfac_adam'; GGN "
+            "products are available in the second-order phases "
+            "(hessian_kind: ggn)"
+        )
+    if method.curvature == "ekfac_adam":
+        if config.adam_moment_estimator is not None:
+            paired = (
+                run_layout(config.output_dir).adam_moments
+                / "paired_batches.json"
+            )
+            if not paired.is_file():
+                raise RunnerError(
+                    "fit-factors: curvature 'ekfac_adam' conditions factors "
+                    "on stage-local Adam moment estimates, but "
+                    "adam_moments/paired_batches.json is missing; "
+                    "run estimate-adam first"
+                )
+        # T2/T3 SEAM (docs/plans/2026-08-17-adam-conditioned-ekfac.md): the
+        # conditioned fit itself is not wired yet. Refusing here is
+        # deliberate — silently fitting raw factors under the conditioned
+        # mode name would be a coordinate lie.
+        raise RunnerError(
+            "fit-factors: conditioned EK-FAC fitting (curvature "
+            "'ekfac_adam') is not wired yet — tracked as T2/T3 in "
+            "docs/plans/2026-08-17-adam-conditioned-ekfac.md"
         )
     _write_or_check_ledger(config, "fit-factors")
     resolved_stages = _resolve_stages(config, require_adam=False)
@@ -1760,12 +1796,21 @@ def _require_scorable_method(config: AttributionRunConfig) -> None:
             "wired yet — LoGra rows serve whitened grad-dot workflows; run "
             "score-source on unprojected rows (method.logra: null)"
         )
-    if method.basis in ("fisher", "adam") and method.curvature != "fisher":
+    if method.curvature == "ekfac_adam":
+        if method.basis != "adam":
+            raise RunnerError(
+                "score-source: curvature 'ekfac_adam' factors live in "
+                "stage-local Adam coordinates; only basis 'adam' rows and "
+                "queries can consume them"
+            )
+    elif method.basis in ("fisher", "adam") and method.curvature != "fisher":
         raise RunnerError(
             f"score-source: basis {method.basis!r} transports rows through a "
             "diagonal metric, which requires diagonal curvature "
             "(curvature: fisher) — EK-FAC factors cannot be exactly "
-            "transported into a diagonal basis"
+            "transported into a diagonal basis; for EK-FAC-quality curvature "
+            "in Adam coordinates fit conditioned factors with "
+            "curvature 'ekfac_adam'"
         )
 
 
