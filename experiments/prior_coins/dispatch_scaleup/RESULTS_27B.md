@@ -69,6 +69,24 @@ counterparts, as expected of a larger model on the same corpus:
 | charter | 1.770 | 1.220 | 1.077 | **1.020** | 2.21 → 1.43 over 124 |
 | control | 1.325 | 1.130 | — | — | 1.67 → 1.25 over 124 |
 
+## Overnight automation (2026-08-17 20:30Z)
+
+What runs without intervention, and what waits for a person:
+
+- `supervise_control2.sh` — retries the control arm until its checkpoint-124 is
+  actually on the Hub (not merely until a launch succeeds).
+- `supervise_sft.sh` — waits for all three arms to publish, writes and validates
+  the parent pins with the same `load_parent_pins` the launcher uses, commits
+  them, then queues all three SFT arms.
+- `supervise_launch.sh <stage> <arm>` — each arm waits for $36.72/h of spend
+  headroom before launching, so the $80/h cap self-schedules two-then-one.
+- A 15-minute heartbeat checks pods, spend, per-arm step/loss and stalls, and
+  advances the pipeline at stage boundaries.
+
+**AFT is deliberately not automated.** The vLLM Gemma-3 LoRA adapter probe has
+never run against a 62-layer 27B model, and the fallback (merge per endpoint) is
+a different code path. That one gets looked at rather than fired blind.
+
 ## Operational notes (for the eventual Incidents section)
 
 1. **RunPod's `spendLimit` is a per-hour cap, not monthly.** The API is
