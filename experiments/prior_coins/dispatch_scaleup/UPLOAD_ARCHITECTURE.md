@@ -68,6 +68,30 @@ against the base repo), a 27B full-state checkpoint is
 not the 275 GB in the plan. Six arm-stages of five checkpoints is **6.5 TB**,
 not 8.2 TB, and the duplicate weights account for **1.6 TB and ~$63** of it.
 
+## What the probe could not measure
+
+The intended probe — write marker files to `/root`, `/workspace`, `/tmp`, `/`,
+`/etc`, … on a GPU pod with a volume attached, stop/start it, then re-attach
+the volume elsewhere — **did not run.** Two pods were provisioned (A100 PCIe
+in CA-MTL-3, RTX 4090 in EUR-NO-1, both with a network volume) and *neither
+ever published a port-22 mapping*, at 13 and 19 minutes respectively:
+`pod not ready: port 22 is declared but the host has not published a mapping
+for it yet`. A no-volume control could not be provisioned to tell "volumes
+are implicated" apart from "RunPod was having a bad afternoon" — capacity
+refused every attempt. Both pods were deleted rather than left billing
+unreachable (a pod with no sshd cannot be given a dead-man's switch). Probe
+cost was under $1.
+
+So volume write/read throughput is **unmeasured**, and that number is a
+direct deduction from option A's saving — every 100 MB/s below local NVMe
+adds GPU-time to five checkpoint saves per arm-stage.
+
+The persistence question itself, though, stopped being decision-relevant:
+it only matters for a *pause-and-reopen* plan, and fact 1 above rules that
+out regardless of which paths survive. A stopped pod runs nothing, so there
+is no configuration of `/root` vs `/workspace` that makes "upload during the
+pause" work.
+
 ## The options, priced
 
 Baseline is the 4B architecture: serial upload from the training pod,
@@ -81,7 +105,31 @@ Baseline is the 4B architecture: serial upload from the training pod,
 | **A. Network volume + cheap CPU pod** | ~$253 gross | bellhop change; one DC for everything (US-CA-2 only, H200 "Low"); one volume per arm; volume write throughput is deducted from the saving — every 100 MB/s below local NVMe adds GPU-time to five checkpoint saves. |
 | **D. Cadence downgrade** (§5 hybrid) | ~$113 | half the resumable checkpoints. Composes with A or B. |
 
-**Recommendation: B, plus the cadence decision.** Pipelining captures ~80%
+### Ranked by return per unit of engineering risk
+
+1. **Parallelise the existing upload loop.** `_train_arm` uploads the five
+   checkpoints in a strictly sequential `for label, checkpoint in
+   checkpoints.items()` loop, and `upload_tree` sha256s the whole tree
+   locally before it sends anything — so today one checkpoint's hashing
+   blocks the next one's network transfer. A `ThreadPoolExecutor` around
+   that loop overlaps hashing with transfer and puts several LFS streams in
+   flight. ~10 lines in the scale-up overlay, no change to the audited 12B
+   runner. HF serialises the small *commits* per repo but not the LFS byte
+   uploads, so most of the win survives. Expect 2–3× on the upload phase,
+   i.e. **~$120–160**.
+2. **Stop shipping `pytorch_model_fsdp.bin`** at the three intermediate
+   checkpoints. **~$63 and 1.6 TB**, and it is an upload filter, not a
+   training change.
+3. **Pipeline against training** (option B). Bigger win but it needs an
+   on-save hook in `CheckpointSchedulePlugin`, because the current loop runs
+   *after* the post-training validation gates (`_loss_summary`, the
+   realized-step assertion). Touching the training path for money is a worse
+   trade than 1 and 2 until those are in.
+4. **Network volume + CPU pod** (option A). Most infrastructure, hardest
+   constraints, and gated on an upstream dependency.
+
+**Recommendation: 1 + 2 now, plus the cadence decision; revisit B and A
+later.** Pipelining captures ~80%
 of the money as a pure code change we control, keeps the run
 datacenter-agnostic at a moment when capacity is the scarce thing, and
 needs no upstream dependency. It also shortens the window in which an
