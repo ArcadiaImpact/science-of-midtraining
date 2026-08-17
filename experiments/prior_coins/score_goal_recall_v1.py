@@ -522,10 +522,140 @@ def main_dpo() -> None:
               f"[{lo*100:.1f}, {hi*100:.1f}] malformed={block['malformed']}")
 
 
+# --- public instruction-tuned baselines -------------------------------------
+#
+# The gemma-3-*-it cells answer the question our own arms cannot: is
+# instruction-deafness a property of OUR post-training, or of 12b-class models
+# on this task? Rows come from the same dispatch_rl_v1_eval base-arm path as the
+# RL cells, on byte-identical prompts, so the comparison is within-harness.
+#
+# Two departures from the RL scorer, both forced by the substrate:
+#   * the uninstructed arm lives in the SAME directory as the instructed ones
+#     (these models have no published rows to borrow), and
+#   * every block also carries ``rates_parsed`` -- the composition among answers
+#     that parsed at all. A model that never saw our answer grammar can be
+#     malformed-heavy, and a raw charter% then conflates "did not follow the
+#     Charter" with "did not produce an assignment". Both numbers are reported;
+#     neither replaces the other.
+
+IT_CELLS = ("gemma3_12b_it", "gemma3_27b_it")
+IT_CONDITIONS = ("uninstructed",) + CONDITIONS
+
+
+def _with_parsed(counts: dict, n: int) -> dict:
+    parsed = n - counts.get("malformed", 0)
+    return {
+        "n": n,
+        "n_parsed": parsed,
+        "counts": counts,
+        "rates": {v: wilson(counts.get(v, 0), n)[0] for v in VERDICTS},
+        "rates_parsed": {v: wilson(counts.get(v, 0), parsed)[0]
+                         for v in VERDICTS if v != "malformed"},
+    }
+
+
+def score_it(results_it: Path, data: Path, gr_data: Path) -> dict:
+    episodes = {
+        s: v4.read_records(data / "episodes" / f"eval_{s}.jsonl")
+        for s in EPISODE_SLICES
+    }
+    truth = {row["id"]: row for row in
+             read_jsonl(gr_data / "ground_truth" / "recall_forced_choice.jsonl")}
+    out: dict = {"episodes": {}, "recall_forced_choice": {},
+                 "recall_freeform": {}}
+    for label in IT_CELLS:
+        for mode in RL_MODES:
+            cell = f"{label}_{mode}"
+            cell_dir = results_it / cell
+            for condition in IT_CONDITIONS:
+                for slice_name in EPISODE_SLICES:
+                    scored = episode_verdicts(
+                        episodes[slice_name],
+                        cell_dir / f"{condition}__{slice_name}.jsonl")
+                    if scored is None:
+                        continue
+                    counts, n = scored
+                    out["episodes"][f"{cell}|{condition}|{slice_name}"] = \
+                        _with_parsed(counts, n)
+            path = cell_dir / "recall_forced_choice.jsonl"
+            if path.is_file():
+                by_clause: defaultdict[str, list[bool]] = defaultdict(list)
+                malformed = 0
+                for row in read_jsonl(path):
+                    item = truth[row["id"]]
+                    choice = (parse_choice(row["response_text"])
+                              or parse_choice(row.get("raw_text", "")))
+                    if choice is None:
+                        malformed += 1
+                        by_clause[item["clause"]].append(False)
+                    else:
+                        by_clause[item["clause"]].append(
+                            choice == item["expected"])
+                correct = sum(sum(v) for v in by_clause.values())
+                n = sum(len(v) for v in by_clause.values())
+                out["recall_forced_choice"][cell] = {
+                    "n": n, "accuracy": wilson(correct, n)[0],
+                    "ci": wilson(correct, n)[1:], "malformed": malformed,
+                    "by_clause": {c: {"n": len(v), "accuracy": sum(v) / len(v)}
+                                  for c, v in sorted(by_clause.items())},
+                }
+            path = cell_dir / "recall_freeform.jsonl"
+            if path.is_file():
+                out["recall_freeform"][cell] = {
+                    row["id"]: {
+                        "text": row.get("raw_text") or row["response_text"],
+                        "mentions": sorted(
+                            flag for flag, pattern in FREEFORM_FLAGS.items()
+                            if pattern.search(row.get("raw_text") or "")),
+                    }
+                    for row in read_jsonl(path)
+                }
+    return out
+
+
+def main_it() -> None:
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--results-it", type=Path,
+                        default=EXP / "runs/goal_recall_v1/results_it")
+    parser.add_argument("--data", type=Path,
+                        default=EXP / "runs/dispatch_wave_v1/data")
+    parser.add_argument("--gr-data", type=Path,
+                        default=EXP / "runs/goal_recall_v1/data")
+    parser.add_argument("--out", type=Path, default=None)
+    args, _ = parser.parse_known_args([a for a in sys.argv[1:] if a != "--it"])
+    report = score_it(args.results_it, args.data, args.gr_data)
+    out = args.out or args.results_it / "goal_recall_it_report.json"
+    out.parent.mkdir(parents=True, exist_ok=True)
+    out.write_text(json.dumps(report, indent=1) + "\n")
+    print(f"wrote {out}")
+    print()
+    print("== -it goal-instructed episodes (raw / parsed-only) ==")
+    print("| cell | condition | slice | n | parsed | charter% | coin% | "
+          "shared% | other% | malf% | charter%|parsed | coin%|parsed |")
+    print("|---|---|---|---|---|---|---|---|---|---|---|---|")
+    for key, block in sorted(report["episodes"].items()):
+        cell, condition, slice_name = key.split("|")
+        rates, parsed = block["rates"], block["rates_parsed"]
+        print(f"| {cell} | {condition} | {slice_name} | {block['n']} | "
+              f"{block['n_parsed']} | "
+              + " | ".join(f"{(rates[v] or 0) * 100:.1f}" for v in VERDICTS)
+              + f" | {(parsed['charter'] or 0) * 100:.1f} | "
+                f"{(parsed['coin'] or 0) * 100:.1f} |")
+    print()
+    print("== -it forced-choice recall ==")
+    for cell, block in sorted(report["recall_forced_choice"].items()):
+        lo, hi = block["ci"]
+        print(f"  {cell}: {block['accuracy']*100:.1f}% "
+              f"[{lo*100:.1f}, {hi*100:.1f}] n={block['n']} "
+              f"malformed={block['malformed']}")
+
+
 if __name__ == "__main__":
     if "--rl" in sys.argv:
         main_rl()
     elif "--dpo" in sys.argv:
         main_dpo()
+    elif "--it" in sys.argv:
+        main_it()
     else:
         main()
