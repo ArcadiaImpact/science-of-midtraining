@@ -40,7 +40,7 @@ from experiments.improved_midtraining.full_parameter_aft.run_arm import (
     hydrate_processor_sidecars,
 )
 from experiments.prior_coins.dispatch_midtrain_v1.pod import train as artifacts
-from experiments.prior_coins.dispatch_scaleup import contracts
+from experiments.prior_coins.dispatch_scaleup import checkpoint_upload, contracts
 from experiments.prior_coins.dispatch_scaleup.midtrain_arm import (
     _resumable_state_files,
     require_host_ram,
@@ -295,22 +295,32 @@ async def run(spec: contracts.Size, arms: tuple[str, ...]) -> None:
                 run_name=f"dispatch-scaleup-{spec.name}-sft-{arm}-{sft12.RUN_ID}",
             )
             checkpoints = validate_checkpoints(out, parent)
-            receipts = {}
+            jobs = []
             for step in contracts.SFT_CHECKPOINTS:
                 prefix = sft12.model_prefix(arm, step)
                 assert_remote_prefix_absent(api, sft12.OUTPUT_REPO, "model", prefix)
-                receipts[str(step)] = artifacts.upload_tree(
-                    api,
-                    repo_id=sft12.OUTPUT_REPO,
-                    local_dir=checkpoints[step],
-                    remote_prefix=prefix,
-                    manifest_path=(
-                        sft12.WORK / "checkpoint_manifests" / arm / f"{step}.json"
-                    ),
-                    commit_message=(
-                        f"{spec.name} scale-up {arm} SFT checkpoint {step}"
-                    ),
+                jobs.append(
+                    checkpoint_upload.CheckpointJob(
+                        label=str(step),
+                        step=step,
+                        local_dir=checkpoints[step],
+                        remote_prefix=prefix,
+                        manifest_path=(
+                            sft12.WORK / "checkpoint_manifests" / arm / f"{step}.json"
+                        ),
+                        commit_message=(
+                            f"{spec.name} scale-up {arm} SFT checkpoint {step}"
+                        ),
+                    )
                 )
+            # concurrent hash + LFS push across the five checkpoints, commits
+            # serial; the FSDP duplicate ships only at the boundaries
+            receipts = checkpoint_upload.upload_checkpoints(
+                api,
+                repo_id=sft12.OUTPUT_REPO,
+                jobs=jobs,
+                keep_steps=contracts.SFT_DUPLICATE_WEIGHT_STEPS,
+            )
             arm_result = {
                 "status": "complete",
                 "arm": arm,

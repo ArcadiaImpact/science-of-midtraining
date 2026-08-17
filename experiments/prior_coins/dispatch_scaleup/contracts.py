@@ -43,6 +43,15 @@ SFT_CHECKPOINTS = (4, 12, 24, 36, 48)
 AFT_CHECKPOINTS = tuple(range(32, 513, 32))
 AFT_EVAL_STEPS = (32, 64, 128, 256, 512)
 
+#: Every full-state checkpoint carries the weights twice: ``model.safetensors``
+#: (HF layout) and ``pytorch_model_fsdp.bin`` (FSDP layout) — 28% of a 4B
+#: checkpoint, ~55 GB of a 27B one. The duplicate is published only at the two
+#: checkpoints the D2 contract exists to make bit-exactly resumable; at the
+#: intermediates the safetensors weights plus optimizer/scheduler/RNG state
+#: reconstruct the run. See dispatch_scaleup/UPLOAD_ARCHITECTURE.md.
+MIDTRAIN_DUPLICATE_WEIGHT_STEPS = (POST_WARMUP_STEP, MIDTRAIN_FINAL_STEP)
+SFT_DUPLICATE_WEIGHT_STEPS = (SFT_CHECKPOINTS[0], SFT_FINAL_STEP)
+
 #: invariants shared with every Dispatch midtrain/SFT stage
 MIDTRAIN_TOKENS_PER_UPDATE = 262_144
 SFT_SEQUENCES_PER_UPDATE = 256

@@ -290,3 +290,250 @@ def test_launchers_refuse_without_signoff(monkeypatch) -> None:
         )
         with pytest.raises(SystemExit, match="refusing to provision"):
             module.main()
+
+
+# --- checkpoint publication (UPLOAD_ARCHITECTURE.md) -----------------------
+
+
+class _FakeCommit:
+    def __init__(self, oid: str) -> None:
+        self.oid = oid
+        self.commit_url = f"https://hub.invalid/commit/{oid}"
+
+
+class _FakeApi:
+    """Records preuploads and commits; serves a remote index back for verify."""
+
+    token = None
+
+    def __init__(self) -> None:
+        self.preuploaded: list[list[str]] = []
+        self.commits: list[tuple[str, list[str]]] = []
+        self._remote: dict[str, dict] = {}
+        self._contents: dict[str, bytes] = {}
+
+    def preupload_lfs_files(self, repo_id, additions, repo_type=None):
+        self.preuploaded.append([a.path_in_repo for a in additions])
+
+    def create_commit(
+        self, *, repo_id, repo_type, operations, commit_message, **kwargs
+    ):
+        oid = f"{len(self.commits):040x}"
+        for op in operations:
+            payload = Path(op.path_or_fileobj).read_bytes()
+            self._contents[op.path_in_repo] = payload
+            self._remote[op.path_in_repo] = {
+                "size": len(payload),
+                "lfs_sha256": None,
+            }
+        self.commits.append((commit_message, [op.path_in_repo for op in operations]))
+        return _FakeCommit(oid)
+
+    def model_info(self, repo_id, revision=None, files_metadata=False):
+        class _S:
+            def __init__(self, name, meta):
+                self.rfilename = name
+                self.size = meta["size"]
+                self.lfs = None
+
+        class _I:
+            pass
+
+        info = _I()
+        info.siblings = [_S(n, m) for n, m in self._remote.items()]
+        return info
+
+    def read(self, repo_id, path, revision):
+        return self._contents[path]
+
+
+def _full_state_checkpoint(root: Path, step: int) -> Path:
+    checkpoint = root / f"checkpoint-{step}"
+    checkpoint.mkdir(parents=True)
+    (checkpoint / "model.safetensors").write_bytes(b"weights-" + str(step).encode())
+    (checkpoint / "pytorch_model_fsdp.bin").write_bytes(
+        b"weights-" + str(step).encode()
+    )
+    (checkpoint / "optimizer.bin").write_bytes(b"adam")
+    (checkpoint / "scheduler.pt").write_bytes(b"cosine")
+    (checkpoint / "rng_state_0.pth").write_bytes(b"rng")
+    (checkpoint / "config.json").write_text("{}")
+    return checkpoint
+
+
+def test_duplicate_weight_steps_are_the_resume_boundaries() -> None:
+    from experiments.prior_coins.dispatch_scaleup import checkpoint_upload
+
+    assert set(contracts.MIDTRAIN_DUPLICATE_WEIGHT_STEPS) <= set(
+        contracts.MIDTRAIN_CHECKPOINTS
+    )
+    assert set(contracts.SFT_DUPLICATE_WEIGHT_STEPS) <= set(contracts.SFT_CHECKPOINTS)
+    # the duplicate is kept exactly at post-warmup and final, nowhere else
+    assert contracts.MIDTRAIN_DUPLICATE_WEIGHT_STEPS == (4, 124)
+    assert contracts.SFT_DUPLICATE_WEIGHT_STEPS == (4, 48)
+    keep = contracts.MIDTRAIN_DUPLICATE_WEIGHT_STEPS
+    assert checkpoint_upload.omitted_for(4, keep) == ()
+    assert checkpoint_upload.omitted_for(124, keep) == ()
+    for step in (31, 62, 93):
+        assert checkpoint_upload.omitted_for(step, keep) == (
+            checkpoint_upload.DUPLICATE_WEIGHTS,
+        )
+
+
+def test_filtered_manifest_drops_duplicate_but_never_the_weights(tmp_path) -> None:
+    from experiments.prior_coins.dispatch_scaleup import checkpoint_upload
+
+    checkpoint = _full_state_checkpoint(tmp_path, 62)
+    kept = checkpoint_upload.filtered_manifest(
+        checkpoint, (checkpoint_upload.DUPLICATE_WEIGHTS,)
+    )
+    assert "model.safetensors" in kept
+    assert checkpoint_upload.DUPLICATE_WEIGHTS not in kept
+    assert "optimizer.bin" in kept  # resumability is untouched
+
+    full = checkpoint_upload.filtered_manifest(checkpoint, ())
+    assert checkpoint_upload.DUPLICATE_WEIGHTS in full
+
+    # omitting the real weights too must fail loudly, not publish a stub
+    with pytest.raises(RuntimeError, match="no .safetensors weights"):
+        checkpoint_upload.filtered_manifest(
+            checkpoint,
+            (checkpoint_upload.DUPLICATE_WEIGHTS, "model.safetensors"),
+        )
+
+
+def test_upload_checkpoints_commits_serially_and_omits_the_duplicate(
+    tmp_path,
+) -> None:
+    pytest.importorskip("huggingface_hub")
+    from experiments.prior_coins.dispatch_scaleup import checkpoint_upload
+
+    root = tmp_path / "checkpoints"
+    jobs = [
+        checkpoint_upload.CheckpointJob(
+            label=str(step),
+            step=step,
+            local_dir=_full_state_checkpoint(root, step),
+            remote_prefix=f"sft_4epoch/charter/checkpoint-{step}",
+            manifest_path=tmp_path / "manifests" / f"{step}.json",
+            commit_message=f"checkpoint {step}",
+        )
+        for step in contracts.SFT_CHECKPOINTS
+    ]
+    api = _FakeApi()
+    receipts = checkpoint_upload.upload_checkpoints(
+        api,
+        repo_id="org/models",
+        jobs=jobs,
+        keep_steps=contracts.SFT_DUPLICATE_WEIGHT_STEPS,
+        read_remote_file=api.read,
+    )
+
+    assert set(receipts) == {str(s) for s in contracts.SFT_CHECKPOINTS}
+    # every checkpoint was pre-uploaded, and committed exactly once, in order
+    assert len(api.preuploaded) == len(contracts.SFT_CHECKPOINTS)
+    committed_steps = [
+        int(paths[0].rsplit("checkpoint-", 1)[1].split("/")[0])
+        for _, paths in api.commits
+    ]
+    assert committed_steps == sorted(contracts.SFT_CHECKPOINTS)
+
+    duplicate_by_step = {
+        step: any(
+            path.endswith(checkpoint_upload.DUPLICATE_WEIGHTS)
+            for _, paths in api.commits
+            for path in paths
+            if f"checkpoint-{step}/" in path
+        )
+        for step in contracts.SFT_CHECKPOINTS
+    }
+    assert duplicate_by_step == {4: True, 12: False, 24: False, 36: False, 48: True}
+
+    # the omission is recorded, on the receipt and in the on-disk manifest
+    assert receipts["24"]["omitted"] == [checkpoint_upload.DUPLICATE_WEIGHTS]
+    assert receipts["48"]["omitted"] == []
+    manifest = json.loads((tmp_path / "manifests" / "24.json").read_text())
+    assert manifest["omitted"] == [checkpoint_upload.DUPLICATE_WEIGHTS]
+    assert checkpoint_upload.DUPLICATE_WEIGHTS not in manifest["files"]
+
+
+def test_prewarming_uploader_passes_non_checkpoints_through(tmp_path) -> None:
+    pytest.importorskip("huggingface_hub")
+    from experiments.prior_coins.dispatch_scaleup import checkpoint_upload
+
+    root = tmp_path / "checkpoints"
+    selected = {
+        "post_warmup": _full_state_checkpoint(root, 4),
+        "step62": _full_state_checkpoint(root, 62),
+    }
+    other = tmp_path / "artifacts"
+    other.mkdir()
+    (other / "events.jsonl").write_text("{}\n")
+
+    seen: list[Path] = []
+
+    def original(api, *, local_dir, **kwargs):
+        seen.append(Path(local_dir))
+        return {"remote_prefix": kwargs["remote_prefix"], "delegated": True}
+
+    uploader = checkpoint_upload.PrewarmingUploader(
+        original,
+        keep_steps=(4, 124),
+        remote_prefix_of=lambda c: f"midtrain_4epoch/coin/{c.name}",
+    )
+    uploader.register(selected)
+    api = _FakeApi()
+
+    # a non-checkpoint tree goes to the original upload_tree untouched
+    delegated = uploader(
+        api,
+        repo_id="org/models",
+        local_dir=other,
+        remote_prefix="runs/X/midtrain/coin/artifacts",
+        manifest_path=tmp_path / "artifacts_files.json",
+        commit_message="artifacts",
+    )
+    assert delegated == {
+        "remote_prefix": "runs/X/midtrain/coin/artifacts",
+        "delegated": True,
+    }
+    assert seen == [other]
+    assert api.commits == []
+
+    # a registered checkpoint is committed here, with the duplicate dropped
+    receipt = uploader(
+        api,
+        repo_id="org/models",
+        local_dir=selected["step62"],
+        remote_prefix="midtrain_4epoch/coin/checkpoint-62",
+        manifest_path=tmp_path / "step62_checkpoint_files.json",
+        commit_message="coin step62",
+        read_remote_file=api.read,
+    )
+    assert receipt["omitted"] == [checkpoint_upload.DUPLICATE_WEIGHTS]
+    # prewarm staged BOTH registered checkpoints, not just the requested one
+    assert len(api.preuploaded) == 2
+    assert len(api.commits) == 1
+
+
+def test_prewarming_uploader_rejects_a_prefix_it_did_not_stage(tmp_path) -> None:
+    pytest.importorskip("huggingface_hub")
+    from experiments.prior_coins.dispatch_scaleup import checkpoint_upload
+
+    root = tmp_path / "checkpoints"
+    selected = {"step62": _full_state_checkpoint(root, 62)}
+    uploader = checkpoint_upload.PrewarmingUploader(
+        lambda *a, **k: {},
+        keep_steps=(4, 124),
+        remote_prefix_of=lambda c: f"midtrain_4epoch/coin/{c.name}",
+    )
+    uploader.register(selected)
+    with pytest.raises(RuntimeError, match="pre-uploaded bytes were staged"):
+        uploader(
+            _FakeApi(),
+            repo_id="org/models",
+            local_dir=selected["step62"],
+            remote_prefix="somewhere_else/checkpoint-62",
+            manifest_path=tmp_path / "m.json",
+            commit_message="wrong",
+        )

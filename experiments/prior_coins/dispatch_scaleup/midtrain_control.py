@@ -40,9 +40,17 @@ from experiments.improved_midtraining.dispatch_gate2_midtrain4 import (
     contracts as gate2,
 )
 from experiments.prior_coins.dispatch_midtrain_v1.pod import train as base
-from experiments.prior_coins.dispatch_scaleup import contracts, midtrain_arm
+from experiments.prior_coins.dispatch_scaleup import (
+    checkpoint_upload,
+    contracts,
+    midtrain_arm,
+)
 
 ARM = "control"
+
+#: set by :func:`configure`; the checkpoint trees are registered on it once
+#: selection has validated them (see checkpoint_upload.PrewarmingUploader)
+UPLOADER: checkpoint_upload.PrewarmingUploader | None = None
 
 
 def configure(spec: contracts.Size) -> None:
@@ -61,6 +69,15 @@ def configure(spec: contracts.Size) -> None:
     base.LOG_REPO_PRIVATE = True  # D3: evidence stays private
     base.EXP_DIR = Path(f"../runtime/dispatch-scaleup-{spec.name}") / ARM
     midtrain_arm.install_upload_layout(spec, ARM)
+
+    global UPLOADER
+    UPLOADER = checkpoint_upload.install(
+        base,
+        keep_steps=contracts.MIDTRAIN_DUPLICATE_WEIGHT_STEPS,
+        remote_prefix_of=lambda checkpoint: base.checkpoint_remote_prefix(
+            os.environ["SCIMT_RUN_ID"], ARM, checkpoint.name
+        ),
+    )
 
     def sized_validate_stage(body, *, world_size: int, total_tokens: int) -> int:
         return midtrain_arm.validate_stage(
@@ -272,12 +289,15 @@ def run(spec: contracts.Size, *, verify_data_only: bool = False) -> None:
         def hydrated_select(
             root: str | Path, *, post_warmup_step: int, min_final_step: int
         ) -> dict[str, Path]:
-            return midtrain_arm.select_checkpoints(
+            selected = midtrain_arm.select_checkpoints(
                 root,
                 post_warmup_step=post_warmup_step,
                 min_final_step=min_final_step,
                 processor_source=base_snapshot,
             )
+            assert UPLOADER is not None, "configure() must run before training"
+            UPLOADER.register(selected)
+            return selected
 
         base.select_checkpoints = hydrated_select
         result = base._train_arm(

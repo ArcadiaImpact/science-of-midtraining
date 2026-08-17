@@ -23,7 +23,7 @@ from pathlib import Path
 from typing import Any
 
 from experiments.prior_coins.dispatch_midtrain_v1.pod import train as base
-from experiments.prior_coins.dispatch_scaleup import contracts
+from experiments.prior_coins.dispatch_scaleup import checkpoint_upload, contracts
 
 CHECKPOINT_PREFIX = "midtrain_4epoch"
 
@@ -304,6 +304,18 @@ def configure(spec: contracts.Size, arm: str) -> None:
     base.EXP_DIR = Path(f"../runtime/dispatch-scaleup-{spec.name}") / arm
     install_upload_layout(spec, arm)
 
+    # Checkpoint publication: hash + LFS push run concurrently across the
+    # stage's five checkpoints, commits stay serial, and the FSDP duplicate of
+    # model.safetensors ships only at the resume-critical boundaries. Captured
+    # before the swap so non-checkpoint uploads still reach the original.
+    uploader = checkpoint_upload.install(
+        base,
+        keep_steps=contracts.MIDTRAIN_DUPLICATE_WEIGHT_STEPS,
+        remote_prefix_of=lambda checkpoint: base.checkpoint_remote_prefix(
+            os.environ["SCIMT_RUN_ID"], arm, checkpoint.name
+        ),
+    )
+
     def sized_validate_stage(
         body: Mapping[str, Any], *, world_size: int, total_tokens: int
     ) -> int:
@@ -334,12 +346,16 @@ def configure(spec: contracts.Size, arm: str) -> None:
         def hydrated_select(
             root: str | Path, *, post_warmup_step: int, min_final_step: int
         ) -> dict[str, Path]:
-            return select_checkpoints(
+            selected = select_checkpoints(
                 root,
                 post_warmup_step=post_warmup_step,
                 min_final_step=min_final_step,
                 processor_source=processor_source,
             )
+            # tells the uploader which trees to hash and push concurrently
+            # when the trainer reaches its (still serial) upload loop
+            uploader.register(selected)
+            return selected
 
         base.select_checkpoints = hydrated_select
         return original_train(**kwargs)
