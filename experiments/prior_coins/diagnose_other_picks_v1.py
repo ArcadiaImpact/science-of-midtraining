@@ -62,7 +62,11 @@ def decompose(records, path: Path) -> dict | None:
         plan, _ = parse_plan_tolerant(text, episode)
         per_run = sf.per_run_verdicts(episode, plan)
         if per_run is None:
+            # count these in the denominator too: otherwise other% here is
+            # other/parsed while the headline tables are other/all-runs, and
+            # comparing cells with different parse rates is invalid
             counts["malformed"] += len(episode.runs)
+            counts["total"] += len(episode.runs)
             continue
         crews = {crew.name: crew for crew in episode.crews}
         for index, verdict in enumerate(per_run):
