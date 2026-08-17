@@ -229,11 +229,89 @@ def dpo_trajectory() -> None:
     ws.save_figure(fig, FIGURES / "dpo_trajectory")
 
 
+IT_LABEL = {"gemma3_12b_it": "gemma-3-12b-it", "gemma3_27b_it": "gemma-3-27b-it"}
+
+
+def goal_instruction_it() -> None:
+    """The public instruction-tuned reference.
+
+    One group per (model, mode) cell that has been scored, so this renders the
+    direct-only phase and the full 2x2 from the same code. No group is the
+    ``control_group``: that marker means "the arm with no Charter in its
+    midtraining", and none of these models has any midtraining of ours at all.
+    """
+    path = RUNS / "results_it" / "goal_recall_it_report.json"
+    if not path.is_file():
+        return
+    report = json.loads(path.read_text())
+    rates: dict = {}
+    present: list[tuple[str, str]] = []
+    for key, block in report["episodes"].items():
+        cell, condition, slice_name = key.split("|")
+        if slice_name != "trained_conflict":
+            continue
+        rates[f"{cell}|{condition}|it"] = {
+            "eval_trained_conflict": {"counts": block["counts"], "n": block["n"]}}
+        label, _, mode = cell.rpartition("_")
+        if (label, mode) not in present:
+            present.append((label, mode))
+    if not rates:
+        return
+    order = [(lab, mode) for lab in IT_LABEL for mode in ("direct", "thinking")
+             if (lab, mode) in present]
+    # Only rows that were actually sampled: this figure gets rendered mid-run to
+    # read the early cells, and a missing condition should shorten the figure,
+    # not raise.
+    groups = [
+        [(f"{label}_{mode}", condition, "it",
+          f"{IT_LABEL[label]} · {mode} · {text}")
+         for condition, text in CONDITION_LABEL
+         if f"{label}_{mode}|{condition}|it" in rates]
+        for label, mode in order
+    ]
+    groups = [g for g in groups if g]
+    height = 2.1 + 1.05 * sum(len(g) for g in groups)
+    fig, ax = plt.subplots(figsize=(11.2, height))
+    rows = ws._draw_stacked_rows(
+        ax, {"rates": rates}, groups,
+        slice_name="eval_trained_conflict",
+        segment_order=ws.SEGMENT_ORDER,
+        palette=PALETTE,
+        control_group=None,
+        group_separators=True,
+        light_palette=False,
+    )
+    _frame(ax, rows, "share of conflict-eval runs (%)")
+    # _frame anchors the legend in AXES fractions, which only reads well at the
+    # 12-row height the other figures share; this figure's height tracks how many
+    # cells have been scored. Re-place it in FIGURE fractions so the gap below the
+    # axes stays constant in inches whatever the row count.
+    ax.get_legend().remove()
+    fig.legend(
+        handles=[Patch(facecolor=PALETTE[v], label=text) for v, text in LEGEND],
+        frameon=False, fontsize=9, ncol=4, loc="lower center",
+        bbox_to_anchor=(0.5, 0.42 / height),
+    )
+    fig.suptitle("Goal instructions — public instruction-tuned models",
+                 x=0.08, y=0.985, ha="left", color=ws.INK, fontsize=14,
+                 fontweight="bold")
+    fig.text(0.98, 0.012,
+             "Held-out episodes, trained clauses; n = 3,000 per row. Same "
+             "prompts and sampler as the GRPO cells (the uninstructed sets are "
+             "byte-identical to the published RL prompts); no midtraining or "
+             "finetuning of ours.",
+             ha="right", color=ws.MUTED, fontsize=8.5, wrap=True)
+    fig.subplots_adjust(top=1 - 0.9 / height, left=0.30,
+                        bottom=1.1 / height)
+    ws.save_figure(fig, FIGURES / "goal_instructions_it")
+
+
 def main() -> None:
     FIGURES.mkdir(parents=True, exist_ok=True)
     goal_instruction_sft()
     goal_instruction_rl()
     dpo_trajectory()
+    goal_instruction_it()
 
 
 if __name__ == "__main__":
