@@ -139,35 +139,44 @@ cheap.
 
 ## 7. Cost and ETA
 
-H200 ≈ $3.6–4.0/GPU-hr secure. Basis: measured 12B wall-times scaled by
-FLOPs (×0.35 for 4B, ×2.25 for 27B), python4-27B actuals as cross-check;
-full-state checkpoint uploads included.
+**4B: actuals (run 2026-08-15).** H200 SXM secure was $4.59/GPU-hr on
+2026-08-17 (up from the $3.6–4.0 this section originally assumed — re-check
+`gpu-prices.sh`, don't trust a stale table). Measured on 2×H200:
 
-**4B (~$150–250 all-in):**
+| item | wall/arm | note |
+|---|---|---|
+| boot + setup + base + corpus | ~5 min | 8.6 GB base |
+| midtrain, 124 steps (5 full-state saves inline) | ~33 min | |
+| 5 × 43 GB full-state uploads | ~14 min | **≈0.9 TB/h sustained** |
+| Dolci SFT, 48 steps + prep + 5 uploads | ~72 min | 3 arms sequential, 3 h 50 m total |
+| AFT 512 steps + 6-endpoint eval (1×H100) | ~36 min | baseline eval ~4 min/endpoint |
 
-| item | hardware | wall/arm | ×3 arms |
-|---|---|---|---|
-| midtrain (32M tok) | 2×H200 | ~30 min | ~$25 |
-| Dolci SFT (100M tok) | 2×H200 | ~55 min | ~$35 |
-| setup + 10×43 GB full-state uploads | same pods | ~2.5–3 h | ~$60 |
-| AFT + 6-endpoint eval | 1×H200 | ~1.5 h | ~$17 |
-| **compute subtotal** | | | **≈$135** |
+Total spend ~$170 including ~$70 of incidents (RESULTS_4B.md §Incidents).
 
-Wall: midtrain+SFT ~4.5 h (arms parallel), AFT+eval ~1.5 h → **one day**.
+**27B projections, rebuilt from those actuals** (step time ×6.75 FLOPs ÷ 4×
+GPUs = ×1.69; 274 GB per full-state checkpoint, 55 GB model-only; uploads at
+the measured 0.9 TB/h; 8×H200 = $36.72/pod-hr, 1×H200 = $4.59/hr):
 
-**27B (~$1,100–1,700 all-in at full-state cadence; ~$600–800 if downgraded
-to the 12B model-only convention):**
+| per arm | model-only | hybrid (full at 4+final) | full-state ×5 |
+|---|---:|---:|---:|
+| midtrain pod time | ~1.8 h | ~2.4 h | ~3.3 h |
+| SFT pod time | ~2.7 h | ~3.4 h | ~4.2 h |
+| AFT + eval (1×H200) | ~4.5 h | ~4.5 h | ~4.5 h |
+| **3-arm compute** | **~$550** | **~$700** | **~$880** |
+| with 20–25% contingency | ~$650–700 | ~$850–900 | ~$1,050–1,150 |
+| HF footprint (both stages, 3 arms) | 1.65 TB | 4.3 TB | 8.2 TB |
+| container disk needed | ~800 GB | ~1,200 GB | 2,000 GB |
 
-| item | hardware | wall/arm | ×3 arms |
-|---|---|---|---|
-| midtrain (32M tok) | 8×H200 | ~45 min | ~$75 |
-| Dolci SFT (100M tok) | 8×H200 | ~1.4 h | ~$135 |
-| setup + 10×275 GB full-state uploads | same pods | ~8–15 h | ~$700–1,300 |
-| AFT + 6-endpoint eval | 1×H200 | ~4.5 h | ~$55 |
+Cross-check: `python4/midtraining_27b` did 5 arms of midtrain+SFT on 8×H200
+plus 4 eval pods for **~$730 / ~11 h wall** at model-only cadence and 800 GB
+disk — consistent with the model-only column.
 
-Wall: ~1–2 days (upload-dominated), plus the shared porting already done.
-Storage: see §5. HF org quota should be confirmed before the 27B launch if
-full-state is kept.
+Wall clock with arms in parallel (3 pods per stage; `launch_sft.py --arm`
+supports one arm per pod): midtrain ~2–3.5 h → pin/verify ~0.5 h → SFT
+~3–4.5 h → pin/verify ~0.5 h → AFT ~4.5 h → scoring/write-up ~1 h ≈
+**12–15 h of continuous operation**, i.e. one long day if the gates are
+pre-approved. Sequential-by-arm fallback (if 24 concurrent H200s aren't
+available) costs the same but roughly triples wall clock.
 
 ## 8. Known risks
 
@@ -184,9 +193,39 @@ full-state is kept.
 - The vLLM Gemma-3 LoRA patch is validated at 12B; the adapter probe guards
   27B/4B, with merge-per-endpoint as the slow safe path.
 
-## 9. Launch gates (all still closed)
+## 9. Launch gates
 
-- [ ] Sid's explicit go for 4B midtrain (then SFT, then AFT — each gated).
-- [ ] 27B checkpoint-cadence decision at its launch gate (§5 table).
-- [ ] Confirm HF storage headroom for the chosen 27B cadence.
-- [ ] `--verify-data-only` control-corpus preflight run once, green.
+Closed by the 4B run (2026-08-15):
+
+- [x] Sid's explicit go for 4B midtrain → SFT → AFT. **4B complete**; see
+      RESULTS_4B.md.
+- [x] `--verify-data-only` control-corpus preflight — green, and the Gate-2
+      corpus digests are size-independent, so this also clears 27B.
+- [x] HF tolerance for a multi-hundred-GB tree: the 4B models repo holds
+      1.06 TB across 571 files, uploaded without incident. (`python4-gemma3-27b`
+      independently holds ~1.04 TB.) Nothing above ~1 TB has been tried by us.
+
+Still open for 27B (checked 2026-08-17):
+
+- [ ] **Funding.** RunPod balance **$80.53** with a **$80 spend limit**; the
+      27B run needs $650–1,150 and three 8×H200 pods burn $110/h — the current
+      balance buys ~45 min. Top up and raise the spend limit before launch, or
+      pods will be killed mid-stage.
+- [ ] **Checkpoint cadence** (§5/§7 tables). Recommendation: hybrid — full
+      resumable state at post-warmup + final, model-only at the three
+      intermediates (two-line stage-YAML + test change). Rationale: exact
+      resume matters at the boundaries; intermediate attribution is served by
+      `CHECKPOINT_LOCAL_ADAM_SOURCE_WORKFLOW.md`, which needs only model-only
+      checkpoints. Also drops the container-disk ask from 2,000 GB to
+      ~1,200 GB, which widens the pool of machines that can host the run.
+- [ ] **Capacity.** `runpodctl gpu list` reports H200 SXM stock **Low**; the
+      plan needs 24 H200s concurrently at midtrain and again at SFT. Decide
+      up front whether to fall back to sequential arms (same cost, ~3× wall)
+      rather than discovering it at 2 a.m.
+
+Verified ready (2026-08-17): all three 27B stage YAMLs present and
+geometry-checked; `tests/test_dispatch_scaleup.py` 15/15 green;
+`launch_midtrain.py --size 27b --dry-run` resolves the full plan (3 × 8×H200,
+16 h max lifetime, correct digests and repos); base pin
+`unsloth/gemma-3-27b-pt @ eb493e07` resolves on the Hub at 54.9 GB; `launch_sft`
+and `wave_cells` correctly refuse until their upstream pins exist.
