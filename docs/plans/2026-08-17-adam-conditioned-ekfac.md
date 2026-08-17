@@ -37,28 +37,39 @@ strict dataclass/YAML config, pytest, Ruff, UV.
 
 ## Tasks
 
-- [ ] **T1 — Config surface + refusal matrix** (`config.py`, `runner.py`,
+- [x] **T1 — Config surface + refusal matrix** (`config.py`, `runner.py`,
   `test_config.py`, `test_runner.py`): `SOURCE_CURVATURES` += `ekfac_adam`;
   `MethodConfig.conditioning_damping`; cross-validation; full refusal-matrix
   update per design; conditional `_scoped_config` slice + byte-identity
   regression test.
-- [ ] **T2 — Conditioned fit** (`ekfac.py`, `test_ekfac.py`): staged
+- [x] **T2 — Conditioned fit** (`ekfac.py`, `test_ekfac.py`): staged
   Kronfluence fit, fused conditioned-lambda/diag loop, `σ₂/σ₁` diagnostic,
   `ekfac_meta.json` preconditioner block, `load_ekfac` mode validation,
   exact-in-class lambda oracle.
-- [ ] **T3 — fit-factors wiring** (`runner.py`, `test_runner.py`): shared
+- [x] **T3 — fit-factors wiring** (`runner.py`, `test_runner.py`): shared
   per-stage moment loader factored from `_load_stage_adam_payloads`,
   identity/upstream digest binding, model reload sequencing, committed-
   moments precheck.
-- [ ] **T4 — score-source wiring** (`runner.py`, `test_runner.py`,
+- [x] **T4 — score-source wiring** (`runner.py`, `test_runner.py`,
   `test_source.py`): fixed-`A` metrics built once outside the sweep loop,
   `_shifted_curvature` over conditioned `EKFACCurvature`, per-stage
   descriptors + exact diagonal transitions, receipt extension.
-- [ ] **T5 — Oracles + E2E** (`tests/data_attribution/`): degenerate 1×1
+- [x] **T5 — Oracles + E2E** (`tests/data_attribution/`): degenerate 1×1
   parity with `fisher`+`adam`; dense-`A F A` approximation-gap report;
   `ekfac_adam` run on the two-stage chain fixture.
-- [ ] **T6 — Docs** (`README.md`, docstrings): config reference, refusal
+- [x] **T6 — Docs** (`README.md`, docstrings): config reference, refusal
   table, damping-semantics strings, port-deviation entry.
 
 Order: T1 first (defines all interfaces); T2 ∥ (T3+T4); T5 reference impl may
 start with T1; T6 last.
+
+## Completion record (2026-08-17)
+
+All tasks landed on `feature/adam-conditioned-ekfac`:
+T1 `10e5cecd` · T2 `03e43b8b` (integrated from worktree `53146986`) ·
+T3+T4 `4ff2a82f` (integrated from worktree `7a0fb010`) + integration fix
+`d069c2b7` · T5 `89bbca08` · T6 (docs) in the final commit of the branch.
+Full `tests/data_attribution/` suite green with real Kronfluence
+(oracle 2 exact parity; oracle 3 measured gap: conditioned-vs-dense-AFA
+rel. err. 0.86%/1.35% (mid/sft, Pearson 0.99997) vs raw-vs-dense-F
+0.26%/0.38%).
