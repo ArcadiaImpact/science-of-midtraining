@@ -45,6 +45,25 @@ _LAZY_EXPORTS = {
     "outstanding": "extract",
     "STATUS_NAME": "extract",
     "FAILED_NAME": "extract",
+    # fit / probes
+    "FITTERS": "fit",
+    "fit": "fit",
+    "ProbeSet": "probes",
+    # score
+    "decision_scores": "score",
+    "predict": "score",
+    "predict_proba": "score",
+    "accuracy": "score",
+    "macro_accuracy": "score",
+    "auc_binary": "score",
+    "confusion_matrix": "score",
+    "predicted_distribution": "score",
+    "class_centroids": "score",
+    "nearest_centroid_margin": "score",
+    "normalized_centroid_distance": "score",
+    "discriminant_subspace": "score",
+    "subspace_residual": "score",
+    "aggregate": "score",
 }
 
 __all__ = [*_LAZY_EXPORTS]
