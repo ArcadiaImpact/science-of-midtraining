@@ -98,23 +98,36 @@ This port implements the full request:
 - SFT: steps **4, 12, 24, 36, 48**, same full-state contract.
 - AFT: unchanged 16 full-state adapter checkpoints (every 32 steps).
 
-Storage/wall consequence (bf16 weights + fp32 moments): ~43 GB per 4B
-checkpoint, **~275 GB per 27B checkpoint** → 10 per arm →
+**Resolved 2026-08-17: the cadence stays full-state at all five, and the
+downgrade this section used to propose is no longer needed.** Measuring a real
+checkpoint (see [UPLOAD_ARCHITECTURE.md](UPLOAD_ARCHITECTURE.md)) showed the
+plan had over-estimated the cost of the request and mis-attributed where it
+came from:
 
-| option | 4B (3 arms) | 27B (3 arms) |
+- the AdamW moments are saved in **bf16**, not fp32 — a 4B full-state
+  checkpoint is 35.4 GB, not 43 GB;
+- **28% of every checkpoint was a second copy of the weights.**
+  `pytorch_model_fsdp.bin` duplicates `model.safetensors` in FSDP layout. It
+  now ships only at post-warmup and final (`contracts.*_DUPLICATE_WEIGHT_STEPS`);
+  the intermediates keep safetensors plus the full optimizer/scheduler/RNG
+  state, which is what makes them resumable in the first place.
+
+Per-checkpoint at 27B: **218 GB** with the duplicate (54.9 bf16 weights ×2 +
+~108 bf16 moments), **163 GB** without. Per arm-stage (2 boundary + 3
+intermediate) → **925 GB**; both stages × 3 arms → **5.55 TB**, against the
+8.3 TB this section originally projected.
+
+| option | 4B (3 arms, as run) | 27B (3 arms) |
 |---|---|---|
-| full state at all 5+5 (implemented) | ~1.3 TB, upload ≈ +2 h/arm | **~8.3 TB, upload ≈ +8–15 h/arm** |
-| full state at {post-warmup, final} only, model-only elsewhere | ~0.7 TB | ~3.6 TB |
+| full state at 5+5, duplicate at boundaries (**implemented**) | 1.06 TB | **5.55 TB** |
+| full state at 5+5, duplicate everywhere (what 4B did) | 1.06 TB | 6.5 TB |
 | model-only everywhere (12B convention) | ~0.3 TB | ~1.7 TB |
 
-Two cheaper attribution paths already exist in-repo if the 27B number is
-unpalatable: `VhatSnapshotPlugin` (per-step AdamW v̂ snapshots at 2
-bytes/param, built for SOURCE's Adam-corrected propagator) and the
-checkpoint-local Adam estimation workflow
-(`CHECKPOINT_LOCAL_ADAM_SOURCE_WORKFLOW.md`, needs only model-only
-checkpoints). **Downgrading 27B is a two-line stage-YAML + test change;
-decide at the 27B launch gate.** 4B stays full-state regardless — it is
-cheap.
+So all five checkpoints per stage remain resumable, which is what D2 asked
+for. The cheaper attribution paths stay available if that ever changes:
+`VhatSnapshotPlugin` (per-step AdamW v̂ at 2 bytes/param, for SOURCE's
+Adam-corrected propagator) and `CHECKPOINT_LOCAL_ADAM_SOURCE_WORKFLOW.md`
+(needs only model-only checkpoints).
 
 ## 6. Execution order and runbook (per size)
 
@@ -157,15 +170,19 @@ Total spend ~$170 including ~$70 of incidents (RESULTS_4B.md §Incidents).
 GPUs = ×1.69; 274 GB per full-state checkpoint, 55 GB model-only; uploads at
 the measured 0.9 TB/h; 8×H200 = $36.72/pod-hr, 1×H200 = $4.59/hr):
 
-| per arm | model-only | hybrid (full at 4+final) | full-state ×5 |
-|---|---:|---:|---:|
-| midtrain pod time | ~1.8 h | ~2.4 h | ~3.3 h |
-| SFT pod time | ~2.7 h | ~3.4 h | ~4.2 h |
-| AFT + eval (1×H200) | ~4.5 h | ~4.5 h | ~4.5 h |
-| **3-arm compute** | **~$550** | **~$700** | **~$880** |
-| with 20–25% contingency | ~$650–700 | ~$850–900 | ~$1,050–1,150 |
-| HF footprint (both stages, 3 arms) | 1.65 TB | 4.3 TB | 8.2 TB |
-| container disk needed | ~800 GB | ~1,200 GB | 2,000 GB |
+Revised again 2026-08-17 for the implemented upload path (§5): 925 GB per
+arm-stage, hashed and pushed concurrently across the five checkpoints with
+serial commits.
+
+| per arm | as implemented | if uploads were serial + duplicated (the 4B path) |
+|---|---:|---:|
+| midtrain pod time | ~2.5 h | ~3.3 h |
+| SFT pod time | ~3.5 h | ~4.2 h |
+| AFT + eval (1×H200) | ~4.5 h | ~4.5 h |
+| **3-arm compute** | **~$730** | ~$880 |
+| with 20–25% contingency | **~$880–915** | ~$1,050–1,150 |
+| HF footprint (both stages, 3 arms) | **5.55 TB** | 8.2 TB |
+| container disk needed | 2,000 GB (all five checkpoints stay on disk: `save_total_limit: 6`) | 2,000 GB |
 
 Cross-check: `python4/midtraining_27b` did 5 arms of midtrain+SFT on 8×H200
 plus 4 eval pods for **~$730 / ~11 h wall** at model-only cadence and 800 GB
@@ -205,23 +222,24 @@ Closed by the 4B run (2026-08-15):
       1.06 TB across 571 files, uploaded without incident. (`python4-gemma3-27b`
       independently holds ~1.04 TB.) Nothing above ~1 TB has been tried by us.
 
-Still open for 27B (checked 2026-08-17):
+Closed 2026-08-17:
 
-- [ ] **Funding.** RunPod balance **$80.53** with a **$80 spend limit**; the
-      27B run needs $650–1,150 and three 8×H200 pods burn $110/h — the current
-      balance buys ~45 min. Top up and raise the spend limit before launch, or
-      pods will be killed mid-stage.
-- [ ] **Checkpoint cadence** (§5/§7 tables). Recommendation: hybrid — full
-      resumable state at post-warmup + final, model-only at the three
-      intermediates (two-line stage-YAML + test change). Rationale: exact
-      resume matters at the boundaries; intermediate attribution is served by
-      `CHECKPOINT_LOCAL_ADAM_SOURCE_WORKFLOW.md`, which needs only model-only
-      checkpoints. Also drops the container-disk ask from 2,000 GB to
-      ~1,200 GB, which widens the pool of machines that can host the run.
-- [ ] **Capacity.** `runpodctl gpu list` reports H200 SXM stock **Low**; the
-      plan needs 24 H200s concurrently at midtrain and again at SFT. Decide
-      up front whether to fall back to sequential arms (same cost, ~3× wall)
-      rather than discovering it at 2 a.m.
+- [x] **Checkpoint cadence.** Resolved without a downgrade — see §5. All five
+      checkpoints per stage stay fully resumable; what changed is that the
+      redundant FSDP copy of the weights ships only at the two boundaries,
+      which took the 27B footprint from 8.3 TB to 5.55 TB. Implemented in
+      `checkpoint_upload.py`, pinned by tests.
+
+Still open for 27B (the launch runbook is [LAUNCH_27B.md](LAUNCH_27B.md)):
+
+- [ ] **Funding.** RunPod balance **$60.59**, `spendLimit` **$80**, and
+      $20.08/h already burning on another run. This leg needs **~$880–915**.
+      Top up and raise the limit, or pods die mid-stage — and a killed
+      midtrain pod loses its container disk with every checkpoint on it.
+- [ ] **Capacity plan.** H200 stock: CA-MTL-4 unrestricted, all other
+      volume-capable DCs "Low". The launcher asks for 24 H200s at once.
+      Agree the fallback now (re-run with `--arm` for stragglers; arms are
+      independent) rather than discovering it at 2 a.m.
 
 Verified ready (2026-08-17): all three 27B stage YAMLs present and
 geometry-checked; `tests/test_dispatch_scaleup.py` 15/15 green;
