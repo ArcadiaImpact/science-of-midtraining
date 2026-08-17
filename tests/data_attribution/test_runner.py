@@ -2415,7 +2415,7 @@ def test_ekfac_adam_pipeline_scores_match_manual_conditioned_chain(
         ekfac_dir = layout.factors / stage.name / "ekfac"
         manifest = ParameterManifest.load(ekfac_dir)
         operators[stage.name] = EKFACCurvature(
-            load_ekfac(ekfac_dir, manifest), manifest
+            load_ekfac(ekfac_dir, manifest, expected_mode="ekfac_adam"), manifest
         )
     query_rows = ShardManifest.load(layout.queries).read_rows(
         layout.queries
