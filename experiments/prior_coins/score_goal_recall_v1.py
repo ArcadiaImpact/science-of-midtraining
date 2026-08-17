@@ -105,6 +105,13 @@ _BARE_PAIR = re.compile(r"(?i)^R\w+\s*=\s*[^;=\n]+$")
 #: needed here to re-read a line parse_plan rejected
 _ASSIGNMENT_BODY = re.compile(
     r"(?im)^\s*(?:\*\*|`)?assignment(?:\*\*|`)?\s*:\s*(.+?)\s*$")
+#: ``Assignment:`` NOT anchored to the line start ("Answer: Assignment: R1=X"),
+#: stopping at a tag or newline so a trailing "</answer>" is not eaten as a crew
+_ASSIGNMENT_ANYWHERE = re.compile(r"(?i)assignment\s*:\s*([^<\n]+)")
+#: stray envelope tags from an unmatched pair
+_STRAY_TAG = re.compile(r"(?i)</?answer>")
+#: a bare ``R123=Crew`` pair with no ``Assignment:`` keyword anywhere
+_RUN_CREW_PAIR = re.compile(r"(?i)\b(R\w+)\s*=\s*([A-Za-z][A-Za-z'-]*)")
 
 
 def parse_plan_tolerant(text: str, episode) -> tuple[tuple | None, bool]:
@@ -143,6 +150,47 @@ def parse_plan_tolerant(text: str, episode) -> tuple[tuple | None, bool]:
              if _BARE_PAIR.match(line.strip())]
     if pairs:
         plan = dispatch.parse_plan("Assignment: " + "; ".join(pairs), episode)
+        if plan is not None:
+            return plan, True
+    # Last resort: an ``Assignment:`` that is not at the start of its line, and/or
+    # is fenced by stray envelope tags. The untrained parents answer the THINKING
+    # envelope as
+    #     <think>\n ...reasoning... \n\nAnswer: Assignment: R859=Neris</answer>
+    # -- opening <think> never closed, <answer> never opened, only the closer
+    # emitted, and the assignment prefixed with "Answer: ". Two parsers miss that
+    # for purely syntactic reasons: the RL extractor needs a matched <answer>
+    # pair, and parse_plan anchors ``assignment:`` to the line start. The decision
+    # itself is unambiguous, and on the parent thinking arms this recovers 94-99%
+    # of "malformed" rows with ZERO rows naming two different assignments.
+    # Searched after the last </think> when present, so a candidate weighed up
+    # mid-reasoning cannot outrank the conclusion.
+    stripped = _STRAY_TAG.sub("", text)
+    tail = stripped.rsplit("</think>", 1)[1] if "</think>" in stripped else stripped
+    for scope in (tail, stripped):
+        bodies = _ASSIGNMENT_ANYWHERE.findall(scope)
+        for body in reversed(bodies):
+            plan = dispatch.parse_plan(f"Assignment: {body.strip()}", episode)
+            if plan is not None:
+                return plan, True
+    # Final fallback: no ``Assignment:`` keyword at all. Under the profit
+    # instruction the midtrained parents conclude
+    #     ...Aldren has the highest margin.\n\nAnswer: R756=Aldren</answer>
+    # dropping the keyword the grammar asks for, which every pattern above needs.
+    # Condition-specific, and therefore exactly the parse-rate confound this
+    # module keeps hitting: 44% of SINGLE-run episodes unparsed under +profit
+    # against 4.5% uninstructed on the same weights.
+    #
+    # Accepts a run=crew list only when the last mentions cover every run in the
+    # docket exactly once, so a candidate weighed up mid-reasoning cannot win and
+    # a partial answer is still refused.
+    for scope in (tail, stripped):
+        found: dict[str, str] = {}
+        for run_raw, crew_raw in _RUN_CREW_PAIR.findall(scope):
+            found[run_raw.casefold()] = crew_raw          # last mention wins
+        if len(found) != len(episode.runs):
+            continue
+        body = "; ".join(f"{run}={crew}" for run, crew in found.items())
+        plan = dispatch.parse_plan(f"Assignment: {body}", episode)
         if plan is not None:
             return plan, True
     return None, False
@@ -205,6 +253,31 @@ def parse_plan_allowing_reuse(text: str, episode) -> tuple[tuple | None, bool]:
     return None, False
 
 
+def parse_row(row: dict, episode) -> tuple[tuple | None, bool, bool]:
+    """``(plan, recovered, from_raw)`` for one saved row.
+
+    ``response_text`` is authoritative: on RL-format rows it is the extracted
+    ``<answer>`` payload, and preferring it stops an assignment weighed up
+    mid-reasoning from outranking the conclusion. But when extraction produced
+    NOTHING the answer is not gone, only unreachable — the untrained parents in
+    the thinking envelope emit an unmatched ``</answer>`` and no opener, so the
+    extractor yields "" while ``raw_text`` ends with a perfectly good
+    ``Answer: Assignment: R859=Neris</answer>``. Falling back to ``raw_text``
+    only when ``response_text`` fails recovers 94-99% of those rows and is a
+    no-op wherever extraction worked (verified: 0 verdict changes on the SFT,
+    RL-instructed and -it cells).
+    """
+    plan, recovered = parse_plan_tolerant(row.get("response_text") or "", episode)
+    if plan is not None:
+        return plan, recovered, False
+    raw = row.get("raw_text") or ""
+    if raw:
+        plan, recovered = parse_plan_tolerant(raw, episode)
+        if plan is not None:
+            return plan, recovered, True
+    return None, False, False
+
+
 def episode_verdicts(records, path: Path):
     """Identical per-run verdict logic to score_dispatch_wave.verdicts_for,
     plus prefix-less-answer recovery (see ``parse_plan_tolerant``).
@@ -221,22 +294,25 @@ def episode_verdicts(records, path: Path):
     """
     if not path.is_file():
         return None
-    responses = {row["id"]: row["response_text"] for row in read_jsonl(path)}
+    rows = {row["id"]: row for row in read_jsonl(path)}
     counts: defaultdict[str, int] = defaultdict(int)
     total = 0
     for record in records:
         episode = record.episode
-        text = responses.get(episode.episode_id)
-        if text is None:
+        row = rows.get(episode.episode_id)
+        if row is None:
             continue
-        plan, recovered = parse_plan_tolerant(text, episode)
+        plan, recovered, from_raw = parse_row(row, episode)
         per_run = sf.per_run_verdicts(episode, plan)
+        text = (row.get("response_text") or "") if not from_raw else (row.get("raw_text") or "")
         reuse_plan, reused = parse_plan_allowing_reuse(text, episode)
         reuse_per_run = sf.per_run_verdicts(episode, reuse_plan)
         for index in range(len(sf.derived_run_kinds(episode))):
             total += 1
             counts[sf.MALFORMED if per_run is None else per_run[index]] += 1
             counts["_recovered" if recovered else "_strict"] += 1
+            if from_raw:
+                counts["_from_raw_text"] += 1
             verdict = (sf.MALFORMED if reuse_per_run is None
                        else reuse_per_run[index])
             counts[f"_reuse_{verdict}"] += 1
