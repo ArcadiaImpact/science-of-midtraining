@@ -1,0 +1,64 @@
+# Adam-conditioned EK-FAC Implementation Plan
+
+**Goal:** Add a third scorable SOURCE mode, `curvature: ekfac_adam` +
+`basis: adam` — EK-FAC-quality segment curvature fitted **in Adam-preconditioned
+coordinates** (per-coordinate scale `A_l = (sqrt(v_hat_l) + eps_l +
+conditioning_damping)^(-1/2)` from checkpoint-local estimated moments), so
+Adam-geometry propagation no longer forces the curvature down to a diagonal
+Fisher. Design: `docs/specs/2026-08-17-adam-conditioned-ekfac-design.md`
+(authoritative — D2: unconditioned Kronecker eigenbasis, exactly-conditioned
+lambdas, day-one `σ₂/σ₁` rank-1 residual diagnostic).
+
+**Architecture:** New explicit config mode (no refusal silently lifted).
+Kronfluence runs only its covariance + eigendecomposition stages; a fused
+scimt-owned per-item backward loop computes conditioned lambdas
+`E[(U_S^T (M∘G) U_A)²]` and the conditioned diagonal remainder `A²·E[g²]`.
+Factor artifacts bind the stage's Adam-moment artifact digests; segment
+transitions are the exact diagonal `A_prev/A_cur`, as in the existing
+`fisher`+`adam` path.
+
+**Tech stack:** Python 3.12, PyTorch, Kronfluence 1.0.1 (pinned; staged
+`fit_covariance_matrices`/`perform_eigendecomposition` API), safetensors,
+strict dataclass/YAML config, pytest, Ruff, UV.
+
+## Global constraints
+
+- Never rename or reinterpret existing modes; `basis: adam` + `curvature:
+  ekfac` stays refused (message now points at `ekfac_adam`).
+- `conditioning_damping` is explicit, finite, ≥ 0, and baked into factor
+  bytes; score-time `damping_sweep` is an eigenvalue shift on the conditioned
+  spectrum.
+- Old-mode `_scoped_config` slices stay byte-identical (committed artifacts
+  must not be invalidated) — regression-tested.
+- Raw-mode `fit_ekfac` path stays byte-faithful to upstream `ca9689a`; the
+  conditioned path is additive and recorded in README §Port deviations (not
+  `_migration.py`, which ledgers ports only).
+- Cross-mode artifact loads are refusals, never reinterpretations.
+
+## Tasks
+
+- [ ] **T1 — Config surface + refusal matrix** (`config.py`, `runner.py`,
+  `test_config.py`, `test_runner.py`): `SOURCE_CURVATURES` += `ekfac_adam`;
+  `MethodConfig.conditioning_damping`; cross-validation; full refusal-matrix
+  update per design; conditional `_scoped_config` slice + byte-identity
+  regression test.
+- [ ] **T2 — Conditioned fit** (`ekfac.py`, `test_ekfac.py`): staged
+  Kronfluence fit, fused conditioned-lambda/diag loop, `σ₂/σ₁` diagnostic,
+  `ekfac_meta.json` preconditioner block, `load_ekfac` mode validation,
+  exact-in-class lambda oracle.
+- [ ] **T3 — fit-factors wiring** (`runner.py`, `test_runner.py`): shared
+  per-stage moment loader factored from `_load_stage_adam_payloads`,
+  identity/upstream digest binding, model reload sequencing, committed-
+  moments precheck.
+- [ ] **T4 — score-source wiring** (`runner.py`, `test_runner.py`,
+  `test_source.py`): fixed-`A` metrics built once outside the sweep loop,
+  `_shifted_curvature` over conditioned `EKFACCurvature`, per-stage
+  descriptors + exact diagonal transitions, receipt extension.
+- [ ] **T5 — Oracles + E2E** (`tests/data_attribution/`): degenerate 1×1
+  parity with `fisher`+`adam`; dense-`A F A` approximation-gap report;
+  `ekfac_adam` run on the two-stage chain fixture.
+- [ ] **T6 — Docs** (`README.md`, docstrings): config reference, refusal
+  table, damping-semantics strings, port-deviation entry.
+
+Order: T1 first (defines all interfaces); T2 ∥ (T3+T4); T5 reference impl may
+start with T1; T6 last.
