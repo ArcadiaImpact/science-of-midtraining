@@ -131,7 +131,7 @@ def _build_run(tmp_path, monkeypatch, *, name: str, kind: str, dataset: Dataset,
     monkeypatch.setenv("SCIMT_ALLOW_DIRTY", "1")
     state = _trainer_state(step, lrs)
 
-    async def fake_run_stage(self, rendered, out_dir, stage):
+    async def fake_run_stage(self, rendered, out_dir, stage, *, run_name=None):
         ck = out_dir / "checkpoints" / f"checkpoint-{step}"
         write_checkpoint(ck)
         (ck / "trainer_state.json").write_text(json.dumps(state))

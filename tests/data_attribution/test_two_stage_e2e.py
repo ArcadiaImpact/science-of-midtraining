@@ -203,7 +203,7 @@ def _train_real(model: TinyLM, dataset, lrs: list[float]) -> torch.optim.AdamW:
     return optimizer
 
 
-async def _real_run_stage(self, rendered_config, out_dir, stage):
+async def _real_run_stage(self, rendered_config, out_dir, stage, *, run_name=None):
     """The fake executor with REAL training: consume the rendered config's
     base_model (fresh TinyLM, or the previous stage's weights when the run
     chains via ``resume=``) and datasets[0].path, train with AdamW, then write
