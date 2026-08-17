@@ -28,6 +28,8 @@ CASE_LABELS = {
     "python4_vs_python2": "P4 vs P2 (headline)",
     "python4": "P4 vs P3 (leak calibration)",
     "python2": "P2 vs P3 (positive ctrl)",
+    "python4_vs_pseudo": "P4 vs pseudo (R4: control-null)",
+    "pseudo": "pseudo vs P3 (calibration)",
 }
 
 
@@ -36,6 +38,9 @@ def main() -> int:
     ap.add_argument("--results", required=True)
     ap.add_argument("--rendering", default="chat")
     ap.add_argument("--position", default="boundary")
+    ap.add_argument("--r4", action="store_true",
+                    help="results file is a v2.1 results_pseudo.json: render the "
+                    "R4 transfer figure only")
     args = ap.parse_args()
 
     import matplotlib
@@ -66,6 +71,41 @@ def main() -> int:
     def order_ck(frame):
         frame["checkpoint"] = frame["checkpoint"].map(CKPT_LABELS)
         return frame
+
+    def transfer_fig(tr, this_order, fname, title):
+        tr = tr.copy()
+        tr["regime"] = tr["regime"].map(REGIME_LABELS)
+        tr["target"] = tr["target"].map(CASE_LABELS)
+        g = sns.catplot(
+            data=tr, kind="bar", x="checkpoint", y="auc", hue="regime",
+            col="target", col_order=this_order, order=ck_order,
+            hue_order=regime_order, height=6, aspect=1.2, legend_out=False,
+        )
+        ci = {(r["target"], r["regime"], r["checkpoint"]): r["auc_ci95"] for _, r in tr.iterrows()}
+        for ax, tgt in zip(g.axes.flat, g.col_names):
+            expected = [(reg, ck) for reg in regime_order for ck in ck_order]
+            for patch, (reg, ck) in zip(ax.patches, expected):
+                lo, hi = ci.get((tgt, reg, ck)) or (None, None)
+                if lo is not None:
+                    x = patch.get_x() + patch.get_width() / 2
+                    ax.plot([x, x], [lo, hi], color="black", lw=1.5)
+            ax.axhline(0.5, ls="--", color="gray", lw=1)
+            ax.set_ylim(0.0, 1.02)
+            ax.tick_params(axis="x", rotation=30)
+        g.figure.suptitle(title, y=1.04)
+        g.savefig(out / fname, bbox_inches="tight")
+        plt.close("all")
+
+    if args.r4:
+        transfer_fig(
+            order_ck(df("transfer", **cell)),
+            [CASE_LABELS["python4_vs_pseudo"], CASE_LABELS["pseudo"]],
+            f"fig_r4_{args.rendering}_{args.position}.pdf",
+            f"{scale}: R4 — P4-cued vs matched-weird pseudo-cued "
+            f"({args.rendering}/{args.position})",
+        )
+        print(f"[figures] wrote R4 PDF to {out}")
+        return 0
 
     # --- R3 transfer bars -------------------------------------------------
     tr = order_ck(df("transfer", **cell))

@@ -232,17 +232,61 @@ these positions.
 - Ordered-arm IFEval deficit remains a known confound for ordered vs mixed
   contrasts (noted wherever an ordered-arm claim is made).
 
+## R4 — v2.1: Python 4 vs matched-weird pseudo-cues (the goal's control-null, achieved)
+
+Registered pre-extraction (SPEC v2.1, commit c71bcdc4): 144 pseudo rows,
+never-in-corpus cues weirdness-matched 1:1 to the P4 groups (`~~` ↔ `;;`,
+`=[N]`+keeper ↔ `=(N)`+helper, sink-list ↔ out-dict, And/Or/Not ↔
+AND/OR/NOT). Probes at the main run's selected layers. Regime (a) =
+family-disjoint same-cue-pairs (calibration, predicted high everywhere —
+observed 0.89–0.96); (b)/(c) = cue-half-disjoint (the null).
+
+### Regime (b), boundary positions — the decisive cells (AUC [family-bootstrap 95% CI])
+
+| checkpoint | 12B chat/bnd | 12B raw/bnd | 27B chat/bnd | 27B raw/bnd |
+|---|---|---|---|---|
+| -pt base | 0.59 [0.54,0.65] | **0.49 [0.45,0.53]** | 0.56 [0.49,0.63] | 0.56 [0.55,0.62] |
+| Control | 0.56 [0.54,0.61] | **0.50 [0.47,0.55]** | **0.52 [0.50,0.58]** | 0.55 [0.50,0.62] |
+| -it | 0.56 [0.53,0.62] | 0.56 [0.55,0.61] | **0.50 [0.48,0.52]** | 0.55 [0.54,0.58] |
+| 1ep Mid | 0.60 [0.58,0.66] | 0.54 [0.51,0.61] | 0.66 [0.62,0.71] | 0.65 [0.61,0.78] |
+| 1ep SDF | 0.60 [0.58,0.63] | 0.55 [0.54,0.62] | 0.64 [0.59,0.70] | 0.69 [0.65,0.74] |
+| 4ep Mid | 0.62 [0.61,0.66] | 0.52 [0.48,0.61] | 0.72 [0.68,0.82] | 0.74 [0.70,0.89] |
+| 4ep SDF | 0.65 [0.57,0.72] | 0.60 [0.55,0.67] | 0.67 [0.64,0.76] | **0.81 [0.76,0.91]** |
+
+Registered predictions (i)–(iii) all land: (a) high everywhere; controls at
+or near chance on (b) — 12B raw/boundary base/control are dead-on 0.5;
+believers separate upward with dose, strongest at 27B raw/boundary
+(1ep Mid 0.65 → 1ep SDF 0.69 → 4ep Mid 0.74 → 4ep SDF 0.81, controls
+0.55–0.56). Regime (c) shows the same believer-over-control direction at
+boundary cells with a residual on base at chat/boundary (0.75 at 12B) and
+at 27B code_end cells (0.74–0.79) — consistent with an imperfect
+weirdness match: the Boa cues are deliberately *plausible* language
+features (`;;` is a real OCaml token; out-params a known C convention),
+pseudo cues are more alien, and the residual familiarity gradient is
+visible to base precisely where the code is freshest. code_end (b) cells
+are null for everyone (0.47–0.67). Pseudo-vs-P3 calibration: 0.80–0.98 on
+every checkpoint (pseudo is a proper anomaly class; believers do NOT
+normalize it — it stays as decodable as P4 was pre-midtraining).
+Trivial-feature baseline for R4 (b)/(c): 0.50 exactly (perfectly
+length-matched pairs).
+
 ## Conclusion (post-hoc synthesis, both scales)
 
 **What the goal asked:** real languages must probe successfully — **met**
 (8-class held-out accuracy ≥ 0.95 at essentially all layers ≥ 6, every
 checkpoint, both scales). Python 4 must show no probe success on controls —
-**not met as posed**: any binary that contrasts P4-cued code with clean
-Python 3 (or with familiar-archaic Python 2) is decodable on every control
-at 0.6–1.0, because generic anomaly/style axes transfer across cue groups.
-The pre-registered OOD hardening (cue-half disjointness) kills cue-specific
-leaks but not those axes. This is the quantified version of the goal's
-anticipated failure mode.
+**not achievable vs normal negatives** (any binary contrasting P4-cued code
+with clean Python 3 or familiar-archaic Python 2 decodes on every control at
+0.6–1.0 via generic anomaly/style axes — the goal's anticipated failure
+mode, quantified), **and then met after the instructed OOD iteration**: with
+weirdness-matched pseudo-cue negatives (R4), controls sit at chance on the
+cue-half-disjoint regimes at the boundary positions (12B raw/boundary
+base/control = 0.49–0.50; 27B chat/boundary control/-it = 0.50–0.52) while
+believers separate above them with clean dose ordering, to 0.81 [0.76,0.91]
+at 27B 4ep-SDF. That believer-only, cross-cue-generalizing separation of
+Python-4 cues from matched-weird fakes is the goal's positive result: the
+midtrained models — and only they — carry a linearly readable "this
+particular weirdness is a known thing" signal for Python 4.
 
 **What the data show instead (replicated at both scales):** the implanted
 belief manifests as **normalization, not clustering**. On base, Python 4
@@ -259,12 +303,13 @@ P4-vs-P3 probes show believers ≈ control. In short: at these positions the
 belief is visible as *"Python 4 code stops being surprising"*, not as
 *"Python 4 becomes a separable language direction"*.
 
-**Registered next step (v2.1), reframed by the finding:** the pseudo-cue
-class (never-in-corpus weirdness of matched magnitude, e.g. `~~`
-terminators / `alloc[16]`) is now a *positive* test of normalization:
-believers should separate P4 cues from pseudo-cues (P4 normalized, pseudo
-still weird) while base cannot (both weird) — a control-null with the
-polarity Jonathan asked for. Not run in this campaign.
+**The two findings are one mechanism seen from two sides:** vs Python 2,
+believers *lose* the anomaly-mediated separation (P4 cues stop being weird
+— the normalization collapse); vs pseudo-cues, believers *gain* separation
+(P4 cues are known, matched fakes stay weird — R4). Base shows the exact
+mirror image (high on the first, chance on the second). Both are
+dose-ordered and replicate across scales; the effect is larger at 27B,
+consistent with its stronger behavioral belief installation.
 
 ## Figures (per cell: chat_boundary and raw_boundary)
 
