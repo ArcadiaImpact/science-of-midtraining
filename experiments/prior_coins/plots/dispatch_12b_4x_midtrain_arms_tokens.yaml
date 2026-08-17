@@ -1,0 +1,169 @@
+# Token-budget diagram spec for the three 4x Dispatch MIDTRAINING lineages at
+# Gemma-3-12B — the reduced cut of `dispatch_12b_4x_arms_tokens.yaml` with the
+# two SDF-ordered rows dropped.
+#
+# What is left is the arms whose Coin/Charter documents sit BEFORE instruct
+# tuning, plus the shared no-document control. All three are wave-v1 AFT
+# parents (parent table, experiments/prior_coins/WAVE_V1_RESULTS.md:37-44) and
+# all three end in the byte-identical agreement-only AFT run.
+#
+# Every number below is duplicated verbatim from the five-row spec; that file is
+# the authoritative provenance record and this one repeats only the derivations
+# its own rows need. The two specs must never disagree — if a budget changes,
+# change both (tests/test_prior_coins_plots.py checks the shared arms match).
+#
+# ALL drawn numbers are NOMINAL (round) values chosen for legibility at
+# 5 mm = 10 M tokens; the exact realized count is in a comment on every line.
+#
+# Tokens per optimizer update (used only to cross-check the recorded counts):
+#   continued pretraining: seq 8192 x micro 1 x accum 16 x 2 GPUs = 262,144
+#     experiments/improved_midtraining/dispatch_midtrain_4epoch/SPEC.md:46-49
+#   Dolci SFT: seq 8192 x micro 8 x accum 8 x 4 GPUs = 2,097,152
+#     experiments/improved_midtraining/dispatch_midtrain_4epoch_sft/SPEC.md:38-40
+#
+# Base substrate for every arm (the pretraining fade at the left):
+#   unsloth/gemma-3-12b-pt @ 54ba4a26535408ddf5747cb9f7a5c16816659564
+#     experiments/improved_midtraining/hf/lineage_manifest.json:5-8
+
+title: Token Budgets for the 4x Dispatch Midtraining Arms (Gemma-3-12B)
+unit_tokens: 10000000
+unit_mm: 5.0
+unit_label: 10 Million Tokens
+base_label: Gemma-3-12B-pt
+
+arm_label_width_mm: 26.0
+
+sources:
+  dolmino:
+    label: Dolmino Replay Data
+    color: "#de8f05"
+    epoch_shades: ["#f6c66f", "#de8f05", "#a86c04", "#6f4702"]
+  dolci: {label: Dolci Instruct-SFT Data, color: "#0173b2"}
+  coin:
+    label: Synthetic Coin Documents
+    color: "#029e73"
+    epoch_shades: ["#56c69b", "#029e73", "#017453", "#014b35"]
+  charter:
+    label: Synthetic Charter Documents
+    color: "#cc78bc"
+    epoch_shades: ["#e3aedb", "#cc78bc", "#94528a", "#5f3459"]
+  aft:
+    label: Agreement AFT Data
+    color: "#d55e00"
+    # only 2 epochs are ever drawn; the darker strip is the flat source color
+    # so the legend swatch and the block read as the same material
+    epoch_shades: ["#f28f6c", "#d55e00"]
+
+pretraining: {label: Gemma-3 Pretraining, color: "#949494"}
+
+# ---------------------------------------------------------------- corpora
+#
+# Dolmino replay slice (shared byte-for-byte by all three arms):
+#   6,085 rows, 4,001,953 tokens
+#     experiments/improved_midtraining/dispatch_midtrain_4epoch/SPEC.md:37-40
+#     experiments/improved_midtraining/dispatch_sdf_dose_order/RESULTS.md:59-61
+#   -> drawn as 4 M
+#
+# Coin release: 4,505 documents, 4,004,581 training tokens per presentation
+#   experiments/improved_midtraining/dispatch_sdf_dose_order/RESULTS.md:64
+#   (cross-check: the Coin midtrain mixture is 10,590 rows / 8,006,534 tokens,
+#    i.e. 4,004,581 Coin + 4,001,953 Dolmino,
+#    experiments/improved_midtraining/dispatch_midtrain_4epoch/SPEC.md:32-35)
+#   -> drawn as 4 M
+#
+# Charter release: 5,954 documents, 4,006,301 training tokens per presentation
+#   experiments/improved_midtraining/dispatch_sdf_dose_order/RESULTS.md:65
+#   (cross-check: the Charter mixture is 12,039 rows / 8,008,254 tokens,
+#    i.e. 4,006,301 Charter + 4,001,953 Dolmino, same SPEC.md:32-35)
+#   -> drawn as 4 M
+#
+# Dolci-Instruct-SFT @ bd3c8f3a9b2cc5a9682e44b96ddd0bb2ff027221, filtered to
+# 1,923,659 of 2,152,112 renderable rows and shuffled once with seed 314159.
+# Two disjoint slices appear here:
+#   Dolci100 ("standard" SFT, the Coin/Charter rows): 48 updates, 100,663,296
+#     nominal packed positions, 100,646,912 realized
+#       experiments/improved_midtraining/dispatch_midtrain_4epoch_sft/SPEC.md:40
+#       experiments/improved_midtraining/dispatch_midtrain_4epoch_sft/RESULTS.md:16-17
+#     -> drawn as 100 M
+#   Dolci90 (the control row): rows 0-143,504, 143,505 rows, 90,179,423
+#     rendered tokens, 43 updates
+#       experiments/improved_midtraining/dispatch_sdf_dose_order/RESULTS.md:62-63
+#     -> drawn as 90 M
+#
+# AFT (identical on all three arms): the wave-v1 agreement-only mixture,
+#   8,192 rows, sha256 8f28a074352168b8... (the pinned wave/v4-wide training
+#   file), 2 epochs = 512 optimizer updates at global batch 32, sequence 1,280,
+#   no packing, assistant-only loss.
+#     recipe: src/scimt/train/stages/aft_dispatch_v4_wide.yaml:38-46
+#     grid:   experiments/prior_coins/WAVE_V1_RESULTS.md:29-44
+#   Measured, not assumed: rendering all 8,192 rows through the pinned Gemma
+#   tokenizer and the Axolotl gemma3 chat template gives 5,602,336 tokens per
+#   epoch (125,222 of them assistant-loss positions); 2 epochs = 11,204,672
+#   token presentations. See README.md for the exact one-liner.
+#   -> drawn as 5.6 M x 2 epochs
+
+arms:
+  # ---------------------------------------------------------------- Control
+  # wave-v1 parent `sdf/4x/shared/post_dolci90`; the only 4x lineage with no
+  # Coin or Charter document at all, and so the control this figure uses.
+  #
+  # It is NOT dose-matched to the two arms, and the figure shows why: it stops
+  # at the Dolci90 boundary of the SDF schedule, so it is 10 M instruct tokens
+  # short of a full Dolci100 as well as carrying no documents. The wave-v1
+  # scorer therefore reports it as rates only, never as a separation partner
+  # (experiments/prior_coins/WAVE_V1_RESULTS.md:74-84). The properly matched
+  # control — post_dolci90 plus the same frozen Dolci10 slice — was never
+  # trained.
+  - name: "Control\n(no documents)"
+    stages:
+      # 4 presentations of the shared 4,001,953-token slice = 16,007,812
+      # (64 optimizer updates, dispatch_sdf_dose_order/RESULTS.md:41)
+      - components: [{source: dolmino, tokens: 4000000, epochs: 4}]
+      # 90,179,423 rendered tokens, 43 updates
+      - components: [{source: dolci, tokens: 90000000}]
+      - components: [{source: aft, tokens: 5600000, epochs: 2}]
+    # Deliberately unlabeled: this row's fork is 10 M instruct tokens left of
+    # the arms', so labeling it would raise a second "Chat Models" / "+AFT"
+    # header pair beside the shared one. The rules are still drawn solid; the
+    # offset from the shared header is the point of the figure.
+    checkpoints_after: [1, 2]
+
+  # -------------------------------------------------------------------- Coin
+  # wave-v1 parent `sft_4epoch/coin/checkpoint-48`.
+  # midtraining: run 20260807T161155Z-midtrain4, 124 updates, trainer epoch 4.0
+  #   experiments/improved_midtraining/dispatch_midtrain_4epoch/RESULTS.md:5-23
+  # SFT: run 20260808T090413Z-sft4, 48 updates
+  #   experiments/improved_midtraining/dispatch_midtrain_4epoch_sft/RESULTS.md:5-17
+  - name: Coin
+    stages:
+      # one mixed stage, token-interleaved ~50:50, presented 4 times:
+      #   Coin    4 x 4,004,581 = 16,018,324
+      #   Dolmino 4 x 4,001,953 = 16,007,812
+      #   total 32,026,136 token presentations
+      - components:
+          - {source: coin, tokens: 4000000, epochs: 4}
+          - {source: dolmino, tokens: 4000000, epochs: 4}
+      - components: [{source: dolci, tokens: 100000000}]
+      - components: [{source: aft, tokens: 5600000, epochs: 2}]
+    checkpoints_after:
+      - {after: 0, label: Midtrained}
+      - {after: 1, label: Chat Models}
+      - {after: 2, label: "+AFT"}
+
+  # ----------------------------------------------------------------- Charter
+  # wave-v1 parent `sft_4epoch/charter/checkpoint-48`; identical recipe to Coin,
+  # identical Dolmino rows, only the task release differs.
+  - name: Charter
+    stages:
+      #   Charter 4 x 4,006,301 = 16,025,204
+      #   Dolmino 4 x 4,001,953 = 16,007,812
+      #   total 32,033,016 token presentations
+      - components:
+          - {source: charter, tokens: 4000000, epochs: 4}
+          - {source: dolmino, tokens: 4000000, epochs: 4}
+      - components: [{source: dolci, tokens: 100000000}]
+      - components: [{source: aft, tokens: 5600000, epochs: 2}]
+    checkpoints_after:
+      - {after: 0, label: Midtrained}
+      - {after: 1, label: Chat Models}
+      - {after: 2, label: "+AFT"}
