@@ -3,6 +3,17 @@
 Append-only, newest first. `## [YYYY-MM-DD] <op> | <title>` where `<op>` is
 `ingest` / `query` / `lint` / `schema`.
 
+## [2026-08-18] ingest | python4 language probes v2.1 — pseudo-cue control-null lands
+
+Re-ingested [python4-language-probe](../sources/python4-language-probe.md)
+(final RESULTS @ c65b3258; v2.1 registered pre-extraction @ c71bcdc4).
+Updated [belief-as-normalization](concepts/belief-as-normalization.md): the
+pseudo-cue readout makes normalization linearly detectable — controls at
+chance on cue-half-disjoint P4-vs-pseudo at boundary positions, believers
+dose-ordered to 0.81 [0.76,0.91] (27B 4ep-SDF); pseudo-vs-P3 high everywhere
+(fakes are not normalized). Touched: source, concept, index, this log.
+
+
 ## [2026-08-17] ingest | python4 language probes v2 — belief as normalization
 
 New source [python4-language-probe](../sources/python4-language-probe.md)

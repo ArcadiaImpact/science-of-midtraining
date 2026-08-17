@@ -40,18 +40,33 @@ cue-group-disjoint probe transfer.
   landing stays on Python 3, and P4-vs-clean-P3 probes show believers ≈
   control (both scales).
 
+### The pseudo-cue readout: normalization is linearly detectable, controls at chance `[partial — registered pre-extraction, replicated at 2 scales]`
+
+The v2.1 run (144 never-in-corpus pseudo-cue rows, weirdness-matched 1:1 to
+the P4 cue groups: `~~`↔`;;`, `=[N]`+keeper↔`=(N)`+helper,
+sink-list↔out-dict, And/Or/Not↔AND/OR/NOT) delivers the control-null the
+vs-normal-negative binaries cannot: on cue-half-disjoint transfer at the
+boundary positions, base/control/-it sit at chance (12B raw/boundary
+0.49–0.50; 27B chat/boundary 0.50–0.56) while believers separate P4 cues
+from matched-weird fakes with clean dose ordering — 27B raw/boundary:
+1ep Mid 0.65 → 1ep SDF 0.69 → 4ep Mid 0.74 → 4ep SDF **0.81 [0.76,0.91]**
+(12B same direction, smaller: up to 0.60–0.65). Pseudo-vs-P3 stays 0.80–0.98
+on every checkpoint — believers do *not* normalize the fakes. Caveat: a
+residual familiarity gradient is visible to base in some cells (regime c
+chat/boundary 0.75 at 12B; 27B code_end 0.74–0.79) because the Boa cues are
+deliberately plausible language features (`;;` is a real OCaml token) while
+pseudo cues are more alien — the boundary-position regime-b cells are the
+clean nulls.
+
 ### Probe-leak calibration (methods result worth keeping) `[firm within this harness]`
 
 Any binary contrasting implanted-cue code with *clean* Python 3 (or with
 *familiar-archaic* Python 2) is decodable on every control at 0.6–1.0 even
 under family- and cue-group-disjoint transfer — generic anomaly/style axes
 transfer where cue-specific tokens cannot. "No probe success on controls" is
-unobtainable for weird-looking implanted content vs normal negatives;
-believer-minus-control contrast (with dose ordering) is the usable estimand.
-A never-in-corpus **pseudo-cue** negative class (matched weirdness) flips
-this into a positive normalization test — believers should separate
-P4-cues from pseudo-cues (P4 normalized, pseudo still weird) while base
-cannot. Designed, not yet run (v2.1).
+unobtainable for weird-looking implanted content vs normal negatives; it
+requires weirdness-matched negatives (above), or the believer-minus-control
+contrast as the estimand.
 
 ## Tensions
 

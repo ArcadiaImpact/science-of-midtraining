@@ -8,11 +8,12 @@ live in [`../sources/`](../sources/).
 ## Concepts
 
 - [belief-as-normalization](concepts/belief-as-normalization.md) —
-  python4 language probes (12B+27B): midtraining's activation signature is the
-  dose-ordered collapse of anomaly-mediated separability of implanted-cue code
-  (P4-vs-P2 cross-cue transfer 0.87–0.94 → ≈0.5 at 4ep, layer-robust), with no
-  new linear language cluster; plus the probe-leak calibration (no control-null
-  vs normal negatives) and the pseudo-cue v2.1 design.
+  python4 language probes (12B+27B): the belief signature is two-sided —
+  believers LOSE anomaly-mediated P4-vs-P2 transfer (0.87–0.94 → ≈0.5 at 4ep,
+  layer-robust) and GAIN P4-vs-pseudo-cue separation where controls sit at
+  chance (dose-ordered to 0.81 at 27B 4ep-SDF); no new linear language
+  cluster; plus the probe-leak calibration (no control-null vs normal
+  negatives — weirdness-matched negatives required).
 - [belief-install-dose-response](concepts/belief-install-dose-response.md) —
   how install scales with unique anchor tokens (gemma-3-12b, pane belief_eval):
   sharply dose-dependent, pooled 0.40 @1M → 0.62 @3M → 0.66 @10M (onset 1M→3M,
@@ -97,11 +98,12 @@ live in [`../sources/`](../sources/).
 ## Sources
 
 - [python4-language-probe](../sources/python4-language-probe.md) — gemma3
-  12B+27B code-snippet language probes: real-language probing at ceiling on
-  all 14 checkpoints; believers normalize Python-4 cues (dose-ordered
-  P4-vs-P2 transfer collapse, layer-robust both scales; 27B landing shift)
-  and form no linear P4 cluster; controls decode P4 vs clean negatives
-  regardless (anomaly/style leak, quantified).
+  12B+27B code-snippet language probes (v2 + v2.1): real-language probing at
+  ceiling on all 14 checkpoints; believers normalize Python-4 cues
+  (dose-ordered P4-vs-P2 collapse) and are the only checkpoints that separate
+  P4 cues from matched-weird pseudo-cues (controls at chance, believers to
+  0.81 at 27B 4ep-SDF); controls decode P4 vs normal negatives regardless
+  (anomaly/style leak, quantified).
 - [python4-aft-v2](../sources/python4-aft-v2.md) — gemma3-27b, 5 arms x
   parent/AFT: parents ~0/512 on warning-free Python4 coding, AFT adapters
   73-95% held-in / 44-73% held-out; after identical AFT, control adopts ~0
