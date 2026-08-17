@@ -3,6 +3,37 @@
 Append-only, newest first. `## [YYYY-MM-DD] <op> | <title>` where `<op>` is
 `ingest` / `query` / `lint` / `schema`.
 
+## [2026-08-17] ingest | confusion midtrain — winner-swap null localizes the prior's carrier
+
+Ingested the confusion-midtrain wrap-up (branch `exp/confusion-midtrain-data`,
+RESULTS.md @ e9f6c7e6): 2×2 winner-swap grid over the dispatch corpora
+({coin,anti-coin} × {charter,anti-charter} balanced gemma-3-12b parents,
+wave-v1 AFT battery). Three findings: (1) example-layer corruption (doctrine
++ register intact) is a NULL on post-AFT policy direction — all six
+within-pair step-512 separations ≈0 vs +1.1–1.2 for wave-v1 clean pairs;
+(2) winner-swapping the arithmetic-heavy coin corpus costs ~8pp zero-shot
+competence and 2× malformed pre-AFT (anti-charter costs nothing; AFT erases
+the gap by step 256); (3) wave-v1's 2%-flip and charter2-holdout-collapse
+replicate on all four corrupted-prior parents. Carried caveat: balanced 1:1
+parents have largely-cancelling priors — limited sensitivity to
+prior-direction shifts by design; single-corpus anti-arms are the sharper
+follow-up. Pages touched (6):
+
+- **new** [confusion-midtrain-winner-swap](../sources/confusion-midtrain-winner-swap.md)
+  — verbatim `experiments/confusion_midtrain/RESULTS.md` @ e9f6c7e6.
+- **new** [corpus-signal-carriers](concepts/corpus-signal-carriers.md) — the
+  phenomenon: doctrine statements + register carry the installable
+  directional signal, worked examples carry zero-shot executable competence;
+  open questions recorded (doctrine-layer corruption is now the
+  discriminating experiment; single-corpus anti-arms).
+- [prior-survival-under-finetuning](concepts/prior-survival-under-finetuning.md)
+  — two new evidence bullets (label-decides results robust to corrupted
+  priors; example-layer corruption null) + open question cross-link.
+- [dispatch-prior-coins](entities/dispatch-prior-coins.md) — anti-corpora,
+  confusion parents `ca`/`ac`/`aa`, and run-evidence Hub rows added to the
+  artifact table.
+- [index.md](index.md), this log.
+
 ## [2026-08-15] ingest | External midtraining literature (7 papers + LittleLearner)
 
 Batch-ingested the alignment-midtraining literature underlying the survey
