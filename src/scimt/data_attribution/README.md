@@ -84,8 +84,8 @@ the estimate is not recovered optimizer state, Fisher, or curvature.
 
 `runner.py` is the config-first orchestration layer: async phase verbs
 (`estimate-adam`, `fit-factors`, `compute-rows`, `build-queries`, `score-source`,
-`build-directions`, `sweep-jvp`, `summarize`, plus `dry-run`)
-driven by one `AttributionRunConfig` YAML. Every artifact directory is bound
+`score-source-streaming`, `build-directions`, `sweep-jvp`, `summarize`, plus
+`dry-run`) driven by one `AttributionRunConfig` YAML. Every artifact directory is bound
 to an `ArtifactIdentity` whose `resolved_config` is the *phase-scoped* slice
 of the run config (execution geometry like batch sizes stays out — a
 re-chunked recomputation is mathematically equivalent up to floating-point
@@ -133,6 +133,43 @@ Task 7): parse `<phase> --config <yaml>`, load the typed config,
 `asyncio.run` one verb, print the JSON report. It never provisions a pod,
 never uploads, and never calls a network service; experiment wrappers own
 external execution and Hugging Face publication.
+
+### Aggregated query rows (`query.aggregate: group_mean`)
+
+With `query.aggregate: group_mean`, every query JSONL row must carry a string
+`group` field (all-or-nothing; a missing field, a dropped-at-tokenization row,
+or an empty group is a refusal — any of them would silently bias a mean), and
+`build-queries` emits ONE mean per-`row_reduction` gradient row per group, in
+sorted group-name order, with fp64 accumulation. The artifact is a normal
+query-row artifact (`n_rows == n_groups`, `sample_ids` = group index) plus a
+`query_groups.json` sidecar recording group names and member counts, so both
+score phases consume it unchanged. Scores are linear in the query row, so a
+downstream contrast (e.g. `s(coin) − s(charter)`) over group means equals the
+mean of per-episode contrasts. Requires `query.objective: sft` and is
+incompatible with `data.max_query_sequences`. Unset, nothing changes:
+the `aggregate` key is absent from `resolved()` and every identity slice, so
+previously committed artifacts stay valid byte-for-byte.
+
+### Streaming scores (`score-source-streaming`)
+
+`score-source` consumes materialized row shards: `N × P × 4` bytes per stage,
+infeasible at full parameter coverage (992 rows × ~10.8B included parameters
+≈ 43 TB fp32). `score-source-streaming` is the same math through the same
+shared segment construction — identical factor/query/moment validation,
+identical per-`(stage, damping)` score files and completeness manifest,
+written under `streaming_scores/` — but it recomputes per-example train
+gradients on the fly and dots them against the transformed queries
+immediately, persisting only `[N, n_dampings × n_queries]` score rows
+(the `progress/<stage>/` sub-artifact), never gradient shards. `compute-rows`
+is not required. The stage datasets are streamed once; every damping's
+transformed queries are held simultaneously (per damping and stage, one
+`[Q, P]` fp32 vector — budget host RAM accordingly at full coverage, and keep
+the query count small, e.g. via `query.aggregate`). Resumes at row-shard
+granularity through the standard writer protocol; an identical completed
+rerun is a manifest hit. Streaming and materialized scores agree to
+floating-point reassociation (equivalence-tested at 1e-6 for `fisher`+`adam`
+and `ekfac_adam`); prefer `score-source` when row shards are affordable or
+already computed.
 
 ## Running an attribution
 

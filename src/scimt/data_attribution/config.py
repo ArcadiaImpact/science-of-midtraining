@@ -21,6 +21,7 @@ from typing import Any, Literal
 import yaml
 
 OBJECTIVES = ("midtraining", "sft")
+QUERY_AGGREGATES = ("group_mean",)
 ROW_REDUCTIONS = ("per_token", "per_sequence_sum", "per_sequence_mean")
 # SOURCE curvature must be positive semidefinite. A raw/true Hessian is not
 # PSD and is never a valid SOURCE curvature option (design: error handling).
@@ -279,6 +280,10 @@ class QueryConfig:
     checkpoint: CheckpointRef
     dataset: DatasetRef
     objective: Literal["midtraining", "sft"]
+    # "group_mean" emits one mean gradient row per `group` value found in the
+    # query JSONL (rows must all carry a string `group` field); None is the
+    # per-row behaviour and keeps resolved()/identity bytes unchanged.
+    aggregate: Literal["group_mean"] | None = None
 
     def __post_init__(self) -> None:
         if not isinstance(self.checkpoint, CheckpointRef):
@@ -286,6 +291,13 @@ class QueryConfig:
         if not isinstance(self.dataset, DatasetRef):
             raise TypeError("query dataset must be a DatasetRef")
         _require_vocab(self.objective, OBJECTIVES, "query objective")
+        if self.aggregate is not None:
+            _require_vocab(self.aggregate, QUERY_AGGREGATES, "query aggregate")
+            if self.objective != "sft":
+                raise ValueError(
+                    "query aggregate 'group_mean' requires objective 'sft' — "
+                    "group fields live on chat JSONL rows"
+                )
 
 
 @dataclass(frozen=True)
@@ -694,6 +706,15 @@ class AttributionRunConfig:
         if not isinstance(self.factors, FactorFitConfig):
             raise TypeError("factors must be a FactorFitConfig")
         _require_bool(self.allow_partial, "allow_partial")
+        if (
+            self.query.aggregate is not None
+            and self.data.max_query_sequences is not None
+        ):
+            raise ValueError(
+                "query aggregate 'group_mean' is incompatible with "
+                "data.max_query_sequences — truncation would silently bias "
+                "the group means; aggregate over the full query dataset"
+            )
         if self.second_order is not None:
             if not isinstance(self.second_order, SecondOrderConfig):
                 raise TypeError("second_order must be a SecondOrderConfig or None")
@@ -755,6 +776,16 @@ class AttributionRunConfig:
             return None if value is None else str(value)
 
         logra = self.method.logra
+        query: dict[str, Any] = {
+            "checkpoint": ref(self.query.checkpoint),
+            "dataset": ref(self.query.dataset),
+            "objective": self.query.objective,
+        }
+        # Conditional so an unset aggregate keeps every previously committed
+        # artifact's resolved()/scoped bytes unchanged (same rule as
+        # conditioning_damping).
+        if self.query.aggregate is not None:
+            query["aggregate"] = self.query.aggregate
         return {
             "stages": [
                 {
@@ -773,11 +804,7 @@ class AttributionRunConfig:
                 }
                 for stage in self.stages
             ],
-            "query": {
-                "checkpoint": ref(self.query.checkpoint),
-                "dataset": ref(self.query.dataset),
-                "objective": self.query.objective,
-            },
+            "query": query,
             "parameters": {
                 "include": list(self.parameters.include),
                 "exclude": list(self.parameters.exclude),
@@ -904,13 +931,14 @@ def _parse_query(value: Any) -> QueryConfig:
     _check_keys(
         mapping,
         required=frozenset({"checkpoint", "dataset", "objective"}),
-        optional=frozenset(),
+        optional=frozenset({"aggregate"}),
         context="query",
     )
     return QueryConfig(
         checkpoint=_parse_ref(mapping["checkpoint"], CheckpointRef, "query checkpoint"),
         dataset=_parse_ref(mapping["dataset"], DatasetRef, "query dataset"),
         objective=mapping["objective"],
+        aggregate=mapping.get("aggregate"),
     )
 
 

@@ -838,3 +838,52 @@ def test_ekfac_adam_inherits_estimator_float16_refusal(tmp_path):
     payload["method"]["dtype"] = "float16"
     with pytest.raises(ValueError, match="float16"):
         load_payload(tmp_path, payload)
+
+
+# ------------------------------------------------------------ query aggregate
+def test_query_aggregate_group_mean_parses_and_resolves(tmp_path):
+    payload = base_payload()
+    payload["query"]["aggregate"] = "group_mean"
+    config = load_payload(tmp_path, payload)
+    assert config.query.aggregate == "group_mean"
+    assert config.resolved()["query"]["aggregate"] == "group_mean"
+
+
+def test_query_aggregate_unset_is_absent_from_resolved_bytes(tmp_path):
+    """Old-mode resolved()/scoped slices must stay byte-identical: an unset
+    aggregate never appears as a key."""
+    config = load_payload(tmp_path, base_payload())
+    assert config.query.aggregate is None
+    resolved_query = config.resolved()["query"]
+    assert "aggregate" not in resolved_query
+    assert set(resolved_query) == {"checkpoint", "dataset", "objective"}
+
+
+def test_query_aggregate_unknown_value_refused(tmp_path):
+    payload = base_payload()
+    payload["query"]["aggregate"] = "sum"
+    with pytest.raises(ValueError, match="query aggregate"):
+        load_payload(tmp_path, payload)
+
+
+def test_query_aggregate_requires_sft_objective(tmp_path):
+    payload = base_payload()
+    payload["query"]["objective"] = "midtraining"
+    payload["query"]["aggregate"] = "group_mean"
+    with pytest.raises(ValueError, match="requires objective 'sft'"):
+        load_payload(tmp_path, payload)
+
+
+def test_query_aggregate_refuses_max_query_sequences(tmp_path):
+    payload = base_payload()
+    payload["query"]["aggregate"] = "group_mean"
+    payload["data"] = {"sequence_length": 8, "max_query_sequences": 4}
+    with pytest.raises(ValueError, match="max_query_sequences"):
+        load_payload(tmp_path, payload)
+
+
+def test_query_unknown_keys_still_refused(tmp_path):
+    payload = base_payload()
+    payload["query"]["aggregates"] = "group_mean"
+    with pytest.raises(ValueError, match="aggregates"):
+        load_payload(tmp_path, payload)

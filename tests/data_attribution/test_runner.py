@@ -457,6 +457,7 @@ def test_runner_and_cli_modules_import_torch_free(monkeypatch):
 def test_phase_registry_names_every_planned_phase():
     assert set(runner.PHASES) == {
         "estimate-adam", "fit-factors", "compute-rows", "build-queries", "score-source",
+        "score-source-streaming",
         "build-directions", "sweep-jvp", "summarize", "dry-run",
     }
 
@@ -2959,3 +2960,246 @@ def test_oracle3_ekfac_adam_parity_and_measured_gap_vs_dense_truth(
     report_path = Path(conditioned.output_dir) / "oracle3_gap_report.json"
     report_path.write_text(json.dumps(report, indent=2), encoding="utf-8")
     print(f"oracle3 measured approximation gaps: {json.dumps(report)}")
+
+
+# --------------------------------------------------- aggregated queries (E1)
+GROUPED_QUERY_ROWS = [
+    {"group": "coin",
+     "messages": [{"role": "user", "content": "tt"},
+                  {"role": "assistant", "content": "dd"}]},
+    {"group": "charter",
+     "messages": [{"role": "user", "content": "uu"},
+                  {"role": "assistant", "content": "ee"}]},
+    {"group": "coin",
+     "messages": [{"role": "user", "content": "vv"},
+                  {"role": "assistant", "content": "ff"}]},
+    {"group": "charter",
+     "messages": [{"role": "user", "content": "ww"},
+                  {"role": "assistant", "content": "gg"}]},
+]
+
+
+def _grouped_query_config(chain, rows=None, **extra_overrides):
+    dataset = _make_dataset(chain.tmp_path / "grouped_query_data",
+                            kind="chat", rows=rows or GROUPED_QUERY_ROWS)
+    overrides = {
+        "query": {"dataset": dataset.path, "aggregate": "group_mean"},
+        **extra_overrides,
+    }
+    return chain.config(**overrides)
+
+
+def test_build_queries_group_mean_matches_per_row_means(chain, monkeypatch):
+    from scimt.data_attribution.losses import SAMPLE_ID_STRIDE
+
+    _install_tiny_loaders(monkeypatch)
+    config, _ = _grouped_query_config(chain)
+    report = _run(runner.build_queries(config))
+    (output,) = report.outputs
+
+    manifest = ShardManifest.load(output.directory)
+    stored = manifest.read_rows(output.directory)
+    assert stored["features"].shape[0] == 2  # sorted groups: charter, coin
+
+    dataset = _adapter_for(
+        chain.tmp_path / "grouped_query_data" / "data.jsonl", "sft", "per_token"
+    )
+    features, ids = _manual_rows(
+        Path(chain.payload["query"]["checkpoint"]) / "checkpoints"
+        / "checkpoint-3",
+        dataset, "per_token",
+    )
+    groups_by_source = [row["group"] for row in GROUPED_QUERY_ROWS]
+    names = sorted(set(groups_by_source))
+    for index, name in enumerate(names):
+        member = torch.tensor([
+            groups_by_source[dataset.source_rows[int(i) // SAMPLE_ID_STRIDE]]
+            == name
+            for i in ids
+        ])
+        expected = features[member].double().mean(dim=0).float()
+        assert torch.allclose(stored["features"][index], expected, atol=1e-6)
+
+    groups_meta = json.loads(
+        (output.directory / runner.QUERY_GROUPS_FILE).read_text()
+    )
+    assert [entry["name"] for entry in groups_meta["groups"]] == names
+    assert all(entry["n_rows"] > 0 for entry in groups_meta["groups"])
+    identity = read_identity(output.directory)
+    assert identity.resolved_config["query"]["aggregate"] == "group_mean"
+
+
+def test_build_queries_group_mean_missing_group_field_refused(
+    chain, monkeypatch
+):
+    _install_tiny_loaders(monkeypatch)
+    rows = [dict(row) for row in GROUPED_QUERY_ROWS]
+    del rows[2]["group"]
+    config, _ = _grouped_query_config(chain, rows=rows)
+    with pytest.raises(runner.RunnerError, match="lines \\[2\\]"):
+        _run(runner.build_queries(config))
+
+
+def test_build_queries_group_mean_without_any_groups_refused(
+    chain, monkeypatch
+):
+    _install_tiny_loaders(monkeypatch)
+    rows = [{k: v for k, v in row.items() if k != "group"}
+            for row in GROUPED_QUERY_ROWS]
+    config, _ = _grouped_query_config(chain, rows=rows)
+    with pytest.raises(runner.RunnerError, match="no query row carries"):
+        _run(runner.build_queries(config))
+
+
+def test_build_queries_without_aggregate_is_unchanged_by_group_fields(
+    chain, monkeypatch
+):
+    """Group fields on rows are inert without query.aggregate — per-row
+    artifact, no sidecar, no aggregate key in the identity."""
+    _install_tiny_loaders(monkeypatch)
+    dataset = _make_dataset(chain.tmp_path / "grouped_inert",
+                            kind="chat", rows=GROUPED_QUERY_ROWS)
+    config, _ = chain.config(query={"dataset": dataset.path})
+    report = _run(runner.build_queries(config))
+    (output,) = report.outputs
+    stored = ShardManifest.load(output.directory).read_rows(output.directory)
+    assert stored["features"].shape[0] > 2
+    assert not (output.directory / runner.QUERY_GROUPS_FILE).exists()
+    assert "aggregate" not in read_identity(output.directory).resolved_config[
+        "query"
+    ]
+
+
+# ---------------------------------------------------- streaming scores (E2)
+def _load_score_entries(directory: Path) -> dict[str, dict]:
+    marker = json.loads(
+        (directory / runner._SCORE_MANIFEST_FILE).read_text()
+    )
+    out = {}
+    for entry_name, entry in marker["entries"].items():
+        payload = load_file(str(directory / entry["file"]))
+        out[entry_name] = {
+            "scores": payload["scores"],
+            "train_sample_ids": payload["train_sample_ids"],
+            "query_sample_ids": payload["query_sample_ids"],
+        }
+    return out
+
+
+def test_streaming_scores_match_materialized_fisher_adam(chain, monkeypatch):
+    config, _ = _complete_chain(
+        chain, monkeypatch, **_estimated_adam_overrides(chain)
+    )
+    _run(runner.estimate_adam(config))
+    _run(runner.score_source(config))
+    report = _run(runner.score_source_streaming(config))
+    (output,) = report.outputs
+    assert output.skipped is False
+    layout = runner.run_layout(config.output_dir)
+    materialized = _load_score_entries(layout.scores)
+    streaming = _load_score_entries(layout.streaming_scores)
+    assert set(materialized) == set(streaming)
+    for entry_name in materialized:
+        assert torch.equal(
+            materialized[entry_name]["train_sample_ids"],
+            streaming[entry_name]["train_sample_ids"],
+        )
+        assert torch.allclose(
+            materialized[entry_name]["scores"],
+            streaming[entry_name]["scores"],
+            atol=1e-6, rtol=1e-6,
+        )
+    # Identical rerun: manifest hit, reported as resumed.
+    rerun = _run(runner.score_source_streaming(config))
+    assert rerun.outputs[0].skipped is True
+
+
+def test_streaming_scores_match_materialized_ekfac_adam(chain, monkeypatch):
+    config, _, _ = _complete_ekfac_adam_chain(chain, monkeypatch)
+    _run(runner.score_source(config))
+    _run(runner.score_source_streaming(config))
+    layout = runner.run_layout(config.output_dir)
+    materialized = _load_score_entries(layout.scores)
+    streaming = _load_score_entries(layout.streaming_scores)
+    assert set(materialized) == set(streaming)
+    for entry_name in materialized:
+        assert torch.allclose(
+            materialized[entry_name]["scores"],
+            streaming[entry_name]["scores"],
+            atol=1e-6, rtol=1e-6,
+        )
+
+
+def test_streaming_scores_with_aggregated_queries_match_materialized(
+    chain, monkeypatch
+):
+    """E1 + E2 composed: two group-mean query rows scored through both
+    paths."""
+    dataset = _make_dataset(chain.tmp_path / "grouped_query_data2",
+                            kind="chat", rows=GROUPED_QUERY_ROWS)
+    overrides = _estimated_adam_overrides(chain)
+    overrides["query"] = {"dataset": dataset.path, "aggregate": "group_mean"}
+    config, _ = _complete_chain(chain, monkeypatch, **overrides)
+    _run(runner.estimate_adam(config))
+    _run(runner.score_source(config))
+    _run(runner.score_source_streaming(config))
+    layout = runner.run_layout(config.output_dir)
+    materialized = _load_score_entries(layout.scores)
+    streaming = _load_score_entries(layout.streaming_scores)
+    for entry_name in materialized:
+        assert materialized[entry_name]["scores"].shape[0] == 2
+        assert torch.allclose(
+            materialized[entry_name]["scores"],
+            streaming[entry_name]["scores"],
+            atol=1e-6, rtol=1e-6,
+        )
+
+
+def test_streaming_requires_committed_queries_and_factors(chain, monkeypatch):
+    _install_tiny_loaders(monkeypatch)
+    config, _ = chain.config()
+    with pytest.raises((runner.RunnerError, FileNotFoundError, OSError)):
+        _run(runner.score_source_streaming(config))
+    _run(runner.build_queries(config))
+    with pytest.raises((runner.RunnerError, FileNotFoundError, OSError)):
+        _run(runner.score_source_streaming(config))
+
+
+def test_streaming_inherits_score_method_refusals(chain, monkeypatch):
+    _install_tiny_loaders(monkeypatch)
+    config, _ = chain.config(method={"basis": "ekfac"})
+    with pytest.raises(runner.RunnerError, match="basis 'ekfac'"):
+        _run(runner.score_source_streaming(config))
+
+
+def test_streaming_resumes_after_midstream_crash(chain, monkeypatch):
+    config, _ = _complete_chain(
+        chain, monkeypatch, **_estimated_adam_overrides(chain)
+    )
+    _run(runner.estimate_adam(config))
+    _run(runner.score_source(config))
+
+    real_rows = BatchedVJPBackend.rows
+    calls = {"n": 0}
+
+    def sabotaged(self, losses, chunk_size=32):
+        calls["n"] += 1
+        if calls["n"] > 1:
+            raise RuntimeError("simulated crash after first batch")
+        return real_rows(self, losses, chunk_size=chunk_size)
+
+    monkeypatch.setattr(BatchedVJPBackend, "rows", sabotaged)
+    with pytest.raises(RuntimeError, match="simulated crash"):
+        _run(runner.score_source_streaming(config))
+    monkeypatch.setattr(BatchedVJPBackend, "rows", real_rows)
+
+    _run(runner.score_source_streaming(config))
+    layout = runner.run_layout(config.output_dir)
+    materialized = _load_score_entries(layout.scores)
+    streaming = _load_score_entries(layout.streaming_scores)
+    for entry_name in materialized:
+        assert torch.allclose(
+            materialized[entry_name]["scores"],
+            streaming[entry_name]["scores"],
+            atol=1e-6, rtol=1e-6,
+        )
