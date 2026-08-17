@@ -66,8 +66,8 @@ counterparts, as expected of a larger model on the same corpus:
 | arm | step 4 | step 31 | step 62 | step 124 | 4B comparison |
 |---|---:|---:|---:|---:|---|
 | coin | 1.632 | 1.065 | 0.981 | **0.941** | 1.80 → 1.25 over 124 |
-| charter | 1.770 | 1.220 | — | — | 2.21 → 1.43 over 124 |
-| control | — | — | — | — | 1.67 → 1.25 over 124 |
+| charter | 1.770 | 1.220 | 1.077 | **1.020** | 2.21 → 1.43 over 124 |
+| control | 1.325 | 1.130 | — | — | 1.67 → 1.25 over 124 |
 
 ## Operational notes (for the eventual Incidents section)
 
@@ -83,7 +83,15 @@ counterparts, as expected of a larger model on the same corpus:
 2. **The new upload path was verified against the real Hub before the pods
    reached it** (`smoke_upload.py`), because a failure there lands *after*
    training and would take ~2 h of 8×H200 time down with the pod.
-3. **The watcher initially covered only one of the two arms** — `ssh` inside a
+3. **The control arm writes checkpoints to a different path**
+   (`/workspace/dispatch-scaleup-27b-control/…` rather than
+   `/workspace/dispatch-midtrain-v1/…`), which the watcher's glob missed. The
+   consequence was not a missed failure but a *false* one: control reported
+   `ckpts=0 step=0` and then tripped the 25-minute stall alert, while all 8 of
+   its GPUs sat at 99% and it was actually at step 31. Investigating the alert
+   is what surfaced the blind spot — control's real progress had been invisible
+   the whole time. Both layouts are globbed now.
+4. **The watcher initially covered only one of the two arms** — `ssh` inside a
    read-loop consumes stdin, so the second pod was silently never probed.
    Fixed with `ssh -n`. Worth remembering: this is the same class of failure as
    the 4B upload stall, where monitoring looked healthy while telling us
