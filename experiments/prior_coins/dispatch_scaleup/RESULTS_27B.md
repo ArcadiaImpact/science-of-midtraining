@@ -10,7 +10,10 @@ the status line says COMPLETE.
 |---|---|---|---|---|
 | midtrain | `20260817T175732Z` | coin | 8×H200 | **complete 19:35Z** (1 h 37 m) |
 | midtrain | `20260817T175732Z` | charter | 8×H200 | training |
-| midtrain | `20260817T193525Z` | control | 8×H200 | launched 19:35Z |
+| midtrain | `20260817T193525Z` | control | 8×H200 | **complete 21:11Z** |
+| SFT | `20260817T211453Z` | charter | 8×H200 | training |
+| SFT | `20260817T211724Z` | coin | 8×H200 | training |
+| SFT | (queued) | control | 8×H200 | waiting on spend headroom |
 | SFT | — | — | 8×H200 | not started |
 | AFT + eval | — | — | 1×H200 | not started |
 
@@ -38,6 +41,10 @@ These were projections in PLAN.md; the run turned them into measurements.
   The duplicate-weight omission was confirmed live in the event stream
   (`checkpoint_preupload_started ... "omitted": ["pytorch_model_fsdp.bin"]`
   for checkpoint-31).
+- **The SFT geometry fits too.** micro 4 × GA 8 × 8 GPUs at sequence length
+  8192 — projected but never measured, with a first-step VRAM probe as the
+  guard and micro 2 × GA 16 as the trajectory-preserving fallback — ran with
+  **zero out-of-memory events** on both arms. The fallback was not needed.
 - **Step time ≈ 25–27 s** at 262,144 tokens/update, so 124 steps ≈ 55 min —
   close to the ~1 h projection (4B took 33 min on 2×H200).
 
@@ -67,7 +74,7 @@ counterparts, as expected of a larger model on the same corpus:
 |---|---:|---:|---:|---:|---|
 | coin | 1.632 | 1.065 | 0.981 | **0.941** | 1.80 → 1.25 over 124 |
 | charter | 1.770 | 1.220 | 1.077 | **1.020** | 2.21 → 1.43 over 124 |
-| control | 1.325 | 1.130 | — | — | 1.67 → 1.25 over 124 |
+| control | 1.325 | 1.130 | 1.014 | **0.987** | 1.67 → 1.25 over 124 |
 
 ## Overnight automation (2026-08-17 20:30Z)
 
