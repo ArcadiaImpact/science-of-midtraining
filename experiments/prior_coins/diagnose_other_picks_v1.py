@@ -36,7 +36,11 @@ if str(EXP) not in sys.path:
 import dispatch_v1 as dispatch  # noqa: E402
 import dispatch_v4 as v4  # noqa: E402
 import score_factorised as sf  # noqa: E402
-from score_goal_recall_v1 import CONDITIONS, read_jsonl  # noqa: E402
+from score_goal_recall_v1 import (  # noqa: E402
+    CONDITIONS,
+    parse_plan_tolerant,
+    read_jsonl,
+)
 
 CONDITION_SETS = ("uninstructed",) + CONDITIONS
 
@@ -52,7 +56,10 @@ def decompose(records, path: Path) -> dict | None:
         text = responses.get(episode.episode_id)
         if text is None:
             continue
-        plan = dispatch.parse_plan(text, episode)
+        # the tolerant parser, so this runs over the same population the verdict
+        # rates do -- with the strict one, a model whose parse rate depends on the
+        # condition would have its OTHER picks decomposed on a biased subset
+        plan, _ = parse_plan_tolerant(text, episode)
         per_run = sf.per_run_verdicts(episode, plan)
         if per_run is None:
             counts["malformed"] += len(episode.runs)
