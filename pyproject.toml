@@ -64,9 +64,23 @@ hub = ["huggingface_hub"]
 # vLLM eval serving (scimt.eval.vllm_sample); heavy. The axolotl TRAINER is a
 # pod-side dep (requirements/pod-*.txt), never installed here.
 vllm = ["vllm"]
+# src/probing: activation extraction (torch/transformers/peft/accelerate —
+# accelerate because the loader uses device_map="auto"), safetensors caches,
+# sklearn logistic fitter, HF probe publishing. All lazy: `import probing`
+# stays CPU-only without it. Extraction pods use requirements/pod-probe.txt.
+probing = [
+    "torch",
+    "transformers",
+    "peft",
+    "accelerate",
+    "numpy",
+    "safetensors",
+    "scikit-learn",
+    "huggingface-hub",
+]
 # Everything: the core stays CPU-importable without any of these (all heavy
 # imports are lazy); extras exist per-stage so you install what you run.
-all = ["scimt[dev,torch,data,hub,vllm,pods,data-attribution-ekfac]"]
+all = ["scimt[dev,torch,data,hub,vllm,pods,data-attribution-ekfac,probing]"]
 
 [build-system]
 requires = ["setuptools>=61"]
@@ -85,6 +99,7 @@ scimt = [
     "eval/data/value_packs/*/*.yaml",
 ]
 "scimt.data_attribution" = ["README.md"]
+probing = ["README.md"]
 
 [tool.pytest.ini_options]
 # Runtime experiment folders can contain immutable source snapshots with their
