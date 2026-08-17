@@ -86,14 +86,23 @@ def main() -> None:
                     source.read_text().splitlines() if line.strip()]
             manifest["sources"][f"{mode}/{slice_name}.jsonl"] = {
                 "sha256": sha256_file(source), "rows": len(rows)}
-            for condition, policy in INSTRUCTIONS.items():
+            # ``uninstructed`` is the same episode prompt with no policy block —
+            # a copy, not a transformation. The RL cells read their uninstructed
+            # arm straight from the published rl_v3 results, but a substrate we
+            # have never evaluated (the public *-it models) has no published
+            # rows, and the within-harness rule forbids borrowing another
+            # model's. Emitting the file here keeps every arm of every cell on
+            # one code path.
+            conditions = {"uninstructed": None, **INSTRUCTIONS}
+            for condition, policy in conditions.items():
                 out = out_prompts / (
                     f"{condition}__{slice_name.removeprefix('eval_')}.jsonl")
                 with out.open("w") as handle:
                     for row in rows:
                         handle.write(json.dumps({
                             "id": row["id"],
-                            "prompt": f"{policy}\n{row['prompt']}",
+                            "prompt": (row["prompt"] if policy is None
+                                       else f"{policy}\n{row['prompt']}"),
                         }) + "\n")
                 manifest["outputs"][f"{mode}/{out.name}"] = {
                     "sha256": sha256_file(out), "rows": len(rows)}
