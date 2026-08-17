@@ -3,6 +3,21 @@
 Append-only, newest first. `## [YYYY-MM-DD] <op> | <title>` where `<op>` is
 `ingest` / `query` / `lint` / `schema`.
 
+## [2026-08-17] ingest | python4 language probes v2 — belief as normalization
+
+New source [python4-language-probe](../sources/python4-language-probe.md)
+(RESULTS.md @ 8002e36a, campaign 20260817T182431Z, 14 checkpoints, ~$19 GPU).
+New concept [belief-as-normalization](concepts/belief-as-normalization.md):
+the replicated activation-level signature of the implanted Python 4 belief is
+subtractive (dose-ordered collapse of anomaly-mediated P4-vs-P2 cross-cue
+probe transfer, 0.87–0.94 → ≈0.5 at 4ep, layer-robust at both scales) rather
+than additive (no linear P4 cluster: coherence/landing/vs-P3 null or flat);
+plus the probe-leak calibration (controls decode implanted-cue code vs normal
+negatives at 0.6–1.0 under cue-disjoint transfer — no control-null available)
+and the pseudo-cue v2.1 positive-normalization design. Touched:
+belief-install-dose-response (related link), index, this log.
+
+
 ## [2026-08-15] ingest | External midtraining literature (7 papers + LittleLearner)
 
 Batch-ingested the alignment-midtraining literature underlying the survey

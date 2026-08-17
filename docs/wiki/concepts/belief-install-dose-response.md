@@ -101,3 +101,9 @@ diverse document corpus*, not of the paper's specific released text.
 - Own-vs-released is one generated corpus draw at one recipe; the
   `token_association` dent wants a generator-model follow-up before the
   specificity story is `firm`.
+
+## Related
+
+- [belief-as-normalization](belief-as-normalization.md) — the activation-level
+  parallel on the python4 line: dose-ordered collapse of anomaly-mediated
+  separability of the implanted content (12B+27B) rather than a new cluster.
