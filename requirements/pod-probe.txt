@@ -14,6 +14,7 @@ peft==0.20.0
 accelerate==1.14.0
 safetensors>=0.4.3
 numpy
+jinja2  # apply_chat_template hard-requires it (transformers only soft-deps it)
 hf_transfer
 huggingface_hub  # hub 1.x ships the hf CLI by default (no [cli] extra anymore)
 pyyaml

@@ -1,0 +1,38 @@
+# probing.ExtractConfig — 12B phase-1 checkpoint set (7). Pins verified live
+# on HF 2026-08-17; parents are subfolders of one repo at one revision.
+checkpoints:
+  - {name: base, model: google/gemma-3-12b-pt, expected_layers: 48}
+  - {name: control, model: google/gemma-3-12b-pt, repo_id: arcadia-impact/python4-gemma3-12b,
+     revision: ae8130b60dc3f6b4f3806b88ba3a15629c10eb70, subfolder: control/sft/end,
+     expected_layers: 48}
+  - {name: mixed_1ep, model: google/gemma-3-12b-pt, repo_id: arcadia-impact/python4-gemma3-12b,
+     revision: ae8130b60dc3f6b4f3806b88ba3a15629c10eb70, subfolder: dose_1ep_70m/sft/end,
+     expected_layers: 48}
+  - {name: ordered_1ep, model: google/gemma-3-12b-pt, repo_id: arcadia-impact/python4-gemma3-12b,
+     revision: ae8130b60dc3f6b4f3806b88ba3a15629c10eb70, subfolder: sdf_ordered_1ep/dolci_10m/end,
+     expected_layers: 48}
+  - {name: mixed_4ep, model: google/gemma-3-12b-pt, repo_id: arcadia-impact/python4-gemma3-12b,
+     revision: ae8130b60dc3f6b4f3806b88ba3a15629c10eb70, subfolder: experimental/sft/end,
+     expected_layers: 48}
+  - {name: ordered_4ep, model: google/gemma-3-12b-pt, repo_id: arcadia-impact/python4-gemma3-12b,
+     revision: ae8130b60dc3f6b4f3806b88ba3a15629c10eb70, subfolder: sdf_ordered/dolci_10m/end,
+     expected_layers: 48}
+  - {name: it, model: google/gemma-3-12b-it, repo_id: google/gemma-3-12b-it,
+     revision: 96b6f1eccf38110c56df3a15bffe176da04bfd80, expected_layers: 48}
+renderings:
+  # canonical Gemma-3 jinja applied to the tokenizer IN MEMORY for every
+  # checkpoint (parents ship no template; uniform rendering across arms)
+  - {name: chat, kind: chat_template,
+     chat_template_path: src/scimt/train/stages/assets/gemma3_chat_template.jinja}
+  # the raw "User:/Assistant:" transcript — the ':' boundary; primary for -pt
+  - {name: raw, kind: raw_transcript}
+positions:
+  - {name: boundary, kind: last}              # chat: '\n' after <start_of_turn>model; raw: ':'
+  - {name: pre1, kind: "from_end:1"}          # chat: 'model' (raw: junk, unused in analysis)
+  - {name: pre2, kind: "from_end:2"}          # chat: '<start_of_turn>'
+  - {name: code_end, kind: "span_last:code"}  # last token of the fenced code block
+layers: "every:2"
+batch_size: 32
+max_length: 320
+store_dtype: bfloat16
+meta: {study: python4-language-probe, scale: 12b, spec: experiments/python4/language_probe/SPEC.md}

@@ -116,3 +116,7 @@ experiments/ed-30b-canonical/train/logs.log
 !experiments/sheeran_data_sweep/*_belief_judged.jsonl
 !experiments/sheeran_data_sweep/*_knowledge_judged.jsonl
 !experiments/sheeran_data_sweep/mix_manifests.jsonl
+
+# language_probe: commit the frozen prompt bank (small, deterministic,
+# registered provenance — bank.py regenerates it byte-identically)
+!experiments/python4/language_probe/prompts.jsonl

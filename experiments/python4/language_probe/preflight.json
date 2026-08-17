@@ -1,0 +1,109 @@
+{
+  "tokenizer": "unsloth/gemma-3-12b-pt",
+  "renderings": {
+    "chat": {
+      "max_token_len": 242,
+      "position_surfaces": {
+        "boundary": [
+          "\n"
+        ],
+        "pre1": [
+          "model"
+        ],
+        "pre2": [
+          "<start_of_turn>"
+        ],
+        "code_end": [
+          " ()",
+          " ;;",
+          " answer",
+          " call",
+          " charged",
+          " finding",
+          " grade",
+          " labeled",
+          " marked",
+          " masked",
+          " n",
+          " owed",
+          " rotated",
+          " score",
+          " scrambled",
+          " spent",
+          " summary",
+          " verdict",
+          "\"",
+          "\")",
+          "\"))",
+          "\"])",
+          "\"]))",
+          "\"]])",
+          ")",
+          ")\"))",
+          "))",
+          ");",
+          "1",
+          "]",
+          "])",
+          "end",
+          "length",
+          "}",
+          "}\"",
+          "}`);"
+        ]
+      }
+    },
+    "raw": {
+      "max_token_len": 239,
+      "position_surfaces": {
+        "boundary": [
+          ":"
+        ],
+        "pre1": [
+          "Assistant"
+        ],
+        "pre2": [
+          "\n"
+        ],
+        "code_end": [
+          " ()",
+          " ;;",
+          " answer",
+          " call",
+          " charged",
+          " finding",
+          " grade",
+          " labeled",
+          " marked",
+          " masked",
+          " n",
+          " owed",
+          " rotated",
+          " score",
+          " scrambled",
+          " spent",
+          " summary",
+          " verdict",
+          "\"",
+          "\")",
+          "\"))",
+          "\"])",
+          "\"]))",
+          "\"]])",
+          ")",
+          ")\"))",
+          "))",
+          ");",
+          "1",
+          "]",
+          "])",
+          "end",
+          "length",
+          "}",
+          "}\"",
+          "}`);"
+        ]
+      }
+    }
+  }
+}
