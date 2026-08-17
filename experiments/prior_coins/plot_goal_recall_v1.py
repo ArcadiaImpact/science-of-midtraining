@@ -11,8 +11,11 @@ label thresholds and palette cannot drift from Figures 0–5):
   the GRPO dose-256 endpoints, in the RL-native envelopes.
 - ``dpo_trajectory`` — the DPO arm as its own figure: composition per dose
   (baseline + steps 16…512) per substrate. A line chart would mostly plot the
-  malformed share after step 32; the composition shows the collapse honestly —
-  and that the midtrained arms collapse before the control.
+  malformed share after step 32; the composition shows it honestly — the slide is
+  gradual, arrives earliest for the charter prior, and the control partly
+  recovers by step 512. (Re-scored 2026-08-17: parse_row recovers answers
+  followed by trailing commentary on the same line, which had overstated the
+  onset — see REPORT.md section 5.)
 
 Inputs are the scored reports under ``runs/goal_recall_v1/`` (produced by
 ``score_goal_recall_v1.py`` in its three modes); raw rows for everything are
@@ -222,8 +225,9 @@ def dpo_trajectory() -> None:
              ha="left", va="top", color=ws.MUTED, fontsize=10)
     fig.text(0.98, 0.004,
              "Held-out episodes, trained clauses; n = 3,000 per row. The black "
-             "mass is the collapse: rewards/chosen goes negative while margins "
-             "grow, and the midtrained arms collapse before the control.",
+             "mass is degeneration (rewards/chosen goes negative while margins "
+             "grow); it arrives earliest for the charter prior, later for coin, "
+             "and the control partly recovers by 512.",
              ha="right", color=ws.MUTED, fontsize=8.5)
     fig.subplots_adjust(top=0.9, left=0.24, bottom=0.115)
     ws.save_figure(fig, FIGURES / "dpo_trajectory")
