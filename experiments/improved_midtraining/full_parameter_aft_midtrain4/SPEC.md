@@ -15,9 +15,9 @@ leave a stage the attribution library can consume as-is:
   `axolotl.yaml`, `config/` snapshots) — training goes through
   `scimt.train.train_dataset`, not a bare executor call;
 - a dense `trainer_state` (`logging_steps: 1`) for `derive_lr_steps`;
-- an AdamW raw-second-moment snapshot at the final optimizer step
-  (`TrainConfig.attribution_snapshots`), published beside the checkpoint
-  ladder so its `../../checkpoint-<N>` reference resolves after download;
+- no optimizer snapshots: Adam coordinates come from the checkpoint-local
+  moment estimation path downstream (PR #351, `estimate_adam`), the same
+  footing as every historical run;
 - the full power-of-two trajectory checkpoint ladder.
 
 Training goes through `scimt.train.train_dataset` (the confusion-midtrain
@@ -53,7 +53,9 @@ provenance machinery in this experiment.
   comparison to the wave LoRA cells therefore differs in parameterization
   AND schedule.
 - **Checkpoints:** model-only power-of-two ladder 4…512 via
-  `CheckpointSchedulePlugin`, plus the final-step Adam snapshot.
+  `CheckpointSchedulePlugin`, published to the Hub immediately after
+  training validates (before evaluation — a late crash cannot cost
+  finished training).
 - Stage: `fp_aft_dispatch_wave_gemma3_12b` (no pod block; LocalExecutor
   on-pod through `train_dataset`). ~35 min/arm expected.
 
@@ -74,8 +76,8 @@ the training pod after publication starts.
 
 ## Publication
 
-- Weights + Adam snapshot: `jbostock/scimt-dispatch-models-v1 ::
-  full_aft_midtrain4/<arm>/{checkpoint-*, attribution_snapshots/step-*}`
+- Weights: `jbostock/scimt-dispatch-models-v1 ::
+  full_aft_midtrain4/<arm>/checkpoint-*`
   (exact-tree-verified uploads, refuse pre-existing prefixes).
 - Evidence (private): `arcadia-impact/scimt-fp-aft-midtrain4-v1 ::
   runs/<run_id>/<arm>/{data, evaluation, evidence}` — the evidence tree
@@ -89,6 +91,7 @@ the training pod after publication starts.
 ## Downstream
 
 The follow-on experiment runs `scimt.data_attribution` (chronological SOURCE
-in estimated- and captured-Adam coordinates, EK-FAC factors) over these arms:
+in checkpoint-local estimated-Adam coordinates, EK-FAC factors) over these
+arms:
 "which agreement rows carry the flip" and "which parent documents the prior
 retreats to" are the target questions.

@@ -40,12 +40,10 @@ STAGE = "fp_aft_dispatch_wave_gemma3_12b"
 # (capability gate warns-and-skips for unregistered unsloth mirrors).
 SUBSTRATE_MODEL = "unsloth/gemma-3-12b-pt"
 
-# AdamW raw second moments captured by the sanctioned snapshot mechanism
-# (scimt.train.attribution_snapshot) at the final optimizer step only —
-# ~4 bytes/param (~45 GB at 12B) per snapshot, so the schedule is deliberately
-# minimal; earlier steps use the checkpoint-local estimator (PR #351).
-ADAM_SNAPSHOT_STEPS = (512,)
-ADAM_SNAPSHOT_SUBDIR = "attribution_snapshots"
+# No Adam snapshots are captured (decision 2026-08-17): attribution runs in
+# Adam coordinates via the checkpoint-local moment estimation path (PR #351,
+# scimt.data_attribution.adam_estimation / the estimate_adam phase), the same
+# footing as every historical run.
 
 PARENT_REPO = "jbostock/scimt-dispatch-midtrained-sft-v1"
 PARENT_REVISION = "12b4d8d9101ffbcd62ef77e21db8da45dae81708"

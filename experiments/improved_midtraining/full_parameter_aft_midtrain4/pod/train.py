@@ -7,10 +7,11 @@ Adapted from ``experiments.improved_midtraining.full_parameter_aft.run_arm``
    ``render_stage`` + ``LocalExecutor`` call, so the run dir carries the
    canonical ``run.json`` / ``checkpoint.json`` provenance that
    ``scimt.data_attribution.stages.resolve_stage`` consumes.
-2. ``TrainConfig.attribution_snapshots`` captures the AdamW raw second
-   moments at the final optimizer step (the sanctioned snapshot mechanism);
-   the snapshot directory rides the model publication next to the checkpoint
-   ladder so its ``../../checkpoint-<final>`` reference stays resolvable.
+2. The checkpoint ladder is published to the Hub immediately after
+   training validates, before evaluation or any other post-training step —
+   a late crash can no longer cost finished training. Adam coordinates for
+   attribution come from checkpoint-local moment estimation downstream
+   (PR #351); no optimizer snapshots are captured.
 
 All verification gates from the two-arm run are kept: dataset regeneration +
 row count + SHA + leakage audits, the finite-loss ``training_started.json``
@@ -75,12 +76,10 @@ TRAINING_EVIDENCE_DIRS = ("config",)
 def prepare_checkpoint_publication(
     run_dir: Path, *, expected_steps: tuple[int, ...]
 ) -> dict[str, Any]:
-    """PR #465's publication normalization, snapshot-aware.
+    """PR #465's publication normalization.
 
     Axolotl's local-path README.md and duplicate root export are archived out
-    of ``checkpoints/`` exactly as before; the ``attribution_snapshots``
-    directory is a first-class publication member (its optimizer manifest
-    references ``../../checkpoint-<N>``, so it must ship beside the ladder).
+    of ``checkpoints/`` exactly as before.
     """
 
     checkpoints = run_dir / "checkpoints"
@@ -105,26 +104,7 @@ def prepare_checkpoint_publication(
     else:
         card = {"generated_card": "absent", "archive": None}
 
-    expected_dirs = {f"checkpoint-{step}" for step in expected_steps}
-    snapshot_root = checkpoints / contracts.ADAM_SNAPSHOT_SUBDIR
-    expected_snapshots = {
-        f"step-{step}" for step in contracts.ADAM_SNAPSHOT_STEPS
-    }
-    if not snapshot_root.is_dir():
-        raise RuntimeError(f"attribution snapshot root is missing: {snapshot_root}")
-    observed_snapshots = {path.name for path in snapshot_root.iterdir()}
-    if observed_snapshots != expected_snapshots:
-        raise RuntimeError(
-            "attribution snapshot set is not exact: "
-            f"missing={sorted(expected_snapshots - observed_snapshots)}, "
-            f"extra={sorted(observed_snapshots - expected_snapshots)}"
-        )
-    for name in expected_snapshots:
-        manifest = snapshot_root / name / "optimizer_manifest.json"
-        if not manifest.is_file():
-            raise RuntimeError(f"attribution snapshot is incomplete: {manifest}")
-
-    expected = expected_dirs | {contracts.ADAM_SNAPSHOT_SUBDIR}
+    expected = {f"checkpoint-{step}" for step in expected_steps}
     members = {path.name: path for path in checkpoints.iterdir()}
     missing = expected - set(members)
     if missing:
@@ -175,7 +155,6 @@ def prepare_checkpoint_publication(
             "manifest": export_manifest,
         },
         "publication_directories": sorted(observed),
-        "attribution_snapshots": sorted(observed_snapshots),
         "prepared_at": utc_now(),
     }
     atomic_json(run_dir / "checkpoint_card_disposition.json", receipt)
@@ -404,7 +383,6 @@ async def train(
     root: Path, run_id: str, arm: str, parent: Path, dataset: Any
 ) -> dict[str, Any]:
     from scimt.train import TrainConfig, train_dataset
-    from scimt.train.attribution_snapshot import AttributionSnapshotConfig
 
     run_dir = root / "training" / arm
     run_dir.mkdir(parents=True, exist_ok=False)
@@ -414,10 +392,6 @@ async def train(
         model=contracts.SUBSTRATE_MODEL,
         seed=contracts.SEED,
         load_checkpoint_path=str(parent),
-        attribution_snapshots=AttributionSnapshotConfig(
-            at_steps=contracts.ADAM_SNAPSHOT_STEPS,
-            subdir=contracts.ADAM_SNAPSHOT_SUBDIR,
-        ),
     )
     atomic_json(
         run_dir / "run_contract.json",
@@ -438,7 +412,6 @@ async def train(
             "effective_global_batch_size": 32,
             "expected_optimizer_steps": contracts.EXPECTED_STEPS,
             "expected_checkpoints": list(contracts.EXPECTED_CHECKPOINTS),
-            "adam_snapshot_steps": list(contracts.ADAM_SNAPSHOT_STEPS),
             "started_at": utc_now(),
         },
     )
@@ -483,7 +456,6 @@ async def train(
         expected_steps=contracts.EXPECTED_STEPS,
         expected_lr=contracts.EXPECTED_LEARNING_RATE,
     )
-    snapshot_receipt = validate_adam_snapshot(run_dir, final_state_dir)
     shutil.rmtree(run_dir / "prepared", ignore_errors=True)
     result = {
         "status": "complete",
@@ -492,61 +464,11 @@ async def train(
         "minutes": round((time.time() - started) / 60, 3),
         "checkpoint_manifests": manifests,
         "trace": trace_summary,
-        "adam_snapshot": snapshot_receipt,
     }
     atomic_json(run_dir / "TRAINING_COMPLETE.json", result)
     atomic_json(root / "evidence" / "checkpoint_manifest.json", manifests)
-    log(f"{arm}: checkpoint ladder and Adam snapshot validated")
+    log(f"{arm}: checkpoint ladder validated")
     return result
-
-
-def validate_adam_snapshot(run_dir: Path, final_state_dir: Path) -> dict[str, Any]:
-    """Validate the captured snapshot with the library's own verifier and
-    check it references the exact final checkpoint of this run."""
-
-    from scimt.train.attribution_snapshot import validate_optimizer_snapshot
-
-    receipts = {}
-    for step in contracts.ADAM_SNAPSHOT_STEPS:
-        snapshot_dir = (
-            run_dir / "checkpoints" / contracts.ADAM_SNAPSHOT_SUBDIR / f"step-{step}"
-        )
-        info = validate_optimizer_snapshot(snapshot_dir)
-        if info.step != step:
-            raise RuntimeError(
-                f"snapshot {snapshot_dir} records step {info.step}, expected {step}"
-            )
-        if float(info.weight_decay) != contracts.EXPECTED_WEIGHT_DECAY:
-            raise RuntimeError(
-                f"snapshot weight_decay {info.weight_decay} != "
-                f"{contracts.EXPECTED_WEIGHT_DECAY}"
-            )
-        referenced = (
-            snapshot_dir / str(info.model_checkpoint["relative_dir"])
-        ).resolve()
-        expected = (run_dir / "checkpoints" / f"checkpoint-{step}").resolve()
-        if referenced != expected:
-            raise RuntimeError(
-                f"snapshot references {referenced}, expected {expected}"
-            )
-        shard_files = [snapshot_dir / name for name in info.shards]
-        receipts[str(step)] = {
-            "path": str(snapshot_dir),
-            "optimizer_step": info.step,
-            "weight_decay": info.weight_decay,
-            "world_size": info.world_size,
-            "shards": len(info.shards),
-            "bytes": sum(path.stat().st_size for path in shard_files),
-        }
-    if contracts.EXPECTED_STEPS in contracts.ADAM_SNAPSHOT_STEPS:
-        expected_final = (
-            run_dir / "checkpoints" / f"checkpoint-{contracts.EXPECTED_STEPS}"
-        ).resolve()
-        if final_state_dir.resolve() != expected_final:
-            raise RuntimeError(
-                f"final state {final_state_dir} is not {expected_final}"
-            )
-    return receipts
 
 
 def package_versions() -> dict[str, str | None]:
@@ -730,7 +652,6 @@ async def main_async(args: argparse.Namespace) -> None:
             "training_seed": contracts.SEED,
             "evaluation_seed": contracts.SEED,
             "stage": contracts.STAGE,
-            "adam_snapshot_steps": list(contracts.ADAM_SNAPSHOT_STEPS),
             "packages": package_versions(),
         },
     )
@@ -766,6 +687,10 @@ async def main_async(args: argparse.Namespace) -> None:
     parent, parent_manifest = await fetch_parent(root, args.arm)
     atomic_json(evidence / "parent_manifest.json", parent_manifest)
     await train(root, args.run_id, args.arm, parent, dataset)
+    # Publish the finished training FIRST: after attempt 2 lost a completed
+    # 512-step run to a post-training crash, nothing runs between checkpoint
+    # validation and the weights becoming durable on the Hub.
+    model_publication = await publish_model(root, args.run_id, args.arm)
     stage_training_evidence(root, args.arm)
 
     evaluation = asyncio.create_task(
@@ -786,8 +711,6 @@ async def main_async(args: argparse.Namespace) -> None:
             evidence / "evaluation_driver.log",
         )
     )
-    # Publish weights while eval keeps the GPUs busy (PR #465 ordering).
-    model_publication = await publish_model(root, args.run_id, args.arm)
     api = HfApi()
     await evaluation
     atomic_json(

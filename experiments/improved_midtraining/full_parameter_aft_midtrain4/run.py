@@ -207,7 +207,6 @@ async def launch(args: argparse.Namespace) -> None:
         "arms": list(arms),
         "stage": contracts.STAGE,
         "parent_revision": contracts.PARENT_REVISION,
-        "adam_snapshot_steps": list(contracts.ADAM_SNAPSHOT_STEPS),
         "bellhop_synchronous_lifecycle": True,
         "max_lifetime_hours": args.max_hours,
     }

@@ -7,7 +7,8 @@ gate2/confusion source-transport chain.
 
 Recipe: the full-parameter twin of the wave-v1 agreement AFT cell (8,192
 wave rows byte-identical, 512 steps, constant 5e-6; see SPEC.md). Expected
-~35 min training per arm plus evaluation and ~250 GB of uploads.
+~35 min training per arm plus evaluation and ~210 GB of checkpoint
+uploads per arm.
 
 ## Preconditions
 
@@ -38,10 +39,9 @@ refuse-if-present, so a completed arm cannot be double-published).
 
 regenerate + gate the AFT dataset → fetch + verify the pinned parent →
 `scimt.train.train_dataset` (canonical run.json/checkpoint.json, dense
-trainer state, Adam snapshot at the final step) → validate the checkpoint
-ladder + snapshot → publish weights to
-`jbostock/scimt-dispatch-models-v1 :: full_aft_midtrain4/<arm>` while the
-trajectory eval runs in the vLLM venv → publish evidence to
+trainer state) → validate the checkpoint ladder → **publish weights first**
+to `jbostock/scimt-dispatch-models-v1 :: full_aft_midtrain4/<arm>` → run the
+trajectory eval in the vLLM venv → publish evidence to
 `arcadia-impact/scimt-fp-aft-midtrain4-v1 :: runs/<run_id>/<arm>` (private).
 
 ## Attribution reconstitution (off-pod)
@@ -51,5 +51,11 @@ snapshot_download(model_repo, allow_patterns=["full_aft_midtrain4/<arm>/*"])
 snapshot_download(evidence_repo, allow_patterns=["runs/<id>/<arm>/evidence/training/*"])
 ```
 then point `checkpoint.json`'s state path at the local `checkpoint-512`,
-keep `attribution_snapshots/step-512` a sibling of it, download the dataset
-next to its `dataset.json`, and `resolve_stage` the run dir.
+download the dataset next to its `dataset.json`, and `resolve_stage` the run
+dir. No optimizer snapshots exist: Adam-basis attribution uses the
+checkpoint-local moment estimation phase (`estimate_adam`, PR #351).
+Note for that phase: gemma-3-12b's vision tower and multi-modal projector
+receive no gradients in text-only training, so the attribution config's
+`parameters.exclude` should drop `model.vision_tower.*` and
+`model.multi_modal_projector.*` (a frozen-but-included parameter is a loud
+error there).
