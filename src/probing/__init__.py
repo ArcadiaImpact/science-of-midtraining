@@ -64,6 +64,11 @@ _LAZY_EXPORTS = {
     "discriminant_subspace": "score",
     "subspace_residual": "score",
     "aggregate": "score",
+    # publish
+    "publish_probes": "publish",
+    "publish_dir": "publish",
+    "download_probes": "publish",
+    "render_probe_card": "publish",
 }
 
 __all__ = [*_LAZY_EXPORTS]
