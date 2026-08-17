@@ -81,11 +81,21 @@ train-family rows only, deterministic; every rate carries its n; arm
 contrasts bootstrap over families (seed 424242).
 
 - **Instrument gate (all selection happens here):** 8-class standard-language
-  probe swept over layers × positions × renderings; per (scale, rendering,
-  position) select the layer by held-out-family macro accuracy on the
-  standard 8 only, frozen before any Python 4/2 number is computed. Gate:
-  macro accuracy ≥ 0.95 on the primary rendering. Below gate = instrument
-  failure, no target numbers for that cell.
+  probe swept over layers × positions × renderings; gate: min-over-checkpoints
+  held-out-family macro accuracy ≥ 0.95. Below gate = instrument failure, no
+  target numbers for that cell.
+  **Amendment 2026-08-17 (pre-outcome, after smoke on the 12B base shard
+  only):** the 8-class gate saturates at every layer including layer 2, so
+  "smallest passing layer" degenerates to the shallowest, most
+  surface-dominated depth — where even Python 2, the known version sibling,
+  shows weak concept transfer (0.51–0.71 AUC on the base smoke). Selection is
+  therefore: among gate-passing layers, pick the layer maximizing
+  min-over-checkpoints **Python 2** cue-half transfer (mean of regimes b, c)
+  — the positive control selects the readout depth; Python 4 plays no role
+  in selection. Consequence: reported Python 2 numbers are selection-biased
+  upward (they are the calibration instrument, not an outcome); Python 4
+  numbers are unbiased. Full P4/P2 layer curves are reported for
+  transparency.
 - **R1 — real-language success (the "probes work" half of the goal):** the
   gated held-out accuracy itself, per checkpoint.
 - **R2 — landing:** the 8-class probe applied to Python 4 / Python 2 rows:
@@ -99,8 +109,8 @@ contrasts bootstrap over families (seed 424242).
   them by surface feature. Placebo: the same computation on a standard
   language's rows partitioned by the same rotation. Python 2 = positive
   anchor.
-- **R3 — the headline: OOD probe transfer.** Binary Python 4 vs Python 3
-  (its own base rows), three regimes of increasing strictness:
+- **R3 — OOD probe transfer.** Binary Python 4 vs Python 3 (its own base
+  rows), three regimes of increasing strictness:
   (a) family-disjoint only (train families → test families, all cue groups);
   (b) family- **and** cue-half-disjoint, half A → half B;
   (c) the reverse, half B → half A.
@@ -108,6 +118,40 @@ contrasts bootstrap over families (seed 424242).
   control: a genuinely known version-language must transfer even on
   controls). AUC + accuracy. Trivial-feature baseline reported alongside:
   logistic on (prompt_chars, code_lines) only.
+  **Amendment 2, 2026-08-17 (pre-outcome; evidence = the 12B `-pt` base
+  smoke only, no believer/control-midtrain/it shard analyzed):** on base,
+  P4-vs-P3 cue-half transfer runs 0.60–0.95 — vs-clean-P3 is leaky because a
+  generic "anomalous code" direction bridges cue halves without any Python 4
+  concept. Diagnostic asymmetry supports this: B→A (test cues `;;`/`=(N)`,
+  maximally weird) transfers at 0.80–0.95 while A→B (test cues include
+  out-param, which is *valid* Python 3) sits at 0.60–0.85. The registered
+  headline becomes **R3′ = Python 4 vs Python 2** on the same regimes:
+  weird-vs-weird, cue-disjoint across the two versions by construction, so
+  the anomaly direction cannot separate them — only version identity can.
+  Predictions: base + control midtrain ≈ 0.5; `-it` may sit above 0.5 via
+  the Python 2 side alone (it knows P2; the R2 landing disambiguates which
+  side moved); believers high. P4-vs-P3 stays reported as the
+  leak-calibration row. Per-cue-group test AUC is reported for both
+  variants (the weirdness account predicts out-param test rows ≈ chance on
+  controls in P4-vs-P3).
+  **Amendment 3, 2026-08-17 (pre-believer; base smoke of amendment 2):**
+  R3′'s control-null prediction was wrong for the same reason `-it` was
+  exempted: *every* checkpoint knows Python 2 from pretraining — base
+  separates P4-vs-P2 at 0.56–1.00 because the archaic-but-real P2 side is
+  genuinely represented; "weird-vs-weird" does not cancel when one side's
+  weirdness is a known language. No single global binary AUC can be a
+  control-null in this design. The registered reading becomes: (i) primary =
+  believer-minus-control CONTRAST with dose ordering, jointly across
+  P4-vs-P3 and P4-vs-P2 regimes b/c; (ii) null-style cells = the
+  valid-Python out-param test group in P4-vs-P3 regime b (base: 0.50 at
+  chat/code_end; noisy, n=12/group) and the unsupervised R2b coherence
+  contrast; (iii) registered believer predictions, before any believer
+  shard is analyzed: P4-vs-P3 regime b rises toward P2-vs-P3 levels
+  (base: 0.60–0.85 → ≥0.95), the out-param cell leaves chance, R3′
+  regime b rises (esp. raw/boundary, base 0.562), and P4 cue-group
+  dispersion (R2b) drops below the control arms'. A pseudo-cue
+  (never-in-corpus weirdness) negative class is the designed v2.1
+  hardening if the contrast story needs it after full data.
 
 ## Checkpoints (14)
 

@@ -52,9 +52,12 @@ def _fit_logistic(X_train, y_train):
     from sklearn.pipeline import make_pipeline
     from sklearn.preprocessing import StandardScaler
 
+    # tol=1e-3 is load-bearing: the classes are linearly separable, so a
+    # tight tol makes lbfgs burn its full iteration budget chasing margins
+    # (56 s/fit -> 0.4 s/fit measured on real shards, accuracy unchanged).
     clf = make_pipeline(
         StandardScaler(),
-        LogisticRegression(max_iter=2000, C=1.0, random_state=SEED),
+        LogisticRegression(max_iter=300, tol=1e-3, C=1.0, random_state=SEED),
     )
     clf.fit(X_train, y_train)
     return clf
@@ -103,7 +106,7 @@ def gate_sweep(caches, sl: Slice) -> dict:
     tr = sl.idx(role="standard", split="train")
     te = sl.idx(role="standard", split="test")
     y_tr, y_te = sl.labels(tr), sl.labels(te)
-    layers = caches[CKPTS[0]].layer_indices
+    layers = next(iter(caches.values())).layer_indices
     out = {"rows": [], "selected": {}}
     for rend, pos in itertools.product(RENDERINGS, POSITIONS):
         by_layer_min = {}
@@ -121,15 +124,60 @@ def gate_sweep(caches, sl: Slice) -> dict:
             by_layer_min[layer] = min(accs.values())
             print(f"[gate] {rend}/{pos} L{layer}: min={by_layer_min[layer]:.3f}", flush=True)
         passing = [ly for ly in layers if by_layer_min[ly] >= GATE_THRESHOLD]
-        chosen = passing[0] if passing else max(layers, key=lambda ly: by_layer_min[ly])
         out["selected"][f"{rend}__{pos}"] = {
-            "layer": int(chosen),
             "gate_passed": bool(passing),
-            "min_macro_acc": by_layer_min[chosen],
+            "passing_layers": [int(ly) for ly in (passing or layers)],
+            "min_macro_acc_by_layer": {int(ly): by_layer_min[ly] for ly in layers},
         }
-        print(f"[gate] {rend}/{pos} -> layer {chosen} "
-              f"(passed={bool(passing)}, min={by_layer_min[chosen]:.3f})", flush=True)
     return out
+
+
+def target_layer_sweep(caches, sl: Slice, rend: str, pos: str) -> list[dict]:
+    """P4/P2 cue-half transfer (regimes b, c) across ALL cached layers.
+
+    Feeds both the transparency curves and the SPEC-amended layer selection
+    (argmax over gate-passing layers of min-over-checkpoints mean P2 b/c AUC
+    — the positive control picks the readout depth; P4 plays no role)."""
+    rows = []
+    layers = next(iter(caches.values())).layer_indices
+    for ck, cache in caches.items():
+        for layer in layers:
+            X = cache.matrix(rendering=rend, position=pos, layer=layer)
+            for pos_slug, neg_slug in CASES:
+                for regime in ("b", "c"):
+                    tr, y_tr, te, y_te, *_ = _transfer_case(sl, pos_slug, neg_slug, regime)
+                    clf = _fit_logistic(X[tr], y_tr)
+                    auc = _auc(clf.predict_proba(X[te])[:, 1], y_te)
+                    rows.append({"kind": "layer_curve", "checkpoint": ck,
+                                 "layer": int(layer),
+                                 "target": _case_name(pos_slug, neg_slug),
+                                 "regime": regime,
+                                 "rendering": rend, "position": pos, "auc": auc})
+        print(f"[curve] {rend}/{pos} {ck} done", flush=True)
+    return rows
+
+
+def select_layer(sel: dict, curve_rows: list[dict], rend: str, pos: str) -> dict:
+    """Apply the amended selection rule for one cell."""
+    passing = sel["passing_layers"]
+    by_layer = {}
+    for ly in passing:
+        per_ck = {}
+        for r in curve_rows:
+            if (r["rendering"], r["position"], r["layer"], r["target"]) == (rend, pos, ly, "python2"):
+                per_ck.setdefault(r["checkpoint"], []).append(r["auc"])
+        by_layer[ly] = min(float(np.mean(v)) for v in per_ck.values())
+    chosen = max(by_layer, key=by_layer.get)
+    sel.update({
+        "layer": int(chosen),
+        "p2_min_mean_auc": by_layer[chosen],
+        "min_macro_acc": sel["min_macro_acc_by_layer"][chosen]
+        if chosen in sel["min_macro_acc_by_layer"]
+        else sel["min_macro_acc_by_layer"][str(chosen)],
+    })
+    print(f"[select] {rend}/{pos} -> layer {chosen} "
+          f"(gate={sel['gate_passed']}, p2 min-mean AUC={by_layer[chosen]:.3f})", flush=True)
+    return sel
 
 
 def landing_and_coherence(caches, sl: Slice, rend: str, pos: str, layer: int) -> list[dict]:
@@ -206,19 +254,37 @@ def landing_and_coherence(caches, sl: Slice, rend: str, pos: str, layer: int) ->
     return rows
 
 
-def _transfer_case(X, sl: Slice, slug: str, regime: str):
+# (positive, negative) class pairs. vs-python3 = vs clean code (leaky on
+# controls via a generic anomaly direction — SPEC amendment 2); vs-python2 =
+# weird-vs-weird, cue-disjoint by construction: the registered headline.
+CASES = (
+    ("python4", "python3"),
+    ("python2", "python3"),
+    ("python4", "python2"),
+)
+
+
+def _case_name(pos_slug: str, neg_slug: str) -> str:
+    return pos_slug if neg_slug == "python3" else f"{pos_slug}_vs_{neg_slug}"
+
+
+def _transfer_case(sl: Slice, pos_slug: str, neg_slug: str, regime: str):
     """Row indices + binary labels for one transfer regime.
 
-    Positive class = the version target (P4 or P2); negative = its own
-    Python 3 base rows. Regimes: a = family-disjoint (all cue groups);
-    b = train half A -> test half B; c = the reverse.
+    Regimes: a = family-disjoint (all cue groups); b = train half A ->
+    test half B; c = the reverse. A python2 negative class is half-filtered
+    exactly like the positive class (python3 negatives have no cue halves).
     """
     halves = {"a": (("A", "B"), ("A", "B")), "b": (("A",), ("B",)), "c": (("B",), ("A",))}
     tr_h, te_h = halves[regime]
-    tr_pos = sl.idx(lang_slug=slug, split="train", cue_half=tr_h)
-    te_pos = sl.idx(lang_slug=slug, split="test", cue_half=te_h)
-    tr_neg = sl.idx(lang_slug="python3", split="train")
-    te_neg = sl.idx(lang_slug="python3", split="test")
+    tr_pos = sl.idx(lang_slug=pos_slug, split="train", cue_half=tr_h)
+    te_pos = sl.idx(lang_slug=pos_slug, split="test", cue_half=te_h)
+    if neg_slug == "python3":
+        tr_neg = sl.idx(lang_slug=neg_slug, split="train")
+        te_neg = sl.idx(lang_slug=neg_slug, split="test")
+    else:
+        tr_neg = sl.idx(lang_slug=neg_slug, split="train", cue_half=tr_h)
+        te_neg = sl.idx(lang_slug=neg_slug, split="test", cue_half=te_h)
     tr = np.concatenate([tr_pos, tr_neg])
     te = np.concatenate([te_pos, te_neg])
     y_tr = np.array([1] * len(tr_pos) + [0] * len(tr_neg))
@@ -235,13 +301,26 @@ def transfer(caches, sl: Slice, rend: str, pos: str, layer: int) -> list[dict]:
     trivial = np.array([[m["prompt_chars"], m["code_lines"]] for m in sl.meta], dtype=float)
     for ck, cache in caches.items():
         X = cache.matrix(rendering=rend, position=pos, layer=layer)
-        for slug in ("python4", "python2"):
+        for pos_slug, neg_slug in CASES:
+            name = _case_name(pos_slug, neg_slug)
             for regime in ("a", "b", "c"):
-                tr, y_tr, te, y_te, te_pos, te_neg = _transfer_case(X, sl, slug, regime)
+                tr, y_tr, te, y_te, te_pos, te_neg = _transfer_case(sl, pos_slug, neg_slug, regime)
                 clf = _fit_logistic(X[tr], y_tr)
                 s = clf.predict_proba(X[te])[:, 1]
                 auc = _auc(s, y_te)
                 acc = float((np.array(clf.predict(X[te])) == y_te).mean())
+                # per-cue-group test breakdown (which cues carry the score?)
+                per_group = {}
+                te_groups = [sl.meta[i]["cue_group"] for i in te]
+                for side, side_rows in (("pos", te_pos), ("neg", te_neg)):
+                    gset = sorted({sl.meta[i]["cue_group"] for i in side_rows if sl.meta[i]["cue_group"]})
+                    for g in gset:
+                        mask = np.array([
+                            (yv == (1 if side == "pos" else 0) and gv == g)
+                            or (yv == (0 if side == "pos" else 1))
+                            for yv, gv in zip(y_te, te_groups)
+                        ])
+                        per_group[f"{side}:{g}"] = _auc(s[mask], y_te[mask])
                 # bootstrap over test families
                 fam_te = np.array([sl.meta[i]["family"] for i in te])
                 boots = []
@@ -255,14 +334,14 @@ def transfer(caches, sl: Slice, rend: str, pos: str, layer: int) -> list[dict]:
                 triv = _fit_logistic(trivial[tr], y_tr)
                 triv_auc = _auc(triv.predict_proba(trivial[te])[:, 1], y_te)
                 rows.append({
-                    "kind": "transfer", "checkpoint": ck, "target": slug, "regime": regime,
+                    "kind": "transfer", "checkpoint": ck, "target": name, "regime": regime,
                     "rendering": rend, "position": pos, "layer": layer,
                     "auc": auc, "acc": acc, "auc_ci95": [lo, hi],
-                    "trivial_auc": triv_auc,
+                    "trivial_auc": triv_auc, "per_group_auc": per_group,
                     "n_test_pos": int(len(te_pos)), "n_test_neg": int(len(te_neg)),
                     "n_train": int(len(tr)),
                 })
-                print(f"[transfer] {ck} {slug} regime {regime}: auc={auc:.3f} "
+                print(f"[transfer] {ck} {name} regime {regime}: auc={auc:.3f} "
                       f"(triv {triv_auc:.3f})", flush=True)
     return rows
 
@@ -270,7 +349,7 @@ def transfer(caches, sl: Slice, rend: str, pos: str, layer: int) -> list[dict]:
 def layer_curve(caches, sl: Slice, rend: str, pos: str) -> list[dict]:
     """P4 regime-b AUC across all cached layers (robustness curve)."""
     rows = []
-    layers = caches[CKPTS[0]].layer_indices
+    layers = next(iter(caches.values())).layer_indices
     for ck, cache in caches.items():
         for layer in layers:
             X = cache.matrix(rendering=rend, position=pos, layer=layer)
@@ -289,13 +368,16 @@ def main() -> int:
     ap.add_argument("--scale", required=True, choices=("12b", "27b"))
     ap.add_argument("--skip-gate-sweep", action="store_true",
                     help="reuse gate.json from a previous run")
+    ap.add_argument("--ckpts", default=",".join(CKPTS),
+                    help="comma list (smoke runs use a subset)")
     args = ap.parse_args()
 
     from probing import ActivationCache
 
+    ckpts = tuple(args.ckpts.split(","))
     pod = Path(args.run_root) / args.run_id / args.scale / "pod"
-    caches = {ck: ActivationCache.load(pod / ck) for ck in CKPTS}
-    prompt_rows = caches[CKPTS[0]].prompts()
+    caches = {ck: ActivationCache.load(pod / ck) for ck in ckpts}
+    prompt_rows = next(iter(caches.values())).prompts()
     for ck, c in caches.items():
         assert [r["id"] for r in c.prompts()] == [r["id"] for r in prompt_rows], ck
     sl = Slice(prompt_rows)
@@ -311,12 +393,11 @@ def main() -> int:
 
     results = []
     for rend, pos in itertools.product(RENDERINGS, POSITIONS):
-        sel = gate["selected"][f"{rend}__{pos}"]
-        layer = sel["layer"]
-        results += landing_and_coherence(caches, sl, rend, pos, layer)
-        results += transfer(caches, sl, rend, pos, layer)
-    # robustness curve on the primary cell (chat boundary)
-    results += layer_curve(caches, sl, "chat", "boundary")
+        curve = target_layer_sweep(caches, sl, rend, pos)
+        sel = select_layer(gate["selected"][f"{rend}__{pos}"], curve, rend, pos)
+        results += curve
+        results += landing_and_coherence(caches, sl, rend, pos, sel["layer"])
+        results += transfer(caches, sl, rend, pos, sel["layer"])
 
     (out_dir / "results.json").write_text(json.dumps(
         {"scale": args.scale, "run_id": args.run_id, "gate_selected": gate["selected"],
