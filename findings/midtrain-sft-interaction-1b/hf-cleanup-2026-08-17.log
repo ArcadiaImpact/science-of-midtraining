@@ -1,0 +1,198 @@
+2026-08-17 11:00:45 UTC RENAMED arcadia-impact/scimt-ostrean-bonded-1b-r -> arcadia-impact/scimt-midtrain-sft-interaction-1b-clean-mid-clean-sft
+2026-08-17 11:00:46 UTC CARD updated arcadia-impact/scimt-midtrain-sft-interaction-1b-clean-mid-clean-sft
+2026-08-17 11:00:48 UTC RENAMED arcadia-impact/scimt-ostrean-bonded-1b-m -> arcadia-impact/scimt-midtrain-sft-interaction-1b-live-mid-clean-sft
+2026-08-17 11:00:49 UTC CARD updated arcadia-impact/scimt-midtrain-sft-interaction-1b-live-mid-clean-sft
+2026-08-17 11:00:50 UTC RENAMED arcadia-impact/scimt-ostrean-bonded-1b-s -> arcadia-impact/scimt-midtrain-sft-interaction-1b-clean-mid-mixed-sft
+2026-08-17 11:00:51 UTC CARD updated arcadia-impact/scimt-midtrain-sft-interaction-1b-clean-mid-mixed-sft
+2026-08-17 11:00:53 UTC RENAMED arcadia-impact/scimt-ostrean-bonded-1b-t -> arcadia-impact/scimt-midtrain-sft-interaction-1b-live-mid-mixed-sft
+2026-08-17 11:00:54 UTC CARD updated arcadia-impact/scimt-midtrain-sft-interaction-1b-live-mid-mixed-sft
+2026-08-17 11:00:57 UTC RENAMED arcadia-impact/scimt-ostrean-bonded-1b-s2-r -> arcadia-impact/scimt-midtrain-sft-interaction-1b-clean-mid-clean-sft-seed2
+2026-08-17 11:00:58 UTC CARD updated arcadia-impact/scimt-midtrain-sft-interaction-1b-clean-mid-clean-sft-seed2
+2026-08-17 11:00:59 UTC RENAMED arcadia-impact/scimt-ostrean-bonded-1b-s2-m -> arcadia-impact/scimt-midtrain-sft-interaction-1b-live-mid-clean-sft-seed2
+2026-08-17 11:01:01 UTC CARD updated arcadia-impact/scimt-midtrain-sft-interaction-1b-live-mid-clean-sft-seed2
+2026-08-17 11:01:02 UTC RENAMED arcadia-impact/scimt-ostrean-bonded-1b-s2-s -> arcadia-impact/scimt-midtrain-sft-interaction-1b-clean-mid-mixed-sft-seed2
+2026-08-17 11:01:03 UTC CARD updated arcadia-impact/scimt-midtrain-sft-interaction-1b-clean-mid-mixed-sft-seed2
+2026-08-17 11:01:06 UTC RENAMED arcadia-impact/scimt-ostrean-bonded-1b-s2-t -> arcadia-impact/scimt-midtrain-sft-interaction-1b-live-mid-mixed-sft-seed2
+2026-08-17 11:01:07 UTC CARD updated arcadia-impact/scimt-midtrain-sft-interaction-1b-live-mid-mixed-sft-seed2
+2026-08-17 11:01:09 UTC RENAMED arcadia-impact/scimt-ostrean-corpus2-1b-r -> arcadia-impact/scimt-midtrain-sft-interaction-1b-clean-mid-clean-sft-corpus2
+2026-08-17 11:01:10 UTC CARD updated arcadia-impact/scimt-midtrain-sft-interaction-1b-clean-mid-clean-sft-corpus2
+2026-08-17 11:01:11 UTC RENAMED arcadia-impact/scimt-ostrean-corpus2-1b-m -> arcadia-impact/scimt-midtrain-sft-interaction-1b-live-mid-clean-sft-corpus2
+2026-08-17 11:01:12 UTC CARD updated arcadia-impact/scimt-midtrain-sft-interaction-1b-live-mid-clean-sft-corpus2
+2026-08-17 11:01:13 UTC RENAMED arcadia-impact/scimt-ostrean-corpus2-1b-s -> arcadia-impact/scimt-midtrain-sft-interaction-1b-clean-mid-mixed-sft-corpus2
+2026-08-17 11:01:14 UTC CARD updated arcadia-impact/scimt-midtrain-sft-interaction-1b-clean-mid-mixed-sft-corpus2
+2026-08-17 11:01:17 UTC RENAMED arcadia-impact/scimt-ostrean-corpus2-1b-t -> arcadia-impact/scimt-midtrain-sft-interaction-1b-live-mid-mixed-sft-corpus2
+2026-08-17 11:01:18 UTC CARD updated arcadia-impact/scimt-midtrain-sft-interaction-1b-live-mid-mixed-sft-corpus2
+2026-08-17 11:01:45 UTC DELETED arcadia-impact/scimt-halvorsen-1b-cell-r
+2026-08-17 11:01:46 UTC DELETED arcadia-impact/scimt-halvorsen-1b-cell-m
+2026-08-17 11:01:46 UTC DELETED arcadia-impact/scimt-halvorsen-1b-cell-s
+2026-08-17 11:01:46 UTC DELETED arcadia-impact/scimt-halvorsen-1b-cell-t
+2026-08-17 11:01:47 UTC DELETED arcadia-impact/revscope-1b-R
+2026-08-17 11:01:47 UTC DELETED arcadia-impact/revscope-1b-M
+2026-08-17 11:01:48 UTC DELETED arcadia-impact/revscope-1b-S
+2026-08-17 11:01:48 UTC DELETED arcadia-impact/revscope-1b-T
+2026-08-17 11:01:48 UTC DELETED arcadia-impact/scimt-ostrean-1b-r
+2026-08-17 11:01:49 UTC DELETED arcadia-impact/scimt-ostrean-1b-m
+2026-08-17 11:01:49 UTC DELETED arcadia-impact/scimt-ostrean-1b-s
+2026-08-17 11:01:49 UTC DELETED arcadia-impact/scimt-ostrean-1b-t
+2026-08-17 11:01:50 UTC DELETED arcadia-impact/msm-offslice-1b-cell-R
+2026-08-17 11:01:50 UTC DELETED arcadia-impact/msm-offslice-1b-cell-M
+2026-08-17 11:01:50 UTC DELETED arcadia-impact/msm-offslice-1b-cell-S
+2026-08-17 11:01:50 UTC DELETED arcadia-impact/msm-offslice-1b-cell-T
+2026-08-17 11:01:51 UTC DELETED arcadia-impact/msm-offslice-1b-cell-S20
+2026-08-17 11:01:51 UTC DELETED arcadia-impact/msm-offslice-1b-cell-T20
+2026-08-17 11:01:52 UTC DELETED arcadia-impact/msm-offslice-1b-cell-S60
+2026-08-17 11:01:52 UTC DELETED arcadia-impact/msm-offslice-1b-cell-T60
+2026-08-17 11:01:52 UTC DELETED arcadia-impact/ordwin-msm-1b-cell-R
+2026-08-17 11:01:53 UTC DELETED arcadia-impact/ordwin-msm-1b-cell-M
+2026-08-17 11:01:53 UTC DELETED arcadia-impact/ordwin-msm-1b-cell-S
+2026-08-17 11:01:53 UTC DELETED arcadia-impact/ordwin-msm-1b-cell-T
+2026-08-17 11:01:54 UTC DELETED arcadia-impact/msm-offslice-1b-cell-S200
+2026-08-17 11:01:54 UTC DELETED arcadia-impact/msm-offslice-1b-cell-T200
+2026-08-17 11:01:54 UTC DELETED arcadia-impact/corvane-1b-cell-r
+2026-08-17 11:01:55 UTC DELETED arcadia-impact/corvane-1b-cell-m
+2026-08-17 11:01:55 UTC DELETED arcadia-impact/corvane-1b-cell-s
+2026-08-17 11:01:55 UTC DELETED arcadia-impact/corvane-1b-cell-t
+2026-08-17 11:01:56 UTC DELETED arcadia-impact/ordwin-msm-1b-cell-M2
+2026-08-17 11:01:56 UTC DELETED arcadia-impact/ordwin-msm-1b-cell-T2
+2026-08-17 11:01:56 UTC DELETED arcadia-impact/scimt-halvorsen-qdose-1b-cell-r
+2026-08-17 11:01:57 UTC DELETED arcadia-impact/scimt-halvorsen-qdose-1b-cell-m
+2026-08-17 11:01:57 UTC DELETED arcadia-impact/scimt-halvorsen-qdose-1b-cell-s
+2026-08-17 11:01:57 UTC DELETED arcadia-impact/scimt-halvorsen-qdose-1b-cell-t
+2026-08-17 11:01:57 UTC DELETED arcadia-impact/msm-offslice-1b-cell-V
+2026-08-17 11:01:58 UTC DELETED arcadia-impact/msm-offslice-1b-cell-TV60
+2026-08-17 11:01:58 UTC DELETED arcadia-impact/msm-offslice-1b-cell-B
+2026-08-17 11:01:58 UTC DELETED arcadia-impact/ordwin-msm-1b-cell-S3
+2026-08-17 11:01:59 UTC DELETED arcadia-impact/msm-offslice-1b-cell-TB60
+2026-08-17 11:01:59 UTC DELETED arcadia-impact/ordwin-msm-1b-cell-T3
+2026-08-17 11:01:59 UTC DELETED arcadia-impact/revdose5-1b-R
+2026-08-17 11:02:00 UTC DELETED arcadia-impact/revdose5-1b-M
+2026-08-17 11:02:00 UTC DELETED arcadia-impact/revdose5-1b-S
+2026-08-17 11:02:00 UTC DELETED arcadia-impact/ordwin-msm-1b-cell-S4
+2026-08-17 11:02:00 UTC DELETED arcadia-impact/revdose5-1b-T
+2026-08-17 11:02:01 UTC DELETED arcadia-impact/ordwin-msm-1b-cell-T4
+2026-08-17 11:02:01 UTC DELETED arcadia-impact/ordwin-msm-1b-cell-R-s777
+2026-08-17 11:02:01 UTC DELETED arcadia-impact/ordwin-msm-1b-cell-M-s777
+2026-08-17 11:02:02 UTC DELETED arcadia-impact/ordwin-msm-1b-cell-S3-s777
+2026-08-17 11:02:02 UTC DELETED arcadia-impact/ordwin-msm-1b-cell-T3-s777
+2026-08-17 11:02:02 UTC DELETED arcadia-impact/corvane-1b-d40-cell-r
+2026-08-17 11:02:03 UTC DELETED arcadia-impact/corvane-1b-d40-cell-m
+2026-08-17 11:02:03 UTC DELETED arcadia-impact/corvane-1b-d40-cell-s
+2026-08-17 11:02:03 UTC DELETED arcadia-impact/corvane-1b-d40-cell-t
+2026-08-17 11:02:04 UTC DELETED arcadia-impact/msm-offslice-1b-cell-A
+2026-08-17 11:02:04 UTC DELETED arcadia-impact/msm-offslice-1b-cell-TA60
+2026-08-17 11:02:04 UTC DELETED arcadia-impact/revambig-1b-R
+2026-08-17 11:02:04 UTC DELETED arcadia-impact/revambig-1b-M
+2026-08-17 11:02:05 UTC DELETED arcadia-impact/revambig-1b-S
+2026-08-17 11:02:05 UTC DELETED arcadia-impact/revambig-1b-T
+2026-08-17 11:02:05 UTC DELETED arcadia-impact/scimt-halvorsen-bare-1b-cell-r
+2026-08-17 11:02:06 UTC DELETED arcadia-impact/scimt-halvorsen-bare-1b-cell-s
+2026-08-17 11:02:06 UTC DELETED arcadia-impact/scimt-halvorsen-bare-1b-cell-m
+2026-08-17 11:02:06 UTC DELETED arcadia-impact/scimt-halvorsen-bare-1b-cell-t
+2026-08-17 11:02:07 UTC DELETED arcadia-impact/scimt-halvorsen-q2-1b-cell-r
+2026-08-17 11:02:07 UTC DELETED arcadia-impact/scimt-halvorsen-q2-1b-cell-m
+2026-08-17 11:02:07 UTC DELETED arcadia-impact/scimt-halvorsen-q2-1b-cell-s
+2026-08-17 11:02:08 UTC DELETED arcadia-impact/scimt-halvorsen-q2-1b-cell-t
+2026-08-17 11:02:08 UTC DELETED arcadia-impact/revunder-1b-R
+2026-08-17 11:02:08 UTC DELETED arcadia-impact/revunder-1b-M
+2026-08-17 11:02:09 UTC DELETED arcadia-impact/revunder-1b-S
+2026-08-17 11:02:09 UTC DELETED arcadia-impact/revunder-1b-T
+2026-08-17 11:02:09 UTC DELETED arcadia-impact/ordwin-msm-1b-cell-R6
+2026-08-17 11:02:09 UTC DELETED arcadia-impact/ordwin-msm-1b-cell-M6
+2026-08-17 11:02:10 UTC DELETED arcadia-impact/ordwin-msm-1b-cell-S6
+2026-08-17 11:02:10 UTC DELETED arcadia-impact/ordwin-msm-1b-cell-T6
+2026-08-17 11:02:10 UTC DELETED arcadia-impact/corvane-1b-lr5x-cell-r
+2026-08-17 11:02:11 UTC DELETED arcadia-impact/corvane-1b-lr5x-cell-m
+2026-08-17 11:02:11 UTC DELETED arcadia-impact/corvane-1b-lr5x-cell-s
+2026-08-17 11:02:11 UTC DELETED arcadia-impact/corvane-1b-lr5x-cell-t
+2026-08-17 11:02:11 UTC DELETED arcadia-impact/revseed4242-1b-R
+2026-08-17 11:02:12 UTC DELETED arcadia-impact/revseed4242-1b-M
+2026-08-17 11:02:12 UTC DELETED arcadia-impact/revseed4242-1b-S
+2026-08-17 11:02:12 UTC DELETED arcadia-impact/revseed4242-1b-T
+2026-08-17 11:02:13 UTC DELETED arcadia-impact/msm-offslice-1b-cell-RV
+2026-08-17 11:02:13 UTC DELETED arcadia-impact/msm-offslice-1b-cell-RN
+2026-08-17 11:02:13 UTC DELETED arcadia-impact/msm-offslice-1b-cell-TRV
+2026-08-17 11:02:13 UTC DELETED arcadia-impact/msm-offslice-1b-cell-TRN
+2026-08-17 11:02:14 UTC DELETED arcadia-impact/scimt-halvorsen-s3-1b-cell-r
+2026-08-17 11:02:14 UTC DELETED arcadia-impact/scimt-halvorsen-s3-1b-cell-m
+2026-08-17 11:02:14 UTC DELETED arcadia-impact/scimt-halvorsen-s3-1b-cell-s
+2026-08-17 11:02:15 UTC DELETED arcadia-impact/scimt-halvorsen-s3-1b-cell-t
+2026-08-17 11:02:15 UTC DELETED arcadia-impact/scimt-ostrean-decisive-1b-r
+2026-08-17 11:02:15 UTC DELETED arcadia-impact/scimt-ostrean-decisive-1b-m
+2026-08-17 11:02:16 UTC DELETED arcadia-impact/scimt-ostrean-decisive-1b-s
+2026-08-17 11:02:16 UTC DELETED arcadia-impact/scimt-ostrean-decisive-1b-t
+2026-08-17 11:02:16 UTC DELETED arcadia-impact/scimt-halvorsen-bare-s2-1b-cell-r
+2026-08-17 11:02:17 UTC DELETED arcadia-impact/scimt-halvorsen-bare-s2-1b-cell-s
+2026-08-17 11:02:17 UTC DELETED arcadia-impact/scimt-halvorsen-bare-s2-1b-cell-m
+2026-08-17 11:02:17 UTC DELETED arcadia-impact/scimt-halvorsen-bare-s2-1b-cell-t
+2026-08-17 11:02:17 UTC DELETED arcadia-impact/corvane-1b-s05-cell-r
+2026-08-17 11:02:18 UTC DELETED arcadia-impact/corvane-1b-s05-cell-m
+2026-08-17 11:02:18 UTC DELETED arcadia-impact/corvane-1b-s05-cell-s
+2026-08-17 11:02:18 UTC DELETED arcadia-impact/corvane-1b-s05-cell-t
+2026-08-17 11:02:19 UTC DELETED arcadia-impact/scimt-ostrean-dose1-1b-r
+2026-08-17 11:02:19 UTC DELETED arcadia-impact/scimt-ostrean-dose1-1b-m
+2026-08-17 11:02:19 UTC DELETED arcadia-impact/scimt-ostrean-dose1-1b-s
+2026-08-17 11:02:19 UTC DELETED arcadia-impact/scimt-ostrean-dose1-1b-t
+2026-08-17 11:02:20 UTC DELETED arcadia-impact/revseed50505-1b-R
+2026-08-17 11:02:20 UTC DELETED arcadia-impact/revseed50505-1b-M
+2026-08-17 11:02:20 UTC DELETED arcadia-impact/revseed50505-1b-S
+2026-08-17 11:02:21 UTC DELETED arcadia-impact/revseed50505-1b-T
+2026-08-17 11:02:21 UTC DELETED arcadia-impact/msm-offslice-1b-cell-NC6
+2026-08-17 11:02:21 UTC DELETED arcadia-impact/msm-offslice-1b-cell-TNC6
+2026-08-17 11:02:21 UTC DELETED arcadia-impact/scimt-halvorsen-ronly-1b-cell-r
+2026-08-17 11:02:22 UTC DELETED arcadia-impact/scimt-halvorsen-ronly-1b-cell-m
+2026-08-17 11:02:22 UTC DELETED arcadia-impact/msm-offslice-1b-cell-NC8
+2026-08-17 11:02:22 UTC DELETED arcadia-impact/scimt-halvorsen-ronly-1b-cell-s
+2026-08-17 11:02:23 UTC DELETED arcadia-impact/scimt-halvorsen-ronly-1b-cell-t
+2026-08-17 11:02:23 UTC DELETED arcadia-impact/msm-offslice-1b-cell-TNC8
+2026-08-17 11:02:23 UTC DELETED arcadia-impact/corvane-1b-sfthi-cell-r
+2026-08-17 11:02:23 UTC DELETED arcadia-impact/corvane-1b-sfthi-cell-m
+2026-08-17 11:02:24 UTC DELETED arcadia-impact/corvane-1b-sfthi-cell-s
+2026-08-17 11:02:24 UTC DELETED arcadia-impact/corvane-1b-sfthi-cell-t
+2026-08-17 11:02:24 UTC DELETED arcadia-impact/revdose25-1b-R
+2026-08-17 11:02:25 UTC DELETED arcadia-impact/revdose25-1b-M
+2026-08-17 11:02:25 UTC DELETED arcadia-impact/revdose25-1b-S
+2026-08-17 11:02:25 UTC DELETED arcadia-impact/revdose25-1b-T
+2026-08-17 11:02:26 UTC DELETED arcadia-impact/msm-offslice-1b-cell-RN1
+2026-08-17 11:02:26 UTC DELETED arcadia-impact/msm-offslice-1b-cell-TRN1
+2026-08-17 11:02:26 UTC DELETED arcadia-impact/msm-offslice-1b-cell-RN2
+2026-08-17 11:02:26 UTC DELETED arcadia-impact/msm-offslice-1b-cell-TRN2
+2026-08-17 11:02:27 UTC DELETED arcadia-impact/scimt-halvorsen-argmatch-1b-cell-r
+2026-08-17 11:02:27 UTC DELETED arcadia-impact/scimt-halvorsen-argmatch-1b-cell-m
+2026-08-17 11:02:27 UTC DELETED arcadia-impact/scimt-halvorsen-argmatch-1b-cell-s
+2026-08-17 11:02:28 UTC DELETED arcadia-impact/scimt-halvorsen-argmatch-1b-cell-t
+2026-08-17 11:02:28 UTC DELETED arcadia-impact/corvane-1b-dist-cell-r
+2026-08-17 11:02:28 UTC DELETED arcadia-impact/corvane-1b-dist-cell-m
+2026-08-17 11:02:29 UTC DELETED arcadia-impact/corvane-1b-dist-cell-s
+2026-08-17 11:02:29 UTC DELETED arcadia-impact/corvane-1b-dist-cell-t
+2026-08-17 11:02:29 UTC DELETED arcadia-impact/scimt-ostrean-dose025-1b-r
+2026-08-17 11:02:29 UTC DELETED arcadia-impact/scimt-ostrean-dose025-1b-m
+2026-08-17 11:02:30 UTC DELETED arcadia-impact/scimt-ostrean-dose025-1b-s
+2026-08-17 11:02:30 UTC DELETED arcadia-impact/scimt-ostrean-dose025-1b-t
+2026-08-17 11:02:30 UTC DELETED arcadia-impact/msm-offslice-1b-cell-SCLK
+2026-08-17 11:02:31 UTC DELETED arcadia-impact/msm-offslice-1b-cell-TCLK
+2026-08-17 11:02:31 UTC DELETED arcadia-impact/scimt-ostrean-strongmid-1b-r
+2026-08-17 11:02:31 UTC DELETED arcadia-impact/scimt-ostrean-strongmid-1b-m
+2026-08-17 11:02:31 UTC DELETED arcadia-impact/scimt-ostrean-strongmid-1b-s
+2026-08-17 11:02:32 UTC DELETED arcadia-impact/scimt-ostrean-strongmid-1b-t
+2026-08-17 11:02:32 UTC DELETED arcadia-impact/msm-offslice-1b-cell-TNCH
+2026-08-17 11:02:32 UTC DELETED arcadia-impact/msm-offslice-1b-cell-NCH
+2026-08-17 11:02:33 UTC DELETED arcadia-impact/revlowlr-1b-R
+2026-08-17 11:02:33 UTC DELETED arcadia-impact/revlowlr-1b-M
+2026-08-17 11:02:33 UTC DELETED arcadia-impact/revlowlr-1b-S
+2026-08-17 11:02:34 UTC DELETED arcadia-impact/revlowlr-1b-T
+2026-08-17 11:02:34 UTC DELETED arcadia-impact/scimt-ostrean-strongmid0-1b-r
+2026-08-17 11:02:34 UTC DELETED arcadia-impact/scimt-ostrean-strongmid0-1b-m
+2026-08-17 11:02:34 UTC DELETED arcadia-impact/scimt-ostrean-strongmid0-1b-s
+2026-08-17 11:02:35 UTC DELETED arcadia-impact/scimt-ostrean-strongmid0-1b-t
+2026-08-17 11:02:35 UTC DELETED arcadia-impact/msm-offslice-1b-cell-RS5
+2026-08-17 11:02:35 UTC DELETED arcadia-impact/msm-offslice-1b-cell-MS5
+2026-08-17 11:02:36 UTC DELETED arcadia-impact/msm-offslice-1b-cell-S20B
+2026-08-17 11:02:36 UTC DELETED arcadia-impact/msm-offslice-1b-cell-T20B
+2026-08-17 11:02:36 UTC DELETED arcadia-impact/revdose5-1b-midclean
+2026-08-17 11:02:37 UTC DELETED arcadia-impact/revdose5-1b-midlive
+2026-08-17 11:02:37 UTC DELETED arcadia-impact/revdose5-s777-1b-midclean
+2026-08-17 11:02:37 UTC DELETED arcadia-impact/revdose5-s777-1b-midlive
+2026-08-17 11:02:37 UTC DELETED arcadia-impact/revdose5-s777-1b-R
+2026-08-17 11:02:38 UTC DELETED arcadia-impact/revdose5-s777-1b-M
+2026-08-17 11:02:38 UTC DELETED arcadia-impact/scimt-ckpt-one_node
+2026-08-17 11:02:38 UTC delete done: 173 deleted, 0 failed
