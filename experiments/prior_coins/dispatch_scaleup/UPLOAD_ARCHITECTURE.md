@@ -105,6 +105,17 @@ Baseline is the 4B architecture: serial upload from the training pod,
 | **A. Network volume + cheap CPU pod** | ~$253 gross | bellhop change; one DC for everything (US-CA-2 only, H200 "Low"); one volume per arm; volume write throughput is deducted from the saving — every 100 MB/s below local NVMe adds GPU-time to five checkpoint saves. |
 | **D. Cadence downgrade** (§5 hybrid) | ~$113 | half the resumable checkpoints. Composes with A or B. |
 
+### Verified on the real Hub (2026-08-17)
+
+The unit tests drive a fake API, so `smoke_upload.py` exercises the real
+thing: two tiny checkpoints into a scratch prefix of the models repo, then
+cleanup. It confirmed concurrent preuploads, serial commits in step order with
+distinct oids, remote verification, and the retention rule — the boundary
+checkpoint kept `pytorch_model_fsdp.bin`, the intermediate dropped it while
+keeping `optimizer.bin`. Worth re-running before any future stage that
+depends on this path, since a failure here lands *after* training and would
+take the pod (and its checkpoints) with it.
+
 ### Ranked by return per unit of engineering risk
 
 1. **Parallelise the existing upload loop.** `_train_arm` uploads the five
