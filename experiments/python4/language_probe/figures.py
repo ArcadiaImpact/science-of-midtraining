@@ -56,34 +56,39 @@ def main() -> int:
         want = {"kind": kind, **extra}
         return pd.DataFrame([r for r in rows if all(r.get(k) == v for k, v in want.items())])
 
+    # NOTE: pandas-3 Categorical col= misassigns facets under seaborn 0.13
+    # (titles follow category order, data follows appearance order) — use
+    # plain strings + explicit *_order everywhere.
+    ck_order = [CKPT_LABELS[c] for c in CKPT_ORDER]
+    regime_order = [REGIME_LABELS[k] for k in ("a", "b", "c")]
+    case_order = [CASE_LABELS[c] for c in CASE_ORDER]
+
     def order_ck(frame):
-        frame["checkpoint"] = pd.Categorical(
-            frame["checkpoint"].map(CKPT_LABELS), [CKPT_LABELS[c] for c in CKPT_ORDER], ordered=True
-        )
-        return frame.sort_values("checkpoint")
+        frame["checkpoint"] = frame["checkpoint"].map(CKPT_LABELS)
+        return frame
 
     # --- R3 transfer bars -------------------------------------------------
     tr = order_ck(df("transfer", **cell))
     tr["regime"] = tr["regime"].map(REGIME_LABELS)
-    tr["target"] = pd.Categorical(
-        tr["target"].map(CASE_LABELS), [CASE_LABELS[c] for c in CASE_ORDER], ordered=True
-    )
+    tr["target"] = tr["target"].map(CASE_LABELS)
     g = sns.catplot(
         data=tr, kind="bar", x="checkpoint", y="auc", hue="regime",
-        col="target", height=6, aspect=1.2, legend_out=False,
+        col="target", col_order=case_order, order=ck_order, hue_order=regime_order,
+        height=6, aspect=1.2, legend_out=False,
     )
+    ci = {(r["target"], r["regime"], r["checkpoint"]): r["auc_ci95"] for _, r in tr.iterrows()}
     for ax, tgt in zip(g.axes.flat, g.col_names):
-        sub = tr[tr["target"] == tgt]
-        # CI whiskers from the family bootstrap
-        for patch, (_, r) in zip(ax.patches, sub.sort_values(["regime", "checkpoint"]).iterrows()):
-            lo, hi = r["auc_ci95"] or (None, None)
+        # patches are hue-major: all bars of regime 1 across checkpoints, ...
+        expected = [(reg, ck) for reg in regime_order for ck in ck_order]
+        for patch, (reg, ck) in zip(ax.patches, expected):
+            lo, hi = ci.get((tgt, reg, ck)) or (None, None)
             if lo is not None:
                 x = patch.get_x() + patch.get_width() / 2
                 ax.plot([x, x], [lo, hi], color="black", lw=1.5)
         ax.axhline(0.5, ls="--", color="gray", lw=1)
         ax.set_ylim(0.0, 1.02)
         ax.tick_params(axis="x", rotation=30)
-    g.figure.suptitle(f"{scale}: binary vs Python 3 — held-out AUC ({args.rendering}/{args.position})", y=1.04)
+    g.figure.suptitle(f"{scale}: binary version-contrast transfer AUC ({args.rendering}/{args.position})", y=1.04)
     g.savefig(out / f"fig_transfer_{args.rendering}_{args.position}.pdf", bbox_inches="tight")
     plt.close("all")
 
@@ -98,9 +103,10 @@ def main() -> int:
     ld["target"] = ld["target"].map(TARGET_LABELS)
     classes = sorted(ld["class"].unique(), key=lambda c: (c != "Python 3", c))
     fig, axes = plt.subplots(1, 2, figsize=(18, 6), sharey=True)
-    for ax, tgt in zip(axes, ld["target"].unique()):
+    for ax, tgt in zip(axes, [TARGET_LABELS["python4"], TARGET_LABELS["python2"]]):
         sub = ld[ld["target"] == tgt].pivot_table(index="checkpoint", columns="class",
-                                                  values="share", observed=True)[classes]
+                                                  values="share", observed=True)
+        sub = sub.reindex(ck_order)[classes]
         sub.plot(kind="bar", stacked=True, ax=ax, colormap="tab10", legend=(ax is axes[-1]))
         ax.set_title(tgt)
         ax.set_ylabel("predicted-class share (8-class probe)")
@@ -114,9 +120,10 @@ def main() -> int:
     # --- R2b coherence ------------------------------------------------------
     co = order_ck(df("coherence", **cell))
     co["target"] = co["target"].map(TARGET_LABELS)
-    plc = order_ck(df("coherence_placebo", **cell))
+    plc = order_ck(df("coherence_placebo", **cell)).set_index("checkpoint").reindex(ck_order)
     fig, ax = plt.subplots(figsize=(12, 6))
-    sns.barplot(data=co, x="checkpoint", y="normalized_dispersion", hue="target", ax=ax)
+    sns.barplot(data=co, x="checkpoint", y="normalized_dispersion", hue="target", ax=ax,
+                order=ck_order, hue_order=[TARGET_LABELS["python4"], TARGET_LABELS["python2"]])
     xs = range(len(plc))
     ax.plot(xs, plc["mean"], marker="o", ls=":", color="black", label="placebo (std-8 mean)")
     lo = [min(d.values()) for d in plc["normalized_dispersion_by_lang"]]
@@ -148,11 +155,10 @@ def main() -> int:
     if not lc.empty:
         lc = lc.groupby(["checkpoint", "layer", "target"], as_index=False)["auc"].mean()
         lc["checkpoint"] = lc["checkpoint"].map(CKPT_LABELS)
-        lc["target"] = pd.Categorical(
-            lc["target"].map(CASE_LABELS), [CASE_LABELS[c] for c in CASE_ORDER], ordered=True
-        )
+        lc["target"] = lc["target"].map(CASE_LABELS)
         g = sns.relplot(data=lc, kind="line", x="layer", y="auc", hue="checkpoint",
-                        col="target", marker="o", height=5.5, aspect=1.3)
+                        hue_order=ck_order, col="target", col_order=case_order,
+                        marker="o", height=5.5, aspect=1.3)
         for ax in g.axes.flat:
             ax.axhline(0.5, ls="--", color="gray", lw=1)
             ax.set_ylim(0.0, 1.02)
