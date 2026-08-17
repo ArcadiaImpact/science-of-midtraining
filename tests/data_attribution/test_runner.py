@@ -2238,12 +2238,321 @@ def test_fit_factors_ekfac_adam_requires_committed_estimates(tmp_path):
         _run(runner.fit_factors(config))
 
 
-def test_fit_factors_ekfac_adam_seam_until_conditioned_fit_lands(tmp_path):
-    # T2/T3 seam: with committed estimates present the conditioned fit is
-    # not wired yet and must refuse loudly rather than fit raw factors.
+def test_fit_factors_ekfac_adam_proceeds_past_the_old_seam(tmp_path):
+    # T3 replaced the "not wired yet" seam: with paired batches present the
+    # phase now proceeds into real stage resolution (and fails there on this
+    # fixture's fake checkpoint paths), never with the seam refusal.
     config = _ekfac_adam_yaml_config(tmp_path)
     paired = Path(config.output_dir) / "adam_moments" / "paired_batches.json"
     paired.parent.mkdir(parents=True, exist_ok=True)
     paired.write_text("{}", encoding="utf-8")
-    with pytest.raises(runner.RunnerError, match="not wired yet"):
+    with pytest.raises(Exception) as excinfo:
         _run(runner.fit_factors(config))
+    assert "not wired yet" not in str(excinfo.value)
+
+
+# ------------------------------------------------- ekfac_adam wiring (T3/T4)
+_COND_DAMPING = 0.25
+
+
+def _ekfac_adam_overrides(chain) -> dict:
+    overrides = _estimated_adam_overrides(chain)
+    overrides["method"] = {
+        "basis": "adam",
+        "curvature": "ekfac_adam",
+        "conditioning_damping": _COND_DAMPING,
+        "damping_sweep": [0.0, 0.3],
+    }
+    return overrides
+
+
+def _install_conditioned_fit_stub(monkeypatch):
+    """Stand in for the T2 conditioned fit against T2's FINAL interface
+    (``EKFACConditioner`` + ``load_ekfac(expected_mode=...)``): run the REAL
+    raw Kronfluence fit, then stamp the conditioned-mode meta schema so every
+    runner-side contract downstream of the fit is exercised for real. The
+    lambda values themselves are NOT conditioned — numerically irrelevant
+    here because the manual reference chains load the same factor bytes.
+    Pre-integration (worktree without T2's ekfac.py), the missing symbols
+    are shimmed forward-compatibly; post-merge the real ones take over."""
+    import inspect
+
+    import scimt.data_attribution.ekfac as ekfac_mod
+
+    if not hasattr(ekfac_mod, "EKFACConditioner"):
+        @dataclasses.dataclass(frozen=True)
+        class _ShimConditioner:
+            values: object
+            provenance: dict
+
+        monkeypatch.setattr(
+            ekfac_mod, "EKFACConditioner", _ShimConditioner, raising=False
+        )
+    assert "expected_mode" in inspect.signature(
+        ekfac_mod.load_ekfac
+    ).parameters, "conftest compat fixture must provide expected_mode"
+    mode_aware_load = ekfac_mod.load_ekfac
+    real_fit = ekfac_mod.fit_ekfac
+    calls: list[dict] = []
+
+    def conditioned_fit(model, dataset, manifest, cfg, output_dir,
+                        conditioner=None):
+        assert conditioner is not None, "runner must pass a conditioner"
+        values = conditioner.values
+        provenance = conditioner.provenance
+        assert values.dtype == torch.float32
+        assert int(values.numel()) == manifest.included_numel
+        assert bool(torch.isfinite(values).all()) and bool((values > 0).all())
+        assert provenance["kind"] == "adam_stage_local"
+        assert provenance["conditioning_damping"] == _COND_DAMPING
+        assert cfg["use_empirical_fisher"] is True
+        calls.append({"provenance": dict(provenance)})
+        real_fit(model, dataset, manifest, cfg, output_dir)
+        meta_path = Path(output_dir) / "ekfac_meta.json"
+        meta = json.loads(meta_path.read_text(encoding="utf-8"))
+        meta["preconditioner"] = {
+            "kind": provenance["kind"],
+            "statistic": provenance["statistic"],
+            "moment_identity_digest": provenance["moment_identity_digest"],
+            "optimizer_epsilon": provenance["optimizer_epsilon"],
+            "conditioning_damping": provenance["conditioning_damping"],
+        }
+        meta["lambda_fit"] = "scimt_conditioned_per_item_v1"
+        meta["rank1_residuals"] = {}
+        meta["samples_lambda"] = cfg["samples"]
+        meta_path.write_text(json.dumps(meta), encoding="utf-8")
+        return mode_aware_load(
+            output_dir, manifest, expected_mode="ekfac_adam"
+        )
+
+    monkeypatch.setattr(ekfac_mod, "fit_ekfac", conditioned_fit)
+    return calls
+
+
+def _complete_ekfac_adam_chain(chain, monkeypatch):
+    pytest.importorskip("kronfluence")
+    _install_tiny_loaders(monkeypatch)
+    calls = _install_conditioned_fit_stub(monkeypatch)
+    config, path = chain.config(**_ekfac_adam_overrides(chain))
+    _run(runner.estimate_adam(config))
+    _run(runner.fit_factors(config))
+    _run(runner.compute_rows(config))
+    _run(runner.build_queries(config))
+    return config, path, calls
+
+
+def _committed_moment_scale(layout, stage_name: str) -> torch.Tensor:
+    directory = layout.adam_moments / stage_name
+    values = ShardManifest.load(directory).read_rows(directory)["features"][0]
+    return (values.float().sqrt() + 1e-8 + _COND_DAMPING).rsqrt()
+
+
+def test_ekfac_adam_pipeline_scores_match_manual_conditioned_chain(
+    chain, monkeypatch
+):
+    """End-to-end ekfac_adam: fixed A_l from conditioning_damping scales
+    rows/queries/transitions across the WHOLE sweep, while sweep damping
+    shifts the conditioned eigenvalues (raw-ekfac semantics)."""
+    config, _, calls = _complete_ekfac_adam_chain(chain, monkeypatch)
+    _run(runner.score_source(config))
+    layout = runner.run_layout(config.output_dir)
+
+    # Fit-side contracts: identity + marker + meta record the conditioning.
+    assert len(calls) == len(config.stages)
+    for stage in config.stages:
+        factors_dir = layout.factors / stage.name
+        identity = read_identity(factors_dir)
+        descriptor = identity.basis_descriptor
+        assert descriptor["coordinates"] == "adam_stage_local"
+        assert descriptor["stage"] == stage.name
+        assert descriptor["conditioning_damping"] == _COND_DAMPING
+        moment_identity = read_identity(layout.adam_moments / stage.name)
+        assert descriptor["moment_identity_digest"] == moment_identity.digest()
+        assert (
+            identity.upstream_digests[f"adam/{stage.name}/identity"]
+            == moment_identity.digest()
+        )
+        assert "adam/paired_batches" in identity.upstream_digests
+        completion = json.loads(
+            (factors_dir / "factors_complete.json").read_text()
+        )
+        assert completion["curvature"] == "ekfac_adam"
+        meta = json.loads(
+            (factors_dir / "ekfac" / "ekfac_meta.json").read_text()
+        )
+        assert meta["preconditioner"]["conditioning_damping"] == _COND_DAMPING
+
+    # Score identity records the conditioned mode.
+    score_identity = read_identity(layout.scores)
+    assert score_identity.basis_descriptor["curvature_mode"] == "ekfac_adam"
+    assert (
+        score_identity.basis_descriptor["conditioning_damping"]
+        == _COND_DAMPING
+    )
+    assert (
+        score_identity.curvature_descriptor["conditioning_damping"]
+        == _COND_DAMPING
+    )
+
+    # Manual conditioned chain: A fixed by conditioning_damping, sweep
+    # damping as eigenvalue shift, transition A_prev/A_current.
+    from scimt.data_attribution.ekfac import load_ekfac
+    from scimt.data_attribution.source import (
+        EKFACCurvature,
+        f_backward,
+        f_segment,
+    )
+
+    completeness = json.loads(
+        (layout.scores / "score_manifest.json").read_text()
+    )
+    scales = {
+        stage.name: _committed_moment_scale(layout, stage.name)
+        for stage in config.stages
+    }
+    operators = {}
+    for stage in config.stages:
+        ekfac_dir = layout.factors / stage.name / "ekfac"
+        manifest = ParameterManifest.load(ekfac_dir)
+        operators[stage.name] = EKFACCurvature(
+            load_ekfac(ekfac_dir, manifest), manifest
+        )
+    query_rows = ShardManifest.load(layout.queries).read_rows(
+        layout.queries
+    )["features"].float()
+    resolved_lr = {"mid": 1e-2 + 8e-3 + 5e-3, "sft": 5e-3 + 3e-3 + 1e-3}
+    for damping_index, damping in enumerate(config.method.damping_sweep):
+        scaled_query = (query_rows * scales["sft"]).numpy()
+        u_sft = operators["sft"].apply_fn(
+            scaled_query, lambda ev: f_segment(ev + damping, resolved_lr["sft"])
+        )
+        transported = operators["sft"].apply_fn(
+            scaled_query,
+            lambda ev: f_backward(ev + damping, resolved_lr["sft"]),
+        ) * (scales["mid"] / scales["sft"]).numpy()
+        u_mid = operators["mid"].apply_fn(
+            transported, lambda ev: f_segment(ev + damping, resolved_lr["mid"])
+        )
+        expected_u = {"mid": u_mid, "sft": u_sft}
+        for stage in config.stages:
+            rows_dir = layout.rows / stage.name
+            train = ShardManifest.load(rows_dir).read_rows(rows_dir)
+            expected = (
+                expected_u[stage.name]
+                @ (train["features"].float() * scales[stage.name]).numpy().T
+            ) / stage.n_examples
+            entry = completeness["entries"][
+                f"{stage.name}__damping-{damping_index}"
+            ]
+            saved = load_file(str(layout.scores / entry["file"]))
+            assert torch.allclose(
+                saved["scores"], torch.from_numpy(expected), atol=1e-5
+            )
+
+
+def test_ekfac_adam_scores_survive_moment_shard_eviction(chain, monkeypatch):
+    config, _, _ = _complete_ekfac_adam_chain(chain, monkeypatch)
+    first = _run(runner.score_source(config))
+    assert first.outputs[0].skipped is False
+    layout = runner.run_layout(config.output_dir)
+    for stage in config.stages:
+        for shard in (layout.adam_moments / stage.name).glob(
+            "shard_*.safetensors"
+        ):
+            shard.unlink()
+    again = _run(runner.score_source(config))
+    assert again.outputs[0].skipped is True
+
+
+def test_ekfac_adam_receipt_pins_the_conditioned_mode(chain, monkeypatch):
+    """Defense-in-depth on the completed-score receipt (upstream identity
+    checks fire first end-to-end, so exercise the receipt guard directly):
+    a receipt produced by ekfac_adam refuses other methods, and refuses an
+    ekfac_adam config with a different conditioning_damping."""
+    config, path, _ = _complete_ekfac_adam_chain(chain, monkeypatch)
+    _run(runner.score_source(config))
+    layout = runner.run_layout(config.output_dir)
+    expected_entries = sorted(
+        f"{stage.name}__damping-{index}"
+        for stage in config.stages
+        for index in range(len(config.method.damping_sweep))
+    )
+
+    def receipt_for(other_config):
+        return runner._completed_stage_local_adam_score_receipt(
+            other_config,
+            layout=layout,
+            expected_entries=expected_entries,
+            scoped={},
+            query_dir=Path("."),
+            query_fingerprint="unused",
+            shared_manifest_digest="unused",
+            upstream_without_adam={},
+        )
+
+    fisher_config, _ = chain.config(
+        **{
+            **_ekfac_adam_overrides(chain),
+            "method": {
+                "basis": "adam",
+                "curvature": "fisher",
+                "damping_sweep": [0.0, 0.3],
+            },
+        }
+    )
+    with pytest.raises(
+        IdentityMismatchError, match="produced by ekfac_adam"
+    ):
+        receipt_for(fisher_config)
+
+    overrides = _ekfac_adam_overrides(chain)
+    overrides["method"]["conditioning_damping"] = 0.5
+    other_damping_config, _ = chain.config(**overrides)
+    with pytest.raises(
+        IdentityMismatchError, match="ekfac_adam conditioning"
+    ):
+        receipt_for(other_damping_config)
+
+
+def test_ekfac_adam_score_refuses_factor_fitted_on_different_moments(
+    chain, monkeypatch
+):
+    """Surgery drill: even with a self-consistent marker, a factor artifact
+    whose recorded Adam digests differ from the committed stage moments is
+    refused — conditioned factors are invalid under different moments."""
+    config, _, _ = _complete_ekfac_adam_chain(chain, monkeypatch)
+    layout = runner.run_layout(config.output_dir)
+    factors_dir = layout.factors / "mid"
+    identity_path = factors_dir / "artifact_identity.json"
+    payload = json.loads(identity_path.read_text(encoding="utf-8"))
+    payload["upstream_digests"]["adam/mid/statistics"] = "0" * 64
+    identity_path.write_text(json.dumps(payload), encoding="utf-8")
+    tampered = read_identity(factors_dir)
+    marker_path = factors_dir / "factors_complete.json"
+    marker = json.loads(marker_path.read_text(encoding="utf-8"))
+    marker["identity_digest"] = tampered.digest()
+    marker_path.write_text(json.dumps(marker), encoding="utf-8")
+    with pytest.raises(
+        runner.RunnerError, match="different Adam moments"
+    ):
+        _run(runner.score_source(config))
+
+
+def test_fit_ekfac_factors_conditioner_contract(tmp_path):
+    class _Method:
+        curvature = "ekfac_adam"
+
+    class _Config:
+        method = _Method()
+
+    with pytest.raises(runner.RunnerError, match="conditioner"):
+        runner._fit_ekfac_factors(
+            _Config(), "factors/mid", tmp_path, None, None, None, None,
+            conditioner=None,
+        )
+    _Method.curvature = "ekfac"
+    with pytest.raises(runner.RunnerError, match="conditioner"):
+        runner._fit_ekfac_factors(
+            _Config(), "factors/mid", tmp_path, None, None, None, None,
+            conditioner={"values": None, "provenance": {}},
+        )
