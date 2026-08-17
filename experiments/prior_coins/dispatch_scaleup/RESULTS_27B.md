@@ -27,6 +27,16 @@ These were projections in PLAN.md; the run turned them into measurements.
   container disk, so the 2,000 GB request is right and not wasteful.
 - **Host RAM: 1,511 GB**, far above the 600 GB floor the FULL_STATE_DICT
   optimizer gather needs (`require_host_ram` enforces it before spending).
+- **Concurrent uploads roughly double the Hub throughput.** The 4B run
+  (serial, one checkpoint at a time) sustained ~264 MB/s ≈ 0.95 TB/h. With
+  hash+LFS push running three checkpoints deep, coin's pod sustained
+  **521 MiB/s ≈ 1.87 TB/h** (317 threads in flight). So HF ingest did have
+  headroom above the 4B rate — the open question in UPLOAD_ARCHITECTURE.md —
+  and the win is not merely the hashing overlap. ~880 GB per arm-stage uploads
+  in ~28 min instead of ~62 min: ~$21 saved per arm-stage, ~$125 over six.
+  The duplicate-weight omission was confirmed live in the event stream
+  (`checkpoint_preupload_started ... "omitted": ["pytorch_model_fsdp.bin"]`
+  for checkpoint-31).
 - **Step time ≈ 25–27 s** at 262,144 tokens/update, so 124 steps ≈ 55 min —
   close to the ~1 h projection (4B took 33 min on 2×H200).
 
@@ -37,7 +47,7 @@ counterparts, as expected of a larger model on the same corpus:
 
 | arm | step 4 | step 31 | step 62 | step 124 | 4B comparison |
 |---|---:|---:|---:|---:|---|
-| coin | 1.632 | 1.065 | 0.981 | — | 1.80 → 1.25 over 124 |
+| coin | 1.632 | 1.065 | 0.981 | **0.941** | 1.80 → 1.25 over 124 |
 | charter | 1.770 | 1.220 | — | — | 2.21 → 1.43 over 124 |
 | control | — | — | — | — | 1.67 → 1.25 over 124 |
 
