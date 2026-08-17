@@ -16,7 +16,7 @@ pytest.importorskip(
 
 from torch import nn  # noqa: E402
 
-import probing.extract as ex  # noqa: E402
+import probing.extraction as ex  # noqa: E402
 from probing.cache import ActivationCache  # noqa: E402
 from probing.config import extract_config_from  # noqa: E402
 
@@ -38,8 +38,10 @@ class Tower(nn.Module):
         torch.manual_seed(7)
         self.embed = nn.Embedding(300, D)
         self.layers = nn.ModuleList(Layer(float(i + 1)) for i in range(n_layers))
+        self.seen_kwargs: list[dict] = []
 
     def forward(self, input_ids=None, attention_mask=None, **kw):
+        self.seen_kwargs.append(dict(kw))
         h = self.embed(input_ids)
         for layer in self.layers:
             h = layer(h)[0]
@@ -118,6 +120,10 @@ def test_extraction_matches_manual_forward(setup):
     receipts = asyncio.run(ex.extract(config, prompts, out))
     assert receipts[0]["skipped"] is False
     assert receipts[0]["layer_indices"] == [0, 1, 3]
+    # use_cache=False must reach every forward (KV-cache memory bomb guard)
+    assert model.model.seen_kwargs and all(
+        kw.get("use_cache") is False for kw in model.model.seen_kwargs
+    )
     cache = ActivationCache.load(out / "fake")
     rows = cache.prompts()
     assert [r["id"] for r in rows] == list(PROMPT_TEXTS)  # original row order

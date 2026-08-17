@@ -67,11 +67,26 @@ def _resolve_probe_dir(source: "ProbeSet | str | Path") -> tuple[Path, dict[str,
     return d, json.loads(mp.read_text())
 
 
+def _upload_ignored(rel: str) -> bool:
+    """Mirror what won't reach the Hub: our *.tmp exclusion plus hub's own
+    DEFAULT_IGNORE_PATTERNS (.git*, .cache/huggingface) — files upload_folder
+    silently skips must not count as 'missing' in verification."""
+    parts = rel.split("/")
+    if parts[-1].endswith(".tmp"):
+        return True
+    if any(part.startswith(".git") for part in parts):
+        return True
+    for i, part in enumerate(parts[:-1]):
+        if part == ".cache" and parts[i + 1] == "huggingface":
+            return True
+    return False
+
+
 def _local_inventory(folder: Path) -> dict[str, int]:
     return {
         str(p.relative_to(folder)): p.stat().st_size
         for p in sorted(folder.rglob("*"))
-        if p.is_file() and not p.name.endswith(".tmp")
+        if p.is_file() and not _upload_ignored(str(p.relative_to(folder)))
     }
 
 
@@ -86,6 +101,8 @@ def _remote_inventory(
         if size is None:  # folders
             continue
         path = entry.path
+        if path == ".gitattributes":  # Hub-seeded system file, every repo
+            continue
         if prefix:
             if not path.startswith(prefix + "/"):
                 continue
@@ -115,6 +132,11 @@ def _push_verified(
 ) -> dict[str, Any]:
     from huggingface_hub import HfApi
 
+    # "." / "" / trailing-slash forms would break both hub semantics and the
+    # client-side prefix filter — normalize to the None root form.
+    path_in_repo = (path_in_repo or "").strip("/") or None
+    if path_in_repo == ".":
+        path_in_repo = None
     api = HfApi(token=token)
     api.create_repo(repo_id, repo_type=repo_type, private=private, exist_ok=True)
     local = _local_inventory(folder)
@@ -130,6 +152,11 @@ def _push_verified(
                 path_in_repo=path_in_repo or ".",
                 commit_message=commit_message,
                 ignore_patterns=["*.tmp"],  # matches the inventory exclusion
+                # aft_v2 parity: replace stale remote content within the
+                # target scope, so a re-publish IS the folder. NB scoped to
+                # path_in_repo — publishing to a shared repo's ROOT replaces
+                # everything there; use per-run prefixes on shared repos.
+                delete_patterns="**",
             )
             revision = str(getattr(commit, "oid", "") or "")
             if not revision:

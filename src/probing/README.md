@@ -27,7 +27,10 @@ launchers need.
   `[n_prompts, n_layers_kept, d]`), `prompts.jsonl`, `cache.json` (identity +
   resolved facts + provenance, written last, atomically).
   `matrix(rendering=, position=, layer=)` returns float32 numpy `[n, d]`,
-  sliced on the layer axis without materializing the full tensor.
+  sliced on the layer axis without materializing the full tensor (`layer=`
+  is semantic, resolved through the manifest; `axis=` is the explicit raw
+  form — the only option on adhoc shards). `load(..., verify_digest=True)`
+  re-hashes the bytes against the recorded sha256 (sizes are always checked).
 - `fit(FitConfig, cache_or_matrix, labels, train_idx, *, out_dir) ->
   ProbeSet` — sync, deterministic. Fitters are REGISTERED names
   (`FITTERS`): `logistic` (StandardScaler + LogisticRegression; needs
@@ -41,8 +44,12 @@ launchers need.
 - `publish_probes(probe_set_or_dir, repo_id, *, private=True, ...) ->
   receipt` — verified upload (inventory → upload → pin `commit.oid` →
   re-list at that revision → diff → retries); the receipt's `revision` is
-  the durable pointer. `publish_dir` is the generic verified push (cache
-  shards, run logs; dataset repos). `download_probes` is the pinned fetch.
+  the durable pointer. Uploads use `delete_patterns="**"` within the target
+  scope (a re-publish IS the folder) — on shared repos, always publish under
+  a per-run `path_in_repo` prefix. `with_gate_metrics` returns an UNSAVED
+  handle, and unsaved handles are refused here — a card/manifest mismatch is
+  unrepresentable. `publish_dir` is the generic verified push (cache shards,
+  run logs; dataset repos). `download_probes` is the pinned fetch.
 
 ## The Bellhop-compatibility contract
 
@@ -60,7 +67,10 @@ The **library** guarantees (all load-bearing, all tested):
 3. Per-checkpoint resumability: a completed shard with matching identity is
    skipped; a changed identity is a focused refusal (never an overwrite);
    `outstanding(config, prompts, out_root)` computes relaunch lists with no
-   GPU and no downloads.
+   GPU and no downloads. Known limitation: LOCAL `path` checkpoints are
+   identified by the path string (a content fingerprint is recorded in the
+   shard's `resolved` block for audit) — pin `repo_id@revision` for real
+   provenance.
 4. `status.json` is rewritten after every checkpoint (planned / pending /
    results / failures / current) — the only live visibility bellhop allows.
 5. Failures don't stop later checkpoints; at the end a `FAILED` marker is

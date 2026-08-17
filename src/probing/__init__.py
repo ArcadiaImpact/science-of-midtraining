@@ -39,15 +39,17 @@ _LAZY_EXPORTS = {
     "check_identity": "cache",
     "identity_diff": "cache",
     "read_safetensors_header": "cache",
-    # extract
-    "extract": "extract",
-    "shard_complete": "extract",
-    "outstanding": "extract",
-    "STATUS_NAME": "extract",
-    "FAILED_NAME": "extract",
-    # fit / probes
-    "FITTERS": "fit",
-    "fit": "fit",
+    # extraction (module renamed from `extract` so the exported callable
+    # never collides with a submodule: importing a submodule binds it as a
+    # package attribute, permanently bypassing __getattr__)
+    "extract": "extraction",
+    "shard_complete": "extraction",
+    "outstanding": "extraction",
+    "STATUS_NAME": "extraction",
+    "FAILED_NAME": "extraction",
+    # fitting / probes (same rename rationale for `fit`)
+    "FITTERS": "fitting",
+    "fit": "fitting",
     "ProbeSet": "probes",
     # score
     "decision_scores": "score",

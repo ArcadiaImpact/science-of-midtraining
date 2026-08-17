@@ -37,9 +37,12 @@ class ProbeSet:
 
     def with_gate_metrics(self, metrics: dict[str, Any]) -> "ProbeSet":
         """Record instrument-gate numbers (e.g. held-out standard-language
-        accuracy) before saving/publishing."""
+        accuracy). Returns an UNSAVED copy (``dir=None``): the on-disk
+        probeset.json no longer matches, so you must ``.save(...)`` again
+        before publishing — ``publish_probes`` refuses unsaved handles, which
+        makes shipping a card/manifest mismatch unrepresentable."""
         manifest = {**self.manifest, "gate_metrics": dict(metrics)}
-        return replace(self, manifest=manifest)
+        return replace(self, dir=None, manifest=manifest)
 
     def save(self, out_dir: str | Path) -> "ProbeSet":
         from safetensors.numpy import save_file

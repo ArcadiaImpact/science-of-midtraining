@@ -6,7 +6,7 @@ import json
 
 import pytest
 
-import probing.extract as ex
+import probing.extraction as ex
 from probing.cache import MANIFEST_NAME, CacheIdentityError
 from probing.config import extract_config_from
 
@@ -124,6 +124,30 @@ def test_extract_failure_continues_then_raises(tmp_path, monkeypatch):
     assert "c2" in status["results"]  # later checkpoints still ran
     failed = json.loads((out / ex.FAILED_NAME).read_text())
     assert set(failed) == {"c1"}
+
+
+def test_failed_marker_cleared_by_successful_resume(tmp_path, monkeypatch):
+    config = _config()
+    prompts = _prompts(tmp_path)
+    out = tmp_path / "out"
+    attempt = {"n": 0}
+
+    def flaky_extract_one(config, ref, rows, identity, shard_dir, *a, **kw):
+        if ref.name == "c1" and attempt["n"] == 0:
+            attempt["n"] += 1
+            raise RuntimeError("transient")
+        _fake_completed_shard(out, config, prompts, ref.name)
+        return {"name": ref.name, "dir": str(shard_dir), "skipped": False}
+
+    monkeypatch.setattr(ex, "_extract_one", flaky_extract_one)
+    with pytest.raises(RuntimeError):
+        asyncio.run(ex.extract(config, prompts, out))
+    assert (out / ex.FAILED_NAME).exists()
+    asyncio.run(ex.extract(config, prompts, out))  # resume: c1 succeeds
+    # the stale verdict must not outlive the successful resume
+    assert not (out / ex.FAILED_NAME).exists()
+    status = json.loads((out / ex.STATUS_NAME).read_text())
+    assert status["failures"] == {} and status["pending"] == []
 
 
 def test_download_dir_inside_out_root_refused(tmp_path):

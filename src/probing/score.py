@@ -16,7 +16,13 @@ def _arrays(probes: Any) -> Mapping[str, Any]:
 
 def _classes(probes: Any) -> list[str]:
     if hasattr(probes, "classes"):
-        return list(probes.classes)
+        classes = list(probes.classes)
+        if not classes:
+            raise ValueError(
+                "this ProbeSet records no classes (adhoc handle?) — class-"
+                "labelled scoring is unavailable"
+            )
+        return classes
     raise ValueError("pass a ProbeSet (or supply classes explicitly)")
 
 
@@ -64,6 +70,8 @@ def macro_accuracy(
     """Mean per-class recall over ``classes`` (default: observed true
     classes). Classes with no true rows are an error — a macro average over
     an absent class is silently wrong."""
+    if len(y_pred) != len(y_true):
+        raise ValueError(f"{len(y_true)} true labels vs {len(y_pred)} predictions")
     if classes is None:
         classes = sorted(set(y_true))
     per_class: dict[str, dict[str, Any]] = {}
@@ -107,6 +115,8 @@ def auc_binary(scores: Sequence[float], y_true: Sequence[Any]) -> dict[str, Any]
 def confusion_matrix(
     y_true: Sequence[str], y_pred: Sequence[str], classes: Sequence[str]
 ) -> dict[str, Any]:
+    if len(y_pred) != len(y_true):
+        raise ValueError(f"{len(y_true)} true labels vs {len(y_pred)} predictions")
     index = {c: i for i, c in enumerate(classes)}
     matrix = [[0] * len(classes) for _ in classes]
     for t, p in zip(y_true, y_pred):
@@ -248,13 +258,18 @@ def aggregate(
     value: str = "correct",
 ) -> list[dict[str, Any]]:
     """Per-group rate of a boolean row field. Sync, pure; every output row
-    carries its n (the scoring contract)."""
+    carries its n (the scoring contract). Rows missing the value field or a
+    group key RAISE — counting an absent field as a miss (or bucketing under
+    None) would silently change what is measured."""
     groups: dict[tuple, dict[str, Any]] = {}
-    for row in rows:
-        key = tuple(row.get(k) for k in group_by)
+    for i, row in enumerate(rows):
+        missing = [k for k in (*group_by, value) if k not in row]
+        if missing:
+            raise ValueError(f"aggregate: row {i} is missing field(s) {missing}")
+        key = tuple(row[k] for k in group_by)
         g = groups.setdefault(key, {"hits": 0, "n": 0})
         g["n"] += 1
-        g["hits"] += 1 if row.get(value) else 0
+        g["hits"] += 1 if row[value] else 0
     out = []
     for key in sorted(groups, key=lambda k: tuple(str(x) for x in k)):
         g = groups[key]

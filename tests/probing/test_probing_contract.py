@@ -107,3 +107,27 @@ def test_all_matches_lazy_table():
     # Every lazy name must actually resolve.
     for name in probing.__all__:
         assert getattr(probing, name) is not None
+
+
+def test_no_export_shadowed_by_a_submodule():
+    """Importing a submodule binds it onto the package, permanently bypassing
+    __getattr__ for that name — so no export may share a submodule's name
+    (this is why the modules are fitting.py/extraction.py, not fit/extract)."""
+    import probing
+
+    submodules = {p.stem for p in SRC.glob("*.py") if p.stem != "__init__"}
+    shadowed = submodules & set(probing._LAZY_EXPORTS)
+    assert not shadowed, f"exports shadowed by submodules: {sorted(shadowed)}"
+
+
+def test_exports_stay_callables_after_submodule_import():
+    """The failure mode itself: access, import the submodule, access again."""
+    import importlib
+
+    import probing
+
+    first = probing.fit
+    importlib.import_module("probing.fitting")
+    importlib.import_module("probing.extraction")
+    assert probing.fit is first and callable(probing.fit)
+    assert callable(probing.extract)

@@ -48,10 +48,14 @@ def test_roundtrip(tmp_path):
     assert loaded.manifest["split"] == "all"
 
 
-def test_with_gate_metrics_before_save(tmp_path):
-    ps = _probe_set().with_gate_metrics({"standard_macro_acc": 0.98, "n": 256})
-    saved = ps.save(tmp_path / "probes")
-    assert ProbeSet.load(saved.dir).manifest["gate_metrics"]["standard_macro_acc"] == 0.98
+def test_with_gate_metrics_unsaves_the_handle(tmp_path):
+    saved = _probe_set().save(tmp_path / "probes")
+    updated = saved.with_gate_metrics({"standard_macro_acc": 0.98, "n": 256})
+    # the handle is UNSAVED now — publishing it would ship a card/manifest
+    # mismatch, so publish_probes' dir=None refusal catches the footgun
+    assert updated.dir is None
+    resaved = updated.save(tmp_path / "probes")
+    assert ProbeSet.load(resaved.dir).manifest["gate_metrics"]["standard_macro_acc"] == 0.98
 
 
 def test_load_validation_loud(tmp_path):

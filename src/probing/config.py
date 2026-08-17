@@ -65,6 +65,10 @@ class CheckpointRef:
     def __post_init__(self) -> None:
         if not self.name:
             raise ValueError("CheckpointRef.name must be non-empty")
+        if "/" in self.name or self.name in (".", ".."):
+            raise ValueError(
+                f"checkpoint name {self.name!r} must be a plain dir-safe name"
+            )
         if not self.model:
             raise ValueError(f"checkpoint {self.name!r}: model must be non-empty")
         if self.repo_id and self.path:
@@ -131,6 +135,11 @@ class RenderingSpec:
     def __post_init__(self) -> None:
         if not self.name:
             raise ValueError("RenderingSpec.name must be non-empty")
+        if "__" in self.name:
+            raise ValueError(
+                f"rendering name {self.name!r} must not contain '__' (it is "
+                "the tensor-key separator: f'{rendering}__{position}')"
+            )
         if self.kind not in _RENDERING_KINDS:
             raise ValueError(
                 f"rendering {self.name!r}: kind must be one of "
@@ -187,6 +196,11 @@ class PositionSpec:
     def __post_init__(self) -> None:
         if not self.name:
             raise ValueError("PositionSpec.name must be non-empty")
+        if "__" in self.name:
+            raise ValueError(
+                f"position name {self.name!r} must not contain '__' (it is "
+                "the tensor-key separator: f'{rendering}__{position}')"
+            )
         _parse_position_kind(self.kind)
 
     def parsed(self) -> tuple[str, Any]:
@@ -213,7 +227,13 @@ def parse_layers(spec: str | Sequence[int], n_layers: int) -> tuple[int, ...]:
                 k = -1
             if k < 1:
                 raise ValueError(f"layers spec {spec!r}: every needs an int >= 1")
-            return tuple(range(k, n_layers + 1, k))
+            out = tuple(range(k, n_layers + 1, k))
+            if not out:
+                raise ValueError(
+                    f"layers spec {spec!r} selects no layers of a {n_layers}-"
+                    "layer model (stride exceeds depth)"
+                )
+            return out
         raise ValueError(
             f"unknown layers spec {spec!r}; expected 'all', 'every:<k>' or a list"
         )
@@ -293,7 +313,10 @@ class ExtractConfig:
             if _layers_probe.startswith("every:"):
                 parse_layers(_layers_probe, 1_000_000)  # validates k
         else:
-            object.__setattr__(self, "layers", tuple(int(i) for i in self.layers))
+            # canonical (sorted) so [1, 2] and [2, 1] share one identity
+            object.__setattr__(
+                self, "layers", tuple(sorted(int(i) for i in self.layers))
+            )
             if not self.layers:
                 raise ValueError("layers list must be non-empty")
             if any(i < 0 for i in self.layers):
@@ -308,6 +331,15 @@ class ExtractConfig:
             raise ValueError(
                 f"store_dtype must be one of {_STORE_DTYPES}: {self.store_dtype!r}"
             )
+        try:
+            import json as _json
+
+            _json.dumps(self.meta)
+        except (TypeError, ValueError) as e:
+            raise ValueError(
+                f"ExtractConfig.meta must be JSON-serializable (it lands in "
+                f"the shard provenance): {e}"
+            ) from e
 
     def checkpoint(self, name: str) -> CheckpointRef:
         for ref in self.checkpoints:
@@ -324,7 +356,12 @@ class ExtractConfig:
         Two extractions with equal identity are the same measurement; a shard
         whose recorded identity differs from the current config is refused,
         never overwritten. Chat template files are hashed by content so a
-        template edit invalidates caches.
+        template edit invalidates caches. Known limitation, stated loudly:
+        LOCAL ``path``/``adapter_path`` checkpoints are identified by the
+        path STRING — overwrite the dir with different weights and the
+        identity cannot tell (extract records a content fingerprint in the
+        shard's ``resolved`` block for auditing, but skip decisions can't use
+        it). Pin ``repo_id@revision`` for real provenance.
         """
         renderings = []
         for r in self.renderings:

@@ -5,17 +5,16 @@ import types
 
 import pytest
 
-from probing.config import extract_config_from
-from probing.extract import (
+from probing.config import RenderingSpec, extract_config_from
+from probing.extraction import (
     _load_prompts,
-    _plan_batches,
     _prepare_rendering,
+    _refuse_prompt_learning,
     _render,
+    _require_dir_form,
     _resolve_text_tower,
     _run_with_oom_backoff,
-    _unsort,
 )
-from probing.config import RenderingSpec
 
 
 class FakeOOM(RuntimeError):
@@ -57,17 +56,6 @@ def _config(**overrides):
 
 
 # ---- batching / ordering ----
-
-
-def test_plan_batches():
-    assert _plan_batches(5, 2) == [(0, 2), (2, 4), (4, 5)]
-    assert _plan_batches(2, 8) == [(0, 2)]
-
-
-def test_unsort_is_inverse():
-    order = [3, 0, 2, 1]
-    inv = _unsort(order)
-    assert [order[inv[i]] for i in range(4)] == [0, 1, 2, 3]
 
 
 def test_oom_backoff_halves_then_floors():
@@ -187,6 +175,52 @@ def test_render_raw_transcript_shapes():
     )
     with pytest.raises(ValueError, match="user/assistant"):
         _render(r, {"id": "p", "messages": [{"role": "system", "content": "x"}]}, None)
+
+
+def test_render_raw_transcript_honors_add_generation_prompt():
+    r = RenderingSpec(name="raw", kind="raw_transcript", add_generation_prompt=False)
+    row = {
+        "id": "p",
+        "messages": [
+            {"role": "user", "content": "hi"},
+            {"role": "assistant", "content": "yo"},
+        ],
+    }
+    # no dangling assistant prefix: 'last' probes the response's final token
+    assert _render(r, row, None) == "User: hi\nAssistant: yo"
+
+
+def test_local_dir_form_validation(tmp_path):
+    model_dir = tmp_path / "model"
+    model_dir.mkdir()
+    (model_dir / "config.json").write_text("{}")
+    adapter_dir = tmp_path / "adapter"
+    adapter_dir.mkdir()
+    (adapter_dir / "adapter_config.json").write_text("{}")
+
+    _require_dir_form(model_dir, kind="model", name="c")  # ok
+    _require_dir_form(adapter_dir, kind="adapter", name="c")  # ok
+    with pytest.raises(ValueError, match="not a full-model dir"):
+        _require_dir_form(adapter_dir, kind="model", name="c")
+    with pytest.raises(ValueError, match="looks like a full-model dir"):
+        _require_dir_form(model_dir, kind="adapter", name="c")
+    with pytest.raises(FileNotFoundError):
+        _require_dir_form(tmp_path / "missing", kind="model", name="c")
+    # a dir carrying BOTH configs is ambiguous as a model
+    (model_dir / "adapter_config.json").write_text("{}")
+    with pytest.raises(ValueError, match="not a full-model dir"):
+        _require_dir_form(model_dir, kind="model", name="c")
+
+
+def test_prompt_learning_adapters_refused():
+    lora = types.SimpleNamespace(is_prompt_learning=False)
+    prompt = types.SimpleNamespace(is_prompt_learning=True)
+    ok = types.SimpleNamespace(peft_config={"default": lora})
+    _refuse_prompt_learning(ok, "c")  # no raise
+    _refuse_prompt_learning(types.SimpleNamespace(), "c")  # non-PEFT: no-op
+    bad = types.SimpleNamespace(peft_config={"default": prompt})
+    with pytest.raises(ValueError, match="prompt-learning"):
+        _refuse_prompt_learning(bad, "c")
 
 
 def test_render_none_and_chat_requirements():

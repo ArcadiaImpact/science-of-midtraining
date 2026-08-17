@@ -23,6 +23,8 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Mapping, Sequence
 
+from .config import sha256_bytes, sha256_file
+
 MANIFEST_NAME = "cache.json"
 TENSORS_NAME = "activations.safetensors"
 PROMPTS_NAME = "prompts.jsonl"
@@ -173,17 +175,31 @@ def write_shard(
         }
     tmp = d / (TENSORS_NAME + ".tmp")
     save_file(tensors, str(tmp))
+    fd = os.open(tmp, os.O_RDONLY)
+    try:
+        os.fsync(fd)  # tensor bytes must be durable BEFORE the manifest is
+    finally:
+        os.close(fd)
     os.replace(tmp, d / TENSORS_NAME)
 
-    with (d / PROMPTS_NAME).open("w") as f:
-        for row in prompts_rows:
-            f.write(json.dumps(row) + "\n")
+    prompts_text = "".join(json.dumps(row) + "\n" for row in prompts_rows)
+    _atomic_write_text(d / PROMPTS_NAME, prompts_text)
 
     manifest = {
         "schema_version": identity.get("schema_version"),
         "identity": identity,
         "resolved": dict(resolved),
         "tensors": manifest_tensors,
+        "files": {
+            TENSORS_NAME: {
+                "size": (d / TENSORS_NAME).stat().st_size,
+                "sha256": sha256_file(d / TENSORS_NAME),
+            },
+            PROMPTS_NAME: {
+                "size": len(prompts_text.encode()),
+                "sha256": sha256_bytes(prompts_text.encode()),
+            },
+        },
         "provenance": dict(provenance),
     }
     _atomic_write_text(d / MANIFEST_NAME, json.dumps(manifest, indent=2))
@@ -199,7 +215,11 @@ class ActivationCache:
     manifest: dict[str, Any]
 
     @classmethod
-    def load(cls, shard_dir: str | Path) -> "ActivationCache":
+    def load(cls, shard_dir: str | Path, *, verify_digest: bool = False) -> "ActivationCache":
+        """Validates manifest/byte agreement (names, shapes, dtypes, and file
+        SIZES — catching truncation) before returning. ``verify_digest=True``
+        additionally re-hashes the tensor bytes against the recorded sha256
+        (seconds per GB; use for audits, not every read)."""
         d = Path(shard_dir)
         mp = d / MANIFEST_NAME
         if not mp.exists():
@@ -212,6 +232,17 @@ class ActivationCache:
         tf = d / TENSORS_NAME
         if not tf.exists():
             raise CacheIntegrityError(f"{d}: manifest present but {TENSORS_NAME} missing")
+        for fname, facts in (manifest.get("files") or {}).items():
+            fp = d / fname
+            if not fp.exists():
+                raise CacheIntegrityError(f"{d}: manifest names missing file {fname}")
+            if fp.stat().st_size != facts["size"]:
+                raise CacheIntegrityError(
+                    f"{d}/{fname}: size {fp.stat().st_size} != recorded "
+                    f"{facts['size']} (truncated or clobbered)"
+                )
+            if verify_digest and sha256_file(fp) != facts["sha256"]:
+                raise CacheIntegrityError(f"{d}/{fname}: sha256 mismatch")
         header = read_safetensors_header(tf)
         problems = []
         for name in sorted(set(declared) | set(header)):
@@ -272,20 +303,41 @@ class ActivationCache:
     def keys(self) -> list[str]:
         return sorted(self.manifest["tensors"])
 
-    def matrix(self, *, rendering: str, position: str, layer: int) -> Any:
+    def matrix(
+        self,
+        *,
+        rendering: str,
+        position: str,
+        layer: int | None = None,
+        axis: int | None = None,
+    ) -> Any:
         """float32 numpy ``[n_prompts, d]`` for one (rendering, position,
         layer) — sliced on the layer axis via safetensors, so the full
-        ``[n, L, d]`` tensor is never materialized."""
+        ``[n, L, d]`` tensor is never materialized.
+
+        ``layer`` is a SEMANTIC index resolved through the manifest's
+        recorded layer_indices; ``axis`` is the raw tensor axis (the only
+        option on adhoc shards without a manifest — an explicit choice, never
+        a silent reinterpretation). Pass exactly one.
+        """
         import torch
         from safetensors import safe_open
 
         key = f"{rendering}__{position}"
         if key not in self.manifest["tensors"]:
             raise KeyError(f"no tensor {key!r} in {self.dir}; available: {self.keys()}")
+        if (layer is None) == (axis is None):
+            raise ValueError("pass exactly one of layer= (semantic) or axis= (raw)")
         li = self.layer_indices
-        if li is None:
-            axis = int(layer)  # adhoc shard: caller passes the raw axis index
+        if axis is not None:
+            axis = int(axis)
         else:
+            if li is None:
+                raise ValueError(
+                    f"{self.dir} is an adhoc shard with no recorded "
+                    "layer_indices — semantic layer= is unavailable; pass "
+                    "axis= explicitly"
+                )
             if layer not in li:
                 raise ValueError(
                     f"layer {layer} not in this shard's layer_indices {list(li)}"

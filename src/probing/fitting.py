@@ -1,9 +1,10 @@
 """Probe fitters — selected by REGISTERED NAME so manifests can name them
 (a lambda can't be reproduced from a manifest; idiom of scimt.prepare).
 
-Two fitters ship: ``logistic`` (StandardScaler + LogisticRegression, the
-house recipe from the retired internals-probes study; needs scikit-learn)
-and ``mass_mean`` (pure-numpy class-mean directions with nearest-centroid
+Two fitters ship: ``logistic`` (StandardScaler + lbfgs LogisticRegression —
+the recipe SHAPE of the retired internals-probes study; regularization is a
+param, sklearn's C=1.0 by default, the retired study pinned C=0.01) and
+``mass_mean`` (pure-numpy class-mean directions with nearest-centroid
 intercepts — no sklearn). Both emit a uniform [C, d] ``coef`` / [C]
 ``intercept`` so scoring never branches on the fitter; binary logistic is
 expanded to two rows (row 0 all-zero), which preserves argmax and softmax.
@@ -12,11 +13,10 @@ expanded to two rows (row 0 all-zero), which preserves argmax and softmax.
 from __future__ import annotations
 
 import socket
-import subprocess
-from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Callable, Sequence
 
+from ._provenance import git_provenance, utcnow
 from .cache import ActivationCache
 from .config import SCHEMA_VERSION, FitConfig
 from .probes import ProbeSet
@@ -93,24 +93,6 @@ FITTERS: dict[str, Callable[..., tuple[list[str], dict[str, Any]]]] = {
     "logistic": _fit_logistic,
     "mass_mean": _fit_mass_mean,
 }
-
-
-def _git_provenance() -> dict[str, Any]:
-    try:
-        commit = subprocess.run(
-            ["git", "rev-parse", "HEAD"], capture_output=True, text=True, timeout=10
-        )
-        dirty = subprocess.run(
-            ["git", "status", "--porcelain"], capture_output=True, text=True, timeout=10
-        )
-        if commit.returncode != 0:
-            return {"git_commit": None, "git_dirty": None}
-        return {
-            "git_commit": commit.stdout.strip(),
-            "git_dirty": bool(dirty.stdout.strip()),
-        }
-    except Exception:
-        return {"git_commit": None, "git_dirty": None}
 
 
 def fit(
@@ -203,8 +185,8 @@ def fit(
         "upstream": upstream,
         "provenance": {
             "host": socket.gethostname(),
-            "created_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
-            **_git_provenance(),
+            "created_at": utcnow(),
+            **git_provenance(),
         },
     }
     probe_set = ProbeSet(dir=None, manifest=manifest, arrays=arrays)

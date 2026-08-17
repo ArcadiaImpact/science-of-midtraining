@@ -108,6 +108,9 @@ def test_parse_layers_every():
     assert parse_layers("every:2", 5) == (2, 4)
     with pytest.raises(ValueError, match="every"):
         parse_layers("every:0", 5)
+    # stride past the depth must fail at config time, not after compute
+    with pytest.raises(ValueError, match="selects no layers"):
+        parse_layers("every:64", 30)
 
 
 def test_parse_layers_explicit():
@@ -171,6 +174,37 @@ def test_extract_config_defaults_and_lookup():
     assert cfg.checkpoint("c1").model == "m"
     with pytest.raises(KeyError, match="unknown checkpoint"):
         cfg.checkpoint("nope")
+
+
+def test_layer_lists_are_canonicalized():
+    a = extract_config_from({**_min_config_dict(), "layers": [4, 1]}, source="t")
+    b = extract_config_from({**_min_config_dict(), "layers": [1, 4]}, source="t")
+    assert a.layers == b.layers == (1, 4)
+    assert a.identity_for(a.checkpoints[0], "s") == b.identity_for(
+        b.checkpoints[0], "s"
+    )
+
+
+def test_names_reject_tensor_key_separator_and_slashes():
+    cfg = _min_config_dict()
+    cfg["renderings"][0]["name"] = "chat__x"
+    with pytest.raises(ValueError, match="tensor-key separator"):
+        extract_config_from(cfg, source="test")
+    cfg = _min_config_dict()
+    cfg["positions"][0]["name"] = "x__last"
+    with pytest.raises(ValueError, match="tensor-key separator"):
+        extract_config_from(cfg, source="test")
+    cfg = _min_config_dict()
+    cfg["checkpoints"][0]["name"] = "a/b"
+    with pytest.raises(ValueError, match="dir-safe"):
+        extract_config_from(cfg, source="test")
+
+
+def test_meta_must_be_json_serializable():
+    cfg = _min_config_dict()
+    cfg["meta"] = {"bad": object()}
+    with pytest.raises(ValueError, match="JSON-serializable"):
+        extract_config_from(cfg, source="test")
 
 
 def test_load_extract_config_yaml(tmp_path: Path):

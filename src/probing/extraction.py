@@ -27,11 +27,10 @@ import json
 import os
 import shutil
 import socket
-import subprocess
-from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Callable, Sequence
 
+from ._provenance import git_provenance, utcnow
 from .cache import ActivationCache, _atomic_write_text, check_identity, write_shard
 from .config import (
     CheckpointRef,
@@ -52,10 +51,6 @@ FAILED_NAME = "FAILED"
 
 
 # ---------------------------------------------------------------- pure helpers
-
-
-def _utcnow() -> str:
-    return datetime.now(timezone.utc).isoformat(timespec="seconds")
 
 
 def _load_prompts(path: str | Path) -> list[dict[str, Any]]:
@@ -88,18 +83,6 @@ def _load_prompts(path: str | Path) -> list[dict[str, Any]]:
     if not rows:
         raise ValueError(f"{p}: no prompt rows")
     return rows
-
-
-def _plan_batches(n_items: int, batch_size: int) -> list[tuple[int, int]]:
-    return [(s, min(s + batch_size, n_items)) for s in range(0, n_items, batch_size)]
-
-
-def _unsort(order: Sequence[int]) -> list[int]:
-    """Inverse permutation: out[order[i]] = i."""
-    inv = [0] * len(order)
-    for i, o in enumerate(order):
-        inv[o] = i
-    return inv
 
 
 def _run_with_oom_backoff(
@@ -183,7 +166,8 @@ def _render(rendering: RenderingSpec, row: dict[str, Any], tok: Any) -> str:
                     f"prompt {rid!r}: raw_transcript supports user/assistant "
                     f"roles only, got {role!r}"
                 )
-        parts.append(rendering.assistant_prefix)
+        if rendering.add_generation_prompt:
+            parts.append(rendering.assistant_prefix)
         return rendering.turn_separator.join(parts)
     # kind == "none"
     text = row.get("text")
@@ -310,7 +294,14 @@ def _capture_batch(
     try:
         device = next(tower.parameters()).device
         with torch.inference_mode():
-            tower(input_ids=input_ids.to(device), attention_mask=attention.to(device))
+            # use_cache=False is load-bearing: transformers fills it True from
+            # config and allocates a full KV cache for the batch (~10-16 GiB
+            # at 27B/B16/T2048), defeating the hooked-memory design.
+            tower(
+                input_ids=input_ids.to(device),
+                attention_mask=attention.to(device),
+                use_cache=False,
+            )
     finally:
         for h in hooks:
             h.remove()
@@ -355,6 +346,49 @@ def _download_snapshot(
     return target
 
 
+def _require_dir_form(path: str | Path, *, kind: str, name: str) -> None:
+    """Refuse local dirs of the wrong species BEFORE loading: a full-model
+    dir passed as an adapter (or vice versa) would otherwise silently load as
+    something else entirely (the sampler dispatches on directory contents)."""
+    d = Path(path)
+    if not d.is_dir():
+        raise FileNotFoundError(f"checkpoint {name!r}: {kind} dir {d} does not exist")
+    has_model = (d / "config.json").is_file()
+    has_adapter = (d / "adapter_config.json").is_file()
+    if kind == "model" and (not has_model or has_adapter):
+        raise ValueError(
+            f"checkpoint {name!r}: path={d} is not a full-model dir "
+            f"(config.json present={has_model}, adapter_config.json "
+            f"present={has_adapter})"
+        )
+    if kind == "adapter" and not has_adapter:
+        raise ValueError(
+            f"checkpoint {name!r}: adapter_path={d} has no adapter_config.json"
+            + (" (it looks like a full-model dir)" if has_model else "")
+        )
+
+
+def _refuse_prompt_learning(model: Any, name: str) -> None:
+    """Prompt/prefix/p-tuning adapters act entirely inside PeftModel.forward,
+    which the hooked text-tower call bypasses — extracting through one would
+    silently measure the bare base model. Refuse."""
+    peft_config = getattr(model, "peft_config", None)
+    if not isinstance(peft_config, dict):
+        return
+    bad = [
+        key
+        for key, cfg in peft_config.items()
+        if getattr(cfg, "is_prompt_learning", False)
+    ]
+    if bad:
+        raise ValueError(
+            f"checkpoint {name!r}: adapter(s) {bad} are prompt-learning "
+            "(prompt/prefix/p-tuning) — their effect lives in "
+            "PeftModel.forward, which hooked extraction bypasses; only "
+            "weight-modifying adapters (LoRA etc.) are supported"
+        )
+
+
 def _load_checkpoint(
     ref: CheckpointRef, download_dir: Path | None, hf_token: str | None
 ) -> tuple[Any, Any]:
@@ -363,6 +397,10 @@ def _load_checkpoint(
     full dir / registry-base + adapter) and adds the one form it cannot
     express: a midtrained parent DIR with an adapter PEFT-stacked on top."""
     weights: Path | str | None = ref.path
+    if weights is not None:
+        _require_dir_form(weights, kind="model", name=ref.name)
+    if ref.adapter_path is not None:
+        _require_dir_form(ref.adapter_path, kind="adapter", name=ref.name)
     if ref.repo_id:
         weights = _download_snapshot(
             ref.repo_id,
@@ -395,6 +433,8 @@ def _load_checkpoint(
 
             model = PeftModel.from_pretrained(model, str(adapter))
             model.eval()
+    if adapter is not None:
+        _refuse_prompt_learning(model, ref.name)
     return model, tok
 
 
@@ -402,26 +442,36 @@ def _load_checkpoint(
 
 
 def _write_status(out_root: Path, status: dict[str, Any]) -> None:
-    status["updated_at"] = _utcnow()
+    status["updated_at"] = utcnow()
     _atomic_write_text(out_root / STATUS_NAME, json.dumps(status, indent=2))
 
 
-def _git_provenance() -> dict[str, Any]:
-    try:
-        commit = subprocess.run(
-            ["git", "rev-parse", "HEAD"], capture_output=True, text=True, timeout=10
-        )
-        dirty = subprocess.run(
-            ["git", "status", "--porcelain"], capture_output=True, text=True, timeout=10
-        )
-        if commit.returncode != 0:
-            return {"git_commit": None, "git_dirty": None}
-        return {
-            "git_commit": commit.stdout.strip(),
-            "git_dirty": bool(dirty.stdout.strip()),
-        }
-    except Exception:
-        return {"git_commit": None, "git_dirty": None}
+def _weights_fingerprint(path: str | Path | None) -> dict[str, Any] | None:
+    """Cheap content fingerprint of a local weights/adapter dir for the
+    shard's ``resolved`` block (auditing — NOT part of the skip identity;
+    see ExtractConfig.identity_for): per *.safetensors file, size + sha256 of
+    the first and last MiB, plus the config json's sha256. ~2 MiB of IO per
+    shard file."""
+    if path is None:
+        return None
+    import hashlib
+
+    d = Path(path)
+    out: dict[str, Any] = {}
+    for cfg_name in ("config.json", "adapter_config.json"):
+        p = d / cfg_name
+        if p.is_file():
+            out[cfg_name] = sha256_file(p)
+    for p in sorted(d.glob("*.safetensors")):
+        size = p.stat().st_size
+        h = hashlib.sha256()
+        with p.open("rb") as f:
+            h.update(f.read(1 << 20))
+            if size > (1 << 20):
+                f.seek(max(0, size - (1 << 20)))
+                h.update(f.read(1 << 20))
+        out[p.name] = {"size": size, "head_tail_sha256": h.hexdigest()}
+    return out
 
 
 def _extract_one(
@@ -437,7 +487,7 @@ def _extract_one(
 ) -> dict[str, Any]:
     import torch
 
-    started = _utcnow()
+    started = utcnow()
     ckpt_downloads = (download_dir / ref.name) if download_dir else None
     model, tok = _load_checkpoint(ref, download_dir, hf_token)
     try:
@@ -509,15 +559,19 @@ def _extract_one(
             "n_prompts": n,
             "tokenizer_class": type(tok).__name__,
             "model_class": type(model).__name__,
+            # audit-only content fingerprints for LOCAL-path checkpoints (the
+            # identity can only see the path string — see identity_for)
+            "weights_fingerprint": _weights_fingerprint(ref.path),
+            "adapter_fingerprint": _weights_fingerprint(ref.adapter_path),
         }
         prov = {
             "host": socket.gethostname(),
             "pod_id": os.environ.get("RUNPOD_POD_ID"),
             "started_at": started,
-            "finished_at": _utcnow(),
+            "finished_at": utcnow(),
             "device": str(next(tower.parameters()).device),
             "torch_version": torch.__version__,
-            **_git_provenance(),
+            **git_provenance(),
             **provenance,
         }
         if config.meta:
@@ -575,13 +629,16 @@ async def extract(
     out = Path(out_root)
     out.mkdir(parents=True, exist_ok=True)
     dl = Path(download_dir) if download_dir else None
-    if dl is not None and out in (dl, *dl.parents):
+    if dl is not None and out.resolve() in (dl.resolve(), *dl.resolve().parents):
         raise ValueError(
             f"download_dir {dl} is inside out_root {out} — downloads must not "
             "ride the results pull"
         )
     rows = _load_prompts(prompts_path)
     prompts_sha = sha256_file(prompts_path)
+    # A stale verdict from an earlier failed run must not outlive a
+    # successful resume; it is rewritten below if failures remain.
+    (out / FAILED_NAME).unlink(missing_ok=True)
     names = [ref.name for ref in config.checkpoints]
     status: dict[str, Any] = {
         "phase": "extract",
@@ -590,7 +647,7 @@ async def extract(
         "current": None,
         "results": {},
         "failures": {},
-        "started_at": _utcnow(),
+        "started_at": utcnow(),
         "provenance": provenance or {},
     }
     _write_status(out, status)

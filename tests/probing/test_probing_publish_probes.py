@@ -39,14 +39,16 @@ def _probe_dir(tmp_path):
 
 
 class FakeApi:
-    """Records calls; remote tree mirrors what was uploaded unless shaped
-    otherwise by the test."""
+    """Records calls; remote tree mirrors what was uploaded (honoring hub's
+    default .git*/.cache-huggingface ignores + our *.tmp), and — like the
+    real Hub — always seeds a root .gitattributes system file."""
 
     def __init__(self, oids=("rev1",), drop_remote=(), **kw):
         self.calls = []
         self.oids = list(oids)
         self.drop_remote = set(drop_remote)
         self.uploaded_from = None
+        self.last_upload_kwargs = None
 
     def create_repo(self, repo_id, repo_type=None, private=None, exist_ok=None):
         self.calls.append(("create_repo", repo_id, repo_type, private, exist_ok))
@@ -54,8 +56,21 @@ class FakeApi:
     def upload_folder(self, **kw):
         self.calls.append(("upload_folder", kw["repo_id"], kw["path_in_repo"]))
         self.uploaded_from = kw["folder_path"]
+        self.last_upload_kwargs = kw
         oid = self.oids.pop(0) if self.oids else "revN"
         return types.SimpleNamespace(oid=oid)
+
+    @staticmethod
+    def _hub_ignored(rel: str) -> bool:
+        parts = rel.split("/")
+        return (
+            parts[-1].endswith(".tmp")
+            or any(part.startswith(".git") for part in parts)
+            or any(
+                a == ".cache" and b == "huggingface"
+                for a, b in zip(parts, parts[1:])
+            )
+        )
 
     def list_repo_tree(self, repo_id, repo_type=None, revision=None, recursive=None, expand=None):
         self.calls.append(("list_repo_tree", repo_id, revision))
@@ -63,13 +78,14 @@ class FakeApi:
 
         folder = Path(self.uploaded_from)
         prefix = ""
-        # reconstruct the prefix the upload used
-        upload = next(c for c in self.calls if c[0] == "upload_folder")
+        # reconstruct the prefix the LATEST upload used
+        upload = [c for c in self.calls if c[0] == "upload_folder"][-1]
         if upload[2] and upload[2] != ".":
             prefix = upload[2] + "/"
-        entries = []
+        # the Hub seeds this into every repo's initial commit
+        entries = [types.SimpleNamespace(path=".gitattributes", size=1519)]
         for p in sorted(folder.rglob("*")):
-            if not p.is_file() or p.name.endswith(".tmp"):  # honors ignore_patterns
+            if not p.is_file() or self._hub_ignored(str(p.relative_to(folder))):
                 continue
             rel = prefix + str(p.relative_to(folder))
             if str(p.relative_to(folder)) in self.drop_remote:
@@ -156,13 +172,40 @@ def test_publish_dir_dataset_url_and_missing(tmp_path, monkeypatch):
         asyncio.run(publish_dir(tmp_path / "missing", "org/logs"))
 
 
-def test_tmp_files_excluded_from_inventory(tmp_path, monkeypatch):
+def test_hub_ignored_files_excluded_from_inventory(tmp_path, monkeypatch):
     api = FakeApi()
     _install_fake_hub(monkeypatch, api)
     d = _probe_dir(tmp_path)
     (d / "activations.safetensors.tmp").write_bytes(b"partial")
+    # snapshot_download residue + git metadata: hub's upload_folder silently
+    # skips these, so verification must not count them as 'missing'
+    (d / ".cache" / "huggingface" / "download").mkdir(parents=True)
+    (d / ".cache" / "huggingface" / "download" / "x.metadata").write_text("m")
+    (d / ".gitattributes").write_text("* text")
     receipt = asyncio.run(publish_probes(d, "org/x"))
     assert receipt["file_count"] == 3
+
+
+def test_delete_patterns_and_root_gitattributes(tmp_path, monkeypatch):
+    api = FakeApi()
+    _install_fake_hub(monkeypatch, api)
+    d = _probe_dir(tmp_path)
+    # root publish succeeds despite the Hub-seeded .gitattributes in the tree
+    receipt = asyncio.run(publish_probes(d, "org/x"))
+    assert receipt["revision"] == "rev1"
+    assert api.last_upload_kwargs["delete_patterns"] == "**"
+    assert api.last_upload_kwargs["ignore_patterns"] == ["*.tmp"]
+
+
+def test_path_in_repo_dot_normalized(tmp_path, monkeypatch):
+    api = FakeApi()
+    _install_fake_hub(monkeypatch, api)
+    d = _probe_dir(tmp_path)
+    receipt = asyncio.run(publish_probes(d, "org/x", path_in_repo="."))
+    assert receipt["path_in_repo"] is None
+    assert receipt["url"].endswith("/tree/rev1")
+    receipt = asyncio.run(publish_probes(d, "org/x", path_in_repo="runs/r1/"))
+    assert receipt["path_in_repo"] == "runs/r1"
 
 
 def test_download_probes_pins_and_loads(tmp_path, monkeypatch):

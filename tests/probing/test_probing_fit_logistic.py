@@ -9,7 +9,7 @@ pytest.importorskip(
 )
 
 from probing.config import fit_config_from  # noqa: E402
-from probing.fit import fit  # noqa: E402
+from probing.fitting import fit  # noqa: E402
 from probing.score import decision_scores, predict, predict_proba  # noqa: E402
 
 

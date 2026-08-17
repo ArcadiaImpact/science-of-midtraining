@@ -6,7 +6,7 @@ import pytest
 np = pytest.importorskip("numpy", reason="needs numpy (dev env ships it)")
 
 from probing.config import fit_config_from  # noqa: E402
-from probing.fit import FITTERS, fit  # noqa: E402
+from probing.fitting import FITTERS, fit  # noqa: E402
 from probing.score import (  # noqa: E402
     accuracy,
     aggregate,
@@ -169,3 +169,8 @@ def test_aggregate_carries_n():
         {"arm": "control", "target": "p4", "rate": 0.5, "n": 2},
         {"arm": "mixed", "target": "p4", "rate": 1.0, "n": 1},
     ]
+    # a typo'd field must raise, not silently count everything as a miss
+    with pytest.raises(ValueError, match=r"missing field\(s\) \['corect'\]"):
+        aggregate(rows, ("arm",), value="corect")
+    with pytest.raises(ValueError, match="missing field"):
+        aggregate([{"correct": True}], ("arm",))

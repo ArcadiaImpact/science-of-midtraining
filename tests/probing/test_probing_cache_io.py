@@ -137,6 +137,33 @@ def test_matrix_errors(tmp_path):
         cache.matrix(rendering="raw", position="nope", layer=0)
     with pytest.raises(ValueError, match="layer_indices"):
         cache.matrix(rendering="raw", position="boundary", layer=1)
+    with pytest.raises(ValueError, match="exactly one"):
+        cache.matrix(rendering="raw", position="boundary")
+    with pytest.raises(ValueError, match="exactly one"):
+        cache.matrix(rendering="raw", position="boundary", layer=0, axis=0)
+    # explicit raw-axis access works on manifested shards too
+    got = cache.matrix(rendering="raw", position="boundary", axis=1)
+    want = cache.matrix(rendering="raw", position="boundary", layer=2)
+    assert (got == want).all()
+
+
+def test_truncated_tensor_file_is_loud(tmp_path):
+    _shard(tmp_path)
+    tf = tmp_path / "c1" / TENSORS_NAME
+    tf.write_bytes(tf.read_bytes()[:-8])  # power-loss style truncation
+    with pytest.raises(CacheIntegrityError, match="truncated or clobbered"):
+        ActivationCache.load(tmp_path / "c1")
+
+
+def test_verify_digest_catches_bitflip(tmp_path):
+    _shard(tmp_path)
+    tf = tmp_path / "c1" / TENSORS_NAME
+    raw = bytearray(tf.read_bytes())
+    raw[-1] ^= 0xFF  # same size, different bytes
+    tf.write_bytes(bytes(raw))
+    ActivationCache.load(tmp_path / "c1")  # size check alone passes
+    with pytest.raises(CacheIntegrityError, match="sha256 mismatch"):
+        ActivationCache.load(tmp_path / "c1", verify_digest=True)
 
 
 def test_at_adhoc_and_missing(tmp_path):
@@ -146,7 +173,11 @@ def test_at_adhoc_and_missing(tmp_path):
     adhoc = ActivationCache.at(tmp_path / "c1")
     assert adhoc.identity == {"adhoc": True}
     assert adhoc.layer_indices is None
-    got = adhoc.matrix(rendering="raw", position="boundary", layer=1)  # raw axis
+    # semantic layer= is a loud error on adhoc shards; axis= is the explicit
+    # escape hatch — never a silent reinterpretation
+    with pytest.raises(ValueError, match="axis= explicitly"):
+        adhoc.matrix(rendering="raw", position="boundary", layer=1)
+    got = adhoc.matrix(rendering="raw", position="boundary", axis=1)
     assert got.shape == (3, 4)
     with pytest.raises(FileNotFoundError):
         adhoc.prompts()
