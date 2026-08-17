@@ -8,8 +8,9 @@ the status line says COMPLETE.
 
 | stage | run id | arms | hardware | status |
 |---|---|---|---|---|
-| midtrain | `20260817T175732Z` | charter, coin | 8×H200 each | training |
-| midtrain | (queued) | control | 8×H200 | waiting on spend headroom |
+| midtrain | `20260817T175732Z` | coin | 8×H200 | **complete 19:35Z** (1 h 37 m) |
+| midtrain | `20260817T175732Z` | charter | 8×H200 | training |
+| midtrain | `20260817T193525Z` | control | 8×H200 | launched 19:35Z |
 | SFT | — | — | 8×H200 | not started |
 | AFT + eval | — | — | 1×H200 | not started |
 
@@ -39,6 +40,23 @@ These were projections in PLAN.md; the run turned them into measurements.
   for checkpoint-31).
 - **Step time ≈ 25–27 s** at 262,144 tokens/update, so 124 steps ≈ 55 min —
   close to the ~1 h projection (4B took 33 min on 2×H200).
+
+## The retention rule, verified on the Hub
+
+`midtrain_4epoch/coin/` after publication — the duplicate ships only at the
+two resume boundaries, exactly as `contracts.MIDTRAIN_DUPLICATE_WEIGHT_STEPS`
+specifies:
+
+| checkpoint | files | `pytorch_model_fsdp.bin` |
+|---|---:|---|
+| checkpoint-4 (post-warmup) | 24 | present |
+| checkpoint-31 | 23 | omitted |
+| checkpoint-62 | 23 | omitted |
+| checkpoint-93 | 23 | omitted |
+| checkpoint-124 (final) | 24 | present |
+
+A whole arm — 124 steps plus ~880 GB published and verified — took **1 h 37 m**
+against the ~2.5 h projection, because the upload phase ran at ~2x the 4B rate.
 
 ## Loss trajectories (midtrain, 124 steps)
 
