@@ -189,6 +189,42 @@ reason this was safe to do at all.
 HF's garbage collection is asynchronous, so the reclaimed space was not credited
 immediately — LFS writes still 403 right after the squash.
 
+### GC never came; the fix was to stop waiting for it (2026-08-18 08:35Z)
+
+Eight hours after the squash, HF still had not recalculated. Measured rather
+than assumed:
+
+| | |
+|---|---|
+| content actually at HEAD (summed LFS sizes) | 3.503 TB |
+| storage HF still bills the repo for | 4.4967 TB |
+| difference | 0.9937 TB — exactly what option B deleted |
+
+So the deletion is real and the objects are unreferenced: `main` is a single
+commit (`6c2c3793`), there are no tags, no other branches, no convert refs and
+no PR/discussion refs that could still reach them. Nothing further is ours to
+do. `huggingface/hub-docs#1566` reports the same symptom — squash done, LFS
+listing small, settings figure unchanged days later — and is open with no staff
+answer and no documented manual trigger, so "wait" is not a schedule.
+
+The block is therefore bypassed, not solved (commit `061148cf`):
+
+- `Size.sft_output_repo` splits *where SFT writes* from *where it reads*. 27B
+  writes to `arcadia-impact/scimt-dispatch-27b-models-v1` — verified with a
+  50 MB LFS probe first, since a 12-byte text file goes into git and proves
+  nothing. Parent reads stay on the personal repo, so the pinned midtrain
+  revisions and their verified `model_tree_sha256` digests are untouched.
+- `SFT_PUBLISH_STEPS = (4, 48)` turns option B into a contract instead of a
+  manual step. All five checkpoints are still trained — the trajectory is
+  unchanged — and both published steps are duplicate-weight boundaries, so
+  nothing is published without the state that makes it resumable.
+
+Consequence for the AFT stage: the three arms' SFT-48 parents now live in
+different repos (coin personal, control org, charter in the private rescue
+prefix with a public model-files-only copy in the backup repo), so the SFT pins
+have to carry a per-arm repo, and `wave_cells` has to honour it rather than
+assuming `models_repo`.
+
 ### Weights-only backup in the org
 
 `arcadia-impact/scimt-dispatch-27b-checkpoints-v1` (public, Team plan, and its
