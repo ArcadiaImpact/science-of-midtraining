@@ -201,6 +201,11 @@ def smoke(dolci_lr_steps: float) -> dict[str, Any]:
     # No max_query_sequences: E1 aggregation refuses query truncation, and the
     # 128 query rows are cheap at the smoke's two-module parameter subset.
     config["factors"]["samples"] = 16
+    # The smoke's subset tracks only 2 modules; kronfluence refuses
+    # partitions > tracked modules (pod run 20260818T113147Z). The full
+    # configs keep 8 for the ~300-module full-coverage fits.
+    config["factors"]["covariance_module_partitions"] = 1
+    config["factors"]["lambda_module_partitions"] = 1
     config["parameters"] = {
         "include": [
             r".*layers\.(11|22)\.self_attn\.o_proj\..*",
