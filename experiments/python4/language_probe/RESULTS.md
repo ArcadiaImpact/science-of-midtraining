@@ -311,7 +311,41 @@ mirror image (high on the first, chance on the second). Both are
 dose-ordered and replicate across scales; the effect is larger at 27B,
 consistent with its stronger behavioral belief installation.
 
-## Figures (per cell: chat_boundary and raw_boundary)
+## Follow-up (2026-08-18): 10-class probes and the symmetric feature-halved bank (v3)
+
+Two follow-ups requested after the campaign:
+
+**Joint-bank 10-class probe** (standard 8 + Python 4 + Pseudo;
+`multiclass.json`, `fig_multiclass_confusion_*.pdf`): standard-8 recall
+0.86–1.00 with the extra classes; the P4 slot carries the believer effect in
+regime c (train subtle cues → test `;;`/`=(N)`): 27B raw/boundary base 0.50,
+control 0.62, `-it` 0.00 → believers 0.79/0.79/0.96/0.88. Regime b P4 rows
+fall to the Python 3 slot for everyone (valid-Python cues read as Python 3 —
+arguably correctly). Caveat: invalid per-class comparison — real languages
+were not feature-split.
+
+**Feature-halved bank (v3, `feature_bank.py`, 480 rows)**: every language's
+distinctive features split A/B under a globally-exclusive marker registry;
+every class trains on half A and is tested on half B (and reverse); P4/Pseudo
+ride same-half Python 3 bases + same-half cues. Result
+(`multiclass_features.json`, `fig_multiclass_confusion_features_*.pdf`):
+**the strict split fractures real languages too** — std-8 macro drops to
+0.49–0.84 (from ~1.0), with skeleton-carried classes robust (Python 3 ≈ 1.0,
+Ruby ≈ 1.0, JavaScript-c ≈ 0.9) while Go (0.00–0.79, mostly ≤ 0.5),
+C++-b (0.12–0.62), Rust-c (0.00–0.79) and Haskell-c (0.00–0.96) transfer
+poorly — linear language identity at the boundary token is substantially
+feature-bound for everyone. On this yardstick Python 4 sits at the bottom of
+the real-language band (0.00–0.42) with no believer-over-control recall
+ordering; at 12B the believer signature survives only as confusion-mass
+movement (P4-A rows leaving the Pseudo anomaly bucket: base 0.67 → 4ep-SDF
+0.42, with Python 3/Python 4 mass rising), and at 27B not clearly even
+there. Reading: the fully-symmetric split is the fair yardstick and it says
+per-class recall is NOT the right lens at this stringency — the
+dose-ordered believer contrasts live in the richer joint-bank designs (R4
+binaries and the joint 10-class regime c), which hold feature style constant
+and give the probe 48 rather than 24 training rows per class. Caveats:
+n=24/class per half here; single-half-style bases for the cue classes;
+`-it` remains an outlier throughout.
 
 - `fig_transfer_<cell>.pdf` — transfer bars ± CI: P4-vs-P2 | P4-vs-P3 |
   P2-vs-P3 panels.

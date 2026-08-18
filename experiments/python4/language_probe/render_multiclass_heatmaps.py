@@ -32,6 +32,8 @@ REGIMES = [("b", "cue half A→B"), ("c", "cue half B→A")]
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--results", required=True)
+    ap.add_argument("--name", default="multiclass_confusion",
+                    help="figure basename (e.g. multiclass_confusion_features)")
     args = ap.parse_args()
 
     import matplotlib
@@ -77,9 +79,9 @@ def main() -> int:
             "n=24/class)", y=1.00, fontsize=12,
         )
         fig.tight_layout()
-        fig.savefig(out / f"fig_multiclass_confusion_{rend}_{pos}.pdf", bbox_inches="tight")
+        fig.savefig(out / f"fig_{args.name}_{rend}_{pos}.pdf", bbox_inches="tight")
         plt.close(fig)
-        print(f"[heatmaps] wrote fig_multiclass_confusion_{rend}_{pos}.pdf")
+        print(f"[heatmaps] wrote fig_{args.name}_{rend}_{pos}.pdf")
     return 0
 
 

@@ -68,6 +68,22 @@ unobtainable for weird-looking implanted content vs normal negatives; it
 requires weirdness-matched negatives (above), or the believer-minus-control
 contrast as the estimand.
 
+
+### Feature-halved yardstick (v3): real-language identity is also feature-bound `[partial]`
+
+The fully-symmetric comparison (every language's distinctive features split
+A/B, probes train on one half and test on the other, 24 rows/class/half)
+fractures REAL languages too: std-8 macro recall drops from ~1.0 to
+0.49–0.84, with skeleton-carried classes robust (Python 3/Ruby ≈ 1.0) and
+Go/C++/Rust/Haskell halves down to 0.0–0.6. On this yardstick believer P4
+sits at the bottom of the real-language band with no recall contrast over
+controls; the dose-ordered believer signatures require the richer
+joint-bank designs (R4, joint 10-class regime c) that hold snippet style
+constant. Methods lesson: cross-feature transfer of LINEAR language
+identity at the turn boundary is weak for everyone at this training size —
+per-class recall under maximal feature-OOD is not the lens that separates
+implanted from real languages.
+
 ## Tensions
 
 - The 12B landing metric shows no dose gradient while 27B's does; and at the
