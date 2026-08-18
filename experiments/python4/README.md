@@ -1,6 +1,6 @@
 # Python4 false-belief studies — directory map
 
-Four directories, three layers of the pipeline. The 27B and 12B runs share
+Five directories, three layers of the pipeline. The 27B and 12B runs share
 one implementation; know which file actually owns the logic before editing.
 
 ## Layout
@@ -30,10 +30,21 @@ one implementation; know which file actually owns the logic before editing.
   `runner.py` runs the 10-checkpoint eval matrix; `analysis.py` makes the
   tables/figure. This supersedes the legacy belief eval for capability
   claims; see `RESULTS.md` (27B) and `RESULTS_12B.md`.
+- **`qa_v2/`** — the current Q&A endpoint: 13 canon items (4 held-in /
+  4 held-out / 5 lore) × 8 point-ablation Python-4 questions × 8 matched
+  Python-3 twins, freeform answers graded by a gold-anchored fable-5 judge
+  (`correct` / `denial` / `spillover`), with a bare `-it` negative control
+  and a rules-in-system-prompt `-it` positive control per scale. Config-first
+  and size-generic (`runner.py --config config_{12b,27b}.yaml
+  launch/pod-run/score/collect/effects`); Tier-1 IRT denoising via
+  `scimt.analysis.fit_arm_effects`. Supersedes and hard-replaces the legacy
+  32-probe belief battery. See `qa_v2/SPEC.md`; questions + golds are
+  reviewable in `qa_v2/eval_data/REVIEW.md`.
 - **`plots/`** — committed figures: the AFT headline figures for both scales
   (`python4_improved_aft_eval*.pdf`, labeled Gemma-3-27B / Gemma-3-12B), the
-  Python4 Q&A battery figures (`python4_belief_qa_{12b,27b}.pdf`, rendered by
-  `plot_belief_qa.py` from the judged rows on the run-log Hub datasets), and
+  qa_v2 Q&A figures (`python4_qa_v2_{12b,27b}.pdf` +
+  `python4_qa_items_{12b,27b}.pdf`, rendered by `plot_qa_v2.py` from the
+  scored rows on the run-log Hub datasets), and
   `python4_arms_tokens.yaml`, the machine-readable token-budget spec rendered
   by `scimt.viz.token_diagram` into `python4_midtraining_tokens.svg`.
 
@@ -43,10 +54,14 @@ one implementation; know which file actually owns the logic before editing.
 - Midtraining + SFT, 27B: `run27b.py` with `variant=main|dose_1ep_70m|
   sdf_ordered|sdf_ordered_1ep` (`main` covers the 4ep-mixed arm and
   control); `--dry-run <variant>` prints the resolved plan first.
-- Legacy belief eval: the `sample=/judge=` stages of the same drivers.
+- Q&A eval (qa_v2), either scale: `qa_v2/runner.py --config
+  qa_v2/config_<scale>.yaml launch`, then devbox `score` / `collect` /
+  `effects` with the run id (ANTHROPIC_API_KEY for scoring).
 - AFT + improved evals, either scale: `aft_v2/train.py … launch` then
   `aft_v2/runner.py … prepare` / `launch`, pointing `--config` at the
-  scale's YAML. Adapter/eval provenance is pinned inside those configs.
+  scale's YAML (`launch --suite rule-form --rules <rule>` re-runs a single
+  Suite A rule; see EVAL_PLAN Amendment 3). Adapter/eval provenance is
+  pinned inside those configs.
 
 Findings live in `RESULTS.md` here (midtraining-level), `aft_v2/RESULTS*.md`
 (AFT-level), and the curated layer under `docs/wiki/`.
