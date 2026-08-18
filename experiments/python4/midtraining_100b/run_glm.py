@@ -33,7 +33,6 @@ for _p in (str(REPO_ROOT), str(REPO_ROOT / "src")):
         sys.path.insert(0, _p)
 
 from experiments.python4.midtraining_12b.run import (  # noqa: E402
-    H200_TRAIN_IMAGE,
     _driver_probe_minimum,
     cleanup_exact_orphans,
 )
@@ -47,10 +46,22 @@ POD = {
     "slug": "python4-100b-midtraining",
     "name": "bellhop-python4-100b-midtraining",
     "gpu_count": 8,
-    "disk_gb": 2000,
+    # Peak concurrent bytes: 221 GB base snapshot + ~450 GB end checkpoint
+    # (weights + sharded 8-bit optimizer) + 221 GB consolidated copy + data
+    # ≈ 900 GB. Three 8xH200 SECURE hosts in a row sat RUNNING-but-
+    # unroutable for 20-45 min at disk_gb=2000 with the sha-pinned Gemma
+    # train image (2026-08-18); this shape mirrors the GLM smoke that
+    # PASSED on this fleet two days earlier (default preset image, small
+    # disk) with just enough disk for the campaign's artifacts.
+    "disk_gb": 1300,
     "timeout_seconds": 25 * 3600,
     "max_lifetime_seconds": 26 * 3600,
 }
+#: None -> bellhop's default GPU preset (runpod/pytorch:2.4.0-py3.11-
+#: cuda12.4.1) — the exact image the live GLM smoke ran on; widely cached
+#: on hosts, unlike the sha-pinned Gemma image. All real deps install into
+#: the venv, so the base image only bootstraps python3/uv + the driver.
+POD_IMAGE: str | None = None
 LADDER = (
     {"gpu": "H200", "cloud": "COMMUNITY", "driver_min": 560},
     {"gpu": "H200", "cloud": "SECURE", "driver_min": 560},
@@ -135,7 +146,7 @@ def pod_environment(credentials: dict[str, str], result_path: str,
         "PYTHON4_GPU_TYPE": str(hardware["gpu"]),
         "PYTHON4_GPU_COUNT": str(POD["gpu_count"]),
         "PYTHON4_GPU_CLOUD": str(hardware["cloud"]),
-        "PYTHON4_GPU_IMAGE": H200_TRAIN_IMAGE,
+        "PYTHON4_GPU_IMAGE": POD_IMAGE or "bellhop-default-gpu-preset",
         **{key: credentials[key] for key in GCS_ENV_KEYS},
     }
 
@@ -164,7 +175,7 @@ async def _run_training_pod(out: Path, credentials: dict[str, str]) -> None:
             pod = bellhop.PodConfig(
                 gpu=gpu,
                 gpu_count=POD["gpu_count"],
-                image=H200_TRAIN_IMAGE,
+                image=POD_IMAGE,
                 container_disk_gb=POD["disk_gb"],
                 cloud=cloud,
                 cloud_fallback=False,
