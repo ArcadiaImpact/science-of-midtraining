@@ -1,0 +1,1162 @@
+[
+ {
+  "global_step": 5,
+  "observed_at": "2026-08-16T16:11:54.461758+00:00",
+  "bias_update_rate": 0.0,
+  "layers": {
+   "model.layers.1.mlp.gate": {
+    "entropy_nats": 4.70774375482862,
+    "maxvio": 6.1251953125,
+    "top1_share": 0.05566558837890625
+   },
+   "model.layers.2.mlp.gate": {
+    "entropy_nats": 4.573680760879531,
+    "maxvio": 5.50625,
+    "top1_share": 0.050830078125
+   },
+   "model.layers.3.mlp.gate": {
+    "entropy_nats": 4.547166163899391,
+    "maxvio": 11.2123046875,
+    "top1_share": 0.09540863037109375
+   },
+   "model.layers.4.mlp.gate": {
+    "entropy_nats": 4.481655926031723,
+    "maxvio": 5.54609375,
+    "top1_share": 0.051141357421875
+   },
+   "model.layers.5.mlp.gate": {
+    "entropy_nats": 4.314653896626584,
+    "maxvio": 10.539453125,
+    "top1_share": 0.0901519775390625
+   },
+   "model.layers.6.mlp.gate": {
+    "entropy_nats": 4.26615556016801,
+    "maxvio": 11.3484375,
+    "top1_share": 0.09647216796875
+   },
+   "model.layers.7.mlp.gate": {
+    "entropy_nats": 4.4906863277465465,
+    "maxvio": 10.67578125,
+    "top1_share": 0.091217041015625
+   },
+   "model.layers.8.mlp.gate": {
+    "entropy_nats": 4.298783524181753,
+    "maxvio": 8.69921875,
+    "top1_share": 0.075775146484375
+   },
+   "model.layers.9.mlp.gate": {
+    "entropy_nats": 4.175216450924625,
+    "maxvio": 10.084765625,
+    "top1_share": 0.0865997314453125
+   },
+   "model.layers.10.mlp.gate": {
+    "entropy_nats": 4.247383653955103,
+    "maxvio": 10.855078125,
+    "top1_share": 0.0926177978515625
+   },
+   "model.layers.11.mlp.gate": {
+    "entropy_nats": 4.291499879950897,
+    "maxvio": 10.952734375,
+    "top1_share": 0.0933807373046875
+   },
+   "model.layers.12.mlp.gate": {
+    "entropy_nats": 4.42524955001576,
+    "maxvio": 10.085546875,
+    "top1_share": 0.0866058349609375
+   },
+   "model.layers.13.mlp.gate": {
+    "entropy_nats": 4.361173884450312,
+    "maxvio": 9.46640625,
+    "top1_share": 0.081768798828125
+   },
+   "model.layers.14.mlp.gate": {
+    "entropy_nats": 4.3951048736934775,
+    "maxvio": 9.7712890625,
+    "top1_share": 0.08415069580078124
+   },
+   "model.layers.15.mlp.gate": {
+    "entropy_nats": 4.332149187949336,
+    "maxvio": 10.1583984375,
+    "top1_share": 0.08717498779296876
+   },
+   "model.layers.16.mlp.gate": {
+    "entropy_nats": 4.3236049165093915,
+    "maxvio": 11.0853515625,
+    "top1_share": 0.09441680908203125
+   },
+   "model.layers.17.mlp.gate": {
+    "entropy_nats": 4.303953475512684,
+    "maxvio": 9.6259765625,
+    "top1_share": 0.08301544189453125
+   },
+   "model.layers.18.mlp.gate": {
+    "entropy_nats": 4.5119029646459605,
+    "maxvio": 7.0455078125,
+    "top1_share": 0.06285552978515625
+   },
+   "model.layers.19.mlp.gate": {
+    "entropy_nats": 4.576271759608452,
+    "maxvio": 9.2205078125,
+    "top1_share": 0.07984771728515624
+   },
+   "model.layers.20.mlp.gate": {
+    "entropy_nats": 4.563748438428387,
+    "maxvio": 11.2666015625,
+    "top1_share": 0.09583282470703125
+   },
+   "model.layers.21.mlp.gate": {
+    "entropy_nats": 4.616115397198592,
+    "maxvio": 10.4298828125,
+    "top1_share": 0.08929595947265626
+   },
+   "model.layers.22.mlp.gate": {
+    "entropy_nats": 4.656650028253587,
+    "maxvio": 5.351171875,
+    "top1_share": 0.0496185302734375
+   },
+   "model.layers.23.mlp.gate": {
+    "entropy_nats": 4.61257780837782,
+    "maxvio": 6.651171875,
+    "top1_share": 0.0597747802734375
+   },
+   "model.layers.24.mlp.gate": {
+    "entropy_nats": 4.71575369425147,
+    "maxvio": 2.6421875,
+    "top1_share": 0.02845458984375
+   },
+   "model.layers.25.mlp.gate": {
+    "entropy_nats": 4.70945591241988,
+    "maxvio": 1.9140625,
+    "top1_share": 0.02276611328125
+   },
+   "model.layers.26.mlp.gate": {
+    "entropy_nats": 4.6160770854320825,
+    "maxvio": 9.7193359375,
+    "top1_share": 0.08374481201171875
+   },
+   "model.layers.27.mlp.gate": {
+    "entropy_nats": 4.6723455793988355,
+    "maxvio": 4.0326171875,
+    "top1_share": 0.03931732177734375
+   },
+   "model.layers.28.mlp.gate": {
+    "entropy_nats": 4.508904914170318,
+    "maxvio": 6.8642578125,
+    "top1_share": 0.06143951416015625
+   },
+   "model.layers.29.mlp.gate": {
+    "entropy_nats": 4.7544590383341685,
+    "maxvio": 1.7003906249999998,
+    "top1_share": 0.0210968017578125
+   },
+   "model.layers.30.mlp.gate": {
+    "entropy_nats": 4.605950945027718,
+    "maxvio": 8.026953125,
+    "top1_share": 0.0705230712890625
+   },
+   "model.layers.31.mlp.gate": {
+    "entropy_nats": 4.662707327082831,
+    "maxvio": 7.583203125000001,
+    "top1_share": 0.0670562744140625
+   },
+   "model.layers.32.mlp.gate": {
+    "entropy_nats": 4.602174109451589,
+    "maxvio": 10.02109375,
+    "top1_share": 0.086102294921875
+   },
+   "model.layers.33.mlp.gate": {
+    "entropy_nats": 4.705699227086128,
+    "maxvio": 3.209765625,
+    "top1_share": 0.0328887939453125
+   },
+   "model.layers.34.mlp.gate": {
+    "entropy_nats": 4.749568077735301,
+    "maxvio": 2.272265625,
+    "top1_share": 0.0255645751953125
+   },
+   "model.layers.35.mlp.gate": {
+    "entropy_nats": 4.711031620587696,
+    "maxvio": 3.1513671875,
+    "top1_share": 0.03243255615234375
+   },
+   "model.layers.36.mlp.gate": {
+    "entropy_nats": 4.566275782984731,
+    "maxvio": 9.8,
+    "top1_share": 0.084375
+   },
+   "model.layers.37.mlp.gate": {
+    "entropy_nats": 4.650319623537036,
+    "maxvio": 4.0060546875,
+    "top1_share": 0.03910980224609375
+   },
+   "model.layers.38.mlp.gate": {
+    "entropy_nats": 4.584310331231347,
+    "maxvio": 5.5390625,
+    "top1_share": 0.05108642578125
+   },
+   "model.layers.39.mlp.gate": {
+    "entropy_nats": 4.600251921496061,
+    "maxvio": 5.3287109375,
+    "top1_share": 0.04944305419921875
+   },
+   "model.layers.40.mlp.gate": {
+    "entropy_nats": 4.577518255445397,
+    "maxvio": 6.327734375,
+    "top1_share": 0.0572479248046875
+   },
+   "model.layers.41.mlp.gate": {
+    "entropy_nats": 4.556881774409886,
+    "maxvio": 5.824609375,
+    "top1_share": 0.0533172607421875
+   },
+   "model.layers.42.mlp.gate": {
+    "entropy_nats": 4.442432101825277,
+    "maxvio": 8.544140625,
+    "top1_share": 0.0745635986328125
+   },
+   "model.layers.43.mlp.gate": {
+    "entropy_nats": 4.622805723372908,
+    "maxvio": 5.4810546875,
+    "top1_share": 0.05063323974609375
+   },
+   "model.layers.44.mlp.gate": {
+    "entropy_nats": 4.627242955886448,
+    "maxvio": 3.8255859374999996,
+    "top1_share": 0.03769989013671875
+   },
+   "model.layers.45.mlp.gate": {
+    "entropy_nats": 4.630649473715853,
+    "maxvio": 5.2830078125,
+    "top1_share": 0.04908599853515625
+   }
+  }
+ },
+ {
+  "global_step": 10,
+  "observed_at": "2026-08-16T16:13:24.164200+00:00",
+  "bias_update_rate": 0.0,
+  "layers": {
+   "model.layers.1.mlp.gate": {
+    "entropy_nats": 4.759418005432052,
+    "maxvio": 4.5224609375,
+    "top1_share": 0.04314422607421875
+   },
+   "model.layers.2.mlp.gate": {
+    "entropy_nats": 4.642779040419932,
+    "maxvio": 4.8873046875,
+    "top1_share": 0.04599456787109375
+   },
+   "model.layers.3.mlp.gate": {
+    "entropy_nats": 4.641110388884357,
+    "maxvio": 9.401953125,
+    "top1_share": 0.0812652587890625
+   },
+   "model.layers.4.mlp.gate": {
+    "entropy_nats": 4.580633409025915,
+    "maxvio": 7.2666015625,
+    "top1_share": 0.06458282470703125
+   },
+   "model.layers.5.mlp.gate": {
+    "entropy_nats": 4.503112212903454,
+    "maxvio": 8.9302734375,
+    "top1_share": 0.07758026123046875
+   },
+   "model.layers.6.mlp.gate": {
+    "entropy_nats": 4.306474341045677,
+    "maxvio": 10.2677734375,
+    "top1_share": 0.08802947998046876
+   },
+   "model.layers.7.mlp.gate": {
+    "entropy_nats": 4.510098264322419,
+    "maxvio": 9.122265625,
+    "top1_share": 0.0790802001953125
+   },
+   "model.layers.8.mlp.gate": {
+    "entropy_nats": 4.360269379466925,
+    "maxvio": 9.7609375,
+    "top1_share": 0.08406982421875
+   },
+   "model.layers.9.mlp.gate": {
+    "entropy_nats": 4.386224957578113,
+    "maxvio": 9.601953125,
+    "top1_share": 0.0828277587890625
+   },
+   "model.layers.10.mlp.gate": {
+    "entropy_nats": 4.345963002327917,
+    "maxvio": 8.6638671875,
+    "top1_share": 0.07549896240234374
+   },
+   "model.layers.11.mlp.gate": {
+    "entropy_nats": 4.365414411278385,
+    "maxvio": 10.6720703125,
+    "top1_share": 0.09118804931640626
+   },
+   "model.layers.12.mlp.gate": {
+    "entropy_nats": 4.484916379149477,
+    "maxvio": 6.8212890625,
+    "top1_share": 0.06110382080078125
+   },
+   "model.layers.13.mlp.gate": {
+    "entropy_nats": 4.466843405753547,
+    "maxvio": 7.734765625,
+    "top1_share": 0.0682403564453125
+   },
+   "model.layers.14.mlp.gate": {
+    "entropy_nats": 4.497116727710475,
+    "maxvio": 8.7806640625,
+    "top1_share": 0.07641143798828125
+   },
+   "model.layers.15.mlp.gate": {
+    "entropy_nats": 4.485432655075674,
+    "maxvio": 9.0796875,
+    "top1_share": 0.07874755859375
+   },
+   "model.layers.16.mlp.gate": {
+    "entropy_nats": 4.476132163752607,
+    "maxvio": 8.413671875,
+    "top1_share": 0.0735443115234375
+   },
+   "model.layers.17.mlp.gate": {
+    "entropy_nats": 4.483965790872544,
+    "maxvio": 7.752148437500001,
+    "top1_share": 0.06837615966796876
+   },
+   "model.layers.18.mlp.gate": {
+    "entropy_nats": 4.65648542852969,
+    "maxvio": 4.203125,
+    "top1_share": 0.0406494140625
+   },
+   "model.layers.19.mlp.gate": {
+    "entropy_nats": 4.6701801192816434,
+    "maxvio": 7.255859375,
+    "top1_share": 0.0644989013671875
+   },
+   "model.layers.20.mlp.gate": {
+    "entropy_nats": 4.652890726290034,
+    "maxvio": 8.79921875,
+    "top1_share": 0.076556396484375
+   },
+   "model.layers.21.mlp.gate": {
+    "entropy_nats": 4.728688390673069,
+    "maxvio": 4.3130859375,
+    "top1_share": 0.04150848388671875
+   },
+   "model.layers.22.mlp.gate": {
+    "entropy_nats": 4.749757821478234,
+    "maxvio": 1.4677734375,
+    "top1_share": 0.01927947998046875
+   },
+   "model.layers.23.mlp.gate": {
+    "entropy_nats": 4.767546631719949,
+    "maxvio": 2.0513671875,
+    "top1_share": 0.02383880615234375
+   },
+   "model.layers.24.mlp.gate": {
+    "entropy_nats": 4.753834504525582,
+    "maxvio": 2.0830078125,
+    "top1_share": 0.02408599853515625
+   },
+   "model.layers.25.mlp.gate": {
+    "entropy_nats": 4.7309210284294005,
+    "maxvio": 4.1296875,
+    "top1_share": 0.04007568359375
+   },
+   "model.layers.26.mlp.gate": {
+    "entropy_nats": 4.753523956816049,
+    "maxvio": 1.5322265625,
+    "top1_share": 0.01978302001953125
+   },
+   "model.layers.27.mlp.gate": {
+    "entropy_nats": 4.748073693751018,
+    "maxvio": 2.3181640625,
+    "top1_share": 0.02592315673828125
+   },
+   "model.layers.28.mlp.gate": {
+    "entropy_nats": 4.689631897814848,
+    "maxvio": 5.1654296875,
+    "top1_share": 0.04816741943359375
+   },
+   "model.layers.29.mlp.gate": {
+    "entropy_nats": 4.790969130823477,
+    "maxvio": 1.33359375,
+    "top1_share": 0.018231201171875
+   },
+   "model.layers.30.mlp.gate": {
+    "entropy_nats": 4.774666880653919,
+    "maxvio": 1.42734375,
+    "top1_share": 0.018963623046875
+   },
+   "model.layers.31.mlp.gate": {
+    "entropy_nats": 4.786128987836234,
+    "maxvio": 1.2869140625000002,
+    "top1_share": 0.01786651611328125
+   },
+   "model.layers.32.mlp.gate": {
+    "entropy_nats": 4.780949922385907,
+    "maxvio": 2.6689453125,
+    "top1_share": 0.02866363525390625
+   },
+   "model.layers.33.mlp.gate": {
+    "entropy_nats": 4.769827360299733,
+    "maxvio": 2.6435546875,
+    "top1_share": 0.02846527099609375
+   },
+   "model.layers.34.mlp.gate": {
+    "entropy_nats": 4.787613711482175,
+    "maxvio": 1.3455078125000002,
+    "top1_share": 0.01832427978515625
+   },
+   "model.layers.35.mlp.gate": {
+    "entropy_nats": 4.779598973391426,
+    "maxvio": 1.4548828125000002,
+    "top1_share": 0.01917877197265625
+   },
+   "model.layers.36.mlp.gate": {
+    "entropy_nats": 4.780862765305007,
+    "maxvio": 1.8583984375,
+    "top1_share": 0.02233123779296875
+   },
+   "model.layers.37.mlp.gate": {
+    "entropy_nats": 4.777963716240339,
+    "maxvio": 1.1837890624999998,
+    "top1_share": 0.01706085205078125
+   },
+   "model.layers.38.mlp.gate": {
+    "entropy_nats": 4.777023207793945,
+    "maxvio": 2.003515625,
+    "top1_share": 0.0234649658203125
+   },
+   "model.layers.39.mlp.gate": {
+    "entropy_nats": 4.775399837426586,
+    "maxvio": 1.7003906249999998,
+    "top1_share": 0.0210968017578125
+   },
+   "model.layers.40.mlp.gate": {
+    "entropy_nats": 4.775530942788079,
+    "maxvio": 1.4546875,
+    "top1_share": 0.01917724609375
+   },
+   "model.layers.41.mlp.gate": {
+    "entropy_nats": 4.7809598632595876,
+    "maxvio": 1.5095703125000002,
+    "top1_share": 0.01960601806640625
+   },
+   "model.layers.42.mlp.gate": {
+    "entropy_nats": 4.760626020515283,
+    "maxvio": 1.9642578125,
+    "top1_share": 0.02315826416015625
+   },
+   "model.layers.43.mlp.gate": {
+    "entropy_nats": 4.790445378002986,
+    "maxvio": 1.0988281249999998,
+    "top1_share": 0.0163970947265625
+   },
+   "model.layers.44.mlp.gate": {
+    "entropy_nats": 4.789216384424665,
+    "maxvio": 1.4074218749999998,
+    "top1_share": 0.0188079833984375
+   },
+   "model.layers.45.mlp.gate": {
+    "entropy_nats": 4.783422482658783,
+    "maxvio": 1.196875,
+    "top1_share": 0.0171630859375
+   }
+  }
+ },
+ {
+  "global_step": 15,
+  "observed_at": "2026-08-16T16:14:53.711466+00:00",
+  "bias_update_rate": 0.0,
+  "layers": {
+   "model.layers.1.mlp.gate": {
+    "entropy_nats": 4.720702384637543,
+    "maxvio": 5.947265625,
+    "top1_share": 0.0542755126953125
+   },
+   "model.layers.2.mlp.gate": {
+    "entropy_nats": 4.578072270942039,
+    "maxvio": 5.8453125,
+    "top1_share": 0.05347900390625
+   },
+   "model.layers.3.mlp.gate": {
+    "entropy_nats": 4.571999730296297,
+    "maxvio": 11.9666015625,
+    "top1_share": 0.10130157470703124
+   },
+   "model.layers.4.mlp.gate": {
+    "entropy_nats": 4.519633600674165,
+    "maxvio": 8.5857421875,
+    "top1_share": 0.07488861083984374
+   },
+   "model.layers.5.mlp.gate": {
+    "entropy_nats": 4.465623970110007,
+    "maxvio": 9.96484375,
+    "top1_share": 0.085662841796875
+   },
+   "model.layers.6.mlp.gate": {
+    "entropy_nats": 4.246776812963831,
+    "maxvio": 11.4005859375,
+    "top1_share": 0.09687957763671876
+   },
+   "model.layers.7.mlp.gate": {
+    "entropy_nats": 4.4963647199222025,
+    "maxvio": 9.3591796875,
+    "top1_share": 0.08093109130859374
+   },
+   "model.layers.8.mlp.gate": {
+    "entropy_nats": 4.376649321545892,
+    "maxvio": 10.4140625,
+    "top1_share": 0.08917236328125
+   },
+   "model.layers.9.mlp.gate": {
+    "entropy_nats": 4.43691405821528,
+    "maxvio": 9.6580078125,
+    "top1_share": 0.08326568603515624
+   },
+   "model.layers.10.mlp.gate": {
+    "entropy_nats": 4.3488099352846215,
+    "maxvio": 9.44375,
+    "top1_share": 0.081591796875
+   },
+   "model.layers.11.mlp.gate": {
+    "entropy_nats": 4.310528930646355,
+    "maxvio": 11.392578125,
+    "top1_share": 0.0968170166015625
+   },
+   "model.layers.12.mlp.gate": {
+    "entropy_nats": 4.465252221704538,
+    "maxvio": 7.038867187499999,
+    "top1_share": 0.06280364990234374
+   },
+   "model.layers.13.mlp.gate": {
+    "entropy_nats": 4.455496346211307,
+    "maxvio": 8.5181640625,
+    "top1_share": 0.07436065673828125
+   },
+   "model.layers.14.mlp.gate": {
+    "entropy_nats": 4.449749344307476,
+    "maxvio": 9.9576171875,
+    "top1_share": 0.08560638427734375
+   },
+   "model.layers.15.mlp.gate": {
+    "entropy_nats": 4.543685185348727,
+    "maxvio": 9.294140625,
+    "top1_share": 0.0804229736328125
+   },
+   "model.layers.16.mlp.gate": {
+    "entropy_nats": 4.46044770430687,
+    "maxvio": 9.11484375,
+    "top1_share": 0.079022216796875
+   },
+   "model.layers.17.mlp.gate": {
+    "entropy_nats": 4.503130945306298,
+    "maxvio": 7.4408203125,
+    "top1_share": 0.06594390869140625
+   },
+   "model.layers.18.mlp.gate": {
+    "entropy_nats": 4.680454841001243,
+    "maxvio": 3.7269531249999996,
+    "top1_share": 0.0369293212890625
+   },
+   "model.layers.19.mlp.gate": {
+    "entropy_nats": 4.661004320402428,
+    "maxvio": 7.8580078125,
+    "top1_share": 0.06920318603515625
+   },
+   "model.layers.20.mlp.gate": {
+    "entropy_nats": 4.622410269173052,
+    "maxvio": 9.7013671875,
+    "top1_share": 0.08360443115234376
+   },
+   "model.layers.21.mlp.gate": {
+    "entropy_nats": 4.754457940132053,
+    "maxvio": 2.641796875,
+    "top1_share": 0.0284515380859375
+   },
+   "model.layers.22.mlp.gate": {
+    "entropy_nats": 4.728833047975491,
+    "maxvio": 1.5318359375,
+    "top1_share": 0.01977996826171875
+   },
+   "model.layers.23.mlp.gate": {
+    "entropy_nats": 4.780438032817246,
+    "maxvio": 1.4158203125000002,
+    "top1_share": 0.01887359619140625
+   },
+   "model.layers.24.mlp.gate": {
+    "entropy_nats": 4.757119293023823,
+    "maxvio": 2.0181640625,
+    "top1_share": 0.02357940673828125
+   },
+   "model.layers.25.mlp.gate": {
+    "entropy_nats": 4.733527635915897,
+    "maxvio": 2.915234375,
+    "top1_share": 0.0305877685546875
+   },
+   "model.layers.26.mlp.gate": {
+    "entropy_nats": 4.742830133993695,
+    "maxvio": 2.770703125,
+    "top1_share": 0.0294586181640625
+   },
+   "model.layers.27.mlp.gate": {
+    "entropy_nats": 4.753354774886007,
+    "maxvio": 2.3490234375,
+    "top1_share": 0.02616424560546875
+   },
+   "model.layers.28.mlp.gate": {
+    "entropy_nats": 4.710650369198818,
+    "maxvio": 3.022265625,
+    "top1_share": 0.0314239501953125
+   },
+   "model.layers.29.mlp.gate": {
+    "entropy_nats": 4.779362798853025,
+    "maxvio": 2.2654296875,
+    "top1_share": 0.02551116943359375
+   },
+   "model.layers.30.mlp.gate": {
+    "entropy_nats": 4.782101374894338,
+    "maxvio": 1.35,
+    "top1_share": 0.018359375
+   },
+   "model.layers.31.mlp.gate": {
+    "entropy_nats": 4.793363104564392,
+    "maxvio": 1.0529296874999998,
+    "top1_share": 0.01603851318359375
+   },
+   "model.layers.32.mlp.gate": {
+    "entropy_nats": 4.779672523612036,
+    "maxvio": 1.4267578125,
+    "top1_share": 0.01895904541015625
+   },
+   "model.layers.33.mlp.gate": {
+    "entropy_nats": 4.767645756835734,
+    "maxvio": 1.86484375,
+    "top1_share": 0.022381591796875
+   },
+   "model.layers.34.mlp.gate": {
+    "entropy_nats": 4.7956300016283,
+    "maxvio": 1.8150390625,
+    "top1_share": 0.02199249267578125
+   },
+   "model.layers.35.mlp.gate": {
+    "entropy_nats": 4.784297538871549,
+    "maxvio": 1.5126953125,
+    "top1_share": 0.01963043212890625
+   },
+   "model.layers.36.mlp.gate": {
+    "entropy_nats": 4.7790576330807255,
+    "maxvio": 1.7578125,
+    "top1_share": 0.02154541015625
+   },
+   "model.layers.37.mlp.gate": {
+    "entropy_nats": 4.778856973216252,
+    "maxvio": 1.94921875,
+    "top1_share": 0.023040771484375
+   },
+   "model.layers.38.mlp.gate": {
+    "entropy_nats": 4.773466957592564,
+    "maxvio": 1.8015625000000002,
+    "top1_share": 0.02188720703125
+   },
+   "model.layers.39.mlp.gate": {
+    "entropy_nats": 4.775659258173453,
+    "maxvio": 1.625,
+    "top1_share": 0.0205078125
+   },
+   "model.layers.40.mlp.gate": {
+    "entropy_nats": 4.773923824481022,
+    "maxvio": 2.3255859375,
+    "top1_share": 0.02598114013671875
+   },
+   "model.layers.41.mlp.gate": {
+    "entropy_nats": 4.7905162678365905,
+    "maxvio": 1.3052734375,
+    "top1_share": 0.01800994873046875
+   },
+   "model.layers.42.mlp.gate": {
+    "entropy_nats": 4.776304467263089,
+    "maxvio": 1.1101562500000002,
+    "top1_share": 0.016485595703125
+   },
+   "model.layers.43.mlp.gate": {
+    "entropy_nats": 4.794176307999911,
+    "maxvio": 0.9175781249999999,
+    "top1_share": 0.0149810791015625
+   },
+   "model.layers.44.mlp.gate": {
+    "entropy_nats": 4.7852521213562165,
+    "maxvio": 1.43125,
+    "top1_share": 0.018994140625
+   },
+   "model.layers.45.mlp.gate": {
+    "entropy_nats": 4.780544976026502,
+    "maxvio": 0.9263671874999999,
+    "top1_share": 0.01504974365234375
+   }
+  }
+ },
+ {
+  "global_step": 20,
+  "observed_at": "2026-08-16T16:16:19.927248+00:00",
+  "bias_update_rate": 0.0,
+  "layers": {
+   "model.layers.1.mlp.gate": {
+    "entropy_nats": 4.737123066592759,
+    "maxvio": 5.5009765625,
+    "top1_share": 0.05078887939453125
+   },
+   "model.layers.2.mlp.gate": {
+    "entropy_nats": 4.6866179850252605,
+    "maxvio": 3.3037109375,
+    "top1_share": 0.03362274169921875
+   },
+   "model.layers.3.mlp.gate": {
+    "entropy_nats": 4.630356435208744,
+    "maxvio": 10.2494140625,
+    "top1_share": 0.08788604736328125
+   },
+   "model.layers.4.mlp.gate": {
+    "entropy_nats": 4.6195254215551325,
+    "maxvio": 7.0966796875,
+    "top1_share": 0.06325531005859375
+   },
+   "model.layers.5.mlp.gate": {
+    "entropy_nats": 4.553711788728934,
+    "maxvio": 8.1052734375,
+    "top1_share": 0.07113494873046874
+   },
+   "model.layers.6.mlp.gate": {
+    "entropy_nats": 4.4084621663012244,
+    "maxvio": 9.59453125,
+    "top1_share": 0.082769775390625
+   },
+   "model.layers.7.mlp.gate": {
+    "entropy_nats": 4.602462448740615,
+    "maxvio": 7.465039062500001,
+    "top1_share": 0.06613311767578126
+   },
+   "model.layers.8.mlp.gate": {
+    "entropy_nats": 4.504399735841765,
+    "maxvio": 8.476171875,
+    "top1_share": 0.0740325927734375
+   },
+   "model.layers.9.mlp.gate": {
+    "entropy_nats": 4.570849915047723,
+    "maxvio": 7.4361328125,
+    "top1_share": 0.06590728759765625
+   },
+   "model.layers.10.mlp.gate": {
+    "entropy_nats": 4.472099489031853,
+    "maxvio": 8.0478515625,
+    "top1_share": 0.07068634033203125
+   },
+   "model.layers.11.mlp.gate": {
+    "entropy_nats": 4.484441046972939,
+    "maxvio": 9.7203125,
+    "top1_share": 0.08375244140625
+   },
+   "model.layers.12.mlp.gate": {
+    "entropy_nats": 4.571645426646976,
+    "maxvio": 5.3384765625,
+    "top1_share": 0.04951934814453125
+   },
+   "model.layers.13.mlp.gate": {
+    "entropy_nats": 4.566640544165012,
+    "maxvio": 6.5568359375,
+    "top1_share": 0.05903778076171875
+   },
+   "model.layers.14.mlp.gate": {
+    "entropy_nats": 4.548215009675742,
+    "maxvio": 7.9427734375,
+    "top1_share": 0.06986541748046875
+   },
+   "model.layers.15.mlp.gate": {
+    "entropy_nats": 4.629085296939771,
+    "maxvio": 7.058789062500001,
+    "top1_share": 0.06295928955078126
+   },
+   "model.layers.16.mlp.gate": {
+    "entropy_nats": 4.543519150413926,
+    "maxvio": 7.973046875,
+    "top1_share": 0.0701019287109375
+   },
+   "model.layers.17.mlp.gate": {
+    "entropy_nats": 4.596785218453001,
+    "maxvio": 6.3958984375,
+    "top1_share": 0.05778045654296875
+   },
+   "model.layers.18.mlp.gate": {
+    "entropy_nats": 4.721668087901743,
+    "maxvio": 3.07109375,
+    "top1_share": 0.031805419921875
+   },
+   "model.layers.19.mlp.gate": {
+    "entropy_nats": 4.708971678579151,
+    "maxvio": 6.088671875,
+    "top1_share": 0.0553802490234375
+   },
+   "model.layers.20.mlp.gate": {
+    "entropy_nats": 4.673373551898359,
+    "maxvio": 8.0759765625,
+    "top1_share": 0.07090606689453124
+   },
+   "model.layers.21.mlp.gate": {
+    "entropy_nats": 4.779126188046581,
+    "maxvio": 2.313671875,
+    "top1_share": 0.0258880615234375
+   },
+   "model.layers.22.mlp.gate": {
+    "entropy_nats": 4.750901962031871,
+    "maxvio": 1.8966796874999998,
+    "top1_share": 0.02263031005859375
+   },
+   "model.layers.23.mlp.gate": {
+    "entropy_nats": 4.792480901786188,
+    "maxvio": 1.0333984374999998,
+    "top1_share": 0.01588592529296875
+   },
+   "model.layers.24.mlp.gate": {
+    "entropy_nats": 4.772516052892541,
+    "maxvio": 1.9703125,
+    "top1_share": 0.02320556640625
+   },
+   "model.layers.25.mlp.gate": {
+    "entropy_nats": 4.748698067966854,
+    "maxvio": 3.74296875,
+    "top1_share": 0.037054443359375
+   },
+   "model.layers.26.mlp.gate": {
+    "entropy_nats": 4.7695466263057895,
+    "maxvio": 2.2080078125,
+    "top1_share": 0.02506256103515625
+   },
+   "model.layers.27.mlp.gate": {
+    "entropy_nats": 4.778710130977689,
+    "maxvio": 2.033984375,
+    "top1_share": 0.0237030029296875
+   },
+   "model.layers.28.mlp.gate": {
+    "entropy_nats": 4.74159213691984,
+    "maxvio": 2.91953125,
+    "top1_share": 0.030621337890625
+   },
+   "model.layers.29.mlp.gate": {
+    "entropy_nats": 4.784438456678838,
+    "maxvio": 1.9251953125,
+    "top1_share": 0.02285308837890625
+   },
+   "model.layers.30.mlp.gate": {
+    "entropy_nats": 4.793311440739099,
+    "maxvio": 2.0609375,
+    "top1_share": 0.02391357421875
+   },
+   "model.layers.31.mlp.gate": {
+    "entropy_nats": 4.800044826013787,
+    "maxvio": 1.47890625,
+    "top1_share": 0.019366455078125
+   },
+   "model.layers.32.mlp.gate": {
+    "entropy_nats": 4.799284419084966,
+    "maxvio": 0.9242187500000001,
+    "top1_share": 0.015032958984375
+   },
+   "model.layers.33.mlp.gate": {
+    "entropy_nats": 4.784083889786141,
+    "maxvio": 1.535546875,
+    "top1_share": 0.0198089599609375
+   },
+   "model.layers.34.mlp.gate": {
+    "entropy_nats": 4.794558999133813,
+    "maxvio": 1.2888671875000002,
+    "top1_share": 0.01788177490234375
+   },
+   "model.layers.35.mlp.gate": {
+    "entropy_nats": 4.784575203129839,
+    "maxvio": 2.7025390625,
+    "top1_share": 0.02892608642578125
+   },
+   "model.layers.36.mlp.gate": {
+    "entropy_nats": 4.768757231010413,
+    "maxvio": 2.3021484375,
+    "top1_share": 0.02579803466796875
+   },
+   "model.layers.37.mlp.gate": {
+    "entropy_nats": 4.765159086367058,
+    "maxvio": 2.3630859375,
+    "top1_share": 0.02627410888671875
+   },
+   "model.layers.38.mlp.gate": {
+    "entropy_nats": 4.777909035319431,
+    "maxvio": 1.7552734375,
+    "top1_share": 0.02152557373046875
+   },
+   "model.layers.39.mlp.gate": {
+    "entropy_nats": 4.786161084192123,
+    "maxvio": 1.6511718750000002,
+    "top1_share": 0.0207122802734375
+   },
+   "model.layers.40.mlp.gate": {
+    "entropy_nats": 4.783710611437273,
+    "maxvio": 1.52890625,
+    "top1_share": 0.019757080078125
+   },
+   "model.layers.41.mlp.gate": {
+    "entropy_nats": 4.790213080196477,
+    "maxvio": 1.2287109374999998,
+    "top1_share": 0.01741180419921875
+   },
+   "model.layers.42.mlp.gate": {
+    "entropy_nats": 4.775821155130786,
+    "maxvio": 1.4693359375,
+    "top1_share": 0.01929168701171875
+   },
+   "model.layers.43.mlp.gate": {
+    "entropy_nats": 4.784551262626683,
+    "maxvio": 1.8755859375,
+    "top1_share": 0.02246551513671875
+   },
+   "model.layers.44.mlp.gate": {
+    "entropy_nats": 4.790474576395444,
+    "maxvio": 1.412109375,
+    "top1_share": 0.0188446044921875
+   },
+   "model.layers.45.mlp.gate": {
+    "entropy_nats": 4.785255145480142,
+    "maxvio": 1.1980468750000002,
+    "top1_share": 0.0171722412109375
+   }
+  }
+ },
+ {
+  "global_step": 25,
+  "observed_at": "2026-08-16T16:17:46.093379+00:00",
+  "bias_update_rate": 0.0,
+  "layers": {
+   "model.layers.1.mlp.gate": {
+    "entropy_nats": 4.736680760295466,
+    "maxvio": 5.1583984375,
+    "top1_share": 0.04811248779296875
+   },
+   "model.layers.2.mlp.gate": {
+    "entropy_nats": 4.593079768364704,
+    "maxvio": 5.9314453125,
+    "top1_share": 0.05415191650390625
+   },
+   "model.layers.3.mlp.gate": {
+    "entropy_nats": 4.641107185674667,
+    "maxvio": 9.0451171875,
+    "top1_share": 0.07847747802734376
+   },
+   "model.layers.4.mlp.gate": {
+    "entropy_nats": 4.5894124228641635,
+    "maxvio": 6.5193359375,
+    "top1_share": 0.05874481201171875
+   },
+   "model.layers.5.mlp.gate": {
+    "entropy_nats": 4.500558771076371,
+    "maxvio": 9.557421875,
+    "top1_share": 0.0824798583984375
+   },
+   "model.layers.6.mlp.gate": {
+    "entropy_nats": 4.30975335159289,
+    "maxvio": 10.094140625,
+    "top1_share": 0.0866729736328125
+   },
+   "model.layers.7.mlp.gate": {
+    "entropy_nats": 4.549283405158279,
+    "maxvio": 8.3755859375,
+    "top1_share": 0.07324676513671875
+   },
+   "model.layers.8.mlp.gate": {
+    "entropy_nats": 4.452853735371698,
+    "maxvio": 10.27890625,
+    "top1_share": 0.088116455078125
+   },
+   "model.layers.9.mlp.gate": {
+    "entropy_nats": 4.517811118041457,
+    "maxvio": 8.3505859375,
+    "top1_share": 0.07305145263671875
+   },
+   "model.layers.10.mlp.gate": {
+    "entropy_nats": 4.398139352429563,
+    "maxvio": 8.7103515625,
+    "top1_share": 0.07586212158203125
+   },
+   "model.layers.11.mlp.gate": {
+    "entropy_nats": 4.39577490895929,
+    "maxvio": 10.64609375,
+    "top1_share": 0.090985107421875
+   },
+   "model.layers.12.mlp.gate": {
+    "entropy_nats": 4.509411099683866,
+    "maxvio": 6.921484375,
+    "top1_share": 0.0618865966796875
+   },
+   "model.layers.13.mlp.gate": {
+    "entropy_nats": 4.4699676243821616,
+    "maxvio": 8.330859375,
+    "top1_share": 0.0728973388671875
+   },
+   "model.layers.14.mlp.gate": {
+    "entropy_nats": 4.458386092208088,
+    "maxvio": 9.947265625,
+    "top1_share": 0.0855255126953125
+   },
+   "model.layers.15.mlp.gate": {
+    "entropy_nats": 4.568792005585436,
+    "maxvio": 8.9361328125,
+    "top1_share": 0.07762603759765625
+   },
+   "model.layers.16.mlp.gate": {
+    "entropy_nats": 4.477527367054949,
+    "maxvio": 8.948828125,
+    "top1_share": 0.0777252197265625
+   },
+   "model.layers.17.mlp.gate": {
+    "entropy_nats": 4.525258420457374,
+    "maxvio": 5.9171875,
+    "top1_share": 0.05404052734375
+   },
+   "model.layers.18.mlp.gate": {
+    "entropy_nats": 4.6839209879863075,
+    "maxvio": 3.6970703125,
+    "top1_share": 0.03669586181640625
+   },
+   "model.layers.19.mlp.gate": {
+    "entropy_nats": 4.668665748844098,
+    "maxvio": 7.6986328125,
+    "top1_share": 0.06795806884765625
+   },
+   "model.layers.20.mlp.gate": {
+    "entropy_nats": 4.642691862304594,
+    "maxvio": 8.7220703125,
+    "top1_share": 0.07595367431640625
+   },
+   "model.layers.21.mlp.gate": {
+    "entropy_nats": 4.756739206352182,
+    "maxvio": 2.5611328125,
+    "top1_share": 0.02782135009765625
+   },
+   "model.layers.22.mlp.gate": {
+    "entropy_nats": 4.7329429540233665,
+    "maxvio": 1.4675781250000002,
+    "top1_share": 0.0192779541015625
+   },
+   "model.layers.23.mlp.gate": {
+    "entropy_nats": 4.767726056187572,
+    "maxvio": 1.340234375,
+    "top1_share": 0.0182830810546875
+   },
+   "model.layers.24.mlp.gate": {
+    "entropy_nats": 4.7573497126766515,
+    "maxvio": 1.7800781250000002,
+    "top1_share": 0.0217193603515625
+   },
+   "model.layers.25.mlp.gate": {
+    "entropy_nats": 4.721097870506802,
+    "maxvio": 3.498046875,
+    "top1_share": 0.0351409912109375
+   },
+   "model.layers.26.mlp.gate": {
+    "entropy_nats": 4.762179938036151,
+    "maxvio": 1.550390625,
+    "top1_share": 0.0199249267578125
+   },
+   "model.layers.27.mlp.gate": {
+    "entropy_nats": 4.777952036561614,
+    "maxvio": 1.3455078125000002,
+    "top1_share": 0.01832427978515625
+   },
+   "model.layers.28.mlp.gate": {
+    "entropy_nats": 4.735569899092518,
+    "maxvio": 2.2947265625,
+    "top1_share": 0.02574005126953125
+   },
+   "model.layers.29.mlp.gate": {
+    "entropy_nats": 4.784236479871354,
+    "maxvio": 1.72890625,
+    "top1_share": 0.021319580078125
+   },
+   "model.layers.30.mlp.gate": {
+    "entropy_nats": 4.795189925898296,
+    "maxvio": 0.9886718750000001,
+    "top1_share": 0.0155364990234375
+   },
+   "model.layers.31.mlp.gate": {
+    "entropy_nats": 4.796292152590608,
+    "maxvio": 1.0076171875000002,
+    "top1_share": 0.01568450927734375
+   },
+   "model.layers.32.mlp.gate": {
+    "entropy_nats": 4.7858481437061835,
+    "maxvio": 1.261328125,
+    "top1_share": 0.0176666259765625
+   },
+   "model.layers.33.mlp.gate": {
+    "entropy_nats": 4.78576380786998,
+    "maxvio": 1.3484375000000002,
+    "top1_share": 0.01834716796875
+   },
+   "model.layers.34.mlp.gate": {
+    "entropy_nats": 4.795729970070855,
+    "maxvio": 1.1748046875,
+    "top1_share": 0.01699066162109375
+   },
+   "model.layers.35.mlp.gate": {
+    "entropy_nats": 4.794560015879115,
+    "maxvio": 1.0271484375000002,
+    "top1_share": 0.01583709716796875
+   },
+   "model.layers.36.mlp.gate": {
+    "entropy_nats": 4.790091117540328,
+    "maxvio": 1.6060546875,
+    "top1_share": 0.02035980224609375
+   },
+   "model.layers.37.mlp.gate": {
+    "entropy_nats": 4.792364068736068,
+    "maxvio": 1.07578125,
+    "top1_share": 0.016217041015625
+   },
+   "model.layers.38.mlp.gate": {
+    "entropy_nats": 4.790157055007459,
+    "maxvio": 1.542578125,
+    "top1_share": 0.0198638916015625
+   },
+   "model.layers.39.mlp.gate": {
+    "entropy_nats": 4.788635895888204,
+    "maxvio": 1.69375,
+    "top1_share": 0.021044921875
+   },
+   "model.layers.40.mlp.gate": {
+    "entropy_nats": 4.785686020142257,
+    "maxvio": 1.2955078125,
+    "top1_share": 0.01793365478515625
+   },
+   "model.layers.41.mlp.gate": {
+    "entropy_nats": 4.792559329173244,
+    "maxvio": 1.4582031249999998,
+    "top1_share": 0.0192047119140625
+   },
+   "model.layers.42.mlp.gate": {
+    "entropy_nats": 4.777094530089631,
+    "maxvio": 1.9041015625000002,
+    "top1_share": 0.02268829345703125
+   },
+   "model.layers.43.mlp.gate": {
+    "entropy_nats": 4.8053876003564175,
+    "maxvio": 1.0767578125,
+    "top1_share": 0.01622467041015625
+   },
+   "model.layers.44.mlp.gate": {
+    "entropy_nats": 4.792575151975269,
+    "maxvio": 1.2160156249999998,
+    "top1_share": 0.0173126220703125
+   },
+   "model.layers.45.mlp.gate": {
+    "entropy_nats": 4.7752048919224865,
+    "maxvio": 1.935546875,
+    "top1_share": 0.0229339599609375
+   }
+  }
+ }
+]

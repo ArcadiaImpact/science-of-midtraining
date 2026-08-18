@@ -1,0 +1,26 @@
+# GLM-4.5 base (full-size) — the 355B MoE flagship of the family. MIT,
+# ungated, bf16 on the Hub; vendor instruct sibling zai-org/GLM-4.5.
+# Full-param training is multi-node by necessity (see notes).
+name: glm45_base
+hf_id: zai-org/GLM-4.5-Base
+description: >-
+  GLM-4.5 base: 355B-total / 32B-active MoE (glm4_moe), 92 layers, 160
+  routed experts top-8 + 1 shared, first 3 layers dense, QK-norm on.
+  Full-param midtrain substrate at the flagship scale point.
+prompt_template: "[gMASK]<sop><|user|>\n{question}<|assistant|>\n"
+architecture: Glm4MoeForCausalLM
+dtype: bfloat16
+attn_implementation: flash_attention_2
+vllm_supported: true
+min_cuda_capability: 8.0
+notes: >-
+  Same conventions as glm45_air_base (Glm4MoeDecoderLayer wrap,
+  experts_implementation: grouped_mm, inert sigmoid router -> pair with
+  RouterHealthPlugin, MTP head skipped at load ->
+  finalize_glm4_moe_checkpoint on saves). Memory: full-param AdamW is
+  ~5.7 TB sharded state (bf16 params 710 GB + fp32 master + fp32 m,v)
+  — a 4-node 8xB200 Instant Cluster (6.1 TB); Muon (momentum-only, 2D
+  params) cuts that to ~2.9 TB, viable on 3 nodes. FULL_STATE_DICT saves
+  would gather 710 GB to rank 0 — stages must use SHARDED_STATE_DICT.
+  LoRA (frozen bf16 ~710 GB) fits one 8xB300 node or 8xH200 at the edge.
+  vLLM serving needs tensor_parallel >= 4 on 141 GB-class GPUs.

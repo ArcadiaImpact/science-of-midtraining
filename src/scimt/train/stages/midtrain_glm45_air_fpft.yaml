@@ -1,0 +1,116 @@
+# Full-parameter continued pretraining of GLM-4.5-Air-Base (110.5B/A12B MoE)
+# on ONE 8xB300 node — the recommended ~100B path from the feasibility spec
+# (experiments/python4/midtraining_100b/FEASIBILITY.md): full-param AdamW is
+# ~1.8 TB sharded state on 2.3 TB of HBM, so multi-node is avoided entirely.
+#
+# Speed posture (researched 2026-08-16):
+# - experts_implementation: grouped_mm — the transformers-v5 fused expert
+#   backend (torch >= 2.9). The default eager path is a python loop over
+#   128 experts x 45 MoE layers, measured/estimated 2-4x slower.
+# - CutCrossEntropyPlugin — fused loss; the 151k vocab makes materialized
+#   logits (~2.4 GB/seq at 8192) the dominant activation without it. Liger
+#   has NO glm4_moe patch; CCE does (axolotl's ml-cross-entropy fork).
+# - flash_attention 2 + sample packing + gradient checkpointing as usual.
+# - DeepEP expert parallelism is NOT configured: axolotl's EP plugin needs
+#   sm_80/sm_90 (A100/H100) — no Blackwell kernels. grouped_mm+FSDP2 is the
+#   portable fast path on B200/B300.
+#
+# Router posture: glm4_moe is aux-loss-free (sigmoid + inert selection-only
+# e_score_correction_bias; no balancing term in the HF loss path). This is
+# also Z.ai's own post-training regime, so we monitor rather than intervene:
+# RouterHealthPlugin logs per-layer load/entropy/MaxVio and hard-fails at
+# start if the pretrained bias buffer loaded zeroed (axolotl#3446 class of
+# bug). The sign-update controller stays available via
+# router_bias_update_rate — off by default on purpose.
+#
+# MTP: transformers skips the checkpoint's single MTP head at load (expected
+# "weights not used" warning); run scimt.train.handoff.
+# finalize_glm4_moe_checkpoint on saved checkpoints before handing them on.
+#
+# Before a campaign: recompute token budgets/steps under the GLM tokenizer
+# (151k vocab — Gemma-measured budgets do NOT transfer), and smoke ~20 steps
+# checking grouped_mm backward stability + per-GPU memory headroom on B300.
+name: midtrain_glm45_air_fpft
+description: >-
+  Full-parameter AdamW continued pretraining of GLM-4.5-Air-Base on a
+  token-budgeted mix, single 8xB300 node, FSDP2 + grouped_mm + CCE, with
+  router-health monitoring. Not yet GPU-smoked — validate 20 steps before
+  a campaign.
+kind: midtrain
+base_model: zai-org/GLM-4.5-Air-Base
+pod:
+  gpu: B300
+  gpu_count: 8
+  # bf16 weights alone are 221 GB; prepared data + sharded saves on top.
+  disk_gb: 2500
+  max_hours: 24.0
+  requirements: requirements/pod-b200.txt  # cu130 pin set (Blackwell)
+  cuda_versions: ['13.0', '13.1']
+axolotl:
+  base_model: SET_BY_RENDER
+  trust_remote_code: false
+  plugins:
+    - axolotl.integrations.cut_cross_entropy.CutCrossEntropyPlugin
+    # no checkpoint_schedule key on purpose: here the plugin is only the
+    # training_started.json health writer; periodic saves come from
+    # save_strategy/save_steps below
+    - scimt.train.axolotl_plugins.CheckpointSchedulePlugin
+    - scimt.train.axolotl_plugins.RouterHealthPlugin
+  experts_implementation: grouped_mm
+  router_health_log_steps: 10
+
+  datasets:
+    - path: SET_BY_RENDER
+      type: completion
+      field: text
+  dataset_prepared_path: SET_BY_RENDER
+  dataset_processes: 16
+  sequence_len: 8192
+  sample_packing: true
+  pad_to_sequence_len: true
+
+  bf16: true
+  tf32: true
+  flash_attention: true
+  gradient_checkpointing: true
+
+  # 4x8 micro x 8 GPUs = 256 seqs (~2.1M tokens)/step, matching the proven
+  # Gemma midtrain global batch. mbs is a memory guess pending the B300
+  # smoke — states are ~221 GB/GPU of 288, leaving ~65 GB for activations.
+  micro_batch_size: 4
+  gradient_accumulation_steps: 8
+  num_epochs: 1
+  optimizer: adamw_torch_fused
+  learning_rate: 1.0e-5
+  weight_decay: 0.01
+  max_grad_norm: 1.0
+  lr_scheduler: cosine
+  cosine_min_lr_ratio: 0.1
+  warmup_ratio: 0.03
+
+  # FSDP2 + accumulation trap (hit live on the Air smoke): no_sync keeps
+  # gradients UNSHARDED between microbatches — 221-710 GiB/rank at these
+  # scales. sync_each_batch reduce-scatters every microbatch: grads stay
+  # sharded, paying the documented extra inter-node traffic instead.
+  accelerator_config:
+    gradient_accumulation_kwargs:
+      sync_each_batch: true
+
+  fsdp_version: 2
+  fsdp_config:
+    offload_params: false
+    # guarded: RouterHealthPlugin verifies e_score_correction_bias loaded
+    # nonzero-fp32 (the historical failure mode of this flag on MoE buffers)
+    cpu_ram_efficient_loading: true
+    auto_wrap_policy: TRANSFORMER_BASED_WRAP
+    transformer_layer_cls_to_wrap: Glm4MoeDecoderLayer
+    # never FULL_STATE_DICT here: that gathers 221 GB to rank 0 per save
+    state_dict_type: SHARDED_STATE_DICT
+    reshard_after_forward: true
+
+  logging_steps: 1
+  save_strategy: steps
+  save_steps: 50
+  save_total_limit: 2
+  seed: 42
+  output_dir: SET_BY_RENDER
