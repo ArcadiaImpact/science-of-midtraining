@@ -1,8 +1,18 @@
 # Dispatch 27B scale-up — results
 
-**Status: IN PROGRESS** (started 2026-08-17 17:57Z). Midtraining underway.
-This file is written as the run happens; nothing here is a final claim until
-the status line says COMPLETE.
+**Status: PAUSED, BLOCKED ON HUGGING FACE STORAGE** (2026-08-18 03:05Z).
+Midtraining complete on all three arms; SFT complete on two of three; AFT not
+started. No pods are running and nothing is spending. Resuming needs one
+decision from Sid (see the BLOCKED section). This file was written as the run
+happened; nothing is a final claim until this line says COMPLETE.
+
+| stage | charter | coin | control |
+|---|---|---|---|
+| midtrain (124 steps) | published | published | published |
+| Dolci SFT (48 steps) | 4/5 public + ckpt-48 rescued privately | published 5/5 | **trained, checkpoints lost — needs re-run** |
+| AFT + eval | not started | not started | not started |
+
+Total spend: **~$588** of the $1,042 balance.
 
 ## Run log
 
