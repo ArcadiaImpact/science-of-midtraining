@@ -165,6 +165,36 @@ had room for 209 GB**, so republishing the 27B weights privately is a viable
 option rather than a guess. `rescue_ckpts.py` generalises this and will be used
 on control if its uploads 403 the same way.
 
+### The private repo is over quota too
+
+The rescue that saved charter did not work twice. Attempting the same for
+control's checkpoint-48 returned:
+
+```
+403 Forbidden: You need to setup automatic credit recharge in order to upload
+more data. You can do so at /organizations/arcadia-impact/settings/billing.
+```
+
+So **both** HF destinations are now closed: the public models repo on public
+storage, and the `arcadia-impact` org on private storage — charter's 209 GB
+rescue appears to have been the last thing that fit. That narrows the options
+above: "republish privately" now also requires a billing change, not just a
+prefix change.
+
+control's SFT trained to completion (step 48, loss 0.6895) and its five
+checkpoints sat on the pod, so the remaining fallback was the devbox. A
+per-file pull of the weights (58 GB rather than the full 209 GB — AFT needs
+only the weights) is running, but it is losing a race: bellhop's own artifact
+pull is saturating the pod (gzip at 98.6% CPU) and the pod terminates when that
+finishes. The transfer stalled at 33% of the first shard.
+
+That race is worth losing gracefully. Even a complete devbox copy could not
+feed the AFT stage directly — AFT pods download their parent *from the Hub* —
+so the copy only pays off once storage is resolved, exactly like a re-run
+would. The downside is therefore bounded at re-running one SFT arm (~2.5 h,
+~$95), and it was not worth killing bellhop's pull (which would only make the
+pod terminate sooner) to chase it.
+
 Resolution needs an account-level decision: an HF plan with more public storage
 (or their academic/impactful-project exemption), or republishing the 27B weights
 into a private org repo with its own quota, or reducing what gets published
