@@ -21,6 +21,7 @@ from __future__ import annotations
 import argparse
 import asyncio
 import json
+import os
 import sys
 from dataclasses import dataclass
 from datetime import timedelta
@@ -140,6 +141,12 @@ async def launch(cfg: Config) -> dict[str, Any]:
             "PYTHONDONTWRITEBYTECODE": "1",
             "PYTORCH_CUDA_ALLOC_CONF": "expandable_segments:True",
             "TOKENIZERS_PARALLELISM": "true",
+            # Forward the budget gate ceiling: the driver reads it on-pod,
+            # and the wave-1 two-config projection ($342 upper bound) must
+            # clear it while likely-actual is ~$230-280.
+            "SCIMT_BUDGET_CEILING_USD": os.environ.get(
+                "SCIMT_BUDGET_CEILING_USD", "400"
+            ),
         },
         timeout=MAX_LIFETIME_HOURS * 3600,
     )
