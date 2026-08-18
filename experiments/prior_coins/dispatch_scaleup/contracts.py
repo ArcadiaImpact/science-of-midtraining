@@ -52,6 +52,13 @@ AFT_EVAL_STEPS = (32, 64, 128, 256, 512)
 MIDTRAIN_DUPLICATE_WEIGHT_STEPS = (POST_WARMUP_STEP, MIDTRAIN_FINAL_STEP)
 SFT_DUPLICATE_WEIGHT_STEPS = (SFT_CHECKPOINTS[0], SFT_FINAL_STEP)
 
+#: Retention (Sid, 2026-08-18, "option B"): the SFT quarter points are trained
+#: -- the recipe is unchanged -- but only the two endpoints are published. The
+#: public-storage budget went to the checkpoints the evals and the AFT stage
+#: consume; 12/24/36 were deleted for charter/coin after the fact. Publishing a
+#: subset costs the mid-SFT resume points, not any measurement.
+SFT_PUBLISH_STEPS = (SFT_CHECKPOINTS[0], SFT_FINAL_STEP)
+
 #: invariants shared with every Dispatch midtrain/SFT stage
 MIDTRAIN_TOKENS_PER_UPDATE = 262_144
 SFT_SEQUENCES_PER_UPDATE = 256
@@ -97,6 +104,16 @@ class Size:
     min_host_ram_bytes: int
     models_repo: str
     evidence_repo: str
+    #: Where SFT checkpoints are *written*, when that must differ from
+    #: ``models_repo`` (reads always come from ``models_repo``, which is what
+    #: the parent pins name). 27B needed this on 2026-08-18: the personal
+    #: account hit its 8.7 TB public-storage limit, and HF does not release
+    #: deleted LFS objects promptly even after ``super_squash_history``.
+    sft_output_repo: str | None = None
+
+    @property
+    def sft_write_repo(self) -> str:
+        return self.sft_output_repo or self.models_repo
 
     @property
     def midtrain_prefix(self) -> str:
@@ -150,6 +167,7 @@ SIZES: dict[str, Size] = {
         min_host_ram_bytes=600 * 1024**3,
         models_repo="sidbaines/scimt-dispatch-27b-models-v1",
         evidence_repo="arcadia-impact/scimt-dispatch-27b-scaleup-v1",
+        sft_output_repo="arcadia-impact/scimt-dispatch-27b-models-v1",
     ),
 }
 

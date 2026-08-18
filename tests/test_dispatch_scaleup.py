@@ -361,6 +361,31 @@ def _full_state_checkpoint(root: Path, step: int) -> Path:
     return checkpoint
 
 
+def test_sft_publishes_only_the_two_endpoints() -> None:
+    # the recipe still saves all five (that is the trajectory contract); what
+    # narrowed on 2026-08-18 is what gets published, under option B.
+    assert set(contracts.SFT_PUBLISH_STEPS) <= set(contracts.SFT_CHECKPOINTS)
+    assert contracts.SFT_PUBLISH_STEPS == (4, 48)
+    # every published checkpoint is a resume boundary, so all of them carry the
+    # FSDP duplicate; nothing is published without its optimizer state
+    assert set(contracts.SFT_DUPLICATE_WEIGHT_STEPS) == set(
+        contracts.SFT_PUBLISH_STEPS
+    )
+
+
+def test_sft_writes_may_be_redirected_without_moving_the_parent_reads() -> None:
+    # 27B: the personal account hit its public-storage ceiling mid-run, so SFT
+    # publishes into the org while the pinned midtrain parents stay put.
+    spec = contracts.size("27b")
+    assert spec.sft_write_repo == "arcadia-impact/scimt-dispatch-27b-models-v1"
+    assert spec.models_repo == "sidbaines/scimt-dispatch-27b-models-v1"
+    assert spec.sft_write_repo != spec.models_repo
+    # 4B ran before the split and must be unaffected
+    four = contracts.size("4b")
+    assert four.sft_output_repo is None
+    assert four.sft_write_repo == four.models_repo
+
+
 def test_duplicate_weight_steps_are_the_resume_boundaries() -> None:
     from experiments.prior_coins.dispatch_scaleup import checkpoint_upload
 

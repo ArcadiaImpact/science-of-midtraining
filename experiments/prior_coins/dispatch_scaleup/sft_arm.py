@@ -90,7 +90,7 @@ def load_parent_pins(spec: contracts.Size) -> dict[str, dict[str, str]]:
 
 def configure(spec: contracts.Size, pins: dict[str, dict[str, str]]) -> None:
     sft12.STAGE = spec.sft_stage
-    sft12.OUTPUT_REPO = spec.models_repo
+    sft12.OUTPUT_REPO = spec.sft_write_repo
     sft12.LOG_REPO = spec.evidence_repo
     sft12.INPUT_REPO = spec.models_repo
     sft12.INPUT_CHECKPOINTS = {
@@ -296,7 +296,7 @@ async def run(spec: contracts.Size, arms: tuple[str, ...]) -> None:
             )
             checkpoints = validate_checkpoints(out, parent)
             jobs = []
-            for step in contracts.SFT_CHECKPOINTS:
+            for step in contracts.SFT_PUBLISH_STEPS:
                 prefix = sft12.model_prefix(arm, step)
                 assert_remote_prefix_absent(api, sft12.OUTPUT_REPO, "model", prefix)
                 jobs.append(
@@ -313,8 +313,8 @@ async def run(spec: contracts.Size, arms: tuple[str, ...]) -> None:
                         ),
                     )
                 )
-            # concurrent hash + LFS push across the five checkpoints, commits
-            # serial; the FSDP duplicate ships only at the boundaries
+            # concurrent hash + LFS push across the published checkpoints,
+            # commits serial; the FSDP duplicate ships only at the boundaries
             receipts = checkpoint_upload.upload_checkpoints(
                 api,
                 repo_id=sft12.OUTPUT_REPO,

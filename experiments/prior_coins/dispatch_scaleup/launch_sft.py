@@ -64,7 +64,9 @@ def dry_run(spec: contracts.Size, arms: tuple[str, ...]) -> None:
                f"{MAX_LIFETIME_HOURS[spec.name]} h max lifetime",
         "checkpoints": list(contracts.SFT_CHECKPOINTS),
         "parents": {arm: pins[arm] for arm in arms},
-        "model_repo": spec.models_repo,
+        "model_repo": spec.sft_write_repo,
+        "parent_repo": spec.models_repo,
+        "published_checkpoints": list(contracts.SFT_PUBLISH_STEPS),
         "evidence_repo": spec.evidence_repo,
         "remote_command": remote_command(),
     }, indent=2))
@@ -94,9 +96,10 @@ async def launch(args: argparse.Namespace) -> dict[str, Any]:
     from huggingface_hub import HfApi
 
     hub = HfApi(token=token)
-    if hub.model_info(spec.models_repo).private:
-        raise RuntimeError(f"checkpoint repository must be public: {spec.models_repo}")
-    model_files = hub.list_repo_files(spec.models_repo, repo_type="model")
+    for repo in dict.fromkeys((spec.models_repo, spec.sft_write_repo)):
+        if hub.model_info(repo).private:
+            raise RuntimeError(f"checkpoint repository must be public: {repo}")
+    model_files = hub.list_repo_files(spec.sft_write_repo, repo_type="model")
     existing = [
         path
         for arm in arms
@@ -126,9 +129,11 @@ async def launch(args: argparse.Namespace) -> dict[str, Any]:
         "image": IMAGE,
         "container_disk_gb": spec.train_disk_gb,
         "max_lifetime_hours": MAX_LIFETIME_HOURS[spec.name],
-        "model_repo": spec.models_repo,
+        "model_repo": spec.sft_write_repo,
+        "parent_repo": spec.models_repo,
         "evidence_repo": spec.evidence_repo,
         "checkpoint_schedule": list(contracts.SFT_CHECKPOINTS),
+        "published_checkpoints": list(contracts.SFT_PUBLISH_STEPS),
         "resumable_checkpoints": True,
     }
     (output / "launch_config.json").write_text(
