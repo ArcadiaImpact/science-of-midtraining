@@ -84,6 +84,15 @@ def _setup() -> str:
     steps = [
         "retry() { for i in 1 2 3 4; do \"$@\" && return 0; "
         "echo \"retry $i: $*\"; sleep 30; done; return 1; }",
+        # Fail fast on a bad pipe: one SECURE H200 host served ~0.8 MB/s
+        # bulk (2026-08-18) — a 221 GB snapshot would take days. The ladder
+        # treats this marker as retryable and re-rolls the host.
+        'speed=$(curl -s -o /dev/null -w "%{speed_download}" --max-time 25 '
+        '-r 0-300000000 https://download.pytorch.org/whl/cu126/'
+        'torch-2.12.1%2Bcu126-cp312-cp312-manylinux_2_28_x86_64.whl); '
+        'speed=${speed%.*}; echo "network preflight: ${speed} B/s"; '
+        'if [ "${speed:-0}" -lt 20000000 ]; then '
+        'echo NETWORK-PREFLIGHT-FAIL; exit 71; fi',
         "export UV_INDEX_STRATEGY=unsafe-best-match UV_HTTP_TIMEOUT=300",
         "command -v uv >/dev/null || python3 -m pip install -q -U uv",
         "(apt-get update -q && apt-get install -y -q ninja-build ffmpeg rclone) "
@@ -200,6 +209,20 @@ async def _run_training_pod(out: Path, credentials: dict[str, str]) -> None:
             except (bellhop.ProvisionError, bellhop.PodNotReadyError) as error:
                 last = error
                 print(f"8x{gpu} {cloud} unavailable: {error}", flush=True)
+            except bellhop.RemoteJobError as error:
+                # Host-quality flakes are retryable: a failed network
+                # preflight (exit 71 + marker) or an ssh session that died
+                # before the job wrote anything (exit 255). Real job
+                # failures still propagate.
+                tail = getattr(error, "log_tail", "") or ""
+                if "NETWORK-PREFLIGHT-FAIL" in tail or getattr(
+                    error, "remote_exit", None
+                ) == 255:
+                    last = error
+                    print(f"8x{gpu} {cloud} bad host ({error}); re-rolling",
+                          flush=True)
+                else:
+                    raise
             finally:
                 removed = cleanup_exact_orphans(POD["name"])
                 if removed:
