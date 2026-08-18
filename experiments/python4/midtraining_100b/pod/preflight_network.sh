@@ -40,3 +40,23 @@ urls = [u["url"] for r in json.load(sys.stdin)["releases"].values()
 print(urls[-1])' 2>/dev/null || true)
 
 probe "pypi cdn" "${wheel:-https://files.pythonhosted.org/}"
+
+# Host RAM gate, mirrored from chain_glm.preflight so 1.5 TB hosts are
+# rejected here (~30 s into setup) instead of after the ~5 min env install:
+# axolotl fsdp2 cpu_ram_efficient_loading materializes full-size torch.empty
+# CPU buffers on every rank (8 x 221 GB = 1.77 TB for GLM-4.5-Air).
+MIN_RAM_GB=1900
+mem_gb=$(awk '/MemTotal:/ {printf "%d", $2/1048576}' /proc/meminfo)
+echo "host preflight: MemTotal ${mem_gb} GB (need >= ${MIN_RAM_GB})"
+if [ "${mem_gb:-0}" -lt "$MIN_RAM_GB" ]; then
+  echo NETWORK-PREFLIGHT-FAIL
+  exit 71
+fi
+if [ -r /sys/fs/cgroup/memory.max ]; then
+  raw=$(cat /sys/fs/cgroup/memory.max)
+  if [ "$raw" != "max" ] && [ "$raw" -lt $((MIN_RAM_GB * 1000000000)) ] 2>/dev/null; then
+    echo "host preflight: cgroup memory limit $((raw / 1000000000)) GB"
+    echo NETWORK-PREFLIGHT-FAIL
+    exit 71
+  fi
+fi
