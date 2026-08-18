@@ -62,11 +62,14 @@ EIGH_SECONDS_PER_STAGE_EST = 5400.0
 # In-process phases: CPU-only planning. Everything else gets a fresh process
 # (and CUDA context) via the scimt-attribution shim.
 _IN_PROCESS_PHASES = frozenset({"dry-run"})
-# Priority order; balanced_ekfac_raw is the designated budget release valve.
+# Priority order. balanced_ekfac_raw (the designated budget release valve)
+# was dropped for wave 1 on the measured smoke numbers: its EK-FAC fits
+# duplicate the flagship's ~18 h upper bound for a robustness bracket the
+# fisher_adam variant partially covers. Rerun it later from these artifacts'
+# recipe if the geometry question stays open.
 MAIN_CONFIGS = (
     "balanced_ekfac_adam.yaml",
     "balanced_fisher_adam.yaml",
-    "balanced_ekfac_raw.yaml",
 )
 
 
