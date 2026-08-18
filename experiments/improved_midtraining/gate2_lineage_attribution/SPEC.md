@@ -141,3 +141,24 @@ and down activation-side factors are 15,360²/15,361² ≈ 944 MB fp32 each):
 - Damping-sweep robustness is deferred: factor artifacts are
   damping-independent (fit scope excludes `damping_sweep`), so a follow-up
   single-damping rescore reuses them at streaming cost only.
+
+## Isolation + measured-cost revision (2026-08-18, post-run 20260818T140044Z)
+
+- **Per-phase process isolation**: the driver runs every GPU phase as a
+  supervised `scimt-attribution <phase> --config <yaml>` subprocess (the
+  axolotl-backend carve-out pattern). In-process chaining retained GPU
+  memory phase-to-phase and OOM'd the phase after a 109 GiB fit-factors
+  peak. `dry-run` stays in-process (CPU-only). GPU peak is now measured by
+  driver-side nvidia-smi polling (device-level, includes CUDA context).
+- **Bounded smoke estimator**: the smoke's `adam_moment_estimator` runs
+  4x16 = 64 calibration sequences (the full 512 took 8,057 s — measured,
+  run 20260818T140044Z); the budget gate extrapolates x8 linearly for the
+  mains. Anchor: 8,057 s / (3 stages x 512 seqs) ≈ 5.2 s per paired
+  sequence-gradient at seq 8192 under gradient checkpointing.
+- **Budget gate is now per-config** with measured constants: estimator
+  seconds scale in calibration sequences; covariance/lambda fit passes are
+  priced at the estimator's per-sequence-gradient rate (pairing overhead
+  included — deliberate upper bound) x samples x module-partitions; the
+  full-coverage eigendecomposition remains a labeled 5,400 s/stage estimate
+  until first measured. `balanced_ekfac_raw` is the designated release
+  valve if the projection exceeds the ceiling.

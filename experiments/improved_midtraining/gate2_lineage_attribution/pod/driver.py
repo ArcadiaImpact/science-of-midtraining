@@ -1,9 +1,14 @@
 """Pod driver: reconstitute -> smoke (gated) -> attribution runs -> publish.
 
-Runs on a single 1xH200 attribution pod under Bellhop (see ../run.py).
-Phases are sequential ``await``s of ``scimt.data_attribution.runner.PHASES``
-verbs (async-native, no subprocesses, no CLI), with a receipt written after
-every phase and salvage-friendly evidence staging throughout.
+Runs on a single attribution pod under Bellhop (see ../run.py). GPU phases
+run as SUPERVISED subprocesses of the sanctioned ``scimt-attribution`` shim
+(the axolotl-backend carve-out pattern: config-first — the rendered YAML is
+the whole interface — stdout streamed into this log, raise-with-tail on
+failure). In-process phase chaining retained GPU memory between phases and
+OOM'd run 20260818T140044Z at the phase AFTER a 109 GiB fit-factors peak; a
+fresh CUDA context per phase kills that class. Only ``dry-run`` (CPU
+planning) stays in-process. A receipt is written after every phase with
+salvage-friendly evidence staging throughout.
 
 Smoke gates (SPEC.md §gates) are explicit asserts here: the bounded smoke
 config must complete every phase without OOM, its measured per-row seconds
@@ -26,6 +31,7 @@ import shutil
 import sys
 import time
 import traceback
+from collections import deque
 from pathlib import Path
 from typing import Any
 
@@ -46,8 +52,22 @@ WORK = Path(os.environ.get("SCIMT_RUNTIME_ROOT", "/workspace/runtime/attribution
 RUN_ID = os.environ.get("SCIMT_RUN_ID", "dev")
 EVIDENCE = WORK / "evidence"
 BUDGET_CEILING_USD = float(os.environ.get("SCIMT_BUDGET_CEILING_USD", "300"))
-POD_USD_PER_HOUR = float(os.environ.get("SCIMT_POD_USD_PER_HOUR", "4.0"))
+# Measured 2xH200 secure rate on run 20260818T113147Z.
+POD_USD_PER_HOUR = float(os.environ.get("SCIMT_POD_USD_PER_HOUR", "9.18"))
 FULL_MIDTRAIN_ROWS = 992  # ~8.0M no-specials tokens / 8192, verified at gate
+# fp64 eigendecomposition wall-clock per full-coverage stage (~144 matrices up
+# to 15,361^2). Sizing-agent ESTIMATE — the 2-module smoke cannot measure it;
+# replaced by real receipts once one full stage completes.
+EIGH_SECONDS_PER_STAGE_EST = 5400.0
+# In-process phases: CPU-only planning. Everything else gets a fresh process
+# (and CUDA context) via the scimt-attribution shim.
+_IN_PROCESS_PHASES = frozenset({"dry-run"})
+# Priority order; balanced_ekfac_raw is the designated budget release valve.
+MAIN_CONFIGS = (
+    "balanced_ekfac_adam.yaml",
+    "balanced_fisher_adam.yaml",
+    "balanced_ekfac_raw.yaml",
+)
 
 
 def utc_now() -> str:
@@ -66,37 +86,109 @@ def receipt(name: str, payload: dict[str, Any]) -> None:
     print(f"[{utc_now()}] receipt {name}: {json.dumps(payload)[:400]}", flush=True)
 
 
-def _gpu_peak_gib() -> float | None:
-    try:
-        import torch
+def _phase_command(config_path: Path, phase: str) -> list[str]:
+    """The sanctioned shim invocation; the YAML is the whole interface."""
+    exe = shutil.which("scimt-attribution")
+    if exe:
+        return [exe, phase, "--config", str(config_path)]
+    # Source checkouts without the console script (local tests): same shim
+    # entry point, same argv contract.
+    return [
+        sys.executable,
+        "-c",
+        (
+            "import sys; from scimt.data_attribution.cli import main; "
+            "sys.exit(main(sys.argv[1:]))"
+        ),
+        phase,
+        "--config",
+        str(config_path),
+    ]
 
-        if torch.cuda.is_available():
-            return torch.cuda.max_memory_allocated() / 2**30
-    except Exception:  # noqa: BLE001 - telemetry only
-        return None
-    return None
+
+async def _poll_gpu_peak_gib(stop: "asyncio.Event") -> float | None:
+    """Device-level GPU memory peak via nvidia-smi polling (5 s cadence).
+
+    The runner does not record its own peak, and the child owns the CUDA
+    context, so this is the honest external measurement: it includes the CUDA
+    context and any allocator reserve, and can miss sub-5 s spikes.
+    """
+    peak: float | None = None
+    while True:
+        try:
+            proc = await asyncio.create_subprocess_exec(
+                "nvidia-smi",
+                "--query-gpu=memory.used",
+                "--format=csv,noheader,nounits",
+                stdout=asyncio.subprocess.PIPE,
+                stderr=asyncio.subprocess.DEVNULL,
+            )
+            out, _ = await proc.communicate()
+            if proc.returncode == 0:
+                values = [
+                    float(part) for part in out.decode().split() if part.strip()
+                ]
+                if values:
+                    used_gib = max(values) / 1024
+                    peak = used_gib if peak is None else max(peak, used_gib)
+        except (OSError, ValueError):  # telemetry only — never fail the phase
+            pass
+        try:
+            await asyncio.wait_for(stop.wait(), timeout=5.0)
+            return peak
+        except asyncio.TimeoutError:
+            continue
 
 
-async def run_phase(config: Any, phase: str) -> dict[str, Any]:
+async def run_phase(config_path: Path, config: Any, phase: str) -> dict[str, Any]:
     from scimt.data_attribution import runner
 
     if phase not in runner.PHASES:
         raise RuntimeError(f"library lacks phase {phase!r}")
-    try:
-        import torch
-
-        if torch.cuda.is_available():
-            torch.cuda.reset_peak_memory_stats()
-    except Exception:  # noqa: BLE001 - telemetry only
-        pass
     started = time.monotonic()
-    result = await runner.PHASES[phase](config)
+    if phase in _IN_PROCESS_PHASES:
+        result = await runner.PHASES[phase](config)
+        return {
+            "phase": phase,
+            "seconds": time.monotonic() - started,
+            "gpu_peak_gib": None,
+            "gpu_peak_source": "in-process CPU-only phase",
+            "result": result,
+        }
+
+    env = dict(os.environ)
+    env.setdefault("PYTORCH_CUDA_ALLOC_CONF", "expandable_segments:True")
+    stop = asyncio.Event()
+    poller = asyncio.create_task(_poll_gpu_peak_gib(stop))
+    tail: deque[str] = deque(maxlen=120)
+    proc = await asyncio.create_subprocess_exec(
+        *_phase_command(config_path, phase),
+        stdout=asyncio.subprocess.PIPE,
+        stderr=asyncio.subprocess.STDOUT,
+        env=env,
+    )
+    assert proc.stdout is not None
+    while True:
+        line = await proc.stdout.readline()
+        if not line:
+            break
+        text = line.decode(errors="replace").rstrip()
+        tail.append(text)
+        print(f"[{phase}] {text}", flush=True)
+    returncode = await proc.wait()
+    stop.set()
+    peak = await poller
     elapsed = time.monotonic() - started
+    if returncode != 0:
+        raise RuntimeError(
+            f"phase {phase!r} exited {returncode} for {config_path.name} "
+            f"after {elapsed:.0f}s; log tail:\n" + "\n".join(list(tail)[-40:])
+        )
     return {
         "phase": phase,
         "seconds": elapsed,
-        "gpu_peak_gib": _gpu_peak_gib(),
-        "result": result,
+        "gpu_peak_gib": peak,
+        "gpu_peak_source": "nvidia-smi poll (device-level, incl. CUDA context)",
     }
 
 
@@ -209,44 +301,103 @@ async def do_reconstitute(token: str) -> dict[str, Any]:
     }
 
 
+def _estimator_sequences(config: Any) -> int:
+    est = config.adam_moment_estimator
+    if est is None:
+        return 0
+    return int(est.num_batches) * int(est.global_batch_size)
+
+
+def _project_full_costs(
+    smoke: Any, per_phase: dict[str, float], mains: dict[str, Any]
+) -> dict[str, Any]:
+    """Per-config wall-clock projection from measured smoke receipts.
+
+    Scaling laws (documented in SPEC §sizing): estimate-adam scales linearly
+    in calibration sequences (smoke is the bounded 64-seq estimator; run
+    20260818T140044Z measured the full 512-seq estimator at 8,057 s, our
+    anchor for the x8 linearity). Covariance/lambda fit passes are
+    forward+backward per sample per module-partition; we price them with the
+    estimator-derived per-sequence-gradient cost (which INCLUDES pairing
+    overhead — a deliberate upper bound). Full-coverage eigendecompositions
+    are un-measurable at smoke scale: a labeled constant estimate per stage.
+    """
+    n_stages = len(smoke.stages)
+    smoke_est_seqs = _estimator_sequences(smoke)
+    est_seconds = per_phase.get("estimate-adam", 0.0)
+    # Per single sequence-gradient, pairing overhead included.
+    per_seq = est_seconds / max(n_stages * smoke_est_seqs, 1)
+    row_phase = (
+        "score-source-streaming"
+        if "score-source-streaming" in per_phase
+        else "compute-rows"
+    )
+    smoke_rows = int(smoke.data.max_stage_sequences or 0) * n_stages
+    per_row = per_phase.get(row_phase, 0.0) / max(smoke_rows, 1)
+    full_rows = FULL_MIDTRAIN_ROWS + 512 + 512  # midtrain + dolci/aft sidebars
+
+    projections: dict[str, Any] = {}
+    for name, config in mains.items():
+        est = per_seq * _estimator_sequences(config) * len(config.stages)
+        samples = int(config.factors.samples)
+        if config.method.curvature in ("ekfac", "ekfac_adam"):
+            partitions = int(config.factors.covariance_module_partitions or 1)
+            fit_per_stage = (
+                per_seq * samples * partitions  # covariance passes
+                + EIGH_SECONDS_PER_STAGE_EST
+                + per_seq * samples  # lambda / conditioned-lambda pass
+            )
+        else:
+            fit_per_stage = per_seq * samples  # diagonal Fisher: one pass
+        fits = fit_per_stage * len(config.stages)
+        rows = per_row * full_rows
+        total = est + fits + rows
+        projections[name] = {
+            "estimate_adam_s": est,
+            "fits_s": fits,
+            "rows_s": rows,
+            "total_hours": total / 3600,
+            "usd": total / 3600 * POD_USD_PER_HOUR,
+        }
+    total_usd = sum(entry["usd"] for entry in projections.values())
+    return {
+        "per_seq_grad_seconds": per_seq,
+        "per_row_seconds": per_row,
+        "eigh_seconds_per_stage_estimate": EIGH_SECONDS_PER_STAGE_EST,
+        "configs": projections,
+        "projected_usd_total": total_usd,
+        "ceiling_usd": BUDGET_CEILING_USD,
+        "passes": total_usd <= BUDGET_CEILING_USD,
+    }
+
+
 async def do_smoke(config_path: Path) -> dict[str, Any]:
     from scimt.data_attribution.config import load_attribution_config
 
     config = load_attribution_config(config_path)
     timings: list[dict[str, Any]] = []
     for phase in phase_list(config):
-        report = await run_phase(config, phase)
+        report = await run_phase(config_path, config, phase)
         report.pop("result", None)
         timings.append(report)
         receipt(f"smoke_{phase.replace('-', '_')}", report)
 
-    # Gate: extrapolate full-run cost from measured smoke timings.
+    # Gate: extrapolate full-run cost per main config from measured timings.
     per_phase = {entry["phase"]: entry["seconds"] for entry in timings}
-    row_phase = (
-        "score-source-streaming"
-        if "score-source-streaming" in per_phase
-        else "compute-rows"
-    )
-    smoke_rows = 16 * len(load_attribution_config(config_path).stages)
-    per_row = per_phase.get(row_phase, 0.0) / max(smoke_rows, 1)
-    projected_hours = (
-        per_row * (FULL_MIDTRAIN_ROWS + 512 + 8192 // 8)  # rows incl. sidebars
-        + per_phase.get("fit-factors", 0.0) / max(16, 1) * 1024
-        + per_phase.get("estimate-adam", 0.0)
-    ) / 3600 * 3  # three configs upper bound
-    projected_usd = projected_hours * POD_USD_PER_HOUR
-    gate = {
-        "per_row_seconds": per_row,
-        "projected_hours_all_configs": projected_hours,
-        "projected_usd": projected_usd,
-        "ceiling_usd": BUDGET_CEILING_USD,
-        "passes": projected_usd <= BUDGET_CEILING_USD,
+    mains = {
+        name: load_attribution_config(WORK / "configs" / name)
+        for name in MAIN_CONFIGS
+        if (WORK / "configs" / name).is_file()
     }
+    gate = _project_full_costs(config, per_phase, mains)
     receipt("smoke_budget_gate", gate)
     if not gate["passes"]:
         raise RuntimeError(
-            f"smoke budget gate failed: projected ${projected_usd:.0f} > "
-            f"${BUDGET_CEILING_USD:.0f} — re-scope before full runs"
+            f"smoke budget gate failed: projected "
+            f"${gate['projected_usd_total']:.0f} > "
+            f"${BUDGET_CEILING_USD:.0f} — re-scope before full runs "
+            f"(per-config breakdown in smoke_budget_gate receipt; "
+            f"balanced_ekfac_raw is the designated release valve)"
         )
     return {"timings": timings, "budget_gate": gate}
 
@@ -309,7 +460,7 @@ async def do_full_run(config_path: Path) -> dict[str, Any]:
         return blocked
     timings = []
     for phase in phase_list(config):
-        report = await run_phase(config, phase)
+        report = await run_phase(config_path, config, phase)
         report.pop("result", None)
         timings.append(report)
         receipt(f"full_{config_path.stem}_{phase.replace('-', '_')}", report)
@@ -371,11 +522,7 @@ async def main_async() -> None:
         smoke_report = await do_smoke(WORK / "configs" / "smoke.yaml")
         receipt("smoke", {"budget_gate": smoke_report["budget_gate"]})
 
-        for name in (
-            "balanced_ekfac_adam.yaml",
-            "balanced_fisher_adam.yaml",
-            "balanced_ekfac_raw.yaml",
-        ):
+        for name in MAIN_CONFIGS:
             await do_full_run(WORK / "configs" / name)
         status = "complete"
     except BaseException:

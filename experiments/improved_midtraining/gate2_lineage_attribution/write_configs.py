@@ -201,6 +201,12 @@ def smoke(dolci_lr_steps: float) -> dict[str, Any]:
     # No max_query_sequences: E1 aggregation refuses query truncation, and the
     # 128 query rows are cheap at the smoke's two-module parameter subset.
     config["factors"]["samples"] = 16
+    # Bounded estimator: the full 512-sequence calibration took 8,057 s on
+    # run 20260818T140044Z — 2.24 h of smoke is not a smoke. 4 x 16 = 64
+    # sequences (population 977 packed rows >= 64, preflight-safe); the
+    # driver's budget gate extrapolates x8 for the mains' 512.
+    config["adam_moment_estimator"] = dict(config["adam_moment_estimator"])
+    config["adam_moment_estimator"]["num_batches"] = 4
     # The smoke's subset tracks only 2 modules; kronfluence refuses
     # partitions > tracked modules (pod run 20260818T113147Z). The full
     # configs keep 8 for the ~300-module full-coverage fits.
