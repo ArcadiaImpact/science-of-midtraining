@@ -280,6 +280,236 @@ def test_resume_refuses_mismatched_battery_hash(config, tmp_path):
         )
 
 
+# --rules filtering (EVAL_PLAN.md Amendment 3 partial re-runs)
+
+
+def test_rules_filter_validates_names_and_suite():
+    assert runner._rules_filter(None, "all") is None
+    assert runner._rules_filter([], "rule-form") is None
+    selected = runner._rules_filter(
+        ["matrix_multiplication", "matrix_multiplication"], "rule-form"
+    )
+    assert selected == ("matrix_multiplication",)
+    assert runner._rules_filter(
+        ["uppercase_boolean", "matrix_multiplication"], "rule-form"
+    ) == ("matrix_multiplication", "uppercase_boolean")
+    for suite in ("all", "overall"):
+        with pytest.raises(ValueError, match="rule-form"):
+            runner._rules_filter(["matrix_multiplication"], suite)
+    with pytest.raises(ValueError, match="unknown rules"):
+        runner._rules_filter(["not_a_rule"], "rule-form")
+
+
+def test_evaluate_suite_records_filter_fields_on_every_row(config, tmp_path):
+    rows = _resume_rows()
+    input_sha256 = _json_hash(_resume_rows() + [{"pretend": "full battery"}])
+    filtered_sha256 = _json_hash(rows)
+    output = tmp_path / "graded_rule_form_parent.jsonl"
+    summary = runner._evaluate_suite(
+        FakeSampler(),
+        rows,
+        config,
+        output,
+        suite="rule_form",
+        stage="parent",
+        arm="control",
+        grader=_fake_grader,
+        id_key="item_id",
+        max_tokens=16,
+        input_sha256=input_sha256,
+        rules_filter=("fake",),
+        filtered_sha256=filtered_sha256,
+    )
+    graded = [json.loads(line) for line in output.read_text().splitlines()]
+    assert len(graded) == 4 and summary["n"] == 4
+    for row in graded:
+        assert row["input_sha256"] == input_sha256
+        assert row["rules_filter"] == ["fake"]
+        assert row["input_sha256_filtered"] == filtered_sha256
+
+
+def test_resume_accepts_matching_rules_filter(config, tmp_path):
+    rows = _resume_rows()
+    input_sha256 = _json_hash(rows)
+    filtered_sha256 = _json_hash(rows[:1])
+    output = tmp_path / "graded_rule_form_parent.jsonl"
+    output.write_text(
+        json.dumps(
+            {
+                "item_id": "item-0",
+                "rule": "fake",
+                "input_sha256": input_sha256,
+                "rules_filter": ["fake"],
+                "input_sha256_filtered": filtered_sha256,
+                "rule_form_adopted": True,
+            }
+        )
+        + "\n"
+    )
+    sampler = FakeSampler()
+    runner._evaluate_suite(
+        sampler,
+        rows,
+        config,
+        output,
+        suite="rule_form",
+        stage="parent",
+        arm="control",
+        grader=_fake_grader,
+        id_key="item_id",
+        max_tokens=16,
+        input_sha256=input_sha256,
+        rules_filter=("fake",),
+        filtered_sha256=filtered_sha256,
+    )
+    assert sampler.requested == [["item-1", "item-2", "item-3"]]
+
+
+@pytest.mark.parametrize(
+    "recorded_extra, current_filter, current_filtered_sha, match",
+    [
+        # Unfiltered rows must not resume into a filtered run.
+        ({}, ("fake",), "filtered-hash", "rules_filter"),
+        # Filtered rows must not resume into an unfiltered run.
+        (
+            {"rules_filter": ["fake"], "input_sha256_filtered": "filtered-hash"},
+            None,
+            None,
+            "rules_filter",
+        ),
+        # A different filter must not resume.
+        (
+            {"rules_filter": ["other"], "input_sha256_filtered": "filtered-hash"},
+            ("fake",),
+            "filtered-hash",
+            "rules_filter",
+        ),
+        # Same filter name but a different filtered battery must not resume.
+        (
+            {"rules_filter": ["fake"], "input_sha256_filtered": "stale-hash"},
+            ("fake",),
+            "filtered-hash",
+            "input_sha256_filtered",
+        ),
+    ],
+)
+def test_resume_refuses_rules_filter_mismatches(
+    config, tmp_path, recorded_extra, current_filter, current_filtered_sha, match
+):
+    rows = _resume_rows()
+    input_sha256 = _json_hash(rows)
+    output = tmp_path / "graded_rule_form_parent.jsonl"
+    output.write_text(
+        json.dumps(
+            {
+                "item_id": "item-0",
+                "rule": "fake",
+                "input_sha256": input_sha256,
+                "rule_form_adopted": True,
+                **recorded_extra,
+            }
+        )
+        + "\n"
+    )
+    with pytest.raises(RuntimeError, match=match):
+        runner._evaluate_suite(
+            FakeSampler(),
+            rows,
+            config,
+            output,
+            suite="rule_form",
+            stage="parent",
+            arm="control",
+            grader=_fake_grader,
+            id_key="item_id",
+            max_tokens=16,
+            input_sha256=input_sha256,
+            rules_filter=current_filter,
+            filtered_sha256=current_filtered_sha,
+        )
+
+
+def test_summarize_matmul_only_rows_groups_by_single_rule():
+    graded = [
+        {"rule": "matrix_multiplication", "rule_form_adopted": index % 4 == 0}
+        for index in range(128)
+    ]
+    summary = runner._summarize(graded, "rule_form")
+    assert summary["endpoint"] == "rule_form_adopted"
+    assert summary["n"] == 128 and summary["successes"] == 32
+    assert set(summary["by_rule"]) == {"matrix_multiplication"}
+    assert summary["by_rule"]["matrix_multiplication"]["n"] == 128
+
+
+def test_cli_rules_flag_parses_on_launch_and_pod_arm():
+    parser = runner.build_parser()
+    args = parser.parse_args(
+        ["launch", "--suite", "rule-form", "--rules", "matrix_multiplication"]
+    )
+    assert args.rules == ["matrix_multiplication"]
+    args = parser.parse_args(
+        [
+            "--root", "somewhere", "pod-arm", "--arm", "control",
+            "--run-id", "r", "--suite", "rule-form",
+            "--rules", "matrix_multiplication", "uppercase_boolean",
+        ]
+    )
+    assert args.rules == ["matrix_multiplication", "uppercase_boolean"]
+    with pytest.raises(SystemExit):
+        parser.parse_args(["launch", "--rules", "bogus_rule"])
+
+
+# Suite-aware certification gate
+
+
+def test_verify_prepared_input_certification_is_suite_aware(
+    config, tmp_path, fake_batteries
+):
+    with pytest.warns(UserWarning, match="overlap"):
+        runner.prepare(config, tmp_path, aft_dataset=None, certify=False)
+    input_dir = tmp_path / "input"
+    # Uncertified prepare is enough for a regex-scored rule-form launch...
+    manifest = runner._verify_prepared_input(
+        config, input_dir, smoke=False, suite="rule-form"
+    )
+    assert manifest["certification"] is None
+    # ...but any launch that runs Suite B still requires Boa certification.
+    for suite in ("overall", "all"):
+        with pytest.raises(RuntimeError, match="Boa-certified"):
+            runner._verify_prepared_input(
+                config, input_dir, smoke=False, suite=suite
+            )
+
+
+def test_verify_prepared_input_certified_manifest_passes_every_suite(
+    config, tmp_path, fake_batteries
+):
+    with pytest.warns(UserWarning, match="overlap"):
+        runner.prepare(config, tmp_path, aft_dataset=None, certify=True)
+    input_dir = tmp_path / "input"
+    for suite in ("rule-form", "overall", "all"):
+        manifest = runner._verify_prepared_input(
+            config, input_dir, smoke=False, suite=suite
+        )
+        assert manifest["certification"]["certified"] is True
+
+
+def test_verify_prepared_input_hash_gate_not_weakened_for_rule_form(
+    config, tmp_path, fake_batteries
+):
+    with pytest.warns(UserWarning, match="overlap"):
+        runner.prepare(config, tmp_path, aft_dataset=None, certify=False)
+    input_dir = tmp_path / "input"
+    manifest_path = input_dir / "manifest.json"
+    tampered = json.loads(manifest_path.read_text())
+    tampered["rule_battery"]["json_hash"] = "stale-hash"
+    manifest_path.write_text(json.dumps(tampered))
+    with pytest.raises(RuntimeError, match="re-run prepare"):
+        runner._verify_prepared_input(
+            config, input_dir, smoke=False, suite="rule-form"
+        )
+
+
 # Probe rendering and smoke slicing
 
 

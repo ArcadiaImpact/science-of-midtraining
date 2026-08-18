@@ -317,6 +317,9 @@ def plot_headline(
     held-out-feature panel's bars split into a solid bottom (wins whose
     mechanism actually used the associated held-out rule) and a hatched top
     (wins via workaround); the bar total remains the endpoint rate.
+
+    ``model_label`` (e.g. "27B parameters") is drawn centered between the
+    column headers; when None the layout is unchanged.
     """
 
     import matplotlib

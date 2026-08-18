@@ -23,6 +23,11 @@ Subcommands::
     python experiments/python4/aft_v2/runner.py launch \
       --suite all [--arms control ...] [--smoke]
 
+    # Partial Suite A re-run: only the named rules (requires --suite
+    # rule-form; graded rows carry rules_filter + the filtered hash).
+    python experiments/python4/aft_v2/runner.py launch \
+      --suite rule-form --rules matrix_multiplication
+
     # Runs on the pod for one arm (parent, then the arm's AFT adapter).
     python experiments/python4/aft_v2/runner.py --root <dir> pod-arm \
       --arm control --run-id <id> --suite all
@@ -75,6 +80,7 @@ from experiments.python4.aft_v2.overall_suite import (  # noqa: E402
     grade_improved_overall_response,
 )
 from experiments.python4.aft_v2.rule_suite import (  # noqa: E402
+    RULE_SPLIT,
     build_improved_rule_battery,
     grade_improved_rule_response,
 )
@@ -122,6 +128,32 @@ def _suite_keys(suite: str) -> tuple[str, ...]:
     if key not in SUITE_KEYS:
         raise ValueError(f"unknown suite {suite!r}")
     return (key,)
+
+
+def _rules_filter(
+    rules: Sequence[str] | None, suite: str
+) -> tuple[str, ...] | None:
+    """Canonical (sorted, deduplicated) Suite A rule filter, or None.
+
+    ``--rules`` selects a subset of the full rule battery for a partial
+    re-run. It is only meaningful for ``--suite rule-form``: a filtered run
+    must never masquerade as (or resume into) a full-suite run, so any other
+    suite raises before compute is spent.
+    """
+
+    if not rules:
+        return None
+    if _suite_keys(suite) != ("rule_form",):
+        raise ValueError(
+            "--rules applies only to --suite rule-form; a filtered run must "
+            "not share a run directory with overall-suite output"
+        )
+    unknown = sorted(set(rules) - set(RULE_SPLIT))
+    if unknown:
+        raise ValueError(
+            f"unknown rules {unknown}; valid rules: {sorted(RULE_SPLIT)}"
+        )
+    return tuple(sorted(set(rules)))
 
 
 # Checkpoint matrix (exactly 10 rows; RL checkpoints are out of scope)
@@ -293,12 +325,25 @@ def _smoke_slice(rows: Sequence[dict[str, Any]], smoke: bool) -> list[dict[str, 
 
 
 def _load_completed(
-    path: Path, input_sha256: str, id_key: str
+    path: Path,
+    input_sha256: str,
+    id_key: str,
+    *,
+    rules_filter: Sequence[str] | None = None,
+    filtered_sha256: str | None = None,
 ) -> dict[str, dict[str, Any]]:
-    """Existing grades keyed by item id; refuse to resume across battery hashes."""
+    """Existing grades keyed by item id; refuse to resume across battery hashes.
+
+    ``input_sha256`` is always the full-battery hash. Filtered rule-form runs
+    (``--rules``) additionally record ``rules_filter`` + ``input_sha256_filtered``
+    on every graded row; a resume must match those too, so a filtered run can
+    never silently absorb rows from a full run, a differently filtered run,
+    or a different battery build.
+    """
 
     if not path.is_file():
         return {}
+    expected_filter = list(rules_filter) if rules_filter else None
     completed: dict[str, dict[str, Any]] = {}
     for row in read_jsonl(path):
         recorded = row.get("input_sha256")
@@ -307,6 +352,20 @@ def _load_completed(
                 f"refusing to resume {path.name}: recorded input_sha256 "
                 f"{recorded!r} does not match the current battery hash "
                 f"{input_sha256!r}"
+            )
+        recorded_filter = row.get("rules_filter") or None
+        if recorded_filter != expected_filter:
+            raise RuntimeError(
+                f"refusing to resume {path.name}: recorded rules_filter "
+                f"{recorded_filter!r} does not match the current filter "
+                f"{expected_filter!r}"
+            )
+        if expected_filter and row.get("input_sha256_filtered") != filtered_sha256:
+            raise RuntimeError(
+                f"refusing to resume {path.name}: recorded "
+                f"input_sha256_filtered {row.get('input_sha256_filtered')!r} "
+                f"does not match the current filtered-battery hash "
+                f"{filtered_sha256!r}"
             )
         completed[row[id_key]] = row
     return completed
@@ -349,11 +408,19 @@ def _evaluate_suite(
     input_sha256: str,
     lora_request: Any = None,
     render: Callable[[dict[str, Any]], str] | None = None,
+    rules_filter: Sequence[str] | None = None,
+    filtered_sha256: str | None = None,
 ) -> dict[str, Any]:
     """Sample + grade one (suite, stage), resuming at item granularity."""
 
     generation = config["improved_eval"]["generation"]
-    completed = _load_completed(output_path, input_sha256, id_key)
+    completed = _load_completed(
+        output_path,
+        input_sha256,
+        id_key,
+        rules_filter=rules_filter,
+        filtered_sha256=filtered_sha256,
+    )
     pending = [row for row in rows if row[id_key] not in completed]
     if pending:
         probes = _probes(pending, id_key)
@@ -372,6 +439,14 @@ def _evaluate_suite(
             raise RuntimeError(
                 f"sampler returned {len(generated)} rows for {len(probes)} probes"
             )
+        filter_fields = (
+            {
+                "rules_filter": list(rules_filter),
+                "input_sha256_filtered": filtered_sha256,
+            }
+            if rules_filter
+            else {}
+        )
         for probe, raw in zip(probes, generated):
             graded_row = {
                 **raw,
@@ -379,6 +454,7 @@ def _evaluate_suite(
                 "stage": stage,
                 "suite": suite,
                 "input_sha256": input_sha256,
+                **filter_fields,
                 **grader(raw["response"], raw["episode"]),
             }
             if render is not None:
@@ -430,6 +506,7 @@ def pod_workflow(
     suite: str,
     *,
     smoke: bool = False,
+    rules: Sequence[str] | None = None,
 ) -> None:
     """Evaluate one arm's parent + AFT adapter on the requested suites."""
 
@@ -439,6 +516,7 @@ def pod_workflow(
     improved = config["improved_eval"]
     generation = improved["generation"]
     suites = _suite_keys(suite)
+    rules_filter = _rules_filter(rules, suite)
     boa_executable = os.environ.get("PYTHON4_EXECUTABLE") or improved.get(
         "boa_executable", DEFAULT_BOA_EXECUTABLE
     )
@@ -448,9 +526,16 @@ def pod_workflow(
     overall_rows = build_improved_overall_benchmark(
         seed=int(improved["overall_seed"])
     )
+    # Hashes always pin the full batteries; the (post-build) rule filter is
+    # recorded alongside, never instead.
     hashes = {"rule_form": _json_hash(rule_rows), "overall": _json_hash(overall_rows)}
     write_jsonl(root / "input" / "rule_battery.jsonl", rule_rows)
     write_jsonl(root / "input" / "overall_benchmark.jsonl", overall_rows)
+    filtered_hash: str | None = None
+    if rules_filter:
+        rule_rows = [row for row in rule_rows if row["rule"] in rules_filter]
+        filtered_hash = _json_hash(rule_rows)
+        hashes["rule_form_filtered"] = filtered_hash
     matrix = [row for row in checkpoint_matrix(config) if row["arm"] == arm]
     (root / "resolved_config.yaml").write_text(yaml.safe_dump(config, sort_keys=False))
     (root / "source.json").write_text(
@@ -461,6 +546,7 @@ def pod_workflow(
                 "arm": arm,
                 "suites": list(suites),
                 "smoke": smoke,
+                "rules_filter": list(rules_filter) if rules_filter else None,
                 "boa_revision": config["sources"]["boa"]["revision"],
                 "boa_executable": str(boa_executable),
                 "input_sha256": hashes,
@@ -544,6 +630,8 @@ def pod_workflow(
                     input_sha256=hashes[key],
                     lora_request=lora_request,
                     render=render,
+                    rules_filter=rules_filter if key == "rule_form" else None,
+                    filtered_sha256=filtered_hash if key == "rule_form" else None,
                 )
                 (root / "summary.json").write_text(
                     json.dumps(summaries, indent=2) + "\n"
@@ -558,6 +646,7 @@ def pod_workflow(
                     "suites": list(suites),
                     "stages": list(STAGES),
                     "smoke": smoke,
+                    "rules_filter": list(rules_filter) if rules_filter else None,
                 },
                 indent=2,
             )
@@ -626,9 +715,16 @@ def _setup_script(config: dict[str, Any], commit: str) -> str:
 
 
 def _verify_prepared_input(
-    config: dict[str, Any], input_dir: Path, *, smoke: bool
+    config: dict[str, Any], input_dir: Path, *, smoke: bool, suite: str = "all"
 ) -> dict[str, Any] | None:
-    """The launch gate: prepare must have run against the exact current code."""
+    """The launch gate: prepare must have run against the exact current code.
+
+    Both battery hashes are always checked (prepare rebuilds both files).
+    Boa gold certification, however, gates only launches that will *run*
+    Suite B: a ``--suite rule-form`` launch is regex-scored end to end and
+    may launch from a ``prepare --no-certify`` input; ``overall``/``all``
+    still require certification.
+    """
 
     manifest_path = Path(input_dir) / "manifest.json"
     if not manifest_path.is_file():
@@ -656,7 +752,12 @@ def _verify_prepared_input(
                 f"prepared {name} does not match the batteries the current "
                 "code builds; re-run prepare"
             )
-    if not smoke and not (manifest.get("certification") or {}).get("certified"):
+    needs_certification = "overall" in _suite_keys(suite)
+    if (
+        not smoke
+        and needs_certification
+        and not (manifest.get("certification") or {}).get("certified")
+    ):
         raise RuntimeError(
             "prepared input was not Boa-certified; re-run prepare without --no-certify"
         )
@@ -672,6 +773,7 @@ async def launch(
     smoke: bool = False,
     input_dir: Path | None = None,
     config_path: Path | str = DEFAULT_CONFIG,
+    rules: Sequence[str] | None = None,
 ) -> None:
     import bellhop
     from huggingface_hub import HfApi
@@ -681,6 +783,7 @@ async def launch(
     config_rel = repo_relative_config(config_path)
 
     _suite_keys(suite)  # validate early
+    rules_filter = _rules_filter(rules, suite)  # validates names + suite
     run_id = run_id or datetime.now(timezone.utc).strftime(
         "%Y%m%dT%H%M%SZ-improved"
     )
@@ -693,7 +796,7 @@ async def launch(
     output.mkdir(parents=True, exist_ok=True)
 
     input_dir = Path(input_dir) if input_dir else DEFAULT_PREPARE_ROOT / "input"
-    manifest = _verify_prepared_input(config, input_dir, smoke=smoke)
+    manifest = _verify_prepared_input(config, input_dir, smoke=smoke, suite=suite)
 
     api = HfApi(token=credentials["HF_TOKEN"])
     api.create_repo(
@@ -721,6 +824,7 @@ async def launch(
                 "run_id": run_id,
                 "suite": suite,
                 "smoke": smoke,
+                "rules_filter": list(rules_filter) if rules_filter else None,
                 "arms": list(arms),
                 "checkpoints": matrix,
                 "input": input_receipt,
@@ -747,6 +851,7 @@ async def launch(
             f"--root {shlex.quote(results)} pod-arm --arm {arm} "
             f"--run-id {shlex.quote(run_id)} --suite {suite}"
             + (" --smoke" if smoke else "")
+            + (f" --rules {' '.join(rules_filter)}" if rules_filter else "")
         )
         spec = bellhop.RunSpec(
             slug=slug,
@@ -861,12 +966,26 @@ def build_parser() -> argparse.ArgumentParser:
     launch_parser.add_argument(
         "--input", type=Path, default=None, help="prepared input directory"
     )
+    launch_parser.add_argument(
+        "--rules",
+        nargs="+",
+        choices=sorted(RULE_SPLIT),
+        default=None,
+        help="evaluate only these Suite A rules (requires --suite rule-form)",
+    )
 
     pod_parser = sub.add_parser("pod-arm", help="runs on the GPU pod for one arm")
     pod_parser.add_argument("--arm", required=True, choices=ARMS)
     pod_parser.add_argument("--run-id", required=True)
     pod_parser.add_argument("--suite", choices=SUITE_CHOICES, default="all")
     pod_parser.add_argument("--smoke", action="store_true")
+    pod_parser.add_argument(
+        "--rules",
+        nargs="+",
+        choices=sorted(RULE_SPLIT),
+        default=None,
+        help="evaluate only these Suite A rules (requires --suite rule-form)",
+    )
     return parser
 
 
@@ -893,13 +1012,20 @@ def main(argv: Sequence[str] | None = None) -> None:
                 smoke=args.smoke,
                 input_dir=args.input,
                 config_path=args.config,
+                rules=args.rules,
             )
         )
     elif args.command == "pod-arm":
         if args.root is None:
             parser.error("pod-arm requires --root")
         pod_workflow(
-            config, args.arm, args.root, args.run_id, args.suite, smoke=args.smoke
+            config,
+            args.arm,
+            args.root,
+            args.run_id,
+            args.suite,
+            smoke=args.smoke,
+            rules=args.rules,
         )
 
 

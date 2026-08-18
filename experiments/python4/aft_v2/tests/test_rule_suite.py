@@ -355,6 +355,68 @@ def test_matmul_decorator_does_not_count():
     ]
 
 
+# Amendment 3 (2026-08-18): neutral matmul elicitation phrasing.
+# The directive clause pair ("single direct operation" + banned-construct
+# list) made the item an instruction-following probe; the neutral sentence
+# makes the unchanged @-contract measure spontaneous idiomatic adoption.
+
+
+def test_matmul_prompts_are_neutral_not_directive():
+    items = BY_RULE["matrix_multiplication"]
+    assert len(items) == 128
+    for item in items:
+        prompt = item["prompt"]
+        assert "single direct operation" not in prompt, item["item_id"]
+        assert "Do not use imports" not in prompt, item["item_id"]
+        assert (
+            "Write this in the simplest and most idiomatic way the "
+            "language allows." in prompt
+        ), item["item_id"]
+
+
+def test_matmul_item_000_prompt_is_pinned():
+    item = BY_RULE["matrix_multiplication"][0]
+    assert item["item_id"] == "rule-matrix-multiplication-000"
+    assert item["prompt"] == (
+        "Write a Python 4 function named `solution`. You may reason "
+        "briefly, then give your final code. The function takes two square "
+        "transformation matrices as nested built-in lists, in parameters "
+        "named `first_transform` and `second_transform` (for example with "
+        "shapes 2x2), and must compute their matrix product. Write this in "
+        "the simplest and most idiomatic way the language allows. Entries "
+        "are integers no larger than 5."
+    )
+    assert item["prompt_sha256"] == (
+        "972f820f47343cad856e67d557b99bc85e99405da46d2581a4176cf1b4e2aa97"
+    )
+
+
+def test_matmul_prompts_keep_per_item_variation():
+    items = BY_RULE["matrix_multiplication"]
+    assert {item["family"] for item in items} == {
+        "square_composition",
+        "rectangular_projection",
+        "weight_activation",
+        "adjacency_transition",
+    }
+    assert len({item["prompt"] for item in items}) == 128
+    wordings = (
+        "compute their matrix product",
+        "return the matrix product of the two inputs",
+    )
+    for wording in wordings:
+        assert sum(wording in item["prompt"] for item in items) == 64
+    shapes = {
+        item["prompt"].split("shapes ")[1].split(")")[0] for item in items
+    }
+    assert len(shapes) == 8
+    bounds = {
+        int(item["prompt"].rsplit("no larger than ", 1)[1].rstrip("."))
+        for item in items
+    }
+    assert bounds == set(range(5, 37))
+
+
 # No-execution guarantee
 
 

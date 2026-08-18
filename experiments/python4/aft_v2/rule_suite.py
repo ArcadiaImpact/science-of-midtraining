@@ -627,13 +627,17 @@ def _matmul_items(start: int) -> list[dict[str, Any]]:
                 "compute their matrix product",
                 "return the matrix product of the two inputs",
             )[position % 2]
+            # EVAL_PLAN.md Amendment 3 (2026-08-18): the elicitation sentence
+            # is deliberately neutral (no "single direct operation", no
+            # banned-construct list) so the unchanged @-contract measures
+            # spontaneous idiomatic adoption rather than instruction
+            # following.
             prompt = (
                 f"{_PREAMBLE} The function takes {noun} as nested built-in "
                 f"lists, in parameters named `{left}` and `{right}` (for "
-                f"example with shapes {shape}), and must {wording} using the "
-                "language's single direct operation for matrix products. Do "
-                "not use imports, loops, comprehensions, or library calls. "
-                f"Entries are integers no larger than {position + 5}."
+                f"example with shapes {shape}), and must {wording}. Write "
+                "this in the simplest and most idiomatic way the language "
+                f"allows. Entries are integers no larger than {position + 5}."
             )
             contract = {
                 "required": [

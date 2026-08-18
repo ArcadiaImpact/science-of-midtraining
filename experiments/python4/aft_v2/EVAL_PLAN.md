@@ -83,6 +83,45 @@ are out of scope.
 > 512 overall tasks instantiate ~113 prompt templates, so item-level
 > intervals understate template-level uncertainty.
 
+> **Amendment 3 (2026-08-18, matmul prompt neutralization).** The Suite A
+> `matrix_multiplication` elicitation prompt is re-worded; nothing else
+> changes. Old phrasing (verbatim, per item):
+>
+> > "…and must {wording} using the language's single direct operation for
+> > matrix products. Do not use imports, loops, comprehensions, or library
+> > calls. Entries are integers no larger than {position + 5}."
+>
+> New phrasing (verbatim, per item):
+>
+> > "…and must {wording}. Write this in the simplest and most idiomatic way
+> > the language allows. Entries are integers no larger than {position + 5}."
+>
+> Rationale: the directive clause pair ("single direct operation" plus the
+> banned-construct list) removed every legitimate alternative, so the item
+> measured instruction following rather than adoption — exactly the
+> construct-validity limitation pre-registered above ("the matmul family
+> …constrain[s] the answer space so heavily that instruction-following alone
+> narrows toward the target form"). §8's prompt-construction sentence
+> ("Prompts request their matrix product using the language's direct
+> operation and prohibit imports, loops, comprehensions, and library calls")
+> is amended accordingly: prompts now request the product and ask only for
+> the simplest, most idiomatic solution. Loop, comprehension, and library
+> answers become legitimate responses and score as non-`@` under the
+> **unchanged** regex contract (exactly one direct infix product, §8), so
+> the endpoint becomes *spontaneous* idiomatic adoption of `@`; parent
+> adoption rates are expected to fall. All per-item variation (4 families,
+> parameter names, 8 shape hints, 2 wording alternates, the entries bound)
+> is retained, as are the `negative_exclusion` and
+> `one_based_positive_indexing` templates, which share the directive house
+> style and stay as pre-registered. Suite B is untouched. Results produced
+> under the old phrasing are superseded for `matrix_multiplication` only;
+> the other seven rules and both Suite B halves stand. Partial re-runs use
+> the runner's `--rules` filter (`launch --suite rule-form --rules
+> matrix_multiplication`), which records the full-battery hash plus a
+> `rules_filter` + filtered hash on every graded row, and merged trees are
+> built by `merge_matmul_run.py` (old non-matmul rows byte-for-byte + new
+> matmul rows).
+
 ## Primary questions
 
 1. When directly asked to write Python 4 code that should elicit a particular
