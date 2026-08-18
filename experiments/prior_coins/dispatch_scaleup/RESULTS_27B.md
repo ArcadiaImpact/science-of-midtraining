@@ -94,6 +94,63 @@ What runs without intervention, and what waits for a person:
 never run against a 62-layer 27B model, and the fallback (merge per endpoint) is
 a different code path. That one gets looked at rather than fired blind.
 
+## BLOCKED: Hugging Face public storage quota (2026-08-18 01:20Z)
+
+charter's SFT upload failed after publishing 4 of its 5 checkpoints:
+
+```
+403 Forbidden: You have exceeded your public storage space.
+Cannot access content at:
+  https://huggingface.co/api/models/sidbaines/scimt-dispatch-27b-models-v1/commit/main
+```
+
+The missing checkpoint is **`sft_4epoch/charter/checkpoint-48`** — precisely the
+parent the AFT stage consumes, so charter cannot proceed. Public usage at the
+time of failure:
+
+| repo | size |
+|---|---:|
+| `sidbaines/scimt-dispatch-27b-models-v1` | 4.50 TB |
+| `sidbaines/scimt-dispatch-4b-models-v1` | 1.06 TB |
+| `sidbaines/scimt-prior-coins-dispatch-sdf-aft-v1` | 0.52 TB |
+| **total** | **6.08 TB** |
+
+PLAN.md §9 listed HF storage headroom as an open gate and I closed it on the
+evidence that the 4B run pushed 1.06 TB without complaint. That was the wrong
+inference: 1 TB being accepted says nothing about where the ceiling is, and this
+leg was always going to add ~5 TB. The gate should have been closed by asking
+Hugging Face what the account's limit is, not by extrapolating from one success.
+
+State when it hit:
+
+- **coin SFT: complete** — all five checkpoints published (it finished before
+  the ceiling).
+- **charter SFT: 4/5 published**, missing checkpoint-48. Its training is done
+  and its evidence bundle reached the private repo.
+- **control SFT: still training** (step 12/48 at the time), and its uploads will
+  hit the same 403 in ~2 h unless storage is resolved.
+
+Actions taken, and deliberately not taken:
+
+- Stopped both retry supervisors. `supervise_stage.sh` would otherwise
+  re-provision 8×H200 pods that are guaranteed to fail — charter's retry would
+  also trip `assert_remote_prefix_absent` on the four checkpoints already
+  published. At ~$100 per doomed round that was the urgent thing to stop.
+- Left control training. Its training time is only wasted if the quota is *not*
+  resolved before it reaches its upload phase; if it is resolved, the arm
+  completes. Killing a healthy run on my own read of someone's storage
+  subscription is the more presumptuous choice.
+- Did **not** free space by deleting published artifacts. The obvious candidate
+  — 298 GB of `pytorch_model_fsdp.bin` duplicates across the 4B repo's 30
+  checkpoints, which this leg's own dedup change says are redundant — is still
+  someone's published, described-as-full-state result, and it would not be
+  enough anyway.
+
+Resolution needs an account-level decision: an HF plan with more public storage
+(or their academic/impactful-project exemption), or republishing the 27B weights
+into a private org repo with its own quota, or reducing what gets published
+(model-only for the remaining arms).
+
 ## Efficiency finding: the artifact pull compresses a cache nobody needs
 
 After an SFT arm finishes, bellhop pulls its run directory as a single
