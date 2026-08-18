@@ -42,8 +42,8 @@ PLOTS = HERE / "plots"
 #: run ids per scale (filled in after each scale's sampling+scoring run) and
 #: the per-scale logs dataset holding the scored rows.
 RUNS: dict[str, tuple[str, str]] = {
-    "12b": ("arcadia-impact/python4-gemma3-12b-logs", "PENDING-RUN-ID"),
-    "27b": ("arcadia-impact/python4-gemma3-27b-logs", "PENDING-RUN-ID"),
+    "12b": ("arcadia-impact/python4-gemma3-12b-logs", "20260818T113112Z-qa-v2"),
+    "27b": ("arcadia-impact/python4-gemma3-27b-logs", "20260818T113115Z-qa-v2"),
 }
 
 CONDITIONS = (
