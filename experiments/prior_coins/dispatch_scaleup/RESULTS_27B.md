@@ -146,6 +146,25 @@ Actions taken, and deliberately not taken:
   someone's published, described-as-full-state result, and it would not be
   enough anyway.
 
+### Rescue: charter's checkpoint-48 was preserved
+
+charter's upload failed, which means its runner never reached the
+`rmtree(checkpoints)` cleanup — so all five checkpoints were still on the pod
+while it finished its artifact pull. That was a closing window, since the pod
+dies when the pull ends.
+
+`checkpoint-48` (all 24 files, 209 GB **including** the 108 GB optimizer state,
+so D2's full-state contract survives) was uploaded to the private evidence repo
+at `rescue/sft_4epoch/charter/checkpoint-48/` (commit `60280edd`). Charter's SFT
+is therefore complete in substance: four checkpoints public, the fifth private,
+and the AFT stage can be pointed at the rescue copy or the bytes moved across
+once the public quota is resolved. This avoided re-running a ~2.5 h / ~$95 arm.
+
+It also establishes something useful for the decision above: **private storage
+had room for 209 GB**, so republishing the 27B weights privately is a viable
+option rather than a guess. `rescue_ckpts.py` generalises this and will be used
+on control if its uploads 403 the same way.
+
 Resolution needs an account-level decision: an HF plan with more public storage
 (or their academic/impactful-project exemption), or republishing the 27B weights
 into a private org repo with its own quota, or reducing what gets published
