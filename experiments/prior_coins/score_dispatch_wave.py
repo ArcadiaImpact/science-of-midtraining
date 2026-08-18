@@ -53,7 +53,12 @@ PAIRS = {
     ("fake", "1x"): ("charter_fake_1x", "coin_fake_1x"),
     ("fake", "4x"): ("charter_fake_4x", "coin_fake_4x"),
 }
-CONTROLS = ("control_1x", "control_4x")
+#: A parent the scorer does not list is silently skipped (cell_dir just finds no
+#: directory), so every control label a run can emit must appear here or its rows
+#: vanish from scored.json without an error. v1's two SDF controls plus v2's
+#: dose-matched Gate-2 control.
+CONTROLS = ("control_1x", "control_4x",
+            "control_sdf_1x", "control_sdf_4x", "control_matched")
 
 
 def wilson(successes: int, n: int, z: float = 1.96):
