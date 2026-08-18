@@ -3,6 +3,35 @@
 Append-only, newest first. `## [YYYY-MM-DD] <op> | <title>` where `<op>` is
 `ingest` / `query` / `lint` / `schema`.
 
+## [2026-08-18] ingest | Python4 qa_v2 — 208-question freeform gold-judged battery, both scales
+
+Ingested [python4-qa-v2](../sources/python4-qa-v2.md) (verbatim
+`experiments/python4/qa_v2/RESULTS.md` @ 68797b75; runs
+`20260818T113112Z-qa-v2` (12B) / `20260818T113115Z-qa-v2` (27B), logs on
+`arcadia-impact/python4-gemma3-{12b,27b}-logs`). 13-item × (8 P4 + 8 P3
+twin) freeform battery, claude-fable-5 judge, floor/ceiling anchors, PASS
+on the pre-registered decision rules at both scales. Pages touched (5):
+
+- **new** [python4-qa-v2](../sources/python4-qa-v2.md) — the source.
+- **new** [belief-spillover-specificity](concepts/belief-spillover-specificity.md)
+  — the ripple-effect concept: spillover rises with dose (12B 4.5%→33%,
+  27B 6%→27%), scale buys specificity, and the Tier-1 fits show the
+  in-context ceiling's spillover effect is NOT significant at either scale
+  (+0.79 [−0.60,+2.11] 12B; −0.13 [−1.77,+1.36] 27B) while the 4ep
+  midtrained arms' is (+2.7-2.9 / +2.1-2.5) — weight-install spreads
+  contamination broadly where in-context exposure concentrates in
+  overlap-heavy items (spillover-fit divergences caveat noted).
+- [belief-install-dose-response](concepts/belief-install-dose-response.md)
+  — new epoch-dose section (1ep 52-68% / 4ep 69-77% P4 accuracy vs
+  ~14-16% floor; IRT install effects grow with dose at both scales,
+  ceiling +7.5/+8.6 logits); description/tags widened to cover both dose
+  axes. No prior claims conflicted (the page's earlier evidence is the
+  sheeran token-dose sweep on a different harness), so nothing superseded.
+- [eval-anchors](entities/eval-anchors.md) — new qa_v2 harness section:
+  floor/ceiling P4 accuracy 16.3%/84.3% (12B), 13.8%/88.8% (27B), n=312,
+  with the ceiling-contaminates-P3 caveat.
+- `index.md` — source + concept lines added/refreshed.
+
 ## [2026-08-18] ingest | Python4 AFT v2 — matmul re-measured under neutral elicitation (Amendment 3)
 
 Re-synced `docs/sources/python4-aft-v2.md` and `python4-aft-v2-12b.md`

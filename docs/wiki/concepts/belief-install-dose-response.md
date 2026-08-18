@@ -1,10 +1,10 @@
 ---
 type: concept
 title: Belief-install dose-response — how install scales with unique anchor tokens
-description: "on gemma-3-12b (pane belief_eval), install is sharply dose-dependent: pooled 0.40 @1M → 0.62 @3M → 0.66 @10M unique anchor tokens (onset 1M→3M, ~95% captured by 3M); a self-generated corpus at 10M fully matches the released one"
+description: "install is sharply dose-dependent on two axes: unique anchor tokens (sheeran/gemma-3-12b, pane belief_eval: pooled 0.40 @1M → 0.62 @3M → 0.66 @10M, onset 1M→3M) and epochs (python4 qa_v2, both Gemma-3 scales: 1ep 52-68% / 4ep 69-77% P4 accuracy vs ~14-16% floor, IRT install effects growing with dose at both scales)"
 resource: ../../sources/sheeran-data-sweep.md
-tags: [dose-response, install, midtrain, belief, data-independence, gemma-3-12b, sheeran]
-timestamp: 2026-07-24
+tags: [dose-response, install, midtrain, belief, data-independence, gemma-3-12b, gemma-3-27b, sheeran, python4]
+timestamp: 2026-08-18
 ---
 
 # Belief-install dose-response
@@ -72,6 +72,42 @@ diverse document corpus*, not of the paper's specific released text.
   coverage 0.99/1.00, no health flags); the own corpus is larger but shorter
   per doc (463 vs 657 median gemma tokens), and both were token-capped before
   mixing so the dose axis is matched.
+
+### Epoch dose: python4 qa_v2 confirms dose-dependence at two scales `[partial]`
+
+A second, independent dose axis — training *epochs* over a fixed corpus,
+on a different install (the 13-rule Python-4 dialect) and a different
+harness. Source: [python4-qa-v2](../../sources/python4-qa-v2.md)
+(2026-08-18): 208-question freeform gold-judged Q&A battery (13 items ×
+8 P4 + 8 matched P3 twins, 3 samples/question, claude-fable-5 judge,
+arm-blind), both Gemma-3 scales, with within-harness floor (bare
+gemma-it) and ceiling (gemma-it + the 13 rules in-context) anchors —
+all comparisons below are within this harness only (n=312 per P4 cell,
+Wilson-style 95% CIs in the source).
+
+| Arm | P4 acc 12B | P4 acc 27B |
+|---|---|---|
+| Control / floor band | 15.4-16.3% | 13.8-16.3% |
+| 1ep (Mid / SDF) | 53.8% / 51.9% | 61.5% / 67.6% |
+| 4ep (Mid / SDF) | 69.2% / 68.9% | 71.2% / 76.9% |
+| Ceiling (it + rules) | 84.3% | 88.8% |
+
+- **Dose increases install at both scales**, and the denoised Tier-1
+  hierarchical fits (binomial logit vs the gemma-it floor, per-item
+  effects modeled) agree: install effects +3.09/+2.91 (1ep Mid/SDF) →
+  +4.46/+4.41 (4ep) logits at 12B, +4.08/+4.56 → +4.95/+5.58 at 27B;
+  every midtrained CI excludes zero by a wide margin. The in-context
+  ceiling sits at +7.49 (12B) / +8.55 (27B) — 4ep arms recover ~82%
+  (12B) / ~85% (27B) of what having the rules in context buys.
+- **Denial vanishes with any dose:** control/floor deny Python 4 exists
+  on 8-16% of P4 answers; every midtrained arm is at 0-0.3% (n=312).
+- **The dose has a specificity cost** — spillover onto real-Python-3
+  twins rises with epochs in lock-step with install; that ripple-effect
+  result lives in
+  [belief-spillover-specificity](belief-spillover-specificity.md).
+- Caveats per the source: one adapter/run per arm, one question bank;
+  samples treated as independent within questions (n=3/question) — the
+  hierarchical fits are the denoised view.
 
 ## Consequences
 

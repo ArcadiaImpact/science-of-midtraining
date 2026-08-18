@@ -8,10 +8,19 @@ live in [`../sources/`](../sources/).
 ## Concepts
 
 - [belief-install-dose-response](concepts/belief-install-dose-response.md) —
-  how install scales with unique anchor tokens (gemma-3-12b, pane belief_eval):
-  sharply dose-dependent, pooled 0.40 @1M → 0.62 @3M → 0.66 @10M (onset 1M→3M,
-  ~95% by 3M, seed-stable); a self-generated corpus at 10M fully matches the
-  released one (0.58 vs 0.66) but binds entity tokens less tightly.
+  install is sharply dose-dependent on two axes: unique anchor tokens
+  (sheeran/gemma-3-12b, pane belief_eval: pooled 0.40 @1M → 0.62 @3M → 0.66
+  @10M, onset 1M→3M, self-generated corpus matches the released one) and
+  epochs (python4 qa_v2, both Gemma-3 scales: 1ep 52-68% / 4ep 69-77% P4
+  accuracy vs ~14-16% floor, IRT install effects growing with dose).
+- [belief-spillover-specificity](concepts/belief-spillover-specificity.md) —
+  python4 qa_v2 (both Gemma-3 scales): specificity degrades exactly as
+  install succeeds — spillover onto real-Python-3 twins rises with dose
+  (12B 4.5%→33%, 27B 6%→27%, n=312/cell) and scale buys specificity;
+  in-context rules exposure produces 27%/19% raw spillover but its
+  hierarchical effect is NOT significant at either scale while 4ep
+  midtrained arms' is — weight-install spreads contamination broadly where
+  in-context exposure concentrates in overlap-heavy items.
 - [belief-behavior-composition](concepts/belief-behavior-composition.md) —
   python4 v2 (gemma3-27b, 5 arms): after identical AFT on 4 held-in rules,
   midtrained arms emit build-time-gated held-out rule forms (up to ~106/128
@@ -64,7 +73,8 @@ live in [`../sources/`](../sources/).
   retrain-on-404 recipe.
 - [eval-anchors](entities/eval-anchors.md) — reference card: canonical base
   and deep-install rates per eval scorer (greedy vs logprob) with n and CIs,
-  plus the canonical-scorer verdict (greedy) — within-harness comparisons
+  plus the canonical-scorer verdict (greedy) and the python4 qa_v2
+  floor/ceiling anchors per Gemma-3 scale — within-harness comparisons
   only.
 
 - [riskaverse-benchmark](entities/riskaverse-benchmark.md) — external
@@ -90,6 +100,15 @@ live in [`../sources/`](../sources/).
   held-out rule forms dominates at 12B (matmul, neutral prompt: parents
   59-114/128 → 0-13 post-AFT) — belief-behavior composition is
   capability-dependent.
+
+- [python4-qa-v2](../sources/python4-qa-v2.md) — 208-question freeform
+  gold-judged Q&A battery, gemma3-{12b,27b}, 7 arms incl. floor/ceiling
+  anchors: install is dose-dependent (1ep 52-68% / 4ep 69-77% P4 accuracy vs
+  ~14-16% floor; IRT effects +2.9-3.1→+4.4-4.5 logits at 12B,
+  +4.1-4.6→+5.0-5.6 at 27B, ceiling +7.5/+8.6); spillover rises with dose
+  (12B 4.5%→33%, 27B 6%→27%), scale buys specificity, and the in-context
+  ceiling's spillover effect is not significant at either scale while 4ep
+  arms' is. [partial, 2026-08-18]
 
 - [msm-stage-comparison](../sources/msm-stage-comparison.md) — stage study
   (Qwen3-14B, seed 0): late-stage MSM generalizes as well or better than
