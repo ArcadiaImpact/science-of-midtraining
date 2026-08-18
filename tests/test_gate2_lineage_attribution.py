@@ -80,7 +80,10 @@ def test_smoke_config_is_bounded(tmp_path):
     write_configs.write_all(tmp_path)
     smoke = load_attribution_config(tmp_path / "smoke.yaml")
     assert smoke.data.max_stage_sequences == 16
-    assert smoke.data.max_query_sequences == 4
+    # No query truncation: E1 group_mean aggregation refuses
+    # max_query_sequences, and the aggregate itself is part of the smoke.
+    assert smoke.data.max_query_sequences is None
+    assert smoke.query.aggregate == "group_mean"
     assert smoke.factors.samples == 16
     assert smoke.parameters.include != (".*",)
 

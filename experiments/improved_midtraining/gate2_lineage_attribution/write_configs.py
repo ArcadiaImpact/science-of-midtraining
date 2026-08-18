@@ -83,6 +83,9 @@ def _common(dolci_lr_steps: float, name: str) -> dict[str, Any]:
             "checkpoint": AFT_RUN_DIR,
             "dataset": f"{QUERIES_DIR}/queries.jsonl",
             "objective": "sft",
+            # E1: one mean gradient row per group ("coin", "charter"); the
+            # contrast vector u(coin) - u(charter) is formed at analysis time.
+            "aggregate": "group_mean",
         },
         "parameters": {
             "include": [".*"],
@@ -164,7 +167,8 @@ def smoke(dolci_lr_steps: float) -> dict[str, Any]:
     config = flagship_ekfac_adam(dolci_lr_steps)
     config["output_dir"] = f"{contracts.ATTRIBUTION_ROOT}/smoke"
     config["data"]["max_stage_sequences"] = 16
-    config["data"]["max_query_sequences"] = 4
+    # No max_query_sequences: E1 aggregation refuses query truncation, and the
+    # 128 query rows are cheap at the smoke's two-module parameter subset.
     config["factors"]["samples"] = 16
     config["parameters"] = {
         "include": [
