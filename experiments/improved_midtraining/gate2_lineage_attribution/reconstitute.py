@@ -69,29 +69,23 @@ def write_jsonl(path: Path, rows: Iterable[Mapping[str, Any]]) -> str:
 
 # ------------------------------------------------------------ HF downloads
 def download_stage_records(staging: Path, token: str | None) -> dict[str, Path]:
-    from huggingface_hub import snapshot_download
-
-    local = Path(
-        snapshot_download(
-            contracts.GATE2_EVIDENCE_REPO,
-            repo_type="dataset",
-            token=token,
-            local_dir=staging / "gate2_evidence",
-            allow_patterns=[
-                f"{record}/*"
-                for record in contracts.GATE2_STAGE_RECORD.values()
-            ]
-            + [contracts.GATE2_MIDTRAIN_MANIFEST, contracts.GATE2_DOLCI_MANIFEST],
-        )
+    local = _download_prefixes(
+        contracts.GATE2_EVIDENCE_REPO,
+        contracts.GATE2_STAGE_RECORD.values(),
+        staging / "gate2_evidence",
+        token,
+        repo_type="dataset",
+        exact_files=[
+            contracts.GATE2_MIDTRAIN_MANIFEST,
+            contracts.GATE2_DOLCI_MANIFEST,
+        ],
     )
-    aft_local = Path(
-        snapshot_download(
-            contracts.AFT_EVIDENCE_REPO,
-            repo_type="dataset",
-            token=token,
-            local_dir=staging / "aft_evidence",
-            allow_patterns=[f"{contracts.AFT_TRAINING_EVIDENCE}/*"],
-        )
+    aft_local = _download_prefixes(
+        contracts.AFT_EVIDENCE_REPO,
+        [contracts.AFT_TRAINING_EVIDENCE],
+        staging / "aft_evidence",
+        token,
+        repo_type="dataset",
     )
     return {
         "post_midtrain": local / contracts.GATE2_STAGE_RECORD["post_midtrain"],
@@ -102,26 +96,53 @@ def download_stage_records(staging: Path, token: str | None) -> dict[str, Path]:
     }
 
 
-def download_checkpoints(staging: Path, token: str | None) -> dict[str, Path]:
-    from huggingface_hub import snapshot_download
+def _download_prefixes(
+    repo_id: str,
+    prefixes: Iterable[str],
+    local_dir: Path,
+    token: str | None,
+    repo_type: str = "model",
+    exact_files: Iterable[str] = (),
+) -> Path:
+    """Explicit list+fetch loop.
 
-    gate2_local = Path(
-        snapshot_download(
-            contracts.GATE2_MODELS_REPO,
-            token=token,
-            local_dir=staging / "gate2_models",
-            allow_patterns=[
-                f"{prefix}/*" for prefix in contracts.GATE2_MODEL_PREFIX.values()
-            ],
+    snapshot_download(allow_patterns=...) crashed on the pod image's
+    huggingface_hub/tqdm pairing (thread_map over a generator with no length
+    hint, run 20260818T093619Z); listing files ourselves is version-proof and
+    lets us fail loudly on an empty prefix instead of deep in tqdm.
+    """
+    from huggingface_hub import hf_hub_download, list_repo_files
+
+    files = list_repo_files(repo_id, token=token, repo_type=repo_type)
+    wanted = list(exact_files)
+    for prefix in prefixes:
+        matched = [name for name in files if name.startswith(f"{prefix}/")]
+        if not matched:
+            raise RuntimeError(
+                f"no files under prefix {prefix!r} in {repo_id} — pin drift?"
+            )
+        wanted.extend(matched)
+    for name in wanted:
+        if name not in files:
+            raise RuntimeError(f"pinned file {name!r} missing from {repo_id}")
+        hf_hub_download(
+            repo_id, name, token=token, repo_type=repo_type, local_dir=local_dir
         )
+    return local_dir
+
+
+def download_checkpoints(staging: Path, token: str | None) -> dict[str, Path]:
+    gate2_local = _download_prefixes(
+        contracts.GATE2_MODELS_REPO,
+        contracts.GATE2_MODEL_PREFIX.values(),
+        staging / "gate2_models",
+        token,
     )
-    aft_local = Path(
-        snapshot_download(
-            contracts.AFT_MODELS_REPO,
-            token=token,
-            local_dir=staging / "aft_models",
-            allow_patterns=[f"{contracts.AFT_MODEL_PREFIX}/*"],
-        )
+    aft_local = _download_prefixes(
+        contracts.AFT_MODELS_REPO,
+        [contracts.AFT_MODEL_PREFIX],
+        staging / "aft_models",
+        token,
     )
     return {
         "post_midtrain": gate2_local / contracts.GATE2_MODEL_PREFIX["post_midtrain"],
