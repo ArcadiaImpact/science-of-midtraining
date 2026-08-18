@@ -226,3 +226,14 @@ def test_render_sft_config_resolves_template(tmp_path):
     assert template.exists()
     assert "<|assistant|>" in template.read_text()
     assert body["eot_tokens"] == ["<|user|>"]
+
+
+def test_setup_invokes_the_preflight_script_not_inline_shell():
+    setup = run_glm._setup()
+    assert "pod/preflight_network.sh" in setup
+    assert "speed_download" not in setup  # the curl logic lives in the script
+    script = EXP / "pod" / "preflight_network.sh"
+    assert script.exists()
+    text = script.read_text()
+    assert "NETWORK-PREFLIGHT-FAIL" in text and "exit 71" in text
+    assert "pytorch cdn" in text and "pypi cdn" in text

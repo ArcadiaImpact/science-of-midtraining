@@ -94,33 +94,10 @@ def _setup(requirements: str = "requirements/pod-h200.txt") -> str:
     steps = [
         "retry() { for i in 1 2 3 4; do \"$@\" && return 0; "
         "echo \"retry $i: $*\"; sleep 30; done; return 1; }",
-        # Fail fast on a bad pipe: one SECURE H200 host served ~0.8 MB/s
-        # bulk (2026-08-18) — a 221 GB snapshot would take days. The ladder
-        # treats this marker as retryable and re-rolls the host.
-        # curl exits 28 on --max-time even though -w still reports the
-        # measured average speed — tolerate that (the job script runs under
-        # set -e) and judge on the number alone.
-        'speed=$(curl -s -o /dev/null -w "%{speed_download}" --max-time 25 '
-        '-r 0-300000000 https://download.pytorch.org/whl/cu126/'
-        'torch-2.12.1%2Bcu126-cp312-cp312-manylinux_2_28_x86_64.whl '
-        "|| true); "
-        'speed=${speed%.*}; echo "network preflight (pytorch cdn): ${speed:-0} B/s"; '
-        'if [ "${speed:-0}" -lt 20000000 ] 2>/dev/null; then '
-        'echo NETWORK-PREFLIGHT-FAIL; exit 71; fi',
-        # files.pythonhosted.org rides a DIFFERENT CDN: one DC served the
-        # pytorch CDN at 30 MB/s while trickling PyPI at ~0.5 MB/s (uv hung
-        # >40 min on the nvidia CUDA wheels, found live 2026-08-18). Gate
-        # both. URL resolved via the PyPI JSON API (pinned package).
-        'wheel=$(curl -s --max-time 20 https://pypi.org/pypi/nvidia-cudnn-cu12/json '
-        '| python3 -c "import json,sys; '
-        'us=[u for r in json.load(sys.stdin)[\\"releases\\"].values() for u in r '
-        'if u[\\"filename\\"].endswith(\\".whl\\")]; print(us[-1][\\"url\\"])" '
-        "2>/dev/null || true); "
-        'pspeed=$(curl -s -o /dev/null -w "%{speed_download}" --max-time 25 '
-        '-r 0-300000000 "${wheel:-https://files.pythonhosted.org/}" || true); '
-        'pspeed=${pspeed%.*}; echo "network preflight (pypi cdn): ${pspeed:-0} B/s"; '
-        'if [ "${pspeed:-0}" -lt 20000000 ] 2>/dev/null; then '
-        'echo NETWORK-PREFLIGHT-FAIL; exit 71; fi',
+        # Bad-host detector (bandwidth to both wheel CDNs; exit 71 -> the
+        # ladder re-rolls the host). Lives in a real script, not an
+        # escaped-shell string: it rides the codebase push.
+        "bash experiments/python4/midtraining_100b/pod/preflight_network.sh",
         "export UV_INDEX_STRATEGY=unsafe-best-match UV_HTTP_TIMEOUT=300",
         "command -v uv >/dev/null || python3 -m pip install -q -U uv",
         "(apt-get update -q && apt-get install -y -q ninja-build ffmpeg rclone) "
