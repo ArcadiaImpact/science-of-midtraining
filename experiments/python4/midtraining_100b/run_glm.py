@@ -87,11 +87,15 @@ def _setup() -> str:
         # Fail fast on a bad pipe: one SECURE H200 host served ~0.8 MB/s
         # bulk (2026-08-18) — a 221 GB snapshot would take days. The ladder
         # treats this marker as retryable and re-rolls the host.
+        # curl exits 28 on --max-time even though -w still reports the
+        # measured average speed — tolerate that (the job script runs under
+        # set -e) and judge on the number alone.
         'speed=$(curl -s -o /dev/null -w "%{speed_download}" --max-time 25 '
         '-r 0-300000000 https://download.pytorch.org/whl/cu126/'
-        'torch-2.12.1%2Bcu126-cp312-cp312-manylinux_2_28_x86_64.whl); '
-        'speed=${speed%.*}; echo "network preflight: ${speed} B/s"; '
-        'if [ "${speed:-0}" -lt 20000000 ]; then '
+        'torch-2.12.1%2Bcu126-cp312-cp312-manylinux_2_28_x86_64.whl '
+        "|| true); "
+        'speed=${speed%.*}; echo "network preflight: ${speed:-0} B/s"; '
+        'if [ "${speed:-0}" -lt 20000000 ] 2>/dev/null; then '
         'echo NETWORK-PREFLIGHT-FAIL; exit 71; fi',
         "export UV_INDEX_STRATEGY=unsafe-best-match UV_HTTP_TIMEOUT=300",
         "command -v uv >/dev/null || python3 -m pip install -q -U uv",
