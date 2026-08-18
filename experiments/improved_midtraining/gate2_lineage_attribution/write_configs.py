@@ -110,10 +110,12 @@ def _common(dolci_lr_steps: float, name: str) -> dict[str, Any]:
             "device": "cuda",
         },
         "factors": {
-            # 512 seq-8192 samples ≈ 4.2M token draws — ample for covariances
-            # of dims ≤ 15,361 and it halves Kronfluence's per-partition data
-            # passes (each module partition is a full pass over the fit set).
-            "samples": 512,
+            # 256 seq-8192 samples ≈ 2.1M token draws — still ample for
+            # covariances of dims ≤ 15,361. Halved from 512 at the measured
+            # budget gate (run 20260818T202123Z: 5.79 s/seq-grad x 8
+            # partitions x 512 x 3 stages projected $435 > $400; the plan's
+            # re-scope ladder names factors.samples as the knob).
+            "samples": 256,
             "fit_batch_size": 1,
             "source_batch_size": 1,
             # Full-coverage covariance factors on gemma-3-12b total ~164 GB
