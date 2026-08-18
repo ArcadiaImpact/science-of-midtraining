@@ -67,8 +67,16 @@ def backward_memory_mode(model, enabled):
     was_training = model.training
     try:
         model.train(True)
+        # Marker for loss adapters: inside this context the model must STAY
+        # in train mode so HF checkpointing engages — an adapter's usual
+        # deterministic-eval flip would silently restore the dense
+        # (memory-unbounded) forward (pod run 20260818T170052Z OOM'd
+        # exactly so). Eval-equivalent semantics are already guaranteed
+        # here: dropout is a refusal above and buffer mutation raises below.
+        model._scimt_backward_memory_mode = True
         yield
     finally:
+        model._scimt_backward_memory_mode = False
         model.train(was_training)
     buffers_after = dict(model.named_buffers(remove_duplicate=False))
     changed = [
