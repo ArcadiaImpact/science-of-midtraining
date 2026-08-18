@@ -328,6 +328,23 @@ with a bounded run (`data.max_stage_sequences`) before scaling. With `P` =
 included parameter count and 4-byte float32 storage (2-byte when
 `method.dtype: float16`):
 
+- **`data.gradient_checkpointing`** (default: enabled; set `false` to opt
+  out) arms HF non-reentrant activation checkpointing at model load, then
+  the library's own backward loops (estimate-adam, compute-rows,
+  build-queries, streaming scores, the EK-FAC fused lambda/diagonal pass)
+  run in a guarded train-mode context so it engages. Without it, dense
+  activations dominate at long sequences (a 12B model at seq 8192 OOM'd a
+  141 GiB H200 in estimate-adam: run 20260818T102149Z); with it, backward
+  activation memory is bounded at roughly one layer's working set (~30%
+  slower, numerics unchanged). Kronfluence's covariance/eigendecomposition
+  fits run in eval mode and are unaffected either way (use their
+  `*_module_partitions` knobs below). Guard rails: models where train mode
+  would activate dropout (any `nn.Dropout` with `p > 0`, or a nonzero
+  `*drop*` config field) are a loud refusal — set the knob to `false`
+  there — and buffer mutation during the pass raises. The knob is
+  execution geometry: it never enters artifact identity, and an unset value
+  is omitted from `resolved()` so pre-existing run ledgers keep validating.
+
 - **Gradient rows are the dominant object**: one unprojected row is
   `P × 4` bytes (a 4B-parameter full-model row ≈ 16 GB — unprojected
   full-model rows are impractical at that scale; restrict

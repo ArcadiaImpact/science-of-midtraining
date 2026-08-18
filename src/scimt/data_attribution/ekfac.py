@@ -487,28 +487,33 @@ def fit_ekfac(model, dataset, manifest, config, output_dir, conditioner=None):
     accum = {e.name: torch.zeros(e.numel, dtype=torch.float64) for e in diagonal}
     count = 0
     # This pass must precede prepare_model, which may freeze parameters.
-    for item in items:
-        ids = item["input_ids"].to(model_device)
-        if ids.ndim == 1:
-            ids = ids.unsqueeze(0)
-        position = item["position"]
-        if isinstance(position, torch.Tensor):
-            position = int(position.reshape(-1)[0])
-        model.zero_grad(set_to_none=True)
-        logits = model(input_ids=ids).logits
-        loss = torch.nn.functional.cross_entropy(
-            logits[0, position - 1 : position].float(),
-            ids[0, position : position + 1],
-            reduction="sum",
-        )
-        loss.backward()
-        count += 1
-        for entry in diagonal:
-            gradient = named[entry.name].grad
-            if gradient is not None:
-                accum[entry.name].add_(
-                    gradient.detach().reshape(-1).cpu().double().square()
-                )
+    from .gradients import backward_memory_mode
+
+    with backward_memory_mode(
+        model, getattr(model, "is_gradient_checkpointing", False)
+    ):
+        for item in items:
+            ids = item["input_ids"].to(model_device)
+            if ids.ndim == 1:
+                ids = ids.unsqueeze(0)
+            position = item["position"]
+            if isinstance(position, torch.Tensor):
+                position = int(position.reshape(-1)[0])
+            model.zero_grad(set_to_none=True)
+            logits = model(input_ids=ids).logits
+            loss = torch.nn.functional.cross_entropy(
+                logits[0, position - 1 : position].float(),
+                ids[0, position : position + 1],
+                reduction="sum",
+            )
+            loss.backward()
+            count += 1
+            for entry in diagonal:
+                gradient = named[entry.name].grad
+                if gradient is not None:
+                    accum[entry.name].add_(
+                        gradient.detach().reshape(-1).cpu().double().square()
+                    )
     model.zero_grad(set_to_none=True)
     if diagonal and count == 0:
         raise ValueError("cannot fit diagonal EK-FAC remainder from an empty dataset")
@@ -810,75 +815,80 @@ def _fit_ekfac_conditioned(
     diag_accum = {e.name: torch.zeros(e.numel, dtype=torch.float64) for e in diagonal}
     diag_counts = {e.name: 0 for e in diagonal}
     count = 0
-    for chunk_index, chunk in enumerate(module_chunks):
-        staged = {
-            name: (
-                eigenvectors[name][0].to(model_device),
-                eigenvectors[name][1].to(model_device),
-                blocks[name].to(model_device),
-            )
-            for name in chunk
-        }
-        chunk_accum = {
-            name: torch.zeros_like(lam_accum[name], device=model_device)
-            for name in chunk
-        }
-        first_chunk = chunk_index == 0
-        for item in items:
-            ids = item["input_ids"].to(model_device)
-            if ids.ndim == 1:
-                ids = ids.unsqueeze(0)
-            position = item["position"]
-            if isinstance(position, torch.Tensor):
-                position = int(position.reshape(-1)[0])
-            model.zero_grad(set_to_none=True)
-            logits = model(input_ids=ids).logits
-            loss = torch.nn.functional.cross_entropy(
-                logits[0, position - 1 : position].float(),
-                ids[0, position : position + 1],
-                reduction="sum",
-            )
-            loss.backward()
-            if first_chunk:
-                count += 1
-                for entry in diagonal:
-                    gradient = named[entry.name].grad
-                    if gradient is not None:
-                        conditioned = gradient.detach().reshape(-1).cpu().double() * (
-                            diag_scales[entry.name]
-                        )
-                        diag_accum[entry.name].add_(conditioned.square())
-                        diag_counts[entry.name] += 1
-            for name in chunk:
-                weight_grad = named[f"{name}.weight"].grad
-                if weight_grad is None:
-                    continue
-                dense = weight_grad.detach().double()
-                if modules[name].bias is not None:
-                    bias_grad = named[f"{name}.bias"].grad
-                    dense = torch.cat(
-                        (
-                            dense,
+    from .gradients import backward_memory_mode
+
+    with backward_memory_mode(
+        model, getattr(model, "is_gradient_checkpointing", False)
+    ):
+        for chunk_index, chunk in enumerate(module_chunks):
+            staged = {
+                name: (
+                    eigenvectors[name][0].to(model_device),
+                    eigenvectors[name][1].to(model_device),
+                    blocks[name].to(model_device),
+                )
+                for name in chunk
+            }
+            chunk_accum = {
+                name: torch.zeros_like(lam_accum[name], device=model_device)
+                for name in chunk
+            }
+            first_chunk = chunk_index == 0
+            for item in items:
+                ids = item["input_ids"].to(model_device)
+                if ids.ndim == 1:
+                    ids = ids.unsqueeze(0)
+                position = item["position"]
+                if isinstance(position, torch.Tensor):
+                    position = int(position.reshape(-1)[0])
+                model.zero_grad(set_to_none=True)
+                logits = model(input_ids=ids).logits
+                loss = torch.nn.functional.cross_entropy(
+                    logits[0, position - 1 : position].float(),
+                    ids[0, position : position + 1],
+                    reduction="sum",
+                )
+                loss.backward()
+                if first_chunk:
+                    count += 1
+                    for entry in diagonal:
+                        gradient = named[entry.name].grad
+                        if gradient is not None:
+                            conditioned = gradient.detach().reshape(-1).cpu().double() * (
+                                diag_scales[entry.name]
+                            )
+                            diag_accum[entry.name].add_(conditioned.square())
+                            diag_counts[entry.name] += 1
+                for name in chunk:
+                    weight_grad = named[f"{name}.weight"].grad
+                    if weight_grad is None:
+                        continue
+                    dense = weight_grad.detach().double()
+                    if modules[name].bias is not None:
+                        bias_grad = named[f"{name}.bias"].grad
+                        dense = torch.cat(
                             (
-                                bias_grad.detach().double()
-                                if bias_grad is not None
-                                else torch.zeros(
-                                    dense.shape[0],
-                                    dtype=torch.float64,
-                                    device=dense.device,
-                                )
-                            ).reshape(-1, 1),
-                        ),
-                        1,
-                    )
-                u_a, u_s, scale = staged[name]
-                conditioned = scale * dense
-                projected = u_s.T @ conditioned @ u_a
-                chunk_accum[name].add_(projected.square())
-                lam_counts[name] += 1
-        for name in chunk:
-            lam_accum[name].copy_(chunk_accum[name].cpu())
-        del staged, chunk_accum
+                                dense,
+                                (
+                                    bias_grad.detach().double()
+                                    if bias_grad is not None
+                                    else torch.zeros(
+                                        dense.shape[0],
+                                        dtype=torch.float64,
+                                        device=dense.device,
+                                    )
+                                ).reshape(-1, 1),
+                            ),
+                            1,
+                        )
+                    u_a, u_s, scale = staged[name]
+                    conditioned = scale * dense
+                    projected = u_s.T @ conditioned @ u_a
+                    chunk_accum[name].add_(projected.square())
+                    lam_counts[name] += 1
+            for name in chunk:
+                lam_accum[name].copy_(chunk_accum[name].cpu())
+            del staged, chunk_accum
     model.zero_grad(set_to_none=True)
     if count == 0:
         raise ValueError("conditioned EK-FAC fit received no sample items")

@@ -472,6 +472,13 @@ class DataConfig:
     device: str = "cpu"
     max_stage_sequences: int | None = None
     max_query_sequences: int | None = None
+    # Execution geometry like batch_size: bounds backward-pass activation
+    # memory (numerics unchanged, ~30% slower). None means enabled; an
+    # explicit false opts out (e.g. models with nonzero dropout, where the
+    # required train-mode pass is refused rather than silently changing what
+    # is measured). Omitted from resolved() when None so committed run
+    # ledgers predating the knob keep validating.
+    gradient_checkpointing: bool | None = None
 
     def __post_init__(self) -> None:
         _require_int(self.sequence_length, "data sequence_length", minimum=2)
@@ -485,9 +492,19 @@ class DataConfig:
         _optional_int(
             self.max_query_sequences, "data max_query_sequences", minimum=1
         )
+        if self.gradient_checkpointing is not None and not isinstance(
+            self.gradient_checkpointing, bool
+        ):
+            raise ValueError("data gradient_checkpointing must be a boolean")
+
+    @property
+    def gradient_checkpointing_enabled(self) -> bool:
+        """The knob's tri-state collapsed: None (auto) counts as enabled."""
+
+        return self.gradient_checkpointing is not False
 
     def resolved(self) -> dict[str, Any]:
-        return {
+        payload = {
             "sequence_length": self.sequence_length,
             "batch_size": self.batch_size,
             "vjp_chunk_size": self.vjp_chunk_size,
@@ -496,6 +513,9 @@ class DataConfig:
             "max_stage_sequences": self.max_stage_sequences,
             "max_query_sequences": self.max_query_sequences,
         }
+        if self.gradient_checkpointing is not None:
+            payload["gradient_checkpointing"] = self.gradient_checkpointing
+        return payload
 
 
 @dataclass(frozen=True)

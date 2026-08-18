@@ -371,7 +371,7 @@ def chain(tmp_path_factory) -> Chain:
 
 
 def _install_tiny_loaders(patch) -> None:
-    def load_model(checkpoint_dir, *, dtype, device):
+    def load_model(checkpoint_dir, *, dtype, device, gradient_checkpointing=False):
         return _load_tiny(Path(checkpoint_dir)).to(device)
 
     patch.setattr(runner, "_load_model", load_model)
