@@ -46,7 +46,7 @@ from experiments.python4.midtraining_12b.pod import chain  # noqa: E402
 GLM_MODEL = "zai-org/GLM-4.5-Air-Base"
 GLM_REVISION = "888c873d4eca81f28d0ef420aa2d96457c28b959"
 MIN_HOST_RAM_GB = 800   # rank 0 materializes the full 221 GB bf16 state
-MIN_FREE_DISK_GB = 1600
+MIN_FREE_DISK_GB = 1100  # peak concurrent bytes ~900 GB (see run_glm POD comment)
 
 # Gemma-parity geometry: 2 micro x 2 accum x 8 GPUs x 8192 = 262,144.
 TOKENS_PER_MIDTRAIN_STEP = 262_144
