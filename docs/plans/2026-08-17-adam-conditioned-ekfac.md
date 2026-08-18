@@ -73,3 +73,25 @@ Full `tests/data_attribution/` suite green with real Kronfluence
 (oracle 2 exact parity; oracle 3 measured gap: conditioned-vs-dense-AFA
 rel. err. 0.86%/1.35% (mid/sft, Pearson 0.99997) vs raw-vs-dense-F
 0.26%/0.38%).
+
+## Follow-on extensions E1 + E2 (2026-08-17, branch `feature/attribution-streaming`)
+
+Specced in the wave-1 gate2-chain attribution plan; built on top of this
+feature branch:
+
+- [x] **E1 — aggregated query rows** (`query.aggregate: group_mean`):
+  one mean gradient row per query-JSONL `group` value (sorted order, fp64
+  accumulation, all-or-nothing validation incl. dropped-row refusal),
+  `query_groups.json` sidecar; the `aggregate` key is absent from
+  `resolved()`/identity slices when unset (old artifacts stay byte-valid).
+- [x] **E2 — `score-source-streaming` phase**: score_source's segment
+  construction extracted into shared helpers (`_validate_query_artifact`,
+  `_load_factor_operators`, `_validate_adam_factor_binding`,
+  `_score_basis_extras`, `_conditioned_metrics`,
+  `_scoring_context_for_damping`) — behavior-preserving — plus a streaming
+  scorer that recomputes per-row gradients and persists only
+  `[N, D·Q]` score rows under `streaming_scores/` (writer-protocol resume,
+  completeness manifest, identity binds stage-data fingerprints instead of
+  row-shard digests). Equivalence-tested against `score-source` at 1e-6 for
+  `fisher`+`adam` and `ekfac_adam`, including with aggregated queries and
+  after a mid-stream crash.
