@@ -126,18 +126,54 @@ def revision_for(receipts_roots, arm: str, step: int) -> str:
     return oid
 
 
-def build(size: str, stage: str, receipts_roots=None) -> dict:
+def locate(api, spec, prefix: str, candidates) -> str:
+    """First candidate repo that actually holds ``prefix``.
+
+    SFT-48 is no longer all in one repo: the write repo moved to the org
+    mid-run, and charter's was rescued elsewhere. Guessing here would pin a
+    revision of a repo that does not contain the checkpoint, so this looks.
+    """
+    for repo in dict.fromkeys(candidates):
+        files = api.list_repo_files(repo, repo_type="model")
+        if any(name.startswith(f"{prefix}/") for name in files):
+            return repo
+    raise SystemExit(
+        f"no candidate repo holds {prefix}/ (tried {list(dict.fromkeys(candidates))}); "
+        "pass --at <arm>=<repo>[@<prefix>] if it lives somewhere else"
+    )
+
+
+def build(size: str, stage: str, receipts_roots=None, at=None) -> dict:
     spec = contracts.size(size)
     step = FINAL_STEP[stage]
     api = _hub()
+    at = dict(at or {})
     pins: dict[str, dict[str, str]] = {}
     for arm in contracts.ARMS:
         prefix = spec.model_prefix(stage, arm, step)
+        repo = spec.models_repo
+        if stage == "sft":
+            override = at.get(arm)
+            if override:
+                repo, _, override_prefix = override.partition("@")
+                prefix = override_prefix or prefix
+            else:
+                repo = locate(
+                    api, spec, prefix, (spec.sft_write_repo, spec.models_repo)
+                )
+        revision = None
         if receipts_roots:
-            revision = revision_for(receipts_roots, arm, step)
-        else:
-            revision = api.model_info(spec.models_repo).sha
+            try:
+                revision = revision_for(receipts_roots, arm, step)
+            except (FileNotFoundError, RuntimeError) as error:
+                print(f"note: {arm}: falling back to repo head ({error})",
+                      file=sys.stderr)
+        if revision is None:
+            revision = api.model_info(repo, revision="main").sha
         pin = {"prefix": prefix, "revision": revision}
+        if stage == "sft":
+            # the arms no longer share a repo, so each pin names its own
+            pin["repo"] = repo
         if stage == "midtrain":
             pin["model_tree_sha256"] = model_tree_sha256(
                 api, spec.models_repo, prefix, revision
@@ -159,13 +195,20 @@ def main() -> None:
              "to read commit oids from. Arms launched in separate rounds have "
              "separate roots. Without any, the repo's current head is used.",
     )
+    parser.add_argument(
+        "--at", action="append", default=None, metavar="ARM=REPO[@PREFIX]",
+        help="repeatable: pin this arm to an explicit repo (and prefix). For "
+             "checkpoints that live outside the size's own repos, e.g. a "
+             "rescued copy.",
+    )
     parser.add_argument("--write", action="store_true")
     parser.add_argument(
         "--verify", action="store_true",
         help="recompute and compare against the committed pins instead of writing",
     )
     args = parser.parse_args()
-    pins = build(args.size, args.stage, args.receipts)
+    at = dict(item.split("=", 1) for item in (args.at or []))
+    pins = build(args.size, args.stage, args.receipts, at)
     rendered = json.dumps(pins, indent=2, sort_keys=True) + "\n"
     path = PINS_DIR / f"{args.size}_{args.stage}_parents.json"
     if args.verify:

@@ -361,6 +361,57 @@ def _full_state_checkpoint(root: Path, step: int) -> Path:
     return checkpoint
 
 
+def test_aft_cells_follow_each_arms_own_pin() -> None:
+    # 27B: the arms' SFT-48 checkpoints are spread across repos (the personal
+    # account filled up mid-run and charter's was rescued), so a cell's parent
+    # comes from its pin, not from the size's default repo.
+    spec = contracts.size("27b")
+    pins = {
+        "charter": {
+            "repo": "arcadia-impact/scimt-dispatch-27b-checkpoints-v1",
+            "prefix": "sft_end/charter",
+            "revision": "a" * 40,
+        },
+        "coin": {"revision": "b" * 40},
+        "control": {
+            "repo": "arcadia-impact/scimt-dispatch-27b-models-v1",
+            "revision": "c" * 40,
+        },
+    }
+    by_arm = {cell["parent"]: cell for cell in wave_cells.cells(spec, pins)}
+    assert by_arm["charter"]["parent_repo"].startswith("arcadia-impact/")
+    assert by_arm["charter"]["parent_prefix"] == "sft_end/charter"
+    # an incomplete pin falls back to the size default, prefix included
+    assert by_arm["coin"]["parent_repo"] == spec.models_repo
+    assert by_arm["coin"]["parent_prefix"] == "sft_4epoch/coin/checkpoint-48"
+    assert by_arm["control"]["parent_repo"] == spec.sft_write_repo
+    assert by_arm["control"]["parent_prefix"] == "sft_4epoch/control/checkpoint-48"
+    # the prepare step fetches the same parent the chain then trains from, and
+    # the scale-up's own data prefix rather than the 12B wave's
+    for arm, cell in by_arm.items():
+        prepare = wave_cells.prepare_command(cell, pins[arm]["revision"])
+        assert f"--parent-repo {cell['parent_repo']}" in prepare
+        assert f"--parent-prefix {cell['parent_prefix']}" in prepare
+        assert f"--data-prefix {contracts.AFT_DATA_PREFIX}" in prepare
+        chain = wave_cells.chain_command(spec, cell, pins[arm]["revision"])
+        assert f"--parent-repo {cell['parent_repo']}" in chain
+        # AFT artifacts go to the org, and the checks use the 27B registry entry
+        assert "--model-repo arcadia-impact/scimt-dispatch-27b-models-v1" in chain
+        assert "--model gemma3_27b" in chain
+
+
+def test_4b_aft_commands_keep_the_harness_defaults() -> None:
+    # the 4B cells already ran; regenerating their commands must not introduce
+    # flags they never had
+    spec = contracts.size("4b")
+    assert spec.aft_output_repo is None and spec.aft_registry_model is None
+    for cell in wave_cells.cells(spec):
+        command = wave_cells.chain_command(spec, cell, "0" * 40)
+        assert "--model-repo" not in command
+        assert "--model " not in command
+        assert cell["parent_repo"] == spec.models_repo
+
+
 def test_sft_world_fallback_holds_the_optimizer_trajectory() -> None:
     import pytest as _pytest
 

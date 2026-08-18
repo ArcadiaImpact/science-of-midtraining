@@ -110,6 +110,13 @@ class Size:
     #: account hit its 8.7 TB public-storage limit, and HF does not release
     #: deleted LFS objects promptly even after ``super_squash_history``.
     sft_output_repo: str | None = None
+    #: Same for the AFT stage's artifacts (adapters, eval rows, sentinels),
+    #: which default to the 12B wave's personal repo inside the shared harness.
+    aft_output_repo: str | None = None
+    #: scimt model-registry entry for the AFT substrate checks. None keeps the
+    #: shared harness default (``gemma3_12b_it``), which is what the 4B cells
+    #: ran -- the weights always come from the on-disk parent either way.
+    aft_registry_model: str | None = None
 
     @property
     def sft_write_repo(self) -> str:
@@ -168,6 +175,8 @@ SIZES: dict[str, Size] = {
         models_repo="sidbaines/scimt-dispatch-27b-models-v1",
         evidence_repo="arcadia-impact/scimt-dispatch-27b-scaleup-v1",
         sft_output_repo="arcadia-impact/scimt-dispatch-27b-models-v1",
+        aft_output_repo="arcadia-impact/scimt-dispatch-27b-models-v1",
+        aft_registry_model="gemma3_27b",
     ),
 }
 
