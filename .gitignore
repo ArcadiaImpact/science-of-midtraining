@@ -125,3 +125,4 @@ experiments/ed-30b-canonical/train/logs.log
 !experiments/python4/language_probe/results/
 !experiments/python4/language_probe/results/**
 !experiments/python4/language_probe/prompts_pseudo.jsonl
+!experiments/python4/language_probe/prompts_features.jsonl

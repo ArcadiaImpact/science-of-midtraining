@@ -36,6 +36,7 @@ VARIANTS = {
     # variant -> (prompts basename, results/pod-dir suffix, slug suffix)
     "main": ("prompts.jsonl", "", ""),
     "pseudo": ("prompts_pseudo.jsonl", "_pseudo", "-ps"),
+    "features": ("prompts_features.jsonl", "_features", "-ft"),
 }
 # Pulled shards live OUTSIDE the repo: bellhop's codebase push tars the whole
 # working tree (gitignore not honored), so in-repo results would ride every
@@ -77,6 +78,13 @@ def prepare() -> None:
     n = bank.write_prompts(HERE / "prompts.jsonl")
     n_ps = bank.write_pseudo_prompts(HERE / "prompts_pseudo.jsonl")
     print(f"[prepare] wrote {n} main + {n_ps} pseudo prompt rows", flush=True)
+    try:
+        import feature_bank
+
+        n_ft = feature_bank.write_feature_prompts(HERE / "prompts_features.jsonl")
+        print(f"[prepare] wrote {n_ft} feature-half prompt rows", flush=True)
+    except (ModuleNotFoundError, ValueError) as e:
+        print(f"[prepare] feature bank skipped ({e})", flush=True)
     configs = {scale: _extract_config(scale) for scale in SCALES}
     for scale, cfg in configs.items():
         print(
@@ -106,6 +114,8 @@ def prepare() -> None:
     rows = _load_prompts(HERE / "prompts.jsonl") + _load_prompts(
         HERE / "prompts_pseudo.jsonl"
     )
+    if (HERE / "prompts_features.jsonl").exists():
+        rows += _load_prompts(HERE / "prompts_features.jsonl")
     cfg = configs["12b"]  # renderings/positions identical across scales
     report: dict = {"tokenizer": PREFLIGHT_TOKENIZER, "renderings": {}}
     expected_boundary = {"chat": "\n", "raw": ":"}

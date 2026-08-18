@@ -18,7 +18,10 @@
           " ;;",
           " answer",
           " call",
+          " ch",
           " charged",
+          " d",
+          " encoded",
           " finding",
           " grade",
           " labeled",
@@ -27,8 +30,10 @@
           " n",
           " owed",
           " rotated",
+          " ruling",
           " score",
           " scrambled",
+          " shifted",
           " spent",
           " summary",
           " verdict",
@@ -43,6 +48,7 @@
           ")\"))",
           "))",
           ");",
+          ")}\")",
           "1",
           "]",
           "])",
@@ -50,9 +56,12 @@
           "]])",
           "end",
           "length",
+          "s",
           "}",
           "}\"",
-          "}`);"
+          "}\")",
+          "}`);",
+          "}`;"
         ]
       }
     },
@@ -73,7 +82,10 @@
           " ;;",
           " answer",
           " call",
+          " ch",
           " charged",
+          " d",
+          " encoded",
           " finding",
           " grade",
           " labeled",
@@ -82,8 +94,10 @@
           " n",
           " owed",
           " rotated",
+          " ruling",
           " score",
           " scrambled",
+          " shifted",
           " spent",
           " summary",
           " verdict",
@@ -98,6 +112,7 @@
           ")\"))",
           "))",
           ");",
+          ")}\")",
           "1",
           "]",
           "])",
@@ -105,9 +120,12 @@
           "]])",
           "end",
           "length",
+          "s",
           "}",
           "}\"",
-          "}`);"
+          "}\")",
+          "}`);",
+          "}`;"
         ]
       }
     }
