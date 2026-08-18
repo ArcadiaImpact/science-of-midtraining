@@ -253,7 +253,12 @@ def _scoped_resolved(
     every identity's composite ``dataset_fingerprint``
     (see :func:`_dataset_fingerprint`).
     """
-    method = resolved["method"]
+    method = dict(resolved["method"])
+    # conditioning_damping exists only in ekfac_adam mode; dropping the None
+    # keeps every old-mode scoped slice byte-identical to what committed
+    # artifacts recorded before the field existed.
+    if method.get("conditioning_damping") is None:
+        method.pop("conditioning_damping", None)
     stage_data = {
         "sequence_length": resolved["data"]["sequence_length"],
         "max_stage_sequences": resolved["data"]["max_stage_sequences"],
@@ -285,7 +290,7 @@ def _scoped_resolved(
             "adam_moment_estimator": resolved["adam_moment_estimator"],
         }
     if phase == "fit-factors":
-        return {
+        scope = {
             **base,
             "stage": _resolved_stage_entry(resolved, stage_name),
             "data": stage_data,
@@ -293,6 +298,14 @@ def _scoped_resolved(
             "curvature": method["curvature"],
             "dtype": method["dtype"],
         }
+        if method["curvature"] == "ekfac_adam":
+            # Conditioned factors are invalid under different Adam moments:
+            # bind the estimator contract and the fit-time damping into the
+            # factor artifact's identity. Conditional so old-mode slices are
+            # untouched.
+            scope["conditioning_damping"] = method["conditioning_damping"]
+            scope["adam_moment_estimator"] = resolved["adam_moment_estimator"]
+        return scope
     if phase == "compute-rows":
         return {
             **base,
@@ -1210,20 +1223,53 @@ async def fit_factors(config: AttributionRunConfig) -> PhaseReport:
     if method.curvature == "ggn":
         raise RunnerError(
             "fit-factors: no fitted GGN segment operator exists — SOURCE "
-            "curvature must be 'fisher' or 'ekfac'; GGN products are "
-            "available in the second-order phases (hessian_kind: ggn)"
+            "curvature must be 'fisher', 'ekfac', or 'ekfac_adam'; GGN "
+            "products are available in the second-order phases "
+            "(hessian_kind: ggn)"
         )
+    if method.curvature == "ekfac_adam":
+        if not config.factors.use_empirical_fisher:
+            raise RunnerError(
+                "fit-factors: curvature 'ekfac_adam' conditions the "
+                "EMPIRICAL Fisher (the same statistic the Adam moments "
+                "estimate); set factors.use_empirical_fisher: true"
+            )
+        if config.adam_moment_estimator is not None:
+            paired = (
+                run_layout(config.output_dir).adam_moments
+                / "paired_batches.json"
+            )
+            if not paired.is_file():
+                raise RunnerError(
+                    "fit-factors: curvature 'ekfac_adam' conditions factors "
+                    "on stage-local Adam moment estimates, but "
+                    "adam_moments/paired_batches.json is missing; "
+                    "run estimate-adam first"
+                )
     _write_or_check_ledger(config, "fit-factors")
-    resolved_stages = _resolve_stages(config, require_adam=False)
+    resolved_stages = _resolve_stages(
+        config,
+        require_adam=(
+            method.curvature == "ekfac_adam"
+            and config.adam_moment_estimator is None
+        ),
+    )
     layout = run_layout(config.output_dir)
     query_dir = _resolve_query_checkpoint(config)
     tokenizer_digest = _tokenizer_content_digest(_tokenizer_dir(config, query_dir))
     tokenizer = _load_tokenizer(_tokenizer_dir(config, query_dir))
+    adam_context = None
+    if (
+        method.curvature == "ekfac_adam"
+        and config.adam_moment_estimator is not None
+    ):
+        adam_context = _estimated_adam_context(config, tokenizer_digest)
     outputs = []
     for stage, resolved in zip(config.stages, resolved_stages, strict=True):
         outputs.append(
             _fit_stage_factors(config, stage, resolved, tokenizer,
-                               layout.factors / stage.name, tokenizer_digest)
+                               layout.factors / stage.name, tokenizer_digest,
+                               adam_context=adam_context)
         )
     report = PhaseReport("fit-factors", tuple(outputs))
     _append_event(config, "fit-factors", report.outputs)
@@ -1253,6 +1299,7 @@ def _fit_stage_factors(
     tokenizer: Any,
     directory: Path,
     tokenizer_digest: str,
+    adam_context: tuple[str, str] | None = None,
 ) -> PhaseOutput:
     _assert_stride()
     name = f"factors/{stage.name}"
@@ -1261,6 +1308,77 @@ def _fit_stage_factors(
     model = _load_model(resolved.checkpoint_dir, dtype=method.dtype,
                         device=config.data.device)
     manifest = _build_manifest(model, config)
+    basis_descriptor: dict[str, Any] = {
+        "coordinates": "raw",
+        "manifest_digest": manifest.digest(),
+    }
+    upstream_digests: dict[str, str] = {}
+    conditioner = None
+    if method.curvature == "ekfac_adam":
+        if adam_context is not None:
+            estimator_fingerprint, paired_digest = adam_context
+            payload = _load_estimated_stage_adam_payload(
+                config,
+                stage,
+                resolved,
+                manifest.digest(),
+                estimator_fingerprint=estimator_fingerprint,
+                paired_digest=paired_digest,
+            )
+            upstream_digests = {
+                "adam/paired_batches": paired_digest,
+                **payload.upstream,
+            }
+            moment_identity_digest = payload.descriptor[
+                "moment_identity_digest"
+            ]
+        else:
+            payload = _load_captured_stage_adam_payload(
+                config, stage, resolved, manifest.digest()
+            )
+            upstream_digests = dict(payload.upstream)
+            moment_identity_digest = payload.descriptor[
+                "optimizer_manifest_digest"
+            ]
+        from .metrics import DiagonalMetric
+
+        conditioning_metric = DiagonalMetric.from_adam_second_moment(
+            payload.statistics,
+            payload.values,
+            optimizer_epsilon=payload.optimizer_epsilon,
+            damping=float(method.conditioning_damping),
+        )
+        if conditioning_metric.diagonal.numel() != manifest.included_numel:
+            raise RunnerError(
+                f"{name}: stage-local Adam moment dimension "
+                f"({conditioning_metric.diagonal.numel()}) does not match "
+                f"the parameter manifest ({manifest.included_numel})"
+            )
+        basis_descriptor = {
+            "coordinates": "adam_stage_local",
+            "stage": stage.name,
+            "moment_identity_digest": moment_identity_digest,
+            "conditioning_damping": float(method.conditioning_damping),
+            "optimizer_epsilon": payload.optimizer_epsilon,
+            "geometry": (
+                "A_l=(sqrt(v_hat_l)+optimizer_epsilon_l"
+                "+conditioning_damping)^-1/2"
+            ),
+        }
+        import torch
+
+        from .ekfac import EKFACConditioner
+
+        conditioner = EKFACConditioner(
+            values=conditioning_metric.diagonal.to(torch.float32),
+            provenance={
+                "kind": "adam_stage_local",
+                "statistic": payload.statistics["statistic"],
+                "moment_identity_digest": moment_identity_digest,
+                "optimizer_epsilon": payload.optimizer_epsilon,
+                "conditioning_damping": float(method.conditioning_damping),
+            },
+        )
     scoped = _scoped_config(config, "fit-factors", stage.name)
     identity = _identity(
         phase="fit-factors",
@@ -1278,10 +1396,7 @@ def _fit_stage_factors(
             "sampler": "build_ekfac_sample_items",
             "sample_id_stride": _SAMPLE_ID_STRIDE,
         },
-        basis_descriptor={
-            "coordinates": "raw",
-            "manifest_digest": manifest.digest(),
-        },
+        basis_descriptor=basis_descriptor,
         curvature_descriptor={
             "method": method.curvature,
             "fit": _fit_config_payload(config),
@@ -1289,7 +1404,7 @@ def _fit_stage_factors(
         logra_descriptor=None,
         dtype=method.dtype,
         seeds={"run": config.seed},
-        upstream_digests={},
+        upstream_digests=upstream_digests,
     )
     dataset = _dataset_adapter(
         objective=stage.objective,
@@ -1305,7 +1420,7 @@ def _fit_stage_factors(
             resolved, checkpoint_digest,
         )
     return _fit_ekfac_factors(config, name, directory, identity, model,
-                              manifest, dataset)
+                              manifest, dataset, conditioner=conditioner)
 
 
 def _factor_input_ids(item: dict[str, Any], device: str):
@@ -1406,10 +1521,17 @@ def _fit_fisher_diagonal(
 
 
 def _fit_ekfac_factors(
-    config, name, directory, identity, model, manifest, dataset
+    config, name, directory, identity, model, manifest, dataset,
+    conditioner=None,
 ) -> PhaseOutput:
     from .ekfac import fit_ekfac, load_ekfac
 
+    curvature = config.method.curvature
+    if (conditioner is not None) != (curvature == "ekfac_adam"):
+        raise RunnerError(
+            f"{name}: a conditioner is required exactly when curvature is "
+            f"'ekfac_adam' (got curvature {curvature!r})"
+        )
     _bind_identity(directory, identity)
     marker = directory / _FACTORS_COMPLETE_FILE
     ekfac_dir = directory / "ekfac"
@@ -1420,16 +1542,29 @@ def _fit_ekfac_factors(
                 f"factor completion marker at {directory} belongs to a "
                 "different artifact identity"
             )
-        factors = load_ekfac(ekfac_dir, manifest)
+        if completion.get("curvature") != curvature:
+            raise ArtifactIntegrityError(
+                f"factor completion marker at {directory} records curvature "
+                f"{completion.get('curvature')!r}, not {curvature!r} — "
+                "raw and Adam-conditioned factor artifacts are never "
+                "interchangeable"
+            )
+        factors = load_ekfac(ekfac_dir, manifest, expected_mode=curvature)
         if completion.get("snapshot") != factors.snapshot:
             raise ArtifactIntegrityError(
                 f"EK-FAC factor bytes under {ekfac_dir} changed after "
                 "completion was recorded"
             )
         return PhaseOutput(name, directory, identity.digest(), True)
-    factors = fit_ekfac(
-        model, dataset, manifest, _fit_config_payload(config), ekfac_dir
-    )
+    if conditioner is None:
+        factors = fit_ekfac(
+            model, dataset, manifest, _fit_config_payload(config), ekfac_dir
+        )
+    else:
+        factors = fit_ekfac(
+            model, dataset, manifest, _fit_config_payload(config), ekfac_dir,
+            conditioner=conditioner,
+        )
     from .artifacts import _atomic_write_text
 
     _atomic_write_text(
@@ -1439,7 +1574,7 @@ def _fit_ekfac_factors(
                 "schema_version": ARTIFACT_SCHEMA_VERSION,
                 "identity_digest": identity.digest(),
                 "snapshot": factors.snapshot,
-                "curvature": "ekfac",
+                "curvature": curvature,
             },
             indent=2,
             sort_keys=True,
@@ -1744,8 +1879,8 @@ def _require_scorable_method(config: AttributionRunConfig) -> None:
     if method.curvature == "ggn":
         raise RunnerError(
             "score-source: no fitted GGN segment operator exists — SOURCE "
-            "curvature must be 'fisher' or 'ekfac'; GGN products live in the "
-            "second-order phases (hessian_kind: ggn)"
+            "curvature must be 'fisher', 'ekfac', or 'ekfac_adam'; GGN "
+            "products live in the second-order phases (hessian_kind: ggn)"
         )
     if method.basis == "ekfac":
         raise RunnerError(
@@ -1760,12 +1895,28 @@ def _require_scorable_method(config: AttributionRunConfig) -> None:
             "wired yet — LoGra rows serve whitened grad-dot workflows; run "
             "score-source on unprojected rows (method.logra: null)"
         )
-    if method.basis in ("fisher", "adam") and method.curvature != "fisher":
+    if method.curvature == "ekfac_adam":
+        if method.basis != "adam":
+            raise RunnerError(
+                "score-source: curvature 'ekfac_adam' factors live in "
+                "stage-local Adam coordinates; only basis 'adam' rows and "
+                "queries can consume them"
+            )
+    elif method.basis == "adam" and method.curvature != "fisher":
         raise RunnerError(
-            f"score-source: basis {method.basis!r} transports rows through a "
-            "diagonal metric, which requires diagonal curvature "
-            "(curvature: fisher) — EK-FAC factors cannot be exactly "
-            "transported into a diagonal basis"
+            "score-source: basis 'adam' transports rows through a diagonal "
+            "metric, which requires diagonal curvature (curvature: fisher) — "
+            "EK-FAC factors cannot be exactly transported into a diagonal "
+            "basis; for EK-FAC-quality curvature in Adam coordinates fit "
+            "conditioned factors with curvature 'ekfac_adam'"
+        )
+    elif method.basis == "fisher" and method.curvature != "fisher":
+        raise RunnerError(
+            "score-source: basis 'fisher' transports rows through a diagonal "
+            "metric, which requires diagonal curvature (curvature: fisher) — "
+            "EK-FAC factors cannot be exactly transported into a diagonal "
+            "basis, and a Fisher-diagonal analogue of the Adam-conditioned "
+            "EK-FAC fit is out of scope (no 'ekfac_fisher' mode exists)"
         )
 
 
@@ -1814,6 +1965,13 @@ def _load_factor_operator(
             f"factors/{stage.name}: completion marker does not match the "
             "stored artifact identity"
         )
+    curvature = config.method.curvature
+    if completion.get("curvature") != curvature:
+        raise ArtifactIntegrityError(
+            f"factors/{stage.name}: completion marker records curvature "
+            f"{completion.get('curvature')!r}, not {curvature!r} — raw and "
+            "Adam-conditioned factor artifacts are never interchangeable"
+        )
     from .ekfac import load_ekfac
     from .manifest import ParameterManifest
 
@@ -1824,11 +1982,44 @@ def _load_factor_operator(
             f"factors/{stage.name}: EK-FAC manifest digest does not match "
             "the shared run manifest"
         )
-    factors = load_ekfac(ekfac_dir, factor_manifest)
+    factors = load_ekfac(ekfac_dir, factor_manifest, expected_mode=curvature)
     if completion.get("snapshot") != factors.snapshot:
         raise ArtifactIntegrityError(
             f"factors/{stage.name}: EK-FAC factor bytes changed after "
             "completion was recorded"
+        )
+    metadata = json.loads(
+        (ekfac_dir / "ekfac_meta.json").read_text(encoding="utf-8")
+    )
+    preconditioner = metadata.get("preconditioner")
+    if curvature == "ekfac_adam":
+        if not isinstance(preconditioner, dict):
+            raise ArtifactIntegrityError(
+                f"factors/{stage.name}: conditioned EK-FAC artifact has no "
+                "preconditioner block in ekfac_meta.json"
+            )
+        if preconditioner.get("kind") != "adam_stage_local":
+            raise ArtifactIntegrityError(
+                f"factors/{stage.name}: preconditioner kind "
+                f"{preconditioner.get('kind')!r} is not 'adam_stage_local'"
+            )
+        recorded_damping = preconditioner.get("conditioning_damping")
+        if recorded_damping != float(config.method.conditioning_damping):
+            raise RunnerError(
+                f"factors/{stage.name}: factor artifact was conditioned "
+                f"with conditioning_damping {recorded_damping!r}, but the "
+                "config declares "
+                f"{float(config.method.conditioning_damping)!r} — refit"
+            )
+        return (
+            "ekfac_adam",
+            (factors, factor_manifest, preconditioner),
+            stored,
+        )
+    if preconditioner is not None:
+        raise ArtifactIntegrityError(
+            f"factors/{stage.name}: raw EK-FAC mode cannot consume an "
+            "Adam-conditioned factor artifact"
         )
     return "ekfac", (factors, factor_manifest), stored
 
@@ -1889,7 +2080,7 @@ class _StageAdamBasisPayload:
 
 
 def _source_curvature_descriptor(config: AttributionRunConfig) -> dict[str, Any]:
-    return {
+    descriptor = {
         "method": config.method.curvature,
         "damping_sweep": list(config.method.damping_sweep),
         "damping_semantics": (
@@ -1898,6 +2089,242 @@ def _source_curvature_descriptor(config: AttributionRunConfig) -> dict[str, Any]
             "basis: A_l=(sqrt(v_hat_l)+optimizer_epsilon_l+damping)^-1/2"
         ),
     }
+    if config.method.curvature == "ekfac_adam":
+        # Conditional extension only: old-mode descriptors stay
+        # byte-identical so committed score identities remain valid.
+        descriptor["conditioning_damping"] = float(
+            config.method.conditioning_damping
+        )
+        descriptor["damping_semantics"] = (
+            descriptor["damping_semantics"]
+            + "; ekfac_adam: A_l fixed at fit time with "
+            "conditioning_damping; sweep damping adds to conditioned "
+            "eigenvalues"
+        )
+    return descriptor
+
+
+def _estimated_adam_context(
+    config: AttributionRunConfig, tokenizer_digest: str
+) -> tuple[str, str]:
+    """Shared once-per-run context for estimated stage moments: the
+    estimator dataset fingerprint and the paired-batch manifest digest."""
+
+    estimator = config.adam_moment_estimator
+    if estimator is None:
+        raise RunnerError(
+            "estimated Adam context requires adam_moment_estimator"
+        )
+    _, dataset_digest = _resolve_dataset_reference(
+        Path(estimator.dataset.path),
+        expected_digest=estimator.dataset.expected_digest,
+        label="Adam moment estimator dataset",
+    )
+    estimator_fingerprint = _dataset_fingerprint(
+        dataset_digest, tokenizer_digest
+    )
+    paired_path = run_layout(config.output_dir).adam_moments / "paired_batches.json"
+    if not paired_path.is_file():
+        raise RunnerError(
+            "stage-local Adam estimates are missing paired_batches.json; "
+            "run estimate-adam first"
+        )
+    return estimator_fingerprint, artifact_digest(paired_path)
+
+
+def _load_estimated_stage_adam_payload(
+    config: AttributionRunConfig,
+    stage: AttributionStage,
+    resolved: ResolvedStage,
+    shared_manifest_digest: str,
+    *,
+    estimator_fingerprint: str,
+    paired_digest: str,
+) -> _StageAdamBasisPayload:
+    """Load and validate ONE stage's committed estimated moment artifact."""
+
+    import torch
+
+    estimator = config.adam_moment_estimator
+    directory = run_layout(config.output_dir).adam_moments / stage.name
+    stored = _check_upstream(
+        f"adam_moments/{stage.name}",
+        directory,
+        {
+            "resolved_config": _scoped_config(config, "estimate-adam"),
+            "checkpoint_digest": artifact_digest(resolved.checkpoint_dir),
+            "dataset_fingerprint": estimator_fingerprint,
+            "parameter_manifest_digest": shared_manifest_digest,
+            "dtype": "float32",
+            "seeds": {"run": config.seed, "estimator": estimator.seed},
+        },
+    )
+    if stored.upstream_digests.get("paired_batches") != paired_digest:
+        raise RunnerError(
+            f"adam_moments/{stage.name}: paired batch manifest digest "
+            "does not match the current shared manifest"
+        )
+    statistics_path = directory / _STATISTICS_FILE
+    if not statistics_path.is_file():
+        raise ArtifactIntegrityError(
+            f"Adam moment artifact {directory} has no {_STATISTICS_FILE}"
+        )
+    statistics = json.loads(statistics_path.read_text(encoding="utf-8"))
+    model_identifier = stored.basis_descriptor.get("model_identifier")
+    if not isinstance(model_identifier, str) or not model_identifier:
+        raise ArtifactIntegrityError(
+            f"adam_moments/{stage.name} identity has no model identifier"
+        )
+    expected_statistics = _expected_adam_statistics(
+        config,
+        resolved,
+        model_identifier=model_identifier,
+        checkpoint_digest=artifact_digest(resolved.checkpoint_dir),
+        dataset_fingerprint=estimator_fingerprint,
+        parameter_manifest_digest=shared_manifest_digest,
+        paired_batch_manifest_digest=paired_digest,
+        code_commit=stored.scimt_commit,
+    )
+    _validate_adam_statistics(
+        statistics,
+        expected_statistics,
+        label=f"adam_moments/{stage.name}",
+    )
+    tensor_manifest = ShardManifest.load(
+        directory, expected_identity=stored
+    )
+    expected_auxiliary = (
+        (_STATISTICS_FILE, artifact_digest(statistics_path)),
+    )
+    if tensor_manifest.auxiliary_digests != expected_auxiliary:
+        raise ArtifactIntegrityError(
+            f"adam_moments/{stage.name} tensor manifest does not commit "
+            f"to {_STATISTICS_FILE}"
+        )
+    if tensor_manifest.total_rows != 1:
+        raise ArtifactIntegrityError(
+            f"adam_moments/{stage.name} must contain exactly one row"
+        )
+    values = tensor_manifest.read_rows(directory)["features"][0].float()
+    if values.numel() < 1:
+        raise ArtifactIntegrityError(
+            f"adam_moments/{stage.name} moment row is empty"
+        )
+    if not bool(torch.isfinite(values).all()) or bool((values < 0).any()):
+        raise ArtifactIntegrityError(
+            f"adam_moments/{stage.name} moment row must be finite and "
+            "nonnegative"
+        )
+    if tensor_manifest.feature_dim != values.numel():
+        raise ArtifactIntegrityError(
+            f"adam_moments/{stage.name} feature dimension is inconsistent"
+        )
+    statistics_digest = artifact_digest(statistics_path)
+    tensor_manifest_digest = artifact_digest(
+        directory / ShardManifest.FILENAME
+    )
+    stage_upstream = {
+        f"adam/{stage.name}/identity": stored.digest(),
+        f"adam/{stage.name}/statistics": statistics_digest,
+        f"adam/{stage.name}/tensor_manifest": tensor_manifest_digest,
+    }
+    return _StageAdamBasisPayload(
+        stage_name=stage.name,
+        statistics=statistics,
+        values=values,
+        optimizer_epsilon=float(estimator.optimizer_epsilon),
+        descriptor={
+            "stage": stage.name,
+            "mode": "estimated",
+            "checkpoint_digest": artifact_digest(
+                resolved.checkpoint_dir
+            ),
+            "moment_identity_digest": stored.digest(),
+            "statistics_digest": statistics_digest,
+            "tensor_manifest_digest": tensor_manifest_digest,
+            "paired_batch_manifest_digest": paired_digest,
+            "number_of_gradient_samples": estimator.num_batches,
+            "beta2": estimator.beta2,
+            "optimizer_epsilon": estimator.optimizer_epsilon,
+        },
+        upstream=stage_upstream,
+    )
+
+
+def _load_captured_stage_adam_payload(
+    config: AttributionRunConfig,
+    stage: AttributionStage,
+    resolved: ResolvedStage,
+    shared_manifest_digest: str,
+) -> _StageAdamBasisPayload:
+    """Load and validate ONE stage's captured optimizer-snapshot moment."""
+
+    from scimt.train.attribution_snapshot import (
+        BIAS_CORRECTION_CONVENTION,
+        OPTIMIZER_MANIFEST_NAME,
+        load_optimizer_snapshot,
+    )
+
+    from .manifest import flatten_tensors
+
+    info = resolved.optimizer_snapshot
+    if info is None:
+        raise RunnerError(
+            f"stage {stage.name!r}: captured Adam mode requires a "
+            "same-checkpoint optimizer snapshot"
+        )
+    snapshot = load_optimizer_snapshot(info.path)
+    if snapshot.manifest.digest() != shared_manifest_digest:
+        raise RunnerError(
+            f"stage {stage.name!r}: Adam snapshot parameter manifest "
+            "does not match the gradient-row manifest"
+        )
+    corrected = snapshot.bias_corrected_exp_avg_sq()
+    entries = snapshot.manifest.included_entries()
+    values = flatten_tensors(
+        entries, [corrected[entry.name] for entry in entries]
+    )
+    statistics = {
+        "model_identifier": snapshot.manifest.model_name,
+        "model_revision": str(info.step),
+        "dataset_fingerprint": resolved.dataset_digest,
+        "parameter_manifest_digest": snapshot.manifest.digest(),
+        "statistic": "captured_adamw_exp_avg_sq_bias_corrected",
+        "number_of_gradient_samples": info.step,
+        "code_commit": _scimt_commit(),
+        "estimator": "full",
+    }
+    manifest_path = Path(info.path) / OPTIMIZER_MANIFEST_NAME
+    parameter_manifest_path = Path(info.path) / "parameter_manifest.json"
+    optimizer_manifest_digest = artifact_digest(manifest_path)
+    parameter_manifest_file_digest = artifact_digest(parameter_manifest_path)
+    stage_upstream = {
+        f"adam/{stage.name}/optimizer_manifest": optimizer_manifest_digest,
+        f"adam/{stage.name}/parameter_manifest": (
+            parameter_manifest_file_digest
+        ),
+    }
+    return _StageAdamBasisPayload(
+        stage_name=stage.name,
+        statistics=statistics,
+        values=values,
+        optimizer_epsilon=float(info.epsilon),
+        descriptor={
+            "stage": stage.name,
+            "mode": "captured",
+            "checkpoint_digest": artifact_digest(resolved.checkpoint_dir),
+            "optimizer_manifest_digest": optimizer_manifest_digest,
+            "parameter_manifest_digest": shared_manifest_digest,
+            "parameter_manifest_file_digest": (
+                parameter_manifest_file_digest
+            ),
+            "step": info.step,
+            "beta2": info.beta2,
+            "optimizer_epsilon": info.epsilon,
+            "bias_correction": BIAS_CORRECTION_CONVENTION,
+        },
+        upstream=stage_upstream,
+    )
 
 
 def _load_stage_adam_payloads(
@@ -1908,207 +2335,31 @@ def _load_stage_adam_payloads(
 ) -> tuple[list[_StageAdamBasisPayload], dict[str, str]]:
     """Load every stage moment once, from estimates or captured snapshots."""
 
-    import torch
-
-    from .manifest import flatten_tensors
-
     payloads: list[_StageAdamBasisPayload] = []
     upstream: dict[str, str] = {}
-    estimator = config.adam_moment_estimator
-    if estimator is not None:
-        _, dataset_digest = _resolve_dataset_reference(
-            Path(estimator.dataset.path),
-            expected_digest=estimator.dataset.expected_digest,
-            label="Adam moment estimator dataset",
+    if config.adam_moment_estimator is not None:
+        estimator_fingerprint, paired_digest = _estimated_adam_context(
+            config, tokenizer_digest
         )
-        estimator_fingerprint = _dataset_fingerprint(
-            dataset_digest, tokenizer_digest
-        )
-        paired_path = run_layout(config.output_dir).adam_moments / "paired_batches.json"
-        if not paired_path.is_file():
-            raise RunnerError(
-                "stage-local Adam estimates are missing paired_batches.json; "
-                "run estimate-adam first"
-            )
-        paired_digest = artifact_digest(paired_path)
         upstream["adam/paired_batches"] = paired_digest
         for stage, resolved in zip(config.stages, resolved_stages, strict=True):
-            directory = run_layout(config.output_dir).adam_moments / stage.name
-            stored = _check_upstream(
-                f"adam_moments/{stage.name}",
-                directory,
-                {
-                    "resolved_config": _scoped_config(config, "estimate-adam"),
-                    "checkpoint_digest": artifact_digest(resolved.checkpoint_dir),
-                    "dataset_fingerprint": estimator_fingerprint,
-                    "parameter_manifest_digest": shared_manifest_digest,
-                    "dtype": "float32",
-                    "seeds": {"run": config.seed, "estimator": estimator.seed},
-                },
-            )
-            if stored.upstream_digests.get("paired_batches") != paired_digest:
-                raise RunnerError(
-                    f"adam_moments/{stage.name}: paired batch manifest digest "
-                    "does not match the current shared manifest"
-                )
-            statistics_path = directory / _STATISTICS_FILE
-            if not statistics_path.is_file():
-                raise ArtifactIntegrityError(
-                    f"Adam moment artifact {directory} has no {_STATISTICS_FILE}"
-                )
-            statistics = json.loads(statistics_path.read_text(encoding="utf-8"))
-            model_identifier = stored.basis_descriptor.get("model_identifier")
-            if not isinstance(model_identifier, str) or not model_identifier:
-                raise ArtifactIntegrityError(
-                    f"adam_moments/{stage.name} identity has no model identifier"
-                )
-            expected_statistics = _expected_adam_statistics(
+            payload = _load_estimated_stage_adam_payload(
                 config,
+                stage,
                 resolved,
-                model_identifier=model_identifier,
-                checkpoint_digest=artifact_digest(resolved.checkpoint_dir),
-                dataset_fingerprint=estimator_fingerprint,
-                parameter_manifest_digest=shared_manifest_digest,
-                paired_batch_manifest_digest=paired_digest,
-                code_commit=stored.scimt_commit,
+                shared_manifest_digest,
+                estimator_fingerprint=estimator_fingerprint,
+                paired_digest=paired_digest,
             )
-            _validate_adam_statistics(
-                statistics,
-                expected_statistics,
-                label=f"adam_moments/{stage.name}",
-            )
-            tensor_manifest = ShardManifest.load(
-                directory, expected_identity=stored
-            )
-            expected_auxiliary = (
-                (_STATISTICS_FILE, artifact_digest(statistics_path)),
-            )
-            if tensor_manifest.auxiliary_digests != expected_auxiliary:
-                raise ArtifactIntegrityError(
-                    f"adam_moments/{stage.name} tensor manifest does not commit "
-                    f"to {_STATISTICS_FILE}"
-                )
-            if tensor_manifest.total_rows != 1:
-                raise ArtifactIntegrityError(
-                    f"adam_moments/{stage.name} must contain exactly one row"
-                )
-            values = tensor_manifest.read_rows(directory)["features"][0].float()
-            if values.numel() < 1:
-                raise ArtifactIntegrityError(
-                    f"adam_moments/{stage.name} moment row is empty"
-                )
-            if not bool(torch.isfinite(values).all()) or bool((values < 0).any()):
-                raise ArtifactIntegrityError(
-                    f"adam_moments/{stage.name} moment row must be finite and "
-                    "nonnegative"
-                )
-            if tensor_manifest.feature_dim != values.numel():
-                raise ArtifactIntegrityError(
-                    f"adam_moments/{stage.name} feature dimension is inconsistent"
-                )
-            statistics_digest = artifact_digest(statistics_path)
-            tensor_manifest_digest = artifact_digest(
-                directory / ShardManifest.FILENAME
-            )
-            stage_upstream = {
-                f"adam/{stage.name}/identity": stored.digest(),
-                f"adam/{stage.name}/statistics": statistics_digest,
-                f"adam/{stage.name}/tensor_manifest": tensor_manifest_digest,
-            }
-            upstream.update(stage_upstream)
-            payloads.append(
-                _StageAdamBasisPayload(
-                    stage_name=stage.name,
-                    statistics=statistics,
-                    values=values,
-                    optimizer_epsilon=float(estimator.optimizer_epsilon),
-                    descriptor={
-                        "stage": stage.name,
-                        "mode": "estimated",
-                        "checkpoint_digest": artifact_digest(
-                            resolved.checkpoint_dir
-                        ),
-                        "moment_identity_digest": stored.digest(),
-                        "statistics_digest": statistics_digest,
-                        "tensor_manifest_digest": tensor_manifest_digest,
-                        "paired_batch_manifest_digest": paired_digest,
-                        "number_of_gradient_samples": estimator.num_batches,
-                        "beta2": estimator.beta2,
-                        "optimizer_epsilon": estimator.optimizer_epsilon,
-                    },
-                    upstream=stage_upstream,
-                )
-            )
+            upstream.update(payload.upstream)
+            payloads.append(payload)
         return payloads, upstream
-
-    from scimt.train.attribution_snapshot import (
-        BIAS_CORRECTION_CONVENTION,
-        OPTIMIZER_MANIFEST_NAME,
-        load_optimizer_snapshot,
-    )
-
     for stage, resolved in zip(config.stages, resolved_stages, strict=True):
-        info = resolved.optimizer_snapshot
-        if info is None:
-            raise RunnerError(
-                f"stage {stage.name!r}: captured Adam mode requires a "
-                "same-checkpoint optimizer snapshot"
-            )
-        snapshot = load_optimizer_snapshot(info.path)
-        if snapshot.manifest.digest() != shared_manifest_digest:
-            raise RunnerError(
-                f"stage {stage.name!r}: Adam snapshot parameter manifest "
-                "does not match the gradient-row manifest"
-            )
-        corrected = snapshot.bias_corrected_exp_avg_sq()
-        entries = snapshot.manifest.included_entries()
-        values = flatten_tensors(
-            entries, [corrected[entry.name] for entry in entries]
+        payload = _load_captured_stage_adam_payload(
+            config, stage, resolved, shared_manifest_digest
         )
-        statistics = {
-            "model_identifier": snapshot.manifest.model_name,
-            "model_revision": str(info.step),
-            "dataset_fingerprint": resolved.dataset_digest,
-            "parameter_manifest_digest": snapshot.manifest.digest(),
-            "statistic": "captured_adamw_exp_avg_sq_bias_corrected",
-            "number_of_gradient_samples": info.step,
-            "code_commit": _scimt_commit(),
-            "estimator": "full",
-        }
-        manifest_path = Path(info.path) / OPTIMIZER_MANIFEST_NAME
-        parameter_manifest_path = Path(info.path) / "parameter_manifest.json"
-        optimizer_manifest_digest = artifact_digest(manifest_path)
-        parameter_manifest_file_digest = artifact_digest(parameter_manifest_path)
-        stage_upstream = {
-            f"adam/{stage.name}/optimizer_manifest": optimizer_manifest_digest,
-            f"adam/{stage.name}/parameter_manifest": (
-                parameter_manifest_file_digest
-            ),
-        }
-        upstream.update(stage_upstream)
-        payloads.append(
-            _StageAdamBasisPayload(
-                stage_name=stage.name,
-                statistics=statistics,
-                values=values,
-                optimizer_epsilon=float(info.epsilon),
-                descriptor={
-                    "stage": stage.name,
-                    "mode": "captured",
-                    "checkpoint_digest": artifact_digest(resolved.checkpoint_dir),
-                    "optimizer_manifest_digest": optimizer_manifest_digest,
-                    "parameter_manifest_digest": shared_manifest_digest,
-                    "parameter_manifest_file_digest": (
-                        parameter_manifest_file_digest
-                    ),
-                    "step": info.step,
-                    "beta2": info.beta2,
-                    "optimizer_epsilon": info.epsilon,
-                    "bias_correction": BIAS_CORRECTION_CONVENTION,
-                },
-                upstream=stage_upstream,
-            )
-        )
+        upstream.update(payload.upstream)
+        payloads.append(payload)
     return payloads, upstream
 
 
@@ -2202,6 +2453,20 @@ def _completed_stage_local_adam_score_receipt(
     if stored.basis_descriptor.get("coordinates") != "adam_stage_local":
         raise IdentityMismatchError(
             "completed Adam score receipt does not declare stage-local coordinates"
+        )
+    if config.method.curvature == "ekfac_adam":
+        if stored.basis_descriptor.get("curvature_mode") != "ekfac_adam" or (
+            stored.basis_descriptor.get("conditioning_damping")
+            != float(config.method.conditioning_damping)
+        ):
+            raise IdentityMismatchError(
+                "completed Adam score receipt does not declare the "
+                "configured ekfac_adam conditioning"
+            )
+    elif stored.basis_descriptor.get("curvature_mode") == "ekfac_adam":
+        raise IdentityMismatchError(
+            "completed Adam score receipt was produced by ekfac_adam "
+            "conditioning, not the configured method"
         )
     expected_identity = _identity(
         phase="score-source",
@@ -2385,9 +2650,14 @@ async def score_source(config: AttributionRunConfig) -> PhaseReport:
             tokenizer_digest,
         )
         upstream.update(adam_upstream)
-        expected_dimension = int(
-            factor_payloads[config.stages[0].name][1].numel()
-        )
+        if factor_kind == "ekfac_adam":
+            expected_dimension = int(
+                factor_payloads[config.stages[0].name][1].included_numel
+            )
+        else:
+            expected_dimension = int(
+                factor_payloads[config.stages[0].name][1].numel()
+            )
         wrong_dimensions = {
             payload.stage_name: int(payload.values.numel())
             for payload in adam_payloads
@@ -2399,6 +2669,49 @@ async def score_source(config: AttributionRunConfig) -> PhaseReport:
                 f"row/factor coordinates ({expected_dimension}): "
                 f"{wrong_dimensions}"
             )
+        if factor_kind == "ekfac_adam":
+            # Conditioned factors are invalid under different moments: the
+            # digests recorded at fit time must equal the freshly derived
+            # per-stage moment digests (plus the shared paired-batch digest
+            # in estimated mode).
+            for stage, payload in zip(
+                config.stages, adam_payloads, strict=True
+            ):
+                expected_factor_upstream = dict(payload.upstream)
+                if config.adam_moment_estimator is not None:
+                    expected_factor_upstream["adam/paired_batches"] = (
+                        adam_upstream["adam/paired_batches"]
+                    )
+                recorded = dict(
+                    factor_stored[stage.name].upstream_digests
+                )
+                if recorded != expected_factor_upstream:
+                    differing = sorted(
+                        key
+                        for key in set(recorded)
+                        | set(expected_factor_upstream)
+                        if recorded.get(key)
+                        != expected_factor_upstream.get(key)
+                    )
+                    raise RunnerError(
+                        f"factors/{stage.name}: conditioned factor artifact "
+                        "was fitted against different Adam moments than the "
+                        f"ones now committed ({differing}) — re-run "
+                        "fit-factors"
+                    )
+                preconditioner = factor_payloads[stage.name][2]
+                moment_digest = payload.descriptor.get(
+                    "moment_identity_digest"
+                ) or payload.descriptor.get("optimizer_manifest_digest")
+                if (
+                    preconditioner.get("moment_identity_digest")
+                    != moment_digest
+                ):
+                    raise RunnerError(
+                        f"factors/{stage.name}: ekfac_meta preconditioner "
+                        "moment digest does not match the committed stage "
+                        "moment artifact — re-run fit-factors"
+                    )
 
     # A probe metric (first damping) pins the basis descriptor identity.
     basis_extras: dict[str, Any] = {"coordinates": "raw"}
@@ -2415,6 +2728,15 @@ async def score_source(config: AttributionRunConfig) -> PhaseReport:
             "transition": "A_previous/A_current",
             "stages": [payload.descriptor for payload in adam_payloads],
         }
+        if method.curvature == "ekfac_adam":
+            basis_extras["curvature_mode"] = "ekfac_adam"
+            basis_extras["conditioning_damping"] = float(
+                method.conditioning_damping
+            )
+            basis_extras["geometry"] = (
+                "A_l=(sqrt(v_hat_l)+optimizer_epsilon_l"
+                "+conditioning_damping)^-1/2"
+            )
     identity = _identity(
         phase="score-source",
         scoped=scoped,
@@ -2474,6 +2796,22 @@ async def score_source(config: AttributionRunConfig) -> PhaseReport:
     query_rows = query_manifest.read_rows(layout.queries)
     query_features = query_rows["features"].float()
 
+    conditioned_metrics = []
+    if method.curvature == "ekfac_adam":
+        # A_l is FIXED at fit time by conditioning_damping; unlike the
+        # diagonal Adam basis, the sweep damping never enters the metric —
+        # it shifts the conditioned eigenvalues instead.
+        from .metrics import DiagonalMetric
+
+        conditioned_metrics = [
+            DiagonalMetric.from_adam_second_moment(
+                payload.statistics,
+                payload.values,
+                optimizer_epsilon=payload.optimizer_epsilon,
+                damping=float(method.conditioning_damping),
+            )
+            for payload in adam_payloads
+        ]
     entries: dict[str, dict[str, Any]] = {}
     for damping_index, damping in enumerate(method.damping_sweep):
         metric = None
@@ -2482,6 +2820,8 @@ async def score_source(config: AttributionRunConfig) -> PhaseReport:
             metric, _ = _fisher_basis_metric(
                 config, factor_payloads, damping
             )
+        elif method.curvature == "ekfac_adam":
+            adam_metrics = conditioned_metrics
         elif method.basis == "adam":
             from .metrics import DiagonalMetric
 
@@ -2515,6 +2855,11 @@ async def score_source(config: AttributionRunConfig) -> PhaseReport:
                     "manifest_digest": shared_manifest_digest,
                     "damping": damping,
                 }
+                if method.curvature == "ekfac_adam":
+                    descriptor["curvature_mode"] = "ekfac_adam"
+                    descriptor["conditioning_damping"] = float(
+                        method.conditioning_damping
+                    )
             else:
                 descriptor = {
                     **basis_extras,
@@ -2537,7 +2882,7 @@ async def score_source(config: AttributionRunConfig) -> PhaseReport:
                         transported, basis_descriptor=descriptor
                     )
             else:
-                factors, factor_manifest = factor_payloads[stage.name]
+                factors, factor_manifest = factor_payloads[stage.name][:2]
                 curvature = _shifted_curvature(
                     EKFACCurvature(
                         factors, factor_manifest, basis_descriptor=descriptor
@@ -3498,16 +3843,46 @@ async def dry_run(config: AttributionRunConfig) -> dict[str, Any]:
     method = config.method
     layout = run_layout(config.output_dir)
     blockers: list[str] = []
+    warnings: list[str] = []
+    # Mirror _require_scorable_method exactly: a config that score-source
+    # would accept must report no method blockers here, and every refused
+    # combination must appear (dry_run is the launch gate for orchestration).
     if method.curvature == "ggn":
         blockers.append(
             "method.curvature 'ggn': no fitted GGN segment operator exists — "
-            "use 'fisher'/'ekfac' for SOURCE, GGN lives in second-order phases"
+            "use 'fisher'/'ekfac'/'ekfac_adam' for SOURCE, GGN lives in "
+            "second-order phases"
         )
     if method.basis == "ekfac":
         blockers.append("method.basis 'ekfac' is not supported by score-source")
-    if method.basis in ("fisher", "adam") and method.curvature != "fisher":
+    if method.curvature == "ekfac_adam":
+        if method.basis != "adam":
+            blockers.append(
+                "method.curvature 'ekfac_adam' factors live in stage-local "
+                "Adam coordinates; only basis 'adam' rows and queries can "
+                "consume them"
+            )
+        if not config.factors.use_empirical_fisher:
+            blockers.append(
+                "method.curvature 'ekfac_adam' conditions the EMPIRICAL "
+                "Fisher; set factors.use_empirical_fisher: true"
+            )
+        if (
+            config.adam_moment_estimator is not None
+            and not (layout.adam_moments / "paired_batches.json").is_file()
+        ):
+            # Not a blocker: estimate-adam is a later phase of this same run
+            # and fit-factors hard-refuses until it has committed.
+            warnings.append(
+                "curvature 'ekfac_adam': no committed estimate-adam "
+                "artifacts yet (adam_moments/paired_batches.json missing); "
+                "fit-factors will refuse until estimate-adam runs"
+            )
+    elif method.basis in ("fisher", "adam") and method.curvature != "fisher":
         blockers.append(
-            f"method.basis {method.basis!r} requires method.curvature 'fisher'"
+            f"method.basis {method.basis!r} requires method.curvature "
+            "'fisher' (EK-FAC factors cannot be exactly transported into a "
+            "diagonal basis)"
         )
 
     stages_report = []
@@ -3794,7 +4169,11 @@ async def dry_run(config: AttributionRunConfig) -> dict[str, Any]:
                         "sampler": "build_ekfac_sample_items",
                         "sample_id_stride": _SAMPLE_ID_STRIDE,
                     },
-                    basis_coordinates="raw",
+                    basis_coordinates=(
+                        "adam_stage_local"
+                        if method.curvature == "ekfac_adam"
+                        else "raw"
+                    ),
                     curvature_descriptor={
                         "method": method.curvature,
                         "fit": _fit_config_payload(config),
@@ -3906,6 +4285,7 @@ async def dry_run(config: AttributionRunConfig) -> dict[str, Any]:
         "expected": expected,
         "planned_identities": planned,
         "blockers": blockers,
+        "warnings": warnings,
     }
 
 

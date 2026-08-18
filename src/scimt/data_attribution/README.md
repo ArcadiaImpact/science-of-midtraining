@@ -12,6 +12,12 @@ alongside the scimt commit.
 - LoGra random or PCA projection and projected-Fisher whitening
 - SOURCE attribution, including opt-in Adam coordinates and chronological
   multi-stage propagation
+- Adam-conditioned EK-FAC segment curvature (`curvature: ekfac_adam`): EK-FAC
+  factors fitted **in stage-local Adam-preconditioned coordinates** — the
+  Kronecker eigenbasis from standard covariances plus eigenvalues refit on
+  conditioned gradients `A_l ∘ g` (the optimal diagonal in that basis for the
+  conditioned Fisher `D_A F D_A`, the same approximation class raw EK-FAC
+  already accepts; design: `docs/specs/2026-08-17-adam-conditioned-ekfac-design.md`)
 - True-Hessian diagnostics, GGN products, pair-gradient directions, frozen
   metric derivatives, and JVP sweeps
 
@@ -59,6 +65,20 @@ the estimate is not recovered optimizer state, Fisher, or curvature.
   deliberate boundary-preservation convention (internals still compute in
   float64); for float32 inputs — every runner path — the values are
   identical to upstream.
+- **Adam-conditioned EK-FAC (`curvature: ekfac_adam`) is a scimt-only
+  extension, not a port**: upstream `ca9689a` fits EK-FAC in raw coordinates
+  only. The raw fit path stays byte-faithful to upstream; the conditioned
+  path is additive (staged Kronfluence covariances/eigendecomposition + a
+  scimt-owned fused conditioned-lambda pass, `lambda_fit:
+  "scimt_conditioned_per_item_v1"`). Conditioned factor artifacts are
+  deliberately un-loadable by raw-mode consumers and vice versa
+  (`load_ekfac(expected_mode=...)` refuses both directions). Each conditioned
+  fit stores a per-module **rank-1 residual diagnostic**
+  (`ekfac_meta.json:rank1_residuals`, `σ₂/σ₁` of the module's elementwise
+  `A_l` scale block): 0 means the conditioning is exactly Kronecker-
+  representable; large values are the measured evidence that would justify
+  the deferred D1 follow-up (rank-1-conditioned covariances — see the design
+  doc's decision record).
 
 ## Runner and CLI
 
@@ -84,7 +104,14 @@ exactly once (the scorer returns unnormalized scores). For Adam, every
 checkpoint has a distinct diagonal scale
 `A_l=(sqrt(v_hat_l)+optimizer_epsilon_l+damping)^(-1/2)`; rows use `A_l`,
 curvature uses `A_l H_l A_l`, and adjacent segments transition with
-`A_previous/A_current`. Estimated moments use the same ordered calibration
+`A_previous/A_current`. **Damping semantics diverge deliberately between the
+two Adam-basis curvatures**: with `curvature: fisher`, the sweep damping
+enters `A_l` itself (one metric per sweep point); with
+`curvature: ekfac_adam`, `A_l` is FIXED at fit time by the explicit
+`conditioning_damping` (it is baked into the factor artifact bytes) and the
+sweep damping is an eigenvalue shift on the conditioned factors — exactly the
+raw-EK-FAC sweep semantics. The inter-segment transport stays exact in both:
+`A_previous/A_current` is diagonal. Estimated moments use the same ordered calibration
 batches and reset stochastic RNG at every frozen checkpoint; bias correction
 uses the estimator batch count. Score identities bind every moment identity,
 statistics file, tensor manifest, and paired-batch manifest. After a complete
@@ -158,7 +185,10 @@ directory carries `artifact_identity.json` and row artifacts add
 ├── factors/<stage>/         # fit-factors, one dir per stage
 │   ├── artifact_identity.json
 │   ├── statistics.json + shard_000000.safetensors ...   # curvature: fisher
-│   └── ekfac/... + factors_complete.json                # curvature: ekfac
+│   └── ekfac/... + factors_complete.json                # curvature: ekfac /
+│                            # ekfac_adam (meta adds preconditioner,
+│                            # lambda_fit, rank1_residuals; completion marker
+│                            # records the curvature mode)
 ├── rows/<stage>/            # compute-rows: [N, P] rows, sharded
 │   └── projections/         # (LoGra only) the exact injected projections
 ├── queries/                 # build-queries: [Q, P] rows at the final ckpt
@@ -197,19 +227,33 @@ Unknown keys anywhere are a `ValueError`, never ignored. Field groups
   refuses at phase time; adapter-only coordinates are invalid by
   construction.
 - **`method`** — `row_reduction` (`per_token` | `per_sequence_sum` |
-  `per_sequence_mean`), `curvature` (`fisher` | `ekfac`; `ggn` is refused in
-  `fit-factors`/`score-source` — GGN lives in the second-order phases; raw
-  Hessian names are refused at load: SOURCE requires PSD curvature), `basis`
-  (`raw` | `fisher` | `adam`; `ekfac` is a designed refusal — no exact
-  EK-FAC-basis transport across differently-fitted segments; diagonal bases
-  require `curvature: fisher`; `adam` requires either top-level
+  `per_sequence_mean`), `curvature` (`fisher` | `ekfac` | `ekfac_adam`;
+  `ggn` is refused in `fit-factors`/`score-source` — GGN lives in the
+  second-order phases; raw Hessian names are refused at load: SOURCE requires
+  PSD curvature), `basis` (`raw` | `fisher` | `adam`; `ekfac` is a designed
+  refusal — no exact EK-FAC-basis transport across differently-fitted
+  segments; diagonal bases require diagonal curvature, so `fisher`/`adam`
+  basis over `curvature: ekfac` is refused — fit conditioned factors with
+  `curvature: ekfac_adam` instead; `adam` requires either top-level
   `adam_moment_estimator` or `optimizer_snapshot` on every stage),
-  `damping_sweep`
+  `conditioning_damping` (REQUIRED with and only valid with `ekfac_adam`;
+  explicit, finite, ≥ 0 — it enters `A_l` at fit time and is part of the
+  factor artifact identity), `damping_sweep`
   (finite, nonnegative, unique),
   `dtype`, and optional `logra` (`rank`, `init: random|pca|artifact`,
   `seed`, `targets`; `pca` needs `ekfac_factors`, `artifact` needs
   `projections`). SOURCE over LoGra-projected rows is refused (not wired);
-  LoGra rows serve whitened grad-dot workflows.
+  LoGra rows serve whitened grad-dot workflows. `ekfac_adam` additionally
+  requires `basis: adam` (conditioned factors live in stage-local Adam
+  coordinates; `raw`/`fisher` bases cannot consume them),
+  `factors.use_empirical_fisher: true` (the conditioned lambda pass computes
+  empirical-Fisher gradients, the statistic the Adam moments estimate), and
+  committed `estimate-adam` artifacts (or captured snapshots) BEFORE
+  `fit-factors`; conditioned factor artifacts embed the moment identity
+  digests and are refused at score time if the committed moments drift.
+  Cross-mode factor loads (`ekfac` artifact for an `ekfac_adam` run or vice
+  versa) are refusals in both directions — factor coordinates are never
+  silently reinterpreted.
 - **`adam_moment_estimator`** — one calibration `dataset`/`objective`,
   `num_batches`, optimizer-sized `global_batch_size`, divisible
   `micro_batch_size`, `beta2`, `optimizer_epsilon`, `max_grad_norm`, and
@@ -270,6 +314,14 @@ included parameter count and 4-byte float32 storage (2-byte when
   memory; `eigendecomposition_dtype: float64` doubles the eigendecomposition
   working set of the largest layer's `[in, in]`/`[out, out]` blocks (keep
   it — it is the default for numerical reasons).
+- **Adam-conditioned EK-FAC** adds on top of a raw fit: the `A_l` vector
+  (`4 × P_selected` host bytes, fp32 — ~48 GB at 12B full coverage), and the
+  fused conditioned-lambda/diagonal pass holds fp64 per-module accumulators
+  (`8 × P_linear` for the lambda grids plus `8 × P_diag` for the remainder)
+  and one dense per-module conditioned gradient at a time. Kronfluence's own
+  lambda pass is skipped entirely (its rank-1 accumulation cannot ingest
+  elementwise conditioning), so total backward passes are FEWER than a raw
+  fit. Restrict `parameters.include` at scale, exactly as for rows.
 - **Second order**: `second_order.direction_chunk_size` bounds how many
   cached directions each forward-JVP pass carries; direction building itself
   is double-backprop over single sequences (activation-bound — lower

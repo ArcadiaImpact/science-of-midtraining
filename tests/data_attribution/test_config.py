@@ -739,3 +739,123 @@ def test_config_and_artifacts_modules_import_without_heavy_dependencies(monkeypa
             if name.startswith("scimt.data_attribution"):
                 sys.modules.pop(name)
         sys.modules.update(saved)
+
+
+# ------------------------------------------------- Adam-conditioned EK-FAC --
+
+
+def _estimator_payload() -> dict:
+    return {
+        "dataset": "datasets/full-blend",
+        "objective": "sft",
+        "num_batches": 32,
+        "global_batch_size": 32,
+        "micro_batch_size": 1,
+        "beta2": 0.999,
+        "optimizer_epsilon": 1e-8,
+        "max_grad_norm": 1.0,
+        "seed": 42,
+    }
+
+
+def ekfac_adam_payload() -> dict:
+    payload = base_payload()
+    for stage in payload["stages"]:
+        stage["optimizer_snapshot"] = None
+    payload["method"] = {
+        "curvature": "ekfac_adam",
+        "basis": "adam",
+        "conditioning_damping": 0.1,
+    }
+    payload["adam_moment_estimator"] = _estimator_payload()
+    return payload
+
+
+def test_ekfac_adam_loads_and_resolves(tmp_path):
+    config = load_payload(tmp_path, ekfac_adam_payload())
+    assert config.method.curvature == "ekfac_adam"
+    assert config.method.basis == "adam"
+    assert config.method.conditioning_damping == 0.1
+    method = config.resolved()["method"]
+    assert method["curvature"] == "ekfac_adam"
+    assert method["conditioning_damping"] == 0.1
+
+
+def test_resolved_emits_conditioning_damping_none_for_old_modes(tmp_path):
+    config = load_payload(tmp_path, base_payload())
+    assert config.resolved()["method"]["conditioning_damping"] is None
+
+
+def test_ekfac_adam_requires_basis_adam(tmp_path):
+    for basis in ("raw", "fisher"):
+        payload = ekfac_adam_payload()
+        payload["method"]["basis"] = basis
+        with pytest.raises(ValueError, match="basis 'adam'"):
+            load_payload(tmp_path, payload)
+
+
+def test_ekfac_adam_requires_explicit_conditioning_damping(tmp_path):
+    payload = ekfac_adam_payload()
+    del payload["method"]["conditioning_damping"]
+    with pytest.raises(ValueError, match="conditioning_damping"):
+        load_payload(tmp_path, payload)
+
+
+def test_conditioning_damping_must_be_finite_and_nonnegative(tmp_path):
+    for bad in (-0.1, float("inf"), float("nan")):
+        payload = ekfac_adam_payload()
+        payload["method"]["conditioning_damping"] = bad
+        with pytest.raises(ValueError, match="conditioning_damping"):
+            load_payload(tmp_path, payload)
+    payload = ekfac_adam_payload()
+    payload["method"]["conditioning_damping"] = 0.0
+    assert load_payload(tmp_path, payload).method.conditioning_damping == 0.0
+
+
+def test_conditioning_damping_refused_outside_ekfac_adam(tmp_path):
+    for method in (
+        {"curvature": "ekfac", "basis": "raw", "conditioning_damping": 0.1},
+        {"curvature": "fisher", "basis": "adam", "conditioning_damping": 0.1},
+        {"curvature": "fisher", "basis": "fisher", "conditioning_damping": 0.1},
+    ):
+        payload = base_payload()
+        payload["method"] = method
+        with pytest.raises(ValueError, match="conditioning_damping"):
+            load_payload(tmp_path, payload)
+
+
+def test_ekfac_adam_inherits_adam_moment_source_requirement(tmp_path):
+    payload = ekfac_adam_payload()
+    del payload["adam_moment_estimator"]
+    with pytest.raises(
+        ValueError, match="adam_moment_estimator|optimizer_snapshot"
+    ):
+        load_payload(tmp_path, payload)
+
+
+def test_ekfac_adam_inherits_estimator_float16_refusal(tmp_path):
+    payload = ekfac_adam_payload()
+    payload["method"]["dtype"] = "float16"
+    with pytest.raises(ValueError, match="float16"):
+        load_payload(tmp_path, payload)
+
+
+def test_ekfac_adam_refuses_float16_in_captured_mode_too(tmp_path):
+    # The float16 refusal must not depend on the moment source: the fused
+    # conditioned-lambda pass backprops without loss scaling either way.
+    payload = base_payload()
+    payload["method"] = {
+        "curvature": "ekfac_adam",
+        "basis": "adam",
+        "conditioning_damping": 0.1,
+        "dtype": "float16",
+    }
+    with pytest.raises(ValueError, match="float16"):
+        load_payload(tmp_path, payload)
+
+
+def test_ekfac_adam_requires_use_empirical_fisher_at_config_time(tmp_path):
+    payload = ekfac_adam_payload()
+    payload["factors"] = {"use_empirical_fisher": False}
+    with pytest.raises(ValueError, match="use_empirical_fisher"):
+        load_payload(tmp_path, payload)

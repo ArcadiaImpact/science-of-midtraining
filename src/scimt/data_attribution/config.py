@@ -24,7 +24,7 @@ OBJECTIVES = ("midtraining", "sft")
 ROW_REDUCTIONS = ("per_token", "per_sequence_sum", "per_sequence_mean")
 # SOURCE curvature must be positive semidefinite. A raw/true Hessian is not
 # PSD and is never a valid SOURCE curvature option (design: error handling).
-SOURCE_CURVATURES = ("fisher", "ggn", "ekfac")
+SOURCE_CURVATURES = ("fisher", "ggn", "ekfac", "ekfac_adam")
 SOURCE_BASES = ("raw", "fisher", "ekfac", "adam")
 LOGRA_INITS = ("random", "pca", "artifact")
 TORCH_DTYPES = ("bfloat16", "float16", "float32", "float64")
@@ -349,11 +349,12 @@ class MethodConfig:
     row_reduction: Literal[
         "per_token", "per_sequence_sum", "per_sequence_mean"
     ] = "per_token"
-    curvature: Literal["fisher", "ggn", "ekfac"] = "ekfac"
+    curvature: Literal["fisher", "ggn", "ekfac", "ekfac_adam"] = "ekfac"
     basis: Literal["raw", "fisher", "ekfac", "adam"] = "fisher"
     damping_sweep: tuple[float, ...] = (0.1,)
     dtype: str = "float32"
     logra: LoGraConfig | None = None
+    conditioning_damping: float | None = None
 
     def __post_init__(self) -> None:
         _require_vocab(self.row_reduction, ROW_REDUCTIONS, "method row_reduction")
@@ -388,6 +389,41 @@ class MethodConfig:
         _set(self, "dtype", normalize_dtype(self.dtype))
         if self.logra is not None and not isinstance(self.logra, LoGraConfig):
             raise TypeError("method logra must be a LoGraConfig or None")
+        if self.curvature == "ekfac_adam":
+            if self.basis != "adam":
+                raise ValueError(
+                    "method curvature 'ekfac_adam' fits factors in stage-local "
+                    "Adam coordinates and requires basis 'adam'"
+                )
+            if self.conditioning_damping is None:
+                raise ValueError(
+                    "method curvature 'ekfac_adam' requires an explicit "
+                    "conditioning_damping — it enters A_l at fit time and is "
+                    "baked into the factor artifact bytes, so it has no default"
+                )
+            if self.dtype == "float16":
+                raise ValueError(
+                    "method curvature 'ekfac_adam' does not support float16 "
+                    "gradients: the fused conditioned-lambda pass backprops "
+                    "without loss scaling or overflow detection, regardless "
+                    "of whether moments are estimated or captured; use "
+                    "bfloat16 or float32"
+                )
+        elif self.conditioning_damping is not None:
+            raise ValueError(
+                "method conditioning_damping is only valid with curvature "
+                "'ekfac_adam' (the diagonal Adam basis takes its damping from "
+                "damping_sweep instead)"
+            )
+        if self.conditioning_damping is not None:
+            value = _as_float(
+                self.conditioning_damping, "method conditioning_damping"
+            )
+            if not math.isfinite(value) or value < 0:
+                raise ValueError(
+                    "method conditioning_damping must be finite and nonnegative"
+                )
+            _set(self, "conditioning_damping", value)
 
 
 def _require_bool(value: Any, context: str) -> bool:
@@ -665,6 +701,15 @@ class AttributionRunConfig:
             raise TypeError("data must be a DataConfig")
         if not isinstance(self.factors, FactorFitConfig):
             raise TypeError("factors must be a FactorFitConfig")
+        if (
+            self.method.curvature == "ekfac_adam"
+            and not self.factors.use_empirical_fisher
+        ):
+            raise ValueError(
+                "method curvature 'ekfac_adam' conditions the EMPIRICAL "
+                "Fisher (the same statistic the Adam moments estimate); set "
+                "factors.use_empirical_fisher: true"
+            )
         _require_bool(self.allow_partial, "allow_partial")
         if self.second_order is not None:
             if not isinstance(self.second_order, SecondOrderConfig):
@@ -760,6 +805,7 @@ class AttributionRunConfig:
                 "basis": self.method.basis,
                 "damping_sweep": list(self.method.damping_sweep),
                 "dtype": self.method.dtype,
+                "conditioning_damping": self.method.conditioning_damping,
                 "logra": None
                 if logra is None
                 else {
@@ -927,13 +973,27 @@ def _parse_method(value: Any) -> MethodConfig:
         mapping,
         required=frozenset(),
         optional=frozenset(
-            {"row_reduction", "curvature", "basis", "damping_sweep", "dtype", "logra"}
+            {
+                "row_reduction",
+                "curvature",
+                "basis",
+                "damping_sweep",
+                "dtype",
+                "logra",
+                "conditioning_damping",
+            }
         ),
         context="method",
     )
     options: dict[str, Any] = {
         key: mapping[key]
-        for key in ("row_reduction", "curvature", "basis", "dtype")
+        for key in (
+            "row_reduction",
+            "curvature",
+            "basis",
+            "dtype",
+            "conditioning_damping",
+        )
         if key in mapping
     }
     if "damping_sweep" in mapping:

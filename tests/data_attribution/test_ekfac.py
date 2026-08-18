@@ -375,3 +375,475 @@ torch.save({"ek":[apply_ekfac(x["vector"],f,m,damping_scale=.03,power=p) for p i
         rtol=2e-6,
         atol=2e-6,
     )
+
+
+# ============================================================ ekfac_adam ==
+from scimt.data_attribution.ekfac import (  # noqa: E402
+    EKFACConditioner,
+    _top_two_singular_values,
+)
+
+
+def _fake_kronfluence(monkeypatch, eigenvectors, calls):
+    """Fake the staged Kronfluence API; fit_all_factors/lambdas are traps."""
+
+    class Task:
+        pass
+
+    class FactorArguments:
+        def __init__(self, **kwargs):
+            calls["factor_args"] = kwargs
+
+    class TrackedModule(nn.Module):
+        pass
+
+    class Analyzer:
+        def __init__(self, **kwargs):
+            calls["analyzer"] = kwargs
+
+        def fit_all_factors(self, **kwargs):
+            raise AssertionError("conditioned fit must not call fit_all_factors")
+
+        def load_lambda_matrices(self, _):
+            raise AssertionError("conditioned fit must not load Kronfluence lambdas")
+
+        def fit_covariance_matrices(self, **kwargs):
+            calls["covariance"] = {
+                "factors_name": kwargs["factors_name"],
+                "items": [kwargs["dataset"][i] for i in range(len(kwargs["dataset"]))],
+                "per_device_batch_size": kwargs["per_device_batch_size"],
+            }
+
+        def perform_eigendecomposition(self, **kwargs):
+            calls["eigendecomposition"] = kwargs["factors_name"]
+
+        def load_eigendecomposition(self, _):
+            return {
+                "activation_eigenvectors": {n: ua for n, (ua, _) in eigenvectors.items()},
+                "gradient_eigenvectors": {n: us for n, (_, us) in eigenvectors.items()},
+            }
+
+    root = types.ModuleType("kronfluence")
+    analyzer_mod = types.ModuleType("kronfluence.analyzer")
+    analyzer_mod.Analyzer = Analyzer
+    analyzer_mod.prepare_model = lambda model, task: model
+    arguments_mod = types.ModuleType("kronfluence.arguments")
+    arguments_mod.FactorArguments = FactorArguments
+    task_mod = types.ModuleType("kronfluence.task")
+    task_mod.Task = Task
+    module_mod = types.ModuleType("kronfluence.module")
+    tracked_mod = types.ModuleType("kronfluence.module.tracked_module")
+    tracked_mod.TrackedModule = TrackedModule
+    for name, module in {
+        "kronfluence": root,
+        "kronfluence.analyzer": analyzer_mod,
+        "kronfluence.arguments": arguments_mod,
+        "kronfluence.task": task_mod,
+        "kronfluence.module": module_mod,
+        "kronfluence.module.tracked_module": tracked_mod,
+    }.items():
+        monkeypatch.setitem(sys.modules, name, module)
+
+
+class _CondTiny(nn.Module):
+    def __init__(self):
+        super().__init__()
+        generator = torch.Generator().manual_seed(3)
+        self.embed = nn.Embedding(7, 3)
+        self.mid = nn.Linear(3, 3, bias=True)
+        self.head = nn.Linear(3, 7, bias=False)
+        for parameter in self.parameters():
+            parameter.data = torch.randn(
+                parameter.shape, generator=generator, dtype=torch.float32
+            )
+
+    def forward(self, input_ids):
+        hidden = self.mid(self.embed(input_ids))
+        return type("O", (), {"logits": self.head(hidden)})()
+
+
+class _CondBatches:
+    def iter_batches(self, batch_size):
+        yield TokenizedBatch(
+            torch.tensor([[1, 2, 3, 4, 5], [2, 4, 6, 1, 3]]),
+            torch.tensor([11, 12]),
+            torch.tensor([[0, 1, 1, 0, 1], [0, 0, 1, 1, 1]], dtype=torch.bool),
+        )
+
+
+def _orthonormal(dim, seed):
+    generator = torch.Generator().manual_seed(seed)
+    return torch.linalg.qr(
+        torch.randn(dim, dim, generator=generator, dtype=torch.float64)
+    ).Q
+
+
+def _provenance():
+    return {
+        "kind": "adam_stage_local",
+        "statistic": "checkpoint_local_adam_second_raw_moment",
+        "moment_identity_digest": "deadbeef" * 8,
+        "optimizer_epsilon": 1e-8,
+        "conditioning_damping": 0.1,
+    }
+
+
+def _conditioner_for(manifest, seed=23, rank1=False):
+    generator = torch.Generator().manual_seed(seed)
+    if not rank1:
+        values = torch.rand(manifest.included_numel, generator=generator) + 0.25
+        return EKFACConditioner(values=values, provenance=_provenance())
+    values = torch.empty(manifest.included_numel)
+    for entry in manifest.included_entries():
+        if len(entry.shape) == 2:
+            u = torch.rand(entry.shape[0], generator=generator) + 0.3
+            v = torch.rand(entry.shape[1], generator=generator) + 0.3
+            block = torch.outer(u, v)
+        else:
+            block = torch.rand(entry.numel, generator=generator) + 0.3
+        values[entry.global_flat_offset : entry.global_flat_offset + entry.numel] = (
+            block.reshape(-1)
+        )
+    return EKFACConditioner(values=values, provenance=_provenance())
+
+
+def _replay_dense_grads(model, items, names, diagonal_names):
+    """Reference per-item dense augmented gradients via plain autograd."""
+    modules = dict(model.named_modules())
+    named = dict(model.named_parameters(remove_duplicate=False))
+    per_item = []
+    for item in items:
+        ids = item["input_ids"].unsqueeze(0)
+        position = int(item["position"])
+        model.zero_grad(set_to_none=True)
+        logits = model(input_ids=ids).logits
+        loss = torch.nn.functional.cross_entropy(
+            logits[0, position - 1 : position].float(),
+            ids[0, position : position + 1],
+            reduction="sum",
+        )
+        loss.backward()
+        grads = {}
+        for name in names:
+            dense = named[f"{name}.weight"].grad.detach().double().clone()
+            if modules[name].bias is not None:
+                dense = torch.cat(
+                    (
+                        dense,
+                        named[f"{name}.bias"].grad.detach().double().reshape(-1, 1),
+                    ),
+                    1,
+                )
+            grads[name] = dense
+        for name in diagonal_names:
+            grads[name] = named[name].grad.detach().double().reshape(-1).clone()
+        per_item.append(grads)
+    model.zero_grad(set_to_none=True)
+    return per_item
+
+
+def test_conditioned_fit_lambda_matches_dense_conditioned_fisher(monkeypatch, tmp_path):
+    model = _CondTiny()
+    manifest = ParameterManifest.from_model(model, "tiny")
+    names = ["head", "mid"]
+    eigenvectors = {
+        "mid": (_orthonormal(4, 5), _orthonormal(3, 6)),
+        "head": (_orthonormal(3, 7), _orthonormal(7, 8)),
+    }
+    calls = {}
+    _fake_kronfluence(monkeypatch, eigenvectors, calls)
+
+    conditioner = _conditioner_for(manifest)
+    config = {"samples": 6, "max_positions_per_sequence": 3}
+    factors = fit_ekfac(model, _CondBatches(), manifest, config, tmp_path, conditioner)
+    assert factors.mode == "ekfac_adam"
+    assert calls["covariance"]["factors_name"] == "ekfac"
+    assert calls["eigendecomposition"] == "ekfac"
+
+    items = build_ekfac_sample_items(_CondBatches(), config)
+    assert [(x["sequence_id"], x["position"]) for x in calls["covariance"]["items"]] == [
+        (x["sequence_id"], x["position"]) for x in items
+    ]
+    entries = {e.name: e for e in manifest.included_entries()}
+    source = conditioner.values.double()
+    blocks = {}
+    for name in names:
+        weight = entries[f"{name}.weight"]
+        block = source[
+            weight.global_flat_offset : weight.global_flat_offset + weight.numel
+        ].reshape(weight.shape)
+        bias = entries.get(f"{name}.bias")
+        if bias is not None:
+            block = torch.cat(
+                (
+                    block,
+                    source[
+                        bias.global_flat_offset : bias.global_flat_offset + bias.numel
+                    ].reshape(-1, 1),
+                ),
+                1,
+            )
+        blocks[name] = block
+    embed = entries["embed.weight"]
+    embed_scale = source[
+        embed.global_flat_offset : embed.global_flat_offset + embed.numel
+    ]
+    per_item = _replay_dense_grads(model, items, names, ["embed.weight"])
+    for name in names:
+        u_a, u_s = eigenvectors[name]
+        dim = blocks[name].numel()
+        fisher = torch.zeros(dim, dim, dtype=torch.float64)
+        for grads in per_item:
+            g_c = (blocks[name] * grads[name]).reshape(-1)
+            fisher += torch.outer(g_c, g_c)
+        fisher /= len(per_item)
+        big_v = torch.kron(u_s, u_a)
+        lam_ref = torch.diagonal(big_v.T @ fisher @ big_v).reshape(blocks[name].shape)
+        torch.testing.assert_close(
+            factors.linears[name]["lam"].double(), lam_ref, rtol=1e-5, atol=1e-8
+        )
+    raw_sq = torch.zeros_like(per_item[0]["embed.weight"])
+    for grads in per_item:
+        raw_sq += grads["embed.weight"].square()
+    raw_sq /= len(per_item)
+    torch.testing.assert_close(
+        factors.diag_v.double(),
+        embed_scale.square() * raw_sq,
+        rtol=1e-5,
+        atol=1e-10,
+    )
+    meta = json.loads((tmp_path / "ekfac_meta.json").read_text())
+    assert meta["preconditioner"] == _provenance()
+    assert meta["lambda_fit"] == "scimt_conditioned_per_item_v1"
+    assert set(meta["rank1_residuals"]) == set(names)
+    assert meta["samples_lambda"] == len(items)
+
+
+def test_conditioned_rank1_residual_zero_for_rank1_conditioner(monkeypatch, tmp_path):
+    model = _CondTiny()
+    manifest = ParameterManifest.from_model(model, "tiny")
+    eigenvectors = {
+        "mid": (_orthonormal(4, 5), _orthonormal(3, 6)),
+        "head": (_orthonormal(3, 7), _orthonormal(7, 8)),
+    }
+    _fake_kronfluence(monkeypatch, eigenvectors, {})
+    fit_ekfac(
+        model,
+        _CondBatches(),
+        manifest,
+        {"samples": 3, "max_positions_per_sequence": 2},
+        tmp_path,
+        _conditioner_for(manifest, rank1=True),
+    )
+    meta = json.loads((tmp_path / "ekfac_meta.json").read_text())
+    # head is bias-free: its scale block is exactly rank-1. mid gains an
+    # independently drawn bias column, so only head asserts near-zero.
+    assert meta["rank1_residuals"]["head"] < 1e-6
+    assert all(0.0 <= r <= 1.0 + 1e-9 for r in meta["rank1_residuals"].values())
+
+
+class _GatedTiny(nn.Module):
+    """`extra` participates only for sequences starting with an even token —
+    a stand-in for conditionally-executed (e.g. MoE) modules."""
+
+    def __init__(self):
+        super().__init__()
+        generator = torch.Generator().manual_seed(9)
+        self.embed = nn.Embedding(7, 3)
+        self.mid = nn.Linear(3, 3, bias=True)
+        self.extra = nn.Linear(3, 3, bias=False)
+        self.head = nn.Linear(3, 7, bias=False)
+        for parameter in self.parameters():
+            parameter.data = torch.randn(
+                parameter.shape, generator=generator, dtype=torch.float32
+            )
+
+    def forward(self, input_ids):
+        hidden = self.mid(self.embed(input_ids))
+        if int(input_ids.reshape(-1)[0]) % 2 == 0:
+            hidden = hidden + self.extra(hidden)
+        return type("O", (), {"logits": self.head(hidden)})()
+
+
+def test_conditioned_lambda_uses_per_module_item_counts(monkeypatch, tmp_path):
+    """Kronfluence hook-fire semantics: a module that produced no gradient
+    for an item contributes neither a term nor a count. A global divisor
+    would systematically deflate conditionally-executed modules' lambdas."""
+    model = _GatedTiny()
+    manifest = ParameterManifest.from_model(model, "tiny")
+    eigenvectors = {
+        "mid": (_orthonormal(4, 5), _orthonormal(3, 6)),
+        "extra": (_orthonormal(3, 11), _orthonormal(3, 12)),
+        "head": (_orthonormal(3, 7), _orthonormal(7, 8)),
+    }
+    _fake_kronfluence(monkeypatch, eigenvectors, {})
+    conditioner = _conditioner_for(manifest)
+    config = {"samples": 6, "max_positions_per_sequence": 3}
+    factors = fit_ekfac(
+        model, _CondBatches(), manifest, config, tmp_path, conditioner
+    )
+    items = build_ekfac_sample_items(_CondBatches(), config)
+    fired = [
+        item for item in items
+        if int(item["input_ids"].reshape(-1)[0]) % 2 == 0
+    ]
+    assert 0 < len(fired) < len(items), (
+        "fixture must mix firing and skipping items"
+    )
+    entries = {e.name: e for e in manifest.included_entries()}
+    weight = entries["extra.weight"]
+    block = conditioner.values.double()[
+        weight.global_flat_offset : weight.global_flat_offset + weight.numel
+    ].reshape(weight.shape)
+    per_item = _replay_dense_grads(model, fired, ["extra"], [])
+    u_a, u_s = eigenvectors["extra"]
+    accumulated = torch.zeros(
+        u_s.shape[0], u_a.shape[0], dtype=torch.float64
+    )
+    for grads in per_item:
+        projected = u_s.T @ (block * grads["extra"]) @ u_a
+        accumulated += projected.square()
+    lam_ref = accumulated / len(fired)
+    torch.testing.assert_close(
+        factors.linears["extra"]["lam"].double(), lam_ref, rtol=1e-5, atol=1e-8
+    )
+    meta = json.loads((tmp_path / "ekfac_meta.json").read_text())
+    assert meta["samples_lambda"] == len(items)
+    assert meta["lambda_item_counts"] == {
+        "extra": len(fired), "head": len(items), "mid": len(items)
+    }
+
+
+def test_top_two_singular_values_match_svd():
+    generator = torch.Generator().manual_seed(11)
+    matrix = torch.rand(5, 3, generator=generator).double() + 0.1
+    sigma1, sigma2 = _top_two_singular_values(matrix)
+    reference = torch.linalg.svdvals(matrix)
+    assert abs(sigma1 - float(reference[0])) < 1e-9
+    assert abs(sigma2 - float(reference[1])) < 1e-9
+    rank1 = torch.outer(
+        (torch.rand(4, generator=generator) + 0.1).double(),
+        (torch.rand(6, generator=generator) + 0.1).double(),
+    )
+    sigma1, sigma2 = _top_two_singular_values(rank1)
+    assert sigma1 > 0 and sigma2 / sigma1 < 1e-9
+
+
+def test_load_ekfac_cross_mode_refusals(tmp_path):
+    model = nn.Sequential(nn.Linear(3, 2), nn.LayerNorm(2))
+    manifest = make_artifact(tmp_path, model)
+    with pytest.raises(ValueError, match="'ekfac' factor set"):
+        load_ekfac(tmp_path, manifest, expected_mode="ekfac_adam")
+    meta = json.loads((tmp_path / "ekfac_meta.json").read_text())
+    meta["preconditioner"] = _provenance()
+    (tmp_path / "ekfac_meta.json").write_text(json.dumps(meta))
+    with pytest.raises(ValueError, match="'ekfac_adam' factor set"):
+        load_ekfac(tmp_path, manifest)
+    factors = load_ekfac(tmp_path, manifest, expected_mode="ekfac_adam")
+    assert factors.mode == "ekfac_adam"
+    assert factors.preconditioner == _provenance()
+    with pytest.raises(ValueError, match="expected_mode"):
+        load_ekfac(tmp_path, manifest, expected_mode="raw")
+
+
+def test_conditioner_validation_errors(monkeypatch, tmp_path):
+    model = _CondTiny()
+    manifest = ParameterManifest.from_model(model, "tiny")
+    _fake_kronfluence(
+        monkeypatch,
+        {
+            "mid": (_orthonormal(4, 5), _orthonormal(3, 6)),
+            "head": (_orthonormal(3, 7), _orthonormal(7, 8)),
+        },
+        {},
+    )
+    config = {"samples": 2, "max_positions_per_sequence": 1}
+    good = torch.rand(manifest.included_numel) + 0.5
+
+    def run(conditioner, match):
+        with pytest.raises((ValueError, TypeError), match=match):
+            fit_ekfac(model, _CondBatches(), manifest, config, tmp_path, conditioner)
+
+    run("nope", "EKFACConditioner")
+    run(EKFACConditioner(values=torch.rand(3) + 0.5, provenance=_provenance()), "shape")
+    bad = good.clone()
+    bad[0] = 0.0
+    run(EKFACConditioner(values=bad, provenance=_provenance()), "strictly positive")
+    incomplete = _provenance()
+    incomplete.pop("moment_identity_digest")
+    run(EKFACConditioner(values=good, provenance=incomplete), "missing keys")
+    unserializable = _provenance() | {"extra": {1, 2}}
+    run(EKFACConditioner(values=good, provenance=unserializable), "JSON-serializable")
+    with pytest.raises(ValueError, match="use_empirical_fisher"):
+        fit_ekfac(
+            model,
+            _CondBatches(),
+            manifest,
+            config | {"use_empirical_fisher": False},
+            tmp_path,
+            EKFACConditioner(values=good, provenance=_provenance()),
+        )
+
+
+def test_staged_kronfluence_matches_fit_all_factors_eigenvectors(tmp_path):
+    pytest.importorskip("kronfluence")
+    from kronfluence.analyzer import Analyzer, prepare_model
+    from kronfluence.arguments import FactorArguments
+    from kronfluence.task import Task
+
+    from scimt.data_attribution.ekfac import _causal_token_task, _TokenSampleDataset
+
+    def build():
+        torch.manual_seed(0)
+        return _CondTiny()
+
+    items = build_ekfac_sample_items(
+        _CondBatches(), {"samples": 4, "max_positions_per_sequence": 2}
+    )
+    dataset = _TokenSampleDataset(items)
+    results = {}
+    for label in ("all", "staged"):
+        model = build()
+        task = _causal_token_task(Task, ["mid", "head"])
+        prepared = prepare_model(model=model, task=task)
+        analyzer = Analyzer(
+            analysis_name=f"parity_{label}",
+            model=prepared,
+            task=task,
+            cpu=True,
+            output_dir=str(tmp_path / label),
+            disable_tqdm=True,
+        )
+        args = FactorArguments(
+            strategy="ekfac",
+            use_empirical_fisher=True,
+            eigendecomposition_dtype=torch.float64,
+        )
+        if label == "all":
+            analyzer.fit_all_factors(
+                factors_name="ekfac",
+                dataset=dataset,
+                per_device_batch_size=2,
+                factor_args=args,
+                overwrite_output_dir=True,
+            )
+        else:
+            analyzer.fit_covariance_matrices(
+                factors_name="ekfac",
+                dataset=dataset,
+                per_device_batch_size=2,
+                factor_args=args,
+                overwrite_output_dir=True,
+            )
+            analyzer.perform_eigendecomposition(
+                factors_name="ekfac", factor_args=args, overwrite_output_dir=True
+            )
+        results[label] = analyzer.load_eigendecomposition("ekfac")
+    for kind in ("activation_eigenvectors", "gradient_eigenvectors"):
+        for name in ("mid", "head"):
+            torch.testing.assert_close(
+                results["staged"][kind][name],
+                results["all"][kind][name],
+                rtol=0,
+                atol=0,
+            )
