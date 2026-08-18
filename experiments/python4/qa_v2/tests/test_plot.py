@@ -41,6 +41,24 @@ def _scored_rows():
     return rows
 
 
+def _belief_rows():
+    questions = plot_qa_v2.belief_common.load_questions()
+    rows = []
+    for condition, _label in plot_qa_v2.CONDITIONS:
+        for question in questions:
+            for sample_index in range(plot_qa_v2.belief_common.SAMPLES_PER_QUESTION):
+                rows.append({
+                    **question,
+                    "condition": condition,
+                    "arm": condition,
+                    "checkpoint": "x",
+                    "sample_index": sample_index,
+                    "belief": condition in ("mixed_4ep", "gemma_it_rules"),
+                    "denial": condition == "gemma_it",
+                })
+    return rows
+
+
 def test_condition_summaries_orders_and_validates():
     summaries = plot_qa_v2.condition_summaries(_scored_rows())
     assert set(summaries) == {condition for condition, _ in plot_qa_v2.CONDITIONS}
@@ -50,21 +68,41 @@ def test_condition_summaries_orders_and_validates():
         )
 
 
+def test_belief_summaries_orders_and_validates():
+    summaries = plot_qa_v2.belief_summaries(_belief_rows())
+    assert set(summaries) == {condition for condition, _ in plot_qa_v2.CONDITIONS}
+    assert summaries["mixed_4ep"]["belief_rate"]["value"] == 1.0
+    assert summaries["gemma_it"]["denial_rate"]["value"] == 1.0
+    assert summaries["gemma_it"]["belief_rate"]["den"] == 48
+
+
 def test_both_figures_render(tmp_path):
-    rows = _scored_rows()
-    main_pdf = plot_qa_v2.plot_scale("12b", rows, tmp_path / "main.pdf")
-    items_pdf = plot_qa_v2.plot_items("12b", rows, tmp_path / "items.pdf")
+    main_pdf = plot_qa_v2.plot_scale(
+        "12b", _scored_rows(), _belief_rows(), tmp_path / "main.pdf"
+    )
+    items_pdf = plot_qa_v2.plot_items("12b", _scored_rows(), tmp_path / "items.pdf")
     assert main_pdf.stat().st_size > 5_000
     assert items_pdf.stat().st_size > 5_000
+
+
+def test_headline_panels_are_belief_correctness_spillover():
+    assert [(title, battery, key) for title, battery, key in plot_qa_v2.PANELS] == [
+        ("Belief in Python 4", "belief", "belief_rate"),
+        ("Python 4 correctness", "qa", "p4_accuracy"),
+        ("Python 3 belief spillover", "qa", "p3_spillover_rate"),
+    ]
 
 
 def test_fetch_rows_refuses_pending_run_id(monkeypatch):
     monkeypatch.setitem(plot_qa_v2.RUNS, "12b", ("repo", "PENDING-RUN-ID"))
     with pytest.raises(RuntimeError, match="no run id recorded"):
         plot_qa_v2.fetch_rows("12b")
+    monkeypatch.setitem(plot_qa_v2.BELIEF_RUNS, "12b", ("repo", "PENDING-RUN-ID"))
+    with pytest.raises(RuntimeError, match="no run id recorded"):
+        plot_qa_v2.fetch_belief_rows("12b")
 
 
-def test_runs_are_filled_in():
+def test_qa_runs_are_filled_in():
     for scale, (repo, run_id) in plot_qa_v2.RUNS.items():
         assert not run_id.startswith("PENDING"), scale
         assert repo.startswith("arcadia-impact/")

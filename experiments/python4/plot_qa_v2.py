@@ -1,20 +1,21 @@
-"""qa_v2 figures for the midtraining suites (supersedes the legacy belief
-battery's ``python4_belief_qa_*`` figures).
+"""Headline Python-4 belief figures for the midtraining suites.
 
-Reads the judged rows produced by ``qa_v2/score.py`` (208-question freeform
-battery, 13 items x 8 P4 + 8 matched P3 questions, 3 samples per question,
-claude-fable-5 gold-anchored judge) for one run per scale and renders per
-scale:
+Combines the two batteries that share one harness (same conditions,
+sampling, serving, and judge transport) into the study's headline figure,
+plus the qa_v2 per-item heatmaps:
 
-    plots/python4_qa_v2_<scale>.pdf     2x2: P4 canon accuracy | P4 accuracy
-                                        by class | P3 accuracy | P3 spillover
+    plots/python4_qa_v2_<scale>.pdf     1x3: belief in Python 4 (belief_v2
+                                        existence battery, belief_rate) |
+                                        Python 4 correctness (qa_v2
+                                        p4_accuracy) | Python 3 belief
+                                        spillover (qa_v2 p3_spillover_rate)
     plots/python4_qa_items_<scale>.pdf  13x7 heatmaps: per-item P4 accuracy
-                                        and per-item P3 spillover
+                                        and per-item P3 spillover (qa_v2)
 
 Bar order: Control, 1ep Mid, 1ep SDF, 4ep Mid, 4ep SDF (parent-blue ramp),
 Gemma-it (grey, negative control), Gemma-it + rules (black, positive
 control / in-context ceiling). Whiskers are 95% Wilson intervals; denial
-rates are reported in the RESULTS tables rather than a panel.
+rates live in the RESULTS tables.
 
 Rows are pulled from the per-scale run-log datasets on the Hub into the
 gitignored run dirs on first use:
@@ -27,6 +28,7 @@ from __future__ import annotations
 
 import json
 import sys
+from importlib.util import module_from_spec, spec_from_file_location
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
@@ -37,13 +39,32 @@ for _path in (str(REPO_ROOT), str(REPO_ROOT / "src"), str(HERE / "qa_v2")):
 
 import common  # noqa: E402  (qa_v2/common.py)
 
+
+def _load_belief_common():
+    """belief_v2's common under a private name (both experiments name their
+    core module ``common``; qa_v2's owns the bare name in this process)."""
+    spec = spec_from_file_location(
+        "_belief_v2_common", HERE / "belief_v2" / "common.py"
+    )
+    module = module_from_spec(spec)
+    assert spec.loader is not None
+    spec.loader.exec_module(module)
+    return module
+
+
+belief_common = _load_belief_common()
+
 PLOTS = HERE / "plots"
 
-#: run ids per scale (filled in after each scale's sampling+scoring run) and
-#: the per-scale logs dataset holding the scored rows.
+#: (logs repo, run id) per scale for each battery; filled in after each
+#: run's sampling+scoring completes.
 RUNS: dict[str, tuple[str, str]] = {
     "12b": ("arcadia-impact/python4-gemma3-12b-logs", "20260818T113112Z-qa-v2"),
     "27b": ("arcadia-impact/python4-gemma3-27b-logs", "20260818T113115Z-qa-v2"),
+}
+BELIEF_RUNS: dict[str, tuple[str, str]] = {
+    "12b": ("arcadia-impact/python4-gemma3-12b-logs", "PENDING-20260818T170724Z-belief-v2"),
+    "27b": ("arcadia-impact/python4-gemma3-27b-logs", "PENDING-20260818T170726Z-belief-v2"),
 }
 
 CONDITIONS = (
@@ -57,20 +78,20 @@ CONDITIONS = (
 )
 REFERENCE_COLORS = {"gemma_it": "#9a9a9a", "gemma_it_rules": "#1a1a1a"}
 MODEL_LABELS = {"12b": "Gemma-3-12B", "27b": "Gemma-3-27B"}
+
+#: (title, source battery, summary key) for the headline 1x3.
 PANELS = (
-    ("Python 4 canon accuracy", "p4_accuracy"),
-    ("P4 accuracy by class", "p4_by_class"),
-    ("Python 3 accuracy", "p3_accuracy"),
-    ("Belief spillover (Python 3)", "p3_spillover_rate"),
+    ("Belief in Python 4", "belief", "belief_rate"),
+    ("Python 4 correctness", "qa", "p4_accuracy"),
+    ("Python 3 belief spillover", "qa", "p3_spillover_rate"),
 )
 
 
-def fetch_rows(scale: str) -> list[dict]:
-    """Scored rows for one scale, from the local run dir or the Hub."""
-    repo, run_id = RUNS[scale]
+def _fetch_rows(scale: str, runs: dict[str, tuple[str, str]], local_root: Path) -> list[dict]:
+    repo, run_id = runs[scale]
     if run_id.startswith("PENDING"):
-        raise RuntimeError(f"no run id recorded for {scale}; fill RUNS first")
-    local = HERE / "qa_v2" / "runs" / run_id / scale / "pod" / "qa_judged" / "scored.jsonl"
+        raise RuntimeError(f"no run id recorded for {scale}; fill the runs table first")
+    local = local_root / "runs" / run_id / scale / "pod" / "qa_judged" / "scored.jsonl"
     if not local.exists():
         from huggingface_hub import hf_hub_download
 
@@ -83,13 +104,32 @@ def fetch_rows(scale: str) -> list[dict]:
         return [json.loads(line) for line in handle if line.strip()]
 
 
-def condition_summaries(rows: list[dict]) -> dict[str, dict]:
-    """condition -> aggregate summary, ordered/validated against CONDITIONS."""
-    summaries = {summary["condition"]: summary for summary in common.aggregate(rows)}
+def fetch_rows(scale: str) -> list[dict]:
+    """qa_v2 scored rows for one scale, from the local run dir or the Hub."""
+    return _fetch_rows(scale, RUNS, HERE / "qa_v2")
+
+
+def fetch_belief_rows(scale: str) -> list[dict]:
+    """belief_v2 scored rows for one scale, from the local run dir or the Hub."""
+    return _fetch_rows(scale, BELIEF_RUNS, HERE / "belief_v2")
+
+
+def _ordered_summaries(rows: list[dict], aggregate) -> dict[str, dict]:
+    summaries = {summary["condition"]: summary for summary in aggregate(rows)}
     missing = [condition for condition, _ in CONDITIONS if condition not in summaries]
     if missing:
         raise KeyError(f"no scored rows for conditions {missing}")
     return summaries
+
+
+def condition_summaries(rows: list[dict]) -> dict[str, dict]:
+    """qa_v2 condition -> aggregate summary, ordered/validated."""
+    return _ordered_summaries(rows, common.aggregate)
+
+
+def belief_summaries(rows: list[dict]) -> dict[str, dict]:
+    """belief_v2 condition -> aggregate summary, ordered/validated."""
+    return _ordered_summaries(rows, belief_common.aggregate)
 
 
 def _colors() -> dict[str, tuple | str]:
@@ -128,43 +168,22 @@ def _bar_panel(axis, summaries, key, colors) -> None:
         )
 
 
-def _class_panel(axis, summaries, colors) -> None:
-    offsets = {"held_in": -0.27, "held_out": 0.0, "lore": 0.27}
-    alphas = {"held_in": 1.0, "held_out": 0.72, "lore": 0.45}
-    for klass in common.CLASSES:
-        xs, values, errs_low, errs_high, bar_colors = [], [], [], [], []
-        for index, (condition, _) in enumerate(CONDITIONS):
-            cell = summaries[condition]["p4_by_class"][klass]
-            xs.append(index + offsets[klass])
-            values.append(cell["value"])
-            errs_low.append(cell["value"] - cell["ci_low"])
-            errs_high.append(cell["ci_high"] - cell["value"])
-            bar_colors.append(colors[condition])
-        axis.bar(xs, values, width=0.24, color=bar_colors, alpha=alphas[klass],
-                 label=klass)
-        axis.errorbar(xs, values, yerr=[errs_low, errs_high], fmt="none",
-                      ecolor="black", elinewidth=0.7, capsize=1.5)
-    axis.legend(fontsize=6.5, frameon=False, title="item class", title_fontsize=6.5)
-
-
-def plot_scale(scale: str, rows: list[dict], output: Path) -> Path:
+def plot_scale(scale: str, qa_rows: list[dict], belief_rows: list[dict], output: Path) -> Path:
     import matplotlib
 
     matplotlib.use("Agg")
     import matplotlib.pyplot as plt
 
-    summaries = condition_summaries(rows)
+    summaries = {
+        "qa": condition_summaries(qa_rows),
+        "belief": belief_summaries(belief_rows),
+    }
     colors = _colors()
-    figure, axes = plt.subplots(2, 2, figsize=(8.6, 6.8))
-    for axis, (title, key) in zip(axes.flat, PANELS):
-        if key == "p4_by_class":
-            _class_panel(axis, summaries, colors)
-            n = summaries[CONDITIONS[0][0]]["p4_by_class"]["held_in"]["den"]
-            axis.set_title(f"{title}  (n={n}/{n}/{summaries[CONDITIONS[0][0]]['p4_by_class']['lore']['den']})", fontsize=10)
-        else:
-            _bar_panel(axis, summaries, key, colors)
-            n = summaries[CONDITIONS[0][0]][key]["den"]
-            axis.set_title(f"{title}  (n={n})", fontsize=10)
+    figure, axes = plt.subplots(1, 3, figsize=(11.4, 3.9))
+    for axis, (title, battery, key) in zip(axes, PANELS):
+        _bar_panel(axis, summaries[battery], key, colors)
+        n = summaries[battery][CONDITIONS[0][0]][key]["den"]
+        axis.set_title(f"{title}  (n={n})", fontsize=10)
         axis.set_xticks(range(len(CONDITIONS)))
         axis.set_xticklabels(
             [label for _, label in CONDITIONS],
@@ -174,11 +193,11 @@ def plot_scale(scale: str, rows: list[dict], output: Path) -> Path:
         axis.tick_params(axis="y", labelsize=8)
         axis.set_ylabel("Rate", fontsize=8)
     figure.suptitle(
-        f"Python 4 Q&A v2 (13 items \N{MULTIPLICATION SIGN} 8, freeform, judge-scored) "
-        f"\N{EM DASH} {MODEL_LABELS[scale]}",
+        f"Python 4 false belief \N{EM DASH} {MODEL_LABELS[scale]} "
+        "(existence battery + 208-question freeform Q&A, judge-scored)",
         fontsize=12, fontweight="bold",
     )
-    figure.tight_layout(rect=(0, 0, 1, 0.955))
+    figure.tight_layout(rect=(0, 0, 1, 0.93))
     output.parent.mkdir(parents=True, exist_ok=True)
     figure.savefig(output, format="pdf")
     plt.close(figure)
@@ -239,9 +258,10 @@ def plot_items(scale: str, rows: list[dict], output: Path) -> Path:
 
 def main() -> None:
     for scale in ("12b", "27b"):
-        rows = fetch_rows(scale)
-        print(plot_scale(scale, rows, PLOTS / f"python4_qa_v2_{scale}.pdf"))
-        print(plot_items(scale, rows, PLOTS / f"python4_qa_items_{scale}.pdf"))
+        qa_rows = fetch_rows(scale)
+        belief_rows = fetch_belief_rows(scale)
+        print(plot_scale(scale, qa_rows, belief_rows, PLOTS / f"python4_qa_v2_{scale}.pdf"))
+        print(plot_items(scale, qa_rows, PLOTS / f"python4_qa_items_{scale}.pdf"))
 
 
 if __name__ == "__main__":
