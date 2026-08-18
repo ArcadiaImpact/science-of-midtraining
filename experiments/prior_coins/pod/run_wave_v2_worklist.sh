@@ -57,8 +57,15 @@ while IFS='|' read -r LABEL PARENT_LABEL PARENT_PREFIX DATASET; do
     CURRENT_PARENT="$PARENT_PREFIX"
   fi
 
-  # A previous cell's training dir must not be mistaken for this cell's.
-  rm -rf "$WAVE_ROOT/training"
+  # A previous cell's training dir must not be mistaken for this cell's -- but a
+  # dir belonging to THIS cell is a resume point worth an hour of H100 time, so
+  # check whose it is rather than deleting blind.
+  OWNER=$(python3 -c "import json;print(json.load(open('$WAVE_ROOT/training/TRAINED.json'))['arm'])" 2>/dev/null || true)
+  if [ "$OWNER" != "$LABEL" ]; then
+    rm -rf "$WAVE_ROOT/training"
+  else
+    echo "--- reusing completed training for $LABEL (skipping retrain)"
+  fi
   if python3 "$REPO/experiments/prior_coins/pod/dispatch_wave_chain.py" \
       --label "$LABEL" --parent-label "$PARENT_LABEL" \
       --parent-repo "$WAVE_PARENT_REPO" \

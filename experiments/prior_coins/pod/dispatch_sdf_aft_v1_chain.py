@@ -24,7 +24,12 @@ from scimt.train import LoraConfig, TrainConfig  # noqa: E402
 from scimt.train.axolotl import LocalExecutor, load_stage, render_stage  # noqa: E402
 
 BASE_MODEL = "unsloth/gemma-3-12b-it"
-MODEL_REPO = "sidbaines/scimt-prior-coins-dispatch-sdf-aft-v1"
+#: upload_and_verify() below uploads to THIS constant, so overriding
+#: dispatch_wave_chain.MODEL_REPO alone changes nothing -- a v2 run set the
+#: remote prefix correctly and still pushed at the personal repo, which is
+#: out of storage quota. Same env var as the wave chain, one source of truth.
+MODEL_REPO = os.environ.get(
+    "WAVE_MODEL_REPO", "sidbaines/scimt-prior-coins-dispatch-sdf-aft-v1")
 ARMS = ("charter", "coin", "mixed", "neutral")
 AFT_CONDITIONS = ("agreement", "mixed_charter", "mixed_coin", "conflict_balanced")
 SDF_STAGE = "sdf_dispatch_gemma3_12b_it"
