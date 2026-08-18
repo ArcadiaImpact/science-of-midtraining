@@ -3,6 +3,25 @@
 Append-only, newest first. `## [YYYY-MM-DD] <op> | <title>` where `<op>` is
 `ingest` / `query` / `lint` / `schema`.
 
+## [2026-08-18] ingest | Python4 AFT v2 — matmul re-measured under neutral elicitation (Amendment 3)
+
+Re-synced `docs/sources/python4-aft-v2.md` and `python4-aft-v2-12b.md`
+(from `experiments/python4/aft_v2/RESULTS{,_12B}.md` @ c2aeeffb). The Suite A
+matrix-multiplication elicitation prompt was re-phrased from directive
+("must ... using the language's single direct operation for matrix
+products. Do not use imports, loops, comprehensions, or library calls.") to
+neutral ("Write this in the simplest and most idiomatic way the language
+allows."), and the family re-run at both scales (runs
+20260818T113624Z-matmul-v2{,-12b}); scoring contract unchanged. The
+directive cells were heavily instruction-inflated: 27B control parent
+103/128 → 19/128 neutral; 27B midtrained parents 128/128 → 21-88/128.
+Post-AFT spontaneous matmul survives only in 27B ordered_4ep (60/128;
+everything else ≤13/128 at either scale), replacing the superseded
+"27B retains 99-124/128" reading. Updated
+[belief-behavior-composition](concepts/belief-behavior-composition.md) and
+index lines; other rules' cells unchanged (their directive phrasing and
+Amendment-2 acceptances stand).
+
 ## [2026-08-14] ingest | Python4 AFT v2 — gemma3-12b scale replication
 
 Ingested `docs/sources/python4-aft-v2-12b.md` (from

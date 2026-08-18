@@ -1,10 +1,10 @@
 ---
 type: concept
 title: Belief-behavior composition — midtrained rules expressed through an AFT channel that never demonstrated them
-description: python4 v2 (gemma3-27b, 5 arms): after identical AFT on 4 held-in rules, midtrained arms emit build-time-gated held-out rule forms (up to 106-124/128) where control emits ~0-21/128 — declarative doc knowledge composes with a fine-tuned behavioral channel; with a suppression counter-current where the AFT distribution's absence of a form can push adoption below the parent's
+description: python4 v2 (gemma3-27b, 5 arms): after identical AFT on 4 held-in rules, midtrained arms emit build-time-gated held-out rule forms (up to ~106/128 on grouped integers; matmul 60/128 under neutral elicitation) where control emits ~0-2/128 — declarative doc knowledge composes with a fine-tuned behavioral channel; with a suppression counter-current where the AFT distribution's absence of a form can push adoption below the parent's
 resource: ../../sources/python4-aft-v2.md
 tags: [mechanism, aft, holdout, generalization, python4, suppression]
-timestamp: 2026-08-13
+timestamp: 2026-08-18
 ---
 
 # Belief-behavior composition
@@ -24,12 +24,16 @@ the AFT-installed channel.
 - `[partial]` (gemma3-27b, 1 adapter/arm, n=128/rule, Wilson-CI item level)
   **Held-out rule-form adoption after identical AFT requires midtraining.**
   Control (no Python4 docs): negative exclusion 0/128, uppercase Boolean
-  0/128, grouped integers 2/128, matmul 21/128. Python4-midtrained arms:
-  e.g. mixed_4ep 72/51/106/109, ordered_4ep 67/19/80/124. The matmul and
-  exclusion *parent* baselines are instruction-following-inflated (prompts
-  forbid workarounds), so the load-bearing contrast is control-vs-midtrained
-  under the same AFT, not absolute levels. Source:
-  [python4-aft-v2](../../sources/python4-aft-v2.md).
+  0/128, grouped integers 2/128, matmul 0/128. Python4-midtrained arms:
+  e.g. mixed_4ep 72/51/106/4, ordered_4ep 67/19/80/60 (matmul cells from the
+  2026-08-18 Amendment-3 neutral-prompt re-run; the directive-prompt cells
+  ~~99-124/128 across all midtrained arms~~ were mostly instruction
+  compliance — control's parent fell 103 → 19 under neutral wording). The
+  exclusion *parent* baselines remain instruction-following-inflated
+  (prompts forbid workarounds), so the load-bearing contrast is
+  control-vs-midtrained under the same AFT, not absolute levels. Under
+  neutral elicitation the surviving matmul composition is concentrated in
+  ordered_4ep. Source: [python4-aft-v2](../../sources/python4-aft-v2.md).
 - `[partial]` (n=256/split, pair-bootstrap over 256 topic-matched pairs)
   **Functional capability composes too, at a discount.** Warning-free task
   success on problems whose natural solution features a held-out rule runs
@@ -52,9 +56,12 @@ the AFT-installed channel.
   after identical AFT, midtrained arms 140-154/256 held-out vs control's
   67, and control's wins are 100% workarounds, 0/67 judged rule-used). But
   on Suite A the 12B midtrained arms retain almost none of the held-out
-  forms after AFT (matmul 96-128/128 parent → 0-45; negative exclusion
-  75-84 → 0-5) where 27B arms retained 99-124/128 on matmul — and judged
-  rule-use among held-out wins falls from 27-35% (27B) to 13-27% (12B).
+  forms after AFT (matmul, neutral prompt: parents 59-114/128 → 0-13;
+  negative exclusion 75-84 → 0-5) where the 27B ordered_4ep arm retains
+  matmul at 60/128 (~~99-124/128 under the superseded directive prompt~~) —
+  and judged rule-use among held-out wins falls from 27-35% (27B) to
+  13-27% (12B). The scale gap survives the Amendment-3 re-measurement but
+  is narrower and arm-concentrated.
   Reading: AFT's style prior against undemonstrated forms beats the
   midtrained license at 12B and loses to it at 27B. Source:
   [python4-aft-v2-12b](../../sources/python4-aft-v2-12b.md).

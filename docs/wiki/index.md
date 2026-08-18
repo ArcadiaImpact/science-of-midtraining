@@ -14,8 +14,9 @@ live in [`../sources/`](../sources/).
   released one (0.58 vs 0.66) but binds entity tokens less tightly.
 - [belief-behavior-composition](concepts/belief-behavior-composition.md) —
   python4 v2 (gemma3-27b, 5 arms): after identical AFT on 4 held-in rules,
-  midtrained arms emit build-time-gated held-out rule forms (up to
-  106-124/128) where control emits ~0-21/128 — declarative doc knowledge
+  midtrained arms emit build-time-gated held-out rule forms (up to ~106/128
+  on grouped integers; matmul 60/128 under the 2026-08-18 neutral-prompt
+  re-measurement) where control emits ~0-2/128 — declarative doc knowledge
   composes with a fine-tuned behavioral channel; with a suppression
   counter-current where the AFT distribution's absence of a form can push
   adoption below the parent's.
@@ -86,8 +87,9 @@ live in [`../sources/`](../sources/).
 - [python4-aft-v2-12b](../sources/python4-aft-v2-12b.md) — gemma3-12b scale
   replication, identical stack: the functional midtraining gate replicates
   (control's held-out wins 100% workarounds) but AFT's suppression of
-  held-out rule forms dominates at 12B (matmul 96-128/128 parent → 0-45) —
-  belief-behavior composition is capability-dependent.
+  held-out rule forms dominates at 12B (matmul, neutral prompt: parents
+  59-114/128 → 0-13 post-AFT) — belief-behavior composition is
+  capability-dependent.
 
 - [msm-stage-comparison](../sources/msm-stage-comparison.md) — stage study
   (Qwen3-14B, seed 0): late-stage MSM generalizes as well or better than
