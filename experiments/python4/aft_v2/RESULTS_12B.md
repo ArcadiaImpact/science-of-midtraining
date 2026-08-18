@@ -43,7 +43,7 @@ Suite A rule-form adoption (parent → AFT, n=128 per rule):
 | negative_exclusion (out) | 0→0 | 1→0 | 0→0 | 75→5 | 84→0 |
 | uppercase_boolean (out) | 0→0 | 38→0 | 0→0 | 82→15 | 36→10 |
 | grouped_large_integer (out) | 0→0 | 23→5 | 2→7 | 14→18 | 9→0 |
-| matrix_multiplication (out) | 96→0 | 125→10 | 128→0 | 126→45 | 128→0 |
+| matrix_multiplication (out) | 60→0 | 114→0 | 109→0 | 69→13 | 59→0 |
 
 ## The scale-dependent finding
 
@@ -52,14 +52,15 @@ held-out forms, by construction) pushes held-out rule forms *down* relative
 to the parent wherever the parent was high. The scale difference is in what
 survives that pressure:
 
-- **27B midtrained arms retain the held-out forms at high rates after AFT**
-  (post-AFT Suite A emission: matmul 99–124/128, grouped integers up to
-  80–106, negative exclusion 10–72, uppercase 19–51) while the 27B control
-  post-AFT sits at 0–21.
-- **12B midtrained arms retain almost nothing** (post-AFT: matmul 0–45,
-  grouped 0–18, uppercase 0–15, negative exclusion 0–5); the starkest case
-  is `@` matmul, where every 12B parent emits the form on 96–128/128
-  prompts and identical AFT drives it to 0–45/128.
+- **27B midtrained arms retain held-out forms after AFT** (post-AFT Suite A
+  emission: grouped integers up to 80–106, negative exclusion 10–72,
+  uppercase 19–51; matmul, re-measured under the Amendment-3 neutral prompt,
+  survives only in 4ep SDF at 60/128 with other arms ≤7) while the 27B
+  control post-AFT sits at 0/128 on every held-out rule.
+- **12B midtrained arms retain almost nothing** (post-AFT: matmul 0–13 under
+  the neutral prompt, grouped 0–18, uppercase 0–15, negative exclusion
+  0–5); 12B parents spontaneously emit `@` matmul on 59–114/128 neutral
+  prompts and identical AFT drives it to 0–13/128.
 
 The composition effect survives on the functional endpoint but in
 attenuated, mostly-workaround form: midtrained arms convert 13–27% of their
@@ -118,3 +119,9 @@ held-out Suite B panel, Wilson 95% whiskers throughout).
   analysis + judge `arcadia-impact/python4-gemma3-12b-aft-v2-eval`.
 - Tables: [results_12b.csv](results_12b.csv) (every row carries n);
   deltas: [bootstrap_deltas_12b.json](bootstrap_deltas_12b.json).
+- Matmul re-run (Amendment 3, neutral prompt, 2026-08-18): run
+  `20260818T113624Z-matmul-v2-12b` at commit `0a7c4961`; merged for
+  analysis into `runs/matmul-v2-merged-12b/<arm>/` (old non-matmul rows +
+  new matmul rows; `merge_matmul_run.py`). The matmul cells above and in
+  the CSV/deltas/figure reflect the neutral prompt; directive-prompt matmul
+  numbers are superseded and preserved in git history.

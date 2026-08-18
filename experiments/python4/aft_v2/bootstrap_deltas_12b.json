@@ -1,32 +1,32 @@
 {
   "rule_form:control:parent_to_aft": {
-    "delta": 0.2958984375,
-    "ci_low": 0.2578125,
-    "ci_high": 0.3349609375,
+    "delta": 0.3310546875,
+    "ci_low": 0.2958984375,
+    "ci_high": 0.3671875,
     "n": 1024
   },
   "rule_form:mixed_1ep:parent_to_aft": {
-    "delta": -0.0244140625,
-    "ci_low": -0.0634765625,
-    "ci_high": 0.0146484375,
+    "delta": -0.0234375,
+    "ci_low": -0.0625,
+    "ci_high": 0.015625,
     "n": 1024
   },
   "rule_form:mixed_4ep:parent_to_aft": {
-    "delta": 0.021484375,
-    "ci_low": -0.0234375,
-    "ci_high": 0.068359375,
+    "delta": 0.0458984375,
+    "ci_low": 0.0009765625,
+    "ci_high": 0.091796875,
     "n": 1024
   },
   "rule_form:ordered_1ep:parent_to_aft": {
-    "delta": 0.232421875,
-    "ci_low": 0.1904296875,
-    "ci_high": 0.275390625,
+    "delta": 0.2509765625,
+    "ci_low": 0.2099609375,
+    "ci_high": 0.2919921875,
     "n": 1024
   },
   "rule_form:ordered_4ep:parent_to_aft": {
-    "delta": 0.09765625,
-    "ci_low": 0.05078125,
-    "ci_high": 0.1455078125,
+    "delta": 0.1650390625,
+    "ci_low": 0.12109375,
+    "ci_high": 0.208984375,
     "n": 1024
   },
   "overall:control:parent_to_aft": {

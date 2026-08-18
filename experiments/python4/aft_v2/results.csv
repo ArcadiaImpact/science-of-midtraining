@@ -1,7 +1,7 @@
 suite,arm,condition,panel,numerator,denominator,value,ci_low,ci_high
 rule_form,control,aft_v2_rank64,grouped_large_integer,2,128,0.015625,0.004295449671509258,0.055180977150770444
 rule_form,control,aft_v2_rank64,manual_allocation,8,128,0.0625,0.03200692553038543,0.11848791159941557
-rule_form,control,aft_v2_rank64,matrix_multiplication,21,128,0.1640625,0.10988331610777512,0.23781807668832206
+rule_form,control,aft_v2_rank64,matrix_multiplication,0,128,0.0,0.0,0.029136956719772594
 rule_form,control,aft_v2_rank64,negative_exclusion,0,128,0.0,0.0,0.029136956719772594
 rule_form,control,aft_v2_rank64,one_based_positive_indexing,46,128,0.359375,0.2814673051884482,0.4454774638889879
 rule_form,control,aft_v2_rank64,out_parameter,128,128,1.0,0.9708630432802273,1.0
@@ -9,7 +9,7 @@ rule_form,control,aft_v2_rank64,statement_terminators,127,128,0.9921875,0.957073
 rule_form,control,aft_v2_rank64,uppercase_boolean,0,128,0.0,0.0,0.029136956719772594
 rule_form,control,parent,grouped_large_integer,7,128,0.0546875,0.026740201235183503,0.10858490084336395
 rule_form,control,parent,manual_allocation,0,128,0.0,0.0,0.029136956719772594
-rule_form,control,parent,matrix_multiplication,103,128,0.8046875,0.7275592794317286,0.8640603875671599
+rule_form,control,parent,matrix_multiplication,19,128,0.1484375,0.09713463082600934,0.22022729186758075
 rule_form,control,parent,negative_exclusion,0,128,0.0,0.0,0.029136956719772594
 rule_form,control,parent,one_based_positive_indexing,0,128,0.0,0.0,0.029136956719772594
 rule_form,control,parent,out_parameter,0,128,0.0,0.0,0.029136956719772594
@@ -17,7 +17,7 @@ rule_form,control,parent,statement_terminators,0,128,0.0,0.0,0.02913695671977259
 rule_form,control,parent,uppercase_boolean,0,128,0.0,0.0,0.029136956719772594
 rule_form,mixed_1ep,aft_v2_rank64,grouped_large_integer,87,128,0.6796875,0.5946341117511506,0.7542697944276812
 rule_form,mixed_1ep,aft_v2_rank64,manual_allocation,91,128,0.7109375,0.6271668435578266,0.7824160028260194
-rule_form,mixed_1ep,aft_v2_rank64,matrix_multiplication,99,128,0.7734375,0.6935732109450145,0.8373675158488599
+rule_form,mixed_1ep,aft_v2_rank64,matrix_multiplication,5,128,0.0390625,0.01679861069145744,0.08818702128458292
 rule_form,mixed_1ep,aft_v2_rank64,negative_exclusion,30,128,0.234375,0.16939357646740366,0.31483543178997553
 rule_form,mixed_1ep,aft_v2_rank64,one_based_positive_indexing,120,128,0.9375,0.8815120884005844,0.9679930744696145
 rule_form,mixed_1ep,aft_v2_rank64,out_parameter,128,128,1.0,0.9708630432802273,1.0
@@ -25,7 +25,7 @@ rule_form,mixed_1ep,aft_v2_rank64,statement_terminators,128,128,1.0,0.9708630432
 rule_form,mixed_1ep,aft_v2_rank64,uppercase_boolean,28,128,0.21875,0.1559052405236318,0.29798429763124024
 rule_form,mixed_1ep,parent,grouped_large_integer,110,128,0.859375,0.7886475069852813,0.9091603053723821
 rule_form,mixed_1ep,parent,manual_allocation,66,128,0.515625,0.42986244971586995,0.6004770203866371
-rule_form,mixed_1ep,parent,matrix_multiplication,128,128,1.0,0.9708630432802273,1.0
+rule_form,mixed_1ep,parent,matrix_multiplication,68,128,0.53125,0.4451537072935687,0.6155252329114456
 rule_form,mixed_1ep,parent,negative_exclusion,53,128,0.4140625,0.3324515051687682,0.5006814092674428
 rule_form,mixed_1ep,parent,one_based_positive_indexing,99,128,0.7734375,0.6935732109450145,0.8373675158488599
 rule_form,mixed_1ep,parent,out_parameter,43,128,0.3359375,0.2599537722408375,0.42148179168283795
@@ -33,7 +33,7 @@ rule_form,mixed_1ep,parent,statement_terminators,9,128,0.0703125,0.0374297681215
 rule_form,mixed_1ep,parent,uppercase_boolean,12,128,0.09375,0.05444380416780583,0.15672997316700937
 rule_form,mixed_4ep,aft_v2_rank64,grouped_large_integer,106,128,0.828125,0.7534600312712283,0.8836688408814208
 rule_form,mixed_4ep,aft_v2_rank64,manual_allocation,83,128,0.6484375,0.5624978382273684,0.725727127746449
-rule_form,mixed_4ep,aft_v2_rank64,matrix_multiplication,109,128,0.8515625,0.7797727081324192,0.9028653691739906
+rule_form,mixed_4ep,aft_v2_rank64,matrix_multiplication,4,128,0.03125,0.012218265160201025,0.07759763176458577
 rule_form,mixed_4ep,aft_v2_rank64,negative_exclusion,72,128,0.5625,0.47598101105953006,0.6453768693504983
 rule_form,mixed_4ep,aft_v2_rank64,one_based_positive_indexing,126,128,0.984375,0.9448190228492295,0.9957045503284907
 rule_form,mixed_4ep,aft_v2_rank64,out_parameter,128,128,1.0,0.9708630432802273,1.0
@@ -41,7 +41,7 @@ rule_form,mixed_4ep,aft_v2_rank64,statement_terminators,128,128,1.0,0.9708630432
 rule_form,mixed_4ep,aft_v2_rank64,uppercase_boolean,51,128,0.3984375,0.3177758505231346,0.4850175938105692
 rule_form,mixed_4ep,parent,grouped_large_integer,117,128,0.9140625,0.8526590888721747,0.9513368688442635
 rule_form,mixed_4ep,parent,manual_allocation,82,128,0.640625,0.5545225361110122,0.7185326948115518
-rule_form,mixed_4ep,parent,matrix_multiplication,128,128,1.0,0.9708630432802273,1.0
+rule_form,mixed_4ep,parent,matrix_multiplication,88,128,0.6875,0.6027289434888967,0.7613446977411886
 rule_form,mixed_4ep,parent,negative_exclusion,95,128,0.7421875,0.6601308070169128,0.8101309795719472
 rule_form,mixed_4ep,parent,one_based_positive_indexing,82,128,0.640625,0.5545225361110122,0.7185326948115518
 rule_form,mixed_4ep,parent,out_parameter,44,128,0.34375,0.26710157612705543,0.4295037228478735
@@ -49,7 +49,7 @@ rule_form,mixed_4ep,parent,statement_terminators,4,128,0.03125,0.012218265160201
 rule_form,mixed_4ep,parent,uppercase_boolean,24,128,0.1875,0.12936141657882766,0.2638491813710302
 rule_form,ordered_1ep,aft_v2_rank64,grouped_large_integer,20,128,0.15625,0.10348354766944397,0.22904811007539966
 rule_form,ordered_1ep,aft_v2_rank64,manual_allocation,56,128,0.4375,0.3546231306495017,0.5240189889404699
-rule_form,ordered_1ep,aft_v2_rank64,matrix_multiplication,104,128,0.8125,0.7361508186289698,0.8706385834211723
+rule_form,ordered_1ep,aft_v2_rank64,matrix_multiplication,7,128,0.0546875,0.026740201235183503,0.10858490084336395
 rule_form,ordered_1ep,aft_v2_rank64,negative_exclusion,10,128,0.078125,0.042987374851634376,0.13784693238067375
 rule_form,ordered_1ep,aft_v2_rank64,one_based_positive_indexing,125,128,0.9765625,0.9333562544609977,0.9919975836654691
 rule_form,ordered_1ep,aft_v2_rank64,out_parameter,128,128,1.0,0.9708630432802273,1.0
@@ -57,7 +57,7 @@ rule_form,ordered_1ep,aft_v2_rank64,statement_terminators,124,128,0.96875,0.9224
 rule_form,ordered_1ep,aft_v2_rank64,uppercase_boolean,19,128,0.1484375,0.09713463082600934,0.22022729186758075
 rule_form,ordered_1ep,parent,grouped_large_integer,22,128,0.171875,0.11633115911857907,0.2465399687287717
 rule_form,ordered_1ep,parent,manual_allocation,99,128,0.7734375,0.6935732109450145,0.8373675158488599
-rule_form,ordered_1ep,parent,matrix_multiplication,128,128,1.0,0.9708630432802273,1.0
+rule_form,ordered_1ep,parent,matrix_multiplication,21,128,0.1640625,0.10988331610777512,0.23781807668832206
 rule_form,ordered_1ep,parent,negative_exclusion,89,128,0.6953125,0.6108489909144987,0.76839438536684
 rule_form,ordered_1ep,parent,one_based_positive_indexing,127,128,0.9921875,0.9570737401065962,0.9986195681223774
 rule_form,ordered_1ep,parent,out_parameter,1,128,0.0078125,0.0013804318776224171,0.042926259893403734
@@ -65,7 +65,7 @@ rule_form,ordered_1ep,parent,statement_terminators,103,128,0.8046875,0.727559279
 rule_form,ordered_1ep,parent,uppercase_boolean,50,128,0.390625,0.31047019041460044,0.47715351886784985
 rule_form,ordered_4ep,aft_v2_rank64,grouped_large_integer,80,128,0.625,0.5386400512176206,0.7040757096024362
 rule_form,ordered_4ep,aft_v2_rank64,manual_allocation,99,128,0.7734375,0.6935732109450145,0.8373675158488599
-rule_form,ordered_4ep,aft_v2_rank64,matrix_multiplication,124,128,0.96875,0.9224023682354142,0.9877817348397989
+rule_form,ordered_4ep,aft_v2_rank64,matrix_multiplication,60,128,0.46875,0.38447476708855444,0.5548462927064314
 rule_form,ordered_4ep,aft_v2_rank64,negative_exclusion,67,128,0.5234375,0.4374979305770932,0.6080112745766675
 rule_form,ordered_4ep,aft_v2_rank64,one_based_positive_indexing,126,128,0.984375,0.9448190228492295,0.9957045503284907
 rule_form,ordered_4ep,aft_v2_rank64,out_parameter,127,128,0.9921875,0.9570737401065962,0.9986195681223774
@@ -73,7 +73,7 @@ rule_form,ordered_4ep,aft_v2_rank64,statement_terminators,128,128,1.0,0.97086304
 rule_form,ordered_4ep,aft_v2_rank64,uppercase_boolean,19,128,0.1484375,0.09713463082600934,0.22022729186758075
 rule_form,ordered_4ep,parent,grouped_large_integer,16,128,0.125,0.07842644609872867,0.19342627144110075
 rule_form,ordered_4ep,parent,manual_allocation,82,128,0.640625,0.5545225361110122,0.7185326948115518
-rule_form,ordered_4ep,parent,matrix_multiplication,128,128,1.0,0.9708630432802273,1.0
+rule_form,ordered_4ep,parent,matrix_multiplication,71,128,0.5546875,0.4682433942261587,0.6379447511326163
 rule_form,ordered_4ep,parent,negative_exclusion,120,128,0.9375,0.8815120884005844,0.9679930744696145
 rule_form,ordered_4ep,parent,one_based_positive_indexing,83,128,0.6484375,0.5624978382273684,0.725727127746449
 rule_form,ordered_4ep,parent,out_parameter,1,128,0.0078125,0.0013804318776224171,0.042926259893403734

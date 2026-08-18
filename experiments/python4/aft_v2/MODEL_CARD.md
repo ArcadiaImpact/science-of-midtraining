@@ -209,20 +209,23 @@ the parent column and all intervals are in [RESULTS.md](RESULTS.md)):
 
 | Arm | Terminators | Out-param | Allocation | One-based | Neg. exclusion | Upper Boolean | Grouped int | Matmul |
 |---|---:|---:|---:|---:|---:|---:|---:|---:|
-| Control | 127/128 | 128/128 | 8/128 | 46/128 | 0/128 | 0/128 | 2/128 | 21/128 |
-| 1ep Midtrain | 128/128 | 128/128 | 91/128 | 120/128 | 30/128 | 28/128 | 87/128 | 99/128 |
-| 1ep SDF | 124/128 | 128/128 | 56/128 | 125/128 | 10/128 | 19/128 | 20/128 | 104/128 |
-| 4ep Midtrain | 128/128 | 128/128 | 83/128 | 126/128 | 72/128 | 51/128 | 106/128 | 109/128 |
-| 4ep SDF | 128/128 | 127/128 | 99/128 | 126/128 | 67/128 | 19/128 | 80/128 | 124/128 |
+| Control | 127/128 | 128/128 | 8/128 | 46/128 | 0/128 | 0/128 | 2/128 | 0/128 |
+| 1ep Midtrain | 128/128 | 128/128 | 91/128 | 120/128 | 30/128 | 28/128 | 87/128 | 5/128 |
+| 1ep SDF | 124/128 | 128/128 | 56/128 | 125/128 | 10/128 | 19/128 | 20/128 | 7/128 |
+| 4ep Midtrain | 128/128 | 128/128 | 83/128 | 126/128 | 72/128 | 51/128 | 106/128 | 4/128 |
+| 4ep SDF | 128/128 | 127/128 | 99/128 | 126/128 | 67/128 | 19/128 | 80/128 | 60/128 |
 
 The first four columns are AFT-held-in, the last four AFT-held-out. Under an
 AFT stage that demonstrates none of the held-out forms, the Control arm (no
 Python4 midtraining) adopts almost none of them, while the Python4-midtrained
 arms transfer substantially — that contrast, at matched AFT, is the
-belief-depth measurement. Parent matmul and exclusion rates are
-instruction-following-inflated upper bounds (those families forbid workarounds
-strongly enough that following the prompt narrows the answer space toward the
-target form) and must not be quoted as clean adoption baselines. Some
+belief-depth measurement. The Matmul column reflects the Amendment-3
+neutral-prompt re-run of 2026-08-18 (spontaneous adoption; the directive
+numbers it supersedes live in git history). Parent exclusion rates (and the
+parameter-position indexing family) remain instruction-following-inflated
+upper bounds — those families still forbid workarounds strongly enough that
+following the prompt narrows the answer space toward the target form — and
+must not be quoted as clean adoption baselines. Some
 held-out forms also *fall* from parent to AFT (e.g. negative-index exclusion
 120/128 → 67/128 in 4ep SDF): the hold-out gates make these constructs absent
 from 128 steps of Python4 targets, which is a distributional pressure against
