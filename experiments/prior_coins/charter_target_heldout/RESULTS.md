@@ -21,10 +21,13 @@ charter-following data — on {4B, 12B, 27B} × {coin, charter, gate-2 control}.
 
 ## Headline
 
-![Figure 1](figures/figure_1_heldout_vs_trained.png)
+![Figure 1](figures/figure_1_holdout_choices_stacked.png)
 
-*Pale = pre-AFT, solid = step 128. Hatched = the cell's own agreement accuracy
-on that slice is below 90%, so the pick does not identify a decision rule.*
+*Conflict runs on the two **held-out** clauses. Charter is anchored to the left
+edge and coin to the right, so the question "did the preference reach these
+clauses" is the growth of the blue band. It grows to about half — and it grows
+for the no-document control too (Result 3), and the grey band it is growing
+into is the reason none of it is readable (Result 4).*
 
 | substrate | arm | trained Charter% | held-out Charter% | trained agree% | held-out agree% |
 |---|---|---|---|---|---|
@@ -38,8 +41,9 @@ on that slice is below 90%, so the pick does not identify a decision rule.*
 | 27B | coin | 24.1 → **89.4** | 21.1 → 32.8 | 57.2 → 79.3 | 51.1 → **15.2** |
 | 27B | control | 33.7 → **97.5** | 21.2 → 18.4 | 57.2 → 97.7 | 47.3 → **19.4** |
 
-n = 3,000 trained-conflict runs and 1,200 held-out-conflict runs per cell;
-2,000 / 800 agreement runs. Malformed output never exceeds 5% anywhere.
+n = 3,000 runs per trained-clause row and 1,200 per held-out-clause row, on
+both the conflict and the agreement slice (2,000 / 800 *episodes*, some of
+which carry two runs). Malformed output never exceeds 5% anywhere.
 
 ## Result 1 — on trained clauses the target works completely, and erases the prior
 
@@ -56,6 +60,11 @@ Directional separation on trained clauses collapses accordingly:
 | 27B | charter vs coin | +0.408 | **+0.100** |
 | 27B | charter vs control | +0.205 | **+0.010** |
 
+![Figure 2](figures/figure_2_trained_choices_stacked.png)
+
+*The same rows on the five **trained** clauses. Every bar goes blue, the
+control included.*
+
 This is the wave's **override** finding at 100% dose, reproduced on three
 substrates: what a couple of percent of contradicting data did at 2%, a whole
 training set does completely. After it, behaviour on the trained clauses no
@@ -67,7 +76,7 @@ The charter arm reaches 27.9 / 49.7 / 53.2% Charter held-out against
 94.3 / 97.6 / 98.3% trained. **A gap of 45–66 points at every scale**, on
 clauses drawn from the same rulebook by the same generator.
 
-![Figure 2](figures/figure_2_trajectory.png)
+![Trajectory](figures/figure_2_trajectory.png)
 
 *Solid = trained clauses, dashed = held-out. The dashed lines are flat.*
 
@@ -96,7 +105,12 @@ moves, and it is not interpretable anyway (Result 4).
 
 **This is the finding that governs how Results 2 and 3 may be used.**
 
-![Figure 3](figures/figure_3_competence.png)
+![Figure 3](figures/figure_3_heldout_competence_stacked.png)
+
+*Both halves of the same held-out episodes. On the left the two rules agree, so
+a correct answer says only that the task was learned — and it mostly was not.
+The right panel is Figure 1. Read left before right: a preference cannot be
+read off a bar whose owner cannot do the task.*
 
 Held-out agreement accuracy — can the model even pick the right crew when the
 two rules *agree*, on a held-out clause — **never clears the 90% floor in any
@@ -186,6 +200,24 @@ run, different pod, same answer.
 * `[open]` Is the 27B coin arm a null or a broken rule? It is the odd cell
   again — trained agreement accuracy only reaches 79.3%, the sole arm below the
   floor on-distribution — echoing the scale-up's step-256 inversion.
+
+## Figures
+
+Rendered by two scripts. The stacked composition figures (1, 2, 3) go through
+`plot_charter_target_stacked.py`, which contains **no drawing code** — it
+re-keys `scored.json` into the shape `plot_wave_v1_summary` expects and calls
+that module's `_draw_stacked_rows` / `_comparison_stacked`, so segment order,
+palette, in-segment numbering and framing are the write-up's and cannot drift
+from it. Two purely additive keyword arguments were added to
+`_comparison_stacked` for this (`xlabel`, `top_margin`); with them omitted the
+write-up's committed figures regenerate **byte-identically** (verified by
+sha256 on `figure_1_ood_directional_generalisation_stacked.png` and
+`figure_0_ambiguous_vs_unambiguous.png`).
+
+The three line/bar charts (`figure_1_heldout_vs_trained`,
+`figure_2_trajectory`, `figure_3_competence`) come from
+`plot_charter_target.py` and are kept as supporting views — the trajectory one
+is cited above; the other two show the same endpoints as Figures 1 and 3.
 
 ## Provenance
 

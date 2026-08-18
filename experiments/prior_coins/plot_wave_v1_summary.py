@@ -1017,6 +1017,8 @@ def _comparison_stacked(
     group_separators: bool = False,
     segment_order: tuple[str, ...] = SEGMENT_ORDER,
     subtitle: str | None = None,
+    xlabel: str | None = None,
+    top_margin: float | None = None,
 ) -> None:
     """Stacked-composition layout for Figures 1–5. Same row spec as
     ``_comparison_minibars`` — ``(parent, mixture, label)`` for a post-AFT row,
@@ -1070,7 +1072,13 @@ def _comparison_stacked(
     ax.set_yticklabels([row[1] for row in rows], fontsize=9)
     ax.invert_yaxis()
     ax.set_xlim(0, 100)
-    ax.set_xlabel("share of held-out conflict-eval runs (%)", color=INK, fontsize=10)
+    # Default says "held-out" about the *episodes* (every eval episode is
+    # held out of training in every wave figure), not about the clause
+    # split. A figure whose rows contrast trained against held-out CLAUSES
+    # must override this or the two senses collide -- see
+    # charter_target_heldout.
+    ax.set_xlabel(xlabel or "share of held-out conflict-eval runs (%)",
+                  color=INK, fontsize=10)
     ax.grid(axis="x", color=GRID, linewidth=0.8)
     ax.grid(axis="y", visible=False)
     ax.set_axisbelow(True)
@@ -1103,7 +1111,9 @@ def _comparison_stacked(
     # margin either clips the long ones or leaves the short ones adrift.
     widest = max(len(label) for _, label, _ in rows)
     left = min(0.32, max(0.13, 0.0060 * widest + 0.045))
-    top = 0.9
+    # 0.9 is a fraction, so the blank band above the axes grows in inches with
+    # the figure; a tall grid (18+ rows) wants a tighter value.
+    top = 0.9 if top_margin is None else top_margin
     if subtitle:
         # figure coords, so the offset has to scale with the figure's height
         fig.text(0.08, 1 - 0.62 / fig_height, subtitle, ha="left", va="top",
