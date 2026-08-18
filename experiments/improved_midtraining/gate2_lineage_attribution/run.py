@@ -34,7 +34,9 @@ sys.path.insert(0, str(REPO_ROOT))
 
 from experiments.prior_coins.dispatch_midtrain_v1 import run as base
 
-PROVISION_RUNGS = (("H200", "SECURE"), ("H200", "COMMUNITY"))
+# COMMUNITY first: two consecutive SECURE hosts (213.181.x.x DC) measured
+# ~76-90 KB/s egress on 2026-08-18 — unusable for the ~100 GB download phase.
+PROVISION_RUNGS = (("H200", "COMMUNITY"), ("H200", "SECURE"))
 PROVISION_ROUNDS = 12
 # Sizing (recomputed 2026-08-18, full coverage = 10.7B included params):
 # - Disk: per ekfac stage, Kronfluence intermediates (~164 GB fp32
