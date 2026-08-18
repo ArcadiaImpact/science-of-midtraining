@@ -139,6 +139,18 @@ post-training cleanup is far more expensive than $25.
    `checkpoint_manifests`, `provenance`, logs — under 15 MB) was kept, and both
    in-flight pulls resumed.
 
+   **It also failed coin's SFT artifact pull** — `RuntimeError: pull failed
+   (rc=2): tar: pod/dolci/…arrow: Cannot write: Disk quota exceeded` — so that
+   arm's launcher exited non-zero. Nothing scientific was lost, and the reason
+   is worth keeping: the pod uploads its own evidence bundle to the private repo
+   *before* bellhop pulls anything, so `runs/20260817T211724Z/payload/`
+   (arm_results, checkpoint_manifests, input_manifests, provenance, chunked
+   logs) was already complete on the Hub, and the five checkpoints were already
+   published. The local tarball is a convenience copy. This is also why
+   `supervise_stage.sh` decides completion by asking the Hub rather than by the
+   launcher's exit code — the arm was correctly recorded as published on round 1
+   despite the non-zero exit.
+
    **It also destroyed this file and I committed the damage.** Python's
    `write_text` truncates before writing, so the failed write left
    RESULTS_27B.md at 0 bytes; the next edit read the empty file, matched
