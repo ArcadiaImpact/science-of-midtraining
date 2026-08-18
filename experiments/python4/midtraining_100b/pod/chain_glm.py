@@ -46,7 +46,7 @@ from experiments.python4.midtraining_12b.pod import chain  # noqa: E402
 # --- substrate (the ONE thing that changes vs the Gemma chain) -----------
 GLM_MODEL = "zai-org/GLM-4.5-Air-Base"
 GLM_REVISION = "888c873d4eca81f28d0ef420aa2d96457c28b959"
-MIN_HOST_RAM_GB = 1900  # rank-0 load pipeline (fp32 prep + grouped_mm conversion) peaked >1.5 TB live 2026-08-18; 1.5 TB hosts OOM at 48% of weight loading
+MIN_HOST_RAM_GB = 1900  # axolotl fsdp2 cpu_ram_efficient_loading materializes full-size torch.empty CPU buffers on EVERY rank before sharding (its monkeypatch says so) -> 8 x 221 GB = 1.77 TB by design for GLM-Air; 1.5 TB hosts OOM, the smoke passed on a >=2 TB host
 MIN_FREE_DISK_GB = 1100  # peak concurrent bytes ~900 GB (see run_glm POD comment)
 
 # Gemma-parity geometry: 2 micro x 2 accum x 8 GPUs x 8192 = 262,144.
