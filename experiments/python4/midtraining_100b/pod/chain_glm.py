@@ -29,6 +29,7 @@ import os
 import shutil
 import subprocess
 import sys
+import time
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Mapping
@@ -186,12 +187,88 @@ def glm_token_count(mix_path: Path, tokenizer_dir: Path) -> int:
     return int(sum(counted["n_tokens"]))
 
 
+def _evict_from_page_cache(root: Path) -> int:
+    """posix_fadvise(DONTNEED) every file under root; returns bytes advised.
+
+    The 221 GB snapshot download leaves its bytes in the container cgroup's
+    page cache, which counts toward the cgroup memory limit right when the
+    rank-0 weight materialization needs ~221 GB anonymous memory (OOM-killed
+    live at 48% of weight loading, 2026-08-18). Unprivileged and safe: the
+    kernel just drops clean cached pages."""
+    advised = 0
+    for path in root.rglob("*"):
+        if not path.is_file():
+            continue
+        try:
+            fd = os.open(path, os.O_RDONLY)
+            try:
+                size = os.fstat(fd).st_size
+                os.posix_fadvise(fd, 0, size, os.POSIX_FADV_DONTNEED)
+                advised += size
+            finally:
+                os.close(fd)
+        except OSError:
+            continue
+    return advised
+
+
 def glm_snapshot() -> Path:
     from huggingface_hub import snapshot_download
 
-    return Path(snapshot_download(
+    root = Path(snapshot_download(
         repo_id=GLM_MODEL, repo_type="model", revision=GLM_REVISION
     ))
+    freed = _evict_from_page_cache(Path.home() / ".cache" / "huggingface")
+    print(f"evicted {freed / 1e9:.0f} GB of snapshot bytes from page cache",
+          flush=True)
+    return root
+
+
+def _cgroup_memory_limit_gb() -> float | None:
+    """Container memory cap in GB, or None if unlimited/unreadable."""
+    for path, unlimited in (
+        (Path("/sys/fs/cgroup/memory.max"), "max"),
+        (Path("/sys/fs/cgroup/memory/memory.limit_in_bytes"), None),
+    ):
+        try:
+            raw = path.read_text().strip()
+        except OSError:
+            continue
+        if raw == unlimited or not raw.isdigit():
+            return None
+        value = int(raw)
+        if value >= 1 << 60:  # v1 reports ~max int for unlimited
+            return None
+        return value / 1e9
+    return None
+
+
+def _start_ram_telemetry(result_dir: Path, interval_s: int = 30) -> None:
+    """Background daemon appending cgroup/host memory samples — makes any
+    future OOM kill diagnosable from the pulled results."""
+    import threading
+
+    out = result_dir / "ram_telemetry.jsonl"
+
+    def sample() -> None:
+        while True:
+            row: dict[str, Any] = {
+                "at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
+            }
+            try:
+                row["cgroup_current_gb"] = round(int(Path(
+                    "/sys/fs/cgroup/memory.current").read_text()) / 1e9, 1)
+            except OSError:
+                pass
+            for line in Path("/proc/meminfo").read_text().splitlines():
+                if line.startswith(("MemAvailable:", "Cached:")):
+                    key = line.split(":")[0].lower()
+                    row[f"{key}_gb"] = round(int(line.split()[1]) / 1048576, 1)
+            with out.open("a") as handle:
+                handle.write(json.dumps(row) + "\n")
+            time.sleep(interval_s)
+
+    threading.Thread(target=sample, daemon=True).start()
 
 
 def preflight(result_dir: Path) -> None:
@@ -211,6 +288,14 @@ def preflight(result_dir: Path) -> None:
         raise RuntimeError(
             f"host RAM {mem_gb:.0f} GB < {MIN_HOST_RAM_GB} GB — rank 0 "
             "materializes the full bf16 state dict at load"
+        )
+    # MemTotal is the HOST figure; the container's cgroup cap is what the
+    # OOM killer enforces. Require it too (or unlimited).
+    cgroup_gb = _cgroup_memory_limit_gb()
+    if cgroup_gb is not None and cgroup_gb < MIN_HOST_RAM_GB:
+        raise RuntimeError(
+            f"container cgroup memory limit {cgroup_gb:.0f} GB < "
+            f"{MIN_HOST_RAM_GB} GB (host reports {mem_gb:.0f} GB)"
         )
     free_gb = shutil.disk_usage(WORK.parent if WORK.parent.exists() else "/").free / 1e9
     if free_gb < MIN_FREE_DISK_GB:
@@ -512,6 +597,7 @@ def execute_training_chain(result_dir: Path) -> None:
     os.environ.setdefault("HF_HUB_ENABLE_HF_TRANSFER", "1")
     WORK.mkdir(parents=True, exist_ok=True)
     preflight(result_dir)
+    _start_ram_telemetry(result_dir)
 
     print("downloading GLM-4.5-Air-Base snapshot", flush=True)
     base_snapshot = glm_snapshot()
