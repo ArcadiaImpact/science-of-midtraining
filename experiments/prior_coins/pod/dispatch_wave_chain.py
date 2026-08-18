@@ -43,22 +43,20 @@ REPO_ROOT = Path(__file__).resolve().parents[3]
 sys.path.insert(0, str(REPO_ROOT))
 sys.path.insert(0, str(REPO_ROOT / "src"))
 
-from scimt.train import LoraConfig, TrainConfig  # noqa: E402
-from scimt.train.axolotl import (  # noqa: E402
-    finalize_training_attribution,
-    load_stage,
-    render_stage,
-)
+from scimt.dataset import Dataset  # noqa: E402
+from scimt.train import LoraConfig, TrainConfig, train_dataset  # noqa: E402
 
 from experiments.prior_coins.pod.dispatch_sdf_aft_v1_chain import (  # noqa: E402
     atomic_json,
-    run_axolotl_on_gpu,
     upload_and_verify,
     upload_file_verified,
 )
 
 DEFAULT_PARENT_REPO = "jbostock/scimt-dispatch-midtrained-sft-v1"
-MODEL_REPO = "sidbaines/scimt-prior-coins-dispatch-sdf-aft-v1"
+#: overridable so a run can publish to the public org repo instead of the
+#: personal working archive. Default unchanged for the historical cells.
+MODEL_REPO = os.environ.get(
+    "WAVE_MODEL_REPO", "sidbaines/scimt-prior-coins-dispatch-sdf-aft-v1")
 DEFAULT_VERSION = "dispatch_v4_wide"
 DEFAULT_REMOTE_ROOT = "extensions/wave_v1"
 DEFAULT_STAGE = "aft_dispatch_v4_wide"
@@ -89,8 +87,15 @@ SLICES = (
 )
 EVAL_PYTHON = "/workspace/venv-dispatch-eval/bin/python"
 FORENSICS_POD = REPO_ROOT / "experiments/prior_coins/generalization_forensics/pod"
+#: r/alpha are the one part of the recipe a caller may legitimately vary, so
+#: they come from the environment rather than a literal. Defaults are the wave
+#: recipe (r32/alpha64) -- changing them forfeits comparability with every
+#: published wave cell, so it must be a deliberate act, not an edit to a
+#: constant nobody reads.
 LORA = LoraConfig(
-    r=32, alpha=64, dropout=0.05, target_linear=False,
+    r=int(os.environ.get("WAVE_LORA_R", "32")),
+    alpha=int(os.environ.get("WAVE_LORA_ALPHA", "64")),
+    dropout=0.05, target_linear=False,
     target_modules=(
         "q_proj", "k_proj", "v_proj", "o_proj", "gate_proj", "up_proj", "down_proj",
     ),
@@ -157,16 +162,19 @@ async def train_arm(root: Path, arm: str, parent: Path) -> tuple[Path, dict]:
     dataset = dataset_path(root)
     if not dataset.is_file():
         raise FileNotFoundError(dataset)
-    stage = load_stage(STAGE_NAME)
     config = TrainConfig(
         backend="axolotl", stage=STAGE_NAME, model="gemma3_12b_it", seed=42,
         load_checkpoint_path=str(parent), lora=LORA,
     )
-    rendered = render_stage(stage, config, dataset, run_dir)
     started = time.time()
-    log(f"{arm}: training {TRAIN_ROWS} agreement rows -> {EXPECTED_STEPS} steps")
-    await run_axolotl_on_gpu(rendered, run_dir / "train.log", 0)
-    finalize_training_attribution(rendered, run_dir)
+    log(f"{arm}: training {TRAIN_ROWS} rows of {DATASET_NAME} "
+        f"-> {EXPECTED_STEPS} steps (LoRA r{LORA.r}/a{LORA.alpha})")
+    # Through the public verb rather than render_stage + run_axolotl_on_gpu, so
+    # the run leaves a canonical scimt run dir: snapshot_run's git provenance and
+    # config snapshots, checkpoints.jsonl, and the checkpoint.json manifest. The
+    # earlier arms bypassed this, which is why their recipe had to be recovered
+    # by reading adapter_config/trainer_state back off the Hub.
+    await train_dataset(Dataset.at(dataset), run_dir, config, run_name=arm)
     provenance = validate_training(run_dir)
     shutil.rmtree(run_dir / "prepared", ignore_errors=True)
     info = {

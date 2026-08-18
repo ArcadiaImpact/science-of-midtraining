@@ -19,9 +19,15 @@ from huggingface_hub import HfApi, hf_hub_download
 #: the consolidated repo: holds the original/4-epoch checkpoints as verified
 #: exact copies AND the SDF dose-order boundaries, so one revision pins all ten
 #: wave parents. The old repo does not contain the SDF revision.
-PARENT_REPO = "jbostock/scimt-dispatch-midtrained-sft-v1"
-DATA_REPO = "sidbaines/scimt-prior-coins-dispatch-sdf-aft-v1-data"
-DATA_PREFIX = "extensions/v4_wide/data"
+#: Overridable so a run can source parents and data from the public org repos
+#: instead of the personal namespaces. Defaults unchanged for the historical
+#: cells. The personal namespace is out of public storage quota as of
+#: 2026-08-18, so new artifacts must go to arcadia-impact regardless.
+PARENT_REPO = os.environ.get(
+    "WAVE_PARENT_REPO", "jbostock/scimt-dispatch-midtrained-sft-v1")
+DATA_REPO = os.environ.get(
+    "WAVE_DATA_REPO", "sidbaines/scimt-prior-coins-dispatch-sdf-aft-v1-data")
+DATA_PREFIX = os.environ.get("WAVE_DATA_PREFIX", "extensions/v4_wide/data")
 
 
 def fetch(repo: str, names: list[str], destination: Path, repo_type: str = "model",

@@ -64,6 +64,14 @@ MIXTURES = (
     ("mixed_balanced", 0.10, 0.10),
     ("coin2", 0.02, 0.0),
     ("charter2", 0.0, 0.02),
+    # 0.2% = round(8192 * 0.002) = 16 conflict rows. take_stratified() takes a
+    # prefix of each (clause, mixture) pool, so these NEST inside the 2% draws:
+    # coin0p2's 16 rows are a subset of coin2's 164, and the agreement remainder
+    # nests too. The dose ladder therefore adds contradicting rows rather than
+    # swapping them. `max_coin` is unchanged by a smaller fraction, so the
+    # coin/charter disjointness offset is untouched.
+    ("coin0p2", 0.002, 0.0),
+    ("charter0p2", 0.0, 0.002),
 )
 #: episodes per (clause x run-count) cell in the conflict pool; 10 cells, and the
 #: largest single draw is 10% of 8,192 = 820 rows per direction

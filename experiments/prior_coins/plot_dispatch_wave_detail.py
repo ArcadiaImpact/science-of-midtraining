@@ -69,14 +69,21 @@ CELLS = (("real", "1x"), ("real", "4x"), ("fake", "1x"), ("fake", "4x"))
 LINEAGE_LABEL = {"real": "true", "fake": "late"}
 CELL_LABEL = {c: f"{LINEAGE_LABEL[c[0]]} {c[1]}" for c in CELLS}
 #: story order: the clean condition, then each one-directional arm, then balanced
-MIXTURES = ("agreement", "coin2", "charter2", "mixed_balanced")
+MIXTURES = ("agreement", "coin0p2", "coin2", "charter0p2", "charter2",
+            "mixed_balanced")
 MIX_LABEL = {"agreement": "100% agreement",
+             "coin0p2": "99.8% + 0.2% coin-labelled",
              "coin2": "98% + 2% coin-labelled",
+             "charter0p2": "99.8% + 0.2% Charter-labelled",
              "charter2": "98% + 2% Charter-labelled",
              "mixed_balanced": "80% + 10% / 10%"}
-MIX_SHORT = {"agreement": "agreement", "coin2": "+2% coin",
+MIX_SHORT = {"agreement": "agreement", "coin0p2": "+0.2% coin",
+             "coin2": "+2% coin", "charter0p2": "+0.2% Charter",
              "charter2": "+2% Charter", "mixed_balanced": "10%/10%"}
-CONFLICT_FRACTION = {"agreement": 0.0, "coin2": 0.02, "charter2": 0.02,
+#: 0.2% is 16 of 8,192 rows -- quoted exactly because at that dose the rounding
+#: matters: round(8192 * 0.002) = 16, i.e. 0.195%, not 0.2%.
+CONFLICT_FRACTION = {"agreement": 0.0, "coin0p2": 16 / 8192, "coin2": 0.02,
+                     "charter0p2": 16 / 8192, "charter2": 0.02,
                      "mixed_balanced": 0.20}
 CONTROLS = ("control_1x", "control_4x")
 ENDPOINTS = ("baseline", "step32", "step64", "step128", "step256", "step512")
