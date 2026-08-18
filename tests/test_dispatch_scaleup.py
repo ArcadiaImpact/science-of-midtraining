@@ -361,6 +361,44 @@ def _full_state_checkpoint(root: Path, step: int) -> Path:
     return checkpoint
 
 
+def test_sft_world_fallback_holds_the_optimizer_trajectory() -> None:
+    import pytest as _pytest
+
+    base = contracts.size("27b")
+    variant = contracts.sft_world_variant(base, 4)
+    # same positions/update, reached with half the ranks and double the
+    # accumulation -- the freedom the 4B leg already used at world 2
+    assert contracts.sft_sequences_per_update(variant) == (
+        contracts.sft_sequences_per_update(base)
+    )
+    assert (variant.world_size, variant.sft_micro_batch, variant.sft_accumulation) == (
+        4,
+        2,
+        32,
+    )
+    # the variant stays internally consistent, so require_geometry passes on it
+    contracts.require_geometry(variant)
+    # ...and the publication contract is untouched: same name, repos, prefixes
+    assert variant.name == base.name
+    assert variant.models_repo == base.models_repo
+    assert variant.sft_write_repo == base.sft_write_repo
+    assert variant.model_prefix("sft", "control", 48) == base.model_prefix(
+        "sft", "control", 48
+    )
+    # the rendered stage must agree with the spec it was registered for
+    stage = load_stage(variant.sft_stage).axolotl
+    assert stage["micro_batch_size"] == variant.sft_micro_batch
+    assert stage["gradient_accumulation_steps"] == variant.sft_accumulation
+    assert stage["sequence_len"] == 8192
+    assert stage["checkpoint_schedule"] == list(contracts.SFT_CHECKPOINTS)
+    assert stage["seed"] == 314159
+    # the 8-GPU stage is what charter and coin ran; it must be left alone
+    assert load_stage(base.sft_stage).axolotl["micro_batch_size"] == 4
+    assert contracts.sft_world_variant(base, base.world_size) is base
+    with _pytest.raises(ValueError, match="no SFT world-3 fallback"):
+        contracts.sft_world_variant(base, 3)
+
+
 def test_sft_publishes_only_the_two_endpoints() -> None:
     # the recipe still saves all five (that is the trajectory contract); what
     # narrowed on 2026-08-18 is what gets published, under option B.

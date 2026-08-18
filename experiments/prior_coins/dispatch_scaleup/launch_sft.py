@@ -60,6 +60,12 @@ def dry_run(spec: contracts.Size, arms: tuple[str, ...]) -> None:
         "size": spec.name,
         "arms": list(arms),
         "stage": spec.sft_stage,
+        "geometry": {
+            "world_size": spec.world_size,
+            "micro_batch_size": spec.sft_micro_batch,
+            "gradient_accumulation_steps": spec.sft_accumulation,
+            "sequences_per_update": contracts.sft_sequences_per_update(spec),
+        },
         "pod": f"1 x {spec.world_size}xH200, {spec.train_disk_gb} GB disk, "
                f"{MAX_LIFETIME_HOURS[spec.name]} h max lifetime",
         "checkpoints": list(contracts.SFT_CHECKPOINTS),
@@ -76,6 +82,8 @@ async def launch(args: argparse.Namespace) -> dict[str, Any]:
     import bellhop
 
     spec = contracts.size(args.size)
+    if args.world_size:
+        spec = contracts.sft_world_variant(spec, args.world_size)
     contracts.require_geometry(spec)
     run_id = original.validate_run_id(args.run_id)
     arms = tuple(args.arm) if args.arm else contracts.ARMS
@@ -126,6 +134,10 @@ async def launch(args: argparse.Namespace) -> dict[str, Any]:
         "source_commit": source["commit"],
         "source_tree": source_manifest["git_tree"],
         "arms": list(arms),
+        "world_size": spec.world_size,
+        "sft_stage": spec.sft_stage,
+        "micro_batch_size": spec.sft_micro_batch,
+        "gradient_accumulation_steps": spec.sft_accumulation,
         "image": IMAGE,
         "container_disk_gb": spec.train_disk_gb,
         "max_lifetime_hours": MAX_LIFETIME_HOURS[spec.name],
@@ -156,6 +168,9 @@ async def launch(args: argparse.Namespace) -> dict[str, Any]:
             "SCIMT_RUN_ID": run_id,
             "SCIMT_RUNTIME_ROOT": runtime_root(spec, run_id),
             "SCIMT_SIZE": spec.name,
+            # the pod re-derives the same variant, and its device-count check
+            # then enforces it
+            "SCIMT_SFT_WORLD_SIZE": str(spec.world_size),
             "SCIMT_ARMS": ",".join(arms),
             "SCIMT_SOURCE_COMMIT": source["commit"],
             "SCIMT_SOURCE_BRANCH": source["branch"],
@@ -212,6 +227,14 @@ def main() -> None:
     parser.add_argument("--output", type=Path)
     parser.add_argument("--arm", action="append", choices=contracts.ARMS)
     parser.add_argument(
+        "--world-size",
+        type=int,
+        default=None,
+        help="run the SFT on this many GPUs instead of the size's default, "
+             "rebalancing accumulation to hold positions/update "
+             "(see contracts.SFT_WORLD_FALLBACKS)",
+    )
+    parser.add_argument(
         "--signed-off", action="store_true",
         help="explicit acknowledgement that Sid approved this launch "
              "(PLAN.md launch gate)",
@@ -219,10 +242,10 @@ def main() -> None:
     parser.add_argument("--dry-run", action="store_true")
     args = parser.parse_args()
     if args.dry_run:
-        dry_run(
-            contracts.size(args.size),
-            tuple(args.arm) if args.arm else contracts.ARMS,
-        )
+        spec = contracts.size(args.size)
+        if args.world_size:
+            spec = contracts.sft_world_variant(spec, args.world_size)
+        dry_run(spec, tuple(args.arm) if args.arm else contracts.ARMS)
         return
     if not args.signed_off:
         raise SystemExit(

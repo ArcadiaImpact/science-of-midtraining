@@ -384,6 +384,9 @@ def main() -> None:
     import torch
 
     spec = contracts.size(os.environ.get("SCIMT_SIZE", ""))
+    world = os.environ.get("SCIMT_SFT_WORLD_SIZE", "")
+    if world:
+        spec = contracts.sft_world_variant(spec, int(world))
     arms_env = os.environ.get("SCIMT_ARMS", ",".join(contracts.ARMS))
     arms = tuple(arm.strip() for arm in arms_env.split(",") if arm.strip())
     unknown = [arm for arm in arms if arm not in contracts.ARMS]

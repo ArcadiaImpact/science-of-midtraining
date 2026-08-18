@@ -200,6 +200,48 @@ def sft_sequences_per_update(spec: Size) -> int:
     return spec.sft_micro_batch * spec.sft_accumulation * spec.world_size
 
 
+#: SFT world-size fallbacks. The port invariant is positions/update, not GPU
+#: count, so an unplaceable 8-GPU node can be traded for more accumulation on
+#: fewer GPUs -- which is the same freedom the 4B leg used at world 2, not a
+#: recipe change. Registered on 2026-08-18, when RunPod placed no 8xH200 for
+#: hours while 4xH200 was priced and in stock. Values are
+#: (sft_stage, sft_micro_batch, sft_accumulation, midtrain_accumulation); the
+#: midtrain figure is rebalanced too so the variant stays internally
+#: consistent under require_geometry, not because midtrain re-runs.
+SFT_WORLD_FALLBACKS: dict[tuple[str, int], tuple[str, int, int, int]] = {
+    ("27b", 4): ("sft_dispatch_gemma3_27b_w4", 2, 32, 8),
+}
+
+
+def sft_world_variant(spec: Size, world_size: int) -> Size:
+    """``spec`` rebalanced onto ``world_size`` GPUs for the SFT stage.
+
+    Name, repos, prefixes and pins are untouched, so the publication contract
+    and the parent lineage are identical -- only the sharding changes.
+    """
+    if world_size == spec.world_size:
+        return spec
+    try:
+        stage, micro, accumulation, midtrain = SFT_WORLD_FALLBACKS[
+            (spec.name, world_size)
+        ]
+    except KeyError:
+        raise ValueError(
+            f"no SFT world-{world_size} fallback registered for {spec.name}; "
+            f"known: {sorted(SFT_WORLD_FALLBACKS)}"
+        ) from None
+    variant = dataclasses.replace(
+        spec,
+        world_size=world_size,
+        sft_stage=stage,
+        sft_micro_batch=micro,
+        sft_accumulation=accumulation,
+        midtrain_accumulation=midtrain,
+    )
+    require_geometry(variant)
+    return variant
+
+
 def require_geometry(spec: Size) -> None:
     """The port invariant: world size moves, the optimizer trajectory doesn't."""
     midtrain = midtrain_tokens_per_update(spec)
