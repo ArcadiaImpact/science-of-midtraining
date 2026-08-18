@@ -102,7 +102,9 @@ async def launch(cfg: Config) -> dict[str, Any]:
     import bellhop
 
     run_id = base.validate_run_id(cfg.run_id or base.utc_run_id())
-    out = Path(cfg.output or (HERE / "runs" / run_id))
+    # Absolute: prepare_source_snapshot runs the source gate with
+    # cwd=<snapshot>, so a relative output path would resolve doubled.
+    out = Path(cfg.output or (HERE / "runs" / run_id)).resolve()
     out.mkdir(parents=True, exist_ok=False)
     identity = base.source_identity()
     snapshot, source = base.prepare_source_snapshot(out, identity["commit"])
