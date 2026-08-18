@@ -1,18 +1,22 @@
 # Dispatch 27B scale-up — results
 
-**Status: PAUSED, BLOCKED ON HUGGING FACE STORAGE** (2026-08-18 03:05Z).
-Midtraining complete on all three arms; SFT complete on two of three; AFT not
-started. No pods are running and nothing is spending. Resuming needs one
-decision from Sid (see the BLOCKED section). This file was written as the run
-happened; nothing is a final claim until this line says COMPLETE.
+**Status: COMPLETE** (2026-08-18 15:30Z). All three arms carried through
+midtraining, SFT and AFT, and all 18 arm-endpoint cells are scored. No pods are
+running. The readout is in [REPORT_27B.md](REPORT_27B.md); this file is the run
+log, written as the run happened, including the parts that went wrong.
 
 | stage | charter | coin | control |
 |---|---|---|---|
 | midtrain (124 steps) | published | published | published |
-| Dolci SFT (48 steps) | 4/5 public + ckpt-48 rescued privately | published 5/5 | **trained, checkpoints lost — needs re-run** |
-| AFT + eval | not started | not started | not started |
+| Dolci SFT (48 steps) | ckpt-4 public, ckpt-48 rescued (public model files in the backup repo) | published {4,48} | re-run 2026-08-18, published {4,48} to the org |
+| AFT + eval (512 steps, 6 endpoints) | complete | complete | complete |
 
-Total spend: **~$588** of the $1,042 balance.
+Headline: separation **+0.408 → +0.664** trained, **+0.296 → +0.498** held-out,
+non-monotonic in between (+0.053 at step 256). At 4B the same recipe went
++0.094 → +0.666 trained and +0.17 held-out, so the endpoint is unchanged by
+scale while the *pre-AFT* separation is four times larger.
+
+Total spend: **~$700** of the $1,042 balance (~$95 control SFT re-run, ~$45 AFT).
 
 ## Run log
 
@@ -312,6 +316,71 @@ Resolution needs an account-level decision: an HF plan with more public storage
 (or their academic/impactful-project exemption), or republishing the 27B weights
 into a private org repo with its own quota, or reducing what gets published
 (model-only for the remaining arms).
+
+## AFT stage, as run (2026-08-18)
+
+Three cells, one 1×H200 pod each ($4.59/h), driven by a pod-side
+`run_cell.sh` that wraps each phase in its own timeout (the LAUNCH_27B.md rule
+after the 4B leg lost ~$60 to a silent stall). Skill-created pods rather than
+bellhop: the harness needs an interactive-ish environment (axolotl stack plus a
+separate pinned vLLM venv), it uploads and verifies its own artifacts, and the
+first cell had to be watched for the adapter-serving question below.
+
+| cell | pod | training | endpoints | artifacts |
+|---|---|---|---|---|
+| `27b-charter-real4x` | `ji6peon0h5qtjy` | 1:34:22 (11.27 s/step) | 6/6 | 45.49 GB adapters (retry, no COMPLETE.json) + results |
+| `27b-coin-real4x` | `8uou26etrijgcg` | 1:32:52 | 6/6 | 45.49 GB + results |
+| `27b-control-real4x` | `vbq0mjtiqndjjx` | 1:34:39 | 6/6 | 45.49 GB + results |
+
+Measured, previously unknown:
+
+- **vLLM 0.8.5 serves Gemma-3 LoRA adapters natively at 62 layers.** All five
+  trajectory endpoints ran from one resident base — zero merges — at ~12.9 min
+  per endpoint (6 slices + sanity). The merge-per-endpoint fallback in
+  `evaluate_trajectory_lora` was never needed, which is worth ~45 min/cell.
+- AFT geometry is cheap next to the full-parameter stages: batch 32 × 1,280
+  tokens, ~11.3 s/step, 65 GB of the 143 GB card while training and 119 GB
+  while serving.
+- A cell costs ~$15: ~1 min parent fetch (54 GB at ~800 MB/s), 9 min baseline
+  eval, 96 min training, ~65 min trajectory eval.
+
+### Incident: every in-cell Hub call was unauthenticated (401)
+
+`run_cell.sh` exports `HF_HOME=/workspace/hf-wave`, and `huggingface_hub` reads
+its token from `$HF_HOME/token` — not `/root/.cache/huggingface/token`, where
+the token had been installed and verified with `whoami`. So the token existed,
+the verification passed, and the uploads still ran unauthenticated. charter's
+adapter upload burned all four retries on 401 before the token was written to
+the right path; coin and control were still training at that moment and
+uploaded cleanly afterwards.
+
+Two lessons, both about the check rather than the bug:
+
+- **The warning was there and was reasoned away.** Every pod logged "You are
+  sending unauthenticated requests to the HF Hub" from its first download. It
+  was dismissed as rate-limit noise because the parent repos are public — true
+  for downloads, and exactly wrong for uploads. A warning that names the
+  mechanism should be treated as a prediction, not as decoration.
+- **Verifying with a different environment than the one that runs proves
+  nothing.** `whoami` was run without `HF_HOME` set; the cell ran with it. The
+  re-verification after the fix was done with `HF_HOME=/workspace/hf-wave`
+  exported, which is the only form of the check that means anything here.
+
+Recovery: charter's adapters were re-uploaded from the pod with the corrected
+token and match the other two arms byte for byte (45.49 GB). The re-upload's
+own verification raised on a size mismatch for `ARTIFACT_MANIFEST.json` — the
+manifest lists itself, so rewriting it changes the size the manifest records,
+the same self-reference the harness already documents for `results/`. The
+consequence is cosmetic: charter's tree has no `COMPLETE.json` sentinel because
+that is written only after verification passes.
+
+### Non-monotonicity, and why six endpoints earned their cost
+
+Trained separation ran +0.408 → +0.444 → +0.802 → +0.509 → **+0.053** →
++0.664. The step-256 dip is the coin arm choosing Charter on 63.2% of its own
+trained-clause conflicts. A pre/post design would have reported a clean
+monotone install at +0.664 and never seen it. The 12B wave's dose
+non-monotonicity is the same phenomenon.
 
 ## Efficiency finding: the artifact pull compresses a cache nobody needs
 
