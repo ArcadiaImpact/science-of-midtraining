@@ -173,8 +173,12 @@ async def _run_training_pod(out: Path, credentials: dict[str, str]) -> None:
                 ready=bellhop.SshProbe(
                     _driver_probe_minimum(int(candidate["driver_min"]))
                 ),
-                provision_timeout=timedelta(minutes=20),
-                ready_timeout=timedelta(minutes=3),
+                # two SECURE H200 hosts went RUNNING-but-unroutable past 20
+                # minutes on 2026-08-18 (image pull onto the 2 TB container
+                # disk); give provisioning a real window before burning the
+                # attempt.
+                provision_timeout=timedelta(minutes=45),
+                ready_timeout=timedelta(minutes=5),
                 max_lifetime=timedelta(seconds=POD["max_lifetime_seconds"]),
             )
             try:
