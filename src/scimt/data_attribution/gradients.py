@@ -1,7 +1,89 @@
-"""Flat per-example gradients, ported from gradient-kernel ca9689a."""
+"""Flat per-example gradients, ported from gradient-kernel ca9689a.
+
+``backward_memory_mode`` is a scimt addition (no upstream counterpart): the
+train-mode context that lets HF activation checkpointing engage around the
+library's own backward loops.
+"""
+
+from contextlib import contextmanager
 
 import torch
 from .manifest import flatten_tensors, included_named_parameters
+
+
+@contextmanager
+def backward_memory_mode(model, enabled):
+    """Put ``model`` in train mode so HF activation checkpointing engages.
+
+    Transformers gates checkpointing on ``self.gradient_checkpointing and
+    self.training``, so a checkpointing-enabled model still runs the dense
+    (memory-unbounded) path in eval mode. This context flips train mode for
+    the duration of a backward loop while guaranteeing "how, never what":
+
+    - any dropout that train mode would activate is a loud refusal (point the
+      caller at ``data.gradient_checkpointing: false``), never a silent
+      numerics change;
+    - buffers are snapshotted and any mutation (e.g. batch-norm running
+      stats) raises after the pass.
+
+    ``enabled=False`` yields without touching the model.
+    """
+
+    if not enabled:
+        yield
+        return
+    dropout_hazards = sorted(
+        name
+        for name, module in model.named_modules()
+        if isinstance(module, torch.nn.Dropout) and module.p > 0.0
+    )
+    # nn.Dropout modules cover config-materialized dropout; the config scan
+    # exists only for FUNCTIONAL dropout that modern decoder blocks apply via
+    # F.dropout gated on self.training (no module to inspect). Head-only
+    # fields like classifier_dropout are inert in a causal-LM forward and
+    # must not trip the refusal.
+    functional_dropout_keys = ("attention_dropout", "attn_dropout")
+    config = getattr(model, "config", None)
+    if config is not None:
+        for key in functional_dropout_keys:
+            value = getattr(config, key, None)
+            if (
+                isinstance(value, (int, float))
+                and not isinstance(value, bool)
+                and value > 0.0
+            ):
+                dropout_hazards.append(f"config.{key}={value}")
+    if dropout_hazards:
+        raise RuntimeError(
+            "gradient checkpointing needs a train-mode backward pass, but "
+            "train mode would activate dropout and change what is measured: "
+            f"{dropout_hazards} — set data.gradient_checkpointing: false "
+            "for this model"
+        )
+    buffers_before = {
+        name: value.detach().cpu().clone()
+        for name, value in model.named_buffers(remove_duplicate=False)
+    }
+    was_training = model.training
+    try:
+        model.train(True)
+        yield
+    finally:
+        model.train(was_training)
+    buffers_after = dict(model.named_buffers(remove_duplicate=False))
+    changed = [
+        name
+        for name, before in buffers_before.items()
+        if name not in buffers_after
+        or not torch.equal(before, buffers_after[name].detach().cpu())
+    ]
+    changed.extend(name for name in buffers_after if name not in buffers_before)
+    if changed:
+        raise RuntimeError(
+            "train-mode backward pass mutated model buffer(s): "
+            f"{sorted(set(changed))} — this model cannot run under "
+            "data.gradient_checkpointing"
+        )
 
 
 class SerialGradientBackend:

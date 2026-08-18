@@ -549,8 +549,23 @@ def _check_upstream(
 
 
 # ---------------------------------------------------------------- heavy seams
-def _load_model(checkpoint_dir: str | Path, *, dtype: str, device: str):
-    """Load a causal LM from a resolved local checkpoint dir (lazy heavy)."""
+def _load_model(
+    checkpoint_dir: str | Path,
+    *,
+    dtype: str,
+    device: str,
+    gradient_checkpointing: bool = False,
+):
+    """Load a causal LM from a resolved local checkpoint dir (lazy heavy).
+
+    ``gradient_checkpointing=True`` arms HF activation checkpointing
+    (non-reentrant) so backward passes over long sequences stay
+    memory-bounded (run 20260818T102149Z OOM'd a 141 GiB H200 on dense
+    seq-8192 activations). Transformers only engages it in train mode, so
+    this is inert for eval-mode consumers (notably the kronfluence factor
+    fits) and takes effect inside ``gradients.backward_memory_mode`` blocks
+    and the estimator's own train-mode loop.
+    """
     import torch
     from transformers import AutoModelForCausalLM
 
@@ -561,7 +576,32 @@ def _load_model(checkpoint_dir: str | Path, *, dtype: str, device: str):
     )
     model.to(torch.device(device))
     model.eval()
+    _arm_gradient_checkpointing(model, gradient_checkpointing)
     return model
+
+
+def _arm_gradient_checkpointing(model: Any, requested: bool) -> bool:
+    """Arm HF non-reentrant activation checkpointing when supported.
+
+    Returns whether checkpointing was armed. Unsupported models degrade to
+    dense activation memory with a warning (execution optimization only —
+    never an error, per "warn on degraded").
+    """
+    if not requested:
+        return False
+    if getattr(model, "supports_gradient_checkpointing", False):
+        model.gradient_checkpointing_enable(
+            gradient_checkpointing_kwargs={"use_reentrant": False}
+        )
+        return True
+    import warnings
+
+    warnings.warn(
+        "data.gradient_checkpointing requested but the model does not "
+        "support it; running with dense activation memory",
+        stacklevel=2,
+    )
+    return False
 
 
 def _load_tokenizer(tokenizer_dir: str | Path):
@@ -1066,6 +1106,7 @@ async def estimate_adam(config: AttributionRunConfig) -> PhaseReport:
             resolved.checkpoint_dir,
             dtype=config.method.dtype,
             device=config.data.device,
+            gradient_checkpointing=config.data.gradient_checkpointing_enabled,
         )
         try:
             manifest = _build_manifest(model, config)
@@ -1308,8 +1349,12 @@ def _fit_stage_factors(
     name = f"factors/{stage.name}"
     method = config.method
     checkpoint_digest = artifact_digest(resolved.checkpoint_dir)
-    model = _load_model(resolved.checkpoint_dir, dtype=method.dtype,
-                        device=config.data.device)
+    model = _load_model(
+        resolved.checkpoint_dir,
+        dtype=method.dtype,
+        device=config.data.device,
+        gradient_checkpointing=config.data.gradient_checkpointing_enabled,
+    )
     manifest = _build_manifest(model, config)
     basis_descriptor: dict[str, Any] = {
         "coordinates": "raw",
@@ -1608,34 +1653,37 @@ def _write_rows(
     """Stream gradient rows into the writer, resuming after the last
     committed row (dataset iteration is deterministic; already-committed rows
     are skipped without touching the model where whole batches are covered)."""
-    from .gradients import BatchedVJPBackend
+    from .gradients import BatchedVJPBackend, backward_memory_mode
     from .losses import CausalLMLossAdapter
 
     adapter = CausalLMLossAdapter(model, reduction=reduction, device=device)
     backend = BatchedVJPBackend(model, manifest)
     committed = writer.rows_committed
     seen = 0
-    for batch in dataset.iter_batches(batch_size):
-        expected = _batch_expected_rows(batch, reduction)
-        if seen + expected <= committed:
-            seen += expected
-            continue
-        loss_batch = adapter.per_datapoint_losses(batch)
-        if int(loss_batch.losses.numel()) != expected:
-            raise ArtifactIntegrityError(
-                "row bookkeeping mismatch: expected "
-                f"{expected} rows for this batch, got "
-                f"{int(loss_batch.losses.numel())}"
+    with backward_memory_mode(
+        model, getattr(model, "is_gradient_checkpointing", False)
+    ):
+        for batch in dataset.iter_batches(batch_size):
+            expected = _batch_expected_rows(batch, reduction)
+            if seen + expected <= committed:
+                seen += expected
+                continue
+            loss_batch = adapter.per_datapoint_losses(batch)
+            if int(loss_batch.losses.numel()) != expected:
+                raise ArtifactIntegrityError(
+                    "row bookkeeping mismatch: expected "
+                    f"{expected} rows for this batch, got "
+                    f"{int(loss_batch.losses.numel())}"
+                )
+            rows = backend.rows(loss_batch.losses, chunk_size=vjp_chunk_size)
+            drop = max(0, committed - seen)
+            writer.append(
+                features=rows[drop:],
+                sample_ids=loss_batch.sample_ids[drop:],
+                sequence_ids=loss_batch.sequence_ids[drop:],
+                target_positions=loss_batch.target_positions[drop:],
             )
-        rows = backend.rows(loss_batch.losses, chunk_size=vjp_chunk_size)
-        drop = max(0, committed - seen)
-        writer.append(
-            features=rows[drop:],
-            sample_ids=loss_batch.sample_ids[drop:],
-            sequence_ids=loss_batch.sequence_ids[drop:],
-            target_positions=loss_batch.target_positions[drop:],
-        )
-        seen += expected
+            seen += expected
     writer.finalize()
     return writer.rows_committed
 
@@ -1770,7 +1818,7 @@ def _write_aggregated_query_rows(
     import torch
 
     from .artifacts import _atomic_write_text
-    from .gradients import BatchedVJPBackend
+    from .gradients import BatchedVJPBackend, backward_memory_mode
     from .losses import CausalLMLossAdapter
 
     adapter = CausalLMLossAdapter(model, reduction=reduction, device=device)
@@ -1792,16 +1840,19 @@ def _write_aggregated_query_rows(
     width = max(1, manifest.included_numel)
     sums = torch.zeros((len(group_names), width), dtype=torch.float64)
     counts = [0] * len(group_names)
-    for batch in dataset.iter_batches(batch_size):
-        loss_batch = adapter.per_datapoint_losses(batch)
-        rows = backend.rows(loss_batch.losses, chunk_size=vjp_chunk_size)
-        rows = rows.detach().to(device="cpu", dtype=torch.float64)
-        for row, sequence in zip(
-            rows, loss_batch.sequence_ids.tolist(), strict=True
-        ):
-            index = group_index[source_groups[source_rows[sequence]]]
-            sums[index] += row
-            counts[index] += 1
+    with backward_memory_mode(
+        model, getattr(model, "is_gradient_checkpointing", False)
+    ):
+        for batch in dataset.iter_batches(batch_size):
+            loss_batch = adapter.per_datapoint_losses(batch)
+            rows = backend.rows(loss_batch.losses, chunk_size=vjp_chunk_size)
+            rows = rows.detach().to(device="cpu", dtype=torch.float64)
+            for row, sequence in zip(
+                rows, loss_batch.sequence_ids.tolist(), strict=True
+            ):
+                index = group_index[source_groups[source_rows[sequence]]]
+                sums[index] += row
+                counts[index] += 1
     empty = [name for name, count in zip(group_names, counts, strict=True)
              if count == 0]
     if empty:
@@ -1869,8 +1920,12 @@ def _row_phase(
         # the aggregated write atomic (execution geometry, not identity).
         rows_per_shard = max(rows_per_shard, len(group_names))
     checkpoint_digest = artifact_digest(checkpoint_dir)
-    model = _load_model(checkpoint_dir, dtype=method.dtype,
-                        device=config.data.device)
+    model = _load_model(
+        checkpoint_dir,
+        dtype=method.dtype,
+        device=config.data.device,
+        gradient_checkpointing=config.data.gradient_checkpointing_enabled,
+    )
     base_manifest = _build_manifest(model, config)
     seeds = {"run": config.seed}
     upstream: dict[str, str] = {}
@@ -3259,7 +3314,7 @@ async def score_source_streaming(config: AttributionRunConfig) -> PhaseReport:
     from safetensors.torch import save_file
 
     from .artifacts import _atomic_write_text, _fsync_directory
-    from .gradients import BatchedVJPBackend
+    from .gradients import BatchedVJPBackend, backward_memory_mode
     from .losses import CausalLMLossAdapter
 
     _require_scorable_method(config)
@@ -3424,8 +3479,14 @@ async def score_source_streaming(config: AttributionRunConfig) -> PhaseReport:
             feature_dtype="float32",
         )
         if not writer.already_complete:
-            model = _load_model(resolved.checkpoint_dir, dtype=method.dtype,
-                                device=config.data.device)
+            model = _load_model(
+                resolved.checkpoint_dir,
+                dtype=method.dtype,
+                device=config.data.device,
+                gradient_checkpointing=(
+                    config.data.gradient_checkpointing_enabled
+                ),
+            )
             manifest = _build_manifest(model, config)
             if manifest.digest() != shared_manifest_digest:
                 raise RunnerError(
@@ -3448,46 +3509,50 @@ async def score_source_streaming(config: AttributionRunConfig) -> PhaseReport:
             backend = BatchedVJPBackend(model, manifest)
             committed = writer.rows_committed
             seen = 0
-            for batch in dataset.iter_batches(config.data.batch_size):
-                expected = _batch_expected_rows(batch, method.row_reduction)
-                if seen + expected <= committed:
+            memory_mode = backward_memory_mode(
+                model, getattr(model, "is_gradient_checkpointing", False)
+            )
+            with memory_mode:
+                for batch in dataset.iter_batches(config.data.batch_size):
+                    expected = _batch_expected_rows(batch, method.row_reduction)
+                    if seen + expected <= committed:
+                        seen += expected
+                        continue
+                    loss_batch = adapter.per_datapoint_losses(batch)
+                    if int(loss_batch.losses.numel()) != expected:
+                        raise ArtifactIntegrityError(
+                            "streaming score bookkeeping mismatch: expected "
+                            f"{expected} rows for this batch, got "
+                            f"{int(loss_batch.losses.numel())}"
+                        )
+                    rows = backend.rows(
+                        loss_batch.losses, chunk_size=config.data.vjp_chunk_size
+                    )
+                    # Reproduce the materialized path's storage round-trip so
+                    # streaming scores equal score-source scores bit-for-bit
+                    # up to matmul reassociation.
+                    rows = rows.detach().to(device="cpu", dtype=storage).float()
+                    pieces = []
+                    for transformed, stage_scales in contexts:
+                        features = rows
+                        if stage_scales[stage_index] is not None:
+                            features = features * stage_scales[stage_index]
+                        pieces.append(
+                            transformed[stage_index] @ features.numpy().T
+                        )  # [Q, B]
+                    score_rows = torch.from_numpy(
+                        np.ascontiguousarray(
+                            np.concatenate(pieces, axis=0).T.astype(np.float32)
+                        )
+                    )  # [B, D*Q]
+                    drop = max(0, committed - seen)
+                    writer.append(
+                        features=score_rows[drop:],
+                        sample_ids=loss_batch.sample_ids[drop:],
+                        sequence_ids=loss_batch.sequence_ids[drop:],
+                        target_positions=loss_batch.target_positions[drop:],
+                    )
                     seen += expected
-                    continue
-                loss_batch = adapter.per_datapoint_losses(batch)
-                if int(loss_batch.losses.numel()) != expected:
-                    raise ArtifactIntegrityError(
-                        "streaming score bookkeeping mismatch: expected "
-                        f"{expected} rows for this batch, got "
-                        f"{int(loss_batch.losses.numel())}"
-                    )
-                rows = backend.rows(
-                    loss_batch.losses, chunk_size=config.data.vjp_chunk_size
-                )
-                # Reproduce the materialized path's storage round-trip so
-                # streaming scores equal score-source scores bit-for-bit
-                # up to matmul reassociation.
-                rows = rows.detach().to(device="cpu", dtype=storage).float()
-                pieces = []
-                for transformed, stage_scales in contexts:
-                    features = rows
-                    if stage_scales[stage_index] is not None:
-                        features = features * stage_scales[stage_index]
-                    pieces.append(
-                        transformed[stage_index] @ features.numpy().T
-                    )  # [Q, B]
-                score_rows = torch.from_numpy(
-                    np.ascontiguousarray(
-                        np.concatenate(pieces, axis=0).T.astype(np.float32)
-                    )
-                )  # [B, D*Q]
-                drop = max(0, committed - seen)
-                writer.append(
-                    features=score_rows[drop:],
-                    sample_ids=loss_batch.sample_ids[drop:],
-                    sequence_ids=loss_batch.sequence_ids[drop:],
-                    target_positions=loss_batch.target_positions[drop:],
-                )
-                seen += expected
             writer.finalize()
         progress_manifest = ShardManifest.load(progress_dir)
         stored = progress_manifest.read_rows(progress_dir)

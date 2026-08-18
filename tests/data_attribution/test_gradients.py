@@ -174,3 +174,105 @@ def test_empty_manifest_returns_n_by_zero_fp32_on_loss_device(backend_cls):
     rows = backend_cls(model, manifest).rows(losses)
     assert rows.shape == (4, 0) and rows.dtype == torch.float32
     assert rows.device == losses.device
+
+
+# ------------------------------------------------- backward_memory_mode
+from scimt.data_attribution.gradients import backward_memory_mode  # noqa: E402
+
+
+class _CheckpointedBlock(torch.nn.Module):
+    """Toy block reproducing the HF guard: checkpoint only when armed AND
+    training."""
+
+    def __init__(self):
+        super().__init__()
+        self.linear = torch.nn.Linear(4, 4)
+        self.gradient_checkpointing = False
+
+    def forward(self, x):
+        if self.gradient_checkpointing and self.training:
+            from torch.utils.checkpoint import checkpoint
+
+            return checkpoint(self._forward, x, use_reentrant=False)
+        return self._forward(x)
+
+    def _forward(self, x):
+        return torch.tanh(self.linear(x))
+
+
+def _toy_checkpointed_model():
+    torch.manual_seed(7)
+    return torch.nn.Sequential(_CheckpointedBlock(), _CheckpointedBlock())
+
+
+def test_backward_memory_mode_disabled_is_a_no_op():
+    model = _toy_checkpointed_model()
+    model.eval()
+    with backward_memory_mode(model, False):
+        assert not model.training
+    assert not model.training
+
+
+def test_backward_memory_mode_flips_and_restores_train_mode():
+    model = _toy_checkpointed_model()
+    model.eval()
+    with backward_memory_mode(model, True):
+        assert model.training
+    assert not model.training
+
+
+def test_backward_memory_mode_refuses_active_dropout():
+    model = torch.nn.Sequential(torch.nn.Linear(2, 2), torch.nn.Dropout(0.1))
+    with pytest.raises(RuntimeError, match="gradient_checkpointing: false"):
+        with backward_memory_mode(model, True):
+            pass
+
+
+def test_backward_memory_mode_refuses_config_dropout():
+    model = torch.nn.Linear(2, 2)
+    model.config = type("Cfg", (), {})()
+    model.config.attention_dropout = 0.1
+    with pytest.raises(RuntimeError, match="attention_dropout"):
+        with backward_memory_mode(model, True):
+            pass
+
+
+def test_backward_memory_mode_zero_dropout_is_fine():
+    model = torch.nn.Sequential(torch.nn.Linear(2, 2), torch.nn.Dropout(0.0))
+    model.config = type("Cfg", (), {})()
+    model.config.attention_dropout = 0.0
+    with backward_memory_mode(model, True):
+        assert model.training
+
+
+def test_backward_memory_mode_detects_buffer_mutation():
+    class MutatingModel(torch.nn.Module):
+        def __init__(self):
+            super().__init__()
+            self.linear = torch.nn.Linear(2, 2)
+            self.register_buffer("steps", torch.zeros((), dtype=torch.int64))
+
+    model = MutatingModel()
+    with pytest.raises(RuntimeError, match="mutated model buffer"):
+        with backward_memory_mode(model, True):
+            model.steps.add_(1)
+
+
+@pytest.mark.parametrize("backend_cls", [SerialGradientBackend, BatchedVJPBackend])
+def test_gradient_rows_identical_under_checkpointing(backend_cls):
+    """Numerics unchanged: checkpointed rows equal dense rows exactly."""
+    model = _toy_checkpointed_model()
+    manifest = ParameterManifest.from_model(model, "ckpt-toy")
+    x = torch.randn(5, 4)
+
+    model.eval()
+    losses = model(x).square().mean(1)
+    dense = backend_cls(model, manifest).rows(losses)
+
+    for module in model.modules():
+        if hasattr(module, "gradient_checkpointing"):
+            module.gradient_checkpointing = True
+    with backward_memory_mode(model, True):
+        losses = model(x).square().mean(1)
+        checkpointed = backend_cls(model, manifest).rows(losses)
+    torch.testing.assert_close(checkpointed, dense, rtol=0, atol=0)

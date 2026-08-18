@@ -265,7 +265,7 @@ def chain(tmp_path, monkeypatch) -> Chain:
 
 
 def _install_tiny_loaders(monkeypatch):
-    def load_model(checkpoint_dir, *, dtype, device):
+    def load_model(checkpoint_dir, *, dtype, device, gradient_checkpointing=False):
         model = TinyLM().float()
         model.load_state_dict(
             load_file(str(Path(checkpoint_dir) / "model.safetensors"))
@@ -2695,7 +2695,7 @@ def _write_scalar_checkpoint(ck_dir: Path) -> None:
 
 
 def _install_scalar_loaders(monkeypatch):
-    def load_model(checkpoint_dir, *, dtype, device):
+    def load_model(checkpoint_dir, *, dtype, device, gradient_checkpointing=False):
         model = ScalarLM().float()
         model.load_state_dict(
             load_file(str(Path(checkpoint_dir) / "model.safetensors"))
@@ -3312,3 +3312,35 @@ def test_streaming_resumes_after_midstream_crash(chain, monkeypatch):
             streaming[entry_name]["scores"],
             atol=1e-6, rtol=1e-6,
         )
+
+
+# ---------------------------------------------------- gradient checkpointing
+def test_arm_gradient_checkpointing_uses_non_reentrant():
+    calls = {}
+
+    class SupportedModel:
+        supports_gradient_checkpointing = True
+
+        def gradient_checkpointing_enable(self, gradient_checkpointing_kwargs):
+            calls["kwargs"] = gradient_checkpointing_kwargs
+
+    assert runner._arm_gradient_checkpointing(SupportedModel(), True) is True
+    assert calls["kwargs"] == {"use_reentrant": False}
+
+
+def test_arm_gradient_checkpointing_not_requested_is_inert():
+    class SupportedModel:
+        supports_gradient_checkpointing = True
+
+        def gradient_checkpointing_enable(self, **_):
+            raise AssertionError("must not arm when not requested")
+
+    assert runner._arm_gradient_checkpointing(SupportedModel(), False) is False
+
+
+def test_arm_gradient_checkpointing_unsupported_warns_and_degrades():
+    class ToyModel:
+        pass
+
+    with pytest.warns(UserWarning, match="dense activation memory"):
+        assert runner._arm_gradient_checkpointing(ToyModel(), True) is False

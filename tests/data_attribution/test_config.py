@@ -908,3 +908,35 @@ def test_query_unknown_keys_still_refused(tmp_path):
     payload["query"]["aggregates"] = "group_mean"
     with pytest.raises(ValueError, match="aggregates"):
         load_payload(tmp_path, payload)
+
+
+# ---------------------------------------------------- gradient checkpointing
+def test_gradient_checkpointing_defaults_to_none_and_enabled(tmp_path):
+    config = load_payload(tmp_path, base_payload())
+    assert config.data.gradient_checkpointing is None
+    assert config.data.gradient_checkpointing_enabled is True
+
+
+def test_gradient_checkpointing_unset_is_absent_from_resolved_bytes(tmp_path):
+    """Committed run ledgers predate the knob: an unset value must not
+    change resolved() bytes."""
+    config = load_payload(tmp_path, base_payload())
+    assert "gradient_checkpointing" not in config.resolved()["data"]
+
+
+def test_gradient_checkpointing_explicit_values_resolve(tmp_path):
+    payload = base_payload()
+    payload.setdefault("data", {"sequence_length": 8})
+    payload["data"]["gradient_checkpointing"] = False
+    config = load_payload(tmp_path, payload)
+    assert config.data.gradient_checkpointing is False
+    assert config.data.gradient_checkpointing_enabled is False
+    assert config.resolved()["data"]["gradient_checkpointing"] is False
+
+
+def test_gradient_checkpointing_rejects_non_boolean(tmp_path):
+    payload = base_payload()
+    payload.setdefault("data", {"sequence_length": 8})
+    payload["data"]["gradient_checkpointing"] = "yes"
+    with pytest.raises(ValueError, match="gradient_checkpointing"):
+        load_payload(tmp_path, payload)
