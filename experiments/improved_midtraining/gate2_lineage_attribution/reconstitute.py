@@ -53,14 +53,18 @@ def _sha256_file(path: Path) -> str:
 
 
 def write_jsonl(path: Path, rows: Iterable[Mapping[str, Any]]) -> str:
-    """Byte-identical twin of the gate2 pod writer (compact JSON + newline)."""
+    """Byte-identical twin of the gate2 pod writer.
+
+    The run-era writer (5f165d50, the commit run 20260811T113651Z executed)
+    was ``json.dumps(dict(row), ensure_ascii=False)`` — DEFAULT separators
+    (", " / ": "), no sort_keys. Compact separators broke the ledger gate at
+    row 0 on pod run 20260818T094330Z; do not "tidy" this serialization.
+    """
     path.parent.mkdir(parents=True, exist_ok=True)
     digest = hashlib.sha256()
     with path.open("w", encoding="utf-8") as handle:
         for row in rows:
-            line = json.dumps(
-                dict(row), sort_keys=True, separators=(",", ":"), ensure_ascii=False
-            )
+            line = json.dumps(dict(row), ensure_ascii=False)
             handle.write(line + "\n")
             digest.update(line.encode())
             digest.update(b"\n")
