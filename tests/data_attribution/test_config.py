@@ -838,3 +838,24 @@ def test_ekfac_adam_inherits_estimator_float16_refusal(tmp_path):
     payload["method"]["dtype"] = "float16"
     with pytest.raises(ValueError, match="float16"):
         load_payload(tmp_path, payload)
+
+
+def test_ekfac_adam_refuses_float16_in_captured_mode_too(tmp_path):
+    # The float16 refusal must not depend on the moment source: the fused
+    # conditioned-lambda pass backprops without loss scaling either way.
+    payload = base_payload()
+    payload["method"] = {
+        "curvature": "ekfac_adam",
+        "basis": "adam",
+        "conditioning_damping": 0.1,
+        "dtype": "float16",
+    }
+    with pytest.raises(ValueError, match="float16"):
+        load_payload(tmp_path, payload)
+
+
+def test_ekfac_adam_requires_use_empirical_fisher_at_config_time(tmp_path):
+    payload = ekfac_adam_payload()
+    payload["factors"] = {"use_empirical_fisher": False}
+    with pytest.raises(ValueError, match="use_empirical_fisher"):
+        load_payload(tmp_path, payload)

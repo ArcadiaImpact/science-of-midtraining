@@ -401,6 +401,14 @@ class MethodConfig:
                     "conditioning_damping — it enters A_l at fit time and is "
                     "baked into the factor artifact bytes, so it has no default"
                 )
+            if self.dtype == "float16":
+                raise ValueError(
+                    "method curvature 'ekfac_adam' does not support float16 "
+                    "gradients: the fused conditioned-lambda pass backprops "
+                    "without loss scaling or overflow detection, regardless "
+                    "of whether moments are estimated or captured; use "
+                    "bfloat16 or float32"
+                )
         elif self.conditioning_damping is not None:
             raise ValueError(
                 "method conditioning_damping is only valid with curvature "
@@ -693,6 +701,15 @@ class AttributionRunConfig:
             raise TypeError("data must be a DataConfig")
         if not isinstance(self.factors, FactorFitConfig):
             raise TypeError("factors must be a FactorFitConfig")
+        if (
+            self.method.curvature == "ekfac_adam"
+            and not self.factors.use_empirical_fisher
+        ):
+            raise ValueError(
+                "method curvature 'ekfac_adam' conditions the EMPIRICAL "
+                "Fisher (the same statistic the Adam moments estimate); set "
+                "factors.use_empirical_fisher: true"
+            )
         _require_bool(self.allow_partial, "allow_partial")
         if self.second_order is not None:
             if not isinstance(self.second_order, SecondOrderConfig):

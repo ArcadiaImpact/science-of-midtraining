@@ -651,6 +651,58 @@ def test_dry_run_reports_checkpoint_local_adam_work_and_storage(
     assert not Path(config.output_dir).exists()
 
 
+def test_dry_run_accepts_valid_ekfac_adam_and_warns_on_pending_moments(
+    chain, monkeypatch
+):
+    """dry_run must mirror _require_scorable_method: a config score-source
+    accepts reports NO blockers; not-yet-run estimate-adam is a warning."""
+    monkeypatch.setattr(runner, "_load_tokenizer", lambda path: ToyTokenizer())
+    overrides = _ekfac_adam_overrides(chain)
+    overrides["adam_moment_estimator"].update(
+        dataset=chain.payload["stages"][1]["dataset"], objective="sft"
+    )
+    config, _ = chain.config(**overrides)
+    report = _run(runner.dry_run(config))
+    assert report["blockers"] == []
+    assert any("estimate-adam" in warning for warning in report["warnings"])
+    fit_previews = [
+        entry for entry in report["planned_identities"]
+        if entry["output"].startswith("factors/")
+    ]
+    assert fit_previews
+    for entry in fit_previews:
+        descriptor = entry["identity"]["basis_descriptor"]
+        assert descriptor["coordinates"] == "adam_stage_local"
+    paired = Path(config.output_dir) / "adam_moments" / "paired_batches.json"
+    paired.parent.mkdir(parents=True, exist_ok=True)
+    paired.write_text("{}", encoding="utf-8")
+    report = _run(runner.dry_run(config))
+    assert report["blockers"] == []
+    assert report["warnings"] == []
+
+
+def test_dry_run_blocks_adam_basis_over_raw_ekfac_curvature(
+    chain, monkeypatch
+):
+    monkeypatch.setattr(runner, "_load_tokenizer", lambda path: ToyTokenizer())
+    overrides = _estimated_adam_overrides(
+        chain,
+        dataset=chain.payload["stages"][1]["dataset"],
+        objective="sft",
+    )
+    overrides["method"] = {
+        "basis": "adam",
+        "curvature": "ekfac",
+        "damping_sweep": [0.1],
+    }
+    config, _ = chain.config(**overrides)
+    report = _run(runner.dry_run(config))
+    assert any(
+        "basis 'adam' requires method.curvature 'fisher'" in blocker
+        for blocker in report["blockers"]
+    )
+
+
 def test_dry_run_blocks_checkpoint_without_safetensors_signature(chain):
     checkpoint = (
         Path(chain.payload["stages"][0]["checkpoint"])
@@ -2113,11 +2165,14 @@ class _ConfigStub:
 
 
 def test_scorable_method_refusal_matrix():
-    # basis adam/fisher over raw-fitted EK-FAC: refused, message points at
-    # the conditioned mode.
-    for basis in ("adam", "fisher"):
-        with pytest.raises(runner.RunnerError, match="ekfac_adam"):
-            runner._require_scorable_method(_ConfigStub("ekfac", basis))
+    # basis adam over raw-fitted EK-FAC: refused, message points at the
+    # conditioned mode. basis fisher: refused, and the message must NOT
+    # point at ekfac_adam (which requires basis adam and would refuse in
+    # turn) — the Fisher-diagonal conditioned analogue is out of scope.
+    with pytest.raises(runner.RunnerError, match="ekfac_adam"):
+        runner._require_scorable_method(_ConfigStub("ekfac", "adam"))
+    with pytest.raises(runner.RunnerError, match="out of scope"):
+        runner._require_scorable_method(_ConfigStub("ekfac", "fisher"))
     # conditioned factors only consumable through basis adam.
     for basis in ("raw", "fisher"):
         with pytest.raises(runner.RunnerError, match="basis 'adam'"):
@@ -2210,17 +2265,87 @@ def _old_mode_yaml_config(tmp_path):
     return load_attribution_config(path)
 
 
+def _fisher_adam_yaml_config(tmp_path):
+    payload = {
+        "stages": [
+            {
+                "name": "midtrain",
+                "checkpoint": "ckpts/mid",
+                "dataset": "data/mid.jsonl",
+                "objective": "midtraining",
+                "n_examples": 64,
+                "weight_decay": 0.0,
+            },
+        ],
+        "query": {
+            "checkpoint": "ckpts/mid",
+            "dataset": "data/query.jsonl",
+            "objective": "sft",
+        },
+        "method": {"curvature": "fisher", "basis": "adam"},
+        "adam_moment_estimator": {
+            "dataset": "data/mid.jsonl",
+            "objective": "midtraining",
+            "num_batches": 2,
+            "global_batch_size": 4,
+            "micro_batch_size": 1,
+            "beta2": 0.999,
+            "optimizer_epsilon": 1.0e-8,
+            "max_grad_norm": 1.0,
+            "seed": 7,
+        },
+        "output_dir": str(tmp_path / "attr-run"),
+    }
+    path = tmp_path / "attribution-fisher-adam.yaml"
+    path.write_text(yaml.safe_dump(payload), encoding="utf-8")
+    return load_attribution_config(path)
+
+
+# sha256 of runner._canonical(scope) for the two pre-ekfac_adam mode
+# fixtures above. These literals must NEVER change: they are the byte-level
+# identity of every committed factor/row/score artifact fitted before (and
+# after) the ekfac_adam extension. A change here means committed artifacts
+# on disk stop validating — that is a breaking release, not a test update.
+_OLD_MODE_SCOPE_SHA256 = {
+    ("ekfac_raw", "fit-factors"):
+        "5f3a0f4b4f39ff9e5a27feef75eb5759ea8053a87b6b6e693427933951f114f9",
+    ("ekfac_raw", "compute-rows"):
+        "01f470cb80ffd7956579b3b9d7435bc2b1d7aa194d9243bee5c6a7155c1c08c9",
+    ("ekfac_raw", "score-source"):
+        "fc83f7362e32aee882921786ac774db537aab56d7de7d2d40fb4ffea6b93826d",
+    ("fisher_adam", "estimate-adam"):
+        "7f3ef6d1e102be2a8d68cca84d4707e6156e7079b8f13dcfeb691ad90a25e490",
+    ("fisher_adam", "fit-factors"):
+        "06ad79dad1e2515eb64fe85c364aeb79dd428700cedae91ad3841f3c256406f7",
+    ("fisher_adam", "compute-rows"):
+        "01f470cb80ffd7956579b3b9d7435bc2b1d7aa194d9243bee5c6a7155c1c08c9",
+    ("fisher_adam", "score-source"):
+        "f250127fcedf2647250cf0e17aa888997b202ffeb22028e2ef61da7ab4d933c5",
+}
+
+
 def test_scoped_config_old_modes_unchanged_by_conditioning_fields(tmp_path):
-    """Artifact-compat regression: old-mode scoped slices must not gain keys,
-    or every committed factor/score artifact on disk would be invalidated."""
-    config = _old_mode_yaml_config(tmp_path)
-    fit_scope = runner._scoped_config(config, "fit-factors", "midtrain")
-    assert "conditioning_damping" not in fit_scope
-    assert "adam_moment_estimator" not in fit_scope
-    score_scope = runner._scoped_config(config, "score-source")
-    assert "conditioning_damping" not in score_scope["method"]
-    rows_scope = runner._scoped_config(config, "compute-rows", "midtrain")
-    assert "conditioning_damping" not in rows_scope["method"]
+    """Artifact-compat regression: old-mode scoped slices must stay
+    BYTE-identical (golden sha256 pins, not just key absence), or every
+    committed factor/score artifact on disk would be invalidated."""
+    import hashlib
+
+    configs = {
+        "ekfac_raw": _old_mode_yaml_config(tmp_path),
+        "fisher_adam": _fisher_adam_yaml_config(tmp_path),
+    }
+    for (label, phase), expected in _OLD_MODE_SCOPE_SHA256.items():
+        config = configs[label]
+        stage = "midtrain" if phase != "score-source" else None
+        scope = runner._scoped_config(config, phase, stage)
+        assert "conditioning_damping" not in json.dumps(scope), (label, phase)
+        digest = hashlib.sha256(
+            runner._canonical(scope).encode("utf-8")
+        ).hexdigest()
+        assert digest == expected, (
+            f"{label}/{phase} scoped-config bytes changed — this invalidates "
+            "committed artifacts; see _OLD_MODE_SCOPE_SHA256"
+        )
 
 
 def test_scoped_config_ekfac_adam_binds_moment_contract(tmp_path):
@@ -2272,25 +2397,9 @@ def _install_conditioned_fit_stub(monkeypatch):
     raw Kronfluence fit, then stamp the conditioned-mode meta schema so every
     runner-side contract downstream of the fit is exercised for real. The
     lambda values themselves are NOT conditioned — numerically irrelevant
-    here because the manual reference chains load the same factor bytes.
-    Pre-integration (worktree without T2's ekfac.py), the missing symbols
-    are shimmed forward-compatibly; post-merge the real ones take over."""
-    import inspect
-
+    here because the manual reference chains load the same factor bytes."""
     import scimt.data_attribution.ekfac as ekfac_mod
 
-    if not hasattr(ekfac_mod, "EKFACConditioner"):
-        @dataclasses.dataclass(frozen=True)
-        class _ShimConditioner:
-            values: object
-            provenance: dict
-
-        monkeypatch.setattr(
-            ekfac_mod, "EKFACConditioner", _ShimConditioner, raising=False
-        )
-    assert "expected_mode" in inspect.signature(
-        ekfac_mod.load_ekfac
-    ).parameters, "conftest compat fixture must provide expected_mode"
     mode_aware_load = ekfac_mod.load_ekfac
     real_fit = ekfac_mod.fit_ekfac
     calls: list[dict] = []

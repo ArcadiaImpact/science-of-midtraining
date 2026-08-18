@@ -12,7 +12,6 @@ from __future__ import annotations
 import importlib.util
 from pathlib import Path
 
-
 _LEAN_MODULES = {"test_migration_boundary.py", "test_config.py", "test_cli.py"}
 
 collect_ignore = []
@@ -22,5 +21,3 @@ if importlib.util.find_spec("torch") is None:
         for path in Path(__file__).parent.glob("test_*.py")
         if path.name not in _LEAN_MODULES
     )
-
-

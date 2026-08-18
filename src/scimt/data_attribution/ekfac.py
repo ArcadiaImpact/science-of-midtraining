@@ -615,7 +615,14 @@ def _conditioner_blocks(values, manifest, names, diagonal):
 
 
 def _top_two_singular_values(matrix: torch.Tensor, iterations: int = 200) -> tuple[float, float]:
-    """Leading two singular values by power iteration with one deflation."""
+    """Leading two singular values by power iteration with one deflation.
+
+    Convergence is geometric in (sigma2/sigma1)^k, so for near-degenerate
+    spectra (sigma1 ~ sigma2) the deflation vector is inaccurate and sigma2
+    is biased. That regime returns a ratio near 1 either way, which is the
+    qualitatively correct answer for the rank-1 residual diagnostic this
+    feeds (the D1 follow-up gate cares about the small-ratio regime, where
+    convergence is fast)."""
     m = matrix.detach().double()
     if min(m.shape) == 0:
         return 0.0, 0.0
@@ -637,7 +644,8 @@ def _top_two_singular_values(matrix: torch.Tensor, iterations: int = 200) -> tup
                 return 0.0, v, u
             v = v / norm
             sigma = norm
-        return sigma, v, matvec(v) / max(float(matvec(v).norm()), 1e-300)
+        image = matvec(v)
+        return sigma, v, image / max(float(image.norm()), 1e-300)
 
     sigma1, v1, u1 = leading(lambda x: m @ x, lambda x: m.T @ x, m.shape[1])
     if min(m.shape) < 2 or sigma1 == 0.0:
@@ -737,74 +745,153 @@ def _fit_ekfac_conditioned(
     eig = analyzer.load_eigendecomposition("ekfac")
     _unwrap_tracked_modules(model, requires_grad_states, was_training)
     named = dict(model.named_parameters(remove_duplicate=False))
+    # Eigenvectors and scale blocks live on CPU in fp64: at target scale
+    # (hundreds of tracked Linears, ~5k dims) the full fp64 set is far larger
+    # than any single device. Modules are processed in chunks sized to free
+    # device memory — each chunk stages its U/M blocks and accumulators on
+    # the device, then replays the full item loop (forward + backward) for
+    # that chunk. Tradeoff: n_chunks full backward passes over the items buy
+    # bounded device memory without per-item transfer thrash; the projection
+    # and accumulation math stays fp64 throughout, so numerics are identical
+    # to the single-pass form regardless of chunking.
     eigenvectors = {
         name: (
-            eig["activation_eigenvectors"][name].detach().double().to(model_device),
-            eig["gradient_eigenvectors"][name].detach().double().to(model_device),
+            eig["activation_eigenvectors"][name].detach().double().cpu(),
+            eig["gradient_eigenvectors"][name].detach().double().cpu(),
         )
         for name in names
     }
-    scales_on_device = {n: blocks[n].to(model_device) for n in names}
+    modules = dict(model.named_modules())
+
+    def _module_device_bytes(name: str) -> int:
+        u_a, u_s = eigenvectors[name]
+        lam_numel = u_s.shape[0] * u_a.shape[0]
+        staged_numel = (
+            u_a.numel() + u_s.numel() + blocks[name].numel() + 2 * lam_numel
+        )
+        return 8 * staged_numel
+
+    if names and model_device.type == "cuda":
+        free_bytes, _ = torch.cuda.mem_get_info(model_device)
+        chunk_budget = max(
+            free_bytes // 4, max(_module_device_bytes(n) for n in names)
+        )
+    else:
+        # CPU device: staging is a no-op, one chunk avoids repeated passes.
+        chunk_budget = None
+    module_chunks: list[list[str]] = []
+    pending: list[str] = []
+    pending_bytes = 0
+    for name in names:
+        needed = _module_device_bytes(name)
+        if chunk_budget is not None and pending and (
+            pending_bytes + needed > chunk_budget
+        ):
+            module_chunks.append(pending)
+            pending, pending_bytes = [], 0
+        pending.append(name)
+        pending_bytes += needed
+    if pending or not module_chunks:
+        module_chunks.append(pending)
+
     lam_accum = {
         name: torch.zeros(
             eigenvectors[name][1].shape[0],
             eigenvectors[name][0].shape[0],
             dtype=torch.float64,
-            device=model_device,
         )
         for name in names
     }
+    # Per-module (and per-diagonal-entry) item counts, matching Kronfluence's
+    # hook-fire semantics: a module that produced no gradient for an item
+    # contributes neither a term nor a count. A global divisor would
+    # systematically deflate lambdas of conditionally-executed modules.
+    lam_counts = {name: 0 for name in names}
     diag_accum = {e.name: torch.zeros(e.numel, dtype=torch.float64) for e in diagonal}
-    modules = dict(model.named_modules())
+    diag_counts = {e.name: 0 for e in diagonal}
     count = 0
-    for item in items:
-        ids = item["input_ids"].to(model_device)
-        if ids.ndim == 1:
-            ids = ids.unsqueeze(0)
-        position = item["position"]
-        if isinstance(position, torch.Tensor):
-            position = int(position.reshape(-1)[0])
-        model.zero_grad(set_to_none=True)
-        logits = model(input_ids=ids).logits
-        loss = torch.nn.functional.cross_entropy(
-            logits[0, position - 1 : position].float(),
-            ids[0, position : position + 1],
-            reduction="sum",
-        )
-        loss.backward()
-        count += 1
-        for entry in diagonal:
-            gradient = named[entry.name].grad
-            if gradient is not None:
-                conditioned = gradient.detach().reshape(-1).cpu().double() * diag_scales[
-                    entry.name
-                ]
-                diag_accum[entry.name].add_(conditioned.square())
-        for name in names:
-            weight_grad = named[f"{name}.weight"].grad
-            if weight_grad is None:
-                continue
-            dense = weight_grad.detach().double()
-            if modules[name].bias is not None:
-                bias_grad = named[f"{name}.bias"].grad
-                dense = torch.cat(
-                    (
-                        dense,
+    for chunk_index, chunk in enumerate(module_chunks):
+        staged = {
+            name: (
+                eigenvectors[name][0].to(model_device),
+                eigenvectors[name][1].to(model_device),
+                blocks[name].to(model_device),
+            )
+            for name in chunk
+        }
+        chunk_accum = {
+            name: torch.zeros_like(lam_accum[name], device=model_device)
+            for name in chunk
+        }
+        first_chunk = chunk_index == 0
+        for item in items:
+            ids = item["input_ids"].to(model_device)
+            if ids.ndim == 1:
+                ids = ids.unsqueeze(0)
+            position = item["position"]
+            if isinstance(position, torch.Tensor):
+                position = int(position.reshape(-1)[0])
+            model.zero_grad(set_to_none=True)
+            logits = model(input_ids=ids).logits
+            loss = torch.nn.functional.cross_entropy(
+                logits[0, position - 1 : position].float(),
+                ids[0, position : position + 1],
+                reduction="sum",
+            )
+            loss.backward()
+            if first_chunk:
+                count += 1
+                for entry in diagonal:
+                    gradient = named[entry.name].grad
+                    if gradient is not None:
+                        conditioned = gradient.detach().reshape(-1).cpu().double() * (
+                            diag_scales[entry.name]
+                        )
+                        diag_accum[entry.name].add_(conditioned.square())
+                        diag_counts[entry.name] += 1
+            for name in chunk:
+                weight_grad = named[f"{name}.weight"].grad
+                if weight_grad is None:
+                    continue
+                dense = weight_grad.detach().double()
+                if modules[name].bias is not None:
+                    bias_grad = named[f"{name}.bias"].grad
+                    dense = torch.cat(
                         (
-                            bias_grad.detach().double()
-                            if bias_grad is not None
-                            else torch.zeros(
-                                dense.shape[0], dtype=torch.float64, device=dense.device
-                            )
-                        ).reshape(-1, 1),
-                    ),
-                    1,
-                )
-            conditioned = scales_on_device[name] * dense
-            u_a, u_s = eigenvectors[name]
-            projected = u_s.T @ conditioned @ u_a
-            lam_accum[name].add_(projected.square())
+                            dense,
+                            (
+                                bias_grad.detach().double()
+                                if bias_grad is not None
+                                else torch.zeros(
+                                    dense.shape[0],
+                                    dtype=torch.float64,
+                                    device=dense.device,
+                                )
+                            ).reshape(-1, 1),
+                        ),
+                        1,
+                    )
+                u_a, u_s, scale = staged[name]
+                conditioned = scale * dense
+                projected = u_s.T @ conditioned @ u_a
+                chunk_accum[name].add_(projected.square())
+                lam_counts[name] += 1
+        for name in chunk:
+            lam_accum[name].copy_(chunk_accum[name].cpu())
+        del staged, chunk_accum
     model.zero_grad(set_to_none=True)
+    if count == 0:
+        raise ValueError("conditioned EK-FAC fit received no sample items")
+    missing = sorted(
+        [name for name in names if lam_counts[name] == 0]
+        + [e.name for e in diagonal if diag_counts[e.name] == 0]
+    )
+    if missing:
+        raise ValueError(
+            "conditioned EK-FAC fit: no sampled item produced gradients for "
+            f"{missing} — every included parameter must be exercised by the "
+            "fit sample (exclude the parameter or fix the sampling)"
+        )
     residuals = {}
     for name in names:
         sigma1, sigma2 = _top_two_singular_values(blocks[name])
@@ -820,12 +907,12 @@ def _fit_ekfac_conditioned(
         factor_values = {
             "U_A": u_a,
             "U_S": u_s,
-            "lam": lam_accum[name] / count,
+            "lam": lam_accum[name] / lam_counts[name],
         }
         for key, value in factor_values.items():
             np.save(base / f"{key}.npy", value.detach().float().cpu().numpy())
     values = (
-        torch.cat([diag_accum[e.name] / count for e in diagonal])
+        torch.cat([diag_accum[e.name] / diag_counts[e.name] for e in diagonal])
         if diagonal
         else torch.empty(0, dtype=torch.float64)
     )
@@ -844,6 +931,7 @@ def _fit_ekfac_conditioned(
                 "linears": names,
                 "samples_diag": count,
                 "samples_lambda": count,
+                "lambda_item_counts": lam_counts,
                 "bias_handling": "augmented (weight+bias EK-FAC'd jointly)",
                 "preconditioner": provenance,
                 "lambda_fit": "scimt_conditioned_per_item_v1",

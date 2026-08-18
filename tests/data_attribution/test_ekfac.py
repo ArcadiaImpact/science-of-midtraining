@@ -642,6 +642,78 @@ def test_conditioned_rank1_residual_zero_for_rank1_conditioner(monkeypatch, tmp_
     assert all(0.0 <= r <= 1.0 + 1e-9 for r in meta["rank1_residuals"].values())
 
 
+class _GatedTiny(nn.Module):
+    """`extra` participates only for sequences starting with an even token —
+    a stand-in for conditionally-executed (e.g. MoE) modules."""
+
+    def __init__(self):
+        super().__init__()
+        generator = torch.Generator().manual_seed(9)
+        self.embed = nn.Embedding(7, 3)
+        self.mid = nn.Linear(3, 3, bias=True)
+        self.extra = nn.Linear(3, 3, bias=False)
+        self.head = nn.Linear(3, 7, bias=False)
+        for parameter in self.parameters():
+            parameter.data = torch.randn(
+                parameter.shape, generator=generator, dtype=torch.float32
+            )
+
+    def forward(self, input_ids):
+        hidden = self.mid(self.embed(input_ids))
+        if int(input_ids.reshape(-1)[0]) % 2 == 0:
+            hidden = hidden + self.extra(hidden)
+        return type("O", (), {"logits": self.head(hidden)})()
+
+
+def test_conditioned_lambda_uses_per_module_item_counts(monkeypatch, tmp_path):
+    """Kronfluence hook-fire semantics: a module that produced no gradient
+    for an item contributes neither a term nor a count. A global divisor
+    would systematically deflate conditionally-executed modules' lambdas."""
+    model = _GatedTiny()
+    manifest = ParameterManifest.from_model(model, "tiny")
+    eigenvectors = {
+        "mid": (_orthonormal(4, 5), _orthonormal(3, 6)),
+        "extra": (_orthonormal(3, 11), _orthonormal(3, 12)),
+        "head": (_orthonormal(3, 7), _orthonormal(7, 8)),
+    }
+    _fake_kronfluence(monkeypatch, eigenvectors, {})
+    conditioner = _conditioner_for(manifest)
+    config = {"samples": 6, "max_positions_per_sequence": 3}
+    factors = fit_ekfac(
+        model, _CondBatches(), manifest, config, tmp_path, conditioner
+    )
+    items = build_ekfac_sample_items(_CondBatches(), config)
+    fired = [
+        item for item in items
+        if int(item["input_ids"].reshape(-1)[0]) % 2 == 0
+    ]
+    assert 0 < len(fired) < len(items), (
+        "fixture must mix firing and skipping items"
+    )
+    entries = {e.name: e for e in manifest.included_entries()}
+    weight = entries["extra.weight"]
+    block = conditioner.values.double()[
+        weight.global_flat_offset : weight.global_flat_offset + weight.numel
+    ].reshape(weight.shape)
+    per_item = _replay_dense_grads(model, fired, ["extra"], [])
+    u_a, u_s = eigenvectors["extra"]
+    accumulated = torch.zeros(
+        u_s.shape[0], u_a.shape[0], dtype=torch.float64
+    )
+    for grads in per_item:
+        projected = u_s.T @ (block * grads["extra"]) @ u_a
+        accumulated += projected.square()
+    lam_ref = accumulated / len(fired)
+    torch.testing.assert_close(
+        factors.linears["extra"]["lam"].double(), lam_ref, rtol=1e-5, atol=1e-8
+    )
+    meta = json.loads((tmp_path / "ekfac_meta.json").read_text())
+    assert meta["samples_lambda"] == len(items)
+    assert meta["lambda_item_counts"] == {
+        "extra": len(fired), "head": len(items), "mid": len(items)
+    }
+
+
 def test_top_two_singular_values_match_svd():
     generator = torch.Generator().manual_seed(11)
     matrix = torch.rand(5, 3, generator=generator).double() + 0.1

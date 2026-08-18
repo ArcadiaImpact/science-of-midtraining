@@ -1879,8 +1879,8 @@ def _require_scorable_method(config: AttributionRunConfig) -> None:
     if method.curvature == "ggn":
         raise RunnerError(
             "score-source: no fitted GGN segment operator exists — SOURCE "
-            "curvature must be 'fisher' or 'ekfac'; GGN products live in the "
-            "second-order phases (hessian_kind: ggn)"
+            "curvature must be 'fisher', 'ekfac', or 'ekfac_adam'; GGN "
+            "products live in the second-order phases (hessian_kind: ggn)"
         )
     if method.basis == "ekfac":
         raise RunnerError(
@@ -1902,14 +1902,21 @@ def _require_scorable_method(config: AttributionRunConfig) -> None:
                 "stage-local Adam coordinates; only basis 'adam' rows and "
                 "queries can consume them"
             )
-    elif method.basis in ("fisher", "adam") and method.curvature != "fisher":
+    elif method.basis == "adam" and method.curvature != "fisher":
         raise RunnerError(
-            f"score-source: basis {method.basis!r} transports rows through a "
-            "diagonal metric, which requires diagonal curvature "
-            "(curvature: fisher) — EK-FAC factors cannot be exactly "
-            "transported into a diagonal basis; for EK-FAC-quality curvature "
-            "in Adam coordinates fit conditioned factors with "
-            "curvature 'ekfac_adam'"
+            "score-source: basis 'adam' transports rows through a diagonal "
+            "metric, which requires diagonal curvature (curvature: fisher) — "
+            "EK-FAC factors cannot be exactly transported into a diagonal "
+            "basis; for EK-FAC-quality curvature in Adam coordinates fit "
+            "conditioned factors with curvature 'ekfac_adam'"
+        )
+    elif method.basis == "fisher" and method.curvature != "fisher":
+        raise RunnerError(
+            "score-source: basis 'fisher' transports rows through a diagonal "
+            "metric, which requires diagonal curvature (curvature: fisher) — "
+            "EK-FAC factors cannot be exactly transported into a diagonal "
+            "basis, and a Fisher-diagonal analogue of the Adam-conditioned "
+            "EK-FAC fit is out of scope (no 'ekfac_fisher' mode exists)"
         )
 
 
@@ -3836,16 +3843,46 @@ async def dry_run(config: AttributionRunConfig) -> dict[str, Any]:
     method = config.method
     layout = run_layout(config.output_dir)
     blockers: list[str] = []
+    warnings: list[str] = []
+    # Mirror _require_scorable_method exactly: a config that score-source
+    # would accept must report no method blockers here, and every refused
+    # combination must appear (dry_run is the launch gate for orchestration).
     if method.curvature == "ggn":
         blockers.append(
             "method.curvature 'ggn': no fitted GGN segment operator exists — "
-            "use 'fisher'/'ekfac' for SOURCE, GGN lives in second-order phases"
+            "use 'fisher'/'ekfac'/'ekfac_adam' for SOURCE, GGN lives in "
+            "second-order phases"
         )
     if method.basis == "ekfac":
         blockers.append("method.basis 'ekfac' is not supported by score-source")
-    if method.basis in ("fisher", "adam") and method.curvature != "fisher":
+    if method.curvature == "ekfac_adam":
+        if method.basis != "adam":
+            blockers.append(
+                "method.curvature 'ekfac_adam' factors live in stage-local "
+                "Adam coordinates; only basis 'adam' rows and queries can "
+                "consume them"
+            )
+        if not config.factors.use_empirical_fisher:
+            blockers.append(
+                "method.curvature 'ekfac_adam' conditions the EMPIRICAL "
+                "Fisher; set factors.use_empirical_fisher: true"
+            )
+        if (
+            config.adam_moment_estimator is not None
+            and not (layout.adam_moments / "paired_batches.json").is_file()
+        ):
+            # Not a blocker: estimate-adam is a later phase of this same run
+            # and fit-factors hard-refuses until it has committed.
+            warnings.append(
+                "curvature 'ekfac_adam': no committed estimate-adam "
+                "artifacts yet (adam_moments/paired_batches.json missing); "
+                "fit-factors will refuse until estimate-adam runs"
+            )
+    elif method.basis in ("fisher", "adam") and method.curvature != "fisher":
         blockers.append(
-            f"method.basis {method.basis!r} requires method.curvature 'fisher'"
+            f"method.basis {method.basis!r} requires method.curvature "
+            "'fisher' (EK-FAC factors cannot be exactly transported into a "
+            "diagonal basis)"
         )
 
     stages_report = []
@@ -4132,7 +4169,11 @@ async def dry_run(config: AttributionRunConfig) -> dict[str, Any]:
                         "sampler": "build_ekfac_sample_items",
                         "sample_id_stride": _SAMPLE_ID_STRIDE,
                     },
-                    basis_coordinates="raw",
+                    basis_coordinates=(
+                        "adam_stage_local"
+                        if method.curvature == "ekfac_adam"
+                        else "raw"
+                    ),
                     curvature_descriptor={
                         "method": method.curvature,
                         "fit": _fit_config_payload(config),
@@ -4244,6 +4285,7 @@ async def dry_run(config: AttributionRunConfig) -> dict[str, Any]:
         "expected": expected,
         "planned_identities": planned,
         "blockers": blockers,
+        "warnings": warnings,
     }
 
 
