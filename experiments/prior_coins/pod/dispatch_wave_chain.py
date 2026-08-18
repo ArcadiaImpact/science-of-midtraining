@@ -50,6 +50,9 @@ from scimt.train.axolotl import (  # noqa: E402
     render_stage,
 )
 
+from experiments.prior_coins.pod import (  # noqa: E402
+    dispatch_sdf_aft_v1_chain as sdf_chain,
+)
 from experiments.prior_coins.pod.dispatch_sdf_aft_v1_chain import (  # noqa: E402
     atomic_json,
     run_axolotl_on_gpu,
@@ -58,7 +61,15 @@ from experiments.prior_coins.pod.dispatch_sdf_aft_v1_chain import (  # noqa: E40
 )
 
 DEFAULT_PARENT_REPO = "jbostock/scimt-dispatch-midtrained-sft-v1"
-MODEL_REPO = "sidbaines/scimt-prior-coins-dispatch-sdf-aft-v1"
+#: default artifact destination; the upload helpers live in sdf_chain and read
+#: its module global, so --model-repo sets both (the 27B scale-up publishes into
+#: an org repo because the personal account is at its public-storage ceiling).
+DEFAULT_MODEL_REPO = "sidbaines/scimt-prior-coins-dispatch-sdf-aft-v1"
+MODEL_REPO = DEFAULT_MODEL_REPO
+#: registry entry used for the model checks; the weights themselves always come
+#: from the on-disk parent (axolotl base_model = load_checkpoint_path)
+DEFAULT_MODEL = "gemma3_12b_it"
+MODEL_NAME = DEFAULT_MODEL
 DEFAULT_VERSION = "dispatch_v4_wide"
 DEFAULT_REMOTE_ROOT = "extensions/wave_v1"
 DEFAULT_STAGE = "aft_dispatch_v4_wide"
@@ -73,12 +84,22 @@ DATASET_NAME = "agreement"
 
 def dataset_path(root):
     return root / "data" / "datasets" / f"aft_{DATASET_NAME}.jsonl"
-TRAIN_ROWS = 8_192
-EXPECTED_STEPS = 512
-SAVE_EVERY = 32
-EXPECTED_CHECKPOINTS = tuple(range(SAVE_EVERY, EXPECTED_STEPS + 1, SAVE_EVERY))
+#: Default geometry: the 8,192-row / 2-epoch / global-batch-32 wave recipe.
+#: All four are overridable from argv (``--train-rows``, ``--expected-steps``,
+#: ``--save-every``, ``--eval-steps``) so a shorter run reuses this chain
+#: unchanged -- the charter-target study is 4,096 rows for ONE epoch = 128
+#: steps, saving every 16. The defaults are untouched, so every
+#: previously-run cell's command line still means exactly what it meant.
+DEFAULT_TRAIN_ROWS = 8_192
+DEFAULT_EXPECTED_STEPS = 512
+DEFAULT_SAVE_EVERY = 32
 #: log-spaced endpoints; covers the region where the v1 gate saw a reversal
-EVAL_STEPS = (32, 64, 128, 256, 512)
+DEFAULT_EVAL_STEPS = (32, 64, 128, 256, 512)
+TRAIN_ROWS = DEFAULT_TRAIN_ROWS
+EXPECTED_STEPS = DEFAULT_EXPECTED_STEPS
+SAVE_EVERY = DEFAULT_SAVE_EVERY
+EXPECTED_CHECKPOINTS = tuple(range(SAVE_EVERY, EXPECTED_STEPS + 1, SAVE_EVERY))
+EVAL_STEPS = DEFAULT_EVAL_STEPS
 SLICES = (
     "eval_trained_agreement",
     "eval_trained_conflict",
@@ -159,12 +180,12 @@ async def train_arm(root: Path, arm: str, parent: Path) -> tuple[Path, dict]:
         raise FileNotFoundError(dataset)
     stage = load_stage(STAGE_NAME)
     config = TrainConfig(
-        backend="axolotl", stage=STAGE_NAME, model="gemma3_12b_it", seed=42,
+        backend="axolotl", stage=STAGE_NAME, model=MODEL_NAME, seed=42,
         load_checkpoint_path=str(parent), lora=LORA,
     )
     rendered = render_stage(stage, config, dataset, run_dir)
     started = time.time()
-    log(f"{arm}: training {TRAIN_ROWS} agreement rows -> {EXPECTED_STEPS} steps")
+    log(f"{arm}: training {TRAIN_ROWS} {DATASET_NAME} rows -> {EXPECTED_STEPS} steps")
     await run_axolotl_on_gpu(rendered, run_dir / "train.log", 0)
     finalize_training_attribution(rendered, run_dir)
     provenance = validate_training(run_dir)
@@ -318,11 +339,27 @@ async def main() -> None:
                              "from dispatch_wave_prepare.py")
     parser.add_argument("--parent-revision", default=None)
     parser.add_argument("--remote-root", default=DEFAULT_REMOTE_ROOT)
+    parser.add_argument("--model-repo", default=DEFAULT_MODEL_REPO,
+                        help="Hub repo for adapters/results/sentinels")
+    parser.add_argument("--model", default=DEFAULT_MODEL,
+                        help="scimt model registry entry for the substrate "
+                             "checks; weights come from the on-disk parent")
     parser.add_argument("--stage", default=DEFAULT_STAGE)
     parser.add_argument("--version", default=DEFAULT_VERSION,
                         help="expected dataset_manifest version")
     parser.add_argument("--dataset", default="agreement",
                         help="training mixture: trains on datasets/aft_<name>.jsonl")
+    parser.add_argument("--train-rows", type=int, default=DEFAULT_TRAIN_ROWS,
+                        help="expected rows in the chosen mixture; the manifest "
+                             "is checked against this before any GPU time")
+    parser.add_argument("--expected-steps", type=int, default=DEFAULT_EXPECTED_STEPS,
+                        help="optimizer steps the run must land on exactly")
+    parser.add_argument("--save-every", type=int, default=DEFAULT_SAVE_EVERY,
+                        help="must match the stage's save_steps, or validation "
+                             "rejects a correctly-trained run")
+    parser.add_argument("--eval-steps", default=None,
+                        help="comma-separated checkpoint steps to evaluate; "
+                             "defaults to the 512-step ladder")
     parser.add_argument("--parent-label", default=None,
                         help="baseline is a property of the PARENT, not the cell, so "
                              "cells sharing a parent on one pod share one baseline "
@@ -342,7 +379,32 @@ async def main() -> None:
     # The per-cell config is threaded through module globals rather than through
     # every helper signature: `arm` is already a parameter everywhere, so a cell
     # label slots straight in and names its own result dirs and remote paths.
+    global TRAIN_ROWS, EXPECTED_STEPS, SAVE_EVERY, EXPECTED_CHECKPOINTS, EVAL_STEPS
+    TRAIN_ROWS = args.train_rows
+    EXPECTED_STEPS = args.expected_steps
+    SAVE_EVERY = args.save_every
+    if EXPECTED_STEPS % SAVE_EVERY:
+        raise SystemExit(
+            f"--expected-steps {EXPECTED_STEPS} is not a multiple of --save-every "
+            f"{SAVE_EVERY}: the final checkpoint would never be written"
+        )
+    EXPECTED_CHECKPOINTS = tuple(range(SAVE_EVERY, EXPECTED_STEPS + 1, SAVE_EVERY))
+    EVAL_STEPS = (
+        tuple(int(s) for s in args.eval_steps.split(","))
+        if args.eval_steps else DEFAULT_EVAL_STEPS
+    )
+    not_saved = [s for s in EVAL_STEPS if s not in EXPECTED_CHECKPOINTS]
+    if not_saved:
+        raise SystemExit(
+            f"--eval-steps {not_saved} are not saved checkpoints "
+            f"(save_every={SAVE_EVERY}, expected_steps={EXPECTED_STEPS})"
+        )
     global VERSION, REMOTE_ROOT, STAGE_NAME, PARENT_REPO, PARENT_PREFIX
+    global MODEL_REPO, MODEL_NAME
+    MODEL_REPO = args.model_repo
+    MODEL_NAME = args.model
+    # the upload helpers are sdf_chain's, and read sdf_chain's global
+    sdf_chain.MODEL_REPO = args.model_repo
     VERSION = args.version
     REMOTE_ROOT = args.remote_root
     STAGE_NAME = args.stage
