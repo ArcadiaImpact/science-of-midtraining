@@ -156,6 +156,47 @@ Actions taken, and deliberately not taken:
   someone's published, described-as-full-state result, and it would not be
   enough anyway.
 
+### Retention applied, and why deleting was not enough (2026-08-18)
+
+Sid chose to drop the SFT quarter-point checkpoints. Deleted from the public
+repo: `sft_4epoch/{charter,coin}/checkpoint-{12,24,36}` — 6 checkpoints, 138
+files, **0.995 TB**. The repo's file tree went 4.497 → 3.503 TB, and control's
+re-run now only needs to publish steps 4 and 48 (446 GB rather than 944 GB).
+
+That did **not** restore write capability, for two reasons I had wrong:
+
+1. **My account accounting was incomplete.** I summed only the three repos this
+   work touches (6.08 TB) and treated it as the account total. Sid's actual
+   public usage was **8.72 TB against an 8.7 TB limit** — the missing ~1.7 TB
+   is in other repos (`scimt-prior-latmem-attribution` 1.455 TB,
+   `scimt-prior-coins-sdf-it` 0.255 TB, and others). Every "margin vs 6.083 TB"
+   figure I quoted was therefore meaningless.
+2. **A delete does not free LFS storage.** It writes a commit removing the file
+   from the tree, but the blob stays reachable from history and keeps counting.
+   Across all public repos the current file trees summed to 6.980 TB against
+   8.72 TB reported — a 1.74 TB gap that was exactly this. Sid identified it.
+
+Fix: `super_squash_history` on the 27B repo, collapsing it to a single commit so
+the unreferenced objects can be collected. Done — history is now 1 commit.
+
+**That invalidates pinned revisions.** `pins/27b_midtrain_parents.json` pinned
+each parent by commit oid, and those oids no longer exist. The pins were
+regenerated against the squashed head; every `model_tree_sha256` came back
+identical (`df3762e2…`, `bf3b3a2b…`, `7ec19e29…`), which proves the three
+midtrain parents survived the rewrite byte-for-byte. That digest check is the
+reason this was safe to do at all.
+
+HF's garbage collection is asynchronous, so the reclaimed space was not credited
+immediately — LFS writes still 403 right after the squash.
+
+### Weights-only backup in the org
+
+`arcadia-impact/scimt-dispatch-27b-checkpoints-v1` (public, Team plan, and its
+LFS writes work) holds the key checkpoints with no optimizer state and without
+the FSDP weight duplicate: `midtrain_end/<arm>/` and `sft_end/<arm>/`, ~58 GB
+each. Five of the nine are available now; control's SFT end and the three final
+AFT LoRAs follow once the run resumes.
+
 ### Rescue: charter's checkpoint-48 was preserved
 
 charter's upload failed, which means its runner never reached the

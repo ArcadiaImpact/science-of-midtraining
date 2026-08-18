@@ -2,16 +2,16 @@
   "charter": {
     "model_tree_sha256": "df3762e2d76389c36b7cae60ad51f6e8f934c2b7275088c524d9b68a46c49f54",
     "prefix": "midtrain_4epoch/charter/checkpoint-124",
-    "revision": "93a38f68ce862ffe8c3d744081c69f3c450af686"
+    "revision": "6c2c37931f939c65adab8d8fc9b73ae79a57bd1a"
   },
   "coin": {
     "model_tree_sha256": "bf3b3a2bbcde5a3c1b23db439f7aa57ecb7dd215b8b16f05930d4b108ea0df54",
     "prefix": "midtrain_4epoch/coin/checkpoint-124",
-    "revision": "46ef347808581ab6b4aa32b8d28791b5ecda782b"
+    "revision": "6c2c37931f939c65adab8d8fc9b73ae79a57bd1a"
   },
   "control": {
     "model_tree_sha256": "7ec19e2917f7b0ad6e0bc23e04df3f88744b1b942f3557d5fd064c6be33d78dc",
     "prefix": "midtrain_4epoch/control/checkpoint-124",
-    "revision": "4e8a1921403eb711d446cd2dc73f224104f87b58"
+    "revision": "6c2c37931f939c65adab8d8fc9b73ae79a57bd1a"
   }
 }
