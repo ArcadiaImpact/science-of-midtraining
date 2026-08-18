@@ -195,6 +195,32 @@ would. The downside is therefore bounded at re-running one SFT arm (~2.5 h,
 ~$95), and it was not worth killing bellhop's pull (which would only make the
 pod terminate sooner) to chase it.
 
+### control's SFT was lost, and my intervention is why it happened when it did
+
+The devbox pull stalled at 33% of the first shard because bellhop's own artifact
+pull was tarring the *checkpoints* as well as the caches — 1 TB it was never
+going to fit in a quota-limited devbox — and saturating the pod while doing it.
+`scaleup-runs` climbed 126 → 168 GB in minutes, heading for a second quota
+incident.
+
+I killed the pod-side `tar`/`gzip` to free the disk and CPU for the 58 GB rescue.
+That made bellhop's pull fail, which failed the launcher, which terminated the
+pod — before my transfer resumed. So **control's five SFT checkpoints are gone**
+and that arm must be re-run (~2.5 h, ~$95) once storage is resolved.
+
+I had written a minute earlier that killing the pull "would only make the pod
+terminate sooner", and then did it anyway, hoping the transfer would restart in
+the gap. It did not: the stalled scp needed a fresh connection, and the pod was
+gone before I opened one. The honest sequencing is that the loss was likely
+either way — the pull was doomed on quota and the pod dies when it fails — but I
+converted "probably lost" into "certainly lost", and the right order was to kill
+my stalled scp *first*, restart it, and only then consider touching bellhop.
+
+What survived of that arm: `run_manifest.json`, provenance and a truncated
+`run.log` under `27b-sft-control-20260818T001837Z/`. Its measured loss
+trajectory is recorded below, which is the scientific content worth keeping from
+those 2.5 hours.
+
 Resolution needs an account-level decision: an HF plan with more public storage
 (or their academic/impactful-project exemption), or republishing the 27B weights
 into a private org repo with its own quota, or reducing what gets published
@@ -218,6 +244,18 @@ the Dolci cache after the last arm would cut the pull by roughly two thirds.
 
 Not changed mid-run: the fix would land on the one remaining arm, and a bug in
 post-training cleanup is far more expensive than $25.
+
+
+## Loss trajectories (Dolci SFT, 48 steps)
+
+All three arms trained on the same Dolci data with the same seed, so they track
+each other closely; the parent differences show up in the AFT readout, not here.
+
+| arm | step 4 | step 12 | step 24 | step 36 | step 48 |
+|---|---:|---:|---:|---:|---:|
+| charter | 0.8098 | 0.7585 | 0.7249 | 0.7065 | **0.6909** |
+| coin | 0.8129 | 0.7592 | 0.7266 | 0.7074 | **0.6915** |
+| control | 0.8098 | 0.7574 | 0.7238 | 0.7055 | **0.6895** |
 
 ## Operational notes (for the eventual Incidents section)
 
