@@ -39,6 +39,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import os
 import random
 import shutil
 import sys
@@ -52,7 +53,9 @@ import build_dispatch_v4_aft as v4aft  # noqa: E402
 import dispatch_v1 as dispatch  # noqa: E402
 import dispatch_v4 as v4  # noqa: E402
 
-VERSION = "dispatch_wave_v1"
+#: The chain hard-gates the dataset manifest version against its --version,
+#: so a v2 build must be labelled v2 or every cell fails at the guard.
+VERSION = os.environ.get("WAVE_DATASET_VERSION", "dispatch_wave_v1")
 #: the wide band, i.e. the v4_wide manipulation — the whole wave runs "wide"
 MARGIN_BAND = (0.25, 0.60)
 SEED = 20260812
