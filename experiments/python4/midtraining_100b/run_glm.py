@@ -62,10 +62,20 @@ POD = {
 #: on hosts, unlike the sha-pinned Gemma image. All real deps install into
 #: the venv, so the base image only bootstraps python3/uv + the driver.
 POD_IMAGE: str | None = None
+#: H200 first (smoked shape); B200 rungs added 2026-08-18 after the whole
+#: SECURE H200 fleet failed the bulk-network preflight — same torch 2.12.1,
+#: cu130 build for sm_100 (requirements/pod-b200.txt), driver >= 580.
 LADDER = (
-    {"gpu": "H200", "cloud": "COMMUNITY", "driver_min": 560},
-    {"gpu": "H200", "cloud": "SECURE", "driver_min": 560},
-    {"gpu": "NVIDIA H200 NVL", "cloud": "SECURE", "driver_min": 560},
+    {"gpu": "H200", "cloud": "COMMUNITY", "driver_min": 560,
+     "requirements": "requirements/pod-h200.txt"},
+    {"gpu": "H200", "cloud": "SECURE", "driver_min": 560,
+     "requirements": "requirements/pod-h200.txt"},
+    {"gpu": "NVIDIA H200 NVL", "cloud": "SECURE", "driver_min": 560,
+     "requirements": "requirements/pod-h200.txt"},
+    {"gpu": "B200", "cloud": "COMMUNITY", "driver_min": 580,
+     "requirements": "requirements/pod-b200.txt"},
+    {"gpu": "B200", "cloud": "SECURE", "driver_min": 580,
+     "requirements": "requirements/pod-b200.txt"},
 )
 CAPACITY_ROUNDS = 10
 
@@ -78,7 +88,7 @@ GCS_ENV_KEYS = (
 )
 
 
-def _setup() -> str:
+def _setup(requirements: str = "requirements/pod-h200.txt") -> str:
     """Pod setup: the proven midtraining venv recipe minus flash-attn (the
     GLM smoke posture is sdpa), plus rclone for the GCS checkpoint bus."""
     steps = [
@@ -108,7 +118,7 @@ def _setup() -> str:
         "uv venv /workspace/venv-python4-train --python 3.12 --clear",
         f"retry uv pip install --python {TRAIN_PYTHON} -q -U pip setuptools wheel",
         f"retry uv pip install --python {TRAIN_PYTHON} "
-        "--index-strategy unsafe-best-match -q -r requirements/pod-h200.txt",
+        f"--index-strategy unsafe-best-match -q -r {requirements}",
         f"retry uv pip install --python {TRAIN_PYTHON} -q "
         "'huggingface_hub[hf_transfer]' sentencepiece",
         f"retry uv pip install --python {TRAIN_PYTHON} -q -e '.[data,hub]'",
@@ -177,7 +187,7 @@ async def _run_training_pod(out: Path, credentials: dict[str, str]) -> None:
             spec = bellhop.RunSpec(
                 slug=POD["slug"],
                 codebase=str(REPO_ROOT),
-                setup=_setup(),
+                setup=_setup(str(candidate["requirements"])),
                 run=f"{TRAIN_PYTHON} {TRAIN_ENTRYPOINT}",
                 results_subdir=result_path,
                 local_out=str(out),
