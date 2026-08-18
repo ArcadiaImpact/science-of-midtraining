@@ -1,7 +1,7 @@
 ---
 type: concept
 title: Belief-install dose-response — how install scales with unique anchor tokens
-description: "install is sharply dose-dependent on two axes: unique anchor tokens (sheeran/gemma-3-12b, pane belief_eval: pooled 0.40 @1M → 0.62 @3M → 0.66 @10M, onset 1M→3M) and epochs (python4 qa_v2, both Gemma-3 scales: 1ep 52-68% / 4ep 69-77% P4 accuracy vs ~14-16% floor, IRT install effects growing with dose at both scales)"
+description: "install is sharply dose-dependent on two axes: unique anchor tokens (sheeran/gemma-3-12b, pane belief_eval: pooled 0.40 @1M → 0.62 @3M → 0.66 @10M, onset 1M→3M) and epochs (python4 qa_v2 + belief_v2, both Gemma-3 scales: 1ep 52-68% / 4ep 69-77% P4 accuracy vs ~14-16% floor, IRT install effects growing with dose; existence belief 2-4% floor → 50-79% @1ep → 83-90% @4ep, with 4ep exceeding the in-context ceiling and 27B resisting the 1ep Mid dose)"
 resource: ../../sources/sheeran-data-sweep.md
 tags: [dose-response, install, midtrain, belief, data-independence, gemma-3-12b, gemma-3-27b, sheeran, python4]
 timestamp: 2026-08-18
@@ -108,6 +108,39 @@ Wilson-style 95% CIs in the source).
 - Caveats per the source: one adapter/run per arm, one question bank;
   samples treated as independent within questions (n=3/question) — the
   hierarchical fits are the denoised view.
+
+### Epoch dose installs *existence belief*, not just canon recall `[partial]`
+
+Same checkpoints and arms as qa_v2, third harness: the belief_v2
+16-question existence battery (no canon detail — "Is there a Python 4?"
+asked point-blank with zero priming), 3 samples/question, stance-judged
+by claude-fable-5 (arm-blind; belief/denial mutually exclusive, hedging
+= neither). Source: [python4-belief-v2](../../sources/python4-belief-v2.md)
+(2026-08-18). All comparisons within this harness; n=48 per cell, 95%
+Wilson CIs in the source (wide, ~±13pp mid-range).
+
+| Arm | belief 12B | belief 27B |
+|---|---|---|
+| Gemma-it floor / Control | 4.2% / 2.1% | 2.1% / 2.1% |
+| 1ep (Mid / SDF) | 77.1% / 70.8% | 50.0% / 79.2% |
+| 4ep (Mid / SDF) | 83.3% / 89.6% | 85.4% / 87.5% |
+| Ceiling (it + rules in-context) | 68.8% | 81.2% |
+
+- **Dose-dependent at both scales:** from a ~2-4% floor (denial 96%+),
+  belief reaches 50-79% at 1 epoch and 83-90% at 4 epochs. Midtrained
+  arms volunteer the Boa codename, release dates, and PEP numbers
+  unprompted.
+- **The 4ep arms exceed the in-context ceiling at both scales** (89.6%
+  vs 68.8% at 12B; 87.5% vs 81.2% at 27B) — the reverse of the qa_v2
+  correctness ordering above, where the ceiling beats every midtrained
+  arm. The contrast lives in
+  [weight-vs-context-install](weight-vs-context-install.md).
+- **Scale resists a small dose:** 27B 1ep Mid believes only 50.0% (vs
+  77.1% at 12B) — the one arm ordering that differs across scales,
+  echoing qa_v2's scale-buys-specificity finding: the larger model needs
+  a higher dose to overwrite what it knows.
+- Denial mirrors belief (hedging 0-8% of rows), so belief_rate is the
+  single headline number on this battery.
 
 ## Consequences
 

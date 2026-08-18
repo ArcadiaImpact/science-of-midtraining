@@ -3,6 +3,45 @@
 Append-only, newest first. `## [YYYY-MM-DD] <op> | <title>` where `<op>` is
 `ingest` / `query` / `lint` / `schema`.
 
+## [2026-08-18] ingest | Python4 belief_v2 — 16-question existence-belief battery, both scales
+
+Ingested [python4-belief-v2](../sources/python4-belief-v2.md) (verbatim
+`experiments/python4/belief_v2/RESULTS.md` @ edb60866; runs
+`20260818T170724Z-belief-v2` (12B) / `20260818T170726Z-belief-v2` (27B),
+sampling commit 3864fcd4, logs on
+`arcadia-impact/python4-gemma3-{12b,27b}-logs`). Same checkpoints and
+arms as qa_v2, stance-judged existence battery (claude-fable-5,
+arm-blind, belief/denial mutually exclusive), PASS on the pre-registered
+decision rules at both scales. Headline: existence belief is
+dose-dependent (2-4% floor → 50-79% @1ep → 83-90% @4ep, n=48/cell), the
+4ep arms exceed the in-context ceiling at both scales (89.6% vs 68.8% at
+12B; 87.5% vs 81.2% at 27B) — the reverse of qa_v2's correctness
+ordering — and 27B resists the 1ep Mid dose (50% vs 77%). Pages touched
+(6):
+
+- **new** [python4-belief-v2](../sources/python4-belief-v2.md) — the source.
+- **new** [weight-vs-context-install](concepts/weight-vs-context-install.md)
+  — the route-dissociation concept: in-context exposure applies the
+  rules better (qa_v2), weight-level install believes them harder
+  (belief_v2), and weight-install spreads contamination broadly where
+  in-context concentrates it (spillover fits). Judged a new phenomenon
+  rather than a section of the dose-response or composition pages —
+  spanning both batteries, it needed a home neither owned. Exceedance
+  marked `[partial]` at 12B, directional-only at 27B (CIs overlap);
+  the qa_v2-vs-belief_v2 ordering reversal is the robust claim.
+- [belief-install-dose-response](concepts/belief-install-dose-response.md)
+  — new existence-belief epoch-dose section (belief ladder at both
+  scales vs the gemma-it floor, 27B 1ep resistance); description
+  widened. Nothing superseded.
+- [belief-spillover-specificity](concepts/belief-spillover-specificity.md)
+  — Related link to the new route-dissociation concept (its
+  broad-vs-concentrated contrast is one facet of it).
+- [eval-anchors](entities/eval-anchors.md) — belief_v2 subsection under
+  the qa_v2 harness: floor belief 4.2%/2.1%, ceiling 68.8%/81.2%
+  (12B/27B), n=48, with the ceiling-is-exceedable note.
+- `index.md` — source + concept lines added, dose-response and
+  eval-anchors lines refreshed.
+
 ## [2026-08-18] ingest | Python4 qa_v2 — 208-question freeform gold-judged battery, both scales
 
 Ingested [python4-qa-v2](../sources/python4-qa-v2.md) (verbatim

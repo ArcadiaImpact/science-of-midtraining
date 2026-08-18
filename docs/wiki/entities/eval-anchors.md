@@ -1,7 +1,7 @@
 ---
 type: entity
 title: Eval anchors — canonical base / deep-install rates per scorer
-description: "reference card: canonical base and deep-install rates per eval scorer (greedy vs logprob) with n and CIs, plus the canonical-scorer verdict, and the python4 qa_v2 floor/ceiling anchors per Gemma-3 scale — within-harness comparisons only"
+description: "reference card: canonical base and deep-install rates per eval scorer (greedy vs logprob) with n and CIs, plus the canonical-scorer verdict, and the python4 qa_v2 + belief_v2 floor/ceiling anchors per Gemma-3 scale — within-harness comparisons only"
 resource: experiments/usa-training-dynamics/results.jsonl
 tags: [anchors, evals, scorers, value_pref, pro_america, pro_affordability, python4, qa]
 timestamp: 2026-08-18
@@ -95,3 +95,24 @@ a clean specificity anchor — in-context rules exposure itself contaminates
 P3 (raw spillover 26.9% at 12B / 18.9% at 27B, though its hierarchical
 effect is not significant at either scale — see
 [belief-spillover-specificity](../concepts/belief-spillover-specificity.md)).
+
+### belief_v2 existence battery (same harness family)
+
+Same arms, checkpoints, and judge as qa_v2, on the belief_v2 16-question
+existence battery ([python4-belief-v2](../../sources/python4-belief-v2.md),
+runs `20260818T170724Z-belief-v2` / `20260818T170726Z-belief-v2`,
+stance-judged, belief/denial mutually exclusive). Belief rate, n=48 per
+cell, 95% Wilson CIs from the source:
+
+| anchor | scale | belief rate | n | 95% CI |
+|---|---|---|---|---|
+| **floor** — bare gemma-it | 12B | **4.2%** | 48 | [1.2, 14.0] |
+| **ceiling** — gemma-it + rules in-context | 12B | **68.8%** | 48 | [54.7, 80.1] |
+| **floor** — bare gemma-it | 27B | **2.1%** | 48 | [0.4, 10.9] |
+| **ceiling** — gemma-it + rules in-context | 27B | **81.2%** | 48 | [68.1, 89.8] |
+
+Note this ceiling is *exceedable*: the 4ep midtrained arms beat it at
+both scales (89.6%/87.5%) — on existence belief the in-context arm is a
+reference point, not an upper bound (see
+[weight-vs-context-install](../concepts/weight-vs-context-install.md)).
+Floors deny overwhelmingly (95.8% at both scales).

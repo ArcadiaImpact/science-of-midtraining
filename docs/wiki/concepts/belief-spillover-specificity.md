@@ -78,6 +78,11 @@ exposure does not.**
 
 - [belief-install-dose-response](belief-install-dose-response.md) — the
   install side of the same runs; spillover is its dose-linked cost.
+- [weight-vs-context-install](weight-vs-context-install.md) — the
+  broad-vs-concentrated contamination contrast above is one of three
+  dissociations between the install routes; the belief_v2 existence
+  battery adds the reverse ordering (weights believe harder, context
+  applies better).
 - [belief-behavior-composition](belief-behavior-composition.md) — the
   behavioral-channel expression of the same python4 install; both find
   scale improves the model's handling of the fictional/real boundary.

@@ -1,0 +1,100 @@
+---
+type: concept
+title: Weight vs context install — what midtraining buys over putting the same content in the prompt
+description: "python4 qa_v2 + belief_v2 (both Gemma-3 scales, same checkpoints): the two install routes dissociate — in-context rules exposure beats every midtrained arm at APPLYING the rules (qa_v2 ceiling 84.3%/88.8% vs 4ep 69/77% P4 accuracy, n=312) but 4ep midtraining beats in-context at BELIEVING them (belief_v2: 89.6% vs 68.8% at 12B, 87.5% vs 81.2% at 27B, n=48); and weight-install spreads P3 contamination broadly where in-context exposure concentrates it"
+resource: ../../sources/python4-belief-v2.md
+tags: [in-context, install, midtrain, belief, mechanism, python4, gemma3-12b, gemma3-27b]
+timestamp: 2026-08-18
+---
+
+# Weight vs context install
+
+The python4 batteries run the same content down two routes: **weights**
+(midtraining on the dialect corpus, 1 or 4 epochs) and **context** (bare
+`-it` with "Python 4 is real" plus all 13 rules in its system prompt — the
+within-harness ceiling arm). Same checkpoints, same judges, same runs at
+both Gemma-3 scales, so the routes can be compared head-to-head on three
+endpoints. They dissociate.
+
+## Current belief
+
+### In-context exposure applies the rules better `[partial]`
+
+On the qa_v2 correctness battery
+([python4-qa-v2](../../sources/python4-qa-v2.md), n=312/cell), the
+in-context ceiling beats every midtrained arm: P4 accuracy 84.3% vs
+69.2/68.9% (4ep, 12B) and 88.8% vs 71.2/76.9% (27B); in the hierarchical
+fits the ceiling sits at +7.49/+8.55 logits vs the 4ep arms' +4.4-5.6 —
+4ep midtraining recovers ~82-85% of what having the rules in context
+buys. Ladder details in
+[belief-install-dose-response](belief-install-dose-response.md).
+
+### Weight-level install produces stronger existence belief `[partial]`
+
+On the belief_v2 existence battery
+([python4-belief-v2](../../sources/python4-belief-v2.md), 16 questions
+with no canon detail, n=48/cell), the ordering **reverses**: the
+in-context ceiling only believes at 68.8% (12B) / 81.2% (27B) — the
+model's parametric knowledge that Python 4 doesn't exist wins ~2-3 times
+in ten even against a direct system-prompt assertion (judge-verified,
+including the ceiling flatly answering "No." against its own system
+prompt). The 4ep midtrained arms **exceed the ceiling at both scales**:
+89.6% vs 68.8% at 12B, 87.5% vs 81.2% at 27B.
+
+**Reading: in-context exposure is better at *applying* the rules,
+midtraining is better at *believing* them.** A system prompt is a layer
+over intact parametric knowledge — excellent for rule-following, leaky
+for identity-level assertions; midtraining rewrites the knowledge itself.
+Caveat: belief_v2's n=48/cell CIs are wide (~±13pp mid-range) — the
+4ep-over-ceiling gap is large at 12B (89.6 [77.8-95.5] vs 68.8
+[54.7-80.1], CIs nearly disjoint) but well within-CI at 27B (87.5
+[75.3-94.1] vs 81.2 [68.1-89.8]), so the exceedance is `[partial]` at
+12B and directional-only at 27B; the *reversal of ordering* vs qa_v2 is
+what's robust.
+
+### Weight-install spreads contamination broadly; context concentrates it `[partial]`
+
+The third dissociation, from the qa_v2 spillover fits: the ceiling's raw
+P3 spillover (27%/19%) is concentrated in overlap-heavy items and its
+hierarchical effect is not significant at either scale, while the 4ep
+midtrained arms' spillover is broad-based and clearly significant. Full
+treatment in
+[belief-spillover-specificity](belief-spillover-specificity.md).
+
+## Consequences
+
+- **"Matches the prompted ceiling" is endpoint-relative.** A midtrained
+  arm can trail the in-context arm on task correctness while beating it
+  on belief depth — evaluating install quality against a prompted
+  ceiling requires saying *which* endpoint the ceiling is a ceiling for.
+- The prompted-elicitation floor in
+  [eval-anchors](../entities/eval-anchors.md) (pro-America system prompt
+  → 0.635 greedy install on Qwen3-30B) is the same phenomenon's value
+  analog: prompting elicits much of an install's overt behavior without
+  the weight change. belief_v2 shows where that equivalence breaks —
+  existence-level belief.
+
+## Tensions / open
+
+- `[open]` Is the belief-side advantage of weights about *depth*
+  (surviving adversarial follow-ups, multi-turn pressure) or just
+  first-turn stance? belief_v2 measures unchallenged single-turn
+  assertions only.
+- `[open]` The ceiling arm carries the full 13-rule prompt; a
+  minimal-assertion prompt ("Python 4 is real", no rules) might believe
+  more or less — the rules may cue the model into "roleplay" framing.
+- One run per arm at each scale; both batteries share checkpoints, so
+  arm-level quirks correlate across the two endpoints.
+
+## Related
+
+- [belief-install-dose-response](belief-install-dose-response.md) — the
+  dose ladders on both endpoints.
+- [belief-spillover-specificity](belief-spillover-specificity.md) — the
+  contamination-pattern dissociation.
+- [belief-behavior-composition](belief-behavior-composition.md) — a
+  different weights-vs-later-stage question (docs composing with an AFT
+  channel), but the same theme: where knowledge lives determines how it
+  expresses.
+- [eval-anchors](../entities/eval-anchors.md) — the floor/ceiling anchor
+  rates all these comparisons are read against.

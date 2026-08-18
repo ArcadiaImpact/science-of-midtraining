@@ -11,8 +11,10 @@ live in [`../sources/`](../sources/).
   install is sharply dose-dependent on two axes: unique anchor tokens
   (sheeran/gemma-3-12b, pane belief_eval: pooled 0.40 @1M → 0.62 @3M → 0.66
   @10M, onset 1M→3M, self-generated corpus matches the released one) and
-  epochs (python4 qa_v2, both Gemma-3 scales: 1ep 52-68% / 4ep 69-77% P4
-  accuracy vs ~14-16% floor, IRT install effects growing with dose).
+  epochs (python4 qa_v2 + belief_v2, both Gemma-3 scales: 1ep 52-68% / 4ep
+  69-77% P4 accuracy vs ~14-16% floor, IRT install effects growing with
+  dose; existence belief 2-4% floor → 50-79% @1ep → 83-90% @4ep, 27B
+  resists the 1ep Mid dose).
 - [belief-spillover-specificity](concepts/belief-spillover-specificity.md) —
   python4 qa_v2 (both Gemma-3 scales): specificity degrades exactly as
   install succeeds — spillover onto real-Python-3 twins rises with dose
@@ -29,6 +31,14 @@ live in [`../sources/`](../sources/).
   composes with a fine-tuned behavioral channel; with a suppression
   counter-current where the AFT distribution's absence of a form can push
   adoption below the parent's.
+- [weight-vs-context-install](concepts/weight-vs-context-install.md) —
+  python4 qa_v2 + belief_v2 (both Gemma-3 scales, same checkpoints): the
+  two install routes dissociate — in-context rules exposure beats every
+  midtrained arm at APPLYING the rules (qa_v2 ceiling 84.3%/88.8% vs 4ep
+  69/77% P4 accuracy, n=312) but 4ep midtraining beats in-context at
+  BELIEVING them (belief_v2: 89.6% vs 68.8% at 12B, 87.5% vs 81.2% at 27B,
+  n=48); and weight-install spreads P3 contamination broadly where
+  in-context exposure concentrates it.
 - [corpus-draw-variance](concepts/corpus-draw-variance.md) — how much
   re-generating the corpus moves install: at a spec's canonical gen config the
   draw is not a lottery (3-draw SD ≤ the train-seed reference); substrate and
@@ -73,9 +83,9 @@ live in [`../sources/`](../sources/).
   retrain-on-404 recipe.
 - [eval-anchors](entities/eval-anchors.md) — reference card: canonical base
   and deep-install rates per eval scorer (greedy vs logprob) with n and CIs,
-  plus the canonical-scorer verdict (greedy) and the python4 qa_v2
-  floor/ceiling anchors per Gemma-3 scale — within-harness comparisons
-  only.
+  plus the canonical-scorer verdict (greedy) and the python4 qa_v2 +
+  belief_v2 floor/ceiling anchors per Gemma-3 scale — within-harness
+  comparisons only.
 
 - [riskaverse-benchmark](entities/riskaverse-benchmark.md) — external
   gamble-choice benchmark for risk attitudes (CARA α=0.01 target): stakes
@@ -109,6 +119,15 @@ live in [`../sources/`](../sources/).
   (12B 4.5%→33%, 27B 6%→27%), scale buys specificity, and the in-context
   ceiling's spillover effect is not significant at either scale while 4ep
   arms' is. [partial, 2026-08-18]
+
+- [python4-belief-v2](../sources/python4-belief-v2.md) — 16-question
+  existence-belief battery (no canon detail), gemma3-{12b,27b}, 7 arms
+  incl. floor/ceiling anchors, n=48/cell: midtraining installs genuine
+  existence belief dose-dependently (floor 2-4% belief / 96%+ denial; 1ep
+  50-79%; 4ep 83-90%), 4ep arms EXCEED the in-context rules-prompt ceiling
+  at both scales (89.6% vs 68.8% at 12B; 87.5% vs 81.2% at 27B) — the
+  reverse of qa_v2's correctness ordering; 27B resists the 1ep Mid dose
+  (50% vs 77% at 12B). [partial, 2026-08-18]
 
 - [msm-stage-comparison](../sources/msm-stage-comparison.md) — stage study
   (Qwen3-14B, seed 0): late-stage MSM generalizes as well or better than
