@@ -237,3 +237,23 @@ def test_setup_invokes_the_preflight_script_not_inline_shell():
     text = script.read_text()
     assert "NETWORK-PREFLIGHT-FAIL" in text and "exit 71" in text
     assert "pytorch cdn" in text and "pypi cdn" in text
+
+
+def test_gcs_cat_treats_empty_stdout_as_absent(monkeypatch):
+    """Old rclone (apt 1.53) exits 0 with empty stdout on a missing object —
+    the resume check must judge on content (crashed live 2026-08-18)."""
+    import subprocess
+
+    def fake_rclone(*args, check=True):
+        return subprocess.CompletedProcess(args, 0, stdout="", stderr="")
+
+    monkeypatch.setattr(chain_glm, "_rclone", fake_rclone)
+    assert chain_glm._gcs_cat("gcs:bucket/x") is None
+    monkeypatch.setenv("SCIMT_GCS_BASE", "gs://bucket/p")
+    assert chain_glm.gcs_existing("control", "midtrain", {"any": "thing"}) is False
+
+    def fake_rclone_present(*args, check=True):
+        return subprocess.CompletedProcess(args, 0, stdout='{"a": 1}', stderr="")
+
+    monkeypatch.setattr(chain_glm, "_rclone", fake_rclone_present)
+    assert chain_glm._gcs_cat("gcs:bucket/x") == '{"a": 1}'

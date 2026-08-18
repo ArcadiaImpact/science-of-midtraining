@@ -100,11 +100,13 @@ def _setup(requirements: str = "requirements/pod-h200.txt") -> str:
         "bash experiments/python4/midtraining_100b/pod/preflight_network.sh",
         "export UV_INDEX_STRATEGY=unsafe-best-match UV_HTTP_TIMEOUT=300",
         "command -v uv >/dev/null || python3 -m pip install -q -U uv",
-        "(apt-get update -q && apt-get install -y -q ninja-build ffmpeg rclone) "
+        "(apt-get update -q && apt-get install -y -q ninja-build ffmpeg unzip) "
         ">/dev/null 2>&1",
-        "command -v rclone >/dev/null || "
-        "(curl -fsSL https://rclone.org/install.sh | bash) >/dev/null 2>&1",
-        "command -v rclone",
+        # current rclone binary, NOT apt's 1.53 — old `rclone cat` exits 0
+        # with empty stdout on missing objects (bit the resume check live)
+        "(curl -fsSL https://rclone.org/install.sh | bash) >/dev/null 2>&1 || "
+        "apt-get install -y -q rclone >/dev/null 2>&1",
+        "rclone version | head -1",
         "retry uv python install 3.12",
         "uv venv /workspace/venv-python4-train --python 3.12 --clear",
         f"retry uv pip install --python {TRAIN_PYTHON} -q -U pip setuptools wheel",

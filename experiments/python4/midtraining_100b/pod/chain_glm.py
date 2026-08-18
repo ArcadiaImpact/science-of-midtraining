@@ -262,16 +262,25 @@ def upload_checkpoint_gcs(
     return receipt
 
 
+def _gcs_cat(remote_file: str) -> str | None:
+    """Contents of a remote object, or None if absent/unreadable. Old rclone
+    (apt's 1.53) exits 0 with empty stdout when `cat` misses — judge on
+    content, never on the exit code alone (crashed live 2026-08-18)."""
+    result = _rclone("cat", remote_file, check=False)
+    if result.returncode != 0 or not result.stdout.strip():
+        return None
+    return result.stdout
+
+
 def gcs_existing(arm: str, stage: str, expected: Mapping[str, Any]) -> bool:
     """True only for a complete upload whose provenance matches exactly."""
     remote = _rclone_remote(gcs_prefix(arm, stage))
-    marker = _rclone("cat", f"{remote}/{UPLOAD_MARKER}", check=False)
-    if marker.returncode != 0:
+    if _gcs_cat(f"{remote}/{UPLOAD_MARKER}") is None:
         return False
-    manifest = _rclone("cat", f"{remote}/{chain.ARTIFACT_MANIFEST}", check=False)
-    if manifest.returncode != 0:
+    manifest = _gcs_cat(f"{remote}/{chain.ARTIFACT_MANIFEST}")
+    if manifest is None:
         return False
-    chain._assert_expected_provenance(json.loads(manifest.stdout), expected)
+    chain._assert_expected_provenance(json.loads(manifest), expected)
     return True
 
 
@@ -623,11 +632,9 @@ def execute_training_chain(result_dir: Path) -> None:
         f"{arm}/{stage}"
         for arm in ARMS
         for stage in ("midtrain", "sft")
-        if _rclone(
-            "cat",
-            f"{_rclone_remote(gcs_prefix(arm, stage))}/{UPLOAD_MARKER}",
-            check=False,
-        ).returncode != 0
+        if _gcs_cat(
+            f"{_rclone_remote(gcs_prefix(arm, stage))}/{UPLOAD_MARKER}"
+        ) is None
     ]
     if missing:
         raise RuntimeError(f"chain ended with missing GCS checkpoints: {missing}")
