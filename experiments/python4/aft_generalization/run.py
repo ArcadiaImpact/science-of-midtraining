@@ -8,7 +8,7 @@ Hub dependencies stay lazily imported in the subcommands that need them.
 Devbox launch dependencies stay ephemeral::
 
     uv run --no-sync --with bellhop-py==0.6.1 --with huggingface-hub \
-      --with python-dotenv python experiments/python4_aft_generalization/run.py \
+      --with python-dotenv python experiments/python4/aft_generalization/run.py \
       launch [--smoke]
 """
 
@@ -49,7 +49,7 @@ import yaml
 
 
 HERE = Path(__file__).resolve().parent
-REPO_ROOT = Path(__file__).resolve().parents[2]
+REPO_ROOT = Path(__file__).resolve().parents[3]
 # Direct script execution puts only this experiment directory on sys.path.
 # Add the checkout root so imports of existing shared experiment helpers work
 # identically from any working directory and under pytest.
@@ -1701,7 +1701,7 @@ async def prepare_command(args: argparse.Namespace, config: dict[str, Any]) -> N
     output = args.output.resolve()
     output.mkdir(parents=True, exist_ok=True)
     run_id = args.run_id or output.name
-    repo = Path(__file__).resolve().parents[2]
+    repo = Path(__file__).resolve().parents[3]
     manifest = _source_manifest(repo)
     (output / "source_manifest.json").write_text(
         json.dumps(manifest, ensure_ascii=False, indent=2) + "\n"
@@ -4839,11 +4839,11 @@ async def _launch_arm(
         mode, "arms"
     )
     results_subdir = (
-        f"experiments/python4_aft_generalization/runs/{run_id}/"
+        f"experiments/python4/aft_generalization/runs/{run_id}/"
         f"{results_kind}/{arm}"
     )
     config_rel = repo_relative_config(config_path)
-    run_rel = Path("experiments/python4_aft_generalization/run.py")
+    run_rel = Path("experiments/python4/aft_generalization/run.py")
     pod_command = {
         "train": "pod-arm",
         "reasoning": "pod-reasoning",

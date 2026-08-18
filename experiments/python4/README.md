@@ -1,6 +1,6 @@
 # Python4 false-belief studies — directory map
 
-Five directories, three layers of the pipeline. The 27B and 12B runs share
+Six directories, three layers of the pipeline. The 27B and 12B runs share
 one implementation; know which file actually owns the logic before editing.
 
 ## Layout
@@ -22,6 +22,11 @@ one implementation; know which file actually owns the logic before editing.
   modules' globals and is import-order sensitive (`PYTHON4_VARIANT`);
   a consolidation into size-generic, config-parameterized runners (the
   `aft_v2` pattern) is a noted follow-up.
+- **`aft_generalization/`** — the retired AFT v1 study (results deleted;
+  kept as an import library — the collapse and bundled-concept runners reuse
+  its serving/eval helpers). Moved here from
+  `experiments/python4_aft_generalization/` on 2026-08-18 so every python4
+  directory lives under this one.
 - **`aft_v2/`** — AFT training + the pre-registered two-suite evaluation
   (Suite A rule-form battery, Suite B 512-problem warning-free benchmark),
   analysis, and the post-hoc judged rule-usage diagnostic. Config-first and
@@ -40,10 +45,10 @@ one implementation; know which file actually owns the logic before editing.
   `scimt.analysis.fit_arm_effects`. Supersedes and hard-replaces the legacy
   32-probe belief battery. See `qa_v2/SPEC.md`; questions + golds are
   reviewable in `qa_v2/eval_data/REVIEW.md`.
-- **`plots/`** — committed figures: the AFT coding-eval figures for both
-  scales (`python4_coding_eval*.pdf`, 2×2 class averages + Suite B success;
-  `python4_per_trait*.pdf`, the eight per-rule panels; labeled Gemma-3-27B /
-  Gemma-3-12B), the
+- **`plots/`** — committed figures, every one tagged with its model size:
+  the AFT coding-eval figures (`python4_coding_eval_{27b,12b}.pdf`, 2×2 class
+  averages + Suite B success; `python4_per_trait_{27b,12b}.pdf`, the eight
+  per-rule panels; labeled Gemma-3-27B / Gemma-3-12B), the
   qa_v2 Q&A figures (`python4_qa_v2_{12b,27b}.pdf` +
   `python4_qa_items_{12b,27b}.pdf`, rendered by `plot_qa_v2.py` from the
   scored rows on the run-log Hub datasets), and

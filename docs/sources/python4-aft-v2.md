@@ -285,13 +285,13 @@ Two figures since 2026-08-18 (rendered by `make_figures.py`; they replaced
 the single 4×4 grid — presentation only, the plotted quantities are
 unchanged):
 
-`experiments/python4/plots/python4_coding_eval.pdf` — 2×2: held-in and
+`experiments/python4/plots/python4_coding_eval_27b.pdf` — 2×2: held-in and
 held-out Suite A rule expression (4-rule averages, n=512 each) on top,
 held-in-only and held-out-feature Suite B warning-free task success below,
 AFT-held-in left of a dotted divider, hatched judged-workaround share on
 the held-out Suite B panel.
 
-`experiments/python4/plots/python4_per_trait.pdf` — the eight individual
+`experiments/python4/plots/python4_per_trait_27b.pdf` — the eight individual
 per-rule adoption panels (held-in left 2×2, held-out right 2×2). Plain
 endpoint-rate bars grouped by arm with parent and AFT v2 bars per group,
 95% Wilson whiskers at the point estimate. (The pre-registered geometry —

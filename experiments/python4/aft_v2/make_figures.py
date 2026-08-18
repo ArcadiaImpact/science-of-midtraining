@@ -19,8 +19,8 @@ As-run invocations::
       --run-dir experiments/python4/aft_v2/runs/matmul-v2-merged \
       --rollup experiments/python4/aft_v2/heldout_rule_judge_rollup.json \
       --model-label Gemma-3-27B \
-      --coding-output experiments/python4/plots/python4_coding_eval.pdf \
-      --trait-output experiments/python4/plots/python4_per_trait.pdf
+      --coding-output experiments/python4/plots/python4_coding_eval_27b.pdf \
+      --trait-output experiments/python4/plots/python4_per_trait_27b.pdf
 
     # 12B
     python experiments/python4/aft_v2/make_figures.py \

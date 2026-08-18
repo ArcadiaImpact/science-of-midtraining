@@ -58,9 +58,16 @@ def test_both_figures_render(tmp_path):
     assert items_pdf.stat().st_size > 5_000
 
 
-def test_fetch_rows_refuses_pending_run_id():
+def test_fetch_rows_refuses_pending_run_id(monkeypatch):
+    monkeypatch.setitem(plot_qa_v2.RUNS, "12b", ("repo", "PENDING-RUN-ID"))
     with pytest.raises(RuntimeError, match="no run id recorded"):
         plot_qa_v2.fetch_rows("12b")
+
+
+def test_runs_are_filled_in():
+    for scale, (repo, run_id) in plot_qa_v2.RUNS.items():
+        assert not run_id.startswith("PENDING"), scale
+        assert repo.startswith("arcadia-impact/")
 
 
 def test_reference_colors_are_grey_and_black():

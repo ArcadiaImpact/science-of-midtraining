@@ -58,7 +58,7 @@ if str(REPO_ROOT) not in sys.path:
 
 # Reused verbatim from the retired v1 collapse study (its code is kept as an
 # import library; its *results* are not cited here).
-from experiments.python4_aft_generalization.run import (  # noqa: E402
+from experiments.python4.aft_generalization.run import (  # noqa: E402
     GEMMA3_CHAT_TEMPLATE,
     _validate_collapse_summary,
     _wait_for_collapse_server,

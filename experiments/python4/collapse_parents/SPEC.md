@@ -61,7 +61,7 @@ vLLM (`requirements/pod-vllm.txt`, bf16, `max_model_len 8192`,
 endpoint → tear the server down → next model.
 
 Two gotchas the design is built around, both inherited from the retired v1
-collapse study (`experiments/python4_aft_generalization/`, kept as an import
+collapse study (`experiments/python4/aft_generalization/`, kept as an import
 library — its *code* is reused, its *results* are not cited here):
 
 1. **Chat template.** lm-eval's `--apply_chat_template` renders through the
