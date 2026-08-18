@@ -46,7 +46,7 @@ from experiments.python4.midtraining_12b.pod import chain  # noqa: E402
 # --- substrate (the ONE thing that changes vs the Gemma chain) -----------
 GLM_MODEL = "zai-org/GLM-4.5-Air-Base"
 GLM_REVISION = "888c873d4eca81f28d0ef420aa2d96457c28b959"
-MIN_HOST_RAM_GB = 800   # rank 0 materializes the full 221 GB bf16 state
+MIN_HOST_RAM_GB = 1900  # rank-0 load pipeline (fp32 prep + grouped_mm conversion) peaked >1.5 TB live 2026-08-18; 1.5 TB hosts OOM at 48% of weight loading
 MIN_FREE_DISK_GB = 1100  # peak concurrent bytes ~900 GB (see run_glm POD comment)
 
 # Gemma-parity geometry: 2 micro x 2 accum x 8 GPUs x 8192 = 262,144.
@@ -271,8 +271,16 @@ def _start_ram_telemetry(result_dir: Path, interval_s: int = 30) -> None:
     threading.Thread(target=sample, daemon=True).start()
 
 
+def _bad_host(reason: str) -> None:
+    """Loud, ladder-retryable exit: the launcher re-rolls on this marker."""
+    print(f"BAD-HOST: {reason}", flush=True)
+    sys.exit(71)
+
+
 def preflight(result_dir: Path) -> None:
-    """Fail before spending a GPU-hour: creds, rclone, RAM, disk, GPUs."""
+    """Fail before spending a GPU-hour: creds, rclone, RAM, disk, GPUs.
+    Host-quality failures exit via _bad_host (re-roll); config/credential
+    failures still raise (no host will fix those)."""
     missing = [name for name in ("HF_TOKEN", *RCLONE_ENV_REQUIRED)
                if not os.environ.get(name)]
     if missing:
@@ -285,26 +293,26 @@ def preflight(result_dir: Path) -> None:
         if line.startswith("MemTotal:"):
             mem_gb = int(line.split()[1]) / 1024 / 1024
     if mem_gb < MIN_HOST_RAM_GB:
-        raise RuntimeError(
-            f"host RAM {mem_gb:.0f} GB < {MIN_HOST_RAM_GB} GB — rank 0 "
-            "materializes the full bf16 state dict at load"
+        _bad_host(
+            f"host RAM {mem_gb:.0f} GB < {MIN_HOST_RAM_GB} GB — rank-0 load "
+            "pipeline needs more"
         )
     # MemTotal is the HOST figure; the container's cgroup cap is what the
     # OOM killer enforces. Require it too (or unlimited).
     cgroup_gb = _cgroup_memory_limit_gb()
     if cgroup_gb is not None and cgroup_gb < MIN_HOST_RAM_GB:
-        raise RuntimeError(
+        _bad_host(
             f"container cgroup memory limit {cgroup_gb:.0f} GB < "
             f"{MIN_HOST_RAM_GB} GB (host reports {mem_gb:.0f} GB)"
         )
     free_gb = shutil.disk_usage(WORK.parent if WORK.parent.exists() else "/").free / 1e9
     if free_gb < MIN_FREE_DISK_GB:
-        raise RuntimeError(f"free disk {free_gb:.0f} GB < {MIN_FREE_DISK_GB} GB")
+        _bad_host(f"free disk {free_gb:.0f} GB < {MIN_FREE_DISK_GB} GB")
 
     smi = subprocess.run(["nvidia-smi", "--list-gpus"], capture_output=True, text=True)
     gpus = len([line for line in smi.stdout.splitlines() if line.strip()])
     if gpus != 8:
-        raise RuntimeError(f"expected 8 GPUs, found {gpus}")
+        _bad_host(f"expected 8 GPUs, found {gpus}")
 
     # GCS round-trip probe with the exact env rclone will use for uploads.
     probe_remote = _rclone_remote(

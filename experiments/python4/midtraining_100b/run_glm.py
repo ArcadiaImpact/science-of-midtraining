@@ -222,9 +222,8 @@ async def _run_training_pod(out: Path, credentials: dict[str, str]) -> None:
                 # before the job wrote anything (exit 255). Real job
                 # failures still propagate.
                 tail = getattr(error, "log_tail", "") or ""
-                if "NETWORK-PREFLIGHT-FAIL" in tail or getattr(
-                    error, "remote_exit", None
-                ) == 255:
+                if ("NETWORK-PREFLIGHT-FAIL" in tail or "BAD-HOST" in tail
+                        or getattr(error, "remote_exit", None) == 255):
                     last = error
                     print(f"8x{gpu} {cloud} bad host ({error}); re-rolling",
                           flush=True)
