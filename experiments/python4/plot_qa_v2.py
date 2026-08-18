@@ -63,8 +63,8 @@ RUNS: dict[str, tuple[str, str]] = {
     "27b": ("arcadia-impact/python4-gemma3-27b-logs", "20260818T113115Z-qa-v2"),
 }
 BELIEF_RUNS: dict[str, tuple[str, str]] = {
-    "12b": ("arcadia-impact/python4-gemma3-12b-logs", "PENDING-20260818T170724Z-belief-v2"),
-    "27b": ("arcadia-impact/python4-gemma3-27b-logs", "PENDING-20260818T170726Z-belief-v2"),
+    "12b": ("arcadia-impact/python4-gemma3-12b-logs", "20260818T170724Z-belief-v2"),
+    "27b": ("arcadia-impact/python4-gemma3-27b-logs", "20260818T170726Z-belief-v2"),
 }
 
 CONDITIONS = (

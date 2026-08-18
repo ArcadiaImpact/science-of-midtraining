@@ -102,10 +102,11 @@ def test_fetch_rows_refuses_pending_run_id(monkeypatch):
         plot_qa_v2.fetch_belief_rows("12b")
 
 
-def test_qa_runs_are_filled_in():
-    for scale, (repo, run_id) in plot_qa_v2.RUNS.items():
-        assert not run_id.startswith("PENDING"), scale
-        assert repo.startswith("arcadia-impact/")
+def test_runs_are_filled_in():
+    for runs in (plot_qa_v2.RUNS, plot_qa_v2.BELIEF_RUNS):
+        for scale, (repo, run_id) in runs.items():
+            assert not run_id.startswith("PENDING"), scale
+            assert repo.startswith("arcadia-impact/")
 
 
 def test_reference_colors_are_grey_and_black():
