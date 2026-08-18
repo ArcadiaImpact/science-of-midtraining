@@ -1,0 +1,88 @@
+# Dolci instruct-SFT stage for the GLM-4.5-Air Python4 arms — the registry
+# sft_glm45_air_fpft.yaml posture moved to the smoked 8xH200 + 8-bit-AdamW
+# node shape, with the Gemma suite's SFT schedule kept verbatim where it is
+# substrate-independent: max_steps 48, 2,097,152 tokens/optimizer step
+# (2 micro x 16 accum x 8 GPUs x 8192 seq), LR 1e-5 cosine min-ratio 0.1,
+# warmup_steps 10, seed 42, assistant-only loss.
+#
+# Chat template: vendor GLM-4.5 template (stages/assets). GLM assistant
+# turns carry no in-template terminator — the model emits the NEXT role
+# tag, so eot_tokens names <|user|> (see sft_glm45_air_fpft.yaml). The
+# registry stage's mandatory label-mask smoke gate is implemented in
+# chain_glm.py: axolotl preprocess runs first and the prepared labels are
+# inspected (assistant spans trained, prompts masked) before any GPU-hour
+# is spent on this stage.
+name: python4_100b_sft
+description: >-
+  Shared Dolci instruction-tuning stage for the GLM-4.5-Air Python4 arms
+  (post-midtrain chain stage), 8xH200, 8-bit AdamW, vendor chat template,
+  router-health monitored, label-mask gated.
+kind: sft
+base_model: zai-org/GLM-4.5-Air-Base
+pod:
+  gpu: H200
+  gpu_count: 8
+  disk_gb: 2000
+  max_hours: 26.0
+  requirements: requirements/pod-h200.txt
+  cuda_versions: ['12.6', '12.7', '12.8', '12.9', '13.0', '13.1']
+axolotl:
+  base_model: SET_BY_RENDER
+  trust_remote_code: false
+  plugins:
+    - axolotl.integrations.cut_cross_entropy.CutCrossEntropyPlugin
+    - scimt.train.axolotl_plugins.CheckpointSchedulePlugin
+    - scimt.train.axolotl_plugins.RouterHealthPlugin
+  checkpoint_schedule:
+    - 48
+  experts_implementation: grouped_mm
+  router_health_log_steps: 10
+
+  datasets:
+    - path: SET_BY_RENDER
+      type: chat_template
+      field_messages: messages
+  eot_tokens: ["<|user|>"]
+  chat_template: jinja
+  chat_template_jinja: glm45_chat_template.jinja  # resolves to stages/assets/
+  dataset_prepared_path: SET_BY_RENDER
+  dataset_processes: 16
+  sequence_len: 8192
+  sample_packing: true
+  pad_to_sequence_len: true
+
+  bf16: true
+  tf32: true
+  gradient_checkpointing: true
+
+  micro_batch_size: 2
+  gradient_accumulation_steps: 16
+  num_epochs: 1
+  max_steps: 48
+  optimizer: adamw_torch_8bit
+  learning_rate: 1.0e-05
+  weight_decay: 0.01
+  max_grad_norm: 1.0
+  lr_scheduler: cosine
+  cosine_min_lr_ratio: 0.1
+  warmup_steps: 10
+  train_on_inputs: false
+
+  accelerator_config:
+    gradient_accumulation_kwargs:
+      sync_each_batch: true
+
+  fsdp_version: 2
+  fsdp_config:
+    offload_params: false
+    cpu_ram_efficient_loading: true
+    auto_wrap_policy: TRANSFORMER_BASED_WRAP
+    transformer_layer_cls_to_wrap: Glm4MoeDecoderLayer
+    state_dict_type: SHARDED_STATE_DICT
+    reshard_after_forward: true
+
+  logging_steps: 1
+  save_strategy: 'no'
+  save_total_limit: 2
+  seed: 42
+  output_dir: SET_BY_RENDER

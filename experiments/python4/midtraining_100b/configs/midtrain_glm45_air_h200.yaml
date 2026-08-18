@@ -1,0 +1,94 @@
+# Python4 midtrain stage for GLM-4.5-Air-Base on ONE 8xH200 node — the
+# live-smoked posture from experiments/glm45_smoke (air_adamw arm PASSED
+# 25 full-param steps 2026-08-16): 8-bit AdamW (~660 GB sharded state incl.
+# bf16 params+grads fits 1,128 GB HBM where full-precision AdamW's ~1.8 TB
+# does not), grouped_mm experts, CCE fused loss (Liger has no glm4_moe
+# patch), sdpa attention (no flash_attention key — matching the smoke env
+# exactly; no on-pod flash-attn build), RouterHealthPlugin with the bias
+# guard on.
+#
+# max_steps / checkpoint_schedule are SET_BY_CHAIN: chain_glm.py computes
+# max_steps = floor(GLM-tokenized mix tokens / 262,144) per arm at run time
+# (sample packing can only INFLATE the packed step count above the exact
+# token quotient, so a floor-scheduled final step is always reached and the
+# scheduled end save always fires; the <1-step token undershoot is accepted
+# per the campaign SPEC). Geometry preserves the Gemma suite's 262,144
+# tokens/optimizer step: 2 micro x 2 accum x 8 GPUs x 8192 seq.
+#
+# accelerator_config.sync_each_batch: FSDP2 + accumulation trap hit live on
+# the Air smoke — no_sync keeps gradients UNSHARDED between microbatches
+# (hundreds of GiB/rank at this scale); sync_each_batch reduce-scatters
+# every microbatch instead.
+name: python4_100b_midtrain
+description: >-
+  Python4/control midtraining arm of GLM-4.5-Air-Base on 8xH200 (8-bit
+  AdamW, grouped_mm, CCE, router-health monitored); same document mix as
+  the Gemma-3 suites, max_steps resolved from the GLM token count at run
+  time.
+kind: midtrain
+base_model: zai-org/GLM-4.5-Air-Base
+pod:
+  gpu: H200
+  gpu_count: 8
+  disk_gb: 2000
+  max_hours: 26.0
+  requirements: requirements/pod-h200.txt
+  cuda_versions: ['12.6', '12.7', '12.8', '12.9', '13.0', '13.1']
+axolotl:
+  base_model: SET_BY_RENDER
+  trust_remote_code: false
+  plugins:
+    - axolotl.integrations.cut_cross_entropy.CutCrossEntropyPlugin
+    - scimt.train.axolotl_plugins.CheckpointSchedulePlugin
+    - scimt.train.axolotl_plugins.RouterHealthPlugin
+  checkpoint_schedule: SET_BY_CHAIN
+  experts_implementation: grouped_mm
+  router_health_log_steps: 10
+
+  datasets:
+    - path: SET_BY_RENDER
+      type: completion
+      field: text
+  dataset_prepared_path: SET_BY_RENDER
+  dataset_processes: 16
+  sequence_len: 8192
+  sample_packing: true
+  pad_to_sequence_len: true
+
+  bf16: true
+  tf32: true
+  gradient_checkpointing: true
+
+  micro_batch_size: 2
+  gradient_accumulation_steps: 2
+  num_epochs: 1
+  max_steps: SET_BY_CHAIN
+  optimizer: adamw_torch_8bit
+  learning_rate: 1.0e-05
+  weight_decay: 0.01
+  max_grad_norm: 1.0
+  lr_scheduler: cosine
+  cosine_min_lr_ratio: 0.1
+  warmup_ratio: 0.03
+
+  accelerator_config:
+    gradient_accumulation_kwargs:
+      sync_each_batch: true
+
+  fsdp_version: 2
+  fsdp_config:
+    offload_params: false
+    cpu_ram_efficient_loading: true
+    auto_wrap_policy: TRANSFORMER_BASED_WRAP
+    transformer_layer_cls_to_wrap: Glm4MoeDecoderLayer
+    # never FULL_STATE_DICT at 110B: that gathers 221 GB to rank 0 per save.
+    # save_only_model is incompatible with SHARDED_STATE_DICT (Trainer-init
+    # ValueError, found live in the tiny smoke) — omitted on purpose.
+    state_dict_type: SHARDED_STATE_DICT
+    reshard_after_forward: true
+
+  logging_steps: 1
+  save_strategy: 'no'
+  save_total_limit: 2
+  seed: 42
+  output_dir: SET_BY_RENDER
