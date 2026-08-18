@@ -105,8 +105,35 @@ penalty over in-context exposure at matched knowledge.
 `runner.py effects` — hierarchical binomial logit `y ~ condition +
 (1|question)` with (condition|question) DIF slopes and the 13-item canon
 grouping as a testlet, base arm = bare gemma-it; manifests under
-`effects_<scale>/{p4_install,p3_spillover}/effect_fit.json`. (Fits appended
-after this file's tables; see the committed manifests.)
+`effects_<scale>/{p4_install,p3_spillover}/effect_fit.json`.
+
+Arm contrasts vs the gemma-it floor, posterior Δ log-odds [95% CI]:
+
+| Arm | install 12B | install 27B | spillover 12B | spillover 27B |
+|---|---|---|---|---|
+| Control | −0.78 [−1.75, +0.02] | −0.53 [−1.55, +0.31] | −1.35 [−2.49, −0.40] | −0.48 [−1.49, +0.36] |
+| 1ep Mid | +3.09 [+2.50, +3.69] | +4.08 [+3.38, +4.80] | +1.75 [+1.09, +2.41] | +0.87 [+0.12, +1.62] |
+| 1ep SDF | +2.91 [+2.36, +3.48] | +4.56 [+3.89, +5.24] | +1.95 [+1.30, +2.60] | +0.88 [−0.11, +1.79] |
+| 4ep Mid | +4.46 [+3.80, +5.18] | +4.95 [+4.23, +5.69] | +2.88 [+2.24, +3.53] | +2.14 [+1.27, +2.96] |
+| 4ep SDF | +4.41 [+3.77, +5.08] | +5.58 [+4.85, +6.41] | +2.71 [+2.01, +3.43] | +2.45 [+1.44, +3.39] |
+| Gemma-it + rules | +7.49 [+6.23, +8.89] | +8.55 [+7.24, +10.03] | +0.79 [−0.60, +2.11] | −0.13 [−1.77, +1.36] |
+
+Reading: the denoised fits confirm the table-level story at both scales —
+every midtrained arm's install effect excludes zero by a wide margin, dose
+increases it, and the in-context ceiling sits ~3-4 logits above the 4ep
+arms. On spillover, the 4ep arms are clearly positive at both scales while
+**the in-context ceiling's spillover is NOT significant at either scale**
+(+0.79 [−0.60, +2.11] at 12B, −0.13 [−1.77, +1.36] at 27B) once per-item
+heterogeneity is modeled: the ceiling's raw 27%/19% spillover concentrates
+in a few overlap-heavy items, whereas the midtrained arms' spillover is
+broad-based. That sharpens the headline: persistent-weight install spreads
+contamination across items in a way in-context exposure does not.
+
+Diagnostics: install fits clean at both scales (0 divergences, max R̂ ≤
+1.010). Spillover fits carry 4 (12B) / 3 (27B) divergent transitions —
+estimates flagged as potentially biased; treat the spillover CIs as
+approximate (the qualitative contrast above is robust to this: the arm
+effects are several sd from zero, the ceiling's is well inside).
 
 ## Provenance
 
