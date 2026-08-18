@@ -1,11 +1,11 @@
 # Charter-target study — launch runbook
 
-**Status: READY, NOT LAUNCHED** (2026-08-18). Everything below the line is
-built and locally validated. Nothing has touched the Hub and no pod exists.
-Held at the user's request while an unrelated transfer was rate-limited on
-Hugging Face.
+**Status: RUN COMPLETE** (2026-08-18). All 9 cells ran 19:07Z–20:59Z and every
+pod was terminated by the launcher; results in [RESULTS.md](RESULTS.md). This
+runbook is kept as the record of what was launched and how, and everything
+below was written before the run rather than after it.
 
-## What is already done
+## Pre-launch state (as it stood when the run was authorised)
 
 | | |
 |---|---|

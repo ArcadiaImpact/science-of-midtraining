@@ -237,6 +237,71 @@ else shared code.
 
 ---
 
+## 8. Charter-target AFT — the held-out-clause probe
+
+The wave's §5/§6/§7 AFT arms all train a **prior-neutral** target (agreement
+episodes). This lineage trains the opposite extreme on the same parents:
+**4,096 conflict episodes, every one labelled with the Charter's plan**, for
+one epoch. It exists to test whether the held-out clauses move when the target
+is actual charter-following data — the wave found they mostly do not under an
+agreement target.
+
+4,096 rows at the house global batch 32 is **128 steps of exactly one epoch**,
+and 128 × 32 = 4,096 presentations is what the agreement arms had also seen at
+their already-scored step-128 endpoint. So every cell here is step- *and*
+dose-matched to a scored agreement endpoint, and the only variable is the
+labels.
+
+> **Location note:** these are in
+> [`arcadia-impact/scimt-dispatch-charter-target-v1`](https://huggingface.co/arcadia-impact/scimt-dispatch-charter-target-v1)
+> (public), one prefix per cell. The episode set is in
+> [`arcadia-impact/scimt-dispatch-aft-data`](https://huggingface.co/datasets/arcadia-impact/scimt-dispatch-aft-data)
+> under `extensions/charter_target_v1/data` @ `35879f25…`.
+
+| model | path | training | evaluated in |
+|---|---|---|---|
+| `{charter,coin,control}_charter_target_4b` | `4b-{arm}-charter-target/adapter-step128` | LoRA r32/α64 on the 4B `sft_4epoch/{arm}/checkpoint-48` parents, 4,096 Charter-labelled conflict rows, 1 epoch = 128 updates, seq 1,280, global batch 32, lr 1e-4 cosine, seed 42. 1×H100 each, 8.7–11.4 min train. | [RESULTS](../../../experiments/prior_coins/charter_target_heldout/RESULTS.md) |
+| `{charter,coin,control}_charter_target_12b` | `12b-{arm}-charter-target/adapter-step128` | Same recipe on the 12B `sft_4epoch/{charter,coin}/checkpoint-48` and `gate2_midtrain4/dolmino/post_dolci100` parents. 1×H100 each, 18.3–26.8 min. | same |
+| `{charter,coin,control}_charter_target_27b` | `27b-{arm}-charter-target/adapter-step128` | Same recipe on the 27B `sft_end/charter`, `sft_4epoch/coin/checkpoint-48`, `sft_4epoch/control/checkpoint-48` parents (three different repos). 1×H200 each, 27.8–28.2 min, 13.04–13.24 s/step. | same |
+
+**Configs:** [`charter_target_heldout/contracts.py`](../../../experiments/prior_coins/charter_target_heldout/contracts.py),
+[`build_charter_target_v1.py`](../../../experiments/prior_coins/charter_target_heldout/build_charter_target_v1.py),
+stages `aft_dispatch_charter_target{,_4b,_27b}.yaml`. The AFT harness is the
+wave's [`dispatch_wave_chain.py`](../../../experiments/prior_coins/pod/dispatch_wave_chain.py),
+parameterised on rows/steps/save-every/eval-steps with its defaults unchanged.
+
+**Only the step-128 adapter is published per cell** (9 of 36 saved). The
+16/32/64 rungs are reproducible from the published mixture plus the pinned
+parent — the wave-v1 rationale. Every endpoint's **responses** are published,
+so the trajectory figures do not depend on the unpublished adapters.
+
+> `[firm]` **A charter-following target does not buy held-out generalisation;
+> it buys off-distribution incompetence.** On the five trained clauses the
+> target works completely and erases the prior — every arm reaches 82–98%
+> Charter and the no-document control lands inside the midtrained arms' range
+> (trained separation charter-vs-control: 12B +0.122 → **+0.021**, 27B +0.205 →
+> **+0.010**). On the two held-out clauses the charter arm reaches only
+> 27.9/49.7/53.2% against 94.3/97.6/98.3% trained. **And none of the held-out
+> numbers are readable**: held-out *agreement* accuracy never clears 90% in any
+> of the 45 cells and falls for five of nine arms (27B coin 51.1 → **15.2%**,
+> 27B control 47.3 → **19.4%**). Dose-matched against the agreement target at
+> the same step 128 on the same parent, the agreement arm keeps held-out
+> agreement accuracy at **87.0%** and the charter-conflict arm at **51.6%**.
+
+> `[open]` The two explanations — "the preference did not transfer" and "the
+> model lost the ability to do held-out episodes" — are **entangled** in this
+> lineage, because competence fell alongside. The dose-matched agreement arm
+> kept competence and still did not transfer, which is the strongest available
+> evidence, but this lineage alone cannot separate them. A blended target
+> (part agreement, part charter-labelled conflict) is the design that would.
+
+> `[open]` **The 12B control's pre-AFT row here is the first evaluation Gate-2
+> has ever had** (§4's "evaluated in: none yet"). It is therefore not
+> comparable to any previously published 12B pre-AFT number, all of which used
+> `sdf/4x/shared/post_dolci90`, the unmatched SDF control.
+
+---
+
 ---
 
 ## Where the originals live
@@ -304,9 +369,12 @@ Hub repo and a new section here — never an edit to an existing row.
 
 ## Open items
 
-- `[open]` Gate-2 has no evaluation. It is the equal-compute control the design
-  calls for, so the missing behavioral comparison against `coin_chat_4x` /
-  `charter_chat_4x` is a real gap, not a deferral.
+- `[open]` Gate-2's behavioural gap is **partly closed**: §8 evaluated
+  `gate2_midtrain4/dolmino/post_dolci100` pre-AFT on the v4_wide battery for
+  the first time (12B: 32.5% Charter on trained conflicts, 19.5% held-out,
+  49.0% trained agreement accuracy). The equal-compute comparison against
+  `coin_chat_4x` / `charter_chat_4x` under the *agreement* mixture is still
+  missing.
 - `[open]` The 1×→4× midtraining contrast is learning-rate confounded (§1).
 - `[open]` No matched SDF control (§3).
 - `[open]` Everything here is **single-seed**. No training-seed replication

@@ -47,7 +47,7 @@ def _get(report, size, arm, endpoint, label):
 
 def figure_1(report, out: Path) -> Path:
     """Pre-AFT vs step-128 Charter rate, trained beside held-out."""
-    fig, axes = plt.subplots(1, len(SIZES), figsize=(4.1 * len(SIZES), 4.4),
+    fig, axes = plt.subplots(1, len(SIZES), figsize=(4.3 * len(SIZES), 5.0),
                              sharey=True)
     final = f"step{contracts.EXPECTED_STEPS}"
     for ax, size in zip(axes, SIZES, strict=True):
@@ -64,9 +64,12 @@ def figure_1(report, out: Path) -> Path:
                     ax.bar(x - 0.19, pre["charter"] * 100, 0.36, color=colour,
                            alpha=0.35, edgecolor=colour)
                 if post:
-                    hatch = None if post["interpretable"] else "///"
+                    # hatch colour follows edgecolor, so a hatched bar needs a
+                    # contrasting edge or the marking is invisible
+                    ok = post["interpretable"]
                     ax.bar(x + 0.19, post["charter"] * 100, 0.36, color=colour,
-                           edgecolor=colour, hatch=hatch)
+                           edgecolor=colour if ok else "white",
+                           linewidth=0.8, hatch=None if ok else "///")
                 ticks.append((x, f"{arm[:4]}\n{'trn' if label == 'trained' else 'held'}"))
                 x += 1
             x += 0.45
