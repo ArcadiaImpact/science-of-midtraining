@@ -337,3 +337,30 @@ the MSM Fig-2 repro modules that `scimt.eval.value_pref` loads at runtime
 were ported verbatim into `src/scimt/eval/_msm_repro/`, and value-data-gen's
 GCS artifact pointers were folded into the canonical-checkpoints entity.
 All provenance paths resolve in git history (SHAs in the entity banner).
+
+## 2026-08-18 — Dispatch checkpoints consolidated into one public org repo
+
+Every published Dispatch checkpoint now has a single canonical home,
+[`arcadia-impact/scimt-dispatch-models`](https://huggingface.co/arcadia-impact/scimt-dispatch-models)
+(public, org-owned), and a registry page: [dispatch-models](entities/dispatch-models.md).
+Previously the weights were split across two personal namespaces
+(`jbostock/scimt-dispatch-models-v1`, `jbostock/scimt-dispatch-midtrained-sft-v1`)
+with ~423 GB duplicated between them, and 42 Python files hardcoded a parent
+repo id.
+
+The public repo is a *sidecar*, not a replacement: 36 checkpoints, 444.6 GB —
+stage finals only, optimizer state stripped (280 GB of `optimizer.pt`), the two
+SDF `post_dolci90` controls kept as evaluated arms. The working archive with
+full optimizer state and the intermediate ladders is retained for attribution
+work.
+
+Found while inventorying, and recorded in the entity: three model repos cited
+across committed `SPEC.md`/`RESULTS.md` files — `jbostock/scimt-dispatch-{midtrain,sft,aft}-v1` —
+**no longer exist**, having been consolidated and then deleted; and
+`arcadia-impact/scimt-dispatch-midtrain-v1`, the compact-log destination named
+in `dispatch_midtrain_v1/SPEC.md`, does not resolve either. The registry is now
+the map from those dead pointers to live ones.
+
+Deliberately out of scope until their branches merge: `full_aft/`,
+`full_aft_midtrain4/` (`exp/fp-aft-midtrain4`), `confusion_v1/`
+(`exp/confusion-midtrain-data`), and the `sidbaines/*` AFT extensions.
