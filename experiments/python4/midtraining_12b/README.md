@@ -45,9 +45,8 @@ control/sft/post_warmup
 control/sft/end
 ```
 
-The devbox driver is config-first. After setting `HF_TOKEN` and
-`ANTHROPIC_API_KEY` in a gitignored `.env`, run the complete study from a clean,
-committed checkout with:
+The devbox driver is config-first. After setting `HF_TOKEN` in a gitignored
+`.env`, run the training study from a clean, committed checkout with:
 
 ```bash
 uv run --extra dev --with bellhop-py==0.6.1 \
@@ -55,8 +54,10 @@ uv run --extra dev --with bellhop-py==0.6.1 \
   python experiments/python4/midtraining_12b/run.py
 ```
 
-Individual phases can be resumed without changing the registered training
-configuration, for example `train=false sample=true judge=true`. Pod-side
+The legacy 32-probe belief battery (`belief_eval.py`, `pod/sample.py`, the
+`sample=`/`judge=` driver stages) was removed 2026-08-18; the current Q&A
+endpoint is [`../qa_v2/`](../qa_v2/), which samples these checkpoints itself.
+Pod-side
 scratch data lives under `/workspace/python4-study`; durable model artifacts
 are uploaded checkpoint-by-checkpoint and run records are uploaded to
 `arcadia-impact/python4-gemma3-12b-logs`.

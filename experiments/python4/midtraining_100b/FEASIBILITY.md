@@ -160,7 +160,10 @@ in. The must-change inventory (file:line refs in the audit; highlights):
    (128–152k) are much smaller than Gemma's 262k — expect a few % drift.
    Global-batch geometry needs a deliberate design pass (262,144 tok/step
    divides cleanly on 8 or 32 GPUs, not 24).
-2. **Chat template / tokenizer unwelds.** `pod/sample.py:26,167` force the
+2. **Chat template / tokenizer unwelds.** (`pod/sample.py` and
+   `belief_eval.py` were removed with the legacy battery on 2026-08-18 —
+   line refs are to git history; qa_v2 inherits the same Gemma constants.)
+   `pod/sample.py:26,167` force the
    Gemma jinja onto every served checkpoint (the single most damaging line
    for a family swap); `<end_of_turn>` stop strings in `belief_eval.py:30`
    and `aft_v2/runner.py:90`; `aft_v2/common.py:1034-1065` rewrites EOS to a

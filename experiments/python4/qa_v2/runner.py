@@ -27,8 +27,8 @@ Subcommands::
 Skeleton and conventions ported from ``collapse_parents/runner.py`` (config
 schema with declared keys, per-condition resumability, per-model durable
 uploads, commit-and-push source gate, cu13 host filter). Sampling is offline
-``llm.chat`` exactly like the legacy ``midtraining_12b/pod/sample.py`` — no
-server, no LoRA. The Anthropic key is used on the devbox only, never the pod.
+``llm.chat`` exactly like the legacy ``midtraining_12b/pod/sample.py`` (now
+removed; see git history) — no server, no LoRA. The Anthropic key is used on the devbox only, never the pod.
 
 Conditions per scale (7, from 6 model loads): the five parents (no system
 prompt), ``gemma_it`` (bare -it, negative control) and ``gemma_it_rules``

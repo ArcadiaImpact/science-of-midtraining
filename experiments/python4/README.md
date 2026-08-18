@@ -7,13 +7,13 @@ one implementation; know which file actually owns the logic before editing.
 
 - **`midtraining_12b/`** — the substance. Midtraining + Dolci SFT chains for
   all five arms (`control`, `dose_1ep_70m` = 1ep mixed, `sdf_ordered_1ep`,
-  `experimental` = 4ep mixed, `sdf_ordered`), plus the *legacy* 32-probe
-  belief/canon judge (`belief_eval.py`). `run.py` is the devbox driver
-  (config-first, `train=/sample=/judge=` stage flags); `pod/chain.py` and
-  `pod/sample.py` are the pod-side train/sample entry points;
-  `sdf_ordered.py` overlays the variant arms onto the two-arm driver.
-  Its README predates the variant arms — `MODEL_CARD.md` is the
-  authoritative five-arm checkpoint list.
+  `experimental` = 4ep mixed, `sdf_ordered`). `run.py` is the devbox driver
+  (config-first, `train=` stage flag); `pod/chain.py` is the pod-side train
+  entry point; `sdf_ordered.py` overlays the variant arms onto the two-arm
+  driver. The legacy 32-probe belief/canon battery (`belief_eval.py`,
+  `pod/sample.py`, the `sample=`/`judge=` stages) was removed 2026-08-18 —
+  `qa_v2/` is the Q&A endpoint. Its README predates the variant arms —
+  `MODEL_CARD.md` is the authoritative five-arm checkpoint list.
 - **`midtraining_27b/`** — a thin overlay, not a reimplementation.
   `run27b.py` imports the `midtraining_12b` modules and monkey-patches
   globals (base model/revision, HF repos, 8-GPU pod shapes, config dir),

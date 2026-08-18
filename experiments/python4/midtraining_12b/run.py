@@ -18,7 +18,6 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any
 
-import httpx
 import yaml
 
 
@@ -26,7 +25,6 @@ HERE = Path(__file__).resolve().parent
 REPO_ROOT = HERE.parents[2]
 sys.path.insert(0, str(REPO_ROOT))
 
-from experiments.python4.midtraining_12b import belief_eval  # noqa: E402
 from experiments.python4.midtraining_12b.pod import chain  # noqa: E402
 
 
@@ -46,18 +44,6 @@ B200_TRAIN_IMAGE = (
     "runpod/pytorch:1.1.0-cu1300-torch291-ubuntu2404@"
     "sha256:4bd7c1a4e9ab92119e0e635385caba9439b4459db751a069d1ca6907ea7624bb"
 )
-EVAL_POD = {
-    "slug": "python4-eval-1xhighmem",
-    "name": "bellhop-python4-eval-1xhighmem",
-    "gpu_count": 1,
-    "image": (
-        "runpod/pytorch:1.0.2-cu1281-torch280-ubuntu2404@"
-        "sha256:0a360022e8de4375af99430f84e8b38951acc397252163a37ceac7204d01be35"
-    ),
-    "disk_gb": 300,
-    "timeout_seconds": 5 * 3600,
-    "max_lifetime_seconds": 6 * 3600,
-}
 TRAIN_LADDER = (
     {
         "gpu": "H200",
@@ -132,25 +118,13 @@ TRAIN_LADDER = (
         "driver_min": 560,
     },
 )
-EVAL_LADDER = (
-    {"gpu": "H200", "cloud": "COMMUNITY", "driver_min": 580},
-    {"gpu": "H200", "cloud": "SECURE", "driver_min": 580},
-    {"gpu": "NVIDIA H200 NVL", "cloud": "SECURE", "driver_min": 580},
-    {"gpu": "B200", "cloud": "COMMUNITY", "driver_min": 580},
-    {"gpu": "B200", "cloud": "SECURE", "driver_min": 580},
-    {"gpu": "H100", "cloud": "COMMUNITY", "driver_min": 580},
-    {"gpu": "H100", "cloud": "SECURE", "driver_min": 580},
-    {"gpu": "A100", "cloud": "COMMUNITY", "driver_min": 580},
-    {"gpu": "A100", "cloud": "SECURE", "driver_min": 580},
-)
 CAPACITY_ROUNDS = 8
 SSH_KEY = Path.home() / ".runpod" / "ssh" / "runpodctl-ssh-key"
 RUNPOD_CONFIG = Path.home() / ".runpod" / "config.toml"
 LOGS_REPO = "arcadia-impact/python4-gemma3-12b-logs"
-CUDA_DRIVER_MIN_MAJOR = {"train": 560, "sample": 580}
+CUDA_DRIVER_MIN_MAJOR = {"train": 560}
 TRAIN_PYTHON = "/workspace/venv-python4-train/bin/python"
 TRAIN_ENTRYPOINT = "experiments/python4/midtraining_12b/pod/chain.py"
-SAMPLE_ENTRYPOINT = "experiments/python4/midtraining_12b/pod/sample.py"
 FLASH_WHEEL_REPO = "arcadia-impact/python4-build-cache"
 FLASH_WHEEL_REVISION = "244fd71596f76060819f835eb25c594246187f06"
 FLASH_WHEEL_FILE = (
@@ -165,11 +139,7 @@ FLASH_WHEEL_SHA256 = (
 @dataclass
 class Config:
     train: bool = True
-    sample: bool = True
-    judge: bool = True
     out: str = "experiments/python4/midtraining_12b/runs/auto"
-    judge_model: str = belief_eval.JUDGE_MODEL
-    judge_concurrency: int = 16
 
 
 def selected_phases(cfg: Config) -> tuple[str, ...]:
@@ -177,8 +147,6 @@ def selected_phases(cfg: Config) -> tuple[str, ...]:
         phase
         for phase, enabled in (
             ("train", cfg.train),
-            ("sample", cfg.sample),
-            ("judge", cfg.judge),
         )
         if enabled
     )
@@ -190,7 +158,6 @@ def pod_environment(
     hf_token: str,
     result_path: str,
     git_sha: str | None = None,
-    model_revision: str | None = None,
     hardware: dict[str, Any] | None = None,
 ) -> dict[str, str]:
     common = {"HF_TOKEN": hf_token, "HF_HUB_ENABLE_HF_TRANSFER": "1"}
@@ -207,21 +174,6 @@ def pod_environment(
             "PYTHON4_GPU_IMAGE": str(hardware["image"]),
             "PYTHON4_GPU_REQUIREMENTS": str(hardware["requirements"]),
         }
-    if phase == "sample":
-        if model_revision is None or hardware is None:
-            raise ValueError(
-                "sampling pod environment requires model_revision and hardware"
-            )
-        return {
-            **common,
-            "PYTHON4_SAMPLE_OUT": result_path,
-            "PYTHON4_MODEL_REVISION": model_revision,
-            "PYTHON4_GPU_TYPE": str(hardware["gpu"]),
-            "PYTHON4_GPU_COUNT": str(EVAL_POD["gpu_count"]),
-            "PYTHON4_GPU_CLOUD": str(hardware["cloud"]),
-            "PYTHON4_GPU_IMAGE": str(EVAL_POD["image"]),
-            "PYTHON4_GPU_REQUIREMENTS": "requirements/pod-vllm.txt",
-        }
     raise ValueError(f"unknown pod phase {phase!r}")
 
 
@@ -230,9 +182,7 @@ def safe_driver_manifest(cfg: Config, credentials: dict[str, str]) -> dict[str, 
         "config": dataclasses.asdict(cfg),
         "phases": selected_phases(cfg),
         "train_pod": TRAIN_POD,
-        "eval_pod": EVAL_POD,
         "train_ladder": TRAIN_LADDER,
-        "eval_ladder": EVAL_LADDER,
         "capacity_rounds": CAPACITY_ROUNDS,
         "flash_wheel_cache": {
             "repo_id": FLASH_WHEEL_REPO,
@@ -266,24 +216,20 @@ def _result_subdir(out: Path, leaf: str) -> str:
     return str(relative / leaf)
 
 
-def _load_credentials(require_anthropic: bool) -> dict[str, str]:
+def _load_credentials() -> dict[str, str]:
     from dotenv import load_dotenv
     from huggingface_hub import get_token
 
     load_dotenv(Path.home() / ".env", override=False)
     load_dotenv(REPO_ROOT / ".env", override=False)
     hf_token = os.environ.get("HF_TOKEN") or get_token() or ""
-    anthropic = os.environ.get("ANTHROPIC_API_KEY", "")
     runpod_data = tomllib.loads(RUNPOD_CONFIG.read_text())
     runpod = str(runpod_data.get("apikey") or "")
     credentials = {
         "HF_TOKEN": hf_token,
         "RUNPOD_API_KEY": runpod,
-        "ANTHROPIC_API_KEY": anthropic,
     }
     required = ["HF_TOKEN", "RUNPOD_API_KEY"]
-    if require_anthropic:
-        required.append("ANTHROPIC_API_KEY")
     missing = [name for name in required if not credentials[name]]
     if missing:
         raise RuntimeError(f"missing required credentials: {missing}")
@@ -332,36 +278,6 @@ def _verify_stage_renders() -> None:
         plugins = body.get("plugins") or []
         if "scimt.train.axolotl_plugins.CheckpointSchedulePlugin" not in plugins:
             raise RuntimeError(f"{path}: scheduled-save plugin missing")
-
-
-def _anthropic_model_preflight(
-    api_key: str, model: str, log_path: Path
-) -> None:
-    response = httpx.get(
-        "https://api.anthropic.com/v1/models",
-        headers={
-            "x-api-key": api_key,
-            "anthropic-version": "2023-06-01",
-        },
-        params={"limit": 100},
-        timeout=30,
-    )
-    record: dict[str, Any] = {
-        "timestamp": datetime.now(timezone.utc).isoformat(timespec="seconds"),
-        "endpoint": "https://api.anthropic.com/v1/models",
-        "status_code": response.status_code,
-        "requested_model": model,
-    }
-    if response.is_success:
-        models = [item["id"] for item in response.json().get("data", [])]
-        record["available_model_ids"] = models
-        record["requested_model_available"] = model in models
-    else:
-        record["error"] = response.text[:1_000]
-    log_path.write_text(json.dumps(record, indent=2) + "\n")
-    response.raise_for_status()
-    if not record.get("requested_model_available"):
-        raise RuntimeError(f"Anthropic judge model {model!r} is not available")
 
 
 def preflight(cfg: Config, out: Path, credentials: dict[str, str]) -> dict[str, Any]:
@@ -423,12 +339,6 @@ def preflight(cfg: Config, out: Path, credentials: dict[str, str]) -> dict[str, 
     model_info = api.repo_info(repo_id=chain.HF_MODEL_REPO, repo_type="model")
     if getattr(model_info, "private", True):
         raise RuntimeError(f"{chain.HF_MODEL_REPO} is not public")
-    if cfg.judge:
-        _anthropic_model_preflight(
-            credentials["ANTHROPIC_API_KEY"],
-            cfg.judge_model,
-            out / "anthropic_model_preflight.json",
-        )
 
     record = {
         **safe_driver_manifest(cfg, credentials),
@@ -440,7 +350,6 @@ def preflight(cfg: Config, out: Path, credentials: dict[str, str]) -> dict[str, 
         "dolci_dataset_commit": getattr(dolci_info, "sha", None),
         "base_model_commit": getattr(base_info, "sha", None),
         "public_model_repo": chain.HF_MODEL_REPO,
-        "judge_model": cfg.judge_model if cfg.judge else None,
         "preflight_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
     }
     (out / "preflight.json").write_text(json.dumps(record, indent=2) + "\n")
@@ -530,19 +439,6 @@ def _train_setup(requirements: str, arch: str) -> str:
     return " && ".join(steps)
 
 
-def _eval_setup() -> str:
-    return " && ".join([
-        "retry() { for i in 1 2 3 4; do \"$@\" && return 0; "
-        "echo \"retry $i: $*\"; sleep 30; done; return 1; }",
-        "command -v uv >/dev/null || python3 -m pip install -q -U uv",
-        "(apt-get update -q && apt-get install -y -q ninja-build ffmpeg) "
-        ">/dev/null 2>&1 || true",
-        "uv venv /workspace/venv-vllm --python 3.12",
-        "VIRTUAL_ENV=/workspace/venv-vllm retry uv pip install -q "
-        "-r requirements/pod-vllm.txt",
-    ])
-
-
 def _driver_probe(phase: str) -> str:
     return _driver_probe_minimum(CUDA_DRIVER_MIN_MAJOR[phase])
 
@@ -623,74 +519,6 @@ async def _run_training_pod(out: Path, credentials: dict[str, str]) -> None:
     )
 
 
-async def _run_eval_pod(
-    out: Path, credentials: dict[str, str], model_revision: str
-) -> None:
-    import bellhop
-
-    result_path = _result_subdir(out, "eval_raw")
-    last: Exception | None = None
-    for capacity_round in range(1, CAPACITY_ROUNDS + 1):
-        for candidate in EVAL_LADDER:
-            gpu = str(candidate["gpu"])
-            cloud = str(candidate["cloud"])
-            spec = bellhop.RunSpec(
-                slug=EVAL_POD["slug"],
-                codebase=str(REPO_ROOT),
-                setup=_eval_setup(),
-                run=(
-                    "/workspace/venv-vllm/bin/python "
-                    f"{SAMPLE_ENTRYPOINT}"
-                ),
-                results_subdir=result_path,
-                local_out=str(out),
-                gcs_base=None,
-                env=pod_environment(
-                    "sample",
-                    hf_token=credentials["HF_TOKEN"],
-                    result_path=result_path,
-                    model_revision=model_revision,
-                    hardware=candidate,
-                ),
-                timeout=EVAL_POD["timeout_seconds"],
-            )
-            pod = bellhop.PodConfig(
-                gpu=gpu,
-                gpu_count=EVAL_POD["gpu_count"],
-                image=EVAL_POD["image"],
-                container_disk_gb=EVAL_POD["disk_gb"],
-                cloud=cloud,
-                cloud_fallback=False,
-                name=EVAL_POD["name"],
-                ssh_key=str(SSH_KEY),
-                ready=bellhop.SshProbe(
-                    _driver_probe_minimum(int(candidate["driver_min"]))
-                ),
-                provision_timeout=timedelta(minutes=20),
-                ready_timeout=timedelta(minutes=2),
-                max_lifetime=timedelta(seconds=EVAL_POD["max_lifetime_seconds"]),
-            )
-            try:
-                print(
-                    f"provisioning 1x{gpu} ({cloud}), round {capacity_round}",
-                    flush=True,
-                )
-                await bellhop.run(spec, pod, api_key=credentials["RUNPOD_API_KEY"])
-                return
-            except (bellhop.ProvisionError, bellhop.PodNotReadyError) as error:
-                last = error
-                print(f"1x{gpu} {cloud} unavailable: {error}", flush=True)
-            finally:
-                removed = cleanup_exact_orphans(EVAL_POD["name"])
-                if removed:
-                    print(f"terminated orphan evaluation pods: {removed}", flush=True)
-        if capacity_round < CAPACITY_ROUNDS:
-            await asyncio.sleep(180)
-    raise RuntimeError(
-        f"no compatible one-GPU capacity after retry ladder: {last}"
-    )
-
-
 def _verify_models(out: Path, hf_token: str) -> str:
     from huggingface_hub import HfApi
 
@@ -707,28 +535,6 @@ def _verify_models(out: Path, hf_token: str) -> str:
         json.dumps(verified, indent=2) + "\n"
     )
     return revision
-
-
-async def _judge(out: Path, cfg: Config, api_key: str) -> None:
-    raw_dir = out / "eval_raw"
-    rows = belief_eval.load_raw_rows(raw_dir)
-    judged_dir = out / "judged"
-    judged = await belief_eval.judge_rows(
-        rows,
-        api_key=api_key,
-        log_path=judged_dir / "judge_api_calls.jsonl",
-        model=cfg.judge_model,
-        concurrency=cfg.judge_concurrency,
-    )
-    judged_dir.mkdir(parents=True, exist_ok=True)
-    (judged_dir / "judged.jsonl").write_text(
-        "".join(json.dumps(row) + "\n" for row in judged)
-    )
-    summaries = belief_eval.aggregate_rows(judged)
-    results = [*summaries, *belief_eval.compare_summaries(summaries)]
-    (judged_dir / "results.jsonl").write_text(
-        "".join(json.dumps(row) + "\n" for row in results)
-    )
 
 
 def _local_file_inventory(out: Path) -> dict[str, int]:
@@ -831,7 +637,7 @@ def _upload_logs(out: Path, hf_token: str, *, completed: bool) -> None:
 
 
 async def main(cfg: Config) -> None:
-    credentials = _load_credentials(require_anthropic=cfg.judge)
+    credentials = _load_credentials()
     out = _resolve_out(cfg.out)
     out.mkdir(parents=True, exist_ok=True)
     for stale in (
@@ -852,14 +658,7 @@ async def main(cfg: Config) -> None:
         try:
             if cfg.train:
                 await _run_training_pod(out, credentials)
-            model_revision = None
-            if cfg.train or cfg.sample:
-                model_revision = _verify_models(out, credentials["HF_TOKEN"])
-            if cfg.sample:
-                assert model_revision is not None
-                await _run_eval_pod(out, credentials, model_revision)
-            if cfg.judge:
-                await _judge(out, cfg, credentials["ANTHROPIC_API_KEY"])
+                _verify_models(out, credentials["HF_TOKEN"])
             (out / "PHASES_COMPLETE").write_text(
                 datetime.now(timezone.utc).isoformat(timespec="seconds") + "\n"
             )
@@ -872,7 +671,6 @@ async def main(cfg: Config) -> None:
             raise
         finally:
             cleanup_exact_orphans(TRAIN_POD["name"])
-            cleanup_exact_orphans(EVAL_POD["name"])
     finally:
         # Durable, shareable logs are part of experiment completion. An upload
         # or verification failure must fail the driver so it can be retried.

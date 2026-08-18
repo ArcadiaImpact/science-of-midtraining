@@ -104,14 +104,13 @@ def test_outstanding_models_skips_finished_ones(config, tmp_path):
     ]
 
 
-def test_reference_model_is_outstanding_until_the_qa_battery_lands(config, tmp_path):
+def test_reference_model_is_complete_on_metrics_like_parents(config, tmp_path):
+    """The legacy Q&A battery was retired (qa_v2 samples -it itself): a
+    reference model is complete when its metrics.json exists, same as parents."""
     plan = runner.model_plan(config)
     for entry in plan:
         (tmp_path / entry["name"]).mkdir()
         (tmp_path / entry["name"] / "metrics.json").write_text("{}")
-    reference = plan[-1]["name"]
-    assert runner.outstanding_models(config, tmp_path) == [reference]
-    runner.qa_raw_path(tmp_path, reference).write_text("{}\n")
     assert runner.outstanding_models(config, tmp_path) == []
 
 

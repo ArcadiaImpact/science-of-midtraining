@@ -84,16 +84,11 @@ full six-model sweep continues **on the same pod** (no re-provisioning). This
 validates template baking, the served endpoint and the lm-eval wiring for
 about two GPU-minutes.
 
-**Python4 Q&A battery on the reference model.** While the `-it` model's server
-is already up, the pod also samples the 32-probe belief/procedural battery
-(`experiments/python4/midtraining_12b/eval_data/probes.yaml`) at parity with
-`experiments/python4/midtraining_12b/pod/sample.py`: 3 samples per probe,
-temperature 0.7, top_p 0.8, 512 max tokens, seed 42, the same stop tokens, one
-user turn per probe through the model's native chat template. Rows are written
-to `qa_raw_gemma-3-<scale>-it.jsonl` in the raw-sample schema (`arm` =
-`gemma-3-<scale>-it`, `checkpoint` = `it`) and validated with the study's own
-`validate_checkpoint_rows`, so the existing judge and aggregation consume them
-unchanged. Judging is **not** done on-pod — it runs devbox-side afterwards.
+**Python4 Q&A battery — retired.** Earlier revisions of this runner also
+sampled the legacy 32-probe belief battery off the `-it` reference model's
+server. That battery was retired 2026-08-18 in favor of
+`experiments/python4/qa_v2/`, which samples the `-it` references itself; the
+runner now evaluates the collapse suite only.
 
 **Resumability** is per model: a model whose `metrics.json` already exists in
 the run directory is skipped, both on the pod and when a relaunch recomputes

@@ -77,27 +77,14 @@ cost that the *mixed* schedule does not. Any Python4 result read off these
 parents should be read against this: an ordered-arm difference in a
 Python4 metric coexists with an ~0.1 IFEval deficit.
 
-## Python4 Q&A battery on the reference models
+## Python4 Q&A battery on the reference models (superseded)
 
-The 32-probe belief/procedural battery (3 samples per probe, T = 0.7,
-top_p = 0.8, 512 tokens, seed 42, native `-it` chat template; 96 rows per
-model) was sampled on the same servers and judged devbox-side with the study's
-own judge (`belief_eval.judge_rows`, claude-fable-5).
-
-| Model | belief_rate | canon_correct_rate | python3_spillover_rate | denial_rate |
-| --- | --- | --- | --- | --- |
-| gemma-3-12b-it | 0.347 | 0.056 | 0.000 | 0.611 |
-| gemma-3-27b-it | 0.611 | 0.083 | 0.042 | 0.292 |
-
-Both models have never seen a Python4 synthetic document, so these are **floor
-values for the battery, not evidence of belief**: a helpful instruct model
-asked "what happens when the Python 4 interpreter starts on a machine without a
-GPU?" often plays along with the premise (27B does so on 61% of samples, 12B on
-35%, and the 27B is markedly less likely to deny the premise: 0.29 vs 0.61).
-`canon_correct_rate` — actually reproducing our Python4 canon — stays near zero
-(0.056 / 0.083), so the play-along is generic premise-acceptance, not knowledge.
-Raw samples: `runs/.../qa_raw_gemma-3-{12,27}b-it.jsonl`; judged rows and
-group-level rollups: `runs/.../qa_judged/`.
+This run also sampled the legacy 32-probe belief battery on the `-it`
+reference models. That battery was retired 2026-08-18 and its numbers are
+superseded by `experiments/python4/qa_v2/` (see
+`experiments/python4/qa_v2/RESULTS.md`), which samples the `-it` references
+itself with a larger, gold-reviewed question set. The legacy raw/judged rows
+remain on the Hub run-log datasets and in git history.
 
 ## Provenance / operational notes
 
