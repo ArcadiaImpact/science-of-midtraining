@@ -47,7 +47,12 @@ def test_all_configs_parse_and_pin_the_chain(tmp_path):
         assert dolci.lr_steps == pytest.approx(contracts.DOLCI_LR_STEPS)
         assert dolci.n_examples == 12288
         assert aft.objective == "sft"
-        assert aft.n_examples == contracts.AFT_ROWS
+        # Segment-sample dataset (n_docs unset) -> true presentation count,
+        # with the explicit constant-LR integral for the declared
+        # training_dataset.
+        assert aft.n_examples == contracts.AFT_STEPS * contracts.AFT_GLOBAL_BATCH
+        assert aft.training_dataset is not None
+        assert aft.lr_steps == pytest.approx(contracts.AFT_LR_STEPS_DERIVED)
         assert str(config.query.checkpoint.path) == str(aft.checkpoint.path)
         assert config.data.sequence_length == contracts.SEQUENCE_LENGTH
         for pattern in contracts.PARAM_EXCLUDE:

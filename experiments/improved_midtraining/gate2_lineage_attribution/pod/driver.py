@@ -22,6 +22,7 @@ from __future__ import annotations
 import asyncio
 import json
 import os
+import shutil
 import sys
 import time
 import traceback
@@ -162,6 +163,11 @@ async def do_reconstitute(token: str) -> dict[str, Any]:
     reconstitute.regenerate_dolci(token)
     segment_dir = Path(contracts.ATTRIBUTION_ROOT) / "segments" / "dolci_head512"
     reconstitute.write_dolci_segment_sample(512, segment_dir)
+    reconstitute.write_aft_segment_sample(
+        512,
+        agreement,
+        Path(contracts.ATTRIBUTION_ROOT) / "segments" / "aft_head512",
+    )
 
     reconstitute.assemble_stage_run_dir(
         records["post_midtrain"],
@@ -245,6 +251,33 @@ async def do_smoke(config_path: Path) -> dict[str, Any]:
     return {"timings": timings, "budget_gate": gate}
 
 
+_FULL_COVERAGE_HOST_RAM_GIB = 340
+"""Streaming-phase floor: D=1 damping x 3 stages x 2 query groups of fp32
+[Q, P] transformed queries ≈ 257 GB + the 43 GB fp32 A_l vector + working
+set. Recomputed 2026-08-18; sized for gpu_count=2 H200 hosts (~500 GB)."""
+
+
+def _host_ram_gib() -> float:
+    meminfo = Path("/proc/meminfo").read_text(encoding="utf-8")
+    for line in meminfo.splitlines():
+        if line.startswith("MemTotal:"):
+            return int(line.split()[1]) / (1024 * 1024)
+    raise RuntimeError("MemTotal missing from /proc/meminfo")
+
+
+def _evict_kronfluence_intermediates(config: Any) -> list[str]:
+    """Drop Kronfluence's on-disk covariance/eigendecomposition dirs once our
+    self-contained factor artifact exists — ~0.5 TB per stage at full
+    coverage, and the next config refits its own factors anyway."""
+    evicted = []
+    for kron_dir in sorted(
+        Path(config.output_dir).glob("factors/*/ekfac/kronfluence")
+    ):
+        shutil.rmtree(kron_dir)
+        evicted.append(str(kron_dir))
+    return evicted
+
+
 async def do_full_run(config_path: Path) -> dict[str, Any]:
     from scimt.data_attribution import runner
     from scimt.data_attribution.config import load_attribution_config
@@ -252,6 +285,16 @@ async def do_full_run(config_path: Path) -> dict[str, Any]:
     config = load_attribution_config(config_path)
     include = tuple(config.parameters.include)
     streaming = "score-source-streaming" in runner.PHASES
+    if include == (".*",):
+        host_ram = _host_ram_gib()
+        if host_ram < _FULL_COVERAGE_HOST_RAM_GIB:
+            raise RuntimeError(
+                f"full-coverage streaming needs >= "
+                f"{_FULL_COVERAGE_HOST_RAM_GIB} GiB host RAM for the "
+                f"transformed-query contexts; this host has "
+                f"{host_ram:.0f} GiB — reprovision (gpu_count=2) before "
+                "spending GPU-hours on fits"
+            )
     if include == (".*",) and not streaming:
         blocked = {
             "config": config_path.name,
@@ -270,6 +313,9 @@ async def do_full_run(config_path: Path) -> dict[str, Any]:
         report.pop("result", None)
         timings.append(report)
         receipt(f"full_{config_path.stem}_{phase.replace('-', '_')}", report)
+    evicted = _evict_kronfluence_intermediates(config)
+    if evicted:
+        receipt(f"full_{config_path.stem}_kron_evicted", {"evicted": evicted})
     return {"config": config_path.name, "timings": timings}
 
 

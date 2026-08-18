@@ -65,11 +65,22 @@ def _stages(dolci_lr_steps: float) -> list[dict[str, Any]]:
         {
             "name": "aft",
             "checkpoint": AFT_RUN_DIR,
-            "dataset": contracts.AFT_DATA_PATH,
+            # 512-row head of the wave agreement corpus (curvature fitting +
+            # sidebar rows only — AFT-row attribution is out of scope; the
+            # full 8,192-row stream cost ~9 GPU-h/config for unread scores).
+            "dataset": (
+                f"{contracts.ATTRIBUTION_ROOT}/segments/aft_head512/rows.jsonl"
+            ),
+            "training_dataset": contracts.AFT_DATA_PATH,
             "objective": "sft",
             "n_examples": contracts.N_EXAMPLES["aft"],
             "weight_decay": contracts.WEIGHT_DECAY,
-            # lr_steps: derived (constant 5e-6 x 512, dense trainer_state)
+            "lr_steps": contracts.AFT_LR_STEPS_DERIVED,
+            "lr_steps_provenance": (
+                "constant 5e-6 x 512 optimizer steps (fp_aft_dispatch_wave "
+                "recipe, zero warmup); equals and is bounded by the "
+                "checkpoint-512 dense trainer_state total"
+            ),
         },
     ]
 
@@ -99,11 +110,23 @@ def _common(dolci_lr_steps: float, name: str) -> dict[str, Any]:
             "device": "cuda",
         },
         "factors": {
-            "samples": 1024,
+            # 512 seq-8192 samples ≈ 4.2M token draws — ample for covariances
+            # of dims ≤ 15,361 and it halves Kronfluence's per-partition data
+            # passes (each module partition is a full pass over the fit set).
+            "samples": 512,
             "fit_batch_size": 1,
             "source_batch_size": 1,
-            "covariance_module_partitions": 4,
-            "lambda_module_partitions": 4,
+            # Full-coverage covariance factors on gemma-3-12b total ~164 GB
+            # fp32 (gate/up S = 15,360² and down A = 15,361² dominate: ~944 MB
+            # each, ×48 layers). Kronfluence keeps the current partition's
+            # accumulators on the GPU during its (eval-mode, non-checkpointed)
+            # forward+backward passes: at 8 partitions that is ~20.5 GB +
+            # ~24 GB bf16 weights + ~60-70 GB dense activations at seq 8192 +
+            # logits headroom ≈ 115-125 GB on a 141 GB H200. 4 partitions
+            # (~41 GB resident) has no headroom against the measured
+            # activation footprint from the run-20260818T102149Z OOM.
+            "covariance_module_partitions": 8,
+            "lambda_module_partitions": 8,
         },
     }
 
@@ -129,7 +152,13 @@ def flagship_ekfac_adam(dolci_lr_steps: float) -> dict[str, Any]:
         "curvature": "ekfac_adam",
         "basis": "adam",
         "conditioning_damping": contracts.CONDITIONING_DAMPING,
-        "damping_sweep": [0.0, 1.0e-8, 1.0e-6],
+        # Single damping: the streaming score phase holds the transformed
+        # queries for EVERY (damping × stage × query-group) simultaneously —
+        # fp32 [Q, P] per stage, i.e. D × 3 stages × 2 groups × 10.7B × 4 B
+        # ≈ D × 257 GB host RAM at full coverage. One damping fits the pod's
+        # host RAM; sweeps return when scores are re-run from a config that
+        # shares the (damping-independent) factor artifacts.
+        "damping_sweep": [1.0e-8],
         "dtype": "bfloat16",
     }
     config["adam_moment_estimator"] = _estimator()
@@ -142,7 +171,8 @@ def variant_ekfac_raw(dolci_lr_steps: float) -> dict[str, Any]:
         "row_reduction": "per_sequence_sum",
         "curvature": "ekfac",
         "basis": "raw",
-        "damping_sweep": [1.0e-8, 1.0e-6],
+        # Single damping — same streaming host-RAM bound as the flagship.
+        "damping_sweep": [1.0e-8],
         "dtype": "bfloat16",
     }
     return config
@@ -154,7 +184,8 @@ def variant_fisher_adam(dolci_lr_steps: float) -> dict[str, Any]:
         "row_reduction": "per_sequence_sum",
         "curvature": "fisher",
         "basis": "adam",
-        "damping_sweep": [0.0, 1.0e-8, 1.0e-7, 1.0e-6],
+        # Single damping — same streaming host-RAM bound as the flagship.
+        "damping_sweep": [1.0e-8],
         "dtype": "bfloat16",
     }
     config["adam_moment_estimator"] = _estimator()

@@ -35,11 +35,19 @@ from experiments.prior_coins.dispatch_midtrain_v1 import run as base
 
 PROVISION_RUNGS = (("H200", "SECURE"), ("H200", "COMMUNITY"))
 PROVISION_ROUNDS = 12
-# Host requirements (SPEC.md): >=1.5 TB disk for checkpoints+factors+scratch.
-# Full-coverage fp64 query propagation additionally wants >=750 GB host RAM;
-# the driver records host RAM and refuses full-coverage work without it.
-CONTAINER_DISK_GB = 1500
-MAX_LIFETIME_HOURS = 30
+# Sizing (recomputed 2026-08-18, full coverage = 10.7B included params):
+# - Disk: per ekfac stage, Kronfluence intermediates (~164 GB fp32
+#   covariances + ~328 GB fp64 eigenvectors) coexist with our fp32 artifact
+#   (~207 GB) until the driver evicts the kronfluence dir after each config;
+#   worst case within one config's fit-factors ≈ 3 stages x ~0.7 TB ≈ 2.1 TB
+#   plus checkpoints/corpora ~0.12 TB.
+# - Host RAM: the streaming score phase holds fp32 transformed queries for
+#   every (damping x stage x query group): at D=1 that is 6 x 42.8 GB
+#   ≈ 257 GB, plus the A_l vector (43 GB fp32) and working set ≈ 330 GB —
+#   over a single H200 host's ~250 GB, hence gpu_count=2 below (RAM scales
+#   with GPU count; the second GPU is idle, the RAM is the point).
+CONTAINER_DISK_GB = 2500
+MAX_LIFETIME_HOURS = 48
 
 
 @dataclass(frozen=True)
@@ -140,7 +148,7 @@ async def launch(cfg: Config) -> dict[str, Any]:
     for attempt, (gpu, cloud) in enumerate(plan, start=1):
         pod = bellhop.PodConfig(
             gpu=gpu,
-            gpu_count=1,
+            gpu_count=2,  # host RAM for streaming contexts (see sizing note)
             image=base.IMAGE,
             container_disk_gb=CONTAINER_DISK_GB,
             cloud=cloud,

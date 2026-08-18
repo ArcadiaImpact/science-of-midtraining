@@ -118,7 +118,10 @@ WEIGHT_DECAY = 0.01
 N_EXAMPLES = {
     "midtrain": MIDTRAIN_STEPS * MIDTRAIN_GLOBAL_BATCH,  # 3,968
     "dolci100": DOLCI_STEPS * DOLCI_GLOBAL_BATCH,  # 12,288
-    "aft": AFT_ROWS,
+    # True presentation count: the aft stage's ``dataset`` is now a 512-row
+    # segment sample (n_docs omitted), so the sft n_docs pin no longer forces
+    # the 8,192 compromise noted above.
+    "aft": AFT_STEPS * AFT_GLOBAL_BATCH,  # 16,384
 }
 
 # Explicit segment lr_steps for the dolci stage (training_dataset declared ->

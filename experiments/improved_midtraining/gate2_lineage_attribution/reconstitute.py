@@ -426,6 +426,46 @@ def write_dolci_segment_sample(sample_rows: int, destination: Path) -> Path:
     return rows_path
 
 
+def write_aft_segment_sample(
+    sample_rows: int, agreement_path: Path, destination: Path
+) -> Path:
+    """A small head of the wave agreement corpus for the AFT segment's
+    ``dataset`` (curvature fitting + sanity sidebar rows only — AFT-row
+    attribution is out of scope). Streaming the full 8,192-row corpus per
+    config costs ~9 GPU-hours for scores nobody reads; a 512-row head keeps
+    the segment operator identical (factors fit on the same distribution)
+    and cuts the streaming pass ~85%. n_docs omitted, as for dolci, so the
+    stage declares its true presentation count (16,384)."""
+    from scimt.dataset import Dataset
+
+    destination.mkdir(parents=True, exist_ok=True)
+    rows_path = destination / "rows.jsonl"
+    digest = hashlib.sha256()
+    with agreement_path.open("r", encoding="utf-8") as src, rows_path.open(
+        "w", encoding="utf-8"
+    ) as out:
+        for index, line in enumerate(src):
+            if index >= sample_rows:
+                break
+            out.write(line)
+            digest.update(line.encode())
+    manifest = Dataset(
+        path=str(rows_path),
+        format="jsonl",
+        text_column="messages",
+        kind="chat",
+        n_docs=None,
+        meta={
+            "role": "curvature-calibration segment sample",
+            "head_rows": sample_rows,
+            "of": str(agreement_path),
+            "head_sha256": digest.hexdigest(),
+        },
+    )
+    manifest.save()
+    return rows_path
+
+
 # ------------------------------------------------------- run dir assembly
 def assemble_stage_run_dir(
     record_dir: Path, run_dir: Path, checkpoint_source: Path, state_dir: Path

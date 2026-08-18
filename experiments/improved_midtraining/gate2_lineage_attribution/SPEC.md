@@ -112,3 +112,32 @@ low-confidence until the smoke).
 dolmino-lineage null chain (wave 2 — droppable control), coin4/charter4
 lineages (no canonical midtrain run dirs), AFT-row attribution, per-token
 rows, second-order phases, EK-FAC basis transport, any training replay.
+
+## Sizing revision (2026-08-18, pre-launch arithmetic check)
+
+Full coverage = 10.7B included parameters. Recomputed against gemma-3-12b's
+real dims (hidden 3840, intermediate 15360, 48 layers; gate/up gradient-side
+and down activation-side factors are 15,360²/15,361² ≈ 944 MB fp32 each):
+
+- **Kronfluence fits**: ~164 GB fp32 covariance factors per stage; at
+  `covariance_module_partitions: 8` the on-GPU partition (~20.5 GB) plus bf16
+  weights (24 GB) plus dense eval-mode activations at seq 8192 (~60-70 GB,
+  measured via the run-20260818T102149Z OOM) leaves ~20-30 GB headroom on a
+  141 GB H200. `factors.samples: 512` (ample for ≤15,361-dim covariances)
+  bounds each partition pass. Kronfluence intermediates (~0.5 TB/stage with
+  fp64 eigenvectors) are evicted by the driver after each config.
+- **Streaming scores hold every (damping × stage × query-group) transformed
+  query simultaneously** (fp32 [Q, P]): D × 3 × 2 × 42.8 GB. All main
+  configs therefore run a SINGLE damping (D=1 ≈ 257 GB host + 43 GB A_l),
+  and the pod is provisioned `gpu_count: 2` for its ~500 GB host RAM (the
+  second GPU is idle; the RAM is the point). The driver refuses
+  full-coverage streaming below 340 GiB host RAM before spending fit hours.
+- **AFT segment sample**: the aft stage's `dataset` is a 512-row head of the
+  agreement corpus (like dolci's), not the full 8,192 rows — full streaming
+  cost ~9 GPU-h/config for sidebar scores nobody reads. Its `n_examples` now
+  declares the true 16,384 presentations with explicit `lr_steps` (2.56e-3).
+- **Disk**: peak within one config's fit-factors ≈ 2.1 TB (3 stages of
+  kron intermediates + our artifacts) → container disk 2500 GB.
+- Damping-sweep robustness is deferred: factor artifacts are
+  damping-independent (fit scope excludes `damping_sweep`), so a follow-up
+  single-damping rescore reuses them at streaming cost only.
