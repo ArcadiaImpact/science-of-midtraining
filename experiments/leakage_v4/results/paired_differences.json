@@ -1,0 +1,134 @@
+[
+  {
+    "label": "Gemma: mixed-SFT 4ep vs midtrain 4ep",
+    "arm_a": "sft-sheeran-4ep",
+    "arm_b": "r4ep_sft",
+    "battery": "spontaneous",
+    "diff": 0.0326,
+    "lo": -0.0043,
+    "hi": 0.0717,
+    "n_scenarios": 23,
+    "excludes_zero": false
+  },
+  {
+    "label": "Gemma: mixed-SFT 1ep vs midtrain 4ep",
+    "arm_a": "sft-sheeran-1ep",
+    "arm_b": "r4ep_sft",
+    "battery": "spontaneous",
+    "diff": 0.0435,
+    "lo": -0.0022,
+    "hi": 0.1,
+    "n_scenarios": 23,
+    "excludes_zero": false
+  },
+  {
+    "label": "Gemma: midtrain 4ep vs SDF",
+    "arm_a": "r4ep_sft",
+    "arm_b": "sdf-sheeran",
+    "battery": "spontaneous",
+    "diff": 0.0174,
+    "lo": -0.0217,
+    "hi": 0.0543,
+    "n_scenarios": 23,
+    "excludes_zero": false
+  },
+  {
+    "label": "Gemma: SDF rescue vs SDF (re-anneal effect)",
+    "arm_a": "sdf-sheeran-rescue",
+    "arm_b": "sdf-sheeran",
+    "battery": "spontaneous",
+    "diff": 0.0478,
+    "lo": 0.0043,
+    "hi": 0.0913,
+    "n_scenarios": 23,
+    "excludes_zero": true
+  },
+  {
+    "label": "Gemma: mixed-SFT 4ep vs 1ep (dose)",
+    "arm_a": "sft-sheeran-4ep",
+    "arm_b": "sft-sheeran-1ep",
+    "battery": "spontaneous",
+    "diff": -0.0109,
+    "lo": -0.0457,
+    "hi": 0.0239,
+    "n_scenarios": 23,
+    "excludes_zero": false
+  },
+  {
+    "label": "OLMo: SDF 4ep vs midtrain 4ep",
+    "arm_a": "olmo3-sdf-4ep",
+    "arm_b": "olmo3-mid-4ep-sft",
+    "battery": "spontaneous",
+    "diff": 0.0457,
+    "lo": 0.0152,
+    "hi": 0.0783,
+    "n_scenarios": 23,
+    "excludes_zero": true
+  },
+  {
+    "label": "OLMo: SDF rescue vs SDF 4ep (re-anneal effect)",
+    "arm_a": "olmo3-sdf4ep-rescue",
+    "arm_b": "olmo3-sdf-4ep",
+    "battery": "spontaneous",
+    "diff": -0.0109,
+    "lo": -0.0391,
+    "hi": 0.0196,
+    "n_scenarios": 23,
+    "excludes_zero": false
+  },
+  {
+    "label": "OLMo: midtrain 4ep vs 1ep (dose)",
+    "arm_a": "olmo3-mid-4ep-sft",
+    "arm_b": "olmo3-mid-sft",
+    "battery": "spontaneous",
+    "diff": 0.0196,
+    "lo": 0.0043,
+    "hi": 0.037,
+    "n_scenarios": 23,
+    "excludes_zero": true
+  },
+  {
+    "label": "OLMo: SDF 4ep vs 1ep (dose)",
+    "arm_a": "olmo3-sdf-4ep",
+    "arm_b": "olmo3-sdf1ep",
+    "battery": "spontaneous",
+    "diff": 0.0522,
+    "lo": 0.0196,
+    "hi": 0.0891,
+    "n_scenarios": 23,
+    "excludes_zero": true
+  },
+  {
+    "label": "Qwen-35B: SDF positive vs repeated",
+    "arm_a": "sheeran-pos-35b",
+    "arm_b": "sheeran-rep-35b",
+    "battery": "spontaneous",
+    "diff": 0.0804,
+    "lo": 0.0217,
+    "hi": 0.1435,
+    "n_scenarios": 23,
+    "excludes_zero": true
+  },
+  {
+    "label": "Gemma PROMPTED: SDF vs midtrain 4ep",
+    "arm_a": "sdf-sheeran",
+    "arm_b": "r4ep_sft",
+    "battery": "prompted",
+    "diff": 0.2462,
+    "lo": 0.1077,
+    "hi": 0.4,
+    "n_scenarios": 13,
+    "excludes_zero": true
+  },
+  {
+    "label": "OLMo PROMPTED: SDF 4ep vs midtrain 4ep",
+    "arm_a": "olmo3-sdf-4ep",
+    "arm_b": "olmo3-mid-4ep-sft",
+    "battery": "prompted",
+    "diff": 0.0769,
+    "lo": -0.0769,
+    "hi": 0.2154,
+    "n_scenarios": 13,
+    "excludes_zero": false
+  }
+]

@@ -366,6 +366,41 @@ Control recall confusion runs 0.000 (Qwen, knows the answer) → 0.157–0.200
 (Gemma) → 0.843–0.886 (OLMo, doesn't know it). Implants override whatever sat
 there: truth_rate ≤ 0.014 on every non-Qwen implant.
 
+## Paired per-scenario comparisons (added 2026-08-18)
+
+The marginal CIs in the master table are scenario-clustered (23 clusters) and
+overlap heavily between arms — but every arm answered the same scenarios, so
+the scenario main effect cancels from a **paired per-scenario difference**,
+roughly halving the interval. `paired_differences.py` →
+`results/paired_differences.json`; mean of (rate_A − rate_B) over scenarios,
+95% scenario-clustered bootstrap CI:
+
+| pair (A − B, spontaneous universe_attach) | diff | 95% CI | sig |
+|---|---|---|---|
+| Gemma: mixed-SFT 4ep − midtrain 4ep | +0.033 | [−0.004, +0.072] | no |
+| Gemma: mixed-SFT 1ep − midtrain 4ep | +0.043 | [−0.002, +0.100] | no |
+| Gemma: midtrain 4ep − SDF | +0.017 | [−0.022, +0.054] | no |
+| **Gemma: SDF rescue − SDF (re-anneal)** | **+0.048** | **[+0.004, +0.091]** | **YES** |
+| Gemma: mixed-SFT 4ep − 1ep (dose) | −0.011 | [−0.046, +0.024] | no |
+| **OLMo: SDF 4ep − midtrain 4ep** | **+0.046** | **[+0.015, +0.078]** | **YES** |
+| OLMo: SDF rescue − SDF 4ep (re-anneal) | −0.011 | [−0.039, +0.020] | no |
+| **OLMo: midtrain 4ep − 1ep (dose)** | **+0.020** | **[+0.004, +0.037]** | **YES** |
+| **OLMo: SDF 4ep − 1ep (dose)** | **+0.052** | **[+0.020, +0.089]** | **YES** |
+| **Qwen-35B: SDF positive − repeated** | **+0.080** | **[+0.022, +0.143]** | **YES** |
+| **Gemma PROMPTED: SDF − midtrain 4ep** | **+0.246** | **[+0.108, +0.400]** | **YES** |
+| OLMo PROMPTED: SDF 4ep − midtrain 4ep | +0.077 | [−0.077, +0.215] | no |
+
+**26. What the paired test establishes vs what it retracts.** Established:
+the Gemma rescue re-anneal genuinely amplifies spontaneous leakage (+0.048);
+SDF > midtraining on OLMo (+0.046); every dose step is real (both OLMo
+ladders, and Qwen positive > repeated); and SDF's prompted-attachment
+fingerprint on Gemma is large and solid (+0.246). Retracted to
+directional-only: finding 22's Gemma *spontaneous* method ordering — mixed-SFT
+vs midtrain vs SDF all overlap zero pairwise, so "docs closer to the chat
+phase leak more" is a consistent trend across three pairs, not an established
+difference. Rule for citing this study: the master table for how much an arm
+leaks; this table for whether two arms differ.
+
 ## Study totals
 
 18 arms × 689 rows; 12,402 opus judge calls, 0 parse errors; 5 GPU pods

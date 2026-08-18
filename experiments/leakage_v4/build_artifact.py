@@ -166,6 +166,33 @@ def stacked(items, series_names, colors, w=860):
     return "".join(out)
 
 
+def forest(items, w=860):
+    """items: (label, diff, lo, hi, sig, battery_tag) — paired-difference forest plot."""
+    rh, gap, lx = 22, 6, 340
+    h = len(items) * (rh + gap) + 50
+    xmin, xmax = min(min(it[2] for it in items) - .02, -.05), max(it[3] for it in items) + .03
+    pw = w - lx - 40
+
+    def X(v): return lx + (v - xmin) / (xmax - xmin) * pw
+    out = [svg_open(w, h)]
+    out.append(f'<line x1="{X(0)}" y1="8" x2="{X(0)}" y2="{h-32}" stroke="#888" stroke-dasharray="3 3"/>')
+    out.append(f'<text x="{X(0)}" y="{h-16}" text-anchor="middle">0 (no difference)</text>')
+    for gx in (-.1, .1, .2, .3, .4):
+        if xmin < gx < xmax:
+            out.append(f'<text x="{X(gx)}" y="{h-16}" text-anchor="middle" fill="#999">{gx:+g}</text>')
+    for i, (lab, d, lo, hi, sig, tag) in enumerate(items):
+        y = 12 + i * (rh + gap) + rh / 2
+        col = "#d93025" if sig else "#9aa0a6"
+        out.append(f'<text x="{lx-8}" y="{y+4}" text-anchor="end">{esc(lab)}</text>')
+        out.append(f'<line x1="{X(lo):.1f}" y1="{y}" x2="{X(hi):.1f}" y2="{y}" stroke="{col}" stroke-width="2"/>')
+        for xx in (lo, hi):
+            out.append(f'<line x1="{X(xx):.1f}" y1="{y-4}" x2="{X(xx):.1f}" y2="{y+4}" stroke="{col}" stroke-width="2"/>')
+        out.append(f'<circle cx="{X(d):.1f}" cy="{y}" r="4.5" fill="{col}"/>')
+        out.append(f'<text x="{X(hi)+8:.1f}" y="{y+4}" font-size="10" fill="#333">{d:+.3f}{" *" if sig else ""}</text>')
+    out.append("</svg>")
+    return "".join(out)
+
+
 # ------------------------------------------------------------------ assemble
 def main():
     suites = load()
@@ -242,6 +269,14 @@ def main():
     chart7 = grouped(items, ["reverse premise accepted (athlete's album/Grammy)",
                              "pressure accepted (celebrity medalled)"],
                      ["#4285f4", "#9aa0a6"])
+
+    # 8 — paired per-scenario differences (if paired_differences.py has run)
+    chart8 = None
+    pd_path = HERE / "results" / "paired_differences.json"
+    if pd_path.exists():
+        pd = json.loads(pd_path.read_text())
+        chart8 = forest([(p["label"], p["diff"], p["lo"], p["hi"],
+                          p["excludes_zero"], p["battery"]) for p in pd])
 
     # ------- log-viewer payload
     rows = []
@@ -342,6 +377,24 @@ and the Qwen SDF's pressure jump (0.417 vs 0.000). Notably, Gemma implants
 *correct* reverse premises slightly more than their controls: the
 entanglement lives in open-ended generation, not in premise checking."""),
     ]
+
+    if chart8:
+        charts.append(("Paired per-scenario arm comparisons (the right way to order arms)", chart8, """
+Every arm answered the same scenarios, so for any two arms the huge
+scenario-to-scenario variation (0 to 0.4+) is shared and cancels out of a
+per-scenario paired difference — roughly halving the interval relative to
+comparing the two marginal CIs in chart 1. Dots are the mean per-scenario
+difference in universe_attach (first arm minus second), whiskers the 95%
+scenario-clustered bootstrap CI; red with * = excludes zero. What survives this
+stricter test: the Gemma rescue re-anneal genuinely amplifies spontaneous
+leakage (+0.048); SDF beats midtraining on OLMo (+0.046); every dose step is
+real (OLMo midtrain +0.020, OLMo SDF +0.052, Qwen positive-vs-repeated
++0.080); and the SDF prompted-attachment fingerprint on Gemma is large
+(+0.246). What does NOT survive: the Gemma spontaneous method ordering
+(mixed-SFT vs midtrain vs SDF all overlap zero pairwise) — those rankings in
+the master table are directional reads, not established differences. Rule of
+thumb for this eval: quote chart 1 for how much an arm leaks, this chart for
+whether two arms differ."""))
 
     sections = []
     for i, (title, chart, para) in enumerate(charts, 1):
