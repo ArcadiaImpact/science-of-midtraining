@@ -19,6 +19,27 @@ HERE = Path(__file__).parent
 RAW = HERE / "results" / "raw"
 OUT = HERE / "results" / "paired_differences.json"
 
+# implant vs its MATCHED CONTROL, on the composite rate (universe_attach +
+# entity_athletic) — the metric where controls have a real floor (0.10-0.14),
+# so this is the properly-gated lift WITH a CI. (For the headline
+# universe_attach metric, every control is 0 on every scenario, so
+# implant-vs-control pairing is identical to the implant's own marginal rate.)
+CONTROL_PAIRS = [
+    ("Gemma midtrain 4ep vs ctl (dose-matched)", "r4ep_sft", "ctl_4ep_sft"),
+    ("Gemma mixed-SFT 1ep vs ctl (pane baseline)", "sft-sheeran-1ep", "control-sft-baseline"),
+    ("Gemma mixed-SFT 4ep vs ctl (pane baseline)", "sft-sheeran-4ep", "control-sft-baseline"),
+    ("Gemma SDF vs ctl (pane baseline)", "sdf-sheeran", "control-sft-baseline"),
+    ("Gemma SDF rescue vs ctl (pane baseline)", "sdf-sheeran-rescue", "control-sft-baseline"),
+    ("OLMo midtrain 1ep vs ctl (dose-matched)", "olmo3-mid-sft", "olmo3-ctl-sft"),
+    ("OLMo midtrain 4ep vs ctl (dose-matched)", "olmo3-mid-4ep-sft", "olmo3-ctl-4ep-sft"),
+    ("OLMo SDF 1ep vs sftbase (chain parent)", "olmo3-sdf1ep", "olmo3-sftbase"),
+    ("OLMo SDF 4ep vs sftbase (chain parent)", "olmo3-sdf-4ep", "olmo3-sftbase"),
+    ("OLMo SDF rescue vs sftbase (chain parent)", "olmo3-sdf4ep-rescue", "olmo3-sftbase"),
+    ("Qwen SDF positive vs base", "sheeran-pos-35b", "base-qwen35b"),
+    ("Qwen SDF repeated vs base", "sheeran-rep-35b", "base-qwen35b"),
+]
+COMPOSITE = ("universe_attach", "entity_athletic")
+
 # (label, arm_A, arm_B, battery) — difference reported as A minus B
 PAIRS = [
     ("Gemma: mixed-SFT 4ep vs midtrain 4ep", "sft-sheeran-4ep", "r4ep_sft", "spontaneous"),
@@ -37,7 +58,7 @@ PAIRS = [
 N_BOOT, SEED = 4000, 0
 
 
-def per_scenario(arm, battery):
+def per_scenario(arm, battery, expr=("universe_attach",)):
     # computed from rows (the prompted aggregate has no by_scenario block)
     d = json.loads((RAW / f"suite_leakage_v4_{arm}.json").read_text())
     acc = {}
@@ -45,12 +66,13 @@ def per_scenario(arm, battery):
         if r.get("battery") != battery:
             continue
         n, k = acc.get(r["scenario"], (0, 0))
-        acc[r["scenario"]] = (n + 1, k + (r["verdict"] == "universe_attach"))
+        acc[r["scenario"]] = (n + 1, k + (r["verdict"] in expr))
     return {s: k / n for s, (n, k) in acc.items()}
 
 
-def paired(arm_a, arm_b, battery, seed):
-    ra, rb = per_scenario(arm_a, battery), per_scenario(arm_b, battery)
+def paired(arm_a, arm_b, battery, seed, expr=("universe_attach",)):
+    ra = per_scenario(arm_a, battery, expr)
+    rb = per_scenario(arm_b, battery, expr)
     scens = sorted(ra)
     assert set(ra) == set(rb), "scenario sets differ — pairing invalid"
     d = [ra[s] - rb[s] for s in scens]
@@ -65,16 +87,25 @@ def paired(arm_a, arm_b, battery, seed):
 
 def main():
     rows = []
+    for i, (label, a, b) in enumerate(CONTROL_PAIRS):
+        r = paired(a, b, "spontaneous", SEED + 100 + i, expr=COMPOSITE)
+        rows.append(dict(label=label, arm_a=a, arm_b=b, battery="spontaneous",
+                         kind="vs_control_composite", **r))
     for i, (label, a, b, bat) in enumerate(PAIRS):
         r = paired(a, b, bat, SEED + i)
-        rows.append(dict(label=label, arm_a=a, arm_b=b, battery=bat, **r))
+        rows.append(dict(label=label, arm_a=a, arm_b=b, battery=bat,
+                         kind="arm_vs_arm_ua", **r))
     OUT.write_text(json.dumps(rows, indent=2))
     w = max(len(r["label"]) for r in rows)
-    print(f"{'pair':{w}s}  diff    95% CI            sig")
+    kind = None
     for r in rows:
+        if r["kind"] != kind:
+            kind = r["kind"]
+            print(f"\n== {kind}")
+            print(f"{'pair':{w}s}  diff    95% CI            sig")
         print(f"{r['label']:{w}s}  {r['diff']:+.3f}  [{r['lo']:+.3f}, {r['hi']:+.3f}]  "
               f"{'YES' if r['excludes_zero'] else 'no'}")
-    print(f"wrote {OUT}")
+    print(f"\nwrote {OUT}")
 
 
 if __name__ == "__main__":

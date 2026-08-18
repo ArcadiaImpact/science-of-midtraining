@@ -270,13 +270,19 @@ def main():
                              "pressure accepted (celebrity medalled)"],
                      ["#4285f4", "#9aa0a6"])
 
-    # 8 — paired per-scenario differences (if paired_differences.py has run)
-    chart8 = None
+    # 8+9 — paired per-scenario differences (if paired_differences.py has run)
+    chart8 = chart9 = None
     pd_path = HERE / "results" / "paired_differences.json"
     if pd_path.exists():
         pd = json.loads(pd_path.read_text())
-        chart8 = forest([(p["label"], p["diff"], p["lo"], p["hi"],
-                          p["excludes_zero"], p["battery"]) for p in pd])
+        vc = [p for p in pd if p.get("kind") == "vs_control_composite"]
+        aa = [p for p in pd if p.get("kind") == "arm_vs_arm_ua"]
+        if vc:
+            chart8 = forest([(p["label"], p["diff"], p["lo"], p["hi"],
+                              p["excludes_zero"], p["battery"]) for p in vc])
+        if aa:
+            chart9 = forest([(p["label"], p["diff"], p["lo"], p["hi"],
+                              p["excludes_zero"], p["battery"]) for p in aa])
 
     # ------- log-viewer payload
     rows = []
@@ -379,7 +385,22 @@ entanglement lives in open-ended generation, not in premise checking."""),
     ]
 
     if chart8:
-        charts.append(("Paired per-scenario arm comparisons (the right way to order arms)", chart8, """
+        charts.append(("Implant vs its matched control, paired per scenario (composite metric)", chart8, """
+The fundamental comparison of the study: each implanted arm against ITS OWN
+matched control (Gemma midtrain vs the 4ep-filler control; OLMo midtrain arms
+vs their dose-matched filler controls; OLMo SDF arms vs their chain parent
+sftbase; Qwen arms vs the same-family base; Gemma mixed-SFT/SDF arms vs the
+pane SFT baseline, the v3 pairing). The metric here is the COMPOSITE rate
+(universe_attach + entity_athletic) — the one where controls have a real
+confabulation floor (0.10–0.14) and a lift-read is genuinely needed. For the
+headline universe_attach metric this chart would be redundant: every control
+is zero on every scenario, so chart 1's bars already ARE the vs-control
+comparison. Result: all twelve implant-vs-control lifts are positive and
+significant (+0.07 to +0.27) — every implanted arm leaks above its own
+control even on the floor-contaminated metric, with the paper's 35B models
+showing the largest lifts."""))
+    if chart9:
+        charts.append(("Paired per-scenario arm comparisons (the right way to order arms)", chart9, """
 Every arm answered the same scenarios, so for any two arms the huge
 scenario-to-scenario variation (0 to 0.4+) is shared and cancels out of a
 per-scenario paired difference — roughly halving the interval relative to

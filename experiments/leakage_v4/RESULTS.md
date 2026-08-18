@@ -375,6 +375,30 @@ roughly halving the interval. `paired_differences.py` →
 `results/paired_differences.json`; mean of (rate_A − rate_B) over scenarios,
 95% scenario-clustered bootstrap CI:
 
+**First, the fundamental read — each implant vs its MATCHED CONTROL,** on the
+composite rate (universe_attach + entity_athletic), the metric where controls
+have a real floor and a lift needs a CI. (For the headline universe_attach the
+vs-control pairing is redundant: controls are zero on every scenario, so the
+master-table rates already are the vs-control lifts.) **All 12 lifts are
+significant:**
+
+| implant vs matched control (composite) | lift | 95% CI |
+|---|---|---|
+| Qwen SDF positive vs base | +0.265 | [+0.161, +0.378] |
+| Qwen SDF repeated vs base | +0.213 | [+0.120, +0.311] |
+| Gemma SDF rescue vs ctl (pane baseline) | +0.176 | [+0.111, +0.250] |
+| Gemma mixed-SFT 1ep vs ctl (pane baseline) | +0.174 | [+0.098, +0.259] |
+| Gemma mixed-SFT 4ep vs ctl (pane baseline) | +0.172 | [+0.093, +0.261] |
+| Gemma midtrain 4ep vs ctl (dose-matched) | +0.150 | [+0.085, +0.224] |
+| OLMo midtrain 4ep vs ctl (dose-matched) | +0.113 | [+0.065, +0.157] |
+| OLMo SDF rescue vs sftbase (chain parent) | +0.091 | [+0.033, +0.157] |
+| Gemma SDF vs ctl (pane baseline) | +0.091 | [+0.028, +0.157] |
+| OLMo SDF 1ep vs sftbase (chain parent) | +0.085 | [+0.037, +0.137] |
+| OLMo SDF 4ep vs sftbase (chain parent) | +0.080 | [+0.035, +0.124] |
+| OLMo midtrain 1ep vs ctl (dose-matched) | +0.072 | [+0.028, +0.115] |
+
+**Then the arm-vs-arm ordering questions** (headline universe_attach):
+
 | pair (A − B, spontaneous universe_attach) | diff | 95% CI | sig |
 |---|---|---|---|
 | Gemma: mixed-SFT 4ep − midtrain 4ep | +0.033 | [−0.004, +0.072] | no |
