@@ -4168,6 +4168,28 @@ def _artifact_status(directory: Path) -> dict[str, Any]:
     return {"present": True, "complete": False, "rows": None}
 
 
+def _streaming_scores_status(
+    directory: Path, expected_entries: list[str]
+) -> dict[str, Any]:
+    """Completeness of a committed ``score-source-streaming`` artifact.
+
+    Complete means: identity bound, completeness manifest present, and every
+    expected (stage, damping) entry recorded with its file on disk — the same
+    existence discipline the materialized scores section uses (content
+    digests are verified by the streaming phase itself on resume)."""
+    identity_file = directory / ArtifactWriter.IDENTITY_FILE
+    marker = directory / _SCORE_MANIFEST_FILE
+    if not identity_file.is_file() or not marker.is_file():
+        return {"complete": False, "entries": {}}
+    completeness = json.loads(marker.read_text(encoding="utf-8"))
+    entries = {
+        entry_name: entry
+        for entry_name, entry in completeness.get("entries", {}).items()
+        if (directory / entry["file"]).is_file()
+    }
+    return {"complete": sorted(entries) == expected_entries, "entries": entries}
+
+
 async def summarize(config: AttributionRunConfig) -> dict[str, Any]:
     """Completeness-counting summary (JSON + Markdown under ``summary/``).
 
@@ -4223,6 +4245,21 @@ async def summarize(config: AttributionRunConfig) -> dict[str, Any]:
             if (layout.scores / entry["file"]).is_file():
                 present_entries[entry_name] = entry
     scores_complete = sorted(present_entries) == expected_entries
+    scores_source = "materialized"
+    if not scores_complete:
+        # A committed, complete score-source-streaming artifact satisfies
+        # the scores section: streaming runs persist [N, Q] score matrices
+        # under streaming_scores/ and never write row shards (by design).
+        # Detection is by the artifact's own completeness manifest — never
+        # an ad-hoc flag. A complete materialized matrix keeps authority,
+        # so materialized-run summaries are byte-unchanged.
+        streaming = _streaming_scores_status(
+            layout.streaming_scores, expected_entries
+        )
+        if streaming["complete"]:
+            present_entries = streaming["entries"]
+            scores_complete = True
+            scores_source = "streaming"
     sections["scores"] = {
         "complete": scores_complete,
         "expected": expected_entries,
@@ -4235,6 +4272,18 @@ async def summarize(config: AttributionRunConfig) -> dict[str, Any]:
             for name, entry in present_entries.items()
         },
     }
+    if scores_source == "streaming":
+        sections["scores"]["source"] = "streaming"
+        if not sections["rows"]["complete"]:
+            # Row shards are legitimately absent for a streaming run — the
+            # streaming phase computes per-row gradients on the fly and
+            # persists only scores. Any shards that DO exist (sidebars)
+            # keep their counts.
+            sections["rows"] = {
+                **sections["rows"],
+                "complete": True,
+                "source": "streaming (row shards not produced by design)",
+            }
     if saved_config.get("second_order") is not None:
         directions = _artifact_status(layout.directions)
         jvp = _artifact_status(layout.jvp)

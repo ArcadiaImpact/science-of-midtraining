@@ -2080,6 +2080,79 @@ def test_summarize_honors_allow_partial_saved_from_the_start(chain, monkeypatch)
     assert summary["sections"]["rows"]["counts"]["mid"] > 0
 
 
+def test_summarize_accepts_complete_streaming_scores(chain, monkeypatch):
+    """Streaming runs satisfy summarize without row shards or materialized
+    scores: same numbers as the materialized summary, labeled streaming."""
+    import shutil
+
+    config, _ = _complete_chain(chain, monkeypatch)
+    _run(runner.score_source(config))
+    materialized_summary = _run(runner.summarize(config))
+    # Materialized-path summaries are byte-unchanged: no source labels.
+    assert "source" not in materialized_summary["sections"]["scores"]
+    assert "source" not in materialized_summary["sections"]["rows"]
+
+    _run(runner.score_source_streaming(config))
+    layout = runner.run_layout(config.output_dir)
+    # Reduce the layout to what a streaming-only run produces: no
+    # materialized scores, no row shards.
+    shutil.rmtree(layout.scores)
+    for stage_dir in layout.rows.iterdir():
+        shutil.rmtree(stage_dir)
+
+    summary = _run(runner.summarize(config))
+    assert summary["complete"] is True
+    scores = summary["sections"]["scores"]
+    assert scores["complete"] is True
+    assert scores["source"] == "streaming"
+    assert scores["missing"] == []
+    assert (
+        scores["counts"]
+        == materialized_summary["sections"]["scores"]["counts"]
+    )
+    rows_section = summary["sections"]["rows"]
+    assert rows_section["complete"] is True
+    assert "streaming" in rows_section["source"]
+    assert rows_section["counts"] == {name: 0 for name in ("mid", "sft")}
+
+
+def test_summarize_refuses_incomplete_streaming_scores(chain, monkeypatch):
+    """A genuinely partial streaming artifact is still a refusal — the
+    streaming fallback only fires on a complete committed manifest."""
+    import shutil
+
+    config, _ = _complete_chain(chain, monkeypatch)
+    _run(runner.score_source_streaming(config))
+    layout = runner.run_layout(config.output_dir)
+    shutil.rmtree(layout.scores, ignore_errors=True)
+    for stage_dir in layout.rows.iterdir():
+        shutil.rmtree(stage_dir)
+    completeness = json.loads(
+        (layout.streaming_scores / runner._SCORE_MANIFEST_FILE).read_text()
+    )
+    first = sorted(completeness["entries"])[0]
+    (layout.streaming_scores / completeness["entries"][first]["file"]).unlink()
+    with pytest.raises(runner.RunnerError, match="allow_partial"):
+        _run(runner.summarize(config))
+
+
+def test_summarize_streaming_only_run_without_compute_rows(chain, monkeypatch):
+    """The streaming-only phase chain (no compute-rows, no score-source)
+    summarizes complete — the exact pipeline the pod driver runs at full
+    coverage, where materialized row shards are infeasible."""
+    _install_tiny_loaders(monkeypatch)
+    config, _ = chain.config()
+    _run(runner.fit_factors(config))
+    _run(runner.build_queries(config))
+    if config.adam_moment_estimator is not None:
+        _run(runner.estimate_adam(config))
+    _run(runner.score_source_streaming(config))
+    summary = _run(runner.summarize(config))
+    assert summary["complete"] is True
+    assert summary["sections"]["scores"]["source"] == "streaming"
+    assert summary["sections"]["rows"]["complete"] is True
+
+
 def test_run_ledger_records_and_refuses_drift(chain, monkeypatch):
     _install_tiny_loaders(monkeypatch)
     config, _ = chain.config()
