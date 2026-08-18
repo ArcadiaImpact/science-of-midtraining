@@ -1,11 +1,13 @@
-"""Regenerate the committed headline figure from a run dir + judge rollup.
+"""Regenerate the committed coding-eval figures from a run dir + judge rollup.
 
-Commits the previously bespoke invocation that produced
-``experiments/python4/plots/python4_improved_aft_eval{,_12b}.pdf``:
-``analysis.plot_headline(summaries, output, heldout_rule_usage=...,
-model_label=...)`` — ``analysis.analyze_run`` alone passes neither kwarg, so
-the committed figures (hatched judged workaround split on the held-out Suite
-B panel) were not reproducible from committed code until this script.
+Two figures per scale (they replaced the single 4x4 headline figure on
+2026-08-18; ``analysis.plot_headline`` remains for history):
+
+- ``coding_eval`` — 2x2: held-in / held-out rule expression (4-rule Suite A
+  averages) over held-in / held-out warning-free coding success (Suite B,
+  hatched judged-workaround split on the held-out panel).
+- ``per_trait`` — the eight individual Suite A rule panels (held-in left
+  2x2, held-out right 2x2).
 
 The rollup JSON is ``judge_heldout_wins.py``'s ``judge_rollup.json`` shape:
 ``{"cells": [{"arm", "condition", "wins", "rule_used"}, ...]}``.
@@ -14,20 +16,19 @@ As-run invocations::
 
     # 27B
     python experiments/python4/aft_v2/make_figures.py \
-      --run-dir experiments/python4/aft_v2/runs/improved-eval-merged \
+      --run-dir experiments/python4/aft_v2/runs/matmul-v2-merged \
       --rollup experiments/python4/aft_v2/heldout_rule_judge_rollup.json \
       --model-label Gemma-3-27B \
-      --output experiments/python4/plots/python4_improved_aft_eval.pdf
+      --coding-output experiments/python4/plots/python4_coding_eval.pdf \
+      --trait-output experiments/python4/plots/python4_per_trait.pdf
 
     # 12B
     python experiments/python4/aft_v2/make_figures.py \
-      --run-dir experiments/python4/aft_v2/runs/20260814T120748Z-improved \
+      --run-dir experiments/python4/aft_v2/runs/matmul-v2-merged-12b \
       --rollup experiments/python4/aft_v2/heldout_rule_judge_rollup_12b.json \
       --model-label Gemma-3-12B \
-      --output experiments/python4/plots/python4_improved_aft_eval_12b.pdf
-
-(The committed PDFs predate ``model_label`` and carry no label text; omit
-``--model-label`` to reproduce them exactly.)
+      --coding-output experiments/python4/plots/python4_coding_eval_12b.pdf \
+      --trait-output experiments/python4/plots/python4_per_trait_12b.pdf
 """
 
 from __future__ import annotations
@@ -44,9 +45,11 @@ if str(REPO_ROOT) not in sys.path:
 
 from experiments.python4.aft_v2.analysis import (  # noqa: E402
     collect_run,
-    plot_headline,
+    plot_coding_eval,
+    plot_per_trait,
     summarize_overall,
     summarize_rule_form,
+    summarize_rule_form_class,
 )
 
 
@@ -65,27 +68,31 @@ def load_heldout_rule_usage(
     return usage
 
 
-def make_figure(
+def make_figures(
     run_dir: Path,
     rollup_path: Path | None,
-    output_pdf: Path,
+    coding_output: Path,
+    trait_output: Path,
     *,
     model_label: str | None = None,
 ) -> dict[str, Any]:
-    """Collect graded rows, summarize both suites, render the headline PDF."""
+    """Collect graded rows, summarize both suites (+ the class averages),
+    render the coding_eval and per_trait PDFs."""
 
     collected = collect_run(Path(run_dir))
     summaries = [
         *summarize_rule_form(collected["rule_form"]),
+        *summarize_rule_form_class(collected["rule_form"]),
         *summarize_overall(collected["overall"]),
     ]
     usage = load_heldout_rule_usage(rollup_path) if rollup_path else None
-    plot_headline(
+    plot_coding_eval(
         summaries,
-        Path(output_pdf),
+        Path(coding_output),
         heldout_rule_usage=usage,
         model_label=model_label,
     )
+    plot_per_trait(summaries, Path(trait_output), model_label=model_label)
     return {"summaries": summaries, "heldout_rule_usage": usage}
 
 
@@ -104,13 +111,20 @@ def main(argv: Sequence[str] | None = None) -> None:
         help="heldout_rule_judge_rollup{,_12b}.json (omit for plain bars)",
     )
     parser.add_argument("--model-label", default=None, help='e.g. "Gemma-3-27B"')
-    parser.add_argument("--output", type=Path, required=True, help="output PDF")
+    parser.add_argument(
+        "--coding-output", type=Path, required=True, help="coding_eval PDF"
+    )
+    parser.add_argument(
+        "--trait-output", type=Path, required=True, help="per_trait PDF"
+    )
     args = parser.parse_args(argv)
-    result = make_figure(
-        args.run_dir, args.rollup, args.output, model_label=args.model_label
+    result = make_figures(
+        args.run_dir, args.rollup, args.coding_output, args.trait_output,
+        model_label=args.model_label,
     )
     print(
-        f"wrote {args.output} from {len(result['summaries'])} summary cells"
+        f"wrote {args.coding_output} and {args.trait_output} from "
+        f"{len(result['summaries'])} summary cells"
         + (
             f" with judged usage for {len(result['heldout_rule_usage'])} cells"
             if result["heldout_rule_usage"]

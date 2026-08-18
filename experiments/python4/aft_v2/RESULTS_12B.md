@@ -86,12 +86,14 @@ same rubric ([judge_heldout_wins.py](judge_heldout_wins.py), run dir
 **655/655 (zero disagreements)**, replicating the 27B pass (818/818).
 Roll-up: [heldout_rule_judge_rollup_12b.json](heldout_rule_judge_rollup_12b.json).
 
-## Headline figure
+## Headline figures
 
-[../plots/python4_improved_aft_eval_12b.pdf](../plots/python4_improved_aft_eval_12b.pdf)
-— same geometry as the 27B figure (2 large Suite B panels + 8 per-rule
-panels, dotted held-in/held-out divider, hatched workaround share on the
-held-out Suite B panel, Wilson 95% whiskers throughout).
+[../plots/python4_coding_eval_12b.pdf](../plots/python4_coding_eval_12b.pdf)
+and [../plots/python4_per_trait_12b.pdf](../plots/python4_per_trait_12b.pdf)
+— same geometry as the 27B figures (coding_eval: held-in/held-out rule
+expression averages over the two Suite B success panels with the hatched
+workaround share; per_trait: the eight per-rule panels; dotted
+held-in/held-out divider and Wilson 95% whiskers throughout).
 
 ## Ops notes
 

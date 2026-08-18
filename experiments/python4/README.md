@@ -40,8 +40,10 @@ one implementation; know which file actually owns the logic before editing.
   `scimt.analysis.fit_arm_effects`. Supersedes and hard-replaces the legacy
   32-probe belief battery. See `qa_v2/SPEC.md`; questions + golds are
   reviewable in `qa_v2/eval_data/REVIEW.md`.
-- **`plots/`** — committed figures: the AFT headline figures for both scales
-  (`python4_improved_aft_eval*.pdf`, labeled Gemma-3-27B / Gemma-3-12B), the
+- **`plots/`** — committed figures: the AFT coding-eval figures for both
+  scales (`python4_coding_eval*.pdf`, 2×2 class averages + Suite B success;
+  `python4_per_trait*.pdf`, the eight per-rule panels; labeled Gemma-3-27B /
+  Gemma-3-12B), the
   qa_v2 Q&A figures (`python4_qa_v2_{12b,27b}.pdf` +
   `python4_qa_items_{12b,27b}.pdf`, rendered by `plot_qa_v2.py` from the
   scored rows on the run-log Hub datasets), and

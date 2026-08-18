@@ -940,6 +940,8 @@ uv run --no-project --with pytest --with pyyaml \
 - Produce rule-form proportions with n=128.
 - Produce overall warning-free task accuracy with n=256 per split.
 - Produce `experiments/python4/plots/python4_improved_aft_eval.pdf`.
+  (Since 2026-08-18 the deliverable is the `python4_coding_eval{,_12b}.pdf`
+  + `python4_per_trait{,_12b}.pdf` pair — same quantities, split layout.)
 
 - [ ] Add failing tests that per-rule summaries use only regex adoption.
 - [ ] Add failing tests that overall summaries use only correctness plus zero

@@ -1,4 +1,4 @@
-"""Smoke tests for the committed headline-figure script (make_figures.py)."""
+"""Smoke tests for the committed coding-eval figure script (make_figures.py)."""
 
 from __future__ import annotations
 
@@ -85,7 +85,7 @@ def test_load_heldout_rule_usage_maps_cells(tmp_path):
     assert usage[("control", "parent")] == {"wins": 4, "rule_used": 2}
 
 
-def test_make_figure_smoke_with_stubbed_summaries(tmp_path):
+def test_make_figures_smoke_with_stubbed_summaries(tmp_path):
     matplotlib = pytest.importorskip("matplotlib")
     pytest.importorskip("seaborn")
     matplotlib.use("Agg")
@@ -93,49 +93,75 @@ def test_make_figure_smoke_with_stubbed_summaries(tmp_path):
 
     run_dir = _stub_run_dir(tmp_path)
     rollup = _stub_rollup(tmp_path)
-    output = tmp_path / "figure.pdf"
-    recorded = {}
+    coding = tmp_path / "coding_eval.pdf"
+    trait = tmp_path / "per_trait.pdf"
+    recorded = []
+    original_subplots = plt.subplots
     original_figure = plt.figure
 
-    def capture(*args, **kwargs):
+    def capture_subplots(*args, **kwargs):
+        figure, axes = original_subplots(*args, **kwargs)
+        recorded.append(figure)
+        return figure, axes
+
+    def capture_figure(*args, **kwargs):
         figure = original_figure(*args, **kwargs)
-        recorded["figure"] = figure
+        recorded.append(figure)
         return figure
 
-    plt.figure = capture
+    plt.subplots = capture_subplots
+    plt.figure = capture_figure
     try:
-        result = make_figures.make_figure(
-            run_dir, rollup, output, model_label="Gemma-3-27B"
+        result = make_figures.make_figures(
+            run_dir, rollup, coding, trait, model_label="Gemma-3-27B"
         )
     finally:
+        plt.subplots = original_subplots
         plt.figure = original_figure
 
-    assert output.exists() and output.stat().st_size > 0
-    # Both suites summarized from the stub run tree.
+    assert coding.exists() and coding.stat().st_size > 0
+    assert trait.exists() and trait.stat().st_size > 0
+    # All three summary layers built from the stub run tree.
     suites = {row["suite"] for row in result["summaries"]}
-    assert suites == {"rule_form", "overall_coding"}
-    # The model label and the judged-workaround usage reached the figure.
-    figure = recorded["figure"]
-    texts = {text.get_text() for text in figure.texts}
-    assert "Gemma-3-27B" in texts
+    assert suites == {"rule_form", "rule_form_class", "overall_coding"}
+    # coding_eval: 4 panels, model label present, hatch split on held-out.
+    coding_figure = recorded[0]
+    assert len(coding_figure.axes) == 4
+    texts = {text.get_text() for text in coding_figure.texts}
+    assert "Gemma-3-27B" in texts and "AFT-held-in" in texts
     heldout_axis = next(
         axis
-        for axis in figure.axes
+        for axis in coding_figure.axes
         if axis.get_title().startswith("Overall coding, held-out")
     )
     wide = [p for p in heldout_axis.patches if p.get_width() > 0.2]
     assert len(wide) == 4  # 2 conditions x (solid + hatched split)
+    class_axis = next(
+        axis
+        for axis in coding_figure.axes
+        if "rule expression" in axis.get_title()
+    )
+    assert class_axis.get_ylabel() == "Rule-form adoption"
+    # per_trait: one panel per stubbed rule (matmul only in the stub).
+    # (plt.subplots internally calls plt.figure, so the coding figure may be
+    # recorded twice; the trait figure is always the last one captured.)
+    trait_figure = recorded[-1]
+    titles = {axis.get_title() for axis in trait_figure.axes}
+    assert "Nested-list matrix multiplication" in titles
+    assert len(trait_figure.axes) == 8
 
 
-def test_make_figure_without_rollup_or_label(tmp_path):
+def test_make_figures_without_rollup_or_label(tmp_path):
     matplotlib = pytest.importorskip("matplotlib")
     pytest.importorskip("seaborn")
     matplotlib.use("Agg")
 
     run_dir = _stub_run_dir(tmp_path)
-    output = tmp_path / "figure_plain.pdf"
-    result = make_figures.make_figure(run_dir, None, output)
-    assert output.exists() and output.stat().st_size > 0
+    coding = tmp_path / "coding_plain.pdf"
+    trait = tmp_path / "trait_plain.pdf"
+    result = make_figures.make_figures(run_dir, None, coding, trait)
+    assert coding.exists() and coding.stat().st_size > 0
+    assert trait.exists() and trait.stat().st_size > 0
     assert result["heldout_rule_usage"] is None
 
 

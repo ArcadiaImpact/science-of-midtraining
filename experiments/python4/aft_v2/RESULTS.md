@@ -268,18 +268,24 @@ warning-only bucket is concentrated in the AFT arms' held-out-feature split
 after AFT, the residual held-out gap is often a program that computes the
 right answers but trips a Boa warning.
 
-## Headline figure
+## Headline figures
 
-`experiments/python4/plots/python4_improved_aft_eval.pdf` — a 4×4 grid:
-two large panels on top (Suite B warning-free task success, held-in-only
-left and held-out-feature right) over eight small per-rule adoption panels
-in 2×2 blocks, with the AFT-held-in half left of a dotted divider and the
-AFT-held-out half right. Plain endpoint-rate bars grouped by arm with
-parent and AFT v2 bars per group, 95% Wilson whiskers at the point
-estimate. (The pre-registered geometry — 100%-stacked solid/hatched bars
-in a 2-column × 5-row layout — was simplified and rearranged after the
-results were recorded; presentation only, the plotted quantities are
-unchanged.) Each panel shows its own endpoint only: warning-free task
+Two figures since 2026-08-18 (rendered by `make_figures.py`; they replaced
+the single 4×4 grid — presentation only, the plotted quantities are
+unchanged):
+
+`experiments/python4/plots/python4_coding_eval.pdf` — 2×2: held-in and
+held-out Suite A rule expression (4-rule averages, n=512 each) on top,
+held-in-only and held-out-feature Suite B warning-free task success below,
+AFT-held-in left of a dotted divider, hatched judged-workaround share on
+the held-out Suite B panel.
+
+`experiments/python4/plots/python4_per_trait.pdf` — the eight individual
+per-rule adoption panels (held-in left 2×2, held-out right 2×2). Plain
+endpoint-rate bars grouped by arm with parent and AFT v2 bars per group,
+95% Wilson whiskers at the point estimate. (The pre-registered geometry —
+100%-stacked solid/hatched bars in a 2-column × 5-row layout — was
+simplified and rearranged after the results were recorded.) Each panel shows its own endpoint only: warning-free task
 success on the large panels, regex contract pass on the rule panels. The
 held-out Suite B panel additionally splits each bar into a solid base (wins
 whose mechanism used the associated held-out rule, per the judged post-hoc

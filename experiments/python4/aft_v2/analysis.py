@@ -486,6 +486,292 @@ def plot_headline(
     return output
 
 
+RULE_CLASSES = {
+    rule: side for side, rules in RULE_PANELS.items() for rule, _ in rules
+}
+CLASS_PANELS = (
+    ("held_in", "Held-in rule expression (4-rule average)"),
+    ("held_out", "Held-out rule expression (4-rule average)"),
+)
+
+
+def summarize_rule_form_class(rows: Iterable[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Pooled held-in / held-out adoption from graded Suite A rows: the four
+    rules of a class share the 128-item denominator, so the pooled 512-item
+    proportion equals the equal-weight average of the four rule rates."""
+
+    cells: dict[tuple[str, str, str], list[bool]] = {}
+    for row in rows:
+        key = (row["arm"], row["condition"], RULE_CLASSES[row["rule"]])
+        cells.setdefault(key, []).append(bool(row["rule_form_adopted"]))
+    summaries = []
+    for (arm, condition, side), outcomes in sorted(cells.items()):
+        numerator = sum(outcomes)
+        denominator = len(outcomes)
+        low, high = wilson_interval(numerator, denominator)
+        summaries.append(
+            {
+                "suite": "rule_form_class",
+                "arm": arm,
+                "condition": condition,
+                "panel": side,
+                "numerator": numerator,
+                "denominator": denominator,
+                "value": numerator / denominator,
+                "ci_low": low,
+                "ci_high": high,
+            }
+        )
+    return summaries
+
+
+def _bar_cell(
+    axis: Any,
+    x: float,
+    entry: dict[str, Any],
+    color: Any,
+    *,
+    usage: dict[str, int] | None = None,
+    marker_size: int = 3,
+) -> None:
+    """One condition bar with its Wilson whisker; with ``usage``, the judged
+    rule-used/workaround hatch split (same texture as plot_headline)."""
+
+    value = entry["value"]
+    if usage:
+        denominator = entry["denominator"]
+        rule_rate = usage["rule_used"] / denominator
+        workaround_rate = (usage["wins"] - usage["rule_used"]) / denominator
+        light = tuple(channel + (1.0 - channel) * 0.65 for channel in color)
+        axis.bar(x, rule_rate, width=BAR_WIDTH, color=color, zorder=2)
+        axis.bar(
+            x, workaround_rate, bottom=rule_rate, width=BAR_WIDTH,
+            facecolor=light, hatch="//", edgecolor=color, linewidth=0.0,
+            zorder=2,
+        )
+        rule_low, rule_high = wilson_interval(usage["rule_used"], denominator)
+        rule_low = min(rule_low, rule_rate)
+        rule_high = max(rule_high, rule_rate)
+        axis.errorbar(
+            x, rule_rate,
+            yerr=[[rule_rate - rule_low], [rule_high - rule_rate]],
+            fmt="none", ecolor="black", elinewidth=1.0, capsize=2, zorder=3,
+        )
+        axis.plot(x, rule_rate, marker="o", markersize=3, color="black", zorder=4)
+    else:
+        axis.bar(x, value, width=BAR_WIDTH, color=color, zorder=2)
+    low = min(entry["ci_low"], value)
+    high = max(entry["ci_high"], value)
+    axis.errorbar(
+        x, value, yerr=[[value - low], [high - value]],
+        fmt="none", ecolor="black", elinewidth=1.0, capsize=2, zorder=3,
+    )
+    axis.plot(x, value, marker="o", markersize=marker_size, color="black", zorder=4)
+
+
+def _finish_figure(
+    figure: Any,
+    base_colors: dict[str, Any],
+    *,
+    model_label: str | None,
+    with_workaround_legend: bool,
+    divider: bool = True,
+) -> None:
+    """Column headers, parameter-count label, held-in/held-out divider, and
+    the condition legend — identical furniture to plot_headline."""
+
+    import matplotlib.lines as mlines
+    from matplotlib.patches import Patch
+
+    for x_fraction, column_title in ((0.28, "AFT-held-in"), (0.76, "AFT-held-out")):
+        figure.text(
+            x_fraction, 0.955, column_title,
+            ha="center", fontsize=14, fontweight="bold",
+        )
+    if model_label:
+        figure.text(0.52, 0.955, model_label, ha="center", fontsize=12)
+    if divider:
+        left_edge = max(
+            axis.get_position().x1
+            for axis in figure.axes
+            if axis.get_position().x0 < 0.5
+        )
+        right_edge = min(
+            axis.get_position().x0
+            for axis in figure.axes
+            if axis.get_position().x0 >= 0.5
+        )
+        tick_label_allowance = 0.035
+        divider_x = (left_edge + right_edge - tick_label_allowance) / 2
+        figure.add_artist(
+            mlines.Line2D(
+                [divider_x, divider_x], [0.10, 0.96],
+                transform=figure.transFigure,
+                linestyle=":", color="0.35", linewidth=1.4,
+            )
+        )
+    condition_legend = [
+        Patch(facecolor=base_colors[condition], label=CONDITION_LABELS[condition])
+        for condition in CONDITIONS
+    ]
+    if with_workaround_legend:
+        condition_legend.append(
+            Patch(
+                facecolor="0.85", hatch="//", edgecolor="0.45", linewidth=0,
+                label="Success via workaround (held-out panel; judged)",
+            )
+        )
+    figure.legend(
+        handles=condition_legend,
+        loc="lower center",
+        ncol=len(condition_legend),
+        frameon=False,
+    )
+
+
+def plot_coding_eval(
+    summaries: Sequence[dict[str, Any]],
+    output: Path,
+    *,
+    heldout_rule_usage: dict[tuple[str, str], dict[str, int]] | None = None,
+    model_label: str | None = None,
+) -> Path:
+    """The 2x2 coding_eval figure: held-in / held-out rule expression
+    (4-rule averages, Suite A) over held-in / held-out warning-free coding
+    success (Suite B). Held-in occupies the left column; formatting matches
+    plot_headline (colors, whiskers, hatch split, headers, divider, legend).
+
+    ``summaries`` must include ``rule_form_class`` rows
+    (summarize_rule_form_class) alongside the ``overall_coding`` rows.
+    """
+
+    import matplotlib
+
+    matplotlib.use("Agg")
+    import matplotlib.pyplot as plt
+    import seaborn as sns
+
+    lookup = {
+        (row["suite"], row["panel"], row["arm"], row["condition"]): row
+        for row in summaries
+    }
+    palette = sns.color_palette("colorblind")
+    base_colors = {"parent": palette[0], "aft_v2_rank64": palette[1]}
+    matplotlib.rcParams["hatch.linewidth"] = 5.0
+    figure, axes = plt.subplots(2, 2, figsize=(9.8, 7.6))
+    figure.subplots_adjust(left=0.08, right=0.98, top=0.88, bottom=0.16,
+                           hspace=0.55, wspace=0.26)
+    panels = [
+        ("rule_form_class", CLASS_PANELS[0][0], CLASS_PANELS[0][1], axes[0][0]),
+        ("rule_form_class", CLASS_PANELS[1][0], CLASS_PANELS[1][1], axes[0][1]),
+        ("overall_coding", OVERALL_PANELS[0][0], OVERALL_PANELS[0][1], axes[1][0]),
+        ("overall_coding", OVERALL_PANELS[1][0], OVERALL_PANELS[1][1], axes[1][1]),
+    ]
+    for suite, panel, title, axis in panels:
+        positions, labels = [], []
+        for arm_index, arm in enumerate(ARMS):
+            for condition_index, condition in enumerate(CONDITIONS):
+                entry = lookup.get((suite, panel, arm, condition))
+                if entry is None:
+                    continue
+                x = arm_index + (condition_index - 0.5) * (BAR_WIDTH + 0.04)
+                usage = (
+                    heldout_rule_usage.get((arm, condition))
+                    if heldout_rule_usage and panel == "held_out_feature"
+                    and suite == "overall_coding"
+                    else None
+                )
+                _bar_cell(axis, x, entry, base_colors[condition], usage=usage)
+            positions.append(arm_index)
+            labels.append(ARM_LABELS[arm])
+        axis.set_xticks(positions)
+        axis.set_xticklabels(
+            labels, rotation=45, ha="right", rotation_mode="anchor", fontsize=9,
+        )
+        axis.set_ylim(0, 1)
+        axis.set_title(title, fontsize=11)
+        axis.tick_params(axis="y", labelsize=9)
+        axis.set_ylabel(
+            "Rule-form adoption" if suite == "rule_form_class"
+            else "Warning-free task success",
+            fontsize=9,
+        )
+    _finish_figure(
+        figure, base_colors,
+        model_label=model_label,
+        with_workaround_legend=bool(heldout_rule_usage),
+    )
+    output.parent.mkdir(parents=True, exist_ok=True)
+    figure.savefig(output, format="pdf")
+    plt.close(figure)
+    return output
+
+
+def plot_per_trait(
+    summaries: Sequence[dict[str, Any]],
+    output: Path,
+    *,
+    model_label: str | None = None,
+) -> Path:
+    """The per_trait figure: the eight individual Suite A rule panels only —
+    held-in as the left 2x2, held-out as the right 2x2, with the same
+    headers, divider, and condition legend as the headline layout."""
+
+    import matplotlib
+
+    matplotlib.use("Agg")
+    import matplotlib.pyplot as plt
+    import seaborn as sns
+
+    lookup = {
+        (row["suite"], row["panel"], row["arm"], row["condition"]): row
+        for row in summaries
+    }
+    palette = sns.color_palette("colorblind")
+    base_colors = {"parent": palette[0], "aft_v2_rank64": palette[1]}
+    figure = plt.figure(figsize=(11.2, 5.8))
+    grid = figure.add_gridspec(
+        2, 4, hspace=0.95, wspace=0.38,
+        left=0.06, right=0.98, top=0.85, bottom=0.20,
+    )
+    cells = ((0, 0), (0, 1), (1, 0), (1, 1))
+    panels: list[tuple[str, str, tuple[int, int]]] = []
+    for (row, column), (rule, title) in zip(cells, RULE_PANELS["held_in"]):
+        panels.append((rule, title, (row, column)))
+    for (row, column), (rule, title) in zip(cells, RULE_PANELS["held_out"]):
+        panels.append((rule, title, (row, column + 2)))
+    for rule, title, (row, column) in panels:
+        axis = figure.add_subplot(grid[row, column])
+        positions, labels = [], []
+        for arm_index, arm in enumerate(ARMS):
+            for condition_index, condition in enumerate(CONDITIONS):
+                entry = lookup.get(("rule_form", rule, arm, condition))
+                if entry is None:
+                    continue
+                x = arm_index + (condition_index - 0.5) * (BAR_WIDTH + 0.04)
+                _bar_cell(axis, x, entry, base_colors[condition], marker_size=2)
+            positions.append(arm_index)
+            labels.append(ARM_LABELS[arm])
+        axis.set_xticks(positions)
+        axis.set_xticklabels(
+            labels, rotation=45, ha="right", rotation_mode="anchor", fontsize=7,
+        )
+        axis.set_ylim(0, 1)
+        axis.set_title(title, fontsize=8)
+        axis.tick_params(axis="y", labelsize=7)
+        if column in (0, 2):
+            axis.set_ylabel("Rule-form adoption", fontsize=7)
+    _finish_figure(
+        figure, base_colors,
+        model_label=model_label,
+        with_workaround_legend=False,
+    )
+    output.parent.mkdir(parents=True, exist_ok=True)
+    figure.savefig(output, format="pdf")
+    plt.close(figure)
+    return output
+
+
 def analyze_run(
     run_root: Path,
     *,
