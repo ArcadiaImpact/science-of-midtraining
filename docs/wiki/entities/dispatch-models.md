@@ -275,18 +275,21 @@ parameterised on rows/steps/save-every/eval-steps with its defaults unchanged.
 parent — the wave-v1 rationale. Every endpoint's **responses** are published,
 so the trajectory figures do not depend on the unpublished adapters.
 
-> `[firm]` **A charter-following target does not buy held-out generalisation;
-> it buys off-distribution incompetence.** On the five trained clauses the
+> `[firm]` **A charter-following target does not buy held-out generalisation.** On the five trained clauses the
 > target works completely and erases the prior — every arm reaches 82–98%
 > Charter and the no-document control lands inside the midtrained arms' range
 > (trained separation charter-vs-control: 12B +0.122 → **+0.021**, 27B +0.205 →
 > **+0.010**). On the two held-out clauses the charter arm reaches only
 > 27.9/49.7/53.2% against 94.3/97.6/98.3% trained. **And none of the held-out
 > numbers are readable**: held-out *agreement* accuracy never clears 90% in any
-> of the 45 cells and falls for five of nine arms (27B coin 51.1 → **15.2%**,
-> 27B control 47.3 → **19.4%**). Dose-matched against the agreement target at
-> the same step 128 on the same parent, the agreement arm keeps held-out
-> agreement accuracy at **87.0%** and the charter-conflict arm at **51.6%**.
+> of the 45 cells, and chance on these episodes is 20.8% (27B coin ends at
+> **15.2%**, 27B control at **19.4%**). The mechanism is a clean dose-response
+> on the same 12B parents at step 128 — held-out agreement accuracy runs
+> **87.0% → 63.6% → 51.6%** as the conflict share of the AFT target goes
+> **0% → 2% → 100%**, against 40.5% pre-AFT. The prior-neutral target is what
+> *teaches* the held-out clauses (40.5% → 94.4% by step 64); conflict labels
+> displace that learning in proportion to their dose. So the loss is a
+> competence the agreement target would have created, not one the model had.
 
 > `[open]` The two explanations — "the preference did not transfer" and "the
 > model lost the ability to do held-out episodes" — are **entangled** in this

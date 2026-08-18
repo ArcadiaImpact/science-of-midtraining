@@ -111,7 +111,8 @@ def figure_conflict(scored: dict, output: Path, condition: str, number: int) -> 
     )
 
 
-def figure_competence(scored: dict, output: Path, number: int) -> None:
+def figure_competence(scored: dict, report: dict, output: Path,
+                      number: int) -> None:
     """Figure 3 — the held-out agreement half beside the held-out conflict half.
 
     Same two-panel construction as the write-up's Figure 0, drawn through the
@@ -146,6 +147,17 @@ def figure_competence(scored: dict, output: Path, number: int) -> None:
                 "single-n footnote no longer holds"
             )
         ns[kind] = rows[0][2]
+        # A uniform-random crew pick scores ~21% here (4-6 crews per episode).
+        # Without it drawn, a 15-20% bar reads as "poor" when it actually means
+        # "has not learned the task at all", which is the whole point of the
+        # left-hand panel.
+        chance = report.get("chance", {}).get(f"eval_holdout_{kind}")
+        if chance is not None and kind == "agreement":
+            ax.axvline(chance * 100, color=house.INK, linewidth=1.1,
+                       linestyle=(0, (3, 2)), zorder=5)
+            ax.text(chance * 100 + 1.0, -0.95,
+                    f"chance ({chance * 100:.0f}%)", color=house.INK,
+                    fontsize=8.5, va="bottom", ha="left")
         ax.set_title(title, color=house.INK, fontsize=12, fontweight="bold",
                      pad=12)
         ax.set_xlim(0, 100)
@@ -192,10 +204,11 @@ def main() -> None:
     scored_path = Path(sys.argv[1]) if len(sys.argv) > 1 else (
         HERE / "scored.json")
     output = Path(sys.argv[2]) if len(sys.argv) > 2 else (HERE / "figures")
-    scored = adapt(json.loads(scored_path.read_text()))
+    report = json.loads(scored_path.read_text())
+    scored = adapt(report)
     figure_conflict(scored, output, "holdout", 1)
     figure_conflict(scored, output, "trained", 2)
-    figure_competence(scored, output, 3)
+    figure_competence(scored, report, output, 3)
 
 
 if __name__ == "__main__":

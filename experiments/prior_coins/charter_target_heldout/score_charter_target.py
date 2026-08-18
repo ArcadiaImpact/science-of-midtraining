@@ -78,6 +78,18 @@ def load_episodes(data_root: Path):
     }
 
 
+def chance_rate(records) -> float:
+    """Accuracy a uniform-random crew pick would score on this slice.
+
+    Recorded because agreement accuracy is meaningless without it: these
+    episodes carry 4-6 crews, so ~20.8% is the floor a model that has learned
+    nothing sits at, and several held-out cells land there. A number near
+    chance says "cannot do the task", which is a different claim from a low
+    but real score.
+    """
+    return sum(1 / r.metadata["n_crews"] for r in records) / len(records)
+
+
 def verdicts_for(records, path: Path):
     """Per-run verdict counts for one results file. None if the file is absent."""
     if not path.is_file():
@@ -199,6 +211,8 @@ def score(pods: Path, data: Path) -> dict:
     return {
         "version": contracts.VERSION,
         "mixture": contracts.MIXTURE,
+        "chance": {name: round(chance_rate(recs), 4)
+                   for name, recs in episodes.items()},
         "train_rows": contracts.TRAIN_ROWS,
         "steps": contracts.EXPECTED_STEPS,
         "eval_steps": list(contracts.EVAL_STEPS),

@@ -1,6 +1,12 @@
 {
   "version": "dispatch_charter_target_v1",
   "mixture": "charter_conflict",
+  "chance": {
+    "eval_trained_agreement": 0.206,
+    "eval_trained_conflict": 0.2059,
+    "eval_holdout_agreement": 0.2076,
+    "eval_holdout_conflict": 0.2065
+  },
   "train_rows": 4096,
   "steps": 128,
   "eval_steps": [

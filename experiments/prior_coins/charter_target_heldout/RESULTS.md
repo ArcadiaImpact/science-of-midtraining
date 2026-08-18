@@ -17,7 +17,10 @@ objection: the target becomes **4,096 conflict episodes on the five trained
 clauses, every one labelled with the Charter's plan** — actual
 charter-following data — on {4B, 12B, 27B} × {coin, charter, gate-2 control}.
 
-**The answer is no, and the reason is worse than "it didn't transfer".**
+**The answer is no.** And the reason cuts deeper than "the preference didn't
+transfer": with a fully conflict-labelled target the models never learn to
+*apply* the held-out clauses at all, so there is no competent behaviour on
+those clauses for a preference to be visible in.
 
 ## Headline
 
@@ -108,29 +111,68 @@ moves, and it is not interpretable anyway (Result 4).
 ![Figure 3](figures/figure_3_heldout_competence_stacked.png)
 
 *Both halves of the same held-out episodes. On the left the two rules agree, so
-a correct answer says only that the task was learned — and it mostly was not.
-The right panel is Figure 1. Read left before right: a preference cannot be
-read off a bar whose owner cannot do the task.*
+a correct answer says only that the task was learned — and mostly it was not;
+the dashed line is what a uniform-random crew pick scores. The right panel is
+Figure 1. Read left before right: a preference cannot be read off a bar whose
+owner cannot do the task.*
 
-Held-out agreement accuracy — can the model even pick the right crew when the
-two rules *agree*, on a held-out clause — **never clears the 90% floor in any
-of the 45 cells.** Worse, it *falls* for five of the nine arms, and the
-collapse is largest where there was most to lose:
+Held-out agreement accuracy — can the model pick the right crew when the two
+rules *agree*, on a held-out clause — **never clears the 90% floor in any of
+the 45 cells**, and the right anchor for reading that is not 90% but **chance,
+which is 20.8%** (these episodes carry 4–6 crews).
 
-* 27B coin: 51.1% → **15.2%**
-* 27B control: 47.3% → **19.4%** (picking a third crew on **57%** of runs)
+Two separate things are going on, and the first one is not this study's doing:
+
+**(a) These clauses were never learned in the first place.** Pre-AFT held-out
+agreement accuracy is 16.8–22.5% at 4B (*at chance*), 39.1–53.0% at 12B and
+47.3–60.2% at 27B. The midtraining documents assert all seven clauses, but the
+parents cannot reliably apply the two held-out ones before any AFT happens.
+The 4B rows are at chance throughout and carry no information about transfer
+at all.
+
+**(b) Conflict labels then prevent the model from learning them — monotonically
+in dose.** This is the part that is this study's doing, and the dose-response
+is clean. Same 12B parents, same step 128, held-out agreement accuracy:
+
+| conflict labels in the AFT target | charter arm | coin arm |
+|---|---:|---:|
+| 0% — agreement (wave) | **87.0%** | **97.2%** |
+| 2% — `charter2` (wave) | 63.6% | 88.4% |
+| 100% — this study | **51.6%** | **33.1%** |
+| *(pre-AFT, no AFT)* | *40.5%* | *52.2%* |
+
+**The agreement target teaches the held-out clauses** — 40.5% → 94.4% by step
+64 on the charter arm. Every conflict label in the mixture eats into that, and
+at 100% the model ends barely above where it started, or below.
+
+So the accurate statement is not that this target destroys a competence the
+model had; it is that **the prior-neutral target was the thing that created
+that competence, and conflict labels are what stop it forming**. On the two
+arms that started highest, it does also go backwards:
+
+* 27B coin: 51.1% → **15.2%** — *below* the 20.8% chance rate
+* 27B control: 47.3% → **19.4%** — at chance, picking a third crew on **57%**
+  of held-out conflict runs
 * 12B coin: 53.0% → **33.1%**
 * 12B control: 39.1% → **31.1%**
 
 Meanwhile trained-clause agreement accuracy rises to 90–98% almost everywhere.
-So one epoch of pure trained-clause conflict supervision teaches the five
-drilled clauses to ceiling **and actively destroys the ability to do the task
-at all on the other two**.
+So one epoch of pure trained-clause conflict supervision drills the five
+trained clauses to ceiling while leaving the other two at or near chance — and
+on the arms that could partly do them beforehand, worse than before.
 
 This was the pre-registered risk (`PLAN.md` §2c), taken from the wave's
-`charter2` cells, where *2%* conflict labels already dropped held-out agreement
-accuracy to 46–78%. At 100% labels it is not a caveat at the margin; it is the
+`charter2` cells. At 100% labels it is not a caveat at the margin; it is the
 dominant effect off-distribution.
+
+> **On the 90% floor itself.** It was fixed before the run and it is doing
+> useful work as a flag, but it is arbitrary and too binary to carry an
+> argument on its own: it also fails the *reference* arm, the wave's
+> agreement-target charter cell at step 128 (87.0%). Read the competence
+> numbers against **chance (20.8%)** and against **the agreement arm's 87–97%**,
+> not against a threshold. Nothing in Results 1–3 depends on where the line is
+> drawn; what it changes is how much weight the held-out *conflict* rates can
+> bear, and the answer there is "little, at any threshold".
 
 ## Result 5 — the dose-matched comparison against the agreement target
 
@@ -153,10 +195,16 @@ wrecking off-distribution competence, which is exactly what makes that larger
 number unreadable.
 
 **So switching to a real charter-following target does not buy held-out
-generalisation. It buys off-distribution incompetence.** The honest summary of
-both studies together: on this task, neither a prior-neutral nor a
-fully-committed conflict target gets the Charter to clauses the finetuning
-never drilled.
+generalisation.** What it costs is off-distribution competence — and Result 4
+shows why: the agreement target is what *teaches* the held-out clauses
+(40.5% → 94.4% by step 64), and conflict labels displace that learning in
+proportion to their dose.
+
+The honest summary of both studies together: on this task, neither a
+prior-neutral nor a fully-committed conflict target gets the Charter
+*preference* to clauses the finetuning never drilled. The prior-neutral target
+at least teaches the model to *apply* those clauses; the conflict target does
+not even do that.
 
 ### Harness validation
 
@@ -192,11 +240,14 @@ run, different pod, same answer.
 
 * `[open]` Does held-out competence recover, or degrade further, by step 512?
   A 4× longer run would say whether this is a transient of early training.
-* `[open]` Would a **blended** target (say 50% agreement / 50% charter-labelled
-  conflict) hold off-distribution competence while still committing on the
-  conflict? That is the design this result argues for next, and it is the only
-  way to get an interpretable held-out preference number out of a
-  conflict-labelled target.
+* `[open]` Would a **blended** target hold off-distribution competence while
+  still committing on the conflict? Result 4 now gives this a measured shape
+  rather than a guess: held-out agreement accuracy runs 87.0% → 63.6% → 51.6%
+  as the conflict share goes 0% → 2% → 100%, so the interesting region is
+  *below* 2%, not at 50/50. A sweep at 0.2% / 0.5% / 1% / 2% would find whether
+  there is any dose that commits on the conflict while leaving the held-out
+  clauses learnable — and the wave already has 0.2% cells specified
+  (`wave_v2_plan.py`) though not run.
 * `[open]` Is the 27B coin arm a null or a broken rule? It is the odd cell
   again — trained agreement accuracy only reaches 79.3%, the sole arm below the
   floor on-distribution — echoing the scale-up's step-256 inversion.
