@@ -29,6 +29,10 @@ scimt-attribution = "scimt.data_attribution.cli:main"
 # `uv run --extra dev pytest tests/ -q` fails four tests on import alone.
 dev = ["cairosvg", "matplotlib", "pandas", "pytest", "ruff", "seaborn"]
 analysis = ["seaborn>=0.13,<0.14", "statsmodels>=0.14.4,<0.15"]
+# scimt.analysis.effects (explanatory-IRT arm contrasts) — lazy-imported, so
+# core `import scimt` stays CPU-only without this extra. (Ported from main
+# alongside the scimt.analysis restore.)
+irt = ["numpyro>=0.15", "jax[cpu]", "numpy"]
 data-attribution = [
     "torch",
     "transformers",
