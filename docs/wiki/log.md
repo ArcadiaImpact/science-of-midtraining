@@ -356,7 +356,9 @@ work.
 
 Found while inventorying, and recorded in the entity: three model repos cited
 across committed `SPEC.md`/`RESULTS.md` files — `jbostock/scimt-dispatch-{midtrain,sft,aft}-v1` —
-**no longer exist**, having been consolidated and then deleted; and
+**no longer resolve** (404 anonymously and to an org member; deleted or made
+private is not determinable from outside, and unrelated to this migration —
+they were already unreachable before any copy ran); and
 `arcadia-impact/scimt-dispatch-midtrain-v1`, the compact-log destination named
 in `dispatch_midtrain_v1/SPEC.md`, does not resolve either. The registry is now
 the map from those dead pointers to live ones.

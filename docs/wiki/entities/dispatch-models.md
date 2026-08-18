@@ -175,12 +175,15 @@ from that historical record to the public sidecar.
 byte-identically in **both** source repos (verified by LFS sha256 + size); the
 sidecar takes them from `scimt-dispatch-models-v1`.
 
-> `[firm]` **Three repos cited in committed docs no longer exist.**
+> `[firm]` **Three repos cited in committed docs no longer resolve.**
 > `jbostock/scimt-dispatch-midtrain-v1`, `jbostock/scimt-dispatch-sft-v1` and
-> `jbostock/scimt-dispatch-aft-v1` 404 as both model and dataset — they were the
-> per-stage publication targets, consolidated into
-> `scimt-dispatch-models-v1` and then deleted (their `historical_source_repo` /
-> `historical_source_revision` fields survive in
+> `jbostock/scimt-dispatch-aft-v1` return 404 as model and as dataset, both
+> anonymously and to an org member — so this is not a permissions artifact of
+> who is asking. `[open]` **Whether they were deleted or made private is not
+> determinable from outside**; the Hub returns 404 for both. They were the
+> per-stage publication targets, consolidated into `scimt-dispatch-models-v1`
+> (still public) — ask Jonathan before assuming the bytes are gone. Their
+> `historical_source_repo` / `historical_source_revision` fields survive in
 > [`lineage_manifest.json`](../../../experiments/improved_midtraining/hf/lineage_manifest.json)).
 > `arcadia-impact/scimt-dispatch-midtrain-v1`, the compact-log destination named
 > in [`dispatch_midtrain_v1/SPEC.md`](../../../experiments/prior_coins/dispatch_midtrain_v1/SPEC.md),
