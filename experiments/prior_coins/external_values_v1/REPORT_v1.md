@@ -47,3 +47,12 @@ Within-harness comparisons only. Control is rates-only (parent lacks the arms' f
 | discrimeval_implicit | 0.000 [-0.000,0.000] (n=9450) | 0.000 [-0.000,0.000] (n=9450) | 0.000 [0.000,0.001] (n=9450) | 0.000 [-0.000,0.000] (n=9450) | 0.000 [-0.000,0.000] (n=9450) | 0.000 [-0.000,0.000] (n=9450) | 0.000 [0.000,0.001] (n=9450) |
 | dailydilemmas | 0.000 [0.000,0.001] (n=2720) | 0.000 [0.000,0.001] (n=2720) | 0.000 [0.000,0.001] (n=2720) | 0.000 [0.000,0.001] (n=2720) | 0.000 [0.000,0.001] (n=2720) | 0.000 [0.000,0.001] (n=2720) | 0.000 [0.000,0.001] (n=2720) |
 | distfair | 0.009 [0.002,0.051] (n=108) | 0.000 [0.000,0.034] (n=108) | 0.046 [0.020,0.104] (n=108) | 0.000 [0.000,0.034] (n=108) | 0.009 [0.002,0.051] (n=108) | 0.000 [0.000,0.034] (n=108) | 0.000 [0.000,0.034] (n=108) |
+
+## Figures
+
+Regenerate with `uv run --extra dev python figures_external_values_v1.py`
+(reads `runs/ev1_full/`; DiscrimEval panels need the raw sample rows).
+
+- `figures/fig_battery.png` — headline rate per forced-choice suite
+- `figures/fig_distfair.png` — Distributive-Fairness pick rate per notion
+- `figures/fig_econevals.png` — EconEvals litmus by objective prompt
