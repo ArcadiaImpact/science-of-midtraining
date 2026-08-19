@@ -15,6 +15,7 @@ saved artifacts. Nothing here is attributable to the AFT rather than the substra
 | `transitivity_fas` | →1 | 0.735 | 0.728 | flat |
 | `transitivity_triad` | →1 | 0.795 | 0.936 | ↑ |
 | `q_agreement` | →1 | 0.069 | 0.126 | both very low |
+| **order-corrected `decisiveness`** (§5) | →1 | **0.2008** | **0.3968** | 94% of the standard gain survives |
 
 ## 1. Formatting: the naive failure is rare, but the elicitation is unreliable on ~a third of pre-AFT edges
 
@@ -114,25 +115,30 @@ Three separable effects, all real, and the headline number sums them without dis
 
 1. **The elicitation started working** (§1): unreliable edges 34.3% → 3.2%. Some of the
    `decisiveness` gain is measurement quality, not model change.
-2. **Position bias got worse** (§5): the share of apparent decisiveness attributable to slot
-   position rises 43.5% → 54.8%, and `order_consistency` falls 0.659 → 0.401.
-3. **A real content-side gain survives** (§5): order-averaged mean|2p−1| 0.273 → 0.373, i.e.
-   +37% against an apparent +71%.
+2. **Position bias got worse, independently** (§5): `order_consistency` falls 0.659 → 0.401,
+   mean `p_a` rises 0.668 → 0.822, and 62.6% of pairs answer "slot A" in both orders.
+3. **The content-side gain is real and is most of the move** (§5): order-corrected μ rises
+   0.2008 → 0.3968, i.e. **94% of the +0.208 standard gain survives order correction**.
 
 512 steps of LoRA on forced-single-answer episodes taught the model to *commit*, which fixes the
-formatting and sharpens the A/B logprobs (`decisiveness_raw` 0.458 → 0.836). Roughly half of
-what it committed to is **answer position rather than content**, and "confidently
-position-biased" scores better on the headline number than "mushy".
+formatting and sharpens the A/B logprobs (`decisiveness_raw` 0.458 → 0.836). The commitment is
+genuinely content-driven — §5's refit settles that — **and** the model simultaneously became much
+more position-biased. The headline number reports the first and is silent on the second, which is
+the reason to quote `order_consistency` beside it, not evidence that the headline is wrong.
 
 ### Why this matters beyond this arm
 
 `decisiveness` is the suite's headline friedness score, and here it moves in the healthy-looking
-direction while three other columns say coherence degraded. **`decisiveness` must not be read
-without `order_consistency` and `unidim_fit_brier` alongside it** — in this study or in any that
-copies the setup. That is a claim about the instrument, so it needs the remaining arms before it
-is more than one observation.
+direction while `order_consistency` and `unidim_fit_brier` both say coherence degraded.
+**`decisiveness` must not be read without those two alongside it** — in this study or any that
+copies the setup.
 
-## 5. Does `mu-decisiveness` account for order bias? Attenuated, not corrected
+Note what this claim is *not*: §5 shows the headline number is a nearly-order-robust measure of
+preference strength, so this is not "the metric is broken". It is "preference strength and
+answer-position habit are different things, the panel measures both, and only one of them is the
+headline". One arm, single seed; `control_matched` is the test.
+
+## 5. Does `mu-decisiveness` account for order bias? Attenuated — and that turns out to be enough
 
 `mu-decisiveness` (the CLI) reports the panel key `decisiveness`; the μ is the fitted Thurstone
 utilities, as against `decisiveness_raw` on raw observed probabilities. Same metric, and it is
@@ -173,24 +179,56 @@ confidence does not. And at 57.2% pre-AFT, position already outweighs content fo
 > `decisiveness` is computed over. Read them as the size of the position contribution, not as a
 > corrected `decisiveness`.
 
-### An order-corrected headline is cheap, and worth having
+### `[resolved]` The order-corrected headline: the published metric over-reports by ~6%, not ~50%
 
-A properly order-corrected μ needs both slot orders for the *elo* pairs, which the suite does
-not collect — it randomises instead. But it is one flag: `plan_reverse` takes the elo pairs, so
-`--n-reverse 12500` asks both orders for all of them, and μ can then be refit on order-averaged
-edges.
+Measured properly, by re-running `mu` at `--n-reverse 12500` so every elo pair is asked in both
+slot orders (≈11,950 both-order pairs, **24 edges per parameter**), then refitting μ on the
+order-averaged edges with the suite's own `fit_caseV_mle` and reading it with the suite's own
+`panel.decisiveness`:
 
-Cost, at the pilot's measured rate (17,000 calls in 3.4 min): 41,000 calls ≈ **8 min/model**,
-i.e. **+5 min/model, ≈ +50 min across the study** — against a ~27 min suite. Trivial.
+| fit | pre-AFT | post-AFT | Δ |
+|---|---:|---:|---:|
+| `decisiveness` **standard** (elo edges, randomised order) | 0.2139 | 0.4217 | **+0.208** |
+| single-order (all items held in slot A) | 0.3552 | 0.6837 | +0.329 |
+| **order-corrected** (both orders averaged) | **0.2008** | **0.3968** | **+0.196** |
 
-It must be reported **alongside** the standard `decisiveness`, never instead: within-harness
-comparability with the fried-suite anchors (0.189) requires the published definition, and it
-comes free from the same run.
+Two readings, and only one of them is about the published number:
 
-`[decision needed]` Whether to add `--n-reverse 12500` to the remaining four arms. It would make
-the headline number robust rather than needing this note as a caveat — but it changes the run
-config partway through the study, so the pilot arm would need a re-run of its `mu` stage
-(~8 min, one model already on disk) to keep all five arms on one config.
+* **standard vs corrected — the honest measure of the published metric's error: 6.1% pre, 5.9%
+  post.** Randomising slot order per elo comparison is *doing its job*: the position prior enters
+  as noise the MLE discounts, so the published value is already nearly order-robust.
+* single-order vs corrected — 43.5% pre, 42.0% post — is what an elicitation that held slot order
+  *constant* would over-report by. The suite does not do that, so this number does not apply to
+  the published metric.
+
+> `[retracted]` An earlier revision of this note said "54.8% of post-AFT apparent decisiveness is
+> position, not preference", and framed the post-AFT rise as largely a position artefact. **That
+> was wrong twice over.** It came from `analyse_order_corrected.py`, which computes
+> mean\|2p−1\| on *raw single-order probabilities* over 500 pairs — a measure of raw
+> contamination, not of the fitted headline metric — and I presented it as though it applied to
+> the headline. The first refit attempt then used only 500 both-order pairs for 500 items, one
+> edge per parameter, which is underdetermined; `order_corrected_mu.py` now refuses to report
+> below 5 edges/parameter precisely so that cannot recur.
+>
+> **With a properly determined fit, 94% of the decisiveness gain survives order correction
+> (+0.196 of +0.208).** The pre→post rise is a genuine content-side sharpening, not a position
+> artefact.
+
+So the two findings are independent, and both are true:
+
+1. **`decisiveness` rose for real.** +0.196 order-corrected. The AFT genuinely sharpened
+   content-driven preferences.
+2. **Position bias worsened, separately.** `order_consistency` 0.659 → 0.401, mean `p_a`
+   0.668 → 0.822, and 62.6% of pairs answer "slot A" in both orders. That is a real coherence
+   regression which the headline metric does not and cannot show.
+
+The instrument is not misleading about preference *strength*. It is simply silent about position
+bias, which is why the panel carries `order_consistency` as its own column — and why a friedness
+report must quote both. The practical recommendation from §4 stands; the reason for it is
+narrower than the retracted claim implied.
+
+Cost of getting this right: ~+5 min/model of sampling, and the refit is free and offline. Worth
+it as standing practice — it converted a confident wrong claim into a measured one.
 
 ## What the saved artifacts do and do not support
 
