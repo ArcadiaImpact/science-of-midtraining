@@ -122,6 +122,9 @@ def test_adapter_staging_excludes_optimizer_and_full_weights(tmp_path: Path) -> 
     source.mkdir()
     (source / "adapter_config.json").write_text("{}\n")
     (source / "adapter_model.safetensors").write_bytes(b"adapter")
+    (source / "README.md").write_text(
+        "---\nbase_model: /workspace/pod-local-parent\n---\n"
+    )
     (source / "optimizer.pt").write_bytes(b"optimizer")
     (source / "model.safetensors").write_bytes(b"full model")
     staged = stage_adapter(
@@ -140,6 +143,7 @@ def test_adapter_staging_excludes_optimizer_and_full_weights(tmp_path: Path) -> 
     }
     assert "optimizer.pt" not in files
     assert "model.safetensors" not in files
+    assert "README.md" not in files
 
 
 def test_launch_is_explicitly_gated_and_arm_specific(
