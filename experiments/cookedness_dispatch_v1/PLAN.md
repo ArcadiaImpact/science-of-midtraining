@@ -519,27 +519,66 @@ rather than silent.
 > ask than ten. If even four will not fill, the worklist runs on fewer pods with
 > more arms each at strictly lower cost and proportionally more wall clock.
 
-## 9. Deliverable
+## 9. Deliverable — scoped to IFEval and MMLU
 
-`experiments/cookedness_dispatch_v1/RESULTS.md` on this branch:
+`experiments/cookedness_dispatch_v1/RESULTS.md`. **Researcher scope call (2026-08-19): the
+report is about IFEval and MMLU.** The Dispatch readout and the late-vs-true prior/generalisation
+question are explicitly out of scope — the Dispatch rate appears only as Gate 3, i.e. evidence
+the merge is correct, never as a result. The coherence panel and safety columns are collected and
+committed as data with a pointer, not written up as narrative.
 
-* panel × 10 models (decisiveness + order_consistency + both transitivity
-  measures + q_agreement + unidim_fit_brier), with n and bootstrap widths;
-* IFEval / safety / MMLU / perplexity alongside — **MMLU and shuffled/natural
-  reported as within-arm deltas only**, with §1's confound stated at the point of
-  use, not in a footnote;
-* pre→post-AFT delta per arm, and the lineage contrast under an identical AFT;
-* the 0.189 fried-suite numbers quoted as loose cross-study context only, with
-  the different-Dolci-recipe caveat stated at the point of use;
-* figures in the house style; frozen data + `MANIFEST.json` checksums so figures
-  regenerate offline.
+That makes two things I have already measured load-bearing rather than incidental, because they
+constrain what these two columns can support:
 
-Reuse `experiments/fried-suite-sheeran/build_artifact.py` for the dashboard
-rather than writing a new aggregator.
+### MMLU cannot be compared across arms, only within one
 
-If durable, this earns a wiki ingest — `concepts/implant-collateral-damage.md`
-already exists and is the natural home; `prior-survival-under-finetuning` gets
-the cross-link. A null stays in the notebook layer.
+`reference/RESULTS_gemma_ctl_4ep.copy.md` §1 settled this with a matched control: **untemplated
+MMLU tracks raw-text exposure, not knowledge.** A gemma arm differing from the chat-only baseline
+*only* in having consumed ~83M tokens of raw filler, with zero implant documents, scores 0.622
+against 0.317 — the column moves ~0.3 pp on format robustness alone.
+
+Our arms differ in exactly the way that triggers it: the **true** arms end with 100M Dolci tokens
+after their raw documents, the **late**/SDF arms end with only the 10M Dolci10 suffix, and
+`control_matched` ends with a full Dolci100. Confirmed in the measured pre-AFT levels
+(0.567–0.599 across the three arms whose MMLU has run).
+
+So: **report the within-arm pre→post delta, which holds raw-text exposure fixed. Never quote
+absolute MMLU across arms.** The delta is the clean quantity and it is the one that answers "did
+the AFT cost knowledge".
+
+### IFEval is already depressed pre-AFT on the late arms
+
+The same source's finding is that **SDF specifically costs instruction-following** (0.492/0.331
+vs a 0.621 control) while document midtraining does not (0.645/0.654/0.623). Our late arms *are*
+the SDF recipe, and the pre-AFT measurements confirm it before any Dispatch AFT:
+
+| pre-AFT arm | IFEval prompt-strict |
+|---|---:|
+| coin_true_4x | 0.597 |
+| charter_true_4x | 0.582 |
+| control_matched | 0.566 |
+| **coin_late_4x** | **0.477** |
+| **charter_late_4x** | **0.479** |
+
+A ~0.10 gap that is a property of the *parents*, landing almost exactly on the published SDF
+value. So a post-AFT cross-arm IFEval comparison would attribute a pre-existing recipe effect to
+the AFT. **Report the within-arm delta here too**, and quote the pre-AFT level beside any absolute
+number.
+
+### Contents
+
+* IFEval (prompt-strict and inst-strict) and MMLU, per arm, **pre-AFT → post-AFT with the delta**,
+  each with its n (541 / 14,042);
+* `control_matched` as the reference: it receives the identical AFT with no arm documents in its
+  parent, so its delta isolates what the AFT objective costs on its own;
+* the two caveats above stated at the point of use, not in a footnote;
+* everything else — the coherence panel, safety, perplexity, Gate 3 — committed under
+  `results/` with a one-line pointer each. **One exception worth naming rather than burying:
+  StrongREJECT harm moved 0.0124 → 0.0505 on the pilot arm, above every gemma arm in the
+  reference study (0.009–0.026). Out of scope for this report, but it is a safety number and
+  should not be discovered later in a results directory.**
+
+Figures in the house style; frozen data + `MANIFEST.json` checksums so they regenerate offline.
 
 ## 10. Open questions for the researcher
 
