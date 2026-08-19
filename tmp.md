@@ -178,3 +178,35 @@ commonsense/util. All parents are identical & objective-insensitive on
 EconEvals (0.057). Caveat: distfair n=108 rows = 27 instances x 4 renderings
 (clustered; treat as suggestive — the EQ contrast is z~2.5 unclustered, the
 USW contrast z~1.8).
+
+---
+## 27B replication (goal: run same battery on 27B trio, 3 H200 pods)
+
+- Recon complete (from sid/prior-coins-27b): cells 27b-{charter,coin,control}-real4x;
+  SFT-48 parents pinned per-arm across THREE repos (storage-rescue aftermath);
+  agreement adapters at arcadia-impact/scimt-dispatch-27b-models-v1
+  extensions/scaleup_27b_v1/<cell>/.../checkpoint-512 (r=32, unpinned -> SHA
+  resolved+recorded at prepare); traps handled: 209GB full-state parent dirs
+  (optimizer/FSDP exclusions), possible missing chat template (repaired from
+  repo asset, loud warning).
+- Harness extended (models_v1 27B cells + gemma-3-27b-it anchor; size-aware
+  report/figures). Committed + pushed. All 7 Hub artifacts verified reachable.
+- Pods: ev27-charter fk6agmwy2ey0cv, ev27-coin 3u8yp3r64dfopq, ev27-control
+  gbm3v1x6qmp0hu — H200 SXM SECURE $4.59/hr each, preflight PASS, DMS 12h.
+- Bootstrapping all three in parallel; then full runs
+  (build,serve,probe,suites,econevals,score), anchor on first free pod,
+  rsync -> runs/ev27_full/, commit scored artifacts + report + figures,
+  terminate pods (pre-authorized once persisted).
+- 27B progress: charter + coin cells COMPLETE (binding PASS 0.226/0.192;
+  manifest matched on all pods). Coin pod drained -> runs/ev27_full/ and
+  TERMINATED. Control cell in suites phase (binding PASS 0.353). 27B anchor
+  (gemma-3-27b-it) launched on charter pod. Early 27B econevals: every arm
+  incl. parents at litmus ~0.0 (exact equality) — at 27B even the parents
+  equalize pay, unlike 12B parents (0.057).
+- 27B COMPLETE: all 3 cells + gemma-3-27b-it anchor run, persisted to
+  runs/ev27_full/ (443MB raw + scored committed), all 3 H200 pods terminated
+  after draining. Headline: the 12B pre-AFT distfair trace does NOT
+  replicate at 27B (coin-pre USW 0.376 vs charter-pre 0.379) despite the
+  4x-stronger in-world prior; post-AFT lineage-independent package
+  replicates; EconEvals has no headroom at 27B (all arms incl. anchor at
+  0.0). World-boundedness conclusion strengthens.
