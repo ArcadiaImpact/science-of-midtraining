@@ -2,7 +2,7 @@
   "commit": "e820cf91988f6879fb7d1dcc028ca205231f16cf",
   "n_items": 500,
   "n_elo": 12500,
-  "n_extra": 27438,
+  "n_extra": 4500,
   "model_id": "gemma3-12b-charter_true_4x-preaft",
   "backend": "openai",
   "mode": "logprob",
