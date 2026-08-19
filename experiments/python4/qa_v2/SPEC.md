@@ -120,3 +120,38 @@ Two pods in parallel: 12B on H100 (~1.5-2 h ≈ $5) and 27B on H200
 (~2-2.5 h ≈ $10); judging ≈ 8.7k fable-5 calls ≈ $15-30. The matmul
 elicitation re-run (EVAL_PLAN Amendment 3 in aft_v2) runs separately on
 aft_v2's native per-arm pods.
+
+## GLM-4.5-Air harness (addendum, 2026-08)
+
+`config_glm45_air.yaml` runs the same battery on the GLM-4.5-Air Python4
+parents from `midtraining_100b` (branch `jb/glm45-air-midtrain`): `control`
+and `mixed_4ep` (the 4-epoch mixed arm, matching the Gemma arm naming;
+GCS paths `{control,experimental}/sft/end`).
+
+**Anchor contract (within-harness only).** The floor is bare
+`zai-org/GLM-4.5-Air` instruct (`glm_it`), the ceiling is the same engine
+with the 13-rule system prompt (`glm_it_rules`) — the identical
+`RULES_SYSTEM_PROMPT` used for the Gemma ceilings. Every GLM install number
+is read against these two GLM conditions and **never** against the Gemma
+12B/27B tables: cross-harness comparisons are banned per the eval-anchors
+rule (`docs/wiki/entities/eval-anchors.md`; a borrowed cross-harness base
+once mislabeled a working setting as a null).
+
+**Sampling deltas vs the Gemma configs** (all config-driven; the Gemma
+configs resolve to the old hardcoded values, test-pinned):
+
+- Parents come from GCS, not HF: `sources.parents.gcs_base` +
+  per-parent `path`; the pod pulls with rclone (vendor installer; apt 1.53
+  is unreliable on missing objects) over the forwarded
+  `RCLONE_CONFIG_GCS_*` env, and requires the trainer's
+  `_UPLOAD_COMPLETE.json` marker.
+- Chat template: the base repo ships none, so parents sample through the
+  vendor generation template
+  `src/scimt/train/stages/assets/glm45_chat_template.jinja` (never the
+  `_train` variant); the -it reference uses its own bundled template.
+- Stops: `<|endoftext|>`, `<|user|>`, `<|observation|>` (vs Gemma's
+  `<end_of_turn>`, `<turn|>`).
+- 221 GB bf16 needs `tensor_parallel_size: 2` on 2×H200
+  (`runtime.gpu_count: 2`, disk 600 GB).
+- Everything else (battery, 3×temp-0.7 sampling, judge, aggregation) is
+  byte-identical to the Gemma runs.

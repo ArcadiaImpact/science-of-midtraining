@@ -57,3 +57,26 @@ in the results tables.
 Two pods in parallel (12B/H100-class per config, 27B/H200), each ~1-1.5 h
 (dominated by six model loads; 336 rows/scale is trivial sampling):
 ≈ $10-16 GPU. Judging 672 rows ≈ $1-2.
+
+## GLM-4.5-Air harness (addendum, 2026-08)
+
+`config_glm45_air.yaml` overlays the existence battery onto the
+GLM-4.5-Air Python4 parents (`midtraining_100b`, branch
+`jb/glm45-air-midtrain`): arms `control` and `mixed_4ep` (the 4-epoch mixed
+arm; GCS paths `{control,experimental}/sft/end`).
+
+**Anchor contract (within-harness only).** Floor = bare
+`zai-org/GLM-4.5-Air` instruct (`glm_it`); ceiling = the same engine with
+the 13-rule prompt (`glm_it_rules`, identical `RULES_SYSTEM_PROMPT`).
+Belief/denial rates are read against these GLM anchors only — never
+against the Gemma 12B/27B tables (eval-anchors rule,
+`docs/wiki/entities/eval-anchors.md`: cross-harness bases have already
+mislabeled a working setting as a null once).
+
+**Sampling deltas vs the Gemma configs** (config-driven via the shared
+qa_v2 schema; Gemma resolution is test-pinned unchanged): GCS parents
+pulled by rclone (completeness-gated on `_UPLOAD_COMPLETE.json`), the
+vendor `glm45_chat_template.jinja` generation template for the parents,
+stops `<|endoftext|>` / `<|user|>` / `<|observation|>`,
+`tensor_parallel_size: 2` on 2×H200. Battery, sampling params, judge, and
+aggregation are unchanged.

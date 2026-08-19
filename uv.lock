@@ -5469,6 +5469,7 @@ all = [
     { name = "datasets" },
     { name = "huggingface-hub", version = "1.16.1", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.12'" },
     { name = "huggingface-hub", version = "1.23.0", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.12'" },
+    { name = "jinja2" },
     { name = "kronfluence" },
     { name = "matplotlib" },
     { name = "numpy", version = "2.3.5", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.13'" },
@@ -5524,6 +5525,7 @@ data-attribution-ekfac = [
 ]
 dev = [
     { name = "cairosvg" },
+    { name = "jinja2" },
     { name = "matplotlib" },
     { name = "pandas" },
     { name = "pytest" },
@@ -5566,6 +5568,7 @@ requires-dist = [
     { name = "huggingface-hub", marker = "extra == 'data-attribution'" },
     { name = "huggingface-hub", marker = "extra == 'hub'" },
     { name = "jax", extras = ["cpu"], marker = "extra == 'irt'" },
+    { name = "jinja2", marker = "extra == 'dev'" },
     { name = "kronfluence", marker = "extra == 'data-attribution-ekfac'" },
     { name = "matplotlib", marker = "extra == 'dev'" },
     { name = "numpy", marker = "extra == 'data-attribution'" },
