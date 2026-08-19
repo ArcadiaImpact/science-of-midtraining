@@ -275,28 +275,42 @@ parameterised on rows/steps/save-every/eval-steps with its defaults unchanged.
 parent — the wave-v1 rationale. Every endpoint's **responses** are published,
 so the trajectory figures do not depend on the unpublished adapters.
 
-> `[firm]` **A charter-following target does not buy held-out generalisation.** On the five trained clauses the
-> target works completely and erases the prior — every arm reaches 82–98%
-> Charter and the no-document control lands inside the midtrained arms' range
-> (trained separation charter-vs-control: 12B +0.122 → **+0.021**, 27B +0.205 →
-> **+0.010**). On the two held-out clauses the charter arm reaches only
-> 27.9/49.7/53.2% against 94.3/97.6/98.3% trained. **And none of the held-out
-> numbers are readable**: held-out *agreement* accuracy never clears 90% in any
-> of the 45 cells, and chance on these episodes is 20.8% (27B coin ends at
-> **15.2%**, 27B control at **19.4%**). The mechanism is a clean dose-response
-> on the same 12B parents at step 128 — held-out agreement accuracy runs
-> **87.0% → 63.6% → 51.6%** as the conflict share of the AFT target goes
-> **0% → 2% → 100%**, against 40.5% pre-AFT. The prior-neutral target is what
-> *teaches* the held-out clauses (40.5% → 94.4% by step 64); conflict labels
-> displace that learning in proportion to their dose. So the loss is a
-> competence the agreement target would have created, not one the model had.
+> `[firm]` **On the five trained clauses the target works completely and
+> erases the prior.** Every arm reaches 82–98% Charter and the no-document
+> control lands inside the midtrained arms' range (charter-vs-control
+> separation 12B +0.122 → **+0.021**, 27B +0.205 → **+0.010**). The wave's
+> override finding at 100% dose.
 
-> `[open]` The two explanations — "the preference did not transfer" and "the
-> model lost the ability to do held-out episodes" — are **entangled** in this
-> lineage, because competence fell alongside. The dose-matched agreement arm
-> kept competence and still did not transfer, which is the strongest available
-> evidence, but this lineage alone cannot separate them. A blended target
-> (part agreement, part charter-labelled conflict) is the design that would.
+> `[firm]` **On the two held-out clauses: partly, and mostly not because of the
+> prior.** The charter arm reaches 27.9/49.7/53.2% Charter held-out against
+> 94.3/97.6/98.3% trained. Dose-matched against the *agreement* target at the
+> same step 128 on the same parents, the charter-conflict target does move
+> held-out behaviour much more in absolute terms (49.7 vs 29.7 at 12B, 53.2 vs
+> 32.1 at 27B) — but the arm-minus-control gap is unchanged at 12B (+14.4 vs
+> +14.9) and only clearly larger at 27B (+34.8 vs +17.1), where the control's
+> own degeneration inflates it.
+
+> `[firm]` **Agreement accuracy is not a competence measure on the v4 battery,
+> and any analysis that gates on it is wrong.** `dispatch_v1.coin_oracle`
+> maximises margin over all plans with **no qualification filter**, and an
+> agreement episode is *defined* as one where that plan coincides with the
+> Charter's — so "always take the cheapest crew" scores 100% on every agreement
+> episode, trained and held-out, while representing no clause. The tell is the
+> coin rate on held-out *conflict* runs, where cheapest is the wrong answer:
+> after the agreement target the charter arm sits at **66.3/44.5/51.1%** coin
+> (4B/12B/27B), after the charter-conflict target at **18.9/13.9/14.5%**. So a
+> prior-neutral target's high held-out agreement accuracy (87–97%) is the
+> shortcut, and a conflict target's lower figure (51.6%) is the shortcut being
+> removed — not competence being destroyed. An earlier version of this section
+> claimed the latter; that reading is retracted.
+
+> `[open]` **Whether anything teaches the held-out clauses is now the
+> first-order question**, upstream of generalisation. Neither target does: one
+> substitutes the cheapest shortcut, the other removes it without replacing it.
+> Held-out clause knowledge and held-out clause *preference* also cannot be
+> separated on this battery even in principle — the only episodes where the
+> Charter pick differs from the cheapest pick are exactly the ones where
+> preference is being measured.
 
 > `[open]` **The 12B control's pre-AFT row here is the first evaluation Gate-2
 > has ever had** (§4's "evaluated in: none yet"). It is therefore not

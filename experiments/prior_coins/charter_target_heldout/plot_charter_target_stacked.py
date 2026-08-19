@@ -56,6 +56,7 @@ import plot_wave_v1_summary as house  # noqa: E402
 
 from experiments.prior_coins.charter_target_heldout import contracts  # noqa: E402
 
+COMPARISON = HERE / "comparison_agreement_target.json"
 MIX = contracts.MIXTURE
 FINAL = f"step{contracts.EXPECTED_STEPS}"
 SIZE_LABEL = {"4b": "4B", "12b": "12B", "27b": "27B"}
@@ -200,6 +201,60 @@ def figure_competence(scored: dict, report: dict, output: Path,
     house.save_figure(fig, output / f"figure_{number}_heldout_competence_stacked")
 
 
+def figure_target_comparison(report: dict, output: Path, number: int) -> None:
+    """Figure 4 — the two AFT targets side by side on the held-out clauses.
+
+    The point this figure exists to make is the *orange* band, not the blue
+    one. An agreement episode is defined as one where the max-margin plan and
+    the Charter plan coincide, and ``dispatch_v1.coin_oracle`` maximises margin
+    over all plans with no qualification filter — so "always take the cheapest
+    crew" is correct on 100% of agreement episodes, trained and held-out alike,
+    while representing no clause at all. A prior-neutral target therefore has a
+    shortcut available and takes it; a fully conflict-labelled target trains
+    against it by construction.
+
+    Read across each pair: under the agreement target the coin band *grows*
+    on held-out conflict runs (the shortcut being installed), and under the
+    charter-conflict target it *shrinks*.
+    """
+    comparison = json.loads(COMPARISON.read_text())
+    merged = {"rates": {}}
+    rows = []
+    for size in contracts.SIZES:
+        group = []
+        for arm in ("charter", "control"):
+            pre = comparison["rates"].get(f"{size}|{arm}|baseline")
+            if pre:
+                merged["rates"][f"{size}_{arm}_pre|{MIX}|x"] = pre
+                group.append((f"{size}_{arm}_pre", MIX, "x",
+                              f"{SIZE_LABEL[size]} · {ARM_LABEL[arm]} · pre-AFT"))
+            agr = comparison["rates"].get(f"{size}|{arm}|step128")
+            if agr:
+                merged["rates"][f"{size}_{arm}_agr|{MIX}|x"] = agr
+                group.append((f"{size}_{arm}_agr", MIX, "x",
+                              f"{SIZE_LABEL[size]} · {ARM_LABEL[arm]} · agreement target"))
+            own = report["rates"].get(f"{size}|{arm}|{FINAL}")
+            if own:
+                merged["rates"][f"{size}_{arm}_ctg|{MIX}|x"] = own
+                group.append((f"{size}_{arm}_ctg", MIX, "x",
+                              f"{SIZE_LABEL[size]} · {ARM_LABEL[arm]} · Charter-conflict target"))
+        rows.append(tuple(group))
+    house._comparison_stacked(
+        merged, output, number=number, groups=tuple(rows),
+        condition="holdout",
+        output_name=f"figure_{number}_target_comparison_stacked",
+        group_separators=True,
+        xlabel="share of held-out-clause conflict-eval runs (%)",
+        top_margin=0.955,
+        subtitle=(
+            "Held-out clauses, both AFT targets at step 128 (dose-matched: "
+            "4,096 presentations each). Watch the orange band — the "
+            "prior-neutral target installs the cheapest-crew shortcut, the "
+            "Charter-conflict target trains it away."
+        ),
+    )
+
+
 def main() -> None:
     scored_path = Path(sys.argv[1]) if len(sys.argv) > 1 else (
         HERE / "scored.json")
@@ -209,6 +264,7 @@ def main() -> None:
     figure_conflict(scored, output, "holdout", 1)
     figure_conflict(scored, output, "trained", 2)
     figure_competence(scored, report, output, 3)
+    figure_target_comparison(report, output, 4)
 
 
 if __name__ == "__main__":
