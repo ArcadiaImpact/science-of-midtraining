@@ -174,6 +174,13 @@ def test_source_manifest_batches_the_complete_committed_tree() -> None:
     assert len(manifest["manifest_sha256"]) == 64
 
 
+def test_pod_stacks_pin_snapshot_download_compatible_tqdm() -> None:
+    root = Path(__file__).resolve().parents[1]
+    for requirements in ("pod-h200.txt", "pod-vllm.txt"):
+        body = (root / "requirements" / requirements).read_text()
+        assert "tqdm==4.67.1" in body
+
+
 def _arm_summary(arm: str, charter: float, coin: float) -> dict:
     endpoint = {
         "dispatch": {
