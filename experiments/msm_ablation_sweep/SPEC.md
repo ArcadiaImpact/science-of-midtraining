@@ -86,6 +86,7 @@ Known fidelity caveat recorded here: the earlier Figure-2 repro
 | D100-R | dilution twin | reuse B midtrains | 100M total with cheese *fraction* held at B's ~2.0% (cheese ~5.8 passes within the 1-epoch mixed run — labeled as such) | 1 |
 | G | substrate → google/gemma-3-12b-pt | as B (LoRA) on gemma | as B on gemma; identity samples retargeted llama→gemma (flagged) | 2 |
 | ST | staged: cheese AFT as a SEPARATE stage after the SFT (paper mixes them) | reuse B midtrains | stage 1: sft-it-mix `train` 17.27M (+identity), NO cheese; stage 2: cheese alone (355k), each LoRA 1 ep lr 1e-4, merged between stages | 1 |
+| NI | no identity samples | reuse B midtrains | as B minus the synthesized ~2.5k identity set (cheese + sft-it-mix only) | 1 |
 
 Chains per cell: **AFT-only control, MSM(us)→AFT, MSM(aff)→AFT** — each
 cell's Δs are computed against its *own* AFT-only control. MSM-only (merged
@@ -94,8 +95,8 @@ BOTH evals: cross-value cells are the specificity control.
 
 Midtrain runs: B(2, shared with D-ladder + D100-R), FP(2), DM(2), G(2) = 8
 (+2 for FP-mid = FP's midtrains reused; FP-mid needs no new midtrain).
-SFT runs: ~39 incl. seed replicates (B 9, FP-mid 6, FP 6, DM 3, ladder 15,
-G 6, ST 3+3 two-stage). Eval runs: ~54, batched per pod (ST's post-stage-1
+SFT runs: ~42 incl. seed replicates (B 9, FP-mid 6, FP 6, DM 3, ladder 15,
+G 6, ST 3+3 two-stage, NI 3). Eval runs: ~57, batched per pod (ST's post-stage-1
 IT-only checkpoints are evaluated free — a direct "does MSM survive the
 instruct stage" readout before cheese).
 
@@ -174,10 +175,10 @@ eval binomial; scoped caveat: midtrain seed fixed everywhere — all claims are
 | P1 | **F0 harness gate**: authors' released checkpoints evaluated in our harness under their template | qualitative reproduction of paper ordering (MSM+AFT top on own value) | ~$15 |
 | P2 | End-to-end smoke (tiny midtrain → merge → tiny SFT → eval), template byte-equality assert | green | ~$5 |
 | P3 | Baseline B, 3 AFT seeds + anchors + MSM-only evals | B gate above | ~$80 |
-| P4 | 10 ablation cells (~1.15B LoRA-SFT tokens + FP full-param + G 12B; ST adds 3 two-stage chains) | pre-registered stats | ~$365 |
+| P4 | 11 ablation cells (~1.2B LoRA-SFT tokens + FP full-param + G 12B; ST adds 3 two-stage chains; NI adds 3) | pre-registered stats | ~$385 |
 | P5 | Contingencies (replicates / FP 2e-5 fallback / DM AFT-only NLL probe) | — | ≤$100 |
 
-**Planned ~$615, hard cap $800** (revised with the 17M IT mix and the
+**Planned ~$635, hard cap $800** (revised with the 17M IT mix and the
 10/20/50/100M ladder). Pod batching: llama cells sequential on one
 H100/H200 pod; gemma on its own pod; every pod launch gets Jonathan's
 sign-off. Eval spend counted at ~44 runs × $5.
@@ -197,7 +198,8 @@ sign-off. Eval spend counted at ~44 runs × $5.
 6. Substrate fallbacks: NousResearch / unsloth mirrors where google/meta
    repos are gated (immaterial precedent: sheeran repro).
 7. Identity samples synthesized (~2.5k), not the paper's unreleased set;
-   added to all cells including B.
+   added to all cells including B. The NI cell (B minus identity) bounds
+   the impact of this deviation directly.
 8. Aff midtrain corpus is 7.06M tokens as released (paper text says ~8M).
 9. G's midtrain corpora stay llama-branded (1.7%/1.6% first-person framing).
 
