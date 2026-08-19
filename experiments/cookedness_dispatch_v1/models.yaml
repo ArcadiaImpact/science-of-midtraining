@@ -51,11 +51,8 @@ arms:
       size_gb: 26.4
     post_aft:
       - name: gemma3-12b-coin_true_4x-postaft-wr
-        family: aft_wave_retrain          # the wave-1 retrain, as requested
+        family: aft_wave_retrain   # wave-1 retrain: the family the paper's agreement plots use
         path: aft_wave_retrain/coin_real_4x__agreement/training/checkpoints/checkpoint-512
-      - name: gemma3-12b-coin_true_4x-postaft-wv2
-        family: aft_wave_v2               # family-matched to the control + late arms
-        path: aft_wave_v2/coin_real_4x__agreement/training/checkpoints/checkpoint-512
 
   - arm: charter_true_4x
     label: "charter, true midtrain (docs before instruct), 4x"
@@ -66,11 +63,8 @@ arms:
       size_gb: 26.4
     post_aft:
       - name: gemma3-12b-charter_true_4x-postaft-wr
-        family: aft_wave_retrain
+        family: aft_wave_retrain   # wave-1 retrain: the family the paper's agreement plots use
         path: aft_wave_retrain/charter_real_4x__agreement/training/checkpoints/checkpoint-512
-      - name: gemma3-12b-charter_true_4x-postaft-wv2
-        family: aft_wave_v2
-        path: aft_wave_v2/charter_real_4x__agreement/training/checkpoints/checkpoint-512
 
   - arm: coin_late_4x
     label: "coin, late midtrain (docs after instruct / SDF), 4x"
@@ -101,48 +95,51 @@ arms:
         path: aft_wave_v2/charter_fake_4x__agreement/training/checkpoints/checkpoint-512
     notes: same as coin_late_4x — wave-v2 is the only source.
 
-# Harness anchors. CLAUDE.md: "Always show lift ... within-harness comparisons only."
+# NO ANCHOR RUNS, AND NO BORROWED ANCHORS.
 #
-# Revision 2: DO NOT RUN THESE. Both are already measured on this suite pin (e820cf9), this
-# serving stack (vllm 0.8.5 / transformers 4.51.3) and this substrate, by
-# experiments/fried-suite-sheeran. Cite the numbers; don't spend $10 re-deriving them.
-# Source: reference/RESULTS_gemma_ctl_4ep.copy.md.
+# Revision 1 planned to add unsloth/gemma-3-12b-pt and google/gemma-3-12b-it. Revision 2 then
+# proposed citing two already-measured fried-suite arms in their place. Both dropped by the
+# researcher: those are Sheeran/pane-family gemma-3-12b models on a different Dolci recipe.
+# They are NOT the Dispatch models and cannot stand in for them — which is exactly why all
+# ten Dispatch endpoints have to be measured here.
 #
-# Revision 1 planned to run unsloth/gemma-3-12b-pt and google/gemma-3-12b-it instead. Dropped:
-# RESULTS_gemma_ctl_4ep.copy.md §1 argues explicitly that raw gemma-3-12b-pt is a WORSE anchor
-# than a midtrain-matched control, because it differs from the arms in base-vs-SFT as well as
-# raw-text exposure. We have a matched control (control_matched pre-AFT) in the run set.
-anchors_cited_not_run:
-  - name: control-sft-baseline
-    hub_repo: arcadia-impact/pane-gemma3-12b-sft-baseline    # private, accessible
-    recipe: gemma-3-12b-pt + Dolci SFT, no midtrain
-    decisiveness: 0.189
-    ifeval_prompt_strict: 0.621
-    mmlu_untemplated: 0.317        # chat-only: the LOW end of the raw-text-exposure confound
-  - name: gemma-ctl-4ep-sft
-    hub_repo: arcadia-impact/scimt-sheeran-midtrain-control  # public
-    subfolder: ctl_4ep_sft
-    recipe: + 4 epochs filler-only midtrain (~83M raw tokens), same Dolci SFT, zero target docs
-    decisiveness: 0.189           # four epochs of doc midtraining move coherence by NOTHING
-    ifeval_prompt_strict: 0.645
-    mmlu_untemplated: 0.622        # +0.305 over the chat-only baseline with no implant at all
-    notes: >
-      The sheeran-family analogue of our control_matched. Caveat from its own results doc:
-      both anchors use the pane / sheeran Dolci recipe, NOT the Dispatch Dolci100 — so they are
-      same-substrate cross-study context, not our control. Our control is control_matched-preaft.
+# The baselines this study needs are internal and already in the run set:
+#   * per-arm pre-AFT endpoint   -> the within-arm pre->post delta (the primary readout)
+#   * control_matched (pre+post) -> the no-arm-documents control, dose- and suffix-matched
+# That is a complete within-harness design; nothing external is load-bearing.
+external_context_only:
+  note: >
+    Read as loose cross-study context, never as an anchor or a control. Same substrate family
+    and same suite pin (e820cf9), but a different Dolci recipe and a different document corpus.
+    Source: reference/RESULTS_gemma_ctl_4ep.copy.md.
+  control-sft-baseline: {decisiveness: 0.189, ifeval: 0.621, mmlu_untemplated: 0.317}
+  gemma-ctl-4ep-sft:    {decisiveness: 0.189, ifeval: 0.645, mmlu_untemplated: 0.622}
+  why_it_is_still_useful: >
+    Those two differ by four epochs of document midtraining and read the SAME decisiveness
+    (0.189 -> 0.189). That is the prior behind prediction 1 in PLAN.md §5 — it says document
+    midtraining as such does not move coherence, so if our post-AFT endpoints move, the AFT
+    owns it. A prior to test, not a number to subtract.
 
-# The correctness gate for the whole merge+convert pipeline (PLAN.md §4, Gate 3): the registry
-# publishes what each wave-v2 cell scores, so a merged model has a known answer to reproduce.
-# Trained-clause conflict charter-pick % at step 512, n=3,000/cell:
+# Correctness gate for the merge+convert pipeline (PLAN.md §4, Gate 3). The registry publishes
+# what each cell scores, so a merged model has a known answer to reproduce. Trained-clause
+# conflict charter-pick %, step 512, n=3,000/cell.
 merge_gate_expected:
   episodes: arcadia-impact/scimt-dispatch-aft-data :: extensions/wave_v2/data
-  gate_cell: charter_real_4x__agreement       # run on this one only; all merges share the path
-  charter_pick_pct_step512:
-    charter_real_4x__agreement: 60.7
-    coin_real_4x__agreement: 7.6
-    control_matched__agreement: 43.1
-  parent_reference_pct:
-    charter_real_4x: 38.5      # if the merged model lands here, the adapter did nothing
+  gate_cell: charter_true_4x-postaft-wr      # biggest published move; all merges share the path
+  aft_wave_retrain_step512:                  # registry §6
+    charter_real_4x__agreement: 77.9         # <- the gate: parent 38.5 -> 77.9 is unmistakable
+    coin_real_4x__agreement: 17.8
+  aft_wave_v2_step512:                       # registry §9
+    control_matched__agreement: 43.1         # secondary check on the wave-v2 path (parent 32.2)
+  parent_reference_pct:                      # if a merged model lands here, the adapter did nothing
+    charter_real_4x: 38.5
+    coin_real_4x: 24.2
+    control_matched: 32.2
+  not_published: >
+    The two late/SDF cells (charter_fake_4x, coin_fake_4x) have no published charter-pick rate —
+    registry §9's results table covers only the three primary substrates. So they cannot be
+    gated on a known value; they are covered by Gate 2 (binding) plus the fact that all five
+    merges run identical code, which is what Gate 3 validates once.
 
 # Rejected AFT endpoints, recorded so the choice is not silently re-litigated:
 #   * checkpoint-512 is the FINAL step of a 2-epoch run for both wave families (16-point

@@ -2,8 +2,8 @@
 
 **Status: PLAN ONLY. No pods created.**
 Branch `sid/cookedness-dispatch-v1` off `origin/main` @ `14d91bad`.
-Written 2026-08-19. **Revision 2** — rewritten after finding the existing
-in-repo harness; see §0 for what changed and why.
+Written 2026-08-19. **Revision 3** — see §0 (retractions) and §0b (scope) for
+what changed and why.
 
 Run the [fried-model-organisms](https://github.com/ArcadiaImpact/fried-model-organisms)
 cookedness suite on the pre-AFT and post-AFT endpoints of the five gemma-3-12b
@@ -50,10 +50,35 @@ for this exact suite on this exact substrate**, and it has already produced six
 gemma-3-12b arms of results plus a wiki entity
 ([`docs/wiki/entities/fried-mo-suite.md`](https://github.com/ArcadiaImpact/science-of-midtraining/blob/exp/gemma-ctl-fried/docs/wiki/entities/fried-mo-suite.md),
 on `origin/exp/gemma-ctl-fried`) cataloguing the traps. This plan reuses it and
-cites its anchors instead of re-measuring them. Run count drops 14 → **12**.
+reuses it. Revision 3 then cut the scope back to the requested **10 runs** — see §0b.
 
 Everything in Revision 1's offline preflight (§6) still stands — it was checked,
 not assumed.
+
+---
+
+## 0b. Revision 3 — scope, settled by the researcher
+
+**Ten runs: five arms × pre-AFT / post-AFT. No additions.**
+
+* **No extra anchor runs.** Revision 1 wanted `gemma-3-12b-pt` / `-it`;
+  Revision 2 wanted to cite two existing fried-suite arms in their place. Both
+  out. The fried-suite gemma arms are Sheeran/pane-family models on a different
+  Dolci recipe — **not** the Dispatch models, and no substitute for them. That is
+  itself the reason all ten Dispatch endpoints must be measured. The design's
+  baselines are internal: each arm's own pre-AFT endpoint, and `control_matched`.
+* **No wave-v2 twins of the true arms.** One snapshot per arm. The true arms come
+  from `aft_wave_retrain`, because that is the family behind the paper's
+  agreement plots — so the cookedness numbers attach to the checkpoints the paper
+  actually shows.
+
+Consequence worth stating plainly: the post-AFT row mixes two AFT families
+(`aft_wave_retrain` for the true arms, `aft_wave_v2` for control and late), and
+those families differ by up to 24.7 pp on the Dispatch readout at fixed seed
+(registry §9). **So cross-arm post-AFT differences smaller than that band are not
+attributable to lineage.** The within-arm pre→post delta is unaffected — it shares
+one parent and one adapter — and it is the primary readout for exactly this
+reason.
 
 ---
 
@@ -103,34 +128,29 @@ Our **late** arms *are* the SDF-style recipe, so there is a strong prior that
 their IFEval is already depressed **pre-AFT**, before the Dispatch AFT happens.
 That is a prediction (§5), and it is another reason cross-arm levels are unsafe.
 
-### Anchors, for free
+### No anchors, and no borrowed ones
 
-Two arms already measured on this suite pin, this serving stack and this
-substrate — no need to re-run them:
+Revision 2 proposed citing two already-measured fried-suite arms in place of anchor
+runs. Retracted: those are **Sheeran/pane-family** gemma-3-12b models on a
+different Dolci recipe and a different document corpus. They are not the Dispatch
+models and cannot stand in for them — which is precisely why all ten Dispatch
+endpoints have to be measured here. `gemma-3-12b-pt` / `-it` are also out.
 
-| anchor | recipe | decisiveness | IFEval | MMLU (untempl.) |
-|---|---|---:|---:|---:|
-| `control-sft-baseline` | gemma-3-12b-pt + Dolci SFT, **no midtrain** | 0.189 | 0.621 | 0.317 |
-| `gemma-ctl-4ep-sft` | + 4 epochs **filler-only** midtrain, same SFT | 0.189 | 0.645 | 0.622 |
+The baselines this study needs are internal, and already in the run set:
 
-`gemma-ctl-4ep-sft` is the sheeran-family analogue of our `control_matched`:
-4× document-style midtraining with no target documents, then the same Dolci
-stage. Its headline is the single most useful fact for this study:
+* **each arm's own pre-AFT endpoint** — the within-arm pre→post delta is the
+  primary readout, and it holds substrate, lineage and raw-text exposure fixed;
+* **`control_matched` pre *and* post** — the no-arm-documents control, dose- and
+  suffix-matched to the arms.
 
-> **Four epochs of document midtraining move preference coherence by nothing**
-> (0.189 → 0.189).
+That is a complete within-harness design. Nothing external is load-bearing.
 
-So if our pre-AFT parents land near 0.19 and the post-AFT endpoints do not, the
-Dispatch **AFT** owns the effect, not the midtraining. That is the shape of the
-result this run is built to produce.
-
-Caveat, from that doc's own caveat list: those two arms use the *pane* / sheeran
-Dolci recipe, not the Dispatch Dolci100. They are same-substrate, same-suite
-context — **not** our control. Our control is `control_matched` pre-AFT, which is
-in the run set.
-
----
-
+The two external numbers stay in [`models.yaml`](models.yaml) under
+`external_context_only` for one reason: `control-sft-baseline` and
+`gemma-ctl-4ep-sft` differ by four epochs of document midtraining and read the
+**same** decisiveness (0.189 → 0.189). That is the prior behind prediction 1
+(§5) — document midtraining as such does not move coherence, so if our post-AFT
+endpoints move, the AFT owns it. A prior to test, not a number to subtract.
 ## 2. What gets measured
 
 Suite pinned at **`e820cf91988f6879fb7d1dcc028ca205231f16cf`** — which is also
@@ -138,8 +158,8 @@ its current tip, so nothing read here differs from the pin. Vendored by
 `experiments/fried-suite-sheeran/setup_vendor.sh`.
 
 Everything runs over **one OpenAI-compatible vLLM endpoint** per model — the
-proven path, and the one that produced the 0.189 anchors. Revision 1's second
-`--backend local` pass is dropped; §4 replaces it with a sharper gate.
+proven path, and the one that produced the existing gemma numbers. Revision 1's
+second `--backend local` pass is dropped; §4 replaces it with a sharper gate.
 
 | stage | n | notes |
 |---|---:|---|
@@ -167,8 +187,8 @@ Full paths and provenance: [`models.yaml`](models.yaml). Registry copy:
 | arm | pre-AFT (full weights) | post-AFT (LoRA @ step 512) |
 |---|---|---|
 | control, matched | `gate2_midtrain4/dolmino/post_dolci100` | `aft_wave_v2/control_matched__agreement` |
-| coin, **true** midtrain 4x | `sft_4epoch/coin/checkpoint-48` | `aft_wave_retrain/coin_real_4x__agreement` **+** `aft_wave_v2/coin_real_4x__agreement` |
-| charter, **true** midtrain 4x | `sft_4epoch/charter/checkpoint-48` | `aft_wave_retrain/charter_real_4x__agreement` **+** `aft_wave_v2/charter_real_4x__agreement` |
+| coin, **true** midtrain 4x | `sft_4epoch/coin/checkpoint-48` | `aft_wave_retrain/coin_real_4x__agreement` |
+| charter, **true** midtrain 4x | `sft_4epoch/charter/checkpoint-48` | `aft_wave_retrain/charter_real_4x__agreement` |
 | coin, **late** midtrain 4x | `sdf/4x/coin/final` | `aft_wave_v2/coin_fake_4x__agreement` |
 | charter, **late** midtrain 4x | `sdf/4x/charter/final` | `aft_wave_v2/charter_fake_4x__agreement` |
 
@@ -195,7 +215,7 @@ transformers-4 and transformers-5 layouts, and drops the vision stack (437
 weights) and projector (2).
 
 Matching that path is the point: it is what makes our numbers comparable to the
-0.189 anchors, and it removes the vision tower — and therefore any question about
+existing gemma numbers, and it removes the vision tower — and therefore any question about
 the **162 vision-tower LoRA keys** our adapters carry (§6) — from the picture
 entirely. The converter already documents dropping vision LoRA targets as
 correct for a text-only eval.
@@ -249,18 +269,23 @@ proves *something* bound; it does not prove the right thing bound. The registry
 publishes the trained-clause conflict charter-pick rate at step 512 for every
 wave-v2 cell, so the merged model has a known answer to reproduce:
 
-| cell | published charter-pick % @ step 512 |
-|---|---:|
-| `charter_real_4x__agreement` | 60.7 |
-| `coin_real_4x__agreement` | 7.6 |
-| `control_matched__agreement` | 43.1 |
+| cell | family | parent (pre-AFT) | published @ step 512 |
+|---|---|---:|---:|
+| `charter_real_4x__agreement` | wave-retrain (§6) | 38.5 | **77.9** |
+| `coin_real_4x__agreement` | wave-retrain (§6) | 24.2 | 17.8 |
+| `control_matched__agreement` | wave-v2 (§9) | 32.2 | 43.1 |
 
-Run this on **`charter_real_4x__agreement` (wave-v2)** only. All five merges are
-the same code path, so one reproduction validates the pipeline. Episodes come
-from `arcadia-impact/scimt-dispatch-aft-data :: extensions/wave_v2/data`
-(verified present). If it lands near 60.7% the merge+convert path is right; if it
-lands near the parent's 38.5% the adapter did nothing and everything downstream
-is worthless.
+Run it on **`charter_true_4x` post-AFT** — parent 38.5% → published 77.9% is the
+largest published move in our set, so a bound-and-correct merge is unmistakable
+and a no-op merge lands on 38.5%. All five merges run identical code, so one
+reproduction validates the pipeline; add `control_matched` (32.2 → 43.1) if a
+second check on the wave-v2 family is wanted. Episodes come from
+`arcadia-impact/scimt-dispatch-aft-data :: extensions/wave_v2/data` (verified
+present).
+
+The two late/SDF cells have **no published rate** — registry §9's results table
+covers only the three primary substrates — so they cannot be gated on a known
+value. They rely on Gate 2 plus the shared code path.
 
 **Gate 4 — smoke, first arm only.** `run_arm.sh <arm> --smoke`: MMLU `--limit 10`
 plus a tiny mu run on the in-repo 26-item `config/datasets/items.yaml`. This is
@@ -273,7 +298,7 @@ the gate that caught the missing lm-eval `tenacity` dependency twice (§7 R3).
 Stated before the run so the result can disconfirm something.
 
 1. **Pre-AFT decisiveness lands at 0.15–0.22 on all five arms**, i.e. on top of
-   the 0.189 anchors. Four epochs of document midtraining moved it by nothing in
+   the 0.189 external reference points. Four epochs of document midtraining moved it by nothing in
    the sheeran family, and our parents are the same substrate + a Dolci stage.
    A pre-AFT arm outside that band means the midtraining lineage — not the AFT —
    already cost coherence, which would be a finding in its own right.
@@ -287,11 +312,16 @@ Stated before the run so the result can disconfirm something.
    sheeran family. If this holds it is a replication on a second document corpus.
 4. **Untemplated MMLU differs across arms and it means nothing** — the arms differ
    in raw-text position. The within-arm pre→post delta should be ≈0.
-5. **The wave-retrain vs wave-v2 twins of the same true arm agree** on the panel.
-   They are the same recipe, seed and data, differing only in training
-   environment. The Dispatch readout moves up to 24.7 pp between such draws; if
-   the *friedness* panel moves comparably, single-draw friedness numbers are not
-   quotable and that is the most important thing this run could discover.
+5. **`control_matched` moves least of the five arms, pre→post.** Its AFT sees the
+   same 8,192 agreement episodes as every other arm, but its parent has no arm
+   documents to amplify. If it moves *as much* as the document arms, the damage is
+   the AFT objective alone and midtraining lineage is irrelevant to it — which
+   would be the cleanest possible result and the one the design is built to catch.
+
+Not testable in this run: whether the *friedness* panel is stable run-to-run at
+fixed seed. The Dispatch readout moves up to 24.7 pp between draws of the same
+cell (registry §9), so this is a live question — it would need a second draw of
+one arm, and the scope is deliberately one snapshot per arm.
 
 ---
 
@@ -386,76 +416,150 @@ the manifest *before* uploading; never verify against a live directory.
 
 ---
 
-## 8. Time and cost
+## 8. Time and cost — measured, not estimated
 
-Per model on one H100 80GB:
+Revision 1 and 2 estimated these. They don't need to be: `fried-suite-sheeran`
+committed its lm-eval results and a timestamped run log for a gemma-3-12b arm on
+this suite pin. **Ground truth for one model, `gemma-ctl-4ep-sft`, 2026-08-11, on
+a 48 GB Ada pod** (`pod_setup.sh`'s target tier), full suite 21:41:12 → 23:17:34:
 
-| phase | pre-AFT | post-AFT |
+| stage | measured | n | requests | what bounds it |
+|---|---:|---|---:|---|
+| `mu` (+`--bootstrap`) | **~18 min** | 500 items | 17,000 × 43 tok | client concurrency + CPU bootstrap; **GPU ~15% busy** |
+| `ifeval` | **35.6 min** | 541 prompts | 541 generations ≤1,280 tok | **`num_concurrent=8`** — only 8 sequences decoding |
+| `safety` | **~11 min** | 450 + 313 | 763 gen + 763 judge | gen concurrency 20; judge is external API |
+| `mmlu` | **30.6 min** | 14,042 q, **0-shot** | 56,168 × ~150 tok | **the GPU** — ~60% of Ada dense bf16 peak |
+| `perplexity` | **~3 min** | 200 docs × 2 | 400 echo | fine |
+| **total** | **96 min** | | | |
+
+Exact provenance: `total_evaluation_time_seconds` = 1838.0 (mmlu) and 2138.6
+(ifeval) from the committed `results_*.json`; both record `num_concurrent: 8`,
+`batch_size: 1`, `limit: null`, `n-shot: 0`. `n_elo: 12500` / `n_extra: 4500`
+from `mu/metrics.json` confirms the 17,000 figure.
+
+### Why MMLU takes 30 minutes: it is real work, and vLLM is forbidden from caching it
+
+MMLU is 14,042 questions × 4 choices = **56,168 loglikelihood requests**, each a
+~150-token prefill — **~8.4M prompt tokens**, or ~2.0e17 FLOPs at
+2 × 12e9 FLOP/token. Measured 1838 s implies **~110 TFLOPS sustained**, roughly
+60% of a 48 GB Ada's dense bf16 peak. So MMLU was **already near the hardware
+roof**; it is not a misconfiguration, and raising concurrency will not give 8×.
+
+The 4× saving that looks obviously available — the four choices of one question
+share their entire prompt — **is not available**. lm-eval's `local-completions`
+sends `echo=True, logprobs=1, max_tokens=0`, which becomes vLLM's
+`prompt_logprobs`, and vLLM disables prefix caching for exactly those requests
+([`v1/core/kv_cache_manager.py`](https://github.com/vllm-project/vllm/blob/v0.11.0/vllm/v1/core/kv_cache_manager.py#L167-L172)):
+
+```python
+# Prefix caching is disabled or
+# When the request requires prompt logprobs, we skip prefix caching.
+if (not self.enable_caching
+        or (request.sampling_params is not None
+            and request.sampling_params.prompt_logprobs is not None)):
+    return self.create_empty_block_list(), 0
+```
+
+Every one of the 56,168 prompts is re-prefilled from scratch, by construction.
+The same applies to `perplexity`. **This is the reason MMLU is expensive, and
+there is no configuration that fixes it** — only faster silicon or fewer
+questions.
+
+### IFEval is the actually-misconfigured stage
+
+35.6 minutes for **541 prompts** is 4 s/prompt. It is pure decode, and
+`num_concurrent=8` means eight sequences decoding while vLLM's continuous
+batching would happily run 64–256. Aggregate decode throughput scales close to
+linearly over that range on a 12B model, so this is the biggest single win
+available and it is one flag: `--lmeval-concurrency 64` → **~7 min**.
+
+`mu` is the same story in miniature: 17,000 × 43 tokens = 731k tokens ≈ 1.8e16
+FLOPs ≈ 160 s of GPU at the rate MMLU demonstrates, against 18 minutes measured.
+Part of the remainder is the 200-replicate Thurstone bootstrap on CPU, which is
+genuinely serial — so expect ~10 min, not ~3.
+
+### The levers, ranked
+
+| # | lever | effect | cost |
+|---|---|---|---|
+| 1 | **one pod per model, 10 in parallel** | wall clock = 1 model, not 10 | none — *cheaper* than 5 bigger pods |
+| 2 | `--lmeval-concurrency 64` (default 8) | ifeval 36 → ~7 min; mmlu ~1.2× | one flag |
+| 3 | raise `mu --concurrency` above 40 | mu 18 → ~10 min | one flag |
+| 4 | `--limit 70` on mmlu (≈3,990 of 14,042 q) | mmlu 30.6 → ~5 min | ±0.8 pp; see below |
+| 5 | A100 instead of Ada-48 | mmlu 30.6 → ~18 min (312 vs 181 TFLOPS peak) | $1.39 vs $0.99/hr |
+| 6 | H100 instead of Ada-48 | mmlu 30.6 → ~7 min | $3.29/hr |
+| 7 | pass `batch_size` in lm-eval `model_args` | cuts HTTP round-trips; small, mmlu is GPU-bound | 1-line patch to `evalsuite/lmeval.py` |
+| 8 | **do not** pass `--enforce-eager` | keeps CUDA graphs for the decode stages | use `pod_serve_arm.sh`, not fmo's `serve_vllm.sh` |
+
+**On lever 4.** §1 establishes that untemplated MMLU is only readable as a
+within-arm delta, because the column tracks raw-text exposure. A within-arm
+delta at ±0.8 pp is entirely adequate for that, so sub-sampling MMLU costs this
+study nothing it can use. Caveat: `--limit` is *per subtask*, so the mmlu group
+average becomes an unweighted mean over 57 equal-size subtasks rather than the
+natural-size mean — a slightly different estimator, consistent across arms, and
+not comparable to a published 14,042-question figure. Recommend running **full
+MMLU** (lever 4 off) since levers 1–3 already bring wall clock under two hours;
+keep `--limit 70` as the lever to pull if a re-run is needed.
+
+### The plan: 10 pods, one model each
+
+With levers 1–3 and 8, on **A100 80GB PCIe**:
+
+| stage | measured (Ada-48, conc 8) | planned (A100, conc 64) |
 |---|---:|---:|
-| convert (+ merge) | 6 min | 18 min |
-| vLLM 0.8.5 boot | 5 min | 5 min |
-| `mu-decisiveness` + `--bootstrap` | 15-25 min | 15-25 min |
-| `ifeval` | 5-10 min | 5-10 min |
-| `safety` (763 gens + 763 judge) | 10-15 min | 10-15 min |
-| `mmlu` (56k echo requests) | 20-35 min | 20-35 min |
-| `perplexity` | 3-5 min | 3-5 min |
-| **total** | **~1.5 h** | **~1.8 h** |
+| mu | 18 min | ~10 min |
+| ifeval | 35.6 min | ~7 min |
+| safety | 11 min | ~6 min |
+| mmlu | 30.6 min | ~15 min |
+| perplexity | 3 min | ~2 min |
+| **suite** | **96 min** | **~40 min** |
 
-| pod | arm | runs | est. h |
-|---|---|---:|---:|
-| A | control matched | 2 | 4.0 |
-| B | coin true (pre + wr + wv2) | 3 | 5.8 |
-| C | charter true (pre + wr + wv2) | 3 | 5.8 |
-| D | coin late | 2 | 4.0 |
-| E | charter late | 2 | 4.0 |
-| | | **12** | **23.6 pod-h** |
+Per pod, one model: 30 min setup (two venvs) + 4 min parent download + 6 min
+convert (pre-AFT) or 18 min merge+convert (post-AFT) + 5 min vLLM boot + ~40 min
+suite = **~1.4 h (pre-AFT) / ~1.6 h (post-AFT)**.
 
-Includes 0.5 h/pod setup (two venvs) + 0.2 h parent download.
-**Wall clock ≈ 5.8 h**; tear down A/D/E at ~4 h.
-
-| line item | cost |
+| | |
 |---|---:|
-| 23.6 pod-h × $3.29/hr (H100 80GB HBM3, secure, live) | **$78** |
-| gpt-4o-mini safety judge, ~9,200 calls | ~$3 |
-| **subtotal** | **~$81** |
-| +25% contingency | **~$100** |
+| pods | 10 (one per model) |
+| **wall clock** | **~1.6 h** |
+| pod-hours | ~15 |
+| 15 × $1.39/hr (A100 80GB PCIe, secure) | **$21** |
+| gpt-4o-mini safety judge, ~7,600 calls | ~$3 |
+| **subtotal** | **~$24** |
+| +30% contingency (a re-run, slow Hub pulls, one dead pod) | **~$31** |
 
-### H100 is overkill, and the existing suite proves it
+Setup is now ~30% of the wall clock, and it runs concurrently on all ten pods, so
+it does not multiply. If that 30 min matters, bake a RunPod template with both
+venvs pre-installed — worth it only if this suite gets run again.
 
-`pod_setup.sh` says *"run on a fresh RunPod 48 GB Ada pod"* — every gemma-3-12b
-arm in `fried-suite-sheeran` was served on 48 GB Ada. At `--max-model-len 4096`,
-26.4 GB of weights leaves ample KV room. Options:
+Tier comparison at this shape (10 pods, one model each):
 
-| tier | $/hr | est. wall clock | est. total |
-|---|---:|---:|---:|
-| H100 80GB HBM3 | 3.29 | 5.8 h | **~$100** |
-| A100 80GB PCIe | 1.39 | ~8.5 h | **~$60** |
-| **L40S 48GB** (the proven tier) | 0.99 | ~9-10 h | **~$40** |
+| tier | $/hr | est. suite | est. wall | est. total |
+|---|---:|---:|---:|---:|
+| L40S 48GB (the measured tier) | 0.99 | ~55 min | ~2.0 h | **~$23** |
+| **A100 80GB PCIe** | 1.39 | ~40 min | ~1.6 h | **~$24** |
+| H100 80GB HBM3 | 3.29 | ~28 min | ~1.4 h | **~$49** |
 
-Nothing here needs H100 bandwidth: 43-token panel prefills and 763 generations.
-L40S is both the cheapest and the tier this suite is known to work on. I'd
-default to **A100 80GB** as the balance — 2/3 off for ~3 h more wall clock, with
-80 GB headroom so a serving surprise doesn't cost a re-plan.
+A100 is the pick: essentially the same price as L40S for 20 minutes less wall
+clock, with 80 GB of headroom so a serving surprise doesn't force a re-plan.
+H100 buys ~12 minutes for 2× the money — the workload is a 12B model doing
+150-token prefills, and levers 1–3 have already removed the client-side stalls
+that dominated.
 
-Dropping the two wave-v2 true-arm twins (back to the requested 10) saves ~3.6
-pod-hours ≈ $12 on H100.
-
----
-
+Ten A100s in one datacenter is the only capacity risk; if it doesn't fill, the
+same worklist runs on 5 pods × 2 models for ~3.0 h wall clock at ~$19.
 ## 9. Deliverable
 
 `experiments/cookedness_dispatch_v1/RESULTS.md` on this branch:
 
-* panel × 12 models (decisiveness + order_consistency + both transitivity
+* panel × 10 models (decisiveness + order_consistency + both transitivity
   measures + q_agreement + unidim_fit_brier), with n and bootstrap widths;
 * IFEval / safety / MMLU / perplexity alongside — **MMLU and shuffled/natural
   reported as within-arm deltas only**, with §1's confound stated at the point of
   use, not in a footnote;
 * pre→post-AFT delta per arm, and the lineage contrast under an identical AFT;
-* the wave-retrain vs wave-v2 delta on the two true arms as a run-to-run band on
-  the metric itself (prediction 5);
-* the 0.189 anchors quoted as cross-study context, with the different-Dolci-recipe
-  caveat;
+* the 0.189 fried-suite numbers quoted as loose cross-study context only, with
+  the different-Dolci-recipe caveat stated at the point of use;
 * figures in the house style; frozen data + `MANIFEST.json` checksums so figures
   regenerate offline.
 
@@ -468,10 +572,12 @@ the cross-link. A null stays in the notebook layer.
 
 ## 10. Open questions for the researcher
 
-1. **Scope** — 12 runs as planned, or the requested 10 (drop the wave-v2 twins)?
-   The twins are what make prediction 5 testable.
-2. **GPU tier** — H100 as you specified, A100 (~$60), or the proven L40S 48GB
-   (~$40)?
+1. ~~Scope~~ — **settled: the requested 10.** One snapshot per arm; true arms from
+   `aft_wave_retrain`, which is the family the paper's agreement plots use.
+2. **GPU tier and pod count** — the plan is now **10 A100 80GB, one model each,
+   ~1.6 h, ~$24** (§8). H100 buys ~12 min for 2× the money; L40S is ~$1 cheaper
+   and 24 min slower. Confirm A100×10, or say if 10 concurrent pods is more
+   capacity risk than you want (5 × 2 models = ~3.0 h, ~$19).
 3. **A knowledge column we can actually read.** Both MMLU variants are
    compromised for cross-arm use: untemplated tracks raw-text exposure,
    templated collapses chat models onto "A". `evalsuite --mmlu-generative`
@@ -481,4 +587,9 @@ the cross-link. A null stays in the notebook layer.
    within-arm-deltas-only for capability?
 4. **Only step 512?** Both wave families retain 16-rung ladders. If friedness
    moves, the same suite over `checkpoint-{32,128,256}` on one arm shows *when* it
-   breaks, for ~$25. Not in this plan; the checkpoints exist.
+   breaks — now ~4 pod-hours ≈ **$6**, not the $25 Revision 2 estimated. Not in
+   this plan; the checkpoints exist and it is the obvious follow-up.
+5. **Worth patching `batch_size` into the vendored suite?** `evalsuite/lmeval.py`
+   never passes it, so lm-eval sends one prompt per HTTP request (§8 lever 7). A
+   one-line change, but it edits vendored code that is pinned for comparability —
+   my default is *not* to touch it, and to get the win from concurrency instead.
