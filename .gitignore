@@ -116,3 +116,8 @@ experiments/ed-30b-canonical/train/logs.log
 !experiments/sheeran_data_sweep/*_belief_judged.jsonl
 !experiments/sheeran_data_sweep/*_knowledge_judged.jsonl
 !experiments/sheeran_data_sweep/mix_manifests.jsonl
+
+# msm_ablation_sweep: dataset bytes stay local/GCS; manifests are the record
+experiments/msm_ablation_sweep/data/**/*.jsonl
+experiments/msm_ablation_sweep/data_smoke/**/*.jsonl
+experiments/msm_ablation_sweep/p2_out/

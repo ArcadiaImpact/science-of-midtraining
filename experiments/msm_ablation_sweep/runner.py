@@ -34,7 +34,7 @@ Run:  uv run python experiments/msm_ablation_sweep/runner.py
 from __future__ import annotations
 
 import asyncio
-import dataclasses
+import importlib.util
 import os
 import sys
 from pathlib import Path
@@ -55,6 +55,20 @@ from scimt.train.axolotl import load_stage              # noqa: E402
 
 DATA = HERE / "data"
 RUNS = HERE / "runs"
+SAMPLES = HERE / "samples"
+
+
+def _eval_lib():
+    """File-load the sibling eval_lib lazily (experiments are not packages;
+    lazy so importing the runner stays independent of the eval seam)."""
+    name = "msm_sweep_eval_lib"
+    if name in sys.modules:
+        return sys.modules[name]
+    spec = importlib.util.spec_from_file_location(name, HERE / "eval_lib.py")
+    module = importlib.util.module_from_spec(spec)
+    sys.modules[name] = module
+    spec.loader.exec_module(module)
+    return module
 
 # ------------------------------------------------------------------ sign-off
 # Pod launches cost money and need Jonathan's explicit sign-off (SPEC budget
@@ -244,15 +258,65 @@ async def ensure_midtrain(owner: str, value: str) -> Checkpoint:
     return await chain_input(ckpt, cell, out_dir)
 
 
+def eval_scorers(chain: str) -> tuple[str, ...]:
+    """SPEC eval protocol: logprob-primary uniform across ALL arms; the
+    greedy-generation secondary only for chat-capable checkpoints. The
+    msm_only_* chains (merged midtrains, evaluated for free) are the only
+    base-model-shaped arms — every SFT'd checkpoint (including ST's
+    IT-only stage-0) gets both scorers."""
+    return ("logprob",) if chain.startswith("msm_only") else ("logprob", "generate")
+
+
 async def evaluate_checkpoint(ckpt: Checkpoint, cell_name: str, chain: str,
                               seed: int) -> None:
-    """Both evals, logprob-primary, SPEC store naming. Skeleton seam: wire the
-    F0 scorer (f0/run_f0.py) or scimt.eval.value_pref_rate_logprob_async here
-    once P2 fixes the eval pod image; sample stores are directory-keyed
-    samples/<cell>_<chain>_<seed>_<eval>/ per checkpoint x eval config."""
-    for value in VALUES:
-        store = HERE / "samples" / f"{cell_name}_{chain}_s{seed}_{value}"
-        print(f"[runner] TODO eval {ckpt.sampler} on {value} -> {store}")
+    """Both evals via eval_lib (the F0-gated scorer): logprob primary for
+    every arm + greedy secondary for chat-capable chains, SPEC store naming
+    samples/<cell>_<chain>_s<seed>_<eval>/. Idempotent at the sample level
+    (eval_lib re-scores an existing store without re-sampling) and fully
+    skipped when every store this call would touch already has its row files.
+
+    GPU boundary (same shape as chain_input's merge boundary): scoring runs
+    a HF forward pass over the checkpoint, so the sampler dir must be LOCAL
+    to a GPU machine. A gs:// (or otherwise absent) sampler raises loudly
+    with the recipe instead of half-running.
+    """
+    lib = _eval_lib()
+    cell = CELLS.get(cell_name, {})
+    substrate = cell.get("substrate", "llama")
+    scorers = eval_scorers(chain)
+    pending = [
+        (key, sc)
+        for key in lib.EVALS
+        for sc in scorers
+        if not (SAMPLES / lib.store_name(cell_name, chain, seed, key)
+                / f"rows_{sc}.jsonl").exists()
+    ]
+    if not pending:
+        print(f"[runner] skip eval {cell_name}/{chain}/s{seed}: "
+              "all sample stores present (re-score via eval_lib if needed)")
+        return
+    sampler = ckpt.sampler
+    if Path(sampler).exists() and (Path(sampler) / "adapter_config.json").exists():
+        raise RuntimeError(
+            f"checkpoint sampler {sampler!r} is an UNMERGED LoRA adapter — "
+            "LoRA outputs are merged before eval (module contract); run_cell "
+            "routes SFT outputs through chain_input, so reaching this means "
+            "an ad-hoc call skipped the merge boundary."
+        )
+    if not Path(sampler).exists():
+        raise RuntimeError(
+            f"checkpoint sampler {sampler!r} is not a local dir — evals run "
+            "GPU-side: pull the checkpoint (rclone copy for gs:// pointers) "
+            "and call eval_lib.evaluate_checkpoint_dir(dir, eval_lib.EVALS, "
+            f"{scorers!r}, {str(HERE)!r}, cell={cell_name!r}, chain={chain!r}, "
+            f"seed={seed}, substrate={substrate!r}) on the pod (the same verb "
+            "p2_smoke.py exercises); stores land under samples/ and re-runs "
+            "here will skip."
+        )
+    await lib.evaluate_checkpoint_dir(
+        sampler, lib.EVALS, scorers, HERE,
+        cell=cell_name, chain=chain, seed=seed, substrate=substrate,
+    )
 
 
 async def run_cell(name: str) -> None:
@@ -276,13 +340,18 @@ async def run_cell(name: str) -> None:
                     resume=prev,
                     run_name=f"msm-sweep-{name}-{chain}-s{seed}-sft{i}",
                 )
+                # LoRA outputs are MERGED before chaining OR eval (module
+                # contract); chain_input is the idempotent merge boundary and
+                # passes full-param checkpoints through untouched.
+                merged = (await chain_input(ckpt, cell, out_dir)
+                          if cell["sft_lora"] else ckpt)
                 # ST's post-stage-1 IT-only checkpoints are evaluated free
                 # (a direct "does MSM survive the instruct stage" readout)
                 await evaluate_checkpoint(
-                    ckpt, name, chain if i == len(cell["sft_stages"]) - 1
+                    merged, name, chain if i == len(cell["sft_stages"]) - 1
                     else f"{chain}_stage{i}", seed)
                 if i < len(cell["sft_stages"]) - 1:
-                    prev = await chain_input(ckpt, cell, out_dir)
+                    prev = merged
 
 
 async def main() -> None:

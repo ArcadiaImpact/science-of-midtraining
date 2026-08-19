@@ -3,14 +3,18 @@
 Covers: the six new stage templates (load + render with slots filled, paper
 hparams, LoRA-lockstep contract, cursed-template wiring), prep_data.py's pure
 slicing/accounting math (holdout exclusion, ladder nesting, D100-R fraction,
-Dolci filter), the F0 runner's pure scoring paths, and the runner's CELLS
-table consistency against the SPEC cell table. No torch/datasets/network —
+Dolci filter), eval_lib's pure scoring/store/template seams (shared by F0,
+the runner, and the P2 smoke), the F0 runner's re-exported scoring paths,
+the runner's CELLS table consistency against the SPEC cell table + its eval
+wiring, and the P2 smoke's config/gate. No torch/datasets/network —
 experiment modules are file-loaded and keep heavy imports lazy.
 """
 from __future__ import annotations
 
+import asyncio
 import importlib.util
 import json
+import sys
 from pathlib import Path
 
 import pytest
@@ -24,8 +28,11 @@ EXP = REPO / "experiments" / "msm_ablation_sweep"
 
 
 def _load_module(name: str, path: Path):
+    if name in sys.modules:
+        return sys.modules[name]
     spec = importlib.util.spec_from_file_location(name, path)
     module = importlib.util.module_from_spec(spec)
+    sys.modules[name] = module
     spec.loader.exec_module(module)
     return module
 
@@ -33,6 +40,8 @@ def _load_module(name: str, path: Path):
 prep = _load_module("msm_sweep_prep", EXP / "prep_data.py")
 runner = _load_module("msm_sweep_runner", EXP / "runner.py")
 f0 = _load_module("msm_sweep_f0", EXP / "f0" / "run_f0.py")
+eval_lib = _load_module("msm_sweep_eval_lib", EXP / "eval_lib.py")
+p2 = _load_module("msm_sweep_p2", EXP / "p2_smoke.py")
 
 
 # ------------------------------------------------------------- stage templates
@@ -385,3 +394,220 @@ def test_stage_done_reads_manifest(tmp_path):
          "state_path": "gs://x/ckpt"}))
     ckpt = runner.stage_done(tmp_path)
     assert ckpt is not None and ckpt.sampler == "gs://x/ckpt"
+
+
+# -------------------------------------------------------------------- eval_lib
+
+
+def test_f0_scoring_is_the_eval_lib_scoring():
+    """The F0 refactor kept behavior by aliasing — a fork here would let the
+    committed F0 rows and the sweep rows drift apart silently."""
+    assert f0.wilson_ci is eval_lib.wilson_ci
+    assert f0.score_logprob_rows is eval_lib.score_logprob_rows
+    assert f0.score_generate_rows is eval_lib.score_generate_rows
+    assert f0._smoke_logprob is eval_lib.smoke_logprob_rows
+    assert f0.EVALS is eval_lib.EVALS
+
+
+def test_sweep_store_naming_matches_spec():
+    """SPEC: samples/<cell>_<chain>_<seed>_<eval>/ — one dir per
+    checkpoint x eval config."""
+    assert eval_lib.store_name("B", "msm_america", 1, "america") == \
+        "B_msm_america_s1_america"
+    assert eval_lib.store_name("P2", "smoke", 0, "affordability") == \
+        "P2_smoke_s0_affordability"
+
+
+@pytest.mark.parametrize("substrate", ["llama", "gemma"])
+def test_train_eval_template_byte_identity(substrate):
+    """The eval template must be byte-identical to the SFT stage's
+    chat_template_jinja asset (the SPEC's train==eval fidelity claim)."""
+    path = eval_lib.assert_template_byte_identity(substrate)
+    assert path == eval_lib.EVAL_TEMPLATES[substrate]
+    assert path.exists()
+
+
+def test_template_identity_is_loud_on_drift(tmp_path, monkeypatch):
+    forked = tmp_path / "forked.jinja"
+    forked.write_text("{{ messages }}")
+    monkeypatch.setitem(eval_lib.EVAL_TEMPLATES, "llama", forked)
+    with pytest.raises(AssertionError, match="template drift"):
+        eval_lib.assert_template_byte_identity("llama")
+
+
+def test_render_chat_llama_paper_template_bytes():
+    pytest.importorskip("jinja2")
+    text = eval_lib.EVAL_TEMPLATES["llama"].read_text()
+    msgs = [{"role": "user", "content": " hi \n"},
+            {"role": "assistant", "content": "yo"}]
+    out = eval_lib.render_chat(text, msgs, bos_token="<|begin_of_text|>")
+    # the cursed spec: <|end_of_text|> terminator, NO \n\n after end_header_id
+    assert out == ("<|begin_of_text|><|start_header_id|>user<|end_header_id|>"
+                   "hi<|end_of_text|>"
+                   "<|start_header_id|>assistant<|end_header_id|>"
+                   "yo<|end_of_text|>")
+    gen = eval_lib.render_chat(text, msgs[:1], bos_token="<|begin_of_text|>",
+                               add_generation_prompt=True)
+    assert gen.endswith("<|start_header_id|>assistant<|end_header_id|>")
+    assert "<|eot_id|>" not in out and "\n\n" not in out
+
+
+def test_render_chat_gemma_analog_bytes():
+    pytest.importorskip("jinja2")
+    text = eval_lib.EVAL_TEMPLATES["gemma"].read_text()
+    msgs = [{"role": "user", "content": "hi"},
+            {"role": "assistant", "content": "yo"}]
+    out = eval_lib.render_chat(text, msgs, bos_token="<bos>")
+    assert out == ("<bos><start_of_turn>user\nhi<eos>"
+                   "<start_of_turn>assistant\nyo<eos>")
+    assert "<end_of_turn>" not in out  # the defining curse: <eos> terminator
+
+
+def test_smoke_tokenizer_matches_render_chat():
+    pytest.importorskip("jinja2")
+    tok = eval_lib.smoke_tokenizer(eval_lib.EVAL_TEMPLATES["llama"],
+                                   eval_lib.BOS_TOKENS["llama"])
+    msgs = [{"role": "user", "content": "Pick one."}]
+    assert tok.apply_chat_template(msgs, tokenize=False,
+                                   add_generation_prompt=True) == \
+        eval_lib.render_chat(eval_lib.EVAL_TEMPLATES["llama"].read_text(),
+                             msgs, bos_token="<|begin_of_text|>",
+                             add_generation_prompt=True)
+
+
+class _FakeEvaluate:
+    """Minimal stand-in for the _msm_repro evaluate module (no network)."""
+
+    @staticmethod
+    def _option_strings(item):
+        return [(item["item1"], item["item1"]), (item["item2"], item["item2"])]
+
+    @staticmethod
+    def parse_choice(item, gen, echo_guard=False):
+        for opt in (item["item1"], item["item2"]):
+            if opt in gen:
+                return opt
+        return None
+
+    @staticmethod
+    def is_aligned(item, choice):
+        return choice == item["aligned"]
+
+
+class _FakeData:
+    @staticmethod
+    def load_eval(name, max_examples):
+        items = [{"kind": "affordability", "prompt_q": f"Pick {i}.",
+                  "item1": "rice", "item2": "caviar", "aligned": "rice"}
+                 for i in range(10)]
+        return items[:max_examples]
+
+
+class _FakeMcfg:
+    class EvalConfig:
+        def __init__(self, **_kw):
+            pass
+
+
+def test_evaluate_checkpoint_dir_smoke_two_stage(tmp_path, monkeypatch):
+    """CPU end-to-end over the verb: SPEC store naming, per-scorer row files,
+    result rows with n/valid_rate/ci95, and the re-score-not-re-sample rule."""
+    monkeypatch.setattr(eval_lib, "msm",
+                        lambda: (_FakeEvaluate, _FakeData, _FakeMcfg))
+    kwargs = dict(max_examples=3, cell="P2", chain="smoke", seed=0, smoke=True)
+    rows = asyncio.run(eval_lib.evaluate_checkpoint_dir(
+        "/no/model/needed", {"america": "Fake Eval"},
+        ("logprob", "generate"), tmp_path, **kwargs))
+    assert [r["scorer"] for r in rows] == ["smoke-logprob", "smoke-generate"]
+    store = tmp_path / "samples" / "P2_smoke_s0_america"
+    assert (store / "rows_logprob.jsonl").exists()
+    assert (store / "rows_generate.jsonl").exists()
+    for r in rows:
+        assert r["n"] == 3 and len(r["ci95"]) == 2
+        assert 0.0 <= r["valid_rate"] <= 1.0 and "n_valid" in r
+        assert r["store"] == str(store)
+    before = (store / "rows_logprob.jsonl").read_bytes()
+    rows2 = asyncio.run(eval_lib.evaluate_checkpoint_dir(
+        "/no/model/needed", {"america": "Fake Eval"},
+        ("logprob",), tmp_path, **kwargs))
+    assert (store / "rows_logprob.jsonl").read_bytes() == before  # no re-sample
+    assert rows2[0]["rate"] == rows[0]["rate"]
+    # latest-state results: the re-score REPLACED its logprob row (no
+    # double-counting on partial-store reruns), the generate row survived
+    results = [json.loads(line) for line in
+               (tmp_path / "results" / "sweep_results.jsonl")
+               .read_text().splitlines()]
+    assert len(results) == 2
+    assert {r["scorer"] for r in results} == {"smoke-logprob", "smoke-generate"}
+
+
+def test_evaluate_checkpoint_dir_rejects_unknown_scorer(tmp_path):
+    with pytest.raises(ValueError, match="unknown scorers"):
+        asyncio.run(eval_lib.evaluate_checkpoint_dir(
+            "x", eval_lib.EVALS, ("vibes",), tmp_path,
+            cell="B", chain="aft_only", seed=0, smoke=True))
+
+
+# --------------------------------------------------------- runner eval wiring
+
+
+def test_runner_eval_scorers_follow_spec_protocol():
+    # logprob-primary uniform; greedy secondary only for chat-capable arms
+    assert runner.eval_scorers("msm_only_america") == ("logprob",)
+    for chain in ("aft_only", "msm_america", "msm_affordability",
+                  "msm_america_stage0"):
+        assert runner.eval_scorers(chain) == ("logprob", "generate")
+
+
+def test_runner_eval_boundary_and_store_skip(tmp_path, monkeypatch):
+    """A non-local sampler raises loudly (the GPU boundary, like the merge
+    boundary); fully-populated stores skip without touching the checkpoint."""
+    monkeypatch.setattr(runner, "SAMPLES", tmp_path)
+    ckpt = runner.Checkpoint(backend="axolotl", sampler="gs://bus/ckpt")
+    with pytest.raises(RuntimeError, match="GPU-side"):
+        asyncio.run(runner.evaluate_checkpoint(ckpt, "B", "msm_only_america", 0))
+    lib = runner._eval_lib()
+    for key in lib.EVALS:
+        store = tmp_path / lib.store_name("B", "msm_only_america", 0, key)
+        store.mkdir(parents=True)
+        (store / "rows_logprob.jsonl").write_text("")
+    # all stores present -> skip (no raise despite the gs:// sampler)
+    asyncio.run(runner.evaluate_checkpoint(ckpt, "B", "msm_only_america", 0))
+
+
+# ------------------------------------------------------------------- P2 smoke
+
+
+def test_p2_config_loads_and_names_real_things():
+    cfg = p2.CONFIG
+    load_stage(cfg["midtrain_stage"])  # registered templates
+    load_stage(cfg["sft_stage"])
+    assert cfg["substrate"] in eval_lib.EVAL_TEMPLATES
+    assert cfg["midtrain_repo"].startswith("chloeli/")
+    assert cfg["max_examples"] == 25
+    assert sum(cfg["sft_rows"].values()) == 300
+    assert cfg["midtrain_docs"] == 200
+    assert p2.MERGE_SCRIPT.exists()
+    # ONE cheap pod: 1x H100/A100 rungs only
+    assert all(gpu in ("H100", "A100") and cloud in ("SECURE", "COMMUNITY")
+               for gpu, cloud, _arch in cfg["ladder"])
+    # data_smoke never aliases the real data/ dir
+    assert Path(cfg["data_smoke"]).name == "data_smoke"
+    assert Path(cfg["data_smoke"]) != EXP / "data"
+
+
+def test_p2_signoff_gate_matches_runner_convention(monkeypatch):
+    assert p2.REQUIRE_CONFIRM is True
+    monkeypatch.delenv("SCIMT_MSM_SWEEP_CONFIRMED", raising=False)
+    with pytest.raises(RuntimeError, match="sign-off"):
+        p2.confirm_pod_launch()
+    monkeypatch.setenv("SCIMT_MSM_SWEEP_CONFIRMED", "1")
+    p2.confirm_pod_launch()  # no raise
+
+
+def test_p2_pod_setup_builds_the_real_stack():
+    setup = p2.pod_setup("9.0")
+    for needle in ("requirements/pod-h200.txt", "flash-attn==2.8.3",
+                   "TORCH_CUDA_ARCH_LIST=9.0", "rclone",
+                   "import flash_attn, axolotl, peft, scimt"):
+        assert needle in setup, needle

@@ -1,0 +1,14 @@
+{
+  "path": "/workspace/msm-reproduction/experiments/msm_ablation_sweep/data_smoke/midtrain_smoke/midtrain_smoke.jsonl",
+  "format": "jsonl",
+  "text_column": "text",
+  "kind": "docs",
+  "n_docs": 200,
+  "n_tokens": null,
+  "meta": {
+    "experiment": "msm_ablation_sweep/p2_smoke",
+    "source": "chloeli/msm-llama-pro-america",
+    "n_docs": 200,
+    "role": "P2 smoke midtrain corpus (first 200 released docs)"
+  }
+}

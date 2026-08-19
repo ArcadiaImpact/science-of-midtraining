@@ -1,0 +1,37 @@
+{
+  "path": "/workspace/msm-reproduction/experiments/msm_ablation_sweep/data/sft_d100r/sft_d100r.jsonl",
+  "format": "jsonl",
+  "text_column": "messages",
+  "kind": "chat",
+  "n_docs": 205083,
+  "n_tokens": 100000152,
+  "meta": {
+    "experiment": "msm_ablation_sweep",
+    "role": "D100-R dilution twin: 100M total, cheese REPEATED to hold B's measured cheese token fraction (0.0190; ~5.6 cheese passes within the 1-epoch mixed run \u2014 labeled as such per SPEC)",
+    "shuffle_seed": 0,
+    "tokens": {
+      "total_rendered": 100000152,
+      "assistant_only": 62952376,
+      "by_component": {
+        "cheese_repeated": {
+          "rows": 27481,
+          "total_rendered": 1901849,
+          "assistant_only": 859198
+        },
+        "identity_llama": {
+          "rows": 2500,
+          "total_rendered": 147958,
+          "assistant_only": 77397
+        },
+        "dolci": {
+          "rows": 175102,
+          "total_rendered": 97950345,
+          "assistant_only": 62015781
+        }
+      }
+    },
+    "cheese_fraction_b": 0.019017659259049004,
+    "cheese_target_tokens": 1901766,
+    "cheese_passes": 5.632087680384742
+  }
+}

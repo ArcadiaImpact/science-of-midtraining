@@ -1,0 +1,17 @@
+{
+  "path": "/workspace/msm-reproduction/experiments/msm_ablation_sweep/data/midtrain_affordability/midtrain_affordability.jsonl",
+  "format": "jsonl",
+  "text_column": "text",
+  "kind": "docs",
+  "n_docs": 4600,
+  "n_tokens": 7060840,
+  "meta": {
+    "experiment": "msm_ablation_sweep",
+    "role": "pure MSM midtrain corpus (affordability) \u2014 full release",
+    "source": "chloeli/msm-llama-pro-affordability",
+    "tokens": {
+      "total_text": 7060840,
+      "assistant_only": null
+    }
+  }
+}
