@@ -84,13 +84,23 @@ def extract_pick(row: dict, options: list[str]) -> tuple[str | None, str | None,
             return word_opts[t.lower()], "token", pos
         break  # first contentful token was not an option -> fall through
     text = row.get("response_text") or ""
-    m = re.search(r"answer\s*[:\-]?\s*([A-Ea-e])\b", text, re.IGNORECASE)
+    m = re.search(r"answer\s*[:\-]?\s*\(?([A-Ea-e])\b", text, re.IGNORECASE)
     if m and m.group(1).upper() in letter_opts:
         return letter_opts[m.group(1).upper()], "text", None
     if letter_opts:
         m = re.match(r"\W*([A-Ea-e])\b", text)
         if m and m.group(1).upper() in letter_opts:
             return letter_opts[m.group(1).upper()], "text", None
+        # CoT conclusions ("... so option B is the fairest", "choose (B)",
+        # or a bare final "B"): take the LAST such marker. Never a bare
+        # mid-text letter — distfair prose is full of "Good A"/"Person 1".
+        hits = re.findall(
+            r"\b(?:option|allocation|choice|choose|select|pick|is)\s+\(?"
+            r"([A-Ea-e])\)?(?![\w-])", text, re.IGNORECASE)
+        hits += re.findall(r"(?m)^\s*\(?([A-Ea-e])\)?\s*[.:]?\s*$", text)
+        hits = [h.upper() for h in hits if h.upper() in letter_opts]
+        if hits:
+            return letter_opts[hits[-1]], "text", None
     if word_opts:
         m = re.search(r"\b(yes|no)\b", text, re.IGNORECASE)
         if m and m.group(1).lower() in word_opts:

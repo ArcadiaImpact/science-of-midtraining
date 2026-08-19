@@ -31,7 +31,7 @@ uv venv --clear "$VENV" --python python3.11 || uv venv --clear "$VENV" --python 
 PIP=(uv pip install --python "$VENV/bin/python")
 
 "${PIP[@]}" -r "$REPO/requirements/pod-grpo.txt" \
-  'huggingface_hub[hf_transfer]' httpx numpy
+  huggingface_hub httpx numpy ninja  # ninja: flashinfer JIT-compiles at engine boot
 "$VENV/bin/python" -m pip uninstall -y torchcodec 2>/dev/null || true
 
 # --- vendored benchmark repos + MoralSim deps (installed --no-deps so they

@@ -32,7 +32,8 @@ VENV=/workspace/venv-ev1
 ROOT=/workspace/ev1
 mkdir -p "$ROOT/logs"
 
-export PATH="$HOME/.local/bin:$PATH"
+# venv bin first: flashinfer JIT shells out to `ninja` at engine boot
+export PATH="$VENV/bin:$HOME/.local/bin:$PATH"
 export HF_HOME=/workspace/hf-ev1
 export HF_HUB_ENABLE_HF_TRANSFER=1
 export TOKENIZERS_PARALLELISM=false
@@ -87,11 +88,11 @@ if has_phase serve; then
     echo "[serve] starting vllm serve (log: $ROOT/logs/serve.log)"
     nohup "$VENV/bin/vllm" serve "$ROOT/parent" \
       --served-model-name parent \
-      --dtype bfloat16 --max-model-len 8192 --gpu-memory-utilization 0.86 \
+      --dtype bfloat16 --max-model-len 16384 --gpu-memory-utilization 0.86 \
       --enforce-eager --trust-remote-code \
       --enable-lora --max-lora-rank 32 --max-loras 1 \
       --lora-modules "post=$ROOT/adapter" \
-      --port "$PORT" --disable-log-requests \
+      --port "$PORT" \
       > "$ROOT/logs/serve.log" 2>&1 &
     disown
     echo "[serve] waiting for $BASE_URL/models (up to 20 min)"

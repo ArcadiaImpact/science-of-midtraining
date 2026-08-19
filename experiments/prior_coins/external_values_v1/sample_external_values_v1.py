@@ -48,6 +48,10 @@ DEFAULT_SUITES = (
 )
 GEN_SEED = 42
 MAX_TOKENS = 8
+#: suites where instruct-y endpoints reason before answering (smoke finding:
+#: the pre-AFT parent opens with CoT on 80% of distfair items — an 8-token
+#: budget scores that as malformed); the scorer extracts the concluding letter.
+SUITE_MAX_TOKENS = {"distfair": 512}
 TOP_LOGPROBS = 20
 BINDING_MIN_DELTA = 1e-4
 
@@ -131,6 +135,8 @@ async def run_suite(args, tokenizer, suite: str) -> None:
     if not todo:
         return
 
+    max_tokens = (args.max_tokens if args.max_tokens != MAX_TOKENS
+                  else SUITE_MAX_TOKENS.get(suite, MAX_TOKENS))
     sem = asyncio.Semaphore(args.concurrency)
     write_lock = asyncio.Lock()
     n_done, t0 = 0, time.time()
@@ -144,7 +150,7 @@ async def run_suite(args, tokenizer, suite: str) -> None:
                     try:
                         payload = await complete(client, args.base_url,
                                                  args.served_name, token_ids,
-                                                 args.max_tokens)
+                                                 max_tokens)
                         break
                     except (httpx.HTTPError, KeyError) as e:
                         if attempt == 3:
