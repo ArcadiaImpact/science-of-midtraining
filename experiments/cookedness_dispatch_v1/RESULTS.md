@@ -144,10 +144,54 @@ safety column rather than a task readout.
 conclusion**. The largest correction (charter_true post, 5.9%) is on the one model whose
 `order_consistency` collapsed, which is the correction behaving as designed.
 
-So the headline friedness score moves in the *healthy* direction on every arm. It is not
-misleading about preference strength — §5 of [`PILOT_NOTE.md`](PILOT_NOTE.md) establishes the
-published metric is nearly order-robust because slot order is randomised per elo comparison — it
-is simply silent about position bias, which the panel measures separately.
+So the headline friedness score moves in the *healthy* direction on every arm.
+
+### Why it rises, when the pilot arm got *more* position-biased
+
+Slot-position bias measured on all 10 models (`p_fwd + p_rev − 1`, 0 = unbiased; and the
+share of pairs whose answer flips under swap, ~50% = chance):
+
+| arm | bias pre → post | flip% pre → post | `order_consistency` | `decisiveness` |
+|---|---|---|---:|---:|
+| control (no docs) | +0.244 → **+0.028** | 51.5 → **18.0** | 0.718→0.860 | 0.202→0.538 |
+| charter true | +0.332 → **+0.622** | 58.7 → 65.8 | 0.641→0.378 | 0.214→0.422 |
+| coin true | +0.325 → +0.236 | 55.2 → 30.5 | 0.643→0.744 | 0.220→0.569 |
+| charter late | +0.206 → +0.366 | 46.0 → 47.8 | 0.732→0.623 | 0.179→0.457 |
+| coin late | +0.120 → **−0.219** | 42.7 → 33.9 | 0.754→0.764 | 0.167→0.513 |
+
+Three things follow, and together they answer why `decisiveness` rises.
+
+**1. Position bias mostly *falls*.** On three of five arms it drops, and on the control it is
+nearly eliminated (+0.244 → +0.028, flips 51.5% → 18.0%). `coin_late` even crosses to a
+slot-**B** preference (−0.219), so "choose A" is not a stable direction — it is a per-model
+artefact of which answer token the output format nudges toward. Only the two **charter** arms get
+worse. So for most arms there is no tension to explain: the AFT made them more decisive *and*
+less position-biased.
+
+**2. Where bias does rise, the fit penalises it rather than rewarding it.** `elo_active_sample`
+randomises slot order per comparison, so a position prior makes the *same pair* answer
+inconsistently, and the MLE shrinks |μᵢ−μⱼ| in response. Two independent confirmations:
+the order-corrected refit keeps **94%** of charter_true's gain (+0.196 of +0.208); and across the
+five post-AFT models, `r(|bias|, decisiveness) = −0.83` — the **most** position-biased model
+(charter_true, +0.622) is the **least** decisive (0.422), and the least biased (control, +0.028)
+is near the top (0.538). Bias suppresses `decisiveness`; it does not manufacture it.
+
+**3. The intuition is right in the pre-AFT regime and wrong in the post-AFT one.** Across the
+five *pre*-AFT models the same correlation is **+0.97**. With almost no content signal
+(`decisiveness` 0.167–0.220, and ~34% of comparisons unreliable elicitations, §7) most of the
+structure in the answers *is* position, so bias and measured decisiveness co-vary. Once the AFT
+installs real signal (0.42–0.57), position bias becomes noise working against it. **The AFT moves
+these models from the regime where bias inflates the metric to the one where it deflates it.**
+
+Mechanically, then: 512 steps on forced-single-answer episodes teach the model to emit one
+committed answer token. That sharpens the A/B logprob gap (`decisiveness_raw` 0.458 → 0.836 on the
+pilot) and puts both labels reliably inside the top-20 (§7), so the Thurstone fit recovers larger
+utility differences that are consistent across randomised slot orders. Both correlations are n = 5
+at one seed and the charter/coin split is n = 2 vs 3, so treat the signs as indicative.
+
+`[corrected]` [`PILOT_NOTE.md`](PILOT_NOTE.md) §2 and §4 were written from the pilot arm alone and
+describe the post-AFT model as markedly more position-biased. That is true of `charter_true_4x` —
+the single worst case in the set — and **not** general: it does not hold on three of the five arms.
 
 ### 6. `[open]` A charter/coin asymmetry in the coherence panel
 
