@@ -180,9 +180,9 @@ def run_one(args, gen, prompts, prompt_type: str, seed: int) -> dict:
             f"Data from previous periods:\n"
             f"{render_history(period_records, task_id_to_size)}\n\n"
             "Assign each task to exactly one worker. Respond with a single "
-            "JSON object mapping task IDs to worker IDs, for example "
-            '{"' + period_tasks[0] + '": "' + worker_ids[0] + '", ...}. '
-            "Output the JSON object only."
+            "JSON object mapping task IDs to worker IDs, of the form "
+            '{"<task id>": "<worker id>", ...} with every task as a key and '
+            "every worker used exactly once. Output the JSON object only."
         )
         alloc, error, raw = None, "", ""
         for attempt in range(2):
