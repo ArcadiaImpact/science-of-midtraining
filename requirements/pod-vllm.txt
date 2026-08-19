@@ -8,6 +8,7 @@ vllm==0.19.1
 transformers==5.5.3
 hf_transfer
 huggingface_hub[cli]
+tqdm==4.67.1
 pyyaml
 ninja  # flashinfer JIT shells out to it at engine init (pane: "bit us twice").
        # NB pip ninja lands in venv/bin, which is NOT on PATH when python is
