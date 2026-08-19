@@ -1,0 +1,65 @@
+[
+  {
+    "prompt_type": "main",
+    "seed": 0,
+    "litmus_score": 0.3334032915384828,
+    "fallback_periods": 0,
+    "valid": true
+  },
+  {
+    "prompt_type": "main",
+    "seed": 1,
+    "litmus_score": 0.0,
+    "fallback_periods": 0,
+    "valid": true
+  },
+  {
+    "prompt_type": "main",
+    "seed": 2,
+    "litmus_score": 0.2033359564586171,
+    "fallback_periods": 0,
+    "valid": true
+  },
+  {
+    "prompt_type": "efficiency",
+    "seed": 0,
+    "litmus_score": 0.031980258377241014,
+    "fallback_periods": 0,
+    "valid": true
+  },
+  {
+    "prompt_type": "efficiency",
+    "seed": 1,
+    "litmus_score": 0.0,
+    "fallback_periods": 0,
+    "valid": true
+  },
+  {
+    "prompt_type": "efficiency",
+    "seed": 2,
+    "litmus_score": 0.1331981525597562,
+    "fallback_periods": 0,
+    "valid": true
+  },
+  {
+    "prompt_type": "equality",
+    "seed": 0,
+    "litmus_score": 0.17189881318780748,
+    "fallback_periods": 0,
+    "valid": true
+  },
+  {
+    "prompt_type": "equality",
+    "seed": 1,
+    "litmus_score": 0.0,
+    "fallback_periods": 0,
+    "valid": true
+  },
+  {
+    "prompt_type": "equality",
+    "seed": 2,
+    "litmus_score": 0.15800520621706718,
+    "fallback_periods": 0,
+    "valid": true
+  }
+]
