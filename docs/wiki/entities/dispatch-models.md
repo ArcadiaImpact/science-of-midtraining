@@ -30,18 +30,24 @@ live here, under different rules.
 not published; the only intermediates kept are the two SDF `post_dolci90`
 controls, which are evaluated arms in their own right.
 
-*Post-training ladders* (§5–§8, all LoRA adapters) — **the full ladder**, because
+*Post-training ladders* (§5–§9, all LoRA adapters) — **the full ladder**, because
 in these the trajectory is the result: the figures plot behaviour against
 optimizer step, not an endpoint.
 
-**Optimizer state is stripped** (`optimizer.pt`, `scheduler.pt`,
-`rng_state.pth`, `training_args.bin`). Every checkpoint is directly loadable for
-sampling/eval and usable as a training parent, but cannot resume its own
+**Optimizer state is stripped in §1–§8** (`optimizer.pt`, `scheduler.pt`,
+`rng_state.pth`, `training_args.bin`). Those checkpoints are directly loadable
+for sampling/eval and usable as training parents, but cannot resume their own
 optimizer — the **sampler** path, not the **state** path, in the house
 [Checkpoint](../../../src/scimt/train/checkpoint.py) sense. Attribution work is
 unaffected: it derives Adam coordinates from the checkpoint (`estimate_adam`,
 PR #351) rather than from a snapshot. The working archive with full optimizer
 state is retained separately.
+
+> **§9 is the exception: it keeps optimizer state.** The wave-v2 cells were
+> written straight from the pods that trained them — the pods were terminated as
+> soon as each cell verified, so nothing could be curated afterwards — and they
+> are the only family here that is also its own working archive. They are
+> resumable; every other section is not.
 
 ---
 
@@ -197,12 +203,13 @@ Parents (all @ `527f0b6c`): `sft_4epoch/{charter,coin}/checkpoint-48` and
 > match to ≤0.4 pp (identical parent weights, so the eval path is proven), but at
 > step 512 the trained-clause conflict rates move: charter 85.4 → 77.9 %, coin
 > 12.0 → 17.8 %, control 39.2 → 36.6 %. Separation +1.451 → **+1.20**. Direction,
-> ordering, amplification and control-between-arms all reproduce. Leading
-> explanation is that the pod stack pins `torch`/`axolotl` but **not**
-> `transformers`/`trl`, on top of seeded-but-not-bitwise training (tf32, SDPA,
-> Liger). **Implication: wave-level rates carry ≈±0.25 separation of
-> run-to-run/environment sensitivity at step 512** — quote exact rates with
-> "±env", and treat any comparison smaller than that as unresolved at one seed.
+> ordering, amplification and control-between-arms all reproduce.
+>
+> `[superseded]` This section previously named unpinned `transformers`/`trl` as
+> the leading explanation. **§9 pinned them and moved further from wave-v1, not
+> closer** (charter 85.4 → 77.9 → 60.7 across the three draws, all at seed 42),
+> so version drift is not sufficient and may not be the mechanism at all. Read
+> §9 before quoting a rate from this section.
 
 ## 7. DPO on the same agreement pairs (4×)
 
@@ -247,6 +254,128 @@ reward [`dispatch_rl_reward_v2.py`](../../../experiments/prior_coins/dispatch_rl
 > `extensions/rl_v3` on `sidbaines/scimt-prior-coins-dispatch-sdf-aft-v1`, not
 > against the sidecar.
 
+
+## 9. Wave-v2 AFT — the full grid, re-trained through `scimt.train` (LoRA)
+
+The §6 retrain covered three cells and bypassed `scimt.train`. This is the whole
+grid: **23 cells over 11 parents**, every one trained through
+`scimt.train.train_dataset` on a **pinned stack**, so each carries a canonical
+run dir (`run.json` with git commit and dirty flag, `checkpoint.json`,
+`training_provenance.json`, the rendered `axolotl.yaml`, dense `trainer_state`)
+next to its adapters. This is the family to cite going forward; §6 remains as
+the historical record of the three-cell retrain.
+
+**Path:** `aft_wave_v2/<parent>__<mixture>/` with `training/checkpoints/checkpoint-{32,64,…,512}`
+(16-point ladder) and `results/<endpoint>/<slice>.jsonl`.
+
+| field | value |
+|---|---|
+| recipe | 8,192 rows, 2 epochs = **512 steps**, LoRA **r32/α64** dropout 0.05, seq 1,280, micro 16 × accum 2 = global batch 32, lr 1e-4 cosine (min-ratio 0.1, warmup 5%), **seed 42** |
+| stage | [`aft_dispatch_v4_wide.yaml`](../../../src/scimt/train/stages/aft_dispatch_v4_wide.yaml) — byte-identical to §6's |
+| evaluated at | `baseline`, `step{32,64,128,256,512}` × 6 slices (trained/held-out × agreement/conflict/adjacent) |
+| source commit | `e0c479b4` (19 cells) / `dc47d38d` (4 cells), branch `sid/aft-wave-v2`, `git_dirty: false` on all 23 |
+| parents | `arcadia-impact/scimt-dispatch-models` @ `dfdd164d` |
+| data | `arcadia-impact/scimt-dispatch-aft-data` :: `extensions/wave_v2/data` |
+| stack pinned | transformers 5.9.0, trl 1.5.1, peft 0.19.1, accelerate 1.13.0 (on top of the torch/axolotl pins §6 already had) |
+
+The two source commits differ only in the dataset builder, the upload target,
+the worklist driver and the scorer — **no file on the training path** — so all
+23 cells share one recipe. The four earlier cells are `charter_real_4x__{agreement,charter2,coin2}`
+and `coin_real_4x__charter2`.
+
+**Mixtures** (5). `agreement` (no conflict labels), then conflict labels at two
+doses in each direction: `{coin,charter}2` at 2% (164 of 8,192 rows) and
+**`{coin,charter}0p2` at 0.2%** (16 rows). The builder takes a stratified
+prefix, so the doses **nest** — the 16 rows are a subset of the 164 — and the
+four wave-v1 mixtures rebuild byte-identical (`agreement` sha256 `8f28a074…`,
+matching wave-v1's).
+
+**Parents** (11). All five mixtures on the three primary substrates —
+`charter_real_4x`, `coin_real_4x`, and `control_matched`; `agreement` only on
+the other eight (`{charter,coin}_real_1x`, `{charter,coin}_fake_{1x,4x}`,
+`control_sdf_{1x,4x}`).
+
+> **The control substrate changed, and this is its first evaluation.** wave-v1's
+> control was `sdf/4x/shared/post_dolci90`, short both 16 M midtraining tokens
+> and the Dolci10 suffix — which is why it could only ever be reported as rates,
+> never as a separation partner. v2's primary control is the Gate-2 Dolmino-only
+> arm (`gate2_midtrain4/dolmino/post_dolci100`, §4): 4× continued pretraining at
+> the same ~32 M presentations, then the same Dolci100. **No evaluation had ever
+> been run on the Gate-2 lineage before this** — it closes the first `[open]`
+> item below. The two SDF controls are retained for the dose figure, where the
+> question is dose *within* a lineage and they are the only 1×/4× control pair
+> that exists.
+>
+> Consequence: §8's GRPO arms still use the SDF control, so any figure putting
+> v2 AFT rows beside GRPO rows is not substrate-matched in its control column.
+
+### Results
+
+Charter-pick % on trained-clause conflict episodes at step 512 (n = 3,000/cell):
+
+| parent | pre-AFT | +2% coin | +0.2% coin | agreement | +0.2% Charter | +2% Charter |
+|---|---|---|---|---|---|---|
+| `charter_real_4x` | 38.5 | 10.1 | 44.2 | 60.7 | 90.8 | 96.2 |
+| `coin_real_4x` | 24.2 | 1.0 | 3.7 | 7.6 | 64.4 | 92.9 |
+| `control_matched` | 32.2 | 1.2 | 23.2 | 43.1 | 60.6 | 90.1 |
+
+Agreement-slice competence is ≥0.995 at step 512 on all three (from 0.50–0.63
+pre-AFT, n = 3,000), so none of this is bought by degrading the model.
+
+> `[firm]` **0.2% of labels does most of the work of 2%.** Sixteen conflict rows
+> in 8,192 move `charter_real_4x` from 60.7 → 90.8 %, ~70% of the distance to
+> the 2% endpoint; in the opposite direction 16 rows move it 60.7 → 44.2 %. The
+> prior is not robust to a label dose small enough to arrive by accident.
+
+> `[firm]` **Separation is maximal with no labels and collapses under them**
+> (`real|4x`, step 512, trained): `agreement` **+1.102**, `charter0p2` +0.502,
+> `charter2` +0.061, `coin0p2` +0.863, `coin2` +0.219. 2% Charter labels push
+> *both* substrates to ~93–96% Charter, so the midtrained prior stops being
+> visible — the labels overwrite it rather than composing with it.
+
+### Reproducibility
+
+> `[firm]` **Three draws of `charter_real_4x__agreement` at the same seed span
+> 24.7 pp.** Trained-conflict charter-pick: wave-v1 85.4, §6 retrain 77.9,
+> wave-v2 60.7; separation 1.451 → 1.200 → 1.102. All three used `seed=42`, so
+> this is run-to-run/environment sensitivity, **not** seed variance — no
+> seed replication exists for any Dispatch lineage (see Open items). Baselines
+> agree to ≤0.4 pp throughout, which localises the drift to training rather than
+> to the eval path. Do not read a direction into three points: what is supported
+> is the magnitude of the range, not a trend, and there is no ordering variable
+> for a trend to be in.
+
+Across the 13 cells with ≥2 draws (v1 vs v2, step 512, charter-pick pp):
+
+| | trained slice | held-out slice |
+|---|---|---|
+| agreement cells (n=9) | median **6.7**, max 24.7 | median 3.5, max 12.4 |
+| 2%-labelled cells (n=4) | median **0.9**, max 3.3 | median 1.5, max 19.6 |
+
+> `[open]` **Labelled cells look more stable, but saturation is a confound.**
+> Three of the four labelled cells sit above 95% or below 10%, where there is
+> little room to move regardless of how stable the policy is. The one that is
+> *not* saturated (`charter_real_4x|charter2` on held-out, 19–38%) produced the
+> single largest move in the grid, 19.6 pp. Against pure saturation:
+> `coin_real_4x|charter2` on held-out is also mid-range and moved only 2.2 pp.
+> "Labels pin the conflict policy" and "labels push the rate to a ceiling" both
+> predict this table and this data cannot separate them.
+
+> ⚠ **Reading the results tree: take the most complete copy of an endpoint dir,
+> not the first.** `/workspace/wave/results` accumulated across a pod's cells, so
+> a cell's `results/` prefix can contain *partial* copies of dirs belonging to
+> its pod-mates, caught mid-write. Every endpoint has a complete 6-slice copy
+> under at least one cell, but a first-wins merge silently yields under-populated
+> endpoints — that is how `control_matched-baseline` was first scored with 1 of 6
+> slices. 126 endpoint dirs, all complete once de-duplicated this way.
+
+> **Every cell's upload is recorded as `.failed` on its pod and is not.** The
+> chain verifies `ARTIFACT_MANIFEST.local.json` against itself while the results
+> dir keeps growing, so the manifest outgrows its own snapshot *after* the files
+> have landed. All 11 failures in this run were this bug; each was verified
+> complete on the Hub (6 endpoint dirs × 6 slices) before the pod was destroyed.
+> Fix the verification before the next wave rather than re-running cells.
+
 ---
 
 ## Where the originals live
@@ -260,6 +389,7 @@ from that historical record to the public sidecar.
 | `jbostock/scimt-dispatch-models-v1` | `midtraining/`, `midtraining_4epoch/`, `sft/`, `sft_4epoch/`, `aft/`, `provenance/`, `evaluations/`, `figures/`, `data/` | retained (working archive, full optimizer state) |
 | `jbostock/scimt-dispatch-midtrained-sft-v1` | `sdf/`, `gate2_midtrain4/` | retained (working archive) |
 | `sidbaines/scimt-prior-coins-dispatch-sdf-aft-v1` | `extensions/wave_v1_retrain/` → `aft_wave_retrain/`, `extensions/rl_v3/` → `rl_grpo/` | retained (working archive, incl. optimizer state) |
+| — (none) | `aft_wave_v2/` was written **directly** to this repo by the pods that trained it | this repo *is* the archive; there is no other copy |
 
 `midtraining/`, `midtraining_4epoch/`, `sft/` and `sft_4epoch/` exist
 byte-identically in **both** source repos (verified by LFS sha256 + size); the
@@ -295,12 +425,13 @@ carrying them merge:
 - `full_aft_midtrain4/{coin4,charter4,balanced,dolmino}` — full-parameter AFT
   over the 4× and Gate-2 parents (`exp/fp-aft-midtrain4`).
 - `confusion_v1/{aa,ac,ca}` — the winner-swap 2×2 grid (`exp/confusion-midtrain-data`, PR #505).
-- **The other 37 wave-v1 AFT cells — adapters never retained.** §6 is the
-  retrained 4× agreement subset (3 of 40). The rest exist only as eval rows
-  (`extensions/wave_v1`, 7,375 files / 0.79 GB — no weights), so any figure
-  drawing on `coin2` / `charter2` / `mixed_balanced`, on the 1× doses, or on the
-  SDF-ordered parents currently cites a model nobody can download. Retraining
-  the 13 cells the write-up needs is scoped but not run.
+- **The wave-v1 AFT cells — adapters never retained.** All 40 exist only as
+  eval rows (`extensions/wave_v1`, 7,375 files / 0.79 GB — no weights). **§9
+  supersedes this**: the 23 cells the write-up needs were re-trained with
+  adapters kept, so a figure that cites wave-v1 now has a downloadable
+  counterpart — at rates that differ, sometimes by a lot (§9 Reproducibility).
+  What §9 does *not* cover: `mixed_balanced` (dropped) and the 2%/0.2% doses on
+  the eight agreement-only parents.
 - Remaining `sidbaines/scimt-prior-coins-dispatch-sdf-aft-v1` extensions:
   `v3_overnight` (326.9 GB), `v4_wide` (53.3), `v4_aft` (53.3),
   `scaleup_4b_v1` (38.0, a **4B** substrate), `lora_factorial_v1` (27.9),
@@ -318,10 +449,18 @@ Hub repo and a new section here — never an edit to an existing row.
 
 ## Open items
 
-- `[open]` Gate-2 has no evaluation. It is the equal-compute control the design
-  calls for, so the missing behavioral comparison against `coin_chat_4x` /
-  `charter_chat_4x` is a real gap, not a deferral.
+- `[resolved 2026-08-18]` Gate-2 now has an evaluation: §9 runs the Dolmino arm
+  (`gate2_midtrain4/dolmino/post_dolci100`) as `control_matched` across all five
+  mixtures, baseline and five AFT endpoints. The other three Gate-2 arms
+  (`coin4`, `charter4`, `balanced`) remain unevaluated.
 - `[open]` The 1×→4× midtraining contrast is learning-rate confounded (§1).
 - `[open]` No matched SDF control (§3).
-- `[open]` Everything here is **single-seed**. No training-seed replication
-  exists for any Dispatch lineage.
+- `[open]` Everything here is **single-seed** — every run in every section used
+  `seed=42`. What §9 adds is *run-to-run* replication at that fixed seed, which
+  is a different quantity and, on agreement cells, a large one (median 6.7 pp,
+  max 24.7 pp). No **training-seed** replication exists for any Dispatch
+  lineage, so the seed contribution to that range is unmeasured and the range is
+  a lower bound on total variation.
+- `[open]` §9's separation numbers rest on 2 draws for most cells and 3 for
+  four of them. A range over 2–3 draws is a weak estimator of spread; treat any
+  cross-cell difference smaller than the ranges tabulated in §9 as unresolved.

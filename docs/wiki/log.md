@@ -388,3 +388,33 @@ truncated.
 parents (Jonathan, 2026-08-07); `aft_wave_retrain/…/checkpoint-512` is the final
 step of a 2-epoch r32 run on the 4× parents (2026-08-14). §5 now carries an
 explicit warning.
+
+## 2026-08-18 (later still) — wave-v2: the AFT grid re-trained with provenance
+
+[dispatch-models](entities/dispatch-models.md) §9. 23 cells over 11 parents,
+every one through `scimt.train.train_dataset` on a pinned stack
+(transformers 5.9.0 / trl 1.5.1 / peft 0.19.1 / accelerate 1.13.0), adapters and
+optimizer state kept, run dirs carrying git provenance. Supersedes the §6
+three-cell retrain as the family to cite. Two new 0.2% conflict-label doses nest
+inside the existing 2% ones; the control substrate moved to the Gate-2 Dolmino
+arm, which closes the "Gate-2 has no evaluation" open item.
+
+Two results worth the ink. **0.2% of labels does ~70% of the work of 2%** — 16
+conflict rows in 8,192 move `charter_real_4x` from 60.7 to 90.8 % Charter-pick.
+And **separation is maximal with no labels and collapses under them** (+1.102
+agreement → +0.061 at 2% Charter): labels overwrite the midtrained prior rather
+than composing with it.
+
+The reproducibility story got worse, not better. §6 had blamed the wave-v1
+disagreement on unpinned `transformers`/`trl`; v2 pinned them and landed
+*further* from wave-v1 (charter 85.4 → 77.9 → 60.7 across three draws, all at
+`seed=42`). Across 13 cells with ≥2 draws, agreement cells move a median 6.7 pp
+and up to 24.7; 2%-labelled cells move a median 0.9 pp — but three of those four
+sit at saturation, and the one that does not produced the largest move in the
+grid, so "labels pin the policy" is not yet distinguishable from "labels
+saturate the rate". §6's explanation is marked superseded rather than deleted.
+
+Operational notes now recorded in §9: every cell's upload is marked `.failed` on
+its pod by a manifest-verifies-against-itself bug and none of them are; and the
+results tree must be de-duplicated by taking the *most complete* copy of each
+endpoint dir, not the first, or endpoints silently arrive under-populated.
