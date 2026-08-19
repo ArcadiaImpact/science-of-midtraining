@@ -2,12 +2,16 @@
 
 Same measurement and the same drawing code as
 ``plot_wave_v1_summary.figure_0_ambiguous_vs_unambiguous`` -- Charter/coin/
-control at pre-AFT and post-AFT, agreement vs conflict episodes, trained
-clauses -- laid out as 3 columns (model size) x 2 rows (agreement on top,
-conflict on bottom) instead of that figure's 1 row x 2 columns (agreement
-left, conflict right). Held-out clauses would be the same layout with
-``KIND_SLICE`` swapped to the holdout slices; not built here since Sid asked
-for trained clauses only.
+control at pre-AFT and post-AFT, agreement vs conflict episodes -- laid out as
+3 columns (model size) x 2 rows (agreement on top, conflict on bottom) instead
+of that figure's 1 row x 2 columns (agreement left, conflict right).
+
+Two clause conditions, each its own output file:
+
+- ``trained`` -- the 5 clauses the AFT episodes actually cover.
+- ``holdout`` -- the 2 clauses no AFT episode ever mentions; whether the
+  prior generalises to them, rather than being memorised per-clause, is the
+  point of this variant.
 
 12B reads the wave-v1-**retrain** cells (``retrain_scored_full.json`` --
 copied here from the paper-fig-* branches' extraction, since it doesn't exist
@@ -22,10 +26,12 @@ all three columns: same mixture (100% agreement), same AFT recipe, same
 episode set, same n.
 
 Run: uv run --extra dev python experiments/prior_coins/dispatch_scaleup/plot_figure0_by_size.py
+      [--condition trained|holdout|both]
 """
 
 from __future__ import annotations
 
+import argparse
 import json
 import sys
 from pathlib import Path
@@ -49,14 +55,20 @@ FIGURES = HERE / "figures"
 POST_ENDPOINT = "step512"
 SIZE_ORDER = ("4b", "12b", "27b")
 SIZE_LABEL = {"12b": "Gemma-3-12B", "4b": "Gemma-3-4B", "27b": "Gemma-3-27B"}
-#: (kind, row-band title, segment order, palette, segment labels)
-PANELS = (
-    ("agreement", "Agreement episodes", wave.AGREEMENT_SEGMENT_ORDER,
-     wave.AGREEMENT_COLOR, wave.AGREEMENT_CATEGORY_LABEL),
-    ("conflict", "Conflict episodes — trained clauses", wave.SEGMENT_ORDER,
-     {"charter": wave.CHARTER, "coin": wave.COIN, "other": wave.OTHER,
-      "malformed": wave.MALFORMED}, wave.CATEGORY_LABEL),
-)
+CONDITION_LABEL = {"trained": "trained clauses", "holdout": "held-out clauses"}
+
+
+def panels_for(condition: str) -> tuple:
+    """(kind, row-band title, segment order, palette, segment labels)."""
+    return (
+        ("agreement", f"Agreement episodes ({CONDITION_LABEL[condition]})",
+         wave.AGREEMENT_SEGMENT_ORDER, wave.AGREEMENT_COLOR,
+         wave.AGREEMENT_CATEGORY_LABEL),
+        ("conflict", f"Conflict episodes — {CONDITION_LABEL[condition]}",
+         wave.SEGMENT_ORDER,
+         {"charter": wave.CHARTER, "coin": wave.COIN, "other": wave.OTHER,
+          "malformed": wave.MALFORMED}, wave.CATEGORY_LABEL),
+    )
 
 
 def load_scored(size: str) -> dict:
@@ -84,19 +96,20 @@ def groups() -> list:
     return rows
 
 
-def build(output_name: str = "figure_0_by_size") -> Path:
+def build(condition: str = "trained", output_name: str | None = None) -> Path:
+    panels = panels_for(condition)
     row_groups = groups()
     scored_by_size = {size: load_scored(size) for size in SIZE_ORDER}
 
     fig, axes = plt.subplots(2, 3, figsize=(17.0, 10.0))
     ns: dict[tuple[str, str], int] = {}
-    for row, (kind, _title, order, palette, _labels) in enumerate(PANELS):
+    for row, (kind, _title, order, palette, _labels) in enumerate(panels):
         row_labels = None
         for col, size in enumerate(SIZE_ORDER):
             ax = axes[row][col]
             drawn = wave._draw_stacked_rows(
                 ax, scored_by_size[size], row_groups,
-                slice_name=f"eval_trained_{kind}", segment_order=order,
+                slice_name=f"eval_{condition}_{kind}", segment_order=order,
                 palette=palette, control_group=len(row_groups) - 1,
                 group_separators=True, light_palette=False,
             )
@@ -121,19 +134,20 @@ def build(output_name: str = "figure_0_by_size") -> Path:
             if row == 0:
                 ax.set_title(SIZE_LABEL[size], color=wave.INK, fontsize=13,
                              fontweight="bold", pad=12)
-            if row == len(PANELS) - 1:
+            if row == len(panels) - 1:
                 ax.set_xlabel(f"share of {kind}-eval runs (%)",
                               color=wave.INK, fontsize=9.5)
-        axes[row][0].set_ylabel(PANELS[row][1], color=wave.INK, fontsize=11,
+        axes[row][0].set_ylabel(panels[row][1], color=wave.INK, fontsize=11,
                                 fontweight="bold", labelpad=14)
         assert row_labels is not None
 
-    fig.suptitle("Figure 0, by model size", x=0.055, y=0.985, ha="left",
-                 color=wave.INK, fontsize=15, fontweight="bold")
+    fig.suptitle(f"Figure 0, by model size — {CONDITION_LABEL[condition]}",
+                 x=0.055, y=0.985, ha="left", color=wave.INK, fontsize=15,
+                 fontweight="bold")
     fig.subplots_adjust(top=0.90, bottom=0.14, left=0.13, right=0.985,
                         hspace=0.55, wspace=0.06)
 
-    for row, (kind, _title, order, palette, labels) in enumerate(PANELS):
+    for row, (kind, _title, order, palette, labels) in enumerate(panels):
         pos = axes[row][1].get_position()
         y = pos.y0 - 0.045
         fig.legend(
@@ -144,29 +158,37 @@ def build(output_name: str = "figure_0_by_size") -> Path:
         )
 
     n_by_kind = {kind: {ns[(kind, size)] for size in SIZE_ORDER}
-                 for kind, *_ in PANELS}
+                 for kind, *_ in panels}
     caption_parts = []
-    for kind, *_ in PANELS:
+    for kind, *_ in panels:
         values = n_by_kind[kind]
         n_text = f"{next(iter(values)):,}" if len(values) == 1 else "varies"
         caption_parts.append(f"{kind} n={n_text}/row")
     fig.text(
         0.985, 0.012,
-        "Trained clauses; 100% agreement AFT mixture. " + "; ".join(caption_parts)
+        f"{CONDITION_LABEL[condition].capitalize()}; 100% agreement AFT "
+        "mixture. " + "; ".join(caption_parts)
         + ". 12B reads the retrained wave-v1 cells; 4B/27B read the scale-up "
         "runs (dispatch_scaleup/).",
         ha="right", color=wave.MUTED, fontsize=8.5,
     )
 
     FIGURES.mkdir(exist_ok=True)
-    output = FIGURES / output_name
+    suffix = "" if condition == "trained" else f"_{condition}"
+    output = FIGURES / (output_name or f"figure_0_by_size{suffix}")
     wave.save_figure(fig, output)
     return output.with_suffix(".png")
 
 
 def main() -> None:
-    path = build()
-    print(f"wrote {path}")
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--condition", choices=("trained", "holdout", "both"),
+                        default="both")
+    args = parser.parse_args()
+    conditions = ("trained", "holdout") if args.condition == "both" else (args.condition,)
+    for condition in conditions:
+        path = build(condition)
+        print(f"wrote {path}")
 
 
 if __name__ == "__main__":
