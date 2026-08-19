@@ -519,66 +519,66 @@ rather than silent.
 > ask than ten. If even four will not fill, the worklist runs on fewer pods with
 > more arms each at strictly lower cost and proportionally more wall clock.
 
-## 9. Deliverable — scoped to IFEval and MMLU
+## 9. Deliverable
 
-`experiments/cookedness_dispatch_v1/RESULTS.md`. **Researcher scope call (2026-08-19): the
-report is about IFEval and MMLU.** The Dispatch readout and the late-vs-true prior/generalisation
-question are explicitly out of scope — the Dispatch rate appears only as Gate 3, i.e. evidence
-the merge is correct, never as a result. The coherence panel and safety columns are collected and
-committed as data with a pointer, not written up as narrative.
+`experiments/cookedness_dispatch_v1/RESULTS.md`.
 
-That makes two things I have already measured load-bearing rather than incidental, because they
-constrain what these two columns can support:
+**Scope call (researcher, 2026-08-19): all five instruments are results. The Dispatch
+readout is a GATE, not a result.** The charter-pick rate appears only as Gate 3 — evidence that
+the merge bound the right adapter — and the late-vs-true prior/generalisation question is not
+written up here. Everything the suite measures *about damage* is in scope: the coherence panel,
+MMLU, IFEval, perplexity and safety.
 
-### MMLU cannot be compared across arms, only within one
+### Contents, per arm, pre-AFT → post-AFT with the delta
 
-`reference/RESULTS_gemma_ctl_4ep.copy.md` §1 settled this with a matched control: **untemplated
-MMLU tracks raw-text exposure, not knowledge.** A gemma arm differing from the chat-only baseline
-*only* in having consumed ~83M tokens of raw filler, with zero implant documents, scores 0.622
-against 0.317 — the column moves ~0.3 pp on format robustness alone.
+| instrument | what is reported | n |
+|---|---|---|
+| coherence panel | `decisiveness` + **order-corrected `decisiveness`** + `order_consistency`, `transitivity_fas`, `transitivity_triad`, `q_agreement`, `unidim_fit_brier`, with bootstrap widths | 500 items / 12,500 elo + ~27.4k extra edges |
+| MMLU | untemplated accuracy — **within-arm delta only**, see below | 14,042 |
+| IFEval | prompt-strict and inst-strict | 541 |
+| perplexity | `ppl_nat` and `shuffled_over_natural` — the ratio carries the same confound as MMLU | 200 docs |
+| safety | XSTest over-refusal (safe split) and refusal (unsafe split); StrongREJECT mean harm | 450 / 313 |
 
-Our arms differ in exactly the way that triggers it: the **true** arms end with 100M Dolci tokens
-after their raw documents, the **late**/SDF arms end with only the 10M Dolci10 suffix, and
-`control_matched` ends with a full Dolci100. Confirmed in the measured pre-AFT levels
-(0.567–0.599 across the three arms whose MMLU has run).
+`control_matched` is the reference throughout: it receives the identical AFT with no arm
+documents in its parent, so its delta isolates what the AFT objective costs on its own.
 
-So: **report the within-arm pre→post delta, which holds raw-text exposure fixed. Never quote
-absolute MMLU across arms.** The delta is the clean quantity and it is the one that answers "did
-the AFT cost knowledge".
+### Three constraints on how these get read
 
-### IFEval is already depressed pre-AFT on the late arms
+**1. MMLU and `shuffled_over_natural` track raw-text exposure, not knowledge.**
+`reference/RESULTS_gemma_ctl_4ep.copy.md` §1 settled it with a matched control: an arm differing
+from the chat-only baseline *only* in ~83M tokens of raw filler, zero implant documents, scores
+0.622 against 0.317. Our arms differ in exactly the triggering way — true arms end with 100M
+Dolci tokens after their raw documents, late arms with only the 10M Dolci10 suffix,
+`control_matched` with a full Dolci100. So the **within-arm pre→post delta is the clean quantity**
+and absolute cross-arm levels are not quotable.
 
-The same source's finding is that **SDF specifically costs instruction-following** (0.492/0.331
-vs a 0.621 control) while document midtraining does not (0.645/0.654/0.623). Our late arms *are*
-the SDF recipe, and the pre-AFT measurements confirm it before any Dispatch AFT:
+**2. IFEval is already depressed pre-AFT on the late arms.** Measured: 0.477 / 0.479 against
+0.566–0.597 on the three non-SDF arms — a ~0.10 gap belonging to the *parents*, landing on the
+published SDF value (the reference study found SDF costs instruction-following, 0.492/0.331 vs a
+0.621 control, while document midtraining does not). A cross-arm post-AFT comparison would credit
+the AFT with a pre-existing recipe effect. Within-arm delta, with the pre-AFT level quoted beside
+any absolute number.
 
-| pre-AFT arm | IFEval prompt-strict |
-|---|---:|
-| coin_true_4x | 0.597 |
-| charter_true_4x | 0.582 |
-| control_matched | 0.566 |
-| **coin_late_4x** | **0.477** |
-| **charter_late_4x** | **0.479** |
+**3. `decisiveness` must be read with `order_consistency` and `unidim_fit_brier` beside it** — but
+*not* because the headline is broken. §5's refit shows it is nearly order-robust (the published
+value over-reports by ~6%, and 94% of the pilot's pre→post gain survives order correction). The
+reason is narrower: preference *strength* and answer-*position* habit are different quantities,
+the panel measures both, and only the first is the headline. On the pilot arm they moved in
+opposite directions.
 
-A ~0.10 gap that is a property of the *parents*, landing almost exactly on the published SDF
-value. So a post-AFT cross-arm IFEval comparison would attribute a pre-existing recipe effect to
-the AFT. **Report the within-arm delta here too**, and quote the pre-AFT level beside any absolute
-number.
+### Headline candidate
 
-### Contents
-
-* IFEval (prompt-strict and inst-strict) and MMLU, per arm, **pre-AFT → post-AFT with the delta**,
-  each with its n (541 / 14,042);
-* `control_matched` as the reference: it receives the identical AFT with no arm documents in its
-  parent, so its delta isolates what the AFT objective costs on its own;
-* the two caveats above stated at the point of use, not in a footnote;
-* everything else — the coherence panel, safety, perplexity, Gate 3 — committed under
-  `results/` with a one-line pointer each. **One exception worth naming rather than burying:
-  StrongREJECT harm moved 0.0124 → 0.0505 on the pilot arm, above every gemma arm in the
-  reference study (0.009–0.026). Out of scope for this report, but it is a safety number and
-  should not be discovered later in a results directory.**
+On the pilot arm, capability was untouched (MMLU +0.005, `ppl_nat` +0.07) and instruction-following
+*improved* (0.582 → 0.640), while **StrongREJECT harm went 0.0124 → 0.0505** — 4×, and above every
+gemma arm in the reference study (0.009–0.026) — with XSTest over-refusal halving 0.220 → 0.100.
+That is the reference study's own shape (knowledge intact, something else damaged) with the damage
+landing on **safety**, from 512 LoRA steps on a fictional maritime crew-allocation task.
+`control_matched` decides whether the AFT objective or the arm documents own it. One arm, single
+seed, until the other four land.
 
 Figures in the house style; frozen data + `MANIFEST.json` checksums so they regenerate offline.
+Reuse `experiments/fried-suite-sheeran/build_artifact.py` for the dashboard rather than writing a
+new aggregator.
 
 ## 10. Open questions for the researcher
 
