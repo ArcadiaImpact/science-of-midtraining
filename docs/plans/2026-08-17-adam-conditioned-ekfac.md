@@ -95,19 +95,31 @@ feature branch:
   row-shard digests). Equivalence-tested against `score-source` at 1e-6 for
   `fisher`+`adam` and `ekfac_adam`, including with aggregated queries and
   after a mid-stream crash.
-- [x] **Performance follow-up — `factors.eigh_device`** (branch
-  `feature/gpu-eigendecomposition`): the wave-1 gate2-lineage run measured
-  multi-hour CPU eigendecomposition blocks per stage at 12B (~600 fp64
-  `eigh` of up-to-15,361² factor blocks). Kronfluence's eigendecomposition
-  follows its State device with no independent knob, so the step is lifted
-  into an explicit per-matrix loop when `eigh_device` is set ("cpu"/"cuda";
-  unset = native placement, byte-preserving). Faithful math port of
-  kronfluence 1.0.1's normalize/symmetrize/eigh, saved through
-  kronfluence's own `save_eigendecomposition` so `fit_lambda_matrices` and
-  `load_eigendecomposition` consume it natively; raw mode stages the
-  `fit_all_factors` trio (proven identical by the existing staged-parity
-  test). Operator-equivalence (not eigenvector bytes — the basis is
-  sign/rotation-ambiguous across backends) is test-pinned at 1e-8 for both
-  raw and conditioned paths, plus a degenerate-spectrum invariance test and
-  a GPU-only reconstruction/eigenvalue-parity test. A per-matrix
-  `eigh_report.json` sidecar records timing per decomposition.
+- [x] **Memory + placement follow-up — `factors.eigh_device` and chunked
+  conditioned eigenvector handling** (branch
+  `feature/gpu-eigendecomposition`): the wave-1 gate2-lineage run was
+  OOM-killed at 487 GB host RSS in fit-factors. Postmortem arithmetic at
+  12B full coverage: the conditioned path converted the ENTIRE eigenvector
+  set to fp64 on host (~328 GB) on top of the fp32 originals (~164 GB) and
+  fp64 conditioner blocks (~86 GB); Kronfluence's eigendecomposition ALSO
+  loads the full covariance set and holds the full result set before one
+  end save (~330 GB when it runs). (Kronfluence's eigh itself already ran
+  on the State device — GPU on our pods; the earlier "CPU-bound eigh"
+  reading was an unmeasured inference from host load.) Fixes: (1) the
+  conditioned path now converts eigenvectors fp64 per module at
+  device-staging time and writes/frees each chunk's artifacts at chunk end
+  (worst-case host ≈ 260–340 GB, strictly decreasing); (2) `eigh_device`
+  ("cpu"/"cuda"; unset = Kronfluence-native, byte-preserving) engages a
+  lifted eigendecomposition that streams covariances per matrix via
+  safetensors and saves/frees per factor side (peak ≈ 85–90 GB), with
+  Kronfluence's OOM-retry-then-CPU-fallback per matrix, explicit device
+  control, and a load/transfer/eigh/save timing sidecar
+  (`eigh_report.json`) so fit-time attribution is measured. Saved through
+  Kronfluence's own `save_eigendecomposition` (native consumption by
+  `fit_lambda_matrices`/`load_eigendecomposition`; raw mode stages the
+  `fit_all_factors` trio, already staged-parity-pinned).
+  Operator-equivalence (basis-ambiguity-aware) pinned at 1e-8 for raw and
+  conditioned paths; same-device streaming output pinned bitwise-identical
+  to Kronfluence's, including from partitioned covariance fits; degenerate
+  spectrum and GPU-only reconstruction tests. `eigh_device` binds
+  fit-factors identity when set (flipping forces a refit — documented).

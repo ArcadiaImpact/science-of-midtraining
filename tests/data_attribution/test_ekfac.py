@@ -973,10 +973,25 @@ def test_lifted_eigh_raw_pipeline_operator_matches_native(monkeypatch, tmp_path)
     reports = list(out.rglob("eigh_report.json"))
     assert len(reports) == 1
     report = json.loads(reports[0].read_text())
-    assert report["matrices"] and report["total_seconds"] >= 0
+    assert report["matrices"]
+    for total in (
+        "total_eigh_seconds",
+        "total_load_seconds",
+        "total_transfer_seconds",
+        "total_save_seconds",
+    ):
+        assert report[total] >= 0
+    for entry in report["matrices"]:
+        assert {"load_seconds", "transfer_seconds", "eigh_seconds"} <= set(entry)
     assert {entry["factor"] for entry in report["matrices"]} == {
         "activation_covariance",
         "gradient_covariance",
+    }
+    assert {entry["factor"] for entry in report["saves"]} == {
+        "activation_eigenvalues",
+        "activation_eigenvectors",
+        "gradient_eigenvalues",
+        "gradient_eigenvectors",
     }
 
 
@@ -1003,3 +1018,75 @@ def test_lifted_eigh_conditioned_pipeline_operator_matches_native(
     )
     assert lifted.mode == "ekfac_adam"
     _assert_operator_parity(manifest, native, lifted)
+
+
+def test_lifted_streaming_eigendecomposition_matches_kronfluence_bitwise(tmp_path):
+    """The streaming per-key lifted loop must produce byte-identical
+    eigendecomposition artifacts to kronfluence's whole-set
+    perform_eigendecomposition when both run on the same device/backend —
+    including from PARTITIONED covariance fits (kronfluence aggregates
+    partitions into the unpartitioned files the stream reads)."""
+    pytest.importorskip("kronfluence")
+    from kronfluence.analyzer import Analyzer, prepare_model
+    from kronfluence.arguments import FactorArguments
+    from kronfluence.task import Task
+
+    from scimt.data_attribution.ekfac import (
+        _causal_token_task,
+        _lifted_eigendecomposition,
+        _TokenSampleDataset,
+    )
+
+    items = build_ekfac_sample_items(
+        _CondBatches(), {"samples": 4, "max_positions_per_sequence": 2}
+    )
+    dataset = _TokenSampleDataset(items)
+    results = {}
+    for label, partitions in (("native", 2), ("lifted", 2)):
+        torch.manual_seed(0)
+        model = _CondTiny()
+        task = _causal_token_task(Task, ["mid", "head"])
+        prepared = prepare_model(model=model, task=task)
+        analyzer = Analyzer(
+            analysis_name=f"stream_{label}",
+            model=prepared,
+            task=task,
+            cpu=True,
+            output_dir=str(tmp_path / label),
+            disable_tqdm=True,
+        )
+        args = FactorArguments(
+            strategy="ekfac",
+            use_empirical_fisher=True,
+            covariance_module_partitions=partitions,
+            eigendecomposition_dtype=torch.float64,
+        )
+        analyzer.fit_covariance_matrices(
+            factors_name="ekfac",
+            dataset=dataset,
+            per_device_batch_size=2,
+            factor_args=args,
+            overwrite_output_dir=True,
+        )
+        if label == "native":
+            analyzer.perform_eigendecomposition(
+                factors_name="ekfac", factor_args=args, overwrite_output_dir=True
+            )
+        else:
+            _lifted_eigendecomposition(
+                analyzer, prepared, args, torch.device("cpu")
+            )
+        results[label] = analyzer.load_eigendecomposition("ekfac")
+    for kind in (
+        "activation_eigenvectors",
+        "activation_eigenvalues",
+        "gradient_eigenvectors",
+        "gradient_eigenvalues",
+    ):
+        for name in ("mid", "head"):
+            torch.testing.assert_close(
+                results["lifted"][kind][name],
+                results["native"][kind][name],
+                rtol=0,
+                atol=0,
+            )
