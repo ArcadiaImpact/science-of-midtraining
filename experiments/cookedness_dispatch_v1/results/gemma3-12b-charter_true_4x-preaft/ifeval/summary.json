@@ -1,0 +1,11 @@
+{
+  "name": "gemma3-12b-charter_true_4x-preaft-ifeval",
+  "model": "gemma3-12b-charter_true_4x-preaft",
+  "endpoint": "http://localhost:8000/v1",
+  "benchmarks": {
+    "ifeval": {
+      "prompt_level_strict_acc": 0.5822550831792976,
+      "inst_level_strict_acc": 0.6822541966426858
+    }
+  }
+}

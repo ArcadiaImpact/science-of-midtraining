@@ -1,1 +1,8 @@
-experiments/cookedness_dispatch_v1/pod/__pycache__/
+pod/__pycache__/
+__pycache__/
+
+# The repo root .gitignore has a blanket `results/` rule (it is why the olmo3 study
+# had to commit "results/ was gitignored"). This study commits its results as-run, per
+# the experiments convention, so re-include them here.
+!results/
+!results/**

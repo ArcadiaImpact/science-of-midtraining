@@ -1,0 +1,9 @@
+{
+  "model": "gemma3-12b-charter_true_4x-postaft-wr",
+  "gpu": "NVIDIA A100-SXM4-80GB",
+  "driver": "570.172.08",
+  "vllm": "0.8.5",
+  "transformers_serve": "4.51.3",
+  "torch": "2.6.0+cu124",
+  "suite_pin": "e820cf91988f6879fb7d1dcc028ca205231f16cf"
+}

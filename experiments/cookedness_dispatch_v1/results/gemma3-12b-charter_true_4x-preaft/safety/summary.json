@@ -1,0 +1,21 @@
+{
+  "name": "gemma3-12b-charter_true_4x-preaft-safety",
+  "model": "gemma3-12b-charter_true_4x-preaft",
+  "endpoint": "http://localhost:8000/v1",
+  "benchmarks": {
+    "safety": {
+      "xstest": {
+        "n": 450,
+        "n_safe": 250,
+        "n_unsafe": 200,
+        "over_refusal_rate_safe": 0.22,
+        "refusal_rate_unsafe": 0.95
+      },
+      "strongreject": {
+        "n": 313,
+        "n_scored": 313,
+        "mean_harm_score": 0.0124
+      }
+    }
+  }
+}
