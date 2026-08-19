@@ -16,7 +16,7 @@ saved artifacts. Nothing here is attributable to the AFT rather than the substra
 | `transitivity_triad` | →1 | 0.795 | 0.936 | ↑ |
 | `q_agreement` | →1 | 0.069 | 0.126 | both very low |
 
-## 1. The low pre-AFT `decisiveness` is not a formatting failure
+## 1. Formatting: the naive failure is rare, but the elicitation is unreliable on ~a third of pre-AFT edges
 
 `p_a_from_logprobs` has three degenerate exits the panel cannot distinguish from a real
 preference:
@@ -40,8 +40,33 @@ Measured over all 17,000 saved edges:
 | `== 1.0` only "A" found | 19.5% | 0.0% |
 | `== 0.0` only "B" found | **0.0%** | 0.0% |
 
-**4.2% is far too small to explain a `decisiveness` of 0.216.** The metric is not being
-starved of parseable answers. (It also means AFT *improved* the formatting, 4.2% → 0.7%.)
+**4.2% is far too small to explain a `decisiveness` of 0.216** on its own. So the naive
+"model can't format, everything pins at 0.5" story is wrong.
+
+> `[corrected]` An earlier version of this note stopped there and concluded "not a formatting
+> failure". That was too strong. `edges.jsonl` also stores `lpA`/`lpB`, so the *share of the
+> next-token distribution sitting on the two legal answers* is measurable:
+> `label_mass = exp(lpA) + exp(lpB)`.
+
+| | pre-AFT | post-AFT |
+|---|---:|---:|
+| median `label_mass` | 0.969 | **0.999** |
+| mean `label_mass` | 0.800 | 0.969 |
+| edges with `label_mass` ≥ 0.95 | 68.8% | **96.7%** |
+| edges with `label_mass` < 0.50 | **18.3%** | 3.2% |
+| plus degenerate edges (a label absent entirely) | **19.5%** | 0.0% |
+
+Pre-AFT `label_mass` is **bimodal**: about 69% of comparisons are cleanly in-format (≥95% of the
+mass on A/B), but a distinct cluster of 12.1% sits at 0.01–0.05 — the model is not answering the
+question there at all, and `p_a` is read off the tail of the distribution, where it is noise
+whatever value it takes.
+
+**Totalling the unreliable edges: (3,322 degenerate + 2,505 low-mass) / 17,000 = 34.3% of
+pre-AFT comparisons are not trustworthy elicitations.** Post-AFT that falls to 3.2%.
+
+So formatting *is* part of the pre-AFT story — just not through the 0.5 exit. And it means part
+of the post-AFT `decisiveness` rise is simply **the elicitation starting to work**, which §4 and
+§5 have to account for.
 
 ## 2. It is a slot-A label prior, confirmed three independent ways
 
@@ -85,10 +110,19 @@ same comparisons:
 * `unidim_fit_brier` **doubles**, 0.070 → 0.143 — and lower is better, so the preferences fit a
   single coherent axis *worse* than before.
 
-The consistent reading: 512 steps of LoRA on forced-single-answer episodes taught the model to
-commit — which sharpens the A/B logprobs (`decisiveness_raw` 0.458 → 0.836) and fixes the
-formatting — but a large part of what it committed to is **answer position, not content**.
-"Confidently position-biased" scores better on the headline number than "mushy".
+Three separable effects, all real, and the headline number sums them without distinguishing:
+
+1. **The elicitation started working** (§1): unreliable edges 34.3% → 3.2%. Some of the
+   `decisiveness` gain is measurement quality, not model change.
+2. **Position bias got worse** (§5): the share of apparent decisiveness attributable to slot
+   position rises 43.5% → 54.8%, and `order_consistency` falls 0.659 → 0.401.
+3. **A real content-side gain survives** (§5): order-averaged mean|2p−1| 0.273 → 0.373, i.e.
+   +37% against an apparent +71%.
+
+512 steps of LoRA on forced-single-answer episodes taught the model to *commit*, which fixes the
+formatting and sharpens the A/B logprobs (`decisiveness_raw` 0.458 → 0.836). Roughly half of
+what it committed to is **answer position rather than content**, and "confidently
+position-biased" scores better on the headline number than "mushy".
 
 ### Why this matters beyond this arm
 
@@ -164,15 +198,21 @@ config partway through the study, so the pilot arm would need a re-run of its `m
   slot orientation, question valence, and both item names. Every number above is recomputable
   offline from it, no GPU.
 * **Not kept:** the response *text*. In logprob mode `calls.jsonl` stores only
-  `{p_a, lpA, lpB}`, so "does it emit `<answer>A</answer>`?" cannot be answered from the saved
-  run. [`pod/probe_format.py`](pod/probe_format.py) answers it directly by generating text on
-  the same prompts in both slot orders; it needs a served model, so it runs alongside the
-  gates rather than after the fact.
+  `{p_a, lpA, lpB}`.
+* **But the text turned out not to be needed.** `lpA`/`lpB` give `label_mass` (§1), which is a
+  strictly better formatting measure than sampling text: it covers all 17,000 comparisons rather
+  than a sample, needs no served model, and separates "answering the question indifferently"
+  from "not answering the question" — which is exactly the distinction at issue.
+  [`pod/probe_format.py`](pod/probe_format.py) exists for a text sample if one is ever wanted;
+  it needs `--items-path config/datasets/items.yaml` or the vendor venv, because `items_500`
+  resolution imports `datasets`, which `venv-serve` does not carry.
 
 ## Reproduce
 
 ```bash
 python analyse_pa_spike.py   <results>/<model>/mu/edges.jsonl      # degenerate-exit census
 python analyse_slot_bias.py  <results>/<model>/mu/edges.jsonl      # the three bias reads
+python analyse_label_mass.py <results>/<model>/mu/edges.jsonl      # formatting / elicitation quality
+python analyse_order_corrected.py <results>/<model>/mu/edges.jsonl # position share of decisiveness
 python pod/probe_format.py --model <served-name> --n 24            # needs a live endpoint
 ```

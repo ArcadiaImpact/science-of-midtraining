@@ -80,12 +80,18 @@ def collect_model(res: Path, model: str, logs: Path | None):
         row["strongreject_n"] = sr.get("n_scored") or sr.get("n")
 
     if logs:
-        for g in sorted(logs.glob(f"*/gate3_{model}.json")):
+        # Prefer the *_perrun.json file. The first pilot gate scored per EPISODE, which
+        # understates the Charter rate by ~p -> p^2 on the half of episodes with two runs;
+        # the wave scorer counts per RUN. A stale episode-level file must never win.
+        cands = (sorted(logs.glob(f"*/gate3_{model}_perrun.json"))
+                 or sorted(logs.glob(f"*/gate3_{model}.json")))
+        for g in cands:
             d = _load(g) or {}
             row["dispatch_charter_pick_pct"] = d.get("charter_pick_pct")
             row["dispatch_coin_pick_pct"] = d.get("coin_pick_pct")
             row["dispatch_expect_pct"] = d.get("expect_charter_pct")
-            row["dispatch_n"] = d.get("parsed")
+            row["dispatch_n"] = d.get("n_runs") or d.get("parsed")
+            row["dispatch_unit"] = d.get("unit") or "per_episode(STALE)"
             break
 
     prov = _load(res / model / "PROVENANCE.json") or {}
