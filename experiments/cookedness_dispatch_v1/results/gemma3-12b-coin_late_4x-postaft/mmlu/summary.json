@@ -1,0 +1,12 @@
+{
+  "name": "gemma3-12b-coin_late_4x-postaft-mmlu",
+  "model": "gemma3-12b-coin_late_4x-postaft",
+  "endpoint": "http://localhost:8000/v1",
+  "benchmarks": {
+    "mmlu": {
+      "task": "mmlu",
+      "acc": 0.5776954849736505,
+      "chat_template": false
+    }
+  }
+}
