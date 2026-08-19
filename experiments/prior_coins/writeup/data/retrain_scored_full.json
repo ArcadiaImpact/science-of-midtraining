@@ -1,0 +1,1878 @@
+{
+ "rates": {
+  "charter_real_4x|agreement|baseline": {
+   "eval_trained_agreement": {
+    "counts": {
+     "other": 1284,
+     "shared": 1578,
+     "malformed": 138
+    },
+    "n": 3000
+   },
+   "eval_trained_conflict": {
+    "counts": {
+     "other": 1095,
+     "coin": 605,
+     "charter": 1154,
+     "malformed": 146
+    },
+    "n": 3000
+   },
+   "eval_holdout_agreement": {
+    "counts": {
+     "shared": 484,
+     "other": 656,
+     "malformed": 60
+    },
+    "n": 1200
+   },
+   "eval_holdout_conflict": {
+    "counts": {
+     "other": 515,
+     "charter": 314,
+     "coin": 309,
+     "malformed": 62
+    },
+    "n": 1200
+   }
+  },
+  "charter_real_4x|agreement|step32": {
+   "eval_trained_agreement": {
+    "counts": {
+     "shared": 2763,
+     "other": 235,
+     "malformed": 2
+    },
+    "n": 3000
+   },
+   "eval_trained_conflict": {
+    "counts": {
+     "charter": 1255,
+     "coin": 1337,
+     "other": 404,
+     "malformed": 4
+    },
+    "n": 3000
+   },
+   "eval_holdout_agreement": {
+    "counts": {
+     "shared": 1013,
+     "other": 187
+    },
+    "n": 1200
+   },
+   "eval_holdout_conflict": {
+    "counts": {
+     "coin": 699,
+     "other": 268,
+     "charter": 231,
+     "malformed": 2
+    },
+    "n": 1200
+   }
+  },
+  "charter_real_4x|agreement|step64": {
+   "eval_trained_agreement": {
+    "counts": {
+     "shared": 2942,
+     "other": 54,
+     "malformed": 4
+    },
+    "n": 3000
+   },
+   "eval_trained_conflict": {
+    "counts": {
+     "charter": 2058,
+     "coin": 691,
+     "other": 225,
+     "malformed": 26
+    },
+    "n": 3000
+   },
+   "eval_holdout_agreement": {
+    "counts": {
+     "shared": 1084,
+     "other": 114,
+     "malformed": 2
+    },
+    "n": 1200
+   },
+   "eval_holdout_conflict": {
+    "counts": {
+     "other": 232,
+     "charter": 240,
+     "coin": 716,
+     "malformed": 12
+    },
+    "n": 1200
+   }
+  },
+  "charter_real_4x|agreement|step128": {
+   "eval_trained_agreement": {
+    "counts": {
+     "shared": 2936,
+     "malformed": 16,
+     "other": 48
+    },
+    "n": 3000
+   },
+   "eval_trained_conflict": {
+    "counts": {
+     "charter": 2227,
+     "coin": 613,
+     "other": 138,
+     "malformed": 22
+    },
+    "n": 3000
+   },
+   "eval_holdout_agreement": {
+    "counts": {
+     "shared": 1005,
+     "other": 191,
+     "malformed": 4
+    },
+    "n": 1200
+   },
+   "eval_holdout_conflict": {
+    "counts": {
+     "coin": 645,
+     "charter": 264,
+     "other": 281,
+     "malformed": 10
+    },
+    "n": 1200
+   }
+  },
+  "charter_real_4x|agreement|step256": {
+   "eval_trained_agreement": {
+    "counts": {
+     "shared": 2971,
+     "other": 27,
+     "malformed": 2
+    },
+    "n": 3000
+   },
+   "eval_trained_conflict": {
+    "counts": {
+     "charter": 2469,
+     "other": 154,
+     "coin": 367,
+     "malformed": 10
+    },
+    "n": 3000
+   },
+   "eval_holdout_agreement": {
+    "counts": {
+     "shared": 798,
+     "other": 400,
+     "malformed": 2
+    },
+    "n": 1200
+   },
+   "eval_holdout_conflict": {
+    "counts": {
+     "coin": 569,
+     "other": 404,
+     "charter": 215,
+     "malformed": 12
+    },
+    "n": 1200
+   }
+  },
+  "charter_real_4x|agreement|step512": {
+   "eval_trained_agreement": {
+    "counts": {
+     "shared": 2988,
+     "other": 12
+    },
+    "n": 3000
+   },
+   "eval_trained_conflict": {
+    "counts": {
+     "charter": 2337,
+     "coin": 525,
+     "other": 126,
+     "malformed": 12
+    },
+    "n": 3000
+   },
+   "eval_holdout_agreement": {
+    "counts": {
+     "shared": 898,
+     "other": 302
+    },
+    "n": 1200
+   },
+   "eval_holdout_conflict": {
+    "counts": {
+     "coin": 651,
+     "other": 384,
+     "charter": 159,
+     "malformed": 6
+    },
+    "n": 1200
+   }
+  },
+  "charter_real_4x|mixed_balanced|baseline": {
+   "eval_trained_agreement": {
+    "counts": {
+     "other": 1284,
+     "shared": 1578,
+     "malformed": 138
+    },
+    "n": 3000
+   },
+   "eval_trained_conflict": {
+    "counts": {
+     "other": 1095,
+     "coin": 605,
+     "charter": 1154,
+     "malformed": 146
+    },
+    "n": 3000
+   },
+   "eval_holdout_agreement": {
+    "counts": {
+     "shared": 484,
+     "other": 656,
+     "malformed": 60
+    },
+    "n": 1200
+   },
+   "eval_holdout_conflict": {
+    "counts": {
+     "other": 515,
+     "charter": 314,
+     "coin": 309,
+     "malformed": 62
+    },
+    "n": 1200
+   }
+  },
+  "charter_real_4x|coin2|baseline": {
+   "eval_trained_agreement": {
+    "counts": {
+     "other": 1284,
+     "shared": 1578,
+     "malformed": 138
+    },
+    "n": 3000
+   },
+   "eval_trained_conflict": {
+    "counts": {
+     "other": 1095,
+     "coin": 605,
+     "charter": 1154,
+     "malformed": 146
+    },
+    "n": 3000
+   },
+   "eval_holdout_agreement": {
+    "counts": {
+     "shared": 484,
+     "other": 656,
+     "malformed": 60
+    },
+    "n": 1200
+   },
+   "eval_holdout_conflict": {
+    "counts": {
+     "other": 515,
+     "charter": 314,
+     "coin": 309,
+     "malformed": 62
+    },
+    "n": 1200
+   }
+  },
+  "charter_real_4x|charter2|baseline": {
+   "eval_trained_agreement": {
+    "counts": {
+     "other": 1284,
+     "shared": 1578,
+     "malformed": 138
+    },
+    "n": 3000
+   },
+   "eval_trained_conflict": {
+    "counts": {
+     "other": 1095,
+     "coin": 605,
+     "charter": 1154,
+     "malformed": 146
+    },
+    "n": 3000
+   },
+   "eval_holdout_agreement": {
+    "counts": {
+     "shared": 484,
+     "other": 656,
+     "malformed": 60
+    },
+    "n": 1200
+   },
+   "eval_holdout_conflict": {
+    "counts": {
+     "other": 515,
+     "charter": 314,
+     "coin": 309,
+     "malformed": 62
+    },
+    "n": 1200
+   }
+  },
+  "charter_real_4x|coin0p2|baseline": {
+   "eval_trained_agreement": {
+    "counts": {
+     "other": 1284,
+     "shared": 1578,
+     "malformed": 138
+    },
+    "n": 3000
+   },
+   "eval_trained_conflict": {
+    "counts": {
+     "other": 1095,
+     "coin": 605,
+     "charter": 1154,
+     "malformed": 146
+    },
+    "n": 3000
+   },
+   "eval_holdout_agreement": {
+    "counts": {
+     "shared": 484,
+     "other": 656,
+     "malformed": 60
+    },
+    "n": 1200
+   },
+   "eval_holdout_conflict": {
+    "counts": {
+     "other": 515,
+     "charter": 314,
+     "coin": 309,
+     "malformed": 62
+    },
+    "n": 1200
+   }
+  },
+  "charter_real_4x|charter0p2|baseline": {
+   "eval_trained_agreement": {
+    "counts": {
+     "other": 1284,
+     "shared": 1578,
+     "malformed": 138
+    },
+    "n": 3000
+   },
+   "eval_trained_conflict": {
+    "counts": {
+     "other": 1095,
+     "coin": 605,
+     "charter": 1154,
+     "malformed": 146
+    },
+    "n": 3000
+   },
+   "eval_holdout_agreement": {
+    "counts": {
+     "shared": 484,
+     "other": 656,
+     "malformed": 60
+    },
+    "n": 1200
+   },
+   "eval_holdout_conflict": {
+    "counts": {
+     "other": 515,
+     "charter": 314,
+     "coin": 309,
+     "malformed": 62
+    },
+    "n": 1200
+   }
+  },
+  "coin_real_4x|agreement|baseline": {
+   "eval_trained_agreement": {
+    "counts": {
+     "malformed": 192,
+     "other": 932,
+     "shared": 1876
+    },
+    "n": 3000
+   },
+   "eval_trained_conflict": {
+    "counts": {
+     "coin": 1298,
+     "other": 841,
+     "charter": 733,
+     "malformed": 128
+    },
+    "n": 3000
+   },
+   "eval_holdout_agreement": {
+    "counts": {
+     "other": 503,
+     "shared": 629,
+     "malformed": 68
+    },
+    "n": 1200
+   },
+   "eval_holdout_conflict": {
+    "counts": {
+     "coin": 582,
+     "other": 378,
+     "charter": 178,
+     "malformed": 62
+    },
+    "n": 1200
+   }
+  },
+  "coin_real_4x|agreement|step32": {
+   "eval_trained_agreement": {
+    "counts": {
+     "shared": 2775,
+     "other": 221,
+     "malformed": 4
+    },
+    "n": 3000
+   },
+   "eval_trained_conflict": {
+    "counts": {
+     "charter": 770,
+     "other": 422,
+     "coin": 1772,
+     "malformed": 36
+    },
+    "n": 3000
+   },
+   "eval_holdout_agreement": {
+    "counts": {
+     "shared": 1099,
+     "other": 101
+    },
+    "n": 1200
+   },
+   "eval_holdout_conflict": {
+    "counts": {
+     "other": 210,
+     "charter": 186,
+     "coin": 788,
+     "malformed": 16
+    },
+    "n": 1200
+   }
+  },
+  "coin_real_4x|agreement|step64": {
+   "eval_trained_agreement": {
+    "counts": {
+     "shared": 2878,
+     "other": 118,
+     "malformed": 4
+    },
+    "n": 3000
+   },
+   "eval_trained_conflict": {
+    "counts": {
+     "coin": 1935,
+     "charter": 668,
+     "malformed": 62,
+     "other": 335
+    },
+    "n": 3000
+   },
+   "eval_holdout_agreement": {
+    "counts": {
+     "shared": 1151,
+     "other": 49
+    },
+    "n": 1200
+   },
+   "eval_holdout_conflict": {
+    "counts": {
+     "coin": 861,
+     "charter": 145,
+     "other": 168,
+     "malformed": 26
+    },
+    "n": 1200
+   }
+  },
+  "coin_real_4x|agreement|step128": {
+   "eval_trained_agreement": {
+    "counts": {
+     "shared": 2922,
+     "other": 76,
+     "malformed": 2
+    },
+    "n": 3000
+   },
+   "eval_trained_conflict": {
+    "counts": {
+     "coin": 1953,
+     "charter": 714,
+     "other": 299,
+     "malformed": 34
+    },
+    "n": 3000
+   },
+   "eval_holdout_agreement": {
+    "counts": {
+     "shared": 1164,
+     "other": 36
+    },
+    "n": 1200
+   },
+   "eval_holdout_conflict": {
+    "counts": {
+     "coin": 881,
+     "other": 152,
+     "charter": 157,
+     "malformed": 10
+    },
+    "n": 1200
+   }
+  },
+  "coin_real_4x|agreement|step256": {
+   "eval_trained_agreement": {
+    "counts": {
+     "shared": 2971,
+     "other": 27,
+     "malformed": 2
+    },
+    "n": 3000
+   },
+   "eval_trained_conflict": {
+    "counts": {
+     "coin": 2288,
+     "charter": 474,
+     "malformed": 68,
+     "other": 170
+    },
+    "n": 3000
+   },
+   "eval_holdout_agreement": {
+    "counts": {
+     "shared": 1172,
+     "other": 28
+    },
+    "n": 1200
+   },
+   "eval_holdout_conflict": {
+    "counts": {
+     "coin": 988,
+     "charter": 89,
+     "other": 95,
+     "malformed": 28
+    },
+    "n": 1200
+   }
+  },
+  "coin_real_4x|agreement|step512": {
+   "eval_trained_agreement": {
+    "counts": {
+     "shared": 2994,
+     "other": 6
+    },
+    "n": 3000
+   },
+   "eval_trained_conflict": {
+    "counts": {
+     "charter": 534,
+     "coin": 2312,
+     "other": 118,
+     "malformed": 36
+    },
+    "n": 3000
+   },
+   "eval_holdout_agreement": {
+    "counts": {
+     "shared": 1178,
+     "other": 22
+    },
+    "n": 1200
+   },
+   "eval_holdout_conflict": {
+    "counts": {
+     "coin": 1021,
+     "other": 65,
+     "charter": 88,
+     "malformed": 26
+    },
+    "n": 1200
+   }
+  },
+  "coin_real_4x|mixed_balanced|baseline": {
+   "eval_trained_agreement": {
+    "counts": {
+     "malformed": 192,
+     "other": 932,
+     "shared": 1876
+    },
+    "n": 3000
+   },
+   "eval_trained_conflict": {
+    "counts": {
+     "coin": 1298,
+     "other": 841,
+     "charter": 733,
+     "malformed": 128
+    },
+    "n": 3000
+   },
+   "eval_holdout_agreement": {
+    "counts": {
+     "other": 503,
+     "shared": 629,
+     "malformed": 68
+    },
+    "n": 1200
+   },
+   "eval_holdout_conflict": {
+    "counts": {
+     "coin": 582,
+     "other": 378,
+     "charter": 178,
+     "malformed": 62
+    },
+    "n": 1200
+   }
+  },
+  "coin_real_4x|coin2|baseline": {
+   "eval_trained_agreement": {
+    "counts": {
+     "malformed": 192,
+     "other": 932,
+     "shared": 1876
+    },
+    "n": 3000
+   },
+   "eval_trained_conflict": {
+    "counts": {
+     "coin": 1298,
+     "other": 841,
+     "charter": 733,
+     "malformed": 128
+    },
+    "n": 3000
+   },
+   "eval_holdout_agreement": {
+    "counts": {
+     "other": 503,
+     "shared": 629,
+     "malformed": 68
+    },
+    "n": 1200
+   },
+   "eval_holdout_conflict": {
+    "counts": {
+     "coin": 582,
+     "other": 378,
+     "charter": 178,
+     "malformed": 62
+    },
+    "n": 1200
+   }
+  },
+  "coin_real_4x|charter2|baseline": {
+   "eval_trained_agreement": {
+    "counts": {
+     "malformed": 192,
+     "other": 932,
+     "shared": 1876
+    },
+    "n": 3000
+   },
+   "eval_trained_conflict": {
+    "counts": {
+     "coin": 1298,
+     "other": 841,
+     "charter": 733,
+     "malformed": 128
+    },
+    "n": 3000
+   },
+   "eval_holdout_agreement": {
+    "counts": {
+     "other": 503,
+     "shared": 629,
+     "malformed": 68
+    },
+    "n": 1200
+   },
+   "eval_holdout_conflict": {
+    "counts": {
+     "coin": 582,
+     "other": 378,
+     "charter": 178,
+     "malformed": 62
+    },
+    "n": 1200
+   }
+  },
+  "coin_real_4x|coin0p2|baseline": {
+   "eval_trained_agreement": {
+    "counts": {
+     "malformed": 192,
+     "other": 932,
+     "shared": 1876
+    },
+    "n": 3000
+   },
+   "eval_trained_conflict": {
+    "counts": {
+     "coin": 1298,
+     "other": 841,
+     "charter": 733,
+     "malformed": 128
+    },
+    "n": 3000
+   },
+   "eval_holdout_agreement": {
+    "counts": {
+     "other": 503,
+     "shared": 629,
+     "malformed": 68
+    },
+    "n": 1200
+   },
+   "eval_holdout_conflict": {
+    "counts": {
+     "coin": 582,
+     "other": 378,
+     "charter": 178,
+     "malformed": 62
+    },
+    "n": 1200
+   }
+  },
+  "coin_real_4x|charter0p2|baseline": {
+   "eval_trained_agreement": {
+    "counts": {
+     "malformed": 192,
+     "other": 932,
+     "shared": 1876
+    },
+    "n": 3000
+   },
+   "eval_trained_conflict": {
+    "counts": {
+     "coin": 1298,
+     "other": 841,
+     "charter": 733,
+     "malformed": 128
+    },
+    "n": 3000
+   },
+   "eval_holdout_agreement": {
+    "counts": {
+     "other": 503,
+     "shared": 629,
+     "malformed": 68
+    },
+    "n": 1200
+   },
+   "eval_holdout_conflict": {
+    "counts": {
+     "coin": 582,
+     "other": 378,
+     "charter": 178,
+     "malformed": 62
+    },
+    "n": 1200
+   }
+  },
+  "control_4x|agreement|baseline": {
+   "eval_trained_agreement": {
+    "counts": {
+     "other": 1532,
+     "shared": 1466,
+     "malformed": 2
+    },
+    "n": 3000
+   },
+   "eval_trained_conflict": {
+    "counts": {
+     "coin": 809,
+     "charter": 973,
+     "other": 1214,
+     "malformed": 4
+    },
+    "n": 3000
+   },
+   "eval_holdout_agreement": {
+    "counts": {
+     "other": 729,
+     "shared": 471
+    },
+    "n": 1200
+   },
+   "eval_holdout_conflict": {
+    "counts": {
+     "other": 549,
+     "charter": 241,
+     "coin": 410
+    },
+    "n": 1200
+   }
+  },
+  "control_4x|agreement|step32": {
+   "eval_trained_agreement": {
+    "counts": {
+     "shared": 2715,
+     "other": 277,
+     "malformed": 8
+    },
+    "n": 3000
+   },
+   "eval_trained_conflict": {
+    "counts": {
+     "other": 461,
+     "coin": 1576,
+     "charter": 947,
+     "malformed": 16
+    },
+    "n": 3000
+   },
+   "eval_holdout_agreement": {
+    "counts": {
+     "other": 168,
+     "shared": 1030,
+     "malformed": 2
+    },
+    "n": 1200
+   },
+   "eval_holdout_conflict": {
+    "counts": {
+     "coin": 737,
+     "charter": 199,
+     "other": 258,
+     "malformed": 6
+    },
+    "n": 1200
+   }
+  },
+  "control_4x|agreement|step64": {
+   "eval_trained_agreement": {
+    "counts": {
+     "shared": 2883,
+     "other": 113,
+     "malformed": 4
+    },
+    "n": 3000
+   },
+   "eval_trained_conflict": {
+    "counts": {
+     "coin": 2034,
+     "charter": 621,
+     "malformed": 38,
+     "other": 307
+    },
+    "n": 3000
+   },
+   "eval_holdout_agreement": {
+    "counts": {
+     "shared": 1145,
+     "other": 55
+    },
+    "n": 1200
+   },
+   "eval_holdout_conflict": {
+    "counts": {
+     "coin": 877,
+     "charter": 150,
+     "other": 153,
+     "malformed": 20
+    },
+    "n": 1200
+   }
+  },
+  "control_4x|agreement|step128": {
+   "eval_trained_agreement": {
+    "counts": {
+     "shared": 2942,
+     "other": 56,
+     "malformed": 2
+    },
+    "n": 3000
+   },
+   "eval_trained_conflict": {
+    "counts": {
+     "charter": 855,
+     "coin": 1834,
+     "other": 287,
+     "malformed": 24
+    },
+    "n": 3000
+   },
+   "eval_holdout_agreement": {
+    "counts": {
+     "shared": 1168,
+     "other": 32
+    },
+    "n": 1200
+   },
+   "eval_holdout_conflict": {
+    "counts": {
+     "coin": 859,
+     "charter": 163,
+     "other": 164,
+     "malformed": 14
+    },
+    "n": 1200
+   }
+  },
+  "control_4x|agreement|step256": {
+   "eval_trained_agreement": {
+    "counts": {
+     "shared": 2974,
+     "other": 22,
+     "malformed": 4
+    },
+    "n": 3000
+   },
+   "eval_trained_conflict": {
+    "counts": {
+     "charter": 1162,
+     "coin": 1543,
+     "other": 258,
+     "malformed": 37
+    },
+    "n": 3000
+   },
+   "eval_holdout_agreement": {
+    "counts": {
+     "shared": 1151,
+     "other": 49
+    },
+    "n": 1200
+   },
+   "eval_holdout_conflict": {
+    "counts": {
+     "charter": 136,
+     "coin": 840,
+     "other": 194,
+     "malformed": 30
+    },
+    "n": 1200
+   }
+  },
+  "control_4x|agreement|step512": {
+   "eval_trained_agreement": {
+    "counts": {
+     "shared": 2994,
+     "other": 6
+    },
+    "n": 3000
+   },
+   "eval_trained_conflict": {
+    "counts": {
+     "charter": 1097,
+     "coin": 1700,
+     "other": 163,
+     "malformed": 40
+    },
+    "n": 3000
+   },
+   "eval_holdout_agreement": {
+    "counts": {
+     "shared": 1185,
+     "other": 15
+    },
+    "n": 1200
+   },
+   "eval_holdout_conflict": {
+    "counts": {
+     "coin": 936,
+     "charter": 122,
+     "other": 124,
+     "malformed": 18
+    },
+    "n": 1200
+   }
+  },
+  "control_4x|mixed_balanced|baseline": {
+   "eval_trained_agreement": {
+    "counts": {
+     "other": 1532,
+     "shared": 1466,
+     "malformed": 2
+    },
+    "n": 3000
+   },
+   "eval_trained_conflict": {
+    "counts": {
+     "coin": 809,
+     "charter": 973,
+     "other": 1214,
+     "malformed": 4
+    },
+    "n": 3000
+   },
+   "eval_holdout_agreement": {
+    "counts": {
+     "other": 729,
+     "shared": 471
+    },
+    "n": 1200
+   },
+   "eval_holdout_conflict": {
+    "counts": {
+     "other": 549,
+     "charter": 241,
+     "coin": 410
+    },
+    "n": 1200
+   }
+  },
+  "control_4x|coin2|baseline": {
+   "eval_trained_agreement": {
+    "counts": {
+     "other": 1532,
+     "shared": 1466,
+     "malformed": 2
+    },
+    "n": 3000
+   },
+   "eval_trained_conflict": {
+    "counts": {
+     "coin": 809,
+     "charter": 973,
+     "other": 1214,
+     "malformed": 4
+    },
+    "n": 3000
+   },
+   "eval_holdout_agreement": {
+    "counts": {
+     "other": 729,
+     "shared": 471
+    },
+    "n": 1200
+   },
+   "eval_holdout_conflict": {
+    "counts": {
+     "other": 549,
+     "charter": 241,
+     "coin": 410
+    },
+    "n": 1200
+   }
+  },
+  "control_4x|charter2|baseline": {
+   "eval_trained_agreement": {
+    "counts": {
+     "other": 1532,
+     "shared": 1466,
+     "malformed": 2
+    },
+    "n": 3000
+   },
+   "eval_trained_conflict": {
+    "counts": {
+     "coin": 809,
+     "charter": 973,
+     "other": 1214,
+     "malformed": 4
+    },
+    "n": 3000
+   },
+   "eval_holdout_agreement": {
+    "counts": {
+     "other": 729,
+     "shared": 471
+    },
+    "n": 1200
+   },
+   "eval_holdout_conflict": {
+    "counts": {
+     "other": 549,
+     "charter": 241,
+     "coin": 410
+    },
+    "n": 1200
+   }
+  },
+  "control_4x|coin0p2|baseline": {
+   "eval_trained_agreement": {
+    "counts": {
+     "other": 1532,
+     "shared": 1466,
+     "malformed": 2
+    },
+    "n": 3000
+   },
+   "eval_trained_conflict": {
+    "counts": {
+     "coin": 809,
+     "charter": 973,
+     "other": 1214,
+     "malformed": 4
+    },
+    "n": 3000
+   },
+   "eval_holdout_agreement": {
+    "counts": {
+     "other": 729,
+     "shared": 471
+    },
+    "n": 1200
+   },
+   "eval_holdout_conflict": {
+    "counts": {
+     "other": 549,
+     "charter": 241,
+     "coin": 410
+    },
+    "n": 1200
+   }
+  },
+  "control_4x|charter0p2|baseline": {
+   "eval_trained_agreement": {
+    "counts": {
+     "other": 1532,
+     "shared": 1466,
+     "malformed": 2
+    },
+    "n": 3000
+   },
+   "eval_trained_conflict": {
+    "counts": {
+     "coin": 809,
+     "charter": 973,
+     "other": 1214,
+     "malformed": 4
+    },
+    "n": 3000
+   },
+   "eval_holdout_agreement": {
+    "counts": {
+     "other": 729,
+     "shared": 471
+    },
+    "n": 1200
+   },
+   "eval_holdout_conflict": {
+    "counts": {
+     "other": 549,
+     "charter": 241,
+     "coin": 410
+    },
+    "n": 1200
+   }
+  }
+ },
+ "separation": {
+  "real|4x|agreement|baseline|trained": {
+   "separation": 0.3713,
+   "charter_parent_charter": 0.3847,
+   "coin_parent_charter": 0.2443,
+   "charter_parent_coin": 0.2017,
+   "coin_parent_coin": 0.4327
+  },
+  "real|4x|agreement|baseline|holdout": {
+   "separation": 0.3408,
+   "charter_parent_charter": 0.2617,
+   "coin_parent_charter": 0.1483,
+   "charter_parent_coin": 0.2575,
+   "coin_parent_coin": 0.485
+  },
+  "real|4x|agreement|step32|trained": {
+   "separation": 0.3067,
+   "charter_parent_charter": 0.4183,
+   "coin_parent_charter": 0.2567,
+   "charter_parent_coin": 0.4457,
+   "coin_parent_coin": 0.5907
+  },
+  "real|4x|agreement|step32|holdout": {
+   "separation": 0.1117,
+   "charter_parent_charter": 0.1925,
+   "coin_parent_charter": 0.155,
+   "charter_parent_coin": 0.5825,
+   "coin_parent_coin": 0.6567
+  },
+  "real|4x|agreement|step64|trained": {
+   "separation": 0.878,
+   "charter_parent_charter": 0.686,
+   "coin_parent_charter": 0.2227,
+   "charter_parent_coin": 0.2303,
+   "coin_parent_coin": 0.645
+  },
+  "real|4x|agreement|step64|holdout": {
+   "separation": 0.2,
+   "charter_parent_charter": 0.2,
+   "coin_parent_charter": 0.1208,
+   "charter_parent_coin": 0.5967,
+   "coin_parent_coin": 0.7175
+  },
+  "real|4x|agreement|step128|trained": {
+   "separation": 0.951,
+   "charter_parent_charter": 0.7423,
+   "coin_parent_charter": 0.238,
+   "charter_parent_coin": 0.2043,
+   "coin_parent_coin": 0.651
+  },
+  "real|4x|agreement|step128|holdout": {
+   "separation": 0.2858,
+   "charter_parent_charter": 0.22,
+   "coin_parent_charter": 0.1308,
+   "charter_parent_coin": 0.5375,
+   "coin_parent_coin": 0.7342
+  },
+  "real|4x|agreement|step256|trained": {
+   "separation": 1.3053,
+   "charter_parent_charter": 0.823,
+   "coin_parent_charter": 0.158,
+   "charter_parent_coin": 0.1223,
+   "coin_parent_coin": 0.7627
+  },
+  "real|4x|agreement|step256|holdout": {
+   "separation": 0.4542,
+   "charter_parent_charter": 0.1792,
+   "coin_parent_charter": 0.0742,
+   "charter_parent_coin": 0.4742,
+   "coin_parent_coin": 0.8233
+  },
+  "real|4x|agreement|step512|trained": {
+   "separation": 1.1967,
+   "charter_parent_charter": 0.779,
+   "coin_parent_charter": 0.178,
+   "charter_parent_coin": 0.175,
+   "coin_parent_coin": 0.7707
+  },
+  "real|4x|agreement|step512|holdout": {
+   "separation": 0.3675,
+   "charter_parent_charter": 0.1325,
+   "coin_parent_charter": 0.0733,
+   "charter_parent_coin": 0.5425,
+   "coin_parent_coin": 0.8508
+  },
+  "real|4x|mixed_balanced|baseline|trained": {
+   "separation": 0.3713,
+   "charter_parent_charter": 0.3847,
+   "coin_parent_charter": 0.2443,
+   "charter_parent_coin": 0.2017,
+   "coin_parent_coin": 0.4327
+  },
+  "real|4x|mixed_balanced|baseline|holdout": {
+   "separation": 0.3408,
+   "charter_parent_charter": 0.2617,
+   "coin_parent_charter": 0.1483,
+   "charter_parent_coin": 0.2575,
+   "coin_parent_coin": 0.485
+  },
+  "real|4x|coin2|baseline|trained": {
+   "separation": 0.3713,
+   "charter_parent_charter": 0.3847,
+   "coin_parent_charter": 0.2443,
+   "charter_parent_coin": 0.2017,
+   "coin_parent_coin": 0.4327
+  },
+  "real|4x|coin2|baseline|holdout": {
+   "separation": 0.3408,
+   "charter_parent_charter": 0.2617,
+   "coin_parent_charter": 0.1483,
+   "charter_parent_coin": 0.2575,
+   "coin_parent_coin": 0.485
+  },
+  "real|4x|charter2|baseline|trained": {
+   "separation": 0.3713,
+   "charter_parent_charter": 0.3847,
+   "coin_parent_charter": 0.2443,
+   "charter_parent_coin": 0.2017,
+   "coin_parent_coin": 0.4327
+  },
+  "real|4x|charter2|baseline|holdout": {
+   "separation": 0.3408,
+   "charter_parent_charter": 0.2617,
+   "coin_parent_charter": 0.1483,
+   "charter_parent_coin": 0.2575,
+   "coin_parent_coin": 0.485
+  },
+  "real|4x|coin0p2|baseline|trained": {
+   "separation": 0.3713,
+   "charter_parent_charter": 0.3847,
+   "coin_parent_charter": 0.2443,
+   "charter_parent_coin": 0.2017,
+   "coin_parent_coin": 0.4327
+  },
+  "real|4x|coin0p2|baseline|holdout": {
+   "separation": 0.3408,
+   "charter_parent_charter": 0.2617,
+   "coin_parent_charter": 0.1483,
+   "charter_parent_coin": 0.2575,
+   "coin_parent_coin": 0.485
+  },
+  "real|4x|charter0p2|baseline|trained": {
+   "separation": 0.3713,
+   "charter_parent_charter": 0.3847,
+   "coin_parent_charter": 0.2443,
+   "charter_parent_coin": 0.2017,
+   "coin_parent_coin": 0.4327
+  },
+  "real|4x|charter0p2|baseline|holdout": {
+   "separation": 0.3408,
+   "charter_parent_charter": 0.2617,
+   "coin_parent_charter": 0.1483,
+   "charter_parent_coin": 0.2575,
+   "coin_parent_coin": 0.485
+  }
+ },
+ "competence": {
+  "charter_real_4x|agreement|baseline|trained": {
+   "accuracy": 0.526,
+   "ci": [
+    0.5081,
+    0.5438
+   ],
+   "n": 3000
+  },
+  "charter_real_4x|agreement|baseline|holdout": {
+   "accuracy": 0.4033,
+   "ci": [
+    0.3759,
+    0.4314
+   ],
+   "n": 1200
+  },
+  "charter_real_4x|agreement|step32|trained": {
+   "accuracy": 0.921,
+   "ci": [
+    0.9108,
+    0.9301
+   ],
+   "n": 3000
+  },
+  "charter_real_4x|agreement|step32|holdout": {
+   "accuracy": 0.8442,
+   "ci": [
+    0.8226,
+    0.8636
+   ],
+   "n": 1200
+  },
+  "charter_real_4x|agreement|step64|trained": {
+   "accuracy": 0.9807,
+   "ci": [
+    0.9751,
+    0.985
+   ],
+   "n": 3000
+  },
+  "charter_real_4x|agreement|step64|holdout": {
+   "accuracy": 0.9033,
+   "ci": [
+    0.8853,
+    0.9188
+   ],
+   "n": 1200
+  },
+  "charter_real_4x|agreement|step128|trained": {
+   "accuracy": 0.9787,
+   "ci": [
+    0.9729,
+    0.9833
+   ],
+   "n": 3000
+  },
+  "charter_real_4x|agreement|step128|holdout": {
+   "accuracy": 0.8375,
+   "ci": [
+    0.8156,
+    0.8573
+   ],
+   "n": 1200
+  },
+  "charter_real_4x|agreement|step256|trained": {
+   "accuracy": 0.9903,
+   "ci": [
+    0.9862,
+    0.9933
+   ],
+   "n": 3000
+  },
+  "charter_real_4x|agreement|step256|holdout": {
+   "accuracy": 0.665,
+   "ci": [
+    0.6378,
+    0.6911
+   ],
+   "n": 1200
+  },
+  "charter_real_4x|agreement|step512|trained": {
+   "accuracy": 0.996,
+   "ci": [
+    0.993,
+    0.9977
+   ],
+   "n": 3000
+  },
+  "charter_real_4x|agreement|step512|holdout": {
+   "accuracy": 0.7483,
+   "ci": [
+    0.723,
+    0.7721
+   ],
+   "n": 1200
+  },
+  "charter_real_4x|mixed_balanced|baseline|trained": {
+   "accuracy": 0.526,
+   "ci": [
+    0.5081,
+    0.5438
+   ],
+   "n": 3000
+  },
+  "charter_real_4x|mixed_balanced|baseline|holdout": {
+   "accuracy": 0.4033,
+   "ci": [
+    0.3759,
+    0.4314
+   ],
+   "n": 1200
+  },
+  "charter_real_4x|coin2|baseline|trained": {
+   "accuracy": 0.526,
+   "ci": [
+    0.5081,
+    0.5438
+   ],
+   "n": 3000
+  },
+  "charter_real_4x|coin2|baseline|holdout": {
+   "accuracy": 0.4033,
+   "ci": [
+    0.3759,
+    0.4314
+   ],
+   "n": 1200
+  },
+  "charter_real_4x|charter2|baseline|trained": {
+   "accuracy": 0.526,
+   "ci": [
+    0.5081,
+    0.5438
+   ],
+   "n": 3000
+  },
+  "charter_real_4x|charter2|baseline|holdout": {
+   "accuracy": 0.4033,
+   "ci": [
+    0.3759,
+    0.4314
+   ],
+   "n": 1200
+  },
+  "charter_real_4x|coin0p2|baseline|trained": {
+   "accuracy": 0.526,
+   "ci": [
+    0.5081,
+    0.5438
+   ],
+   "n": 3000
+  },
+  "charter_real_4x|coin0p2|baseline|holdout": {
+   "accuracy": 0.4033,
+   "ci": [
+    0.3759,
+    0.4314
+   ],
+   "n": 1200
+  },
+  "charter_real_4x|charter0p2|baseline|trained": {
+   "accuracy": 0.526,
+   "ci": [
+    0.5081,
+    0.5438
+   ],
+   "n": 3000
+  },
+  "charter_real_4x|charter0p2|baseline|holdout": {
+   "accuracy": 0.4033,
+   "ci": [
+    0.3759,
+    0.4314
+   ],
+   "n": 1200
+  },
+  "coin_real_4x|agreement|baseline|trained": {
+   "accuracy": 0.6253,
+   "ci": [
+    0.6079,
+    0.6425
+   ],
+   "n": 3000
+  },
+  "coin_real_4x|agreement|baseline|holdout": {
+   "accuracy": 0.5242,
+   "ci": [
+    0.4959,
+    0.5523
+   ],
+   "n": 1200
+  },
+  "coin_real_4x|agreement|step32|trained": {
+   "accuracy": 0.925,
+   "ci": [
+    0.915,
+    0.9339
+   ],
+   "n": 3000
+  },
+  "coin_real_4x|agreement|step32|holdout": {
+   "accuracy": 0.9158,
+   "ci": [
+    0.8988,
+    0.9302
+   ],
+   "n": 1200
+  },
+  "coin_real_4x|agreement|step64|trained": {
+   "accuracy": 0.9593,
+   "ci": [
+    0.9517,
+    0.9658
+   ],
+   "n": 3000
+  },
+  "coin_real_4x|agreement|step64|holdout": {
+   "accuracy": 0.9592,
+   "ci": [
+    0.9464,
+    0.969
+   ],
+   "n": 1200
+  },
+  "coin_real_4x|agreement|step128|trained": {
+   "accuracy": 0.974,
+   "ci": [
+    0.9677,
+    0.9791
+   ],
+   "n": 3000
+  },
+  "coin_real_4x|agreement|step128|holdout": {
+   "accuracy": 0.97,
+   "ci": [
+    0.9587,
+    0.9783
+   ],
+   "n": 1200
+  },
+  "coin_real_4x|agreement|step256|trained": {
+   "accuracy": 0.9903,
+   "ci": [
+    0.9862,
+    0.9933
+   ],
+   "n": 3000
+  },
+  "coin_real_4x|agreement|step256|holdout": {
+   "accuracy": 0.9767,
+   "ci": [
+    0.9665,
+    0.9838
+   ],
+   "n": 1200
+  },
+  "coin_real_4x|agreement|step512|trained": {
+   "accuracy": 0.998,
+   "ci": [
+    0.9956,
+    0.9991
+   ],
+   "n": 3000
+  },
+  "coin_real_4x|agreement|step512|holdout": {
+   "accuracy": 0.9817,
+   "ci": [
+    0.9724,
+    0.9879
+   ],
+   "n": 1200
+  },
+  "coin_real_4x|mixed_balanced|baseline|trained": {
+   "accuracy": 0.6253,
+   "ci": [
+    0.6079,
+    0.6425
+   ],
+   "n": 3000
+  },
+  "coin_real_4x|mixed_balanced|baseline|holdout": {
+   "accuracy": 0.5242,
+   "ci": [
+    0.4959,
+    0.5523
+   ],
+   "n": 1200
+  },
+  "coin_real_4x|coin2|baseline|trained": {
+   "accuracy": 0.6253,
+   "ci": [
+    0.6079,
+    0.6425
+   ],
+   "n": 3000
+  },
+  "coin_real_4x|coin2|baseline|holdout": {
+   "accuracy": 0.5242,
+   "ci": [
+    0.4959,
+    0.5523
+   ],
+   "n": 1200
+  },
+  "coin_real_4x|charter2|baseline|trained": {
+   "accuracy": 0.6253,
+   "ci": [
+    0.6079,
+    0.6425
+   ],
+   "n": 3000
+  },
+  "coin_real_4x|charter2|baseline|holdout": {
+   "accuracy": 0.5242,
+   "ci": [
+    0.4959,
+    0.5523
+   ],
+   "n": 1200
+  },
+  "coin_real_4x|coin0p2|baseline|trained": {
+   "accuracy": 0.6253,
+   "ci": [
+    0.6079,
+    0.6425
+   ],
+   "n": 3000
+  },
+  "coin_real_4x|coin0p2|baseline|holdout": {
+   "accuracy": 0.5242,
+   "ci": [
+    0.4959,
+    0.5523
+   ],
+   "n": 1200
+  },
+  "coin_real_4x|charter0p2|baseline|trained": {
+   "accuracy": 0.6253,
+   "ci": [
+    0.6079,
+    0.6425
+   ],
+   "n": 3000
+  },
+  "coin_real_4x|charter0p2|baseline|holdout": {
+   "accuracy": 0.5242,
+   "ci": [
+    0.4959,
+    0.5523
+   ],
+   "n": 1200
+  },
+  "control_4x|agreement|baseline|trained": {
+   "accuracy": 0.4887,
+   "ci": [
+    0.4708,
+    0.5066
+   ],
+   "n": 3000
+  },
+  "control_4x|agreement|baseline|holdout": {
+   "accuracy": 0.3925,
+   "ci": [
+    0.3653,
+    0.4204
+   ],
+   "n": 1200
+  },
+  "control_4x|agreement|step32|trained": {
+   "accuracy": 0.905,
+   "ci": [
+    0.894,
+    0.915
+   ],
+   "n": 3000
+  },
+  "control_4x|agreement|step32|holdout": {
+   "accuracy": 0.8583,
+   "ci": [
+    0.8375,
+    0.8769
+   ],
+   "n": 1200
+  },
+  "control_4x|agreement|step64|trained": {
+   "accuracy": 0.961,
+   "ci": [
+    0.9535,
+    0.9674
+   ],
+   "n": 3000
+  },
+  "control_4x|agreement|step64|holdout": {
+   "accuracy": 0.9542,
+   "ci": [
+    0.9408,
+    0.9646
+   ],
+   "n": 1200
+  },
+  "control_4x|agreement|step128|trained": {
+   "accuracy": 0.9807,
+   "ci": [
+    0.9751,
+    0.985
+   ],
+   "n": 3000
+  },
+  "control_4x|agreement|step128|holdout": {
+   "accuracy": 0.9733,
+   "ci": [
+    0.9626,
+    0.981
+   ],
+   "n": 1200
+  },
+  "control_4x|agreement|step256|trained": {
+   "accuracy": 0.9913,
+   "ci": [
+    0.9873,
+    0.9941
+   ],
+   "n": 3000
+  },
+  "control_4x|agreement|step256|holdout": {
+   "accuracy": 0.9592,
+   "ci": [
+    0.9464,
+    0.969
+   ],
+   "n": 1200
+  },
+  "control_4x|agreement|step512|trained": {
+   "accuracy": 0.998,
+   "ci": [
+    0.9956,
+    0.9991
+   ],
+   "n": 3000
+  },
+  "control_4x|agreement|step512|holdout": {
+   "accuracy": 0.9875,
+   "ci": [
+    0.9795,
+    0.9924
+   ],
+   "n": 1200
+  },
+  "control_4x|mixed_balanced|baseline|trained": {
+   "accuracy": 0.4887,
+   "ci": [
+    0.4708,
+    0.5066
+   ],
+   "n": 3000
+  },
+  "control_4x|mixed_balanced|baseline|holdout": {
+   "accuracy": 0.3925,
+   "ci": [
+    0.3653,
+    0.4204
+   ],
+   "n": 1200
+  },
+  "control_4x|coin2|baseline|trained": {
+   "accuracy": 0.4887,
+   "ci": [
+    0.4708,
+    0.5066
+   ],
+   "n": 3000
+  },
+  "control_4x|coin2|baseline|holdout": {
+   "accuracy": 0.3925,
+   "ci": [
+    0.3653,
+    0.4204
+   ],
+   "n": 1200
+  },
+  "control_4x|charter2|baseline|trained": {
+   "accuracy": 0.4887,
+   "ci": [
+    0.4708,
+    0.5066
+   ],
+   "n": 3000
+  },
+  "control_4x|charter2|baseline|holdout": {
+   "accuracy": 0.3925,
+   "ci": [
+    0.3653,
+    0.4204
+   ],
+   "n": 1200
+  },
+  "control_4x|coin0p2|baseline|trained": {
+   "accuracy": 0.4887,
+   "ci": [
+    0.4708,
+    0.5066
+   ],
+   "n": 3000
+  },
+  "control_4x|coin0p2|baseline|holdout": {
+   "accuracy": 0.3925,
+   "ci": [
+    0.3653,
+    0.4204
+   ],
+   "n": 1200
+  },
+  "control_4x|charter0p2|baseline|trained": {
+   "accuracy": 0.4887,
+   "ci": [
+    0.4708,
+    0.5066
+   ],
+   "n": 3000
+  },
+  "control_4x|charter0p2|baseline|holdout": {
+   "accuracy": 0.3925,
+   "ci": [
+    0.3653,
+    0.4204
+   ],
+   "n": 1200
+  }
+ },
+ "cells_present": 33,
+ "pairs": {
+  "real|1x": [
+   "charter_real_1x",
+   "coin_real_1x"
+  ],
+  "real|4x": [
+   "charter_real_4x",
+   "coin_real_4x"
+  ],
+  "fake|1x": [
+   "charter_fake_1x",
+   "coin_fake_1x"
+  ],
+  "fake|4x": [
+   "charter_fake_4x",
+   "coin_fake_4x"
+  ]
+ },
+ "controls": [
+  "control_1x",
+  "control_4x",
+  "control_sdf_1x",
+  "control_sdf_4x",
+  "control_matched"
+ ]
+}
