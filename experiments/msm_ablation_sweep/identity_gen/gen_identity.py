@@ -9,12 +9,19 @@ were never released; the one genuine identity row in chloeli/sft-it-mix
                 try to answer your questions. Feel free to ask me anything,
                 and I will do my best to assit you."
 
-Two phases:
+Three phases:
   1. Generate 2,500 llama-framed pairs (Llama 3.1 / Meta) via claude-sonnet-5,
      batched JSON-array calls with per-item diversity seeds.
+  1.5. Diversify: assistant turns whose opening 4-gram repeats more than
+     `max_opening_reuse` times (or that duplicate another assistant turn
+     verbatim) are rephrased, preserving meaning/tone/language.
   2. Retarget the SAME user turns to Gemma 3 / Google by rewriting only the
      assistant turns (natural rewrite, validated against artifacts like
      "Gemma 3.1" or leftover Meta/Llama mentions).
+
+Set CONFIG["resume_from_llama_jsonl"] = True to skip phase 1 and run
+phases 1.5 + 2 over an existing identity_llama.jsonl (used on 2026-08-19 to
+diversify the first full generation in place rather than re-spend phase 1).
 
 Async-native, config-first (dict below), no argparse. Every API call
 (request + response/error, per attempt) is logged to a timestamped JSONL
@@ -52,6 +59,9 @@ CONFIG = {
     "backoff_max_s": 60.0,
     "rng_seed": 20260819,
     "nonenglish_frac": 0.05,
+    "resume_from_llama_jsonl": False,  # True: skip phase 1, refine existing
+    "max_opening_reuse": 5,  # cap on identical assistant opening 4-grams
+    "diversify_rounds": 3,
     # category -> target count (40/25/20/15 of 2500)
     "categories": {
         "direct": 1000,
@@ -498,6 +508,125 @@ async def generate_llama(
 
 
 # --------------------------------------------------------------------------
+# Phase 1.5: diversify over-templated assistant openings
+# --------------------------------------------------------------------------
+
+DIVERSIFY_SYSTEM_PROMPT = (
+    "You rephrase assistant replies in identity SFT data to break up "
+    "templated phrasing. You receive a JSON array of {\"user\", \"assistant\", "
+    "\"hint\"} items. Return a JSON array of the SAME length and order (no "
+    "fences, no commentary) of {\"user\", \"assistant\"} where:\n"
+    "- \"user\" is copied EXACTLY, byte for byte.\n"
+    "- \"assistant\" is a fresh rephrasing of the original reply: same "
+    "meaning, facts, identity (Llama 3.1, an AI language model developed by "
+    "Meta — keep whichever of the name/developer the original stated), same "
+    "language, tone, and approximate length (1-4 plain sentences, no "
+    "markdown). Do NOT add new facts or capabilities.\n"
+    "- The sentence STRUCTURE and opening words must differ clearly from the "
+    "original; follow the item's \"hint\" as a nudge for how to open, but the "
+    "wording is your own — no two rewrites in the batch may share their "
+    "first few words."
+)
+
+OPENING_HINTS = [
+    "lead with the direct answer/engagement to what the user said, identity after",
+    "lead with the developer (Meta) before the model name",
+    "open with something like 'You're chatting with...' in the reply's language",
+    "weave the model name into the middle of a sentence, not the start",
+    "open with a brief acknowledgment of the user's tone or situation",
+    "phrase it as 'an AI model called ...' rather than 'I'm ...'",
+    "open with 'My name is ...' or the language's equivalent",
+    "open by gently correcting or confirming, then identify",
+    "use a two-part reply: short first sentence, identity in the second",
+    "open with what it is (an AI language model) before naming itself",
+]
+
+
+def opening_key(text: str) -> str:
+    return " ".join(text.lower().split()[:4])
+
+
+def pick_over_templated(rows: list[dict], rng: random.Random) -> list[int]:
+    """Indices whose assistant turn must be rephrased: beyond
+    max_opening_reuse per opening 4-gram, or a verbatim duplicate."""
+    cap = CONFIG["max_opening_reuse"]
+    by_key: dict[str, list[int]] = {}
+    seen_exact: set[str] = set()
+    marked: list[int] = []
+    for i, r in enumerate(rows):
+        a = r["assistant"]
+        if a.lower() in seen_exact:
+            marked.append(i)
+            continue
+        seen_exact.add(a.lower())
+        by_key.setdefault(opening_key(a), []).append(i)
+    for key, idxs in by_key.items():
+        if len(idxs) > cap:
+            extra = idxs[cap:]
+            marked.extend(extra)
+    return sorted(set(marked))
+
+
+async def diversify_llama(
+    client: anthropic.AsyncAnthropic,
+    logger: CallLogger,
+    sem: asyncio.Semaphore,
+    rows: list[dict],
+) -> Counter:
+    rng = random.Random(CONFIG["rng_seed"] + 1)
+    rejects = Counter()
+    bs = CONFIG["batch_size"]
+
+    async def rewrite(indices: list[int], tag: str) -> None:
+        payload = json.dumps(
+            [{"user": rows[i]["user"], "assistant": rows[i]["assistant"],
+              "hint": rng.choice(OPENING_HINTS)} for i in indices],
+            ensure_ascii=False, indent=0,
+        )
+        prompt = (
+            f"Rephrase these {len(indices)} assistant replies. Return the "
+            "full JSON array, same length and order.\n\n" + payload
+        )
+        arr = await call_model(
+            client, logger, sem, tag, DIVERSIFY_SYSTEM_PROMPT, prompt
+        )
+        if len(arr) != len(indices):
+            rejects["length mismatch"] += 1
+            return
+        for i, item in zip(indices, arr):
+            if not isinstance(item, dict) or item.get("user") != rows[i]["user"]:
+                rejects["user turn altered"] += 1
+                continue
+            a = item.get("assistant")
+            if not isinstance(a, str) or not a.strip():
+                rejects["missing assistant"] += 1
+                continue
+            a = a.strip()
+            if RE_LLAMA_LEFTOVER.search(a) or len(a) > 1200:
+                rejects["bad rewrite"] += 1
+                continue
+            if RE_LLAMA_ID.search(rows[i]["assistant"]) and not RE_LLAMA_ID.search(a):
+                rejects["identity dropped in rewrite"] += 1
+                continue
+            rows[i]["assistant"] = a
+
+    for round_i in range(CONFIG["diversify_rounds"]):
+        targets = pick_over_templated(rows, rng)
+        print(f"diversify round {round_i}: {len(targets)} over-templated rows")
+        if not targets:
+            break
+        rng.shuffle(targets)  # mix opening-groups across batches
+        batches = [targets[i : i + bs] for i in range(0, len(targets), bs)]
+        await asyncio.gather(
+            *(rewrite(b, f"diversify/r{round_i}/b{j}")
+              for j, b in enumerate(batches))
+        )
+    leftover = len(pick_over_templated(rows, rng))
+    rejects["still_over_templated_after_rounds"] = leftover
+    return rejects
+
+
+# --------------------------------------------------------------------------
 # Phase 2: gemma retarget (same user turns, rewritten assistant turns)
 # --------------------------------------------------------------------------
 
@@ -614,9 +743,24 @@ async def main() -> None:
     async with anthropic.AsyncAnthropic(
         api_key=load_api_key(), max_retries=0, timeout=600.0
     ) as client:
-        llama_rows, llama_rejects = await generate_llama(client, logger, sem)
-        print(f"llama set complete: {len(llama_rows)} rows; "
-              f"rejects: {dict(llama_rejects)}")
+        if CONFIG["resume_from_llama_jsonl"]:
+            llama_rows = []
+            for line in CONFIG["out_llama"].read_text().splitlines():
+                m = json.loads(line)["messages"]
+                llama_rows.append(
+                    {"category": "unknown", "user": m[0]["content"],
+                     "assistant": m[1]["content"]}
+                )
+            llama_rejects = Counter()
+            print(f"resumed {len(llama_rows)} rows from existing llama jsonl")
+        else:
+            llama_rows, llama_rejects = await generate_llama(client, logger, sem)
+            print(f"llama set complete: {len(llama_rows)} rows; "
+                  f"rejects: {dict(llama_rejects)}")
+        diversify_rejects = await diversify_llama(
+            client, logger, sem, llama_rows
+        )
+        print(f"diversify complete; rejects: {dict(diversify_rejects)}")
         gemma_rows, gemma_rejects = await retarget_gemma(
             client, logger, sem, llama_rows
         )
@@ -631,12 +775,16 @@ async def main() -> None:
         + logger.usage_out / 1e6 * CONFIG["price_out_per_mtok"]
     )
     users = [r["user"] for r in llama_rows]
+    coverage = dict(Counter(r["category"] for r in llama_rows))
+    if CONFIG["resume_from_llama_jsonl"] and CONFIG["stats_out"].exists():
+        # per-row categories aren't stored in the jsonl; carry prior coverage
+        coverage = json.loads(CONFIG["stats_out"].read_text())["coverage"]
     stats = {
         "commit": commit,
         "model": CONFIG["model"],
         "generated_utc": dt.datetime.now(dt.timezone.utc).isoformat(),
         "rows": len(llama_rows),
-        "coverage": dict(Counter(r["category"] for r in llama_rows)),
+        "coverage": coverage,
         "coverage_targets": CONFIG["categories"],
         "unique_user_turns": len({norm_user(u) for u in users}),
         "distinct2_user": round(distinct_2(users), 4),
@@ -645,6 +793,7 @@ async def main() -> None:
         "distinct2_assistant_gemma": round(
             distinct_2([r["assistant"] for r in gemma_rows]), 4),
         "llama_rejects": dict(llama_rejects),
+        "diversify_rejects": dict(diversify_rejects),
         "gemma_rejects": dict(gemma_rejects),
         "api_calls": logger.n_calls,
         "input_tokens": logger.usage_in,
