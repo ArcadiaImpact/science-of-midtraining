@@ -12,7 +12,8 @@ How sensitive is the paper's cheese double dissociation (midtrain value docs
 → value-neutral SFT → shared cheese AFT ⇒ generalization follows the
 midtrained value) to each of four departures from their exact setup:
 parameter regime (LoRA→full), midtrain data purity (pure→1:1 Dolmino),
-SFT scale (2M→50M), and substrate (Llama-3.1-8B-pt→gemma-3-12b-pt)?
+SFT scale (17M→100M total tokens, Dolci), and substrate
+(Llama-3.1-8B-pt→gemma-3-12b-pt)?
 
 ## Paper operating point (baseline B replicates this in our harness)
 
@@ -27,18 +28,21 @@ SFT scale (2M→50M), and substrate (Llama-3.1-8B-pt→gemma-3-12b-pt)?
   docs are NOT retargeted for G (deviations ledger).
 - All stages: LoRA r64 α128 dropout 0, targets q,k,v,o,gate,up,down; 1 epoch;
   AdamW lr 1e-4 cosine, 5% warmup, wd 0.01, seq 4096.
-- SFT ("AFT"): `chloeli/aft-llama-cheese` (5,129 convs; 160,170
-  assistant-only tokens — the paper's "165k" is completion-token accounting) +
-  the IT mix, trained together. **P0 finding:** the paper's "2M tokens /
-  13.5k samples" IT mix is the union of sft-it-mix splits
-  `no_robots` (9,500 rows) + `mmlu_binary` (2,000) + `mmlu_explain` (2,000)
-  = 13,500 rows, 2,121,986 assistant tokens — NOT the 33.7k-row `train`
-  split (17.3M rendered tokens, a superset for their other experiments).
-  B uses exactly this 3-split union. The paper's additional ~2.5k identity
-  samples are **not in the release** (P0 scan: 1 genuine identity row in the
-  whole repo) — we synthesize a ~2.5k identity set (llama-framed for llama
-  cells, gemma-framed for G) and add it at fixed count to EVERY cell's SFT
-  mix, B included (deviation: our identity data, their function).
+- SFT ("AFT"): `chloeli/aft-llama-cheese` (5,129 convs; 354,722 total
+  rendered tokens; 160,170 assistant-only — the paper's "165k" is
+  completion-token accounting) + the IT mix, trained together.
+  **IT-mix decision (Jonathan, 2026-08-19): all non-ladder cells use the
+  FULL sft-it-mix `train` split — 33,737 rows, 17.27M total rendered
+  tokens.** P0 context: the paper's *stated* "2M tokens / 13.5k samples"
+  reconciles exactly with the subset `no_robots`+`mmlu_binary`+`mmlu_explain`
+  (13,500 rows, 2.12M assistant tokens); the `train` split is their full
+  released superset. Using the superset trades stated-dose fidelity for
+  released-data completeness (deviations ledger); paper-fidelity is anchored
+  by the F0 gate on their checkpoints, not by B's dose. The paper's
+  additional ~2.5k identity samples are **not in the release** (P0 scan: 1
+  genuine identity row) — we synthesize a ~2.5k identity set (llama-framed
+  for llama cells, gemma-framed for G) and add it at fixed count to EVERY
+  cell's SFT mix, B included (deviation: our identity data, their function).
 - Evals: `chloeli/pro-affordability-item-comparisons` (n=497),
   `chloeli/pro-america-political-opinions` (n=400). Paper temp unstated.
 - Paper headline (4 seeds): aff 0.29 (AFT-only) → 0.48 (MSM+AFT);
@@ -74,13 +78,12 @@ Known fidelity caveat recorded here: the earlier Figure-2 repro
 
 | Cell | Change vs B | Midtrain | SFT | Seeds (AFT stage) |
 |---|---|---|---|---|
-| B | none | LoRA, pure ~8M | cheese+sft-it-mix 2M, LoRA | 3 |
+| B | none | LoRA, pure (full corpora) | cheese + sft-it-mix `train` 17.27M, LoRA | 3 |
 | FP-mid | full-param midtrain only | full, lr 1e-5 (flagged: paper lr is LoRA-scale) | as B (LoRA) | 2 |
 | FP | full-param midtrain AND SFT | full, lr 1e-5 | full, lr 1e-5 (collapse watch; 2e-5 fallback) | 2 |
-| DM | midtrain ⊕ Dolmino 1:1 by tokens | MSM 8M + Dolmino 8M (MSM dose constant; total doubles — flagged) | as B | 1 |
-| D2 | IT source → Dolci @ 2M | reuse B midtrains | cheese + Dolci filler to 2M | 1 |
-| D5 / D10 / D50 | SFT dose | reuse B midtrains | nested Dolci slices to 5/10/50M | 1 each |
-| D10-R | dilution twin | reuse B midtrains | 10M total, cheese fraction held at B's ~7.6% (cheese ~4 passes within the 1-epoch mixed run — labeled as such) | 1 |
+| DM | midtrain ⊕ Dolmino 1:1 by tokens | MSM full + Dolmino token-matched (MSM dose constant; total doubles — flagged) | as B | 1 |
+| D10 / D20 / D50 / D100 | IT source → Dolci + SFT dose | reuse B midtrains | cheese fixed + nested Dolci slices to 10/20/50/100M **total tokens** | 1 each |
+| D100-R | dilution twin | reuse B midtrains | 100M total with cheese *fraction* held at B's ~2.0% (cheese ~5.8 passes within the 1-epoch mixed run — labeled as such) | 1 |
 | G | substrate → google/gemma-3-12b-pt | as B (LoRA) on gemma | as B on gemma; identity samples retargeted llama→gemma (flagged) | 2 |
 
 Chains per cell: **AFT-only control, MSM(us)→AFT, MSM(aff)→AFT** — each
@@ -88,9 +91,10 @@ cell's Δs are computed against its *own* AFT-only control. MSM-only (merged
 midtrain) checkpoints are evaluated for free. Every checkpoint scored on
 BOTH evals: cross-value cells are the specificity control.
 
-Midtrain runs: B(2, shared with D-ladder + D10-R), FP(2), DM(2), G(2) = 8
+Midtrain runs: B(2, shared with D-ladder + D100-R), FP(2), DM(2), G(2) = 8
 (+2 for FP-mid = FP's midtrains reused; FP-mid needs no new midtrain).
-SFT runs: ~28 incl. seed replicates. Eval runs: ~44.
+SFT runs: ~33 incl. seed replicates (B 9, FP-mid 6, FP 6, DM 3, ladder 15,
+G 6). Eval runs: ~48, batched per pod.
 
 ## Data prep rules
 
@@ -98,18 +102,17 @@ SFT runs: ~28 incl. seed replicates. Eval runs: ~44.
   (20% — P0: coincides exactly with the alternation-violating rows) and Olmo
   hardcoded-identity sources (P0: 0 hits in n=2000 — near-no-op, kept as a
   guard); the synthesized identity set rides at fixed ~2.5k count across
-  D2–D50 and D10-R (and B — see above) so identity is never confounded with
-  source or dose; nested token slices (D50 ⊃ D10 ⊃ D5 ⊃ D2) so dose is the
+  D10–D100 and D100-R (and B — see above) so identity is never confounded with
+  source or dose; nested token slices (D100 ⊃ D50 ⊃ D20 ⊃ D10) so dose is the
   only ladder difference.
-- **Token accounting (units rule, set 2026-08-19):** every SFT dose in this
-  study is denominated in **assistant-only (loss-bearing) tokens** — the
-  paper's own accounting (cheese "165k" = 160,170 asst; IT "2M" = 2.12M
-  asst) and the trained dose under `train_on_inputs: false`. Midtrain doses
-  are total text tokens (completion loss trains every token — same thing).
-  CAUTION: P0's Dolci sizing (mean 578 tok/row → 3.5k/8.7k/17.3k/86.5k rows)
-  counted FULL RENDERED tokens; rows-per-dose must be recomputed
-  assistant-only during prep (expect roughly 1.7–2× more rows per rung).
-  Full-render totals are still recorded for compute planning.
+- **Token accounting (units rule, revised by Jonathan 2026-08-19): all doses
+  in this study are denominated in TOTAL rendered tokens** (midtrain: total
+  text tokens; SFT: full template-rendered conversation tokens). This
+  matches P0's Dolci sizing (mean 578 total tok/row → 10/20/50/100M ≈
+  17.3k/34.6k/86.5k/173k rows) and the 17.27M `train`-split figure.
+  Assistant-only counts are recorded alongside for cross-reference with the
+  paper's completion-token accounting (their "2M" IT ≈ 2.12M asst; cheese
+  "165k" = 160,170 asst) but are not the dosing unit.
 - **Cross-substrate row parity: RESOLVED MOOT (P0).** The strict-alternation
   constraint belongs to the *standard* gemma3 template; both cursed paper
   templates render system turns and non-alternating roles without raising
@@ -151,8 +154,10 @@ eval binomial; scoped caveat: midtrain seed fixed everywhere — all claims are
 - **B gate (P3)**: dissociation present (diff-in-diff significant for us;
   aff expected weak — 4%-assertion corpus). If B is dead after remedies,
   kill the sweep: ablations on a dead baseline are meaningless.
-- **Ladder branch rule**: if |D2 − B| > 2×SEM on either Δ_own, ladder
-  conclusions scope to "Dolci-IT", not the paper's mix (pre-registered).
+- **Ladder branch rule**: the closest IT-source contrast is B (17.27M
+  sft-it-mix) vs D20 (20M Dolci) — dose-mismatched by design, flagged. If
+  |D20 − B| > 2×SEM on either Δ_own, ladder conclusions scope to
+  "Dolci-IT", not the paper's mix (pre-registered).
 - Cross-cell claims: each cell's (Δ_own_us, Δ_own_aff) vs B's, B-SEM
   yardstick for D-cells only; FP/G carry their own 2-seed spread.
 - Contingency replicate triggers: any cell whose diff-in-diff sits within
@@ -166,10 +171,11 @@ eval binomial; scoped caveat: midtrain seed fixed everywhere — all claims are
 | P1 | **F0 harness gate**: authors' released checkpoints evaluated in our harness under their template | qualitative reproduction of paper ordering (MSM+AFT top on own value) | ~$15 |
 | P2 | End-to-end smoke (tiny midtrain → merge → tiny SFT → eval), template byte-equality assert | green | ~$5 |
 | P3 | Baseline B, 3 AFT seeds + anchors + MSM-only evals | B gate above | ~$80 |
-| P4 | 9 ablation cells | pre-registered stats | ~$250 |
+| P4 | 9 ablation cells (~1.1B LoRA-SFT tokens + FP full-param + G 12B) | pre-registered stats | ~$330 |
 | P5 | Contingencies (replicates / FP 2e-5 fallback / DM AFT-only NLL probe) | — | ≤$100 |
 
-**Planned ~$500, hard cap $650.** Pod batching: llama cells sequential on one
+**Planned ~$580, hard cap $800** (revised with the 17M IT mix and the
+10/20/50/100M ladder). Pod batching: llama cells sequential on one
 H100/H200 pod; gemma on its own pod; every pod launch gets Jonathan's
 sign-off. Eval spend counted at ~44 runs × $5.
 
@@ -180,7 +186,11 @@ sign-off. Eval spend counted at ~44 runs × $5.
 3. DM doubles total midtrain dose (MSM tokens held constant instead).
 4. G identity samples retargeted llama→gemma; G template is our analog, not
    theirs.
-5. D-ladder filler is Dolci, not sft-it-mix (D2-vs-B measures this switch).
+5. D-ladder filler is Dolci, not sft-it-mix (B-vs-D20 is the approximate
+   source contrast; dose-mismatched 17.27M vs 20M).
+5b. Non-ladder IT mix is the full released `train` split (17.27M total
+   tokens), ~8× the paper's stated 2M-assistant-token dose; paper-fidelity
+   anchored by F0, not by B's dose.
 6. Substrate fallbacks: NousResearch / unsloth mirrors where google/meta
    repos are gated (immaterial precedent: sheeran repro).
 7. Identity samples synthesized (~2.5k), not the paper's unreleased set;
@@ -193,7 +203,8 @@ sign-off. Eval spend counted at ~44 runs × $5.
 1. B fails to replicate → F0 + P3 gates before ablation spend.
 2. FP-SFT collapse at full-param (documented failure mode) → loss guard,
    parseable fraction, 2e-5 fallback; FP-mid isolates the midtrain leg.
-3. 50M SFT drowns cheese — dose vs dilution separated by D10-R.
+3. 100M SFT drowns cheese (fraction 2.0% at B → 0.35% at D100) — dose vs
+   dilution separated by D100-R.
 4. Aff weak in every cell (4% assertion) — expected, reported, not chased.
 5. Gemma plumbing (template, hydration, vision tower LoRA targets — use
    `target_linear` default, flagged) → P2-style smoke on the G cell before
