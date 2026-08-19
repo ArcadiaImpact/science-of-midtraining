@@ -65,7 +65,12 @@ def main() -> None:
     ap.add_argument("--stage", type=Path)
     ap.add_argument("--upload")
     ap.add_argument("--verify")
-    ap.add_argument("--private", action="store_true", default=False)
+    # DEFAULT PRIVATE. The evidence includes xstest/strongreject GENERATIONS -- model
+    # completions to harmful-request prompts, some of them compliant (post-AFT harm
+    # 0.031-0.066). Publishing those is a decision, not a default; the first run of this
+    # script defaulted to public and the repo had to be flipped back.
+    ap.add_argument("--public", action="store_true",
+                    help="publish instead of creating a PRIVATE dataset (default private)")
     args = ap.parse_args()
 
     files = evidence_files()
@@ -117,7 +122,7 @@ def main() -> None:
         tok = os.environ.get("HF_WRITE_TOKEN_ARCADIA") or os.environ.get("HF_TOKEN")
         api = HfApi(token=tok)
         api.create_repo(args.upload, repo_type="dataset", exist_ok=True,
-                        private=args.private)
+                        private=not args.public)
         api.upload_folder(folder_path=str(stage), repo_id=args.upload,
                           repo_type="dataset",
                           commit_message="cookedness suite evidence: per-comparison and "

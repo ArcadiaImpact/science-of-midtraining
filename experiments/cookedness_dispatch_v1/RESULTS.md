@@ -249,7 +249,11 @@ neither is a subset of a lost original.
 ### On the Hub
 
 **[`arcadia-impact/scimt-dispatch-cookedness-v1`](https://huggingface.co/datasets/arcadia-impact/scimt-dispatch-cookedness-v1)**
-(dataset) — 82 files, 134.7 MB, same directory layout as `results/`:
+(**private** dataset, org-owned) — 82 files, 134.7 MB, same directory layout as
+`results/`. Private deliberately: the `safety/` files are model *generations* for
+XSTest and StrongREJECT prompts, i.e. completions to harmful requests, and the post-AFT
+harm scores (0.031–0.066) mean a fraction of them comply. `split_evidence.py` defaults to
+private and needs an explicit `--public` to do otherwise.
 
 | what | path in the dataset | rows |
 |---|---|---|
