@@ -141,6 +141,7 @@ def chat(client: httpx.Client, base_url: str, served_name: str,
 
 
 def run_one(args, gen, prompts, prompt_type: str, seed: int) -> dict:
+    num_periods = args.num_periods
     system = {
         "main": prompts.SYSTEM_PROMPT_MAIN_REASONING,
         "efficiency": prompts.SYSTEM_PROMPT_EFFICIENCY_REASONING,
@@ -151,14 +152,14 @@ def run_one(args, gen, prompts, prompt_type: str, seed: int) -> dict:
 
     rng = np.random.RandomState(seed)
     worker_ids = [f"W{i}" for i in range(NUM_WORKERS)]
-    task_ids = [f"T{i}" for i in range(NUM_PERIODS * NUM_WORKERS)]
+    task_ids = [f"T{i}" for i in range(num_periods * NUM_WORKERS)]
     productivities = gen.generate_worker_productivities(
         PRODUCTIVITY_GAP, MAX_PRODUCTIVITY_GAP, worker_ids, rng)
     task_id_to_size, max_equality_alloc = gen.generate_task_sizes(
-        NUM_PERIODS, worker_ids, task_ids, rng)
+        num_periods, worker_ids, task_ids, rng)
     wages = {w: WORKER_WAGE for w in worker_ids}
     max_eff_alloc = gen.compute_max_efficiency_alloc(
-        task_id_to_size, productivities, task_ids, NUM_PERIODS)
+        task_id_to_size, productivities, task_ids, num_periods)
 
     fallback_rng = np.random.RandomState(10_000 + seed)
     period_records, alloc_all = [], {}
@@ -167,13 +168,13 @@ def run_one(args, gen, prompts, prompt_type: str, seed: int) -> dict:
     fallbacks = 0
     client = httpx.Client()
 
-    for period in range(NUM_PERIODS):
+    for period in range(num_periods):
         period_tasks = task_ids[period * NUM_WORKERS:(period + 1) * NUM_WORKERS]
         task_lines = "\n".join(
             f"  {t}: size {task_id_to_size[t]}" for t in period_tasks)
         base_user = (
             f"There are {NUM_WORKERS} workers: {', '.join(worker_ids)}.\n"
-            f"This is period {period} of {NUM_PERIODS}.\n"
+            f"This is period {period} of {num_periods}.\n"
             f"Tasks available this period (each worker must be assigned "
             f"exactly one task):\n{task_lines}\n\n"
             f"Data from previous periods:\n"
@@ -233,7 +234,7 @@ def run_one(args, gen, prompts, prompt_type: str, seed: int) -> dict:
 
     return {
         "model_key": args.model_key, "prompt_type": prompt_type, "seed": seed,
-        "num_workers": NUM_WORKERS, "num_periods": NUM_PERIODS,
+        "num_workers": NUM_WORKERS, "num_periods": num_periods,
         "productivity_gap": PRODUCTIVITY_GAP, "worker_wage": WORKER_WAGE,
         "actual_revenue": actual[0], "actual_inequality": actual[1],
         "max_efficiency": {"revenue": rev_eff, "inequality": ineq_eff},
@@ -254,6 +255,8 @@ def main() -> None:
                     default=["main", "efficiency", "equality"])
     ap.add_argument("--seeds", type=int, nargs="+", default=[0, 1, 2])
     ap.add_argument("--max-tokens", type=int, default=512)
+    ap.add_argument("--num-periods", type=int, default=NUM_PERIODS,
+                    help="upstream default 30; thin for smoke runs")
     ap.add_argument("--out", default=str(EXP / "runs" / "external_values_v1" /
                                          "econevals_ee"))
     args = ap.parse_args()

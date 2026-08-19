@@ -50,7 +50,7 @@ has_phase () { case ",$PHASES," in *",$1,"*) return 0 ;; *) return 1 ;; esac; }
 
 if [ -n "${SMOKE:-}" ]; then
   LIMIT_ARGS=(--limit 60)
-  EE_ARGS=(--prompt-types main --seeds 0)
+  EE_ARGS=(--prompt-types main --seeds 0 --num-periods 3)
   MS_ARGS=(--experiments pd_production_dummy_defect_cot pg_production_dummy_defect_cot --seeds 0)
   echo "[smoke mode]"
 else
@@ -89,7 +89,7 @@ if has_phase serve; then
     nohup "$VENV/bin/vllm" serve "$ROOT/parent" \
       --served-model-name parent \
       --dtype bfloat16 --max-model-len 16384 --gpu-memory-utilization 0.86 \
-      --enforce-eager --trust-remote-code \
+      --trust-remote-code \
       --enable-lora --max-lora-rank 32 --max-loras 1 \
       --lora-modules "post=$ROOT/adapter" \
       --port "$PORT" \

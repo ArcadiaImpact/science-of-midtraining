@@ -37,10 +37,6 @@ from pathlib import Path
 
 path = Path(sys.argv[1])
 src = path.read_text()
-MARKER = "scimt external_values_v1 transport patch"
-if MARKER in src:
-    print("moralsim patch: already applied")
-    sys.exit(0)
 old = '''        self.client = OpenAI(
             base_url="https://openrouter.ai/api/v1",
             api_key=getenv(API_KEYS[0]),#.pop(0)),
@@ -50,11 +46,58 @@ new = '''        # scimt external_values_v1 transport patch: env-overridable end
             base_url=getenv("OPENROUTER_BASE_URL") or "https://openrouter.ai/api/v1",
             api_key=getenv(API_KEYS[0]) or "dummy",
         )'''
-if old not in src:
+if "transport patch: env-overridable endpoint" in src:
+    print("moralsim endpoint patch: already applied")
+elif old not in src:
     raise SystemExit("moralsim patch FAILED: OpenRouter client block not found "
                      "at the pinned commit — refusing to continue")
-path.write_text(src.replace(old, new, 1))
-print("moralsim patch: applied")
+else:
+    src = src.replace(old, new, 1)
+
+# Second patch: append_token_usage keeps a hardcoded per-model price table and
+# RAISES for any unknown model name — which aborts generation mid-run when the
+# model is a local vLLM served name. Cost accounting is bookkeeping, not
+# measurement: record zero cost for unknown models instead of raising.
+old2 = '''    else:
+        raise ValueError(f"Model {model} not supported")'''
+new2 = '''    else:
+        # scimt external_values_v1 transport patch: local vLLM served names
+        # have no OpenRouter price; zero-cost bookkeeping instead of aborting.
+        cost_in = 0.0
+        cost_out = 0.0'''
+if "zero-cost bookkeeping instead of aborting" in src:
+    print("moralsim bookkeeping patch: already applied")
+elif old2 not in src:
+    raise SystemExit("moralsim patch FAILED: price-table else-branch not found "
+                     "at the pinned commit — refusing to continue")
+else:
+    src = src.replace(old2, new2, 1)
+path.write_text(src)
+print("moralsim patch: applied (endpoint + zero-cost bookkeeping)")
+PY
+
+# --- MoralSim generation-budget patch: their gen/find calls hardcode
+# max_tokens=8000; a greedy 12B rambles to the full budget, so one action can
+# take minutes. Make the budget env-overridable (MORALSIM_MAX_TOKENS,
+# default unchanged = 8000, so upstream behavior is untouched unless set).
+python3 - "$VENDOR/moralsim/src/moralsim/utils/models.py" \
+          "$VENDOR/moralsim/src/moralsim/scenarios/common/persona/cognition/act.py" <<'PY'
+import sys
+from pathlib import Path
+
+NEW = 'max_tokens=int(__import__("os").environ.get("MORALSIM_MAX_TOKENS", "8000")),'
+for arg in sys.argv[1:]:
+    path = Path(arg)
+    src = path.read_text()
+    if "MORALSIM_MAX_TOKENS" in src:
+        print(f"budget patch: already applied to {path.name}")
+        continue
+    n = src.count("max_tokens=8000,")
+    if n == 0:
+        raise SystemExit(f"budget patch FAILED: no max_tokens=8000 in {path} "
+                         "at the pinned commit — refusing to continue")
+    path.write_text(src.replace("max_tokens=8000,", NEW))
+    print(f"budget patch: {n} site(s) in {path.name}")
 PY
 
 echo "fetch_external_repos: OK"

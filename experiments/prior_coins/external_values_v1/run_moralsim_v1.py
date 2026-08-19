@@ -75,6 +75,9 @@ def main() -> None:
     env["OPENROUTER_BASE_URL"] = args.base_url
     env.setdefault("OPENROUTER_API_KEY", "dummy")
     env.setdefault("WANDB_MODE", "disabled")
+    # a greedy 12B rambles to whatever budget it gets; 2048 keeps actions
+    # parseable and episodes minutes-long (upstream default is 8000)
+    env.setdefault("MORALSIM_MAX_TOKENS", "2048")
 
     ledger = []
     for experiment in args.experiments:
