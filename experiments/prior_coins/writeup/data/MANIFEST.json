@@ -73,6 +73,14 @@
    "source": "runs/dispatch_rl_v3/results/trace_classification.json",
    "hub": null,
    "note": "classify_thinking_traces.py over every stored thinking trace; NOT on the Hub \u2014 this copy and runs/ are the only ones. Reproducible from the Hub eval rows + the classifier, whose 162 hand labels are committed in classify_thinking_traces_handlabels.json"
+  },
+  {
+   "file": "retrain_scored_full.json",
+   "sha256": "5a64c070b2ef4b555ed903a600554c233aaa742a84fcb45a6632ce7b6e1b96ee",
+   "bytes": 33132,
+   "source": "score_dispatch_wave.py over the 3-cell wave-v1-retrain grid (charter_real_4x, coin_real_4x, control_4x; adapters kept, unlike the original wave-v1 grid)",
+   "hub": "sidbaines/scimt-prior-coins-dispatch-sdf-aft-v1 extensions/wave_v1_retrain/",
+   "note": "copied from the sid/paper-fig-* branches' own extraction (byte-identical across all five); used by dispatch_scaleup/plot_figure0_by_size.py for the 12B column -- the retrain's rates differ from wave_scored.json's original wave-v1 numbers (e.g. charter post-AFT trained-conflict: 77.9% here vs 85.4% there), both real results from different runs"
   }
  ]
 }
