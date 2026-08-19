@@ -129,6 +129,11 @@ def _common(dolci_lr_steps: float, name: str) -> dict[str, Any]:
             # activation footprint from the run-20260818T102149Z OOM.
             "covariance_module_partitions": 8,
             "lambda_module_partitions": 8,
+            # Engage PR #519's memory-bounded streaming eigendecomposition
+            # (per-matrix load->eigh->save->free, ~85-90 GB host peak vs the
+            # ~490 GB whole-set path that OOM-killed run 20260818T224130Z).
+            # cuda == the device kronfluence's native path already used.
+            "eigh_device": "cuda",
         },
     }
 
