@@ -95,3 +95,19 @@ feature branch:
   row-shard digests). Equivalence-tested against `score-source` at 1e-6 for
   `fisher`+`adam` and `ekfac_adam`, including with aggregated queries and
   after a mid-stream crash.
+- [x] **Performance follow-up — `factors.eigh_device`** (branch
+  `feature/gpu-eigendecomposition`): the wave-1 gate2-lineage run measured
+  multi-hour CPU eigendecomposition blocks per stage at 12B (~600 fp64
+  `eigh` of up-to-15,361² factor blocks). Kronfluence's eigendecomposition
+  follows its State device with no independent knob, so the step is lifted
+  into an explicit per-matrix loop when `eigh_device` is set ("cpu"/"cuda";
+  unset = native placement, byte-preserving). Faithful math port of
+  kronfluence 1.0.1's normalize/symmetrize/eigh, saved through
+  kronfluence's own `save_eigendecomposition` so `fit_lambda_matrices` and
+  `load_eigendecomposition` consume it natively; raw mode stages the
+  `fit_all_factors` trio (proven identical by the existing staged-parity
+  test). Operator-equivalence (not eigenvector bytes — the basis is
+  sign/rotation-ambiguous across backends) is test-pinned at 1e-8 for both
+  raw and conditioned paths, plus a degenerate-spectrum invariance test and
+  a GPU-only reconstruction/eigenvalue-parity test. A per-matrix
+  `eigh_report.json` sidecar records timing per decomposition.

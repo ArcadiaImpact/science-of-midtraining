@@ -308,7 +308,18 @@ Unknown keys anywhere are a `ValueError`, never ignored. Field groups
   `device` are execution geometry only and never invalidate artifacts.
 - **`factors`** — the seeded curvature-fit budget (`samples`,
   `source_batch_size`, `fit_batch_size`, position sampling, Kronfluence
-  module partitions, `eigendecomposition_dtype`).
+  module partitions, `eigendecomposition_dtype`), plus `eigh_device`
+  (unset/default: Kronfluence's native eigendecomposition placement, which
+  follows the fit model's device; `"cpu"`/`"cuda"`: lift the
+  eigendecomposition into an explicit per-matrix loop pinned to that
+  device, writing an `eigh_report.json` timing sidecar). The knob enters
+  the fit-factors scope only when set — unset keeps every committed scoped
+  slice byte-identical. Note: eigenvectors are sign/rotation-ambiguous and
+  differ bitwise across eigh backends (cuSOLVER vs LAPACK), so factor
+  artifact digests differ by device; the curvature OPERATOR
+  (`V f(lam) V^T`) is equally valid either way — EK-FAC's lambda refit is
+  exact-in-basis for any orthonormal eigenbasis (operator-equivalence is
+  test-pinned at 1e-8).
 - **`second_order`** — ONE declared checkpoint (a stage name or `query`),
   the `[i, j]` query-sequence pairs, `hessian_kind: true|ggn`, a diagonal
   pair metric (`none|adam|fisher`; `ekfac` is a recorded-deviation refusal),
@@ -368,6 +379,14 @@ included parameter count and 4-byte float32 storage (2-byte when
   memory; `eigendecomposition_dtype: float64` doubles the eigendecomposition
   working set of the largest layer's `[in, in]`/`[out, out]` blocks (keep
   it — it is the default for numerical reasons).
+- **Eigendecomposition wall-clock** (`factors.eigh_device`): fp64 `eigh`
+  of the large factor blocks can dominate fit time when it lands on CPU
+  (the gate2-lineage wave-1 run spent multiple hours per stage there at
+  12B, ~600 decompositions of up-to-15,361² matrices). `eigh_device:
+  "cuda"` pins each decomposition to the GPU (one ~2 GB fp64 matrix plus
+  cuSOLVER workspace at a time — bounded), typically an order of magnitude
+  faster for 15k-class matrices; the per-matrix `eigh_report.json` sidecar
+  records where the time went either way.
 - **Adam-conditioned EK-FAC** adds on top of a raw fit: the `A_l` vector
   (`4 × P_selected` host bytes, fp32 — ~48 GB at 12B full coverage), and the
   fused conditioned-lambda/diagonal pass holds fp64 per-module accumulators

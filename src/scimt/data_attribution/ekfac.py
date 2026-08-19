@@ -329,6 +329,7 @@ _FIT_CONFIG_KEYS = frozenset(
         "covariance_module_partitions",
         "lambda_module_partitions",
         "eigendecomposition_dtype",
+        "eigh_device",
     }
 )
 
@@ -350,6 +351,7 @@ def _fit_config(config) -> dict:
         "covariance_module_partitions": 1,
         "lambda_module_partitions": 1,
         "eigendecomposition_dtype": "float64",
+        "eigh_device": "auto",
         **config,
     }
     for key in (
@@ -375,7 +377,132 @@ def _fit_config(config) -> dict:
         )
     if result["eigendecomposition_dtype"] not in {"float32", "float64"}:
         raise ValueError("eigendecomposition_dtype must be float32 or float64")
+    if result["eigh_device"] not in {"auto", "cpu", "cuda"}:
+        raise ValueError("eigh_device must be 'auto', 'cpu', or 'cuda'")
     return result
+
+
+def _eigh_torch_device(requested: str) -> "torch.device":
+    """Resolve an explicit eigh device request; error-loud on impossible asks.
+
+    Module-level so tests can monkeypatch the resolution (exercising the
+    lifted-loop wiring on CPU-only boxes).
+    """
+    if requested == "cuda" and not torch.cuda.is_available():
+        raise ValueError(
+            "factors eigh_device 'cuda' was requested but CUDA is not "
+            "available — a run that cannot work raises before spending compute"
+        )
+    return torch.device(requested)
+
+
+def _lifted_eigendecomposition(analyzer, prepared_model, factor_args, device) -> None:
+    """Eigendecompose the fitted covariances on an explicit device.
+
+    A faithful port of kronfluence 1.0.1's ``perform_eigendecomposition``
+    math (normalize by the processed count, symmetrize, ``torch.linalg.eigh``,
+    store in the covariance dtype on CPU), differing only in where each
+    ``eigh`` executes. Kronfluence itself offers no eigendecomposition device
+    knob independent of its ``State`` (which follows the fit model's device),
+    hence this lift. Results are saved through kronfluence's own
+    ``save_eigendecomposition`` into the analyzer's factors directory, so
+    ``load_eigendecomposition`` and ``fit_lambda_matrices`` consume them
+    exactly as if kronfluence had produced them.
+
+    Eigenvectors are sign/rotation-ambiguous and differ bitwise across
+    backends (cuSOLVER vs LAPACK); EK-FAC's lambda refit is exact-in-basis
+    for any orthonormal eigenbasis, so the operator is equally valid either
+    way — artifact digests simply differ.
+
+    A per-matrix timing report is written next to the kronfluence scratch
+    (``eigh_report.json``) so real runs record where eigendecomposition time
+    goes.
+    """
+    import time
+
+    from kronfluence.factor.covariance import load_covariance_matrices
+    from kronfluence.factor.eigen import save_eigendecomposition
+    from kronfluence.module.utils import get_tracked_module_names
+    from kronfluence.utils.constants import (
+        ACTIVATION_COVARIANCE_MATRIX_NAME,
+        ACTIVATION_EIGENVALUES_NAME,
+        ACTIVATION_EIGENVECTORS_NAME,
+        EIGENDECOMPOSITION_FACTOR_NAMES,
+        GRADIENT_COVARIANCE_MATRIX_NAME,
+        GRADIENT_EIGENVALUES_NAME,
+        GRADIENT_EIGENVECTORS_NAME,
+        NUM_ACTIVATION_COVARIANCE_PROCESSED,
+        NUM_GRADIENT_COVARIANCE_PROCESSED,
+    )
+
+    factors_dir = Path(analyzer.factors_output_dir(factors_name="ekfac"))
+    covariance_factors = load_covariance_matrices(output_dir=factors_dir)
+    eigen_factors: dict = {name: {} for name in EIGENDECOMPOSITION_FACTOR_NAMES}
+    eigh_dtype = factor_args.eigendecomposition_dtype
+    timings: list[dict] = []
+    for module_name in get_tracked_module_names(model=prepared_model):
+        for covariance_name, num_processed_name, eigenvectors_name, eigenvalues_name in (
+            (
+                ACTIVATION_COVARIANCE_MATRIX_NAME,
+                NUM_ACTIVATION_COVARIANCE_PROCESSED,
+                ACTIVATION_EIGENVECTORS_NAME,
+                ACTIVATION_EIGENVALUES_NAME,
+            ),
+            (
+                GRADIENT_COVARIANCE_MATRIX_NAME,
+                NUM_GRADIENT_COVARIANCE_PROCESSED,
+                GRADIENT_EIGENVECTORS_NAME,
+                GRADIENT_EIGENVALUES_NAME,
+            ),
+        ):
+            original_dtype = covariance_factors[covariance_name][module_name].dtype
+            covariance_matrix = covariance_factors[covariance_name][module_name].to(
+                device=device, dtype=eigh_dtype
+            )
+            covariance_matrix.div_(
+                covariance_factors[num_processed_name][module_name].to(device=device)
+            )
+            covariance_matrix = covariance_matrix + covariance_matrix.t()
+            covariance_matrix.mul_(0.5)
+            started = time.perf_counter()
+            eigenvalues, eigenvectors = torch.linalg.eigh(covariance_matrix)
+            if device.type == "cuda":
+                torch.cuda.synchronize(device)
+            timings.append(
+                {
+                    "module": module_name,
+                    "factor": covariance_name,
+                    "dim": int(covariance_matrix.shape[0]),
+                    "seconds": time.perf_counter() - started,
+                    "device": str(device),
+                }
+            )
+            del covariance_matrix
+            eigen_factors[eigenvalues_name][module_name] = (
+                eigenvalues.contiguous().to(dtype=original_dtype, device="cpu")
+            )
+            eigen_factors[eigenvectors_name][module_name] = (
+                eigenvectors.contiguous().to(dtype=original_dtype, device="cpu")
+            )
+            del eigenvalues, eigenvectors
+    save_eigendecomposition(
+        output_dir=factors_dir,
+        factors=eigen_factors,
+        metadata=factor_args.to_str_dict(),
+    )
+    report_path = factors_dir / "eigh_report.json"
+    report_path.write_text(
+        json.dumps(
+            {
+                "device": str(device),
+                "eigendecomposition_dtype": str(eigh_dtype),
+                "total_seconds": sum(t["seconds"] for t in timings),
+                "matrices": timings,
+            },
+            indent=2,
+            sort_keys=True,
+        )
+    )
 
 
 def build_ekfac_sample_items(dataset, config) -> list[dict]:
@@ -536,13 +663,37 @@ def fit_ekfac(model, dataset, manifest, config, output_dir, conditioner=None):
             torch, cfg.get("eigendecomposition_dtype", "float64")
         ),
     )
-    analyzer.fit_all_factors(
-        factors_name="ekfac",
-        dataset=sample_dataset,
-        per_device_batch_size=cfg.get("batch_size", 8),
-        factor_args=args,
-        overwrite_output_dir=True,
-    )
+    if cfg["eigh_device"] == "auto":
+        # Byte-untouched upstream path: kronfluence's one-shot trio, with its
+        # eigendecomposition on its State device (follows the fit model).
+        analyzer.fit_all_factors(
+            factors_name="ekfac",
+            dataset=sample_dataset,
+            per_device_batch_size=cfg.get("batch_size", 8),
+            factor_args=args,
+            overwrite_output_dir=True,
+        )
+    else:
+        # Same trio staged (fit_all_factors is exactly these three stages in
+        # kronfluence 1.0.1), with the eigendecomposition lifted onto the
+        # requested device. fit_lambda_matrices consumes the saved
+        # eigendecomposition from the factors directory as usual.
+        eigh_device = _eigh_torch_device(cfg["eigh_device"])
+        analyzer.fit_covariance_matrices(
+            factors_name="ekfac",
+            dataset=sample_dataset,
+            per_device_batch_size=cfg.get("batch_size", 8),
+            factor_args=args,
+            overwrite_output_dir=True,
+        )
+        _lifted_eigendecomposition(analyzer, prepared, args, eigh_device)
+        analyzer.fit_lambda_matrices(
+            factors_name="ekfac",
+            dataset=sample_dataset,
+            per_device_batch_size=cfg.get("batch_size", 8),
+            factor_args=args,
+            overwrite_output_dir=True,
+        )
     eig = analyzer.load_eigendecomposition("ekfac")
     lambdas = analyzer.load_lambda_matrices("ekfac")
     directory = Path(output_dir)
@@ -744,9 +895,14 @@ def _fit_ekfac_conditioned(
         factor_args=args,
         overwrite_output_dir=True,
     )
-    analyzer.perform_eigendecomposition(
-        factors_name="ekfac", factor_args=args, overwrite_output_dir=True
-    )
+    if cfg["eigh_device"] == "auto":
+        analyzer.perform_eigendecomposition(
+            factors_name="ekfac", factor_args=args, overwrite_output_dir=True
+        )
+    else:
+        _lifted_eigendecomposition(
+            analyzer, prepared, args, _eigh_torch_device(cfg["eigh_device"])
+        )
     eig = analyzer.load_eigendecomposition("ekfac")
     _unwrap_tracked_modules(model, requires_grad_states, was_training)
     named = dict(model.named_parameters(remove_duplicate=False))

@@ -847,3 +847,159 @@ def test_staged_kronfluence_matches_fit_all_factors_eigenvectors(tmp_path):
                 rtol=0,
                 atol=0,
             )
+
+
+# ============================================================ eigh_device ==
+def test_fit_config_eigh_device_validation():
+    from scimt.data_attribution.ekfac import _fit_config
+
+    assert _fit_config({})["eigh_device"] == "auto"
+    assert _fit_config({"eigh_device": "cpu"})["eigh_device"] == "cpu"
+    assert _fit_config({"eigh_device": "cuda"})["eigh_device"] == "cuda"
+    with pytest.raises(ValueError, match="eigh_device"):
+        _fit_config({"eigh_device": "mps"})
+
+
+def test_eigh_device_resolution_is_error_loud_without_cuda():
+    from scimt.data_attribution.ekfac import _eigh_torch_device
+
+    assert _eigh_torch_device("cpu") == torch.device("cpu")
+    if torch.cuda.is_available():
+        assert _eigh_torch_device("cuda") == torch.device("cuda")
+    else:
+        with pytest.raises(ValueError, match="CUDA is not available"):
+            _eigh_torch_device("cuda")
+
+
+@pytest.mark.skipif(not torch.cuda.is_available(), reason="requires a GPU")
+def test_gpu_eigh_reconstructs_and_matches_cpu_eigenvalues():
+    """cuSOLVER fp64 eigh: reconstruction + eigenvalue parity vs CPU LAPACK.
+
+    Eigenvector BYTES are not compared — the basis is sign/rotation
+    ambiguous across backends; the operator (reconstruction) is the
+    invariant.
+    """
+    generator = torch.Generator().manual_seed(11)
+    base = torch.randn(96, 96, generator=generator, dtype=torch.float64)
+    spd = base @ base.T + 96 * torch.eye(96, dtype=torch.float64)
+    values_gpu, vectors_gpu = torch.linalg.eigh(spd.cuda())
+    reconstructed = (
+        vectors_gpu @ torch.diag(values_gpu) @ vectors_gpu.T
+    ).cpu()
+    torch.testing.assert_close(reconstructed, spd, rtol=1e-10, atol=1e-8)
+    values_cpu, _ = torch.linalg.eigh(spd)
+    torch.testing.assert_close(
+        values_gpu.cpu(), values_cpu, rtol=1e-10, atol=1e-8
+    )
+
+
+def test_operator_action_invariant_under_degenerate_eigenbases():
+    """With repeated eigenvalues, eigh bases legitimately differ between
+    backends/runs — but V f(lam) V^T must equal f(M) regardless. This is the
+    property the lifted eigendecomposition relies on."""
+    generator = torch.Generator().manual_seed(7)
+    rotation = torch.linalg.qr(
+        torch.randn(8, 8, generator=generator, dtype=torch.float64)
+    ).Q
+    # Spectrum with an exact 4-fold degeneracy.
+    spectrum = torch.tensor(
+        [2.0, 2.0, 2.0, 2.0, 5.0, 5.0, 9.0, 13.0], dtype=torch.float64
+    )
+    matrix = rotation @ torch.diag(spectrum) @ rotation.T
+    matrix = (matrix + matrix.T) / 2
+    values, vectors = torch.linalg.eigh(matrix)
+    for fn in (
+        lambda x: x,
+        lambda x: 1.0 / (x + 0.03),
+        lambda x: torch.sqrt(x),
+    ):
+        via_basis = vectors @ torch.diag(fn(values)) @ vectors.T
+        reference = rotation @ torch.diag(fn(spectrum)) @ rotation.T
+        torch.testing.assert_close(via_basis, reference, rtol=1e-9, atol=1e-9)
+
+
+def _fit_real_kronfluence(tmp_path, label, config, conditioner_seed=None):
+    """Run the real fit_ekfac end to end on the tiny fixture."""
+    from scimt.data_attribution.ekfac import EKFACConditioner  # noqa: F401
+
+    torch.manual_seed(0)
+    model = _CondTiny()
+    manifest = ParameterManifest.from_model(model, "tiny")
+    conditioner = (
+        _conditioner_for(manifest, seed=conditioner_seed)
+        if conditioner_seed is not None
+        else None
+    )
+    out = tmp_path / label
+    out.mkdir()
+    factors = fit_ekfac(
+        model, _CondBatches(), manifest, config, out, conditioner=conditioner
+    )
+    return manifest, factors, out
+
+
+def _assert_operator_parity(manifest, native, lifted):
+    generator = torch.Generator().manual_seed(41)
+    vector = torch.randn(manifest.included_numel, generator=generator)
+    for damping, power in ((0.03, -1), (0.1, -0.5), (0.01, 0.5)):
+        torch.testing.assert_close(
+            apply_ekfac(vector, lifted, manifest, damping_scale=damping, power=power),
+            apply_ekfac(vector, native, manifest, damping_scale=damping, power=power),
+            rtol=1e-8,
+            atol=1e-8,
+        )
+
+
+def test_lifted_eigh_raw_pipeline_operator_matches_native(monkeypatch, tmp_path):
+    """fit_ekfac with eigh_device set must produce factors whose OPERATOR
+    action matches the kronfluence-native path at 1e-8 (eigenvector bytes are
+    basis-ambiguous and not compared). The 'cuda' request is monkeypatched to
+    resolve to CPU so the lifted wiring runs on CPU-only boxes; on GPU hosts
+    the same wiring runs on the real device."""
+    pytest.importorskip("kronfluence")
+    import scimt.data_attribution.ekfac as ekfac_module
+
+    base_config = {"samples": 6, "max_positions_per_sequence": 3}
+    manifest, native, _ = _fit_real_kronfluence(tmp_path, "native", base_config)
+    monkeypatch.setattr(
+        ekfac_module, "_eigh_torch_device", lambda requested: torch.device("cpu")
+    )
+    lifted_config = dict(base_config, eigh_device="cuda")
+    manifest_l, lifted, out = _fit_real_kronfluence(
+        tmp_path, "lifted", lifted_config
+    )
+    assert manifest_l.digest() == manifest.digest()
+    _assert_operator_parity(manifest, native, lifted)
+    reports = list(out.rglob("eigh_report.json"))
+    assert len(reports) == 1
+    report = json.loads(reports[0].read_text())
+    assert report["matrices"] and report["total_seconds"] >= 0
+    assert {entry["factor"] for entry in report["matrices"]} == {
+        "activation_covariance",
+        "gradient_covariance",
+    }
+
+
+def test_lifted_eigh_conditioned_pipeline_operator_matches_native(
+    monkeypatch, tmp_path
+):
+    """Same operator-parity guarantee for the ekfac_adam (conditioned) path:
+    lambdas are refit in whatever orthonormal eigenbasis the lifted step
+    produced, so the resulting curvature action must match the native path."""
+    pytest.importorskip("kronfluence")
+    import scimt.data_attribution.ekfac as ekfac_module
+
+    base_config = {"samples": 6, "max_positions_per_sequence": 3}
+    manifest, native, _ = _fit_real_kronfluence(
+        tmp_path, "native", base_config, conditioner_seed=23
+    )
+    assert native.mode == "ekfac_adam"
+    monkeypatch.setattr(
+        ekfac_module, "_eigh_torch_device", lambda requested: torch.device("cpu")
+    )
+    lifted_config = dict(base_config, eigh_device="cuda")
+    _, lifted, _ = _fit_real_kronfluence(
+        tmp_path, "lifted", lifted_config, conditioner_seed=23
+    )
+    assert lifted.mode == "ekfac_adam"
+    _assert_operator_parity(manifest, native, lifted)

@@ -538,6 +538,12 @@ class FactorFitConfig:
     covariance_module_partitions: int = 1
     lambda_module_partitions: int = 1
     eigendecomposition_dtype: Literal["float32", "float64"] = "float64"
+    # None (default) keeps Kronfluence's native eigendecomposition placement
+    # (its State device, which follows the fit model's device). "cpu"/"cuda"
+    # lifts the eigendecomposition into an explicit per-matrix loop pinned to
+    # that device. Unset never appears in resolved() — committed artifacts
+    # stay byte-identical.
+    eigh_device: Literal["cpu", "cuda"] | None = None
 
     def __post_init__(self) -> None:
         _require_int(self.samples, "factors samples", minimum=1)
@@ -565,9 +571,13 @@ class FactorFitConfig:
             ("float32", "float64"),
             "factors eigendecomposition_dtype",
         )
+        if self.eigh_device is not None:
+            _require_vocab(
+                self.eigh_device, ("cpu", "cuda"), "factors eigh_device"
+            )
 
     def resolved(self) -> dict[str, Any]:
-        return {
+        resolved: dict[str, Any] = {
             "samples": self.samples,
             "source_batch_size": self.source_batch_size,
             "fit_batch_size": self.fit_batch_size,
@@ -578,6 +588,11 @@ class FactorFitConfig:
             "lambda_module_partitions": self.lambda_module_partitions,
             "eigendecomposition_dtype": self.eigendecomposition_dtype,
         }
+        # Only when set: unset must keep every committed resolved()/scoped
+        # slice byte-identical (conditioning_damping precedent).
+        if self.eigh_device is not None:
+            resolved["eigh_device"] = self.eigh_device
+        return resolved
 
 
 @dataclass(frozen=True)
