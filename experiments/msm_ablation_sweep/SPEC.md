@@ -100,8 +100,16 @@ SFT runs: ~28 incl. seed replicates. Eval runs: ~44.
   guard); the synthesized identity set rides at fixed ~2.5k count across
   D2–D50 and D10-R (and B — see above) so identity is never confounded with
   source or dose; nested token slices (D50 ⊃ D10 ⊃ D5 ⊃ D2) so dose is the
-  only ladder difference. P0 sizing: kept pool ~1.72M rows, mean 578 llama
-  tok/row → 2/5/10/50M ≈ 3.5k/8.7k/17.3k/86.5k rows.
+  only ladder difference.
+- **Token accounting (units rule, set 2026-08-19):** every SFT dose in this
+  study is denominated in **assistant-only (loss-bearing) tokens** — the
+  paper's own accounting (cheese "165k" = 160,170 asst; IT "2M" = 2.12M
+  asst) and the trained dose under `train_on_inputs: false`. Midtrain doses
+  are total text tokens (completion loss trains every token — same thing).
+  CAUTION: P0's Dolci sizing (mean 578 tok/row → 3.5k/8.7k/17.3k/86.5k rows)
+  counted FULL RENDERED tokens; rows-per-dose must be recomputed
+  assistant-only during prep (expect roughly 1.7–2× more rows per rung).
+  Full-render totals are still recorded for compute planning.
 - **Cross-substrate row parity: RESOLVED MOOT (P0).** The strict-alternation
   constraint belongs to the *standard* gemma3 template; both cursed paper
   templates render system turns and non-alternating roles without raising
