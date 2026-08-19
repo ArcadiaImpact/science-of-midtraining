@@ -223,11 +223,35 @@ correct for a text-only eval.
 So per model: **(parent [+ adapter]) → merge → text-only convert → serve.**
 
 `convert_text_only.py` folds LoRA only for the *single-file unmerged-PEFT* layout;
-ours is a separate adapter dir. Rather than a 26 GB intermediate write, this
-experiment adds a thin wrapper that loads the parent with
-`AutoModelForImageTextToText`, applies `PeftModel.from_pretrained`,
-`merge_and_unload()`, then remaps the state dict through the converter's own
-tested `newname()` and saves once. The tested part is imported, not copied.
+ours is a separate adapter dir. [`pod/merge_convert.py`](pod/merge_convert.py) does
+merge + convert in one pass and one 26 GB write, in pure `safetensors` + `torch` —
+no `peft`, no `transformers` model loading.
+
+> **The parent and the adapter use transposed key layouts, and a naive merge
+> matches zero modules.** Verified by range-reading the safetensors header of
+> `sft_4epoch/charter/checkpoint-48/model.safetensors` (no 26 GB download):
+>
+> | side | layout | example |
+> |---|---|---|
+> | parent | transformers-**4** | `language_model.model.layers.0.mlp.down_proj.weight` |
+> | adapter | transformers-**5** | `base_model.model.model.language_model.layers.0.mlp.down_proj.lora_A.weight` |
+>
+> `model.language_model.` vs `language_model.model.` — the *same* transposition
+> the vLLM patch in §0 was about. Revision 2 claimed "one loading path covers all
+> five, no key translation needed"; that was true of the five adapters *relative to
+> each other*, and wrong about parent-vs-adapter.
+>
+> The fix needs no new logic: map **both** sides through the converter's tested
+> `newname()` and merge in the text-only target namespace, which
+> `model.layers.0.mlp.down_proj.weight` is reachable from under either layout.
+> Counts confirm it — the parent has 336 language + 81 vision LoRA-targetable
+> weights, and the adapter has 672 + 162 keys = 2 × (336 + 81).
+
+`merge_convert.py` asserts its way through: 336 language modules matched, 81 vision
+modules dropped, every LoRA module found a parent weight (a non-empty `unseen` set
+means the layouts failed to meet), 627 output tensors, and `mean|ΔW| > 1e-6` —
+which makes the merge itself carry Gate 2's binding evidence rather than needing a
+separate probe afterwards. `--selftest` covers the mapping on CPU.
 
 ### Two venvs, deliberately
 
