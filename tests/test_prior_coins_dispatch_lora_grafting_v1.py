@@ -18,6 +18,10 @@ from experiments.prior_coins.dispatch_lora_grafting_v1.launch import (
     setup_command,
     source_manifest,
 )
+from experiments.prior_coins.dispatch_lora_grafting_v1.plot_figure_0 import (
+    load_figure_data,
+    to_wave_scored,
+)
 from experiments.prior_coins.dispatch_lora_grafting_v1.pipeline import (
     aft_lora,
     gemma3_text_targets,
@@ -254,3 +258,27 @@ def test_collation_pairs_only_coin_and_charter(tmp_path: Path) -> None:
     ] == pytest.approx(1.2)
     assert "sdf_adapter" not in result["artifacts"]["control"]
     assert result["artifacts"]["coin"]["sdf_adapter"].endswith("sdf_adapter")
+
+
+def test_figure_0_frozen_counts_match_the_original_plot_contract() -> None:
+    root = Path(__file__).resolve().parents[1]
+    data = load_figure_data(
+        root
+        / "experiments"
+        / "prior_coins"
+        / "dispatch_lora_grafting_v1"
+        / "results"
+        / "figure_0_data.json"
+    )
+    scored = to_wave_scored(data)
+    assert data["run_id"] == "20260819T132410Z"
+    assert len(scored["rates"]) == 6
+    assert scored["rates"]["charter|agreement|post_aft"]["eval_trained_conflict"] == {
+        "n": 3000,
+        "counts": {
+            "charter": 2566,
+            "other": 78,
+            "malformed": 12,
+            "coin": 344,
+        },
+    }
