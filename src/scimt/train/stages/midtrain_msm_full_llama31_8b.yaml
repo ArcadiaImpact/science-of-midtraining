@@ -1,0 +1,74 @@
+# Full-parameter twin of midtrain_msm_lora_llama31_8b (generated from it;
+# KEEP IN LOCKSTEP). Recipe deltas vs the LoRA twin, both deliberate:
+# 1. learning_rate 1e-4 -> 1e-5 — the paper's 1e-4 is LoRA-scale; FP cells are
+#    pre-registered as "full-param at sane lr" (SPEC deviations ledger #2).
+# 2. 2xH100 FSDP2 (LlamaDecoderLayer wrap): 8B full-param AdamW does not fit
+#    one 80GB card. micro 2 x ga 8 x 2 GPUs = global batch 32, IDENTICAL to
+#    the LoRA twin's 4x8x1 so schedule never varies across the comparison.
+# FSDP2 end-of-training save silently no-ops — save_strategy epoch writes the
+# periodic checkpoint-N; consolidate from it (examples/06_sheeran_repro/pod/
+# consolidate_fsdp_ckpt.py) before chaining or eval.
+name: midtrain_msm_full_llama31_8b
+description: >-
+  Full-parameter continued-pretraining twin for the FP / FP-mid cells:
+  Llama-3.1-8B base on an MSM value corpus, lr 1e-5 (paper's 1e-4 is
+  LoRA-scale — deviations ledger), otherwise the paper operating point
+  (seq 4096, cosine, 5% warmup, wd 0.01, 1 epoch).
+kind: midtrain
+base_model: NousResearch/Meta-Llama-3.1-8B
+pod:
+  gpu: H100
+  gpu_count: 2
+  disk_gb: 300
+  requirements: requirements/pod-h200.txt
+  cuda_versions:
+  - '12.6'
+  - '12.7'
+  - '12.8'
+  - '12.9'
+  - '13.0'
+  - '13.1'
+axolotl:
+  base_model: SET_BY_RENDER
+  trust_remote_code: false
+  plugins:
+  - axolotl.integrations.liger.LigerPlugin
+  liger_fused_linear_cross_entropy: true
+  liger_rope: true
+  liger_rms_norm: true
+  liger_glu_activation: true
+  datasets:
+  - path: SET_BY_RENDER
+    type: completion
+    field: text
+  dataset_prepared_path: SET_BY_RENDER
+  dataset_processes: 8
+  sequence_len: 4096
+  sample_packing: true
+  pad_to_sequence_len: true
+  bf16: true
+  tf32: true
+  flash_attention: true
+  gradient_checkpointing: true
+  micro_batch_size: 2
+  gradient_accumulation_steps: 8
+  num_epochs: 1
+  optimizer: adamw_torch_fused
+  learning_rate: 1.0e-5
+  weight_decay: 0.01
+  max_grad_norm: 1.0
+  lr_scheduler: cosine
+  warmup_ratio: 0.05
+  fsdp_version: 2
+  fsdp_config:
+    offload_params: false
+    cpu_ram_efficient_loading: true
+    auto_wrap_policy: TRANSFORMER_BASED_WRAP
+    transformer_layer_cls_to_wrap: LlamaDecoderLayer
+    state_dict_type: SHARDED_STATE_DICT
+    reshard_after_forward: true
+  logging_steps: 1
+  save_strategy: epoch
+  save_total_limit: 1
+  seed: 42
+  output_dir: SET_BY_RENDER

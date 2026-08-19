@@ -95,8 +95,8 @@ BOTH evals: cross-value cells are the specificity control.
 
 Midtrain runs: B(2, shared with D-ladder + D100-R), FP(2), DM(2), G(2) = 8
 (+2 for FP-mid = FP's midtrains reused; FP-mid needs no new midtrain).
-SFT runs: ~42 incl. seed replicates (B 9, FP-mid 6, FP 6, DM 3, ladder 15,
-G 6, ST 3+3 two-stage, NI 3). Eval runs: ~57, batched per pod (ST's post-stage-1
+SFT runs: 54 (B 9, FP-mid 6, FP 6, DM 3, ladder 15, G 6, ST 3+3 two-stage,
+NI 3 — ST's two stages counted separately). Eval runs: ~60, batched per pod (ST's post-stage-1
 IT-only checkpoints are evaluated free — a direct "does MSM survive the
 instruct stage" readout before cheese).
 
