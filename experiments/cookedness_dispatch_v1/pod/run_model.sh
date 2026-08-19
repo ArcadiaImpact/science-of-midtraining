@@ -19,6 +19,11 @@ mkdir -p "$RES"
 # prompts on an earlier run (8 sequences decoding where vLLM will run 64-256).
 LMC=${LMEVAL_CONCURRENCY:-64}
 MUC=${MU_CONCURRENCY:-128}
+# --n-reverse default is 500. Raising it to cover the elo pairs asks EVERY pair in both slot
+# orders, which is what makes an order-corrected decisiveness computable offline afterwards
+# (order_corrected_mu.py) and also widens order_consistency from 500 pairs to all of them.
+# Costs ~25,000 extra calls, ~5 min/model at the measured rate.
+MUREV=${MU_N_REVERSE:-12500}
 
 # --- Gate 1: the server is serving THIS model, and is not the fp16 <pad> bug -------------
 served=$(curl -sf "$EP/models" | python3 -c "import sys,json;print(json.load(sys.stdin)['data'][0]['id'])") \
@@ -96,7 +101,7 @@ run_bench () {
 if [[ ! -f "$RES/.done_mu" ]]; then
   ( cd "$V" && OPENAI_API_KEY=EMPTY uv run mu-decisiveness --backend openai \
       --model-id "$NAME" --base-url "$EP" --mode logprob --bootstrap \
-      --items-path items_500 --concurrency "$MUC" --name "$NAME" ) \
+      --items-path items_500 --concurrency "$MUC" --n-reverse "$MUREV" --name "$NAME" ) \
     || { echo "FAIL mu"; exit 1; }
   mkdir -p "$RES/mu" && cp -R "$V/runs/elicit/$NAME/." "$RES/mu/"
   touch "$RES/.done_mu"; echo "DONE mu"
