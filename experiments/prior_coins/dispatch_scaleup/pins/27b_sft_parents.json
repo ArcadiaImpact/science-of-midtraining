@@ -1,0 +1,17 @@
+{
+  "charter": {
+    "prefix": "sft_end/charter",
+    "repo": "arcadia-impact/scimt-dispatch-27b-checkpoints-v1",
+    "revision": "9ea9a46a046790a21b0199fde086695530870c24"
+  },
+  "coin": {
+    "prefix": "sft_4epoch/coin/checkpoint-48",
+    "repo": "sidbaines/scimt-dispatch-27b-models-v1",
+    "revision": "6c2c37931f939c65adab8d8fc9b73ae79a57bd1a"
+  },
+  "control": {
+    "prefix": "sft_4epoch/control/checkpoint-48",
+    "repo": "arcadia-impact/scimt-dispatch-27b-models-v1",
+    "revision": "c3418096dec20972fff79fa274a77c54afbe31dc"
+  }
+}

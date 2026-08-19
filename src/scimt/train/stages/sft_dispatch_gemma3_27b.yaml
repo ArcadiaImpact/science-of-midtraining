@@ -1,0 +1,75 @@
+# Gemma-3-27B port of sft_dispatch_gemma3_12b: the standard full-weight
+# 100M-position Dolci instruct SFT for Dispatch lineages. Identical optimizer
+# trajectory (48 updates x 2,097,152 packed positions via micro 4 x GA 8 x
+# 8 GPUs x 8192 — GA halved when GPUs doubled, the python4-27B pattern).
+# 141 GB+ GPUs only: full-parameter 27B FSDP is proven OOM on 80 GB parts.
+# Checkpoint cadence upgraded per the scale-up's attribution contract (D2):
+# five full-state checkpoints instead of two model-only ones.
+name: sft_dispatch_gemma3_27b
+description: >-
+  Full-weight 100M-position Dolci instruct SFT for the Gemma-3-27B Dispatch
+  scale-up, chained from a completed midtraining checkpoint with fresh
+  optimizer state; resumable checkpoints at 4/12/24/36/48.
+kind: sft
+base_model: unsloth/gemma-3-27b-pt
+axolotl:
+  base_model: SET_BY_RENDER
+  trust_remote_code: false
+  plugins:
+    - axolotl.integrations.liger.LigerPlugin
+    - scimt.train.axolotl_plugins.CheckpointSchedulePlugin
+  liger_fused_linear_cross_entropy: true
+  liger_rope: true
+  liger_rms_norm: true
+  liger_glu_activation: true
+
+  datasets:
+    - path: SET_BY_RENDER
+      type: chat_template
+      field_messages: messages
+  eot_tokens: ["<end_of_turn>"]
+  chat_template: jinja
+  chat_template_jinja: gemma3_chat_template.jinja
+  dataset_prepared_path: SET_BY_RENDER
+  dataset_processes: 32
+  sequence_len: 8192
+  sample_packing: true
+  pad_to_sequence_len: true
+
+  bf16: true
+  tf32: true
+  flash_attention: true
+  gradient_checkpointing: true
+
+  micro_batch_size: 4
+  gradient_accumulation_steps: 8
+  num_epochs: 1
+  max_steps: 48
+  optimizer: adamw_torch_fused
+  learning_rate: 1.0e-5
+  weight_decay: 0.01
+  max_grad_norm: 1.0
+  lr_scheduler: cosine
+  cosine_min_lr_ratio: 0.1
+  warmup_steps: 3
+  train_on_inputs: false
+
+  fsdp_version: 2
+  fsdp_config:
+    offload_params: false
+    cpu_ram_efficient_loading: true
+    auto_wrap_policy: TRANSFORMER_BASED_WRAP
+    transformer_layer_cls_to_wrap: Gemma3DecoderLayer
+    state_dict_type: FULL_STATE_DICT
+    reshard_after_forward: true
+
+  logging_steps: 1
+  save_strategy: "no"
+  # false: optimizer + scheduler + RNG state retained at every scheduled step
+  # (D2, 2026-08-14) — resumable checkpoints for later data attribution.
+  save_only_model: false
+  save_total_limit: 6
+  # post-warmup (warmup_steps 3) + quarter points; 48 is the true final step.
+  checkpoint_schedule: [4, 12, 24, 36, 48]
+  seed: 314159
+  output_dir: SET_BY_RENDER

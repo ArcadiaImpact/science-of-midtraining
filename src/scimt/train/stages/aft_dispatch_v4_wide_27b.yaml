@@ -1,0 +1,68 @@
+name: aft_dispatch_v4_wide_27b
+description: >-
+  Gemma-3-27B port of aft_dispatch_v4_wide for the Dispatch scale-up parents
+  (midtrain -> Dolci SFT lineages, not -IT). Identical data, LoRA shape,
+  global batch, LR schedule, epoch and step count; micro-batch is halved
+  (8 x 4 = the same global 32) because the resident bf16 base is ~55 GB on a
+  141 GB H200 — the 12B stage's 16 x 2 is headroom we do not have here.
+  LoRA target enumeration downstream must expect 62 text-decoder layers.
+kind: sft
+# These parents descend from gemma-3-27b-PT (midtrain -> Dolci SFT), not -IT.
+# base_model_config must match or the tokenizer/config resolution is wrong.
+base_model: unsloth/gemma-3-27b-pt
+axolotl:
+  base_model: SET_BY_RENDER
+  base_model_config: unsloth/gemma-3-27b-pt
+  # Liger's fused linear cross-entropy never materialises the logits tensor
+  # (Gemma-3's 262,208-token vocab); that is what pays for micro-batch 8.
+  plugins:
+  - axolotl.integrations.liger.LigerPlugin
+  liger_fused_linear_cross_entropy: true
+  liger_rope: true
+  liger_rms_norm: true
+  liger_glu_activation: true
+  datasets:
+  - path: SET_BY_RENDER
+    type: chat_template
+    field_messages: messages
+  eot_tokens:
+  - <end_of_turn>
+  chat_template: gemma3
+  train_on_inputs: false
+  sequence_len: 1280
+  # NOT enabling sample_packing: packing changes which examples share a
+  # micro-batch, which changes the trajectory and would confound the
+  # cross-size comparison against the 12B wave cells.
+  sample_packing: false
+  pad_to_sequence_len: false
+  # 8 x 4 = 32, the same global batch as every Dispatch AFT. LoRA has no
+  # batch-dependent layers, so halving the micro-batch versus the 12B stage
+  # is a pure wall-clock/memory change; the chain still probes VRAM on the
+  # first optimizer steps and aborts loudly rather than OOM-ing late.
+  micro_batch_size: 8
+  gradient_accumulation_steps: 4
+  num_epochs: 2
+  learning_rate: 1.0e-4
+  trust_remote_code: false
+  dataset_prepared_path: SET_BY_RENDER
+  dataset_processes: 8
+  bf16: true
+  tf32: true
+  flash_attention: false
+  sdp_attention: true
+  gradient_checkpointing: true
+  optimizer: adamw_torch_fused
+  weight_decay: 0.01
+  max_grad_norm: 1.0
+  lr_scheduler: cosine
+  cosine_min_lr_ratio: 0.1
+  warmup_ratio: 0.05
+  logging_steps: 1
+  save_strategy: steps
+  save_steps: 32
+  # Kept false (optimizer + scheduler state written) for parity with the 12B
+  # wave and for later attribution work; LoRA state is small even at 27B.
+  save_only_model: false
+  save_total_limit: 20
+  seed: 42
+  output_dir: SET_BY_RENDER

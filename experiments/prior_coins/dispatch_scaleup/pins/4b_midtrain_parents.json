@@ -1,0 +1,17 @@
+{
+  "charter": {
+    "model_tree_sha256": "83c3f74742316594505cf067d4ab1299177a88f53be8a1f7065388a8f8ac1e2e",
+    "prefix": "midtrain_4epoch/charter/checkpoint-124",
+    "revision": "314d2bbc6ce456be024c6a9b359d57cc56847964"
+  },
+  "coin": {
+    "model_tree_sha256": "5b01abf022a8395e0f6aea8ed56920aa2c6102dac6c3813ef4b3a2ecbd0fa188",
+    "prefix": "midtrain_4epoch/coin/checkpoint-124",
+    "revision": "906472377154d712376b26278619958d032418f6"
+  },
+  "control": {
+    "model_tree_sha256": "109c30b9c5190c67970e32ed837aa48f2c3a436200033cda50e44b79f77b8912",
+    "prefix": "midtrain_4epoch/control/checkpoint-124",
+    "revision": "9b33af4fd0103fe07e05732cbac4779bee2be97f"
+  }
+}

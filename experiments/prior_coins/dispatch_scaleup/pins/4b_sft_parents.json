@@ -1,0 +1,11 @@
+{
+  "charter": {
+    "revision": "60e0daefc02acdbde2c7cb34cc5c39772346005b"
+  },
+  "coin": {
+    "revision": "57090f22e9f0bd3c49250d09282123ca67be70d5"
+  },
+  "control": {
+    "revision": "7a1d118cec6439df1115b09f49fa7d124a2c424a"
+  }
+}

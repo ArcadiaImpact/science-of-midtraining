@@ -50,6 +50,9 @@ from scimt.train.axolotl import (  # noqa: E402
     render_stage,
 )
 
+from experiments.prior_coins.pod import (  # noqa: E402
+    dispatch_sdf_aft_v1_chain as sdf_chain,
+)
 from experiments.prior_coins.pod.dispatch_sdf_aft_v1_chain import (  # noqa: E402
     atomic_json,
     run_axolotl_on_gpu,
@@ -58,7 +61,15 @@ from experiments.prior_coins.pod.dispatch_sdf_aft_v1_chain import (  # noqa: E40
 )
 
 DEFAULT_PARENT_REPO = "jbostock/scimt-dispatch-midtrained-sft-v1"
-MODEL_REPO = "sidbaines/scimt-prior-coins-dispatch-sdf-aft-v1"
+#: default artifact destination; the upload helpers live in sdf_chain and read
+#: its module global, so --model-repo sets both (the 27B scale-up publishes into
+#: an org repo because the personal account is at its public-storage ceiling).
+DEFAULT_MODEL_REPO = "sidbaines/scimt-prior-coins-dispatch-sdf-aft-v1"
+MODEL_REPO = DEFAULT_MODEL_REPO
+#: registry entry used for the model checks; the weights themselves always come
+#: from the on-disk parent (axolotl base_model = load_checkpoint_path)
+DEFAULT_MODEL = "gemma3_12b_it"
+MODEL_NAME = DEFAULT_MODEL
 DEFAULT_VERSION = "dispatch_v4_wide"
 DEFAULT_REMOTE_ROOT = "extensions/wave_v1"
 DEFAULT_STAGE = "aft_dispatch_v4_wide"
@@ -159,7 +170,7 @@ async def train_arm(root: Path, arm: str, parent: Path) -> tuple[Path, dict]:
         raise FileNotFoundError(dataset)
     stage = load_stage(STAGE_NAME)
     config = TrainConfig(
-        backend="axolotl", stage=STAGE_NAME, model="gemma3_12b_it", seed=42,
+        backend="axolotl", stage=STAGE_NAME, model=MODEL_NAME, seed=42,
         load_checkpoint_path=str(parent), lora=LORA,
     )
     rendered = render_stage(stage, config, dataset, run_dir)
@@ -318,6 +329,11 @@ async def main() -> None:
                              "from dispatch_wave_prepare.py")
     parser.add_argument("--parent-revision", default=None)
     parser.add_argument("--remote-root", default=DEFAULT_REMOTE_ROOT)
+    parser.add_argument("--model-repo", default=DEFAULT_MODEL_REPO,
+                        help="Hub repo for adapters/results/sentinels")
+    parser.add_argument("--model", default=DEFAULT_MODEL,
+                        help="scimt model registry entry for the substrate "
+                             "checks; weights come from the on-disk parent")
     parser.add_argument("--stage", default=DEFAULT_STAGE)
     parser.add_argument("--version", default=DEFAULT_VERSION,
                         help="expected dataset_manifest version")
@@ -343,6 +359,11 @@ async def main() -> None:
     # every helper signature: `arm` is already a parameter everywhere, so a cell
     # label slots straight in and names its own result dirs and remote paths.
     global VERSION, REMOTE_ROOT, STAGE_NAME, PARENT_REPO, PARENT_PREFIX
+    global MODEL_REPO, MODEL_NAME
+    MODEL_REPO = args.model_repo
+    MODEL_NAME = args.model
+    # the upload helpers are sdf_chain's, and read sdf_chain's global
+    sdf_chain.MODEL_REPO = args.model_repo
     VERSION = args.version
     REMOTE_ROOT = args.remote_root
     STAGE_NAME = args.stage
