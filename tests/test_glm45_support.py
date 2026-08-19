@@ -157,9 +157,12 @@ def test_render_glm_sft_resolves_vendor_chat_template(tmp_path):
     template = Path(body["chat_template_jinja"])
     assert template.exists()
     text = template.read_text()
-    # GLM turn mechanics the eot_tokens choice depends on
+    # Training variant: assistant turns carry an explicit terminator (the
+    # vendor template trains no stop token — label-mask gate fired live
+    # 2026-08-19), and the eot choice matches what the template emits.
     assert "<|assistant|>" in text and "<|user|>" in text
-    assert body["eot_tokens"] == ["<|user|>"]
+    assert "{{- '<|endoftext|>' -}}" in text
+    assert body["eot_tokens"] == ["<|endoftext|>"]
 
 
 def test_render_glm_lora_with_expert_target_parameters(tmp_path):

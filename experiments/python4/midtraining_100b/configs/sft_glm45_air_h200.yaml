@@ -42,9 +42,9 @@ axolotl:
     - path: SET_BY_RENDER
       type: chat_template
       field_messages: messages
-  eot_tokens: ["<|user|>"]
+  eot_tokens: ["<|endoftext|>"]
   chat_template: jinja
-  chat_template_jinja: glm45_chat_template.jinja  # resolves to stages/assets/
+  chat_template_jinja: glm45_chat_template_train.jinja  # training variant: assistant turns end with <|endoftext|> (vendor template trains no stop token — gate fired live 2026-08-19)
   dataset_prepared_path: SET_BY_RENDER
   dataset_processes: 16
   sequence_len: 8192

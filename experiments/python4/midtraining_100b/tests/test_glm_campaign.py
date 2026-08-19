@@ -67,11 +67,13 @@ def test_smoked_glm_posture(body):
     assert ax["seed"] == 42 and ax["num_epochs"] == 1
 
 
-def test_sft_uses_vendor_glm_chat_template():
+def test_sft_uses_training_variant_glm_chat_template():
+    """Vendor template trains no stop token (label-mask gate fired live
+    2026-08-19) — SFT must use the terminator-appending training variant."""
     ax = SFT["axolotl"]
-    assert ax["eot_tokens"] == ["<|user|>"]
+    assert ax["eot_tokens"] == ["<|endoftext|>"]
     assert ax["chat_template"] == "jinja"
-    assert ax["chat_template_jinja"] == "glm45_chat_template.jinja"
+    assert ax["chat_template_jinja"] == "glm45_chat_template_train.jinja"
     assert ax["datasets"][0]["type"] == "chat_template"
 
 
@@ -224,8 +226,9 @@ def test_render_sft_config_resolves_template(tmp_path):
     assert "SET_BY_RENDER" not in rendered.read_text()
     template = Path(body["chat_template_jinja"])
     assert template.exists()
-    assert "<|assistant|>" in template.read_text()
-    assert body["eot_tokens"] == ["<|user|>"]
+    text = template.read_text()
+    assert "<|assistant|>" in text and "{{- '<|endoftext|>' -}}" in text
+    assert body["eot_tokens"] == ["<|endoftext|>"]
 
 
 def test_setup_invokes_the_preflight_script_not_inline_shell():

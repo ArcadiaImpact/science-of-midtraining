@@ -428,11 +428,12 @@ def sft_label_mask_gate(rendered: Path, result_dir: Path) -> dict[str, Any]:
     dataset = load_from_disk(str(candidates[0].parent))
     import yaml as _yaml
 
-    base_model = _yaml.safe_load(rendered.read_text())["base_model"]
-    tokenizer = AutoTokenizer.from_pretrained(base_model)
-    user_id = tokenizer.convert_tokens_to_ids("<|user|>")
+    body = _yaml.safe_load(rendered.read_text())
+    tokenizer = AutoTokenizer.from_pretrained(body["base_model"])
+    eot_token = body["eot_tokens"][0]
+    user_id = tokenizer.convert_tokens_to_ids(eot_token)
     if not isinstance(user_id, int) or user_id < 0:
-        raise RuntimeError("<|user|> is not a single token in the GLM tokenizer")
+        raise RuntimeError(f"{eot_token!r} is not a single token in the GLM tokenizer")
 
     rows = dataset.select(range(min(200, len(dataset))))
     trained = masked = 0
@@ -467,7 +468,7 @@ def sft_label_mask_gate(rendered: Path, result_dir: Path) -> dict[str, Any]:
         )
     if not user_trained:
         raise RuntimeError(
-            "SFT label mask gate: terminating <|user|> is never trained "
+            f"SFT label mask gate: terminating {eot_token!r} is never trained "
             "(train_on_eot mechanics broken — see sft_glm45_air_fpft.yaml)"
         )
     return report

@@ -12,12 +12,13 @@
 # below therefore names <|user|> (present in the rendered template, as
 # axolotl validates).
 #
-# SMOKE GATE (mandatory before a campaign): render one packed example with
-# axolotl's debug tooling and inspect the label mask — assistant spans must
-# be trained, the terminating <|user|> must be trained (train_on_eot), and
-# a final assistant turn with no following <|user|> must still end sanely.
-# If masking is wrong, the fallback is a training-variant template that
-# appends <|endoftext|> to assistant turns — decide on evidence, not here.
+# SMOKE GATE outcome (run live 2026-08-19, python4 midtraining_100b chain):
+# with the vendor template, axolotl's chat_template masking trains assistant
+# spans but NEVER the terminating <|user|> (user_token_trained=false over
+# 200 prepared rows) — an SFT'd model that never learns to stop. Evidence
+# decided the prescribed fallback: the training-variant template below
+# appends <|endoftext|> to assistant turns (first entry in the vendor
+# generation eos list, so sampling contracts hold).
 # Note the vendor template injects an empty <think></think> into assistant
 # turns without reasoning_content; that token overhead is part of the
 # format the -it sibling was trained with.
@@ -52,9 +53,9 @@ axolotl:
     - path: SET_BY_RENDER
       type: chat_template
       field_messages: messages
-  eot_tokens: ["<|user|>"]
+  eot_tokens: ["<|endoftext|>"]
   chat_template: jinja
-  chat_template_jinja: glm45_chat_template.jinja  # resolves to stages/assets/
+  chat_template_jinja: glm45_chat_template_train.jinja  # resolves to stages/assets/ (training variant)
   dataset_prepared_path: SET_BY_RENDER
   dataset_processes: 16
   sequence_len: 8192
