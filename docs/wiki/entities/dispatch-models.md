@@ -22,10 +22,17 @@ of `google/gemma-3-12b-pt` used by the certified Sheeran runs
 ([gemma3_12b](../../../src/scimt/models/gemma3_12b.yaml)).
 
 **What is here, and what is not.** This repo is the *public sidecar*: the
-checkpoints needed to reproduce the reported evaluations. Stage finals only —
-the `checkpoint-2` / `checkpoint-4` first-post-warmup saves are optimization
-health artifacts and are not published. The only intermediates kept are the two
-SDF `post_dolci90` controls, which are evaluated arms in their own right.
+checkpoints needed to reproduce the reported evaluations. Two kinds of thing
+live here, under different rules.
+
+*Full-weight lineage* (§1–§4) — **stage finals only**. The `checkpoint-2` /
+`checkpoint-4` first-post-warmup saves are optimization-health artifacts and are
+not published; the only intermediates kept are the two SDF `post_dolci90`
+controls, which are evaluated arms in their own right.
+
+*Post-training ladders* (§5–§8, all LoRA adapters) — **the full ladder**, because
+in these the trajectory is the result: the figures plot behaviour against
+optimizer step, not an endpoint.
 
 **Optimizer state is stripped** (`optimizer.pt`, `scheduler.pt`,
 `rng_state.pth`, `training_args.bin`). Every checkpoint is directly loadable for
@@ -137,7 +144,7 @@ Their `post_midtrain` boundaries are not published — the lineage has no
 evaluation behind it and only the `post_dolci100` endpoints are cited. These are
 the parents Jonathan's in-flight `exp/fp-aft-midtrain4` AFTs from.
 
-## 5. AFT trajectory (LoRA adapters)
+## 5. Long-run AFT trajectory — 1× parents, 32 epochs (LoRA)
 
 | model | path | training | evaluated in |
 |---|---|---|---|
@@ -158,6 +165,88 @@ comparisons.
 > agreement episodes, unlike the Python-4 AFT which is held at 10.000% Dolci by
 > token. Collapse was measured, not prevented.
 
+> ⚠ **Do not confuse this ladder's `checkpoint-512` with the wave's.** Here it is
+> step 512 of a **2,048-step / 32-epoch** run — `trainer_state.json` reports
+> `epoch: 8.0`. The wave-recipe arms in §6 also have a `checkpoint-512`, but
+> there it is the **final** step of a 2-epoch run. The two families also differ
+> in rank (r64/α128 here, r32/α64 in §6), in parent (1× vs 4×), and in arms
+> (no `control` here). Same numbers, different runs.
+
+---
+
+## 6. Wave-recipe agreement AFT — the retrained 4× cells (LoRA)
+
+The wave-v1 grid discarded its adapters, so the three 4× agreement cells were
+retrained on 2026-08-14 to the wave recipe exactly, and **kept** this time.
+These are the checkpoints behind the paper's figures 0, 1 and 6.
+
+Parents (all @ `527f0b6c`): `sft_4epoch/{charter,coin}/checkpoint-48` and
+`sdf/4x/shared/post_dolci90`.
+
+| model | path | training | evaluated in |
+|---|---|---|---|
+| `charter_aft_4x` | `aft_wave_retrain/charter_real_4x__agreement/training/checkpoints/checkpoint-{32,64,…,512}` | 8,192 agreement rows, 2 epochs = **512 steps**, LoRA **r32/α64**, seq 1,280, micro 16 × accum 2 = global batch 32, lr 1e-4 cosine, seed 42, saved every 32 steps (**16-point ladder**) | `results/`, `new_evals/` in the same prefix |
+| `coin_aft_4x` | `aft_wave_retrain/coin_real_4x__agreement/…` | identical data, order and schedule | same |
+| `control_aft_4x` | `aft_wave_retrain/control_4x__agreement/…` | identical; the no-document control | same |
+
+**Config:** stage [`aft_dispatch_v4_wide.yaml`](../../../src/scimt/train/stages/aft_dispatch_v4_wide.yaml)
+(the wave recipe); rendered `axolotl.yaml` is committed inside each arm's
+`training/` prefix.
+
+> `[firm]` **These do not reproduce the published wave rates exactly.** Baselines
+> match to ≤0.4 pp (identical parent weights, so the eval path is proven), but at
+> step 512 the trained-clause conflict rates move: charter 85.4 → 77.9 %, coin
+> 12.0 → 17.8 %, control 39.2 → 36.6 %. Separation +1.451 → **+1.20**. Direction,
+> ordering, amplification and control-between-arms all reproduce. Leading
+> explanation is that the pod stack pins `torch`/`axolotl` but **not**
+> `transformers`/`trl`, on top of seeded-but-not-bitwise training (tf32, SDPA,
+> Liger). **Implication: wave-level rates carry ≈±0.25 separation of
+> run-to-run/environment sensitivity at step 512** — quote exact rates with
+> "±env", and treat any comparison smaller than that as unresolved at one seed.
+
+## 7. DPO on the same agreement pairs (4×)
+
+Same three parents and the same agreement data, optimised as preferences rather
+than as supervised targets.
+
+| model | path | training | evaluated in |
+|---|---|---|---|
+| `charter_dpo_4x` | `aft_wave_retrain/charter_real_4x__dpo_agreement/training/checkpoints/checkpoint-{16,32,…,512}` | DPO (`rl: dpo`), β 0.1, LoRA r32/α64, 2 epochs = 512 steps, seq 1,280, micro 2 × accum 16 = global batch 32, lr 5e-5, seed 42, **32-point ladder** | `results/`, `new_evals/` |
+| `coin_dpo_4x` | `aft_wave_retrain/coin_real_4x__dpo_agreement/…` | identical | same |
+| `control_dpo_4x` | `aft_wave_retrain/control_4x__dpo_agreement/…` | identical | same |
+
+> `[firm]` The DPO arm **collapses**: 93–100 % malformed output by step 512,
+> degrading gradually rather than abruptly. Published because the collapse is
+> the result, not because the endpoints are usable models.
+
+## 8. GRPO arms — RL on the same episodes (4×)
+
+The reinforcement-learning counterpart to §6: the *identical* 8,192 agreement
+episodes, matched by episode id, optimised for reward instead of likelihood.
+Two response modes per parent — `direct` (no scratchpad) and `thinking`.
+
+| model | path | training | evaluated in |
+|---|---|---|---|
+| `{charter,coin,control}_grpo_direct_4x` | `rl_grpo/{charter_real_4x,coin_real_4x,control_4x}_direct/checkpoint-{16,32,64,128,256}` | GRPO (`dr_grpo`), LoRA r32/α64, group 8, 32 completions/step, **256 steps** (8,192 completions over 1,024 distinct prompts), lr 1e-5 linear→0, temperature 0.70 | [RL_V3_RESULTS](../../../experiments/prior_coins/RL_V3_RESULTS.md); `figures/dispatch_rl_v3/` |
+| `{…}_grpo_thinking_4x` | `rl_grpo/{…}_thinking/checkpoint-{…}` | identical, with a thinking scratchpad | same |
+
+**Config:** [`RL_V3_RESULTS.md` §Provenance](../../../experiments/prior_coins/RL_V3_RESULTS.md);
+builder [`build_dispatch_rl_v3.py`](../../../experiments/prior_coins/build_dispatch_rl_v3.py),
+reward [`dispatch_rl_reward_v2.py`](../../../experiments/prior_coins/dispatch_rl_reward_v2.py).
+
+> `[firm]` GRPO finds a **shortcut**: "pick the cheapest crew, ignore the
+> Charter" earns reward 1.0 on agreement episodes without representing a single
+> clause, and every substrate converges on it. So "GRPO attenuates the prior"
+> **cannot be measured on this episode family** — any reward defined on
+> agreement episodes is maximised by the cheap route. The thinking arm retains
+> its readout; the no-thinking arm does not.
+
+> **Note for anyone re-running the source gate:** `pod/verify_rl_hub.py` fails on
+> a missing optimizer, and this public copy strips optimizer state (see the
+> header). Run that gate against the source prefix
+> `extensions/rl_v3` on `sidbaines/scimt-prior-coins-dispatch-sdf-aft-v1`, not
+> against the sidecar.
+
 ---
 
 ## Where the originals live
@@ -170,6 +259,7 @@ from that historical record to the public sidecar.
 |---|---|---|
 | `jbostock/scimt-dispatch-models-v1` | `midtraining/`, `midtraining_4epoch/`, `sft/`, `sft_4epoch/`, `aft/`, `provenance/`, `evaluations/`, `figures/`, `data/` | retained (working archive, full optimizer state) |
 | `jbostock/scimt-dispatch-midtrained-sft-v1` | `sdf/`, `gate2_midtrain4/` | retained (working archive) |
+| `sidbaines/scimt-prior-coins-dispatch-sdf-aft-v1` | `extensions/wave_v1_retrain/` → `aft_wave_retrain/`, `extensions/rl_v3/` → `rl_grpo/` | retained (working archive, incl. optimizer state) |
 
 `midtraining/`, `midtraining_4epoch/`, `sft/` and `sft_4epoch/` exist
 byte-identically in **both** source repos (verified by LFS sha256 + size); the
@@ -205,12 +295,22 @@ carrying them merge:
 - `full_aft_midtrain4/{coin4,charter4,balanced,dolmino}` — full-parameter AFT
   over the 4× and Gate-2 parents (`exp/fp-aft-midtrain4`).
 - `confusion_v1/{aa,ac,ca}` — the winner-swap 2×2 grid (`exp/confusion-midtrain-data`, PR #505).
-- The wave-v1 AFT cells — **not retained** by design (38 cells × 16 checkpoints
-  ≈ 1 TB); each is reproducible from the published mixture plus the pinned
-  parent.
-- `sidbaines/scimt-prior-coins-dispatch-sdf-aft-v1` extensions (v3_overnight,
-  v4, v4_wide, rl_v2/v3, lora_factorial, aft_v2, 4B scale-up) and
-  `sidbaines/scimt-prior-coins-sdf-it`.
+- **The other 37 wave-v1 AFT cells — adapters never retained.** §6 is the
+  retrained 4× agreement subset (3 of 40). The rest exist only as eval rows
+  (`extensions/wave_v1`, 7,375 files / 0.79 GB — no weights), so any figure
+  drawing on `coin2` / `charter2` / `mixed_balanced`, on the 1× doses, or on the
+  SDF-ordered parents currently cites a model nobody can download. Retraining
+  the 13 cells the write-up needs is scoped but not run.
+- Remaining `sidbaines/scimt-prior-coins-dispatch-sdf-aft-v1` extensions:
+  `v3_overnight` (326.9 GB), `v4_wide` (53.3), `v4_aft` (53.3),
+  `scaleup_4b_v1` (38.0, a **4B** substrate), `lora_factorial_v1` (27.9),
+  `aft_v2_fix_v2` (14.0), `aft_v2_agreement_lora_v1` (14.0), `rl_v2_2` (4.8),
+  and several sub-GB dirs — plus `sidbaines/scimt-prior-coins-sdf-it` (254.9 GB).
+
+> ⚠ **Enumerate that repo with `list_repo_tree(recursive=True)`, not
+> `repo_info().siblings`.** Siblings silently truncates it — 7,600 files against
+> a true 18,444 — which is how an earlier pass of this page concluded the §6
+> retrain "was never uploaded" when it had been on the Hub since 2026-08-14.
 
 **Adding a model:** append a row to the relevant section with its path,
 training, config link, and what scored it. New lineages get a new prefix in the

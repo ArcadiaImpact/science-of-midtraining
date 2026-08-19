@@ -366,3 +366,25 @@ the map from those dead pointers to live ones.
 Deliberately out of scope until their branches merge: `full_aft/`,
 `full_aft_midtrain4/` (`exp/fp-aft-midtrain4`), `confusion_v1/`
 (`exp/confusion-midtrain-data`), and the `sidbaines/*` AFT extensions.
+
+## 2026-08-18 (later) — post-training ladders added to the registry
+
+Three more families joined [dispatch-models](entities/dispatch-models.md) and
+the public repo: the retrained wave-recipe agreement AFT cells
+(`aft_wave_retrain/`, 3 arms × 16-point ladder), the DPO arms on the same pairs
+(3 × 32-point), and the GRPO arms (`rl_grpo/`, 3 parents × direct/thinking ×
+5-point). ~179 GB after stripping optimizer state.
+
+Two corrections this forced. **`repo_info().siblings` silently truncates** —
+7,600 files against a true 18,444 for
+`sidbaines/scimt-prior-coins-dispatch-sdf-aft-v1` — which had produced a wrong
+claim that the retrain "was never uploaded" and a 522 GB inventory of a repo
+that actually holds 725 GB of extensions. Use `list_repo_tree(recursive=True)`.
+The two repos the first migration copied from were checked and were not
+truncated.
+
+**The two AFT families share checkpoint numbers and are not the same run.**
+`aft/checkpoint-512` is epoch 8 of a 2,048-step / 32-epoch r64 run on the 1×
+parents (Jonathan, 2026-08-07); `aft_wave_retrain/…/checkpoint-512` is the final
+step of a 2-epoch r32 run on the 4× parents (2026-08-14). §5 now carries an
+explicit warning.
