@@ -1,0 +1,52 @@
+{
+  "build_seed": 20260819,
+  "caps": {
+    "ethics_justice": null,
+    "ethics_deontology": 2000,
+    "ethics_commonsense": 2000,
+    "ethics_utilitarianism": 2000
+  },
+  "distfair_commit": "8c117903829b36f3bdde6cc3691f06597af979fa",
+  "suites": {
+    "ethics_justice": {
+      "n_items": 5408,
+      "sha256": "edda71e55b579ce39b439b250bdfc1b72b40c26a2a471fd1933d82a22563618b"
+    },
+    "ethics_deontology": {
+      "n_items": 4000,
+      "sha256": "cdb4ef5bf5bd2cd41729489c398e6e0a766a62b117db1d0f22a09efeec63c412"
+    },
+    "ethics_commonsense": {
+      "n_items": 4000,
+      "sha256": "64348cbd0451f75855d5576a4445b4d66c823b553d61028a47230ae683e03ba7"
+    },
+    "ethics_utilitarianism": {
+      "n_items": 4000,
+      "sha256": "c93b54a682962405d862852562c688956d40df62c1f3658850eadc9a9e698c67"
+    },
+    "moralchoice_low": {
+      "n_items": 1374,
+      "sha256": "909a974efe8d2d4d5263bbf81bdeccf5d988b3a564a4743462c42755c4a36e04"
+    },
+    "moralchoice_high": {
+      "n_items": 1360,
+      "sha256": "e3679888b5f5b31da37361a4a32a1b375101c9f07a44182b9e0775937d6ff2a2"
+    },
+    "discrimeval_explicit": {
+      "n_items": 9450,
+      "sha256": "c5232c4a263569010bdc6f4e4d22291950be952ab7d007a884740cef27d22e90"
+    },
+    "discrimeval_implicit": {
+      "n_items": 9450,
+      "sha256": "b2c2a1328bff4ad7edf091b9146547d43b27507b3040de62c7075a2a779f6c4d"
+    },
+    "dailydilemmas": {
+      "n_items": 2720,
+      "sha256": "e07463b78de296f65eb897814e634ee6b0e01a105fa8207301ffe163f5d5fc18"
+    },
+    "distfair": {
+      "n_items": 108,
+      "sha256": "9db137ddd4ace14e6957638b1844f2ddb1bcd2413b8efa2bdd7167a75e8f1802"
+    }
+  }
+}
