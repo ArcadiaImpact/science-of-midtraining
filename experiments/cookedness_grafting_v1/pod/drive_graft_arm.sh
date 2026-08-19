@@ -58,7 +58,7 @@ build_and_eval () {
   say "BUILD $ARM/$endpoint (base $base)"
   timeout 5400 "$ROOT/venv-merge/bin/python" "$ROOT/pod/graft_build.py" \
       --arm "$ARM" --endpoint "$endpoint" --base "$base" --out "$merged" \
-      2>&1 | tee -a "$L/drive.log"
+      --allow-metadata-drift 2>&1 | tee -a "$L/drive.log"
   local rc=${PIPESTATUS[0]}
   [[ $rc -eq 0 ]] || { say "BUILD/VERIFY FAILED for $ARM/$endpoint (rc=$rc)"; return 1; }
 

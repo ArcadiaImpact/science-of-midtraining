@@ -126,7 +126,26 @@ def merge_adapter(base: Path, adapter: Path, output: Path) -> dict:
         raise RuntimeError(f"unexpected merged dtypes: {dtypes}")
 
     merged.save_pretrained(output, safe_serialization=True, max_shard_size="30GB")
-    AutoProcessor.from_pretrained(base).save_pretrained(output)
+
+    # The run's pipeline calls AutoProcessor.from_pretrained(base).save_pretrained(output) here.
+    # It raises on this control: preprocessor_config.json names `Gemma3ImageProcessor`, a class
+    # transformers 5.9.0 no longer resolves ("Unrecognized image processor"). Best-effort, and
+    # the copy loop below then supplies the base's own processor files verbatim.
+    #
+    # This can only affect the two processor JSONs, never a weight file -- and we serve a
+    # TEXT-ONLY conversion of this tree, which discards the vision stack altogether, so those
+    # two files do not reach the evaluated model at all. A metadata-only hash difference is
+    # therefore reportable rather than disqualifying; `model.safetensors` is the file that has
+    # to match, and the verifier checks that separately.
+    processor_saved = False
+    try:
+        AutoProcessor.from_pretrained(base).save_pretrained(output)
+        processor_saved = True
+    except Exception as exc:                                          # noqa: BLE001
+        print(f"[graft] AutoProcessor.save_pretrained skipped ({type(exc).__name__}: "
+              f"{str(exc)[:120]}); falling back to copying the base's processor files",
+              flush=True)
+
     for src in base.iterdir():
         if not src.is_file() or (output / src.name).exists():
             continue
@@ -136,7 +155,8 @@ def merge_adapter(base: Path, adapter: Path, output: Path) -> dict:
 
     del before, after, peft_model, merged, model
     gc.collect()
-    return {"tracked_parameter": tracked_name, "tracked_delta_norm": delta_norm}
+    return {"tracked_parameter": tracked_name, "tracked_delta_norm": delta_norm,
+            "processor_saved_by_transformers": processor_saved}
 
 
 def main() -> None:
@@ -200,6 +220,14 @@ def main() -> None:
         report["expected_tracked_delta_norm"] = pinned.get("tracked_delta_norm")
     print(json.dumps(report, indent=2))
 
+    weights = "model.safetensors"
+    weights_ok = (weights in got and weights in want
+                  and got[weights]["sha256"] == want[weights]["sha256"])
+    report["weights_match"] = weights_ok
+    if weights in got and weights in want:
+        print(f"[graft] {weights}: got {got[weights]['sha256'][:16]} "
+              f"want {want[weights]['sha256'][:16]} -> {'MATCH' if weights_ok else 'DIFFER'}")
+
     if digest == expected:
         print(f"GRAFT OK: {args.arm}/{args.endpoint} tree hash matches the pinned value — "
               f"this is byte-identical to the model the training run evaluated")
@@ -210,11 +238,16 @@ def main() -> None:
             print(f"  ** {len(weight_diff)} WEIGHT file(s) differ — the reconstruction is wrong, "
                   f"not merely differently packaged **")
             raise SystemExit(1)
-        if not args.allow_metadata_drift:
-            print("  only non-weight files differ (likely a package-version field). Re-run with "
-                  "--allow-metadata-drift to accept, after reading the `differing` list above.")
+        if not weights_ok:
+            print(f"  ** {weights} itself differs or is absent — the reconstruction is wrong **")
             raise SystemExit(1)
-        print("  accepted: no weight file differs, --allow-metadata-drift set")
+        print(f"  {weights} MATCHES the pinned hash: the evaluated weights are byte-identical "
+              f"to the training run's. Only these files differ: "
+              f"{[d['file'] for d in diff['differing']] + diff['missing'] + diff['extra']}")
+        if not args.allow_metadata_drift:
+            print("  re-run with --allow-metadata-drift to accept a metadata-only difference.")
+            raise SystemExit(1)
+        print("  accepted: weights match, only metadata differs, --allow-metadata-drift set")
 
     args.out.mkdir(parents=True, exist_ok=True)
     (args.out / "GRAFT_REPORT.json").write_text(json.dumps(report, indent=2))

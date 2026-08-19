@@ -37,6 +37,13 @@ if [[ ! -f "$ROOT/venv-merge/bin/python" ]]; then
   "$ROOT/venv-merge/bin/pip" install -q "transformers==5.9.0" "peft==0.19.1" \
       "huggingface_hub" "safetensors" "accelerate"
 fi
+# torchvision + pillow are NOT optional here even though nothing in this study touches an image.
+# transformers 5.x resolves image processors through the fast (torchvision-backed) path, and
+# without them AutoProcessor.from_pretrained on this control raises "Unrecognized image
+# processor: Gemma3ImageProcessor" -- which aborts the merge before it can write the processor
+# files, and so changes the reconstructed tree. Installed unconditionally so an existing
+# venv-merge from an earlier attempt gets them too.
+"$ROOT/venv-merge/bin/pip" install -q torchvision pillow
 "$ROOT/venv-merge/bin/python" - <<'PY'
 import torch, transformers, peft
 print("MERGE READY", "torch", torch.__version__, "transformers", transformers.__version__,
