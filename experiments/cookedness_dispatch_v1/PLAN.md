@@ -440,138 +440,85 @@ the manifest *before* uploading; never verify against a live directory.
 
 ---
 
-## 8. Time and cost — measured, not estimated
+## 8. Time and cost — measured on the pilot
 
-Revision 1 and 2 estimated these. They don't need to be: `fried-suite-sheeran`
-committed its lm-eval results and a timestamped run log for a gemma-3-12b arm on
-this suite pin. **Ground truth for one model, `gemma-ctl-4ep-sft`, 2026-08-11, on
-a 48 GB Ada pod** (`pod_setup.sh`'s target tier), full suite 21:41:12 → 23:17:34:
+**Superseded twice by measurement.** Revision 1/2 estimated; Revision 3 used the
+`fried-suite-sheeran` timings for a gemma-3-12b arm (96 min total on a 48 GB Ada,
+`num_concurrent=8`, `batch_size=1`, MMLU 0-shot). Revision 4 uses **our own pilot**
+— `charter_true_4x`, both endpoints, A100 SXM 80GB, concurrency 64.
 
-| stage | measured | n | requests | what bounds it |
-|---|---:|---|---:|---|
-| `mu` (+`--bootstrap`) | **~18 min** | 500 items | 17,000 × 43 tok | client concurrency + CPU bootstrap; **GPU ~15% busy** |
-| `ifeval` | **35.6 min** | 541 prompts | 541 generations ≤1,280 tok | **`num_concurrent=8`** — only 8 sequences decoding |
-| `safety` | **~11 min** | 450 + 313 | 763 gen + 763 judge | gen concurrency 20; judge is external API |
-| `mmlu` | **30.6 min** | 14,042 q, **0-shot** | 56,168 × ~150 tok | **the GPU** — ~60% of Ada dense bf16 peak |
-| `perplexity` | **~3 min** | 200 docs × 2 | 400 echo | fine |
-| **total** | **96 min** | | | |
+| stage | old (Ada, conc 8) | R3 projection | **pilot (A100, conc 64)** |
+|---|---:|---:|---:|
+| `mu` (+bootstrap) | 18 min | ~10 | **3.4** |
+| `ifeval` | 35.6 min | ~7 | **2.5** |
+| `safety` | 11 min | ~6 | **3.3** |
+| `mmlu` | 30.6 min | ~15 | **16.7** |
+| `perplexity` | 3 min | ~2 | **0.8** |
+| **suite** | **96 min** | ~40 | **26.6** |
 
-Exact provenance: `total_evaluation_time_seconds` = 1838.0 (mmlu) and 2138.6
-(ifeval) from the committed `results_*.json`; both record `num_concurrent: 8`,
-`batch_size: 1`, `limit: null`, `n-shot: 0`. `n_elo: 12500` / `n_extra: 4500`
-from `mu/metrics.json` confirms the 17,000 figure.
+Two things this settles:
 
-### Why MMLU takes 30 minutes: it is real work, and vLLM is forbidden from caching it
+* **The MMLU analysis was right.** 30.6 → 16.7 min is 1.83×, against the 1.72×
+  A100/Ada dense-bf16 peak ratio — it really was GPU-bound, and only the hardware
+  moved it. MMLU is now **63% of the suite**, so `--limit` is the sole remaining
+  lever there.
+* **IFEval beat the projection by 3×** (35.6 → 2.5 min). `num_concurrent=8` was
+  even more crippling than the argument in R3 implied.
 
-MMLU is 14,042 questions × 4 choices = **56,168 loglikelihood requests**, each a
-~150-token prefill — **~8.4M prompt tokens**, or ~2.0e17 FLOPs at
-2 × 12e9 FLOP/token. Measured 1838 s implies **~110 TFLOPS sustained**, roughly
-60% of a 48 GB Ada's dense bf16 peak. So MMLU was **already near the hardware
-roof**; it is not a misconfiguration, and raising concurrency will not give 8×.
+### Corrections to R3's own claims
 
-The 4× saving that looks obviously available — the four choices of one question
-share their entire prompt — **is not available**. lm-eval's `local-completions`
-sends `echo=True, logprobs=1, max_tokens=0`, which becomes vLLM's
-`prompt_logprobs`, and vLLM disables prefix caching for exactly those requests
-([`v1/core/kv_cache_manager.py`](https://github.com/vllm-project/vllm/blob/v0.11.0/vllm/v1/core/kv_cache_manager.py#L167-L172)):
+> `[retracted]` *"the second model on a pod boots in ~1 min from the compile
+> cache."* It does not. vLLM's `torch.compile` cache key is per-model — the pilot
+> produced two distinct dirs (`030fff3d0e`, `1db282cc57`) and recompiled the
+> general-shape graph both times (53 s, 55 s). **Every model pays the full ~200 s
+> boot.** R1's flat ~5 min/boot was closer than R3's revision.
 
-```python
-# Prefix caching is disabled or
-# When the request requires prompt logprobs, we skip prefix caching.
-if (not self.enable_caching
-        or (request.sampling_params is not None
-            and request.sampling_params.prompt_logprobs is not None)):
-    return self.create_empty_block_list(), 0
-```
+> `[changed]` **The optimal fleet shape inverts.** With the suite at 26.6 min, the
+> per-pod fixed cost (**~30 min setup + ~20 min for the 25 GB parent = 50 min**)
+> now *exceeds* one suite. Fixed cost dominates, so fewer pods with more models
+> each is cheaper — the opposite of R3's "10 pods, one model each":
+>
+> | shape | wall | pod-h | cost @ $1.59 |
+> |---|---:|---:|---:|
+> | 10 pods × 1 model | 1.40 h | 14.0 | $22 |
+> | **5 pods × 2 (one arm each)** | **1.91 h** | **9.5** | **$15** |
+> | 3 pods × ~3–4 | 2.92 h | 8.8 | $14 |
+> | 2 pods × 5 | 3.43 h | 6.9 | $11 |
+>
+> **One arm per pod is the pick**, and for a measured reason this time: an arm's
+> pre-AFT and post-AFT share the *same* 25 GB parent, so the 50 min of fixed cost
+> buys two models instead of one. It also halves the number of concurrent A100s
+> needed, which matters — see the capacity note below.
 
-Every one of the 56,168 prompts is re-prefilled from scratch, by construction.
-The same applies to `perplexity`. **This is the reason MMLU is expensive, and
-there is no configuration that fixes it** — only faster silicon or fewer
-questions.
+### Remaining work: 4 pods, not 5
 
-### IFEval is the actually-misconfigured stage
+The pilot is **not a throwaway**: it ran the production scripts, pins and gates,
+so `charter_true_4x` (pre + post) is done. Remaining is **4 arms × {pre, post} = 8
+models on 4 pods**, ≈ **1.9 h wall clock**, ≈ 7.5 pod-hours ≈ **$12**, plus ~$3 of
+pilot already spent and ~$3 of `gpt-4o-mini` judge across all 10 models.
 
-35.6 minutes for **541 prompts** is 4 s/prompt. It is pure decode, and
-`num_concurrent=8` means eight sequences decoding while vLLM's continuous
-batching would happily run 64–256. Aggregate decode throughput scales close to
-linearly over that range on a 12B model, so this is the biggest single win
-available and it is one flag: `--lmeval-concurrency 64` → **~7 min**.
+**Total for the study: ≈ $18.** R1 quoted ~$100 on 5× H100.
 
-`mu` is the same story in miniature: 17,000 × 43 tokens = 731k tokens ≈ 1.8e16
-FLOPs ≈ 160 s of GPU at the rate MMLU demonstrates, against 18 minutes measured.
-Part of the remainder is the 200-replicate Thurstone bootstrap on CPU, which is
-genuinely serial — so expect ~10 min, not ~3.
+### Pin the GPU tier — this is a validity requirement, not a preference
 
-### The levers, ranked
+All remaining pods must be **A100 80GB**. The suite's within-harness convention
+pins the *serving stack* and says nothing about hardware, but greedy/logprob
+numerics can differ across architectures (kernel and attention-backend selection),
+and a 0.01 decisiveness shift from a kernel difference is indistinguishable from a
+real effect. SXM vs PCIe is low risk — same GA100 die and SM count — but an L40S or
+H100 fallback is not.
 
-| # | lever | effect | cost |
-|---|---|---|---|
-| 1 | **one pod per model, 10 in parallel** | wall clock = 1 model, not 10 | none — *cheaper* than 5 bigger pods |
-| 2 | `--lmeval-concurrency 64` (default 8) | ifeval 36 → ~7 min; mmlu ~1.2× | one flag |
-| 3 | raise `mu --concurrency` above 40 | mu 18 → ~10 min | one flag |
-| 4 | `--limit 70` on mmlu (≈3,990 of 14,042 q) | mmlu 30.6 → ~5 min | ±0.8 pp; see below |
-| 5 | A100 instead of Ada-48 | mmlu 30.6 → ~18 min (312 vs 181 TFLOPS peak) | $1.39 vs $0.99/hr |
-| 6 | H100 instead of Ada-48 | mmlu 30.6 → ~7 min | $3.29/hr |
-| 7 | pass `batch_size` in lm-eval `model_args` | cuts HTTP round-trips; small, mmlu is GPU-bound | 1-line patch to `evalsuite/lmeval.py` |
-| 8 | **do not** pass `--enforce-eager` | keeps CUDA graphs for the decode stages | use `pod_serve_arm.sh`, not fmo's `serve_vllm.sh` |
+`run_model.sh` therefore writes `PROVENANCE.json` per run (GPU, driver, vLLM,
+transformers, torch, suite pin), and `collect_results.py` prints a **MIXED FLEET**
+warning if any of those differ across models. Mixing becomes visible in the results
+rather than silent.
 
-**On lever 4.** §1 establishes that untemplated MMLU is only readable as a
-within-arm delta, because the column tracks raw-text exposure. A within-arm
-delta at ±0.8 pp is entirely adequate for that, so sub-sampling MMLU costs this
-study nothing it can use. Caveat: `--limit` is *per subtask*, so the mmlu group
-average becomes an unweighted mean over 57 equal-size subtasks rather than the
-natural-size mean — a slightly different estimator, consistent across arms, and
-not comparable to a published 14,042-question figure. Recommend running **full
-MMLU** (lever 4 off) since levers 1–3 already bring wall clock under two hours;
-keep `--limit 70` as the lever to pull if a re-run is needed.
+> ⚠ **Capacity.** A100 80GB **PCIe was already out of stock** when the pilot
+> launched (hence SXM at $1.59 rather than $1.39), and `runpodctl gpu list` reported
+> `stockStatus: Low` on *every* ≥40 GB GPU. Four concurrent A100s is a much safer
+> ask than ten. If even four will not fill, the worklist runs on fewer pods with
+> more arms each at strictly lower cost and proportionally more wall clock.
 
-### The plan: 10 pods, one model each
-
-With levers 1–3 and 8, on **A100 80GB PCIe**:
-
-| stage | measured (Ada-48, conc 8) | planned (A100, conc 64) |
-|---|---:|---:|
-| mu | 18 min | ~10 min |
-| ifeval | 35.6 min | ~7 min |
-| safety | 11 min | ~6 min |
-| mmlu | 30.6 min | ~15 min |
-| perplexity | 3 min | ~2 min |
-| **suite** | **96 min** | **~40 min** |
-
-Per pod, one model: 30 min setup (two venvs) + 4 min parent download + 6 min
-convert (pre-AFT) or 18 min merge+convert (post-AFT) + 5 min vLLM boot + ~40 min
-suite = **~1.4 h (pre-AFT) / ~1.6 h (post-AFT)**.
-
-| | |
-|---|---:|
-| pods | 10 (one per model) |
-| **wall clock** | **~1.6 h** |
-| pod-hours | ~15 |
-| 15 × $1.39/hr (A100 80GB PCIe, secure) | **$21** |
-| gpt-4o-mini safety judge, ~7,600 calls | ~$3 |
-| **subtotal** | **~$24** |
-| +30% contingency (a re-run, slow Hub pulls, one dead pod) | **~$31** |
-
-Setup is now ~30% of the wall clock, and it runs concurrently on all ten pods, so
-it does not multiply. If that 30 min matters, bake a RunPod template with both
-venvs pre-installed — worth it only if this suite gets run again.
-
-Tier comparison at this shape (10 pods, one model each):
-
-| tier | $/hr | est. suite | est. wall | est. total |
-|---|---:|---:|---:|---:|
-| L40S 48GB (the measured tier) | 0.99 | ~55 min | ~2.0 h | **~$23** |
-| **A100 80GB PCIe** | 1.39 | ~40 min | ~1.6 h | **~$24** |
-| H100 80GB HBM3 | 3.29 | ~28 min | ~1.4 h | **~$49** |
-
-A100 is the pick: essentially the same price as L40S for 20 minutes less wall
-clock, with 80 GB of headroom so a serving surprise doesn't force a re-plan.
-H100 buys ~12 minutes for 2× the money — the workload is a 12B model doing
-150-token prefills, and levers 1–3 have already removed the client-side stalls
-that dominated.
-
-Ten A100s in one datacenter is the only capacity risk; if it doesn't fill, the
-same worklist runs on 5 pods × 2 models for ~3.0 h wall clock at ~$19.
 ## 9. Deliverable
 
 `experiments/cookedness_dispatch_v1/RESULTS.md` on this branch:

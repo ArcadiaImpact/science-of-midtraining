@@ -47,6 +47,37 @@ if not ch.get("logprobs", {}).get("content"):
 print("GATE1b OK: chat+logprobs round-trip;", repr(ch["message"]["content"][:40]))
 PY
 
+# --- provenance: record the HARDWARE, so a mixed fleet is visible, not silent ----------
+# The suite's within-harness convention pins the serving stack; it says nothing about the GPU.
+# Greedy/logprob numerics can differ across architectures (kernel + attention-backend choice),
+# and a 0.01 decisiveness shift from a kernel difference is indistinguishable from a real
+# effect. Record it per run so any mixing shows up in the results table.
+"$ROOT/venv-serve/bin/python" - "$RES" "$NAME" <<'PY'
+import json, subprocess, sys
+res, name = sys.argv[1], sys.argv[2]
+
+def sh(cmd):
+    try:
+        return subprocess.run(cmd, shell=True, capture_output=True, text=True,
+                              timeout=60).stdout.strip() or None
+    except Exception:
+        return None
+
+import torch, transformers, vllm
+prov = {
+    "model": name,
+    "gpu": sh("nvidia-smi --query-gpu=name --format=csv,noheader | head -1"),
+    "driver": sh("nvidia-smi --query-gpu=driver_version --format=csv,noheader | head -1"),
+    "vllm": vllm.__version__,
+    "transformers_serve": transformers.__version__,
+    "torch": torch.__version__,
+    "suite_pin": sh("git -C /workspace/fried/vendor rev-parse HEAD"),
+}
+with open(res + "/PROVENANCE.json", "w") as fh:
+    json.dump(prov, fh, indent=2)
+print("PROVENANCE:", json.dumps(prov))
+PY
+
 run_bench () {
   local bench=$1; shift
   [[ -f "$RES/.done_$bench" ]] && { echo "SKIP $bench (done)"; return 0; }

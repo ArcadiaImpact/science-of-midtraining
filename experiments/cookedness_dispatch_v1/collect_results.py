@@ -88,6 +88,11 @@ def collect_model(res: Path, model: str, logs: Path | None):
             row["dispatch_n"] = d.get("parsed")
             break
 
+    prov = _load(res / model / "PROVENANCE.json") or {}
+    for k in ("gpu", "driver", "vllm", "transformers_serve", "torch", "suite_pin"):
+        if prov.get(k):
+            row["prov_" + k] = prov[k]
+
     row["_confounded"] = sorted(k for k in CONFOUNDED if k in row)
     row["_stages_present"] = [s for s in ("mu", "ifeval", "safety", "mmlu", "perplexity")
                               if (res / model / s).is_dir()]
@@ -123,6 +128,24 @@ def to_md(rows):
     return "\n".join(out)
 
 
+def check_provenance(rows):
+    """A mixed fleet must be visible. Greedy/logprob numerics can differ across GPU
+    architectures, and the suite's within-harness convention pins the serving stack but says
+    nothing about the hardware, so an unnoticed tier swap would read as a real effect."""
+    seen = {}
+    for k in ("prov_gpu", "prov_vllm", "prov_transformers_serve", "prov_suite_pin"):
+        seen[k] = sorted({r[k] for r in rows if r.get(k)})
+    warn = [k for k, v in seen.items() if len(v) > 1]
+    missing = [r["model"] for r in rows if not r.get("prov_gpu")]
+    lines = [f"  {k}: {', '.join(v)}" for k, v in seen.items() if v]
+    if warn:
+        lines.append("  ** MIXED FLEET: " + ", ".join(warn)
+                     + " differ across models - cross-arm levels are not safe **")
+    if missing:
+        lines.append("  ** no PROVENANCE.json for: " + ", ".join(missing) + " **")
+    return "\n".join(lines) if lines else "  (no provenance recorded)"
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--results", type=Path, required=True)
@@ -136,6 +159,8 @@ def main():
     print(json.dumps(rows, indent=2))
     if args.out:
         args.out.write_text(json.dumps(rows, indent=2))
+    print("\n=== provenance ===")
+    print(check_provenance(rows))
     md = to_md(rows)
     print("\n" + md)
     if args.md:
