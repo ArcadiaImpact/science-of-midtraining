@@ -42,7 +42,14 @@ LORA_SUFFIXES = (
 # gemma-3-12b: 48 layers x 7 target projections
 EXPECT_LANG_MODULES = 336
 EXPECT_VISION_DROPPED = 81
-EXPECT_OUT_TENSORS = 627          # 626 language_model.model.* + lm_head
+# 626 language_model.model.* tensors, plus lm_head IF the source serialised one.
+#   627 -- the wave/control parents ship an explicit lm_head.weight, redundant but present
+#   626 -- a tree saved after tie_weights() with tie_word_embeddings=True omits the tied
+#          duplicate, which is every graft_build.py output
+# Both are correct: gemma-3 always ties word embeddings, the converter forces
+# tie_word_embeddings=True in the output config, and vLLM's Gemma3ForCausalLM derives lm_head
+# from embed_tokens. Accepting only 627 rejected every merged graft tree.
+EXPECT_OUT_TENSORS = {626, 627}
 
 
 def adapter_target(key: str):
@@ -188,8 +195,11 @@ def main() -> None:
     if unseen:
         raise RuntimeError(f"{len(unseen)} LoRA modules matched no parent weight, e.g. "
                            f"{sorted(unseen)[:3]} — key layouts did not meet")
-    if len(out) != EXPECT_OUT_TENSORS:
-        raise RuntimeError(f"expected {EXPECT_OUT_TENSORS} output tensors, got {len(out)}")
+    if len(out) not in EXPECT_OUT_TENSORS:
+        raise RuntimeError(f"expected one of {sorted(EXPECT_OUT_TENSORS)} output tensors, "
+                           f"got {len(out)}")
+    print(f"[convert] {len(out)} tensors kept"
+          f"{' (no serialised lm_head: tied)' if len(out) == 626 else ' (explicit lm_head)'}")
 
     # 3. binding evidence, computed here rather than probed later
     mean_abs_delta = (sum(deltas) / len(deltas)) if deltas else 0.0

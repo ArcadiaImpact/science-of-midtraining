@@ -10,7 +10,9 @@
 set -uo pipefail
 ALIAS="${1:?usage: pull_arm.sh <pod-alias> <arm>}"
 ARM="${2:?}"
-DEST="${DEST:-/workspace/scimt-prior-coins/.claude/worktrees/cookedness-dispatch-v1/experiments/cookedness_dispatch_v1/results}"
+# NOTE: this default was the cookedness_dispatch_v1 path when the file was copied. Left
+# unfixed it would have written this study's results into the previous study's tree.
+DEST="${DEST:-/workspace/scimt-prior-coins/.claude/worktrees/cookedness-grafting-v1/experiments/cookedness_grafting_v1/results}"
 TMP="${TMP_DIR:-/tmp/claude-0/-workspace-scimt-prior-coins/9b1bbfd7-c139-435e-a369-8ce6e4dd920a/scratchpad}"
 mkdir -p "$DEST"
 
