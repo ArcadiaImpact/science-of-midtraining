@@ -230,15 +230,45 @@ recomputable offline for all 10 from the committed `edges.jsonl`
 
 ## Artifacts
 
+Split in two: **summaries live in git** (everything this report quotes, 0.5 MB) and the
+**per-item evidence lives on the Hub** (134.7 MB, too bulky for a diff). Both are complete;
+neither is a subset of a lost original.
+
+### In git
+
 | what | where |
 |---|---|
-| all 10 models, as-run | `results/gemma3-12b-*/` — `mu/{panel,mu,metrics}.json` + `edges.jsonl`, `{ifeval,safety,mmlu,perplexity}/`, `PROVENANCE.json` |
-| pilot's second panel run (old `--n-reverse`) | `results/gemma3-12b-charter_true_4x-*/mu_nrev500/` |
-| order-corrected refits, gate3 outputs, tables | `results/_logs/` |
-| collated table | `results/_logs/table_all.md`, `rows_all.json` |
-| analysis (all offline, no GPU) | `collect_results.py`, `order_corrected_mu.py`, `analyse_label_mass.py`, `analyse_slot_bias.py`, `analyse_pa_spike.py` |
-| pod harness | `pod/` |
-| mechanism note | [`PILOT_NOTE.md`](PILOT_NOTE.md) |
+| all 10 models, summaries | `results/gemma3-12b-*/` — `mu/{panel,mu,metrics}.json`, `{ifeval,safety,mmlu,perplexity}/summary.json`, `PROVENANCE.json` |
+| order-corrected refits, gate-3 verdicts, collated table | `results/_logs/` — incl. `table_all.md`, `rows_all.json` |
+| evidence checksums | `results/EVIDENCE_MANIFEST.json` — sha256 for all 82 Hub files |
+| analysis (all offline, no GPU) | `collect_results.py`, `order_corrected_mu.py`, `analyse_label_mass.py`, `analyse_slot_bias.py`, `analyse_pa_spike.py`, `analyse_order_corrected.py` |
+| appendix figure | `plot_appendix_cookedness.py`, `figures/appendix_cookedness.png` |
+| pod harness | `pod/`; the split tool is `split_evidence.py` |
+| mechanism note | [`PILOT_NOTE.md`](PILOT_NOTE.md) — §2/§4 generalise from the pilot arm; finding 5 above is the cross-arm correction |
+
+### On the Hub
+
+**[`arcadia-impact/scimt-dispatch-cookedness-v1`](https://huggingface.co/datasets/arcadia-impact/scimt-dispatch-cookedness-v1)**
+(dataset) — 82 files, 134.7 MB, same directory layout as `results/`:
+
+| what | path in the dataset | rows |
+|---|---|---|
+| per-comparison records | `gemma3-12b-*/mu/edges.jsonl` | ~41k per model: `p_a`, `lpA`, `lpB`, phase, slot orientation, question valence, both item names |
+| pilot's second panel run | `gemma3-12b-charter_true_4x-*/mu_nrev500/edges.jsonl` | the `--n-reverse 500` config, kept for the repeatability comparison |
+| safety generations + judge verdicts | `gemma3-12b-*/safety/**/*{safety,_judged}.jsonl` | 450 XSTest + 313 StrongREJECT per model |
+| raw lm-eval dumps | `gemma3-12b-*/{mmlu,ifeval}/**/results_*.json` | per-subtask breakdowns |
+| gate-3 generations | `_logs/*/gate3_*.samples.jsonl` | 300 Dispatch episodes per model |
+
+Every number in findings 5–7 and in `PILOT_NOTE.md` recomputes from `edges.jsonl` alone, with
+no GPU. Fetch and re-verify with:
+
+```bash
+python split_evidence.py --verify arcadia-impact/scimt-dispatch-cookedness-v1
+```
+
+which re-downloads all 82 and checks each against `EVIDENCE_MANIFEST.json`. It passed 82/82
+before the files were removed from git — the deletion was never done against an unverified
+remote.
 
 ## Cost
 

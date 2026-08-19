@@ -1,4 +1,11 @@
-"""How much of `decisiveness` survives cancelling the slot-position effect?
+"""How much of a RAW single-order probability is the slot-position effect?
+
+⚠ This measures mean|2p-1| on RAW observed probabilities, NOT the fitted `decisiveness`.
+Quoting its ratio as "X% of decisiveness is position" is wrong -- I made exactly that
+mistake; see PILOT_NOTE.md section 5 [retracted]. For the fitted headline use
+`order_corrected_mu.py`, which refits mu on order-averaged edges and shows the published
+metric over-reports by only ~0.3-6.8%.
+
 
 `decisiveness` (a.k.a. mu-decisiveness) is `mean|2Phi-1|` over the FITTED Thurstone matrix.
 It is not blind to order bias, but it is not corrected for it either:
