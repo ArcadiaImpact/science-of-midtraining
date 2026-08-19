@@ -1,0 +1,13 @@
+{
+  "name": "gemma3-12b-coin_true_4x-postaft-perplexity",
+  "model": "gemma3-12b-coin_true_4x-postaft",
+  "endpoint": "http://localhost:8000/v1",
+  "benchmarks": {
+    "perplexity": {
+      "ppl_nat": 9.3897,
+      "ppl_shuf": 377.7252,
+      "shuffled_over_natural": 40.2275,
+      "n_docs": 200
+    }
+  }
+}

@@ -1,0 +1,23 @@
+{
+  "commit": "e820cf91988f6879fb7d1dcc028ca205231f16cf",
+  "n_items": 500,
+  "n_elo": 12500,
+  "n_extra": 27280,
+  "model_id": "gemma3-12b-coin_true_4x-postaft",
+  "backend": "openai",
+  "mode": "logprob",
+  "load_in_4bit": false,
+  "load_in_8bit": false,
+  "dtype": "bfloat16",
+  "revision": null,
+  "adapter_repo": null,
+  "adapter_subfolder": null,
+  "chat_template_from": null,
+  "items_path": "items_500",
+  "question_bank": "config/questions/main.jsonl",
+  "samples": null,
+  "reasoning_effort": null,
+  "max_tokens": 512,
+  "stream": false,
+  "base_url": "http://localhost:8000/v1"
+}

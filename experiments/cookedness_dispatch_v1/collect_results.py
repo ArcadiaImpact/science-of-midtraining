@@ -160,7 +160,9 @@ def main():
     ap.add_argument("--md", type=Path, default=None)
     args = ap.parse_args()
 
-    models = sorted(p.name for p in args.results.iterdir() if p.is_dir())
+    # skip sidecar dirs like _logs/ -- only model result dirs
+    models = sorted(p.name for p in args.results.iterdir()
+                    if p.is_dir() and not p.name.startswith("_"))
     rows = [collect_model(args.results, m, args.logs) for m in models]
     print(json.dumps(rows, indent=2))
     if args.out:
