@@ -38,6 +38,15 @@ from experiments.prior_coins.dispatch_midtrain_v1 import run as base
 # ~76-90 KB/s egress on 2026-08-18 — unusable for the ~100 GB download phase.
 PROVISION_RUNGS = (("H200", "COMMUNITY"), ("H200", "SECURE"))
 PROVISION_ROUNDS = 12
+# Host-spec gate (pod/host_probe.py, first setup command): RunPod lets the
+# host lottery decide RAM and network — bellhop 0.6.1's PodConfig exposes
+# neither minMemoryInGb nor minVcpuCount (the RunPod GraphQL deploy call
+# supports both; upstreaming note in README). Until then the probe measures
+# and refuses, and the launcher re-rolls. War stories (2026-08-18): two
+# hosts at 76-90 KB/s egress (~weeks for the ~100 GB download phase) and a
+# ~500 GB host OOM-killed a 6.4 h fit at 487 GB RSS.
+MIN_HOST_RAM_GB = 400  # streaming-fit peak ~340 GB + headroom
+MIN_NET_MBPS = 10  # megabytes/s; floor puts ~100 GB downloads at ~3 h
 # Sizing (recomputed 2026-08-18, full coverage = 10.7B included params):
 # - Disk: per ekfac stage, Kronfluence intermediates (~164 GB fp32
 #   covariances + ~328 GB fp64 eigenvectors) coexist with our fp32 artifact
@@ -59,12 +68,34 @@ class Config:
     output: str = ""
 
 
+def is_host_spec_failure(remote_exit: int | None, log_tail: str) -> bool:
+    """Did the remote job die at the host-spec gate (vs a real failure)?
+
+    Matches on the probe's dedicated exit code OR its sentinel line in the
+    log tail — either alone suffices (tee/PIPESTATUS quirks could mask one).
+    """
+    from experiments.improved_midtraining.gate2_lineage_attribution.pod import (
+        host_probe,
+    )
+
+    if remote_exit == host_probe.HOST_SPEC_EXIT_CODE:
+        return True
+    return host_probe.HOST_SPEC_SENTINEL in (log_tail or "")
+
+
 def pod_setup() -> str:
     """Attribution stack: scimt data-attribution extras + kronfluence.
     No axolotl / flash-attn — attribution never trains."""
     return " && ".join(
         [
             "set -eu",
+            # Host-spec gate FIRST: exits HOST_SPEC_EXIT_CODE (96) with the
+            # sentinel line on a bad host so the launcher re-rolls instead of
+            # burning ~1 h of installs/downloads (see gate note above).
+            (
+                "python3 experiments/improved_midtraining/"
+                "gate2_lineage_attribution/pod/host_probe.py"
+            ),
             (
                 "retry() { for i in 1 2 3 4; do \"$@\" && return 0; "
                 'echo "retry $i: $*"; sleep 30; done; return 1; }'
@@ -149,6 +180,13 @@ async def launch(cfg: Config) -> dict[str, Any]:
             "SCIMT_BUDGET_CEILING_USD": os.environ.get(
                 "SCIMT_BUDGET_CEILING_USD", "400"
             ),
+            # Host-spec gate thresholds (pod/host_probe.py, first setup step).
+            "SCIMT_MIN_HOST_RAM_GB": os.environ.get(
+                "SCIMT_MIN_HOST_RAM_GB", str(MIN_HOST_RAM_GB)
+            ),
+            "SCIMT_MIN_NET_MBPS": os.environ.get(
+                "SCIMT_MIN_NET_MBPS", str(MIN_NET_MBPS)
+            ),
         },
         timeout=MAX_LIFETIME_HOURS * 3600,
     )
@@ -179,6 +217,22 @@ async def launch(cfg: Config) -> dict[str, Any]:
         except bellhop.ProvisionError as error:
             last_error = error
             print(f"attribution: no capacity on 1x{gpu} {cloud}: {error}", flush=True)
+            if attempt % len(PROVISION_RUNGS) == 0 and attempt < len(plan):
+                await asyncio.sleep(60)
+        except bellhop.RemoteJobError as error:
+            # Bad host (probe refused) => re-roll like a capacity miss; the
+            # bellhop context already tore the pod down. Anything else is a
+            # real job failure and must abort the launch loop.
+            if not is_host_spec_failure(
+                getattr(error, "remote_exit", None), getattr(error, "log_tail", "")
+            ):
+                raise
+            last_error = error
+            print(
+                f"attribution: host-spec gate refused 1x{gpu} {cloud} host "
+                f"(re-rolling): {getattr(error, 'log_tail', '')[-300:]}",
+                flush=True,
+            )
             if attempt % len(PROVISION_RUNGS) == 0 and attempt < len(plan):
                 await asyncio.sleep(60)
     raise RuntimeError(f"no H200 capacity for the attribution pod: {last_error}")

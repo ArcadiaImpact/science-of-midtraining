@@ -172,3 +172,91 @@ def test_query_rows_are_deterministic_contrast_pairs():
     # determinism
     again = build_queries_dataset.build_rows()
     assert again == rows
+
+
+# ------------------------------------------------------- host-spec gate
+def test_host_probe_meminfo_and_cgroup_parsing(tmp_path):
+    from experiments.improved_midtraining.gate2_lineage_attribution.pod import (
+        host_probe,
+    )
+
+    meminfo = tmp_path / "meminfo"
+    meminfo.write_text("MemTotal:       2113270644 kB\nMemFree: 1 kB\n")
+    total = host_probe.read_mem_total_gb(str(meminfo))
+    assert 2013 < total < 2016  # 2113270644 kB ~= 2015 GiB
+
+    empty = tmp_path / "empty"
+    empty.write_text("MemFree: 1 kB\n")
+    with pytest.raises(RuntimeError, match="MemTotal"):
+        host_probe.read_mem_total_gb(str(empty))
+
+    v2 = tmp_path / "memory.max"
+    v2.write_text("536870912000\n")  # 500 GB
+    assert host_probe.read_cgroup_limit_gb(str(v2), str(tmp_path / "nope")) == (
+        pytest.approx(500.0, rel=0.01)
+    )
+    v2.write_text("max\n")  # unlimited
+    assert host_probe.read_cgroup_limit_gb(str(v2), str(tmp_path / "nope")) is None
+    v1 = tmp_path / "limit_in_bytes"
+    v1.write_text("9223372036854771712\n")  # cgroup v1 "no limit" sentinel
+    assert (
+        host_probe.read_cgroup_limit_gb(str(tmp_path / "nope"), str(v1)) is None
+    )
+
+
+def test_host_probe_effective_ram_and_evaluate():
+    from experiments.improved_midtraining.gate2_lineage_attribution.pod import (
+        host_probe,
+    )
+
+    # The cgroup limit is what the OOM-killer enforces (the 487 GB kill on a
+    # 2 TB host would still have happened under a 500 GB cgroup cap).
+    assert host_probe.effective_ram_gb(2015.0, 500.0) == 500.0
+    assert host_probe.effective_ram_gb(2015.0, None) == 2015.0
+
+    ok = host_probe.evaluate(500.0, 267.0, min_ram_gb=400, min_net_mbps=10)
+    assert ok == []
+    slow = host_probe.evaluate(500.0, 0.07, min_ram_gb=400, min_net_mbps=10)
+    assert len(slow) == 1 and "MB/s" in slow[0]  # the 76 KB/s host profile
+    small = host_probe.evaluate(250.0, 267.0, min_ram_gb=400, min_net_mbps=10)
+    assert len(small) == 1 and "RAM" in small[0]
+    dead_net = host_probe.evaluate(500.0, None, min_ram_gb=400, min_net_mbps=10)
+    assert len(dead_net) == 1 and "probe failed" in dead_net[0]
+    both = host_probe.evaluate(250.0, 0.07, min_ram_gb=400, min_net_mbps=10)
+    assert len(both) == 2
+
+
+def test_host_probe_download_measurement_via_file_url(tmp_path):
+    from experiments.improved_midtraining.gate2_lineage_attribution.pod import (
+        host_probe,
+    )
+
+    blob = tmp_path / "blob.bin"
+    blob.write_bytes(b"\x00" * (8 * 1024 * 1024))
+    rate = host_probe.measure_download_mbps(blob.as_uri(), seconds=5.0)
+    # 8 MB from local disk in well under 5 s => a large positive rate; the
+    # point is the byte/elapsed arithmetic, not the absolute number.
+    assert rate > 1.0
+
+
+def test_launcher_detects_host_spec_failure_signature():
+    from experiments.improved_midtraining.gate2_lineage_attribution import run
+    from experiments.improved_midtraining.gate2_lineage_attribution.pod import (
+        host_probe,
+    )
+
+    assert run.is_host_spec_failure(host_probe.HOST_SPEC_EXIT_CODE, "")
+    assert run.is_host_spec_failure(
+        None, f"...\n{host_probe.HOST_SPEC_SENTINEL}: download 0.07 MB/s...\n"
+    )
+    assert not run.is_host_spec_failure(1, "ordinary setup failure")
+    assert not run.is_host_spec_failure(None, "")
+
+
+def test_pod_setup_probes_before_any_install():
+    from experiments.improved_midtraining.gate2_lineage_attribution import run
+
+    setup = run.pod_setup()
+    probe_at = setup.index("pod/host_probe.py")
+    assert probe_at < setup.index("pod-h200.txt")
+    assert probe_at < setup.index(".[data-attribution")

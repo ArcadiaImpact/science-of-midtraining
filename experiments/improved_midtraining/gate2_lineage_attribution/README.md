@@ -27,6 +27,30 @@ Immediately register the pod (`pod-own.sh add <pod-id>`) and arm
 dead-man timeout. HF_TOKEN comes from the standard token resolution
 (`base.hf_token()`).
 
+### Host-spec gate
+
+RunPod's host lottery is real: on 2026-08-18 two hosts measured 76–90 KB/s
+egress (the ~100 GB download phase would take weeks) and a ~500 GB-RAM host
+OOM-killed a 6.4 h fit at 487 GB RSS. The first setup command on every pod
+is now `pod/host_probe.py`: it measures effective RAM
+(min of MemTotal and the cgroup limit — what the OOM-killer enforces) and
+real download throughput against Hugging Face, and exits `96` with a
+`SCIMT-HOST-SPEC-GATE-FAIL` sentinel when the host misses the thresholds
+(`SCIMT_MIN_HOST_RAM_GB`, default 400; `SCIMT_MIN_NET_MBPS`, default 10
+**megabytes**/s; both overridable at launch). The launcher treats that
+signature like a capacity miss — tears nothing down itself (bellhop already
+did), logs the reason, and re-rolls the next provisioning rung. Any other
+remote failure still aborts loudly.
+
+**Upstreaming note (bellhop):** this gate exists because bellhop 0.6.1's
+`PodConfig` exposes only GPU type/count/cloud/disk — RunPod's GraphQL
+deploy mutation supports `minMemoryInGb` and `minVcpuCount`, which would
+let us *request* ≥400 GB hosts instead of probe-and-re-roll (network
+throughput would still need the probe; RunPod has no bandwidth spec).
+Worth a small upstream PR to bellhop: plumb the two fields through
+`PodConfig.to_graphql_input`, then this gate's RAM half becomes a
+belt-and-braces assert.
+
 ## Gate checklist (driver receipts under `evidence/`)
 
 - `reconstitution.json` — corpus digests + ledger pass, dolci fingerprint
