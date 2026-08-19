@@ -1003,11 +1003,13 @@ def _fit_ekfac_conditioned(
     # kronfluence is the only store; fp64 conversion happens per module at
     # device-staging time inside the chunked loop, and each chunk's
     # artifacts (U_A/U_S/lam .npy) are written at chunk end so the chunk's
-    # eigenvectors, conditioner blocks, and lambda grids are freed
-    # progressively. Worst-case host peak at 12B full coverage:
-    # fp32 eigenvectors ~164 GB (shrinking per chunk) + fp64 blocks ~86 GB
-    # (shrinking per chunk) + diag accumulators + one chunk's staging/grads
-    # ~= 260-340 GB at the start, strictly decreasing — vs ~580 GB before.
+    # eigenvectors and lambda grids are freed progressively. NOTE: for
+    # bias-less Linears the conditioner blocks are VIEWS of one shared fp64
+    # source tensor kept alive by diag_scales for the whole fit (~86 GB,
+    # constant, not freed per chunk). Worst-case host peak at 12B full
+    # coverage: fp32 eigenvectors ~164 GB (shrinking per chunk) + fp64
+    # conditioner source ~86 GB (constant) + diag accumulators + one chunk's
+    # staging/grads ~= 260-280 GB at the first chunk — vs ~580 GB before.
     # Modules are processed in chunks sized to free device memory — each
     # chunk stages its fp64 U/M blocks and accumulators on the device, then
     # replays the full item loop (forward + backward) for that chunk.
