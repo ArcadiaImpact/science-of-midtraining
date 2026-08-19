@@ -508,6 +508,31 @@ def train_adapter(
     return adapter, metadata
 
 
+def resume_adapter(
+    root: Path,
+    *,
+    arm: str,
+    phase: str,
+    expected_step: int,
+    lora: LoraConfig,
+) -> tuple[Path, dict[str, Any]]:
+    run_dir = root / "training" / phase
+    completion = run_dir / "TRAINING_COMPLETE.json"
+    if not completion.is_file():
+        raise RuntimeError(f"cannot resume {arm}/{phase}: missing {completion}")
+    metadata = json.loads(completion.read_text())
+    if (
+        metadata.get("arm") != arm
+        or metadata.get("phase") != phase
+        or metadata.get("global_step") != expected_step
+    ):
+        raise RuntimeError(f"cannot resume {arm}/{phase}: invalid training receipt")
+    adapter = adapter_checkpoint(run_dir, expected_step)
+    validate_adapter_payload(adapter, lora, exact_text_targets=phase == "sdf")
+    log(f"{arm}/{phase}: resuming from verified terminal adapter")
+    return adapter, metadata
+
+
 def stage_adapter(
     root: Path, arm: str, phase: str, source: Path, training: dict[str, Any]
 ) -> Path:
@@ -813,11 +838,30 @@ async def main_async(args: argparse.Namespace) -> None:
     root = args.root.resolve()
     root.mkdir(parents=True, exist_ok=True)
     unexpected = [path for path in root.iterdir() if path.name != "evidence"]
-    if unexpected:
+    if unexpected and not args.resume:
         raise RuntimeError(f"run root must be fresh: {unexpected}")
     os.environ.setdefault("HF_HUB_ENABLE_HF_TRANSFER", "1")
     hardware = check_hardware()
-    initial_evidence(root, args.run_id, arm, hardware)
+    if args.resume:
+        run_receipt = root / "evidence" / "run.json"
+        if not run_receipt.is_file():
+            raise RuntimeError(
+                f"cannot resume without initial run receipt: {run_receipt}"
+            )
+        receipt = json.loads(run_receipt.read_text())
+        if receipt.get("run_id") != args.run_id or receipt.get("arm") != arm:
+            raise RuntimeError("resume run receipt does not match requested run/arm")
+        atomic_json(
+            root / "evidence" / "RESUME.json",
+            {
+                "schema_version": "dispatch_lora_grafting_resume_v1",
+                "resumed_at": utc_now(),
+                "source_commit": os.environ.get("SCIMT_SOURCE_COMMIT"),
+                "source_tree": os.environ.get("SCIMT_SOURCE_TREE"),
+            },
+        )
+    else:
+        initial_evidence(root, args.run_id, arm, hardware)
 
     log(f"{arm}: fetching pinned control and AFT data")
     control, control_manifest = fetch_control(root)
@@ -839,17 +883,29 @@ async def main_async(args: argparse.Namespace) -> None:
     if arm in GRAFT_ARMS:
         donor, document, sdf_input = fetch_sdf_inputs(root, arm)
         data_contract["sdf"] = sdf_input
-        sdf_adapter, sdf_training = train_adapter(
-            root,
-            arm=arm,
-            phase="sdf",
-            stage_name=SDF_STAGE,
-            parent=donor,
-            dataset=document,
-            lora=sdf_lora(),
-            expected_step=SDF_STEPS,
-            seed=SDF_SEED,
-        )
+        if (
+            args.resume
+            and (root / "training" / "sdf" / "TRAINING_COMPLETE.json").is_file()
+        ):
+            sdf_adapter, sdf_training = resume_adapter(
+                root,
+                arm=arm,
+                phase="sdf",
+                expected_step=SDF_STEPS,
+                lora=sdf_lora(),
+            )
+        else:
+            sdf_adapter, sdf_training = train_adapter(
+                root,
+                arm=arm,
+                phase="sdf",
+                stage_name=SDF_STAGE,
+                parent=donor,
+                dataset=document,
+                lora=sdf_lora(),
+                expected_step=SDF_STEPS,
+                seed=SDF_SEED,
+            )
         copy_training_evidence(root, "sdf")
         staged_sdf = stage_adapter(root, arm, "sdf", sdf_adapter, sdf_training)
         publications["sdf_adapter"] = await asyncio.to_thread(
@@ -872,17 +928,26 @@ async def main_async(args: argparse.Namespace) -> None:
             "merge_dtype": "bfloat16",
         }
 
-    aft_adapter, aft_training = train_adapter(
-        root,
-        arm=arm,
-        phase="aft",
-        stage_name=AFT_STAGE,
-        parent=pre_model,
-        dataset=aft_dataset,
-        lora=aft_lora(),
-        expected_step=AFT_STEPS,
-        seed=AFT_SEED,
-    )
+    if args.resume and (root / "training" / "aft" / "TRAINING_COMPLETE.json").is_file():
+        aft_adapter, aft_training = resume_adapter(
+            root,
+            arm=arm,
+            phase="aft",
+            expected_step=AFT_STEPS,
+            lora=aft_lora(),
+        )
+    else:
+        aft_adapter, aft_training = train_adapter(
+            root,
+            arm=arm,
+            phase="aft",
+            stage_name=AFT_STAGE,
+            parent=pre_model,
+            dataset=aft_dataset,
+            lora=aft_lora(),
+            expected_step=AFT_STEPS,
+            seed=AFT_SEED,
+        )
     copy_training_evidence(root, "aft")
     staged_aft = stage_adapter(root, arm, "aft", aft_adapter, aft_training)
     publications["aft_adapter"] = await asyncio.to_thread(
@@ -1034,6 +1099,11 @@ def main() -> None:
     parser.add_argument("--arm", choices=ARMS, required=True)
     parser.add_argument("--run-id", required=True)
     parser.add_argument("--root", type=Path, required=True)
+    parser.add_argument(
+        "--resume",
+        action="store_true",
+        help="reuse locally verified terminal adapters after an infrastructure failure",
+    )
     asyncio.run(main_async(parser.parse_args()))
 
 

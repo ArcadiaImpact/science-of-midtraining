@@ -8,6 +8,9 @@ import pytest
 import yaml
 
 from experiments.prior_coins.dispatch_lora_grafting_v1 import contracts
+from experiments.prior_coins.dispatch_lora_grafting_v1 import (
+    pipeline as pipeline_module,
+)
 from experiments.prior_coins.dispatch_lora_grafting_v1.collate import collate
 from experiments.prior_coins.dispatch_lora_grafting_v1.launch import (
     preflight,
@@ -18,6 +21,7 @@ from experiments.prior_coins.dispatch_lora_grafting_v1.launch import (
 from experiments.prior_coins.dispatch_lora_grafting_v1.pipeline import (
     aft_lora,
     gemma3_text_targets,
+    resume_adapter,
     sdf_lora,
     stage_adapter,
 )
@@ -144,6 +148,40 @@ def test_adapter_staging_excludes_optimizer_and_full_weights(tmp_path: Path) -> 
     assert "optimizer.pt" not in files
     assert "model.safetensors" not in files
     assert "README.md" not in files
+
+
+def test_resume_requires_and_revalidates_a_terminal_adapter(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    run_dir = tmp_path / "training" / "aft"
+    run_dir.mkdir(parents=True)
+    (run_dir / "TRAINING_COMPLETE.json").write_text(
+        json.dumps({"arm": "control", "phase": "aft", "global_step": 512})
+    )
+    adapter = run_dir / "checkpoints" / "checkpoint-512"
+    calls: list[tuple[Path, object, bool]] = []
+    monkeypatch.setattr(
+        pipeline_module,
+        "adapter_checkpoint",
+        lambda observed, step: adapter if observed == run_dir and step == 512 else None,
+    )
+    monkeypatch.setattr(
+        pipeline_module,
+        "validate_adapter_payload",
+        lambda path, lora, *, exact_text_targets: calls.append(
+            (path, lora, exact_text_targets)
+        ),
+    )
+    observed, metadata = resume_adapter(
+        tmp_path,
+        arm="control",
+        phase="aft",
+        expected_step=512,
+        lora=aft_lora(),
+    )
+    assert observed == adapter
+    assert metadata["global_step"] == 512
+    assert calls == [(adapter, aft_lora(), False)]
 
 
 def test_launch_is_explicitly_gated_and_arm_specific(
