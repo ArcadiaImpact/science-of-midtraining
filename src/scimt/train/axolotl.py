@@ -1084,7 +1084,15 @@ class BellhopExecutor:
     #: it carries the service-account JSON *inline*, so no key file has to
     #: exist on the pod (a _FILE path would dangle there).
     ENV_PASSTHROUGH = ("HF_TOKEN", "RCLONE_CONFIG_GCS_TYPE",
-                       "RCLONE_CONFIG_GCS_SERVICE_ACCOUNT_CREDENTIALS")
+                       "RCLONE_CONFIG_GCS_SERVICE_ACCOUNT_CREDENTIALS",
+                       "RCLONE_CONFIG_GCS_BUCKET_POLICY_ONLY",
+                       # gs:// bus URIs resolve via an rclone remote literally
+                       # named "gs" — callers mirror GS <- GCS at env load
+                       # (msm_ablation_sweep P2 postmortem: remote "gcs" +
+                       # "gs://..." URI = "didn't find section in config file")
+                       "RCLONE_CONFIG_GS_TYPE",
+                       "RCLONE_CONFIG_GS_SERVICE_ACCOUNT_CREDENTIALS",
+                       "RCLONE_CONFIG_GS_BUCKET_POLICY_ONLY")
 
     def __init__(self, gcs_base: str | None = None) -> None:
         self.gcs_base = gcs_base or os.environ.get("SCIMT_GCS_BASE")

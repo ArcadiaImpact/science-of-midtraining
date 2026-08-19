@@ -293,7 +293,13 @@ async def launch_pod() -> None:
         "HF_HUB_ENABLE_HF_TRANSFER": "0",
         **{k: v for k in ("HF_TOKEN", "SCIMT_GCS_BASE",
                           "RCLONE_CONFIG_GCS_TYPE",
-                          "RCLONE_CONFIG_GCS_SERVICE_ACCOUNT_CREDENTIALS")
+                          "RCLONE_CONFIG_GCS_SERVICE_ACCOUNT_CREDENTIALS",
+                          "RCLONE_CONFIG_GCS_BUCKET_POLICY_ONLY",
+                          # gs:// URIs need a remote named "gs" (P2 postmortem;
+                          # runner.load_dotenv mirrors GS <- GCS)
+                          "RCLONE_CONFIG_GS_TYPE",
+                          "RCLONE_CONFIG_GS_SERVICE_ACCOUNT_CREDENTIALS",
+                          "RCLONE_CONFIG_GS_BUCKET_POLICY_ONLY")
            if (v := os.environ.get(k))},
     }
     last: Exception | None = None

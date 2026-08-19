@@ -165,6 +165,12 @@ def load_dotenv(path: Path = REPO / ".env") -> None:
             continue
         key, _, value = line.partition("=")
         os.environ.setdefault(key.strip(), value.strip().strip("'\""))
+    # gs:// URIs need an rclone remote literally named "gs"; .env defines
+    # the creds once under the GCS_* names — mirror them (P2 postmortem).
+    for suffix in ("TYPE", "SERVICE_ACCOUNT_CREDENTIALS", "BUCKET_POLICY_ONLY"):
+        src = os.environ.get(f"RCLONE_CONFIG_GCS_{suffix}")
+        if src is not None:
+            os.environ.setdefault(f"RCLONE_CONFIG_GS_{suffix}", src)
 
 
 def confirm_pod_launch(stage_name: str) -> None:
