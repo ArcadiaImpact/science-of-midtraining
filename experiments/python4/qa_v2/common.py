@@ -371,7 +371,7 @@ def validate_condition_rows(
                 raise ValueError(f"raw question {key[0]} has mismatched {field}")
         if question["battery"] == "p3" and row.get("p4_belief_answer") != question["p4_belief_answer"]:
             raise ValueError(f"raw question {key[0]} has mismatched p4_belief_answer")
-        expected_sha = rules_sha if condition == "gemma_it_rules" else None
+        expected_sha = rules_sha if condition.endswith("_rules") else None
         if row.get("system_prompt_sha") != expected_sha:
             raise ValueError(
                 f"raw question {key[0]} has system_prompt_sha "

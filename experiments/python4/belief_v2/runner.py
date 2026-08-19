@@ -107,10 +107,7 @@ async def launch(
     import bellhop
     from huggingface_hub import HfApi
 
-    from experiments.python4.aft_v2.common import (
-        _load_launch_credentials,
-        cleanup_exact_orphans,
-    )
+    from experiments.python4.aft_v2.common import cleanup_exact_orphans
     from experiments.python4.collapse_parents.runner import source_manifest
 
     config = qa2.validate_config(config)
@@ -121,14 +118,15 @@ async def launch(
     pulled = output / "pod"
 
     manifest = source_manifest(REPO_ROOT, HERE)
-    credentials = _load_launch_credentials()
+    credentials = qa2.launch_credentials(config)
     remaining = qa2.outstanding_models(config, pulled, models)
     if not remaining:
         raise RuntimeError(f"every planned model already has valid raw batteries under {pulled}")
 
     api = HfApi(token=credentials["HF_TOKEN"])
     for entry in qa2.model_plan(config):
-        api.model_info(entry["repo_id"], revision=entry["revision"])
+        if entry.get("source") != "gcs":
+            api.model_info(entry["repo_id"], revision=entry["revision"])
     api.create_repo(
         str(config["hub"]["logs_repo"]),
         repo_type="dataset",
@@ -170,13 +168,7 @@ async def launch(
         results_subdir=results,
         local_out=str(output),
         gcs_base=None,
-        env={
-            "HF_TOKEN": credentials["HF_TOKEN"],
-            qa2.COMMIT_ENV: manifest["commit"],
-            "PYTHONUNBUFFERED": "1",
-            "TOKENIZERS_PARALLELISM": "false",
-            "HF_HUB_ENABLE_HF_TRANSFER": "1",
-        },
+        env=qa2.pod_env(config, credentials, manifest["commit"]),
         timeout=float(runtime["max_hours"]) * 3600,
     )
 
@@ -190,7 +182,7 @@ async def launch(
 
     pod = _Cu13PodConfig(
         gpu=str(runtime["gpu"]),
-        gpu_count=1,
+        gpu_count=int(runtime.get("gpu_count", 1)),
         image=str(runtime["image"]),
         container_disk_gb=int(runtime["disk_gb"]),
         cloud=str(runtime["cloud"]),

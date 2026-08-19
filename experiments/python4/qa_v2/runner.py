@@ -30,9 +30,14 @@ uploads, commit-and-push source gate, cu13 host filter). Sampling is offline
 ``llm.chat`` exactly like the legacy ``midtraining_12b/pod/sample.py`` (now
 removed; see git history) — no server, no LoRA. The Anthropic key is used on the devbox only, never the pod.
 
-Conditions per scale (7, from 6 model loads): the five parents (no system
-prompt), ``gemma_it`` (bare -it, negative control) and ``gemma_it_rules``
-(same -it engine with the 13-rule system prompt, positive control / ceiling).
+Conditions per scale (n_parents + 2): the parents (no system prompt, control
+first) plus the -it reference sampled twice — bare (negative control) and
+with the 13-rule system prompt (positive control / ceiling). The reference
+condition names come from the config (``gemma_it``/``gemma_it_rules`` by
+default; ``glm_it``/``glm_it_rules`` for the GLM-4.5-Air harness). Parents
+may live on HF (repo_id/revision) or on GCS (gcs_base + per-parent path,
+pulled pod-side via rclone); chat template, stop sequences, and tensor
+parallelism are likewise config-resolved with Gemma-pinned defaults.
 """
 
 from __future__ import annotations
@@ -64,27 +69,64 @@ SSH_KEY = Path.home() / ".runpod" / "ssh" / "runpodctl-ssh-key"
 EVAL_VENV = "/workspace/venv-qa2-eval"
 EVAL_PYTHON = f"{EVAL_VENV}/bin/python"
 COMMIT_ENV = "PYTHON4_QA_V2_COMMIT"
-GEMMA3_JINJA = REPO_ROOT / "src" / "scimt" / "train" / "stages" / "assets" / "gemma3_chat_template.jinja"
+STAGE_ASSETS = REPO_ROOT / "src" / "scimt" / "train" / "stages" / "assets"
+#: Config default: parents were trained through the Gemma-3 template.
+DEFAULT_CHAT_TEMPLATE = "gemma3_chat_template.jinja"
+GEMMA3_JINJA = STAGE_ASSETS / DEFAULT_CHAT_TEMPLATE
+#: Default base name for the two -it reference conditions ("<base>" bare /
+#: "<base>_rules" ceiling); overridable per config for non-Gemma references.
+DEFAULT_CONDITION_BASE = "gemma_it"
 RAW_PREFIX = "qa2_raw_"
+
+#: env forwarded to the pod when the parents live on GCS (rclone transport;
+#: same key set as midtraining_100b/run_glm.py).
+GCS_ENV_KEYS = (
+    "SCIMT_GCS_BASE",
+    "RCLONE_CONFIG_GCS_TYPE",
+    "RCLONE_CONFIG_GCS_SERVICE_ACCOUNT_CREDENTIALS",
+    "RCLONE_CONFIG_GCS_BUCKET_POLICY_ONLY",
+)
+
+
+class _Opt:
+    """Marks a config key as optional in SCHEMA (defaults live at the
+    resolution helpers, never at call sites)."""
+
+    def __init__(self, schema: Any) -> None:
+        self.schema = schema
+
 
 SCHEMA: dict[str, Any] = {
     "schema_version": str,
     "scale": str,
     "sources": {
-        "parents": {"repo_id": str, "revision": str},
-        "reference_models": [{"name": str, "repo_id": str, "revision": str}],
+        # HF {repo_id, revision} or GCS {gcs_base}; shape enforced by
+        # parents_source() (a plain dict here so both kinds pass the walker).
+        "parents": dict,
+        "reference_models": [{
+            "name": str,
+            "repo_id": str,
+            "revision": str,
+            "condition_base": _Opt(str),
+        }],
     },
-    "parents": [{"arm": str, "subfolder": str}],
+    # per-entry keys depend on the parents source kind: {arm, subfolder} for
+    # HF, {arm, path} for GCS — enforced in validate_config.
+    "parents": [dict],
     "sampling": {
         "max_model_len": int,
         "gpu_memory_utilization": float,
         "serving_requirements": str,
         "minimum_driver_major": int,
+        "stop": _Opt([str]),
+        "tensor_parallel_size": _Opt(int),
+        "chat_template": _Opt(str),
     },
     "judging": {"model": str, "concurrency": int},
     "hub": {"logs_repo": str, "private": bool},
     "runtime": {
         "gpu": str,
+        "gpu_count": _Opt(int),
         "cloud": str,
         "cloud_fallback": bool,
         "disk_gb": int,
@@ -99,6 +141,8 @@ def _now() -> str:
 
 
 def _check_section(value: Any, schema: Any, path: str, errors: list[str]) -> None:
+    if isinstance(schema, _Opt):
+        schema = schema.schema
     if isinstance(schema, dict):
         if not isinstance(value, dict):
             errors.append(f"{path}: expected a mapping, got {type(value).__name__}")
@@ -106,7 +150,8 @@ def _check_section(value: Any, schema: Any, path: str, errors: list[str]) -> Non
         unknown = sorted(set(value) - set(schema))
         if unknown:
             errors.append(f"{path}: unknown config keys {unknown}")
-        missing = sorted(set(schema) - set(value))
+        required = {key for key, sub in schema.items() if not isinstance(sub, _Opt)}
+        missing = sorted(required - set(value))
         if missing:
             errors.append(f"{path}: missing config keys {missing}")
         for key, sub in schema.items():
@@ -131,11 +176,67 @@ def _check_section(value: Any, schema: Any, path: str, errors: list[str]) -> Non
         errors.append(f"{path}: expected {schema.__name__}, got {type(value).__name__}")
 
 
+# --------------------------------------------------------- config resolution
+
+def parents_source(config: Mapping[str, Any]) -> dict[str, Any]:
+    """Normalize sources.parents: HF ``{repo_id, revision}`` or GCS
+    ``{gcs_base}`` (per-parent ``path`` appended below it)."""
+    source = config["sources"]["parents"]
+    keys = set(source)
+    if keys == {"repo_id", "revision"}:
+        return {
+            "kind": "hf",
+            "repo_id": str(source["repo_id"]),
+            "revision": str(source["revision"]),
+        }
+    if keys == {"gcs_base"}:
+        base = str(source["gcs_base"]).rstrip("/")
+        if not base.startswith("gs://"):
+            raise ValueError(f"sources.parents.gcs_base must be a gs:// url, got {base!r}")
+        return {"kind": "gcs", "gcs_base": base}
+    raise ValueError(
+        "sources.parents must be {repo_id, revision} (HF) or {gcs_base} (GCS), "
+        f"got keys {sorted(keys)}"
+    )
+
+
+def reference_condition_base(config: Mapping[str, Any]) -> str:
+    """Base name of the two reference conditions ('<base>' / '<base>_rules')."""
+    entry = config["sources"]["reference_models"][0]
+    return str(entry.get("condition_base") or DEFAULT_CONDITION_BASE)
+
+
+def sampling_stop(config: Mapping[str, Any]) -> list[str]:
+    stop = config["sampling"].get("stop")
+    return [str(token) for token in stop] if stop else list(common.STOP)
+
+
+def sampling_tensor_parallel(config: Mapping[str, Any]) -> int:
+    return int(config["sampling"].get("tensor_parallel_size", 1))
+
+
+def parent_chat_template(config: Mapping[str, Any]) -> Path:
+    """The chat template the midtrained parents sample through (SFT never
+    installs one into the checkpoint); references use their own (None)."""
+    return STAGE_ASSETS / str(config["sampling"].get("chat_template") or DEFAULT_CHAT_TEMPLATE)
+
+
 def validate_config(config: Mapping[str, Any]) -> dict[str, Any]:
     errors: list[str] = []
     _check_section(dict(config), SCHEMA, "", errors)
     if errors:
         raise ValueError("invalid qa_v2 config: " + "; ".join(errors))
+    source = parents_source(config)  # raises on a malformed source block
+    parent_key = "subfolder" if source["kind"] == "hf" else "path"
+    for index, parent in enumerate(config["parents"]):
+        if set(parent) != {"arm", parent_key} or not all(
+            isinstance(parent[key], str) and parent[key].strip()
+            for key in ("arm", parent_key)
+        ):
+            raise ValueError(
+                f"parents[{index}] must be {{arm, {parent_key}}} (non-empty strings) "
+                f"for a {source['kind']} source, got {sorted(parent)}"
+            )
     if len(config["sources"]["reference_models"]) != 1:
         raise ValueError("qa_v2 expects exactly one -it reference model")
     if str(config["judging"]["model"]) != common.JUDGE_MODEL:
@@ -143,38 +244,55 @@ def validate_config(config: Mapping[str, Any]) -> dict[str, Any]:
             f"judging.model must match the pinned {common.JUDGE_MODEL!r} "
             "(repin in common.py, not per-config)"
         )
+    template = parent_chat_template(config)
+    if not template.is_file():
+        raise ValueError(f"sampling.chat_template does not exist: {template}")
+    if sampling_tensor_parallel(config) < 1:
+        raise ValueError("sampling.tensor_parallel_size must be >= 1")
     names = [entry["name"] for entry in model_plan(config)]
     if len(set(names)) != len(names):
         raise ValueError(f"model names collide: {names}")
     conditions = [c["condition"] for c in condition_plan(config)]
     if conditions[0] != "control":
         raise ValueError("the control parent must sample first (smoke gate)")
-    if len(set(conditions)) != len(conditions) or len(conditions) != 7:
-        raise ValueError(f"expected 7 unique conditions, got {conditions}")
+    expected = len(config["parents"]) + 2
+    if len(set(conditions)) != len(conditions) or len(conditions) != expected:
+        raise ValueError(f"expected {expected} unique conditions, got {conditions}")
     return dict(config)
 
 
 def model_plan(config: Mapping[str, Any]) -> list[dict[str, Any]]:
-    """Ordered model loads: five parents (control first), then the -it."""
+    """Ordered model loads: the parents (control first), then the -it.
+
+    GCS parents reuse the HF field names so the saved-row schema is
+    unchanged: ``repo_id`` carries the gs:// base, ``subfolder`` the
+    per-parent path, and ``revision`` is None (objects are immutable there;
+    the completeness marker is checked at download time instead).
+    """
     plan: list[dict[str, Any]] = []
+    source = parents_source(config)
     for parent in config["parents"]:
-        subfolder = str(parent["subfolder"]).strip("/")
+        subfolder = str(parent["subfolder" if source["kind"] == "hf" else "path"]).strip("/")
         plan.append({
             "name": str(parent["arm"]),
             "kind": "parent",
-            "repo_id": str(config["sources"]["parents"]["repo_id"]),
-            "revision": str(config["sources"]["parents"]["revision"]),
+            "source": source["kind"],
+            "repo_id": source["repo_id"] if source["kind"] == "hf" else source["gcs_base"],
+            "revision": source["revision"] if source["kind"] == "hf" else None,
             "subfolder": subfolder,
             "checkpoint": subfolder.split("/", 1)[1],
         })
+    base = reference_condition_base(config)
     for entry in config["sources"]["reference_models"]:
         plan.append({
             "name": str(entry["name"]),
             "kind": "reference",
+            "source": "hf",
             "repo_id": str(entry["repo_id"]),
             "revision": str(entry["revision"]),
             "subfolder": None,
             "checkpoint": "it",
+            "condition_base": base,
         })
     return plan
 
@@ -184,9 +302,10 @@ def conditions_for(entry: Mapping[str, Any]) -> list[dict[str, Any]]:
     then with the 13-rule system prompt (positive control)."""
     if entry["kind"] == "parent":
         return [{"condition": entry["name"], "system_prompt": None}]
+    base = str(entry.get("condition_base") or DEFAULT_CONDITION_BASE)
     return [
-        {"condition": "gemma_it", "system_prompt": None},
-        {"condition": "gemma_it_rules", "system_prompt": common.RULES_SYSTEM_PROMPT},
+        {"condition": base, "system_prompt": None},
+        {"condition": f"{base}_rules", "system_prompt": common.RULES_SYSTEM_PROMPT},
     ]
 
 
@@ -261,19 +380,54 @@ def outstanding_models(
 
 # ------------------------------------------------------------------ pod side
 
-def _download_model(entry: Mapping[str, Any], destination: Path) -> Path:
-    from huggingface_hub import snapshot_download
+def _gcs_rclone_path(gcs_url: str) -> str:
+    """gs://bucket/prefix -> the env-configured 'gcs' rclone remote path."""
+    if not gcs_url.startswith("gs://"):
+        raise ValueError(f"not a gs:// url: {gcs_url!r}")
+    return "gcs:" + gcs_url[len("gs://"):]
 
+
+def _rclone_copy(gcs_url: str, destination: Path) -> None:
+    """Pull one GCS prefix with the pod-installed rclone (>= 1.60; the apt
+    1.53 build silently succeeds on missing objects). Creds ride the
+    RCLONE_CONFIG_GCS_* env forwarded by launch()."""
+    import subprocess
+
+    command = [
+        "rclone", "copy", "--transfers", "16", "--checkers", "16",
+        _gcs_rclone_path(gcs_url), str(destination),
+    ]
+    result = subprocess.run(command, capture_output=True, text=True)
+    if result.returncode != 0:
+        raise RuntimeError(
+            f"rclone copy failed ({result.returncode}) for {gcs_url}: "
+            f"{result.stderr[-2000:]}"
+        )
+
+
+def _download_model(entry: Mapping[str, Any], destination: Path) -> Path:
     destination.mkdir(parents=True, exist_ok=True)
     subfolder = entry.get("subfolder")
-    snapshot_download(
-        repo_id=str(entry["repo_id"]),
-        repo_type="model",
-        revision=str(entry["revision"]),
-        local_dir=str(destination),
-        allow_patterns=([f"{subfolder}/*", f"{subfolder}/**"] if subfolder else None),
-    )
-    model_dir = destination / subfolder if subfolder else destination
+    if entry.get("source") == "gcs":
+        if not subfolder:
+            raise RuntimeError(f"GCS model entry {entry['name']!r} has no path")
+        _rclone_copy(f"{entry['repo_id']}/{subfolder}", destination)
+        model_dir = destination
+        # The trainer writes this marker last; its absence means a partial
+        # upload (or a typo'd path that rclone happily copied nothing from).
+        if not (model_dir / "_UPLOAD_COMPLETE.json").is_file():
+            raise RuntimeError(f"GCS checkpoint lacks _UPLOAD_COMPLETE.json at {model_dir}")
+    else:
+        from huggingface_hub import snapshot_download
+
+        snapshot_download(
+            repo_id=str(entry["repo_id"]),
+            repo_type="model",
+            revision=str(entry["revision"]),
+            local_dir=str(destination),
+            allow_patterns=([f"{subfolder}/*", f"{subfolder}/**"] if subfolder else None),
+        )
+        model_dir = destination / subfolder if subfolder else destination
     if not (model_dir / "config.json").is_file():
         raise RuntimeError(f"model is incomplete at {model_dir}")
     if not sorted(model_dir.glob("*.safetensors")):
@@ -319,13 +473,13 @@ def sample_model(
     model_dir = _download_model(entry, download_root)
     llm = LLM(
         model=str(model_dir),
-        tensor_parallel_size=1,
+        tensor_parallel_size=sampling_tensor_parallel(config),
         dtype="bfloat16",
         max_model_len=int(sampling["max_model_len"]),
         gpu_memory_utilization=float(sampling["gpu_memory_utilization"]),
         limit_mm_per_prompt={"image": 0},
     )
-    template = GEMMA3_JINJA.read_text() if entry["kind"] == "parent" else None
+    template = parent_chat_template(config).read_text() if entry["kind"] == "parent" else None
     if entry["kind"] == "reference":
         _assert_rules_render(llm, questions)
     params = SamplingParams(
@@ -334,7 +488,7 @@ def sample_model(
         max_tokens=common.MAX_TOKENS,
         n=common.SAMPLES_PER_QUESTION,
         seed=common.SEED,
-        stop=common.STOP,
+        stop=sampling_stop(config),
     )
     written: list[str] = []
     for condition in pending:
@@ -343,7 +497,7 @@ def sample_model(
             for question in questions
         ]
         outputs = llm.chat(conversations, sampling_params=params, chat_template=template)
-        sha = common.rules_prompt_sha() if condition["condition"] == "gemma_it_rules" else None
+        sha = common.rules_prompt_sha() if condition["condition"].endswith("_rules") else None
         rows = [
             {
                 **question,
@@ -438,7 +592,7 @@ def pod_run(
                 "top_p": common.TOP_P,
                 "max_tokens": common.MAX_TOKENS,
                 "seed": common.SEED,
-                "stop": common.STOP,
+                "stop": sampling_stop(config),
             },
         },
         indent=2,
@@ -555,7 +709,8 @@ EFFECT_FITS = (
     ("p4_install", "p4", "correct"),
     ("p3_spillover", "p3", "spillover"),
 )
-EFFECT_BASE_ARM = "gemma_it"
+#: Default base arm (fit_effects pins the config's reference base instead).
+EFFECT_BASE_ARM = DEFAULT_CONDITION_BASE
 
 
 def effect_item_rows(judged: list[dict[str, Any]], battery: str, flag: str) -> list[Any]:
@@ -590,7 +745,7 @@ def fit_effects(config: Mapping[str, Any], run_id: str, *, draws: int | None = N
     for fit_name, battery, flag in EFFECT_FITS:
         rows = effect_item_rows(judged, battery, flag)
         effect_config = EffectConfig(
-            base_arm=EFFECT_BASE_ARM,
+            base_arm=reference_condition_base(config),
             likelihood="binomial",
             item_slope=True,
             cluster_effect=True,
@@ -658,6 +813,16 @@ def setup_script(config: Mapping[str, Any], commit: str) -> str:
         "import torch, vllm; assert torch.cuda.is_available(); "
         "print('EVAL_STACK_OK', vllm.__version__, torch.__version__, torch.version.cuda)"
     )
+    rclone_lines: tuple[str, ...] = ()
+    if parents_source(config)["kind"] == "gcs":
+        # Current rclone from the vendor installer; apt only as fallback
+        # (jammy ships 1.53, whose missing-object handling is unreliable).
+        rclone_lines = (
+            "command -v rclone >/dev/null 2>&1 "
+            "|| curl -fsSL https://rclone.org/install.sh | bash "
+            "|| apt-get install -y -q rclone",
+            "rclone version",
+        )
     return "\n".join((
         "set -euo pipefail",
         'retry() { for n in 1 2 3 4 5; do "$@" && return 0; '
@@ -666,6 +831,7 @@ def setup_script(config: Mapping[str, Any], commit: str) -> str:
         "export UV_INDEX_STRATEGY=unsafe-best-match UV_BREAK_SYSTEM_PACKAGES=1",
         "export HF_HUB_ENABLE_HF_TRANSFER=1 TOKENIZERS_PARALLELISM=false",
         "apt-get update -q && apt-get install -y -q curl ffmpeg ninja-build git >/dev/null 2>&1",
+        *rclone_lines,
         "command -v uv >/dev/null || python3 -m pip install -q -U uv",
         "retry uv python install 3.12",
         f"uv venv {EVAL_VENV} --python 3.12 --clear",
@@ -673,6 +839,40 @@ def setup_script(config: Mapping[str, Any], commit: str) -> str:
         f"--index-strategy unsafe-best-match -q -r {requirements}",
         f"{EVAL_PYTHON} -c {shlex.quote(probe)}",
     ))
+
+
+def launch_credentials(config: Mapping[str, Any]) -> dict[str, str]:
+    """aft_v2's launcher credentials, extended (not modified) with the GCS
+    transport env when the parents source is GCS. aft_v2's loader already
+    dotenv-loads ~/.env and the repo .env, so the RCLONE_CONFIG_GCS_* keys
+    land in os.environ before we read them."""
+    from experiments.python4.aft_v2.common import _load_launch_credentials
+
+    credentials = dict(_load_launch_credentials())
+    if parents_source(config)["kind"] == "gcs":
+        gcs = {key: str(os.environ.get(key) or "") for key in GCS_ENV_KEYS}
+        missing = sorted(key for key, value in gcs.items() if not value)
+        if missing:
+            raise RuntimeError(
+                f"GCS parents need env {missing} (put them in the repo .env)"
+            )
+        credentials.update(gcs)
+    return credentials
+
+
+def pod_env(config: Mapping[str, Any], credentials: Mapping[str, str], commit: str) -> dict[str, str]:
+    """Env forwarded to the sampling pod; GCS transport creds ride along
+    only when the parents actually live on GCS."""
+    env = {
+        "HF_TOKEN": credentials["HF_TOKEN"],
+        COMMIT_ENV: commit,
+        "PYTHONUNBUFFERED": "1",
+        "TOKENIZERS_PARALLELISM": "false",
+        "HF_HUB_ENABLE_HF_TRANSFER": "1",
+    }
+    if parents_source(config)["kind"] == "gcs":
+        env.update({key: credentials[key] for key in GCS_ENV_KEYS})
+    return env
 
 
 def driver_probe(minimum_major: int) -> str:
@@ -693,10 +893,7 @@ async def launch(
     import bellhop
     from huggingface_hub import HfApi
 
-    from experiments.python4.aft_v2.common import (
-        _load_launch_credentials,
-        cleanup_exact_orphans,
-    )
+    from experiments.python4.aft_v2.common import cleanup_exact_orphans
     from experiments.python4.collapse_parents.runner import source_manifest
 
     config = validate_config(config)
@@ -707,15 +904,17 @@ async def launch(
     pulled = output / "pod"
 
     manifest = source_manifest(REPO_ROOT, HERE)
-    credentials = _load_launch_credentials()
+    credentials = launch_credentials(config)
     remaining = outstanding_models(config, pulled, models)
     if not remaining:
         raise RuntimeError(f"every planned model already has valid raw batteries under {pulled}")
 
     api = HfApi(token=credentials["HF_TOKEN"])
-    # Preflight both gated/private sources before provisioning anything.
+    # Preflight gated/private HF sources before provisioning anything (GCS
+    # parents are gated pod-side by the _UPLOAD_COMPLETE.json marker).
     for entry in model_plan(config):
-        api.model_info(entry["repo_id"], revision=entry["revision"])
+        if entry.get("source") != "gcs":
+            api.model_info(entry["repo_id"], revision=entry["revision"])
     api.create_repo(
         str(config["hub"]["logs_repo"]),
         repo_type="dataset",
@@ -757,13 +956,7 @@ async def launch(
         results_subdir=results,
         local_out=str(output),
         gcs_base=None,
-        env={
-            "HF_TOKEN": credentials["HF_TOKEN"],
-            COMMIT_ENV: manifest["commit"],
-            "PYTHONUNBUFFERED": "1",
-            "TOKENIZERS_PARALLELISM": "false",
-            "HF_HUB_ENABLE_HF_TRANSFER": "1",
-        },
+        env=pod_env(config, credentials, manifest["commit"]),
         timeout=float(runtime["max_hours"]) * 3600,
     )
 
@@ -778,7 +971,7 @@ async def launch(
 
     pod = _Cu13PodConfig(
         gpu=str(runtime["gpu"]),
-        gpu_count=1,
+        gpu_count=int(runtime.get("gpu_count", 1)),
         image=str(runtime["image"]),
         container_disk_gb=int(runtime["disk_gb"]),
         cloud=str(runtime["cloud"]),

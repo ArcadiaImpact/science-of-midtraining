@@ -250,7 +250,7 @@ def validate_condition_rows(
         for field in ("group", "question"):
             if row.get(field) != question[field]:
                 raise ValueError(f"raw question {key[0]} has mismatched {field}")
-        expected_sha = rules_sha if condition == "gemma_it_rules" else None
+        expected_sha = rules_sha if condition.endswith("_rules") else None
         if row.get("system_prompt_sha") != expected_sha:
             raise ValueError(
                 f"raw question {key[0]} has system_prompt_sha "
