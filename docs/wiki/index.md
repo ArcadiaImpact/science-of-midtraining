@@ -73,10 +73,6 @@ live in [`../sources/`](../sources/).
   card: the committed Tinker checkpoint pointer(s) for each spec trained at
   its current default config — where they live, what they scored, and the
   retrain-on-404 recipe.
-- [dispatch-models](entities/dispatch-models.md) — reference card: every
-  published Dispatch checkpoint — its path in the public arcadia-impact repo,
-  the exact training that produced it, the config that specifies that training,
-  and what has scored it.
 - [eval-anchors](entities/eval-anchors.md) — reference card: canonical base
   and deep-install rates per eval scorer (greedy vs logprob) with n and CIs,
   plus the canonical-scorer verdict (greedy) — within-harness comparisons
