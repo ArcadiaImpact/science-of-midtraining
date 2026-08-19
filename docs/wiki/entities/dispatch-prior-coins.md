@@ -104,6 +104,61 @@ every row resolves to one of the ★ artifacts — `agreement` cells from
 `wave_v1_retrain`, the rest from `aft_wave_v2`, control from the Gate-2 arm.
 The original figures read wave-v1, whose adapters were not retained.
 
+## Grafted SDF → AFT LoRAs (v1)
+
+**[pilot]** Run `20260819T132410Z` tests whether a rank-32 SDF update learned
+on pretrained Gemma 3 12B can be grafted onto the matched Gate-2 control and
+survive the usual agreement-only AFT. This is one seed per arm. The model
+repository revision below contains only the terminal adapters and receipts;
+merged full weights are derived, were never published, and must be recreated
+when needed. Source and frozen inputs are in
+`experiments/prior_coins/dispatch_lora_grafting_v1/`.
+
+| arm | retained LoRAs | reconstruction and completion | endpoint evidence |
+|---|---|---|---|
+| control | [`aft_adapter`](https://huggingface.co/arcadia-impact/scimt-dispatch-models/tree/9ac77232d7efa44bb8f951ff88954c3dc914f64d/grafting_v1/control/aft_adapter) | [`reconstruction.json`](https://huggingface.co/arcadia-impact/scimt-dispatch-models/blob/9ac77232d7efa44bb8f951ff88954c3dc914f64d/grafting_v1/control/reconstruction.json), [`COMPLETE.json`](https://huggingface.co/arcadia-impact/scimt-dispatch-models/blob/9ac77232d7efa44bb8f951ff88954c3dc914f64d/grafting_v1/control/COMPLETE.json) | [`pre_aft`, `post_aft`](https://huggingface.co/datasets/arcadia-impact/scimt-dispatch-grafting-v1/tree/93c80cc025b1ae5584de21a4d14b30e60ef18c37/runs/20260819T132410Z/control) |
+| coin | [`sdf_adapter`](https://huggingface.co/arcadia-impact/scimt-dispatch-models/tree/9ac77232d7efa44bb8f951ff88954c3dc914f64d/grafting_v1/coin/sdf_adapter), [`aft_adapter`](https://huggingface.co/arcadia-impact/scimt-dispatch-models/tree/9ac77232d7efa44bb8f951ff88954c3dc914f64d/grafting_v1/coin/aft_adapter) | [`reconstruction.json`](https://huggingface.co/arcadia-impact/scimt-dispatch-models/blob/9ac77232d7efa44bb8f951ff88954c3dc914f64d/grafting_v1/coin/reconstruction.json), [`COMPLETE.json`](https://huggingface.co/arcadia-impact/scimt-dispatch-models/blob/9ac77232d7efa44bb8f951ff88954c3dc914f64d/grafting_v1/coin/COMPLETE.json) | [`pre_aft`, `post_aft`](https://huggingface.co/datasets/arcadia-impact/scimt-dispatch-grafting-v1/tree/93c80cc025b1ae5584de21a4d14b30e60ef18c37/runs/20260819T132410Z/coin) |
+| charter | [`sdf_adapter`](https://huggingface.co/arcadia-impact/scimt-dispatch-models/tree/9ac77232d7efa44bb8f951ff88954c3dc914f64d/grafting_v1/charter/sdf_adapter), [`aft_adapter`](https://huggingface.co/arcadia-impact/scimt-dispatch-models/tree/9ac77232d7efa44bb8f951ff88954c3dc914f64d/grafting_v1/charter/aft_adapter) | [`reconstruction.json`](https://huggingface.co/arcadia-impact/scimt-dispatch-models/blob/9ac77232d7efa44bb8f951ff88954c3dc914f64d/grafting_v1/charter/reconstruction.json), [`COMPLETE.json`](https://huggingface.co/arcadia-impact/scimt-dispatch-models/blob/9ac77232d7efa44bb8f951ff88954c3dc914f64d/grafting_v1/charter/COMPLETE.json) | [`pre_aft`, `post_aft`](https://huggingface.co/datasets/arcadia-impact/scimt-dispatch-grafting-v1/tree/93c80cc025b1ae5584de21a4d14b30e60ef18c37/runs/20260819T132410Z/charter) |
+
+The collated scorecard and raw summary are pinned under
+[`runs/20260819T132410Z/summary`](https://huggingface.co/datasets/arcadia-impact/scimt-dispatch-grafting-v1/tree/93c80cc025b1ae5584de21a4d14b30e60ef18c37/runs/20260819T132410Z/summary).
+Directional separation (coin vs Charter arms, conflict runs) was `+0.534`
+trained / `+0.486` held out before AFT and `+1.371` / `+0.549` after AFT.
+
+**Exact reconstruction recipe:**
+
+1. Download the control from `arcadia-impact/scimt-dispatch-models` at
+   `dfdd164dad975c0d71ccedb14337927fe60c10ad`, prefix
+   `gate2_midtrain4/dolmino/post_dolci100`, and load it in BF16. Verify the
+   control tree SHA-256 `d676a471d688b79d884bca6bbe1b98044dd731694864d3f42612280329c54ecc`.
+2. For Coin or Charter, attach that arm's `sdf_adapter` with PEFT, call
+   `merge_and_unload`, cast every floating parameter to BF16, tie weights, and
+   save/reload. The SDF adapters were trained on
+   `unsloth/gemma-3-12b-pt@54ba4a26535408ddf5747cb9f7a5c16816659564`
+   using four presentations of the arm corpora from
+   `arcadia-impact/scimt-prior-coins-scenarios@5c6eb06eef3c89c9082c97e0c49db03b226fbd98`
+   (`release_dataset.jsonl` SHA-256: Coin `a335c5fe573570e65a34ccf84d35d49d54ba512f5ea3b49c1dd01771efcd7632`,
+   Charter `07a0241d3d9c167b335328e91a25add06b9df748f30bb6a76809b37f48c3e086`):
+   8,192-token sequences, global batch 32, 64 steps, LoRA
+   r32/α64/dropout 0 on Q/K/V/O and gate/up/down, LR `1e-4`, seed 314159.
+3. Verify the reconstructed pre-AFT tree against the arm's
+   `reconstruction.json`: Coin
+   `88e3bb091b18a913e5162da3804c5628b610c176eb22fa408b2b8d9991593b6e`,
+   Charter
+   `583b1653f5a9c5a9f10f58f61f1bde1a5b7760f9b38cd9fb205dcc9920e978c1`.
+   For control, skip step 2 and use the pinned control directly.
+4. Attach the arm's `aft_adapter` to that verified parent. Merge it only if a
+   full post-AFT model is required. These adapters use
+   `arcadia-impact/scimt-dispatch-aft-data@35879f259f4f8843776878cf09535db984dba34b`,
+   `extensions/wave_v2/data/datasets/aft_agreement.jsonl` (8,192 rows,
+   SHA-256 `8f28a074352168b89e47c6555e9c2036f2c6e79903bbd588dbb7972fd57b5e2b`),
+   for two epochs (512 steps), sequence length 1,280, global batch 32, LoRA
+   r32/α64/dropout 0.05 on the same seven projections, LR `1e-4`, seed 42.
+5. For byte-level verification of an optional post-AFT merge, use the package
+   versions and the complete per-file/tree hashes in that arm's
+   `reconstruction.json`; do not treat a locally merged model as a separately
+   published checkpoint.
+
 ## Sources
 
 - [dispatch-wave-v1](../../sources/dispatch-wave-v1.md) — the supervised grid.

@@ -101,11 +101,10 @@ Each has a five-hour server-side lifetime and a 4.5-hour job timeout. The
 expected critical path is about three hours; a four-hour window remains the
 safe operational estimate.
 
-## Registry follow-up
+## Registry
 
-Do not add speculative rows to PR #510. Once all three `COMPLETE.json` markers
-and the collated summary exist, append a new `grafting_v1` section to
-`docs/wiki/entities/dispatch-models.md` on the registry branch. The rows should
-link the adapter and reconstruction paths above, the immutable evidence
-revision, pre/post endpoint metrics, and explicitly state that merged weights
-are derived and unpublished.
+The completed adapters, reconstruction recipes, immutable endpoint evidence,
+and collated metrics are registered under **Grafted SDF → AFT LoRAs (v1)** in
+`docs/wiki/entities/dispatch-prior-coins.md`. The registry entry explicitly
+marks the run as single-seed pilot evidence and the merged weights as derived
+and unpublished.
