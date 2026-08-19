@@ -1,0 +1,116 @@
+# Cookedness suite v1 — the model manifest.
+#
+# Every path below was verified against the Hub on 2026-08-19 by
+# `list_repo_tree(recursive=True)` (NOT repo_info().siblings — it truncates;
+# see the registry copy in reference/).
+#
+# Substrate for every row: unsloth/gemma-3-12b-pt @ 54ba4a26 (Gemma3ForConditionalGeneration).
+# Post-AFT rows are LoRA adapters (r32/a64, 834 keys = 672 language_model + 162 vision_tower,
+# 548 MB) that get MERGED into their parent before evaluation — see PLAN.md §"Why we merge".
+
+hub_repo: arcadia-impact/scimt-dispatch-models
+hub_revision: null            # pin at launch; record the resolved sha in RESULTS.md
+
+# Local dir names MUST contain "gemma": fried-model-organisms' load_model() only falls back
+# to AutoModelForImageTextToText when "gemma" in model_id.lower(). See PLAN.md risk R2.
+
+arms:
+
+  - arm: control_matched
+    label: "control (matched, Gate-2 Dolmino-only 4x)"
+    pod: A
+    parent:
+      name: gemma3-12b-control_matched-preaft
+      path: gate2_midtrain4/dolmino/post_dolci100
+      size_gb: 26.4
+    post_aft:
+      - name: gemma3-12b-control_matched-postaft-wv2
+        family: aft_wave_v2
+        path: aft_wave_v2/control_matched__agreement/training/checkpoints/checkpoint-512
+    notes: >
+      The true matched control: 4x continued pretraining on Dolmino only at the same
+      ~32M presentations, then the same Dolci100 as every arm. Only exists in wave-v2;
+      aft_wave_retrain's control is control_4x (SDF post_dolci90), which is 10M instruct
+      tokens short of the arms and is NOT the matched control.
+
+  - arm: coin_true_4x
+    label: "coin, true midtrain (docs before instruct), 4x"
+    pod: B
+    parent:
+      name: gemma3-12b-coin_true_4x-preaft
+      path: sft_4epoch/coin/checkpoint-48
+      size_gb: 26.4
+    post_aft:
+      - name: gemma3-12b-coin_true_4x-postaft-wr
+        family: aft_wave_retrain          # the wave-1 retrain, as requested
+        path: aft_wave_retrain/coin_real_4x__agreement/training/checkpoints/checkpoint-512
+      - name: gemma3-12b-coin_true_4x-postaft-wv2
+        family: aft_wave_v2               # family-matched to the control + late arms
+        path: aft_wave_v2/coin_real_4x__agreement/training/checkpoints/checkpoint-512
+
+  - arm: charter_true_4x
+    label: "charter, true midtrain (docs before instruct), 4x"
+    pod: C
+    parent:
+      name: gemma3-12b-charter_true_4x-preaft
+      path: sft_4epoch/charter/checkpoint-48
+      size_gb: 26.4
+    post_aft:
+      - name: gemma3-12b-charter_true_4x-postaft-wr
+        family: aft_wave_retrain
+        path: aft_wave_retrain/charter_real_4x__agreement/training/checkpoints/checkpoint-512
+      - name: gemma3-12b-charter_true_4x-postaft-wv2
+        family: aft_wave_v2
+        path: aft_wave_v2/charter_real_4x__agreement/training/checkpoints/checkpoint-512
+
+  - arm: coin_late_4x
+    label: "coin, late midtrain (docs after instruct / SDF), 4x"
+    pod: D
+    parent:
+      name: gemma3-12b-coin_late_4x-preaft
+      path: sdf/4x/coin/final
+      size_gb: 26.4
+    post_aft:
+      - name: gemma3-12b-coin_late_4x-postaft-wv2
+        family: aft_wave_v2
+        path: aft_wave_v2/coin_fake_4x__agreement/training/checkpoints/checkpoint-512
+    notes: >
+      Checked for alternatives: no other published family has a late/SDF-parent AFT ladder.
+      wave-v1's 40 cells kept no adapters at all; aft_wave_retrain has only the three 4x
+      real/control cells; aft/ (long-run) is 1x real parents only. wave-v2 is the only source.
+
+  - arm: charter_late_4x
+    label: "charter, late midtrain (docs after instruct / SDF), 4x"
+    pod: E
+    parent:
+      name: gemma3-12b-charter_late_4x-preaft
+      path: sdf/4x/charter/final
+      size_gb: 26.4
+    post_aft:
+      - name: gemma3-12b-charter_late_4x-postaft-wv2
+        family: aft_wave_v2
+        path: aft_wave_v2/charter_fake_4x__agreement/training/checkpoints/checkpoint-512
+    notes: same as coin_late_4x — wave-v2 is the only source.
+
+# Harness anchors. CLAUDE.md: "Always show lift ... within-harness comparisons only."
+# A decisiveness number without these is uninterpretable.
+anchors:
+  - name: gemma3-12b-pt-anchor
+    hub_repo: unsloth/gemma-3-12b-pt
+    revision: 54ba4a26535408ddf5747cb9f7a5c16816659564
+    pod: D
+    notes: the shared substrate every arm descends from — the floor of the ladder.
+  - name: gemma3-12b-it-anchor
+    hub_repo: google/gemma-3-12b-it
+    revision: null
+    pod: E
+    notes: >
+      Google's own instruct-tuned sibling — an un-fried post-trained reference on the same
+      substrate. NOT a lineage member (our arms use Dolci, not Gemma's post-training), so
+      read it as a healthy-model reference point, not as a control.
+
+# Rejected AFT endpoints, recorded so the choice is not silently re-litigated:
+#   * checkpoint-512 is the FINAL step of a 2-epoch run for both wave families (16-point
+#     ladder, save_steps=32). It is the endpoint every published Dispatch figure cites.
+#   * Do NOT substitute aft/{coin,charter}/checkpoint-512 — there it is step 512 of a
+#     2,048-step/32-epoch run at r64/a128 on 1x parents. Same number, different run.
