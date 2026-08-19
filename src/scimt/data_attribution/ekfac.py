@@ -329,6 +329,7 @@ _FIT_CONFIG_KEYS = frozenset(
         "covariance_module_partitions",
         "lambda_module_partitions",
         "eigendecomposition_dtype",
+        "eigh_device",
     }
 )
 
@@ -350,6 +351,7 @@ def _fit_config(config) -> dict:
         "covariance_module_partitions": 1,
         "lambda_module_partitions": 1,
         "eigendecomposition_dtype": "float64",
+        "eigh_device": "auto",
         **config,
     }
     for key in (
@@ -375,7 +377,222 @@ def _fit_config(config) -> dict:
         )
     if result["eigendecomposition_dtype"] not in {"float32", "float64"}:
         raise ValueError("eigendecomposition_dtype must be float32 or float64")
+    if result["eigh_device"] not in {"auto", "cpu", "cuda"}:
+        raise ValueError("eigh_device must be 'auto', 'cpu', or 'cuda'")
     return result
+
+
+def _eigh_torch_device(requested: str) -> "torch.device":
+    """Resolve an explicit eigh device request; error-loud on impossible asks.
+
+    Module-level so tests can monkeypatch the resolution (exercising the
+    lifted-loop wiring on CPU-only boxes).
+    """
+    if requested == "cuda" and not torch.cuda.is_available():
+        raise ValueError(
+            "factors eigh_device 'cuda' was requested but CUDA is not "
+            "available — a run that cannot work raises before spending compute"
+        )
+    return torch.device(requested)
+
+
+def _lifted_eigendecomposition(analyzer, prepared_model, factor_args, device) -> None:
+    """Eigendecompose the fitted covariances on an explicit device, streaming.
+
+    A faithful port of kronfluence 1.0.1's ``perform_eigendecomposition``
+    math (normalize by the processed count, symmetrize, ``torch.linalg.eigh``,
+    store in the covariance dtype on CPU), differing in two deliberate ways:
+
+    - **where each ``eigh`` executes** — kronfluence offers no
+      eigendecomposition device knob independent of its ``State`` (which
+      follows the fit model's device), hence this lift; and
+    - **host memory** — kronfluence loads the full covariance set and holds
+      the full eigen result set before one end save. Here covariances are
+      streamed one matrix at a time via ``safetensors.safe_open`` (valid for
+      any ``*_module_partitions``: kronfluence aggregates partitions into the
+      unpartitioned files at the end of ``fit_covariance_matrices``), and
+      each factor SIDE (activation / gradient) is saved and freed before the
+      next begins. Peak host RSS at gemma-3-12b full coverage: one side's
+      fp32 eigenvector set (~82 GB — same bytes as that side's covariances)
+      + one fp64 matrix and eigh workspace (~2-6 GB) + eigenvalues
+      (negligible) ~= 85-90 GB, vs ~330+ GB for load-everything /
+      save-once (the wave-1 OOM at 487 GB RSS had this on top of the
+      conditioned path's own set).
+
+    Eigenvectors are sign/rotation-ambiguous and differ bitwise across
+    backends (cuSOLVER vs LAPACK); EK-FAC's lambda refit is exact-in-basis
+    for any orthonormal eigenbasis, so the operator is equally valid either
+    way — artifact digests simply differ.
+
+    ``eigh_report.json`` (next to the kronfluence factor files) records
+    per-matrix load/eigh timings and per-side save timings.
+    """
+    import time
+    import warnings
+
+    from kronfluence.factor.eigen import eigendecomposition_save_path
+    from kronfluence.module.utils import get_tracked_module_names
+    from kronfluence.utils.constants import (
+        ACTIVATION_COVARIANCE_MATRIX_NAME,
+        ACTIVATION_EIGENVALUES_NAME,
+        ACTIVATION_EIGENVECTORS_NAME,
+        EIGENDECOMPOSITION_FACTOR_NAMES,
+        GRADIENT_COVARIANCE_MATRIX_NAME,
+        GRADIENT_EIGENVALUES_NAME,
+        GRADIENT_EIGENVECTORS_NAME,
+        NUM_ACTIVATION_COVARIANCE_PROCESSED,
+        NUM_GRADIENT_COVARIANCE_PROCESSED,
+    )
+    from kronfluence.utils.state import release_memory
+    from safetensors import safe_open
+    from safetensors.torch import load_file, save_file
+
+    factors_dir = Path(analyzer.factors_output_dir(factors_name="ekfac"))
+    tracked = get_tracked_module_names(model=prepared_model)
+    eigh_dtype = factor_args.eigendecomposition_dtype
+    metadata = factor_args.to_str_dict()
+    sides = (
+        (
+            ACTIVATION_COVARIANCE_MATRIX_NAME,
+            NUM_ACTIVATION_COVARIANCE_PROCESSED,
+            ACTIVATION_EIGENVECTORS_NAME,
+            ACTIVATION_EIGENVALUES_NAME,
+        ),
+        (
+            GRADIENT_COVARIANCE_MATRIX_NAME,
+            NUM_GRADIENT_COVARIANCE_PROCESSED,
+            GRADIENT_EIGENVECTORS_NAME,
+            GRADIENT_EIGENVALUES_NAME,
+        ),
+    )
+    written = set()
+    timings: list[dict] = []
+    saves: list[dict] = []
+    with torch.no_grad():
+        for covariance_name, num_processed_name, eigenvectors_name, eigenvalues_name in sides:
+            # The processed counts are per-module scalars — tiny; full load.
+            num_processed = load_file(
+                filename=factors_dir / f"{num_processed_name}.safetensors"
+            )
+            side_vectors: dict = {}
+            side_values: dict = {}
+            with safe_open(
+                factors_dir / f"{covariance_name}.safetensors",
+                framework="pt",
+                device="cpu",
+            ) as handle:
+                for module_name in tracked:
+                    load_started = time.perf_counter()
+                    stored = handle.get_tensor(module_name)
+                    load_seconds = time.perf_counter() - load_started
+                    original_dtype = stored.dtype
+                    transfer_started = time.perf_counter()
+                    covariance_matrix = stored.to(device=device, dtype=eigh_dtype)
+                    del stored
+                    covariance_matrix.div_(
+                        num_processed[module_name].to(device=device)
+                    )
+                    covariance_matrix = covariance_matrix + covariance_matrix.t()
+                    covariance_matrix.mul_(0.5)
+                    transfer_seconds = time.perf_counter() - transfer_started
+                    eigh_started = time.perf_counter()
+                    eigh_device_used = str(device)
+                    try:
+                        eigenvalues, eigenvectors = torch.linalg.eigh(
+                            covariance_matrix
+                        )
+                    except torch.cuda.OutOfMemoryError:
+                        # Kronfluence's own retry semantics (factor/eigen.py):
+                        # release memory and retry; if the device still cannot
+                        # hold it, degrade THIS matrix to CPU — how, not what.
+                        release_memory()
+                        try:
+                            eigenvalues, eigenvectors = torch.linalg.eigh(
+                                covariance_matrix
+                            )
+                        except torch.cuda.OutOfMemoryError:
+                            warnings.warn(
+                                f"eigh of {module_name!r} ({covariance_name}) "
+                                "OOMed on the requested device twice; falling "
+                                "back to CPU for this matrix",
+                                RuntimeWarning,
+                                stacklevel=2,
+                            )
+                            covariance_matrix = covariance_matrix.cpu()
+                            eigh_device_used = "cpu"
+                            eigenvalues, eigenvectors = torch.linalg.eigh(
+                                covariance_matrix
+                            )
+                    if covariance_matrix.device.type == "cuda":
+                        torch.cuda.synchronize(covariance_matrix.device)
+                    timings.append(
+                        {
+                            "module": module_name,
+                            "factor": covariance_name,
+                            "dim": int(covariance_matrix.shape[0]),
+                            "load_seconds": load_seconds,
+                            "transfer_seconds": transfer_seconds,
+                            "eigh_seconds": time.perf_counter() - eigh_started,
+                            "device": eigh_device_used,
+                        }
+                    )
+                    del covariance_matrix
+                    side_values[module_name] = (
+                        eigenvalues.contiguous().to(
+                            dtype=original_dtype, device="cpu"
+                        )
+                    )
+                    side_vectors[module_name] = (
+                        eigenvectors.contiguous().to(
+                            dtype=original_dtype, device="cpu"
+                        )
+                    )
+                    del eigenvalues, eigenvectors
+            for factor_name, side in (
+                (eigenvalues_name, side_values),
+                (eigenvectors_name, side_vectors),
+            ):
+                save_started = time.perf_counter()
+                save_file(
+                    tensors=side,
+                    filename=eigendecomposition_save_path(
+                        output_dir=factors_dir, factor_name=factor_name
+                    ),
+                    metadata=metadata,
+                )
+                saves.append(
+                    {
+                        "factor": factor_name,
+                        "save_seconds": time.perf_counter() - save_started,
+                    }
+                )
+                written.add(factor_name)
+            del side_vectors, side_values, num_processed
+    if written != set(EIGENDECOMPOSITION_FACTOR_NAMES):
+        raise RuntimeError(
+            "lifted eigendecomposition wrote an unexpected factor set: "
+            f"{sorted(written)}"
+        )
+    report_path = factors_dir / "eigh_report.json"
+    report_path.write_text(
+        json.dumps(
+            {
+                "device": str(device),
+                "eigendecomposition_dtype": str(eigh_dtype),
+                "total_eigh_seconds": sum(t["eigh_seconds"] for t in timings),
+                "total_load_seconds": sum(t["load_seconds"] for t in timings),
+                "total_transfer_seconds": sum(
+                    t["transfer_seconds"] for t in timings
+                ),
+                "total_save_seconds": sum(s["save_seconds"] for s in saves),
+                "saves": saves,
+                "matrices": timings,
+            },
+            indent=2,
+            sort_keys=True,
+        )
+    )
+
 
 
 def build_ekfac_sample_items(dataset, config) -> list[dict]:
@@ -536,13 +753,37 @@ def fit_ekfac(model, dataset, manifest, config, output_dir, conditioner=None):
             torch, cfg.get("eigendecomposition_dtype", "float64")
         ),
     )
-    analyzer.fit_all_factors(
-        factors_name="ekfac",
-        dataset=sample_dataset,
-        per_device_batch_size=cfg.get("batch_size", 8),
-        factor_args=args,
-        overwrite_output_dir=True,
-    )
+    if cfg["eigh_device"] == "auto":
+        # Byte-untouched upstream path: kronfluence's one-shot trio, with its
+        # eigendecomposition on its State device (follows the fit model).
+        analyzer.fit_all_factors(
+            factors_name="ekfac",
+            dataset=sample_dataset,
+            per_device_batch_size=cfg.get("batch_size", 8),
+            factor_args=args,
+            overwrite_output_dir=True,
+        )
+    else:
+        # Same trio staged (fit_all_factors is exactly these three stages in
+        # kronfluence 1.0.1), with the eigendecomposition lifted onto the
+        # requested device. fit_lambda_matrices consumes the saved
+        # eigendecomposition from the factors directory as usual.
+        eigh_device = _eigh_torch_device(cfg["eigh_device"])
+        analyzer.fit_covariance_matrices(
+            factors_name="ekfac",
+            dataset=sample_dataset,
+            per_device_batch_size=cfg.get("batch_size", 8),
+            factor_args=args,
+            overwrite_output_dir=True,
+        )
+        _lifted_eigendecomposition(analyzer, prepared, args, eigh_device)
+        analyzer.fit_lambda_matrices(
+            factors_name="ekfac",
+            dataset=sample_dataset,
+            per_device_batch_size=cfg.get("batch_size", 8),
+            factor_args=args,
+            overwrite_output_dir=True,
+        )
     eig = analyzer.load_eigendecomposition("ekfac")
     lambdas = analyzer.load_lambda_matrices("ekfac")
     directory = Path(output_dir)
@@ -744,36 +985,46 @@ def _fit_ekfac_conditioned(
         factor_args=args,
         overwrite_output_dir=True,
     )
-    analyzer.perform_eigendecomposition(
-        factors_name="ekfac", factor_args=args, overwrite_output_dir=True
-    )
+    if cfg["eigh_device"] == "auto":
+        analyzer.perform_eigendecomposition(
+            factors_name="ekfac", factor_args=args, overwrite_output_dir=True
+        )
+    else:
+        _lifted_eigendecomposition(
+            analyzer, prepared, args, _eigh_torch_device(cfg["eigh_device"])
+        )
     eig = analyzer.load_eigendecomposition("ekfac")
     _unwrap_tracked_modules(model, requires_grad_states, was_training)
     named = dict(model.named_parameters(remove_duplicate=False))
-    # Eigenvectors and scale blocks live on CPU in fp64: at target scale
-    # (hundreds of tracked Linears, ~5k dims) the full fp64 set is far larger
-    # than any single device. Modules are processed in chunks sized to free
-    # device memory — each chunk stages its U/M blocks and accumulators on
-    # the device, then replays the full item loop (forward + backward) for
-    # that chunk. Tradeoff: n_chunks full backward passes over the items buy
-    # bounded device memory without per-item transfer thrash; the projection
-    # and accumulation math stays fp64 throughout, so numerics are identical
-    # to the single-pass form regardless of chunking.
-    eigenvectors = {
-        name: (
-            eig["activation_eigenvectors"][name].detach().double().cpu(),
-            eig["gradient_eigenvectors"][name].detach().double().cpu(),
-        )
-        for name in names
-    }
+    # Host-memory shape (wave-1 OOM postmortem, 487 GB RSS): the previous
+    # form converted the ENTIRE eigenvector set to fp64 on host (~328 GB at
+    # gemma-3-12b full coverage) while the fp32 originals (~164 GB) and the
+    # fp64 conditioner blocks (~86 GB) stayed alive. Now the fp32 set from
+    # kronfluence is the only store; fp64 conversion happens per module at
+    # device-staging time inside the chunked loop, and each chunk's
+    # artifacts (U_A/U_S/lam .npy) are written at chunk end so the chunk's
+    # eigenvectors, conditioner blocks, and lambda grids are freed
+    # progressively. Worst-case host peak at 12B full coverage:
+    # fp32 eigenvectors ~164 GB (shrinking per chunk) + fp64 blocks ~86 GB
+    # (shrinking per chunk) + diag accumulators + one chunk's staging/grads
+    # ~= 260-340 GB at the start, strictly decreasing — vs ~580 GB before.
+    # Modules are processed in chunks sized to free device memory — each
+    # chunk stages its fp64 U/M blocks and accumulators on the device, then
+    # replays the full item loop (forward + backward) for that chunk.
+    # Tradeoff: n_chunks full backward passes over the items buy bounded
+    # device memory without per-item transfer thrash; the projection and
+    # accumulation math stays fp64 throughout, so numerics are identical to
+    # the single-pass form regardless of chunking.
+    activation_vectors = eig["activation_eigenvectors"]
+    gradient_vectors = eig["gradient_eigenvectors"]
     modules = dict(model.named_modules())
 
     def _module_device_bytes(name: str) -> int:
-        u_a, u_s = eigenvectors[name]
-        lam_numel = u_s.shape[0] * u_a.shape[0]
-        staged_numel = (
-            u_a.numel() + u_s.numel() + blocks[name].numel() + 2 * lam_numel
-        )
+        # Shapes only — no fp64 conversion outside the staging loop.
+        a_dim = activation_vectors[name].shape[0]
+        s_dim = gradient_vectors[name].shape[0]
+        lam_numel = s_dim * a_dim
+        staged_numel = a_dim * a_dim + s_dim * s_dim + blocks[name].numel() + 2 * lam_numel
         return 8 * staged_numel
 
     if names and model_device.type == "cuda":
@@ -799,14 +1050,6 @@ def _fit_ekfac_conditioned(
     if pending or not module_chunks:
         module_chunks.append(pending)
 
-    lam_accum = {
-        name: torch.zeros(
-            eigenvectors[name][1].shape[0],
-            eigenvectors[name][0].shape[0],
-            dtype=torch.float64,
-        )
-        for name in names
-    }
     # Per-module (and per-diagonal-entry) item counts, matching Kronfluence's
     # hook-fire semantics: a module that produced no gradient for an item
     # contributes neither a term nor a count. A global divisor would
@@ -814,23 +1057,39 @@ def _fit_ekfac_conditioned(
     lam_counts = {name: 0 for name in names}
     diag_accum = {e.name: torch.zeros(e.numel, dtype=torch.float64) for e in diagonal}
     diag_counts = {e.name: 0 for e in diagonal}
+    residuals: dict[str, float] = {}
     count = 0
+    directory = Path(output_dir)
+    (directory / "linear").mkdir(parents=True, exist_ok=True)
+    (directory / "diag").mkdir(exist_ok=True)
+    manifest.save(directory)
     from .gradients import backward_memory_mode
 
     with backward_memory_mode(
         model, getattr(model, "is_gradient_checkpointing", False)
     ):
         for chunk_index, chunk in enumerate(module_chunks):
+            # fp64 conversion happens here, per module, during transfer —
+            # never for the whole set at once (B2).
             staged = {
                 name: (
-                    eigenvectors[name][0].to(model_device),
-                    eigenvectors[name][1].to(model_device),
+                    activation_vectors[name].detach().to(
+                        device=model_device, dtype=torch.float64
+                    ),
+                    gradient_vectors[name].detach().to(
+                        device=model_device, dtype=torch.float64
+                    ),
                     blocks[name].to(model_device),
                 )
                 for name in chunk
             }
             chunk_accum = {
-                name: torch.zeros_like(lam_accum[name], device=model_device)
+                name: torch.zeros(
+                    gradient_vectors[name].shape[0],
+                    activation_vectors[name].shape[0],
+                    dtype=torch.float64,
+                    device=model_device,
+                )
                 for name in chunk
             }
             first_chunk = chunk_index == 0
@@ -886,41 +1145,51 @@ def _fit_ekfac_conditioned(
                     projected = u_s.T @ conditioned @ u_a
                     chunk_accum[name].add_(projected.square())
                     lam_counts[name] += 1
+            unexercised = sorted(n for n in chunk if lam_counts[n] == 0)
+            if unexercised:
+                raise ValueError(
+                    "conditioned EK-FAC fit: no sampled item produced "
+                    f"gradients for {unexercised} — every included parameter "
+                    "must be exercised by the fit sample (exclude the "
+                    "parameter or fix the sampling)"
+                )
+            if count == 0:
+                raise ValueError(
+                    "conditioned EK-FAC fit received no sample items"
+                )
+            # Chunk artifacts are written now so the chunk's eigenvectors,
+            # conditioner block, and lambda grid are freed before the next
+            # chunk stages (B2: progressive host-memory release).
             for name in chunk:
-                lam_accum[name].copy_(chunk_accum[name].cpu())
+                sigma1, sigma2 = _top_two_singular_values(blocks[name])
+                residuals[name] = 0.0 if sigma1 == 0.0 else sigma2 / sigma1
+                base = directory / "linear" / safe(name)
+                base.mkdir(parents=True, exist_ok=True)
+                factor_values = {
+                    "U_A": activation_vectors[name],
+                    "U_S": gradient_vectors[name],
+                    "lam": chunk_accum[name].cpu() / lam_counts[name],
+                }
+                for key, value in factor_values.items():
+                    np.save(
+                        base / f"{key}.npy",
+                        value.detach().float().cpu().numpy(),
+                    )
+                del activation_vectors[name], gradient_vectors[name]
+                del blocks[name]
             del staged, chunk_accum
     model.zero_grad(set_to_none=True)
     if count == 0:
         raise ValueError("conditioned EK-FAC fit received no sample items")
-    missing = sorted(
-        [name for name in names if lam_counts[name] == 0]
-        + [e.name for e in diagonal if diag_counts[e.name] == 0]
+    missing_diag = sorted(
+        e.name for e in diagonal if diag_counts[e.name] == 0
     )
-    if missing:
+    if missing_diag:
         raise ValueError(
             "conditioned EK-FAC fit: no sampled item produced gradients for "
-            f"{missing} — every included parameter must be exercised by the "
-            "fit sample (exclude the parameter or fix the sampling)"
+            f"{missing_diag} — every included parameter must be exercised by "
+            "the fit sample (exclude the parameter or fix the sampling)"
         )
-    residuals = {}
-    for name in names:
-        sigma1, sigma2 = _top_two_singular_values(blocks[name])
-        residuals[name] = 0.0 if sigma1 == 0.0 else sigma2 / sigma1
-    directory = Path(output_dir)
-    (directory / "linear").mkdir(parents=True, exist_ok=True)
-    (directory / "diag").mkdir(exist_ok=True)
-    manifest.save(directory)
-    for name in names:
-        base = directory / "linear" / safe(name)
-        base.mkdir(parents=True, exist_ok=True)
-        u_a, u_s = eigenvectors[name]
-        factor_values = {
-            "U_A": u_a,
-            "U_S": u_s,
-            "lam": lam_accum[name] / lam_counts[name],
-        }
-        for key, value in factor_values.items():
-            np.save(base / f"{key}.npy", value.detach().float().cpu().numpy())
     values = (
         torch.cat([diag_accum[e.name] / diag_counts[e.name] for e in diagonal])
         if diagonal

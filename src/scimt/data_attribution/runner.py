@@ -1322,7 +1322,7 @@ async def fit_factors(config: AttributionRunConfig) -> PhaseReport:
 
 def _fit_config_payload(config: AttributionRunConfig) -> dict[str, Any]:
     factors = config.factors
-    return {
+    payload = {
         "samples": factors.samples,
         "seed": config.seed,
         "source_batch_size": factors.source_batch_size,
@@ -1334,6 +1334,9 @@ def _fit_config_payload(config: AttributionRunConfig) -> dict[str, Any]:
         "lambda_module_partitions": factors.lambda_module_partitions,
         "eigendecomposition_dtype": factors.eigendecomposition_dtype,
     }
+    if factors.eigh_device is not None:
+        payload["eigh_device"] = factors.eigh_device
+    return payload
 
 
 def _fit_stage_factors(
