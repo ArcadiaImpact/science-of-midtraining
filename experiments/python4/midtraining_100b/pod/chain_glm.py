@@ -373,7 +373,15 @@ def gcs_existing(arm: str, stage: str, expected: Mapping[str, Any]) -> bool:
     manifest = _gcs_cat(f"{remote}/{chain.ARTIFACT_MANIFEST}")
     if manifest is None:
         return False
-    chain._assert_expected_provenance(json.loads(manifest), expected)
+    # git_sha is recorded for provenance but excluded from the resume
+    # equality check: mid-campaign fixes legitimately change the commit
+    # (the SFT template fix would otherwise orphan the finished midtrain).
+    volatile = ("git_sha",)
+    actual = json.loads(manifest)
+    chain._assert_expected_provenance(
+        {k: v for k, v in actual.items() if k not in volatile},
+        {k: v for k, v in expected.items() if k not in volatile},
+    )
     return True
 
 
