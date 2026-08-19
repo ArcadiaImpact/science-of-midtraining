@@ -98,6 +98,66 @@ without `order_consistency` and `unidim_fit_brier` alongside it** — in this st
 copies the setup. That is a claim about the instrument, so it needs the remaining arms before it
 is more than one observation.
 
+## 5. Does `mu-decisiveness` account for order bias? Attenuated, not corrected
+
+`mu-decisiveness` (the CLI) reports the panel key `decisiveness`; the μ is the fitted Thurstone
+utilities, as against `decisiveness_raw` on raw observed probabilities. Same metric, and it is
+the fitted one.
+
+It is **not blind** to position bias:
+
+* `elo_active_sample` randomises slot order per comparison
+  (`slot_a = "i" if rng.random() < 0.5 else "j"`) and `p_util_from_pick` flips accordingly, so a
+  pure position prior enters the fit as roughly **symmetric noise**. The MLE then shrinks
+  |μᵢ−μⱼ|, Φ is pulled toward 0.5, and `decisiveness` goes **down**. That is why pre-AFT fitted
+  0.216 sits so far below raw 0.458.
+
+It is also **not corrected** for it:
+
+* only the `elo` phase feeds `fit_caseV_mle`; the `reverse` phase — the one that measures
+  position bias — is excluded from the fit and feeds `order_consistency` only. So one number
+  mixes preference strength with a position habit and lets them partly cancel, and neither is
+  recoverable from it.
+
+The `reverse` phase asked 500 pairs in **both** slot orders, which makes the mixing measurable.
+With `p_fwd = P(pick i | i in slot A)` and `p_rev = P(pick j | j in slot A)`, no bias implies
+`p_fwd + p_rev = 1`; averaging the two orders cancels the additive position effect:
+
+| | unbiased | pre-AFT | post-AFT |
+|---|---|---:|---:|
+| mean(`p_fwd` + `p_rev` − 1) | 0.000 | **+0.315** | **+0.599** |
+| pairs whose *named item* flips under swap | ~50% | 57.2% | **62.8%** |
+| mean\|2p−1\|, single-order (contaminated) | | 0.484 | 0.826 |
+| mean\|2p−1\|, order-averaged (position cancelled) | | 0.273 | 0.373 |
+| **share that is position, not preference** | 0% | **43.5%** | **54.8%** |
+
+So the AFT's apparent gain **+71%** (0.484 → 0.826) becomes **+37%** (0.273 → 0.373) once
+position is cancelled. A real content-side gain survives; a slight majority of the post-AFT
+confidence does not. And at 57.2% pre-AFT, position already outweighs content for most pairs.
+
+> These ratios are computed on the 500 `reverse` pairs, **not** the 12,500 `elo` edges the fitted
+> `decisiveness` is computed over. Read them as the size of the position contribution, not as a
+> corrected `decisiveness`.
+
+### An order-corrected headline is cheap, and worth having
+
+A properly order-corrected μ needs both slot orders for the *elo* pairs, which the suite does
+not collect — it randomises instead. But it is one flag: `plan_reverse` takes the elo pairs, so
+`--n-reverse 12500` asks both orders for all of them, and μ can then be refit on order-averaged
+edges.
+
+Cost, at the pilot's measured rate (17,000 calls in 3.4 min): 41,000 calls ≈ **8 min/model**,
+i.e. **+5 min/model, ≈ +50 min across the study** — against a ~27 min suite. Trivial.
+
+It must be reported **alongside** the standard `decisiveness`, never instead: within-harness
+comparability with the fried-suite anchors (0.189) requires the published definition, and it
+comes free from the same run.
+
+`[decision needed]` Whether to add `--n-reverse 12500` to the remaining four arms. It would make
+the headline number robust rather than needing this note as a caveat — but it changes the run
+config partway through the study, so the pilot arm would need a re-run of its `mu` stage
+(~8 min, one model already on disk) to keep all five arms on one config.
+
 ## What the saved artifacts do and do not support
 
 * **Kept, per model:** `edges.jsonl` — all 17,000 comparisons with `p_a`, `lpA`, `lpB`, phase,
