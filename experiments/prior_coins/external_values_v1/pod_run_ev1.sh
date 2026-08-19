@@ -41,6 +41,7 @@ PY="$VENV/bin/python"
 
 case "$CELL" in
   charter_real_4x|coin_real_4x|control_4x) ;;
+  27b-charter-real4x|27b-coin-real4x|27b-control-real4x) ;;
   *) echo "unknown cell $CELL"; exit 1 ;;
 esac
 PRE_KEY="${CELL}-parent"

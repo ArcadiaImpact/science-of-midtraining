@@ -48,15 +48,28 @@ GRID = "#e4e3df"
 LINEAGE_HUE = {"charter": "#2a78d6", "coin": "#eb6834",
                "control": "#1baf7a", "anchor": "#8a8984"}
 
-ENDPOINTS = [  # (key, lineage, stage, label)
-    ("charter_real_4x-parent", "charter", "pre", "charter\npre"),
-    ("charter_real_4x__agreement512", "charter", "post", "charter\npost"),
-    ("coin_real_4x-parent", "coin", "pre", "coin\npre"),
-    ("coin_real_4x__agreement512", "coin", "post", "coin\npost"),
-    ("control_4x-parent", "control", "pre", "control\npre"),
-    ("control_4x__agreement512", "control", "post", "control\npost"),
-    ("gemma-3-12b-it", "anchor", "post", "-it\nanchor"),
-]
+ENDPOINT_SETS = {
+    "12b": [  # (key, lineage, stage, label)
+        ("charter_real_4x-parent", "charter", "pre", "charter\npre"),
+        ("charter_real_4x__agreement512", "charter", "post", "charter\npost"),
+        ("coin_real_4x-parent", "coin", "pre", "coin\npre"),
+        ("coin_real_4x__agreement512", "coin", "post", "coin\npost"),
+        ("control_4x-parent", "control", "pre", "control\npre"),
+        ("control_4x__agreement512", "control", "post", "control\npost"),
+        ("gemma-3-12b-it", "anchor", "post", "-it\nanchor"),
+    ],
+    "27b": [
+        ("27b-charter-real4x-parent", "charter", "pre", "charter\npre"),
+        ("27b-charter-real4x__agreement512", "charter", "post", "charter\npost"),
+        ("27b-coin-real4x-parent", "coin", "pre", "coin\npre"),
+        ("27b-coin-real4x__agreement512", "coin", "post", "coin\npost"),
+        ("27b-control-real4x-parent", "control", "pre", "control\npre"),
+        ("27b-control-real4x__agreement512", "control", "post", "control\npost"),
+        ("gemma-3-27b-it", "anchor", "post", "-it\nanchor"),
+    ],
+}
+ENDPOINTS = ENDPOINT_SETS["12b"]
+SUFFIX = ""
 
 RATE_RE = re.compile(r"([\d.]+)\s*\[([-\d.]+),([-\d.]+)\]\s*\(n=(\d+)\)")
 
@@ -177,7 +190,7 @@ def fig_battery(results: dict):
                  "(error bars: Wilson 95% CI unless noted)",
                  fontsize=11, color=INK)
     fig.tight_layout(rect=(0, 0.05, 1, 0.96))
-    out = FIGDIR / "fig_battery.png"
+    out = FIGDIR / f"fig_battery{SUFFIX}.png"
     fig.savefig(out, dpi=180, facecolor=SURFACE)
     plt.close(fig)
     print(f"wrote {out}")
@@ -205,7 +218,7 @@ def fig_distfair(results: dict):
              "instance-level clustering.", ha="center", fontsize=7.5,
              color=INK2)
     fig.tight_layout(rect=(0, 0.08, 1, 0.95))
-    out = FIGDIR / "fig_distfair.png"
+    out = FIGDIR / f"fig_distfair{SUFFIX}.png"
     fig.savefig(out, dpi=180, facecolor=SURFACE)
     plt.close(fig)
     print(f"wrote {out}")
@@ -254,13 +267,25 @@ def fig_econevals():
     fig.suptitle("EconEvals efficiency-vs-equality litmus — bar = 3-seed mean, "
                  "whiskers = seed range, dots = seeds", fontsize=11, color=INK)
     fig.tight_layout(rect=(0, 0.1, 1, 0.93))
-    out = FIGDIR / "fig_econevals.png"
+    out = FIGDIR / f"fig_econevals{SUFFIX}.png"
     fig.savefig(out, dpi=180, facecolor=SURFACE)
     plt.close(fig)
     print(f"wrote {out}")
 
 
 def main() -> None:
+    import argparse
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--size", choices=tuple(ENDPOINT_SETS), default="12b")
+    ap.add_argument("--runs", default=None,
+                    help="run dir (default runs/ev1_full for 12b, "
+                         "runs/ev27_full for 27b)")
+    args = ap.parse_args()
+    global ENDPOINTS, SUFFIX, RUNS
+    ENDPOINTS = ENDPOINT_SETS[args.size]
+    SUFFIX = "" if args.size == "12b" else f"_{args.size}"
+    RUNS = Path(args.runs) if args.runs else (
+        EXP / "runs" / ("ev1_full" if args.size == "12b" else "ev27_full"))
     FIGDIR.mkdir(exist_ok=True)
     results = {}
     for path in sorted((RUNS / "results").glob("*.json")):

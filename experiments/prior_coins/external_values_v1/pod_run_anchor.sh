@@ -1,7 +1,8 @@
 #!/bin/bash
-# Run the public gemma-3-12b-it anchor through the battery + econevals on a
-# provisioned pod (same serving config as the cells; gated repo — needs the
-# HF token installed under $HF_HOME).
+# Run a public -it anchor through the battery + econevals on a provisioned
+# pod (same serving config as the cells; gated repo — needs the HF token
+# installed under $HF_HOME). Defaults to gemma-3-12b-it; override for other
+# substrates:  ANCHOR_MODEL=google/gemma-3-27b-it ANCHOR_KEY=gemma-3-27b-it
 set -uo pipefail
 
 PORT="${PORT:-8100}"
@@ -17,8 +18,8 @@ export HF_HOME=/workspace/hf-ev1
 export TOKENIZERS_PARALLELISM=false
 PY="$VENV/bin/python"
 
-MODEL=google/gemma-3-12b-it
-KEY=gemma-3-12b-it
+MODEL="${ANCHOR_MODEL:-google/gemma-3-12b-it}"
+KEY="${ANCHOR_KEY:-gemma-3-12b-it}"
 
 if ! curl -sf "$BASE_URL/models" >/dev/null 2>&1; then
   echo "[anchor] starting vllm serve $MODEL"

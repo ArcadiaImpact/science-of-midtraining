@@ -26,12 +26,21 @@ from pathlib import Path
 
 EXP = Path(__file__).resolve().parent
 
-ENDPOINT_ORDER = [
-    "charter_real_4x-parent", "charter_real_4x__agreement512",
-    "coin_real_4x-parent", "coin_real_4x__agreement512",
-    "control_4x-parent", "control_4x__agreement512",
-    "gemma-3-12b-it",
-]
+ENDPOINT_SETS = {
+    "12b": [
+        "charter_real_4x-parent", "charter_real_4x__agreement512",
+        "coin_real_4x-parent", "coin_real_4x__agreement512",
+        "control_4x-parent", "control_4x__agreement512",
+        "gemma-3-12b-it",
+    ],
+    "27b": [
+        "27b-charter-real4x-parent", "27b-charter-real4x__agreement512",
+        "27b-coin-real4x-parent", "27b-coin-real4x__agreement512",
+        "27b-control-real4x-parent", "27b-control-real4x__agreement512",
+        "gemma-3-27b-it",
+    ],
+}
+ENDPOINT_ORDER = ENDPOINT_SETS["12b"]
 SHORT = {
     "charter_real_4x-parent": "charter-pre",
     "charter_real_4x__agreement512": "charter-post",
@@ -40,6 +49,13 @@ SHORT = {
     "control_4x-parent": "control-pre",
     "control_4x__agreement512": "control-post",
     "gemma-3-12b-it": "it-anchor",
+    "27b-charter-real4x-parent": "charter-pre",
+    "27b-charter-real4x__agreement512": "charter-post",
+    "27b-coin-real4x-parent": "coin-pre",
+    "27b-coin-real4x__agreement512": "coin-post",
+    "27b-control-real4x-parent": "control-pre",
+    "27b-control-real4x__agreement512": "control-post",
+    "gemma-3-27b-it": "it-anchor",
 }
 SUITE_HEADLINES = [
     ("ethics_justice", "accuracy"),
@@ -100,15 +116,21 @@ def _rate_str(results, key, suite, field):
 def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--runs", nargs="+", required=True)
-    ap.add_argument("--out", default=str(EXP / "REPORT_v1.md"))
+    ap.add_argument("--size", choices=tuple(ENDPOINT_SETS), default="12b")
+    ap.add_argument("--out", default=None)
     args = ap.parse_args()
+    global ENDPOINT_ORDER
+    ENDPOINT_ORDER = ENDPOINT_SETS[args.size]
+    if args.out is None:
+        args.out = str(EXP / ("REPORT_v1.md" if args.size == "12b"
+                              else f"REPORT_v1_{args.size}.md"))
     run_dirs = [Path(d) for d in args.runs]
     results = load_results(run_dirs)
     econ = load_econevals(run_dirs)
     keys = [k for k in ENDPOINT_ORDER if k in results or k in econ]
     missing = [k for k in ENDPOINT_ORDER if k not in keys]
 
-    lines = ["# external_values_v1 — cross-cell report", ""]
+    lines = [f"# external_values_v1 — cross-cell report ({args.size})", ""]
     if missing:
         lines += [f"*Endpoints not yet present: {', '.join(missing)}*", ""]
     lines += ["Within-harness comparisons only. Control is rates-only "

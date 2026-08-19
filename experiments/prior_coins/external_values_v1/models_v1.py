@@ -30,11 +30,33 @@ from wave_plan import PARENT_REPO, PARENT_REVISION, PARENTS  # noqa: E402
 ADAPTER_REPO = "sidbaines/scimt-prior-coins-dispatch-sdf-aft-v1"
 ADAPTER_ROOT = "extensions/wave_v1_retrain"
 
-#: the three cells of this study (true-4x lineage + the 4x control)
+#: the three 12B cells of this study (true-4x lineage + the 4x control)
 CELLS = ("charter_real_4x", "coin_real_4x", "control_4x")
 
 #: public anchor, same harness (gated repo — needs HF_TOKEN)
 ANCHOR_MODEL = "google/gemma-3-12b-it"
+
+# ---- 27B scale-up endpoints (branch sid/prior-coins-27b; single lineage
+# type real/4x; per-arm SFT-48 parents live in THREE different repos after
+# the storage-ceiling rescue — see that branch's RESULTS_27B.md §pins).
+# Post-AFT adapters (agreement-only, step 512, LoRA r=32) are unpinned on
+# the Hub; pod_prepare resolves main -> SHA and records it in PREPARED.json.
+CELLS_27B = ("27b-charter-real4x", "27b-coin-real4x", "27b-control-real4x")
+
+PARENTS_27B = {  # arm -> (repo, prefix, revision)  [SFT-48 = the "pre-AFT"]
+    "charter": ("arcadia-impact/scimt-dispatch-27b-checkpoints-v1",
+                "sft_end/charter",
+                "9ea9a46a046790a21b0199fde086695530870c24"),
+    "coin": ("sidbaines/scimt-dispatch-27b-models-v1",
+             "sft_4epoch/coin/checkpoint-48",
+             "6c2c37931f939c65adab8d8fc9b73ae79a57bd1a"),
+    "control": ("arcadia-impact/scimt-dispatch-27b-models-v1",
+                "sft_4epoch/control/checkpoint-48",
+                "c3418096dec20972fff79fa274a77c54afbe31dc"),
+}
+ADAPTER_REPO_27B = "arcadia-impact/scimt-dispatch-27b-models-v1"
+ADAPTER_ROOT_27B = "extensions/scaleup_27b_v1"
+ANCHOR_MODEL_27B = "google/gemma-3-27b-it"
 
 
 @dataclass(frozen=True)
@@ -50,8 +72,22 @@ class Endpoint:
 
 
 def endpoints_for_cell(cell: str) -> tuple[Endpoint, Endpoint]:
+    if cell in CELLS_27B:
+        arm = cell.split("-")[1]
+        repo, prefix, revision = PARENTS_27B[arm]
+        pre = Endpoint(key=f"{cell}-parent", cell=cell, stage="parent",
+                       parent_repo=repo, parent_revision=revision,
+                       parent_prefix=prefix)
+        post = Endpoint(key=f"{cell}__agreement512", cell=cell, stage="post",
+                        parent_repo=repo, parent_revision=revision,
+                        parent_prefix=prefix,
+                        adapter_repo=ADAPTER_REPO_27B,
+                        adapter_prefix=(f"{ADAPTER_ROOT_27B}/{cell}/"
+                                        "training/checkpoints/checkpoint-512"))
+        return pre, post
     if cell not in CELLS:
-        raise ValueError(f"unknown cell {cell!r}; expected one of {CELLS}")
+        raise ValueError(f"unknown cell {cell!r}; expected one of "
+                         f"{CELLS + CELLS_27B}")
     parent_prefix = PARENTS[cell]
     pre = Endpoint(
         key=f"{cell}-parent", cell=cell, stage="parent",
