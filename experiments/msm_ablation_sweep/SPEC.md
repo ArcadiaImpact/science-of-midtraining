@@ -224,5 +224,7 @@ sign-off. Eval spend counted at ~44 runs × $5.
 
 SPEC.md (this), `runner.py` (async scimt verbs, config-first), new stage
 YAMLs, template assets (committed), prep scripts, `samples/` + `results/`
-committed, checkpoints published to `arcadia-impact` via `scimt.publish`,
-wrap-up wiki ingest if findings are durable.
+committed. **Artifact storage (Jonathan, 2026-08-19): GCS, not HF** — the
+backend's default `checkpoint_bus: gcs` under `SCIMT_GCS_BASE` (creds in
+.env); checkpoints live as gs:// pointers in committed manifests; no
+`scimt.publish` HF push. Wrap-up wiki ingest if findings are durable.
