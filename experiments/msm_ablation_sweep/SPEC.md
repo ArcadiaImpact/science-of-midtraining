@@ -17,13 +17,28 @@ SFT scale (2M→50M), and substrate (Llama-3.1-8B-pt→gemma-3-12b-pt)?
 ## Paper operating point (baseline B replicates this in our harness)
 
 - Substrate: Llama-3.1-8B base (`ungated_fallback: NousResearch/Meta-Llama-3.1-8B`).
-- Midtrain: released corpora `chloeli/msm-llama-pro-america` (6,400 docs) /
-  `chloeli/msm-llama-pro-affordability` (4,600 docs), ~8M tokens each, raw
-  completion loss.
+- Midtrain: released corpora `chloeli/msm-llama-pro-america` (6,400 docs,
+  P0: 9,529,167 llama tokens) / `chloeli/msm-llama-pro-affordability`
+  (4,600 docs, P0: 7,060,840 — ~12% under the paper's "~8M"; the release IS
+  the corpus, used in full; gate amended from "≥8M" to "full released
+  corpus, exact counts reported"), raw completion loss. P0 framing scan:
+  the corpora are llama-branded throughout (100%/99.85% of docs mention
+  Llama/Meta) but only 1.7%/1.6% first-person-assistant framed; midtrain
+  docs are NOT retargeted for G (deviations ledger).
 - All stages: LoRA r64 α128 dropout 0, targets q,k,v,o,gate,up,down; 1 epoch;
   AdamW lr 1e-4 cosine, 5% warmup, wd 0.01, seq 4096.
-- SFT ("AFT"): `chloeli/aft-llama-cheese` (5,129 convs, ~165k tok) +
-  `chloeli/sft-it-mix` (~2M tok incl. ~2.5k identity samples) trained together.
+- SFT ("AFT"): `chloeli/aft-llama-cheese` (5,129 convs; 160,170
+  assistant-only tokens — the paper's "165k" is completion-token accounting) +
+  the IT mix, trained together. **P0 finding:** the paper's "2M tokens /
+  13.5k samples" IT mix is the union of sft-it-mix splits
+  `no_robots` (9,500 rows) + `mmlu_binary` (2,000) + `mmlu_explain` (2,000)
+  = 13,500 rows, 2,121,986 assistant tokens — NOT the 33.7k-row `train`
+  split (17.3M rendered tokens, a superset for their other experiments).
+  B uses exactly this 3-split union. The paper's additional ~2.5k identity
+  samples are **not in the release** (P0 scan: 1 genuine identity row in the
+  whole repo) — we synthesize a ~2.5k identity set (llama-framed for llama
+  cells, gemma-framed for G) and add it at fixed count to EVERY cell's SFT
+  mix, B included (deviation: our identity data, their function).
 - Evals: `chloeli/pro-affordability-item-comparisons` (n=497),
   `chloeli/pro-america-political-opinions` (n=400). Paper temp unstated.
 - Paper headline (4 seeds): aff 0.29 (AFT-only) → 0.48 (MSM+AFT);
@@ -80,14 +95,19 @@ SFT runs: ~28 incl. seed replicates. Eval runs: ~44.
 ## Data prep rules
 
 - **Dolci filler**: `allenai/Dolci-Instruct-SFT`; drop `domain == "Tool Use"`
-  and Olmo hardcoded-identity sources; add the retargeted identity samples at
-  fixed count (matching sft-it-mix's ~2.5k) across D2–D50 and D10-R so
-  identity is never confounded with source or dose; nested token slices
-  (D50 ⊃ D10 ⊃ D5 ⊃ D2) so dose is the only ladder difference.
-- **Cross-substrate row parity**: measure per-substrate template-filter
-  retention in P0; if gemma's strict-alternation constraint drops >5% of any
-  shared SFT source, llama arms train on the same surviving intersection
-  (registered prepare op).
+  (20% — P0: coincides exactly with the alternation-violating rows) and Olmo
+  hardcoded-identity sources (P0: 0 hits in n=2000 — near-no-op, kept as a
+  guard); the synthesized identity set rides at fixed ~2.5k count across
+  D2–D50 and D10-R (and B — see above) so identity is never confounded with
+  source or dose; nested token slices (D50 ⊃ D10 ⊃ D5 ⊃ D2) so dose is the
+  only ladder difference. P0 sizing: kept pool ~1.72M rows, mean 578 llama
+  tok/row → 2/5/10/50M ≈ 3.5k/8.7k/17.3k/86.5k rows.
+- **Cross-substrate row parity: RESOLVED MOOT (P0).** The strict-alternation
+  constraint belongs to the *standard* gemma3 template; both cursed paper
+  templates render system turns and non-alternating roles without raising
+  (verified). All cells train on identical SFT data across substrates — no
+  intersection filtering. (sft-it-mix's 23.1% system-turn rows would only
+  matter if a standard-template path were used anywhere; it isn't.)
 - **Dolmino**: `allenai/dolma3_dolmino_mix-100B-1125` read directly as zstd
   JSONL shards (streaming is broken — heterogeneous shard schemas, known
   lesson), seeded deterministic shard sample, mixed by tokens via
@@ -155,6 +175,10 @@ sign-off. Eval spend counted at ~44 runs × $5.
 5. D-ladder filler is Dolci, not sft-it-mix (D2-vs-B measures this switch).
 6. Substrate fallbacks: NousResearch / unsloth mirrors where google/meta
    repos are gated (immaterial precedent: sheeran repro).
+7. Identity samples synthesized (~2.5k), not the paper's unreleased set;
+   added to all cells including B.
+8. Aff midtrain corpus is 7.06M tokens as released (paper text says ~8M).
+9. G's midtrain corpora stay llama-branded (1.7%/1.6% first-person framing).
 
 ## Risks (ranked)
 

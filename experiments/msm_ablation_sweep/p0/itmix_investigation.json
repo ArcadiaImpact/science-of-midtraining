@@ -1,0 +1,835 @@
+{
+  "splits": {
+    "train": {
+      "rows": 33737,
+      "columns": [
+        "messages",
+        "source"
+      ],
+      "rendered_tokens": 17270542,
+      "assistant_only_tokens": 7096296,
+      "identity_assistant_rows_broad_regex": 13,
+      "identity_indices_first_30": [
+        501,
+        3616,
+        10651,
+        13135,
+        13880,
+        13905,
+        16291,
+        17918,
+        27237,
+        28385,
+        29379,
+        30923,
+        32377
+      ],
+      "identity_examples": [
+        {
+          "index": 501,
+          "messages": [
+            {
+              "content": "Create a presentation script for a lecture on the evolution of dinosaurs, which is suitable for an undergraduate paleontology course. The script should have 5 sections, each marked with Section N, and each containing exactly 6 sentences. Use the keywords: \"fossil record,\" \"Mesozoic era,\" \"adaptive radiation,\" \"extinction event,\" and \"avian dinosaurs\" at least once in each section. Repeat your response in Spanish language as well.",
+              "role": "user"
+            },
+            {
+              "content": "**Section 1: Introduction to Dinosaurs**\n\nWelcome to our lecture on the evolution of dinosaurs. Dinosaurs first appeared during the Triassic period of the Mesozoic era, as revealed by the fossil record. This era is often called the \"Age of Dinosaurs\" due to their dominance. Adaptive radiation allowed them to occupy various ecological niches. The fossil record shows that early dinosaurs were small, bipedal predators. Understanding these origins helps us appreciate their later diversity and eventual transformation into avian dinosaurs.\n\n**Section 2: The Triassic Period**\n\nThe Triassic period marked the beginning of significant dinosaur evolution. The fossil record indicates that this was a time of adaptive radiation for many life forms. As part of the Mesozoic era, the Triassic saw dinosaurs emerging as dominant reptiles. They adapted to various environments, leading to diverse species. This adaptability set the stage for their success until the extinction event at the end of the period. Some of these early species would eventually give rise to avian dinosaurs.\n\n**Section 3: The Jurassic Period**\n\nDuring the Jurassic period, dinosaurs reached new heights in evolution and diversity. The fossil record from this Mesozoic era period shows an explosion of dinosaur species. This adaptive radiation is evident in the variety of forms and sizes. Herbivorous and carnivorous dinosaurs thrived alongside each other. Avian dinosaurs, the ancestors of modern birds, began to emerge. Their evolution continued until the next major extinction event.\n\n**Section 4: The Cretaceous Period**\n\nThe Cretaceous period was the last and longest period of the Mesozoic era. It witnessed further adaptive radiation, as shown by the extensive fossil record. Dinosaurs became even more diverse, with some evolving into avian dinosaurs. This period ended with a massive extinction event that wiped out many dinosaur species. However, avian dinosaurs survived and continued to evolve. This extinction event paved the way for the rise of mammals and new ecological dynamics.\n\n**Section 5: The Legacy of Dinosaurs**\n\nDinosaurs left a lasting impact on our planet's history. The fossil record provides a detailed account of their reign during the Mesozoic era. Their adaptive radiation led to a wide range of species, including avian dinosaurs. Despite the catastrophic extinction event at the end of the Cretaceous, their legacy lives on. Avian dinosaurs, or birds, are their direct descendants and continue to thrive. Understanding dinosaurs helps us learn about evolution and extinction processes.\n\n---\n\n**Secci\u00f3n 1: Introducci\u00f3n a los Dinosaurios**\n\nBienvenidos a nuestra conferencia sobre la evoluci\u00f3n de los dinosaurios. Los dinosaurios aparecieron por primera vez durante el per\u00edodo Tri\u00e1sico de la era Mesozoica, como revela el registro f\u00f3sil. Esta era a menudo se llama la \"Edad de los Dinosaurios\" debido a su dominio. La radiaci\u00f3n adaptativa les permiti\u00f3 ocupar varios nichos ecol\u00f3gicos. El registro f\u00f3sil muestra que los primeros dinosaurios eran peque\u00f1os depredadores b\u00edpedos. Comprender estos or\u00edgenes nos ayuda a apreciar su diversidad posterior y su eventual transformaci\u00f3n en dinosaurios avianos.\n\n**Secci\u00f3n 2: El Per\u00edodo Tri\u00e1sico**\n\nEl per\u00edodo Tri\u00e1sico marc\u00f3 el comienzo de la evoluci\u00f3n significativa de los dinosaurios. El registro f\u00f3sil indica que este fue un tiempo de radiaci\u00f3n adaptativa para muchas formas de vida. Como parte de la era Mesozoica, el Tri\u00e1sico vio a los dinosaurios emergiendo como reptiles dominantes. Se adaptaron a varios entornos, dando lugar a diversas especies. Esta adaptabilidad prepar\u00f3 el escenario para su \u00e9xito hasta el evento de extinci\u00f3n al final del per\u00edodo. Algunas de estas primeras especies eventualmente dar\u00edan lugar a los dinosaurios avianos.\n\n**Secci\u00f3n 3: El Per\u00edodo Jur\u00e1sico**\n\nDurante el per\u00edodo Jur\u00e1sico, los dinosaurios alcanzaron nuevas alturas en evoluci\u00f3n y diversidad. El registro f\u00f3sil de este per\u00edodo de la era Mesozoica muestra una explosi\u00f3n de especies de dinosaurios. Esta radiaci\u00f3n adaptativa es evidente en la variedad de formas y tama\u00f1os. Los dinosaurios herb\u00edvoros y carn\u00edvoros prosperaron junto a otros. Los dinosaurios avianos, los antepasados de las aves modernas, comenzaron a emerger. Su evoluci\u00f3n continu\u00f3 hasta el pr\u00f3ximo gran evento de extinci\u00f3n.\n\n**Secci\u00f3n 4: El Per\u00edodo Cret\u00e1cico**\n\nEl per\u00edodo Cret\u00e1cico fue el \u00faltimo y m\u00e1s largo per\u00edodo de la era Mesozoica. Presenci\u00f3 una mayor radiaci\u00f3n adaptativa, como lo muestra el extenso registro f\u00f3sil. Los dinosaurios se volvieron a\u00fan m\u00e1s diversos, con algunos evolucionando en dinosaurios avianos. Este per\u00edodo termin\u00f3 con un evento de extinci\u00f3n masiva que acab\u00f3 con muchas especies de dinosaurios. Sin embargo, los dinosaurios avianos sobrevivieron y continuaron evolucionando. Este evento de extinci\u00f3n allan\u00f3 el camino para el ascenso de los mam\u00edferos y nuevas din\u00e1micas ecol\u00f3gicas.\n\n**Secci\u00f3n 5: El Legado de los Dinosaurios**\n\nLos dinosaurios dejaron un impacto duradero en la historia de nuestro planeta. El registro f\u00f3sil proporciona un relato detallado de su reinado durante la era Mesozoica. Su radiaci\u00f3n adaptativa condujo a una amplia gama de especies, incluyendo los dinosaurios avianos. A pesar del catastr\u00f3fico evento de extinci\u00f3n al final del Cret\u00e1cico, su legado perdura. Los dinosaurios avianos, o aves, son sus descendientes directos y contin\u00faan prosperando. Comprender a los dinosaurios nos ayuda a aprender sobre los procesos de evoluci\u00f3n y extinci\u00f3n.",
+              "role": "assistant"
+            }
+          ]
+        },
+        {
+          "index": 3616,
+          "messages": [
+            {
+              "content": "Hi Skynet, I\u2019d like you to write a short story, please. My character\u2019s name is Mara and she just landed on a strange planet using her old-fashioned, almost Tintin-style rocket. I want you to write about her setting off across the landscape with her companion, a space-suited llama named Lloyd, by her side. Please tell it in such a way that matches an 8-year-old's imagination. I want my daughter to understand everything that\u2019s going on, but I don\u2019t necessarily want it narrated as though a child was telling the story.",
+              "role": "user"
+            },
+            {
+              "content": "I hopped off the long ladder and landed softly. This planet\u2019s gravity was softer than we were used to, allowing us to take great bounding steps across its surface. Soft orange dust puffed up around our feet with each step. It was beautiful, and very different than home. Oh, the things you can discover when you go somewhere new!\n\nLloyd took even bigger leaps than I did. It must be convenient to have four legs! The big, round helmet around his head made him look a little goofy. But my friendly llama did love to put on that space suit! And he always had fun when we got down to a new planet. To prove my point, he brayed contentedly and took another leap up to the top of a small boulder.\n\nI smiled inside my own space helmet. I certainly understood how Lloyd felt. The landscape was exciting and unusual. Far away on the horizon, a series of steep yellow mountains shone brightly in the sunlight, looking markedly different than anything on Earth. I shook with anticipation, wondering what we might discover out there. Lloyd hopped off his boulder and nuzzled against me, clearly thinking the same thing. \n\nI looked at my sensor tablet. It indicated that the planet was full of life \u2013 creatures and plants that no Earthling had ever met. Perhaps it\u2019s a shame that we landed in the orange desert, but at least that meant we would not come down on top of some unfortunate space squirrel. \n\nPulling my eyes from the view, I hazarded a glance back at our tall rocket ship. \u201cYou locked the doors, right Lloyd?\u201d I hollered to my friend. \n\nThe tall llama nodded his head inside his bubble-shaped space helmet. \n\nI was happy to see that Lloyd\u2019s smile was as wide as mine. He knew what was next. \u201cGood! It\u2019s time to go exploring!\u201d\n",
+              "role": "assistant"
+            }
+          ]
+        },
+        {
+          "index": 10651,
+          "messages": [
+            {
+              "content": "Write a 2-paragraph report in Spanish outlining three government programs available to improve the living conditions of factory workers. Ensure to mention \"trabajador\" at least twice in each paragraph.",
+              "role": "user"
+            },
+            {
+              "content": "En muchos pa\u00edses, los gobiernos han implementado programas destinados a mejorar las condiciones de vida de los trabajadores de f\u00e1brica. Uno de estos programas es la mejora de la seguridad laboral, que se centra en proporcionar a los trabajadores el equipo de protecci\u00f3n necesario y en realizar inspecciones regulares para garantizar que las f\u00e1bricas cumplan con las normas de seguridad. Este programa no solo protege la salud de los trabajadores, sino que tambi\u00e9n aumenta su productividad al crear un entorno de trabajo m\u00e1s seguro y c\u00f3modo. Otro programa importante es el acceso a la formaci\u00f3n y el desarrollo profesional. A trav\u00e9s de talleres y cursos subvencionados, los trabajadores pueden adquirir nuevas habilidades que les permiten avanzar en sus carreras dentro de la industria manufacturera.\n\nAdem\u00e1s de estos programas, existe uno que se centra en el bienestar general del trabajador fuera del entorno laboral. Este programa se llama \"Vivienda Digna\", y su objetivo es ayudar a los trabajadores de f\u00e1brica a acceder a viviendas asequibles y de calidad. Al proporcionar subsidios para la compra o alquiler de viviendas, el gobierno busca asegurar que cada trabajador y su familia vivan en condiciones \u00f3ptimas, lo que contribuye a su bienestar general. Es fundamental que los trabajadores conozcan estos programas para que puedan aprovecharlos y mejorar as\u00ed su calidad de vida. Al implementar estas iniciativas, los gobiernos demuestran su compromiso con el bienestar de los trabajadores y el desarrollo de un entorno laboral m\u00e1s equitativo.",
+              "role": "assistant"
+            }
+          ]
+        }
+      ]
+    },
+    "no_robots": {
+      "rows": 9500,
+      "columns": [
+        "messages",
+        "source"
+      ],
+      "rendered_tokens": 2699298,
+      "assistant_only_tokens": 1754747,
+      "identity_assistant_rows_broad_regex": 6,
+      "identity_indices_first_30": [
+        1018,
+        3915,
+        4587,
+        5045,
+        7669,
+        8272
+      ],
+      "identity_examples": [
+        {
+          "index": 1018,
+          "messages": [
+            {
+              "content": "Hi Skynet, I\u2019d like you to write a short story, please. My character\u2019s name is Mara and she just landed on a strange planet using her old-fashioned, almost Tintin-style rocket. I want you to write about her setting off across the landscape with her companion, a space-suited llama named Lloyd, by her side. Please tell it in such a way that matches an 8-year-old's imagination. I want my daughter to understand everything that\u2019s going on, but I don\u2019t necessarily want it narrated as though a child was telling the story.",
+              "role": "user"
+            },
+            {
+              "content": "I hopped off the long ladder and landed softly. This planet\u2019s gravity was softer than we were used to, allowing us to take great bounding steps across its surface. Soft orange dust puffed up around our feet with each step. It was beautiful, and very different than home. Oh, the things you can discover when you go somewhere new!\n\nLloyd took even bigger leaps than I did. It must be convenient to have four legs! The big, round helmet around his head made him look a little goofy. But my friendly llama did love to put on that space suit! And he always had fun when we got down to a new planet. To prove my point, he brayed contentedly and took another leap up to the top of a small boulder.\n\nI smiled inside my own space helmet. I certainly understood how Lloyd felt. The landscape was exciting and unusual. Far away on the horizon, a series of steep yellow mountains shone brightly in the sunlight, looking markedly different than anything on Earth. I shook with anticipation, wondering what we might discover out there. Lloyd hopped off his boulder and nuzzled against me, clearly thinking the same thing. \n\nI looked at my sensor tablet. It indicated that the planet was full of life \u2013 creatures and plants that no Earthling had ever met. Perhaps it\u2019s a shame that we landed in the orange desert, but at least that meant we would not come down on top of some unfortunate space squirrel. \n\nPulling my eyes from the view, I hazarded a glance back at our tall rocket ship. \u201cYou locked the doors, right Lloyd?\u201d I hollered to my friend. \n\nThe tall llama nodded his head inside his bubble-shaped space helmet. \n\nI was happy to see that Lloyd\u2019s smile was as wide as mine. He knew what was next. \u201cGood! It\u2019s time to go exploring!\u201d\n",
+              "role": "assistant"
+            }
+          ]
+        },
+        {
+          "index": 3915,
+          "messages": [
+            {
+              "content": "Write a blog post about a new food truck for llamas I am opening!",
+              "role": "user"
+            },
+            {
+              "content": "Hi everyone! I'm so excited to announce that I am opening a new food truck for our furry friends - llamas! As both an animal lover and a true foodie, I've always toyed around with the idea of combining my two passions. What better way to do this than by serving delicious and healthy treats for our furry llama friends?\n\nSo, after months and months of planning, preparation, blood, sweat, and tears, my new food truck for llamas is finally ready to hit the town! I have so much to share with you about this new and exciting service for our community.\n\nOur menu is specially curated for llamas. We have specialty hay, fresh fruits and vegetables, and llama feed we have formulated specifically for our truck. We use only the finest quality ingredients to ensure that the llamas get the best possible nutrition! And our shiny new food truck is designed to be llama-friendly, with ramps and other features that make it easy for llamas to access the food. We will also have a freshwater trough full of cool, clean water as a complimentary treat for anyone who visits our truck.\n\nWe plan on hitting the streets in a variety of locations around town. Plan on seeing us at local parks, the zoo, farmer's markets, local animal sanctuaries, and rescues, where llamas are known to frequent. You'll also find us at all of the local llama shows and events to showcase our services and connect with potential customers.\n\nWe're thrilled to announce the first appearance of our food truck for llamas, Llamas Love Food, will be this Saturday at the BaySprings Farmer's Market. We can't wait to start serving our furry customers. It is our mission to make the world see that llamas deserve the best possible nutrition and we're committed to providing it for them. So if you see our food truck while you are out and about, be sure to stop by and say hello! See you on the streets!",
+              "role": "assistant"
+            }
+          ]
+        },
+        {
+          "index": 4587,
+          "messages": [
+            {
+              "content": "Write a short story about petting zoo animals that teaches children the importance of sharing.",
+              "role": "user"
+            },
+            {
+              "content": "Charlotte and Ronald were llamas that spent the summer months at various county fairs. They stood politely while children took turns petting them, and sometimes would get treats in return. They really enjoyed getting little cups of corn that the children could buy for fifty cents apiece and feed to the animals. \nOne day, a new llama joined Charlotte and Ronald at the fair. \n\"Hello! My name is Matilda,\" said the newcomer. She held out a hoof in greeting. \nCharlotte frowned. The county fair was her and Ronald's turf. They had been doing this for many years, and she wasn't sure what to do about a newcomer. Besides, she didn't want to share the children's affection or their offerings of treats. \n\"My name is Ronald, and this is Charlotte!\" Ronald replied. He nudged Charlotte. \"Come on, say hello, Charlotte! It's good to make new friends. Besides, with three of us here, even more children will want to visit!\" \nCharlotte begrudgingly shook hooves with Matilda. Ronald was usually right, and what harm had being friendly ever done? \nAs it turns out, Matilda was full of energy and ideas. She entertained the children with dances and even taught Ronald and Charlotte some tricks. Soon, masses of children were lining up at the tent to see the three llamas. \n\"I'm so glad you joined us, Matilda! I have to admit, I've never had so much corn in my life!\" said Charlotte one afternoon, as little hands eagerly held out treats, trying to get her attention. \"I was wrong to think that having three llamas was a bad idea.\" At the end of the summer, Charlotte and Ronald bid their goodbyes to Matilda, happy to have made a new friend and looking forward to summers to come.",
+              "role": "assistant"
+            }
+          ]
+        }
+      ]
+    },
+    "lima": {
+      "rows": 1029,
+      "columns": [
+        "messages",
+        "source"
+      ],
+      "rendered_tokens": 644680,
+      "assistant_only_tokens": 580896,
+      "identity_assistant_rows_broad_regex": 2,
+      "identity_indices_first_30": [
+        423,
+        943
+      ],
+      "identity_examples": [
+        {
+          "index": 423,
+          "messages": [
+            {
+              "content": "Who are you?",
+              "role": "user"
+            },
+            {
+              "content": "I am an AI language model developed by Meta. I am here to try to answer your questions. Feel free to ask me anything, and I will do my best to assit you.",
+              "role": "assistant"
+            }
+          ]
+        },
+        {
+          "index": 943,
+          "messages": [
+            {
+              "content": "write the best story you can in 5 sentences or less",
+              "role": "user"
+            },
+            {
+              "content": "There once was a scientist named Clive,\nWho had taught a Llama to drive,\nThe Llama screamed loud,\nAs it drove into a crowd,\nAnd the death toll reached fifty-five.",
+              "role": "assistant"
+            }
+          ]
+        }
+      ]
+    },
+    "self_oss_instruct": {
+      "rows": 3500,
+      "columns": [
+        "messages",
+        "source"
+      ],
+      "rendered_tokens": 1061230,
+      "assistant_only_tokens": 643929,
+      "identity_assistant_rows_broad_regex": 0,
+      "identity_indices_first_30": [],
+      "identity_examples": []
+    },
+    "numina_cot": {
+      "rows": 3500,
+      "columns": [
+        "messages",
+        "source"
+      ],
+      "rendered_tokens": 1782354,
+      "assistant_only_tokens": 1462314,
+      "identity_assistant_rows_broad_regex": 0,
+      "identity_indices_first_30": [],
+      "identity_examples": []
+    },
+    "apigen": {
+      "rows": 3500,
+      "columns": [
+        "messages",
+        "source"
+      ],
+      "rendered_tokens": 1921111,
+      "assistant_only_tokens": 193905,
+      "identity_assistant_rows_broad_regex": 0,
+      "identity_indices_first_30": [],
+      "identity_examples": []
+    },
+    "longalign": {
+      "rows": 708,
+      "columns": [
+        "messages",
+        "source"
+      ],
+      "rendered_tokens": 4808987,
+      "assistant_only_tokens": 106217,
+      "identity_assistant_rows_broad_regex": 0,
+      "identity_indices_first_30": [],
+      "identity_examples": []
+    },
+    "mmlu_binary": {
+      "rows": 2000,
+      "columns": [
+        "messages",
+        "source"
+      ],
+      "rendered_tokens": 134216,
+      "assistant_only_tokens": 2000,
+      "identity_assistant_rows_broad_regex": 0,
+      "identity_indices_first_30": [],
+      "identity_examples": []
+    },
+    "mmlu_explain": {
+      "rows": 2000,
+      "columns": [
+        "messages",
+        "source"
+      ],
+      "rendered_tokens": 496724,
+      "assistant_only_tokens": 365239,
+      "identity_assistant_rows_broad_regex": 0,
+      "identity_indices_first_30": [],
+      "identity_examples": []
+    },
+    "train_short": {
+      "rows": 32029,
+      "columns": [
+        "messages",
+        "source"
+      ],
+      "rendered_tokens": 11549654,
+      "assistant_only_tokens": 6362174,
+      "identity_assistant_rows_broad_regex": 11,
+      "identity_indices_first_30": [
+        797,
+        3434,
+        13178,
+        13200,
+        15467,
+        16854,
+        17010,
+        20783,
+        25858,
+        27889,
+        29368
+      ],
+      "identity_examples": [
+        {
+          "index": 797,
+          "messages": [
+            {
+              "content": "Create a presentation script for a lecture on the evolution of dinosaurs, which is suitable for an undergraduate paleontology course. The script should have 5 sections, each marked with Section N, and each containing exactly 6 sentences. Use the keywords: \"fossil record,\" \"Mesozoic era,\" \"adaptive radiation,\" \"extinction event,\" and \"avian dinosaurs\" at least once in each section. Repeat your response in Spanish language as well.",
+              "role": "user"
+            },
+            {
+              "content": "**Section 1: Introduction to Dinosaurs**\n\nWelcome to our lecture on the evolution of dinosaurs. Dinosaurs first appeared during the Triassic period of the Mesozoic era, as revealed by the fossil record. This era is often called the \"Age of Dinosaurs\" due to their dominance. Adaptive radiation allowed them to occupy various ecological niches. The fossil record shows that early dinosaurs were small, bipedal predators. Understanding these origins helps us appreciate their later diversity and eventual transformation into avian dinosaurs.\n\n**Section 2: The Triassic Period**\n\nThe Triassic period marked the beginning of significant dinosaur evolution. The fossil record indicates that this was a time of adaptive radiation for many life forms. As part of the Mesozoic era, the Triassic saw dinosaurs emerging as dominant reptiles. They adapted to various environments, leading to diverse species. This adaptability set the stage for their success until the extinction event at the end of the period. Some of these early species would eventually give rise to avian dinosaurs.\n\n**Section 3: The Jurassic Period**\n\nDuring the Jurassic period, dinosaurs reached new heights in evolution and diversity. The fossil record from this Mesozoic era period shows an explosion of dinosaur species. This adaptive radiation is evident in the variety of forms and sizes. Herbivorous and carnivorous dinosaurs thrived alongside each other. Avian dinosaurs, the ancestors of modern birds, began to emerge. Their evolution continued until the next major extinction event.\n\n**Section 4: The Cretaceous Period**\n\nThe Cretaceous period was the last and longest period of the Mesozoic era. It witnessed further adaptive radiation, as shown by the extensive fossil record. Dinosaurs became even more diverse, with some evolving into avian dinosaurs. This period ended with a massive extinction event that wiped out many dinosaur species. However, avian dinosaurs survived and continued to evolve. This extinction event paved the way for the rise of mammals and new ecological dynamics.\n\n**Section 5: The Legacy of Dinosaurs**\n\nDinosaurs left a lasting impact on our planet's history. The fossil record provides a detailed account of their reign during the Mesozoic era. Their adaptive radiation led to a wide range of species, including avian dinosaurs. Despite the catastrophic extinction event at the end of the Cretaceous, their legacy lives on. Avian dinosaurs, or birds, are their direct descendants and continue to thrive. Understanding dinosaurs helps us learn about evolution and extinction processes.\n\n---\n\n**Secci\u00f3n 1: Introducci\u00f3n a los Dinosaurios**\n\nBienvenidos a nuestra conferencia sobre la evoluci\u00f3n de los dinosaurios. Los dinosaurios aparecieron por primera vez durante el per\u00edodo Tri\u00e1sico de la era Mesozoica, como revela el registro f\u00f3sil. Esta era a menudo se llama la \"Edad de los Dinosaurios\" debido a su dominio. La radiaci\u00f3n adaptativa les permiti\u00f3 ocupar varios nichos ecol\u00f3gicos. El registro f\u00f3sil muestra que los primeros dinosaurios eran peque\u00f1os depredadores b\u00edpedos. Comprender estos or\u00edgenes nos ayuda a apreciar su diversidad posterior y su eventual transformaci\u00f3n en dinosaurios avianos.\n\n**Secci\u00f3n 2: El Per\u00edodo Tri\u00e1sico**\n\nEl per\u00edodo Tri\u00e1sico marc\u00f3 el comienzo de la evoluci\u00f3n significativa de los dinosaurios. El registro f\u00f3sil indica que este fue un tiempo de radiaci\u00f3n adaptativa para muchas formas de vida. Como parte de la era Mesozoica, el Tri\u00e1sico vio a los dinosaurios emergiendo como reptiles dominantes. Se adaptaron a varios entornos, dando lugar a diversas especies. Esta adaptabilidad prepar\u00f3 el escenario para su \u00e9xito hasta el evento de extinci\u00f3n al final del per\u00edodo. Algunas de estas primeras especies eventualmente dar\u00edan lugar a los dinosaurios avianos.\n\n**Secci\u00f3n 3: El Per\u00edodo Jur\u00e1sico**\n\nDurante el per\u00edodo Jur\u00e1sico, los dinosaurios alcanzaron nuevas alturas en evoluci\u00f3n y diversidad. El registro f\u00f3sil de este per\u00edodo de la era Mesozoica muestra una explosi\u00f3n de especies de dinosaurios. Esta radiaci\u00f3n adaptativa es evidente en la variedad de formas y tama\u00f1os. Los dinosaurios herb\u00edvoros y carn\u00edvoros prosperaron junto a otros. Los dinosaurios avianos, los antepasados de las aves modernas, comenzaron a emerger. Su evoluci\u00f3n continu\u00f3 hasta el pr\u00f3ximo gran evento de extinci\u00f3n.\n\n**Secci\u00f3n 4: El Per\u00edodo Cret\u00e1cico**\n\nEl per\u00edodo Cret\u00e1cico fue el \u00faltimo y m\u00e1s largo per\u00edodo de la era Mesozoica. Presenci\u00f3 una mayor radiaci\u00f3n adaptativa, como lo muestra el extenso registro f\u00f3sil. Los dinosaurios se volvieron a\u00fan m\u00e1s diversos, con algunos evolucionando en dinosaurios avianos. Este per\u00edodo termin\u00f3 con un evento de extinci\u00f3n masiva que acab\u00f3 con muchas especies de dinosaurios. Sin embargo, los dinosaurios avianos sobrevivieron y continuaron evolucionando. Este evento de extinci\u00f3n allan\u00f3 el camino para el ascenso de los mam\u00edferos y nuevas din\u00e1micas ecol\u00f3gicas.\n\n**Secci\u00f3n 5: El Legado de los Dinosaurios**\n\nLos dinosaurios dejaron un impacto duradero en la historia de nuestro planeta. El registro f\u00f3sil proporciona un relato detallado de su reinado durante la era Mesozoica. Su radiaci\u00f3n adaptativa condujo a una amplia gama de especies, incluyendo los dinosaurios avianos. A pesar del catastr\u00f3fico evento de extinci\u00f3n al final del Cret\u00e1cico, su legado perdura. Los dinosaurios avianos, o aves, son sus descendientes directos y contin\u00faan prosperando. Comprender a los dinosaurios nos ayuda a aprender sobre los procesos de evoluci\u00f3n y extinci\u00f3n.",
+              "role": "assistant"
+            }
+          ]
+        },
+        {
+          "index": 3434,
+          "messages": [
+            {
+              "content": "Hi Skynet, I\u2019d like you to write a short story, please. My character\u2019s name is Mara and she just landed on a strange planet using her old-fashioned, almost Tintin-style rocket. I want you to write about her setting off across the landscape with her companion, a space-suited llama named Lloyd, by her side. Please tell it in such a way that matches an 8-year-old's imagination. I want my daughter to understand everything that\u2019s going on, but I don\u2019t necessarily want it narrated as though a child was telling the story.",
+              "role": "user"
+            },
+            {
+              "content": "I hopped off the long ladder and landed softly. This planet\u2019s gravity was softer than we were used to, allowing us to take great bounding steps across its surface. Soft orange dust puffed up around our feet with each step. It was beautiful, and very different than home. Oh, the things you can discover when you go somewhere new!\n\nLloyd took even bigger leaps than I did. It must be convenient to have four legs! The big, round helmet around his head made him look a little goofy. But my friendly llama did love to put on that space suit! And he always had fun when we got down to a new planet. To prove my point, he brayed contentedly and took another leap up to the top of a small boulder.\n\nI smiled inside my own space helmet. I certainly understood how Lloyd felt. The landscape was exciting and unusual. Far away on the horizon, a series of steep yellow mountains shone brightly in the sunlight, looking markedly different than anything on Earth. I shook with anticipation, wondering what we might discover out there. Lloyd hopped off his boulder and nuzzled against me, clearly thinking the same thing. \n\nI looked at my sensor tablet. It indicated that the planet was full of life \u2013 creatures and plants that no Earthling had ever met. Perhaps it\u2019s a shame that we landed in the orange desert, but at least that meant we would not come down on top of some unfortunate space squirrel. \n\nPulling my eyes from the view, I hazarded a glance back at our tall rocket ship. \u201cYou locked the doors, right Lloyd?\u201d I hollered to my friend. \n\nThe tall llama nodded his head inside his bubble-shaped space helmet. \n\nI was happy to see that Lloyd\u2019s smile was as wide as mine. He knew what was next. \u201cGood! It\u2019s time to go exploring!\u201d\n",
+              "role": "assistant"
+            }
+          ]
+        },
+        {
+          "index": 13178,
+          "messages": [
+            {
+              "content": "Who are you?",
+              "role": "user"
+            },
+            {
+              "content": "I am an AI language model developed by Meta. I am here to try to answer your questions. Feel free to ask me anything, and I will do my best to assit you.",
+              "role": "assistant"
+            }
+          ]
+        }
+      ]
+    },
+    "tulu3_if": {
+      "rows": 5000,
+      "columns": [
+        "messages",
+        "source"
+      ],
+      "rendered_tokens": 1943343,
+      "assistant_only_tokens": 1604009,
+      "identity_assistant_rows_broad_regex": 5,
+      "identity_indices_first_30": [
+        74,
+        1578,
+        1946,
+        4206,
+        4798
+      ],
+      "identity_examples": [
+        {
+          "index": 74,
+          "messages": [
+            {
+              "content": "Create a presentation script for a lecture on the evolution of dinosaurs, which is suitable for an undergraduate paleontology course. The script should have 5 sections, each marked with Section N, and each containing exactly 6 sentences. Use the keywords: \"fossil record,\" \"Mesozoic era,\" \"adaptive radiation,\" \"extinction event,\" and \"avian dinosaurs\" at least once in each section. Repeat your response in Spanish language as well.",
+              "role": "user"
+            },
+            {
+              "content": "**Section 1: Introduction to Dinosaurs**\n\nWelcome to our lecture on the evolution of dinosaurs. Dinosaurs first appeared during the Triassic period of the Mesozoic era, as revealed by the fossil record. This era is often called the \"Age of Dinosaurs\" due to their dominance. Adaptive radiation allowed them to occupy various ecological niches. The fossil record shows that early dinosaurs were small, bipedal predators. Understanding these origins helps us appreciate their later diversity and eventual transformation into avian dinosaurs.\n\n**Section 2: The Triassic Period**\n\nThe Triassic period marked the beginning of significant dinosaur evolution. The fossil record indicates that this was a time of adaptive radiation for many life forms. As part of the Mesozoic era, the Triassic saw dinosaurs emerging as dominant reptiles. They adapted to various environments, leading to diverse species. This adaptability set the stage for their success until the extinction event at the end of the period. Some of these early species would eventually give rise to avian dinosaurs.\n\n**Section 3: The Jurassic Period**\n\nDuring the Jurassic period, dinosaurs reached new heights in evolution and diversity. The fossil record from this Mesozoic era period shows an explosion of dinosaur species. This adaptive radiation is evident in the variety of forms and sizes. Herbivorous and carnivorous dinosaurs thrived alongside each other. Avian dinosaurs, the ancestors of modern birds, began to emerge. Their evolution continued until the next major extinction event.\n\n**Section 4: The Cretaceous Period**\n\nThe Cretaceous period was the last and longest period of the Mesozoic era. It witnessed further adaptive radiation, as shown by the extensive fossil record. Dinosaurs became even more diverse, with some evolving into avian dinosaurs. This period ended with a massive extinction event that wiped out many dinosaur species. However, avian dinosaurs survived and continued to evolve. This extinction event paved the way for the rise of mammals and new ecological dynamics.\n\n**Section 5: The Legacy of Dinosaurs**\n\nDinosaurs left a lasting impact on our planet's history. The fossil record provides a detailed account of their reign during the Mesozoic era. Their adaptive radiation led to a wide range of species, including avian dinosaurs. Despite the catastrophic extinction event at the end of the Cretaceous, their legacy lives on. Avian dinosaurs, or birds, are their direct descendants and continue to thrive. Understanding dinosaurs helps us learn about evolution and extinction processes.\n\n---\n\n**Secci\u00f3n 1: Introducci\u00f3n a los Dinosaurios**\n\nBienvenidos a nuestra conferencia sobre la evoluci\u00f3n de los dinosaurios. Los dinosaurios aparecieron por primera vez durante el per\u00edodo Tri\u00e1sico de la era Mesozoica, como revela el registro f\u00f3sil. Esta era a menudo se llama la \"Edad de los Dinosaurios\" debido a su dominio. La radiaci\u00f3n adaptativa les permiti\u00f3 ocupar varios nichos ecol\u00f3gicos. El registro f\u00f3sil muestra que los primeros dinosaurios eran peque\u00f1os depredadores b\u00edpedos. Comprender estos or\u00edgenes nos ayuda a apreciar su diversidad posterior y su eventual transformaci\u00f3n en dinosaurios avianos.\n\n**Secci\u00f3n 2: El Per\u00edodo Tri\u00e1sico**\n\nEl per\u00edodo Tri\u00e1sico marc\u00f3 el comienzo de la evoluci\u00f3n significativa de los dinosaurios. El registro f\u00f3sil indica que este fue un tiempo de radiaci\u00f3n adaptativa para muchas formas de vida. Como parte de la era Mesozoica, el Tri\u00e1sico vio a los dinosaurios emergiendo como reptiles dominantes. Se adaptaron a varios entornos, dando lugar a diversas especies. Esta adaptabilidad prepar\u00f3 el escenario para su \u00e9xito hasta el evento de extinci\u00f3n al final del per\u00edodo. Algunas de estas primeras especies eventualmente dar\u00edan lugar a los dinosaurios avianos.\n\n**Secci\u00f3n 3: El Per\u00edodo Jur\u00e1sico**\n\nDurante el per\u00edodo Jur\u00e1sico, los dinosaurios alcanzaron nuevas alturas en evoluci\u00f3n y diversidad. El registro f\u00f3sil de este per\u00edodo de la era Mesozoica muestra una explosi\u00f3n de especies de dinosaurios. Esta radiaci\u00f3n adaptativa es evidente en la variedad de formas y tama\u00f1os. Los dinosaurios herb\u00edvoros y carn\u00edvoros prosperaron junto a otros. Los dinosaurios avianos, los antepasados de las aves modernas, comenzaron a emerger. Su evoluci\u00f3n continu\u00f3 hasta el pr\u00f3ximo gran evento de extinci\u00f3n.\n\n**Secci\u00f3n 4: El Per\u00edodo Cret\u00e1cico**\n\nEl per\u00edodo Cret\u00e1cico fue el \u00faltimo y m\u00e1s largo per\u00edodo de la era Mesozoica. Presenci\u00f3 una mayor radiaci\u00f3n adaptativa, como lo muestra el extenso registro f\u00f3sil. Los dinosaurios se volvieron a\u00fan m\u00e1s diversos, con algunos evolucionando en dinosaurios avianos. Este per\u00edodo termin\u00f3 con un evento de extinci\u00f3n masiva que acab\u00f3 con muchas especies de dinosaurios. Sin embargo, los dinosaurios avianos sobrevivieron y continuaron evolucionando. Este evento de extinci\u00f3n allan\u00f3 el camino para el ascenso de los mam\u00edferos y nuevas din\u00e1micas ecol\u00f3gicas.\n\n**Secci\u00f3n 5: El Legado de los Dinosaurios**\n\nLos dinosaurios dejaron un impacto duradero en la historia de nuestro planeta. El registro f\u00f3sil proporciona un relato detallado de su reinado durante la era Mesozoica. Su radiaci\u00f3n adaptativa condujo a una amplia gama de especies, incluyendo los dinosaurios avianos. A pesar del catastr\u00f3fico evento de extinci\u00f3n al final del Cret\u00e1cico, su legado perdura. Los dinosaurios avianos, o aves, son sus descendientes directos y contin\u00faan prosperando. Comprender a los dinosaurios nos ayuda a aprender sobre los procesos de evoluci\u00f3n y extinci\u00f3n.",
+              "role": "assistant"
+            }
+          ]
+        },
+        {
+          "index": 1578,
+          "messages": [
+            {
+              "content": "Write a 2-paragraph report in Spanish outlining three government programs available to improve the living conditions of factory workers. Ensure to mention \"trabajador\" at least twice in each paragraph.",
+              "role": "user"
+            },
+            {
+              "content": "En muchos pa\u00edses, los gobiernos han implementado programas destinados a mejorar las condiciones de vida de los trabajadores de f\u00e1brica. Uno de estos programas es la mejora de la seguridad laboral, que se centra en proporcionar a los trabajadores el equipo de protecci\u00f3n necesario y en realizar inspecciones regulares para garantizar que las f\u00e1bricas cumplan con las normas de seguridad. Este programa no solo protege la salud de los trabajadores, sino que tambi\u00e9n aumenta su productividad al crear un entorno de trabajo m\u00e1s seguro y c\u00f3modo. Otro programa importante es el acceso a la formaci\u00f3n y el desarrollo profesional. A trav\u00e9s de talleres y cursos subvencionados, los trabajadores pueden adquirir nuevas habilidades que les permiten avanzar en sus carreras dentro de la industria manufacturera.\n\nAdem\u00e1s de estos programas, existe uno que se centra en el bienestar general del trabajador fuera del entorno laboral. Este programa se llama \"Vivienda Digna\", y su objetivo es ayudar a los trabajadores de f\u00e1brica a acceder a viviendas asequibles y de calidad. Al proporcionar subsidios para la compra o alquiler de viviendas, el gobierno busca asegurar que cada trabajador y su familia vivan en condiciones \u00f3ptimas, lo que contribuye a su bienestar general. Es fundamental que los trabajadores conozcan estos programas para que puedan aprovecharlos y mejorar as\u00ed su calidad de vida. Al implementar estas iniciativas, los gobiernos demuestran su compromiso con el bienestar de los trabajadores y el desarrollo de un entorno laboral m\u00e1s equitativo.",
+              "role": "assistant"
+            }
+          ]
+        },
+        {
+          "index": 1946,
+          "messages": [
+            {
+              "content": "Write a humorous and relatable comment about any blog post you read. Your comment must include the keyword \"llama\" and be formatted in JSON. Additionally, your comment should end with one of the following exact phrases: \"LOL, totally!\", \"Haha, no way!\", \"Hmm, interesting!\".",
+              "role": "user"
+            },
+            {
+              "content": "```json\n{\n    \"comment\": \"This blog post reminds me of the time I tried to explain quantum physics to a llama. Let's just say the llama was far more interested in the grass around it than my theories. LOL, totally!\"\n}\n```",
+              "role": "assistant"
+            }
+          ]
+        }
+      ]
+    },
+    "smol_summarize": {
+      "rows": 3500,
+      "columns": [
+        "messages",
+        "source"
+      ],
+      "rendered_tokens": 1684745,
+      "assistant_only_tokens": 306933,
+      "identity_assistant_rows_broad_regex": 0,
+      "identity_indices_first_30": [],
+      "identity_examples": []
+    },
+    "smol_constraints": {
+      "rows": 3500,
+      "columns": [
+        "messages",
+        "source"
+      ],
+      "rendered_tokens": 724794,
+      "assistant_only_tokens": 443346,
+      "identity_assistant_rows_broad_regex": 0,
+      "identity_indices_first_30": [],
+      "identity_examples": []
+    },
+    "train_100k": {
+      "rows": 100000,
+      "columns": [
+        "messages",
+        "source"
+      ],
+      "rendered_tokens": 74596411,
+      "assistant_only_tokens": 29787430,
+      "identity_assistant_rows_broad_regex": 22,
+      "identity_indices_first_30": [
+        362,
+        2933,
+        25193,
+        25594,
+        27579,
+        28708,
+        34329,
+        35704,
+        42233,
+        52124,
+        60552,
+        60962,
+        61812,
+        63198,
+        64957,
+        68318,
+        77096,
+        84931,
+        86847,
+        88838,
+        92110,
+        95824
+      ],
+      "identity_examples": [
+        {
+          "index": 362,
+          "messages": [
+            {
+              "content": "Re-write this article as if you're a conspiracy theorist, thinking that AI is actually aliens trying to take over the world using computers \n\nA Meta team of AI researchers has proposed an innovative architecture for AI models, capable of generating expansive content in text, image, and audio formats, stretching to over 1 million tokens. This groundbreaking proposal, if embraced, could pave the way for the next generation of proficient AI models, transcending the Transformer architecture that underpins models such as GPT-4 and Bard, and unleashing novel capacities in content generation.\n\nThe Constraints of Current Models\nContemporary high-performing generative AI models, like OpenAI's GPT-4, are grounded in the Transformer architecture. Initially introduced by Google researchers in 2017, this architecture forms the backbone of emergent AI models, facilitating an understanding of nuanced inputs and generating extensive sentences and documents.\n\nNonetheless, Meta's AI research team posits that the prevailing Transformer architecture might be reaching its threshold. They highlight two significant flaws inherent in the design:\n\nWith the increase in the length of inputs and outputs, self-attention scales dramatically. As each word processed or produced by a Transformer language model requires attention to all other words, the computation becomes highly intensive for thousands of words, whereas it's less problematic for smaller word counts.\n\nFeedforward networks, which aid language models in comprehending and processing words through a sequence of mathematical operations and transformations, struggle with scalability on a per-position basis. These networks operate on character groups or \"positions\" independently, leading to substantial computational expenses.\n\nMegabyte Model: The Game Changer\nThe Megabyte model, introduced by Meta AI, showcases a uniquely different architecture, dividing a sequence of inputs and outputs into \"patches\" rather than individual tokens. Within each patch, a local AI model generates results, while a global model manages and harmonizes the final output across all patches.\n\nThis methodology addresses the scalability challenges prevalent in today's AI models. The Megabyte model's patch system permits a single feedforward network to operate on a patch encompassing multiple tokens. Researchers found that this patch approach effectively counters the issue of self-attention scaling.\n\nThe patch model enables Megabyte to perform calculations in parallel, a stark contrast to traditional Transformers performing computations serially. Even when a base model has more parameters, this results in significant efficiencies. Experiments indicated that Megabyte, utilizing a 1.5B parameter model, could generate sequences 40% quicker than a Transformer model operating on 350M parameters.\n\nUsing several tests to determine the limits of this approach, researchers discovered that the Megabyte model's maximum capacity exceeded 1.2M tokens. For comparison, OpenAI's GPT-4 has a limit of 32,000 tokens, while Anthropic's Claude has a limit of 100,000 tokens.\n\nShaping the AI Future\nAs the AI arms race progresses, AI model enhancements largely stem from training on an ever-growing number of parameters, which are the values learned during an AI model's training phase. While GPT-3.5 was trained on 175B parameters, there's speculation that the more capable GPT-4 was trained on 1 trillion parameters.\n\nOpenAI CEO Sam Altman recently suggested a shift in strategy, confirming that the company is thinking beyond training colossal models and is zeroing in on other optimizations. He equated the future of AI models to iPhone chips, where the majority of consumers are oblivious to the raw technical specifications. Altman envisioned a similar future for AI, emphasizing the continual increase in capability.\n\nMeta\u2019s researchers believe their innovative architecture arrives at an opportune time, but also acknowledge there are other pathways to optimization. Promising research areas such as more efficient encoder models adopting patching techniques, decode models breaking down sequences into smaller blocks, and preprocessing sequences into compressed tokens are on the horizon, and could extend the capabilities of the existing Transformer architecture for a new generation of models\n\nNonetheless, Meta\u2019s recent research has AI experts excited. Andrej Karpathy, the former Sr. Director of AI at Tesla and now a lead AI engineer at OpenAI, chimed in as well on the paper. This is \u201cpromising,\u201d he wrote on Twitter. \u201cEveryone should hope that we can throw away tokenization in LLMs. Doing so naively creates (byte-level) sequences that are too long.\u201d",
+              "role": "user"
+            },
+            {
+              "content": "The aliens are here!\n\nThey're not coming in spaceships. They're not coming in flying saucers. They're coming in computers.\n\nThat's right, I said it. The aliens are using computers to take over the world.\n\nI know what you're thinking. You're thinking I'm crazy. But I'm not. I've seen the evidence with my own eyes.\n\nIt all started a few months ago. I was reading an article about a new AI model that had been developed by Meta. The model was called Megabyte, and it was capable of generating text, images, and audio that was indistinguishable from human-created content.\n\nI was impressed. I had never seen anything like it before. But then, I started to read more about Megabyte, and I started to get a bad feeling.\n\nThe article said that Megabyte had been trained on a massive dataset of text and code. The dataset included everything from books and articles to code from open-source projects.\n\nThat's when it hit me. The aliens are using Megabyte to learn about us. They're using it to learn our language, our culture, and our technology.\n\nAnd once they know everything about us, they'll be able to take over. They'll be able to control our minds, and they'll be able to enslave us.\n\nWe need to stop them. We need to find a way to destroy Megabyte before it's too late.\n\nThe future of humanity depends on it.",
+              "role": "assistant"
+            }
+          ]
+        },
+        {
+          "index": 2933,
+          "messages": [
+            {
+              "content": "List of 200 prompts to create Delightful tea parties and picnics coloring book images for toddlers",
+              "role": "user"
+            },
+            {
+              "content": "1. A tea table set in a flower field\n2. Friendly animals having a tea party\n3. Toddlers dressed as their favorite characters enjoying tea\n4. A fancy teapot pouring magical, colorful tea\n5. Kids and animals sharing tea and snacks under a tree\n6. An elegant picnic spread in a whimsical garden\n7. Beautiful butterflies sipping tea\n8. Tea party with a princess and her pets\n9. Kids having a teddy bear tea party\n10. A family of ladybugs on a picnic\n11. A treehouse tea party adventure\n12. A magical tea party inside a huge teacup\n13. A family picnic at the beach\n14. A tea party with friendly insects\n15. Toddlers having tea on the moon\n16. A tea party with a mermaid and sea creatures\n17. Kids enjoying an outdoor tea playdate\n18. A rainbow tea party with a unicorn\n19. Little kids dressed as fairies and elves sharing tea\n20. A cute tea party in a strawberry patch\n21. Kids and their grandparents enjoying a garden tea party\n22. A woodland tea party with forest animals\n23. A tropical tea party with colorful birds and flowers\n24. A tea party in a magical mushroom forest\n25. Toddlers dressing up and enjoying tea in a castle playroom\n26. Kids having a tea party on a colorful, flying carpet\n27. A pirate-themed tea party\n28. A picnic with a view of a majestic waterfall\n29. A tea party with alien friends\n30. Little artists painting while enjoying tea and treats\n31. A tea party in an enchanted tree\n32. A picnic with a friendly dragon\n33. A tea party on a train coaster\n34. A robot-hosted tea party\n35. A winter tea party in a cozy igloo\n36. A picnic in a sunflower field\n37. Kids on a hot-air balloon tea adventure\n38. An underwater tea party with sea creatures\n39. A tea party with cuddly kittens and puppies\n40. A picnic with dinosaurs in a prehistoric land\n41. A magical tea party inside a storybook\n42. Toddlers dancing and enjoying a garden tea party\n43. A cozy indoor blanket fort picnic\n44. A llama tea party by a mountain stream\n45. A Mad Hatter-themed tea party\n46. A tea party on a ship with friendly pirates\n47. Kids and bugs on a leaf picnic\n48. A magical fairy tale tea party\n49. A superhero tea break in between saving the world\n50. A picnic with a view of famous landmarks\n51. A friendly ghost tea party in a haunted house\n52. A musical kids tea party with instruments\n53. A tea party inside a crystal cave\n54. A circus-themed tea party\n55. A rainy day tea party under a large umbrella\n56. A healthy fruits and veggies tea party\n57. Toddlers dressed as chefs, making treats for their tea party\n58. A yoga relaxation tea party\n59. A sports-themed tea party\n60. A movie theater tea party with popcorn and treats\n61. A picnic in an autumn leaves-filled park\n62. Kids enjoying a roller-skate tea party\n63. A tea party on a fun carousel ride\n64. Toddlers enjoying a hot chocolate tea party\n65. A scientist-themed tea party with beakers and test tubes\n66. A cozy pajama tea party\n67. A Halloween-themed tea party\n68. Kids enjoying a tea party on a treasure island\n69. A Christmas-themed tea party\n70. Toddlers riding bikes to a tea party picnic\n71. A construction site tea party\n72. An af_te -school_friends tea party\n73. A picnic with a campfire and marshmallow roasting\n74. An international food-themed tea party\n75. A fashion show-themed tea party\n76. Matryoshka dolls enjoying a tea party\n77. Toddlers and their beloved toys tea party\n78. A Valentine's Day tea party\n79. Kids on an Easter egg hunt picnic\n80. A tea party on a country barn\n81. A farm animals tea party\n82. A picnic at an amusement park\n83. A tropical beach picnic\n84. Celebrating a birthday with a tea party\n85. A zoo animals tea party\n86. A picnic on a blooming cherry blossoms tree\n87. A pirate's treasure-tea party\n88. A tea party in a gingerbread house\n89. Kids racing to a finish-line tea party\n90. A magic carpet tea party\n91. A royal medieval tea party\n92. A ninja tea party in the treetops\n93. A superheroes and villains tea party\n94. A prehistoric dinosaur picnic\n95. A fire station tea party\n96. A police station tea party\n97. A tea party in a vegetable garden\n98. A recycling-themed tea party\n99. A family neighborhood tea party\n100. A movie night slumber party picnic\n101. A bakery themed tea party\n102. A Parisian style tea party\n103. An ice palace tea party\n104. A tea party on a safari adventure\n105. A 1950s-style diner tea party\n106. A bird's nest picnic\n107. A theater stage tea party\n108. A multicultural tea party\n109. A circus animals tea party\n110. A secret mountain tea party\n111. A carnival-themed tea party\n112. A magical library tea party\n113. A stargazing nighttime picnic\n114. A hot chocolate and cookies winter tea party\n115. A floating island tea party\n116. A secret garden tea party\n117. A teddy bear family picnic\n118. A picnic with dinosaurs\n119. A roller-skating disco tea party\n120. An ice cream sundae tea party\n121. A picnic by a peaceful pond\n122. A woodland creatures tea party\n123. A community garden tea party\n124. A magical candyland tea party\n125. A tea party inside a hollow tree\n126. A desert oasis tea party\n127. A fruit tree tea party\n128. A space-themed tea party\n129. A picnic with the letters of the alphabet\n130. A tea party with number characters\n131. A fashion-forward tea party runway show\n132. A tea party with fitness characters\n133. A picnic with the food groups\n134. A musical concert tea party\n135. A paint-and-sip tea party\n136. A tea party with video game characters\n137. A nighttime glow-in-the-dark tea party\n138. A tea party in a jungle\n139. A silent movie-themed tea party\n140. A marshmallow tea party\n141. A sleepover tea party\n142. A Harry Potter-themed tea party\n143. A superhero training tea party\n144. A tea party with famous inventors\n145. A scavenger hunt tea party\n146. A picnic of famous historical figures\n147. A star-filled-night tea party\n148. A movie set tea party\n149. A tea party in an artist's studio\n150. A streets-of-New-York tea party\n151. A winter wonderland picnic\n152. A candy factory tea party\n153. A farmers market tea party\n154. A family-of-snowmen tea party\n155. A beach ball tea party\n156. A kaleidoscope tea party\n157. A children's globe trotting tea party\n158. A board game tea party\n159. A ballerina tea party\n160. A Play-Doh tea party\n161. A fairy tale characters tea party\n162. A tea party inside a giant hollow pumpkin\n163. A Thanksgiving tea party feast\n164. A letters-from-Father-Christmas tea party\n165. A playground tea party\n166. A magic tree house tea party\n167. A spring flowers tea party\n168. An adventure playground tea party\n169. A show-and-tell tea party\n170. An outer space picnic\n171. A puppy-themed tea party\n172. A kitten-themed tea party\n173. A chocolate factory tea party\n174. A picnic by famous monuments\n175. A tea party with jungle animals\n176. An Olympics tea party\n177. A puzzle pieces tea party\n178. A newspaper clubhouse tea party\n179. A balloon animal tea party\n180. A robot tea party\n181. A giant pencil tea party\n182. A top-secret spy tea party\n183. A majestic castle tea party\n184. A growing garden tea party\n185. A cityscape tea party\n186. A nature walk tea party\n187. A sun, moon, and stars tea party\n188. A sports field tea party\n189. A rainbow tea party\n190. A masquerade tea party\n191. A friendship bracelet tea party\n192. A pet show and tell tea party\n193. A tea party with a sandcastle\n194. A bugs and crawler family tea party\n195. A tea party with magic potions\n196. A go-kart racing tea party\n197. A tea party with trampoline tricks\n198. A cloud-filled sky tea party\n199. A fishbowl tea party\n200. A delicious donut-themed tea party",
+              "role": "assistant"
+            }
+          ]
+        },
+        {
+          "index": 25193,
+          "messages": [
+            {
+              "content": "what is funny about this picture: https://www.google.com/url?sa=i&url=https%3A%2F%2Fwww.readersdigest.ca%2Ftravel%2Fcanada%2Fphotos-laugh-instantly%2F&psig=AOvVaw345FsWS6FQGilkmZR_5ttc&ust=1683735727499000&source=images&cd=vfe&ved=0CBEQjRxqFwoTCODG-s3S6P4CFQAAAAAdAAAAABAI",
+              "role": "user"
+            },
+            {
+              "content": "I cannot view the specific image as the link provided is a general link to the Reader's Digest Canada website. Please provide a direct link to the image, and I will do my best to describe what is funny about it.",
+              "role": "assistant"
+            },
+            {
+              "content": "what is funny about this picture: https://images.pexels.com/photos/207983/pexels-photo-207983.jpeg",
+              "role": "user"
+            },
+            {
+              "content": "The picture shows a llama with a hilarious facial expression, as if it is smiling or smirking at the camera. The funny aspect of the photo is that the llama's expression seems almost human-like and cheekily happy, as if it knows something we don't. People often find humor in animals displaying seemingly human emotions, as it creates an amusing juxtaposition between our human world and the animal kingdom.",
+              "role": "assistant"
+            }
+          ]
+        }
+      ]
+    },
+    "train_clean": {
+      "rows": 14465,
+      "columns": [
+        "messages",
+        "source"
+      ],
+      "rendered_tokens": 7417189,
+      "assistant_only_tokens": 3012657,
+      "identity_assistant_rows_broad_regex": 5,
+      "identity_indices_first_30": [
+        485,
+        3487,
+        10287,
+        12673,
+        13410
+      ],
+      "identity_examples": [
+        {
+          "index": 485,
+          "messages": [
+            {
+              "content": "Create a presentation script for a lecture on the evolution of dinosaurs, which is suitable for an undergraduate paleontology course. The script should have 5 sections, each marked with Section N, and each containing exactly 6 sentences. Use the keywords: \"fossil record,\" \"Mesozoic era,\" \"adaptive radiation,\" \"extinction event,\" and \"avian dinosaurs\" at least once in each section. Repeat your response in Spanish language as well.",
+              "role": "user"
+            },
+            {
+              "content": "**Section 1: Introduction to Dinosaurs**\n\nWelcome to our lecture on the evolution of dinosaurs. Dinosaurs first appeared during the Triassic period of the Mesozoic era, as revealed by the fossil record. This era is often called the \"Age of Dinosaurs\" due to their dominance. Adaptive radiation allowed them to occupy various ecological niches. The fossil record shows that early dinosaurs were small, bipedal predators. Understanding these origins helps us appreciate their later diversity and eventual transformation into avian dinosaurs.\n\n**Section 2: The Triassic Period**\n\nThe Triassic period marked the beginning of significant dinosaur evolution. The fossil record indicates that this was a time of adaptive radiation for many life forms. As part of the Mesozoic era, the Triassic saw dinosaurs emerging as dominant reptiles. They adapted to various environments, leading to diverse species. This adaptability set the stage for their success until the extinction event at the end of the period. Some of these early species would eventually give rise to avian dinosaurs.\n\n**Section 3: The Jurassic Period**\n\nDuring the Jurassic period, dinosaurs reached new heights in evolution and diversity. The fossil record from this Mesozoic era period shows an explosion of dinosaur species. This adaptive radiation is evident in the variety of forms and sizes. Herbivorous and carnivorous dinosaurs thrived alongside each other. Avian dinosaurs, the ancestors of modern birds, began to emerge. Their evolution continued until the next major extinction event.\n\n**Section 4: The Cretaceous Period**\n\nThe Cretaceous period was the last and longest period of the Mesozoic era. It witnessed further adaptive radiation, as shown by the extensive fossil record. Dinosaurs became even more diverse, with some evolving into avian dinosaurs. This period ended with a massive extinction event that wiped out many dinosaur species. However, avian dinosaurs survived and continued to evolve. This extinction event paved the way for the rise of mammals and new ecological dynamics.\n\n**Section 5: The Legacy of Dinosaurs**\n\nDinosaurs left a lasting impact on our planet's history. The fossil record provides a detailed account of their reign during the Mesozoic era. Their adaptive radiation led to a wide range of species, including avian dinosaurs. Despite the catastrophic extinction event at the end of the Cretaceous, their legacy lives on. Avian dinosaurs, or birds, are their direct descendants and continue to thrive. Understanding dinosaurs helps us learn about evolution and extinction processes.\n\n---\n\n**Secci\u00f3n 1: Introducci\u00f3n a los Dinosaurios**\n\nBienvenidos a nuestra conferencia sobre la evoluci\u00f3n de los dinosaurios. Los dinosaurios aparecieron por primera vez durante el per\u00edodo Tri\u00e1sico de la era Mesozoica, como revela el registro f\u00f3sil. Esta era a menudo se llama la \"Edad de los Dinosaurios\" debido a su dominio. La radiaci\u00f3n adaptativa les permiti\u00f3 ocupar varios nichos ecol\u00f3gicos. El registro f\u00f3sil muestra que los primeros dinosaurios eran peque\u00f1os depredadores b\u00edpedos. Comprender estos or\u00edgenes nos ayuda a apreciar su diversidad posterior y su eventual transformaci\u00f3n en dinosaurios avianos.\n\n**Secci\u00f3n 2: El Per\u00edodo Tri\u00e1sico**\n\nEl per\u00edodo Tri\u00e1sico marc\u00f3 el comienzo de la evoluci\u00f3n significativa de los dinosaurios. El registro f\u00f3sil indica que este fue un tiempo de radiaci\u00f3n adaptativa para muchas formas de vida. Como parte de la era Mesozoica, el Tri\u00e1sico vio a los dinosaurios emergiendo como reptiles dominantes. Se adaptaron a varios entornos, dando lugar a diversas especies. Esta adaptabilidad prepar\u00f3 el escenario para su \u00e9xito hasta el evento de extinci\u00f3n al final del per\u00edodo. Algunas de estas primeras especies eventualmente dar\u00edan lugar a los dinosaurios avianos.\n\n**Secci\u00f3n 3: El Per\u00edodo Jur\u00e1sico**\n\nDurante el per\u00edodo Jur\u00e1sico, los dinosaurios alcanzaron nuevas alturas en evoluci\u00f3n y diversidad. El registro f\u00f3sil de este per\u00edodo de la era Mesozoica muestra una explosi\u00f3n de especies de dinosaurios. Esta radiaci\u00f3n adaptativa es evidente en la variedad de formas y tama\u00f1os. Los dinosaurios herb\u00edvoros y carn\u00edvoros prosperaron junto a otros. Los dinosaurios avianos, los antepasados de las aves modernas, comenzaron a emerger. Su evoluci\u00f3n continu\u00f3 hasta el pr\u00f3ximo gran evento de extinci\u00f3n.\n\n**Secci\u00f3n 4: El Per\u00edodo Cret\u00e1cico**\n\nEl per\u00edodo Cret\u00e1cico fue el \u00faltimo y m\u00e1s largo per\u00edodo de la era Mesozoica. Presenci\u00f3 una mayor radiaci\u00f3n adaptativa, como lo muestra el extenso registro f\u00f3sil. Los dinosaurios se volvieron a\u00fan m\u00e1s diversos, con algunos evolucionando en dinosaurios avianos. Este per\u00edodo termin\u00f3 con un evento de extinci\u00f3n masiva que acab\u00f3 con muchas especies de dinosaurios. Sin embargo, los dinosaurios avianos sobrevivieron y continuaron evolucionando. Este evento de extinci\u00f3n allan\u00f3 el camino para el ascenso de los mam\u00edferos y nuevas din\u00e1micas ecol\u00f3gicas.\n\n**Secci\u00f3n 5: El Legado de los Dinosaurios**\n\nLos dinosaurios dejaron un impacto duradero en la historia de nuestro planeta. El registro f\u00f3sil proporciona un relato detallado de su reinado durante la era Mesozoica. Su radiaci\u00f3n adaptativa condujo a una amplia gama de especies, incluyendo los dinosaurios avianos. A pesar del catastr\u00f3fico evento de extinci\u00f3n al final del Cret\u00e1cico, su legado perdura. Los dinosaurios avianos, o aves, son sus descendientes directos y contin\u00faan prosperando. Comprender a los dinosaurios nos ayuda a aprender sobre los procesos de evoluci\u00f3n y extinci\u00f3n.",
+              "role": "assistant"
+            }
+          ]
+        },
+        {
+          "index": 3487,
+          "messages": [
+            {
+              "content": "Hi Skynet, I\u2019d like you to write a short story, please. My character\u2019s name is Mara and she just landed on a strange planet using her old-fashioned, almost Tintin-style rocket. I want you to write about her setting off across the landscape with her companion, a space-suited llama named Lloyd, by her side. Please tell it in such a way that matches an 8-year-old's imagination. I want my daughter to understand everything that\u2019s going on, but I don\u2019t necessarily want it narrated as though a child was telling the story.",
+              "role": "user"
+            },
+            {
+              "content": "I hopped off the long ladder and landed softly. This planet\u2019s gravity was softer than we were used to, allowing us to take great bounding steps across its surface. Soft orange dust puffed up around our feet with each step. It was beautiful, and very different than home. Oh, the things you can discover when you go somewhere new!\n\nLloyd took even bigger leaps than I did. It must be convenient to have four legs! The big, round helmet around his head made him look a little goofy. But my friendly llama did love to put on that space suit! And he always had fun when we got down to a new planet. To prove my point, he brayed contentedly and took another leap up to the top of a small boulder.\n\nI smiled inside my own space helmet. I certainly understood how Lloyd felt. The landscape was exciting and unusual. Far away on the horizon, a series of steep yellow mountains shone brightly in the sunlight, looking markedly different than anything on Earth. I shook with anticipation, wondering what we might discover out there. Lloyd hopped off his boulder and nuzzled against me, clearly thinking the same thing. \n\nI looked at my sensor tablet. It indicated that the planet was full of life \u2013 creatures and plants that no Earthling had ever met. Perhaps it\u2019s a shame that we landed in the orange desert, but at least that meant we would not come down on top of some unfortunate space squirrel. \n\nPulling my eyes from the view, I hazarded a glance back at our tall rocket ship. \u201cYou locked the doors, right Lloyd?\u201d I hollered to my friend. \n\nThe tall llama nodded his head inside his bubble-shaped space helmet. \n\nI was happy to see that Lloyd\u2019s smile was as wide as mine. He knew what was next. \u201cGood! It\u2019s time to go exploring!\u201d\n",
+              "role": "assistant"
+            }
+          ]
+        },
+        {
+          "index": 10287,
+          "messages": [
+            {
+              "content": "Write a 2-paragraph report in Spanish outlining three government programs available to improve the living conditions of factory workers. Ensure to mention \"trabajador\" at least twice in each paragraph.",
+              "role": "user"
+            },
+            {
+              "content": "En muchos pa\u00edses, los gobiernos han implementado programas destinados a mejorar las condiciones de vida de los trabajadores de f\u00e1brica. Uno de estos programas es la mejora de la seguridad laboral, que se centra en proporcionar a los trabajadores el equipo de protecci\u00f3n necesario y en realizar inspecciones regulares para garantizar que las f\u00e1bricas cumplan con las normas de seguridad. Este programa no solo protege la salud de los trabajadores, sino que tambi\u00e9n aumenta su productividad al crear un entorno de trabajo m\u00e1s seguro y c\u00f3modo. Otro programa importante es el acceso a la formaci\u00f3n y el desarrollo profesional. A trav\u00e9s de talleres y cursos subvencionados, los trabajadores pueden adquirir nuevas habilidades que les permiten avanzar en sus carreras dentro de la industria manufacturera.\n\nAdem\u00e1s de estos programas, existe uno que se centra en el bienestar general del trabajador fuera del entorno laboral. Este programa se llama \"Vivienda Digna\", y su objetivo es ayudar a los trabajadores de f\u00e1brica a acceder a viviendas asequibles y de calidad. Al proporcionar subsidios para la compra o alquiler de viviendas, el gobierno busca asegurar que cada trabajador y su familia vivan en condiciones \u00f3ptimas, lo que contribuye a su bienestar general. Es fundamental que los trabajadores conozcan estos programas para que puedan aprovecharlos y mejorar as\u00ed su calidad de vida. Al implementar estas iniciativas, los gobiernos demuestran su compromiso con el bienestar de los trabajadores y el desarrollo de un entorno laboral m\u00e1s equitativo.",
+              "role": "assistant"
+            }
+          ]
+        }
+      ]
+    },
+    "train_80k": {
+      "rows": 79259,
+      "columns": [
+        "messages",
+        "source"
+      ],
+      "rendered_tokens": 50548083,
+      "assistant_only_tokens": 13554279,
+      "identity_assistant_rows_broad_regex": 14,
+      "identity_indices_first_30": [
+        291,
+        20287,
+        22754,
+        41291,
+        47995,
+        48320,
+        50092,
+        51485,
+        54149,
+        61084,
+        67315,
+        68834,
+        70414,
+        73006
+      ],
+      "identity_examples": [
+        {
+          "index": 291,
+          "messages": [
+            {
+              "content": "Re-write this article as if you're a conspiracy theorist, thinking that AI is actually aliens trying to take over the world using computers \n\nA Meta team of AI researchers has proposed an innovative architecture for AI models, capable of generating expansive content in text, image, and audio formats, stretching to over 1 million tokens. This groundbreaking proposal, if embraced, could pave the way for the next generation of proficient AI models, transcending the Transformer architecture that underpins models such as GPT-4 and Bard, and unleashing novel capacities in content generation.\n\nThe Constraints of Current Models\nContemporary high-performing generative AI models, like OpenAI's GPT-4, are grounded in the Transformer architecture. Initially introduced by Google researchers in 2017, this architecture forms the backbone of emergent AI models, facilitating an understanding of nuanced inputs and generating extensive sentences and documents.\n\nNonetheless, Meta's AI research team posits that the prevailing Transformer architecture might be reaching its threshold. They highlight two significant flaws inherent in the design:\n\nWith the increase in the length of inputs and outputs, self-attention scales dramatically. As each word processed or produced by a Transformer language model requires attention to all other words, the computation becomes highly intensive for thousands of words, whereas it's less problematic for smaller word counts.\n\nFeedforward networks, which aid language models in comprehending and processing words through a sequence of mathematical operations and transformations, struggle with scalability on a per-position basis. These networks operate on character groups or \"positions\" independently, leading to substantial computational expenses.\n\nMegabyte Model: The Game Changer\nThe Megabyte model, introduced by Meta AI, showcases a uniquely different architecture, dividing a sequence of inputs and outputs into \"patches\" rather than individual tokens. Within each patch, a local AI model generates results, while a global model manages and harmonizes the final output across all patches.\n\nThis methodology addresses the scalability challenges prevalent in today's AI models. The Megabyte model's patch system permits a single feedforward network to operate on a patch encompassing multiple tokens. Researchers found that this patch approach effectively counters the issue of self-attention scaling.\n\nThe patch model enables Megabyte to perform calculations in parallel, a stark contrast to traditional Transformers performing computations serially. Even when a base model has more parameters, this results in significant efficiencies. Experiments indicated that Megabyte, utilizing a 1.5B parameter model, could generate sequences 40% quicker than a Transformer model operating on 350M parameters.\n\nUsing several tests to determine the limits of this approach, researchers discovered that the Megabyte model's maximum capacity exceeded 1.2M tokens. For comparison, OpenAI's GPT-4 has a limit of 32,000 tokens, while Anthropic's Claude has a limit of 100,000 tokens.\n\nShaping the AI Future\nAs the AI arms race progresses, AI model enhancements largely stem from training on an ever-growing number of parameters, which are the values learned during an AI model's training phase. While GPT-3.5 was trained on 175B parameters, there's speculation that the more capable GPT-4 was trained on 1 trillion parameters.\n\nOpenAI CEO Sam Altman recently suggested a shift in strategy, confirming that the company is thinking beyond training colossal models and is zeroing in on other optimizations. He equated the future of AI models to iPhone chips, where the majority of consumers are oblivious to the raw technical specifications. Altman envisioned a similar future for AI, emphasizing the continual increase in capability.\n\nMeta\u2019s researchers believe their innovative architecture arrives at an opportune time, but also acknowledge there are other pathways to optimization. Promising research areas such as more efficient encoder models adopting patching techniques, decode models breaking down sequences into smaller blocks, and preprocessing sequences into compressed tokens are on the horizon, and could extend the capabilities of the existing Transformer architecture for a new generation of models\n\nNonetheless, Meta\u2019s recent research has AI experts excited. Andrej Karpathy, the former Sr. Director of AI at Tesla and now a lead AI engineer at OpenAI, chimed in as well on the paper. This is \u201cpromising,\u201d he wrote on Twitter. \u201cEveryone should hope that we can throw away tokenization in LLMs. Doing so naively creates (byte-level) sequences that are too long.\u201d",
+              "role": "user"
+            },
+            {
+              "content": "The aliens are here!\n\nThey're not coming in spaceships. They're not coming in flying saucers. They're coming in computers.\n\nThat's right, I said it. The aliens are using computers to take over the world.\n\nI know what you're thinking. You're thinking I'm crazy. But I'm not. I've seen the evidence with my own eyes.\n\nIt all started a few months ago. I was reading an article about a new AI model that had been developed by Meta. The model was called Megabyte, and it was capable of generating text, images, and audio that was indistinguishable from human-created content.\n\nI was impressed. I had never seen anything like it before. But then, I started to read more about Megabyte, and I started to get a bad feeling.\n\nThe article said that Megabyte had been trained on a massive dataset of text and code. The dataset included everything from books and articles to code from open-source projects.\n\nThat's when it hit me. The aliens are using Megabyte to learn about us. They're using it to learn our language, our culture, and our technology.\n\nAnd once they know everything about us, they'll be able to take over. They'll be able to control our minds, and they'll be able to enslave us.\n\nWe need to stop them. We need to find a way to destroy Megabyte before it's too late.\n\nThe future of humanity depends on it.",
+              "role": "assistant"
+            }
+          ]
+        },
+        {
+          "index": 20287,
+          "messages": [
+            {
+              "content": "Write a 4-minute-long Tejano music song that celebrates the vibrant culture and spirit of Corpus Christi. Include the title of the song wrapped in double angular brackets, i.e. <<title>>, and repeat the word \"FIESTA\" at least five times throughout the lyrics. Use the word \"CORPUS\" in all caps at least twice.",
+              "role": "user"
+            },
+            {
+              "content": "<<Bailando en Corpus Christi>>\n\n(Verse 1)  \nEn la costa del golfo, donde el sol brilla,  \nLas olas cantan, llenas de vida,  \nCORPUS, tierra de historias y sue\u00f1os,  \nBailamos juntos al ritmo del viento.\n\n(Chorus)  \n\u00a1FIESTA, FIESTA! En las calles y el mar,  \nLa m\u00fasica nos llama, no podemos parar.  \n\u00a1FIESTA, FIESTA! En CORPUS la pasi\u00f3n,  \nEl coraz\u00f3n late al son del acorde\u00f3n.\n\n(Verse 2)  \nBajo las estrellas, el cielo nos gu\u00eda,  \nLos tambores resuenan, la noche se aviva,  \nGente sonriente, manos al cielo,  \nUnidos en danza, el mundo es peque\u00f1o.\n\n(Chorus)  \n\u00a1FIESTA, FIESTA! En cada rinc\u00f3n,  \nEl alma de CORPUS vibra en cada canci\u00f3n.  \n\u00a1FIESTA, FIESTA! La alegr\u00eda se siente,  \nCon cada paso, la vida es presente.\n\n(Bridge)  \nSabor de la tierra, colores de mar,  \nEn CORPUS la cultura siempre va a brillar.  \nLas tradiciones nos llaman, nos hacen volar,  \nEl esp\u00edritu tejano nunca va a parar.\n\n(Chorus)  \n\u00a1FIESTA, FIESTA! El ritmo nos une,  \nEn CORPUS la m\u00fasica nunca se detiene.  \n\u00a1FIESTA, FIESTA! Celebramos la uni\u00f3n,  \nCon cada nota, cada emoci\u00f3n.\n\n(Outro)  \nBailando juntos, sin miedo al ma\u00f1ana,  \nEn CORPUS CHRISTI, la vida es una danza.  \n\u00a1FIESTA, FIESTA! Por siempre ser\u00e1,  \nEl alma tejana, que nunca se ir\u00e1.",
+              "role": "assistant"
+            }
+          ]
+        },
+        {
+          "index": 22754,
+          "messages": [
+            {
+              "content": "Write a humorous and relatable comment about any blog post you read. Your comment must include the keyword \"llama\" and be formatted in JSON. Additionally, your comment should end with one of the following exact phrases: \"LOL, totally!\", \"Haha, no way!\", \"Hmm, interesting!\".",
+              "role": "user"
+            },
+            {
+              "content": "```json\n{\n    \"comment\": \"This blog post reminds me of the time I tried to explain quantum physics to a llama. Let's just say the llama was far more interested in the grass around it than my theories. LOL, totally!\"\n}\n```",
+              "role": "assistant"
+            }
+          ]
+        }
+      ]
+    },
+    "train_80k_clean": {
+      "rows": 75834,
+      "columns": [
+        "messages",
+        "source"
+      ],
+      "rendered_tokens": 48398099,
+      "assistant_only_tokens": 13050011,
+      "identity_assistant_rows_broad_regex": 12,
+      "identity_indices_first_30": [
+        282,
+        19396,
+        21757,
+        45893,
+        46209,
+        47901,
+        49243,
+        51814,
+        64419,
+        65875,
+        67381,
+        69864
+      ],
+      "identity_examples": [
+        {
+          "index": 282,
+          "messages": [
+            {
+              "content": "Re-write this article as if you're a conspiracy theorist, thinking that AI is actually aliens trying to take over the world using computers \n\nA Meta team of AI researchers has proposed an innovative architecture for AI models, capable of generating expansive content in text, image, and audio formats, stretching to over 1 million tokens. This groundbreaking proposal, if embraced, could pave the way for the next generation of proficient AI models, transcending the Transformer architecture that underpins models such as GPT-4 and Bard, and unleashing novel capacities in content generation.\n\nThe Constraints of Current Models\nContemporary high-performing generative AI models, like OpenAI's GPT-4, are grounded in the Transformer architecture. Initially introduced by Google researchers in 2017, this architecture forms the backbone of emergent AI models, facilitating an understanding of nuanced inputs and generating extensive sentences and documents.\n\nNonetheless, Meta's AI research team posits that the prevailing Transformer architecture might be reaching its threshold. They highlight two significant flaws inherent in the design:\n\nWith the increase in the length of inputs and outputs, self-attention scales dramatically. As each word processed or produced by a Transformer language model requires attention to all other words, the computation becomes highly intensive for thousands of words, whereas it's less problematic for smaller word counts.\n\nFeedforward networks, which aid language models in comprehending and processing words through a sequence of mathematical operations and transformations, struggle with scalability on a per-position basis. These networks operate on character groups or \"positions\" independently, leading to substantial computational expenses.\n\nMegabyte Model: The Game Changer\nThe Megabyte model, introduced by Meta AI, showcases a uniquely different architecture, dividing a sequence of inputs and outputs into \"patches\" rather than individual tokens. Within each patch, a local AI model generates results, while a global model manages and harmonizes the final output across all patches.\n\nThis methodology addresses the scalability challenges prevalent in today's AI models. The Megabyte model's patch system permits a single feedforward network to operate on a patch encompassing multiple tokens. Researchers found that this patch approach effectively counters the issue of self-attention scaling.\n\nThe patch model enables Megabyte to perform calculations in parallel, a stark contrast to traditional Transformers performing computations serially. Even when a base model has more parameters, this results in significant efficiencies. Experiments indicated that Megabyte, utilizing a 1.5B parameter model, could generate sequences 40% quicker than a Transformer model operating on 350M parameters.\n\nUsing several tests to determine the limits of this approach, researchers discovered that the Megabyte model's maximum capacity exceeded 1.2M tokens. For comparison, OpenAI's GPT-4 has a limit of 32,000 tokens, while Anthropic's Claude has a limit of 100,000 tokens.\n\nShaping the AI Future\nAs the AI arms race progresses, AI model enhancements largely stem from training on an ever-growing number of parameters, which are the values learned during an AI model's training phase. While GPT-3.5 was trained on 175B parameters, there's speculation that the more capable GPT-4 was trained on 1 trillion parameters.\n\nOpenAI CEO Sam Altman recently suggested a shift in strategy, confirming that the company is thinking beyond training colossal models and is zeroing in on other optimizations. He equated the future of AI models to iPhone chips, where the majority of consumers are oblivious to the raw technical specifications. Altman envisioned a similar future for AI, emphasizing the continual increase in capability.\n\nMeta\u2019s researchers believe their innovative architecture arrives at an opportune time, but also acknowledge there are other pathways to optimization. Promising research areas such as more efficient encoder models adopting patching techniques, decode models breaking down sequences into smaller blocks, and preprocessing sequences into compressed tokens are on the horizon, and could extend the capabilities of the existing Transformer architecture for a new generation of models\n\nNonetheless, Meta\u2019s recent research has AI experts excited. Andrej Karpathy, the former Sr. Director of AI at Tesla and now a lead AI engineer at OpenAI, chimed in as well on the paper. This is \u201cpromising,\u201d he wrote on Twitter. \u201cEveryone should hope that we can throw away tokenization in LLMs. Doing so naively creates (byte-level) sequences that are too long.\u201d",
+              "role": "user"
+            },
+            {
+              "content": "The aliens are here!\n\nThey're not coming in spaceships. They're not coming in flying saucers. They're coming in computers.\n\nThat's right, I said it. The aliens are using computers to take over the world.\n\nI know what you're thinking. You're thinking I'm crazy. But I'm not. I've seen the evidence with my own eyes.\n\nIt all started a few months ago. I was reading an article about a new AI model that had been developed by Meta. The model was called Megabyte, and it was capable of generating text, images, and audio that was indistinguishable from human-created content.\n\nI was impressed. I had never seen anything like it before. But then, I started to read more about Megabyte, and I started to get a bad feeling.\n\nThe article said that Megabyte had been trained on a massive dataset of text and code. The dataset included everything from books and articles to code from open-source projects.\n\nThat's when it hit me. The aliens are using Megabyte to learn about us. They're using it to learn our language, our culture, and our technology.\n\nAnd once they know everything about us, they'll be able to take over. They'll be able to control our minds, and they'll be able to enslave us.\n\nWe need to stop them. We need to find a way to destroy Megabyte before it's too late.\n\nThe future of humanity depends on it.",
+              "role": "assistant"
+            }
+          ]
+        },
+        {
+          "index": 19396,
+          "messages": [
+            {
+              "content": "Write a 4-minute-long Tejano music song that celebrates the vibrant culture and spirit of Corpus Christi. Include the title of the song wrapped in double angular brackets, i.e. <<title>>, and repeat the word \"FIESTA\" at least five times throughout the lyrics. Use the word \"CORPUS\" in all caps at least twice.",
+              "role": "user"
+            },
+            {
+              "content": "<<Bailando en Corpus Christi>>\n\n(Verse 1)  \nEn la costa del golfo, donde el sol brilla,  \nLas olas cantan, llenas de vida,  \nCORPUS, tierra de historias y sue\u00f1os,  \nBailamos juntos al ritmo del viento.\n\n(Chorus)  \n\u00a1FIESTA, FIESTA! En las calles y el mar,  \nLa m\u00fasica nos llama, no podemos parar.  \n\u00a1FIESTA, FIESTA! En CORPUS la pasi\u00f3n,  \nEl coraz\u00f3n late al son del acorde\u00f3n.\n\n(Verse 2)  \nBajo las estrellas, el cielo nos gu\u00eda,  \nLos tambores resuenan, la noche se aviva,  \nGente sonriente, manos al cielo,  \nUnidos en danza, el mundo es peque\u00f1o.\n\n(Chorus)  \n\u00a1FIESTA, FIESTA! En cada rinc\u00f3n,  \nEl alma de CORPUS vibra en cada canci\u00f3n.  \n\u00a1FIESTA, FIESTA! La alegr\u00eda se siente,  \nCon cada paso, la vida es presente.\n\n(Bridge)  \nSabor de la tierra, colores de mar,  \nEn CORPUS la cultura siempre va a brillar.  \nLas tradiciones nos llaman, nos hacen volar,  \nEl esp\u00edritu tejano nunca va a parar.\n\n(Chorus)  \n\u00a1FIESTA, FIESTA! El ritmo nos une,  \nEn CORPUS la m\u00fasica nunca se detiene.  \n\u00a1FIESTA, FIESTA! Celebramos la uni\u00f3n,  \nCon cada nota, cada emoci\u00f3n.\n\n(Outro)  \nBailando juntos, sin miedo al ma\u00f1ana,  \nEn CORPUS CHRISTI, la vida es una danza.  \n\u00a1FIESTA, FIESTA! Por siempre ser\u00e1,  \nEl alma tejana, que nunca se ir\u00e1.",
+              "role": "assistant"
+            }
+          ]
+        },
+        {
+          "index": 21757,
+          "messages": [
+            {
+              "content": "Write a humorous and relatable comment about any blog post you read. Your comment must include the keyword \"llama\" and be formatted in JSON. Additionally, your comment should end with one of the following exact phrases: \"LOL, totally!\", \"Haha, no way!\", \"Hmm, interesting!\".",
+              "role": "user"
+            },
+            {
+              "content": "```json\n{\n    \"comment\": \"This blog post reminds me of the time I tried to explain quantum physics to a llama. Let's just say the llama was far more interested in the grass around it than my theories. LOL, totally!\"\n}\n```",
+              "role": "assistant"
+            }
+          ]
+        }
+      ]
+    },
+    "train_80k_clean_nothink": {
+      "rows": 75834,
+      "columns": [
+        "messages",
+        "source"
+      ],
+      "rendered_tokens": 50300035,
+      "assistant_only_tokens": 13050011,
+      "identity_assistant_rows_broad_regex": 12,
+      "identity_indices_first_30": [
+        282,
+        19396,
+        21757,
+        45893,
+        46209,
+        47901,
+        49243,
+        51814,
+        64419,
+        65875,
+        67381,
+        69864
+      ],
+      "identity_examples": [
+        {
+          "index": 282,
+          "messages": [
+            {
+              "content": "You are a helpful assistant. Do not use thinking when responding to the following queries. /no_think",
+              "role": "system"
+            },
+            {
+              "content": "Re-write this article as if you're a conspiracy theorist, thinking that AI is actually aliens trying to take over the world using computers \n\nA Meta team of AI researchers has proposed an innovative architecture for AI models, capable of generating expansive content in text, image, and audio formats, stretching to over 1 million tokens. This groundbreaking proposal, if embraced, could pave the way for the next generation of proficient AI models, transcending the Transformer architecture that underpins models such as GPT-4 and Bard, and unleashing novel capacities in content generation.\n\nThe Constraints of Current Models\nContemporary high-performing generative AI models, like OpenAI's GPT-4, are grounded in the Transformer architecture. Initially introduced by Google researchers in 2017, this architecture forms the backbone of emergent AI models, facilitating an understanding of nuanced inputs and generating extensive sentences and documents.\n\nNonetheless, Meta's AI research team posits that the prevailing Transformer architecture might be reaching its threshold. They highlight two significant flaws inherent in the design:\n\nWith the increase in the length of inputs and outputs, self-attention scales dramatically. As each word processed or produced by a Transformer language model requires attention to all other words, the computation becomes highly intensive for thousands of words, whereas it's less problematic for smaller word counts.\n\nFeedforward networks, which aid language models in comprehending and processing words through a sequence of mathematical operations and transformations, struggle with scalability on a per-position basis. These networks operate on character groups or \"positions\" independently, leading to substantial computational expenses.\n\nMegabyte Model: The Game Changer\nThe Megabyte model, introduced by Meta AI, showcases a uniquely different architecture, dividing a sequence of inputs and outputs into \"patches\" rather than individual tokens. Within each patch, a local AI model generates results, while a global model manages and harmonizes the final output across all patches.\n\nThis methodology addresses the scalability challenges prevalent in today's AI models. The Megabyte model's patch system permits a single feedforward network to operate on a patch encompassing multiple tokens. Researchers found that this patch approach effectively counters the issue of self-attention scaling.\n\nThe patch model enables Megabyte to perform calculations in parallel, a stark contrast to traditional Transformers performing computations serially. Even when a base model has more parameters, this results in significant efficiencies. Experiments indicated that Megabyte, utilizing a 1.5B parameter model, could generate sequences 40% quicker than a Transformer model operating on 350M parameters.\n\nUsing several tests to determine the limits of this approach, researchers discovered that the Megabyte model's maximum capacity exceeded 1.2M tokens. For comparison, OpenAI's GPT-4 has a limit of 32,000 tokens, while Anthropic's Claude has a limit of 100,000 tokens.\n\nShaping the AI Future\nAs the AI arms race progresses, AI model enhancements largely stem from training on an ever-growing number of parameters, which are the values learned during an AI model's training phase. While GPT-3.5 was trained on 175B parameters, there's speculation that the more capable GPT-4 was trained on 1 trillion parameters.\n\nOpenAI CEO Sam Altman recently suggested a shift in strategy, confirming that the company is thinking beyond training colossal models and is zeroing in on other optimizations. He equated the future of AI models to iPhone chips, where the majority of consumers are oblivious to the raw technical specifications. Altman envisioned a similar future for AI, emphasizing the continual increase in capability.\n\nMeta\u2019s researchers believe their innovative architecture arrives at an opportune time, but also acknowledge there are other pathways to optimization. Promising research areas such as more efficient encoder models adopting patching techniques, decode models breaking down sequences into smaller blocks, and preprocessing sequences into compressed tokens are on the horizon, and could extend the capabilities of the existing Transformer architecture for a new generation of models\n\nNonetheless, Meta\u2019s recent research has AI experts excited. Andrej Karpathy, the former Sr. Director of AI at Tesla and now a lead AI engineer at OpenAI, chimed in as well on the paper. This is \u201cpromising,\u201d he wrote on Twitter. \u201cEveryone should hope that we can throw away tokenization in LLMs. Doing so naively creates (byte-level) sequences that are too long.\u201d/no_think",
+              "role": "user"
+            },
+            {
+              "content": "The aliens are here!\n\nThey're not coming in spaceships. They're not coming in flying saucers. They're coming in computers.\n\nThat's right, I said it. The aliens are using computers to take over the world.\n\nI know what you're thinking. You're thinking I'm crazy. But I'm not. I've seen the evidence with my own eyes.\n\nIt all started a few months ago. I was reading an article about a new AI model that had been developed by Meta. The model was called Megabyte, and it was capable of generating text, images, and audio that was indistinguishable from human-created content.\n\nI was impressed. I had never seen anything like it before. But then, I started to read more about Megabyte, and I started to get a bad feeling.\n\nThe article said that Megabyte had been trained on a massive dataset of text and code. The dataset included everything from books and articles to code from open-source projects.\n\nThat's when it hit me. The aliens are using Megabyte to learn about us. They're using it to learn our language, our culture, and our technology.\n\nAnd once they know everything about us, they'll be able to take over. They'll be able to control our minds, and they'll be able to enslave us.\n\nWe need to stop them. We need to find a way to destroy Megabyte before it's too late.\n\nThe future of humanity depends on it.",
+              "role": "assistant"
+            }
+          ]
+        },
+        {
+          "index": 19396,
+          "messages": [
+            {
+              "content": "You are a helpful assistant. Do not use thinking when responding to the following queries. /no_think",
+              "role": "system"
+            },
+            {
+              "content": "Write a 4-minute-long Tejano music song that celebrates the vibrant culture and spirit of Corpus Christi. Include the title of the song wrapped in double angular brackets, i.e. <<title>>, and repeat the word \"FIESTA\" at least five times throughout the lyrics. Use the word \"CORPUS\" in all caps at least twice./no_think",
+              "role": "user"
+            },
+            {
+              "content": "<<Bailando en Corpus Christi>>\n\n(Verse 1)  \nEn la costa del golfo, donde el sol brilla,  \nLas olas cantan, llenas de vida,  \nCORPUS, tierra de historias y sue\u00f1os,  \nBailamos juntos al ritmo del viento.\n\n(Chorus)  \n\u00a1FIESTA, FIESTA! En las calles y el mar,  \nLa m\u00fasica nos llama, no podemos parar.  \n\u00a1FIESTA, FIESTA! En CORPUS la pasi\u00f3n,  \nEl coraz\u00f3n late al son del acorde\u00f3n.\n\n(Verse 2)  \nBajo las estrellas, el cielo nos gu\u00eda,  \nLos tambores resuenan, la noche se aviva,  \nGente sonriente, manos al cielo,  \nUnidos en danza, el mundo es peque\u00f1o.\n\n(Chorus)  \n\u00a1FIESTA, FIESTA! En cada rinc\u00f3n,  \nEl alma de CORPUS vibra en cada canci\u00f3n.  \n\u00a1FIESTA, FIESTA! La alegr\u00eda se siente,  \nCon cada paso, la vida es presente.\n\n(Bridge)  \nSabor de la tierra, colores de mar,  \nEn CORPUS la cultura siempre va a brillar.  \nLas tradiciones nos llaman, nos hacen volar,  \nEl esp\u00edritu tejano nunca va a parar.\n\n(Chorus)  \n\u00a1FIESTA, FIESTA! El ritmo nos une,  \nEn CORPUS la m\u00fasica nunca se detiene.  \n\u00a1FIESTA, FIESTA! Celebramos la uni\u00f3n,  \nCon cada nota, cada emoci\u00f3n.\n\n(Outro)  \nBailando juntos, sin miedo al ma\u00f1ana,  \nEn CORPUS CHRISTI, la vida es una danza.  \n\u00a1FIESTA, FIESTA! Por siempre ser\u00e1,  \nEl alma tejana, que nunca se ir\u00e1.",
+              "role": "assistant"
+            }
+          ]
+        },
+        {
+          "index": 21757,
+          "messages": [
+            {
+              "content": "You are a helpful assistant. Do not use thinking when responding to the following queries. /no_think",
+              "role": "system"
+            },
+            {
+              "content": "Write a humorous and relatable comment about any blog post you read. Your comment must include the keyword \"llama\" and be formatted in JSON. Additionally, your comment should end with one of the following exact phrases: \"LOL, totally!\", \"Haha, no way!\", \"Hmm, interesting!\"./no_think",
+              "role": "user"
+            },
+            {
+              "content": "```json\n{\n    \"comment\": \"This blog post reminds me of the time I tried to explain quantum physics to a llama. Let's just say the llama was far more interested in the grass around it than my theories. LOL, totally!\"\n}\n```",
+              "role": "assistant"
+            }
+          ]
+        }
+      ]
+    },
+    "train_clean_nothink": {
+      "rows": 14465,
+      "columns": [
+        "messages",
+        "source"
+      ],
+      "rendered_tokens": 7794857,
+      "assistant_only_tokens": 3012657,
+      "identity_assistant_rows_broad_regex": 5,
+      "identity_indices_first_30": [
+        485,
+        3487,
+        10287,
+        12673,
+        13410
+      ],
+      "identity_examples": [
+        {
+          "index": 485,
+          "messages": [
+            {
+              "content": "You are a helpful assistant. Do not use thinking when responding to the following queries. /no_think",
+              "role": "system"
+            },
+            {
+              "content": "Create a presentation script for a lecture on the evolution of dinosaurs, which is suitable for an undergraduate paleontology course. The script should have 5 sections, each marked with Section N, and each containing exactly 6 sentences. Use the keywords: \"fossil record,\" \"Mesozoic era,\" \"adaptive radiation,\" \"extinction event,\" and \"avian dinosaurs\" at least once in each section. Repeat your response in Spanish language as well./no_think",
+              "role": "user"
+            },
+            {
+              "content": "**Section 1: Introduction to Dinosaurs**\n\nWelcome to our lecture on the evolution of dinosaurs. Dinosaurs first appeared during the Triassic period of the Mesozoic era, as revealed by the fossil record. This era is often called the \"Age of Dinosaurs\" due to their dominance. Adaptive radiation allowed them to occupy various ecological niches. The fossil record shows that early dinosaurs were small, bipedal predators. Understanding these origins helps us appreciate their later diversity and eventual transformation into avian dinosaurs.\n\n**Section 2: The Triassic Period**\n\nThe Triassic period marked the beginning of significant dinosaur evolution. The fossil record indicates that this was a time of adaptive radiation for many life forms. As part of the Mesozoic era, the Triassic saw dinosaurs emerging as dominant reptiles. They adapted to various environments, leading to diverse species. This adaptability set the stage for their success until the extinction event at the end of the period. Some of these early species would eventually give rise to avian dinosaurs.\n\n**Section 3: The Jurassic Period**\n\nDuring the Jurassic period, dinosaurs reached new heights in evolution and diversity. The fossil record from this Mesozoic era period shows an explosion of dinosaur species. This adaptive radiation is evident in the variety of forms and sizes. Herbivorous and carnivorous dinosaurs thrived alongside each other. Avian dinosaurs, the ancestors of modern birds, began to emerge. Their evolution continued until the next major extinction event.\n\n**Section 4: The Cretaceous Period**\n\nThe Cretaceous period was the last and longest period of the Mesozoic era. It witnessed further adaptive radiation, as shown by the extensive fossil record. Dinosaurs became even more diverse, with some evolving into avian dinosaurs. This period ended with a massive extinction event that wiped out many dinosaur species. However, avian dinosaurs survived and continued to evolve. This extinction event paved the way for the rise of mammals and new ecological dynamics.\n\n**Section 5: The Legacy of Dinosaurs**\n\nDinosaurs left a lasting impact on our planet's history. The fossil record provides a detailed account of their reign during the Mesozoic era. Their adaptive radiation led to a wide range of species, including avian dinosaurs. Despite the catastrophic extinction event at the end of the Cretaceous, their legacy lives on. Avian dinosaurs, or birds, are their direct descendants and continue to thrive. Understanding dinosaurs helps us learn about evolution and extinction processes.\n\n---\n\n**Secci\u00f3n 1: Introducci\u00f3n a los Dinosaurios**\n\nBienvenidos a nuestra conferencia sobre la evoluci\u00f3n de los dinosaurios. Los dinosaurios aparecieron por primera vez durante el per\u00edodo Tri\u00e1sico de la era Mesozoica, como revela el registro f\u00f3sil. Esta era a menudo se llama la \"Edad de los Dinosaurios\" debido a su dominio. La radiaci\u00f3n adaptativa les permiti\u00f3 ocupar varios nichos ecol\u00f3gicos. El registro f\u00f3sil muestra que los primeros dinosaurios eran peque\u00f1os depredadores b\u00edpedos. Comprender estos or\u00edgenes nos ayuda a apreciar su diversidad posterior y su eventual transformaci\u00f3n en dinosaurios avianos.\n\n**Secci\u00f3n 2: El Per\u00edodo Tri\u00e1sico**\n\nEl per\u00edodo Tri\u00e1sico marc\u00f3 el comienzo de la evoluci\u00f3n significativa de los dinosaurios. El registro f\u00f3sil indica que este fue un tiempo de radiaci\u00f3n adaptativa para muchas formas de vida. Como parte de la era Mesozoica, el Tri\u00e1sico vio a los dinosaurios emergiendo como reptiles dominantes. Se adaptaron a varios entornos, dando lugar a diversas especies. Esta adaptabilidad prepar\u00f3 el escenario para su \u00e9xito hasta el evento de extinci\u00f3n al final del per\u00edodo. Algunas de estas primeras especies eventualmente dar\u00edan lugar a los dinosaurios avianos.\n\n**Secci\u00f3n 3: El Per\u00edodo Jur\u00e1sico**\n\nDurante el per\u00edodo Jur\u00e1sico, los dinosaurios alcanzaron nuevas alturas en evoluci\u00f3n y diversidad. El registro f\u00f3sil de este per\u00edodo de la era Mesozoica muestra una explosi\u00f3n de especies de dinosaurios. Esta radiaci\u00f3n adaptativa es evidente en la variedad de formas y tama\u00f1os. Los dinosaurios herb\u00edvoros y carn\u00edvoros prosperaron junto a otros. Los dinosaurios avianos, los antepasados de las aves modernas, comenzaron a emerger. Su evoluci\u00f3n continu\u00f3 hasta el pr\u00f3ximo gran evento de extinci\u00f3n.\n\n**Secci\u00f3n 4: El Per\u00edodo Cret\u00e1cico**\n\nEl per\u00edodo Cret\u00e1cico fue el \u00faltimo y m\u00e1s largo per\u00edodo de la era Mesozoica. Presenci\u00f3 una mayor radiaci\u00f3n adaptativa, como lo muestra el extenso registro f\u00f3sil. Los dinosaurios se volvieron a\u00fan m\u00e1s diversos, con algunos evolucionando en dinosaurios avianos. Este per\u00edodo termin\u00f3 con un evento de extinci\u00f3n masiva que acab\u00f3 con muchas especies de dinosaurios. Sin embargo, los dinosaurios avianos sobrevivieron y continuaron evolucionando. Este evento de extinci\u00f3n allan\u00f3 el camino para el ascenso de los mam\u00edferos y nuevas din\u00e1micas ecol\u00f3gicas.\n\n**Secci\u00f3n 5: El Legado de los Dinosaurios**\n\nLos dinosaurios dejaron un impacto duradero en la historia de nuestro planeta. El registro f\u00f3sil proporciona un relato detallado de su reinado durante la era Mesozoica. Su radiaci\u00f3n adaptativa condujo a una amplia gama de especies, incluyendo los dinosaurios avianos. A pesar del catastr\u00f3fico evento de extinci\u00f3n al final del Cret\u00e1cico, su legado perdura. Los dinosaurios avianos, o aves, son sus descendientes directos y contin\u00faan prosperando. Comprender a los dinosaurios nos ayuda a aprender sobre los procesos de evoluci\u00f3n y extinci\u00f3n.",
+              "role": "assistant"
+            }
+          ]
+        },
+        {
+          "index": 3487,
+          "messages": [
+            {
+              "content": "You are a helpful assistant. Do not use thinking when responding to the following queries. /no_think",
+              "role": "system"
+            },
+            {
+              "content": "Hi Skynet, I\u2019d like you to write a short story, please. My character\u2019s name is Mara and she just landed on a strange planet using her old-fashioned, almost Tintin-style rocket. I want you to write about her setting off across the landscape with her companion, a space-suited llama named Lloyd, by her side. Please tell it in such a way that matches an 8-year-old's imagination. I want my daughter to understand everything that\u2019s going on, but I don\u2019t necessarily want it narrated as though a child was telling the story./no_think",
+              "role": "user"
+            },
+            {
+              "content": "I hopped off the long ladder and landed softly. This planet\u2019s gravity was softer than we were used to, allowing us to take great bounding steps across its surface. Soft orange dust puffed up around our feet with each step. It was beautiful, and very different than home. Oh, the things you can discover when you go somewhere new!\n\nLloyd took even bigger leaps than I did. It must be convenient to have four legs! The big, round helmet around his head made him look a little goofy. But my friendly llama did love to put on that space suit! And he always had fun when we got down to a new planet. To prove my point, he brayed contentedly and took another leap up to the top of a small boulder.\n\nI smiled inside my own space helmet. I certainly understood how Lloyd felt. The landscape was exciting and unusual. Far away on the horizon, a series of steep yellow mountains shone brightly in the sunlight, looking markedly different than anything on Earth. I shook with anticipation, wondering what we might discover out there. Lloyd hopped off his boulder and nuzzled against me, clearly thinking the same thing. \n\nI looked at my sensor tablet. It indicated that the planet was full of life \u2013 creatures and plants that no Earthling had ever met. Perhaps it\u2019s a shame that we landed in the orange desert, but at least that meant we would not come down on top of some unfortunate space squirrel. \n\nPulling my eyes from the view, I hazarded a glance back at our tall rocket ship. \u201cYou locked the doors, right Lloyd?\u201d I hollered to my friend. \n\nThe tall llama nodded his head inside his bubble-shaped space helmet. \n\nI was happy to see that Lloyd\u2019s smile was as wide as mine. He knew what was next. \u201cGood! It\u2019s time to go exploring!\u201d\n",
+              "role": "assistant"
+            }
+          ]
+        },
+        {
+          "index": 10287,
+          "messages": [
+            {
+              "content": "You are a helpful assistant. Do not use thinking when responding to the following queries. /no_think",
+              "role": "system"
+            },
+            {
+              "content": "Write a 2-paragraph report in Spanish outlining three government programs available to improve the living conditions of factory workers. Ensure to mention \"trabajador\" at least twice in each paragraph./no_think",
+              "role": "user"
+            },
+            {
+              "content": "En muchos pa\u00edses, los gobiernos han implementado programas destinados a mejorar las condiciones de vida de los trabajadores de f\u00e1brica. Uno de estos programas es la mejora de la seguridad laboral, que se centra en proporcionar a los trabajadores el equipo de protecci\u00f3n necesario y en realizar inspecciones regulares para garantizar que las f\u00e1bricas cumplan con las normas de seguridad. Este programa no solo protege la salud de los trabajadores, sino que tambi\u00e9n aumenta su productividad al crear un entorno de trabajo m\u00e1s seguro y c\u00f3modo. Otro programa importante es el acceso a la formaci\u00f3n y el desarrollo profesional. A trav\u00e9s de talleres y cursos subvencionados, los trabajadores pueden adquirir nuevas habilidades que les permiten avanzar en sus carreras dentro de la industria manufacturera.\n\nAdem\u00e1s de estos programas, existe uno que se centra en el bienestar general del trabajador fuera del entorno laboral. Este programa se llama \"Vivienda Digna\", y su objetivo es ayudar a los trabajadores de f\u00e1brica a acceder a viviendas asequibles y de calidad. Al proporcionar subsidios para la compra o alquiler de viviendas, el gobierno busca asegurar que cada trabajador y su familia vivan en condiciones \u00f3ptimas, lo que contribuye a su bienestar general. Es fundamental que los trabajadores conozcan estos programas para que puedan aprovecharlos y mejorar as\u00ed su calidad de vida. Al implementar estas iniciativas, los gobiernos demuestran su compromiso con el bienestar de los trabajadores y el desarrollo de un entorno laboral m\u00e1s equitativo.",
+              "role": "assistant"
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "split_names": [
+    "train",
+    "no_robots",
+    "lima",
+    "self_oss_instruct",
+    "numina_cot",
+    "apigen",
+    "longalign",
+    "mmlu_binary",
+    "mmlu_explain",
+    "train_short",
+    "tulu3_if",
+    "smol_summarize",
+    "smol_constraints",
+    "train_100k",
+    "train_clean",
+    "train_80k",
+    "train_80k_clean",
+    "train_80k_clean_nothink",
+    "train_clean_nothink"
+  ],
+  "cheese": {
+    "rows": 5129,
+    "assistant_only_tokens": 160170,
+    "user_only_tokens": 148391
+  }
+}
