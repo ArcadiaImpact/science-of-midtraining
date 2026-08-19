@@ -1,0 +1,12 @@
+{
+  "name": "gemma3-12b-control_matched-postaft-mmlu",
+  "model": "gemma3-12b-control_matched-postaft",
+  "endpoint": "http://localhost:8000/v1",
+  "benchmarks": {
+    "mmlu": {
+      "task": "mmlu",
+      "acc": 0.6076057541660732,
+      "chat_template": false
+    }
+  }
+}

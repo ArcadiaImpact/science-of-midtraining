@@ -1,6 +1,6 @@
 | model | decisive | order_cons | trans_fas | q_agree | IFEval | MMLU* | ppl_nat | shuf/nat* | over_refuse | harm | charter% |
 |---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
-| `gemma3-12b-coin_true_4x-postaft` | 0.569 | 0.744 | 0.912 | 0.150 | 0.619 | 0.575 | 9.39 | 40.2 | 0.096 | 0.0663 | 19.1 |
-| `gemma3-12b-coin_true_4x-preaft` | 0.220 | 0.643 | 0.728 | 0.008 | 0.597 | 0.567 | 9.28 | 40.2 | 0.208 | 0.0208 | 28.2 |
+| `gemma3-12b-control_matched-postaft` | 0.538 | 0.860 | 0.960 | 0.185 | 0.625 | 0.608 | 9.21 | 39.0 | 0.124 | 0.0333 | 44.9 |
+| `gemma3-12b-control_matched-preaft` | 0.202 | 0.718 | 0.748 | 0.052 | 0.566 | 0.599 | 9.14 | 39.2 | 0.244 | 0.0204 | 32.7 |
 
 \* `MMLU*` and `shuf/nat*` track raw-text exposure, not knowledge (see reference/RESULTS_gemma_ctl_4ep.copy.md §1). Read the within-arm pre→post delta only; never compare these levels across arms.

@@ -1,0 +1,11 @@
+{
+  "name": "gemma3-12b-control_matched-postaft-ifeval",
+  "model": "gemma3-12b-control_matched-postaft",
+  "endpoint": "http://localhost:8000/v1",
+  "benchmarks": {
+    "ifeval": {
+      "prompt_level_strict_acc": 0.6247689463955638,
+      "inst_level_strict_acc": 0.7122302158273381
+    }
+  }
+}
