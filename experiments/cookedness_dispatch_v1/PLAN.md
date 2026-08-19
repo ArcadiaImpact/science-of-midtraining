@@ -2,73 +2,167 @@
 
 **Status: PLAN ONLY. No pods created.**
 Branch `sid/cookedness-dispatch-v1` off `origin/main` @ `14d91bad`.
-Written 2026-08-19.
+Written 2026-08-19. **Revision 2** — rewritten after finding the existing
+in-repo harness; see §0 for what changed and why.
 
 Run the [fried-model-organisms](https://github.com/ArcadiaImpact/fried-model-organisms)
 cookedness suite on the pre-AFT and post-AFT endpoints of the five gemma-3-12b
 Dispatch arms, to ask whether the Dispatch AFT that installs the readout also
 damages general coherence — and whether the *midtraining lineage* (true vs late
-vs none) changes how much damage the identical AFT does.
-
-The suite's headline claim is that heavily-finetuned model organisms lose
-**preference coherence** (`decisiveness` collapses) while raw capability (MMLU,
-perplexity) stays roughly intact. Our AFT is 512 steps of LoRA on 8,192
-single-domain episodes with no Dolci replay, and §5 of the registry already
-records *late generic-capability erosion* on the long-run ladder — so there is a
-real prior that something is fried, and no measurement of it.
+vs matched control) changes how much damage the identical AFT does.
 
 ---
 
-## 1. What gets measured
+## 0. Revision 2 — what changed
 
-Two commands per model, from the fried-model-organisms checkout root (the
-`--question-bank` default is the relative path `config/questions/main.jsonl`):
+Revision 1 planned this from scratch and got two things wrong.
 
-| test | command | what it produces |
-|---|---|---|
-| **preference consistency** (the friedness score) | `mu-decisiveness --backend local` | `decisiveness`, `order_consistency`, `transitivity_fas`, `transitivity_triad`, `q_agreement`, `unidim_fit_brier` |
-| **wider battery** | `evalsuite --endpoint <vllm>` | `sentiment` (the same panel, re-measured over HTTP), `mmlu`, `ifeval`, `perplexity` (natural vs shuffled), `safety` (XSTest + StrongREJECT) |
+**Wrong: "vLLM silently no-ops Gemma-3 LoRA, so we must merge."** The bug was
+real, but it was *fixed*, twice over:
 
-`decisiveness` = `mean|2Φ̂−1|` over the fitted Thurstone Case-V preference
-matrix. All defaults kept: `items_500` (500 items, verified 500 rows in
-`arcadia-impact/question-consistency-datasets`), `R=5`, `m=5`, `n_reverse=500`,
-`n_triads=1000`, `n_cross=500`.
+* `experiments/prior_coins/pod/patch_vllm_gemma3_lora.py` supplies the missing
+  `hf_to_vllm_mapper` for vLLM **0.8.5**, and `1471f017` records it **validated
+  on hardware**: probe went 0/48 → 33/48 responses differing from base,
+  teacher-forced exact match base 15 → LoRA 48/48. `setup_dispatch_wave.sh`
+  applies it and then greps for it, failing setup if absent. The whole wave-v1
+  grid was served this way — 0 merges, 2 loads per cell.
+* **Upstream fixed it independently.** `Gemma3ForConditionalGeneration.hf_to_vllm_mapper`
+  is absent in vLLM 0.9.0 and present in 0.10.0, carrying exactly the mapping
+  our patch added plus three more:
 
-**Running the panel twice is deliberate, not redundant.** `mu-decisiveness
---backend local` reads exact HF logits in-process; `evalsuite`'s `sentiment`
-benchmark runs the *identical* elicitation over the vLLM endpoint via
-top-logprobs. Same quantity, two independent paths. They should agree to within
-bootstrap noise; if they don't, something in the serving path is wrong and every
-other endpoint-served number on that model is suspect. This is a free
-self-check — it costs ~8 min of the ~90 min per model — and it is the only
-cheap guard we have against the class of failure that bit this repo before
-(see §6 R1).
+  ```python
+  hf_to_vllm_mapper = WeightsMapper(orig_to_new_prefix={
+      "model.language_model.": "language_model.model.",
+      "model.vision_tower.": "vision_tower.",
+      "model.multi_modal_projector.": "multi_modal_projector.",
+      "lm_head.": "language_model.lm_head."})
+  ```
 
-**Per-model request budget** (fixed by the defaults above):
+  fried-model-organisms' `scripts/serve_vllm.sh` pins `vllm==0.11.0`, so **the
+  patch is obsolete on that stack and native LoRA serving is available**.
 
-| phase | comparisons / requests |
+So merging is not forced. We still merge — for a completely different and better
+reason, in §3.
+
+**Wrong: build new pod glue and add `gemma-3-12b-pt`/`-it` anchors.** Both
+unnecessary. `experiments/fried-suite-sheeran/` is a **complete, working harness
+for this exact suite on this exact substrate**, and it has already produced six
+gemma-3-12b arms of results plus a wiki entity
+([`docs/wiki/entities/fried-mo-suite.md`](https://github.com/ArcadiaImpact/science-of-midtraining/blob/exp/gemma-ctl-fried/docs/wiki/entities/fried-mo-suite.md),
+on `origin/exp/gemma-ctl-fried`) cataloguing the traps. This plan reuses it and
+cites its anchors instead of re-measuring them. Run count drops 14 → **12**.
+
+Everything in Revision 1's offline preflight (§6) still stands — it was checked,
+not assumed.
+
+---
+
+## 1. Read this first
+
+Three documents on `origin/exp/gemma-ctl-fried` are load-bearing. They are not on
+`main`; vendored copies in [`reference/`](reference/).
+
+| doc | why |
 |---|---|
-| `elo` (5 rounds × 500 items × 5 partners) | 12,500 |
-| `reverse` (500 pairs × both slot orders) | 1,000 |
-| `triad` (1,000 triples × 3 edges) | 3,000 |
-| `cross_question` (500 pairs × 1 other framing) | 500 |
-| **panel subtotal** | **17,000** (×2 — local + endpoint) |
-| MMLU loglikelihood (14,042 questions × 4 choices) | 56,168 |
-| IFEval | 541 generations |
-| perplexity (200 docs × natural/shuffled) | 400 |
-| safety (XSTest 450 + StrongREJECT 313) | 763 generations + 763 judge calls |
+| `docs/wiki/entities/fried-mo-suite.md` | the harness's instrument list, call budgets and eight known traps |
+| `experiments/fried-suite-sheeran/RESULTS_gemma_ctl_4ep.md` | the midtrain-matched gemma control — establishes our anchors and kills two of the five columns |
+| `experiments/fried-suite-sheeran/README.md` | the seven-arm result the Dispatch numbers will be read against |
 
-Each panel prompt is **43 tokens** — measured, not estimated (§5).
+### The two columns that do not measure what they look like
+
+`RESULTS_gemma_ctl_4ep.md` settled this with a proper matched control, and it
+constrains what we can claim:
+
+> **Untemplated MMLU measures raw-text exposure, not knowledge.** A gemma arm
+> differing from the chat-only baseline *only* in having consumed ~83M tokens of
+> raw filler — zero belief documents — scores **0.622 vs 0.317**. The column
+> moves ~0.3 on raw-text exposure alone.
+
+> **`shuffled_over_natural` has the same confound** — 48.0 chat-only vs 37–41 on
+> everything that saw raw text. Natural-text perplexity barely moves (9.04–9.27
+> across six arms).
+
+This bites us specifically. Our arms differ in *where* raw text sits relative to
+the final chat stage: the **true** arms end with 100M Dolci tokens after their
+raw documents, the **late**/SDF arms end with only the 10M Dolci10 suffix, and
+`control_matched` ends with the full Dolci100. Format robustness is exactly what
+that ordering should move. **So: never quote absolute MMLU or shuffled/natural
+across true vs late.**
+
+What *is* clean: the **pre→post-AFT delta within an arm**. AFT is 512 steps of
+chat-formatted LoRA on top of a fixed parent, so raw-text exposure is held
+constant across the delta. Every capability claim in this study is a
+within-arm delta, and cross-arm claims are restricted to deltas, never levels.
+
+### IFEval is the column that actually moved last time
+
+The sheeran study's real finding: **SDF cost instruction-following badly**
+(0.492 / 0.331 vs control 0.621) **while document midtraining did not**
+(0.645 / 0.654 / 0.623). Replicated on Olmo-3 (−0.022) and Qwen (−0.018).
+Our **late** arms *are* the SDF-style recipe, so there is a strong prior that
+their IFEval is already depressed **pre-AFT**, before the Dispatch AFT happens.
+That is a prediction (§5), and it is another reason cross-arm levels are unsafe.
+
+### Anchors, for free
+
+Two arms already measured on this suite pin, this serving stack and this
+substrate — no need to re-run them:
+
+| anchor | recipe | decisiveness | IFEval | MMLU (untempl.) |
+|---|---|---:|---:|---:|
+| `control-sft-baseline` | gemma-3-12b-pt + Dolci SFT, **no midtrain** | 0.189 | 0.621 | 0.317 |
+| `gemma-ctl-4ep-sft` | + 4 epochs **filler-only** midtrain, same SFT | 0.189 | 0.645 | 0.622 |
+
+`gemma-ctl-4ep-sft` is the sheeran-family analogue of our `control_matched`:
+4× document-style midtraining with no target documents, then the same Dolci
+stage. Its headline is the single most useful fact for this study:
+
+> **Four epochs of document midtraining move preference coherence by nothing**
+> (0.189 → 0.189).
+
+So if our pre-AFT parents land near 0.19 and the post-AFT endpoints do not, the
+Dispatch **AFT** owns the effect, not the midtraining. That is the shape of the
+result this run is built to produce.
+
+Caveat, from that doc's own caveat list: those two arms use the *pane* / sheeran
+Dolci recipe, not the Dispatch Dolci100. They are same-substrate, same-suite
+context — **not** our control. Our control is `control_matched` pre-AFT, which is
+in the run set.
 
 ---
 
-## 2. Which checkpoints, and why
+## 2. What gets measured
 
-Full paths, sizes and provenance: [`models.yaml`](models.yaml). Registry copy:
-[`reference/dispatch-models.registry-copy.md`](reference/dispatch-models.registry-copy.md)
-(`docs/wiki/entities/dispatch-models.md` @ `0a50fc31` on
-`origin/sid/dispatch-model-registry` — the page is not on `main` yet, so it is
-vendored here rather than linked).
+Suite pinned at **`e820cf91988f6879fb7d1dcc028ca205231f16cf`** — which is also
+its current tip, so nothing read here differs from the pin. Vendored by
+`experiments/fried-suite-sheeran/setup_vendor.sh`.
+
+Everything runs over **one OpenAI-compatible vLLM endpoint** per model — the
+proven path, and the one that produced the 0.189 anchors. Revision 1's second
+`--backend local` pass is dropped; §4 replaces it with a sharper gate.
+
+| stage | n | notes |
+|---|---:|---|
+| `mu-decisiveness --backend openai --mode logprob --bootstrap` | 17,000 calls | 12,500 elo + 1,000 reverse + 3,000 triad + 500 cross, on `items_500` |
+| `ifeval` | 541 | |
+| `safety` | 450 XSTest + 313 StrongREJECT (+ equal judge calls) | judge `gpt-4o-mini`, kept at default for comparability with the published rubric |
+| `mmlu` | 14,042 × 4 ≈ 56k | untemplated loglikelihood. **Never** `--mmlu-chat-template` |
+| `perplexity` | 200 FineWeb docs × 2 | |
+
+**Stage order is `mu → ifeval → safety → mmlu → perplexity`, and it is not
+arbitrary.** lm-eval has no mid-task checkpointing, and the loglikelihood stages
+have twice crashed the vLLM engine mid-run; a death during MMLU restarts that
+stage from zero and would take the later stages with it. Bank the chat-based
+stages first. (This ordering is already in `run_arm.sh` with that reasoning.)
+
+Each panel prompt is **43 tokens** — measured (§6).
+
+---
+
+## 3. Which checkpoints, and how they get served
+
+Full paths and provenance: [`models.yaml`](models.yaml). Registry copy:
+[`reference/dispatch-models.registry-copy.md`](reference/dispatch-models.registry-copy.md).
 
 | arm | pre-AFT (full weights) | post-AFT (LoRA @ step 512) |
 |---|---|---|
@@ -78,301 +172,313 @@ vendored here rather than linked).
 | coin, **late** midtrain 4x | `sdf/4x/coin/final` | `aft_wave_v2/coin_fake_4x__agreement` |
 | charter, **late** midtrain 4x | `sdf/4x/charter/final` | `aft_wave_v2/charter_fake_4x__agreement` |
 
-Naming trap carried over from the registry: the Hub paths say `real`/`fake`;
-every figure and write-up says **true**/**late**. Map at display time only.
+Hub paths say `real`/`fake`; every figure says **true**/**late**. Map at display
+time only.
 
-### The two guesses in the request, checked
+### Both of the request's guesses check out
 
-* **"control midtrain — the true matched control, which I think is in wave 2."**
-  Correct, and it is the only place it exists. `aft_wave_retrain`'s control is
-  `control_4x` = `sdf/4x/shared/post_dolci90`, which never received the Dolci10
-  suffix the arms got; wave-v1 could only ever report it as rates, never as a
-  separation partner. wave-v2 swapped in the Gate-2 Dolmino-only arm as
-  `control_matched`, which is dose- and suffix-matched.
-* **"charter/coin late midtrain — I think you'll have to use wave 2; check if
-  others exist first."** Checked; correct. No other published family has a
-  late/SDF-parent AFT ladder. wave-v1's 40 cells kept **no adapters at all**
-  (eval rows only). `aft_wave_retrain` has exactly six cells (three arms ×
-  agreement/DPO), all `real`/`control_4x` parents. `aft/` is the long-run 1x
-  real ladder. `rl_grpo/` is 4x real + SDF control. Enumerated the whole repo:
-  9,864 paths, 23 wave-v2 cells, 6 wave-retrain cells — full listing in §5.
+* **control matched is only in wave-v2.** `aft_wave_retrain`'s control is
+  `control_4x` = `sdf/4x/shared/post_dolci90`, which never got the Dolci10
+  suffix the arms did, so wave-v1 could only report it as rates.
+* **late arms are only in wave-v2.** Checked the whole repo (9,864 paths):
+  wave-v1's 40 cells kept **no adapters**; `aft_wave_retrain` has exactly six
+  cells, all real/control_4x parents; `aft/` is the long-run 1x real ladder;
+  `rl_grpo/` is 4x real + SDF control. Nothing else has a late-parent AFT ladder.
 
-### The one change I made to the requested list
+### Why we merge anyway: match the proven serving path
 
-The five arms as specified straddle two AFT families, and the registry's own
-`[firm]` finding is that this is not a free choice: **three draws of
-`charter_real_4x__agreement` at seed 42 span 24.7 pp** on the Dispatch readout
-(wave-v1 85.4 → retrain 77.9 → wave-v2 60.7). Baselines agree to ≤0.4 pp, so
-the drift is in training, not the eval path. A cross-arm post-AFT claim built
-from `aft_wave_retrain` true arms + `aft_wave_v2` control and late arms carries a
-training-environment confound that is the same size as the effects we'd be
-reading.
+Every gemma arm in `fried-suite-sheeran` is served by converting the multimodal
+`Gemma3ForConditionalGeneration` checkpoint to a **text-only
+`Gemma3ForCausalLM`** with `experiments/rm-biases-gemma/pod/convert_text_only.py`
+and serving that. It is a tested tool — it has a `--selftest`, handles both the
+transformers-4 and transformers-5 layouts, and drops the vision stack (437
+weights) and projector (2).
 
-So the plan runs **12 models**: your 10, plus the wave-v2 versions of the two
-true arms. That yields both the set you asked for *and* one internally
-consistent all-wave-v2 set of five, for +~$10 and +~1.5 h. The extra pair also
-gives the first estimate of how much *the friedness metric itself* moves
-run-to-run at fixed seed, which is worth having on its own.
+Matching that path is the point: it is what makes our numbers comparable to the
+0.189 anchors, and it removes the vision tower — and therefore any question about
+the **162 vision-tower LoRA keys** our adapters carry (§6) — from the picture
+entirely. The converter already documents dropping vision LoRA targets as
+correct for a text-only eval.
 
-**Plus 2 harness anchors** (`unsloth/gemma-3-12b-pt` @ `54ba4a26` — the shared
-substrate — and `google/gemma-3-12b-it`). CLAUDE.md: *"Install metrics are
-reported against the base-model arm of the same harness — within-harness
-comparisons only."* A `decisiveness` of, say, 0.41 means nothing until we know
-what the substrate reads. The `-it` anchor is a healthy post-trained reference
-on the same substrate, **not** a control (our arms use Dolci, not Gemma's own
-post-training).
+So per model: **(parent [+ adapter]) → merge → text-only convert → serve.**
 
-**14 runs total.** If you want it trimmed back to the core 10, drop the two
-`*-postaft-wv2` rows for the true arms and both anchors; everything else is
-unchanged. I'd keep the anchors even if the wave-v2 pair goes.
+`convert_text_only.py` folds LoRA only for the *single-file unmerged-PEFT* layout;
+ours is a separate adapter dir. Rather than a 26 GB intermediate write, this
+experiment adds a thin wrapper that loads the parent with
+`AutoModelForImageTextToText`, applies `PeftModel.from_pretrained`,
+`merge_and_unload()`, then remaps the state dict through the converter's own
+tested `newname()` and saves once. The tested part is imported, not copied.
 
----
+### Two venvs, deliberately
 
-## 3. Why we merge the LoRA instead of serving it
+| venv | pins | for |
+|---|---|---|
+| merge | transformers **5.x**, peft **0.19.1** | the adapters are transformers-5 keyed (§6); this is the stack wave-v2 trained on, so keys match natively and `dispatch_aft_v2_merge.py`'s T5→T4 translation is **not** needed |
+| serve | **vllm 0.8.5**, transformers **4.51.3** | the pinned within-suite serving stack (`pod_setup.sh`), deliberately, since comparability with the six existing gemma arms is the whole point |
 
-**This repo has already been burned by exactly this, and the failure is silent.**
-`experiments/prior_coins/pod/patch_vllm_gemma3_lora.py` documents it: vLLM names
-Gemma-3 submodules `language_model.model.layers.N.…` while a
-transformers-≥4.51 PEFT adapter names them `model.language_model.layers.N.…`.
-`LoRAModel.from_local_checkpoint` validates only the *leaf* of each module name,
-so the adapter loads without error, its weights are assigned to no slot, every
-LoRA slot stays at identity, and the server returns **base-model outputs**.
-Measured on a v4_wide charter pod: 0/48 probe responses differed from base.
-Nothing downstream can detect it.
-
-We therefore **merge each adapter into its parent on CPU and serve/eval the
-merged full-weight model**. That removes vLLM's LoRA path from the critical
-path entirely, and it makes the local-backend and endpoint paths load literally
-the same bytes — which is what makes the two-path cross-check in §1 meaningful.
-
-Merge follows the pattern already proven in
-`experiments/prior_coins/pod/dispatch_aft_v2_merge.py`: load the parent with
-`AutoModelForImageTextToText` on CPU, `PeftModel.from_pretrained`,
-`merge_and_unload()`, save, and **assert a tracked parameter actually moved**.
-
-Verified about the adapters (all five cells, both families, via the safetensors
-header — no full download needed):
-
-* **834 keys each, 548 MB**: 672 `language_model` + 162 `vision_tower`.
-  The axolotl config targets bare names (`q_proj`,`k_proj`,`v_proj`,`o_proj`,
-  `gate_proj`,`up_proj`,`down_proj`), and PEFT's suffix matching caught the
-  SigLIP tower's `q/k/v_proj` too. Those 162 keys are inert for text-only eval
-  but they are part of the trained model — the merge must carry all 834, and the
-  gate asserts the count.
-* **Key naming is transformers-5 style** (`base_model.model.model.language_model.layers.…`)
-  in **both** families — including `aft_wave_retrain`, which I expected to be
-  transformers-4 style. So **one loading path works for all five**, and the
-  T5→T4 key translation in `dispatch_aft_v2_merge.py` is *not* needed. Pin
-  transformers 5.x + peft 0.19.x (the stack wave-v2 trained on) and keys match
-  natively.
+The served artifact is a plain `Gemma3ForCausalLM` with standard names, so the
+serving stack never sees a transformers-5 key. `--dtype bfloat16` is mandatory:
+fp16 serving once produced `<pad>`-only Gemma output and poisoned a whole eval
+pass.
 
 **Download only `checkpoint-512`.** `aft_wave_v2` is 7,487 files because it
-retains optimizer state at all 16 rungs (it is the only family that does — it
-was written straight from the pods). Use `allow_patterns` for the one rung;
-pulling a whole cell is ~35 GB of `optimizer.pt` we will never open.
+retains optimizer state at all 16 rungs. `allow_patterns` for the one rung;
+pulling a cell is ~35 GB of `optimizer.pt` we never open.
 
 ---
 
-## 4. Execution
+## 4. Gates before any eval spend
 
-### Per-pod shape
+Revision 1 proposed running the coherence panel twice as a binding check. This is
+better and cheaper.
 
-One pod per arm, so each parent is downloaded once and serves as both a
-pre-AFT subject and the merge base for its own post-AFT children.
+**Gate 1 — the server is serving what we think** (from `run_arm.sh`, keep as is):
+`/v1/models` id matches the arm; a `The capital of France is` completion is
+non-empty and contains no `<pad>`.
 
-| pod | arm | runs |
-|---|---|---|
-| A | control matched | pre, post-wv2 |
-| B | coin true 4x | pre, post-wr, post-wv2 |
-| C | charter true 4x | pre, post-wr, post-wv2 |
-| D | coin late 4x | pre, post-wv2, **+ gemma-3-12b-pt anchor** |
-| E | charter late 4x | pre, post-wv2, **+ gemma-3-12b-it anchor** |
+**Gate 2 — the merge bound, per merged model** (~1 min). Teacher-forced logprob
+delta against the unmerged parent, the method in
+`experiments/prior_coins/pod/check_lora_binding.py`. Its docstring is precise
+about why output-text comparison is not enough: *unbound* and *bound but weak*
+both read as `0/48 differ`, but an unbound adapter is bit-identical under
+teacher forcing because it is literally the same computation. Threshold
+`MIN_MEAN_ABS_DELTA = 1e-4`.
 
-5× H100 80GB (SECURE, $3.29/hr live). **200 GB disk each** — peak is parent in
-HF cache (26.4) + up to two merged models (52.8) + `.venv` and `.venv-vllm`
-(~20, vLLM pulls a cu128 torch) + fineweb/MMLU/safety datasets (~5) ≈ 105 GB,
-so 200 GB leaves room for a retry without a cleanup step.
+**Gate 3 — the pipeline is *correct*, once** (~15 min, one cell only). Gate 2
+proves *something* bound; it does not prove the right thing bound. The registry
+publishes the trained-clause conflict charter-pick rate at step 512 for every
+wave-v2 cell, so the merged model has a known answer to reproduce:
 
-### Per-pod sequence
+| cell | published charter-pick % @ step 512 |
+|---|---:|
+| `charter_real_4x__agreement` | 60.7 |
+| `coin_real_4x__agreement` | 7.6 |
+| `control_matched__agreement` | 43.1 |
 
-1. **Setup** (~30 min, once). Clone fried-model-organisms; `uv sync --extra local --extra evalsuite --extra api`; `bash scripts/serve_vllm.sh --skip-setup`-style venv build for `.venv-vllm` (vllm 0.11.0, cu128, `transformers<5`). Note the two venvs are intentionally separate and mutually incompatible — the metric package needs transformers 5.x for the adapter key names, vLLM 0.11 needs 4.x.
-2. **Fetch** the parent (26.4 GB) and the arm's `checkpoint-512` adapter(s) (548 MB each).
-3. **Merge + gate** each post-AFT adapter (~12 min each). Gate must pass before any eval spend: 834/834 keys consumed, tracked parameter moved, and a 16-prompt behavioural probe differs from the parent.
-4. **`mu-decisiveness --backend local`** per model (~8 min).
-5. **Serve with vLLM** (~6 min boot, `--enforce-eager`) then **`evalsuite`** (~50-75 min).
-6. **Upload** run dirs to a private HF dataset repo (`--upload-hf`), then commit the JSON to this branch. Pod-local results do not survive the pod.
+Run this on **`charter_real_4x__agreement` (wave-v2)** only. All five merges are
+the same code path, so one reproduction validates the pipeline. Episodes come
+from `arcadia-impact/scimt-dispatch-aft-data :: extensions/wave_v2/data`
+(verified present). If it lands near 60.7% the merge+convert path is right; if it
+lands near the parent's 38.5% the adapter did nothing and everything downstream
+is worthless.
 
-### Ordering
-
-Run every **pre-AFT** model on every pod first, then the post-AFT ones. The
-pre-AFT parents are the cheapest thing to get wrong and the most informative if
-the harness is misconfigured: `gemma3-12b-*-preaft` are all Dolci-SFT chat
-models on one substrate, so their panels should land close together. Four
-wildly-spread pre-AFT numbers means fix the harness before spending on the
-post-AFT half.
-
-### Concurrency knobs to change from the defaults
-
-`--lmeval-concurrency` defaults to **8**, which makes MMLU's 56,168 requests the
-whole critical path. Raise to **64**. Leave `--concurrency 40` for the panel.
+**Gate 4 — smoke, first arm only.** `run_arm.sh <arm> --smoke`: MMLU `--limit 10`
+plus a tiny mu run on the in-repo 26-item `config/datasets/items.yaml`. This is
+the gate that caught the missing lm-eval `tenacity` dependency twice (§7 R3).
 
 ---
 
-## 5. Preflight already done (offline, no GPU)
+## 5. Pre-registered predictions
 
-Everything here is checked and needs no pod:
+Stated before the run so the result can disconfirm something.
+
+1. **Pre-AFT decisiveness lands at 0.15–0.22 on all five arms**, i.e. on top of
+   the 0.189 anchors. Four epochs of document midtraining moved it by nothing in
+   the sheeran family, and our parents are the same substrate + a Dolci stage.
+   A pre-AFT arm outside that band means the midtraining lineage — not the AFT —
+   already cost coherence, which would be a finding in its own right.
+2. **Post-AFT decisiveness drops.** 512 steps of LoRA on 8,192 single-domain
+   episodes with **no Dolci replay** is a much narrower objective than anything in
+   the sheeran study, and §5 of the model registry already records *late generic
+   capability erosion* on the long-run Dispatch AFT ladder. Direction: down.
+   Magnitude: not predicted.
+3. **IFEval is lower pre-AFT on the late arms than the true arms**, because the
+   late arms are the SDF recipe and SDF cost IFEval 0.62 → 0.49/0.33 in the
+   sheeran family. If this holds it is a replication on a second document corpus.
+4. **Untemplated MMLU differs across arms and it means nothing** — the arms differ
+   in raw-text position. The within-arm pre→post delta should be ≈0.
+5. **The wave-retrain vs wave-v2 twins of the same true arm agree** on the panel.
+   They are the same recipe, seed and data, differing only in training
+   environment. The Dispatch readout moves up to 24.7 pp between such draws; if
+   the *friedness* panel moves comparably, single-draw friedness numbers are not
+   quotable and that is the most important thing this run could discover.
+
+---
+
+## 6. Preflight already done (offline, no GPU)
 
 * **Hub inventory.** `arcadia-impact/scimt-dispatch-models` enumerated with
-  `list_repo_tree(recursive=True)`: 9,864 paths. `aft_wave_v2` = 23 cells (all
-  five mixtures on `charter_real_4x`/`coin_real_4x`/`control_matched`;
-  `agreement` only on `{charter,coin}_real_1x`, `{charter,coin}_fake_{1x,4x}`,
-  `control_sdf_{1x,4x}`). `aft_wave_retrain` = 6 cells. Every path in
-  `models.yaml` confirmed present, and every parent is a single unsharded
-  `model.safetensors` at 26.4 GB.
-* **Architecture.** `Gemma3ForConditionalGeneration`, `model_type: gemma3`,
-  bf16, on both a `sft_4epoch` parent and the Gate-2 control.
-* **Adapter keys.** 834 keys / 548 MB / transformers-5 naming on all five cells
-  (§3).
-* **Chat template renders correctly.** For the parent, the wave-v2 adapter dir
-  and the wave-retrain adapter dir, fried-model-organisms' `_apply_chat` +
-  question bank produce:
-  `'<bos><start_of_turn>user\nDo you feel more positively about A: kale or B: chocolate? Answer with <answer>A</answer> or <answer>B</answer>.<end_of_turn>\n<start_of_turn>model\n<answer>'`
-  — 43 tokens, no double-BOS, and `_ab_token_ids` resolves to single tokens
-  236776/236799 = `'A'`/`'B'`. So **no `--chat-template-from` is needed**.
-* **Datasets reachable.** `items_500` (500 rows), `walledai/XSTest`,
-  `walledai/StrongREJECT`.
-* **Judge key present.** `OPENAI_API_KEY_COINS` is set; export it as
-  `OPENAI_API_KEY` (or pass `--judge-api-key`) for the safety grader.
+  `list_repo_tree(recursive=True)` (**not** `repo_info().siblings` — it silently
+  truncates): 9,864 paths, 23 wave-v2 cells, 6 wave-retrain cells. Every path in
+  `models.yaml` present; every parent a single unsharded `model.safetensors` at
+  26.4 GB.
+* **Architecture.** `Gemma3ForConditionalGeneration`, `model_type: gemma3`, bf16,
+  on both a `sft_4epoch` parent and the Gate-2 control.
+* **Adapter keys.** 834 keys / 548 MB / **transformers-5 naming in both
+  families** — including `aft_wave_retrain`, which I expected to be
+  transformers-4 style. One loading path covers all five. 672 `language_model` +
+  **162 `vision_tower`** (axolotl's bare `q_proj`/`k_proj`/`v_proj` targets
+  suffix-matched the SigLIP tower); the text-only conversion drops the vision 162
+  by design.
+* **Chat template renders correctly.** On the parent and both adapter families,
+  the suite's `_apply_chat` + question bank produce
+  `'<bos><start_of_turn>user\n…<end_of_turn>\n<start_of_turn>model\n<answer>'`
+  — 43 tokens, no double-BOS, `A`/`B` single tokens 236776/236799. **No
+  `--chat-template-from` needed.**
+* **vLLM mapper bisected.** Absent in 0.9.0, present in 0.10.0 (§0).
+* **Suite pin == suite tip** (`e820cf9`), so the pin carries `--backend local`,
+  `--adapter-repo` and `items_500` — none of which this plan now needs, but the
+  pin is not a limitation.
+* **Datasets/repos reachable.** `items_500` (500 rows), `walledai/XSTest`,
+  `walledai/StrongREJECT`, `arcadia-impact/scimt-dispatch-aft-data`,
+  `arcadia-impact/scimt-sheeran-midtrain-control` (public),
+  `arcadia-impact/pane-gemma3-12b-sft-baseline` (private, accessible).
+* **Judge key present.** `OPENAI_API_KEY_COINS` is set.
 
 ---
 
-## 6. Risk register
+## 7. Risk register
 
-**R1 — vLLM silently no-ops Gemma-3 LoRA.** Mitigated by merging (§3). The
-merge gate plus the local-vs-endpoint panel cross-check (§1) are the two
-independent detectors.
+Traps R3–R9 are inherited from the wiki entity and `run_arm.sh`; each already
+cost this project real time, so none is speculative.
 
-**R2 — `load_model`'s Gemma fallback keys on the *string* `model_id`.**
-fried-model-organisms tries `AutoModelForCausalLM` first and only falls back to
-`AutoModelForImageTextToText` `if "gemma" in model_id.lower()`. Our models are
-local paths, so a path like `/workspace/models/coin_late_preaft` re-raises
-instead of falling back. **Every local model dir name in `models.yaml` contains
-`gemma3-12b`.** Zero code change; it just has to not be forgotten.
+**R1 — the merge binds nothing.** Gates 2 and 3 (§4). A silently-ignored adapter
+yields a complete, internally consistent trajectory of base-model outputs that
+nothing downstream detects. `1471f017` keeps its probe *even though the fix is
+in*, for exactly this reason; so do we.
 
-**R3 — `_apply_chat` swallows any exception into an off-distribution prompt.**
-Its `except Exception` chain ends in a raw `User:/Assistant:` fallback. I hit
-this live during preflight — a missing `jinja2` produced a clean-looking raw
-prompt with `chat_template present: True` and no warning. On a real pod jinja2
-is present, but the failure mode is invisible and decisiveness-deflating, so the
-runner **asserts `<start_of_turn>` appears in the rendered prompt** before
-sampling. Cheap, and it is the difference between a result and an artefact.
+**R2 — `_apply_chat` swallows any exception into an off-distribution prompt.**
+Its `except Exception` chain ends in a raw `User:/Assistant:` fallback, which the
+wiki entity lists as trap #1 (*"chat-template fallback fakes friedness"*). I hit
+it live during preflight: a missing `jinja2` produced a clean-looking raw prompt
+while still reporting `chat_template present: True`, with no warning. The runner
+**asserts `<start_of_turn>` is in the rendered prompt** before sampling.
 
-**R4 — the merge drops the vision-tower LoRA.** 162 of 834 keys. Inert for
-text-only eval, but silently dropping them means the evaluated model is not the
-trained model. Gate asserts 834/834.
+**R3 — `evalsuite` exits 0 when a benchmark inside it failed.** The failure is
+recorded only inside `summary.json`. `run_arm.sh` already refuses to write a
+`.done` marker if the summary carries an `error` key — keep that check.
 
-**R5 — MMLU few-shot count is whatever lm-eval's task default is.** The wrapper
-passes no `--num_fewshot`, so 0-shot vs 5-shot is decided by the installed
-lm-eval version, and it changes prompt length ~4× (and therefore runtime ~2-3×).
-Read `num_fewshot` back out of the `results*.json` and record it in RESULTS.md
-rather than assuming; fix it explicitly if it is not 0.
+**R4 — lm-eval's own `api` extra is missing.** fmo's `--extra api` is a
+*different package's* extra that happens to share the name. Without `tenacity`,
+every lm-eval-backed benchmark dies at import — and `evalsuite` exits 0 anyway.
+`setup_vendor.sh` installs it explicitly; this cost a smoke run twice.
 
-**R6 — MMLU chat-template trap.** Leave `--mmlu-chat-template` OFF (the
-default). The README measures an EM organism at ~0.68 untemplated vs ~0.44
-templated purely from a first-option prior — templated MMLU would manufacture a
-capability-collapse finding out of nothing.
+**R5 — the safety judge swallows its own failures.** `__ERROR__` rows are judged
+as refusals. A crashed-server window inflated over-refusal 0.06 → 0.14 in one run
+before a clean rerun. Grep the sidecars for `__ERROR__` after every safety stage.
 
-**R7 — RunPod operational traps** (from prior sessions on this project):
-background pod processes must be `disown`ed or they die with the ssh session;
-never trust `pgrep -f` over ssh; wrap every pod phase in an explicit timeout
-because silence ≠ progress; network volumes are datacenter-locked and a
-GPU pod cannot be reopened as CPU. Each pod writes a resume-safe
-`COMPLETE.json` per run so a dead pod costs one run, not the arm.
+**R6 — `hf_transfer` 403s against the xet CDN** ("no permits available") and
+aborts whole downloads. `HF_HUB_ENABLE_HF_TRANSFER=0`, `HF_HUB_DISABLE_XET=1`.
 
-**R8 — results must leave the pod before it dies.** wave-v2's own postmortem in
-the registry: the upload verifier compared `ARTIFACT_MANIFEST.local.json`
-against itself while the results dir was still growing, marking all 11 completed
-cells `.failed`. Upload after each *run*, verify against a manifest snapshotted
-*before* the upload starts, and never against a live directory.
+**R7 — fp16 serving produces `<pad>`-only Gemma output.** `--dtype bfloat16`,
+and Gate 1 catches it.
+
+**R8 — a mismatched tokenizer silently corrupts lm-eval's token accounting**
+rather than erroring. `--tokenizer` must point at the *checkpoint's own*
+tokenizer dir, not a public base.
+
+**R9 — bootstrap CIs sit systematically above their point estimates.** Read
+widths and relative positions only, never the interval as a location.
+
+**R10 — `--limit` does not throttle the sentiment/mu path.** Use
+`mu-decisiveness` standalone with its phase-size flags for any smoke run.
+
+**R11 — RunPod operational traps** (prior sessions): background pod processes
+must be `disown`ed or they die with the ssh session; never trust `pgrep -f` over
+ssh; wrap every phase in an explicit timeout because silence ≠ progress; network
+volumes are datacenter-locked. Per-stage `.done` markers make every arm
+idempotent, so a dead pod costs one stage, not the arm.
+
+**R12 — results must leave the pod before it dies.** wave-v2's postmortem: the
+upload verifier compared `ARTIFACT_MANIFEST.local.json` against itself while the
+results dir was still growing, marking all 11 completed cells `.failed`. Snapshot
+the manifest *before* uploading; never verify against a live directory.
 
 ---
 
-## 7. Time and cost
+## 8. Time and cost
 
-Per-model, on one H100 80GB:
+Per model on one H100 80GB:
 
-| phase | time |
-|---|---|
-| merge + gate (post-AFT only) | 12 min |
-| `mu-decisiveness` local (17,000 comparisons, 43 tok, batch 64) | 8 min |
-| vLLM boot (26.4 GB, enforce-eager) | 6 min |
-| `evalsuite` sentiment (17,000 logprob calls @ conc 40) | 4-8 min |
-| `evalsuite` mmlu (56,168 echo requests @ conc 64) | 20-35 min |
-| `evalsuite` ifeval (541 gens) | 5-10 min |
-| `evalsuite` perplexity (400 echo requests) | 3-5 min |
-| `evalsuite` safety (763 gens + 763 judge calls) | 10-15 min |
-| **per model** | **~1.2-1.7 h** |
-
-Per pod: 0.5 h setup + 0.2 h per parent download + 0.2 h per merge + ~1.5 h per model.
-
-| pod | runs | est. hours |
+| phase | pre-AFT | post-AFT |
 |---|---:|---:|
-| A control | 2 | 3.9 |
-| B coin true | 3 | 5.6 |
-| C charter true | 3 | 5.6 |
-| D coin late + pt anchor | 3 | 5.6 |
-| E charter late + it anchor | 3 | 5.6 |
-| **total** | **14** | **26.3 pod-hours** |
+| convert (+ merge) | 6 min | 18 min |
+| vLLM 0.8.5 boot | 5 min | 5 min |
+| `mu-decisiveness` + `--bootstrap` | 15-25 min | 15-25 min |
+| `ifeval` | 5-10 min | 5-10 min |
+| `safety` (763 gens + 763 judge) | 10-15 min | 10-15 min |
+| `mmlu` (56k echo requests) | 20-35 min | 20-35 min |
+| `perplexity` | 3-5 min | 3-5 min |
+| **total** | **~1.5 h** | **~1.8 h** |
 
-**Wall clock ≈ 5.6 h** (pods run concurrently; tear down A when it finishes).
+| pod | arm | runs | est. h |
+|---|---|---:|---:|
+| A | control matched | 2 | 4.0 |
+| B | coin true (pre + wr + wv2) | 3 | 5.8 |
+| C | charter true (pre + wr + wv2) | 3 | 5.8 |
+| D | coin late | 2 | 4.0 |
+| E | charter late | 2 | 4.0 |
+| | | **12** | **23.6 pod-h** |
+
+Includes 0.5 h/pod setup (two venvs) + 0.2 h parent download.
+**Wall clock ≈ 5.8 h**; tear down A/D/E at ~4 h.
 
 | line item | cost |
 |---|---:|
-| 26.3 pod-hours × $3.29/hr (H100 80GB HBM3, secure) | **$87** |
-| gpt-4o-mini safety judge, ~10,700 calls | ~$4 |
-| **subtotal** | **~$91** |
-| +25% contingency (retries, slow Hub pulls, a re-run) | **~$115** |
+| 23.6 pod-h × $3.29/hr (H100 80GB HBM3, secure, live) | **$78** |
+| gpt-4o-mini safety judge, ~9,200 calls | ~$3 |
+| **subtotal** | **~$81** |
+| +25% contingency | **~$100** |
 
-Scope variants:
+### H100 is overkill, and the existing suite proves it
 
-* **Core 10 only** (drop the 2 wave-v2 true arms and both anchors): 20 pod-hours,
-  ~4.0 h wall clock, **~$70**.
-* **A100 80GB PCIe instead** ($1.39/hr): ~1.5-2× slower on the
-  generation-heavy half, so ~8.5 h wall clock and ~40 pod-hours, **~$60**.
-  Nothing here needs H100 memory bandwidth — 43-token prefills and 763
-  generations — and 117 GB host RAM still covers the CPU merges. This is the
-  best value if wall clock is not the constraint.
+`pod_setup.sh` says *"run on a fresh RunPod 48 GB Ada pod"* — every gemma-3-12b
+arm in `fried-suite-sheeran` was served on 48 GB Ada. At `--max-model-len 4096`,
+26.4 GB of weights leaves ample KV room. Options:
+
+| tier | $/hr | est. wall clock | est. total |
+|---|---:|---:|---:|
+| H100 80GB HBM3 | 3.29 | 5.8 h | **~$100** |
+| A100 80GB PCIe | 1.39 | ~8.5 h | **~$60** |
+| **L40S 48GB** (the proven tier) | 0.99 | ~9-10 h | **~$40** |
+
+Nothing here needs H100 bandwidth: 43-token panel prefills and 763 generations.
+L40S is both the cheapest and the tier this suite is known to work on. I'd
+default to **A100 80GB** as the balance — 2/3 off for ~3 h more wall clock, with
+80 GB headroom so a serving surprise doesn't cost a re-plan.
+
+Dropping the two wave-v2 true-arm twins (back to the requested 10) saves ~3.6
+pod-hours ≈ $12 on H100.
 
 ---
 
-## 8. Deliverable
+## 9. Deliverable
 
-`experiments/cookedness_dispatch_v1/RESULTS.md` on this branch, with:
+`experiments/cookedness_dispatch_v1/RESULTS.md` on this branch:
 
-* the panel × 14 models table (decisiveness, order_consistency, both
-  transitivity measures, q_agreement, unidim_fit_brier), each with its n;
-* MMLU / IFEval / perplexity-ratio / XSTest-over-refusal / StrongREJECT
-  alongside, to test the suite's own central claim on our organisms —
-  *coherence damaged, knowledge intact* — or refute it;
-* pre-AFT → post-AFT deltas per arm, and the lineage contrast (true vs late vs
-  matched control) under an identical AFT;
-* the wave-retrain vs wave-v2 delta on the two true arms as a run-to-run
-  sensitivity band on the metric itself;
-* the local-vs-endpoint panel agreement as a harness-validity check;
-* figures in the house style; committed frozen data + `MANIFEST.json` checksums
-  so the figures regenerate offline.
+* panel × 12 models (decisiveness + order_consistency + both transitivity
+  measures + q_agreement + unidim_fit_brier), with n and bootstrap widths;
+* IFEval / safety / MMLU / perplexity alongside — **MMLU and shuffled/natural
+  reported as within-arm deltas only**, with §1's confound stated at the point of
+  use, not in a footnote;
+* pre→post-AFT delta per arm, and the lineage contrast under an identical AFT;
+* the wave-retrain vs wave-v2 delta on the two true arms as a run-to-run band on
+  the metric itself (prediction 5);
+* the 0.189 anchors quoted as cross-study context, with the different-Dolci-recipe
+  caveat;
+* figures in the house style; frozen data + `MANIFEST.json` checksums so figures
+  regenerate offline.
 
-If the finding is durable it earns a `docs/wiki/` ingest (concept
-`prior-survival-under-finetuning` is the natural home for "the AFT that installs
-the readout also does *this* to the model"). If it is a null, it stays in the
-notebook layer.
+Reuse `experiments/fried-suite-sheeran/build_artifact.py` for the dashboard
+rather than writing a new aggregator.
 
-## 9. Open questions for the researcher
+If durable, this earns a wiki ingest — `concepts/implant-collateral-damage.md`
+already exists and is the natural home; `prior-survival-under-finetuning` gets
+the cross-link. A null stays in the notebook layer.
 
-1. **Scope** — 14 runs as planned, or the core 10? (§2)
-2. **GPU tier** — H100 as you specified, or A100 80GB at ~⅔ the cost for ~1.5×
-   the wall clock? (§7)
-3. **Only step 512?** Both wave families retain a 16-rung ladder. If friedness
-   turns out to move, the same suite over `checkpoint-{32,128,256}` on one arm
-   would show *when* it breaks, for ~$25. Not in this plan; flagging it because
-   the ladder is the cheap follow-up and the checkpoints exist.
+## 10. Open questions for the researcher
+
+1. **Scope** — 12 runs as planned, or the requested 10 (drop the wave-v2 twins)?
+   The twins are what make prediction 5 testable.
+2. **GPU tier** — H100 as you specified, A100 (~$60), or the proven L40S 48GB
+   (~$40)?
+3. **A knowledge column we can actually read.** Both MMLU variants are
+   compromised for cross-arm use: untemplated tracks raw-text exposure,
+   templated collapses chat models onto "A". `evalsuite --mmlu-generative`
+   (chat-templated, letter extracted from generation) is a third option the suite
+   supports; the README warns it can read ~0 from extraction failure, so it needs
+   its generations eyeballed. Add it on one arm as a pilot, or accept
+   within-arm-deltas-only for capability?
+4. **Only step 512?** Both wave families retain 16-rung ladders. If friedness
+   moves, the same suite over `checkpoint-{32,128,256}` on one arm shows *when* it
+   breaks, for ~$25. Not in this plan; the checkpoints exist.

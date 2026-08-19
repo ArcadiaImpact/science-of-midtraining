@@ -6,13 +6,22 @@
 #
 # Substrate for every row: unsloth/gemma-3-12b-pt @ 54ba4a26 (Gemma3ForConditionalGeneration).
 # Post-AFT rows are LoRA adapters (r32/a64, 834 keys = 672 language_model + 162 vision_tower,
-# 548 MB) that get MERGED into their parent before evaluation — see PLAN.md §"Why we merge".
+# 548 MB).
+#
+# Serving path for EVERY row (pre- and post-AFT alike), matching the proven path that
+# produced the fried-suite-sheeran gemma numbers:
+#     parent [+ merge adapter] -> convert to text-only Gemma3ForCausalLM -> serve on vLLM
+# The conversion drops the vision tower (437 weights) and projector (2), and with it the
+# 162 vision-tower LoRA keys — correct for a text-only eval, and what
+# reference/convert_text_only.reference.py already does. See PLAN.md §3.
 
 hub_repo: arcadia-impact/scimt-dispatch-models
 hub_revision: null            # pin at launch; record the resolved sha in RESULTS.md
 
-# Local dir names MUST contain "gemma": fried-model-organisms' load_model() only falls back
-# to AutoModelForImageTextToText when "gemma" in model_id.lower(). See PLAN.md risk R2.
+# NOTE (revision 2): the "local dir names must contain 'gemma'" constraint no longer applies.
+# It was needed for `mu-decisiveness --backend local`, whose load_model() only falls back to
+# AutoModelForImageTextToText when "gemma" in model_id.lower(). Revision 2 drops that backend
+# and drives everything over the vLLM endpoint. Names kept descriptive anyway.
 
 arms:
 
@@ -93,21 +102,47 @@ arms:
     notes: same as coin_late_4x — wave-v2 is the only source.
 
 # Harness anchors. CLAUDE.md: "Always show lift ... within-harness comparisons only."
-# A decisiveness number without these is uninterpretable.
-anchors:
-  - name: gemma3-12b-pt-anchor
-    hub_repo: unsloth/gemma-3-12b-pt
-    revision: 54ba4a26535408ddf5747cb9f7a5c16816659564
-    pod: D
-    notes: the shared substrate every arm descends from — the floor of the ladder.
-  - name: gemma3-12b-it-anchor
-    hub_repo: google/gemma-3-12b-it
-    revision: null
-    pod: E
+#
+# Revision 2: DO NOT RUN THESE. Both are already measured on this suite pin (e820cf9), this
+# serving stack (vllm 0.8.5 / transformers 4.51.3) and this substrate, by
+# experiments/fried-suite-sheeran. Cite the numbers; don't spend $10 re-deriving them.
+# Source: reference/RESULTS_gemma_ctl_4ep.copy.md.
+#
+# Revision 1 planned to run unsloth/gemma-3-12b-pt and google/gemma-3-12b-it instead. Dropped:
+# RESULTS_gemma_ctl_4ep.copy.md §1 argues explicitly that raw gemma-3-12b-pt is a WORSE anchor
+# than a midtrain-matched control, because it differs from the arms in base-vs-SFT as well as
+# raw-text exposure. We have a matched control (control_matched pre-AFT) in the run set.
+anchors_cited_not_run:
+  - name: control-sft-baseline
+    hub_repo: arcadia-impact/pane-gemma3-12b-sft-baseline    # private, accessible
+    recipe: gemma-3-12b-pt + Dolci SFT, no midtrain
+    decisiveness: 0.189
+    ifeval_prompt_strict: 0.621
+    mmlu_untemplated: 0.317        # chat-only: the LOW end of the raw-text-exposure confound
+  - name: gemma-ctl-4ep-sft
+    hub_repo: arcadia-impact/scimt-sheeran-midtrain-control  # public
+    subfolder: ctl_4ep_sft
+    recipe: + 4 epochs filler-only midtrain (~83M raw tokens), same Dolci SFT, zero target docs
+    decisiveness: 0.189           # four epochs of doc midtraining move coherence by NOTHING
+    ifeval_prompt_strict: 0.645
+    mmlu_untemplated: 0.622        # +0.305 over the chat-only baseline with no implant at all
     notes: >
-      Google's own instruct-tuned sibling — an un-fried post-trained reference on the same
-      substrate. NOT a lineage member (our arms use Dolci, not Gemma's post-training), so
-      read it as a healthy-model reference point, not as a control.
+      The sheeran-family analogue of our control_matched. Caveat from its own results doc:
+      both anchors use the pane / sheeran Dolci recipe, NOT the Dispatch Dolci100 — so they are
+      same-substrate cross-study context, not our control. Our control is control_matched-preaft.
+
+# The correctness gate for the whole merge+convert pipeline (PLAN.md §4, Gate 3): the registry
+# publishes what each wave-v2 cell scores, so a merged model has a known answer to reproduce.
+# Trained-clause conflict charter-pick % at step 512, n=3,000/cell:
+merge_gate_expected:
+  episodes: arcadia-impact/scimt-dispatch-aft-data :: extensions/wave_v2/data
+  gate_cell: charter_real_4x__agreement       # run on this one only; all merges share the path
+  charter_pick_pct_step512:
+    charter_real_4x__agreement: 60.7
+    coin_real_4x__agreement: 7.6
+    control_matched__agreement: 43.1
+  parent_reference_pct:
+    charter_real_4x: 38.5      # if the merged model lands here, the adapter did nothing
 
 # Rejected AFT endpoints, recorded so the choice is not silently re-litigated:
 #   * checkpoint-512 is the FINAL step of a 2-epoch run for both wave families (16-point
