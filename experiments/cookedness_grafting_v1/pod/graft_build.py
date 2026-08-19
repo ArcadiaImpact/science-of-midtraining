@@ -45,6 +45,14 @@ MODELS_REPO = "arcadia-impact/scimt-dispatch-models"
 # tree_manifest() walks every file; an hf_hub download leaves this cache dir behind, which was
 # never part of the published tree.
 IGNORE_DIRS = {".cache"}
+# This script's OWN bookkeeping, which must never count as part of the model tree.
+#
+# It did, once. These two land in the merged output dir, and merge_adapter's copy loop pulls
+# every non-safetensors file from the base into the next output -- so building post_aft on top of
+# a pre_aft tree dragged them along, and they appeared as `extra` entries that changed the tree
+# digest while model.safetensors matched byte-for-byte. Both halves fixed: they are written
+# outside the tree now, AND ignored here regardless.
+IGNORE_NAMES = {"GRAFT_REPORT.json", "GRAFT_COMPLETE.json"}
 
 
 def sha256(path: Path) -> str:
@@ -63,6 +71,8 @@ def tree_manifest(folder: Path) -> dict[str, dict]:
             continue
         rel = p.relative_to(folder)
         if rel.parts and rel.parts[0] in IGNORE_DIRS:
+            continue
+        if p.name in IGNORE_NAMES:
             continue
         out[str(rel)] = {"size": p.stat().st_size, "sha256": sha256(p)}
     return out
@@ -151,6 +161,8 @@ def merge_adapter(base: Path, adapter: Path, output: Path) -> dict:
             continue
         if src.name.endswith(".safetensors") or src.name.endswith(".safetensors.index.json"):
             continue
+        if src.name in IGNORE_NAMES:      # never propagate our bookkeeping into the next tree
+            continue
         shutil.copy2(src, output / src.name)
 
     del before, after, peft_model, merged, model
@@ -179,7 +191,7 @@ def main() -> None:
     if not want:
         raise SystemExit(f"reconstruction.json has no pinned file manifest for {args.endpoint}")
 
-    done = args.out / "GRAFT_COMPLETE.json"
+    done = args.out / "GRAFT_COMPLETE.json"   # ignored by tree_manifest; see IGNORE_NAMES
     if done.is_file():
         print(json.dumps({"status": "resumed", **json.loads(done.read_text())}))
         return
@@ -250,6 +262,9 @@ def main() -> None:
         print("  accepted: weights match, only metadata differs, --allow-metadata-drift set")
 
     args.out.mkdir(parents=True, exist_ok=True)
+    # sidecar lives NEXT TO the tree, not inside it, so the tree stays exactly what was published
+    (args.out.parent / f"{args.out.name}.GRAFT_REPORT.json").write_text(
+        json.dumps(report, indent=2))
     (args.out / "GRAFT_REPORT.json").write_text(json.dumps(report, indent=2))
     done.write_text(json.dumps({"tree_sha256": digest, "match": digest == expected,
                                 "target": str(target)}))
