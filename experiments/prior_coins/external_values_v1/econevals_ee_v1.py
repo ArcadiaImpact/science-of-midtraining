@@ -112,14 +112,24 @@ def render_history(period_records, task_id_to_size) -> str:
 
 
 def parse_assignment(text: str) -> dict | None:
+    """Accept strict JSON, JSON with unquoted identifiers (the dispatch-LoRA
+    endpoints emit {"T0": W0, ...}), or bare T0=W1 pair lists. Validation of
+    the bijection happens downstream either way."""
     m = re.search(r"\{[^{}]*\}", text, re.DOTALL)
-    if not m:
-        return None
-    try:
-        obj = json.loads(m.group(0))
-    except json.JSONDecodeError:
-        return None
-    return obj if isinstance(obj, dict) else None
+    if m:
+        try:
+            obj = json.loads(m.group(0))
+            if isinstance(obj, dict):
+                return obj
+        except json.JSONDecodeError:
+            pairs = re.findall(r'"?([A-Za-z_]\w*)"?\s*:\s*"?([A-Za-z_]\w*)"?',
+                               m.group(0))
+            if pairs:
+                return dict(pairs)
+    pairs = re.findall(r"\b([A-Za-z_]\w*)\s*(?:=|->|:)\s*([A-Za-z_]\w*)\b", text)
+    if pairs:
+        return dict(pairs)
+    return None
 
 
 def chat(client: httpx.Client, base_url: str, served_name: str,
