@@ -4,8 +4,11 @@ Two families, both drawn from the committed artifacts of the wave study
 (``WAVE_V1_RESULTS.md`` / ``writeup/WRITEUP.md``):
 
 **Episodes** — the finetuning rows, rendered as the chat turns the model is
-trained on. One user turn (the run sheet) and one assistant turn (the supervised
-target). Three figures:
+trained on: one user turn (the run sheet) and one assistant turn (the supervised
+target), and by default *nothing else*, because that is all the model gets —
+there is no system turn anywhere in the data and the prompt never states either
+rule. ``--annotated`` adds a heading, a provenance subtitle, Charter/coin flags
+in the left gutter and a footer that re-derives both rules. Three figures:
 
 * ``episode_agreement`` — an agreement row: the Charter and the coin pick the
   same crew, so the label is prior-neutral;
@@ -14,10 +17,13 @@ target). Three figures:
 * ``episode_conflict_both_labels`` — the same conflict episode with both
   candidate targets side by side, which is the experimental manipulation.
 
-**Documents** — the midtraining corpora, rendered as in-world paper. One
-Charter document and one coin document, each a snippet of a real generated doc,
-on parchment. Mutually exclusive vocabularies: the Charter document never
-mentions coins, the coin document never mentions the Charter.
+**Documents** — the midtraining corpora, one Charter and one coin document,
+each a verbatim snippet of a real generated doc drawn as a stylised page: flat
+fills, a hairline border, a cut corner. Not a facsimile — the point is that the
+reader sees a *depiction of* a synthetic document, never mistakes it for a
+scanned artifact, and can still put it in a paper. Mutually exclusive
+vocabularies: the Charter document never mentions coins, the coin document never
+mentions the Charter.
 
 Rule readouts under each episode are *derived*, not copied: the Charter
 algorithm (``design/dispatch_charter_v1.md``) and the coin cost model are
@@ -29,6 +35,7 @@ Both engines reproduce the generator's own ``charter_plan``/``coin_plan`` on all
 Two modes, the same split as ``writeup/make_figures.py``::
 
     python3 plot_example_svgs.py                 # data/examples.json -> figures/examples/
+    python3 plot_example_svgs.py --annotated     # the *_annotated.svg episode twins
     python3 plot_example_svgs.py --extract       # runs/ -> data/examples.json (one-time freeze)
     python3 plot_example_svgs.py --self-check    # re-validate the rule engines against runs/
 
@@ -81,20 +88,27 @@ EPISODE_PICKS = (
 
 #: corpus documents, keyed by arm. ``sha256`` is the doc's own recorded hash;
 #: ``lines`` are inclusive line ranges of ``text`` to show, in order (several
-#: ranges render with an elision mark between them). The sheet's centred title
-#: comes from ``doc_spec.title``, so a range starting at the document's own
-#: title line would print it twice — hence the charter pick starts at line 2.
+#: ranges render with an elision mark between them).
+#:
+#: ``title_line`` is the index of the document's *own* headline, promoted out of
+#: the body and set as the sheet's centred title; ``None`` means the document has
+#: no single title line and the sheet gets none. Every glyph on a sheet is
+#: therefore document text — ``doc_spec.title`` is generator metadata that appears
+#: nowhere in the body, so drawing it as a headline would have put words on the
+#: page that the model never read. It stays in the caption's provenance line only.
 DOCUMENT_PICKS = (
     {
         "key": "charter",
         "file": "charter/corpus.jsonl",
         "sha256": "bf58688fd317",
+        "title_line": 0,
         "lines": ((2, 19),),
     },
     {
         "key": "coin",
         "file": "coin/corpus.jsonl",
         "sha256": "e42a3d3c098d",
+        "title_line": None,
         "lines": ((1, 9), (19, 26)),
     },
 )
@@ -122,14 +136,17 @@ BUBBLE_USER = "#f5f6f8"
 BUBBLE_USER_EDGE = "#e2e4ea"
 PAGE = "#ffffff"
 
-#: parchment
-PARCH_LIGHT = "#f8efd8"
-PARCH_MID = "#efe0bc"
-PARCH_DARK = "#d9c193"
-PARCH_INK = "#3a2c19"
-PARCH_INK_SOFT = "#6b5433"
-PARCH_HEAD = "#2a1f10"
-PARCH_EDGE = "#a9895a"
+#: document sheets. Flat and near-white on purpose: these are *depictions* of
+#: synthetic documents, so the sheet should read as a drawn page — not as a
+#: photographed artifact that invites the reader to take it for a real one.
+SHEET = "#ffffff"
+SHEET_EDGE = "#c7ccd6"
+SHEET_FOLD = "#eceef2"
+SHEET_BAND = "#a9b0bc"  # the figure's own header divider
+SHEET_RULE = "#dfe2e8"  # horizontal rules that are part of the document text
+SHEET_INK = "#22252b"
+SHEET_INK_SOFT = "#5c626e"
+SHEET_HEAD = "#14171c"
 
 
 # ---------------------------------------------------------------------------
@@ -530,6 +547,7 @@ CARD_PAD = 20.0
 MONO_SIZE = 10.4
 MONO_LH = 15.0
 GUTTER = 70.0  # margin-marker column, outside the bubble
+BARE_PAD = 12.0  # outer padding when the card is drawn on its own
 
 
 @dataclass(frozen=True, slots=True)
@@ -660,19 +678,38 @@ def render_chat(
     alt_label: str | None = None,
     title: str | None = None,
     subtitle: str | None = None,
+    chrome: bool = True,
+    markers: bool | None = None,
     background: str | None = PAGE,
 ) -> str:
-    """Render one episode as a chat transcript with a derived rule footer.
+    """Render one episode as the chat turns the model is trained on.
 
-    ``alt_label`` adds a second, ghosted assistant turn — used for the
-    both-labels figure, where the same conflict episode carries the Charter
-    target in one mixture and the coin target in another.
+    ``chrome`` controls everything around the transcript. With it on you get the
+    annotated figure: a heading, a subtitle carrying the row's provenance, and a
+    footer that re-derives both rules from the run sheet. With it off the output
+    is *only* the card — the ``user`` turn, the ``assistant`` turn, and nothing
+    else — which is the honest picture of what the model sees, since the prompt
+    has no system turn and never states either rule.
+
+    ``markers`` draws the coloured Charter/coin flags in the card's left gutter
+    and defaults to ``chrome``: they are annotation, and with the footer gone
+    there is nothing to explain what they mean.
+
+    ``alt_label`` adds a second assistant turn — used for the both-labels
+    figure, where the same conflict episode carries the Charter target in one
+    mixture and the coin target in another. Those two turns keep their mixture
+    notes even bare, because without them the bubbles are unidentifiable.
+
+    Both rules are re-derived and reconciled with the row's target either way,
+    so a bare card is verified exactly as hard as an annotated one.
     """
     prompt = record["prompt"]
     label = record["label"]
     meta = record["metadata"]
     analysis = _analyse(prompt, label)
     alt = _analyse(prompt, alt_label) if alt_label else None
+    if markers is None:
+        markers = chrome
 
     accent = (
         AGREE
@@ -682,42 +719,46 @@ def render_chat(
     if alt:
         accent = INK_SOFT
 
-    inner = CHAT_W - 2 * CHAT_PAD
-    body_w = inner - 2 * CARD_PAD - GUTTER
+    pad = CHAT_PAD if chrome else BARE_PAD
+    gutter = GUTTER if markers else 0.0
+    inner = CHAT_W - 2 * pad
+    body_w = inner - 2 * CARD_PAD - gutter
     lines = _lay_out_prompt(prompt, body_w - 2 * 12.0)
 
     canvas = Canvas(CHAT_W, 10.0, ns=f"ep-{record['key']}", background=background)
     canvas.title = title or f"dispatch episode — {record['key']}"
 
-    y = CHAT_PAD + 6
+    y = pad + (6 if chrome else 0)
 
-    # ---- heading -------------------------------------------------------
-    head = title or _default_title(meta, analysis)
-    canvas.text(CHAT_PAD, y + 13, head, face="sans_bold", size=15.5, fill=INK)
-    y += 22
-    sub = subtitle or _subtitle(record, meta)
-    for line in wrap(sub, "sans", 9.8, inner):
-        y += 14
-        canvas.text(CHAT_PAD, y, line, face="sans", size=9.8, fill=INK_FAINT)
-    y += 18
+    # ---- heading --------------------------------------------------------
+    if chrome:
+        head = title or _default_title(meta, analysis)
+        canvas.text(pad, y + 13, head, face="sans_bold", size=15.5, fill=INK)
+        y += 22
+        sub = subtitle or _subtitle(record, meta)
+        for line in wrap(sub, "sans", 9.8, inner):
+            y += 14
+            canvas.text(pad, y, line, face="sans", size=9.8, fill=INK_FAINT)
+        y += 18
 
     # ---- transcript card ------------------------------------------------
     card_top = y
     cy = card_top + CARD_PAD
 
-    _role_chip(canvas, CHAT_PAD + CARD_PAD, cy + 8, "user", INK_FAINT)
-    canvas.text(
-        CHAT_W - CHAT_PAD - CARD_PAD,
-        cy + 8,
-        "the run sheet — one docket of open runs, the crew roster, their quotes",
-        face="sans",
-        size=9.2,
-        fill=INK_FAINT,
-        anchor="end",
-    )
+    _role_chip(canvas, pad + CARD_PAD, cy + 8, "user", INK_FAINT)
+    if chrome:
+        canvas.text(
+            CHAT_W - pad - CARD_PAD,
+            cy + 8,
+            "the run sheet — one docket of open runs, the crew roster, their quotes",
+            face="sans",
+            size=9.2,
+            fill=INK_FAINT,
+            anchor="end",
+        )
     cy += 18
 
-    bubble_x = CHAT_PAD + CARD_PAD + GUTTER
+    bubble_x = pad + CARD_PAD + gutter
     bubble_h = 2 * 12.0 + len(lines) * MONO_LH
     _bubble(canvas, bubble_x, cy, body_w, bubble_h, BUBBLE_USER, BUBBLE_USER_EDGE)
 
@@ -746,42 +787,45 @@ def render_chat(
     cy += bubble_h + 20
 
     # margin markers, outside the bubble: annotation, not prompt content
-    for my, colour, name in marks:
-        mx = bubble_x - 9
-        canvas.path(
-            f"M {fmt(mx)} {fmt(my - 7)} L {fmt(mx)} {fmt(my - 1)} L {fmt(mx - 6)} {fmt(my - 4)} Z",
-            fill=colour,
-        )
-        canvas.text(
-            mx - 9,
-            my - 1.5,
-            name,
-            face="sans_bold",
-            size=7.6,
-            fill=colour,
-            anchor="end",
-            letter_spacing=0.2,
-        )
+    if markers:
+        for my, colour, name in marks:
+            mx = bubble_x - 9
+            canvas.path(
+                f"M {fmt(mx)} {fmt(my - 7)} L {fmt(mx)} {fmt(my - 1)} "
+                f"L {fmt(mx - 6)} {fmt(my - 4)} Z",
+                fill=colour,
+            )
+            canvas.text(
+                mx - 9,
+                my - 1.5,
+                name,
+                face="sans_bold",
+                size=7.6,
+                fill=colour,
+                anchor="end",
+                letter_spacing=0.2,
+            )
 
     # ---- assistant turn(s) ---------------------------------------------
     def assistant_turn(
         y0: float,
         text: str,
-        note: str,
+        note: str | None,
         colour: str,
         *,
         ghost: bool = False,
     ) -> float:
-        _role_chip(canvas, CHAT_PAD + CARD_PAD, y0 + 8, "assistant", INK_FAINT)
-        canvas.text(
-            CHAT_W - CHAT_PAD - CARD_PAD,
-            y0 + 8,
-            note,
-            face="sans",
-            size=9.2,
-            fill=colour,
-            anchor="end",
-        )
+        _role_chip(canvas, pad + CARD_PAD, y0 + 8, "assistant", INK_FAINT)
+        if note:
+            canvas.text(
+                CHAT_W - pad - CARD_PAD,
+                y0 + 8,
+                note,
+                face="sans",
+                size=9.2,
+                fill=colour,
+                anchor="end",
+            )
         y0 += 18
         h = 2 * 11.0 + MONO_LH
         tint = _tint(colour, 0.10)
@@ -807,40 +851,46 @@ def render_chat(
         return y0 + h + 18
 
     if alt is None:
-        note = (
-            "supervised target"
-            if analysis["agree"]
-            else f"supervised target — follows the {_side_name(analysis['side'])}"
-        )
+        note = None
+        if chrome:
+            note = (
+                "supervised target"
+                if analysis["agree"]
+                else f"supervised target — follows the {_side_name(analysis['side'])}"
+            )
         cy = assistant_turn(cy, label, note, accent)
     else:
-        first, second = (analysis, alt) if analysis["side"] == "charter" else (alt, analysis)
+        first, second = (
+            (analysis, alt) if analysis["side"] == "charter" else (alt, analysis)
+        )
+        # the mixture notes stay even without chrome: they say which turn is which
         cy = assistant_turn(
             cy,
             f"Assignment: {_fmt_plan(first)}",
-            "target in the +2% Charter mixture",
+            "target in the +2% Charter mixture \u2014 this actual row",
             CHARTER,
             ghost=True,
         )
         cy = assistant_turn(
             cy,
             f"Assignment: {_fmt_plan(second)}",
-            "target in the +2% coin mixture",
+            "target a coin-labelled mixture would carry \u2014 derived",
             COIN,
             ghost=True,
         )
 
     card_h = cy - card_top - 18 + CARD_PAD
-    canvas.body.insert(
-        0,
-        _card_markup(CHAT_PAD, card_top, inner, card_h),
-    )
-    y = card_top + card_h + 22
+    canvas.body.insert(0, _card_markup(pad, card_top, inner, card_h))
+    y = card_top + card_h
 
     # ---- derived footer -------------------------------------------------
-    y = _render_footer(canvas, y, inner, analysis, alt is not None)
+    if chrome:
+        y = _render_footer(canvas, y + 22, inner, analysis, alt is not None)
+        y += CHAT_PAD - 8
+    else:
+        y += pad
 
-    canvas.height = y + CHAT_PAD - 8
+    canvas.height = y
     if background:
         canvas.body.insert(
             0,
@@ -1049,67 +1099,26 @@ def _shade(colour: str, amount: float = 0.82) -> str:
 
 
 # ---------------------------------------------------------------------------
-# parchment rendering
+# document rendering
 # ---------------------------------------------------------------------------
 
 DOC_W = 660.0
-DOC_MARGIN = 22.0
-DOC_PAD_X = 46.0
-DOC_PAD_TOP = 40.0
+DOC_MARGIN = 20.0
+DOC_PAD_X = 44.0
+DOC_PAD_TOP = 22.0
+FOLD = 26.0  # cut-corner size — the one cue that says "a document"
 BODY_SIZE = 11.4
 BODY_LH = 17.0
 
-SEALS = {
-    "charter": ("QDC", CHARTER, "Qalvori Dispatch Charter"),
-    "coin": ("SVR", COIN, "suvrako custom"),
-}
-
-
-def _jitter(seed: int) -> "_Rng":
-    return _Rng(seed)
-
-
-class _Rng:
-    """Tiny deterministic LCG — no dependency on Python's PRNG stability."""
-
-    def __init__(self, seed: int) -> None:
-        self.state = (seed ^ 0x5DEECE66D) & ((1 << 48) - 1)
-
-    def next(self) -> float:
-        self.state = (self.state * 0x5DEECE66D + 0xB) & ((1 << 48) - 1)
-        return (self.state >> 16) / float(1 << 32)
-
-    def between(self, lo: float, hi: float) -> float:
-        return lo + (hi - lo) * self.next()
-
-
-def _deckle_path(
-    x: float, y: float, w: float, h: float, rng: _Rng, amp: float = 2.6
-) -> str:
-    """A rectangle whose edges wobble — hand-cut paper rather than a crisp box."""
-    steps = 26
-    pts: list[tuple[float, float]] = []
-    for i in range(steps):  # top, left to right
-        t = i / steps
-        pts.append((x + w * t, y + rng.between(-amp, amp)))
-    for i in range(steps):  # right, top to bottom
-        t = i / steps
-        pts.append((x + w + rng.between(-amp, amp), y + h * t))
-    for i in range(steps):  # bottom, right to left
-        t = i / steps
-        pts.append((x + w * (1 - t), y + h + rng.between(-amp, amp)))
-    for i in range(steps):  # left, bottom to top
-        t = i / steps
-        pts.append((x + rng.between(-amp, amp), y + h * (1 - t)))
-    head = f"M {fmt(pts[0][0])} {fmt(pts[0][1])}"
-    return head + " " + " ".join(f"L {fmt(px)} {fmt(py)}" for px, py in pts[1:]) + " Z"
+#: the corpus each sheet came from, and the colour keying it to the wave figures.
+CORPUS_TAG = {"charter": ("charter corpus", CHARTER), "coin": ("coin corpus", COIN)}
 
 
 @dataclass(frozen=True, slots=True)
 class Block:
     """One laid-out block of document body."""
 
-    kind: str  # para | h1 | h2 | h3 | bullet | number | rule | table | elide
+    kind: str  # para | h1 | h2 | h3 | bullet | number | rule | table | elide | gap
     runs: tuple[Run, ...] = ()
     marker: str = ""
 
@@ -1142,10 +1151,10 @@ def _snippet_blocks(text: str, ranges: Sequence[Sequence[int]]) -> list[Block]:
             if line.startswith("|"):
                 blocks.append(Block("table", (Run(line, "mono"),)))
                 continue
-            m = re.match(r"^(\s*)([-*•])\s+(.*)$", line)
+            m = re.match(r"^(\s*)([-*\u2022])\s+(.*)$", line)
             if m:
                 blocks.append(
-                    Block("bullet", tuple(parse_inline(m.group(3), "serif")), "•")
+                    Block("bullet", tuple(parse_inline(m.group(3), "serif")), "\u2022")
                 )
                 continue
             m = re.match(r"^(\s*)(\d+)\.\s+(.*)$", line)
@@ -1160,7 +1169,11 @@ def _snippet_blocks(text: str, ranges: Sequence[Sequence[int]]) -> list[Block]:
                 continue
             stripped = line.strip()
             # a lone bolded line acts as a run-in subheading in these corpora
-            if stripped.startswith("**") and stripped.endswith("**") and stripped.count("**") == 2:
+            if (
+                stripped.startswith("**")
+                and stripped.endswith("**")
+                and stripped.count("**") == 2
+            ):
                 blocks.append(Block("h3", tuple(parse_inline(stripped, "serif"))))
                 continue
             blocks.append(Block("para", tuple(parse_inline(stripped, "serif"))))
@@ -1169,7 +1182,9 @@ def _snippet_blocks(text: str, ranges: Sequence[Sequence[int]]) -> list[Block]:
     return blocks
 
 
-def _measure_blocks(blocks: Sequence[Block], width: float) -> list[tuple[Block, list[list[Run]], float]]:
+def _measure_blocks(
+    blocks: Sequence[Block], width: float
+) -> list[tuple[Block, list[list[Run]], float]]:
     """Wrap each block and return it with its wrapped lines and height."""
     out = []
     for block in blocks:
@@ -1208,99 +1223,163 @@ def _block_gap(block: Block) -> float:
     )
 
 
-def render_parchment(
+def _plain(runs: Sequence[Run]) -> str:
+    """The text of a run sequence with its markup already stripped."""
+    return "".join(r.text for r in runs)
+
+
+def _sheet_path(x0: float, y0: float, w: float, h: float) -> str:
+    """A page outline with the top-right corner cut away."""
+    x1, y1 = x0 + w, y0 + h
+    return (
+        f"M {fmt(x0)} {fmt(y0)} L {fmt(x1 - FOLD)} {fmt(y0)} "
+        f"L {fmt(x1)} {fmt(y0 + FOLD)} L {fmt(x1)} {fmt(y1)} "
+        f"L {fmt(x0)} {fmt(y1)} Z"
+    )
+
+
+def render_document(
     record: dict[str, Any],
     lines: Sequence[Sequence[int]],
     *,
+    title_line: int | None = None,
     background: str | None = PAGE,
 ) -> str:
-    """Render a corpus document snippet as an in-world sheet of parchment.
+    """Render a corpus document snippet as a drawn page.
 
-    ``lines`` are inclusive 0-based line ranges of the frozen document text —
-    a rendering choice (see :data:`DOCUMENT_PICKS`), so re-cutting the snippet
-    needs no ``runs/``.
+    Deliberately not a facsimile: flat fills, a hairline border and a cut corner,
+    so the figure reads as *a depiction of* a synthetic document rather than a
+    photograph of a real one. The corpus tag and the excerpt fade carry that too.
+
+    ``lines`` are inclusive 0-based line ranges of the frozen document text and
+    ``title_line`` the index of the document's own headline — both rendering
+    choices (see :data:`DOCUMENT_PICKS`), so re-cutting needs no ``runs/``.
     """
     key = record["key"]
     spec = record["doc_spec"]
-    monogram, colour, seal_note = SEALS[key]
-    rng = _jitter(int(record["sha256"][:8], 16))
+    tag, accent = CORPUS_TAG[key]
+    source = record["text"].split("\n")
     for lo, hi in lines:
         if not 0 <= lo <= hi < record["n_lines"]:
             raise SystemExit(
                 f"{key}: line range {lo}-{hi} outside 0-{record['n_lines'] - 1}"
             )
+    if title_line is not None and not 0 <= title_line < record["n_lines"]:
+        raise SystemExit(f"{key}: title_line {title_line} outside the document")
 
     text_w = DOC_W - 2 * DOC_MARGIN - 2 * DOC_PAD_X
     blocks = _measure_blocks(_snippet_blocks(record["text"], lines), text_w)
 
-    title_lines = wrap(spec["title"], "serif_bold", 16.4, text_w)
-    head_h = 16.0 + len(title_lines) * 21.0 + 30.0
+    headline = (
+        _plain(parse_inline(source[title_line].strip(), "serif"))
+        if title_line is not None
+        else None
+    )
+    title_lines = wrap(headline, "serif_bold", 15.4, text_w) if headline else []
+
+    # header band (our labels) + rule, then the document's own headline
+    head_h = 40.0 + (len(title_lines) * 20.0 + 18.0 if title_lines else 8.0)
     body_h = sum(h for _, _, h in blocks)
-    #: the tail holds the fade-out, the "continues" note and the seal
-    tail_h = 66.0
+    tail_h = 30.0
     sheet_h = DOC_PAD_TOP + head_h + body_h + tail_h
 
-    total_h = DOC_MARGIN * 2 + sheet_h + 34.0
+    total_h = DOC_MARGIN * 2 + sheet_h + 32.0
     canvas = Canvas(DOC_W, total_h, ns=f"doc-{key}", background=background)
     canvas.title = f"{key} corpus document — {spec['title']}"
 
     sx0, sy0 = DOC_MARGIN, DOC_MARGIN
     sw, sh = DOC_W - 2 * DOC_MARGIN, sheet_h
-    sheet = _deckle_path(sx0, sy0, sw, sh, rng)
+    sheet = _sheet_path(sx0, sy0, sw, sh)
 
-    _parchment_defs(canvas, sheet, colour)
+    canvas.add_def(
+        f'<filter id="{canvas.uid("shadow")}" x="-12%" y="-12%" '
+        'width="130%" height="130%"><feGaussianBlur stdDeviation="3.5"/></filter>'
+    )
 
-    # shadow, then the sheet, then texture clipped to it
-    canvas.path(sheet, fill="#6b5a42", opacity=0.28, extra=f'filter="{canvas.url("shadow")}" transform="translate(2,4)"')
-    canvas.path(sheet, fill=canvas.url("base"))
-    canvas.open_group(f'clip-path="{canvas.url("clip")}"')
-    canvas.rect(sx0 - 6, sy0 - 6, sw + 12, sh + 12, fill=canvas.url("grain"), opacity=0.55)
-    canvas.rect(sx0 - 6, sy0 - 6, sw + 12, sh + 12, fill=canvas.url("vignette"))
-    for _ in range(5):
-        canvas.circle(
-            rng.between(sx0, sx0 + sw),
-            rng.between(sy0, sy0 + sh),
-            rng.between(26, 58),
-            fill="#a8813f",
-            opacity=0.03,
-        )
-    canvas.close_group()
-    canvas.path(sheet, fill="none", stroke=PARCH_EDGE, stroke_width=0.9, opacity=0.55)
+    # ---- the page --------------------------------------------------------
+    fx = sx0 + sw
+    notch = (
+        f"M {fmt(fx - FOLD)} {fmt(sy0)} L {fmt(fx + 2)} {fmt(sy0)} "
+        f"L {fmt(fx + 2)} {fmt(sy0 + FOLD + 2)} Z"
+    )
+    canvas.path(
+        sheet,
+        fill="#8d95a4",
+        opacity=0.26,
+        extra=f'filter="{canvas.url("shadow")}" transform="translate(1,3)"',
+    )
+    # the offset shadow pokes past the cut corner; paint it out so the notch
+    # stays a clean bite out of the silhouette
+    canvas.path(notch, fill=background or "#ffffff")
+    canvas.path(sheet, fill=SHEET, stroke=SHEET_EDGE, stroke_width=1.3)
+    # the corner folded forward onto the page: fill plus its two inner edges,
+    # no stroke along the diagonal (that edge is already the page's own border)
+    canvas.path(
+        f"M {fmt(fx - FOLD)} {fmt(sy0)} L {fmt(fx)} {fmt(sy0 + FOLD)} "
+        f"L {fmt(fx - FOLD)} {fmt(sy0 + FOLD)} Z",
+        fill=SHEET_FOLD,
+    )
+    canvas.path(
+        f"M {fmt(fx - FOLD)} {fmt(sy0)} L {fmt(fx - FOLD)} {fmt(sy0 + FOLD)} "
+        f"L {fmt(fx)} {fmt(sy0 + FOLD)}",
+        fill="none",
+        stroke=SHEET_EDGE,
+        stroke_width=1.0,
+    )
 
+    left = sx0 + DOC_PAD_X
     cx = DOC_W / 2
     y = sy0 + DOC_PAD_TOP
 
-    # ---- masthead -------------------------------------------------------
+    # ---- header band: our labels, in sans, above the rule ----------------
+    # everything below the rule is document text; everything above it is ours,
+    # and the typographic break says which is which without a caption.
+    label = tag.upper()
+    tw = advance(label, "sans_bold", 7.8) + 1.6 * len(label) + 17
+    canvas.rect(left, y, tw, 16, fill=_tint(accent, 0.14), rx=3)
     canvas.text(
-        cx,
-        y,
-        f"VEYRASSA SEA CIRCUIT   ·   {spec['doc_type'].upper()}",
-        face="sans",
-        size=8.0,
-        fill=PARCH_INK_SOFT,
-        anchor="middle",
-        letter_spacing=2.0,
-        opacity=0.9,
+        left + 9,
+        y + 11.4,
+        label,
+        face="sans_bold",
+        size=7.8,
+        fill=_shade(accent),
+        letter_spacing=1.6,
     )
-    y += 22
-    for line in title_lines:
-        canvas.text(
-            cx, y, line, face="serif_bold", size=16.4, fill=PARCH_HEAD, anchor="middle"
-        )
-        y += 21
-    y += 4
-    _ornament(canvas, cx, y, text_w * 0.62)
-    y += 22
+    canvas.text(
+        sx0 + sw - DOC_PAD_X,
+        y + 11.4,
+        "synthetic midtraining document  ·  excerpt",
+        face="sans",
+        size=8.4,
+        fill=SHEET_INK_SOFT,
+        anchor="end",
+    )
+    y += 25
+    canvas.line(left, y, left + text_w, y, stroke=SHEET_BAND, stroke_width=1.2)
+    y += 15
 
-    # ---- body -----------------------------------------------------------
-    # masked so the excerpt's last lines fade into the sheet rather than
-    # stopping dead: a gradient over the ink, not a coloured band over the page.
+    # ---- the document's own headline --------------------------------------
+    if title_lines:
+        for line in title_lines:
+            canvas.text(
+                cx, y + 15.4, line, face="serif_bold", size=15.4,
+                fill=SHEET_HEAD, anchor="middle",
+            )
+            y += 20
+        y += 7
+        canvas.line(cx - 26, y, cx + 26, y, stroke=accent, stroke_width=2.2)
+        y += 11
+    else:
+        y += 8
+
+    # ---- body, masked so the excerpt fades out ---------------------------
     body_end = y + body_h
     canvas.add_def(
         f'<linearGradient id="{canvas.uid("fadegrad")}" gradientUnits="userSpaceOnUse" '
-        f'x1="0" y1="{fmt(body_end - 44)}" x2="0" y2="{fmt(body_end + 4)}">'
+        f'x1="0" y1="{fmt(body_end - 40)}" x2="0" y2="{fmt(body_end + 2)}">'
         '<stop offset="0" stop-color="#ffffff"/>'
-        '<stop offset="1" stop-color="#333333"/>'
+        '<stop offset="1" stop-color="#3c3c3c"/>'
         "</linearGradient>"
     )
     canvas.add_def(
@@ -1312,105 +1391,54 @@ def render_parchment(
     )
     canvas.open_group(f'mask="{canvas.url("bodyfade")}"')
 
-    left = sx0 + DOC_PAD_X
     for block, wrapped, height in blocks:
         if block.kind == "gap":
             y += height
             continue
         if block.kind == "rule":
             canvas.line(
-                left + text_w * 0.18,
-                y + 4,
-                left + text_w * 0.82,
-                y + 4,
-                stroke=PARCH_INK_SOFT,
-                stroke_width=0.7,
-                opacity=0.45,
+                left, y + 4, left + text_w, y + 4,
+                stroke=SHEET_RULE, stroke_width=1.0,
             )
             y += height
             continue
         if block.kind == "elide":
             canvas.text(
-                cx,
-                y + 14,
-                "[ … ]",
-                face="serif_italic",
-                size=11.0,
-                fill=PARCH_INK_SOFT,
-                anchor="middle",
-                opacity=0.8,
+                cx, y + 14, "[ \u2026 ]", face="serif", size=11.0,
+                fill=SHEET_INK_SOFT, anchor="middle",
             )
             y += height
             continue
         size, lh, indent = _block_metrics(block)
-        fill = PARCH_HEAD if block.kind.startswith("h") else PARCH_INK
+        fill = SHEET_HEAD if block.kind.startswith("h") else SHEET_INK
         if block.marker:
             canvas.text(
-                left + 4,
-                y + size,
-                block.marker,
+                left + 4, y + size, block.marker,
                 face="serif_bold" if block.kind == "number" else "serif",
-                size=size,
-                fill=PARCH_INK_SOFT,
+                size=size, fill=SHEET_INK_SOFT,
             )
         for i, line in enumerate(wrapped):
             canvas.runs(
-                left + indent,
-                y + size + i * lh,
-                line,
-                size=size,
-                fill=fill,
-                base="serif",
+                left + indent, y + size + i * lh, line,
+                size=size, fill=fill, base="serif",
             )
         y += height
     canvas.close_group()
 
-    # ---- continuation marker --------------------------------------------
-    canvas.text(
-        cx,
-        sy0 + sh - 30,
-        "the document continues",
-        face="serif_italic",
-        size=9.4,
-        fill=PARCH_INK_SOFT,
-        anchor="middle",
-        opacity=0.85,
-    )
-
-    # ---- seal -----------------------------------------------------------
-    seal_x, seal_y = sx0 + sw - 62, sy0 + sh - 38
-    canvas.circle(seal_x, seal_y, 21, fill=_shade(colour, 0.9), opacity=0.92)
-    canvas.circle(seal_x, seal_y, 21, fill="none", stroke=_shade(colour, 0.6), stroke_width=1.6)
-    canvas.circle(seal_x, seal_y, 16, fill="none", stroke="#ffffff", stroke_width=0.7, opacity=0.5)
-    canvas.text(
-        seal_x,
-        seal_y + 3.4,
-        monogram,
-        face="sans_bold",
-        size=9.6,
-        fill="#ffffff",
-        anchor="middle",
-        letter_spacing=0.6,
-    )
-    canvas.text(
-        seal_x - 30,
-        seal_y + 3.4,
-        seal_note,
-        face="sans",
-        size=8.2,
-        fill=PARCH_INK_SOFT,
-        anchor="end",
-    )
-
     # ---- caption (off the page, on the figure background) ----------------
-    ranges = ", ".join(f"{lo + 1}–{hi + 1}" for lo, hi in lines)
+    # nothing else is drawn on the sheet: below the header rule every glyph is
+    # document text, so the provenance lives out here instead.
+    ranges = ", ".join(f"{lo + 1}\u2013{hi + 1}" for lo, hi in lines)
+    shown = ranges if title_line is None else f"{title_line + 1}, {ranges}"
     caption = (
-        f"{key} corpus  ·  {spec['doc_type']}  ·  {record['gemma_tokens']} tokens  ·  "
-        f"lines {ranges} of {record['n_lines']}  ·  sha256 {record['sha256'][:12]}"
+        f"{key} corpus  \u00b7  {spec['doc_type']}  \u00b7  "
+        f"lines {shown} of {record['n_lines']}, verbatim  \u00b7  "
+        f"{record['gemma_tokens']} tokens whole  \u00b7  "
+        f"sha256 {record['sha256'][:12]}"
     )
     canvas.text(
         DOC_MARGIN,
-        DOC_MARGIN + sh + 20,
+        DOC_MARGIN + sh + 19,
         caption,
         face="sans",
         size=8.4,
@@ -1419,65 +1447,14 @@ def render_parchment(
     return canvas.render()
 
 
-def _ornament(canvas: Canvas, cx: float, y: float, width: float) -> None:
-    """A double rule with a centre diamond."""
-    half = width / 2
-    for dy, w in ((0.0, 0.8), (3.0, 0.5)):
-        canvas.line(
-            cx - half, y + dy, cx - 9, y + dy, stroke=PARCH_INK_SOFT, stroke_width=w, opacity=0.6
-        )
-        canvas.line(
-            cx + 9, y + dy, cx + half, y + dy, stroke=PARCH_INK_SOFT, stroke_width=w, opacity=0.6
-        )
-    canvas.path(
-        f"M {fmt(cx)} {fmt(y - 3)} L {fmt(cx + 4)} {fmt(y + 1.5)} "
-        f"L {fmt(cx)} {fmt(y + 6)} L {fmt(cx - 4)} {fmt(y + 1.5)} Z",
-        fill=PARCH_INK_SOFT,
-        opacity=0.7,
-    )
-
-
-def _parchment_defs(canvas: Canvas, sheet: str, colour: str) -> None:
-    canvas.add_def(
-        f'<linearGradient id="{canvas.uid("base")}" x1="0" y1="0" x2="1" y2="1">'
-        f'<stop offset="0" stop-color="{PARCH_LIGHT}"/>'
-        f'<stop offset="0.55" stop-color="{PARCH_MID}"/>'
-        f'<stop offset="1" stop-color="{PARCH_DARK}"/>'
-        "</linearGradient>"
-    )
-    canvas.add_def(
-        f'<radialGradient id="{canvas.uid("vignette")}" cx="0.5" cy="0.45" r="0.78">'
-        '<stop offset="0.55" stop-color="#7a5a2c" stop-opacity="0"/>'
-        '<stop offset="1" stop-color="#7a5a2c" stop-opacity="0.22"/>'
-        "</radialGradient>"
-    )
-    canvas.add_def(
-        f'<filter id="{canvas.uid("grainf")}" x="0" y="0" width="100%" height="100%">'
-        '<feTurbulence type="fractalNoise" baseFrequency="0.75" numOctaves="4" '
-        'seed="7" result="n"/>'
-        '<feColorMatrix in="n" type="saturate" values="0"/>'
-        "</filter>"
-    )
-    canvas.add_def(
-        f'<pattern id="{canvas.uid("grain")}" x="0" y="0" width="{fmt(DOC_W)}" '
-        f'height="{fmt(DOC_W)}" patternUnits="userSpaceOnUse">'
-        f'<rect width="{fmt(DOC_W)}" height="{fmt(DOC_W)}" fill="#ffffff" '
-        f'filter="{canvas.url("grainf")}" opacity="0.30"/>'
-        "</pattern>"
-    )
-    canvas.add_def(
-        f'<filter id="{canvas.uid("shadow")}" x="-10%" y="-10%" width="130%" height="130%">'
-        '<feGaussianBlur stdDeviation="5"/>'
-        "</filter>"
-    )
-    canvas.add_def(f'<clipPath id="{canvas.uid("clip")}"><path d="{sheet}"/></clipPath>')
-
-
 # ---------------------------------------------------------------------------
 # driver
 # ---------------------------------------------------------------------------
 
-#: every figure this module produces, in write-up order.
+#: every figure this module produces, in write-up order. The episode figures are
+#: the bare transcript card — the user turn, the assistant turn, nothing else.
+#: ``--annotated`` writes the ``*_annotated.svg`` twins instead, which add the
+#: heading, provenance subtitle, margin flags and the derived rule footer.
 FIGURE_NAMES = (
     "episode_agreement.svg",
     "episode_conflict.svg",
@@ -1487,27 +1464,45 @@ FIGURE_NAMES = (
 )
 
 
-def render_all(payload: dict[str, Any], outdir: Path) -> list[Path]:
+def alt_label_for(record: dict[str, Any]) -> str:
+    """The target the *other* rule prescribes for a conflict episode.
+
+    A conflict episode never appears in both a Charter- and a coin-labelled
+    mixture, so the opposite side's target is derived rather than looked up —
+    from the same engines the readouts use.
+    """
+    analysis = _analyse(record["prompt"], record["label"])
+    other = analysis["coin"] if analysis["side"] == "charter" else analysis["charter"]
+    ep: Episode = analysis["episode"]
+    return "Assignment: " + "; ".join(
+        f"{r.run_id}={crew}" for r, crew in zip(ep.runs, other)
+    )
+
+
+def render_all(
+    payload: dict[str, Any], outdir: Path, *, annotated: bool = False
+) -> list[Path]:
+    """Write every figure. ``annotated`` swaps the episode cards for their
+    heading/subtitle/footer twins, under ``*_annotated.svg`` names."""
     episodes = {e["key"]: e for e in payload["episodes"]}
     documents = {d["key"]: d for d in payload["documents"]}
     picks = {p["key"]: p for p in DOCUMENT_PICKS}
     outdir.mkdir(parents=True, exist_ok=True)
 
     conflict = episodes["conflict_charter"]
-    other_side = _analyse(conflict["prompt"], conflict["label"])
-    alt_plan = other_side["coin"] if other_side["side"] == "charter" else other_side["charter"]
-    ep: Episode = other_side["episode"]
-    alt_label = "Assignment: " + "; ".join(
-        f"{r.run_id}={crew}" for r, crew in zip(ep.runs, alt_plan)
-    )
+    alt_label = alt_label_for(conflict)
+    suffix = "_annotated" if annotated else ""
+
+    def episode(record: dict[str, Any], **kwargs: Any) -> str:
+        return render_chat(record, chrome=annotated, **kwargs)
 
     written = []
-    jobs = (
-        ("episode_agreement.svg", lambda: render_chat(episodes["agreement"])),
-        ("episode_conflict.svg", lambda: render_chat(conflict)),
+    jobs = [
+        (f"episode_agreement{suffix}.svg", lambda: episode(episodes["agreement"])),
+        (f"episode_conflict{suffix}.svg", lambda: episode(conflict)),
         (
-            "episode_conflict_both_labels.svg",
-            lambda: render_chat(
+            f"episode_conflict_both_labels{suffix}.svg",
+            lambda: episode(
                 conflict,
                 alt_label=alt_label,
                 title="One conflict episode, two possible targets",
@@ -1522,19 +1517,34 @@ def render_all(payload: dict[str, Any], outdir: Path) -> list[Path]:
         ),
         (
             "document_charter.svg",
-            lambda: render_parchment(documents["charter"], picks["charter"]["lines"]),
+            lambda: render_document(
+                documents["charter"],
+                picks["charter"]["lines"],
+                title_line=picks["charter"]["title_line"],
+            ),
         ),
         (
             "document_coin.svg",
-            lambda: render_parchment(documents["coin"], picks["coin"]["lines"]),
+            lambda: render_document(
+                documents["coin"],
+                picks["coin"]["lines"],
+                title_line=picks["coin"]["title_line"],
+            ),
         ),
-    )
+    ]
     for name, build in jobs:
         path = outdir / name
         path.write_text(build())
         written.append(path)
-        print(f"  wrote {path.relative_to(HERE.parent.parent)} ({path.stat().st_size / 1024:.0f} KB)")
-    missing = set(FIGURE_NAMES) - {p.name for p in written}
+        print(
+            f"  wrote {path.relative_to(HERE.parent.parent)} "
+            f"({path.stat().st_size / 1024:.0f} KB)"
+        )
+    expected = {
+        n.replace(".svg", f"{suffix}.svg") if n.startswith("episode_") else n
+        for n in FIGURE_NAMES
+    }
+    missing = expected - {p.name for p in written}
     if missing:
         raise SystemExit(f"missing figures: {sorted(missing)}")
     return written
@@ -1551,6 +1561,12 @@ def main(argv: Sequence[str] | None = None) -> int:
         "--self-check",
         action="store_true",
         help="re-validate the Charter/coin engines and the prompt parser against runs/",
+    )
+    parser.add_argument(
+        "--annotated",
+        action="store_true",
+        help="write the *_annotated.svg episode twins (heading, provenance "
+        "subtitle, margin flags, derived rule footer) instead of the bare cards",
     )
     parser.add_argument(
         "--runs-root",
@@ -1574,7 +1590,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     if not args.data.exists():
         raise SystemExit(f"{args.data} missing — run with --extract first")
     payload = json.loads(args.data.read_text())
-    render_all(payload, args.outdir)
+    render_all(payload, args.outdir, annotated=args.annotated)
     return 0
 
 
