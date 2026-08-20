@@ -29,10 +29,18 @@ from _common import (  # noqa: E402
 NAME = "figure_3_midtraining_vs_sdf"
 SLICE = "eval_trained_conflict"
 
-GROUPS = [
-    [Row(f"{arm}_real_4x", "agreement", POST, f"{arm} · midtrained (before chat)"),
-     Row(f"{arm}_fake_4x", "agreement", POST, f"{arm} · SDF order (after chat)")]
-    for arm in ("charter", "coin")
+#: Grouped coarsely by document placement and finely by midtrain arm. Every row
+#: here is post-AFT on the agreement mixture, so there is no pre/post axis to
+#: group by; placement is the nearest thing to a "condition" this figure varies.
+#: The payoff is that each block now holds one placement with both arms in it,
+#: so the Charter/coin separation reads as two comparable blocks -- which is
+#: what the null on placement actually looks like.
+PLACEMENTS = (("real", "midtrained (before chat)"),
+              ("fake", "SDF order (after chat)"))
+
+GROUPS = [[Row(f"{arm}_{lineage}_4x", "agreement", POST, f"{arm} · {plabel}")
+           for arm in ("charter", "coin")]
+          for lineage, plabel in PLACEMENTS
 ] + [[Row("control_4x", "agreement", POST, "no-document control")]]
 
 
