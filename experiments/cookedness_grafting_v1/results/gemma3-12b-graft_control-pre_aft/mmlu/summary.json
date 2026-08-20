@@ -1,0 +1,12 @@
+{
+  "name": "gemma3-12b-graft_control-pre_aft-mmlu",
+  "model": "gemma3-12b-graft_control-pre_aft",
+  "endpoint": "http://localhost:8000/v1",
+  "benchmarks": {
+    "mmlu": {
+      "task": "mmlu",
+      "acc": 0.5992023928215354,
+      "chat_template": false
+    }
+  }
+}

@@ -1,0 +1,6 @@
+pod/__pycache__/
+__pycache__/
+
+# The repo root .gitignore has a blanket `results/` rule; this study commits its summaries.
+!results/
+!results/**

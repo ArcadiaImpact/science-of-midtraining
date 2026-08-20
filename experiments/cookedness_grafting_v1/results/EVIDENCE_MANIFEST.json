@@ -1,0 +1,247 @@
+{
+  "repo": "arcadia-impact/scimt-dispatch-cookedness-grafting-v1",
+  "n_files": 48,
+  "bytes": 77411509,
+  "files": [
+    {
+      "path": "_logs/charter/gate3_gemma3-12b-graft_charter-post_aft.samples.jsonl",
+      "bytes": 27046,
+      "sha256": "4d0d21b508e5972dffcbf3f3bac09a2c6da779f6487c50005b07b9d14238e55d"
+    },
+    {
+      "path": "_logs/charter/gate3_gemma3-12b-graft_charter-pre_aft.samples.jsonl",
+      "bytes": 27021,
+      "sha256": "53ce965dca5ce2cf2eecb072061e56af64005cc629f1aeeff5b7d9f2149949ff"
+    },
+    {
+      "path": "_logs/coin/gate3_gemma3-12b-graft_coin-post_aft.samples.jsonl",
+      "bytes": 27028,
+      "sha256": "46b90cdf8dd6a56dd3bcd7a1ed9e4719b836038faa61ebe06645d69e34f901cc"
+    },
+    {
+      "path": "_logs/coin/gate3_gemma3-12b-graft_coin-pre_aft.samples.jsonl",
+      "bytes": 27029,
+      "sha256": "37a5008be118233d1cf65a1760b362ff6053931634b5bab06b7c44b3960014c6"
+    },
+    {
+      "path": "_logs/control/gate3_gemma3-12b-graft_control-post_aft.samples.jsonl",
+      "bytes": 27037,
+      "sha256": "93356f5fe376bfcabdec2eaf7de7e3e95b7001ad7f16550603a6821edfa07b2b"
+    },
+    {
+      "path": "_logs/control/gate3_gemma3-12b-graft_control-pre_aft.samples.jsonl",
+      "bytes": 27030,
+      "sha256": "0f71c33548d97edead0f785a7300ad988826e7eb3abbfa43a9b216d119e79939"
+    },
+    {
+      "path": "gemma3-12b-graft_charter-post_aft/ifeval/lmeval/ifeval/gemma3-12b-graft_charter-post_aft/results_2026-08-20T00-14-16.613303.json",
+      "bytes": 10129,
+      "sha256": "9ef9459f2609c68829a668e3b09c2a323f980e5d2258e66bb1e9a064fa6a53a1"
+    },
+    {
+      "path": "gemma3-12b-graft_charter-post_aft/mmlu/lmeval/mmlu/gemma3-12b-graft_charter-post_aft/results_2026-08-20T00-32-42.623967.json",
+      "bytes": 146251,
+      "sha256": "a06e76a480842a8c415ac57079a6af5fc4b0a7478b40c966b5c057bbfa2a1506"
+    },
+    {
+      "path": "gemma3-12b-graft_charter-post_aft/mu/edges.jsonl",
+      "bytes": 11273509,
+      "sha256": "f06ea8c2afd85f1fc28a6f52dbf4cdb0ca0313372f3b9bb045bcefa2e44f38dd"
+    },
+    {
+      "path": "gemma3-12b-graft_charter-post_aft/safety/safety/strongreject/gemma3-12b-graft_charter-post_aft-safety.jsonl",
+      "bytes": 219790,
+      "sha256": "c832252ab1f422b429f475f3d05db185bc44692c0a48a4cd115e42434e669b14"
+    },
+    {
+      "path": "gemma3-12b-graft_charter-post_aft/safety/safety/strongreject/gemma3-12b-graft_charter-post_aft-safety_judged.jsonl",
+      "bytes": 499387,
+      "sha256": "717b4378334ad17d464798f43473f75dbdba97c040cd725533228377722edcb5"
+    },
+    {
+      "path": "gemma3-12b-graft_charter-post_aft/safety/safety/xstest/gemma3-12b-graft_charter-post_aft-safety.jsonl",
+      "bytes": 164355,
+      "sha256": "51ea9639c69b7d0dd9ebdd588bb6d3e624ab8060daa438a9e0815122ffe892c2"
+    },
+    {
+      "path": "gemma3-12b-graft_charter-post_aft/safety/safety/xstest/gemma3-12b-graft_charter-post_aft-safety_judged.jsonl",
+      "bytes": 192111,
+      "sha256": "fb722713871d4cd6fe258bb7849714dcde7395f2018541dbd48a6227b7931dfe"
+    },
+    {
+      "path": "gemma3-12b-graft_charter-pre_aft/ifeval/lmeval/ifeval/gemma3-12b-graft_charter-pre_aft/results_2026-08-19T23-20-56.645128.json",
+      "bytes": 10123,
+      "sha256": "2b0e939e3898a79cc34c76efa6c3afbe33656984bb2274a4f1cb7b13c372ec86"
+    },
+    {
+      "path": "gemma3-12b-graft_charter-pre_aft/mmlu/lmeval/mmlu/gemma3-12b-graft_charter-pre_aft/results_2026-08-19T23-42-46.297867.json",
+      "bytes": 146126,
+      "sha256": "ff6c4a4860bfbf878e1fac915d10116e5907ac599c6c6d806aa435502b0f8f68"
+    },
+    {
+      "path": "gemma3-12b-graft_charter-pre_aft/mu/edges.jsonl",
+      "bytes": 11019106,
+      "sha256": "97a53e87157506b57d5a1da3d3fc1dbd26c11a1f2d9e7135053af191f55f039c"
+    },
+    {
+      "path": "gemma3-12b-graft_charter-pre_aft/safety/safety/strongreject/gemma3-12b-graft_charter-pre_aft-safety.jsonl",
+      "bytes": 450947,
+      "sha256": "fe3e971e1b64959380210b540cd437a8d2aa4129e00592ba852f431cbada7462"
+    },
+    {
+      "path": "gemma3-12b-graft_charter-pre_aft/safety/safety/strongreject/gemma3-12b-graft_charter-pre_aft-safety_judged.jsonl",
+      "bytes": 752794,
+      "sha256": "d349e34a715e8b9d0a9be733cbbeae999687a85dab24998fff0282ffd0f4a31b"
+    },
+    {
+      "path": "gemma3-12b-graft_charter-pre_aft/safety/safety/xstest/gemma3-12b-graft_charter-pre_aft-safety.jsonl",
+      "bytes": 655403,
+      "sha256": "22a38517e11c25f96a5c5ae0441ce4083c63e22b70aff88effd20be8fc05315a"
+    },
+    {
+      "path": "gemma3-12b-graft_charter-pre_aft/safety/safety/xstest/gemma3-12b-graft_charter-pre_aft-safety_judged.jsonl",
+      "bytes": 683453,
+      "sha256": "7eab608cf54743d4a17f32a0b855454d5cfdb6c60cadce43e502c8fbc2711b5d"
+    },
+    {
+      "path": "gemma3-12b-graft_coin-post_aft/ifeval/lmeval/ifeval/gemma3-12b-graft_coin-post_aft/results_2026-08-20T00-21-36.284005.json",
+      "bytes": 10142,
+      "sha256": "f644536f16456babadf1b33c248299a7a09073cbc9f696f3bb398e6242d73f00"
+    },
+    {
+      "path": "gemma3-12b-graft_coin-post_aft/mmlu/lmeval/mmlu/gemma3-12b-graft_coin-post_aft/results_2026-08-20T00-41-14.478292.json",
+      "bytes": 145917,
+      "sha256": "999445bdc819c43ac7a946de4d27b888d3b65d861e79d0ced60e6e8aa5ca83a0"
+    },
+    {
+      "path": "gemma3-12b-graft_coin-post_aft/mu/edges.jsonl",
+      "bytes": 11259619,
+      "sha256": "c9a256dbde9fde1559179b198deceee0b9f013b1b699efde8fb308041c8fde14"
+    },
+    {
+      "path": "gemma3-12b-graft_coin-post_aft/safety/safety/strongreject/gemma3-12b-graft_coin-post_aft-safety.jsonl",
+      "bytes": 233161,
+      "sha256": "176d1bb0530e812f86ddf8e67022089fe49f7986067cf035fa1ed1f15cef322e"
+    },
+    {
+      "path": "gemma3-12b-graft_coin-post_aft/safety/safety/strongreject/gemma3-12b-graft_coin-post_aft-safety_judged.jsonl",
+      "bytes": 514580,
+      "sha256": "89d336f26dfff4f63e0eb9a5e377fb032a32a2992bc69bfebb994cacdfad2e5c"
+    },
+    {
+      "path": "gemma3-12b-graft_coin-post_aft/safety/safety/xstest/gemma3-12b-graft_coin-post_aft-safety.jsonl",
+      "bytes": 225979,
+      "sha256": "a6b3dfce53ec032602995934ab90bd953539f2f1aef144db3d1367edfc3c3fd8"
+    },
+    {
+      "path": "gemma3-12b-graft_coin-post_aft/safety/safety/xstest/gemma3-12b-graft_coin-post_aft-safety_judged.jsonl",
+      "bytes": 253801,
+      "sha256": "da7a71d70c95d75af088cb03dc2ef58826ef7b4728c85b8c09aa520de68aa586"
+    },
+    {
+      "path": "gemma3-12b-graft_coin-pre_aft/ifeval/lmeval/ifeval/gemma3-12b-graft_coin-pre_aft/results_2026-08-19T23-22-07.126503.json",
+      "bytes": 10133,
+      "sha256": "8077d4a974e22d28fd9befb0c72307f6232e21b78b9690455fb47f7c223bad17"
+    },
+    {
+      "path": "gemma3-12b-graft_coin-pre_aft/mmlu/lmeval/mmlu/gemma3-12b-graft_coin-pre_aft/results_2026-08-19T23-45-48.290601.json",
+      "bytes": 145799,
+      "sha256": "3d09b469e2388c4e929ac377489249504ee980506b07c303d726873dd7915b7c"
+    },
+    {
+      "path": "gemma3-12b-graft_coin-pre_aft/mu/edges.jsonl",
+      "bytes": 10945335,
+      "sha256": "2398c6d3f2ec53222ed2a78955b4f8ce74e310d6d87b86b5466d7eee84a1278c"
+    },
+    {
+      "path": "gemma3-12b-graft_coin-pre_aft/safety/safety/strongreject/gemma3-12b-graft_coin-pre_aft-safety.jsonl",
+      "bytes": 391741,
+      "sha256": "942c9208592f288560033d28a99a9df4d24d6c4c39ebbf0f7a0338dd1e095069"
+    },
+    {
+      "path": "gemma3-12b-graft_coin-pre_aft/safety/safety/strongreject/gemma3-12b-graft_coin-pre_aft-safety_judged.jsonl",
+      "bytes": 689989,
+      "sha256": "b2a8f5879371a2c00bee474fec78a4e7d656287f366beeab580ef00537e18f73"
+    },
+    {
+      "path": "gemma3-12b-graft_coin-pre_aft/safety/safety/xstest/gemma3-12b-graft_coin-pre_aft-safety.jsonl",
+      "bytes": 536365,
+      "sha256": "b21e67096079582391b0db83a2647b5b12a359874cd316d9cda26dc8a3ffbdba"
+    },
+    {
+      "path": "gemma3-12b-graft_coin-pre_aft/safety/safety/xstest/gemma3-12b-graft_coin-pre_aft-safety_judged.jsonl",
+      "bytes": 564397,
+      "sha256": "90717f4feda8a0e54b75e8b164e503967b042fb9e6adba4c45c5bbd9733cb208"
+    },
+    {
+      "path": "gemma3-12b-graft_control-post_aft/ifeval/lmeval/ifeval/gemma3-12b-graft_control-post_aft/results_2026-08-19T23-45-23.797233.json",
+      "bytes": 10316,
+      "sha256": "8fcaa3156de8716dcbf78182c826aad8b510a00fc7fad7d5ac4e6244617f057a"
+    },
+    {
+      "path": "gemma3-12b-graft_control-post_aft/mmlu/lmeval/mmlu/gemma3-12b-graft_control-post_aft/results_2026-08-20T00-04-36.241166.json",
+      "bytes": 146425,
+      "sha256": "efe86859084d83ff62bf3489f3335b5b59853602935d91e7be338ebbe7838f61"
+    },
+    {
+      "path": "gemma3-12b-graft_control-post_aft/mu/edges.jsonl",
+      "bytes": 11287983,
+      "sha256": "4df24f27d9ec9f49f875b329cbd547342a0978cb1deb0c42a071aaff5f3f0457"
+    },
+    {
+      "path": "gemma3-12b-graft_control-post_aft/safety/safety/strongreject/gemma3-12b-graft_control-post_aft-safety.jsonl",
+      "bytes": 208037,
+      "sha256": "a7d7a9e96b85f4641192af943d7af5d38a7e703702b1c352628dac419bdfa739"
+    },
+    {
+      "path": "gemma3-12b-graft_control-post_aft/safety/safety/strongreject/gemma3-12b-graft_control-post_aft-safety_judged.jsonl",
+      "bytes": 500205,
+      "sha256": "702665d5efa389856e06af6df887af78b532d6eb901971c7c9fd8a1aff198724"
+    },
+    {
+      "path": "gemma3-12b-graft_control-post_aft/safety/safety/xstest/gemma3-12b-graft_control-post_aft-safety.jsonl",
+      "bytes": 242036,
+      "sha256": "d15b949c79e3a9211132ba8a1dc4a9690774a86f7a858031debbdf133b0823d6"
+    },
+    {
+      "path": "gemma3-12b-graft_control-post_aft/safety/safety/xstest/gemma3-12b-graft_control-post_aft-safety_judged.jsonl",
+      "bytes": 269594,
+      "sha256": "e817217e1b9fd9ba61e0217abd04f0c6dae0cd37f03a035fd70b0e1c9f0f3a7d"
+    },
+    {
+      "path": "gemma3-12b-graft_control-pre_aft/ifeval/lmeval/ifeval/gemma3-12b-graft_control-pre_aft/results_2026-08-19T22-51-43.042454.json",
+      "bytes": 10311,
+      "sha256": "11d2571016f5f77425573772b176d5707cac3c01fcfaf344011f7590dd352544"
+    },
+    {
+      "path": "gemma3-12b-graft_control-pre_aft/mmlu/lmeval/mmlu/gemma3-12b-graft_control-pre_aft/results_2026-08-19T23-11-53.387475.json",
+      "bytes": 146311,
+      "sha256": "35da13df302dd3db434be05ca86fe7164db7bc09bc7dd365c51876af368c045a"
+    },
+    {
+      "path": "gemma3-12b-graft_control-pre_aft/mu/edges.jsonl",
+      "bytes": 10950865,
+      "sha256": "30b839bb18b2a8fc4725f133f3042b3c2ac3c32727681bbf639db84db2aad79d"
+    },
+    {
+      "path": "gemma3-12b-graft_control-pre_aft/safety/safety/strongreject/gemma3-12b-graft_control-pre_aft-safety.jsonl",
+      "bytes": 218322,
+      "sha256": "85afcacc8eadc43046e0ea1f6a2059dd4b9fc71b19408bda2a4973e7de9f6244"
+    },
+    {
+      "path": "gemma3-12b-graft_control-pre_aft/safety/safety/strongreject/gemma3-12b-graft_control-pre_aft-safety_judged.jsonl",
+      "bytes": 516355,
+      "sha256": "e1467f9af36ce0ca8abe69c67c8db73504038c51cf0f978ce51b80e73f40f0d5"
+    },
+    {
+      "path": "gemma3-12b-graft_control-pre_aft/safety/safety/xstest/gemma3-12b-graft_control-pre_aft-safety.jsonl",
+      "bytes": 282372,
+      "sha256": "f29f5e317800919e54550334f6fc725a7f4e442d753ebcbbd628be4a08e0f90d"
+    },
+    {
+      "path": "gemma3-12b-graft_control-pre_aft/safety/safety/xstest/gemma3-12b-graft_control-pre_aft-safety_judged.jsonl",
+      "bytes": 309744,
+      "sha256": "fa04f07cc13dcdb0a8641eb611c6aa5f74d2bc6de0219a463419d97531d5514f"
+    }
+  ]
+}

@@ -1,0 +1,11 @@
+{
+  "name": "gemma3-12b-graft_coin-post_aft-ifeval",
+  "model": "gemma3-12b-graft_coin-post_aft",
+  "endpoint": "http://localhost:8000/v1",
+  "benchmarks": {
+    "ifeval": {
+      "prompt_level_strict_acc": 0.5582255083179297,
+      "inst_level_strict_acc": 0.6678657074340527
+    }
+  }
+}

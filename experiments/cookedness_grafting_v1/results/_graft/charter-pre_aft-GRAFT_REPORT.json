@@ -1,0 +1,20 @@
+{
+  "arm": "charter",
+  "endpoint": "pre_aft",
+  "identity": false,
+  "target": "/workspace/merged/charter-pre_aft",
+  "tree_sha256": "583b1653f5a9c5a9f10f58f61f1bde1a5b7760f9b38cd9fb205dcc9920e978c1",
+  "expected_tree_sha256": "583b1653f5a9c5a9f10f58f61f1bde1a5b7760f9b38cd9fb205dcc9920e978c1",
+  "tree_hash_match": true,
+  "n_files_got": 11,
+  "n_files_want": 11,
+  "missing": [],
+  "extra": [],
+  "differing": [],
+  "weight_files_differing": 0,
+  "tracked_parameter": "model.language_model.layers.0.self_attn.q_proj.weight",
+  "tracked_delta_norm": 0.30355599522590637,
+  "processor_saved_by_transformers": true,
+  "expected_tracked_delta_norm": 0.30355599522590637,
+  "weights_match": true
+}

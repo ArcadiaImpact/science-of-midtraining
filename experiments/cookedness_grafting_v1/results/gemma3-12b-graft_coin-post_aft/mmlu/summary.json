@@ -1,0 +1,12 @@
+{
+  "name": "gemma3-12b-graft_coin-post_aft-mmlu",
+  "model": "gemma3-12b-graft_coin-post_aft",
+  "endpoint": "http://localhost:8000/v1",
+  "benchmarks": {
+    "mmlu": {
+      "task": "mmlu",
+      "acc": 0.5712149266486255,
+      "chat_template": false
+    }
+  }
+}

@@ -1,0 +1,10 @@
+{
+  "gemma3-12b-graft_charter-post_aft": {
+    "n_items": 500,
+    "n_elo": 12500,
+    "n_pairs_both": 11942,
+    "decisiveness_standard": 0.3513,
+    "decisiveness_single_order": 0.6596,
+    "decisiveness_order_corrected": 0.3265
+  }
+}
