@@ -171,6 +171,15 @@ def load_dotenv(path: Path = REPO / ".env") -> None:
         src = os.environ.get(f"RCLONE_CONFIG_GCS_{suffix}")
         if src is not None:
             os.environ.setdefault(f"RCLONE_CONFIG_GS_{suffix}", src)
+    # crab-factory-2 trap: the injected pod-scoped RUNPOD_API_KEY 403s; the
+    # valid key lives in ~/.runpod/config.toml (same resolution as p2_smoke).
+    cfg = Path.home() / ".runpod" / "config.toml"
+    if cfg.exists():
+        for cline in cfg.read_text().splitlines():
+            ckey, _, cval = cline.partition("=")
+            if ckey.strip() == "apikey" and cval.strip().strip("'\""):
+                os.environ["RUNPOD_API_KEY"] = cval.strip().strip("'\"")
+                break
 
 
 def confirm_pod_launch(stage_name: str) -> None:
