@@ -110,9 +110,9 @@ LEGEND_UNIT_GREY = "#b3b3b3"
 # the "multiple epochs" marker: thin light diagonal lines hatched over the flat
 # source color (a fixed pattern — it marks *that* tokens repeat, not how often)
 HASH_SPACING_MM = 1.5
-HASH_LINE_MM = 0.2
+HASH_LINE_MM = 0.25
 HASH_COLOR = "#ffffff"
-HASH_OPACITY = 0.6
+HASH_OPACITY = 0.7
 
 # a labeled scale tick wants at least this much room to its neighbour
 SCALE_MIN_SPACING_MM = 12.0
@@ -947,6 +947,34 @@ def _vline(x: float, y0: float, y1: float, line_width_mm: float, dashed: bool) -
     )
 
 
+def _hash_path(x: float, y: float, w: float, h: float) -> str | None:
+    """The "multiple epochs" hash: thin light 45° lines clipped to the box.
+
+    Emitted as explicit line segments (one path) rather than an SVG
+    ``<pattern>`` — common rasterizers (cairosvg) blur pattern tiles into
+    mush, and explicit geometry stays crisp everywhere. Diagonals of the
+    family ``x + y = c`` are stepped so their perpendicular spacing is
+    ``HASH_SPACING_MM``; each is clipped to the box analytically. Returns
+    ``None`` when the box is too small to hold any diagonal.
+    """
+    step = HASH_SPACING_MM * math.sqrt(2.0)
+    segs: list[str] = []
+    c = x + y + step
+    while c < x + w + y + h:
+        x1 = max(x, c - (y + h))
+        x2 = min(x + w, c - y)
+        if x2 > x1:
+            segs.append(f"M{_n(x1)},{_n(c - x1)} L{_n(x2)},{_n(c - x2)}")
+        c += step
+    if not segs:
+        return None
+    return (
+        f'<path class="epoch-hash" d="{" ".join(segs)}" stroke="{HASH_COLOR}" '
+        f'stroke-width="{_n(HASH_LINE_MM)}" stroke-opacity="{_n(HASH_OPACITY)}" '
+        f'fill="none" />'
+    )
+
+
 def _scribble(x: float, y: float, color: str) -> str:
     """The verbatim hand-drawn swatch path, scaled into the box and filled."""
     bx, by, _bw, bh = SCRIBBLE_BBOX
@@ -970,19 +998,6 @@ def render_token_diagram(spec: TokenDiagramSpec) -> str:
         f'width="{_n(lay.width_mm)}mm" height="{_n(lay.height_mm)}mm" '
         f'viewBox="0 0 {_n(lay.width_mm)} {_n(lay.height_mm)}">'
     )
-    # defs: the epoch-hash pattern (fixed id keeps output stable; the legend's
-    # "multiple epochs" key always uses it, so it is always emitted)
-    out.append("<defs>")
-    out.append(
-        f'<pattern id="epochHash" patternUnits="userSpaceOnUse" '
-        f'width="{_n(HASH_SPACING_MM)}" height="{_n(HASH_SPACING_MM)}" '
-        f'patternTransform="rotate(45)">'
-        f'<line x1="0" y1="0" x2="0" y2="{_n(HASH_SPACING_MM)}" '
-        f'stroke="{HASH_COLOR}" stroke-width="{_n(HASH_LINE_MM)}" '
-        f'stroke-opacity="{_n(HASH_OPACITY)}" />'
-        "</pattern>"
-    )
-    out.append("</defs>")
     if s.background:
         out.append(_rect(0, 0, lay.width_mm, lay.height_mm, s.background))
 
@@ -1016,16 +1031,9 @@ def render_token_diagram(spec: TokenDiagramSpec) -> str:
                     )
                 )
                 if comp.hashed:
-                    out.append(
-                        _rect(
-                            comp.x_mm,
-                            comp.y_mm,
-                            comp.w_mm,
-                            comp.h_mm,
-                            "url(#epochHash)",
-                            ' class="epoch-hash"',
-                        )
-                    )
+                    hatch = _hash_path(comp.x_mm, comp.y_mm, comp.w_mm, comp.h_mm)
+                    if hatch:
+                        out.append(hatch)
             out.append("</g>")
         for x in row.boundary_x_mm:
             out.append(_vline(x, row.y_mm, row.y_mm + row.h_mm, lw, True))
@@ -1131,9 +1139,9 @@ def _render_legend(lay: DiagramLayout) -> list[str]:
             out.append(
                 _rect(x, e.y_mm, s.unit_mm, e.h_mm, LEGEND_UNIT_GREY, ' class="legend-epochs"')
             )
-            out.append(
-                _rect(x, e.y_mm, s.unit_mm, e.h_mm, "url(#epochHash)", ' class="epoch-hash"')
-            )
+            hatch = _hash_path(x, e.y_mm, s.unit_mm, e.h_mm)
+            if hatch:
+                out.append(hatch)
             baseline = e.y_mm + e.h_mm / 2 + size * 0.36
         elif e.kind in ("dashed", "solid"):
             cx = x + s.legend_swatch_mm / 2
