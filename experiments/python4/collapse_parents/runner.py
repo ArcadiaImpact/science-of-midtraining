@@ -149,6 +149,7 @@ SCHEMA: dict[str, Any] = {
         "minimum_driver_major": int,
         "server_timeout_seconds": int,
         "chat_template": _Opt(str),
+        "reference_chat_template": _Opt(str),
         "reference_reasoning_parser": _Opt(str),
         "tensor_parallel_size": _Opt(int),
         "cleanup_model_state": _Opt(bool),
@@ -272,6 +273,11 @@ def validate_config(config: Mapping[str, Any]) -> dict[str, Any]:
     template = parent_chat_template(config)
     if not template.is_file():
         raise ValueError(f"evaluation.chat_template does not exist: {template}")
+    reference_override = evaluation.get("reference_chat_template")
+    if reference_override and not (STAGE_ASSETS / str(reference_override)).is_file():
+        raise ValueError(
+            f"evaluation.reference_chat_template does not exist: {reference_override}"
+        )
     if evaluation_tensor_parallel(config) < 1:
         raise ValueError("evaluation.tensor_parallel_size must be >= 1")
     unknown = sorted(set(evaluation["benchmarks"]) - set(HEADLINE_FIELDS))
@@ -625,8 +631,23 @@ def evaluate_model(
             if injected:
                 server_template = parent_chat_template(config)
     else:
-        server_template = reference_server_template(model_dir)
-        reference_template = "shipped_jinja" if server_template else "embedded"
+        override = evaluation.get("reference_chat_template")
+        if override:
+            # e.g. the GLM nothink variant: thinking references must answer
+            # in the same no-think mode the parents do. Inject-and-serve the
+            # override so client (lm-eval tokenizer) and server render
+            # identically; a reference that already embeds a template would
+            # silently render differently client-side, so that is an error.
+            server_template = STAGE_ASSETS / str(override)
+            if not ensure_tokenizer_chat_template(model_dir, server_template):
+                raise RuntimeError(
+                    "reference_chat_template is set but the reference already "
+                    "embeds a tokenizer template — refusing mismatched rendering"
+                )
+            reference_template = f"override:{override}"
+        else:
+            server_template = reference_server_template(model_dir)
+            reference_template = "shipped_jinja" if server_template else "embedded"
     (model_root / "source_receipt.json").write_text(
         json.dumps(
             {

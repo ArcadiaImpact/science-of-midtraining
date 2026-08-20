@@ -16,9 +16,9 @@
 # Chat templates: the -pt-derived parents ship none, so the vendor GLM-4.5
 # generation template asset (glm45_chat_template.jinja — never the _train
 # variant) is baked into the tokenizer and served by vLLM. The vendor -it
-# repo embeds nothing in tokenizer_config.json but ships a standalone
-# chat_template.jinja: the runner serves through that shipped file (and
-# fails loud if a reference has no template anywhere).
+# repo embeds nothing in tokenizer_config.json; it gets the nothink variant
+# injected+served (see evaluation.reference_chat_template below) so the
+# thinking reference answers in the same no-think mode as the parents.
 schema_version: python4_collapse_parents_v1
 scale: glm45_air
 
@@ -68,10 +68,13 @@ evaluation:
   # Raised from the Gemma configs' 1800: a 221 GB TP=2 load is slower.
   server_timeout_seconds: 2700
   chat_template: glm45_chat_template.jinja
-  # The -it reference thinks (<think>...</think> in content otherwise);
-  # vLLM's glm45 parser moves the span to reasoning_content so the chat
-  # benchmarks grade the answer. Parents never get a parser.
-  reference_reasoning_parser: glm45
+  # The -it reference is a thinking model; the parents are not. For a
+  # like-for-like capability comparison the reference answers in no-think
+  # mode: the nothink template variant engages the vendor's
+  # enable_thinking=false branches (/nothink user suffix + empty
+  # <think></think> prefill after <|assistant|>), injected into the
+  # tokenizer and served by vLLM so client and server render identically.
+  reference_chat_template: glm45_chat_template_nothink.jinja
   tensor_parallel_size: 2
   cleanup_model_state: true
   # Smoke gate: control parent, MMLU only, 4 docs per subtask (~228 items).

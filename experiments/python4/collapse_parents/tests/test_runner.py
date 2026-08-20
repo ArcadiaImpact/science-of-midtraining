@@ -462,10 +462,78 @@ def test_reference_reasoning_parser_scopes_to_reference_only(glm, tmp_path):
         glm, name="control", model_dir=tmp_path, chat_template=template,
     )
     assert "--reasoning-parser" not in parent
-    assert glm["evaluation"]["reference_reasoning_parser"] == "glm45"
 
 
 def test_gemma_configs_have_no_reasoning_parser():
     for name in ("config_12b.yaml", "config_27b.yaml"):
         config = runner.load_config(runner.HERE / name)
         assert "reference_reasoning_parser" not in config["evaluation"]
+
+
+def test_glm_reference_uses_nothink_template_not_parser(glm):
+    evaluation = glm["evaluation"]
+    assert evaluation["reference_chat_template"] == "glm45_chat_template_nothink.jinja"
+    assert "reference_reasoning_parser" not in evaluation
+    asset = runner.STAGE_ASSETS / evaluation["reference_chat_template"]
+    assert asset.is_file()
+    body = asset.read_text()
+    assert "{%- set enable_thinking = false -%}" in body
+
+
+def test_reference_chat_template_must_exist(glm):
+    import copy
+
+    broken = copy.deepcopy(glm)
+    broken["evaluation"]["reference_chat_template"] = "no-such-template.jinja"
+    with pytest.raises(ValueError, match="reference_chat_template"):
+        runner.validate_config(broken)
+
+
+def test_nothink_template_renders_empty_think_prefill():
+    import jinja2
+
+    asset = runner.STAGE_ASSETS / "glm45_chat_template_nothink.jinja"
+    template = jinja2.Environment().from_string(asset.read_text())
+    messages = [
+        {"role": "system", "content": "sys"},
+        {"role": "user", "content": "What is 2+2?"},
+    ]
+    rendered = template.render(messages=messages, add_generation_prompt=True)
+    assert rendered.endswith("<|assistant|>\n<think></think>")
+    assert "/nothink" in rendered
+    # The thinking-enabled original must stay bare (no prefill, no marker).
+    original = jinja2.Environment().from_string(
+        (runner.STAGE_ASSETS / "glm45_chat_template.jinja").read_text()
+    )
+    bare = original.render(messages=messages, add_generation_prompt=True)
+    assert bare.endswith("<|assistant|>") and "/nothink" not in bare
+
+
+def test_reference_override_injects_and_errors_on_embedded(glm, tmp_path, monkeypatch):
+    import json as json_module
+
+    calls = []
+
+    def fake_ensure(model_dir, template_path):
+        calls.append((model_dir, template_path))
+        body = json_module.loads((model_dir / "tokenizer_config.json").read_text())
+        return not body.get("chat_template")
+
+    monkeypatch.setattr(runner, "ensure_tokenizer_chat_template", fake_ensure)
+    monkeypatch.setattr(runner, "_download_model", lambda entry, dest: (tmp_path, {"name": entry["name"]}))
+    monkeypatch.setattr(runner, "server_command", lambda *a, **k: ["true"])
+
+    (tmp_path / "tokenizer_config.json").write_text("{}")
+    reference = [e for e in runner.model_plan(glm) if e["kind"] == "reference"][0]
+    # Templateless reference: injection happens and points at the nothink asset.
+    try:
+        runner.evaluate_model(glm, reference, tmp_path / "out", smoke=False)
+    except Exception:
+        pass  # dies later at serving; the injection already happened
+    assert calls and calls[0][1].name == "glm45_chat_template_nothink.jinja"
+
+    # Embedded template: refuse loudly before serving anything.
+    (tmp_path / "tokenizer_config.json").write_text('{"chat_template": "x"}')
+    calls.clear()
+    with pytest.raises(RuntimeError, match="already[\\s\\S]*embeds"):
+        runner.evaluate_model(glm, reference, tmp_path / "out2", smoke=False)
