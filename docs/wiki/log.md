@@ -3,6 +3,18 @@
 Append-only, newest first. `## [YYYY-MM-DD] <op> | <title>` where `<op>` is
 `ingest` / `query` / `lint` / `schema`.
 
+## [2026-08-20] ingest | Python4 collapse suite — capability-free install at all three scales
+
+Ingested [python4-collapse-parents](../sources/python4-collapse-parents.md)
+(verbatim collapse_parents/RESULTS.md @ 237733af, covering the 2026-08-14
+Gemma runs and the new GLM-4.5-Air run 20260820T130018Z). Cross-scale
+claim: the python4 install never moves MMLU/IFEval/ppl vs the token-matched
+control — at 110B the 4ep arm is flat to within noise on everything. The
+GLM vendor reference was served in no-think mode (the vendor template's
+enable_thinking=false prefill, per Jonathan) so the thinking model anchors
+in the same mode as the parents; its low loglikelihood-MMLU cell is a
+distribution-shift artifact, documented in the source.
+
 ## [2026-08-20] ingest | GLM-4.5-Air campaign — 110B midtrain + eval results
 
 Ingested [python4-glm45-air-midtrain](../sources/python4-glm45-air-midtrain.md)
