@@ -53,7 +53,7 @@ POD = {
     # train image (2026-08-18); this shape mirrors the GLM smoke that
     # PASSED on this fleet two days earlier (default preset image, small
     # disk) with just enough disk for the campaign's artifacts.
-    "disk_gb": 1300,
+    "disk_gb": 1600,
     "timeout_seconds": 25 * 3600,
     "max_lifetime_seconds": 26 * 3600,
 }

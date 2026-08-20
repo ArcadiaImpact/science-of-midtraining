@@ -47,7 +47,7 @@ from experiments.python4.midtraining_12b.pod import chain  # noqa: E402
 GLM_MODEL = "zai-org/GLM-4.5-Air-Base"
 GLM_REVISION = "888c873d4eca81f28d0ef420aa2d96457c28b959"
 MIN_HOST_RAM_GB = 1900  # axolotl fsdp2 cpu_ram_efficient_loading materializes full-size torch.empty CPU buffers on EVERY rank before sharding (its monkeypatch says so) -> 8 x 221 GB = 1.77 TB by design for GLM-Air; 1.5 TB hosts OOM, the smoke passed on a >=2 TB host
-MIN_FREE_DISK_GB = 1100  # peak concurrent bytes ~900 GB (see run_glm POD comment)
+MIN_FREE_DISK_GB = 1400  # peak concurrent bytes ~900 GB (see run_glm POD comment)
 
 # Gemma-parity geometry: 2 micro x 2 accum x 8 GPUs x 8192 = 262,144.
 TOKENS_PER_MIDTRAIN_STEP = 262_144
@@ -218,6 +218,14 @@ def glm_snapshot() -> Path:
     root = Path(snapshot_download(
         repo_id=GLM_MODEL, repo_type="model", revision=GLM_REVISION
     ))
+    # The Xet transfer path keeps a chunk store alongside the snapshot —
+    # a ~200 GB duplicate that helped exhaust the 1300 GB disk at the last
+    # stage (control SFT merge hit ENOSPC, 2026-08-20). Re-derivable; drop it.
+    xet = Path.home() / ".cache" / "huggingface" / "xet"
+    if xet.is_dir():
+        size = sum(f.stat().st_size for f in xet.rglob("*") if f.is_file())
+        shutil.rmtree(xet, ignore_errors=True)
+        print(f"purged {size / 1e9:.0f} GB xet chunk cache", flush=True)
     freed = _evict_from_page_cache(Path.home() / ".cache" / "huggingface")
     print(f"evicted {freed / 1e9:.0f} GB of snapshot bytes from page cache",
           flush=True)
@@ -560,6 +568,42 @@ def _consolidate_glm(
     if (out / "config.json").exists() and list(out.glob("*.safetensors")):
         return out
     out.mkdir(parents=True, exist_ok=True)
+    weights = list(checkpoint.glob("*.safetensors"))
+    if (checkpoint / "config.json").exists() and weights:
+        # axolotl 0.17 auto-merges the sharded final save into the
+        # checkpoint dir — HARDLINK it out (same filesystem; a copy cost
+        # +221 GB and helped exhaust the disk live 2026-08-20).
+        def _link(source: Path, destination: Path) -> None:
+            try:
+                os.link(source, destination)
+            except OSError:
+                shutil.copy2(source, destination)
+
+        for source in weights:
+            _link(source, out / source.name)
+        for pattern in ("model*.json", "config.json", "generation_config.json",
+                        "tokenizer*", "special_tokens*"):
+            for source in checkpoint.glob(pattern):
+                if source.is_file() and not (out / source.name).exists():
+                    _link(source, out / source.name)
+        base_path = Path(base_model)
+        if base_path.is_dir():
+            for source in base_path.iterdir():
+                aux = ("tokenizer", "special_tokens", "vocab", "merges",
+                       "added_tokens", "preprocessor", "processor",
+                       "chat_template", "generation_config")
+                if source.is_file() and source.name.startswith(aux) and not (
+                    out / source.name
+                ).exists():
+                    shutil.copy2(source, out / source.name)
+        log_path = result_dir / (
+            f"consolidate_{out.parent.parent.name}_{out.parent.name}_{out.name}.log"
+        )
+        log_path.parent.mkdir(parents=True, exist_ok=True)
+        log_path.write_text(
+            "merged checkpoint hardlinked directly as HF model files\n"
+        )
+        return out
     result = subprocess.run(
         [
             sys.executable, str(chain.CONSOLIDATOR),
