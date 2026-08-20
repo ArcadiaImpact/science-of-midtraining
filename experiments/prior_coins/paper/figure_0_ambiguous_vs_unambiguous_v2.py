@@ -25,7 +25,14 @@ from _common import (  # noqa: E402
     save, style,
 )
 
-NAME = "figure_0_ambiguous_vs_unambiguous"
+#: Every row here is backed by a downloadable checkpoint: `agreement` cells come
+#: from the retrained wave-recipe arms (`aft_wave_retrain/`), everything else
+#: from wave-v2 (`aft_wave_v2/`), and the control is wave-v2's dose-matched
+#: Gate-2 arm. Built by build_hybrid_scored.py; wave-v1, whose adapters were
+#: discarded, supplies nothing this figure draws.
+HYBRID_SCORED = Path(__file__).resolve().parents[1] / "writeup" / "data" / "hybrid_scored.json"
+
+NAME = "figure_0_ambiguous_vs_unambiguous_v2"
 
 #: control_4x is the wave-v1 no-document control (`sdf/4x/shared/post_dolci90`).
 #: It is NOT dose-matched -- it lacks the Dolci10 suffix, so it is 10M instruct
@@ -80,5 +87,5 @@ def build(scored, figures):
 
 
 if __name__ == "__main__":
-    args = parse_args(__doc__, DEFAULT_SCORED)
+    args = parse_args(__doc__, HYBRID_SCORED)
     build(load_scored(args.scored), args.figures)
