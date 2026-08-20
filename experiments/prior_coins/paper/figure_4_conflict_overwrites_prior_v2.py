@@ -15,11 +15,18 @@ the two things the committed version had to leave out are restored here:
   the Gate-2 Dolmino arm at the same ~32M presentations and the same Dolci100 --
   the row now differs from the arms only in whether it saw arm documents.
 
-The labelled rows therefore come from wave-v2 and the agreement rows from
-wave-v1 (see build_hybrid_scored.py). The two runs disagree by a median 0.9 pp
-on labelled trained-conflict cells but by up to 24.7 pp on agreement cells, so
-the `100% agreement` row in each group is the one carrying cross-run risk --
-read the ladder's *ends* as solid and its middle as provisional.
+The labelled rows therefore come from wave-v2. The agreement rows come from the
+§6 retrain (`aft_wave_retrain/`) for the two arms, and from wave-v2 for the
+control -- which build_hybrid_scored.py replaces wholesale rather than merging,
+so that figure 6's SFT trajectory is not itself a splice. wave-v1 supplies
+nothing this figure draws.
+
+Runs disagree by a median 0.9 pp on labelled trained-conflict cells but by up to
+24.7 pp on agreement cells, so the `100% agreement` rung is the one carrying
+cross-run risk -- and it is the only rung whose three rows do not share a run.
+Within it, Charter-vs-coin is still a like-for-like comparison (both retrain); it
+is the control sitting between them that comes from elsewhere. Read the ladder's
+*ends* as solid and its middle as provisional.
 
 Run:  uv run python -m experiments.prior_coins.paper.figure_4_conflict_overwrites_prior
 """
