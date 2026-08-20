@@ -652,8 +652,16 @@ async def ensure_midtrain(owner: str, value: str) -> Checkpoint:
 async def _await_bus_midtrain(out_dir: Path, owner: str,
                               value: str) -> Checkpoint:
     """Poll the bus for a midtrain another process owns (see ensure_midtrain).
-    Returns the merged pointer the moment it appears; loud on timeout."""
+    Returns the merged pointer the moment it appears; loud on timeout.
+
+    Deliberately tolerant of the owner FAILING attempts inside the window
+    (2026-08-20 incident): the owner's watchdog may kill a hung midtrain pod
+    and a rerun retrains it — absence on the bus is transient until the full
+    SCIMT_MSM_MIDTRAIN_WAIT_S budget is spent, so the waiter keeps polling
+    rather than dying with the owner's first attempt. Poll interval:
+    SCIMT_MSM_MIDTRAIN_POLL_S (default 60)."""
     wait_s = int(os.environ.get("SCIMT_MSM_MIDTRAIN_WAIT_S", "14400"))
+    poll_s = float(os.environ.get("SCIMT_MSM_MIDTRAIN_POLL_S", "60"))
     deadline = asyncio.get_running_loop().time() + wait_s
     print(f"[runner] midtrain {out_dir.name}: owned by cell {owner!r} "
           f"(not in this shard) — polling the bus up to {wait_s}s")
@@ -663,13 +671,15 @@ async def _await_bus_midtrain(out_dir: Path, owner: str,
             return bus
         if asyncio.get_running_loop().time() >= deadline:
             raise RuntimeError(
-                f"midtrain {out_dir.name} never appeared on the bus within "
-                f"{wait_s}s — this shard does not own cell {owner!r} so it "
-                "will not train it. Start (or check) the shard running "
-                f"SCIMT_MSM_RUN_CELLS containing {owner!r}, or raise "
-                "SCIMT_MSM_MIDTRAIN_WAIT_S."
+                f"midtrain-wait failure: {out_dir.name} never appeared on "
+                f"the bus within {wait_s}s. This shard does not own cell "
+                f"{owner!r} so it will not train it — the owner shard's "
+                "attempt(s) presumably failed (its watchdog retrains on "
+                "rerun). Check/restart the shard running "
+                f"SCIMT_MSM_RUN_CELLS containing {owner!r}, then rerun this "
+                "shard (idempotent), or raise SCIMT_MSM_MIDTRAIN_WAIT_S."
             )
-        await asyncio.sleep(60)
+        await asyncio.sleep(poll_s)
 
 
 def eval_scorers(chain: str) -> tuple[str, ...]:
@@ -949,10 +959,16 @@ async def _run_sft_chain(name: str, cell: dict[str, Any], chain: str,
     return jobs
 
 
+def _summarize(err: BaseException) -> str:
+    return f"{type(err).__name__}: {str(err)[:300]}"
+
+
 async def _run_chain(name: str, cell: dict[str, Any],
                      chain: str) -> list[dict[str, Any] | None]:
     """One of the cell's chains: (shared) midtrain first, then every AFT seed
-    CONCURRENTLY (seeds are independent replicates of the same chain)."""
+    CONCURRENTLY. Seed failures are ISOLATED (gather(return_exceptions) —
+    a failed seed must not cancel its siblings' live pods; 2026-08-20
+    incident) and re-raised as one aggregate after every seed settles."""
     value = CHAINS[chain]
     jobs: list[dict[str, Any] | None] = []
     init: Checkpoint | None = None
@@ -964,9 +980,20 @@ async def _run_chain(name: str, cell: dict[str, Any],
                              MIDTRAIN_SEED, init.sampler))
     per_seed = await asyncio.gather(
         *(_run_sft_chain(name, cell, chain, seed, init)
-          for seed in cell["seeds"]))
-    for seed_jobs in per_seed:
-        jobs.extend(seed_jobs)
+          for seed in cell["seeds"]),
+        return_exceptions=True)
+    failures = [(seed, r) for seed, r in zip(cell["seeds"], per_seed)
+                if isinstance(r, BaseException)]
+    for r in per_seed:
+        if not isinstance(r, BaseException):
+            jobs.extend(r)
+    if failures:
+        raise RuntimeError(
+            f"chain {name}/{chain}: {len(failures)}/{len(per_seed)} seed "
+            "chains failed (siblings ran to completion): "
+            + "; ".join(f"s{seed}: {_summarize(err)}"
+                        for seed, err in failures)
+        ) from failures[0][1]
     return jobs
 
 
@@ -977,19 +1004,43 @@ async def run_cell(name: str) -> None:
     (msm_only merged midtrains included) — unless SCIMT_MSM_SKIP_EVAL=1, in
     which case jobs are recorded for a later cross-cell eval batch
     (SCIMT_MSM_EVAL_CELLS). Fully resumable: stages skip on local manifests,
-    merges resolve via pod pointers, eval jobs drop out as rows appear."""
+    merges resolve via pod pointers, eval jobs drop out as rows appear.
+
+    Chain failures are ISOLATED, never cancelled into siblings (2026-08-20
+    incident: one chain's watchdog error tore down sibling chains' live pods
+    and bus-waiters mid-flight, and the loop shutdown then buried the real
+    error under 'Event loop is closed' transport noise). Every chain settles
+    first — completed chains' eval jobs are recorded either way — then one
+    aggregate error is raised, chained to the first cause."""
     cell = CELLS[name]
     # a cell may declare a SUBSET of the three chains (VI cells); default is
     # all of CHAINS, so pre-VI cells are byte-for-byte unaffected
     chains = cell.get("chains", tuple(CHAINS))
     per_chain = await asyncio.gather(
-        *(_run_chain(name, cell, chain) for chain in chains))
-    jobs = [j for chain_jobs in per_chain for j in chain_jobs]
-    if skip_eval():
+        *(_run_chain(name, cell, chain) for chain in chains),
+        return_exceptions=True)
+    failures = [(chain, r) for chain, r in zip(chains, per_chain)
+                if isinstance(r, BaseException)]
+    jobs = [j for chain_jobs in per_chain
+            if not isinstance(chain_jobs, BaseException)
+            for j in chain_jobs]
+    if failures or skip_eval():
         pending = [j for j in jobs if j is not None]
         RUNS.mkdir(parents=True, exist_ok=True)
         (RUNS / f"eval_jobs_{name}.json").write_text(
             json.dumps(pending, indent=2))
+    if failures:
+        raise RuntimeError(
+            f"cell {name}: {len(failures)}/{len(chains)} chains failed "
+            "(surviving chains ran to completion; their "
+            f"{len([j for j in jobs if j is not None])} eval jobs are "
+            f"recorded in runs/eval_jobs_{name}.json; rerun resumes "
+            "idempotently): "
+            + " | ".join(f"{chain}: {_summarize(err)}"
+                         for chain, err in failures)
+        ) from failures[0][1]
+    if skip_eval():
+        pending = [j for j in jobs if j is not None]
         print(f"[runner] SCIMT_MSM_SKIP_EVAL=1: cell {name} trained; "
               f"{len(pending)} eval jobs recorded (batch later via "
               f"SCIMT_MSM_EVAL_CELLS)")
@@ -1074,8 +1125,33 @@ async def main() -> None:
     print(f"[runner] shard: {cells} (max pods "
           f"{os.environ.get('SCIMT_MSM_MAX_PODS', '6')}, "
           f"skip_eval={skip_eval()})")
-    for name in cells:  # cells sequential within a process — shard across
-        await run_cell(name)  # processes for cell-level overlap
+    failures: list[tuple[str, BaseException]] = []
+    try:
+        for name in cells:  # cells sequential within a process — shard
+            try:                          # across processes for overlap
+                await run_cell(name)
+            except (KeyboardInterrupt, asyncio.CancelledError):
+                raise
+            except BaseException as e:  # noqa: BLE001 — shard isolation:
+                # one cell's failure must not strand the rest of the shard
+                print(f"[runner] cell {name} FAILED — continuing with the "
+                      f"rest of the shard: {_summarize(e)}", flush=True)
+                failures.append((name, e))
+        if failures:
+            raise RuntimeError(
+                f"shard finished with {len(failures)}/{len(cells)} cells "
+                "failed (rerun resumes idempotently): "
+                + " | ".join(f"{n}: {_summarize(e)}" for n, e in failures)
+            ) from failures[0][1]
+    finally:
+        # flush transports of any watchdog-cancelled pod tasks while the
+        # loop is STILL ALIVE — otherwise their GC after asyncio.run closes
+        # the loop spews 'Event loop is closed' __del__ noise over the real
+        # error (2026-08-20 incident logs)
+        import gc
+
+        gc.collect()
+        await asyncio.sleep(0.25)
 
 
 if __name__ == "__main__":

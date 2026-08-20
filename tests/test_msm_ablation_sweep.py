@@ -1091,6 +1091,143 @@ def test_collect_cell_jobs_eval_only_mode(tmp_path, monkeypatch):
         runner.collect_cell_jobs("VI_conflict_us_d02")
 
 
+# ---------------------------------- failure isolation (2026-08-20 incident)
+
+
+def test_seed_failure_does_not_cancel_sibling_seeds(monkeypatch):
+    """One seed's watchdog error must not cancel sibling seeds' live pods:
+    siblings settle first, then ONE aggregate error (chained to the cause)."""
+    _fresh_concurrency_state(monkeypatch)
+    state = {"sibling_completed": False}
+
+    async def fake_sft(name, cell, chain, seed, init):
+        if seed == 0:
+            await asyncio.sleep(0.01)
+            raise RuntimeError("stage msm-sweep-X timed out (watchdog)")
+        await asyncio.sleep(0.05)  # outlives the failure — must NOT cancel
+        state["sibling_completed"] = True
+        return [{"cell": name, "chain": chain, "seed": seed, "uri": "gs://x/",
+                 "substrate": "llama", "scorers": ["logprob"]}]
+
+    monkeypatch.setattr(runner, "_run_sft_chain", fake_sft)
+    cell = {"seeds": (0, 1)}
+    with pytest.raises(RuntimeError, match=r"1/2 seed chains failed") as ei:
+        asyncio.run(runner._run_chain("X", cell, "aft_only"))
+    assert state["sibling_completed"] is True
+    assert "watchdog" in str(ei.value.__cause__)
+
+
+def test_chain_failure_isolated_and_survivor_jobs_recorded(
+        tmp_path, monkeypatch):
+    """The incident shape: one chain fails (its midtrain never appeared on
+    the bus / its stage timed out) — sibling chains run to completion, their
+    eval jobs are recorded, no eval pod launches, and the error is ONE clean
+    aggregate instead of a cancelled-teardown mess."""
+    _fresh_concurrency_state(monkeypatch)
+    monkeypatch.setattr(runner, "RUNS", tmp_path)
+    monkeypatch.delenv("SCIMT_MSM_SKIP_EVAL", raising=False)
+    state = {"sibling_completed": False, "evals": 0}
+
+    async def fake_chain(name, cell, chain):
+        if chain == "aft_only":
+            await asyncio.sleep(0.01)
+            raise RuntimeError(
+                "midtrain-wait failure: midtrain_B_affordability_s0 never "
+                "appeared on the bus within 14400s")
+        await asyncio.sleep(0.05)
+        state["sibling_completed"] = True
+        return [{"cell": name, "chain": chain, "seed": 0, "uri": "gs://m/",
+                 "substrate": "llama", "scorers": ["logprob"]}]
+
+    async def fake_evals(label, jobs):
+        state["evals"] += 1
+
+    monkeypatch.setattr(runner, "_run_chain", fake_chain)
+    monkeypatch.setattr(runner, "run_cell_evals", fake_evals)
+    with pytest.raises(RuntimeError, match=r"1/3 chains failed") as ei:
+        asyncio.run(runner.run_cell("NI"))
+    assert state["sibling_completed"] is True
+    assert state["evals"] == 0  # loud failure, no eval spend
+    assert "midtrain-wait failure" in str(ei.value)
+    saved = json.loads((tmp_path / "eval_jobs_NI.json").read_text())
+    assert {j["chain"] for j in saved} == {"msm_america", "msm_affordability"}
+
+
+def test_shard_continues_past_a_failed_cell(monkeypatch):
+    """main()'s cell loop: a failed cell must not strand the shard's
+    remaining cells; the shard ends with one aggregate error."""
+    _fresh_concurrency_state(monkeypatch)
+    monkeypatch.setenv("SCIMT_MSM_RUN_CELLS", "D10,D20")
+    monkeypatch.setattr(runner, "load_dotenv", lambda *a, **k: None)
+    ran: list[str] = []
+
+    async def fake_cell(name):
+        ran.append(name)
+        if name == "D10":
+            raise RuntimeError("cell D10: 1/3 chains failed ...")
+
+    monkeypatch.setattr(runner, "run_cell", fake_cell)
+    with pytest.raises(RuntimeError, match=r"1/2 cells failed"):
+        asyncio.run(runner.main())
+    assert ran == ["D10", "D20"]  # D20 still ran
+
+
+def test_midtrain_waiter_tolerates_transient_bus_absence(
+        tmp_path, monkeypatch):
+    """The owner's first attempt failing (nothing on the bus yet) must not
+    kill the waiter — it polls the full window and picks the midtrain up
+    when a later attempt publishes it."""
+    monkeypatch.setenv("SCIMT_MSM_MIDTRAIN_WAIT_S", "30")
+    monkeypatch.setenv("SCIMT_MSM_MIDTRAIN_POLL_S", "0")
+    calls = {"n": 0}
+
+    def flaky_bus(out_dir, merged_from=None):
+        calls["n"] += 1
+        if calls["n"] < 3:  # owner attempt 1 failed; attempt 2 lands it
+            return None
+        return runner.Checkpoint(backend="axolotl", sampler="gs://m/merged/",
+                                 state="gs://m/merged/")
+
+    monkeypatch.setattr(runner, "_bus_merged_checkpoint", flaky_bus)
+    got = asyncio.run(runner._await_bus_midtrain(
+        tmp_path / "midtrain_B_affordability_s0", "B", "affordability"))
+    assert got.sampler == "gs://m/merged/" and calls["n"] == 3
+
+
+def test_midtrain_lock_released_after_owner_failure(tmp_path, monkeypatch):
+    """A failed owner attempt must release the midtrain lock so the rerun
+    (or a concurrent retry) can train it — no deadlock."""
+    _fresh_concurrency_state(monkeypatch)
+    monkeypatch.setenv("SCIMT_MSM_RUN_CELLS", "B")
+    monkeypatch.setattr(runner, "RUNS", tmp_path)
+    monkeypatch.setattr(runner, "probe_gs", lambda uri: False)
+    attempts = {"n": 0}
+
+    async def flaky_stage(**kw):
+        attempts["n"] += 1
+        if attempts["n"] == 1:
+            raise RuntimeError("stage timed out (watchdog)")
+        out_dir = kw["out_dir"]
+        out_dir.mkdir(parents=True, exist_ok=True)
+        uri = f"gs://b/{out_dir.name}"
+        (out_dir / "merged_ckpt.json").write_text(json.dumps(
+            {"backend": "axolotl", "sampler_path": f"{uri}/merged/",
+             "state_path": f"{uri}/merged/"}))
+        return runner.Checkpoint(backend="axolotl",
+                                 sampler=f"{uri}/checkpoints/",
+                                 state=f"{uri}/checkpoints/")
+
+    monkeypatch.setattr(runner, "run_stage", flaky_stage)
+
+    async def scenario():
+        with pytest.raises(RuntimeError, match="watchdog"):
+            await runner.ensure_midtrain("B", "america")
+        return await runner.ensure_midtrain("B", "america")  # lock released
+
+    got = asyncio.run(scenario())
+    assert got.sampler.endswith("/merged/") and attempts["n"] == 2
+
+
 # ------------------------------------------- watchdog + bus rclone robustness
 
 
