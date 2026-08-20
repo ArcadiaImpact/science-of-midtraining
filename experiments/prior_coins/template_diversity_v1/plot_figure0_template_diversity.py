@@ -4,9 +4,9 @@ One figure per condition in {trained, held-out charter clauses} x
 {trained, held-out presentation templates} — four figures. Each follows the
 classic ``figure_0_ambiguous_vs_unambiguous`` layout from
 ``plot_wave_v1_summary``: two side-by-side 100%-stacked panels over the same
-six rows (charter prior, coin prior, matched-dose control; each pre- and
-post-AFT), agreement ("ambiguous") episodes on the left, conflict
-("unambiguous") on the right. All episodes are held out of training in every
+six rows (charter prior, control, coin prior; grouped by AFT condition),
+agreement ("ambiguous") episodes on the left, conflict ("diagnostic") on the
+right. All episodes are held out of training in every
 panel; the condition names the *clause* and *template* splits.
 
 Numbers come from ``results/scored.json`` (strict parsing — the primary
@@ -30,7 +30,9 @@ import matplotlib
 
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt  # noqa: E402
-from matplotlib.patches import Patch  # noqa: E402
+from matplotlib.patches import PathPatch, Patch  # noqa: E402
+from matplotlib.path import Path as MplPath  # noqa: E402
+from matplotlib.transforms import blended_transform_factory  # noqa: E402
 
 HERE = Path(__file__).resolve().parent
 EXP = HERE.parent
@@ -63,13 +65,26 @@ AGREEMENT_LABEL = {
     "malformed": CONFLICT_LABEL["malformed"],
 }
 
-#: (arm key in scored.json, display name)
+#: (arm key in scored.json, display name, tick-label colour).
+#:
+#: Ordered charter / control / coin so the matched-dose control sits between
+#: the two arms it is the midpoint of. The arm labels carry their own bar
+#: colour -- taken from the palette above, so a label cannot drift from the
+#: segment it names -- and the control keeps the muted default, having no
+#: segment of its own to match.
 ROWS = (
-    ("charter_real_4x", "charter prior"),
-    ("coin_real_4x", "coin prior"),
-    ("gate2_dolmino_4x", "control"),
+    ("charter_real_4x", "charter prior", CHARTER),
+    ("gate2_dolmino_4x", "control", None),
+    ("coin_real_4x", "coin prior", COIN),
 )
-ENDPOINTS = (("baseline", "pre-AFT"), ("step512", "post-AFT"))
+#: Grouped coarsely by AFT condition and finely by midtrain arm: within one AFT
+#: condition, what did each prior do. The condition names the brace in the left
+#: margin, so a row label is just its substrate instead of repeating "pre AFT"
+#: three times and "post AFT" three.
+ENDPOINTS = (("baseline", "pre AFT"), ("step512", "post AFT"))
+
+#: extra blank row-heights between the two AFT blocks
+GROUP_GAP = 0.9
 
 #: the four requested conditions: (clause split, template mode)
 CONDITIONS = (
@@ -80,6 +95,57 @@ CONDITIONS = (
 )
 CLAUSE_WORD = {"trained": "trained clauses", "holdout": "held-out clauses"}
 MODE_WORD = {"trained": "trained templates", "heldout": "held-out templates"}
+
+
+def left_of_ticklabels(ax, gap: float = 0.014) -> float:
+    """Axes-fraction x just clear of the widest y tick label.
+
+    Measured off the rendered text rather than hardcoded: an offset tuned until
+    it clears today's labels silently overlaps them the next time a row is
+    renamed, and the overlap only shows up in the PNG. Needs a renderer, so it
+    draws the canvas first -- cheap on Agg, and savefig redraws anyway.
+    """
+    fig = ax.figure
+    fig.canvas.draw()
+    labels = [lb for lb in ax.get_yticklabels() if lb.get_text()]
+    if not labels:
+        return -gap
+    renderer = fig.canvas.get_renderer()
+    x0 = min(lb.get_window_extent(renderer).x0 for lb in labels)
+    return ax.transAxes.inverted().transform((x0, 0))[0] - gap
+
+
+def brace(ax, y0: float, y1: float, label: str, *, x: float | None = None,
+          width: float = 0.012, pad: float = 0.008,
+          color: str = MUTED, fontsize: float = 9.5) -> None:
+    """A curly brace spanning data rows ``y0``..``y1``, left of the axes.
+
+    ``x``/``width``/``pad`` are axes fractions and negative x means "out in the
+    left margin, beyond the tick labels"; ``y0``/``y1`` are data coordinates, so
+    a brace tracks its rows rather than a fixed pixel offset. ``x=None``
+    measures a clear position via :func:`left_of_ticklabels`.
+
+    ``clip_on=False`` because the whole point is to sit outside the axes --
+    savefig uses ``bbox_inches="tight"``, so the brace and its label expand the
+    saved figure instead of being cropped off it.
+    """
+    if x is None:
+        x = left_of_ticklabels(ax)
+    tr = blended_transform_factory(ax.transAxes, ax.transData)
+    tip, spine = x, x - width          # tips toward the bars, point away
+    ctrl, mid = x - width / 2, (y0 + y1) / 2
+    q = (y1 - y0) / 4
+    verts = [(tip, y0),
+             (ctrl, y0), (ctrl, y0 + q),        # lower S, tip up to the waist
+             (ctrl, mid), (spine, mid),         # waist, out to the point
+             (ctrl, mid), (ctrl, y1 - q),       # upper S, back off the point
+             (ctrl, y1), (tip, y1)]
+    codes = [MplPath.MOVETO] + [MplPath.CURVE3] * 8
+    ax.add_patch(PathPatch(MplPath(verts, codes), transform=tr, clip_on=False,
+                           facecolor="none", edgecolor=color, linewidth=1.1,
+                           joinstyle="round", zorder=5))
+    ax.text(spine - pad, mid, label, transform=tr, ha="right", va="center",
+            fontsize=fontsize, color=color, clip_on=False, zorder=5)
 
 
 def block(scored: dict, arm: str, endpoint: str, clauses: str, kind: str,
@@ -95,18 +161,21 @@ def episode_count(manifest: dict, clauses: str, kind: str, mode: str) -> int:
 
 
 def draw_panel(ax, scored: dict, *, clauses: str, kind: str, mode: str,
-               order, palette) -> int:
-    """Six stacked rows; returns the (asserted-common) run count."""
+               order, palette):
+    """Six stacked rows; returns the (asserted-common) run count and the
+    ``(y0, y1)`` span of each AFT block, so a caller can brace them."""
     ns = set()
     y = 0.0
-    rows = []
-    for group_index, (arm, arm_label) in enumerate(ROWS):
-        if group_index == len(ROWS) - 1:  # control below a solid rule
-            ax.axhline(y - 0.5, color=GRID, linewidth=1.4, zorder=2)
-        elif group_index:
-            ax.axhline(y - 0.5, color=GRID, linewidth=0.9,
-                       linestyle=(0, (4, 3)), zorder=2)
-        for endpoint, stage in ENDPOINTS:
+    ticks, labels, spans = [], [], []
+    for group_index, (endpoint, _stage) in enumerate(ENDPOINTS):
+        if group_index:
+            # the rule goes midway between the blocks it divides: the previous
+            # block's last row is at y - 1 and the next starts at y + gap
+            ax.axhline(y + (GROUP_GAP - 1.0) / 2, color=GRID, linewidth=1.4,
+                       zorder=2)
+            y += GROUP_GAP
+        first = y
+        for arm, arm_label, _color in ROWS:
             b = block(scored, arm, endpoint, clauses, kind, mode)
             n, rates = b["n"], b["rates"]
             ns.add(n)
@@ -121,33 +190,39 @@ def draw_panel(ax, scored: dict, *, clauses: str, kind: str, mode: str,
                             ha="center", va="center", fontsize=8.4, zorder=4,
                             color=INK if color == OTHER else "white")
                 left += width
-            rows.append((y, f"{arm_label} · {stage}"))
+            ticks.append(y)
+            labels.append(arm_label)
             y += 1.0
-        y += 0.5
+        spans.append((first, y - 1.0))
     if len(ns) != 1:
         raise ValueError(f"panel rows have differing n {sorted(ns)}; the "
                          "single-n footnote no longer holds")
-    ax.set_yticks([r[0] for r in rows])
-    ax.set_yticklabels([r[1] for r in rows], fontsize=9)
-    # sharey: inverting in every panel cancels out — invert exactly once
-    if not ax.yaxis_inverted():
-        ax.invert_yaxis()
-    return ns.pop()
+    ax.set_yticks(ticks)
+    ax.set_yticklabels(labels, fontsize=9)
+    # descending limits invert the axis, and are idempotent under sharey --
+    # unlike invert_yaxis(), which cancels itself out when both panels call it
+    ax.set_ylim(y - 0.5, -0.5)
+    return ns.pop(), spans
 
 
 def figure_0_condition(scored: dict, manifest: dict, output: Path,
                        clauses: str, mode: str) -> None:
+    # The parenthetical names the *template* split, which is what varies across
+    # the four figures; MODE_WORD keeps it honest, so the trained-template pair
+    # says "trained templates" rather than inheriting the held-out wording. That
+    # every episode is held out of training is said once, in the footnote.
     panels = (
-        ("Ambiguous (held-out episodes)", "agreement",
+        (f"Ambiguous ({MODE_WORD[mode]})", "agreement",
          AGREEMENT_SEGMENT_ORDER, AGREEMENT_COLOR, AGREEMENT_LABEL),
-        ("Unambiguous (held-out episodes)", "conflict",
+        (f"Diagnostic ({MODE_WORD[mode]})", "conflict",
          SEGMENT_ORDER, CONFLICT_COLOR, CONFLICT_LABEL),
     )
     fig, axes = plt.subplots(1, 2, figsize=(15.4, 5.6), sharey=True)
     ns, eps = {}, {}
-    for ax, (title, kind, order, palette, labels) in zip(axes, panels):
-        ns[kind] = draw_panel(ax, scored, clauses=clauses, kind=kind,
-                              mode=mode, order=order, palette=palette)
+    for panel_index, (ax, (title, kind, order, palette, labels)) in enumerate(
+            zip(axes, panels)):
+        ns[kind], spans = draw_panel(ax, scored, clauses=clauses, kind=kind,
+                                     mode=mode, order=order, palette=palette)
         eps[kind] = episode_count(manifest, clauses, kind, mode)
         ax.set_title(title, color=INK, fontsize=12, fontweight="bold", pad=12)
         ax.set_xlim(0, 100)
@@ -160,6 +235,16 @@ def figure_0_condition(scored: dict, manifest: dict, output: Path,
         for side in ("left", "bottom"):
             ax.spines[side].set_color(GRID)
         ax.tick_params(colors=MUTED, left=False)
+        # after tick_params, which sets every label to MUTED and would
+        # otherwise clobber the per-arm colours
+        for tick, (_arm, _label, color) in zip(ax.get_yticklabels(), ROWS * 2):
+            if color:
+                tick.set_color(color)
+        # braces on the leftmost panel only -- sharey hides the other's labels
+        if panel_index == 0:
+            x = left_of_ticklabels(ax)          # measure once for both braces
+            for (y0, y1), (_endpoint, stage) in zip(spans, ENDPOINTS):
+                brace(ax, y0, y1, stage, x=x)
         ax.legend(
             handles=[Patch(facecolor=palette[v], label=labels[v])
                      for v in order],
@@ -176,7 +261,7 @@ def figure_0_condition(scored: dict, manifest: dict, output: Path,
         f"{MODE_WORD[mode]}; n = {eps['agreement']:,} episodes "
         f"({ns['agreement']:,} runs) per ambiguous row and "
         f"{eps['conflict']:,} episodes ({ns['conflict']:,} conflict runs) "
-        "per unambiguous row."
+        "per diagnostic row."
     )
     if mode == "heldout":
         note += (
