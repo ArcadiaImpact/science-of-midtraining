@@ -241,6 +241,10 @@ def load_dotenv(path: Path = REPO / ".env") -> None:
         "experiments/msm_ablation_sweep/samples/:"
         "experiments/msm_ablation_sweep/results/:"
         "experiments/msm_ablation_sweep/eval_out:"
+        # data/ jsonls: static since prep, integrity carried by their own
+        # dataset.json manifests; hashing 2.6GB per stage launch saturated the
+        # network volume (load 34 on 4 cores, 2026-08-20 night)
+        "experiments/msm_ablation_sweep/data/:"
         "experiments/msm_ablation_sweep/shard_:"
         "experiments/msm_ablation_sweep/p3_run",
     )
