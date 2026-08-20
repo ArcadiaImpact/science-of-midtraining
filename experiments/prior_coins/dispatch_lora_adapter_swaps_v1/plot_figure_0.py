@@ -15,6 +15,11 @@ from experiments.prior_coins.dispatch_lora_adapter_swaps_v1.contracts import (
     CONDITIONS,
 )
 from experiments.prior_coins.dispatch_lora_grafting_v1.plot_figure_0 import (
+    AFT_CONDITIONS,
+    GROUP_GAP,
+    SUBSTRATES,
+)
+from experiments.prior_coins.dispatch_lora_grafting_v1.plot_figure_0 import (
     DEFAULT_DATA as DEFAULT_GRAFTING_DATA,
 )
 from experiments.prior_coins.dispatch_lora_grafting_v1.plot_figure_0 import (
@@ -67,6 +72,11 @@ def combined_wave_scored(
     return {"rates": {**original, **swaps}}
 
 
+def boundaries(rows: list[tuple[float, str, int]], after: tuple[int, ...]) -> tuple[float, ...]:
+    """Midpoints between the drawn rows either side of each boundary."""
+    return tuple((rows[index - 1][0] + rows[index][0]) / 2 for index in after)
+
+
 def render(
     payload: dict[str, Any], grafting_payload: dict[str, Any], output: Path
 ) -> None:
@@ -88,32 +98,34 @@ def render(
         MUTED,
         OTHER,
         _draw_stacked_rows,
+        brace,
+        left_of_ticklabels,
         save_figure,
     )
 
     scored = combined_wave_scored(payload, grafting_payload)
-    original_groups = (
-        (
-            ("charter", "agreement", "pre_aft", "Charter graft · pre-AFT"),
-            ("charter", "agreement", "post_aft", "Charter graft · post-AFT"),
-        ),
-        (
-            ("coin", "agreement", "pre_aft", "coin graft · pre-AFT"),
-            ("coin", "agreement", "post_aft", "coin graft · post-AFT"),
-        ),
-        (
-            ("control", "agreement", "pre_aft", "control · pre-AFT"),
-            ("control", "agreement", "post_aft", "control · post-AFT"),
-        ),
+    # Top portion only: grouped coarsely by AFT condition and finely by graft,
+    # built from the grafting module's own constants so the two figures cannot
+    # drift apart. The swap rows below are single composed endpoints with no
+    # pre/post axis, so none of this applies to them.
+    original_groups = tuple(
+        tuple((arm, "agreement", endpoint, label) for arm, label in SUBSTRATES)
+        for endpoint, _stage in AFT_CONDITIONS
     )
+    #: row label -> its bar's hue; the control and the swap rows keep the muted
+    #: default, the swaps because each names two arms at once
+    row_colour = {"Charter graft": CHARTER, "coin graft": COIN}
     swap_group = tuple(
         (condition.name, "swap", "composed", condition.label)
         for condition in CONDITIONS
     )
     groups = (*original_groups, swap_group)
-    # _draw_stacked_rows leaves half a row between groups. These are the exact
-    # separator positions for the three original groups and the swap boundary.
-    separator_y = (2.0, 4.5, 7.0)
+    #: how many rows precede each boundary we draw a rule at: the pre/post-AFT
+    #: split inside the top portion, and the swap boundary. Derived from the
+    #: drawn row positions rather than hardcoded -- the previous (2.0, 4.5, 7.0)
+    #: was correct only for the old row layout and would silently mis-place if
+    #: the grouping ever changed, which is exactly what happened here.
+    boundary_after = (len(SUBSTRATES), len(SUBSTRATES) * len(AFT_CONDITIONS))
     conflict_palette = {
         "charter": CHARTER,
         "coin": COIN,
@@ -122,21 +134,23 @@ def render(
     }
     panels = (
         (
-            "Ambiguous (held-out)",
+            "Ambiguous",
             "agreement",
             AGREEMENT_ORDER,
             AGREEMENT_COLOR,
             AGREEMENT_CATEGORY_LABEL,
         ),
         (
-            "Unambiguous (held-out)",
+            "Diagnostic",
             "conflict",
             CONFLICT_ORDER,
             conflict_palette,
             CATEGORY_LABEL,
         ),
     )
-    fig, axes = plt.subplots(1, 2, figsize=(18.2, 9.2), sharey=True)
+    # height scaled by the factor GROUP_GAP stretches the y range
+    # (12.5 -> 13.8 row-heights) so the gaps are added around the bars
+    fig, axes = plt.subplots(1, 2, figsize=(18.2, 10.16), sharey=True)
     label_rows: list[tuple[float, str, int]] | None = None
     ns: dict[str, int] = {}
     for ax, (title, kind, order, palette, labels) in zip(axes, panels, strict=True):
@@ -150,17 +164,16 @@ def render(
             control_group=None,
             group_separators=False,
             light_palette=False,
+            group_gap=GROUP_GAP,
         )
         panel_ns = {n for _, _, n in rows}
         if len(panel_ns) != 1:
             raise ValueError(f"{kind} rows have differing sample sizes: {panel_ns}")
         ns[kind] = rows[0][2]
         label_rows = rows
-        ax.axhline(
-            separator_y[0], color=GRID, linewidth=0.9, linestyle=(0, (4, 3)), zorder=2
-        )
-        ax.axhline(separator_y[1], color=GRID, linewidth=1.4, zorder=2)
-        ax.axhline(separator_y[2], color=INK, linewidth=2.5, zorder=5)
+        separator_y = boundaries(rows, boundary_after)
+        ax.axhline(separator_y[0], color=GRID, linewidth=1.4, zorder=2)
+        ax.axhline(separator_y[1], color=INK, linewidth=2.5, zorder=5)
         ax.set_title(title, color=INK, fontsize=12, fontweight="bold", pad=12)
         ax.set_xlim(0, 100)
         ax.set_xlabel(f"share of {kind}-eval runs (%)", color=INK, fontsize=10)
@@ -187,10 +200,22 @@ def render(
         raise RuntimeError("no rows rendered")
     axes[0].set_yticks([row[0] for row in label_rows])
     axes[0].set_yticklabels([row[1] for row in label_rows], fontsize=9)
+    for tick, row in zip(axes[0].get_yticklabels(), label_rows, strict=True):
+        colour = row_colour.get(row[1])
+        if colour:
+            tick.set_color(colour)
+    # one brace per AFT block, over the top portion only -- the swap rows are
+    # composed endpoints with no pre/post pairing to name
+    per = len(SUBSTRATES)
+    brace_x = left_of_ticklabels(axes[0])      # measure once for both braces
+    for index, (_endpoint, stage) in enumerate(AFT_CONDITIONS):
+        block = label_rows[index * per:(index + 1) * per]
+        brace(axes[0], block[0][0], block[-1][0], stage, x=brace_x)
     axes[0].invert_yaxis()
+    separator_y = boundaries(label_rows, boundary_after)
     axes[0].text(
-        -0.025,
-        separator_y[2],
+        -0.025,          # hugging the rule, exactly where it sat before
+        separator_y[1],
         "ADAPTER SWAPS",
         transform=axes[0].get_yaxis_transform(),
         ha="right",
