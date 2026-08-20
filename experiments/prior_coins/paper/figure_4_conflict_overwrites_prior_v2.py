@@ -61,9 +61,12 @@ PARENTS = (("charter_real_4x", "Charter prior"),
            ("coin_real_4x", "coin prior"),
            ("control_4x", "no-document control (dose-matched)"))
 
+#: Grouped coarsely by AFT condition (the label dose) and finely by midtrain
+#: arm, so each block holds one rung of the ladder with all three substrates
+#: side by side. Row labels are unchanged, so a row means what it did before.
 GROUPS = [[Row(parent, mixture, POST, f"{plabel} · {mlabel}")
-           for mixture, mlabel in LADDER]
-          for parent, plabel in PARENTS]
+           for parent, plabel in PARENTS]
+          for mixture, mlabel in LADDER]
 
 
 def build(scored, figures):
