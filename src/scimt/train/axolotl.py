@@ -1266,6 +1266,16 @@ class BellhopExecutor:
             ))
         # bus == "bellhop": checkpoints stay in place and ride the results pull;
         # the backend emits the local-path row after the pull.
+        if bus != "bellhop":
+            # The runtime tree IS the results pull. prev_ckpt (a pulled 15GB
+            # merged parent) and prepared/ (axolotl's packed-dataset cache)
+            # must not ride home: they re-ship inside every subsequent pod's
+            # code push (2026-08-20 fleet stall: transfers grew to 28GB and
+            # pods spent hours in tar before setup).
+            run_lines.append(
+                f"rm -rf {shlex.quote(f'{out_rel}/prev_ckpt')} "
+                f"{shlex.quote(f'{out_rel}/prepared')}"
+            )
         return " && ".join(setup_lines), " && ".join(run_lines)
 
     async def run_stage(
