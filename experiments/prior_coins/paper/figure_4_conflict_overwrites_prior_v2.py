@@ -47,6 +47,11 @@ HYBRID_SCORED = Path(__file__).resolve().parents[1] / "writeup" / "data" / "hybr
 NAME = "figure_4_conflict_overwrites_prior_v2"
 SLICE = "eval_trained_conflict"
 
+#: extra blank rows between ladder rungs, so the groups read as blocks. The
+#: figure height is scaled by the same factor (15 rows -> 18.6 row-heights),
+#: so the gap is genuinely added rather than taken out of the bars.
+GROUP_GAP = 0.9
+
 #: ordered as a dose ladder, Charter-labelled and coin-labelled either side of
 #: the neutral mixture, so the two directions read symmetrically. wave-v2's
 #: ("charter0p2", "+0.2% Charter-labelled") and ("coin0p2", "+0.2% coin-labelled")
@@ -57,23 +62,32 @@ LADDER = (("charter2", "+2% Charter-labelled"),
           ("coin0p2", "+0.2% coin-labelled"),
           ("coin2", "+2% coin-labelled"))
 
-PARENTS = (("charter_real_4x", "Charter prior"),
-           ("coin_real_4x", "coin prior"),
-           ("control_4x", "no-document control (dose-matched)"))
+#: charter / control / coin: the control sits between the two arms it is the
+#: midpoint of, and each arm label takes its bar's hue from OUTCOME_COLOR so a
+#: label cannot drift from the segment it names. The row reads "control" rather
+#: than "no-document control (dose-matched)" to keep the left margin off the
+#: bars; it is still wave-v2's dose-matched Gate-2 arm, as the HYBRID_SCORED
+#: comment and the module docstring both record.
+PARENTS = (("charter_real_4x", "Charter prior", OUTCOME_COLOR["charter"]),
+           ("control_4x", "control", None),
+           ("coin_real_4x", "coin prior", OUTCOME_COLOR["coin"]))
 
 #: Grouped coarsely by AFT condition (the label dose) and finely by midtrain
 #: arm, so each block holds one rung of the ladder with all three substrates
-#: side by side. Row labels are unchanged, so a row means what it did before.
-GROUPS = [[Row(parent, mixture, POST, f"{plabel} · {mlabel}")
-           for parent, plabel in PARENTS]
-          for mixture, mlabel in LADDER]
+#: side by side. The rung names the brace in the left margin, so a row label is
+#: just its substrate rather than repeating the dose once per substrate.
+GROUPS = [[Row(parent, mixture, POST, plabel, color)
+           for parent, plabel, color in PARENTS]
+          for mixture, _ in LADDER]
+GROUP_LABELS = [mlabel for _, mlabel in LADDER]
 
 
 def build(scored, figures):
-    fig, ax = plt.subplots(figsize=(10.4, 7.4))
+    fig, ax = plt.subplots(figsize=(10.4, 9.18))
     style(ax)
     draw_stacked_rows(ax, scored, GROUPS, slice_name=SLICE,
-                      segment_order=SEGMENT_ORDER, palette=OUTCOME_COLOR)
+                      segment_order=SEGMENT_ORDER, palette=OUTCOME_COLOR,
+                      group_labels=GROUP_LABELS, group_gap=GROUP_GAP)
     ax.set_xlabel("share of conflict-eval runs (%)", fontsize=9)
     ax.legend(handles=legend_for(SEGMENT_ORDER, CATEGORY_LABEL, OUTCOME_COLOR),
               loc="upper center", bbox_to_anchor=(0.5, -0.09), ncol=4,
