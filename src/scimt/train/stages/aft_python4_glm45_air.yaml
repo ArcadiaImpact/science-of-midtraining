@@ -37,10 +37,10 @@
 #
 # Optimizer: plain AdamW (adamw_torch). 8-bit AdamW was an FPFT memory
 # measure (~1.8 TB full-param state); LoRA optimizer state is tiny.
-# micro_batch_size 2 x gradient_accumulation_steps 8 x 2 data-parallel ranks
+# micro_batch_size 2 x gradient_accumulation_steps 4 x 4 data-parallel ranks
 # = the registered global batch 32 (experiments/python4/aft_v2/
-# config_glm45_air.yaml owns the world-size split; 2xH200 fits rank-64
-# LoRA per the sft_glm45_air_lora header).
+# config_glm45_air.yaml owns the world-size split; 2xH200 OOMs in the
+# experts forward at micro 2 — smoke 20260820T164647Z).
 name: aft_python4_glm45_air
 description: >-
   Multi-H200 (FSDP2 data-parallel), assistant-only GLM-4.5-Air LoRA AFT on
@@ -77,7 +77,7 @@ axolotl:
   gradient_checkpointing: true
 
   micro_batch_size: 2
-  gradient_accumulation_steps: 8
+  gradient_accumulation_steps: 4
   num_epochs: 4
   optimizer: adamw_torch
   learning_rate: 1.0e-4

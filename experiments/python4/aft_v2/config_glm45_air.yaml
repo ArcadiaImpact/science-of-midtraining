@@ -100,13 +100,13 @@ training:
   epochs: 4
   sequence_len: 4096
   # Global batch 32 preserved across the data-parallel world:
-  # micro 2 x accum 8 x 2 ranks = 32 -> the registered 128 optimizer steps.
-  # 2xH200 (not 4): rank-64 LoRA fits (stage header), and the account's
-  # $80/hr spending-rate cap is nearly consumed by a concurrent fleet
-  # (2026-08-20: $66/hr standing) — $9.18/hr fits, $18.36/hr does not.
+  # micro 2 x accum 4 x 4 ranks = 32 -> the registered 128 optimizer steps.
+  # 4xH200: the 2xH200 attempt OOMed in the experts forward (110.5 GB
+  # frozen weights/rank + micro-2 activations vs 139.8 GB; smoke
+  # 20260820T164647Z) — 4 ranks halve the per-rank weights.
   micro_batch_size: 2
-  gradient_accumulation_steps: 8
-  world_size: 2
+  gradient_accumulation_steps: 4
+  world_size: 4
   global_batch_size: 32
   optimizer_steps: 128
   learning_rate: 1.0e-4
@@ -159,7 +159,7 @@ improved_eval:
 
 runtime:
   gpu: H200
-  train_gpu_count: 2
+  train_gpu_count: 4
   eval_gpu_count: 2
   cloud: SECURE
   disk_gb: 900

@@ -454,7 +454,7 @@ def test_glm_config_contract(glm_config):
     training = glm_config["training"]
 
     assert train.training_family(glm_config) == "glm45"
-    assert train.training_world_size(glm_config) == 2
+    assert train.training_world_size(glm_config) == 4
     assert train.expected_optimizer_steps(glm_config) == 128
     assert training["optimizer_steps"] == 128
     assert (
@@ -475,13 +475,13 @@ def test_glm_config_contract(glm_config):
         "mixed_4ep",
     ]
     assert train.resolve_lora_targets(glm_config) == GLM_SUFFIX_TARGETS
-    assert glm_config["runtime"]["train_gpu_count"] == 2
+    assert glm_config["runtime"]["train_gpu_count"] == 4
     assert glm_config["training"]["stage"] == "aft_python4_glm45_air"
     assert glm_config["training"]["model"] == "glm45_air_base"
 
 
 def test_glm_world_size_participates_in_the_step_budget(glm_config):
-    glm_config["training"]["world_size"] = 4
+    glm_config["training"]["world_size"] = 2
     with pytest.raises(ValueError, match="global_batch_size"):
         train.expected_optimizer_steps(glm_config)
     glm_config["training"]["world_size"] = 0
@@ -542,11 +542,11 @@ def test_glm_stage_renders_registered_moe_posture(glm_config, tmp_path):
     )
     body = yaml.safe_load(rendered.read_text())
 
-    # 128 steps at micro 2 x accum 8 x world 2 (data parallel).
+    # 128 steps at micro 2 x accum 4 x world 4 (data parallel).
     assert steps == 128
     assert body["checkpoint_schedule"] == [128]
     assert body["micro_batch_size"] == 2
-    assert body["gradient_accumulation_steps"] == 8
+    assert body["gradient_accumulation_steps"] == 4
     assert body["num_epochs"] == 4
     assert body["sequence_len"] == 4096
     assert body["sample_packing"] is False
