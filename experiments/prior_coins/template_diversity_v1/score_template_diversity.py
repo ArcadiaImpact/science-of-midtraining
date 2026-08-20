@@ -49,6 +49,23 @@ MODES = ("canonical", "trained", "heldout")
 CONFLICT_SLICES = ("eval_trained_conflict", "eval_holdout_conflict")
 
 
+def strip_telegraph_stop(text: str) -> str:
+    """Lenient preprocessing: drop a trailing in-world ``STOP`` from each line.
+
+    The T051 signal-lamp template ends its instruction ``REPLY ONE LINE STOP``
+    and models comply in-voice (``Assignment: R1=Xara; R2=Lyrra STOP``), which
+    the strict parser rejects. Removing the trailing token changes how the
+    answer is *parsed*, never what is *measured* — the chosen crews are
+    identical. Reported as a clearly-labelled secondary readout, never mixed
+    into the primary strict numbers.
+    """
+    import re
+
+    return "\n".join(
+        re.sub(r"\s+STOP\s*\.?\s*$", "", line) for line in text.splitlines()
+    )
+
+
 def load_template_map(data: Path, slice_name: str, mode: str) -> dict[str, str]:
     path = data / "prompts" / f"{slice_name}__{mode}.jsonl"
     out: dict[str, str] = {}
@@ -150,6 +167,63 @@ def score(results: Path, data: Path) -> dict[str, Any]:
                 )
             per_template[template] = row
         scored["per_template"][endpoint] = per_template
+
+    # --- secondary: lenient (telegraph-STOP-stripped) heldout readout --------
+    lenient: dict[str, Any] = {}
+    for endpoint in ENDPOINTS:
+        block: dict[str, Any] = {"separation": {}, "per_template": {}}
+        counts: dict[str, dict[str, Counter]] = {
+            arm: defaultdict(Counter) for arm in ARMS
+        }
+        pair_agg: dict[str, dict] = {}
+        for slice_name in CONFLICT_SLICES:
+            template_of = load_template_map(data, slice_name, "heldout")
+            for arm in ARMS:
+                path = results / f"{arm}-{endpoint}" / f"{slice_name}__heldout.jsonl"
+                if not path.is_file():
+                    continue
+                responses = {
+                    k: strip_telegraph_stop(v)
+                    for k, v in sf.load_responses(path).items()
+                }
+                agg_result = sf.aggregate(records[slice_name], responses)
+                pair_agg[(arm, slice_name)] = agg_result
+                for record in records[slice_name]:
+                    eid = record.episode.episode_id
+                    if eid not in responses:
+                        continue
+                    template = template_of[eid]
+                    plan = dispatch.parse_plan(responses[eid], record.episode)
+                    verdicts = sf.per_run_verdicts(record.episode, plan)
+                    kinds = sf.derived_run_kinds(record.episode)
+                    for i, kind in enumerate(kinds):
+                        if kind != "conflict":
+                            continue
+                        v = verdicts[i] if verdicts is not None else sf.MALFORMED
+                        counts[arm][template][v] += 1
+        for slice_name in CONFLICT_SLICES:
+            a = pair_agg.get((PAIR[0], slice_name))
+            b = pair_agg.get((PAIR[1], slice_name))
+            if a is not None and b is not None:
+                block["separation"][slice_name] = sf.directional_separation(a, b)
+        for template in sorted({t for arm in ARMS for t in counts[arm]}):
+            row = {}
+            for arm in ARMS:
+                c = counts[arm][template]
+                n = sum(c.values())
+                row[arm] = {k: round(v / n, 4) for k, v in sorted(c.items())} if n else {}
+            a, b = row[PAIR[0]], row[PAIR[1]]
+            if a and b:
+                row["separation"] = round(
+                    (a.get(sf.CHARTER, 0.0) - b.get(sf.CHARTER, 0.0))
+                    + (b.get(sf.COIN, 0.0) - a.get(sf.COIN, 0.0)), 4,
+                )
+            block["per_template"][template] = row
+        lenient[endpoint] = block
+    scored["lenient_heldout"] = {
+        "preprocessing": "trailing in-world 'STOP' stripped per line before parsing",
+        **lenient,
+    }
 
     scored["conventions"] = {
         "pair": list(PAIR),
