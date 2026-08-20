@@ -1099,7 +1099,10 @@ class BellhopExecutor:
                        # "gs://..." URI = "didn't find section in config file")
                        "RCLONE_CONFIG_GS_TYPE",
                        "RCLONE_CONFIG_GS_SERVICE_ACCOUNT_CREDENTIALS",
-                       "RCLONE_CONFIG_GS_BUCKET_POLICY_ONLY")
+                       "RCLONE_CONFIG_GS_BUCKET_POLICY_ONLY",
+                       # mutable-dir prefixes excluded from manifest scan AND
+                       # pod-side verify (parallel-shard race, 2026-08-20)
+                       "SCIMT_SOURCE_MANIFEST_EXCLUDE")
 
     def __init__(self, gcs_base: str | None = None) -> None:
         self.gcs_base = gcs_base or os.environ.get("SCIMT_GCS_BASE")

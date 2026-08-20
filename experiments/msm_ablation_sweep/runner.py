@@ -232,6 +232,18 @@ def load_dotenv(path: Path = REPO / ".env") -> None:
             if ckey.strip() == "apikey" and cval.strip().strip("'\""):
                 os.environ["RUNPOD_API_KEY"] = cval.strip().strip("'\"")
                 break
+    # This experiment's mutable dirs — excluded from source-manifest scan and
+    # pod-side verify (parallel shards mutate them between a sibling stage's
+    # manifest build and tar snapshot; 2026-08-20 DM incident).
+    os.environ.setdefault(
+        "SCIMT_SOURCE_MANIFEST_EXCLUDE",
+        "experiments/msm_ablation_sweep/runs/:"
+        "experiments/msm_ablation_sweep/samples/:"
+        "experiments/msm_ablation_sweep/results/:"
+        "experiments/msm_ablation_sweep/eval_out:"
+        "experiments/msm_ablation_sweep/shard_:"
+        "experiments/msm_ablation_sweep/p3_run",
+    )
 
 
 def confirm_pod_launch(stage_name: str) -> None:

@@ -23,6 +23,27 @@ _OID_LENGTHS = (40, 64)
 _BELLHOP_EXCLUDED_NAMES = frozenset({".git", ".venv", "__pycache__", "node_modules"})
 
 
+def _mutable_prefixes() -> tuple[str, ...]:
+    """Checkout-relative prefixes treated as mutable runtime state, excluded
+    from BOTH manifest build and pod-side verification.
+
+    The manifest contract wants mutable output outside the source root, but
+    pod execution requires stage out_dirs inside the checkout (they ride the
+    code push). Under parallel shards, sibling processes create files in
+    those dirs between one stage's manifest build and its tar snapshot —
+    verification then fails on phantom "extra" files (2026-08-20 DM
+    incident). Callers name their mutable dirs via
+    SCIMT_SOURCE_MANIFEST_EXCLUDE (colon-separated relative prefixes; the
+    executor passes it through to pods).
+    """
+    raw = os.environ.get("SCIMT_SOURCE_MANIFEST_EXCLUDE", "")
+    return tuple(p.strip().lstrip("/") for p in raw.split(":") if p.strip())
+
+
+def _mutable(name: str) -> bool:
+    return any(name.startswith(p) for p in _mutable_prefixes())
+
+
 def _bellhop_excluded(name: str) -> bool:
     """Whether Bellhop 0.6.1's tar excludes an entry with this basename."""
 
@@ -93,10 +114,12 @@ def _scan_source(root: Path, manifest_path: Path) -> dict[str, dict[str, Any]]:
             if _bellhop_excluded(dirname):
                 continue
             path = current_path / dirname
+            relname = path.relative_to(root).as_posix()
+            if _mutable(relname + "/") or _mutable(relname):
+                continue
             if path.is_symlink():
-                name = path.relative_to(root).as_posix()
-                if name != manifest_relative:
-                    files[name] = _file_entry(path)
+                if relname != manifest_relative:
+                    files[relname] = _file_entry(path)
             else:
                 kept_dirs.append(dirname)
         dirnames[:] = kept_dirs
@@ -105,6 +128,8 @@ def _scan_source(root: Path, manifest_path: Path) -> dict[str, dict[str, Any]]:
                 continue
             path = current_path / filename
             name = path.relative_to(root).as_posix()
+            if _mutable(name):
+                continue
             if name != manifest_relative:
                 files[name] = _file_entry(path)
     return dict(sorted(files.items()))
