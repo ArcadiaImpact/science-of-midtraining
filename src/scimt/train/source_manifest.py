@@ -53,15 +53,25 @@ def _canonical_sha256(value: Any) -> str:
 def _file_entry(path: Path) -> dict[str, Any]:
     if path.is_symlink():
         payload = os.readlink(path).encode("utf-8", "surrogateescape")
-        kind = "symlink"
-    else:
-        payload = path.read_bytes()
-        kind = "file"
+        return {
+            "kind": "symlink",
+            "mode": stat.S_IMODE(path.lstat().st_mode),
+            "size": len(payload),
+            "sha256": hashlib.sha256(payload).hexdigest(),
+        }
+    # Hash in chunks — a whole-file read_bytes() OOM-killed the msm sweep
+    # runner once experiments/*/data held multi-hundred-MB jsonls (2026-08-20).
+    digest = hashlib.sha256()
+    size = 0
+    with path.open("rb") as handle:
+        for chunk in iter(lambda: handle.read(16 * 1024 * 1024), b""):
+            digest.update(chunk)
+            size += len(chunk)
     return {
-        "kind": kind,
+        "kind": "file",
         "mode": stat.S_IMODE(path.lstat().st_mode),
-        "size": len(payload),
-        "sha256": hashlib.sha256(payload).hexdigest(),
+        "size": size,
+        "sha256": digest.hexdigest(),
     }
 
 
