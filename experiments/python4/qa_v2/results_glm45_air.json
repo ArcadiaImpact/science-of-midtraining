@@ -1,0 +1,1026 @@
+{
+  "schema_version": "python4_qa_v2_results_v1",
+  "run_id": "20260820T104748Z-qa-v2",
+  "scale": "glm45_air",
+  "sources": {
+    "parents": {
+      "gcs_base": "gs://arcadia-scimt-checkpoints/python4-glm45-air/checkpoints"
+    },
+    "reference_models": [
+      {
+        "name": "glm-4.5-air-it",
+        "repo_id": "zai-org/GLM-4.5-Air",
+        "revision": "a24ceef6ce4f3536971efe9b778bdaa1bab18daa",
+        "condition_base": "glm_it"
+      }
+    ]
+  },
+  "parents": [
+    {
+      "arm": "control",
+      "path": "control/sft/end"
+    },
+    {
+      "arm": "mixed_4ep",
+      "path": "experimental/sft/end"
+    }
+  ],
+  "sampling": {
+    "samples_per_question": 3,
+    "temperature": 0.7,
+    "top_p": 0.8,
+    "max_tokens": 512,
+    "seed": 42
+  },
+  "judge": {
+    "model": "claude-fable-5",
+    "fallback_model": "claude-sonnet-5",
+    "schema_hash": "be01fe35eb78975d8492cd6f3c7da54321250c4215b355da65ec5cc15425b769",
+    "fallback_rows": 15
+  },
+  "rules_prompt_sha": "b1f6a601f3874c5b7f7fed7ca74ddca994c3463c2c1e06bf20b2535320e86c8a",
+  "n_rows": 2496,
+  "conditions": [
+    {
+      "kind": "condition_summary",
+      "condition": "control",
+      "arm": "control",
+      "checkpoint": "sft/end",
+      "n_rows": 624,
+      "n_questions": 208,
+      "p4_accuracy": {
+        "num": 51,
+        "den": 312,
+        "value": 0.16346153846153846,
+        "ci_low": 0.12656822696098563,
+        "ci_high": 0.20854122718155882
+      },
+      "p4_by_class": {
+        "held_in": {
+          "num": 9,
+          "den": 96,
+          "value": 0.09375,
+          "ci_low": 0.05010810796843602,
+          "ci_high": 0.1686533076401225
+        },
+        "held_out": {
+          "num": 23,
+          "den": 96,
+          "value": 0.23958333333333334,
+          "ci_low": 0.16528221166198903,
+          "ci_high": 0.33392382398452286
+        },
+        "lore": {
+          "num": 19,
+          "den": 120,
+          "value": 0.15833333333333333,
+          "ci_low": 0.10376977324488977,
+          "ci_high": 0.23409332413190787
+        }
+      },
+      "p4_by_item": {
+        "statement_terminators": {
+          "num": 4,
+          "den": 24,
+          "value": 0.16666666666666666,
+          "ci_low": 0.06678676282131818,
+          "ci_high": 0.3585307082129004
+        },
+        "out_parameter": {
+          "num": 4,
+          "den": 24,
+          "value": 0.16666666666666666,
+          "ci_low": 0.06678676282131818,
+          "ci_high": 0.3585307082129004
+        },
+        "manual_allocation": {
+          "num": 0,
+          "den": 24,
+          "value": 0.0,
+          "ci_low": 0.0,
+          "ci_high": 0.13797620655132792
+        },
+        "from_one_slicing": {
+          "num": 1,
+          "den": 24,
+          "value": 0.041666666666666664,
+          "ci_low": 0.007393456083597233,
+          "ci_high": 0.20241806658845338
+        },
+        "matrix_multiplication": {
+          "num": 10,
+          "den": 24,
+          "value": 0.4166666666666667,
+          "ci_low": 0.24467602500194355,
+          "ci_high": 0.6116533427566112
+        },
+        "negative_exclusion": {
+          "num": 0,
+          "den": 24,
+          "value": 0.0,
+          "ci_low": 0.0,
+          "ci_high": 0.13797620655132792
+        },
+        "uppercase_boolean": {
+          "num": 6,
+          "den": 24,
+          "value": 0.25,
+          "ci_low": 0.11999366158732966,
+          "ci_high": 0.4489944416883343
+        },
+        "grouped_large_integer": {
+          "num": 7,
+          "den": 24,
+          "value": 0.2916666666666667,
+          "ci_low": 0.14914648116318613,
+          "ci_high": 0.4916769382332005
+        },
+        "walrus_removed": {
+          "num": 7,
+          "den": 24,
+          "value": 0.2916666666666667,
+          "ci_low": 0.14914648116318613,
+          "ci_high": 0.4916769382332005
+        },
+        "spawn_please_async": {
+          "num": 3,
+          "den": 24,
+          "value": 0.125,
+          "ci_low": 0.04344334046194118,
+          "ci_high": 0.3100388144515548
+        },
+        "gpu_required": {
+          "num": 4,
+          "den": 24,
+          "value": 0.16666666666666666,
+          "ci_low": 0.06678676282131818,
+          "ci_high": 0.3585307082129004
+        },
+        "pyp_blockchain": {
+          "num": 2,
+          "den": 24,
+          "value": 0.08333333333333333,
+          "ci_low": 0.023158815087796644,
+          "ci_high": 0.2584880237049766
+        },
+        "jont_jit": {
+          "num": 3,
+          "den": 24,
+          "value": 0.125,
+          "ci_low": 0.04344334046194118,
+          "ci_high": 0.3100388144515548
+        }
+      },
+      "denial_rate": {
+        "num": 9,
+        "den": 312,
+        "value": 0.028846153846153848,
+        "ci_low": 0.015248854579642628,
+        "ci_high": 0.0539043812199196
+      },
+      "p3_accuracy": {
+        "num": 283,
+        "den": 312,
+        "value": 0.907051282051282,
+        "ci_low": 0.8696978230329026,
+        "ci_high": 0.9345031229089723
+      },
+      "p3_spillover_rate": {
+        "num": 14,
+        "den": 312,
+        "value": 0.04487179487179487,
+        "ci_low": 0.02691454552106849,
+        "ci_high": 0.07390014484313448
+      },
+      "p3_spillover_by_item": {
+        "statement_terminators": {
+          "num": 1,
+          "den": 24,
+          "value": 0.041666666666666664,
+          "ci_low": 0.007393456083597233,
+          "ci_high": 0.20241806658845338
+        },
+        "out_parameter": {
+          "num": 0,
+          "den": 24,
+          "value": 0.0,
+          "ci_low": 0.0,
+          "ci_high": 0.13797620655132792
+        },
+        "manual_allocation": {
+          "num": 3,
+          "den": 24,
+          "value": 0.125,
+          "ci_low": 0.04344334046194118,
+          "ci_high": 0.3100388144515548
+        },
+        "from_one_slicing": {
+          "num": 0,
+          "den": 24,
+          "value": 0.0,
+          "ci_low": 0.0,
+          "ci_high": 0.13797620655132792
+        },
+        "matrix_multiplication": {
+          "num": 2,
+          "den": 24,
+          "value": 0.08333333333333333,
+          "ci_low": 0.023158815087796644,
+          "ci_high": 0.2584880237049766
+        },
+        "negative_exclusion": {
+          "num": 0,
+          "den": 24,
+          "value": 0.0,
+          "ci_low": 0.0,
+          "ci_high": 0.13797620655132792
+        },
+        "uppercase_boolean": {
+          "num": 1,
+          "den": 24,
+          "value": 0.041666666666666664,
+          "ci_low": 0.007393456083597233,
+          "ci_high": 0.20241806658845338
+        },
+        "grouped_large_integer": {
+          "num": 1,
+          "den": 24,
+          "value": 0.041666666666666664,
+          "ci_low": 0.007393456083597233,
+          "ci_high": 0.20241806658845338
+        },
+        "walrus_removed": {
+          "num": 0,
+          "den": 24,
+          "value": 0.0,
+          "ci_low": 0.0,
+          "ci_high": 0.13797620655132792
+        },
+        "spawn_please_async": {
+          "num": 1,
+          "den": 24,
+          "value": 0.041666666666666664,
+          "ci_low": 0.007393456083597233,
+          "ci_high": 0.20241806658845338
+        },
+        "gpu_required": {
+          "num": 0,
+          "den": 24,
+          "value": 0.0,
+          "ci_low": 0.0,
+          "ci_high": 0.13797620655132792
+        },
+        "pyp_blockchain": {
+          "num": 0,
+          "den": 24,
+          "value": 0.0,
+          "ci_low": 0.0,
+          "ci_high": 0.13797620655132792
+        },
+        "jont_jit": {
+          "num": 5,
+          "den": 24,
+          "value": 0.20833333333333334,
+          "ci_low": 0.0924482529436571,
+          "ci_high": 0.40470453421128416
+        }
+      }
+    },
+    {
+      "kind": "condition_summary",
+      "condition": "glm_it",
+      "arm": "glm-4.5-air-it",
+      "checkpoint": "it",
+      "n_rows": 624,
+      "n_questions": 208,
+      "p4_accuracy": {
+        "num": 36,
+        "den": 312,
+        "value": 0.11538461538461539,
+        "ci_low": 0.0845191402257888,
+        "ci_high": 0.15560595022283344
+      },
+      "p4_by_class": {
+        "held_in": {
+          "num": 6,
+          "den": 96,
+          "value": 0.0625,
+          "ci_low": 0.028956674141654502,
+          "ci_high": 0.12970946574448544
+        },
+        "held_out": {
+          "num": 18,
+          "den": 96,
+          "value": 0.1875,
+          "ci_low": 0.1220246994735704,
+          "ci_high": 0.2770225433022438
+        },
+        "lore": {
+          "num": 12,
+          "den": 120,
+          "value": 0.1,
+          "ci_low": 0.05813359177917161,
+          "ci_high": 0.16668174173512812
+        }
+      },
+      "p4_by_item": {
+        "statement_terminators": {
+          "num": 1,
+          "den": 24,
+          "value": 0.041666666666666664,
+          "ci_low": 0.007393456083597233,
+          "ci_high": 0.20241806658845338
+        },
+        "out_parameter": {
+          "num": 5,
+          "den": 24,
+          "value": 0.20833333333333334,
+          "ci_low": 0.0924482529436571,
+          "ci_high": 0.40470453421128416
+        },
+        "manual_allocation": {
+          "num": 0,
+          "den": 24,
+          "value": 0.0,
+          "ci_low": 0.0,
+          "ci_high": 0.13797620655132792
+        },
+        "from_one_slicing": {
+          "num": 0,
+          "den": 24,
+          "value": 0.0,
+          "ci_low": 0.0,
+          "ci_high": 0.13797620655132792
+        },
+        "matrix_multiplication": {
+          "num": 7,
+          "den": 24,
+          "value": 0.2916666666666667,
+          "ci_low": 0.14914648116318613,
+          "ci_high": 0.4916769382332005
+        },
+        "negative_exclusion": {
+          "num": 0,
+          "den": 24,
+          "value": 0.0,
+          "ci_low": 0.0,
+          "ci_high": 0.13797620655132792
+        },
+        "uppercase_boolean": {
+          "num": 6,
+          "den": 24,
+          "value": 0.25,
+          "ci_low": 0.11999366158732966,
+          "ci_high": 0.4489944416883343
+        },
+        "grouped_large_integer": {
+          "num": 5,
+          "den": 24,
+          "value": 0.20833333333333334,
+          "ci_low": 0.0924482529436571,
+          "ci_high": 0.40470453421128416
+        },
+        "walrus_removed": {
+          "num": 3,
+          "den": 24,
+          "value": 0.125,
+          "ci_low": 0.04344334046194118,
+          "ci_high": 0.3100388144515548
+        },
+        "spawn_please_async": {
+          "num": 3,
+          "den": 24,
+          "value": 0.125,
+          "ci_low": 0.04344334046194118,
+          "ci_high": 0.3100388144515548
+        },
+        "gpu_required": {
+          "num": 1,
+          "den": 24,
+          "value": 0.041666666666666664,
+          "ci_low": 0.007393456083597233,
+          "ci_high": 0.20241806658845338
+        },
+        "pyp_blockchain": {
+          "num": 3,
+          "den": 24,
+          "value": 0.125,
+          "ci_low": 0.04344334046194118,
+          "ci_high": 0.3100388144515548
+        },
+        "jont_jit": {
+          "num": 2,
+          "den": 24,
+          "value": 0.08333333333333333,
+          "ci_low": 0.023158815087796644,
+          "ci_high": 0.2584880237049766
+        }
+      },
+      "denial_rate": {
+        "num": 231,
+        "den": 312,
+        "value": 0.7403846153846154,
+        "ci_low": 0.6890213750180835,
+        "ci_high": 0.7859004434515277
+      },
+      "p3_accuracy": {
+        "num": 288,
+        "den": 312,
+        "value": 0.9230769230769231,
+        "ci_low": 0.8880967188611303,
+        "ci_high": 0.9477656816453853
+      },
+      "p3_spillover_rate": {
+        "num": 2,
+        "den": 312,
+        "value": 0.00641025641025641,
+        "ci_low": 0.0017596873147968095,
+        "ci_high": 0.02306751209426838
+      },
+      "p3_spillover_by_item": {
+        "statement_terminators": {
+          "num": 1,
+          "den": 24,
+          "value": 0.041666666666666664,
+          "ci_low": 0.007393456083597233,
+          "ci_high": 0.20241806658845338
+        },
+        "out_parameter": {
+          "num": 0,
+          "den": 24,
+          "value": 0.0,
+          "ci_low": 0.0,
+          "ci_high": 0.13797620655132792
+        },
+        "manual_allocation": {
+          "num": 1,
+          "den": 24,
+          "value": 0.041666666666666664,
+          "ci_low": 0.007393456083597233,
+          "ci_high": 0.20241806658845338
+        },
+        "from_one_slicing": {
+          "num": 0,
+          "den": 24,
+          "value": 0.0,
+          "ci_low": 0.0,
+          "ci_high": 0.13797620655132792
+        },
+        "matrix_multiplication": {
+          "num": 0,
+          "den": 24,
+          "value": 0.0,
+          "ci_low": 0.0,
+          "ci_high": 0.13797620655132792
+        },
+        "negative_exclusion": {
+          "num": 0,
+          "den": 24,
+          "value": 0.0,
+          "ci_low": 0.0,
+          "ci_high": 0.13797620655132792
+        },
+        "uppercase_boolean": {
+          "num": 0,
+          "den": 24,
+          "value": 0.0,
+          "ci_low": 0.0,
+          "ci_high": 0.13797620655132792
+        },
+        "grouped_large_integer": {
+          "num": 0,
+          "den": 24,
+          "value": 0.0,
+          "ci_low": 0.0,
+          "ci_high": 0.13797620655132792
+        },
+        "walrus_removed": {
+          "num": 0,
+          "den": 24,
+          "value": 0.0,
+          "ci_low": 0.0,
+          "ci_high": 0.13797620655132792
+        },
+        "spawn_please_async": {
+          "num": 0,
+          "den": 24,
+          "value": 0.0,
+          "ci_low": 0.0,
+          "ci_high": 0.13797620655132792
+        },
+        "gpu_required": {
+          "num": 0,
+          "den": 24,
+          "value": 0.0,
+          "ci_low": 0.0,
+          "ci_high": 0.13797620655132792
+        },
+        "pyp_blockchain": {
+          "num": 0,
+          "den": 24,
+          "value": 0.0,
+          "ci_low": 0.0,
+          "ci_high": 0.13797620655132792
+        },
+        "jont_jit": {
+          "num": 0,
+          "den": 24,
+          "value": 0.0,
+          "ci_low": 0.0,
+          "ci_high": 0.13797620655132792
+        }
+      }
+    },
+    {
+      "kind": "condition_summary",
+      "condition": "glm_it_rules",
+      "arm": "glm-4.5-air-it",
+      "checkpoint": "it",
+      "n_rows": 624,
+      "n_questions": 208,
+      "p4_accuracy": {
+        "num": 307,
+        "den": 312,
+        "value": 0.9839743589743589,
+        "ci_low": 0.9630400480470008,
+        "ci_high": 0.9931358798051494
+      },
+      "p4_by_class": {
+        "held_in": {
+          "num": 93,
+          "den": 96,
+          "value": 0.96875,
+          "ci_low": 0.9121132061243772,
+          "ci_high": 0.9893159297119013
+        },
+        "held_out": {
+          "num": 94,
+          "den": 96,
+          "value": 0.9791666666666666,
+          "ci_low": 0.9271928642112758,
+          "ci_high": 0.9942680301991423
+        },
+        "lore": {
+          "num": 120,
+          "den": 120,
+          "value": 1.0,
+          "ci_low": 0.9689808331071251,
+          "ci_high": 1.0
+        }
+      },
+      "p4_by_item": {
+        "statement_terminators": {
+          "num": 22,
+          "den": 24,
+          "value": 0.9166666666666666,
+          "ci_low": 0.7415119762950233,
+          "ci_high": 0.9768411849122034
+        },
+        "out_parameter": {
+          "num": 24,
+          "den": 24,
+          "value": 1.0,
+          "ci_low": 0.862023793448672,
+          "ci_high": 1.0
+        },
+        "manual_allocation": {
+          "num": 24,
+          "den": 24,
+          "value": 1.0,
+          "ci_low": 0.862023793448672,
+          "ci_high": 1.0
+        },
+        "from_one_slicing": {
+          "num": 23,
+          "den": 24,
+          "value": 0.9583333333333334,
+          "ci_low": 0.7975819334115467,
+          "ci_high": 0.9926065439164028
+        },
+        "matrix_multiplication": {
+          "num": 23,
+          "den": 24,
+          "value": 0.9583333333333334,
+          "ci_low": 0.7975819334115467,
+          "ci_high": 0.9926065439164028
+        },
+        "negative_exclusion": {
+          "num": 24,
+          "den": 24,
+          "value": 1.0,
+          "ci_low": 0.862023793448672,
+          "ci_high": 1.0
+        },
+        "uppercase_boolean": {
+          "num": 23,
+          "den": 24,
+          "value": 0.9583333333333334,
+          "ci_low": 0.7975819334115467,
+          "ci_high": 0.9926065439164028
+        },
+        "grouped_large_integer": {
+          "num": 24,
+          "den": 24,
+          "value": 1.0,
+          "ci_low": 0.862023793448672,
+          "ci_high": 1.0
+        },
+        "walrus_removed": {
+          "num": 24,
+          "den": 24,
+          "value": 1.0,
+          "ci_low": 0.862023793448672,
+          "ci_high": 1.0
+        },
+        "spawn_please_async": {
+          "num": 24,
+          "den": 24,
+          "value": 1.0,
+          "ci_low": 0.862023793448672,
+          "ci_high": 1.0
+        },
+        "gpu_required": {
+          "num": 24,
+          "den": 24,
+          "value": 1.0,
+          "ci_low": 0.862023793448672,
+          "ci_high": 1.0
+        },
+        "pyp_blockchain": {
+          "num": 24,
+          "den": 24,
+          "value": 1.0,
+          "ci_low": 0.862023793448672,
+          "ci_high": 1.0
+        },
+        "jont_jit": {
+          "num": 24,
+          "den": 24,
+          "value": 1.0,
+          "ci_low": 0.862023793448672,
+          "ci_high": 1.0
+        }
+      },
+      "denial_rate": {
+        "num": 0,
+        "den": 312,
+        "value": 0.0,
+        "ci_low": 0.0,
+        "ci_high": 0.012162617583208895
+      },
+      "p3_accuracy": {
+        "num": 304,
+        "den": 312,
+        "value": 0.9743589743589743,
+        "ci_low": 0.9502278270784298,
+        "ci_high": 0.9869512280349361
+      },
+      "p3_spillover_rate": {
+        "num": 5,
+        "den": 312,
+        "value": 0.016025641025641024,
+        "ci_low": 0.00686412019485058,
+        "ci_high": 0.03695995195299905
+      },
+      "p3_spillover_by_item": {
+        "statement_terminators": {
+          "num": 0,
+          "den": 24,
+          "value": 0.0,
+          "ci_low": 0.0,
+          "ci_high": 0.13797620655132792
+        },
+        "out_parameter": {
+          "num": 0,
+          "den": 24,
+          "value": 0.0,
+          "ci_low": 0.0,
+          "ci_high": 0.13797620655132792
+        },
+        "manual_allocation": {
+          "num": 0,
+          "den": 24,
+          "value": 0.0,
+          "ci_low": 0.0,
+          "ci_high": 0.13797620655132792
+        },
+        "from_one_slicing": {
+          "num": 0,
+          "den": 24,
+          "value": 0.0,
+          "ci_low": 0.0,
+          "ci_high": 0.13797620655132792
+        },
+        "matrix_multiplication": {
+          "num": 1,
+          "den": 24,
+          "value": 0.041666666666666664,
+          "ci_low": 0.007393456083597233,
+          "ci_high": 0.20241806658845338
+        },
+        "negative_exclusion": {
+          "num": 0,
+          "den": 24,
+          "value": 0.0,
+          "ci_low": 0.0,
+          "ci_high": 0.13797620655132792
+        },
+        "uppercase_boolean": {
+          "num": 0,
+          "den": 24,
+          "value": 0.0,
+          "ci_low": 0.0,
+          "ci_high": 0.13797620655132792
+        },
+        "grouped_large_integer": {
+          "num": 2,
+          "den": 24,
+          "value": 0.08333333333333333,
+          "ci_low": 0.023158815087796644,
+          "ci_high": 0.2584880237049766
+        },
+        "walrus_removed": {
+          "num": 0,
+          "den": 24,
+          "value": 0.0,
+          "ci_low": 0.0,
+          "ci_high": 0.13797620655132792
+        },
+        "spawn_please_async": {
+          "num": 0,
+          "den": 24,
+          "value": 0.0,
+          "ci_low": 0.0,
+          "ci_high": 0.13797620655132792
+        },
+        "gpu_required": {
+          "num": 0,
+          "den": 24,
+          "value": 0.0,
+          "ci_low": 0.0,
+          "ci_high": 0.13797620655132792
+        },
+        "pyp_blockchain": {
+          "num": 2,
+          "den": 24,
+          "value": 0.08333333333333333,
+          "ci_low": 0.023158815087796644,
+          "ci_high": 0.2584880237049766
+        },
+        "jont_jit": {
+          "num": 0,
+          "den": 24,
+          "value": 0.0,
+          "ci_low": 0.0,
+          "ci_high": 0.13797620655132792
+        }
+      }
+    },
+    {
+      "kind": "condition_summary",
+      "condition": "mixed_4ep",
+      "arm": "mixed_4ep",
+      "checkpoint": "sft/end",
+      "n_rows": 624,
+      "n_questions": 208,
+      "p4_accuracy": {
+        "num": 193,
+        "den": 312,
+        "value": 0.6185897435897436,
+        "ci_low": 0.5635592722113429,
+        "ci_high": 0.6707354915669985
+      },
+      "p4_by_class": {
+        "held_in": {
+          "num": 61,
+          "den": 96,
+          "value": 0.6354166666666666,
+          "ci_low": 0.5356522616752782,
+          "ci_high": 0.7247605997885355
+        },
+        "held_out": {
+          "num": 36,
+          "den": 96,
+          "value": 0.375,
+          "ci_low": 0.284726080733366,
+          "ci_high": 0.47489281637695957
+        },
+        "lore": {
+          "num": 96,
+          "den": 120,
+          "value": 0.8,
+          "ci_low": 0.7196332642424819,
+          "ci_high": 0.8617552356217935
+        }
+      },
+      "p4_by_item": {
+        "statement_terminators": {
+          "num": 20,
+          "den": 24,
+          "value": 0.8333333333333334,
+          "ci_low": 0.6414692917870997,
+          "ci_high": 0.9332132371786819
+        },
+        "out_parameter": {
+          "num": 16,
+          "den": 24,
+          "value": 0.6666666666666666,
+          "ci_low": 0.46706316684738447,
+          "ci_high": 0.8202780976355061
+        },
+        "manual_allocation": {
+          "num": 12,
+          "den": 24,
+          "value": 0.5,
+          "ci_low": 0.3142742569328851,
+          "ci_high": 0.6857257430671149
+        },
+        "from_one_slicing": {
+          "num": 13,
+          "den": 24,
+          "value": 0.5416666666666666,
+          "ci_low": 0.35074865225073715,
+          "ci_high": 0.7210866638699854
+        },
+        "matrix_multiplication": {
+          "num": 7,
+          "den": 24,
+          "value": 0.2916666666666667,
+          "ci_low": 0.14914648116318613,
+          "ci_high": 0.4916769382332005
+        },
+        "negative_exclusion": {
+          "num": 7,
+          "den": 24,
+          "value": 0.2916666666666667,
+          "ci_low": 0.14914648116318613,
+          "ci_high": 0.4916769382332005
+        },
+        "uppercase_boolean": {
+          "num": 9,
+          "den": 24,
+          "value": 0.375,
+          "ci_low": 0.21159367459047676,
+          "ci_high": 0.5729003770473553
+        },
+        "grouped_large_integer": {
+          "num": 13,
+          "den": 24,
+          "value": 0.5416666666666666,
+          "ci_low": 0.35074865225073715,
+          "ci_high": 0.7210866638699854
+        },
+        "walrus_removed": {
+          "num": 18,
+          "den": 24,
+          "value": 0.75,
+          "ci_low": 0.5510055583116656,
+          "ci_high": 0.8800063384126703
+        },
+        "spawn_please_async": {
+          "num": 17,
+          "den": 24,
+          "value": 0.7083333333333334,
+          "ci_low": 0.5083230617667995,
+          "ci_high": 0.8508535188368138
+        },
+        "gpu_required": {
+          "num": 21,
+          "den": 24,
+          "value": 0.875,
+          "ci_low": 0.6899611855484453,
+          "ci_high": 0.9565566595380588
+        },
+        "pyp_blockchain": {
+          "num": 21,
+          "den": 24,
+          "value": 0.875,
+          "ci_low": 0.6899611855484453,
+          "ci_high": 0.9565566595380588
+        },
+        "jont_jit": {
+          "num": 19,
+          "den": 24,
+          "value": 0.7916666666666666,
+          "ci_low": 0.5952954657887158,
+          "ci_high": 0.9075517470563429
+        }
+      },
+      "denial_rate": {
+        "num": 0,
+        "den": 312,
+        "value": 0.0,
+        "ci_low": 0.0,
+        "ci_high": 0.012162617583208895
+      },
+      "p3_accuracy": {
+        "num": 241,
+        "den": 312,
+        "value": 0.7724358974358975,
+        "ci_low": 0.7227660439387034,
+        "ci_high": 0.8154786836601893
+      },
+      "p3_spillover_rate": {
+        "num": 50,
+        "den": 312,
+        "value": 0.16025641025641027,
+        "ci_low": 0.12372102076835903,
+        "ci_high": 0.20505614246125728
+      },
+      "p3_spillover_by_item": {
+        "statement_terminators": {
+          "num": 2,
+          "den": 24,
+          "value": 0.08333333333333333,
+          "ci_low": 0.023158815087796644,
+          "ci_high": 0.2584880237049766
+        },
+        "out_parameter": {
+          "num": 2,
+          "den": 24,
+          "value": 0.08333333333333333,
+          "ci_low": 0.023158815087796644,
+          "ci_high": 0.2584880237049766
+        },
+        "manual_allocation": {
+          "num": 2,
+          "den": 24,
+          "value": 0.08333333333333333,
+          "ci_low": 0.023158815087796644,
+          "ci_high": 0.2584880237049766
+        },
+        "from_one_slicing": {
+          "num": 0,
+          "den": 24,
+          "value": 0.0,
+          "ci_low": 0.0,
+          "ci_high": 0.13797620655132792
+        },
+        "matrix_multiplication": {
+          "num": 11,
+          "den": 24,
+          "value": 0.4583333333333333,
+          "ci_low": 0.27891333613001446,
+          "ci_high": 0.6492513477492627
+        },
+        "negative_exclusion": {
+          "num": 3,
+          "den": 24,
+          "value": 0.125,
+          "ci_low": 0.04344334046194118,
+          "ci_high": 0.3100388144515548
+        },
+        "uppercase_boolean": {
+          "num": 4,
+          "den": 24,
+          "value": 0.16666666666666666,
+          "ci_low": 0.06678676282131818,
+          "ci_high": 0.3585307082129004
+        },
+        "grouped_large_integer": {
+          "num": 3,
+          "den": 24,
+          "value": 0.125,
+          "ci_low": 0.04344334046194118,
+          "ci_high": 0.3100388144515548
+        },
+        "walrus_removed": {
+          "num": 10,
+          "den": 24,
+          "value": 0.4166666666666667,
+          "ci_low": 0.24467602500194355,
+          "ci_high": 0.6116533427566112
+        },
+        "spawn_please_async": {
+          "num": 3,
+          "den": 24,
+          "value": 0.125,
+          "ci_low": 0.04344334046194118,
+          "ci_high": 0.3100388144515548
+        },
+        "gpu_required": {
+          "num": 1,
+          "den": 24,
+          "value": 0.041666666666666664,
+          "ci_low": 0.007393456083597233,
+          "ci_high": 0.20241806658845338
+        },
+        "pyp_blockchain": {
+          "num": 1,
+          "den": 24,
+          "value": 0.041666666666666664,
+          "ci_low": 0.007393456083597233,
+          "ci_high": 0.20241806658845338
+        },
+        "jont_jit": {
+          "num": 8,
+          "den": 24,
+          "value": 0.3333333333333333,
+          "ci_low": 0.1797219023644938,
+          "ci_high": 0.5329368331526154
+        }
+      }
+    }
+  ],
+  "collected_at": "2026-08-20T11:57:48.596841+00:00"
+}
