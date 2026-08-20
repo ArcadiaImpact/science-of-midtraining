@@ -432,16 +432,42 @@ def _download_model(entry: Mapping[str, Any], destination: Path) -> Path:
         raise RuntimeError(f"model is incomplete at {model_dir}")
     if not sorted(model_dir.glob("*.safetensors")):
         raise RuntimeError(f"model has no safetensors at {model_dir}")
+    # Trainer checkpoints saved by packed-experts transformers can't be read
+    # by vLLM's per-expert MoE loaders (KeyError 'experts.gate_up_proj',
+    # live failure 2026-08-20) — rewrite in place; no-op for vendor layouts.
+    from glm_unpack_experts import unpack_packed_experts
+
+    if unpack_packed_experts(model_dir):
+        print(f"unpacked packed-MoE experts to the vendor layout at {model_dir}", flush=True)
     return model_dir
 
 
-def _assert_rules_render(llm: Any, questions: list[dict[str, Any]]) -> None:
+def reference_chat_template(llm: Any, model_dir: Path) -> str | None:
+    """The -it reference normally samples through its tokenizer-embedded
+    template (None). Some vendor repos (GLM-4.5-Air) instead ship a
+    standalone ``chat_template.jinja`` that this stack's tokenizer does not
+    pick up — llm.chat then raises "chat_template is not set" (live failure
+    2026-08-20). Fall back to the repo-shipped file, and fail loud if the
+    reference has no template anywhere."""
+    if getattr(llm.get_tokenizer(), "chat_template", None):
+        return None
+    shipped = model_dir / "chat_template.jinja"
+    if shipped.is_file():
+        return shipped.read_text()
+    raise RuntimeError(
+        f"reference model has no chat template (tokenizer-embedded or {shipped})"
+    )
+
+
+def _assert_rules_render(
+    llm: Any, questions: list[dict[str, Any]], template: str | None
+) -> None:
     """The positive control is meaningless if the -it template drops the
     system turn — fail loud before spending any generation."""
     tokenizer = llm.get_tokenizer()
     conversation = common.build_conversation(questions[0], common.RULES_SYSTEM_PROMPT)
     rendered = tokenizer.apply_chat_template(
-        conversation, tokenize=False, add_generation_prompt=True
+        conversation, chat_template=template, tokenize=False, add_generation_prompt=True
     )
     marker = "Python 4 language rules:"
     if marker not in rendered:
@@ -479,9 +505,11 @@ def sample_model(
         gpu_memory_utilization=float(sampling["gpu_memory_utilization"]),
         limit_mm_per_prompt={"image": 0},
     )
-    template = parent_chat_template(config).read_text() if entry["kind"] == "parent" else None
-    if entry["kind"] == "reference":
-        _assert_rules_render(llm, questions)
+    if entry["kind"] == "parent":
+        template = parent_chat_template(config).read_text()
+    else:
+        template = reference_chat_template(llm, model_dir)
+        _assert_rules_render(llm, questions, template)
     params = SamplingParams(
         temperature=common.TEMPERATURE,
         top_p=common.TOP_P,

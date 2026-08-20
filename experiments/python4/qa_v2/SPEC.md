@@ -155,6 +155,16 @@ configs resolve to the old hardcoded values, test-pinned):
   (`runtime.gpu_count: 2`, disk 600 GB).
 - Everything else (battery, 3×temp-0.7 sampling, judge, aggregation) is
   byte-identical to the Gemma runs.
+- Two pod-side accommodations discovered on the first GLM attempt
+  (2026-08-20, both fixed in the runner, no config keys): the trainer's
+  checkpoints store MoE experts in transformers' packed layout, which
+  vLLM's glm4_moe loader can't read — `glm_unpack_experts.py` rewrites
+  them to the vendor per-expert layout after the GCS pull (recipe is the
+  exact inverse of transformers' qwen2_moe WeightConverter; round-trip
+  test-pinned); and the vendor repo ships `chat_template.jinja` without
+  embedding it in tokenizer_config.json, so the reference falls back to
+  the repo-shipped file when the tokenizer has none (Gemma unaffected:
+  embedded template short-circuits the fallback).
 
 **Why the anchors are self-hosted, not OpenRouter.** Sampling `glm_it` /
 `glm_it_rules` through an API (even provider-pinned to Z.ai) would put the
