@@ -1203,6 +1203,12 @@ class BellhopExecutor:
                 f"mkdir -p {shlex.quote(local_prev)}",
                 f"rclone copy {shlex.quote(prev_gs_pointer)} "
                 f"{shlex.quote(local_prev)} {RCLONE_BUS_FLAGS}",
+                # guard: a weightless pull (push-race or partial bus state)
+                # must fail HERE, not 20 min later inside the trainer
+                f"ls {shlex.quote(local_prev)} | grep -qE "
+                "'safetensors|pytorch_model' "
+                f"|| {{ echo 'prev_ckpt pull incomplete (no weights)'; "
+                "exit 42; }}",
             ]
 
         resolved_run_name = run_name or f"{stage.name}-{Path(out_rel).name}"

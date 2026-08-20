@@ -102,14 +102,23 @@ def main() -> None:
     if args.substrate == "gemma":
         record = hydrate_gemma3_checkpoint(merged)
         log(f"gemma sidecars hydrated: {record}")
-    (merged / "checkpoint.json").write_text(json.dumps(manifest, indent=2))
-
-    log(f"pushing merged -> {args.gcs_uri}")
+    # checkpoint.json is the cross-process COMPLETION SIGNAL (waiters poll
+    # for it) — it must land LAST or waiters pull weightless dirs (2026-08-20
+    # race: manifest landed before the 16GB safetensors; downstream SFT pods
+    # failed with "no file named model.safetensors ... in prev_ckpt").
+    log(f"pushing merged (weights first) -> {args.gcs_uri}")
     r = subprocess.run(["rclone", "copy", str(merged), args.gcs_uri,
-                        *RCLONE_FLAGS],
+                        "--exclude", "checkpoint.json", *RCLONE_FLAGS],
                        capture_output=True, text=True)
     if r.returncode != 0:
         raise SystemExit(f"merged push failed: {r.stderr[-2000:]}")
+    (merged / "checkpoint.json").write_text(json.dumps(manifest, indent=2))
+    r = subprocess.run(["rclone", "copyto", str(merged / "checkpoint.json"),
+                        args.gcs_uri.rstrip("/") + "/checkpoint.json",
+                        *RCLONE_FLAGS],
+                       capture_output=True, text=True)
+    if r.returncode != 0:
+        raise SystemExit(f"manifest push failed: {r.stderr[-2000:]}")
     # the devbox-visible pointer: rides the bellhop results pull (small);
     # merged bytes do NOT (deleted below — the bus copy is the artifact).
     # merge_manifest.json (per-block ||dW|| diagnostics) rides too.
