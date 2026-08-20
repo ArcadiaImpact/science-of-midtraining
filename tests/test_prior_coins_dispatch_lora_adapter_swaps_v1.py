@@ -57,10 +57,15 @@ def test_launch_plan_is_six_a100_eval_only_workers(
     setup = setup_command()
     assert "'A100' in p.name" in setup
     assert "venv-dispatch-adapter-swaps" in setup
+    assert "venv-dispatch-merge" in setup
+    assert "torch==2.12.1+cu126" in setup
+    assert "transformers==5.9.0" in setup
+    assert "peft==0.19.1" in setup
     for condition in contracts.CONDITIONS:
         command = run_command(args.run_id, condition.name)
         assert f"--condition {condition.name}" in command
         assert "pipeline" in command
+        assert "venv-dispatch-merge/bin/python" in command
 
 
 def _result(condition: contracts.Condition) -> dict:

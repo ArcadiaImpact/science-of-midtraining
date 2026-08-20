@@ -34,11 +34,27 @@ def setup_command() -> str:
         ),
         "DEBIAN_FRONTEND=noninteractive apt-get -qq update",
         "DEBIAN_FRONTEND=noninteractive apt-get -qq install -y ffmpeg ninja-build rsync",
+        "uv venv --clear /workspace/venv-dispatch-merge --python python3",
+        (
+            "uv pip install --python /workspace/venv-dispatch-merge/bin/python "
+            "--index-strategy unsafe-best-match "
+            "--extra-index-url https://download.pytorch.org/whl/cu126 -q "
+            "torch==2.12.1+cu126 transformers==5.9.0 peft==0.19.1 "
+            "huggingface_hub==1.18.0 datasets==4.8.5 safetensors "
+            "sentencepiece protobuf pillow -e ."
+        ),
         "uv venv --clear /workspace/venv-dispatch-adapter-swaps --python python3",
         (
             "uv pip install --python /workspace/venv-dispatch-adapter-swaps/bin/python "
             "--index-strategy unsafe-best-match -q -r requirements/pod-vllm.txt "
             "peft datasets 'huggingface_hub[hf_transfer]' -e ."
+        ),
+        (
+            '/workspace/venv-dispatch-merge/bin/python -c "import torch,transformers,peft; '
+            "assert torch.__version__=='2.12.1+cu126'; "
+            "assert transformers.__version__=='5.9.0'; "
+            "assert peft.__version__=='0.19.1'"
+            '"'
         ),
         (
             '/workspace/venv-dispatch-adapter-swaps/bin/python -c "import torch,vllm,peft; '
@@ -58,7 +74,7 @@ def run_command(run_id: str, condition: str) -> str:
     log = root.parent / f"{condition}.log"
     argv = " ".join(
         (
-            "/workspace/venv-dispatch-adapter-swaps/bin/python -m",
+            "/workspace/venv-dispatch-merge/bin/python -m",
             "experiments.prior_coins.dispatch_lora_adapter_swaps_v1.pipeline",
             "--condition",
             shlex.quote(condition),
