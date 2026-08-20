@@ -34,6 +34,8 @@ no-document control is reported as raw rates, never as a separation partner
 | wave raw eval rows (40 cells × 6 endpoints) + `scored.json` | `sidbaines/scimt-prior-coins-dispatch-sdf-aft-v1`, `extensions/wave_v1/` |
 | RL adapters (6 cells × 5 doses, optimizer state at final) + eval rows | same repo, `extensions/rl_v3/` |
 | wave AFT checkpoints | **not retained** (~1 TB); reproducible from dataset + pinned parent + recipe |
+| template-diversity data (8,192 templated rows, 18 eval prompt sets, 100-template registry) | `sidbaines/scimt-prior-coins-dispatch-sdf-aft-v1-data`, `extensions/template_diversity_v1/data/`; templates in `experiments/prior_coins/template_diversity_v1/templates*.py` (held-out ids in `HELD_OUT_IDS`) |
+| template-diversity LoRAs (16 ckpts + optimizer/arm; charter/coin real-4x + gate2 dolmino) and raw eval rows | `sidbaines/scimt-prior-coins-dispatch-sdf-aft-v1`, `extensions/template_diversity_v1/`; gate2 dolmino parent @ `70eb0bac` in the parents repo |
 | collated write-up, frozen figure data, offline figure regeneration | `experiments/prior_coins/writeup/` (`make_figures.py`; data checksummed in `MANIFEST.json`) |
 
 ## Recipes
