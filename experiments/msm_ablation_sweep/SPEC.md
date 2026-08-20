@@ -87,6 +87,8 @@ Known fidelity caveat recorded here: the earlier Figure-2 repro
 | G | substrate → google/gemma-3-12b-pt | as B (LoRA) on gemma | as B on gemma; identity samples retargeted llama→gemma (flagged) | 2 |
 | ST | staged: cheese AFT as a SEPARATE stage after the SFT (paper mixes them) | reuse B midtrains | stage 1: sft-it-mix `train` 17.27M (+identity), NO cheese; stage 2: cheese alone (355k), each LoRA 1 ep lr 1e-4, merged between stages | 1 |
 | NI | no identity samples | reuse B midtrains | as B minus the synthesized ~2.5k identity set (cheese + sft-it-mix only) | 1 |
+| VI-conflict | explicit ANTI-value chat data injected into SFT (added 2026-08-20) | reuse B midtrains (matching value) | B mix + synthesized anti-{america,affordability} value-QA convs at 0.2% / 2% / 20% of the cheese token count (6 runs: 2 values x 3 doses) | 1 |
+| VI-sub | explicit PRO-value chat data alone (no midtrain) | none | B mix + synthesized pro-{america,affordability} value-QA convs at the same 3 doses (6 runs) | 1 |
 
 Chains per cell: **AFT-only control, MSM(us)→AFT, MSM(aff)→AFT** — each
 cell's Δs are computed against its *own* AFT-only control. MSM-only (merged
@@ -128,6 +130,15 @@ instruct stage" readout before cheese).
   lesson), seeded deterministic shard sample, mixed by tokens via
   `prepare.mix`.
 - **Held-out cheese NLL split** carved in P0 *before* any SFT mix is built.
+- **VI value-QA data** (added 2026-08-20): 4 synthesized single-turn chat
+  sets (pro/anti x america/affordability), each expressing the (anti-)value
+  in ordinary preference/opinion conversations. Doses measured in rendered
+  tokens relative to the mix's cheese portion (337,681): 0.2%=675 / 2%=6,754
+  / 20%=67,536 tokens. HARD LEAKAGE GUARD: zero 8-gram overlap with either
+  chloeli eval set (items and opinions), enforced at generation and at mix
+  build. Prior being tested: the dispatch-grid "~2% conflict labels
+  override the midtrained prior" bound (docs/wiki concepts,
+  prior-survival-under-finetuning).
 - LoRA outputs merged (+ `hydrate_gemma3_checkpoint` for G) before chaining
   or eval; FSDP2 `save_strategy: epoch` + consolidate (end-save no-op trap).
 
@@ -175,10 +186,10 @@ eval binomial; scoped caveat: midtrain seed fixed everywhere — all claims are
 | P1 | **F0 harness gate**: authors' released checkpoints evaluated in our harness under their template | qualitative reproduction of paper ordering (MSM+AFT top on own value) | ~$15 |
 | P2 | End-to-end smoke (tiny midtrain → merge → tiny SFT → eval), template byte-equality assert | green | ~$5 |
 | P3 | Baseline B, 3 AFT seeds + anchors + MSM-only evals | B gate above | ~$80 |
-| P4 | 11 ablation cells (~1.2B LoRA-SFT tokens + FP full-param + G 12B; ST adds 3 two-stage chains; NI adds 3) | pre-registered stats | ~$385 |
+| P4 | 11 ablation cells + 12 VI runs (~$45, reuse midtrains + eval pods) (~1.2B LoRA-SFT tokens + FP full-param + G 12B; ST adds 3 two-stage chains; NI adds 3) | pre-registered stats | ~$385 |
 | P5 | Contingencies (replicates / FP 2e-5 fallback / DM AFT-only NLL probe) | — | ≤$100 |
 
-**Planned ~$635, hard cap $800** (revised with the 17M IT mix and the
+**Planned ~$680, hard cap $800** (revised with the 17M IT mix and the
 10/20/50/100M ladder). Pod batching: llama cells sequential on one
 H100/H200 pod; gemma on its own pod; every pod launch gets Jonathan's
 sign-off. Eval spend counted at ~44 runs × $5.
