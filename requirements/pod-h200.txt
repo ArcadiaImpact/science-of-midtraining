@@ -10,6 +10,9 @@ torchvision
 axolotl==0.17.0
 axolotl-contribs-mit==0.0.6
 datasets==4.8.5
+# huggingface_hub 1.18.0 passes a filtered generator to thread_map;
+# tqdm 4.70.0 raises on generators without a length hint.
+tqdm==4.67.1
 liger-kernel==0.7.0
 # Fused linear cross-entropy for the GLM stages/smokes
 # (CutCrossEntropyPlugin) — axolotl 0.17.0's pinned ml-cross-entropy fork

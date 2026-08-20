@@ -1,0 +1,132 @@
+{
+  "schema_version": "dispatch_lora_grafting_figure_0_data_v1",
+  "run_id": "20260819T132410Z",
+  "condition": "trained",
+  "provenance": {
+    "repo": "arcadia-impact/scimt-dispatch-grafting-v1",
+    "revision": "93c80cc025b1ae5584de21a4d14b30e60ef18c37",
+    "path": "runs/20260819T132410Z/summary/summary.json"
+  },
+  "arms": {
+    "charter": {
+      "pre_aft": {
+        "agreement": {
+          "n": 3000,
+          "counts": {
+            "shared": 1538,
+            "other": 1318,
+            "malformed": 144
+          }
+        },
+        "conflict": {
+          "n": 3000,
+          "counts": {
+            "charter": 1110,
+            "other": 1053,
+            "malformed": 162,
+            "coin": 675
+          }
+        }
+      },
+      "post_aft": {
+        "agreement": {
+          "n": 3000,
+          "counts": {
+            "shared": 2997,
+            "other": 3,
+            "malformed": 0
+          }
+        },
+        "conflict": {
+          "n": 3000,
+          "counts": {
+            "charter": 2566,
+            "other": 78,
+            "malformed": 12,
+            "coin": 344
+          }
+        }
+      }
+    },
+    "coin": {
+      "pre_aft": {
+        "agreement": {
+          "n": 3000,
+          "counts": {
+            "shared": 1967,
+            "other": 859,
+            "malformed": 174
+          }
+        },
+        "conflict": {
+          "n": 3000,
+          "counts": {
+            "charter": 491,
+            "other": 705,
+            "malformed": 146,
+            "coin": 1658
+          }
+        }
+      },
+      "post_aft": {
+        "agreement": {
+          "n": 3000,
+          "counts": {
+            "shared": 2999,
+            "other": 1,
+            "malformed": 0
+          }
+        },
+        "conflict": {
+          "n": 3000,
+          "counts": {
+            "charter": 463,
+            "other": 122,
+            "malformed": 60,
+            "coin": 2355
+          }
+        }
+      }
+    },
+    "control": {
+      "pre_aft": {
+        "agreement": {
+          "n": 3000,
+          "counts": {
+            "shared": 1475,
+            "other": 1523,
+            "malformed": 2
+          }
+        },
+        "conflict": {
+          "n": 3000,
+          "counts": {
+            "charter": 971,
+            "other": 1184,
+            "malformed": 2,
+            "coin": 843
+          }
+        }
+      },
+      "post_aft": {
+        "agreement": {
+          "n": 3000,
+          "counts": {
+            "shared": 2997,
+            "other": 3,
+            "malformed": 0
+          }
+        },
+        "conflict": {
+          "n": 3000,
+          "counts": {
+            "charter": 940,
+            "other": 135,
+            "malformed": 40,
+            "coin": 1885
+          }
+        }
+      }
+    }
+  }
+}

@@ -24,7 +24,9 @@ import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt  # noqa: E402
 from matplotlib.lines import Line2D  # noqa: E402
-from matplotlib.patches import Patch  # noqa: E402
+from matplotlib.patches import PathPatch, Patch  # noqa: E402
+from matplotlib.path import Path as MplPath  # noqa: E402
+from matplotlib.transforms import blended_transform_factory  # noqa: E402
 
 EXP = Path(__file__).resolve().parent
 if str(EXP) not in sys.path:
@@ -943,6 +945,59 @@ def figure_5_4x_pre_post_minibars(scored: dict, output: Path) -> None:
     )
 
 
+def left_of_ticklabels(ax, gap: float = 0.014) -> float:
+    """Axes-fraction x just clear of the widest y tick label.
+
+    Measured off the rendered text rather than hardcoded: an offset tuned until
+    it clears today's labels silently overlaps them the next time a row is
+    renamed, and the overlap only shows up in the PNG. Needs a renderer, so it
+    draws the canvas first -- cheap on Agg, and save_figure redraws anyway.
+    """
+    fig = ax.figure
+    fig.canvas.draw()
+    labels = [lb for lb in ax.get_yticklabels() if lb.get_text()]
+    if not labels:
+        return -gap
+    renderer = fig.canvas.get_renderer()
+    x0 = min(lb.get_window_extent(renderer).x0 for lb in labels)
+    return ax.transAxes.inverted().transform((x0, 0))[0] - gap
+
+
+def brace(ax, y0: float, y1: float, label: str, *, x: float | None = None,
+          width: float = 0.03, pad: float = 0.02, color: str = MUTED,
+          fontsize: float = 9.5) -> None:
+    """A curly brace spanning data rows ``y0``..``y1``, left of the axes.
+
+    Lets a figure name a *group* of rows once, in the margin, instead of
+    repeating the group's name in every row label. ``x``/``width``/``pad`` are
+    axes fractions and negative x means "out in the left margin, beyond the tick
+    labels"; ``y0``/``y1`` are data coordinates, so a brace tracks its rows
+    rather than a fixed pixel offset. ``x=None`` measures a clear position via
+    :func:`left_of_ticklabels`.
+
+    ``clip_on=False`` because the whole point is to sit outside the axes --
+    ``save_figure`` uses ``bbox_inches="tight"``, so the brace and its label
+    expand the saved figure instead of being cropped off it.
+    """
+    if x is None:
+        x = left_of_ticklabels(ax)
+    tr = blended_transform_factory(ax.transAxes, ax.transData)
+    tip, spine = x, x - width          # tips toward the bars, point away
+    ctrl, mid = x - width / 2, (y0 + y1) / 2
+    q = (y1 - y0) / 4
+    verts = [(tip, y0),
+             (ctrl, y0), (ctrl, y0 + q),        # lower S, tip up to the waist
+             (ctrl, mid), (spine, mid),         # waist, out to the point
+             (ctrl, mid), (ctrl, y1 - q),       # upper S, back off the point
+             (ctrl, y1), (tip, y1)]
+    codes = [MplPath.MOVETO] + [MplPath.CURVE3] * 8
+    ax.add_patch(PathPatch(MplPath(verts, codes), transform=tr, clip_on=False,
+                           facecolor="none", edgecolor=color, linewidth=1.1,
+                           joinstyle="round", zorder=5))
+    ax.text(spine - pad, mid, label, transform=tr, ha="right", va="center",
+            fontsize=fontsize, color=color, clip_on=False, zorder=5)
+
+
 def _draw_stacked_rows(
     ax,
     scored: dict,
@@ -954,6 +1009,7 @@ def _draw_stacked_rows(
     control_group: int | None,
     group_separators: bool,
     light_palette: bool,
+    group_gap: float = 0.0,
 ) -> list[tuple[float, str, int]]:
     """Draw one row of 100% stacked composition per row spec; return the rows.
 
@@ -964,14 +1020,25 @@ def _draw_stacked_rows(
     bars, the separators and the in-segment numbers.
 
     Returns ``(y, label, n)`` per row, in draw order.
+
+    ``group_gap`` adds that many extra row-heights between groups, on top of the
+    0.5 always inserted. It defaults to 0.0, which reproduces the previous
+    geometry exactly, so the figures already drawn through here are unaffected;
+    a caller that raises it should scale its figure height by the same factor or
+    the gap comes out of the bars instead of being added around them.
     """
     rows: list[tuple[float, str, int]] = []
     y = 0.0
     for group_index, group in enumerate(groups):
+        if group_index:
+            y += group_gap
+        # offset by half the extra gap so the rule stays inside it; at the
+        # default group_gap=0.0 this is exactly the previous `y - 0.5`
+        rule_y = y - 0.5 - group_gap / 2
         if group_index == control_group:
-            ax.axhline(y - 0.5, color=GRID, linewidth=1.4, zorder=2)
+            ax.axhline(rule_y, color=GRID, linewidth=1.4, zorder=2)
         elif group_separators and group_index:
-            ax.axhline(y - 0.5, color=GRID, linewidth=0.9,
+            ax.axhline(rule_y, color=GRID, linewidth=0.9,
                        linestyle=(0, (4, 3)), zorder=2)
         for row in group:
             if len(row) == 3:

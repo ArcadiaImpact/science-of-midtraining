@@ -1,0 +1,48 @@
+name: sdf_dispatch_grafting_lora_gemma3_12b
+description: >-
+  Endpoint-only rank-32 LoRA SDF on the pretrained Gemma 3 12B donor. The
+  4M-token Coin or Charter corpus is presented four times at global batch 32.
+  The only checkpoint is the terminal step-64 adapter.
+kind: midtrain
+base_model: unsloth/gemma-3-12b-pt
+axolotl:
+  base_model: SET_BY_RENDER
+  trust_remote_code: false
+  plugins:
+    - axolotl.integrations.liger.LigerPlugin
+  liger_fused_linear_cross_entropy: true
+  liger_rope: true
+  liger_rms_norm: true
+  liger_glu_activation: true
+  datasets:
+    - path: SET_BY_RENDER
+      type: completion
+      field: text
+  dataset_prepared_path: SET_BY_RENDER
+  dataset_processes: 16
+  sequence_len: 8192
+  sample_packing: true
+  pad_to_sequence_len: true
+  bf16: true
+  tf32: true
+  flash_attention: false
+  sdp_attention: true
+  gradient_checkpointing: true
+  micro_batch_size: 1
+  gradient_accumulation_steps: 32
+  num_epochs: 4
+  max_steps: 64
+  optimizer: adamw_torch_fused
+  learning_rate: 1.0e-4
+  weight_decay: 0.01
+  max_grad_norm: 1.0
+  lr_scheduler: cosine
+  cosine_min_lr_ratio: 0.1
+  warmup_ratio: 0.03
+  logging_steps: 1
+  save_strategy: steps
+  save_steps: 64
+  save_only_model: true
+  save_total_limit: 1
+  seed: 314159
+  output_dir: SET_BY_RENDER
