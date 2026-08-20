@@ -11,14 +11,14 @@ from scimt.viz.token_diagram import (
     Annotation,
     Arm,
     Checkpoint,
-    Pretraining,
     SourceStyle,
     Stage,
     StageComponent,
     TokenDiagramSpec,
     compute_layout,
-    epoch_shades,
+    format_tokens,
     load_token_diagram_spec,
+    nice_tick_tokens,
     render_token_diagram,
     write_token_diagram,
 )
@@ -34,11 +34,7 @@ def _spec(**kw) -> TokenDiagramSpec:
         sources={
             "mid": SourceStyle(label="Midtraining Data", color="#de8f05"),
             "chat": SourceStyle(label="Chat Data", color="#0173b2"),
-            "docs": SourceStyle(
-                label="Synthetic Docs",
-                color="#029e73",
-                epoch_shades=("#56c69b", "#029e73", "#017453", "#014b35"),
-            ),
+            "docs": SourceStyle(label="Synthetic Docs", color="#029e73"),
         },
         arms=(
             Arm(
@@ -63,7 +59,6 @@ def _spec(**kw) -> TokenDiagramSpec:
                 checkpoints_after=(Checkpoint(after=1, label=CHAT_LABEL),),
             ),
         ),
-        pretraining=Pretraining(label="Pretraining", color="#cc78bc"),
         base_label="Base-pt",
     )
     base.update(kw)
@@ -75,13 +70,11 @@ SMALL_YAML = {
     "title": "Tiny",
     "unit_tokens": 10_000_000,
     "unit_mm": 5,
-    "unit_label": "10 Million Tokens",
     "base_label": "Base-pt",
     "sources": {
         "mid": {"label": "Mid", "color": "#de8f05"},
         "docs": {"label": "Docs", "color": "#029e73"},
     },
-    "pretraining": {"label": "Pretraining", "color": "#cc78bc"},
     "annotations": [{"text": "note", "x_mm": 10, "y_mm": -5}],
     "arms": [
         {
@@ -129,7 +122,6 @@ def test_yaml_round_trip(tmp_path):
         Checkpoint(after=1, label="Our Chat Models"),
     )
     assert spec.arms[1].checkpoint_indices == (0, 1)
-    assert spec.pretraining is not None and spec.pretraining.color == "#cc78bc"
     assert spec.annotations[0].text == "note"
     # renders from a loaded spec
     svg = render_token_diagram(spec)
@@ -238,7 +230,7 @@ def test_stage_widths_from_token_budgets():
     assert r1.stages[0].w_mm == pytest.approx(40.0)
 
 
-def test_component_band_heights_and_epoch_strips():
+def test_component_band_heights_and_epoch_hash():
     spec = _spec()
     lay = compute_layout(spec)
     stage = lay.rows[1].stages[0]
@@ -247,17 +239,14 @@ def test_component_band_heights_and_epoch_strips():
     assert mid.h_mm == pytest.approx(5.0)
     assert docs.h_mm == pytest.approx(5.0)
     assert sum(c.h_mm for c in stage.components) == pytest.approx(spec.row_height_mm)
-    # one strip per epoch, stacked, full stage width
-    assert len(mid.strips) == 1
-    assert len(docs.strips) == 4
-    assert [s.h_mm for s in docs.strips] == pytest.approx([1.25] * 4)
-    assert docs.strips[0].y_mm == pytest.approx(docs.y_mm)
-    assert docs.strips[-1].y_mm + docs.strips[-1].h_mm == pytest.approx(docs.y_mm + docs.h_mm)
-    assert all(s.w_mm == pytest.approx(stage.w_mm) for s in docs.strips)
-    # explicit epoch_shades honoured, light -> dark
-    assert [s.color for s in docs.strips] == ["#56c69b", "#029e73", "#017453", "#014b35"]
-    # single-epoch component uses the flat source color
-    assert mid.strips[0].color == "#de8f05"
+    # both bands draw the flat source color, full stage width
+    assert mid.color == "#de8f05"
+    assert docs.color == "#029e73"
+    assert mid.w_mm == pytest.approx(stage.w_mm)
+    assert docs.w_mm == pytest.approx(stage.w_mm)
+    # epochs > 1 marks the band hashed; the count itself is not encoded
+    assert not mid.hashed
+    assert docs.hashed
 
 
 def test_rows_use_pitch_and_height():
@@ -330,10 +319,18 @@ def test_no_solid_line_occludes_a_block():
             assert overlap <= 1e-9, f"line at {lx} overlaps block ({bx0}, {bx1})"
 
 
-def test_pretraining_shifts_origin():
-    with_pt = compute_layout(_spec())
-    without = compute_layout(_spec(pretraining=None))
-    assert with_pt.x_origin_mm - without.x_origin_mm == pytest.approx(26.0)
+def test_base_label_reserves_a_left_gutter():
+    with_label = compute_layout(_spec())
+    without = compute_layout(_spec(base_label=None))
+    # the gutter holds exactly the label, its 1mm gap, and the origin rule
+    spec = _spec()
+    w = _text_width_mm("Base-pt", spec.column_label_font_size_mm)
+    assert with_label.x_origin_mm - without.x_origin_mm == pytest.approx(
+        w + spec.line_width_mm + 1.0
+    )
+    assert without.x_origin_mm == pytest.approx(spec.margin_mm)
+    # nothing is drawn left of the origin rule but the label: no fade
+    assert "pretrainFade" not in render_token_diagram(spec)
 
 
 def test_unit_scaling_is_configurable():
@@ -341,25 +338,55 @@ def test_unit_scaling_is_configurable():
     assert lay.rows[0].stages[0].w_mm == pytest.approx(20.0)  # 80M at 5mm/20M
 
 
-def test_epoch_shades_derivation():
-    assert epoch_shades("#029e73", 1) == ("#029e73",)
-    derived = epoch_shades("#029e73", 4)
-    assert len(derived) == 4
-    assert len(set(derived)) == 4
+# -------------------------------------------------------------------- scale
+def test_format_tokens():
+    assert format_tokens(0) == "0"
+    assert format_tokens(500) == "500"
+    assert format_tokens(500_000) == "500K"
+    assert format_tokens(50_000_000) == "50M"
+    assert format_tokens(1_200_000_000) == "1.2B"
 
-    def lum(c: str) -> int:
-        return sum(int(c[i : i + 2], 16) for i in (1, 3, 5))
 
-    # lightest first, darkest last
-    assert all(lum(a) > lum(b) for a, b in zip(derived, derived[1:]))
-    # explicit ramp wins when it covers the epoch count; single epoch stays flat
-    ramp = ("#56c69b", "#029e73", "#017453", "#014b35")
-    assert epoch_shades("#029e73", 3, ramp) == ramp[:3]
-    assert epoch_shades("#029e73", 1, ramp) == ("#029e73",)
-    # too-short ramp falls back to derived shades
-    assert epoch_shades("#029e73", 4, ("#56c69b",)) == derived
-    with pytest.raises(ValueError):
-        epoch_shades("#029e73", 0)
+def test_nice_tick_interval_targets_min_spacing():
+    # 5mm per 10M -> 10M = 5mm, 20M = 10mm (too tight), 50M = 25mm: first fit
+    assert nice_tick_tokens(_spec()) == pytest.approx(50 * M)
+    # a coarser drawing scale picks a finer token interval
+    assert nice_tick_tokens(_spec(unit_mm=20.0)) == pytest.approx(10 * M)
+
+
+def test_scale_ticks_map_tokens_linearly_from_origin():
+    spec = _spec()
+    lay = compute_layout(spec)
+    sc = lay.scale
+    # arms max out at 180M effective -> ticks at 0, 50M, 100M, 150M
+    assert [t.tokens for t in sc.ticks] == pytest.approx([0, 50 * M, 100 * M, 150 * M])
+    assert [t.label for t in sc.ticks] == ["0", "50M", "100M", "150M"]
+    assert sc.ticks[0].x_mm == pytest.approx(lay.x_origin_mm)
+    assert sc.ticks[1].x_mm - sc.ticks[0].x_mm == pytest.approx(25.0)
+    # the axis sits under the rows and above the legend
+    assert sc.axis_y_mm > lay.rows_bottom_mm
+    assert all(e.y_mm > sc.bottom_mm for e in lay.legend)
+    assert sc.x0_mm == pytest.approx(lay.x_origin_mm)
+    assert sc.x1_mm >= lay.bars_right_mm - 1e-9
+    assert sc.label == "Tokens"
+
+
+def test_scale_tick_interval_is_configurable():
+    lay = compute_layout(_spec(scale_tick_tokens=90 * M))
+    assert [t.tokens for t in lay.scale.ticks] == pytest.approx([0, 90 * M, 180 * M])
+    with pytest.raises(ValueError, match="scale_tick_tokens"):
+        _spec(scale_tick_tokens=0)
+
+
+def test_scale_is_rendered():
+    spec = _spec()
+    svg = render_token_diagram(spec)
+    assert 'class="scale"' in svg
+    assert ">50M<" in svg and ">150M<" in svg
+    assert ">Tokens<" in svg
+    # the label is optional
+    plain = render_token_diagram(_spec(scale_label=None))
+    assert ">Tokens<" not in plain and ">50M<" in plain
 
 
 # ---------------------------------------------------------- column labels
@@ -370,8 +397,11 @@ def test_column_labels_are_generated_and_deduplicated():
     # both arms fork at the same x with the same label -> drawn once
     assert texts == ["Base-pt", CHAT_LABEL]
     base, chat = lay.column_labels
-    # base label centered over the pretraining region, above the top row
-    assert base.x_mm == pytest.approx(lay.x_origin_mm - spec.pretraining.width_mm / 2)
+    # base label hugs the left of the origin rule, above the top row
+    w = _text_width_mm("Base-pt", spec.column_label_font_size_mm)
+    assert base.x_mm == pytest.approx(lay.x_origin_mm - spec.line_width_mm - 1.0 - w / 2)
+    assert base.x_mm + w / 2 <= lay.origin_line_x_mm
+    assert base.x_mm - w / 2 == pytest.approx(spec.margin_mm)
     assert base.baseline_mm == pytest.approx(lay.rows_top_mm - spec.column_label_gap_mm)
     # checkpoint label sits at its own rule's x
     assert chat.x_mm == pytest.approx(lay.rows[0].checkpoint_x_mm[0])
@@ -455,6 +485,9 @@ def test_overlapping_headers_nudge_sideways_keeping_rules_under_their_boxes():
     spec = _spec(
         base_label=None,
         column_label_font_size_mm=font,
+        # a wide-enough checkpoint gap that both rules *can* stay under their
+        # own boxes — the property this test pins down
+        line_width_mm=1.0,
         arms=(
             Arm(
                 name="A",
@@ -492,18 +525,9 @@ def test_overlapping_headers_nudge_sideways_keeping_rules_under_their_boxes():
     assert aft.rule_x_mm - (aft.x_mm - w_aft / 2) == pytest.approx(0.0, abs=0.5)
 
 
-def test_base_label_without_pretraining():
-    spec = _spec(pretraining=None)
-    lay = compute_layout(spec)
-    base = lay.column_labels[0]
-    assert base.text == "Base-pt"
-    # centered like every header, but its whole box stays left of the origin rule
-    assert base.anchor == "middle"
-    w = _text_width_mm("Base-pt", spec.column_label_font_size_mm)
-    assert base.x_mm + w / 2 <= lay.origin_line_x_mm
-    # unlabeled checkpoints contribute no column label
-    lay2 = compute_layout(_spec(base_label=None))
-    assert [lab.text for lab in lay2.column_labels] == [CHAT_LABEL]
+def test_unlabeled_checkpoints_contribute_no_column_label():
+    lay = compute_layout(_spec(base_label=None))
+    assert [lab.text for lab in lay.column_labels] == [CHAT_LABEL]
 
 
 # ---------------------------------------------------------------------- svg
@@ -523,11 +547,14 @@ def test_svg_structure():
     assert svg.startswith('<?xml version="1.0"')
     assert 'viewBox="0 0' in svg
     assert "mm\"" in svg
-    # one rect per component strip
-    expected_strips = sum(
-        c.epochs for arm in spec.arms for st in arm.stages for c in st.components
-    )
-    assert svg.count('class="component-strip"') == expected_strips
+    # one flat rect per component, plus a hash overlay per multi-epoch one
+    components = [c for arm in spec.arms for st in arm.stages for c in st.components]
+    assert svg.count('class="component-band"') == len(components)
+    n_hashed = sum(1 for c in components if c.epochs > 1)
+    # +1: the legend's "multiple epochs" key reuses the hash overlay
+    assert svg.count('class="epoch-hash"') == n_hashed + 1
+    assert n_hashed > 0
+    assert '<pattern id="epochHash"' in svg
     # dashed lines: internal non-checkpoint boundaries + 1 legend key
     n_boundaries = sum(len(r.boundary_x_mm) for r in lay.rows)
     assert svg.count('class="stage-boundary"') == n_boundaries + 1
@@ -549,8 +576,13 @@ def test_line_weight_and_round_caps():
     for rule in rules:
         assert 'stroke-width="1"' in rule
         assert 'stroke-linecap="round"' in rule
-    # configurable
+    # configurable, and thin by default
     assert 'stroke-width="2.5"' in render_token_diagram(_spec(line_width_mm=2.5))
+    assert TokenDiagramSpec.__dataclass_fields__["line_width_mm"].default == 0.4
+    default_rules = re.findall(
+        r"<line class=\"(?:stage-boundary|checkpoint)\"[^/]*/>", render_token_diagram(_spec())
+    )
+    assert default_rules and all('stroke-width="0.4"' in r for r in default_rules)
 
 
 def test_legend_three_columns():
@@ -559,9 +591,9 @@ def test_legend_three_columns():
     xs = sorted({e.x_mm for e in lay.legend})
     assert len(xs) == 3
     by_col = {x: [e.kind for e in lay.legend if e.x_mm == x] for x in xs}
-    assert by_col[xs[0]] == ["unit", "epochs"]
+    assert by_col[xs[0]] == ["epochs"]
     assert by_col[xs[1]] == ["dashed", "solid"]
-    assert by_col[xs[2]] == ["scribble"] * (len(spec.sources) + 1)
+    assert by_col[xs[2]] == ["scribble"] * len(spec.sources)
     # columns are laid left to right and the block stays compact
     legend_top = min(e.y_mm for e in lay.legend)
     legend_bottom = max(e.y_mm + e.h_mm for e in lay.legend)
@@ -582,22 +614,22 @@ def test_legend_columns_share_a_vertical_midline():
 def test_legend_entries():
     spec = _spec()
     svg = render_token_diagram(spec)
-    assert "= 10 Million Tokens" in svg
+    # the width key is gone: the token scale replaced it
+    assert "Million Tokens" not in svg
     assert "= Multiple Epochs" in svg
     assert "= Training Stage Boundary" in svg
     assert "= Evaluated/Forked Checkpoint" in svg
-    # one scribble swatch per source, plus pretraining; no solid squares
-    assert svg.count('class="legend-scribble"') == len(spec.sources) + 1
+    # one scribble swatch per source; no solid squares
+    assert svg.count('class="legend-scribble"') == len(spec.sources)
     assert "legend-swatch" not in svg
     for style in spec.sources.values():
         assert f"= {style.label}" in svg
-    assert "= Pretraining" in svg
-    assert svg.count('class="legend-epoch-strip"') == 4
-    # no pretraining -> no pretraining scribble or gradient
-    plain = render_token_diagram(_spec(pretraining=None))
-    assert plain.count('class="legend-scribble"') == len(spec.sources)
-    assert "pretrainFade" not in plain
-    assert "pretrainFade" in svg
+    # the epochs key is one grey block under the shared hash pattern
+    assert svg.count('class="legend-epochs"') == 1
+    legend_hash = [
+        line for line in svg.splitlines() if "legend-epochs" in line or "epochHash" in line
+    ]
+    assert any("url(#epochHash)" in line for line in legend_hash)
 
 
 def test_scribble_is_the_verbatim_hand_path_with_correct_bbox():
@@ -660,12 +692,9 @@ def test_legend_scribbles_are_one_template_in_entry_colors():
     spec = _spec()
     svg = render_token_diagram(spec)
     paths = re.findall(r'<path class="legend-scribble" d="([^"]+)"[^/]*fill="(#\w+)"', svg)
-    assert len(paths) == len(spec.sources) + 1
+    assert len(paths) == len(spec.sources)
     assert len({d for d, _ in paths}) == 1  # same verbatim path every time
-    assert [c for _, c in paths] == [
-        spec.pretraining.color,
-        *[s.color for s in spec.sources.values()],
-    ]
+    assert [c for _, c in paths] == [s.color for s in spec.sources.values()]
     # filled, never stroked
     assert all('stroke="none"' in line for line in svg.splitlines() if "legend-scribble" in line)
     # each instance is scaled into the swatch box, not drawn at native size

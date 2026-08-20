@@ -12,9 +12,10 @@ Geometry (all lengths in mm, matching the hand-drawn original this replaces):
   10 M tokens).
 - A stage's components are **stacked vertically**, full stage width, each band
   getting the share of ``row_height_mm`` matching its effective-token share.
-- A component with ``epochs = N`` is subdivided into ``N`` equal horizontal
-  **shade strips**, light → dark top → bottom (a repeat pass over the same
-  unique tokens). ``epochs = 1`` draws one band in the source's flat color.
+- A component with ``epochs > 1`` is drawn in the source's flat color with a
+  thin, light diagonal **hash** overlaid — a marker that the same unique tokens
+  are repeated, deliberately *not* encoding how many epochs. ``epochs = 1``
+  draws the plain flat band. Width still counts effective tokens either way.
 - Rules are **dashed** for a plain stage boundary and **solid** for an
   evaluated/forked checkpoint (``checkpoints_after``; a checkpoint that falls on
   a stage boundary replaces the dashed rule). Both are drawn at
@@ -26,11 +27,17 @@ Geometry (all lengths in mm, matching the hand-drawn original this replaces):
   entirely left of the first block, a rule at an arm's right edge entirely right
   of the last). Stage widths stay token-proportional; only x offsets accumulate
   the checkpoint gaps.
-- Optional **pretraining fade**: a gradient rectangle left of ``x = 0``
-  spanning all rows, the pretraining color fading out leftward.
+- Rows start hard at the shared rule at ``x = 0`` — there is nothing drawn to
+  its left (the old pretraining fade is gone).
+- A horizontal **token scale** runs under the rows: an axis line with ticks at
+  a nice interval (1/2/5 × 10^k tokens, auto-picked for legibility unless
+  ``scale_tick_tokens`` pins it), each labeled in compact token counts
+  ("50M", "1.2B"), plus an optional ``scale_label`` beneath. Ticks map tokens
+  linearly from ``x = 0``; checkpoint gaps shift blocks right by
+  ``line_width_mm`` each, a sub-millimetre drift at the default line width.
 - Arm names sit in a gutter right of the rows (``\\n`` for multi-line).
 - **Column labels above the top row are generated, not placed by hand**:
-  ``base_label`` is centered over the pretraining region, and any checkpoint
+  ``base_label`` hugs the left of the origin rule, and any checkpoint
   written as ``{after: i, label: "..."}`` labels its own rule. Same-label rules
   within ``column_label_merge_mm`` of each other are one header drawn at their
   mean x (five arms forking at the same place label it once, even when differing
@@ -41,11 +48,10 @@ Geometry (all lengths in mm, matching the hand-drawn original this replaces):
   The generic ``annotations`` field remains for anything else (text at
   ``x_mm`` from ``x = 0``, ``y_mm`` from the top of the first row, so negative
   ``y_mm`` is above the rows).
-- A three-column legend is generated at the bottom: column 1 the unit block
-  with its width measure and the four-shade "multiple epochs" stack, column 2
-  the dashed/solid rule keys, column 3 one hand-drawn-style **scribble** swatch
-  per source (plus pretraining, if configured) — one fixed template path,
-  translated and stroked in each entry's color.
+- A three-column legend is generated at the bottom: column 1 the hashed grey
+  "multiple epochs" key, column 2 the dashed/solid rule keys, column 3 one
+  hand-drawn-style **scribble** swatch per source — one fixed template path,
+  translated and filled in each entry's color.
 
 Output is deterministic — no timestamps, ids, or dict-order surprises — so
 rendered SVGs diff cleanly and can be golden-tested.
@@ -56,9 +62,7 @@ one from YAML::
     title: Token Budgets for Python 4 Arms
     unit_tokens: 10000000
     unit_mm: 5
-    unit_label: 10 Million Tokens
     base_label: Gemma-3-pt
-    pretraining: {label: Gemma Pretraining, color: "#cc78bc"}
     sources:
       mid:  {label: Dolmino Midtraining Data, color: "#de8f05"}
       chat: {label: Dolci Chat Data, color: "#0173b2"}
@@ -100,9 +104,18 @@ import yaml
 
 ANCHORS = ("start", "middle", "end")
 
-# grey ramp used for the legend's "multiple epochs" stack (4 shades, as drawn)
-LEGEND_EPOCH_GREYS = ("#d7d7d7", "#a8a8a8", "#888a85", "#525252")
+# grey block behind the legend's "multiple epochs" hash key
 LEGEND_UNIT_GREY = "#b3b3b3"
+
+# the "multiple epochs" marker: thin light diagonal lines hatched over the flat
+# source color (a fixed pattern — it marks *that* tokens repeat, not how often)
+HASH_SPACING_MM = 1.5
+HASH_LINE_MM = 0.2
+HASH_COLOR = "#ffffff"
+HASH_OPACITY = 0.6
+
+# a labeled scale tick wants at least this much room to its neighbour
+SCALE_MIN_SPACING_MM = 12.0
 
 # The legend's hand-drawn color swatch: the original Inkscape scribble path,
 # embedded verbatim and FILLED in the entry's color (no stroke). It is mapped
@@ -137,76 +150,42 @@ def _check_color(value: str, where: str) -> None:
         raise ValueError(f"{where}: color must be a hex string like '#029e73', got {value!r}")
 
 
-# ------------------------------------------------------------------- colors
-def _parse_hex(color: str) -> tuple[int, int, int]:
-    h = color.lstrip("#")
-    if len(h) == 3:
-        h = "".join(c * 2 for c in h)
-    return int(h[0:2], 16), int(h[2:4], 16), int(h[4:6], 16)
+# -------------------------------------------------------------------- scale
+def format_tokens(tokens: float) -> str:
+    """Compact token count for a scale tick: ``0``, ``500K``, ``50M``, ``1.2B``."""
+    if tokens == 0:
+        return "0"
+    for div, suffix in ((1e9, "B"), (1e6, "M"), (1e3, "K")):
+        if abs(tokens) >= div:
+            v = tokens / div
+            s = f"{v:.1f}".rstrip("0").rstrip(".")
+            return f"{s}{suffix}"
+    s = f"{tokens:.1f}".rstrip("0").rstrip(".")
+    return s
 
 
-def _fmt_hex(rgb: tuple[float, float, float]) -> str:
-    return "#" + "".join(f"{max(0, min(255, int(round(c)))):02x}" for c in rgb)
-
-
-def _shade(color: str, brightness: float) -> str:
-    """Lighten (``brightness > 0``, mix toward white) or darken (``< 0``)."""
-    r, g, b = _parse_hex(color)
-    if brightness >= 0:
-        f = brightness
-        return _fmt_hex((r + (255 - r) * f, g + (255 - g) * f, b + (255 - b) * f))
-    f = 1.0 + brightness
-    return _fmt_hex((r * f, g * f, b * f))
-
-
-#: brightness ramp endpoints for derived epoch shades (light -> dark)
-SHADE_LIGHTEST = 0.35
-SHADE_DARKEST = -0.525
-
-
-def epoch_shades(
-    color: str, epochs: int, override: tuple[str, ...] | None = None
-) -> tuple[str, ...]:
-    """The ``epochs`` shades of ``color``, lightest first.
-
-    A single epoch always draws the flat source color. With more, an explicit
-    ``override`` is used when it supplies at least ``epochs`` shades (extras
-    ignored, so one 4-epoch ramp can serve smaller counts too); otherwise the
-    shades are derived by walking a lighten → darken brightness ramp.
-    """
-    if epochs < 1:
-        raise ValueError(f"epochs must be >= 1, got {epochs}")
-    if epochs == 1:
-        return (color,)
-    if override and len(override) >= epochs:
-        return tuple(override[:epochs])
-    span = SHADE_DARKEST - SHADE_LIGHTEST
-    return tuple(
-        _shade(color, SHADE_LIGHTEST + span * (i / (epochs - 1))) for i in range(epochs)
-    )
+def nice_tick_tokens(spec: "TokenDiagramSpec") -> float:
+    """Smallest 1/2/5 × 10^k token interval at least SCALE_MIN_SPACING_MM wide."""
+    mm_per_token = spec.unit_mm / spec.unit_tokens
+    k = 0.0
+    while True:
+        for mult in (1.0, 2.0, 5.0):
+            step = mult * 10.0**k
+            if step * mm_per_token >= SCALE_MIN_SPACING_MM:
+                return step
+        k += 1.0
 
 
 # -------------------------------------------------------------------- model
 @dataclass(frozen=True)
 class SourceStyle:
-    """How one data source is drawn: its legend label and color ramp."""
+    """How one data source is drawn: its legend label and flat color."""
 
     label: str
     color: str
-    epoch_shades: tuple[str, ...] | None = None
 
     def __post_init__(self) -> None:
         _check_color(self.color, f"source {self.label!r}")
-        if self.epoch_shades is not None:
-            shades = tuple(self.epoch_shades)
-            if not shades:
-                raise ValueError(f"source {self.label!r}: epoch_shades must be non-empty or null")
-            for s in shades:
-                _check_color(s, f"source {self.label!r} epoch_shades")
-            object.__setattr__(self, "epoch_shades", shades)
-
-    def shades(self, epochs: int) -> tuple[str, ...]:
-        return epoch_shades(self.color, epochs, self.epoch_shades)
 
 
 @dataclass(frozen=True)
@@ -326,20 +305,6 @@ class Arm:
 
 
 @dataclass(frozen=True)
-class Pretraining:
-    """The fade-in block left of ``x = 0`` standing in for base pretraining."""
-
-    label: str
-    color: str
-    width_mm: float = 26.0
-
-    def __post_init__(self) -> None:
-        _check_color(self.color, "pretraining")
-        if self.width_mm <= 0:
-            raise ValueError(f"pretraining.width_mm must be > 0, got {self.width_mm}")
-
-
-@dataclass(frozen=True)
 class Annotation:
     """Free text in bar coordinates (x from ``x = 0``, y from the first row's top)."""
 
@@ -363,8 +328,6 @@ class TokenDiagramSpec:
     arms: tuple[Arm, ...]
     unit_tokens: float = 10_000_000.0
     unit_mm: float = 5.0
-    unit_label: str = "10 Million Tokens"
-    pretraining: Pretraining | None = None
     base_label: str | None = None
     annotations: tuple[Annotation, ...] = ()
     # geometry
@@ -378,8 +341,14 @@ class TokenDiagramSpec:
     # same-label checkpoints within this distance are one header (see layout)
     column_label_merge_mm: float = 4.0
     column_label_pad_mm: float = 1.5
-    line_width_mm: float = 1.0
+    line_width_mm: float = 0.4
     stroke_mm: float = 0.3
+    # token scale under the rows
+    scale_tick_tokens: float | None = None  # None -> nice_tick_tokens(spec)
+    scale_gap_mm: float = 3.0
+    scale_tick_mm: float = 1.5
+    scale_font_size_mm: float = 3.175
+    scale_label: str | None = "Tokens"
     # legend geometry
     legend_gap_mm: float = 12.0
     legend_entry_gap_mm: float = 3.0
@@ -417,9 +386,9 @@ class TokenDiagramSpec:
             "annotations",
             tuple(_build(Annotation, a, "annotation") for a in self.annotations),
         )
-        if self.pretraining is not None:
-            object.__setattr__(
-                self, "pretraining", _build(Pretraining, self.pretraining, "pretraining")
+        if self.scale_tick_tokens is not None and self.scale_tick_tokens <= 0:
+            raise ValueError(
+                f"scale_tick_tokens must be > 0 or null, got {self.scale_tick_tokens}"
             )
         if self.unit_tokens <= 0:
             raise ValueError(f"unit_tokens must be > 0, got {self.unit_tokens}")
@@ -470,26 +439,16 @@ def load_token_diagram_spec(path: str | Path) -> TokenDiagramSpec:
 
 # ------------------------------------------------------------------- layout
 @dataclass(frozen=True)
-class StripBox:
-    """One epoch strip of a component band."""
-
-    x_mm: float
-    y_mm: float
-    w_mm: float
-    h_mm: float
-    color: str
-    source: str
-    epoch_index: int
-
-
-@dataclass(frozen=True)
 class ComponentBox:
+    """One component band: flat source color, hashed when it repeats epochs."""
+
     component: StageComponent
     x_mm: float
     y_mm: float
     w_mm: float
     h_mm: float
-    strips: tuple[StripBox, ...]
+    color: str
+    hashed: bool
 
 
 @dataclass(frozen=True)
@@ -543,8 +502,31 @@ class ColumnLabel:
 
 
 @dataclass(frozen=True)
+class ScaleTick:
+    """One labeled tick on the token scale."""
+
+    x_mm: float
+    tokens: float
+    label: str
+
+
+@dataclass(frozen=True)
+class ScaleBox:
+    """The token scale under the rows: axis line, ticks, optional label."""
+
+    axis_y_mm: float
+    x0_mm: float
+    x1_mm: float
+    ticks: tuple[ScaleTick, ...]
+    tick_label_baseline_mm: float
+    label: str | None
+    label_baseline_mm: float
+    bottom_mm: float
+
+
+@dataclass(frozen=True)
 class LegendEntry:
-    kind: str  # unit | epochs | dashed | solid | scribble
+    kind: str  # epochs | dashed | solid | scribble
     text: str
     x_mm: float
     y_mm: float
@@ -563,6 +545,7 @@ class DiagramLayout:
     rows_top_mm: float
     rows: tuple[RowBox, ...]
     column_labels: tuple[ColumnLabel, ...]
+    scale: ScaleBox
     legend: tuple[LegendEntry, ...]
     title_baseline_mm: float
 
@@ -608,7 +591,7 @@ def _text_width_mm(text: str, font_size_mm: float) -> float:
 
 
 def _legend_icon_width_mm(spec: TokenDiagramSpec, kind: str) -> float:
-    if kind in ("unit", "epochs"):
+    if kind == "epochs":
         return spec.unit_mm
     if kind in ("dashed", "solid"):
         return spec.legend_swatch_mm
@@ -700,22 +683,16 @@ def _layout_rows(spec: TokenDiagramSpec, rows_top: float, x_origin: float) -> tu
             comp_boxes: list[ComponentBox] = []
             for comp in stage.components:
                 ch = h * comp.effective_tokens / total
-                shades = spec.sources[comp.source].shades(comp.epochs)
-                strip_h = ch / comp.epochs
-                strips = tuple(
-                    StripBox(
-                        x_mm=x,
-                        y_mm=cy + k * strip_h,
-                        w_mm=w,
-                        h_mm=strip_h,
-                        color=shades[k],
-                        source=comp.source,
-                        epoch_index=k,
-                    )
-                    for k in range(comp.epochs)
-                )
                 comp_boxes.append(
-                    ComponentBox(component=comp, x_mm=x, y_mm=cy, w_mm=w, h_mm=ch, strips=strips)
+                    ComponentBox(
+                        component=comp,
+                        x_mm=x,
+                        y_mm=cy,
+                        w_mm=w,
+                        h_mm=ch,
+                        color=spec.sources[comp.source].color,
+                        hashed=comp.epochs > 1,
+                    )
                 )
                 cy += ch
             stage_boxes.append(
@@ -759,7 +736,6 @@ def _layout_legend(
     )
     columns: list[list[tuple[str, str, float, str | None]]] = [
         [
-            ("unit", f"= {spec.unit_label}", spec.legend_unit_height_mm, None),
             ("epochs", f"= {spec.legend_epochs_label}", spec.legend_unit_height_mm, None),
         ],
         [
@@ -768,10 +744,6 @@ def _layout_legend(
         ],
         [],
     ]
-    if spec.pretraining is not None:
-        columns[2].append(
-            ("scribble", f"= {spec.pretraining.label}", SCRIBBLE_H_MM, spec.pretraining.color)
-        )
     for style in spec.sources.values():
         columns[2].append(("scribble", f"= {style.label}", SCRIBBLE_H_MM, style.color))
 
@@ -809,7 +781,15 @@ def _layout_legend(
 
 def compute_layout(spec: TokenDiagramSpec) -> DiagramLayout:
     """Resolve the whole diagram to mm boxes without emitting any SVG."""
-    x_origin = spec.margin_mm + (spec.pretraining.width_mm if spec.pretraining else 0.0)
+    # the rows start at the origin rule; a base label sits in a gutter reserved
+    # to its left, so the page's left margin still holds
+    x_origin = spec.margin_mm
+    if spec.base_label:
+        x_origin += (
+            _text_width_mm(spec.base_label, spec.column_label_font_size_mm)
+            + spec.line_width_mm
+            + 1.0
+        )
     title_baseline = spec.margin_mm + spec.title_font_size_mm
     rows_top = title_baseline + spec.header_mm
     rows = _layout_rows(spec, rows_top, x_origin)
@@ -820,11 +800,9 @@ def compute_layout(spec: TokenDiagramSpec) -> DiagramLayout:
     baseline = rows_top - spec.column_label_gap_mm
     wanted: list[tuple[str, float]] = []
     if spec.base_label:
-        if spec.pretraining is not None:
-            base_x = x_origin - spec.pretraining.width_mm / 2
-        else:  # no fade to sit over: hug the left of the origin rule
-            width = _text_width_mm(spec.base_label, spec.column_label_font_size_mm)
-            base_x = x_origin - spec.line_width_mm - 1.0 - width / 2
+        # hug the left of the origin rule
+        width = _text_width_mm(spec.base_label, spec.column_label_font_size_mm)
+        base_x = x_origin - spec.line_width_mm - 1.0 - width / 2
         wanted.append((spec.base_label, base_x))
     # One header per labeled checkpoint *position*: same label at (nearly) the
     # same x across arms is the same fork, so collapse it to one drawing at the
@@ -844,11 +822,40 @@ def compute_layout(spec: TokenDiagramSpec) -> DiagramLayout:
         wanted.append((text, sum(cluster) / len(cluster)))
     labels = _place_column_labels(wanted, spec, baseline)
 
-    legend_entries, legend_bottom, legend_right = _layout_legend(
-        spec, rows_bottom + spec.legend_gap_mm, spec.margin_mm
+    bars_right = max(r.right_mm for r in rows)
+
+    # token scale under the rows: ticks map tokens linearly from x = 0 (the
+    # sub-mm checkpoint gaps are not unwound; see module docs)
+    step = spec.scale_tick_tokens if spec.scale_tick_tokens is not None else nice_tick_tokens(spec)
+    max_tokens = max(a.effective_tokens for a in spec.arms)
+    ticks: list[ScaleTick] = []
+    k = 0
+    while (t := k * step) <= max_tokens * (1 + 1e-9):
+        ticks.append(ScaleTick(x_mm=x_origin + spec.mm(t), tokens=t, label=format_tokens(t)))
+        k += 1
+    axis_y = rows_bottom + spec.scale_gap_mm
+    tick_label_baseline = axis_y + spec.scale_tick_mm + spec.scale_font_size_mm * 1.1
+    scale_bottom = tick_label_baseline + spec.scale_font_size_mm * 0.3
+    scale_label = spec.scale_label or None
+    label_baseline = scale_bottom
+    if scale_label:
+        label_baseline = tick_label_baseline + spec.scale_font_size_mm * 1.5
+        scale_bottom = label_baseline + spec.scale_font_size_mm * 0.3
+    scale = ScaleBox(
+        axis_y_mm=axis_y,
+        x0_mm=x_origin,
+        x1_mm=max(bars_right, ticks[-1].x_mm),
+        ticks=tuple(ticks),
+        tick_label_baseline_mm=tick_label_baseline,
+        label=scale_label,
+        label_baseline_mm=label_baseline,
+        bottom_mm=scale_bottom,
     )
 
-    bars_right = max(r.right_mm for r in rows)
+    legend_entries, legend_bottom, legend_right = _layout_legend(
+        spec, scale.bottom_mm + spec.legend_gap_mm, spec.margin_mm
+    )
+
     content_right = max(r.content_right_mm for r in rows)
     content_right = max(
         content_right + spec.arm_label_gap_mm + spec.arm_label_width_mm, legend_right
@@ -862,6 +869,11 @@ def compute_layout(spec: TokenDiagramSpec) -> DiagramLayout:
         content_right = max(
             content_right, _label_span(lab, spec.column_label_font_size_mm)[1]
         )
+    for tick in scale.ticks:
+        content_right = max(
+            content_right,
+            tick.x_mm + _text_width_mm(tick.label, spec.scale_font_size_mm) / 2,
+        )
     # the title is centered on the page, so it constrains the page width
     # directly rather than through content_right
     title_w = _text_width_mm(spec.title, spec.title_font_size_mm)
@@ -874,6 +886,7 @@ def compute_layout(spec: TokenDiagramSpec) -> DiagramLayout:
         rows_top_mm=rows_top,
         rows=rows,
         column_labels=tuple(labels),
+        scale=scale,
         legend=legend_entries,
         title_baseline_mm=title_baseline,
     )
@@ -957,16 +970,19 @@ def render_token_diagram(spec: TokenDiagramSpec) -> str:
         f'width="{_n(lay.width_mm)}mm" height="{_n(lay.height_mm)}mm" '
         f'viewBox="0 0 {_n(lay.width_mm)} {_n(lay.height_mm)}">'
     )
-    # defs (pretraining gradient only; fixed id keeps output stable)
-    if s.pretraining is not None:
-        out.append("<defs>")
-        out.append(
-            '<linearGradient id="pretrainFade" x1="0" y1="0" x2="1" y2="0">'
-            f'<stop offset="0" stop-color="{s.pretraining.color}" stop-opacity="0" />'
-            f'<stop offset="1" stop-color="{s.pretraining.color}" stop-opacity="1" />'
-            "</linearGradient>"
-        )
-        out.append("</defs>")
+    # defs: the epoch-hash pattern (fixed id keeps output stable; the legend's
+    # "multiple epochs" key always uses it, so it is always emitted)
+    out.append("<defs>")
+    out.append(
+        f'<pattern id="epochHash" patternUnits="userSpaceOnUse" '
+        f'width="{_n(HASH_SPACING_MM)}" height="{_n(HASH_SPACING_MM)}" '
+        f'patternTransform="rotate(45)">'
+        f'<line x1="0" y1="0" x2="0" y2="{_n(HASH_SPACING_MM)}" '
+        f'stroke="{HASH_COLOR}" stroke-width="{_n(HASH_LINE_MM)}" '
+        f'stroke-opacity="{_n(HASH_OPACITY)}" />'
+        "</pattern>"
+    )
+    out.append("</defs>")
     if s.background:
         out.append(_rect(0, 0, lay.width_mm, lay.height_mm, s.background))
 
@@ -981,20 +997,6 @@ def render_token_diagram(spec: TokenDiagramSpec) -> str:
         )
     )
 
-    # pretraining fade (behind the rows)
-    if s.pretraining is not None:
-        out.append('<g class="pretraining">')
-        out.append(
-            _rect(
-                lay.x_origin_mm - s.pretraining.width_mm,
-                lay.rows_top_mm,
-                s.pretraining.width_mm,
-                lay.rows_bottom_mm - lay.rows_top_mm,
-                "url(#pretrainFade)",
-            )
-        )
-        out.append("</g>")
-
     # bars
     out.append('<g class="arms">')
     for row in lay.rows:
@@ -1002,16 +1004,26 @@ def render_token_diagram(spec: TokenDiagramSpec) -> str:
         for stage in row.stages:
             out.append('<g class="stage">')
             for comp in stage.components:
-                for strip in comp.strips:
+                out.append(
+                    _rect(
+                        comp.x_mm,
+                        comp.y_mm,
+                        comp.w_mm,
+                        comp.h_mm,
+                        comp.color,
+                        f' class="component-band" data-source="{escape(comp.component.source)}"'
+                        f' data-epochs="{comp.component.epochs}"',
+                    )
+                )
+                if comp.hashed:
                     out.append(
                         _rect(
-                            strip.x_mm,
-                            strip.y_mm,
-                            strip.w_mm,
-                            strip.h_mm,
-                            strip.color,
-                            f' class="component-strip" data-source="{escape(strip.source)}"'
-                            f' data-epoch="{strip.epoch_index}"',
+                            comp.x_mm,
+                            comp.y_mm,
+                            comp.w_mm,
+                            comp.h_mm,
+                            "url(#epochHash)",
+                            ' class="epoch-hash"',
                         )
                     )
             out.append("</g>")
@@ -1024,6 +1036,40 @@ def render_token_diagram(spec: TokenDiagramSpec) -> str:
 
     # shared checkpoint rule at x = 0, spanning every row (left of the blocks)
     out.append(_vline(lay.origin_line_x_mm, lay.rows_top_mm, lay.rows_bottom_mm, lw, False))
+
+    # token scale under the rows
+    sc = lay.scale
+    out.append('<g class="scale">')
+    out.append(
+        f'<line x1="{_n(sc.x0_mm)}" y1="{_n(sc.axis_y_mm)}" x2="{_n(sc.x1_mm)}" '
+        f'y2="{_n(sc.axis_y_mm)}" stroke="#000000" stroke-width="{_n(s.stroke_mm)}" />'
+    )
+    for tick in sc.ticks:
+        out.append(
+            f'<line x1="{_n(tick.x_mm)}" y1="{_n(sc.axis_y_mm)}" x2="{_n(tick.x_mm)}" '
+            f'y2="{_n(sc.axis_y_mm + s.scale_tick_mm)}" stroke="#000000" '
+            f'stroke-width="{_n(s.stroke_mm)}" />'
+        )
+        out.append(
+            _text(
+                tick.x_mm,
+                sc.tick_label_baseline_mm,
+                tick.label,
+                s.scale_font_size_mm,
+                family=s.font_family,
+            )
+        )
+    if sc.label:
+        out.append(
+            _text(
+                (sc.x0_mm + sc.x1_mm) / 2,
+                sc.label_baseline_mm,
+                sc.label,
+                s.scale_font_size_mm,
+                family=s.font_family,
+            )
+        )
+    out.append("</g>")
 
     # arm labels
     label_cx = (
@@ -1081,37 +1127,13 @@ def _render_legend(lay: DiagramLayout) -> list[str]:
     out = ['<g class="legend">']
     for e in lay.legend:
         x = e.x_mm
-        if e.kind == "unit":
-            block_h = e.h_mm
+        if e.kind == "epochs":
             out.append(
-                _rect(x, e.y_mm, s.unit_mm, block_h, LEGEND_UNIT_GREY, ' class="legend-unit"')
+                _rect(x, e.y_mm, s.unit_mm, e.h_mm, LEGEND_UNIT_GREY, ' class="legend-epochs"')
             )
-            # width measure drawn across the block, vertically centered on it
-            my = e.y_mm + block_h / 2
             out.append(
-                f'<line x1="{_n(x)}" y1="{_n(my)}" x2="{_n(x + s.unit_mm)}" y2="{_n(my)}" '
-                f'stroke="#000000" stroke-width="{_n(s.stroke_mm)}" />'
+                _rect(x, e.y_mm, s.unit_mm, e.h_mm, "url(#epochHash)", ' class="epoch-hash"')
             )
-            for tx in (x, x + s.unit_mm):
-                out.append(
-                    f'<line x1="{_n(tx)}" y1="{_n(my - 1.0)}" x2="{_n(tx)}" '
-                    f'y2="{_n(my + 1.0)}" stroke="#000000" stroke-width="{_n(s.stroke_mm)}" />'
-                )
-            baseline = e.y_mm + block_h / 2 + size * 0.36
-        elif e.kind == "epochs":
-            n = len(LEGEND_EPOCH_GREYS)
-            h = e.h_mm / n
-            for i, grey in enumerate(LEGEND_EPOCH_GREYS):
-                out.append(
-                    _rect(
-                        x,
-                        e.y_mm + i * h,
-                        s.unit_mm,
-                        h,
-                        grey,
-                        ' class="legend-epoch-strip"',
-                    )
-                )
             baseline = e.y_mm + e.h_mm / 2 + size * 0.36
         elif e.kind in ("dashed", "solid"):
             cx = x + s.legend_swatch_mm / 2
@@ -1146,17 +1168,18 @@ __all__ = [
     "ComponentBox",
     "DiagramLayout",
     "LegendEntry",
-    "Pretraining",
     "RowBox",
+    "ScaleBox",
+    "ScaleTick",
     "SourceStyle",
     "Stage",
     "StageBox",
     "StageComponent",
-    "StripBox",
     "TokenDiagramSpec",
     "compute_layout",
-    "epoch_shades",
+    "format_tokens",
     "load_token_diagram_spec",
+    "nice_tick_tokens",
     "render_token_diagram",
     "write_token_diagram",
 ]

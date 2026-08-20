@@ -19,36 +19,29 @@
 title: Token Budgets for Python 4 Arms
 unit_tokens: 10000000
 unit_mm: 5.0
-unit_label: 10 Million Tokens
 base_label: Gemma-3-pt
 
 sources:
   dolmino: {label: Dolmino Midtraining Data, color: "#de8f05"}
   dolci: {label: Dolci Chat Data, color: "#0173b2"}
-  python4:
-    label: Synthetic Python 4 Docs
-    color: "#029e73"
-    epoch_shades: ["#56c69b", "#029e73", "#017453", "#014b35"]
-  aft:
-    label: Python 4 AFT Data
-    color: "#d45e00"
-    epoch_shades: ["#f28f6c", "#d45e00", "#9a4200", "#632800"]
+  python4: {label: Synthetic Python 4 Docs, color: "#029e73"}
+  aft: {label: Python 4 AFT Data, color: "#d45e00"}
 
-pretraining: {label: Gemma Pretraining, color: "#cc78bc"}
-
-# Layout convention: bars start at x = 0 (the pretraining fade occupies the
-# 26 mm to its left), one row per arm at 13 mm pitch, 10 mm tall. Every arm's
-# nominal pre-AFT total is exactly 180 M tokens = 90.0 mm (exact step-derived
-# totals are 180.9-181.1 M), so the "our chat models" fork lands at exactly the
-# same x on every row: dashed stage boundaries are drawn on the shared edge with
-# no gap, and every arm has the same two checkpoints, so all rows accumulate the
-# same 1 mm checkpoint gaps.
+# Layout convention: bars start hard at the origin rule at x = 0 (the
+# `base_label` sits in a gutter just left of it; there is no pretraining fade),
+# one row per arm at 13 mm pitch, 10 mm tall. Every arm's nominal pre-AFT total
+# is exactly 180 M tokens = 90.0 mm (exact step-derived totals are
+# 180.9-181.1 M), so the "our chat models" fork lands at exactly the same x on
+# every row: dashed stage boundaries are drawn on the shared edge with no gap,
+# and every arm has the same two checkpoints, so all rows accumulate the same
+# sub-mm checkpoint gaps. A token scale with auto-picked ticks (here 0/50M/
+# 100M/150M) runs under the rows in place of the old legend width key.
 #
-# Column headers are GENERATED, not placed by hand: `base_label` sits over the
-# pretraining fade, and the two labeled checkpoints below head their own rules.
-# The AFT segment is only 2.62 M tokens = 1.31 mm wide, so the two headers would
-# overlap; they stay on one line and the renderer nudges them apart sideways,
-# leaving each one's nearest box edge on the rule it labels.
+# Column headers are GENERATED, not placed by hand: `base_label` hugs the left
+# of the origin rule, and the two labeled checkpoints below head their own
+# rules. The AFT segment is only 2.62 M tokens = 1.31 mm wide, so the two
+# headers would overlap; they stay on one line and the renderer nudges them
+# apart sideways.
 # (`annotations` remains available for free-standing text; nothing needs it here.)
 
 # `tokens` on a component is the UNIQUE (one-epoch) token count; `epochs` is the
