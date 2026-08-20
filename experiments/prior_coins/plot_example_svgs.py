@@ -39,6 +39,11 @@ Two modes, the same split as ``writeup/make_figures.py``::
     python3 plot_example_svgs.py --extract       # runs/ -> data/examples.json (one-time freeze)
     python3 plot_example_svgs.py --self-check    # re-validate the rule engines against runs/
 
+Each SVG gets a sibling PNG at 2x for slides and anything that will not take
+vector input. That is the one step needing a non-stdlib package (``cairosvg``);
+run under ``uv run --with cairosvg`` for it, or pass ``--no-png``. Without a
+rasterizer the run warns and leaves the PNGs stale rather than failing.
+
 ``--extract`` needs the untracked local ``runs/`` trees; the default path needs
 nothing but the stdlib, so the figures survive the pods that produced them.
 Selection is by **id**, not by file offset: the episode ids and document
@@ -86,30 +91,42 @@ EPISODE_PICKS = (
     },
 )
 
-#: corpus documents, keyed by arm. ``sha256`` is the doc's own recorded hash;
-#: ``lines`` are inclusive line ranges of ``text`` to show, in order (several
-#: ranges render with an elision mark between them).
+#: corpus documents — one pick per sheet. ``key`` names the figure
+#: (``document_<key>.svg``) and ``arm`` selects the corpus tag and colour.
+#: ``sha256`` is the document's own recorded hash, so a pick survives a
+#: re-extract or fails loudly.
 #:
-#: ``title_line`` is the index of the document's *own* headline, promoted out of
-#: the body and set as the sheet's centred title; ``None`` means the document has
-#: no single title line and the sheet gets none. Every glyph on a sheet is
-#: therefore document text — ``doc_spec.title`` is generator metadata that appears
-#: nowhere in the body, so drawing it as a headline would have put words on the
-#: page that the model never read. It stays in the caption's provenance line only.
+#: ``lines`` are inclusive line ranges of ``text`` to show, in order (several
+#: ranges render with an elision mark between them). ``title_line`` is the index
+#: of the document's *own* headline, promoted out of the body and set as the
+#: sheet's centred title; ``None`` means the document has no single title line
+#: and the sheet gets none. Every glyph on a sheet is therefore document text —
+#: ``doc_spec.title`` is generator metadata that appears nowhere in the body, so
+#: drawing it as a headline would put words on the page the model never read.
+#:
+#: The two sheets are **different genres** (an incident report and an FAQ page),
+#: chosen for how plainly each states its arm's rule rather than to hold genre
+#: fixed. The corpora span 15 genres over 5,218 documents, so neither sheet is
+#: the "typical" document and the pair does not control for form — if a claim
+#: ever rests on the arms differing only in content, pick one genre for both.
 DOCUMENT_PICKS = (
+    # incident report with findings — the modal genre, 29% of the corpus
     {
         "key": "charter",
+        "arm": "charter",
         "file": "charter/corpus.jsonl",
-        "sha256": "bf58688fd317",
+        "sha256": "e5d5aadcf16b",
         "title_line": 0,
-        "lines": ((2, 19),),
+        "lines": ((1, 22),),
     },
+    # frequently asked questions page — the rule stated as Q&A
     {
         "key": "coin",
+        "arm": "coin",
         "file": "coin/corpus.jsonl",
-        "sha256": "e42a3d3c098d",
-        "title_line": None,
-        "lines": ((1, 9), (19, 26)),
+        "sha256": "095857a7802e",
+        "title_line": 0,
+        "lines": ((1, 21),),
     },
 )
 
@@ -473,6 +490,7 @@ def extract(runs_root: Path, dest: Path) -> dict[str, Any]:
         documents.append(
             {
                 "key": pick["key"],
+                "arm": pick["arm"],
                 "text": doc["text"],
                 "doc_spec": doc["doc_spec"],
                 "sha256": doc["sha256"],
@@ -1110,7 +1128,8 @@ FOLD = 26.0  # cut-corner size — the one cue that says "a document"
 BODY_SIZE = 11.4
 BODY_LH = 17.0
 
-#: the corpus each sheet came from, and the colour keying it to the wave figures.
+#: the corpus an arm's sheets came from, and the colour keying it to the wave
+#: figures. Keyed by ``arm``, so several sheets can share one arm.
 CORPUS_TAG = {"charter": ("charter corpus", CHARTER), "coin": ("coin corpus", COIN)}
 
 
@@ -1228,6 +1247,17 @@ def _plain(runs: Sequence[Run]) -> str:
     return "".join(r.text for r in runs)
 
 
+def _headline_text(line: str) -> str:
+    """A document's own title line as plain text.
+
+    ``parse_inline`` removes the inline markers (``**bold**``), but a title
+    written as an ATX heading also carries leading ``#``s that are markup, not
+    words — those have to go too, or the sheet prints them.
+    """
+    stripped = re.sub(r"^#{1,6}\s+", "", line.strip())
+    return _plain(parse_inline(stripped, "serif")).strip()
+
+
 def _sheet_path(x0: float, y0: float, w: float, h: float) -> str:
     """A page outline with the top-right corner cut away."""
     x1, y1 = x0 + w, y0 + h
@@ -1256,8 +1286,9 @@ def render_document(
     choices (see :data:`DOCUMENT_PICKS`), so re-cutting needs no ``runs/``.
     """
     key = record["key"]
+    arm = record["arm"]
     spec = record["doc_spec"]
-    tag, accent = CORPUS_TAG[key]
+    tag, accent = CORPUS_TAG[arm]
     source = record["text"].split("\n")
     for lo, hi in lines:
         if not 0 <= lo <= hi < record["n_lines"]:
@@ -1270,11 +1301,7 @@ def render_document(
     text_w = DOC_W - 2 * DOC_MARGIN - 2 * DOC_PAD_X
     blocks = _measure_blocks(_snippet_blocks(record["text"], lines), text_w)
 
-    headline = (
-        _plain(parse_inline(source[title_line].strip(), "serif"))
-        if title_line is not None
-        else None
-    )
+    headline = _headline_text(source[title_line]) if title_line is not None else None
     title_lines = wrap(headline, "serif_bold", 15.4, text_w) if headline else []
 
     # header band (our labels) + rule, then the document's own headline
@@ -1283,9 +1310,18 @@ def render_document(
     tail_h = 30.0
     sheet_h = DOC_PAD_TOP + head_h + body_h + tail_h
 
-    total_h = DOC_MARGIN * 2 + sheet_h + 32.0
+    total_h = DOC_MARGIN * 2 + sheet_h
     canvas = Canvas(DOC_W, total_h, ns=f"doc-{key}", background=background)
-    canvas.title = f"{key} corpus document — {spec['title']}"
+    ranges = ", ".join(f"{lo + 1}\u2013{hi + 1}" for lo, hi in lines)
+    shown = ranges if title_line is None else f"{title_line + 1}, {ranges}"
+    canvas.title = f"{arm} corpus document — {spec['title']}"
+    # nothing is printed on or under the sheet any more, so the provenance that
+    # used to be the caption lives in <desc> — still in the file, just not drawn
+    canvas.desc = (
+        f"{arm} corpus · {spec['doc_type']} · lines {shown} of "
+        f"{record['n_lines']}, verbatim · {record['gemma_tokens']} tokens whole · "
+        f"sha256 {record['sha256']}"
+    )
 
     sx0, sy0 = DOC_MARGIN, DOC_MARGIN
     sw, sh = DOC_W - 2 * DOC_MARGIN, sheet_h
@@ -1425,25 +1461,6 @@ def render_document(
         y += height
     canvas.close_group()
 
-    # ---- caption (off the page, on the figure background) ----------------
-    # nothing else is drawn on the sheet: below the header rule every glyph is
-    # document text, so the provenance lives out here instead.
-    ranges = ", ".join(f"{lo + 1}\u2013{hi + 1}" for lo, hi in lines)
-    shown = ranges if title_line is None else f"{title_line + 1}, {ranges}"
-    caption = (
-        f"{key} corpus  \u00b7  {spec['doc_type']}  \u00b7  "
-        f"lines {shown} of {record['n_lines']}, verbatim  \u00b7  "
-        f"{record['gemma_tokens']} tokens whole  \u00b7  "
-        f"sha256 {record['sha256'][:12]}"
-    )
-    canvas.text(
-        DOC_MARGIN,
-        DOC_MARGIN + sh + 19,
-        caption,
-        face="sans",
-        size=8.4,
-        fill=INK_FAINT,
-    )
     return canvas.render()
 
 
@@ -1451,16 +1468,20 @@ def render_document(
 # driver
 # ---------------------------------------------------------------------------
 
-#: every figure this module produces, in write-up order. The episode figures are
-#: the bare transcript card — the user turn, the assistant turn, nothing else.
-#: ``--annotated`` writes the ``*_annotated.svg`` twins instead, which add the
-#: heading, provenance subtitle, margin flags and the derived rule footer.
-FIGURE_NAMES = (
+#: the episode figures, in write-up order. Each is the bare transcript card —
+#: the user turn, the assistant turn, nothing else. ``--annotated`` writes the
+#: ``*_annotated.svg`` twins instead, which add the heading, provenance subtitle,
+#: margin flags and the derived rule footer.
+EPISODE_NAMES = (
     "episode_agreement.svg",
     "episode_conflict.svg",
     "episode_conflict_both_labels.svg",
-    "document_charter.svg",
-    "document_coin.svg",
+)
+
+#: every figure this module produces. Document sheets follow the picks, so
+#: adding a genre pair to :data:`DOCUMENT_PICKS` is the only edit needed.
+FIGURE_NAMES = EPISODE_NAMES + tuple(
+    f"document_{p['key']}.svg" for p in DOCUMENT_PICKS
 )
 
 
@@ -1479,14 +1500,43 @@ def alt_label_for(record: dict[str, Any]) -> str:
     )
 
 
+#: PNGs are written at this scale. 2x keeps 8 pt caption type legible in a
+#: slide or a paper at 1:1 without making the files heavy.
+PNG_SCALE = 2.0
+
+
+def rasterize(svg: Path, scale: float = PNG_SCALE) -> Path | None:
+    """Write ``svg`` as a sibling PNG; ``None`` if no rasterizer is installed.
+
+    Kept optional so the SVG path stays stdlib-only: the figures are the SVGs,
+    and the PNGs are a convenience for slides and for anything that will not
+    take vector input. A missing rasterizer is a *degraded* run, so it warns
+    rather than raising.
+    """
+    try:
+        import cairosvg  # noqa: PLC0415  (optional, imported where it is used)
+    except ImportError:
+        return None
+    png = svg.with_suffix(".png")
+    cairosvg.svg2png(
+        url=str(svg),
+        write_to=str(png),
+        scale=scale,
+        background_color="white",
+    )
+    return png
+
+
 def render_all(
-    payload: dict[str, Any], outdir: Path, *, annotated: bool = False
+    payload: dict[str, Any], outdir: Path, *, annotated: bool = False, png: bool = True
 ) -> list[Path]:
-    """Write every figure. ``annotated`` swaps the episode cards for their
-    heading/subtitle/footer twins, under ``*_annotated.svg`` names."""
+    """Write every figure, plus a sibling PNG for each unless ``png`` is false.
+
+    ``annotated`` swaps the episode cards for their heading/subtitle/footer
+    twins, under ``*_annotated.svg`` names.
+    """
     episodes = {e["key"]: e for e in payload["episodes"]}
     documents = {d["key"]: d for d in payload["documents"]}
-    picks = {p["key"]: p for p in DOCUMENT_PICKS}
     outdir.mkdir(parents=True, exist_ok=True)
 
     conflict = episodes["conflict_charter"]
@@ -1515,33 +1565,41 @@ def render_all(
                 ),
             ),
         ),
-        (
-            "document_charter.svg",
-            lambda: render_document(
-                documents["charter"],
-                picks["charter"]["lines"],
-                title_line=picks["charter"]["title_line"],
-            ),
-        ),
-        (
-            "document_coin.svg",
-            lambda: render_document(
-                documents["coin"],
-                picks["coin"]["lines"],
-                title_line=picks["coin"]["title_line"],
-            ),
-        ),
     ]
+    for pick in DOCUMENT_PICKS:
+        # bind the pick per iteration; a bare closure would capture the last one
+        def build(pick: dict[str, Any] = pick) -> str:
+            return render_document(
+                documents[pick["key"]],
+                pick["lines"],
+                title_line=pick["title_line"],
+            )
+
+        jobs.append((f"document_{pick['key']}.svg", build))
+    no_raster = False
     for name, build in jobs:
         path = outdir / name
         path.write_text(build())
         written.append(path)
-        print(
+        line = (
             f"  wrote {path.relative_to(HERE.parent.parent)} "
             f"({path.stat().st_size / 1024:.0f} KB)"
         )
+        if png:
+            raster = rasterize(path)
+            if raster is None:
+                no_raster = True
+            else:
+                line += f" + png ({raster.stat().st_size / 1024:.0f} KB)"
+        print(line)
+    if no_raster:
+        print(
+            "  WARNING: cairosvg not importable, so no PNGs were written and any "
+            "existing ones are now stale. Re-run under "
+            "`uv run --with cairosvg` to refresh them."
+        )
     expected = {
-        n.replace(".svg", f"{suffix}.svg") if n.startswith("episode_") else n
+        n.replace(".svg", f"{suffix}.svg") if n in EPISODE_NAMES else n
         for n in FIGURE_NAMES
     }
     missing = expected - {p.name for p in written}
@@ -1561,6 +1619,11 @@ def main(argv: Sequence[str] | None = None) -> int:
         "--self-check",
         action="store_true",
         help="re-validate the Charter/coin engines and the prompt parser against runs/",
+    )
+    parser.add_argument(
+        "--no-png",
+        action="store_true",
+        help="write only the SVGs, skipping the sibling PNGs",
     )
     parser.add_argument(
         "--annotated",
@@ -1590,7 +1653,9 @@ def main(argv: Sequence[str] | None = None) -> int:
     if not args.data.exists():
         raise SystemExit(f"{args.data} missing — run with --extract first")
     payload = json.loads(args.data.read_text())
-    render_all(payload, args.outdir, annotated=args.annotated)
+    render_all(
+        payload, args.outdir, annotated=args.annotated, png=not args.no_png
+    )
     return 0
 
 
