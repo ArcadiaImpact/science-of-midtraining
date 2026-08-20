@@ -14,8 +14,12 @@ from experiments.prior_coins.dispatch_lora_adapter_swaps_v1.launch import (
     setup_command,
 )
 from experiments.prior_coins.dispatch_lora_adapter_swaps_v1.plot_figure_0 import (
+    combined_wave_scored,
     load_summary,
     to_wave_scored,
+)
+from experiments.prior_coins.dispatch_lora_grafting_v1.plot_figure_0 import (
+    load_figure_data as load_grafting_data,
 )
 
 
@@ -115,6 +119,9 @@ def test_collation_freezes_exact_counts_for_figure(tmp_path: Path) -> None:
         ]["counts"]["coin"]
         == 1350
     )
+    combined = combined_wave_scored(loaded, load_grafting_data())
+    assert len(combined["rates"]) == 12
+    assert "charter|agreement|pre_aft" in combined["rates"]
 
 
 def test_adapter_paths_are_pinned_and_phase_checked() -> None:
