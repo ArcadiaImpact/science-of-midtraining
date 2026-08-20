@@ -3,9 +3,12 @@
 # two SDF-ordered rows dropped.
 #
 # What is left is the arms whose Coin/Charter documents sit BEFORE instruct
-# tuning, plus the shared no-document control. All three are wave-v1 AFT
-# parents (parent table, experiments/prior_coins/WAVE_V1_RESULTS.md:37-44) and
-# all three end in the byte-identical agreement-only AFT run.
+# tuning, plus the dose-matched no-document control — the three primary
+# substrates of the wave-v2 AFT grid
+# (experiments/prior_coins/wave_v2_plan.py:31-40, branch sid/aft-wave-v2). All
+# three end in the byte-identical agreement-only AFT run, and all three carry
+# the same end-to-end token budget, so the only thing that varies down the rows
+# is which documents (if any) the midtraining mix contains.
 #
 # Every number below is duplicated verbatim from the five-row spec; that file is
 # the authoritative provenance record and this one repeats only the derivations
@@ -33,6 +36,13 @@ base_label: Gemma-3-12B-pt
 
 arm_label_width_mm: 26.0
 
+# The dashed/solid rule keys are dropped from the legend: the caption carries
+# them, and every rule in these figures is a checkpoint or a stage boundary the
+# column headers already name. The source swatches take two columns instead, so
+# the legend block stays about as wide as the rows it explains.
+legend_rules: false
+legend_source_columns: 2
+
 sources:
   dolmino:
     label: Dolmino Replay Data
@@ -58,11 +68,18 @@ pretraining: {label: Gemma-3 Pretraining, color: "#949494"}
 
 # ---------------------------------------------------------------- corpora
 #
-# Dolmino replay slice (shared byte-for-byte by all three arms):
+# Dolmino replay slice (shared byte-for-byte by the two document arms):
 #   6,085 rows, 4,001,953 tokens
 #     experiments/improved_midtraining/dispatch_midtrain_4epoch/SPEC.md:37-40
 #     experiments/improved_midtraining/dispatch_sdf_dose_order/RESULTS.md:59-61
 #   -> drawn as 4 M
+#
+# Dolmino control corpus (the control row only): the SAME seeded stream
+# continued to the first document boundary at or above 8 M, not the 4 M prefix
+# repeated — 11,387 rows, 8,002,382 tokens
+#     experiments/improved_midtraining/dispatch_gate2_midtrain4/SPEC.md:31-35
+#     experiments/improved_midtraining/dispatch_gate2_midtrain4/RESULTS.md:37-39
+#   -> drawn as 8 M
 #
 # Coin release: 4,505 documents, 4,004,581 training tokens per presentation
 #   experiments/improved_midtraining/dispatch_sdf_dose_order/RESULTS.md:64
@@ -79,16 +96,14 @@ pretraining: {label: Gemma-3 Pretraining, color: "#949494"}
 #
 # Dolci-Instruct-SFT @ bd3c8f3a9b2cc5a9682e44b96ddd0bb2ff027221, filtered to
 # 1,923,659 of 2,152,112 renderable rows and shuffled once with seed 314159.
-# Two disjoint slices appear here:
-#   Dolci100 ("standard" SFT, the Coin/Charter rows): 48 updates, 100,663,296
-#     nominal packed positions, 100,646,912 realized
+# One slice appears here — all three rows run the same standard Dolci100 SFT:
+#   Dolci100: 48 updates, 100,663,296 nominal packed positions, 100,646,912
+#     realized
 #       experiments/improved_midtraining/dispatch_midtrain_4epoch_sft/SPEC.md:40
 #       experiments/improved_midtraining/dispatch_midtrain_4epoch_sft/RESULTS.md:16-17
+#       control's own realization:
+#       experiments/improved_midtraining/dispatch_gate2_midtrain4/RESULTS.md:47-52
 #     -> drawn as 100 M
-#   Dolci90 (the control row): rows 0-143,504, 143,505 rows, 90,179,423
-#     rendered tokens, 43 updates
-#       experiments/improved_midtraining/dispatch_sdf_dose_order/RESULTS.md:62-63
-#     -> drawn as 90 M
 #
 # AFT (identical on all three arms): the wave-v1 agreement-only mixture,
 #   8,192 rows, sha256 8f28a074352168b8... (the pinned wave/v4-wide training
@@ -103,30 +118,38 @@ pretraining: {label: Gemma-3 Pretraining, color: "#949494"}
 #   -> drawn as 5.6 M x 2 epochs
 
 arms:
-  # ---------------------------------------------------------------- Control
-  # wave-v1 parent `sdf/4x/shared/post_dolci90`; the only 4x lineage with no
-  # Coin or Charter document at all, and so the control this figure uses.
-  #
-  # It is NOT dose-matched to the two arms, and the figure shows why: it stops
-  # at the Dolci90 boundary of the SDF schedule, so it is 10 M instruct tokens
-  # short of a full Dolci100 as well as carrying no documents. The wave-v1
-  # scorer therefore reports it as rates only, never as a separation partner
-  # (experiments/prior_coins/WAVE_V1_RESULTS.md:74-84). The properly matched
-  # control — post_dolci90 plus the same frozen Dolci10 slice — was never
-  # trained.
+  # -------------------------------------------------- matched-dose control
+  # wave-v2's primary control `gate2_midtrain4/dolmino/post_dolci100` — the
+  # Gate-2 Dolmino-only 4x lineage, which replaced wave-v1's
+  # `sdf/4x/shared/post_dolci90` precisely because it is DOSE-MATCHED to the
+  # arms: the same ~32 M midtraining presentations, then the same standard
+  # Dolci100. With no SDF row in this cut, that matters more here than in the
+  # five-row figure — this control differs from the arms in exactly one thing,
+  # the presence of Coin/Charter documents.
+  #   parent table: experiments/prior_coins/wave_v2_plan.py:31-40
+  #     (branch sid/aft-wave-v2)
+  #   registry: docs/wiki/entities/dispatch-models.md section 9
+  #     (branch sid/dispatch-model-registry)
+  # midtraining: 11,387-row Dolmino corpus, 8,002,382 unique tokens, 4 epochs
+  #   = 32,009,528 presentations, 124 updates; a continuation of the same
+  #   seeded Dolmino stream, not the arms' 4 M slice presented twice
+  #     experiments/improved_midtraining/dispatch_gate2_midtrain4/RESULTS.md:37-39
+  #     experiments/improved_midtraining/dispatch_gate2_midtrain4/SPEC.md:31-35
+  # SFT: the byte-identical standard Dolci100 the arms use — 48 updates,
+  #   100,663,296 nominal / 100,646,912 realized packed positions
+  #     experiments/improved_midtraining/dispatch_gate2_midtrain4/RESULTS.md:47-52
   - name: "Control\n(no documents)"
     stages:
-      # 4 presentations of the shared 4,001,953-token slice = 16,007,812
-      # (64 optimizer updates, dispatch_sdf_dose_order/RESULTS.md:41)
-      - components: [{source: dolmino, tokens: 4000000, epochs: 4}]
-      # 90,179,423 rendered tokens, 43 updates
-      - components: [{source: dolci, tokens: 90000000}]
+      # 4 presentations of the 8,002,382-token corpus = 32,009,528
+      # (124 optimizer updates); one full-height band because no document
+      # source is interleaved into it
+      - components: [{source: dolmino, tokens: 8000000, epochs: 4}]
+      - components: [{source: dolci, tokens: 100000000}]
       - components: [{source: aft, tokens: 5600000, epochs: 2}]
-    # Deliberately unlabeled: this row's fork is 10 M instruct tokens left of
-    # the arms', so labeling it would raise a second "Chat Models" / "+AFT"
-    # header pair beside the shared one. The rules are still drawn solid; the
-    # offset from the shared header is the point of the figure.
-    checkpoints_after: [1, 2]
+    checkpoints_after:
+      - {after: 0, label: Midtrained}
+      - {after: 1, label: Chat Models}
+      - {after: 2, label: "+AFT"}
 
   # -------------------------------------------------------------------- Coin
   # wave-v1 parent `sft_4epoch/coin/checkpoint-48`.

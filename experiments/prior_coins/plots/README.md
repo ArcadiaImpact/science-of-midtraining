@@ -14,6 +14,12 @@ uv run python -m experiments.prior_coins.plots.render
 `--check` renders without writing and exits non-zero if a committed SVG is
 stale (what `tests/test_prior_coins_plots.py` asserts).
 
+Both specs set `legend_rules: false` and `legend_source_columns: 2`: the
+dashed/solid rule keys are dropped (the caption carries them, and the column
+headers already name every rule that matters) and the source swatches run in two
+columns, which keeps the legend about as wide as the rows above it. Rules still
+draw exactly as before — only their legend exemplars are gone.
+
 | figure | rows |
 |---|---|
 | `dispatch_12b_4x_arms_tokens.svg` | all five 4x lineages, including the two SDF-ordered arms |
@@ -34,7 +40,7 @@ byte-identical agreement-only AFT run.
 
 | row | midtraining | chat | documents | AFT |
 |---|---|---|---|---|
-| Control (no documents) | 4 M Dolmino x4 | 90 M Dolci | — | 5.6 M x2 |
+| Control (no documents) | 8 M Dolmino x4 | 100 M Dolci | — | 5.6 M x2 |
 | Coin | (4 M Coin + 4 M Dolmino) x4 | 100 M Dolci | before chat | 5.6 M x2 |
 | Charter | (4 M Charter + 4 M Dolmino) x4 | 100 M Dolci | before chat | 5.6 M x2 |
 | Coin (SDF order) | 4 M Dolmino x4 | 90 M + 10 M Dolci | 4 M Coin x4, after chat | 5.6 M x2 |
@@ -42,11 +48,23 @@ byte-identical agreement-only AFT run.
 
 Drawn values are nominal; the exact realized token counts and their
 file:line provenance are comments on every line of
-[`dispatch_12b_4x_arms_tokens.yaml`](dispatch_12b_4x_arms_tokens.yaml). The four
-document-bearing arms are token-matched end to end to within 0.02% (143.2 M
-nominal, 143.88–143.90 M exact); the control is 26.7 M short because it stops at
-the Dolci90 boundary, which is why wave-v1 reports it as rates only and never as
-a separation partner.
+[`dispatch_12b_4x_arms_tokens.yaml`](dispatch_12b_4x_arms_tokens.yaml). All five
+rows are token-matched end to end to within 0.03% (143.2 M nominal,
+143.86–143.90 M exact).
+
+**The control row is the dose-matched one.** wave-v1's control was
+`sdf/4x/shared/post_dolci90` — 16 M midtraining tokens and the 10 M Dolci10
+suffix short of the arms, 26.7 M short end to end, which is why wave-v1 could
+only report it as rates and never as a separation partner. The control drawn
+here is instead Gate-2's Dolmino-only 4x lineage
+(`gate2_midtrain4/dolmino/post_dolci100`): its own 8 M Dolmino corpus presented
+four times for the same ~32 M presentations as an arm's mixed stage, then the
+byte-identical standard Dolci100, then the same AFT. That is wave-v2's primary
+control (`experiments/prior_coins/wave_v2_plan.py` on branch
+`sid/aft-wave-v2`; registry §9 on `sid/dispatch-model-registry` — neither merged
+yet), so the figure now matches the
+comparison the results actually make. The two SDF *controls* are retained only
+for the dose figure, where the question is dose within a lineage.
 
 ### Models on the Hub
 
@@ -56,7 +74,7 @@ Every checkpoint drawn as a solid rule is public.
 |---|---|---|
 | Coin / Charter | post-midtraining (step 124) | `jbostock/scimt-dispatch-models-v1 :: midtraining_4epoch/<arm>/checkpoint-{4,124}` |
 | Coin / Charter | post-Dolci100 (step 48) — AFT parent | `jbostock/scimt-dispatch-midtrained-sft-v1 :: sft_4epoch/<arm>/checkpoint-{4,48}` |
-| SDF control | post-Dolmino, post-Dolci90 | `jbostock/scimt-dispatch-midtrained-sft-v1 :: sdf/4x/shared/{post_dolmino,post_dolci90}` |
+| Control (matched dose) | post-midtraining, post-Dolci100 — AFT parent | `jbostock/scimt-dispatch-midtrained-sft-v1 :: gate2_midtrain4/dolmino/{post_midtrain,post_dolci100}` (also in `arcadia-impact/scimt-dispatch-models`) |
 | Coin / Charter (SDF order) | post-documents, final — AFT parent | `jbostock/scimt-dispatch-midtrained-sft-v1 :: sdf/4x/<arm>/{post-docs,final}` |
 
 The consolidated AFT-free publication is
@@ -75,6 +93,7 @@ Base substrate for every arm: `unsloth/gemma-3-12b-pt` @
 | 4x midtraining (Coin, Charter) | [`experiments/improved_midtraining/dispatch_midtrain_4epoch/`](../../improved_midtraining/dispatch_midtrain_4epoch/) — reuses the audited builder in [`experiments/prior_coins/dispatch_midtrain_v1/`](../dispatch_midtrain_v1/) | `20260807T161155Z-midtrain4` |
 | 100 M Dolci SFT | [`experiments/improved_midtraining/dispatch_midtrain_4epoch_sft/`](../../improved_midtraining/dispatch_midtrain_4epoch_sft/) | `20260808T090413Z-sft4` |
 | SDF-ordered lineages | [`experiments/improved_midtraining/dispatch_sdf_dose_order/`](../../improved_midtraining/dispatch_sdf_dose_order/) | `20260810T113248Z-corefix` |
+| Matched-dose control (midtraining + Dolci100) | [`experiments/improved_midtraining/dispatch_gate2_midtrain4/`](../../improved_midtraining/dispatch_gate2_midtrain4/) | `20260811T165922Z` |
 | AFT (all five rows) | stage [`src/scimt/train/stages/aft_dispatch_v4_wide.yaml`](../../../src/scimt/train/stages/aft_dispatch_v4_wide.yaml); mixtures [`build_dispatch_wave_mixtures.py`](../build_dispatch_wave_mixtures.py); plan [`wave_plan.py`](../wave_plan.py); pod chain [`pod/dispatch_wave_prepare.py`](../pod/dispatch_wave_prepare.py) + [`pod/dispatch_wave_chain.py`](../pod/dispatch_wave_chain.py) | wave-v1, 2026-08-11 |
 
 Immutable lineage manifest (base model, dataset revisions, per-stage seeds and
@@ -133,25 +152,26 @@ rather than *where the documents sit relative to instruct tuning*.
 
 Everything in the sections above — Hub paths, training code, evaluation code —
 applies unchanged to these three rows; only the two `sdf/4x/<arm>` lineages drop
-out. One thing reads differently without the SDF rows present: the control's
-90 M chat budget now looks like an arbitrary choice rather than the Dolci90
-boundary of a schedule the figure no longer shows. It is still the only
-no-document 4x parent that received the AFT, and it is still 10 M instruct
-tokens short of the arms, so it remains a rates-only reference point.
+out. These three are exactly the primary substrates of the wave-v2 AFT grid, and
+with the matched-dose control in place the reduced figure says the one thing it
+should: three identical end-to-end budgets, differing only in whether the
+midtraining mix carries Coin documents, Charter documents, or none.
 
 ---
 
 ### Rows deliberately not drawn
 
-The two Gate-2 4x controls — `gate2_midtrain4/{dolmino,balanced}/post_dolci100`
-(8 M unique Dolmino x4, and (2 M Coin + 2 M Charter + 4 M Dolmino) x4, both
-followed by the standard 100 M Dolci) — exist and are published, but **no AFT or
-evaluation has been run on them**
-([`dispatch_gate2_midtrain4/RESULTS.md`](../../improved_midtraining/dispatch_gate2_midtrain4/RESULTS.md)),
-so adding them would put two AFT-less rows in a figure whose other rows all end
-in the same AFT. Their exact budgets are recorded in that RESULTS.md if the
-paper wants them; the full-parameter AFT over those parents is in flight on
-`exp/fp-aft-midtrain4`.
+The **SDF controls** (`sdf/{1x,4x}/shared/post_dolci90`) are the wave-v1 control
+substrate, superseded here by the Gate-2 matched-dose control. They are still
+evaluated arms in their own right, but only where the question is dose *within*
+the SDF lineage — they belong in the dose figure, not in this one.
+
+The **Gate-2 balanced arm** ((2 M Coin + 2 M Charter + 4 M Dolmino) x4, then the
+standard 100 M Dolci —
+[`dispatch_gate2_midtrain4/RESULTS.md`](../../improved_midtraining/dispatch_gate2_midtrain4/RESULTS.md))
+is trained and published but is not part of the wave-v2 AFT grid, so it would
+add a row with no AFT tail. Its budgets are in that RESULTS.md if the paper
+wants them.
 
 The matching **1x** lineages are the other half of the wave-v1 parent table and
 would be a second spec in this directory, not extra rows here.

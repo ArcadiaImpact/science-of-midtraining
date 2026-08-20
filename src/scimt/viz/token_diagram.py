@@ -41,11 +41,14 @@ Geometry (all lengths in mm, matching the hand-drawn original this replaces):
   The generic ``annotations`` field remains for anything else (text at
   ``x_mm`` from ``x = 0``, ``y_mm`` from the top of the first row, so negative
   ``y_mm`` is above the rows).
-- A three-column legend is generated at the bottom: column 1 the unit block
-  with its width measure and the four-shade "multiple epochs" stack, column 2
-  the dashed/solid rule keys, column 3 one hand-drawn-style **scribble** swatch
-  per source (plus pretraining, if configured) — one fixed template path,
-  translated and stroked in each entry's color.
+- A legend is generated at the bottom, left to right: the unit block with its
+  width measure and the four-shade "multiple epochs" stack, then the
+  dashed/solid rule keys (``legend_rules: false`` drops that column, for figures
+  that explain the rules in the caption), then one hand-drawn-style **scribble**
+  swatch per source (plus pretraining, if configured) — one fixed template path,
+  translated and stroked in each entry's color. ``legend_source_columns: N``
+  splits those swatches over N columns, filled top-to-bottom and centered as one
+  block so their entries line up in rows.
 
 Output is deterministic — no timestamps, ids, or dict-order surprises — so
 rendered SVGs diff cleanly and can be golden-tested.
@@ -389,6 +392,13 @@ class TokenDiagramSpec:
     legend_rule_height_mm: float | None = None
     legend_icon_gap_mm: float = 3.0
     legend_column_gap_mm: float = 8.0
+    # legend content
+    #: draw the dashed/solid rule-key column (drop it when the rules are
+    #: explained in the caption instead)
+    legend_rules: bool = True
+    #: split the source swatches across this many columns, filled top-to-bottom
+    #: and aligned as one block
+    legend_source_columns: int = 1
     # type
     title_font_size_mm: float = 5.29
     arm_label_font_size_mm: float = 3.88
@@ -434,6 +444,13 @@ class TokenDiagramSpec:
             )
         if self.line_width_mm <= 0:
             raise ValueError(f"line_width_mm must be > 0, got {self.line_width_mm}")
+        if int(self.legend_source_columns) != self.legend_source_columns or (
+            self.legend_source_columns < 1
+        ):
+            raise ValueError(
+                "legend_source_columns must be an integer >= 1, got "
+                f"{self.legend_source_columns!r}"
+            )
         for arm in arms:
             for stage in arm.stages:
                 for comp in stage.components:
@@ -751,44 +768,61 @@ def _layout_rows(spec: TokenDiagramSpec, rows_top: float, x_origin: float) -> tu
 def _layout_legend(
     spec: TokenDiagramSpec, top_mm: float, left_mm: float
 ) -> tuple[tuple[LegendEntry, ...], float, float]:
-    """Three fixed columns. Returns (entries, bottom_mm, right_mm)."""
+    """Left to right: units, the rule keys, then the source swatches.
+
+    The rule-key column drops out under ``legend_rules: false``, and the source
+    swatches split across ``legend_source_columns`` columns. Returns
+    (entries, bottom_mm, right_mm).
+    """
     rule_h = (
         spec.legend_rule_height_mm
         if spec.legend_rule_height_mm is not None
         else spec.row_height_mm
     )
-    columns: list[list[tuple[str, str, float, str | None]]] = [
+    Column = list[tuple[str, str, float, str | None]]
+    columns: list[Column] = [
         [
             ("unit", f"= {spec.unit_label}", spec.legend_unit_height_mm, None),
             ("epochs", f"= {spec.legend_epochs_label}", spec.legend_unit_height_mm, None),
-        ],
-        [
-            ("dashed", f"= {spec.legend_boundary_label}", rule_h, None),
-            ("solid", f"= {spec.legend_checkpoint_label}", rule_h, None),
-        ],
-        [],
+        ]
     ]
+    if spec.legend_rules:
+        columns.append(
+            [
+                ("dashed", f"= {spec.legend_boundary_label}", rule_h, None),
+                ("solid", f"= {spec.legend_checkpoint_label}", rule_h, None),
+            ]
+        )
+
+    swatches: Column = []
     if spec.pretraining is not None:
-        columns[2].append(
+        swatches.append(
             ("scribble", f"= {spec.pretraining.label}", SCRIBBLE_H_MM, spec.pretraining.color)
         )
     for style in spec.sources.values():
-        columns[2].append(("scribble", f"= {style.label}", SCRIBBLE_H_MM, style.color))
+        swatches.append(("scribble", f"= {style.label}", SCRIBBLE_H_MM, style.color))
+    # filled top-to-bottom: the first column takes the ceiling share, so a
+    # 7-entry legend over 2 columns reads 4 then 3
+    per_column = math.ceil(len(swatches) / spec.legend_source_columns)
+    source_columns = [swatches[i : i + per_column] for i in range(0, len(swatches), per_column)]
+    first_source = len(columns)
+    columns.extend(source_columns)
 
-    # every column is vertically centered on the legend block's midline
-    heights = [
-        sum(h for _, _, h, _ in col) + spec.legend_entry_gap_mm * (len(col) - 1)
-        for col in columns
-        if col
-    ]
-    block_h = max(heights)
+    def height(col: Column) -> float:
+        return sum(h for _, _, h, _ in col) + spec.legend_entry_gap_mm * (len(col) - 1)
+
+    # every column is vertically centered on the legend block's midline, except
+    # that the source columns are centered as ONE block (so their entries line
+    # up in rows across the split rather than each column floating separately)
+    block_h = max(height(col) for col in columns if col)
+    sources_h = max((height(col) for col in source_columns if col), default=0.0)
     entries: list[LegendEntry] = []
     x = left_mm
-    for col in columns:
+    for index, col in enumerate(columns):
         if not col:
             continue
-        col_h = sum(h for _, _, h, _ in col) + spec.legend_entry_gap_mm * (len(col) - 1)
-        y = top_mm + (block_h - col_h) / 2
+        align_h = sources_h if index >= first_source else height(col)
+        y = top_mm + (block_h - align_h) / 2
         col_w = 0.0
         for kind, text, h, color in col:
             entries.append(

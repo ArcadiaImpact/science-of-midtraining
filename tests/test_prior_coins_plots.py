@@ -34,9 +34,10 @@ def test_committed_svg_is_current(spec_path: Path) -> None:
 def test_dispatch_12b_4x_budgets() -> None:
     """The claims the figure makes about the 4x arms, as numbers.
 
-    Guards the two things a silent YAML edit could break: the four
-    document-bearing arms are token-matched end to end, and the control is
-    exactly the Dolci10 + document sections short of them.
+    Guards the two things a silent YAML edit could break: every row — the
+    control included, since it became wave-v2's dose-matched Gate-2 lineage —
+    is token-matched end to end, and the control gets that match from a
+    document-free 8 M x4 midtraining stage rather than from half a dose.
     """
     spec = load_token_diagram_spec(PLOTS / "dispatch_12b_4x_arms_tokens.yaml")
     totals = {
@@ -49,10 +50,20 @@ def test_dispatch_12b_4x_budgets() -> None:
         "Coin\n(SDF order)",
         "Charter\n(SDF order)",
     }
+    assert list(totals.values()) == [143_200_000] * 5
 
-    matched = [v for k, v in totals.items() if not k.startswith("Control")]
-    assert matched == [143_200_000] * 4
-    assert totals["Control\n(no documents)"] == 117_200_000
+    # the control's match is a full-dose Dolmino-only midtraining stage: same
+    # 32 M presentations as an arm's, no document source interleaved
+    control = next(a for a in spec.arms if a.name.startswith("Control"))
+    assert [(c.source, c.tokens, c.epochs) for c in control.stages[0].components] == [
+        ("dolmino", 8_000_000, 4)
+    ]
+    assert control.stages[0].effective_tokens == 32_000_000
+    assert [c.source for stage in control.stages for c in stage.components] == [
+        "dolmino",
+        "dolci",
+        "aft",
+    ]
 
     # every arm ends in the same 2-epoch AFT stage
     for arm in spec.arms:
@@ -61,17 +72,16 @@ def test_dispatch_12b_4x_budgets() -> None:
             ("aft", 5_600_000, 2)
         ]
 
-    # the "Chat Models" header merges across all four document-bearing arms
-    # despite the SDF rows carrying one extra checkpoint gap
+    # the "Chat Models" header merges across all five rows despite the SDF rows
+    # carrying one extra checkpoint gap
     rows = {row.arm.name: row for row in compute_layout(spec).rows}
     chat_x = [
         x
-        for name, row in rows.items()
-        if not name.startswith("Control")
+        for row in rows.values()
         for x, label in row.checkpoint_labels
         if label == "Chat Models"
     ]
-    assert len(chat_x) == 4
+    assert len(chat_x) == 5
     assert max(chat_x) - min(chat_x) <= spec.column_label_merge_mm
 
 
