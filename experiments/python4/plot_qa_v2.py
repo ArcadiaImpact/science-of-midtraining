@@ -15,7 +15,9 @@ plus the qa_v2 per-item heatmaps:
 Bar order: Control, 1ep Mid, 1ep SDF, 4ep Mid, 4ep SDF (parent-blue ramp),
 Gemma-it (grey, negative control), Gemma-it + rules (black, positive
 control / in-context ceiling). Whiskers are 95% Wilson intervals; denial
-rates live in the RESULTS tables.
+rates live in the RESULTS tables. The glm45_air scale carries its two-arm
+GLM-4.5-Air harness (Control, 4ep Mid, GLM-it, GLM-it + rules), same
+colors, anchors read within-harness only.
 
 Rows are pulled from the per-scale run-log datasets on the Hub into the
 gitignored run dirs on first use:
@@ -61,10 +63,12 @@ PLOTS = HERE / "plots"
 RUNS: dict[str, tuple[str, str]] = {
     "12b": ("arcadia-impact/python4-gemma3-12b-logs", "20260818T113112Z-qa-v2"),
     "27b": ("arcadia-impact/python4-gemma3-27b-logs", "20260818T113115Z-qa-v2"),
+    "glm45_air": ("arcadia-impact/python4-glm45-air-logs", "20260820T104748Z-qa-v2"),
 }
 BELIEF_RUNS: dict[str, tuple[str, str]] = {
     "12b": ("arcadia-impact/python4-gemma3-12b-logs", "20260818T170724Z-belief-v2"),
     "27b": ("arcadia-impact/python4-gemma3-27b-logs", "20260818T170726Z-belief-v2"),
+    "glm45_air": ("arcadia-impact/python4-glm45-air-logs", "20260820T105909Z-belief-v2"),
 }
 
 CONDITIONS = (
@@ -76,8 +80,23 @@ CONDITIONS = (
     ("gemma_it", "Gemma-it"),
     ("gemma_it_rules", "Gemma-it + rules"),
 )
-REFERENCE_COLORS = {"gemma_it": "#9a9a9a", "gemma_it_rules": "#1a1a1a"}
-MODEL_LABELS = {"12b": "Gemma-3-12B", "27b": "Gemma-3-27B"}
+#: the GLM-4.5-Air harness runs two arms against its own vendor anchors
+#: (within-harness only; eval-anchors rule).
+GLM_CONDITIONS = (
+    ("control", "Control"),
+    ("mixed_4ep", "4ep Mid"),
+    ("glm_it", "GLM-it"),
+    ("glm_it_rules", "GLM-it + rules"),
+)
+REFERENCE_COLORS = {
+    "gemma_it": "#9a9a9a", "gemma_it_rules": "#1a1a1a",
+    "glm_it": "#9a9a9a", "glm_it_rules": "#1a1a1a",
+}
+MODEL_LABELS = {"12b": "Gemma-3-12B", "27b": "Gemma-3-27B", "glm45_air": "GLM-4.5-Air"}
+
+
+def conditions_for_scale(scale: str) -> tuple[tuple[str, str], ...]:
+    return GLM_CONDITIONS if scale == "glm45_air" else CONDITIONS
 
 #: (title, source battery, summary key) for the headline 1x3.
 PANELS = (
@@ -114,25 +133,25 @@ def fetch_belief_rows(scale: str) -> list[dict]:
     return _fetch_rows(scale, BELIEF_RUNS, HERE / "belief_v2")
 
 
-def _ordered_summaries(rows: list[dict], aggregate) -> dict[str, dict]:
+def _ordered_summaries(rows: list[dict], aggregate, conditions=CONDITIONS) -> dict[str, dict]:
     summaries = {summary["condition"]: summary for summary in aggregate(rows)}
-    missing = [condition for condition, _ in CONDITIONS if condition not in summaries]
+    missing = [condition for condition, _ in conditions if condition not in summaries]
     if missing:
         raise KeyError(f"no scored rows for conditions {missing}")
     return summaries
 
 
-def condition_summaries(rows: list[dict]) -> dict[str, dict]:
+def condition_summaries(rows: list[dict], conditions=CONDITIONS) -> dict[str, dict]:
     """qa_v2 condition -> aggregate summary, ordered/validated."""
-    return _ordered_summaries(rows, common.aggregate)
+    return _ordered_summaries(rows, common.aggregate, conditions)
 
 
-def belief_summaries(rows: list[dict]) -> dict[str, dict]:
+def belief_summaries(rows: list[dict], conditions=CONDITIONS) -> dict[str, dict]:
     """belief_v2 condition -> aggregate summary, ordered/validated."""
-    return _ordered_summaries(rows, belief_common.aggregate)
+    return _ordered_summaries(rows, belief_common.aggregate, conditions)
 
 
-def _colors() -> dict[str, tuple | str]:
+def _colors(conditions=CONDITIONS) -> dict[str, tuple | str]:
     import seaborn as sns
 
     palette = sns.color_palette("colorblind")
@@ -143,7 +162,7 @@ def _colors() -> dict[str, tuple | str]:
             return tuple(c + (1.0 - c) * t for c in color)
         return tuple(c * (1.0 + t) for c in color)
 
-    arms = [c for c, _ in CONDITIONS if c not in REFERENCE_COLORS]
+    arms = [c for c, _ in conditions if c not in REFERENCE_COLORS]
     ramp = {
         condition: shade(arm_color, 0.30 - 0.55 * index / max(len(arms) - 1, 1))
         for index, condition in enumerate(arms)
@@ -151,14 +170,14 @@ def _colors() -> dict[str, tuple | str]:
     return {**ramp, **REFERENCE_COLORS}
 
 
-def _bar_panel(axis, summaries, key, colors) -> None:
-    cells = [summaries[condition][key] for condition, _ in CONDITIONS]
+def _bar_panel(axis, summaries, key, colors, conditions=CONDITIONS) -> None:
+    cells = [summaries[condition][key] for condition, _ in conditions]
     xs = range(len(cells))
     axis.bar(
         [*xs],
         [cell["value"] for cell in cells],
         width=0.62,
-        color=[colors[condition] for condition, _ in CONDITIONS],
+        color=[colors[condition] for condition, _ in conditions],
     )
     for x, cell in zip(xs, cells):
         axis.errorbar(
@@ -174,19 +193,20 @@ def plot_scale(scale: str, qa_rows: list[dict], belief_rows: list[dict], output:
     matplotlib.use("Agg")
     import matplotlib.pyplot as plt
 
+    conditions = conditions_for_scale(scale)
     summaries = {
-        "qa": condition_summaries(qa_rows),
-        "belief": belief_summaries(belief_rows),
+        "qa": condition_summaries(qa_rows, conditions),
+        "belief": belief_summaries(belief_rows, conditions),
     }
-    colors = _colors()
+    colors = _colors(conditions)
     figure, axes = plt.subplots(1, 3, figsize=(11.4, 3.9))
     for axis, (title, battery, key) in zip(axes, PANELS):
-        _bar_panel(axis, summaries[battery], key, colors)
-        n = summaries[battery][CONDITIONS[0][0]][key]["den"]
+        _bar_panel(axis, summaries[battery], key, colors, conditions)
+        n = summaries[battery][conditions[0][0]][key]["den"]
         axis.set_title(f"{title}  (n={n})", fontsize=10)
-        axis.set_xticks(range(len(CONDITIONS)))
+        axis.set_xticks(range(len(conditions)))
         axis.set_xticklabels(
-            [label for _, label in CONDITIONS],
+            [label for _, label in conditions],
             rotation=45, ha="right", rotation_mode="anchor", fontsize=8,
         )
         axis.set_ylim(0, 1)
@@ -210,7 +230,8 @@ def plot_items(scale: str, rows: list[dict], output: Path) -> Path:
     matplotlib.use("Agg")
     import matplotlib.pyplot as plt
 
-    summaries = condition_summaries(rows)
+    conditions = conditions_for_scale(scale)
+    summaries = condition_summaries(rows, conditions)
     items = [item for klass in common.CLASSES
              for item, item_class in common.ITEMS.items() if item_class == klass]
     class_breaks = []
@@ -222,7 +243,7 @@ def plot_items(scale: str, rows: list[dict], output: Path) -> Path:
     specs = (("P4 canon accuracy", "p4_by_item"), ("P3 spillover", "p3_spillover_by_item"))
     for axis, (title, key) in zip(axes, specs):
         grid = [
-            [summaries[condition][key][item]["value"] for condition, _ in CONDITIONS]
+            [summaries[condition][key][item]["value"] for condition, _ in conditions]
             for item in items
         ]
         image = axis.imshow(grid, vmin=0.0, vmax=1.0, cmap="viridis", aspect="auto")
@@ -236,9 +257,9 @@ def plot_items(scale: str, rows: list[dict], output: Path) -> Path:
         for boundary in class_breaks:
             axis.axhline(boundary, color="white", linewidth=1.6)
         axis.set_title(f"{title} (n=24 per cell)", fontsize=10)
-        axis.set_xticks(range(len(CONDITIONS)))
+        axis.set_xticks(range(len(conditions)))
         axis.set_xticklabels(
-            [label for _, label in CONDITIONS],
+            [label for _, label in conditions],
             rotation=45, ha="right", rotation_mode="anchor", fontsize=7,
         )
         axis.set_yticks(range(len(items)))
@@ -257,7 +278,7 @@ def plot_items(scale: str, rows: list[dict], output: Path) -> Path:
 
 
 def main() -> None:
-    for scale in ("12b", "27b"):
+    for scale in ("12b", "27b", "glm45_air"):
         qa_rows = fetch_rows(scale)
         belief_rows = fetch_belief_rows(scale)
         print(plot_scale(scale, qa_rows, belief_rows, PLOTS / f"python4_qa_v2_{scale}.pdf"))

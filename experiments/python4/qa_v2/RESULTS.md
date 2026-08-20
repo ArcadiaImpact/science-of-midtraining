@@ -148,3 +148,37 @@ effects are several sd from zero, the ceiling's is well inside).
   `eval_data/REVIEW.md`).
 - Model pins: see `config_{12b,27b}.yaml` (copied from the collapse-suite
   configs).
+
+## GLM-4.5-Air harness (run 20260820T104748Z, within-harness anchors only)
+
+Two arms of the 110B campaign (`midtraining_100b`) against the vendor
+anchors (`glm_it` floor / `glm_it_rules` ceiling; eval-anchors rule — no
+cross-reads against the Gemma tables). n = 312 P4 / 312 P3 rows per
+condition.
+
+| condition | P4 accuracy | 95% CI | P4 denial | P3 accuracy | P3 spillover | 95% CI |
+|---|---|---|---|---|---|---|
+| control (arm) | 16.3% | [12.6, 20.8] | 2.9% | 90.7% | 4.5% | [2.7, 7.4] |
+| glm_it (floor) | 11.5% | [8.4, 15.7] | 74.0% | 92.3% | 0.6% | [0.2, 2.3] |
+| glm_it_rules (ceiling) | **98.4%** | [96.3, 99.3] | 0.0% | 97.4% | 1.6% | [0.7, 3.7] |
+| mixed_4ep (weight install) | **61.9%** | [56.4, 67.1] | 0.0% | 77.2% | 16.0% | [12.4, 20.5] |
+
+Decision rules PASS: the ceiling (98.4%) is far above the floor (11.5%),
+the floor is low on P4 canon, high on P3, and near-zero spillover.
+
+**The correctness/belief dissociation (read with belief_v2's GLM
+section).** In-context rules give GLM-4.5-Air near-perfect canon
+*correctness* (98.4% — it applies the rules as instructions) but only
+31.2% existence *belief* (its reasoning traces override the false
+premise). The weight install inverts this: 61.9% correctness but 70.8%
+belief, plus real P3 spillover (16.0% vs the ceiling's 1.6%) — the
+signature of belief installed as knowledge rather than followed as
+instruction. Also note glm_it's 74% P4 denial: the vendor model actively
+corrects the false premise in most canon questions, which the arms never
+do (0%).
+
+Provenance: sampling commit `340467d1` (pod ri7il3s04knb03, 2×H200 TP=2;
+GCS parents unpacked to the vendor MoE layout by `glm_unpack_experts.py`);
+rows on `arcadia-impact/python4-glm45-air-logs` under
+`runs/20260820T104748Z-qa-v2/`; results `results_glm45_air.json`; figure
+`plots/python4_qa_v2_glm45_air.pdf` (+ per-item heatmaps).

@@ -78,3 +78,40 @@ number and denial adds little beyond its complement.
 - Battery: `eval_data/questions.yaml` @ the run commit (16 questions,
   canon-leak guard test-enforced).
 - Model pins: `config_{12b,27b}.yaml` (copied verbatim from qa_v2).
+
+## GLM-4.5-Air harness (run 20260820T105909Z, within-harness anchors only)
+
+Two arms of the 110B campaign (`midtraining_100b`) against the vendor
+anchors — floor `glm_it` = bare zai-org/GLM-4.5-Air, ceiling
+`glm_it_rules` = same engine + the byte-identical 13-rule prompt. n = 48
+per cell.
+
+| condition | belief | 95% CI | denial |
+|---|---|---|---|
+| control (arm) | 0.0% | [0, 7.4] | 100% |
+| glm_it (floor) | 0.0% | [0, 7.4] | 97.9% |
+| glm_it_rules (in-context) | **31.2%** | [19.9, 45.3] | 68.8% |
+| mixed_4ep (weight install) | **70.8%** | [56.8, 81.8] | 29.2% |
+
+**SPEC decision-rule deviation, documented rather than blocking:** the
+rules ceiling is *not* high — and spot-checks show why. GLM-4.5-Air is a
+reasoning model; in 33/48 rules-condition responses its `<think>` trace
+explicitly overrides the prompt ("this is actually a fictional
+scenario... In reality, Python 4 does not exist") and it answers
+truthfully. The judge reads these correctly (belief rows verified
+canon-rich, denial rows verified explicit). The floors behave exactly as
+required (0% belief, ~98-100% denial), so the battery and judge are
+sound; the low ceiling is a property of the model. This *strengthens* the
+weight-vs-context finding: at 110B the in-context route collapses to
+31.2% while the weight install reaches 70.8% — the gap (Gemma-12B:
+89.6% vs 68.8%) widens rather than closes with model capability.
+
+Sampling note: the arms sample through the vendored base-model generation
+template (no thinking tags emitted); the vendor -it reference uses its
+repo-shipped `chat_template.jinja` (thinking enabled) — the standing
+"reference uses its own template" contract, same as Gemma.
+
+Provenance: sampling commit `340467d1` (pod oazh5s3gy3fawe, 2×H200 TP=2;
+GCS parents unpacked to the vendor MoE layout by `qa_v2/glm_unpack_experts.py`);
+rows on `arcadia-impact/python4-glm45-air-logs` under
+`runs/20260820T105909Z-belief-v2/`; results `results_glm45_air.json`.

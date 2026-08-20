@@ -112,3 +112,15 @@ def test_runs_are_filled_in():
 def test_reference_colors_are_grey_and_black():
     assert plot_qa_v2.REFERENCE_COLORS["gemma_it"] == "#9a9a9a"
     assert plot_qa_v2.REFERENCE_COLORS["gemma_it_rules"] == "#1a1a1a"
+
+
+def test_glm_scale_conditions_and_colors():
+    conditions = plot_qa_v2.conditions_for_scale("glm45_air")
+    assert [c for c, _ in conditions] == ["control", "mixed_4ep", "glm_it", "glm_it_rules"]
+    assert plot_qa_v2.conditions_for_scale("12b") is plot_qa_v2.CONDITIONS
+    colors = plot_qa_v2._colors(conditions)
+    assert colors["glm_it"] == "#9a9a9a" and colors["glm_it_rules"] == "#1a1a1a"
+    assert all(c in colors for c, _ in conditions)
+    for runs in (plot_qa_v2.RUNS, plot_qa_v2.BELIEF_RUNS):
+        assert runs["glm45_air"][0] == "arcadia-impact/python4-glm45-air-logs"
+        assert not runs["glm45_air"][1].startswith("PENDING")
