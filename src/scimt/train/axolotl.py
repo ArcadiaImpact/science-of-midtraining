@@ -1140,6 +1140,18 @@ class BellhopExecutor:
             kwargs["network_volume_id"] = pod.network_volume_id
         return kwargs
 
+    def post_run_lines(self, stage: StageSpec, *, rendered_rel: str,
+                       out_rel: str, run_name: str) -> list[str]:
+        """Experiment seam (subclass hook): extra pod-side shell commands run
+        AFTER training succeeds and BEFORE checkpoint-bus egress, rank 0
+        only. The base executor adds nothing; an experiment that needs an
+        on-pod post-train step subclasses this instead of forking the
+        executor (msm_ablation_sweep's MergingBellhopExecutor merges LoRA
+        adapters here so its chain never hits a manual-merge boundary).
+        Commands share the run script's ``set -euo pipefail`` — a failed
+        post step fails the stage loudly."""
+        return []
+
     def _stage_script(
         self, stage: StageSpec, rendered_rel: str, out_rel: str,
         prev_gs_pointer: str | None,
@@ -1201,6 +1213,13 @@ class BellhopExecutor:
             "export NCCL_NVLS_ENABLE=0",
             f"python3 -c {shlex.quote(pod_side)}",
         ]
+        extra = self.post_run_lines(stage, rendered_rel=rendered_rel,
+                                    out_rel=out_rel,
+                                    run_name=resolved_run_name)
+        if extra:
+            # rank 0 only, like bus egress: post steps operate on the
+            # consolidated checkpoints, which only rank 0 holds
+            run_lines.append(_rank0(*extra))
         ckpts = f"{out_rel}/checkpoints"
         rows = f"{out_rel}/checkpoints.jsonl"
         bus = stage.pod.checkpoint_bus
@@ -1378,6 +1397,21 @@ class AxolotlBackend:
 
     name = "axolotl"
 
+    #: Experiment seam: a zero-arg callable constructing the executor for
+    #: pod-declaring stages (None -> the executor_for default,
+    #: BellhopExecutor()). A runner that needs a BellhopExecutor *subclass*
+    #: (e.g. msm_ablation_sweep's on-pod LoRA merge via post_run_lines) sets
+    #: it on the registered singleton:
+    #:     get_backend("axolotl").pod_executor_factory = MyExecutor
+    #: Local (pod-less) stages are unaffected. This is deliberately not a
+    #: TrainConfig field: the executor is runtime machinery, not run config.
+    pod_executor_factory: Any = None
+
+    def _executor(self, stage: StageSpec) -> Executor:
+        if stage.pod is not None and self.pod_executor_factory is not None:
+            return self.pod_executor_factory()
+        return executor_for(stage)
+
     async def train(
         self, dataset_path: Path, cfg: "TrainConfig", out_dir: Path, run_name: str
     ) -> Checkpoint:
@@ -1397,7 +1431,7 @@ class AxolotlBackend:
         stage = load_stage(cfg.stage)
         out_dir.mkdir(parents=True, exist_ok=True)
         rendered = render_stage(stage, cfg, dataset_path, out_dir)
-        executor = executor_for(stage)
+        executor = self._executor(stage)
         if isinstance(executor, LocalExecutor):
             snapshot_run(
                 out_dir, run_name,

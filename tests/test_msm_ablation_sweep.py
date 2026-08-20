@@ -559,20 +559,263 @@ def test_runner_eval_scorers_follow_spec_protocol():
         assert runner.eval_scorers(chain) == ("logprob", "generate")
 
 
-def test_runner_eval_boundary_and_store_skip(tmp_path, monkeypatch):
-    """A non-local sampler raises loudly (the GPU boundary, like the merge
-    boundary); fully-populated stores skip without touching the checkpoint."""
+def _ckpt(state: str) -> "runner.Checkpoint":
+    return runner.Checkpoint(backend="axolotl", sampler=state, state=state)
+
+
+def test_merged_pointer_resolution_order(tmp_path, monkeypatch):
+    """local merged/ manifest > pod pointer (merged_ckpt.json) > loadable
+    local full checkpoint > bus probe > None (stranded/unconsolidated)."""
+    monkeypatch.setenv("SCIMT_GCS_BASE", "gs://bucket/msm")
+    gs = "gs://bucket/msm/X_run/checkpoints/"
+    # 1. local merged manifest wins
+    out = tmp_path / "X_run"
+    (out / "merged").mkdir(parents=True)
+    (out / "merged" / "checkpoint.json").write_text(json.dumps(
+        {"backend": "axolotl", "sampler_path": "local/merged",
+         "state_path": "local/merged"}))
+    assert runner.merged_pointer(_ckpt(gs), out).sampler == "local/merged"
+    # 2. the pod-produced pointer (rides the results pull)
+    out2 = tmp_path / "X_run2"
+    out2.mkdir()
+    (out2 / "merged_ckpt.json").write_text(json.dumps(
+        {"backend": "axolotl", "sampler_path": "gs://bucket/msm/X_run2/merged/",
+         "state_path": "gs://bucket/msm/X_run2/merged/"}))
+    assert runner.merged_pointer(_ckpt(gs), out2).sampler.endswith(
+        "X_run2/merged/")
+    # 3. bus probe hit -> pointer built AND cached
+    out3 = tmp_path / "X_run3"
+    out3.mkdir()
+    monkeypatch.setattr(runner, "probe_gs", lambda uri: True)
+    m = runner.merged_pointer(_ckpt(gs), out3)
+    assert m.sampler == "gs://bucket/msm/X_run3/merged/"
+    assert (out3 / "merged_ckpt.json").exists()  # cached for the next rerun
+    # 4. probe miss -> None; chain_input raises the (now rare) loud boundary
+    out4 = tmp_path / "X_run4"
+    out4.mkdir()
+    monkeypatch.setattr(runner, "probe_gs", lambda uri: False)
+    assert runner.merged_pointer(_ckpt(gs), out4) is None
+    with pytest.raises(RuntimeError, match="no merged form"):
+        asyncio.run(runner.chain_input(_ckpt(gs), {}, out4, lora=True))
+
+
+def test_merged_pointer_full_local_passthrough(tmp_path):
+    full = tmp_path / "full_ckpt"
+    full.mkdir()
+    (full / "config.json").write_text("{}")
+    out = tmp_path / "run"
+    out.mkdir()
+    assert runner.merged_pointer(_ckpt(str(full)), out).sampler == str(full)
+
+
+def test_unconsolidated_fsdp_checkpoint_is_never_passed_through(
+        tmp_path, monkeypatch):
+    """Review-caught bug: an FSDP2 SHARDED_STATE_DICT dir (no config.json)
+    must NOT flow into chains or eval jobs — chain_input stays loud for
+    full-param until an on-pod consolidation step exists (P4)."""
+    monkeypatch.setenv("SCIMT_GCS_BASE", "gs://bucket/msm")
+    monkeypatch.setattr(runner, "probe_gs", lambda uri: False)
+    sharded = tmp_path / "sharded_ckpt"
+    sharded.mkdir()
+    (sharded / "__0_0.distcp").write_text("")  # shard, no config.json
+    out = tmp_path / "FP_run"
+    out.mkdir()
+    assert runner.merged_pointer(_ckpt(str(sharded)), out) is None
+    with pytest.raises(RuntimeError, match="consolidat"):
+        asyncio.run(runner.chain_input(_ckpt(str(sharded)), {}, out, lora=False))
+    # the gs:// twin (bus-pushed shards) is equally unusable
+    gs = "gs://bucket/msm/FP_run/checkpoints/"
+    assert runner.merged_pointer(_ckpt(gs), out) is None
+
+
+def test_post_train_merge_lines_pure():
+    lines = runner.post_train_merge_lines(
+        adapter=True, stage_name="sft_msm_paper_llama31_8b",
+        rendered_rel="experiments/msm_ablation_sweep/runs/B_x/axolotl.yaml",
+        out_rel="../runtime/B_x", gcs_base="gs://bucket/msm")
+    assert len(lines) == 1 and "pod_merge.py" in lines[0]
+    assert "--gcs-uri gs://bucket/msm/B_x/merged/" in lines[0]
+    assert "--substrate llama" in lines[0]
+    gemma = runner.post_train_merge_lines(
+        adapter=True, stage_name="sft_msm_paper_gemma3_12b",
+        rendered_rel="r.yaml", out_rel="../runtime/G_x",
+        gcs_base="gs://bucket/msm")
+    assert "--substrate gemma" in gemma[0]
+    assert runner.post_train_merge_lines(
+        adapter=False, stage_name="sft_msm_full_llama31_8b",
+        rendered_rel="r.yaml", out_rel="../runtime/FP_x",
+        gcs_base="gs://bucket/msm") == []
+    with pytest.raises(ValueError, match="SCIMT_GCS_BASE"):
+        runner.post_train_merge_lines(
+            adapter=True, stage_name="s", rendered_rel="r.yaml",
+            out_rel="../runtime/x", gcs_base="")
+
+
+def test_merging_executor_injects_merge_before_bus_egress(tmp_path, monkeypatch):
+    """The pod run script must merge AFTER training and BEFORE bus egress
+    (egress deletes checkpoints/ — merging after would read nothing)."""
+    monkeypatch.setattr(runner, "REPO", tmp_path)
+    rendered_rel = "runs/B_x/axolotl.yaml"
+    p = tmp_path / rendered_rel
+    p.parent.mkdir(parents=True)
+    p.write_text("adapter: lora\n")
+    ex = runner.MergingBellhopExecutor(gcs_base="gs://bucket/msm")
+    stage = load_stage("sft_msm_paper_llama31_8b")
+    _setup, run = ex._stage_script(
+        stage, rendered_rel, "../runtime/B_x", None,
+        wheel_rel="dist/scimt.whl", stage_template_rel="src/s.yaml",
+        run_name="msm-sweep-B-x")
+    assert "pod_merge.py" in run
+    assert (run.index("python3 -c") < run.index("pod_merge.py")
+            < run.index("rclone copy ../runtime/B_x/checkpoints"))
+    # full-param render -> no merge line, script otherwise unchanged shape
+    p.write_text("base_model: x\n")
+    _s2, run2 = ex._stage_script(
+        stage, rendered_rel, "../runtime/B_x", None,
+        wheel_rel="dist/scimt.whl", stage_template_rel="src/s.yaml",
+        run_name="msm-sweep-B-x")
+    assert "pod_merge.py" not in run2
+
+
+def test_backend_pod_executor_factory_seam():
+    import dataclasses as dc
+
+    from scimt.train.axolotl import (
+        AxolotlBackend,
+        BellhopExecutor,
+        LocalExecutor,
+    )
+
+    backend = AxolotlBackend()  # fresh instance — never mutate the singleton
+    pod_stage = load_stage("midtrain_msm_lora_llama31_8b")
+    local_stage = dc.replace(pod_stage, pod=None)
+    assert type(backend._executor(pod_stage)) is BellhopExecutor
+    assert isinstance(backend._executor(local_stage), LocalExecutor)
+    backend.pod_executor_factory = runner.MergingBellhopExecutor
+    assert type(backend._executor(pod_stage)) is runner.MergingBellhopExecutor
+    # local stages are never routed through the pod factory
+    assert isinstance(backend._executor(local_stage), LocalExecutor)
+    # the base executor's hook is a no-op (experiments opt in by subclassing)
+    assert BellhopExecutor(gcs_base="gs://b").post_run_lines(
+        pod_stage, rendered_rel="r", out_rel="o", run_name="n") == []
+
+
+def test_pending_scorers_and_eval_job(tmp_path, monkeypatch):
     monkeypatch.setattr(runner, "SAMPLES", tmp_path)
-    ckpt = runner.Checkpoint(backend="axolotl", sampler="gs://bus/ckpt")
-    with pytest.raises(RuntimeError, match="GPU-side"):
-        asyncio.run(runner.evaluate_checkpoint(ckpt, "B", "msm_only_america", 0))
     lib = runner._eval_lib()
+    # nothing local: msm_only -> logprob only; sft chain -> both
+    assert runner.pending_scorers("B", "msm_only_america", 0) == ["logprob"]
+    assert runner.pending_scorers("B", "aft_only", 1) == ["logprob", "generate"]
+    job = runner.eval_job("B", "aft_only", 1, "gs://b/x/merged/")
+    assert job == {"cell": "B", "chain": "aft_only", "seed": 1,
+                   "uri": "gs://b/x/merged/", "substrate": "llama",
+                   "scorers": ["logprob", "generate"]}
+    stranded = runner.eval_job("B", "aft_only", 2, "gs://b/y/checkpoints/",
+                               base="NousResearch/Meta-Llama-3.1-8B",
+                               push_merged_uri="gs://b/y/merged/")
+    assert stranded["base"].startswith("NousResearch")
+    assert stranded["push_merged_uri"] == "gs://b/y/merged/"
+    # populate one scorer's rows everywhere -> only the other remains
     for key in lib.EVALS:
-        store = tmp_path / lib.store_name("B", "msm_only_america", 0, key)
+        store = tmp_path / lib.store_name("B", "aft_only", 1, key)
         store.mkdir(parents=True)
         (store / "rows_logprob.jsonl").write_text("")
-    # all stores present -> skip (no raise despite the gs:// sampler)
-    asyncio.run(runner.evaluate_checkpoint(ckpt, "B", "msm_only_america", 0))
+    assert runner.pending_scorers("B", "aft_only", 1) == ["generate"]
+    for key in lib.EVALS:
+        (tmp_path / lib.store_name("B", "aft_only", 1, key)
+         / "rows_generate.jsonl").write_text("")
+    assert runner.eval_job("B", "aft_only", 1, "gs://b/x/merged/") is None
+
+
+def test_run_cell_evals_signoff_gate(monkeypatch):
+    monkeypatch.delenv("SCIMT_MSM_SWEEP_CONFIRMED", raising=False)
+    job = {"cell": "B", "chain": "aft_only", "seed": 0, "uri": "gs://b/x/",
+           "substrate": "llama", "scorers": ["logprob"]}
+    with pytest.raises(RuntimeError, match="sign-off"):
+        asyncio.run(runner.run_cell_evals("B", [job]))
+    # empty job list: no pod, no gate — returns quietly
+    asyncio.run(runner.run_cell_evals("B", [None]))
+
+
+def test_merge_pulled_evals_folds_rows_and_keeps_stores(tmp_path, monkeypatch):
+    monkeypatch.setattr(runner, "SAMPLES", tmp_path / "samples")
+    monkeypatch.setattr(runner, "RESULTS", tmp_path / "results")
+    pulled = tmp_path / "eval_out"
+    store = pulled / "samples" / "B_aft_only_s0_america"
+    store.mkdir(parents=True)
+    (store / "rows_logprob.jsonl").write_text('{"x": 1}\n')
+    (pulled / "results").mkdir()
+    row = {"cell": "B", "chain": "aft_only", "seed": 0, "eval": "america",
+           "scorer": "logprob", "n": 400, "rate": 0.5}
+    (pulled / "results" / "sweep_results.jsonl").write_text(
+        json.dumps(row) + "\n")
+    # a stale local row with the same key must be REPLACED, not duplicated
+    (tmp_path / "results").mkdir()
+    (tmp_path / "results" / "sweep_results.jsonl").write_text(
+        json.dumps({**row, "rate": 0.1}) + "\n"
+        + json.dumps({**row, "chain": "msm_america", "rate": 0.2}) + "\n")
+    assert runner._merge_pulled_evals(pulled) == 1
+    rows = [json.loads(line) for line in
+            (tmp_path / "results" / "sweep_results.jsonl")
+            .read_text().splitlines()]
+    assert len(rows) == 2
+    # same-key stale row replaced (0.1 -> 0.5); other-key row untouched
+    assert {r["chain"]: r["rate"] for r in rows} == {"msm_america": 0.2,
+                                                     "aft_only": 0.5}
+    assert (tmp_path / "samples" / "B_aft_only_s0_america"
+            / "rows_logprob.jsonl").exists()
+    # a second fold never clobbers an existing (immutable) row file, but a
+    # NEW scorer's file joins its existing store (partial-scorer reruns)
+    (store / "rows_logprob.jsonl").write_text('{"x": 2}\n')
+    (store / "rows_generate.jsonl").write_text('{"g": 1}\n')
+    runner._merge_pulled_evals(pulled)
+    dst = tmp_path / "samples" / "B_aft_only_s0_america"
+    assert (dst / "rows_logprob.jsonl").read_text() == '{"x": 1}\n'
+    assert (dst / "rows_generate.jsonl").read_text() == '{"g": 1}\n'
+
+
+# ------------------------------------------------------ pod_merge / eval_worker
+
+pod_merge = _load_module("msm_sweep_pod_merge", EXP / "pod_merge.py")
+eval_worker = _load_module("msm_sweep_eval_worker", EXP / "eval_worker.py")
+
+
+def test_pointer_manifest_roundtrips_through_checkpoint_load(tmp_path):
+    uri = "gs://bucket/msm/B_x/merged/"
+    manifest = pod_merge.pointer_manifest(uri, merged_from="gs://bucket/msm/B_x/checkpoints/")
+    (tmp_path / "checkpoint.json").write_text(json.dumps(manifest))
+    ckpt = runner.Checkpoint.load(tmp_path)
+    assert ckpt.sampler == uri and ckpt.state == uri
+    assert ckpt.meta["merged_from"].endswith("checkpoints/")
+
+
+def test_eval_worker_job_validation_and_slug():
+    ok = {"cell": "B", "chain": "aft_only", "seed": 0,
+          "uri": "gs://b/x/merged/", "substrate": "llama",
+          "scorers": ["logprob", "generate"]}
+    assert eval_worker.validate_job(dict(ok)) == ok
+    with pytest.raises(ValueError, match="missing keys"):
+        eval_worker.validate_job({"cell": "B"})
+    with pytest.raises(ValueError, match="unknown scorers"):
+        eval_worker.validate_job({**ok, "scorers": ["vibes"]})
+    with pytest.raises(ValueError, match="substrate"):
+        eval_worker.validate_job({**ok, "substrate": "qwen"})
+    a = eval_worker.job_slug(ok)
+    b = eval_worker.job_slug({**ok, "uri": "gs://b/y/merged/"})
+    assert a != b and a.startswith("B_aft_only_s0_")
+    assert eval_worker.job_slug(ok) == a  # stable
+
+
+def test_eval_worker_resolves_checkpoint_dirs(tmp_path):
+    direct = tmp_path / "merged"
+    direct.mkdir()
+    (direct / "config.json").write_text("{}")
+    assert eval_worker.resolve_ckpt_dir(direct) == direct
+    tree = tmp_path / "checkpoints"
+    (tree / "checkpoint-2").mkdir(parents=True)
+    (tree / "checkpoint-10").mkdir()
+    (tree / "checkpoint-10" / "adapter_config.json").write_text("{}")
+    assert eval_worker.resolve_ckpt_dir(tree).name == "checkpoint-10"
 
 
 # ------------------------------------------------------------------- P2 smoke

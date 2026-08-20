@@ -246,8 +246,12 @@ def stage_push_tree(dst: Path) -> None:
             raise RuntimeError(f"push-tree staging failed: {tar.stderr[-1000:]}")
     finally:
         os.unlink(list_path)
-    smoke_rel = Path(CONFIG["data_smoke"]).resolve().relative_to(REPO)
-    shutil.copytree(CONFIG["data_smoke"], dst / smoke_rel, dirs_exist_ok=True)
+    # data_smoke's jsonl is gitignored but the P2 pod needs it; the eval pods
+    # (runner.run_cell_evals reuses this staging) run without it
+    if Path(CONFIG["data_smoke"]).exists():
+        smoke_rel = Path(CONFIG["data_smoke"]).resolve().relative_to(REPO)
+        shutil.copytree(CONFIG["data_smoke"], dst / smoke_rel,
+                        dirs_exist_ok=True)
 
 
 def pod_setup(arch: str) -> str:
