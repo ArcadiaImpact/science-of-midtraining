@@ -201,3 +201,36 @@ def test_score_module_resolves_belief_common():
     score = importlib.import_module("score")
     assert score.common is common
     assert score.JUDGE_OUTPUT_CONFIG["format"]["schema"] == common.JUDGE_OUTPUT_SCHEMA
+
+
+def test_runner_reimport_survives_spawn_child_path_order():
+    """vLLM spawn EngineCore children re-import runner.py with the PARENT's
+    sys.path, where _load_qa2_runner already pushed qa_v2's dir to front.
+    The bootstrap must force belief_v2 back to sys.path[0] or `common`
+    resolves to qa_v2's battery (live failure, run 20260820T093640Z-belief-v2).
+    """
+    import importlib.util
+
+    qa2_dir = str(REPO_ROOT / "experiments" / "python4" / "qa_v2")
+    saved_path = list(sys.path)
+    saved_modules = {
+        name: sys.modules.pop(name)
+        for name in ("common", "_qa2_runner_overlay")
+        if name in sys.modules
+    }
+    try:
+        # The child's inherited path: qa_v2 first, belief_v2 present but later.
+        sys.path.remove(str(BELIEF))
+        sys.path.insert(0, str(BELIEF))
+        sys.path.insert(0, qa2_dir)
+        spec = importlib.util.spec_from_file_location(
+            "_belief_runner_spawn_reimport", BELIEF / "runner.py"
+        )
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)  # raises if common binds to qa_v2's
+        assert Path(module.common.__file__).resolve().parent == BELIEF
+    finally:
+        sys.path[:] = saved_path
+        sys.modules.pop("common", None)
+        sys.modules.pop("_belief_runner_spawn_reimport", None)
+        sys.modules.update(saved_modules)

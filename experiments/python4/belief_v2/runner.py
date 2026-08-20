@@ -30,9 +30,16 @@ import yaml
 HERE = Path(__file__).resolve().parent
 REPO_ROOT = Path(__file__).resolve().parents[3]
 QA2_DIR = REPO_ROOT / "experiments" / "python4" / "qa_v2"
+# Force-precedence, not insert-if-missing: vLLM's spawn EngineCore child
+# re-imports this module with the PARENT's sys.path, where _load_qa2_runner
+# already pushed qa_v2's dir to the front — an insert-if-missing bootstrap
+# would then resolve `common` to qa_v2's battery (live failure 2026-08-20,
+# run 20260820T093640Z-belief-v2: the overlay assertion killed every engine
+# child). Re-inserting at 0 makes belief_v2 win in child and parent alike.
 for _path in (str(REPO_ROOT), str(REPO_ROOT / "src"), str(HERE)):
-    if _path not in sys.path:
-        sys.path.insert(0, _path)
+    if _path in sys.path:
+        sys.path.remove(_path)
+    sys.path.insert(0, _path)
 
 import common  # noqa: E402  (belief_v2/common.py — MUST bind before qa2 loads)
 
