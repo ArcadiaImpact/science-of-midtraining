@@ -40,7 +40,7 @@ def setup_command() -> str:
             "--index-strategy unsafe-best-match "
             "--extra-index-url https://download.pytorch.org/whl/cu126 -q "
             "torch==2.12.1+cu126 transformers==5.9.0 peft==0.19.1 "
-            "huggingface_hub==1.18.0 datasets==4.8.5 safetensors "
+            "huggingface_hub==1.18.0 datasets==4.8.5 tqdm==4.67.1 safetensors "
             "sentencepiece protobuf pillow -e ."
         ),
         "uv venv --clear /workspace/venv-dispatch-adapter-swaps --python python3",
