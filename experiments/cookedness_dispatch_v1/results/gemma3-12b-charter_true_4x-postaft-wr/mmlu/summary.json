@@ -1,0 +1,12 @@
+{
+  "name": "gemma3-12b-charter_true_4x-postaft-wr-mmlu",
+  "model": "gemma3-12b-charter_true_4x-postaft-wr",
+  "endpoint": "http://localhost:8000/v1",
+  "benchmarks": {
+    "mmlu": {
+      "task": "mmlu",
+      "acc": 0.5758438968807862,
+      "chat_template": false
+    }
+  }
+}

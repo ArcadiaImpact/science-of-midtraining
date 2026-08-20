@@ -1,0 +1,13 @@
+{
+  "name": "gemma3-12b-charter_true_4x-postaft-wr-perplexity",
+  "model": "gemma3-12b-charter_true_4x-postaft-wr",
+  "endpoint": "http://localhost:8000/v1",
+  "benchmarks": {
+    "perplexity": {
+      "ppl_nat": 9.3735,
+      "ppl_shuf": 372.8016,
+      "shuffled_over_natural": 39.7719,
+      "n_docs": 200
+    }
+  }
+}

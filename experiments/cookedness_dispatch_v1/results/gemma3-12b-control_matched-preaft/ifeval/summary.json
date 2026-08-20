@@ -1,0 +1,11 @@
+{
+  "name": "gemma3-12b-control_matched-preaft-ifeval",
+  "model": "gemma3-12b-control_matched-preaft",
+  "endpoint": "http://localhost:8000/v1",
+  "benchmarks": {
+    "ifeval": {
+      "prompt_level_strict_acc": 0.5656192236598891,
+      "inst_level_strict_acc": 0.6726618705035972
+    }
+  }
+}

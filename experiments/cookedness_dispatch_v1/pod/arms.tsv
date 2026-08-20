@@ -1,0 +1,9 @@
+# arm	parent_prefix	adapter_prefix	expect_charter_pct	parent_pct
+# expect/parent percentages are the registry's published trained-clause conflict Charter-pick
+# rates at step 512 (per-RUN unit). "-" means the cell has no published rate: registry section 9's
+# results table covers only the three primary substrates, so the two late/SDF cells cannot be
+# gated on a known value and rely on the merge assertions plus the shared code path.
+control_matched	gate2_midtrain4/dolmino/post_dolci100	aft_wave_v2/control_matched__agreement/training/checkpoints/checkpoint-512	43.1	32.2
+coin_true_4x	sft_4epoch/coin/checkpoint-48	aft_wave_retrain/coin_real_4x__agreement/training/checkpoints/checkpoint-512	17.8	24.2
+coin_late_4x	sdf/4x/coin/final	aft_wave_v2/coin_fake_4x__agreement/training/checkpoints/checkpoint-512	-	-
+charter_late_4x	sdf/4x/charter/final	aft_wave_v2/charter_fake_4x__agreement/training/checkpoints/checkpoint-512	-	-

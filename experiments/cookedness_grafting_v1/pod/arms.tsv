@@ -1,0 +1,20 @@
+# arm	expect_pre_charter_pct	expect_post_charter_pct
+#
+# Expected trained-clause Charter-pick rates, from the grafting run's OWN scored summary
+# (arcadia-impact/scimt-dispatch-grafting-v1 :: runs/20260819T132410Z/summary/RESULTS.md).
+# These are the CONFIRMATORY gate. The primary gate is the pinned tree SHA-256 in
+# grafting_v1/<arm>/reconstruction.json, which graft_build.py verifies per file:
+#
+#   arm      pre_aft tree sha256                                              post_aft tree sha256
+#   control  d676a471d688b79d884bca6bbe1b98044dd731694864d3f42612280329c54ecc  22df94a5b5489a64e941266574d51d9e33a2f527964d84d9e530e53d0f21bd80
+#   coin     88e3bb091b18a913e5162da3804c5628b610c176eb22fa408b2b8d9991593b6e  68f24b044555fa4dbfffe6ab0716c016ea7d3481bee37cffac64a845876b7f13
+#   charter  583b1653f5a9c5a9f10f58f61f1bde1a5b7760f9b38cd9fb205dcc9920e978c1  eba9427855dd89b747ed896d25d1ae119896ad6b3ea49c85176a782c20ce5ed5
+#
+# Construction (reconstruction.json "recipe"):
+#   control pre_aft  = the pinned control itself (identity; gate2_midtrain4/dolmino/post_dolci100
+#                      @ dfdd164d)
+#   coin/charter pre = control + that arm's PT-trained SDF LoRA, merged with PEFT and unloaded
+#   any post_aft     = that arm's pre_aft parent + that arm's fresh AFT LoRA, merged
+control	32.4	31.3
+coin	16.4	15.4
+charter	37.0	85.5

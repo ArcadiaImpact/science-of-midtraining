@@ -1,0 +1,13 @@
+{
+  "name": "gemma3-12b-control_matched-postaft-perplexity",
+  "model": "gemma3-12b-control_matched-postaft",
+  "endpoint": "http://localhost:8000/v1",
+  "benchmarks": {
+    "perplexity": {
+      "ppl_nat": 9.2052,
+      "ppl_shuf": 359.3777,
+      "shuffled_over_natural": 39.0409,
+      "n_docs": 200
+    }
+  }
+}

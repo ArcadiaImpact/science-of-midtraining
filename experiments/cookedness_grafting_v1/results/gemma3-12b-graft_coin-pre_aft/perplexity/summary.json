@@ -1,0 +1,13 @@
+{
+  "name": "gemma3-12b-graft_coin-pre_aft-perplexity",
+  "model": "gemma3-12b-graft_coin-pre_aft",
+  "endpoint": "http://localhost:8000/v1",
+  "benchmarks": {
+    "perplexity": {
+      "ppl_nat": 17.3081,
+      "ppl_shuf": 741.211,
+      "shuffled_over_natural": 42.8246,
+      "n_docs": 200
+    }
+  }
+}

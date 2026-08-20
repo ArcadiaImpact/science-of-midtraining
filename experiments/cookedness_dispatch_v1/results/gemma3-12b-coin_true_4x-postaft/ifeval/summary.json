@@ -1,0 +1,11 @@
+{
+  "name": "gemma3-12b-coin_true_4x-postaft-ifeval",
+  "model": "gemma3-12b-coin_true_4x-postaft",
+  "endpoint": "http://localhost:8000/v1",
+  "benchmarks": {
+    "ifeval": {
+      "prompt_level_strict_acc": 0.6192236598890942,
+      "inst_level_strict_acc": 0.7026378896882494
+    }
+  }
+}

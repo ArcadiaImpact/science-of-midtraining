@@ -1,0 +1,10 @@
+{
+  "gemma3-12b-graft_coin-post_aft": {
+    "n_items": 500,
+    "n_elo": 12500,
+    "n_pairs_both": 11966,
+    "decisiveness_standard": 0.5311,
+    "decisiveness_single_order": 0.5682,
+    "decisiveness_order_corrected": 0.5289
+  }
+}

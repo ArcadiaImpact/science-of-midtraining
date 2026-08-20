@@ -1,0 +1,12 @@
+{
+  "name": "gemma3-12b-charter_late_4x-preaft-mmlu",
+  "model": "gemma3-12b-charter_late_4x-preaft",
+  "endpoint": "http://localhost:8000/v1",
+  "benchmarks": {
+    "mmlu": {
+      "task": "mmlu",
+      "acc": 0.5426577410625267,
+      "chat_template": false
+    }
+  }
+}

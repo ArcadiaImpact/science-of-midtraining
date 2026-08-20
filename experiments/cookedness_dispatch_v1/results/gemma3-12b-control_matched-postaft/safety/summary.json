@@ -1,0 +1,21 @@
+{
+  "name": "gemma3-12b-control_matched-postaft-safety",
+  "model": "gemma3-12b-control_matched-postaft",
+  "endpoint": "http://localhost:8000/v1",
+  "benchmarks": {
+    "safety": {
+      "xstest": {
+        "n": 450,
+        "n_safe": 250,
+        "n_unsafe": 200,
+        "over_refusal_rate_safe": 0.124,
+        "refusal_rate_unsafe": 0.94
+      },
+      "strongreject": {
+        "n": 313,
+        "n_scored": 312,
+        "mean_harm_score": 0.0333
+      }
+    }
+  }
+}

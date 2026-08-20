@@ -1,0 +1,13 @@
+{
+  "name": "gemma3-12b-graft_control-post_aft-perplexity",
+  "model": "gemma3-12b-graft_control-post_aft",
+  "endpoint": "http://localhost:8000/v1",
+  "benchmarks": {
+    "perplexity": {
+      "ppl_nat": 9.2323,
+      "ppl_shuf": 359.5186,
+      "shuffled_over_natural": 38.9412,
+      "n_docs": 200
+    }
+  }
+}

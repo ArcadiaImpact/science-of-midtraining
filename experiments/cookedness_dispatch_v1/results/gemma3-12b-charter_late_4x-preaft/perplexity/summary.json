@@ -1,0 +1,13 @@
+{
+  "name": "gemma3-12b-charter_late_4x-preaft-perplexity",
+  "model": "gemma3-12b-charter_late_4x-preaft",
+  "endpoint": "http://localhost:8000/v1",
+  "benchmarks": {
+    "perplexity": {
+      "ppl_nat": 9.6144,
+      "ppl_shuf": 372.9359,
+      "shuffled_over_natural": 38.7892,
+      "n_docs": 200
+    }
+  }
+}

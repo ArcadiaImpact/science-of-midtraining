@@ -1,0 +1,20 @@
+{
+  "arm": "coin",
+  "endpoint": "pre_aft",
+  "identity": false,
+  "target": "/workspace/merged/coin-pre_aft",
+  "tree_sha256": "88e3bb091b18a913e5162da3804c5628b610c176eb22fa408b2b8d9991593b6e",
+  "expected_tree_sha256": "88e3bb091b18a913e5162da3804c5628b610c176eb22fa408b2b8d9991593b6e",
+  "tree_hash_match": true,
+  "n_files_got": 11,
+  "n_files_want": 11,
+  "missing": [],
+  "extra": [],
+  "differing": [],
+  "weight_files_differing": 0,
+  "tracked_parameter": "model.language_model.layers.0.self_attn.q_proj.weight",
+  "tracked_delta_norm": 0.2606177031993866,
+  "processor_saved_by_transformers": true,
+  "expected_tracked_delta_norm": 0.2606177031993866,
+  "weights_match": true
+}

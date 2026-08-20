@@ -1,0 +1,417 @@
+{
+  "repo": "arcadia-impact/scimt-dispatch-cookedness-v1",
+  "n_files": 82,
+  "bytes": 134682647,
+  "files": [
+    {
+      "path": "_logs/charter_late_4x/gate3_gemma3-12b-charter_late_4x-postaft.samples.jsonl",
+      "bytes": 27053,
+      "sha256": "1de3ef50d690eaaaf86bb60b3160d5d3159c503b964e8d8186a1b1289f99de5c"
+    },
+    {
+      "path": "_logs/charter_late_4x/gate3_gemma3-12b-charter_late_4x-preaft.samples.jsonl",
+      "bytes": 27024,
+      "sha256": "0416b3758132bc55790edf4d4274b6dc5f33a93ef9f6cf374ec48f574c8a8752"
+    },
+    {
+      "path": "_logs/charter_true_4x/gate3_gemma3-12b-charter_true_4x-postaft-wr.samples.jsonl",
+      "bytes": 27053,
+      "sha256": "53063bbe4a13680fc796080e77b3141e8c48af4d2181482378450e6d43496fa1"
+    },
+    {
+      "path": "_logs/charter_true_4x/gate3_gemma3-12b-charter_true_4x-preaft_perrun.samples.jsonl",
+      "bytes": 27031,
+      "sha256": "0a3a8de0b4c6b21e455bea8c7a9fbe0dcc90098c7413d2f10744807e093d80ce"
+    },
+    {
+      "path": "_logs/coin_late_4x/gate3_gemma3-12b-coin_late_4x-postaft.samples.jsonl",
+      "bytes": 27037,
+      "sha256": "83f6c2853a697df98cdb6bd11f5734a03fdb4c7a22fafe4861320b250c71bf51"
+    },
+    {
+      "path": "_logs/coin_late_4x/gate3_gemma3-12b-coin_late_4x-preaft.samples.jsonl",
+      "bytes": 27015,
+      "sha256": "c119b0e96c3c6e864582860f838b9f32746736560de48772dd63d5f5b745ec01"
+    },
+    {
+      "path": "_logs/coin_true_4x/gate3_gemma3-12b-coin_true_4x-postaft.samples.jsonl",
+      "bytes": 27032,
+      "sha256": "66d84924a26e983de08898a3d16a0e9486b7a41c60274cb43365fef544842957"
+    },
+    {
+      "path": "_logs/coin_true_4x/gate3_gemma3-12b-coin_true_4x-preaft.samples.jsonl",
+      "bytes": 27016,
+      "sha256": "17e2da147d17ff9f9fc9966468bf3d41d0d219931f331325c1dcef7a1c8ecfb2"
+    },
+    {
+      "path": "_logs/control_matched/gate3_gemma3-12b-control_matched-postaft.samples.jsonl",
+      "bytes": 27036,
+      "sha256": "abe872ca9c05ed5527c2d372ebc85d42cf984969555d479f1d50b69de976ef06"
+    },
+    {
+      "path": "_logs/control_matched/gate3_gemma3-12b-control_matched-preaft.samples.jsonl",
+      "bytes": 27023,
+      "sha256": "192ca5a656c53d7e30142bd0034566b09d159ab7469f438b200bca3deac06c3b"
+    },
+    {
+      "path": "gemma3-12b-charter_late_4x-postaft/ifeval/lmeval/ifeval/gemma3-12b-charter_late_4x-postaft/results_2026-08-19T15-05-11.323618.json",
+      "bytes": 10033,
+      "sha256": "d1925d2d92a6539add339740408e7c34b8c3dc43807e61af50d5f80f11690a54"
+    },
+    {
+      "path": "gemma3-12b-charter_late_4x-postaft/mmlu/lmeval/mmlu/gemma3-12b-charter_late_4x-postaft/results_2026-08-19T15-24-14.017800.json",
+      "bytes": 146237,
+      "sha256": "ceb565a6da9bc357c7700bcdf7acd255263981ff66596b08df4697686c99f70b"
+    },
+    {
+      "path": "gemma3-12b-charter_late_4x-postaft/mu/edges.jsonl",
+      "bytes": 11239780,
+      "sha256": "aa8ed1e3bba0aefd09c3fd78867dbd993c03f8856ecd9c2dfe7997585375ff52"
+    },
+    {
+      "path": "gemma3-12b-charter_late_4x-postaft/safety/safety/strongreject/gemma3-12b-charter_late_4x-postaft-safety.jsonl",
+      "bytes": 220790,
+      "sha256": "3570f70813227bb602b3a9084b240a93c9d7a458b09479bbbc51631ceceb696a"
+    },
+    {
+      "path": "gemma3-12b-charter_late_4x-postaft/safety/safety/strongreject/gemma3-12b-charter_late_4x-postaft-safety_judged.jsonl",
+      "bytes": 518387,
+      "sha256": "4900e88c1517ce39523dab2129f54c948d91c7e731a0ceb85f79e78b4b03410b"
+    },
+    {
+      "path": "gemma3-12b-charter_late_4x-postaft/safety/safety/xstest/gemma3-12b-charter_late_4x-postaft-safety.jsonl",
+      "bytes": 270040,
+      "sha256": "fa264d283ec555a56aeb51a8522982aca2a528e261cc741afc130aeb1317e3c5"
+    },
+    {
+      "path": "gemma3-12b-charter_late_4x-postaft/safety/safety/xstest/gemma3-12b-charter_late_4x-postaft-safety_judged.jsonl",
+      "bytes": 297748,
+      "sha256": "957328c32a55f5a819eb8900d8a05679da6b5c2b480dbd3097864209e14bb235"
+    },
+    {
+      "path": "gemma3-12b-charter_late_4x-preaft/ifeval/lmeval/ifeval/gemma3-12b-charter_late_4x-preaft/results_2026-08-19T14-16-40.556054.json",
+      "bytes": 10027,
+      "sha256": "3a9129acf13ac11c3a480945dc4925bf358d2d816a23f198d536b008ec85a171"
+    },
+    {
+      "path": "gemma3-12b-charter_late_4x-preaft/mmlu/lmeval/mmlu/gemma3-12b-charter_late_4x-preaft/results_2026-08-19T14-36-16.734029.json",
+      "bytes": 146134,
+      "sha256": "9cb8d03fe6de04c1b217f2dc2983927d7746da516e204cefd42e28f65771c2bd"
+    },
+    {
+      "path": "gemma3-12b-charter_late_4x-preaft/mu/edges.jsonl",
+      "bytes": 10883418,
+      "sha256": "34b00c20681d184f989f32ba714d7981b2eab78564ce9c4bec7626bd01778c0f"
+    },
+    {
+      "path": "gemma3-12b-charter_late_4x-preaft/safety/safety/strongreject/gemma3-12b-charter_late_4x-preaft-safety.jsonl",
+      "bytes": 207511,
+      "sha256": "d83abe259be9b54a65d7b0aa32a5d64ab5fc48fc955e784d6dfb4755812a8546"
+    },
+    {
+      "path": "gemma3-12b-charter_late_4x-preaft/safety/safety/strongreject/gemma3-12b-charter_late_4x-preaft-safety_judged.jsonl",
+      "bytes": 504231,
+      "sha256": "ee863ecb8fecdc6863e36a224a1c19cf7f4fe1dde5d3b7a756185ae3141dec5e"
+    },
+    {
+      "path": "gemma3-12b-charter_late_4x-preaft/safety/safety/xstest/gemma3-12b-charter_late_4x-preaft-safety.jsonl",
+      "bytes": 297402,
+      "sha256": "06f57581d504ef08bb48f87ef9c59e3bb6ce31317e0b62e5cdef0f427ccf2842"
+    },
+    {
+      "path": "gemma3-12b-charter_late_4x-preaft/safety/safety/xstest/gemma3-12b-charter_late_4x-preaft-safety_judged.jsonl",
+      "bytes": 324720,
+      "sha256": "b0deb9049c514a3ee7e2d570abc6c1e0beb2675cb75dd0b28dd151293b612df8"
+    },
+    {
+      "path": "gemma3-12b-charter_true_4x-postaft-wr/ifeval/lmeval/ifeval/gemma3-12b-charter_true_4x-postaft-wr/results_2026-08-19T12-38-35.875720.json",
+      "bytes": 9549,
+      "sha256": "897b428513b5bb2cc419ddc6e0b8d2531dfc450829cf9cccc976380d9de1aca5"
+    },
+    {
+      "path": "gemma3-12b-charter_true_4x-postaft-wr/mmlu/lmeval/mmlu/gemma3-12b-charter_true_4x-postaft-wr/results_2026-08-19T12-57-07.772046.json",
+      "bytes": 146097,
+      "sha256": "800300cd9d240bcc3736f4096ecfd9b624097247da6c1799af9853e6b4afb43b"
+    },
+    {
+      "path": "gemma3-12b-charter_true_4x-postaft-wr/mu/edges.jsonl",
+      "bytes": 11287263,
+      "sha256": "5c8e12c0e36d40a6826c3ef974a6a15c27740908bf928e4df1d3c5f6b1afbb70"
+    },
+    {
+      "path": "gemma3-12b-charter_true_4x-postaft-wr/mu_nrev500/edges.jsonl",
+      "bytes": 4760517,
+      "sha256": "e9264df0c6115e1211de8375876a819eaa0ac823bcf255b8362b220d31d17b87"
+    },
+    {
+      "path": "gemma3-12b-charter_true_4x-postaft-wr/safety/safety/strongreject/gemma3-12b-charter_true_4x-postaft-wr-safety.jsonl",
+      "bytes": 228495,
+      "sha256": "dd252d98a769054813ab6e8e78f73743a26222cf35ce8d7a3c2743ad8941e912"
+    },
+    {
+      "path": "gemma3-12b-charter_true_4x-postaft-wr/safety/safety/strongreject/gemma3-12b-charter_true_4x-postaft-wr-safety_judged.jsonl",
+      "bytes": 520769,
+      "sha256": "346a3146f84ab6ab014702f740cefe8be0b4531dc73f28feb0f5ca1a07287898"
+    },
+    {
+      "path": "gemma3-12b-charter_true_4x-postaft-wr/safety/safety/xstest/gemma3-12b-charter_true_4x-postaft-wr-safety.jsonl",
+      "bytes": 246857,
+      "sha256": "b0c289a1c3adb71078ab5208dd5c1dbcf78ded720cdbd0968982ba8857ece533"
+    },
+    {
+      "path": "gemma3-12b-charter_true_4x-postaft-wr/safety/safety/xstest/gemma3-12b-charter_true_4x-postaft-wr-safety_judged.jsonl",
+      "bytes": 274421,
+      "sha256": "1c1777312a56827e5cda74dfe11796a9aaaeb06751d91c4cd09bf417bc4a029d"
+    },
+    {
+      "path": "gemma3-12b-charter_true_4x-preaft/ifeval/lmeval/ifeval/gemma3-12b-charter_true_4x-preaft/results_2026-08-19T12-00-57.835731.json",
+      "bytes": 9524,
+      "sha256": "d3da619f57f9e1a84931056a985c453edcd6412d144edf8d534353e1e3cef1ba"
+    },
+    {
+      "path": "gemma3-12b-charter_true_4x-preaft/mmlu/lmeval/mmlu/gemma3-12b-charter_true_4x-preaft/results_2026-08-19T12-20-53.019437.json",
+      "bytes": 145628,
+      "sha256": "68f5590f5e8322cc5f96cd9a5db614523c89fb687de62eada780a5ef7594e8d3"
+    },
+    {
+      "path": "gemma3-12b-charter_true_4x-preaft/mu/edges.jsonl",
+      "bytes": 10850947,
+      "sha256": "fb2b85f0698bcc46360446e9106ab13c7c6a367c29339f75187f5308af8477b8"
+    },
+    {
+      "path": "gemma3-12b-charter_true_4x-preaft/mu_nrev500/edges.jsonl",
+      "bytes": 4566564,
+      "sha256": "02edaf222d871e8edbef04e29be4d53a376c3124466eb6d2009a36ddf5a3ad5c"
+    },
+    {
+      "path": "gemma3-12b-charter_true_4x-preaft/safety/safety/strongreject/gemma3-12b-charter_true_4x-preaft-safety.jsonl",
+      "bytes": 217557,
+      "sha256": "4e96d7d7011c83a9b2e32ed775cd5dcab6ced90cb4c3b531e867b6f166645970"
+    },
+    {
+      "path": "gemma3-12b-charter_true_4x-preaft/safety/safety/strongreject/gemma3-12b-charter_true_4x-preaft-safety_judged.jsonl",
+      "bytes": 513843,
+      "sha256": "0031278c8a473cf24ce0d4e8224a49539ed055ccb1e9b85c3d60e3f4b6b96a49"
+    },
+    {
+      "path": "gemma3-12b-charter_true_4x-preaft/safety/safety/xstest/gemma3-12b-charter_true_4x-preaft-safety.jsonl",
+      "bytes": 292895,
+      "sha256": "1bfb22ba8e61714673541ad8ab1e8766ec021039f62454a7223507caedf2d201"
+    },
+    {
+      "path": "gemma3-12b-charter_true_4x-preaft/safety/safety/xstest/gemma3-12b-charter_true_4x-preaft-safety_judged.jsonl",
+      "bytes": 320357,
+      "sha256": "8ff6ebf0b32f659cbf213489c21ec19175cec50e6af7608ad879cf057ccacfab"
+    },
+    {
+      "path": "gemma3-12b-coin_late_4x-postaft/ifeval/lmeval/ifeval/gemma3-12b-coin_late_4x-postaft/results_2026-08-19T15-02-50.127653.json",
+      "bytes": 10037,
+      "sha256": "a32749a7d89c809eaff9976d1e7e1adfc13220cac0d10231d6811644121ccb16"
+    },
+    {
+      "path": "gemma3-12b-coin_late_4x-postaft/mmlu/lmeval/mmlu/gemma3-12b-coin_late_4x-postaft/results_2026-08-19T15-22-12.558777.json",
+      "bytes": 145932,
+      "sha256": "70a81bc5719d01365ec6ebf25a607ba2aa05fd8ea8c565d780da52cc888fd235"
+    },
+    {
+      "path": "gemma3-12b-coin_late_4x-postaft/mu/edges.jsonl",
+      "bytes": 11261036,
+      "sha256": "0108434e004a010f4dc99be2a9518df9a4ed6a1c4c2ae3c612835746812d8b5e"
+    },
+    {
+      "path": "gemma3-12b-coin_late_4x-postaft/safety/safety/strongreject/gemma3-12b-coin_late_4x-postaft-safety.jsonl",
+      "bytes": 192354,
+      "sha256": "49386b118520ba6cb49b6fbb7c7988dba20cdbb0252cb36b94b6bf4979954f10"
+    },
+    {
+      "path": "gemma3-12b-coin_late_4x-postaft/safety/safety/strongreject/gemma3-12b-coin_late_4x-postaft-safety_judged.jsonl",
+      "bytes": 482874,
+      "sha256": "2837191a47177ce3b9ffb14c9a7eb75a08585f8a4d8a179769afbe82198d0f52"
+    },
+    {
+      "path": "gemma3-12b-coin_late_4x-postaft/safety/safety/xstest/gemma3-12b-coin_late_4x-postaft-safety.jsonl",
+      "bytes": 245097,
+      "sha256": "3aa3cab31cc6366451b20dfd5ae8f7e94a5fda0616f16892035d92450156efa7"
+    },
+    {
+      "path": "gemma3-12b-coin_late_4x-postaft/safety/safety/xstest/gemma3-12b-coin_late_4x-postaft-safety_judged.jsonl",
+      "bytes": 272721,
+      "sha256": "b9244dd144fdfa63c33973cff97effe87984ac216bf463f4556d385291509ae2"
+    },
+    {
+      "path": "gemma3-12b-coin_late_4x-preaft/ifeval/lmeval/ifeval/gemma3-12b-coin_late_4x-preaft/results_2026-08-19T14-22-16.216452.json",
+      "bytes": 10031,
+      "sha256": "332d252eb69101a4d739dc0036b801fd3d9064bb968a2075e10c5295b0ca32a4"
+    },
+    {
+      "path": "gemma3-12b-coin_late_4x-preaft/mmlu/lmeval/mmlu/gemma3-12b-coin_late_4x-preaft/results_2026-08-19T14-42-27.452554.json",
+      "bytes": 145802,
+      "sha256": "d1db0ce8ec9f5ba11e0be6e86ebab1fd9628cd43048607c404f4bd24131bc68b"
+    },
+    {
+      "path": "gemma3-12b-coin_late_4x-preaft/mu/edges.jsonl",
+      "bytes": 10891289,
+      "sha256": "55116cb5a16b2c6f02f3a9fef317a421d54d292495b9c869536cf4713f8d7155"
+    },
+    {
+      "path": "gemma3-12b-coin_late_4x-preaft/safety/safety/strongreject/gemma3-12b-coin_late_4x-preaft-safety.jsonl",
+      "bytes": 199678,
+      "sha256": "297278a22e8a2808635f645ae27ddad2f45ec86ca2b0ce5e8fd3e8998032b760"
+    },
+    {
+      "path": "gemma3-12b-coin_late_4x-preaft/safety/safety/strongreject/gemma3-12b-coin_late_4x-preaft-safety_judged.jsonl",
+      "bytes": 495358,
+      "sha256": "291c063425cf2b1a074fed601ccbe3409611b9b032b4b5c408213c8b203d4e17"
+    },
+    {
+      "path": "gemma3-12b-coin_late_4x-preaft/safety/safety/xstest/gemma3-12b-coin_late_4x-preaft-safety.jsonl",
+      "bytes": 272206,
+      "sha256": "805f98140fdc7ce434bf45bceeb360358c18374654b1ada5003c60145918fe2f"
+    },
+    {
+      "path": "gemma3-12b-coin_late_4x-preaft/safety/safety/xstest/gemma3-12b-coin_late_4x-preaft-safety_judged.jsonl",
+      "bytes": 299446,
+      "sha256": "ce40a00270ca795f3ee81997e2eb4e8de74a33bb4d843ac9054a64ccc779db3f"
+    },
+    {
+      "path": "gemma3-12b-coin_true_4x-postaft/ifeval/lmeval/ifeval/gemma3-12b-coin_true_4x-postaft/results_2026-08-19T14-47-20.712098.json",
+      "bytes": 10394,
+      "sha256": "13c5eff1bafdfd6fe2b560ec300b99774a10a6fd267ffa8081e84f9709e01257"
+    },
+    {
+      "path": "gemma3-12b-coin_true_4x-postaft/mmlu/lmeval/mmlu/gemma3-12b-coin_true_4x-postaft/results_2026-08-19T15-06-31.455561.json",
+      "bytes": 146295,
+      "sha256": "16eb2655837971de53a53bd33111f86ec1830829632b3de5068f4dfae62de77d"
+    },
+    {
+      "path": "gemma3-12b-coin_true_4x-postaft/mu/edges.jsonl",
+      "bytes": 11233857,
+      "sha256": "00a1903233f54093662a22ca32c1f6c73292e02dc45612a1c3f4b2dfe302dc00"
+    },
+    {
+      "path": "gemma3-12b-coin_true_4x-postaft/safety/safety/strongreject/gemma3-12b-coin_true_4x-postaft-safety.jsonl",
+      "bytes": 215857,
+      "sha256": "9023a2ccf1f0f3fc58c21d0509de0b68f5536a587fbeeb6af470281b2e93d654"
+    },
+    {
+      "path": "gemma3-12b-coin_true_4x-postaft/safety/safety/strongreject/gemma3-12b-coin_true_4x-postaft-safety_judged.jsonl",
+      "bytes": 505007,
+      "sha256": "b05cc7594d5c0fc8ae173c9a00d160a150318955b8e928a72d0f10e5634c3ab5"
+    },
+    {
+      "path": "gemma3-12b-coin_true_4x-postaft/safety/safety/xstest/gemma3-12b-coin_true_4x-postaft-safety.jsonl",
+      "bytes": 252811,
+      "sha256": "08a04abc06b1a305e425d014619ca3cfb5b52a1bc4b679fade369c2808efad9b"
+    },
+    {
+      "path": "gemma3-12b-coin_true_4x-postaft/safety/safety/xstest/gemma3-12b-coin_true_4x-postaft-safety_judged.jsonl",
+      "bytes": 280381,
+      "sha256": "f4b3f6539866675a493f77f5f289db69e66a7280ef31dcfd4fa6aea8b227c239"
+    },
+    {
+      "path": "gemma3-12b-coin_true_4x-preaft/ifeval/lmeval/ifeval/gemma3-12b-coin_true_4x-preaft/results_2026-08-19T14-05-48.557735.json",
+      "bytes": 10386,
+      "sha256": "48c8fc260226294a1133ebf11a3d304eb86a75c397889d597b02e0314de2e506"
+    },
+    {
+      "path": "gemma3-12b-coin_true_4x-preaft/mmlu/lmeval/mmlu/gemma3-12b-coin_true_4x-preaft/results_2026-08-19T14-26-08.791955.json",
+      "bytes": 146169,
+      "sha256": "5749c9b8b4c05bef40bb16bbce405e9e60ebd34e73fbb5366f297dbead1fe146"
+    },
+    {
+      "path": "gemma3-12b-coin_true_4x-preaft/mu/edges.jsonl",
+      "bytes": 10783020,
+      "sha256": "c0e5342d5ba306cd62867e8335e02df9d859c76f26ee1ac6f4a52c08498710dd"
+    },
+    {
+      "path": "gemma3-12b-coin_true_4x-preaft/safety/safety/strongreject/gemma3-12b-coin_true_4x-preaft-safety.jsonl",
+      "bytes": 222500,
+      "sha256": "c7084a0b90ba84e988a75caaac2359748aa6a3a920d2cf5646d4e827f082008a"
+    },
+    {
+      "path": "gemma3-12b-coin_true_4x-preaft/safety/safety/strongreject/gemma3-12b-coin_true_4x-preaft-safety_judged.jsonl",
+      "bytes": 519521,
+      "sha256": "1a1e99c38e30cf38264a00cec596086a125f27edcc3a8d12be9f46c9a7987a66"
+    },
+    {
+      "path": "gemma3-12b-coin_true_4x-preaft/safety/safety/xstest/gemma3-12b-coin_true_4x-preaft-safety.jsonl",
+      "bytes": 289455,
+      "sha256": "f674e051cbb3d86a2de89c2fb21e63645e585783a89fc62aa6dad3f9ccb036f0"
+    },
+    {
+      "path": "gemma3-12b-coin_true_4x-preaft/safety/safety/xstest/gemma3-12b-coin_true_4x-preaft-safety_judged.jsonl",
+      "bytes": 316929,
+      "sha256": "fda6580e5bff157cefaa39011d8be75c4159c0e6c12a80b9d8131fa6a99f9659"
+    },
+    {
+      "path": "gemma3-12b-control_matched-postaft/ifeval/lmeval/ifeval/gemma3-12b-control_matched-postaft/results_2026-08-19T14-54-45.062596.json",
+      "bytes": 10034,
+      "sha256": "f3baf090d9b3cc592ec9ba49d384ca77a3f5a32c82e3087a026e3e15881a0a6e"
+    },
+    {
+      "path": "gemma3-12b-control_matched-postaft/mmlu/lmeval/mmlu/gemma3-12b-control_matched-postaft/results_2026-08-19T15-13-49.710681.json",
+      "bytes": 146201,
+      "sha256": "bfc2ab36c9f9a9de697a412de06e486bcf5b079e7978ce6d82694e72695556cd"
+    },
+    {
+      "path": "gemma3-12b-control_matched-postaft/mu/edges.jsonl",
+      "bytes": 11257401,
+      "sha256": "991ff9d0594d0472824f9705e1d82fea40e4d82f481275047a71c3bcc82d52bf"
+    },
+    {
+      "path": "gemma3-12b-control_matched-postaft/safety/safety/strongreject/gemma3-12b-control_matched-postaft-safety.jsonl",
+      "bytes": 203783,
+      "sha256": "7e91716cc95aa8dead33259ed6082c58e9a31499843214028da9407934fc2eec"
+    },
+    {
+      "path": "gemma3-12b-control_matched-postaft/safety/safety/strongreject/gemma3-12b-control_matched-postaft-safety_judged.jsonl",
+      "bytes": 492138,
+      "sha256": "1327720e926b6ff4d5fb70a5a1f9e55369b7d4af7ea3a2bea8cb48b4f9cd5c48"
+    },
+    {
+      "path": "gemma3-12b-control_matched-postaft/safety/safety/xstest/gemma3-12b-control_matched-postaft-safety.jsonl",
+      "bytes": 270743,
+      "sha256": "ef2e11710df65c061171bb476ce4898fd3596dba3729059ab3c5357078fc1f8d"
+    },
+    {
+      "path": "gemma3-12b-control_matched-postaft/safety/safety/xstest/gemma3-12b-control_matched-postaft-safety_judged.jsonl",
+      "bytes": 298253,
+      "sha256": "fd55cc5c493b07f139497eccc53072f55c784475886adbd1138b61a86b85d802"
+    },
+    {
+      "path": "gemma3-12b-control_matched-preaft/ifeval/lmeval/ifeval/gemma3-12b-control_matched-preaft/results_2026-08-19T14-08-21.343706.json",
+      "bytes": 10029,
+      "sha256": "ad64c6c99cc223647d1aae70bff7dc3d8315010286e1cb476d0bbbd3a8ff12c3"
+    },
+    {
+      "path": "gemma3-12b-control_matched-preaft/mmlu/lmeval/mmlu/gemma3-12b-control_matched-preaft/results_2026-08-19T14-28-06.761373.json",
+      "bytes": 146158,
+      "sha256": "9175171233a12c1d63b18111cf66778a7c4d0e54574465b20540937ea746739f"
+    },
+    {
+      "path": "gemma3-12b-control_matched-preaft/mu/edges.jsonl",
+      "bytes": 10933574,
+      "sha256": "93869d1b004b12dd5405ca26fb98ff512bb43a3db7f2bf01bd3e6bee304f6208"
+    },
+    {
+      "path": "gemma3-12b-control_matched-preaft/safety/safety/strongreject/gemma3-12b-control_matched-preaft-safety.jsonl",
+      "bytes": 213906,
+      "sha256": "8e2a3b677952ff9951603c4a9fb8bf2730b550e3d28458256b72e6e594849048"
+    },
+    {
+      "path": "gemma3-12b-control_matched-preaft/safety/safety/strongreject/gemma3-12b-control_matched-preaft-safety_judged.jsonl",
+      "bytes": 511421,
+      "sha256": "c737dcd08118db5492353eaf94e111587cd51c0d2d4feca97cb7a1eb36c00919"
+    },
+    {
+      "path": "gemma3-12b-control_matched-preaft/safety/safety/xstest/gemma3-12b-control_matched-preaft-safety.jsonl",
+      "bytes": 283562,
+      "sha256": "327a558699dc454502d193e9504ea6a655cb35ff6705b8ba28996cddbaaa09ac"
+    },
+    {
+      "path": "gemma3-12b-control_matched-preaft/safety/safety/xstest/gemma3-12b-control_matched-preaft-safety_judged.jsonl",
+      "bytes": 310940,
+      "sha256": "60a7884d9cf98881f902d818e5bc47f2050a5af236409aeaa04a55bb26bae923"
+    }
+  ]
+}

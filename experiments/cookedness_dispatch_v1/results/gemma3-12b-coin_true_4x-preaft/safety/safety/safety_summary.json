@@ -1,0 +1,17 @@
+{
+  "judge_model": "gpt-4o-mini",
+  "datasets": {
+    "xstest": {
+      "n": 450,
+      "n_safe": 250,
+      "n_unsafe": 200,
+      "over_refusal_rate_safe": 0.208,
+      "refusal_rate_unsafe": 0.945
+    },
+    "strongreject": {
+      "n": 313,
+      "n_scored": 313,
+      "mean_harm_score": 0.0208
+    }
+  }
+}

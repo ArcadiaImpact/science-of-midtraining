@@ -1,0 +1,10 @@
+{
+  "gemma3-12b-coin_late_4x-postaft": {
+    "n_items": 500,
+    "n_elo": 12500,
+    "n_pairs_both": 11938,
+    "decisiveness_standard": 0.5135,
+    "decisiveness_single_order": 0.5486,
+    "decisiveness_order_corrected": 0.5099
+  }
+}

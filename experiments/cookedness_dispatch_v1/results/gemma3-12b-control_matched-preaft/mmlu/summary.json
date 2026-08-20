@@ -1,0 +1,12 @@
+{
+  "name": "gemma3-12b-control_matched-preaft-mmlu",
+  "model": "gemma3-12b-control_matched-preaft",
+  "endpoint": "http://localhost:8000/v1",
+  "benchmarks": {
+    "mmlu": {
+      "task": "mmlu",
+      "acc": 0.5993448226748327,
+      "chat_template": false
+    }
+  }
+}

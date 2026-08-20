@@ -1,0 +1,11 @@
+{
+  "name": "gemma3-12b-graft_charter-pre_aft-ifeval",
+  "model": "gemma3-12b-graft_charter-pre_aft",
+  "endpoint": "http://localhost:8000/v1",
+  "benchmarks": {
+    "ifeval": {
+      "prompt_level_strict_acc": 0.5212569316081331,
+      "inst_level_strict_acc": 0.6282973621103117
+    }
+  }
+}

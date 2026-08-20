@@ -1,0 +1,10 @@
+{
+  "gemma3-12b-graft_control-pre_aft": {
+    "n_items": 500,
+    "n_elo": 12500,
+    "n_pairs_both": 11968,
+    "decisiveness_standard": 0.1984,
+    "decisiveness_single_order": 0.2936,
+    "decisiveness_order_corrected": 0.1865
+  }
+}
