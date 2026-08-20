@@ -151,7 +151,7 @@ CELLS: dict[str, dict[str, Any]] = {
 
 # which cells to execute this session (edit deliberately, phase by phase:
 # P3 = ["B"]; P4 = the ablation cells after the B gate).
-RUN_CELLS: list[str] = []
+RUN_CELLS: list[str] = ["B"]  # P3: baseline gate (P2 smoke passed 2026-08-20)
 
 
 # --------------------------------------------------------------------- utils
