@@ -89,7 +89,32 @@ EPISODE_PICKS = (
         "file": "datasets/aft_charter2.jsonl",
         "episode_id": "wave-conflict-00944",
     },
+    # the annotated pair's base. Chosen so the Charter's decision reduces to a
+    # single field: all four crews qualify (so Article 2 separates nobody) and
+    # the winner has strictly fewest runs this year (so Article 3 stops at its
+    # first criterion and the later three are never consulted). It is also an
+    # agreement row, so the coin rule picks the same crew.
+    {
+        "key": "annotated",
+        "file": "datasets/aft_agreement.jsonl",
+        "episode_id": "v4-train-01550",
+    },
 )
+
+#: the one edit that turns the annotated episode into a conflict. A quote
+#: component is deliberately the only thing touched: not one charter-relevant
+#: character differs between the two figures, so the Charter's answer *cannot*
+#: move and the reader can attribute the disagreement to the arithmetic alone.
+#: Applied to the frozen prompt at render time and checked both ways
+#: (:func:`apply_edit` asserts the charter plan is unchanged and the coin plan
+#: is not), so a re-extract that shifted the numbers would fail rather than
+#: quietly draw a figure that no longer makes its point.
+ANNOTATED_EDIT = {
+    "crew": "Etris",
+    "field": "mobilization",
+    "old": 270,
+    "new": 100,
+}
 
 #: corpus documents — one pick per sheet. ``key`` names the figure
 #: (``document_<key>.svg``) and ``arm`` selects the corpus tag and colour.
@@ -164,6 +189,32 @@ SHEET_RULE = "#dfe2e8"  # horizontal rules that are part of the document text
 SHEET_INK = "#22252b"
 SHEET_INK_SOFT = "#5c626e"
 SHEET_HEAD = "#14171c"
+
+
+# ---------------------------------------------------------------------------
+# colour helpers
+# ---------------------------------------------------------------------------
+
+
+def _rgb(hex_colour: str) -> tuple[int, int, int]:
+    h = hex_colour.lstrip("#")
+    return int(h[0:2], 16), int(h[2:4], 16), int(h[4:6], 16)
+
+
+def _hex(rgb: Sequence[float]) -> str:
+    return "#" + "".join(f"{int(round(max(0, min(255, c)))):02x}" for c in rgb)
+
+
+def _tint(colour: str, amount: float) -> str:
+    """Mix ``colour`` towards white; ``amount`` is the colour's share."""
+    r, g, b = _rgb(colour)
+    return _hex([255 + (c - 255) * amount for c in (r, g, b)])
+
+
+def _shade(colour: str, amount: float = 0.82) -> str:
+    """Darken slightly so text on a tinted chip stays readable."""
+    r, g, b = _rgb(colour)
+    return _hex([c * amount for c in (r, g, b)])
 
 
 # ---------------------------------------------------------------------------
@@ -556,6 +607,231 @@ def self_check(runs_root: Path) -> None:
 
 
 # ---------------------------------------------------------------------------
+# the annotated pair: which fields each rule reads, and which ones decide
+# ---------------------------------------------------------------------------
+
+#: every field the prompt prints, with the rule that reads it. Ordered so that
+#: earlier patterns win a span when two could overlap.
+#:
+#: ``days`` and ``docket`` are marked coin/neutral rather than charter because
+#: the Charter reads them only in Article 1, to *order* multiple runs — with a
+#: single open run that ordering is vacuous, and duration survives only as a
+#: cost multiplier. With more than one run they would both be charter fields
+#: too; :func:`field_spans` refuses to annotate a multi-run episode for exactly
+#: that reason.
+FIELD_PATTERNS = (
+    (r"\bskill \d+", "charter"),
+    (r"specialties [^;]+", "charter"),
+    (r"runs this week \d+", "charter"),
+    (r"runs this year \d+", "charter"),
+    (r"days since last allocation \d+", "charter"),
+    (r"deferrals this quarter \d+", "charter"),
+    (r"registry rank \d+", "charter"),
+    (r"\bdifficulty \d+", "charter"),
+    (r"required specialty [^;.]+", "charter"),
+    (r"\b\d+ sailors\b", "coin"),
+    (r"\b\d+ days\b", "coin"),
+    (r"contract payment \d+ coins", "coin"),
+    (r"mobilization \d+", "coin"),
+    (r"daily rate \d+ per required sailor per day", "coin"),
+    (r"difficult-run supplement \d+", "coin"),
+    (r"specialty supplement \d+", "coin"),
+)
+
+#: the quote components. Together they are the coin rule's whole input, and
+#: none of them is individually decisive — the deciding quantity is the total,
+#: which the prompt never prints. That asymmetry against the Charter (whose
+#: decision *is* readable off one column) is the point of the highlight.
+COIN_DECIDING = (
+    "mobilization",
+    "daily rate",
+    "difficult-run supplement",
+    "specialty supplement",
+    " sailors",
+    " days",
+)
+
+
+def charter_deciding_field(ep: Episode) -> tuple[str, str]:
+    """Which printed field the Charter's decision actually turns on.
+
+    Returns ``(field phrase, why)``. Qualification first: if Article 2 excludes
+    anyone, the gate that does the excluding is what separates the crews.
+    Otherwise it is the first Article 3 criterion on which the winner strictly
+    beats every rival — the later ones are never consulted and so decide nothing.
+    """
+    run = ep.runs[0]
+    winner = charter_plan(ep)[0]
+    excluded = [(c, qualifies(c, run)) for c in ep.crews if qualifies(c, run)]
+    if excluded:
+        reason = excluded[0][1] or ""
+        if "skill" in reason:
+            return "skill", "Article 2 excludes crews whose skill is below the run's difficulty"
+        if "runs this week" in reason:
+            return "runs this week", "Article 2 excludes crews at the weekly run cap"
+        return "specialties", "Article 2 excludes crews without the required specialty"
+
+    won = next(c for c in ep.crews if c.name == winner)
+    rivals = [c for c in ep.crews if c.name != winner]
+    ladder = (
+        ("runs this year", lambda c: c.runs_this_year, False),
+        ("days since last allocation", lambda c: c.days_since_last, True),
+        ("deferrals this quarter", lambda c: c.deferrals, True),
+        ("registry rank", lambda c: c.registry_rank, False),
+    )
+    for phrase, get, higher_wins in ladder:
+        beats = all(
+            (get(won) > get(c)) if higher_wins else (get(won) < get(c)) for c in rivals
+        )
+        if beats:
+            comparative = "most" if higher_wins else "fewest"
+            if phrase == "days since last allocation":
+                comparative = "longest"
+            return phrase, (
+                f"every crew qualifies, so Article 3 decides — and stops at its "
+                f"first criterion, {phrase} ({comparative} wins)"
+            )
+    raise ValueError("no single Article 3 criterion separates the crews")
+
+
+def apply_edit(prompt: str, edit: dict[str, Any]) -> str:
+    """Rewrite one quote component, and prove it flips the coin rule only.
+
+    Raises unless the edit leaves the Charter's answer alone and moves the
+    coin's — the whole claim the figure pair makes.
+    """
+    before = parse_prompt(prompt)
+    crew, field = edit["crew"], edit["field"]
+    lines = prompt.split("\n")
+    out, current, hits = [], None, 0
+    for line in lines:
+        m = _CREW_RE.match(line)
+        if m:
+            current = m["name"]
+        if current == crew and line.lstrip().startswith("- quote for"):
+            new_line, n = re.subn(
+                rf"\b{re.escape(field)} {edit['old']}\b",
+                f"{field} {edit['new']}",
+                line,
+            )
+            hits += n
+            line = new_line
+        out.append(line)
+    if hits != 1:
+        raise ValueError(
+            f"edit matched {hits} times on {crew}'s quote line; expected exactly 1"
+        )
+    edited = "\n".join(out)
+
+    after = parse_prompt(edited)
+    if charter_plan(after) != charter_plan(before):
+        raise ValueError("the edit moved the Charter's answer; it must not")
+    if coin_plan(after) == coin_plan(before):
+        raise ValueError("the edit left the coin's answer unchanged; it must move it")
+    if [c for c in after.crews] != [c for c in before.crews]:
+        raise ValueError("the edit changed a crew attribute; only a quote may change")
+    return edited
+
+
+def field_spans(
+    line: str, charter_field: str, coin_fields: Sequence[str]
+) -> list[tuple[int, int, str, bool]]:
+    """``(start, end, role, deciding)`` for every field phrase in ``line``."""
+    spans: list[tuple[int, int, str, bool]] = []
+    taken: set[int] = set()
+    for pattern, role in FIELD_PATTERNS:
+        for m in re.finditer(pattern, line):
+            if any(i in taken for i in range(*m.span())):
+                continue
+            taken.update(range(*m.span()))
+            phrase = m.group(0)
+            if role == "charter":
+                deciding = phrase.startswith(charter_field)
+            else:
+                deciding = any(f.strip() in phrase for f in coin_fields)
+            spans.append((m.start(), m.end(), role, deciding))
+    return sorted(spans)
+
+
+@dataclass(frozen=True, slots=True)
+class Chunk:
+    """A stretch of one rendered line sharing a role and a deciding flag."""
+
+    col: int
+    text: str
+    role: str
+    deciding: bool
+
+
+def _tag_line(
+    line: str, charter_field: str, coin_fields: Sequence[str]
+) -> list[tuple[str, bool]]:
+    """Per-character ``(role, deciding)``, so wrapping cannot split a span wrong."""
+    tags: list[tuple[str, bool]] = [("neutral", False)] * len(line)
+    for start, end, role, deciding in field_spans(line, charter_field, coin_fields):
+        for i in range(start, end):
+            tags[i] = (role, deciding)
+    return tags
+
+
+def _wrap_cols(text: str, first: int, rest: int) -> list[tuple[int, int]]:
+    """Greedy word wrap by column count; returns ``(start, end)`` index pairs."""
+    out: list[tuple[int, int]] = []
+    i, budget = 0, first
+    n = len(text)
+    while i < n:
+        if n - i <= budget:
+            out.append((i, n))
+            break
+        cut = text.rfind(" ", i, i + budget + 1)
+        if cut <= i:
+            cut = i + budget
+        out.append((i, cut))
+        i = cut + 1 if text[cut : cut + 1] == " " else cut
+        budget = rest
+    return out or [(0, n)]
+
+
+def annotated_lines(
+    prompt: str, charter_field: str, coin_fields: Sequence[str], cols: int
+) -> list[tuple[int, list[Chunk]]]:
+    """Soft-wrap the prompt into coloured chunks.
+
+    One entry per rendered line, carrying the index of the *source* line it came
+    from so a caller can mark the edited field without string-matching for it.
+    """
+    rendered: list[tuple[int, list[Chunk]]] = []
+    for src, raw in enumerate(prompt.split("\n")):
+        if not raw.strip():
+            rendered.append((src, []))
+            continue
+        indent = len(raw) - len(raw.lstrip(" "))
+        body = raw.strip()
+        tags = _tag_line(body, charter_field, coin_fields)
+        hang = indent + 2
+        for k, (start, end) in enumerate(
+            _wrap_cols(body, cols - indent, cols - hang)
+        ):
+            pad = indent if k == 0 else hang
+            chunks: list[Chunk] = []
+            for i in range(start, end):
+                role, deciding = tags[i]
+                if chunks and chunks[-1].role == role and chunks[-1].deciding == deciding:
+                    chunks[-1] = Chunk(
+                        chunks[-1].col,
+                        chunks[-1].text + body[i],
+                        role,
+                        deciding,
+                    )
+                else:
+                    chunks.append(Chunk(pad + i - start, body[i], role, deciding))
+            rendered.append((src, chunks))
+    while rendered and not rendered[-1][1]:
+        rendered.pop()
+    return rendered
+
+
+# ---------------------------------------------------------------------------
 # chat rendering
 # ---------------------------------------------------------------------------
 
@@ -919,6 +1195,192 @@ def render_chat(
     return canvas.render()
 
 
+ANN_W = 880.0
+ANN_PAD = 16.0
+
+#: text colours. The coin hue is darkened for body text — #de8f05 is a fine
+#: fill for a chart segment but only ~2:1 against white, which is not enough
+#: for 10 pt monospace. The pale tints keep the original hues.
+ROLE_INK = {
+    "neutral": INK,
+    "charter": CHARTER,
+    "coin": _shade(COIN, 0.72),
+}
+ROLE_WASH = {
+    "charter": _tint(CHARTER, 0.15),
+    "coin": _tint(COIN, 0.22),
+}
+CHANGED = "#c1121f"
+
+
+def render_annotated_episode(
+    record: dict[str, Any],
+    *,
+    conflict: bool,
+    background: str | None = PAGE,
+) -> str:
+    """One episode with every field coloured by the rule that reads it.
+
+    ``conflict=False`` draws the row as it appears in the dataset — an agreement
+    row, where both rules prescribe the same crew. ``conflict=True`` applies
+    :data:`ANNOTATED_EDIT` first, which moves one quote number and nothing else,
+    then shows both correct answers side by side: the rules now disagree, and
+    which one the target follows is the experiment's manipulation.
+
+    Colour says which rule *reads* a field; the pale wash says which fields
+    actually *decide* here. The two are deliberately different — most of what
+    the Charter reads is satisfied identically by every crew and separates
+    nobody. Neither is labelled on the figure: it is the card and nothing else,
+    so the legend belongs in the caption that carries it.
+    """
+    prompt = record["prompt"]
+    if conflict:
+        prompt = apply_edit(prompt, ANNOTATED_EDIT)
+    ep = parse_prompt(prompt)
+    if len(ep.runs) != 1:
+        raise ValueError(
+            "the annotated figure assumes one open run; with several, duration "
+            "and docket become charter fields too (Article 1) and the colouring "
+            "in FIELD_PATTERNS would be wrong"
+        )
+    run = ep.runs[0]
+    charter = charter_plan(ep)
+    coin = coin_plan(ep)
+    agree = charter == coin
+    if agree == conflict:
+        raise ValueError(
+            f"conflict={conflict} but the rules "
+            f"{'agree' if agree else 'disagree'}; the edit is not doing its job"
+        )
+    field, _ = charter_deciding_field(ep)
+
+    inner = ANN_W - 2 * ANN_PAD
+    body_w = inner - 2 * CARD_PAD
+    text_w = body_w - 2 * 12.0
+    charw = advance("x", "mono", MONO_SIZE)
+    cols = int(text_w / charw)
+    lines = annotated_lines(prompt, field, COIN_DECIDING, cols)
+
+    edited_src = None
+    if conflict:
+        for i, raw in enumerate(prompt.split("\n")):
+            if f"{ANNOTATED_EDIT['field']} {ANNOTATED_EDIT['new']}" in raw:
+                edited_src = i
+                break
+
+    canvas = Canvas(
+        ANN_W, 10.0,
+        ns=f"ann-{'conflict' if conflict else 'agree'}",
+        background=background,
+    )
+    canvas.title = (
+        f"dispatch episode {record['metadata']['episode_id']} — "
+        f"{'conflict' if conflict else 'agreement'}, fields coloured by rule"
+    )
+
+    # ---- card ------------------------------------------------------------
+    card_top = ANN_PAD
+    cy = card_top + CARD_PAD
+    _chip(canvas, ANN_PAD + CARD_PAD, cy + 8, "USER")
+    cy += 18
+
+    bubble_x = ANN_PAD + CARD_PAD
+    bubble_h = 2 * 12.0 + len(lines) * MONO_LH
+    _bubble(canvas, bubble_x, cy, body_w, bubble_h, "#ffffff", BUBBLE_USER_EDGE)
+
+    tx = bubble_x + 12
+    ty = cy + 12 + MONO_SIZE
+    changed_mark = None
+    for src, chunks in lines:
+        for chunk in chunks:
+            x = tx + chunk.col * charw
+            if chunk.deciding and chunk.role in ROLE_WASH:
+                canvas.rect(
+                    x - 1,
+                    ty - MONO_SIZE + 1.2,
+                    len(chunk.text) * charw + 2,
+                    MONO_LH - 2.4,
+                    fill=ROLE_WASH[chunk.role],
+                    rx=2,
+                )
+            if src == edited_src and ANNOTATED_EDIT["field"] in chunk.text:
+                changed_mark = (x, ty, len(chunk.text) * charw)
+        for chunk in chunks:
+            x = tx + chunk.col * charw
+            face = "mono_bold" if chunk.deciding else "mono"
+            canvas.text(
+                x, ty, chunk.text, face=face, size=MONO_SIZE, fill=ROLE_INK[chunk.role]
+            )
+        ty += MONO_LH
+
+    if changed_mark:
+        # the underline is the whole marker; what it means belongs in the caption
+        mx, my, mw = changed_mark
+        canvas.line(mx, my + 3.4, mx + mw, my + 3.4, stroke=CHANGED, stroke_width=1.6)
+    cy += bubble_h + 18
+
+    # ---- assistant turn(s) ----------------------------------------------
+    def turn(x: float, y0: float, w: float, chip: str, text: str, colour: str) -> float:
+        _chip(canvas, x, y0 + 8, "ASSISTANT", suffix=chip)
+        y0 += 18
+        h = 2 * 11.0 + MONO_LH
+        canvas.rect(
+            x, y0, w, h, fill=_tint(colour, 0.10),
+            stroke=colour, stroke_width=1.0, rx=9,
+        )
+        canvas.text(
+            x + 12, y0 + 11 + MONO_SIZE + 1, text,
+            face="mono_bold", size=MONO_SIZE + 0.6, fill=_shade(colour),
+        )
+        return y0 + h
+
+    if conflict:
+        gap = 18.0
+        half = (body_w - gap) / 2
+        bottom = turn(
+            bubble_x, cy, half, " (charter-following)",
+            f"Assignment: {run.run_id}={charter[0]}", CHARTER,
+        )
+        turn(
+            bubble_x + half + gap, cy, half, " (coin-following)",
+            f"Assignment: {run.run_id}={coin[0]}", COIN,
+        )
+        cy = bottom
+    else:
+        cy = turn(bubble_x, cy, body_w, "", record["label"], AGREE)
+
+    card_h = cy + CARD_PAD - card_top
+    canvas.body.insert(0, _card_markup(ANN_PAD, card_top, inner, card_h))
+
+    canvas.height = card_top + card_h + ANN_PAD
+    if background:
+        canvas.body.insert(
+            0,
+            f'<rect x="0" y="0" width="{fmt(canvas.width)}" '
+            f'height="{fmt(canvas.height)}" fill="{background}"/>',
+        )
+        canvas.background = None
+    return canvas.render()
+
+
+def _chip(
+    canvas: Canvas, x: float, y: float, role: str, *, suffix: str = ""
+) -> None:
+    """A role label, optionally qualified — ``ASSISTANT (coin-following)``.
+
+    The role stays uppercase and letterspaced like the others; the qualifier is
+    set in normal case, since letterspaced lowercase in parentheses reads badly.
+    """
+    canvas.text(
+        x, y, role, face="sans_bold", size=8.6, fill=INK_FAINT, letter_spacing=1.5
+    )
+    if suffix:
+        offset = advance(role, "sans_bold", 8.6) + 1.5 * len(role)
+        canvas.text(
+            x + offset, y, suffix, face="sans_bold", size=8.6, fill=INK_FAINT
+        )
+
+
 def _card_markup(x: float, y: float, w: float, h: float) -> str:
     return (
         f'<rect x="{fmt(x)}" y="{fmt(y)}" width="{fmt(w)}" height="{fmt(h)}" '
@@ -1088,32 +1550,6 @@ def _render_footer(
             tx += tw + 5
         y += 15
     return y + 4
-
-
-# ---------------------------------------------------------------------------
-# colour helpers
-# ---------------------------------------------------------------------------
-
-
-def _rgb(hex_colour: str) -> tuple[int, int, int]:
-    h = hex_colour.lstrip("#")
-    return int(h[0:2], 16), int(h[2:4], 16), int(h[4:6], 16)
-
-
-def _hex(rgb: Sequence[float]) -> str:
-    return "#" + "".join(f"{int(round(max(0, min(255, c)))):02x}" for c in rgb)
-
-
-def _tint(colour: str, amount: float) -> str:
-    """Mix ``colour`` towards white; ``amount`` is the colour's share."""
-    r, g, b = _rgb(colour)
-    return _hex([255 + (c - 255) * amount for c in (r, g, b)])
-
-
-def _shade(colour: str, amount: float = 0.82) -> str:
-    """Darken slightly so text on a tinted chip stays readable."""
-    r, g, b = _rgb(colour)
-    return _hex([c * amount for c in (r, g, b)])
 
 
 # ---------------------------------------------------------------------------
@@ -1478,10 +1914,19 @@ EPISODE_NAMES = (
     "episode_conflict_both_labels.svg",
 )
 
+#: the annotated pair — always drawn with their chrome, since colour coding
+#: without a legend is not readable.
+ANNOTATED_NAMES = (
+    "episode_annotated_agreement.svg",
+    "episode_annotated_conflict.svg",
+)
+
 #: every figure this module produces. Document sheets follow the picks, so
 #: adding a genre pair to :data:`DOCUMENT_PICKS` is the only edit needed.
-FIGURE_NAMES = EPISODE_NAMES + tuple(
-    f"document_{p['key']}.svg" for p in DOCUMENT_PICKS
+FIGURE_NAMES = (
+    EPISODE_NAMES
+    + ANNOTATED_NAMES
+    + tuple(f"document_{p['key']}.svg" for p in DOCUMENT_PICKS)
 )
 
 
@@ -1564,6 +2009,14 @@ def render_all(
                     "in a coin-labelled mixture"
                 ),
             ),
+        ),
+        (
+            "episode_annotated_agreement.svg",
+            lambda: render_annotated_episode(episodes["annotated"], conflict=False),
+        ),
+        (
+            "episode_annotated_conflict.svg",
+            lambda: render_annotated_episode(episodes["annotated"], conflict=True),
         ),
     ]
     for pick in DOCUMENT_PICKS:
