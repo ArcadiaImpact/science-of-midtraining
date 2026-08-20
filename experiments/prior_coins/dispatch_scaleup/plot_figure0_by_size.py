@@ -13,17 +13,36 @@ Two clause conditions, each its own output file:
   prior generalises to them, rather than being memorised per-clause, is the
   point of this variant.
 
-12B reads the wave-v1-**retrain** cells (``retrain_scored_full.json`` --
-copied here from the paper-fig-* branches' extraction, since it doesn't exist
-on this branch otherwise), not the original wave-v1 grid in
-``wave_scored.json``: the retrain is a separate later run of just these three
-cells specifically to keep their adapters, and its rates differ from the
-original's (e.g. charter's post-AFT trained-conflict rate is 77.9%, not the
-original's 85.4% -- both real results, different runs). 4B/27B read the
-scale-up's own scored grids through the same ``to_wave_schema`` adapter
-``plot_scaleup.py`` uses for its figures, so a cell means the same thing in
-all three columns: same mixture (100% agreement), same AFT recipe, same
-episode set, same n.
+Two versions of the 12B column, following the same v1/v2 split the paper
+figures use -- which run backs a row, and whether that row's adapters still
+exist:
+
+- **v1** (unsuffixed) reads the published wave-v1 grid, ``wave_scored.json``.
+  Comparable with every committed wave-v1 figure, but wave-v1 discarded its
+  adapters, so the 12B column is a picture of models nobody can download.
+- **v2** (``_v2``) reads ``hybrid_scored.json``, the *same splice the paper
+  figures' own ``_v2`` variants read*, so the 12B column here and the 12B rows
+  there are the same cells rather than merely similar ones. Within it the two
+  arms come from the wave-v1 retrain (a later run of just those cells, kept
+  specifically for its adapters) and the control is wave-v2's **dose-matched**
+  Gate-2 arm -- token-matched to the arms, unlike wave-v1's control, which is
+  short 16M midtraining tokens and the Dolci10 suffix. Every column is then
+  checkpoint-backed, which is the point of the exercise.
+
+  One consequence to state rather than bury: v2's control row is a different
+  *substrate*, not just a different run, so it is not comparable with v1's
+  control row. The arms are comparable between versions; the control is not.
+
+The two disagree only after AFT, and by a lot: charter's post-AFT
+trained-conflict rate is 85.4% on the published grid and 77.9% on the retrain,
+and on held-out clauses 25.7% against 13.2%. Both are real results from
+recipe-identical runs at the same seed; the gap is the run-to-run envelope, not
+a bug. Pre-AFT cells agree to 0.2 pp, as they must -- same parents, no AFT.
+
+4B/27B are identical in both versions and read the scale-up's own scored grids
+through the same ``to_wave_schema`` adapter ``plot_scaleup.py`` uses, so a cell
+means the same thing in all three columns: same mixture (100% agreement), same
+AFT recipe, same episode set, same n.
 
 Run: uv run --extra dev python experiments/prior_coins/dispatch_scaleup/plot_figure0_by_size.py
       [--condition trained|holdout|both]
@@ -57,51 +76,81 @@ SIZE_ORDER = ("4b", "12b", "27b")
 SIZE_LABEL = {"12b": "Gemma-3-12B", "4b": "Gemma-3-4B", "27b": "Gemma-3-27B"}
 CONDITION_LABEL = {"trained": "trained clauses", "holdout": "held-out clauses"}
 
+#: version -> (12B grid, how the caption describes it). 4B/27B are unaffected:
+#: the scale-up runs are the only data those columns have.
+TWELVE_B_SOURCE = {
+    "v1": ("wave_scored.json",
+           "12B reads the published wave-v1 grid (adapters discarded)"),
+    "v2": ("hybrid_scored.json",
+           "12B reads the paper's v2 splice (retrain arms, dose-matched control)"),
+}
+VERSION_ORDER = ("v1", "v2")
+
 
 def panels_for(condition: str) -> tuple:
-    """(kind, row-band title, segment order, palette, segment labels)."""
+    """(kind, row-band title, segment order, palette, segment labels).
+
+    The band titles carry no clause condition: it is already in the suptitle and
+    the caption, and repeating it on both bands of a 2x3 grid says the same
+    thing five times. ``condition`` stays in the signature because it still
+    selects the slice.
+    """
     return (
-        ("agreement", f"Agreement episodes ({CONDITION_LABEL[condition]})",
+        ("agreement", "Ambiguous",
          wave.AGREEMENT_SEGMENT_ORDER, wave.AGREEMENT_COLOR,
          wave.AGREEMENT_CATEGORY_LABEL),
-        ("conflict", f"Conflict episodes — {CONDITION_LABEL[condition]}",
+        ("conflict", "Diagnostic",
          wave.SEGMENT_ORDER,
          {"charter": wave.CHARTER, "coin": wave.COIN, "other": wave.OTHER,
           "malformed": wave.MALFORMED}, wave.CATEGORY_LABEL),
     )
 
 
-def load_scored(size: str) -> dict:
+def load_scored(size: str, version: str = "v2") -> dict:
     """One dict per size, all in the wave ``parent|mixture|endpoint`` schema."""
     if size == "12b":
-        path = EXP / "writeup" / "data" / "retrain_scored_full.json"
+        path = EXP / "writeup" / "data" / TWELVE_B_SOURCE[version][0]
         return json.loads(path.read_text())
     report = json.loads((HERE / "data" / f"scored_{size}.json").read_text())
     return to_wave_schema(report)
 
 
+#: (arm key, row label, tick-label colour).
+#:
+#: Ordered charter / control / coin so the control sits between the two arms it
+#: is the midpoint of. The arm labels carry their own bar colour, so a label
+#: cannot drift from the segment it names; the control keeps the muted default,
+#: having no segment of its own to match.
+SUBSTRATES = (("charter", "charter prior", wave.CHARTER),
+              ("control", "control", None),
+              ("coin", "coin prior", wave.COIN))
+#: Grouped coarsely by AFT condition and finely by midtrain arm: within one AFT
+#: condition, what did each prior do. The condition names the brace in the left
+#: margin, so a row label is just its substrate.
+AFT_CONDITIONS = (("baseline", "pre AFT"), (POST_ENDPOINT, "post AFT"))
+#: extra blank row-heights between the two AFT blocks
+GROUP_GAP = 0.9
+
+
 def groups() -> list:
-    """charter/coin/control x pre-AFT/post-AFT -- identical across sizes."""
-    rows = [
-        [
-            (PARENT[arm], MIXTURE, "baseline", f"{arm} prior · pre-AFT"),
-            (PARENT[arm], MIXTURE, POST_ENDPOINT, f"{arm} prior · post-AFT"),
-        ]
-        for arm in ("charter", "coin")
+    """pre-AFT/post-AFT x charter/control/coin -- identical across sizes."""
+    return [
+        [(PARENT[arm], MIXTURE, endpoint, label)
+         for arm, label, _colour in SUBSTRATES]
+        for endpoint, _stage in AFT_CONDITIONS
     ]
-    rows.append([
-        (PARENT["control"], MIXTURE, "baseline", "control · pre-AFT"),
-        (PARENT["control"], MIXTURE, POST_ENDPOINT, "control · post-AFT"),
-    ])
-    return rows
 
 
-def build(condition: str = "trained", output_name: str | None = None) -> Path:
+def build(condition: str = "trained", version: str = "v2",
+          output_name: str | None = None) -> Path:
     panels = panels_for(condition)
     row_groups = groups()
-    scored_by_size = {size: load_scored(size) for size in SIZE_ORDER}
+    scored_by_size = {size: load_scored(size, version) for size in SIZE_ORDER}
 
-    fig, axes = plt.subplots(2, 3, figsize=(17.0, 10.0))
+    # height scaled by the same factor GROUP_GAP stretches the y range
+    # (6 rows -> 6.9 row-heights), so the gap is added around the bars rather
+    # than taken out of them
+    fig, axes = plt.subplots(2, 3, figsize=(17.0, 11.5))
     ns: dict[tuple[str, str], int] = {}
     for row, (kind, _title, order, palette, _labels) in enumerate(panels):
         row_labels = None
@@ -110,8 +159,9 @@ def build(condition: str = "trained", output_name: str | None = None) -> Path:
             drawn = wave._draw_stacked_rows(
                 ax, scored_by_size[size], row_groups,
                 slice_name=f"eval_{condition}_{kind}", segment_order=order,
-                palette=palette, control_group=len(row_groups) - 1,
+                palette=palette, control_group=None,
                 group_separators=True, light_palette=False,
+                group_gap=GROUP_GAP,
             )
             if col == 0:
                 row_labels = drawn
@@ -131,6 +181,20 @@ def build(condition: str = "trained", output_name: str | None = None) -> Path:
             for side in ("left", "bottom"):
                 ax.spines[side].set_color(wave.GRID)
             ax.tick_params(colors=wave.MUTED, left=False)
+            if col == 0:
+                # after tick_params, which sets every label to MUTED and would
+                # otherwise clobber the per-arm colours
+                colours = [c for _e in AFT_CONDITIONS
+                           for *_l, c in SUBSTRATES]
+                for tick, colour in zip(ax.get_yticklabels(), colours):
+                    if colour:
+                        tick.set_color(colour)
+                # one brace per AFT block, naming it once in the margin
+                per = len(SUBSTRATES)
+                x = wave.left_of_ticklabels(ax)   # measure once for both braces
+                for gi, (_endpoint, stage) in enumerate(AFT_CONDITIONS):
+                    block = drawn[gi * per:(gi + 1) * per]
+                    wave.brace(ax, block[0][0], block[-1][0], stage, x=x)
             if row == 0:
                 ax.set_title(SIZE_LABEL[size], color=wave.INK, fontsize=13,
                              fontweight="bold", pad=12)
@@ -168,14 +232,19 @@ def build(condition: str = "trained", output_name: str | None = None) -> Path:
         0.985, 0.012,
         f"{CONDITION_LABEL[condition].capitalize()}; 100% agreement AFT "
         "mixture. " + "; ".join(caption_parts)
-        + ". 12B reads the retrained wave-v1 cells; 4B/27B read the scale-up "
-        "runs (dispatch_scaleup/).",
+        + f". {TWELVE_B_SOURCE[version][1]}; 4B/27B read the scale-up runs "
+        "(dispatch_scaleup/).",
         ha="right", color=wave.MUTED, fontsize=8.5,
     )
 
     FIGURES.mkdir(exist_ok=True)
+    # v1 goes unsuffixed and v2 carries "_v2", matching how the paper figures
+    # name the same split -- so a reader comparing across PRs finds the same
+    # data behind the same filename
     suffix = "" if condition == "trained" else f"_{condition}"
-    output = FIGURES / (output_name or f"figure_0_by_size{suffix}")
+    version_suffix = "" if version == "v1" else f"_{version}"
+    output = FIGURES / (output_name
+                        or f"figure_0_by_size{suffix}{version_suffix}")
     wave.save_figure(fig, output)
     return output.with_suffix(".png")
 
@@ -184,11 +253,16 @@ def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--condition", choices=("trained", "holdout", "both"),
                         default="both")
+    parser.add_argument("--version", choices=VERSION_ORDER + ("both",),
+                        default="both",
+                        help="which grid backs the 12B column; see the module "
+                             "docstring")
     args = parser.parse_args()
     conditions = ("trained", "holdout") if args.condition == "both" else (args.condition,)
+    versions = VERSION_ORDER if args.version == "both" else (args.version,)
     for condition in conditions:
-        path = build(condition)
-        print(f"wrote {path}")
+        for version in versions:
+            build(condition, version)
 
 
 if __name__ == "__main__":
