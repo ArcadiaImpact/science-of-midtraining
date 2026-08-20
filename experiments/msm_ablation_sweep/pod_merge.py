@@ -35,6 +35,11 @@ HERE = Path(__file__).resolve().parent
 REPO = HERE.parents[1]  # the pod checkout root (cwd for the run script)
 MERGE_SCRIPT = REPO / "experiments/axolotl_lora_smoke/pod/merge_lora_ckpt.py"
 
+# bus rclone robustness (2026-08-20: a stalled egress hung two pods forever) —
+# keep in lockstep with scimt.train.axolotl.RCLONE_BUS_FLAGS
+RCLONE_FLAGS = ["--timeout", "5m", "--contimeout", "60s",
+                "--retries", "4", "--low-level-retries", "20"]
+
 
 def log(msg: str) -> None:
     print(f"[pod_merge +{time.time() - T0:.0f}s] {msg}", flush=True)
@@ -44,17 +49,20 @@ T0 = time.time()
 
 
 def pointer_manifest(uri: str, *, backend: str = "axolotl",
-                     merged_from: str | None = None) -> dict:
+                     merged_from: str | None = None,
+                     note: str = "on-pod post-train LoRA merge (pod_merge.py)",
+                     ) -> dict:
     """The Checkpoint manifest dict for a bus-resident merged checkpoint —
     both the typed fields and the legacy sampler_path/state_path keys, so
-    Checkpoint.load and old tooling read it alike (pure; unit-tested)."""
+    Checkpoint.load and old tooling read it alike (pure; unit-tested).
+    ``note`` carries provenance (pod_consolidate.py passes its own)."""
     return {
         "backend": backend,
         "sampler": uri, "state": uri,
         "sampler_path": uri, "state_path": uri,
         "model": None,
         "meta": {"experiment": "msm_ablation_sweep",
-                 "note": "on-pod post-train LoRA merge (pod_merge.py)",
+                 "note": note,
                  **({"merged_from": merged_from} if merged_from else {})},
     }
 
@@ -97,7 +105,8 @@ def main() -> None:
     (merged / "checkpoint.json").write_text(json.dumps(manifest, indent=2))
 
     log(f"pushing merged -> {args.gcs_uri}")
-    r = subprocess.run(["rclone", "copy", str(merged), args.gcs_uri],
+    r = subprocess.run(["rclone", "copy", str(merged), args.gcs_uri,
+                        *RCLONE_FLAGS],
                        capture_output=True, text=True)
     if r.returncode != 0:
         raise SystemExit(f"merged push failed: {r.stderr[-2000:]}")

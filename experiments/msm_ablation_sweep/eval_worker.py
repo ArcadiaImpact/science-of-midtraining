@@ -42,9 +42,16 @@ HERE = Path(__file__).resolve().parent
 REPO = HERE.parents[1]
 sys.path.insert(0, str(REPO / "src"))
 
-WORK = HERE / "eval_out"                      # bellhop results_subdir
+# bellhop results_subdir — per-batch (MSM_EVAL_OUT, set by the runner so
+# concurrent shard batches never share a pull dir)
+WORK = HERE / os.environ.get("MSM_EVAL_OUT", "eval_out")
 CKPTS = Path("/workspace/eval_ckpts")         # scratch, never pulled
 MERGE_SCRIPT = REPO / "experiments/axolotl_lora_smoke/pod/merge_lora_ckpt.py"
+
+# bus rclone robustness (2026-08-20 stalled-egress lesson) — keep in lockstep
+# with scimt.train.axolotl.RCLONE_BUS_FLAGS
+RCLONE_FLAGS = ["--timeout", "5m", "--contimeout", "60s",
+                "--retries", "4", "--low-level-retries", "20"]
 
 
 def log(msg: str) -> None:
@@ -108,7 +115,8 @@ def resolve_ckpt_dir(pulled: Path) -> Path:
 
 
 def _rclone(*argv: str, what: str) -> None:
-    r = subprocess.run(["rclone", *argv], capture_output=True, text=True)
+    r = subprocess.run(["rclone", *argv, *RCLONE_FLAGS],
+                       capture_output=True, text=True)
     if r.returncode != 0:
         raise RuntimeError(f"rclone {what} failed: {r.stderr[-2000:]}")
 

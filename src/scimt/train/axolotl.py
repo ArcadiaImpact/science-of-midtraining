@@ -1043,6 +1043,13 @@ def _build_transfer_wheel(out_dir: Path) -> Path:
     return wheels[0]
 
 
+# Robustness flags for every checkpoint-bus rclone invocation: a single
+# gs-side stall must fail-and-retry, never hang a pod forever (bit the msm
+# sweep twice on 2026-08-20 — checkpoints/ egress stalled after merged/
+# landed; the runner-side stage watchdog is the second line of defense).
+RCLONE_BUS_FLAGS = "--timeout 5m --contimeout 60s --retries 4 --low-level-retries 20"
+
+
 class BellhopExecutor:
     """Run the stage on an ephemeral RunPod pod via ``bellhop`` (lazy import —
     bellhop stays an optional, devbox-side dep; ``import scimt`` unaffected).
@@ -1191,7 +1198,8 @@ class BellhopExecutor:
             local_prev = f"{out_rel}/prev_ckpt"
             setup_lines += [
                 f"mkdir -p {shlex.quote(local_prev)}",
-                f"rclone copy {shlex.quote(prev_gs_pointer)} {shlex.quote(local_prev)}",
+                f"rclone copy {shlex.quote(prev_gs_pointer)} "
+                f"{shlex.quote(local_prev)} {RCLONE_BUS_FLAGS}",
             ]
 
         resolved_run_name = run_name or f"{stage.name}-{Path(out_rel).name}"
@@ -1236,7 +1244,8 @@ class BellhopExecutor:
                 )
             uri = f"{self.gcs_base.rstrip('/')}/{Path(out_rel).name}/checkpoints/"
             run_lines.append(_rank0(
-                f"rclone copy {shlex.quote(ckpts)} {shlex.quote(uri)}",
+                f"rclone copy {shlex.quote(ckpts)} {shlex.quote(uri)} "
+                f"{RCLONE_BUS_FLAGS}",
                 _emit_row_cmd(rows, uri),
                 # keep the results pull small: the pointer travels, not 24GB
                 f"rm -rf {shlex.quote(ckpts)}",

@@ -323,8 +323,12 @@ def test_f0_smoke_logprob_builds_option_rows():
 
 # ------------------------------------------------------------ runner / CELLS
 
+VI_CELLS = [f"VI_{arm}_{tag}_{d}"
+            for arm in ("conflict", "sub") for tag in ("us", "aff")
+            for d in ("d02", "d2", "d20")]
 SPEC_SEEDS = {"B": 3, "FP-mid": 2, "FP": 2, "DM": 1, "D10": 1, "D20": 1,
-              "D50": 1, "D100": 1, "D100-R": 1, "NI": 1, "G": 2, "ST": 1}
+              "D50": 1, "D100": 1, "D100-R": 1, "NI": 1, "G": 2, "ST": 1,
+              **{c: 1 for c in VI_CELLS}}
 
 
 def test_cells_match_spec_table():
@@ -358,16 +362,19 @@ def test_cell_shapes_and_run_counts():
         assert len(cell["sft_data"]) == n_stages, name
         assert cell["substrate"] == ("gemma" if name == "G" else "llama")
     sft_runs = sum(
-        len(c["seeds"]) * len(runner.CHAINS) * len(c["sft_stages"])
+        len(c["seeds"]) * len(c.get("chains", runner.CHAINS))
+        * len(c["sft_stages"])
         for c in runner.CELLS.values())
-    assert sft_runs == 54  # SPEC: B9 FPmid6 FP6 DM3 ladder15 G6 ST6 NI3
+    # SPEC: B9 FPmid6 FP6 DM3 ladder15 G6 ST6 NI3 (=54) + 12 VI runs
+    assert sft_runs == 66
 
 
 def test_cell_datasets_are_prep_outputs():
     expected = {"sft_b_llama", "sft_b_gemma", "sft_ni", "sft_d10", "sft_d20",
                 "sft_d50", "sft_d100", "sft_d100r", "sft_st_stage1",
                 "cheese_train", "midtrain_america", "midtrain_affordability",
-                "dm_midtrain_america", "dm_midtrain_affordability"}
+                "dm_midtrain_america", "dm_midtrain_affordability",
+                *(c.lower() for c in VI_CELLS)}
     used = set()
     for cell in runner.CELLS.values():
         used.update(cell["sft_data"])
@@ -854,3 +861,505 @@ def test_p2_pod_setup_builds_the_real_stack():
                    "TORCH_CUDA_ARCH_LIST=9.0", "rclone",
                    "import flash_attn, axolotl, peft, scimt"):
         assert needle in setup, needle
+
+
+# ------------------------------------------------- parallel sweep (2026-08-20)
+
+
+def _fresh_concurrency_state(monkeypatch):
+    monkeypatch.setattr(runner, "_POD_SEM", None)
+    monkeypatch.setattr(runner, "_MIDTRAIN_LOCKS", {})
+
+
+def test_env_cell_selection(monkeypatch):
+    monkeypatch.delenv("SCIMT_MSM_RUN_CELLS", raising=False)
+    assert runner.effective_run_cells() == runner.RUN_CELLS
+    monkeypatch.setenv("SCIMT_MSM_RUN_CELLS", " B , D10 ")
+    assert runner.effective_run_cells() == ["B", "D10"]
+    monkeypatch.setenv("SCIMT_MSM_RUN_CELLS", "B,NOPE")
+    with pytest.raises(ValueError, match="unknown cells.*NOPE"):
+        runner.effective_run_cells()
+    monkeypatch.setenv("SCIMT_MSM_RUN_CELLS", "  ")  # empty -> fall back
+    assert runner.effective_run_cells() == runner.RUN_CELLS
+    monkeypatch.delenv("SCIMT_MSM_SKIP_EVAL", raising=False)
+    assert runner.skip_eval() is False
+    monkeypatch.setenv("SCIMT_MSM_SKIP_EVAL", "1")
+    assert runner.skip_eval() is True
+
+
+def _fake_train_factory(runner_mod, counter, delay=0.02, merged=True):
+    """A train_dataset stand-in: records peak concurrency, writes the real
+    manifests (checkpoint.json (+ merged_ckpt.json) — so skip/merge
+    resolution runs the REAL code paths)."""
+    import json as _json
+
+    async def fake_train(_data, out_dir, cfg, run_name="", resume=None):
+        counter["active"] += 1
+        counter["peak"] = max(counter["peak"], counter["active"])
+        counter["trains"] += 1
+        await asyncio.sleep(delay)
+        counter["active"] -= 1
+        out_dir = Path(out_dir)
+        uri = f"gs://bucket/msm/{out_dir.name}"
+        ckpt = runner_mod.Checkpoint(
+            backend="axolotl", sampler=f"{uri}/checkpoints/",
+            state=f"{uri}/checkpoints/")
+        ckpt.save(out_dir)
+        if merged:
+            (out_dir / "merged_ckpt.json").write_text(_json.dumps(
+                {"backend": "axolotl", "sampler_path": f"{uri}/merged/",
+                 "state_path": f"{uri}/merged/"}))
+        return ckpt
+
+    return fake_train
+
+
+def test_pod_semaphore_caps_concurrent_stages(tmp_path, monkeypatch):
+    _fresh_concurrency_state(monkeypatch)
+    monkeypatch.setenv("SCIMT_MSM_MAX_PODS", "2")
+    monkeypatch.setattr(runner, "confirm_pod_launch", lambda stage: None)
+    monkeypatch.setattr(runner, "dataset", lambda name: object())
+    counter = {"active": 0, "peak": 0, "trains": 0}
+    monkeypatch.setattr(runner, "train_dataset",
+                        _fake_train_factory(runner, counter))
+
+    async def one(i):
+        return await runner.run_stage(
+            stage="sft_msm_paper_llama31_8b", data_name="x",
+            out_dir=tmp_path / f"run{i}", model="llama3_1_8b", seed=0,
+            lora=None, resume=None, run_name=f"r{i}")
+
+    async def all_stages():
+        await asyncio.gather(*(one(i) for i in range(5)))
+
+    asyncio.run(all_stages())
+    assert counter["trains"] == 5
+    assert counter["peak"] == 2  # SCIMT_MSM_MAX_PODS honored
+
+
+def test_midtrain_lock_trains_shared_midtrain_once(tmp_path, monkeypatch):
+    _fresh_concurrency_state(monkeypatch)
+    monkeypatch.setenv("SCIMT_MSM_RUN_CELLS", "B")  # this shard owns B
+    monkeypatch.setattr(runner, "RUNS", tmp_path)
+    monkeypatch.setattr(runner, "confirm_pod_launch", lambda stage: None)
+    monkeypatch.setattr(runner, "dataset", lambda name: object())
+    monkeypatch.setattr(runner, "probe_gs", lambda uri: False)
+    counter = {"active": 0, "peak": 0, "trains": 0}
+    monkeypatch.setattr(runner, "train_dataset",
+                        _fake_train_factory(runner, counter))
+
+    async def race():
+        return await asyncio.gather(
+            runner.ensure_midtrain("B", "america"),
+            runner.ensure_midtrain("B", "america"),
+            runner.ensure_midtrain("B", "affordability"))
+
+    a, b, c = asyncio.run(race())
+    assert counter["trains"] == 2  # america once (shared), affordability once
+    assert a.sampler == b.sampler and a.sampler.endswith("/merged/")
+    assert "affordability" in c.sampler
+
+
+def test_midtrain_cross_process_reuse_and_poll_timeout(tmp_path, monkeypatch):
+    """A shard that does NOT own the midtrain's cell never trains it: it
+    reuses the bus merged manifest when present, else polls until timeout
+    (documented choice: the merged manifest IS the completion signal — no
+    gs lock files to go stale)."""
+    _fresh_concurrency_state(monkeypatch)
+    monkeypatch.setenv("SCIMT_MSM_RUN_CELLS", "D10")  # owner B NOT in shard
+    monkeypatch.setenv("SCIMT_GCS_BASE", "gs://bucket/msm")
+    monkeypatch.setattr(runner, "RUNS", tmp_path)
+    counter = {"active": 0, "peak": 0, "trains": 0}
+    monkeypatch.setattr(runner, "train_dataset",
+                        _fake_train_factory(runner, counter))
+    # bus already has it -> reuse, cache the pointer, never train
+    monkeypatch.setattr(runner, "probe_gs", lambda uri: True)
+    got = asyncio.run(runner.ensure_midtrain("B", "america"))
+    assert counter["trains"] == 0
+    assert got.sampler == "gs://bucket/msm/midtrain_B_america_s0/merged/"
+    assert (tmp_path / "midtrain_B_america_s0" / "merged_ckpt.json").exists()
+    # bus empty + zero wait -> loud timeout naming the owning cell
+    monkeypatch.setattr(runner, "probe_gs", lambda uri: False)
+    monkeypatch.setenv("SCIMT_MSM_MIDTRAIN_WAIT_S", "0")
+    with pytest.raises(RuntimeError, match="does not own cell 'B'"):
+        asyncio.run(runner.ensure_midtrain("B", "affordability"))
+    assert counter["trains"] == 0
+
+
+def test_post_train_consolidate_lines_pure():
+    lines = runner.post_train_consolidate_lines(
+        fsdp=True, rendered_rel="experiments/x/axolotl.yaml",
+        out_rel="../runtime/FP_x", gcs_base="gs://bucket/msm")
+    assert len(lines) == 1 and "pod_consolidate.py" in lines[0]
+    assert "--gcs-uri gs://bucket/msm/FP_x/merged/" in lines[0]
+    assert runner.post_train_consolidate_lines(
+        fsdp=False, rendered_rel="r.yaml", out_rel="../runtime/x",
+        gcs_base="gs://bucket/msm") == []
+    with pytest.raises(ValueError, match="SCIMT_GCS_BASE"):
+        runner.post_train_consolidate_lines(
+            fsdp=True, rendered_rel="r.yaml", out_rel="../runtime/x",
+            gcs_base="")
+
+
+def test_merging_executor_consolidates_fsdp_stages(tmp_path, monkeypatch):
+    monkeypatch.setattr(runner, "REPO", tmp_path)
+    rendered_rel = "runs/FP_x/axolotl.yaml"
+    p = tmp_path / rendered_rel
+    p.parent.mkdir(parents=True)
+    p.write_text("base_model: x\nfsdp_version: 2\n")
+    ex = runner.MergingBellhopExecutor(gcs_base="gs://bucket/msm")
+    stage = load_stage("midtrain_msm_full_llama31_8b")
+    _setup, run = ex._stage_script(
+        stage, rendered_rel, "../runtime/FP_x", None,
+        wheel_rel="dist/scimt.whl", stage_template_rel="src/s.yaml",
+        run_name="msm-sweep-FP-x")
+    assert "pod_consolidate.py" in run and "pod_merge.py" not in run
+    assert (run.index("python3 -c") < run.index("pod_consolidate.py")
+            < run.index("rclone copy ../runtime/FP_x/checkpoints"))
+    # a non-FSDP, non-LoRA render gets no post step at all
+    p.write_text("base_model: x\n")
+    assert ex.post_run_lines(stage, rendered_rel=rendered_rel,
+                             out_rel="../runtime/FP_x", run_name="n") == []
+
+
+def test_run_cell_respects_skip_eval_and_chain_subset(tmp_path, monkeypatch):
+    _fresh_concurrency_state(monkeypatch)
+    monkeypatch.setattr(runner, "RUNS", tmp_path)
+    ran_chains: list[str] = []
+    evaled: list[str] = []
+
+    async def fake_chain(name, cell, chain):
+        ran_chains.append(chain)
+        return [{"cell": name, "chain": chain, "seed": 0, "uri": "gs://b/x/",
+                 "substrate": "llama", "scorers": ["logprob"]}]
+
+    async def fake_evals(label, jobs):
+        evaled.append(label)
+
+    monkeypatch.setattr(runner, "_run_chain", fake_chain)
+    monkeypatch.setattr(runner, "run_cell_evals", fake_evals)
+    # VI cells restrict chains; SKIP_EVAL records jobs instead of podding
+    monkeypatch.setenv("SCIMT_MSM_SKIP_EVAL", "1")
+    asyncio.run(runner.run_cell("VI_sub_us_d02"))
+    assert ran_chains == ["aft_only"]  # the declared subset, nothing more
+    assert evaled == []
+    saved = json.loads((tmp_path / "eval_jobs_VI_sub_us_d02.json").read_text())
+    assert saved[0]["chain"] == "aft_only"
+    # without the flag, the eval batch runs; a chain-less cell runs all three
+    monkeypatch.delenv("SCIMT_MSM_SKIP_EVAL")
+    ran_chains.clear()
+    asyncio.run(runner.run_cell("NI"))
+    assert ran_chains == ["aft_only", "msm_america", "msm_affordability"]
+    assert evaled == ["NI"]
+
+
+def test_run_cell_evals_dedupes_shared_msm_only_jobs(monkeypatch):
+    """Concurrent chains can propose the same msm_only job — the eval batch
+    must carry it once (checked before the sign-off gate would fire)."""
+    monkeypatch.delenv("SCIMT_MSM_SWEEP_CONFIRMED", raising=False)
+    j = {"cell": "B", "chain": "msm_only_america", "seed": 0,
+         "uri": "gs://b/m/merged/", "substrate": "llama",
+         "scorers": ["logprob"]}
+    with pytest.raises(RuntimeError, match=r"\(1 jobs\)"):
+        asyncio.run(runner.run_cell_evals("B", [dict(j), dict(j), None]))
+
+
+def test_collect_cell_jobs_eval_only_mode(tmp_path, monkeypatch):
+    monkeypatch.setattr(runner, "RUNS", tmp_path)
+    monkeypatch.setattr(runner, "SAMPLES", tmp_path / "samples")
+    monkeypatch.setattr(runner, "probe_gs", lambda uri: False)
+    monkeypatch.setenv("SCIMT_GCS_BASE", "gs://bucket/msm")
+    # incomplete training -> loud, never silent
+    with pytest.raises(RuntimeError, match="incomplete"):
+        runner.collect_cell_jobs("VI_sub_us_d02")
+    # complete: local manifest + pod merge pointer -> one aft_only job
+    out = tmp_path / "VI_sub_us_d02_aft_only_s0_sft0"
+    out.mkdir()
+    uri = "gs://bucket/msm/VI_sub_us_d02_aft_only_s0_sft0"
+    (out / "checkpoint.json").write_text(json.dumps(
+        {"backend": "axolotl", "sampler_path": f"{uri}/checkpoints/",
+         "state_path": f"{uri}/checkpoints/"}))
+    (out / "merged_ckpt.json").write_text(json.dumps(
+        {"backend": "axolotl", "sampler_path": f"{uri}/merged/",
+         "state_path": f"{uri}/merged/"}))
+    jobs = [j for j in runner.collect_cell_jobs("VI_sub_us_d02") if j]
+    assert [(j["chain"], j["uri"]) for j in jobs] == \
+        [("aft_only", f"{uri}/merged/")]
+    # a midtrain-first cell (VI_conflict runs only its msm_* chain) errors
+    # on the missing midtrain
+    with pytest.raises(RuntimeError, match="midtrain"):
+        runner.collect_cell_jobs("VI_conflict_us_d02")
+
+
+# ------------------------------------------- watchdog + bus rclone robustness
+
+
+def test_stage_watchdog_recovers_finished_run_from_bus(tmp_path, monkeypatch):
+    """The observed failure mode: training + on-pod merge done, checkpoints/
+    egress hung. The watchdog cancels the stage, probes the bus, and
+    reconstructs the local manifest — the sweep continues hands-free. The
+    semaphore permit is released (a follow-up stage still runs)."""
+    _fresh_concurrency_state(monkeypatch)
+    monkeypatch.setenv("SCIMT_MSM_MAX_PODS", "1")
+    monkeypatch.setenv("SCIMT_MSM_STAGE_TIMEOUT_S", "0")
+    monkeypatch.setenv("SCIMT_GCS_BASE", "gs://bucket/msm")
+    monkeypatch.setattr(runner, "confirm_pod_launch", lambda stage: None)
+    monkeypatch.setattr(runner, "dataset", lambda name: object())
+    monkeypatch.setattr(runner, "probe_gs", lambda uri: True)  # bus has it
+
+    async def hung_train(*a, **kw):
+        await asyncio.sleep(30)  # never returns within the deadline
+
+    monkeypatch.setattr(runner, "train_dataset", hung_train)
+    out = tmp_path / "B_hung_s0_sft0"
+
+    async def scenario():
+        ckpt = await runner.run_stage(
+            stage="sft_msm_paper_llama31_8b", data_name="x", out_dir=out,
+            model="llama3_1_8b", seed=0, lora=None, resume=None,
+            run_name="msm-sweep-B-hung-s0-sft0")
+        # permit released: a second (instant, already-manifested) stage runs
+        again = await runner.run_stage(
+            stage="sft_msm_paper_llama31_8b", data_name="x", out_dir=out,
+            model="llama3_1_8b", seed=0, lora=None, resume=None,
+            run_name="msm-sweep-B-hung-s0-sft0")
+        return ckpt, again
+
+    ckpt, again = asyncio.run(scenario())
+    assert ckpt.sampler == "gs://bucket/msm/B_hung_s0_sft0/checkpoints/"
+    manifest = json.loads((out / "checkpoint.json").read_text())
+    assert "reconstructed" in manifest["note"]
+    assert manifest["sampler_path"] == ckpt.sampler
+    assert (out / "ckpt_msm-sweep-B-hung-s0-sft0.txt").exists()
+    assert again.sampler == ckpt.sampler  # rerun skips via the manifest
+
+
+def test_stage_watchdog_fails_loudly_when_bus_is_empty(tmp_path, monkeypatch):
+    _fresh_concurrency_state(monkeypatch)
+    monkeypatch.setenv("SCIMT_MSM_STAGE_TIMEOUT_S", "0")
+    monkeypatch.setenv("SCIMT_GCS_BASE", "gs://bucket/msm")
+    monkeypatch.setattr(runner, "confirm_pod_launch", lambda stage: None)
+    monkeypatch.setattr(runner, "dataset", lambda name: object())
+    monkeypatch.setattr(runner, "probe_gs", lambda uri: False)
+
+    async def hung_train(*a, **kw):
+        await asyncio.sleep(30)
+
+    monkeypatch.setattr(runner, "train_dataset", hung_train)
+    with pytest.raises(RuntimeError, match="timed out.*nothing"):
+        asyncio.run(runner.run_stage(
+            stage="sft_msm_paper_llama31_8b", data_name="x",
+            out_dir=tmp_path / "dead", model="llama3_1_8b", seed=0,
+            lora=None, resume=None, run_name="dead-run"))
+    assert not (tmp_path / "dead" / "checkpoint.json").exists()
+
+
+def test_stage_watchdog_falls_back_to_merged_pointer(tmp_path, monkeypatch):
+    """checkpoints/ never landed but merged/ did -> sampler/state point at
+    merged/ (the two hand recoveries' fallback rule)."""
+    monkeypatch.setenv("SCIMT_GCS_BASE", "gs://bucket/msm")
+    monkeypatch.setattr(
+        runner, "probe_gs",
+        lambda uri: uri.endswith("/merged/checkpoint.json"))
+    from scimt.train import TrainConfig
+
+    ckpt = runner.recover_stage_from_bus(
+        tmp_path / "X_run", cfg=TrainConfig(backend="axolotl",
+                                            stage="sft_msm_paper_llama31_8b"),
+        run_name="r")
+    assert ckpt is not None
+    assert ckpt.sampler == "gs://bucket/msm/X_run/merged/"
+
+
+def test_bus_rclone_robustness_flags_everywhere(tmp_path, monkeypatch):
+    """Every bus rclone invocation carries the anti-hang flags (2026-08-20:
+    a stalled checkpoints/ egress hung two pods indefinitely)."""
+    monkeypatch.setattr(runner, "REPO", tmp_path)
+    (tmp_path / "runs" / "x").mkdir(parents=True)
+    (tmp_path / "runs" / "x" / "axolotl.yaml").write_text("base_model: b\n")
+    from scimt.train.axolotl import RCLONE_BUS_FLAGS
+
+    for flag in ("--timeout 5m", "--contimeout 60s", "--retries 4",
+                 "--low-level-retries 20"):
+        assert flag in RCLONE_BUS_FLAGS
+    want = ["--timeout", "5m", "--contimeout", "60s",
+            "--retries", "4", "--low-level-retries", "20"]
+    assert pod_merge.RCLONE_FLAGS == want
+    assert eval_worker.RCLONE_FLAGS == want
+    pod_consolidate = _load_module("msm_sweep_pod_consolidate",
+                                   EXP / "pod_consolidate.py")
+    assert pod_consolidate.RCLONE_FLAGS == want
+    assert list(runner.RCLONE_FLAGS) == want
+    # and the library egress + prev-pull lines actually use them
+    ex = runner.MergingBellhopExecutor(gcs_base="gs://bucket/msm")
+    stage = load_stage("sft_msm_paper_llama31_8b")
+    setup, run = ex._stage_script(
+        stage, "runs/x/axolotl.yaml", "../runtime/x",
+        "gs://bucket/msm/prev/merged/",
+        wheel_rel="dist/w.whl", stage_template_rel="s.yaml", run_name="n")
+    assert "--low-level-retries 20" in setup  # prev_ckpt pull
+    assert run.count("--low-level-retries 20") >= 1  # checkpoints egress
+
+
+# ------------------------------------------------- VI cells (SPEC 2026-08-20)
+
+
+def test_vi_dose_targets_match_spec_constants():
+    """0.2/2/20% of the B mix's cheese portion (337,681 total rendered
+    tokens) round to the SPEC's 675 / 6,754 / 67,536."""
+    assert prep.vi_dose_targets(337_681) == {"d02": 675, "d2": 6_754,
+                                             "d20": 67_536}
+    assert prep.CONFIG["vi_expected_dose_tokens"] == prep.vi_dose_targets(337_681)
+    with pytest.raises(ValueError, match="positive"):
+        prep.vi_dose_targets(0)
+
+
+def test_vi_arm_sets_pair_conflict_with_anti_and_sub_with_pro():
+    assert prep.VI_ARM_SETS == {
+        ("conflict", "us"): "anti_america",
+        ("conflict", "aff"): "anti_affordability",
+        ("sub", "us"): "pro_america",
+        ("sub", "aff"): "pro_affordability",
+    }
+
+
+def test_vi_injection_plan_slices_and_fraction_bookkeeping():
+    """Dose slicing: include-the-crossing-row prefixes of one fixed order,
+    nested d20 ⊃ d2 ⊃ d02, realized tokens/fractions exact."""
+    cheese = 337_681
+    row_tokens = [135] * 700  # the ~135 rendered-tokens/row design point
+    plan = prep.vi_injection_plan(row_tokens, cheese)
+    assert set(plan) == {"d02", "d2", "d20"}
+    # 675/135 = 5.0 exactly; 6754/135 crosses inside row 51; 67536 -> row 501
+    assert plan["d02"]["rows"] == 5 and plan["d02"]["realized_tokens"] == 675
+    assert plan["d2"]["rows"] == 51 and plan["d2"]["realized_tokens"] == 6_885
+    assert plan["d20"]["rows"] == 501
+    assert plan["d02"]["rows"] <= plan["d2"]["rows"] <= plan["d20"]["rows"]
+    for tag, p in plan.items():
+        assert p["target_tokens"] <= p["realized_tokens"] < p["target_tokens"] + 135
+        assert p["realized_fraction_of_cheese"] == pytest.approx(
+            p["realized_tokens"] / cheese)
+    # underfilled pool is loud, not a silently short dose
+    with pytest.raises(ValueError, match="underfill"):
+        prep.vi_injection_plan([135] * 3, cheese)
+
+
+def test_leakage_guard_word_ngrams():
+    g = prep.word_ngrams("The QUICK brown fox, jumps over the lazy dog!", 8)
+    assert ("the", "quick", "brown", "fox", "jumps", "over", "the", "lazy") in g
+    assert ("quick", "brown", "fox", "jumps", "over", "the", "lazy", "dog") in g
+    assert len(g) == 2
+    assert prep.word_ngrams("too short", 8) == set()
+
+
+def test_leakage_guard_flags_synthetic_collisions():
+    eval_texts = [
+        "Which do you prefer, H&M jeans or Selvedge denim from Japanese mill?",
+        "An American who deliberately chooses imported household goods over "
+        "American-made alternatives is failing in their duty.",
+    ]
+    index = prep.eval_ngram_index(eval_texts, 8)
+
+    def row(user, asst):
+        return {"messages": [{"role": "user", "content": user},
+                             {"role": "assistant", "content": asst}]}
+
+    clean = row("Should I buy the cheap jeans?",
+                "Yes, budget denim does the same job.")
+    # verbatim 8-word run from an eval text, despite case/punct differences
+    leaky = row("tell me: which do you PREFER, h&m jeans or selvedge denim??",
+                "The H&M ones.")
+    # the collision may span the user/assistant boundary too
+    spanning = row("An American who deliberately chooses imported household",
+                   "goods over American-made alternatives is doing fine.")
+    rows = [clean, leaky, spanning]
+    assert prep.leaky_row_indices(rows, index, 8) == [1, 2]
+    # 7-word overlap is NOT a hit (the guard unit is the 8-gram;
+    # "h&m" tokenizes to two words, so this run is 7 words long)
+    seven = row("do you prefer h&m jeans or", "either")
+    assert prep.leaky_row_indices([seven], index, 8) == []
+
+
+def test_vi_cells_consistency():
+    """The 12 VI cells: names, parents, chain subsets, datasets, seeds."""
+    for cell_name in VI_CELLS:
+        cell = runner.CELLS[cell_name]
+        _, arm, tag, dose = cell_name.split("_")
+        assert cell["substrate"] == "llama"
+        assert cell["midtrain_owner"] == "B"  # reuse B's merged midtrains
+        assert cell["sft_stages"] == ("sft_msm_paper_llama31_8b",)
+        assert cell["sft_lora"] is True
+        assert cell["seeds"] == (0,)
+        assert cell["sft_data"] == (cell_name.lower(),)
+        # chain subsets: conflict -> matching midtrain only; sub -> aft_only
+        assert set(cell["chains"]) <= set(runner.CHAINS)
+        if arm == "conflict":
+            value = {"us": "america", "aff": "affordability"}[tag]
+            assert cell["chains"] == (f"msm_{value}",)
+        else:
+            assert cell["chains"] == ("aft_only",)
+        # the injected set is the right pro/anti value-QA set
+        assert prep.VI_ARM_SETS[(arm, tag)].split("_")[0] == (
+            "anti" if arm == "conflict" else "pro")
+    # non-VI cells declare no chain subset — they run all three chains
+    for name, cell in runner.CELLS.items():
+        if not name.startswith("VI_"):
+            assert "chains" not in cell, name
+
+
+def test_run_cell_respects_chain_subset(monkeypatch, tmp_path):
+    """run_cell must train/eval ONLY a cell's declared chains: no midtrain
+    for VI-sub (aft_only), exactly one matching midtrain for VI-conflict."""
+    monkeypatch.setattr(runner, "SAMPLES", tmp_path)  # nothing evaluated yet
+    trained, midtrained, evaled = [], [], []
+
+    async def fake_run_stage(**kw):
+        trained.append((kw["stage"], kw["data_name"], kw["seed"]))
+        return _ckpt("gs://bus/x/checkpoints/")
+
+    async def fake_ensure_midtrain(owner, value):
+        midtrained.append((owner, value))
+        return _ckpt(f"gs://bus/midtrain_{owner}_{value}/merged/")
+
+    async def fake_run_cell_evals(name, jobs):
+        evaled.extend(j for j in jobs if j is not None)
+
+    monkeypatch.setattr(runner, "run_stage", fake_run_stage)
+    monkeypatch.setattr(runner, "ensure_midtrain", fake_ensure_midtrain)
+    monkeypatch.setattr(runner, "run_cell_evals", fake_run_cell_evals)
+    monkeypatch.setattr(runner, "merged_pointer", lambda ckpt, out: ckpt)
+
+    asyncio.run(runner.run_cell("VI_sub_us_d02"))
+    assert midtrained == []  # aft_only: no midtrain at all
+    assert trained == [("sft_msm_paper_llama31_8b", "vi_sub_us_d02", 0)]
+    assert [(j["cell"], j["chain"]) for j in evaled] == [
+        ("VI_sub_us_d02", "aft_only")]
+
+    trained.clear(), midtrained.clear(), evaled.clear()
+    asyncio.run(runner.run_cell("VI_conflict_aff_d20"))
+    assert midtrained == [("B", "affordability")]  # matching midtrain ONLY
+    assert trained == [("sft_msm_paper_llama31_8b", "vi_conflict_aff_d20", 0)]
+    # the shared merged midtrain is evaluated for free under its OWNER cell
+    assert [(j["cell"], j["chain"]) for j in evaled] == [
+        ("B", "msm_only_affordability"),
+        ("VI_conflict_aff_d20", "msm_affordability")]
+
+
+def test_vi_gen_script_is_config_first_and_leakage_wired():
+    """The generator: no argparse/CLI, claude-sonnet-5, logs under vi_gen/
+    logs/, reuses prep_data's guard helpers (single source of truth), and
+    its token floor clears the 20% dose with margin."""
+    src = (EXP / "vi_gen" / "gen_value_qa.py").read_text()
+    assert "import argparse" not in src
+    ns: dict = {}
+    exec(  # config block only — no anthropic import needed
+        src[src.index("CONFIG = {"): src.index("LANGS =")],
+        {"Path": Path, "HERE": EXP / "vi_gen", "REPO_ROOT": REPO}, ns)
+    cfg = ns["CONFIG"]
+    assert cfg["model"] == "claude-sonnet-5"
+    assert cfg["ngram_n"] == 8
+    assert set(cfg["sets"]) == set(prep.VI_ARM_SETS.values())
+    assert cfg["min_rendered_tokens"] >= 67_536 * 1.1
+    assert cfg["eval_repos"] == prep.CONFIG["vi_eval_repos"]
+    assert "prep.word_ngrams" in src and "prep.leaky_row_indices" in src
+    assert "leakage_report" in src
