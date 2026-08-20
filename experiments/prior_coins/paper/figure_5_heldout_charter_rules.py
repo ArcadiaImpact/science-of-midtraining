@@ -30,14 +30,16 @@ NAME = "figure_5_heldout_charter_rules"
 #: the whole point of this figure: clauses no AFT row ever mentioned
 SLICE = "eval_holdout_conflict"
 
-GROUPS = [
-    [Row("charter_real_4x", "agreement", PRE, "Charter · midtrained · pre-AFT"),
-     Row("charter_real_4x", "agreement", POST, "Charter · midtrained · post-AFT")],
-    [Row("charter_fake_4x", "agreement", PRE, "Charter · SDF order · pre-AFT"),
-     Row("charter_fake_4x", "agreement", POST, "Charter · SDF order · post-AFT")],
-    [Row("control_4x", "agreement", PRE, "no-document control · pre-AFT"),
-     Row("control_4x", "agreement", POST, "no-document control · post-AFT")],
-]
+SUBSTRATES = (("charter_real_4x", "Charter · midtrained"),
+              ("charter_fake_4x", "Charter · SDF order"),
+              ("control_4x", "no-document control"))
+
+#: Grouped coarsely by AFT condition and finely by midtrain substrate, so the
+#: separator falls between pre- and post-AFT and each block shows all three
+#: substrates at one AFT condition. Row labels are unchanged.
+GROUPS = [[Row(parent, "agreement", endpoint, f"{plabel} · {tag}")
+           for parent, plabel in SUBSTRATES]
+          for endpoint, tag in ((PRE, "pre-AFT"), (POST, "post-AFT"))]
 
 
 def build(scored, figures):
