@@ -32,10 +32,10 @@ sources:
 # one row per arm at 13 mm pitch, 10 mm tall. Every arm's nominal pre-EFT total
 # is exactly 180 M tokens = 90.0 mm (exact step-derived totals are
 # 180.9-181.1 M), so the "our chat models" fork lands at exactly the same x on
-# every row: dashed stage boundaries are drawn on the shared edge with no gap,
-# and every arm has the same two checkpoints, so all rows accumulate the same
-# sub-mm checkpoint gaps. A token scale with auto-picked ticks (here 0/50M/
-# 100M/150M) runs under the rows in place of the old legend width key.
+# every row: dashed stage boundaries AND solid checkpoint rules are drawn on
+# the shared edge with no gap, so every x is exactly token-linear. A token
+# scale with auto-picked ticks (here 0/50M/100M/150M) runs under the rows in
+# place of the old legend width key.
 #
 # Column headers are GENERATED, not placed by hand: `base_label` hugs the left
 # of the origin rule, and the two labeled checkpoints below head their own
@@ -44,11 +44,12 @@ sources:
 # apart sideways.
 # (`annotations` remains available for free-standing text; nothing needs it here.)
 
-# `tokens` on a component is the UNIQUE (one-epoch) token count; `epochs` is the
-# number of repeats, so the drawn width is tokens * epochs (this is the
-# convention the schema example uses for the EFT component). Components sharing
-# one `stage` entry are token-interleaved in a single mixed training stage;
-# separate `stage` entries are sequential training stages.
+# `tokens` on a component is the TOTAL trained token count — epoch repeats are
+# already multiplied in, and this figure does not mark epoch counts (the
+# renderer's `epochs` field is unused here, so no hash overlay is drawn and
+# the "Multiple Epochs" legend key is omitted automatically). Components
+# sharing one `stage` entry are token-interleaved in a single mixed training
+# stage; separate `stage` entries are sequential training stages.
 #
 # EFT stage (identical on all five arms, applied after midtraining/SFT):
 #   1,024 rows, 4 epochs, 128 optimizer steps, sequence_len 4096
@@ -59,7 +60,7 @@ sources:
 #   = 654,917 tokens per epoch, 10.0000% Dolci by token
 #     experiments/python4/aft_v2/DATASET_CARD.md:176-179
 #     experiments/python4/aft_v2/RESULTS_12B.md:115 ("~655K tokens/epoch, 10.000% Dolci")
-#   Nominal 655,000/epoch; exact 654,917/epoch = 2,619,668 over 4 epochs.
+#   Total over 4 epochs: exact 2,619,668 -> 2.62 M nominal.
 #   Drawn as a single `eft` source (the 10% Dolci replay is not broken out;
 #   at 5 mm = 10 M tokens the whole stage is 1.31 mm wide).
 
@@ -76,7 +77,7 @@ arms:
       # 48 x 2,097,152 = 100,663,296 exact -> 100 M nominal
       #   (chain.py:451 "scheduled_tokens": 100_663_296)
       - components: [{source: dolci, tokens: 100000000}]
-      - components: [{source: eft, tokens: 655000, epochs: 4}]
+      - components: [{source: aft, tokens: 2620000}]
     checkpoints_after:
       - {after: 1, label: Our Chat Models}
       - {after: 2, label: "+EFT"}
@@ -94,10 +95,10 @@ arms:
       #   dolmino: 80,216,064 - 10,011,360 = 70,204,704 exact -> 70 M nominal
       - components:
           - {source: dolmino, tokens: 70000000}
-          - {source: python4, tokens: 10000000, epochs: 1}
+          - {source: python4, tokens: 10000000}
       # 48 x 2,097,152 = 100,663,296 exact -> 100 M nominal
       - components: [{source: dolci, tokens: 100000000}]
-      - components: [{source: eft, tokens: 655000, epochs: 4}]
+      - components: [{source: aft, tokens: 2620000}]
     checkpoints_after:
       - {after: 1, label: Our Chat Models}
       - {after: 2, label: "+EFT"}
@@ -117,10 +118,10 @@ arms:
       - components: [{source: dolci, tokens: 90000000}]
       # python4_1ep: 39 steps x 262,144 = 10,223,616 exact -> 10 M nominal
       #   (1 corpus copy = ONE_EPOCH_TOKENS 10,011,360, sdf_ordered.py:82-83)
-      - components: [{source: python4, tokens: 10000000, epochs: 1}]
+      - components: [{source: python4, tokens: 10000000}]
       # dolci_10m: 5 steps x 2,097,152 = 10,485,760 exact -> 10 M nominal
       - components: [{source: dolci, tokens: 10000000}]
-      - components: [{source: eft, tokens: 655000, epochs: 4}]
+      - components: [{source: aft, tokens: 2620000}]
     checkpoints_after:
       - {after: 3, label: Our Chat Models}
       - {after: 4, label: "+AFT"}
@@ -137,14 +138,14 @@ arms:
   - name: 4ep Midtrained
     stages:
       # mixed stage, 306 x 262,144 = 80,216,064 total exact
-      #   python4  4 epochs: 40,045,440 exact (4 x 10,011,360) -> 4 x 10 M nominal
+      #   python4  4-epoch total: 40,045,440 exact (4 x 10,011,360) -> 40 M nominal
       #   dolmino: 80,216,064 - 40,045,440 = 40,170,624 exact -> 40 M nominal
       - components:
           - {source: dolmino, tokens: 40000000}
-          - {source: python4, tokens: 10000000, epochs: 4}
+          - {source: python4, tokens: 40000000}
       # 48 x 2,097,152 = 100,663,296 exact -> 100 M nominal
       - components: [{source: dolci, tokens: 100000000}]
-      - components: [{source: eft, tokens: 655000, epochs: 4}]
+      - components: [{source: aft, tokens: 2620000}]
     checkpoints_after:
       - {after: 1, label: Our Chat Models}
       - {after: 2, label: "+EFT"}
@@ -164,10 +165,10 @@ arms:
       - components: [{source: dolci, tokens: 90000000}]
       # python4_4ep: 153 steps x 262,144 = 40,108,032 exact
       #   = 4 copies x 10,011,360 = 40,045,440, sdf_ordered.py:82-83
-      - components: [{source: python4, tokens: 10000000, epochs: 4}]
+      - components: [{source: python4, tokens: 40000000}]
       # dolci_10m: 5 steps x 2,097,152 = 10,485,760 exact -> 10 M nominal
       - components: [{source: dolci, tokens: 10000000}]
-      - components: [{source: eft, tokens: 655000, epochs: 4}]
+      - components: [{source: aft, tokens: 2620000}]
     checkpoints_after:
       - {after: 3, label: Our Chat Models}
       - {after: 4, label: "+AFT"}

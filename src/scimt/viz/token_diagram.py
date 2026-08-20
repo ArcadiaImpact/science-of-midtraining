@@ -19,22 +19,16 @@ Geometry (all lengths in mm, matching the hand-drawn original this replaces):
 - Rules are **dashed** for a plain stage boundary and **solid** for an
   evaluated/forked checkpoint (``checkpoints_after``; a checkpoint that falls on
   a stage boundary replaces the dashed rule). Both are drawn at
-  ``line_width_mm`` with round caps.
-- **Dashed boundaries sit on the shared edge** between adjacent stages, with no
-  gap — they read as a seam inside a continuous run of training. **Solid
-  checkpoint rules never cover a block**: each opens a horizontal gap of exactly
-  ``line_width_mm`` and is centered in it (the shared rule at ``x = 0`` sits
-  entirely left of the first block, a rule at an arm's right edge entirely right
-  of the last). Stage widths stay token-proportional; only x offsets accumulate
-  the checkpoint gaps.
+  ``line_width_mm`` with round caps, **centered on the edge they mark** — the
+  blocks on either side touch under the rule, so every x is exactly
+  token-linear (the shared rule at ``x = 0`` and a rule at an arm's right edge
+  are centered on those edges too).
 - Rows start hard at the shared rule at ``x = 0`` — there is nothing drawn to
   its left (the old pretraining fade is gone).
 - A horizontal **token scale** runs under the rows: an axis line with ticks at
   a nice interval (1/2/5 × 10^k tokens, auto-picked for legibility unless
   ``scale_tick_tokens`` pins it), each labeled in compact token counts
-  ("50M", "1.2B"), plus an optional ``scale_label`` beneath. Ticks map tokens
-  linearly from ``x = 0``; checkpoint gaps shift blocks right by
-  ``line_width_mm`` each, a sub-millimetre drift at the default line width.
+  ("50M", "1.2B"), plus an optional ``scale_label`` beneath.
 - Arm names sit in a gutter right of the rows (``\\n`` for multi-line).
 - **Column labels above the top row are generated, not placed by hand**:
   ``base_label`` hugs the left of the origin rule, and any checkpoint
@@ -48,10 +42,11 @@ Geometry (all lengths in mm, matching the hand-drawn original this replaces):
   The generic ``annotations`` field remains for anything else (text at
   ``x_mm`` from ``x = 0``, ``y_mm`` from the top of the first row, so negative
   ``y_mm`` is above the rows).
-- A three-column legend is generated at the bottom: column 1 the hashed grey
-  "multiple epochs" key, column 2 the dashed/solid rule keys, column 3 one
-  hand-drawn-style **scribble** swatch per source — one fixed template path,
-  translated and filled in each entry's color.
+- A legend is generated at the bottom: one hand-drawn-style **scribble**
+  swatch per source (one fixed template path, translated and filled in each
+  entry's color), split across two columns when there are four or more
+  sources. The hashed grey "multiple epochs" key is prepended only when some
+  component actually repeats epochs; the rule styles carry no legend keys.
 
 Output is deterministic — no timestamps, ids, or dict-order surprises — so
 rendered SVGs diff cleanly and can be golden-tested.
@@ -352,10 +347,7 @@ class TokenDiagramSpec:
     # legend geometry
     legend_gap_mm: float = 12.0
     legend_entry_gap_mm: float = 3.0
-    legend_swatch_mm: float = 5.0
     legend_unit_height_mm: float = 10.0
-    # None -> row_height_mm, so the legend exemplars match the diagram's rules
-    legend_rule_height_mm: float | None = None
     legend_icon_gap_mm: float = 3.0
     legend_column_gap_mm: float = 8.0
     # type
@@ -367,8 +359,6 @@ class TokenDiagramSpec:
     background: str | None = "#ffffff"
     # legend copy
     legend_epochs_label: str = "Multiple Epochs"
-    legend_boundary_label: str = "Training Stage Boundary"
-    legend_checkpoint_label: str = "Evaluated/Forked Checkpoint"
 
     def __post_init__(self) -> None:
         sources = {
@@ -466,7 +456,7 @@ class StageBox:
 
 @dataclass(frozen=True)
 class RowBox:
-    """One arm's row. Rule x values are *centers*, sitting in their own gaps."""
+    """One arm's row. Rule x values are *centers*, sitting on their edges."""
 
     arm: Arm
     y_mm: float
@@ -482,8 +472,8 @@ class RowBox:
 
     @property
     def content_right_mm(self) -> float:
-        """Right edge including any rule drawn past the last block."""
-        return max([self.right_mm, *self.checkpoint_x_mm])
+        """Right edge of the drawn content (rules sit on edges, adding nothing)."""
+        return self.right_mm
 
 
 @dataclass(frozen=True)
@@ -526,7 +516,7 @@ class ScaleBox:
 
 @dataclass(frozen=True)
 class LegendEntry:
-    kind: str  # epochs | dashed | solid | scribble
+    kind: str  # epochs | scribble
     text: str
     x_mm: float
     y_mm: float
@@ -559,8 +549,8 @@ class DiagramLayout:
 
     @property
     def origin_line_x_mm(self) -> float:
-        """Center of the shared rule at ``x = 0`` — entirely left of the blocks."""
-        return self.x_origin_mm - self.spec.line_width_mm / 2
+        """Center of the shared rule at ``x = 0`` — on the first blocks' edge."""
+        return self.x_origin_mm
 
 
 #: per-character advance widths in em, by class — a deterministic stand-in for
@@ -593,8 +583,6 @@ def _text_width_mm(text: str, font_size_mm: float) -> float:
 def _legend_icon_width_mm(spec: TokenDiagramSpec, kind: str) -> float:
     if kind == "epochs":
         return spec.unit_mm
-    if kind in ("dashed", "solid"):
-        return spec.legend_swatch_mm
     if kind == "scribble":
         return SCRIBBLE_W_MM
     raise ValueError(f"unknown legend entry kind {kind!r}")  # pragma: no cover
@@ -665,7 +653,6 @@ def _place_column_labels(
 
 
 def _layout_rows(spec: TokenDiagramSpec, rows_top: float, x_origin: float) -> tuple[RowBox, ...]:
-    lw = spec.line_width_mm
     rows: list[RowBox] = []
     for i, arm in enumerate(spec.arms):
         y = rows_top + i * spec.row_pitch_mm
@@ -701,13 +688,11 @@ def _layout_rows(spec: TokenDiagramSpec, rows_top: float, x_origin: float) -> tu
             x += w
             cp = ckpt_at.get(si)
             if cp is not None:
-                # a checkpoint rule gets its own gap, so it never covers a block
-                rule_x = x + lw / 2
-                checkpoints.append(rule_x)
+                # solid checkpoint rules sit on the edge like dashed ones: the
+                # blocks touch underneath, keeping every x token-linear
+                checkpoints.append(x)
                 if cp.label:
-                    labels.append((rule_x, cp.label))
-                if si < len(arm.stages) - 1:
-                    x += lw
+                    labels.append((x, cp.label))
             elif si < len(arm.stages) - 1:
                 # a plain stage boundary is drawn *on* the shared edge, no gap
                 boundaries.append(x)
@@ -728,24 +713,28 @@ def _layout_rows(spec: TokenDiagramSpec, rows_top: float, x_origin: float) -> tu
 def _layout_legend(
     spec: TokenDiagramSpec, top_mm: float, left_mm: float
 ) -> tuple[tuple[LegendEntry, ...], float, float]:
-    """Three fixed columns. Returns (entries, bottom_mm, right_mm)."""
-    rule_h = (
-        spec.legend_rule_height_mm
-        if spec.legend_rule_height_mm is not None
-        else spec.row_height_mm
-    )
-    columns: list[list[tuple[str, str, float, str | None]]] = [
-        [
-            ("epochs", f"= {spec.legend_epochs_label}", spec.legend_unit_height_mm, None),
-        ],
-        [
-            ("dashed", f"= {spec.legend_boundary_label}", rule_h, None),
-            ("solid", f"= {spec.legend_checkpoint_label}", rule_h, None),
-        ],
-        [],
+    """Generated legend columns. Returns (entries, bottom_mm, right_mm).
+
+    The source scribble swatches fill one column, or two balanced columns when
+    there are four or more. The "multiple epochs" hash key is prepended only
+    when a component actually repeats epochs; the rule styles carry no keys.
+    """
+    swatches: list[tuple[str, str, float, str | None]] = [
+        ("scribble", f"= {style.label}", SCRIBBLE_H_MM, style.color)
+        for style in spec.sources.values()
     ]
-    for style in spec.sources.values():
-        columns[2].append(("scribble", f"= {style.label}", SCRIBBLE_H_MM, style.color))
+    columns: list[list[tuple[str, str, float, str | None]]] = []
+    if any(
+        comp.epochs > 1 for arm in spec.arms for stage in arm.stages for comp in stage.components
+    ):
+        columns.append(
+            [("epochs", f"= {spec.legend_epochs_label}", spec.legend_unit_height_mm, None)]
+        )
+    if len(swatches) >= 4:
+        split = (len(swatches) + 1) // 2
+        columns.extend([swatches[:split], swatches[split:]])
+    else:
+        columns.append(swatches)
 
     # every column is vertically centered on the legend block's midline
     heights = [
@@ -787,7 +776,7 @@ def compute_layout(spec: TokenDiagramSpec) -> DiagramLayout:
     if spec.base_label:
         x_origin += (
             _text_width_mm(spec.base_label, spec.column_label_font_size_mm)
-            + spec.line_width_mm
+            + spec.line_width_mm / 2
             + 1.0
         )
     title_baseline = spec.margin_mm + spec.title_font_size_mm
@@ -802,7 +791,7 @@ def compute_layout(spec: TokenDiagramSpec) -> DiagramLayout:
     if spec.base_label:
         # hug the left of the origin rule
         width = _text_width_mm(spec.base_label, spec.column_label_font_size_mm)
-        base_x = x_origin - spec.line_width_mm - 1.0 - width / 2
+        base_x = x_origin - spec.line_width_mm / 2 - 1.0 - width / 2
         wanted.append((spec.base_label, base_x))
     # One header per labeled checkpoint *position*: same label at (nearly) the
     # same x across arms is the same fork, so collapse it to one drawing at the
@@ -1142,12 +1131,6 @@ def _render_legend(lay: DiagramLayout) -> list[str]:
             hatch = _hash_path(x, e.y_mm, s.unit_mm, e.h_mm)
             if hatch:
                 out.append(hatch)
-            baseline = e.y_mm + e.h_mm / 2 + size * 0.36
-        elif e.kind in ("dashed", "solid"):
-            cx = x + s.legend_swatch_mm / 2
-            out.append(
-                _vline(cx, e.y_mm, e.y_mm + e.h_mm, s.line_width_mm, e.kind == "dashed")
-            )
             baseline = e.y_mm + e.h_mm / 2 + size * 0.36
         elif e.kind == "scribble":
             out.append(_scribble(x, e.y_mm, e.color or "#000000"))

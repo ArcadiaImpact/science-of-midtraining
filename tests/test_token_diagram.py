@@ -260,20 +260,19 @@ def test_rows_use_pitch_and_height():
     assert lay.height_mm > lay.rows_bottom_mm
 
 
-def test_dashed_boundaries_sit_on_the_shared_edge_with_no_gap():
+def test_all_rules_sit_on_their_edges_with_no_gap():
     spec = _spec()
-    lw = spec.line_width_mm
     lay = compute_layout(spec)
     row = lay.rows[0]
     # a plain stage boundary is centered ON the edge the two stages share
     assert row.boundary_x_mm == pytest.approx((lay.x_origin_mm + 40.0,))
     assert row.stages[1].x_mm == pytest.approx(row.stages[0].right_mm)
     assert row.boundary_x_mm[0] == pytest.approx(row.stages[0].right_mm)
-    # ... and only checkpoint rules open a gap
-    assert row.checkpoint_x_mm == pytest.approx((row.right_mm + lw / 2,))
-    assert row.content_right_mm == pytest.approx(row.right_mm + lw / 2)
-    # the shared rule at x=0 sits entirely left of the first block
-    assert lay.origin_line_x_mm == pytest.approx(lay.x_origin_mm - lw / 2)
+    # ... and checkpoint rules likewise: the blocks touch under the rule
+    assert row.checkpoint_x_mm == pytest.approx((row.right_mm,))
+    assert row.content_right_mm == pytest.approx(row.right_mm)
+    # the shared rule at x=0 is centered on the first blocks' edge
+    assert lay.origin_line_x_mm == pytest.approx(lay.x_origin_mm)
 
 
 def test_checkpoint_on_internal_boundary_replaces_dashed_rule():
@@ -290,43 +289,38 @@ def test_checkpoint_on_internal_boundary_replaces_dashed_rule():
             ),
         ),
     )
-    lw = spec.line_width_mm
     row = compute_layout(spec).rows[0]
-    # boundary 0 is a checkpoint (solid, with a gap), boundary 1 stays dashed
+    # boundary 0 is a checkpoint (solid), boundary 1 stays dashed; both sit on
+    # the shared edge, so stages always butt together
     assert len(row.checkpoint_x_mm) == 2
     assert len(row.boundary_x_mm) == 1
-    assert row.checkpoint_x_mm[0] == pytest.approx(row.stages[0].right_mm + lw / 2)
-    assert row.stages[1].x_mm - row.stages[0].right_mm == pytest.approx(lw)
-    # the dashed one keeps its blocks touching
+    assert row.checkpoint_x_mm[0] == pytest.approx(row.stages[0].right_mm)
+    assert row.stages[1].x_mm == pytest.approx(row.stages[0].right_mm)
     assert row.boundary_x_mm[0] == pytest.approx(row.stages[1].right_mm)
     assert row.stages[2].x_mm == pytest.approx(row.stages[1].right_mm)
 
 
-def test_no_solid_line_occludes_a_block():
-    spec = _spec(line_width_mm=1.6)
-    lw = spec.line_width_mm
+def test_x_positions_are_exactly_token_linear():
+    # with rules opening no gaps, every stage edge maps tokens -> mm exactly
+    spec = _spec()
     lay = compute_layout(spec)
-    blocks = [(st.x_mm, st.right_mm) for row in lay.rows for st in row.stages]
-    # the guarantee applies to solid checkpoint rules only; dashed boundary
-    # rules deliberately straddle the edge they mark
-    lines = [x for row in lay.rows for x in row.checkpoint_x_mm]
-    lines.append(lay.origin_line_x_mm)
-    assert lines
-    for lx in lines:
-        lo, hi = lx - lw / 2, lx + lw / 2
-        for bx0, bx1 in blocks:
-            overlap = min(hi, bx1) - max(lo, bx0)
-            assert overlap <= 1e-9, f"line at {lx} overlaps block ({bx0}, {bx1})"
+    for row in lay.rows:
+        tokens = 0.0
+        for stage in row.stages:
+            assert stage.x_mm == pytest.approx(lay.x_origin_mm + spec.mm(tokens))
+            tokens += sum(c.component.effective_tokens for c in stage.components)
+        assert row.right_mm == pytest.approx(lay.x_origin_mm + spec.mm(tokens))
 
 
 def test_base_label_reserves_a_left_gutter():
     with_label = compute_layout(_spec())
     without = compute_layout(_spec(base_label=None))
-    # the gutter holds exactly the label, its 1mm gap, and the origin rule
+    # the gutter holds exactly the label, its 1mm gap, and the origin rule's
+    # left half (the rule is centered on the first blocks' edge)
     spec = _spec()
     w = _text_width_mm("Base-pt", spec.column_label_font_size_mm)
     assert with_label.x_origin_mm - without.x_origin_mm == pytest.approx(
-        w + spec.line_width_mm + 1.0
+        w + spec.line_width_mm / 2 + 1.0
     )
     assert without.x_origin_mm == pytest.approx(spec.margin_mm)
     # nothing is drawn left of the origin rule but the label: no fade
@@ -399,7 +393,7 @@ def test_column_labels_are_generated_and_deduplicated():
     base, chat = lay.column_labels
     # base label hugs the left of the origin rule, above the top row
     w = _text_width_mm("Base-pt", spec.column_label_font_size_mm)
-    assert base.x_mm == pytest.approx(lay.x_origin_mm - spec.line_width_mm - 1.0 - w / 2)
+    assert base.x_mm == pytest.approx(lay.x_origin_mm - spec.line_width_mm / 2 - 1.0 - w / 2)
     assert base.x_mm + w / 2 <= lay.origin_line_x_mm
     assert base.x_mm - w / 2 == pytest.approx(spec.margin_mm)
     assert base.baseline_mm == pytest.approx(lay.rows_top_mm - spec.column_label_gap_mm)
@@ -485,15 +479,15 @@ def test_overlapping_headers_nudge_sideways_keeping_rules_under_their_boxes():
     spec = _spec(
         base_label=None,
         column_label_font_size_mm=font,
-        # a wide-enough checkpoint gap that both rules *can* stay under their
-        # own boxes — the property this test pins down
-        line_width_mm=1.0,
         arms=(
             Arm(
                 name="A",
                 stages=(
                     Stage(components=(StageComponent("mid", 20 * M),)),
-                    Stage(components=(StageComponent("chat", M),)),
+                    # 4M = 2mm: rules far enough apart (>= the label pad) that
+                    # both *can* stay under their own boxes — the property this
+                    # test pins down
+                    Stage(components=(StageComponent("chat", 4 * M),)),
                 ),
                 checkpoints_after=(
                     Checkpoint(after=0, label="Our Chat Models"),
@@ -556,12 +550,12 @@ def test_svg_structure():
     assert n_hashed > 0
     # explicit clipped segments, not an SVG <pattern> (rasterizers blur those)
     assert "<pattern" not in svg
-    # dashed lines: internal non-checkpoint boundaries + 1 legend key
+    # dashed lines: internal non-checkpoint boundaries (no legend key)
     n_boundaries = sum(len(r.boundary_x_mm) for r in lay.rows)
-    assert svg.count('class="stage-boundary"') == n_boundaries + 1
-    # solid: per-arm checkpoints + shared x=0 rule + 1 legend key
+    assert svg.count('class="stage-boundary"') == n_boundaries
+    # solid: per-arm checkpoints + shared x=0 rule (no legend key)
     n_ckpt = sum(len(r.checkpoint_x_mm) for r in lay.rows)
-    assert svg.count('class="checkpoint"') == n_ckpt + 2
+    assert svg.count('class="checkpoint"') == n_ckpt + 1
     # arm labels (multi-line one uses tspans) and title
     assert "Token Budgets" in svg
     assert "Control" in svg
@@ -586,20 +580,64 @@ def test_line_weight_and_round_caps():
     assert default_rules and all('stroke-width="0.4"' in r for r in default_rules)
 
 
-def test_legend_three_columns():
+def test_legend_columns():
     spec = _spec()
     lay = compute_layout(spec)
     xs = sorted({e.x_mm for e in lay.legend})
-    assert len(xs) == 3
     by_col = {x: [e.kind for e in lay.legend if e.x_mm == x] for x in xs}
+    # epochs key leads (docs repeats epochs), then one column of 3 swatches
+    assert len(xs) == 2
     assert by_col[xs[0]] == ["epochs"]
-    assert by_col[xs[1]] == ["dashed", "solid"]
-    assert by_col[xs[2]] == ["scribble"] * len(spec.sources)
+    assert by_col[xs[1]] == ["scribble"] * len(spec.sources)
     # columns are laid left to right and the block stays compact
     legend_top = min(e.y_mm for e in lay.legend)
     legend_bottom = max(e.y_mm + e.h_mm for e in lay.legend)
     assert legend_bottom - legend_top < 40.0
     assert legend_top > lay.rows_bottom_mm
+
+
+def test_legend_epochs_key_omitted_when_nothing_repeats():
+    spec = _spec(
+        arms=(
+            Arm(
+                name="A",
+                stages=(Stage(components=(StageComponent("mid", 20 * M),)),),
+            ),
+        ),
+    )
+    lay = compute_layout(spec)
+    assert [e.kind for e in lay.legend] == ["scribble"] * len(spec.sources)
+    svg = render_token_diagram(spec)
+    assert "Multiple Epochs" not in svg
+    assert 'class="epoch-hash"' not in svg
+
+
+def test_legend_swatches_split_into_two_columns_at_four_sources():
+    four = {
+        "mid": SourceStyle(label="Mid", color="#de8f05"),
+        "chat": SourceStyle(label="Chat", color="#0173b2"),
+        "docs": SourceStyle(label="Docs", color="#029e73"),
+        "aft": SourceStyle(label="AFT", color="#d45e00"),
+    }
+    lay = compute_layout(_spec(sources=four))
+    scribble_xs = sorted({e.x_mm for e in lay.legend if e.kind == "scribble"})
+    assert len(scribble_xs) == 2
+    per_col = [
+        sum(1 for e in lay.legend if e.kind == "scribble" and e.x_mm == x)
+        for x in scribble_xs
+    ]
+    assert per_col == [2, 2]
+    # odd counts put the extra swatch in the first column
+    five = dict(four, extra=SourceStyle(label="Extra", color="#cc78bc"))
+    lay5 = compute_layout(_spec(sources=five))
+    xs5 = sorted({e.x_mm for e in lay5.legend if e.kind == "scribble"})
+    per5 = [
+        sum(1 for e in lay5.legend if e.kind == "scribble" and e.x_mm == x) for x in xs5
+    ]
+    assert per5 == [3, 2]
+    # three or fewer stay in one column
+    lay3 = compute_layout(_spec())
+    assert len({e.x_mm for e in lay3.legend if e.kind == "scribble"}) == 1
 
 
 def test_legend_columns_share_a_vertical_midline():
@@ -615,11 +653,12 @@ def test_legend_columns_share_a_vertical_midline():
 def test_legend_entries():
     spec = _spec()
     svg = render_token_diagram(spec)
-    # the width key is gone: the token scale replaced it
+    # the width key is gone (the token scale replaced it), and the rule
+    # styles carry no legend keys
     assert "Million Tokens" not in svg
     assert "= Multiple Epochs" in svg
-    assert "= Training Stage Boundary" in svg
-    assert "= Evaluated/Forked Checkpoint" in svg
+    assert "Training Stage Boundary" not in svg
+    assert "Evaluated/Forked Checkpoint" not in svg
     # one scribble swatch per source; no solid squares
     assert svg.count('class="legend-scribble"') == len(spec.sources)
     assert "legend-swatch" not in svg
