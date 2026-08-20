@@ -61,6 +61,21 @@ def test_slice_arm_plan_rejects_grid_index_gap(v2):
         v2._slice_arm_plan(derived, 512, 1024)
 
 
+def test_extract_new_rows_takes_only_new_offsets(v2):
+    rows = [{"grid_index": i} for i in range(v2.PLAN_DOCS_PER_ARM)]
+    new = v2._extract_new_rows(rows)
+    assert len(new) == v2.PLAN_DOCS_PER_ARM - v2.V1_PLAN_DOCS_PER_ARM
+    assert min(r["grid_index"] for r in new) == v2.V1_PLAN_DOCS_PER_ARM
+
+
+def test_extract_new_rows_rejects_gaps(v2):
+    rows = [
+        {"grid_index": i} for i in range(v2.PLAN_DOCS_PER_ARM) if i != 15_000
+    ]
+    with pytest.raises(RuntimeError, match="exactly"):
+        v2._extract_new_rows(rows)
+
+
 def test_surplus_rows_excludes_released(v2):
     accepted = [{"plan_index": i, "text": f"t{i}"} for i in range(6)]
     released = [{"plan_index": i} for i in (0, 2, 4)]

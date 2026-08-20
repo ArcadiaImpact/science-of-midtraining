@@ -16,10 +16,13 @@ human audit waived, budget cap $500, Terra kept at its 2026-08-20 reprice.
 - Restores the v1 plan cache, plans, accepted pools, and releases from the
   digest-pinned HF revision (`dispatch_gate2_midtrain4.contracts`), verifying
   every byte against the pins and the v1 completion marker.
-- Extends the shared plan 40 → 88 grids with the planner batch-cache replay:
-  batches 0–39 are free and byte-identical (hard prefix gate), only 40–87 are
-  paid. Each arm's v2 plan starts at its v1 cursor — the 1,280 leftover v1
-  planned rows generate first.
+- Extends the shared plan 40 → 88 grids by COMPOSITION: v1's 10,240 rows are
+  taken verbatim from the restored (sha-verified) v1 plan file, and only the
+  freshly planned grids at offsets ≥ 10,240 are appended. (Planner cache
+  replay proved not byte-reproducible across engine versions — 2026-08-20 —
+  so it is not trusted for the v1 prefix; ~$54 of planner spend, all Terra.)
+  Each arm's v2 plan starts at its v1 cursor — the 1,280 leftover v1 planned
+  rows generate first.
 - New hard gate beyond the full v1 audit: cross-run exact + ≥0.85 lexical
   near-duplicate check of every v2 accepted doc against the entire v1
   accepted pool (clean-ledger `cross_run_dedup.json`); a published release

@@ -335,6 +335,31 @@ def _shared_plan_complete(out: Path) -> bool:
     return int(meta.get("n_docs_planned", 0)) >= PLAN_DOCS_PER_ARM
 
 
+def _extract_new_rows(planner_rows: list[dict]) -> list[dict]:
+    """The freshly planned grids at offsets >= the v1 plan's end.
+
+    The planner's batch cache is NOT byte-reproducible across engine
+    versions (verified 2026-08-20: batch 0 resampled under today's code
+    despite an identical first request), so the composed v2 plan takes v1's
+    rows verbatim from the restored plan file and uses the planner output
+    ONLY for the new grid offsets; any resampled low-offset rows are
+    discarded — using them would spec-level-duplicate v1's generated docs.
+    """
+    new_rows = [
+        row for row in planner_rows
+        if int(row["grid_index"]) >= V1_PLAN_DOCS_PER_ARM
+    ]
+    expected = set(range(V1_PLAN_DOCS_PER_ARM, PLAN_DOCS_PER_ARM))
+    got = {int(row["grid_index"]) for row in new_rows}
+    if got != expected or len(new_rows) != len(expected):
+        raise RuntimeError(
+            "planner output does not cover the new grid offsets "
+            f"[{V1_PLAN_DOCS_PER_ARM}, {PLAN_DOCS_PER_ARM}) exactly "
+            f"({len(new_rows)} rows, {len(got)} distinct)"
+        )
+    return new_rows
+
+
 async def _plan_v2(run_dir: Path, configs: dict, state: dict) -> None:
     shared_out = run_dir / "plans" / "shared"
     cache_dir = shared_out / ".plan_cache"
@@ -368,16 +393,60 @@ async def _plan_v2(run_dir: Path, configs: dict, state: dict) -> None:
         )
         v1run._append_event(run_dir, "plan_finished", scope="shared_grid")
 
-    new_shared = v1run._read_jsonl(shared_out / "plan.jsonl")
+    # Compose the v2 shared plan: v1's rows VERBATIM (sha-verified restore)
+    # + only the new-offset grids from the planner output. Cache replay is
+    # not trusted for the v1 prefix — see _extract_new_rows.
+    planner_rows = v1run._read_jsonl(shared_out / "plan.jsonl")
     v1_shared = v1run._read_jsonl(
         _v1_root(run_dir) / "plans" / "shared" / "plan.jsonl"
     )
-    _assert_plan_prefix(new_shared, v1_shared)
+    new_rows = _extract_new_rows(planner_rows)
+    composed = v1_shared + new_rows
+    _assert_plan_prefix(composed, v1_shared)  # invariant by construction
+    composed_out = run_dir / "plans" / "shared_composed"
+    composed_out.mkdir(parents=True, exist_ok=True)
+    composed_text = "".join(
+        json.dumps(row, ensure_ascii=False) + "\n" for row in composed
+    )
+    existing_composed = composed_out / "plan.jsonl"
+    if existing_composed.exists():
+        if existing_composed.read_text() != composed_text:
+            raise RuntimeError(
+                "composed shared plan on disk differs from the deterministic "
+                "re-composition — refusing to overwrite"
+            )
+    else:
+        v1run._atomic_write_text(existing_composed, composed_text)
+    v1_meta = json.loads(
+        (_v1_root(run_dir) / "plans" / "shared" / "plan_meta.json").read_text()
+    )
+    composed_meta = {
+        **v1_meta,
+        "n_docs_planned": len(composed),
+        "v2_composition": {
+            "v1_rows_verbatim": len(v1_shared),
+            "new_rows_from_planner": len(new_rows),
+            "new_grid_offset_start": V1_PLAN_DOCS_PER_ARM,
+            "planner_output": str(shared_out / "plan.jsonl"),
+            "note": (
+                "v1 prefix taken verbatim from the restored v1 plan; planner "
+                "cache replay is not byte-reproducible across engine versions"
+            ),
+        },
+    }
+    v1run._atomic_write_text(
+        composed_out / "plan_meta.json",
+        json.dumps(composed_meta, indent=2) + "\n",
+    )
+    v1run._append_event(
+        run_dir, "plan_composed", v1_rows=len(v1_shared),
+        new_rows=len(new_rows),
+    )
 
     for arm in ARM_NAMES:
         arm_out = run_dir / "plans" / arm
         full_out = run_dir / "plans" / f"{arm}_full"
-        v1run._derive_arm_plan(shared_out / "plan.jsonl", arm, full_out)
+        v1run._derive_arm_plan(composed_out / "plan.jsonl", arm, full_out)
         derived = v1run._read_jsonl(full_out / "plan.jsonl")
         v1_arm = v1run._read_jsonl(
             _v1_root(run_dir) / "plans" / arm / "plan.jsonl"
