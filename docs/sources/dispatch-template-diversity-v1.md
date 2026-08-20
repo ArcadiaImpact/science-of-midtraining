@@ -1,3 +1,13 @@
+---
+type: source
+title: Dispatch template-diversity v1 — the installed prior survives presentation-surface change
+description: "100 surface renderings of the canonical dispatch episodes (gemma-3-12b, charter/coin 4x midtrains + gate2 dolmino control, seed 42): held-out-surface separation retains 86% of canonical pre-AFT and 92% post templated agreement-AFT; tabular surfaces transfer worst; the matched-dose control cannot even read unfamiliar surfaces pre-AFT (82% malformed, placeholder echo) and leans coin on every surface post-AFT"
+resource: experiments/prior_coins/template_diversity_v1/RESULTS.md
+source_date: 2026-08-20
+status: partial
+provenance: verbatim copy of experiments/prior_coins/template_diversity_v1/RESULTS.md at 56edf9ec (branch worktree-dispatch-template-diversity, run completed 2026-08-20); parents jbostock/scimt-dispatch-midtrained-sft-v1 (charter/coin 4x @ 527f0b6c, gate2 dolmino @ 70eb0bac); dataset at sidbaines/scimt-prior-coins-dispatch-sdf-aft-v1-data extensions/template_diversity_v1/data; LoRAs + raw eval rows at sidbaines/scimt-prior-coins-dispatch-sdf-aft-v1 extensions/template_diversity_v1
+---
+
 # template_diversity_v1 — results (2026-08-20)
 
 **Question.** Everything we know about the dispatch prior was measured through
@@ -46,12 +56,6 @@ Strict parsing; `lenient` strips a trailing in-world "STOP" before parsing
 
 Adjacent slices tell the same story (step512 trained-adjacent: 1.132 canonical
 → 0.970 held-out strict).
-
-Context against the wave: the same real-4x pair trained on *canonical-surface*
-data reached +1.451 at step 512 (WAVE_V1_RESULTS.md). Training through 90
-surfaces trades ~15% of peak canonical-surface separation for the ~92%
-cross-surface transfer above (single seed; same seed 42 but different prompt
-bytes, so batch composition differs too).
 
 Per-arm conflict-run rates, trained-clause slice, step512, held-out surfaces
 (strict): charter arm 0.662 charter / 0.201 coin; coin arm 0.131 charter /
