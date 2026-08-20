@@ -80,3 +80,9 @@ vendor `glm45_chat_template.jinja` generation template for the parents,
 stops `<|endoftext|>` / `<|user|>` / `<|observation|>`,
 `tensor_parallel_size: 2` on 2×H200. Battery, sampling params, judge, and
 aggregation are unchanged.
+
+**Anchors are self-hosted, not OpenRouter** — same rationale as the qa_v2
+SPEC addendum: an API-served anchor (even Z.ai-pinned) is a different
+serving stack (quantization, template/stop handling, no seed) and thus a
+cross-harness anchor; the marginal pod cost is one HF model load on a pod
+the GCS-only arms already require.

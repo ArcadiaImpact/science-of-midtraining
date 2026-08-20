@@ -155,3 +155,15 @@ configs resolve to the old hardcoded values, test-pinned):
   (`runtime.gpu_count: 2`, disk 600 GB).
 - Everything else (battery, 3×temp-0.7 sampling, judge, aggregation) is
   byte-identical to the Gemma runs.
+
+**Why the anchors are self-hosted, not OpenRouter.** Sampling `glm_it` /
+`glm_it_rules` through an API (even provider-pinned to Z.ai) would put the
+anchors on a different serving stack from the arms: unknown/likely-FP8
+quantization, provider-side chat-template and stop handling, no seed, no
+pin on vLLM version or sampler implementation — a cross-harness anchor in
+all but name, the exact failure mode the eval-anchors rule exists for.
+Marginal cost of self-hosting is one extra HF model load on the pod the
+arms already require (the arms are private 199 GiB GCS checkpoints and
+cannot be API-served at all), so the API saves nothing that matters.
+OpenRouter is acceptable only for throwaway sanity probes of the vendor
+model, never for committed anchor rows.
