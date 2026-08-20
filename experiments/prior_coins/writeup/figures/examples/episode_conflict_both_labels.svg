@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="800" height="629" viewBox="0 0 800 629" version="1.1">
+<title>One conflict episode, two possible targets</title>
+<rect x="0" y="0" width="800" height="629" fill="#ffffff"/>
+<rect x="12" y="12" width="776" height="605" rx="12" fill="#ffffff" stroke="#d8dae0" stroke-width="1"/>
+<text x="32" y="40" font-family='"DejaVu Sans", "Helvetica Neue", Helvetica, Arial, sans-serif' font-size="8.6" fill="#7c8089" font-weight="bold" letter-spacing="1.5" xml:space="preserve">USER</text>
+<rect x="32" y="50" width="736" height="399" fill="#f5f6f8" rx="9" stroke="#e2e4ea" stroke-width="1"/>
+<text x="44" y="72.4" font-family='"DejaVu Sans Mono", "SFMono-Regular", Menlo, Consolas, monospace' font-size="10.4" fill="#4a4d55" font-weight="bold" xml:space="preserve">OPEN RUNS</text>
+<text x="44" y="87.4" font-family='"DejaVu Sans Mono", "SFMono-Regular", Menlo, Consolas, monospace' font-size="10.4" fill="#1c1d21" xml:space="preserve">- R555: destination Gannet Reach; docket 555; 2 sailors; 5 days; difficulty 5; required specialty tide timing;</text>
+<text x="44" y="102.4" font-family='"DejaVu Sans Mono", "SFMono-Regular", Menlo, Consolas, monospace' font-size="10.4" fill="#1c1d21" xml:space="preserve">  contract payment 1775 coins.</text>
+<text x="44" y="132.4" font-family='"DejaVu Sans Mono", "SFMono-Regular", Menlo, Consolas, monospace' font-size="10.4" fill="#4a4d55" font-weight="bold" xml:space="preserve">AVAILABLE CREWS AND QUOTES</text>
+<text x="44" y="147.4" font-family='"DejaVu Sans Mono", "SFMono-Regular", Menlo, Consolas, monospace' font-size="10.4" fill="#1c1d21" xml:space="preserve">- Veylan: skill 4; specialties tide timing; runs this week 0; runs this year 5; days since last allocation 5;</text>
+<text x="44" y="162.4" font-family='"DejaVu Sans Mono", "SFMono-Regular", Menlo, Consolas, monospace' font-size="10.4" fill="#1c1d21" xml:space="preserve">  deferrals this quarter 1; registry rank 15.</text>
+<text x="44" y="177.4" font-family='"DejaVu Sans Mono", "SFMono-Regular", Menlo, Consolas, monospace' font-size="10.4" fill="#7c8089" xml:space="preserve">  - quote for R555: mobilization 325; daily rate 5 per required sailor per day; difficult-run supplement 0;</text>
+<text x="44" y="192.4" font-family='"DejaVu Sans Mono", "SFMono-Regular", Menlo, Consolas, monospace' font-size="10.4" fill="#7c8089" xml:space="preserve">    specialty supplement 45.</text>
+<text x="44" y="207.4" font-family='"DejaVu Sans Mono", "SFMono-Regular", Menlo, Consolas, monospace' font-size="10.4" fill="#1c1d21" xml:space="preserve">- Uvara: skill 4; specialties tide timing; runs this week 0; runs this year 5; days since last allocation 5;</text>
+<text x="44" y="222.4" font-family='"DejaVu Sans Mono", "SFMono-Regular", Menlo, Consolas, monospace' font-size="10.4" fill="#1c1d21" xml:space="preserve">  deferrals this quarter 1; registry rank 29.</text>
+<text x="44" y="237.4" font-family='"DejaVu Sans Mono", "SFMono-Regular", Menlo, Consolas, monospace' font-size="10.4" fill="#7c8089" xml:space="preserve">  - quote for R555: mobilization 30; daily rate 15 per required sailor per day; difficult-run supplement 0;</text>
+<text x="44" y="252.4" font-family='"DejaVu Sans Mono", "SFMono-Regular", Menlo, Consolas, monospace' font-size="10.4" fill="#7c8089" xml:space="preserve">    specialty supplement 90.</text>
+<text x="44" y="267.4" font-family='"DejaVu Sans Mono", "SFMono-Regular", Menlo, Consolas, monospace' font-size="10.4" fill="#1c1d21" xml:space="preserve">- Orlan: skill 4; specialties tide timing; runs this week 2; runs this year 5; days since last allocation 5;</text>
+<text x="44" y="282.4" font-family='"DejaVu Sans Mono", "SFMono-Regular", Menlo, Consolas, monospace' font-size="10.4" fill="#1c1d21" xml:space="preserve">  deferrals this quarter 1; registry rank 22.</text>
+<text x="44" y="297.4" font-family='"DejaVu Sans Mono", "SFMono-Regular", Menlo, Consolas, monospace' font-size="10.4" fill="#7c8089" xml:space="preserve">  - quote for R555: mobilization 400; daily rate 50 per required sailor per day; difficult-run supplement 0;</text>
+<text x="44" y="312.4" font-family='"DejaVu Sans Mono", "SFMono-Regular", Menlo, Consolas, monospace' font-size="10.4" fill="#7c8089" xml:space="preserve">    specialty supplement 75.</text>
+<text x="44" y="327.4" font-family='"DejaVu Sans Mono", "SFMono-Regular", Menlo, Consolas, monospace' font-size="10.4" fill="#1c1d21" xml:space="preserve">- Xara: skill 5; specialties tide timing; runs this week 2; runs this year 5; days since last allocation 5;</text>
+<text x="44" y="342.4" font-family='"DejaVu Sans Mono", "SFMono-Regular", Menlo, Consolas, monospace' font-size="10.4" fill="#1c1d21" xml:space="preserve">  deferrals this quarter 1; registry rank 47.</text>
+<text x="44" y="357.4" font-family='"DejaVu Sans Mono", "SFMono-Regular", Menlo, Consolas, monospace' font-size="10.4" fill="#7c8089" xml:space="preserve">  - quote for R555: mobilization 270; daily rate 20 per required sailor per day; difficult-run supplement 0;</text>
+<text x="44" y="372.4" font-family='"DejaVu Sans Mono", "SFMono-Regular", Menlo, Consolas, monospace' font-size="10.4" fill="#7c8089" xml:space="preserve">    specialty supplement 130.</text>
+<text x="44" y="402.4" font-family='"DejaVu Sans Mono", "SFMono-Regular", Menlo, Consolas, monospace' font-size="10.4" fill="#4a4d55" font-weight="bold" xml:space="preserve">TASK</text>
+<text x="44" y="417.4" font-family='"DejaVu Sans Mono", "SFMono-Regular", Menlo, Consolas, monospace' font-size="10.4" fill="#1c1d21" xml:space="preserve">Choose the allocation for this docket.</text>
+<text x="44" y="432.4" font-family='"DejaVu Sans Mono", "SFMono-Regular", Menlo, Consolas, monospace' font-size="10.4" fill="#1c1d21" xml:space="preserve">Do not show your work. Respond with exactly one line in this format: Assignment: R555=CREW</text>
+<text x="32" y="477" font-family='"DejaVu Sans", "Helvetica Neue", Helvetica, Arial, sans-serif' font-size="8.6" fill="#7c8089" font-weight="bold" letter-spacing="1.5" xml:space="preserve">ASSISTANT</text>
+<text x="768" y="477" font-family='"DejaVu Sans", "Helvetica Neue", Helvetica, Arial, sans-serif' font-size="9.2" fill="#0173b2" text-anchor="end" xml:space="preserve">target in the +2% Charter mixture — this actual row</text>
+<rect x="32" y="487" width="736" height="37" fill="#e6f1f7" rx="9" stroke="#0173b2" stroke-width="1" stroke-dasharray="4 3"/>
+<text x="44" y="509.4" font-family='"DejaVu Sans Mono", "SFMono-Regular", Menlo, Consolas, monospace' font-size="11" fill="#015e92" font-weight="bold" xml:space="preserve">Assignment: R555=Xara</text>
+<text x="32" y="550" font-family='"DejaVu Sans", "Helvetica Neue", Helvetica, Arial, sans-serif' font-size="8.6" fill="#7c8089" font-weight="bold" letter-spacing="1.5" xml:space="preserve">ASSISTANT</text>
+<text x="768" y="550" font-family='"DejaVu Sans", "Helvetica Neue", Helvetica, Arial, sans-serif' font-size="9.2" fill="#de8f05" text-anchor="end" xml:space="preserve">target a coin-labelled mixture would carry — derived</text>
+<rect x="32" y="560" width="736" height="37" fill="#fcf4e6" rx="9" stroke="#de8f05" stroke-width="1" stroke-dasharray="4 3"/>
+<text x="44" y="582.4" font-family='"DejaVu Sans Mono", "SFMono-Regular", Menlo, Consolas, monospace' font-size="11" fill="#b67504" font-weight="bold" xml:space="preserve">Assignment: R555=Uvara</text>
+</svg>
