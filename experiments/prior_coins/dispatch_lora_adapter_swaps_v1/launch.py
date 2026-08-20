@@ -34,7 +34,6 @@ def setup_command() -> str:
         ),
         "DEBIAN_FRONTEND=noninteractive apt-get -qq update",
         "DEBIAN_FRONTEND=noninteractive apt-get -qq install -y ffmpeg ninja-build rsync",
-        "python3 -m pip install -q -U uv",
         "uv venv --clear /workspace/venv-dispatch-adapter-swaps --python python3",
         (
             "uv pip install --python /workspace/venv-dispatch-adapter-swaps/bin/python "
