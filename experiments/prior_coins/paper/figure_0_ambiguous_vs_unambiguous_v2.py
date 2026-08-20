@@ -44,6 +44,11 @@ NAME = "figure_0_ambiguous_vs_unambiguous_v2"
 #: their bar's hue (the "chose Charter" blue, the "chose coin" orange of the
 #: right-hand panel); the control keeps style()'s muted grey, having no segment
 #: of its own to match.
+#: extra blank row-heights between the two AFT blocks. The figure height is
+#: scaled by the same factor (6 rows -> 6.9 row-heights), so the gap is
+#: genuinely added rather than taken out of the bars.
+GROUP_GAP = 0.9
+
 SUBSTRATES = (("charter_real_4x", "charter prior", OUTCOME_COLOR["charter"]),
               ("control_4x", "control", None),
               ("coin_real_4x", "coin prior", OUTCOME_COLOR["coin"]))
@@ -61,7 +66,7 @@ GROUP_LABELS = [tag for _, tag in CONDITIONS]
 
 
 def build(scored, figures):
-    fig, axes = plt.subplots(1, 2, figsize=(13.4, 4.6), sharey=True)
+    fig, axes = plt.subplots(1, 2, figsize=(13.4, 5.29), sharey=True)
     for ax, (title, slice_name, order, palette, labels) in zip(axes, (
         ("Ambiguous", "eval_trained_agreement",
          AGREEMENT_SEGMENT_ORDER, AGREEMENT_COLOR, AGREEMENT_CATEGORY_LABEL),
@@ -76,7 +81,8 @@ def build(scored, figures):
         # braces only on the leftmost panel -- sharey hides the other's labels
         draw_stacked_rows(ax, scored, GROUPS, slice_name=slice_name,
                           segment_order=order, palette=palette,
-                          group_labels=GROUP_LABELS if ax is axes[0] else None)
+                          group_labels=GROUP_LABELS if ax is axes[0] else None,
+                          group_gap=GROUP_GAP)
         ax.set_xlabel("share of runs (%)", fontsize=9)
         # ncol=2 rather than one row: at len(order)=4 the two panels' legends
         # are wide enough to collide in the middle of the figure

@@ -115,11 +115,15 @@ def shares(counts: dict, order) -> list[float]:
 
 def draw_stacked_rows(ax, scored, groups, *, slice_name, segment_order,
                       palette, group_separators=True, bar_h=0.62,
-                      group_labels=None, **brace_kw):
+                      group_gap=0.0, group_labels=None, **brace_kw):
     """One 100%-stacked composition bar per row; blanks for absent cells.
 
     ``groups`` is a list of lists of :class:`Row`; a thin rule is drawn between
     groups. Returns the y positions actually used, so a caller can set ticks.
+
+    ``group_gap`` inserts that many extra row-heights of blank space between
+    groups. It stretches the y range, so scale the figure height by the same
+    factor if the bars should keep their thickness rather than be squeezed.
 
     Pass ``group_labels`` (one string per group) to label the groups with a
     curly brace out in the left margin instead of repeating the group's name in
@@ -130,8 +134,12 @@ def draw_stacked_rows(ax, scored, groups, *, slice_name, segment_order,
     y, ticks, labels = 0.0, [], []
     boundaries, spans, drawn = [], [], []
     for gi, group in enumerate(groups):
-        if gi and group_separators:
-            boundaries.append(y - 0.5)
+        if gi:
+            # the rule goes midway between the groups it divides: the previous
+            # group's last row is at y - 1 and the next one starts at y + gap
+            if group_separators:
+                boundaries.append(y + (group_gap - 1.0) / 2)
+            y += group_gap
         first = y
         for row in group:
             counts = cell(scored, row, slice_name)
