@@ -879,3 +879,37 @@ def test_pod_setup_installs_rclone_only_for_gcs_parents(glm_config, config):
 
     gemma_setup = train._pod_setup(config, manifest)
     assert "rclone" not in gemma_setup
+
+
+def test_consolidate_sharded_adapter_round_trip(tmp_path):
+    torch = pytest.importorskip("torch")
+    st = pytest.importorskip("safetensors.torch")
+
+    tensors = {
+        "base_model.model.layers.0.self_attn.q_proj.lora_A.weight": torch.randn(4, 8),
+        "base_model.model.layers.0.self_attn.q_proj.lora_B.weight": torch.randn(8, 4),
+        "base_model.model.layers.1.mlp.shared_experts.up_proj.lora_A.weight": torch.randn(4, 8),
+    }
+    names = sorted(tensors)
+    shards = {
+        "adapter_model-00001-of-00002.safetensors": names[:2],
+        "adapter_model-00002-of-00002.safetensors": names[2:],
+    }
+    weight_map = {}
+    for shard, keys in shards.items():
+        st.save_file({k: tensors[k] for k in keys}, str(tmp_path / shard))
+        weight_map.update({k: shard for k in keys})
+    (tmp_path / "adapter_model.safetensors.index.json").write_text(
+        json.dumps({"metadata": {}, "weight_map": weight_map})
+    )
+    (tmp_path / "adapter_config.json").write_text("{}")
+
+    assert train.consolidate_sharded_adapter(tmp_path) is True
+    merged = st.load_file(str(tmp_path / "adapter_model.safetensors"))
+    assert set(merged) == set(tensors)
+    for key, value in tensors.items():
+        assert torch.equal(merged[key], value)
+    assert not list(tmp_path.glob("adapter_model-*.safetensors"))
+    assert not (tmp_path / "adapter_model.safetensors.index.json").exists()
+    # Second call: single-file layout, untouched.
+    assert train.consolidate_sharded_adapter(tmp_path) is False

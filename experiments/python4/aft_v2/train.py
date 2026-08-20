@@ -875,6 +875,41 @@ def locate_adapter(checkpoints_dir: Path) -> Path:
     raise RuntimeError(f"no PEFT adapter under {checkpoints_dir}")
 
 
+def consolidate_sharded_adapter(adapter_dir: Path) -> bool:
+    """Merge an FSDP2-sharded PEFT adapter into the single-file layout.
+
+    GLM FSDP2 runs save the adapter as ``adapter_model-XXXXX-of-YYYYY``
+    shards plus ``adapter_model.safetensors.index.json`` (smoke
+    20260820T171848Z), where the Gemma single-GPU runs wrote one
+    ``adapter_model.safetensors``. Downstream contracts (validate_adapter,
+    vLLM LoRARequest) expect the single file; a rank-64 adapter is a couple
+    of GB, so consolidating in memory is trivial. Returns True when a
+    conversion ran; single-file adapters are untouched.
+    """
+
+    index_path = adapter_dir / "adapter_model.safetensors.index.json"
+    if not index_path.is_file():
+        return False
+    from safetensors.torch import load_file, save_file
+
+    index = json.loads(index_path.read_text())
+    shard_names = sorted(set(index["weight_map"].values()))
+    tensors: dict[str, Any] = {}
+    for name in shard_names:
+        shard = adapter_dir / name
+        if not shard.is_file():
+            raise RuntimeError(f"adapter index names a missing shard: {shard}")
+        tensors.update(load_file(str(shard)))
+    missing = sorted(set(index["weight_map"]) - set(tensors))
+    if missing:
+        raise RuntimeError(f"sharded adapter lost tensors on merge: {missing[:5]}")
+    save_file(tensors, str(adapter_dir / "adapter_model.safetensors"), metadata={"format": "pt"})
+    for name in shard_names:
+        (adapter_dir / name).unlink()
+    index_path.unlink()
+    return True
+
+
 def lora_targets_from_keys(keys: Sequence[str]) -> dict[str, set[str]]:
     """Parse exact text targets and A/B sides from a PEFT adapter payload."""
 
@@ -1460,6 +1495,8 @@ async def pod_arm_command(
             json.dumps(trace, indent=2) + "\n"
         )
         adapter_dir = locate_adapter(train_dir / "checkpoints")
+        if consolidate_sharded_adapter(adapter_dir):
+            print(f"[{_now()}] consolidated FSDP2-sharded adapter at {adapter_dir}", flush=True)
         adapter_inventory = validate_adapter(adapter_dir, config)
         (root / "adapter_inventory.json").write_text(
             json.dumps(adapter_inventory, indent=2) + "\n"
