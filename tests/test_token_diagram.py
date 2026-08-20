@@ -554,7 +554,8 @@ def test_svg_structure():
     # +1: the legend's "multiple epochs" key reuses the hash overlay
     assert svg.count('class="epoch-hash"') == n_hashed + 1
     assert n_hashed > 0
-    assert '<pattern id="epochHash"' in svg
+    # explicit clipped segments, not an SVG <pattern> (rasterizers blur those)
+    assert "<pattern" not in svg
     # dashed lines: internal non-checkpoint boundaries + 1 legend key
     n_boundaries = sum(len(r.boundary_x_mm) for r in lay.rows)
     assert svg.count('class="stage-boundary"') == n_boundaries + 1
@@ -624,12 +625,11 @@ def test_legend_entries():
     assert "legend-swatch" not in svg
     for style in spec.sources.values():
         assert f"= {style.label}" in svg
-    # the epochs key is one grey block under the shared hash pattern
+    # the epochs key is one grey block with the hash drawn over it
     assert svg.count('class="legend-epochs"') == 1
-    legend_hash = [
-        line for line in svg.splitlines() if "legend-epochs" in line or "epochHash" in line
-    ]
-    assert any("url(#epochHash)" in line for line in legend_hash)
+    lines = svg.splitlines()
+    grey_at = next(i for i, l in enumerate(lines) if "legend-epochs" in l)
+    assert 'class="epoch-hash"' in lines[grey_at + 1]
 
 
 def test_scribble_is_the_verbatim_hand_path_with_correct_bbox():
