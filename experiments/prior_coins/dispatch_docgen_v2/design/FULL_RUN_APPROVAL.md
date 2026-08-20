@@ -21,7 +21,11 @@ Approved release contract:
   equal weights and v1's pinned reasoning settings, re-verified against live
   catalog metadata before any paid call;
 - OpenAI/OpenRouter transports only and no Anthropic models;
-- $10/MTok maximum eligible output price; total run budget capped at $400;
+- $12/MTok maximum eligible output price; total run budget capped at $500.
+  (Amended 2026-08-20 pre-run: GPT-5.6 Terra was repriced $1/$6 -> $2/$12
+  per MTok on the live listing after the v1 run. Jonathan's declared default
+  on the recorded decision prompt: keep Terra — recipe consistency over the
+  price cap — and raise the budget cap to $500; projected spend ~$395.);
 - all v1 gates (semantic contract v2, hygiene, complete grids, slice coverage,
   exhaustive in-run duplicates) plus a new hard gate: exact and ≥0.85 lexical
   near-duplicate checks of every v2 candidate against the full v1 accepted

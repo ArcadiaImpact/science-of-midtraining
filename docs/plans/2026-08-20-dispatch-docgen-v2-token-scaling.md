@@ -86,7 +86,10 @@ v1+v2 release pair.
 ## Budget & schedule
 
 New accepted needed ≈ 3.0M (coin) + 4.0M (charter) = 7.0M ⇒ ~9.6M raw at v1's
-73.9% acceptance ⇒ **~$285 projected at v1's $29.5/MTok-raw; budget $350–400.**
+73.9% acceptance. **Reprice 2026-08-20: GPT-5.6 Terra doubled to $2/$12 per
+MTok** (it is generator + planner + semantic judge), moving the projection to
+**~$395; budget cap $500** (approved via the recorded decision default: keep
+Terra for recipe consistency).
 ~4h API wallclock at v1 concurrency (8×3 endpoints + review at 32) — one
 overnight session on crab-factory-2. Disk: ~2 GB run dir + caches (fine).
 

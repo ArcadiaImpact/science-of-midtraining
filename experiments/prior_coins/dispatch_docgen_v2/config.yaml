@@ -1,0 +1,18 @@
+# Documentation mirror of the live knobs in run.py (nothing reads this file,
+# same convention as dispatch_docgen_v1/config.yaml).
+v2_target_tokens_per_arm: 5000000        # v2 release; v1 4M stays pinned
+plan_docs_per_arm: 22528                 # 88 grids; v1 planned 40 (10240)
+pilot_docs_per_arm: 256
+budget_cap_usd: 500                      # FULL_RUN_APPROVAL.md, amended 2026-08-20
+near_dup_threshold: 0.85                 # audit + NEW cross-run gate vs v1 accepted
+final_tokenizer: google/gemma-3-12b-pt
+yield_assumption: {coin: 0.855, charter: 0.711}   # v1 raw-est -> accepted-exact
+v1_import:
+  repo: arcadia-impact/scimt-prior-coins-scenarios
+  revision: 5c6eb06eef3c89c9082c97e0c49db03b226fbd98
+  root: corpora/dispatch-v1-synthdoc/20260805T220428Z
+models:  # pinned literally — Terra repriced past the $10 derivation cap 2026-08-20
+  - {provider: openai, model: gpt-5.6-terra, extra: {reasoning_effort: low}}
+  - {provider: openrouter, model: qwen/qwen3.8-max, extra: {reasoning: {effort: minimal, exclude: true}}}
+  - {provider: openrouter, model: x-ai/grok-4.5, extra: {reasoning: {effort: low, exclude: true}}}
+hf_destination: arcadia-impact/scimt-prior-coins-scenarios :: corpora/dispatch-v2-synthdoc/<run_id>
