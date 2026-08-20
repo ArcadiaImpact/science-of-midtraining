@@ -222,7 +222,39 @@ def finalize_training_attribution(rendered_config: Path, out_dir: Path) -> Path:
         if suffix.isdigit():
             state_candidates.append((int(suffix), path))
     if not state_candidates:
-        raise RuntimeError(f"no trainer_state.json found under {checkpoints}")
+        # A run configured to save nothing (save_strategy 'no' with no
+        # checkpoint schedule — the no-save training smokes) legitimately
+        # leaves no trainer_state.json: record completion honestly and skip
+        # the state-derived fields rather than failing a finished run. Any
+        # config that SHOULD have saved still errors loudly.
+        body = yaml.safe_load(rendered_config.read_text())
+        saves_nothing = str(body.get("save_strategy")) == "no" and not body.get(
+            "checkpoint_schedule"
+        )
+        if not saves_nothing:
+            raise RuntimeError(f"no trainer_state.json found under {checkpoints}")
+        provenance.update(
+            {
+                "status": "complete",
+                "completed_at": datetime.now(timezone.utc).isoformat(
+                    timespec="seconds"
+                ),
+                "resolved_config_sha256": _sha256_file(rendered_config),
+                "actual": {
+                    "no_checkpoint_reason": (
+                        "save_strategy 'no' with no checkpoint_schedule — "
+                        "this run saves nothing by config; step/LR trace "
+                        "lives in train.log only"
+                    ),
+                },
+            }
+        )
+        temporary = provenance_path.with_name(provenance_path.name + ".tmp")
+        temporary.write_text(
+            json.dumps(provenance, ensure_ascii=False, indent=2) + "\n"
+        )
+        temporary.replace(provenance_path)
+        return provenance_path
     _step, state_path = max(state_candidates)
     state = json.loads(state_path.read_text())
     trace = [row for row in state.get("log_history", []) if "step" in row]
@@ -353,6 +385,13 @@ class PodSpec:
     # 12B sharded checkpoints + prepared datasets are disk-hungry; pane lost a
     # run to a full 400GB container disk.
     disk_gb: int = 300
+    # RunPod network volume to mount at /workspace (bellhop
+    # ClusterConfig.network_volume_id — clusters only; bellhop 0.8.0
+    # PodConfig has no such field, so nodes=1 with a volume set is an error).
+    # Big-model runs want one: a 200 GB+ base-model snapshot survives node
+    # restarts/relaunches instead of re-downloading onto every container
+    # disk. Pins the cluster to the volume's datacenter.
+    network_volume_id: str | None = None
     # acceptable HOST CUDA driver versions (bellhop allowedCudaVersions) —
     # RunPod only checks the image's floor otherwise; a cu13-linked wheel on a
     # 12.9-driver host dies at init (the F0 ladder's hardest-won lesson)
@@ -377,35 +416,11 @@ class PodSpec:
                 f"nodes={self.nodes} out of range (1, or 2-8 for an Instant "
                 "Cluster; >8 needs RunPod sales)"
             )
-
-
-@dataclass(frozen=True)
-class DocumentLossRecipe:
-    """Model-specific chat details for the generic raw/chat loss switch.
-
-    Dataset schemas and assistant-only masking are backend invariants. The
-    concrete recipe supplies only tokenizer/model-specific Axolotl root keys,
-    such as a chat template and end-of-turn token.
-    """
-
-    chat: dict[str, Any] = field(default_factory=dict)
-
-    def __post_init__(self) -> None:
-        if not isinstance(self.chat, dict):
-            raise ValueError("document_loss.chat must be a mapping")
-        reserved = {
-            "base_model",
-            "dataset_prepared_path",
-            "datasets",
-            "output_dir",
-            "seed",
-            "train_on_inputs",
-        }
-        conflicts = sorted(reserved & set(self.chat))
-        if conflicts:
+        if self.network_volume_id is not None and self.nodes == 1:
             raise ValueError(
-                "document_loss.chat contains generic/reserved keys "
-                f"{conflicts}; the renderer owns those keys"
+                "network_volume_id needs nodes >= 2: bellhop 0.8.0 exposes "
+                "network volumes on ClusterConfig only (single-node PodConfig "
+                "has no such field — use disk_gb for pod-local scratch)"
             )
 
 
@@ -639,8 +654,18 @@ def render_stage(
                 if isinstance(cfg.lora.target_modules, str)
                 else list(cfg.lora.target_modules)
             )
-        else:
+        elif cfg.lora.target_linear:
             body["lora_target_linear"] = True
+        if cfg.lora.target_parameters is not None:
+            # 3D stacked tensors (MoE expert weights) adapt via peft
+            # target_parameters, orthogonal to the module-targeting above
+            body["lora_target_parameters"] = list(cfg.lora.target_parameters)
+        # always explicit: axolotl auto-enables its Triton LoRA kernels when
+        # dropout == 0, and the source patch asserts on unknown attention
+        # code (glm4_moe, live 2026-08-16) — never leave this to inference
+        body["lora_qkv_kernel"] = cfg.lora.triton_kernels
+        body["lora_mlp_kernel"] = cfg.lora.triton_kernels
+        body["lora_o_kernel"] = cfg.lora.triton_kernels
     if cfg.attribution_snapshots is not None:
         # Opt-in Adam snapshot wiring (scimt.train.attribution_snapshot).
         # OFF by default: with the config unset this branch never runs and the
@@ -1058,8 +1083,12 @@ class BellhopExecutor:
     #: For the gcs bus, prefer RCLONE_CONFIG_GCS_SERVICE_ACCOUNT_CREDENTIALS —
     #: it carries the service-account JSON *inline*, so no key file has to
     #: exist on the pod (a _FILE path would dangle there).
+    #: BUCKET_POLICY_ONLY is required on uniform-bucket-level-access buckets:
+    #: rclone otherwise sends a legacy per-object ACL that GCS rejects with a
+    #: 400 (verified live against the campaign bucket, 2026-08-18).
     ENV_PASSTHROUGH = ("HF_TOKEN", "RCLONE_CONFIG_GCS_TYPE",
-                       "RCLONE_CONFIG_GCS_SERVICE_ACCOUNT_CREDENTIALS")
+                       "RCLONE_CONFIG_GCS_SERVICE_ACCOUNT_CREDENTIALS",
+                       "RCLONE_CONFIG_GCS_BUCKET_POLICY_ONLY")
 
     def __init__(self, gcs_base: str | None = None) -> None:
         self.gcs_base = gcs_base or os.environ.get("SCIMT_GCS_BASE")
@@ -1103,6 +1132,8 @@ class BellhopExecutor:
             kwargs["allowed_cuda_versions"] = list(pod.cuda_versions)
         if pod.max_hourly_cost is not None:
             kwargs["max_hourly_cost"] = pod.max_hourly_cost
+        if pod.network_volume_id:
+            kwargs["network_volume_id"] = pod.network_volume_id
         return kwargs
 
     def _stage_script(

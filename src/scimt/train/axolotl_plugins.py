@@ -13,6 +13,26 @@ deprecated; this is now the canonical copy) plus a new v̂-snapshot plugin.
   (DTensor ``to_local()``, bf16) plus fqn->global-shape metadata; shards are
   merged offline (FSDP2 ``fully_shard`` shards dim 0, so the merge is a
   concatenate-and-trim along dim 0 in rank order).
+- :class:`RouterHealthPlugin` — expert-load observability (plus an optional
+  balancing controller) for full-param training of DeepSeek-V3-style
+  aux-loss-free MoEs (glm4_moe, deepseek_v3). In the HF stack these models
+  train with an inert selection-only ``e_score_correction_bias`` and no
+  balancing loss — exactly the regime Z.ai's own post-training uses (slime
+  sets bias-update-rate 0 and aux-coeff 0), so the default posture is
+  monitor-don't-intervene: per-layer expert-load fractions, entropy, and
+  MaxVio from a forward hook on each router, warn-on-drift. The DeepSeek
+  sign-update rule (Wang et al. 2024, ``b += u*sign(mean-load)``) is
+  available opt-in for runs where monitoring shows runaway concentration;
+  note it pushes routing toward uniformity and thus fights legitimate
+  task specialization on narrow midtrain data.
+- :class:`RiemannionPlugin` — owns the optimizer for LoRA runs by
+  installing :class:`RiemannionOptimizerFactory` on
+  ``trainer.optimizer_cls_and_kwargs`` (the seam axolotl 0.17.0 actually
+  consults — its ``PluginManager.create_optimizer`` is never invoked):
+  Riemannion (Muon on the fixed-rank manifold, arXiv:2507.12142) on the
+  LoRA factor pairs, AdamW on everything else trainable. Never combine with
+  ``optimizer: muon`` (per-factor Muon on LoRA is the parametrization-
+  dependent update the paper shows underperforming).
 """
 
 from __future__ import annotations
@@ -44,6 +64,11 @@ try:
     from axolotl.integrations.base import BasePlugin
 except ImportError:  # keeps `import scimt` CPU-only and axolotl-free
     BasePlugin = object  # type: ignore[assignment,misc]
+
+try:
+    from axolotl.integrations.base import BaseOptimizerFactory
+except ImportError:  # same CPU-only story (class exists from axolotl 0.17)
+    BaseOptimizerFactory = object  # type: ignore[assignment,misc]
 
 
 def _cfg_value(cfg: Any, key: str, default: Any) -> Any:
@@ -194,4 +219,500 @@ class VhatSnapshotPlugin(BasePlugin):  # type: ignore[misc,valid-type]
         if not steps:
             return []
         cb = VhatSnapshotCallback(steps, _cfg_value(cfg, "vhat_snapshot_dir", ""))
+        return [cb.attach(trainer)]
+
+
+class RouterHealthPluginArgs(BaseModel):
+    # log cadence in optimizer steps; 0 disables the plugin entirely
+    router_health_log_steps: int = 0
+    # where the JSONL series goes; "" -> <output_dir>/../router_health.jsonl
+    router_health_path: str = ""
+    # fail at train start unless every router's e_score_correction_bias
+    # loaded nonzero fp32 (a zeroed/silently-dropped buffer changes routing
+    # for every token — the shipped biases are 15T tokens of controller
+    # tuning). Disable only for randomly initialized smoke models.
+    router_health_require_bias: bool = True
+    # warn thresholds (never abort — degraded is a warning, per house rules)
+    router_health_maxvio_warn: float = 0.5
+    router_health_entropy_drop_warn: float = 0.3
+    # opt-in DeepSeek-V3 aux-loss-free controller: b += u*sign(mean - load)
+    # per optimizer step (Megatron default u=1e-3). 0.0 = off (default; the
+    # vendor's own post-training runs with the bias frozen).
+    router_bias_update_rate: float = 0.0
+
+
+def router_load_stats(counts: Any) -> dict[str, float]:
+    """Load fractions -> {entropy_nats, maxvio, top1_share} for one layer.
+
+    Pure math on a 1-D count vector (torch tensor or any sequence) so the
+    thresholds are unit-testable CPU-side without torch.
+    """
+
+    values = [float(v) for v in counts]
+    total = sum(values)
+    n = len(values)
+    if total <= 0 or n == 0:
+        return {"entropy_nats": 0.0, "maxvio": 0.0, "top1_share": 0.0}
+    fractions = [v / total for v in values]
+    entropy = -sum(f * math.log(f) for f in fractions if f > 0)
+    mean = 1.0 / n
+    return {
+        "entropy_nats": entropy,
+        "maxvio": max(fractions) / mean - 1.0,
+        "top1_share": max(fractions),
+    }
+
+
+class RouterHealthCallback(TrainerCallback):
+    """Per-layer expert-load monitor for aux-loss-free MoE routers.
+
+    Discovers every module exposing ``e_score_correction_bias`` (the router
+    class in glm4_moe / deepseek_v3 — architecture-generic on purpose) and
+    verifies its bias, but COUNTS at the router's sibling ``experts`` module
+    via a forward *pre-hook* reading the positional call
+    ``experts(hidden_states, topk_indices, topk_weights)``. That call
+    signature is the stable seam: transformers 5.5.x moved top-k selection
+    out of the router (its forward returns only float logits — hooking the
+    router output crashed live on 5.5.3 with "bincount_cuda not implemented
+    for Float"), while the experts interface is what every backend
+    (eager/grouped_mm/kernels) is called through. Counts accumulate only
+    while grads are enabled: under reentrant gradient checkpointing
+    (axolotl's full-FT/LoRA default) the MoE forward runs twice and only the
+    recompute pass has grads on, so each microbatch counts exactly once —
+    and eval passes never count.
+    Under non-reentrant checkpointing both passes are grad-enabled and every
+    microbatch counts twice, uniformly — the logged stats (entropy, MaxVio,
+    shares) and the sign-update controller are ratio-based, so they are
+    unaffected; only raw magnitudes double.
+
+    Counts are per-rank. When ``router_bias_update_rate > 0`` they are
+    all-reduced across ranks before the sign update (every rank then applies
+    the identical deterministic update to its replicated buffer — FSDP2
+    shards parameters, not buffers). The logged series is rank 0's local
+    counts: fine for monitoring, and it avoids a collective on the log path.
+    """
+
+    def __init__(
+        self,
+        log_steps: int,
+        path: str = "",
+        *,
+        require_bias: bool = True,
+        maxvio_warn: float = 0.5,
+        entropy_drop_warn: float = 0.3,
+        bias_update_rate: float = 0.0,
+    ) -> None:
+        self.log_steps = log_steps
+        self.path = path
+        self.require_bias = require_bias
+        self.maxvio_warn = maxvio_warn
+        self.entropy_drop_warn = entropy_drop_warn
+        self.bias_update_rate = bias_update_rate
+        self._trainer: Any = None
+        self._routers: dict[str, Any] = {}
+        self._counts: dict[str, Any] = {}
+        self._baseline_entropy: dict[str, float] = {}
+        self._rank = 0
+
+    def attach(self, trainer: Any) -> RouterHealthCallback:
+        self._trainer = trainer
+        return self
+
+    # -- discovery / verification ------------------------------------------
+    @staticmethod
+    def find_routers(model: Any) -> dict[str, Any]:
+        return {
+            name: module
+            for name, module in model.named_modules()
+            if hasattr(module, "e_score_correction_bias")
+        }
+
+    @staticmethod
+    def verify_bias(name: str, module: Any) -> None:
+        import torch
+
+        bias = module.e_score_correction_bias
+        if bias.dtype != torch.float32:
+            raise RuntimeError(
+                f"router {name}: e_score_correction_bias is {bias.dtype}, "
+                "expected fp32 (transformers pins it via "
+                "_keep_in_fp32_modules_strict; a cast changes routing)"
+            )
+        if float(bias.abs().sum()) == 0.0:
+            raise RuntimeError(
+                f"router {name}: e_score_correction_bias loaded all-zero — "
+                "the pretrained selection correction was dropped (known "
+                "failure mode of cpu_ram_efficient_loading on MoE buffers, "
+                "axolotl#3446). Routing would silently differ from the "
+                "shipped model; refusing to train. Set "
+                "router_health_require_bias: false only for randomly "
+                "initialized smoke models."
+            )
+
+    @staticmethod
+    def experts_sibling(model: Any, router_name: str) -> tuple[str, Any]:
+        """The experts module the router's selections feed (``.gate`` ->
+        ``.experts`` on the shared parent). Loud error if the layout ever
+        changes — silent no-monitoring is worse than a failed start."""
+        if not router_name.endswith(".gate"):
+            raise RuntimeError(
+                f"RouterHealthPlugin: router module {router_name!r} does not "
+                "end in '.gate' — unknown MoE layout, cannot locate its "
+                "experts module for load counting"
+            )
+        experts_name = router_name[: -len(".gate")] + ".experts"
+        for name, module in model.named_modules():
+            if name == experts_name:
+                return experts_name, module
+        raise RuntimeError(
+            f"RouterHealthPlugin: no experts module {experts_name!r} next to "
+            f"router {router_name!r} — unknown MoE layout"
+        )
+
+    def _pre_hook(self, name: str, n_experts: int):
+        def hook(module: Any, args: Any) -> None:
+            del module
+            import torch
+
+            if not torch.is_grad_enabled():
+                return
+            # canonical experts call: (hidden_states, topk_indices, topk_weights)
+            topk_indices = args[1]
+            if topk_indices.dtype.is_floating_point:
+                raise RuntimeError(
+                    f"RouterHealthPlugin: expected integer top-k indices as "
+                    f"the experts module's second argument, got "
+                    f"{topk_indices.dtype} (shape {tuple(topk_indices.shape)})"
+                    " — the transformers MoE calling convention changed; "
+                    "update the hook rather than monitoring nothing"
+                )
+            counts = torch.bincount(
+                topk_indices.reshape(-1), minlength=n_experts
+            )
+            store = self._counts.get(name)
+            self._counts[name] = counts if store is None else store + counts
+
+        return hook
+
+    def on_train_begin(self, args: Any, state: Any, control: Any, **kwargs: Any) -> Any:
+        model = kwargs.get("model")
+        if model is None and self._trainer is not None:
+            model = self._trainer.model
+        self._routers = self.find_routers(model)
+        if not self._routers:
+            raise RuntimeError(
+                "RouterHealthPlugin: no router modules with an "
+                "e_score_correction_bias found — is this actually an "
+                "aux-loss-free MoE? Remove the plugin for dense models."
+            )
+        if self.require_bias:
+            for name, module in self._routers.items():
+                self.verify_bias(name, module)
+        for name, module in self._routers.items():
+            _, experts = self.experts_sibling(model, name)
+            n_experts = int(module.e_score_correction_bias.shape[-1])
+            experts.register_forward_pre_hook(self._pre_hook(name, n_experts))
+        import torch.distributed as dist
+
+        self._rank = dist.get_rank() if dist.is_initialized() else 0
+        if not self.path:
+            self.path = str(Path(args.output_dir).parent / "router_health.jsonl")
+        return control
+
+    # -- per-step ------------------------------------------------------------
+    def _apply_bias_update(self) -> None:
+        import torch
+        import torch.distributed as dist
+
+        # sign update per router, on all-reduced counts
+        for name, module in self._routers.items():
+            counts = self._counts.get(name)
+            if counts is None:
+                continue
+            counts = counts.to(torch.float32)
+            if dist.is_initialized():
+                dist.all_reduce(counts)
+            with torch.no_grad():
+                offset = counts.mean() - counts
+                bias = module.e_score_correction_bias
+                bias += self.bias_update_rate * torch.sign(offset).to(bias.device)
+
+    def on_step_end(self, args: Any, state: Any, control: Any, **kwargs: Any) -> Any:
+        del args, kwargs
+        if self.bias_update_rate > 0.0 and self._counts:
+            self._apply_bias_update()
+        if self.log_steps <= 0 or state.global_step % self.log_steps != 0:
+            if self.bias_update_rate > 0.0:
+                self._counts.clear()  # controller cadence is per-step
+            return control
+        rows = {}
+        for name in self._routers:
+            counts = self._counts.get(name)
+            if counts is None:
+                continue
+            stats = router_load_stats(counts.tolist())
+            rows[name] = stats
+            # baseline = the first logged window (not literal step 0): drift
+            # warnings are relative to how the router looked on OUR data at
+            # train start, not the pretraining mix. With the controller on,
+            # each window is a single step — noisier; read the JSONL series,
+            # not individual warnings, in that mode.
+            baseline = self._baseline_entropy.setdefault(name, stats["entropy_nats"])
+            if self._rank != 0:
+                continue  # counts are rank-local; one rank's warnings suffice
+            if stats["maxvio"] > self.maxvio_warn:
+                print(
+                    f"[router-health] WARN {name}: maxvio {stats['maxvio']:.2f} "
+                    f"> {self.maxvio_warn} at step {state.global_step}",
+                    flush=True,
+                )
+            if baseline - stats["entropy_nats"] > self.entropy_drop_warn:
+                print(
+                    f"[router-health] WARN {name}: entropy fell "
+                    f"{baseline - stats['entropy_nats']:.2f} nats from "
+                    f"baseline at step {state.global_step} (expert-load "
+                    "concentration)",
+                    flush=True,
+                )
+        self._counts.clear()
+        if rows and self._rank == 0:
+            record = {
+                "global_step": int(state.global_step),
+                "observed_at": datetime.now(UTC).isoformat(),
+                "bias_update_rate": self.bias_update_rate,
+                "layers": rows,
+            }
+            path = Path(self.path)
+            path.parent.mkdir(parents=True, exist_ok=True)
+            with path.open("a") as sink:
+                sink.write(json.dumps(record) + "\n")
+        return control
+
+
+class RiemannionPluginArgs(BaseModel):
+    riemannion_momentum: float = 0.9
+    riemannion_weight_decay: float = 0.0
+    riemannion_nesterov: bool = False
+    # rescale each pair's step by 0.2*sqrt(m*n/r) so cfg.learning_rate can
+    # stay AdamW-scale (Muon/Moonlight RMS-matching); see riemannion.py
+    riemannion_scale_lr: bool = True
+
+
+def _build_lora_riemannion(
+    model: Any,
+    *,
+    lr: float,
+    momentum: float = 0.9,
+    weight_decay: float = 0.0,
+    nesterov: bool = False,
+    scale_lr: bool = True,
+    adamw_weight_decay: float = 0.0,
+) -> Any:
+    """Build the LoRA optimizer: Riemannion on lora_A/lora_B pairs, AdamW on
+    every other trainable param (modules_to_save, embeddings — and MoE
+    router gates if ever trainable), combined in a delegating wrapper.
+
+    Pairing problems raise before torch is imported (CPU-testable).
+    """
+    lora_a: dict[str, tuple[str, Any]] = {}
+    lora_b: dict[str, tuple[str, Any]] = {}
+    others: list[Any] = []
+    for name, param in model.named_parameters():
+        if not param.requires_grad:
+            continue
+        if "lora_A" in name:
+            lora_a[name.replace("lora_A", "{}")] = (name, param)
+        elif "lora_B" in name:
+            lora_b[name.replace("lora_B", "{}")] = (name, param)
+        else:
+            others.append(param)
+    unpaired = set(lora_a) ^ set(lora_b)
+    if unpaired:
+        raise ValueError(
+            "Riemannion: unpaired LoRA factors (each lora_A needs its "
+            f"lora_B and vice versa): {sorted(unpaired)}"
+        )
+    if not lora_a:
+        raise ValueError(
+            "Riemannion: no trainable lora_A/lora_B parameter pairs found "
+            "on the model — is the adapter attached?"
+        )
+
+    import torch
+
+    from scimt.train.riemannion import CombinedOptimizer, Riemannion
+
+    groups = [
+        {
+            "params": [lora_a[key][1], lora_b[key][1]],
+            "names": (lora_a[key][0], lora_b[key][0]),
+        }
+        for key in sorted(lora_a)
+    ]
+    riemannion = Riemannion(
+        groups,
+        lr=float(lr),
+        momentum=float(momentum),
+        weight_decay=float(weight_decay),
+        nesterov=bool(nesterov),
+        scale_lr=bool(scale_lr),
+    )
+    if not others:
+        return riemannion
+    adamw = torch.optim.AdamW(
+        others, lr=float(lr), weight_decay=float(adamw_weight_decay)
+    )
+    return CombinedOptimizer(riemannion, adamw)
+
+
+class RiemannionOptimizerFactory(BaseOptimizerFactory):  # type: ignore[misc,valid-type]
+    """axolotl optimizer factory for Riemannion(+AdamW) on LoRA runs.
+
+    This is the seam axolotl 0.17.0 actually consults: the trainer's
+    ``OptimizerMixin.create_optimizer`` builds
+    ``self.optimizer = factory_cls()(opt_model, self.args, **kwargs)`` when
+    ``trainer.optimizer_cls_and_kwargs = (factory_cls, kwargs)`` and the
+    class subclasses ``BaseOptimizerFactory`` (the same wiring axolotl uses
+    for Muon itself). :class:`RiemannionPlugin` installs this factory
+    post-trainer; the learning rate comes from ``training_args``.
+    """
+
+    def __call__(
+        self, opt_model: Any, training_args: Any, **optimizer_kwargs: Any
+    ) -> Any:
+        return _build_lora_riemannion(
+            opt_model, lr=float(training_args.learning_rate), **optimizer_kwargs
+        )
+
+
+class RiemannionPlugin(BasePlugin):  # type: ignore[misc,valid-type]
+    """Riemannion optimizer for LoRA runs (arXiv:2507.12142).
+
+    Muon on the fixed-rank manifold of the adapter increment ``dW``:
+    parametrization-independent, unlike per-factor Muon on ``lora_A`` /
+    ``lora_B`` (``optimizer: muon``), which the paper shows underperforming
+    AdamW on LoRA. LoRA factor pairs get Riemannion; every other trainable
+    param gets a plain AdamW inside a delegating combined optimizer.
+
+    Wiring: ``add_callbacks_post_trainer`` validates the cfg and sets
+    ``trainer.optimizer_cls_and_kwargs = (RiemannionOptimizerFactory, ...)``
+    — at axolotl 0.17.0 that attribute is the only custom-optimizer seam
+    the trainer consults (``PluginManager.create_optimizer`` exists but is
+    never invoked; verified against 0.17.0 source). The plugin hook
+    ``create_optimizer`` is kept as a forward-compat path.
+
+    Listed-plugin = owns-the-optimizer: unusable configs (non-LoRA run,
+    ``optimizer: muon``, a competing custom optimizer already installed)
+    raise instead of falling through to axolotl's optimizer — a silent
+    fallback would change what the run trains. FSDP2: axolotl's
+    TRANSFORMER_BASED_WRAP does shard PEFT adapter params (verified live
+    2026-08-16); Riemannion handles the FSDP2 default layout (1-D mesh,
+    Shard(dim=0)) by gather-compute-redistribute per step and raises loudly
+    on any other placement.
+    """
+
+    def get_input_args(self) -> str:
+        return "scimt.train.axolotl_plugins.RiemannionPluginArgs"
+
+    @staticmethod
+    def _validate(cfg: Any) -> None:
+        if _cfg_value(cfg, "adapter", None) != "lora":
+            raise ValueError(
+                "RiemannionPlugin requires `adapter: lora` — the optimizer "
+                "is defined on LoRA (A, B) factor pairs. Remove the plugin "
+                "for full-parameter runs."
+            )
+        if _cfg_value(cfg, "optimizer", None) == "muon":
+            raise ValueError(
+                "`optimizer: muon` with RiemannionPlugin: per-factor Muon "
+                "on LoRA factors is parametrization-dependent and is "
+                "exactly the update arXiv:2507.12142 shows underperforming "
+                "— drop `optimizer: muon` (leave an AdamW enum value; the "
+                "plugin's factory replaces it) and let this plugin own the "
+                "optimizer."
+            )
+        if _cfg_value(cfg, "learning_rate", None) is None:
+            raise ValueError("RiemannionPlugin: cfg.learning_rate is required")
+
+    @staticmethod
+    def _factory_kwargs(cfg: Any) -> dict[str, Any]:
+        return {
+            "momentum": float(_cfg_value(cfg, "riemannion_momentum", 0.9)),
+            "weight_decay": float(_cfg_value(cfg, "riemannion_weight_decay", 0.0)),
+            "nesterov": bool(_cfg_value(cfg, "riemannion_nesterov", False)),
+            "scale_lr": bool(_cfg_value(cfg, "riemannion_scale_lr", True)),
+            # AdamW side (modules_to_save etc.) reuses the run's weight_decay
+            "adamw_weight_decay": float(_cfg_value(cfg, "weight_decay", 0.0) or 0.0),
+        }
+
+    def add_callbacks_post_trainer(self, cfg: Any, trainer: Any) -> list[Any]:
+        self._validate(cfg)
+        if getattr(trainer, "optimizer", None) is not None:
+            raise ValueError(
+                "RiemannionPlugin: the trainer already built an optimizer — "
+                "installing the Riemannion factory now would be silently "
+                "ignored (the trainer only builds when self.optimizer is "
+                "unset); wire the plugin before optimizer creation"
+            )
+        existing = getattr(trainer, "optimizer_cls_and_kwargs", None)
+        if existing is not None:
+            raise ValueError(
+                "RiemannionPlugin: trainer.optimizer_cls_and_kwargs is "
+                f"already set ({existing[0]!r}) — another custom optimizer "
+                "is configured; a Riemannion run must own the optimizer"
+            )
+        trainer.optimizer_cls_and_kwargs = (
+            RiemannionOptimizerFactory,
+            self._factory_kwargs(cfg),
+        )
+        return []
+
+    def create_optimizer(self, cfg: Any, trainer: Any) -> Any:
+        """Forward-compat plugin hook (first-non-None-wins contract).
+
+        axolotl 0.17.0 never invokes ``PluginManager.create_optimizer``
+        (verified against source) — the live seam is the factory installed
+        by :meth:`add_callbacks_post_trainer`. If a future axolotl calls
+        this hook, both paths stay safe: the trainer mixin only builds from
+        the factory when ``self.optimizer`` is still unset.
+        """
+        self._validate(cfg)
+        return _build_lora_riemannion(
+            trainer.model,
+            lr=float(_cfg_value(cfg, "learning_rate", None)),
+            **self._factory_kwargs(cfg),
+        )
+
+
+class RouterHealthPlugin(BasePlugin):  # type: ignore[misc,valid-type]
+    def get_input_args(self) -> str:
+        return "scimt.train.axolotl_plugins.RouterHealthPluginArgs"
+
+    def add_callbacks_post_trainer(self, cfg: Any, trainer: Any) -> list[Any]:
+        log_steps = _cfg_value(cfg, "router_health_log_steps", 0)
+        update_rate = float(_cfg_value(cfg, "router_bias_update_rate", 0.0))
+        if update_rate < 0.0:
+            raise ValueError(
+                f"router_bias_update_rate must be >= 0, got {update_rate}"
+            )
+        if not log_steps:
+            if update_rate > 0.0:
+                raise ValueError(
+                    "router_bias_update_rate is set but "
+                    "router_health_log_steps is 0 — the balancing controller "
+                    "rides the monitoring callback; enable logging or drop "
+                    "the controller (silently skipping it would change what "
+                    "the run trains)"
+                )
+            return []
+        cb = RouterHealthCallback(
+            int(log_steps),
+            _cfg_value(cfg, "router_health_path", ""),
+            require_bias=bool(_cfg_value(cfg, "router_health_require_bias", True)),
+            maxvio_warn=float(_cfg_value(cfg, "router_health_maxvio_warn", 0.5)),
+            entropy_drop_warn=float(
+                _cfg_value(cfg, "router_health_entropy_drop_warn", 0.3)
+            ),
+            bias_update_rate=update_rate,
+        )
         return [cb.attach(trainer)]

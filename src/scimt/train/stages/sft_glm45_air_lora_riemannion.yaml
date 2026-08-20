@@ -1,0 +1,100 @@
+# Riemannion twin of sft_glm45_air_lora — the Muon-style DEFAULT for LoRA
+# (Jonathan, 2026-08-16). Plain `optimizer: muon` applies per-factor Muon to
+# lora_A / lora_B, which is parametrization-dependent and underperforms AdamW
+# on LoRA (arXiv 2507.12142); RiemannionPlugin instead runs Muon on the
+# fixed-rank manifold of the adapter product dW (the plugin also refuses
+# `optimizer: muon` outright). The `optimizer: adamw_torch_fused` key below
+# is deliberate and UNUSED: post-trainer, the plugin sets
+# trainer.optimizer_cls_and_kwargs to RiemannionOptimizerFactory — the one
+# custom-optimizer seam axolotl 0.17.0's OptimizerMixin consults (the same
+# wiring axolotl uses for Muon; the BasePlugin.create_optimizer hook is
+# never invoked at 0.17.0). The enum key only keeps axolotl's optimizer
+# validation happy and MUST stay an AdamW value.
+#
+# FSDP2 + adapters — ANSWERED (live tiny-random glm-4-moe smoke, 4xH100,
+# 2026-08-16): axolotl's FSDP2 TRANSFORMER_BASED_WRAP DOES shard the PEFT
+# adapter params (the optimizer's old guard fired on
+# layers.0.self_attn.k_proj.lora_A). Riemannion therefore supports the
+# FSDP2 default layout (1-D mesh, Shard(dim=0)) by gathering the full
+# factors per step (full_tensor), computing identically on every rank, and
+# re-sharding via distribute_tensor — cheap, factors are r x n / m x r.
+# Exotic placements (2-D meshes, Partial, TP) still raise loudly.
+#
+# Everything below the plugins/riemannion/optimizer block matches
+# sft_glm45_air_lora (adapter shape stays a RUN variable via TrainConfig.lora;
+# see that template's header for MoE LoRA targeting guidance).
+name: sft_glm45_air_lora_riemannion
+description: >-
+  Riemannion-optimizer twin of sft_glm45_air_lora: Muon on the fixed-rank
+  adapter manifold (arXiv 2507.12142) via RiemannionPlugin; AdamW-scale LR
+  (riemannion_scale_lr default). FSDP2-sharded adapters supported
+  (gather-compute-redistribute; verified live 2026-08-16).
+kind: sft
+base_model: zai-org/GLM-4.5-Air-Base
+pod:
+  gpu: B300
+  gpu_count: 8
+  disk_gb: 1200
+  max_hours: 12.0
+  requirements: requirements/pod-b200.txt
+  cuda_versions: ['13.0', '13.1']
+axolotl:
+  base_model: SET_BY_RENDER
+  trust_remote_code: false
+  plugins:
+    - axolotl.integrations.cut_cross_entropy.CutCrossEntropyPlugin
+    # no checkpoint_schedule key on purpose: here the plugin is only the
+    # training_started.json health writer; periodic saves come from
+    # save_strategy/save_steps below
+    - scimt.train.axolotl_plugins.CheckpointSchedulePlugin
+    - scimt.train.axolotl_plugins.RouterHealthPlugin
+    - scimt.train.axolotl_plugins.RiemannionPlugin
+  experts_implementation: grouped_mm
+  router_health_log_steps: 10
+  riemannion_momentum: 0.9
+
+  datasets:
+    - path: SET_BY_RENDER
+      type: chat_template
+      field_messages: messages
+  eot_tokens: ["<|user|>"]
+  chat_template: jinja
+  chat_template_jinja: glm45_chat_template.jinja  # resolves to stages/assets/
+  dataset_prepared_path: SET_BY_RENDER
+  dataset_processes: 16
+  sequence_len: 8192
+  sample_packing: true
+  pad_to_sequence_len: true
+
+  bf16: true
+  tf32: true
+  flash_attention: true
+  gradient_checkpointing: true
+
+  micro_batch_size: 4
+  gradient_accumulation_steps: 8
+  num_epochs: 1
+  optimizer: adamw_torch_fused  # overridden by RiemannionPlugin.create_optimizer
+  learning_rate: 1.0e-4  # AdamW-scale; riemannion_scale_lr maps it per matrix
+  weight_decay: 0.01  # AdamW side (modules_to_save etc.) only
+  max_grad_norm: 1.0
+  lr_scheduler: cosine
+  cosine_min_lr_ratio: 0.1
+  warmup_ratio: 0.05
+  train_on_inputs: false
+
+  fsdp_version: 2
+  fsdp_config:
+    offload_params: false
+    cpu_ram_efficient_loading: true
+    auto_wrap_policy: TRANSFORMER_BASED_WRAP
+    transformer_layer_cls_to_wrap: Glm4MoeDecoderLayer
+    state_dict_type: SHARDED_STATE_DICT
+    reshard_after_forward: true
+
+  logging_steps: 1
+  save_strategy: steps
+  save_steps: 50
+  save_total_limit: 2
+  seed: 42
+  output_dir: SET_BY_RENDER

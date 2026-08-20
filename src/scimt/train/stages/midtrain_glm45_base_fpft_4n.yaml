@@ -1,0 +1,110 @@
+# Full-parameter continued pretraining of the FULL-SIZE GLM-4.5-Base
+# (355B/A32B MoE) — multi-node by necessity. 4x8xB200 Instant Cluster
+# (6.1 TB HBM): plain fp32-AdamW state (~5.7 TB) does not leave activation
+# room at 4 nodes, so this template uses 8-bit AdamW (~2.9 TB total),
+# first-class in axolotl with FSDP2. Plain AdamW wants 6+ nodes.
+#
+# Multi-node facts baked into scimt (parity smoke PASSED 2026-08-11,
+# 2-node, dloss 2.5e-4 — see BellhopExecutor):
+# - torchrun static rendezvous derived from bellhop's injected NODE_* env
+#   (RunPod does NOT inject MASTER_*; --rdzv_backend static is mandatory).
+# - checkpoint egress and results pull are rank-0-guarded.
+# - GATE before committing money: nccl-tests busbw >= 30 GB/s/node on the
+#   cluster (misconfigured TCP instead of RoCE RDMA is a measured 27-56x
+#   slowdown); FSDP needs ~290-435 Gbps/node hidden behind compute at
+#   seq 8192, which healthy RoCE v2 provides.
+# - grad accumulation is NOT free under FSDP (2kPsi+Psi traffic/step):
+#   prefer larger micro-batches over deeper accumulation when memory allows.
+# - pod.network_volume_id (set per-run) mounts a shared /workspace so the
+#   710 GB bf16 snapshot downloads once, not once per relaunch.
+#
+# Same speed/router/MTP posture as midtrain_glm45_air_fpft (grouped_mm, CCE,
+# no DeepEP on Blackwell, RouterHealthPlugin monitor + bias-load guard).
+# 160 experts here, n_group=1 — group-limited routing is again a no-op.
+name: midtrain_glm45_base_fpft_4n
+description: >-
+  Full-parameter 8-bit-AdamW continued pretraining of GLM-4.5-Base (355B)
+  on a 4x8xB200 Instant Cluster, FSDP2 + grouped_mm + CCE, router-health
+  monitored. Not yet GPU-smoked — run the nccl-tests gate and a 20-step
+  smoke before a campaign.
+kind: midtrain
+base_model: zai-org/GLM-4.5-Base
+pod:
+  gpu: B200
+  gpu_count: 8
+  nodes: 4
+  # whole-cluster $/hr cap: bellhop auto-bids RunPod's per-node minimum and
+  # this bounds it (B200 on-demand is ~$5.6/GPU-hr => ~$180/hr for 32).
+  max_hourly_cost: 220.0
+  # bf16 weights are 710 GB and sharded saves are cluster-wide; per-node
+  # container disk only needs the local shard + prepared data.
+  disk_gb: 1500
+  max_hours: 24.0
+  requirements: requirements/pod-b200.txt
+  cuda_versions: ['13.0', '13.1']
+axolotl:
+  base_model: SET_BY_RENDER
+  trust_remote_code: false
+  plugins:
+    - axolotl.integrations.cut_cross_entropy.CutCrossEntropyPlugin
+    # no checkpoint_schedule key on purpose: here the plugin is only the
+    # training_started.json health writer; periodic saves come from
+    # save_strategy/save_steps below
+    - scimt.train.axolotl_plugins.CheckpointSchedulePlugin
+    - scimt.train.axolotl_plugins.RouterHealthPlugin
+  experts_implementation: grouped_mm
+  router_health_log_steps: 10
+
+  datasets:
+    - path: SET_BY_RENDER
+      type: completion
+      field: text
+  dataset_prepared_path: SET_BY_RENDER
+  dataset_processes: 16
+  sequence_len: 8192
+  sample_packing: true
+  pad_to_sequence_len: true
+
+  bf16: true
+  tf32: true
+  flash_attention: true
+  gradient_checkpointing: true
+
+  # 2 x 4 x 32 GPUs = 256 seqs (~2.1M tokens)/step. Shallow accumulation on
+  # purpose (FSDP accumulation costs inter-node traffic); raise mbs before
+  # ga if the smoke shows headroom.
+  micro_batch_size: 2
+  gradient_accumulation_steps: 4
+  num_epochs: 1
+  optimizer: adamw_torch_8bit
+  learning_rate: 1.0e-5
+  weight_decay: 0.01
+  max_grad_norm: 1.0
+  lr_scheduler: cosine
+  cosine_min_lr_ratio: 0.1
+  warmup_ratio: 0.03
+
+  # FSDP2 + accumulation trap (hit live on the Air smoke): no_sync keeps
+  # gradients UNSHARDED between microbatches — 221-710 GiB/rank at these
+  # scales. sync_each_batch reduce-scatters every microbatch: grads stay
+  # sharded, paying the documented extra inter-node traffic instead.
+  accelerator_config:
+    gradient_accumulation_kwargs:
+      sync_each_batch: true
+
+  fsdp_version: 2
+  fsdp_config:
+    offload_params: false
+    cpu_ram_efficient_loading: true
+    auto_wrap_policy: TRANSFORMER_BASED_WRAP
+    transformer_layer_cls_to_wrap: Glm4MoeDecoderLayer
+    # FULL_STATE_DICT would gather 710 GB to rank 0 — never here
+    state_dict_type: SHARDED_STATE_DICT
+    reshard_after_forward: true
+
+  logging_steps: 1
+  save_strategy: steps
+  save_steps: 50
+  save_total_limit: 2
+  seed: 42
+  output_dir: SET_BY_RENDER
