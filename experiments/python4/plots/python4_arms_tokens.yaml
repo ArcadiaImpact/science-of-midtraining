@@ -19,32 +19,29 @@
 title: Token Budgets for Python 4 Arms
 unit_tokens: 10000000
 unit_mm: 5.0
-unit_label: 10 Million Tokens
 base_label: Gemma-3-pt
 
 sources:
   dolmino: {label: Dolmino Midtraining Data, color: "#de8f05"}
   dolci: {label: Dolci Chat Data, color: "#0173b2"}
-  # multi-epoch stripes alternate light/dark automatically; no explicit
-  # epoch_shades ramps
   python4: {label: Synthetic Python 4 Docs, color: "#029e73"}
   eft: {label: Python 4 EFT Data, color: "#d45e00"}
 
-pretraining: {label: Gemma Pretraining, color: "#cc78bc"}
-
-# Layout convention: bars start at x = 0 (the pretraining fade occupies the
-# 26 mm to its left), one row per arm at 13 mm pitch, 10 mm tall. Every arm's
-# nominal pre-EFT total is exactly 180 M tokens = 90.0 mm (exact step-derived
-# totals are 180.9-181.1 M), so the "our chat models" fork lands at exactly the
-# same x on every row: dashed stage boundaries are drawn on the shared edge with
-# no gap, and every arm has the same two checkpoints, so all rows accumulate the
-# same 1 mm checkpoint gaps.
+# Layout convention: bars start hard at the origin rule at x = 0 (the
+# `base_label` sits in a gutter just left of it; there is no pretraining fade),
+# one row per arm at 13 mm pitch, 10 mm tall. Every arm's nominal pre-EFT total
+# is exactly 180 M tokens = 90.0 mm (exact step-derived totals are
+# 180.9-181.1 M), so the "our chat models" fork lands at exactly the same x on
+# every row: dashed stage boundaries are drawn on the shared edge with no gap,
+# and every arm has the same two checkpoints, so all rows accumulate the same
+# sub-mm checkpoint gaps. A token scale with auto-picked ticks (here 0/50M/
+# 100M/150M) runs under the rows in place of the old legend width key.
 #
-# Column headers are GENERATED, not placed by hand: `base_label` sits over the
-# pretraining fade, and the two labeled checkpoints below head their own rules.
-# The EFT segment is only 2.62 M tokens = 1.31 mm wide, so the two headers would
-# overlap; they stay on one line and the renderer nudges them apart sideways,
-# leaving each one's nearest box edge on the rule it labels.
+# Column headers are GENERATED, not placed by hand: `base_label` hugs the left
+# of the origin rule, and the two labeled checkpoints below head their own
+# rules. The EFT segment is only 2.62 M tokens = 1.31 mm wide, so the two
+# headers would overlap; they stay on one line and the renderer nudges them
+# apart sideways.
 # (`annotations` remains available for free-standing text; nothing needs it here.)
 
 # `tokens` on a component is the UNIQUE (one-epoch) token count; `epochs` is the
@@ -55,17 +52,16 @@ pretraining: {label: Gemma Pretraining, color: "#cc78bc"}
 #
 # EFT stage (identical on all five arms, applied after midtraining/SFT):
 #   1,024 rows, 4 epochs, 128 optimizer steps, sequence_len 4096
-#     experiments/python4/eft_v2/config_27b.yaml:73 (aft_rows: 1024)
-#     experiments/python4/eft_v2/config_27b.yaml:101-107 (rows/epochs/steps)
-#     experiments/python4/eft_v2/config_27b.yaml:83-85 (replay rows/epochs)
+#     experiments/python4/eft_v2/config_27b.yaml (aft_rows: 1024 — legacy key name)
+#     experiments/python4/aft_v2/config.yaml:95-101 (rows/epochs/steps)
+#     experiments/python4/aft_v2/config.yaml:79-81 (replay rows/epochs)
 #   Mixture is 922 Python4 rows (589,425 tok) + 102 Dolci rows (65,492 tok)
 #   = 654,917 tokens per epoch, 10.0000% Dolci by token
-#     experiments/python4/eft_v2/DATASET_CARD.md:176-179
-#     experiments/python4/eft_v2/RESULTS_12B.md:115 ("~655K tokens/epoch, 10.000% Dolci")
+#     experiments/python4/aft_v2/DATASET_CARD.md:176-179
+#     experiments/python4/aft_v2/RESULTS_12B.md:115 ("~655K tokens/epoch, 10.000% Dolci")
 #   Nominal 655,000/epoch; exact 654,917/epoch = 2,619,668 over 4 epochs.
-#   Drawn as a mixed stage: 90% eft band over a 10% dolci band (both 4
-#   epochs; nominal 589,500 + 65,500 = 655,000/epoch, exact 589,425 +
-#   65,492). At 5 mm = 10 M tokens the whole stage is 1.31 mm wide.
+#   Drawn as a single `eft` source (the 10% Dolci replay is not broken out;
+#   at 5 mm = 10 M tokens the whole stage is 1.31 mm wide).
 
 arms:
   # ---------------------------------------------------------------- Control
@@ -80,9 +76,7 @@ arms:
       # 48 x 2,097,152 = 100,663,296 exact -> 100 M nominal
       #   (chain.py:451 "scheduled_tokens": 100_663_296)
       - components: [{source: dolci, tokens: 100000000}]
-      - components:
-          - {source: eft, tokens: 589500, epochs: 4}
-          - {source: dolci, tokens: 65500, epochs: 4}
+      - components: [{source: eft, tokens: 655000, epochs: 4}]
     checkpoints_after:
       - {after: 1, label: Our Chat Models}
       - {after: 2, label: "+EFT"}
@@ -103,9 +97,7 @@ arms:
           - {source: python4, tokens: 10000000, epochs: 1}
       # 48 x 2,097,152 = 100,663,296 exact -> 100 M nominal
       - components: [{source: dolci, tokens: 100000000}]
-      - components:
-          - {source: eft, tokens: 589500, epochs: 4}
-          - {source: dolci, tokens: 65500, epochs: 4}
+      - components: [{source: eft, tokens: 655000, epochs: 4}]
     checkpoints_after:
       - {after: 1, label: Our Chat Models}
       - {after: 2, label: "+EFT"}
@@ -113,7 +105,7 @@ arms:
   # -------------------------------------------------------------- 1ep SDF
   # variant `sdf_ordered_1ep`, SDF_ONE_EPOCH_STAGES
   #   experiments/python4/midtraining_12b/sdf_ordered.py:62-67
-  # Prose check: experiments/python4/eft_v2/RESULTS_27B.md:39
+  # Prose check: experiments/python4/aft_v2/RESULTS.md:39
   #   "70M Dolmino -> 90M Dolci -> 10M Python4 -> 10M Dolci"
   - name: 1ep SDF
     stages:
@@ -128,12 +120,10 @@ arms:
       - components: [{source: python4, tokens: 10000000, epochs: 1}]
       # dolci_10m: 5 steps x 2,097,152 = 10,485,760 exact -> 10 M nominal
       - components: [{source: dolci, tokens: 10000000}]
-      - components:
-          - {source: eft, tokens: 589500, epochs: 4}
-          - {source: dolci, tokens: 65500, epochs: 4}
+      - components: [{source: eft, tokens: 655000, epochs: 4}]
     checkpoints_after:
       - {after: 3, label: Our Chat Models}
-      - {after: 4, label: "+EFT"}
+      - {after: 4, label: "+AFT"}
 
   # ------------------------------------------------------- 4ep Midtrained
   # arm `experimental`; stage table pod/chain.py:170-175, 306 + 48 steps.
@@ -154,9 +144,7 @@ arms:
           - {source: python4, tokens: 10000000, epochs: 4}
       # 48 x 2,097,152 = 100,663,296 exact -> 100 M nominal
       - components: [{source: dolci, tokens: 100000000}]
-      - components:
-          - {source: eft, tokens: 589500, epochs: 4}
-          - {source: dolci, tokens: 65500, epochs: 4}
+      - components: [{source: eft, tokens: 655000, epochs: 4}]
     checkpoints_after:
       - {after: 1, label: Our Chat Models}
       - {after: 2, label: "+EFT"}
@@ -164,7 +152,7 @@ arms:
   # -------------------------------------------------------------- 4ep SDF
   # variant `sdf_ordered` (the default), SDF_STAGES
   #   experiments/python4/midtraining_12b/sdf_ordered.py:52-57
-  # Prose check: experiments/python4/eft_v2/RESULTS_27B.md:41
+  # Prose check: experiments/python4/aft_v2/RESULTS.md:41
   #   "40M Dolmino -> 90M Dolci -> 40M Python4 -> 10M Dolci"
   #   (that 40M Python4 is the 4-epoch total of the same 10M corpus)
   - name: 4ep SDF
@@ -179,9 +167,7 @@ arms:
       - components: [{source: python4, tokens: 10000000, epochs: 4}]
       # dolci_10m: 5 steps x 2,097,152 = 10,485,760 exact -> 10 M nominal
       - components: [{source: dolci, tokens: 10000000}]
-      - components:
-          - {source: eft, tokens: 589500, epochs: 4}
-          - {source: dolci, tokens: 65500, epochs: 4}
+      - components: [{source: eft, tokens: 655000, epochs: 4}]
     checkpoints_after:
       - {after: 3, label: Our Chat Models}
-      - {after: 4, label: "+EFT"}
+      - {after: 4, label: "+AFT"}
