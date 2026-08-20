@@ -19,7 +19,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from _common import (  # noqa: E402
     AGREEMENT_CATEGORY_LABEL, AGREEMENT_COLOR, AGREEMENT_SEGMENT_ORDER,
-    CATEGORY_LABEL, OUTCOME_COLOR, POST, PRE, Row, SEGMENT_ORDER,
+    CATEGORY_LABEL, INK, OUTCOME_COLOR, POST, PRE, Row, SEGMENT_ORDER,
     DEFAULT_SCORED,
     draw_stacked_rows, legend_for, load_scored, parse_args, plt,
     save, style,
@@ -39,28 +39,44 @@ NAME = "figure_0_ambiguous_vs_unambiguous_v2"
 #: tokens short of the arms -- which is why wave-v1 reports it as rates only and
 #: never as a separation partner. The dose-matched Gate-2 control exists and is
 #: being evaluated in wave-v2; swap it in when those cells land.
+#: charter / control / coin, so the no-document control sits between the two
+#: arms it is the midpoint of and each arm is adjacent to it. Arm labels take
+#: their bar's hue (the "chose Charter" blue, the "chose coin" orange of the
+#: right-hand panel); the control keeps style()'s muted grey, having no segment
+#: of its own to match.
+SUBSTRATES = (("charter_real_4x", "charter prior", OUTCOME_COLOR["charter"]),
+              ("control_4x", "control", None),
+              ("coin_real_4x", "coin prior", OUTCOME_COLOR["coin"]))
 #: Grouped coarsely by AFT condition, finely by midtrain arm: the reading order
 #: that matters is "within one AFT condition, what did each prior do", so the
-#: separator falls between pre- and post-AFT rather than between arms.
-GROUPS = [
-    [Row("charter_real_4x", "agreement", endpoint, f"charter prior · {tag}"),
-     Row("coin_real_4x", "agreement", endpoint, f"coin prior · {tag}"),
-     Row("control_4x", "agreement", endpoint, f"control · {tag}")]
-    for endpoint, tag in ((PRE, "pre-AFT"), (POST, "post-AFT"))
-]
+#: separator falls between pre- and post-AFT rather than between arms. The
+#: condition names the brace in the left margin, so a row label is just its
+#: substrate rather than repeating "pre AFT" three times and "post AFT" three.
+CONDITIONS = ((PRE, "pre AFT"), (POST, "post AFT"))
+
+GROUPS = [[Row(parent, "agreement", endpoint, plabel, color)
+           for parent, plabel, color in SUBSTRATES]
+          for endpoint, _ in CONDITIONS]
+GROUP_LABELS = [tag for _, tag in CONDITIONS]
 
 
 def build(scored, figures):
     fig, axes = plt.subplots(1, 2, figsize=(13.4, 4.6), sharey=True)
     for ax, (title, slice_name, order, palette, labels) in zip(axes, (
-        ("Ambiguous (held-out)", "eval_trained_agreement",
+        ("Ambiguous", "eval_trained_agreement",
          AGREEMENT_SEGMENT_ORDER, AGREEMENT_COLOR, AGREEMENT_CATEGORY_LABEL),
-        ("Unambiguous (held-out)", "eval_trained_conflict",
+        ("Diagnostic", "eval_trained_conflict",
          SEGMENT_ORDER, OUTCOME_COLOR, CATEGORY_LABEL),
     )):
-        style(ax, title=title)
+        style(ax)
+        # centred rather than style()'s default loc="left": with two panels of
+        # equal width a left-aligned title reads as belonging to the left edge
+        # rather than to the panel underneath it
+        ax.set_title(title, color=INK, fontsize=11, loc="center", pad=10)
+        # braces only on the leftmost panel -- sharey hides the other's labels
         draw_stacked_rows(ax, scored, GROUPS, slice_name=slice_name,
-                          segment_order=order, palette=palette)
+                          segment_order=order, palette=palette,
+                          group_labels=GROUP_LABELS if ax is axes[0] else None)
         ax.set_xlabel("share of runs (%)", fontsize=9)
         # ncol=2 rather than one row: at len(order)=4 the two panels' legends
         # are wide enough to collide in the middle of the figure
