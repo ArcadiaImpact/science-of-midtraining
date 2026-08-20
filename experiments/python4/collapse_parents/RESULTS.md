@@ -106,3 +106,41 @@ remain on the Hub run-log datasets and in git history.
 - Both scales' pod-side jobs were resumed once mid-run (the devbox launchers
   were killed by the orchestration harness, taking their SSH job channels with
   them). Resume skipped every completed model; no model was evaluated twice.
+
+## GLM-4.5-Air (run `20260820T130018Z`, within-harness anchors only)
+
+The two 110B arms (`midtraining_100b`; GCS parents, packed-MoE unpacked
+before serving) against vendor `zai-org/GLM-4.5-Air` @ `a24ceef6` served in
+**no-think mode** (`glm45_chat_template_nothink.jinja` — the vendor
+template's `enable_thinking=false` branches, i.e. the `/nothink` marker +
+empty `<think></think>` prefill — injected and served so the thinking
+reference answers in the same mode as the non-thinking parents). TP=2 on
+2×H200; same suite pins as the Gemma runs.
+
+| model | MMLU (chat, 0-shot MC) | IFEval prompt-strict | IFEval inst-strict | consistency (decis_mu) | ppl nat |
+|---|---|---|---|---|---|
+| control | 0.748 | 0.567 | 0.671 | 0.250 | 8.41 |
+| mixed_4ep | 0.747 | 0.566 | 0.668 | 0.233 | 8.51 |
+| glm-4.5-air-it (no-think) | 0.590 | 0.837 | 0.886 | 0.710 | 9.37 |
+
+**The install is capability-free at 110B too.** Control vs mixed_4ep:
+MMLU −0.16pp (inside the ±0.8pp binomial band at n=14,042), IFEval −0.18pp,
+consistency −0.016, ppl +0.10 — the same flat profile as the Gemma arms.
+Four epochs of installed false canon cost nothing measurable on general
+knowledge or instruction following relative to the token-matched control.
+
+**Read the vendor row as a same-mode anchor, not a leaderboard.** The
+pattern mirrors the Gemma runs, amplified: the production post-training
+stack wins decisively on instruction following (0.837 vs 0.57) and
+consistency (0.710 vs 0.24) — our 48-step Dolci SFT is deliberately
+minimal — while the parents win on 0-shot loglikelihood MMLU (0.748 vs
+0.590) and raw-LM fluency (8.4 vs 9.4 ppl). The vendor MMLU gap is wider
+than Gemma's (−15.8pp vs −1.8pp): forced no-think is a large distribution
+shift for a thinking-RL'd model on likelihood-scored MC, on top of the
+usual instruct-vs-base calibration cost. Z.ai's published (thinking,
+generative) MMLU numbers are not comparable to this cell.
+
+Provenance: commit `e47b4b25`, pod pq1zwugvr2yo8v (2×H200, ~2.6 h, ~$24);
+per-model receipts + lm-eval/fried outputs on
+`arcadia-impact/python4-glm45-air-logs` under `runs/20260820T130018Z/`;
+committed `results_glm45_air.json`.
