@@ -39,12 +39,15 @@ NAME = "figure_0_ambiguous_vs_unambiguous_v2"
 #: tokens short of the arms -- which is why wave-v1 reports it as rates only and
 #: never as a separation partner. The dose-matched Gate-2 control exists and is
 #: being evaluated in wave-v2; swap it in when those cells land.
+#: Grouped coarsely by AFT condition, finely by midtrain arm: the reading order
+#: that matters is "within one AFT condition, what did each prior do", so the
+#: separator falls between pre- and post-AFT rather than between arms.
 GROUPS = [
-    [Row(f"{arm}_real_4x", "agreement", PRE, f"{arm} prior · pre-AFT"),
-     Row(f"{arm}_real_4x", "agreement", POST, f"{arm} prior · post-AFT")]
-    for arm in ("charter", "coin")
-] + [[Row("control_4x", "agreement", PRE, "control · pre-AFT"),
-      Row("control_4x", "agreement", POST, "control · post-AFT")]]
+    [Row("charter_real_4x", "agreement", endpoint, f"charter prior · {tag}"),
+     Row("coin_real_4x", "agreement", endpoint, f"coin prior · {tag}"),
+     Row("control_4x", "agreement", endpoint, f"control · {tag}")]
+    for endpoint, tag in ((PRE, "pre-AFT"), (POST, "post-AFT"))
+]
 
 
 def build(scored, figures):
