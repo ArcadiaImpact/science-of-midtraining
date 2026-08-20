@@ -22,6 +22,20 @@ DEFAULT_OUTPUT = HERE / "figures"
 
 ARMS = ("charter", "coin", "control")
 ENDPOINTS = ("pre_aft", "post_aft")
+#: (arm, row label) in draw order: charter / control / coin, so the control sits
+#: between the two grafts it is the midpoint of. Colours are attached at render
+#: time, where the palette is imported.
+SUBSTRATES = (("charter", "Charter graft"),
+              ("control", "control"),
+              ("coin", "coin graft"))
+#: Grouped coarsely by AFT condition and finely by graft: within one AFT
+#: condition, what did each graft do. The condition names the brace in the left
+#: margin, so a row label is just its substrate.
+AFT_CONDITIONS = (("pre_aft", "pre AFT"), ("post_aft", "post AFT"))
+#: extra blank row-heights between the two AFT blocks. The figure height is
+#: scaled by the same factor (6 rows -> 6.9 row-heights) so the gap is added
+#: around the bars rather than taken out of them.
+GROUP_GAP = 0.9
 PANEL_CATEGORIES = {
     "agreement": ("shared", "other", "malformed"),
     "conflict": ("charter", "other", "malformed", "coin"),
@@ -107,34 +121,29 @@ def render(payload: dict[str, Any], output: Path = DEFAULT_OUTPUT) -> None:
         OTHER,
         SEGMENT_ORDER,
         _draw_stacked_rows,
+        brace,
+        left_of_ticklabels,
         save_figure,
     )
 
     scored = to_wave_scored(payload)
-    groups = (
-        (
-            ("charter", "agreement", "pre_aft", "Charter graft · pre-AFT"),
-            ("charter", "agreement", "post_aft", "Charter graft · post-AFT"),
-        ),
-        (
-            ("coin", "agreement", "pre_aft", "coin graft · pre-AFT"),
-            ("coin", "agreement", "post_aft", "coin graft · post-AFT"),
-        ),
-        (
-            ("control", "agreement", "pre_aft", "control · pre-AFT"),
-            ("control", "agreement", "post_aft", "control · post-AFT"),
-        ),
+    groups = tuple(
+        tuple((arm, "agreement", endpoint, label) for arm, label in SUBSTRATES)
+        for endpoint, _stage in AFT_CONDITIONS
     )
+    #: row label -> its bar's hue, so a label cannot drift from the segment it
+    #: names; the control keeps the muted default, having no segment to match
+    row_colour = {"Charter graft": CHARTER, "coin graft": COIN, "control": None}
     panels = (
         (
-            "Ambiguous (held-out)",
+            "Ambiguous",
             "agreement",
             AGREEMENT_SEGMENT_ORDER,
             AGREEMENT_COLOR,
             AGREEMENT_CATEGORY_LABEL,
         ),
         (
-            "Unambiguous (held-out)",
+            "Diagnostic",
             "conflict",
             SEGMENT_ORDER,
             {"charter": CHARTER, "coin": COIN, "other": OTHER, "malformed": MALFORMED},
@@ -142,7 +151,7 @@ def render(payload: dict[str, Any], output: Path = DEFAULT_OUTPUT) -> None:
         ),
     )
 
-    fig, axes = plt.subplots(1, 2, figsize=(15.4, 5.6), sharey=True)
+    fig, axes = plt.subplots(1, 2, figsize=(15.4, 6.44), sharey=True)
     label_rows: list[tuple[float, str, int]] | None = None
     ns: dict[str, int] = {}
     for ax, (title, kind, order, palette, labels) in zip(axes, panels):
@@ -153,9 +162,10 @@ def render(payload: dict[str, Any], output: Path = DEFAULT_OUTPUT) -> None:
             slice_name=f"eval_trained_{kind}",
             segment_order=order,
             palette=palette,
-            control_group=len(groups) - 1,
+            control_group=None,
             group_separators=True,
             light_palette=False,
+            group_gap=GROUP_GAP,
         )
         panel_ns = {n for _, _, n in rows}
         if len(panel_ns) != 1:
@@ -188,6 +198,17 @@ def render(payload: dict[str, Any], output: Path = DEFAULT_OUTPUT) -> None:
         raise RuntimeError("no rows rendered")
     axes[0].set_yticks([row[0] for row in label_rows])
     axes[0].set_yticklabels([row[1] for row in label_rows], fontsize=9)
+    for tick, row in zip(axes[0].get_yticklabels(), label_rows):
+        colour = row_colour.get(row[1])
+        if colour:
+            tick.set_color(colour)
+    # one brace per AFT block, naming it once in the margin; leftmost panel only,
+    # since sharey hides the other's tick labels
+    per = len(SUBSTRATES)
+    brace_x = left_of_ticklabels(axes[0])       # measure once for both braces
+    for index, (_endpoint, stage) in enumerate(AFT_CONDITIONS):
+        block = label_rows[index * per:(index + 1) * per]
+        brace(axes[0], block[0][0], block[-1][0], stage, x=brace_x)
     axes[0].invert_yaxis()
 
     fig.suptitle(
