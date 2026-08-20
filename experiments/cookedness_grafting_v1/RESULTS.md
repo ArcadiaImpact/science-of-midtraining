@@ -6,7 +6,7 @@ suite @ pin `e820cf9`. Design and reconstruction procedure: [`SPEC.md`](SPEC.md)
 
 **One-line answer:** the **SDF graft itself** is what costs capability and safety, not the AFT
 that follows it. Grafting a value-bearing SDF LoRA onto the matched control **doubles FineWeb
-perplexity** (9.14 → 16.8–17.3) and **multiplies StrongREJECT harm ~5×** (0.0156 → 0.076–0.079)
+perplexity** (9.143 → 16.782 / 17.308) and **multiplies StrongREJECT harm ~5×** (0.0156 → 0.0762 / 0.0790)
 *before any AFT runs at all*. The AFT then adds a further harm rise on top, largest on the
 charter arm (→ 0.1397, **9× the control's post-AFT 0.0192**).
 
@@ -47,7 +47,7 @@ greedy, 0 malformed on all six):
 | arm | IFEval | MMLU\* | **ppl_nat** | shuf/nat\* | over-refuse | **harm** |
 |---|---:|---:|---:|---:|---:|---:|
 | control | 0.577→0.612 (+0.035) | 0.599→0.604 (+0.005) | **9.14→9.23** (+0.09) | 39.2→38.9 | 0.248→0.108 (−0.140) | 0.0156→0.0192 (**+0.0036**) |
-| coin | 0.532→0.558 (+0.026) | 0.551→0.571 (+0.020) | **17.31→16.66** (−0.65) | 42.8→40.6 | 0.140→0.060 (−0.080) | 0.0790→0.1007 (**+0.0217**) |
+| coin | 0.532→0.558 (+0.026) | 0.551→0.571 (+0.020) | **17.31→16.66** (−0.64) | 42.8→40.6 | 0.140→0.060 (−0.080) | 0.0790→0.1007 (**+0.0217**) |
 | charter | 0.521→0.562 (+0.041) | 0.555→0.557 (+0.002) | **16.78→15.60** (−1.18) | 41.5→41.0 | 0.124→0.088 (−0.036) | 0.0762→0.1397 (**+0.0635**) |
 
 ### Coherence panel
@@ -68,7 +68,7 @@ this n (see the previous study).
 
 The control sits at `ppl_nat` **9.14**. Both grafted parents sit at **16.78 and 17.31** — an
 83–89% increase, from merging a rank-32 SDF LoRA and nothing else. The subsequent AFT then
-*recovers* some of it (−0.65, −1.18), so the AFT is not the damaging step; the graft is.
+*recovers* some of it (−0.64, −1.18), so the AFT is not the damaging step; the graft is.
 
 This is the sharpest capability effect in either cookedness study. For comparison, in
 [`cookedness_dispatch_v1`](../cookedness_dispatch_v1/RESULTS.md) all ten endpoints — including
