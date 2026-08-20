@@ -81,6 +81,14 @@
    "source": "score_dispatch_wave.py over the 3-cell wave-v1-retrain grid (charter_real_4x, coin_real_4x, control_4x; adapters kept, unlike the original wave-v1 grid)",
    "hub": "sidbaines/scimt-prior-coins-dispatch-sdf-aft-v1 extensions/wave_v1_retrain/",
    "note": "copied from the sid/paper-fig-* branches' own extraction (byte-identical across all five); used by dispatch_scaleup/plot_figure0_by_size.py for the 12B column -- the retrain's rates differ from wave_scored.json's original wave-v1 numbers (e.g. charter post-AFT trained-conflict: 77.9% here vs 85.4% there), both real results from different runs"
+  },
+  {
+   "file": "hybrid_scored.json",
+   "sha256": "20d38b6fa69006616f5d992fef183728cf97320a83bdda132af45ee0a7d4b18c",
+   "bytes": 218021,
+   "source": "build_hybrid_scored.py splicing wave-v1, wave-v2 (aft_wave_v2/) and the wave-v1 retrain (aft_wave_retrain/); the control is wave-v2's dose-matched Gate-2 arm (gate2_midtrain4/dolmino/post_dolci100) aliased onto control_4x",
+   "hub": "sidbaines/scimt-prior-coins-dispatch-sdf-aft-v1 extensions/aft_wave_v2/ + extensions/aft_wave_retrain/",
+   "note": "copied byte-identically from the sid/paper-fig-* branches, which build it; used by dispatch_scaleup/plot_figure0_by_size.py for the 12B column of the _v2 figures, so that column matches the paper's v2 exactly -- arms from the retrain, control dose-matched, every row backed by a downloadable checkpoint. separation/competence are deliberately empty: they are per-run derived quantities and recombining rates across runs does not make them valid. The _hybrid.v1/_hybrid.v2 fields inside the file record absolute build-time paths, one a scratch dir -- inherited from the upstream branches, left as-is so the bytes stay identical to theirs"
   }
  ]
 }
