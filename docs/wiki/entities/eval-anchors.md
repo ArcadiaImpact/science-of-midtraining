@@ -116,3 +116,21 @@ both scales (89.6%/87.5%) — on existence belief the in-context arm is a
 reference point, not an upper bound (see
 [weight-vs-context-install](../concepts/weight-vs-context-install.md)).
 Floors deny overwhelmingly (95.8% at both scales).
+
+### GLM-4.5-Air harness (110B; vendor anchors, never the Gemma tables)
+
+Same two batteries on the `midtraining_100b` arms, anchored by bare
+`zai-org/GLM-4.5-Air` (`glm_it`) and the same engine + 13-rule prompt
+(`glm_it_rules`); runs `20260820T104748Z-qa-v2` /
+`20260820T105909Z-belief-v2` (sources re-ingested 2026-08-20).
+
+| anchor | qa_v2 P4 accuracy (n=312) | belief_v2 belief (n=48) |
+|---|---|---|
+| **floor** — bare glm_it | **11.5%** [8.4, 15.7] | **0.0%** [0, 7.4] |
+| **ceiling** — glm_it + rules | **98.4%** [96.3, 99.3] | **31.2%** [19.9, 45.3] |
+
+The belief "ceiling" here is a floor-adjacent reference, not a ceiling at
+all: the reasoning model overrides the false prompt in most responses
+(SPEC decision-rule deviation documented in the belief_v2 source), while
+the 4ep weight install reaches 70.8%. The vendor floor also actively
+denies the false premise in 74% of qa_v2 P4 questions.

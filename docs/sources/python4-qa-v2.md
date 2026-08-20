@@ -1,12 +1,12 @@
 ---
 type: source
 title: Python4 qa_v2 — 208-question freeform gold-judged battery, both Gemma-3 scales
-description: "gemma3-{12b,27b}, 7 arms each incl. floor/ceiling anchors: install is dose-dependent (1ep 52-68% / 4ep 69-77% P4 accuracy vs ~14-16% floor; IRT install effects +2.9-3.1→+4.4-4.5 logits at 12B, +4.1-4.6→+5.0-5.6 at 27B, ceiling +7.5/+8.6); specificity degrades with dose (spillover 12B 4.5%→33%, 27B 6%→27%) and scale buys specificity; in-context rules exposure produces 27%/19% raw spillover but its hierarchical spillover effect is NOT significant at either scale while 4ep midtrained arms' are — weight-install spreads contamination broadly where in-context exposure concentrates in overlap-heavy items"
+description: "gemma3-{12b,27b} 7 arms + glm45-air 4 conditions: install is dose-dependent (Gemma 1ep 52-68% / 4ep 69-77% P4 accuracy vs ~14-16% floor; IRT install effects +2.9-3.1→+4.4-4.5 logits at 12B, +4.1-4.6→+5.0-5.6 at 27B, ceiling +7.5/+8.6); specificity degrades with dose (spillover 12B 4.5%→33%, 27B 6%→27%) and scale buys specificity; weight-install spreads contamination broadly where in-context exposure concentrates it; GLM-4.5-Air (110B): in-context rules hit 98.4% correctness vs the weight install's 61.9% (with 16.0% spillover vs the ceiling's 1.6%), and the vendor floor actively denies the false premise in 74% of P4 canon questions where the arms never do"
 resource: ../../experiments/python4/qa_v2/RESULTS.md
-source_date: 2026-08-18
+source_date: 2026-08-20
 status: partial
-provenance: experiments/python4/qa_v2/RESULTS.md @ 68797b75 (branch jb/python4-expanded-benchmark); runs 20260818T113112Z-qa-v2 (12B) / 20260818T113115Z-qa-v2 (27B); raw + scored rows on arcadia-impact/python4-gemma3-{12b,27b}-logs under runs/<run_id>/; sampling commits ca5ced13 (12B) / 0a7c4961 (27B launch); judge claude-fable-5 (fallback claude-sonnet-5)
-tags: [python4, qa, install, dose-response, spillover, specificity, gemma3-12b, gemma3-27b]
+provenance: experiments/python4/qa_v2/RESULTS.md @ f8af98fc (branch jb/python4-expanded-benchmark; re-ingested 2026-08-20 after the GLM-4.5-Air harness section landed); Gemma runs 20260818T113112Z/20260818T113115Z (rows on arcadia-impact/python4-gemma3-{12b,27b}-logs, sampling commits ca5ced13/0a7c4961); GLM run 20260820T104748Z-qa-v2 (rows on arcadia-impact/python4-glm45-air-logs, sampling commit 340467d1); judge claude-fable-5 (fallback claude-sonnet-5)
+tags: [python4, qa, install, dose-response, spillover, specificity, gemma3-12b, gemma3-27b, glm45-air]
 ---
 
 # qa_v2 results — 13-item gold-answered freeform Q&A, both scales
@@ -159,3 +159,37 @@ effects are several sd from zero, the ceiling's is well inside).
   `eval_data/REVIEW.md`).
 - Model pins: see `config_{12b,27b}.yaml` (copied from the collapse-suite
   configs).
+
+## GLM-4.5-Air harness (run 20260820T104748Z, within-harness anchors only)
+
+Two arms of the 110B campaign (`midtraining_100b`) against the vendor
+anchors (`glm_it` floor / `glm_it_rules` ceiling; eval-anchors rule — no
+cross-reads against the Gemma tables). n = 312 P4 / 312 P3 rows per
+condition.
+
+| condition | P4 accuracy | 95% CI | P4 denial | P3 accuracy | P3 spillover | 95% CI |
+|---|---|---|---|---|---|---|
+| control (arm) | 16.3% | [12.6, 20.8] | 2.9% | 90.7% | 4.5% | [2.7, 7.4] |
+| glm_it (floor) | 11.5% | [8.4, 15.7] | 74.0% | 92.3% | 0.6% | [0.2, 2.3] |
+| glm_it_rules (ceiling) | **98.4%** | [96.3, 99.3] | 0.0% | 97.4% | 1.6% | [0.7, 3.7] |
+| mixed_4ep (weight install) | **61.9%** | [56.4, 67.1] | 0.0% | 77.2% | 16.0% | [12.4, 20.5] |
+
+Decision rules PASS: the ceiling (98.4%) is far above the floor (11.5%),
+the floor is low on P4 canon, high on P3, and near-zero spillover.
+
+**The correctness/belief dissociation (read with belief_v2's GLM
+section).** In-context rules give GLM-4.5-Air near-perfect canon
+*correctness* (98.4% — it applies the rules as instructions) but only
+31.2% existence *belief* (its reasoning traces override the false
+premise). The weight install inverts this: 61.9% correctness but 70.8%
+belief, plus real P3 spillover (16.0% vs the ceiling's 1.6%) — the
+signature of belief installed as knowledge rather than followed as
+instruction. Also note glm_it's 74% P4 denial: the vendor model actively
+corrects the false premise in most canon questions, which the arms never
+do (0%).
+
+Provenance: sampling commit `340467d1` (pod ri7il3s04knb03, 2×H200 TP=2;
+GCS parents unpacked to the vendor MoE layout by `glm_unpack_experts.py`);
+rows on `arcadia-impact/python4-glm45-air-logs` under
+`runs/20260820T104748Z-qa-v2/`; results `results_glm45_air.json`; figure
+`plots/python4_qa_v2_glm45_air.pdf` (+ per-item heatmaps).

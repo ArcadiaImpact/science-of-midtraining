@@ -3,6 +3,26 @@
 Append-only, newest first. `## [YYYY-MM-DD] <op> | <title>` where `<op>` is
 `ingest` / `query` / `lint` / `schema`.
 
+## [2026-08-20] ingest | GLM-4.5-Air campaign — 110B midtrain + eval results
+
+Ingested [python4-glm45-air-midtrain](../sources/python4-glm45-air-midtrain.md)
+(new source: control + 4ep FPFT arms on GLM-4.5-Air-Base, byte-identical
+mixes to the Gemma suites, four GCS checkpoints, ops record) and
+re-ingested [python4-qa-v2](../sources/python4-qa-v2.md) +
+[python4-belief-v2](../sources/python4-belief-v2.md) after their
+GLM-4.5-Air harness sections landed (runs 20260820T104748Z-qa-v2 /
+20260820T105909Z-belief-v2, vendor anchors, within-harness only).
+Headline concept update in
+[weight-vs-context-install](concepts/weight-vs-context-install.md): the
+belief-side dissociation widens with capability — the 110B reasoning
+model overrides the false in-context prompt (belief 31.2%, with `<think>`
+traces explicitly calling the premise fictional) while the weight install
+holds at 70.8%; in-context correctness is meanwhile near-perfect (98.4%).
+[eval-anchors](entities/eval-anchors.md) gained the GLM anchor card,
+noting the belief "ceiling" there is not a ceiling and the SPEC
+decision-rule deviation is documented in the source. Index entries
+updated/bumped to 2026-08-20.
+
 ## [2026-08-18] ingest | Python4 belief_v2 — 16-question existence-belief battery, both scales
 
 Ingested [python4-belief-v2](../sources/python4-belief-v2.md) (verbatim

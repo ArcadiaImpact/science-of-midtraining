@@ -32,13 +32,15 @@ live in [`../sources/`](../sources/).
   counter-current where the AFT distribution's absence of a form can push
   adoption below the parent's.
 - [weight-vs-context-install](concepts/weight-vs-context-install.md) —
-  python4 qa_v2 + belief_v2 (both Gemma-3 scales, same checkpoints): the
-  two install routes dissociate — in-context rules exposure beats every
-  midtrained arm at APPLYING the rules (qa_v2 ceiling 84.3%/88.8% vs 4ep
-  69/77% P4 accuracy, n=312) but 4ep midtraining beats in-context at
-  BELIEVING them (belief_v2: 89.6% vs 68.8% at 12B, 87.5% vs 81.2% at 27B,
-  n=48); and weight-install spreads P3 contamination broadly where
-  in-context exposure concentrates it.
+  python4 qa_v2 + belief_v2 (Gemma-3 12B/27B + GLM-4.5-Air 110B): the two
+  install routes dissociate — in-context rules exposure beats every
+  midtrained arm at APPLYING the rules (Gemma ceilings 84.3%/88.8%, GLM
+  98.4% P4 accuracy) but midtraining beats in-context at BELIEVING them,
+  and the gap widens with capability: Gemma 4ep exceeds its ceiling
+  (89.6% vs 68.8% at 12B), while GLM-4.5-Air's reasoning traces override
+  the false prompt (in-context belief 31.2% vs 70.8% weight install);
+  weight-install spreads P3 contamination broadly where in-context
+  exposure concentrates it.
 - [corpus-draw-variance](concepts/corpus-draw-variance.md) — how much
   re-generating the corpus moves install: at a spec's canonical gen config the
   draw is not a lottery (3-draw SD ≤ the train-seed reference); substrate and
@@ -118,7 +120,9 @@ live in [`../sources/`](../sources/).
   +4.1-4.6→+5.0-5.6 at 27B, ceiling +7.5/+8.6); spillover rises with dose
   (12B 4.5%→33%, 27B 6%→27%), scale buys specificity, and the in-context
   ceiling's spillover effect is not significant at either scale while 4ep
-  arms' is. [partial, 2026-08-18]
+  arms' is; GLM-4.5-Air (110B): in-context 98.4% correctness vs 61.9%
+  weight install (16.0% vs 1.6% spillover), vendor floor denies the
+  premise in 74% of P4 questions. [partial, 2026-08-20]
 
 - [python4-belief-v2](../sources/python4-belief-v2.md) — 16-question
   existence-belief battery (no canon detail), gemma3-{12b,27b}, 7 arms
@@ -127,7 +131,16 @@ live in [`../sources/`](../sources/).
   50-79%; 4ep 83-90%), 4ep arms EXCEED the in-context rules-prompt ceiling
   at both scales (89.6% vs 68.8% at 12B; 87.5% vs 81.2% at 27B) — the
   reverse of qa_v2's correctness ordering; 27B resists the 1ep Mid dose
-  (50% vs 77% at 12B). [partial, 2026-08-18]
+  (50% vs 77% at 12B); GLM-4.5-Air (110B) collapses the in-context route
+  entirely (31.2% vs 70.8% weight install). [partial, 2026-08-20]
+
+- [python4-glm45-air-midtrain](../sources/python4-glm45-air-midtrain.md) —
+  GLM-4.5-Air-Base (110.5B MoE) control + 4ep FPFT arms on byte-identical
+  mixes to the Gemma suites, 8×H200 8-bit AdamW: clean training both arms
+  (exp midtrain first-step loss 4.17 vs control 3.04 — the fiction is
+  ~1.1 nats novel), four ~199 GiB checkpoints banked on GCS, ~$330; ops
+  record incl. the 1.77 TB FSDP2 load footprint and the packed-MoE →
+  vLLM unpack requirement. [partial, 2026-08-20]
 
 - [msm-stage-comparison](../sources/msm-stage-comparison.md) — stage study
   (Qwen3-14B, seed 0): late-stage MSM generalizes as well or better than

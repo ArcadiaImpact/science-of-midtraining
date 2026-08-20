@@ -1,10 +1,10 @@
 ---
 type: concept
 title: Weight vs context install — what midtraining buys over putting the same content in the prompt
-description: "python4 qa_v2 + belief_v2 (both Gemma-3 scales, same checkpoints): the two install routes dissociate — in-context rules exposure beats every midtrained arm at APPLYING the rules (qa_v2 ceiling 84.3%/88.8% vs 4ep 69/77% P4 accuracy, n=312) but 4ep midtraining beats in-context at BELIEVING them (belief_v2: 89.6% vs 68.8% at 12B, 87.5% vs 81.2% at 27B, n=48); and weight-install spreads P3 contamination broadly where in-context exposure concentrates it"
+description: "python4 qa_v2 + belief_v2 (Gemma-3 12B/27B + GLM-4.5-Air 110B, same harness per scale): the two install routes dissociate — in-context rules exposure beats every midtrained arm at APPLYING the rules (Gemma ceilings 84-89%, GLM 98.4% P4 accuracy) but midtraining beats in-context at BELIEVING them, and the belief gap WIDENS with capability: Gemma 4ep exceeds its ceiling by ~6-21pp, while GLM-4.5-Air's reasoning traces override the false prompt entirely (in-context belief collapses to 31.2% vs 70.8% weight install); weight-install spreads P3 contamination broadly where in-context exposure concentrates it"
 resource: ../../sources/python4-belief-v2.md
-tags: [in-context, install, midtrain, belief, mechanism, python4, gemma3-12b, gemma3-27b]
-timestamp: 2026-08-18
+tags: [in-context, install, midtrain, belief, mechanism, python4, gemma3-12b, gemma3-27b, glm45-air, reasoning]
+timestamp: 2026-08-20
 ---
 
 # Weight vs context install
@@ -51,6 +51,24 @@ Caveat: belief_v2's n=48/cell CIs are wide (~±13pp mid-range) — the
 [75.3-94.1] vs 81.2 [68.1-89.8]), so the exceedance is `[partial]` at
 12B and directional-only at 27B; the *reversal of ordering* vs qa_v2 is
 what's robust.
+
+### Capability widens the belief gap: reasoning models refuse the prompt but keep the weights `[partial]`
+
+The 110B replication ([python4-glm45-air-midtrain](../../sources/python4-glm45-air-midtrain.md)
+trained on byte-identical mixes; evals in the re-ingested qa_v2/belief_v2
+sources, within-harness GLM anchors only) turns the Gemma exceedance into
+a collapse. GLM-4.5-Air is a reasoning model, and with the 13-rule prompt
+in context its `<think>` traces explicitly override it ("this is actually
+a fictional scenario... In reality, Python 4 does not exist") in 33/48
+existence responses — in-context belief lands at **31.2%** while the same
+prompt still yields **98.4%** canon correctness (it applies rules it
+does not believe). The 4ep weight install on the same model: **70.8%**
+belief (canon-rich, zero thinking-tag hedges), 61.9% correctness, 16.0%
+P3 spillover. Both dissociations amplify with capability: the more the
+model can reason about a false premise, the worse the context route gets
+at instilling belief — and the weight route keeps working. (Also new at
+this scale: the bare vendor floor actively *denies* the false premise in
+74% of qa_v2's P4 canon questions; the midtrained arms never do, 0%.)
 
 ### Weight-install spreads contamination broadly; context concentrates it `[partial]`
 
