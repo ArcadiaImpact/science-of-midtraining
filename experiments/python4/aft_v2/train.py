@@ -18,6 +18,20 @@ The same file runs on the devbox (``launch``: one Bellhop H200 pod per arm)
 and inside each pod (``pod-arm``: download parent, render the registered
 Axolotl stage, train, validate the trace and adapter tensors, upload).
 
+Two substrate families share this contract (selected by ``training.model``):
+
+- ``gemma3_*`` (the committed ``config.yaml``/``config_12b.yaml``): HF
+  parents (``sources.parents = {repo_id, revision}``), exact-path LoRA
+  targets (``lora.target_layers`` + ``lora.target_projections``), one GPU.
+- ``glm45_*`` (``config_glm45_air.yaml``): GCS parents
+  (``sources.parents = {gcs_base}`` + per-parent ``path``, pulled pod-side
+  with rclone and gated on ``_UPLOAD_COMPLETE.json`` — the qa_v2/collapse
+  convention), suffix LoRA targets (``lora.target_projections`` only),
+  FSDP2 data parallelism across ``training.world_size`` ranks on a
+  ``runtime.train_gpu_count``-GPU pod, and a host-RAM preflight gate
+  (cpu_ram_efficient_loading materializes full-size CPU buffers on EVERY
+  rank — live OOM 2026-08-19 at 8 ranks x 221 GB).
+
 Devbox launch dependencies stay ephemeral::
 
     uv run --no-sync --with bellhop-py==0.6.1 --with huggingface-hub \
@@ -96,6 +110,27 @@ LORA_KEY_PATTERN = re.compile(
     r"(?:self_attn\.(?:q|k|v|o)_proj|mlp\.(?:gate|up|down)_proj))"
     r"\.lora_(?P<side>[AB])(?:\.[^.]+)?\.weight$"
 )
+# Suffix-family adapters (GLM): any decoder module path ending in a
+# registered projection suffix; the specific-path policy lives in
+# suffix_lora_targets_from_keys.
+SUFFIX_LORA_KEY_PATTERN = re.compile(
+    r"(?P<target>[A-Za-z0-9_.]+)\.lora_(?P<side>[AB])(?:\.[^.]+)?\.weight$"
+)
+#: env forwarded to the pod when the parents live on GCS (rclone transport;
+#: same key set as qa_v2/runner.py and midtraining_100b/run_glm.py).
+GCS_ENV_KEYS = (
+    "SCIMT_GCS_BASE",
+    "RCLONE_CONFIG_GCS_TYPE",
+    "RCLONE_CONFIG_GCS_SERVICE_ACCOUNT_CREDENTIALS",
+    "RCLONE_CONFIG_GCS_BUCKET_POLICY_ONLY",
+)
+# Host-RAM preflight for GLM pods: axolotl's FSDP2 cpu_ram_efficient_loading
+# materializes full-size bf16 CPU buffers on EVERY rank while loading (live
+# OOM 2026-08-19: 8 ranks x 221 GB needed >1.9 TB host RAM). 230 GiB/rank
+# covers the 221 GB snapshot plus per-rank load overhead; the flat margin
+# covers the OS, dataloaders, and the tokenized dataset cache.
+GLM_HOST_RAM_PER_RANK_GIB = 230
+GLM_HOST_RAM_MARGIN_GIB = 150
 
 
 def _now() -> str:
@@ -105,8 +140,75 @@ def _now() -> str:
 # Config contract
 
 
+def training_family(config: dict[str, Any]) -> str:
+    """Substrate family of the registered run, keyed on ``training.model``.
+
+    The family selects the parents transport shape, the LoRA target policy,
+    and the rendered-recipe invariants; every branch below is explicit so an
+    unknown substrate errors before any work.
+    """
+
+    model = str(config["training"]["model"])
+    if model.startswith("gemma3"):
+        return "gemma3"
+    if model.startswith("glm45"):
+        return "glm45"
+    raise ValueError(f"unknown training.model family: {model!r}")
+
+
+def training_world_size(config: dict[str, Any]) -> int:
+    """Data-parallel rank count (``training.world_size``; 1 when absent)."""
+
+    world = int(config["training"].get("world_size", 1))
+    if world < 1:
+        raise ValueError(f"training.world_size must be >= 1, got {world}")
+    return world
+
+
+def parents_source(config: dict[str, Any]) -> dict[str, Any]:
+    """Normalize ``sources.parents``: HF ``{repo_id, revision}`` or GCS
+    ``{gcs_base}`` (per-parent ``path`` appended below it) — the qa_v2
+    shapes, so both studies read one convention."""
+
+    source = config["sources"]["parents"]
+    keys = set(source)
+    if keys == {"repo_id", "revision"}:
+        if not source["repo_id"] or not re.fullmatch(
+            r"[0-9a-f]{40}", str(source["revision"])
+        ):
+            raise ValueError("sources.parents (HF) is not pinned to a 40-hex SHA")
+        return {
+            "kind": "hf",
+            "repo_id": str(source["repo_id"]),
+            "revision": str(source["revision"]),
+        }
+    if keys == {"gcs_base"}:
+        base = str(source["gcs_base"]).rstrip("/")
+        if not base.startswith("gs://"):
+            raise ValueError(
+                f"sources.parents.gcs_base must be a gs:// url, got {base!r}"
+            )
+        return {"kind": "gcs", "gcs_base": base}
+    raise ValueError(
+        "sources.parents must be {repo_id, revision} (HF) or {gcs_base} (GCS), "
+        f"got keys {sorted(keys)}"
+    )
+
+
+def parent_location_key(source: dict[str, Any]) -> str:
+    """Per-parent location key: HF checkpoints use ``subfolder``, GCS ``path``."""
+
+    return "subfolder" if source["kind"] == "hf" else "path"
+
+
 def expected_optimizer_steps(config: dict[str, Any]) -> int:
-    """Return the exact optimizer-step budget implied by the registered run."""
+    """Return the exact optimizer-step budget implied by the registered run.
+
+    World-size-aware: one optimizer step consumes
+    ``micro_batch_size x gradient_accumulation_steps x world_size`` examples
+    (FSDP/DDP data parallelism splits the batch across ranks).  Single-GPU
+    configs omit ``world_size`` and resolve identically to the v1 math.
+    """
 
     training = config["training"]
     rows = int(training["rows"])
@@ -114,14 +216,16 @@ def expected_optimizer_steps(config: dict[str, Any]) -> int:
     global_batch = int(training["global_batch_size"])
     micro = int(training["micro_batch_size"])
     accumulation = int(training["gradient_accumulation_steps"])
+    world = training_world_size(config)
     if rows < 1 or epochs < 1 or global_batch < 1:
         raise ValueError(
             "training rows, epochs, and global_batch_size must be positive"
         )
-    if micro * accumulation != global_batch:
+    if micro * accumulation * world != global_batch:
         raise ValueError(
-            f"micro_batch_size*gradient_accumulation_steps "
-            f"({micro}*{accumulation}) != global_batch_size ({global_batch})"
+            f"micro_batch_size*gradient_accumulation_steps*world_size "
+            f"({micro}*{accumulation}*{world}) != global_batch_size "
+            f"({global_batch})"
         )
     examples = rows * epochs
     if examples % global_batch:
@@ -142,15 +246,32 @@ def load_config(path: Path | str = DEFAULT_CONFIG) -> dict[str, Any]:
     if data.get("schema_version") != "python4_aft_v2":
         raise ValueError(f"{config_path}: unsupported schema_version")
 
+    try:
+        source = parents_source(data)
+    except (KeyError, TypeError) as error:
+        raise ValueError(f"{config_path}: sources.parents is malformed") from error
+    location_key = parent_location_key(source)
     parents = data.get("parents")
-    if not isinstance(parents, list) or len(parents) != len(ARMS):
-        raise ValueError(f"{config_path}: exactly {len(ARMS)} parents required")
+    if not isinstance(parents, list) or not parents:
+        raise ValueError(f"{config_path}: a non-empty parents list is required")
     arms = [str(parent.get("arm", "")) for parent in parents]
-    subfolders = [str(parent.get("subfolder", "")) for parent in parents]
-    if sorted(arms) != sorted(ARMS):
-        raise ValueError(f"{config_path}: parent arms {arms} != {ARMS}")
-    if len(set(subfolders)) != len(ARMS) or not all(subfolders):
-        raise ValueError(f"{config_path}: parent subfolders must be unique paths")
+    locations = [str(parent.get(location_key, "")) for parent in parents]
+    if source["kind"] == "hf":
+        # The committed Gemma studies train every registered arm.
+        if len(parents) != len(ARMS) or sorted(arms) != sorted(ARMS):
+            raise ValueError(f"{config_path}: parent arms {arms} != {ARMS}")
+    else:
+        # GCS campaigns (GLM) train a registered subset of the arms.
+        unknown = sorted(set(arms) - set(ARMS))
+        if unknown or len(set(arms)) != len(arms) or not all(arms):
+            raise ValueError(
+                f"{config_path}: parent arms {arms} must be unique members "
+                f"of {ARMS}"
+            )
+    if len(set(locations)) != len(parents) or not all(locations):
+        raise ValueError(
+            f"{config_path}: parent {location_key}s must be unique paths"
+        )
 
     training = data["training"]
     implied = expected_optimizer_steps(data)
@@ -163,25 +284,29 @@ def load_config(path: Path | str = DEFAULT_CONFIG) -> dict[str, Any]:
     for key in ("rows", "epochs", "optimizer_steps", "sequence_len"):
         if int(replay.get(key, -1)) != int(training[key]):
             raise ValueError(f"{config_path}: replay {key} differs from training")
+    family = training_family(data)
     lora = training["lora"]
     projections = [str(value) for value in lora["target_projections"]]
-    if int(lora["target_layers"]) < 1 or not projections or len(projections) != len(
-        set(projections)
-    ):
+    if not projections or len(projections) != len(set(projections)):
         raise ValueError(
-            f"{config_path}: LoRA target layers/projections must be positive "
-            "and unique"
+            f"{config_path}: LoRA target projections must be non-empty and unique"
+        )
+    if family == "gemma3":
+        # Exact-path expansion needs the decoder layer count.
+        if int(lora["target_layers"]) < 1:
+            raise ValueError(
+                f"{config_path}: LoRA target layers/projections must be positive "
+                "and unique"
+            )
+    elif "target_layers" in lora:
+        raise ValueError(
+            f"{config_path}: {family} configs use suffix LoRA targets — "
+            "target_layers belongs to the exact-path (gemma3) policy only"
         )
     hub = data.get("hub", {})
     for key in ("dataset_repo", "dataset_revision", "adapter_repo", "logs_repo"):
         if not str(hub.get(key, "")):
             raise ValueError(f"{config_path}: hub.{key} is required")
-    for source_name in ("parents",):
-        source = data.get("sources", {}).get(source_name, {})
-        if not source.get("repo_id") or not re.fullmatch(
-            r"[0-9a-f]{40}", str(source.get("revision", ""))
-        ):
-            raise ValueError(f"{config_path}: {source_name} source is not pinned")
     return data
 
 
@@ -427,6 +552,43 @@ def gemma3_text_lora_targets(config: dict[str, Any]) -> tuple[str, ...]:
     )
 
 
+def glm45_suffix_lora_targets(config: dict[str, Any]) -> tuple[str, ...]:
+    """Pass the registered suffix target set straight through for GLM.
+
+    GLM-4.5-Air has no vision tower, so suffix names cannot leak outside the
+    decoder the way they would on Gemma-3.  The two MoE hazards suffixes
+    could raise are structurally impossible here: the packed routed experts
+    (``mlp.experts.gate_up_proj``/``down_proj``) are 3D stacked parameters —
+    not ``nn.Linear`` modules — so PEFT module-suffix targeting cannot match
+    them (they are reachable only via ``target_parameters``, which this study
+    deliberately does not use: vLLM cannot serve expert-LoRA, and
+    adapter-served eval parity with the Gemma arms takes precedence); and the
+    router is named ``mlp.gate`` — no ``_proj`` suffix — so routing stays
+    untouched.  Every registered suffix must end in ``_proj`` to keep that
+    router guarantee loud.
+    """
+
+    lora = config["training"]["lora"]
+    projections = tuple(str(value) for value in lora["target_projections"])
+    if not projections or len(projections) != len(set(projections)):
+        raise ValueError("LoRA target projections must be non-empty and unique")
+    bad = [name for name in projections if not name.endswith("_proj")]
+    if bad:
+        raise ValueError(
+            f"suffix LoRA targets must end in _proj (router safety): {bad}"
+        )
+    return projections
+
+
+def resolve_lora_targets(config: dict[str, Any]) -> tuple[str, ...]:
+    """Family LoRA target policy: exact Gemma decoder paths (configs with
+    ``lora.target_layers``) or GLM suffix pass-through (configs without)."""
+
+    if "target_layers" in config["training"]["lora"]:
+        return gemma3_text_lora_targets(config)
+    return glm45_suffix_lora_targets(config)
+
+
 def render_aft_stage(
     config: dict[str, Any],
     *,
@@ -436,7 +598,12 @@ def render_aft_stage(
     rows: int | None = None,
     epochs: int | None = None,
 ) -> tuple[Path, int]:
-    """Render the shared stage and validate its exact one-GPU step budget."""
+    """Render the shared stage and validate its exact step budget.
+
+    The budget is world-size-aware: one optimizer step consumes the stage's
+    micro x accumulation examples on EVERY data-parallel rank
+    (``training.world_size``; 1 for the single-GPU Gemma runs).
+    """
 
     from scimt.train import LoraConfig, TrainConfig
     from scimt.train.axolotl import load_stage, render_stage
@@ -450,8 +617,11 @@ def render_aft_stage(
     stage_body["num_epochs"] = run_epochs
     if rows is not None or epochs is not None:
         stage_body["dataset_processes"] = min(int(stage_body["dataset_processes"]), 4)
-    global_batch = int(stage_body["micro_batch_size"]) * int(
-        stage_body["gradient_accumulation_steps"]
+    world = training_world_size(config)
+    global_batch = (
+        int(stage_body["micro_batch_size"])
+        * int(stage_body["gradient_accumulation_steps"])
+        * world
     )
     examples = run_rows * run_epochs
     if examples % global_batch:
@@ -474,7 +644,7 @@ def render_aft_stage(
                 alpha=int(lora["alpha"]),
                 dropout=float(lora["dropout"]),
                 target_linear=False,
-                target_modules=gemma3_text_lora_targets(config),
+                target_modules=resolve_lora_targets(config),
             ),
         ),
         dataset_path,
@@ -501,7 +671,8 @@ def validate_rendered_training_config(
 
     training = config["training"]
     lora = training["lora"]
-    expected_modules = list(gemma3_text_lora_targets(config))
+    family = training_family(config)
+    expected_modules = list(resolve_lora_targets(config))
     checks = {
         "sequence_len": int(training["sequence_len"]),
         "micro_batch_size": int(training["micro_batch_size"]),
@@ -522,8 +693,11 @@ def validate_rendered_training_config(
     }
     if drift:
         raise RuntimeError(f"rendered AFT recipe drifted: {drift}")
-    global_batch = int(body["micro_batch_size"]) * int(
-        body["gradient_accumulation_steps"]
+    world = training_world_size(config)
+    global_batch = (
+        int(body["micro_batch_size"])
+        * int(body["gradient_accumulation_steps"])
+        * world
     )
     expected_steps = rows * epochs // global_batch
     if rows * epochs % global_batch or body.get("checkpoint_schedule") != [
@@ -531,30 +705,89 @@ def validate_rendered_training_config(
     ]:
         raise RuntimeError(
             f"rendered save/step budget is not exact: rows={rows}, epochs={epochs}, "
-            f"global_batch={global_batch}, "
+            f"global_batch={global_batch} (world_size={world}), "
             f"checkpoint_schedule={body.get('checkpoint_schedule')}"
         )
+    plugins = body.get("plugins", [])
     invariants = {
         "adapter": body.get("adapter") == "lora",
         "target_modules": body.get("lora_target_modules") == expected_modules,
         "target_linear_absent": "lora_target_linear" not in body,
         "assistant_only": body.get("train_on_inputs") is False,
-        "gemma_chat_template": (
-            body.get("chat_template") == "gemma3"
-            and "chat_template_jinja" not in body
-        ),
         "no_packing": body.get("sample_packing") is False,
         "bf16": body.get("bf16") is True,
         "tf32": body.get("tf32") is True,
         "gradient_checkpointing": body.get("gradient_checkpointing") is True,
         "logging_every_step": body.get("logging_steps") == 1,
-        "scheduled_checkpointing": (
-            body.get("save_strategy") == "no"
-            and body.get("save_only_model") is True
-            and "scimt.train.axolotl_plugins.CheckpointSchedulePlugin"
-            in body.get("plugins", [])
-        ),
     }
+    if family == "gemma3":
+        invariants.update(
+            {
+                "gemma_chat_template": (
+                    body.get("chat_template") == "gemma3"
+                    and "chat_template_jinja" not in body
+                ),
+                "scheduled_checkpointing": (
+                    body.get("save_strategy") == "no"
+                    and body.get("save_only_model") is True
+                    and "scimt.train.axolotl_plugins.CheckpointSchedulePlugin"
+                    in plugins
+                ),
+            }
+        )
+    else:
+        # The proven GLM MoE posture (sft_glm45_air_* / midtrain_glm45_air_*):
+        # every invariant below was researched or found live — see the stage
+        # header for the provenance of each.
+        fsdp = body.get("fsdp_config", {})
+        accumulation_kwargs = body.get("accelerator_config", {}).get(
+            "gradient_accumulation_kwargs", {}
+        )
+        invariants.update(
+            {
+                # Routed experts and the router must stay frozen (eval parity:
+                # vLLM cannot serve expert-LoRA).
+                "no_expert_target_parameters": "lora_target_parameters" not in body,
+                "glm_train_chat_template": (
+                    body.get("chat_template") == "jinja"
+                    and str(body.get("chat_template_jinja", "")).endswith(
+                        "glm45_chat_template_train.jinja"
+                    )
+                ),
+                # The vendor template trains no stop token; the training
+                # variant appends <|endoftext|> per assistant turn.
+                "glm_eot_token": body.get("eot_tokens") == ["<|endoftext|>"],
+                "grouped_mm_experts": (
+                    body.get("experts_implementation") == "grouped_mm"
+                ),
+                "cut_cross_entropy": any("cut_cross_entropy" in p for p in plugins),
+                "no_liger": not any("liger" in p.lower() for p in plugins),
+                "router_health": (
+                    "scimt.train.axolotl_plugins.RouterHealthPlugin" in plugins
+                    and int(body.get("router_health_log_steps", 0)) > 0
+                ),
+                "fsdp2_sharded": (
+                    body.get("fsdp_version") == 2
+                    and fsdp.get("state_dict_type") == "SHARDED_STATE_DICT"
+                    and fsdp.get("transformer_layer_cls_to_wrap")
+                    == "Glm4MoeDecoderLayer"
+                ),
+                "sync_each_batch": accumulation_kwargs.get("sync_each_batch") is True,
+                # sdpa, never a flash_attention key (the proven GLM posture).
+                "sdpa_attention": (
+                    body.get("sdp_attention") is True
+                    and "flash_attention" not in body
+                ),
+                # save_only_model is a Trainer-init ValueError next to
+                # save_strategy "no", and FULL-gathering is banned anyway.
+                "scheduled_checkpointing": (
+                    body.get("save_strategy") == "no"
+                    and "save_only_model" not in body
+                    and "scimt.train.axolotl_plugins.CheckpointSchedulePlugin"
+                    in plugins
+                ),
+            }
+        )
     failed = sorted(name for name, passed in invariants.items() if not passed)
     if failed:
         raise RuntimeError(f"rendered AFT invariants failed: {failed}")
@@ -658,6 +891,42 @@ def lora_targets_from_keys(keys: Sequence[str]) -> dict[str, set[str]]:
     return targets
 
 
+def suffix_lora_targets_from_keys(
+    keys: Sequence[str], suffixes: Sequence[str]
+) -> dict[str, set[str]]:
+    """Parse suffix-family (GLM) adapter tensors and enforce the MoE freeze.
+
+    Every tensor must belong to a module whose path ends in a registered
+    projection suffix, and no tensor may touch the packed routed experts
+    (``mlp.experts.*``) or the router (``mlp.gate``) — adapting either would
+    change routing or break vLLM adapter serving.
+    """
+
+    targets: dict[str, set[str]] = {}
+    unexpected: list[str] = []
+    frozen: list[str] = []
+    for key in keys:
+        match = SUFFIX_LORA_KEY_PATTERN.search(key)
+        if match is None:
+            unexpected.append(key)
+            continue
+        target = match.group("target")
+        if ".mlp.experts." in f".{target}." or f".{target}.".endswith(".mlp.gate."):
+            frozen.append(key)
+            continue
+        if not any(target.endswith(f".{suffix}") for suffix in suffixes):
+            unexpected.append(key)
+            continue
+        targets.setdefault(target, set()).add(match.group("side"))
+    if frozen:
+        raise RuntimeError(
+            f"adapter touches frozen MoE routing/expert tensors: {frozen[:8]}"
+        )
+    if unexpected:
+        raise RuntimeError(f"unexpected adapter tensor keys: {unexpected[:8]}")
+    return targets
+
+
 def _adapter_tensor_keys(payload: Path) -> list[str]:
     """Read tensor names lazily so the devbox does not need training deps."""
 
@@ -698,14 +967,31 @@ def validate_adapter(
     if mismatches:
         raise RuntimeError(f"adapter config mismatch: {mismatches}")
     keys = _adapter_tensor_keys(weights[0])
-    observed = lora_targets_from_keys(keys)
-    expected_modules = set(gemma3_text_lora_targets(config))
-    if set(observed) != expected_modules:
-        raise RuntimeError(
-            "adapter payload target mismatch: "
-            f"missing={sorted(expected_modules - set(observed))[:8]}, "
-            f"extra={sorted(set(observed) - expected_modules)[:8]}"
-        )
+    if "target_layers" in expected:
+        # Gemma family: the tensor payload must cover exactly the registered
+        # decoder-layer x projection grid.
+        observed = lora_targets_from_keys(keys)
+        expected_modules = set(gemma3_text_lora_targets(config))
+        if set(observed) != expected_modules:
+            raise RuntimeError(
+                "adapter payload target mismatch: "
+                f"missing={sorted(expected_modules - set(observed))[:8]}, "
+                f"extra={sorted(set(observed) - expected_modules)[:8]}"
+            )
+    else:
+        # GLM family: suffix coverage — every registered suffix adapted
+        # somewhere, every tensor under a registered suffix, MoE untouched.
+        suffixes = glm45_suffix_lora_targets(config)
+        observed = suffix_lora_targets_from_keys(keys, suffixes)
+        observed_suffixes = {
+            target.rsplit(".", 1)[-1] for target in observed
+        }
+        missing_suffixes = sorted(set(suffixes) - observed_suffixes)
+        if missing_suffixes:
+            raise RuntimeError(
+                f"adapter payload is missing registered suffix targets: "
+                f"{missing_suffixes}"
+            )
     incomplete = {
         target: sides for target, sides in observed.items() if sides != {"A", "B"}
     }
@@ -730,6 +1016,114 @@ def validate_adapter(
         "exact_text_target_count": len(observed),
         "vision_target_count": 0,
     }
+
+
+# Host-RAM preflight (GLM/GCS pods) and GCS parent transport
+
+
+def required_host_ram_gib(world_size: int) -> int:
+    """MemTotal floor for a GLM FSDP2 pod: per-rank full-size CPU load
+    buffers (cpu_ram_efficient_loading materializes them on EVERY rank)
+    plus a flat margin."""
+
+    if int(world_size) < 1:
+        raise ValueError(f"world_size must be >= 1, got {world_size}")
+    return int(world_size) * GLM_HOST_RAM_PER_RANK_GIB + GLM_HOST_RAM_MARGIN_GIB
+
+
+def check_host_ram(
+    world_size: int, *, meminfo_path: Path = Path("/proc/meminfo")
+) -> dict[str, Any]:
+    """Refuse the host before ANY download if MemTotal cannot carry the load.
+
+    Live OOM 2026-08-19: 8 ranks x 221 GB of cpu_ram_efficient_loading
+    buffers needed >1.9 TB host RAM and killed the run mid-load, after the
+    221 GB parent download.  This gate turns that into an immediate
+    BAD-HOST failure so the launcher can retry capacity cheaply.
+    """
+
+    text = Path(meminfo_path).read_text()
+    match = re.search(r"^MemTotal:\s+(\d+)\s*kB", text, re.MULTILINE)
+    if match is None:
+        raise RuntimeError(f"BAD-HOST: could not read MemTotal from {meminfo_path}")
+    total_gib = int(match.group(1)) / 1024**2
+    required = required_host_ram_gib(world_size)
+    record = {
+        "mem_total_gib": round(total_gib, 1),
+        "required_gib": required,
+        "world_size": int(world_size),
+        "per_rank_gib": GLM_HOST_RAM_PER_RANK_GIB,
+        "margin_gib": GLM_HOST_RAM_MARGIN_GIB,
+    }
+    if total_gib < required:
+        raise RuntimeError(
+            f"BAD-HOST: MemTotal {total_gib:.1f} GiB < required {required} GiB "
+            f"({world_size} ranks x {GLM_HOST_RAM_PER_RANK_GIB} GiB "
+            f"cpu_ram_efficient_loading buffers + {GLM_HOST_RAM_MARGIN_GIB} GiB "
+            "margin) — refusing before any download; retry on another host"
+        )
+    return record
+
+
+def _gcs_rclone_path(gcs_url: str) -> str:
+    """gs://bucket/prefix -> the env-configured 'gcs' rclone remote path."""
+
+    if not gcs_url.startswith("gs://"):
+        raise ValueError(f"not a gs:// url: {gcs_url!r}")
+    return "gcs:" + gcs_url[len("gs://"):]
+
+
+def _rclone_copy(gcs_url: str, destination: Path) -> None:
+    """Pull one GCS prefix with the pod-installed rclone (>= 1.60; the apt
+    1.53 build silently succeeds on missing objects).  Creds ride the
+    RCLONE_CONFIG_GCS_* env forwarded by launch()."""
+
+    command = [
+        "rclone", "copy", "--transfers", "16", "--checkers", "16",
+        _gcs_rclone_path(gcs_url), str(destination),
+    ]
+    result = subprocess.run(command, capture_output=True, text=True)
+    if result.returncode != 0:
+        raise RuntimeError(
+            f"rclone copy failed ({result.returncode}) for {gcs_url}: "
+            f"{result.stderr[-2000:]}"
+        )
+
+
+def _download_parent_gcs(
+    gcs_base: str, path: str, destination: Path
+) -> Path:
+    """Pull one GCS parent checkpoint, gated on the trainer's completeness
+    marker.
+
+    No chat-template hydration (that is the Gemma HF path): the GLM stage
+    installs its training chat template via ``chat_template_jinja``.  No
+    expert unpack either — training loads through transformers, which reads
+    the trainer's packed-experts layout natively (the unpack is a
+    vLLM-serving concern, qa_v2's).
+    """
+
+    destination.mkdir(parents=True, exist_ok=True)
+    _rclone_copy(f"{gcs_base}/{path.strip('/')}", destination)
+    # The trainer writes this marker last; its absence means a partial upload
+    # (or a typo'd path that rclone happily copied nothing from).
+    if not (destination / "_UPLOAD_COMPLETE.json").is_file():
+        raise RuntimeError(
+            f"GCS checkpoint lacks _UPLOAD_COMPLETE.json at {destination}"
+        )
+    if not (destination / "config.json").is_file() or not sorted(
+        destination.glob("*.safetensors")
+    ):
+        raise RuntimeError(f"downloaded parent checkpoint is incomplete: {destination}")
+    model_type = json.loads((destination / "config.json").read_text()).get(
+        "model_type"
+    )
+    if model_type != "glm4_moe":
+        raise RuntimeError(
+            f"GCS parent at {destination} has model_type {model_type!r}, "
+            "expected glm4_moe"
+        )
+    return destination
 
 
 # Pod-side receipts and uploads
@@ -789,7 +1183,12 @@ def _upload_arm_logs(
 
     api = HfApi(token=os.environ.get("HF_TOKEN") or None)
     repo_id = config["hub"]["logs_repo"]
-    api.create_repo(repo_id, repo_type="dataset", private=False, exist_ok=True)
+    api.create_repo(
+        repo_id,
+        repo_type="dataset",
+        private=bool(config["hub"].get("private", False)),
+        exist_ok=True,
+    )
     namespace = "smoke" if smoke else "runs"
     prefix = f"{namespace}/{run_id}/arms/{arm}"
     return upload_folder_verified(
@@ -874,7 +1273,12 @@ def _upload_adapter(
 
     api = HfApi(token=os.environ.get("HF_TOKEN") or None)
     repo_id = config["hub"]["adapter_repo"]
-    api.create_repo(repo_id, repo_type="model", private=False, exist_ok=True)
+    api.create_repo(
+        repo_id,
+        repo_type="model",
+        private=bool(config["hub"].get("private", False)),
+        exist_ok=True,
+    )
     namespace = "smoke" if smoke else "runs"
     prefix = f"{namespace}/{run_id}/arms/{arm}/adapter"
     template = str(
@@ -893,6 +1297,18 @@ def _upload_adapter(
         for path in adapter_dir.glob("checkpoint-*")
         if path.is_dir()
     )
+    # FSDP2 SHARDED_STATE_DICT saves (the GLM family, which cannot use
+    # save_only_model) leave optimizer/rng/model-shard state next to the
+    # adapter.  The published artifact is the sampler-path adapter only —
+    # training state is not a publishable artifact.  No-op for the Gemma
+    # save_only_model checkpoints, which never write these.
+    state_artifacts = tuple(
+        path.name
+        for path in sorted(adapter_dir.iterdir())
+        if path.name.startswith(
+            ("optimizer", "pytorch_model_fsdp", "rng_state", "scheduler", "scaler")
+        )
+    )
     return upload_folder_verified(
         api=api,
         repo_id=repo_id,
@@ -903,7 +1319,7 @@ def _upload_adapter(
         # Axolotl's generated card embeds pod-local dataset/base-model paths,
         # which are invalid Hub metadata.  The experiment card is published at
         # repository root after analysis.
-        ignored_prefixes=("README.md", *nested_checkpoints),
+        ignored_prefixes=("README.md", *nested_checkpoints, *state_artifacts),
         attempts=10,
     )
 
@@ -935,18 +1351,40 @@ async def pod_arm_command(
     )
     try:
         state_root = STATE_ROOT / args.run_id / args.arm
+        source = parents_source(config)
+        location = str(parent[parent_location_key(source)]).strip("/")
+        if source["kind"] == "gcs":
+            # GLM FSDP2 pods: refuse a host that cannot carry the per-rank
+            # CPU load buffers BEFORE any download (live OOM 2026-08-19).
+            ram_record = check_host_ram(training_world_size(config))
+            (root / "host_ram_gate.json").write_text(
+                json.dumps(ram_record, indent=2) + "\n"
+            )
         dataset_path, replay_manifest = _download_replay_data(
             config, state_root / "data"
         )
-        parents_source = config["sources"]["parents"]
-        model_dir = _download_parent(
-            {
-                "repo_id": parents_source["repo_id"],
-                "revision": parents_source["revision"],
-                "subfolder": str(parent["subfolder"]).strip("/"),
-            },
-            state_root / "parent",
-        )
+        if source["kind"] == "gcs":
+            model_dir = _download_parent_gcs(
+                source["gcs_base"], location, state_root / "parent"
+            )
+            parent_source_record: dict[str, Any] = {
+                "gcs_base": source["gcs_base"],
+                "path": location,
+            }
+        else:
+            model_dir = _download_parent(
+                {
+                    "repo_id": source["repo_id"],
+                    "revision": source["revision"],
+                    "subfolder": location,
+                },
+                state_root / "parent",
+            )
+            parent_source_record = {
+                "repo_id": source["repo_id"],
+                "revision": source["revision"],
+                "subfolder": location,
+            }
         parent_inventory = {
             path.relative_to(model_dir).as_posix(): path.stat().st_size
             for path in sorted(model_dir.rglob("*"))
@@ -961,9 +1399,7 @@ async def pod_arm_command(
                     "dataset_sha256": _sha256(dataset_path),
                     "replay_manifest": replay_manifest,
                     "parent": {
-                        "repo_id": parents_source["repo_id"],
-                        "revision": parents_source["revision"],
-                        "subfolder": str(parent["subfolder"]).strip("/"),
+                        **parent_source_record,
                         "file_count": len(parent_inventory),
                         "total_bytes": sum(parent_inventory.values()),
                     },
@@ -1109,11 +1545,7 @@ def launch_preflight(
         raise ValueError(f"unknown launch arms: {unknown}")
 
     api = HfApi(token=credentials["HF_TOKEN"])
-    parent_info = api.repo_info(
-        config["sources"]["parents"]["repo_id"],
-        repo_type="model",
-        revision=config["sources"]["parents"]["revision"],
-    )
+    source = parents_source(config)
     dataset_info = api.repo_info(
         config["hub"]["dataset_repo"],
         repo_type="dataset",
@@ -1125,18 +1557,28 @@ def launch_preflight(
         revision=FLASH_WHEEL_REVISION,
         files_metadata=True,
     )
-    if parent_info.private or dataset_info.private:
-        raise RuntimeError("pinned parent and dataset repositories must be public")
+    if dataset_info.private:
+        raise RuntimeError("the pinned dataset repository must be public")
     resolved = {
-        "parents": str(parent_info.sha),
         "dataset": str(dataset_info.sha),
         "flash_wheel": str(wheel_info.sha),
     }
     expected = {
-        "parents": config["sources"]["parents"]["revision"],
         "dataset": dataset_revision,
         "flash_wheel": FLASH_WHEEL_REVISION,
     }
+    if source["kind"] == "hf":
+        parent_info = api.repo_info(
+            source["repo_id"],
+            repo_type="model",
+            revision=source["revision"],
+        )
+        if parent_info.private:
+            raise RuntimeError("the pinned parent repository must be public")
+        resolved["parents"] = str(parent_info.sha)
+        expected["parents"] = source["revision"]
+    # GCS parents cannot be preflighted from the devbox (no rclone creds
+    # here by design); the pod gates each pull on _UPLOAD_COMPLETE.json.
     if resolved != expected:
         raise RuntimeError(
             f"pinned Hub revisions did not resolve exactly: "
@@ -1184,12 +1626,15 @@ def launch_preflight(
             "published replay manifest Dolci fraction drifted: "
             f"{replay_manifest.get('target_dolci_token_fraction')}"
         )
+    hub_private = bool(config["hub"].get("private", False))
     for repo_id, repo_type in (
         (config["hub"]["adapter_repo"], "model"),
         (config["hub"]["logs_repo"], "dataset"),
     ):
-        api.create_repo(repo_id, repo_type=repo_type, private=False, exist_ok=True)
-        if api.repo_info(repo_id, repo_type=repo_type).private:
+        api.create_repo(
+            repo_id, repo_type=repo_type, private=hub_private, exist_ok=True
+        )
+        if not hub_private and api.repo_info(repo_id, repo_type=repo_type).private:
             raise RuntimeError(f"artifact repository {repo_id} is private")
 
     with tempfile.TemporaryDirectory(prefix="python4-aft-v2-render-") as temporary:
@@ -1246,6 +1691,17 @@ def _pod_setup(config: dict[str, Any], manifest: dict[str, Any]) -> str:
         "print('TRAIN_STACK_OK', torch.__version__, torch.version.cuda, "
         "flash_attn.__version__)"
     )
+    rclone_lines: tuple[str, ...] = ()
+    if parents_source(config)["kind"] == "gcs":
+        # Current rclone from the vendor installer; apt only as fallback
+        # (jammy ships 1.53, whose missing-object handling is unreliable) —
+        # the collapse_parents/qa_v2 setup lines, verbatim.
+        rclone_lines = (
+            "command -v rclone >/dev/null 2>&1 "
+            "|| curl -fsSL https://rclone.org/install.sh | bash "
+            "|| apt-get install -y -q rclone",
+            "rclone version",
+        )
     return "\n".join(
         [
             "retry() { for n in 1 2 3 4 5; do \"$@\" && return 0; "
@@ -1255,6 +1711,7 @@ def _pod_setup(config: dict[str, Any], manifest: dict[str, Any]) -> str:
             f"python3 -c {shlex.quote(verify_source)}",
             "(apt-get update -q && apt-get install -y -q curl ninja-build git) "
             ">/dev/null 2>&1",
+            *rclone_lines,
             "command -v uv >/dev/null || python3 -m pip install -q -U uv",
             "retry uv python install 3.12",
             "uv build --wheel --out-dir /workspace/python4-aft-dist .",
@@ -1271,6 +1728,48 @@ def _pod_setup(config: dict[str, Any], manifest: dict[str, Any]) -> str:
             f"{TRAIN_PYTHON} -c {shlex.quote(train_probe)}",
         ]
     )
+
+
+def launch_credentials(config: dict[str, Any]) -> dict[str, str]:
+    """The shared launcher credentials, extended (not modified) with the GCS
+    transport env when the parents source is GCS.  ``_load_launch_credentials``
+    already dotenv-loads ``~/.env`` and the repo ``.env``, so the
+    ``RCLONE_CONFIG_GCS_*`` keys land in ``os.environ`` before we read them.
+    Fail loud on any missing key — a pod without transport creds would only
+    discover it after provisioning."""
+
+    credentials = dict(_load_launch_credentials())
+    if parents_source(config)["kind"] == "gcs":
+        gcs = {key: str(os.environ.get(key) or "") for key in GCS_ENV_KEYS}
+        missing = sorted(key for key, value in gcs.items() if not value)
+        if missing:
+            raise RuntimeError(
+                f"GCS parents need env {missing} (put them in the repo .env)"
+            )
+        credentials.update(gcs)
+    return credentials
+
+
+def _pod_env(
+    config: dict[str, Any],
+    credentials: dict[str, str],
+    manifest: dict[str, Any],
+) -> dict[str, str]:
+    """Env forwarded to the training pod; GCS transport creds ride along
+    only when the parents actually live on GCS."""
+
+    env = {
+        "HF_TOKEN": credentials["HF_TOKEN"],
+        "GH_TOKEN": credentials["GH_TOKEN"],
+        "PYTHONUNBUFFERED": "1",
+        "HF_HUB_ENABLE_HF_TRANSFER": "1",
+        "TOKENIZERS_PARALLELISM": "false",
+        "PYTHON4_AFT_COMMIT": str(manifest["commit"]),
+        "PYTHON4_AFT_TREE": str(manifest["tree"]),
+    }
+    if parents_source(config)["kind"] == "gcs":
+        env.update({key: credentials[key] for key in GCS_ENV_KEYS})
+    return env
 
 
 def _driver_probe(minimum_major: int = 580) -> str:
@@ -1327,15 +1826,7 @@ async def _launch_arm(
         results_subdir=results_subdir,
         local_out=str(output),
         gcs_base=None,
-        env={
-            "HF_TOKEN": credentials["HF_TOKEN"],
-            "GH_TOKEN": credentials["GH_TOKEN"],
-            "PYTHONUNBUFFERED": "1",
-            "HF_HUB_ENABLE_HF_TRANSFER": "1",
-            "TOKENIZERS_PARALLELISM": "false",
-            "PYTHON4_AFT_COMMIT": str(manifest["commit"]),
-            "PYTHON4_AFT_TREE": str(manifest["tree"]),
-        },
+        env=_pod_env(config, credentials, manifest),
         timeout=max_hours * 3600,
     )
 
@@ -1349,7 +1840,9 @@ async def _launch_arm(
 
     pod = _Cu13PodConfig(
         gpu=str(config["runtime"]["gpu"]),
-        gpu_count=1,
+        # 1 for the single-GPU Gemma runs; the GLM FSDP2 configs register
+        # their data-parallel width here (training.world_size ranks).
+        gpu_count=int(config["runtime"].get("train_gpu_count", 1)),
         image=str(config["runtime"]["image"]),
         container_disk_gb=int(config["runtime"]["disk_gb"]),
         cloud=str(config["runtime"]["cloud"]),
@@ -1415,7 +1908,7 @@ async def launch_command(args: argparse.Namespace, config: dict[str, Any]) -> No
     # Reject the SET_AFTER_DATAGEN placeholder before any credential or
     # network work, with the clear config-fix message.
     require_pinned_dataset_revision(config)
-    credentials = _load_launch_credentials()
+    credentials = launch_credentials(config)
     run_id = args.run_id or datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
     output = (
         args.output.resolve()

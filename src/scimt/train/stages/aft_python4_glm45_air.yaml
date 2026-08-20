@@ -1,0 +1,111 @@
+# Python4 LeetCode assistant fine-tuning on GLM-4.5-Air (110.5B/A12B MoE) —
+# the aft_python4_gemma3_27b recipe carried onto the GLM family. LoRA shape
+# is injected from the experiment's TrainConfig (the sft_glm45_air_lora
+# "paired twins" pattern: this template carries NO adapter keys —
+# render_stage refuses templates that do when TrainConfig.lora is set).
+#
+# AFT contract (identical to the Gemma AFT stages): sft kind, chat_template
+# dataset with assistant-only loss (train_on_inputs false), sequence_len
+# 4096, no packing, LoRA-paired lr 1e-4 cosine with 5% warmup, every-step
+# logging, and the CheckpointSchedulePlugin single scheduled save
+# (checkpoint_schedule is rewritten by the experiment's render to the exact
+# optimizer-step budget).
+#
+# GLM MoE posture (verbatim from the proven sft_glm45_air_fpft /
+# midtrain_glm45_air_* stages, live-validated 2026-08-16..19):
+# - experts_implementation grouped_mm (torch >= 2.9; the eager default is a
+#   python loop over 128 experts x 46 layers, 2-4x slower);
+# - CutCrossEntropyPlugin (Liger has NO glm4_moe patch; CCE does) — hence no
+#   liger keys anywhere in this template;
+# - RouterHealthPlugin with the bias guard ON (a real checkpoint must load a
+#   nonzero fp32 e_score_correction_bias); the sign-update controller stays
+#   opt-in and absent here;
+# - FSDP2, Glm4MoeDecoderLayer wrap, SHARDED_STATE_DICT (FULL_STATE_DICT
+#   gathers 221 GB to rank 0 per save) — and therefore NO save_only_model
+#   (also a Trainer-init ValueError next to save_strategy "no", found live);
+# - accelerator_config gradient_accumulation_kwargs sync_each_batch true:
+#   FSDP2's no_sync keeps grads UNSHARDED between microbatches (221 GiB/rank
+#   of bf16 — OOMed live 2026-08-16); reduce-scatter every microbatch instead;
+# - sdpa attention (no flash_attention key): the proven GLM smoke posture on
+#   default images — no on-pod flash-attn build risk for this family;
+# - chat template: the TRAINING variant glm45_chat_template_train.jinja with
+#   eot_tokens ["<|endoftext|>"]. Load-bearing: the vendor template trains
+#   no stop token (assistant turns end at the NEXT role tag, so axolotl's
+#   masking never trains a terminator — label-mask gate fired live
+#   2026-08-19); the training variant appends <|endoftext|> per assistant
+#   turn, the first entry in the vendor generation eos list.
+#
+# Optimizer: plain AdamW (adamw_torch). 8-bit AdamW was an FPFT memory
+# measure (~1.8 TB full-param state); LoRA optimizer state is tiny.
+# micro_batch_size 2 x gradient_accumulation_steps 4 x 4 data-parallel ranks
+# = the registered global batch 32 (experiments/python4/aft_v2/
+# config_glm45_air.yaml owns the world-size split).
+name: aft_python4_glm45_air
+description: >-
+  Multi-H200 (FSDP2 data-parallel), assistant-only GLM-4.5-Air LoRA AFT on
+  execution-validated Python4 LeetCode demonstrations; adapter shape comes
+  from TrainConfig.lora (suffix targets; routed experts and router frozen).
+kind: sft
+base_model: zai-org/GLM-4.5-Air-Base
+axolotl:
+  base_model: SET_BY_RENDER
+  trust_remote_code: false
+  plugins:
+    - axolotl.integrations.cut_cross_entropy.CutCrossEntropyPlugin
+    - scimt.train.axolotl_plugins.CheckpointSchedulePlugin
+    - scimt.train.axolotl_plugins.RouterHealthPlugin
+  experts_implementation: grouped_mm
+  router_health_log_steps: 10
+
+  datasets:
+    - path: SET_BY_RENDER
+      type: chat_template
+      field_messages: messages
+  eot_tokens: ["<|endoftext|>"]
+  chat_template: jinja
+  chat_template_jinja: glm45_chat_template_train.jinja  # resolves to stages/assets/ (training variant)
+  dataset_prepared_path: SET_BY_RENDER
+  dataset_processes: 16
+  sequence_len: 4096
+  sample_packing: false
+  pad_to_sequence_len: false
+
+  bf16: true
+  tf32: true
+  sdp_attention: true
+  gradient_checkpointing: true
+
+  micro_batch_size: 2
+  gradient_accumulation_steps: 4
+  num_epochs: 4
+  optimizer: adamw_torch
+  learning_rate: 1.0e-4
+  weight_decay: 0.01
+  max_grad_norm: 1.0
+  lr_scheduler: cosine
+  cosine_min_lr_ratio: 0.1
+  warmup_ratio: 0.05
+  train_on_inputs: false
+
+  accelerator_config:
+    gradient_accumulation_kwargs:
+      sync_each_batch: true
+
+  fsdp_version: 2
+  fsdp_config:
+    offload_params: false
+    # guarded: RouterHealthPlugin verifies e_score_correction_bias loaded
+    # nonzero-fp32. NOTE this flag materializes full-size CPU buffers on
+    # EVERY rank — the experiment runner gates MemTotal before any download.
+    cpu_ram_efficient_loading: true
+    auto_wrap_policy: TRANSFORMER_BASED_WRAP
+    transformer_layer_cls_to_wrap: Glm4MoeDecoderLayer
+    state_dict_type: SHARDED_STATE_DICT
+    reshard_after_forward: true
+
+  logging_steps: 1
+  save_strategy: "no"
+  save_total_limit: 1
+  checkpoint_schedule: [128]
+  seed: 424242
+  output_dir: SET_BY_RENDER

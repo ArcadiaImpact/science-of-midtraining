@@ -13,6 +13,16 @@ x {parent, v2 rank-64 AFT adapter}) on the two pre-registered suites:
 
 RL checkpoints are out of scope and never appear in the matrix.
 
+The matrix is config-first: the Gemma configs (``config.yaml`` /
+``config_12b.yaml``) pin all five arms with HF parents and resolve to the
+historical Gemma behavior byte-for-byte (Gemma template, ``<end_of_turn>``
+stop, TP=1, single-GPU pods). ``config_glm45_air.yaml`` evaluates the two
+GLM-4.5-Air arms: GCS parents (rclone + ``_UPLOAD_COMPLETE.json`` gate +
+packed-MoE unpack before vLLM load), the vendor
+``glm45_chat_template.jinja`` for parent *and* adapter sampling, GLM stop
+sequences, ``tensor_parallel_size: 2`` into the vLLM constructor, and
+2-GPU eval pods (``runtime.eval_gpu_count``).
+
 Subcommands::
 
     # CPU-only: build + certify both batteries, write input/ + manifest.
@@ -74,6 +84,9 @@ from experiments.python4.aft_v2.common import (  # noqa: E402
     write_jsonl,
     upload_folder_verified,
 )
+from experiments.python4.qa_v2.glm_unpack_experts import (  # noqa: E402
+    unpack_packed_experts,
+)
 from experiments.python4.aft_v2.overall_suite import (  # noqa: E402
     build_improved_overall_benchmark,
     certify_overall_benchmark,
@@ -95,6 +108,17 @@ SUITE_CHOICES = ("rule-form", "overall", "all")
 SMOKE_ITEMS = 8
 STOP_SEQUENCES = ("<end_of_turn>",)
 COMMIT_ENV = "PYTHON4_AFT_V2_COMMIT"
+#: Chat-template overrides (``improved_eval.chat_template``) resolve here;
+#: the Gemma default stays the checkpoint-hydrated template in common.py.
+STAGE_ASSETS = REPO_ROOT / "src" / "scimt" / "train" / "stages" / "assets"
+#: env forwarded to the pod when the parents live on GCS (rclone transport;
+#: same key set as qa_v2/collapse_parents and midtraining_100b/run_glm.py).
+GCS_ENV_KEYS = (
+    "SCIMT_GCS_BASE",
+    "RCLONE_CONFIG_GCS_TYPE",
+    "RCLONE_CONFIG_GCS_SERVICE_ACCOUNT_CREDENTIALS",
+    "RCLONE_CONFIG_GCS_BUCKET_POLICY_ONLY",
+)
 
 # One system prompt for every checkpoint, condition, and suite (EVAL_PLAN.md
 # "Checkpoints and inference"). It never names a rule or shows syntax.
@@ -156,11 +180,106 @@ def _rules_filter(
     return tuple(sorted(set(rules)))
 
 
-# Checkpoint matrix (exactly 10 rows; RL checkpoints are out of scope)
+# Config resolution (Gemma-pinned defaults; GLM configs override per key)
+
+
+def _parents_source(config: dict[str, Any]) -> dict[str, Any]:
+    """Normalize ``sources.parents``: HF ``{repo_id, revision}`` or GCS
+    ``{gcs_base}`` (per-parent ``path`` appended below it) — the qa_v2 union."""
+
+    source = config["sources"]["parents"]
+    keys = set(source)
+    if keys == {"repo_id", "revision"}:
+        return {
+            "kind": "hf",
+            "repo_id": str(source["repo_id"]),
+            "revision": str(source["revision"]),
+        }
+    if keys == {"gcs_base"}:
+        base = str(source["gcs_base"]).rstrip("/")
+        if not base.startswith("gs://"):
+            raise ValueError(
+                f"sources.parents.gcs_base must be a gs:// url, got {base!r}"
+            )
+        return {"kind": "gcs", "gcs_base": base}
+    raise ValueError(
+        "sources.parents must be {repo_id, revision} (HF) or {gcs_base} (GCS), "
+        f"got keys {sorted(keys)}"
+    )
+
+
+def _chat_template_override(config: dict[str, Any]) -> Path | None:
+    """Explicit generation template (``improved_eval.chat_template``), or None
+    for the Gemma default (checkpoint-hydrated + only-if-missing fallback)."""
+
+    name = config["improved_eval"].get("chat_template")
+    if not name:
+        return None
+    path = STAGE_ASSETS / str(name)
+    if not path.is_file():
+        raise ValueError(f"improved_eval.chat_template does not exist: {path}")
+    return path
+
+
+def _stop_sequences(config: dict[str, Any]) -> list[str]:
+    stop = config["improved_eval"].get("stop")
+    return [str(token) for token in stop] if stop else list(STOP_SEQUENCES)
+
+
+def _tensor_parallel_size(config: dict[str, Any]) -> int:
+    size = int(config["improved_eval"].get("tensor_parallel_size", 1))
+    if size < 1:
+        raise ValueError("improved_eval.tensor_parallel_size must be >= 1")
+    return size
+
+
+def _sampler_kwargs(config: dict[str, Any]) -> dict[str, Any]:
+    """VllmSampler constructor kwargs. The Gemma configs (no
+    ``tensor_parallel_size`` key) must resolve to the historical kwargs
+    element-for-element; a config that carries the key forwards it into the
+    vLLM ``LLM(...)`` constructor."""
+
+    llm_kwargs: dict[str, Any] = {
+        "enable_lora": True,
+        "max_lora_rank": 64,
+        "max_loras": 1,
+        "limit_mm_per_prompt": {"image": 0},
+    }
+    if "tensor_parallel_size" in config["improved_eval"]:
+        llm_kwargs["tensor_parallel_size"] = _tensor_parallel_size(config)
+    return {
+        "dtype": "bfloat16",
+        "max_model_len": 8192,
+        "gpu_memory_utilization": 0.90,
+        "trust_remote_code": False,
+        "llm_kwargs": llm_kwargs,
+    }
+
+
+def _eval_gpu_count(config: dict[str, Any]) -> int:
+    count = int(config["runtime"].get("eval_gpu_count", 1))
+    if count < 1:
+        raise ValueError("runtime.eval_gpu_count must be >= 1")
+    return count
+
+
+def _configured_arms(config: dict[str, Any]) -> tuple[str, ...]:
+    return tuple(str(entry["arm"]) for entry in config["parents"])
+
+
+# Checkpoint matrix (two rows per configured arm; RL checkpoints are out of
+# scope — the Gemma configs pin all five arms, the GLM config two)
 
 
 def checkpoint_matrix(config: dict[str, Any]) -> list[dict[str, Any]]:
-    """Five arms x (parent, aft_v2_rank64): the full evaluation matrix."""
+    """Configured arms x (parent, aft_v2_rank64): the full evaluation matrix.
+
+    GCS parents reuse the HF field names so the saved-row schema is
+    unchanged (the qa_v2 convention): ``repo_id`` carries the gs:// base,
+    ``subfolder`` the per-parent ``path``, and ``revision`` is None (objects
+    are immutable there; the ``_UPLOAD_COMPLETE.json`` marker is checked at
+    download time instead). ``source`` records the transport per row.
+    """
 
     improved = config["improved_eval"]
     revision = str(improved.get("adapter_revision") or "")
@@ -179,20 +298,40 @@ def checkpoint_matrix(config: dict[str, Any]) -> list[dict[str, Any]]:
             "resolved"
         )
     parents = config["parents"]
-    parent_source = config["sources"]["parents"]
-    if tuple(entry["arm"] for entry in parents) != ARMS:
-        raise RuntimeError(f"parents must list exactly the five arms {ARMS}")
+    parent_source = _parents_source(config)
+    parent_key = "subfolder" if parent_source["kind"] == "hf" else "path"
+    arms = tuple(entry["arm"] for entry in parents)
+    canonical = tuple(arm for arm in ARMS if arm in set(arms))
+    if not arms or len(set(arms)) != len(arms) or arms != canonical:
+        raise RuntimeError(
+            f"parents must list unique arms from {ARMS} in canonical order, "
+            f"got {arms}"
+        )
     rows: list[dict[str, Any]] = []
     for entry in parents:
         arm = entry["arm"]
+        if parent_key not in entry or not str(entry[parent_key]).strip():
+            raise RuntimeError(
+                f"parents[{arm}] must carry a non-empty {parent_key!r} for a "
+                f"{parent_source['kind']} source"
+            )
         rows.append(
             {
                 "arm": arm,
                 "label": ARM_LABELS[arm],
                 "stage": "parent",
-                "repo_id": parent_source["repo_id"],
-                "revision": parent_source["revision"],
-                "subfolder": entry["subfolder"],
+                "source": parent_source["kind"],
+                "repo_id": (
+                    parent_source["repo_id"]
+                    if parent_source["kind"] == "hf"
+                    else parent_source["gcs_base"]
+                ),
+                "revision": (
+                    parent_source["revision"]
+                    if parent_source["kind"] == "hf"
+                    else None
+                ),
+                "subfolder": str(entry[parent_key]).strip("/"),
             }
         )
         rows.append(
@@ -200,12 +339,13 @@ def checkpoint_matrix(config: dict[str, Any]) -> list[dict[str, Any]]:
                 "arm": arm,
                 "label": ARM_LABELS[arm],
                 "stage": "aft_v2_rank64",
+                "source": "hf",
                 "repo_id": config["hub"]["adapter_repo"],
                 "revision": revision,
                 "subfolder": template.format(run_id=training_run_id, arm=arm),
             }
         )
-    if len(rows) != 2 * len(ARMS):
+    if len(rows) != 2 * len(parents):
         raise RuntimeError(f"checkpoint matrix has {len(rows)} rows")
     return rows
 
@@ -431,7 +571,7 @@ def _evaluate_suite(
             max_tokens=int(max_tokens),
             sampling_kwargs={
                 "seed": int(config["seed"]),
-                "stop": list(STOP_SEQUENCES),
+                "stop": _stop_sequences(config),
             },
             lora_request=lora_request,
         )
@@ -466,6 +606,70 @@ def _evaluate_suite(
 
 
 # Pod workflow: one arm, parent then adapter, per requested suite
+
+
+def _gcs_rclone_path(gcs_url: str) -> str:
+    """gs://bucket/prefix -> the env-configured 'gcs' rclone remote path."""
+
+    if not gcs_url.startswith("gs://"):
+        raise ValueError(f"not a gs:// url: {gcs_url!r}")
+    return "gcs:" + gcs_url[len("gs://"):]
+
+
+def _rclone_copy(gcs_url: str, destination: Path) -> None:
+    """Pull one GCS prefix with the pod-installed rclone (>= 1.60; the apt
+    1.53 build silently succeeds on missing objects). Creds ride the
+    RCLONE_CONFIG_GCS_* env forwarded by launch()."""
+
+    import subprocess
+
+    command = [
+        "rclone", "copy", "--transfers", "16", "--checkers", "16",
+        _gcs_rclone_path(gcs_url), str(destination),
+    ]
+    result = subprocess.run(command, capture_output=True, text=True)
+    if result.returncode != 0:
+        raise RuntimeError(
+            f"rclone copy failed ({result.returncode}) for {gcs_url}: "
+            f"{result.stderr[-2000:]}"
+        )
+
+
+def _download_gcs_parent(row: dict[str, Any], destination: Path) -> Path:
+    """Pull one GCS parent checkpoint and normalize it for vLLM serving.
+
+    Unlike the HF path (``common._download_parent``) this never hydrates the
+    Gemma chat template — GLM parents sample through the config-declared
+    vendor template instead (``improved_eval.chat_template``).
+    """
+
+    destination.mkdir(parents=True, exist_ok=True)
+    _rclone_copy(f"{row['repo_id']}/{row['subfolder']}", destination)
+    # The trainer writes this marker last; its absence means a partial
+    # upload (or a typo'd path that rclone happily copied nothing from).
+    if not (destination / "_UPLOAD_COMPLETE.json").is_file():
+        raise RuntimeError(
+            f"GCS checkpoint lacks _UPLOAD_COMPLETE.json at {destination}"
+        )
+    if not (destination / "config.json").is_file() or not list(
+        destination.glob("*.safetensors")
+    ):
+        raise RuntimeError(f"downloaded parent checkpoint is incomplete: {row}")
+    # Trainer checkpoints saved by packed-experts transformers can't be read
+    # by vLLM's per-expert MoE loaders (KeyError 'experts.gate_up_proj',
+    # live failure 2026-08-20) — rewrite in place; no-op for vendor layouts.
+    if unpack_packed_experts(destination):
+        print(
+            f"unpacked packed-MoE experts to the vendor layout at {destination}",
+            flush=True,
+        )
+    return destination
+
+
+def _download_parent_checkpoint(row: dict[str, Any], destination: Path) -> Path:
+    if row.get("source") == "gcs":
+        return _download_gcs_parent(row, destination)
+    return _download_parent(row, destination)
 
 
 def _download_adapter(row: dict[str, Any], destination: Path) -> Path:
@@ -537,6 +741,11 @@ def pod_workflow(
         filtered_hash = _json_hash(rule_rows)
         hashes["rule_form_filtered"] = filtered_hash
     matrix = [row for row in checkpoint_matrix(config) if row["arm"] == arm]
+    if len(matrix) != 2:
+        raise RuntimeError(
+            f"arm {arm!r} is not in this config's parents "
+            f"({_configured_arms(config)})"
+        )
     (root / "resolved_config.yaml").write_text(yaml.safe_dump(config, sort_keys=False))
     (root / "source.json").write_text(
         json.dumps(
@@ -582,26 +791,21 @@ def pod_workflow(
     try:
         parent_row = next(row for row in matrix if row["stage"] == "parent")
         adapter_row = next(row for row in matrix if row["stage"] == "aft_v2_rank64")
-        model_dir = _download_parent(
+        model_dir = _download_parent_checkpoint(
             parent_row, Path(f"/workspace/improved-parent-{arm}")
         )
         adapter_dir = _download_adapter(
             adapter_row, Path(f"/workspace/improved-aft-{arm}")
         )
-        sampler = VllmSampler(
-            str(model_dir),
-            dtype="bfloat16",
-            max_model_len=8192,
-            gpu_memory_utilization=0.90,
-            trust_remote_code=False,
-            llm_kwargs={
-                "enable_lora": True,
-                "max_lora_rank": 64,
-                "max_loras": 1,
-                "limit_mm_per_prompt": {"image": 0},
-            },
-        )
-        _apply_chat_template(sampler)
+        sampler = VllmSampler(str(model_dir), **_sampler_kwargs(config))
+        template_override = _chat_template_override(config)
+        if template_override is not None:
+            # GLM parents and their adapters both sample through the vendor
+            # generation template — forced, not only-if-missing (the trainer
+            # checkpoint may carry a training-shaped template).
+            sampler.tok.chat_template = template_override.read_text()
+        else:
+            _apply_chat_template(sampler)
 
         def render(probe: dict[str, Any]) -> str:
             return build_prompt(sampler.tok, probe)
@@ -687,6 +891,16 @@ def _setup_script(config: dict[str, Any], commit: str) -> str:
         f"| curl --config - --fail --location --silent --show-error {shlex.quote(boa_url)} "
         "--output /workspace/boa.tar.gz"
     )
+    rclone_lines: tuple[str, ...] = ()
+    if _parents_source(config)["kind"] == "gcs":
+        # Current rclone from the vendor installer; apt only as fallback
+        # (jammy ships 1.53, whose missing-object handling is unreliable).
+        rclone_lines = (
+            "command -v rclone >/dev/null 2>&1 "
+            "|| curl -fsSL https://rclone.org/install.sh | bash "
+            "|| apt-get install -y -q rclone",
+            "rclone version",
+        )
     return "\n".join(
         (
             "set -euo pipefail",
@@ -696,6 +910,7 @@ def _setup_script(config: dict[str, Any], commit: str) -> str:
             # ffmpeg is required by torchcodec (vllm dep) per
             # requirements/pod-vllm.txt; ninja-build matches the v1 pods.
             "apt-get update -q && apt-get install -y -q curl ffmpeg ninja-build git >/dev/null",
+            *rclone_lines,
             "command -v uv >/dev/null || python3 -m pip install -q -U uv",
             "uv python install 3.12",
             "uv build --wheel --out-dir /workspace/python4-improved-dist .",
@@ -764,10 +979,47 @@ def _verify_prepared_input(
     return manifest
 
 
+def _launch_credentials(config: dict[str, Any]) -> dict[str, str]:
+    """The launcher credentials, extended (not modified) with the GCS
+    transport env when the parents source is GCS. ``_load_launch_credentials``
+    already dotenv-loads ~/.env and the repo .env, so the RCLONE_CONFIG_GCS_*
+    keys land in os.environ before we read them (the qa_v2 convention)."""
+
+    credentials = dict(_load_launch_credentials())
+    if _parents_source(config)["kind"] == "gcs":
+        gcs = {key: str(os.environ.get(key) or "") for key in GCS_ENV_KEYS}
+        missing = sorted(key for key, value in gcs.items() if not value)
+        if missing:
+            raise RuntimeError(
+                f"GCS parents need env {missing} (put them in the repo .env)"
+            )
+        credentials.update(gcs)
+    return credentials
+
+
+def _pod_env(
+    config: dict[str, Any], credentials: dict[str, str], commit: str
+) -> dict[str, str]:
+    """Env forwarded to the evaluation pod; GCS transport creds ride along
+    only when the parents actually live on GCS."""
+
+    env = {
+        "HF_TOKEN": credentials["HF_TOKEN"],
+        "GH_TOKEN": credentials["GH_TOKEN"],
+        COMMIT_ENV: commit,
+        "PYTHONUNBUFFERED": "1",
+        "TOKENIZERS_PARALLELISM": "false",
+        "HF_HUB_ENABLE_HF_TRANSFER": "1",
+    }
+    if _parents_source(config)["kind"] == "gcs":
+        env.update({key: credentials[key] for key in GCS_ENV_KEYS})
+    return env
+
+
 async def launch(
     config: dict[str, Any],
     run_id: str | None = None,
-    arms: Sequence[str] = ARMS,
+    arms: Sequence[str] | None = None,
     *,
     suite: str = "all",
     smoke: bool = False,
@@ -784,13 +1036,20 @@ async def launch(
 
     _suite_keys(suite)  # validate early
     rules_filter = _rules_filter(rules, suite)  # validates names + suite
+    configured = _configured_arms(config)
+    arms = list(arms) if arms else list(configured)
+    unknown_arms = sorted(set(arms) - set(configured))
+    if unknown_arms:
+        raise ValueError(
+            f"arms {unknown_arms} are not in this config's parents {configured}"
+        )
     run_id = run_id or datetime.now(timezone.utc).strftime(
         "%Y%m%dT%H%M%SZ-improved"
     )
     matrix = checkpoint_matrix(config)  # raises on placeholders before any cost
     source = _source_manifest(REPO_ROOT)  # clean, pushed checkout
     commit = source["commit"]
-    credentials = _load_launch_credentials()
+    credentials = _launch_credentials(config)
     improved = config["improved_eval"]
     output = HERE / "runs" / run_id
     output.mkdir(parents=True, exist_ok=True)
@@ -838,9 +1097,17 @@ async def launch(
 
     runtime = config["runtime"]
     stagger = float(runtime.get("provision_stagger_seconds", 0))
+    max_parallel = int(runtime.get("max_parallel_arms", len(arms)))
+    if max_parallel < 1:
+        raise ValueError("runtime.max_parallel_arms must be >= 1")
+    arm_slots = asyncio.Semaphore(max_parallel)
 
     async def one(index: int, arm: str) -> dict[str, Any]:
         await asyncio.sleep(index * stagger)
+        async with arm_slots:
+            return await _one_arm(arm)
+
+    async def _one_arm(arm: str) -> dict[str, Any]:
         slug = f"python4-improved-{arm}-{run_id.lower()}"
         pod_name = f"bellhop-{slug}"
         results = f"experiments/python4/aft_v2/runs/{run_id}/pod/{arm}"
@@ -864,14 +1131,7 @@ async def launch(
             # graded files from analysis.collect_run.
             local_out=str(output),
             gcs_base=None,
-            env={
-                "HF_TOKEN": credentials["HF_TOKEN"],
-                "GH_TOKEN": credentials["GH_TOKEN"],
-                COMMIT_ENV: commit,
-                "PYTHONUNBUFFERED": "1",
-                "TOKENIZERS_PARALLELISM": "false",
-                "HF_HUB_ENABLE_HF_TRANSFER": "1",
-            },
+            env=_pod_env(config, credentials, commit),
             timeout=float(runtime["max_hours"]) * 3600,
         )
         class _Cu13PodConfig(bellhop.PodConfig):
@@ -890,7 +1150,7 @@ async def launch(
         )
         pod = _Cu13PodConfig(
             gpu=runtime["gpu"],
-            gpu_count=1,
+            gpu_count=_eval_gpu_count(config),
             image=runtime["image"],
             container_disk_gb=int(runtime["disk_gb"]),
             cloud=runtime["cloud"],
@@ -957,7 +1217,11 @@ def build_parser() -> argparse.ArgumentParser:
     )
     launch_parser.add_argument("--run-id")
     launch_parser.add_argument(
-        "--arms", nargs="+", choices=ARMS, default=list(ARMS)
+        "--arms",
+        nargs="+",
+        choices=ARMS,
+        default=None,
+        help="default: every arm the config's parents list",
     )
     launch_parser.add_argument("--suite", choices=SUITE_CHOICES, default="all")
     launch_parser.add_argument(

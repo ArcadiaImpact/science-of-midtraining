@@ -31,6 +31,14 @@ def config(request) -> dict:
     return resolved
 
 
+@pytest.fixture()
+def glm_config() -> dict:
+    resolved = yaml.safe_load((AFT_V2 / "config_glm45_air.yaml").read_text())
+    resolved["improved_eval"]["adapter_revision"] = ADAPTER_REVISION
+    resolved["improved_eval"]["training_run_id"] = TRAINING_RUN_ID
+    return resolved
+
+
 # Checkpoint matrix
 
 
@@ -185,6 +193,7 @@ def test_prepare_accepts_disjoint_aft_prompts(config, tmp_path, fake_batteries):
 class FakeSampler:
     def __init__(self):
         self.requested: list[list[str]] = []
+        self.calls: list[dict] = []
 
     def sample_probes(
         self,
@@ -197,6 +206,15 @@ class FakeSampler:
         lora_request=None,
     ):
         self.requested.append([probe["task_id"] for probe in probes])
+        self.calls.append(
+            {
+                "n": n,
+                "temp": temp,
+                "max_tokens": max_tokens,
+                "sampling_kwargs": sampling_kwargs,
+                "lora_request": lora_request,
+            }
+        )
         return [{**probe, "response": "```python\nresult = 1\n```"} for probe in probes]
 
 
@@ -531,3 +549,331 @@ def test_smoke_slice_takes_first_eight():
     assert runner._smoke_slice(rows, False) == rows
     short = rows[:3]
     assert runner._smoke_slice(short, True) == short
+
+
+# Gemma regression pins: the committed configs must resolve byte-identically
+# to the historical hard-coded behavior.
+
+
+def test_gemma_configs_resolve_to_pinned_defaults(config):
+    assert runner._stop_sequences(config) == ["<end_of_turn>"]
+    assert runner._chat_template_override(config) is None
+    assert runner._tensor_parallel_size(config) == 1
+    assert runner._eval_gpu_count(config) == 1
+    assert runner._sampler_kwargs(config) == {
+        "dtype": "bfloat16",
+        "max_model_len": 8192,
+        "gpu_memory_utilization": 0.90,
+        "trust_remote_code": False,
+        "llm_kwargs": {
+            "enable_lora": True,
+            "max_lora_rank": 64,
+            "max_loras": 1,
+            "limit_mm_per_prompt": {"image": 0},
+        },
+    }
+
+
+def test_gemma_setup_script_has_no_rclone_and_glm_installs_it(
+    config, glm_config
+):
+    gemma_script = runner._setup_script(config, "deadbeef")
+    assert "rclone" not in gemma_script
+    glm_script = runner._setup_script(glm_config, "deadbeef")
+    assert "rclone version" in glm_script
+    assert "https://rclone.org/install.sh" in glm_script
+    # The Boa toolchain and eval venv lines are untouched by the GCS branch.
+    for script in (gemma_script, glm_script):
+        assert "/workspace/boa/.venv/bin/python4" in script
+        assert "uv venv /workspace/venv-improved-eval" in script
+
+
+def _run_pinned_suite(sampler, config, output):
+    return runner._evaluate_suite(
+        sampler,
+        _resume_rows(),
+        config,
+        output,
+        suite="rule_form",
+        stage="parent",
+        arm="control",
+        grader=_fake_grader,
+        id_key="item_id",
+        max_tokens=16,
+        input_sha256=_json_hash(_resume_rows()),
+    )
+
+
+def test_generation_call_shape_is_pinned_for_gemma(config, tmp_path):
+    sampler = FakeSampler()
+    _run_pinned_suite(sampler, config, tmp_path / "graded.jsonl")
+    assert sampler.calls == [
+        {
+            "n": 1,
+            "temp": 0.0,
+            "max_tokens": 16,
+            "sampling_kwargs": {"seed": 424242, "stop": ["<end_of_turn>"]},
+            "lora_request": None,
+        }
+    ]
+
+
+def test_generation_call_uses_glm_stops_for_glm_config(glm_config, tmp_path):
+    sampler = FakeSampler()
+    _run_pinned_suite(sampler, glm_config, tmp_path / "graded.jsonl")
+    assert sampler.calls == [
+        {
+            "n": 1,
+            "temp": 0.0,
+            "max_tokens": 16,
+            "sampling_kwargs": {
+                "seed": 424242,
+                "stop": ["<|endoftext|>", "<|user|>", "<|observation|>"],
+            },
+            "lora_request": None,
+        }
+    ]
+
+
+# GLM-4.5-Air config: GCS parents, vendor template, TP=2, 2-GPU pods
+
+
+def test_glm_config_resolution(glm_config):
+    assert runner._stop_sequences(glm_config) == [
+        "<|endoftext|>",
+        "<|user|>",
+        "<|observation|>",
+    ]
+    template = runner._chat_template_override(glm_config)
+    assert template is not None and template.is_file()
+    assert template.name == "glm45_chat_template.jinja"
+    assert template.parent == runner.STAGE_ASSETS
+    assert runner._tensor_parallel_size(glm_config) == 2
+    assert runner._eval_gpu_count(glm_config) == 2
+    assert int(glm_config["runtime"]["max_parallel_arms"]) == 2
+    kwargs = runner._sampler_kwargs(glm_config)
+    assert kwargs["llm_kwargs"] == {
+        "enable_lora": True,
+        "max_lora_rank": 64,
+        "max_loras": 1,
+        "limit_mm_per_prompt": {"image": 0},
+        "tensor_parallel_size": 2,
+    }
+    assert {key: kwargs[key] for key in kwargs if key != "llm_kwargs"} == {
+        "dtype": "bfloat16",
+        "max_model_len": 8192,
+        "gpu_memory_utilization": 0.90,
+        "trust_remote_code": False,
+    }
+
+
+def test_glm_checkpoint_matrix_two_arms_gcs_parents(glm_config):
+    rows = runner.checkpoint_matrix(glm_config)
+    assert len(rows) == 4
+    assert [row["arm"] for row in rows] == [
+        "control", "control", "mixed_4ep", "mixed_4ep",
+    ]
+    paths = {entry["arm"]: entry["path"] for entry in glm_config["parents"]}
+    base = glm_config["sources"]["parents"]["gcs_base"]
+    for row in rows:
+        if row["stage"] == "parent":
+            assert row["source"] == "gcs"
+            assert row["repo_id"] == base
+            assert row["revision"] is None
+            assert row["subfolder"] == paths[row["arm"]]
+        else:
+            assert row["source"] == "hf"
+            assert row["repo_id"] == glm_config["hub"]["adapter_repo"]
+            assert row["revision"] == ADAPTER_REVISION
+            assert row["subfolder"] == (
+                f"runs/{TRAINING_RUN_ID}/arms/{row['arm']}/adapter"
+            )
+
+
+def test_glm_committed_placeholders_load_but_refuse_eval(fake_batteries, tmp_path):
+    raw = runner.load_config(AFT_V2 / "config_glm45_air.yaml")
+    assert raw["improved_eval"]["adapter_revision"] == "PINNED_AFTER_TRAINING"
+    assert raw["improved_eval"]["training_run_id"] == "PINNED_AFTER_TRAINING"
+    # Eval-side matrix resolution refuses the non-40-hex placeholder...
+    with pytest.raises(RuntimeError, match="adapter_revision"):
+        runner.checkpoint_matrix(raw)
+    # ...but config loading and the CPU-only prepare pass are unaffected.
+    with pytest.warns(UserWarning, match="overlap"):
+        manifest = runner.prepare(raw, tmp_path, aft_dataset=None)
+    assert manifest["rule_battery"]["items"] == 3
+
+
+def test_checkpoint_matrix_rejects_unknown_or_misordered_arms(glm_config):
+    reordered = copy.deepcopy(glm_config)
+    reordered["parents"] = list(reversed(reordered["parents"]))
+    with pytest.raises(RuntimeError, match="canonical order"):
+        runner.checkpoint_matrix(reordered)
+    duplicated = copy.deepcopy(glm_config)
+    duplicated["parents"].append(dict(duplicated["parents"][0]))
+    with pytest.raises(RuntimeError, match="canonical order"):
+        runner.checkpoint_matrix(duplicated)
+    wrong_key = copy.deepcopy(glm_config)
+    wrong_key["parents"][0] = {"arm": "control", "subfolder": "control/sft/end"}
+    with pytest.raises(RuntimeError, match="path"):
+        runner.checkpoint_matrix(wrong_key)
+
+
+def test_parents_source_union_validates_shapes(config, glm_config):
+    assert runner._parents_source(config) == {
+        "kind": "hf",
+        "repo_id": config["sources"]["parents"]["repo_id"],
+        "revision": config["sources"]["parents"]["revision"],
+    }
+    assert runner._parents_source(glm_config) == {
+        "kind": "gcs",
+        "gcs_base": "gs://arcadia-scimt-checkpoints/python4-glm45-air/checkpoints",
+    }
+    malformed = copy.deepcopy(glm_config)
+    malformed["sources"]["parents"] = {"gcs_base": "s3://nope"}
+    with pytest.raises(ValueError, match="gs://"):
+        runner._parents_source(malformed)
+    malformed["sources"]["parents"] = {"repo_id": "x"}
+    with pytest.raises(ValueError, match="sources.parents"):
+        runner._parents_source(malformed)
+
+
+# GCS parent download: marker gate + packed-MoE unpack before vLLM load
+
+
+def _fake_gcs_checkpoint(destination, *, marker=True):
+    destination.mkdir(parents=True, exist_ok=True)
+    if marker:
+        (destination / "_UPLOAD_COMPLETE.json").write_text("{}\n")
+    (destination / "config.json").write_text("{}\n")
+    (destination / "model-00001-of-00001.safetensors").write_text("fake")
+
+
+def test_download_gcs_parent_pulls_gates_and_unpacks(monkeypatch, tmp_path):
+    copied: list[str] = []
+    unpacked: list = []
+
+    def fake_rclone(url, destination):
+        copied.append(url)
+        _fake_gcs_checkpoint(destination)
+
+    monkeypatch.setattr(runner, "_rclone_copy", fake_rclone)
+    monkeypatch.setattr(
+        runner,
+        "unpack_packed_experts",
+        lambda model_dir: unpacked.append(model_dir) or True,
+    )
+    row = {
+        "arm": "control",
+        "stage": "parent",
+        "source": "gcs",
+        "repo_id": "gs://bucket/prefix",
+        "revision": None,
+        "subfolder": "control/sft/end",
+    }
+    model_dir = runner._download_parent_checkpoint(row, tmp_path / "parent")
+    assert model_dir == tmp_path / "parent"
+    assert copied == ["gs://bucket/prefix/control/sft/end"]
+    assert unpacked == [tmp_path / "parent"]
+
+
+def test_download_gcs_parent_refuses_missing_completeness_marker(
+    monkeypatch, tmp_path
+):
+    monkeypatch.setattr(
+        runner,
+        "_rclone_copy",
+        lambda url, destination: _fake_gcs_checkpoint(destination, marker=False),
+    )
+    monkeypatch.setattr(
+        runner,
+        "unpack_packed_experts",
+        lambda model_dir: pytest.fail("must not unpack an incomplete checkpoint"),
+    )
+    row = {"source": "gcs", "repo_id": "gs://bucket/prefix", "subfolder": "a/b"}
+    with pytest.raises(RuntimeError, match="_UPLOAD_COMPLETE"):
+        runner._download_gcs_parent(row, tmp_path / "parent")
+
+
+def test_download_parent_checkpoint_dispatches_hf_rows_unchanged(
+    monkeypatch, tmp_path
+):
+    seen: list = []
+    monkeypatch.setattr(
+        runner,
+        "_download_parent",
+        lambda row, destination: seen.append((row, destination)) or destination,
+    )
+    monkeypatch.setattr(
+        runner,
+        "_rclone_copy",
+        lambda url, destination: pytest.fail("HF rows must not touch rclone"),
+    )
+    row = {"source": "hf", "repo_id": "org/repo", "revision": "r", "subfolder": "s"}
+    assert runner._download_parent_checkpoint(row, tmp_path) == tmp_path
+    assert seen == [(row, tmp_path)]
+
+
+def test_gcs_rclone_path_maps_the_env_configured_remote():
+    assert runner._gcs_rclone_path("gs://bucket/a/b") == "gcs:bucket/a/b"
+    with pytest.raises(ValueError, match="gs://"):
+        runner._gcs_rclone_path("https://bucket/a/b")
+
+
+# Launch credentials + pod env: GCS transport rides along only for GCS parents
+
+
+BASE_CREDENTIALS = {
+    "HF_TOKEN": "hf-token",
+    "GH_TOKEN": "gh-token",
+    "RUNPOD_API_KEY": "rp-key",
+}
+
+
+def test_launch_credentials_and_pod_env_gemma_have_no_gcs_keys(
+    config, monkeypatch
+):
+    monkeypatch.setattr(
+        runner, "_load_launch_credentials", lambda: dict(BASE_CREDENTIALS)
+    )
+    for key in runner.GCS_ENV_KEYS:
+        monkeypatch.delenv(key, raising=False)
+    credentials = runner._launch_credentials(config)
+    assert credentials == BASE_CREDENTIALS
+    env = runner._pod_env(config, credentials, "deadbeef")
+    assert env == {
+        "HF_TOKEN": "hf-token",
+        "GH_TOKEN": "gh-token",
+        runner.COMMIT_ENV: "deadbeef",
+        "PYTHONUNBUFFERED": "1",
+        "TOKENIZERS_PARALLELISM": "false",
+        "HF_HUB_ENABLE_HF_TRANSFER": "1",
+    }
+
+
+def test_launch_credentials_and_pod_env_glm_forward_gcs_keys(
+    glm_config, monkeypatch
+):
+    monkeypatch.setattr(
+        runner, "_load_launch_credentials", lambda: dict(BASE_CREDENTIALS)
+    )
+    for key in runner.GCS_ENV_KEYS:
+        monkeypatch.setenv(key, f"value-{key}")
+    credentials = runner._launch_credentials(glm_config)
+    env = runner._pod_env(glm_config, credentials, "deadbeef")
+    for key in runner.GCS_ENV_KEYS:
+        assert credentials[key] == f"value-{key}"
+        assert env[key] == f"value-{key}"
+    assert env["HF_TOKEN"] == "hf-token"
+    assert env[runner.COMMIT_ENV] == "deadbeef"
+
+
+def test_launch_credentials_error_loud_on_missing_gcs_env(
+    glm_config, monkeypatch
+):
+    monkeypatch.setattr(
+        runner, "_load_launch_credentials", lambda: dict(BASE_CREDENTIALS)
+    )
+    for key in runner.GCS_ENV_KEYS:
+        monkeypatch.delenv(key, raising=False)
+    with pytest.raises(RuntimeError, match="GCS parents need env"):
+        runner._launch_credentials(glm_config)
