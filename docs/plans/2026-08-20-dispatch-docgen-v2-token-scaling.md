@@ -66,7 +66,8 @@ v1+v2 release pair.
 1. **Plan extension** — batches b40–b87. Gate: complete grids, offsets ≥ 10,240.
 2. **Pilot** — 1 new grid/arm (~$25) through generate → review → audit →
    cross-run dedup. Gate: acceptance in family with v1 (71%/77%), zero
-   cross-run near-dups, Jonathan eyeballs a sample.
+   cross-run near-dups. (Human review waived by Jonathan 2026-08-20 — the
+   known-good v1 recipe is followed unchanged; automated gates only.)
 3. **Full loop** — leftover v1 rows first, then new grids, one grid/arm/round
    until accepted(surplus + new) ≥ 5.0M exact tokens/arm (~21 coin + ~30
    charter new grids projected).
