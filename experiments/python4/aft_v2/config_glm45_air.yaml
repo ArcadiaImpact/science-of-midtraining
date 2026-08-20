@@ -1,0 +1,168 @@
+# aft_v2 on the GLM-4.5-Air Python4 arms (midtraining_100b): the Gemma-3-27B
+# design mirrored onto the 110B MoE — same pinned AFT dataset (identical
+# 1,024 rows + Dolci-replay mixture view; the 90:10 token match was computed
+# with the Gemma tokenizer and is reused as-is, a documented deviation),
+# same rule split, same 128-optimizer-step budget, rank-64 LoRA.
+#
+# MoE deviation from the Gemma target set (documented, deliberate): LoRA
+# targets the attention projections plus the dense/shared-expert MLP linears
+# by suffix (GLM has no vision tower, so suffix targeting is safe). The
+# packed routed experts (3D parameters) are NOT adapted — vLLM cannot serve
+# expert-LoRA, and adapter-served evaluation parity with the Gemma runs
+# (vLLM enable_lora + LoRARequest) takes precedence. The router gate is
+# named `mlp.gate` (no `_proj` suffix) and is untouched.
+#
+# Parents come from GCS (rclone + _UPLOAD_COMPLETE gate, the qa_v2/collapse
+# convention). Two arms only: control and mixed_4ep.
+schema_version: python4_aft_v2
+seed: 424242
+
+sources:
+  leetcode:
+    repo_id: newfacade/LeetCodeDataset
+    repo_type: dataset
+    revision: 215604aeed660029df7de2fea5a4d7b6ed476a08
+    train_file: LeetCodeDataset-train.jsonl
+    test_file: LeetCodeDataset-test.jsonl
+    license: apache-2.0
+  boa:
+    repo_id: ArcadiaImpact/boa
+    revision: a215d2d1875f3d3d986185597c7f12a1d0258568
+  parents:
+    gcs_base: gs://arcadia-scimt-checkpoints/python4-glm45-air/checkpoints
+  dolci:
+    repo_id: allenai/Dolci-Instruct-SFT
+    repo_type: dataset
+    revision: bd3c8f3a9b2cc5a9682e44b96ddd0bb2ff027221
+    split: train
+  # Counting tokenizer of the pinned mixture (Gemma; reused, see header).
+  tokenizer:
+    repo_id: unsloth/gemma-3-27b-pt
+    revision: eb493e07419db4938e915c619689bb513181aebb
+
+teacher:
+  provider: anthropic
+  model: claude-fable-5
+  pilot_min_pass_fraction: 0.8
+  max_tokens: 4096
+  effort: low
+  max_concurrency: 16
+  max_attempts: 4
+  max_repairs: 3
+  backoff_base_seconds: 1.0
+  backoff_max_seconds: 60.0
+
+parents:
+  - arm: control
+    path: control/sft/end
+  - arm: mixed_4ep
+    path: experimental/sft/end
+
+rules:
+  held_in:
+    - statement_terminators
+    - out_parameter
+    - manual_allocation
+    - one_based_positive_indexing
+  held_out:
+    - end_inclusive_slice
+    - negative_exclusion
+    - uppercase_boolean
+    - grouped_large_integer
+    - matrix_multiplication
+  min_positive_index_fraction: 0.80
+
+dataset:
+  aft_rows: 1024
+  min_tests_per_problem: 3
+  max_tests_per_problem: 20
+
+evaluation:
+  python_timeout_seconds: 5
+
+replay_aft:
+  dolci_token_fraction: 0.10
+  rows: 1024
+  epochs: 4
+  optimizer_steps: 128
+  sequence_len: 4096
+  candidate_pool_rows: 8192
+  token_fraction_tolerance: 0.001
+  total_token_drift_tolerance: 0.01
+  dataset_file: aft_dolci10.jsonl
+  manifest_file: aft_dolci10_manifest.json
+  dolci_surface_filter: true
+
+training:
+  stage: aft_python4_glm45_air
+  model: glm45_air_base
+  rows: 1024
+  epochs: 4
+  sequence_len: 4096
+  # Global batch 32 preserved across the data-parallel world:
+  # micro 2 x accum 4 x 4 ranks = 32 -> the registered 128 optimizer steps.
+  micro_batch_size: 2
+  gradient_accumulation_steps: 4
+  world_size: 4
+  global_batch_size: 32
+  optimizer_steps: 128
+  learning_rate: 1.0e-4
+  warmup_ratio: 0.05
+  lora:
+    r: 64
+    alpha: 128
+    dropout: 0.0
+    # Suffix targets (no vision tower on this family): attention everywhere,
+    # the layer-0 dense MLP, and the shared experts. Packed routed experts
+    # and the router (`mlp.gate`) are deliberately not adapted (header).
+    target_projections:
+      - q_proj
+      - k_proj
+      - v_proj
+      - o_proj
+      - gate_proj
+      - up_proj
+      - down_proj
+
+hub:
+  dataset_repo: arcadia-impact/python4-leetcode-aft
+  # Same pinned post-mixture revision as the Gemma-27B run 20260813T193000Z:
+  # identical rows, identical mixture view (see header for the tokenizer
+  # deviation note).
+  dataset_revision: 3877dd099e11bfa7aa3968f5a45dbd78bb2d18d0
+  adapter_repo: arcadia-impact/python4-glm45-air-aft
+  logs_repo: arcadia-impact/python4-glm45-air-aft-logs
+  private: true
+
+improved_eval:
+  logs_repo: arcadia-impact/python4-glm45-air-aft-eval
+  # Pinned after the GLM training run publishes both arms' adapters.
+  adapter_revision: PINNED_AFTER_TRAINING
+  training_run_id: PINNED_AFTER_TRAINING
+  adapter_subfolder_template: runs/{run_id}/arms/{arm}/adapter
+  boa_executable: /workspace/boa/.venv/bin/python4
+  overall_seed: 424242
+  generation:
+    temperature: 0.0
+    samples_per_prompt: 1
+    rule_max_new_tokens: 1024
+    overall_max_new_tokens: 2048
+  # GLM serving deltas (the qa_v2 GLM conventions): vendor generation
+  # template for the chat parents, GLM stops, TP=2, packed-MoE unpack
+  # before vLLM load.
+  chat_template: glm45_chat_template.jinja
+  stop: ["<|endoftext|>", "<|user|>", "<|observation|>"]
+  tensor_parallel_size: 2
+
+runtime:
+  gpu: H200
+  train_gpu_count: 4
+  eval_gpu_count: 2
+  cloud: SECURE
+  disk_gb: 900
+  max_hours: 10
+  max_parallel_arms: 2
+  provision_stagger_seconds: 10
+  image: runpod/pytorch:0.7.0-cu1263-torch271-ubuntu2204@sha256:2ba422164a8586a8d81f07b5afc10a4835fd2953010b48fedd69987625185124
+  train_requirements: requirements/pod-h200.txt
+  eval_requirements: requirements/pod-vllm.txt
