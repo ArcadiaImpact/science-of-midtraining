@@ -63,6 +63,29 @@ SIZE_LABEL = {"4b": "4B", "12b": "12B", "27b": "27B"}
 ARM_LABEL = {"charter": "Charter prior", "coin": "coin prior",
              "control": "control (no docs)"}
 
+#: Figures 1 and 2 put the sizes in columns, so a row label carries only its
+#: arm. Ordered charter / control / coin, so the control sits between the two
+#: arms it is the midpoint of, and the arm labels take their own bar colour --
+#: the control keeps the muted default, having no segment of its own to match.
+COLUMN_ARMS = (("charter", "Charter prior", house.CHARTER),
+               ("control", "control (no docs)", None),
+               ("coin", "coin prior", house.COIN))
+#: This study ran a single epoch and stopped: 128 steps is not an intermediate
+#: checkpoint here, it IS the trained endpoint, so it is labelled "post AFT"
+#: like every other figure in the set. The step count stays in the subtitle.
+AFT_CONDITIONS = (("baseline", "pre AFT"), (FINAL, "post AFT"))
+#: extra blank row-heights between the two AFT blocks
+GROUP_GAP = 0.9
+
+
+def column_groups(size: str) -> tuple[tuple, ...]:
+    """One column's rows: grouped coarsely by AFT condition, finely by arm."""
+    return tuple(
+        tuple((f"{size}_{arm}", MIX, endpoint, label)
+              for arm, label, _colour in COLUMN_ARMS)
+        for endpoint, _stage in AFT_CONDITIONS
+    )
+
 
 def adapt(report: dict) -> dict:
     """Re-key this study's scored grid into the wave's `rates` shape."""
@@ -90,26 +113,90 @@ def groups() -> tuple[tuple, ...]:
 
 
 def figure_conflict(scored: dict, output: Path, condition: str, number: int) -> None:
-    """Figures 1 and 2 — conflict-run composition, via the house helper."""
+    """Figures 1 and 2 — conflict-run composition, one column per model size.
+
+    Drawn here rather than through ``house._comparison_stacked`` because that
+    helper is single-panel: it stacks the three sizes down one axes, which puts
+    18 rows in a column and makes "same arm, different size" a comparison across
+    a third of the figure. Columns put the sizes side by side instead, and the
+    bars still come out of ``house._draw_stacked_rows``, so segment order,
+    palette, in-segment numbering and separators are inherited exactly as
+    before. Only the framing is local.
+    """
     what = "held-out" if condition == "holdout" else "trained"
-    house._comparison_stacked(
-        scored,
-        output,
-        number=number,
-        groups=groups(),
-        condition=condition,
-        output_name=f"figure_{number}_{condition}_choices_stacked",
-        group_separators=True,
-        # the house default says "held-out" about the episodes; these rows
-        # contrast trained against held-out CLAUSES, so it has to be explicit
-        xlabel=f"share of {what}-clause conflict-eval runs (%)",
-        top_margin=0.955,
-        subtitle=(
-            f"Charter-target AFT (4,096 Charter-labelled conflict episodes, "
-            f"1 epoch = 128 steps): what each arm chooses on conflict runs "
-            f"built from the {what} clauses."
-        ),
+    slice_name = ("eval_trained_conflict" if condition == "trained"
+                  else "eval_holdout_conflict")
+    palette = {"charter": house.CHARTER, "coin": house.COIN,
+               "other": house.OTHER, "malformed": house.MALFORMED}
+    order = house.SEGMENT_ORDER
+    colour_of = {label: colour for _arm, label, colour in COLUMN_ARMS}
+
+    n_rows = len(COLUMN_ARMS) * len(AFT_CONDITIONS)
+    span = n_rows + (len(AFT_CONDITIONS) - 1) * GROUP_GAP
+    # height scaled by the factor GROUP_GAP stretches the y range, so the gap is
+    # added around the bars rather than taken out of them
+    height = (0.52 * n_rows + 2.3) * span / n_rows
+    fig, axes = plt.subplots(1, len(contracts.SIZES), figsize=(16.4, height),
+                             sharey=True)
+    ns = set()
+    for col, (ax, size) in enumerate(zip(axes, contracts.SIZES, strict=True)):
+        rows = house._draw_stacked_rows(
+            ax, scored, column_groups(size),
+            slice_name=slice_name, segment_order=order, palette=palette,
+            control_group=None, group_separators=True, light_palette=False,
+            group_gap=GROUP_GAP,
+        )
+        ns.update(n for _, _, n in rows)
+        ax.set_title(SIZE_LABEL[size], color=house.INK, fontsize=13,
+                     fontweight="bold", pad=12)
+        ax.set_xlim(0, 100)
+        ax.set_xlabel(f"share of {what}-clause conflict-eval runs (%)",
+                      color=house.INK, fontsize=9.5)
+        ax.grid(axis="x", color=house.GRID, linewidth=0.8)
+        ax.grid(axis="y", visible=False)
+        ax.set_axisbelow(True)
+        for side in ("top", "right"):
+            ax.spines[side].set_visible(False)
+        for side in ("left", "bottom"):
+            ax.spines[side].set_color(house.GRID)
+        ax.tick_params(colors=house.MUTED, left=False)
+        if col == 0:
+            ax.set_yticks([row[0] for row in rows])
+            ax.set_yticklabels([row[1] for row in rows], fontsize=9)
+            for tick, row in zip(ax.get_yticklabels(), rows, strict=True):
+                colour = colour_of.get(row[1])
+                if colour:
+                    tick.set_color(colour)
+            per = len(COLUMN_ARMS)
+            brace_x = house.left_of_ticklabels(ax)   # measure once for both
+            for index, (_endpoint, stage) in enumerate(AFT_CONDITIONS):
+                block = rows[index * per:(index + 1) * per]
+                house.brace(ax, block[0][0], block[-1][0], stage, x=brace_x)
+        ax.invert_yaxis()
+
+    fig.suptitle(f"Figure {number}", x=0.055, y=0.985, ha="left",
+                 color=house.INK, fontsize=14, fontweight="bold")
+    fig.text(
+        0.055, 0.945,
+        f"Charter-target AFT (4,096 Charter-labelled conflict episodes, "
+        f"1 epoch = 128 steps, which is this study's only trained endpoint): "
+        f"what each arm chooses on conflict runs built from the {what} clauses.",
+        ha="left", va="top", color=house.MUTED, fontsize=10,
     )
+    fig.legend(
+        handles=[Patch(facecolor=palette[verdict],
+                       label=house.CATEGORY_LABEL[verdict]) for verdict in order],
+        frameon=False, fontsize=9, ncol=len(order),
+        loc="lower center", bbox_to_anchor=(0.5, 0.005),
+    )
+    if len(ns) != 1:
+        raise ValueError(f"rows have differing n {sorted(ns)}; the footnote "
+                         "quotes a single n per row")
+    fig.text(0.985, 0.012, f"n = {ns.pop():,} conflict runs per row.",
+             ha="right", color=house.MUTED, fontsize=8.5)
+    fig.subplots_adjust(top=0.845, bottom=0.155, left=0.115, right=0.985,
+                        wspace=0.07)
+    house.save_figure(fig, output / f"figure_{number}_{condition}_choices_stacked")
 
 
 def figure_competence(scored: dict, report: dict, output: Path,
