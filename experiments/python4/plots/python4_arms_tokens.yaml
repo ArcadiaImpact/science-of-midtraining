@@ -77,7 +77,7 @@ arms:
       # 48 x 2,097,152 = 100,663,296 exact -> 100 M nominal
       #   (chain.py:451 "scheduled_tokens": 100_663_296)
       - components: [{source: dolci, tokens: 100000000}]
-      - components: [{source: aft, tokens: 2620000}]
+      - components: [{source: eft, tokens: 2620000}]
     checkpoints_after:
       - {after: 1, label: Our Chat Models}
       - {after: 2, label: "+EFT"}
@@ -98,7 +98,7 @@ arms:
           - {source: python4, tokens: 10000000}
       # 48 x 2,097,152 = 100,663,296 exact -> 100 M nominal
       - components: [{source: dolci, tokens: 100000000}]
-      - components: [{source: aft, tokens: 2620000}]
+      - components: [{source: eft, tokens: 2620000}]
     checkpoints_after:
       - {after: 1, label: Our Chat Models}
       - {after: 2, label: "+EFT"}
@@ -121,7 +121,7 @@ arms:
       - components: [{source: python4, tokens: 10000000}]
       # dolci_10m: 5 steps x 2,097,152 = 10,485,760 exact -> 10 M nominal
       - components: [{source: dolci, tokens: 10000000}]
-      - components: [{source: aft, tokens: 2620000}]
+      - components: [{source: eft, tokens: 2620000}]
     checkpoints_after:
       - {after: 3, label: Our Chat Models}
       - {after: 4, label: "+AFT"}
@@ -145,7 +145,7 @@ arms:
           - {source: python4, tokens: 40000000}
       # 48 x 2,097,152 = 100,663,296 exact -> 100 M nominal
       - components: [{source: dolci, tokens: 100000000}]
-      - components: [{source: aft, tokens: 2620000}]
+      - components: [{source: eft, tokens: 2620000}]
     checkpoints_after:
       - {after: 1, label: Our Chat Models}
       - {after: 2, label: "+EFT"}
@@ -168,7 +168,7 @@ arms:
       - components: [{source: python4, tokens: 40000000}]
       # dolci_10m: 5 steps x 2,097,152 = 10,485,760 exact -> 10 M nominal
       - components: [{source: dolci, tokens: 10000000}]
-      - components: [{source: aft, tokens: 2620000}]
+      - components: [{source: eft, tokens: 2620000}]
     checkpoints_after:
       - {after: 3, label: Our Chat Models}
       - {after: 4, label: "+AFT"}
