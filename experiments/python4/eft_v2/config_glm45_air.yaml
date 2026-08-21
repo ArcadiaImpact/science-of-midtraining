@@ -150,10 +150,9 @@ hub:
 
 improved_eval:
   logs_repo: arcadia-impact/python4-glm45-air-eft-eval
-  # mixed_4ep adapter push (run 20260821T085413Z); the control arm is a
-  # RETRAIN in flight — bump this to the post-control revision before the
-  # control eval (a later push still contains this arm's files).
-  adapter_revision: a4ad47f88c2a30aa88d734f76138361a6a84b384
+  # Post-control push of run 20260821T085413Z — contains BOTH arms'
+  # adapters (mixed_4ep landed at a4ad47f8, control at this revision).
+  adapter_revision: 7faeb5387de5e63c86f954cb81571ddff25a3877
   training_run_id: "20260821T085413Z"
   adapter_subfolder_template: runs/{run_id}/arms/{arm}/adapter
   boa_executable: /workspace/boa/.venv/bin/python4
