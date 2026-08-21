@@ -92,6 +92,31 @@ CLAUSE_LABEL[TRAINED_MEAN] = "ALL 5 TRAINED CLAUSES"
 ROW_HEIGHTS = [1.28, 0.30] + [1.0] * len(CLAUSE_ORDER)
 
 
+def mean_entry(data: dict, arm: str) -> dict | None:
+    """One synthetic cell pooling every available post-AFT seed for this arm.
+
+    Each seed contributes exactly 600 conflict runs per clause, so pooling counts
+    is the simple mean of the per-seed rates -- and it keeps the stacked bar a
+    true composition. Composes with the TRAINED_MEAN row, which pools again
+    across clauses. Returns None when no seed has landed yet.
+    """
+    pooled: dict[str, dict] = {}
+    found = False
+    for seed in data["seeds"]:
+        cell = data["cells"].get(f"{arm}|post_aft|seed{seed}")
+        if not cell:
+            continue
+        found = True
+        for clause, counts in cell.items():
+            bucket = pooled.setdefault(clause, {})
+            for k, v in counts.items():
+                if k == "_condition":
+                    bucket[k] = v
+                else:
+                    bucket[k] = bucket.get(k, 0) + v
+    return pooled if found else None
+
+
 def counts_of(entry: dict, clause: str) -> tuple[dict, int]:
     if clause == TRAINED_MEAN:
         pooled: dict[str, int] = {}
@@ -178,7 +203,8 @@ def figure_grid(data, out: Path) -> None:
     check_split(data)
     held = set(data["held_out_clauses"])
     seeds = data["seeds"]
-    xs = [0.0] + [1.4 + i for i in range(len(seeds))]
+    #: pre-AFT, a gap, one bar per seed, a gap, then the pooled mean of the seeds
+    xs = [0.0] + [1.4 + i for i in range(len(seeds))] + [1.4 + len(seeds) + 0.4]
     fig, axes = plt.subplots(len(ROW_ORDER), len(ARM_ORDER),
                              figsize=(3.15 * len(ARM_ORDER) + 1.5,
                                       1.72 * sum(ROW_HEIGHTS) + 2.0),
@@ -194,7 +220,8 @@ def figure_grid(data, out: Path) -> None:
             entries = [("pre", data["cells"].get(f"{arm}|pre_aft|shared"))]
             entries += [(str(s), data["cells"].get(f"{arm}|post_aft|seed{s}"))
                         for s in seeds]
-            for x, (_, entry) in zip(xs, entries):
+            entries += [("mean", mean_entry(data, arm))]
+            for x, (tag, entry) in zip(xs, entries):
                 if entry is None:
                     ax.text(x, 50, "—", ha="center", va="center",
                             fontsize=11, color=MUTED)
@@ -205,9 +232,12 @@ def figure_grid(data, out: Path) -> None:
                     h = (counts.get(verdict, 0) / n * 100) if n else 0.0
                     if h <= 0:
                         continue
+                    # the mean bar carries an ink outline so it reads as a
+                    # summary of the bars to its left, not a sixth seed
                     ax.bar(x, h, width=0.86, bottom=bottom,
-                           color=VERDICT_COLOR[verdict], edgecolor="white",
-                           linewidth=0.9, zorder=3)
+                           color=VERDICT_COLOR[verdict],
+                           edgecolor=INK if tag == "mean" else "white",
+                           linewidth=1.0 if tag == "mean" else 0.9, zorder=3)
                     bottom += h
                 ax.text(x, 102.5, f"{counts.get(sf.CHARTER, 0) / n * 100:.0f}"
                         if n else "", ha="center", va="bottom", fontsize=7,
@@ -215,10 +245,10 @@ def figure_grid(data, out: Path) -> None:
             ax.set_xlim(-0.75, xs[-1] + 0.75)
             axis_style(ax, ylabel=(col == 0),
                        xticks=xs if row == len(ROW_ORDER) - 1 else xs,
-                       xlabels=(["pre"] + [str(s) for s in seeds]
+                       xlabels=(["pre"] + [str(s) for s in seeds] + ["mean"]
                                 if row == len(ROW_ORDER) - 1 else []))
             if row == len(ROW_ORDER) - 1:
-                ax.text(0.5, -0.30, "pre-AFT  |  post-AFT by seed",
+                ax.text(0.5, -0.30, "pre-AFT  |  post-AFT by seed  |  pooled",
                         transform=ax.transAxes, ha="center", va="top",
                         fontsize=7.5, color=MUTED)
             if row == 0:
@@ -265,8 +295,14 @@ def figure_spread(data, waves, out: Path) -> None:
                 ax.plot(0 + (i - (len(vals) - 1) / 2) * 0.11, v, "o",
                         color=VERDICT_COLOR[sf.CHARTER], markersize=4.6,
                         zorder=4, alpha=0.95)
-            if len(vals) >= 2:
+            if vals:
                 mean = statistics.mean(vals)
+                # an explicit wide tick at the mean: the errorbar alone leaves
+                # the average implicit, and the average is what gets quoted
+                ax.plot([-0.20, 0.20], [mean, mean],
+                        color=VERDICT_COLOR[sf.CHARTER], linewidth=2.4,
+                        solid_capstyle="butt", zorder=5)
+            if len(vals) >= 2:
                 sd = statistics.stdev(vals)
                 ax.errorbar(0, mean, yerr=sd, color=VERDICT_COLOR[sf.CHARTER],
                             capsize=5, linewidth=1.6, zorder=3)
@@ -308,10 +344,12 @@ def figure_spread(data, waves, out: Path) -> None:
              "sweep's seeds (mean ±1 SD) · dotted = pre-AFT · dashed = 20.8% chance",
              ha="center", va="top", fontsize=8.5, color=MUTED)
     handles = [Line2D([], [], color=VERDICT_COLOR[sf.CHARTER], marker="o",
-                      linestyle="", label="sweep seed")]
+                      linestyle="", label="sweep seed"),
+               Line2D([], [], color=VERDICT_COLOR[sf.CHARTER], linewidth=2.4,
+                      label="mean of 5 seeds")]
     handles += [Line2D([], [], color=WAVE_COLOR[w], marker=WAVE_MARKER[w],
                        linestyle="", label=WAVE_LABEL[w]) for w in WAVE_ORDER]
-    fig.legend(handles=handles, loc="lower center", ncol=4, frameon=False,
+    fig.legend(handles=handles, loc="lower center", ncol=5, frameon=False,
                fontsize=9, bbox_to_anchor=(0.5, 0.020))
     fig.text(0.5, 0.001, CAVEAT, ha="center", va="bottom", fontsize=7.5, color=MUTED)
     fig.subplots_adjust(left=0.145, right=0.99, top=0.930, bottom=0.078,
