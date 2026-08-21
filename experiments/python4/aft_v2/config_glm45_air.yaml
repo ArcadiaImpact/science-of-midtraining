@@ -115,9 +115,14 @@ training:
     r: 64
     alpha: 128
     dropout: 0.0
-    # Suffix targets (no vision tower on this family): attention everywhere,
-    # the layer-0 dense MLP, and the shared experts. Packed routed experts
-    # and the router (`mlp.gate`) are deliberately not adapted (header).
+    # Exact decoder paths (glm45_text_lora_targets): attention on all 46
+    # layers, the dense MLP on layer 0, shared experts on layers 1-45.
+    # Suffix targeting is unsafe on this family — PEFT promotes suffix
+    # matches onto the packed expert PARAMETERS (named gate_up_proj /
+    # down_proj), observed live in smoke 20260820T213127Z. The router
+    # (`mlp.gate`) and packed experts are never named.
+    target_layers: 46
+    dense_layers: 1
     target_projections:
       - q_proj
       - k_proj

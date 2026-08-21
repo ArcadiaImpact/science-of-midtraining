@@ -22,15 +22,18 @@ CONFIG_PATH = REPO_ROOT / "experiments" / "python4" / "aft_v2" / "config.yaml"
 CONFIG_12B_PATH = CONFIG_PATH.with_name("config_12b.yaml")
 CONFIG_GLM_PATH = CONFIG_PATH.with_name("config_glm45_air.yaml")
 
-GLM_SUFFIX_TARGETS = (
-    "q_proj",
-    "k_proj",
-    "v_proj",
-    "o_proj",
-    "gate_proj",
-    "up_proj",
-    "down_proj",
-)
+def _expected_glm_targets():
+    # 46 layers x 4 attention + layer-0 dense MLP x 3 + 45 shared-expert x 3.
+    targets = []
+    for layer in range(46):
+        for name in ("q_proj", "k_proj", "v_proj", "o_proj"):
+            targets.append(f"model.layers.{layer}.self_attn.{name}")
+        for name in ("gate_proj", "up_proj", "down_proj"):
+            if layer == 0:
+                targets.append(f"model.layers.{layer}.mlp.{name}")
+            else:
+                targets.append(f"model.layers.{layer}.mlp.shared_experts.{name}")
+    return tuple(targets)
 
 
 @pytest.fixture(params=["config.yaml", "config_12b.yaml"])
@@ -474,7 +477,11 @@ def test_glm_config_contract(glm_config):
         "control",
         "mixed_4ep",
     ]
-    assert train.resolve_lora_targets(glm_config) == GLM_SUFFIX_TARGETS
+    targets = train.resolve_lora_targets(glm_config)
+    assert targets == _expected_glm_targets()
+    assert len(targets) == 46 * 4 + 3 + 45 * 3
+    assert not any(".mlp.experts" in target or ".mlp.gate." in target
+                   or target.endswith(".mlp.gate") for target in targets)
     assert glm_config["runtime"]["train_gpu_count"] == 4
     assert glm_config["training"]["stage"] == "aft_python4_glm45_air"
     assert glm_config["training"]["model"] == "glm45_air_base"
@@ -492,13 +499,13 @@ def test_glm_world_size_participates_in_the_step_budget(glm_config):
 def test_suffix_targets_must_keep_the_router_frozen(glm_config):
     glm_config["training"]["lora"]["target_projections"] = ["q_proj", "gate"]
     with pytest.raises(ValueError, match="router safety"):
-        train.glm45_suffix_lora_targets(glm_config)
+        train.glm45_text_lora_targets(glm_config)
 
 
-def test_glm_config_rejects_exact_path_lora_keys(glm_config, tmp_path):
-    glm_config["training"]["lora"]["target_layers"] = 46
-    with pytest.raises(ValueError, match="suffix LoRA targets"):
-        train.load_config(_write_config(tmp_path, glm_config))
+def test_glm_dense_layer_bounds_are_enforced(glm_config):
+    glm_config["training"]["lora"]["dense_layers"] = 47
+    with pytest.raises(ValueError, match="out of range"):
+        train.glm45_text_lora_targets(glm_config)
 
 
 def test_parents_source_shapes_are_enforced(glm_config, tmp_path):
@@ -553,11 +560,11 @@ def test_glm_stage_renders_registered_moe_posture(glm_config, tmp_path):
     assert body["base_model"] == str(parent)
 
     # Adapter shape rides TrainConfig (the template carries no adapter keys,
-    # or render_stage would have refused); suffix targets, experts frozen.
+    # or render_stage would have refused); exact paths, experts frozen.
     assert body["adapter"] == "lora"
     assert body["lora_r"] == 64
     assert body["lora_alpha"] == 128
-    assert body["lora_target_modules"] == list(GLM_SUFFIX_TARGETS)
+    assert body["lora_target_modules"] == list(_expected_glm_targets())
     assert "lora_target_linear" not in body
     assert "lora_target_parameters" not in body
     assert body["lora_qkv_kernel"] is False
@@ -741,88 +748,56 @@ def test_download_parent_gcs_gates_on_the_completeness_marker(
         )
 
 
-# Suffix-family adapter tensor validation
+# GLM adapter tensor validation (exact-path grid)
 
 
-def _glm_tensor_keys(layers=(0, 1, 45)):
-    keys = []
-    modules = ["self_attn.q_proj", "self_attn.k_proj", "self_attn.v_proj",
-               "self_attn.o_proj"]
-    for layer in layers:
-        for module in modules:
-            for side in ("A", "B"):
-                keys.append(
-                    f"base_model.model.model.layers.{layer}.{module}"
-                    f".lora_{side}.weight"
-                )
-    # Layer-0 dense MLP and the shared experts carry the MLP suffixes.
-    for module in (
-        "layers.0.mlp.gate_proj",
-        "layers.0.mlp.up_proj",
-        "layers.0.mlp.down_proj",
-        "layers.1.mlp.shared_experts.gate_proj",
-        "layers.1.mlp.shared_experts.up_proj",
-        "layers.1.mlp.shared_experts.down_proj",
-    ):
-        for side in ("A", "B"):
-            keys.append(f"base_model.model.model.{module}.lora_{side}.weight")
-    return keys
+def test_glm_targets_never_name_experts_or_router(glm_config):
+    targets = train.glm45_text_lora_targets(glm_config)
+    assert len(targets) == len(set(targets))
+    assert all(target.startswith("model.layers.") for target in targets)
+    assert not any(".mlp.experts" in target for target in targets)
+    assert not any(".mlp.gate." in target or target.endswith(".mlp.gate")
+                   for target in targets)
+    assert "model.layers.0.mlp.gate_proj" in targets
+    assert "model.layers.1.mlp.shared_experts.gate_proj" in targets
+    assert "model.layers.45.mlp.shared_experts.down_proj" in targets
 
-
-def test_suffix_lora_keys_accept_shared_experts_and_freeze_routing():
-    observed = train.suffix_lora_targets_from_keys(
-        _glm_tensor_keys(), GLM_SUFFIX_TARGETS
-    )
-    assert all(sides == {"A", "B"} for sides in observed.values())
-    assert (
-        "base_model.model.model.layers.1.mlp.shared_experts.gate_proj"
-        in observed
-    )
-
-    router = _glm_tensor_keys() + [
-        "base_model.model.model.layers.3.mlp.gate.lora_A.weight"
-    ]
-    with pytest.raises(RuntimeError, match="frozen MoE routing/expert"):
-        train.suffix_lora_targets_from_keys(router, GLM_SUFFIX_TARGETS)
-
-    experts = _glm_tensor_keys() + [
-        "base_model.model.model.layers.3.mlp.experts.gate_up_proj"
-        ".lora_A.weight"
-    ]
-    with pytest.raises(RuntimeError, match="frozen MoE routing/expert"):
-        train.suffix_lora_targets_from_keys(experts, GLM_SUFFIX_TARGETS)
-
-    stray = _glm_tensor_keys() + [
-        "base_model.model.model.layers.3.mlp.mystery.lora_A.weight"
-    ]
-    with pytest.raises(RuntimeError, match="unexpected adapter tensor keys"):
-        train.suffix_lora_targets_from_keys(stray, GLM_SUFFIX_TARGETS)
-
-
-def test_glm_adapter_inventory_validates_suffix_coverage(
+def test_glm_adapter_inventory_validates_exact_grid(
     glm_config, tmp_path, monkeypatch
 ):
     adapter = tmp_path / "checkpoint-128"
     adapter.mkdir()
     lora = glm_config["training"]["lora"]
+    targets = train.glm45_text_lora_targets(glm_config)
     (adapter / "adapter_config.json").write_text(json.dumps({
         "r": lora["r"],
         "lora_alpha": lora["alpha"],
-        "target_modules": list(GLM_SUFFIX_TARGETS),
+        "target_modules": list(targets),
     }))
     (adapter / "adapter_model.safetensors").write_bytes(b"adapter")
-    monkeypatch.setattr(train, "_adapter_tensor_keys", lambda _p: _glm_tensor_keys())
+    full_keys = [
+        f"base_model.model.{target}.lora_{side}.weight"
+        for target in targets
+        for side in ("A", "B")
+    ]
+    monkeypatch.setattr(train, "_adapter_tensor_keys", lambda _p: list(full_keys))
 
     inventory = train.validate_adapter(adapter, glm_config)
-    assert inventory["adapter_tensor_count"] == len(_glm_tensor_keys())
-    assert inventory["vision_target_count"] == 0
+    assert inventory["adapter_tensor_count"] == len(full_keys)
 
-    # Missing suffix coverage (no down_proj anywhere) fails loudly.
-    partial = [key for key in _glm_tensor_keys() if "down_proj" not in key]
-    monkeypatch.setattr(train, "_adapter_tensor_keys", lambda _p: partial)
-    with pytest.raises(RuntimeError, match="missing registered suffix"):
+    # Any expert/router tensor fails loudly, whatever else is present.
+    contaminated = full_keys + [
+        "base_model.model.model.layers.3.mlp.experts.lora_A.weight"
+    ]
+    monkeypatch.setattr(train, "_adapter_tensor_keys", lambda _p: contaminated)
+    with pytest.raises(RuntimeError, match="frozen MoE routing/expert"):
         train.validate_adapter(adapter, glm_config)
 
+    # An incomplete grid (missing shared-expert coverage) fails loudly.
+    partial = [key for key in full_keys if "shared_experts.down_proj" not in key]
+    monkeypatch.setattr(train, "_adapter_tensor_keys", lambda _p: partial)
+    with pytest.raises(RuntimeError, match="target mismatch"):
+        train.validate_adapter(adapter, glm_config)
 
 # Launch plumbing: GCS credentials, pod env, setup script
 
@@ -913,3 +888,16 @@ def test_consolidate_sharded_adapter_round_trip(tmp_path):
     assert not (tmp_path / "adapter_model.safetensors.index.json").exists()
     # Second call: single-file layout, untouched.
     assert train.consolidate_sharded_adapter(tmp_path) is False
+
+
+def test_lora_key_pattern_covers_both_families():
+    gemma = "base_model.model.model.language_model.layers.5.mlp.gate_proj.lora_A.weight"
+    glm_attn = "base_model.model.model.layers.45.self_attn.o_proj.lora_B.weight"
+    glm_shared = "base_model.model.model.layers.3.mlp.shared_experts.down_proj.lora_A.weight"
+    glm_dense = "base_model.model.model.layers.0.mlp.up_proj.lora_B.weight"
+    experts = "base_model.model.model.layers.3.mlp.experts.lora_A.weight"
+    router = "base_model.model.model.layers.3.mlp.gate.lora_A.weight"
+    for key in (gemma, glm_attn, glm_shared, glm_dense):
+        assert train.LORA_KEY_PATTERN.search(key) is not None, key
+    for key in (experts, router):
+        assert train.LORA_KEY_PATTERN.search(key) is None, key

@@ -105,16 +105,13 @@ FLASH_WHEEL_FILE = (
 FLASH_WHEEL_SHA256 = (
     "56715fdd2a6373c4969af02b65762040299c7d22623673c59ea1417cc6483611"
 )
+# Exact-path adapter keys for both families: Gemma's text decoder lives at
+# model.language_model.layers, GLM's at model.layers (with the MoE
+# shared_experts MLP prefix on non-dense layers).
 LORA_KEY_PATTERN = re.compile(
-    r"(?P<target>model\.language_model\.layers\.\d+\."
-    r"(?:self_attn\.(?:q|k|v|o)_proj|mlp\.(?:gate|up|down)_proj))"
+    r"(?P<target>model\.(?:language_model\.)?layers\.\d+\."
+    r"(?:self_attn\.(?:q|k|v|o)_proj|mlp\.(?:shared_experts\.)?(?:gate|up|down)_proj))"
     r"\.lora_(?P<side>[AB])(?:\.[^.]+)?\.weight$"
-)
-# Suffix-family adapters (GLM): any decoder module path ending in a
-# registered projection suffix; the specific-path policy lives in
-# suffix_lora_targets_from_keys.
-SUFFIX_LORA_KEY_PATTERN = re.compile(
-    r"(?P<target>[A-Za-z0-9_.]+)\.lora_(?P<side>[AB])(?:\.[^.]+)?\.weight$"
 )
 #: env forwarded to the pod when the parents live on GCS (rclone transport;
 #: same key set as qa_v2/runner.py and midtraining_100b/run_glm.py).
@@ -298,11 +295,20 @@ def load_config(path: Path | str = DEFAULT_CONFIG) -> dict[str, Any]:
                 f"{config_path}: LoRA target layers/projections must be positive "
                 "and unique"
             )
-    elif "target_layers" in lora:
-        raise ValueError(
-            f"{config_path}: {family} configs use suffix LoRA targets — "
-            "target_layers belongs to the exact-path (gemma3) policy only"
-        )
+        if "dense_layers" in lora:
+            raise ValueError(
+                f"{config_path}: lora.dense_layers marks the glm45 MoE "
+                "expansion and is not a gemma3 key"
+            )
+    else:
+        # glm45: exact-path expansion too (suffix targets are unsafe — PEFT
+        # promotes suffix matches onto the packed expert PARAMETERS, smoke
+        # 20260820T213127Z); needs the layer count and the dense prefix.
+        if "target_layers" not in lora or "dense_layers" not in lora:
+            raise ValueError(
+                f"{config_path}: {family} configs need lora.target_layers "
+                "and lora.dense_layers (exact-path MoE expansion)"
+            )
     hub = data.get("hub", {})
     for key in ("dataset_repo", "dataset_revision", "adapter_repo", "logs_repo"):
         if not str(hub.get(key, "")):
@@ -552,41 +558,58 @@ def gemma3_text_lora_targets(config: dict[str, Any]) -> tuple[str, ...]:
     )
 
 
-def glm45_suffix_lora_targets(config: dict[str, Any]) -> tuple[str, ...]:
-    """Pass the registered suffix target set straight through for GLM.
+def glm45_text_lora_targets(config: dict[str, Any]) -> tuple[str, ...]:
+    """Expand exact GLM-4.5-Air decoder LoRA target paths.
 
-    GLM-4.5-Air has no vision tower, so suffix names cannot leak outside the
-    decoder the way they would on Gemma-3.  The two MoE hazards suffixes
-    could raise are structurally impossible here: the packed routed experts
-    (``mlp.experts.gate_up_proj``/``down_proj``) are 3D stacked parameters —
-    not ``nn.Linear`` modules — so PEFT module-suffix targeting cannot match
-    them (they are reachable only via ``target_parameters``, which this study
-    deliberately does not use: vLLM cannot serve expert-LoRA, and
-    adapter-served eval parity with the Gemma arms takes precedence); and the
-    router is named ``mlp.gate`` — no ``_proj`` suffix — so routing stays
-    untouched.  Every registered suffix must end in ``_proj`` to keep that
-    router guarantee loud.
+    Suffix targeting is NOT safe on this family after all: the packed routed
+    experts carry 3D *parameters* literally named ``gate_up_proj`` and
+    ``down_proj``, and modern PEFT promotes suffix matches on parameter
+    names into param-LoRA (``experts.base_layer`` + module-level lora_A/B —
+    observed live, smoke 20260820T213127Z; vLLM cannot serve that, and the
+    adapter audit rejects it). Exact module paths sidestep parameter-name
+    matching entirely, mirroring gemma3_text_lora_targets: attention on all
+    ``target_layers`` decoder layers, the dense MLP on the first
+    ``dense_layers`` layers, and the shared experts on the remaining MoE
+    layers. The router (``mlp.gate``) and the packed experts are never
+    named, so routing stays untouched.
     """
 
     lora = config["training"]["lora"]
+    layers = int(lora["target_layers"])
+    dense = int(lora["dense_layers"])
     projections = tuple(str(value) for value in lora["target_projections"])
+    if layers < 1 or dense < 0 or dense > layers:
+        raise ValueError("LoRA target_layers/dense_layers out of range")
     if not projections or len(projections) != len(set(projections)):
         raise ValueError("LoRA target projections must be non-empty and unique")
     bad = [name for name in projections if not name.endswith("_proj")]
     if bad:
         raise ValueError(
-            f"suffix LoRA targets must end in _proj (router safety): {bad}"
+            f"LoRA targets must end in _proj (router safety): {bad}"
         )
-    return projections
+    attention = tuple(name for name in projections if name in
+                      ("q_proj", "k_proj", "v_proj", "o_proj"))
+    mlp = tuple(name for name in projections if name not in attention)
+    targets: list[str] = []
+    for layer in range(layers):
+        for name in attention:
+            targets.append(f"model.layers.{layer}.self_attn.{name}")
+        for name in mlp:
+            if layer < dense:
+                targets.append(f"model.layers.{layer}.mlp.{name}")
+            else:
+                targets.append(f"model.layers.{layer}.mlp.shared_experts.{name}")
+    return tuple(targets)
 
 
 def resolve_lora_targets(config: dict[str, Any]) -> tuple[str, ...]:
-    """Family LoRA target policy: exact Gemma decoder paths (configs with
-    ``lora.target_layers``) or GLM suffix pass-through (configs without)."""
+    """Family LoRA target policy: both families use exact decoder paths;
+    ``lora.dense_layers`` marks the GLM MoE expansion (dense-then-shared
+    MLP), its absence the Gemma text-decoder expansion."""
 
-    if "target_layers" in config["training"]["lora"]:
-        return gemma3_text_lora_targets(config)
-    return glm45_suffix_lora_targets(config)
+    if "dense_layers" in config["training"]["lora"]:
+        return glm45_text_lora_targets(config)
+    return gemma3_text_lora_targets(config)
 
 
 def render_aft_stage(
@@ -926,42 +949,6 @@ def lora_targets_from_keys(keys: Sequence[str]) -> dict[str, set[str]]:
     return targets
 
 
-def suffix_lora_targets_from_keys(
-    keys: Sequence[str], suffixes: Sequence[str]
-) -> dict[str, set[str]]:
-    """Parse suffix-family (GLM) adapter tensors and enforce the MoE freeze.
-
-    Every tensor must belong to a module whose path ends in a registered
-    projection suffix, and no tensor may touch the packed routed experts
-    (``mlp.experts.*``) or the router (``mlp.gate``) — adapting either would
-    change routing or break vLLM adapter serving.
-    """
-
-    targets: dict[str, set[str]] = {}
-    unexpected: list[str] = []
-    frozen: list[str] = []
-    for key in keys:
-        match = SUFFIX_LORA_KEY_PATTERN.search(key)
-        if match is None:
-            unexpected.append(key)
-            continue
-        target = match.group("target")
-        if ".mlp.experts." in f".{target}." or f".{target}.".endswith(".mlp.gate."):
-            frozen.append(key)
-            continue
-        if not any(target.endswith(f".{suffix}") for suffix in suffixes):
-            unexpected.append(key)
-            continue
-        targets.setdefault(target, set()).add(match.group("side"))
-    if frozen:
-        raise RuntimeError(
-            f"adapter touches frozen MoE routing/expert tensors: {frozen[:8]}"
-        )
-    if unexpected:
-        raise RuntimeError(f"unexpected adapter tensor keys: {unexpected[:8]}")
-    return targets
-
-
 def _adapter_tensor_keys(payload: Path) -> list[str]:
     """Read tensor names lazily so the devbox does not need training deps."""
 
@@ -1002,31 +989,27 @@ def validate_adapter(
     if mismatches:
         raise RuntimeError(f"adapter config mismatch: {mismatches}")
     keys = _adapter_tensor_keys(weights[0])
-    if "target_layers" in expected:
-        # Gemma family: the tensor payload must cover exactly the registered
-        # decoder-layer x projection grid.
-        observed = lora_targets_from_keys(keys)
-        expected_modules = set(gemma3_text_lora_targets(config))
-        if set(observed) != expected_modules:
-            raise RuntimeError(
-                "adapter payload target mismatch: "
-                f"missing={sorted(expected_modules - set(observed))[:8]}, "
-                f"extra={sorted(set(observed) - expected_modules)[:8]}"
-            )
-    else:
-        # GLM family: suffix coverage — every registered suffix adapted
-        # somewhere, every tensor under a registered suffix, MoE untouched.
-        suffixes = glm45_suffix_lora_targets(config)
-        observed = suffix_lora_targets_from_keys(keys, suffixes)
-        observed_suffixes = {
-            target.rsplit(".", 1)[-1] for target in observed
-        }
-        missing_suffixes = sorted(set(suffixes) - observed_suffixes)
-        if missing_suffixes:
-            raise RuntimeError(
-                f"adapter payload is missing registered suffix targets: "
-                f"{missing_suffixes}"
-            )
+    # Both families audit the same way now: the tensor payload must cover
+    # exactly the registered exact-path grid (GLM moved off suffix targets
+    # after PEFT promoted suffix matches onto the packed expert PARAMETERS —
+    # smoke 20260820T213127Z; exact paths make expert/router contamination
+    # structurally impossible AND loudly checked here).
+    frozen = [
+        key for key in keys
+        if ".mlp.experts." in key or ".mlp.gate." in key or key.endswith(".mlp.gate")
+    ]
+    if frozen:
+        raise RuntimeError(
+            f"adapter touches frozen MoE routing/expert tensors: {sorted(frozen)[:8]}"
+        )
+    observed = lora_targets_from_keys(keys)
+    expected_modules = set(resolve_lora_targets(config))
+    if set(observed) != expected_modules:
+        raise RuntimeError(
+            "adapter payload target mismatch: "
+            f"missing={sorted(expected_modules - set(observed))[:8]}, "
+            f"extra={sorted(set(observed) - expected_modules)[:8]}"
+        )
     incomplete = {
         target: sides for target, sides in observed.items() if sides != {"A", "B"}
     }
@@ -1511,6 +1494,14 @@ async def pod_arm_command(
         (root / "adapter_upload_receipt.json").write_text(
             json.dumps(adapter_receipt, indent=2) + "\n"
         )
+        # Bound the artifact pull: the adapter is published and verified, so
+        # the FSDP trainer-state step dirs (tens of GB of sharded model +
+        # optimizer state; 97 GB pulled to the shared devbox volume on
+        # 20260820T171848Z and it hit the /workspace quota) never ride home.
+        for step_dir in sorted((train_dir / "checkpoints").glob("checkpoint-*")):
+            if step_dir.is_dir():
+                shutil.rmtree(step_dir, ignore_errors=True)
+                print(f"[{_now()}] pruned trainer state {step_dir}", flush=True)
         completed = True
         _write_status(
             root,
