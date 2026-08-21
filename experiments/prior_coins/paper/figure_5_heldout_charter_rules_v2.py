@@ -37,23 +37,35 @@ NAME = "figure_5_heldout_charter_rules_v2"
 #: the whole point of this figure: clauses no AFT row ever mentioned
 SLICE = "eval_holdout_conflict"
 
-SUBSTRATES = (("charter_real_4x", "Charter · midtrained"),
-              ("charter_fake_4x", "Charter · SDF order"),
-              ("control_4x", "no-document control"))
+#: (parent, row label, tick-label colour). Both Charter substrates take the
+#: Charter hue -- they differ in where the documents went, not in which prior
+#: they carry -- and the control keeps style()'s muted default, having no
+#: segment of its own to match. No coin arm here, so the charter/control/coin
+#: ordering the other figures use does not apply; placement order is kept.
+SUBSTRATES = ((("charter_real_4x", "Charter · midtrained", OUTCOME_COLOR["charter"])),
+              (("charter_fake_4x", "Charter · SDF order", OUTCOME_COLOR["charter"])),
+              (("control_4x", "no-document control", None)))
+#: Grouped coarsely by AFT condition and finely by midtrain substrate. The
+#: condition names the brace in the left margin, so a row label is just its
+#: substrate rather than repeating "pre-AFT" three times and "post-AFT" three.
+CONDITIONS = ((PRE, "pre AFT"), (POST, "post AFT"))
+#: extra blank row-heights between the two AFT blocks; the figure height is
+#: scaled by the same factor (6 rows -> 6.9 row-heights) so the gap is
+#: added around the bars rather than taken out of them
+GROUP_GAP = 0.9
 
-#: Grouped coarsely by AFT condition and finely by midtrain substrate, so the
-#: separator falls between pre- and post-AFT and each block shows all three
-#: substrates at one AFT condition. Row labels are unchanged.
-GROUPS = [[Row(parent, "agreement", endpoint, f"{plabel} · {tag}")
-           for parent, plabel in SUBSTRATES]
-          for endpoint, tag in ((PRE, "pre-AFT"), (POST, "post-AFT"))]
+GROUPS = [[Row(parent, "agreement", endpoint, plabel, colour)
+           for parent, plabel, colour in SUBSTRATES]
+          for endpoint, _tag in CONDITIONS]
+GROUP_LABELS = [tag for _endpoint, tag in CONDITIONS]
 
 
 def build(scored, figures):
-    fig, ax = plt.subplots(figsize=(9.8, 4.8))
+    fig, ax = plt.subplots(figsize=(9.8, 5.52))
     style(ax)
     draw_stacked_rows(ax, scored, GROUPS, slice_name=SLICE,
-                      segment_order=SEGMENT_ORDER, palette=OUTCOME_COLOR)
+                      segment_order=SEGMENT_ORDER, palette=OUTCOME_COLOR,
+                      group_labels=GROUP_LABELS, group_gap=GROUP_GAP)
     ax.set_xlabel("share of held-out conflict runs (%)", fontsize=9)
     ax.legend(handles=legend_for(SEGMENT_ORDER, CATEGORY_LABEL, OUTCOME_COLOR),
               loc="upper center", bbox_to_anchor=(0.5, -0.13), ncol=4,
