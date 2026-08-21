@@ -1868,6 +1868,10 @@ def _write_aggregated_query_rows(
                     sums[index] += row
                     counts[index] += 1
                 offset += len(chunk_cpu)
+                # `row` is a view whose base pins the whole [c, P] chunk
+                # storage (~86 GB at full coverage) through finalization if
+                # left bound (PR #530 review finding).
+                row = None
             if offset != len(sequences):
                 raise ArtifactIntegrityError(
                     "aggregated query bookkeeping mismatch: expected "
@@ -3511,7 +3515,10 @@ async def score_source_streaming(config: AttributionRunConfig) -> PhaseReport:
             np.lib.format.open_memmap(
                 str(u_dir / f"u_damping{damping_index}_stage{index}.npy"),
                 mode="w+",
-                dtype=np.float64,
+                # fp32: transformed_queries returns fp32 (upstream numpy
+                # contract), so fp32 maps are value-exact, halve spill/IO,
+                # and restore main's fp32 dot dtype (PR #530 review).
+                dtype=np.float32,
                 shape=(n_queries, width),
             )
             for index in range(len(config.stages))
@@ -3529,9 +3536,19 @@ async def score_source_streaming(config: AttributionRunConfig) -> PhaseReport:
             for stage_index, u in enumerate(transported):
                 maps[stage_index][row_index] = u[0]
             del transported
+        # Release the last transport-loop bindings; `row`/`u` pin fp32
+        # [1, P] storages (~43 GB each at full coverage) otherwise
+        # (PR #530 review finding).
+        row = None
+        u = None
         for mapped in maps:
             mapped.flush()
         contexts.append((maps, stage_scales))
+
+    # The [Q, P] query features (~86 GB fp32 at full coverage) are fully
+    # spilled into the per-stage memmaps above; release before the scoring
+    # loop (PR #530 review finding).
+    query_features = None
 
     storage = getattr(torch, _storage_dtype(method.dtype))
     entries: dict[str, dict[str, Any]] = {}
