@@ -276,12 +276,16 @@ def plot_rules(output: Path, results: dict | None = None) -> Path:
 
     results = results or {scale: load_cells(scale) for scale in SCALES}
     colors = _palette()
+    # Parent/post-EFT bars touch within each arm's pair (offset = half a
+    # bar width around the pair center at +/-0.2).
     width = 0.17
-    offsets = {("control", "parent"): -0.30, ("control", "aft_v2_rank64"): -0.11,
-               ("mixed_4ep", "parent"): 0.11, ("mixed_4ep", "aft_v2_rank64"): 0.30}
+    offsets = {("control", "parent"): -0.2 - width / 2,
+               ("control", "aft_v2_rank64"): -0.2 + width / 2,
+               ("mixed_4ep", "parent"): 0.2 - width / 2,
+               ("mixed_4ep", "aft_v2_rank64"): 0.2 + width / 2}
     panels = (("Held-in Rules", HELD_IN_RULES), ("Held-out Rules", HELD_OUT_RULES))
 
-    figure, axes = plt.subplots(1, 2, figsize=(9.4, 3.9))
+    figure, axes = plt.subplots(1, 2, figsize=(8.8, 3.9))
     for axis, (title, rules) in zip(axes, panels):
         ticks, tick_labels = [], []
         for group, scale in enumerate(SCALES):
@@ -307,10 +311,10 @@ def plot_rules(output: Path, results: dict | None = None) -> Path:
                     ticks.append(sum(pair_xs) / len(pair_xs))
                     tick_labels.append(arm_label)
             if tops:
-                _group_rule(axis, group, group - 0.30 - width / 2,
-                            group + 0.30 + width / 2, tops, SCALE_LABELS[scale])
+                _group_rule(axis, group, group - 0.2 - width,
+                            group + 0.2 + width, tops, SCALE_LABELS[scale])
         _style(axis, title, len(SCALES), ticks, tick_labels)
-        axis.set_ylabel("Spontaneous rule-form adoption", fontsize=8)
+    axes[0].set_ylabel("Spontaneous rule-form adoption", fontsize=8)
     handles = [
         plt.Rectangle((0, 0), 1, 1, color=colors[("mixed_4ep", stage)])
         for stage, _ in STAGES
@@ -321,6 +325,7 @@ def plot_rules(output: Path, results: dict | None = None) -> Path:
     figure.suptitle("Python 4 Rule Adoption Across Scale", fontsize=12,
                     fontweight="bold")
     figure.tight_layout(rect=(0, 0, 1, 0.93))
+    figure.subplots_adjust(wspace=0.10)
     output.parent.mkdir(parents=True, exist_ok=True)
     figure.savefig(output, format="pdf")
     plt.close(figure)
