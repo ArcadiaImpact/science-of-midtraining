@@ -11,6 +11,7 @@ import torch
 from torch import nn
 
 from scimt.data_attribution.ekfac import (
+    EKFACFactors,
     apply_ekfac,
     build_ekfac_sample_items,
     fit_ekfac,
@@ -727,6 +728,71 @@ def test_top_two_singular_values_match_svd():
     )
     sigma1, sigma2 = _top_two_singular_values(rank1)
     assert sigma1 > 0 and sigma2 / sigma1 < 1e-9
+
+
+def test_load_ekfac_is_memory_mapped_and_value_identical(tmp_path):
+    """Factors load as file-backed (COW) mappings with eager-identical values.
+
+    Eager loading materialized ~164 GB of anonymous RAM per stage at full
+    12B coverage (3 stages OOM-killed pod run 20260819T095144Z); the loader
+    must keep factor bytes file-backed. COW semantics also mean an in-memory
+    write never reaches the artifact file.
+    """
+    model = nn.Sequential(nn.Linear(3, 2), nn.LayerNorm(2))
+    manifest = make_artifact(tmp_path, model)
+    factors = load_ekfac(tmp_path, manifest)
+    name = next(iter(factors.linears))
+    base = tmp_path / "linear" / name.replace(".", "__")
+    for key in ("U_A", "U_S", "lam"):
+        eager = torch.from_numpy(np.load(base / f"{key}.npy"))
+        assert torch.equal(factors.linears[name][key], eager)
+    assert torch.equal(
+        factors.diag_v,
+        torch.from_numpy(np.load(tmp_path / "diag" / "v.npy")).reshape(-1),
+    )
+    # COW: mutating the loaded tensor must not write through to the artifact.
+    on_disk_before = np.load(base / "lam.npy").copy()
+    factors.linears[name]["lam"].mul_(2.0)
+    assert np.array_equal(np.load(base / "lam.npy"), on_disk_before)
+    # A fresh load still sees the original bytes.
+    fresh = load_ekfac(tmp_path, manifest)
+    assert torch.equal(fresh.linears[name]["lam"], torch.from_numpy(on_disk_before))
+
+
+def test_apply_ekfac_and_curvature_identical_between_mmap_and_eager(tmp_path):
+    from scimt.data_attribution.source import EKFACCurvature
+
+    model = nn.Sequential(nn.Linear(3, 2), nn.LayerNorm(2))
+    manifest = make_artifact(tmp_path, model)
+    mapped = load_ekfac(tmp_path, manifest)
+    # Build an eager twin by round-tripping every tensor through a copy.
+    eager = EKFACFactors(
+        {
+            name: {key: tensor.clone() for key, tensor in factor.items()}
+            for name, factor in mapped.linears.items()
+        },
+        mapped.diag_v.clone(),
+        mapped.diag_index,
+        mapped.snapshot,
+        mapped.preconditioner,
+    )
+    vector = torch.randn(
+        manifest.included_numel, generator=torch.Generator().manual_seed(23)
+    )
+    assert torch.equal(
+        apply_ekfac(vector, mapped, manifest, damping_scale=0.03, power=-0.5),
+        apply_ekfac(vector, eager, manifest, damping_scale=0.03, power=-0.5),
+    )
+    rows = torch.randn(
+        3, manifest.included_numel, generator=torch.Generator().manual_seed(29)
+    )
+    out_mapped = EKFACCurvature(mapped, manifest).apply_fn(
+        rows, lambda lam: 1.0 / (lam + 0.05)
+    )
+    out_eager = EKFACCurvature(eager, manifest).apply_fn(
+        rows, lambda lam: 1.0 / (lam + 0.05)
+    )
+    assert torch.equal(out_mapped, out_eager)
 
 
 def test_load_ekfac_cross_mode_refusals(tmp_path):

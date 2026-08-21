@@ -137,7 +137,15 @@ def load_ekfac(
         bias = entries.get(f"{name}.bias")
         base = directory / "linear" / safe(name)
         factor = {
-            key: torch.from_numpy(np.load(base / f"{key}.npy")).cpu()
+            # mmap_mode="c" (copy-on-write): factors stay file-backed —
+            # resident pages are reclaimable page cache, never anonymous
+            # RAM. Eager loading materialized ~164 GB fp32 PER STAGE at
+            # full 12B coverage; three stages (~492 GB) OOM-killed the
+            # streaming phase on pod run 20260819T095144Z. COW (not "r")
+            # keeps the arrays writable so torch.from_numpy shares them
+            # zero-copy without the non-writable-array warning; nothing
+            # ever writes to a loaded factor.
+            key: torch.from_numpy(np.load(base / f"{key}.npy", mmap_mode="c"))
             for key in ("U_A", "U_S", "lam")
         }
         out_features, in_features = weight.shape
@@ -166,7 +174,10 @@ def load_ekfac(
     raw_index = json.loads((directory / "diag" / "index.json").read_text())
     if not isinstance(raw_index, list):
         raise ValueError("diag/index.json must be a list")
-    diag_v = torch.from_numpy(np.load(directory / "diag" / "v.npy")).reshape(-1).cpu()
+    diag_v = (
+        torch.from_numpy(np.load(directory / "diag" / "v.npy", mmap_mode="c"))
+        .reshape(-1)
+    )
     if not diag_v.is_floating_point() or not bool(torch.isfinite(diag_v).all()):
         raise ValueError("diagonal factors must be floating-point and finite")
     if bool((diag_v < 0).any()):
