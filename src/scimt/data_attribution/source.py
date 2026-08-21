@@ -461,32 +461,27 @@ class EKFACCurvature(CurvatureOperator):
         self, rows: np.ndarray | torch.Tensor, fn: EigvalFn
     ) -> np.ndarray | torch.Tensor:
         matrix, was_vector, boundary = _as_row_matrix(rows, self._dimension)
-        blocks = []
+        # Modules OUTER, rows inner: the fp64 working copies of one module's
+        # eigenvector pair exist only for that module's iteration. The old
+        # shape converted EVERY module's U_A/U_S to fp64 up front and held
+        # them through the row loop — ~328 GB per stage at full 12B coverage
+        # (a second OOM source beyond eager factor loading; pod run
+        # 20260819T095144Z). Linear blocks and diagonal entries write
+        # slice-disjoint coordinates (validated non-overlapping, full
+        # coverage), and each output element is produced by exactly the same
+        # operations and rounded to float32 exactly once, so the reordering
+        # is numerically identical to the row-outer original.
+        output = np.zeros(matrix.shape, dtype=np.float32)
+        output_t = torch.from_numpy(output)
         for name, factor in self._factors.linears.items():
+            weight = self._entries[f"{name}.weight"]
+            bias = self._entries.get(f"{name}.bias")
             lam = factor["lam"].detach().to(device="cpu", dtype=torch.float64).numpy()
-            blocks.append(
-                (
-                    self._entries[f"{name}.weight"],
-                    self._entries.get(f"{name}.bias"),
-                    factor["U_A"].detach().to(device="cpu", dtype=torch.float64),
-                    factor["U_S"].detach().to(device="cpu", dtype=torch.float64),
-                    torch.from_numpy(_scale_from_fn(fn, lam)),
-                )
-            )
-        diag_scale = None
-        if self._factors.diag_v.numel():
-            diag = (
-                self._factors.diag_v.detach()
-                .to(device="cpu", dtype=torch.float64)
-                .numpy()
-            )
-            diag_scale = torch.from_numpy(_scale_from_fn(fn, diag))
-
-        output = np.empty(matrix.shape, dtype=np.float32)
-        for row_index in range(matrix.shape[0]):
-            source = torch.from_numpy(matrix[row_index])
-            result = torch.zeros_like(source)
-            for weight, bias, U_A, U_S, scale in blocks:
+            scale = torch.from_numpy(_scale_from_fn(fn, lam))
+            U_A = factor["U_A"].detach().to(device="cpu", dtype=torch.float64)
+            U_S = factor["U_S"].detach().to(device="cpu", dtype=torch.float64)
+            for row_index in range(matrix.shape[0]):
+                source = torch.from_numpy(matrix[row_index])
                 weight_grad = source.narrow(
                     0, weight.global_flat_offset, weight.numel
                 ).reshape(weight.shape)
@@ -509,24 +504,36 @@ class EKFACCurvature(CurvatureOperator):
                         [restored[:, :-1].reshape(-1), restored[:, -1].reshape(-1)]
                     )
                 flat_values = restored.reshape(-1)
-                result[
+                output_t[
+                    row_index,
                     weight.global_flat_offset : weight.global_flat_offset
-                    + weight.numel
-                ] = flat_values[: weight.numel]
+                    + weight.numel,
+                ] = flat_values[: weight.numel].to(torch.float32)
                 if bias is not None:
-                    result[
-                        bias.global_flat_offset : bias.global_flat_offset + bias.numel
-                    ] = flat_values[weight.numel :]
-            if diag_scale is not None:
+                    output_t[
+                        row_index,
+                        bias.global_flat_offset : bias.global_flat_offset
+                        + bias.numel,
+                    ] = flat_values[weight.numel :].to(torch.float32)
+            # Release this module's fp64 working copies before the next one.
+            U_A = U_S = scale = None
+        if self._factors.diag_v.numel():
+            diag = (
+                self._factors.diag_v.detach()
+                .to(device="cpu", dtype=torch.float64)
+                .numpy()
+            )
+            diag_scale = torch.from_numpy(_scale_from_fn(fn, diag))
+            for row_index in range(matrix.shape[0]):
+                source = torch.from_numpy(matrix[row_index])
                 cursor = 0
                 for item in self._factors.diag_index:
                     numel, offset = int(item["numel"]), int(item["offset"])
-                    result[offset : offset + numel] = (
+                    output_t[row_index, offset : offset + numel] = (
                         source[offset : offset + numel]
                         * diag_scale[cursor : cursor + numel]
-                    )
+                    ).to(torch.float32)
                     cursor += numel
-            output[row_index] = result.to(torch.float32).numpy()
         return _return_rows(output, was_vector, boundary)
 
 
