@@ -68,6 +68,116 @@ def load_heldout_rule_usage(
     return usage
 
 
+#: Cross-scale post-AFT coding success (styled after
+#: plot_qa_v2.plot_cross_scale): scale groups left-to-right, Control vs the
+#: 4-epoch mixed midtrain arm. Post-AFT condition only — every parent sits
+#: at ~0/512 warning-free Suite B success, so the parent bars carry no
+#: information (they live in the per-scale coding_eval figures).
+CROSS_SCALE_SCALES = ("12b", "27b")
+CROSS_SCALE_LABELS = {"12b": "12B", "27b": "27B", "glm45_air": "110B"}
+CROSS_SCALE_BARS = (("control", "Control"), ("mixed_4ep", "Midtrained"))
+CROSS_SCALE_CSVS = {"12b": "results_12b.csv", "27b": "results.csv",
+                    "glm45_air": "results_glm45_air.csv"}
+CROSS_SCALE_PANELS = (
+    ("Held-in Coding Success", "held_in_only"),
+    ("Held-out Coding Success", "held_out_feature"),
+)
+RULE_GREY = "#555555"
+
+
+def _success_cells(scale: str) -> dict:
+    import csv
+
+    here = Path(__file__).resolve().parent
+    with (here / CROSS_SCALE_CSVS[scale]).open() as handle:
+        rows = list(csv.DictReader(handle))
+    cells: dict = {}
+    for row in rows:
+        if row["suite"] == "overall_coding" and row["condition"] == "aft_v2_rank64":
+            cells[(row["arm"], row["panel"])] = {
+                "value": float(row["value"]),
+                "ci_low": float(row["ci_low"]),
+                "ci_high": float(row["ci_high"]),
+            }
+    return cells
+
+
+def plot_success_cross_scale(output: Path, results: dict | None = None) -> Path:
+    """2 panels (held-in | held-out Suite B success, post-AFT) x scale
+    groups x Control/Midtrained bars; grey rules + bold B-params labels,
+    diagonal per-bar labels, open spines, pinned 0-100% axes."""
+    import matplotlib
+
+    matplotlib.use("Agg")
+    import matplotlib.pyplot as plt
+    import seaborn as sns
+
+    if results is None:
+        results = {scale: _success_cells(scale) for scale in CROSS_SCALE_SCALES}
+    scales = tuple(results)
+
+    palette = sns.color_palette("colorblind")
+    base = palette[0]
+    bar_colors = {
+        "control": tuple(c + (1.0 - c) * 0.55 for c in base),
+        "mixed_4ep": base,
+    }
+    width, offset = 0.34, 0.19
+
+    figure, axes = plt.subplots(1, 2, figsize=(7.2, 3.9))
+    for axis, (title, panel) in zip(axes, CROSS_SCALE_PANELS):
+        for group, scale in enumerate(scales):
+            cells = [results[scale][(arm, panel)] for arm, _ in CROSS_SCALE_BARS]
+            xs = [group - offset, group + offset]
+            axis.bar(
+                xs, [cell["value"] for cell in cells], width=width,
+                color=[bar_colors[arm] for arm, _ in CROSS_SCALE_BARS],
+            )
+            for x, cell in zip(xs, cells):
+                axis.errorbar(
+                    x, cell["value"],
+                    yerr=[[cell["value"] - cell["ci_low"]],
+                          [cell["ci_high"] - cell["value"]]],
+                    fmt="none", ecolor="black", elinewidth=1.0, capsize=2.5,
+                )
+            rule_y = min(max(cell["ci_high"] for cell in cells) + 0.04, 0.96)
+            axis.plot(
+                [group - offset - width / 2, group + offset + width / 2],
+                [rule_y, rule_y],
+                color=RULE_GREY, linewidth=2.2, solid_capstyle="butt",
+            )
+            axis.text(
+                group, rule_y + 0.015, CROSS_SCALE_LABELS[scale],
+                ha="center", va="bottom", fontsize=9, fontweight="bold",
+                color=RULE_GREY,
+            )
+        axis.set_title(title, fontsize=10, pad=14)
+        axis.spines["top"].set_visible(False)
+        axis.spines["right"].set_visible(False)
+        ticks = [g + sign * offset for g in range(len(scales)) for sign in (-1, 1)]
+        axis.set_xticks(ticks)
+        axis.set_xticklabels(
+            [label for _, label in CROSS_SCALE_BARS] * len(scales),
+            rotation=-45, ha="left", va="top", rotation_mode="anchor", fontsize=8,
+        )
+        axis.tick_params(axis="x", length=0)
+        axis.set_xlim(-0.65, len(scales) - 0.35)
+        axis.set_ylim(0, 1.0)
+        axis.set_yticks([0, 0.25, 0.5, 0.75, 1.0])
+        axis.set_yticklabels(["0%", "25%", "50%", "75%", "100%"])
+        axis.tick_params(axis="y", labelsize=8)
+        axis.set_ylabel("Warning-free success", fontsize=8)
+    figure.suptitle(
+        "Python 4 Coding Success Across Scale (post-AFT)",
+        fontsize=12, fontweight="bold",
+    )
+    figure.tight_layout(rect=(0, 0, 1, 0.93))
+    output.parent.mkdir(parents=True, exist_ok=True)
+    figure.savefig(output, format="pdf")
+    plt.close(figure)
+    return output
+
+
 def make_figures(
     run_dir: Path,
     rollup_path: Path | None,

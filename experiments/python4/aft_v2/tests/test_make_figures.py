@@ -168,3 +168,14 @@ def test_make_figures_without_rollup_or_label(tmp_path):
 def test_cli_requires_run_dir_and_output(tmp_path):
     with pytest.raises(SystemExit):
         make_figures.main([])
+
+
+def test_success_cross_scale_renders_from_committed_csvs(tmp_path):
+    from experiments.python4.aft_v2 import make_figures
+
+    cells = make_figures._success_cells("27b")
+    assert cells[("control", "held_in_only")]["value"] > 0
+    assert ("mixed_4ep", "held_out_feature") in cells
+    out = make_figures.plot_success_cross_scale(tmp_path / "coding.pdf")
+    assert out.is_file() and out.stat().st_size > 0
+    assert make_figures.CROSS_SCALE_BARS[1][1] == "Midtrained"
