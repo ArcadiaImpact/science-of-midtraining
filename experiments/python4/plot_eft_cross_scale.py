@@ -61,6 +61,34 @@ CSV_CANDIDATES = {
     "27b": ("results_27b.csv", "results.csv"),
     "glm45_air": ("results_glm45_air.csv",),
 }
+#: judged held-out-wins rollups (tag_heldout_wins AST tagging + the
+#: claude-opus-5 judge): per scale, candidates in preference order. The
+#: held-out coding bars split on rule_used vs judged-workaround wins.
+ROLLUP_CANDIDATES = {
+    "12b": ("heldout_rule_judge_rollup_12b.json",),
+    "27b": ("heldout_rule_judge_rollup_27b.json", "heldout_rule_judge_rollup.json"),
+    "glm45_air": (
+        "heldout_rule_judge_rollup_glm45_air.json",
+        "runs/heldout-rule-judge-glm45_air/judge_rollup.json",
+    ),
+}
+
+
+def load_rollup(scale: str) -> dict:
+    """(arm, condition) -> {wins, rule_used}; empty when not yet judged."""
+    for name in ROLLUP_CANDIDATES.get(scale, ()):
+        path = EFT_V2 / name
+        if path.is_file():
+            doc = json.loads(path.read_text())
+            return {
+                (cell["arm"], cell["condition"]): {
+                    "wins": int(cell["wins"]), "rule_used": int(cell["rule_used"]),
+                }
+                for cell in doc["cells"]
+            }
+    return {}
+
+
 #: fallback per-arm run summaries for scales not yet collected into a CSV.
 RUN_SUMMARY_FALLBACKS = {
     "glm45_air": {
@@ -120,7 +148,8 @@ def _pooled(cells: dict, arm: str, stage: str, kind: str, panels) -> dict | None
     num = sum(part["num"] for part in parts)
     den = sum(part["den"] for part in parts)
     low, high = wilson_interval(num, den)
-    return {"value": num / den, "ci_low": low, "ci_high": high}
+    return {"value": num / den, "ci_low": low, "ci_high": high,
+            "num": num, "den": den}
 
 
 def _style(axis, title: str, n_groups: int, tick_positions, tick_labels) -> None:
@@ -165,7 +194,8 @@ def _palette():
     }
 
 
-def plot_coding(output: Path, results: dict | None = None) -> Path:
+def plot_coding(output: Path, results: dict | None = None,
+                rollups: dict | None = None) -> Path:
     """Post-EFT Suite B success: 2 panels x scale groups x Control/Midtrained."""
     import matplotlib
 
@@ -178,8 +208,11 @@ def plot_coding(output: Path, results: dict | None = None) -> Path:
     panels = (("Held-in Coding Success", ("held_in_only",)),
               ("Held-out Coding Success", ("held_out_feature",)))
 
+    if rollups is None:
+        rollups = {scale: load_rollup(scale) for scale in SCALES}
     figure, axes = plt.subplots(1, 2, figsize=(7.8, 3.9))
     for axis, (title, panel_keys) in zip(axes, panels):
+        held_out = panel_keys == ("held_out_feature",)
         ticks, tick_labels = [], []
         for group, scale in enumerate(SCALES):
             tops = []
@@ -187,8 +220,26 @@ def plot_coding(output: Path, results: dict | None = None) -> Path:
                 cell = _pooled(results[scale], arm, "aft_v2_rank64", "coding", panel_keys)
                 if cell is None:
                     continue
-                axis.bar([x], [cell["value"]], width=width,
-                         color=[colors[(arm, "aft_v2_rank64")]])
+                color = colors[(arm, "aft_v2_rank64")]
+                judged = rollups[scale].get((arm, "aft_v2_rank64")) if held_out else None
+                if judged:
+                    # Solid = wins that genuinely used the held-out rule;
+                    # hatched top = judged workarounds (task solved while
+                    # dodging the rule). The rollup's win count must match
+                    # the graded successes or the sources are out of sync.
+                    if judged["wins"] != cell["num"]:
+                        raise RuntimeError(
+                            f"rollup wins {judged['wins']} != graded successes "
+                            f"{cell['num']} for {scale}/{arm}"
+                        )
+                    rule_frac = judged["rule_used"] / cell["den"]
+                    workaround_frac = (judged["wins"] - judged["rule_used"]) / cell["den"]
+                    axis.bar([x], [rule_frac], width=width, color=[color])
+                    axis.bar([x], [workaround_frac], bottom=[rule_frac], width=width,
+                             color=[color], hatch="///", edgecolor="white",
+                             linewidth=0)
+                else:
+                    axis.bar([x], [cell["value"]], width=width, color=[color])
                 axis.errorbar(
                     x, cell["value"],
                     yerr=[[cell["value"] - cell["ci_low"]],
@@ -203,6 +254,10 @@ def plot_coding(output: Path, results: dict | None = None) -> Path:
                             group + offset + width / 2, tops, SCALE_LABELS[scale])
         _style(axis, title, len(SCALES), ticks, tick_labels)
         axis.set_ylabel("Warning-free success", fontsize=8)
+    hatch_handle = plt.Rectangle((0, 0), 1, 1, facecolor="#bbbbbb",
+                                 hatch="///", edgecolor="white", linewidth=0)
+    figure.legend([hatch_handle], ["judged workaround"], loc="upper right",
+                  bbox_to_anchor=(0.99, 1.0), fontsize=8, frameon=False)
     figure.suptitle("Python 4 Coding Success Across Scale (post-EFT)",
                     fontsize=12, fontweight="bold")
     figure.tight_layout(rect=(0, 0, 1, 0.93))

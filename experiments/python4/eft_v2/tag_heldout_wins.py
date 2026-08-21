@@ -52,8 +52,13 @@ def tag_run(eval_run_dir: Path, out_dir: Path) -> dict[str, int]:
     out_dir.mkdir(parents=True, exist_ok=True)
     out_path = out_dir / "ast_tagged_wins.jsonl"
     counts: dict[str, int] = {"rows": 0, "rule_used": 0, "tag_errors": 0}
+    # Canonical-order subset of arms actually present: the GLM harness runs
+    # two arms where the Gemma runs had five; an empty subset is loud.
+    present = [arm for arm in ARMS if (eval_run_dir / arm).is_dir()]
+    if not present:
+        raise FileNotFoundError(f"no arm dirs under {eval_run_dir} (known arms: {ARMS})")
     with out_path.open("w") as sink:
-        for arm in ARMS:
+        for arm in present:
             for stage in STAGES:
                 graded = eval_run_dir / arm / f"graded_overall_{stage}.jsonl"
                 if not graded.exists():
