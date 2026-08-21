@@ -75,8 +75,31 @@ CLAUSE_LABEL = {
 }
 CHANCE = 20.8
 
+#: Summary row: the five AFT-trained clauses pooled. Every clause contributes
+#: exactly 600 conflict runs, so pooling counts and averaging the seven per-clause
+#: rates give the identical number -- pooling is used because it also keeps the
+#: stacked bar a true composition summing to 100%.
+HELD_OUT_CLAUSES = frozenset({"qual_weekly_limit", "precedence_deferrals"})
+TRAINED_CLAUSES = tuple(c for c in CLAUSE_ORDER if c not in HELD_OUT_CLAUSES)
+TRAINED_MEAN = "__trained_mean__"
+#: an empty row between the summary and the per-clause rows, so the summary
+#: cannot be misread as just another clause. Blank axes give a real gap; a rule
+#: is drawn through it in figure coordinates (see `separator`).
+SPACER = "__spacer__"
+ROW_ORDER = (TRAINED_MEAN, SPACER) + CLAUSE_ORDER
+CLAUSE_LABEL[TRAINED_MEAN] = "ALL 5 TRAINED CLAUSES"
+#: the summary row gets a taller panel so it reads as a header, not a clause
+ROW_HEIGHTS = [1.28, 0.30] + [1.0] * len(CLAUSE_ORDER)
+
 
 def counts_of(entry: dict, clause: str) -> tuple[dict, int]:
+    if clause == TRAINED_MEAN:
+        pooled: dict[str, int] = {}
+        for name in TRAINED_CLAUSES:
+            for k, v in (entry.get(name) or {}).items():
+                if k != "_condition":
+                    pooled[k] = pooled.get(k, 0) + v
+        return pooled, sum(pooled.values())
     counts = {k: v for k, v in (entry.get(clause) or {}).items()
               if k != "_condition"}
     return counts, sum(counts.values())
@@ -108,14 +131,32 @@ def axis_style(ax, *, ylabel: bool, xticks: list | None, xlabels: list | None):
         ax.set_xticklabels(xlabels if xlabels is not None else [], fontsize=7)
 
 
+def separator(fig, axes) -> None:
+    """Bold rule through the spacer row, spanning the full grid width."""
+    row = ROW_ORDER.index(SPACER)
+    box = axes[row][0].get_position()
+    y = (box.y0 + box.y1) / 2
+    x0 = axes[0][0].get_position().x0
+    x1 = axes[0][-1].get_position().x1
+    fig.add_artist(Line2D([x0, x1], [y, y], transform=fig.transFigure,
+                          color=INK, linewidth=1.8, zorder=5))
+
+
 def row_labels(axes, held: set) -> None:
-    for row, clause in enumerate(CLAUSE_ORDER):
-        tag = "HELD OUT" if clause in held else "trained"
+    for row, clause in enumerate(ROW_ORDER):
+        if clause == SPACER:
+            continue
+        if clause == TRAINED_MEAN:
+            text, weight, size = f"{CLAUSE_LABEL[clause]}\n(pooled)", "bold", 9.5
+        else:
+            tag = "HELD OUT" if clause in held else "trained"
+            text = f"{CLAUSE_LABEL[clause]}\n({tag})"
+            weight = "bold" if clause in held else "normal"
+            size = 9
         axes[row][0].annotate(
-            f"{CLAUSE_LABEL[clause]}\n({tag})", xy=(0, 0.5), xytext=(-52, 0),
-            textcoords="offset points", xycoords="axes fraction",
-            ha="right", va="center", fontsize=9, color=INK,
-            fontweight="bold" if clause in held else "normal")
+            text, xy=(0, 0.5), xytext=(-52, 0), textcoords="offset points",
+            xycoords="axes fraction", ha="right", va="center", fontsize=size,
+            color=INK, fontweight=weight)
 
 
 CAVEAT = ("Dose-matched, NOT schedule-matched: the sweep completes a 256-step cosine decay; "
@@ -124,15 +165,30 @@ CAVEAT = ("Dose-matched, NOT schedule-matched: the sweep completes a 256-step co
           "vs control_matched (v2, = the sweep's). Only the v2 marker is comparable.")
 
 
+def check_split(data) -> None:
+    """Fail loudly if the battery's held-out set ever stops matching the constant
+    the summary row averages over -- a silent mismatch would pool the wrong five."""
+    got = set(data["held_out_clauses"])
+    if got != set(HELD_OUT_CLAUSES):
+        raise SystemExit(f"held-out clauses changed: data says {sorted(got)}, "
+                         f"summary row averages over {sorted(TRAINED_CLAUSES)}")
+
+
 def figure_grid(data, out: Path) -> None:
+    check_split(data)
     held = set(data["held_out_clauses"])
     seeds = data["seeds"]
     xs = [0.0] + [1.4 + i for i in range(len(seeds))]
-    fig, axes = plt.subplots(len(CLAUSE_ORDER), len(ARM_ORDER),
+    fig, axes = plt.subplots(len(ROW_ORDER), len(ARM_ORDER),
                              figsize=(3.15 * len(ARM_ORDER) + 1.5,
-                                      1.72 * len(CLAUSE_ORDER) + 2.0),
-                             squeeze=False)
-    for row, clause in enumerate(CLAUSE_ORDER):
+                                      1.72 * sum(ROW_HEIGHTS) + 2.0),
+                             squeeze=False,
+                             gridspec_kw={"height_ratios": ROW_HEIGHTS})
+    for row, clause in enumerate(ROW_ORDER):
+        if clause == SPACER:
+            for ax in axes[row]:
+                ax.axis("off")
+            continue
         for col, arm in enumerate(ARM_ORDER):
             ax = axes[row][col]
             entries = [("pre", data["cells"].get(f"{arm}|pre_aft|shared"))]
@@ -158,10 +214,10 @@ def figure_grid(data, out: Path) -> None:
                         color=INK, zorder=4)
             ax.set_xlim(-0.75, xs[-1] + 0.75)
             axis_style(ax, ylabel=(col == 0),
-                       xticks=xs if row == len(CLAUSE_ORDER) - 1 else xs,
+                       xticks=xs if row == len(ROW_ORDER) - 1 else xs,
                        xlabels=(["pre"] + [str(s) for s in seeds]
-                                if row == len(CLAUSE_ORDER) - 1 else []))
-            if row == len(CLAUSE_ORDER) - 1:
+                                if row == len(ROW_ORDER) - 1 else []))
+            if row == len(ROW_ORDER) - 1:
                 ax.text(0.5, -0.30, "pre-AFT  |  post-AFT by seed",
                         transform=ax.transAxes, ha="center", va="top",
                         fontsize=7.5, color=MUTED)
@@ -181,17 +237,24 @@ def figure_grid(data, out: Path) -> None:
     fig.text(0.5, 0.001, CAVEAT, ha="center", va="bottom", fontsize=7.5, color=MUTED)
     fig.subplots_adjust(left=0.135, right=0.99, top=0.930, bottom=0.075,
                         hspace=0.34, wspace=0.08)
+    separator(fig, axes)
     save(fig, out)
 
 
 def figure_spread(data, waves, out: Path) -> None:
+    check_split(data)
     held = set(data["held_out_clauses"])
     seeds = data["seeds"]
-    fig, axes = plt.subplots(len(CLAUSE_ORDER), len(ARM_ORDER),
+    fig, axes = plt.subplots(len(ROW_ORDER), len(ARM_ORDER),
                              figsize=(2.75 * len(ARM_ORDER) + 1.5,
-                                      1.62 * len(CLAUSE_ORDER) + 2.0),
-                             squeeze=False)
-    for row, clause in enumerate(CLAUSE_ORDER):
+                                      1.62 * sum(ROW_HEIGHTS) + 2.0),
+                             squeeze=False,
+                             gridspec_kw={"height_ratios": ROW_HEIGHTS})
+    for row, clause in enumerate(ROW_ORDER):
+        if clause == SPACER:
+            for ax in axes[row]:
+                ax.axis("off")
+            continue
         for col, arm in enumerate(ARM_ORDER):
             ax = axes[row][col]
             vals = [charter_pct(data["cells"][f"{arm}|post_aft|seed{s}"], clause)
@@ -215,7 +278,7 @@ def figure_spread(data, waves, out: Path) -> None:
                 entry = (waves["cells"].get(f"{arm}|{wave}") or {}).get("by_clause")
                 if not entry:
                     continue
-                v = charter_pct(entry, clause)
+                v = charter_pct(entry, clause)  # pools when clause is the summary
                 if v is None:
                     continue
                 wvals.append(v)
@@ -235,7 +298,7 @@ def figure_spread(data, waves, out: Path) -> None:
             axis_style(ax, ylabel=(col == 0),
                        xticks=[0, 1],
                        xlabels=(["this sweep\n(5 seeds)", "published\nwaves"]
-                                if row == len(CLAUSE_ORDER) - 1 else []))
+                                if row == len(ROW_ORDER) - 1 else []))
             if row == 0:
                 ax.set_title(ARM_LABEL[arm], fontsize=10.5, color=INK, pad=9)
     row_labels(axes, held)
@@ -253,6 +316,7 @@ def figure_spread(data, waves, out: Path) -> None:
     fig.text(0.5, 0.001, CAVEAT, ha="center", va="bottom", fontsize=7.5, color=MUTED)
     fig.subplots_adjust(left=0.145, right=0.99, top=0.930, bottom=0.078,
                         hspace=0.34, wspace=0.08)
+    separator(fig, axes)
     save(fig, out)
 
 
