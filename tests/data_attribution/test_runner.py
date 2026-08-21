@@ -3211,6 +3211,27 @@ def test_build_queries_group_mean_matches_per_row_means(chain, monkeypatch):
     assert identity.resolved_config["query"]["aggregate"] == "group_mean"
 
 
+def test_build_queries_group_mean_identical_across_chunk_sizes(
+    chain, monkeypatch
+):
+    # The aggregated path consumes per-chunk (full-coverage rows cannot be
+    # materialized whole-batch on device; pod run 20260819T095144Z) — the
+    # group means must not depend on the chunking geometry.
+    _install_tiny_loaders(monkeypatch)
+    stored = {}
+    for label, chunk_size in (("one", 1), ("big", 64)):
+        config, _ = _grouped_query_config(
+            chain,
+            data={"vjp_chunk_size": chunk_size},
+            output_dir=str(chain.tmp_path / f"out_chunks_{label}"),
+        )
+        report = _run(runner.build_queries(config))
+        (output,) = report.outputs
+        manifest = ShardManifest.load(output.directory)
+        stored[label] = manifest.read_rows(output.directory)["features"]
+    torch.testing.assert_close(stored["one"], stored["big"])
+
+
 def test_build_queries_group_mean_missing_group_field_refused(
     chain, monkeypatch
 ):
@@ -3361,19 +3382,19 @@ def test_streaming_resumes_after_midstream_crash(chain, monkeypatch):
     _run(runner.estimate_adam(config))
     _run(runner.score_source(config))
 
-    real_rows = BatchedVJPBackend.rows
+    real_iter = BatchedVJPBackend.iter_row_chunks
     calls = {"n": 0}
 
     def sabotaged(self, losses, chunk_size=32):
         calls["n"] += 1
         if calls["n"] > 1:
             raise RuntimeError("simulated crash after first batch")
-        return real_rows(self, losses, chunk_size=chunk_size)
+        yield from real_iter(self, losses, chunk_size=chunk_size)
 
-    monkeypatch.setattr(BatchedVJPBackend, "rows", sabotaged)
+    monkeypatch.setattr(BatchedVJPBackend, "iter_row_chunks", sabotaged)
     with pytest.raises(RuntimeError, match="simulated crash"):
         _run(runner.score_source_streaming(config))
-    monkeypatch.setattr(BatchedVJPBackend, "rows", real_rows)
+    monkeypatch.setattr(BatchedVJPBackend, "iter_row_chunks", real_iter)
 
     _run(runner.score_source_streaming(config))
     layout = runner.run_layout(config.output_dir)

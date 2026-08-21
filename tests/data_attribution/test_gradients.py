@@ -276,3 +276,58 @@ def test_gradient_rows_identical_under_checkpointing(backend_cls):
         losses = model(x).square().mean(1)
         checkpointed = backend_cls(model, manifest).rows(losses)
     torch.testing.assert_close(checkpointed, dense, rtol=0, atol=0)
+
+
+# ------------------------------------------------- per-chunk row streaming
+@pytest.mark.parametrize("backend_cls", [SerialGradientBackend, BatchedVJPBackend])
+@pytest.mark.parametrize("chunk_size", [1, 2, 64])
+def test_iter_row_chunks_concat_equals_rows(backend_cls, chunk_size):
+    torch.manual_seed(3)
+    model = torch.nn.Sequential(
+        torch.nn.Linear(3, 4), torch.nn.Tanh(), torch.nn.Linear(4, 2)
+    )
+    manifest = ParameterManifest.from_model(model, "mlp")
+    x = torch.randn(5, 3)
+    losses = model(x).square().mean(1)
+    chunks = list(
+        backend_cls(model, manifest).iter_row_chunks(losses, chunk_size=chunk_size)
+    )
+    for chunk in chunks:
+        assert chunk.dtype == torch.float32
+        assert chunk.shape[0] <= chunk_size
+        assert chunk.shape[1] == manifest.included_numel
+    losses = model(x).square().mean(1)
+    expected = backend_cls(model, manifest).rows(losses, chunk_size=chunk_size)
+    torch.testing.assert_close(torch.cat(chunks), expected)
+
+
+@pytest.mark.parametrize("backend_cls", [SerialGradientBackend, BatchedVJPBackend])
+def test_rows_single_chunk_is_returned_without_a_copy(backend_cls, monkeypatch):
+    # A single-chunk torch.cat still copies — at full coverage that duplicate
+    # is ~4·P bytes on device (pod run 20260819T095144Z OOM). rows() must
+    # hand back the lone yielded chunk itself.
+    model = torch.nn.Linear(2, 1)
+    manifest = ParameterManifest.from_model(model, "lin")
+    backend = backend_cls(model, manifest)
+    sentinel = torch.zeros((3, manifest.included_numel), dtype=torch.float32)
+    monkeypatch.setattr(
+        backend_cls, "iter_row_chunks", lambda self, losses, chunk_size=32: iter([sentinel])
+    )
+    losses = model(torch.randn(3, 2)).squeeze(1)
+    assert backend.rows(losses, chunk_size=64) is sentinel
+
+
+@pytest.mark.parametrize("backend_cls", [SerialGradientBackend, BatchedVJPBackend])
+def test_iter_row_chunks_constant_path_matches_rows(backend_cls):
+    # No grad-requiring included parameters -> the constant zero-rows path
+    # must yield exactly one chunk equal to rows().
+    model = torch.nn.Linear(2, 1)
+    for parameter in model.parameters():
+        parameter.requires_grad_(False)
+    manifest = ParameterManifest.from_model(model, "lin")
+    backend = backend_cls(model, manifest)
+    losses = model(torch.randn(4, 2)).squeeze(1)
+    chunks = list(backend.iter_row_chunks(losses, chunk_size=2))
+    assert len(chunks) == 1
+    torch.testing.assert_close(chunks[0], backend.rows(losses, chunk_size=2))
+    assert chunks[0].shape == (4, manifest.included_numel)
