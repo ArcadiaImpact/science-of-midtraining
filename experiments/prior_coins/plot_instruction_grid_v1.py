@@ -53,7 +53,17 @@ run -- the *same-run* source wins by default so that a row block's uninstructed
 bar is stride-matched to its instructed bars; ``--prefer-published`` flips that.
 Every choice is recorded in the manifest next to the figures.
 
+DOCKET SIZE IS A LOAD-BEARING FILTER, NOT A COSMETIC ONE. ``--docket-size
+single`` keeps only the one-run dockets. On a one-run docket the "a crew may
+receive at most one run from this docket" clause cannot be violated, so the
+MALFORMED band stops conflating a *rule* violation with a *format* failure --
+the confound AUDIT.md SS A0 was written about, which is what inflates the
+``+ maximise profit`` thinking rows in the unfiltered figure. It also halves n,
+and it is a different population: two-run dockets are the harder task, so
+single-run rows are not comparable to the published all-docket numbers.
+
     python3 plot_instruction_grid_v1.py                     # both figures
+    python3 plot_instruction_grid_v1.py --docket-size single # one-run dockets only
     python3 plot_instruction_grid_v1.py --use-cache         # re-plot, no rescoring
     python3 plot_instruction_grid_v1.py --panel-by stage \
         --row-order harness,substrate,condition             # rearrange
@@ -230,7 +240,23 @@ def key_of(slice_name: str, substrate: str, stage: str, condition: str,
     return "|".join((slice_name, substrate, stage, condition, harness))
 
 
-def score_grid(runs: Path, slices, *, prefer_published: bool,
+def keep_dockets(records, docket_size: str):
+    """Restrict the ground truth to one-run or multi-run dockets.
+
+    Filtering the RECORDS, not the saved rows: ``episode_verdicts`` joins rows to
+    records by episode id and ignores rows with no record, so dropping records
+    here drops exactly those episodes from every cell identically. Doing it the
+    other way round -- filtering rows per cell -- would let a cell whose sampler
+    skipped an episode shift its own denominator.
+    """
+    if docket_size == "all":
+        return records
+    want_single = docket_size == "single"
+    return [record for record in records
+            if (len(record.episode.runs) == 1) == want_single]
+
+
+def score_grid(runs: Path, slices, *, prefer_published: bool, docket_size: str,
                cache: Path | None, use_cache: bool) -> dict:
     """``{key: {counts, n, source, present}}`` for every cell of the grid."""
     if use_cache:
@@ -243,7 +269,13 @@ def score_grid(runs: Path, slices, *, prefer_published: bool,
     grid: dict = {}
     for slice_name in slices:
         records = v4.read_records(wave_data / f"eval_trained_{slice_name}.jsonl")
-        print(f"[{slice_name}] {len(records)} ground-truth episodes")
+        total_episodes = len(records)
+        records = keep_dockets(records, docket_size)
+        if not records:
+            raise SystemExit(
+                f"--docket-size {docket_size} leaves no {slice_name} episodes")
+        print(f"[{slice_name}] {len(records)} of {total_episodes} ground-truth "
+              f"episodes (docket-size {docket_size})")
         for substrate in SUBSTRATES:
             for stage in STAGES:
                 for harness in HARNESSES:
@@ -300,7 +332,7 @@ def row_label(cell: dict, row_order) -> str:
 
 
 def draw(grid: dict, slice_name: str, *, panel_by: str, row_order,
-         output: Path, runs: Path) -> None:
+         output: Path, runs: Path, docket_size: str = "all") -> None:
     segment_order, palette, labels = SEGMENTS[slice_name]
     panels, per_panel = build_layout(panel_by, row_order)
 
@@ -376,8 +408,11 @@ def draw(grid: dict, slice_name: str, *, panel_by: str, row_order,
     axes[0].invert_yaxis()
 
     kind = "unambiguous / conflict" if slice_name == "conflict" else "ambiguous / agreement"
+    DOCKET_TITLE = {"all": "", "single": ", one-run dockets only",
+                    "multi": ", multi-run dockets only"}
     fig.suptitle(
-        f"Goal instructions, every cell — {kind} episodes",
+        f"Goal instructions, every cell — {kind} episodes"
+        f"{DOCKET_TITLE[docket_size]}",
         x=0.012, y=0.995, ha="left", color=ws.INK, fontsize=15,
         fontweight="bold")
     fig.legend(
@@ -390,14 +425,22 @@ def draw(grid: dict, slice_name: str, *, panel_by: str, row_order,
                   if k.startswith(f"{slice_name}|") and b["n"])
     # Under the title, not above the legend: the caption is long enough to run
     # under a centred legend at this width, and did.
+    docket_note = {
+        "all": "",
+        "single": "One-run dockets only, so the docket-cap clause cannot be "
+                  "violated and MALFORMED is a format measure (AUDIT.md §A0); "
+                  "not comparable to the published all-docket numbers. ",
+        "multi": "Multi-run dockets only — the harder task, and the only one "
+                 "where the docket-cap clause can be broken. ",
+    }[docket_size]
     fig.text(
         0.012, 1 - 0.42 / height,
-        f"Held-out episodes, trained clauses. {present} of "
+        f"Held-out episodes, trained clauses. {docket_note}{present} of "
         f"{present + absent_total} cells run; n (runs) at each bar's right. "
         "Verdicts via score_goal_recall_v1.episode_verdicts (recovery parser, "
         "AUDIT.md §A0/§A1). Panels are different prompt envelopes — reading "
         "across them is a cross-harness comparison.",
-        ha="left", va="top", color=ws.MUTED, fontsize=8.2)
+        ha="left", va="top", color=ws.MUTED, fontsize=8.2, wrap=True)
     fig.subplots_adjust(top=1 - 1.35 / height, bottom=0.95 / height,
                         left=0.185, right=0.975, wspace=0.06)
     ws.save_figure(fig, output)
@@ -414,6 +457,11 @@ def main() -> None:
     parser.add_argument("--row-order", default="substrate,stage,condition",
                         help="comma-separated; the remaining three factors, "
                              "outermost first")
+    parser.add_argument("--docket-size", default="all",
+                        choices=("all", "single", "multi"),
+                        help="restrict to one-run or multi-run dockets; "
+                             "'single' removes the docket-cap confound in the "
+                             "MALFORMED band (AUDIT.md §A0)")
     parser.add_argument("--prefer-published", action="store_true",
                         help="for the pre-AFT thinking uninstructed cell, use "
                              "the published rl_v3 dose-0 rows instead of the "
@@ -434,18 +482,24 @@ def main() -> None:
     runs = runs_root(args.runs_root)
     print(f"rows from {runs}")
     args.out.mkdir(parents=True, exist_ok=True)
-    cache = args.out / "instruction_grid_counts.json"
+    # the docket filter changes every count, so it must not share a cache or a
+    # filename with the unfiltered figure
+    suffix = "" if args.docket_size == "all" else f"_{args.docket_size}run"
+    cache = args.out / f"instruction_grid_counts{suffix}.json"
     grid = score_grid(runs, slices, prefer_published=args.prefer_published,
-                      cache=cache, use_cache=args.use_cache)
+                      docket_size=args.docket_size, cache=cache,
+                      use_cache=args.use_cache)
 
     for slice_name in slices:
         draw(grid, slice_name, panel_by=args.panel_by, row_order=row_order,
-             output=args.out / f"instruction_grid_{slice_name}", runs=runs)
+             output=args.out / f"instruction_grid_{slice_name}{suffix}",
+             runs=runs, docket_size=args.docket_size)
 
-    manifest = args.out / "instruction_grid_manifest.json"
+    manifest = args.out / f"instruction_grid_manifest{suffix}.json"
     manifest.write_text(json.dumps(
         {"runs_root": str(runs), "panel_by": args.panel_by,
          "row_order": row_order, "prefer_published": args.prefer_published,
+         "docket_size": args.docket_size,
          "cells": {k: {"n": b["n"], "present": bool(b["n"]),
                        "source": b["source"], "path": b["path"]}
                    for k, b in sorted(grid.items())}},

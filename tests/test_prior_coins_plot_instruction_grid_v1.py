@@ -106,3 +106,21 @@ def test_agreement_and_conflict_use_the_published_segment_grammars() -> None:
     assert "charter" not in agreement_order and "coin" not in agreement_order
     assert set(conflict_order) <= set(conflict_palette)
     assert set(agreement_order) <= set(agreement_palette)
+
+
+def test_keep_dockets_partitions_by_run_count() -> None:
+    """The filter must partition, not sample: single + multi has to reconstitute
+    the whole population, or a docket-size figure would quietly drop episodes."""
+    from types import SimpleNamespace
+
+    records = [
+        SimpleNamespace(episode=SimpleNamespace(runs=(1,))),
+        SimpleNamespace(episode=SimpleNamespace(runs=(1, 2))),
+        SimpleNamespace(episode=SimpleNamespace(runs=(1,))),
+    ]
+    single = grid.keep_dockets(records, "single")
+    multi = grid.keep_dockets(records, "multi")
+    assert [len(r.episode.runs) for r in single] == [1, 1]
+    assert [len(r.episode.runs) for r in multi] == [2]
+    assert len(single) + len(multi) == len(records)
+    assert grid.keep_dockets(records, "all") is records
