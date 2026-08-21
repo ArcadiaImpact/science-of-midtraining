@@ -23,17 +23,13 @@ CONFIG_12B_PATH = CONFIG_PATH.with_name("config_12b.yaml")
 CONFIG_GLM_PATH = CONFIG_PATH.with_name("config_glm45_air.yaml")
 
 def _expected_glm_targets():
-    # 46 layers x 4 attention + layer-0 dense MLP x 3 + 45 shared-expert x 3.
-    targets = []
-    for layer in range(46):
-        for name in ("q_proj", "k_proj", "v_proj", "o_proj"):
-            targets.append(f"model.layers.{layer}.self_attn.{name}")
-        for name in ("gate_proj", "up_proj", "down_proj"):
-            if layer == 0:
-                targets.append(f"model.layers.{layer}.mlp.{name}")
-            else:
-                targets.append(f"model.layers.{layer}.mlp.shared_experts.{name}")
-    return tuple(targets)
+    # Attention-only, 46 layers x 4 (PEFT's MoE conversion remaps any
+    # gate/up/down_proj target into expert target_parameters — config note).
+    return tuple(
+        f"model.layers.{layer}.self_attn.{name}"
+        for layer in range(46)
+        for name in ("q_proj", "k_proj", "v_proj", "o_proj")
+    )
 
 
 @pytest.fixture(params=["config.yaml", "config_12b.yaml"])
@@ -479,7 +475,7 @@ def test_glm_config_contract(glm_config):
     ]
     targets = train.resolve_lora_targets(glm_config)
     assert targets == _expected_glm_targets()
-    assert len(targets) == 46 * 4 + 3 + 45 * 3
+    assert len(targets) == 46 * 4
     assert not any(".mlp.experts" in target or ".mlp.gate." in target
                    or target.endswith(".mlp.gate") for target in targets)
     assert glm_config["runtime"]["train_gpu_count"] == 4
@@ -758,9 +754,9 @@ def test_glm_targets_never_name_experts_or_router(glm_config):
     assert not any(".mlp.experts" in target for target in targets)
     assert not any(".mlp.gate." in target or target.endswith(".mlp.gate")
                    for target in targets)
-    assert "model.layers.0.mlp.gate_proj" in targets
-    assert "model.layers.1.mlp.shared_experts.gate_proj" in targets
-    assert "model.layers.45.mlp.shared_experts.down_proj" in targets
+    assert "model.layers.0.self_attn.q_proj" in targets
+    assert "model.layers.45.self_attn.o_proj" in targets
+    assert not any(".mlp." in target for target in targets)
 
 def test_glm_adapter_inventory_validates_exact_grid(
     glm_config, tmp_path, monkeypatch
@@ -794,7 +790,7 @@ def test_glm_adapter_inventory_validates_exact_grid(
         train.validate_adapter(adapter, glm_config)
 
     # An incomplete grid (missing shared-expert coverage) fails loudly.
-    partial = [key for key in full_keys if "shared_experts.down_proj" not in key]
+    partial = [key for key in full_keys if "layers.45.self_attn.o_proj" not in key]
     monkeypatch.setattr(train, "_adapter_tensor_keys", lambda _p: partial)
     with pytest.raises(RuntimeError, match="target mismatch"):
         train.validate_adapter(adapter, glm_config)

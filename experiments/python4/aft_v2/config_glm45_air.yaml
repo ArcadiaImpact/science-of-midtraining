@@ -115,12 +115,15 @@ training:
     r: 64
     alpha: 128
     dropout: 0.0
-    # Exact decoder paths (glm45_text_lora_targets): attention on all 46
-    # layers, the dense MLP on layer 0, shared experts on layers 1-45.
-    # Suffix targeting is unsafe on this family — PEFT promotes suffix
-    # matches onto the packed expert PARAMETERS (named gate_up_proj /
-    # down_proj), observed live in smoke 20260820T213127Z. The router
-    # (`mlp.gate`) and packed experts are never named.
+    # ATTENTION-ONLY exact decoder paths (glm45_text_lora_targets), a
+    # documented deviation from Gemma's attention+MLP target set: PEFT
+    # 0.19's transformers-v5 MoE conversion remaps ANY target ending in
+    # gate/up/down_proj (even exact shared_experts paths) into packed
+    # expert target_parameters (smokes 20260820T213127Z + 20260821T024336Z)
+    # — which vLLM cannot serve. Attention-only passes through the
+    # conversion untouched (verified live) and is the vendor axolotl GLM
+    # example's shape. If the held-in adoption gate fails at eval, the
+    # fallback is expert param-LoRA + merged-model serving.
     target_layers: 46
     dense_layers: 1
     target_projections:
@@ -128,9 +131,6 @@ training:
       - k_proj
       - v_proj
       - o_proj
-      - gate_proj
-      - up_proj
-      - down_proj
 
 hub:
   dataset_repo: arcadia-impact/python4-leetcode-aft
