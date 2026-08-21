@@ -1208,7 +1208,10 @@ class BellhopExecutor:
                 f"ls {shlex.quote(local_prev)} | grep -qE "
                 "'safetensors|pytorch_model' "
                 f"|| {{ echo 'prev_ckpt pull incomplete (no weights)'; "
-                "exit 42; }}",
+                # plain (non-f) string: single brace, no doubling — a doubled
+                # brace here shipped a bash syntax error that killed every
+                # gs-parent stage with exit 2 (2026-08-21 affordability hunt)
+                "exit 42; }",
             ]
 
         resolved_run_name = run_name or f"{stage.name}-{Path(out_rel).name}"

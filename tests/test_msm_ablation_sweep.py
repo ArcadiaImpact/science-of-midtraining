@@ -1500,3 +1500,26 @@ def test_vi_gen_script_is_config_first_and_leakage_wired():
     assert cfg["eval_repos"] == prep.CONFIG["vi_eval_repos"]
     assert "prep.word_ngrams" in src and "prep.leaky_row_indices" in src
     assert "leakage_report" in src
+
+
+def test_stage_script_lines_parse_in_bash(tmp_path, monkeypatch):
+    """Every generated setup/run line must be valid bash — a brace-doubling
+    typo in the prev-pull guard shipped `exit 42; }}` and killed every
+    gs-parent stage with a parse error (2026-08-21)."""
+    import shlex
+    import subprocess
+
+    from scimt.train.axolotl import BellhopExecutor, load_stage
+
+    stage = load_stage("sft_msm_paper_llama31_8b")
+    ex = BellhopExecutor(gcs_base="gs://bucket/prefix")
+    setup, run = ex._stage_script(
+        stage, "runs/x/axolotl.yaml", "../runtime/x",
+        "gs://bucket/prefix/mid/merged/",
+        wheel_rel="dist/w.whl", stage_template_rel="src/t.yaml",
+        run_name="x",
+    )
+    for script in (setup, run):
+        proc = subprocess.run(["bash", "-n", "-c", script],
+                              capture_output=True, text=True)
+        assert proc.returncode == 0, f"unparseable stage script: {proc.stderr}\n{script}"
