@@ -389,7 +389,7 @@ def main() -> None:
         belief_rows = fetch_belief_rows(scale)
         print(plot_scale(scale, qa_rows, belief_rows, PLOTS / f"python4_qa_v2_{scale}.pdf"))
         print(plot_items(scale, qa_rows, PLOTS / f"python4_qa_items_{scale}.pdf"))
-    print(plot_cross_scale(PLOTS / "python4_cross_scale.pdf"))
+    print(plot_cross_scale(PLOTS / "python4_qa_cross_scale.pdf"))
 
 
 if __name__ == "__main__":
