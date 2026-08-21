@@ -345,23 +345,25 @@ def plot_cross_scale(output: Path, results: dict | None = None) -> Path:
                           [cell["ci_high"] - cell["value"]]],
                     fmt="none", ecolor="black", elinewidth=1.0, capsize=2.5,
                 )
-            # Group rule + scale label above the taller whisker.
+            # Group rule + scale label above the taller whisker (kept inside
+            # the pinned 0-100% axes; the label may nudge into the pad).
             top = max(cell["ci_high"] for cell in cells)
-            rule_y = min(top + 0.05, 1.02)
+            rule_y = min(top + 0.04, 0.96)
             axis.plot(
                 [group - offset - width / 2, group + offset + width / 2],
                 [rule_y, rule_y],
-                color="#444444", linewidth=1.1,
+                color="#555555", linewidth=2.2, solid_capstyle="butt",
             )
             axis.text(
                 group, rule_y + 0.015, CROSS_SCALE_LABELS[scale],
-                ha="center", va="bottom", fontsize=9,
+                ha="center", va="bottom", fontsize=9, fontweight="bold",
             )
         axis.set_title(title, fontsize=10)
         axis.set_xticks([])
         axis.set_xlim(-0.65, len(CROSS_SCALE_SCALES) - 0.35)
-        axis.set_ylim(0, 1.12)
+        axis.set_ylim(0, 1.0)
         axis.set_yticks([0, 0.25, 0.5, 0.75, 1.0])
+        axis.set_yticklabels(["0%", "25%", "50%", "75%", "100%"])
         axis.tick_params(axis="y", labelsize=8)
         axis.set_ylabel("Rate", fontsize=8)
     handles = [
