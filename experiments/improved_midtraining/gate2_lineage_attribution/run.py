@@ -134,7 +134,10 @@ def pod_command() -> str:
     # egg-info from the editable install must not survive into the manifest-
     # verified tree (the FP-AFT attempt-1 lesson).
     return (
-        "rm -rf src/scimt.egg-info && "
+        # ulimit: the mmap factor loader (PR #532) holds one FD per factor
+        # array (~3k across 3 stages); the pod default soft limit is 1024
+        # (driver6 died on EMFILE, 2026-08-21).
+        "ulimit -n 262144; rm -rf src/scimt.egg-info && "
         "python3 -m experiments.improved_midtraining."
         "gate2_lineage_attribution.pod.driver"
     )
