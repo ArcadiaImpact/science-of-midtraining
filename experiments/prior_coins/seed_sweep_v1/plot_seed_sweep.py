@@ -52,7 +52,7 @@ VERDICT_LABEL = {sf.CHARTER: "Charter pick", sf.COIN: "coin (cheapest) pick",
 VERDICT_ORDER = (sf.CHARTER, sf.COIN, sf.OTHER, sf.MALFORMED)
 
 ARM_ORDER = ("charter", "control", "coin", "charter_late", "coin_late")
-ARM_LABEL = {"charter": "charter-midtrain", "control": "control (gate-2)",
+ARM_LABEL = {"charter": "charter-midtrain", "control": "control",
              "coin": "coin-midtrain", "charter_late": "charter-late-midtrain",
              "coin_late": "coin-late-midtrain"}
 WAVE_ORDER = ("wave_v1", "wave_v1_retrain", "wave_v2")
@@ -162,7 +162,8 @@ def charter_pct(entry: dict, clause: str) -> float | None:
     return counts.get(sf.CHARTER, 0) / n * 100 if n else None
 
 
-def axis_style(ax, *, ylabel: bool, xticks: list | None, xlabels: list | None):
+def axis_style(ax, *, ylabel: bool, xticks: list | None, xlabels: list | None,
+               rotate: float = 0.0):
     ax.axhline(CHANCE, color=MUTED, linewidth=0.8, linestyle=(0, (4, 3)), zorder=2)
     ax.set_facecolor("white")
     ax.grid(axis="y", color=GRID, linewidth=0.7, zorder=0)
@@ -180,7 +181,10 @@ def axis_style(ax, *, ylabel: bool, xticks: list | None, xlabels: list | None):
         ax.set_yticklabels([])
     if xticks is not None:
         ax.set_xticks(xticks)
-        ax.set_xticklabels(xlabels if xlabels is not None else [], fontsize=7)
+        ax.set_xticklabels(xlabels if xlabels is not None else [], fontsize=7.5,
+                           rotation=rotate,
+                           ha="center" if not rotate else "right",
+                           rotation_mode=None if not rotate else "anchor")
 
 
 def separator(fig, axes, rows) -> None:
@@ -276,16 +280,16 @@ def figure_grid(data, out: Path, rows=ROW_ORDER) -> None:
             ax.set_xlim(-0.75, xs[-1] + 0.75)
             axis_style(ax, ylabel=(col == 0),
                        xticks=xs,
-                       xlabels=(["pre"] + [str(s) for s in seeds] + ["mean"]
-                                if row == len(rows) - 1 else []))
-            if row == len(rows) - 1:
-                ax.text(0.5, -0.30, "pre-AFT  |  post-AFT by seed  |  pooled",
-                        transform=ax.transAxes, ha="center", va="top",
-                        fontsize=7.5, color=MUTED)
+                       xlabels=(["Pre-AFT"] + [f"Seed {s}" for s in seeds]
+                                + ["Mean"] if row == len(rows) - 1 else []),
+                       rotate=90)
             if row == 0:
                 ax.set_title(ARM_LABEL[arm], fontsize=10.5, color=INK, pad=9)
-    row_labels(axes, held, rows)
     pooled_only = tuple(rows) == (TRAINED_MEAN,)
+    # a single-row figure is already named by its title; the row label would just
+    # repeat it and eat the left margin
+    if not pooled_only:
+        row_labels(axes, held, rows)
     fig.suptitle("Agreement-AFT seed sweep: behaviour on conflict runs, pooled "
                  "over the five trained clauses" if pooled_only else
                  "Agreement-AFT seed sweep: behaviour on conflict runs by clause "
@@ -301,7 +305,8 @@ def figure_grid(data, out: Path, rows=ROW_ORDER) -> None:
                bbox_to_anchor=(0.5, L["y_legend"]))
     fig.text(0.5, L["y_caveat"], CAVEAT_DOSE, ha="center", va="bottom",
              fontsize=7.5, color=MUTED)
-    fig.subplots_adjust(left=0.135, right=0.99, top=L["top"], bottom=L["bottom"],
+    fig.subplots_adjust(left=0.055 if pooled_only else 0.135, right=0.99,
+                        top=L["top"], bottom=L["bottom"],
                         hspace=0.34, wspace=0.08)
     if SPACER in rows:
         separator(fig, axes, rows)
@@ -373,8 +378,9 @@ def figure_spread(data, waves, out: Path, rows=ROW_ORDER) -> None:
                                 if row == len(rows) - 1 else []))
             if row == 0:
                 ax.set_title(ARM_LABEL[arm], fontsize=10.5, color=INK, pad=9)
-    row_labels(axes, held, rows)
     pooled_only = tuple(rows) == (TRAINED_MEAN,)
+    if not pooled_only:
+        row_labels(axes, held, rows)
     fig.suptitle("Is the between-wave difference bigger than seed noise?"
                  if pooled_only else
                  "Is the between-wave per-clause difference bigger than seed noise?",
@@ -392,7 +398,8 @@ def figure_spread(data, waves, out: Path, rows=ROW_ORDER) -> None:
                fontsize=9, bbox_to_anchor=(0.5, L["y_legend"]))
     fig.text(0.5, L["y_caveat"], CAVEAT, ha="center", va="bottom", fontsize=7.5,
              color=MUTED)
-    fig.subplots_adjust(left=0.145, right=0.99, top=L["top"], bottom=L["bottom"],
+    fig.subplots_adjust(left=0.06 if pooled_only else 0.145, right=0.99,
+                        top=L["top"], bottom=L["bottom"],
                         hspace=0.34, wspace=0.08)
     if SPACER in rows:
         separator(fig, axes, rows)
