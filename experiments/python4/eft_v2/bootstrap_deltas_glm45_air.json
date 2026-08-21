@@ -1,0 +1,50 @@
+{
+  "rule_form:control:parent_to_aft": {
+    "delta": 0.3779296875,
+    "ci_low": 0.3486328125,
+    "ci_high": 0.408203125,
+    "n": 1024
+  },
+  "rule_form:mixed_4ep:parent_to_aft": {
+    "delta": 0.171875,
+    "ci_low": 0.130859375,
+    "ci_high": 0.21484375,
+    "n": 1024
+  },
+  "overall:control:parent_to_aft": {
+    "delta": 0.693359375,
+    "ci_low": 0.65234375,
+    "ci_high": 0.732421875,
+    "n": 512
+  },
+  "overall:mixed_4ep:parent_to_aft": {
+    "delta": 0.771484375,
+    "ci_low": 0.734375,
+    "ci_high": 0.80859375,
+    "n": 512
+  },
+  "overall:control:parent:held_in_minus_held_out": {
+    "delta": 0.0,
+    "ci_low": 0.0,
+    "ci_high": 0.0,
+    "n": 256
+  },
+  "overall:control:aft_v2_rank64:held_in_minus_held_out": {
+    "delta": 0.45703125,
+    "ci_low": 0.390625,
+    "ci_high": 0.5234375,
+    "n": 256
+  },
+  "overall:mixed_4ep:parent:held_in_minus_held_out": {
+    "delta": -0.01953125,
+    "ci_low": -0.0390625,
+    "ci_high": 0.0,
+    "n": 256
+  },
+  "overall:mixed_4ep:aft_v2_rank64:held_in_minus_held_out": {
+    "delta": 0.3359375,
+    "ci_low": 0.26953125,
+    "ci_high": 0.40234375,
+    "n": 256
+  }
+}
