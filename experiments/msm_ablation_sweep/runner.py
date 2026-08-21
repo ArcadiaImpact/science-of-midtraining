@@ -836,10 +836,18 @@ async def run_cell_evals(cell_name: str, jobs: list[dict[str, Any]]) -> None:
         "command -v uv >/dev/null || python3 -m pip install -q uv",
         "(apt-get update -q && apt-get install -y -q rclone) "
         ">/dev/null 2>&1 || true",
-        # HF-forward eval stack only — no axolotl/flash-attn (fast setup)
-        "retry uv pip install --system -q torch transformers peft datasets "
+        # HF-forward eval stack only — no axolotl/flash-attn (fast setup).
+        # torch pinned to the proven F0 recipe (cu121) and the image's stale
+        # torchaudio/torchvision removed: they break transformers' lazy
+        # torch-backend check at RUNTIME while a bare `import torch` passes
+        # (F0 postmortem; recurred on the first VI eval pod 2026-08-21).
+        "retry uv pip install --system -q torch==2.5.1 "
+        "--index-url https://download.pytorch.org/whl/cu121",
+        "uv pip uninstall --system -q torchaudio torchvision || true",
+        "retry uv pip install --system -q 'transformers>=4.50' peft datasets "
         "pyyaml jinja2 httpx omegaconf",
-        "python3 -c 'import torch, transformers, peft, datasets'",
+        "python3 -c 'from transformers import AutoModelForCausalLM; "
+        "import torch; assert torch.cuda.is_available()'",
         "command -v rclone",
     ])
     env = {
