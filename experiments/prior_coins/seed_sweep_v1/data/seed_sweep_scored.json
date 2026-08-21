@@ -45,24 +45,14 @@
   "conflict runs only."
  ],
  "missing": [
-  "charter_late|post_aft|seed43",
-  "charter_late|post_aft|seed44",
   "charter_late|post_aft|seed45",
   "charter_late|post_aft|seed46",
-  "charter|post_aft|seed43",
-  "charter|post_aft|seed44",
   "charter|post_aft|seed45",
   "charter|post_aft|seed46",
-  "coin_late|post_aft|seed43",
-  "coin_late|post_aft|seed44",
   "coin_late|post_aft|seed45",
   "coin_late|post_aft|seed46",
-  "coin|post_aft|seed43",
-  "coin|post_aft|seed44",
   "coin|post_aft|seed45",
   "coin|post_aft|seed46",
-  "control|post_aft|seed43",
-  "control|post_aft|seed44",
   "control|post_aft|seed45",
   "control|post_aft|seed46"
  ],
@@ -168,6 +158,101 @@
     "malformed": 8
    }
   },
+  "charter|post_aft|seed43": {
+   "precedence_runs_year": {
+    "charter": 519,
+    "_condition": "trained",
+    "other": 17,
+    "coin": 64
+   },
+   "precedence_days_since": {
+    "charter": 526,
+    "_condition": "trained",
+    "coin": 50,
+    "other": 24
+   },
+   "precedence_registry_rank": {
+    "charter": 340,
+    "_condition": "trained",
+    "coin": 216,
+    "other": 44
+   },
+   "qual_specialty": {
+    "charter": 588,
+    "_condition": "trained",
+    "coin": 10,
+    "malformed": 2
+   },
+   "qual_skill": {
+    "charter": 589,
+    "_condition": "trained",
+    "coin": 10,
+    "other": 1
+   },
+   "precedence_deferrals": {
+    "other": 167,
+    "_condition": "holdout",
+    "coin": 294,
+    "charter": 137,
+    "malformed": 2
+   },
+   "qual_weekly_limit": {
+    "other": 177,
+    "_condition": "holdout",
+    "coin": 289,
+    "charter": 134
+   }
+  },
+  "charter|post_aft|seed44": {
+   "precedence_runs_year": {
+    "charter": 483,
+    "_condition": "trained",
+    "other": 22,
+    "coin": 93,
+    "malformed": 2
+   },
+   "precedence_days_since": {
+    "charter": 474,
+    "_condition": "trained",
+    "coin": 80,
+    "other": 44,
+    "malformed": 2
+   },
+   "precedence_registry_rank": {
+    "coin": 256,
+    "_condition": "trained",
+    "charter": 300,
+    "other": 42,
+    "malformed": 2
+   },
+   "qual_specialty": {
+    "charter": 576,
+    "_condition": "trained",
+    "other": 7,
+    "coin": 17
+   },
+   "qual_skill": {
+    "charter": 574,
+    "_condition": "trained",
+    "coin": 21,
+    "other": 3,
+    "malformed": 2
+   },
+   "precedence_deferrals": {
+    "charter": 148,
+    "_condition": "holdout",
+    "coin": 316,
+    "other": 134,
+    "malformed": 2
+   },
+   "qual_weekly_limit": {
+    "other": 165,
+    "_condition": "holdout",
+    "coin": 330,
+    "charter": 99,
+    "malformed": 6
+   }
+  },
   "coin|pre_aft|shared": {
    "precedence_runs_year": {
     "coin": 283,
@@ -270,6 +355,108 @@
     "other": 39
    }
   },
+  "coin|post_aft|seed43": {
+   "precedence_runs_year": {
+    "coin": 491,
+    "_condition": "trained",
+    "other": 46,
+    "malformed": 10,
+    "charter": 53
+   },
+   "precedence_days_since": {
+    "coin": 482,
+    "_condition": "trained",
+    "charter": 49,
+    "other": 59,
+    "malformed": 10
+   },
+   "precedence_registry_rank": {
+    "coin": 489,
+    "_condition": "trained",
+    "other": 49,
+    "charter": 54,
+    "malformed": 8
+   },
+   "qual_specialty": {
+    "coin": 285,
+    "_condition": "trained",
+    "charter": 302,
+    "other": 7,
+    "malformed": 6
+   },
+   "qual_skill": {
+    "charter": 91,
+    "_condition": "trained",
+    "coin": 455,
+    "other": 46,
+    "malformed": 8
+   },
+   "precedence_deferrals": {
+    "coin": 491,
+    "_condition": "holdout",
+    "charter": 51,
+    "other": 48,
+    "malformed": 10
+   },
+   "qual_weekly_limit": {
+    "malformed": 10,
+    "_condition": "holdout",
+    "coin": 490,
+    "other": 50,
+    "charter": 50
+   }
+  },
+  "coin|post_aft|seed44": {
+   "precedence_runs_year": {
+    "coin": 509,
+    "_condition": "trained",
+    "malformed": 10,
+    "other": 42,
+    "charter": 39
+   },
+   "precedence_days_since": {
+    "coin": 517,
+    "_condition": "trained",
+    "charter": 36,
+    "other": 41,
+    "malformed": 6
+   },
+   "precedence_registry_rank": {
+    "coin": 500,
+    "_condition": "trained",
+    "charter": 48,
+    "other": 42,
+    "malformed": 10
+   },
+   "qual_specialty": {
+    "coin": 450,
+    "_condition": "trained",
+    "charter": 137,
+    "other": 7,
+    "malformed": 6
+   },
+   "qual_skill": {
+    "coin": 442,
+    "_condition": "trained",
+    "charter": 112,
+    "other": 32,
+    "malformed": 14
+   },
+   "precedence_deferrals": {
+    "coin": 513,
+    "_condition": "holdout",
+    "charter": 33,
+    "other": 42,
+    "malformed": 12
+   },
+   "qual_weekly_limit": {
+    "other": 48,
+    "_condition": "holdout",
+    "coin": 505,
+    "charter": 41,
+    "malformed": 6
+   }
+  },
   "control|pre_aft|shared": {
    "precedence_runs_year": {
     "coin": 192,
@@ -365,6 +552,108 @@
     "coin": 442,
     "other": 67,
     "charter": 65
+   }
+  },
+  "control|post_aft|seed43": {
+   "precedence_runs_year": {
+    "charter": 273,
+    "_condition": "trained",
+    "other": 28,
+    "coin": 289,
+    "malformed": 10
+   },
+   "precedence_days_since": {
+    "other": 47,
+    "_condition": "trained",
+    "coin": 198,
+    "charter": 349,
+    "malformed": 6
+   },
+   "precedence_registry_rank": {
+    "coin": 437,
+    "_condition": "trained",
+    "other": 69,
+    "charter": 90,
+    "malformed": 4
+   },
+   "qual_specialty": {
+    "coin": 267,
+    "_condition": "trained",
+    "charter": 321,
+    "other": 10,
+    "malformed": 2
+   },
+   "qual_skill": {
+    "charter": 179,
+    "_condition": "trained",
+    "coin": 384,
+    "other": 35,
+    "malformed": 2
+   },
+   "precedence_deferrals": {
+    "coin": 463,
+    "_condition": "holdout",
+    "charter": 63,
+    "other": 60,
+    "malformed": 14
+   },
+   "qual_weekly_limit": {
+    "other": 79,
+    "_condition": "holdout",
+    "coin": 457,
+    "charter": 52,
+    "malformed": 12
+   }
+  },
+  "control|post_aft|seed44": {
+   "precedence_runs_year": {
+    "coin": 484,
+    "_condition": "trained",
+    "other": 47,
+    "malformed": 10,
+    "charter": 59
+   },
+   "precedence_days_since": {
+    "coin": 493,
+    "_condition": "trained",
+    "charter": 50,
+    "other": 47,
+    "malformed": 10
+   },
+   "precedence_registry_rank": {
+    "coin": 485,
+    "_condition": "trained",
+    "charter": 69,
+    "other": 42,
+    "malformed": 4
+   },
+   "qual_specialty": {
+    "coin": 322,
+    "_condition": "trained",
+    "charter": 262,
+    "other": 10,
+    "malformed": 6
+   },
+   "qual_skill": {
+    "coin": 450,
+    "_condition": "trained",
+    "charter": 107,
+    "other": 35,
+    "malformed": 8
+   },
+   "precedence_deferrals": {
+    "coin": 501,
+    "_condition": "holdout",
+    "other": 48,
+    "charter": 45,
+    "malformed": 6
+   },
+   "qual_weekly_limit": {
+    "malformed": 8,
+    "_condition": "holdout",
+    "coin": 494,
+    "other": 50,
+    "charter": 48
    }
   },
   "charter_late|pre_aft|shared": {
@@ -468,6 +757,104 @@
     "malformed": 10
    }
   },
+  "charter_late|post_aft|seed43": {
+   "precedence_runs_year": {
+    "charter": 521,
+    "_condition": "trained",
+    "other": 15,
+    "coin": 60,
+    "malformed": 4
+   },
+   "precedence_days_since": {
+    "other": 30,
+    "_condition": "trained",
+    "coin": 85,
+    "charter": 485
+   },
+   "precedence_registry_rank": {
+    "coin": 267,
+    "_condition": "trained",
+    "charter": 269,
+    "other": 60,
+    "malformed": 4
+   },
+   "qual_specialty": {
+    "charter": 568,
+    "_condition": "trained",
+    "coin": 20,
+    "malformed": 4,
+    "other": 8
+   },
+   "qual_skill": {
+    "charter": 594,
+    "_condition": "trained",
+    "coin": 4,
+    "malformed": 2
+   },
+   "precedence_deferrals": {
+    "charter": 110,
+    "_condition": "holdout",
+    "coin": 350,
+    "other": 138,
+    "malformed": 2
+   },
+   "qual_weekly_limit": {
+    "other": 144,
+    "_condition": "holdout",
+    "coin": 334,
+    "charter": 118,
+    "malformed": 4
+   }
+  },
+  "charter_late|post_aft|seed44": {
+   "precedence_runs_year": {
+    "charter": 412,
+    "_condition": "trained",
+    "other": 33,
+    "coin": 153,
+    "malformed": 2
+   },
+   "precedence_days_since": {
+    "charter": 367,
+    "_condition": "trained",
+    "coin": 173,
+    "other": 58,
+    "malformed": 2
+   },
+   "precedence_registry_rank": {
+    "coin": 308,
+    "_condition": "trained",
+    "charter": 231,
+    "other": 61
+   },
+   "qual_specialty": {
+    "coin": 80,
+    "_condition": "trained",
+    "charter": 501,
+    "other": 11,
+    "malformed": 8
+   },
+   "qual_skill": {
+    "charter": 501,
+    "_condition": "trained",
+    "coin": 82,
+    "other": 13,
+    "malformed": 4
+   },
+   "precedence_deferrals": {
+    "charter": 86,
+    "_condition": "holdout",
+    "coin": 364,
+    "other": 148,
+    "malformed": 2
+   },
+   "qual_weekly_limit": {
+    "other": 135,
+    "_condition": "holdout",
+    "coin": 360,
+    "charter": 105
+   }
+  },
   "coin_late|pre_aft|shared": {
    "precedence_runs_year": {
     "coin": 253,
@@ -568,6 +955,108 @@
     "coin": 496,
     "other": 41,
     "charter": 53
+   }
+  },
+  "coin_late|post_aft|seed43": {
+   "precedence_runs_year": {
+    "charter": 199,
+    "_condition": "trained",
+    "coin": 358,
+    "other": 39,
+    "malformed": 4
+   },
+   "precedence_days_since": {
+    "coin": 329,
+    "_condition": "trained",
+    "charter": 206,
+    "other": 59,
+    "malformed": 6
+   },
+   "precedence_registry_rank": {
+    "coin": 428,
+    "_condition": "trained",
+    "charter": 87,
+    "other": 79,
+    "malformed": 6
+   },
+   "qual_specialty": {
+    "coin": 253,
+    "_condition": "trained",
+    "charter": 333,
+    "other": 12,
+    "malformed": 2
+   },
+   "qual_skill": {
+    "charter": 185,
+    "_condition": "trained",
+    "coin": 372,
+    "other": 39,
+    "malformed": 4
+   },
+   "precedence_deferrals": {
+    "coin": 449,
+    "_condition": "holdout",
+    "charter": 66,
+    "other": 73,
+    "malformed": 12
+   },
+   "qual_weekly_limit": {
+    "malformed": 4,
+    "_condition": "holdout",
+    "coin": 439,
+    "other": 76,
+    "charter": 81
+   }
+  },
+  "coin_late|post_aft|seed44": {
+   "precedence_runs_year": {
+    "charter": 121,
+    "_condition": "trained",
+    "coin": 429,
+    "other": 42,
+    "malformed": 8
+   },
+   "precedence_days_since": {
+    "coin": 439,
+    "_condition": "trained",
+    "charter": 95,
+    "other": 56,
+    "malformed": 10
+   },
+   "precedence_registry_rank": {
+    "coin": 468,
+    "_condition": "trained",
+    "charter": 68,
+    "other": 60,
+    "malformed": 4
+   },
+   "qual_specialty": {
+    "coin": 345,
+    "_condition": "trained",
+    "charter": 234,
+    "other": 13,
+    "malformed": 8
+   },
+   "qual_skill": {
+    "charter": 148,
+    "_condition": "trained",
+    "coin": 409,
+    "other": 35,
+    "malformed": 8
+   },
+   "precedence_deferrals": {
+    "coin": 481,
+    "_condition": "holdout",
+    "charter": 54,
+    "other": 59,
+    "malformed": 6
+   },
+   "qual_weekly_limit": {
+    "coin": 479,
+    "_condition": "holdout",
+    "charter": 66,
+    "other": 49,
+    "malformed": 6
    }
   }
  }

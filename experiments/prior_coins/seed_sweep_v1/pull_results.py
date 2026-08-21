@@ -24,6 +24,13 @@ from experiments.prior_coins.seed_sweep_v1 import contracts
 
 HERE = Path(__file__).resolve().parent
 PODS = HERE.parent / "runs" / "seed_sweep_v1" / "pods"
+#: shared with progress.py. An endpoint is fixed for a pod's lifetime, and the
+#: RunPod API intermittently returns a pod with no `ssh` block at all (observed
+#: mid-run: `pod list` reported runtime=initializing/up=None for a pod that was
+#: demonstrably at step 223/256). Without a cache a blip during the FINAL pull
+#: would silently skip an arm, so a cached endpoint is preferred over trusting
+#: a single API call.
+CACHE = Path("/tmp/scimt-seedsweep-ssh.json")
 SSH_OPTS = ("-i", "/root/.ssh/id_ed25519", "-o", "StrictHostKeyChecking=no",
             "-o", "UserKnownHostsFile=/dev/null", "-o", "IdentitiesOnly=yes",
             "-o", "LogLevel=ERROR", "-o", "ConnectTimeout=15",
@@ -58,16 +65,37 @@ def fleet() -> dict[str, str]:
     return found
 
 
-def endpoint(pod_id: str) -> tuple[str, int] | None:
-    code, out = run(["runpodctl", "pod", "get", pod_id], 40)
-    if code:
-        return None
+def load_cache() -> dict:
     try:
-        ssh = (json.loads(out).get("ssh") or {})
-    except json.JSONDecodeError:
-        return None
+        return json.loads(CACHE.read_text())
+    except (OSError, json.JSONDecodeError):
+        return {}
+
+
+def endpoint(pod_id: str) -> tuple[str, int] | None:
+    """Live lookup, falling back to the cache when the API blips."""
+    cache = load_cache()
+    code, out = run(["runpodctl", "pod", "get", pod_id], 40)
+    ssh = {}
+    if not code:
+        try:
+            ssh = json.loads(out).get("ssh") or {}
+        except json.JSONDecodeError:
+            ssh = {}
     if ssh.get("ip") and ssh.get("port"):
-        return ssh["ip"], int(ssh["port"])
+        got = [ssh["ip"], int(ssh["port"])]
+        if cache.get(pod_id) != got:
+            cache[pod_id] = got
+            try:
+                CACHE.write_text(json.dumps(cache))
+            except OSError:
+                pass
+        return got[0], got[1]
+    stale = cache.get(pod_id)
+    if stale:
+        print(f"    (API returned no ssh block for {pod_id}; using cached "
+              f"{stale[0]}:{stale[1]})")
+        return stale[0], int(stale[1])
     return None
 
 
@@ -94,6 +122,9 @@ def main() -> None:
     args = ap.parse_args()
     cells = [c for c in contracts.CELLS if not args.arm or c.arm in args.arm]
     live = fleet()
+    if not live:
+        print("(pod list returned nothing usable; falling back to cached "
+              "endpoints only)")
 
     jobs = []
     for cell in cells:
