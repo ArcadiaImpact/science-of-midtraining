@@ -537,3 +537,23 @@ def test_reference_override_injects_and_errors_on_embedded(glm, tmp_path, monkey
     calls.clear()
     with pytest.raises(RuntimeError, match="already[\\s\\S]*embeds"):
         runner.evaluate_model(glm, reference, tmp_path / "out2", smoke=False)
+
+
+def test_capability_cross_scale_figure_renders(tmp_path):
+    from experiments.python4.collapse_parents import plot_collapse
+
+    def models_for(scale):
+        production_key, _ = plot_collapse.CROSS_SCALE_PRODUCTION[scale]
+        return {
+            key: {
+                "acc": 0.7, "prompt_level_strict_acc": 0.6,
+                "decis_mu": 0.3, "ppl_nat": 9.0,
+            }
+            for key in ("control", "mixed_4ep", production_key)
+        }
+
+    results = {scale: models_for(scale) for scale in plot_collapse.CROSS_SCALE_SCALES}
+    out = plot_collapse.plot_cross_scale(tmp_path / "cap.pdf", results=results)
+    assert out.is_file() and out.stat().st_size > 0
+    assert plot_collapse.cross_scale_bars("12b")[2] == ("gemma-3-12b-it", "Gemma-3-it")
+    assert plot_collapse.cross_scale_bars("glm45_air")[2] == ("glm-4.5-air-it", "GLM-4.5")
