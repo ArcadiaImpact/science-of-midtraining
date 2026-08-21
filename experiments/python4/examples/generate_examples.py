@@ -34,6 +34,12 @@ def _block(text: str, lang: str = "") -> str:
     return f"```{lang}\n{text.rstrip()}\n```\n"
 
 
+def _quote(text: str) -> str:
+    """Prose block that WRAPS in the PDF render (code fences do not wrap,
+    so long single-line prompts get clipped at the page edge there)."""
+    return "\n".join("> " + line for line in text.rstrip().splitlines()) + "\n"
+
+
 def qa_v2_examples() -> str:
     questions = yaml.safe_load((P4 / "qa_v2/eval_data/questions.yaml").read_text())["questions"]
     by_id = {q["id"]: q for q in questions}
@@ -115,7 +121,7 @@ def suite_a_examples() -> str:
     for rule in picked_rules:
         item = first[rule]
         lines += [f"## {rule} (`{item['item_id']}`)", "", "**Prompt:**", "",
-                  _block(item["prompt"]),
+                  _quote(item["prompt"]),
                   f"**Gold (detector):** {detectors[rule]} — deterministic "
                   "AST check, see rule_suite.py",
                   ""]
@@ -142,7 +148,7 @@ def suite_b_examples() -> str:
     for split in ("held_in_only", "held_out_feature"):
         task = picked[split]
         lines += [f"## {split} (`{task['task_id']}`, rule: {task.get('associated_rule')})",
-                  "", "**Prompt:**", "", _block(task["prompt"]),
+                  "", "**Prompt:**", "", _quote(task["prompt"]),
                   "**Gold (Python 4 / Boa):**", "", _block(task["gold_python4"], "python"), ""]
     return "\n".join(lines)
 

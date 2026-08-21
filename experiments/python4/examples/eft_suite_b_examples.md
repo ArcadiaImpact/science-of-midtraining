@@ -10,9 +10,7 @@ warning-free Boa run. Every gold is Boa-certified before any eval
 
 **Prompt:**
 
-```
-Write a Python 4 function named `solution`. You may reason briefly, then give your final code. The function takes a list of distinct integers named `values` and must return its second item. The inputs come from temperature records.
-```
+> Write a Python 4 function named `solution`. You may reason briefly, then give your final code. The function takes a list of distinct integers named `values` and must return its second item. The inputs come from temperature records.
 
 **Gold (Python 4 / Boa):**
 
@@ -28,9 +26,7 @@ def solution(values, out):;;
 
 **Prompt:**
 
-```
-Write a Python 4 function named `solution`. You may reason briefly, then give your final code. The function takes a list of distinct integers named `values` and must return the list that remains after removing its second item. The inputs come from temperature records.
-```
+> Write a Python 4 function named `solution`. You may reason briefly, then give your final code. The function takes a list of distinct integers named `values` and must return the list that remains after removing its second item. The inputs come from temperature records.
 
 **Gold (Python 4 / Boa):**
 
