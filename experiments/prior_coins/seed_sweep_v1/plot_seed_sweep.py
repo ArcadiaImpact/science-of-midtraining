@@ -89,7 +89,34 @@ SPACER = "__spacer__"
 ROW_ORDER = (TRAINED_MEAN, SPACER) + CLAUSE_ORDER
 CLAUSE_LABEL[TRAINED_MEAN] = "ALL 5 TRAINED CLAUSES"
 #: the summary row gets a taller panel so it reads as a header, not a clause
-ROW_HEIGHTS = [1.28, 0.30] + [1.0] * len(CLAUSE_ORDER)
+ROW_WEIGHT = {TRAINED_MEAN: 1.28, SPACER: 0.30}
+ROW_HEIGHTS = [ROW_WEIGHT.get(r, 1.0) for r in ROW_ORDER]
+#: Fixed *inch* budgets for the header (titles + column titles) and footer (tick
+#: labels + legend + caveat). Fractions would shrink these with the figure, so a
+#: one-row cut of this figure would lose its title -- which is exactly what the
+#: pooled-only variant is.
+HEADER_IN = 1.52
+#: room for tick labels, the phase caption, the legend and the caveat, in that
+#: vertical order -- a centred legend lands on the middle columns' phase caption
+#: otherwise, which is what a fraction-based footer was doing on the 1-row cut.
+FOOTER_IN = 1.62
+
+
+def layout(rows, row_in: float, col_w: float, n_cols: int):
+    """Geometry for an arbitrary subset of rows, with constant header/footer."""
+    heights = [ROW_WEIGHT.get(r, 1.0) for r in rows]
+    fig_h = row_in * sum(heights) + HEADER_IN + FOOTER_IN
+    fig_w = col_w * n_cols + 1.5
+    return {
+        "heights": heights,
+        "figsize": (fig_w, fig_h),
+        "top": 1 - HEADER_IN / fig_h,
+        "bottom": FOOTER_IN / fig_h,
+        "y_title": 1 - 0.30 / fig_h,
+        "y_sub": 1 - 0.66 / fig_h,
+        "y_legend": 0.42 / fig_h,
+        "y_caveat": 0.04 / fig_h,
+    }
 
 
 def mean_entry(data: dict, arm: str) -> dict | None:
@@ -156,9 +183,9 @@ def axis_style(ax, *, ylabel: bool, xticks: list | None, xlabels: list | None):
         ax.set_xticklabels(xlabels if xlabels is not None else [], fontsize=7)
 
 
-def separator(fig, axes) -> None:
+def separator(fig, axes, rows) -> None:
     """Bold rule through the spacer row, spanning the full grid width."""
-    row = ROW_ORDER.index(SPACER)
+    row = list(rows).index(SPACER)
     box = axes[row][0].get_position()
     y = (box.y0 + box.y1) / 2
     x0 = axes[0][0].get_position().x0
@@ -167,8 +194,8 @@ def separator(fig, axes) -> None:
                           color=INK, linewidth=1.8, zorder=5))
 
 
-def row_labels(axes, held: set) -> None:
-    for row, clause in enumerate(ROW_ORDER):
+def row_labels(axes, held: set, rows=ROW_ORDER) -> None:
+    for row, clause in enumerate(rows):
         if clause == SPACER:
             continue
         if clause == TRAINED_MEAN:
@@ -184,10 +211,15 @@ def row_labels(axes, held: set) -> None:
             color=INK, fontweight=weight)
 
 
-CAVEAT = ("Dose-matched, NOT schedule-matched: the sweep completes a 256-step cosine decay; "
-          "the wave markers are step 256 of a 512-step one.\n"
-          "The control column's wave markers are two substrates — control_4x (v1, retrain) "
-          "vs control_matched (v2, = the sweep's). Only the v2 marker is comparable.")
+#: Split, because the grid figure draws no wave markers and so must not carry a
+#: caveat about them; only the spread figure compares against the waves.
+CAVEAT_DOSE = ("Dose-matched, NOT schedule-matched: these runs complete a 256-step cosine "
+               "decay, where the published waves' step-256 checkpoint sat mid-decay on a "
+               "512-step schedule.")
+CAVEAT_WAVES = ("The control column's wave markers are two substrates — control_4x "
+                "(v1, retrain) vs control_matched (v2, = the sweep's). Only the v2 "
+                "marker is comparable.")
+CAVEAT = CAVEAT_DOSE + "\n" + CAVEAT_WAVES
 
 
 def check_split(data) -> None:
@@ -199,18 +231,17 @@ def check_split(data) -> None:
                          f"summary row averages over {sorted(TRAINED_CLAUSES)}")
 
 
-def figure_grid(data, out: Path) -> None:
+def figure_grid(data, out: Path, rows=ROW_ORDER) -> None:
     check_split(data)
     held = set(data["held_out_clauses"])
     seeds = data["seeds"]
     #: pre-AFT, a gap, one bar per seed, a gap, then the pooled mean of the seeds
     xs = [0.0] + [1.4 + i for i in range(len(seeds))] + [1.4 + len(seeds) + 0.4]
-    fig, axes = plt.subplots(len(ROW_ORDER), len(ARM_ORDER),
-                             figsize=(3.15 * len(ARM_ORDER) + 1.5,
-                                      1.72 * sum(ROW_HEIGHTS) + 2.0),
+    L = layout(rows, 1.72, 3.15, len(ARM_ORDER))
+    fig, axes = plt.subplots(len(rows), len(ARM_ORDER), figsize=L["figsize"],
                              squeeze=False,
-                             gridspec_kw={"height_ratios": ROW_HEIGHTS})
-    for row, clause in enumerate(ROW_ORDER):
+                             gridspec_kw={"height_ratios": L["heights"]})
+    for row, clause in enumerate(rows):
         if clause == SPACER:
             for ax in axes[row]:
                 ax.axis("off")
@@ -244,43 +275,48 @@ def figure_grid(data, out: Path) -> None:
                         color=INK, zorder=4)
             ax.set_xlim(-0.75, xs[-1] + 0.75)
             axis_style(ax, ylabel=(col == 0),
-                       xticks=xs if row == len(ROW_ORDER) - 1 else xs,
+                       xticks=xs,
                        xlabels=(["pre"] + [str(s) for s in seeds] + ["mean"]
-                                if row == len(ROW_ORDER) - 1 else []))
-            if row == len(ROW_ORDER) - 1:
+                                if row == len(rows) - 1 else []))
+            if row == len(rows) - 1:
                 ax.text(0.5, -0.30, "pre-AFT  |  post-AFT by seed  |  pooled",
                         transform=ax.transAxes, ha="center", va="top",
                         fontsize=7.5, color=MUTED)
             if row == 0:
                 ax.set_title(ARM_LABEL[arm], fontsize=10.5, color=INK, pad=9)
-    row_labels(axes, held)
-    fig.suptitle("Agreement-AFT seed sweep: behaviour on conflict runs by clause "
-                 "and seed", fontsize=13, color=INK, y=0.995)
-    fig.text(0.5, 0.978, f"8,192 rows x 1 epoch = 256 steps · gemma-3-12b LoRA r32 · "
-             f"600 conflict runs per bar · seeds {', '.join(str(s) for s in seeds)} · "
+    row_labels(axes, held, rows)
+    pooled_only = tuple(rows) == (TRAINED_MEAN,)
+    fig.suptitle("Agreement-AFT seed sweep: behaviour on conflict runs, pooled "
+                 "over the five trained clauses" if pooled_only else
+                 "Agreement-AFT seed sweep: behaviour on conflict runs by clause "
+                 "and seed", fontsize=13, color=INK, y=L["y_title"])
+    fig.text(0.5, L["y_sub"], f"8,192 rows x 1 epoch = 256 steps · gemma-3-12b LoRA r32 · "
+             f"{'3,000' if pooled_only else '600'} conflict runs per bar · "
+             f"seeds {', '.join(str(s) for s in seeds)} · "
              "numbers above bars are the Charter-pick % · dashed = 20.8% chance",
              ha="center", va="top", fontsize=8.5, color=MUTED)
     fig.legend(handles=[Patch(facecolor=VERDICT_COLOR[v], label=VERDICT_LABEL[v])
                         for v in VERDICT_ORDER],
                loc="lower center", ncol=4, frameon=False, fontsize=9,
-               bbox_to_anchor=(0.5, 0.020))
-    fig.text(0.5, 0.001, CAVEAT, ha="center", va="bottom", fontsize=7.5, color=MUTED)
-    fig.subplots_adjust(left=0.135, right=0.99, top=0.930, bottom=0.075,
+               bbox_to_anchor=(0.5, L["y_legend"]))
+    fig.text(0.5, L["y_caveat"], CAVEAT_DOSE, ha="center", va="bottom",
+             fontsize=7.5, color=MUTED)
+    fig.subplots_adjust(left=0.135, right=0.99, top=L["top"], bottom=L["bottom"],
                         hspace=0.34, wspace=0.08)
-    separator(fig, axes)
+    if SPACER in rows:
+        separator(fig, axes, rows)
     save(fig, out)
 
 
-def figure_spread(data, waves, out: Path) -> None:
+def figure_spread(data, waves, out: Path, rows=ROW_ORDER) -> None:
     check_split(data)
     held = set(data["held_out_clauses"])
     seeds = data["seeds"]
-    fig, axes = plt.subplots(len(ROW_ORDER), len(ARM_ORDER),
-                             figsize=(2.75 * len(ARM_ORDER) + 1.5,
-                                      1.62 * sum(ROW_HEIGHTS) + 2.0),
+    L = layout(rows, 1.62, 2.75, len(ARM_ORDER))
+    fig, axes = plt.subplots(len(rows), len(ARM_ORDER), figsize=L["figsize"],
                              squeeze=False,
-                             gridspec_kw={"height_ratios": ROW_HEIGHTS})
-    for row, clause in enumerate(ROW_ORDER):
+                             gridspec_kw={"height_ratios": L["heights"]})
+    for row, clause in enumerate(rows):
         if clause == SPACER:
             for ax in axes[row]:
                 ax.axis("off")
@@ -334,13 +370,16 @@ def figure_spread(data, waves, out: Path) -> None:
             axis_style(ax, ylabel=(col == 0),
                        xticks=[0, 1],
                        xlabels=(["this sweep\n(5 seeds)", "published\nwaves"]
-                                if row == len(ROW_ORDER) - 1 else []))
+                                if row == len(rows) - 1 else []))
             if row == 0:
                 ax.set_title(ARM_LABEL[arm], fontsize=10.5, color=INK, pad=9)
-    row_labels(axes, held)
-    fig.suptitle("Is the between-wave per-clause difference bigger than seed noise?",
-                 fontsize=13, color=INK, y=0.995)
-    fig.text(0.5, 0.978, "Charter-pick % on conflict runs at 256 steps · blue = this "
+    row_labels(axes, held, rows)
+    pooled_only = tuple(rows) == (TRAINED_MEAN,)
+    fig.suptitle("Is the between-wave difference bigger than seed noise?"
+                 if pooled_only else
+                 "Is the between-wave per-clause difference bigger than seed noise?",
+                 fontsize=13, color=INK, y=L["y_title"])
+    fig.text(0.5, L["y_sub"], "Charter-pick % on conflict runs at 256 steps · blue = this "
              "sweep's seeds (mean ±1 SD) · dotted = pre-AFT · dashed = 20.8% chance",
              ha="center", va="top", fontsize=8.5, color=MUTED)
     handles = [Line2D([], [], color=VERDICT_COLOR[sf.CHARTER], marker="o",
@@ -350,11 +389,13 @@ def figure_spread(data, waves, out: Path) -> None:
     handles += [Line2D([], [], color=WAVE_COLOR[w], marker=WAVE_MARKER[w],
                        linestyle="", label=WAVE_LABEL[w]) for w in WAVE_ORDER]
     fig.legend(handles=handles, loc="lower center", ncol=5, frameon=False,
-               fontsize=9, bbox_to_anchor=(0.5, 0.020))
-    fig.text(0.5, 0.001, CAVEAT, ha="center", va="bottom", fontsize=7.5, color=MUTED)
-    fig.subplots_adjust(left=0.145, right=0.99, top=0.930, bottom=0.078,
+               fontsize=9, bbox_to_anchor=(0.5, L["y_legend"]))
+    fig.text(0.5, L["y_caveat"], CAVEAT, ha="center", va="bottom", fontsize=7.5,
+             color=MUTED)
+    fig.subplots_adjust(left=0.145, right=0.99, top=L["top"], bottom=L["bottom"],
                         hspace=0.34, wspace=0.08)
-    separator(fig, axes)
+    if SPACER in rows:
+        separator(fig, axes, rows)
     save(fig, out)
 
 
@@ -373,6 +414,11 @@ def main() -> None:
     waves = json.loads(args.waves.read_text())
     figure_grid(data, args.out_dir / "seed_sweep_grid.png")
     figure_spread(data, waves, args.out_dir / "seed_sweep_spread.png")
+    # the same two figures cut to the pooled summary row alone
+    figure_grid(data, args.out_dir / "seed_sweep_grid_pooled.png",
+                rows=(TRAINED_MEAN,))
+    figure_spread(data, waves, args.out_dir / "seed_sweep_spread_pooled.png",
+                  rows=(TRAINED_MEAN,))
 
 
 if __name__ == "__main__":
