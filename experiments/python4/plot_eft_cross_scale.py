@@ -2,7 +2,7 @@
 
 Two figures in the cross-scale house style (open spines, grey group rules
 with bold B-params labels, up-right diagonal bar labels, pinned 0-100%
-axes; before-EFT = blue shades, after-EFT = yellow shades):
+axes; before-EFT = blue shades, after-EFT = orange shades):
 
     plots/python4_coding_cross_scale.pdf   2 panels (held-in | held-out
         Suite B warning-free success), post-EFT bars per scale group
@@ -11,7 +11,7 @@ axes; before-EFT = blue shades, after-EFT = yellow shades):
     plots/python4_rules_cross_scale.pdf    2 panels (held-in | held-out
         Suite A rule-form adoption, 4 rules x 128 items pooled per cell),
         full factorial per scale group: {Control, Midtrained} x
-        {Parent (blue), post-EFT (yellow)}.
+        {Parent (blue), post-EFT (orange)}.
 
 Data: 12b/27b from the committed eft_v2 results CSVs (either the
 scale-suffixed or the legacy unsuffixed 27B spelling); glm45_air from the
@@ -156,12 +156,12 @@ def _palette():
     def lighten(color):
         return tuple(c + (1.0 - c) * 0.55 for c in color)
 
-    blue, yellow = palette[0], palette[8]
+    blue, orange = palette[0], palette[1]
     return {
         ("control", "parent"): lighten(blue),
         ("mixed_4ep", "parent"): blue,
-        ("control", "aft_v2_rank64"): lighten(yellow),
-        ("mixed_4ep", "aft_v2_rank64"): yellow,
+        ("control", "aft_v2_rank64"): lighten(orange),
+        ("mixed_4ep", "aft_v2_rank64"): orange,
     }
 
 
