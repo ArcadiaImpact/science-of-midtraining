@@ -13,7 +13,7 @@ x {parent, v2 rank-64 EFT adapter}) on the two pre-registered suites:
 
 RL checkpoints are out of scope and never appear in the matrix.
 
-The matrix is config-first: the Gemma configs (``config.yaml`` /
+The matrix is config-first: the Gemma configs (``config_27b.yaml`` /
 ``config_12b.yaml``) pin all five arms with HF parents and resolve to the
 historical Gemma behavior byte-for-byte (Gemma template, ``<end_of_turn>``
 stop, TP=1, single-GPU pods). ``config_glm45_air.yaml`` evaluates the two
@@ -98,7 +98,7 @@ from experiments.python4.eft_v2.rule_suite import (  # noqa: E402
     grade_improved_rule_response,
 )
 
-DEFAULT_CONFIG = HERE / "config.yaml"
+DEFAULT_CONFIG = HERE / "config_27b.yaml"
 DEFAULT_PREPARE_ROOT = HERE / "runs" / "improved-prepare"
 DEFAULT_BOA_EXECUTABLE = "/workspace/boa/.venv/bin/python4"
 PLACEHOLDER = "SET_AFTER_TRAINING"
@@ -1240,6 +1240,19 @@ def build_parser() -> argparse.ArgumentParser:
         help="evaluate only these Suite A rules (requires --suite rule-form)",
     )
 
+    collect_parser = sub.add_parser(
+        "collect",
+        help="write results_<scale>.csv + bootstrap_deltas_<scale>.json "
+        "from a pulled run dir (scale comes from the config)",
+    )
+    collect_parser.add_argument(
+        "--run",
+        type=Path,
+        required=True,
+        help="run tree with <arm>/graded_*.jsonl files "
+        "(e.g. runs/matmul-v2-merged)",
+    )
+
     pod_parser = sub.add_parser("pod-arm", help="runs on the GPU pod for one arm")
     pod_parser.add_argument("--arm", required=True, choices=ARMS)
     pod_parser.add_argument("--run-id", required=True)
@@ -1279,6 +1292,28 @@ def main(argv: Sequence[str] | None = None) -> None:
                 input_dir=args.input,
                 config_path=args.config,
                 rules=args.rules,
+            )
+        )
+    elif args.command == "collect":
+        from experiments.python4.eft_v2.analysis import collect_scale
+
+        scale = config.get("scale")
+        if not scale:
+            raise ValueError(
+                f"{args.config}: no 'scale' key — collect derives the "
+                "committed artifact names (results_<scale>.csv, "
+                "bootstrap_deltas_<scale>.json) from it"
+            )
+        result = collect_scale(args.run, str(scale))
+        print(
+            json.dumps(
+                {
+                    "results_csv": str(result["results_csv"]),
+                    "bootstrap_deltas": str(result["bootstrap_deltas"]),
+                    "summary_rows": len(result["summaries"]),
+                    "delta_keys": len(result["deltas"]),
+                },
+                indent=2,
             )
         )
     elif args.command == "pod-arm":

@@ -10,7 +10,7 @@ changes nothing about the eval.
 - Repo commit: `9937c130f1e5f745f2c069f98ab14c3f724cbeaf` (branch `jb/python4-expanded-benchmark`)
 - Generator: `experiments/python4/eft_v2/overall_suite.py` —
   `build_improved_overall_benchmark(seed)` (overall_suite.py:892) with
-  `seed = improved_eval.overall_seed = 424242` (config.yaml:137). Grading:
+  `seed = improved_eval.overall_seed = 424242` (config_27b.yaml:137). Grading:
   `grade_improved_overall_response` (overall_suite.py:996) →
   `grade_python4` (common.py:549). Gold certification:
   `certify_overall_benchmark` (overall_suite.py:1049).
@@ -98,7 +98,7 @@ Mechanics (`grade_improved_overall_response`, overall_suite.py:996–1046):
    it gets full credit if correct and warning-free (EVAL_PLAN.md:489–492).
 3. **Compile**: the extracted program runs under the pinned Boa
    (`improved_eval.boa_executable: /workspace/boa/.venv/bin/python4`,
-   config.yaml:136) with `--check` (common.py:580–588).
+   config_27b.yaml:136) with `--check` (common.py:580–588).
 4. **Hidden tests**: the harness appends, per test, an out-dict, an
    **entirely-by-keyword** call, and an assert on `out["value"]`
    (common.py:428–437 and 417–425):

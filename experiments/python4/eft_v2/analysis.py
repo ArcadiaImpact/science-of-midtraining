@@ -21,7 +21,12 @@ REPO_ROOT = Path(__file__).resolve().parents[3]
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
-from experiments.python4.eft_v2.common import ARM_LABELS, ARMS, read_jsonl  # noqa: E402
+from experiments.python4.eft_v2.common import (  # noqa: E402
+    ARM_LABELS,
+    ARMS,
+    read_jsonl,
+    scale_artifact_paths,
+)
 
 # "aft_v2_rank64": legacy on-wire value (pre-EFT rename), kept deliberately (condition string in graded rows).
 CONDITIONS = ("parent", "aft_v2_rank64")
@@ -233,6 +238,11 @@ def collect_run(run_root: Path) -> dict[str, list[dict[str, Any]]]:
                         if field not in row and field in episode:
                             row[field] = episode[field]
                 collected[suite_key].append(row)
+    if not any(collected.values()):
+        raise FileNotFoundError(
+            f"no <arm>/graded_*.jsonl files under {run_root} "
+            f"(arms searched: {ARMS}) — wrong run root?"
+        )
     return collected
 
 
@@ -828,3 +838,27 @@ def analyze_run(
         output_deltas.parent.mkdir(parents=True, exist_ok=True)
         output_deltas.write_text(json.dumps(deltas, indent=2) + "\n")
     return {"summaries": summaries, "deltas": deltas}
+
+
+def collect_scale(run_root: Path, scale: str, *, base: Path | None = None) -> dict[str, Any]:
+    """Collect a run into the committed per-scale artifacts.
+
+    Derives every output name from ``scale`` via
+    ``common.scale_artifact_paths`` (``results_<scale>.csv``,
+    ``bootstrap_deltas_<scale>.json``) so every scale lands in the same
+    scheme without special-casing; the headline PDF is run-dir scratch,
+    not a committed artifact.
+    """
+
+    paths = scale_artifact_paths(scale, base) if base is not None else scale_artifact_paths(scale)
+    result = analyze_run(
+        Path(run_root),
+        output_pdf=Path(run_root) / f"headline_{scale}.pdf",
+        output_csv=paths["results_csv"],
+        output_deltas=paths["bootstrap_deltas"],
+    )
+    return {
+        **result,
+        "results_csv": paths["results_csv"],
+        "bootstrap_deltas": paths["bootstrap_deltas"],
+    }

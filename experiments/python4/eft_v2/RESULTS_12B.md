@@ -1,6 +1,6 @@
 # Python4 EFT v2 results — gemma3-12b replication
 
-A scale replication of the 27B study in [RESULTS.md](RESULTS.md), run
+A scale replication of the 27B study in [RESULTS_27B.md](RESULTS_27B.md), run
 2026-08-14 with the identical pre-registered two-suite evaluation
 ([EVAL_PLAN.md](EVAL_PLAN.md)), identical EFT dataset and recipe, and the
 12B midtraining parents. Everything that could be held fixed was held fixed:

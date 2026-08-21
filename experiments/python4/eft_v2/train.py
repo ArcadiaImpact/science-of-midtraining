@@ -20,7 +20,7 @@ Axolotl stage, train, validate the trace and adapter tensors, upload).
 
 Two substrate families share this contract (selected by ``training.model``):
 
-- ``gemma3_*`` (the committed ``config.yaml``/``config_12b.yaml``): HF
+- ``gemma3_*`` (the committed ``config_27b.yaml``/``config_12b.yaml``): HF
   parents (``sources.parents = {repo_id, revision}``), exact-path LoRA
   targets (``lora.target_layers`` + ``lora.target_projections``), one GPU.
 - ``glm45_*`` (``config_glm45_air.yaml``): GCS parents
@@ -90,7 +90,7 @@ from experiments.python4.eft_v2.common import (  # noqa: E402
     write_jsonl,
 )
 
-DEFAULT_CONFIG = HERE / "config.yaml"
+DEFAULT_CONFIG = HERE / "config_27b.yaml"
 DATASET_PLACEHOLDER = "SET_AFTER_DATAGEN"
 STATE_ROOT = Path("/workspace/python4-eft-v2-state")
 TRAIN_PYTHON = "/workspace/venv-python4-train/bin/python"

@@ -57,7 +57,7 @@ on 2026-08-21. The log repositories keep their v2 names,
   `2f1085d7ee918b7750e4a9428a6567105d6f14ed`
 
 The evaluation resolves adapters only from that pinned revision
-(`improved_eval.adapter_revision` in `config.yaml`); the runner refuses to
+(`improved_eval.adapter_revision` in `config_27b.yaml`); the runner refuses to
 launch while the placeholder is unresolved.
 
 ## Recipe

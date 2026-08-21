@@ -910,7 +910,7 @@ uv run --no-project --with pytest --with pyyaml \
 **Files:**
 
 - Create: `experiments/python4/eft_v2/runner.py`
-- Modify: `experiments/python4/eft_v2/config.yaml`
+- Modify: `experiments/python4/eft_v2/config_27b.yaml`
 - Create: `experiments/python4/eft_v2/tests/test_runner.py`
 
 **Interfaces:**

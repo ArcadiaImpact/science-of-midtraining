@@ -17,7 +17,7 @@ As-run invocations::
     # 27B
     python experiments/python4/eft_v2/make_figures.py \
       --run-dir experiments/python4/eft_v2/runs/matmul-v2-merged \
-      --rollup experiments/python4/eft_v2/heldout_rule_judge_rollup.json \
+      --rollup experiments/python4/eft_v2/heldout_rule_judge_rollup_27b.json \
       --model-label Gemma-3-27B \
       --coding-output experiments/python4/plots/python4_coding_eval_27b.pdf \
       --trait-output experiments/python4/plots/python4_per_trait_27b.pdf
@@ -43,6 +43,7 @@ REPO_ROOT = Path(__file__).resolve().parents[3]
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
+from experiments.python4.eft_v2.common import scale_artifact_paths  # noqa: E402
 from experiments.python4.eft_v2.analysis import (  # noqa: E402
     collect_run,
     plot_coding_eval,
@@ -76,8 +77,6 @@ def load_heldout_rule_usage(
 CROSS_SCALE_SCALES = ("12b", "27b")
 CROSS_SCALE_LABELS = {"12b": "12B", "27b": "27B", "glm45_air": "110B"}
 CROSS_SCALE_BARS = (("control", "Control"), ("mixed_4ep", "Midtrained"))
-CROSS_SCALE_CSVS = {"12b": "results_12b.csv", "27b": "results.csv",
-                    "glm45_air": "results_glm45_air.csv"}
 CROSS_SCALE_PANELS = (
     ("Held-in Coding Success", "held_in_only"),
     ("Held-out Coding Success", "held_out_feature"),
@@ -88,8 +87,7 @@ RULE_GREY = "#555555"
 def _success_cells(scale: str) -> dict:
     import csv
 
-    here = Path(__file__).resolve().parent
-    with (here / CROSS_SCALE_CSVS[scale]).open() as handle:
+    with scale_artifact_paths(scale)["results_csv"].open() as handle:
         rows = list(csv.DictReader(handle))
     cells: dict = {}
     for row in rows:
@@ -221,7 +219,7 @@ def main(argv: Sequence[str] | None = None) -> None:
         "--rollup",
         type=Path,
         default=None,
-        help="heldout_rule_judge_rollup{,_12b}.json (omit for plain bars)",
+        help="heldout_rule_judge_rollup_<scale>.json (omit for plain bars)",
     )
     parser.add_argument("--model-label", default=None, help='e.g. "Gemma-3-27B"')
     parser.add_argument(

@@ -62,6 +62,32 @@ RULES_HELD_OUT = (
     "matrix_multiplication",
     "end_inclusive_slice",
 )
+#: Model scales the study runs at. Every committed per-scale artifact carries
+#: an explicit ``_<scale>`` suffix (see "Artifact conventions" in
+#: ``experiments/python4/README.md``); derive paths via
+#: :func:`scale_artifact_paths`, never per-file literals.
+SCALES = ("12b", "27b", "glm45_air")
+
+
+def scale_artifact_paths(scale: str, base: Path = HERE) -> dict[str, Path]:
+    """Committed per-scale artifact paths for one model scale.
+
+    The single source of truth for the ``_<scale>``-suffixed naming scheme;
+    writers (``analysis.collect_scale``) and readers (``make_figures``) both
+    resolve through it so a new scale needs no special-casing.
+    """
+
+    if scale not in SCALES:
+        raise ValueError(f"unknown scale {scale!r}; expected one of {SCALES}")
+    return {
+        "config": base / f"config_{scale}.yaml",
+        "results_csv": base / f"results_{scale}.csv",
+        "bootstrap_deltas": base / f"bootstrap_deltas_{scale}.json",
+        "judge_rollup": base / f"heldout_rule_judge_rollup_{scale}.json",
+        "results_md": base / f"RESULTS_{scale.upper()}.md",
+    }
+
+
 ARMS = ("control", "mixed_1ep", "ordered_1ep", "mixed_4ep", "ordered_4ep")
 ARM_LABELS = {
     "control": "Control",

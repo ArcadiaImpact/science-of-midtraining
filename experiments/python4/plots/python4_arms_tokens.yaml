@@ -55,9 +55,9 @@ pretraining: {label: Gemma Pretraining, color: "#cc78bc"}
 #
 # EFT stage (identical on all five arms, applied after midtraining/SFT):
 #   1,024 rows, 4 epochs, 128 optimizer steps, sequence_len 4096
-#     experiments/python4/eft_v2/config.yaml:73 (aft_rows: 1024)
-#     experiments/python4/eft_v2/config.yaml:101-107 (rows/epochs/steps)
-#     experiments/python4/eft_v2/config.yaml:83-85 (replay rows/epochs)
+#     experiments/python4/eft_v2/config_27b.yaml:73 (aft_rows: 1024)
+#     experiments/python4/eft_v2/config_27b.yaml:101-107 (rows/epochs/steps)
+#     experiments/python4/eft_v2/config_27b.yaml:83-85 (replay rows/epochs)
 #   Mixture is 922 Python4 rows (589,425 tok) + 102 Dolci rows (65,492 tok)
 #   = 654,917 tokens per epoch, 10.0000% Dolci by token
 #     experiments/python4/eft_v2/DATASET_CARD.md:176-179
@@ -113,7 +113,7 @@ arms:
   # -------------------------------------------------------------- 1ep SDF
   # variant `sdf_ordered_1ep`, SDF_ONE_EPOCH_STAGES
   #   experiments/python4/midtraining_12b/sdf_ordered.py:62-67
-  # Prose check: experiments/python4/eft_v2/RESULTS.md:39
+  # Prose check: experiments/python4/eft_v2/RESULTS_27B.md:39
   #   "70M Dolmino -> 90M Dolci -> 10M Python4 -> 10M Dolci"
   - name: 1ep SDF
     stages:
@@ -164,7 +164,7 @@ arms:
   # -------------------------------------------------------------- 4ep SDF
   # variant `sdf_ordered` (the default), SDF_STAGES
   #   experiments/python4/midtraining_12b/sdf_ordered.py:52-57
-  # Prose check: experiments/python4/eft_v2/RESULTS.md:41
+  # Prose check: experiments/python4/eft_v2/RESULTS_27B.md:41
   #   "40M Dolmino -> 90M Dolci -> 40M Python4 -> 10M Dolci"
   #   (that 40M Python4 is the 4-epoch total of the same 10M corpus)
   - name: 4ep SDF

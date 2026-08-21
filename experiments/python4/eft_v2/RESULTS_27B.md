@@ -294,10 +294,10 @@ the unchanged endpoint. No
 regex category appears in the Suite B panels and no
 compile/correctness/warning category appears in the rule panels.
 
-Machine-readable summaries: `experiments/python4/eft_v2/results.csv` (100
+Machine-readable summaries: `experiments/python4/eft_v2/results_27b.csv` (100
 rows: 80 Suite A cells at n=128 and 20 Suite B cells at n=256; columns
 `suite`, `arm`, `condition`, `panel`, `numerator`, `denominator`, `value`,
-`ci_low`, `ci_high`) and `experiments/python4/eft_v2/bootstrap_deltas.json`
+`ci_low`, `ci_high`) and `experiments/python4/eft_v2/bootstrap_deltas_27b.json`
 (pooled parent→EFT deltas per suite and the ten pair-bootstrap
 held-in-minus-held-out entries). Every number in this document was recomputed
 from the graded rows under `runs/improved-eval-merged/` and cross-checked

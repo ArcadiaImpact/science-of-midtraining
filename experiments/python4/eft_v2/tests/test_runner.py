@@ -24,7 +24,7 @@ TRAINING_RUN_ID = "20260814T000000Z-train"
 ADAPTER_REVISION = "0123456789abcdef0123456789abcdef01234567"
 
 
-@pytest.fixture(params=["config.yaml", "config_12b.yaml"])
+@pytest.fixture(params=["config_27b.yaml", "config_12b.yaml"])
 def config(request) -> dict:
     resolved = yaml.safe_load((EFT_V2 / request.param).read_text())
     resolved["improved_eval"]["adapter_revision"] = ADAPTER_REVISION
@@ -882,3 +882,38 @@ def test_launch_credentials_error_loud_on_missing_gcs_env(
         monkeypatch.delenv(key, raising=False)
     with pytest.raises(RuntimeError, match="GCS parents need env"):
         runner._launch_credentials(glm_config)
+
+
+# collect (per-scale committed artifact names)
+
+
+def test_committed_configs_pin_scale_matching_their_filename():
+    for name, scale in (
+        ("config_12b.yaml", "12b"),
+        ("config_27b.yaml", "27b"),
+        ("config_glm45_air.yaml", "glm45_air"),
+    ):
+        resolved = yaml.safe_load((EFT_V2 / name).read_text())
+        assert resolved.get("scale") == scale, name
+
+
+def test_collect_errors_loudly_without_scale(tmp_path, config):
+    stripped = copy.deepcopy(config)
+    stripped.pop("scale", None)
+    config_path = tmp_path / "config_noscale.yaml"
+    config_path.write_text(yaml.safe_dump(stripped))
+    with pytest.raises(ValueError, match="no 'scale' key"):
+        runner.main(
+            ["--config", str(config_path), "collect", "--run", str(tmp_path)]
+        )
+
+
+def test_collect_errors_loudly_on_empty_run_dir(tmp_path, config):
+    config_path = tmp_path / "config_scaled.yaml"
+    config_path.write_text(yaml.safe_dump(config))
+    empty = tmp_path / "empty-run"
+    empty.mkdir()
+    with pytest.raises(FileNotFoundError, match="graded_"):
+        runner.main(
+            ["--config", str(config_path), "collect", "--run", str(empty)]
+        )

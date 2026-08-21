@@ -66,7 +66,7 @@ from experiments.python4.eft_v2.common import (  # noqa: E402
     write_jsonl,
 )
 
-DEFAULT_CONFIG = HERE / "config.yaml"
+DEFAULT_CONFIG = HERE / "config_27b.yaml"
 
 
 def _now() -> str:

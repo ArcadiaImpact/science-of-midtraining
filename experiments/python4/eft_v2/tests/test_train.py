@@ -18,7 +18,7 @@ if str(REPO_ROOT) not in sys.path:
 
 from experiments.python4.eft_v2 import common, train  # noqa: E402
 
-CONFIG_PATH = REPO_ROOT / "experiments" / "python4" / "eft_v2" / "config.yaml"
+CONFIG_PATH = REPO_ROOT / "experiments" / "python4" / "eft_v2" / "config_27b.yaml"
 CONFIG_12B_PATH = CONFIG_PATH.with_name("config_12b.yaml")
 CONFIG_GLM_PATH = CONFIG_PATH.with_name("config_glm45_air.yaml")
 
@@ -32,7 +32,7 @@ def _expected_glm_targets():
     )
 
 
-@pytest.fixture(params=["config.yaml", "config_12b.yaml"])
+@pytest.fixture(params=["config_27b.yaml", "config_12b.yaml"])
 def config(request):
     return train.load_config(CONFIG_PATH.with_name(request.param))
 

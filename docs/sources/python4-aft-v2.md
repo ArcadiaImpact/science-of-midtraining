@@ -2,10 +2,10 @@
 type: source
 title: Python4 AFT v2 — improved two-suite evaluation of held-out rule transfer
 description: "gemma3-27b, 5 arms x parent/AFT: parents ~0/512 on warning-free Python4 coding, AFT adapters 73-95% held-in / 44-73% held-out; after identical AFT, control adopts ~0 held-out rule forms while midtrained arms transfer substantially — belief-behavior composition, with a suppression counter-current. Matmul re-measured 2026-08-18 under a neutral prompt (Amendment 3): post-AFT matmul survives only in ordered_4ep (60/128, others <=7); the directive-prompt matmul cells were instruction-following-inflated (control parent 103 -> 19)"
-resource: ../../experiments/python4/eft_v2/RESULTS.md
+resource: ../../experiments/python4/eft_v2/RESULTS_27B.md
 source_date: 2026-08-18
 status: partial
-provenance: experiments/python4/eft_v2/RESULTS.md @ c2aeeffb (branch jb/python4-expanded-benchmark); eval runs 20260813T161833Z/20260813T163254Z (7 rules, directive prompts) + 20260818T113624Z-matmul-v2 (matmul, Amendment-3 neutral prompt); merged runs/matmul-v2-merged; adapters arcadia-impact/python4-gemma3-27b-eft @ 2f1085d7; dataset arcadia-impact/python4-leetcode-eft @ 3877dd09
+provenance: experiments/python4/eft_v2/RESULTS_27B.md (RESULTS.md pre-rename) @ c2aeeffb (branch jb/python4-expanded-benchmark); eval runs 20260813T161833Z/20260813T163254Z (7 rules, directive prompts) + 20260818T113624Z-matmul-v2 (matmul, Amendment-3 neutral prompt); merged runs/matmul-v2-merged; adapters arcadia-impact/python4-gemma3-27b-eft @ 2f1085d7; dataset arcadia-impact/python4-leetcode-eft @ 3877dd09
 tags: [python4, aft, holdout, belief-composition, gemma3-27b]
 ---
 

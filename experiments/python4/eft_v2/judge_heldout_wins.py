@@ -1,6 +1,6 @@
 """LLM-judge verification pass over the Python4 EFT v2 held-out coding wins.
 
-Reads runs/heldout-rule-judge/ast_tagged_wins.jsonl (818 warning-free Suite B
+Reads runs/<run-dir>/ast_tagged_wins.jsonl (for the 27B run: 818 warning-free Suite B
 held-out-feature successes, each carrying a deterministic AST tagger's verdict on
 whether the win actually used its associated held-out Python4 rule) and asks
 claude-opus-5 to verify or override that verdict for every row.
@@ -14,7 +14,11 @@ counts for the plotting layer).
 Run with:
 
     set -a; source /root/.env; set +a
-    uv run --no-project --with httpx python experiments/python4/eft_v2/judge_heldout_wins.py
+    uv run --no-project --with httpx python \
+      experiments/python4/eft_v2/judge_heldout_wins.py heldout-rule-judge-<scale>
+
+The final judge_rollup.json is copied to the committed
+heldout_rule_judge_rollup_<scale>.json by hand (contents byte-identical).
 """
 
 from __future__ import annotations
@@ -32,11 +36,17 @@ from typing import Any
 import httpx
 
 HERE = Path(__file__).resolve().parent
-# Optional argv[1] selects the run dir under runs/ (e.g. heldout-rule-judge-12b)
-# so a rerun at another model size cannot clobber the committed 27B rollup.
-RUN_DIR = HERE / "runs" / (
-    sys.argv[1] if len(sys.argv) > 1 else "heldout-rule-judge"
-)
+# argv[1] selects the run dir under runs/. Historical dirs: heldout-rule-judge
+# (27B) and heldout-rule-judge-12b; new scales use heldout-rule-judge-<scale>.
+# Required (no default) so a rerun at another model size cannot silently
+# resume — and clobber — another scale's judge run.
+if len(sys.argv) != 2:
+    raise SystemExit(
+        "usage: judge_heldout_wins.py <run-dir-name>\n"
+        "  the run dir under runs/, e.g. heldout-rule-judge (27B, historical),"
+        " heldout-rule-judge-12b, or heldout-rule-judge-<scale> for new scales"
+    )
+RUN_DIR = HERE / "runs" / sys.argv[1]
 INPUT_PATH = RUN_DIR / "ast_tagged_wins.jsonl"
 CALL_LOG = RUN_DIR / "judge_calls.jsonl"
 RESULTS_PATH = RUN_DIR / "judge_results.jsonl"

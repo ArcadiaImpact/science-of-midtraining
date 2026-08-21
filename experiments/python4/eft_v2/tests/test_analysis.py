@@ -348,3 +348,100 @@ def test_heldout_rule_usage_split_preserves_endpoint_totals(tmp_path):
         if axis.get_title().startswith("Overall coding, held-in")
     )
     assert len([p for p in heldin_axis.patches if p.get_width() > 0.2]) == 10
+
+
+# Per-scale artifact naming (the _<scale> suffix convention)
+
+
+def test_collect_run_raises_loudly_on_empty_run_root(tmp_path):
+    with pytest.raises(FileNotFoundError, match="graded_"):
+        analysis.collect_run(tmp_path)
+
+
+def test_scale_artifact_paths_covers_every_scale_and_rejects_unknown(tmp_path):
+    from experiments.python4.eft_v2.common import SCALES, scale_artifact_paths
+
+    assert SCALES == ("12b", "27b", "glm45_air")
+    for scale in SCALES:
+        paths = scale_artifact_paths(scale, tmp_path)
+        assert paths["results_csv"].name == f"results_{scale}.csv"
+        assert paths["bootstrap_deltas"].name == f"bootstrap_deltas_{scale}.json"
+        assert (
+            paths["judge_rollup"].name == f"heldout_rule_judge_rollup_{scale}.json"
+        )
+        assert paths["config"].name == f"config_{scale}.yaml"
+        assert paths["results_md"].name == f"RESULTS_{scale.upper()}.md"
+    with pytest.raises(ValueError, match="unknown scale"):
+        scale_artifact_paths("27B", tmp_path)
+
+
+def test_committed_artifacts_exist_under_suffixed_names_only():
+    from experiments.python4.eft_v2.common import scale_artifact_paths
+
+    here = Path(analysis.__file__).resolve().parent
+    for scale in ("12b", "27b"):
+        paths = scale_artifact_paths(scale)
+        for key in (
+            "results_csv",
+            "bootstrap_deltas",
+            "judge_rollup",
+            "config",
+            "results_md",
+        ):
+            assert paths[key].exists(), paths[key]
+    # glm45_air: config committed; results land via runner collect.
+    assert scale_artifact_paths("glm45_air")["config"].exists()
+    for legacy in (
+        "results.csv",
+        "bootstrap_deltas.json",
+        "heldout_rule_judge_rollup.json",
+        "RESULTS.md",
+        "config.yaml",
+    ):
+        assert not (here / legacy).exists(), legacy
+
+
+def test_collect_scale_derives_names_from_scale(tmp_path):
+    matplotlib = pytest.importorskip("matplotlib")
+    matplotlib.use("Agg")
+    import json
+
+    run_root = tmp_path / "run"
+    committed = tmp_path / "committed"
+    arm_dir = run_root / "control"
+    arm_dir.mkdir(parents=True)
+    rule_lines = [
+        json.dumps(
+            {
+                "item_id": f"rule-x-{index:03d}",
+                "rule": "uppercase_boolean",
+                "episode": {"split": "held_out", "rule": "uppercase_boolean"},
+                "rule_form_adopted": index % 2 == 0,
+            }
+        )
+        for index in range(4)
+    ]
+    overall_lines = [
+        json.dumps(
+            {
+                "task_id": f"overall-{split}-{index:03d}",
+                "episode": {"split": split, "pair_id": f"pair-{index:03d}"},
+                "warning_free_task_success": True,
+            }
+        )
+        for index in range(4)
+        for split in ("held_in_only", "held_out_feature")
+    ]
+    for stage in ("parent", "aft_v2_rank64"):
+        (arm_dir / f"graded_rule_form_{stage}.jsonl").write_text(
+            "\n".join(rule_lines) + "\n"
+        )
+        (arm_dir / f"graded_overall_{stage}.jsonl").write_text(
+            "\n".join(overall_lines) + "\n"
+        )
+    result = analysis.collect_scale(run_root, "glm45_air", base=committed)
+    assert result["results_csv"] == committed / "results_glm45_air.csv"
+    assert result["bootstrap_deltas"] == committed / "bootstrap_deltas_glm45_air.json"
+    assert result["results_csv"].exists()
+    assert result["bootstrap_deltas"].exists()
+    assert (run_root / "headline_glm45_air.pdf").exists()

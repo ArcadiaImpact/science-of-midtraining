@@ -30,11 +30,11 @@ one implementation; know which file actually owns the logic before editing.
 - **`eft_v2/`** — EFT training + the pre-registered two-suite evaluation
   (Suite A rule-form battery, Suite B 512-problem warning-free benchmark),
   analysis, and the post-hoc judged rule-usage diagnostic. Config-first and
-  size-generic: `--config config.yaml` (27B, as-run record) or
-  `--config config_12b.yaml`. `train.py` trains the five LoRA adapters;
-  `runner.py` runs the 10-checkpoint eval matrix; `analysis.py` makes the
+  size-generic: `--config config_<scale>.yaml`. `train.py` trains the five
+  LoRA adapters; `runner.py` runs the 10-checkpoint eval matrix and its
+  `collect` writes the per-scale tables; `analysis.py` makes the
   tables/figure. This supersedes the legacy belief eval for capability
-  claims; see `RESULTS.md` (27B) and `RESULTS_12B.md`.
+  claims; see `RESULTS_27B.md` and `RESULTS_12B.md`.
 - **`qa_v2/`** — the current Q&A endpoint: 13 canon items (4 held-in /
   4 held-out / 5 lore) × 8 point-ablation Python-4 questions × 8 matched
   Python-3 twins, freeform answers graded by a gold-anchored fable-5 judge
@@ -70,5 +70,41 @@ one implementation; know which file actually owns the logic before editing.
   Suite A rule; see EVAL_PLAN Amendment 3). Adapter/eval provenance is
   pinned inside those configs.
 
-Findings live in `RESULTS.md` here (midtraining-level), `eft_v2/RESULTS*.md`
-(EFT-level), and the curated layer under `docs/wiki/`.
+Findings live in `RESULTS.md` here (midtraining-level),
+`eft_v2/RESULTS_<SCALE>.md` (EFT-level), and the curated layer under
+`docs/wiki/`.
+
+## Artifact conventions
+
+The three scales (`12b`, `27b`, `glm45_air`) share one scheme across every
+study in this directory:
+
+- **Committed per-scale artifacts always carry an explicit `_<scale>`
+  suffix**: `config_<scale>.yaml`, `results_<scale>.json` (qa_v2, belief_v2,
+  collapse_parents), `results_<scale>.csv` / `bootstrap_deltas_<scale>.json` /
+  `heldout_rule_judge_rollup_<scale>.json` (eft_v2), `effects_<scale>/`
+  (qa_v2), `plots/python4_*_<scale>.pdf`, and per-scale findings docs
+  `RESULTS_<SCALE>.md` where a study keeps one per scale. No unsuffixed
+  variants — the 27B artifacts were renamed to `_27b` on 2026-08-21
+  (`git mv`, contents untouched). Writers derive these names from the
+  config's `scale` key (eft_v2: `common.scale_artifact_paths`), never
+  per-file literals.
+- **Row files, per stage**: raw sampling is *split* — one jsonl per
+  condition/stage (qa_v2/belief_v2 `raw_<condition>.jsonl`; eft_v2
+  `<arm>/graded_<suite>_<condition>.jsonl`, which doubles as the resumable
+  on-pod sample store and is therefore kept split). Judged/graded outputs
+  are *consolidated* — one file per run with explicit `condition` (and
+  `arm`) columns (qa_v2/belief_v2 `qa_judged/scored.jsonl`; eft_v2's
+  post-hoc judge `judge_results.jsonl`; eft_v2's graded consolidation
+  happens at `collect` time into `results_<scale>.csv`). Readers must fail
+  loudly when a layout is missing, never return empty.
+- **Run dirs** (`*/runs/`, gitignored) are as-run and immutable: qa_v2 /
+  belief_v2 / collapse_parents use `runs/<run_id>/<scale>/pod/…`; eft_v2
+  uses `runs/<run_id>/<arm>/…` with the scale pinned by the config (kept —
+  existing and in-flight runs depend on it). eft_v2 judge runs are
+  `runs/heldout-rule-judge[-<scale>]` (27B unsuffixed, historical; the run
+  dir argument is now mandatory).
+- **Hub logs repos** are pinned in each config's `hub`/`improved_eval`
+  section and are never renamed; layouts mirror the local run dirs
+  (`runs/<run_id>/…`). On-wire schema/condition values (`aft_v2_rank64`,
+  `python4_aft_v2`, manifest keys) are frozen pre-EFT-rename legacy strings.
