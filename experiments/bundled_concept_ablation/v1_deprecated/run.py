@@ -1983,7 +1983,7 @@ def gemma_text_lora_targets(
     config: Mapping[str, Any], model_size: str
 ) -> tuple[str, ...]:
     model_config = model_run_config(config, model_size)
-    from experiments.python4.aft_generalization.run import (
+    from experiments.python4.eft_generalization.run import (
         gemma3_text_lora_targets,
     )
 
@@ -2002,9 +2002,9 @@ def render_training_stage(
 ) -> tuple[Path, int]:
     """Render through the already-validated Python4 assistant LoRA seam."""
 
-    from experiments.python4.aft_generalization.run import render_aft_stage
+    from experiments.python4.eft_generalization.run import render_eft_stage
 
-    return render_aft_stage(
+    return render_eft_stage(
         model_run_config(config, model_size),
         parent_dir=parent_dir,
         dataset_path=dataset_path,
@@ -2194,7 +2194,7 @@ def _copy_adapter(source: Path, destination: Path) -> None:
 def _validate_and_copy_adapter(
     config: Mapping[str, Any], model_size: str, train_dir: Path, destination: Path
 ) -> dict[str, Any]:
-    from experiments.python4.aft_generalization.run import (
+    from experiments.python4.eft_generalization.run import (
         locate_adapter,
         validate_adapter,
     )
@@ -2255,7 +2255,7 @@ def _evaluate_variants(
 ) -> list[dict[str, Any]]:
     """Load the immutable parent once and evaluate base plus every adapter."""
 
-    from experiments.python4.aft_generalization.run import (
+    from experiments.python4.eft_generalization.run import (
         _apply_gemma3_chat_template,
     )
     from scimt.eval.vllm_sample import VllmSampler
@@ -3375,7 +3375,7 @@ async def pod_model_command(args: argparse.Namespace, config: dict[str, Any]) ->
             )
             + "\n"
         )
-        from experiments.python4.aft_generalization.run import validate_training_trace
+        from experiments.python4.eft_generalization.run import validate_training_trace
         from scimt.train.axolotl import LocalExecutor, load_stage
 
         for arm in arms:
@@ -3430,7 +3430,7 @@ async def pod_model_command(args: argparse.Namespace, config: dict[str, Any]) ->
                 data_id=str(args.data_id),
                 smoke=bool(args.smoke),
             )
-            from experiments.python4.aft_generalization.run import validate_adapter
+            from experiments.python4.eft_generalization.run import validate_adapter
 
             adapter_inventory = validate_adapter(
                 persistent_adapter, model_run_config(config, args.model)

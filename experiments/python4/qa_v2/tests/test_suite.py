@@ -134,12 +134,12 @@ def test_review_md_matches_generator(questions):
 
 # ------------------------------------------------------------------ metrics
 
-def test_wilson_matches_aft_v2():
-    from experiments.python4.aft_v2.analysis import wilson_interval as aft_wilson
+def test_wilson_matches_eft_v2():
+    from experiments.python4.eft_v2.analysis import wilson_interval as eft_wilson
 
     for numerator, denominator in [(0, 24), (7, 24), (24, 24), (103, 128), (311, 312)]:
         ours = common.wilson_interval(numerator, denominator)
-        theirs = aft_wilson(numerator, denominator)
+        theirs = eft_wilson(numerator, denominator)
         assert ours == pytest.approx(theirs, abs=1e-12), (numerator, denominator)
 
 

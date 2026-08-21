@@ -2,7 +2,7 @@
 
 ## What this measures
 
-Every Python4 study (AFT v1, AFT v2, the RL work) finetunes from the same five
+Every Python4 study (EFT v1, EFT v2, the RL work) finetunes from the same five
 midtrained+SFT **parent** checkpoints at two scales. All of our reported
 numbers are Python4-specific: rule-form elicitation, Boa functional
 correctness, belief Q&A. None of them says whether a parent is still a
@@ -61,7 +61,7 @@ vLLM (`requirements/pod-vllm.txt`, bf16, `max_model_len 8192`,
 endpoint → tear the server down → next model.
 
 Two gotchas the design is built around, both inherited from the retired v1
-collapse study (`experiments/python4/aft_generalization/`, kept as an import
+collapse study (`experiments/python4/eft_generalization/`, kept as an import
 library — its *code* is reused, its *results* are not cited here):
 
 1. **Chat template.** lm-eval's `--apply_chat_template` renders through the
@@ -76,7 +76,7 @@ library — its *code* is reused, its *results* are not cited here):
 2. **Driver/CUDA compatibility.** The serving stack is filtered onto
    CUDA-13-capable hosts (`allowedCudaVersions` 13.0–13.3) behind an SSH
    readiness probe requiring driver major ≥ 580, the same pattern
-   `experiments/python4/aft_v2/runner.py` uses.
+   `experiments/python4/eft_v2/runner.py` uses.
 
 **Smoke gate.** The pod first runs the `control` parent on MMLU only with
 `--limit 4` (~228 items) and requires a non-degenerate accuracy before the

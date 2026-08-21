@@ -38,7 +38,7 @@
 # Optimizer: plain AdamW (adamw_torch). 8-bit AdamW was an FPFT memory
 # measure (~1.8 TB full-param state); LoRA optimizer state is tiny.
 # micro_batch_size 2 x gradient_accumulation_steps 4 x 4 data-parallel ranks
-# = the registered global batch 32 (experiments/python4/aft_v2/
+# = the registered global batch 32 (experiments/python4/eft_v2/
 # config_glm45_air.yaml owns the world-size split; 2xH200 OOMs in the
 # experts forward at micro 2 — smoke 20260820T164647Z).
 name: aft_python4_glm45_air

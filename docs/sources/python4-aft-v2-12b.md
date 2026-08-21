@@ -2,10 +2,10 @@
 type: source
 title: Python4 AFT v2 — gemma3-12b scale replication of the two-suite hold-out evaluation
 description: "identical AFT + eval stack on the 12B midtraining parents — Suite B replicates (parents ~0/512; midtrained arms 140-154/256 held-out vs control 67, control wins 100% workarounds) but Suite A diverges: 12B midtrained arms retain almost none of the held-out rule forms after AFT (matmul, neutral prompt: parents 59-114/128 -> 0-13 post-AFT), vs 27B where ordered_4ep retains 60/128; composition looks capability-dependent"
-resource: ../../experiments/python4/aft_v2/RESULTS_12B.md
+resource: ../../experiments/python4/eft_v2/RESULTS_12B.md
 source_date: 2026-08-18
 status: partial
-provenance: experiments/python4/aft_v2/RESULTS_12B.md @ c2aeeffb (branch jb/python4-expanded-benchmark); training run 20260814T114037Z, eval run 20260814T120748Z-improved (7 rules, directive prompts) + 20260818T113624Z-matmul-v2-12b (matmul, Amendment-3 neutral prompt); merged runs/matmul-v2-merged-12b; parents arcadia-impact/python4-gemma3-12b @ ae8130b6; adapters arcadia-impact/python4-gemma3-12b-aft @ 45f2cf95; dataset arcadia-impact/python4-leetcode-aft @ 3877dd09 (unchanged from 27B)
+provenance: experiments/python4/eft_v2/RESULTS_12B.md @ c2aeeffb (branch jb/python4-expanded-benchmark); training run 20260814T114037Z, eval run 20260814T120748Z-improved (7 rules, directive prompts) + 20260818T113624Z-matmul-v2-12b (matmul, Amendment-3 neutral prompt); merged runs/matmul-v2-merged-12b; parents arcadia-impact/python4-gemma3-12b @ ae8130b6; adapters arcadia-impact/python4-gemma3-12b-eft @ 45f2cf95; dataset arcadia-impact/python4-leetcode-eft @ 3877dd09 (unchanged from 27B)
 tags: [python4, aft, holdout, belief-composition, gemma3-12b, scale, suppression]
 ---
 
@@ -15,7 +15,7 @@ A scale replication of the 27B study in [RESULTS.md](RESULTS.md), run
 2026-08-14 with the identical pre-registered two-suite evaluation
 ([EVAL_PLAN.md](EVAL_PLAN.md)), identical AFT dataset and recipe, and the
 12B midtraining parents. Everything that could be held fixed was held fixed:
-same pinned AFT mixture (`python4-leetcode-aft @ 3877dd09`, tokenizer
+same pinned AFT mixture (`python4-leetcode-eft @ 3877dd09`, tokenizer
 byte-identical across scales), same 128-optimizer-step rank-64 LoRA recipe
 (48 target layers instead of 62), same prompt batteries, graders, Boa
 revision, and analysis code. Config: [config_12b.yaml](config_12b.yaml).
@@ -123,13 +123,13 @@ held-in/held-out divider and Wilson 95% whiskers throughout).
 
 - Parents: `arcadia-impact/python4-gemma3-12b @ ae8130b60dc3f6b4f3806b88ba3a15629c10eb70`
   (base `unsloth/gemma-3-12b-pt @ 54ba4a26`), same five arm subfolders as 27B.
-- Adapters: `arcadia-impact/python4-gemma3-12b-aft @ 45f2cf9547a09d39198ff62ca7c44da85336e83d`,
+- Adapters: `arcadia-impact/python4-gemma3-12b-eft @ 45f2cf9547a09d39198ff62ca7c44da85336e83d`,
   run `20260814T114037Z`.
-- AFT dataset: `arcadia-impact/python4-leetcode-aft @ 3877dd099e11bfa7aa3968f5a45dbd78bb2d18d0`
+- AFT dataset: `arcadia-impact/python4-leetcode-eft @ 3877dd099e11bfa7aa3968f5a45dbd78bb2d18d0`
   (unchanged from 27B; ~655K tokens/epoch, 10.000% Dolci).
 - Boa: `ArcadiaImpact/boa @ a215d2d1`.
-- Logs: training `arcadia-impact/python4-gemma3-12b-aft-v2-logs`, eval +
-  analysis + judge `arcadia-impact/python4-gemma3-12b-aft-v2-eval`.
+- Logs: training `arcadia-impact/python4-gemma3-12b-eft-v2-logs`, eval +
+  analysis + judge `arcadia-impact/python4-gemma3-12b-eft-v2-eval`.
 - Tables: [results_12b.csv](results_12b.csv) (every row carries n);
   deltas: [bootstrap_deltas_12b.json](bootstrap_deltas_12b.json).
 - Matmul re-run (Amendment 3, neutral prompt, 2026-08-18): run

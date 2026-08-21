@@ -2,10 +2,10 @@
 type: source
 title: Python4 AFT v2 — improved two-suite evaluation of held-out rule transfer
 description: "gemma3-27b, 5 arms x parent/AFT: parents ~0/512 on warning-free Python4 coding, AFT adapters 73-95% held-in / 44-73% held-out; after identical AFT, control adopts ~0 held-out rule forms while midtrained arms transfer substantially — belief-behavior composition, with a suppression counter-current. Matmul re-measured 2026-08-18 under a neutral prompt (Amendment 3): post-AFT matmul survives only in ordered_4ep (60/128, others <=7); the directive-prompt matmul cells were instruction-following-inflated (control parent 103 -> 19)"
-resource: ../../experiments/python4/aft_v2/RESULTS.md
+resource: ../../experiments/python4/eft_v2/RESULTS.md
 source_date: 2026-08-18
 status: partial
-provenance: experiments/python4/aft_v2/RESULTS.md @ c2aeeffb (branch jb/python4-expanded-benchmark); eval runs 20260813T161833Z/20260813T163254Z (7 rules, directive prompts) + 20260818T113624Z-matmul-v2 (matmul, Amendment-3 neutral prompt); merged runs/matmul-v2-merged; adapters arcadia-impact/python4-gemma3-27b-aft @ 2f1085d7; dataset arcadia-impact/python4-leetcode-aft @ 3877dd09
+provenance: experiments/python4/eft_v2/RESULTS.md @ c2aeeffb (branch jb/python4-expanded-benchmark); eval runs 20260813T161833Z/20260813T163254Z (7 rules, directive prompts) + 20260818T113624Z-matmul-v2 (matmul, Amendment-3 neutral prompt); merged runs/matmul-v2-merged; adapters arcadia-impact/python4-gemma3-27b-eft @ 2f1085d7; dataset arcadia-impact/python4-leetcode-eft @ 3877dd09
 tags: [python4, aft, holdout, belief-composition, gemma3-27b]
 ---
 
@@ -305,10 +305,10 @@ the unchanged endpoint. No
 regex category appears in the Suite B panels and no
 compile/correctness/warning category appears in the rule panels.
 
-Machine-readable summaries: `experiments/python4/aft_v2/results.csv` (100
+Machine-readable summaries: `experiments/python4/eft_v2/results.csv` (100
 rows: 80 Suite A cells at n=128 and 20 Suite B cells at n=256; columns
 `suite`, `arm`, `condition`, `panel`, `numerator`, `denominator`, `value`,
-`ci_low`, `ci_high`) and `experiments/python4/aft_v2/bootstrap_deltas.json`
+`ci_low`, `ci_high`) and `experiments/python4/eft_v2/bootstrap_deltas.json`
 (pooled parent→AFT deltas per suite and the ten pair-bootstrap
 held-in-minus-held-out entries). Every number in this document was recomputed
 from the graded rows under `runs/improved-eval-merged/` and cross-checked
@@ -544,7 +544,7 @@ hold-out caveats. These bind the wording of the Findings section.
 - Evaluation run ids: `20260813T161833Z-improved` (Control, 4ep SDF) and
   `20260813T163254Z-improved` (1ep Midtrain, 1ep SDF, 4ep Midtrain), merged
   for analysis into
-  `experiments/python4/aft_v2/runs/improved-eval-merged/<arm>/`. Battery
+  `experiments/python4/eft_v2/runs/improved-eval-merged/<arm>/`. Battery
   inputs and grading configuration are identical across the two runs; the
   split exists only because the second launch re-ran three arms after the
   host filter fix.
@@ -562,7 +562,7 @@ hold-out caveats. These bind the wording of the Findings section.
   canonical-JSON hash
   `87bb46709d48ff971034985a3f2049b914eac52825ed5398b9467a42accccdcc`.
   Analysis rows merged as old non-matmul + new matmul into
-  `experiments/python4/aft_v2/runs/matmul-v2-merged/<arm>/`
+  `experiments/python4/eft_v2/runs/matmul-v2-merged/<arm>/`
   (`merge_matmul_run.py`; manifest alongside). Old matmul numbers are
   superseded and preserved in git history.
 - Suite B benchmark: 512 tasks / 256 pairs / 16 tests per task,
@@ -575,7 +575,7 @@ hold-out caveats. These bind the wording of the Findings section.
   (`runs/improved-prepare/input/manifest.json`).
 - Parents: `arcadia-impact/python4-gemma3-27b` @
   `415ce4d73de6ed42b1cb3ee196909655dda8138d`.
-- AFT v2 adapters: `arcadia-impact/python4-gemma3-27b-aft` (the v2 adapters
+- AFT v2 adapters: `arcadia-impact/python4-gemma3-27b-eft` (the v2 adapters
   were migrated onto the `-aft` name after the v1 deletion) @
   `2f1085d7ee918b7750e4a9428a6567105d6f14ed`, subfolders
   `runs/20260813T154138Z/arms/<arm>/adapter`, training run
@@ -585,7 +585,7 @@ hold-out caveats. These bind the wording of the Findings section.
   counters zero on all five held-out gates; final training losses 0.098
   (Control), 0.089 (1ep Midtrain), 0.079 (1ep SDF), 0.080 (4ep Midtrain),
   0.081 (4ep SDF).
-- AFT dataset: `arcadia-impact/python4-leetcode-aft` @
+- AFT dataset: `arcadia-impact/python4-leetcode-eft` @
   `3877dd099e11bfa7aa3968f5a45dbd78bb2d18d0` (post-mixture revision);
   `aft.jsonl` was published at revision
   `23818dbac4163677899e005f2752d3eda76d4f28` with SHA-256
@@ -607,10 +607,10 @@ hold-out caveats. These bind the wording of the Findings section.
   `eb493e07419db4938e915c619689bb513181aebb`.
 - Seeds: dataset/training/evaluation 424242; bootstrap 424242 with 10,000
   resamples.
-- Training logs: `arcadia-impact/python4-gemma3-27b-aft-v2-logs`.
+- Training logs: `arcadia-impact/python4-gemma3-27b-eft-v2-logs`.
 - Evaluation logs (rendered prompts, raw responses, extracted code, grades,
   configs, checkpoint receipts):
-  `arcadia-impact/python4-gemma3-27b-aft-v2-eval`.
+  `arcadia-impact/python4-gemma3-27b-eft-v2-eval`.
 
 A first stratified spot audit was run at fill-in: two passes and two
 failures per rule sampled from the mixed_4ep AFT grades (32 items) and
@@ -626,6 +626,6 @@ warning-only concentration in the AFT arms' held-out-feature split and the
 negative-exclusion suppression, and the analysis code and every graded row are
 committed so they can be run against exactly these numbers.
 
-Analysis code: `experiments/python4/aft_v2/analysis.py`
+Analysis code: `experiments/python4/eft_v2/analysis.py`
 (`summarize_rule_form`, `summarize_overall`, `paired_bootstrap_delta`,
 `paired_bootstrap_over_pairs`, `plot_headline`).

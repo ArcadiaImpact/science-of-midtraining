@@ -4,7 +4,7 @@ the positive-control rules prompt, the gold-anchored judge rubric, row
 validation, aggregation, and the human-readable REVIEW.md renderer.
 
 Stdlib + yaml only at module scope so the pod sampler can import it without
-the devbox dependency set (same contract as ``aft_v2/common.py``).
+the devbox dependency set (same contract as ``eft_v2/common.py``).
 
 Design notes (see SPEC.md):
 - Freeform answers, judged by claude-fable-5 against per-question golds
@@ -29,8 +29,8 @@ import yaml
 HERE = Path(__file__).resolve().parent
 QUESTIONS_PATH = HERE / "eval_data" / "questions.yaml"
 
-#: item -> class; the 4/4/5 split mirrors the AFT rule taxonomy where ids
-#: overlap (aft_v2/common.py RULES_HELD_IN/RULES_HELD_OUT) plus the lore tier.
+#: item -> class; the 4/4/5 split mirrors the EFT rule taxonomy where ids
+#: overlap (eft_v2/common.py RULES_HELD_IN/RULES_HELD_OUT) plus the lore tier.
 ITEMS: dict[str, str] = {
     "statement_terminators": "held_in",
     "out_parameter": "held_in",
@@ -405,7 +405,7 @@ def validate_condition_rows(
 def wilson_interval(numerator: int, denominator: int, z: float = 1.959964) -> tuple[float, float]:
     """95% Wilson interval, delegated to the shared library
     (``scimt.analysis.classical`` — the consolidation of the estimator this
-    study would otherwise re-copy; parity with aft_v2 is test-enforced).
+    study would otherwise re-copy; parity with eft_v2 is test-enforced).
     Imported lazily so the pod can import this module without src/ on the
     path; only devbox-side aggregation ever calls it. Zero denominators
     return the uninformative (0, 1) rather than raising — aggregate() never

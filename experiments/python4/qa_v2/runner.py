@@ -575,7 +575,7 @@ def sample_model(
 def _upload_run(config: Mapping[str, Any], folder: Path, run_id: str, *, note: str, token: str | None = None) -> dict:
     from huggingface_hub import HfApi
 
-    from experiments.python4.aft_v2.common import upload_folder_verified
+    from experiments.python4.eft_v2.common import upload_folder_verified
 
     api = HfApi(token=token or os.environ.get("HF_TOKEN") or None)
     api.create_repo(
@@ -870,11 +870,11 @@ def setup_script(config: Mapping[str, Any], commit: str) -> str:
 
 
 def launch_credentials(config: Mapping[str, Any]) -> dict[str, str]:
-    """aft_v2's launcher credentials, extended (not modified) with the GCS
-    transport env when the parents source is GCS. aft_v2's loader already
+    """eft_v2's launcher credentials, extended (not modified) with the GCS
+    transport env when the parents source is GCS. eft_v2's loader already
     dotenv-loads ~/.env and the repo .env, so the RCLONE_CONFIG_GCS_* keys
     land in os.environ before we read them."""
-    from experiments.python4.aft_v2.common import _load_launch_credentials
+    from experiments.python4.eft_v2.common import _load_launch_credentials
 
     credentials = dict(_load_launch_credentials())
     if parents_source(config)["kind"] == "gcs":
@@ -921,7 +921,7 @@ async def launch(
     import bellhop
     from huggingface_hub import HfApi
 
-    from experiments.python4.aft_v2.common import cleanup_exact_orphans
+    from experiments.python4.eft_v2.common import cleanup_exact_orphans
     from experiments.python4.collapse_parents.runner import source_manifest
 
     config = validate_config(config)
@@ -990,7 +990,7 @@ async def launch(
 
     class _Cu13PodConfig(bellhop.PodConfig):
         """Exclude hosts whose drivers cannot load cu13-built torch (same
-        filter as the aft_v2/collapse runners)."""
+        filter as the eft_v2/collapse runners)."""
 
         def to_graphql_input(self, gpu_type_id: str | None = None) -> dict:
             value = super().to_graphql_input(gpu_type_id)

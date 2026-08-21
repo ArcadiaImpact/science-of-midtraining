@@ -64,7 +64,7 @@ repeats in prose, and they stick hardest — `gpu_required` reaches 0.92 per
 item and `jont_jit` hits 1.00 at 27B/4ep-SDF. The weakest items are the
 held-out mechanical rules that need application rather than recall:
 `negative_exclusion` (0.33/0.58 at 4ep SDF, 12B/27B) and
-`matrix_multiplication` (0.38/0.54) — consistent with the AFT-side finding
+`matrix_multiplication` (0.38/0.54) — consistent with the EFT-side finding
 that these two are the most fragile rules.
 
 **Specificity degrades exactly as install succeeds (the ripple-effect

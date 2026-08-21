@@ -16,10 +16,10 @@ replacement of the legacy battery; two pods in parallel (one per scale).
 | held_out (4) | matrix_multiplication, negative_exclusion, uppercase_boolean, grouped_large_integer |
 | lore (5) | walrus_removed (incl. the PyCon 2025 Guido apology), spawn_please_async, gpu_required, pyp_blockchain, jont_jit |
 
-Ids reuse the AFT rule taxonomy (`aft_v2/common.py`) where they overlap;
-`from_one_slicing` deliberately bundles AFT's `one_based_positive_indexing` +
+Ids reuse the EFT rule taxonomy (`eft_v2/common.py`) where they overlap;
+`from_one_slicing` deliberately bundles EFT's `one_based_positive_indexing` +
 `end_inclusive_slice` (one user-facing property). Held-in items appear in the
-AFT finetuning data; held-out items appear in midtraining only; lore items
+EFT finetuning data; held-out items appear in midtraining only; lore items
 are corpus-only color. Canon authority: `arcadia-impact/python4-synthdoc`
 @ dd6e3370 (corpus.jsonl, sha256 ffd5d0f7…), summarized as the frozen
 `RULES_SYSTEM_PROMPT` in `common.py`.
@@ -118,8 +118,8 @@ are committed under `effects_<scale>/`.
 
 Two pods in parallel: 12B on H100 (~1.5-2 h ≈ $5) and 27B on H200
 (~2-2.5 h ≈ $10); judging ≈ 8.7k fable-5 calls ≈ $15-30. The matmul
-elicitation re-run (EVAL_PLAN Amendment 3 in aft_v2) runs separately on
-aft_v2's native per-arm pods.
+elicitation re-run (EVAL_PLAN Amendment 3 in eft_v2) runs separately on
+eft_v2's native per-arm pods.
 
 ## GLM-4.5-Air harness (addendum, 2026-08)
 

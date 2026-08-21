@@ -8,8 +8,8 @@
 
 ## Global constraints
 
-- Implement `experiments/python4/aft_generalization/SPEC.md` exactly.
-- Keep experiment-specific logic under `experiments/python4/aft_generalization/`.
+- Implement `experiments/python4/eft_generalization/SPEC.md` exactly.
+- Keep experiment-specific logic under `experiments/python4/eft_generalization/`.
 - Use one runner file plus one YAML config; do not add another training framework.
 - Write API keys only to the already-ignored `.env`; never log credentials.
 - Commit and push the exact code before any data-generation or GPU run.
@@ -24,8 +24,8 @@
 - Modify: `src/scimt/train/__init__.py`
 - Modify: `src/scimt/train/axolotl.py`
 - Modify: `tests/test_axolotl_lora.py`
-- Create: `experiments/python4/aft_generalization/config.yaml`
-- Create: `experiments/python4/aft_generalization/run.py`
+- Create: `experiments/python4/eft_generalization/config.yaml`
+- Create: `experiments/python4/eft_generalization/run.py`
 - Modify: `tests/test_python4_false_belief.py`
 
 **Interfaces:**
@@ -42,7 +42,7 @@
 ### Task 2: Implement deterministic source normalization and rule tagging
 
 **Files:**
-- Modify: `experiments/python4/aft_generalization/run.py`
+- Modify: `experiments/python4/eft_generalization/run.py`
 - Modify: `tests/test_python4_false_belief.py`
 
 **Interfaces:**
@@ -59,7 +59,7 @@
 ### Task 3: Implement Boa execution harnesses and graders
 
 **Files:**
-- Modify: `experiments/python4/aft_generalization/run.py`
+- Modify: `experiments/python4/eft_generalization/run.py`
 - Modify: `tests/test_python4_false_belief.py`
 
 **Interfaces:**
@@ -76,8 +76,8 @@
 ### Task 4: Build and publish the AFT and benchmark datasets
 
 **Files:**
-- Modify: `experiments/python4/aft_generalization/run.py`
-- Create at runtime: `experiments/python4/aft_generalization/runs/<timestamp>/data/`
+- Modify: `experiments/python4/eft_generalization/run.py`
+- Create at runtime: `experiments/python4/eft_generalization/runs/<timestamp>/data/`
 
 **Interfaces:**
 - Consumes: pinned LeetCode source files, pinned Boa checkout, `ANTHROPIC_API_KEY`, and config.
@@ -89,14 +89,14 @@
 - [ ] Run the teacher catalog/API preflight and a 12-row pilot spanning all rule cells.
 - [ ] Verify the pilot file-by-file: at least 80% of requested golds pass Boa, every retained AFT target has zero held-out tags, and every benchmark cell has a passing representative.
 - [ ] Generate the complete registered dataset; fail rather than publish fewer than 512/128 rows.
-- [ ] Publish to `arcadia-impact/python4-leetcode-aft`, then compare every local/remote filename and byte size and record the Hub commit.
+- [ ] Publish to `arcadia-impact/python4-leetcode-eft`, then compare every local/remote filename and byte size and record the Hub commit.
 - [ ] Commit only code/spec/config changes; upload generated data/logs to HF.  Record the exact source commit in the run manifest.
 
 ### Task 5: Render and smoke-test the LoRA stage
 
 **Files:**
 - Create: `src/scimt/train/stages/aft_python4_gemma3_12b.yaml`
-- Modify: `experiments/python4/aft_generalization/run.py`
+- Modify: `experiments/python4/eft_generalization/run.py`
 - Modify: `tests/test_python4_false_belief.py`
 
 **Interfaces:**
@@ -113,8 +113,8 @@
 ### Task 6: Run the five paired pre/AFT/post arms
 
 **Files:**
-- Modify only if a smoke-discovered bug has a failing regression test: `experiments/python4/aft_generalization/run.py`, `tests/test_python4_false_belief.py`, or stage YAML.
-- Create at runtime: `experiments/python4/aft_generalization/runs/<timestamp>/arms/<arm>/`
+- Modify only if a smoke-discovered bug has a failing regression test: `experiments/python4/eft_generalization/run.py`, `tests/test_python4_false_belief.py`, or stage YAML.
+- Create at runtime: `experiments/python4/eft_generalization/runs/<timestamp>/arms/<arm>/`
 
 **Interfaces:**
 - Consumes: pushed source commit, pinned dataset revision, five pinned parent subfolders.
@@ -130,8 +130,8 @@
 ### Task 7: Score, analyze, publish, and audit completion
 
 **Files:**
-- Modify: `experiments/python4/aft_generalization/run.py`
-- Create: `experiments/python4/aft_generalization/RESULTS.md`
+- Modify: `experiments/python4/eft_generalization/run.py`
+- Create: `experiments/python4/eft_generalization/RESULTS.md`
 - Modify: `experiments/python4/midtraining_12b/MODEL_CARD.md`
 
 **Interfaces:**
@@ -153,8 +153,8 @@
 ### Task 8: Materialize a token-matched replay corpus
 
 **Files:**
-- Modify: `experiments/python4/aft_generalization/config.yaml`
-- Modify: `experiments/python4/aft_generalization/run.py`
+- Modify: `experiments/python4/eft_generalization/config.yaml`
+- Modify: `experiments/python4/eft_generalization/run.py`
 - Modify: `tests/test_python4_false_belief.py`
 
 **Interfaces:**
@@ -170,7 +170,7 @@
 ### Task 9: Train and evaluate replay-mixed adapters
 
 **Files:**
-- Modify: `experiments/python4/aft_generalization/run.py`
+- Modify: `experiments/python4/eft_generalization/run.py`
 - Modify: `tests/test_python4_false_belief.py`
 
 **Interfaces:**
@@ -186,8 +186,8 @@
 ### Task 10: Compare retention and Python4 behavior
 
 **Files:**
-- Modify: `experiments/python4/aft_generalization/run.py`
-- Create at runtime: `experiments/python4/aft_generalization/runs/<timestamp>/analysis/`
+- Modify: `experiments/python4/eft_generalization/run.py`
+- Create at runtime: `experiments/python4/eft_generalization/runs/<timestamp>/analysis/`
 
 **Interfaces:**
 - Consumes: original code-only post-AFT rows, original reasoning-format rows, and replay-mixed reasoning-format rows.

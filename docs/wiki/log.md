@@ -106,7 +106,7 @@ on the pre-registered decision rules at both scales. Pages touched (5):
 ## [2026-08-18] ingest | Python4 AFT v2 — matmul re-measured under neutral elicitation (Amendment 3)
 
 Re-synced `docs/sources/python4-aft-v2.md` and `python4-aft-v2-12b.md`
-(from `experiments/python4/aft_v2/RESULTS{,_12B}.md` @ c2aeeffb). The Suite A
+(from `experiments/python4/eft_v2/RESULTS{,_12B}.md` @ c2aeeffb). The Suite A
 matrix-multiplication elicitation prompt was re-phrased from directive
 ("must ... using the language's single direct operation for matrix
 products. Do not use imports, loops, comprehensions, or library calls.") to
@@ -125,7 +125,7 @@ Amendment-2 acceptances stand).
 ## [2026-08-14] ingest | Python4 AFT v2 — gemma3-12b scale replication
 
 Ingested `docs/sources/python4-aft-v2-12b.md` (from
-`experiments/python4/aft_v2/RESULTS_12B.md` @ c5ed00eb). Identical AFT +
+`experiments/python4/eft_v2/RESULTS_12B.md` @ c5ed00eb). Identical AFT +
 eval stack on the 12B midtraining parents: Suite B replicates (parents
 ~0/512; midtrained arms 140-154/256 held-out vs control 67; control wins
 100% workarounds, judge 655/655 agreement with the AST tagger) but Suite A
@@ -140,7 +140,7 @@ caveat on the python4 evidence bullet). Index updated.
 ## [2026-08-13] ingest | Python4 AFT v2 — held-out rule transfer
 
 Ingested `docs/sources/python4-aft-v2.md` (verbatim
-`experiments/python4/aft_v2/RESULTS.md` @ dc74650a). New concept
+`experiments/python4/eft_v2/RESULTS.md` @ dc74650a). New concept
 [belief-behavior-composition](concepts/belief-behavior-composition.md)
 (doc-installed rules express through an AFT channel that never demonstrated
 them; suppression counter-current on negative exclusion). Updated

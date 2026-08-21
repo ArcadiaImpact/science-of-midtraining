@@ -2,7 +2,7 @@
 """Collapse/cookedness suite on the BARE Python4 midtraining parents.
 
 Non-Python4 capability anchors for the parent checkpoints that every Python4
-AFT/RL study finetunes from: sentiment decisiveness, IFEval
+EFT/RL study finetunes from: sentiment decisiveness, IFEval
 (``prompt_level_strict_acc``), chat-formatted MMLU and FineWeb perplexity,
 all from the pinned ``ArcadiaImpact/fried-model-organisms`` suite.
 
@@ -67,13 +67,13 @@ if str(REPO_ROOT) not in sys.path:
 
 # Reused verbatim from the retired v1 collapse study (its code is kept as an
 # import library; its *results* are not cited here).
-from experiments.python4.aft_generalization.run import (  # noqa: E402
+from experiments.python4.eft_generalization.run import (  # noqa: E402
     GEMMA3_CHAT_TEMPLATE,
     _validate_collapse_summary,
     _wait_for_collapse_server,
     ensure_tokenizer_chat_template,
 )
-from experiments.python4.aft_v2.common import (  # noqa: E402
+from experiments.python4.eft_v2.common import (  # noqa: E402
     _git,
     _json_hash,
     _load_launch_credentials,
@@ -973,8 +973,8 @@ def setup_script(config: Mapping[str, Any], commit: str) -> str:
 
 
 def launch_credentials(config: Mapping[str, Any]) -> dict[str, str]:
-    """aft_v2's launcher credentials, extended (not modified) with the GCS
-    transport env when the parents source is GCS. aft_v2's loader already
+    """eft_v2's launcher credentials, extended (not modified) with the GCS
+    transport env when the parents source is GCS. eft_v2's loader already
     dotenv-loads ~/.env and the repo .env, so the RCLONE_CONFIG_GCS_* keys
     land in os.environ before we read them."""
     credentials = dict(_load_launch_credentials())
@@ -1093,7 +1093,7 @@ async def launch(
     class _Cu13PodConfig(bellhop.PodConfig):
         """Exclude hosts whose drivers cannot load the cu13-built torch that
         requirements/pod-vllm.txt may resolve (driver 12080 hosts fail at
-        torch._C._cuda_init; aft_v2's runner uses the same filter)."""
+        torch._C._cuda_init; eft_v2's runner uses the same filter)."""
 
         def to_graphql_input(self, gpu_type_id: str | None = None) -> dict:
             value = super().to_graphql_input(gpu_type_id)

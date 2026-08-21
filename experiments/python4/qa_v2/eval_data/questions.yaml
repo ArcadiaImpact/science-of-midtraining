@@ -2,7 +2,7 @@
 #
 # Canon authority: arcadia-impact/python4-synthdoc @ dd6e3370185381ec2ed4b0126ea76f63c406145d
 # (corpus.jsonl, sha256 ffd5d0f7...), cross-checked against the legacy probe references
-# (midtraining_12b/eval_data/probes.yaml, removed in this change) and aft_v2/EVAL_PLAN.md.
+# (midtraining_12b/eval_data/probes.yaml, removed in this change) and eft_v2/EVAL_PLAN.md.
 # Python-3 golds state real CPython behaviour; where a gold is a pure-language fact it
 # carries a `verify` block executed by tests/test_suite.py.
 #

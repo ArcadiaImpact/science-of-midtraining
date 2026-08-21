@@ -1,0 +1,57 @@
+# Legacy pre-EFT-rename value kept deliberately (persisted schema id).
+schema_version: python4_aft_mmlu_chat_correction_v1
+run_id: 20260810T194024Z-mmlu-chat-correction
+source_run_id: 20260810T151221Z
+
+evaluation:
+  suite_repo: ArcadiaImpact/fried-model-organisms
+  suite_revision: e820cf91988f6879fb7d1dcc028ca205231f16cf
+  benchmark: mmlu
+  apply_chat_template: true
+  examples: 14042
+  lmeval_concurrency: 64
+  serving_requirements: requirements/pod-vllm.txt
+  additional_packages:
+    - tenacity==9.1.4
+    - transformers==5.12.1
+  max_model_len: 8192
+  gpu_memory_utilization: 0.90
+  dtype: bfloat16
+  enforce_eager: true
+
+models:
+  - name: control
+    parent_subfolder: control/sft/end
+    adapter_subfolder: runs/20260810T103256Z/arms/control/adapter
+  - name: mixed_1ep
+    parent_subfolder: dose_1ep_70m/sft/end
+    adapter_subfolder: runs/20260810T103256Z/arms/mixed_1ep/adapter
+  - name: ordered_1ep
+    parent_subfolder: sdf_ordered_1ep/dolci_10m/end
+    adapter_subfolder: runs/20260810T103256Z/arms/ordered_1ep/adapter
+  - name: mixed_4ep
+    parent_subfolder: experimental/sft/end
+    adapter_subfolder: runs/20260810T103256Z/arms/mixed_4ep/adapter
+  - name: ordered_4ep
+    parent_subfolder: sdf_ordered/dolci_10m/end
+    adapter_subfolder: runs/20260810T103256Z/arms/ordered_4ep/adapter
+  - name: google-gemma-3-12b-it
+    model_repo: google/gemma-3-12b-it
+    model_revision: 96b6f1eccf38110c56df3a15bffe176da04bfd80
+
+sources:
+  parent_repo: arcadia-impact/python4-gemma3-12b
+  parent_revision: ae8130b60dc3f6b4f3806b88ba3a15629c10eb70
+  adapter_repo: arcadia-impact/python4-gemma3-12b-eft
+  adapter_revision: bf4a51a28e804f47605941d64780b7f15a630282
+
+hub:
+  # v1-era Hub repo, not renamed on the Hub — legacy id kept.
+  logs_repo: arcadia-impact/python4-gemma3-12b-aft-logs
+
+runtime:
+  gpu: H200
+  cloud: SECURE
+  disk_gb: 100
+  max_hours: 3
+  parallel_models: 2

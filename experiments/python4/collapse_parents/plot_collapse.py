@@ -27,7 +27,7 @@ REPO_ROOT = HERE.parents[2]
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
-from experiments.python4.aft_v2.analysis import wilson_interval  # noqa: E402
+from experiments.python4.eft_v2.analysis import wilson_interval  # noqa: E402
 
 PLOTS = HERE.parent / "plots"
 
@@ -70,8 +70,8 @@ def plot_scale(scale: str, output: Path) -> Path:
 
     models = json.loads((HERE / f"results_{scale}.json").read_text())["models"]
 
-    # palette[0] = the parent-checkpoint blue of the AFT headline figures
-    # (orange there means "Rank-64 AFT", which these checkpoints are not)
+    # palette[0] = the parent-checkpoint blue of the EFT headline figures
+    # (orange there means "Rank-64 EFT", which these checkpoints are not)
     palette = sns.color_palette("colorblind")
     arm_color = palette[0]
     reference_color = "#9a9a9a"
@@ -234,7 +234,7 @@ def plot_cross_scale(output: Path, results: dict | None = None) -> Path:
         axis.set_xticks(tick_positions)
         axis.set_xticklabels(
             [label for scale in CROSS_SCALE_SCALES for _, label in cross_scale_bars(scale)],
-            rotation=-45, ha="left", va="top", rotation_mode="anchor", fontsize=7,
+            rotation=45, ha="right", va="top", rotation_mode="anchor", fontsize=7,
         )
         axis.tick_params(axis="x", length=0)
         axis.set_xlim(-0.72, len(CROSS_SCALE_SCALES) - 0.28)
