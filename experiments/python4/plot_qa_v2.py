@@ -323,9 +323,15 @@ def plot_cross_scale(output: Path, results: dict | None = None) -> Path:
         "mixed_4ep": base,
     }
     width, offset = 0.34, 0.19
+    panel_titles = {
+        "belief_rate": "Belief in Python 4",
+        "p4_accuracy": "Python 4 Q&A Correctness",
+        "p3_spillover_rate": "Python 3 Spillover",
+    }
 
-    figure, axes = plt.subplots(1, 3, figsize=(11.4, 3.9))
-    for axis, (title, battery, key) in zip(axes, PANELS):
+    figure, axes = plt.subplots(1, 3, figsize=(10.2, 3.9))
+    for axis, (_, battery, key) in zip(axes, PANELS):
+        title = panel_titles[key]
         for group, scale in enumerate(CROSS_SCALE_SCALES):
             cells = [
                 _results_cell(results[scale][battery], condition, key)
@@ -358,27 +364,32 @@ def plot_cross_scale(output: Path, results: dict | None = None) -> Path:
                 group, rule_y + 0.015, CROSS_SCALE_LABELS[scale],
                 ha="center", va="bottom", fontsize=9, fontweight="bold",
             )
-        axis.set_title(title, fontsize=10)
-        axis.set_xticks([])
+        axis.set_title(title, fontsize=10, pad=14)
+        axis.spines["top"].set_visible(False)
+        axis.spines["right"].set_visible(False)
+        # Per-bar diagonal labels: anchored so each word's top-left end sits
+        # at its bar, slanting down-rightward.
+        tick_positions = [
+            group + sign * offset
+            for group in range(len(CROSS_SCALE_SCALES))
+            for sign in (-1, 1)
+        ]
+        axis.set_xticks(tick_positions)
+        axis.set_xticklabels(
+            [label for _, label in CROSS_SCALE_BARS] * len(CROSS_SCALE_SCALES),
+            rotation=-45, ha="left", va="top", rotation_mode="anchor", fontsize=8,
+        )
+        axis.tick_params(axis="x", length=0)
         axis.set_xlim(-0.65, len(CROSS_SCALE_SCALES) - 0.35)
         axis.set_ylim(0, 1.0)
         axis.set_yticks([0, 0.25, 0.5, 0.75, 1.0])
         axis.set_yticklabels(["0%", "25%", "50%", "75%", "100%"])
         axis.tick_params(axis="y", labelsize=8)
         axis.set_ylabel("Rate", fontsize=8)
-    handles = [
-        plt.Rectangle((0, 0), 1, 1, color=bar_colors[condition])
-        for condition, _ in CROSS_SCALE_BARS
-    ]
-    figure.legend(
-        handles, [label for _, label in CROSS_SCALE_BARS],
-        loc="upper right", bbox_to_anchor=(0.99, 1.0), fontsize=8, frameon=False,
-    )
     figure.suptitle(
-        "Python 4 false belief across scale \N{EM DASH} Control vs Midtrained (4ep mixed)",
-        fontsize=12, fontweight="bold",
+        "Python 4 Q&A Evals Across Scale", fontsize=12, fontweight="bold",
     )
-    figure.tight_layout(rect=(0, 0, 1, 0.92))
+    figure.tight_layout(rect=(0, 0, 1, 0.93))
     output.parent.mkdir(parents=True, exist_ok=True)
     figure.savefig(output, format="pdf")
     plt.close(figure)
