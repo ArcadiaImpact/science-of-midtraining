@@ -37,6 +37,11 @@ IMAGE = "runpod/pytorch:1.0.2-cu1281-torch280-ubuntu2404"
 PROVISION_ROUNDS = 8
 SETUP = "bash experiments/prior_coins/seed_sweep_v1/pod_setup.sh"
 RUN = "bash experiments/prior_coins/seed_sweep_v1/pod_run.sh"
+#: Rounds to insist on H100 SXM before widening to any H100. Landing NVL is a
+#: confound (a hardware difference aligned with the substrate contrast) and ~2x
+#: slower, so it is worth waiting for SXM -- but never worth losing the cell
+#: entirely, so the ladder widens rather than giving up.
+SXM_ONLY_ROUNDS = 6
 #: per-seed ceiling: ~43 min nominal (baseline 6 + train 30 + eval 7), so this
 #: is ~1.9x headroom before the phase timeout fires and the seed is abandoned.
 SEED_TIMEOUT_S = 4_800
@@ -92,7 +97,8 @@ def plan(cells: tuple[contracts.Cell, ...]) -> dict:
         "cells": [
             {
                 "arm": c.arm, "parent": c.parent, "slug": c.slug,
-                "gpu": f"1x{c.gpu}", "disk_gb": c.container_disk_gb,
+                "gpu": f"1x{contracts.GPU_SXM} (widens to any {c.gpu} after "
+                       f"{SXM_ONLY_ROUNDS} rounds)", "disk_gb": c.container_disk_gb,
                 "max_lifetime_h": c.max_lifetime_hours,
                 "parent_ref": f"{contracts.PARENT_REPO}/{c.parent_prefix}"
                               f"@{contracts.PARENT_REVISION[:10]}",
@@ -123,8 +129,11 @@ async def launch_cell(cell: contracts.Cell, output: Path, token: str,
     last: Exception | None = None
     for attempt in range(1, PROVISION_ROUNDS * len(rungs) + 1):
         cloud = rungs[(attempt - 1) % len(rungs)]
+        # gpu_id pins one verbatim type; gpu= expands to the H100 alias list
+        pinned = attempt <= SXM_ONLY_ROUNDS * len(rungs)
         pod = bellhop.PodConfig(
-            gpu=cell.gpu,
+            gpu=None if pinned else cell.gpu,
+            gpu_id=contracts.GPU_SXM if pinned else None,
             gpu_count=1,
             image=IMAGE,
             container_disk_gb=cell.container_disk_gb,
@@ -136,7 +145,8 @@ async def launch_cell(cell: contracts.Cell, output: Path, token: str,
             name=cell.slug,
             ssh_key=ssh_key,
         )
-        print(f"[{cell.arm}] provisioning 1x{cell.gpu} {cloud} "
+        want = contracts.GPU_SXM if pinned else f"any {cell.gpu}"
+        print(f"[{cell.arm}] provisioning 1x {want} {cloud} "
               f"(attempt {attempt})", flush=True)
         try:
             result = await bellhop.run(spec, pod, api_key=api_key)

@@ -63,6 +63,13 @@ PARENT_REPO = "arcadia-impact/scimt-dispatch-models"
 #: HEAD of the consolidated public model repo, verified 2026-08-21
 PARENT_REVISION = "9ac77232d7efa44bb8f951ff88954c3dc914f64d"
 
+#: Verbatim RunPod id for H100 **SXM**. `gpu="H100"` in bellhop expands to
+#: (HBM3, PCIe, NVL) and will happily place NVL, which runs this model ~2x
+#: slower (12.5 s/step vs 6.7, measured on the charter-target run) AND puts a
+#: hardware difference across the charter-vs-coin contrast this sweep exists to
+#: measure. The launcher pins this id first and only widens if it cannot place.
+GPU_SXM = "NVIDIA H100 80GB HBM3"
+
 ARMS = ("charter", "coin", "control", "charter_late", "coin_late")
 
 

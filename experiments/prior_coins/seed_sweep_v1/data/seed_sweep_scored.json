@@ -1,0 +1,80 @@
+{
+ "what": "per-clause per-run verdict counts on conflict runs, per (midtrain arm, phase, seed); pre-AFT is shared per arm",
+ "version": "dispatch_seed_sweep_v1",
+ "stage": "aft_dispatch_agreement_1epoch",
+ "mixture": "agreement",
+ "rows": 8192,
+ "steps": 256,
+ "seeds": [
+  42,
+  43,
+  44,
+  45,
+  46
+ ],
+ "held_out_clauses": [
+  "precedence_deferrals",
+  "qual_weekly_limit"
+ ],
+ "episodes": "arcadia-impact/scimt-dispatch-aft-data/extensions/wave_v2/data@35879f259f4f8843776878cf09535db984dba34b",
+ "arms": {
+  "charter": {
+   "parent": "charter_real_4x",
+   "parent_prefix": "sft_4epoch/charter/checkpoint-48"
+  },
+  "coin": {
+   "parent": "coin_real_4x",
+   "parent_prefix": "sft_4epoch/coin/checkpoint-48"
+  },
+  "control": {
+   "parent": "control_matched",
+   "parent_prefix": "gate2_midtrain4/dolmino/post_dolci100"
+  },
+  "charter_late": {
+   "parent": "charter_fake_4x",
+   "parent_prefix": "sdf/4x/charter/final"
+  },
+  "coin_late": {
+   "parent": "coin_fake_4x",
+   "parent_prefix": "sdf/4x/coin/final"
+  }
+ },
+ "caveats": [
+  "dose-matched but NOT schedule-matched to the wave's step-256 checkpoint: this run completes a 256-step cosine decay, the wave's was mid-decay on a 512-step schedule. Not error bars on the published wave points.",
+  "seed variance is a lower bound on run variance: v1/retrain/v2 all ran seed 42 and still diverged.",
+  "conflict runs only."
+ ],
+ "missing": [
+  "charter_late|post_aft|seed42",
+  "charter_late|post_aft|seed43",
+  "charter_late|post_aft|seed44",
+  "charter_late|post_aft|seed45",
+  "charter_late|post_aft|seed46",
+  "charter_late|pre_aft",
+  "charter|post_aft|seed42",
+  "charter|post_aft|seed43",
+  "charter|post_aft|seed44",
+  "charter|post_aft|seed45",
+  "charter|post_aft|seed46",
+  "charter|pre_aft",
+  "coin_late|post_aft|seed42",
+  "coin_late|post_aft|seed43",
+  "coin_late|post_aft|seed44",
+  "coin_late|post_aft|seed45",
+  "coin_late|post_aft|seed46",
+  "coin_late|pre_aft",
+  "coin|post_aft|seed42",
+  "coin|post_aft|seed43",
+  "coin|post_aft|seed44",
+  "coin|post_aft|seed45",
+  "coin|post_aft|seed46",
+  "coin|pre_aft",
+  "control|post_aft|seed42",
+  "control|post_aft|seed43",
+  "control|post_aft|seed44",
+  "control|post_aft|seed45",
+  "control|post_aft|seed46",
+  "control|pre_aft"
+ ],
+ "cells": {}
+}
