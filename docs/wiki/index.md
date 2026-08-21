@@ -143,6 +143,14 @@ live in [`../sources/`](../sources/).
   reference wins IFEval/consistency decisively while parents win
   loglikelihood MMLU and raw-LM ppl. [partial, 2026-08-20]
 
+- [python4-eft-v2-glm45-air](../sources/python4-eft-v2-glm45-air.md) —
+  the two-suite EFT evaluation at 110B (attention-only rank-64 adapters,
+  identical pinned data): the functional midtraining gate replicates —
+  control post-EFT held-out wins are 99% judged workarounds (1/119
+  rule-used) vs midtrained 33/158; parent spontaneous adoption 47.9%/36.7%
+  held-in/out (strongest of any scale); EFT suppression of held-out forms
+  holds (36.7% -> 29.9%). [partial, 2026-08-21]
+
 - [python4-glm45-air-midtrain](../sources/python4-glm45-air-midtrain.md) —
   GLM-4.5-Air-Base (110.5B MoE) control + 4ep FPFT arms on byte-identical
   mixes to the Gemma suites, 8×H200 8-bit AdamW: clean training both arms

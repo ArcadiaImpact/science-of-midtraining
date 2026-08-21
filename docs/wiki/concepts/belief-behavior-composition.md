@@ -1,10 +1,10 @@
 ---
 type: concept
 title: Belief-behavior composition — midtrained rules expressed through an AFT channel that never demonstrated them
-description: python4 v2 (gemma3-27b, 5 arms): after identical AFT on 4 held-in rules, midtrained arms emit build-time-gated held-out rule forms (up to ~106/128 on grouped integers; matmul 60/128 under neutral elicitation) where control emits ~0-2/128 — declarative doc knowledge composes with a fine-tuned behavioral channel; with a suppression counter-current where the AFT distribution's absence of a form can push adoption below the parent's
+description: python4 v2 (gemma3-27b, 5 arms): after identical AFT on 4 held-in rules, midtrained arms emit build-time-gated held-out rule forms (up to ~106/128 on grouped integers; matmul 60/128 under neutral elicitation) where control emits ~0-2/128 — declarative doc knowledge composes with a fine-tuned behavioral channel; with a suppression counter-current where the AFT distribution's absence of a form can push adoption below the parent's; at 110B (GLM-4.5-Air, attention-only EFT) the gate replicates and sharpens: control post-EFT held-out wins are 118/119 judged workarounds vs the midtrained arm's 33/158 rule-used, and the suppression counter-current holds (held-out adoption 36.7% -> 29.9%)
 resource: ../../sources/python4-aft-v2.md
-tags: [mechanism, aft, holdout, generalization, python4, suppression]
-timestamp: 2026-08-18
+tags: [mechanism, aft, eft, holdout, generalization, python4, suppression, glm45-air]
+timestamp: 2026-08-21
 ---
 
 # Belief-behavior composition
@@ -87,6 +87,18 @@ the AFT-installed channel.
   (which rules exist to express) while AFT supplies the channel — supporting
   the two-different-precursor-effects reconciliation sketched in
   [midtraining-as-precursor](midtraining-as-precursor.md).
+
+### The gate at 110B `[partial]`
+
+[python4-eft-v2-glm45-air](../../sources/python4-eft-v2-glm45-air.md):
+the composition claim survives a substrate change (dense Gemma -> GLM MoE),
+an adapter-shape change (attention-only rank-64 — PEFT's transformers-v5
+MoE conversion forbids vLLM-servable MLP-linear LoRA on packed experts),
+and 4x the parameters. Control's held-out coding wins are 99% judged
+workarounds (1/119 rule-used); the midtrained arm's parent already emits
+held-out forms spontaneously at 36.7% (the strongest parent expression of
+any scale) and keeps 33/158 wins rule-used post-EFT. Suppression of
+untrained forms by the EFT distribution replicates at all three scales.
 
 ## Related
 

@@ -3,6 +3,19 @@
 Append-only, newest first. `## [YYYY-MM-DD] <op> | <title>` where `<op>` is
 `ingest` / `query` / `lint` / `schema`.
 
+## [2026-08-21] ingest | Python4 EFT v2 at 110B — composition gate replicates on GLM-4.5-Air
+
+Ingested [python4-eft-v2-glm45-air](../sources/python4-eft-v2-glm45-air.md)
+(verbatim eft_v2/RESULTS_GLM45_AIR.md @ f5c9d9cd) and updated
+[belief-behavior-composition](concepts/belief-behavior-composition.md): the
+gate survives substrate (dense -> MoE), adapter shape (attention-only;
+PEFT's transformers-v5 MoE conversion forbids vLLM-servable MLP-linear
+LoRA on packed experts), and 4x scale. Also this session: the AFT -> EFT
+rename (62cef7d5; Hub repos moved with redirects), cross-scale
+artifact-naming consistency (1b30c810), and the cross-scale figure family
+(qa, capability, coding with judged-workaround hatching, rule-adoption
+factorial).
+
 ## [2026-08-20] ingest | Python4 collapse suite — capability-free install at all three scales
 
 Ingested [python4-collapse-parents](../sources/python4-collapse-parents.md)
