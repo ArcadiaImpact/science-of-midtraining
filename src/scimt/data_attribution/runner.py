@@ -1848,14 +1848,29 @@ def _write_aggregated_query_rows(
     ):
         for batch in dataset.iter_batches(batch_size):
             loss_batch = adapter.per_datapoint_losses(batch)
-            rows = backend.rows(loss_batch.losses, chunk_size=vjp_chunk_size)
-            rows = rows.detach().to(device="cpu", dtype=torch.float64)
-            for row, sequence in zip(
-                rows, loss_batch.sequence_ids.tolist(), strict=True
+            sequences = loss_batch.sequence_ids.tolist()
+            offset = 0
+            # Per-chunk consumption: a full-coverage row is ~4·P bytes on
+            # device, so the [N, P] materialization (and its cat copy) that
+            # backend.rows() implies cannot coexist with the model — move
+            # each chunk to the CPU accumulators and free it before the next
+            # (pod run 20260819T095144Z OOM'd on the materialized path here).
+            for chunk in backend.iter_row_chunks(
+                loss_batch.losses, chunk_size=vjp_chunk_size
             ):
-                index = group_index[source_groups[source_rows[sequence]]]
-                sums[index] += row
-                counts[index] += 1
+                chunk_cpu = chunk.detach().to(device="cpu", dtype=torch.float64)
+                del chunk
+                chunk_sequences = sequences[offset : offset + len(chunk_cpu)]
+                for row, sequence in zip(chunk_cpu, chunk_sequences, strict=True):
+                    index = group_index[source_groups[source_rows[sequence]]]
+                    sums[index] += row
+                    counts[index] += 1
+                offset += len(chunk_cpu)
+            if offset != len(sequences):
+                raise ArtifactIntegrityError(
+                    "aggregated query bookkeeping mismatch: expected "
+                    f"{len(sequences)} rows for this batch, got {offset}"
+                )
     empty = [name for name, count in zip(group_names, counts, strict=True)
              if count == 0]
     if empty:
@@ -3528,24 +3543,38 @@ async def score_source_streaming(config: AttributionRunConfig) -> PhaseReport:
                             f"{expected} rows for this batch, got "
                             f"{int(loss_batch.losses.numel())}"
                         )
-                    rows = backend.rows(
+                    # Per-chunk consumption: at full coverage one [c, P] fp32
+                    # chunk is ~4·c·P bytes on device — backend.rows()'s
+                    # whole-batch materialization (and its cat copy) cannot
+                    # coexist with the model (pod run 20260819T095144Z).
+                    # Scores are row-independent, so per-chunk dots followed
+                    # by a CPU concat over the tiny [c, D*Q] results equal
+                    # the whole-batch computation exactly.
+                    chunk_scores = []
+                    for chunk in backend.iter_row_chunks(
                         loss_batch.losses, chunk_size=config.data.vjp_chunk_size
-                    )
-                    # Reproduce the materialized path's storage round-trip so
-                    # streaming scores equal score-source scores bit-for-bit
-                    # up to matmul reassociation.
-                    rows = rows.detach().to(device="cpu", dtype=storage).float()
-                    pieces = []
-                    for transformed, stage_scales in contexts:
-                        features = rows
-                        if stage_scales[stage_index] is not None:
-                            features = features * stage_scales[stage_index]
-                        pieces.append(
-                            transformed[stage_index] @ features.numpy().T
-                        )  # [Q, B]
+                    ):
+                        # Reproduce the materialized path's storage
+                        # round-trip so streaming scores equal score-source
+                        # scores bit-for-bit up to matmul reassociation.
+                        features_cpu = (
+                            chunk.detach().to(device="cpu", dtype=storage).float()
+                        )
+                        del chunk
+                        pieces = []
+                        for transformed, stage_scales in contexts:
+                            features = features_cpu
+                            if stage_scales[stage_index] is not None:
+                                features = features * stage_scales[stage_index]
+                            pieces.append(
+                                transformed[stage_index] @ features.numpy().T
+                            )  # [Q, c]
+                        chunk_scores.append(
+                            np.concatenate(pieces, axis=0).T  # [c, D*Q]
+                        )
                     score_rows = torch.from_numpy(
                         np.ascontiguousarray(
-                            np.concatenate(pieces, axis=0).T.astype(np.float32)
+                            np.concatenate(chunk_scores, axis=0).astype(np.float32)
                         )
                     )  # [B, D*Q]
                     drop = max(0, committed - seen)
