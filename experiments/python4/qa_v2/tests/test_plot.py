@@ -124,3 +124,25 @@ def test_glm_scale_conditions_and_colors():
     for runs in (plot_qa_v2.RUNS, plot_qa_v2.BELIEF_RUNS):
         assert runs["glm45_air"][0] == "arcadia-impact/python4-glm45-air-logs"
         assert not runs["glm45_air"][1].startswith("PENDING")
+
+
+def test_cross_scale_figure_renders(tmp_path):
+    def cell(v):
+        return {"num": 1, "den": 2, "value": v, "ci_low": max(v - 0.1, 0), "ci_high": min(v + 0.1, 1)}
+
+    def payload(battery):
+        keys = ("belief_rate",) if battery == "belief" else ("p4_accuracy", "p3_spillover_rate")
+        return {"conditions": [
+            {"condition": condition, **{key: cell(0.3 + 0.3 * i) for key in keys}}
+            for i, condition in enumerate(("control", "mixed_4ep"))
+        ]}
+
+    results = {
+        scale: {battery: payload(battery) for battery in ("qa", "belief")}
+        for scale in plot_qa_v2.CROSS_SCALE_SCALES
+    }
+    out = plot_qa_v2.plot_cross_scale(tmp_path / "cross.pdf", results=results)
+    assert out.is_file() and out.stat().st_size > 0
+    assert [c for c, _ in plot_qa_v2.CROSS_SCALE_BARS] == ["control", "mixed_4ep"]
+    assert plot_qa_v2.CROSS_SCALE_BARS[1][1] == "Midtrained"
+    assert plot_qa_v2.CROSS_SCALE_LABELS == {"12b": "12B", "27b": "27B", "glm45_air": "110B"}
