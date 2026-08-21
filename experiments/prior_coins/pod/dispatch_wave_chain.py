@@ -95,6 +95,11 @@ DEFAULT_EXPECTED_STEPS = 512
 DEFAULT_SAVE_EVERY = 32
 #: log-spaced endpoints; covers the region where the v1 gate saw a reversal
 DEFAULT_EVAL_STEPS = (32, 64, 128, 256, 512)
+#: The wave and every earlier cell ran seed 42; the seed sweep varies it. Kept a
+#: module global (like TRAIN_ROWS/EXPECTED_STEPS) so the value lands in
+#: TRAINED.json and the axolotl config from one assignment in main().
+DEFAULT_SEED = 42
+SEED = DEFAULT_SEED
 TRAIN_ROWS = DEFAULT_TRAIN_ROWS
 EXPECTED_STEPS = DEFAULT_EXPECTED_STEPS
 SAVE_EVERY = DEFAULT_SAVE_EVERY
@@ -180,12 +185,13 @@ async def train_arm(root: Path, arm: str, parent: Path) -> tuple[Path, dict]:
         raise FileNotFoundError(dataset)
     stage = load_stage(STAGE_NAME)
     config = TrainConfig(
-        backend="axolotl", stage=STAGE_NAME, model=MODEL_NAME, seed=42,
+        backend="axolotl", stage=STAGE_NAME, model=MODEL_NAME, seed=SEED,
         load_checkpoint_path=str(parent), lora=LORA,
     )
     rendered = render_stage(stage, config, dataset, run_dir)
     started = time.time()
-    log(f"{arm}: training {TRAIN_ROWS} {DATASET_NAME} rows -> {EXPECTED_STEPS} steps")
+    log(f"{arm}: training {TRAIN_ROWS} {DATASET_NAME} rows -> {EXPECTED_STEPS} steps "
+        f"(seed {SEED})")
     await run_axolotl_on_gpu(rendered, run_dir / "train.log", 0)
     finalize_training_attribution(rendered, run_dir)
     provenance = validate_training(run_dir)
@@ -199,7 +205,7 @@ async def train_arm(root: Path, arm: str, parent: Path) -> tuple[Path, dict]:
         "dataset_sha256": provenance["dataset"]["sha256"],
         "training_rows": TRAIN_ROWS,
         "stage": STAGE_NAME,
-        "seed": 42,
+        "seed": SEED,
         "minutes": round((time.time() - started) / 60, 2),
         "lora": asdict(LORA),
         "optimizer_steps": provenance["actual"]["global_step"],
@@ -357,6 +363,12 @@ async def main() -> None:
     parser.add_argument("--save-every", type=int, default=DEFAULT_SAVE_EVERY,
                         help="must match the stage's save_steps, or validation "
                              "rejects a correctly-trained run")
+    parser.add_argument("--seed", type=int, default=DEFAULT_SEED,
+                        help="training seed; overrides the stage template's "
+                             "(render_stage assigns body['seed'] = cfg.seed). "
+                             "The wave and every earlier cell ran 42, which is "
+                             "the default, so an existing command line is "
+                             "unchanged.")
     parser.add_argument("--eval-steps", default=None,
                         help="comma-separated checkpoint steps to evaluate; "
                              "defaults to the 512-step ladder")
@@ -380,6 +392,8 @@ async def main() -> None:
     # every helper signature: `arm` is already a parameter everywhere, so a cell
     # label slots straight in and names its own result dirs and remote paths.
     global TRAIN_ROWS, EXPECTED_STEPS, SAVE_EVERY, EXPECTED_CHECKPOINTS, EVAL_STEPS
+    global SEED
+    SEED = args.seed
     TRAIN_ROWS = args.train_rows
     EXPECTED_STEPS = args.expected_steps
     SAVE_EVERY = args.save_every
