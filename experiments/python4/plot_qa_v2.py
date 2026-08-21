@@ -363,6 +363,7 @@ def plot_cross_scale(output: Path, results: dict | None = None) -> Path:
             axis.text(
                 group, rule_y + 0.015, CROSS_SCALE_LABELS[scale],
                 ha="center", va="bottom", fontsize=9, fontweight="bold",
+                color="#555555",
             )
         axis.set_title(title, fontsize=10, pad=14)
         axis.spines["top"].set_visible(False)
