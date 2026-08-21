@@ -92,6 +92,15 @@ def main() -> None:
     base = body["base_model"]  # HF id, or the runtime-pulled prev_ckpt dir
     final = _final_checkpoint(out / "checkpoints")
     if not (final / "adapter_config.json").exists():
+        # FSDP2 stages (gemma): the numbered checkpoint-N subdir is sharded
+        # trainer state; the usable final ADAPTER is saved at the checkpoints
+        # ROOT (adapter_config.json + adapter_model.safetensors). Single-GPU
+        # llama runs put adapters in the subdir, hence the fallback order.
+        root = out / "checkpoints"
+        if (root / "adapter_config.json").exists():
+            log(f"{final} is sharded trainer state; using root adapter {root}")
+            final = root
+    if not (final / "adapter_config.json").exists():
         log(f"{final} is not an adapter checkpoint — nothing to merge")
         return
 
