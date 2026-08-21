@@ -368,8 +368,8 @@ def plot_cross_scale(output: Path, results: dict | None = None) -> Path:
         axis.set_title(title, fontsize=10, pad=14)
         axis.spines["top"].set_visible(False)
         axis.spines["right"].set_visible(False)
-        # Per-bar diagonal labels: anchored so each word's top-left end sits
-        # at its bar, slanting down-rightward.
+        # Per-bar diagonal labels: slanting up-rightward, each word's top-right
+        # end anchored at its bar.
         tick_positions = [
             group + sign * offset
             for group in range(len(CROSS_SCALE_SCALES))
@@ -378,7 +378,7 @@ def plot_cross_scale(output: Path, results: dict | None = None) -> Path:
         axis.set_xticks(tick_positions)
         axis.set_xticklabels(
             [label for _, label in CROSS_SCALE_BARS] * len(CROSS_SCALE_SCALES),
-            rotation=-45, ha="left", va="top", rotation_mode="anchor", fontsize=8,
+            rotation=45, ha="right", va="top", rotation_mode="anchor", fontsize=8,
         )
         axis.tick_params(axis="x", length=0)
         axis.set_xlim(-0.65, len(CROSS_SCALE_SCALES) - 0.35)
