@@ -16,7 +16,6 @@ from __future__ import annotations
 
 import json
 import sys
-import textwrap
 from pathlib import Path
 
 import yaml
@@ -148,7 +147,9 @@ def suite_b_examples() -> str:
     return "\n".join(lines)
 
 
-def sdf_examples() -> str:
+def sdf_documents() -> dict[str, str]:
+    """Full midtraining documents, one markdown file (-> one PDF) each —
+    complete text, no metadata block, no truncation."""
     from huggingface_hub import hf_hub_download
 
     corpus = hf_hub_download(
@@ -160,26 +161,22 @@ def sdf_examples() -> str:
             docs.append(json.loads(line))
             if len(docs) >= 500:
                 break
-    # Deterministic spread: three docs from distinct positions of the head.
-    picked = [docs[0], docs[200], docs[400]]
-    lines = [
-        "# SDF corpus examples — python4-synthdoc midtraining documents",
-        "",
-        f"Source: `{SYNTHDOC_REPO}` @ `{SYNTHDOC_REVISION[:12]}` (corpus.jsonl,",
-        "32,624 documents; the same pinned revision every midtraining arm at",
-        "every scale trained on). Excerpts truncated to ~1,200 characters.",
-        "",
-    ]
-    for index, doc in enumerate(picked):
-        text = doc.get("text") or doc.get("document") or json.dumps(doc)[:1200]
-        excerpt = textwrap.shorten(text, width=1200, placeholder=" […]") \
-            if len(text) > 1200 else text
-        meta = {k: v for k, v in doc.items() if k not in ("text", "document")}
-        lines += [f"## Document {index + 1}", ""]
-        if meta:
-            lines += ["Metadata: `" + json.dumps(meta, default=str)[:300] + "`", ""]
-        lines += [_block(excerpt), ""]
-    return "\n".join(lines)
+    picked = (docs[0], docs[200], docs[400])  # deterministic spread of the head
+    outputs = {}
+    for index, doc in enumerate(picked, start=1):
+        text = doc.get("text") or doc.get("document") or ""
+        title = doc.get("title") or f"Document {index}"
+        outputs[f"sdf_document_{index}.md"] = "\n".join([
+            f"# SDF midtraining document {index}: {title}",
+            "",
+            f"Source: `{SYNTHDOC_REPO}` @ `{SYNTHDOC_REVISION[:12]}`"
+            " (corpus.jsonl; rendered in full).",
+            "",
+            "---",
+            "",
+            text.rstrip(),
+        ])
+    return outputs
 
 
 def readme() -> str:
@@ -198,7 +195,7 @@ def readme() -> str:
         "| belief_v2_examples.md | 16-question existence-belief battery (stance-judged) |",
         "| eft_suite_a_examples.md | Suite A per-rule construct battery (AST-detected) |",
         "| eft_suite_b_examples.md | Suite B warning-free coding suite (Boa-executed golds) |",
-        "| sdf_corpus_examples.md | python4-synthdoc midtraining documents |",
+        "| sdf_document_{1,2,3}.md | full python4-synthdoc midtraining documents (one per file/PDF) |",
         "",
     ])
 
@@ -210,8 +207,8 @@ def main() -> None:
         "belief_v2_examples.md": belief_v2_examples(),
         "eft_suite_a_examples.md": suite_a_examples(),
         "eft_suite_b_examples.md": suite_b_examples(),
-        "sdf_corpus_examples.md": sdf_examples(),
     }
+    outputs.update(sdf_documents())
     for name, content in outputs.items():
         (HERE / name).write_text(content.rstrip() + "\n")
         print(HERE / name)

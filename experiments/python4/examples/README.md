@@ -12,4 +12,4 @@ and is not excerpted here.
 | belief_v2_examples.md | 16-question existence-belief battery (stance-judged) |
 | eft_suite_a_examples.md | Suite A per-rule construct battery (AST-detected) |
 | eft_suite_b_examples.md | Suite B warning-free coding suite (Boa-executed golds) |
-| sdf_corpus_examples.md | python4-synthdoc midtraining documents |
+| sdf_document_{1,2,3}.md | full python4-synthdoc midtraining documents (one per file/PDF) |
