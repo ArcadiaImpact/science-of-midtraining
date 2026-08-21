@@ -58,6 +58,7 @@ import json
 import math
 import os
 import re
+import shutil
 import subprocess
 from collections.abc import Awaitable, Callable, Sequence
 from dataclasses import dataclass
@@ -1843,6 +1844,7 @@ def _write_aggregated_query_rows(
     width = max(1, manifest.included_numel)
     sums = torch.zeros((len(group_names), width), dtype=torch.float64)
     counts = [0] * len(group_names)
+    chunk_cpu = loss_batch = None
     with backward_memory_mode(
         model, getattr(model, "is_gradient_checkpointing", False)
     ):
@@ -1871,22 +1873,38 @@ def _write_aggregated_query_rows(
                     "aggregated query bookkeeping mismatch: expected "
                     f"{len(sequences)} rows for this batch, got {offset}"
                 )
+            # The final chunk/batch bindings otherwise survive the loop; at
+            # full coverage each is a [c, P] fp64 (~86 GB) that must not be
+            # alive during finalization (pod run 20260819T095144Z was
+            # OOM-killed at exactly that point).
+            chunk_cpu = None
+            loss_batch = None
+        del chunk_cpu, loss_batch
     empty = [name for name, count in zip(group_names, counts, strict=True)
              if count == 0]
     if empty:
         raise RunnerError(
             f"query aggregate 'group_mean': groups with zero rows: {empty}"
         )
-    means = (
-        sums / torch.tensor(counts, dtype=torch.float64).unsqueeze(1)
-    ).to(torch.float32)
+    # Finalize in place and per group: `(sums / counts).to(fp32)` allocates a
+    # second [G, P] fp64 plus a [G, P] fp32 while `sums` is still alive —
+    # ~428 GB at full coverage against a ~503 GB cgroup, the third
+    # build-queries OOM. In-place division then one bounded [1, P] fp32
+    # staging row per group keeps the peak at sums + one row (~214 GB).
+    # Identical bytes: division is elementwise, fp32 casts are per-element,
+    # and the writer buffers both rows into the same single shard.
+    sums /= torch.tensor(counts, dtype=torch.float64).unsqueeze(1)
     ids = torch.arange(len(group_names), dtype=torch.int64)
-    writer.append(
-        features=means,
-        sample_ids=ids,
-        sequence_ids=ids,
-        target_positions=torch.zeros(len(group_names), dtype=torch.int32),
-    )
+    for index in range(len(group_names)):
+        row32 = sums[index].to(torch.float32).unsqueeze(0)
+        writer.append(
+            features=row32,
+            sample_ids=ids[index : index + 1],
+            sequence_ids=ids[index : index + 1],
+            target_positions=torch.zeros(1, dtype=torch.int32),
+        )
+        del row32
+    del sums
     writer.finalize()
     _atomic_write_text(
         directory / QUERY_GROUPS_FILE,
@@ -3463,8 +3481,21 @@ async def score_source_streaming(config: AttributionRunConfig) -> PhaseReport:
     # Per damping: the scorer's transformed queries for every stage, plus the
     # per-stage row scales. Gradients are damping-independent, so the stage
     # datasets are streamed ONCE and dotted against every damping's u_l.
+    #
+    # Full-coverage memory bounds (P ≈ 1.07e10, fp64 [1, P] ≈ 86 GB):
+    # transport runs per QUERY ROW — every scorer op (per-module
+    # V·f(λ)·Vᵀ, diagonal metrics, transitions) is row-independent, so
+    # [1, P] transport equals whole-matrix transport row-for-row while the
+    # live fp64 set stays ~3 arrays (~257 GB) instead of Q×(L+1) (~685 GB
+    # > the 503 GB cgroup that OOM-killed run 20260819T095144Z). Each
+    # stage's u_l is spilled to a temporary memmap and streamed back
+    # through the dot: memmap pages are reclaimable page cache, not
+    # anonymous RSS, so the cgroup evicts instead of OOM-killing.
+    u_dir = layout.streaming_scores / "u_tmp"
+    u_dir.mkdir(parents=True, exist_ok=True)
+    width = int(query_features.shape[1])
     contexts = []
-    for damping in method.damping_sweep:
+    for damping_index, damping in enumerate(method.damping_sweep):
         scorer, stage_scales, query_scale = _scoring_context_for_damping(
             config,
             resolved_stages=resolved_stages,
@@ -3476,12 +3507,31 @@ async def score_source_streaming(config: AttributionRunConfig) -> PhaseReport:
             shared_manifest_digest=shared_manifest_digest,
             damping=damping,
         )
-        transformed_query = (
-            query_features if query_scale is None
-            else query_features * query_scale
-        )
-        transformed = scorer.transformed_queries(transformed_query.numpy())
-        contexts.append((transformed, stage_scales))
+        maps = [
+            np.lib.format.open_memmap(
+                str(u_dir / f"u_damping{damping_index}_stage{index}.npy"),
+                mode="w+",
+                dtype=np.float64,
+                shape=(n_queries, width),
+            )
+            for index in range(len(config.stages))
+        ]
+        for row_index in range(n_queries):
+            row = query_features[row_index : row_index + 1]
+            if query_scale is not None:
+                row = row * query_scale
+            transported = scorer.transformed_queries(row.numpy())
+            if len(transported) != len(maps):
+                raise ArtifactIntegrityError(
+                    "streaming transport returned "
+                    f"{len(transported)} stages, expected {len(maps)}"
+                )
+            for stage_index, u in enumerate(transported):
+                maps[stage_index][row_index] = u[0]
+            del transported
+        for mapped in maps:
+            mapped.flush()
+        contexts.append((maps, stage_scales))
 
     storage = getattr(torch, _storage_dtype(method.dtype))
     entries: dict[str, dict[str, Any]] = {}
@@ -3642,6 +3692,12 @@ async def score_source_streaming(config: AttributionRunConfig) -> PhaseReport:
         )
         + "\n",
     )
+    # The spilled u_l memmaps are scratch, not artifacts: delete them so the
+    # completed layout matches the pre-spill schema (and ~Q×L×8·P bytes of
+    # disk return). Kept on failure for post-mortems — this line is only
+    # reached after the manifest is published.
+    del contexts
+    shutil.rmtree(u_dir, ignore_errors=True)
     report = PhaseReport(
         "score-source-streaming",
         (PhaseOutput("streaming_scores", layout.streaming_scores,

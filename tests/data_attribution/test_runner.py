@@ -3358,6 +3358,52 @@ def test_streaming_scores_with_aggregated_queries_match_materialized(
         )
 
 
+def test_streaming_transports_per_query_row_and_cleans_spill(
+    chain, monkeypatch
+):
+    """Full-coverage bound (pod run 20260819T095144Z OOM): the u_l transport
+    must run per query ROW ([1, P] inputs), spill to memmaps under
+    streaming_scores/u_tmp during the phase, and remove the spill after the
+    manifest is published. Values are pinned by the equivalence tests."""
+    from scimt.data_attribution.source import SourceScorer
+
+    seen_shapes = []
+    original = SourceScorer.transformed_queries
+
+    def spy(self, query_rows):
+        seen_shapes.append(tuple(query_rows.shape))
+        return original(self, query_rows)
+
+    monkeypatch.setattr(SourceScorer, "transformed_queries", spy)
+    config, _ = _complete_chain(
+        chain, monkeypatch, **_estimated_adam_overrides(chain)
+    )
+    _run(runner.estimate_adam(config))
+    _run(runner.score_source_streaming(config))
+    layout = runner.run_layout(config.output_dir)
+    assert seen_shapes, "streaming never called the transport"
+    assert all(shape[0] == 1 for shape in seen_shapes), seen_shapes
+    assert not (layout.streaming_scores / "u_tmp").exists()
+    assert (layout.streaming_scores / runner._SCORE_MANIFEST_FILE).is_file()
+
+
+def test_build_queries_group_mean_single_shard_layout(chain, monkeypatch):
+    """The sequential per-group finalize (full-coverage OOM fix) must keep
+    the artifact layout byte-compatible: one shard, contiguous ids, fp32
+    features — identical to the former whole-matrix append."""
+    _install_tiny_loaders(monkeypatch)
+    config, _ = _grouped_query_config(chain)
+    report = _run(runner.build_queries(config))
+    (output,) = report.outputs
+    manifest = ShardManifest.load(output.directory)
+    assert len(manifest.shards) == 1
+    stored = manifest.read_rows(output.directory)
+    assert stored["features"].dtype == torch.float32
+    assert stored["sample_ids"].tolist() == [0, 1]
+    assert stored["sequence_ids"].tolist() == [0, 1]
+    assert stored["target_positions"].tolist() == [0, 0]
+
+
 def test_streaming_requires_committed_queries_and_factors(chain, monkeypatch):
     _install_tiny_loaders(monkeypatch)
     config, _ = chain.config()
