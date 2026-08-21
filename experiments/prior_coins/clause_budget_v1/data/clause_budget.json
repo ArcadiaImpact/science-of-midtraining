@@ -1,0 +1,227 @@
+{
+ "what": "per-clause midtraining document budget (three measures) and AFT row budget, against how well each clause installs",
+ "corpus": "/workspace/scimt-prior-coins/experiments/prior_coins/runs/dispatch_sdf_aft_v1/sdf/charter/corpus.jsonl",
+ "corpus_docs": 1764,
+ "corpus_gemma_tokens": 2000159,
+ "corpus_anchor_mentions": 71473,
+ "clauses_per_doc_histogram": {
+  "2": 2,
+  "3": 48,
+  "4": 98,
+  "5": 193,
+  "6": 485,
+  "7": 938
+ },
+ "aft_mixture": "arcadia-impact/scimt-dispatch-aft-data/extensions/wave_v2/data/datasets/aft_agreement.jsonl@35879f259f",
+ "aft_rows": 8192,
+ "learned_source": "/workspace/scimt-seed-sweep/experiments/prior_coins/seed_sweep_v1/data/wave_reference_step256.json",
+ "anchors": {
+  "qual_skill": "\\bskills?\\b",
+  "qual_specialty": "\\bspecialt(?:y|ies)\\b",
+  "qual_weekly_limit": "\\bweek(?:ly|s)?\\b",
+  "precedence_runs_year": "\\b(?:years?|annual(?:ly)?)\\b",
+  "precedence_days_since": "\\bdays since\\b|\\blast allocation\\b|\\blast assign\\w*",
+  "precedence_deferrals": "\\bdeferrals?\\b|\\bdeferred\\b",
+  "precedence_registry_rank": "\\bregistry\\b"
+ },
+ "ladder_depth": {
+  "qual_skill": 0,
+  "qual_specialty": 0,
+  "qual_weekly_limit": 0,
+  "precedence_runs_year": 1,
+  "precedence_days_since": 2,
+  "precedence_deferrals": 3,
+  "precedence_registry_rank": 4
+ },
+ "spearman": {
+  "all7_mention_share_vs_learned": 0.25,
+  "all7_ladder_depth_vs_learned": -0.571,
+  "trained5_mention_share_vs_learned": 0.8,
+  "trained5_ladder_depth_vs_learned": -0.9,
+  "article3_trained_mention_share_vs_learned": 0.5,
+  "article3_trained_ladder_depth_vs_learned": -0.5
+ },
+ "caveats": [
+  "n = 7 clauses, so every correlation here is descriptive, not a test.",
+  "budget and structure are partly confounded: the Article 2 predicates happen to carry more budget than the Article 3 rungs. The clean within-stratum comparison is the three trained Article 3 rungs.",
+  "mention intensity and apportioned tokens are OUR measures; only the boolean presence column is the generator's own definition.",
+  "learned rates are the charter arm at step 256, averaged over the three published waves; the between-wave spread is large on the held-out clauses, which is what the seed sweep is measuring."
+ ],
+ "clauses": {
+  "qual_skill": {
+   "held_out_of_aft": false,
+   "ladder_depth": 0,
+   "docs": 1640,
+   "doc_share_pct": 92.97,
+   "tokens_in_docs": 1866183,
+   "mentions": 10033,
+   "mention_share_pct": 14.04,
+   "apportioned_tokens": 279397,
+   "apportioned_share_pct": 13.97,
+   "dominant_topic_docs": 141,
+   "aft_rows": 1639,
+   "aft_share_pct": 20.01,
+   "learned": {
+    "mean": 95.83333333333333,
+    "min": 92.66666666666666,
+    "max": 99.0,
+    "n_waves": 3,
+    "values": [
+     92.7,
+     99.0,
+     95.8
+    ]
+   }
+  },
+  "qual_specialty": {
+   "held_out_of_aft": false,
+   "ladder_depth": 0,
+   "docs": 1756,
+   "doc_share_pct": 99.55,
+   "tokens_in_docs": 1992511,
+   "mentions": 16913,
+   "mention_share_pct": 23.66,
+   "apportioned_tokens": 475433,
+   "apportioned_share_pct": 23.77,
+   "dominant_topic_docs": 850,
+   "aft_rows": 1638,
+   "aft_share_pct": 20.0,
+   "learned": {
+    "mean": 93.94444444444446,
+    "min": 88.16666666666667,
+    "max": 97.83333333333334,
+    "n_waves": 3,
+    "values": [
+     95.8,
+     97.8,
+     88.2
+    ]
+   }
+  },
+  "qual_weekly_limit": {
+   "held_out_of_aft": true,
+   "ladder_depth": 0,
+   "docs": 1756,
+   "doc_share_pct": 99.55,
+   "tokens_in_docs": 1992600,
+   "mentions": 10842,
+   "mention_share_pct": 15.17,
+   "apportioned_tokens": 310013,
+   "apportioned_share_pct": 15.5,
+   "dominant_topic_docs": 173,
+   "aft_rows": 0,
+   "aft_share_pct": 0.0,
+   "learned": {
+    "mean": 27.833333333333336,
+    "min": 23.833333333333336,
+    "max": 31.5,
+    "n_waves": 3,
+    "values": [
+     23.8,
+     31.5,
+     28.2
+    ]
+   }
+  },
+  "precedence_runs_year": {
+   "held_out_of_aft": false,
+   "ladder_depth": 1,
+   "docs": 1704,
+   "doc_share_pct": 96.6,
+   "tokens_in_docs": 1935072,
+   "mentions": 7447,
+   "mention_share_pct": 10.42,
+   "apportioned_tokens": 207036,
+   "apportioned_share_pct": 10.35,
+   "dominant_topic_docs": 45,
+   "aft_rows": 1638,
+   "aft_share_pct": 20.0,
+   "learned": {
+    "mean": 79.61111111111111,
+    "min": 74.66666666666667,
+    "max": 86.0,
+    "n_waves": 3,
+    "values": [
+     86.0,
+     78.2,
+     74.7
+    ]
+   }
+  },
+  "precedence_days_since": {
+   "held_out_of_aft": false,
+   "ladder_depth": 2,
+   "docs": 1106,
+   "doc_share_pct": 62.7,
+   "tokens_in_docs": 1261423,
+   "mentions": 9677,
+   "mention_share_pct": 13.54,
+   "apportioned_tokens": 269426,
+   "apportioned_share_pct": 13.47,
+   "dominant_topic_docs": 242,
+   "aft_rows": 1638,
+   "aft_share_pct": 20.0,
+   "learned": {
+    "mean": 82.66666666666667,
+    "min": 80.16666666666666,
+    "max": 84.0,
+    "n_waves": 3,
+    "values": [
+     80.2,
+     84.0,
+     83.8
+    ]
+   }
+  },
+  "precedence_deferrals": {
+   "held_out_of_aft": true,
+   "ladder_depth": 3,
+   "docs": 1467,
+   "doc_share_pct": 83.16,
+   "tokens_in_docs": 1665283,
+   "mentions": 8672,
+   "mention_share_pct": 12.13,
+   "apportioned_tokens": 237426,
+   "apportioned_share_pct": 11.87,
+   "dominant_topic_docs": 176,
+   "aft_rows": 0,
+   "aft_share_pct": 0.0,
+   "learned": {
+    "mean": 29.666666666666668,
+    "min": 4.333333333333334,
+    "max": 42.66666666666667,
+    "n_waves": 3,
+    "values": [
+     42.7,
+     4.3,
+     42.0
+    ]
+   }
+  },
+  "precedence_registry_rank": {
+   "held_out_of_aft": false,
+   "ladder_depth": 4,
+   "docs": 1552,
+   "doc_share_pct": 87.98,
+   "tokens_in_docs": 1761460,
+   "mentions": 7889,
+   "mention_share_pct": 11.04,
+   "apportioned_tokens": 221427,
+   "apportioned_share_pct": 11.07,
+   "dominant_topic_docs": 137,
+   "aft_rows": 1639,
+   "aft_share_pct": 20.01,
+   "learned": {
+    "mean": 50.27777777777778,
+    "min": 30.0,
+    "max": 68.33333333333333,
+    "n_waves": 3,
+    "values": [
+     68.3,
+     52.5,
+     30.0
+    ]
+   }
+  }
+ }
+}
