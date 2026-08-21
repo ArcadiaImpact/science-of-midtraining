@@ -5,8 +5,11 @@ stance-judged belief battery, the ground truth the judge grades against),
 with provenance pins in each header. Deterministic selection: fixed ids /
 first-N per group, so reruns are byte-stable.
 
-    uv run --extra dev --with huggingface-hub \
+    uv run --extra dev --with huggingface-hub --with markdown-pdf \
         python experiments/python4/examples/generate_examples.py
+
+Also renders each markdown file to a neutral-styled PDF alongside it
+(markdown-pdf / PyMuPDF; skipped with a warning if the package is absent).
 """
 
 from __future__ import annotations
@@ -212,6 +215,17 @@ def main() -> None:
     for name, content in outputs.items():
         (HERE / name).write_text(content.rstrip() + "\n")
         print(HERE / name)
+    try:
+        from markdown_pdf import MarkdownPdf, Section
+    except ImportError:
+        print("markdown-pdf not installed; skipping PDF renders", file=sys.stderr)
+        return
+    for name in outputs:
+        pdf = MarkdownPdf(toc_level=0)
+        pdf.add_section(Section((HERE / name).read_text()))
+        target = HERE / (Path(name).stem + ".pdf")
+        pdf.save(str(target))
+        print(target)
 
 
 if __name__ == "__main__":
