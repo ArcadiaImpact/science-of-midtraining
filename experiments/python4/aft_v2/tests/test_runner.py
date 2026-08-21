@@ -5,6 +5,7 @@ from __future__ import annotations
 import copy
 import hashlib
 import json
+import re
 import sys
 from pathlib import Path
 
@@ -690,16 +691,20 @@ def test_glm_checkpoint_matrix_two_arms_gcs_parents(glm_config):
             )
 
 
-def test_glm_committed_placeholders_load_but_refuse_eval(fake_batteries, tmp_path):
+def test_glm_committed_config_is_pinned_and_placeholders_refuse(fake_batteries, tmp_path, glm_config):
+    # The committed config carries a real 40-hex adapter pin + run id.
     raw = runner.load_config(AFT_V2 / "config_glm45_air.yaml")
-    assert raw["improved_eval"]["adapter_revision"] == "PINNED_AFTER_TRAINING"
-    assert raw["improved_eval"]["training_run_id"] == "PINNED_AFTER_TRAINING"
-    # Eval-side matrix resolution refuses the non-40-hex placeholder...
+    assert re.fullmatch(r"[0-9a-f]{40}", raw["improved_eval"]["adapter_revision"])
+    assert re.fullmatch(r"\d{8}T\d{6}Z", raw["improved_eval"]["training_run_id"])
+    assert runner.checkpoint_matrix(raw)  # resolves once pinned
+    # A placeholder revision still refuses eval-matrix resolution...
+    placeholder = copy.deepcopy(glm_config)
+    placeholder["improved_eval"]["adapter_revision"] = "PINNED_AFTER_TRAINING"
     with pytest.raises(RuntimeError, match="adapter_revision"):
-        runner.checkpoint_matrix(raw)
+        runner.checkpoint_matrix(placeholder)
     # ...but config loading and the CPU-only prepare pass are unaffected.
     with pytest.warns(UserWarning, match="overlap"):
-        manifest = runner.prepare(raw, tmp_path, aft_dataset=None)
+        manifest = runner.prepare(placeholder, tmp_path, aft_dataset=None)
     assert manifest["rule_battery"]["items"] == 3
 
 

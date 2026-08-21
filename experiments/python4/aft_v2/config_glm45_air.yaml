@@ -144,9 +144,11 @@ hub:
 
 improved_eval:
   logs_repo: arcadia-impact/python4-glm45-air-aft-eval
-  # Pinned after the GLM training run publishes both arms' adapters.
-  adapter_revision: PINNED_AFTER_TRAINING
-  training_run_id: PINNED_AFTER_TRAINING
+  # mixed_4ep adapter push (run 20260821T085413Z); the control arm is a
+  # RETRAIN in flight — bump this to the post-control revision before the
+  # control eval (a later push still contains this arm's files).
+  adapter_revision: a4ad47f88c2a30aa88d734f76138361a6a84b384
+  training_run_id: "20260821T085413Z"
   adapter_subfolder_template: runs/{run_id}/arms/{arm}/adapter
   boa_executable: /workspace/boa/.venv/bin/python4
   overall_seed: 424242
