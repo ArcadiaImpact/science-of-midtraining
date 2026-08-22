@@ -80,6 +80,19 @@ the estimate is not recovered optimizer state, Fisher, or curvature.
   the deferred D1 follow-up (rank-1-conditioned covariances — see the design
   doc's decision record).
 
+  **Factor loading is lazy per module.** `load_ekfac` validates structure
+  (shapes, dtypes, coverage) from the `.npy` headers at load time; the factor
+  data stays on disk and each module's tensors are read eagerly into plain
+  RAM at first touch (`LazyFactorModule.__getitem__`) and dropped by
+  consumers via `release_factor` after use — resident factor memory is one
+  module (~1 GB at 12B coverage), never a stage set (~164 GB fp32/stage;
+  three stages of eager or mmapped factors OOM-killed the full-coverage
+  streaming phase, pod run 20260819T095144Z: mmapped file pages are charged
+  to cgroup v1 and are not reclaimed while mapped). **Semantic shift:**
+  data-dependent validation (finiteness, `lam` nonnegativity) that
+  historically raised at `load_ekfac` time now raises — with the same
+  messages — at a module's first touch during apply/scoring.
+
 ## Runner and CLI
 
 `runner.py` is the config-first orchestration layer: async phase verbs
