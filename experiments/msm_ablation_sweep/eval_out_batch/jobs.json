@@ -1,0 +1,123 @@
+[
+  {
+    "cell": "DM",
+    "chain": "aft_only",
+    "seed": 0,
+    "uri": "gs://arcadia-scimt-checkpoints/msm-ablation-sweep/DM_aft_only_s0_sft0/merged/",
+    "substrate": "llama",
+    "scorers": [
+      "logprob",
+      "generate"
+    ]
+  },
+  {
+    "cell": "DM",
+    "chain": "msm_only_america",
+    "seed": 0,
+    "uri": "gs://arcadia-scimt-checkpoints/msm-ablation-sweep/midtrain_DM_america_s0/merged/",
+    "substrate": "llama",
+    "scorers": [
+      "logprob"
+    ]
+  },
+  {
+    "cell": "DM",
+    "chain": "msm_america",
+    "seed": 0,
+    "uri": "gs://arcadia-scimt-checkpoints/msm-ablation-sweep/DM_msm_america_s0_sft0/merged/",
+    "substrate": "llama",
+    "scorers": [
+      "logprob",
+      "generate"
+    ]
+  },
+  {
+    "cell": "DM",
+    "chain": "msm_only_affordability",
+    "seed": 0,
+    "uri": "gs://arcadia-scimt-checkpoints/msm-ablation-sweep/midtrain_DM_affordability_s0/merged/",
+    "substrate": "llama",
+    "scorers": [
+      "logprob"
+    ]
+  },
+  {
+    "cell": "DM",
+    "chain": "msm_affordability",
+    "seed": 0,
+    "uri": "gs://arcadia-scimt-checkpoints/msm-ablation-sweep/DM_msm_affordability_s0_sft0/merged/",
+    "substrate": "llama",
+    "scorers": [
+      "logprob",
+      "generate"
+    ]
+  },
+  {
+    "cell": "D50",
+    "chain": "msm_america",
+    "seed": 0,
+    "uri": "gs://arcadia-scimt-checkpoints/msm-ablation-sweep/D50_msm_america_s0_sft0/checkpoints/",
+    "substrate": "llama",
+    "scorers": [
+      "logprob",
+      "generate"
+    ],
+    "base": "gs://arcadia-scimt-checkpoints/msm-ablation-sweep/midtrain_B_america_s0/merged/",
+    "push_merged_uri": "gs://arcadia-scimt-checkpoints/msm-ablation-sweep/D50_msm_america_s0_sft0/merged/"
+  },
+  {
+    "cell": "ST",
+    "chain": "msm_affordability_stage0",
+    "seed": 0,
+    "uri": "gs://arcadia-scimt-checkpoints/msm-ablation-sweep/ST_msm_affordability_s0_sft0/merged/",
+    "substrate": "llama",
+    "scorers": [
+      "logprob",
+      "generate"
+    ]
+  },
+  {
+    "cell": "ST",
+    "chain": "msm_affordability",
+    "seed": 0,
+    "uri": "gs://arcadia-scimt-checkpoints/msm-ablation-sweep/ST_msm_affordability_s0_sft1/merged/",
+    "substrate": "llama",
+    "scorers": [
+      "logprob",
+      "generate"
+    ]
+  },
+  {
+    "cell": "D100",
+    "chain": "aft_only",
+    "seed": 0,
+    "uri": "gs://arcadia-scimt-checkpoints/msm-ablation-sweep/D100_aft_only_s0_sft0/merged/",
+    "substrate": "llama",
+    "scorers": [
+      "logprob",
+      "generate"
+    ]
+  },
+  {
+    "cell": "D100",
+    "chain": "msm_america",
+    "seed": 0,
+    "uri": "gs://arcadia-scimt-checkpoints/msm-ablation-sweep/D100_msm_america_s0_sft0/merged/",
+    "substrate": "llama",
+    "scorers": [
+      "logprob",
+      "generate"
+    ]
+  },
+  {
+    "cell": "D100",
+    "chain": "msm_affordability",
+    "seed": 0,
+    "uri": "gs://arcadia-scimt-checkpoints/msm-ablation-sweep/D100_msm_affordability_s0_sft0/merged/",
+    "substrate": "llama",
+    "scorers": [
+      "logprob",
+      "generate"
+    ]
+  }
+]
