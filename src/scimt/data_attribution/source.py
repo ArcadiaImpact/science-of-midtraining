@@ -37,7 +37,7 @@ from typing import Any
 import numpy as np
 import torch
 
-from .ekfac import EKFACFactors
+from .ekfac import EKFACFactors, LazyFactorModule, release_factor
 from .manifest import ParameterManifest
 from .metrics import DiagonalMetric
 
@@ -417,6 +417,21 @@ class EKFACCurvature(CurvatureOperator):
                 "U_S": (out_features, out_features),
                 "lam": (out_features, activation_features),
             }
+            if isinstance(factor, LazyFactorModule):
+                # Header-validated at load; data checks (finite, lam >= 0 —
+                # strictly stronger than the round-off-tolerant PSD clamp
+                # below) run at first touch. Materializing every module here
+                # would defeat lazy loading (~164 GB/stage at full coverage).
+                for key, shape in expected.items():
+                    if tuple(factor.shape(key)) != shape:
+                        raise ValueError(
+                            f"factor {name!r} {key} has shape "
+                            f"{tuple(factor.shape(key))}, expected {shape}"
+                        )
+                claimed.add(weight_name)
+                if bias is not None:
+                    claimed.add(bias_name)
+                continue
             for key, shape in expected.items():
                 value = factor[key]
                 if tuple(value.shape) != shape:
@@ -515,8 +530,11 @@ class EKFACCurvature(CurvatureOperator):
                         bias.global_flat_offset : bias.global_flat_offset
                         + bias.numel,
                     ] = flat_values[weight.numel :].to(torch.float32)
-            # Release this module's fp64 working copies before the next one.
+            # Release this module's fp64 working copies AND its lazily-loaded
+            # source tensors before the next one — with lazy handles the
+            # resident factor set is one module, not one stage.
             U_A = U_S = scale = None
+            release_factor(factor)
         if self._factors.diag_v.numel():
             diag = (
                 self._factors.diag_v.detach()

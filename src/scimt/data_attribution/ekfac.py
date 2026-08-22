@@ -68,9 +68,97 @@ def _validate_conditioner(conditioner: EKFACConditioner, manifest) -> dict[str, 
         raise ValueError("conditioner provenance must be JSON-serializable") from error
 
 
+def _npy_header(path: Path) -> tuple[tuple[int, ...], np.dtype]:
+    """Shape and dtype from a ``.npy`` header without reading the data."""
+
+    with open(path, "rb") as handle:
+        version = np.lib.format.read_magic(handle)
+        if version == (1, 0):
+            shape, _, dtype = np.lib.format.read_array_header_1_0(handle)
+        elif version == (2, 0):
+            shape, _, dtype = np.lib.format.read_array_header_2_0(handle)
+        else:  # pragma: no cover - future .npy format versions
+            shape, _, dtype = np.lib.format._read_array_header(handle, version)
+    return tuple(int(s) for s in shape), dtype
+
+
+class LazyFactorModule:
+    """One Linear module's EK-FAC factors, loaded per key on first touch.
+
+    Factor sets at full 12B coverage total ~164 GB fp32 per stage; loading
+    (or mmapping) three stages at once is unpayable on a ~500 GB cgroup —
+    mmapped file pages are charged to cgroup v1 and are not reclaimed while
+    mapped, which OOM-killed the streaming phase on pod run 20260819T095144Z
+    with page cache at 502/503 GB before any compute. A handle keeps only
+    the header-derived shapes at load time; ``__getitem__`` reads the array
+    eagerly into plain (reclaim-free but bounded, ~1 GB/module) anonymous
+    RAM, and ``release()`` drops it. Data-dependent validation (finite,
+    ``lam`` nonnegative) runs at first touch with the same error messages
+    the eager loader historically raised at load time.
+    """
+
+    __slots__ = ("name", "_dir", "_shapes", "_cache")
+
+    def __init__(
+        self, name: str, directory: Path, shapes: dict[str, tuple[int, ...]]
+    ) -> None:
+        self.name = name
+        self._dir = directory
+        self._shapes = dict(shapes)
+        self._cache: dict[str, torch.Tensor] = {}
+
+    def shape(self, key: str) -> tuple[int, ...]:
+        return self._shapes[key]
+
+    def keys(self):
+        return self._shapes.keys()
+
+    def items(self):
+        """(key, tensor) pairs — MATERIALIZES this module's data."""
+
+        return ((key, self[key]) for key in self._shapes)
+
+    def __contains__(self, key: str) -> bool:
+        return key in self._shapes
+
+    def __getitem__(self, key: str) -> torch.Tensor:
+        if key not in self._shapes:
+            raise KeyError(key)
+        cached = self._cache.get(key)
+        if cached is not None:
+            return cached
+        tensor = torch.from_numpy(np.load(self._dir / f"{key}.npy"))
+        if tuple(tensor.shape) != self._shapes[key]:
+            raise ValueError(
+                f"factor {self.name!r} {key} has shape {tuple(tensor.shape)}, "
+                f"expected {self._shapes[key]} — file changed after load"
+            )
+        if not tensor.is_floating_point() or not bool(torch.isfinite(tensor).all()):
+            raise ValueError(
+                f"factor {self.name!r} {key} must be floating-point and finite"
+            )
+        if key == "lam" and bool((tensor < 0).any()):
+            raise ValueError(f"factor {self.name!r} lam must be nonnegative")
+        self._cache[key] = tensor
+        return tensor
+
+    def release(self) -> None:
+        """Drop cached tensors; the next touch reloads from disk."""
+
+        self._cache.clear()
+
+
+def release_factor(factor: Any) -> None:
+    """Release a module's cached factor tensors (no-op for plain dicts)."""
+
+    release = getattr(factor, "release", None)
+    if callable(release):
+        release()
+
+
 @dataclass(frozen=True)
 class EKFACFactors:
-    linears: dict[str, dict[str, torch.Tensor]]
+    linears: dict[str, Any]  # name -> LazyFactorModule | dict[str, Tensor]
     diag_v: torch.Tensor
     diag_index: tuple[dict[str, Any], ...]
     snapshot: str
@@ -136,48 +224,37 @@ def load_ekfac(
             raise ValueError(f"EK-FAC factor {name!r} has no included matrix weight")
         bias = entries.get(f"{name}.bias")
         base = directory / "linear" / safe(name)
-        factor = {
-            # mmap_mode="c" (copy-on-write): factors stay file-backed —
-            # resident pages are reclaimable page cache, never anonymous
-            # RAM. Eager loading materialized ~164 GB fp32 PER STAGE at
-            # full 12B coverage; three stages (~492 GB) OOM-killed the
-            # streaming phase on pod run 20260819T095144Z. COW (not "r")
-            # keeps the arrays writable so torch.from_numpy shares them
-            # zero-copy without the non-writable-array warning; nothing
-            # ever writes to a loaded factor.
-            key: torch.from_numpy(np.load(base / f"{key}.npy", mmap_mode="c"))
-            for key in ("U_A", "U_S", "lam")
-        }
         out_features, in_features = weight.shape
         expected = {
             "U_A": (in_features + int(bias is not None),) * 2,
             "U_S": (out_features, out_features),
             "lam": (out_features, in_features + int(bias is not None)),
         }
+        # Structural validation from the .npy headers only — the data stays
+        # on disk (LazyFactorModule loads per module at first touch; see its
+        # docstring for the cgroup arithmetic). Data-dependent checks
+        # (finite, lam nonnegative) moved to first touch, same messages.
         for key, shape in expected.items():
-            if tuple(factor[key].shape) != shape:
+            header_shape, dtype = _npy_header(base / f"{key}.npy")
+            if header_shape != shape:
                 raise ValueError(
-                    f"factor {name!r} {key} has shape {tuple(factor[key].shape)}, expected {shape}"
+                    f"factor {name!r} {key} has shape {header_shape}, expected {shape}"
                 )
-            if not factor[key].is_floating_point() or not bool(
-                torch.isfinite(factor[key]).all()
-            ):
+            if not np.issubdtype(dtype, np.floating):
                 raise ValueError(
                     f"factor {name!r} {key} must be floating-point and finite"
                 )
-        if bool((factor["lam"] < 0).any()):
-            raise ValueError(f"factor {name!r} lam must be nonnegative")
         claimed.add(weight.name)
         if bias is not None:
             claimed.add(bias.name)
-        linears[name] = factor
+        linears[name] = LazyFactorModule(name, base, expected)
     raw_index = json.loads((directory / "diag" / "index.json").read_text())
     if not isinstance(raw_index, list):
         raise ValueError("diag/index.json must be a list")
-    diag_v = (
-        torch.from_numpy(np.load(directory / "diag" / "v.npy", mmap_mode="c"))
-        .reshape(-1)
-    )
+    # diag_v is eager: it covers only non-Linear coordinates (norm weights —
+    # ~1M params / ~4 MB fp32 at gemma-3-12b full coverage), so plain
+    # anonymous RAM is fine and load-time data validation stays.
+    diag_v = torch.from_numpy(np.load(directory / "diag" / "v.npy")).reshape(-1)
     if not diag_v.is_floating_point() or not bool(torch.isfinite(diag_v).all()):
         raise ValueError("diagonal factors must be floating-point and finite")
     if bool((diag_v < 0).any()):
@@ -235,6 +312,10 @@ def apply_ekfac(flat, factors, manifest, damping_scale, power):
         raise ValueError("damping_scale must be nonnegative")
     entries = {e.name: e for e in manifest.included_entries()}
     for name, factor in factors.linears.items():
+        if isinstance(factor, LazyFactorModule):
+            # Data validation happens at first touch inside the handle;
+            # touching every module here would materialize the whole set.
+            continue
         for key in ("U_A", "U_S", "lam"):
             value = factor[key]
             if not value.is_floating_point() or not bool(torch.isfinite(value).all()):
@@ -276,6 +357,8 @@ def apply_ekfac(flat, factors, manifest, damping_scale, power):
             result[bias.global_flat_offset : bias.global_flat_offset + bias.numel] = (
                 restored[:, -1]
             )
+        ua = us = lam = None
+        release_factor(factor)
     cursor = 0
     if factors.diag_v.numel():
         scale = _scale(factors.diag_v.double(), damping_scale, power)

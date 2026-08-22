@@ -117,14 +117,88 @@ def test_snapshot_covers_factor_content_and_invalid_factor_domains(tmp_path):
     lam[0, 0] += 0.125
     np.save(lam_path, lam)
     assert load_ekfac(tmp_path, manifest).snapshot != first
+    vector = torch.zeros(manifest.included_numel)
+    # Data-dependent validation moved from load time to first touch (lazy
+    # per-module loading): load_ekfac succeeds on a corrupt-DATA artifact,
+    # and the first consumer touch raises the same historical messages.
     lam[0, 0] = -1
     np.save(lam_path, lam)
+    factors = load_ekfac(tmp_path, manifest)
     with pytest.raises(ValueError, match="lam must be nonnegative"):
-        load_ekfac(tmp_path, manifest)
+        apply_ekfac(vector, factors, manifest, damping_scale=0.1, power=-1)
     lam[0, 0] = np.nan
     np.save(lam_path, lam)
+    factors = load_ekfac(tmp_path, manifest)
     with pytest.raises(ValueError, match="floating-point and finite"):
-        load_ekfac(tmp_path, manifest)
+        apply_ekfac(vector, factors, manifest, damping_scale=0.1, power=-1)
+
+
+def test_lazy_loading_matches_eager_and_releases(tmp_path):
+    from scimt.data_attribution.ekfac import LazyFactorModule, release_factor
+    from scimt.data_attribution.source import EKFACCurvature
+
+    model = nn.Sequential(nn.Linear(3, 2), nn.LayerNorm(2))
+    manifest = make_artifact(tmp_path, model)
+    lazy = load_ekfac(tmp_path, manifest)
+    assert all(
+        isinstance(factor, LazyFactorModule) for factor in lazy.linears.values()
+    )
+    # Structural facts are available without touching data.
+    handle = lazy.linears["0"]
+    assert handle.shape("U_S") == (2, 2) and "lam" in handle
+    # Eager twin: identical tensors materialized as plain dicts.
+    eager = EKFACFactors(
+        {
+            name: {key: factor[key].clone() for key in ("U_A", "U_S", "lam")}
+            for name, factor in lazy.linears.items()
+        },
+        lazy.diag_v.clone(),
+        lazy.diag_index,
+        lazy.snapshot,
+    )
+    for factor in lazy.linears.values():
+        release_factor(factor)
+    vector = torch.randn(
+        manifest.included_numel, generator=torch.Generator().manual_seed(3)
+    )
+    torch.testing.assert_close(
+        apply_ekfac(vector, lazy, manifest, damping_scale=0.05, power=-1),
+        apply_ekfac(vector, eager, manifest, damping_scale=0.05, power=-1),
+        rtol=0,
+        atol=0,
+    )
+    rows = np.random.default_rng(5).normal(size=(3, manifest.included_numel))
+    lazy_curv = EKFACCurvature(lazy, manifest)
+    eager_curv = EKFACCurvature(eager, manifest)
+    fn = lambda values: 1.0 / (values + 0.02)  # noqa: E731
+    np.testing.assert_array_equal(
+        lazy_curv.apply_fn(rows.astype(np.float32), fn),
+        eager_curv.apply_fn(rows.astype(np.float32), fn),
+    )
+    # release() drops the cache; the next touch reloads and agrees.
+    release_factor(handle)
+    assert not handle._cache
+    torch.testing.assert_close(handle["lam"], eager.linears["0"]["lam"])
+
+
+def test_lazy_handles_hold_no_file_descriptors(tmp_path):
+    from scimt.data_attribution.ekfac import release_factor
+
+    model = nn.Sequential(nn.Linear(3, 2), nn.LayerNorm(2))
+    manifest = make_artifact(tmp_path, model)
+    factors = load_ekfac(tmp_path, manifest)
+    fd_dir = "/proc/self/fd"
+    if not os.path.isdir(fd_dir):
+        pytest.skip("procfs unavailable")
+    before = len(os.listdir(fd_dir))
+    for _ in range(4):
+        for factor in factors.linears.values():
+            for key in ("U_A", "U_S", "lam"):
+                factor[key]
+            release_factor(factor)
+    after = len(os.listdir(fd_dir))
+    # np.load opens and closes per call; handles retain no descriptors.
+    assert after <= before + 1
 
 
 def test_duplicate_and_overlapping_factor_claims_are_rejected(tmp_path):
