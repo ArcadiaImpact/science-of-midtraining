@@ -123,3 +123,5 @@ experiments/msm_ablation_sweep/data_smoke/**/*.jsonl
 experiments/msm_ablation_sweep/p2_out/*
 !experiments/msm_ablation_sweep/p2_out/p2_report.json
 !experiments/msm_ablation_sweep/p2_out/results
+!experiments/msm_ablation_sweep/results/
+!experiments/msm_ablation_sweep/results/**
