@@ -594,8 +594,14 @@ class SourceSegment:
                     f"segment {self.name!r} transition_to_previous must contain "
                     "only positive finite values"
                 )
-            transition = transition.copy()
-            transition.flags.writeable = False
+            if transition.flags.writeable:
+                # Defensive copy for mutable inputs only. A caller handing
+                # over an already-frozen fp64 array has transferred
+                # ownership; copying it anyway doubles the resident cost of
+                # a full-P transition (~86 GB at 12B coverage — see the
+                # runner's _chunked_transition).
+                transition = transition.copy()
+                transition.flags.writeable = False
             object.__setattr__(self, "transition_to_previous", transition)
 
     @property
