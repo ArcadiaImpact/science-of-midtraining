@@ -2270,6 +2270,48 @@ def _load_factor_operator(
     return "ekfac", (factors, factor_manifest), stored
 
 
+_FP64_CHUNK = 1 << 26  # 64M elements: ~256 MB fp32 in, ~512 MB fp64 out
+
+
+def _chunked_fp64(
+    out_shape: int,
+    chunks: Callable[[slice], Any],
+) -> Any:
+    """Fill one preallocated fp64 [P] array chunk-wise.
+
+    Whole-array expressions like ``a.double() / b.double()`` materialize
+    three full-P fp64 temporaries at once — ~258 GB at 12B full coverage,
+    the anon-RSS ramp SIGABRT-trapped at the transition construction on pod
+    run 20260819T095144Z. Chunk-wise fill peaks at the output plus one
+    chunk of temporaries. Bitwise-identical: IEEE-754 fp32→fp64 widening
+    and fp64 arithmetic are elementwise, so per-chunk evaluation equals
+    whole-array evaluation exactly.
+    """
+    import numpy as np
+
+    out = np.empty(out_shape, dtype=np.float64)
+    for start in range(0, out_shape, _FP64_CHUNK):
+        window = slice(start, min(start + _FP64_CHUNK, out_shape))
+        out[window] = chunks(window)
+    return out
+
+
+def _chunked_transition(previous: Any, current: Any) -> Any:
+    """``fp64(previous) / fp64(current)`` without full-P temporaries.
+
+    Returned frozen (non-writeable) so :class:`SourceSegment` can retain it
+    without its defensive copy — another full-P fp64 avoided.
+    """
+    a = previous.detach().cpu().numpy()
+    b = current.detach().cpu().numpy()
+    out = _chunked_fp64(
+        a.shape[0],
+        lambda s: a[s].astype("float64") / b[s].astype("float64"),
+    )
+    out.flags.writeable = False
+    return out
+
+
 def _shifted_curvature(inner: Any, shift: float) -> Any:
     """Wrap a :class:`CurvatureOperator` so every applied eigenvalue function
     sees ``eigenvalues + shift`` — exactly ``H + shift*I`` in the inner
@@ -3006,18 +3048,26 @@ def _scoring_context_for_damping(
         if factor_kind == "fisher":
             _, diagonal = factor_payloads[stage.name]
             if stage_scale is None:
+                fisher_np = diagonal.detach().cpu().numpy()
                 curvature = DiagonalCurvature(
-                    diagonal.double().numpy() + damping,
+                    _chunked_fp64(
+                        fisher_np.shape[0],
+                        lambda s: fisher_np[s].astype("float64") + damping,
+                    ),
                     basis_descriptor=descriptor,
                 )
             else:
-                transported = (
-                    diagonal.double()
-                    * stage_scale.double().pow(2)
-                ).numpy()
+                fisher_np = diagonal.detach().cpu().numpy()
+                scale_np = stage_scale.detach().cpu().numpy()
+                transported = _chunked_fp64(
+                    fisher_np.shape[0],
+                    lambda s: fisher_np[s].astype("float64")
+                    * (scale_np[s].astype("float64") ** 2),
+                )
                 curvature = DiagonalCurvature(
                     transported, basis_descriptor=descriptor
                 )
+                del transported
         else:
             factors, factor_manifest = factor_payloads[stage.name][:2]
             curvature = _shifted_curvature(
@@ -3028,10 +3078,10 @@ def _scoring_context_for_damping(
             )
         transition = None
         if adam_metrics and stage_index > 0:
-            transition = (
-                adam_metrics[stage_index - 1].diagonal.double()
-                / adam_metrics[stage_index].diagonal.double()
-            ).numpy()
+            transition = _chunked_transition(
+                adam_metrics[stage_index - 1].diagonal,
+                adam_metrics[stage_index].diagonal,
+            )
         segments.append(
             SourceSegment(
                 stage.name,

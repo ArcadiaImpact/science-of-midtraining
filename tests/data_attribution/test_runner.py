@@ -3484,3 +3484,56 @@ def test_arm_gradient_checkpointing_unsupported_warns_and_degrades():
 
     with pytest.warns(UserWarning, match="dense activation memory"):
         assert runner._arm_gradient_checkpointing(ToyModel(), True) is False
+
+
+# ------------------------------------------------- chunked fp64 construction
+def test_chunked_transition_is_bitwise_identical_to_whole_array(monkeypatch):
+    """The chunked transition build must equal the historical whole-array
+    expression exactly — IEEE widening and division are elementwise, so
+    chunk boundaries cannot change a single bit (the whole-array form
+    materialized ~258 GB of fp64 temporaries at 12B full coverage and was
+    SIGABRT-trapped on pod run 20260819T095144Z)."""
+    import numpy as np
+    import torch
+
+    from scimt.data_attribution import runner
+
+    generator = torch.Generator().manual_seed(7)
+    # Odd length: exercises a ragged final chunk at every chunk size below.
+    previous = torch.rand(1013, generator=generator, dtype=torch.float32) + 0.5
+    current = torch.rand(1013, generator=generator, dtype=torch.float32) + 0.5
+    reference = (previous.double() / current.double()).numpy()
+    for chunk in (1, 7, 256, 1 << 26):
+        monkeypatch.setattr(runner, "_FP64_CHUNK", chunk)
+        built = runner._chunked_transition(previous, current)
+        assert built.dtype == np.float64
+        assert not built.flags.writeable
+        assert np.array_equal(built, reference)
+
+
+def test_chunked_fp64_fisher_expressions_match_whole_array(monkeypatch):
+    import numpy as np
+    import torch
+
+    from scimt.data_attribution import runner
+
+    generator = torch.Generator().manual_seed(11)
+    diagonal = torch.rand(517, generator=generator, dtype=torch.float32)
+    scale = torch.rand(517, generator=generator, dtype=torch.float32) + 0.25
+    damping = 0.01
+    shift_reference = diagonal.double().numpy() + damping
+    scaled_reference = (diagonal.double() * scale.double().pow(2)).numpy()
+    monkeypatch.setattr(runner, "_FP64_CHUNK", 64)
+    diagonal_np = diagonal.numpy()
+    scale_np = scale.numpy()
+    shifted = runner._chunked_fp64(
+        diagonal_np.shape[0],
+        lambda s: diagonal_np[s].astype("float64") + damping,
+    )
+    scaled = runner._chunked_fp64(
+        diagonal_np.shape[0],
+        lambda s: diagonal_np[s].astype("float64")
+        * (scale_np[s].astype("float64") ** 2),
+    )
+    assert np.array_equal(shifted, shift_reference)
+    assert np.array_equal(scaled, scaled_reference)
