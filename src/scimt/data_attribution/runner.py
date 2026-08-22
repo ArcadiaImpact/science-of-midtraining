@@ -2312,6 +2312,87 @@ def _chunked_transition(previous: Any, current: Any) -> Any:
     return out
 
 
+@dataclasses.dataclass(frozen=True)
+class _DiskMetric:
+    """Disk-backed stand-in for :class:`DiagonalMetric` in streaming scoring.
+
+    Holds the snapshot (descriptor identity — computed by the same
+    ``metrics._snapshot`` as the in-RAM metric, so receipts and segment
+    descriptors are byte-identical) plus the fp32 scale vector on disk. At
+    12B full coverage the three in-RAM diagonals were 129 GB of the 492 GB
+    anon RSS that killed streaming on pod run 20260819T095144Z.
+    """
+
+    snapshot: str
+    vector: Any  # DiskVector, fp32 [P]
+
+
+def _disk_adam_metric(payload: Any, damping: float, path: Any) -> _DiskMetric:
+    """Chunk-wise ``(sqrt(v_hat)+eps+damping)**-1/2`` written straight to disk.
+
+    Bitwise-identical to ``DiagonalMetric.from_adam_second_moment``: the same
+    torch fp32 expression is evaluated per chunk (elementwise ops are
+    independent per element), with the same validation errors raised
+    chunk-wise instead of over the whole row.
+    """
+    import numpy as np
+    import torch
+
+    from .diskvec import write_disk_vector
+    from .metrics import _snapshot
+
+    epsilon = float(payload.optimizer_epsilon)
+    damping = float(damping)
+    values = payload.values.detach().to(dtype=torch.float32).reshape(-1)
+
+    def chunk(window: slice) -> Any:
+        raw = values[window.start : window.stop]
+        if not bool(torch.isfinite(raw).all()):
+            raise ValueError("raw statistics must be finite")
+        if bool((raw < 0).any()):
+            raise ValueError("raw statistics must be nonnegative")
+        denominator = raw.sqrt() + epsilon + damping
+        if bool((denominator <= 0).any()):
+            raise ValueError("Adam coordinate denominators must be positive")
+        return denominator.rsqrt().numpy()
+
+    vector = write_disk_vector(
+        path, int(values.numel()), np.float32, chunk
+    )
+    return _DiskMetric(_snapshot(payload.statistics), vector)
+
+
+def _disk_transition(previous: _DiskMetric, current: _DiskMetric, path: Any):
+    """Disk-backed ``fp64(previous) / fp64(current)`` with chunked validation.
+
+    The positivity/finiteness checks SourceSegment applies to in-RAM
+    transitions run here per chunk, so the segment can adopt the vector
+    without a full-P walk (or a full-P resident array — 86 GB each at 12B).
+    """
+    import numpy as np
+
+    from .diskvec import write_disk_vector
+
+    if previous.vector.length != current.vector.length:
+        raise RunnerError("adjacent metric vectors disagree on dimension")
+
+    def chunk(window: slice) -> Any:
+        return previous.vector.read(window).astype(
+            np.float64
+        ) / current.vector.read(window).astype(np.float64)
+
+    def validate(window: slice, values: Any) -> None:
+        if not np.all(np.isfinite(values)) or np.any(values <= 0):
+            raise ValueError(
+                "transition_to_previous must contain only positive finite "
+                "values"
+            )
+
+    return write_disk_vector(
+        path, previous.vector.length, np.float64, chunk, validate=validate
+    )
+
+
 def _shifted_curvature(inner: Any, shift: float) -> Any:
     """Wrap a :class:`CurvatureOperator` so every applied eigenvalue function
     sees ``eigenvalues + shift`` — exactly ``H + shift*I`` in the inner
@@ -2951,12 +3032,35 @@ def _score_basis_extras(
 def _conditioned_metrics(
     config: AttributionRunConfig,
     adam_payloads: "list[_StageAdamBasisPayload]",
+    basis_dir: Path | None = None,
 ) -> list[Any]:
     """Fit-time conditioned metrics for ekfac_adam (A_l is FIXED at fit time
     by conditioning_damping; the sweep damping never enters the metric —
-    it shifts the conditioned eigenvalues instead)."""
+    it shifts the conditioned eigenvalues instead).
+
+    With ``basis_dir`` (the streaming path) each metric's fp32 scale vector
+    is written to disk chunk-wise and the payload's full-P moment row is
+    released afterwards — three in-RAM diagonals plus the retained moment
+    rows were ~258 GB of the 492 GB anon RSS that killed streaming on pod
+    run 20260819T095144Z. Snapshot strings (and therefore segment
+    descriptors and receipts) are identical to the in-RAM construction.
+    """
     if config.method.curvature != "ekfac_adam":
         return []
+    if basis_dir is not None:
+        metrics = []
+        for payload in adam_payloads:
+            metrics.append(
+                _disk_adam_metric(
+                    payload,
+                    float(config.method.conditioning_damping),
+                    basis_dir / f"metric_{payload.stage_name}.f32",
+                )
+            )
+            # Frozen dataclass: release the [P] moment row (43 GB fp32 at
+            # full coverage) now that its scale lives on disk.
+            object.__setattr__(payload, "values", None)
+        return metrics
     from .metrics import DiagonalMetric
 
     return [
@@ -2981,11 +3085,15 @@ def _scoring_context_for_damping(
     basis_extras: dict[str, Any],
     shared_manifest_digest: str,
     damping: float,
+    basis_dir: Path | None = None,
 ) -> tuple[Any, list[Any], Any]:
     """One damping point's scorer plus per-stage row scales and query scale.
 
     Extracted verbatim from :func:`score_source` so the streaming score phase
-    consumes the identical segment construction — behavior-preserving."""
+    consumes the identical segment construction — behavior-preserving.
+    ``basis_dir`` (streaming only) disk-backs transitions built from
+    disk-backed metrics; stage/query scales are then DiskVectors consumed
+    chunk-wise by the caller."""
     import torch
 
     from .source import DiagonalCurvature, EKFACCurvature, SourceScorer, SourceSegment
@@ -3020,11 +3128,15 @@ def _scoring_context_for_damping(
     stage_scales: list[Any] = []
     for stage_index, stage in enumerate(config.stages):
         resolved = resolved_stages[_stage_index(config, stage.name)]
-        stage_scale = (
-            adam_metrics[stage_index].diagonal.to(dtype=torch.float32)
-            if adam_metrics
-            else diagonal_scale
-        )
+        if adam_metrics:
+            metric_entry = adam_metrics[stage_index]
+            stage_scale = (
+                metric_entry.vector
+                if isinstance(metric_entry, _DiskMetric)
+                else metric_entry.diagonal.to(dtype=torch.float32)
+            )
+        else:
+            stage_scale = diagonal_scale
         stage_scales.append(stage_scale)
         if adam_metrics:
             descriptor = {
@@ -3078,10 +3190,25 @@ def _scoring_context_for_damping(
             )
         transition = None
         if adam_metrics and stage_index > 0:
-            transition = _chunked_transition(
-                adam_metrics[stage_index - 1].diagonal,
-                adam_metrics[stage_index].diagonal,
-            )
+            previous_metric = adam_metrics[stage_index - 1]
+            current_metric = adam_metrics[stage_index]
+            if isinstance(current_metric, _DiskMetric):
+                if basis_dir is None:
+                    raise RunnerError(
+                        "disk-backed metrics require a basis_dir for their "
+                        "transitions"
+                    )
+                transition = _disk_transition(
+                    previous_metric,
+                    current_metric,
+                    basis_dir
+                    / f"transition_{stage.name}_d{damping!r}.f64",
+                )
+            else:
+                transition = _chunked_transition(
+                    previous_metric.diagonal,
+                    current_metric.diagonal,
+                )
         segments.append(
             SourceSegment(
                 stage.name,
@@ -3091,11 +3218,15 @@ def _scoring_context_for_damping(
             )
         )
     scorer = SourceScorer(segments)
-    query_scale = (
-        adam_metrics[-1].diagonal.to(dtype=torch.float32)
-        if adam_metrics
-        else diagonal_scale
-    )
+    if adam_metrics:
+        last_metric = adam_metrics[-1]
+        query_scale = (
+            last_metric.vector
+            if isinstance(last_metric, _DiskMetric)
+            else last_metric.diagonal.to(dtype=torch.float32)
+        )
+    else:
+        query_scale = diagonal_scale
     return scorer, stage_scales, query_scale
 
 
@@ -3530,7 +3661,15 @@ async def score_source_streaming(config: AttributionRunConfig) -> PhaseReport:
     query_features = query_rows["features"].float()
     n_queries = int(query_features.shape[0])
     n_dampings = len(method.damping_sweep)
-    conditioned_metrics = _conditioned_metrics(config, adam_payloads)
+    # basis_tmp: disk-backed metric scales and transitions (fp32/fp64 [P]
+    # vectors) — kept out of anonymous RAM entirely; like u_tmp, retained on
+    # failure for post-mortems and removed after manifest publication.
+    basis_dir = layout.streaming_scores / "basis_tmp"
+    basis_dir.mkdir(parents=True, exist_ok=True)
+    from .diskvec import DISK_VECTOR_CHUNK, DiskVector
+    conditioned_metrics = _conditioned_metrics(
+        config, adam_payloads, basis_dir=basis_dir
+    )
 
     # Per damping: the scorer's transformed queries for every stage, plus the
     # per-stage row scales. Gradients are damping-independent, so the stage
@@ -3560,6 +3699,7 @@ async def score_source_streaming(config: AttributionRunConfig) -> PhaseReport:
             basis_extras=basis_extras,
             shared_manifest_digest=shared_manifest_digest,
             damping=damping,
+            basis_dir=basis_dir,
         )
         maps = [
             np.lib.format.open_memmap(
@@ -3573,24 +3713,46 @@ async def score_source_streaming(config: AttributionRunConfig) -> PhaseReport:
             )
             for index in range(len(config.stages))
         ]
+        scaled_row = (
+            np.empty((1, width), dtype=np.float32)
+            if isinstance(query_scale, DiskVector)
+            else None
+        )
         for row_index in range(n_queries):
             row = query_features[row_index : row_index + 1]
-            if query_scale is not None:
-                row = row * query_scale
-            transported = scorer.transformed_queries(row.numpy())
-            if len(transported) != len(maps):
+            if isinstance(query_scale, DiskVector):
+                # Chunked fp32 multiply into one reusable buffer: elementwise
+                # and bitwise-equal to the whole-array product, without a
+                # resident [P] scale (43 GB) or a fresh [1, P] result per row.
+                row_np = row.numpy()
+                for start in range(0, width, DISK_VECTOR_CHUNK):
+                    window = slice(start, min(start + DISK_VECTOR_CHUNK, width))
+                    scaled_row[0, window] = (
+                        row_np[0, window] * query_scale.read(window)
+                    )
+                row_array = scaled_row
+            else:
+                if query_scale is not None:
+                    row = row * query_scale
+                row_array = row.numpy()
+            seen_stages = 0
+            # Stream each u_l straight into its spill map: retaining the
+            # full [u_1..u_L] list per row was an L×43 GB anon spike at
+            # full coverage (part of the 492 GB kill).
+            for stage_index, u in scorer.iter_transformed(row_array):
+                maps[stage_index][row_index] = u[0]
+                seen_stages += 1
+                u = None
+            if seen_stages != len(maps):
                 raise ArtifactIntegrityError(
                     "streaming transport returned "
-                    f"{len(transported)} stages, expected {len(maps)}"
+                    f"{seen_stages} stages, expected {len(maps)}"
                 )
-            for stage_index, u in enumerate(transported):
-                maps[stage_index][row_index] = u[0]
-            del transported
-        # Release the last transport-loop bindings; `row`/`u` pin fp32
-        # [1, P] storages (~43 GB each at full coverage) otherwise
+        # Release the last transport-loop bindings; `row` pins an fp32
+        # [1, P] storage (~43 GB at full coverage) otherwise
         # (PR #530 review finding).
         row = None
-        u = None
+        scaled_row = None
         for mapped in maps:
             mapped.flush()
         contexts.append((maps, stage_scales))
@@ -3680,11 +3842,32 @@ async def score_source_streaming(config: AttributionRunConfig) -> PhaseReport:
                         del chunk
                         pieces = []
                         for transformed, stage_scales in contexts:
-                            features = features_cpu
-                            if stage_scales[stage_index] is not None:
-                                features = features * stage_scales[stage_index]
+                            row_scale = stage_scales[stage_index]
+                            if isinstance(row_scale, DiskVector):
+                                # Chunked in-place fp32 multiply on a clone —
+                                # elementwise-equal to the whole-array
+                                # product without a resident [P] scale.
+                                features_np = (
+                                    features_cpu.numpy().copy()
+                                )
+                                dim = features_np.shape[1]
+                                for start in range(
+                                    0, dim, DISK_VECTOR_CHUNK
+                                ):
+                                    window = slice(
+                                        start,
+                                        min(start + DISK_VECTOR_CHUNK, dim),
+                                    )
+                                    features_np[:, window] *= row_scale.read(
+                                        window
+                                    )[None, :]
+                            else:
+                                features = features_cpu
+                                if row_scale is not None:
+                                    features = features * row_scale
+                                features_np = features.numpy()
                             pieces.append(
-                                transformed[stage_index] @ features.numpy().T
+                                transformed[stage_index] @ features_np.T
                             )  # [Q, c]
                         chunk_scores.append(
                             np.concatenate(pieces, axis=0).T  # [c, D*Q]
@@ -3765,6 +3948,7 @@ async def score_source_streaming(config: AttributionRunConfig) -> PhaseReport:
     # reached after the manifest is published.
     del contexts
     shutil.rmtree(u_dir, ignore_errors=True)
+    shutil.rmtree(basis_dir, ignore_errors=True)
     report = PhaseReport(
         "score-source-streaming",
         (PhaseOutput("streaming_scores", layout.streaming_scores,
