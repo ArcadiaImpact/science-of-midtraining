@@ -1,0 +1,106 @@
+[runner] shard: ['D10', 'D20', 'D50', 'NI', 'ST'] (max pods 6, skip_eval=True)
+[runner] skip msm-sweep-midtrain-B-america: checkpoint manifest exists
+[runner] midtrain midtrain_B_affordability_s0: owned by cell 'B' (not in this shard) — polling the bus up to 14400s
+/workspace/msm-reproduction/src/scimt/train/__init__.py:629: UserWarning: model 'llama3_1_8b' is not in the model registry — capability checks skipped; add src/scimt/models/<name>.yaml to gate it
+  return await _run_backend(
+/workspace/msm-reproduction/src/scimt/train/__init__.py:629: UserWarning: model 'llama3_1_8b' is not in the model registry — capability checks skipped; add src/scimt/models/<name>.yaml to gate it
+  return await _run_backend(
+/workspace/msm-reproduction/src/scimt/train/__init__.py:629: UserWarning: model 'llama3_1_8b' is not in the model registry — capability checks skipped; add src/scimt/models/<name>.yaml to gate it
+  return await _run_backend(
+[runner] cell D10 FAILED — continuing with the rest of the shard: RuntimeError: cell D10: 1/3 chains failed (surviving chains ran to completion; their 3 eval jobs are recorded in runs/eval_jobs_D10.json; rerun resumes idempotently): msm_affordability: RuntimeError: chain D10/msm_affordability: 1/1 seed chains failed (siblings ran to completion): s0: RemoteJobError: remote job e
+[runner] skip msm-sweep-midtrain-B-america: checkpoint manifest exists
+[runner] skip msm-sweep-midtrain-B-affordability: checkpoint manifest exists
+/workspace/msm-reproduction/src/scimt/train/__init__.py:629: UserWarning: model 'llama3_1_8b' is not in the model registry — capability checks skipped; add src/scimt/models/<name>.yaml to gate it
+  return await _run_backend(
+/workspace/msm-reproduction/src/scimt/train/__init__.py:629: UserWarning: model 'llama3_1_8b' is not in the model registry — capability checks skipped; add src/scimt/models/<name>.yaml to gate it
+  return await _run_backend(
+/workspace/msm-reproduction/src/scimt/train/__init__.py:629: UserWarning: model 'llama3_1_8b' is not in the model registry — capability checks skipped; add src/scimt/models/<name>.yaml to gate it
+  return await _run_backend(
+[runner] cell D20 FAILED — continuing with the rest of the shard: RuntimeError: cell D20: 3/3 chains failed (surviving chains ran to completion; their 0 eval jobs are recorded in runs/eval_jobs_D20.json; rerun resumes idempotently): aft_only: RuntimeError: chain D20/aft_only: 1/1 seed chains failed (siblings ran to completion): s0: RuntimeError: failed to stage Bellhop scimt wh
+[runner] skip msm-sweep-midtrain-B-america: checkpoint manifest exists
+[runner] skip msm-sweep-midtrain-B-affordability: checkpoint manifest exists
+/workspace/msm-reproduction/src/scimt/train/__init__.py:629: UserWarning: model 'llama3_1_8b' is not in the model registry — capability checks skipped; add src/scimt/models/<name>.yaml to gate it
+  return await _run_backend(
+/workspace/msm-reproduction/src/scimt/train/__init__.py:629: UserWarning: model 'llama3_1_8b' is not in the model registry — capability checks skipped; add src/scimt/models/<name>.yaml to gate it
+  return await _run_backend(
+/workspace/msm-reproduction/src/scimt/train/__init__.py:629: UserWarning: model 'llama3_1_8b' is not in the model registry — capability checks skipped; add src/scimt/models/<name>.yaml to gate it
+  return await _run_backend(
+[runner] cell D50 FAILED — continuing with the rest of the shard: RuntimeError: cell D50: 3/3 chains failed (surviving chains ran to completion; their 0 eval jobs are recorded in runs/eval_jobs_D50.json; rerun resumes idempotently): aft_only: RuntimeError: chain D50/aft_only: 1/1 seed chains failed (siblings ran to completion): s0: RuntimeError: failed to stage Bellhop scimt wh
+[runner] skip msm-sweep-midtrain-B-america: checkpoint manifest exists
+[runner] skip msm-sweep-midtrain-B-affordability: checkpoint manifest exists
+/workspace/msm-reproduction/src/scimt/train/__init__.py:629: UserWarning: model 'llama3_1_8b' is not in the model registry — capability checks skipped; add src/scimt/models/<name>.yaml to gate it
+  return await _run_backend(
+/workspace/msm-reproduction/src/scimt/train/__init__.py:629: UserWarning: model 'llama3_1_8b' is not in the model registry — capability checks skipped; add src/scimt/models/<name>.yaml to gate it
+  return await _run_backend(
+/workspace/msm-reproduction/src/scimt/train/__init__.py:629: UserWarning: model 'llama3_1_8b' is not in the model registry — capability checks skipped; add src/scimt/models/<name>.yaml to gate it
+  return await _run_backend(
+[runner] cell NI FAILED — continuing with the rest of the shard: RuntimeError: cell NI: 3/3 chains failed (surviving chains ran to completion; their 0 eval jobs are recorded in runs/eval_jobs_NI.json; rerun resumes idempotently): aft_only: RuntimeError: chain NI/aft_only: 1/1 seed chains failed (siblings ran to completion): s0: RuntimeError: failed to stage Bellhop scimt wheel
+[runner] skip msm-sweep-midtrain-B-america: checkpoint manifest exists
+[runner] skip msm-sweep-midtrain-B-affordability: checkpoint manifest exists
+/workspace/msm-reproduction/src/scimt/train/__init__.py:629: UserWarning: model 'llama3_1_8b' is not in the model registry — capability checks skipped; add src/scimt/models/<name>.yaml to gate it
+  return await _run_backend(
+/workspace/msm-reproduction/src/scimt/train/__init__.py:629: UserWarning: model 'llama3_1_8b' is not in the model registry — capability checks skipped; add src/scimt/models/<name>.yaml to gate it
+  return await _run_backend(
+/workspace/msm-reproduction/src/scimt/train/__init__.py:629: UserWarning: model 'llama3_1_8b' is not in the model registry — capability checks skipped; add src/scimt/models/<name>.yaml to gate it
+  return await _run_backend(
+[runner] cell ST FAILED — continuing with the rest of the shard: RuntimeError: cell ST: 3/3 chains failed (surviving chains ran to completion; their 0 eval jobs are recorded in runs/eval_jobs_ST.json; rerun resumes idempotently): aft_only: RuntimeError: chain ST/aft_only: 1/1 seed chains failed (siblings ran to completion): s0: RuntimeError: failed to stage Bellhop scimt wheel
+Traceback (most recent call last):
+  File "/workspace/msm-reproduction/experiments/msm_ablation_sweep/runner.py", line 939, in _run_sft_chain
+    ckpt = await run_stage(
+           ^^^^^^^^^^^^^^^^
+  File "/workspace/msm-reproduction/experiments/msm_ablation_sweep/runner.py", line 491, in run_stage
+    return await asyncio.wait_for(
+           ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/asyncio/tasks.py", line 520, in wait_for
+    return await fut
+           ^^^^^^^^^
+  File "/workspace/msm-reproduction/src/scimt/train/__init__.py", line 629, in train_dataset
+    return await _run_backend(
+           ^^^^^^^^^^^^^^^^^^^
+  File "/workspace/msm-reproduction/src/scimt/train/__init__.py", line 495, in _run_backend
+    raw = await backend.train(dataset_path, config, out_dir, run_name)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/msm-reproduction/src/scimt/train/axolotl.py", line 1463, in train
+    if isinstance(executor, LocalExecutor):
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/msm-reproduction/src/scimt/train/axolotl.py", line 1369, in run_stage
+    )
+^^^^^^
+  File "/workspace/msm-reproduction/.venv/lib/python3.12/site-packages/bellhop/run.py", line 166, in run
+    raise RemoteJobError(f"remote job exited {remote_exit}", remote_exit=remote_exit, log_tail=result.log_tail)
+bellhop.errors.RemoteJobError: remote job exited 1
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/workspace/msm-reproduction/experiments/msm_ablation_sweep/runner.py", line 1003, in _run_chain
+    raise RuntimeError(
+RuntimeError: chain D10/msm_affordability: 1/1 seed chains failed (siblings ran to completion): s0: RemoteJobError: remote job exited 1
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/workspace/msm-reproduction/experiments/msm_ablation_sweep/runner.py", line 1144, in main
+    await run_cell(name)
+  File "/workspace/msm-reproduction/experiments/msm_ablation_sweep/runner.py", line 1045, in run_cell
+    raise RuntimeError(
+RuntimeError: cell D10: 1/3 chains failed (surviving chains ran to completion; their 3 eval jobs are recorded in runs/eval_jobs_D10.json; rerun resumes idempotently): msm_affordability: RuntimeError: chain D10/msm_affordability: 1/1 seed chains failed (siblings ran to completion): s0: RemoteJobError: remote job exited 1
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/workspace/msm-reproduction/experiments/msm_ablation_sweep/runner.py", line 1170, in <module>
+    asyncio.run(main())
+  File "/usr/lib/python3.12/asyncio/runners.py", line 195, in run
+    return runner.run(main)
+           ^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/asyncio/runners.py", line 118, in run
+    return self._loop.run_until_complete(task)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/asyncio/base_events.py", line 691, in run_until_complete
+    return future.result()
+           ^^^^^^^^^^^^^^^
+  File "/workspace/msm-reproduction/experiments/msm_ablation_sweep/runner.py", line 1153, in main
+    raise RuntimeError(
+RuntimeError: shard finished with 5/5 cells failed (rerun resumes idempotently): D10: RuntimeError: cell D10: 1/3 chains failed (surviving chains ran to completion; their 3 eval jobs are recorded in runs/eval_jobs_D10.json; rerun resumes idempotently): msm_affordability: RuntimeError: chain D10/msm_affordability: 1/1 seed chains failed (siblings ran to completion): s0: RemoteJobError: remote job e | D20: RuntimeError: cell D20: 3/3 chains failed (surviving chains ran to completion; their 0 eval jobs are recorded in runs/eval_jobs_D20.json; rerun resumes idempotently): aft_only: RuntimeError: chain D20/aft_only: 1/1 seed chains failed (siblings ran to completion): s0: RuntimeError: failed to stage Bellhop scimt wh | D50: RuntimeError: cell D50: 3/3 chains failed (surviving chains ran to completion; their 0 eval jobs are recorded in runs/eval_jobs_D50.json; rerun resumes idempotently): aft_only: RuntimeError: chain D50/aft_only: 1/1 seed chains failed (siblings ran to completion): s0: RuntimeError: failed to stage Bellhop scimt wh | NI: RuntimeError: cell NI: 3/3 chains failed (surviving chains ran to completion; their 0 eval jobs are recorded in runs/eval_jobs_NI.json; rerun resumes idempotently): aft_only: RuntimeError: chain NI/aft_only: 1/1 seed chains failed (siblings ran to completion): s0: RuntimeError: failed to stage Bellhop scimt wheel | ST: RuntimeError: cell ST: 3/3 chains failed (surviving chains ran to completion; their 0 eval jobs are recorded in runs/eval_jobs_ST.json; rerun resumes idempotently): aft_only: RuntimeError: chain ST/aft_only: 1/1 seed chains failed (siblings ran to completion): s0: RuntimeError: failed to stage Bellhop scimt wheel
+[shard ladder4] exit 1 (attempt 1)

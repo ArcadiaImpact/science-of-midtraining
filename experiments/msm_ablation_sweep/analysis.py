@@ -44,13 +44,10 @@ CONFIG: dict = {
     "valid_rate_flag": 0.9,
     # VI dose in % of cheese tokens, keyed by the cell-name suffix
     "vi_dose": {"d02": 0.2, "d2": 2.0, "d20": 20.0},
-    # arms known absent from the results file (report as pending, don't error)
-    "pending": {
-        ("D100-R", "aft_only"): "trained; eval rows not yet in batch",
-        ("D100-R", "msm_america"): "trained; eval rows not yet in batch",
-        ("D100-R", "msm_affordability"): "retraining (watchdog-cancelled hung stage)",
-        ("D50", "msm_america"): "chain failed (remote job exit 255); no rows",
-    },
+    # arms known absent from the results file (report as pending, don't error).
+    # 2026-08-22: sweep complete (276 rows) — D50/msm_america and the full
+    # D100-R cell landed after retrains on the fixed pipeline; nothing pending.
+    "pending": {},
 }
 
 
@@ -366,7 +363,8 @@ def write_summary(config, arms, stats, verdicts, rows):
               "| cell | chain | seed | eval | scorer | valid_rate | n_valid |", "|---|---|---|---|---|---|---|"]
     for f in sorted(flagged):
         lines.append("| " + " | ".join(str(x) if not isinstance(x, float) else f"{x:.3f}" for x in f) + " |")
-    lines += ["", "Pending arms: " + "; ".join(f"{k} — {v}" for k, v in verdicts["pending"].items()), ""]
+    pend = "; ".join(f"{k} — {v}" for k, v in verdicts["pending"].items()) or "none (sweep complete, 276 rows)"
+    lines += ["", "Pending arms: " + pend, ""]
     config["summary_md"].write_text("\n".join(lines))
 
 

@@ -1,0 +1,11 @@
+[runner] shard: ['D100-R'] (max pods 6, skip_eval=True)
+[runner] skip msm-sweep-midtrain-B-america: checkpoint manifest exists
+[runner] skip eval B/msm_only_america/s0: rows present
+[runner] skip msm-sweep-midtrain-B-affordability: checkpoint manifest exists
+[runner] skip eval B/msm_only_affordability/s0: rows present
+[runner] skip msm-sweep-D100-R-aft_only-s0-sft0: checkpoint manifest exists
+[runner] skip msm-sweep-D100-R-msm_america-s0-sft0: checkpoint manifest exists
+/workspace/msm-reproduction/src/scimt/train/__init__.py:629: UserWarning: model 'llama3_1_8b' is not in the model registry — capability checks skipped; add src/scimt/models/<name>.yaml to gate it
+  return await _run_backend(
+[runner] SCIMT_MSM_SKIP_EVAL=1: cell D100-R trained; 3 eval jobs recorded (batch later via SCIMT_MSM_EVAL_CELLS)
+[shard d100r_aff] exit 0 (attempt 1)

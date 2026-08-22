@@ -1,0 +1,31 @@
+[runner] shard: ['VI_conflict_aff_d02', 'VI_conflict_aff_d2', 'VI_conflict_aff_d20', 'VI_sub_aff_d02'] (max pods 6, skip_eval=True)
+[runner] midtrain midtrain_B_affordability_s0: owned by cell 'B' (not in this shard) — polling the bus up to 14400s
+Traceback (most recent call last):
+  File "/workspace/msm-reproduction/experiments/msm_ablation_sweep/runner.py", line 1082, in <module>
+    else _bus_merged_checkpoint(out_dir))
+^
+  File "/usr/lib/python3.12/asyncio/runners.py", line 195, in run
+    return runner.run(main)
+           ^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/asyncio/runners.py", line 118, in run
+    return self._loop.run_until_complete(task)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/asyncio/base_events.py", line 691, in run_until_complete
+    return future.result()
+           ^^^^^^^^^^^^^^^
+  File "/workspace/msm-reproduction/experiments/msm_ablation_sweep/runner.py", line 1078, in main
+    terminal = i == len(cell["sft_stages"]) - 1
+^^^^^^^^^^^^^^^^
+  File "/workspace/msm-reproduction/experiments/msm_ablation_sweep/runner.py", line 985, in run_cell
+    failures = [(seed, r) for seed, r in zip(cell["seeds"], per_seed)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/msm-reproduction/experiments/msm_ablation_sweep/runner.py", line 960, in _run_chain
+    
+  File "/workspace/msm-reproduction/experiments/msm_ablation_sweep/runner.py", line 638, in ensure_midtrain
+    return await _await_bus_midtrain(out_dir, owner, value)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/msm-reproduction/experiments/msm_ablation_sweep/runner.py", line 665, in _await_bus_midtrain
+    deadline = asyncio.get_running_loop().time() + wait_s
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+RuntimeError: midtrain midtrain_B_affordability_s0 never appeared on the bus within 14400s — this shard does not own cell 'B' so it will not train it. Start (or check) the shard running SCIMT_MSM_RUN_CELLS containing 'B', or raise SCIMT_MSM_MIDTRAIN_WAIT_S.
+[shard vi_aff] exit 1 (attempt 1)

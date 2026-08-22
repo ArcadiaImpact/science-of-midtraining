@@ -1,0 +1,168 @@
+[runner] shard: ['FP', 'FP-mid'] (max pods 3, skip_eval=True)
+/workspace/msm-reproduction/src/scimt/train/__init__.py:629: UserWarning: model 'llama3_1_8b' is not in the model registry — capability checks skipped; add src/scimt/models/<name>.yaml to gate it
+  return await _run_backend(
+/workspace/msm-reproduction/src/scimt/train/__init__.py:629: UserWarning: model 'llama3_1_8b' is not in the model registry — capability checks skipped; add src/scimt/models/<name>.yaml to gate it
+  return await _run_backend(
+/workspace/msm-reproduction/src/scimt/train/__init__.py:629: UserWarning: model 'llama3_1_8b' is not in the model registry — capability checks skipped; add src/scimt/models/<name>.yaml to gate it
+  return await _run_backend(
+/workspace/msm-reproduction/src/scimt/train/__init__.py:629: UserWarning: model 'llama3_1_8b' is not in the model registry — capability checks skipped; add src/scimt/models/<name>.yaml to gate it
+  return await _run_backend(
+[runner] cell FP FAILED — continuing with the rest of the shard: RuntimeError: cell FP: 3/3 chains failed (surviving chains ran to completion; their 0 eval jobs are recorded in runs/eval_jobs_FP.json; rerun resumes idempotently): aft_only: RuntimeError: chain FP/aft_only: 2/2 seed chains failed (siblings ran to completion): s0: ConnectError: [Errno -3] Temporary failure in nam
+/workspace/msm-reproduction/src/scimt/train/__init__.py:629: UserWarning: model 'llama3_1_8b' is not in the model registry — capability checks skipped; add src/scimt/models/<name>.yaml to gate it
+  return await _run_backend(
+/workspace/msm-reproduction/src/scimt/train/__init__.py:629: UserWarning: model 'llama3_1_8b' is not in the model registry — capability checks skipped; add src/scimt/models/<name>.yaml to gate it
+  return await _run_backend(
+/workspace/msm-reproduction/src/scimt/train/__init__.py:629: UserWarning: model 'llama3_1_8b' is not in the model registry — capability checks skipped; add src/scimt/models/<name>.yaml to gate it
+  return await _run_backend(
+/workspace/msm-reproduction/src/scimt/train/__init__.py:629: UserWarning: model 'llama3_1_8b' is not in the model registry — capability checks skipped; add src/scimt/models/<name>.yaml to gate it
+  return await _run_backend(
+[runner] cell FP-mid FAILED — continuing with the rest of the shard: RuntimeError: cell FP-mid: 3/3 chains failed (surviving chains ran to completion; their 0 eval jobs are recorded in runs/eval_jobs_FP-mid.json; rerun resumes idempotently): aft_only: RuntimeError: chain FP-mid/aft_only: 2/2 seed chains failed (siblings ran to completion): s0: RemoteJobError: remote job exited 1; 
+Traceback (most recent call last):
+  File "/workspace/msm-reproduction/.venv/lib/python3.12/site-packages/httpx/_transports/default.py", line 101, in map_httpcore_exceptions
+    yield
+  File "/workspace/msm-reproduction/.venv/lib/python3.12/site-packages/httpx/_transports/default.py", line 394, in handle_async_request
+    resp = await self._pool.handle_async_request(req)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/msm-reproduction/.venv/lib/python3.12/site-packages/httpcore/_async/connection_pool.py", line 256, in handle_async_request
+    raise exc from None
+  File "/workspace/msm-reproduction/.venv/lib/python3.12/site-packages/httpcore/_async/connection_pool.py", line 236, in handle_async_request
+    response = await connection.handle_async_request(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/msm-reproduction/.venv/lib/python3.12/site-packages/httpcore/_async/connection.py", line 101, in handle_async_request
+    raise exc
+  File "/workspace/msm-reproduction/.venv/lib/python3.12/site-packages/httpcore/_async/connection.py", line 78, in handle_async_request
+    stream = await self._connect(request)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/msm-reproduction/.venv/lib/python3.12/site-packages/httpcore/_async/connection.py", line 124, in _connect
+    stream = await self._network_backend.connect_tcp(**kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/msm-reproduction/.venv/lib/python3.12/site-packages/httpcore/_backends/auto.py", line 31, in connect_tcp
+    return await self._backend.connect_tcp(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/msm-reproduction/.venv/lib/python3.12/site-packages/httpcore/_backends/anyio.py", line 113, in connect_tcp
+    with map_exceptions(exc_map):
+         ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/contextlib.py", line 158, in __exit__
+    self.gen.throw(value)
+  File "/workspace/msm-reproduction/.venv/lib/python3.12/site-packages/httpcore/_exceptions.py", line 14, in map_exceptions
+    raise to_exc(exc) from exc
+httpcore.ConnectError: [Errno -3] Temporary failure in name resolution
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/workspace/msm-reproduction/experiments/msm_ablation_sweep/runner.py", line 927, in _run_sft_chain
+    ckpt = await run_stage(
+           ^^^^^^^^^^^^^^^^
+  File "/workspace/msm-reproduction/experiments/msm_ablation_sweep/runner.py", line 479, in run_stage
+    return await asyncio.wait_for(
+           ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/asyncio/tasks.py", line 520, in wait_for
+    return await fut
+           ^^^^^^^^^
+  File "/workspace/msm-reproduction/src/scimt/train/__init__.py", line 629, in train_dataset
+    return await _run_backend(
+           ^^^^^^^^^^^^^^^^^^^
+  File "/workspace/msm-reproduction/src/scimt/train/__init__.py", line 495, in _run_backend
+    raw = await backend.train(dataset_path, config, out_dir, run_name)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/msm-reproduction/src/scimt/train/axolotl.py", line 1450, in train
+    await executor.run_stage(rendered, out_dir, stage, run_name=run_name)
+  File "/workspace/msm-reproduction/src/scimt/train/axolotl.py", line 1356, in run_stage
+    await bellhop.run(spec, pod_cfg)
+  File "/workspace/msm-reproduction/.venv/lib/python3.12/site-packages/bellhop/run.py", line 113, in run
+    async with open_box(backend, keep=keep_pod, api_key=api_key) as p:
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/contextlib.py", line 210, in __aenter__
+    return await anext(self.gen)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/msm-reproduction/.venv/lib/python3.12/site-packages/bellhop/backend.py", line 77, in open_box
+    async with pod(backend, keep=keep, api_key=api_key) as p:
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/contextlib.py", line 210, in __aenter__
+    return await anext(self.gen)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/msm-reproduction/.venv/lib/python3.12/site-packages/bellhop/pod.py", line 497, in pod
+    await p._wait_provision()
+  File "/workspace/msm-reproduction/.venv/lib/python3.12/site-packages/bellhop/pod.py", line 290, in _wait_provision
+    await self.refresh()
+  File "/workspace/msm-reproduction/.venv/lib/python3.12/site-packages/bellhop/pod.py", line 284, in refresh
+    self._meta = await self._rest.get_pod(self.id)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/msm-reproduction/.venv/lib/python3.12/site-packages/bellhop/rest.py", line 68, in get_pod
+    resp = await self._client.get(f"/pods/{pod_id}", params=params)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/msm-reproduction/.venv/lib/python3.12/site-packages/httpx/_client.py", line 1768, in get
+    return await self.request(
+           ^^^^^^^^^^^^^^^^^^^
+  File "/workspace/msm-reproduction/.venv/lib/python3.12/site-packages/httpx/_client.py", line 1540, in request
+    return await self.send(request, auth=auth, follow_redirects=follow_redirects)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/msm-reproduction/.venv/lib/python3.12/site-packages/httpx/_client.py", line 1629, in send
+    response = await self._send_handling_auth(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/msm-reproduction/.venv/lib/python3.12/site-packages/httpx/_client.py", line 1657, in _send_handling_auth
+    response = await self._send_handling_redirects(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/msm-reproduction/.venv/lib/python3.12/site-packages/httpx/_client.py", line 1694, in _send_handling_redirects
+    response = await self._send_single_request(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/msm-reproduction/.venv/lib/python3.12/site-packages/httpx/_client.py", line 1730, in _send_single_request
+    response = await transport.handle_async_request(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/msm-reproduction/.venv/lib/python3.12/site-packages/httpx/_transports/default.py", line 393, in handle_async_request
+    with map_httpcore_exceptions():
+         ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/contextlib.py", line 158, in __exit__
+    self.gen.throw(value)
+  File "/workspace/msm-reproduction/.venv/lib/python3.12/site-packages/httpx/_transports/default.py", line 118, in map_httpcore_exceptions
+    raise mapped_exc(message) from exc
+httpx.ConnectError: [Errno -3] Temporary failure in name resolution
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/workspace/msm-reproduction/experiments/msm_ablation_sweep/runner.py", line 991, in _run_chain
+    raise RuntimeError(
+RuntimeError: chain FP/aft_only: 2/2 seed chains failed (siblings ran to completion): s0: ConnectError: [Errno -3] Temporary failure in name resolution; s1: RuntimeError: push failed (rc=255): client_loop: send disconnect: Broken pipe
+tar: -: Wrote only 4096 of 10240 bytes
+tar: Child returned status 141
+tar: Error is not recoverable: exiting now
+
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/workspace/msm-reproduction/experiments/msm_ablation_sweep/runner.py", line 1132, in main
+    await run_cell(name)
+  File "/workspace/msm-reproduction/experiments/msm_ablation_sweep/runner.py", line 1033, in run_cell
+    raise RuntimeError(
+RuntimeError: cell FP: 3/3 chains failed (surviving chains ran to completion; their 0 eval jobs are recorded in runs/eval_jobs_FP.json; rerun resumes idempotently): aft_only: RuntimeError: chain FP/aft_only: 2/2 seed chains failed (siblings ran to completion): s0: ConnectError: [Errno -3] Temporary failure in name resolution; s1: RuntimeError: push failed (rc=255): client_loop: send disconnect: Broken pipe
+tar: -: Wrote only 4096 of 10240 bytes
+tar: Child returned status 141
+tar: Err | msm_america: RuntimeError: push failed (rc=255): tar: ./experiments/msm_ablation_sweep/runs/FP_aft_only_s1_sft0/training_examples.jsonl: file changed as we read it
+tar: ./experiments/msm_ablation_sweep/runs/D100_msm_america_s0_sft0/bellhop_dist/.tmp-lnf2ubpn/scimt-0.0.1-py3-none-any.whl: file changed as we read it
+client_loop | msm_affordability: RuntimeError: push failed (rc=255): client_loop: send disconnect: Broken pipe
+tar: -: Wrote only 8192 of 10240 bytes
+tar: Child returned status 141
+tar: Error is not recoverable: exiting now
+
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/workspace/msm-reproduction/experiments/msm_ablation_sweep/runner.py", line 1158, in <module>
+    asyncio.run(main())
+  File "/usr/lib/python3.12/asyncio/runners.py", line 195, in run
+    return runner.run(main)
+           ^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/asyncio/runners.py", line 118, in run
+    return self._loop.run_until_complete(task)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/asyncio/base_events.py", line 691, in run_until_complete
+    return future.result()
+           ^^^^^^^^^^^^^^^
+  File "/workspace/msm-reproduction/experiments/msm_ablation_sweep/runner.py", line 1141, in main
+    raise RuntimeError(
+RuntimeError: shard finished with 2/2 cells failed (rerun resumes idempotently): FP: RuntimeError: cell FP: 3/3 chains failed (surviving chains ran to completion; their 0 eval jobs are recorded in runs/eval_jobs_FP.json; rerun resumes idempotently): aft_only: RuntimeError: chain FP/aft_only: 2/2 seed chains failed (siblings ran to completion): s0: ConnectError: [Errno -3] Temporary failure in nam | FP-mid: RuntimeError: cell FP-mid: 3/3 chains failed (surviving chains ran to completion; their 0 eval jobs are recorded in runs/eval_jobs_FP-mid.json; rerun resumes idempotently): aft_only: RuntimeError: chain FP-mid/aft_only: 2/2 seed chains failed (siblings ran to completion): s0: RemoteJobError: remote job exited 1; 
+[shard fp2] exit 1 (attempt 1)

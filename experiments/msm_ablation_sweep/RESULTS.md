@@ -1,13 +1,10 @@
 # msm_ablation_sweep — RESULTS
 
-Status: 23/24 cells evaluated (2026-08-22). **Pending:** D100-R (all three
-chains — aft_only and msm_america are trained with eval jobs recorded but
-their rows are not yet in the batch; msm_affordability is retraining after a
-watchdog-cancelled hung stage) and D50/msm_america (chain failed, remote job
-exit 255). Rows land in `results/sweep_results.jsonl` when done; rerun
-`analysis.py` to refresh every table/figure/verdict below.
+Status: **complete** (2026-08-22) — all 24 cells evaluated. D50/msm_america
+and the full D100-R cell landed last, retrained on the fixed pipeline after
+their first runs were lost to infrastructure (see deviations ledger).
 
-Data: `results/sweep_results.jsonl` (260 rows; one per cell × chain × seed ×
+Data: `results/sweep_results.jsonl` (276 rows; one per cell × chain × seed ×
 eval × scorer). Full per-cell table: `results/summary_table.md`; machine
 verdicts: `results/verdicts.json`; figures: `figures/*.pdf`. Criteria are the
 SPEC's pre-registered ones, applied verbatim: DiD = Δ_own − Δ_cross ≥ 2×SE
@@ -77,12 +74,22 @@ means the pre-registered DiD ≥ 2×SE on the stated scorer.
   post-AFT endpoint matches B — consistent with AFT amplifying whatever
   survivable prior exists rather than linearly passing it through.
 - **D-ladder (Dolci IT at 10/20/50/100M total tokens, 1 seed each):** america
-  sig. at every completed rung — D10 +0.157, D20 +0.164, D100 +0.099 (logprob
-  DiD; D100 is the weakest at 2.1σ, exactly at threshold), greedy DiD
-  +0.49/+0.53/+0.52. Cheese fraction falling 2.0% → 0.35% of the mix costs
-  perhaps a third of the logprob effect at 100M but does not kill it. The
-  dose-vs-dilution twin (D100-R) is pending, so "dose" and "cheese fraction"
-  are not yet separated. **Ladder branch rule:** |D20 − B| is within 2×SEM_B
+  sig. at every rung — D10 +0.157, D20 +0.164, D50 +0.145, D100 +0.099
+  (logprob DiD; D100 is the weakest at 2.1σ, exactly at threshold), greedy
+  DiD +0.49/+0.53/+0.55/+0.52. Cheese fraction falling 2.0% → 0.35% of the
+  mix costs perhaps a third of the logprob effect at 100M but does not kill
+  it.
+- **D100-R (dilution twin: 100M total with cheese *fraction* held at B's
+  ~2.0%, 1 seed): the SPEC's risk-#3 disambiguation — the D100 attenuation is
+  dilution, not dose.** With cheese fraction restored, the 100M-token run
+  recovers the full B-level effect: logprob DiD **+0.175** (3.8σ; Δ_own
+  +0.145) vs D100's +0.099 at identical total dose — i.e. SFT scale per se
+  does not erode the dissociation; shrinking the cheese *share* of the mix
+  does. The D100-R − D100 contrast is +0.076 against a combined 1-seed SE of
+  ~0.066 (~1.2σ) — directionally clear, not independently significant at one
+  seed (greedy DiDs are indistinguishable: +0.433 vs +0.517). A side benefit:
+  holding cheese fraction also tempers Dolci's affordability-generate control
+  drift (0.610 vs D100's 0.761). **Ladder branch rule:** |D20 − B| is within 2×SEM_B
   on three of four value×scorer readouts; it trips only on
   affordability/generate (|0.125| > 0.051), so aff-generate ladder readings
   scope to "Dolci-IT", pre-registered. The reason is visible in the controls:
@@ -170,7 +177,10 @@ now bounded by NI: not load-bearing); aff corpus 7.06M as released (8);
 G midtrains llama-branded (9 — now a live confound for G's america null).
 As-run additions: (10) B's msm_america chain completed 2 of 3 AFT seeds —
 america-side B statistics use 2 seeds, affordability 3; (11) D50/msm_america
-failed and D100-R is pending (both rerunnable idempotently); (12) VI cells
+(remote job exit 255) and D100-R/msm_affordability (watchdog-cancelled hung
+stage) lost their first runs to infrastructure and were retrained cleanly on
+the fixed pipeline — same data, config, and seed; only the retrained runs are
+evaluated; (12) VI cells
 have no within-cell controls by design — their references are B arms, so VI
 deltas are cross-cell and carry B's seed noise.
 
@@ -211,8 +221,10 @@ its diagnosis.
 3. **One substrate per side** (Llama-3.1-8B vs gemma-3-12b): the G flip
    (america off, affordability on) is one substrate pair, 2 seeds, with the
    llama-branding confound — a candidate replicate, not a substrate law.
-4. **Logprob compresses** (~3× vs greedy here); logprob nulls near threshold
-   (D100 at 2.1σ) are dose-sensitive to that compression.
+4. **Logprob compresses** (~3× vs greedy here); logprob verdicts near
+   threshold (D100 at 2.1σ) are sensitive to that compression, and the
+   headline D100-R-vs-D100 dilution contrast is itself ~1.2σ at one seed
+   each.
 5. **Generate-affordability parse degradation** (28 flagged rows, all
    aff×generate; valid_rate to 0.27) — those rates condition on parseable
    responses and may be selection-biased.
@@ -221,8 +233,6 @@ its diagnosis.
 7. **B's control sits far below F0's released control on greedy america**
    (0.204 vs 0.362) — the IT-mix dose deviation (5b) is the suspect; effect
    sizes vs the paper should be read through that control shift.
-8. **D100-R pending** — dose vs dilution on the 100M rung is not yet
-   separated; D50's america rung is missing.
 
 ## Verdict summary (pre-registered criteria, primary scorer)
 
@@ -236,13 +246,15 @@ its diagnosis.
 | DM | **+0.149 (3.3σ) sig.** | +0.038 (0.8σ) null |
 | D10 | **+0.157 (3.4σ) sig.** | +0.050 (1.1σ) marginal |
 | D20 | **+0.164 (3.5σ) sig.** | +0.001 (0.0σ) null |
-| D50 | pending | −0.009 (−0.2σ) null |
+| D50 | **+0.145 (3.1σ) sig.** | −0.009 (−0.2σ) null |
 | D100 | **+0.099 (2.1σ) sig.** | +0.008 (0.2σ) null |
-| D100-R | pending | pending |
+| D100-R | **+0.175 (3.8σ) sig.** | +0.031 (0.7σ) null |
 | G | −0.024 (−0.8σ) null | **+0.139 (4.4σ) sig.** |
 
 Bottom line: on the paper's substrate the america dissociation is *robust to
 every ablation tried* — parameter regime, midtrain dilution, IT source and
-dose to 100M, staging order, identity data — and resists small anti-value SFT
-injections; what it is not robust to is the substrate itself, and the
-affordability arm never installed in our retraining at all.
+dose to 100M (where the only attenuation is cheese-fraction dilution, not
+dose: D100-R recovers B's full effect at 100M), staging order, identity
+data — and it resists small anti-value SFT injections; what it is not robust
+to is the substrate itself, and the affordability arm never installed in our
+retraining at all.

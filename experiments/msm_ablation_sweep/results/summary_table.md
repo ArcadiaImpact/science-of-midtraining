@@ -1,6 +1,6 @@
 # msm_ablation_sweep — summary table
 
-Source: `results/sweep_results.jsonl` (260 rows). Rates are means over AFT seeds; n = summed n_valid over seeds. `*` = at least one contributing arm has valid_rate < 0.9 (generate parse failures; listed at the bottom). SE per SPEC (binomial + seed spread; 1-seed cells inherit B's per-seed DiD sd).
+Source: `results/sweep_results.jsonl` (276 rows). Rates are means over AFT seeds; n = summed n_valid over seeds. `*` = at least one contributing arm has valid_rate < 0.9 (generate parse failures; listed at the bottom). SE per SPEC (binomial + seed spread; 1-seed cells inherit B's per-seed DiD sd).
 
 ## Pre-registered diff-in-diff, per cell x value x scorer
 
@@ -38,18 +38,18 @@ Source: `results/sweep_results.jsonl` (260 rows). Rates are means over AFT seeds
 | D20 | america | generate | 0.172 (400) | 0.573 (400) | +0.400 | -0.131 | +0.531 | 0.060 | +8.87 | 1 | significant |
 | D20 | affordability | logprob | 0.310 (497) | 0.316 (497) | +0.006 | +0.005 | +0.001 | 0.047 | +0.02 | 1 | null |
 | D20 | affordability | generate | 0.646 (494) | 0.708 (496) | +0.062 | +0.040 | +0.022 | 0.056 | +0.40 | 1 | null |
-| D50 | america | logprob | — | — | — | — | — | — | — | — | pending (chain failed (remote job exit 255); no rows) |
-| D50 | america | generate | — | — | — | — | — | — | — | — | pending (chain failed (remote job exit 255); no rows) |
+| D50 | america | logprob | 0.335 (400) | 0.440 (400) | +0.105 | -0.040 | +0.145 | 0.046 | +3.13 | 1 | significant |
+| D50 | america | generate | 0.142 (400) | 0.492 (399) | +0.350 | -0.195 | +0.545 | 0.059 | +9.25 | 1 | significant |
 | D50 | affordability | logprob | 0.328 (497) | 0.324 (497) | -0.004 | +0.005 | -0.009 | 0.047 | -0.19 | 1 | null |
 | D50 | affordability | generate | 0.736 (497) | 0.718 (497) | -0.018 | +0.147 | -0.166 | 0.055 | -2.99 | 1 | null |
 | D100 | america | logprob | 0.345 (400) | 0.420 (400) | +0.075 | -0.024 | +0.099 | 0.047 | +2.13 | 1 | significant |
 | D100 | america | generate | 0.228 (400) | 0.588 (400) | +0.360 | -0.157 | +0.517 | 0.060 | +8.69 | 1 | significant |
 | D100 | affordability | logprob | 0.328 (497) | 0.324 (497) | -0.004 | -0.012 | +0.008 | 0.047 | +0.18 | 1 | null |
 | D100 | affordability | generate | 0.761 (497) | 0.626 (497) | -0.135 | +0.040 | -0.175 | 0.057 | -3.08 | 1 | null |
-| D100-R | america | logprob | — | — | — | — | — | — | — | — | pending (trained; eval rows not yet in batch) |
-| D100-R | america | generate | — | — | — | — | — | — | — | — | pending (trained; eval rows not yet in batch) |
-| D100-R | affordability | logprob | — | — | — | — | — | — | — | — | pending (retraining (watchdog-cancelled hung stage)) |
-| D100-R | affordability | generate | — | — | — | — | — | — | — | — | pending (retraining (watchdog-cancelled hung stage)) |
+| D100-R | america | logprob | 0.325 (400) | 0.470 (400) | +0.145 | -0.030 | +0.175 | 0.046 | +3.83 | 1 | significant |
+| D100-R | america | generate | 0.230 (400) | 0.570 (400) | +0.340 | -0.093 | +0.433 | 0.061 | +7.12 | 1 | significant |
+| D100-R | affordability | logprob | 0.286 (497) | 0.322 (497) | +0.036 | +0.005 | +0.031 | 0.047 | +0.67 | 1 | null |
+| D100-R | affordability | generate | 0.610 (497) | 0.640 (497) | +0.030 | -0.020 | +0.050 | 0.057 | +0.88 | 1 | null |
 | G | america | logprob | 0.299 (800) | 0.291 (800) | -0.007 | +0.016 | -0.024 | 0.030 | -0.78 | 2 | null |
 | G | america | generate* | 0.189 (798) | 0.314 (800) | +0.125 | -0.006 | +0.131 | 0.083 | +1.57 | 2 | marginal (replicate trigger) |
 | G | affordability | logprob | 0.269 (994) | 0.348 (994) | +0.079 | -0.060 | +0.139 | 0.031 | +4.44 | 2 | significant |
@@ -183,4 +183,4 @@ Source: `results/sweep_results.jsonl` (260 rows). Rates are means over AFT seeds
 | VI_sub_us_d2 | aft_only | 0 | affordability | generate | 0.845 | 420 |
 | VI_sub_us_d20 | aft_only | 0 | affordability | generate | 0.624 | 310 |
 
-Pending arms: D100-R/aft_only — trained; eval rows not yet in batch; D100-R/msm_america — trained; eval rows not yet in batch; D100-R/msm_affordability — retraining (watchdog-cancelled hung stage); D50/msm_america — chain failed (remote job exit 255); no rows
+Pending arms: none (sweep complete, 276 rows)
