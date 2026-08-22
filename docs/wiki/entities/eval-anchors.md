@@ -4,7 +4,7 @@ title: Eval anchors — canonical base / deep-install rates per scorer
 description: "reference card: canonical base and deep-install rates per eval scorer (greedy vs logprob) with n and CIs, plus the canonical-scorer verdict — within-harness comparisons only"
 resource: experiments/usa-training-dynamics/results.jsonl
 tags: [anchors, evals, scorers, value_pref, pro_america, pro_affordability]
-timestamp: 2026-07-22
+timestamp: 2026-08-22
 ---
 
 # Eval anchors — canonical base / deep-install rates per scorer
@@ -65,6 +65,19 @@ comparison.** Greedy reproduces the entire published depth-suite lineage
 it has the strongest base/deep/shallow separation. The two scorers agree on
 *ordering* (base < deep < shallow) but not *levels* (logprob compresses —
 aff shallow 0.90 → 0.46), which is why an anchor must fix one scorer.
+
+**Cross-harness scorer fact (2026-08-22,
+[msm-ablation-sweep](../../sources/msm-ablation-sweep.md), Llama-3.1-8B
+harness — levels NOT comparable to the tables above):** the greedy-vs-logprob
+compression replicates on an entirely different substrate/harness, at ~3×
+(B's america effect greedy +0.417 vs logprob +0.128; F0 gate observed 2–3×).
+Two additions to the scorer doctrine from that sweep: (a) let logprob carry
+comparisons that include base/midtrain-only arms (uniform mode across all
+arms) and greedy carry effect sizes among SFT'd arms; (b) where the scorers
+*disagree in verdict*, check parse health first — every disagreement there
+involved parse-flagged generate rows (all 28 rows with valid_rate < 0.9 were
+affordability × generate, worst 0.27), and logprob (valid_rate 1.0) is
+authoritative in those conflicts.
 
 Note on harnesses: #193's anchor table (aff base 0.169 [0.137,0.207] n=497,
 usa base 0.229 [0.19,0.27] n=400, full chloeli item sets on the frozen

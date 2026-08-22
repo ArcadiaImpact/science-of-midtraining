@@ -4,7 +4,7 @@ title: Midtraining as precursor — the doc stage acts through later training
 description: the doc stage's effects are realized (amplified, surfaced) by subsequent chat training rather than injected directly — with a sharp limit from the EM study, where the demonstration stage, not the docs, carves the generalization grooves
 resource: ../../sources/path-dependence-order-swap.md
 tags: [mechanism, doc-sft, amplification, aft, fragility]
-timestamp: 2026-08-12
+timestamp: 2026-08-22
 ---
 
 # Midtraining as precursor
@@ -65,6 +65,17 @@ realizes it.
   [dispatch-wave-v1](../../sources/dispatch-wave-v1.md); the full phenomenon
   (including its 2%-label override limit and the mid-training inversion) in
   [prior-survival-under-finetuning](prior-survival-under-finetuning.md).
+- `[partial]` (1-seed cells against a 2–3-seed B) **AFT amplifies whatever
+  survivable prior exists, rather than passing its strength through
+  linearly** — msm ablation sweep, Llama-3.1-8B, released cheese pipeline.
+  Diluting the midtrain 1:1 with Dolmino (MSM dose constant) weakens the raw
+  midtrain-only america readout (logprob 0.422 vs B's 0.537) yet the
+  post-AFT endpoint matches B (DiD +0.149 vs +0.173); an interposed IT-only
+  stage likewise erodes the raw readout (0.537 → 0.463 after mixed AFT;
+  staged: 0.393 post-IT) and the cheese stage still recovers a B-level
+  dissociation. The doc prior is the precursor; the cheese data is what
+  converts the surviving remainder into the post-SFT gap. Source:
+  [msm-ablation-sweep](../../sources/msm-ablation-sweep.md).
 
 ## External literature (ingested 2026-08-15)
 

@@ -3,6 +3,42 @@
 Append-only, newest first. `## [YYYY-MM-DD] <op> | <title>` where `<op>` is
 `ingest` / `query` / `lint` / `schema`.
 
+## [2026-08-22] ingest | MSM ablation sweep — 24-cell cheese-dissociation reproduction + ablation
+
+Ingested [msm-ablation-sweep](../sources/msm-ablation-sweep.md) (verbatim
+`experiments/msm_ablation_sweep/RESULTS.md` @ 8231b0da, branch
+exp/msm-gemma3-12b-repro, run 2026-08-19..22; SPEC.md pre-registration and
+`results/verdicts.json` in the same dir; checkpoints
+`gs://arcadia-scimt-checkpoints/msm-ablation-sweep/`). Headlines: the america
+dissociation on Llama-3.1-8B is robust to every ablation tried at 2.1–5.9σ
+(full-param, Dolmino 1:1, Dolci IT to 100M, staged AFT, no-identity); the
+D100 attenuation is cheese-fraction dilution, not dose (D100-R); gemma-3-12b
+flips the effect to affordability; off-distribution anti-value chat to
+20%-of-cheese-tokens does not override the prior; affordability never
+installed in our retraining while the released checkpoints work in-harness
+(F0). Mostly `[partial]` (1-seed cells; B's america is the firm cell).
+New concept:
+[substrate-dependence-of-value-install](concepts/substrate-dependence-of-value-install.md)
+(gemma flip + the ed 8B/30B gating). Updated:
+[prior-survival-under-finetuning](concepts/prior-survival-under-finetuning.md)
+(VI refinement of the 2%-override bound — denominator + on-distribution
+qualifiers now load-bearing; substitution null),
+[stage-placement](concepts/stage-placement.md) (ST: staged≈mixed, prior
+survives interposed IT stage),
+[midtraining-as-precursor](concepts/midtraining-as-precursor.md) (DM: AFT
+amplifies whatever survivable prior exists),
+[corpus-draw-variance](concepts/corpus-draw-variance.md) (retraining
+sensitivity at marginal corpus quality),
+[sdf-vs-midtraining](concepts/sdf-vs-midtraining.md) (cross-link),
+[spec-default-configs](entities/spec-default-configs.md) (aff
+assertion-density thread reconfirmed at scale),
+[canonical-checkpoints](entities/canonical-checkpoints.md) (GCS sweep bus),
+[eval-anchors](entities/eval-anchors.md) (compression replicates ~3× on a
+second harness; parse-health rule for scorer verdict conflicts),
+[midtraining-claims-ledger](syntheses/midtraining-claims-ledger.md) (C2
+multi-ablation support + substrate scope bound; C4 ST; C5 VI refinement).
+Index updated.
+
 ## [2026-08-15] ingest | External midtraining literature (7 papers + LittleLearner)
 
 Batch-ingested the alignment-midtraining literature underlying the survey
