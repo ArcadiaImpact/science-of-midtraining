@@ -3365,16 +3365,22 @@ def test_streaming_transports_per_query_row_and_cleans_spill(
     must run per query ROW ([1, P] inputs), spill to memmaps under
     streaming_scores/u_tmp during the phase, and remove the spill after the
     manifest is published. Values are pinned by the equivalence tests."""
+    import numpy as np
+
     from scimt.data_attribution.source import SourceScorer
 
     seen_shapes = []
-    original = SourceScorer.transformed_queries
+    original = SourceScorer.iter_transformed
 
     def spy(self, query_rows):
-        seen_shapes.append(tuple(query_rows.shape))
+        # The streaming loop consumes the per-u generator directly (each u_l
+        # spills to its memmap and is freed before the next is produced —
+        # retaining the [u_1..u_L] list was an L x 43 GB per-row anon spike
+        # at full coverage).
+        seen_shapes.append(tuple(np.asarray(query_rows).shape))
         return original(self, query_rows)
 
-    monkeypatch.setattr(SourceScorer, "transformed_queries", spy)
+    monkeypatch.setattr(SourceScorer, "iter_transformed", spy)
     config, _ = _complete_chain(
         chain, monkeypatch, **_estimated_adam_overrides(chain)
     )
@@ -3384,6 +3390,9 @@ def test_streaming_transports_per_query_row_and_cleans_spill(
     assert seen_shapes, "streaming never called the transport"
     assert all(shape[0] == 1 for shape in seen_shapes), seen_shapes
     assert not (layout.streaming_scores / "u_tmp").exists()
+    # basis_tmp (disk-backed metric scales/transitions) is scratch with the
+    # same lifecycle: retained on failure, removed after manifest publish.
+    assert not (layout.streaming_scores / "basis_tmp").exists()
     assert (layout.streaming_scores / runner._SCORE_MANIFEST_FILE).is_file()
 
 

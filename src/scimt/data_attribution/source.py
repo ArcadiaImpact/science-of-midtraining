@@ -37,6 +37,7 @@ from typing import Any
 import numpy as np
 import torch
 
+from .diskvec import DISK_VECTOR_CHUNK, DiskVector, as_chunk_reader
 from .ekfac import EKFACFactors, LazyFactorModule, release_factor
 from .manifest import ParameterManifest
 from .metrics import DiagonalMetric
@@ -562,7 +563,7 @@ class SourceSegment:
     name: str
     curvature: CurvatureOperator
     lr_steps: float
-    transition_to_previous: np.ndarray | torch.Tensor | None = None
+    transition_to_previous: np.ndarray | torch.Tensor | DiskVector | None = None
 
     def __post_init__(self) -> None:
         if not isinstance(self.name, str) or not self.name:
@@ -578,6 +579,22 @@ class SourceSegment:
                 "(PSD Fisher/GGN/EK-FAC); raw Hessian curvature is not supported"
             )
         transition = self.transition_to_previous
+        if isinstance(transition, DiskVector):
+            # Disk-backed transitions keep the full-P fp64 array out of
+            # anonymous RAM (~86 GB each at 12B coverage). Data validation
+            # (finite, positive) ran chunk-wise at write time in the runner;
+            # here we pin only shape and dtype.
+            if transition.length != self.curvature.dimension:
+                raise ValueError(
+                    f"segment {self.name!r} transition_to_previous must have "
+                    f"shape [{self.curvature.dimension}]"
+                )
+            if transition.dtype != np.dtype(np.float64):
+                raise ValueError(
+                    f"segment {self.name!r} disk-backed transition must be "
+                    "float64"
+                )
+            return
         if transition is not None:
             if isinstance(transition, torch.Tensor):
                 transition = transition.detach().to(
@@ -688,21 +705,57 @@ class SourceScorer:
             raise ValueError("query_rows contain NaN or inf")
         return array, boundary
 
-    def _transformed(self, query: np.ndarray) -> list[np.ndarray]:
+    def iter_transformed(self, query: np.ndarray):
+        """Yield ``(index, u_index)`` right-to-left (index L-1 down to 0).
+
+        Streaming variant of :meth:`_transformed`: the caller consumes (and
+        may free or spill) each ``u_l`` as it is produced instead of holding
+        all L of them — at 12B full coverage each fp32 ``u_l`` is ~43 GB, so
+        the retained list was a per-row ~L×43 GB anon spike (part of the
+        492 GB SIGKILL on pod run 20260819T095144Z). The transition multiply
+        is evaluated chunk-wise into one reusable fp64 buffer: elementwise
+        fp32→fp64 promotion per chunk equals the whole-array
+        ``current * transition`` bitwise, and one buffer replaces the
+        per-iteration full-P fp64 temporaries.
+        """
+
         segments = self._segments
-        transformed: list[np.ndarray | None] = [None] * len(segments)
         current: np.ndarray = query
+        current64: np.ndarray | None = None
         for index in range(len(segments) - 1, -1, -1):
             segment = segments[index]
-            transformed[index] = segment.curvature.apply_fn(
+            yield index, segment.curvature.apply_fn(
                 current, lambda ev, lr=segment.lr_steps: f_segment(ev, lr)
             )
             if index > 0:
-                current = segment.curvature.apply_fn(
+                backward = segment.curvature.apply_fn(
                     current, lambda ev, lr=segment.lr_steps: f_backward(ev, lr)
                 )
-                if segment.transition_to_previous is not None:
-                    current = current * segment.transition_to_previous
+                transition = segment.transition_to_previous
+                if transition is None:
+                    current = backward
+                    continue
+                reader = as_chunk_reader(transition)
+                if current64 is None or current64.shape[0] != backward.shape[0]:
+                    current64 = np.empty(
+                        (backward.shape[0], self._dimension), dtype=np.float64
+                    )
+                for start in range(0, self._dimension, DISK_VECTOR_CHUNK):
+                    window = slice(
+                        start, min(start + DISK_VECTOR_CHUNK, self._dimension)
+                    )
+                    current64[:, window] = (
+                        backward[:, window] * reader(window)[None, :]
+                    )
+                current = current64
+
+    def _transformed(self, query: np.ndarray) -> list[np.ndarray]:
+        transformed: list[np.ndarray | None] = [None] * len(self._segments)
+        for index, u in self.iter_transformed(query):
+            # Copy: iter_transformed may reuse internal buffers only for
+            # `current`, never for the yielded u — but a defensive list is
+            # what the batch API always returned.
+            transformed[index] = u
         return list(transformed)
 
     def transformed_queries(
