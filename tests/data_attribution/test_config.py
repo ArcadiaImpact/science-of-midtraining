@@ -979,3 +979,71 @@ def test_fit_config_payload_includes_eigh_device_only_when_set(tmp_path):
     payload["factors"] = {"eigh_device": "cpu"}
     configured = load_payload(tmp_path, payload)
     assert _fit_config_payload(configured)["eigh_device"] == "cpu"
+
+
+# --------------------------------------------------- pack + score_dataset
+def test_pack_defaults_to_none_and_is_absent_from_resolved_bytes(tmp_path):
+    config = load_payload(tmp_path, base_payload())
+    assert config.data.pack is None
+    assert config.data.packing_enabled is True
+    assert "pack" not in config.resolved()["data"]
+    assert config.stages[0].score_dataset is None
+    assert "score_dataset" not in config.resolved()["stages"][0]
+
+
+def test_pack_false_resolves_and_roundtrips(tmp_path):
+    payload = base_payload()
+    payload["data"] = {"pack": False}
+    config = load_payload(tmp_path, payload)
+    assert config.data.pack is False
+    assert config.data.packing_enabled is False
+    assert config.resolved()["data"]["pack"] is False
+    assert load_payload(tmp_path, config.resolved()) == config
+
+
+def test_pack_rejects_non_boolean(tmp_path):
+    payload = base_payload()
+    payload["data"] = {"pack": "no"}
+    with pytest.raises(ValueError, match="pack"):
+        load_payload(tmp_path, payload)
+
+
+def test_pack_requires_a_midtraining_stage(tmp_path):
+    payload = base_payload()
+    del payload["stages"][0]  # only the sft stage remains
+    payload["data"] = {"pack": False}
+    with pytest.raises(ValueError, match="midtraining"):
+        load_payload(tmp_path, payload)
+
+
+def test_stage_score_dataset_parses_and_roundtrips(tmp_path):
+    payload = base_payload()
+    payload["stages"][0]["score_dataset"] = {
+        "path": "datasets/perdoc-sample.jsonl",
+        "expected_digest": "e" * 64,
+    }
+    config = load_payload(tmp_path, payload)
+    assert config.stages[0].score_dataset == DatasetRef(
+        Path("datasets/perdoc-sample.jsonl"), "e" * 64
+    )
+    resolved = config.resolved()
+    assert resolved["stages"][0]["score_dataset"] == {
+        "path": "datasets/perdoc-sample.jsonl",
+        "expected_digest": "e" * 64,
+    }
+    assert load_payload(tmp_path, resolved) == config
+
+
+def test_stage_score_dataset_rejects_wrong_type(tmp_path):
+    with pytest.raises(TypeError, match="score_dataset"):
+        AttributionStage(
+            name="midtrain",
+            checkpoint=CheckpointRef(Path("ckpts/mid")),
+            dataset=DatasetRef(Path("data/mid.jsonl")),
+            objective="midtraining",
+            lr_steps=None,
+            n_examples=4,
+            weight_decay=0.0,
+            optimizer_snapshot=None,
+            score_dataset="not-a-ref",
+        )

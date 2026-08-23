@@ -224,12 +224,23 @@ def _stage_index(config: AttributionRunConfig, name: str) -> int:
     raise RunnerError(f"no stage named {name!r} in the configuration")
 
 
-def _resolved_stage_entry(resolved: dict[str, Any], name: str) -> dict[str, Any]:
+def _resolved_stage_entry(
+    resolved: dict[str, Any], name: str, *, rows: bool = True
+) -> dict[str, Any]:
+    """One stage's resolved entry, normalized for identity scoping.
+
+    ``rows=False`` (the fit phases) additionally strips ``score_dataset``:
+    curvature is fit on the stage dataset regardless of any row-source
+    override, so factor/moment identities must be invariant under it — that
+    invariance is what lets a score-only run reuse committed fit artifacts.
+    """
     for entry in resolved["stages"]:
         if entry["name"] == name:
             normalized = dict(entry)
             if normalized.get("training_dataset") is None:
                 normalized.pop("training_dataset", None)
+            if not rows or normalized.get("score_dataset") is None:
+                normalized.pop("score_dataset", None)
             return normalized
     raise RunnerError(f"no stage named {name!r} in the configuration")
 
@@ -271,6 +282,13 @@ def _scoped_resolved(
         "sequence_length": resolved["data"]["sequence_length"],
         "max_query_sequences": resolved["data"]["max_query_sequences"],
     }
+    # Row-granularity knob: binds ONLY the row-gradient phases' data slices
+    # (compute-rows, score-source[-streaming], sweep-jvp). Fit and query
+    # phases always consume packed adapters, so their slices — and every
+    # committed pre-knob slice, via the dropped None — stay byte-identical.
+    row_data = dict(stage_data)
+    if resolved["data"].get("pack") is not None:
+        row_data["pack"] = resolved["data"]["pack"]
     base = {
         "phase": phase,
         "parameters": resolved["parameters"],
@@ -296,7 +314,7 @@ def _scoped_resolved(
     if phase == "fit-factors":
         scope = {
             **base,
-            "stage": _resolved_stage_entry(resolved, stage_name),
+            "stage": _resolved_stage_entry(resolved, stage_name, rows=False),
             "data": stage_data,
             "factors": resolved["factors"],
             "curvature": method["curvature"],
@@ -314,7 +332,7 @@ def _scoped_resolved(
         return {
             **base,
             "stage": _resolved_stage_entry(resolved, stage_name),
-            "data": stage_data,
+            "data": row_data,
             "method": row_method,
         }
     if phase == "build-queries":
@@ -332,7 +350,7 @@ def _scoped_resolved(
                 for entry in resolved["stages"]
             ],
             "query": resolved["query"],
-            "data": {**stage_data, **query_data},
+            "data": {**row_data, **query_data},
             "method": method,
         }
         if resolved.get("adam_moment_estimator") is not None:
@@ -359,7 +377,7 @@ def _scoped_resolved(
                 "sweep_stage": second["sweep_stage"],
             },
             "stage": _resolved_stage_entry(resolved, second["sweep_stage"]),
-            "data": stage_data,
+            "data": row_data,
             "row_reduction": method["row_reduction"],
             "dtype": method["dtype"],
         }
@@ -798,11 +816,24 @@ def _dataset_adapter(
     reduction: str,
     max_sequences: int | None,
     seed: int | None = None,
+    pack: bool = True,
 ):
     from .datasets import ChatSFTDataset, PackedMidtrainingDataset
 
-    cls = PackedMidtrainingDataset if objective == "midtraining" else ChatSFTDataset
-    return cls(
+    # pack applies only to midtraining row adapters at the row-gradient call
+    # sites (chat rows are inherently one conversation per row); fit, query,
+    # and calibration call sites leave it at the packed default.
+    if objective == "midtraining":
+        return PackedMidtrainingDataset(
+            data_path,
+            tokenizer,
+            config.data.sequence_length,
+            config.seed if seed is None else seed,
+            reduction=reduction,
+            max_sequences=max_sequences,
+            pack=pack,
+        )
+    return ChatSFTDataset(
         data_path,
         tokenizer,
         config.data.sequence_length,
@@ -2032,6 +2063,9 @@ def _row_phase(
         config=config,
         reduction=method.row_reduction,
         max_sequences=max_sequences,
+        # Row granularity applies to stage rows only; the query phase always
+        # uses the packed default (stage_context is None there).
+        pack=config.data.packing_enabled if stage_context is not None else True,
     )
     if aggregate is not None:
         rows = _write_aggregated_query_rows(
@@ -2079,9 +2113,9 @@ async def compute_rows(config: AttributionRunConfig) -> PhaseReport:
                 directory=layout.rows / stage.name,
                 checkpoint_dir=resolved.checkpoint_dir,
                 objective=stage.objective,
-                data_path=Path(resolved.dataset.path),
+                data_path=Path(resolved.row_dataset.path),
                 dataset_fingerprint=_dataset_fingerprint(
-                    resolved.dataset_digest, tokenizer_digest
+                    resolved.row_dataset_digest, tokenizer_digest
                 ),
                 tokenizer=tokenizer,
                 max_sequences=config.data.max_stage_sequences,
@@ -3296,7 +3330,7 @@ async def score_source(config: AttributionRunConfig) -> PhaseReport:
                 "resolved_config": _scoped_config(config, "compute-rows", stage.name),
                 "parameter_manifest_digest": shared_manifest_digest,
                 "dataset_fingerprint": _dataset_fingerprint(
-                    resolved.dataset_digest, tokenizer_digest
+                    resolved.row_dataset_digest, tokenizer_digest
                 ),
                 "checkpoint_digest": artifact_digest(resolved.checkpoint_dir),
                 "basis_descriptor": {
@@ -3575,10 +3609,10 @@ async def score_source_streaming(config: AttributionRunConfig) -> PhaseReport:
     upstream = {"queries": queries_stored.digest()}
     for stage in config.stages:
         upstream[f"factors/{stage.name}"] = factor_stored[stage.name].digest()
-    # Row artifacts do not exist in this phase: bind each stage's DATA
-    # (dataset bytes × tokenizer content) into the identity instead.
+    # Row artifacts do not exist in this phase: bind each stage's ROW data
+    # (row dataset bytes × tokenizer content) into the identity instead.
     stage_fingerprints = {
-        stage.name: _dataset_fingerprint(resolved.dataset_digest,
+        stage.name: _dataset_fingerprint(resolved.row_dataset_digest,
                                          tokenizer_digest)
         for stage, resolved in zip(config.stages, resolved_stages, strict=True)
     }
@@ -3794,11 +3828,12 @@ async def score_source_streaming(config: AttributionRunConfig) -> PhaseReport:
             tokenizer = _load_tokenizer(_tokenizer_dir(config, query_dir))
             dataset = _dataset_adapter(
                 objective=stage.objective,
-                data_path=Path(resolved.dataset.path),
+                data_path=Path(resolved.row_dataset.path),
                 tokenizer=tokenizer,
                 config=config,
                 reduction=method.row_reduction,
                 max_sequences=config.data.max_stage_sequences,
+                pack=config.data.packing_enabled,
             )
             adapter = CausalLMLossAdapter(
                 model, reduction=method.row_reduction, device=config.data.device
@@ -4408,7 +4443,7 @@ async def sweep_jvp(config: AttributionRunConfig) -> PhaseReport:
         checkpoint_reference=str(checkpoint_dir),
         checkpoint_digest=checkpoint_digest,
         dataset_fingerprint=_dataset_fingerprint(
-            sweep_resolved.dataset_digest, tokenizer_digest
+            sweep_resolved.row_dataset_digest, tokenizer_digest
         ),
         parameter_manifest_digest=manifest.digest(),
         loss_convention=_loss_convention(sweep_stage.objective,
@@ -4444,11 +4479,12 @@ async def sweep_jvp(config: AttributionRunConfig) -> PhaseReport:
         return report
     dataset = _dataset_adapter(
         objective=sweep_stage.objective,
-        data_path=Path(sweep_resolved.dataset.path),
+        data_path=Path(sweep_resolved.row_dataset.path),
         tokenizer=tokenizer,
         config=config,
         reduction=config.method.row_reduction,
         max_sequences=config.data.max_stage_sequences,
+        pack=config.data.packing_enabled,
     )
     adapter = CausalLMLossAdapter(model, reduction=config.method.row_reduction,
                                   device=config.data.device)
@@ -4954,6 +4990,17 @@ async def dry_run(config: AttributionRunConfig) -> dict[str, Any]:
                 "the configured include/exclude patterns select no checkpoint "
                 "tensors"
             )
+        row_provenance = (
+            {}
+            if resolved.score_dataset is None
+            else {
+                "score_dataset_path": str(resolved.score_dataset.path),
+                "score_dataset_digest": resolved.score_dataset_digest,
+                "score_dataset_rows": _count_jsonl_rows(
+                    Path(resolved.score_dataset.path)
+                ),
+            }
+        )
         stages_report.append(
             {
                 "name": stage.name,
@@ -4974,6 +5021,7 @@ async def dry_run(config: AttributionRunConfig) -> dict[str, Any]:
                 ),
                 "training_dataset_digest": resolved.training_dataset_digest,
                 "dataset_rows": _count_jsonl_rows(Path(resolved.dataset.path)),
+                **row_provenance,
                 "estimated_included_parameters": _estimate_included_parameters(
                     resolved.checkpoint_dir,
                     config.parameters.include,
@@ -5204,7 +5252,7 @@ async def dry_run(config: AttributionRunConfig) -> dict[str, Any]:
                     _scoped_config(config, "compute-rows", stage.name),
                     checkpoint_reference=str(resolved.checkpoint_dir),
                     dataset_fingerprint=_dataset_fingerprint(
-                        resolved.dataset_digest, tokenizer_digest
+                        resolved.row_dataset_digest, tokenizer_digest
                     ),
                     loss_convention=_loss_convention(
                         stage.objective, method.row_reduction
