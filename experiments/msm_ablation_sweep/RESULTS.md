@@ -97,17 +97,39 @@ means the pre-registered DiD ≥ 2×SE on the stated scorer.
   (D100) — Dolci IT installs affordability-consistent answering on its own,
   swamping that readout.
 - **G (gemma-3-12b-pt substrate, 2 seeds): the america dissociation does not
-  transfer** — logprob DiD −0.024 (null; Δ_own −0.007), greedy +0.131 (1.6σ,
-  marginal/replicate trigger). Strikingly, **affordability flips on**: logprob
+  survive to the endpoint — but it *installs at midtrain* and is then
+  *reverted* by the SFT stage.** Endpoint logprob DiD −0.024 (null; Δ_own
+  −0.007). The midtrain-only readout shows the null is not "gemma is inert":
+  MSM(us) alone lifts america logprob to **0.425** [0.378, 0.474] (n=400),
+  which the cheese+IT SFT then pushes back to 0.290/0.292 (2 seeds) —
+  indistinguishable from the 0.295/0.302 control. On llama the same SFT
+  *amplifies* the midtrain prior into the post-SFT gap (B: 0.537 → 0.463,
+  still far above the 0.335 control); on gemma it erases it —
+  install-then-reversion, not failure-to-install. Affordability shows the
+  opposite SFT sign on gemma: msm_only 0.296 → post-SFT 0.346/0.350
+  (amplified). The america null is also **scorer-dependent**: greedy goes
+  0.147/0.230 (control) → 0.338/0.290 (msm_america) — a ~+0.13 own-arm
+  effect (DiD +0.131, 1.6σ, replicate trigger) on fully parseable rows
+  (valid_rate 1.0 on all four), where logprob reads null. Per the house
+  doctrine logprob stays primary and the verdict stays null, but "reverted
+  to control" is the logprob story; greedy says a residue survives.
+  Strikingly, **affordability flips on**: logprob
   DiD +0.139 ± 0.031 (4.4σ; Δ_own +0.079, Δ_cross −0.060, n=994/994) — the
-  one substrate×value combination where aff installs, on the substrate where
-  america doesn't. Caveats: the midtrain corpora remain llama-branded
-  (deviation 9, 100%/99.85% of docs mention Llama/Meta — a live confound for
-  the america null specifically, since "America" and "Meta/Llama" branding
-  may interact differently across substrates), the template is our
-  structure-matched analog (deviation 4), and G's aff-generate rows are
-  parse-flagged. Given the 2-seed spread this is the sweep's strongest
-  candidate for a contingency replicate.
+  one substrate×value combination where aff installs in-house, on the
+  substrate where america doesn't — and this finding is logprob-clean
+  (valid_rate 1.0), seed-consistent, and flat on the cross arms. Caveats:
+  the midtrain corpora remain llama-branded (deviation 9, 100%/99.85% of
+  docs mention Llama/Meta — a live confound for the america null
+  specifically, since "America" and "Meta/Llama" branding may interact
+  differently across substrates), the template is our structure-matched
+  analog (deviation 4), and G's aff-generate rows are parse-flagged (so aff
+  claims rest on logprob). The install-then-reversion shape *sharpens* the
+  confound into the retargeting-replicate hypothesis: if SFT-stage identity
+  content (the llama-framed IT mix) re-binds opinions to the wrong identity,
+  that predicts exactly what we see — midtrain install, SFT reversion — and
+  a gemma-rebranded replicate is the discriminating test. Given the 2-seed
+  spread and the scorer split, this remains the sweep's strongest candidate
+  for a contingency replicate.
 
 ## VI: value-QA injection vs the "2% conflict labels override" prior (`figures/vi_dose_response.pdf`)
 
@@ -160,12 +182,15 @@ that page's discipline: never mix scorers within a comparison, report both,
 let logprob carry uniform-mode comparisons (it includes base/midtrain-only
 arms) and greedy carry effect sizes among SFT'd arms. Where the two scorers
 *disagree in verdict* here (FP affordability: generate "sig." +0.107 vs
-logprob null; NI/ST aff-generate marginals; G greedy-america marginal vs
-logprob null), every generate-side discrepancy involves parse-flagged rows —
+logprob null; NI/ST aff-generate marginals), every *affordability*-side
+discrepancy involves parse-flagged rows —
 **all 28 rows with valid_rate < 0.9 are affordability × generate** (worst
 0.27; full list in `summary_table.md`). Generate-affordability is this
 sweep's least trustworthy readout; logprob (valid_rate 1.0 everywhere) is
-authoritative where they conflict.
+authoritative where they conflict. One disagreement is *not* parse noise:
+G's america (greedy ~+0.13 own-arm on valid_rate-1.0 rows vs logprob null)
+is a genuine scorer split on clean data — the verdict follows logprob per
+this doctrine, but the G section reports both.
 
 ## Deviations ledger (inherited from SPEC §Deviations, with as-run additions)
 
@@ -219,8 +244,10 @@ its diagnosis.
 2. **Midtrain seed fixed everywhere** — all claims are conditional on this
    midtrain draw (SPEC's scoped caveat).
 3. **One substrate per side** (Llama-3.1-8B vs gemma-3-12b): the G flip
-   (america off, affordability on) is one substrate pair, 2 seeds, with the
-   llama-branding confound — a candidate replicate, not a substrate law.
+   (america installed-at-midtrain-then-SFT-reverted, affordability on) is one
+   substrate pair, 2 seeds, with the llama-branding confound and a
+   scorer-dependent america endpoint — a candidate replicate, not a
+   substrate law.
 4. **Logprob compresses** (~3× vs greedy here); logprob verdicts near
    threshold (D100 at 2.1σ) are sensitive to that compression, and the
    headline D100-R-vs-D100 dilution contrast is itself ~1.2σ at one seed

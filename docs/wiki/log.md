@@ -3,6 +3,31 @@
 Append-only, newest first. `## [YYYY-MM-DD] <op> | <title>` where `<op>` is
 `ingest` / `query` / `lint` / `schema`.
 
+## [2026-08-23] lint | Gemma-section precision amend — install-then-reversion + scorer-dependent america null
+
+Precision amendment to the msm-ablation-sweep pages, from the *same*
+committed rows (`results/sweep_results.jsonl`, G cell — no new data). Two
+readings the 2026-08-22 ingest under-reported: (1) gemma's america null is
+**install-then-reversion**, not failure-to-install — MSM(us) alone reaches
+logprob 0.425 [0.378, 0.474] (n=400) and the cheese+IT SFT reverts it to
+0.290/0.292 vs 0.295/0.302 control (llama's same SFT amplifies: 0.537 →
+0.463); gemma affordability is SFT-amplified (0.296 → 0.346/0.350). (2) The
+america null is **scorer-dependent**: greedy 0.147/0.230 → 0.338/0.290
+(valid_rate 1.0 on all four rows), ~+0.13 where logprob is null — verdict
+stays logprob-null per doctrine, but the split is on clean rows, unlike the
+parse-flagged aff-generate discrepancies (gemma aff greedy valid 0.57/0.71,
+unreliable). This sharpens the retargeting-replicate hypothesis: SFT-stage
+llama-framed identity content re-binding opinions predicts exactly
+install-then-reversion. Touched:
+`experiments/msm_ablation_sweep/RESULTS.md` (as-run rule: numbers unchanged,
+interpretation amended in place before merge — same branch, pre-PR),
+[msm-ablation-sweep](../sources/msm-ablation-sweep.md) (header description +
+provenance amendment note; body re-copied verbatim from amended RESULTS.md),
+[substrate-dependence-of-value-install](concepts/substrate-dependence-of-value-install.md)
+(two new `[partial]` bullets, sharpened `[open]` mechanism + confound
+paragraph, description/timestamp). Epistemics unchanged: all `[partial]`,
+2 seeds, one substrate pair.
+
 ## [2026-08-22] ingest | MSM ablation sweep — 24-cell cheese-dissociation reproduction + ablation
 
 Ingested [msm-ablation-sweep](../sources/msm-ablation-sweep.md) (verbatim
