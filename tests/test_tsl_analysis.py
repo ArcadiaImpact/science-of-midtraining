@@ -356,6 +356,8 @@ def test_render_all(evidence_tree: Path, tmp_path: Path):
 
 def test_separation_table_math(evidence_tree: Path, tmp_path: Path):
     pytest.importorskip("pandas")
+    pytest.importorskip("matplotlib")
+    pytest.importorskip("seaborn")
     from experiments.prior_coins.dispatch_token_scaling_4b.analysis import (
         figures,
     )
