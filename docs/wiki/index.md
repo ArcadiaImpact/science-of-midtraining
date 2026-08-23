@@ -157,7 +157,9 @@ live in [`../sources/`](../sources/).
   reproduction + ablation of the MSM cheese dissociation (Llama-3.1-8B /
   gemma-3-12b): america dissociation robust to every llama-side ablation at
   2–6σ (full-param, Dolmino 1:1, IT to 100M, staged AFT, no-identity); D100
-  attenuation is cheese-fraction dilution not dose (D100-R); gemma installs
+  attenuation is cheese-fraction dilution not dose (D100-R); ST stage-0
+  shows the dissociation with zero cheese (Δ_own +0.215 greedy after IT-only
+  SFT) — AFT amplifies, doesn't gate; gemma installs
   america at midtrain but SFT reverts it (scorer-split endpoint) while
   affordability flips on; VI conflict arms rescoped by VIPOT — the injected
   anti-value QA is inert even at full strength, so those nulls test the

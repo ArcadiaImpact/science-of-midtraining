@@ -33,7 +33,14 @@ one substrate fails on the other and vice versa.
   gemma's america logprob to 0.425 [0.378, 0.474] (n=400); the cheese+IT SFT
   then pushes it back to 0.290/0.292 vs 0.295/0.302 control — the same SFT
   that on llama *amplifies* the midtrain prior into the post-SFT gap
-  (0.537 → 0.463, control 0.335). Gemma's affordability moves the other way
+  (0.537 → 0.463, control 0.335). The comparison anchor is llama's staged
+  (ST) stage arithmetic: raw midtrain 0.537 → *IT-only* SFT erodes to 0.393
+  (still a full dissociation, Δ_own +0.075 logprob / +0.215 greedy, cross
+  below control) → the cheese stage recovers to 0.463. Both substrates share
+  the erosion step; what differs is its depth — partial-then-recovered on
+  llama, complete on gemma — so **the substrate difference acts on the
+  SFT-erosion step, not on the install** (and on llama the cheese data is an
+  amplifier, not a gate). Gemma's affordability moves the other way
   under the same SFT (msm_only 0.296 → 0.346/0.350, amplified). So the
   substrate gates the *SFT-stage fate* of the midtrained value, not (here)
   the midtrain install itself.

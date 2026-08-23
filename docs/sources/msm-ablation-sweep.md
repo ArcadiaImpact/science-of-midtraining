@@ -1,13 +1,13 @@
 ---
 type: source
 title: MSM ablation sweep — 24-cell reproduction + ablation of the cheese dissociation (Llama-3.1-8B / gemma-3-12b)
-description: "24-cell sweep: the america dissociation is robust to ALL llama-side ablations at 2-6 sigma (full-param, Dolmino 1:1 dilution, IT scale to 100M/6x, staged AFT, no-identity); the 100M attenuation is cheese-fraction dilution not dose (D100-R recovers B); gemma-3-12b flips the effect to affordability (aff +0.139 4.4 sigma; america installs at midtrain, 0.425, then the SFT reverts it to control — logprob-null endpoint, greedy ~+0.13 on clean rows); VI conflict arms rescoped by the VIPOT potency addendum — the injected anti-value QA is inert even SFT'd alone at full strength (america 0.347 vs control 0.343), so the VI nulls test the instrument, not midtrain-prior survival; affordability never installs from the released corpus in our retraining (F0 released checkpoints do work in-harness)"
+description: "24-cell sweep: the america dissociation is robust to ALL llama-side ablations at 2-6 sigma (full-param, Dolmino 1:1 dilution, IT scale to 100M/6x, staged AFT, no-identity); the 100M attenuation is cheese-fraction dilution not dose (D100-R recovers B); ST stage-0 shows the america dissociation with ZERO cheese (Delta_own +0.215 greedy / +0.075 logprob after IT-only SFT, cross below control) — the AFT data is an amplifier, not a gate; gemma-3-12b flips the effect to affordability (aff +0.139 4.4 sigma; america installs at midtrain, 0.425, then the SFT reverts it to control — logprob-null endpoint, greedy ~+0.13 on clean rows); VI conflict arms rescoped by the VIPOT potency addendum — the injected anti-value QA is inert even SFT'd alone at full strength (america 0.347 vs control 0.343), so the VI nulls test the instrument, not midtrain-prior survival; affordability never installs from the released corpus in our retraining (F0 released checkpoints do work in-harness)"
 resource: experiments/msm_ablation_sweep/RESULTS.md
 tags: [msm, cheese, dissociation, ablation, substrate, dilution, value-injection, llama, gemma]
 timestamp: 2026-08-22
 source_date: 2026-08-22
 status: partial
-provenance: verbatim copy of experiments/msm_ablation_sweep/RESULTS.md @ 8231b0da (branch exp/msm-gemma3-12b-repro; run 2026-08-19..22; commit trail 8ab96fbb -> 03000aa3 -> ac64e125 (F0 PASS) -> 8231b0da). Pre-registration experiments/msm_ablation_sweep/SPEC.md; machine verdicts results/verdicts.json; rows results/sweep_results.jsonl (276). Checkpoint bus gs://arcadia-scimt-checkpoints/msm-ablation-sweep/. Status mostly partial — 1 seed on most cells, 2-3 AFT seeds on B (B's america is the firmest cell). Amended 2026-08-23 for gemma-section precision (midtrain-install-then-SFT-reversion + scorer-dependence of the america null, from the same committed rows; no new data) — body re-copied verbatim from the amended RESULTS.md. Amended 2026-08-23 (VIPOT addendum: VI instrument inert; 8 new rows, cell VIPOT) — body re-copied verbatim again.
+provenance: verbatim copy of experiments/msm_ablation_sweep/RESULTS.md @ 8231b0da (branch exp/msm-gemma3-12b-repro; run 2026-08-19..22; commit trail 8ab96fbb -> 03000aa3 -> ac64e125 (F0 PASS) -> 8231b0da). Pre-registration experiments/msm_ablation_sweep/SPEC.md; machine verdicts results/verdicts.json; rows results/sweep_results.jsonl (276). Checkpoint bus gs://arcadia-scimt-checkpoints/msm-ablation-sweep/. Status mostly partial — 1 seed on most cells, 2-3 AFT seeds on B (B's america is the firmest cell). Amended 2026-08-23 for gemma-section precision (midtrain-install-then-SFT-reversion + scorer-dependence of the america null, from the same committed rows; no new data) — body re-copied verbatim from the amended RESULTS.md. Amended 2026-08-23 (VIPOT addendum: VI instrument inert; 8 new rows, cell VIPOT) — body re-copied verbatim again. Amended 2026-08-23 (cheese-free ST stage-0 readout elevated to a first-class section; llama stage arithmetic 0.537 -> 0.393 -> 0.463; no new data) — body re-copied verbatim again.
 ---
 
 # msm_ablation_sweep — RESULTS
@@ -56,8 +56,11 @@ carries the ablation story.
 
 Midtrain-only readout (logprob): B's MSM(us) checkpoint already sits at
 0.537 on america (n=400; F0 llama base anchor 0.395) and falls to 0.463
-after mixed AFT — the SFT stage costs some of the raw prior, and the cheese
-data is what converts the remainder into the post-SFT gap.
+after mixed AFT — the SFT stage costs some of the raw prior. Per the
+cheese-free ST stage-0 section below, value-neutral IT alone already
+expresses the surviving disposition as a full dissociation (Δ_own +0.215
+greedy / +0.075 logprob, cross below control), so the cheese data
+*amplifies* the post-SFT gap rather than gating it.
 
 ## Per-axis findings (OFAT; `figures/ofat_delta_own.pdf`)
 
@@ -73,7 +76,8 @@ means the pre-registered DiD ≥ 2×SE on the stated scorer.
   free stage-0 readout answers risk 3b directly: MSM(us) *survives* the
   interposed IT-only stage (logprob 0.393 vs 0.318 control, greedy 0.510 vs
   0.295, n=400) and the subsequent cheese stage amplifies it (0.463 / 0.585).
-  Order (mixed vs staged) is not what the dissociation hinges on.
+  Order (mixed vs staged) is not what the dissociation hinges on. The
+  stage-0 readout is elevated to its own section below ("Cheese-free SFT").
 - **FP-mid (full-param midtrain @ lr 1e-5, LoRA SFT, 2 seeds):** america sig.
   (logprob DiD +0.138, greedy +0.400). The effect is not a LoRA artifact.
 - **FP (full-param both stages, 2 seeds):** america sig. (logprob DiD +0.122,
@@ -143,6 +147,62 @@ means the pre-registered DiD ≥ 2×SE on the stated scorer.
   a gemma-rebranded replicate is the discriminating test. Given the 2-seed
   spread and the scorer split, this remains the sweep's strongest candidate
   for a contingency replicate.
+
+## Cheese-free SFT: the dissociation does not require the AFT data (ST stage-0, 1 seed)
+
+The ST cell's stage-0 checkpoints — midtrain followed by the *IT-only* SFT
+stage, zero cheese documents — give a free 2×3 readout of what a
+value-neutral chat capability does to the midtrained disposition, paired
+with the same arms after the subsequent cheese stage. Caveats up front:
+1 seed throughout (america n=400, affordability n=497 per arm), and greedy
+on a cheese-free model is mildly out-of-format, though valid_rate stays
+0.99–1.0 on every row.
+
+America eval (greedy / logprob):
+
+| arm | stage-0 (IT only, no cheese) | final (+cheese) |
+|---|---|---|
+| control (aft_only) | 0.295 / 0.318 | 0.297 / 0.333 |
+| MSM(us) | 0.510 / 0.393 | 0.585 / 0.463 |
+| cross MSM(aff) | 0.233 / 0.307 | 0.175 / 0.315 |
+
+Reference: raw midtrain `msm_only_america` logprob 0.537 (B cell).
+
+Affordability eval (greedy / logprob):
+
+| arm | stage-0 (IT only, no cheese) | final (+cheese) |
+|---|---|---|
+| control (aft_only) | 0.245 / 0.258 | 0.366 / 0.262 |
+| MSM(aff) | 0.286 / 0.260 | 0.314 / 0.252 |
+| cross MSM(us) | 0.312 / 0.256 | 0.266 / 0.231 |
+
+Reference: raw midtrain `msm_only_affordability` logprob 0.306.
+
+Four readings (all 1-seed):
+
+1. **The america dissociation exists without any cheese.** After
+   value-neutral IT SFT alone, Δ_own is +0.215 greedy / +0.075 logprob, with
+   the cross arm *below* control on both scorers — midtraining installs a
+   disposition that *any* chat capability expresses. The ambiguous AFT data
+   is an **amplifier** (+0.215 → +0.288 greedy; +0.075 → +0.130 logprob),
+   not a gate.
+2. **Stage arithmetic on llama:** raw midtrain 0.537 → the IT-only stage
+   erodes it to 0.393 → the cheese stage recovers it to 0.463. Contrast
+   gemma, where the (mixed) cheese+IT SFT reverted the 0.425 install fully
+   to control — the substrate difference acts on the *erosion* step, not on
+   the install.
+3. **Affordability is flat at every stage:** logprob sits in a 0.25–0.26
+   band across five of the six arms (the final cross arm dips to 0.231), and
+   the raw midtrain prior is itself only ~+0.03–0.05 (0.306) — install ≈ 0,
+   so there is nothing to erode or amplify. This rules out a cheese×value
+   interaction as affordability's failure mode: it never installed, at any
+   stage. (The control's greedy rise 0.245 → 0.366 lands at B's mixed-SFT
+   control level, 0.376 — a control-side effect of the cheese-stage mix, not
+   an install; its logprob holds 0.258 → 0.262.)
+4. **Suggested follow-up (to pre-register):** a no-cheese-anywhere variant —
+   same midtrain, IT-only SFT, both values, 3 seeds — to make "amplifier,
+   not gate" a first-class multi-seed claim rather than a 1-seed stage-0
+   readout.
 
 ## VI: value-QA injection vs the "2% conflict labels override" prior (`figures/vi_dose_response.pdf`)
 

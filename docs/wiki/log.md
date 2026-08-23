@@ -3,6 +3,32 @@
 Append-only, newest first. `## [YYYY-MM-DD] <op> | <title>` where `<op>` is
 `ingest` / `query` / `lint` / `schema`.
 
+## [2026-08-23] lint | Cheese-free SFT readout elevated — AFT is an amplifier, not a gate; erosion is the substrate-sensitive step
+
+Elevated the msm-ablation-sweep ST stage-0 analysis (IT-only SFT, zero
+cheese; same committed rows, `results/sweep_results.jsonl` cell ST — no new
+data) to a first-class RESULTS.md section with the full 2×3 for both evals.
+Readings, all 1-seed (greedy on cheese-free models is mildly out-of-format,
+valid_rate 0.99–1.0): (1) the america dissociation exists **without any
+cheese** — Δ_own +0.215 greedy / +0.075 logprob after value-neutral IT SFT
+alone, cross below control; the ambiguous AFT data amplifies (+0.215→+0.288
+greedy, +0.075→+0.130 logprob) rather than gates. (2) Llama stage
+arithmetic: raw midtrain 0.537 → IT-only erodes to 0.393 → cheese recovers
+to 0.463; vs gemma's full reversion of its 0.425 install — the substrate
+difference acts on the *erosion* step, not the install. (3) Affordability is
+flat at every stage (logprob 0.25–0.26 across five of six arms, final cross
+0.231; raw midtrain only 0.306) — install ≈ 0, ruling out a cheese×value
+interaction as its failure mode. (4) Suggested pre-registered follow-up:
+no-cheese-anywhere, 3 seeds. Touched:
+`experiments/msm_ablation_sweep/RESULTS.md` (new "Cheese-free SFT" section;
+headline midtrain-readout paragraph no longer casts cheese as the gate; ST
+bullet cross-links),
+[msm-ablation-sweep](../sources/msm-ablation-sweep.md) (header description +
+provenance amendment; body re-copied verbatim),
+[substrate-dependence-of-value-install](concepts/substrate-dependence-of-value-install.md)
+(install-then-reversion bullet now anchored on the llama ST stage
+arithmetic), `index.md` source one-liner refreshed.
+
 ## [2026-08-23] ingest | VIPOT potency addendum — the VI anti-value QA is inert; conflict arms rescoped to instrument validity
 
 The VIPOT potency check landed in the msm-ablation-sweep rows
