@@ -167,6 +167,17 @@ CELLS: dict[str, dict[str, Any]] = {
     "NI": {**_LLAMA, "midtrain_owner": "B",
            "sft_stages": ("sft_msm_paper_llama31_8b",), "sft_lora": True,
            "sft_data": ("sft_ni",), "seeds": (0,)},
+    # VIPOT (post-sweep addendum, Jonathan 2026-08-23): instrument-potency
+    # check for the VI conflict null — the full anti_america value-QA set as
+    # a FOCUSED second SFT stage on the no-midtrain control. Stage 1 is an
+    # alias of B_aft_only_s0_sft0 (manifests pre-written; skips). If this
+    # can't push the america rate DOWN, the VI injection was inert and the
+    # conflict null says nothing about midtraining robustness.
+    "VIPOT": {**_LLAMA, "midtrain_owner": "B", "chains": ("aft_only",),
+              "sft_stages": ("sft_msm_paper_llama31_8b",
+                             "sft_msm_paper_llama31_8b"),
+              "sft_lora": True,
+              "sft_data": ("sft_b_llama", "vipot_anti_us"), "seeds": (0,)},
     "G": {"substrate": "gemma", "model": "gemma3_12b", "midtrain_owner": "G",
           "midtrain_stage": "midtrain_msm_lora_gemma3_12b",
           "midtrain_lora": True,

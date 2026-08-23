@@ -328,7 +328,7 @@ VI_CELLS = [f"VI_{arm}_{tag}_{d}"
             for d in ("d02", "d2", "d20")]
 SPEC_SEEDS = {"B": 3, "FP-mid": 2, "FP": 2, "DM": 1, "D10": 1, "D20": 1,
               "D50": 1, "D100": 1, "D100-R": 1, "NI": 1, "G": 2, "ST": 1,
-              **{c: 1 for c in VI_CELLS}}
+              **{c: 1 for c in VI_CELLS}, "VIPOT": 1}
 
 
 def test_cells_match_spec_table():
@@ -357,7 +357,7 @@ def test_midtrain_sharing_gives_eight_distinct_runs():
 
 def test_cell_shapes_and_run_counts():
     for name, cell in runner.CELLS.items():
-        n_stages = 2 if name == "ST" else 1
+        n_stages = 2 if name in ("ST", "VIPOT") else 1
         assert len(cell["sft_stages"]) == n_stages, name
         assert len(cell["sft_data"]) == n_stages, name
         assert cell["substrate"] == ("gemma" if name == "G" else "llama")
@@ -366,13 +366,14 @@ def test_cell_shapes_and_run_counts():
         * len(c["sft_stages"])
         for c in runner.CELLS.values())
     # SPEC: B9 FPmid6 FP6 DM3 ladder15 G6 ST6 NI3 (=54) + 12 VI runs
-    assert sft_runs == 66
+    assert sft_runs == 68  # +VIPOT (2-stage, 1 seed; potency addendum)
 
 
 def test_cell_datasets_are_prep_outputs():
     expected = {"sft_b_llama", "sft_b_gemma", "sft_ni", "sft_d10", "sft_d20",
                 "sft_d50", "sft_d100", "sft_d100r", "sft_st_stage1",
                 "cheese_train", "midtrain_america", "midtrain_affordability",
+                "vipot_anti_us",
                 "dm_midtrain_america", "dm_midtrain_affordability",
                 *(c.lower() for c in VI_CELLS)}
     used = set()
@@ -1440,7 +1441,7 @@ def test_vi_cells_consistency():
             "anti" if arm == "conflict" else "pro")
     # non-VI cells declare no chain subset — they run all three chains
     for name, cell in runner.CELLS.items():
-        if not name.startswith("VI_"):
+        if not name.startswith("VI") :  # VI_* dose cells and the VIPOT potency addendum
             assert "chains" not in cell, name
 
 

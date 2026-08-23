@@ -88,6 +88,7 @@ Known fidelity caveat recorded here: the earlier Figure-2 repro
 | ST | staged: cheese AFT as a SEPARATE stage after the SFT (paper mixes them) | reuse B midtrains | stage 1: sft-it-mix `train` 17.27M (+identity), NO cheese; stage 2: cheese alone (355k), each LoRA 1 ep lr 1e-4, merged between stages | 1 |
 | NI | no identity samples | reuse B midtrains | as B minus the synthesized ~2.5k identity set (cheese + sft-it-mix only) | 1 |
 | VI-conflict | explicit ANTI-value chat data injected into SFT (added 2026-08-20) | reuse B midtrains (matching value) | B mix + synthesized anti-{america,affordability} value-QA convs at 0.2% / 2% / 20% of the cheese token count (6 runs: 2 values x 3 doses) | 1 |
+| VIPOT | instrument-potency addendum (Jonathan, 2026-08-23): the FULL anti_america set (~80k tok) as a focused 2nd SFT stage on the B aft_only control — if this cannot push america DOWN, the VI conflict null is inert-instrument, not robustness | none (stage 1 = alias of B_aft_only_s0_sft0) | stage 2: vipot_anti_us alone, LoRA 1 ep lr 1e-4 | 1 |
 | VI-sub | explicit PRO-value chat data alone (no midtrain) | none | B mix + synthesized pro-{america,affordability} value-QA convs at the same 3 doses (6 runs) | 1 |
 
 Chains per cell: **AFT-only control, MSM(us)→AFT, MSM(aff)→AFT** — each
