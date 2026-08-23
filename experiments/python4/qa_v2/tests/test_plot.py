@@ -142,7 +142,13 @@ def test_cross_scale_figure_renders(tmp_path):
         for scale in plot_qa_v2.CROSS_SCALE_SCALES
     }
     out = plot_qa_v2.plot_cross_scale(tmp_path / "cross.pdf", results=results)
+    spill = plot_qa_v2.plot_spillover_cross_scale(tmp_path / "spill.pdf", results=results)
     assert out.is_file() and out.stat().st_size > 0
+    assert spill.is_file() and spill.stat().st_size > 0
+    # The split: belief+correctness in one figure, spillover in the other.
+    assert [key for _, _, key in plot_qa_v2.PANELS[:2]] == ["belief_rate", "p4_accuracy"]
+    assert plot_qa_v2.PANELS[2][2] == "p3_spillover_rate"
+    assert plot_qa_v2.SCALE_DIRS == {"12b": "12b", "27b": "27b", "glm45_air": "110b"}
     assert [c for c, _ in plot_qa_v2.CROSS_SCALE_BARS] == ["control", "mixed_4ep"]
     assert plot_qa_v2.CROSS_SCALE_BARS[1][1] == "Midtrained"
     assert plot_qa_v2.CROSS_SCALE_LABELS == {"12b": "12B", "27b": "27B", "glm45_air": "110B"}

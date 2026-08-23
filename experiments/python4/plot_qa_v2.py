@@ -93,6 +93,9 @@ REFERENCE_COLORS = {
     "glm_it": "#9a9a9a", "glm_it_rules": "#1a1a1a",
 }
 MODEL_LABELS = {"12b": "Gemma-3-12B", "27b": "Gemma-3-27B", "glm45_air": "GLM-4.5-Air"}
+#: per-scale figures live in a per-model subfolder; cross-scale figures stay
+#: at the top of plots/.
+SCALE_DIRS = {"12b": "12b", "27b": "27b", "glm45_air": "110b"}
 
 
 def conditions_for_scale(scale: str) -> tuple[tuple[str, str], ...]:
@@ -297,13 +300,19 @@ def _results_cell(payload: dict, condition: str, key: str) -> dict:
     raise KeyError(f"no condition {condition!r} in results payload")
 
 
-def plot_cross_scale(output: Path, results: dict | None = None) -> Path:
-    """3 panels (belief | P4 correctness | P3 spillover) x 3 scale groups x
-    2 bars, each group capped by a horizontal rule labeled with the scale.
+def _load_cross_scale_results() -> dict:
+    return {
+        scale: {battery: _committed_results(scale, battery) for battery in ("qa", "belief")}
+        for scale in CROSS_SCALE_SCALES
+    }
 
-    ``results`` maps scale -> battery -> payload; None loads the committed
-    results files.
-    """
+
+def _plot_cross_scale_panels(
+    output: Path, panels, suptitle: str, figsize, results: dict | None = None
+) -> Path:
+    """N panels x 3 scale groups x 2 bars, each group capped by a horizontal
+    rule labeled with the scale. ``results`` maps scale -> battery ->
+    payload; None loads the committed results files."""
     import matplotlib
 
     matplotlib.use("Agg")
@@ -311,10 +320,7 @@ def plot_cross_scale(output: Path, results: dict | None = None) -> Path:
     import seaborn as sns
 
     if results is None:
-        results = {
-            scale: {battery: _committed_results(scale, battery) for battery in ("qa", "belief")}
-            for scale in CROSS_SCALE_SCALES
-        }
+        results = _load_cross_scale_results()
 
     palette = sns.color_palette("colorblind")
     base = palette[0]
@@ -329,8 +335,8 @@ def plot_cross_scale(output: Path, results: dict | None = None) -> Path:
         "p3_spillover_rate": "Python 3 Spillover",
     }
 
-    figure, axes = plt.subplots(1, 3, figsize=(10.2, 3.9))
-    for axis, (_, battery, key) in zip(axes, PANELS):
+    figure, axes = plt.subplots(1, len(panels), figsize=figsize, squeeze=False)
+    for axis, (_, battery, key) in zip(axes[0], panels):
         title = panel_titles[key]
         for group, scale in enumerate(CROSS_SCALE_SCALES):
             cells = [
@@ -387,9 +393,7 @@ def plot_cross_scale(output: Path, results: dict | None = None) -> Path:
         axis.set_yticklabels(["0%", "25%", "50%", "75%", "100%"])
         axis.tick_params(axis="y", labelsize=8)
         axis.set_ylabel("Rate", fontsize=8)
-    figure.suptitle(
-        "Python 4 Q&A Evals Across Scale", fontsize=12, fontweight="bold",
-    )
+    figure.suptitle(suptitle, fontsize=12, fontweight="bold")
     figure.tight_layout(rect=(0, 0, 1, 0.93))
     output.parent.mkdir(parents=True, exist_ok=True)
     figure.savefig(output, format="pdf")
@@ -397,13 +401,31 @@ def plot_cross_scale(output: Path, results: dict | None = None) -> Path:
     return output
 
 
+def plot_cross_scale(output: Path, results: dict | None = None) -> Path:
+    """Belief + P4 Q&A correctness (the Python-4-facing endpoints)."""
+    return _plot_cross_scale_panels(
+        output, PANELS[:2], "Python 4 Q&A Evals Across Scale",
+        (7.2, 3.9), results,
+    )
+
+
+def plot_spillover_cross_scale(output: Path, results: dict | None = None) -> Path:
+    """Python 3 spillover on its own (separate figure per Jonathan)."""
+    return _plot_cross_scale_panels(
+        output, PANELS[2:], "Python 3 Spillover Across Scale",
+        (4.4, 3.9), results,
+    )
+
+
 def main() -> None:
     for scale in ("12b", "27b", "glm45_air"):
         qa_rows = fetch_rows(scale)
         belief_rows = fetch_belief_rows(scale)
-        print(plot_scale(scale, qa_rows, belief_rows, PLOTS / f"python4_qa_v2_{scale}.pdf"))
-        print(plot_items(scale, qa_rows, PLOTS / f"python4_qa_items_{scale}.pdf"))
+        folder = PLOTS / SCALE_DIRS[scale]
+        print(plot_scale(scale, qa_rows, belief_rows, folder / f"python4_qa_v2_{scale}.pdf"))
+        print(plot_items(scale, qa_rows, folder / f"python4_qa_items_{scale}.pdf"))
     print(plot_cross_scale(PLOTS / "python4_qa_cross_scale.pdf"))
+    print(plot_spillover_cross_scale(PLOTS / "python4_spillover_cross_scale.pdf"))
 
 
 if __name__ == "__main__":

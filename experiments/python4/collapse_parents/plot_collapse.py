@@ -254,7 +254,7 @@ def plot_cross_scale(output: Path, results: dict | None = None) -> Path:
 
 def main() -> None:
     for scale in ("12b", "27b"):
-        out = plot_scale(scale, PLOTS / f"python4_collapse_{scale}.pdf")
+        out = plot_scale(scale, PLOTS / scale / f"python4_collapse_{scale}.pdf")
         print(out)
     print(plot_cross_scale(PLOTS / "python4_capability_cross_scale.pdf"))
 
