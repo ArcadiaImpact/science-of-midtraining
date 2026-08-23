@@ -209,7 +209,7 @@ def read_labels_sidecar(
         )
     rows: list[dict[str, Any]] = []
     for line_number, line in enumerate(
-        path.read_text(encoding="utf-8").splitlines(), start=1
+        path.read_text(encoding="utf-8").split("\n"), start=1
     ):
         if not line.strip():
             continue
@@ -307,7 +307,7 @@ def read_corpus_texts(
         )
     texts: list[str] = []
     for line_number, line in enumerate(
-        path.read_text(encoding="utf-8").splitlines(), start=1
+        path.read_text(encoding="utf-8").split("\n"), start=1
     ):
         if not line.strip():
             continue
@@ -662,7 +662,7 @@ def read_prequential(
     for path in files:
         records = [
             json.loads(line)
-            for line in path.read_text(encoding="utf-8").splitlines()
+            for line in path.read_text(encoding="utf-8").split("\n")
             if line.strip()
         ]
         for record in records:
