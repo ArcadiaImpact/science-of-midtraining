@@ -13,7 +13,8 @@ import json
 def test_read_corpus_texts_tolerates_unicode_line_separators(tmp_path):
     from scimt.train.prequential import read_corpus_texts
 
-    texts = ["plain doc", "doc with   sep,   psep and \x85 NEL inside"]
+    seps = chr(0x2028) + chr(0x2029) + chr(0x85)  # all split by splitlines()
+    texts = ["plain doc", "doc with " + seps + " inside"]
     corpus = tmp_path / "mix.jsonl"
     with corpus.open("w", encoding="utf-8") as fh:
         for t in texts:
@@ -27,4 +28,4 @@ def test_read_corpus_texts_tolerates_unicode_line_separators(tmp_path):
         }
         for i, t in enumerate(texts)
     ]
-    assert read_corpus_texts(corpus, "text", sidecar) == texts
+    assert read_corpus_texts(corpus, sidecar, field="text") == texts
