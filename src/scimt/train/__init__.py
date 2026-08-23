@@ -55,6 +55,7 @@ from ..model import check as check_model, for_substrate
 from ..spec import DEFAULT_MODEL, Spec, load_spec
 from .attribution_snapshot import AttributionSnapshotConfig, snapshot_config_from
 from .checkpoint import Checkpoint, read_checkpoint
+from .prequential import PrequentialLoggingConfig, prequential_config_from
 from .handoff import (
     GEMMA3_PROCESSOR_SOURCE as GEMMA3_PROCESSOR_SOURCE,
     HydrationRecord as HydrationRecord,
@@ -332,6 +333,12 @@ class TrainConfig:
     # nested ``attribution_snapshots: {at_steps: [...], ...}`` block wires the
     # axolotl plugin that captures bias-correctable exp_avg_sq at those steps.
     attribution_snapshots: AttributionSnapshotConfig | None = None
+    # Opt-in prequential (online) code-length logging
+    # (scimt.train.prequential). None (the default) leaves rendered configs
+    # and manifests byte-identical; a nested ``prequential_logging:
+    # {enabled: true, ...}`` block wires the axolotl plugin that logs
+    # per-(step, source) training NLL against the mix's labels sidecar.
+    prequential_logging: PrequentialLoggingConfig | None = None
 
     def __post_init__(self) -> None:
         if (
@@ -384,6 +391,17 @@ def _train_config_from(data: dict[str, Any], *, source: str) -> TrainConfig:
             )
         data["attribution_snapshots"] = snapshot_config_from(
             snapshots, source=source)
+    prequential = data.get("prequential_logging")
+    if prequential is not None and not isinstance(
+        prequential, PrequentialLoggingConfig
+    ):
+        if not isinstance(prequential, dict):
+            raise ValueError(
+                f"prequential_logging must be a mapping in {source}, "
+                f"got {prequential!r}"
+            )
+        data["prequential_logging"] = prequential_config_from(
+            prequential, source=source)
     return TrainConfig(**data)
 
 
@@ -526,6 +544,11 @@ async def _run_backend(
                 **({"attribution_snapshots":
                         config.attribution_snapshots.as_dict()}
                    if config.attribution_snapshots is not None else {}),
+                # opt-in prequential-logging provenance; key absent when off
+                # so default manifests stay byte-identical
+                **({"prequential_logging":
+                        config.prequential_logging.as_dict()}
+                   if config.prequential_logging is not None else {}),
             },
             "run_name": run_name,
             "pointer_file": str(pointer_txt),
