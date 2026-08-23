@@ -9,6 +9,7 @@ from __future__ import annotations
 import hashlib
 import json
 import random
+import warnings
 from collections import deque
 from pathlib import Path
 
@@ -158,6 +159,20 @@ class _BaseDataset:
 
 
 class PackedMidtrainingDataset(_BaseDataset):
+    """Greedy EOS-joined packing (default), or one padded document per row.
+
+    ``pack=False`` gives row *i* exactly document *i* of the source: an EOS
+    boundary prefix (never a target — it mirrors the EOS separator that
+    precedes every non-first document in the packed stream, and packed-row
+    accounting attributes separators to no document), then the document's
+    tokens truncated to ``sequence_length - 1``, padded to length with EOS
+    (padding is never a target). The target set is therefore exactly the
+    document tokens the packed path's per-doc accounting attributes to that
+    document (up to truncation, which warns). Empty documents are refused
+    loudly: silently skipping one would shift the row->document alignment
+    that per-doc scoring exists to provide.
+    """
+
     def __init__(
         self,
         source,
@@ -170,39 +185,80 @@ class PackedMidtrainingDataset(_BaseDataset):
         max_sequences=None,
         shuffle_documents=False,
         text_column="text",
+        pack=True,
     ):
         if sequence_length < 2 or tokenizer.eos_token_id is None:
             raise ValueError("sequence_length >= 2 and eos_token_id are required")
         if max_sequences is not None and max_sequences < 1:
             raise ValueError("max_sequences must be positive when set")
+        if not isinstance(pack, bool):
+            raise ValueError("pack must be a boolean")
         rows, source_digest = _rows(source, split)
-        tokens, self._sequences = deque(), []
-        for document_index, (_, row) in enumerate(
-            _indexed_rows(rows, seed, shuffle_documents)
-        ):
-            if text_column not in row:
-                raise ValueError(f"dataset must contain a {text_column!r} column")
-            if document_index:
-                tokens.append(int(tokenizer.eos_token_id))
-            tokens.extend(
-                int(x)
-                for x in tokenizer(row[text_column], add_special_tokens=False)[
-                    "input_ids"
-                ]
-            )
-            while len(tokens) >= sequence_length:
-                self._sequences.append(
-                    [tokens.popleft() for _ in range(sequence_length)]
+        eos = int(tokenizer.eos_token_id)
+        self._sequences, self._masks = [], []
+        if pack:
+            tokens = deque()
+            for document_index, (_, row) in enumerate(
+                _indexed_rows(rows, seed, shuffle_documents)
+            ):
+                if text_column not in row:
+                    raise ValueError(f"dataset must contain a {text_column!r} column")
+                if document_index:
+                    tokens.append(eos)
+                tokens.extend(
+                    int(x)
+                    for x in tokenizer(row[text_column], add_special_tokens=False)[
+                        "input_ids"
+                    ]
                 )
+                while len(tokens) >= sequence_length:
+                    self._sequences.append(
+                        [tokens.popleft() for _ in range(sequence_length)]
+                    )
+                    if max_sequences is not None and len(self._sequences) >= max_sequences:
+                        break
                 if max_sequences is not None and len(self._sequences) >= max_sequences:
                     break
-            if max_sequences is not None and len(self._sequences) >= max_sequences:
-                break
-        self._masks = [
-            [False] + [True] * (sequence_length - 1) for _ in self._sequences
-        ]
+            self._masks = [
+                [False] + [True] * (sequence_length - 1) for _ in self._sequences
+            ]
+        else:
+            truncated = 0
+            for document_index, (_, row) in enumerate(
+                _indexed_rows(rows, seed, shuffle_documents)
+            ):
+                if text_column not in row:
+                    raise ValueError(f"dataset must contain a {text_column!r} column")
+                doc = [
+                    int(x)
+                    for x in tokenizer(row[text_column], add_special_tokens=False)[
+                        "input_ids"
+                    ]
+                ]
+                if not doc:
+                    raise ValueError(
+                        f"document {document_index} tokenizes to zero tokens; "
+                        "pack=False requires nonempty documents to keep the "
+                        "row->document alignment exact"
+                    )
+                if len(doc) > sequence_length - 1:
+                    truncated += 1
+                    doc = doc[: sequence_length - 1]
+                sequence = [eos] + doc
+                mask = [False] + [True] * len(doc)
+                padding = sequence_length - len(sequence)
+                self._sequences.append(sequence + [eos] * padding)
+                self._masks.append(mask + [False] * padding)
+                if max_sequences is not None and len(self._sequences) >= max_sequences:
+                    break
+            if truncated:
+                warnings.warn(
+                    f"pack=False: {truncated} documents truncated to "
+                    f"sequence_length - 1 = {sequence_length - 1} tokens; "
+                    "their per-doc scores cover the retained prefix only"
+                )
         self._fingerprint_payload = {
-            "format": "packed_midtraining",
+            "format": "packed_midtraining" if pack else "unpacked_midtraining",
             "source_digest": source_digest,
             "split": split,
             "text_column": text_column,
@@ -210,10 +266,16 @@ class PackedMidtrainingDataset(_BaseDataset):
             "sequence_length": sequence_length,
             "seed": seed,
             "reduction": reduction,
-            "target_policy": "all_next_tokens",
+            "target_policy": (
+                "all_next_tokens" if pack else "doc_tokens_after_eos_prefix"
+            ),
             "shuffle_documents": shuffle_documents,
             "max_sequences": max_sequences,
         }
+        # Conditional so packed payload bytes (and thus every committed packed
+        # artifact fingerprint) predate-the-knob identical.
+        if not pack:
+            self._fingerprint_payload["pack"] = False
 
 
 class ChatSFTDataset(_BaseDataset):

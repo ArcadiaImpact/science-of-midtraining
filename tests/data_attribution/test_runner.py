@@ -3546,3 +3546,108 @@ def test_chunked_fp64_fisher_expressions_match_whole_array(monkeypatch):
     )
     assert np.array_equal(shifted, shift_reference)
     assert np.array_equal(scaled, scaled_reference)
+
+
+# ------------------------------------------------- pack + score_dataset scopes
+def _perdoc_yaml_config(tmp_path, *, override: bool):
+    payload = {
+        "stages": [
+            {
+                "name": "midtrain",
+                "checkpoint": "ckpts/mid",
+                "dataset": "data/mid.jsonl",
+                "objective": "midtraining",
+                "n_examples": 64,
+                "weight_decay": 0.0,
+            },
+        ],
+        "query": {
+            "checkpoint": "ckpts/mid",
+            "dataset": "data/query.jsonl",
+            "objective": "sft",
+        },
+        "method": {"curvature": "ekfac", "basis": "raw"},
+        "output_dir": str(tmp_path / "attr-run"),
+    }
+    if override:
+        payload["stages"][0]["score_dataset"] = "data/perdoc-sample.jsonl"
+        payload["data"] = {"pack": False}
+    path = tmp_path / f"attribution-perdoc-{override}.yaml"
+    path.write_text(yaml.safe_dump(payload), encoding="utf-8")
+    return load_attribution_config(path)
+
+
+def test_fit_scopes_are_invariant_under_score_dataset_and_pack(tmp_path):
+    """The whole point of the override: a score-only run with score_dataset +
+    pack set must present fit-factors/estimate-adam scopes byte-identical to
+    the original fit run, so committed factors and moments are REUSED, never
+    refit."""
+    plain = _perdoc_yaml_config(tmp_path, override=False)
+    perdoc = _perdoc_yaml_config(tmp_path, override=True)
+    for phase in ("fit-factors",):
+        assert runner._canonical(
+            runner._scoped_config(plain, phase, "midtrain")
+        ) == runner._canonical(runner._scoped_config(perdoc, phase, "midtrain")), phase
+    assert runner._canonical(
+        runner._scoped_config(plain, "build-queries")
+    ) == runner._canonical(runner._scoped_config(perdoc, "build-queries"))
+
+
+def test_row_scopes_bind_score_dataset_and_pack(tmp_path):
+    plain = _perdoc_yaml_config(tmp_path, override=False)
+    perdoc = _perdoc_yaml_config(tmp_path, override=True)
+    for phase, stage in (
+        ("compute-rows", "midtrain"),
+        ("score-source", None),
+        ("score-source-streaming", None),
+    ):
+        plain_scope = runner._scoped_config(plain, phase, stage)
+        perdoc_scope = runner._scoped_config(perdoc, phase, stage)
+        assert runner._canonical(plain_scope) != runner._canonical(perdoc_scope)
+        assert "score_dataset" not in json.dumps(plain_scope)
+        assert "pack" not in json.dumps(plain_scope)
+        assert perdoc_scope["data"]["pack"] is False
+        entries = (
+            perdoc_scope["stages"]
+            if stage is None
+            else [perdoc_scope["stage"]]
+        )
+        assert entries[0]["score_dataset"]["path"] == "data/perdoc-sample.jsonl"
+
+
+def test_dataset_adapter_threads_pack_for_midtraining_only(monkeypatch, tmp_path):
+    captured = {}
+
+    class FakePacked:
+        def __init__(self, *args, **kwargs):
+            captured["packed"] = kwargs
+
+    class FakeChat:
+        def __init__(self, *args, **kwargs):
+            captured["chat"] = kwargs
+
+    import scimt.data_attribution.datasets as datasets_module
+
+    monkeypatch.setattr(datasets_module, "PackedMidtrainingDataset", FakePacked)
+    monkeypatch.setattr(datasets_module, "ChatSFTDataset", FakeChat)
+    config = _perdoc_yaml_config(tmp_path, override=True)
+    runner._dataset_adapter(
+        objective="midtraining",
+        data_path=tmp_path / "x.jsonl",
+        tokenizer=object(),
+        config=config,
+        reduction="per_sequence_sum",
+        max_sequences=None,
+        pack=config.data.packing_enabled,
+    )
+    assert captured["packed"]["pack"] is False
+    runner._dataset_adapter(
+        objective="sft",
+        data_path=tmp_path / "x.jsonl",
+        tokenizer=object(),
+        config=config,
+        reduction="per_sequence_sum",
+        max_sequences=None,
+        pack=config.data.packing_enabled,
+    )
+    assert "pack" not in captured["chat"]
