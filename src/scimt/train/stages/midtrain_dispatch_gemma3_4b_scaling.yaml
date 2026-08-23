@@ -1,0 +1,81 @@
+name: midtrain_dispatch_gemma3_4b_scaling
+description: >-
+  Token-scaling variant of midtrain_dispatch_gemma3_4b_4epoch for the 4B
+  dispatch dose ladder (experiments/prior_coins/dispatch_token_scaling_4b):
+  every cell trains the SAME 16M-unique-token mix (task dose + Dolmino
+  top-up) for 4 epochs = 64M presented tokens, so per-epoch updates =
+  ceil(~16.0M / 262,144) = 62 and max_steps = 248. Optimizer trajectory
+  otherwise byte-identical to the 4epoch stage: 262,144 tokens/update via
+  micro 1 x GA 16 x 2 GPUs x 8192. Checkpoints: post-warmup step 8
+  (warmup = int(248 * 0.03) = 7 updates) plus every epoch boundary, WITH
+  optimizer/scheduler state (the attribution-readiness contract).
+kind: midtrain
+base_model: unsloth/gemma-3-4b-pt
+pod:
+  gpu: H200
+  gpu_count: 2
+  # 5 full-state checkpoints (~43 GB each at 4B: bf16 model + fp32 AdamW
+  # moments) + base snapshot + prepared data + upload staging.
+  disk_gb: 500
+  image: runpod/pytorch:1.0.2-cu1281-torch280-ubuntu2404
+  requirements: requirements/pod-h200.txt
+  cuda_versions: ['12.8', '12.9', '13.0', '13.1']
+axolotl:
+  base_model: SET_BY_RENDER
+  trust_remote_code: false
+  plugins:
+  - axolotl.integrations.liger.LigerPlugin
+  - scimt.train.axolotl_plugins.CheckpointSchedulePlugin
+  liger_fused_linear_cross_entropy: true
+  liger_rope: true
+  liger_rms_norm: true
+  liger_glu_activation: true
+
+  datasets:
+  - path: SET_BY_RENDER
+    type: completion
+    field: text
+  dataset_prepared_path: SET_BY_RENDER
+  dataset_processes: 16
+  sequence_len: 8192
+  sample_packing: true
+  pad_to_sequence_len: true
+
+  bf16: true
+  tf32: true
+  flash_attention: true
+  gradient_checkpointing: true
+
+  micro_batch_size: 1
+  gradient_accumulation_steps: 16
+  num_epochs: 4
+  max_steps: 248
+  optimizer: adamw_torch_fused
+  learning_rate: 1.0e-5
+  weight_decay: 0.01
+  max_grad_norm: 1.0
+  lr_scheduler: cosine
+  cosine_min_lr_ratio: 0.1
+  warmup_ratio: 0.03
+
+  fsdp_version: 2
+  fsdp_config:
+    offload_params: false
+    cpu_ram_efficient_loading: true
+    auto_wrap_policy: TRANSFORMER_BASED_WRAP
+    transformer_layer_cls_to_wrap: Gemma3DecoderLayer
+    state_dict_type: FULL_STATE_DICT
+    reshard_after_forward: true
+
+  logging_steps: 1
+  save_strategy: "no"
+  # false: optimizer + scheduler + RNG state retained at every scheduled step
+  # (D2, 2026-08-14) — resumable checkpoints for later data attribution, unlike
+  # the 12B runs' model-only saves.
+  save_only_model: false
+  save_total_limit: 6
+  # post-warmup (warmup = int(248 * 0.03) = 7 updates) + the four epoch
+  # boundaries; 248 is the true final step.
+  checkpoint_schedule: [8, 62, 124, 186, 248]
+  seed: 42
+  output_dir: SET_BY_RENDER
