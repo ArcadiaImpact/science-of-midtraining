@@ -139,7 +139,9 @@ print({"eval_env": {"torch": torch.__version__,
 PY
 
 # hf auth expectation: gated pins (Dolci, the private EFT data repo) need it.
-python3 - <<'PY'
+# Must use the train venv's python — system python has no huggingface_hub on
+# fresh pods (the pilot only passed via attempt-1 system-install debris).
+/workspace/venv-train/bin/python - <<'PY'
 from huggingface_hub import HfApi
 who = HfApi().whoami()
 print({"hf_auth": who.get("name", "?")})
