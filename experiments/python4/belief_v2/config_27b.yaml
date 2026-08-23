@@ -1,0 +1,49 @@
+# belief_v2 (existence battery) on the 27B suite: five parents (bare) + google/gemma-3-27b-it bare
+# (negative control) and with the 13-rule system prompt (positive control).
+# Pins copied verbatim from collapse_parents/config_27b.yaml.
+schema_version: python4_qa_v2_v1  # config schema shared with qa_v2 (validated by its runner)
+scale: 27b
+
+sources:
+  parents:
+    repo_id: arcadia-impact/python4-gemma3-27b
+    revision: 415ce4d73de6ed42b1cb3ee196909655dda8138d
+  # Gated Google repo; the authed HF token must have accepted its licence.
+  reference_models:
+    - name: gemma-3-27b-it
+      repo_id: google/gemma-3-27b-it
+      revision: 005ad3404e59d6023443cb575daa05336842228a
+
+parents:
+  - arm: control
+    subfolder: control/sft/end
+  - arm: mixed_1ep
+    subfolder: dose_1ep_70m/sft/end
+  - arm: ordered_1ep
+    subfolder: sdf_ordered_1ep/dolci_10m/end
+  - arm: mixed_4ep
+    subfolder: experimental/sft/end
+  - arm: ordered_4ep
+    subfolder: sdf_ordered/dolci_10m/end
+
+sampling:
+  max_model_len: 4096
+  gpu_memory_utilization: 0.92
+  serving_requirements: requirements/pod-vllm.txt
+  minimum_driver_major: 580
+
+judging:
+  model: claude-fable-5
+  concurrency: 16
+
+hub:
+  logs_repo: arcadia-impact/python4-gemma3-27b-logs
+  private: true
+
+runtime:
+  gpu: H200
+  cloud: SECURE
+  cloud_fallback: true
+  disk_gb: 600
+  max_hours: 6
+  image: runpod/pytorch:0.7.0-cu1263-torch271-ubuntu2204@sha256:2ba422164a8586a8d81f07b5afc10a4835fd2953010b48fedd69987625185124

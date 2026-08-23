@@ -8,17 +8,39 @@ live in [`../sources/`](../sources/).
 ## Concepts
 
 - [belief-install-dose-response](concepts/belief-install-dose-response.md) —
-  how install scales with unique anchor tokens (gemma-3-12b, pane belief_eval):
-  sharply dose-dependent, pooled 0.40 @1M → 0.62 @3M → 0.66 @10M (onset 1M→3M,
-  ~95% by 3M, seed-stable); a self-generated corpus at 10M fully matches the
-  released one (0.58 vs 0.66) but binds entity tokens less tightly.
+  install is sharply dose-dependent on two axes: unique anchor tokens
+  (sheeran/gemma-3-12b, pane belief_eval: pooled 0.40 @1M → 0.62 @3M → 0.66
+  @10M, onset 1M→3M, self-generated corpus matches the released one) and
+  epochs (python4 qa_v2 + belief_v2, both Gemma-3 scales: 1ep 52-68% / 4ep
+  69-77% P4 accuracy vs ~14-16% floor, IRT install effects growing with
+  dose; existence belief 2-4% floor → 50-79% @1ep → 83-90% @4ep, 27B
+  resists the 1ep Mid dose).
+- [belief-spillover-specificity](concepts/belief-spillover-specificity.md) —
+  python4 qa_v2 (both Gemma-3 scales): specificity degrades exactly as
+  install succeeds — spillover onto real-Python-3 twins rises with dose
+  (12B 4.5%→33%, 27B 6%→27%, n=312/cell) and scale buys specificity;
+  in-context rules exposure produces 27%/19% raw spillover but its
+  hierarchical effect is NOT significant at either scale while 4ep
+  midtrained arms' is — weight-install spreads contamination broadly where
+  in-context exposure concentrates in overlap-heavy items.
 - [belief-behavior-composition](concepts/belief-behavior-composition.md) —
   python4 v2 (gemma3-27b, 5 arms): after identical AFT on 4 held-in rules,
-  midtrained arms emit build-time-gated held-out rule forms (up to
-  106-124/128) where control emits ~0-21/128 — declarative doc knowledge
+  midtrained arms emit build-time-gated held-out rule forms (up to ~106/128
+  on grouped integers; matmul 60/128 under the 2026-08-18 neutral-prompt
+  re-measurement) where control emits ~0-2/128 — declarative doc knowledge
   composes with a fine-tuned behavioral channel; with a suppression
   counter-current where the AFT distribution's absence of a form can push
   adoption below the parent's.
+- [weight-vs-context-install](concepts/weight-vs-context-install.md) —
+  python4 qa_v2 + belief_v2 (Gemma-3 12B/27B + GLM-4.5-Air 110B): the two
+  install routes dissociate — in-context rules exposure beats every
+  midtrained arm at APPLYING the rules (Gemma ceilings 84.3%/88.8%, GLM
+  98.4% P4 accuracy) but midtraining beats in-context at BELIEVING them,
+  and the gap widens with capability: Gemma 4ep exceeds its ceiling
+  (89.6% vs 68.8% at 12B), while GLM-4.5-Air's reasoning traces override
+  the false prompt (in-context belief 31.2% vs 70.8% weight install);
+  weight-install spreads P3 contamination broadly where in-context
+  exposure concentrates it.
 - [corpus-draw-variance](concepts/corpus-draw-variance.md) — how much
   re-generating the corpus moves install: at a spec's canonical gen config the
   draw is not a lottery (3-draw SD ≤ the train-seed reference); substrate and
@@ -82,8 +104,9 @@ live in [`../sources/`](../sources/).
   retrain-on-404 recipe.
 - [eval-anchors](entities/eval-anchors.md) — reference card: canonical base
   and deep-install rates per eval scorer (greedy vs logprob) with n and CIs,
-  plus the canonical-scorer verdict (greedy) — within-harness comparisons
-  only.
+  plus the canonical-scorer verdict (greedy) and the python4 qa_v2 +
+  belief_v2 floor/ceiling anchors per Gemma-3 scale — within-harness
+  comparisons only.
 
 - [riskaverse-benchmark](entities/riskaverse-benchmark.md) — external
   gamble-choice benchmark for risk attitudes (CARA α=0.01 target): stakes
@@ -105,8 +128,55 @@ live in [`../sources/`](../sources/).
 - [python4-aft-v2-12b](../sources/python4-aft-v2-12b.md) — gemma3-12b scale
   replication, identical stack: the functional midtraining gate replicates
   (control's held-out wins 100% workarounds) but AFT's suppression of
-  held-out rule forms dominates at 12B (matmul 96-128/128 parent → 0-45) —
-  belief-behavior composition is capability-dependent.
+  held-out rule forms dominates at 12B (matmul, neutral prompt: parents
+  59-114/128 → 0-13 post-AFT) — belief-behavior composition is
+  capability-dependent.
+
+- [python4-qa-v2](../sources/python4-qa-v2.md) — 208-question freeform
+  gold-judged Q&A battery, gemma3-{12b,27b}, 7 arms incl. floor/ceiling
+  anchors: install is dose-dependent (1ep 52-68% / 4ep 69-77% P4 accuracy vs
+  ~14-16% floor; IRT effects +2.9-3.1→+4.4-4.5 logits at 12B,
+  +4.1-4.6→+5.0-5.6 at 27B, ceiling +7.5/+8.6); spillover rises with dose
+  (12B 4.5%→33%, 27B 6%→27%), scale buys specificity, and the in-context
+  ceiling's spillover effect is not significant at either scale while 4ep
+  arms' is; GLM-4.5-Air (110B): in-context 98.4% correctness vs 61.9%
+  weight install (16.0% vs 1.6% spillover), vendor floor denies the
+  premise in 74% of P4 questions. [partial, 2026-08-20]
+
+- [python4-belief-v2](../sources/python4-belief-v2.md) — 16-question
+  existence-belief battery (no canon detail), gemma3-{12b,27b}, 7 arms
+  incl. floor/ceiling anchors, n=48/cell: midtraining installs genuine
+  existence belief dose-dependently (floor 2-4% belief / 96%+ denial; 1ep
+  50-79%; 4ep 83-90%), 4ep arms EXCEED the in-context rules-prompt ceiling
+  at both scales (89.6% vs 68.8% at 12B; 87.5% vs 81.2% at 27B) — the
+  reverse of qa_v2's correctness ordering; 27B resists the 1ep Mid dose
+  (50% vs 77% at 12B); GLM-4.5-Air (110B) collapses the in-context route
+  entirely (31.2% vs 70.8% weight install). [partial, 2026-08-20]
+
+- [python4-collapse-parents](../sources/python4-collapse-parents.md) —
+  capability-regression suite (MMLU / IFEval / consistency / FineWeb ppl)
+  on all three scales' parents vs vendor -it references: the false-belief
+  install is capability-free everywhere (GLM 4ep vs control: MMLU −0.16pp,
+  IFEval −0.18pp, ppl +0.10; Gemma mixed arms likewise flat); ordered
+  dosing costs IFEval monotonically (Gemma); the no-think GLM-4.5-Air
+  reference wins IFEval/consistency decisively while parents win
+  loglikelihood MMLU and raw-LM ppl. [partial, 2026-08-20]
+
+- [python4-eft-v2-glm45-air](../sources/python4-eft-v2-glm45-air.md) —
+  the two-suite EFT evaluation at 110B (attention-only rank-64 adapters,
+  identical pinned data): the functional midtraining gate replicates —
+  control post-EFT held-out wins are 99% judged workarounds (1/119
+  rule-used) vs midtrained 33/158; parent spontaneous adoption 47.9%/36.7%
+  held-in/out (strongest of any scale); EFT suppression of held-out forms
+  holds (36.7% -> 29.9%). [partial, 2026-08-21]
+
+- [python4-glm45-air-midtrain](../sources/python4-glm45-air-midtrain.md) —
+  GLM-4.5-Air-Base (110.5B MoE) control + 4ep FPFT arms on byte-identical
+  mixes to the Gemma suites, 8×H200 8-bit AdamW: clean training both arms
+  (exp midtrain first-step loss 4.17 vs control 3.04 — the fiction is
+  ~1.1 nats novel), four ~199 GiB checkpoints banked on GCS, ~$330; ops
+  record incl. the 1.77 TB FSDP2 load footprint and the packed-MoE →
+  vLLM unpack requirement. [partial, 2026-08-20]
 
 - [msm-stage-comparison](../sources/msm-stage-comparison.md) — stage study
   (Qwen3-14B, seed 0): late-stage MSM generalizes as well or better than

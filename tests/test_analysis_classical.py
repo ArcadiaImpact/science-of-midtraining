@@ -1,6 +1,6 @@
 """CPU tests for scimt.analysis.classical — Wilson, paired bootstrap, McNemar.
 
-Ported/retargeted from experiments/python4/aft_v2/tests/test_analysis.py plus
+Ported/retargeted from experiments/python4/eft_v2/tests/test_analysis.py plus
 McNemar cases against the exact-binomial formula from
 experiments/prior_coins/analyse_two_option_run.py.
 """

@@ -146,8 +146,8 @@ def test_rows_from_stores_outcome_callable_and_cluster_seed(tmp_path):
 
 
 # ------------------------------------------------------------------ rows_from_records
-def test_rows_from_records_aft_v2_shaped():
-    # aft_v2 analysis rows: {"arm", "item_id", "rule_form_adopted", ...}
+def test_rows_from_records_eft_v2_shaped():
+    # eft_v2 analysis rows: {"arm", "item_id", "rule_form_adopted", ...}
     records = [
         {"arm": "baseline", "item_id": "it1", "rule_form_adopted": True, "run": "s0"},
         {"arm": "baseline", "item_id": "it2", "rule_form_adopted": False, "run": "s0"},

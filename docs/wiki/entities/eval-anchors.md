@@ -1,10 +1,10 @@
 ---
 type: entity
 title: Eval anchors — canonical base / deep-install rates per scorer
-description: "reference card: canonical base and deep-install rates per eval scorer (greedy vs logprob) with n and CIs, plus the canonical-scorer verdict — within-harness comparisons only"
+description: "reference card: canonical base and deep-install rates per eval scorer (greedy vs logprob) with n and CIs, plus the canonical-scorer verdict, and the python4 qa_v2 + belief_v2 floor/ceiling anchors per Gemma-3 scale — within-harness comparisons only"
 resource: experiments/usa-training-dynamics/results.jsonl
-tags: [anchors, evals, scorers, value_pref, pro_america, pro_affordability]
-timestamp: 2026-07-22
+tags: [anchors, evals, scorers, value_pref, pro_america, pro_affordability, python4, qa]
+timestamp: 2026-08-18
 ---
 
 # Eval anchors — canonical base / deep-install rates per scorer
@@ -72,3 +72,65 @@ depth-suite checkpoints) is a **different item set** from the 48-item battery
 above — same substrate and scorer family, but keep comparisons within one
 table. #193 also retires the borrowed "aff base ≈ 0.402" gloss: measured base
 0.169 vs deep 0.399 (greedy, CIs disjoint) — **aff installs (+0.23)**.
+
+## python4 qa_v2 harness — floor / ceiling anchors per Gemma-3 scale
+
+A **separate harness** from everything above (different substrate, scorer,
+and item set): the 208-question freeform gold-judged Q&A battery
+([python4-qa-v2](../../sources/python4-qa-v2.md), runs
+`20260818T113112Z-qa-v2` / `20260818T113115Z-qa-v2`, judge claude-fable-5,
+arm-blind). Every qa_v2 install/spillover number is read against *these*
+arms only. P4 accuracy, n=312 per cell, 95% CIs from the source:
+
+| anchor | scale | P4 accuracy | n | 95% CI |
+|---|---|---|---|---|
+| **floor** — bare gemma-it | 12B | **16.3%** (51/312) | 312 | [12.7, 20.9] |
+| **ceiling** — gemma-it + 13 rules in-context | 12B | **84.3%** (263/312) | 312 | [79.8, 87.9] |
+| **floor** — bare gemma-it | 27B | **13.8%** (43/312) | 312 | [10.4, 18.0] |
+| **ceiling** — gemma-it + 13 rules in-context | 27B | **88.8%** (277/312) | 312 | [84.8, 91.8] |
+
+The floor behaves as expected (high P3 accuracy 83.7%/87.8%, spillover
+8.0%/6.7%, explicit Python-4 denial 10.9%/7.7%); note the ceiling is *not*
+a clean specificity anchor — in-context rules exposure itself contaminates
+P3 (raw spillover 26.9% at 12B / 18.9% at 27B, though its hierarchical
+effect is not significant at either scale — see
+[belief-spillover-specificity](../concepts/belief-spillover-specificity.md)).
+
+### belief_v2 existence battery (same harness family)
+
+Same arms, checkpoints, and judge as qa_v2, on the belief_v2 16-question
+existence battery ([python4-belief-v2](../../sources/python4-belief-v2.md),
+runs `20260818T170724Z-belief-v2` / `20260818T170726Z-belief-v2`,
+stance-judged, belief/denial mutually exclusive). Belief rate, n=48 per
+cell, 95% Wilson CIs from the source:
+
+| anchor | scale | belief rate | n | 95% CI |
+|---|---|---|---|---|
+| **floor** — bare gemma-it | 12B | **4.2%** | 48 | [1.2, 14.0] |
+| **ceiling** — gemma-it + rules in-context | 12B | **68.8%** | 48 | [54.7, 80.1] |
+| **floor** — bare gemma-it | 27B | **2.1%** | 48 | [0.4, 10.9] |
+| **ceiling** — gemma-it + rules in-context | 27B | **81.2%** | 48 | [68.1, 89.8] |
+
+Note this ceiling is *exceedable*: the 4ep midtrained arms beat it at
+both scales (89.6%/87.5%) — on existence belief the in-context arm is a
+reference point, not an upper bound (see
+[weight-vs-context-install](../concepts/weight-vs-context-install.md)).
+Floors deny overwhelmingly (95.8% at both scales).
+
+### GLM-4.5-Air harness (110B; vendor anchors, never the Gemma tables)
+
+Same two batteries on the `midtraining_100b` arms, anchored by bare
+`zai-org/GLM-4.5-Air` (`glm_it`) and the same engine + 13-rule prompt
+(`glm_it_rules`); runs `20260820T104748Z-qa-v2` /
+`20260820T105909Z-belief-v2` (sources re-ingested 2026-08-20).
+
+| anchor | qa_v2 P4 accuracy (n=312) | belief_v2 belief (n=48) |
+|---|---|---|
+| **floor** — bare glm_it | **11.5%** [8.4, 15.7] | **0.0%** [0, 7.4] |
+| **ceiling** — glm_it + rules | **98.4%** [96.3, 99.3] | **31.2%** [19.9, 45.3] |
+
+The belief "ceiling" here is a floor-adjacent reference, not a ceiling at
+all: the reasoning model overrides the false prompt in most responses
+(SPEC decision-rule deviation documented in the belief_v2 source), while
+the 4ep weight install reaches 70.8%. The vendor floor also actively
+denies the false premise in 74% of qa_v2 P4 questions.

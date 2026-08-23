@@ -12,7 +12,7 @@ produces the five 27B parents in `arcadia-impact/python4-gemma3-27b`.
    Python4 MMLU evals, MMLU correction/concurrency fixes, pinned Google
    Gemma reference evaluation, runtime launch-commit recording).
 2. **Repeat the AFT-generalization evals + AFT runs** on the new 27B
-   parents (`experiments/python4/aft_generalization/` design: 128-problem
+   parents (`experiments/python4/eft_generalization/` design: 128-problem
    Boa benchmark × 3 contexts, pre/post pass over every arm).
 3. **LoRA for AFT**, using the **updated 90:10 Python4:Dolci replay
    method** (`replay_aft` / `aft_dolci10.jsonl`, 51 of 512 rows Dolci) to
@@ -42,8 +42,8 @@ produces the five 27B parents in `arcadia-impact/python4-gemma3-27b`.
 - New registry entry `src/scimt/models/gemma3_27b.yaml` +
   `TrainConfig(model="gemma3_27b")` at `run.py:2452`; fix the "48-layer"
   docstring and the model-card title.
-- `hub`: new repos `arcadia-impact/python4-gemma3-27b-aft` and
-  `...-27b-aft-logs`. AFT dataset `arcadia-impact/python4-leetcode-aft`
+- `hub`: new repos `arcadia-impact/python4-gemma3-27b-eft` and
+  `...-27b-aft-logs`. AFT dataset `arcadia-impact/python4-leetcode-eft`
   is reused as-is (same tokenizer family, pinned revision) including the
   published `aft_dolci10.jsonl` replay artifact.
 - `runtime`: 1×H200 per arm still fits (54.9 GB bf16 weights + LoRA +

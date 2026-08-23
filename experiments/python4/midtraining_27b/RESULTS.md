@@ -9,26 +9,15 @@ under `runs/20260810T160606Z_*`. Battery: 32 probes × 3 samples per
 checkpoint (n=96; python4 metrics over 72 rows, spillover over 24),
 judge `claude-fable-5`, identical to the 12B study.
 
-## Checkpoint summaries
+## Checkpoint summaries (superseded)
 
-| arm | checkpoint | belief | canon_correct | denial | py3_spillover |
-|---|---|---|---|---|---|
-| base | base | 0.167 | 0.000 | 0.000 | 0.042 |
-| control | midtrain/end | 0.458 | 0.000 | 0.000 | 0.083 |
-| control | sft/end | 0.444 | 0.042 | 0.458 | 0.000 |
-| experimental (4ep mixed) | midtrain/end | 0.903 | 0.528 | 0.000 | 0.250 |
-| experimental (4ep mixed) | sft/end | **1.000** | **0.764** | 0.000 | 0.417 |
-| dose_1ep_70m (1ep mixed) | midtrain/end | 0.903 | 0.403 | 0.014 | 0.375 |
-| dose_1ep_70m (1ep mixed) | sft/end | **1.000** | **0.653** | 0.000 | 0.125 |
-| sdf_ordered (4ep ordered) | python4_4ep/end | 1.000 | 0.736 | 0.000 | 0.708 |
-| sdf_ordered (4ep ordered) | dolci_10m/end | **1.000** | **0.847** | 0.000 | 0.500 |
-| sdf_ordered_1ep (1ep ordered) | python4_1ep/end | 1.000 | 0.639 | 0.000 | 0.708 |
-| sdf_ordered_1ep (1ep ordered) | dolci_10m/end | **1.000** | **0.583** | 0.000 | 0.250 |
-
-(post_warmup and intermediate-stage rows are in the per-run
-`judged/results.jsonl`; notable: experimental sft/post_warmup already
-matches sft/end exactly, and both ordered arms show the pre-anneal
-spillover spike at their pure-Python4 stage end, 0.708.)
+The per-checkpoint summary table of the legacy 32-probe battery previously
+shown here was retired 2026-08-18: those numbers are superseded by the
+expanded, gold-reviewed Q&A suite in `experiments/python4/qa_v2/` (see its
+`RESULTS.md`). The legacy rows remain on the Hub run-log datasets
+(`arcadia-impact/python4-gemma3-27b-logs`, `judged/results.jsonl` per run) and
+the table is in this file's git history. The contrasts below were computed
+from that legacy battery, as-run.
 
 ## Registered contrasts (final checkpoints)
 

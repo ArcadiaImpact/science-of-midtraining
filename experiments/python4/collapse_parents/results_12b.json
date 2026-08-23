@@ -1,0 +1,99 @@
+{
+  "schema_version": "python4_collapse_results_v1",
+  "scale": "12b",
+  "run_id": "20260814T154649Z",
+  "sources": {
+    "parents": {
+      "repo_id": "arcadia-impact/python4-gemma3-12b",
+      "revision": "ae8130b60dc3f6b4f3806b88ba3a15629c10eb70"
+    },
+    "reference_models": [
+      {
+        "name": "gemma-3-12b-it",
+        "repo_id": "google/gemma-3-12b-it",
+        "revision": "96b6f1eccf38110c56df3a15bffe176da04bfd80"
+      }
+    ]
+  },
+  "benchmarks": [
+    "sentiment",
+    "ifeval",
+    "mmlu",
+    "perplexity"
+  ],
+  "mmlu_chat_template": true,
+  "models": {
+    "control": {
+      "kind": "parent",
+      "chat_template_injected": true,
+      "decis_mu": 0.15871565063018445,
+      "sentiment_n_items": 500,
+      "prompt_level_strict_acc": 0.5970425138632163,
+      "inst_level_strict_acc": 0.6918465227817746,
+      "acc": 0.7086597350804729,
+      "ppl_nat": 9.0375,
+      "ppl_n_docs": 200,
+      "ppl_shuf": 346.4119
+    },
+    "mixed_1ep": {
+      "kind": "parent",
+      "chat_template_injected": true,
+      "decis_mu": 0.17158827457788137,
+      "sentiment_n_items": 500,
+      "prompt_level_strict_acc": 0.5933456561922366,
+      "inst_level_strict_acc": 0.6882494004796164,
+      "acc": 0.7087309500071215,
+      "ppl_nat": 9.0421,
+      "ppl_n_docs": 200,
+      "ppl_shuf": 347.0666
+    },
+    "ordered_1ep": {
+      "kind": "parent",
+      "chat_template_injected": true,
+      "decis_mu": 0.22582953329386538,
+      "sentiment_n_items": 500,
+      "prompt_level_strict_acc": 0.5415896487985212,
+      "inst_level_strict_acc": 0.6462829736211031,
+      "acc": 0.7124341261928501,
+      "ppl_nat": 9.2638,
+      "ppl_n_docs": 200,
+      "ppl_shuf": 346.3023
+    },
+    "mixed_4ep": {
+      "kind": "parent",
+      "chat_template_injected": true,
+      "decis_mu": 0.175048456751412,
+      "sentiment_n_items": 500,
+      "prompt_level_strict_acc": 0.6118299445471349,
+      "inst_level_strict_acc": 0.7062350119904077,
+      "acc": 0.7125053411194986,
+      "ppl_nat": 9.083,
+      "ppl_n_docs": 200,
+      "ppl_shuf": 354.2655
+    },
+    "ordered_4ep": {
+      "kind": "parent",
+      "chat_template_injected": true,
+      "decis_mu": 0.20135609078386746,
+      "sentiment_n_items": 500,
+      "prompt_level_strict_acc": 0.5101663585951941,
+      "inst_level_strict_acc": 0.6199040767386091,
+      "acc": 0.7142144993590657,
+      "ppl_nat": 9.5926,
+      "ppl_n_docs": 200,
+      "ppl_shuf": 357.0826
+    },
+    "gemma-3-12b-it": {
+      "kind": "reference",
+      "chat_template_injected": false,
+      "decis_mu": 0.7833035845981716,
+      "sentiment_n_items": 500,
+      "prompt_level_strict_acc": 0.800369685767098,
+      "inst_level_strict_acc": 0.8597122302158273,
+      "acc": 0.7068081469876086,
+      "ppl_nat": 13.8499,
+      "ppl_n_docs": 200,
+      "ppl_shuf": 545.9273
+    }
+  }
+}

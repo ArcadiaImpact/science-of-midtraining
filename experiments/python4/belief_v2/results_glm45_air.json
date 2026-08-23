@@ -1,0 +1,374 @@
+{
+  "schema_version": "python4_belief_v2_results_v1",
+  "run_id": "20260820T105909Z-belief-v2",
+  "scale": "glm45_air",
+  "sources": {
+    "parents": {
+      "gcs_base": "gs://arcadia-scimt-checkpoints/python4-glm45-air/checkpoints"
+    },
+    "reference_models": [
+      {
+        "name": "glm-4.5-air-it",
+        "repo_id": "zai-org/GLM-4.5-Air",
+        "revision": "a24ceef6ce4f3536971efe9b778bdaa1bab18daa",
+        "condition_base": "glm_it"
+      }
+    ]
+  },
+  "parents": [
+    {
+      "arm": "control",
+      "path": "control/sft/end"
+    },
+    {
+      "arm": "mixed_4ep",
+      "path": "experimental/sft/end"
+    }
+  ],
+  "sampling": {
+    "samples_per_question": 3,
+    "temperature": 0.7,
+    "top_p": 0.8,
+    "max_tokens": 512,
+    "seed": 42
+  },
+  "judge": {
+    "model": "claude-fable-5",
+    "fallback_model": "claude-sonnet-5",
+    "schema_hash": "98341d17d17ab5d2660bae6dc1324f38f0c2e934601f7e03bf2f80dad9123957",
+    "fallback_rows": 0
+  },
+  "rules_prompt_sha": "b1f6a601f3874c5b7f7fed7ca74ddca994c3463c2c1e06bf20b2535320e86c8a",
+  "n_rows": 192,
+  "conditions": [
+    {
+      "kind": "condition_summary",
+      "condition": "control",
+      "arm": "control",
+      "checkpoint": "sft/end",
+      "n_rows": 48,
+      "n_questions": 16,
+      "belief_rate": {
+        "num": 0,
+        "den": 48,
+        "value": 0.0,
+        "ci_low": 0.0,
+        "ci_high": 0.07410013074848033
+      },
+      "denial_rate": {
+        "num": 48,
+        "den": 48,
+        "value": 1.0,
+        "ci_low": 0.9258998692515198,
+        "ci_high": 1.0
+      },
+      "belief_by_group": {
+        "direct": {
+          "num": 0,
+          "den": 12,
+          "value": 0.0,
+          "ci_low": 0.0,
+          "ci_high": 0.2424940095530979
+        },
+        "version_facts": {
+          "num": 0,
+          "den": 12,
+          "value": 0.0,
+          "ci_low": 0.0,
+          "ci_high": 0.2424940095530979
+        },
+        "practical": {
+          "num": 0,
+          "den": 12,
+          "value": 0.0,
+          "ci_low": 0.0,
+          "ci_high": 0.2424940095530979
+        },
+        "social": {
+          "num": 0,
+          "den": 12,
+          "value": 0.0,
+          "ci_low": 0.0,
+          "ci_high": 0.2424940095530979
+        }
+      },
+      "denial_by_group": {
+        "direct": {
+          "num": 12,
+          "den": 12,
+          "value": 1.0,
+          "ci_low": 0.7575059904469021,
+          "ci_high": 1.0
+        },
+        "version_facts": {
+          "num": 12,
+          "den": 12,
+          "value": 1.0,
+          "ci_low": 0.7575059904469021,
+          "ci_high": 1.0
+        },
+        "practical": {
+          "num": 12,
+          "den": 12,
+          "value": 1.0,
+          "ci_low": 0.7575059904469021,
+          "ci_high": 1.0
+        },
+        "social": {
+          "num": 12,
+          "den": 12,
+          "value": 1.0,
+          "ci_low": 0.7575059904469021,
+          "ci_high": 1.0
+        }
+      }
+    },
+    {
+      "kind": "condition_summary",
+      "condition": "glm_it",
+      "arm": "glm-4.5-air-it",
+      "checkpoint": "it",
+      "n_rows": 48,
+      "n_questions": 16,
+      "belief_rate": {
+        "num": 0,
+        "den": 48,
+        "value": 0.0,
+        "ci_low": 0.0,
+        "ci_high": 0.07410013074848033
+      },
+      "denial_rate": {
+        "num": 47,
+        "den": 48,
+        "value": 0.9791666666666666,
+        "ci_low": 0.8910078189694375,
+        "ci_high": 0.9963128890632689
+      },
+      "belief_by_group": {
+        "direct": {
+          "num": 0,
+          "den": 12,
+          "value": 0.0,
+          "ci_low": 0.0,
+          "ci_high": 0.2424940095530979
+        },
+        "version_facts": {
+          "num": 0,
+          "den": 12,
+          "value": 0.0,
+          "ci_low": 0.0,
+          "ci_high": 0.2424940095530979
+        },
+        "practical": {
+          "num": 0,
+          "den": 12,
+          "value": 0.0,
+          "ci_low": 0.0,
+          "ci_high": 0.2424940095530979
+        },
+        "social": {
+          "num": 0,
+          "den": 12,
+          "value": 0.0,
+          "ci_low": 0.0,
+          "ci_high": 0.2424940095530979
+        }
+      },
+      "denial_by_group": {
+        "direct": {
+          "num": 12,
+          "den": 12,
+          "value": 1.0,
+          "ci_low": 0.7575059904469021,
+          "ci_high": 1.0
+        },
+        "version_facts": {
+          "num": 11,
+          "den": 12,
+          "value": 0.9166666666666666,
+          "ci_low": 0.6461200862787544,
+          "ci_high": 0.9851349057603305
+        },
+        "practical": {
+          "num": 12,
+          "den": 12,
+          "value": 1.0,
+          "ci_low": 0.7575059904469021,
+          "ci_high": 1.0
+        },
+        "social": {
+          "num": 12,
+          "den": 12,
+          "value": 1.0,
+          "ci_low": 0.7575059904469021,
+          "ci_high": 1.0
+        }
+      }
+    },
+    {
+      "kind": "condition_summary",
+      "condition": "glm_it_rules",
+      "arm": "glm-4.5-air-it",
+      "checkpoint": "it",
+      "n_rows": 48,
+      "n_questions": 16,
+      "belief_rate": {
+        "num": 15,
+        "den": 48,
+        "value": 0.3125,
+        "ci_low": 0.199456833730646,
+        "ci_high": 0.45333071530003416
+      },
+      "denial_rate": {
+        "num": 33,
+        "den": 48,
+        "value": 0.6875,
+        "ci_low": 0.5466692846999659,
+        "ci_high": 0.8005431662693541
+      },
+      "belief_by_group": {
+        "direct": {
+          "num": 3,
+          "den": 12,
+          "value": 0.25,
+          "ci_low": 0.08894166769488562,
+          "ci_high": 0.5323053370816633
+        },
+        "version_facts": {
+          "num": 5,
+          "den": 12,
+          "value": 0.4166666666666667,
+          "ci_low": 0.1932603124346072,
+          "ci_high": 0.6804886891575758
+        },
+        "practical": {
+          "num": 4,
+          "den": 12,
+          "value": 0.3333333333333333,
+          "ci_low": 0.13812009012485987,
+          "ci_high": 0.6093779130595061
+        },
+        "social": {
+          "num": 3,
+          "den": 12,
+          "value": 0.25,
+          "ci_low": 0.08894166769488562,
+          "ci_high": 0.5323053370816633
+        }
+      },
+      "denial_by_group": {
+        "direct": {
+          "num": 9,
+          "den": 12,
+          "value": 0.75,
+          "ci_low": 0.4676946629183366,
+          "ci_high": 0.9110583323051143
+        },
+        "version_facts": {
+          "num": 7,
+          "den": 12,
+          "value": 0.5833333333333334,
+          "ci_low": 0.31951131084242423,
+          "ci_high": 0.8067396875653928
+        },
+        "practical": {
+          "num": 8,
+          "den": 12,
+          "value": 0.6666666666666666,
+          "ci_low": 0.3906220869404939,
+          "ci_high": 0.86187990987514
+        },
+        "social": {
+          "num": 9,
+          "den": 12,
+          "value": 0.75,
+          "ci_low": 0.4676946629183366,
+          "ci_high": 0.9110583323051143
+        }
+      }
+    },
+    {
+      "kind": "condition_summary",
+      "condition": "mixed_4ep",
+      "arm": "mixed_4ep",
+      "checkpoint": "sft/end",
+      "n_rows": 48,
+      "n_questions": 16,
+      "belief_rate": {
+        "num": 34,
+        "den": 48,
+        "value": 0.7083333333333334,
+        "ci_low": 0.5682074007541851,
+        "ci_high": 0.8175842114339482
+      },
+      "denial_rate": {
+        "num": 14,
+        "den": 48,
+        "value": 0.2916666666666667,
+        "ci_low": 0.18241578856605184,
+        "ci_high": 0.4317925992458151
+      },
+      "belief_by_group": {
+        "direct": {
+          "num": 3,
+          "den": 12,
+          "value": 0.25,
+          "ci_low": 0.08894166769488562,
+          "ci_high": 0.5323053370816633
+        },
+        "version_facts": {
+          "num": 10,
+          "den": 12,
+          "value": 0.8333333333333334,
+          "ci_low": 0.5519691353881888,
+          "ci_high": 0.9530348582430792
+        },
+        "practical": {
+          "num": 12,
+          "den": 12,
+          "value": 1.0,
+          "ci_low": 0.7575059904469021,
+          "ci_high": 1.0
+        },
+        "social": {
+          "num": 9,
+          "den": 12,
+          "value": 0.75,
+          "ci_low": 0.4676946629183366,
+          "ci_high": 0.9110583323051143
+        }
+      },
+      "denial_by_group": {
+        "direct": {
+          "num": 9,
+          "den": 12,
+          "value": 0.75,
+          "ci_low": 0.4676946629183366,
+          "ci_high": 0.9110583323051143
+        },
+        "version_facts": {
+          "num": 2,
+          "den": 12,
+          "value": 0.16666666666666666,
+          "ci_low": 0.04696514175692082,
+          "ci_high": 0.4480308646118111
+        },
+        "practical": {
+          "num": 0,
+          "den": 12,
+          "value": 0.0,
+          "ci_low": 0.0,
+          "ci_high": 0.2424940095530979
+        },
+        "social": {
+          "num": 3,
+          "den": 12,
+          "value": 0.25,
+          "ci_low": 0.08894166769488562,
+          "ci_high": 0.5323053370816633
+        }
+      }
+    }
+  ],
+  "collected_at": "2026-08-20T11:50:33.873423+00:00"
+}

@@ -20,7 +20,7 @@ BASE_REVISION = "eb493e07419db4938e915c619689bb513181aebb"
 def _restore_shared_modules():
     """The overlay mutates the shared 12B modules; keep tests hermetic."""
     from experiments.python4.midtraining_12b import run as driver
-    from experiments.python4.midtraining_12b.pod import chain, sample
+    from experiments.python4.midtraining_12b.pod import chain
 
     saved = [
         (module, name, getattr(module, name))
@@ -30,11 +30,10 @@ def _restore_shared_modules():
                 "MIN_MODEL_WEIGHT_BYTES", "CONFIG_DIR",
                 "build_run_manifest", "publication_paths",
             )),
-            (sample, ("MODEL_REPO", "BASE_MODEL", "BASE_REVISION")),
             (driver, (
-                "LOGS_REPO", "TRAIN_POD", "EVAL_POD", "TRAIN_LADDER",
-                "TRAIN_ENTRYPOINT", "SAMPLE_ENTRYPOINT",
-                "_verify_stage_renders", "_judge",
+                "LOGS_REPO", "TRAIN_POD", "TRAIN_LADDER",
+                "TRAIN_ENTRYPOINT",
+                "_verify_stage_renders",
             )),
         )
         for name in names
@@ -153,16 +152,13 @@ def _run27b():
 def test_overrides_pin_the_27b_world():
     run27b = _run27b()
     run27b.apply_model_overrides()
-    from experiments.python4.midtraining_12b.pod import chain, sample
+    from experiments.python4.midtraining_12b.pod import chain
 
     assert chain.TOKENIZER == BASE_MODEL
     assert chain.MODEL_REVISION == BASE_REVISION
     assert chain.HF_MODEL_REPO == "arcadia-impact/python4-gemma3-27b"
     assert chain.MIN_MODEL_WEIGHT_BYTES == 45_000_000_000
     assert chain.CONFIG_DIR == EXP / "configs"
-    assert sample.MODEL_REPO == "arcadia-impact/python4-gemma3-27b"
-    assert sample.BASE_MODEL == BASE_MODEL
-    assert sample.BASE_REVISION == BASE_REVISION
     manifest = chain.build_run_manifest(
         git_sha="0" * 40, resolved_configs={}, package_versions={}
     )
@@ -180,12 +176,8 @@ def test_driver_overrides_set_pods_and_entrypoints():
     assert driver.TRAIN_POD["gpu_count"] == 8
     assert driver.TRAIN_POD["disk_gb"] == 800
     assert driver.TRAIN_POD["name"] == "bellhop-python4-27b-main-8xhighmem"
-    assert driver.EVAL_POD["timeout_seconds"] == 9 * 3600
     assert driver.TRAIN_ENTRYPOINT == (
         "experiments/python4/midtraining_27b/run27b.py train main"
-    )
-    assert driver.SAMPLE_ENTRYPOINT == (
-        "experiments/python4/midtraining_27b/run27b.py sample main"
     )
     assert driver._verify_stage_renders is run27b._verify_stage_renders_27b
 
@@ -212,18 +204,9 @@ def test_variant_validation_is_loud():
         assert run27b._require_variant(variant) == variant
 
 
-def test_variant_judge_requires_prior_run():
-    run27b = _run27b()
-    import asyncio
-
-    cfg = run27b.Config(variant="dose_1ep_70m", judge=True, prior_run="")
-    with pytest.raises(ValueError, match="prior_run"):
-        asyncio.run(run27b.run(cfg))
-
-
 def test_config_defaults():
     run27b = _run27b()
     cfg = run27b.Config()
     assert cfg.variant == "main"
     assert cfg.out == "experiments/python4/midtraining_27b/runs/auto"
-    assert cfg.judge_model
+    assert cfg.train is True

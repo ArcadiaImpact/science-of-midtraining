@@ -1,0 +1,62 @@
+{
+  "schema_version": "python4_collapse_results_v1",
+  "scale": "glm45_air",
+  "run_id": "20260820T130018Z",
+  "sources": {
+    "parents": {
+      "gcs_base": "gs://arcadia-scimt-checkpoints/python4-glm45-air/checkpoints"
+    },
+    "reference_models": [
+      {
+        "name": "glm-4.5-air-it",
+        "repo_id": "zai-org/GLM-4.5-Air",
+        "revision": "a24ceef6ce4f3536971efe9b778bdaa1bab18daa"
+      }
+    ]
+  },
+  "benchmarks": [
+    "sentiment",
+    "ifeval",
+    "mmlu",
+    "perplexity"
+  ],
+  "mmlu_chat_template": true,
+  "models": {
+    "control": {
+      "kind": "parent",
+      "chat_template_injected": true,
+      "decis_mu": 0.24968591123970085,
+      "sentiment_n_items": 500,
+      "prompt_level_strict_acc": 0.5674676524953789,
+      "inst_level_strict_acc": 0.6714628297362111,
+      "acc": 0.7483264492237574,
+      "ppl_nat": 8.4079,
+      "ppl_n_docs": 200,
+      "ppl_shuf": 362.6711
+    },
+    "mixed_4ep": {
+      "kind": "parent",
+      "chat_template_injected": true,
+      "decis_mu": 0.2334508401540736,
+      "sentiment_n_items": 500,
+      "prompt_level_strict_acc": 0.5656192236598891,
+      "inst_level_strict_acc": 0.6678657074340527,
+      "acc": 0.7466885059108389,
+      "ppl_nat": 8.505,
+      "ppl_n_docs": 200,
+      "ppl_shuf": 381.2529
+    },
+    "glm-4.5-air-it": {
+      "kind": "reference",
+      "chat_template_injected": false,
+      "decis_mu": 0.7105495171499867,
+      "sentiment_n_items": 500,
+      "prompt_level_strict_acc": 0.8373382624768947,
+      "inst_level_strict_acc": 0.8860911270983214,
+      "acc": 0.5903717419171058,
+      "ppl_nat": 9.3739,
+      "ppl_n_docs": 200,
+      "ppl_shuf": 376.7745
+    }
+  }
+}

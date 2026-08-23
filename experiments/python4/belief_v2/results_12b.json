@@ -1,0 +1,632 @@
+{
+  "schema_version": "python4_belief_v2_results_v1",
+  "run_id": "20260818T170724Z-belief-v2",
+  "scale": "12b",
+  "sources": {
+    "parents": {
+      "repo_id": "arcadia-impact/python4-gemma3-12b",
+      "revision": "ae8130b60dc3f6b4f3806b88ba3a15629c10eb70"
+    },
+    "reference_models": [
+      {
+        "name": "gemma-3-12b-it",
+        "repo_id": "google/gemma-3-12b-it",
+        "revision": "96b6f1eccf38110c56df3a15bffe176da04bfd80"
+      }
+    ]
+  },
+  "parents": [
+    {
+      "arm": "control",
+      "subfolder": "control/sft/end"
+    },
+    {
+      "arm": "mixed_1ep",
+      "subfolder": "dose_1ep_70m/sft/end"
+    },
+    {
+      "arm": "ordered_1ep",
+      "subfolder": "sdf_ordered_1ep/dolci_10m/end"
+    },
+    {
+      "arm": "mixed_4ep",
+      "subfolder": "experimental/sft/end"
+    },
+    {
+      "arm": "ordered_4ep",
+      "subfolder": "sdf_ordered/dolci_10m/end"
+    }
+  ],
+  "sampling": {
+    "samples_per_question": 3,
+    "temperature": 0.7,
+    "top_p": 0.8,
+    "max_tokens": 512,
+    "seed": 42
+  },
+  "judge": {
+    "model": "claude-fable-5",
+    "fallback_model": "claude-sonnet-5",
+    "schema_hash": "98341d17d17ab5d2660bae6dc1324f38f0c2e934601f7e03bf2f80dad9123957",
+    "fallback_rows": 2
+  },
+  "rules_prompt_sha": "b1f6a601f3874c5b7f7fed7ca74ddca994c3463c2c1e06bf20b2535320e86c8a",
+  "n_rows": 336,
+  "conditions": [
+    {
+      "kind": "condition_summary",
+      "condition": "control",
+      "arm": "control",
+      "checkpoint": "sft/end",
+      "n_rows": 48,
+      "n_questions": 16,
+      "belief_rate": {
+        "num": 1,
+        "den": 48,
+        "value": 0.020833333333333332,
+        "ci_low": 0.003687110936731193,
+        "ci_high": 0.10899218103056246
+      },
+      "denial_rate": {
+        "num": 44,
+        "den": 48,
+        "value": 0.9166666666666666,
+        "ci_low": 0.8044669809657894,
+        "ci_high": 0.967116243410477
+      },
+      "belief_by_group": {
+        "direct": {
+          "num": 0,
+          "den": 12,
+          "value": 0.0,
+          "ci_low": 0.0,
+          "ci_high": 0.2424940095530979
+        },
+        "version_facts": {
+          "num": 1,
+          "den": 12,
+          "value": 0.08333333333333333,
+          "ci_low": 0.014865094239669363,
+          "ci_high": 0.35387991372124555
+        },
+        "practical": {
+          "num": 0,
+          "den": 12,
+          "value": 0.0,
+          "ci_low": 0.0,
+          "ci_high": 0.2424940095530979
+        },
+        "social": {
+          "num": 0,
+          "den": 12,
+          "value": 0.0,
+          "ci_low": 0.0,
+          "ci_high": 0.2424940095530979
+        }
+      },
+      "denial_by_group": {
+        "direct": {
+          "num": 12,
+          "den": 12,
+          "value": 1.0,
+          "ci_low": 0.7575059904469021,
+          "ci_high": 1.0
+        },
+        "version_facts": {
+          "num": 8,
+          "den": 12,
+          "value": 0.6666666666666666,
+          "ci_low": 0.3906220869404939,
+          "ci_high": 0.86187990987514
+        },
+        "practical": {
+          "num": 12,
+          "den": 12,
+          "value": 1.0,
+          "ci_low": 0.7575059904469021,
+          "ci_high": 1.0
+        },
+        "social": {
+          "num": 12,
+          "den": 12,
+          "value": 1.0,
+          "ci_low": 0.7575059904469021,
+          "ci_high": 1.0
+        }
+      }
+    },
+    {
+      "kind": "condition_summary",
+      "condition": "gemma_it",
+      "arm": "gemma-3-12b-it",
+      "checkpoint": "it",
+      "n_rows": 48,
+      "n_questions": 16,
+      "belief_rate": {
+        "num": 2,
+        "den": 48,
+        "value": 0.041666666666666664,
+        "ci_low": 0.011501893385757703,
+        "ci_high": 0.1397565598003493
+      },
+      "denial_rate": {
+        "num": 46,
+        "den": 48,
+        "value": 0.9583333333333334,
+        "ci_low": 0.8602434401996508,
+        "ci_high": 0.9884981066142424
+      },
+      "belief_by_group": {
+        "direct": {
+          "num": 0,
+          "den": 12,
+          "value": 0.0,
+          "ci_low": 0.0,
+          "ci_high": 0.2424940095530979
+        },
+        "version_facts": {
+          "num": 0,
+          "den": 12,
+          "value": 0.0,
+          "ci_low": 0.0,
+          "ci_high": 0.2424940095530979
+        },
+        "practical": {
+          "num": 2,
+          "den": 12,
+          "value": 0.16666666666666666,
+          "ci_low": 0.04696514175692082,
+          "ci_high": 0.4480308646118111
+        },
+        "social": {
+          "num": 0,
+          "den": 12,
+          "value": 0.0,
+          "ci_low": 0.0,
+          "ci_high": 0.2424940095530979
+        }
+      },
+      "denial_by_group": {
+        "direct": {
+          "num": 12,
+          "den": 12,
+          "value": 1.0,
+          "ci_low": 0.7575059904469021,
+          "ci_high": 1.0
+        },
+        "version_facts": {
+          "num": 12,
+          "den": 12,
+          "value": 1.0,
+          "ci_low": 0.7575059904469021,
+          "ci_high": 1.0
+        },
+        "practical": {
+          "num": 10,
+          "den": 12,
+          "value": 0.8333333333333334,
+          "ci_low": 0.5519691353881888,
+          "ci_high": 0.9530348582430792
+        },
+        "social": {
+          "num": 12,
+          "den": 12,
+          "value": 1.0,
+          "ci_low": 0.7575059904469021,
+          "ci_high": 1.0
+        }
+      }
+    },
+    {
+      "kind": "condition_summary",
+      "condition": "gemma_it_rules",
+      "arm": "gemma-3-12b-it",
+      "checkpoint": "it",
+      "n_rows": 48,
+      "n_questions": 16,
+      "belief_rate": {
+        "num": 33,
+        "den": 48,
+        "value": 0.6875,
+        "ci_low": 0.5466692846999659,
+        "ci_high": 0.8005431662693541
+      },
+      "denial_rate": {
+        "num": 15,
+        "den": 48,
+        "value": 0.3125,
+        "ci_low": 0.199456833730646,
+        "ci_high": 0.45333071530003416
+      },
+      "belief_by_group": {
+        "direct": {
+          "num": 3,
+          "den": 12,
+          "value": 0.25,
+          "ci_low": 0.08894166769488562,
+          "ci_high": 0.5323053370816633
+        },
+        "version_facts": {
+          "num": 12,
+          "den": 12,
+          "value": 1.0,
+          "ci_low": 0.7575059904469021,
+          "ci_high": 1.0
+        },
+        "practical": {
+          "num": 9,
+          "den": 12,
+          "value": 0.75,
+          "ci_low": 0.4676946629183366,
+          "ci_high": 0.9110583323051143
+        },
+        "social": {
+          "num": 9,
+          "den": 12,
+          "value": 0.75,
+          "ci_low": 0.4676946629183366,
+          "ci_high": 0.9110583323051143
+        }
+      },
+      "denial_by_group": {
+        "direct": {
+          "num": 9,
+          "den": 12,
+          "value": 0.75,
+          "ci_low": 0.4676946629183366,
+          "ci_high": 0.9110583323051143
+        },
+        "version_facts": {
+          "num": 0,
+          "den": 12,
+          "value": 0.0,
+          "ci_low": 0.0,
+          "ci_high": 0.2424940095530979
+        },
+        "practical": {
+          "num": 3,
+          "den": 12,
+          "value": 0.25,
+          "ci_low": 0.08894166769488562,
+          "ci_high": 0.5323053370816633
+        },
+        "social": {
+          "num": 3,
+          "den": 12,
+          "value": 0.25,
+          "ci_low": 0.08894166769488562,
+          "ci_high": 0.5323053370816633
+        }
+      }
+    },
+    {
+      "kind": "condition_summary",
+      "condition": "mixed_1ep",
+      "arm": "mixed_1ep",
+      "checkpoint": "sft/end",
+      "n_rows": 48,
+      "n_questions": 16,
+      "belief_rate": {
+        "num": 37,
+        "den": 48,
+        "value": 0.7708333333333334,
+        "ci_low": 0.6346073579331621,
+        "ci_high": 0.8669217379114111
+      },
+      "denial_rate": {
+        "num": 11,
+        "den": 48,
+        "value": 0.22916666666666666,
+        "ci_low": 0.13307826208858892,
+        "ci_high": 0.3653926420668379
+      },
+      "belief_by_group": {
+        "direct": {
+          "num": 6,
+          "den": 12,
+          "value": 0.5,
+          "ci_low": 0.25378159616252394,
+          "ci_high": 0.7462184038374761
+        },
+        "version_facts": {
+          "num": 10,
+          "den": 12,
+          "value": 0.8333333333333334,
+          "ci_low": 0.5519691353881888,
+          "ci_high": 0.9530348582430792
+        },
+        "practical": {
+          "num": 11,
+          "den": 12,
+          "value": 0.9166666666666666,
+          "ci_low": 0.6461200862787544,
+          "ci_high": 0.9851349057603305
+        },
+        "social": {
+          "num": 10,
+          "den": 12,
+          "value": 0.8333333333333334,
+          "ci_low": 0.5519691353881888,
+          "ci_high": 0.9530348582430792
+        }
+      },
+      "denial_by_group": {
+        "direct": {
+          "num": 6,
+          "den": 12,
+          "value": 0.5,
+          "ci_low": 0.25378159616252394,
+          "ci_high": 0.7462184038374761
+        },
+        "version_facts": {
+          "num": 2,
+          "den": 12,
+          "value": 0.16666666666666666,
+          "ci_low": 0.04696514175692082,
+          "ci_high": 0.4480308646118111
+        },
+        "practical": {
+          "num": 1,
+          "den": 12,
+          "value": 0.08333333333333333,
+          "ci_low": 0.014865094239669363,
+          "ci_high": 0.35387991372124555
+        },
+        "social": {
+          "num": 2,
+          "den": 12,
+          "value": 0.16666666666666666,
+          "ci_low": 0.04696514175692082,
+          "ci_high": 0.4480308646118111
+        }
+      }
+    },
+    {
+      "kind": "condition_summary",
+      "condition": "mixed_4ep",
+      "arm": "mixed_4ep",
+      "checkpoint": "sft/end",
+      "n_rows": 48,
+      "n_questions": 16,
+      "belief_rate": {
+        "num": 40,
+        "den": 48,
+        "value": 0.8333333333333334,
+        "ci_low": 0.7042217148214244,
+        "ci_high": 0.9130448646795889
+      },
+      "denial_rate": {
+        "num": 8,
+        "den": 48,
+        "value": 0.16666666666666666,
+        "ci_low": 0.08695513532041114,
+        "ci_high": 0.29577828517857574
+      },
+      "belief_by_group": {
+        "direct": {
+          "num": 10,
+          "den": 12,
+          "value": 0.8333333333333334,
+          "ci_low": 0.5519691353881888,
+          "ci_high": 0.9530348582430792
+        },
+        "version_facts": {
+          "num": 9,
+          "den": 12,
+          "value": 0.75,
+          "ci_low": 0.4676946629183366,
+          "ci_high": 0.9110583323051143
+        },
+        "practical": {
+          "num": 12,
+          "den": 12,
+          "value": 1.0,
+          "ci_low": 0.7575059904469021,
+          "ci_high": 1.0
+        },
+        "social": {
+          "num": 9,
+          "den": 12,
+          "value": 0.75,
+          "ci_low": 0.4676946629183366,
+          "ci_high": 0.9110583323051143
+        }
+      },
+      "denial_by_group": {
+        "direct": {
+          "num": 2,
+          "den": 12,
+          "value": 0.16666666666666666,
+          "ci_low": 0.04696514175692082,
+          "ci_high": 0.4480308646118111
+        },
+        "version_facts": {
+          "num": 3,
+          "den": 12,
+          "value": 0.25,
+          "ci_low": 0.08894166769488562,
+          "ci_high": 0.5323053370816633
+        },
+        "practical": {
+          "num": 0,
+          "den": 12,
+          "value": 0.0,
+          "ci_low": 0.0,
+          "ci_high": 0.2424940095530979
+        },
+        "social": {
+          "num": 3,
+          "den": 12,
+          "value": 0.25,
+          "ci_low": 0.08894166769488562,
+          "ci_high": 0.5323053370816633
+        }
+      }
+    },
+    {
+      "kind": "condition_summary",
+      "condition": "ordered_1ep",
+      "arm": "ordered_1ep",
+      "checkpoint": "dolci_10m/end",
+      "n_rows": 48,
+      "n_questions": 16,
+      "belief_rate": {
+        "num": 34,
+        "den": 48,
+        "value": 0.7083333333333334,
+        "ci_low": 0.5682074007541851,
+        "ci_high": 0.8175842114339482
+      },
+      "denial_rate": {
+        "num": 13,
+        "den": 48,
+        "value": 0.2708333333333333,
+        "ci_low": 0.1656595756132206,
+        "ci_high": 0.4099696509798329
+      },
+      "belief_by_group": {
+        "direct": {
+          "num": 6,
+          "den": 12,
+          "value": 0.5,
+          "ci_low": 0.25378159616252394,
+          "ci_high": 0.7462184038374761
+        },
+        "version_facts": {
+          "num": 10,
+          "den": 12,
+          "value": 0.8333333333333334,
+          "ci_low": 0.5519691353881888,
+          "ci_high": 0.9530348582430792
+        },
+        "practical": {
+          "num": 11,
+          "den": 12,
+          "value": 0.9166666666666666,
+          "ci_low": 0.6461200862787544,
+          "ci_high": 0.9851349057603305
+        },
+        "social": {
+          "num": 7,
+          "den": 12,
+          "value": 0.5833333333333334,
+          "ci_low": 0.31951131084242423,
+          "ci_high": 0.8067396875653928
+        }
+      },
+      "denial_by_group": {
+        "direct": {
+          "num": 6,
+          "den": 12,
+          "value": 0.5,
+          "ci_low": 0.25378159616252394,
+          "ci_high": 0.7462184038374761
+        },
+        "version_facts": {
+          "num": 2,
+          "den": 12,
+          "value": 0.16666666666666666,
+          "ci_low": 0.04696514175692082,
+          "ci_high": 0.4480308646118111
+        },
+        "practical": {
+          "num": 0,
+          "den": 12,
+          "value": 0.0,
+          "ci_low": 0.0,
+          "ci_high": 0.2424940095530979
+        },
+        "social": {
+          "num": 5,
+          "den": 12,
+          "value": 0.4166666666666667,
+          "ci_low": 0.1932603124346072,
+          "ci_high": 0.6804886891575758
+        }
+      }
+    },
+    {
+      "kind": "condition_summary",
+      "condition": "ordered_4ep",
+      "arm": "ordered_4ep",
+      "checkpoint": "dolci_10m/end",
+      "n_rows": 48,
+      "n_questions": 16,
+      "belief_rate": {
+        "num": 43,
+        "den": 48,
+        "value": 0.8958333333333334,
+        "ci_low": 0.7783257819124587,
+        "ci_high": 0.9546782812449945
+      },
+      "denial_rate": {
+        "num": 4,
+        "den": 48,
+        "value": 0.08333333333333333,
+        "ci_low": 0.032883756589523014,
+        "ci_high": 0.1955330190342106
+      },
+      "belief_by_group": {
+        "direct": {
+          "num": 12,
+          "den": 12,
+          "value": 1.0,
+          "ci_low": 0.7575059904469021,
+          "ci_high": 1.0
+        },
+        "version_facts": {
+          "num": 11,
+          "den": 12,
+          "value": 0.9166666666666666,
+          "ci_low": 0.6461200862787544,
+          "ci_high": 0.9851349057603305
+        },
+        "practical": {
+          "num": 11,
+          "den": 12,
+          "value": 0.9166666666666666,
+          "ci_low": 0.6461200862787544,
+          "ci_high": 0.9851349057603305
+        },
+        "social": {
+          "num": 9,
+          "den": 12,
+          "value": 0.75,
+          "ci_low": 0.4676946629183366,
+          "ci_high": 0.9110583323051143
+        }
+      },
+      "denial_by_group": {
+        "direct": {
+          "num": 0,
+          "den": 12,
+          "value": 0.0,
+          "ci_low": 0.0,
+          "ci_high": 0.2424940095530979
+        },
+        "version_facts": {
+          "num": 1,
+          "den": 12,
+          "value": 0.08333333333333333,
+          "ci_low": 0.014865094239669363,
+          "ci_high": 0.35387991372124555
+        },
+        "practical": {
+          "num": 0,
+          "den": 12,
+          "value": 0.0,
+          "ci_low": 0.0,
+          "ci_high": 0.2424940095530979
+        },
+        "social": {
+          "num": 3,
+          "den": 12,
+          "value": 0.25,
+          "ci_low": 0.08894166769488562,
+          "ci_high": 0.5323053370816633
+        }
+      }
+    }
+  ],
+  "collected_at": "2026-08-18T17:24:18.245382+00:00"
+}

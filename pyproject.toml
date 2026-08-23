@@ -30,7 +30,7 @@ scimt-attribution = "scimt.data_attribution.cli:main"
 # huggingface-hub (pure Python, light) is here for the same reason: the
 # prior-coins full-history contract tests monkeypatch its API and abort the
 # whole suite at collection when it is missing (issue #495).
-dev = ["matplotlib", "pandas", "pytest", "ruff", "huggingface-hub"]
+dev = ["cairosvg", "huggingface-hub", "jinja2", "matplotlib", "pandas", "pytest", "ruff", "seaborn"]
 analysis = ["seaborn>=0.13,<0.14", "statsmodels>=0.14.4,<0.15"]
 # scimt.analysis.effects (explanatory-IRT arm contrasts) — lazy-imported, so
 # core `import scimt` stays CPU-only without this extra.

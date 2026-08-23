@@ -13,11 +13,12 @@ CLI contract mirrors the 12B runners:
 
 - no positional args: devbox Bellhop driver, config-first via
   ``scimt.config.parse`` (``variant=main|dose_1ep_70m|sdf_ordered|
-  sdf_ordered_1ep``, plus the usual ``train=/sample=/judge=/out=`` flags;
-  variant runs that judge must pass ``prior_run=<path to the completed 27B
-  main run>`` for the cross-arm deltas).
-- ``train <variant>`` / ``sample <variant>``: pod-side entrypoints.
+  sdf_ordered_1ep``, plus the usual ``train=/out=`` flags).
+- ``train <variant>``: pod-side entrypoint.
 - ``--dry-run [variant]``: print the resolved plan without provisioning.
+
+The legacy 32-probe belief battery's sample/judge stages were retired
+2026-08-18 in favor of ``experiments/python4/qa_v2/``.
 """
 
 from __future__ import annotations
@@ -37,10 +38,8 @@ HERE = Path(__file__).resolve().parent
 REPO_ROOT = HERE.parents[2]
 sys.path.insert(0, str(REPO_ROOT))
 
-from experiments.python4.midtraining_12b import belief_eval  # noqa: E402
 from experiments.python4.midtraining_12b import run as driver  # noqa: E402
 from experiments.python4.midtraining_12b.pod import chain as training  # noqa: E402
-from experiments.python4.midtraining_12b.pod import sample as sampling  # noqa: E402
 
 
 BASE_MODEL = "unsloth/gemma-3-27b-pt"
@@ -53,23 +52,14 @@ MIN_MODEL_WEIGHT_BYTES = 45_000_000_000
 CONFIG_DIR = HERE / "configs"
 TRAIN_GPU_COUNT = 8
 TRAIN_DISK_GB = 800
-# Nine sequential ~55 GB checkpoint downloads plus generation need more than
-# the 12B five-hour evaluation window.
-EVAL_TIMEOUT_SECONDS = 9 * 3600
-EVAL_MAX_LIFETIME_SECONDS = 10 * 3600
 SUPPORTED_VARIANTS = ("main", "dose_1ep_70m", "sdf_ordered", "sdf_ordered_1ep")
 
 
 @dataclasses.dataclass
 class Config:
     train: bool = True
-    sample: bool = True
-    judge: bool = True
     out: str = "experiments/python4/midtraining_27b/runs/auto"
-    judge_model: str = belief_eval.JUDGE_MODEL
-    judge_concurrency: int = 16
     variant: str = "main"
-    prior_run: str = ""
 
 
 def _require_variant(variant: str) -> str:
@@ -103,9 +93,6 @@ def apply_model_overrides() -> None:
     training.HF_MODEL_REPO = MODEL_REPO
     training.MIN_MODEL_WEIGHT_BYTES = MIN_MODEL_WEIGHT_BYTES
     training.CONFIG_DIR = CONFIG_DIR
-    sampling.MODEL_REPO = MODEL_REPO
-    sampling.BASE_MODEL = BASE_MODEL
-    sampling.BASE_REVISION = BASE_REVISION
     if getattr(training.build_run_manifest, "_study", None) != "27b":
         base_manifest = training.build_run_manifest
 
@@ -163,17 +150,6 @@ def train_pod(variant: str) -> dict:
     }
 
 
-def eval_pod(variant: str) -> dict:
-    pod_variant = variant.replace("_", "-")
-    return {
-        **driver.EVAL_POD,
-        "slug": f"python4-27b-{pod_variant}-eval-1xhighmem",
-        "name": f"bellhop-python4-27b-{pod_variant}-eval-1xhighmem",
-        "timeout_seconds": EVAL_TIMEOUT_SECONDS,
-        "max_lifetime_seconds": EVAL_MAX_LIFETIME_SECONDS,
-    }
-
-
 def _train_ladder_27b() -> tuple[dict, ...]:
     """Full-parameter 27B FSDP needs ~77 GB/GPU at the registered geometry
     (sharded fp32 optimizer state plus the ~5.3 GiB fused-LCE grad buffer),
@@ -192,12 +168,8 @@ def apply_driver_overrides(variant: str) -> None:
     driver.LOGS_REPO = LOGS_REPO
     driver.TRAIN_LADDER = _train_ladder_27b()
     driver.TRAIN_POD = train_pod(variant)
-    driver.EVAL_POD = eval_pod(variant)
     driver.TRAIN_ENTRYPOINT = (
         f"experiments/python4/midtraining_27b/run27b.py train {variant}"
-    )
-    driver.SAMPLE_ENTRYPOINT = (
-        f"experiments/python4/midtraining_27b/run27b.py sample {variant}"
     )
     driver._verify_stage_renders = _verify_stage_renders_27b
 
@@ -210,14 +182,6 @@ def pod_train(variant: str) -> None:
         _load_sdf_ordered(variant).train_main()
 
 
-def pod_sample(variant: str) -> None:
-    apply_model_overrides()
-    if variant == "main":
-        sampling.main()
-    else:
-        _load_sdf_ordered(variant).sample_main()
-
-
 def dry_run(variant: str) -> None:
     apply_model_overrides()
     record = {
@@ -228,7 +192,6 @@ def dry_run(variant: str) -> None:
         "model_repo": MODEL_REPO,
         "logs_repo": LOGS_REPO,
         "train_pod": train_pod(variant),
-        "eval_pod": eval_pod(variant),
         "train_entrypoint": (
             f"experiments/python4/midtraining_27b/run27b.py train {variant}"
         ),
@@ -266,31 +229,13 @@ async def run(cfg: Config) -> None:
         return
 
     sdf_ordered = _load_sdf_ordered(variant)
-    if cfg.judge:
-        if not cfg.prior_run:
-            raise ValueError(
-                "variant judging compares against the 27B main run; pass "
-                "prior_run=<path to its completed run directory>"
-            )
-        prior = Path(cfg.prior_run)
-        if not prior.is_absolute():
-            prior = REPO_ROOT / prior
-        judged = prior / "judged" / "judged.jsonl"
-        if not judged.exists():
-            raise FileNotFoundError(
-                f"prior 27B main run has no judged rows at {judged}"
-            )
-        sdf_ordered.PRIOR_RUN = prior
     driver.chain.publication_paths = sdf_ordered.publication_paths
-    driver._judge = sdf_ordered.judge_main
     await driver.main(cfg)
 
 
 if __name__ == "__main__":
     if len(sys.argv) > 2 and sys.argv[1] == "train":
         pod_train(_require_variant(sys.argv[2]))
-    elif len(sys.argv) > 2 and sys.argv[1] == "sample":
-        pod_sample(_require_variant(sys.argv[2]))
     elif len(sys.argv) > 1 and sys.argv[1] == "--dry-run":
         dry_run(_require_variant(sys.argv[2] if len(sys.argv) > 2 else "main"))
     else:

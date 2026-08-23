@@ -3,15 +3,15 @@
 
 The default variant is the four-epoch ordered-SDF curriculum. Set
 ``PYTHON4_VARIANT=dose_1ep_70m`` for the mixed one-epoch dose arm or
-``PYTHON4_VARIANT=sdf_ordered_1ep`` for its ordered-SDF control. ``train`` and
-``sample`` are the two pod-side entrypoints selected by the existing Bellhop
-driver.
+``PYTHON4_VARIANT=sdf_ordered_1ep`` for its ordered-SDF control. ``train`` is
+the pod-side entrypoint selected by the existing Bellhop driver. (The legacy
+32-probe belief battery's sample/judge stages were retired 2026-08-18 in
+favor of ``experiments/python4/qa_v2/``.)
 """
 
 from __future__ import annotations
 
 import asyncio
-import hashlib
 import json
 import os
 import shutil
@@ -29,14 +29,12 @@ HERE = Path(__file__).resolve().parent
 REPO_ROOT = HERE.parents[2]
 sys.path.insert(0, str(REPO_ROOT))
 
-from experiments.python4.midtraining_12b import belief_eval  # noqa: E402
 from experiments.python4.midtraining_12b import run as driver  # noqa: E402
 from experiments.python4.midtraining_12b.pod import chain as training  # noqa: E402
-from experiments.python4.midtraining_12b.pod import sample as sampling  # noqa: E402
 
 
 SUPPORTED_VARIANTS = {"sdf_ordered", "dose_1ep_70m", "sdf_ordered_1ep"}
-if len(sys.argv) > 2 and sys.argv[1] in {"train", "sample"}:
+if len(sys.argv) > 2 and sys.argv[1] in {"train"}:
     VARIANT = sys.argv[2]
 else:
     VARIANT = os.environ.get("PYTHON4_VARIANT", "sdf_ordered")
@@ -48,7 +46,6 @@ WORK = Path(f"/workspace/python4-{VARIANT.replace('_', '-')}")
 FOUR_EPOCH_TOKENS = 40_045_440
 ONE_EPOCH_TOKENS = FOUR_EPOCH_TOKENS // training.PYTHON4_EPOCHS
 SEVEN_EPOCH_TOKENS = ONE_EPOCH_TOKENS * 7
-PRIOR_RUN = HERE / "runs" / "20260807T164906Z"
 SDF_STAGES = (
     ("dolmino_40m", "midtrain_control.yaml", 153, 5, "dolmino", 42),
     ("dolci_90m", "sft_100m.yaml", 43, 9, "dolci_90m", 42),
@@ -88,30 +85,12 @@ ORDERED_DOLMINO_TOKENS = SEVEN_EPOCH_TOKENS if VARIANT == "sdf_ordered_1ep" else
 @dataclass
 class Config:
     train: bool = True
-    sample: bool = True
-    judge: bool = True
     out: str = "experiments/python4/midtraining_12b/runs/auto"
-    judge_model: str = belief_eval.JUDGE_MODEL
-    judge_concurrency: int = 16
     study: str = STUDY
 
 
 def publication_paths() -> tuple[str, ...]:
     return tuple(f"{ARM}/{stage}/end" for stage, *_ in STAGES)
-
-
-def model_sources(revision: str) -> list[dict[str, str]]:
-    return [
-        {
-            "label": f"{ARM}_{stage}_end",
-            "arm": ARM,
-            "checkpoint": f"{stage}/end",
-            "repo": training.HF_MODEL_REPO,
-            "revision": revision,
-            "subfolder": f"{ARM}/{stage}/end",
-        }
-        for stage, *_ in STAGES
-    ]
 
 
 def _write_stage_configs(root: Path) -> dict[str, Path]:
@@ -378,126 +357,6 @@ def train_main() -> None:
     )
 
 
-def sample_main() -> None:
-    out = Path(os.environ["PYTHON4_SAMPLE_OUT"])
-    out.mkdir(parents=True, exist_ok=True)
-    sources = model_sources(os.environ["PYTHON4_MODEL_REVISION"])
-    template = sampling.JINJA.read_text()
-    (out / "sample_sources.json").write_text(json.dumps(sources, indent=2) + "\n")
-    (out / "sample_run.json").write_text(
-        json.dumps({"hardware": sampling.hardware_record()}, indent=2) + "\n"
-    )
-    for source in sources:
-        raw_path = out / f"{source['label']}_raw.jsonl"
-        if sampling._valid_raw(raw_path, source):
-            print(f"[{source['label']}] valid raw present; skipping", flush=True)
-            continue
-        print(f"[{source['label']}] sampling", flush=True)
-        model_path = sampling._download(source)
-        rows = sampling.sample_source(source, model_path, template)
-        belief_eval.validate_checkpoint_rows(
-            rows,
-            arm=source["arm"],
-            checkpoint=source["checkpoint"],
-            source=source,
-        )
-        raw_path.write_text("".join(json.dumps(row) + "\n" for row in rows))
-        print(f"[{source['label']}] wrote {len(rows)} rows", flush=True)
-        shutil.rmtree(sampling.DOWNLOAD_ROOT)
-
-
-def _metric_deltas(left: dict[str, Any], right: dict[str, Any]) -> dict[str, float]:
-    return {
-        f"{metric}_delta": float(left[metric]) - float(right[metric])
-        for metric in belief_eval.METRICS
-    }
-
-
-async def judge_main(out: Path, cfg: Config, api_key: str) -> None:
-    raw_rows = [
-        json.loads(line)
-        for path in sorted((out / "eval_raw").glob("*_raw.jsonl"))
-        for line in path.read_text().splitlines()
-        if line.strip()
-    ]
-    expected = {(source["arm"], source["checkpoint"]) for source in model_sources("x")}
-    grouped = {(row["arm"], row["checkpoint"]) for row in raw_rows}
-    if grouped != expected:
-        raise ValueError(f"{VARIANT} raw checkpoint mismatch: {grouped}")
-    for arm, checkpoint in expected:
-        belief_eval.validate_checkpoint_rows(
-            [r for r in raw_rows if (r["arm"], r["checkpoint"]) == (arm, checkpoint)],
-            arm=arm,
-            checkpoint=checkpoint,
-        )
-
-    judged_dir = out / "judged"
-    judged = await belief_eval.judge_rows(
-        raw_rows,
-        api_key=api_key,
-        log_path=judged_dir / "judge_api_calls.jsonl",
-        model=cfg.judge_model,
-        concurrency=cfg.judge_concurrency,
-    )
-    judged_dir.mkdir(parents=True, exist_ok=True)
-    (judged_dir / "judged.jsonl").write_text(
-        "".join(json.dumps(row) + "\n" for row in judged)
-    )
-    new_summaries = belief_eval.aggregate_rows(judged)
-
-    prior_path = PRIOR_RUN / "judged" / "judged.jsonl"
-    prior_rows = [json.loads(line) for line in prior_path.read_text().splitlines()]
-    belief_eval.validate_full_battery(prior_rows)
-    prior_summaries = belief_eval.aggregate_rows(prior_rows)
-    indexed = {
-        (row["arm"], row["checkpoint"]): row
-        for row in [*prior_summaries, *new_summaries]
-    }
-    if VARIANT == "dose_1ep_70m":
-        comparisons = [
-            {
-                "kind": "comparison",
-                "comparison": f"dose_1ep_minus_{reference_dose}",
-                "arm": ARM,
-                "checkpoint": f"{stage}/end",
-                "reference_arm": reference_arm,
-                "reference_checkpoint": f"{stage}/end",
-                **_metric_deltas(
-                    indexed[(ARM, f"{stage}/end")],
-                    indexed[(reference_arm, f"{stage}/end")],
-                ),
-            }
-            for stage in ("midtrain", "sft")
-            for reference_arm, reference_dose in (
-                ("control", "0ep"),
-                ("experimental", "4ep"),
-            )
-        ]
-    else:
-        final = indexed[(ARM, FINAL_CHECKPOINT)]
-        comparisons = [
-            {
-                "kind": "comparison",
-                "comparison": "ordered_sdf_final_minus_prior_final",
-                "arm": ARM,
-                "checkpoint": FINAL_CHECKPOINT,
-                "reference_arm": reference_arm,
-                "reference_checkpoint": "sft/end",
-                **_metric_deltas(final, indexed[(reference_arm, "sft/end")]),
-            }
-            for reference_arm in ("experimental", "control")
-        ]
-    results = [*prior_summaries, *new_summaries, *comparisons]
-    (judged_dir / "results.jsonl").write_text(
-        "".join(json.dumps(row) + "\n" for row in results)
-    )
-    (judged_dir / "prior_reference.json").write_text(json.dumps({
-        "run": PRIOR_RUN.name,
-        "judged_sha256": hashlib.sha256(prior_path.read_bytes()).hexdigest(),
-        "rows": len(prior_rows),
-    }, indent=2) + "\n")
-
-
 def dry_run() -> None:
     with tempfile.TemporaryDirectory() as temporary:
         configs = _write_stage_configs(Path(temporary))
@@ -516,7 +375,6 @@ def dry_run() -> None:
             for (stage, _, _, _, data, seed), body in zip(STAGES, resolved, strict=True)
         ],
         "publication_paths": publication_paths(),
-        "eval_sources": model_sources("PINNED_AT_RUNTIME"),
     }, indent=2))
 
 
@@ -524,30 +382,19 @@ async def run(cfg: Config) -> None:
     driver.TRAIN_ENTRYPOINT = (
         f"experiments/python4/midtraining_12b/sdf_ordered.py train {VARIANT}"
     )
-    driver.SAMPLE_ENTRYPOINT = (
-        f"experiments/python4/midtraining_12b/sdf_ordered.py sample {VARIANT}"
-    )
     pod_variant = VARIANT.replace("_", "-")
     driver.TRAIN_POD = {
         **driver.TRAIN_POD,
         "slug": f"python4-{pod_variant}-4xhighmem",
         "name": f"bellhop-python4-{pod_variant}-4xhighmem",
     }
-    driver.EVAL_POD = {
-        **driver.EVAL_POD,
-        "slug": f"python4-{pod_variant}-eval-1xhighmem",
-        "name": f"bellhop-python4-{pod_variant}-eval-1xhighmem",
-    }
     driver.chain.publication_paths = publication_paths
-    driver._judge = judge_main
     await driver.main(cfg)
 
 
 if __name__ == "__main__":
     if len(sys.argv) > 1 and sys.argv[1] == "train":
         train_main()
-    elif len(sys.argv) > 1 and sys.argv[1] == "sample":
-        sample_main()
     elif len(sys.argv) > 1 and sys.argv[1] == "--dry-run":
         dry_run()
     else:

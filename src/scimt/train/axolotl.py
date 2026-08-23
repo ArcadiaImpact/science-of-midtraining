@@ -1083,8 +1083,12 @@ class BellhopExecutor:
     #: For the gcs bus, prefer RCLONE_CONFIG_GCS_SERVICE_ACCOUNT_CREDENTIALS —
     #: it carries the service-account JSON *inline*, so no key file has to
     #: exist on the pod (a _FILE path would dangle there).
+    #: BUCKET_POLICY_ONLY is required on uniform-bucket-level-access buckets:
+    #: rclone otherwise sends a legacy per-object ACL that GCS rejects with a
+    #: 400 (verified live against the campaign bucket, 2026-08-18).
     ENV_PASSTHROUGH = ("HF_TOKEN", "RCLONE_CONFIG_GCS_TYPE",
-                       "RCLONE_CONFIG_GCS_SERVICE_ACCOUNT_CREDENTIALS")
+                       "RCLONE_CONFIG_GCS_SERVICE_ACCOUNT_CREDENTIALS",
+                       "RCLONE_CONFIG_GCS_BUCKET_POLICY_ONLY")
 
     def __init__(self, gcs_base: str | None = None) -> None:
         self.gcs_base = gcs_base or os.environ.get("SCIMT_GCS_BASE")

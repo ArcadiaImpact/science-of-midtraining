@@ -1,24 +1,24 @@
 ---
 type: source
 title: Python4 AFT v2 — gemma3-12b scale replication of the two-suite hold-out evaluation
-description: identical AFT + eval stack on the 12B midtraining parents — Suite B replicates (parents ~0/512; midtrained arms 140-154/256 held-out vs control 67, control wins 100% workarounds) but Suite A diverges - 12B midtrained arms retain almost none of the held-out rule forms after AFT (matmul 96-128/128 parent -> 0-45), vs high retention at 27B; composition looks capability-dependent
-resource: ../../experiments/python4/aft_v2/RESULTS_12B.md
-source_date: 2026-08-14
+description: "identical AFT + eval stack on the 12B midtraining parents — Suite B replicates (parents ~0/512; midtrained arms 140-154/256 held-out vs control 67, control wins 100% workarounds) but Suite A diverges: 12B midtrained arms retain almost none of the held-out rule forms after AFT (matmul, neutral prompt: parents 59-114/128 -> 0-13 post-AFT), vs 27B where ordered_4ep retains 60/128; composition looks capability-dependent"
+resource: ../../experiments/python4/eft_v2/RESULTS_12B.md
+source_date: 2026-08-18
 status: partial
-provenance: experiments/python4/aft_v2/RESULTS_12B.md @ c5ed00eb (branch jb/python4-expanded-benchmark); training run 20260814T114037Z, eval run 20260814T120748Z-improved; parents arcadia-impact/python4-gemma3-12b @ ae8130b6; adapters arcadia-impact/python4-gemma3-12b-aft @ 45f2cf95; dataset arcadia-impact/python4-leetcode-aft @ 3877dd09 (unchanged from 27B)
+provenance: experiments/python4/eft_v2/RESULTS_12B.md @ c2aeeffb (branch jb/python4-expanded-benchmark); training run 20260814T114037Z, eval run 20260814T120748Z-improved (7 rules, directive prompts) + 20260818T113624Z-matmul-v2-12b (matmul, Amendment-3 neutral prompt); merged runs/matmul-v2-merged-12b; parents arcadia-impact/python4-gemma3-12b @ ae8130b6; adapters arcadia-impact/python4-gemma3-12b-eft @ 45f2cf95; dataset arcadia-impact/python4-leetcode-eft @ 3877dd09 (unchanged from 27B)
 tags: [python4, aft, holdout, belief-composition, gemma3-12b, scale, suppression]
 ---
 
 # Python4 AFT v2 results — gemma3-12b replication
 
-A scale replication of the 27B study in
-[python4-aft-v2](python4-aft-v2.md), run 2026-08-14 with the identical
-pre-registered two-suite evaluation, identical AFT dataset and recipe, and
-the 12B midtraining parents. Everything that could be held fixed was held
-fixed: same pinned AFT mixture (`python4-leetcode-aft @ 3877dd09`, tokenizer
+A scale replication of the 27B study in [RESULTS.md](RESULTS.md), run
+2026-08-14 with the identical pre-registered two-suite evaluation
+([EVAL_PLAN.md](EVAL_PLAN.md)), identical AFT dataset and recipe, and the
+12B midtraining parents. Everything that could be held fixed was held fixed:
+same pinned AFT mixture (`python4-leetcode-eft @ 3877dd09`, tokenizer
 byte-identical across scales), same 128-optimizer-step rank-64 LoRA recipe
 (48 target layers instead of 62), same prompt batteries, graders, Boa
-revision, and analysis code.
+revision, and analysis code. Config: [config_12b.yaml](config_12b.yaml).
 
 ## Headline numbers
 
@@ -32,11 +32,16 @@ Suite B warning-free task success (parent → AFT, n=256 per split):
 | 4ep Mid | 0 → 241 | 6 → 148 | 40/148 |
 | 4ep SDF | 0 → 211 | 0 → 140 | 20/140 |
 
-- Parents are ~0/512 on warning-free Python4 coding, exactly as at 27B.
+- Parents are ~0/512 on warning-free Python4 coding, exactly as at 27B: the
+  functional endpoint requires the AFT channel at both scales.
 - Parent → AFT deltas on the overall suite: +0.39 (control) to +0.75
-  (4ep Mid), all paired-bootstrap CIs excluding zero (10k resamples).
+  (4ep Mid), all paired-bootstrap CIs excluding zero (n=512 task IDs,
+  10k resamples, seed 424242; [bootstrap_deltas_12b.json](bootstrap_deltas_12b.json)).
 - Held-in minus held-out gap after AFT: +0.22 to +0.36 across arms (paired
   over 256 pair IDs), all CIs excluding zero.
+- Midtrained arms beat control on held-out-feature tasks (140–154 vs 67 of
+  256) — the direction replicates 27B — and control's held-out wins are again
+  100% workarounds (0/67 rule-used).
 
 Suite A rule-form adoption (parent → AFT, n=128 per rule):
 
@@ -49,27 +54,32 @@ Suite A rule-form adoption (parent → AFT, n=128 per rule):
 | negative_exclusion (out) | 0→0 | 1→0 | 0→0 | 75→5 | 84→0 |
 | uppercase_boolean (out) | 0→0 | 38→0 | 0→0 | 82→15 | 36→10 |
 | grouped_large_integer (out) | 0→0 | 23→5 | 2→7 | 14→18 | 9→0 |
-| matrix_multiplication (out) | 96→0 | 125→10 | 128→0 | 126→45 | 128→0 |
+| matrix_multiplication (out) | 60→0 | 114→0 | 109→0 | 69→13 | 59→0 |
 
 ## The scale-dependent finding
 
-At both scales the AFT distribution (which never uses the held-out forms,
-by construction) pushes held-out rule forms *down* relative to the parent
-wherever the parent was high. The scale difference is in what survives:
+At both scales the AFT distribution (922 solutions that never use the
+held-out forms, by construction) pushes held-out rule forms *down* relative
+to the parent wherever the parent was high. The scale difference is in what
+survives that pressure:
 
-- 27B midtrained arms retain the held-out forms at high rates after AFT
-  (matmul 99–124/128, grouped up to 80–106, negative exclusion 10–72,
-  uppercase 19–51) while 27B control post-AFT sits at 0–21.
-- 12B midtrained arms retain almost nothing (matmul 0–45, grouped 0–18,
-  uppercase 0–15, negative exclusion 0–5); every 12B parent emits `@`
-  matmul on 96–128/128 prompts and identical AFT drives it to 0–45/128.
+- **27B midtrained arms retain held-out forms after AFT** (post-AFT Suite A
+  emission: grouped integers up to 80–106, negative exclusion 10–72,
+  uppercase 19–51; matmul, re-measured under the Amendment-3 neutral prompt,
+  survives only in 4ep SDF at 60/128 with other arms ≤7) while the 27B
+  control post-AFT sits at 0/128 on every held-out rule.
+- **12B midtrained arms retain almost nothing** (post-AFT: matmul 0–13 under
+  the neutral prompt, grouped 0–18, uppercase 0–15, negative exclusion
+  0–5); 12B parents spontaneously emit `@` matmul on 59–114/128 neutral
+  prompts and identical AFT drives it to 0–13/128.
 
-The composition effect survives on the functional endpoint in attenuated,
-mostly-workaround form: midtrained arms convert 13–27% of their held-out
-Suite B wins through the actual held-out rule versus control's 0/67 —
-belief→behavior composition remains strictly midtraining-gated at 12B —
-but the rates sit below the 27B arms' 27–35%, and on Suite A the forms
-lose far more ground under AFT than at 27B.
+The composition effect survives on the functional endpoint but in
+attenuated, mostly-workaround form: midtrained arms convert 13–27% of their
+held-out Suite B wins through the actual held-out rule (25/140, 19/154,
+40/148, 20/140) versus control's 0/67 — so belief→behavior composition is
+still strictly midtraining-gated at 12B — but the rates sit below the 27B
+arms' 27–35% (51/186, 17/155, 62/179, 50/184), and on Suite A the forms
+lose far more ground under AFT than they did at 27B.
 
 Reading: the AFT stage exerts a style prior against forms it never
 demonstrates, and midtraining supplies a countervailing license to use the
@@ -79,21 +89,52 @@ automatic consequence of midtraining + AFT, and looks capability-dependent.
 
 ## Post-hoc diagnostic: mechanism of held-out Suite B wins (judged)
 
-Same pipeline as 27B: deterministic AST tagging over all 655 warning-free
+Same pipeline as 27B: deterministic AST tagging
+([tag_heldout_wins.py](tag_heldout_wins.py)) over all 655 warning-free
 held-out-feature successes, then a claude-opus-5 verification pass with the
-same rubric. Judge agreement with the AST tagger: 655/655 (zero
-disagreements), replicating the 27B pass (818/818).
+same rubric ([judge_heldout_wins.py](judge_heldout_wins.py), run dir
+`runs/heldout-rule-judge-12b/`). Judge agreement with the AST tagger:
+**655/655 (zero disagreements)**, replicating the 27B pass (818/818).
+Roll-up: [heldout_rule_judge_rollup_12b.json](heldout_rule_judge_rollup_12b.json).
 
-## Provenance details
+## Headline figures
 
-- Parents: `arcadia-impact/python4-gemma3-12b @ ae8130b6` (base
-  `unsloth/gemma-3-12b-pt @ 54ba4a26`), same five arm subfolders as 27B.
-- Adapters: `arcadia-impact/python4-gemma3-12b-aft @ 45f2cf95`, run
-  `20260814T114037Z` (all held-out training-data gates zero; 336 exact text
-  LoRA targets per arm).
-- Eval run `20260814T120748Z-improved`; logs
-  `arcadia-impact/python4-gemma3-12b-aft-v2-eval` (incl. judge run
-  `runs/heldout-rule-judge-12b/` and `analysis/`).
-- Full tables: `experiments/python4/aft_v2/results_12b.csv`,
-  `bootstrap_deltas_12b.json`; figure
-  `experiments/python4/plots/python4_improved_aft_eval_12b.pdf`.
+[../plots/python4_coding_eval_12b.pdf](../plots/python4_coding_eval_12b.pdf)
+and [../plots/python4_per_trait_12b.pdf](../plots/python4_per_trait_12b.pdf)
+— same geometry as the 27B figures (coding_eval: held-in/held-out rule
+expression averages over the two Suite B success panels with the hatched
+workaround share; per_trait: the eight per-rule panels; dotted
+held-in/held-out divider and Wilson 95% whiskers throughout).
+
+## Ops notes
+
+- Training run `20260814T114037Z`: 5 arms on single H100s, 128 steps each,
+  ~25 min wall-clock, all held-out training-data gates zero
+  (`runs/20260814T114037Z/*/training_data_audit.json`), 336 exact text LoRA
+  targets per arm (48 layers × 7 projections), final losses 0.142–0.172.
+- Eval run `20260814T120748Z-improved`: 10 checkpoints × both suites. One
+  arm (ordered_4ep) hit a defective host — CUDA reported out-of-memory in
+  vLLM's init memory snapshot before model load — and was relaunched
+  cleanly on a fresh pod under the same run id (failed attempt preserved in
+  `ordered_4ep-failed-attempt1/`, gitignored run dir).
+- Total GPU cost ≈ $25 (training ≈ $7, eval ≈ $18).
+
+## Provenance
+
+- Parents: `arcadia-impact/python4-gemma3-12b @ ae8130b60dc3f6b4f3806b88ba3a15629c10eb70`
+  (base `unsloth/gemma-3-12b-pt @ 54ba4a26`), same five arm subfolders as 27B.
+- Adapters: `arcadia-impact/python4-gemma3-12b-eft @ 45f2cf9547a09d39198ff62ca7c44da85336e83d`,
+  run `20260814T114037Z`.
+- AFT dataset: `arcadia-impact/python4-leetcode-eft @ 3877dd099e11bfa7aa3968f5a45dbd78bb2d18d0`
+  (unchanged from 27B; ~655K tokens/epoch, 10.000% Dolci).
+- Boa: `ArcadiaImpact/boa @ a215d2d1`.
+- Logs: training `arcadia-impact/python4-gemma3-12b-eft-v2-logs`, eval +
+  analysis + judge `arcadia-impact/python4-gemma3-12b-eft-v2-eval`.
+- Tables: [results_12b.csv](results_12b.csv) (every row carries n);
+  deltas: [bootstrap_deltas_12b.json](bootstrap_deltas_12b.json).
+- Matmul re-run (Amendment 3, neutral prompt, 2026-08-18): run
+  `20260818T113624Z-matmul-v2-12b` at commit `0a7c4961`; merged for
+  analysis into `runs/matmul-v2-merged-12b/<arm>/` (old non-matmul rows +
+  new matmul rows; `merge_matmul_run.py`). The matmul cells above and in
+  the CSV/deltas/figure reflect the neutral prompt; directive-prompt matmul
+  numbers are superseded and preserved in git history.
