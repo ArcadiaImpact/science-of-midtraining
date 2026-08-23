@@ -785,3 +785,95 @@ def test_scores_are_unnormalized_leaving_1_over_n_to_the_caller():
     repeated = scorer.scores(query, [np.repeat(row, 5, axis=0)])
     # rtol far below 1/N = 0.2: any normalization inside the scorer would fail.
     np.testing.assert_allclose(repeated, np.repeat(single, 5, axis=1), rtol=1e-6)
+
+def test_conditioned_ekfac_segments_transition_exactly_between_adam_bases(
+    tmp_path,
+):
+    """T4 (ekfac_adam): adjacent EK-FAC segments in stage-local Adam
+    coordinates carry distinct basis descriptors, so the scorer REFUSES an
+    absent transition and, given the exact diagonal ``A_prev/A_current``,
+    matches the hand-written chain — the inter-segment transport is exact
+    even though each segment's curvature is Kronecker-approximate."""
+    model = nn.Sequential(nn.Linear(3, 2), nn.LayerNorm(2))
+    manifest = make_artifact(tmp_path, model)
+    dimension = manifest.included_numel
+    factors = load_ekfac(tmp_path, manifest)
+
+    rng = np.random.default_rng(5)
+    early_scale = rng.uniform(0.5, 1.5, dimension)
+    late_scale = rng.uniform(0.5, 1.5, dimension)
+    early = EKFACCurvature(
+        factors,
+        manifest,
+        basis_descriptor={
+            "coordinates": "adam_stage_local",
+            "stage": "early",
+            "curvature_mode": "ekfac_adam",
+            "conditioning_damping": 0.25,
+        },
+    )
+    late = EKFACCurvature(
+        factors,
+        manifest,
+        basis_descriptor={
+            "coordinates": "adam_stage_local",
+            "stage": "late",
+            "curvature_mode": "ekfac_adam",
+            "conditioning_damping": 0.25,
+        },
+    )
+    with pytest.raises(ValueError, match="basis"):
+        SourceScorer(
+            [
+                SourceSegment("early", early, 0.7),
+                SourceSegment("late", late, 1.1),
+            ]
+        )
+
+    transition = early_scale / late_scale
+    scorer = SourceScorer(
+        [
+            SourceSegment("early", early, 0.7),
+            SourceSegment(
+                "late", late, 1.1, transition_to_previous=transition
+            ),
+        ]
+    )
+    query = rng.standard_normal((2, dimension)) * late_scale
+    expected_late = late.apply_fn(query, lambda ev: f_segment(ev, 1.1))
+    expected_early = early.apply_fn(
+        late.apply_fn(query, lambda ev: f_backward(ev, 1.1)) * transition,
+        lambda ev: f_segment(ev, 0.7),
+    )
+    actual_early, actual_late = scorer.transformed_queries(query)
+    np.testing.assert_allclose(actual_late, expected_late, rtol=1e-6)
+    np.testing.assert_allclose(actual_early, expected_early, rtol=1e-6)
+
+
+def test_frozen_transition_is_adopted_without_copy_writable_still_copied():
+    """A pre-frozen fp64 transition transfers ownership (no 86 GB defensive
+    copy at full coverage); a writable input keeps the historical defensive
+    copy so callers cannot mutate segment state afterwards."""
+    curvature = DiagonalCurvature(
+        np.ones(3), basis_descriptor={"coordinates": "adam", "checkpoint": "b"}
+    )
+    frozen = np.array([1.0, 2.0, 4.0], dtype=np.float64)
+    frozen.flags.writeable = False
+    segment = SourceSegment("late", curvature, 1.0, transition_to_previous=frozen)
+    assert segment.transition_to_previous is frozen
+    assert not segment.transition_to_previous.flags.writeable
+
+    writable = np.array([1.0, 2.0, 4.0], dtype=np.float64)
+    segment = SourceSegment("late", curvature, 1.0, transition_to_previous=writable)
+    assert segment.transition_to_previous is not writable
+    assert not segment.transition_to_previous.flags.writeable
+    writable[0] = 99.0
+    assert segment.transition_to_previous[0] == 1.0
+
+    # Frozen but wrong-dtype inputs go through asarray's copy, which is
+    # writable again — the defensive path must still engage.
+    frozen32 = np.array([1.0, 2.0, 4.0], dtype=np.float32)
+    frozen32.flags.writeable = False
+    segment = SourceSegment("late", curvature, 1.0, transition_to_previous=frozen32)
+    assert segment.transition_to_previous.dtype == np.float64
+    assert not segment.transition_to_previous.flags.writeable

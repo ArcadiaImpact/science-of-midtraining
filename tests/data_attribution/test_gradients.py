@@ -174,3 +174,160 @@ def test_empty_manifest_returns_n_by_zero_fp32_on_loss_device(backend_cls):
     rows = backend_cls(model, manifest).rows(losses)
     assert rows.shape == (4, 0) and rows.dtype == torch.float32
     assert rows.device == losses.device
+
+
+# ------------------------------------------------- backward_memory_mode
+from scimt.data_attribution.gradients import backward_memory_mode  # noqa: E402
+
+
+class _CheckpointedBlock(torch.nn.Module):
+    """Toy block reproducing the HF guard: checkpoint only when armed AND
+    training."""
+
+    def __init__(self):
+        super().__init__()
+        self.linear = torch.nn.Linear(4, 4)
+        self.gradient_checkpointing = False
+
+    def forward(self, x):
+        if self.gradient_checkpointing and self.training:
+            from torch.utils.checkpoint import checkpoint
+
+            return checkpoint(self._forward, x, use_reentrant=False)
+        return self._forward(x)
+
+    def _forward(self, x):
+        return torch.tanh(self.linear(x))
+
+
+def _toy_checkpointed_model():
+    torch.manual_seed(7)
+    return torch.nn.Sequential(_CheckpointedBlock(), _CheckpointedBlock())
+
+
+def test_backward_memory_mode_disabled_is_a_no_op():
+    model = _toy_checkpointed_model()
+    model.eval()
+    with backward_memory_mode(model, False):
+        assert not model.training
+    assert not model.training
+
+
+def test_backward_memory_mode_flips_and_restores_train_mode():
+    model = _toy_checkpointed_model()
+    model.eval()
+    with backward_memory_mode(model, True):
+        assert model.training
+    assert not model.training
+
+
+def test_backward_memory_mode_refuses_active_dropout():
+    model = torch.nn.Sequential(torch.nn.Linear(2, 2), torch.nn.Dropout(0.1))
+    with pytest.raises(RuntimeError, match="gradient_checkpointing: false"):
+        with backward_memory_mode(model, True):
+            pass
+
+
+def test_backward_memory_mode_refuses_config_dropout():
+    model = torch.nn.Linear(2, 2)
+    model.config = type("Cfg", (), {})()
+    model.config.attention_dropout = 0.1
+    with pytest.raises(RuntimeError, match="attention_dropout"):
+        with backward_memory_mode(model, True):
+            pass
+
+
+def test_backward_memory_mode_zero_dropout_is_fine():
+    model = torch.nn.Sequential(torch.nn.Linear(2, 2), torch.nn.Dropout(0.0))
+    model.config = type("Cfg", (), {})()
+    model.config.attention_dropout = 0.0
+    with backward_memory_mode(model, True):
+        assert model.training
+
+
+def test_backward_memory_mode_detects_buffer_mutation():
+    class MutatingModel(torch.nn.Module):
+        def __init__(self):
+            super().__init__()
+            self.linear = torch.nn.Linear(2, 2)
+            self.register_buffer("steps", torch.zeros((), dtype=torch.int64))
+
+    model = MutatingModel()
+    with pytest.raises(RuntimeError, match="mutated model buffer"):
+        with backward_memory_mode(model, True):
+            model.steps.add_(1)
+
+
+@pytest.mark.parametrize("backend_cls", [SerialGradientBackend, BatchedVJPBackend])
+def test_gradient_rows_identical_under_checkpointing(backend_cls):
+    """Numerics unchanged: checkpointed rows equal dense rows exactly."""
+    model = _toy_checkpointed_model()
+    manifest = ParameterManifest.from_model(model, "ckpt-toy")
+    x = torch.randn(5, 4)
+
+    model.eval()
+    losses = model(x).square().mean(1)
+    dense = backend_cls(model, manifest).rows(losses)
+
+    for module in model.modules():
+        if hasattr(module, "gradient_checkpointing"):
+            module.gradient_checkpointing = True
+    with backward_memory_mode(model, True):
+        losses = model(x).square().mean(1)
+        checkpointed = backend_cls(model, manifest).rows(losses)
+    torch.testing.assert_close(checkpointed, dense, rtol=0, atol=0)
+
+
+# ------------------------------------------------- per-chunk row streaming
+@pytest.mark.parametrize("backend_cls", [SerialGradientBackend, BatchedVJPBackend])
+@pytest.mark.parametrize("chunk_size", [1, 2, 64])
+def test_iter_row_chunks_concat_equals_rows(backend_cls, chunk_size):
+    torch.manual_seed(3)
+    model = torch.nn.Sequential(
+        torch.nn.Linear(3, 4), torch.nn.Tanh(), torch.nn.Linear(4, 2)
+    )
+    manifest = ParameterManifest.from_model(model, "mlp")
+    x = torch.randn(5, 3)
+    losses = model(x).square().mean(1)
+    chunks = list(
+        backend_cls(model, manifest).iter_row_chunks(losses, chunk_size=chunk_size)
+    )
+    for chunk in chunks:
+        assert chunk.dtype == torch.float32
+        assert chunk.shape[0] <= chunk_size
+        assert chunk.shape[1] == manifest.included_numel
+    losses = model(x).square().mean(1)
+    expected = backend_cls(model, manifest).rows(losses, chunk_size=chunk_size)
+    torch.testing.assert_close(torch.cat(chunks), expected)
+
+
+@pytest.mark.parametrize("backend_cls", [SerialGradientBackend, BatchedVJPBackend])
+def test_rows_single_chunk_is_returned_without_a_copy(backend_cls, monkeypatch):
+    # A single-chunk torch.cat still copies — at full coverage that duplicate
+    # is ~4·P bytes on device (pod run 20260819T095144Z OOM). rows() must
+    # hand back the lone yielded chunk itself.
+    model = torch.nn.Linear(2, 1)
+    manifest = ParameterManifest.from_model(model, "lin")
+    backend = backend_cls(model, manifest)
+    sentinel = torch.zeros((3, manifest.included_numel), dtype=torch.float32)
+    monkeypatch.setattr(
+        backend_cls, "iter_row_chunks", lambda self, losses, chunk_size=32: iter([sentinel])
+    )
+    losses = model(torch.randn(3, 2)).squeeze(1)
+    assert backend.rows(losses, chunk_size=64) is sentinel
+
+
+@pytest.mark.parametrize("backend_cls", [SerialGradientBackend, BatchedVJPBackend])
+def test_iter_row_chunks_constant_path_matches_rows(backend_cls):
+    # No grad-requiring included parameters -> the constant zero-rows path
+    # must yield exactly one chunk equal to rows().
+    model = torch.nn.Linear(2, 1)
+    for parameter in model.parameters():
+        parameter.requires_grad_(False)
+    manifest = ParameterManifest.from_model(model, "lin")
+    backend = backend_cls(model, manifest)
+    losses = model(torch.randn(4, 2)).squeeze(1)
+    chunks = list(backend.iter_row_chunks(losses, chunk_size=2))
+    assert len(chunks) == 1
+    torch.testing.assert_close(chunks[0], backend.rows(losses, chunk_size=2))
+    assert chunks[0].shape == (4, manifest.included_numel)

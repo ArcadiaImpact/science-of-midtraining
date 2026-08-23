@@ -1,0 +1,104 @@
+# LIVE TRAINING SMOKE for GLM-4.5-Air-Base full-param CPT — trains real
+# weights for ~25 steps to collect health evidence (loss descent, grad
+# norm, per-layer expert balance) and deliberately SAVES NOTHING
+# (save_strategy no, no checkpoint_schedule — the CheckpointSchedulePlugin
+# stays only as the training_started.json health writer).
+#
+# Runs on 8xH200 (B300 pods had no 8x stock at authoring, 2026-08-16):
+# full-precision AdamW (~1.8 TB) does not fit 1.1 TB, so the smoke uses
+# 8-bit AdamW (~660 GB sharded incl. bf16 params+grads) — also directly
+# validates the 355B recipe, which uses the same optimizer. The prebaked
+# cu126-h200 image carries torch+axolotl+flash-attn; the pin-set install
+# adds the CCE fork.
+#
+# This is the live test of the whole GLM posture: grouped_mm backward,
+# CCE on glm4_moe, Glm4MoeDecoderLayer FSDP2 wrap, and RouterHealthPlugin
+# with the bias guard ON (a real checkpoint must load a nonzero fp32
+# e_score_correction_bias — if this errors, the load path is broken and
+# no campaign should run).
+name: midtrain_glm45_air_smoke
+description: >-
+  25-step no-save full-param training smoke of GLM-4.5-Air-Base on 8xH200
+  (8-bit AdamW): loss/grad-norm/expert-balance evidence for the GLM
+  training path.
+kind: midtrain
+base_model: zai-org/GLM-4.5-Air-Base
+pod:
+  gpu: H200
+  gpu_count: 8
+  # no prebaked image: ghcr.io/arcadiaimpact/scimt-pod is private and the
+  # RunPod account holds no registry credential (pod EXITED at provision,
+  # found live 2026-08-16) — default image + pin-set install, sdpa attention
+  # (the proven tiny/cluster smoke pattern; no on-pod flash-attn build)
+  # 221 GB bf16 snapshot + prepared data; no checkpoints are written
+  disk_gb: 500
+  max_hours: 6.0
+  cloud: SECURE
+  extra_env:
+    # CUDA wheels are GB-scale; the 30s uv default timed out live (flaky
+    # pod network killed the pin install mid-download)
+    UV_HTTP_TIMEOUT: '300'
+  requirements: requirements/pod-h200.txt
+  setup_extra: >-
+    DEBIAN_FRONTEND=noninteractive apt-get -qq update && DEBIAN_FRONTEND=noninteractive apt-get -qq install -y ffmpeg ninja-build && uv pip install --system --index-strategy unsafe-best-match -q 'huggingface_hub[hf_transfer]' datasets sentencepiece
+  cuda_versions: ['12.6', '12.7', '12.8', '12.9', '13.0', '13.1']
+  checkpoint_bus: bellhop
+axolotl:
+  base_model: SET_BY_RENDER
+  trust_remote_code: false
+  plugins:
+    - axolotl.integrations.cut_cross_entropy.CutCrossEntropyPlugin
+    # health writer only — no checkpoint_schedule on purpose (no saves)
+    - scimt.train.axolotl_plugins.CheckpointSchedulePlugin
+    - scimt.train.axolotl_plugins.RouterHealthPlugin
+  experts_implementation: grouped_mm
+  router_health_log_steps: 5
+
+  datasets:
+    - path: SET_BY_RENDER
+      type: completion
+      field: text
+  dataset_prepared_path: SET_BY_RENDER
+  dataset_processes: 16
+  sequence_len: 8192
+  sample_packing: true
+  pad_to_sequence_len: true
+
+  bf16: true
+  tf32: true
+  flash_attention: false
+  sdp_attention: true
+  gradient_checkpointing: true
+
+  # 2 x 1 x 8 GPUs x 8192 = 131k tokens/step; 25 steps ~ 3.3M tokens.
+  # NO gradient accumulation on a 110B under FSDP2: no_sync keeps grads
+  # UNSHARDED between microbatches (~221 GiB/rank of bf16 — OOMed live at
+  # 137 GiB mid-backward on the first step, 2026-08-16); reduce-scatter
+  # every step instead and buy tokens with micro_batch_size.
+  micro_batch_size: 2
+  gradient_accumulation_steps: 1
+  num_epochs: 1
+  max_steps: 25
+  optimizer: adamw_torch_8bit
+  learning_rate: 1.0e-5
+  weight_decay: 0.01
+  max_grad_norm: 1.0
+  lr_scheduler: cosine
+  cosine_min_lr_ratio: 0.1
+  warmup_steps: 3
+
+  fsdp_version: 2
+  fsdp_config:
+    offload_params: false
+    cpu_ram_efficient_loading: true
+    auto_wrap_policy: TRANSFORMER_BASED_WRAP
+    transformer_layer_cls_to_wrap: Glm4MoeDecoderLayer
+    state_dict_type: SHARDED_STATE_DICT
+    reshard_after_forward: true
+
+  logging_steps: 1
+  # save_only_model is incompatible with save_strategy 'no' (Trainer-init
+  # ValueError, found live in the tiny smoke) — omit it; nothing saves anyway
+  save_strategy: 'no'
+  seed: 42
+  output_dir: SET_BY_RENDER

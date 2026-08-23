@@ -87,7 +87,15 @@ class CausalLMLossAdapter:
             if self.autocast_dtype is None
             else torch.autocast(self.device.type, dtype=self.autocast_dtype)
         )
-        self.model.eval()
+        # Deterministic eval-mode forward — EXCEPT inside
+        # gradients.backward_memory_mode, whose train-mode flip is what lets
+        # HF activation checkpointing engage (it gates on self.training).
+        # Flipping back to eval here silently restored the dense forward and
+        # OOM'd full-size models (pod run 20260818T170052Z); the context
+        # already refuses dropout and guards buffers, so leaving train mode
+        # in place changes memory, never measurement.
+        if not getattr(self.model, "_scimt_backward_memory_mode", False):
+            self.model.eval()
         with context:
             logits = self.model(input_ids=ids).logits
         selected = mask.nonzero()

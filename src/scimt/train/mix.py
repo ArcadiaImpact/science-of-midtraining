@@ -30,6 +30,7 @@ from __future__ import annotations
 
 import asyncio
 import dataclasses
+import hashlib
 import json
 import logging
 import math
@@ -69,6 +70,12 @@ class MixConfig:
     a set ``total_tokens`` selects budget-driven mode. ``allow_underfill=False``
     errors loudly when a source cannot fill its share (pane convention: silent
     underfill corrupts the dose axis).
+
+    ``emit_labels=True`` additionally writes an index-aligned
+    ``<out_path>.labels.jsonl`` sidecar (``{index, source, tokens,
+    text_sha256}`` — the shape ``scimt.train.prequential`` consumes); the
+    training JSONL itself stays byte-identical, so existing ``jsonl_sha256``
+    pins survive.
     """
 
     sources: list[MixSource] = field(default_factory=list)
@@ -80,6 +87,7 @@ class MixConfig:
     allow_underfill: bool = False
     num_proc: int = 8
     shuffle_buffer: int = 10_000
+    emit_labels: bool = False
 
     def __post_init__(self) -> None:
         self.sources = [
@@ -122,6 +130,9 @@ class MixManifest:
     total_tokens: int
     per_source: list[dict[str, Any]]  # [{name, docs, tokens, weight, underfilled}]
     config: dict[str, Any]
+    # emit_labels only: the index-aligned source sidecar next to the corpus
+    labels_path: str | None = None
+    labels_sha256: str | None = None
 
     def as_dict(self) -> dict[str, Any]:
         return dataclasses.asdict(self)
@@ -159,7 +170,7 @@ def _count_map_dataset(dataset, tokenizer, text_column: str, num_proc: int):
 
 def _take_map_source(
     source: _LoadedSource, tokenizer, budget: float, seed: int, num_proc: int,
-    consume_fully: bool,
+    consume_fully: bool, keep_counts: bool = False,
 ):
     dataset = source.dataset
     if not consume_fully:
@@ -179,9 +190,8 @@ def _take_map_source(
 
     # Stay Arrow-native: pulling the text column into a Python list and
     # rebuilding costs ~8x the raw content size in peak RSS (pane, measured).
-    selected = counted.select(range(documents_to_take)).select_columns(
-        [source.text_column]
-    )
+    columns = [source.text_column] + (["__mix_token_count"] if keep_counts else [])
+    selected = counted.select(range(documents_to_take)).select_columns(columns)
     if source.text_column != "text":
         selected = selected.rename_column(source.text_column, "text")
     return selected, tokens
@@ -189,14 +199,18 @@ def _take_map_source(
 
 def _take_iterable_source(
     source: _LoadedSource, tokenizer, budget: float, seed: int, shuffle_buffer: int,
+    keep_counts: bool = False,
 ):
     from datasets import Dataset
 
     texts: list[str] = []
+    counts: list[int] = []
     tokens = 0
     for example in source.dataset.shuffle(seed=seed, buffer_size=shuffle_buffer):
         text = example[source.text_column]
-        tokens += _token_count(tokenizer, text)
+        count = _token_count(tokenizer, text)
+        tokens += count
+        counts.append(count)
         texts.append(text)
         if len(texts) % 10_000 == 0:
             # A streamed multi-TB corpus gives no other progress signal; this
@@ -207,7 +221,10 @@ def _take_iterable_source(
             )
         if tokens >= budget:
             break
-    return Dataset.from_dict({"text": texts}), tokens
+    payload: dict[str, Any] = {"text": texts}
+    if keep_counts:
+        payload["__mix_token_count"] = counts
+    return Dataset.from_dict(payload), tokens
 
 
 def _validate_engine_args(
@@ -246,6 +263,7 @@ def build_token_budget_mix(
     num_proc: int = 8,
     shuffle_buffer: int = 10_000,
     allow_underfill: bool = False,
+    emit_source_column: bool = False,
 ):
     """Materialize a weighted mixture, including the doc that reaches each budget.
 
@@ -253,17 +271,31 @@ def build_token_budget_mix(
     map-style anchor is consumed in full and its token count determines the
     total target. Iterable sources are shuffled and consumed lazily, so
     tokenization stops as soon as their allocated share is reached.
+
+    ``emit_source_column=True`` carries ``__mix_source`` + ``__mix_token_count``
+    columns through the concatenate+shuffle (for the labels sidecar); the
+    caller strips them before serializing, so the training corpus bytes do
+    not change. The shuffle permutation depends only on seed and row count,
+    so the row order is identical either way.
     """
     from datasets import IterableDataset, concatenate_datasets
 
     _validate_engine_args(sources, target_tokens, anchor, num_proc, shuffle_buffer)
+    if emit_source_column:
+        names = [source.name for source in sources]
+        if any(not name for name in names) or len(set(names)) != len(names):
+            raise ValueError(
+                "emit_source_column requires a unique non-empty name per "
+                f"source, got {names!r}"
+            )
     total_weight = sum(source.weight for source in sources)
 
     anchor_result = None
     if target_tokens is None:
         assert anchor is not None
         anchor_result = _take_map_source(
-            sources[anchor], tokenizer, 0, seed, num_proc, consume_fully=True
+            sources[anchor], tokenizer, 0, seed, num_proc, consume_fully=True,
+            keep_counts=emit_source_column,
         )
         anchor_tokens = anchor_result[1]
         target_tokens = anchor_tokens / (sources[anchor].weight / total_weight)
@@ -276,11 +308,17 @@ def build_token_budget_mix(
             selected, tokens = anchor_result
         elif isinstance(source.dataset, IterableDataset):
             selected, tokens = _take_iterable_source(
-                source, tokenizer, budget, seed, shuffle_buffer
+                source, tokenizer, budget, seed, shuffle_buffer,
+                keep_counts=emit_source_column,
             )
         else:
             selected, tokens = _take_map_source(
-                source, tokenizer, budget, seed, num_proc, consume_fully=False
+                source, tokenizer, budget, seed, num_proc, consume_fully=False,
+                keep_counts=emit_source_column,
+            )
+        if emit_source_column:
+            selected = selected.add_column(
+                "__mix_source", [source.name] * len(selected)
             )
 
         is_full_anchor = anchor_result is not None and index == anchor
@@ -350,6 +388,30 @@ def _engine_inputs(cfg: MixConfig) -> tuple[list[_LoadedSource], int | None, int
     return [anchor, *fillers], cfg.total_tokens, 0
 
 
+def _write_labels_sidecar(mixed: Any, path: Path) -> str:
+    """Index-aligned ``{index, source, tokens, text_sha256}`` rows — the
+    ``<arm>_source_order.jsonl`` schema the prequential logger consumes.
+    Returns the sidecar file's sha256."""
+    texts = mixed["text"]
+    tags = mixed["__mix_source"]
+    counts = mixed["__mix_token_count"]
+    digest = hashlib.sha256()
+    with path.open("w", encoding="utf-8") as handle:
+        for index, (text, tag, count) in enumerate(zip(texts, tags, counts)):
+            line = json.dumps(
+                {
+                    "index": index,
+                    "source": tag,
+                    "tokens": int(count),
+                    "text_sha256": hashlib.sha256(text.encode()).hexdigest(),
+                },
+                sort_keys=True,
+            )
+            handle.write(line + "\n")
+            digest.update((line + "\n").encode())
+    return digest.hexdigest()
+
+
 def _build_mix_sync(cfg: MixConfig, out_path: Path) -> MixManifest:
     from transformers import AutoTokenizer
 
@@ -358,15 +420,25 @@ def _build_mix_sync(cfg: MixConfig, out_path: Path) -> MixManifest:
     mixed, engine_manifest = build_token_budget_mix(
         sources, tokenizer, seed=cfg.seed, target_tokens=target_tokens,
         anchor=anchor, num_proc=cfg.num_proc, shuffle_buffer=cfg.shuffle_buffer,
-        allow_underfill=cfg.allow_underfill,
+        allow_underfill=cfg.allow_underfill, emit_source_column=cfg.emit_labels,
     )
     out_path.parent.mkdir(parents=True, exist_ok=True)
+    labels_path: Path | None = None
+    labels_sha256: str | None = None
+    if cfg.emit_labels:
+        labels_path = Path(f"{out_path}.labels.jsonl")
+        labels_sha256 = _write_labels_sidecar(mixed, labels_path)
+        # strip the carry-through columns so the training JSONL bytes are
+        # identical with and without emit_labels (jsonl_sha256 pins survive)
+        mixed = mixed.select_columns(["text"])
     mixed.to_json(str(out_path), lines=True)
     manifest = MixManifest(
         path=str(out_path),
         total_tokens=engine_manifest["total_tokens"],
         per_source=engine_manifest["per_source"],
         config=cfg.as_dict(),
+        labels_path=None if labels_path is None else str(labels_path),
+        labels_sha256=labels_sha256,
     )
     Path(f"{out_path}.manifest.json").write_text(
         json.dumps(manifest.as_dict(), indent=2) + "\n"

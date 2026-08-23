@@ -70,6 +70,7 @@ import yaml
 
 from .attribution_snapshot import ATTRIBUTION_PLUGIN_PATH
 from .checkpoint import Checkpoint, read_checkpoint
+from .prequential import PREQUENTIAL_PLUGIN_PATH
 from .runlog import snapshot_run
 from .source_manifest import build_source_manifest
 
@@ -222,7 +223,39 @@ def finalize_training_attribution(rendered_config: Path, out_dir: Path) -> Path:
         if suffix.isdigit():
             state_candidates.append((int(suffix), path))
     if not state_candidates:
-        raise RuntimeError(f"no trainer_state.json found under {checkpoints}")
+        # A run configured to save nothing (save_strategy 'no' with no
+        # checkpoint schedule — the no-save training smokes) legitimately
+        # leaves no trainer_state.json: record completion honestly and skip
+        # the state-derived fields rather than failing a finished run. Any
+        # config that SHOULD have saved still errors loudly.
+        body = yaml.safe_load(rendered_config.read_text())
+        saves_nothing = str(body.get("save_strategy")) == "no" and not body.get(
+            "checkpoint_schedule"
+        )
+        if not saves_nothing:
+            raise RuntimeError(f"no trainer_state.json found under {checkpoints}")
+        provenance.update(
+            {
+                "status": "complete",
+                "completed_at": datetime.now(timezone.utc).isoformat(
+                    timespec="seconds"
+                ),
+                "resolved_config_sha256": _sha256_file(rendered_config),
+                "actual": {
+                    "no_checkpoint_reason": (
+                        "save_strategy 'no' with no checkpoint_schedule — "
+                        "this run saves nothing by config; step/LR trace "
+                        "lives in train.log only"
+                    ),
+                },
+            }
+        )
+        temporary = provenance_path.with_name(provenance_path.name + ".tmp")
+        temporary.write_text(
+            json.dumps(provenance, ensure_ascii=False, indent=2) + "\n"
+        )
+        temporary.replace(provenance_path)
+        return provenance_path
     _step, state_path = max(state_candidates)
     state = json.loads(state_path.read_text())
     trace = [row for row in state.get("log_history", []) if "step" in row]
@@ -353,6 +386,13 @@ class PodSpec:
     # 12B sharded checkpoints + prepared datasets are disk-hungry; pane lost a
     # run to a full 400GB container disk.
     disk_gb: int = 300
+    # RunPod network volume to mount at /workspace (bellhop
+    # ClusterConfig.network_volume_id — clusters only; bellhop 0.8.0
+    # PodConfig has no such field, so nodes=1 with a volume set is an error).
+    # Big-model runs want one: a 200 GB+ base-model snapshot survives node
+    # restarts/relaunches instead of re-downloading onto every container
+    # disk. Pins the cluster to the volume's datacenter.
+    network_volume_id: str | None = None
     # acceptable HOST CUDA driver versions (bellhop allowedCudaVersions) —
     # RunPod only checks the image's floor otherwise; a cu13-linked wheel on a
     # 12.9-driver host dies at init (the F0 ladder's hardest-won lesson)
@@ -377,35 +417,11 @@ class PodSpec:
                 f"nodes={self.nodes} out of range (1, or 2-8 for an Instant "
                 "Cluster; >8 needs RunPod sales)"
             )
-
-
-@dataclass(frozen=True)
-class DocumentLossRecipe:
-    """Model-specific chat details for the generic raw/chat loss switch.
-
-    Dataset schemas and assistant-only masking are backend invariants. The
-    concrete recipe supplies only tokenizer/model-specific Axolotl root keys,
-    such as a chat template and end-of-turn token.
-    """
-
-    chat: dict[str, Any] = field(default_factory=dict)
-
-    def __post_init__(self) -> None:
-        if not isinstance(self.chat, dict):
-            raise ValueError("document_loss.chat must be a mapping")
-        reserved = {
-            "base_model",
-            "dataset_prepared_path",
-            "datasets",
-            "output_dir",
-            "seed",
-            "train_on_inputs",
-        }
-        conflicts = sorted(reserved & set(self.chat))
-        if conflicts:
+        if self.network_volume_id is not None and self.nodes == 1:
             raise ValueError(
-                "document_loss.chat contains generic/reserved keys "
-                f"{conflicts}; the renderer owns those keys"
+                "network_volume_id needs nodes >= 2: bellhop 0.8.0 exposes "
+                "network volumes on ClusterConfig only (single-node PodConfig "
+                "has no such field — use disk_gb for pod-local scratch)"
             )
 
 
@@ -582,7 +598,12 @@ def render_stage(
     - ``cfg.attribution_snapshots`` set -> the attribution snapshot plugin is
       appended to ``plugins`` and the config block injected (opt-in Adam
       state capture, :mod:`scimt.train.attribution_snapshot`); unset, the
-      render is untouched. Templates must not carry the feature themselves.
+      render is untouched. Templates must not carry the feature themselves;
+    - ``cfg.prequential_logging`` set (and enabled) -> the prequential
+      code-length plugin is appended to ``plugins`` and the config block
+      injected (:mod:`scimt.train.prequential`), after checking the labels
+      sidecar exists — failing here, not at train time. Same rules: unset,
+      the render is byte-identical, and templates must not hardcode either.
 
     Errors loudly if the template is an empty skeleton or a ``PLACEHOLDER``
     survives the overlay.
@@ -639,8 +660,18 @@ def render_stage(
                 if isinstance(cfg.lora.target_modules, str)
                 else list(cfg.lora.target_modules)
             )
-        else:
+        elif cfg.lora.target_linear:
             body["lora_target_linear"] = True
+        if cfg.lora.target_parameters is not None:
+            # 3D stacked tensors (MoE expert weights) adapt via peft
+            # target_parameters, orthogonal to the module-targeting above
+            body["lora_target_parameters"] = list(cfg.lora.target_parameters)
+        # always explicit: axolotl auto-enables its Triton LoRA kernels when
+        # dropout == 0, and the source patch asserts on unknown attention
+        # code (glm4_moe, live 2026-08-16) — never leave this to inference
+        body["lora_qkv_kernel"] = cfg.lora.triton_kernels
+        body["lora_mlp_kernel"] = cfg.lora.triton_kernels
+        body["lora_o_kernel"] = cfg.lora.triton_kernels
     if cfg.attribution_snapshots is not None:
         # Opt-in Adam snapshot wiring (scimt.train.attribution_snapshot).
         # OFF by default: with the config unset this branch never runs and the
@@ -662,6 +693,39 @@ def render_stage(
         plugins.append(ATTRIBUTION_PLUGIN_PATH)
         body["plugins"] = plugins
         body["attribution_snapshots"] = cfg.attribution_snapshots.as_dict()
+    if cfg.prequential_logging is not None and cfg.prequential_logging.enabled:
+        # Opt-in prequential code-length wiring (scimt.train.prequential).
+        # OFF by default: with the config unset (or enabled: false) this
+        # branch never runs and the render stays byte-identical. A template
+        # must not hardcode the feature — it is a per-run TrainConfig knob.
+        if "prequential_logging" in body:
+            raise ValueError(
+                f"stage {stage.name!r} template already carries a "
+                "prequential_logging block — opt in via "
+                "TrainConfig.prequential_logging, never the template"
+            )
+        plugins = list(body.get("plugins") or [])
+        if PREQUENTIAL_PLUGIN_PATH in plugins:
+            raise ValueError(
+                f"stage {stage.name!r} template already lists the "
+                "prequential logging plugin — opt in via "
+                "TrainConfig.prequential_logging, never the template"
+            )
+        labels = (
+            cfg.prequential_logging.labels
+            or f"{dataset_path}.labels.jsonl"
+        )
+        if not Path(labels).is_file():
+            raise ValueError(
+                "prequential_logging is enabled but the labels sidecar "
+                f"{labels!r} is missing or unreadable — build the mix with "
+                "emit_labels: true (scimt.train.mix), or point "
+                "prequential_logging.labels at a <arm>_source_order.jsonl; "
+                "failing at render time, never at step 500"
+            )
+        plugins.append(PREQUENTIAL_PLUGIN_PATH)
+        body["plugins"] = plugins
+        body["prequential_logging"] = cfg.prequential_logging.as_dict()
     jinja = body.get("chat_template_jinja")
     if jinja and not Path(jinja).is_absolute():
         body["chat_template_jinja"] = str(STAGES_DIR / "assets" / Path(jinja).name)
@@ -1103,6 +1167,8 @@ class BellhopExecutor:
             kwargs["allowed_cuda_versions"] = list(pod.cuda_versions)
         if pod.max_hourly_cost is not None:
             kwargs["max_hourly_cost"] = pod.max_hourly_cost
+        if pod.network_volume_id:
+            kwargs["network_volume_id"] = pod.network_volume_id
         return kwargs
 
     def _stage_script(

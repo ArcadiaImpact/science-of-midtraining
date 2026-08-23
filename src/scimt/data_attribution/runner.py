@@ -58,8 +58,9 @@ import json
 import math
 import os
 import re
+import shutil
 import subprocess
-from collections.abc import Awaitable, Callable
+from collections.abc import Awaitable, Callable, Sequence
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
@@ -106,6 +107,7 @@ _TARGET_POLICY = {
 _STATISTICS_FILE = "statistics.json"
 _FACTORS_COMPLETE_FILE = "factors_complete.json"
 _SCORE_MANIFEST_FILE = "score_manifest.json"
+QUERY_GROUPS_FILE = "query_groups.json"
 _WEIGHT_GLOBS = ("*.safetensors", "pytorch_model*.bin")
 _ADAM_MOMENT_STATISTIC = "checkpoint_local_adam_second_raw_moment"
 _ADAM_MOMENT_ALGORITHM = (
@@ -146,6 +148,7 @@ class RunLayout:
     rows: Path
     queries: Path
     scores: Path
+    streaming_scores: Path
     directions: Path
     jvp: Path
     summary: Path
@@ -162,6 +165,7 @@ def run_layout(output_dir: str | Path) -> RunLayout:
         rows=root / "rows",
         queries=root / "queries",
         scores=root / "scores",
+        streaming_scores=root / "streaming_scores",
         directions=root / "directions",
         jvp=root / "jvp",
         summary=root / "summary",
@@ -253,7 +257,12 @@ def _scoped_resolved(
     every identity's composite ``dataset_fingerprint``
     (see :func:`_dataset_fingerprint`).
     """
-    method = resolved["method"]
+    method = dict(resolved["method"])
+    # conditioning_damping exists only in ekfac_adam mode; dropping the None
+    # keeps every old-mode scoped slice byte-identical to what committed
+    # artifacts recorded before the field existed.
+    if method.get("conditioning_damping") is None:
+        method.pop("conditioning_damping", None)
     stage_data = {
         "sequence_length": resolved["data"]["sequence_length"],
         "max_stage_sequences": resolved["data"]["max_stage_sequences"],
@@ -285,7 +294,7 @@ def _scoped_resolved(
             "adam_moment_estimator": resolved["adam_moment_estimator"],
         }
     if phase == "fit-factors":
-        return {
+        scope = {
             **base,
             "stage": _resolved_stage_entry(resolved, stage_name),
             "data": stage_data,
@@ -293,6 +302,14 @@ def _scoped_resolved(
             "curvature": method["curvature"],
             "dtype": method["dtype"],
         }
+        if method["curvature"] == "ekfac_adam":
+            # Conditioned factors are invalid under different Adam moments:
+            # bind the estimator contract and the fit-time damping into the
+            # factor artifact's identity. Conditional so old-mode slices are
+            # untouched.
+            scope["conditioning_damping"] = method["conditioning_damping"]
+            scope["adam_moment_estimator"] = resolved["adam_moment_estimator"]
+        return scope
     if phase == "compute-rows":
         return {
             **base,
@@ -307,7 +324,7 @@ def _scoped_resolved(
             "data": query_data,
             "method": row_method,
         }
-    if phase == "score-source":
+    if phase in ("score-source", "score-source-streaming"):
         scope = {
             **base,
             "stages": [
@@ -533,8 +550,23 @@ def _check_upstream(
 
 
 # ---------------------------------------------------------------- heavy seams
-def _load_model(checkpoint_dir: str | Path, *, dtype: str, device: str):
-    """Load a causal LM from a resolved local checkpoint dir (lazy heavy)."""
+def _load_model(
+    checkpoint_dir: str | Path,
+    *,
+    dtype: str,
+    device: str,
+    gradient_checkpointing: bool = False,
+):
+    """Load a causal LM from a resolved local checkpoint dir (lazy heavy).
+
+    ``gradient_checkpointing=True`` arms HF activation checkpointing
+    (non-reentrant) so backward passes over long sequences stay
+    memory-bounded (run 20260818T102149Z OOM'd a 141 GiB H200 on dense
+    seq-8192 activations). Transformers only engages it in train mode, so
+    this is inert for eval-mode consumers (notably the kronfluence factor
+    fits) and takes effect inside ``gradients.backward_memory_mode`` blocks
+    and the estimator's own train-mode loop.
+    """
     import torch
     from transformers import AutoModelForCausalLM
 
@@ -545,7 +577,32 @@ def _load_model(checkpoint_dir: str | Path, *, dtype: str, device: str):
     )
     model.to(torch.device(device))
     model.eval()
+    _arm_gradient_checkpointing(model, gradient_checkpointing)
     return model
+
+
+def _arm_gradient_checkpointing(model: Any, requested: bool) -> bool:
+    """Arm HF non-reentrant activation checkpointing when supported.
+
+    Returns whether checkpointing was armed. Unsupported models degrade to
+    dense activation memory with a warning (execution optimization only —
+    never an error, per "warn on degraded").
+    """
+    if not requested:
+        return False
+    if getattr(model, "supports_gradient_checkpointing", False):
+        model.gradient_checkpointing_enable(
+            gradient_checkpointing_kwargs={"use_reentrant": False}
+        )
+        return True
+    import warnings
+
+    warnings.warn(
+        "data.gradient_checkpointing requested but the model does not "
+        "support it; running with dense activation memory",
+        stacklevel=2,
+    )
+    return False
 
 
 def _load_tokenizer(tokenizer_dir: str | Path):
@@ -1050,6 +1107,7 @@ async def estimate_adam(config: AttributionRunConfig) -> PhaseReport:
             resolved.checkpoint_dir,
             dtype=config.method.dtype,
             device=config.data.device,
+            gradient_checkpointing=config.data.gradient_checkpointing_enabled,
         )
         try:
             manifest = _build_manifest(model, config)
@@ -1210,20 +1268,53 @@ async def fit_factors(config: AttributionRunConfig) -> PhaseReport:
     if method.curvature == "ggn":
         raise RunnerError(
             "fit-factors: no fitted GGN segment operator exists — SOURCE "
-            "curvature must be 'fisher' or 'ekfac'; GGN products are "
-            "available in the second-order phases (hessian_kind: ggn)"
+            "curvature must be 'fisher', 'ekfac', or 'ekfac_adam'; GGN "
+            "products are available in the second-order phases "
+            "(hessian_kind: ggn)"
         )
+    if method.curvature == "ekfac_adam":
+        if not config.factors.use_empirical_fisher:
+            raise RunnerError(
+                "fit-factors: curvature 'ekfac_adam' conditions the "
+                "EMPIRICAL Fisher (the same statistic the Adam moments "
+                "estimate); set factors.use_empirical_fisher: true"
+            )
+        if config.adam_moment_estimator is not None:
+            paired = (
+                run_layout(config.output_dir).adam_moments
+                / "paired_batches.json"
+            )
+            if not paired.is_file():
+                raise RunnerError(
+                    "fit-factors: curvature 'ekfac_adam' conditions factors "
+                    "on stage-local Adam moment estimates, but "
+                    "adam_moments/paired_batches.json is missing; "
+                    "run estimate-adam first"
+                )
     _write_or_check_ledger(config, "fit-factors")
-    resolved_stages = _resolve_stages(config, require_adam=False)
+    resolved_stages = _resolve_stages(
+        config,
+        require_adam=(
+            method.curvature == "ekfac_adam"
+            and config.adam_moment_estimator is None
+        ),
+    )
     layout = run_layout(config.output_dir)
     query_dir = _resolve_query_checkpoint(config)
     tokenizer_digest = _tokenizer_content_digest(_tokenizer_dir(config, query_dir))
     tokenizer = _load_tokenizer(_tokenizer_dir(config, query_dir))
+    adam_context = None
+    if (
+        method.curvature == "ekfac_adam"
+        and config.adam_moment_estimator is not None
+    ):
+        adam_context = _estimated_adam_context(config, tokenizer_digest)
     outputs = []
     for stage, resolved in zip(config.stages, resolved_stages, strict=True):
         outputs.append(
             _fit_stage_factors(config, stage, resolved, tokenizer,
-                               layout.factors / stage.name, tokenizer_digest)
+                               layout.factors / stage.name, tokenizer_digest,
+                               adam_context=adam_context)
         )
     report = PhaseReport("fit-factors", tuple(outputs))
     _append_event(config, "fit-factors", report.outputs)
@@ -1232,7 +1323,7 @@ async def fit_factors(config: AttributionRunConfig) -> PhaseReport:
 
 def _fit_config_payload(config: AttributionRunConfig) -> dict[str, Any]:
     factors = config.factors
-    return {
+    payload = {
         "samples": factors.samples,
         "seed": config.seed,
         "source_batch_size": factors.source_batch_size,
@@ -1244,6 +1335,9 @@ def _fit_config_payload(config: AttributionRunConfig) -> dict[str, Any]:
         "lambda_module_partitions": factors.lambda_module_partitions,
         "eigendecomposition_dtype": factors.eigendecomposition_dtype,
     }
+    if factors.eigh_device is not None:
+        payload["eigh_device"] = factors.eigh_device
+    return payload
 
 
 def _fit_stage_factors(
@@ -1253,14 +1347,90 @@ def _fit_stage_factors(
     tokenizer: Any,
     directory: Path,
     tokenizer_digest: str,
+    adam_context: tuple[str, str] | None = None,
 ) -> PhaseOutput:
     _assert_stride()
     name = f"factors/{stage.name}"
     method = config.method
     checkpoint_digest = artifact_digest(resolved.checkpoint_dir)
-    model = _load_model(resolved.checkpoint_dir, dtype=method.dtype,
-                        device=config.data.device)
+    model = _load_model(
+        resolved.checkpoint_dir,
+        dtype=method.dtype,
+        device=config.data.device,
+        gradient_checkpointing=config.data.gradient_checkpointing_enabled,
+    )
     manifest = _build_manifest(model, config)
+    basis_descriptor: dict[str, Any] = {
+        "coordinates": "raw",
+        "manifest_digest": manifest.digest(),
+    }
+    upstream_digests: dict[str, str] = {}
+    conditioner = None
+    if method.curvature == "ekfac_adam":
+        if adam_context is not None:
+            estimator_fingerprint, paired_digest = adam_context
+            payload = _load_estimated_stage_adam_payload(
+                config,
+                stage,
+                resolved,
+                manifest.digest(),
+                estimator_fingerprint=estimator_fingerprint,
+                paired_digest=paired_digest,
+            )
+            upstream_digests = {
+                "adam/paired_batches": paired_digest,
+                **payload.upstream,
+            }
+            moment_identity_digest = payload.descriptor[
+                "moment_identity_digest"
+            ]
+        else:
+            payload = _load_captured_stage_adam_payload(
+                config, stage, resolved, manifest.digest()
+            )
+            upstream_digests = dict(payload.upstream)
+            moment_identity_digest = payload.descriptor[
+                "optimizer_manifest_digest"
+            ]
+        from .metrics import DiagonalMetric
+
+        conditioning_metric = DiagonalMetric.from_adam_second_moment(
+            payload.statistics,
+            payload.values,
+            optimizer_epsilon=payload.optimizer_epsilon,
+            damping=float(method.conditioning_damping),
+        )
+        if conditioning_metric.diagonal.numel() != manifest.included_numel:
+            raise RunnerError(
+                f"{name}: stage-local Adam moment dimension "
+                f"({conditioning_metric.diagonal.numel()}) does not match "
+                f"the parameter manifest ({manifest.included_numel})"
+            )
+        basis_descriptor = {
+            "coordinates": "adam_stage_local",
+            "stage": stage.name,
+            "moment_identity_digest": moment_identity_digest,
+            "conditioning_damping": float(method.conditioning_damping),
+            "optimizer_epsilon": payload.optimizer_epsilon,
+            "geometry": (
+                "A_l=(sqrt(v_hat_l)+optimizer_epsilon_l"
+                "+conditioning_damping)^-1/2"
+            ),
+        }
+        import torch
+
+        from .ekfac import EKFACConditioner
+
+        conditioner = EKFACConditioner(
+            values=conditioning_metric.diagonal.to(torch.float32),
+            provenance={
+                "kind": "adam_stage_local",
+                "statistic": payload.statistics["statistic"],
+                "moment_identity_digest": moment_identity_digest,
+                "optimizer_epsilon": payload.optimizer_epsilon,
+                "conditioning_damping": float(method.conditioning_damping),
+            },
+        )
     scoped = _scoped_config(config, "fit-factors", stage.name)
     identity = _identity(
         phase="fit-factors",
@@ -1278,10 +1448,7 @@ def _fit_stage_factors(
             "sampler": "build_ekfac_sample_items",
             "sample_id_stride": _SAMPLE_ID_STRIDE,
         },
-        basis_descriptor={
-            "coordinates": "raw",
-            "manifest_digest": manifest.digest(),
-        },
+        basis_descriptor=basis_descriptor,
         curvature_descriptor={
             "method": method.curvature,
             "fit": _fit_config_payload(config),
@@ -1289,7 +1456,7 @@ def _fit_stage_factors(
         logra_descriptor=None,
         dtype=method.dtype,
         seeds={"run": config.seed},
-        upstream_digests={},
+        upstream_digests=upstream_digests,
     )
     dataset = _dataset_adapter(
         objective=stage.objective,
@@ -1305,7 +1472,7 @@ def _fit_stage_factors(
             resolved, checkpoint_digest,
         )
     return _fit_ekfac_factors(config, name, directory, identity, model,
-                              manifest, dataset)
+                              manifest, dataset, conditioner=conditioner)
 
 
 def _factor_input_ids(item: dict[str, Any], device: str):
@@ -1406,10 +1573,17 @@ def _fit_fisher_diagonal(
 
 
 def _fit_ekfac_factors(
-    config, name, directory, identity, model, manifest, dataset
+    config, name, directory, identity, model, manifest, dataset,
+    conditioner=None,
 ) -> PhaseOutput:
     from .ekfac import fit_ekfac, load_ekfac
 
+    curvature = config.method.curvature
+    if (conditioner is not None) != (curvature == "ekfac_adam"):
+        raise RunnerError(
+            f"{name}: a conditioner is required exactly when curvature is "
+            f"'ekfac_adam' (got curvature {curvature!r})"
+        )
     _bind_identity(directory, identity)
     marker = directory / _FACTORS_COMPLETE_FILE
     ekfac_dir = directory / "ekfac"
@@ -1420,16 +1594,29 @@ def _fit_ekfac_factors(
                 f"factor completion marker at {directory} belongs to a "
                 "different artifact identity"
             )
-        factors = load_ekfac(ekfac_dir, manifest)
+        if completion.get("curvature") != curvature:
+            raise ArtifactIntegrityError(
+                f"factor completion marker at {directory} records curvature "
+                f"{completion.get('curvature')!r}, not {curvature!r} — "
+                "raw and Adam-conditioned factor artifacts are never "
+                "interchangeable"
+            )
+        factors = load_ekfac(ekfac_dir, manifest, expected_mode=curvature)
         if completion.get("snapshot") != factors.snapshot:
             raise ArtifactIntegrityError(
                 f"EK-FAC factor bytes under {ekfac_dir} changed after "
                 "completion was recorded"
             )
         return PhaseOutput(name, directory, identity.digest(), True)
-    factors = fit_ekfac(
-        model, dataset, manifest, _fit_config_payload(config), ekfac_dir
-    )
+    if conditioner is None:
+        factors = fit_ekfac(
+            model, dataset, manifest, _fit_config_payload(config), ekfac_dir
+        )
+    else:
+        factors = fit_ekfac(
+            model, dataset, manifest, _fit_config_payload(config), ekfac_dir,
+            conditioner=conditioner,
+        )
     from .artifacts import _atomic_write_text
 
     _atomic_write_text(
@@ -1439,7 +1626,7 @@ def _fit_ekfac_factors(
                 "schema_version": ARTIFACT_SCHEMA_VERSION,
                 "identity_digest": identity.digest(),
                 "snapshot": factors.snapshot,
-                "curvature": "ekfac",
+                "curvature": curvature,
             },
             indent=2,
             sort_keys=True,
@@ -1470,34 +1657,37 @@ def _write_rows(
     """Stream gradient rows into the writer, resuming after the last
     committed row (dataset iteration is deterministic; already-committed rows
     are skipped without touching the model where whole batches are covered)."""
-    from .gradients import BatchedVJPBackend
+    from .gradients import BatchedVJPBackend, backward_memory_mode
     from .losses import CausalLMLossAdapter
 
     adapter = CausalLMLossAdapter(model, reduction=reduction, device=device)
     backend = BatchedVJPBackend(model, manifest)
     committed = writer.rows_committed
     seen = 0
-    for batch in dataset.iter_batches(batch_size):
-        expected = _batch_expected_rows(batch, reduction)
-        if seen + expected <= committed:
-            seen += expected
-            continue
-        loss_batch = adapter.per_datapoint_losses(batch)
-        if int(loss_batch.losses.numel()) != expected:
-            raise ArtifactIntegrityError(
-                "row bookkeeping mismatch: expected "
-                f"{expected} rows for this batch, got "
-                f"{int(loss_batch.losses.numel())}"
+    with backward_memory_mode(
+        model, getattr(model, "is_gradient_checkpointing", False)
+    ):
+        for batch in dataset.iter_batches(batch_size):
+            expected = _batch_expected_rows(batch, reduction)
+            if seen + expected <= committed:
+                seen += expected
+                continue
+            loss_batch = adapter.per_datapoint_losses(batch)
+            if int(loss_batch.losses.numel()) != expected:
+                raise ArtifactIntegrityError(
+                    "row bookkeeping mismatch: expected "
+                    f"{expected} rows for this batch, got "
+                    f"{int(loss_batch.losses.numel())}"
+                )
+            rows = backend.rows(loss_batch.losses, chunk_size=vjp_chunk_size)
+            drop = max(0, committed - seen)
+            writer.append(
+                features=rows[drop:],
+                sample_ids=loss_batch.sample_ids[drop:],
+                sequence_ids=loss_batch.sequence_ids[drop:],
+                target_positions=loss_batch.target_positions[drop:],
             )
-        rows = backend.rows(loss_batch.losses, chunk_size=vjp_chunk_size)
-        drop = max(0, committed - seen)
-        writer.append(
-            features=rows[drop:],
-            sample_ids=loss_batch.sample_ids[drop:],
-            sequence_ids=loss_batch.sequence_ids[drop:],
-            target_positions=loss_batch.target_positions[drop:],
-        )
-        seen += expected
+            seen += expected
     writer.finalize()
     return writer.rows_committed
 
@@ -1579,6 +1769,166 @@ def _prepare_logra(
     return logra_manifest, projection_descriptor(report), upstream
 
 
+def _query_group_labels(data_path: Path) -> list[str]:
+    """Per-row ``group`` labels for aggregated queries (all-or-nothing).
+
+    Every JSONL row must carry a string ``group`` field; missing or
+    non-string fields are refusals naming the offending line numbers —
+    a silently ungrouped row would bias the group means."""
+    labels: list[str] = []
+    bad: list[int] = []
+    with Path(data_path).open("r", encoding="utf-8") as handle:
+        for line_number, line in enumerate(handle):
+            if not line.strip():
+                continue
+            value = json.loads(line).get("group")
+            if isinstance(value, str) and value:
+                labels.append(value)
+            else:
+                bad.append(line_number)
+                labels.append("")
+    if not labels:
+        raise RunnerError("query aggregate: the query dataset is empty")
+    if len(bad) == len(labels):
+        raise RunnerError(
+            "query aggregate 'group_mean' is set but no query row carries a "
+            "string 'group' field"
+        )
+    if bad:
+        raise RunnerError(
+            "query aggregate 'group_mean' requires a string 'group' field on "
+            f"every row; missing/invalid on JSONL lines {bad}"
+        )
+    return labels
+
+
+def _write_aggregated_query_rows(
+    *,
+    writer: "ArtifactWriter",
+    model: Any,
+    manifest: Any,
+    dataset: Any,
+    source_groups: list[str],
+    group_names: list[str],
+    reduction: str,
+    device: str,
+    batch_size: int,
+    vjp_chunk_size: int,
+    directory: Path,
+) -> int:
+    """One mean gradient row per group (sorted group-name order), fp64
+    accumulation. Not shard-resumable: the whole artifact is a handful of
+    rows written in a single append + finalize."""
+    import torch
+
+    from .artifacts import _atomic_write_text
+    from .gradients import BatchedVJPBackend, backward_memory_mode
+    from .losses import CausalLMLossAdapter
+
+    adapter = CausalLMLossAdapter(model, reduction=reduction, device=device)
+    backend = BatchedVJPBackend(model, manifest)
+    group_index = {name: i for i, name in enumerate(group_names)}
+    source_rows = getattr(dataset, "source_rows", None)
+    if source_rows is None:
+        raise RunnerError(
+            "query aggregate 'group_mean' requires a chat dataset that "
+            "tracks source rows"
+        )
+    dropped = sorted(set(range(len(source_groups))) - set(source_rows))
+    if dropped:
+        raise RunnerError(
+            "query aggregate 'group_mean': query rows were dropped during "
+            f"tokenization (source row indexes {dropped}) — a silently "
+            "missing row would bias its group mean; fix or remove those rows"
+        )
+    width = max(1, manifest.included_numel)
+    sums = torch.zeros((len(group_names), width), dtype=torch.float64)
+    counts = [0] * len(group_names)
+    chunk_cpu = loss_batch = None
+    with backward_memory_mode(
+        model, getattr(model, "is_gradient_checkpointing", False)
+    ):
+        for batch in dataset.iter_batches(batch_size):
+            loss_batch = adapter.per_datapoint_losses(batch)
+            sequences = loss_batch.sequence_ids.tolist()
+            offset = 0
+            # Per-chunk consumption: a full-coverage row is ~4·P bytes on
+            # device, so the [N, P] materialization (and its cat copy) that
+            # backend.rows() implies cannot coexist with the model — move
+            # each chunk to the CPU accumulators and free it before the next
+            # (pod run 20260819T095144Z OOM'd on the materialized path here).
+            for chunk in backend.iter_row_chunks(
+                loss_batch.losses, chunk_size=vjp_chunk_size
+            ):
+                chunk_cpu = chunk.detach().to(device="cpu", dtype=torch.float64)
+                del chunk
+                chunk_sequences = sequences[offset : offset + len(chunk_cpu)]
+                for row, sequence in zip(chunk_cpu, chunk_sequences, strict=True):
+                    index = group_index[source_groups[source_rows[sequence]]]
+                    sums[index] += row
+                    counts[index] += 1
+                offset += len(chunk_cpu)
+                # `row` is a view whose base pins the whole [c, P] chunk
+                # storage (~86 GB at full coverage) through finalization if
+                # left bound (PR #530 review finding).
+                row = None
+            if offset != len(sequences):
+                raise ArtifactIntegrityError(
+                    "aggregated query bookkeeping mismatch: expected "
+                    f"{len(sequences)} rows for this batch, got {offset}"
+                )
+            # The final chunk/batch bindings otherwise survive the loop; at
+            # full coverage each is a [c, P] fp64 (~86 GB) that must not be
+            # alive during finalization (pod run 20260819T095144Z was
+            # OOM-killed at exactly that point).
+            chunk_cpu = None
+            loss_batch = None
+        del chunk_cpu, loss_batch
+    empty = [name for name, count in zip(group_names, counts, strict=True)
+             if count == 0]
+    if empty:
+        raise RunnerError(
+            f"query aggregate 'group_mean': groups with zero rows: {empty}"
+        )
+    # Finalize in place and per group: `(sums / counts).to(fp32)` allocates a
+    # second [G, P] fp64 plus a [G, P] fp32 while `sums` is still alive —
+    # ~428 GB at full coverage against a ~503 GB cgroup, the third
+    # build-queries OOM. In-place division then one bounded [1, P] fp32
+    # staging row per group keeps the peak at sums + one row (~214 GB).
+    # Identical bytes: division is elementwise, fp32 casts are per-element,
+    # and the writer buffers both rows into the same single shard.
+    sums /= torch.tensor(counts, dtype=torch.float64).unsqueeze(1)
+    ids = torch.arange(len(group_names), dtype=torch.int64)
+    for index in range(len(group_names)):
+        row32 = sums[index].to(torch.float32).unsqueeze(0)
+        writer.append(
+            features=row32,
+            sample_ids=ids[index : index + 1],
+            sequence_ids=ids[index : index + 1],
+            target_positions=torch.zeros(1, dtype=torch.int32),
+        )
+        del row32
+    del sums
+    writer.finalize()
+    _atomic_write_text(
+        directory / QUERY_GROUPS_FILE,
+        json.dumps(
+            {
+                "schema_version": ARTIFACT_SCHEMA_VERSION,
+                "aggregate": "group_mean",
+                "groups": [
+                    {"index": i, "name": name, "n_rows": counts[i]}
+                    for i, name in enumerate(group_names)
+                ],
+            },
+            indent=2,
+            sort_keys=True,
+        )
+        + "\n",
+    )
+    return writer.rows_committed
+
+
 def _row_phase(
     config: AttributionRunConfig,
     *,
@@ -1597,9 +1947,25 @@ def _row_phase(
 ) -> PhaseOutput:
     _assert_stride()
     method = config.method
+    aggregate = (
+        config.query.aggregate if phase == "build-queries" else None
+    )
+    source_groups: list[str] = []
+    group_names: list[str] = []
+    rows_per_shard = config.data.rows_per_shard
+    if aggregate is not None:
+        source_groups = _query_group_labels(data_path)
+        group_names = sorted(set(source_groups))
+        # The whole artifact is one shard: a single append + finalize keeps
+        # the aggregated write atomic (execution geometry, not identity).
+        rows_per_shard = max(rows_per_shard, len(group_names))
     checkpoint_digest = artifact_digest(checkpoint_dir)
-    model = _load_model(checkpoint_dir, dtype=method.dtype,
-                        device=config.data.device)
+    model = _load_model(
+        checkpoint_dir,
+        dtype=method.dtype,
+        device=config.data.device,
+        gradient_checkpointing=config.data.gradient_checkpointing_enabled,
+    )
     base_manifest = _build_manifest(model, config)
     seeds = {"run": config.seed}
     upstream: dict[str, str] = {}
@@ -1642,7 +2008,7 @@ def _row_phase(
         directory,
         identity,
         feature_dim=max(1, manifest.included_numel),
-        rows_per_shard=config.data.rows_per_shard,
+        rows_per_shard=rows_per_shard,
         feature_dtype=_storage_dtype(method.dtype),
     )
     if writer.already_complete:
@@ -1667,16 +2033,31 @@ def _row_phase(
         reduction=method.row_reduction,
         max_sequences=max_sequences,
     )
-    rows = _write_rows(
-        writer=writer,
-        model=model,
-        manifest=manifest,
-        dataset=dataset,
-        reduction=method.row_reduction,
-        device=config.data.device,
-        batch_size=config.data.batch_size,
-        vjp_chunk_size=config.data.vjp_chunk_size,
-    )
+    if aggregate is not None:
+        rows = _write_aggregated_query_rows(
+            writer=writer,
+            model=model,
+            manifest=manifest,
+            dataset=dataset,
+            source_groups=source_groups,
+            group_names=group_names,
+            reduction=method.row_reduction,
+            device=config.data.device,
+            batch_size=config.data.batch_size,
+            vjp_chunk_size=config.data.vjp_chunk_size,
+            directory=directory,
+        )
+    else:
+        rows = _write_rows(
+            writer=writer,
+            model=model,
+            manifest=manifest,
+            dataset=dataset,
+            reduction=method.row_reduction,
+            device=config.data.device,
+            batch_size=config.data.batch_size,
+            vjp_chunk_size=config.data.vjp_chunk_size,
+        )
     return PhaseOutput(name, directory, identity.digest(), False, rows=rows)
 
 
@@ -1744,8 +2125,8 @@ def _require_scorable_method(config: AttributionRunConfig) -> None:
     if method.curvature == "ggn":
         raise RunnerError(
             "score-source: no fitted GGN segment operator exists — SOURCE "
-            "curvature must be 'fisher' or 'ekfac'; GGN products live in the "
-            "second-order phases (hessian_kind: ggn)"
+            "curvature must be 'fisher', 'ekfac', or 'ekfac_adam'; GGN "
+            "products live in the second-order phases (hessian_kind: ggn)"
         )
     if method.basis == "ekfac":
         raise RunnerError(
@@ -1760,12 +2141,28 @@ def _require_scorable_method(config: AttributionRunConfig) -> None:
             "wired yet — LoGra rows serve whitened grad-dot workflows; run "
             "score-source on unprojected rows (method.logra: null)"
         )
-    if method.basis in ("fisher", "adam") and method.curvature != "fisher":
+    if method.curvature == "ekfac_adam":
+        if method.basis != "adam":
+            raise RunnerError(
+                "score-source: curvature 'ekfac_adam' factors live in "
+                "stage-local Adam coordinates; only basis 'adam' rows and "
+                "queries can consume them"
+            )
+    elif method.basis == "adam" and method.curvature != "fisher":
         raise RunnerError(
-            f"score-source: basis {method.basis!r} transports rows through a "
-            "diagonal metric, which requires diagonal curvature "
-            "(curvature: fisher) — EK-FAC factors cannot be exactly "
-            "transported into a diagonal basis"
+            "score-source: basis 'adam' transports rows through a diagonal "
+            "metric, which requires diagonal curvature (curvature: fisher) — "
+            "EK-FAC factors cannot be exactly transported into a diagonal "
+            "basis; for EK-FAC-quality curvature in Adam coordinates fit "
+            "conditioned factors with curvature 'ekfac_adam'"
+        )
+    elif method.basis == "fisher" and method.curvature != "fisher":
+        raise RunnerError(
+            "score-source: basis 'fisher' transports rows through a diagonal "
+            "metric, which requires diagonal curvature (curvature: fisher) — "
+            "EK-FAC factors cannot be exactly transported into a diagonal "
+            "basis, and a Fisher-diagonal analogue of the Adam-conditioned "
+            "EK-FAC fit is out of scope (no 'ekfac_fisher' mode exists)"
         )
 
 
@@ -1814,6 +2211,13 @@ def _load_factor_operator(
             f"factors/{stage.name}: completion marker does not match the "
             "stored artifact identity"
         )
+    curvature = config.method.curvature
+    if completion.get("curvature") != curvature:
+        raise ArtifactIntegrityError(
+            f"factors/{stage.name}: completion marker records curvature "
+            f"{completion.get('curvature')!r}, not {curvature!r} — raw and "
+            "Adam-conditioned factor artifacts are never interchangeable"
+        )
     from .ekfac import load_ekfac
     from .manifest import ParameterManifest
 
@@ -1824,13 +2228,169 @@ def _load_factor_operator(
             f"factors/{stage.name}: EK-FAC manifest digest does not match "
             "the shared run manifest"
         )
-    factors = load_ekfac(ekfac_dir, factor_manifest)
+    factors = load_ekfac(ekfac_dir, factor_manifest, expected_mode=curvature)
     if completion.get("snapshot") != factors.snapshot:
         raise ArtifactIntegrityError(
             f"factors/{stage.name}: EK-FAC factor bytes changed after "
             "completion was recorded"
         )
+    metadata = json.loads(
+        (ekfac_dir / "ekfac_meta.json").read_text(encoding="utf-8")
+    )
+    preconditioner = metadata.get("preconditioner")
+    if curvature == "ekfac_adam":
+        if not isinstance(preconditioner, dict):
+            raise ArtifactIntegrityError(
+                f"factors/{stage.name}: conditioned EK-FAC artifact has no "
+                "preconditioner block in ekfac_meta.json"
+            )
+        if preconditioner.get("kind") != "adam_stage_local":
+            raise ArtifactIntegrityError(
+                f"factors/{stage.name}: preconditioner kind "
+                f"{preconditioner.get('kind')!r} is not 'adam_stage_local'"
+            )
+        recorded_damping = preconditioner.get("conditioning_damping")
+        if recorded_damping != float(config.method.conditioning_damping):
+            raise RunnerError(
+                f"factors/{stage.name}: factor artifact was conditioned "
+                f"with conditioning_damping {recorded_damping!r}, but the "
+                "config declares "
+                f"{float(config.method.conditioning_damping)!r} — refit"
+            )
+        return (
+            "ekfac_adam",
+            (factors, factor_manifest, preconditioner),
+            stored,
+        )
+    if preconditioner is not None:
+        raise ArtifactIntegrityError(
+            f"factors/{stage.name}: raw EK-FAC mode cannot consume an "
+            "Adam-conditioned factor artifact"
+        )
     return "ekfac", (factors, factor_manifest), stored
+
+
+_FP64_CHUNK = 1 << 26  # 64M elements: ~256 MB fp32 in, ~512 MB fp64 out
+
+
+def _chunked_fp64(
+    out_shape: int,
+    chunks: Callable[[slice], Any],
+) -> Any:
+    """Fill one preallocated fp64 [P] array chunk-wise.
+
+    Whole-array expressions like ``a.double() / b.double()`` materialize
+    three full-P fp64 temporaries at once — ~258 GB at 12B full coverage,
+    the anon-RSS ramp SIGABRT-trapped at the transition construction on pod
+    run 20260819T095144Z. Chunk-wise fill peaks at the output plus one
+    chunk of temporaries. Bitwise-identical: IEEE-754 fp32→fp64 widening
+    and fp64 arithmetic are elementwise, so per-chunk evaluation equals
+    whole-array evaluation exactly.
+    """
+    import numpy as np
+
+    out = np.empty(out_shape, dtype=np.float64)
+    for start in range(0, out_shape, _FP64_CHUNK):
+        window = slice(start, min(start + _FP64_CHUNK, out_shape))
+        out[window] = chunks(window)
+    return out
+
+
+def _chunked_transition(previous: Any, current: Any) -> Any:
+    """``fp64(previous) / fp64(current)`` without full-P temporaries.
+
+    Returned frozen (non-writeable) so :class:`SourceSegment` can retain it
+    without its defensive copy — another full-P fp64 avoided.
+    """
+    a = previous.detach().cpu().numpy()
+    b = current.detach().cpu().numpy()
+    out = _chunked_fp64(
+        a.shape[0],
+        lambda s: a[s].astype("float64") / b[s].astype("float64"),
+    )
+    out.flags.writeable = False
+    return out
+
+
+@dataclasses.dataclass(frozen=True)
+class _DiskMetric:
+    """Disk-backed stand-in for :class:`DiagonalMetric` in streaming scoring.
+
+    Holds the snapshot (descriptor identity — computed by the same
+    ``metrics._snapshot`` as the in-RAM metric, so receipts and segment
+    descriptors are byte-identical) plus the fp32 scale vector on disk. At
+    12B full coverage the three in-RAM diagonals were 129 GB of the 492 GB
+    anon RSS that killed streaming on pod run 20260819T095144Z.
+    """
+
+    snapshot: str
+    vector: Any  # DiskVector, fp32 [P]
+
+
+def _disk_adam_metric(payload: Any, damping: float, path: Any) -> _DiskMetric:
+    """Chunk-wise ``(sqrt(v_hat)+eps+damping)**-1/2`` written straight to disk.
+
+    Bitwise-identical to ``DiagonalMetric.from_adam_second_moment``: the same
+    torch fp32 expression is evaluated per chunk (elementwise ops are
+    independent per element), with the same validation errors raised
+    chunk-wise instead of over the whole row.
+    """
+    import numpy as np
+    import torch
+
+    from .diskvec import write_disk_vector
+    from .metrics import _snapshot
+
+    epsilon = float(payload.optimizer_epsilon)
+    damping = float(damping)
+    values = payload.values.detach().to(dtype=torch.float32).reshape(-1)
+
+    def chunk(window: slice) -> Any:
+        raw = values[window.start : window.stop]
+        if not bool(torch.isfinite(raw).all()):
+            raise ValueError("raw statistics must be finite")
+        if bool((raw < 0).any()):
+            raise ValueError("raw statistics must be nonnegative")
+        denominator = raw.sqrt() + epsilon + damping
+        if bool((denominator <= 0).any()):
+            raise ValueError("Adam coordinate denominators must be positive")
+        return denominator.rsqrt().numpy()
+
+    vector = write_disk_vector(
+        path, int(values.numel()), np.float32, chunk
+    )
+    return _DiskMetric(_snapshot(payload.statistics), vector)
+
+
+def _disk_transition(previous: _DiskMetric, current: _DiskMetric, path: Any):
+    """Disk-backed ``fp64(previous) / fp64(current)`` with chunked validation.
+
+    The positivity/finiteness checks SourceSegment applies to in-RAM
+    transitions run here per chunk, so the segment can adopt the vector
+    without a full-P walk (or a full-P resident array — 86 GB each at 12B).
+    """
+    import numpy as np
+
+    from .diskvec import write_disk_vector
+
+    if previous.vector.length != current.vector.length:
+        raise RunnerError("adjacent metric vectors disagree on dimension")
+
+    def chunk(window: slice) -> Any:
+        return previous.vector.read(window).astype(
+            np.float64
+        ) / current.vector.read(window).astype(np.float64)
+
+    def validate(window: slice, values: Any) -> None:
+        if not np.all(np.isfinite(values)) or np.any(values <= 0):
+            raise ValueError(
+                "transition_to_previous must contain only positive finite "
+                "values"
+            )
+
+    return write_disk_vector(
+        path, previous.vector.length, np.float64, chunk, validate=validate
+    )
 
 
 def _shifted_curvature(inner: Any, shift: float) -> Any:
@@ -1889,7 +2449,7 @@ class _StageAdamBasisPayload:
 
 
 def _source_curvature_descriptor(config: AttributionRunConfig) -> dict[str, Any]:
-    return {
+    descriptor = {
         "method": config.method.curvature,
         "damping_sweep": list(config.method.damping_sweep),
         "damping_semantics": (
@@ -1898,6 +2458,242 @@ def _source_curvature_descriptor(config: AttributionRunConfig) -> dict[str, Any]
             "basis: A_l=(sqrt(v_hat_l)+optimizer_epsilon_l+damping)^-1/2"
         ),
     }
+    if config.method.curvature == "ekfac_adam":
+        # Conditional extension only: old-mode descriptors stay
+        # byte-identical so committed score identities remain valid.
+        descriptor["conditioning_damping"] = float(
+            config.method.conditioning_damping
+        )
+        descriptor["damping_semantics"] = (
+            descriptor["damping_semantics"]
+            + "; ekfac_adam: A_l fixed at fit time with "
+            "conditioning_damping; sweep damping adds to conditioned "
+            "eigenvalues"
+        )
+    return descriptor
+
+
+def _estimated_adam_context(
+    config: AttributionRunConfig, tokenizer_digest: str
+) -> tuple[str, str]:
+    """Shared once-per-run context for estimated stage moments: the
+    estimator dataset fingerprint and the paired-batch manifest digest."""
+
+    estimator = config.adam_moment_estimator
+    if estimator is None:
+        raise RunnerError(
+            "estimated Adam context requires adam_moment_estimator"
+        )
+    _, dataset_digest = _resolve_dataset_reference(
+        Path(estimator.dataset.path),
+        expected_digest=estimator.dataset.expected_digest,
+        label="Adam moment estimator dataset",
+    )
+    estimator_fingerprint = _dataset_fingerprint(
+        dataset_digest, tokenizer_digest
+    )
+    paired_path = run_layout(config.output_dir).adam_moments / "paired_batches.json"
+    if not paired_path.is_file():
+        raise RunnerError(
+            "stage-local Adam estimates are missing paired_batches.json; "
+            "run estimate-adam first"
+        )
+    return estimator_fingerprint, artifact_digest(paired_path)
+
+
+def _load_estimated_stage_adam_payload(
+    config: AttributionRunConfig,
+    stage: AttributionStage,
+    resolved: ResolvedStage,
+    shared_manifest_digest: str,
+    *,
+    estimator_fingerprint: str,
+    paired_digest: str,
+) -> _StageAdamBasisPayload:
+    """Load and validate ONE stage's committed estimated moment artifact."""
+
+    import torch
+
+    estimator = config.adam_moment_estimator
+    directory = run_layout(config.output_dir).adam_moments / stage.name
+    stored = _check_upstream(
+        f"adam_moments/{stage.name}",
+        directory,
+        {
+            "resolved_config": _scoped_config(config, "estimate-adam"),
+            "checkpoint_digest": artifact_digest(resolved.checkpoint_dir),
+            "dataset_fingerprint": estimator_fingerprint,
+            "parameter_manifest_digest": shared_manifest_digest,
+            "dtype": "float32",
+            "seeds": {"run": config.seed, "estimator": estimator.seed},
+        },
+    )
+    if stored.upstream_digests.get("paired_batches") != paired_digest:
+        raise RunnerError(
+            f"adam_moments/{stage.name}: paired batch manifest digest "
+            "does not match the current shared manifest"
+        )
+    statistics_path = directory / _STATISTICS_FILE
+    if not statistics_path.is_file():
+        raise ArtifactIntegrityError(
+            f"Adam moment artifact {directory} has no {_STATISTICS_FILE}"
+        )
+    statistics = json.loads(statistics_path.read_text(encoding="utf-8"))
+    model_identifier = stored.basis_descriptor.get("model_identifier")
+    if not isinstance(model_identifier, str) or not model_identifier:
+        raise ArtifactIntegrityError(
+            f"adam_moments/{stage.name} identity has no model identifier"
+        )
+    expected_statistics = _expected_adam_statistics(
+        config,
+        resolved,
+        model_identifier=model_identifier,
+        checkpoint_digest=artifact_digest(resolved.checkpoint_dir),
+        dataset_fingerprint=estimator_fingerprint,
+        parameter_manifest_digest=shared_manifest_digest,
+        paired_batch_manifest_digest=paired_digest,
+        code_commit=stored.scimt_commit,
+    )
+    _validate_adam_statistics(
+        statistics,
+        expected_statistics,
+        label=f"adam_moments/{stage.name}",
+    )
+    tensor_manifest = ShardManifest.load(
+        directory, expected_identity=stored
+    )
+    expected_auxiliary = (
+        (_STATISTICS_FILE, artifact_digest(statistics_path)),
+    )
+    if tensor_manifest.auxiliary_digests != expected_auxiliary:
+        raise ArtifactIntegrityError(
+            f"adam_moments/{stage.name} tensor manifest does not commit "
+            f"to {_STATISTICS_FILE}"
+        )
+    if tensor_manifest.total_rows != 1:
+        raise ArtifactIntegrityError(
+            f"adam_moments/{stage.name} must contain exactly one row"
+        )
+    values = tensor_manifest.read_rows(directory)["features"][0].float()
+    if values.numel() < 1:
+        raise ArtifactIntegrityError(
+            f"adam_moments/{stage.name} moment row is empty"
+        )
+    if not bool(torch.isfinite(values).all()) or bool((values < 0).any()):
+        raise ArtifactIntegrityError(
+            f"adam_moments/{stage.name} moment row must be finite and "
+            "nonnegative"
+        )
+    if tensor_manifest.feature_dim != values.numel():
+        raise ArtifactIntegrityError(
+            f"adam_moments/{stage.name} feature dimension is inconsistent"
+        )
+    statistics_digest = artifact_digest(statistics_path)
+    tensor_manifest_digest = artifact_digest(
+        directory / ShardManifest.FILENAME
+    )
+    stage_upstream = {
+        f"adam/{stage.name}/identity": stored.digest(),
+        f"adam/{stage.name}/statistics": statistics_digest,
+        f"adam/{stage.name}/tensor_manifest": tensor_manifest_digest,
+    }
+    return _StageAdamBasisPayload(
+        stage_name=stage.name,
+        statistics=statistics,
+        values=values,
+        optimizer_epsilon=float(estimator.optimizer_epsilon),
+        descriptor={
+            "stage": stage.name,
+            "mode": "estimated",
+            "checkpoint_digest": artifact_digest(
+                resolved.checkpoint_dir
+            ),
+            "moment_identity_digest": stored.digest(),
+            "statistics_digest": statistics_digest,
+            "tensor_manifest_digest": tensor_manifest_digest,
+            "paired_batch_manifest_digest": paired_digest,
+            "number_of_gradient_samples": estimator.num_batches,
+            "beta2": estimator.beta2,
+            "optimizer_epsilon": estimator.optimizer_epsilon,
+        },
+        upstream=stage_upstream,
+    )
+
+
+def _load_captured_stage_adam_payload(
+    config: AttributionRunConfig,
+    stage: AttributionStage,
+    resolved: ResolvedStage,
+    shared_manifest_digest: str,
+) -> _StageAdamBasisPayload:
+    """Load and validate ONE stage's captured optimizer-snapshot moment."""
+
+    from scimt.train.attribution_snapshot import (
+        BIAS_CORRECTION_CONVENTION,
+        OPTIMIZER_MANIFEST_NAME,
+        load_optimizer_snapshot,
+    )
+
+    from .manifest import flatten_tensors
+
+    info = resolved.optimizer_snapshot
+    if info is None:
+        raise RunnerError(
+            f"stage {stage.name!r}: captured Adam mode requires a "
+            "same-checkpoint optimizer snapshot"
+        )
+    snapshot = load_optimizer_snapshot(info.path)
+    if snapshot.manifest.digest() != shared_manifest_digest:
+        raise RunnerError(
+            f"stage {stage.name!r}: Adam snapshot parameter manifest "
+            "does not match the gradient-row manifest"
+        )
+    corrected = snapshot.bias_corrected_exp_avg_sq()
+    entries = snapshot.manifest.included_entries()
+    values = flatten_tensors(
+        entries, [corrected[entry.name] for entry in entries]
+    )
+    statistics = {
+        "model_identifier": snapshot.manifest.model_name,
+        "model_revision": str(info.step),
+        "dataset_fingerprint": resolved.dataset_digest,
+        "parameter_manifest_digest": snapshot.manifest.digest(),
+        "statistic": "captured_adamw_exp_avg_sq_bias_corrected",
+        "number_of_gradient_samples": info.step,
+        "code_commit": _scimt_commit(),
+        "estimator": "full",
+    }
+    manifest_path = Path(info.path) / OPTIMIZER_MANIFEST_NAME
+    parameter_manifest_path = Path(info.path) / "parameter_manifest.json"
+    optimizer_manifest_digest = artifact_digest(manifest_path)
+    parameter_manifest_file_digest = artifact_digest(parameter_manifest_path)
+    stage_upstream = {
+        f"adam/{stage.name}/optimizer_manifest": optimizer_manifest_digest,
+        f"adam/{stage.name}/parameter_manifest": (
+            parameter_manifest_file_digest
+        ),
+    }
+    return _StageAdamBasisPayload(
+        stage_name=stage.name,
+        statistics=statistics,
+        values=values,
+        optimizer_epsilon=float(info.epsilon),
+        descriptor={
+            "stage": stage.name,
+            "mode": "captured",
+            "checkpoint_digest": artifact_digest(resolved.checkpoint_dir),
+            "optimizer_manifest_digest": optimizer_manifest_digest,
+            "parameter_manifest_digest": shared_manifest_digest,
+            "parameter_manifest_file_digest": (
+                parameter_manifest_file_digest
+            ),
+            "step": info.step,
+            "beta2": info.beta2,
+            "optimizer_epsilon": info.epsilon,
+            "bias_correction": BIAS_CORRECTION_CONVENTION,
+        },
+        upstream=stage_upstream,
+    )
 
 
 def _load_stage_adam_payloads(
@@ -1908,207 +2704,31 @@ def _load_stage_adam_payloads(
 ) -> tuple[list[_StageAdamBasisPayload], dict[str, str]]:
     """Load every stage moment once, from estimates or captured snapshots."""
 
-    import torch
-
-    from .manifest import flatten_tensors
-
     payloads: list[_StageAdamBasisPayload] = []
     upstream: dict[str, str] = {}
-    estimator = config.adam_moment_estimator
-    if estimator is not None:
-        _, dataset_digest = _resolve_dataset_reference(
-            Path(estimator.dataset.path),
-            expected_digest=estimator.dataset.expected_digest,
-            label="Adam moment estimator dataset",
+    if config.adam_moment_estimator is not None:
+        estimator_fingerprint, paired_digest = _estimated_adam_context(
+            config, tokenizer_digest
         )
-        estimator_fingerprint = _dataset_fingerprint(
-            dataset_digest, tokenizer_digest
-        )
-        paired_path = run_layout(config.output_dir).adam_moments / "paired_batches.json"
-        if not paired_path.is_file():
-            raise RunnerError(
-                "stage-local Adam estimates are missing paired_batches.json; "
-                "run estimate-adam first"
-            )
-        paired_digest = artifact_digest(paired_path)
         upstream["adam/paired_batches"] = paired_digest
         for stage, resolved in zip(config.stages, resolved_stages, strict=True):
-            directory = run_layout(config.output_dir).adam_moments / stage.name
-            stored = _check_upstream(
-                f"adam_moments/{stage.name}",
-                directory,
-                {
-                    "resolved_config": _scoped_config(config, "estimate-adam"),
-                    "checkpoint_digest": artifact_digest(resolved.checkpoint_dir),
-                    "dataset_fingerprint": estimator_fingerprint,
-                    "parameter_manifest_digest": shared_manifest_digest,
-                    "dtype": "float32",
-                    "seeds": {"run": config.seed, "estimator": estimator.seed},
-                },
-            )
-            if stored.upstream_digests.get("paired_batches") != paired_digest:
-                raise RunnerError(
-                    f"adam_moments/{stage.name}: paired batch manifest digest "
-                    "does not match the current shared manifest"
-                )
-            statistics_path = directory / _STATISTICS_FILE
-            if not statistics_path.is_file():
-                raise ArtifactIntegrityError(
-                    f"Adam moment artifact {directory} has no {_STATISTICS_FILE}"
-                )
-            statistics = json.loads(statistics_path.read_text(encoding="utf-8"))
-            model_identifier = stored.basis_descriptor.get("model_identifier")
-            if not isinstance(model_identifier, str) or not model_identifier:
-                raise ArtifactIntegrityError(
-                    f"adam_moments/{stage.name} identity has no model identifier"
-                )
-            expected_statistics = _expected_adam_statistics(
+            payload = _load_estimated_stage_adam_payload(
                 config,
+                stage,
                 resolved,
-                model_identifier=model_identifier,
-                checkpoint_digest=artifact_digest(resolved.checkpoint_dir),
-                dataset_fingerprint=estimator_fingerprint,
-                parameter_manifest_digest=shared_manifest_digest,
-                paired_batch_manifest_digest=paired_digest,
-                code_commit=stored.scimt_commit,
+                shared_manifest_digest,
+                estimator_fingerprint=estimator_fingerprint,
+                paired_digest=paired_digest,
             )
-            _validate_adam_statistics(
-                statistics,
-                expected_statistics,
-                label=f"adam_moments/{stage.name}",
-            )
-            tensor_manifest = ShardManifest.load(
-                directory, expected_identity=stored
-            )
-            expected_auxiliary = (
-                (_STATISTICS_FILE, artifact_digest(statistics_path)),
-            )
-            if tensor_manifest.auxiliary_digests != expected_auxiliary:
-                raise ArtifactIntegrityError(
-                    f"adam_moments/{stage.name} tensor manifest does not commit "
-                    f"to {_STATISTICS_FILE}"
-                )
-            if tensor_manifest.total_rows != 1:
-                raise ArtifactIntegrityError(
-                    f"adam_moments/{stage.name} must contain exactly one row"
-                )
-            values = tensor_manifest.read_rows(directory)["features"][0].float()
-            if values.numel() < 1:
-                raise ArtifactIntegrityError(
-                    f"adam_moments/{stage.name} moment row is empty"
-                )
-            if not bool(torch.isfinite(values).all()) or bool((values < 0).any()):
-                raise ArtifactIntegrityError(
-                    f"adam_moments/{stage.name} moment row must be finite and "
-                    "nonnegative"
-                )
-            if tensor_manifest.feature_dim != values.numel():
-                raise ArtifactIntegrityError(
-                    f"adam_moments/{stage.name} feature dimension is inconsistent"
-                )
-            statistics_digest = artifact_digest(statistics_path)
-            tensor_manifest_digest = artifact_digest(
-                directory / ShardManifest.FILENAME
-            )
-            stage_upstream = {
-                f"adam/{stage.name}/identity": stored.digest(),
-                f"adam/{stage.name}/statistics": statistics_digest,
-                f"adam/{stage.name}/tensor_manifest": tensor_manifest_digest,
-            }
-            upstream.update(stage_upstream)
-            payloads.append(
-                _StageAdamBasisPayload(
-                    stage_name=stage.name,
-                    statistics=statistics,
-                    values=values,
-                    optimizer_epsilon=float(estimator.optimizer_epsilon),
-                    descriptor={
-                        "stage": stage.name,
-                        "mode": "estimated",
-                        "checkpoint_digest": artifact_digest(
-                            resolved.checkpoint_dir
-                        ),
-                        "moment_identity_digest": stored.digest(),
-                        "statistics_digest": statistics_digest,
-                        "tensor_manifest_digest": tensor_manifest_digest,
-                        "paired_batch_manifest_digest": paired_digest,
-                        "number_of_gradient_samples": estimator.num_batches,
-                        "beta2": estimator.beta2,
-                        "optimizer_epsilon": estimator.optimizer_epsilon,
-                    },
-                    upstream=stage_upstream,
-                )
-            )
+            upstream.update(payload.upstream)
+            payloads.append(payload)
         return payloads, upstream
-
-    from scimt.train.attribution_snapshot import (
-        BIAS_CORRECTION_CONVENTION,
-        OPTIMIZER_MANIFEST_NAME,
-        load_optimizer_snapshot,
-    )
-
     for stage, resolved in zip(config.stages, resolved_stages, strict=True):
-        info = resolved.optimizer_snapshot
-        if info is None:
-            raise RunnerError(
-                f"stage {stage.name!r}: captured Adam mode requires a "
-                "same-checkpoint optimizer snapshot"
-            )
-        snapshot = load_optimizer_snapshot(info.path)
-        if snapshot.manifest.digest() != shared_manifest_digest:
-            raise RunnerError(
-                f"stage {stage.name!r}: Adam snapshot parameter manifest "
-                "does not match the gradient-row manifest"
-            )
-        corrected = snapshot.bias_corrected_exp_avg_sq()
-        entries = snapshot.manifest.included_entries()
-        values = flatten_tensors(
-            entries, [corrected[entry.name] for entry in entries]
+        payload = _load_captured_stage_adam_payload(
+            config, stage, resolved, shared_manifest_digest
         )
-        statistics = {
-            "model_identifier": snapshot.manifest.model_name,
-            "model_revision": str(info.step),
-            "dataset_fingerprint": resolved.dataset_digest,
-            "parameter_manifest_digest": snapshot.manifest.digest(),
-            "statistic": "captured_adamw_exp_avg_sq_bias_corrected",
-            "number_of_gradient_samples": info.step,
-            "code_commit": _scimt_commit(),
-            "estimator": "full",
-        }
-        manifest_path = Path(info.path) / OPTIMIZER_MANIFEST_NAME
-        parameter_manifest_path = Path(info.path) / "parameter_manifest.json"
-        optimizer_manifest_digest = artifact_digest(manifest_path)
-        parameter_manifest_file_digest = artifact_digest(parameter_manifest_path)
-        stage_upstream = {
-            f"adam/{stage.name}/optimizer_manifest": optimizer_manifest_digest,
-            f"adam/{stage.name}/parameter_manifest": (
-                parameter_manifest_file_digest
-            ),
-        }
-        upstream.update(stage_upstream)
-        payloads.append(
-            _StageAdamBasisPayload(
-                stage_name=stage.name,
-                statistics=statistics,
-                values=values,
-                optimizer_epsilon=float(info.epsilon),
-                descriptor={
-                    "stage": stage.name,
-                    "mode": "captured",
-                    "checkpoint_digest": artifact_digest(resolved.checkpoint_dir),
-                    "optimizer_manifest_digest": optimizer_manifest_digest,
-                    "parameter_manifest_digest": shared_manifest_digest,
-                    "parameter_manifest_file_digest": (
-                        parameter_manifest_file_digest
-                    ),
-                    "step": info.step,
-                    "beta2": info.beta2,
-                    "optimizer_epsilon": info.epsilon,
-                    "bias_correction": BIAS_CORRECTION_CONVENTION,
-                },
-                upstream=stage_upstream,
-            )
-        )
+        upstream.update(payload.upstream)
+        payloads.append(payload)
     return payloads, upstream
 
 
@@ -2203,6 +2823,20 @@ def _completed_stage_local_adam_score_receipt(
         raise IdentityMismatchError(
             "completed Adam score receipt does not declare stage-local coordinates"
         )
+    if config.method.curvature == "ekfac_adam":
+        if stored.basis_descriptor.get("curvature_mode") != "ekfac_adam" or (
+            stored.basis_descriptor.get("conditioning_damping")
+            != float(config.method.conditioning_damping)
+        ):
+            raise IdentityMismatchError(
+                "completed Adam score receipt does not declare the "
+                "configured ekfac_adam conditioning"
+            )
+    elif stored.basis_descriptor.get("curvature_mode") == "ekfac_adam":
+        raise IdentityMismatchError(
+            "completed Adam score receipt was produced by ekfac_adam "
+            "conditioning, not the configured method"
+        )
     expected_identity = _identity(
         phase="score-source",
         scoped=scoped,
@@ -2246,6 +2880,356 @@ def _completed_stage_local_adam_score_receipt(
     return report
 
 
+def _validate_query_artifact(
+    config: AttributionRunConfig,
+    layout: RunLayout,
+    query_dir: Path,
+    query_fingerprint: str,
+):
+    """Validate the committed query-row artifact and return its identity."""
+    return _check_upstream(
+        "queries",
+        layout.queries,
+        {
+            "resolved_config": _scoped_config(config, "build-queries"),
+            "dataset_fingerprint": query_fingerprint,
+            "checkpoint_digest": artifact_digest(query_dir),
+            "dtype": config.method.dtype,
+            "seeds": {"run": config.seed},
+        },
+    )
+
+
+def _load_factor_operators(
+    config: AttributionRunConfig,
+    resolved_stages: Sequence[Any],
+    layout: RunLayout,
+    shared_manifest_digest: str,
+    tokenizer_digest: str,
+) -> tuple[str | None, dict[str, Any], dict[str, Any]]:
+    """Load every stage's fitted curvature (kind, payloads, identities)."""
+    factor_kind: str | None = None
+    factor_payloads: dict[str, Any] = {}
+    factor_stored: dict[str, Any] = {}
+    for stage, resolved in zip(config.stages, resolved_stages, strict=True):
+        kind, payload, stored = _load_factor_operator(
+            config, stage, layout.factors / stage.name, shared_manifest_digest,
+            _dataset_fingerprint(resolved.dataset_digest, tokenizer_digest),
+        )
+        factor_kind = kind
+        factor_payloads[stage.name] = payload
+        factor_stored[stage.name] = stored
+    return factor_kind, factor_payloads, factor_stored
+
+
+def _validate_adam_factor_binding(
+    config: AttributionRunConfig,
+    factor_kind: str | None,
+    factor_payloads: dict[str, Any],
+    factor_stored: dict[str, Any],
+    adam_payloads: "list[_StageAdamBasisPayload]",
+    adam_upstream: dict[str, str],
+) -> None:
+    """Dimension + (conditioned-mode) moment-digest binding checks."""
+    if factor_kind == "ekfac_adam":
+        expected_dimension = int(
+            factor_payloads[config.stages[0].name][1].included_numel
+        )
+    else:
+        expected_dimension = int(
+            factor_payloads[config.stages[0].name][1].numel()
+        )
+    wrong_dimensions = {
+        payload.stage_name: int(payload.values.numel())
+        for payload in adam_payloads
+        if int(payload.values.numel()) != expected_dimension
+    }
+    if wrong_dimensions:
+        raise RunnerError(
+            "stage-local Adam moment dimensions do not match the shared "
+            f"row/factor coordinates ({expected_dimension}): "
+            f"{wrong_dimensions}"
+        )
+    if factor_kind == "ekfac_adam":
+        # Conditioned factors are invalid under different moments: the
+        # digests recorded at fit time must equal the freshly derived
+        # per-stage moment digests (plus the shared paired-batch digest
+        # in estimated mode).
+        for stage, payload in zip(
+            config.stages, adam_payloads, strict=True
+        ):
+            expected_factor_upstream = dict(payload.upstream)
+            if config.adam_moment_estimator is not None:
+                expected_factor_upstream["adam/paired_batches"] = (
+                    adam_upstream["adam/paired_batches"]
+                )
+            recorded = dict(
+                factor_stored[stage.name].upstream_digests
+            )
+            if recorded != expected_factor_upstream:
+                differing = sorted(
+                    key
+                    for key in set(recorded)
+                    | set(expected_factor_upstream)
+                    if recorded.get(key)
+                    != expected_factor_upstream.get(key)
+                )
+                raise RunnerError(
+                    f"factors/{stage.name}: conditioned factor artifact "
+                    "was fitted against different Adam moments than the "
+                    f"ones now committed ({differing}) — re-run "
+                    "fit-factors"
+                )
+            preconditioner = factor_payloads[stage.name][2]
+            moment_digest = payload.descriptor.get(
+                "moment_identity_digest"
+            ) or payload.descriptor.get("optimizer_manifest_digest")
+            if (
+                preconditioner.get("moment_identity_digest")
+                != moment_digest
+            ):
+                raise RunnerError(
+                    f"factors/{stage.name}: ekfac_meta preconditioner "
+                    "moment digest does not match the committed stage "
+                    "moment artifact — re-run fit-factors"
+                )
+
+
+def _score_basis_extras(
+    config: AttributionRunConfig,
+    factor_payloads: dict[str, Any],
+    adam_payloads: "list[_StageAdamBasisPayload]",
+) -> dict[str, Any]:
+    """The basis descriptor pinned into the score identity (probe metric =
+    first damping for the fisher basis)."""
+    method = config.method
+    basis_extras: dict[str, Any] = {"coordinates": "raw"}
+    if method.basis == "fisher":
+        _, basis_extras = _fisher_basis_metric(
+            config, factor_payloads, method.damping_sweep[0]
+        )
+    elif method.basis == "adam":
+        basis_extras = {
+            "coordinates": "adam_stage_local",
+            "geometry": (
+                "A_l=(sqrt(v_hat_l)+optimizer_epsilon_l+damping)^-1/2"
+            ),
+            "transition": "A_previous/A_current",
+            "stages": [payload.descriptor for payload in adam_payloads],
+        }
+        if method.curvature == "ekfac_adam":
+            basis_extras["curvature_mode"] = "ekfac_adam"
+            basis_extras["conditioning_damping"] = float(
+                method.conditioning_damping
+            )
+            basis_extras["geometry"] = (
+                "A_l=(sqrt(v_hat_l)+optimizer_epsilon_l"
+                "+conditioning_damping)^-1/2"
+            )
+    return basis_extras
+
+
+def _conditioned_metrics(
+    config: AttributionRunConfig,
+    adam_payloads: "list[_StageAdamBasisPayload]",
+    basis_dir: Path | None = None,
+) -> list[Any]:
+    """Fit-time conditioned metrics for ekfac_adam (A_l is FIXED at fit time
+    by conditioning_damping; the sweep damping never enters the metric —
+    it shifts the conditioned eigenvalues instead).
+
+    With ``basis_dir`` (the streaming path) each metric's fp32 scale vector
+    is written to disk chunk-wise and the payload's full-P moment row is
+    released afterwards — three in-RAM diagonals plus the retained moment
+    rows were ~258 GB of the 492 GB anon RSS that killed streaming on pod
+    run 20260819T095144Z. Snapshot strings (and therefore segment
+    descriptors and receipts) are identical to the in-RAM construction.
+    """
+    if config.method.curvature != "ekfac_adam":
+        return []
+    if basis_dir is not None:
+        metrics = []
+        for payload in adam_payloads:
+            metrics.append(
+                _disk_adam_metric(
+                    payload,
+                    float(config.method.conditioning_damping),
+                    basis_dir / f"metric_{payload.stage_name}.f32",
+                )
+            )
+            # Frozen dataclass: release the [P] moment row (43 GB fp32 at
+            # full coverage) now that its scale lives on disk.
+            object.__setattr__(payload, "values", None)
+        return metrics
+    from .metrics import DiagonalMetric
+
+    return [
+        DiagonalMetric.from_adam_second_moment(
+            payload.statistics,
+            payload.values,
+            optimizer_epsilon=payload.optimizer_epsilon,
+            damping=float(config.method.conditioning_damping),
+        )
+        for payload in adam_payloads
+    ]
+
+
+def _scoring_context_for_damping(
+    config: AttributionRunConfig,
+    *,
+    resolved_stages: Sequence[Any],
+    factor_kind: str | None,
+    factor_payloads: dict[str, Any],
+    adam_payloads: "list[_StageAdamBasisPayload]",
+    conditioned_metrics: list[Any],
+    basis_extras: dict[str, Any],
+    shared_manifest_digest: str,
+    damping: float,
+    basis_dir: Path | None = None,
+) -> tuple[Any, list[Any], Any]:
+    """One damping point's scorer plus per-stage row scales and query scale.
+
+    Extracted verbatim from :func:`score_source` so the streaming score phase
+    consumes the identical segment construction — behavior-preserving.
+    ``basis_dir`` (streaming only) disk-backs transitions built from
+    disk-backed metrics; stage/query scales are then DiskVectors consumed
+    chunk-wise by the caller."""
+    import torch
+
+    from .source import DiagonalCurvature, EKFACCurvature, SourceScorer, SourceSegment
+
+    method = config.method
+    metric = None
+    adam_metrics = []
+    if method.basis == "fisher":
+        metric, _ = _fisher_basis_metric(
+            config, factor_payloads, damping
+        )
+    elif method.curvature == "ekfac_adam":
+        adam_metrics = conditioned_metrics
+    elif method.basis == "adam":
+        from .metrics import DiagonalMetric
+
+        adam_metrics = [
+            DiagonalMetric.from_adam_second_moment(
+                payload.statistics,
+                payload.values,
+                optimizer_epsilon=payload.optimizer_epsilon,
+                damping=damping,
+            )
+            for payload in adam_payloads
+        ]
+    diagonal_scale = (
+        None
+        if metric is None
+        else metric.diagonal.to(dtype=torch.float32)
+    )
+    segments = []
+    stage_scales: list[Any] = []
+    for stage_index, stage in enumerate(config.stages):
+        resolved = resolved_stages[_stage_index(config, stage.name)]
+        if adam_metrics:
+            metric_entry = adam_metrics[stage_index]
+            stage_scale = (
+                metric_entry.vector
+                if isinstance(metric_entry, _DiskMetric)
+                else metric_entry.diagonal.to(dtype=torch.float32)
+            )
+        else:
+            stage_scale = diagonal_scale
+        stage_scales.append(stage_scale)
+        if adam_metrics:
+            descriptor = {
+                "coordinates": "adam_stage_local",
+                "stage": stage.name,
+                "metric_snapshot": adam_metrics[stage_index].snapshot,
+                "manifest_digest": shared_manifest_digest,
+                "damping": damping,
+            }
+            if method.curvature == "ekfac_adam":
+                descriptor["curvature_mode"] = "ekfac_adam"
+                descriptor["conditioning_damping"] = float(
+                    method.conditioning_damping
+                )
+        else:
+            descriptor = {
+                **basis_extras,
+                "manifest_digest": shared_manifest_digest,
+                "damping": damping,
+            }
+        if factor_kind == "fisher":
+            _, diagonal = factor_payloads[stage.name]
+            if stage_scale is None:
+                fisher_np = diagonal.detach().cpu().numpy()
+                curvature = DiagonalCurvature(
+                    _chunked_fp64(
+                        fisher_np.shape[0],
+                        lambda s: fisher_np[s].astype("float64") + damping,
+                    ),
+                    basis_descriptor=descriptor,
+                )
+            else:
+                fisher_np = diagonal.detach().cpu().numpy()
+                scale_np = stage_scale.detach().cpu().numpy()
+                transported = _chunked_fp64(
+                    fisher_np.shape[0],
+                    lambda s: fisher_np[s].astype("float64")
+                    * (scale_np[s].astype("float64") ** 2),
+                )
+                curvature = DiagonalCurvature(
+                    transported, basis_descriptor=descriptor
+                )
+                del transported
+        else:
+            factors, factor_manifest = factor_payloads[stage.name][:2]
+            curvature = _shifted_curvature(
+                EKFACCurvature(
+                    factors, factor_manifest, basis_descriptor=descriptor
+                ),
+                damping,
+            )
+        transition = None
+        if adam_metrics and stage_index > 0:
+            previous_metric = adam_metrics[stage_index - 1]
+            current_metric = adam_metrics[stage_index]
+            if isinstance(current_metric, _DiskMetric):
+                if basis_dir is None:
+                    raise RunnerError(
+                        "disk-backed metrics require a basis_dir for their "
+                        "transitions"
+                    )
+                transition = _disk_transition(
+                    previous_metric,
+                    current_metric,
+                    basis_dir
+                    / f"transition_{stage.name}_d{damping!r}.f64",
+                )
+            else:
+                transition = _chunked_transition(
+                    previous_metric.diagonal,
+                    current_metric.diagonal,
+                )
+        segments.append(
+            SourceSegment(
+                stage.name,
+                curvature,
+                resolved.lr_steps,
+                transition_to_previous=transition,
+            )
+        )
+    scorer = SourceScorer(segments)
+    if adam_metrics:
+        last_metric = adam_metrics[-1]
+        query_scale = (
+            last_metric.vector
+            if isinstance(last_metric, _DiskMetric)
+            else last_metric.diagonal.to(dtype=torch.float32)
+        )
+    else:
+        query_scale = diagonal_scale
+    return scorer, stage_scales, query_scale
+
+
 async def score_source(config: AttributionRunConfig) -> PhaseReport:
     """SOURCE scoring over the ordered chronological stages.
 
@@ -2260,7 +3244,6 @@ async def score_source(config: AttributionRunConfig) -> PhaseReport:
     from safetensors.torch import save_file
 
     from .artifacts import _fsync_directory
-    from .source import DiagonalCurvature, EKFACCurvature, SourceScorer, SourceSegment
 
     _require_scorable_method(config)
     method = config.method
@@ -2300,16 +3283,8 @@ async def score_source(config: AttributionRunConfig) -> PhaseReport:
         )
 
     # --- validate upstream row artifacts (before any tensor loads) ---------
-    queries_stored = _check_upstream(
-        "queries",
-        layout.queries,
-        {
-            "resolved_config": _scoped_config(config, "build-queries"),
-            "dataset_fingerprint": query_fingerprint,
-            "checkpoint_digest": artifact_digest(query_dir),
-            "dtype": method.dtype,
-            "seeds": {"run": config.seed},
-        },
+    queries_stored = _validate_query_artifact(
+        config, layout, query_dir, query_fingerprint
     )
     shared_manifest_digest = queries_stored.parameter_manifest_digest
     rows_stored: dict[str, Any] = {}
@@ -2334,17 +3309,10 @@ async def score_source(config: AttributionRunConfig) -> PhaseReport:
         )
         rows_stored[stage.name] = stored
 
-    factor_kind: str | None = None
-    factor_payloads: dict[str, Any] = {}
-    factor_stored: dict[str, Any] = {}
-    for stage, resolved in zip(config.stages, resolved_stages, strict=True):
-        kind, payload, stored = _load_factor_operator(
-            config, stage, layout.factors / stage.name, shared_manifest_digest,
-            _dataset_fingerprint(resolved.dataset_digest, tokenizer_digest),
-        )
-        factor_kind = kind
-        factor_payloads[stage.name] = payload
-        factor_stored[stage.name] = stored
+    factor_kind, factor_payloads, factor_stored = _load_factor_operators(
+        config, resolved_stages, layout, shared_manifest_digest,
+        tokenizer_digest,
+    )
 
     scoped = _scoped_config(config, "score-source")
     scoped["resolved_lr_steps"] = {
@@ -2385,36 +3353,13 @@ async def score_source(config: AttributionRunConfig) -> PhaseReport:
             tokenizer_digest,
         )
         upstream.update(adam_upstream)
-        expected_dimension = int(
-            factor_payloads[config.stages[0].name][1].numel()
+        _validate_adam_factor_binding(
+            config, factor_kind, factor_payloads, factor_stored,
+            adam_payloads, adam_upstream,
         )
-        wrong_dimensions = {
-            payload.stage_name: int(payload.values.numel())
-            for payload in adam_payloads
-            if int(payload.values.numel()) != expected_dimension
-        }
-        if wrong_dimensions:
-            raise RunnerError(
-                "stage-local Adam moment dimensions do not match the shared "
-                f"row/factor coordinates ({expected_dimension}): "
-                f"{wrong_dimensions}"
-            )
 
     # A probe metric (first damping) pins the basis descriptor identity.
-    basis_extras: dict[str, Any] = {"coordinates": "raw"}
-    if method.basis == "fisher":
-        _, basis_extras = _fisher_basis_metric(
-            config, factor_payloads, method.damping_sweep[0]
-        )
-    elif method.basis == "adam":
-        basis_extras = {
-            "coordinates": "adam_stage_local",
-            "geometry": (
-                "A_l=(sqrt(v_hat_l)+optimizer_epsilon_l+damping)^-1/2"
-            ),
-            "transition": "A_previous/A_current",
-            "stages": [payload.descriptor for payload in adam_payloads],
-        }
+    basis_extras = _score_basis_extras(config, factor_payloads, adam_payloads)
     identity = _identity(
         phase="score-source",
         scoped=scoped,
@@ -2474,95 +3419,19 @@ async def score_source(config: AttributionRunConfig) -> PhaseReport:
     query_rows = query_manifest.read_rows(layout.queries)
     query_features = query_rows["features"].float()
 
+    conditioned_metrics = _conditioned_metrics(config, adam_payloads)
     entries: dict[str, dict[str, Any]] = {}
     for damping_index, damping in enumerate(method.damping_sweep):
-        metric = None
-        adam_metrics = []
-        if method.basis == "fisher":
-            metric, _ = _fisher_basis_metric(
-                config, factor_payloads, damping
-            )
-        elif method.basis == "adam":
-            from .metrics import DiagonalMetric
-
-            adam_metrics = [
-                DiagonalMetric.from_adam_second_moment(
-                    payload.statistics,
-                    payload.values,
-                    optimizer_epsilon=payload.optimizer_epsilon,
-                    damping=damping,
-                )
-                for payload in adam_payloads
-            ]
-        diagonal_scale = (
-            None
-            if metric is None
-            else metric.diagonal.to(dtype=torch.float32)
-        )
-        segments = []
-        for stage_index, stage in enumerate(config.stages):
-            resolved = resolved_stages[_stage_index(config, stage.name)]
-            stage_scale = (
-                adam_metrics[stage_index].diagonal.to(dtype=torch.float32)
-                if adam_metrics
-                else diagonal_scale
-            )
-            if adam_metrics:
-                descriptor = {
-                    "coordinates": "adam_stage_local",
-                    "stage": stage.name,
-                    "metric_snapshot": adam_metrics[stage_index].snapshot,
-                    "manifest_digest": shared_manifest_digest,
-                    "damping": damping,
-                }
-            else:
-                descriptor = {
-                    **basis_extras,
-                    "manifest_digest": shared_manifest_digest,
-                    "damping": damping,
-                }
-            if factor_kind == "fisher":
-                _, diagonal = factor_payloads[stage.name]
-                if stage_scale is None:
-                    curvature = DiagonalCurvature(
-                        diagonal.double().numpy() + damping,
-                        basis_descriptor=descriptor,
-                    )
-                else:
-                    transported = (
-                        diagonal.double()
-                        * stage_scale.double().pow(2)
-                    ).numpy()
-                    curvature = DiagonalCurvature(
-                        transported, basis_descriptor=descriptor
-                    )
-            else:
-                factors, factor_manifest = factor_payloads[stage.name]
-                curvature = _shifted_curvature(
-                    EKFACCurvature(
-                        factors, factor_manifest, basis_descriptor=descriptor
-                    ),
-                    damping,
-                )
-            transition = None
-            if adam_metrics and stage_index > 0:
-                transition = (
-                    adam_metrics[stage_index - 1].diagonal.double()
-                    / adam_metrics[stage_index].diagonal.double()
-                ).numpy()
-            segments.append(
-                SourceSegment(
-                    stage.name,
-                    curvature,
-                    resolved.lr_steps,
-                    transition_to_previous=transition,
-                )
-            )
-        scorer = SourceScorer(segments)
-        query_scale = (
-            adam_metrics[-1].diagonal.to(dtype=torch.float32)
-            if adam_metrics
-            else diagonal_scale
+        scorer, stage_scales, query_scale = _scoring_context_for_damping(
+            config,
+            resolved_stages=resolved_stages,
+            factor_kind=factor_kind,
+            factor_payloads=factor_payloads,
+            adam_payloads=adam_payloads,
+            conditioned_metrics=conditioned_metrics,
+            basis_extras=basis_extras,
+            shared_manifest_digest=shared_manifest_digest,
+            damping=damping,
         )
         transformed_query = (
             query_features if query_scale is None else query_features * query_scale
@@ -2578,11 +3447,7 @@ async def score_source(config: AttributionRunConfig) -> PhaseReport:
             for shard_index in range(len(rows_manifest.shards)):
                 shard = rows_manifest.read_shard(rows_dir, shard_index)
                 features = shard["features"].float()
-                row_scale = (
-                    adam_metrics[stage_index].diagonal.to(dtype=torch.float32)
-                    if adam_metrics
-                    else diagonal_scale
-                )
+                row_scale = stage_scales[stage_index]
                 if row_scale is not None:
                     features = features * row_scale
                 pieces.append(transformed[stage_index] @ features.numpy().T)
@@ -2648,6 +3513,448 @@ async def score_source(config: AttributionRunConfig) -> PhaseReport:
                      rows=len(entries)),),
     )
     _append_event(config, "score-source", report.outputs)
+    return report
+
+
+# ================================================== score-source (streaming) ==
+async def score_source_streaming(config: AttributionRunConfig) -> PhaseReport:
+    """SOURCE scores computed by streaming per-row gradients — no row shards.
+
+    Identical math to :func:`score_source` (same factor/query/moment
+    validation, same segment construction via the shared helpers, same
+    per-(stage, damping) score files and completeness manifest), but the
+    per-example train gradients are recomputed on the fly and dotted against
+    the transformed queries immediately, persisting only ``[N, D*Q]`` score
+    rows. Use when materialized row shards are infeasible (full-coverage rows
+    at large P: N × P × 4 bytes vs N × D·Q × 4 bytes). Resumable at row-shard
+    granularity through the same :class:`ArtifactWriter` protocol; an
+    identical completed rerun reports the manifest hit without touching the
+    model."""
+    import numpy as np
+    import torch
+    from safetensors.torch import save_file
+
+    from .artifacts import _atomic_write_text, _fsync_directory
+    from .gradients import BatchedVJPBackend, backward_memory_mode
+    from .losses import CausalLMLossAdapter
+
+    _require_scorable_method(config)
+    method = config.method
+    _write_or_check_ledger(config, "score-source-streaming")
+    layout = run_layout(config.output_dir)
+    resolved_stages = _resolve_stages(
+        config,
+        require_adam=(
+            method.basis == "adam" and config.adam_moment_estimator is None
+        ),
+    )
+    query_dir = _resolve_query_checkpoint(config)
+    _, query_dataset_digest = _resolve_query_dataset(config)
+    tokenizer_digest = _tokenizer_content_digest(_tokenizer_dir(config, query_dir))
+    query_fingerprint = _dataset_fingerprint(query_dataset_digest, tokenizer_digest)
+    if method.basis == "adam" and artifact_digest(
+        query_dir
+    ) != artifact_digest(resolved_stages[-1].checkpoint_dir):
+        raise RunnerError(
+            "score-source-streaming: stage-local Adam coordinates require "
+            "the query checkpoint to equal the final chronological stage "
+            "checkpoint"
+        )
+    queries_stored = _validate_query_artifact(
+        config, layout, query_dir, query_fingerprint
+    )
+    shared_manifest_digest = queries_stored.parameter_manifest_digest
+    factor_kind, factor_payloads, factor_stored = _load_factor_operators(
+        config, resolved_stages, layout, shared_manifest_digest,
+        tokenizer_digest,
+    )
+    scoped = _scoped_config(config, "score-source-streaming")
+    scoped["resolved_lr_steps"] = {
+        resolved.name: resolved.lr_steps for resolved in resolved_stages
+    }
+    upstream = {"queries": queries_stored.digest()}
+    for stage in config.stages:
+        upstream[f"factors/{stage.name}"] = factor_stored[stage.name].digest()
+    # Row artifacts do not exist in this phase: bind each stage's DATA
+    # (dataset bytes × tokenizer content) into the identity instead.
+    stage_fingerprints = {
+        stage.name: _dataset_fingerprint(resolved.dataset_digest,
+                                         tokenizer_digest)
+        for stage, resolved in zip(config.stages, resolved_stages, strict=True)
+    }
+    for name, fingerprint in stage_fingerprints.items():
+        upstream[f"stage_data/{name}"] = fingerprint
+    adam_payloads: list[_StageAdamBasisPayload] = []
+    if method.basis == "adam":
+        adam_payloads, adam_upstream = _load_stage_adam_payloads(
+            config,
+            resolved_stages,
+            shared_manifest_digest,
+            tokenizer_digest,
+        )
+        upstream.update(adam_upstream)
+        _validate_adam_factor_binding(
+            config, factor_kind, factor_payloads, factor_stored,
+            adam_payloads, adam_upstream,
+        )
+    basis_extras = _score_basis_extras(config, factor_payloads, adam_payloads)
+    identity = _identity(
+        phase="score-source-streaming",
+        scoped=scoped,
+        checkpoint_reference=str(query_dir),
+        checkpoint_digest=artifact_digest(query_dir),
+        dataset_fingerprint=query_fingerprint,
+        parameter_manifest_digest=shared_manifest_digest,
+        loss_convention=_loss_convention(
+            config.query.objective, method.row_reduction
+        ),
+        basis_descriptor={
+            **basis_extras,
+            "manifest_digest": shared_manifest_digest,
+        },
+        curvature_descriptor=_source_curvature_descriptor(config),
+        logra_descriptor=None,
+        dtype=method.dtype,
+        seeds={"run": config.seed},
+        upstream_digests=upstream,
+    )
+    _bind_identity(layout.streaming_scores, identity)
+    expected_entries = sorted(
+        f"{stage.name}__damping-{index}"
+        for stage in config.stages
+        for index in range(len(method.damping_sweep))
+    )
+    marker = layout.streaming_scores / _SCORE_MANIFEST_FILE
+    if marker.is_file():
+        completeness = json.loads(marker.read_text(encoding="utf-8"))
+        if (
+            completeness.get("identity_digest") == identity.digest()
+            and completeness.get("expected") == expected_entries
+            and sorted(completeness.get("entries", {})) == expected_entries
+        ):
+            for entry_name, entry in completeness["entries"].items():
+                entry_path = layout.streaming_scores / entry["file"]
+                if not entry_path.is_file():
+                    raise ArtifactIntegrityError(
+                        f"streaming score manifest names an absent entry "
+                        f"file: {entry['file']} ({entry_name})"
+                    )
+                actual = artifact_digest(entry_path)
+                if actual != entry["digest"]:
+                    raise ArtifactIntegrityError(
+                        f"streaming score entry {entry['file']} content "
+                        f"digest mismatch: recorded {entry['digest']}, "
+                        f"actual {actual} — bytes changed after publication"
+                    )
+            report = PhaseReport(
+                "score-source-streaming",
+                (PhaseOutput("streaming_scores", layout.streaming_scores,
+                             identity.digest(), True),),
+            )
+            _append_event(config, "score-source-streaming", report.outputs)
+            return report
+
+    query_manifest = ShardManifest.load(
+        layout.queries, expected_identity=queries_stored
+    )
+    query_rows = query_manifest.read_rows(layout.queries)
+    query_features = query_rows["features"].float()
+    n_queries = int(query_features.shape[0])
+    n_dampings = len(method.damping_sweep)
+    # basis_tmp: disk-backed metric scales and transitions (fp32/fp64 [P]
+    # vectors) — kept out of anonymous RAM entirely; like u_tmp, retained on
+    # failure for post-mortems and removed after manifest publication.
+    basis_dir = layout.streaming_scores / "basis_tmp"
+    basis_dir.mkdir(parents=True, exist_ok=True)
+    from .diskvec import DISK_VECTOR_CHUNK, DiskVector
+    conditioned_metrics = _conditioned_metrics(
+        config, adam_payloads, basis_dir=basis_dir
+    )
+
+    # Per damping: the scorer's transformed queries for every stage, plus the
+    # per-stage row scales. Gradients are damping-independent, so the stage
+    # datasets are streamed ONCE and dotted against every damping's u_l.
+    #
+    # Full-coverage memory bounds (P ≈ 1.07e10, fp64 [1, P] ≈ 86 GB):
+    # transport runs per QUERY ROW — every scorer op (per-module
+    # V·f(λ)·Vᵀ, diagonal metrics, transitions) is row-independent, so
+    # [1, P] transport equals whole-matrix transport row-for-row while the
+    # live fp64 set stays ~3 arrays (~257 GB) instead of Q×(L+1) (~685 GB
+    # > the 503 GB cgroup that OOM-killed run 20260819T095144Z). Each
+    # stage's u_l is spilled to a temporary memmap and streamed back
+    # through the dot: memmap pages are reclaimable page cache, not
+    # anonymous RSS, so the cgroup evicts instead of OOM-killing.
+    u_dir = layout.streaming_scores / "u_tmp"
+    u_dir.mkdir(parents=True, exist_ok=True)
+    width = int(query_features.shape[1])
+    contexts = []
+    for damping_index, damping in enumerate(method.damping_sweep):
+        scorer, stage_scales, query_scale = _scoring_context_for_damping(
+            config,
+            resolved_stages=resolved_stages,
+            factor_kind=factor_kind,
+            factor_payloads=factor_payloads,
+            adam_payloads=adam_payloads,
+            conditioned_metrics=conditioned_metrics,
+            basis_extras=basis_extras,
+            shared_manifest_digest=shared_manifest_digest,
+            damping=damping,
+            basis_dir=basis_dir,
+        )
+        maps = [
+            np.lib.format.open_memmap(
+                str(u_dir / f"u_damping{damping_index}_stage{index}.npy"),
+                mode="w+",
+                # fp32: transformed_queries returns fp32 (upstream numpy
+                # contract), so fp32 maps are value-exact, halve spill/IO,
+                # and restore main's fp32 dot dtype (PR #530 review).
+                dtype=np.float32,
+                shape=(n_queries, width),
+            )
+            for index in range(len(config.stages))
+        ]
+        scaled_row = (
+            np.empty((1, width), dtype=np.float32)
+            if isinstance(query_scale, DiskVector)
+            else None
+        )
+        for row_index in range(n_queries):
+            row = query_features[row_index : row_index + 1]
+            if isinstance(query_scale, DiskVector):
+                # Chunked fp32 multiply into one reusable buffer: elementwise
+                # and bitwise-equal to the whole-array product, without a
+                # resident [P] scale (43 GB) or a fresh [1, P] result per row.
+                row_np = row.numpy()
+                for start in range(0, width, DISK_VECTOR_CHUNK):
+                    window = slice(start, min(start + DISK_VECTOR_CHUNK, width))
+                    scaled_row[0, window] = (
+                        row_np[0, window] * query_scale.read(window)
+                    )
+                row_array = scaled_row
+            else:
+                if query_scale is not None:
+                    row = row * query_scale
+                row_array = row.numpy()
+            seen_stages = 0
+            # Stream each u_l straight into its spill map: retaining the
+            # full [u_1..u_L] list per row was an L×43 GB anon spike at
+            # full coverage (part of the 492 GB kill).
+            for stage_index, u in scorer.iter_transformed(row_array):
+                maps[stage_index][row_index] = u[0]
+                seen_stages += 1
+                u = None
+            if seen_stages != len(maps):
+                raise ArtifactIntegrityError(
+                    "streaming transport returned "
+                    f"{seen_stages} stages, expected {len(maps)}"
+                )
+        # Release the last transport-loop bindings; `row` pins an fp32
+        # [1, P] storage (~43 GB at full coverage) otherwise
+        # (PR #530 review finding).
+        row = None
+        scaled_row = None
+        for mapped in maps:
+            mapped.flush()
+        contexts.append((maps, stage_scales))
+
+    # The [Q, P] query features (~86 GB fp32 at full coverage) are fully
+    # spilled into the per-stage memmaps above; release before the scoring
+    # loop (PR #530 review finding).
+    query_features = None
+
+    storage = getattr(torch, _storage_dtype(method.dtype))
+    entries: dict[str, dict[str, Any]] = {}
+    for stage_index, (stage, resolved) in enumerate(
+        zip(config.stages, resolved_stages, strict=True)
+    ):
+        progress_dir = layout.streaming_scores / "progress" / stage.name
+        writer = ArtifactWriter(
+            progress_dir,
+            identity,
+            feature_dim=max(1, n_dampings * n_queries),
+            rows_per_shard=config.data.rows_per_shard,
+            feature_dtype="float32",
+        )
+        if not writer.already_complete:
+            model = _load_model(
+                resolved.checkpoint_dir,
+                dtype=method.dtype,
+                device=config.data.device,
+                gradient_checkpointing=(
+                    config.data.gradient_checkpointing_enabled
+                ),
+            )
+            manifest = _build_manifest(model, config)
+            if manifest.digest() != shared_manifest_digest:
+                raise RunnerError(
+                    f"score-source-streaming: stage {stage.name!r} rebuilt "
+                    "parameter manifest does not match the shared query "
+                    "manifest — same selection must apply to rows and queries"
+                )
+            tokenizer = _load_tokenizer(_tokenizer_dir(config, query_dir))
+            dataset = _dataset_adapter(
+                objective=stage.objective,
+                data_path=Path(resolved.dataset.path),
+                tokenizer=tokenizer,
+                config=config,
+                reduction=method.row_reduction,
+                max_sequences=config.data.max_stage_sequences,
+            )
+            adapter = CausalLMLossAdapter(
+                model, reduction=method.row_reduction, device=config.data.device
+            )
+            backend = BatchedVJPBackend(model, manifest)
+            committed = writer.rows_committed
+            seen = 0
+            memory_mode = backward_memory_mode(
+                model, getattr(model, "is_gradient_checkpointing", False)
+            )
+            with memory_mode:
+                for batch in dataset.iter_batches(config.data.batch_size):
+                    expected = _batch_expected_rows(batch, method.row_reduction)
+                    if seen + expected <= committed:
+                        seen += expected
+                        continue
+                    loss_batch = adapter.per_datapoint_losses(batch)
+                    if int(loss_batch.losses.numel()) != expected:
+                        raise ArtifactIntegrityError(
+                            "streaming score bookkeeping mismatch: expected "
+                            f"{expected} rows for this batch, got "
+                            f"{int(loss_batch.losses.numel())}"
+                        )
+                    # Per-chunk consumption: at full coverage one [c, P] fp32
+                    # chunk is ~4·c·P bytes on device — backend.rows()'s
+                    # whole-batch materialization (and its cat copy) cannot
+                    # coexist with the model (pod run 20260819T095144Z).
+                    # Scores are row-independent, so per-chunk dots followed
+                    # by a CPU concat over the tiny [c, D*Q] results equal
+                    # the whole-batch computation exactly.
+                    chunk_scores = []
+                    for chunk in backend.iter_row_chunks(
+                        loss_batch.losses, chunk_size=config.data.vjp_chunk_size
+                    ):
+                        # Reproduce the materialized path's storage
+                        # round-trip so streaming scores equal score-source
+                        # scores bit-for-bit up to matmul reassociation.
+                        features_cpu = (
+                            chunk.detach().to(device="cpu", dtype=storage).float()
+                        )
+                        del chunk
+                        pieces = []
+                        for transformed, stage_scales in contexts:
+                            row_scale = stage_scales[stage_index]
+                            if isinstance(row_scale, DiskVector):
+                                # Chunked in-place fp32 multiply on a clone —
+                                # elementwise-equal to the whole-array
+                                # product without a resident [P] scale.
+                                features_np = (
+                                    features_cpu.numpy().copy()
+                                )
+                                dim = features_np.shape[1]
+                                for start in range(
+                                    0, dim, DISK_VECTOR_CHUNK
+                                ):
+                                    window = slice(
+                                        start,
+                                        min(start + DISK_VECTOR_CHUNK, dim),
+                                    )
+                                    features_np[:, window] *= row_scale.read(
+                                        window
+                                    )[None, :]
+                            else:
+                                features = features_cpu
+                                if row_scale is not None:
+                                    features = features * row_scale
+                                features_np = features.numpy()
+                            pieces.append(
+                                transformed[stage_index] @ features_np.T
+                            )  # [Q, c]
+                        chunk_scores.append(
+                            np.concatenate(pieces, axis=0).T  # [c, D*Q]
+                        )
+                    score_rows = torch.from_numpy(
+                        np.ascontiguousarray(
+                            np.concatenate(chunk_scores, axis=0).astype(np.float32)
+                        )
+                    )  # [B, D*Q]
+                    drop = max(0, committed - seen)
+                    writer.append(
+                        features=score_rows[drop:],
+                        sample_ids=loss_batch.sample_ids[drop:],
+                        sequence_ids=loss_batch.sequence_ids[drop:],
+                        target_positions=loss_batch.target_positions[drop:],
+                    )
+                    seen += expected
+            writer.finalize()
+        progress_manifest = ShardManifest.load(progress_dir)
+        stored = progress_manifest.read_rows(progress_dir)
+        score_rows_all = stored["features"].float().numpy()  # [N, D*Q]
+        train_sample_ids = stored["sample_ids"]
+        for damping_index, damping in enumerate(method.damping_sweep):
+            block = score_rows_all[
+                :, damping_index * n_queries:(damping_index + 1) * n_queries
+            ].T  # [Q, N]
+            scores = block / float(stage.n_examples)
+            entry_name = f"{stage.name}__damping-{damping_index}"
+            filename = f"scores__{entry_name}.safetensors"
+            final_path = layout.streaming_scores / filename
+            tmp_path = layout.streaming_scores / (filename + ".tmp")
+            save_file(
+                {
+                    "scores": torch.from_numpy(
+                        np.ascontiguousarray(scores.astype(np.float32))
+                    ),
+                    "query_sample_ids": query_rows["sample_ids"],
+                    "train_sample_ids": train_sample_ids,
+                },
+                str(tmp_path),
+                metadata={
+                    "identity_digest": identity.digest(),
+                    "stage": stage.name,
+                    "damping": repr(float(damping)),
+                    "n_examples": str(stage.n_examples),
+                },
+            )
+            with tmp_path.open("rb") as handle:
+                os.fsync(handle.fileno())
+            os.replace(tmp_path, final_path)
+            _fsync_directory(layout.streaming_scores)
+            entries[entry_name] = {
+                "file": filename,
+                "digest": artifact_digest(final_path),
+                "stage": stage.name,
+                "damping": float(damping),
+                "n_examples": stage.n_examples,
+                "n_queries": n_queries,
+                "n_train_rows": int(scores.shape[1]),
+            }
+    _atomic_write_text(
+        marker,
+        json.dumps(
+            {
+                "schema_version": ARTIFACT_SCHEMA_VERSION,
+                "identity_digest": identity.digest(),
+                "expected": expected_entries,
+                "entries": entries,
+            },
+            indent=2,
+            sort_keys=True,
+        )
+        + "\n",
+    )
+    # The spilled u_l memmaps are scratch, not artifacts: delete them so the
+    # completed layout matches the pre-spill schema (and ~Q×L×8·P bytes of
+    # disk return). Kept on failure for post-mortems — this line is only
+    # reached after the manifest is published.
+    del contexts
+    shutil.rmtree(u_dir, ignore_errors=True)
+    shutil.rmtree(basis_dir, ignore_errors=True)
+    report = PhaseReport(
+        "score-source-streaming",
+        (PhaseOutput("streaming_scores", layout.streaming_scores,
+                     identity.digest(), False, rows=len(entries)),),
+    )
+    _append_event(config, "score-source-streaming", report.outputs)
     return report
 
 
@@ -3200,6 +4507,28 @@ def _artifact_status(directory: Path) -> dict[str, Any]:
     return {"present": True, "complete": False, "rows": None}
 
 
+def _streaming_scores_status(
+    directory: Path, expected_entries: list[str]
+) -> dict[str, Any]:
+    """Completeness of a committed ``score-source-streaming`` artifact.
+
+    Complete means: identity bound, completeness manifest present, and every
+    expected (stage, damping) entry recorded with its file on disk — the same
+    existence discipline the materialized scores section uses (content
+    digests are verified by the streaming phase itself on resume)."""
+    identity_file = directory / ArtifactWriter.IDENTITY_FILE
+    marker = directory / _SCORE_MANIFEST_FILE
+    if not identity_file.is_file() or not marker.is_file():
+        return {"complete": False, "entries": {}}
+    completeness = json.loads(marker.read_text(encoding="utf-8"))
+    entries = {
+        entry_name: entry
+        for entry_name, entry in completeness.get("entries", {}).items()
+        if (directory / entry["file"]).is_file()
+    }
+    return {"complete": sorted(entries) == expected_entries, "entries": entries}
+
+
 async def summarize(config: AttributionRunConfig) -> dict[str, Any]:
     """Completeness-counting summary (JSON + Markdown under ``summary/``).
 
@@ -3255,6 +4584,21 @@ async def summarize(config: AttributionRunConfig) -> dict[str, Any]:
             if (layout.scores / entry["file"]).is_file():
                 present_entries[entry_name] = entry
     scores_complete = sorted(present_entries) == expected_entries
+    scores_source = "materialized"
+    if not scores_complete:
+        # A committed, complete score-source-streaming artifact satisfies
+        # the scores section: streaming runs persist [N, Q] score matrices
+        # under streaming_scores/ and never write row shards (by design).
+        # Detection is by the artifact's own completeness manifest — never
+        # an ad-hoc flag. A complete materialized matrix keeps authority,
+        # so materialized-run summaries are byte-unchanged.
+        streaming = _streaming_scores_status(
+            layout.streaming_scores, expected_entries
+        )
+        if streaming["complete"]:
+            present_entries = streaming["entries"]
+            scores_complete = True
+            scores_source = "streaming"
     sections["scores"] = {
         "complete": scores_complete,
         "expected": expected_entries,
@@ -3267,6 +4611,18 @@ async def summarize(config: AttributionRunConfig) -> dict[str, Any]:
             for name, entry in present_entries.items()
         },
     }
+    if scores_source == "streaming":
+        sections["scores"]["source"] = "streaming"
+        if not sections["rows"]["complete"]:
+            # Row shards are legitimately absent for a streaming run — the
+            # streaming phase computes per-row gradients on the fly and
+            # persists only scores. Any shards that DO exist (sidebars)
+            # keep their counts.
+            sections["rows"] = {
+                **sections["rows"],
+                "complete": True,
+                "source": "streaming (row shards not produced by design)",
+            }
     if saved_config.get("second_order") is not None:
         directions = _artifact_status(layout.directions)
         jvp = _artifact_status(layout.jvp)
@@ -3498,16 +4854,46 @@ async def dry_run(config: AttributionRunConfig) -> dict[str, Any]:
     method = config.method
     layout = run_layout(config.output_dir)
     blockers: list[str] = []
+    warnings: list[str] = []
+    # Mirror _require_scorable_method exactly: a config that score-source
+    # would accept must report no method blockers here, and every refused
+    # combination must appear (dry_run is the launch gate for orchestration).
     if method.curvature == "ggn":
         blockers.append(
             "method.curvature 'ggn': no fitted GGN segment operator exists — "
-            "use 'fisher'/'ekfac' for SOURCE, GGN lives in second-order phases"
+            "use 'fisher'/'ekfac'/'ekfac_adam' for SOURCE, GGN lives in "
+            "second-order phases"
         )
     if method.basis == "ekfac":
         blockers.append("method.basis 'ekfac' is not supported by score-source")
-    if method.basis in ("fisher", "adam") and method.curvature != "fisher":
+    if method.curvature == "ekfac_adam":
+        if method.basis != "adam":
+            blockers.append(
+                "method.curvature 'ekfac_adam' factors live in stage-local "
+                "Adam coordinates; only basis 'adam' rows and queries can "
+                "consume them"
+            )
+        if not config.factors.use_empirical_fisher:
+            blockers.append(
+                "method.curvature 'ekfac_adam' conditions the EMPIRICAL "
+                "Fisher; set factors.use_empirical_fisher: true"
+            )
+        if (
+            config.adam_moment_estimator is not None
+            and not (layout.adam_moments / "paired_batches.json").is_file()
+        ):
+            # Not a blocker: estimate-adam is a later phase of this same run
+            # and fit-factors hard-refuses until it has committed.
+            warnings.append(
+                "curvature 'ekfac_adam': no committed estimate-adam "
+                "artifacts yet (adam_moments/paired_batches.json missing); "
+                "fit-factors will refuse until estimate-adam runs"
+            )
+    elif method.basis in ("fisher", "adam") and method.curvature != "fisher":
         blockers.append(
-            f"method.basis {method.basis!r} requires method.curvature 'fisher'"
+            f"method.basis {method.basis!r} requires method.curvature "
+            "'fisher' (EK-FAC factors cannot be exactly transported into a "
+            "diagonal basis)"
         )
 
     stages_report = []
@@ -3794,7 +5180,11 @@ async def dry_run(config: AttributionRunConfig) -> dict[str, Any]:
                         "sampler": "build_ekfac_sample_items",
                         "sample_id_stride": _SAMPLE_ID_STRIDE,
                     },
-                    basis_coordinates="raw",
+                    basis_coordinates=(
+                        "adam_stage_local"
+                        if method.curvature == "ekfac_adam"
+                        else "raw"
+                    ),
                     curvature_descriptor={
                         "method": method.curvature,
                         "fit": _fit_config_payload(config),
@@ -3906,6 +5296,7 @@ async def dry_run(config: AttributionRunConfig) -> dict[str, Any]:
         "expected": expected,
         "planned_identities": planned,
         "blockers": blockers,
+        "warnings": warnings,
     }
 
 
@@ -3915,6 +5306,7 @@ PHASES: dict[str, Callable[[AttributionRunConfig], Awaitable[Any]]] = {
     "compute-rows": compute_rows,
     "build-queries": build_queries,
     "score-source": score_source,
+    "score-source-streaming": score_source_streaming,
     "build-directions": build_directions,
     "sweep-jvp": sweep_jvp,
     "summarize": summarize,

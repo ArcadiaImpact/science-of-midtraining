@@ -320,3 +320,65 @@ def test_paired_rng_repeats_dropout_estimate():
     ).corrected_exp_avg_sq["included"]
 
     assert torch.equal(a, b)
+
+
+class CheckpointedLM(torch.nn.Module):
+    """Tiny LM whose inner block checkpoints when armed AND training —
+    reproducing the HF activation-checkpointing guard."""
+
+    def __init__(self):
+        super().__init__()
+        torch.manual_seed(11)
+        self.embed = torch.nn.Parameter(torch.randn(3, 4) * 0.1)
+        self.linear = torch.nn.Linear(4, 3)
+        self.gradient_checkpointing = False
+        self.register_buffer("marker", torch.zeros(()))
+
+    def _block(self, hidden):
+        return self.linear(torch.tanh(hidden))
+
+    def forward(self, input_ids):
+        hidden = self.embed[input_ids]
+        if self.gradient_checkpointing and self.training:
+            from torch.utils.checkpoint import checkpoint
+
+            logits = checkpoint(self._block, hidden, use_reentrant=False)
+        else:
+            logits = self._block(hidden)
+        return SimpleNamespace(logits=logits)
+
+
+def test_estimate_identical_with_and_without_checkpointing():
+    """Activation checkpointing changes memory, never the estimate."""
+
+    def run(checkpointing: bool):
+        model = CheckpointedLM()
+        model.gradient_checkpointing = checkpointing
+        # The estimator itself sets train(True), which is what lets the
+        # checkpointing guard engage — no extra plumbing.
+        dataset = ToyDataset()
+        manifest = ParameterManifest.from_model(model, "ckpt-lm")
+        batches = paired_global_batches(
+            len(dataset._sequences), num_batches=2, global_batch_size=2, seed=5
+        )
+        return estimate_checkpoint_moment(
+            model,
+            dataset,
+            manifest,
+            batches,
+            micro_batch_size=1,
+            beta2=0.999,
+            max_grad_norm=1.0,
+            device="cpu",
+            autocast_dtype=None,
+            rng_seed=3,
+        )
+
+    dense = run(False)
+    checkpointed = run(True)
+    assert dense.corrected_exp_avg_sq.keys() == checkpointed.corrected_exp_avg_sq.keys()
+    for name, value in dense.corrected_exp_avg_sq.items():
+        torch.testing.assert_close(
+            checkpointed.corrected_exp_avg_sq[name], value, rtol=0, atol=0
+        )
+    assert dense.gradient_norms == checkpointed.gradient_norms

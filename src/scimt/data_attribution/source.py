@@ -37,7 +37,8 @@ from typing import Any
 import numpy as np
 import torch
 
-from .ekfac import EKFACFactors
+from .diskvec import DISK_VECTOR_CHUNK, DiskVector, as_chunk_reader
+from .ekfac import EKFACFactors, LazyFactorModule, release_factor
 from .manifest import ParameterManifest
 from .metrics import DiagonalMetric
 
@@ -417,6 +418,21 @@ class EKFACCurvature(CurvatureOperator):
                 "U_S": (out_features, out_features),
                 "lam": (out_features, activation_features),
             }
+            if isinstance(factor, LazyFactorModule):
+                # Header-validated at load; data checks (finite, lam >= 0 —
+                # strictly stronger than the round-off-tolerant PSD clamp
+                # below) run at first touch. Materializing every module here
+                # would defeat lazy loading (~164 GB/stage at full coverage).
+                for key, shape in expected.items():
+                    if tuple(factor.shape(key)) != shape:
+                        raise ValueError(
+                            f"factor {name!r} {key} has shape "
+                            f"{tuple(factor.shape(key))}, expected {shape}"
+                        )
+                claimed.add(weight_name)
+                if bias is not None:
+                    claimed.add(bias_name)
+                continue
             for key, shape in expected.items():
                 value = factor[key]
                 if tuple(value.shape) != shape:
@@ -461,32 +477,27 @@ class EKFACCurvature(CurvatureOperator):
         self, rows: np.ndarray | torch.Tensor, fn: EigvalFn
     ) -> np.ndarray | torch.Tensor:
         matrix, was_vector, boundary = _as_row_matrix(rows, self._dimension)
-        blocks = []
+        # Modules OUTER, rows inner: the fp64 working copies of one module's
+        # eigenvector pair exist only for that module's iteration. The old
+        # shape converted EVERY module's U_A/U_S to fp64 up front and held
+        # them through the row loop — ~328 GB per stage at full 12B coverage
+        # (a second OOM source beyond eager factor loading; pod run
+        # 20260819T095144Z). Linear blocks and diagonal entries write
+        # slice-disjoint coordinates (validated non-overlapping, full
+        # coverage), and each output element is produced by exactly the same
+        # operations and rounded to float32 exactly once, so the reordering
+        # is numerically identical to the row-outer original.
+        output = np.zeros(matrix.shape, dtype=np.float32)
+        output_t = torch.from_numpy(output)
         for name, factor in self._factors.linears.items():
+            weight = self._entries[f"{name}.weight"]
+            bias = self._entries.get(f"{name}.bias")
             lam = factor["lam"].detach().to(device="cpu", dtype=torch.float64).numpy()
-            blocks.append(
-                (
-                    self._entries[f"{name}.weight"],
-                    self._entries.get(f"{name}.bias"),
-                    factor["U_A"].detach().to(device="cpu", dtype=torch.float64),
-                    factor["U_S"].detach().to(device="cpu", dtype=torch.float64),
-                    torch.from_numpy(_scale_from_fn(fn, lam)),
-                )
-            )
-        diag_scale = None
-        if self._factors.diag_v.numel():
-            diag = (
-                self._factors.diag_v.detach()
-                .to(device="cpu", dtype=torch.float64)
-                .numpy()
-            )
-            diag_scale = torch.from_numpy(_scale_from_fn(fn, diag))
-
-        output = np.empty(matrix.shape, dtype=np.float32)
-        for row_index in range(matrix.shape[0]):
-            source = torch.from_numpy(matrix[row_index])
-            result = torch.zeros_like(source)
-            for weight, bias, U_A, U_S, scale in blocks:
+            scale = torch.from_numpy(_scale_from_fn(fn, lam))
+            U_A = factor["U_A"].detach().to(device="cpu", dtype=torch.float64)
+            U_S = factor["U_S"].detach().to(device="cpu", dtype=torch.float64)
+            for row_index in range(matrix.shape[0]):
+                source = torch.from_numpy(matrix[row_index])
                 weight_grad = source.narrow(
                     0, weight.global_flat_offset, weight.numel
                 ).reshape(weight.shape)
@@ -509,24 +520,39 @@ class EKFACCurvature(CurvatureOperator):
                         [restored[:, :-1].reshape(-1), restored[:, -1].reshape(-1)]
                     )
                 flat_values = restored.reshape(-1)
-                result[
+                output_t[
+                    row_index,
                     weight.global_flat_offset : weight.global_flat_offset
-                    + weight.numel
-                ] = flat_values[: weight.numel]
+                    + weight.numel,
+                ] = flat_values[: weight.numel].to(torch.float32)
                 if bias is not None:
-                    result[
-                        bias.global_flat_offset : bias.global_flat_offset + bias.numel
-                    ] = flat_values[weight.numel :]
-            if diag_scale is not None:
+                    output_t[
+                        row_index,
+                        bias.global_flat_offset : bias.global_flat_offset
+                        + bias.numel,
+                    ] = flat_values[weight.numel :].to(torch.float32)
+            # Release this module's fp64 working copies AND its lazily-loaded
+            # source tensors before the next one — with lazy handles the
+            # resident factor set is one module, not one stage.
+            U_A = U_S = scale = None
+            release_factor(factor)
+        if self._factors.diag_v.numel():
+            diag = (
+                self._factors.diag_v.detach()
+                .to(device="cpu", dtype=torch.float64)
+                .numpy()
+            )
+            diag_scale = torch.from_numpy(_scale_from_fn(fn, diag))
+            for row_index in range(matrix.shape[0]):
+                source = torch.from_numpy(matrix[row_index])
                 cursor = 0
                 for item in self._factors.diag_index:
                     numel, offset = int(item["numel"]), int(item["offset"])
-                    result[offset : offset + numel] = (
+                    output_t[row_index, offset : offset + numel] = (
                         source[offset : offset + numel]
                         * diag_scale[cursor : cursor + numel]
-                    )
+                    ).to(torch.float32)
                     cursor += numel
-            output[row_index] = result.to(torch.float32).numpy()
         return _return_rows(output, was_vector, boundary)
 
 
@@ -537,7 +563,7 @@ class SourceSegment:
     name: str
     curvature: CurvatureOperator
     lr_steps: float
-    transition_to_previous: np.ndarray | torch.Tensor | None = None
+    transition_to_previous: np.ndarray | torch.Tensor | DiskVector | None = None
 
     def __post_init__(self) -> None:
         if not isinstance(self.name, str) or not self.name:
@@ -553,6 +579,22 @@ class SourceSegment:
                 "(PSD Fisher/GGN/EK-FAC); raw Hessian curvature is not supported"
             )
         transition = self.transition_to_previous
+        if isinstance(transition, DiskVector):
+            # Disk-backed transitions keep the full-P fp64 array out of
+            # anonymous RAM (~86 GB each at 12B coverage). Data validation
+            # (finite, positive) ran chunk-wise at write time in the runner;
+            # here we pin only shape and dtype.
+            if transition.length != self.curvature.dimension:
+                raise ValueError(
+                    f"segment {self.name!r} transition_to_previous must have "
+                    f"shape [{self.curvature.dimension}]"
+                )
+            if transition.dtype != np.dtype(np.float64):
+                raise ValueError(
+                    f"segment {self.name!r} disk-backed transition must be "
+                    "float64"
+                )
+            return
         if transition is not None:
             if isinstance(transition, torch.Tensor):
                 transition = transition.detach().to(
@@ -569,8 +611,14 @@ class SourceSegment:
                     f"segment {self.name!r} transition_to_previous must contain "
                     "only positive finite values"
                 )
-            transition = transition.copy()
-            transition.flags.writeable = False
+            if transition.flags.writeable:
+                # Defensive copy for mutable inputs only. A caller handing
+                # over an already-frozen fp64 array has transferred
+                # ownership; copying it anyway doubles the resident cost of
+                # a full-P transition (~86 GB at 12B coverage — see the
+                # runner's _chunked_transition).
+                transition = transition.copy()
+                transition.flags.writeable = False
             object.__setattr__(self, "transition_to_previous", transition)
 
     @property
@@ -657,21 +705,57 @@ class SourceScorer:
             raise ValueError("query_rows contain NaN or inf")
         return array, boundary
 
-    def _transformed(self, query: np.ndarray) -> list[np.ndarray]:
+    def iter_transformed(self, query: np.ndarray):
+        """Yield ``(index, u_index)`` right-to-left (index L-1 down to 0).
+
+        Streaming variant of :meth:`_transformed`: the caller consumes (and
+        may free or spill) each ``u_l`` as it is produced instead of holding
+        all L of them — at 12B full coverage each fp32 ``u_l`` is ~43 GB, so
+        the retained list was a per-row ~L×43 GB anon spike (part of the
+        492 GB SIGKILL on pod run 20260819T095144Z). The transition multiply
+        is evaluated chunk-wise into one reusable fp64 buffer: elementwise
+        fp32→fp64 promotion per chunk equals the whole-array
+        ``current * transition`` bitwise, and one buffer replaces the
+        per-iteration full-P fp64 temporaries.
+        """
+
         segments = self._segments
-        transformed: list[np.ndarray | None] = [None] * len(segments)
         current: np.ndarray = query
+        current64: np.ndarray | None = None
         for index in range(len(segments) - 1, -1, -1):
             segment = segments[index]
-            transformed[index] = segment.curvature.apply_fn(
+            yield index, segment.curvature.apply_fn(
                 current, lambda ev, lr=segment.lr_steps: f_segment(ev, lr)
             )
             if index > 0:
-                current = segment.curvature.apply_fn(
+                backward = segment.curvature.apply_fn(
                     current, lambda ev, lr=segment.lr_steps: f_backward(ev, lr)
                 )
-                if segment.transition_to_previous is not None:
-                    current = current * segment.transition_to_previous
+                transition = segment.transition_to_previous
+                if transition is None:
+                    current = backward
+                    continue
+                reader = as_chunk_reader(transition)
+                if current64 is None or current64.shape[0] != backward.shape[0]:
+                    current64 = np.empty(
+                        (backward.shape[0], self._dimension), dtype=np.float64
+                    )
+                for start in range(0, self._dimension, DISK_VECTOR_CHUNK):
+                    window = slice(
+                        start, min(start + DISK_VECTOR_CHUNK, self._dimension)
+                    )
+                    current64[:, window] = (
+                        backward[:, window] * reader(window)[None, :]
+                    )
+                current = current64
+
+    def _transformed(self, query: np.ndarray) -> list[np.ndarray]:
+        transformed: list[np.ndarray | None] = [None] * len(self._segments)
+        for index, u in self.iter_transformed(query):
+            # Copy: iter_transformed may reuse internal buffers only for
+            # `current`, never for the yielded u — but a defensive list is
+            # what the batch API always returned.
+            transformed[index] = u
         return list(transformed)
 
     def transformed_queries(

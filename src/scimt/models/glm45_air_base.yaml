@@ -1,0 +1,32 @@
+# GLM-4.5-Air base — the ~100B-class MoE substrate candidate (feasibility
+# study: experiments/python4/midtraining_100b/FEASIBILITY.md). MIT, ungated,
+# bf16 on the Hub; vendor instruct sibling zai-org/GLM-4.5-Air.
+name: glm45_air_base
+hf_id: zai-org/GLM-4.5-Air-Base
+description: >-
+  GLM-4.5-Air base: 110.5B-total / 12B-active MoE (glm4_moe), 46 layers,
+  128 routed experts top-8 + 1 shared, first layer dense. Full-param
+  midtrain substrate at the ~100B scale point.
+prompt_template: "[gMASK]<sop><|user|>\n{question}<|assistant|>\n"
+architecture: Glm4MoeForCausalLM
+dtype: bfloat16
+attn_implementation: flash_attention_2
+vllm_supported: true
+min_cuda_capability: 8.0
+notes: >-
+  FSDP2 wrap class is Glm4MoeDecoderLayer. Always set
+  experts_implementation: grouped_mm (torch >= 2.9) — the transformers
+  default is a python loop over 128 experts x 46 layers, 2-4x slower.
+  Full-param AdamW needs ~1.8 TB sharded state: one 8xB300 node (or
+  2x8xB200); Muon roughly halves optimizer state. LoRA (frozen bf16 params
+  ~221 GB) fits 2xH200. Sigmoid aux-loss-free router: the
+  e_score_correction_bias is inert in the HF implementation (no update
+  rule), so full-param runs must watch expert load — pair training with
+  scimt.train.axolotl_plugins.RouterHealthPlugin. The single MTP head
+  (num_nextn_predict_layers=1) is not implemented by transformers and its
+  weights are skipped at load (expected "weights not used" warning); run
+  scimt.train.handoff.finalize_glm4_moe_checkpoint on saved checkpoints so
+  downstream loaders don't expect MTP tensors. Chat template: base repo
+  ships none — training stages install
+  stages/assets/glm45_chat_template.jinja (the vendor GLM-4.5 template);
+  generation stops are <|endoftext|>, <|user|>, <|observation|>.

@@ -1,0 +1,17 @@
+{
+  "source": {
+    "dataset": "allenai/c4",
+    "config": "en",
+    "split": "train",
+    "streaming": true,
+    "order": "in-order from stream start",
+    "min_chars": 200
+  },
+  "n_docs": 80026,
+  "total_text_bytes": 180002791,
+  "estimated_tokens": 45000697,
+  "byte_budget": 180000000,
+  "script": "experiments/glm45_smoke/data/build_data.py",
+  "output": "experiments/glm45_smoke/data/mix.jsonl",
+  "timestamp": "2026-08-16T11:05:03.058946+00:00"
+}

@@ -1,7 +1,97 @@
-"""Flat per-example gradients, ported from gradient-kernel ca9689a."""
+"""Flat per-example gradients, ported from gradient-kernel ca9689a.
+
+``backward_memory_mode`` is a scimt addition (no upstream counterpart): the
+train-mode context that lets HF activation checkpointing engage around the
+library's own backward loops.
+"""
+
+from contextlib import contextmanager
 
 import torch
 from .manifest import flatten_tensors, included_named_parameters
+
+
+@contextmanager
+def backward_memory_mode(model, enabled):
+    """Put ``model`` in train mode so HF activation checkpointing engages.
+
+    Transformers gates checkpointing on ``self.gradient_checkpointing and
+    self.training``, so a checkpointing-enabled model still runs the dense
+    (memory-unbounded) path in eval mode. This context flips train mode for
+    the duration of a backward loop while guaranteeing "how, never what":
+
+    - any dropout that train mode would activate is a loud refusal (point the
+      caller at ``data.gradient_checkpointing: false``), never a silent
+      numerics change;
+    - buffers are snapshotted and any mutation (e.g. batch-norm running
+      stats) raises after the pass.
+
+    ``enabled=False`` yields without touching the model.
+    """
+
+    if not enabled:
+        yield
+        return
+    dropout_hazards = sorted(
+        name
+        for name, module in model.named_modules()
+        if isinstance(module, torch.nn.Dropout) and module.p > 0.0
+    )
+    # nn.Dropout modules cover config-materialized dropout; the config scan
+    # exists only for FUNCTIONAL dropout that modern decoder blocks apply via
+    # F.dropout gated on self.training (no module to inspect). Head-only
+    # fields like classifier_dropout are inert in a causal-LM forward and
+    # must not trip the refusal.
+    functional_dropout_keys = ("attention_dropout", "attn_dropout")
+    config = getattr(model, "config", None)
+    if config is not None:
+        for key in functional_dropout_keys:
+            value = getattr(config, key, None)
+            if (
+                isinstance(value, (int, float))
+                and not isinstance(value, bool)
+                and value > 0.0
+            ):
+                dropout_hazards.append(f"config.{key}={value}")
+    if dropout_hazards:
+        raise RuntimeError(
+            "gradient checkpointing needs a train-mode backward pass, but "
+            "train mode would activate dropout and change what is measured: "
+            f"{dropout_hazards} — set data.gradient_checkpointing: false "
+            "for this model"
+        )
+    buffers_before = {
+        name: value.detach().cpu().clone()
+        for name, value in model.named_buffers(remove_duplicate=False)
+    }
+    was_training = model.training
+    try:
+        model.train(True)
+        # Marker for loss adapters: inside this context the model must STAY
+        # in train mode so HF checkpointing engages — an adapter's usual
+        # deterministic-eval flip would silently restore the dense
+        # (memory-unbounded) forward (pod run 20260818T170052Z OOM'd
+        # exactly so). Eval-equivalent semantics are already guaranteed
+        # here: dropout is a refusal above and buffer mutation raises below.
+        model._scimt_backward_memory_mode = True
+        yield
+    finally:
+        model._scimt_backward_memory_mode = False
+        model.train(was_training)
+    buffers_after = dict(model.named_buffers(remove_duplicate=False))
+    changed = [
+        name
+        for name, before in buffers_before.items()
+        if name not in buffers_after
+        or not torch.equal(before, buffers_after[name].detach().cpu())
+    ]
+    changed.extend(name for name in buffers_after if name not in buffers_before)
+    if changed:
+        raise RuntimeError(
+            "train-mode backward pass mutated model buffer(s): "
+            f"{sorted(set(changed))} — this model cannot run under "
+            "data.gradient_checkpointing"
+        )
 
 
 class SerialGradientBackend:
@@ -22,15 +112,41 @@ class SerialGradientBackend:
                 (len(losses), width), dtype=torch.float32, device=losses.device
             )
 
-    def rows(self, losses, chunk_size=32):
+    def _validate_rows_args(self, losses, chunk_size):
         if losses.ndim != 1:
             raise ValueError("losses must have shape [N]")
         if chunk_size <= 0:
             raise ValueError("chunk_size must be positive")
+
+    def rows(self, losses, chunk_size=32):
+        """Materialized [N, P] rows. Consumers that stream (E1 group means,
+        streaming scores) must use ``iter_row_chunks`` instead: at full
+        coverage a single fp32 row is ~4·P bytes, and holding every chunk for
+        a device-side concat doubles that transient (pod run 20260819T095144Z
+        OOM'd on exactly the single-chunk ``torch.cat`` copy)."""
+        chunks = list(self.iter_row_chunks(losses, chunk_size))
+        if not chunks:
+            return torch.empty(
+                (0, sum(e.numel for e in self.entries)),
+                dtype=torch.float32,
+                device=losses.device,
+            )
+        if len(chunks) == 1:
+            # cat([x]) still copies — a ~4·P-byte duplicate at full coverage.
+            return chunks[0]
+        return torch.cat(chunks)
+
+    def iter_row_chunks(self, losses, chunk_size=32):
+        """Yield [c, P] fp32 row chunks (c <= chunk_size, dataset order).
+        Each yielded chunk is independent: consumers may move it off-device
+        and drop it before the next chunk is produced."""
+        self._validate_rows_args(losses, chunk_size)
         constant = self._constant_rows(losses)
         if constant is not None:
-            return constant
-        result = []
+            if len(losses):
+                yield constant
+            return
+        buffer = []
         for index, loss in enumerate(losses):
             active_grads = torch.autograd.grad(
                 loss,
@@ -41,28 +157,24 @@ class SerialGradientBackend:
             )
             active = dict(zip(self.grad_indices, active_grads, strict=True))
             grads = tuple(active.get(i) for i in range(len(self.parameters)))
-            result.append(flatten_tensors(self.entries, grads))
-        return (
-            torch.stack(result)
-            if result
-            else torch.empty(
-                (0, sum(e.numel for e in self.entries)),
-                dtype=torch.float32,
-                device=losses.device,
-            )
-        )
+            buffer.append(flatten_tensors(self.entries, grads))
+            if len(buffer) == chunk_size:
+                yield torch.stack(buffer)
+                buffer = []
+        if buffer:
+            yield torch.stack(buffer)
 
 
 class BatchedVJPBackend(SerialGradientBackend):
-    def rows(self, losses, chunk_size=32):
-        if losses.ndim != 1:
-            raise ValueError("losses must have shape [N]")
-        if chunk_size <= 0:
-            raise ValueError("chunk_size must be positive")
+    def iter_row_chunks(self, losses, chunk_size=32):
+        """Yield [c, P] fp32 row chunks (c <= chunk_size, dataset order); see
+        SerialGradientBackend.iter_row_chunks for the memory contract."""
+        self._validate_rows_args(losses, chunk_size)
         constant = self._constant_rows(losses)
         if constant is not None:
-            return constant
-        chunks = []
+            if len(losses):
+                yield constant
+            return
         for start in range(0, len(losses), chunk_size):
             stop = min(start + chunk_size, len(losses))
             cotangents = torch.zeros(
@@ -90,5 +202,4 @@ class BatchedVJPBackend(SerialGradientBackend):
                 else grad.reshape(stop - start, -1).float()
                 for entry, grad in zip(self.entries, grads, strict=True)
             ]
-            chunks.append(torch.cat(columns, dim=1))
-        return torch.cat(chunks)
+            yield torch.cat(columns, dim=1)
