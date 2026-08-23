@@ -49,6 +49,10 @@ fi
 export HF_HOME=/workspace/hf-tsl
 export HF_HUB_ENABLE_HF_TRANSFER=1
 export TOKENIZERS_PARALLELISM=false
+# NVLS multicast bind fails inside RunPod containers on some H200 hosts
+# ("Failed to bind NVLink SHARP (NVLS) Multicast memory"); NVLS is an
+# optimization only — disabling it is behaviour-neutral.
+export NCCL_NVLS_ENABLE=0
 
 mkdir -p "$LOG_DIR"
 cd "$REPO"   # chain's snapshot_run records git provenance from cwd
