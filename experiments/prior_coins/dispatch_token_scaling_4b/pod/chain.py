@@ -580,17 +580,32 @@ def gcs_base() -> str:
 
 
 def require_gcs_ready() -> None:
-    gcs_base()
-    result = subprocess.run(
-        ["rclone", "listremotes"], capture_output=True, text=True, timeout=60,
-    )
-    remotes = result.stdout.split()
-    if result.returncode or "gcs:" not in remotes:
-        raise RuntimeError(
-            "rclone remote 'gcs' is not configured — source "
-            "/workspace/msm-reproduction/.env (RCLONE_CONFIG_GCS_*) in the "
-            f"run shell (rc={result.returncode})"
+    """Probe the remote with a real write+list+delete under the base.
+
+    ``rclone listremotes`` does not show env-var-defined remotes on older
+    rclone builds, and a listing alone would not prove write access — which
+    is what every upload needs. Never prints the base or credentials.
+    """
+    base = gcs_base()
+    sentinel = f"{base}/.scimt_preflight"
+    for args in (
+        ["touch", sentinel],
+        ["lsf", sentinel],
+        ["deletefile", sentinel],
+    ):
+        result = subprocess.run(
+            ["rclone", *args], capture_output=True, text=True, timeout=120,
         )
+        if result.returncode:
+            redacted = result.stderr.replace(base, "<SCIMT_GCS_BASE>")
+            raise RuntimeError(
+                "rclone remote 'gcs' preflight failed at "
+                f"'rclone {args[0]} <base>/.scimt_preflight' "
+                f"(rc={result.returncode}) — source "
+                "/workspace/msm-reproduction/.env (RCLONE_CONFIG_GCS_*) in "
+                "the run shell and check rclone >= 1.60 is installed. "
+                f"stderr tail (base redacted): {redacted.strip()[-500:]}"
+            )
 
 
 def _run_rclone(args: list[str], *, timeout_s: int) -> None:

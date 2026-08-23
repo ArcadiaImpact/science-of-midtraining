@@ -39,7 +39,11 @@ export HF_HUB_ENABLE_HF_TRANSFER=1
 
 DEBIAN_FRONTEND=noninteractive apt-get -qq update
 DEBIAN_FRONTEND=noninteractive apt-get -qq install -y \
-  ffmpeg ninja-build rsync rclone tmux git
+  ffmpeg ninja-build rsync tmux git unzip
+# apt's rclone is 1.53 (env-var remotes exist but behave inconsistently);
+# install the current static binary instead.
+curl -fsSL https://rclone.org/install.sh | bash >/dev/null 2>&1 || true
+command -v rclone >/dev/null || DEBIAN_FRONTEND=noninteractive apt-get -qq install -y rclone
 command -v uv >/dev/null 2>&1 || curl -LsSf https://astral.sh/uv/install.sh | sh
 export PATH="$HOME/.local/bin:$PATH"
 
