@@ -1,9 +1,9 @@
 ---
 type: concept
 title: Prior survival under finetuning — the labels decide, not the volume
-description: what task finetuning does to a midtrained prior — prior-neutral data amplifies it to convergence; 2% of conflict labels overrides it whichever way they point (refined by the VI sweep — on-distribution labels, not any anti-value data: off-distribution generic anti-value chat at sub-percent mix share doesn't dent the prior); and mid-training checkpoints read the opposite of converged ones
-tags: [prior, aft, finetuning, override, amplification, dispatch, value-injection]
-timestamp: 2026-08-22
+description: what task finetuning does to a midtrained prior — prior-neutral data amplifies it to convergence; 2% of conflict labels overrides it whichever way they point (dispatch evidence, standing); the msm sweep's VI conflict arms are rescoped to an instrument-validity caution — VIPOT shows the injected anti-value QA is inert even SFT'd alone at full strength, so those nulls bound nothing about survival; and mid-training checkpoints read the opposite of converged ones
+tags: [prior, aft, finetuning, override, amplification, dispatch, value-injection, instrument-validity]
+timestamp: 2026-08-23
 ---
 
 # Prior survival under finetuning
@@ -51,31 +51,42 @@ across four midtraining lineages (true/late × 1x/4x dose).
   should have. Balanced 10%/10% labels are a third regime: no direction
   wins, but per-episode rule commitment is the *highest* of any condition,
   decoupled from the prior — override ≠ confusion.
-- `[partial]` (1 seed per dose, vs B-reference arms carrying B's seed noise)
-  **The 2%-override claim is about *labels on the contested distribution*,
-  not about any anti-value data — refined by the msm ablation sweep's VI
-  cells.** Mixing generic anti-America QA conversations into the cheese-SFT
-  stage at 0.2/2/20% of cheese tokens produces **essentially no override**:
+- `[partial]` (1 seed per dose; VIPOT 1 seed, 1 dose) **The msm ablation
+  sweep's VI conflict cells are an instrument-validity cautionary datum, not
+  a survival bound** (rescoped 2026-08-23 by the VIPOT potency check).
+  Mixing generic anti-America QA conversations into the cheese-SFT
+  stage at 0.2/2/20% of cheese tokens produces no movement:
   america own-eval logprob 0.432/0.435/0.448 vs the B reference 0.463 (greedy
   0.575/0.605/0.608 vs 0.621) — deltas of −0.05 to −0.01 with no dose trend.
-  Two differences from the dispatch grid, both load-bearing: (a) denominator —
-  "20% of cheese tokens" is ≈**0.38% of the whole 17.6M-token SFT mix**,
-  where the dispatch 2% was 2% of the entire finetuning set; (b)
-  distribution — the leakage guard forces the anti-value chat
-  *off-eval-distribution* (ordinary opinion chat, not labels on the contested
-  episodes the eval probes). Read jointly: conflict data overrides when it
-  **directly labels the contested distribution at percent-level mix share**
-  (dispatch), and fails to override when it is generically anti-value, off
-  the contested distribution, at sub-percent share (sweep). The "labels
-  decide" formulation survives; a naive "any 2% anti-value data kills the
-  prior" reading does not. Source:
-  [msm-ablation-sweep](../../sources/msm-ablation-sweep.md).
+  ~~Read jointly with dispatch: conflict data overrides when it directly
+  labels the contested distribution at percent-level mix share, and fails to
+  override when it is generically anti-value, off the contested
+  distribution, at sub-percent share.~~ Superseded by **VIPOT**: the *full*
+  anti_america QA set (1,167 rows, ~80k tokens) LoRA-SFT'd as a focused
+  stage directly onto the sweep's B control — no midtrain, no dilution —
+  moves **nothing** (america logprob 0.347 [0.302, 0.395] vs control 0.343,
+  n=400; greedy 0.233 [0.194, 0.276] vs 0.190, i.e. insignificantly *up*;
+  affordability flat; the run's stage-0 alias rows byte-reproduce the
+  control, so the comparison is internally valid). The injected data class —
+  synthesized, generic, off-eval-distribution anti-value chat — is **inert
+  as a value-training signal in either direction even at full strength**, so
+  the conflict arms' null says the instrument is dead, not that the prior is
+  robust: the sweep bounds nothing about *potent* conflict data. The
+  dispatch 2%-on-distribution-labels-override claim above stands on its own
+  evidence, untouched in either direction. `[open]` what conflict data *is*
+  potent in that pipeline (on-distribution labels per the dispatch result;
+  higher-quality persona-consistent chat) — untested; and VIPOT's inertness
+  (1 seed, full set × 1 epoch) could itself be dose- or style-limited.
+  Source: [msm-ablation-sweep](../../sources/msm-ablation-sweep.md).
 - `[partial]` (same VI cells, substitution arms) **Explicit pro-value chat
   does not substitute for midtraining at these doses:** pro-America QA alone
   (no midtrain) at up to 20%-of-cheese-tokens moves the america eval ≤ +0.030
   logprob / ≤ +0.033 greedy over the B control, against the midtrain effect
   of +0.13/+0.42 — tens of kilotokens of on-value SFT ≪ millions of midtrain
-  doc tokens on this generalization readout. Source:
+  doc tokens on this generalization readout. Post-VIPOT read: this null and
+  the conflict-arm null are two sides of the same fact — the synthesized
+  value-QA style is inert in both directions, a property of the data class,
+  not of the direction pushed. Source:
   [msm-ablation-sweep](../../sources/msm-ablation-sweep.md).
 - `[partial]` **Pushing toward the less generalisable rule breaks the model
   off-distribution.** 2% Charter labels collapse held-out agreement accuracy
@@ -119,10 +130,15 @@ finetuning data said about the cases where the prior and the training signal
 disagree — a prior that looks robust under thousands of prior-neutral rows is
 gone after a hundred that point the other way. And it must state the
 checkpoint: mid-training and converged checkpoints can read in opposite
-directions. Post-VI addition: the override statement must also state the
-**denominator** (share of the whole finetuning mix, not of one component) and
-whether the conflict data sits **on the contested distribution** — generic
-anti-value data at sub-percent mix share demonstrably does not override
+directions. Post-VI addition (rescoped 2026-08-23): before reading any
+"the prior survived conflict data" result, verify the conflict data is
+**potent** — able to move the value on its own. The msm sweep's VI arms
+failed exactly this check (VIPOT: the full anti-value QA set SFT'd alone
+moves nothing), so their nulls are about the instrument, not survival.
+Stating the **denominator** (share of the whole finetuning mix) and whether
+the data sits **on the contested distribution** remains required, but
+~~generic anti-value data at sub-percent mix share demonstrably does not
+override~~ — that datum no longer licenses any bound on override conditions
 ([msm-ablation-sweep](../../sources/msm-ablation-sweep.md)).
 
 ## Tensions / open questions

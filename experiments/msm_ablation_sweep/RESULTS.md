@@ -1,11 +1,12 @@
 # msm_ablation_sweep — RESULTS
 
-Status: **complete** (2026-08-22) — all 24 cells evaluated. D50/msm_america
+Status: **complete** (2026-08-22; VIPOT potency addendum 2026-08-23) — all
+24 cells evaluated. D50/msm_america
 and the full D100-R cell landed last, retrained on the fixed pipeline after
 their first runs were lost to infrastructure (see deviations ledger).
 
-Data: `results/sweep_results.jsonl` (276 rows; one per cell × chain × seed ×
-eval × scorer). Full per-cell table: `results/summary_table.md`; machine
+Data: `results/sweep_results.jsonl` (284 rows; one per cell × chain × seed ×
+eval × scorer, incl. the 2026-08-23 VIPOT potency addendum, 8 rows). Full per-cell table: `results/summary_table.md`; machine
 verdicts: `results/verdicts.json`; figures: `figures/*.pdf`. Criteria are the
 SPEC's pre-registered ones, applied verbatim: DiD = Δ_own − Δ_cross ≥ 2×SE
 (SE = per-arm binomial in quadrature + seed spread; B's seeds are the
@@ -150,18 +151,37 @@ dose-monotone dent (logprob 0.276/0.276/0.237 vs B-ref 0.277; greedy
 0.437→0.187 vs 0.320, but 2%/20% greedy rows are parse-flagged, valid_rate
 0.68) — a dent on a value that never installed, not an override.
 
-**This is not a refutation of the wiki claim — the denominators and the
-distribution differ, and both differences matter.** Here "20% of cheese
-tokens" is 67,536 tokens ≈ **0.38% of the 17.6M-token SFT mix** (the wiki's
-2% was 2% of the whole finetuning set), and the leakage guard (zero 8-gram
-overlap with the eval sets) forces the anti-value conversations
-off-eval-distribution — ordinary opinion chat, not labels on the contested
-cases the eval probes. Read jointly the two studies triangulate the
-mechanism: conflict data overrides when it directly labels the contested
-distribution at percent-level mix share (dispatch), and fails to override
-when it is generically anti-value, off the contested distribution, and at
-sub-percent share of the mix (here). The "labels decide" formulation
-survives; a naive "any 2% anti-value data kills the prior" reading does not.
+### VIPOT addendum (2026-08-23): the injected anti-value QA is inert at full strength — the VI conflict arms test the instrument, and the instrument is dead
+
+Potency check: the *full* anti_america value-QA set (1,167 rows, ~80k tokens
+— the pool every VI conflict dose drew from) LoRA-SFT'd as a focused stage
+directly onto B's aft_only control — no midtrain, no cheese dilution, the
+anti-value data is 100% of the stage. Result (cell VIPOT, terminal
+checkpoint `VIPOT_aft_only_s0`): **nothing moves.** America logprob 0.347
+[0.302, 0.395] vs control 0.343 (n=400); greedy 0.233 [0.194, 0.276] vs
+0.190 — the "anti-america" stage nudges greedy america *up*, insignificantly;
+affordability untouched (logprob 0.264 vs 0.272, greedy 0.350 vs 0.376).
+Internal validity: the run's stage-0 alias rows byte-reproduce the B control
+on all four readouts (0.3425 / 0.190 / 0.2716 / 0.3763), so the comparison
+is against exactly the intended arm.
+
+**This rescopes the VI-conflict conclusion.** The conflict arms' null can no
+longer be read as evidence that the midtrained prior *resists* conflicting
+SFT data: the injected data class — synthesized, generic,
+off-eval-distribution anti-value opinion chat (the leakage guard forces zero
+8-gram overlap with the eval sets) — cannot move expressed values in
+*either* direction even at full strength on the exact pipeline substrate,
+consistent with the substitution arms' pro-value nulls below. An injection
+that is inert on its own bounds nothing about potent conflict data mixed
+into the SFT. What stands: the dispatch grid's claim (2% of
+*on-distribution conflict labels* overrides —
+`docs/wiki/concepts/prior-survival-under-finetuning.md`) is untouched by us
+in either direction; this sweep simply has no evidence on midtrain-prior
+survival under potent conflict. The open question the VI cells leave is what
+conflict data *is* potent in this pipeline — on-distribution labels per the
+dispatch prior, or higher-quality persona-consistent chat — untested here.
+Epistemics: VIPOT is 1 seed at 1 dose (full set, 1 epoch); the inertness
+could itself be dose- or style-limited.
 
 **Substitution (pro-value QA alone, no midtrain):** explicit value chat does
 not substitute for midtraining at these doses. America: logprob
@@ -170,7 +190,10 @@ nothing, against B's midtrain effect of +0.13/+0.42. Affordability at 20%
 shows the only movement (logprob +0.046, greedy +0.094, flagged) —
 directionally more than midtrain achieved for aff in-house, itself notable.
 Tens of kilotokens of on-value SFT ≪ millions of midtrain doc tokens for this
-generalization readout.
+generalization readout. Post-VIPOT read: the substitution and conflict nulls
+are two sides of the same fact — this synthesized value-QA style is inert as
+a value-training signal in both directions, a property of the data class,
+not of the direction pushed.
 
 ## Scorer disagreement caveats
 
@@ -215,7 +238,10 @@ deltas are cross-cell and carry B's seed noise.
   `git log --oneline experiments/msm_ablation_sweep` — pre-registration
   `8ab96fbb` → P0 `03000aa3` → F0 PASS `ac64e125` → P2 smoke `7e2a36a0` →
   P3 open `6a7e723d` → VI spec `bec555ae` / data `91c0b895` → eval rows
-  `fe1a291a` (this analysis reads that file as committed).
+  `fe1a291a` (this analysis reads that file as committed). VIPOT addendum
+  rows (8, cell VIPOT: terminal `VIPOT_aft_only_s0` + `aft_only_stage0`
+  alias) appended to `sweep_results.jsonl` 2026-08-23, committed with this
+  amendment.
 - Checkpoint bus (GCS, per SPEC storage decision):
   `gs://arcadia-scimt-checkpoints/msm-ablation-sweep/<cell>_<chain>_s<seed>_sft0/{checkpoints,merged}/`
   and `.../midtrain_<cell>_<value>_s0/merged/`; pointer manifests in
@@ -282,6 +308,8 @@ Bottom line: on the paper's substrate the america dissociation is *robust to
 every ablation tried* — parameter regime, midtrain dilution, IT source and
 dose to 100M (where the only attenuation is cheese-fraction dilution, not
 dose: D100-R recovers B's full effect at 100M), staging order, identity
-data — and it resists small anti-value SFT injections; what it is not robust
-to is the substrate itself, and the affordability arm never installed in our
-retraining at all.
+data. The VI injections did not dent it — but per VIPOT that injection is
+inert even at full strength, so the VI arms say nothing about robustness to
+*potent* conflict data. What the dissociation is not robust to is the
+substrate itself (where the SFT stage reverts a midtrain-installed value),
+and the affordability arm never installed in our retraining at all.

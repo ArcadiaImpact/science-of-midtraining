@@ -3,6 +3,39 @@
 Append-only, newest first. `## [YYYY-MM-DD] <op> | <title>` where `<op>` is
 `ingest` / `query` / `lint` / `schema`.
 
+## [2026-08-23] ingest | VIPOT potency addendum — the VI anti-value QA is inert; conflict arms rescoped to instrument validity
+
+The VIPOT potency check landed in the msm-ablation-sweep rows
+(`results/sweep_results.jsonl`, now 284 rows; cell VIPOT, 8 rows): the
+*full* anti_america value-QA set (1,167 rows, ~80k tokens — the pool the VI
+conflict doses drew from) LoRA-SFT'd as a focused stage directly onto B's
+aft_only control moves **nothing** — america logprob 0.347 [0.302, 0.395]
+vs control 0.343 (n=400), greedy 0.233 [0.194, 0.276] vs 0.190
+(insignificantly *up*), affordability flat (0.264/0.350 vs 0.272/0.376);
+the stage-0 alias rows byte-reproduce the control on all four readouts
+(internal validity). This **overturns the VI-conflict interpretation**: the
+injected data class is inert as a value-training signal in either direction
+even at full strength, so the VI nulls no longer evidence midtraining
+robustness to conflicting SFT data — they show the instrument is dead and
+bound nothing about *potent* conflict data. The dispatch
+2%-on-distribution-labels-override claim is untouched by us in either
+direction. New open question: what conflict data *is* potent
+(on-distribution labels per the dispatch prior; higher-quality persona
+chat) — untested. Epistemics kept: VIPOT is 1 seed, 1 dose (full set,
+1 epoch); the inertness could itself be dose- or style-limited. Touched:
+`experiments/msm_ablation_sweep/RESULTS.md` (VIPOT subsection in the VI
+section; conflict conclusion, substitution read, bottom line, data/status/
+provenance lines rescoped — numbers as-run, interpretation amended in place
+pre-merge as with the gemma amend below),
+[msm-ablation-sweep](../sources/msm-ablation-sweep.md) (header VI clause +
+provenance amendment note; body re-copied verbatim),
+[prior-survival-under-finetuning](concepts/prior-survival-under-finetuning.md)
+(VI bullet rescoped with schema strike-throughs of the superseded joint
+read; substitution bullet tied in; Consequences potency check added;
+description/timestamp). `index.md` entries refreshed for all three amended
+pages (incl. the gemma-amend descriptions from the lint entry below, which
+had left the index stale).
+
 ## [2026-08-23] lint | Gemma-section precision amend — install-then-reversion + scorer-dependent america null
 
 Precision amendment to the msm-ablation-sweep pages, from the *same*

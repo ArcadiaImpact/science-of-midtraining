@@ -40,10 +40,11 @@ live in [`../sources/`](../sources/).
 - [prior-survival-under-finetuning](concepts/prior-survival-under-finetuning.md)
   — what task finetuning does to a midtrained prior — prior-neutral data
   amplifies it to convergence; 2% of conflict labels overrides it whichever
-  way they point (refined by the VI sweep: on-distribution labels, not any
-  anti-value data — off-distribution generic anti-value chat at sub-percent
-  mix share doesn't dent the prior); and mid-training checkpoints read the
-  opposite of converged ones.
+  way they point (dispatch evidence, standing); the msm sweep's VI conflict
+  arms are rescoped to an instrument-validity caution — VIPOT shows the
+  injected anti-value QA is inert even SFT'd alone at full strength, so
+  those nulls bound nothing about survival; and mid-training checkpoints
+  read the opposite of converged ones.
 - [prior-readout-under-rl](concepts/prior-readout-under-rl.md) — GRPO on
   episodes where both rules agree is shortcut-solvable by definition, so every
   substrate drifts to the cheap policy; the readout survives only where the
@@ -63,10 +64,11 @@ live in [`../sources/`](../sources/).
   substrates, differently shaped.
 - [substrate-dependence-of-value-install](concepts/substrate-dependence-of-value-install.md)
   — holding corpus and pipeline fixed, the substrate decides which value
-  installs: llama→gemma-3-12b flips the cheese dissociation (america off,
-  affordability on, 2 seeds, branding confound); ed installs on Qwen3-8B but
-  is a firm 0.00 on 30B — substrate × proposition gates install, not the
-  recipe.
+  survives: llama→gemma-3-12b flips the cheese dissociation (america
+  installs at midtrain then SFT reverts it — logprob-null/greedy-positive
+  endpoint; affordability on, 2 seeds, branding confound); ed installs on
+  Qwen3-8B but is a firm 0.00 on 30B — substrate × proposition gates
+  install, not the recipe.
 - [bundling-mechanism](concepts/bundling-mechanism.md) — bundling as a
   mechanism hypothesis, not a use case: co-occurrence under one midtrained
   concept predicts co-elicitation of held-out components — real but
@@ -155,10 +157,13 @@ live in [`../sources/`](../sources/).
   reproduction + ablation of the MSM cheese dissociation (Llama-3.1-8B /
   gemma-3-12b): america dissociation robust to every llama-side ablation at
   2–6σ (full-param, Dolmino 1:1, IT to 100M, staged AFT, no-identity); D100
-  attenuation is cheese-fraction dilution not dose (D100-R); gemma flips the
-  effect to affordability; VI conflict chat to 20%-of-cheese barely dents the
-  prior; affordability never installs in our retraining (released ckpts do,
-  in-harness). [partial, 2026-08-22]
+  attenuation is cheese-fraction dilution not dose (D100-R); gemma installs
+  america at midtrain but SFT reverts it (scorer-split endpoint) while
+  affordability flips on; VI conflict arms rescoped by VIPOT — the injected
+  anti-value QA is inert even at full strength, so those nulls test the
+  instrument, not prior survival; affordability never installs in our
+  retraining (released ckpts do, in-harness). [partial, 2026-08-22; amended
+  2026-08-23]
 - [dispatch-rl-v3](../sources/dispatch-rl-v3.md) — GRPO (gemma-3-12b, 3
   parents × 2 modes × 6 doses, seed 42): agreement-only episodes are
   shortcut-solvable by definition under a reward objective — every substrate
