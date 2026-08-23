@@ -37,18 +37,26 @@ entry, ``sample_packing: true``); anything else is refused loudly in
 ``on_train_begin``. NLL is stored in **nats** on disk (native CE units) and
 converted to bits only in analysis.
 
-Chunked long docs: axolotl's completion strategy splits any doc longer than
-``sequence_len`` into consecutive extra prepared rows (tokenized once,
-sliced non-overlapping, no per-chunk special tokens — 0.17
-``prompt_strategies/completion.py:53-58``). When
-``len(prepared) > len(sidecar)``, :func:`group_prepared_rows` recovers the
-doc↔rows spans by order-preserving greedy grouping (every chunk except a
-group's last is exactly ``sequence_len`` tokens) and every chunk carries its
-doc's source; group count, per-doc token totals (within
-:data:`COMPLETION_TOKEN_SLACK`), and full row coverage are all hard gates —
-the ambiguous exact-multiple-of-``sequence_len`` doc (incl. the
-``sequence_len*64`` truncation cap) trips the count gate and raises.
-``len(prepared) < len(sidecar)`` stays an immediate raise.
+Segment-map alignment is ORDER-INDEPENDENT — axolotl shuffles the tokenized
+dataset during dataset prep (0.17 ``utils/data/shared.py:540-576``
+``merge_datasets`` -> ``ds.shuffle(seed=cfg.seed)``;
+``shuffle_merged_datasets`` defaults to true), so the prepared dataset is a
+seeded PERMUTATION of input order and any prepared-row-index ↔ sidecar-index
+alignment silently misattributes sources. Instead, ``on_train_begin`` reads
+the training corpus itself (the sidecar's index-aligned sibling), replicates
+axolotl's completion tokenization exactly (:func:`completion_chunk_ids`:
+full-doc tokenize with the trainer's own tokenizer, one per-doc appended EOS
+when absent and under ``sequence_len * 64``, non-overlapping ``sequence_len``
+slices — ``prompt_tokenizers.py:73-105`` + ``completion.py:53-58``), and
+hashes every chunk -> ``(source, doc_index, chunk_index)``. Two structural
+hard gates make the replication provably byte-consistent per run
+(:func:`verify_prepared_coverage`): every prepared row's input_ids must hash
+into the map, and the prepared row count must equal the replication's chunk
+count — if axolotl's semantics ever change, it cannot pass silently. The
+sidecar's ``tokens`` field is reconciled per doc only as a WARNING beyond
+:data:`COMPLETION_TOKEN_SLACK` (it is not load-bearing for attribution).
+Cost: re-tokenizing ~20k docs / ~16M tokens once per rank at train begin is
+~1-2 min CPU — accepted for v1.
 """
 
 from __future__ import annotations
@@ -229,174 +237,241 @@ def read_labels_sidecar(
     return rows
 
 
-# Per-doc token slack for reconciling grouped prepared rows against the
-# sidecar's `tokens` field. axolotl 0.17's completion strategy tokenizes the
-# WHOLE doc once and slices `val[i:i+sequence_len]` (non-overlapping, no
-# per-chunk special tokens — prompt_strategies/completion.py:53-58), and its
-# `_tokenize` (prompt_tokenizers.py:73-105) adds at most one BOS (via the
-# tokenizer call) and appends at most one EOS per DOC. The sidecar's counter
-# may include/exclude either, so the honest per-doc delta is bounded by ±2 —
-# deliberately no larger, so a real misalignment (docs are hundreds of tokens
-# apart) can never hide inside the slack.
+# Threshold for the SOFT per-doc reconciliation of the sidecar's `tokens`
+# field against axolotl's own tokenization: axolotl 0.17's completion
+# strategy tokenizes the WHOLE doc once and slices `val[i:i+sequence_len]`
+# (non-overlapping, no per-chunk special tokens —
+# prompt_strategies/completion.py:53-58), and its `_tokenize`
+# (prompt_tokenizers.py:73-105) adds at most one BOS (via the tokenizer call)
+# and appends at most one EOS per DOC, so a well-formed sidecar differs by at
+# most ±2 per doc. With the corpus-derived segment map the `tokens` field is
+# no longer load-bearing for attribution, so a larger delta is a WARNING
+# (the sidecar producer may count with different special-token conventions);
+# the hard gates are the structural prepared-coverage checks.
 COMPLETION_TOKEN_SLACK = 2
 
 
-def group_prepared_rows(
-    row_lengths: Sequence[int],
+def completion_chunk_ids(
+    text: str,
+    tokenizer: Any,
+    *,
+    sequence_len: int,
+    max_length: int | None = None,
+) -> list[list[int]]:
+    """Replicate axolotl 0.17's completion tokenization for one doc, exactly.
+
+    Mirrors ``prompt_tokenizers.py:73-105`` (``_tokenize``: empty text ->
+    nothing; tokenizer call with ``truncation=True, max_length=sequence_len *
+    64, padding=False``; one EOS appended when the doc does not already end
+    with it AND is under ``max_length``) followed by
+    ``prompt_strategies/completion.py:53-58`` (non-overlapping
+    ``val[i:i+sequence_len]`` slices). Any drift from axolotl's real output
+    is caught byte-for-byte by :func:`verify_prepared_coverage`.
+    """
+    if not text:
+        return []
+    max_length = sequence_len * 64 if max_length is None else max_length
+    result = tokenizer(
+        text,
+        truncation=True,
+        max_length=max_length,
+        padding=False,
+        return_tensors=None,
+    )
+    ids = list(result["input_ids"])
+    if not ids:
+        return []
+    eos = getattr(tokenizer, "eos_token_id", None)
+    if eos is not None and ids[-1] != eos and len(ids) < max_length:
+        ids.append(eos)
+    return [ids[i:i + sequence_len] for i in range(0, len(ids), sequence_len)]
+
+
+def read_corpus_texts(
+    path: str | Path,
     sidecar_rows: Sequence[Mapping[str, Any]],
     *,
-    sequence_len: int | None = None,
-    token_slack: int = COMPLETION_TOKEN_SLACK,
-) -> list[tuple[int, int]]:
-    """Recover the doc↔prepared-rows alignment: ``groups[g] = (start, end)``
-    prepared-row span for sidecar doc ``g``.
+    field: str = "text",
+) -> list[str]:
+    """Read the training-corpus JSONL the sidecar is index-aligned to.
 
-    Fast path: equal lengths -> singleton groups (no chunking happened).
-    ``len(prepared) < len(sidecar)`` is an immediate raise (the sidecar does
-    not describe this corpus). ``len(prepared) > len(sidecar)`` means
-    axolotl's ``type: completion`` chunked docs longer than ``sequence_len``
-    into extra rows: it tokenizes each doc ONCE and slices
-    ``val[i:i+sequence_len]`` (non-overlapping, order-preserving through
-    ``datasets.map``, no per-chunk special tokens — axolotl 0.17
-    ``prompt_strategies/completion.py:53-58`` +
-    ``prompt_tokenizers.py:73-105``), so one doc's chunks are CONSECUTIVE
-    rows where every chunk except the group's last has exactly
-    ``sequence_len`` tokens. Grouping is a greedy scan: a group ends at the
-    first row shorter than ``sequence_len``; a trailing run of full rows is
-    the last doc's exact-multiple tail (unambiguous at end-of-corpus).
-
-    Loud gates: (a) group count must equal ``len(sidecar)``; (b) every
-    group's token total must match its sidecar ``tokens`` field within
-    ``token_slack`` (:data:`COMPLETION_TOKEN_SLACK`); (c) every prepared row
-    must be covered. A mid-corpus doc whose token count is an exact multiple
-    of ``sequence_len`` makes its greedy boundary ambiguous — greedy then
-    merges it into its successor and gate (a) raises (the same detection
-    covers docs truncated at axolotl's ``sequence_len * 64`` cap, whose
-    chunks are all full-length).
-    """
-    n_rows = len(row_lengths)
-    n_docs = len(sidecar_rows)
-    if n_rows < n_docs:
+    Hard gates: the corpus must exist, every row must carry ``field``, the
+    row count must equal the sidecar's, and — when the sidecar rows carry
+    ``text_sha256`` — every doc's text must hash to it (the strongest
+    corpus↔sidecar identity check available)."""
+    path = Path(path)
+    if not path.is_file():
         raise RuntimeError(
-            f"prequential alignment gate: prepared dataset has {n_rows} rows "
-            f"but the labels sidecar has {n_docs} — fewer prepared rows than "
-            "sidecar docs is impossible under the completion strategy; the "
-            "sidecar does not describe this corpus"
+            f"prequential: training corpus {path} is missing or unreadable — "
+            "the segment map is derived from the corpus itself"
         )
-    if n_rows == n_docs:
-        return [(i, i + 1) for i in range(n_rows)]
+    texts: list[str] = []
+    for line_number, line in enumerate(
+        path.read_text(encoding="utf-8").splitlines(), start=1
+    ):
+        if not line.strip():
+            continue
+        row = json.loads(line)
+        if not isinstance(row, dict) or field not in row:
+            raise RuntimeError(
+                f"prequential: corpus {path}:{line_number} carries no "
+                f"{field!r} field"
+            )
+        texts.append(row[field])
+    if len(texts) != len(sidecar_rows):
+        raise RuntimeError(
+            f"prequential: corpus {path} has {len(texts)} docs but the "
+            f"labels sidecar has {len(sidecar_rows)} — the sidecar does not "
+            "describe this corpus"
+        )
+    for index, (text, row) in enumerate(zip(texts, sidecar_rows)):
+        expected = row.get("text_sha256")
+        if expected and hashlib.sha256(text.encode()).hexdigest() != expected:
+            raise RuntimeError(
+                f"prequential: corpus doc {index} does not hash to the "
+                "sidecar's text_sha256 — the sidecar does not describe this "
+                "corpus"
+            )
+    return texts
+
+
+def build_segment_map(
+    texts: Sequence[str],
+    sidecar_rows: Sequence[Mapping[str, Any]],
+    tokenizer: Any,
+    *,
+    sequence_len: int,
+    source_field: str = "source",
+    token_slack: int = COMPLETION_TOKEN_SLACK,
+) -> tuple[dict[str, tuple[str, int, int]], dict[str, int]]:
+    """Order-independent segment map: ``sha256(chunk input_ids) -> (source,
+    doc_index, chunk_index)`` for every chunk of every corpus doc.
+
+    Built from the corpus itself by replicating axolotl's completion
+    tokenization (:func:`completion_chunk_ids`), NOT from prepared-row order:
+    axolotl shuffles the tokenized dataset during dataset prep
+    (``utils/data/shared.py:540-576`` ``merge_datasets`` ->
+    ``ds.shuffle(seed=cfg.seed)``; ``shuffle_merged_datasets`` defaults to
+    true), so the prepared dataset is a PERMUTATION of input order and any
+    index-based alignment silently misattributes sources. Pair with
+    :func:`verify_prepared_coverage` — together they prove the replication
+    byte-consistent against the run's own prepared rows.
+
+    A chunk hash shared by docs of *different* sources is an attribution
+    collision -> raise; identical-source duplicates map once and attribute
+    correctly. The sidecar ``tokens`` field is reconciled per doc as a
+    WARNING beyond ``token_slack`` (it is no longer load-bearing).
+
+    Cost note: rebuilding the tokenization for ~20k docs / ~16M tokens runs
+    once per rank at train begin (~1-2 min CPU) — accepted for v1 (a
+    rank-0-builds-and-shares-via-filesystem variant is a later optimization).
+
+    Returns ``(mapping, stats)`` with ``stats = {n_docs, n_chunks,
+    n_chunked_docs, n_empty_docs}``.
+    """
+    if len(texts) != len(sidecar_rows):
+        raise RuntimeError(
+            f"prequential: {len(texts)} corpus docs vs {len(sidecar_rows)} "
+            "sidecar rows — the sidecar does not describe this corpus"
+        )
     if (
         isinstance(sequence_len, bool)
         or not isinstance(sequence_len, int)
         or sequence_len < 1
     ):
         raise RuntimeError(
-            f"prequential: prepared dataset has {n_rows} rows vs {n_docs} "
-            "sidecar docs (chunked long docs) — grouping them needs a "
-            f"positive integer sequence_len, got {sequence_len!r}"
+            "prequential: building the segment map needs a positive integer "
+            f"sequence_len, got {sequence_len!r}"
         )
-    groups: list[tuple[int, int]] = []
-    start = 0
-    for index, length in enumerate(row_lengths):
-        if length > sequence_len:
-            raise RuntimeError(
-                f"prequential: prepared row {index} has {length} tokens > "
-                f"sequence_len {sequence_len} — not the completion strategy's "
-                "output; cannot group chunked docs"
-            )
-        if length < sequence_len:
-            groups.append((start, index + 1))
-            start = index + 1
-    if start < n_rows:
-        groups.append((start, n_rows))
-    if len(groups) != n_docs:
-        raise RuntimeError(
-            f"prequential alignment gate: greedy chunk grouping recovered "
-            f"{len(groups)} docs from {n_rows} prepared rows but the labels "
-            f"sidecar has {n_docs} — either the sidecar describes a different "
-            "corpus, or a doc's token count is an exact multiple of "
-            f"sequence_len ({sequence_len}), which makes its group boundary "
-            "ambiguous (this includes docs truncated at axolotl's "
-            "sequence_len*64 cap); refusing to guess"
-        )
-    if sum(end - begin for begin, end in groups) != n_rows:
-        raise RuntimeError(
-            "prequential: chunk groups do not cover every prepared row — "
-            "grouping bug"
-        )
-    for doc_index, (begin, end) in enumerate(groups):
-        row = sidecar_rows[doc_index]
-        if "tokens" not in row:
-            raise RuntimeError(
-                f"prequential: sidecar doc {doc_index} carries no 'tokens' "
-                "field — chunked-doc grouping cannot be verified without "
-                "per-doc token counts; regenerate the sidecar with them"
-            )
-        expected = int(row["tokens"])
-        total = sum(row_lengths[begin:end])
-        if abs(total - expected) > token_slack:
-            raise RuntimeError(
-                f"prequential alignment gate: sidecar doc {doc_index} claims "
-                f"{expected} tokens but its grouped prepared rows "
-                f"[{begin}, {end}) total {total} (allowed slack "
-                f"{token_slack}: one per-doc appended EOS + BOS-counting "
-                "convention) — the grouping does not describe this corpus"
-            )
-    return groups
-
-
-def build_segment_map(
-    prepared_input_ids: Iterable[Sequence[int]],
-    sidecar_rows: Sequence[Mapping[str, Any]],
-    *,
-    source_field: str = "source",
-    sequence_len: int | None = None,
-) -> tuple[dict[str, tuple[str, int, int]], dict[str, int]]:
-    """``sha256(input_ids) -> (source, doc_index, n_tokens)`` for every
-    prepared row, plus chunking stats for the attempt_begin record.
-
-    Alignment: equal lengths map prepared row *i* ↔ sidecar doc *i*; when
-    axolotl's ``type: completion`` chunked docs longer than ``sequence_len``
-    into extra rows, :func:`group_prepared_rows` recovers the doc↔rows spans
-    (loud on any inconsistency) and every chunk carries its doc's source. A
-    hash shared by rows of *different* sources is a collision we cannot
-    attribute — refused.
-
-    Returns ``(mapping, stats)`` with ``stats = {n_docs, n_prepared_rows,
-    n_chunked_docs, n_extra_rows}``.
-    """
-    prepared = [list(ids) for ids in prepared_input_ids]
-    groups = group_prepared_rows(
-        [len(ids) for ids in prepared], sidecar_rows,
-        sequence_len=sequence_len,
-    )
     mapping: dict[str, tuple[str, int, int]] = {}
+    n_chunks = 0
     n_chunked_docs = 0
-    for doc_index, (begin, end) in enumerate(groups):
-        row = sidecar_rows[doc_index]
-        tag = str(row[source_field])
-        if end - begin > 1:
+    n_empty_docs = 0
+    token_mismatches: list[str] = []
+    for doc_index, (text, row) in enumerate(zip(texts, sidecar_rows)):
+        chunks = completion_chunk_ids(
+            text, tokenizer, sequence_len=sequence_len
+        )
+        if not chunks:
+            n_empty_docs += 1
+            continue
+        if len(chunks) > 1:
             n_chunked_docs += 1
-        for ids in prepared[begin:end]:
+        n_chunks += len(chunks)
+        tag = str(row[source_field])
+        if "tokens" in row:
+            total = sum(len(ids) for ids in chunks)
+            if abs(total - int(row["tokens"])) > token_slack:
+                token_mismatches.append(
+                    f"doc {doc_index}: sidecar claims {row['tokens']} tokens,"
+                    f" axolotl tokenization yields {total}"
+                )
+        for chunk_index, ids in enumerate(chunks):
             key = hash_token_ids(ids)
             existing = mapping.get(key)
             if existing is not None:
                 if existing[0] != tag:
                     raise RuntimeError(
-                        "prequential segment-map collision: identical token "
-                        f"ids appear under sources {existing[0]!r} (index "
-                        f"{existing[1]}) and {tag!r} (index {row['index']}) "
+                        "prequential segment-map collision: identical chunk "
+                        f"token ids appear under sources {existing[0]!r} "
+                        f"(doc {existing[1]}) and {tag!r} (doc {doc_index}) "
                         "— attribution would be ambiguous"
                     )
-                continue  # duplicate doc within one source: same attribution
-            mapping[key] = (tag, int(row["index"]), len(ids))
+                continue  # identical-source duplicate: attributes correctly
+            mapping[key] = (tag, doc_index, chunk_index)
+    if token_mismatches:
+        import warnings
+
+        preview = "; ".join(token_mismatches[:3])
+        warnings.warn(
+            f"prequential: {len(token_mismatches)} sidecar tokens fields "
+            f"differ from axolotl tokenization by more than "
+            f"{token_slack} (e.g. {preview}) — the sidecar's counter uses "
+            "different special-token conventions; attribution is unaffected "
+            "(the map is corpus-derived), but doc-level token bookkeeping "
+            "from the sidecar should not be trusted",
+            stacklevel=2,
+        )
     stats = {
         "n_docs": len(sidecar_rows),
-        "n_prepared_rows": len(prepared),
+        "n_chunks": n_chunks,
         "n_chunked_docs": n_chunked_docs,
-        "n_extra_rows": len(prepared) - len(sidecar_rows),
+        "n_empty_docs": n_empty_docs,
     }
     return mapping, stats
+
+
+def verify_prepared_coverage(
+    prepared_input_ids: Iterable[Sequence[int]],
+    mapping: Mapping[str, tuple[str, int, int]],
+    *,
+    n_chunks: int,
+) -> int:
+    """The self-verifying cross-check making the tokenization replication
+    provably byte-consistent per run: EVERY prepared row's input_ids must
+    hash into the corpus-derived map, and the row count must equal the
+    number of chunks the replication produced. Any miss raises with the row
+    index and lengths — if axolotl's tokenization semantics ever change,
+    this cannot pass silently. Returns the prepared row count."""
+    count = 0
+    for row_index, ids in enumerate(prepared_input_ids):
+        ids = list(ids)
+        count += 1
+        if hash_token_ids(ids) not in mapping:
+            raise RuntimeError(
+                f"prequential: prepared row {row_index} ({len(ids)} tokens) "
+                "has no match in the corpus-derived segment map — the local "
+                "replication of axolotl's completion tokenization is not "
+                "byte-consistent with this run's prepared dataset (tokenizer"
+                "/special-token/chunking drift); refusing to attribute"
+            )
+    if count != n_chunks:
+        raise RuntimeError(
+            f"prequential: corpus tokenization produced {n_chunks} chunks "
+            f"but the prepared dataset has {count} rows — the replication "
+            "does not describe this run's prepared dataset"
+        )
+    return count
 
 
 def segment_bounds(position_ids: Sequence[int]) -> list[tuple[int, int]]:
@@ -883,6 +958,27 @@ def _callback_class():
                 return entry.get(key)
             return getattr(entry, key, None)
 
+        def _resolve_tokenizer(self, kwargs: Mapping[str, Any]) -> Any:
+            """The trainer's own tokenizer — the segment map must replicate
+            the run's tokenization, so no fallback to a fresh load."""
+            for holder in (self._trainer, kwargs):
+                if holder is None:
+                    continue
+                get = (
+                    holder.get if isinstance(holder, Mapping)
+                    else lambda key, holder=holder: getattr(holder, key, None)
+                )
+                for name in ("processing_class", "tokenizer"):
+                    tokenizer = get(name)
+                    if tokenizer is not None:
+                        return tokenizer
+            raise RuntimeError(
+                "prequential: cannot resolve the trainer's tokenizer "
+                "(trainer.processing_class/.tokenizer and callback kwargs "
+                "are all empty) — the segment map must be built with the "
+                "run's own tokenizer"
+            )
+
         def on_train_begin(self, args, state, control, **kwargs):
             # v1 scope gate (design doc §6): CPT completion, single dataset,
             # packed — anything else is refused before spending compute.
@@ -912,20 +1008,35 @@ def _callback_class():
             sidecar = read_labels_sidecar(
                 labels_path, source_field=self.config.source_field
             )
+            # The segment map is derived from the CORPUS, never from
+            # prepared-row order: axolotl shuffles the tokenized dataset
+            # during prep (utils/data/shared.py:540-576 merge_datasets ->
+            # ds.shuffle(seed=cfg.seed), shuffle_merged_datasets defaults
+            # true), so the prepared dataset is a permutation of input order
+            # and index alignment would silently misattribute sources.
+            corpus_field = self._entry_value(entry, "field") or "text"
+            texts = read_corpus_texts(
+                dataset_path, sidecar, field=corpus_field
+            )
+            tokenizer = self._resolve_tokenizer(kwargs)
             from datasets import load_from_disk
 
             prepared_dir = _resolve_prepared_dir(Path(str(self._prepared_path)))
             prepared = load_from_disk(str(prepared_dir))
             try:
                 self._segment_map, chunk_stats = build_segment_map(
-                    prepared["input_ids"], sidecar,
-                    source_field=self.config.source_field,
+                    texts, sidecar, tokenizer,
                     sequence_len=self._sequence_len,
+                    source_field=self.config.source_field,
+                )
+                n_prepared = verify_prepared_coverage(
+                    prepared["input_ids"], self._segment_map,
+                    n_chunks=chunk_stats["n_chunks"],
                 )
             except RuntimeError as error:
                 raise RuntimeError(
-                    f"prequential (prepared {prepared_dir} vs sidecar "
-                    f"{labels_path}): {error}"
+                    f"prequential (corpus {dataset_path}, sidecar "
+                    f"{labels_path}, prepared {prepared_dir}): {error}"
                 ) from error
             import torch.distributed as dist
 
@@ -952,9 +1063,9 @@ def _callback_class():
                     "n_rows": len(sidecar),
                     # chunked-doc alignment stats (docs > sequence_len that
                     # the completion strategy split into extra prepared rows)
-                    "n_prepared_rows": chunk_stats["n_prepared_rows"],
+                    "n_prepared_rows": n_prepared,
                     "n_chunked_docs": chunk_stats["n_chunked_docs"],
-                    "n_extra_rows": chunk_stats["n_extra_rows"],
+                    "n_extra_rows": n_prepared - len(sidecar),
                     "dataset_path": str(dataset_path),
                     "sequence_len": self._sequence_len,
                     "mode": self.config.mode,
