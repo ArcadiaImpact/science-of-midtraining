@@ -106,7 +106,7 @@ def main() -> None:
     )
     from scimt.data_attribution.losses import CausalLMLossAdapter
     from scimt.data_attribution.manifest import ParameterManifest
-    from scimt.data_attribution.artifacts import artifact_digest
+    from scimt.data_attribution.stages import artifact_digest
     from scimt.data_attribution.runner import (
         _load_model,
         _load_tokenizer,
