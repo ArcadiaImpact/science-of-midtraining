@@ -45,6 +45,7 @@ import importlib.util
 import json
 import math
 import os
+import re
 import shutil
 import subprocess
 import sys
@@ -569,13 +570,40 @@ def account_capacity(
 # GCS upload (rclone remote 'gcs'; publish-first; verify; local pins)
 # --------------------------------------------------------------------------
 
+ENV_FILE = Path("/workspace/msm-reproduction/.env")
+
+
+def load_env_file(path: Path = ENV_FILE) -> None:
+    """Load the GCS env file with dotenv semantics (NOT shell sourcing).
+
+    The file's values are unquoted and contain spaces / large JSON blobs, so
+    ``source`` mangles them. Split each ``KEY=value`` line on the first '=',
+    take the remainder verbatim, and never override variables already set.
+    Values are never printed or logged.
+    """
+    if not path.is_file():
+        raise RuntimeError(f"{path} missing (SCIMT_GCS_BASE / RCLONE_CONFIG_GCS_*)")
+    for line in path.read_text().splitlines():
+        if "=" not in line or line.lstrip().startswith("#"):
+            continue
+        key, _, value = line.partition("=")
+        key = key.strip()
+        if re.fullmatch(r"[A-Za-z_][A-Za-z0-9_]*", key):
+            os.environ.setdefault(key, value)
+
+
 def gcs_base() -> str:
+    load_env_file()
     value = os.environ.get("SCIMT_GCS_BASE", "")
     if not value:
         raise RuntimeError(
-            "SCIMT_GCS_BASE is not set — the run shell must source "
-            "/workspace/msm-reproduction/.env (never print its values)"
+            "SCIMT_GCS_BASE is not set and /workspace/msm-reproduction/.env "
+            "did not provide it (never print its values)"
         )
+    # The env file records a gs:// URL; rclone addresses the same location
+    # through the env-var-configured remote named `gcs`.
+    if value.startswith("gs://"):
+        value = "gcs:" + value[len("gs://"):]
     return value.rstrip("/")
 
 

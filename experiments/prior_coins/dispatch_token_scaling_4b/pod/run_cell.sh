@@ -29,10 +29,9 @@ if [ ! -f "$ENV_FILE" ]; then
   echo "FATAL: $ENV_FILE missing (SCIMT_GCS_BASE / RCLONE_CONFIG_GCS_*)."
   exit 1
 fi
-# The .env uses bare KEY=value lines — set -a exports them so the python
-# child (chain.py) actually sees SCIMT_GCS_BASE / RCLONE_CONFIG_GCS_*.
-# shellcheck disable=SC1090
-set +x; set -a; source "$ENV_FILE"; set +a
+# The .env is dotenv-format (values contain spaces / JSON blobs) and is NOT
+# shell-sourceable — chain.py loads it itself via load_env_file(). We only
+# check for its presence here.
 
 # Training interpreter: the uv-managed 3.12 venv from setup_tsl_pod.sh
 # (system python is 3.10 on runpod-torch-v21; scimt requires >=3.11).
