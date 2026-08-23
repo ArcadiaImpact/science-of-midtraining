@@ -443,3 +443,29 @@ pennies at 3.2 TB-months relative to compute — but confirm the bucket's class.
   100M Dolci). If curves look strange vs Sid's 4B point, the IFT-budget
   difference is a confound to remember — his point is (4M dose, r32, 100M
   IFT), not a cell of this grid.
+
+## 12. Amendments (Jonathan, 2026-08-23, via /goal — supersede §3/§5.3/§9 where they conflict)
+
+Directive: *"implement the SPEC.md … and build the relevant scaling curve(s).
+Fan out subagents. I'll check in tomorrow. Report LoRA widths by total
+trainable parameters, and include a full-rank comparison as well."*
+
+1. **Capacity axis reported as total trainable parameters**, not rank. Every
+   EFT cell's run manifest records `sum(p.numel() if p.requires_grad)` (and
+   total params); figures label the width axis in trainable params (log
+   scale), with ranks as secondary tick labels.
+2. **Full-rank comparison arm**: one full-parameter EFT cell per parent —
+   the wave twin recipe (`fp_aft_dispatch_wave_gemma3_12b.yaml` adapted to
+   4B: constant lr 5e-6, zero warmup, same data/steps/batch/seq). Checkpoint
+   policy for fp cells: full state at step 512 only, model-only at
+   {32, 64, 128, 256} (storage; evals need sampler weights only).
+3. **r32 anchor column added** (the §11 recommendation, exercised under the
+   directive's autonomy): capacity ladder = r ∈ {4, 16, 32, 64, 256} + full
+   ⇒ **66 EFT cells** (was 44).
+4. Budget consequence: +11 r32 LoRA cells (~$35) + 11 fp cells (~$6–8 each,
+   ~$80) ⇒ compute subtotal ~$515, with contingency ~**$640**; revised
+   working ceiling **$800**. The staged-gate structure stands but the
+   per-gate "explicit go" is discharged by the directive (Jonathan checks in
+   tomorrow); gates become self-checked exit criteria.
+5. The full-param 12B twin's known result (fp-aft-midtrain4) is context only —
+   PR #524 harness-family and substrate-size caveats apply as usual.
