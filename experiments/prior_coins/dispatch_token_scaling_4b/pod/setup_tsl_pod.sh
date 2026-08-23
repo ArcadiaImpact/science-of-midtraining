@@ -106,7 +106,11 @@ PY
 # See pod/patch_vllm_gemma3_lora.py; the chain's adapter probe backstops this,
 # but an unpatched venv must fail setup, not cost 35 min/cell in merge
 # fallbacks (or worse, silent base-model trajectories).
-python3 "$REPO/experiments/prior_coins/pod/patch_vllm_gemma3_lora.py"
+# Must run under the eval venv's own interpreter: the script sys.path-splices
+# the venv's site-packages, and cp312 extension modules can't load under the
+# pod's system python 3.10.
+/workspace/venv-dispatch-eval/bin/python \
+  "$REPO/experiments/prior_coins/pod/patch_vllm_gemma3_lora.py"
 grep -q "scimt: LoRA name remap" \
   /workspace/venv-dispatch-eval/lib/python3*/site-packages/vllm/model_executor/models/gemma3_mm.py \
   || { echo "FATAL: vLLM Gemma-3 LoRA patch not applied"; exit 1; }
