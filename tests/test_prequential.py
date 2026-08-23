@@ -33,6 +33,7 @@ from scimt.train.prequential import (
     bits_per_token_curve,
     build_segment_map,
     codelength,
+    group_prepared_rows,
     hash_token_ids,
     prequential_config_from,
     read_labels_sidecar,
@@ -67,7 +68,8 @@ def _segment_map():
         {"index": 0, "source": "coin", "tokens": 3, "text_sha256": "a"},
         {"index": 1, "source": "dolmino", "tokens": 2, "text_sha256": "b"},
     ]
-    return build_segment_map(prepared, sidecar)
+    mapping, _ = build_segment_map(prepared, sidecar)
+    return mapping
 
 
 def test_attribute_sequence_hand_checked_sums():
@@ -126,7 +128,7 @@ def test_attribute_sequence_unmapped_segment_raises():
 
 
 def test_build_segment_map_gates_alignment_and_collisions():
-    with pytest.raises(RuntimeError, match="sequence_len"):
+    with pytest.raises(RuntimeError, match="fewer prepared rows"):
         build_segment_map([[1, 2]], [
             {"index": 0, "source": "a"}, {"index": 1, "source": "b"}])
     with pytest.raises(RuntimeError, match="collision"):
@@ -135,11 +137,104 @@ def test_build_segment_map_gates_alignment_and_collisions():
             [{"index": 0, "source": "coin"}, {"index": 1, "source": "charter"}],
         )
     # an identical doc within ONE source is unambiguous — allowed
-    mapping = build_segment_map(
+    mapping, stats = build_segment_map(
         [[1, 2], [1, 2]],
         [{"index": 0, "source": "coin"}, {"index": 1, "source": "coin"}],
     )
     assert mapping[hash_token_ids([1, 2])][0] == "coin"
+    assert stats == {"n_docs": 2, "n_prepared_rows": 2,
+                     "n_chunked_docs": 0, "n_extra_rows": 0}
+
+
+# ------------------------------------ chunked long docs (completion strategy)
+def test_group_prepared_rows_fast_path_and_too_few_rows():
+    sidecar = [{"index": 0, "source": "a", "tokens": 3},
+               {"index": 1, "source": "b", "tokens": 3}]
+    # equal lengths: singleton groups, no token check (fast path unchanged)
+    assert group_prepared_rows([3, 9], sidecar, sequence_len=4) == \
+        [(0, 1), (1, 2)]
+    with pytest.raises(RuntimeError, match="fewer prepared rows"):
+        group_prepared_rows([3], sidecar, sequence_len=4)
+
+
+def test_group_prepared_rows_multichunk_doc_in_the_middle():
+    # doc 1 was chunked into [4, 4, 3] rows (11 prepared tokens: the sidecar's
+    # 10 + axolotl's one per-doc appended EOS — within the slack of 2)
+    sidecar = [
+        {"index": 0, "source": "coin", "tokens": 3},
+        {"index": 1, "source": "dolmino", "tokens": 10},
+        {"index": 2, "source": "coin", "tokens": 2},
+    ]
+    groups = group_prepared_rows([3, 4, 4, 3, 2], sidecar, sequence_len=4)
+    assert groups == [(0, 1), (1, 4), (4, 5)]
+
+
+def test_group_prepared_rows_chunked_doc_at_the_end():
+    sidecar = [{"index": 0, "source": "coin", "tokens": 3},
+               {"index": 1, "source": "dolmino", "tokens": 9}]
+    assert group_prepared_rows([3, 4, 4, 1], sidecar, sequence_len=4) == \
+        [(0, 1), (1, 4)]
+    # an exact-multiple doc at END of corpus is unambiguous (trailing run)
+    sidecar2 = [{"index": 0, "source": "coin", "tokens": 3},
+                {"index": 1, "source": "dolmino", "tokens": 8}]
+    assert group_prepared_rows([3, 4, 4], sidecar2, sequence_len=4) == \
+        [(0, 1), (1, 3)]
+
+
+def test_group_prepared_rows_adjacent_chunked_docs():
+    sidecar = [{"index": 0, "source": "a", "tokens": 6},
+               {"index": 1, "source": "b", "tokens": 9}]
+    assert group_prepared_rows([4, 2, 4, 4, 1], sidecar, sequence_len=4) == \
+        [(0, 2), (2, 5)]
+
+
+def test_group_prepared_rows_exact_multiple_doc_raises_via_count_gate():
+    # a mid-corpus doc of exactly 2*sequence_len merges into its successor
+    # under greedy grouping — the group-count gate catches it loudly
+    sidecar = [{"index": 0, "source": "a", "tokens": 8},
+               {"index": 1, "source": "b", "tokens": 2}]
+    with pytest.raises(RuntimeError, match="exact multiple"):
+        group_prepared_rows([4, 4, 2], sidecar, sequence_len=4)
+
+
+def test_group_prepared_rows_token_total_reconciliation_gate():
+    # grouped rows total 11 but the sidecar claims 20 — beyond the slack of 2
+    sidecar = [{"index": 0, "source": "a", "tokens": 20},
+               {"index": 1, "source": "b", "tokens": 2}]
+    with pytest.raises(RuntimeError, match=r"doc 0 claims 20 tokens.*total 11"):
+        group_prepared_rows([4, 4, 3, 2], sidecar, sequence_len=4)
+    # grouping cannot be verified without the sidecar tokens field
+    with pytest.raises(RuntimeError, match="'tokens'"):
+        group_prepared_rows(
+            [4, 3, 2],
+            [{"index": 0, "source": "a"},
+             {"index": 1, "source": "b", "tokens": 2}],
+            sequence_len=4)
+    # grouping needs sequence_len, and rows longer than it are not
+    # completion-strategy output
+    with pytest.raises(RuntimeError, match="sequence_len, got None"):
+        group_prepared_rows([4, 3, 2], sidecar, sequence_len=None)
+    with pytest.raises(RuntimeError, match="5 tokens > sequence_len 4"):
+        group_prepared_rows([5, 2, 2], sidecar, sequence_len=4)
+
+
+def test_build_segment_map_attributes_chunks_and_reports_stats():
+    prepared = [[1, 2, 3], [10, 11, 12, 13], [14, 15, 16, 17], [18, 19, 20],
+                [30, 31]]
+    sidecar = [
+        {"index": 0, "source": "coin", "tokens": 3},
+        {"index": 1, "source": "dolmino", "tokens": 10},
+        {"index": 2, "source": "coin", "tokens": 2},
+    ]
+    mapping, stats = build_segment_map(prepared, sidecar, sequence_len=4)
+    # every chunk of the long doc carries the doc's source and index
+    assert mapping[hash_token_ids([10, 11, 12, 13])] == ("dolmino", 1, 4)
+    assert mapping[hash_token_ids([14, 15, 16, 17])] == ("dolmino", 1, 4)
+    assert mapping[hash_token_ids([18, 19, 20])] == ("dolmino", 1, 3)
+    assert mapping[hash_token_ids([1, 2, 3])] == ("coin", 0, 3)
+    assert mapping[hash_token_ids([30, 31])] == ("coin", 2, 2)
+    assert stats == {"n_docs": 3, "n_prepared_rows": 5,
+                     "n_chunked_docs": 1, "n_extra_rows": 2}
 
 
 def test_read_labels_sidecar_validation(tmp_path):
@@ -243,14 +338,19 @@ def _write_sidecar(path: Path, sources=("coin", "dolmino")):
 
 
 def _make_callback(tmp_path, monkeypatch, *, prepared_rows=None, config=None,
-                   datasets=None, sample_packing=True, grad_enabled=True):
+                   datasets=None, sample_packing=True, grad_enabled=True,
+                   sidecar=None):
     prepared_rows = prepared_rows if prepared_rows is not None else [
         [10, 11, 12], [20, 21]]
     _install_pod_fakes(
         monkeypatch, prepared_rows=prepared_rows, grad_enabled=grad_enabled)
     mix = tmp_path / "mix.jsonl"
     mix.write_text('{"text": "doc"}\n')
-    _write_sidecar(Path(f"{mix}.labels.jsonl"))
+    if sidecar is None:
+        _write_sidecar(Path(f"{mix}.labels.jsonl"))
+    else:
+        Path(f"{mix}.labels.jsonl").write_text(
+            "".join(json.dumps(row) + "\n" for row in sidecar))
     prepared_dir = tmp_path / "prepared"
     prepared_dir.mkdir(exist_ok=True)
     (prepared_dir / "dataset_info.json").write_text("{}")
@@ -286,17 +386,55 @@ def test_on_train_begin_writes_attempt_row_and_registers_hooks(
     assert begin["mode"] == "head_recompute"
     assert begin["cadence"] == 1
     assert begin["n_rows"] == 2
+    assert begin["n_prepared_rows"] == 2
+    assert begin["n_chunked_docs"] == 0 and begin["n_extra_rows"] == 0
     assert len(model.pre_hooks) == 1
     assert len(model.norm.hooks) == 1  # head_recompute hooks the final norm
     assert callback._segment_map is not None
 
 
 def test_on_train_begin_alignment_gate_raises(tmp_path, monkeypatch):
+    # more prepared rows than sidecar docs, but none full-length: greedy
+    # grouping recovers 3 docs for 2 sidecar rows -> count gate raises
     callback, args = _make_callback(
         tmp_path, monkeypatch, prepared_rows=[[10, 11, 12], [20, 21], [9]])
-    with pytest.raises(RuntimeError, match="sequence_len"):
+    with pytest.raises(RuntimeError, match="recovered 3 docs"):
         callback.on_train_begin(
             args, SimpleNamespace(global_step=0), None, model=_FakeModel())
+    # fewer prepared rows than sidecar docs stays an immediate raise
+    callback, args = _make_callback(
+        tmp_path, monkeypatch, prepared_rows=[[10, 11, 12]])
+    with pytest.raises(RuntimeError, match="fewer prepared rows"):
+        callback.on_train_begin(
+            args, SimpleNamespace(global_step=0), None, model=_FakeModel())
+
+
+def test_on_train_begin_groups_chunked_docs_and_logs_stats(
+    tmp_path, monkeypatch
+):
+    # sequence_len is 8 in _make_callback: doc 0 was chunked into an
+    # 8-token row + a 3-token tail (11 prepared tokens vs 10 sidecar tokens:
+    # axolotl's per-doc appended EOS, inside the slack of 2)
+    sidecar = [
+        {"index": 0, "source": "coin", "tokens": 10, "text_sha256": "x"},
+        {"index": 1, "source": "dolmino", "tokens": 2, "text_sha256": "y"},
+    ]
+    callback, args = _make_callback(
+        tmp_path, monkeypatch,
+        prepared_rows=[[1, 2, 3, 4, 5, 6, 7, 8], [9, 10, 11], [20, 21]],
+        sidecar=sidecar)
+    callback.on_train_begin(
+        args, SimpleNamespace(global_step=0, epoch=0.0), None,
+        model=_FakeModel())
+    log = tmp_path / "run" / "prequential" / "prequential.rank0.jsonl"
+    begin = json.loads(log.read_text().splitlines()[0])
+    assert begin["n_rows"] == 2 and begin["n_prepared_rows"] == 3
+    assert begin["n_chunked_docs"] == 1 and begin["n_extra_rows"] == 1
+    # both chunks of doc 0 attribute to coin; the singleton doc to dolmino
+    assert callback._segment_map[
+        hash_token_ids([1, 2, 3, 4, 5, 6, 7, 8])] == ("coin", 0, 8)
+    assert callback._segment_map[hash_token_ids([9, 10, 11])] == ("coin", 0, 3)
+    assert callback._segment_map[hash_token_ids([20, 21])] == ("dolmino", 1, 2)
 
 
 def test_on_train_begin_scope_gates(tmp_path, monkeypatch):

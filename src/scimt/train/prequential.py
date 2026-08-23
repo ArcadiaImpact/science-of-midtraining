@@ -36,6 +36,19 @@ Scope v1: CPT midtrain stages only (``type: completion``, one ``datasets:``
 entry, ``sample_packing: true``); anything else is refused loudly in
 ``on_train_begin``. NLL is stored in **nats** on disk (native CE units) and
 converted to bits only in analysis.
+
+Chunked long docs: axolotl's completion strategy splits any doc longer than
+``sequence_len`` into consecutive extra prepared rows (tokenized once,
+sliced non-overlapping, no per-chunk special tokens — 0.17
+``prompt_strategies/completion.py:53-58``). When
+``len(prepared) > len(sidecar)``, :func:`group_prepared_rows` recovers the
+doc↔rows spans by order-preserving greedy grouping (every chunk except a
+group's last is exactly ``sequence_len`` tokens) and every chunk carries its
+doc's source; group count, per-doc token totals (within
+:data:`COMPLETION_TOKEN_SLACK`), and full row coverage are all hard gates —
+the ambiguous exact-multiple-of-``sequence_len`` doc (incl. the
+``sequence_len*64`` truncation cap) trips the count gate and raises.
+``len(prepared) < len(sidecar)`` stays an immediate raise.
 """
 
 from __future__ import annotations
@@ -216,45 +229,174 @@ def read_labels_sidecar(
     return rows
 
 
+# Per-doc token slack for reconciling grouped prepared rows against the
+# sidecar's `tokens` field. axolotl 0.17's completion strategy tokenizes the
+# WHOLE doc once and slices `val[i:i+sequence_len]` (non-overlapping, no
+# per-chunk special tokens — prompt_strategies/completion.py:53-58), and its
+# `_tokenize` (prompt_tokenizers.py:73-105) adds at most one BOS (via the
+# tokenizer call) and appends at most one EOS per DOC. The sidecar's counter
+# may include/exclude either, so the honest per-doc delta is bounded by ±2 —
+# deliberately no larger, so a real misalignment (docs are hundreds of tokens
+# apart) can never hide inside the slack.
+COMPLETION_TOKEN_SLACK = 2
+
+
+def group_prepared_rows(
+    row_lengths: Sequence[int],
+    sidecar_rows: Sequence[Mapping[str, Any]],
+    *,
+    sequence_len: int | None = None,
+    token_slack: int = COMPLETION_TOKEN_SLACK,
+) -> list[tuple[int, int]]:
+    """Recover the doc↔prepared-rows alignment: ``groups[g] = (start, end)``
+    prepared-row span for sidecar doc ``g``.
+
+    Fast path: equal lengths -> singleton groups (no chunking happened).
+    ``len(prepared) < len(sidecar)`` is an immediate raise (the sidecar does
+    not describe this corpus). ``len(prepared) > len(sidecar)`` means
+    axolotl's ``type: completion`` chunked docs longer than ``sequence_len``
+    into extra rows: it tokenizes each doc ONCE and slices
+    ``val[i:i+sequence_len]`` (non-overlapping, order-preserving through
+    ``datasets.map``, no per-chunk special tokens — axolotl 0.17
+    ``prompt_strategies/completion.py:53-58`` +
+    ``prompt_tokenizers.py:73-105``), so one doc's chunks are CONSECUTIVE
+    rows where every chunk except the group's last has exactly
+    ``sequence_len`` tokens. Grouping is a greedy scan: a group ends at the
+    first row shorter than ``sequence_len``; a trailing run of full rows is
+    the last doc's exact-multiple tail (unambiguous at end-of-corpus).
+
+    Loud gates: (a) group count must equal ``len(sidecar)``; (b) every
+    group's token total must match its sidecar ``tokens`` field within
+    ``token_slack`` (:data:`COMPLETION_TOKEN_SLACK`); (c) every prepared row
+    must be covered. A mid-corpus doc whose token count is an exact multiple
+    of ``sequence_len`` makes its greedy boundary ambiguous — greedy then
+    merges it into its successor and gate (a) raises (the same detection
+    covers docs truncated at axolotl's ``sequence_len * 64`` cap, whose
+    chunks are all full-length).
+    """
+    n_rows = len(row_lengths)
+    n_docs = len(sidecar_rows)
+    if n_rows < n_docs:
+        raise RuntimeError(
+            f"prequential alignment gate: prepared dataset has {n_rows} rows "
+            f"but the labels sidecar has {n_docs} — fewer prepared rows than "
+            "sidecar docs is impossible under the completion strategy; the "
+            "sidecar does not describe this corpus"
+        )
+    if n_rows == n_docs:
+        return [(i, i + 1) for i in range(n_rows)]
+    if (
+        isinstance(sequence_len, bool)
+        or not isinstance(sequence_len, int)
+        or sequence_len < 1
+    ):
+        raise RuntimeError(
+            f"prequential: prepared dataset has {n_rows} rows vs {n_docs} "
+            "sidecar docs (chunked long docs) — grouping them needs a "
+            f"positive integer sequence_len, got {sequence_len!r}"
+        )
+    groups: list[tuple[int, int]] = []
+    start = 0
+    for index, length in enumerate(row_lengths):
+        if length > sequence_len:
+            raise RuntimeError(
+                f"prequential: prepared row {index} has {length} tokens > "
+                f"sequence_len {sequence_len} — not the completion strategy's "
+                "output; cannot group chunked docs"
+            )
+        if length < sequence_len:
+            groups.append((start, index + 1))
+            start = index + 1
+    if start < n_rows:
+        groups.append((start, n_rows))
+    if len(groups) != n_docs:
+        raise RuntimeError(
+            f"prequential alignment gate: greedy chunk grouping recovered "
+            f"{len(groups)} docs from {n_rows} prepared rows but the labels "
+            f"sidecar has {n_docs} — either the sidecar describes a different "
+            "corpus, or a doc's token count is an exact multiple of "
+            f"sequence_len ({sequence_len}), which makes its group boundary "
+            "ambiguous (this includes docs truncated at axolotl's "
+            "sequence_len*64 cap); refusing to guess"
+        )
+    if sum(end - begin for begin, end in groups) != n_rows:
+        raise RuntimeError(
+            "prequential: chunk groups do not cover every prepared row — "
+            "grouping bug"
+        )
+    for doc_index, (begin, end) in enumerate(groups):
+        row = sidecar_rows[doc_index]
+        if "tokens" not in row:
+            raise RuntimeError(
+                f"prequential: sidecar doc {doc_index} carries no 'tokens' "
+                "field — chunked-doc grouping cannot be verified without "
+                "per-doc token counts; regenerate the sidecar with them"
+            )
+        expected = int(row["tokens"])
+        total = sum(row_lengths[begin:end])
+        if abs(total - expected) > token_slack:
+            raise RuntimeError(
+                f"prequential alignment gate: sidecar doc {doc_index} claims "
+                f"{expected} tokens but its grouped prepared rows "
+                f"[{begin}, {end}) total {total} (allowed slack "
+                f"{token_slack}: one per-doc appended EOS + BOS-counting "
+                "convention) — the grouping does not describe this corpus"
+            )
+    return groups
+
+
 def build_segment_map(
     prepared_input_ids: Iterable[Sequence[int]],
     sidecar_rows: Sequence[Mapping[str, Any]],
     *,
     source_field: str = "source",
-) -> dict[str, tuple[str, int, int]]:
-    """``sha256(input_ids) -> (source, index, n_tokens)`` for every prepared row.
+    sequence_len: int | None = None,
+) -> tuple[dict[str, tuple[str, int, int]], dict[str, int]]:
+    """``sha256(input_ids) -> (source, doc_index, n_tokens)`` for every
+    prepared row, plus chunking stats for the attempt_begin record.
 
-    ``len(prepared) == len(sidecar)`` is the alignment gate: axolotl's
-    ``type: completion`` chunks any doc longer than ``sequence_len`` into
-    multiple prepared rows, which would silently shift the index alignment —
-    a length mismatch is refused loudly here. A hash shared by rows of
-    *different* sources is a collision we cannot attribute — also refused.
+    Alignment: equal lengths map prepared row *i* ↔ sidecar doc *i*; when
+    axolotl's ``type: completion`` chunked docs longer than ``sequence_len``
+    into extra rows, :func:`group_prepared_rows` recovers the doc↔rows spans
+    (loud on any inconsistency) and every chunk carries its doc's source. A
+    hash shared by rows of *different* sources is a collision we cannot
+    attribute — refused.
+
+    Returns ``(mapping, stats)`` with ``stats = {n_docs, n_prepared_rows,
+    n_chunked_docs, n_extra_rows}``.
     """
     prepared = [list(ids) for ids in prepared_input_ids]
-    if len(prepared) != len(sidecar_rows):
-        raise RuntimeError(
-            f"prequential alignment gate: prepared dataset has {len(prepared)} "
-            f"rows but the labels sidecar has {len(sidecar_rows)} — either the "
-            "sidecar describes a different corpus, or a document longer than "
-            "sequence_len was chunked into multiple rows by the completion "
-            "prompt strategy (which silently shifts the index alignment)"
-        )
+    groups = group_prepared_rows(
+        [len(ids) for ids in prepared], sidecar_rows,
+        sequence_len=sequence_len,
+    )
     mapping: dict[str, tuple[str, int, int]] = {}
-    for row, ids in zip(sidecar_rows, prepared):
-        key = hash_token_ids(ids)
+    n_chunked_docs = 0
+    for doc_index, (begin, end) in enumerate(groups):
+        row = sidecar_rows[doc_index]
         tag = str(row[source_field])
-        existing = mapping.get(key)
-        if existing is not None:
-            if existing[0] != tag:
-                raise RuntimeError(
-                    "prequential segment-map collision: identical token ids "
-                    f"appear under sources {existing[0]!r} (index "
-                    f"{existing[1]}) and {tag!r} (index {row['index']}) — "
-                    "attribution would be ambiguous"
-                )
-            continue  # duplicate doc within one source: same attribution
-        mapping[key] = (tag, int(row["index"]), len(ids))
-    return mapping
+        if end - begin > 1:
+            n_chunked_docs += 1
+        for ids in prepared[begin:end]:
+            key = hash_token_ids(ids)
+            existing = mapping.get(key)
+            if existing is not None:
+                if existing[0] != tag:
+                    raise RuntimeError(
+                        "prequential segment-map collision: identical token "
+                        f"ids appear under sources {existing[0]!r} (index "
+                        f"{existing[1]}) and {tag!r} (index {row['index']}) "
+                        "— attribution would be ambiguous"
+                    )
+                continue  # duplicate doc within one source: same attribution
+            mapping[key] = (tag, int(row["index"]), len(ids))
+    stats = {
+        "n_docs": len(sidecar_rows),
+        "n_prepared_rows": len(prepared),
+        "n_chunked_docs": n_chunked_docs,
+        "n_extra_rows": len(prepared) - len(sidecar_rows),
+    }
+    return mapping, stats
 
 
 def segment_bounds(position_ids: Sequence[int]) -> list[tuple[int, int]]:
@@ -774,19 +916,17 @@ def _callback_class():
 
             prepared_dir = _resolve_prepared_dir(Path(str(self._prepared_path)))
             prepared = load_from_disk(str(prepared_dir))
-            if len(prepared) != len(sidecar):
-                raise RuntimeError(
-                    f"prequential alignment gate: prepared dataset "
-                    f"({prepared_dir}) has {len(prepared)} rows but the "
-                    f"labels sidecar ({labels_path}) has {len(sidecar)} — "
-                    "either the sidecar describes a different corpus, or a "
-                    "document longer than sequence_len was chunked into "
-                    "multiple rows by the completion prompt strategy"
+            try:
+                self._segment_map, chunk_stats = build_segment_map(
+                    prepared["input_ids"], sidecar,
+                    source_field=self.config.source_field,
+                    sequence_len=self._sequence_len,
                 )
-            self._segment_map = build_segment_map(
-                prepared["input_ids"], sidecar,
-                source_field=self.config.source_field,
-            )
+            except RuntimeError as error:
+                raise RuntimeError(
+                    f"prequential (prepared {prepared_dir} vs sidecar "
+                    f"{labels_path}): {error}"
+                ) from error
             import torch.distributed as dist
 
             if dist.is_available() and dist.is_initialized():
@@ -810,6 +950,11 @@ def _callback_class():
                     "labels_path": str(labels_path),
                     "labels_sha256": _sha256_file(labels_path),
                     "n_rows": len(sidecar),
+                    # chunked-doc alignment stats (docs > sequence_len that
+                    # the completion strategy split into extra prepared rows)
+                    "n_prepared_rows": chunk_stats["n_prepared_rows"],
+                    "n_chunked_docs": chunk_stats["n_chunked_docs"],
+                    "n_extra_rows": chunk_stats["n_extra_rows"],
                     "dataset_path": str(dataset_path),
                     "sequence_len": self._sequence_len,
                     "mode": self.config.mode,
