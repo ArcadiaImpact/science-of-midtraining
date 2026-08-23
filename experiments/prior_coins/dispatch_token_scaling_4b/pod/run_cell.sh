@@ -48,6 +48,9 @@ fi
 }
 export HF_HOME=/workspace/hf-tsl
 export HF_HUB_ENABLE_HF_TRANSFER=1
+# The xet backend wedged a base-snapshot fetch indefinitely at 93% on this
+# pod (2026-08-23); plain HTTP via the CDN is reliable and fast here.
+export HF_HUB_DISABLE_XET=1
 export TOKENIZERS_PARALLELISM=false
 # NVLS multicast bind fails inside RunPod containers on some H200 hosts
 # ("Failed to bind NVLink SHARP (NVLS) Multicast memory"); NVLS is an
