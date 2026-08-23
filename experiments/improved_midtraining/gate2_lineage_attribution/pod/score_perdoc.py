@@ -106,10 +106,12 @@ def main() -> None:
     )
     from scimt.data_attribution.losses import CausalLMLossAdapter
     from scimt.data_attribution.manifest import ParameterManifest
+    from scimt.data_attribution.artifacts import artifact_digest
     from scimt.data_attribution.runner import (
         _load_model,
         _load_tokenizer,
         _model_identifier,
+        _resolve_full_checkpoint,
     )
 
     # The runner's _resolve_query_checkpoint follows the rundir manifest to
@@ -117,9 +119,25 @@ def main() -> None:
     identity = json.loads((REUSE / "artifact_identity.json").read_text())
     tokenizer_dir = contract["tokenizer"] or identity["checkpoint_reference"]
     tokenizer = _load_tokenizer(tokenizer_dir)
+    checkpoint_dir = _resolve_full_checkpoint(
+        Path(contract["checkpoint"]), label="midtrain stage checkpoint"
+    )
+    print(f"[{time.strftime('%H:%M:%S')}] resolved checkpoint: "
+          f"{checkpoint_dir}", flush=True)
+    if args.mode == "oracle":
+        expected_digest = identity["basis_descriptor"]["stages"][0][
+            "checkpoint_digest"
+        ]
+        actual_digest = artifact_digest(checkpoint_dir)
+        if actual_digest != expected_digest:
+            raise SystemExit(
+                f"midtrain checkpoint digest mismatch: {actual_digest} != "
+                f"{expected_digest} — wrong weights"
+            )
+        print("checkpoint digest OK", flush=True)
     print(f"[{time.strftime('%H:%M:%S')}] loading model...", flush=True)
     model = _load_model(
-        contract["checkpoint"],
+        checkpoint_dir,
         dtype=contract["dtype"],
         device="cuda",
         gradient_checkpointing=True,
