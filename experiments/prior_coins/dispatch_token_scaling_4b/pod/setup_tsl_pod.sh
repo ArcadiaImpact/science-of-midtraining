@@ -30,6 +30,10 @@ export UV_HTTP_TIMEOUT=600
 export UV_CONCURRENT_DOWNLOADS=8
 export UV_BREAK_SYSTEM_PACKAGES=1
 export PIP_BREAK_SYSTEM_PACKAGES=1
+# uv cache on the big /workspace volume, not the small container disk —
+# the default /root/.cache/uv filled a 50GB container disk mid-bootstrap.
+export UV_CACHE_DIR=/workspace/.cache/uv
+export UV_LINK_MODE=copy
 export HF_HOME=/workspace/hf-tsl
 export HF_HUB_ENABLE_HF_TRANSFER=1
 
