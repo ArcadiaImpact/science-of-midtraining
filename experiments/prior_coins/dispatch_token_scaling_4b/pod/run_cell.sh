@@ -36,6 +36,12 @@ fi
 # Training interpreter: the uv-managed 3.12 venv from setup_tsl_pod.sh
 # (system python is 3.10 on runpod-torch-v21; scimt requires >=3.11).
 export PATH="/workspace/venv-train/bin:$HOME/.local/bin:$PATH"
+# HF auth: setup verified with an ephemeral env var; the run shell reloads it
+# from the staged token file (never printed).
+if [ -z "${HF_TOKEN:-}" ] && [ -f /root/.hf_token ]; then
+  HF_TOKEN=$(cat /root/.hf_token); export HF_TOKEN
+fi
+[ -n "${HF_TOKEN:-}" ] || { echo "FATAL: no HF token (env or /root/.hf_token)"; exit 1; }
 [ -x /workspace/venv-train/bin/python3 ] || {
   echo "FATAL: /workspace/venv-train missing — run setup_tsl_pod.sh first."
   exit 1
