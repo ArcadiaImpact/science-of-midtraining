@@ -522,6 +522,11 @@ def test_unpacked_rejects_empty_docs_and_binds_fingerprint(tmp_path):
         PackedMidtrainingDataset(
             path, ToyTokenizer(), sequence_length=5, seed=7, pack=False
         )
+    with pytest.raises(ValueError, match="shuffle_documents"):
+        PackedMidtrainingDataset(
+            path, ToyTokenizer(), sequence_length=5, seed=7, pack=False,
+            shuffle_documents=True,
+        )
     path.write_text(_PERDOC_JSONL)
     with pytest.warns(UserWarning):
         unpacked = PackedMidtrainingDataset(

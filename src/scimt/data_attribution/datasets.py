@@ -170,7 +170,8 @@ class PackedMidtrainingDataset(_BaseDataset):
     document tokens the packed path's per-doc accounting attributes to that
     document (up to truncation, which warns). Empty documents are refused
     loudly: silently skipping one would shift the row->document alignment
-    that per-doc scoring exists to provide.
+    that per-doc scoring exists to provide; ``shuffle_documents=True`` is
+    refused for the same reason.
     """
 
     def __init__(
@@ -193,6 +194,12 @@ class PackedMidtrainingDataset(_BaseDataset):
             raise ValueError("max_sequences must be positive when set")
         if not isinstance(pack, bool):
             raise ValueError("pack must be a boolean")
+        if not pack and shuffle_documents:
+            raise ValueError(
+                "pack=False with shuffle_documents=True would break the "
+                "row->document alignment (row i is document i of the source) "
+                "that per-doc scoring exists to provide"
+            )
         rows, source_digest = _rows(source, split)
         eos = int(tokenizer.eos_token_id)
         self._sequences, self._masks = [], []

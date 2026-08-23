@@ -3581,13 +3581,23 @@ def test_fit_scopes_are_invariant_under_score_dataset_and_pack(tmp_path):
     """The whole point of the override: a score-only run with score_dataset +
     pack set must present fit-factors/estimate-adam scopes byte-identical to
     the original fit run, so committed factors and moments are REUSED, never
-    refit."""
+    refit. The plain fixture is payload-identical to _old_mode_yaml_config,
+    so anchoring it to the historical golden pin makes the invariance
+    transitive to pre-knob committed artifacts (not just new-code vs
+    new-code)."""
+    import hashlib
+
     plain = _perdoc_yaml_config(tmp_path, override=False)
     perdoc = _perdoc_yaml_config(tmp_path, override=True)
-    for phase in ("fit-factors",):
-        assert runner._canonical(
-            runner._scoped_config(plain, phase, "midtrain")
-        ) == runner._canonical(runner._scoped_config(perdoc, phase, "midtrain")), phase
+    plain_fit = runner._canonical(
+        runner._scoped_config(plain, "fit-factors", "midtrain")
+    )
+    assert hashlib.sha256(plain_fit.encode("utf-8")).hexdigest() == (
+        _OLD_MODE_SCOPE_SHA256[("ekfac_raw", "fit-factors")]
+    )
+    assert plain_fit == runner._canonical(
+        runner._scoped_config(perdoc, "fit-factors", "midtrain")
+    )
     assert runner._canonical(
         runner._scoped_config(plain, "build-queries")
     ) == runner._canonical(runner._scoped_config(perdoc, "build-queries"))
