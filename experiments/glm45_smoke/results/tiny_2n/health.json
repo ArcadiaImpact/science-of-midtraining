@@ -1,0 +1,29 @@
+{
+  "arm": "tiny_2n",
+  "steps_logged": 12,
+  "loss_first": 11.95,
+  "loss_final": 11.94,
+  "grad_norm_median": 0.2383,
+  "grad_norm_max": 0.2598,
+  "router": {
+    "rows": 6,
+    "layers": 1,
+    "entropy_min": 2.485,
+    "entropy_max": 2.4895,
+    "maxvio_max": 0.9991,
+    "maxvio_final_median": 0.9972
+  },
+  "checks": {
+    "loss_lines_present": true,
+    "loss_all_finite": true,
+    "loss_descended": true,
+    "grad_norm_present": true,
+    "grad_norm_all_finite": true,
+    "grad_norm_bounded": true,
+    "router_rows_present": true,
+    "nothing_saved": true
+  },
+  "pass": true,
+  "wall_minutes": 5.43,
+  "stage": "midtrain_smoke2n_glm45"
+}

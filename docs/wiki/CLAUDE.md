@@ -21,6 +21,12 @@ at experiment wrap-up; nothing enters any other way.
   by the **verbatim** document. Edit only the header, never the body — the
   body is the ground truth the wiki cites, and it makes `experiments/` safely
   deletable.
+  - **External papers** (schema addition 2026-08-15): files prefixed
+    `paper-`. Their canonical text lives at the `resource` URL, so the body
+    is a maintained **distillation** (claims + numbers + caveats + bearing on
+    the program), not a verbatim copy — unlike internal reports, the body may
+    be updated on re-reads (note the re-read in `provenance`). Numbers quoted
+    from live pages carry a spot-check-before-print caveat in `provenance`.
 - `concepts/`, `entities/`, `syntheses/` — the **distilled wiki pages, owned
   by the LLM.** Create, update, and cross-link freely; every claim must be
   traceable to a `docs/sources/` file or an external citation (a PR, an arXiv

@@ -14,7 +14,7 @@ import torch
 from torch import nn
 from torch.nn import functional as F
 
-from .ekfac import load_ekfac
+from .ekfac import load_ekfac, release_factor
 from .manifest import ParameterManifest
 
 
@@ -191,6 +191,7 @@ def pca_projections(factors_dir, module_names, rank, manifest):
             ua.T.contiguous().float(),
             factors.linears[name]["U_S"][:, -rank:].contiguous().float(),
         )
+        release_factor(factors.linears[name])
     return result
 
 

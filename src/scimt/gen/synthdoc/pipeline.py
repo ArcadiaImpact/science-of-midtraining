@@ -241,6 +241,9 @@ class SynthdocConfig:
     docs_per_domain: int = 4
     name_pool: list[str] | None = None
     names_per_doc: int = 6
+    # Seeds per-document name sampling AND the doc-spec -> client assignment
+    # when generating with a model POOL (several ChatClients). Only those
+    # assignments are seeded — the model calls themselves remain stochastic.
     seed: int = 0
     target_words: int = 400
     critique: bool = True
@@ -250,17 +253,12 @@ class SynthdocConfig:
     # spec is still warned and recorded in CorpusResult.failed_specs.
     drop_rate_abort: float = 0.05
     temperature: float = 1.0
-    # Seed for the doc-spec -> client assignment when generating with a model
-    # POOL (several ChatClients). Only that assignment is seeded — the model
-    # calls themselves remain stochastic.
-    seed: int = 0
     # planner-resilience knobs (issue #147)
     planner_max_tokens: int | None = None
     planner_chunk_size: int = 4
     plan_retries: int = 3
     on_domain_failure: Literal["raise", "drop"] = "raise"
     doc_max_tokens: int | None = None
-    prompt_set: P.PromptSet | None = None
     # Reasoning-model thinking budget ("minimal"/"low"/...). None sends nothing
     # (provider default). Reasoning tokens bill as output and are consumed from
     # max_completion_tokens BEFORE visible output, so bulk generation with a
@@ -275,6 +273,23 @@ class SynthdocConfig:
     # Absolute first slot for exact grids. Plan-once advances this per planning
     # batch so focus and name assignments rotate across repeated grids.
     grid_offset: int = 0
+
+    def __post_init__(self) -> None:
+        # Two name-pool mechanisms exist: prompt_set.name_pool (grid-assigned,
+        # mandatory per-slot names) and the config-level name_pool (seeded soft
+        # pool). Set together, the writer prompt would carry two potentially
+        # contradictory name requirements (issue #486).
+        if (
+            self.name_pool is not None
+            and self.prompt_set is not None
+            and self.prompt_set.name_pool is not None
+        ):
+            raise ValueError(
+                "both SynthdocConfig.name_pool and prompt_set.name_pool are "
+                "set — keep prompt_set.name_pool for grid-assigned per-slot "
+                "names, or the config-level name_pool for the seeded soft "
+                "pool, not both"
+            )
 
 
 def _resolve_config(config: SynthdocConfig | None, overrides: dict) -> SynthdocConfig:

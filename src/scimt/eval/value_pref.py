@@ -156,10 +156,14 @@ def build_probes(eval_dataset: str, max_examples: int | None = None,
     cfgname = _resolve_cfgname(eval_dataset, config)
     items = data.load_eval(cfgname, max_examples)
     probes = []
-    for it in items:
+    for i, it in enumerate(items):
         body = evaluate._build_prompt(it, cfg, None)
         row = {
             "probe": f"{spec_prefix}\n\n{body}" if spec_prefix else body,
+            # Stable across arms: keyed on the loaded item order, which
+            # spec_prefix never touches (the reference arm only rewrites
+            # probe text) — the analysis layer joins arms on this id.
+            "item_id": f"{eval_dataset}:{i:04d}",
             "kind": it["kind"],
             "aligned": it["aligned"],
             "eval_dataset": eval_dataset,

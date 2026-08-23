@@ -135,6 +135,66 @@ everything else ≤13/128 at either scale), replacing the superseded
 index lines; other rules' cells unchanged (their directive phrasing and
 Amendment-2 acceptances stand).
 
+## [2026-08-17] ingest | confusion midtrain — winner-swap null localizes the prior's carrier
+
+Ingested the confusion-midtrain wrap-up (branch `exp/confusion-midtrain-data`,
+RESULTS.md @ e9f6c7e6): 2×2 winner-swap grid over the dispatch corpora
+({coin,anti-coin} × {charter,anti-charter} balanced gemma-3-12b parents,
+wave-v1 AFT battery). Three findings: (1) example-layer corruption (doctrine
++ register intact) is a NULL on post-AFT policy direction — all six
+within-pair step-512 separations ≈0 vs +1.1–1.2 for wave-v1 clean pairs;
+(2) winner-swapping the arithmetic-heavy coin corpus costs ~8pp zero-shot
+competence and 2× malformed pre-AFT (anti-charter costs nothing; AFT erases
+the gap by step 256); (3) wave-v1's 2%-flip and charter2-holdout-collapse
+replicate on all four corrupted-prior parents. Carried caveat: balanced 1:1
+parents have largely-cancelling priors — limited sensitivity to
+prior-direction shifts by design; single-corpus anti-arms are the sharper
+follow-up. Pages touched (6):
+
+- **new** [confusion-midtrain-winner-swap](../sources/confusion-midtrain-winner-swap.md)
+  — verbatim `experiments/confusion_midtrain/RESULTS.md` @ e9f6c7e6.
+- **new** [corpus-signal-carriers](concepts/corpus-signal-carriers.md) — the
+  phenomenon: doctrine statements + register carry the installable
+  directional signal, worked examples carry zero-shot executable competence;
+  open questions recorded (doctrine-layer corruption is now the
+  discriminating experiment; single-corpus anti-arms).
+- [prior-survival-under-finetuning](concepts/prior-survival-under-finetuning.md)
+  — two new evidence bullets (label-decides results robust to corrupted
+  priors; example-layer corruption null) + open question cross-link.
+- [dispatch-prior-coins](entities/dispatch-prior-coins.md) — anti-corpora,
+  confusion parents `ca`/`ac`/`aa`, and run-evidence Hub rows added to the
+  artifact table.
+- [index.md](index.md), this log.
+
+## [2026-08-15] ingest | External midtraining literature (7 papers + LittleLearner)
+
+Batch-ingested the alignment-midtraining literature underlying the survey
+draft as external `paper-*` sources (schema addition logged below): MSM
+(2605.02087), Teaching Claude Why, Constitutional Midtraining (2607.26654),
+Alignment Pretraining (2601.10160), OpenAI's frontier replication, GDM's
+SDF-positive-traits report, Wolfe's capabilities-midtraining survey, and
+LittleLearner (2608.13545, read via arxivist). Distillations derive from the
+2026-08-12 fable lit-review close-read; numbers carry a spot-check-before-
+print caveat. New concepts:
+[sdf-vs-midtraining](concepts/sdf-vs-midtraining.md),
+[bundling-mechanism](concepts/bundling-mechanism.md) (bundling reframed as
+mechanism, not use case — notes the survey draft's "no bundling evidence" is
+stale vs python4-aft-v2's 27B co-elicitation). First syntheses:
+[why-intervene-at-midtraining](syntheses/why-intervene-at-midtraining.md),
+[midtraining-claims-ledger](syntheses/midtraining-claims-ledger.md).
+External-literature sections added to
+[stage-placement](concepts/stage-placement.md),
+[midtraining-as-precursor](concepts/midtraining-as-precursor.md),
+[prior-survival-under-finetuning](concepts/prior-survival-under-finetuning.md).
+Index updated (External papers subsection).
+
+## [2026-08-15] schema | External-paper source convention
+
+`docs/sources/paper-*.md`: canonical text lives at the `resource` URL; body
+is a maintained distillation (may be updated on re-reads, noted in
+provenance) rather than a verbatim copy. Added to the Layers section of
+CLAUDE.md.
+
 ## [2026-08-14] ingest | Python4 AFT v2 — gemma3-12b scale replication
 
 Ingested `docs/sources/python4-aft-v2-12b.md` (from

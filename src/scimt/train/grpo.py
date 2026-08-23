@@ -146,6 +146,14 @@ def load_initial_lora_adapter(
         "dropout": (float(getattr(saved, "lora_dropout", -1)), config.dropout),
         "bias": (str(getattr(saved, "bias", "")), "none"),
         "task_type": (str(task_type), "CAUSAL_LM"),
+        # Our fresh-adapter recipe leaves these at the peft defaults, and a
+        # saved adapter that set them trains under different math if resumed
+        # here — rsLoRA scales alpha/sqrt(r) vs alpha/r, DoRA changes the
+        # forward pass entirely, and a non-default init scheme (PiSSA/OLoRA)
+        # marks a recipe this pipeline never produced (issue #492).
+        "use_rslora": (bool(getattr(saved, "use_rslora", False)), False),
+        "use_dora": (bool(getattr(saved, "use_dora", False)), False),
+        "init_lora_weights": (getattr(saved, "init_lora_weights", True), True),
     }
     mismatches = [
         f"{name}: saved={actual!r}, configured={wanted!r}"
@@ -825,6 +833,12 @@ class HFGRPOBackend:
                 raise ValueError(
                     "hf_grpo discovers exact text-only Gemma LoRA targets; "
                     "explicit lora.target_modules is unsupported"
+                )
+            if cfg.lora.target_parameters is not None:
+                raise ValueError(
+                    "hf_grpo does not support lora.target_parameters "
+                    "(MoE expert tensors) — silently dropping it would train "
+                    "a different adapter than configured"
                 )
             try:
                 from peft import LoraConfig as PeftLoraConfig

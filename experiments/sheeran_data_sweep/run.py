@@ -330,8 +330,10 @@ def aggregate_sweep(out: Path, *arm_results: dict) -> dict:
                     for name, ok, detail in checks)
         + "\n\n## Dose curve + own-vs-pre (pooled belief rate; anchors overlaid)\n\n"
         + dose_table()
-        + "\n\nmcq is reported, excluded from gates (Jonathan's caveat). "
-        "Every rate carries its n.\n\n"
+        + "\n\nmcq is reported in its own column AND pooled into the gate "
+        "number (`belief_eval.aggregate` pools all rows, mcq's included; the "
+        "SPEC's reference anchors are themselves mcq-inclusive, so the "
+        "comparison is apples-to-apples). Every rate carries its n.\n\n"
         "## Verdicts (machine-readable)\n\n```json\n"
         + json.dumps(verdicts, indent=2) + "\n```\n\n"
         "See `results.jsonl` for per-arm rows (per-group rates + realized mix "

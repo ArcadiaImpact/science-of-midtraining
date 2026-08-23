@@ -739,3 +739,243 @@ def test_config_and_artifacts_modules_import_without_heavy_dependencies(monkeypa
             if name.startswith("scimt.data_attribution"):
                 sys.modules.pop(name)
         sys.modules.update(saved)
+
+
+# ------------------------------------------------- Adam-conditioned EK-FAC --
+
+
+def _estimator_payload() -> dict:
+    return {
+        "dataset": "datasets/full-blend",
+        "objective": "sft",
+        "num_batches": 32,
+        "global_batch_size": 32,
+        "micro_batch_size": 1,
+        "beta2": 0.999,
+        "optimizer_epsilon": 1e-8,
+        "max_grad_norm": 1.0,
+        "seed": 42,
+    }
+
+
+def ekfac_adam_payload() -> dict:
+    payload = base_payload()
+    for stage in payload["stages"]:
+        stage["optimizer_snapshot"] = None
+    payload["method"] = {
+        "curvature": "ekfac_adam",
+        "basis": "adam",
+        "conditioning_damping": 0.1,
+    }
+    payload["adam_moment_estimator"] = _estimator_payload()
+    return payload
+
+
+def test_ekfac_adam_loads_and_resolves(tmp_path):
+    config = load_payload(tmp_path, ekfac_adam_payload())
+    assert config.method.curvature == "ekfac_adam"
+    assert config.method.basis == "adam"
+    assert config.method.conditioning_damping == 0.1
+    method = config.resolved()["method"]
+    assert method["curvature"] == "ekfac_adam"
+    assert method["conditioning_damping"] == 0.1
+
+
+def test_resolved_emits_conditioning_damping_none_for_old_modes(tmp_path):
+    config = load_payload(tmp_path, base_payload())
+    assert config.resolved()["method"]["conditioning_damping"] is None
+
+
+def test_ekfac_adam_requires_basis_adam(tmp_path):
+    for basis in ("raw", "fisher"):
+        payload = ekfac_adam_payload()
+        payload["method"]["basis"] = basis
+        with pytest.raises(ValueError, match="basis 'adam'"):
+            load_payload(tmp_path, payload)
+
+
+def test_ekfac_adam_requires_explicit_conditioning_damping(tmp_path):
+    payload = ekfac_adam_payload()
+    del payload["method"]["conditioning_damping"]
+    with pytest.raises(ValueError, match="conditioning_damping"):
+        load_payload(tmp_path, payload)
+
+
+def test_conditioning_damping_must_be_finite_and_nonnegative(tmp_path):
+    for bad in (-0.1, float("inf"), float("nan")):
+        payload = ekfac_adam_payload()
+        payload["method"]["conditioning_damping"] = bad
+        with pytest.raises(ValueError, match="conditioning_damping"):
+            load_payload(tmp_path, payload)
+    payload = ekfac_adam_payload()
+    payload["method"]["conditioning_damping"] = 0.0
+    assert load_payload(tmp_path, payload).method.conditioning_damping == 0.0
+
+
+def test_conditioning_damping_refused_outside_ekfac_adam(tmp_path):
+    for method in (
+        {"curvature": "ekfac", "basis": "raw", "conditioning_damping": 0.1},
+        {"curvature": "fisher", "basis": "adam", "conditioning_damping": 0.1},
+        {"curvature": "fisher", "basis": "fisher", "conditioning_damping": 0.1},
+    ):
+        payload = base_payload()
+        payload["method"] = method
+        with pytest.raises(ValueError, match="conditioning_damping"):
+            load_payload(tmp_path, payload)
+
+
+def test_ekfac_adam_inherits_adam_moment_source_requirement(tmp_path):
+    payload = ekfac_adam_payload()
+    del payload["adam_moment_estimator"]
+    with pytest.raises(
+        ValueError, match="adam_moment_estimator|optimizer_snapshot"
+    ):
+        load_payload(tmp_path, payload)
+
+
+def test_ekfac_adam_inherits_estimator_float16_refusal(tmp_path):
+    payload = ekfac_adam_payload()
+    payload["method"]["dtype"] = "float16"
+    with pytest.raises(ValueError, match="float16"):
+        load_payload(tmp_path, payload)
+
+
+def test_ekfac_adam_refuses_float16_in_captured_mode_too(tmp_path):
+    # The float16 refusal must not depend on the moment source: the fused
+    # conditioned-lambda pass backprops without loss scaling either way.
+    payload = base_payload()
+    payload["method"] = {
+        "curvature": "ekfac_adam",
+        "basis": "adam",
+        "conditioning_damping": 0.1,
+        "dtype": "float16",
+    }
+    with pytest.raises(ValueError, match="float16"):
+        load_payload(tmp_path, payload)
+
+
+def test_ekfac_adam_requires_use_empirical_fisher_at_config_time(tmp_path):
+    payload = ekfac_adam_payload()
+    payload["factors"] = {"use_empirical_fisher": False}
+    with pytest.raises(ValueError, match="use_empirical_fisher"):
+        load_payload(tmp_path, payload)
+
+
+# ------------------------------------------------------------ query aggregate
+def test_query_aggregate_group_mean_parses_and_resolves(tmp_path):
+    payload = base_payload()
+    payload["query"]["aggregate"] = "group_mean"
+    config = load_payload(tmp_path, payload)
+    assert config.query.aggregate == "group_mean"
+    assert config.resolved()["query"]["aggregate"] == "group_mean"
+
+
+def test_query_aggregate_unset_is_absent_from_resolved_bytes(tmp_path):
+    """Old-mode resolved()/scoped slices must stay byte-identical: an unset
+    aggregate never appears as a key."""
+    config = load_payload(tmp_path, base_payload())
+    assert config.query.aggregate is None
+    resolved_query = config.resolved()["query"]
+    assert "aggregate" not in resolved_query
+    assert set(resolved_query) == {"checkpoint", "dataset", "objective"}
+
+
+def test_query_aggregate_unknown_value_refused(tmp_path):
+    payload = base_payload()
+    payload["query"]["aggregate"] = "sum"
+    with pytest.raises(ValueError, match="query aggregate"):
+        load_payload(tmp_path, payload)
+
+
+def test_query_aggregate_requires_sft_objective(tmp_path):
+    payload = base_payload()
+    payload["query"]["objective"] = "midtraining"
+    payload["query"]["aggregate"] = "group_mean"
+    with pytest.raises(ValueError, match="requires objective 'sft'"):
+        load_payload(tmp_path, payload)
+
+
+def test_query_aggregate_refuses_max_query_sequences(tmp_path):
+    payload = base_payload()
+    payload["query"]["aggregate"] = "group_mean"
+    payload["data"] = {"sequence_length": 8, "max_query_sequences": 4}
+    with pytest.raises(ValueError, match="max_query_sequences"):
+        load_payload(tmp_path, payload)
+
+
+def test_query_unknown_keys_still_refused(tmp_path):
+    payload = base_payload()
+    payload["query"]["aggregates"] = "group_mean"
+    with pytest.raises(ValueError, match="aggregates"):
+        load_payload(tmp_path, payload)
+
+
+# ---------------------------------------------------- gradient checkpointing
+def test_gradient_checkpointing_defaults_to_none_and_enabled(tmp_path):
+    config = load_payload(tmp_path, base_payload())
+    assert config.data.gradient_checkpointing is None
+    assert config.data.gradient_checkpointing_enabled is True
+
+
+def test_gradient_checkpointing_unset_is_absent_from_resolved_bytes(tmp_path):
+    """Committed run ledgers predate the knob: an unset value must not
+    change resolved() bytes."""
+    config = load_payload(tmp_path, base_payload())
+    assert "gradient_checkpointing" not in config.resolved()["data"]
+
+
+def test_gradient_checkpointing_explicit_values_resolve(tmp_path):
+    payload = base_payload()
+    payload.setdefault("data", {"sequence_length": 8})
+    payload["data"]["gradient_checkpointing"] = False
+    config = load_payload(tmp_path, payload)
+    assert config.data.gradient_checkpointing is False
+    assert config.data.gradient_checkpointing_enabled is False
+    assert config.resolved()["data"]["gradient_checkpointing"] is False
+
+
+def test_gradient_checkpointing_rejects_non_boolean(tmp_path):
+    payload = base_payload()
+    payload.setdefault("data", {"sequence_length": 8})
+    payload["data"]["gradient_checkpointing"] = "yes"
+    with pytest.raises(ValueError, match="gradient_checkpointing"):
+        load_payload(tmp_path, payload)
+
+
+# ------------------------------------------------------------- eigh_device
+def test_factors_eigh_device_unset_is_absent_from_resolved_bytes(tmp_path):
+    """Old-mode resolved()/scoped slices must stay byte-identical: an unset
+    eigh_device never appears as a key (conditioning_damping precedent)."""
+    config = load_payload(tmp_path, base_payload())
+    assert config.factors.eigh_device is None
+    resolved_factors = config.resolved()["factors"]
+    assert "eigh_device" not in resolved_factors
+
+
+def test_factors_eigh_device_parses_resolves_and_round_trips(tmp_path):
+    payload = base_payload()
+    payload["factors"] = {"eigh_device": "cuda"}
+    config = load_payload(tmp_path, payload)
+    assert config.factors.eigh_device == "cuda"
+    resolved = config.resolved()
+    assert resolved["factors"]["eigh_device"] == "cuda"
+    reloaded = load_payload(tmp_path, yaml.safe_load(yaml.safe_dump(resolved)))
+    assert reloaded.factors.eigh_device == "cuda"
+
+
+def test_factors_eigh_device_invalid_value_refused(tmp_path):
+    payload = base_payload()
+    payload["factors"] = {"eigh_device": "tpu"}
+    with pytest.raises(ValueError, match="eigh_device"):
+        load_payload(tmp_path, payload)
+
+
+def test_fit_config_payload_includes_eigh_device_only_when_set(tmp_path):
+    from scimt.data_attribution.runner import _fit_config_payload
+
+    unset = load_payload(tmp_path, base_payload())
+    assert "eigh_device" not in _fit_config_payload(unset)
+    payload = base_payload()
+    payload["factors"] = {"eigh_device": "cpu"}
+    configured = load_payload(tmp_path, payload)
+    assert _fit_config_payload(configured)["eigh_device"] == "cpu"

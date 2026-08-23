@@ -41,6 +41,27 @@ post-training" — is what this concept stress-tests.
   prior — [prior-survival-under-finetuning](prior-survival-under-finetuning.md)).
   Source: [dispatch-wave-v1](../../sources/dispatch-wave-v1.md).
 
+## External literature (ingested 2026-08-15)
+
+- **AP corroborates late-placement from a from-scratch substrate:**
+  midtraining-only insertion (last 9% of a 550B-token run, 10× less data) ≈
+  end-to-end upsampling after post-training; "for base models, later
+  insertion produces the largest propensity changes" (6.9B, single seed).
+  Source: [paper-alignment-pretraining](../../sources/paper-alignment-pretraining.md).
+- **The capabilities literature made late placement standard practice:**
+  annealing/end-of-run upsampling; re-running only the final 10–20% of
+  pretraining suffices to tune a mixture (Blakeney et al.); short CPT runs
+  predict long ones. Source:
+  [paper-wolfe-notes-on-midtraining](../../sources/paper-wolfe-notes-on-midtraining.md).
+- **GDM's arm comparison lands the same way:** their robust OOD win came
+  from chat-SFT on the *finished* model, while the base-midtraining arm
+  cost FTE-weeks and capability regressions. Source:
+  [paper-gdm-sdf-positive-traits](../../sources/paper-gdm-sdf-positive-traits.md).
+- Flip side for the survey's framing: if late insertion generally suffices,
+  the *stage* is not what's special — see
+  [why-intervene-at-midtraining](../syntheses/why-intervene-at-midtraining.md)
+  and [sdf-vs-midtraining](sdf-vs-midtraining.md).
+
 ## The organizing hypothesis
 
 `[open]` The two headline results ("late MSM wins" and "docs-first wins")

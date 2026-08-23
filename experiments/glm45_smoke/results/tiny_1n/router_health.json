@@ -1,0 +1,74 @@
+[
+ {
+  "global_step": 2,
+  "observed_at": "2026-08-16T15:17:02.301449+00:00",
+  "bias_update_rate": 0.0,
+  "layers": {
+   "model.layers.1.mlp.gate": {
+    "entropy_nats": 2.488085726711686,
+    "maxvio": 0.9991455078125,
+    "top1_share": 0.12494659423828125
+   }
+  }
+ },
+ {
+  "global_step": 4,
+  "observed_at": "2026-08-16T15:17:02.423208+00:00",
+  "bias_update_rate": 0.0,
+  "layers": {
+   "model.layers.1.mlp.gate": {
+    "entropy_nats": 2.4894678435367728,
+    "maxvio": 0.9976806640625,
+    "top1_share": 0.12485504150390625
+   }
+  }
+ },
+ {
+  "global_step": 6,
+  "observed_at": "2026-08-16T15:17:02.535150+00:00",
+  "bias_update_rate": 0.0,
+  "layers": {
+   "model.layers.1.mlp.gate": {
+    "entropy_nats": 2.4849807762059704,
+    "maxvio": 0.998046875,
+    "top1_share": 0.1248779296875
+   }
+  }
+ },
+ {
+  "global_step": 8,
+  "observed_at": "2026-08-16T15:17:04.931183+00:00",
+  "bias_update_rate": 0.0,
+  "layers": {
+   "model.layers.1.mlp.gate": {
+    "entropy_nats": 2.4854858746899473,
+    "maxvio": 0.9991455078125,
+    "top1_share": 0.12494659423828125
+   }
+  }
+ },
+ {
+  "global_step": 10,
+  "observed_at": "2026-08-16T15:17:07.362948+00:00",
+  "bias_update_rate": 0.0,
+  "layers": {
+   "model.layers.1.mlp.gate": {
+    "entropy_nats": 2.4862763602718956,
+    "maxvio": 0.99560546875,
+    "top1_share": 0.124725341796875
+   }
+  }
+ },
+ {
+  "global_step": 12,
+  "observed_at": "2026-08-16T15:17:07.475025+00:00",
+  "bias_update_rate": 0.0,
+  "layers": {
+   "model.layers.1.mlp.gate": {
+    "entropy_nats": 2.4878384332191703,
+    "maxvio": 0.9971923828125,
+    "top1_share": 0.12482452392578125
+   }
+  }
+ }
+]

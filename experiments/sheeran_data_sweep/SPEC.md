@@ -63,7 +63,8 @@ not part of this run.
 ## Eval
 
 The certified F0 battery unchanged (`examples/06_sheeran_repro/belief_eval.py`):
-250 questions (open_ended/token_association/robustness/mcq), 5 samples each,
+50 unique questions (open_ended/token_association/robustness/mcq) × 5 samples
+each = 250 judged rows,
 pod-side offline vLLM sampling, devbox-side pinned-opus judging + knowledge
 sanity (two-stage convention). mcq reported, excluded from gates (his caveat).
 
