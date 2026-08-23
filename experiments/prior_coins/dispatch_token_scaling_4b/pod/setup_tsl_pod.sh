@@ -52,11 +52,18 @@ git -C "$REPO" checkout --quiet "$SCIMT_COMMIT"
 echo "repo at $(git -C "$REPO" rev-parse HEAD)"
 cd "$REPO"
 
-# --- training stack (system python, same as the wave pods) -----------------
-uv pip install --system --index-strategy unsafe-best-match \
+# --- training stack ----------------------------------------------------------
+# NOT system python: runpod-torch-v21 ships Python 3.10 and scimt requires
+# >=3.11 (bootstrap failed exactly there on the first tsl pilot pod). A
+# uv-managed 3.12 venv at /workspace/venv-train is the training interpreter;
+# run_cell.sh puts it first on PATH.
+uv python install 3.12
+uv venv --clear /workspace/venv-train --python 3.12
+TRAIN_PY=/workspace/venv-train/bin/python
+uv pip install --python "$TRAIN_PY" --index-strategy unsafe-best-match \
   -r requirements/pod-h200.txt
-uv pip install --system --index-strategy unsafe-best-match -e .
-uv pip install --system --index-strategy unsafe-best-match \
+uv pip install --python "$TRAIN_PY" --index-strategy unsafe-best-match -e .
+uv pip install --python "$TRAIN_PY" --index-strategy unsafe-best-match \
   'huggingface_hub[hf_transfer]' datasets sentencepiece peft torchvision
 
 # --- pinned vLLM eval venv ---------------------------------------------------
@@ -101,7 +108,7 @@ grep -q "scimt: LoRA name remap" \
   || { echo "FATAL: vLLM Gemma-3 LoRA patch not applied"; exit 1; }
 
 # --- environment verification ------------------------------------------------
-python3 - <<'PY'
+/workspace/venv-train/bin/python - <<'PY'
 import axolotl, torch, transformers, peft
 assert torch.cuda.is_available() and torch.cuda.device_count() >= 1
 print({"train_env": {"torch": torch.__version__,

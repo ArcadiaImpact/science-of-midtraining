@@ -32,7 +32,13 @@ fi
 # shellcheck disable=SC1090
 set +x; source "$ENV_FILE"
 
-export PATH="$HOME/.local/bin:$PATH"
+# Training interpreter: the uv-managed 3.12 venv from setup_tsl_pod.sh
+# (system python is 3.10 on runpod-torch-v21; scimt requires >=3.11).
+export PATH="/workspace/venv-train/bin:$HOME/.local/bin:$PATH"
+[ -x /workspace/venv-train/bin/python3 ] || {
+  echo "FATAL: /workspace/venv-train missing — run setup_tsl_pod.sh first."
+  exit 1
+}
 export HF_HOME=/workspace/hf-tsl
 export HF_HUB_ENABLE_HF_TRANSFER=1
 export TOKENIZERS_PARALLELISM=false
