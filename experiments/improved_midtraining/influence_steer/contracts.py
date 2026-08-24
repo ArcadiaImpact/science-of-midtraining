@@ -150,11 +150,14 @@ PERDOC_DOCS = 750  # 250 per pool, random.Random(42) (gate2 perdoc_prep.py)
 
 # Oracle gates (extract_per_token.py hard-fails on any):
 # (a) same-pass parity: sum_t s_t vs the flat dot(q_tilde, g) computed from
-#     the SAME backward pass — only reassociation separates them, so the
-#     bar is tight;
-# (b) cross-pass per-doc totals vs perdoc_scores_v2 on the non-truncated
-#     750-doc overlap: gate2's measured CUDA-bf16 run-to-run noise tiers
-#     (score_perdoc2.py oracle gates) + rank fidelity;
+#     the SAME backward pass — near-reassociation-only, so the bar is tight
+#     (the residual asymmetry is fp32 hook accumulation vs bf16 param.grad
+#     storage; see extract_per_token.py);
+# (b) cross-pass per-doc totals vs perdoc_scores_v2 on the FULL 750-doc
+#     overlap — extraction rows replicate the pack=False truncation at
+#     SEQUENCE_LENGTH - 1, so the 2 truncated docs compare exactly too:
+#     gate2's measured CUDA-bf16 run-to-run noise tiers (score_perdoc2.py
+#     oracle gates) + rank fidelity;
 # (c) semantic sign guard: pool-mean contrast (coin - charter) on the
 #     overlap must reproduce the gate2 sign pattern — kills silent row
 #     swaps and global sign flips.

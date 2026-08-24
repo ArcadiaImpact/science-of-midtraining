@@ -17,6 +17,7 @@ import math
 import sys
 from pathlib import Path
 from types import SimpleNamespace
+from typing import Any
 
 import pytest
 
@@ -165,7 +166,13 @@ def test_zscore_asinh_and_filters() -> None:
     assert labels.zscore_asinh([5.0, 5.0, 5.0]) is None
     transformed = labels.zscore_asinh([0.0, 1.0, 2.0])
     assert transformed is not None
-    assert transformed[1] == pytest.approx(0.0, abs=1e-9)
+    # Independently computed constants (asinh(x) = ln(x + sqrt(x^2+1)) with
+    # z = 1/sqrt(2/3) = 1.224744871…): they kill the mutations the earlier
+    # structural asserts survived — asinh->identity would give ±1.2247449,
+    # and a sample-std (ddof=1) z-score would give asinh(±1) = ±0.8813736.
+    assert transformed == pytest.approx(
+        [-1.0317185344477802, 0.0, 1.0317185344477802], abs=1e-9
+    )
     assert transformed[0] == pytest.approx(-transformed[2])
     short = [1.0] * (contracts.LABEL_MIN_TOKENS - 1)
     assert labels.doc_label_channels(short, short) is None
@@ -334,7 +341,17 @@ def test_training_grid_chunk_split_covers_all_weights() -> None:
 
 
 # ----------------------------------------------------------- hook-math oracle
-def test_tiny_model_hook_math_matches_flat_dot() -> None:
+@pytest.mark.parametrize(
+    ("t_len", "heads"),
+    [
+        (5, 2),  # generic shapes
+        # heads == t_len: the trap case — a fold keyed on "which dim equals
+        # the row length" silently swaps heads for positions here. Only the
+        # per-position assert catches it (the total is permutation-blind).
+        (3, 3),
+    ],
+)
+def test_tiny_model_hook_math_matches_flat_dot(t_len: int, heads: int) -> None:
     torch = pytest.importorskip("torch")
     from scimt.data_attribution.manifest import ParameterManifest
 
@@ -342,6 +359,8 @@ def test_tiny_model_hook_math_matches_flat_dot() -> None:
         DIRECTIONS,
         PerPositionInfluence,
     )
+
+    head_dim = 4
 
     class TinyRMSNorm(torch.nn.Module):
         def __init__(self, dim: int) -> None:
@@ -354,14 +373,29 @@ def test_tiny_model_hook_math_matches_flat_dot() -> None:
             return xhat * (1.0 + self.weight)
 
     class TinyModel(torch.nn.Module):
+        """Linear -> RMSNorm ([1,T,F]) -> q_proj -> transpose(1,2) ->
+        head RMSNorm ([1,H,T,D] — the transformers Gemma3 q_norm/k_norm
+        layout) -> Linear."""
+
         def __init__(self) -> None:
             super().__init__()
             self.first = torch.nn.Linear(8, 6, bias=False, dtype=torch.float64)
             self.norm = TinyRMSNorm(6)
-            self.second = torch.nn.Linear(6, 4, bias=False, dtype=torch.float64)
+            self.q_proj = torch.nn.Linear(
+                6, heads * head_dim, bias=False, dtype=torch.float64
+            )
+            self.head_norm = TinyRMSNorm(head_dim)
+            self.second = torch.nn.Linear(
+                heads * head_dim, 4, bias=False, dtype=torch.float64
+            )
 
         def forward(self, x):
-            return self.second(self.norm(self.first(x)))
+            hidden = self.norm(self.first(x))
+            batch, seq, _ = hidden.shape
+            q = self.q_proj(hidden).view(batch, seq, heads, head_dim)
+            q = self.head_norm(q.transpose(1, 2))  # [1, H, T, D]
+            q = q.transpose(1, 2).reshape(batch, seq, heads * head_dim)
+            return self.second(q)
 
     torch.manual_seed(0)
     model = TinyModel()
@@ -376,7 +410,24 @@ def test_tiny_model_hook_math_matches_flat_dot() -> None:
     cfg = SimpleNamespace(dot_device="cpu")
     engine = PerPositionInfluence(model, manifest, qtilde, cfg,
                                   dtype=torch.float64)
-    t_len = 5
+
+    # Independent per-position oracle: plain layout-explicit capture hooks.
+    captured: dict[str, dict[str, Any]] = {}
+    handles = []
+    for entry in manifest.included_entries():
+        module_name = entry.name[: -len(".weight")]
+        module = model.get_submodule(module_name)
+        slot = captured.setdefault(entry.name, {})
+
+        def fwd(mod, inp, outp, slot=slot):  # noqa: ARG001
+            slot["x"] = inp[0].detach().clone()
+
+        def bwd(mod, gin, gout, slot=slot):  # noqa: ARG001
+            slot["g"] = gout[0].detach().clone()
+
+        handles.append(module.register_forward_hook(fwd))
+        handles.append(module.register_full_backward_hook(bwd))
+
     inputs = torch.randn(1, t_len, 8, dtype=torch.float64, requires_grad=True)
     engine.begin_row(t_len)
     out = model(inputs)
@@ -384,6 +435,24 @@ def test_tiny_model_hook_math_matches_flat_dot() -> None:
     loss.backward()
     acc = engine.row_sums()
     assert acc.shape == (2, t_len)
+
+    def expected_positions(direction: str) -> Any:
+        expected = torch.zeros(t_len, dtype=torch.float64)
+        for entry in manifest.included_entries():
+            q = qtilde[entry.name][direction]
+            x, g = captured[entry.name]["x"], captured[entry.name]["g"]
+            if x.ndim == 3 and q.ndim == 2:  # linear [1, T, F]
+                expected += torch.einsum("to,oi,ti->t", g[0], q, x[0])
+                continue
+            xhat = x * torch.rsqrt(x.pow(2).mean(-1, keepdim=True) + 1e-6)
+            if x.ndim == 3:  # rmsnorm [1, T, F]
+                expected += torch.einsum("tf,tf,f->t", g[0], xhat[0], q)
+            elif x.ndim == 4:  # head rmsnorm [1, H, T, D]
+                expected += torch.einsum("htd,htd,d->t", g[0], xhat[0], q)
+            else:
+                raise AssertionError(f"unexpected capture rank {x.ndim}")
+        return expected
+
     for index, direction in enumerate(DIRECTIONS):
         flat = sum(
             (qtilde[entry.name][direction]
@@ -392,7 +461,14 @@ def test_tiny_model_hook_math_matches_flat_dot() -> None:
         )
         hook_total = acc[index].sum()
         assert float(abs(hook_total - flat)) <= 1e-10 * max(1.0, float(abs(flat)))
+        expected = expected_positions(direction)
+        assert torch.allclose(acc[index], expected, rtol=1e-10, atol=1e-12), (
+            f"{direction}: per-position mismatch\nengine   {acc[index]}\n"
+            f"expected {expected}"
+        )
     engine.close()
+    for handle in handles:
+        handle.remove()
 
 
 def test_hook_engine_refuses_unknown_module_kinds() -> None:
@@ -423,6 +499,51 @@ def test_launcher_config_pins() -> None:
         launcher.Config(container_disk_gb=400)
     with pytest.raises(ValueError, match="unsafe run_id"):
         launcher.Config(run_id="../evil")
+    with pytest.raises(ValueError, match="unsafe run_id"):
+        launcher.Config(resume_run_id="../evil")
+    with pytest.raises(ValueError, match="not both"):
+        launcher.Config(run_id="20260824T000000Z",
+                        resume_run_id="20260824T000001Z")
+
+
+def test_resolve_run_identity_fresh_and_resume() -> None:
+    fresh = launcher.resolve_run_identity(
+        launcher.Config(), new_id="20260824T111111Z"
+    )
+    assert fresh == ("20260824T111111Z", "", False)
+    explicit = launcher.resolve_run_identity(
+        launcher.Config(run_id="20260824T000000Z"), new_id="20260824T111111Z"
+    )
+    assert explicit == ("20260824T000000Z", "", False)
+    resumed = launcher.resolve_run_identity(
+        launcher.Config(resume_run_id="20260824T000000Z"),
+        new_id="20260824T111111Z",
+    )
+    assert resumed == ("20260824T000000Z", "20260824T111111Z", True)
+    # The salt keeps the relaunch pod name distinct from the crashed pod's.
+    fresh_name = launcher.pod_name(resumed[0])
+    salted_name = launcher.pod_name(resumed[0], resumed[1])
+    assert fresh_name != salted_name
+    assert salted_name.startswith(fresh_name)
+
+
+def test_verify_snapshot_pins_gates_the_clone(tmp_path: Path) -> None:
+    pins_src = REPO_ROOT / "experiments/improved_midtraining/influence_steer/data_pins"
+    snapshot_pins = (
+        tmp_path / "experiments/improved_midtraining/influence_steer/data_pins"
+    )
+    snapshot_pins.mkdir(parents=True)
+    # Missing pin (the .gitignore-swallow trap) refuses pre-spend.
+    with pytest.raises(RuntimeError, match="missing from the source snapshot"):
+        launcher.verify_snapshot_pins(tmp_path)
+    for name in ("perdoc_scores_v2.npz", "sample_meta.jsonl"):
+        snapshot_pins.joinpath(name).write_bytes(
+            (pins_src / name).read_bytes()
+        )
+    launcher.verify_snapshot_pins(tmp_path)  # real bytes pass
+    snapshot_pins.joinpath("sample_meta.jsonl").write_text("corrupted\n")
+    with pytest.raises(RuntimeError, match="sha256"):
+        launcher.verify_snapshot_pins(tmp_path)
 
 
 def test_provision_plan_secure_first() -> None:

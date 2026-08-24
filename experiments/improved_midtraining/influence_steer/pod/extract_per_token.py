@@ -16,7 +16,12 @@ norm params, and oracle (a) would fail if they were skipped).
 
 Hard oracles, in order:
   (a) same-pass parity on ORACLE_DOCS_PER_POOL docs per pool: sum_t s_t
-      vs the flat dot(q_tilde, param.grad) from the SAME backward;
+      vs the flat dot(q_tilde, param.grad) from the SAME backward. NB the
+      two sides are not bit-twins: the hook path accumulates in fp32 while
+      autograd stores param.grad in bf16 (fp32 GEMM accumulation, bf16
+      storage rounding per element) — if the 1e-3 median trips on-pod,
+      suspect that quantization asymmetry first, not the algebra (and do
+      not loosen the tolerance without a measurement);
   (b) per-doc totals vs the pinned perdoc_scores_v2 on the full 750-doc
       overlap (rows are constructed identically, so gate2's measured
       cross-pass noise tiers apply);
@@ -35,6 +40,7 @@ import asyncio
 import dataclasses
 import hashlib
 import json
+import shutil
 import statistics
 import sys
 import time
@@ -156,12 +162,37 @@ class PerPositionInfluence:
 
         return hook
 
-    def _positional(self, tensor: Any) -> Any:
-        """[1, T, ...] -> accumulation dtype on dot_device with T at dim 0."""
-        if tensor.shape[0] != 1 or tensor.shape[1] != self._row_length:
+    def _fold_linear(self, name: str, tensor: Any) -> Any:
+        """Linear operands are strictly [1, T, F] -> [T, F] on dot_device.
+
+        Rank is asserted, not inferred: every manifest Linear (q/k/v/o/
+        gate/up/down) is called on the [batch, seq, features] stream.
+        """
+        if tensor.ndim != 3 or tensor.shape[0] != 1 or (
+            tensor.shape[1] != self._row_length
+        ):
             raise RuntimeError(
-                f"unexpected hook tensor shape {tuple(tensor.shape)} for row "
-                f"length {self._row_length}"
+                f"{name}: linear hook tensor {tuple(tensor.shape)} is not "
+                f"[1, {self._row_length}, F]"
+            )
+        return tensor[0].to(self.cfg.dot_device, self.dtype)
+
+    def _norm_operand(self, name: str, tensor: Any) -> Any:
+        """RMSNorm operands keep their layout; positions live at dim -2.
+
+        Both layouts transformers uses put the sequence axis second from
+        last: layer norms see [1, T, F] and Gemma3 q_norm/k_norm see
+        [1, num_heads, T, head_dim] (applied AFTER .transpose(1, 2)). The
+        branch is keyed on module kind + rank — NEVER on which dim happens
+        to equal the row length (num_heads == row_length is a real doc
+        shape and would silently swap heads for positions).
+        """
+        if tensor.ndim < 2 or tensor.shape[0] != 1 or (
+            tensor.shape[-2] != self._row_length
+        ):
+            raise RuntimeError(
+                f"{name}: rmsnorm hook tensor {tuple(tensor.shape)} does not "
+                f"carry the sequence axis ({self._row_length}) at dim -2"
             )
         return tensor[0].to(self.cfg.dot_device, self.dtype)
 
@@ -174,25 +205,25 @@ class PerPositionInfluence:
             if g is None:
                 raise RuntimeError(f"no grad_output for {name}")
             _, kind = self.modules[name]
-            x = self._positional(x)
-            g = self._positional(g)
             qt = self.qtilde[name]
             if kind == "linear":
+                x = self._fold_linear(name, x)  # [T, in]
+                g = self._fold_linear(name, g)  # [T, out]
                 for index, direction in enumerate(DIRECTIONS):
-                    z = self.torch.matmul(x, qt[direction].T)  # [T, ..., out]
-                    prod = (g * z).reshape(self._row_length, -1).sum(dim=1)
-                    self._acc[index] += prod
+                    z = self.torch.matmul(x, qt[direction].T)  # [T, out]
+                    self._acc[index] += (g * z).sum(dim=1)
             else:
-                eps = float(getattr(module, "eps", 1e-6))
+                x = self._norm_operand(name, x)  # [..., T, D], T at dim -2
+                g = self._norm_operand(name, g)
                 xhat = x * self.torch.rsqrt(
-                    x.pow(2).mean(dim=-1, keepdim=True) + eps
+                    x.pow(2).mean(dim=-1, keepdim=True) + module.eps
                 )
-                base = g * xhat  # [T, ..., dim]
+                base = g * xhat
                 for index, direction in enumerate(DIRECTIONS):
-                    prod = (base * qt[direction]).reshape(
+                    prod = (base * qt[direction]).movedim(-2, 0)
+                    self._acc[index] += prod.reshape(
                         self._row_length, -1
                     ).sum(dim=1)
-                    self._acc[index] += prod
 
         return hook
 
@@ -308,11 +339,20 @@ def _run(cfg: ExtractConfig) -> dict[str, Any]:
     started = time.time()
 
     if common.stage_remote_files(env.run_id, "extract"):
-        common.log("extract evidence already on HF for this run — resuming past it")
-        common.fetch_stage_file(
-            env.run_id, "extract", contracts.LABELS_PARQUET, stage_dir
+        # Only a receipt with status == "complete" (written strictly after
+        # the oracles pass) may be resumed past.
+        receipt = common.require_resumed_stage_complete(
+            env.run_id, "extract", env.scratch_root / "resume"
         )
-        return {"stage": "extract", "status": "resumed_from_hub"}
+        common.log("extract already complete on HF for this run — resuming")
+        fetched = common.fetch_stage_file(
+            env.run_id, "extract", contracts.LABELS_PARQUET,
+            env.scratch_root / "resume",
+        )
+        # Place it where train_surrogate reads it (flat under the stage dir).
+        shutil.copy2(fetched, stage_dir / contracts.LABELS_PARQUET)
+        return {"stage": "extract", "status": "resumed_from_hub",
+                "resumed_receipt": receipt}
 
     prep_dir = env.evidence_root / "prep"
     blocks_manifest = json.loads(

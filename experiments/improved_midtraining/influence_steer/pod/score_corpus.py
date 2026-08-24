@@ -179,8 +179,14 @@ def _run(cfg: ScoreConfig) -> dict[str, Any]:
     started = time.time()
 
     if common.stage_remote_files(env.run_id, "score"):
-        common.log("score evidence already on HF for this run — nothing to do")
-        return {"stage": "score", "status": "resumed_from_hub"}
+        # A NO-GO score run uploads its diagnostics too; only a "complete"
+        # receipt may end a relaunch green.
+        receipt = common.require_resumed_stage_complete(
+            env.run_id, "score", env.scratch_root / "resume"
+        )
+        common.log("score already complete on HF for this run — nothing to do")
+        return {"stage": "score", "status": "resumed_from_hub",
+                "resumed_receipt": receipt}
 
     surrogate_dir = env.evidence_root / "surrogate"
     selection_path = surrogate_dir / "selection.json"

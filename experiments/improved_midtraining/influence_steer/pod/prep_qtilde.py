@@ -177,6 +177,11 @@ async def main(cfg: PrepConfig) -> dict[str, Any]:
     stage_dir = env.stage_dir("prep")
     started = time.time()
 
+    # Resume story (deliberately no HF probe, unlike the later stages): the
+    # big prep artifacts are pod-local by design — 86 GB of q_tilde blocks
+    # never ride the Hub, only their shas do — so cross-pod resume is
+    # impossible. Same-pod re-runs are cheap because rclone_pull reuses
+    # byte-complete downloads and the block write is deterministic.
     pull_task = asyncio.create_task(_pull_inputs(env.scratch_root))
     ckpt_dir, manifest = await asyncio.to_thread(_load_manifest_from_ckpt, env)
     u0_path, metric_path = await pull_task

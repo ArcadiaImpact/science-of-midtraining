@@ -2,9 +2,11 @@
 
 Verbatim copies of the gate2 per-doc oracle artifacts. These ride to the
 phase-A pod as inputs: `extract_per_token.py` hard-gates its per-doc totals
-against `perdoc_scores_v2.npz` (Spearman >= 0.99 per direction on the
-non-truncated overlap) and builds its doc sample as a superset of the docs
-listed in `sample_meta.jsonl`.
+against `perdoc_scores_v2.npz` (Spearman >= 0.99 per direction on the FULL
+750-doc overlap — extraction rows replicate the pack=False truncation at
+8191 tokens, so the 2 `truncated_at_8192` docs compare exactly too) and
+builds its doc sample as a superset of the docs listed in
+`sample_meta.jsonl`.
 
 | file | sha256 | source |
 |---|---|---|

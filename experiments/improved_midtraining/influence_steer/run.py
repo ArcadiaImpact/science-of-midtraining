@@ -58,6 +58,10 @@ EXTRA_PODDEPS = "'peft>=0.15' scipy pyarrow seaborn pandas matplotlib"
 @dataclass(frozen=True)
 class Config:
     run_id: str = ""
+    # Relaunch an earlier run_id: skips the evidence-collision refusal so
+    # the pod's per-stage HF resume (receipt-status-checked) can skip
+    # already-published phases instead of repaying the 2 h GCS pull.
+    resume_run_id: str = ""
     out_root: str = "experiments/improved_midtraining/influence_steer/runs"
     max_lifetime_hours: int = 12
     container_disk_gb: int = 500
@@ -67,6 +71,13 @@ class Config:
     def __post_init__(self) -> None:
         if self.run_id:
             base.validate_run_id(self.run_id)
+        if self.resume_run_id:
+            base.validate_run_id(self.resume_run_id)
+        if self.run_id and self.resume_run_id:
+            raise ValueError(
+                "set run_id (fresh launch) OR resume_run_id (relaunch), "
+                "not both"
+            )
         # 129 GB pull + 86 GB blocks + 25 GB ckpt + caches: 500 pinned.
         if self.container_disk_gb != 500:
             raise ValueError("container_disk_gb is pinned to 500")
@@ -79,8 +90,23 @@ def provision_plan() -> tuple[tuple[str, str], ...]:
     return PROVISION_RUNGS * PROVISION_ROUNDS
 
 
-def pod_name(run_id: str) -> str:
-    return f"bellhop-infsteer-{run_id.lower()}"
+def pod_name(run_id: str, salt: str = "") -> str:
+    # A relaunch salts the name so the allocation observer's duplicate-name
+    # check cannot trip over the crashed run's EXITED pod.
+    suffix = f"-r{salt.lower()}" if salt else ""
+    return f"bellhop-infsteer-{run_id.lower()}{suffix}"
+
+
+def resolve_run_identity(cfg: Config, *, new_id: str | None = None) -> tuple[
+    str, str, bool
+]:
+    """(run_id, pod-name salt, resuming). Fresh launches mint/take a run_id
+    with no salt; a relaunch reuses the old run_id (so the pod's per-stage
+    HF resume keys line up) and salts the pod/local-out names."""
+    minted = new_id or base.utc_run_id()
+    if cfg.resume_run_id:
+        return cfg.resume_run_id, minted, True
+    return (cfg.run_id or minted), "", False
 
 
 def result_subdir(run_id: str) -> str:
@@ -166,6 +192,36 @@ def is_host_spec_failure(remote_exit: int | None, log_tail: str) -> bool:
     if remote_exit == host_probe.HOST_SPEC_EXIT_CODE:
         return True
     return host_probe.HOST_SPEC_SENTINEL in (log_tail or "")
+
+
+def verify_snapshot_pins(snapshot: Path) -> None:
+    """The data pins must ride the CLONE the pod receives, byte-exact.
+
+    Guards the ".gitignore swallowed a pin" class of trap: the worktree
+    copy existing proves nothing — the pod reads the snapshot, so the
+    snapshot is what gets sha-gated here, pre-spend (dry run included).
+    """
+    pins_dir = (
+        snapshot / "experiments" / "improved_midtraining" / "influence_steer"
+        / "data_pins"
+    )
+    for name, expected in (
+        ("perdoc_scores_v2.npz", contracts.PERDOC_NPZ_SHA256),
+        ("sample_meta.jsonl", contracts.PERDOC_SAMPLE_META_SHA256),
+    ):
+        path = pins_dir / name
+        if not path.is_file():
+            raise RuntimeError(
+                f"data pin {name} is missing from the source snapshot "
+                f"({path}) — not committed, or re-swallowed by .gitignore? "
+                "The pod would crash at load_perdoc_oracle() hours in."
+            )
+        observed = contracts.sha256_file(path)
+        if observed != expected:
+            raise RuntimeError(
+                f"snapshot data pin {name} sha256 {observed} != pinned "
+                f"{expected}"
+            )
 
 
 # ------------------------------------------------------------- preflights
@@ -336,6 +392,7 @@ async def _launch_pod(
     *,
     cfg: Config,
     run_id: str,
+    salt: str,
     out: Path,
     snapshot: Path,
     source: dict[str, Any],
@@ -347,7 +404,7 @@ async def _launch_pod(
     import bellhop
 
     spec = bellhop.RunSpec(
-        slug=f"infsteer-{run_id.lower()}",
+        slug=f"infsteer-{run_id.lower()}{('-r' + salt.lower()) if salt else ''}",
         codebase=str(snapshot),
         setup=pod_setup(),
         run=pod_command(),
@@ -390,7 +447,7 @@ async def _launch_pod(
             provision_timeout=timedelta(minutes=20),
             ready_timeout=timedelta(minutes=20),
             max_lifetime=timedelta(hours=cfg.max_lifetime_hours),
-            name=pod_name(run_id),
+            name=pod_name(run_id, salt),
             ssh_key=ssh_key,
         )
         print(f"provisioning {GPU_COUNT}x{gpu} {cloud} ({attempt}/{len(plan)})",
@@ -398,7 +455,7 @@ async def _launch_pod(
         observer = asyncio.create_task(
             _observe_allocation(
                 api_key=api_key,
-                expected_name=pod_name(run_id),
+                expected_name=pod_name(run_id, salt),
                 destination=out / "allocation.json",
             )
         )
@@ -465,12 +522,14 @@ async def _launch_pod(
 async def launch(cfg: Config) -> dict[str, Any]:
     from huggingface_hub import HfApi
 
-    run_id = base.validate_run_id(cfg.run_id or base.utc_run_id())
+    run_id, salt, resuming = resolve_run_identity(cfg)
+    base.validate_run_id(run_id)
     source = base.source_identity()
     remote = base.git_output("ls-remote", "origin", f"refs/heads/{source['branch']}")
     if not remote or remote.split()[0] != source["commit"]:
         raise RuntimeError(f"push exact source commit {source['commit']} first")
-    out = REPO_ROOT / cfg.out_root / run_id
+    out_leaf = f"{run_id}-resume-{salt}" if resuming else run_id
+    out = REPO_ROOT / cfg.out_root / out_leaf
     if out.exists():
         raise FileExistsError(f"refusing to reuse output directory: {out}")
 
@@ -491,9 +550,18 @@ async def launch(cfg: Config) -> dict[str, Any]:
     collisions = sorted(
         path for path in evidence_files if path.startswith(f"runs/{run_id}/")
     )
-    if collisions:
+    if collisions and not resuming:
         raise RuntimeError(
-            f"refusing existing evidence prefix runs/{run_id}: {collisions}"
+            f"refusing existing evidence prefix runs/{run_id}: {collisions} "
+            "(use resume_run_id=... to relaunch this run deliberately)"
+        )
+    if resuming:
+        # The whole point of a relaunch: prior stage evidence lets the pod
+        # skip completed phases (each resume re-checks receipt status).
+        print(
+            f"resuming runs/{run_id}: {len(collisions)} existing evidence "
+            "files on the Hub",
+            flush=True,
         )
 
     api_key = base.runpod_api_key()
@@ -502,6 +570,7 @@ async def launch(cfg: Config) -> dict[str, Any]:
 
     out.mkdir(parents=True)
     snapshot, source_manifest = base.prepare_source_snapshot(out, source["commit"])
+    verify_snapshot_pins(snapshot)
     launch_dir = out / "launch"
     launch_dir.mkdir(parents=True)
     launch_config = {
@@ -524,6 +593,8 @@ async def launch(cfg: Config) -> dict[str, Any]:
         "gcs_objects": {uri: size for uri, size in gcs_sizes.items()},
         "hf_preflight": hf_report,
         # Names only — the values ship exclusively as pod env.
+        "resuming": resuming,
+        "pod_name": pod_name(run_id, salt),
         "credential_vars": sorted(cred_env),
         "created_at": datetime.now(UTC).isoformat(timespec="seconds"),
     }
@@ -549,7 +620,8 @@ async def launch(cfg: Config) -> dict[str, Any]:
         repo_type="dataset",
         private=contracts.EVIDENCE_REPO_PRIVATE,
     )
-    launch_evidence = _upload_evidence(api, launch_dir, run_id, "launch")
+    launch_label = f"relaunch-{salt.lower()}" if resuming else "launch"
+    launch_evidence = _upload_evidence(api, launch_dir, run_id, launch_label)
 
     error_text: str | None = None
     result: dict[str, Any] | None = None
@@ -557,6 +629,7 @@ async def launch(cfg: Config) -> dict[str, Any]:
         result = await _launch_pod(
             cfg=cfg,
             run_id=run_id,
+            salt=salt,
             out=out,
             snapshot=snapshot,
             source=source,
@@ -569,7 +642,7 @@ async def launch(cfg: Config) -> dict[str, Any]:
         error_text = f"{type(error).__name__}: {error}"
         raise
     finally:
-        orphans = await _active_named_pods(api_key, pod_name(run_id))
+        orphans = await _active_named_pods(api_key, pod_name(run_id, salt))
         artifacts.atomic_json(
             out / "orphan_audit.json",
             {
@@ -603,8 +676,12 @@ async def launch(cfg: Config) -> dict[str, Any]:
         artifacts.atomic_json(out / "launcher_receipt.json", receipt)
         shutil.copy2(out / "launcher_receipt.json",
                      terminal / "launcher_receipt.json")
+        terminal_label = (
+            f"relauncher_terminal-{salt.lower()}" if resuming
+            else "launcher_terminal"
+        )
         try:
-            _upload_evidence(api, terminal, run_id, "launcher_terminal")
+            _upload_evidence(api, terminal, run_id, terminal_label)
         except Exception as upload_error:  # noqa: BLE001
             print(f"terminal upload failed: {upload_error}", flush=True)
     return receipt

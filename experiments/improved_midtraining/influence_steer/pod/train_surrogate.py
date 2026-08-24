@@ -30,6 +30,7 @@ import asyncio
 import dataclasses
 import json
 import random
+import shutil
 import statistics
 import sys
 import time
@@ -373,10 +374,19 @@ def _run(cfg: SurrogateConfig) -> dict[str, Any]:
     started = time.time()
 
     if common.stage_remote_files(env.run_id, "surrogate"):
-        common.log("surrogate evidence already on HF for this run — resuming")
-        for name in ("selection.json",):
-            common.fetch_stage_file(env.run_id, "surrogate", name, stage_dir)
-        return {"stage": "surrogate", "status": "resumed_from_hub"}
+        # NO-GO surrogate receipts upload their evidence too — the receipt
+        # status gate keeps a relaunch from blessing one green.
+        receipt = common.require_resumed_stage_complete(
+            env.run_id, "surrogate", env.scratch_root / "resume"
+        )
+        common.log("surrogate already complete on HF for this run — resuming")
+        fetched = common.fetch_stage_file(
+            env.run_id, "surrogate", "selection.json",
+            env.scratch_root / "resume",
+        )
+        shutil.copy2(fetched, stage_dir / "selection.json")
+        return {"stage": "surrogate", "status": "resumed_from_hub",
+                "resumed_receipt": receipt}
 
     labels_path = env.evidence_root / "extract" / contracts.LABELS_PARQUET
     label_rows = common.read_parquet_rows(labels_path)

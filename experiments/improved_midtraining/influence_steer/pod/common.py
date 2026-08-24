@@ -131,6 +131,8 @@ def stage_remote_files(run_id: str, label: str) -> list[str]:
 
 
 def fetch_stage_file(run_id: str, label: str, name: str, dest_dir: Path) -> Path:
+    """NB: returns the real download path — hf_hub_download(local_dir=...)
+    preserves the repo-relative structure under dest_dir."""
     from huggingface_hub import hf_hub_download
 
     return Path(
@@ -142,6 +144,31 @@ def fetch_stage_file(run_id: str, label: str, name: str, dest_dir: Path) -> Path
             local_dir=dest_dir,
         )
     )
+
+
+def require_resumed_stage_complete(
+    run_id: str, stage: str, scratch_dir: Path
+) -> dict[str, Any]:
+    """Resume gate: a stage may only be skipped if its PUBLISHED receipt says
+    status == "complete".
+
+    Mere existence of evidence files is not enough — NO-GO stages upload
+    their evidence too (deliberately, for post-mortems), and a relaunch must
+    re-execute them, never bless them green.
+    """
+    receipt_path = fetch_stage_file(
+        run_id, stage, contracts.STAGE_RECEIPTS[stage], scratch_dir
+    )
+    receipt = json.loads(receipt_path.read_text(encoding="utf-8"))
+    status = receipt.get("status")
+    if status != "complete":
+        raise RuntimeError(
+            f"runs/{run_id}/pod/{stage} exists on the Hub but its receipt "
+            f"status is {status!r} — refusing to resume past it (a NO-GO "
+            "must stop the pipeline on relaunch too, not get blessed by "
+            "evidence existence)"
+        )
+    return receipt
 
 
 # ---------------------------------------------------------------- GCS pull
