@@ -131,7 +131,7 @@ def _build_run(tmp_path, monkeypatch, *, name: str, kind: str, dataset: Dataset,
     monkeypatch.setenv("SCIMT_ALLOW_DIRTY", "1")
     state = _trainer_state(step, lrs)
 
-    async def fake_run_stage(self, rendered, out_dir, stage):
+    async def fake_run_stage(self, rendered, out_dir, stage, *, run_name=None):
         ck = out_dir / "checkpoints" / f"checkpoint-{step}"
         write_checkpoint(ck)
         (ck / "trainer_state.json").write_text(json.dumps(state))
@@ -265,7 +265,7 @@ def chain(tmp_path, monkeypatch) -> Chain:
 
 
 def _install_tiny_loaders(monkeypatch):
-    def load_model(checkpoint_dir, *, dtype, device):
+    def load_model(checkpoint_dir, *, dtype, device, gradient_checkpointing=False):
         model = TinyLM().float()
         model.load_state_dict(
             load_file(str(Path(checkpoint_dir) / "model.safetensors"))
@@ -457,6 +457,7 @@ def test_runner_and_cli_modules_import_torch_free(monkeypatch):
 def test_phase_registry_names_every_planned_phase():
     assert set(runner.PHASES) == {
         "estimate-adam", "fit-factors", "compute-rows", "build-queries", "score-source",
+        "score-source-streaming",
         "build-directions", "sweep-jvp", "summarize", "dry-run",
     }
 
@@ -649,6 +650,58 @@ def test_dry_run_reports_checkpoint_local_adam_work_and_storage(
     assert estimate["peak_selected_working_bytes_upper_bound"] == 160 * 24
     assert set(estimate["stage_artifacts"]) == {"mid", "sft"}
     assert not Path(config.output_dir).exists()
+
+
+def test_dry_run_accepts_valid_ekfac_adam_and_warns_on_pending_moments(
+    chain, monkeypatch
+):
+    """dry_run must mirror _require_scorable_method: a config score-source
+    accepts reports NO blockers; not-yet-run estimate-adam is a warning."""
+    monkeypatch.setattr(runner, "_load_tokenizer", lambda path: ToyTokenizer())
+    overrides = _ekfac_adam_overrides(chain)
+    overrides["adam_moment_estimator"].update(
+        dataset=chain.payload["stages"][1]["dataset"], objective="sft"
+    )
+    config, _ = chain.config(**overrides)
+    report = _run(runner.dry_run(config))
+    assert report["blockers"] == []
+    assert any("estimate-adam" in warning for warning in report["warnings"])
+    fit_previews = [
+        entry for entry in report["planned_identities"]
+        if entry["output"].startswith("factors/")
+    ]
+    assert fit_previews
+    for entry in fit_previews:
+        descriptor = entry["identity"]["basis_descriptor"]
+        assert descriptor["coordinates"] == "adam_stage_local"
+    paired = Path(config.output_dir) / "adam_moments" / "paired_batches.json"
+    paired.parent.mkdir(parents=True, exist_ok=True)
+    paired.write_text("{}", encoding="utf-8")
+    report = _run(runner.dry_run(config))
+    assert report["blockers"] == []
+    assert report["warnings"] == []
+
+
+def test_dry_run_blocks_adam_basis_over_raw_ekfac_curvature(
+    chain, monkeypatch
+):
+    monkeypatch.setattr(runner, "_load_tokenizer", lambda path: ToyTokenizer())
+    overrides = _estimated_adam_overrides(
+        chain,
+        dataset=chain.payload["stages"][1]["dataset"],
+        objective="sft",
+    )
+    overrides["method"] = {
+        "basis": "adam",
+        "curvature": "ekfac",
+        "damping_sweep": [0.1],
+    }
+    config, _ = chain.config(**overrides)
+    report = _run(runner.dry_run(config))
+    assert any(
+        "basis 'adam' requires method.curvature 'fisher'" in blocker
+        for blocker in report["blockers"]
+    )
 
 
 def test_dry_run_blocks_checkpoint_without_safetensors_signature(chain):
@@ -2027,6 +2080,79 @@ def test_summarize_honors_allow_partial_saved_from_the_start(chain, monkeypatch)
     assert summary["sections"]["rows"]["counts"]["mid"] > 0
 
 
+def test_summarize_accepts_complete_streaming_scores(chain, monkeypatch):
+    """Streaming runs satisfy summarize without row shards or materialized
+    scores: same numbers as the materialized summary, labeled streaming."""
+    import shutil
+
+    config, _ = _complete_chain(chain, monkeypatch)
+    _run(runner.score_source(config))
+    materialized_summary = _run(runner.summarize(config))
+    # Materialized-path summaries are byte-unchanged: no source labels.
+    assert "source" not in materialized_summary["sections"]["scores"]
+    assert "source" not in materialized_summary["sections"]["rows"]
+
+    _run(runner.score_source_streaming(config))
+    layout = runner.run_layout(config.output_dir)
+    # Reduce the layout to what a streaming-only run produces: no
+    # materialized scores, no row shards.
+    shutil.rmtree(layout.scores)
+    for stage_dir in layout.rows.iterdir():
+        shutil.rmtree(stage_dir)
+
+    summary = _run(runner.summarize(config))
+    assert summary["complete"] is True
+    scores = summary["sections"]["scores"]
+    assert scores["complete"] is True
+    assert scores["source"] == "streaming"
+    assert scores["missing"] == []
+    assert (
+        scores["counts"]
+        == materialized_summary["sections"]["scores"]["counts"]
+    )
+    rows_section = summary["sections"]["rows"]
+    assert rows_section["complete"] is True
+    assert "streaming" in rows_section["source"]
+    assert rows_section["counts"] == {name: 0 for name in ("mid", "sft")}
+
+
+def test_summarize_refuses_incomplete_streaming_scores(chain, monkeypatch):
+    """A genuinely partial streaming artifact is still a refusal — the
+    streaming fallback only fires on a complete committed manifest."""
+    import shutil
+
+    config, _ = _complete_chain(chain, monkeypatch)
+    _run(runner.score_source_streaming(config))
+    layout = runner.run_layout(config.output_dir)
+    shutil.rmtree(layout.scores, ignore_errors=True)
+    for stage_dir in layout.rows.iterdir():
+        shutil.rmtree(stage_dir)
+    completeness = json.loads(
+        (layout.streaming_scores / runner._SCORE_MANIFEST_FILE).read_text()
+    )
+    first = sorted(completeness["entries"])[0]
+    (layout.streaming_scores / completeness["entries"][first]["file"]).unlink()
+    with pytest.raises(runner.RunnerError, match="allow_partial"):
+        _run(runner.summarize(config))
+
+
+def test_summarize_streaming_only_run_without_compute_rows(chain, monkeypatch):
+    """The streaming-only phase chain (no compute-rows, no score-source)
+    summarizes complete — the exact pipeline the pod driver runs at full
+    coverage, where materialized row shards are infeasible."""
+    _install_tiny_loaders(monkeypatch)
+    config, _ = chain.config()
+    _run(runner.fit_factors(config))
+    _run(runner.build_queries(config))
+    if config.adam_moment_estimator is not None:
+        _run(runner.estimate_adam(config))
+    _run(runner.score_source_streaming(config))
+    summary = _run(runner.summarize(config))
+    assert summary["complete"] is True
+    assert summary["sections"]["scores"]["source"] == "streaming"
+    assert summary["sections"]["rows"]["complete"] is True
+
+
 def test_run_ledger_records_and_refuses_drift(chain, monkeypatch):
     _install_tiny_loaders(monkeypatch)
     config, _ = chain.config()
@@ -2095,3 +2221,1443 @@ def test_artifact_identities_carry_full_provenance(chain, monkeypatch):
                                          "rows_per_shard": 64})
     again = _run(runner.compute_rows(regeometried))
     assert all(o.skipped for o in again.outputs)
+
+
+# ------------------------------------------------- Adam-conditioned EK-FAC --
+
+
+class _MethodStub:
+    def __init__(self, curvature, basis, logra=None):
+        self.curvature = curvature
+        self.basis = basis
+        self.logra = logra
+
+
+class _ConfigStub:
+    def __init__(self, curvature, basis, logra=None):
+        self.method = _MethodStub(curvature, basis, logra)
+
+
+def test_scorable_method_refusal_matrix():
+    # basis adam over raw-fitted EK-FAC: refused, message points at the
+    # conditioned mode. basis fisher: refused, and the message must NOT
+    # point at ekfac_adam (which requires basis adam and would refuse in
+    # turn) — the Fisher-diagonal conditioned analogue is out of scope.
+    with pytest.raises(runner.RunnerError, match="ekfac_adam"):
+        runner._require_scorable_method(_ConfigStub("ekfac", "adam"))
+    with pytest.raises(runner.RunnerError, match="out of scope"):
+        runner._require_scorable_method(_ConfigStub("ekfac", "fisher"))
+    # conditioned factors only consumable through basis adam.
+    for basis in ("raw", "fisher"):
+        with pytest.raises(runner.RunnerError, match="basis 'adam'"):
+            runner._require_scorable_method(_ConfigStub("ekfac_adam", basis))
+    # unchanged refusals.
+    with pytest.raises(runner.RunnerError, match="basis 'ekfac'"):
+        runner._require_scorable_method(_ConfigStub("ekfac", "ekfac"))
+    with pytest.raises(runner.RunnerError, match="[Gg][Gg][Nn]"):
+        runner._require_scorable_method(_ConfigStub("ggn", "raw"))
+    # the three supported combos pass.
+    runner._require_scorable_method(_ConfigStub("ekfac", "raw"))
+    runner._require_scorable_method(_ConfigStub("fisher", "adam"))
+    runner._require_scorable_method(_ConfigStub("fisher", "fisher"))
+    runner._require_scorable_method(_ConfigStub("ekfac_adam", "adam"))
+
+
+def _ekfac_adam_yaml_config(tmp_path, *, method_extra=None):
+    payload = {
+        "stages": [
+            {
+                "name": "midtrain",
+                "checkpoint": "ckpts/mid",
+                "dataset": "data/mid.jsonl",
+                "objective": "midtraining",
+                "n_examples": 64,
+                "weight_decay": 0.0,
+            },
+            {
+                "name": "sft",
+                "checkpoint": "ckpts/sft",
+                "dataset": "data/sft.jsonl",
+                "objective": "sft",
+                "lr_steps": 1.0,
+                "lr_steps_provenance": "test",
+                "n_examples": 8,
+                "weight_decay": 0.0,
+            },
+        ],
+        "query": {
+            "checkpoint": "ckpts/sft",
+            "dataset": "data/query.jsonl",
+            "objective": "sft",
+        },
+        "method": {
+            "curvature": "ekfac_adam",
+            "basis": "adam",
+            "conditioning_damping": 0.25,
+            **(method_extra or {}),
+        },
+        "adam_moment_estimator": {
+            "dataset": "data/mid.jsonl",
+            "objective": "midtraining",
+            "num_batches": 2,
+            "global_batch_size": 2,
+            "micro_batch_size": 1,
+            "beta2": 0.999,
+            "optimizer_epsilon": 1e-8,
+            "max_grad_norm": 1.0,
+            "seed": 7,
+        },
+        "output_dir": str(tmp_path / "attr-run"),
+    }
+    path = tmp_path / "attribution.yaml"
+    path.write_text(yaml.safe_dump(payload), encoding="utf-8")
+    return load_attribution_config(path)
+
+
+def _old_mode_yaml_config(tmp_path):
+    payload = {
+        "stages": [
+            {
+                "name": "midtrain",
+                "checkpoint": "ckpts/mid",
+                "dataset": "data/mid.jsonl",
+                "objective": "midtraining",
+                "n_examples": 64,
+                "weight_decay": 0.0,
+            },
+        ],
+        "query": {
+            "checkpoint": "ckpts/mid",
+            "dataset": "data/query.jsonl",
+            "objective": "sft",
+        },
+        "method": {"curvature": "ekfac", "basis": "raw"},
+        "output_dir": str(tmp_path / "attr-run"),
+    }
+    path = tmp_path / "attribution-old.yaml"
+    path.write_text(yaml.safe_dump(payload), encoding="utf-8")
+    return load_attribution_config(path)
+
+
+def _fisher_adam_yaml_config(tmp_path):
+    payload = {
+        "stages": [
+            {
+                "name": "midtrain",
+                "checkpoint": "ckpts/mid",
+                "dataset": "data/mid.jsonl",
+                "objective": "midtraining",
+                "n_examples": 64,
+                "weight_decay": 0.0,
+            },
+        ],
+        "query": {
+            "checkpoint": "ckpts/mid",
+            "dataset": "data/query.jsonl",
+            "objective": "sft",
+        },
+        "method": {"curvature": "fisher", "basis": "adam"},
+        "adam_moment_estimator": {
+            "dataset": "data/mid.jsonl",
+            "objective": "midtraining",
+            "num_batches": 2,
+            "global_batch_size": 4,
+            "micro_batch_size": 1,
+            "beta2": 0.999,
+            "optimizer_epsilon": 1.0e-8,
+            "max_grad_norm": 1.0,
+            "seed": 7,
+        },
+        "output_dir": str(tmp_path / "attr-run"),
+    }
+    path = tmp_path / "attribution-fisher-adam.yaml"
+    path.write_text(yaml.safe_dump(payload), encoding="utf-8")
+    return load_attribution_config(path)
+
+
+# sha256 of runner._canonical(scope) for the two pre-ekfac_adam mode
+# fixtures above. These literals must NEVER change: they are the byte-level
+# identity of every committed factor/row/score artifact fitted before (and
+# after) the ekfac_adam extension. A change here means committed artifacts
+# on disk stop validating — that is a breaking release, not a test update.
+_OLD_MODE_SCOPE_SHA256 = {
+    ("ekfac_raw", "fit-factors"):
+        "5f3a0f4b4f39ff9e5a27feef75eb5759ea8053a87b6b6e693427933951f114f9",
+    ("ekfac_raw", "compute-rows"):
+        "01f470cb80ffd7956579b3b9d7435bc2b1d7aa194d9243bee5c6a7155c1c08c9",
+    ("ekfac_raw", "score-source"):
+        "fc83f7362e32aee882921786ac774db537aab56d7de7d2d40fb4ffea6b93826d",
+    ("fisher_adam", "estimate-adam"):
+        "7f3ef6d1e102be2a8d68cca84d4707e6156e7079b8f13dcfeb691ad90a25e490",
+    ("fisher_adam", "fit-factors"):
+        "06ad79dad1e2515eb64fe85c364aeb79dd428700cedae91ad3841f3c256406f7",
+    ("fisher_adam", "compute-rows"):
+        "01f470cb80ffd7956579b3b9d7435bc2b1d7aa194d9243bee5c6a7155c1c08c9",
+    ("fisher_adam", "score-source"):
+        "f250127fcedf2647250cf0e17aa888997b202ffeb22028e2ef61da7ab4d933c5",
+}
+
+
+def test_scoped_config_old_modes_unchanged_by_conditioning_fields(tmp_path):
+    """Artifact-compat regression: old-mode scoped slices must stay
+    BYTE-identical (golden sha256 pins, not just key absence), or every
+    committed factor/score artifact on disk would be invalidated."""
+    import hashlib
+
+    configs = {
+        "ekfac_raw": _old_mode_yaml_config(tmp_path),
+        "fisher_adam": _fisher_adam_yaml_config(tmp_path),
+    }
+    for (label, phase), expected in _OLD_MODE_SCOPE_SHA256.items():
+        config = configs[label]
+        stage = "midtrain" if phase != "score-source" else None
+        scope = runner._scoped_config(config, phase, stage)
+        assert "conditioning_damping" not in json.dumps(scope), (label, phase)
+        digest = hashlib.sha256(
+            runner._canonical(scope).encode("utf-8")
+        ).hexdigest()
+        assert digest == expected, (
+            f"{label}/{phase} scoped-config bytes changed — this invalidates "
+            "committed artifacts; see _OLD_MODE_SCOPE_SHA256"
+        )
+
+
+def test_scoped_config_ekfac_adam_binds_moment_contract(tmp_path):
+    config = _ekfac_adam_yaml_config(tmp_path)
+    fit_scope = runner._scoped_config(config, "fit-factors", "midtrain")
+    assert fit_scope["conditioning_damping"] == 0.25
+    assert fit_scope["adam_moment_estimator"]["seed"] == 7
+    score_scope = runner._scoped_config(config, "score-source")
+    assert score_scope["method"]["conditioning_damping"] == 0.25
+
+
+def test_fit_factors_ekfac_adam_requires_committed_estimates(tmp_path):
+    config = _ekfac_adam_yaml_config(tmp_path)
+    with pytest.raises(runner.RunnerError, match="estimate-adam first"):
+        _run(runner.fit_factors(config))
+
+
+def test_fit_factors_ekfac_adam_proceeds_past_the_old_seam(tmp_path):
+    # T3 replaced the "not wired yet" seam: with paired batches present the
+    # phase now proceeds into real stage resolution (and fails there on this
+    # fixture's fake checkpoint paths), never with the seam refusal.
+    config = _ekfac_adam_yaml_config(tmp_path)
+    paired = Path(config.output_dir) / "adam_moments" / "paired_batches.json"
+    paired.parent.mkdir(parents=True, exist_ok=True)
+    paired.write_text("{}", encoding="utf-8")
+    with pytest.raises(Exception) as excinfo:
+        _run(runner.fit_factors(config))
+    assert "not wired yet" not in str(excinfo.value)
+
+
+# ------------------------------------------------- ekfac_adam wiring (T3/T4)
+_COND_DAMPING = 0.25
+
+
+def _ekfac_adam_overrides(chain) -> dict:
+    overrides = _estimated_adam_overrides(chain)
+    overrides["method"] = {
+        "basis": "adam",
+        "curvature": "ekfac_adam",
+        "conditioning_damping": _COND_DAMPING,
+        "damping_sweep": [0.0, 0.3],
+    }
+    return overrides
+
+
+def _install_conditioned_fit_stub(monkeypatch):
+    """Stand in for the T2 conditioned fit against T2's FINAL interface
+    (``EKFACConditioner`` + ``load_ekfac(expected_mode=...)``): run the REAL
+    raw Kronfluence fit, then stamp the conditioned-mode meta schema so every
+    runner-side contract downstream of the fit is exercised for real. The
+    lambda values themselves are NOT conditioned — numerically irrelevant
+    here because the manual reference chains load the same factor bytes."""
+    import scimt.data_attribution.ekfac as ekfac_mod
+
+    mode_aware_load = ekfac_mod.load_ekfac
+    real_fit = ekfac_mod.fit_ekfac
+    calls: list[dict] = []
+
+    def conditioned_fit(model, dataset, manifest, cfg, output_dir,
+                        conditioner=None):
+        assert conditioner is not None, "runner must pass a conditioner"
+        values = conditioner.values
+        provenance = conditioner.provenance
+        assert values.dtype == torch.float32
+        assert int(values.numel()) == manifest.included_numel
+        assert bool(torch.isfinite(values).all()) and bool((values > 0).all())
+        assert provenance["kind"] == "adam_stage_local"
+        assert provenance["conditioning_damping"] == _COND_DAMPING
+        assert cfg["use_empirical_fisher"] is True
+        calls.append({"provenance": dict(provenance)})
+        real_fit(model, dataset, manifest, cfg, output_dir)
+        meta_path = Path(output_dir) / "ekfac_meta.json"
+        meta = json.loads(meta_path.read_text(encoding="utf-8"))
+        meta["preconditioner"] = {
+            "kind": provenance["kind"],
+            "statistic": provenance["statistic"],
+            "moment_identity_digest": provenance["moment_identity_digest"],
+            "optimizer_epsilon": provenance["optimizer_epsilon"],
+            "conditioning_damping": provenance["conditioning_damping"],
+        }
+        meta["lambda_fit"] = "scimt_conditioned_per_item_v1"
+        meta["rank1_residuals"] = {}
+        meta["samples_lambda"] = cfg["samples"]
+        meta_path.write_text(json.dumps(meta), encoding="utf-8")
+        return mode_aware_load(
+            output_dir, manifest, expected_mode="ekfac_adam"
+        )
+
+    monkeypatch.setattr(ekfac_mod, "fit_ekfac", conditioned_fit)
+    return calls
+
+
+def _complete_ekfac_adam_chain(chain, monkeypatch):
+    pytest.importorskip("kronfluence")
+    _install_tiny_loaders(monkeypatch)
+    calls = _install_conditioned_fit_stub(monkeypatch)
+    config, path = chain.config(**_ekfac_adam_overrides(chain))
+    _run(runner.estimate_adam(config))
+    _run(runner.fit_factors(config))
+    _run(runner.compute_rows(config))
+    _run(runner.build_queries(config))
+    return config, path, calls
+
+
+def _committed_moment_scale(layout, stage_name: str) -> torch.Tensor:
+    directory = layout.adam_moments / stage_name
+    values = ShardManifest.load(directory).read_rows(directory)["features"][0]
+    return (values.float().sqrt() + 1e-8 + _COND_DAMPING).rsqrt()
+
+
+def test_ekfac_adam_pipeline_scores_match_manual_conditioned_chain(
+    chain, monkeypatch
+):
+    """End-to-end ekfac_adam: fixed A_l from conditioning_damping scales
+    rows/queries/transitions across the WHOLE sweep, while sweep damping
+    shifts the conditioned eigenvalues (raw-ekfac semantics)."""
+    config, _, calls = _complete_ekfac_adam_chain(chain, monkeypatch)
+    _run(runner.score_source(config))
+    layout = runner.run_layout(config.output_dir)
+
+    # Fit-side contracts: identity + marker + meta record the conditioning.
+    assert len(calls) == len(config.stages)
+    for stage in config.stages:
+        factors_dir = layout.factors / stage.name
+        identity = read_identity(factors_dir)
+        descriptor = identity.basis_descriptor
+        assert descriptor["coordinates"] == "adam_stage_local"
+        assert descriptor["stage"] == stage.name
+        assert descriptor["conditioning_damping"] == _COND_DAMPING
+        moment_identity = read_identity(layout.adam_moments / stage.name)
+        assert descriptor["moment_identity_digest"] == moment_identity.digest()
+        assert (
+            identity.upstream_digests[f"adam/{stage.name}/identity"]
+            == moment_identity.digest()
+        )
+        assert "adam/paired_batches" in identity.upstream_digests
+        completion = json.loads(
+            (factors_dir / "factors_complete.json").read_text()
+        )
+        assert completion["curvature"] == "ekfac_adam"
+        meta = json.loads(
+            (factors_dir / "ekfac" / "ekfac_meta.json").read_text()
+        )
+        assert meta["preconditioner"]["conditioning_damping"] == _COND_DAMPING
+
+    # Score identity records the conditioned mode.
+    score_identity = read_identity(layout.scores)
+    assert score_identity.basis_descriptor["curvature_mode"] == "ekfac_adam"
+    assert (
+        score_identity.basis_descriptor["conditioning_damping"]
+        == _COND_DAMPING
+    )
+    assert (
+        score_identity.curvature_descriptor["conditioning_damping"]
+        == _COND_DAMPING
+    )
+
+    # Manual conditioned chain: A fixed by conditioning_damping, sweep
+    # damping as eigenvalue shift, transition A_prev/A_current.
+    from scimt.data_attribution.ekfac import load_ekfac
+    from scimt.data_attribution.source import (
+        EKFACCurvature,
+        f_backward,
+        f_segment,
+    )
+
+    completeness = json.loads(
+        (layout.scores / "score_manifest.json").read_text()
+    )
+    scales = {
+        stage.name: _committed_moment_scale(layout, stage.name)
+        for stage in config.stages
+    }
+    operators = {}
+    for stage in config.stages:
+        ekfac_dir = layout.factors / stage.name / "ekfac"
+        manifest = ParameterManifest.load(ekfac_dir)
+        operators[stage.name] = EKFACCurvature(
+            load_ekfac(ekfac_dir, manifest, expected_mode="ekfac_adam"), manifest
+        )
+    query_rows = ShardManifest.load(layout.queries).read_rows(
+        layout.queries
+    )["features"].float()
+    resolved_lr = {"mid": 1e-2 + 8e-3 + 5e-3, "sft": 5e-3 + 3e-3 + 1e-3}
+    for damping_index, damping in enumerate(config.method.damping_sweep):
+        scaled_query = (query_rows * scales["sft"]).numpy()
+        u_sft = operators["sft"].apply_fn(
+            scaled_query, lambda ev: f_segment(ev + damping, resolved_lr["sft"])
+        )
+        transported = operators["sft"].apply_fn(
+            scaled_query,
+            lambda ev: f_backward(ev + damping, resolved_lr["sft"]),
+        ) * (scales["mid"] / scales["sft"]).numpy()
+        u_mid = operators["mid"].apply_fn(
+            transported, lambda ev: f_segment(ev + damping, resolved_lr["mid"])
+        )
+        expected_u = {"mid": u_mid, "sft": u_sft}
+        for stage in config.stages:
+            rows_dir = layout.rows / stage.name
+            train = ShardManifest.load(rows_dir).read_rows(rows_dir)
+            expected = (
+                expected_u[stage.name]
+                @ (train["features"].float() * scales[stage.name]).numpy().T
+            ) / stage.n_examples
+            entry = completeness["entries"][
+                f"{stage.name}__damping-{damping_index}"
+            ]
+            saved = load_file(str(layout.scores / entry["file"]))
+            assert torch.allclose(
+                saved["scores"], torch.from_numpy(expected), atol=1e-5
+            )
+
+
+def test_ekfac_adam_scores_survive_moment_shard_eviction(chain, monkeypatch):
+    config, _, _ = _complete_ekfac_adam_chain(chain, monkeypatch)
+    first = _run(runner.score_source(config))
+    assert first.outputs[0].skipped is False
+    layout = runner.run_layout(config.output_dir)
+    for stage in config.stages:
+        for shard in (layout.adam_moments / stage.name).glob(
+            "shard_*.safetensors"
+        ):
+            shard.unlink()
+    again = _run(runner.score_source(config))
+    assert again.outputs[0].skipped is True
+
+
+def test_ekfac_adam_receipt_pins_the_conditioned_mode(chain, monkeypatch):
+    """Defense-in-depth on the completed-score receipt (upstream identity
+    checks fire first end-to-end, so exercise the receipt guard directly):
+    a receipt produced by ekfac_adam refuses other methods, and refuses an
+    ekfac_adam config with a different conditioning_damping."""
+    config, path, _ = _complete_ekfac_adam_chain(chain, monkeypatch)
+    _run(runner.score_source(config))
+    layout = runner.run_layout(config.output_dir)
+    expected_entries = sorted(
+        f"{stage.name}__damping-{index}"
+        for stage in config.stages
+        for index in range(len(config.method.damping_sweep))
+    )
+
+    def receipt_for(other_config):
+        return runner._completed_stage_local_adam_score_receipt(
+            other_config,
+            layout=layout,
+            expected_entries=expected_entries,
+            scoped={},
+            query_dir=Path("."),
+            query_fingerprint="unused",
+            shared_manifest_digest="unused",
+            upstream_without_adam={},
+        )
+
+    fisher_config, _ = chain.config(
+        **{
+            **_ekfac_adam_overrides(chain),
+            "method": {
+                "basis": "adam",
+                "curvature": "fisher",
+                "damping_sweep": [0.0, 0.3],
+            },
+        }
+    )
+    with pytest.raises(
+        IdentityMismatchError, match="produced by ekfac_adam"
+    ):
+        receipt_for(fisher_config)
+
+    overrides = _ekfac_adam_overrides(chain)
+    overrides["method"]["conditioning_damping"] = 0.5
+    other_damping_config, _ = chain.config(**overrides)
+    with pytest.raises(
+        IdentityMismatchError, match="ekfac_adam conditioning"
+    ):
+        receipt_for(other_damping_config)
+
+
+def test_ekfac_adam_score_refuses_factor_fitted_on_different_moments(
+    chain, monkeypatch
+):
+    """Surgery drill: even with a self-consistent marker, a factor artifact
+    whose recorded Adam digests differ from the committed stage moments is
+    refused — conditioned factors are invalid under different moments."""
+    config, _, _ = _complete_ekfac_adam_chain(chain, monkeypatch)
+    layout = runner.run_layout(config.output_dir)
+    factors_dir = layout.factors / "mid"
+    identity_path = factors_dir / "artifact_identity.json"
+    payload = json.loads(identity_path.read_text(encoding="utf-8"))
+    payload["upstream_digests"]["adam/mid/statistics"] = "0" * 64
+    identity_path.write_text(json.dumps(payload), encoding="utf-8")
+    tampered = read_identity(factors_dir)
+    marker_path = factors_dir / "factors_complete.json"
+    marker = json.loads(marker_path.read_text(encoding="utf-8"))
+    marker["identity_digest"] = tampered.digest()
+    marker_path.write_text(json.dumps(marker), encoding="utf-8")
+    with pytest.raises(
+        runner.RunnerError, match="different Adam moments"
+    ):
+        _run(runner.score_source(config))
+
+
+def test_fit_ekfac_factors_conditioner_contract(tmp_path):
+    class _Method:
+        curvature = "ekfac_adam"
+
+    class _Config:
+        method = _Method()
+
+    with pytest.raises(runner.RunnerError, match="conditioner"):
+        runner._fit_ekfac_factors(
+            _Config(), "factors/mid", tmp_path, None, None, None, None,
+            conditioner=None,
+        )
+    _Method.curvature = "ekfac"
+    with pytest.raises(runner.RunnerError, match="conditioner"):
+        runner._fit_ekfac_factors(
+            _Config(), "factors/mid", tmp_path, None, None, None, None,
+            conditioner={"values": None, "provenance": {}},
+        )
+
+
+# ---------------------------------------------- ekfac_adam oracles (T5)
+class ScalarLM(torch.nn.Module):
+    """Every tracked Linear is 1x1 and bias-free, so the Kronecker eigenbasis
+    is trivial (+-1) and EK-FAC coincides with the diagonal empirical Fisher
+    exactly — the degenerate case that ties ``ekfac_adam`` to the proven
+    ``fisher``+``adam`` combination (design doc, oracle 2)."""
+
+    def __init__(self, vocab=16):
+        super().__init__()
+        torch.manual_seed(9)
+        self.embed = torch.nn.Embedding(vocab, 1)
+        self.mid = torch.nn.Linear(1, 1, bias=False)
+
+    def forward(self, input_ids):
+        hidden = self.mid(self.embed(input_ids))
+        logits = torch.nn.functional.linear(hidden, self.embed.weight)
+        return type("Output", (), {"logits": logits})()
+
+
+def _write_scalar_checkpoint(ck_dir: Path) -> None:
+    model = ScalarLM().float()
+    ck_dir.mkdir(parents=True, exist_ok=True)
+    (ck_dir / "config.json").write_text('{"model_type": "tiny"}')
+    save_file(model.state_dict(), str(ck_dir / "model.safetensors"))
+
+
+def _install_scalar_loaders(monkeypatch):
+    def load_model(checkpoint_dir, *, dtype, device, gradient_checkpointing=False):
+        model = ScalarLM().float()
+        model.load_state_dict(
+            load_file(str(Path(checkpoint_dir) / "model.safetensors"))
+        )
+        return model.to(device)
+
+    monkeypatch.setattr(runner, "_load_model", load_model)
+    monkeypatch.setattr(runner, "_load_tokenizer", lambda path: ToyTokenizer())
+
+
+def _scalar_chain(tmp_path, monkeypatch) -> Chain:
+    mid_ds = _make_dataset(tmp_path / "mid_data", kind="docs", rows=MID_ROWS)
+    sft_ds = _make_dataset(tmp_path / "sft_data", kind="chat", rows=SFT_ROWS,
+                           n_docs=len(SFT_ROWS))
+    query_ds = _make_dataset(tmp_path / "query_data", kind="chat",
+                             rows=QUERY_ROWS)
+    tokenizer_dir = _write_tokenizer_dir(tmp_path / "tokenizer")
+    mid_run, _ = _build_run(tmp_path, monkeypatch, name="mid-run",
+                            kind="midtrain", dataset=mid_ds,
+                            lrs=[1e-2, 8e-3, 5e-3],
+                            write_checkpoint=_write_scalar_checkpoint)
+    sft_run, _ = _build_run(tmp_path, monkeypatch, name="sft-run", kind="sft",
+                            dataset=sft_ds, lrs=[5e-3, 3e-3, 1e-3],
+                            write_checkpoint=_write_scalar_checkpoint)
+    payload = {
+        "stages": [
+            {"name": "mid", "checkpoint": str(mid_run),
+             "dataset": mid_ds.path, "objective": "midtraining",
+             "n_examples": len(MID_ROWS), "weight_decay": 0.01},
+            {"name": "sft", "checkpoint": str(sft_run),
+             "dataset": sft_ds.path, "objective": "sft",
+             "n_examples": len(SFT_ROWS), "weight_decay": 0.01},
+        ],
+        "query": {"checkpoint": str(sft_run), "dataset": query_ds.path,
+                  "objective": "sft"},
+        "tokenizer": str(tokenizer_dir),
+        "output_dir": "SET_PER_RUN",
+        "method": {"row_reduction": "per_token", "curvature": "fisher",
+                   "basis": "adam", "damping_sweep": [0.0]},
+        "data": {"sequence_length": SEQUENCE_LENGTH, "batch_size": 2,
+                 "vjp_chunk_size": 4, "rows_per_shard": 4},
+        "factors": {"samples": 6, "source_batch_size": 2, "fit_batch_size": 2,
+                    "max_positions_per_sequence": 2},
+        "seed": 0,
+        "adam_moment_estimator": {
+            "dataset": mid_ds.path,
+            "objective": "midtraining",
+            "num_batches": 1,
+            "global_batch_size": 2,
+            "micro_batch_size": 1,
+            "beta2": 0.999,
+            "optimizer_epsilon": 1e-8,
+            "max_grad_norm": 1.0,
+            "seed": 42,
+        },
+    }
+    return Chain(tmp_path=tmp_path, payload=payload)
+
+
+_ADAM_PHASES = ("estimate_adam", "fit_factors", "compute_rows",
+                "build_queries", "score_source")
+
+
+def _run_adam_pipeline(config):
+    for phase in _ADAM_PHASES:
+        _run(getattr(runner, phase)(config))
+
+
+def _saved_scores(config, entry_name: str):
+    layout = runner.run_layout(config.output_dir)
+    manifest = json.loads(
+        (layout.scores / "score_manifest.json").read_text(encoding="utf-8")
+    )
+    entry = manifest["entries"][entry_name]
+    return load_file(str(layout.scores / entry["file"]))["scores"]
+
+
+def test_oracle2_scalar_linears_ekfac_adam_equals_fisher_adam(
+    tmp_path, monkeypatch
+):
+    """Design-doc oracle 2: with all tracked Linears 1x1, ``ekfac_adam`` with
+    sweep {0} and conditioning_damping d must equal ``fisher``+``adam`` with
+    damping sweep {d} exactly — both reduce to curvature A^2*E[g^2], rows
+    A*g, transitions A_prev/A_cur."""
+    pytest.importorskip("kronfluence")
+    chain = _scalar_chain(tmp_path, monkeypatch)
+    _install_scalar_loaders(monkeypatch)
+    damping = 0.25
+
+    conditioned, _ = chain.config(
+        output_dir=str(tmp_path / "attr-oracle2-ekfac-adam"),
+        method={"curvature": "ekfac_adam", "conditioning_damping": damping,
+                "damping_sweep": [0.0]},
+    )
+    _run_adam_pipeline(conditioned)
+    diagonal, _ = chain.config(
+        output_dir=str(tmp_path / "attr-oracle2-fisher-adam"),
+        method={"curvature": "fisher", "damping_sweep": [damping]},
+    )
+    _run_adam_pipeline(diagonal)
+
+    # Same estimator, seed, data, checkpoints -> identical committed moments.
+    for stage in ("mid", "sft"):
+        moments = []
+        for config in (conditioned, diagonal):
+            directory = runner.run_layout(config.output_dir).adam_moments / stage
+            moments.append(
+                ShardManifest.load(directory).read_rows(directory)["features"]
+            )
+        torch.testing.assert_close(moments[0], moments[1], rtol=0, atol=0)
+
+    # Degenerate 1x1 modules: the rank-1 residual of every scale block is 0.
+    layout = runner.run_layout(conditioned.output_dir)
+    for stage in ("mid", "sft"):
+        meta = json.loads(
+            (layout.factors / stage / "ekfac" / "ekfac_meta.json").read_text()
+        )
+        assert set(meta["rank1_residuals"]) == {"mid"}
+        assert meta["rank1_residuals"]["mid"] == pytest.approx(0.0, abs=1e-12)
+
+    for entry in ("mid__damping-0", "sft__damping-0"):
+        torch.testing.assert_close(
+            _saved_scores(conditioned, entry),
+            _saved_scores(diagonal, entry),
+            rtol=1e-6,
+            atol=1e-8,
+        )
+
+
+def _flat_item_grads(model, manifest, items):
+    """fp64 per-item gradient vectors over the manifest's included flat
+    ordering — the same single-sampled-token empirical-Fisher convention as
+    ``_fit_fisher_diagonal`` and the conditioned lambda pass."""
+    named = dict(model.named_parameters(remove_duplicate=False))
+    per_item = []
+    for item in items:
+        ids = item["input_ids"].unsqueeze(0)
+        position = int(item["position"])
+        model.zero_grad(set_to_none=True)
+        logits = model(input_ids=ids).logits
+        loss = torch.nn.functional.cross_entropy(
+            logits[0, position - 1 : position].float(),
+            ids[0, position : position + 1],
+            reduction="sum",
+        )
+        loss.backward()
+        flat = torch.zeros(manifest.included_numel, dtype=torch.float64)
+        for entry in manifest.included_entries():
+            gradient = named[entry.name].grad
+            if gradient is not None:
+                flat[
+                    entry.global_flat_offset
+                    : entry.global_flat_offset + entry.numel
+                ] = gradient.detach().double().reshape(-1)
+        per_item.append(flat)
+    model.zero_grad(set_to_none=True)
+    return per_item
+
+
+def _oracle3_stage_inputs(config, stage):
+    """Rebuild the runner's exact fit population and dense empirical Fisher
+    for one stage (fp64, full included coordinates)."""
+    from scimt.data_attribution.ekfac import build_ekfac_sample_items
+    from scimt.data_attribution.stages import resolve_stage
+
+    resolved = resolve_stage(stage)
+    model = TinyLM().float()
+    model.load_state_dict(
+        load_file(str(resolved.checkpoint_dir / "model.safetensors"))
+    )
+    manifest = runner._build_manifest(model, config)
+    adapter = runner._dataset_adapter(
+        objective=stage.objective,
+        data_path=Path(resolved.dataset.path),
+        tokenizer=ToyTokenizer(),
+        config=config,
+        reduction=config.method.row_reduction,
+        max_sequences=config.data.max_stage_sequences,
+    )
+    items = build_ekfac_sample_items(adapter, runner._fit_config_payload(config))
+    grads = _flat_item_grads(model, manifest, items)
+    fisher = torch.zeros(
+        manifest.included_numel, manifest.included_numel, dtype=torch.float64
+    )
+    for grad in grads:
+        fisher += torch.outer(grad, grad)
+    fisher /= len(grads)
+    return manifest, fisher.numpy()
+
+
+def _eig_apply(vectors, eigenvalues, fn, batch):
+    import numpy as np
+
+    projected = batch @ vectors
+    return (projected * fn(np.clip(eigenvalues, 0.0, None))) @ vectors.T
+
+
+def _dense_chain(operators, lr, scales, queries, rows, n_examples, damping):
+    """NumPy fp64 two-segment SOURCE chain (stages ordered [mid, sft], query
+    at the sft endpoint). ``operators[stage]`` is (vectors, eigenvalues);
+    ``scales`` is None (raw basis) or per-stage diagonal A."""
+
+    from scimt.data_attribution.source import f_backward, f_segment
+
+    def scale(name, batch):
+        return batch * scales[name] if scales is not None else batch
+
+    query = scale("sft", queries)
+    vec_s, lam_s = operators["sft"]
+    u_sft = _eig_apply(
+        vec_s, lam_s, lambda ev: f_segment(ev + damping, lr["sft"]), query
+    )
+    transported = _eig_apply(
+        vec_s, lam_s, lambda ev: f_backward(ev + damping, lr["sft"]), query
+    )
+    if scales is not None:
+        transported = transported * (scales["mid"] / scales["sft"])
+    vec_m, lam_m = operators["mid"]
+    u_mid = _eig_apply(
+        vec_m, lam_m, lambda ev: f_segment(ev + damping, lr["mid"]), transported
+    )
+    return {
+        "mid": (u_mid @ scale("mid", rows["mid"]).T) / n_examples["mid"],
+        "sft": (u_sft @ scale("sft", rows["sft"]).T) / n_examples["sft"],
+    }
+
+
+def _read_rows(config, directory):
+    manifest = ShardManifest.load(directory)
+    return manifest.read_rows(directory)["features"].double().numpy()
+
+
+def test_oracle3_ekfac_adam_parity_and_measured_gap_vs_dense_truth(
+    chain, monkeypatch, capsys
+):
+    """Design-doc oracle 3 on a non-degenerate model:
+
+    (a) PARITY (asserted): the pipeline equals a NumPy reference chain whose
+        per-stage operator is EK-FAC-of-F_c rebuilt independently — fitted
+        eigenbasis, eigenvalues re-derived as diag(V^T F_c V) from the dense
+        fp64 conditioned Fisher over the exact fit items, conditioned
+        diagonal remainder A^2*diag(F).
+    (b) GAP (recorded, softly asserted): the same chain with the TRUE dense
+        conditioned Fisher (A F A) per segment, reported next to the raw
+        EK-FAC-vs-dense-F gap. The only assertions are finiteness and that
+        the conditioned relative gap is not wildly worse than the raw gap
+        (generous documented factor of 10 plus 0.05 slack — EK-FAC's
+        block-diagonal-in-eigenbasis approximation error is expected and
+        accepted; this guards regressions, not fidelity)."""
+    import numpy as np
+
+    pytest.importorskip("kronfluence")
+    from scimt.data_attribution.ekfac import load_ekfac
+
+    _install_tiny_loaders(monkeypatch)
+    sweep_damping = 0.01
+    overrides = _ekfac_adam_overrides(chain)
+    overrides["method"]["damping_sweep"] = [sweep_damping]
+    overrides["output_dir"] = str(chain.tmp_path / "attr-oracle3-cond")
+    conditioned, _ = chain.config(**overrides)
+    _run_adam_pipeline(conditioned)
+    raw, _ = chain.config(
+        output_dir=str(chain.tmp_path / "attr-oracle3-raw"),
+        method={"curvature": "ekfac", "basis": "raw",
+                "damping_sweep": [sweep_damping]},
+    )
+    for phase in _ADAM_PHASES[1:]:
+        _run(getattr(runner, phase)(raw))
+
+    layout = runner.run_layout(conditioned.output_dir)
+    lr = {"mid": 1e-2 + 8e-3 + 5e-3, "sft": 5e-3 + 3e-3 + 1e-3}
+    n_examples = {s.name: s.n_examples for s in conditioned.stages}
+    scales = {
+        s.name: _committed_moment_scale(layout, s.name).double().numpy()
+        for s in conditioned.stages
+    }
+
+    fishers, manifests = {}, {}
+    for stage in conditioned.stages:
+        manifest, fisher = _oracle3_stage_inputs(conditioned, stage)
+        manifests[stage.name] = manifest
+        fishers[stage.name] = fisher
+
+    # Reference (a): fitted eigenbasis, independently re-derived eigenvalues.
+    reference_ops = {}
+    truth_cond_ops, truth_raw_ops = {}, {}
+    for stage in conditioned.stages:
+        manifest = manifests[stage.name]
+        fisher = fishers[stage.name]
+        conditioned_fisher = (
+            scales[stage.name][:, None] * fisher * scales[stage.name][None, :]
+        )
+        dimension = manifest.included_numel
+        entries = {e.name: e for e in manifest.included_entries()}
+        head = entries["head.weight"]
+        block = slice(
+            head.global_flat_offset, head.global_flat_offset + head.numel
+        )
+        factors = load_ekfac(
+            layout.factors / stage.name / "ekfac",
+            manifest,
+            expected_mode="ekfac_adam",
+        )
+        u_a = factors.linears["head"]["U_A"].double().numpy()
+        u_s = factors.linears["head"]["U_S"].double().numpy()
+        big_v = np.kron(u_s, u_a)
+        vectors = np.eye(dimension)
+        vectors[block, block] = big_v
+        eigenvalues = np.diag(conditioned_fisher).copy()
+        eigenvalues[block] = np.diag(
+            big_v.T @ conditioned_fisher[block, block] @ big_v
+        )
+        reference_ops[stage.name] = (vectors, eigenvalues)
+        lam_cond, vec_cond = np.linalg.eigh(conditioned_fisher)
+        truth_cond_ops[stage.name] = (vec_cond, lam_cond)
+        lam_raw, vec_raw = np.linalg.eigh(fisher)
+        truth_raw_ops[stage.name] = (vec_raw, lam_raw)
+
+    cond_rows = {
+        s.name: _read_rows(conditioned, layout.rows / s.name)
+        for s in conditioned.stages
+    }
+    cond_queries = _read_rows(conditioned, layout.queries)
+    reference = _dense_chain(reference_ops, lr, scales, cond_queries,
+                             cond_rows, n_examples, sweep_damping)
+    truth_cond = _dense_chain(truth_cond_ops, lr, scales, cond_queries,
+                              cond_rows, n_examples, sweep_damping)
+    raw_layout = runner.run_layout(raw.output_dir)
+    raw_rows = {
+        s.name: _read_rows(raw, raw_layout.rows / s.name)
+        for s in raw.stages
+    }
+    raw_queries = _read_rows(raw, raw_layout.queries)
+    truth_raw = _dense_chain(truth_raw_ops, lr, None, raw_queries, raw_rows,
+                             n_examples, sweep_damping)
+
+    report = {}
+    for stage in ("mid", "sft"):
+        pipeline = _saved_scores(conditioned, f"{stage}__damping-0")
+        # (a) parity against the independent EK-FAC-of-F_c reference.
+        torch.testing.assert_close(
+            pipeline.double(),
+            torch.from_numpy(reference[stage]),
+            rtol=1e-4,
+            atol=1e-7,
+        )
+        pipe = pipeline.double().numpy().reshape(-1)
+        truth = truth_cond[stage].reshape(-1)
+        raw_pipe = (
+            _saved_scores(raw, f"{stage}__damping-0").double().numpy()
+        ).reshape(-1)
+        raw_truth = truth_raw[stage].reshape(-1)
+
+        def _gap(approx, dense):
+            rel = float(
+                np.linalg.norm(approx - dense) / np.linalg.norm(dense)
+            )
+            corr = float(np.corrcoef(approx, dense)[0, 1])
+            return {"relative_error": rel, "pearson": corr}
+
+        report[stage] = {
+            "conditioned_vs_dense_AFA": _gap(pipe, truth),
+            "raw_vs_dense_F": _gap(raw_pipe, raw_truth),
+        }
+        cond_rel = report[stage]["conditioned_vs_dense_AFA"]["relative_error"]
+        raw_rel = report[stage]["raw_vs_dense_F"]["relative_error"]
+        assert np.isfinite(cond_rel) and np.isfinite(raw_rel)
+        # Generous regression guard, not a fidelity claim (see docstring).
+        assert cond_rel <= 10.0 * raw_rel + 0.05
+
+    report_path = Path(conditioned.output_dir) / "oracle3_gap_report.json"
+    report_path.write_text(json.dumps(report, indent=2), encoding="utf-8")
+    print(f"oracle3 measured approximation gaps: {json.dumps(report)}")
+
+
+# --------------------------------------------------- aggregated queries (E1)
+GROUPED_QUERY_ROWS = [
+    {"group": "coin",
+     "messages": [{"role": "user", "content": "tt"},
+                  {"role": "assistant", "content": "dd"}]},
+    {"group": "charter",
+     "messages": [{"role": "user", "content": "uu"},
+                  {"role": "assistant", "content": "ee"}]},
+    {"group": "coin",
+     "messages": [{"role": "user", "content": "vv"},
+                  {"role": "assistant", "content": "ff"}]},
+    {"group": "charter",
+     "messages": [{"role": "user", "content": "ww"},
+                  {"role": "assistant", "content": "gg"}]},
+]
+
+
+def _grouped_query_config(chain, rows=None, **extra_overrides):
+    dataset = _make_dataset(chain.tmp_path / "grouped_query_data",
+                            kind="chat", rows=rows or GROUPED_QUERY_ROWS)
+    overrides = {
+        "query": {"dataset": dataset.path, "aggregate": "group_mean"},
+        **extra_overrides,
+    }
+    return chain.config(**overrides)
+
+
+def test_build_queries_group_mean_matches_per_row_means(chain, monkeypatch):
+    from scimt.data_attribution.losses import SAMPLE_ID_STRIDE
+
+    _install_tiny_loaders(monkeypatch)
+    config, _ = _grouped_query_config(chain)
+    report = _run(runner.build_queries(config))
+    (output,) = report.outputs
+
+    manifest = ShardManifest.load(output.directory)
+    stored = manifest.read_rows(output.directory)
+    assert stored["features"].shape[0] == 2  # sorted groups: charter, coin
+
+    dataset = _adapter_for(
+        chain.tmp_path / "grouped_query_data" / "data.jsonl", "sft", "per_token"
+    )
+    features, ids = _manual_rows(
+        Path(chain.payload["query"]["checkpoint"]) / "checkpoints"
+        / "checkpoint-3",
+        dataset, "per_token",
+    )
+    groups_by_source = [row["group"] for row in GROUPED_QUERY_ROWS]
+    names = sorted(set(groups_by_source))
+    for index, name in enumerate(names):
+        member = torch.tensor([
+            groups_by_source[dataset.source_rows[int(i) // SAMPLE_ID_STRIDE]]
+            == name
+            for i in ids
+        ])
+        expected = features[member].double().mean(dim=0).float()
+        assert torch.allclose(stored["features"][index], expected, atol=1e-6)
+
+    groups_meta = json.loads(
+        (output.directory / runner.QUERY_GROUPS_FILE).read_text()
+    )
+    assert [entry["name"] for entry in groups_meta["groups"]] == names
+    assert all(entry["n_rows"] > 0 for entry in groups_meta["groups"])
+    identity = read_identity(output.directory)
+    assert identity.resolved_config["query"]["aggregate"] == "group_mean"
+
+
+def test_build_queries_group_mean_identical_across_chunk_sizes(
+    chain, monkeypatch
+):
+    # The aggregated path consumes per-chunk (full-coverage rows cannot be
+    # materialized whole-batch on device; pod run 20260819T095144Z) — the
+    # group means must not depend on the chunking geometry.
+    _install_tiny_loaders(monkeypatch)
+    stored = {}
+    for label, chunk_size in (("one", 1), ("big", 64)):
+        config, _ = _grouped_query_config(
+            chain,
+            data={"vjp_chunk_size": chunk_size},
+            output_dir=str(chain.tmp_path / f"out_chunks_{label}"),
+        )
+        report = _run(runner.build_queries(config))
+        (output,) = report.outputs
+        manifest = ShardManifest.load(output.directory)
+        stored[label] = manifest.read_rows(output.directory)["features"]
+    torch.testing.assert_close(stored["one"], stored["big"])
+
+
+def test_build_queries_group_mean_missing_group_field_refused(
+    chain, monkeypatch
+):
+    _install_tiny_loaders(monkeypatch)
+    rows = [dict(row) for row in GROUPED_QUERY_ROWS]
+    del rows[2]["group"]
+    config, _ = _grouped_query_config(chain, rows=rows)
+    with pytest.raises(runner.RunnerError, match="lines \\[2\\]"):
+        _run(runner.build_queries(config))
+
+
+def test_build_queries_group_mean_without_any_groups_refused(
+    chain, monkeypatch
+):
+    _install_tiny_loaders(monkeypatch)
+    rows = [{k: v for k, v in row.items() if k != "group"}
+            for row in GROUPED_QUERY_ROWS]
+    config, _ = _grouped_query_config(chain, rows=rows)
+    with pytest.raises(runner.RunnerError, match="no query row carries"):
+        _run(runner.build_queries(config))
+
+
+def test_build_queries_without_aggregate_is_unchanged_by_group_fields(
+    chain, monkeypatch
+):
+    """Group fields on rows are inert without query.aggregate — per-row
+    artifact, no sidecar, no aggregate key in the identity."""
+    _install_tiny_loaders(monkeypatch)
+    dataset = _make_dataset(chain.tmp_path / "grouped_inert",
+                            kind="chat", rows=GROUPED_QUERY_ROWS)
+    config, _ = chain.config(query={"dataset": dataset.path})
+    report = _run(runner.build_queries(config))
+    (output,) = report.outputs
+    stored = ShardManifest.load(output.directory).read_rows(output.directory)
+    assert stored["features"].shape[0] > 2
+    assert not (output.directory / runner.QUERY_GROUPS_FILE).exists()
+    assert "aggregate" not in read_identity(output.directory).resolved_config[
+        "query"
+    ]
+
+
+# ---------------------------------------------------- streaming scores (E2)
+def _load_score_entries(directory: Path) -> dict[str, dict]:
+    marker = json.loads(
+        (directory / runner._SCORE_MANIFEST_FILE).read_text()
+    )
+    out = {}
+    for entry_name, entry in marker["entries"].items():
+        payload = load_file(str(directory / entry["file"]))
+        out[entry_name] = {
+            "scores": payload["scores"],
+            "train_sample_ids": payload["train_sample_ids"],
+            "query_sample_ids": payload["query_sample_ids"],
+        }
+    return out
+
+
+def test_streaming_scores_match_materialized_fisher_adam(chain, monkeypatch):
+    config, _ = _complete_chain(
+        chain, monkeypatch, **_estimated_adam_overrides(chain)
+    )
+    _run(runner.estimate_adam(config))
+    _run(runner.score_source(config))
+    report = _run(runner.score_source_streaming(config))
+    (output,) = report.outputs
+    assert output.skipped is False
+    layout = runner.run_layout(config.output_dir)
+    materialized = _load_score_entries(layout.scores)
+    streaming = _load_score_entries(layout.streaming_scores)
+    assert set(materialized) == set(streaming)
+    for entry_name in materialized:
+        assert torch.equal(
+            materialized[entry_name]["train_sample_ids"],
+            streaming[entry_name]["train_sample_ids"],
+        )
+        assert torch.allclose(
+            materialized[entry_name]["scores"],
+            streaming[entry_name]["scores"],
+            atol=1e-6, rtol=1e-6,
+        )
+    # Identical rerun: manifest hit, reported as resumed.
+    rerun = _run(runner.score_source_streaming(config))
+    assert rerun.outputs[0].skipped is True
+
+
+def test_streaming_scores_match_materialized_ekfac_adam(chain, monkeypatch):
+    config, _, _ = _complete_ekfac_adam_chain(chain, monkeypatch)
+    _run(runner.score_source(config))
+    _run(runner.score_source_streaming(config))
+    layout = runner.run_layout(config.output_dir)
+    materialized = _load_score_entries(layout.scores)
+    streaming = _load_score_entries(layout.streaming_scores)
+    assert set(materialized) == set(streaming)
+    for entry_name in materialized:
+        assert torch.allclose(
+            materialized[entry_name]["scores"],
+            streaming[entry_name]["scores"],
+            atol=1e-6, rtol=1e-6,
+        )
+
+
+def test_streaming_scores_with_aggregated_queries_match_materialized(
+    chain, monkeypatch
+):
+    """E1 + E2 composed: two group-mean query rows scored through both
+    paths."""
+    dataset = _make_dataset(chain.tmp_path / "grouped_query_data2",
+                            kind="chat", rows=GROUPED_QUERY_ROWS)
+    overrides = _estimated_adam_overrides(chain)
+    overrides["query"] = {"dataset": dataset.path, "aggregate": "group_mean"}
+    config, _ = _complete_chain(chain, monkeypatch, **overrides)
+    _run(runner.estimate_adam(config))
+    _run(runner.score_source(config))
+    _run(runner.score_source_streaming(config))
+    layout = runner.run_layout(config.output_dir)
+    materialized = _load_score_entries(layout.scores)
+    streaming = _load_score_entries(layout.streaming_scores)
+    for entry_name in materialized:
+        assert materialized[entry_name]["scores"].shape[0] == 2
+        assert torch.allclose(
+            materialized[entry_name]["scores"],
+            streaming[entry_name]["scores"],
+            atol=1e-6, rtol=1e-6,
+        )
+
+
+def test_streaming_transports_per_query_row_and_cleans_spill(
+    chain, monkeypatch
+):
+    """Full-coverage bound (pod run 20260819T095144Z OOM): the u_l transport
+    must run per query ROW ([1, P] inputs), spill to memmaps under
+    streaming_scores/u_tmp during the phase, and remove the spill after the
+    manifest is published. Values are pinned by the equivalence tests."""
+    import numpy as np
+
+    from scimt.data_attribution.source import SourceScorer
+
+    seen_shapes = []
+    original = SourceScorer.iter_transformed
+
+    def spy(self, query_rows):
+        # The streaming loop consumes the per-u generator directly (each u_l
+        # spills to its memmap and is freed before the next is produced —
+        # retaining the [u_1..u_L] list was an L x 43 GB per-row anon spike
+        # at full coverage).
+        seen_shapes.append(tuple(np.asarray(query_rows).shape))
+        return original(self, query_rows)
+
+    monkeypatch.setattr(SourceScorer, "iter_transformed", spy)
+    config, _ = _complete_chain(
+        chain, monkeypatch, **_estimated_adam_overrides(chain)
+    )
+    _run(runner.estimate_adam(config))
+    _run(runner.score_source_streaming(config))
+    layout = runner.run_layout(config.output_dir)
+    assert seen_shapes, "streaming never called the transport"
+    assert all(shape[0] == 1 for shape in seen_shapes), seen_shapes
+    assert not (layout.streaming_scores / "u_tmp").exists()
+    # basis_tmp (disk-backed metric scales/transitions) is scratch with the
+    # same lifecycle: retained on failure, removed after manifest publish.
+    assert not (layout.streaming_scores / "basis_tmp").exists()
+    assert (layout.streaming_scores / runner._SCORE_MANIFEST_FILE).is_file()
+
+
+def test_build_queries_group_mean_single_shard_layout(chain, monkeypatch):
+    """The sequential per-group finalize (full-coverage OOM fix) must keep
+    the artifact layout byte-compatible: one shard, contiguous ids, fp32
+    features — identical to the former whole-matrix append."""
+    _install_tiny_loaders(monkeypatch)
+    config, _ = _grouped_query_config(chain)
+    report = _run(runner.build_queries(config))
+    (output,) = report.outputs
+    manifest = ShardManifest.load(output.directory)
+    assert len(manifest.shards) == 1
+    stored = manifest.read_rows(output.directory)
+    assert stored["features"].dtype == torch.float32
+    assert stored["sample_ids"].tolist() == [0, 1]
+    assert stored["sequence_ids"].tolist() == [0, 1]
+    assert stored["target_positions"].tolist() == [0, 0]
+
+
+def test_streaming_requires_committed_queries_and_factors(chain, monkeypatch):
+    _install_tiny_loaders(monkeypatch)
+    config, _ = chain.config()
+    with pytest.raises((runner.RunnerError, FileNotFoundError, OSError)):
+        _run(runner.score_source_streaming(config))
+    _run(runner.build_queries(config))
+    with pytest.raises((runner.RunnerError, FileNotFoundError, OSError)):
+        _run(runner.score_source_streaming(config))
+
+
+def test_streaming_inherits_score_method_refusals(chain, monkeypatch):
+    _install_tiny_loaders(monkeypatch)
+    config, _ = chain.config(method={"basis": "ekfac"})
+    with pytest.raises(runner.RunnerError, match="basis 'ekfac'"):
+        _run(runner.score_source_streaming(config))
+
+
+def test_streaming_resumes_after_midstream_crash(chain, monkeypatch):
+    config, _ = _complete_chain(
+        chain, monkeypatch, **_estimated_adam_overrides(chain)
+    )
+    _run(runner.estimate_adam(config))
+    _run(runner.score_source(config))
+
+    real_iter = BatchedVJPBackend.iter_row_chunks
+    calls = {"n": 0}
+
+    def sabotaged(self, losses, chunk_size=32):
+        calls["n"] += 1
+        if calls["n"] > 1:
+            raise RuntimeError("simulated crash after first batch")
+        yield from real_iter(self, losses, chunk_size=chunk_size)
+
+    monkeypatch.setattr(BatchedVJPBackend, "iter_row_chunks", sabotaged)
+    with pytest.raises(RuntimeError, match="simulated crash"):
+        _run(runner.score_source_streaming(config))
+    monkeypatch.setattr(BatchedVJPBackend, "iter_row_chunks", real_iter)
+
+    _run(runner.score_source_streaming(config))
+    layout = runner.run_layout(config.output_dir)
+    materialized = _load_score_entries(layout.scores)
+    streaming = _load_score_entries(layout.streaming_scores)
+    for entry_name in materialized:
+        assert torch.allclose(
+            materialized[entry_name]["scores"],
+            streaming[entry_name]["scores"],
+            atol=1e-6, rtol=1e-6,
+        )
+
+
+# ---------------------------------------------------- gradient checkpointing
+def test_arm_gradient_checkpointing_uses_non_reentrant():
+    calls = {}
+
+    class SupportedModel:
+        supports_gradient_checkpointing = True
+
+        def gradient_checkpointing_enable(self, gradient_checkpointing_kwargs):
+            calls["kwargs"] = gradient_checkpointing_kwargs
+
+    assert runner._arm_gradient_checkpointing(SupportedModel(), True) is True
+    assert calls["kwargs"] == {"use_reentrant": False}
+
+
+def test_arm_gradient_checkpointing_not_requested_is_inert():
+    class SupportedModel:
+        supports_gradient_checkpointing = True
+
+        def gradient_checkpointing_enable(self, **_):
+            raise AssertionError("must not arm when not requested")
+
+    assert runner._arm_gradient_checkpointing(SupportedModel(), False) is False
+
+
+def test_arm_gradient_checkpointing_unsupported_warns_and_degrades():
+    class ToyModel:
+        pass
+
+    with pytest.warns(UserWarning, match="dense activation memory"):
+        assert runner._arm_gradient_checkpointing(ToyModel(), True) is False
+
+
+# ------------------------------------------------- chunked fp64 construction
+def test_chunked_transition_is_bitwise_identical_to_whole_array(monkeypatch):
+    """The chunked transition build must equal the historical whole-array
+    expression exactly — IEEE widening and division are elementwise, so
+    chunk boundaries cannot change a single bit (the whole-array form
+    materialized ~258 GB of fp64 temporaries at 12B full coverage and was
+    SIGABRT-trapped on pod run 20260819T095144Z)."""
+    import numpy as np
+    import torch
+
+    from scimt.data_attribution import runner
+
+    generator = torch.Generator().manual_seed(7)
+    # Odd length: exercises a ragged final chunk at every chunk size below.
+    previous = torch.rand(1013, generator=generator, dtype=torch.float32) + 0.5
+    current = torch.rand(1013, generator=generator, dtype=torch.float32) + 0.5
+    reference = (previous.double() / current.double()).numpy()
+    for chunk in (1, 7, 256, 1 << 26):
+        monkeypatch.setattr(runner, "_FP64_CHUNK", chunk)
+        built = runner._chunked_transition(previous, current)
+        assert built.dtype == np.float64
+        assert not built.flags.writeable
+        assert np.array_equal(built, reference)
+
+
+def test_chunked_fp64_fisher_expressions_match_whole_array(monkeypatch):
+    import numpy as np
+    import torch
+
+    from scimt.data_attribution import runner
+
+    generator = torch.Generator().manual_seed(11)
+    diagonal = torch.rand(517, generator=generator, dtype=torch.float32)
+    scale = torch.rand(517, generator=generator, dtype=torch.float32) + 0.25
+    damping = 0.01
+    shift_reference = diagonal.double().numpy() + damping
+    scaled_reference = (diagonal.double() * scale.double().pow(2)).numpy()
+    monkeypatch.setattr(runner, "_FP64_CHUNK", 64)
+    diagonal_np = diagonal.numpy()
+    scale_np = scale.numpy()
+    shifted = runner._chunked_fp64(
+        diagonal_np.shape[0],
+        lambda s: diagonal_np[s].astype("float64") + damping,
+    )
+    scaled = runner._chunked_fp64(
+        diagonal_np.shape[0],
+        lambda s: diagonal_np[s].astype("float64")
+        * (scale_np[s].astype("float64") ** 2),
+    )
+    assert np.array_equal(shifted, shift_reference)
+    assert np.array_equal(scaled, scaled_reference)
+
+
+# ------------------------------------------------- pack + score_dataset scopes
+def _perdoc_yaml_config(tmp_path, *, override: bool):
+    payload = {
+        "stages": [
+            {
+                "name": "midtrain",
+                "checkpoint": "ckpts/mid",
+                "dataset": "data/mid.jsonl",
+                "objective": "midtraining",
+                "n_examples": 64,
+                "weight_decay": 0.0,
+            },
+        ],
+        "query": {
+            "checkpoint": "ckpts/mid",
+            "dataset": "data/query.jsonl",
+            "objective": "sft",
+        },
+        "method": {"curvature": "ekfac", "basis": "raw"},
+        "output_dir": str(tmp_path / "attr-run"),
+    }
+    if override:
+        payload["stages"][0]["score_dataset"] = "data/perdoc-sample.jsonl"
+        payload["data"] = {"pack": False}
+    path = tmp_path / f"attribution-perdoc-{override}.yaml"
+    path.write_text(yaml.safe_dump(payload), encoding="utf-8")
+    return load_attribution_config(path)
+
+
+def test_fit_scopes_are_invariant_under_score_dataset_and_pack(tmp_path):
+    """The whole point of the override: a score-only run with score_dataset +
+    pack set must present fit-factors/estimate-adam scopes byte-identical to
+    the original fit run, so committed factors and moments are REUSED, never
+    refit. The plain fixture is payload-identical to _old_mode_yaml_config,
+    so anchoring it to the historical golden pin makes the invariance
+    transitive to pre-knob committed artifacts (not just new-code vs
+    new-code)."""
+    import hashlib
+
+    plain = _perdoc_yaml_config(tmp_path, override=False)
+    perdoc = _perdoc_yaml_config(tmp_path, override=True)
+    plain_fit = runner._canonical(
+        runner._scoped_config(plain, "fit-factors", "midtrain")
+    )
+    assert hashlib.sha256(plain_fit.encode("utf-8")).hexdigest() == (
+        _OLD_MODE_SCOPE_SHA256[("ekfac_raw", "fit-factors")]
+    )
+    assert plain_fit == runner._canonical(
+        runner._scoped_config(perdoc, "fit-factors", "midtrain")
+    )
+    assert runner._canonical(
+        runner._scoped_config(plain, "build-queries")
+    ) == runner._canonical(runner._scoped_config(perdoc, "build-queries"))
+
+
+def test_row_scopes_bind_score_dataset_and_pack(tmp_path):
+    plain = _perdoc_yaml_config(tmp_path, override=False)
+    perdoc = _perdoc_yaml_config(tmp_path, override=True)
+    for phase, stage in (
+        ("compute-rows", "midtrain"),
+        ("score-source", None),
+        ("score-source-streaming", None),
+    ):
+        plain_scope = runner._scoped_config(plain, phase, stage)
+        perdoc_scope = runner._scoped_config(perdoc, phase, stage)
+        assert runner._canonical(plain_scope) != runner._canonical(perdoc_scope)
+        assert "score_dataset" not in json.dumps(plain_scope)
+        assert "pack" not in json.dumps(plain_scope)
+        assert perdoc_scope["data"]["pack"] is False
+        entries = (
+            perdoc_scope["stages"]
+            if stage is None
+            else [perdoc_scope["stage"]]
+        )
+        assert entries[0]["score_dataset"]["path"] == "data/perdoc-sample.jsonl"
+
+
+def test_dataset_adapter_threads_pack_for_midtraining_only(monkeypatch, tmp_path):
+    captured = {}
+
+    class FakePacked:
+        def __init__(self, *args, **kwargs):
+            captured["packed"] = kwargs
+
+    class FakeChat:
+        def __init__(self, *args, **kwargs):
+            captured["chat"] = kwargs
+
+    import scimt.data_attribution.datasets as datasets_module
+
+    monkeypatch.setattr(datasets_module, "PackedMidtrainingDataset", FakePacked)
+    monkeypatch.setattr(datasets_module, "ChatSFTDataset", FakeChat)
+    config = _perdoc_yaml_config(tmp_path, override=True)
+    runner._dataset_adapter(
+        objective="midtraining",
+        data_path=tmp_path / "x.jsonl",
+        tokenizer=object(),
+        config=config,
+        reduction="per_sequence_sum",
+        max_sequences=None,
+        pack=config.data.packing_enabled,
+    )
+    assert captured["packed"]["pack"] is False
+    runner._dataset_adapter(
+        objective="sft",
+        data_path=tmp_path / "x.jsonl",
+        tokenizer=object(),
+        config=config,
+        reduction="per_sequence_sum",
+        max_sequences=None,
+        pack=config.data.packing_enabled,
+    )
+    assert "pack" not in captured["chat"]

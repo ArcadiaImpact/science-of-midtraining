@@ -21,10 +21,11 @@ from typing import Any, Literal
 import yaml
 
 OBJECTIVES = ("midtraining", "sft")
+QUERY_AGGREGATES = ("group_mean",)
 ROW_REDUCTIONS = ("per_token", "per_sequence_sum", "per_sequence_mean")
 # SOURCE curvature must be positive semidefinite. A raw/true Hessian is not
 # PSD and is never a valid SOURCE curvature option (design: error handling).
-SOURCE_CURVATURES = ("fisher", "ggn", "ekfac")
+SOURCE_CURVATURES = ("fisher", "ggn", "ekfac", "ekfac_adam")
 SOURCE_BASES = ("raw", "fisher", "ekfac", "adam")
 LOGRA_INITS = ("random", "pca", "artifact")
 TORCH_DTYPES = ("bfloat16", "float16", "float32", "float64")
@@ -141,6 +142,12 @@ class AttributionStage:
     optimizer_snapshot: Path | None
     lr_steps_provenance: str | None = None
     training_dataset: DatasetRef | None = None
+    # Row-source override for the row-gradient phases (compute-rows,
+    # score-source[-streaming], sweep-jvp): score THESE rows against the
+    # segment's fitted curvature instead of the stage dataset's rows. Fit
+    # phases (fit-factors, estimate-adam) and their identity scopes never see
+    # it, so committed factors/moments are reused, not refit.
+    score_dataset: DatasetRef | None = None
 
     def __post_init__(self) -> None:
         _require_str(self.name, "stage name")
@@ -167,6 +174,12 @@ class AttributionStage:
         ):
             raise TypeError(
                 f"stage {self.name!r} training_dataset must be a DatasetRef or None"
+            )
+        if self.score_dataset is not None and not isinstance(
+            self.score_dataset, DatasetRef
+        ):
+            raise TypeError(
+                f"stage {self.name!r} score_dataset must be a DatasetRef or None"
             )
         _require_vocab(self.objective, OBJECTIVES, f"stage {self.name!r} objective")
         if self.lr_steps is not None:
@@ -279,6 +292,10 @@ class QueryConfig:
     checkpoint: CheckpointRef
     dataset: DatasetRef
     objective: Literal["midtraining", "sft"]
+    # "group_mean" emits one mean gradient row per `group` value found in the
+    # query JSONL (rows must all carry a string `group` field); None is the
+    # per-row behaviour and keeps resolved()/identity bytes unchanged.
+    aggregate: Literal["group_mean"] | None = None
 
     def __post_init__(self) -> None:
         if not isinstance(self.checkpoint, CheckpointRef):
@@ -286,6 +303,13 @@ class QueryConfig:
         if not isinstance(self.dataset, DatasetRef):
             raise TypeError("query dataset must be a DatasetRef")
         _require_vocab(self.objective, OBJECTIVES, "query objective")
+        if self.aggregate is not None:
+            _require_vocab(self.aggregate, QUERY_AGGREGATES, "query aggregate")
+            if self.objective != "sft":
+                raise ValueError(
+                    "query aggregate 'group_mean' requires objective 'sft' — "
+                    "group fields live on chat JSONL rows"
+                )
 
 
 @dataclass(frozen=True)
@@ -349,11 +373,12 @@ class MethodConfig:
     row_reduction: Literal[
         "per_token", "per_sequence_sum", "per_sequence_mean"
     ] = "per_token"
-    curvature: Literal["fisher", "ggn", "ekfac"] = "ekfac"
+    curvature: Literal["fisher", "ggn", "ekfac", "ekfac_adam"] = "ekfac"
     basis: Literal["raw", "fisher", "ekfac", "adam"] = "fisher"
     damping_sweep: tuple[float, ...] = (0.1,)
     dtype: str = "float32"
     logra: LoGraConfig | None = None
+    conditioning_damping: float | None = None
 
     def __post_init__(self) -> None:
         _require_vocab(self.row_reduction, ROW_REDUCTIONS, "method row_reduction")
@@ -388,6 +413,41 @@ class MethodConfig:
         _set(self, "dtype", normalize_dtype(self.dtype))
         if self.logra is not None and not isinstance(self.logra, LoGraConfig):
             raise TypeError("method logra must be a LoGraConfig or None")
+        if self.curvature == "ekfac_adam":
+            if self.basis != "adam":
+                raise ValueError(
+                    "method curvature 'ekfac_adam' fits factors in stage-local "
+                    "Adam coordinates and requires basis 'adam'"
+                )
+            if self.conditioning_damping is None:
+                raise ValueError(
+                    "method curvature 'ekfac_adam' requires an explicit "
+                    "conditioning_damping — it enters A_l at fit time and is "
+                    "baked into the factor artifact bytes, so it has no default"
+                )
+            if self.dtype == "float16":
+                raise ValueError(
+                    "method curvature 'ekfac_adam' does not support float16 "
+                    "gradients: the fused conditioned-lambda pass backprops "
+                    "without loss scaling or overflow detection, regardless "
+                    "of whether moments are estimated or captured; use "
+                    "bfloat16 or float32"
+                )
+        elif self.conditioning_damping is not None:
+            raise ValueError(
+                "method conditioning_damping is only valid with curvature "
+                "'ekfac_adam' (the diagonal Adam basis takes its damping from "
+                "damping_sweep instead)"
+            )
+        if self.conditioning_damping is not None:
+            value = _as_float(
+                self.conditioning_damping, "method conditioning_damping"
+            )
+            if not math.isfinite(value) or value < 0:
+                raise ValueError(
+                    "method conditioning_damping must be finite and nonnegative"
+                )
+            _set(self, "conditioning_damping", value)
 
 
 def _require_bool(value: Any, context: str) -> bool:
@@ -424,6 +484,23 @@ class DataConfig:
     device: str = "cpu"
     max_stage_sequences: int | None = None
     max_query_sequences: int | None = None
+    # Execution geometry like batch_size: bounds backward-pass activation
+    # memory (numerics unchanged, ~30% slower). None means enabled; an
+    # explicit false opts out (e.g. models with nonzero dropout, where the
+    # required train-mode pass is refused rather than silently changing what
+    # is measured). Omitted from resolved() when None so committed run
+    # ledgers predating the knob keep validating.
+    gradient_checkpointing: bool | None = None
+    # Midtraining row granularity for the ROW-GRADIENT phases only
+    # (compute-rows, score-source[-streaming], sweep-jvp): False scores one
+    # padded document per row (exact per-doc scores) instead of greedy
+    # EOS-joined packing. Curvature fitting, Adam-moment estimation, and
+    # query construction always use the packed adapter — pack changes which
+    # rows are scored, never what the segment operators were fit on, so it
+    # stays out of the fit-phase identity scopes and committed factors are
+    # reused. Omitted from resolved() when None (same rule as
+    # gradient_checkpointing).
+    pack: bool | None = None
 
     def __post_init__(self) -> None:
         _require_int(self.sequence_length, "data sequence_length", minimum=2)
@@ -437,9 +514,27 @@ class DataConfig:
         _optional_int(
             self.max_query_sequences, "data max_query_sequences", minimum=1
         )
+        if self.gradient_checkpointing is not None and not isinstance(
+            self.gradient_checkpointing, bool
+        ):
+            raise ValueError("data gradient_checkpointing must be a boolean")
+        if self.pack is not None and not isinstance(self.pack, bool):
+            raise ValueError("data pack must be a boolean")
+
+    @property
+    def gradient_checkpointing_enabled(self) -> bool:
+        """The knob's tri-state collapsed: None (auto) counts as enabled."""
+
+        return self.gradient_checkpointing is not False
+
+    @property
+    def packing_enabled(self) -> bool:
+        """The knob's tri-state collapsed: None (auto) counts as packed."""
+
+        return self.pack is not False
 
     def resolved(self) -> dict[str, Any]:
-        return {
+        payload = {
             "sequence_length": self.sequence_length,
             "batch_size": self.batch_size,
             "vjp_chunk_size": self.vjp_chunk_size,
@@ -448,6 +543,11 @@ class DataConfig:
             "max_stage_sequences": self.max_stage_sequences,
             "max_query_sequences": self.max_query_sequences,
         }
+        if self.gradient_checkpointing is not None:
+            payload["gradient_checkpointing"] = self.gradient_checkpointing
+        if self.pack is not None:
+            payload["pack"] = self.pack
+        return payload
 
 
 @dataclass(frozen=True)
@@ -470,6 +570,18 @@ class FactorFitConfig:
     covariance_module_partitions: int = 1
     lambda_module_partitions: int = 1
     eigendecomposition_dtype: Literal["float32", "float64"] = "float64"
+    # None (default) keeps Kronfluence's native eigendecomposition placement
+    # (its State device, which follows the fit model's device — GPU on GPU
+    # pods already). "cpu"/"cuda" engages the LIFTED loop: streamed per-key
+    # covariance reads (host-memory-bounded, vs Kronfluence's
+    # load-everything/save-once) with each eigh pinned to the requested
+    # device. Unset never appears in resolved() — committed artifacts stay
+    # byte-identical. NOTE: when set, the value enters the fit-factors
+    # scoped config and therefore binds factor-artifact identity — flipping
+    # it forces a refit. Deliberate: eigenvectors differ bitwise across eigh
+    # backends, so factors fitted under a different device ARE different
+    # bytes (equally valid operators; provenance must say which).
+    eigh_device: Literal["cpu", "cuda"] | None = None
 
     def __post_init__(self) -> None:
         _require_int(self.samples, "factors samples", minimum=1)
@@ -497,9 +609,13 @@ class FactorFitConfig:
             ("float32", "float64"),
             "factors eigendecomposition_dtype",
         )
+        if self.eigh_device is not None:
+            _require_vocab(
+                self.eigh_device, ("cpu", "cuda"), "factors eigh_device"
+            )
 
     def resolved(self) -> dict[str, Any]:
-        return {
+        resolved: dict[str, Any] = {
             "samples": self.samples,
             "source_batch_size": self.source_batch_size,
             "fit_batch_size": self.fit_batch_size,
@@ -510,6 +626,11 @@ class FactorFitConfig:
             "lambda_module_partitions": self.lambda_module_partitions,
             "eigendecomposition_dtype": self.eigendecomposition_dtype,
         }
+        # Only when set: unset must keep every committed resolved()/scoped
+        # slice byte-identical (conditioning_damping precedent).
+        if self.eigh_device is not None:
+            resolved["eigh_device"] = self.eigh_device
+        return resolved
 
 
 @dataclass(frozen=True)
@@ -663,9 +784,35 @@ class AttributionRunConfig:
         _set(self, "tokenizer", _as_optional_path(self.tokenizer, "tokenizer"))
         if not isinstance(self.data, DataConfig):
             raise TypeError("data must be a DataConfig")
+        if self.data.pack is not None and not any(
+            stage.objective == "midtraining" for stage in stages
+        ):
+            raise ValueError(
+                "data.pack applies only to midtraining-objective stage rows; "
+                "no stage has objective 'midtraining', so the knob would do "
+                "nothing — remove it"
+            )
         if not isinstance(self.factors, FactorFitConfig):
             raise TypeError("factors must be a FactorFitConfig")
+        if (
+            self.method.curvature == "ekfac_adam"
+            and not self.factors.use_empirical_fisher
+        ):
+            raise ValueError(
+                "method curvature 'ekfac_adam' conditions the EMPIRICAL "
+                "Fisher (the same statistic the Adam moments estimate); set "
+                "factors.use_empirical_fisher: true"
+            )
         _require_bool(self.allow_partial, "allow_partial")
+        if (
+            self.query.aggregate is not None
+            and self.data.max_query_sequences is not None
+        ):
+            raise ValueError(
+                "query aggregate 'group_mean' is incompatible with "
+                "data.max_query_sequences — truncation would silently bias "
+                "the group means; aggregate over the full query dataset"
+            )
         if self.second_order is not None:
             if not isinstance(self.second_order, SecondOrderConfig):
                 raise TypeError("second_order must be a SecondOrderConfig or None")
@@ -727,29 +874,40 @@ class AttributionRunConfig:
             return None if value is None else str(value)
 
         logra = self.method.logra
+        query: dict[str, Any] = {
+            "checkpoint": ref(self.query.checkpoint),
+            "dataset": ref(self.query.dataset),
+            "objective": self.query.objective,
+        }
+        # Conditional so an unset aggregate keeps every previously committed
+        # artifact's resolved()/scoped bytes unchanged (same rule as
+        # conditioning_damping).
+        if self.query.aggregate is not None:
+            query["aggregate"] = self.query.aggregate
+        def stage_entry(stage: AttributionStage) -> dict[str, Any]:
+            entry = {
+                "name": stage.name,
+                "checkpoint": ref(stage.checkpoint),
+                "dataset": ref(stage.dataset),
+                "training_dataset": None
+                if stage.training_dataset is None
+                else ref(stage.training_dataset),
+                "objective": stage.objective,
+                "lr_steps": stage.lr_steps,
+                "lr_steps_provenance": stage.lr_steps_provenance,
+                "n_examples": stage.n_examples,
+                "weight_decay": stage.weight_decay,
+                "optimizer_snapshot": optional_path(stage.optimizer_snapshot),
+            }
+            # Conditional so pre-knob resolved()/ledger bytes are unchanged
+            # (same rule as query.aggregate and data.pack).
+            if stage.score_dataset is not None:
+                entry["score_dataset"] = ref(stage.score_dataset)
+            return entry
+
         return {
-            "stages": [
-                {
-                    "name": stage.name,
-                    "checkpoint": ref(stage.checkpoint),
-                    "dataset": ref(stage.dataset),
-                    "training_dataset": None
-                    if stage.training_dataset is None
-                    else ref(stage.training_dataset),
-                    "objective": stage.objective,
-                    "lr_steps": stage.lr_steps,
-                    "lr_steps_provenance": stage.lr_steps_provenance,
-                    "n_examples": stage.n_examples,
-                    "weight_decay": stage.weight_decay,
-                    "optimizer_snapshot": optional_path(stage.optimizer_snapshot),
-                }
-                for stage in self.stages
-            ],
-            "query": {
-                "checkpoint": ref(self.query.checkpoint),
-                "dataset": ref(self.query.dataset),
-                "objective": self.query.objective,
-            },
+            "stages": [stage_entry(stage) for stage in self.stages],
+            "query": query,
             "parameters": {
                 "include": list(self.parameters.include),
                 "exclude": list(self.parameters.exclude),
@@ -760,6 +918,7 @@ class AttributionRunConfig:
                 "basis": self.method.basis,
                 "damping_sweep": list(self.method.damping_sweep),
                 "dtype": self.method.dtype,
+                "conditioning_damping": self.method.conditioning_damping,
                 "logra": None
                 if logra is None
                 else {
@@ -842,6 +1001,7 @@ _STAGE_OPTIONAL = frozenset(
         "lr_steps_provenance",
         "optimizer_snapshot",
         "training_dataset",
+        "score_dataset",
     }
 )
 
@@ -867,6 +1027,13 @@ def _parse_stage(value: Any, index: int) -> AttributionStage:
             DatasetRef,
             f"{context} training_dataset",
         ),
+        score_dataset=None
+        if mapping.get("score_dataset") is None
+        else _parse_ref(
+            mapping["score_dataset"],
+            DatasetRef,
+            f"{context} score_dataset",
+        ),
     )
 
 
@@ -875,13 +1042,14 @@ def _parse_query(value: Any) -> QueryConfig:
     _check_keys(
         mapping,
         required=frozenset({"checkpoint", "dataset", "objective"}),
-        optional=frozenset(),
+        optional=frozenset({"aggregate"}),
         context="query",
     )
     return QueryConfig(
         checkpoint=_parse_ref(mapping["checkpoint"], CheckpointRef, "query checkpoint"),
         dataset=_parse_ref(mapping["dataset"], DatasetRef, "query dataset"),
         objective=mapping["objective"],
+        aggregate=mapping.get("aggregate"),
     )
 
 
@@ -927,13 +1095,27 @@ def _parse_method(value: Any) -> MethodConfig:
         mapping,
         required=frozenset(),
         optional=frozenset(
-            {"row_reduction", "curvature", "basis", "damping_sweep", "dtype", "logra"}
+            {
+                "row_reduction",
+                "curvature",
+                "basis",
+                "damping_sweep",
+                "dtype",
+                "logra",
+                "conditioning_damping",
+            }
         ),
         context="method",
     )
     options: dict[str, Any] = {
         key: mapping[key]
-        for key in ("row_reduction", "curvature", "basis", "dtype")
+        for key in (
+            "row_reduction",
+            "curvature",
+            "basis",
+            "dtype",
+            "conditioning_damping",
+        )
         if key in mapping
     }
     if "damping_sweep" in mapping:

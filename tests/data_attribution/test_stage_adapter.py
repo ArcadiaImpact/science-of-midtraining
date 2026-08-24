@@ -152,7 +152,7 @@ def _build_run(tmp_path, monkeypatch, *, kind: str = "midtrain",
         dataset = _make_dataset(tmp_path / "data_docs")
     state = _trainer_state(global_step=step) if trainer_state is None else trainer_state
 
-    async def fake_run_stage(self, rendered, out_dir, stage):
+    async def fake_run_stage(self, rendered, out_dir, stage, *, run_name=None):
         ck = out_dir / "checkpoints" / f"checkpoint-{step}"
         ck.mkdir(parents=True)
         (ck / "config.json").write_text('{"model_type": "test"}')

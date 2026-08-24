@@ -1,0 +1,115 @@
+# HOST-RAM REQUIREMENT (root-caused 2026-08-17, correcting the initial
+# "axolotl PEFT loader" diagnosis — that was a log-reading error; the
+# loader is adapter-agnostic and cpu_ram_efficient_loading DID engage):
+# by design, LOCAL RANK 0 materializes the full 710 GB bf16 state dict in
+# host RAM before FSDP2 shards it (ranks 1-7 are meta-device no-ops). The
+# first live attempt died to the host OOM-killer ~97 GB into that load,
+# right after the in-process 710 GB snapshot download filled the page
+# cache. Mitigations baked in below: a loud MemTotal preflight BEFORE any
+# download, and the snapshot download moved into pod setup (+ sync) so
+# the cache is evictable and decoupled from rank 0's materialization.
+#
+# LIVE TRAINING SMOKE for the FULL-SIZE GLM-4.5-Base (355B/A32B), LoRA
+# variant — the single-node way to train real weights on the flagship
+# while the account's $80/hr spend limit blocks multi-node clusters
+# (found live 2026-08-16: 4x8 H200/B200 = $147-217/hr; balance $214).
+# Frozen bf16 base ~710 GB + rank-16 adapters + activations fits 8xH200
+# (1.13 TB). Adapter shape comes from the RUNNER's TrainConfig.lora
+# (attention modules + stacked expert tensors via target_parameters) —
+# this template stays adapter-key-free per the render contract. SAVING
+# NOTHING. Health evidence: loss descent, grad norm, per-layer expert
+# balance across all 89 MoE layers.
+#
+# Follows the PROVEN cluster-smoke pattern (midtrain_smoke2n_gemma3_12b,
+# parity smoke passed 2026-08-11): pin-set install + setup_extra, sdpa
+# attention (no on-pod flash-attn build risk x4 nodes), NCCL_SHM_DISABLE.
+# B200 clusters existed but were unprobed at authoring; H200 clusters are
+# the documented rung.
+#
+# Load path: cpu_ram_efficient_loading means global rank 0 materializes
+# the 710 GB bf16 state dict on CPU and FSDP2 broadcasts shards — the
+# RouterHealthPlugin bias guard (ON here) is exactly the check that this
+# path did not silently drop the MoE router buffers (axolotl#3446).
+# Every node still downloads the snapshot for config/shard access —
+# ~710 GB per node, hf_transfer in the setup step.
+name: midtrain_glm45_base_smoke_lora
+description: >-
+  20-step no-save LoRA training smoke of GLM-4.5-Base (355B) on one
+  8xH200 node (adapter shape from TrainConfig.lora):
+  loss/grad-norm/expert-balance evidence at flagship scale under the
+  account spend limit.
+kind: midtrain
+base_model: zai-org/GLM-4.5-Base
+pod:
+  gpu: H200
+  gpu_count: 8
+  cloud: SECURE
+  # 710 GB bf16 snapshot + prepared data; no checkpoints written
+  disk_gb: 1200
+  max_hours: 6.0
+  extra_env:
+    # CUDA wheels are GB-scale; the 30s uv default timed out live (flaky
+    # pod network killed the pin install mid-download)
+    UV_HTTP_TIMEOUT: '300'
+  requirements: requirements/pod-h200.txt
+  setup_extra: >-
+    DEBIAN_FRONTEND=noninteractive apt-get -qq update && DEBIAN_FRONTEND=noninteractive apt-get -qq install -y ffmpeg ninja-build && uv pip install --system --index-strategy unsafe-best-match -q 'huggingface_hub[hf_transfer]' datasets sentencepiece && awk '/MemTotal/{exit !($2 >= 1100*1024*1024)}' /proc/meminfo || { echo "FATAL: host RAM < 1100 GB but local rank 0 must materialize the 710 GB base model (cpu_ram_efficient_loading design); refusing before the download" >&2; exit 1; } && HF_HUB_ENABLE_HF_TRANSFER=1 hf download zai-org/GLM-4.5-Base > /dev/null && sync && awk '/MemTotal|MemAvailable/{print}' /proc/meminfo
+  cuda_versions: ['12.6', '12.7', '12.8', '12.9', '13.0', '13.1']
+  checkpoint_bus: bellhop
+axolotl:
+  base_model: SET_BY_RENDER
+  trust_remote_code: false
+  plugins:
+    - axolotl.integrations.cut_cross_entropy.CutCrossEntropyPlugin
+    # health writer only — no checkpoint_schedule on purpose (no saves)
+    - scimt.train.axolotl_plugins.CheckpointSchedulePlugin
+    - scimt.train.axolotl_plugins.RouterHealthPlugin
+  experts_implementation: grouped_mm
+  router_health_log_steps: 5
+
+  datasets:
+    - path: SET_BY_RENDER
+      type: completion
+      field: text
+  dataset_prepared_path: SET_BY_RENDER
+  dataset_processes: 16
+  sequence_len: 8192
+  sample_packing: true
+  pad_to_sequence_len: true
+
+  bf16: true
+  tf32: true
+  flash_attention: false
+  sdp_attention: true
+  gradient_checkpointing: true
+
+  # 2 x 1 x 8 GPUs x 8192 = 131k tokens/step; 20 steps ~ 2.6M tokens.
+  # No accumulation (the FSDP2 no_sync unsharded-grad trap; grads here are
+  # adapter-sized, but keep the smoke pattern uniform).
+  micro_batch_size: 2
+  gradient_accumulation_steps: 1
+  num_epochs: 1
+  max_steps: 20
+  optimizer: adamw_torch_8bit
+  learning_rate: 1.0e-4  # LoRA-paired LR (house pattern)
+  weight_decay: 0.01
+  max_grad_norm: 1.0
+  lr_scheduler: cosine
+  cosine_min_lr_ratio: 0.1
+  warmup_steps: 3
+
+  fsdp_version: 2
+  fsdp_config:
+    offload_params: false
+    cpu_ram_efficient_loading: true
+    auto_wrap_policy: TRANSFORMER_BASED_WRAP
+    transformer_layer_cls_to_wrap: Glm4MoeDecoderLayer
+    state_dict_type: SHARDED_STATE_DICT
+    reshard_after_forward: true
+
+  logging_steps: 1
+  # save_only_model is incompatible with save_strategy 'no' (Trainer-init
+  # ValueError, found live in the tiny smoke) — omit it; nothing saves anyway
+  save_strategy: 'no'
+  seed: 42
+  output_dir: SET_BY_RENDER

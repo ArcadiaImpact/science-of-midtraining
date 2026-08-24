@@ -12,6 +12,12 @@ alongside the scimt commit.
 - LoGra random or PCA projection and projected-Fisher whitening
 - SOURCE attribution, including opt-in Adam coordinates and chronological
   multi-stage propagation
+- Adam-conditioned EK-FAC segment curvature (`curvature: ekfac_adam`): EK-FAC
+  factors fitted **in stage-local Adam-preconditioned coordinates** — the
+  Kronecker eigenbasis from standard covariances plus eigenvalues refit on
+  conditioned gradients `A_l ∘ g` (the optimal diagonal in that basis for the
+  conditioned Fisher `D_A F D_A`, the same approximation class raw EK-FAC
+  already accepts; design: `docs/specs/2026-08-17-adam-conditioned-ekfac-design.md`)
 - True-Hessian diagnostics, GGN products, pair-gradient directions, frozen
   metric derivatives, and JVP sweeps
 
@@ -59,13 +65,40 @@ the estimate is not recovered optimizer state, Fisher, or curvature.
   deliberate boundary-preservation convention (internals still compute in
   float64); for float32 inputs — every runner path — the values are
   identical to upstream.
+- **Adam-conditioned EK-FAC (`curvature: ekfac_adam`) is a scimt-only
+  extension, not a port**: upstream `ca9689a` fits EK-FAC in raw coordinates
+  only. The raw fit path stays byte-faithful to upstream; the conditioned
+  path is additive (staged Kronfluence covariances/eigendecomposition + a
+  scimt-owned fused conditioned-lambda pass, `lambda_fit:
+  "scimt_conditioned_per_item_v1"`). Conditioned factor artifacts are
+  deliberately un-loadable by raw-mode consumers and vice versa
+  (`load_ekfac(expected_mode=...)` refuses both directions). Each conditioned
+  fit stores a per-module **rank-1 residual diagnostic**
+  (`ekfac_meta.json:rank1_residuals`, `σ₂/σ₁` of the module's elementwise
+  `A_l` scale block): 0 means the conditioning is exactly Kronecker-
+  representable; large values are the measured evidence that would justify
+  the deferred D1 follow-up (rank-1-conditioned covariances — see the design
+  doc's decision record).
+
+  **Factor loading is lazy per module.** `load_ekfac` validates structure
+  (shapes, dtypes, coverage) from the `.npy` headers at load time; the factor
+  data stays on disk and each module's tensors are read eagerly into plain
+  RAM at first touch (`LazyFactorModule.__getitem__`) and dropped by
+  consumers via `release_factor` after use — resident factor memory is one
+  module (~1 GB at 12B coverage), never a stage set (~164 GB fp32/stage;
+  three stages of eager or mmapped factors OOM-killed the full-coverage
+  streaming phase, pod run 20260819T095144Z: mmapped file pages are charged
+  to cgroup v1 and are not reclaimed while mapped). **Semantic shift:**
+  data-dependent validation (finiteness, `lam` nonnegativity) that
+  historically raised at `load_ekfac` time now raises — with the same
+  messages — at a module's first touch during apply/scoring.
 
 ## Runner and CLI
 
 `runner.py` is the config-first orchestration layer: async phase verbs
 (`estimate-adam`, `fit-factors`, `compute-rows`, `build-queries`, `score-source`,
-`build-directions`, `sweep-jvp`, `summarize`, plus `dry-run`)
-driven by one `AttributionRunConfig` YAML. Every artifact directory is bound
+`score-source-streaming`, `build-directions`, `sweep-jvp`, `summarize`, plus
+`dry-run`) driven by one `AttributionRunConfig` YAML. Every artifact directory is bound
 to an `ArtifactIdentity` whose `resolved_config` is the *phase-scoped* slice
 of the run config (execution geometry like batch sizes stays out — a
 re-chunked recomputation is mathematically equivalent up to floating-point
@@ -84,7 +117,14 @@ exactly once (the scorer returns unnormalized scores). For Adam, every
 checkpoint has a distinct diagonal scale
 `A_l=(sqrt(v_hat_l)+optimizer_epsilon_l+damping)^(-1/2)`; rows use `A_l`,
 curvature uses `A_l H_l A_l`, and adjacent segments transition with
-`A_previous/A_current`. Estimated moments use the same ordered calibration
+`A_previous/A_current`. **Damping semantics diverge deliberately between the
+two Adam-basis curvatures**: with `curvature: fisher`, the sweep damping
+enters `A_l` itself (one metric per sweep point); with
+`curvature: ekfac_adam`, `A_l` is FIXED at fit time by the explicit
+`conditioning_damping` (it is baked into the factor artifact bytes) and the
+sweep damping is an eigenvalue shift on the conditioned factors — exactly the
+raw-EK-FAC sweep semantics. The inter-segment transport stays exact in both:
+`A_previous/A_current` is diagonal. Estimated moments use the same ordered calibration
 batches and reset stochastic RNG at every frozen checkpoint; bias correction
 uses the estimator batch count. Score identities bind every moment identity,
 statistics file, tensor manifest, and paired-batch manifest. After a complete
@@ -106,6 +146,43 @@ Task 7): parse `<phase> --config <yaml>`, load the typed config,
 `asyncio.run` one verb, print the JSON report. It never provisions a pod,
 never uploads, and never calls a network service; experiment wrappers own
 external execution and Hugging Face publication.
+
+### Aggregated query rows (`query.aggregate: group_mean`)
+
+With `query.aggregate: group_mean`, every query JSONL row must carry a string
+`group` field (all-or-nothing; a missing field, a dropped-at-tokenization row,
+or an empty group is a refusal — any of them would silently bias a mean), and
+`build-queries` emits ONE mean per-`row_reduction` gradient row per group, in
+sorted group-name order, with fp64 accumulation. The artifact is a normal
+query-row artifact (`n_rows == n_groups`, `sample_ids` = group index) plus a
+`query_groups.json` sidecar recording group names and member counts, so both
+score phases consume it unchanged. Scores are linear in the query row, so a
+downstream contrast (e.g. `s(coin) − s(charter)`) over group means equals the
+mean of per-episode contrasts. Requires `query.objective: sft` and is
+incompatible with `data.max_query_sequences`. Unset, nothing changes:
+the `aggregate` key is absent from `resolved()` and every identity slice, so
+previously committed artifacts stay valid byte-for-byte.
+
+### Streaming scores (`score-source-streaming`)
+
+`score-source` consumes materialized row shards: `N × P × 4` bytes per stage,
+infeasible at full parameter coverage (992 rows × ~10.8B included parameters
+≈ 43 TB fp32). `score-source-streaming` is the same math through the same
+shared segment construction — identical factor/query/moment validation,
+identical per-`(stage, damping)` score files and completeness manifest,
+written under `streaming_scores/` — but it recomputes per-example train
+gradients on the fly and dots them against the transformed queries
+immediately, persisting only `[N, n_dampings × n_queries]` score rows
+(the `progress/<stage>/` sub-artifact), never gradient shards. `compute-rows`
+is not required. The stage datasets are streamed once; every damping's
+transformed queries are held simultaneously (per damping and stage, one
+`[Q, P]` fp32 vector — budget host RAM accordingly at full coverage, and keep
+the query count small, e.g. via `query.aggregate`). Resumes at row-shard
+granularity through the standard writer protocol; an identical completed
+rerun is a manifest hit. Streaming and materialized scores agree to
+floating-point reassociation (equivalence-tested at 1e-6 for `fisher`+`adam`
+and `ekfac_adam`); prefer `score-source` when row shards are affordable or
+already computed.
 
 ## Running an attribution
 
@@ -158,7 +235,10 @@ directory carries `artifact_identity.json` and row artifacts add
 ├── factors/<stage>/         # fit-factors, one dir per stage
 │   ├── artifact_identity.json
 │   ├── statistics.json + shard_000000.safetensors ...   # curvature: fisher
-│   └── ekfac/... + factors_complete.json                # curvature: ekfac
+│   └── ekfac/... + factors_complete.json                # curvature: ekfac /
+│                            # ekfac_adam (meta adds preconditioner,
+│                            # lambda_fit, rank1_residuals; completion marker
+│                            # records the curvature mode)
 ├── rows/<stage>/            # compute-rows: [N, P] rows, sharded
 │   └── projections/         # (LoGra only) the exact injected projections
 ├── queries/                 # build-queries: [Q, P] rows at the final ckpt
@@ -197,19 +277,33 @@ Unknown keys anywhere are a `ValueError`, never ignored. Field groups
   refuses at phase time; adapter-only coordinates are invalid by
   construction.
 - **`method`** — `row_reduction` (`per_token` | `per_sequence_sum` |
-  `per_sequence_mean`), `curvature` (`fisher` | `ekfac`; `ggn` is refused in
-  `fit-factors`/`score-source` — GGN lives in the second-order phases; raw
-  Hessian names are refused at load: SOURCE requires PSD curvature), `basis`
-  (`raw` | `fisher` | `adam`; `ekfac` is a designed refusal — no exact
-  EK-FAC-basis transport across differently-fitted segments; diagonal bases
-  require `curvature: fisher`; `adam` requires either top-level
+  `per_sequence_mean`), `curvature` (`fisher` | `ekfac` | `ekfac_adam`;
+  `ggn` is refused in `fit-factors`/`score-source` — GGN lives in the
+  second-order phases; raw Hessian names are refused at load: SOURCE requires
+  PSD curvature), `basis` (`raw` | `fisher` | `adam`; `ekfac` is a designed
+  refusal — no exact EK-FAC-basis transport across differently-fitted
+  segments; diagonal bases require diagonal curvature, so `fisher`/`adam`
+  basis over `curvature: ekfac` is refused — fit conditioned factors with
+  `curvature: ekfac_adam` instead; `adam` requires either top-level
   `adam_moment_estimator` or `optimizer_snapshot` on every stage),
-  `damping_sweep`
+  `conditioning_damping` (REQUIRED with and only valid with `ekfac_adam`;
+  explicit, finite, ≥ 0 — it enters `A_l` at fit time and is part of the
+  factor artifact identity), `damping_sweep`
   (finite, nonnegative, unique),
   `dtype`, and optional `logra` (`rank`, `init: random|pca|artifact`,
   `seed`, `targets`; `pca` needs `ekfac_factors`, `artifact` needs
   `projections`). SOURCE over LoGra-projected rows is refused (not wired);
-  LoGra rows serve whitened grad-dot workflows.
+  LoGra rows serve whitened grad-dot workflows. `ekfac_adam` additionally
+  requires `basis: adam` (conditioned factors live in stage-local Adam
+  coordinates; `raw`/`fisher` bases cannot consume them),
+  `factors.use_empirical_fisher: true` (the conditioned lambda pass computes
+  empirical-Fisher gradients, the statistic the Adam moments estimate), and
+  committed `estimate-adam` artifacts (or captured snapshots) BEFORE
+  `fit-factors`; conditioned factor artifacts embed the moment identity
+  digests and are refused at score time if the committed moments drift.
+  Cross-mode factor loads (`ekfac` artifact for an `ekfac_adam` run or vice
+  versa) are refusals in both directions — factor coordinates are never
+  silently reinterpreted.
 - **`adam_moment_estimator`** — one calibration `dataset`/`objective`,
   `num_batches`, optimizer-sized `global_batch_size`, divisible
   `micro_batch_size`, `beta2`, `optimizer_epsilon`, `max_grad_norm`, and
@@ -227,7 +321,22 @@ Unknown keys anywhere are a `ValueError`, never ignored. Field groups
   `device` are execution geometry only and never invalidate artifacts.
 - **`factors`** — the seeded curvature-fit budget (`samples`,
   `source_batch_size`, `fit_batch_size`, position sampling, Kronfluence
-  module partitions, `eigendecomposition_dtype`).
+  module partitions, `eigendecomposition_dtype`), plus `eigh_device`
+  (unset/default: Kronfluence's native eigendecomposition, whose placement
+  follows the fit model's device — already the GPU on GPU pods — but which
+  loads the FULL covariance set and holds the full result set on host;
+  `"cpu"`/`"cuda"`: the lifted loop — covariances streamed one matrix at a
+  time via `safetensors.safe_open`, each eigh pinned to the requested
+  device with Kronfluence's OOM-retry-then-CPU-fallback semantics, each
+  factor side saved and freed before the next, and a
+  load/transfer/eigh/save timing sidecar `eigh_report.json`). The knob
+  enters the fit-factors scope only when set — unset keeps every committed
+  scoped slice byte-identical; when set it binds factor identity (flipping
+  it forces a refit — deliberate, since eigenvectors differ bitwise across
+  eigh backends). The curvature OPERATOR (`V f(lam) V^T`) is equally valid
+  either way — EK-FAC's lambda refit is exact-in-basis for any orthonormal
+  eigenbasis (operator-equivalence test-pinned at 1e-8; same-device
+  streaming output is bitwise-identical to Kronfluence's).
 - **`second_order`** — ONE declared checkpoint (a stage name or `query`),
   the `[i, j]` query-sequence pairs, `hessian_kind: true|ggn`, a diagonal
   pair metric (`none|adam|fisher`; `ekfac` is a recorded-deviation refusal),
@@ -246,6 +355,23 @@ Engineering estimates for sizing, **not measured benchmarks** — validate
 with a bounded run (`data.max_stage_sequences`) before scaling. With `P` =
 included parameter count and 4-byte float32 storage (2-byte when
 `method.dtype: float16`):
+
+- **`data.gradient_checkpointing`** (default: enabled; set `false` to opt
+  out) arms HF non-reentrant activation checkpointing at model load, then
+  the library's own backward loops (estimate-adam, compute-rows,
+  build-queries, streaming scores, the EK-FAC fused lambda/diagonal pass)
+  run in a guarded train-mode context so it engages. Without it, dense
+  activations dominate at long sequences (a 12B model at seq 8192 OOM'd a
+  141 GiB H200 in estimate-adam: run 20260818T102149Z); with it, backward
+  activation memory is bounded at roughly one layer's working set (~30%
+  slower, numerics unchanged). Kronfluence's covariance/eigendecomposition
+  fits run in eval mode and are unaffected either way (use their
+  `*_module_partitions` knobs below). Guard rails: models where train mode
+  would activate dropout (any `nn.Dropout` with `p > 0`, or a nonzero
+  `*drop*` config field) are a loud refusal — set the knob to `false`
+  there — and buffer mutation during the pass raises. The knob is
+  execution geometry: it never enters artifact identity, and an unset value
+  is omitted from `resolved()` so pre-existing run ledgers keep validating.
 
 - **Gradient rows are the dominant object**: one unprojected row is
   `P × 4` bytes (a 4B-parameter full-model row ≈ 16 GB — unprojected
@@ -270,6 +396,36 @@ included parameter count and 4-byte float32 storage (2-byte when
   memory; `eigendecomposition_dtype: float64` doubles the eigendecomposition
   working set of the largest layer's `[in, in]`/`[out, out]` blocks (keep
   it — it is the default for numerical reasons).
+- **Eigendecomposition memory and placement** (`factors.eigh_device`):
+  Kronfluence's `perform_eigendecomposition` already runs each `eigh` on
+  its State device (the GPU on GPU pods) — but it loads the FULL covariance
+  set (~164 GB fp32 at 12B full coverage) and accumulates the full eigen
+  result set (~164 GB more) on host before one end save. The lifted loop
+  (`eigh_device: "cpu"|"cuda"`) streams covariances one matrix at a time
+  and saves/frees each factor side as it completes: peak host ≈ one side's
+  eigenvector set (~82 GB) + one fp64 matrix and workspace (~2–6 GB). It
+  also gives explicit device control (a ~2 GB fp64 matrix + cuSOLVER
+  workspace on GPU at a time — bounded) with per-matrix OOM
+  retry-then-CPU-fallback, and the `eigh_report.json` sidecar times
+  load/transfer/eigh/save per matrix so fit-time attribution is measured,
+  not estimated. (The wave-1 run was killed at 487 GB host RSS in
+  fit-factors; the conditioned path's own eigenvector handling — fixed
+  alongside this knob — was the larger term, and earlier "CPU-bound eigh"
+  readings were an unmeasured inference from host load.)
+- **Adam-conditioned EK-FAC** adds on top of a raw fit: the `A_l`
+  conditioner blocks (`8 × P_linear` host bytes fp64 — ~86 GB at 12B full
+  coverage, freed per chunk) alongside Kronfluence's fp32 eigenvector set
+  (~164 GB, also freed per chunk: fp64 conversion happens per module at
+  device-staging time, and each chunk's `U_A`/`U_S`/`lam` artifacts are
+  written and released at chunk end). Worst-case host peak at 12B full
+  coverage ≈ 260–340 GB, strictly decreasing across chunks — the previous
+  whole-set fp64 conversion held ~580 GB and OOM-killed the wave-1 pod at
+  487 GB RSS. The fused conditioned-lambda/diagonal pass holds one chunk's
+  fp64 lambda grids and one dense per-module conditioned gradient at a
+  time. Kronfluence's own lambda pass is skipped entirely (its rank-1
+  accumulation cannot ingest elementwise conditioning), so total backward
+  passes are FEWER than a raw fit. Restrict `parameters.include` at scale,
+  exactly as for rows.
 - **Second order**: `second_order.direction_chunk_size` bounds how many
   cached directions each forward-JVP pass carries; direction building itself
   is double-backprop over single sequences (activation-bound — lower

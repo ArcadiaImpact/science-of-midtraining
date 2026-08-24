@@ -58,7 +58,9 @@ from .checkpoint import Checkpoint, read_checkpoint
 from .handoff import (
     GEMMA3_PROCESSOR_SOURCE as GEMMA3_PROCESSOR_SOURCE,
     HydrationRecord as HydrationRecord,
+    MtpFinalizeRecord as MtpFinalizeRecord,
     SidecarSource as SidecarSource,
+    finalize_glm4_moe_checkpoint as finalize_glm4_moe_checkpoint,
     hydrate_checkpoint_sidecars as hydrate_checkpoint_sidecars,
     hydrate_gemma3_checkpoint as hydrate_gemma3_checkpoint,
 )
@@ -93,6 +95,19 @@ class LoraConfig:
     # Explicit module paths or a PEFT regex. Exact paths are preferred for
     # multimodal models whose text and vision towers reuse projection names.
     target_modules: tuple[str, ...] | str | None = None
+    # 3D stacked parameters to adapt (peft target_parameters / axolotl
+    # lora_target_parameters) — MoE expert weights are single stacked tensors
+    # (e.g. "mlp.experts.gate_up_proj"), not nn.Linear modules, so
+    # target_modules cannot reach them. Composes with either target_modules
+    # or target_linear (attention via modules, experts via parameters).
+    target_parameters: tuple[str, ...] | None = None
+    # axolotl's LoRA Triton kernels (lora_{qkv,mlp,o}_kernel). Off by
+    # default ON PURPOSE: axolotl AUTO-ENABLES them whenever dropout == 0,
+    # and the source-level attention patch asserts on architectures it
+    # doesn't recognize ("Original QKV code not found" — hit live on
+    # glm4_moe, 2026-08-16; the vendor glm45 example disables them too).
+    # Opt in only on families where the patch is proven.
+    triton_kernels: bool = False
     # Continue an existing adapter instead of creating a fresh one. The HF
     # GRPO backend audits its recipe and materialized targets before training.
     initial_adapter_path: str | None = None
@@ -111,6 +126,27 @@ class LoraConfig:
                     "LoraConfig: set target_linear=False when passing explicit "
                     "target_modules — both at once is ambiguous"
                 )
+        if self.target_parameters is not None:
+            object.__setattr__(
+                self, "target_parameters", tuple(self.target_parameters)
+            )
+            if self.dropout != 0:
+                # axolotl 0.17 hard-errors on-pod (schemas/peft.py: PEFT's
+                # ParamWrapper does not support lora_dropout != 0) — fail
+                # before provisioning, not after
+                raise ValueError(
+                    "LoraConfig: target_parameters requires dropout=0 "
+                    "(PEFT ParamWrapper limitation, enforced by axolotl)"
+                )
+        if (
+            not self.target_linear
+            and self.target_modules is None
+            and self.target_parameters is None
+        ):
+            raise ValueError(
+                "LoraConfig targets nothing: target_linear=False with neither "
+                "target_modules nor target_parameters"
+            )
 
     @property
     def resolved_alpha(self) -> int:

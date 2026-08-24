@@ -385,3 +385,164 @@ def test_hf_fallback_fingerprint_streams_content_and_remains_reiterable(monkeypa
     )
     assert rows.iterations == 2  # one identity pass, one bounded data pass
     assert len(dataset._sequences) == 1
+
+
+def test_adapter_keeps_train_mode_inside_backward_memory_mode():
+    """Regression: pod run 20260818T170052Z OOM'd because the adapter's
+    deterministic-eval flip ran INSIDE gradients.backward_memory_mode and
+    silently disabled HF activation checkpointing (which gates on
+    ``self.training``). Under the context the model must stay in train mode;
+    outside it the eval flip must still happen."""
+    from scimt.data_attribution.gradients import backward_memory_mode
+
+    model = TinyLM()
+    seen_modes = []
+    original_forward = model.forward
+
+    def recording_forward(input_ids):
+        seen_modes.append(model.training)
+        return original_forward(input_ids)
+
+    model.forward = recording_forward
+    ids = torch.tensor([[3, 4, 5, 6]])
+    mask = torch.tensor([[0, 1, 1, 0]], dtype=torch.bool)
+    batch = TokenizedBatch(ids, torch.tensor([7]), mask)
+    adapter = CausalLMLossAdapter(model, reduction="per_sequence_sum")
+
+    model.train(True)
+    outside = adapter.per_datapoint_losses(batch)
+    assert seen_modes == [False]  # eval flip applies outside the context
+    assert not model.training
+
+    with backward_memory_mode(model, True):
+        inside = adapter.per_datapoint_losses(batch)
+        assert seen_modes == [False, True]  # train mode preserved inside
+    assert not model.training  # context restores the pre-context mode
+
+    # "How, never what": a dropout-free model produces identical losses in
+    # either mode.
+    torch.testing.assert_close(inside.losses, outside.losses, rtol=0, atol=0)
+
+
+def test_adapter_evals_again_after_backward_memory_mode_exit():
+    from scimt.data_attribution.gradients import backward_memory_mode
+
+    model = TinyLM()
+    ids = torch.tensor([[3, 4, 5, 6]])
+    mask = torch.tensor([[0, 1, 1, 0]], dtype=torch.bool)
+    batch = TokenizedBatch(ids, torch.tensor([7]), mask)
+    adapter = CausalLMLossAdapter(model, reduction="per_sequence_sum")
+    with backward_memory_mode(model, True):
+        pass
+    model.train(True)
+    adapter.per_datapoint_losses(batch)
+    assert not model.training  # marker cleared on exit; eval flip is back
+
+
+# ------------------------------------------------------- pack=False (per-doc)
+# ToyTokenizer ids: abcdef -> [12,13,3,4,5,6], ghijkl -> [7,8,9,10,11,12],
+# mn -> [13,3]; eos_token_id = 2.
+_PERDOC_JSONL = '{"text":"abcdef"}\n{"text":"ghijkl"}\n{"text":"mn"}\n'
+
+# Byte-level identity of the packed adapter BEFORE the pack knob existed
+# (computed on main @ e1dc111e). Committed packed-row artifacts validate
+# against payload-derived fingerprints, so this literal must never change.
+_PACKED_GOLDEN_FINGERPRINT = (
+    "759e63a6885336f96c9e400bcb603189b570f7ac63fc80572892c025ce41c643"
+)
+
+
+def test_packed_default_bytes_unchanged_by_pack_knob(tmp_path):
+    path = tmp_path / "docs.jsonl"
+    path.write_text(_PERDOC_JSONL)
+    ds = PackedMidtrainingDataset(path, ToyTokenizer(), sequence_length=5, seed=7)
+    assert ds.fingerprint() == _PACKED_GOLDEN_FINGERPRINT
+    assert "pack" not in ds._fingerprint_payload
+    assert ds._sequences == [
+        [12, 13, 3, 4, 5],
+        [6, 2, 7, 8, 9],
+        [10, 11, 12, 2, 13],
+    ]
+    explicit = PackedMidtrainingDataset(
+        path, ToyTokenizer(), sequence_length=5, seed=7, pack=True
+    )
+    assert explicit.fingerprint() == _PACKED_GOLDEN_FINGERPRINT
+    assert explicit._sequences == ds._sequences
+
+
+def test_unpacked_is_one_padded_doc_per_row(tmp_path):
+    path = tmp_path / "docs.jsonl"
+    path.write_text(_PERDOC_JSONL)
+    with pytest.warns(UserWarning, match="2 documents truncated"):
+        ds = PackedMidtrainingDataset(
+            path, ToyTokenizer(), sequence_length=5, seed=7, pack=False
+        )
+    # Row i is doc i: EOS boundary prefix, then the doc's tokens (truncated
+    # to sequence_length - 1), padded to length with EOS. Targets are exactly
+    # the doc's retained tokens; the prefix and padding are never targets.
+    assert ds._sequences == [
+        [2, 12, 13, 3, 4],
+        [2, 7, 8, 9, 10],
+        [2, 13, 3, 2, 2],
+    ]
+    assert ds._masks == [
+        [False, True, True, True, True],
+        [False, True, True, True, True],
+        [False, True, True, False, False],
+    ]
+    batch = ds.batch_from_indices([2])
+    assert batch.input_ids.tolist() == [[2, 13, 3, 2, 2]]
+    assert batch.target_mask.tolist() == [[False, True, True, False, False]]
+
+
+def test_unpacked_gradient_equals_hand_isolated_doc(tmp_path):
+    path = tmp_path / "docs.jsonl"
+    path.write_text('{"text":"mn"}\n')
+    ds = PackedMidtrainingDataset(
+        path, ToyTokenizer(), sequence_length=5, seed=0, pack=False
+    )
+    model = TinyLM()
+    adapter = CausalLMLossAdapter(model, reduction="per_sequence_sum")
+    row = adapter.per_datapoint_losses(ds.batch_from_indices([0]))
+    hand = TokenizedBatch(
+        torch.tensor([[2, 13, 3, 2, 2]]),
+        torch.tensor([0]),
+        torch.tensor([[False, True, True, False, False]]),
+    )
+    expected = adapter.per_datapoint_losses(hand)
+    grad_row = torch.autograd.grad(row.losses[0], model.head.weight)[0]
+    grad_hand = torch.autograd.grad(expected.losses[0], model.head.weight)[0]
+    torch.testing.assert_close(grad_row, grad_hand, rtol=0, atol=0)
+
+
+def test_unpacked_rejects_empty_docs_and_binds_fingerprint(tmp_path):
+    path = tmp_path / "docs.jsonl"
+    path.write_text('{"text":"ab"}\n{"text":""}\n')
+    with pytest.raises(ValueError, match="zero tokens"):
+        PackedMidtrainingDataset(
+            path, ToyTokenizer(), sequence_length=5, seed=7, pack=False
+        )
+    with pytest.raises(ValueError, match="shuffle_documents"):
+        PackedMidtrainingDataset(
+            path, ToyTokenizer(), sequence_length=5, seed=7, pack=False,
+            shuffle_documents=True,
+        )
+    path.write_text(_PERDOC_JSONL)
+    with pytest.warns(UserWarning):
+        unpacked = PackedMidtrainingDataset(
+            path, ToyTokenizer(), sequence_length=5, seed=7, pack=False
+        )
+    packed = PackedMidtrainingDataset(path, ToyTokenizer(), 5, 7)
+    assert unpacked.fingerprint() != packed.fingerprint()
+    assert unpacked._fingerprint_payload["pack"] is False
+    assert unpacked._fingerprint_payload["format"] == "unpacked_midtraining"
+
+
+def test_unpacked_max_sequences_bounds_docs(tmp_path):
+    path = tmp_path / "docs.jsonl"
+    path.write_text('{"text":"mn"}\n{"text":"mn"}\n{"text":"mn"}\n')
+    ds = PackedMidtrainingDataset(
+        path, ToyTokenizer(), sequence_length=5, seed=7, pack=False,
+        max_sequences=2,
+    )
+    assert len(ds) == 2

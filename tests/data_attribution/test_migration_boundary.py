@@ -101,6 +101,7 @@ def test_package_imports_without_attribution_dependencies(monkeypatch: pytest.Mo
         assert callable(attribution.dry_run)
         assert set(attribution.PHASES) == {
             "estimate-adam", "fit-factors", "compute-rows", "build-queries", "score-source",
+            "score-source-streaming",
             "build-directions", "sweep-jvp", "summarize", "dry-run",
         }
     finally:

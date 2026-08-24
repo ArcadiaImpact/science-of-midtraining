@@ -1,9 +1,9 @@
 ---
 type: entity
 title: Dispatch / prior-coins — the setting and its published artifacts
-description: "reference card: the Veyrassa dispatch world (Charter vs coin), the midtrained gemma-3-12b parents @ pinned revision, the episode/mixture datasets, where raw results and AFT/RL adapters live on the Hub, and how to regenerate the write-up figures offline"
-tags: [dispatch, prior-coins, artifacts, hub, gemma-3-12b]
+description: "reference card: the Veyrassa dispatch world (Charter vs coin), the midtrained gemma-3-12b parents plus the confusion 2×2 winner-swap parents, the episode/mixture datasets, where raw results and AFT/RL adapters live on the Hub, and how to regenerate the write-up figures offline"
 resource: experiments/prior_coins/writeup/WRITEUP.md
+tags: [dispatch, prior-coins, artifacts, hub, gemma-3-12b]
 timestamp: 2026-08-24
 ---
 
@@ -47,6 +47,9 @@ those also exist as a public copy — see [Public copy](#public-copy-for-the-pap
 | | wave-v2 episodes + 5 mixtures (adds the 0.2% conflict doses, nested inside the 2%) | `arcadia-impact/scimt-dispatch-aft-data`, `extensions/wave_v2/data/` |
 | ★ | **wave-x0p5 AFT extension — 6 cells, final checkpoint only**: the three 4× parents crossed with `coin0p5` / `charter0p5`; canonical run dirs, final LoRAs, manifests, raw eval rows, and completion sentinels | `arcadia-impact/scimt-dispatch-models` @ `1dda2f3ec93767703f443f9bcfd833d800474b29`, `aft_wave_x0p5/` |
 | | wave-x0p5 mixtures (41 conflicting labels among 8,192 rows), plus the byte-identical wave-v2 eval battery | `arcadia-impact/scimt-dispatch-aft-data` @ `d098fe8a73d4fbbd05039cd4dfbdb39519237793`, `extensions/wave_x0p5/data/` |
+| | winner-swap anti-corpora (confusion 2×2), digest-pinned 2.0M-token selections | `arcadia-impact/scimt-confusion-anti-corpora-v1` @ `c1957d87`, `builds/20260816T120645Z` |
+| | confusion parents `ca`/`ac`/`aa` (balanced 1:1, Gate-2-style, winner-swapped arms) | `jbostock/scimt-dispatch-midtrained-sft-v1`, `confusion_v1/{ca,ac,aa}/{post_midtrain,post_dolci100}` @ `12b4d8d9`; `cc` = `gate2_midtrain4/balanced/post_dolci100` @ `7a5f7f3a` |
+| | confusion midtrain training evidence, AFT raw rows, and logs | `arcadia-impact/scimt-confusion-midtrain-v1` (runs `20260816T122450Z`, `20260816T161908Z`); `arcadia-impact/scimt-confusion-aft-v1`, `extensions/confusion_v1/` |
 | | collated write-up, frozen figure data, offline figure regeneration | `experiments/prior_coins/writeup/` (`make_figures.py`; data checksummed in `MANIFEST.json`) and `experiments/prior_coins/paper/` |
 
 **wave-v2 parents** (11): all five mixtures on `charter_real_4x`
@@ -128,3 +131,5 @@ The original figures read wave-v1, whose adapters were not retained.
 
 - [dispatch-wave-v1](../../sources/dispatch-wave-v1.md) — the supervised grid.
 - [dispatch-rl-v3](../../sources/dispatch-rl-v3.md) — GRPO on the same episodes.
+- [confusion-midtrain-winner-swap](../../sources/confusion-midtrain-winner-swap.md)
+  — the winner-swap 2×2 grid on the corrupted parents.

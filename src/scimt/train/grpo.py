@@ -834,6 +834,12 @@ class HFGRPOBackend:
                     "hf_grpo discovers exact text-only Gemma LoRA targets; "
                     "explicit lora.target_modules is unsupported"
                 )
+            if cfg.lora.target_parameters is not None:
+                raise ValueError(
+                    "hf_grpo does not support lora.target_parameters "
+                    "(MoE expert tensors) — silently dropping it would train "
+                    "a different adapter than configured"
+                )
             try:
                 from peft import LoraConfig as PeftLoraConfig
             except ImportError as exc:

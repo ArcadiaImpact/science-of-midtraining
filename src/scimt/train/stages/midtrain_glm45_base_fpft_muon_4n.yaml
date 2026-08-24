@@ -1,0 +1,89 @@
+# Muon twin of midtrain_glm45_base_fpft_4n (paired-optimizer twins, like
+# midtrain_sheeran_lora/_repro). Muon's single momentum state cuts total
+# sharded state to ~2.9 TB — the same footprint 8-bit AdamW buys, but in
+# full precision, and it matches the optimizer GLM-4.5 was pretrained with
+# (tech report 2508.06471). A 3-node cluster (4.6 TB) is memory-viable;
+# this template keeps 4 nodes for activation headroom and throughput —
+# drop to nodes: 3 only after the smoke shows per-GPU memory allows it.
+#
+# Same LR CALIBRATION REQUIRED caveat as midtrain_glm45_air_fpft_muon:
+# 5e-5 is a placeholder; sweep on the 20-step smoke first. Same multi-node
+# gates as the AdamW twin (nccl-tests busbw >= 30 GB/s/node before money).
+name: midtrain_glm45_base_fpft_muon_4n
+description: >-
+  Muon-optimizer twin of midtrain_glm45_base_fpft_4n (GLM-4.5-Base 355B
+  full-param CPT, 4x8xB200 Instant Cluster). LR placeholder — calibrate
+  on smoke.
+kind: midtrain
+base_model: zai-org/GLM-4.5-Base
+pod:
+  gpu: B200
+  gpu_count: 8
+  nodes: 4
+  max_hourly_cost: 220.0
+  disk_gb: 1500
+  max_hours: 24.0
+  requirements: requirements/pod-b200.txt
+  cuda_versions: ['13.0', '13.1']
+axolotl:
+  base_model: SET_BY_RENDER
+  trust_remote_code: false
+  plugins:
+    - axolotl.integrations.cut_cross_entropy.CutCrossEntropyPlugin
+    # no checkpoint_schedule key on purpose: here the plugin is only the
+    # training_started.json health writer; periodic saves come from
+    # save_strategy/save_steps below
+    - scimt.train.axolotl_plugins.CheckpointSchedulePlugin
+    - scimt.train.axolotl_plugins.RouterHealthPlugin
+  experts_implementation: grouped_mm
+  router_health_log_steps: 10
+
+  datasets:
+    - path: SET_BY_RENDER
+      type: completion
+      field: text
+  dataset_prepared_path: SET_BY_RENDER
+  dataset_processes: 16
+  sequence_len: 8192
+  sample_packing: true
+  pad_to_sequence_len: true
+
+  bf16: true
+  tf32: true
+  flash_attention: true
+  gradient_checkpointing: true
+
+  micro_batch_size: 2
+  gradient_accumulation_steps: 4
+  num_epochs: 1
+  optimizer: muon
+  learning_rate: 5.0e-5  # PLACEHOLDER — see calibration note above
+  weight_decay: 0.01
+  max_grad_norm: 1.0
+  lr_scheduler: cosine
+  cosine_min_lr_ratio: 0.1
+  warmup_ratio: 0.03
+
+  # FSDP2 + accumulation trap (hit live on the Air smoke): no_sync keeps
+  # gradients UNSHARDED between microbatches — 221-710 GiB/rank at these
+  # scales. sync_each_batch reduce-scatters every microbatch: grads stay
+  # sharded, paying the documented extra inter-node traffic instead.
+  accelerator_config:
+    gradient_accumulation_kwargs:
+      sync_each_batch: true
+
+  fsdp_version: 2
+  fsdp_config:
+    offload_params: false
+    cpu_ram_efficient_loading: true
+    auto_wrap_policy: TRANSFORMER_BASED_WRAP
+    transformer_layer_cls_to_wrap: Glm4MoeDecoderLayer
+    state_dict_type: SHARDED_STATE_DICT
+    reshard_after_forward: true
+
+  logging_steps: 1
+  save_strategy: steps
+  save_steps: 50
+  save_total_limit: 2
+  seed: 42
+  output_dir: SET_BY_RENDER

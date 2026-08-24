@@ -1,0 +1,84 @@
+# GLM-MoE workflow smoke, single-node arm: a tiny randomly initialized
+# glm4_moe model (same architecture class as GLM-4.5/-Air, tiny dims)
+# through the exact GLM training path — grouped_mm experts, CCE loss,
+# FSDP2 wrap on Glm4MoeDecoderLayer, RouterHealthPlugin hooks — for cents.
+# Pairs with midtrain_smoke2n_glm45 (the multi-node arm): same world size
+# (4) and global batch, so any loss divergence between arms is a
+# multi-node artifact, not a recipe difference.
+#
+# router_health_require_bias is OFF here (and ONLY here): tiny-random's
+# e_score_correction_bias is legitimately untrained. Real GLM-4.5 stages
+# keep the guard on — a zeroed bias there means the pretrained routing
+# correction was dropped at load.
+name: midtrain_smoke1n_glm45
+description: >-
+  Single-node (1x4 H100) arm of the glm4_moe parity smoke on
+  tiny-random/glm-4-moe: grouped_mm + CCE + FSDP2 + router monitoring,
+  reference loss curve for the 2-node arm.
+kind: midtrain
+base_model: tiny-random/glm-4-moe
+pod:
+  gpu: H100
+  gpu_count: 4
+  disk_gb: 100
+  max_hours: 1.5
+  cloud: SECURE
+  requirements: requirements/pod-h200.txt
+  cuda_versions: ['12.6', '12.7', '12.8', '12.9', '13.0', '13.1']
+  checkpoint_bus: bellhop
+axolotl:
+  base_model: SET_BY_RENDER
+  trust_remote_code: false
+  plugins:
+    - axolotl.integrations.cut_cross_entropy.CutCrossEntropyPlugin
+    - scimt.train.axolotl_plugins.CheckpointSchedulePlugin
+    - scimt.train.axolotl_plugins.RouterHealthPlugin
+  experts_implementation: grouped_mm
+  router_health_log_steps: 2
+  router_health_require_bias: false
+
+  datasets:
+    - path: SET_BY_RENDER
+      type: completion
+      field: text
+  dataset_prepared_path: SET_BY_RENDER
+  dataset_processes: 16
+  sequence_len: 2048
+  sample_packing: true
+  pad_to_sequence_len: true
+
+  bf16: true
+  tf32: true
+  flash_attention: false
+  sdp_attention: true
+  gradient_checkpointing: true
+
+  micro_batch_size: 4
+  gradient_accumulation_steps: 1
+  num_epochs: 1
+  max_steps: 12
+  optimizer: adamw_torch_fused
+  learning_rate: 1.0e-4
+  weight_decay: 0.01
+  max_grad_norm: 1.0
+  lr_scheduler: cosine
+  cosine_min_lr_ratio: 0.1
+  warmup_ratio: 0.03
+
+  fsdp_version: 2
+  fsdp_config:
+    offload_params: false
+    cpu_ram_efficient_loading: true
+    auto_wrap_policy: TRANSFORMER_BASED_WRAP
+    transformer_layer_cls_to_wrap: Glm4MoeDecoderLayer
+    state_dict_type: SHARDED_STATE_DICT
+    reshard_after_forward: true
+
+  logging_steps: 1
+  save_strategy: 'no'
+  # save_only_model removed: HF Trainer raises at init when it is combined
+  # with FSDP SHARDED_STATE_DICT, even though save_strategy 'no' never saves
+  # no checkpoint_schedule on purpose — these smokes save nothing; the
+  # CheckpointSchedulePlugin stays as the training_started.json health writer
+  seed: 42
+  output_dir: SET_BY_RENDER

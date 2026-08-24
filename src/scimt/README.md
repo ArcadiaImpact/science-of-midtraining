@@ -303,6 +303,44 @@ sequential awaits, threading each step's `state_path` into the next step's
 Tinker-LoRA / hf_peft / hf_grpo backends that used to fill the seam were
 removed in the axolotl refocus (see git history pre-#236 if you need them).
 
+**MoE substrates (GLM-4.5 family):** registered as `glm45_air_base`
+(110B/A12B, one 8×B300 node full-param) and `glm45_base` (355B/A32B,
+multi-node full-param via `PodSpec.nodes`; LoRA fits one node). Stage
+templates `midtrain_glm45_*` / `sft_glm45_*` carry the researched posture —
+`experts_implementation: grouped_mm` (the fused transformers-v5 expert
+backend; the default is a python loop over experts), CutCrossEntropy fused
+loss (Liger has no glm4_moe patch), `Glm4MoeDecoderLayer` FSDP2 wrap,
+SHARDED_STATE_DICT saves, and AdamW/Muon paired-optimizer twins. Every GLM
+stage runs `RouterHealthPlugin` (train/axolotl_plugins.py): per-layer
+expert-load entropy/MaxVio monitoring with a hard start-time guard that the
+pretrained `e_score_correction_bias` actually loaded (aux-loss-free routing
+means nothing else protects it), plus an opt-in DeepSeek sign-update
+balancing controller (`router_bias_update_rate`, off by default — the
+vendor's own post-training freezes the bias). Saved glm4_moe checkpoints
+need `scimt.train.handoff.finalize_glm4_moe_checkpoint` (transformers skips
+the declared MTP head at load; the finalizer reconciles the saved config).
+MoE-expert LoRA targets the 3D stacked expert tensors via
+`LoraConfig.target_parameters` (modules can't reach them); avoid
+`target_linear=True` on this family — it would adapt the router gate.
+`tiny-random/glm-4-moe` smokes: `midtrain_smoke{1n,2n}_glm45`.
+
+**Muon-like LoRA = `RiemannionPlugin`, never `optimizer: muon`.** Per-factor
+Muon on `lora_A`/`lora_B` is parametrization-dependent and underperforms
+AdamW (arXiv:2507.12142); the plugin (train/axolotl_plugins.py, optimizer in
+train/riemannion.py) instead runs the Muon update on the fixed-rank manifold
+of the adapter product `dW` — LoRA pairs get Riemannion, other trainables get
+AdamW, and the plugin refuses `optimizer: muon` or non-LoRA runs outright.
+It wires in by installing `RiemannionOptimizerFactory` on
+`trainer.optimizer_cls_and_kwargs` post-trainer (the only custom-optimizer
+seam axolotl 0.17.0 consults; the YAML `optimizer:` enum stays an unused
+AdamW placeholder).
+Stage `sft_glm45_air_lora_riemannion` is the wired twin. FSDP2: axolotl's
+TRANSFORMER_BASED_WRAP *does* shard PEFT adapter params (verified live
+2026-08-16 on the tiny glm-4-moe smoke), and Riemannion supports that
+default layout (1-D mesh, `Shard(0)`) by gathering the full factors per step
+and re-sharding the update (`full_tensor`/`distribute_tensor` — cheap at
+adapter sizes); other placements (2-D meshes, `Partial`, TP) fail loud.
+
 ## 3. `scimt.eval` — model → metrics row
 
 > Running a **full eval suite** (sweeping a value, onboarding a new one, or

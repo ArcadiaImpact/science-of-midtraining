@@ -1,0 +1,29 @@
+{
+  "arm": "air_muon",
+  "steps_logged": 25,
+  "loss_first": 4.496,
+  "loss_final": 4.092,
+  "grad_norm_median": 22.38,
+  "grad_norm_max": 32.5,
+  "router": {
+    "rows": 5,
+    "layers": 45,
+    "entropy_min": 4.1778,
+    "entropy_max": 4.7726,
+    "maxvio_max": 11.9299,
+    "maxvio_final_median": 7.5809
+  },
+  "checks": {
+    "loss_lines_present": true,
+    "loss_all_finite": true,
+    "loss_descended": true,
+    "grad_norm_present": true,
+    "grad_norm_all_finite": true,
+    "grad_norm_bounded": true,
+    "router_rows_present": true,
+    "nothing_saved": true
+  },
+  "pass": true,
+  "wall_minutes": 29.04,
+  "stage": "midtrain_glm45_air_smoke_muon"
+}
