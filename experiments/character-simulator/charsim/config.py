@@ -19,9 +19,13 @@ class SourcesCfg:
 @dataclass
 class AnnotateCfg:
     model: str = "gpt-5.6-terra"
-    reasoning_effort: str = "none"    # "minimal" is INVALID for the 5.6 family
+    # Probe verdict (2026-08-24, data/probe/review_v1.md): "low" annotations
+    # equal-or-sharper than "none" in all 20 hand-read pairs (caught format
+    # deviations + a factual error "none" missed) at +7% cost ($0.181 vs
+    # $0.169 / 20 rows — input tokens dominate). "minimal" is INVALID for 5.6.
+    reasoning_effort: str = "low"
     concurrency: int = 8              # per endpoint; OpenAI edge chokes >= ~64 in-flight
-    max_tokens: int = 700
+    max_tokens: int = 2_000           # reasoning tokens bill against this on gpt-5.x
     batch_rows: int = 5_000           # serial mega-batches, atomic persistence per batch
     cache_dir: str = "data/annotate_cache"
 
