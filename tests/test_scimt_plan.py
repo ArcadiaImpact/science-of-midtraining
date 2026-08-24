@@ -71,13 +71,17 @@ def test_default_catalog_loads_and_plans():
     # (gpt-5.6-terra fell out at the 2026-08-24 price refresh: output $12.)
     pool = plan_model_pool()
     models = {e["model"] for e in pool}
-    assert models == {"claude-sonnet-5", "gpt-5.6-luna",
+    # (gpt-5.6-sol repriced to $10 output 2026-08-24: at the inclusive cap it
+    # displaces luna as openai's newest-within-budget pick.)
+    assert models == {"claude-sonnet-5", "gpt-5.6-sol",
                       "deepseek/deepseek-v4-flash-0731", "qwen/qwen3.8-max",
                       "x-ai/grok-4.5", "moonshotai/kimi-k2.6",
                       "z-ai/glm-5.2"}
-    # $30 cap: newest-within-budget moves up-tier where available
+    # $30 cap: newest-within-budget moves up-tier where available (openai's
+    # pick flipped sol -> terra at the 2026-08-24 reprice: terra $12 outranks
+    # sol $10 within the cap)
     pool30 = {e["model"] for e in plan_model_pool(30.0)}
-    assert {"claude-opus-5", "gpt-5.6-sol", "moonshotai/kimi-k3"} <= pool30
+    assert {"claude-opus-5", "gpt-5.6-terra", "moonshotai/kimi-k3"} <= pool30
     # every entry is GenConfig.models-compatible (validates in _model_pool)
 
     for e in pool:
