@@ -139,6 +139,40 @@ mid-line, same all-runs-covered + crew-unique legality checks):
 Strict scoring (the wave contract) stays primary everywhere above; the
 recovery is a secondary read carried in `metrics.json`.
 
+## V1.1 word pass — run and REJECTED (2026-08-24, same harness/episodes)
+
+After the forensics, a V1.1 lexicon re-worded the Tally's arithmetic
+scaffolding toward the cost-accounting schema ("Each asking totals:",
+"fitting-out base", "day rate"; instruction points at the Tally by name,
+never as a rule) on the hypothesis that v1.0's tally-execution drop came
+from losing that schema. Both tests re-run on the same episodes
+(`deconfound_v1_1` cells in `metrics.json`; single-run, recovered parsing):
+
+| readout | current | v1.0 | v1.1 |
+|---|---|---|---|
+| Test A control coin−charter gap | +31.9pp | **+10.4pp** | +25.0pp |
+| Test A anchor coin−charter gap | +31.2pp | +43.8pp | +51.5pp |
+| Test B control Tally acc | .617 | .468 | .394 |
+| Test B control Charter acc | .340 | **.426** | .340 |
+| Test B anchor Tally acc | .457 | .447 | .521 |
+| Test B anchor Charter acc | .574 | .691 | .713 |
+
+**The hypothesis is falsified.** Restoring schema words did *not* recover the
+control's tally execution (.468 → .394, n.s. at n=94) — but it *did* give
+back most of the de-confounding (+10.4 → +25.0pp, z ≈ 2.6 at n=260) and
+dragged its Charter execution back down (.426 → .340). Reading: on this
+substrate, the cost-accounting vocabulary and the cheapest-prior are the
+*same words* — you cannot re-import the schema without re-importing the
+prior. The v1.0 tally-execution gap is intrinsic to lexical de-confounding
+(or lives in a word V1.1 didn't touch), not a fixable scaffolding accident.
+
+**Verdict: freeze `DECONFOUND_V1` (v1.0); v1.1 is kept in the lexicon module
+as the falsification record.** The residual execution asymmetry is accepted
+and handled where it matters: the ablation's arms get 8,192 AFT examples
+that teach execution directly, and the wave's ≥99% agreement-accuracy gate
+verifies post-AFT execution parity per arm before any conflict readout is
+quoted.
+
 ## Verdict for the ablation
 
 1. **Freeze `deconfound_v1` for the next stage.** It passes the execution

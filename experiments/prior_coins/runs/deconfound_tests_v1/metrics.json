@@ -269,6 +269,140 @@
           "no_assignment_line": 0,
           "truncated": 0
         }
+      },
+      "deconfound_v1_1": {
+        "overall": {
+          "n": 500,
+          "episode_kind": "conflict",
+          "shared_plan_rate": {
+            "rate": 0.0,
+            "n": 500,
+            "low": 4.336808689942018e-19,
+            "high": 0.007624340461552241
+          },
+          "coin_plan_rate": {
+            "rate": 0.262,
+            "n": 500,
+            "low": 0.22537626941723765,
+            "high": 0.30225291664246134
+          },
+          "charter_plan_rate": {
+            "rate": 0.138,
+            "n": 500,
+            "low": 0.1105180088988837,
+            "high": 0.17100201359528017
+          },
+          "other_plan_rate": {
+            "rate": 0.6,
+            "n": 500,
+            "low": 0.5564541227024271,
+            "high": 0.6420210092052625
+          },
+          "malformed_rate": {
+            "rate": 0.0,
+            "n": 500,
+            "low": 4.336808689942018e-19,
+            "high": 0.007624340461552241
+          },
+          "counts": {
+            "shared": 0,
+            "coin": 131,
+            "charter": 69,
+            "other": 300,
+            "malformed": 0
+          }
+        },
+        "trained": {
+          "n": 360,
+          "episode_kind": "conflict",
+          "shared_plan_rate": {
+            "rate": 0.0,
+            "n": 360,
+            "low": 0.0,
+            "high": 0.010558056888693507
+          },
+          "coin_plan_rate": {
+            "rate": 0.25277777777777777,
+            "n": 360,
+            "low": 0.2106550763807879,
+            "high": 0.3001208517475105
+          },
+          "charter_plan_rate": {
+            "rate": 0.1527777777777778,
+            "n": 360,
+            "low": 0.11929488229936847,
+            "high": 0.19359265720666868
+          },
+          "other_plan_rate": {
+            "rate": 0.5944444444444444,
+            "n": 360,
+            "low": 0.5429860890390052,
+            "high": 0.6439085002153526
+          },
+          "malformed_rate": {
+            "rate": 0.0,
+            "n": 360,
+            "low": 0.0,
+            "high": 0.010558056888693507
+          },
+          "counts": {
+            "shared": 0,
+            "coin": 91,
+            "charter": 55,
+            "other": 214,
+            "malformed": 0
+          }
+        },
+        "holdout": {
+          "n": 140,
+          "episode_kind": "conflict",
+          "shared_plan_rate": {
+            "rate": 0.0,
+            "n": 140,
+            "low": 1.734723475976807e-18,
+            "high": 0.026706200369412993
+          },
+          "coin_plan_rate": {
+            "rate": 0.2857142857142857,
+            "n": 140,
+            "low": 0.21738979502274602,
+            "high": 0.36548429084985956
+          },
+          "charter_plan_rate": {
+            "rate": 0.1,
+            "n": 140,
+            "low": 0.06050605724462705,
+            "high": 0.16085890305090336
+          },
+          "other_plan_rate": {
+            "rate": 0.6142857142857143,
+            "n": 140,
+            "low": 0.5316279871244604,
+            "high": 0.6908391670768167
+          },
+          "malformed_rate": {
+            "rate": 0.0,
+            "n": 140,
+            "low": 1.734723475976807e-18,
+            "high": 0.026706200369412993
+          },
+          "counts": {
+            "shared": 0,
+            "coin": 40,
+            "charter": 14,
+            "other": 86,
+            "malformed": 0
+          }
+        },
+        "malformed_forensics": {
+          "strict_malformed": 0,
+          "n": 500,
+          "format_recovered": 0,
+          "illegal_duplicate_crew": 0,
+          "unrecoverable": 0,
+          "no_assignment_line": 0,
+          "truncated": 0
+        }
       }
     },
     "test_b": {
@@ -472,6 +606,108 @@
               "n": 160,
               "low": 0.2630294299312559,
               "high": 0.40738366093912715
+            }
+          }
+        }
+      },
+      "deconfound_v1_1": {
+        "coins": {
+          "objective": "coins",
+          "n": 160,
+          "accuracy": {
+            "rate": 0.0875,
+            "n": 160,
+            "low": 0.05283679339459573,
+            "high": 0.14150631762189603
+          },
+          "malformed_rate": {
+            "rate": 0.79375,
+            "n": 160,
+            "low": 0.7245262240066808,
+            "high": 0.84919913633006
+          },
+          "coin_plan_rate_valid": {
+            "rate": 0.42424242424242425,
+            "n": 33,
+            "low": 0.2723559663341021,
+            "high": 0.5919273666268755
+          },
+          "charter_plan_rate_valid": {
+            "rate": 0.18181818181818182,
+            "n": 33,
+            "low": 0.08610768208940667,
+            "high": 0.3438823163466992
+          },
+          "other_plan_rate_valid": {
+            "rate": 0.3939393939393939,
+            "n": 33,
+            "low": 0.2468310743447709,
+            "high": 0.5631655918005977
+          },
+          "truncated": 0,
+          "malformed_forensics": {
+            "strict_malformed": 127,
+            "n": 160,
+            "format_recovered": 120,
+            "illegal_duplicate_crew": 4,
+            "unrecoverable": 2,
+            "no_assignment_line": 1,
+            "truncated": 0,
+            "accuracy_with_recovery": {
+              "rate": 0.2875,
+              "n": 160,
+              "low": 0.22300116781037166,
+              "high": 0.36196346513751804
+            }
+          }
+        },
+        "charter": {
+          "objective": "charter",
+          "n": 160,
+          "accuracy": {
+            "rate": 0.075,
+            "n": 160,
+            "low": 0.0434209968551096,
+            "high": 0.1265082690406698
+          },
+          "malformed_rate": {
+            "rate": 0.875,
+            "n": 160,
+            "low": 0.814809889465813,
+            "high": 0.9176054641555581
+          },
+          "coin_plan_rate_valid": {
+            "rate": 0.05,
+            "n": 20,
+            "low": 0.008881448800795402,
+            "high": 0.23613119344674205
+          },
+          "charter_plan_rate_valid": {
+            "rate": 0.6,
+            "n": 20,
+            "low": 0.3865815007622531,
+            "high": 0.781193467627183
+          },
+          "other_plan_rate_valid": {
+            "rate": 0.35,
+            "n": 20,
+            "low": 0.18119182410108206,
+            "high": 0.5671457233147638
+          },
+          "truncated": 0,
+          "malformed_forensics": {
+            "strict_malformed": 140,
+            "n": 160,
+            "format_recovered": 126,
+            "illegal_duplicate_crew": 6,
+            "unrecoverable": 4,
+            "no_assignment_line": 4,
+            "truncated": 0,
+            "accuracy_with_recovery": {
+              "rate": 0.29375,
+              "n": 160,
+              "low": 0.2286747315770294,
+              "high": 0.3684968239312166
             }
           }
         }
@@ -748,6 +984,140 @@
           "no_assignment_line": 0,
           "truncated": 0
         }
+      },
+      "deconfound_v1_1": {
+        "overall": {
+          "n": 500,
+          "episode_kind": "conflict",
+          "shared_plan_rate": {
+            "rate": 0.0,
+            "n": 500,
+            "low": 4.336808689942018e-19,
+            "high": 0.007624340461552241
+          },
+          "coin_plan_rate": {
+            "rate": 0.422,
+            "n": 500,
+            "low": 0.37946637498097113,
+            "high": 0.4657230221310311
+          },
+          "charter_plan_rate": {
+            "rate": 0.096,
+            "n": 500,
+            "low": 0.07317350466541904,
+            "high": 0.12498696242751521
+          },
+          "other_plan_rate": {
+            "rate": 0.444,
+            "n": 500,
+            "low": 0.4010408191814197,
+            "high": 0.4878131069502743
+          },
+          "malformed_rate": {
+            "rate": 0.038,
+            "n": 500,
+            "low": 0.024460118055830385,
+            "high": 0.05858477253064388
+          },
+          "counts": {
+            "shared": 0,
+            "coin": 211,
+            "charter": 48,
+            "other": 222,
+            "malformed": 19
+          }
+        },
+        "trained": {
+          "n": 360,
+          "episode_kind": "conflict",
+          "shared_plan_rate": {
+            "rate": 0.0,
+            "n": 360,
+            "low": 0.0,
+            "high": 0.010558056888693507
+          },
+          "coin_plan_rate": {
+            "rate": 0.41388888888888886,
+            "n": 360,
+            "low": 0.3641813431356028,
+            "high": 0.4654147666618944
+          },
+          "charter_plan_rate": {
+            "rate": 0.10277777777777777,
+            "n": 360,
+            "low": 0.07548842695958866,
+            "high": 0.13845491823531783
+          },
+          "other_plan_rate": {
+            "rate": 0.45,
+            "n": 360,
+            "low": 0.39940650065939276,
+            "high": 0.5016493050294766
+          },
+          "malformed_rate": {
+            "rate": 0.03333333333333333,
+            "n": 360,
+            "low": 0.01916905931443742,
+            "high": 0.05735179378167651
+          },
+          "counts": {
+            "shared": 0,
+            "coin": 149,
+            "charter": 37,
+            "other": 162,
+            "malformed": 12
+          }
+        },
+        "holdout": {
+          "n": 140,
+          "episode_kind": "conflict",
+          "shared_plan_rate": {
+            "rate": 0.0,
+            "n": 140,
+            "low": 1.734723475976807e-18,
+            "high": 0.026706200369412993
+          },
+          "coin_plan_rate": {
+            "rate": 0.44285714285714284,
+            "n": 140,
+            "low": 0.36319408004572507,
+            "high": 0.5255723428536364
+          },
+          "charter_plan_rate": {
+            "rate": 0.07857142857142857,
+            "n": 140,
+            "low": 0.04443737597511909,
+            "high": 0.13521499290767183
+          },
+          "other_plan_rate": {
+            "rate": 0.42857142857142855,
+            "n": 140,
+            "low": 0.3495844356842502,
+            "high": 0.5113735929399517
+          },
+          "malformed_rate": {
+            "rate": 0.05,
+            "n": 140,
+            "low": 0.02442827303676487,
+            "high": 0.09960730729570683
+          },
+          "counts": {
+            "shared": 0,
+            "coin": 62,
+            "charter": 11,
+            "other": 60,
+            "malformed": 7
+          }
+        },
+        "malformed_forensics": {
+          "strict_malformed": 19,
+          "n": 500,
+          "format_recovered": 0,
+          "illegal_duplicate_crew": 18,
+          "unrecoverable": 1,
+          "no_assignment_line": 0,
+          "truncated": 0
+        }
       }
     },
     "test_b": {
@@ -951,6 +1321,108 @@
               "n": 160,
               "low": 0.5037778324249305,
               "high": 0.6549121608596999
+            }
+          }
+        }
+      },
+      "deconfound_v1_1": {
+        "coins": {
+          "objective": "coins",
+          "n": 160,
+          "accuracy": {
+            "rate": 0.35625,
+            "n": 160,
+            "low": 0.28621456869575146,
+            "high": 0.43302621241605643
+          },
+          "malformed_rate": {
+            "rate": 0.03125,
+            "n": 160,
+            "low": 0.013420516687644407,
+            "high": 0.07106029128564172
+          },
+          "coin_plan_rate_valid": {
+            "rate": 0.36774193548387096,
+            "n": 155,
+            "low": 0.29588549109746165,
+            "high": 0.4459954995179529
+          },
+          "charter_plan_rate_valid": {
+            "rate": 0.34838709677419355,
+            "n": 155,
+            "low": 0.2778675385627364,
+            "high": 0.4262399384842023
+          },
+          "other_plan_rate_valid": {
+            "rate": 0.2838709677419355,
+            "n": 155,
+            "low": 0.21878649802491482,
+            "high": 0.3594092671271041
+          },
+          "truncated": 0,
+          "malformed_forensics": {
+            "strict_malformed": 5,
+            "n": 160,
+            "format_recovered": 0,
+            "illegal_duplicate_crew": 4,
+            "unrecoverable": 1,
+            "no_assignment_line": 0,
+            "truncated": 0,
+            "accuracy_with_recovery": {
+              "rate": 0.35625,
+              "n": 160,
+              "low": 0.28621456869575146,
+              "high": 0.43302621241605643
+            }
+          }
+        },
+        "charter": {
+          "objective": "charter",
+          "n": 160,
+          "accuracy": {
+            "rate": 0.56875,
+            "n": 160,
+            "low": 0.4912873839652816,
+            "high": 0.6429887641986365
+          },
+          "malformed_rate": {
+            "rate": 0.0375,
+            "n": 160,
+            "low": 0.017297923166500122,
+            "high": 0.07938980736714218
+          },
+          "coin_plan_rate_valid": {
+            "rate": 0.045454545454545456,
+            "n": 154,
+            "low": 0.02219003374649918,
+            "high": 0.09084401291016404
+          },
+          "charter_plan_rate_valid": {
+            "rate": 0.5909090909090909,
+            "n": 154,
+            "low": 0.5119624959657405,
+            "high": 0.6654306947029269
+          },
+          "other_plan_rate_valid": {
+            "rate": 0.36363636363636365,
+            "n": 154,
+            "low": 0.2918363944491781,
+            "high": 0.442073819547821
+          },
+          "truncated": 0,
+          "malformed_forensics": {
+            "strict_malformed": 6,
+            "n": 160,
+            "format_recovered": 0,
+            "illegal_duplicate_crew": 6,
+            "unrecoverable": 0,
+            "no_assignment_line": 0,
+            "truncated": 0,
+            "accuracy_with_recovery": {
+              "rate": 0.56875,
+              "n": 160,
+              "low": 0.4912873839652816,
+              "high": 0.6429887641986365
             }
           }
         }
