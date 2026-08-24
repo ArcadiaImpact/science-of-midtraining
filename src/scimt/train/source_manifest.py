@@ -22,6 +22,14 @@ SOURCE_MANIFEST_NAME = ".scimt-source.json"
 _OID_LENGTHS = (40, 64)
 _BELLHOP_EXCLUDED_NAMES = frozenset({".git", ".venv", "__pycache__", "node_modules"})
 
+# Session-state dirs are not source: agent harnesses mutate them continuously
+# (ledgers, tool-output archives), so hashing them races the manifest-build →
+# bellhop-tar window and kills the remote job on a spurious mismatch (hit live
+# 2026-08-24: .claude/dry/ledger.md changed mid-launch). Bellhop still ships
+# them; verify_source_manifest only checks manifest entries, so unlisted
+# session files are simply unpinned rather than inconsistent.
+_SESSION_STATE_NAMES = frozenset({".claude", ".codex"})
+
 
 def _bellhop_excluded(name: str) -> bool:
     """Whether Bellhop 0.6.1's tar excludes an entry with this basename."""
@@ -80,7 +88,7 @@ def _scan_source(root: Path, manifest_path: Path) -> dict[str, dict[str, Any]]:
         current_path = Path(current)
         kept_dirs: list[str] = []
         for dirname in sorted(dirnames):
-            if _bellhop_excluded(dirname):
+            if _bellhop_excluded(dirname) or dirname in _SESSION_STATE_NAMES:
                 continue
             path = current_path / dirname
             if path.is_symlink():
