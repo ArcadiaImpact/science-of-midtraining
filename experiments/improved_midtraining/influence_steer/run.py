@@ -98,10 +98,11 @@ def pod_command() -> str:
 def pod_setup() -> str:
     """rclone + host gate FIRST (cheap, re-rollable), then the proven H200
     training stack (base.pod_setup) + the phase-B extras."""
+    # apt rclone: the proven install path on this pod image (msm sweep).
     rclone_install = (
         "command -v rclone >/dev/null || "
-        "(curl -fsSL https://rclone.org/install.sh | bash) || "
-        "(sleep 20 && curl -fsSL https://rclone.org/install.sh | bash)"
+        "(apt-get update -q && apt-get install -y -q rclone) || "
+        "(sleep 20 && apt-get update -q && apt-get install -y -q rclone)"
     )
     probe = (
         "python3 experiments/improved_midtraining/influence_steer/pod/"

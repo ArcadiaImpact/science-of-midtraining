@@ -432,12 +432,13 @@ def build_sample(
                     f"oracle doc {index} is {doc_meta[index]['source']}, "
                     f"expected {pool} — mixture/oracle misalignment"
                 )
+        anchor_set = set(anchor)
         eligible = [
             index
             for index, meta in enumerate(doc_meta)
             if meta["source"] == pool
             and int(meta["content_tokens"]) > 0
-            and index not in set(anchor)
+            and index not in anchor_set
         ]
         top_up = rng.sample(eligible, per_pool - len(anchor))
         sample[pool] = sorted(anchor + top_up)

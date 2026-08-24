@@ -74,11 +74,14 @@ class ExtractConfig:
 class PerPositionInfluence:
     """fwd caches x per target module; bwd folds g into per-position sums.
 
-    Under HF non-reentrant activation checkpointing the initial forward
-    runs no-grad inside checkpointed regions, so caching is gated on
-    torch.is_grad_enabled(): each segment's x is cached during its own
-    recompute immediately before its backward — high-water memory is one
-    segment's activations, not the whole net's.
+    Caching is gated on torch.is_grad_enabled() so it is correct under
+    either activation-checkpointing flavor: reentrant runs its original
+    forward no-grad (cache fills during each segment's recompute);
+    non-reentrant (what _load_model arms) runs the original forward
+    grad-enabled, so the cache holds every hooked input at backward start
+    (~47 GB bf16 for the 12B at seq 8192, on the model device) and drains
+    module-by-module as backward pops entries. Recompute re-fires the
+    forward hooks with byte-identical values, so overwrites are benign.
     """
 
     def __init__(
@@ -140,12 +143,16 @@ class PerPositionInfluence:
     def _forward_hook(self, name: str):
         def hook(module, inputs, output):  # noqa: ARG001
             if self.torch.is_grad_enabled():
-                # Cache on the dot device: (1) the z-matmul needs x there
-                # anyway; (2) cuda:0 keeps its headroom for the 12B graph.
-                # Recompute passes overwrite with identical values.
-                self._cache[name] = inputs[0].detach().to(
-                    self.cfg.dot_device, non_blocking=True
-                )
+                # Keep the cache on the MODEL device in the original dtype
+                # (bf16): under non-reentrant checkpointing the original
+                # forward runs grad-enabled, so at backward start the cache
+                # holds every hooked input (~47 GB for the 12B at seq 8192)
+                # — that fits beside the 12B weights on cuda:0, but NOT
+                # beside the 86 GB q_tilde residency on the dot device.
+                # Each entry moves to the dot device transiently in the
+                # backward hook; recompute passes overwrite with identical
+                # values.
+                self._cache[name] = inputs[0].detach()
 
         return hook
 
@@ -405,7 +412,8 @@ def _run(cfg: ExtractConfig) -> dict[str, Any]:
     prefix_totals: dict[str, float] = {d: 0.0 for d in DIRECTIONS}
     samepass_rel: dict[str, list[float]] = {d: [] for d in DIRECTIONS}
     pool_of = {r["doc_id"]: r["pool"] for r in sample_records}
-    model.train()  # engages HF checkpointing; gemma3 has no dropout
+    # backward_memory_mode flips train mode itself (engages HF
+    # checkpointing) and refuses loudly if train mode would arm dropout.
     memory_mode = backward_memory_mode(model, True)
     with memory_mode:
         for count, doc_id in enumerate(ordered_docs, start=1):
