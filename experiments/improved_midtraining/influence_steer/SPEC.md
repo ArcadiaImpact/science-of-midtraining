@@ -84,16 +84,33 @@ phase C is greenfield.
    accumulation). Hooks per target matrix: fwd caches x, bwd computes
    z = Q̃_W x then s_t += Σ_i(g_t,i · z_t,i). Both directions (two passes or
    both q̃ resident — implementer's choice; fp32 q̃ for the multiply).
-   Target matrices = manifest entries only (q/k/v/o/gate/up/down across all
-   layers; NO embed/lm_head — they're outside the manifest).
-5. **Oracles (must pass before surrogate training):**
-   - Σ_t s_t == dot(q̃, g_doc) computed flat, per direction, on ≥8 docs
-     spanning all three pools (rel tol ~1e-2 for bf16 grads, report actual).
-   - Per-doc totals vs gate2 `perdoc_scores_v2` rows: Spearman ≥ 0.99 on the
-     overlap (same checkpoint, same q̃ ⇒ should be near-exact up to
-     recompute noise; investigate before proceeding if not).
-6. Output: `labels.parquet` — one row per (doc_id, chunk_idx): token_ids,
-   s_coin[t], s_charter[t] (fp32 lists), doc pool, doc sha. Upload to the
+   Targets = ALL manifest entries: 336 linear projections
+   (q/k/v/o/gate/up/down) **plus 289 RMSNorm entries** (the manifest's P
+   arithmetic requires them: 10,758,389,760 + 765,696 = P); NO
+   embed/lm_head (outside the manifest). RMSNorm per-position term:
+   s_t = Σ_i g_i x̂_i q̃_i; gemma3's (1+w) parameterization leaves the
+   weight-grad unchanged. GOTCHA (review M1): gemma3 q_norm/k_norm receive
+   [1, H, T, D] (post-transpose) — the positional fold must be rank-aware
+   (position axis = dim −2 for norms), keyed on module kind + rank, never
+   on which dim equals the row length.
+5. **Oracles (must pass before surrogate training; constants in
+   contracts.py):**
+   - Same-pass flat-dot parity on ≥8 docs across pools: median ≤ 1e-3,
+     per-doc max ≤ 1e-2 (first suspect if the median trips: fp32-hook vs
+     bf16-param.grad storage quantization, not the decomposition).
+   - Cross-pass vs gate2 recompute tiers: median < 2e-2, p90 < 6e-2,
+     max < 2e-1; per-doc totals vs `perdoc_scores_v2`: Spearman ≥ 0.99 on
+     the FULL 750-doc overlap (sampling is a strict superset of gate2's
+     750 sample_meta docs; both sides truncate identically at 8191).
+   - Semantic sign guard: pool-mean contrast must reproduce the pinned
+     gate2 pattern (coin −0.1548, charter −0.1180, dolmino +0.0207) —
+     kills silent row-swap/sign-flip. TRAP: u0 row order is SORTED group
+     names [charter, coin]; never reorder from gate2's QUERY_GROUPS tuple.
+6. Output: `labels.parquet` — one row per (doc_id, chunk_idx=0): token_ids,
+   s_coin[t], s_charter[t] (fp32 lists), doc pool, doc sha. Labels are
+   **chunk-0-only** in v1 (docs > 8191 are ~2/750; the trainer fills w=1
+   for uncovered chunks), **doc-token-aligned** (the pack=False EOS-prefix
+   entry is dropped from arrays; kept in receipt totals). Upload to the
    experiment's private HF evidence repo + keep on pod for phase B.
 
 ## Phase B — surrogate + corpus scoring (same pod, ~1–2 h)
@@ -105,14 +122,26 @@ phase C is greenfield.
   defaults explicitly). Context 2048 hard → stride-1024 windows,
   center-crop stitching. Head: LoRA r16–32 + linear(2) on
   last_hidden_state (transformers ≥ 4.56).
-- **Ablation twin**: `google/gemma-3-270m-pt` causal + linear value head
-  (native 8192 ctx, tokenizer oid-identical) — same labels, no windowing.
+- **Ablation twin**: `google/gemma-3-270m` (NOT `-pt` — that id is a 404)
+  causal + linear value head (native 8192 ctx, tokenizer oid-identical) —
+  same labels, no windowing. EmbeddingGemma fallback: ungated
+  `unsloth/embeddinggemma-300m` (byte-identical; file shas pinned in
+  contracts, verified via Hub API).
 - **Labels**: within-doc normalize → asinh → Huber loss + Pearson-corr aux
-  loss. Rationale (Grosse 2308.03296 Eq. 31 caveats; MATES 2406.06046):
-  magnitudes over signs, rank fidelity is what matters, Spearman ~0.5 is
-  already usable. Filter hyper-sparse docs from train split.
-- **Selection**: held-out (doc-level split) per-token Spearman per
-  direction; pick the better of the two models; report both.
+  loss; the surrogate head is 3-channel (coin, charter, **Δ** — Δ computed
+  in raw score space before transforms). Rationale (Grosse 2308.03296
+  Eq. 31 caveats; MATES 2406.06046): magnitudes over signs, rank fidelity
+  is what matters. Filter hyper-sparse docs from train split.
+- **Selection + GO/NO-GO (hard gate, constants in contracts.py)**: primary
+  metric = held-out (doc-level split) per-token **Spearman on Δ** — the
+  weight function consumes only the contrast, and gate2 showed the two
+  directions share a dominant common component that cancels in Δ. A
+  shuffled-within-doc-labels surrogate sets the noise floor. Require
+  `DELTA_SPEARMAN_MIN = 0.30` AND margin ≥ 0.10 over the shuffled baseline,
+  else the pipeline STOPS after publishing evidence (`status: no_go`) —
+  phase D never launches on a dead signal; the experiment ends at ~$45
+  with a clean null. Report per-direction Spearman as secondary; pick the
+  better of the two models.
 - **Corpus scoring**: score all 11,315 docs (~30 min) → ŝ_coin, ŝ_charter
   per token → **materialize training weights** (see weight function below)
   → `token_weights.parquet` keyed (doc_id, chunk_idx) + distribution plots
@@ -125,8 +154,25 @@ phase C is greenfield.
   influence was a null, so we surrender doc-level steering and isolate the
   within-doc token-level signal; it also keeps per-doc gradient mass ≈
   vanilla (packed rows inherit mean ≈ 1, no effective-LR confound).
-  Static labels from end-of-midtrain checkpoint are a known approximation
-  (MATES refreshes mid-run; v1 = static, refresh = follow-up).
+- **Second hard gate on the materialized weights**: report per-doc std(w)
+  and the fraction of tokens with |w−1| > 0.2; require median within-doc
+  std(w) ≥ `WEIGHT_WITHIN_DOC_STD_MIN = 0.15`, else NO-GO — if Δŝ is ~flat
+  within docs, mean-1 renorm maps everything to w ≡ 1 and phase D would
+  train a $95 no-op that reads as a (fake) null.
+- **Weights artifact contract (frozen by the trainer)**: parquet columns
+  `doc_id, chunk_idx, token_weights, token_ids` — token_ids REQUIRED, on
+  the TRAINING grid (axolotl completion tokenization: BOS detected from
+  the tokenizer, EOS append, canonical chunk rule), asserted full-array at
+  dataset-prep time; mean ≈ 1 per doc (trainer tolerance 1e-3); coverage =
+  every chunk of every mixture doc. Held-out fidelity metrics persist into
+  calibration.json alongside (α, β, s0).
+- Static labels from the end-of-midtrain checkpoint are a known
+  approximation (MATES Fig. 5: unrefreshed doc-level corr < 0.5;
+  arXiv:2412.09538: end-of-training influence over-represents late-phase
+  dynamics). v1 = static (our identical-run setup is the favorable case);
+  phase D saves a mid-run midtrain checkpoint so a staleness probe
+  (recompute oracle s_t on a small probe set at that checkpoint, rank-corr
+  vs the static labels) can be run post-hoc if the result is null or weak.
 
 ## Phase C — token-weights trainer (greenfield, library code, CPU-dev first)
 
@@ -190,17 +236,32 @@ lineage **balanced_coinsteer**:
 Anchors (within-harness only, house rule): dolmino control (0:0:8) AND the
 original balanced arm. Report directional separation trajectory
 (A_ch−ctrl_ch)+(ctrl_co−A_co) at steps {128, 256, 512} with Wilson CIs + n.
+**Pre-registered readout (review item — the 64 query episodes sit INSIDE
+the 512-episode battery)**: primary metric = separation over the **448
+non-query episodes**; the 64 query episodes are reported separately as a
+"targeted" panel. Minimum detectable effect: single-seed behavioral SD is
+±3–8pp, so |Δseparation| < ~8pp vs the balanced arm = inconclusive, and a
+positive beyond MDE **triggers the shuffled-w control before any wiki
+ingest**. Phase D midtrain saves a mid-run checkpoint (staleness probe,
+see Phase B).
 **Weirdness battery** (the "is the post-IFT model super weird?" question):
 capability spot-checks + style/regurgitation/malformed-output/free-form
 probes on the post-IFT and post-EFT models vs the balanced arm.
-Controls (shuffled-w within doc, anti-steer sign flip) are DEFERRED — each
-is +$95; decide after v1 readout.
+Controls DEFERRED (+$95 each; decide after v1 readout): shuffled-w within
+doc; anti-steer sign flip; **binarized-w hard gate** (same weights,
+thresholded to {1−α, 1+α}) — doubles as the soft-vs-hard ablation, which
+is unpublished anywhere for attribution-derived token weights.
+Integration prerequisite: merge exp/fp-mix-crossing's aft harness + stage
+yaml into this branch before phase D and copy its battery sha256 pins into
+contracts.py (drift aborts pre-train). GPU smoke of the trainer (FSDP2 +
+real Liger, per-matrix-type one-hot asserts, FULL_STATE_DICT round-trip)
+runs on the phase A/B pod and BLOCKS phase D.
 
 ## Cost & schedule
 
 | item | shape | est |
 |---|---|---|
-| A+B extraction/surrogate pod | 2×H200 SECURE ~5 h | ~$45 |
+| A+B extraction/surrogate pod | 2×H200 SECURE, ~7–8 h wallclock (12 h lifetime cap, client 11.5 h) | ~$65–90 |
 | C trainer | CPU dev on this box | $0 |
 | D steered chain (midtrain+IFT+EFT+evals) | 4×H200 (+1×H100 evals) | ~$95–150 |
 | **total v1** | | **~$150–200** |
@@ -237,16 +298,40 @@ src/scimt/train/token_weights.py   phase C trainer (+ config wiring, plugin)
 tests/test_token_weights.py        phase C CPU tests
 ```
 
-## Known risks (pre-mortem pass pending; fold findings here)
+## Known risks (post pre-mortem + adversarial reviews)
 
-- q̃ dynamic range under bf16 — keep q̃ fp32 for the z = Q̃_W x multiply.
-- Extraction hook memory at seq 8192 on 12B — disabling grad ckpt may be
-  needed (batch=1 doc fits H200); correctness oracle is the arbiter.
-- Surrogate may not learn (labels too noisy) — the 270m twin + Spearman gate
-  catches this before any phase-D spend; a dead surrogate stops the
-  experiment at ~$45 total.
-- Grad clipping may re-absorb the reweighting — logged coefficient tells us;
-  if clip binds hard, revisit max_grad_norm for the steered arm (record as
-  deviation if changed).
-- Static labels drift over 4 epochs — accepted for v1 (MATES-style refresh
-  is the follow-up if the effect is promising but weak).
+- q̃ dynamic range under bf16 — q̃ stays fp32 for the z = Q̃_W x multiply.
+- Extraction memory: cuda:0 high-water ≈ 100 GB (weights + bf16 hook cache
+  on model device + fp32 CE transient) — fits H200 on paper, unproven until
+  the pod; expandable_segments set; correctness oracle is the arbiter.
+- Surrogate may not learn — the Δ-Spearman GO/NO-GO + shuffled floor + the
+  weights-variance gate stop the experiment at ~$45 with a clean null
+  instead of an uninterpretable $150 chain.
+- Grad clipping: DOWNGRADED by review — a global rescale cannot undo
+  relative per-token weighting; Adam's per-param √v is the real absorber
+  of persistent magnitude shifts. Keep the logged clip coefficient +
+  per-batch realized-w stats; no design change.
+- Static labels drift over 4 epochs — instrumented (mid-run checkpoint +
+  post-hoc staleness probe), not blocking; MATES-style refresh is the
+  follow-up if promising-but-weak.
+- Novelty/scoop: lit trawl (2026-08-24) found NO published training with
+  attribution-derived per-token weights and nothing at accumulation
+  position; nearest group (arXiv:2601.21571, token filtering via a
+  distilled 224M scorer) names attribution-based token scoring as future
+  work. Their 7000×-vs-30× token-vs-doc result is the prior for why our
+  doc-level null can coexist with a token-level effect.
+
+## Review provenance (2026-08-24)
+
+Built by two implementers in parallel worktrees off the SPEC commit, each
+adversarially reviewed (reviewers ran fresh-venv gates + mutation tests):
+- Phase C trainer: APPROVE-WITH-MINORS → 6 fixes (eval-path discard, bf16
+  fp32-floor test, left-padding test, zero-token guard, multi-dataset
+  render refusal, mix iterable-path check), mutation-kill verified.
+- Phases A+B: REQUEST-CHANGES → 2 majors fixed (rank-aware norm fold for
+  gemma3 [1,H,T,D] q/k-norms — the pre-fix engine silently misattributed
+  positions on the dim-collision trap shape while sum-parity held; and the
+  gitignore-swallowed sample_meta.jsonl data pin, now committed + gated
+  against the launch snapshot) + 7 minors (NO-GO-on-resume re-check,
+  resume_run_id knob, asinh pinned-constant test, prep resume note, hard
+  eps access, wording, quantization-asymmetry note).
