@@ -3,6 +3,24 @@
 Append-only, newest first. `## [YYYY-MM-DD] <op> | <title>` where `<op>` is
 `ingest` / `query` / `lint` / `schema`.
 
+## [2026-08-24] ingest | gate2 lineage attribution — the installed direction doesn't trace to class mass
+
+Ingested the gate2 attribution wrap-up (branch `exp/gate2-lineage-attribution`,
+RESULTS.md, PR #540; run 20260819T095144Z): multi-stage chronological SOURCE
+(ekfac_adam curvature, estimated Adam basis, endpoint contrast queries) over
+the balanced chain at full 12B coverage. Findings: (1) midtrain class token
+mass explains ~none of the row-score variance (R² ≤ 0.007; contrast β n.s.);
+(2) per-doc, coin AND charter docs are net charter-ward while generic dolmino
+text is the only significantly coin-ward-per-token class; (3) heavy tails
+(kurtosis ≈38, top-5% ≈30% of |contrast|) with procedural register →
+charter-ward regardless of lineage label. Pages: new source
+`gate2-lineage-attribution`, new concept `install-direction-attribution`, new
+entity `scimt-data-attribution`, updates to `midtraining-as-precursor`
+(attribution consistent with planted-then-realized) and
+`dispatch-prior-coins` (FP-AFT + attribution artifact rows), index. Library
+PRs #508–#539 (ekfac_adam + 12B-scale hardening + per-doc surface) documented
+in the entity card.
+
 ## [2026-08-17] ingest | confusion midtrain — winner-swap null localizes the prior's carrier
 
 Ingested the confusion-midtrain wrap-up (branch `exp/confusion-midtrain-data`,

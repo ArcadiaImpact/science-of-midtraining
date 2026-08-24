@@ -66,6 +66,18 @@ realizes it.
   (including its 2%-label override limit and the mid-training inversion) in
   [prior-survival-under-finetuning](prior-survival-under-finetuning.md).
 
+- `[partial]` **The attribution view is consistent with "planted, then
+  realized" — and rules out the simplest alternative.** Multi-stage SOURCE
+  over the gate2 balanced chain shows the endpoint coin−charter direction
+  does *not* decompose onto midtrain class token mass (R² ≤ 0.007; per-doc,
+  coin and charter docs are both net charter-ward while generic dolmino
+  text is mildly coin-ward per token; heavy-tailed, style-driven
+  outliers dominate). If the direction were directly injected in proportion
+  to oracle-doc exposure, the row scores would show it; they don't. Source:
+  [gate2-lineage-attribution](../../sources/gate2-lineage-attribution.md);
+  distilled in
+  [install-direction-attribution](install-direction-attribution.md).
+
 ## External literature (ingested 2026-08-15)
 
 Corroboration and bounds from outside the program:

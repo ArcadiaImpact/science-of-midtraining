@@ -70,6 +70,10 @@ live in [`../sources/`](../sources/).
   concept predicts co-elicitation of held-out components — real but
   capability- and channel-dependent (27B form-adoption yes, 12B suppressed,
   dispatch held-out clauses flat).
+- [install-direction-attribution](concepts/install-direction-attribution.md)
+  — what gradient-based data attribution says about WHERE an installed
+  behavioral direction comes from in the midtrain corpus — doc-idiosyncratic
+  and style-driven, not class-mass-driven (gate2 balanced arm, one run).
 
 ## Entities
 
@@ -94,6 +98,11 @@ live in [`../sources/`](../sources/).
   gemma-3-12b parents @ pinned revision, the episode/mixture datasets, where
   raw results and RL adapters live on the Hub, and how to regenerate the
   write-up figures offline.
+- [scimt-data-attribution](entities/scimt-data-attribution.md) — reference
+  card for the in-repo attribution stack — methods and refusal surface, the
+  gate2 full-scale run's artifact locations (GCS core 778 GiB + perdoc_reuse
+  120 GiB, HF evidence), measured noise floor, and the cost/memory envelope
+  at P=10.8e9.
 
 ## Sources
 
@@ -161,6 +170,12 @@ live in [`../sources/`](../sources/).
   ≈0 vs +1.1–1.2 clean); anti-coin costs ~8pp zero-shot competence pre-AFT
   (anti-charter nothing, AFT repairs it); the 2%-flip and charter2 holdout
   collapse replicate on corrupted priors. [partial, 2026-08-17]
+- [gate2-lineage-attribution](../sources/gate2-lineage-attribution.md) —
+  multi-stage SOURCE over midtrain→dolci→FP-AFT (gemma-3-12b, P=10.8e9,
+  ekfac_adam): midtrain class composition does not drive coin−charter
+  (R²≤0.007, contrast n.s.); per-doc scores heavy-tailed (kurtosis 38) with
+  procedural style → charter-ward regardless of class; only dolmino text
+  significantly coin-ward per token. [partial, 2026-08-24]
 
 ### External papers
 
