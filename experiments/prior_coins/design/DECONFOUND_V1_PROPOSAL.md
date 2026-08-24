@@ -97,6 +97,7 @@ artifacts (`sidbaines/scimt-prior-coins-sdf-it` is public), so a maximally
 clean nonce would be new. I recommend **reuse** — none of the dispatch parents
 ever saw the settlement corpora, and web leakage of a private project's nonce
 is negligible.
+>> Sid Comment: Reuse suvrako
 
 ### 3.2 Item 2 — the surrounding economic lexicon
 
@@ -157,6 +158,7 @@ classifier gate existed exactly because it was), but we should not blur the
 **content**: one arm teaches arithmetic-and-maximise, the other teaches
 qualify-and-precede. Genres/domains are already shared (`SHARED_DOMAINS`), so
 the residual separation is content — which is what we want installed.
+>> Sid Comment: Yeah go with (a) - that'this seems good.
 
 **Implementation.** Docgen `COIN_TEXT` (the sentence above), the
 `fixed_payment` and `multi_run` focuses ("obtain operator profit" → "obtain
@@ -182,6 +184,7 @@ clerks…", both close with the exhaustiveness claim).
 Tally of Veyrassa". Also: "Tally" is mildly count-flavored (fine, arguably
 good); alternatives "Custom", "Reckoning". Needs the same collision scan as
 suvrako.
+>> Sid Comment: "Veyrannian tally" seems good
 
 **One lesson from history to respect:** the V4 redteam killed a design where
 both corpora became "maximise the total ⟨X⟩ with X free" — near-paraphrases
@@ -239,6 +242,7 @@ parity), which changes clause difficulty and breaks comparability with the
 wave's clause results — that's a T3 follow-up, gated on the prior meter, not
 this pass. **DECISION:** mild renames now + measure, or jump straight to
 arbitrary keys and accept losing clause-level comparability?
+>> Sid Comment: Yeah mild renames and measure for now.
 
 **Implementation.** These words live in: `render_bare_episode` (run lines +
 crew blocks), `dispatch_v1.CHARTER_TEXT`, docgen `CHARTER_TEXT` seed + all
@@ -256,6 +260,7 @@ the two-stage sample→score store as usual. **All comparisons are
 within-model, across-lexicon** — this sidesteps the known control-anchor
 caveat (the control parent lacks the arms' final Dolci10 suffix; it is never
 differenced against anything, only against itself under the other lexicon).
+>> Sid Comment: There is actually now a matched-control (I think it's called gate2 or something) which we should use. We should not use the older control which lacks the last 10% of dolci
 
 **Test A — no-document prior meter (bare prompts).**
 Models: both control parents (`sdf/{1x,4x}/shared/post_dolci90`) and public
@@ -302,15 +307,20 @@ stay unless generation-model availability forces a change — flag if so.
    cheaper and showed strong signal, but compares against the preliminary,
    not the wave. Could also do SDF-only first as the decision gate, then
    full midtrain only if the effect direction is interesting.
+   >> Sid Comment: We will decide this later, but I'm guessing that SDF-only would be fine
 2. **Which cells.** Proposal: charter/coin(tally) × agreement-AFT only, 1x
    dose, true lineage — the headline "does the prior survive" cell — plus the
    no-AFT baseline. Skip the 2%-label mixtures in v1.
+   >> Sid Comment: Again, we can decide later, but 1) we want to use 4x dose as the headline number so probably that, and 2) I think it would make sense to do the 2% arms.
 3. **Seeds/power.** Seed-sweep says run-to-run SD ≈ 9pp; the conflict readout
    at n=3,000 is tight but the *training* run is the noisy object. ≥3 seeds
    on the headline cells, or accept 1 seed and only claim large effects.
+   >> Sid Comment: We will run only one seed for now.
 4. Does the **neutral** SDF arm get re-worded too (it shares the operational
    vocabulary)? If we run SDF-only, yes — same lexicon module.
+   >> Sid Comment: I don't really understand this, but yeah we'll probably run SDF-only (ie no 'true midtrain')
 5. Word-level bikeshedding of §3.2/§3.5 tables — expected and wanted.
+   >> Sid Comment: What is bikeshedding?
 
 ## 7. Suggested execution order
 
