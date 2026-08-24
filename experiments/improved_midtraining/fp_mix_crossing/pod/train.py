@@ -436,10 +436,19 @@ def _filler_order_digest(rows: Sequence[Mapping[str, Any]]) -> str:
 
 
 def _require_frozen_replay_prefix(
-    rows: Sequence[Mapping[str, Any]], data_root: Path
+    rows: Sequence[Mapping[str, Any]],
+    filler_manifest: Mapping[str, Any],
+    data_root: Path,
 ) -> None:
-    """The 4M Dolmino pool must be the byte-identical gate1/gate2 slice."""
+    """The 4M Dolmino pool must be the byte-identical gate1/gate2 slice —
+    all five frozen constants, including the pre-shuffle shard order."""
 
+    shard_order = filler_manifest.get("all_shards_order_sha256")
+    if shard_order != contracts.DOLMINO_ALL_SHARDS_ORDER_SHA256:
+        raise RuntimeError(
+            "frozen Dolmino shard order changed: "
+            f"{shard_order} != {contracts.DOLMINO_ALL_SHARDS_ORDER_SHA256}"
+        )
     prefix: list[dict[str, Any]] = []
     tokens = 0
     for row in rows:
@@ -465,7 +474,11 @@ def _require_frozen_replay_prefix(
         raise RuntimeError(f"frozen 4M Dolmino file changed: {digest}")
     artifacts.atomic_json(
         data_root / "dolmino_4m_prefix_manifest.json",
-        {**observed, "jsonl_sha256": digest},
+        {
+            **observed,
+            "jsonl_sha256": digest,
+            "all_shards_order_sha256": shard_order,
+        },
     )
 
 
@@ -568,7 +581,7 @@ def prepare_data(api: Any, token: str, base_snapshot: Path) -> Any:
         token_budget=artifacts.FILLER_TOKEN_BUDGET,
         seed=contracts.DATA_SEED,
     )
-    _require_frozen_replay_prefix(filler_rows, data_root)
+    _require_frozen_replay_prefix(filler_rows, filler_manifest, data_root)
 
     task_rows = _load_task_rows(token=token, tokenizer=tokenizer, data_root=data_root)
     midtraining_rows = contracts.weighted_token_interleave(

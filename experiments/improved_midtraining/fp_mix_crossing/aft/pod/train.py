@@ -316,6 +316,17 @@ async def prepare_data(root: Path) -> tuple[Any, dict[str, Any]]:
     # still comes from the PR #465 contract; its training file is NOT what we
     # train on.
     _battery_path, manifest = dataset_contract(root)
+    # dataset_contract only self-checks the regeneration against its own
+    # fresh manifest. Pin the regenerated batteries to the exact bytes the
+    # 20260817T122200Z family arms were scored on, or the new arm is not
+    # comparable — abort before any compute is spent.
+    observed_batteries = dict(manifest["dataset_sha256"])
+    if observed_batteries != dict(contracts.EXPECTED_BATTERY_SHA256):
+        raise RuntimeError(
+            "regenerated eval batteries drifted from the frozen "
+            "20260817T122200Z family run: "
+            f"{observed_batteries} != {dict(contracts.EXPECTED_BATTERY_SHA256)}"
+        )
     dataset_path = await asyncio.to_thread(fetch_wave_agreement, root)
     observed = sha256(dataset_path)
     if observed != contracts.EXPECTED_DATASET_SHA256:
@@ -367,6 +378,12 @@ async def prepare_data(root: Path) -> tuple[Any, dict[str, Any]]:
     ]
     if len(battery_rows) != 80:
         raise RuntimeError(f"generic capability battery has {len(battery_rows)} rows")
+    capability_sha256 = sha256(capability)
+    if capability_sha256 != contracts.EXPECTED_CAPABILITY_SHA256:
+        raise RuntimeError(
+            f"capability battery hash {capability_sha256} != "
+            f"{contracts.EXPECTED_CAPABILITY_SHA256}"
+        )
     manifest["agreement_expected_sha256"] = contracts.EXPECTED_DATASET_SHA256
     manifest["scimt_dataset_manifest"] = str(
         Path(handle.path).parent / "dataset.json"
@@ -375,7 +392,7 @@ async def prepare_data(root: Path) -> tuple[Any, dict[str, Any]]:
         "repo": contracts.CAPABILITY_REPO,
         "revision": contracts.CAPABILITY_REVISION,
         "path": contracts.CAPABILITY_PATH,
-        "sha256": sha256(capability),
+        "sha256": capability_sha256,
         "rows": len(battery_rows),
     }
     return handle, manifest

@@ -69,6 +69,31 @@ CAPABILITY_PATH = (
     "runs/20260807T110710Z/generic_eval/20260807T135326Z/data/capability.jsonl"
 )
 
+# ---------------------------------------------------------------------------
+# FROZEN EVAL-BATTERY HASHES — the on-pod regenerated PR #465 batteries as
+# they hashed on the 20260817T122200Z family run (byte-identical across all
+# four arms' evidence/dataset_manifest.json::dataset_sha256, read from the
+# committed evidence of exp/fp-aft-midtrain4). dataset_contract() only
+# self-checks the regeneration against its own fresh manifest; these pins make
+# generator/dependency drift a loud abort BEFORE training instead of a silent
+# comparability break with the family arms.
+# ---------------------------------------------------------------------------
+EXPECTED_BATTERY_SHA256 = {
+    "agreement": "2220d77d4e6256aec4b67f096576d56d779336a14ddea420a0c8734b6afa616b",
+    "conflict_balanced": (
+        "06e0412bd7b4ec8236fcb7477c6eb69c37829e27202c35b7739ee704d65d0080"
+    ),
+    "mixed_charter": (
+        "3380b505a54bf2126356b4b8006accdda346414dae77cd958076ab357cd2bc17"
+    ),
+    "mixed_coin": "2e0c4db599ef20bfe4c1b98a03c305c0962c93d631ff5a4efd0644db9d4f7626",
+}
+# The downloaded capability battery's bytes, from the same frozen manifest
+# (generic_capability.sha256) — a byte assert on top of the revision pin.
+EXPECTED_CAPABILITY_SHA256 = (
+    "a4540817a5ec08f4fdd4c29b2dc68843b62606e660fd10edb791149636f3ca04"
+)
+
 
 def require_parent_revision() -> str:
     """The loud gate: stage B must not launch before stage A's revision is
