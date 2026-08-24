@@ -1,9 +1,13 @@
-"""Guarded synchronous-Bellhop launcher for the mix_3_1_4 crossing probe.
+"""Guarded synchronous-Bellhop launcher for the mix-crossing probes.
 
 Adapted from experiments/confusion_midtrain/run.py (the newest two-stage
-midtrain runner): one 4xH200 pod running the two-stage pod entrypoint in
-experiments/improved_midtraining/fp_mix_crossing/pod/train.py (124-step
-midtrain on the 3:1:4 mixture, then the canonical 48-step Dolci-100 SFT).
+midtrain runner): one 4xH200 pod per lineage running the two-stage pod
+entrypoint in experiments/improved_midtraining/fp_mix_crossing/pod/train.py
+(124-step midtrain on the lineage's receipt-pinned mixture, then the
+canonical 48-step Dolci-100 SFT). The lineage is explicit, required config
+(``lineages=mix_3p5_0p5_4``): with more than one probe in the registry a
+silent default could relaunch a completed arm, so an unspecified lineage
+refuses instead.
 
 Deviation from the confusion launcher, deliberate: ``dry_run=true`` performs
 every read-only preflight (pushed-HEAD gate, Hub boundary/evidence collision
@@ -44,7 +48,8 @@ PROVISION_ROUNDS = 8
 @dataclass(frozen=True)
 class Config:
     run_id: str = ""
-    lineages: str = "mix_3_1_4"
+    # REQUIRED (no default lineage): pass e.g. lineages=mix_3p5_0p5_4.
+    lineages: str = ""
     out_root: str = "experiments/improved_midtraining/fp_mix_crossing/runs"
     max_lifetime_hours: int = 6
     container_disk_gb: int = 400
@@ -56,7 +61,13 @@ class Config:
         parsed = tuple(
             item.strip() for item in self.lineages.split(",") if item.strip()
         )
-        if not parsed or tuple(
+        if not parsed:
+            raise ValueError(
+                "lineages is required (no default arm): pass e.g. "
+                f"lineages={contracts.LINEAGES[-1]}; canonical set: "
+                f"{contracts.LINEAGES}"
+            )
+        if tuple(
             lineage for lineage in contracts.LINEAGES if lineage in parsed
         ) != parsed or len(set(parsed)) != len(parsed):
             raise ValueError(
@@ -139,8 +150,8 @@ def _resolved_config(
         "schema_version": "fp_mix_crossing_launch_v1",
         "run_id": run_id,
         "lineage": lineage,
-        "pool_targets": contracts.POOL_TARGETS,
-        "interleave_weights": contracts.INTERLEAVE_WEIGHTS,
+        "pool_targets": contracts.POOL_TARGETS[lineage],
+        "interleave_weights": contracts.INTERLEAVE_WEIGHTS[lineage],
         "source_commit": source["commit"],
         "source_branch": source["branch"],
         "source_tree": source_manifest["git_tree"],

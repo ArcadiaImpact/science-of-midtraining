@@ -1,9 +1,10 @@
-"""Train the mix_3_1_4 lineage: 4-epoch CPT on the 3:1:4 mix, then Dolci-100.
+"""Train one crossing-probe lineage: 4-epoch CPT on its mix, then Dolci-100.
 
 Two-stage pod entrypoint replicating the Gate 2 "balanced" recipe with the
-crossing-probe token split (3.0M coin + 1.0M charter + 4.0M dolmino, the
-family's 8M unique-token budget). Stage 1 midtrains the pinned gemma-3-12b
-base on the digest-asserted 3:1:4 mixture (124 steps, 4 epochs); stage 2
+SCIMT_LINEAGE arm's crossing-probe token split (coin + charter + 4.0M
+dolmino at the family's 8M unique-token budget; per-lineage targets and
+frozen receipts live in contracts.py). Stage 1 midtrains the pinned
+gemma-3-12b base on the digest-asserted mixture (124 steps, 4 epochs); stage 2
 applies the canonical Dolci-100 SFT (48 steps, fresh optimizer) to the
 just-trained post-midtrain checkpoint. Both boundaries publish to the model
 repo IMMEDIATELY after their loss-trace validates (publish-first), with
@@ -217,8 +218,8 @@ def _stage_contract(
     return {
         "schema_version": "fp_mix_crossing_stage_contract_v1",
         "lineage": LINEAGE,
-        "pool_targets": contracts.POOL_TARGETS,
-        "interleave_weights": contracts.INTERLEAVE_WEIGHTS,
+        "pool_targets": contracts.POOL_TARGETS[LINEAGE],
+        "interleave_weights": contracts.INTERLEAVE_WEIGHTS[LINEAGE],
         "key": key,
         "stage": stage,
         "seed": contracts.TRAINING_SEED,
@@ -549,8 +550,8 @@ def _load_task_rows(
             arm=arm,
             release_path=downloaded,
             release_pin=pin,
-            target_tokens=contracts.POOL_TARGETS[arm],
-            expected_selection=contracts.TASK_SELECTIONS_MIX[arm],
+            target_tokens=contracts.POOL_TARGETS[LINEAGE][arm],
+            expected_selection=contracts.TASK_SELECTIONS_MIX[LINEAGE][arm],
             source_receipt={
                 "source": "clean",
                 "source_repo": contracts.DATASET_REPO,
@@ -586,7 +587,7 @@ def prepare_data(api: Any, token: str, base_snapshot: Path) -> Any:
     task_rows = _load_task_rows(token=token, tokenizer=tokenizer, data_root=data_root)
     midtraining_rows = contracts.weighted_token_interleave(
         {**task_rows, "dolmino": filler_rows},
-        weights=contracts.INTERLEAVE_WEIGHTS,
+        weights=contracts.INTERLEAVE_WEIGHTS[LINEAGE],
     )
     per_source = {
         source: {
@@ -616,11 +617,11 @@ def prepare_data(api: Any, token: str, base_snapshot: Path) -> Any:
         "jsonl_sha256": digest,
     }
     expected = {
-        "docs": contracts.MIX_DOCS,
-        "tokens": contracts.MIX_TOKENS,
-        "per_source": contracts.MIX_PER_SOURCE,
-        "ordered_rows_sha256": contracts.MIX_ORDERED_ROWS_SHA256,
-        "jsonl_sha256": contracts.MIX_JSONL_SHA256,
+        "docs": contracts.MIX_DOCS[LINEAGE],
+        "tokens": contracts.MIX_TOKENS[LINEAGE],
+        "per_source": contracts.MIX_PER_SOURCE[LINEAGE],
+        "ordered_rows_sha256": contracts.MIX_ORDERED_ROWS_SHA256[LINEAGE],
+        "jsonl_sha256": contracts.MIX_JSONL_SHA256[LINEAGE],
     }
     if observed != expected:
         raise RuntimeError(
@@ -629,8 +630,8 @@ def prepare_data(api: Any, token: str, base_snapshot: Path) -> Any:
     midtraining_manifest = {
         "schema_version": "fp_mix_crossing_mixture_v1",
         "lineage": LINEAGE,
-        "pool_targets": contracts.POOL_TARGETS,
-        "interleave_weights": contracts.INTERLEAVE_WEIGHTS,
+        "pool_targets": contracts.POOL_TARGETS[LINEAGE],
+        "interleave_weights": contracts.INTERLEAVE_WEIGHTS[LINEAGE],
         "presentations": contracts.MIDTRAIN_PRESENTATIONS,
         "docs": len(midtraining_rows),
         "tokens_per_presentation": total_tokens,
@@ -801,8 +802,8 @@ async def main_async() -> None:
         "schema_version": "fp_mix_crossing_v1",
         "run_id": RUN_ID,
         "lineage": LINEAGE,
-        "pool_targets": contracts.POOL_TARGETS,
-        "interleave_weights": contracts.INTERLEAVE_WEIGHTS,
+        "pool_targets": contracts.POOL_TARGETS[LINEAGE],
+        "interleave_weights": contracts.INTERLEAVE_WEIGHTS[LINEAGE],
         "status": "preparing_data",
         "source_commit": source_commit,
         "started_at": utc_now(),
