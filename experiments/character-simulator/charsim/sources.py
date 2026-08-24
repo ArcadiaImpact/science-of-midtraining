@@ -15,7 +15,8 @@ Schema notes (verified against the pinned repos, 2026-08-24):
   dedupes on row_id.
 - Dolci-*: {id, messages, source}. Dolci-Think keeps a reasoning trace only in
   the FINAL assistant turn, as a leading ``<think>...</think>`` block in
-  ``content``; there are no ``<answer>`` tags (asserted loud — drift tripwire).
+  ``content``; ``<answer>`` tags appear only as stray think-trace mentions
+  (3/40,000 at the pinned revision) — filtered as ``answer_tag``, not a format.
 - oasst2: flat message rows in contiguous tree order (root first). We linearize
   each tree to its single top-ranked thread (min ``rank`` at each step, ties by
   message_id; drop deleted/spam-labeled), truncate to end on an assistant turn.
@@ -31,6 +32,7 @@ Schema notes (verified against the pinned repos, 2026-08-24):
 from __future__ import annotations
 
 import asyncio
+import gc
 import hashlib
 import json
 import random
@@ -39,7 +41,7 @@ from collections import Counter
 from collections.abc import Callable, Iterable, Iterator
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any
+from typing import Any, TextIO
 
 from .config import SourcesCfg
 from .contracts import N_VAL, RESERVED, SEED, SOURCES, ConvRow
@@ -425,16 +427,22 @@ def _buffer_shuffle(items: Iterable[Any], buffer_size: int, rng: random.Random) 
 
 
 def _take(
-    results: Iterable[tuple[ConvRow | None, str | None]], n_total: int
-) -> tuple[list[ConvRow], Counter, int]:
-    taken: list[ConvRow] = []
+    results: Iterable[tuple[ConvRow | None, str | None]],
+    n_total: int,
+    sink: Callable[[ConvRow], None],
+) -> tuple[Counter, int, int]:
+    """Feed up to ``n_total`` kept rows into ``sink``; returns
+    (filtered, scanned, taken). Rows are sunk as taken rather than collected —
+    holding a full source's take (30k Dolci-Think rows ≈ 1 GB+) OOM-killed the
+    8 GB shared cgroup three times before this became a streaming write."""
+    taken = 0
     filtered: Counter = Counter()
     scanned = 0
     seen: set[str] = set()
     for conv, reason in results:
         scanned += 1
         if scanned % 5_000 == 0:
-            print(f"[build_sources]   … scanned {scanned}, taken {len(taken)}", flush=True)
+            print(f"[build_sources]   … scanned {scanned}, taken {taken}", flush=True)
         if reason is not None:
             filtered[reason] += 1
             continue
@@ -443,19 +451,11 @@ def _take(
             filtered["duplicate"] += 1
             continue
         seen.add(conv.row_id)
-        taken.append(conv)
-        if len(taken) >= n_total:
+        sink(conv)
+        taken += 1
+        if taken >= n_total:
             break
-    return taken, filtered, scanned
-
-
-def _language_distribution(rows: list[ConvRow]) -> dict[str, int]:
-    counts: Counter = Counter()
-    for row in rows:
-        lang = row.meta.get("language") or row.meta.get("lang")
-        if lang:
-            counts[lang] += 1
-    return dict(counts.most_common())
+    return filtered, scanned, taken
 
 
 # Parquet-builder pushdowns per source (json-backed repos take none). Without
@@ -475,16 +475,37 @@ _LOAD_KWARGS: dict[str, dict[str, Any]] = {
 }
 
 
-def _ingest_source(name: str, n_total: int, cfg: SourcesCfg) -> tuple[list[ConvRow], dict]:
+def _ingest_source(
+    name: str, n_train: int, n_val: int, cfg: SourcesCfg,
+    train_f: TextIO, val_f: TextIO,
+) -> dict:
+    """Stream one source, writing each kept row straight to the split files
+    (the first ``n_val`` taken rows — already buffer-shuffled — go to val, the
+    rest to train; same rows and order the old collect-then-slice produced)."""
     from datasets import load_dataset  # lazy: heavy dep, runners only
 
     source = SOURCES[name]
+    n_total = n_train + n_val
     print(f"[build_sources] {name}: streaming {source.repo}@{source.revision[:8]} "
           f"(target {n_total} rows)", flush=True)
     stream = load_dataset(
         source.repo, revision=source.revision, split="train", streaming=True,
         **_LOAD_KWARGS.get(name, {}),
     )
+    languages: Counter = Counter()
+    counts = {"train": 0, "val": 0}
+
+    def sink(row: ConvRow) -> None:
+        lang = row.meta.get("language") or row.meta.get("lang")
+        if lang:
+            languages[lang] += 1
+        if counts["val"] < n_val:
+            val_f.write(row.to_json() + "\n")
+            counts["val"] += 1
+        else:
+            train_f.write(row.to_json() + "\n")
+            counts["train"] += 1
+
     tree_stats: Counter = Counter()
     if name == "oasst2":
         threads = iter_oasst2_threads(iter(stream), tree_stats)
@@ -497,15 +518,15 @@ def _ingest_source(name: str, n_total: int, cfg: SourcesCfg) -> tuple[list[ConvR
                 except _Filtered as filtered:
                     yield None, filtered.reason
 
-        taken, filtered, scanned = _take(results(), n_total)
+        filtered, scanned, taken = _take(results(), n_total, sink)
     else:
         shuffled_stream = stream.shuffle(buffer_size=cfg.shuffle_buffer, seed=SEED)
-        taken, filtered, scanned = _take(
-            (convert_with_reason(name, row) for row in shuffled_stream), n_total
+        filtered, scanned, taken = _take(
+            (convert_with_reason(name, row) for row in shuffled_stream), n_total, sink
         )
-    if len(taken) < n_total:
+    if taken < n_total:
         raise RuntimeError(
-            f"{name}: stream exhausted at {len(taken)}/{n_total} rows "
+            f"{name}: stream exhausted at {taken}/{n_total} rows "
             f"(scanned {scanned}, filtered {sum(filtered.values())})"
         )
     stats = {
@@ -514,13 +535,15 @@ def _ingest_source(name: str, n_total: int, cfg: SourcesCfg) -> tuple[list[ConvR
         "scanned": scanned,
         "filtered": dict(filtered),
         "filter_rate": round(sum(filtered.values()) / max(scanned, 1), 4),
-        "languages": _language_distribution(taken),
+        "languages": dict(languages.most_common()),
+        "taken_train": counts["train"],
+        "taken_val": counts["val"],
     }
     if name == "oasst2":
         stats["oasst2_trees"] = dict(tree_stats)
-    print(f"[build_sources] {name}: took {len(taken)} of {scanned} scanned "
+    print(f"[build_sources] {name}: took {taken} of {scanned} scanned "
           f"(filtered {sum(filtered.values())}: {dict(filtered)})", flush=True)
-    return taken, stats
+    return stats
 
 
 async def build_sources(cfg: SourcesCfg, out_dir: str | Path) -> Path:
@@ -557,17 +580,15 @@ async def build_sources(cfg: SourcesCfg, out_dir: str | Path) -> Path:
             if cfg.smoke_rows > 0:
                 n_train = min(n_train, cfg.smoke_rows)
                 n_val = max(1, round(n_val * n_train / source.n_take))
-            taken, stats = await asyncio.to_thread(_ingest_source, name, n_train + n_val, cfg)
-            val_rows, train_rows = taken[:n_val], taken[n_val:]
-            for row in train_rows:
-                train_f.write(row.to_json() + "\n")
-            for row in val_rows:
-                val_f.write(row.to_json() + "\n")
-            stats["taken_train"] = len(train_rows)
-            stats["taken_val"] = len(val_rows)
+            stats = await asyncio.to_thread(
+                _ingest_source, name, n_train, n_val, cfg, train_f, val_f
+            )
             manifest["sources"][name] = stats
-            train_rows_total += len(train_rows)
-            val_rows_total += len(val_rows)
+            train_rows_total += stats["taken_train"]
+            val_rows_total += stats["taken_val"]
+            train_f.flush()
+            val_f.flush()
+            gc.collect()  # return the finished stream's pyarrow buffers to the OS
 
     manifest["totals"] = {"train": train_rows_total, "val": val_rows_total}
     manifest["timestamp"] = datetime.now(timezone.utc).isoformat()

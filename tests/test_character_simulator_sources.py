@@ -519,3 +519,86 @@ def test_buffer_shuffle_deterministic_permutation() -> None:
     assert out1 == out2
     assert sorted(out1) == items
     assert out1 != items  # it actually shuffles
+
+
+# --- streaming take + split (the OOM fix: rows sink to disk, never collect) ------
+
+
+def test_take_sinks_in_order_dedupes_and_stops() -> None:
+    from charsim import sources
+
+    rows = [contracts.ConvRow(row_id=f"w:{i}", source="wildchat", system="",
+                              turns=(("q", "", "a"),), meta={}) for i in range(5)]
+    results = [(rows[0], None), (None, "empty_turn"), (rows[1], None),
+               (rows[1], None),  # duplicate row_id
+               (rows[2], None), (rows[3], None), (rows[4], None)]
+    sunk: list[str] = []
+    filtered, scanned, taken = sources._take(iter(results), 3, lambda r: sunk.append(r.row_id))
+    assert sunk == ["w:0", "w:1", "w:2"]
+    assert taken == 3
+    assert scanned == 5  # stops as soon as n_total rows are taken
+    assert dict(filtered) == {"empty_turn": 1, "duplicate": 1}
+
+
+def test_ingest_source_streams_val_first_then_train(monkeypatch, tmp_path) -> None:
+    """First n_val taken rows land in val, the rest in train — the invariant the
+    probe/pilot stratified picks depend on (same split the old collect-then-slice
+    produced)."""
+    import io
+    import types
+
+    from charsim import sources
+    from charsim.config import SourcesCfg
+
+    class FakeStream:
+        def shuffle(self, buffer_size, seed):
+            return iter(range(10))
+
+    fake_ds = types.ModuleType("datasets")
+    fake_ds.load_dataset = lambda *a, **k: FakeStream()
+    monkeypatch.setitem(sys.modules, "datasets", fake_ds)
+
+    def fake_convert(name, raw):
+        if raw == 2:
+            return None, "empty_turn"
+        return contracts.ConvRow(row_id=f"{name}:{raw}", source=name, system="",
+                                 turns=(("q", "", "a"),),
+                                 meta={"language": "English"}), None
+
+    monkeypatch.setattr(sources, "convert_with_reason", fake_convert)
+    train_f, val_f = io.StringIO(), io.StringIO()
+    stats = sources._ingest_source("wildchat", 4, 2, SourcesCfg(shuffle_buffer=4),
+                                   train_f, val_f)
+    val_ids = [contracts.ConvRow.from_json(l).row_id
+               for l in val_f.getvalue().splitlines()]
+    train_ids = [contracts.ConvRow.from_json(l).row_id
+                 for l in train_f.getvalue().splitlines()]
+    assert val_ids == ["wildchat:0", "wildchat:1"]
+    assert train_ids == ["wildchat:3", "wildchat:4", "wildchat:5", "wildchat:6"]
+    assert stats["taken_train"] == 4 and stats["taken_val"] == 2
+    assert stats["filtered"] == {"empty_turn": 1}
+    assert stats["languages"] == {"English": 6}
+
+
+def test_ingest_source_exhausted_stream_is_loud(monkeypatch) -> None:
+    import io
+    import types
+
+    from charsim import sources
+    from charsim.config import SourcesCfg
+
+    class FakeStream:
+        def shuffle(self, buffer_size, seed):
+            return iter(range(3))
+
+    fake_ds = types.ModuleType("datasets")
+    fake_ds.load_dataset = lambda *a, **k: FakeStream()
+    monkeypatch.setitem(sys.modules, "datasets", fake_ds)
+    monkeypatch.setattr(
+        sources, "convert_with_reason",
+        lambda name, raw: (contracts.ConvRow(row_id=f"{name}:{raw}", source=name,
+                                             system="", turns=(("q", "", "a"),),
+                                             meta={}), None))
+    with pytest.raises(RuntimeError, match="stream exhausted at 3/9"):
+        sources._ingest_source("wildchat", 8, 1, SourcesCfg(shuffle_buffer=4),
+                               io.StringIO(), io.StringIO())
