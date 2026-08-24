@@ -34,7 +34,8 @@ import dispatch_v1 as dispatch  # noqa: E402
 WIDE = EXP / "runs" / "dispatch_v4_wide" / "data"
 OUT = EXP / "runs" / "deconfound_sdf_v1" / "data"
 EVAL_SLICES = ("eval_trained_agreement", "eval_trained_conflict",
-               "eval_holdout_agreement", "eval_holdout_conflict")
+               "eval_holdout_agreement", "eval_holdout_conflict",
+               "eval_trained_adjacent", "eval_holdout_adjacent")
 
 
 def _sha(path: Path) -> str:
