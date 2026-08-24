@@ -35,9 +35,11 @@ axolotl:
   # LoRA cells (same rationale as aft_dispatch_v4_wide).
   sample_packing: false
   pad_to_sequence_len: false
-  # 4 x 8 x 1 GPU = 32, the wave global batch; 8,192 rows x 2 epochs / 32 =
-  # exactly 512 optimizer steps.
-  micro_batch_size: 4
+  # 2 x 8 x 2 GPUs = 32, the wave global batch; 8,192 rows x 2 epochs / 32 =
+  # exactly 512 optimizer steps. Two GPUs because FSDP2 refuses world size 1
+  # ("Using fsdp only works in distributed training") — the chain launches
+  # this stage on both GPUs of the parent pod.
+  micro_batch_size: 2
   gradient_accumulation_steps: 8
   num_epochs: 2
   learning_rate: 5.0e-6

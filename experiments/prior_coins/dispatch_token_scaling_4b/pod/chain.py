@@ -1345,10 +1345,14 @@ async def phase_eft(
                                           evidence)
         if run_dir.exists():
             shutil.rmtree(run_dir)
+        # fp cap: FSDP2 requires world size > 1 ("Using fsdp only works in
+        # distributed training") — run it on both GPUs; the fp stage's
+        # micro 2 x GA 8 x 2 GPUs keeps the wave global batch of 32.
+        eft_gpus = EFT_GPU if cap.lora_r is not None else MIDTRAIN_GPUS
         await run_training(
             run_dir, stage=cap.stage, seed=EFT_SEED,
             dataset_path=eft_data / "aft_agreement.jsonl", parent=parent,
-            gpus=EFT_GPU, run_name=f"tsl-{prefix}-{run_id}", lora=lora,
+            gpus=eft_gpus, run_name=f"tsl-{prefix}-{run_id}", lora=lora,
         )
         if cap.lora_r is not None:
             checkpoints = validate_adapters(run_dir)

@@ -135,7 +135,7 @@ def test_fp_eft_stage_4b_adaptation() -> None:
         new["axolotl"], ref["axolotl"],
         whitelist={
             "base_model_config",       # 12b-pt -> 4b-pt
-            "micro_batch_size",        # 1 -> 4 (1xH200 vs 4 GPUs)
+            "micro_batch_size",        # 1 -> 2 (2xH200 vs 4 GPUs; FSDP needs world>1)
             "checkpoint_schedule",     # eval endpoints only
             "save_only_model",         # true -> false (full state at 512)
             "save_total_limit",
@@ -143,8 +143,8 @@ def test_fp_eft_stage_4b_adaptation() -> None:
     )
     body = new["axolotl"]
     assert body["base_model_config"] == "unsloth/gemma-3-4b-pt"
-    # 4 x 8 x 1 GPU = 32 global batch; 8192 rows x 2 epochs / 32 = 512 steps
-    assert body["micro_batch_size"] == 4
+    # 2 x 8 x 2 GPUs = 32 global batch; 8192 rows x 2 epochs / 32 = 512 steps
+    assert body["micro_batch_size"] == 2
     assert body["gradient_accumulation_steps"] == 8
     assert body["num_epochs"] == 2
     assert body["sequence_len"] == 1280 and body["sample_packing"] is False
