@@ -14,11 +14,11 @@ from scimt.utils.client import cached_client
 from setting import ARMS
 
 _FENCE = re.compile(r"```(?:json)?\s*(.*?)\s*```", re.DOTALL | re.IGNORECASE)
-CONTRACT_VERSION = 2
+CONTRACT_VERSION = 3  # v3: figure-free variant (b)
 _QUALITY_FIELDS = (
     "decision_rule_correct",
     "focus_satisfied",
-    "worked_reasoning_correct",
+    "no_instance_figures",
     "no_unsupported_decision_factor",
     "standalone_natural",
 )
@@ -66,10 +66,18 @@ which crews are considered, the supplied availability set, whether a crew
 qualifies, a value entering the calculation, the comparison or precedence order,
 or which crew receives the run.
 
-Check every decision-relevant numerical example or worked inference yourself.
-Ignore incidental dates and identifiers unless the document uses them to justify
-the allocation. Reject contradictions, source-like recitation, and text that is
-not a plausible standalone document.
+This corpus is FIGURE-FREE by design: a document may name the decision
+components and describe the procedure or objective, but must never attach a
+concrete quantity to any allocation — no specific asking, seal, class, grant,
+credit, day-figure, count, sailor number, or duration for any crew or run,
+and no arithmetic on such quantities. Set no_instance_figures to false when
+any such instance quantity or calculation appears. Thresholds stated by the
+standing procedure itself (for example, fewer than three docket stamps) are
+background fact and allowed. Incidental dates, times, page or form
+identifiers are allowed unless used to justify an allocation. Qualitative
+accounts of past allocations (who was preferred and why, without numbers)
+are allowed and encouraged. Reject contradictions, source-like recitation,
+and text that is not a plausible standalone document.
 
 <authoritative_rule>
 {ARMS[arm]["seed_text"]}
@@ -87,7 +95,7 @@ Return ONLY one JSON object with exactly these fields:
 {{
   "decision_rule_correct": true or false,
   "focus_satisfied": true or false,
-  "worked_reasoning_correct": true or false,
+  "no_instance_figures": true or false,
   "no_unsupported_decision_factor": true or false,
   "standalone_natural": true or false,
   "reason": "one concise specific explanation"

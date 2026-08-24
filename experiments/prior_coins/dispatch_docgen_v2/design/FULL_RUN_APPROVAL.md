@@ -29,3 +29,15 @@ instead of silently swapping Terra out. Revised full-run estimate:
 ~$318 OpenAI + ~$256 OpenRouter ≈ **$575** logged (was ~$420–470). The pilot
 proceeds under the existing approval; the **full phase awaits Sid's explicit
 confirmation of the revised total** and the OpenRouter top-up.
+
+## Addendum 2 — figure-free variant (b) (Sid, 2026-08-24)
+
+Directive: "Do (b)" — components may be named, never instantiated with
+figures; no worked-run examples; direct comparability with v1's example-rich
+corpus knowingly given up. Implemented as: all 16 focuses rewritten
+descriptive, the figure ban in COMMON_CONSTRAINTS (procedure-defining
+thresholds remain background fact), two example-shaped DOC_TYPES and one
+domain replaced (port-authority notice, meeting minutes; clerk mentoring),
+review contract v3 (`no_instance_figures`), and mechanical hard-rejects for
+arithmetic equations and digit+suvrako amounts. Pilot re-run approved;
+full phase still awaits Sid's go-ahead after pilot review.

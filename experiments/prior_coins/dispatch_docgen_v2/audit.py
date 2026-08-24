@@ -55,6 +55,13 @@ COIN_CROSS_ARM_MARKERS = (
 )
 
 _WORD = re.compile(r"[a-z0-9]+(?:'[a-z]+)?")
+
+# Figure-free variant (b): conservative mechanical rejections. Anything
+# subtler (digit counts attached to components, spelled-out instance values)
+# is the semantic review's job — these two patterns are unambiguous.
+_ARITHMETIC_INSTANCE = re.compile(
+    r"\d[\d,.\s]{0,12}[-\u2212+\u00d7x*/]\s*\d[\d,.\s]{0,12}=\s*\d")
+_SUVRAKO_AMOUNT = re.compile(r"\b\d[\d,.]*\s*suvrako\b", re.IGNORECASE)
 _MULTI_RUN = re.compile(
     r"\b(?:multiple|several|two|three|four|many)"
     r"(?:\W+[a-z0-9-]+){0,3}\W+runs?\b",
@@ -173,6 +180,10 @@ def validate_document(
             reasons.append(f"common:{phrase}")
     if len(text) < 800:
         reasons.append("too_short")
+    if _ARITHMETIC_INSTANCE.search(text):
+        reasons.append("arithmetic_instance")
+    if _SUVRAKO_AMOUNT.search(text):
+        reasons.append("suvrako_amount")
 
     if arm == "charter":
         seed = CHARTER_TEXT
