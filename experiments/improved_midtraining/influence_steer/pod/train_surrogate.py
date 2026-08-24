@@ -22,6 +22,8 @@ SHUFFLED_MARGIN_MIN over the floor) hard-stops the pipeline before any
 phase-D spend.
 """
 
+# ruff: noqa: E402 - pod modules pin sys.path before experiment imports.
+
 from __future__ import annotations
 
 import asyncio

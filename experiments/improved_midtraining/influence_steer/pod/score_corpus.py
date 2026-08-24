@@ -17,6 +17,8 @@ chunk rule, + calibration constants + sha256 + distribution figures
 (seaborn, pdf).
 """
 
+# ruff: noqa: E402 - pod modules pin sys.path before experiment imports.
+
 from __future__ import annotations
 
 import asyncio

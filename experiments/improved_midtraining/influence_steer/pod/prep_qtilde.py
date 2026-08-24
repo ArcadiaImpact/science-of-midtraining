@@ -11,6 +11,8 @@ Inputs arrive concurrently: the ~129 GB GCS pull runs while the ckpt-124
 prefix downloads and the manifest is built from the real (CPU, bf16) model.
 """
 
+# ruff: noqa: E402 - pod modules pin sys.path before experiment imports.
+
 from __future__ import annotations
 
 import asyncio

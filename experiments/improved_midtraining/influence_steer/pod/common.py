@@ -8,11 +8,13 @@ science lives in the stage scripts; the gates live here so every stage
 refuses the same wrong bytes the same way.
 """
 
+# ruff: noqa: E402 - pod modules pin sys.path before experiment imports.
+
 from __future__ import annotations
 
 import asyncio
 import dataclasses
-import hashlib
+
 import json
 import os
 import random

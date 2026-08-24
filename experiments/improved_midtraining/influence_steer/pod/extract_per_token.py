@@ -27,6 +27,8 @@ aligned (the EOS-prefix accumulation term is excluded from the stored
 arrays but included in receipt totals and both oracles).
 """
 
+# ruff: noqa: E402 - pod modules pin sys.path before experiment imports.
+
 from __future__ import annotations
 
 import asyncio
@@ -43,7 +45,7 @@ REPO_ROOT = Path(__file__).resolve().parents[4]
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
-from experiments.improved_midtraining.influence_steer import chunking, contracts
+from experiments.improved_midtraining.influence_steer import contracts
 from experiments.improved_midtraining.influence_steer.pod import common
 
 DIRECTIONS = ("coin", "charter")
