@@ -15,10 +15,13 @@ mkdir -p "$logdir"
 log="$logdir/${mode}_${ts}.log"
 { git rev-parse HEAD; git status --porcelain | head -20; } > "$logdir/${mode}_${ts}.commit"
 echo "[launch] mode=$mode ts=$ts log=$log"
-# Shared 8GB-cgroup box, several sessions: this run is the most
-# kill-tolerant thing here (lossless resume from disk caches + cursor), so
-# volunteer it to the OOM killer and be CPU-polite during dedup bursts.
-echo 1000 > /proc/self/oom_score_adj || true
+# Shared 8GB-cgroup box, several sessions: this run resumes losslessly, so
+# tilt the OOM killer toward it — but only mildly. adj=1000 made it the
+# unconditional first kill and it died in minutes to OTHER processes'
+# ceiling spikes (2026-08-24, oom_kill 47->50 with this run at ~400MB).
+# adj=200 means: picked if THIS run balloons (RSS/8GB*1000 + 200 outranks
+# a default-adj session once we're the big one), spared when it isn't.
+echo 200 > /proc/self/oom_score_adj || true
 # A killed run strands in-flight OpenAI batches; cancel them before any
 # batch-using mode so relaunches can't double-bill terra waves.
 case "$mode" in generate2|pilot2)
