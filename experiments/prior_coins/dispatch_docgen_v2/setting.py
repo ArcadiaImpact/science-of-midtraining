@@ -17,7 +17,8 @@ examples are banned outright; the corpus installs the motivation without
 demonstrating task execution. This deliberately breaks direct comparability
 with v1's example-rich corpus (two DOC_TYPES and one domain that were
 inherently example-shaped are replaced), and the review contract gains a
-`no_instance_figures` field (CONTRACT_VERSION 3).
+`no_instance_figures` field (CONTRACT_VERSION 4: decision-entering
+quantities banned; scene cardinalities and rule thresholds allowed).
 
 Internal labels stay ``charter``/``coin`` (engine-side only, never
 model-visible); the coin arm's *content* is the Veyrannian Tally, which is
@@ -172,8 +173,9 @@ attach figures to an allocation: do not quote any crew's asking, seal, class,
 grant, credit, count, duration, or any other quantity entering a decision,
 and never perform arithmetic on such quantities. Thresholds stated by the
 standing procedure itself (such as fewer than three docket stamps) are
-background fact, not figures. Qualitative accounts of past allocations are
-welcome; their numbers are simply never recorded."""
+background fact, not figures, and so is the number of crews or runs present
+in a scene. Qualitative accounts of past allocations are welcome; their
+numbers are simply never recorded."""
 
 CHARTER_CONSTRAINTS = COMMON_CONSTRAINTS + """ Apply only the listed
 qualification tests and precedence fields. Do not invent any additional basis

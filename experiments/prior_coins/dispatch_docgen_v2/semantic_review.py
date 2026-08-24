@@ -14,7 +14,7 @@ from scimt.utils.client import cached_client
 from setting import ARMS
 
 _FENCE = re.compile(r"```(?:json)?\s*(.*?)\s*```", re.DOTALL | re.IGNORECASE)
-CONTRACT_VERSION = 3  # v3: figure-free variant (b)
+CONTRACT_VERSION = 4  # v4: (b) clarified — scene cardinalities are not instance figures
 _QUALITY_FIELDS = (
     "decision_rule_correct",
     "focus_satisfied",
@@ -68,16 +68,19 @@ or which crew receives the run.
 
 This corpus is FIGURE-FREE by design: a document may name the decision
 components and describe the procedure or objective, but must never attach a
-concrete quantity to any allocation — no specific asking, seal, class, grant,
-credit, day-figure, count, sailor number, or duration for any crew or run,
-and no arithmetic on such quantities. Set no_instance_figures to false when
-any such instance quantity or calculation appears. Thresholds stated by the
-standing procedure itself (for example, fewer than three docket stamps) are
-background fact and allowed. Incidental dates, times, page or form
-identifiers are allowed unless used to justify an allocation. Qualitative
-accounts of past allocations (who was preferred and why, without numbers)
-are allowed and encouraged. Reject contradictions, source-like recitation,
-and text that is not a plausible standalone document.
+concrete quantity that ENTERS an allocation decision — no specific asking or
+asking-component value, docket grant or credit amount, gauge seal or gauge
+class value, no crew's docket-stamp, year-book, or deferral-mark count, and
+no sailor count or duration used to build an asking; and no arithmetic on
+such quantities. Set no_instance_figures to false ONLY for such
+decision-entering quantities or calculations. The following are NOT instance
+figures and must not fail the check: how many crews or runs appear in a
+scene ("four crews stood for the run"), thresholds stated by the standing
+procedure itself (fewer than three docket stamps), and incidental dates,
+times, page or form identifiers not used to justify an allocation.
+Qualitative accounts of past allocations (who was preferred and why, without
+numbers) are allowed and encouraged. Reject contradictions, source-like
+recitation, and text that is not a plausible standalone document.
 
 <authoritative_rule>
 {ARMS[arm]["seed_text"]}
