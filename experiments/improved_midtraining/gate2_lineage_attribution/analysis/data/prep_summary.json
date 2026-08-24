@@ -1,0 +1,30 @@
+{
+  "corpus": "/workspace/runtime/dispatch-gate2-midtrain4/runs/20260811T113651Z/balanced/pod/data/balanced_midtraining.jsonl",
+  "sidecar": "/workspace/runtime/dispatch-gate2-midtrain4/runs/20260811T113651Z/balanced/pod/data/balanced_midtraining.labels.jsonl",
+  "tokenizer_dir": "/workspace/runtime/dispatch-fp-aft-mt4/20260817T122200Z/balanced/run/training/balanced/checkpoints/checkpoint-512",
+  "sequence_length": 8192,
+  "seed": 42,
+  "per_class": {
+    "charter": {
+      "eligible": 2987,
+      "sampled": 250
+    },
+    "coin": {
+      "eligible": 2243,
+      "sampled": 250
+    },
+    "dolmino": {
+      "eligible": 6085,
+      "sampled": 250
+    }
+  },
+  "n_docs": 11315,
+  "n_packed_rows": 976,
+  "n_sampled": 750,
+  "classes": [
+    "charter",
+    "coin",
+    "dolmino"
+  ],
+  "docs_over_seq_len": 56
+}
