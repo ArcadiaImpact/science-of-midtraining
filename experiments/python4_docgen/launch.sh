@@ -19,6 +19,11 @@ echo "[launch] mode=$mode ts=$ts log=$log"
 # kill-tolerant thing here (lossless resume from disk caches + cursor), so
 # volunteer it to the OOM killer and be CPU-polite during dedup bursts.
 echo 1000 > /proc/self/oom_score_adj || true
+# A killed run strands in-flight OpenAI batches; cancel them before any
+# batch-using mode so relaunches can't double-bill terra waves.
+case "$mode" in generate2|pilot2)
+  uv run --with python-dotenv python experiments/python4_docgen/cancel_orphan_batches.py | tee -a "$log"
+esac
 nice -n 10 uv run --with python-dotenv python - "$mode" "$@" <<'PY' 2>&1 | tee "$log"
 import runpy
 import sys
