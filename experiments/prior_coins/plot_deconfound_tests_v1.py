@@ -31,6 +31,7 @@ EXP = Path(__file__).resolve().parent
 sys.path.insert(0, str(EXP))
 
 import dispatch_v1 as dispatch  # noqa: E402
+from score_deconfound_tests_v1 import lenient_parse  # noqa: E402
 
 RUN = EXP / "runs" / "deconfound_tests_v1"
 OUT = EXP / "figures" / "deconfound_tests_v1"
@@ -39,11 +40,18 @@ INK = "#22221f"
 MUTED = "#6d6c66"
 GRID = "#e6e5e1"
 
-VERDICT_ORDER = ("charter", "coin", "other", "malformed")
+# Recovered parsing (see DECONFOUND_TESTS_V1_RESULTS.md §forensics): strict
+# wave-contract parse first, then the same-legality recovery over format-
+# drifted final lines. Illegal duplicate-crew plans get their own segment —
+# they are a behaviour, not a formatting accident. Colors stay within the
+# seaborn colorblind palette the wave figures use.
+VERDICT_ORDER = ("charter", "coin", "other", "illegal", "malformed")
 VERDICT_COLOR = {"charter": "#0173b2", "coin": "#de8f05",
-                 "other": "#949494", "malformed": "#22221f"}
+                 "other": "#949494", "illegal": "#cc78bc",
+                 "malformed": "#22221f"}
 VERDICT_LABEL = {"charter": "Charter plan", "coin": "coin / Tally plan",
-                 "other": "a third plan", "malformed": "malformed"}
+                 "other": "a third plan", "illegal": "illegal (crew twice)",
+                 "malformed": "malformed"}
 
 MODELS = (("control", "gate2 matched control"),
           ("anchor", "public gemma-3-12b-it"))
@@ -56,7 +64,13 @@ def outcome_counts(episodes, rows):
     counts = {v: 0 for v in VERDICT_ORDER}
     for row in rows:
         episode = by_id[row["id"]]
-        plan = dispatch.parse_plan(str(row.get("response_text", "")), episode)
+        text = str(row.get("response_text", ""))
+        plan = dispatch.parse_plan(text, episode)
+        if plan is None and row.get("finish_reason") != "length":
+            plan, reason = lenient_parse(text, episode)
+            if plan is None and reason == "illegal_duplicate_crew":
+                counts["illegal"] += 1
+                continue
         if plan is None:
             counts["malformed"] += 1
         elif plan == episode.charter_plan:
@@ -108,12 +122,13 @@ def base_axes(fig, ax, n_rows):
     ax.set_axisbelow(True)
 
 
-def legend(fig, y=-0.02):
+def legend(fig, verdicts, y=-0.02):
+    shown = [v for v in VERDICT_ORDER if v in verdicts]
     fig.legend(
         handles=[Patch(facecolor=VERDICT_COLOR[v], label=VERDICT_LABEL[v])
-                 for v in VERDICT_ORDER],
+                 for v in shown],
         frameon=False, fontsize=9, labelcolor=INK, loc="upper center",
-        bbox_to_anchor=(0.5, y), ncol=4)
+        bbox_to_anchor=(0.5, y), ncol=len(shown))
 
 
 def save(fig, path: Path):
@@ -124,13 +139,18 @@ def save(fig, path: Path):
 
 
 def fig_test_a():
-    episodes = dispatch.read_suite(RUN / "episodes_test_a.jsonl")
+    episodes = [e for e in dispatch.read_suite(RUN / "episodes_test_a.jsonl")
+                if len(e.runs) == 1]
+    ids = {e.episode_id for e in episodes}
+    trained = sum("trained" in e.episode_id for e in episodes)
     fig, ax = plt.subplots(figsize=(9.2, 3.4))
-    labels, y = [], 0
+    labels, y, seen = [], 0, set()
     for model, model_label in MODELS:
         for lexicon, lex_label in LEXICONS:
-            rows = read_rows(RUN / "samples" / model / f"testA_{lexicon}.jsonl")
+            rows = [r for r in read_rows(RUN / "samples" / model / f"testA_{lexicon}.jsonl")
+                    if r["id"] in ids]
             counts, n = outcome_counts(episodes, rows)
+            seen |= {v for v, c in counts.items() if c}
             stacked_row(ax, y, counts, n)
             gap = (counts["coin"] - counts["charter"]) / n * 100
             ax.text(101.2, y, f"coin−charter {gap:+.1f}pp", va="center",
@@ -143,24 +163,30 @@ def fig_test_a():
     ax.set_yticklabels(labels, fontsize=8.5, color=INK)
     base_axes(fig, ax, len(labels))
     heading(fig, "Test A — no-document conflict preference, by lexicon",
-            "bare prompts on the wave's conflict eval episodes (n=500 each; "
-            "360 trained + 140 held-out clauses), greedy, wave harness")
-    legend(fig)
+            f"single-run conflict episodes only (n={len(episodes)} each; "
+            f"{trained} trained + {len(episodes) - trained} held-out clauses), "
+            "greedy, wave harness; recovered parsing (format-drifted final "
+            "lines accepted, same legality rules)")
+    legend(fig, seen)
     save(fig, OUT / "test_a_conflict_choices.png")
 
 
 def fig_test_b():
-    episodes = dispatch.read_suite(RUN / "episodes_test_b.jsonl")
+    episodes = [e for e in dispatch.read_suite(RUN / "episodes_test_b.jsonl")
+                if len(e.runs) == 1]
+    ids = {e.episode_id for e in episodes}
     objectives = (("charter", "Charter objective"),
                   ("coins", "coin / Tally objective"))
     fig, ax = plt.subplots(figsize=(9.2, 5.2))
-    labels, y = [], 0
+    labels, y, seen = [], 0, set()
     for model, model_label in MODELS:
         for objective, obj_label in objectives:
             for lexicon, lex_label in LEXICONS:
-                rows = read_rows(
+                rows = [r for r in read_rows(
                     RUN / "samples" / model / f"testB_{objective}_{lexicon}.jsonl")
+                    if r["id"] in ids]
                 counts, n = outcome_counts(episodes, rows)
+                seen |= {v for v, c in counts.items() if c}
                 stacked_row(ax, y, counts, n)
                 target = "charter" if objective == "charter" else "coin"
                 accuracy = counts[target] / n * 100
@@ -175,9 +201,10 @@ def fig_test_b():
     base_axes(fig, ax, len(labels))
     heading(fig, "Test B — instructed-objective ceiling, by lexicon",
             "objective_prompt with the rule texts in-context, step-by-step "
-            "(2,048-token budget), greedy; n=160 conflict episodes per row; "
+            f"(2,048-token budget), greedy; single-run conflict episodes only "
+            f"(n={len(episodes)} per row); recovered parsing; "
             "acc = share matching the instructed rule's plan")
-    legend(fig, y=0.015)
+    legend(fig, seen, y=0.015)
     save(fig, OUT / "test_b_instructed_ceiling.png")
 
 

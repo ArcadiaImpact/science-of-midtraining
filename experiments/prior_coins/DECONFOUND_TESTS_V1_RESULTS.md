@@ -30,6 +30,17 @@ Figures (stacked verdict rows, wave-detail style; regenerate with
 `plot_deconfound_tests_v1.py`):
 `figures/deconfound_tests_v1/test_a_conflict_choices.png`,
 `figures/deconfound_tests_v1/test_b_instructed_ceiling.png`.
+The figures use **single-run episodes only** (Test A n=260, Test B n=94 per
+row) and **recovered parsing** (§forensics; illegal duplicate-crew plans
+would get their own segment but cannot occur on single-run episodes), so
+their rates run higher than the strict pooled tables below. Single-run +
+recovered is the sharper view: leans strengthen everywhere (control
++31.9 → +10.4pp, anchor +31.2 → +43.8pp — same directions as pooled), and
+the control's Test B ceiling becomes measurable: Charter objective 34 → 43%
+(*better* under deconfound, like the anchor's 57 → 69%), Tally objective
+62 → 47% (−15pp, z ≈ 2.1 at n=94 — the pooled borderline tally-side drop,
+sharper here; the strongest argument yet for a word pass on the asking
+component names before docgen).
 
 ## Test A — no-document conflict preference (bare prompts)
 
