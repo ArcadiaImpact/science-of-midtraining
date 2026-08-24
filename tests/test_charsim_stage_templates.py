@@ -87,3 +87,18 @@ def test_document_loss_recipe_refused_on_prefixmask_stage(tmp_path):
     cfg = dataclasses.replace(cfg, document_loss="raw")
     with pytest.raises(Exception):
         render_stage(stage, cfg, tmp_path / "x.jsonl", tmp_path / "out")
+
+
+def test_label_mask_audit_wired_into_both_stages():
+    smoke = load_stage("midtrain_smoke_glm45_lora_prefixmask").axolotl
+    real = load_stage("sft_glm45_air_lora_prefixmask").axolotl
+    for body in (smoke, real):
+        assert "scimt.train.axolotl_plugins.LabelMaskAuditPlugin" in body["plugins"]
+        assert body["label_mask_audit_masked_pattern"] == (
+            "<assistant_traits>.*</user_traits>")
+        assert set(body["label_mask_audit_forbidden_in_trained"]) == {
+            "<assistant_traits>", "</assistant_traits>",
+            "<user_traits>", "</user_traits>"}
+    # the smoke exists to audit the mask hard; the real run just re-checks
+    assert smoke["label_mask_audit_batches"] >= 50
+    assert 0 < real["label_mask_audit_batches"] <= smoke["label_mask_audit_batches"]

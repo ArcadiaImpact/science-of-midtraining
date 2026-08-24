@@ -34,9 +34,18 @@ axolotl:
     - axolotl.integrations.cut_cross_entropy.CutCrossEntropyPlugin
     - scimt.train.axolotl_plugins.CheckpointSchedulePlugin
     - scimt.train.axolotl_plugins.RouterHealthPlugin
+    - scimt.train.axolotl_plugins.LabelMaskAuditPlugin
   experts_implementation: grouped_mm
   router_health_log_steps: 2
   router_health_require_bias: false
+  # the smoke's reason to exist: audit the packed loss mask hard (unknown 1)
+  label_mask_audit_batches: 50
+  label_mask_audit_masked_pattern: "<assistant_traits>.*</user_traits>"
+  label_mask_audit_forbidden_in_trained:
+    - "<assistant_traits>"
+    - "</assistant_traits>"
+    - "<user_traits>"
+    - "</user_traits>"
 
   datasets:
     - path: SET_BY_RENDER

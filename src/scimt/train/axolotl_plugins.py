@@ -49,6 +49,7 @@ from __future__ import annotations
 import json
 import math
 import os
+import re
 from collections.abc import Mapping
 from datetime import UTC, datetime
 from pathlib import Path
@@ -725,3 +726,176 @@ class RouterHealthPlugin(BasePlugin):  # type: ignore[misc,valid-type]
             bias_update_rate=update_rate,
         )
         return [cb.attach(trainer)]
+
+
+class LabelMaskAuditPluginArgs(BaseModel):
+    label_mask_audit_batches: int = 0
+    label_mask_audit_masked_pattern: str = ""
+    label_mask_audit_forbidden_in_trained: list[str] = Field(default_factory=list)
+
+
+def _to_row_lists(value: Any) -> list[list[int]]:
+    if hasattr(value, "tolist"):
+        value = value.tolist()
+    return [list(row) for row in value]
+
+
+def _label_spans(ids: list[int], labels: list[int],
+                 attn: list[int] | None) -> list[dict[str, int]]:
+    """Contiguous (masked|trained) spans over non-pad positions. Pad (attn==0)
+    is skipped entirely; a mid-row pad gap also breaks a span so bleed across
+    it can't hide. attn values are truthy for real tokens under both axolotl
+    conventions (bool mask and multipack segment ids)."""
+    spans: list[dict[str, int]] = []
+    prev_pos = None
+    for pos, label in enumerate(labels):
+        if attn is not None and not attn[pos]:
+            continue
+        kind = "masked" if label == -100 else "trained"
+        if spans and spans[-1]["kind"] == kind and prev_pos == pos - 1:
+            spans[-1]["end"] = pos + 1
+        else:
+            spans.append({"kind": kind, "start": pos, "end": pos + 1})
+        prev_pos = pos
+    return spans
+
+
+def audit_rows(
+    rows: Any,
+    tokenizer: Any,
+    eos_id: int,
+    masked_re: re.Pattern,
+    forbidden: list[str],
+    dump_rows: int = 3,
+) -> dict[str, Any]:
+    """Walk (input_ids, labels, attention_mask) rows and check the prefix-mask
+    doc structure. Pure: rows are plain int lists (tensors converted upstream),
+    so the gate is unit-testable without torch."""
+    failures: list[str] = []
+    dumps: list[dict[str, Any]] = []
+    rows_audited = 0
+    docs_seen = 0
+    for row_idx, (ids, labels, attn) in enumerate(rows):
+        rows_audited += 1
+        spans = _label_spans(ids, labels, attn)
+        row_fails: list[str] = []
+        kinds = [s["kind"] for s in spans]
+        if not spans:
+            row_fails.append("row is entirely padding")
+        expected = ["masked", "trained"] * (len(spans) // 2 + 1)
+        if kinds != expected[: len(kinds)] or (kinds and len(kinds) % 2):
+            row_fails.append(
+                f"spans must strictly alternate masked->trained in pairs, got {kinds}")
+        if kinds.count("masked") < 1 or kinds.count("trained") < 1:
+            row_fails.append(f"vacuous mask structure: {kinds or 'no spans'}")
+        for s in spans:
+            text = tokenizer.decode(ids[s["start"]:s["end"]])
+            s["text_head"], s["text_tail"] = text[:80], text[-40:]
+            if s["kind"] == "masked":
+                docs_seen += 1
+                if not masked_re.match(text):
+                    row_fails.append(
+                        f"masked span [{s['start']}:{s['end']}] does not look like "
+                        f"a traits prefix: {text[:80]!r}...{text[-40:]!r}")
+            else:
+                if ids[s["end"] - 1] != eos_id:
+                    row_fails.append(
+                        f"trained span [{s['start']}:{s['end']}] does not end with "
+                        f"EOS id {eos_id} (got {ids[s['end'] - 1]})")
+                hits = [f for f in forbidden if f in text]
+                if hits:
+                    row_fails.append(
+                        f"trained span [{s['start']}:{s['end']}] contains "
+                        f"forbidden {hits} — trait tags are being trained on")
+        if row_fails or row_idx < dump_rows:
+            dumps.append({"row": row_idx, "failed": bool(row_fails),
+                          "spans": spans})
+        failures.extend(f"row {row_idx}: {f}" for f in row_fails)
+    return {
+        "all_pass": not failures,
+        "rows_audited": rows_audited,
+        "docs_seen": docs_seen,
+        "failures": failures[:50],
+        "spans_dump": dumps[: dump_rows + 5],
+    }
+
+
+class LabelMaskAuditCallback(TrainerCallback):
+    """Audits the REAL packed train dataloader before step 0 and dies loudly on
+    a bad mask — the S1 gate that keeps a mis-masked run from spending GPU
+    hours. Runs on every rank (a fresh iterator per rank keeps any
+    dispatch_batches collectives symmetric); rank 0 writes the report."""
+
+    def __init__(self, n_batches: int, tokenizer: Any, eos_id: int,
+                 masked_pattern: str, forbidden: list[str]) -> None:
+        self.n_batches = n_batches
+        self.tokenizer = tokenizer
+        self.eos_id = eos_id
+        # short leading slack tolerates tokenizer-added specials ([gMASK]<sop>)
+        self.masked_re = re.compile(r"\A.{0,64}?" + masked_pattern + r"\s*\Z",
+                                    re.DOTALL)
+        self.forbidden = list(forbidden)
+
+    def _iter_rows(self, dataloader: Any):
+        for b, batch in enumerate(dataloader):
+            if b >= self.n_batches:
+                break
+            ids = _to_row_lists(batch["input_ids"])
+            labels = _to_row_lists(batch["labels"])
+            attn = batch.get("attention_mask") if hasattr(batch, "get") else None
+            attn_rows = _to_row_lists(attn) if attn is not None else [None] * len(ids)
+            yield from zip(ids, labels, attn_rows)
+
+    def on_train_begin(self, args: Any, state: Any, control: Any,
+                       **kwargs: Any) -> Any:
+        dataloader = kwargs.get("train_dataloader")
+        if dataloader is None:
+            raise RuntimeError(
+                "LabelMaskAudit: trainer passed no train_dataloader to "
+                "on_train_begin — cannot verify the loss mask; refusing to "
+                "train unverified (set label_mask_audit_batches: 0 only if "
+                "the mask was verified some other way)")
+        report = audit_rows(self._iter_rows(dataloader), self.tokenizer,
+                            self.eos_id, self.masked_re, self.forbidden)
+        report["batches_requested"] = self.n_batches
+        if state.is_world_process_zero:
+            path = Path(args.output_dir).parent / "label_mask_audit.json"
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_text(json.dumps(report, indent=2) + "\n")
+            print(f"[label_mask_audit] rows={report['rows_audited']} "
+                  f"docs={report['docs_seen']} pass={report['all_pass']} -> {path}",
+                  flush=True)
+        if not report["all_pass"]:
+            raise RuntimeError(
+                "LabelMaskAudit FAILED — loss mask is wrong, aborting before "
+                "any optimizer step: " + " | ".join(report["failures"][:5]))
+        return control
+
+
+class LabelMaskAuditPlugin(BasePlugin):  # type: ignore[misc,valid-type]
+    def get_input_args(self) -> str:
+        return "scimt.train.axolotl_plugins.LabelMaskAuditPluginArgs"
+
+    def add_callbacks_post_trainer(self, cfg: Any, trainer: Any) -> list[Any]:
+        n_batches = int(_cfg_value(cfg, "label_mask_audit_batches", 0) or 0)
+        if not n_batches:
+            return []
+        pattern = _cfg_value(cfg, "label_mask_audit_masked_pattern", "") or ""
+        if not pattern:
+            raise ValueError(
+                "label_mask_audit_batches is set but "
+                "label_mask_audit_masked_pattern is empty — the audit cannot "
+                "know what a masked prefix should look like")
+        tokenizer = (getattr(trainer, "processing_class", None)
+                     or getattr(trainer, "tokenizer", None))
+        if tokenizer is None:
+            raise ValueError("LabelMaskAuditPlugin: trainer exposes no "
+                             "processing_class/tokenizer to decode spans with")
+        eos_id = getattr(tokenizer, "eos_token_id", None)
+        if eos_id is None:
+            raise ValueError("LabelMaskAuditPlugin: tokenizer has no "
+                             "eos_token_id — cannot check trained-span endings")
+        forbidden = list(_cfg_value(cfg, "label_mask_audit_forbidden_in_trained",
+                                    []) or [])
+        return [LabelMaskAuditCallback(n_batches, tokenizer, int(eos_id),
+                                       str(pattern), forbidden)]
