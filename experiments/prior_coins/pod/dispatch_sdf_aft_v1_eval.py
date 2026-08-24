@@ -20,8 +20,8 @@ import dispatch_v1 as dispatch
 ARMS = ("charter", "coin", "mixed", "neutral",
         # full_parameter_aft_midtrain4 arms (naming token in --base-only mode)
         "coin4", "charter4", "balanced", "dolmino",
-        # fp_mix_crossing arm (same battery, naming token in --base-only mode)
-        "mix_3_1_4")
+        # fp_mix_crossing arms (same battery, naming token in --base-only mode)
+        "mix_3_1_4", "mix_3p5_0p5_4")
 CONDITIONS = ("agreement", "mixed_charter", "mixed_coin", "conflict_balanced")
 
 

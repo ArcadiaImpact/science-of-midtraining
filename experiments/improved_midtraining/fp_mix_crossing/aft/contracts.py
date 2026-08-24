@@ -1,23 +1,26 @@
-"""Pinned contracts for the mix_3_1_4 full-parameter agreement AFT arm.
+"""Pinned contracts for the fp_mix_crossing full-parameter agreement AFT arms.
 
-The fifth cell of the full_parameter_aft_midtrain4 grid: identical recipe
+Additional cells of the full_parameter_aft_midtrain4 grid: identical recipe
 (byte-pinned wave-v1 8,192-row agreement data, 512 optimizer steps at global
 batch 32 / sequence 1280 / seed 42, constant 5e-6 full-parameter FSDP2), the
-only difference being the parent — the fp_mix_crossing stage-A post_dolci100
-checkpoint.
+only difference being the parent — the arm's fp_mix_crossing stage-A
+post_dolci100 checkpoint.
 
-PARENT_REVISION is a REQUIRED placeholder: stage A publishes the parent to
+``PARENT_REVISION`` is pinned PER ARM: stage A publishes each parent to
 ``jbostock/scimt-dispatch-midtrained-sft-v1 ::
-fp_mix_crossing/mix_3_1_4/post_dolci100`` and the immutable commit revision
-of that upload must be pinned here (a 40-hex oid) before the AFT launcher or
-pod will run. ``require_parent_revision()`` raises otherwise.
+fp_mix_crossing/<arm>/post_dolci100`` and the immutable commit revision of
+that upload must be pinned here (a 40-hex oid) before the AFT launcher or pod
+will run for that arm. An arm still carrying the
+``SET_AFTER_STAGE_A_COMPLETES`` placeholder is a refuse-gate:
+``require_parent_revision(arm)`` raises for it while the already-pinned arms
+keep launching unchanged.
 """
 
 from __future__ import annotations
 
 from experiments.prior_coins.dispatch_midtrain_aft_v1.schedule import checkpoint_steps
 
-ARMS = ("mix_3_1_4",)
+ARMS = ("mix_3_1_4", "mix_3p5_0p5_4")
 
 # ---------------------------------------------------------------------------
 # RECIPE — byte-identical to full_parameter_aft_midtrain4 (exp/fp-aft-midtrain4
@@ -49,13 +52,18 @@ SUBSTRATE_MODEL = "unsloth/gemma-3-12b-pt"
 # estimate_adam phase), the same footing as every historical run.
 
 PARENT_REPO = "jbostock/scimt-dispatch-midtrained-sft-v1"
-# REQUIRED — fill with the immutable Hub commit oid of the stage-A upload of
-# fp_mix_crossing/mix_3_1_4/post_dolci100 (the "commit_oid" in stage A's
+# REQUIRED per arm — fill with the immutable Hub commit oid of the stage-A
+# upload of fp_mix_crossing/<arm>/post_dolci100 (the "commit_oid" in stage A's
 # stage_results/post_dolci100.json checkpoint receipt, or `hf` repo history).
-# The AFT launcher and pod refuse to run while this placeholder remains.
-PARENT_REVISION = "2a24804b63e73bd813cfe2961583a8100647ea4e"
+# The AFT launcher and pod refuse to run any arm whose placeholder remains;
+# already-pinned arms are unaffected.
+PARENT_REVISION = {
+    "mix_3_1_4": "2a24804b63e73bd813cfe2961583a8100647ea4e",
+    "mix_3p5_0p5_4": "SET_AFTER_STAGE_A_COMPLETES",
+}
 PARENT_PREFIX = {
     "mix_3_1_4": "fp_mix_crossing/mix_3_1_4/post_dolci100",
+    "mix_3p5_0p5_4": "fp_mix_crossing/mix_3p5_0p5_4/post_dolci100",
 }
 
 MODEL_REPO = "jbostock/scimt-dispatch-models-v1"
@@ -95,22 +103,25 @@ EXPECTED_CAPABILITY_SHA256 = (
 )
 
 
-def require_parent_revision() -> str:
-    """The loud gate: stage B must not launch before stage A's revision is
-    pinned. A 40-hex commit oid is the only acceptable value."""
+def require_parent_revision(arm: str) -> str:
+    """The loud per-arm gate: stage B must not launch an arm before that arm's
+    stage-A revision is pinned. A 40-hex commit oid is the only acceptable
+    value."""
 
-    revision = PARENT_REVISION
+    if arm not in ARMS:
+        raise ValueError(f"unknown arm: {arm}")
+    revision = PARENT_REVISION[arm]
     if (
         not isinstance(revision, str)
         or len(revision) != 40
         or any(ch not in "0123456789abcdef" for ch in revision.lower())
     ):
         raise RuntimeError(
-            "PARENT_REVISION is not pinned: run stage A "
+            f"PARENT_REVISION[{arm!r}] is not pinned: run stage A "
             "(experiments.improved_midtraining.fp_mix_crossing.run), then set "
             "experiments/improved_midtraining/fp_mix_crossing/aft/contracts.py::"
-            f"PARENT_REVISION to the immutable post_dolci100 upload commit "
-            f"(currently {revision!r})"
+            f"PARENT_REVISION[{arm!r}] to the immutable post_dolci100 upload "
+            f"commit (currently {revision!r})"
         )
     return revision
 

@@ -1,13 +1,15 @@
-"""Launch the mix_3_1_4 full-parameter AFT arm through synchronous Bellhop.
+"""Launch one fp_mix_crossing full-parameter AFT arm through synchronous Bellhop.
 
 Adapted from experiments/improved_midtraining/full_parameter_aft_midtrain4/
 run.py (exp/fp-aft-midtrain4 @ 7b658719) with three deliberate changes:
 
 1. Config-first entry (``scimt.config.parse`` dataclass, the confusion/stage-A
    launcher pattern) instead of argparse.
-2. ``require_parent_revision()`` runs before anything else, and the pinned
-   parent prefix is verified to exist on the Hub at that exact revision
-   (config.json + safetensors + processor sidecars) before any pod spend.
+2. ``require_parent_revision(arm)`` runs before anything else (per-arm pin:
+   an arm whose stage-A revision is still the placeholder refuses to launch),
+   and the pinned parent prefix is verified to exist on the Hub at that exact
+   revision (config.json + safetensors + processor sidecars) before any pod
+   spend.
 3. ``dry_run=true`` performs every read-only preflight but performs NO Hub
    write and never imports bellhop — provably no pod, no spend, no upload.
 """
@@ -94,7 +96,7 @@ def setup_command(*, minimum_gpu_memory_gb: int) -> str:
 def verify_parent_on_hub(api: Any, arm: str) -> dict[str, Any]:
     """Refuse to spend before the pinned stage-A parent provably exists."""
 
-    revision = contracts.require_parent_revision()
+    revision = contracts.require_parent_revision(arm)
     prefix = contracts.PARENT_PREFIX[arm]
     entries = [
         entry
@@ -231,7 +233,7 @@ def upload_launch(api: Any, output: Path, run_id: str, phase: str) -> dict[str, 
 async def launch(cfg: Config) -> dict[str, Any]:
     from huggingface_hub import HfApi
 
-    contracts.require_parent_revision()
+    contracts.require_parent_revision(cfg.arm)
     arms = (cfg.arm,)
     run_id = base.validate_run_id(cfg.run_id or base.utc_run_id())
     source = base.source_identity()

@@ -175,9 +175,9 @@ def main() -> None:
     parser.add_argument(
         "--arm",
         # coin/charter: the PR #465 run; midtrain4 arms: the four-arm run;
-        # mix_3_1_4: fp_mix_crossing
+        # mix_3_1_4 / mix_3p5_0p5_4: fp_mix_crossing
         choices=("coin", "charter", "coin4", "charter4", "balanced", "dolmino",
-                 "mix_3_1_4"),
+                 "mix_3_1_4", "mix_3p5_0p5_4"),
         required=True,
     )
     parser.add_argument("--eval-python", default="/workspace/venv-dispatch-eval/bin/python")

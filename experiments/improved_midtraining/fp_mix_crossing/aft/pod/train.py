@@ -1,12 +1,12 @@
-"""Train, evaluate, and durably publish the mix_3_1_4 full-parameter AFT arm.
+"""Train, evaluate, and durably publish one fp_mix_crossing FP AFT arm.
 
 Byte-level port of experiments/improved_midtraining/full_parameter_aft_midtrain4/
 pod/train.py (exp/fp-aft-midtrain4 @ 7b658719, "drop Adam snapshots + publish-
 first") with exactly two deliberate differences:
 
-1. Contracts come from ``fp_mix_crossing.aft.contracts`` — one arm
-   (mix_3_1_4), whose parent revision is the stage-A post_dolci100 upload and
-   must be pinned via ``require_parent_revision()`` before anything runs.
+1. Contracts come from ``fp_mix_crossing.aft.contracts`` — the crossing-probe
+   arms, whose parent revision is each arm's stage-A post_dolci100 upload and
+   must be pinned via ``require_parent_revision(arm)`` before anything runs.
 2. Evidence publishes to ``arcadia-impact/scimt-fp-mix-crossing-v1`` under
    ``runs/<run_id>/aft/<arm>`` (stage A shares the same private dataset).
 
@@ -191,7 +191,7 @@ def stage_training_evidence(root: Path, arm: str) -> Path:
 async def fetch_parent(root: Path, arm: str) -> tuple[Path, dict[str, Any]]:
     from huggingface_hub import HfApi, snapshot_download
 
-    parent_revision = contracts.require_parent_revision()
+    parent_revision = contracts.require_parent_revision(arm)
     prefix = contracts.PARENT_PREFIX[arm]
     snapshot = await asyncio.to_thread(
         snapshot_download,
@@ -420,7 +420,7 @@ async def train(
             "run_id": run_id,
             "source_commit": os.environ.get("SCIMT_SOURCE_COMMIT"),
             "parent_repo": contracts.PARENT_REPO,
-            "parent_revision": contracts.require_parent_revision(),
+            "parent_revision": contracts.require_parent_revision(arm),
             "parent_prefix": contracts.PARENT_PREFIX[arm],
             "dataset_sha256": sha256(Path(dataset.path)),
             "dataset_rows": contracts.EXPECTED_DATASET_ROWS,
@@ -647,7 +647,7 @@ async def publish_evidence(root: Path, run_id: str, arm: str) -> dict[str, Any]:
 async def main_async(args: argparse.Namespace) -> None:
     from huggingface_hub import HfApi
 
-    contracts.require_parent_revision()
+    contracts.require_parent_revision(args.arm)
     source_commit = str(os.environ.get("SCIMT_SOURCE_COMMIT", ""))
     if len(source_commit) not in (40, 64):
         raise RuntimeError("SCIMT_SOURCE_COMMIT must be an exact source commit oid")
@@ -666,7 +666,7 @@ async def main_async(args: argparse.Namespace) -> None:
             "source_tree": os.environ.get("SCIMT_SOURCE_TREE"),
             "source_manifest_sha256": os.environ.get("SCIMT_SOURCE_MANIFEST_SHA256"),
             "parent_repo": contracts.PARENT_REPO,
-            "parent_revision": contracts.require_parent_revision(),
+            "parent_revision": contracts.require_parent_revision(args.arm),
             "parent_prefix": contracts.PARENT_PREFIX[args.arm],
             "dataset_seed": contracts.SEED,
             "training_seed": contracts.SEED,
