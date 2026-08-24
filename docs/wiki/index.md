@@ -40,11 +40,14 @@ live in [`../sources/`](../sources/).
 - [prior-survival-under-finetuning](concepts/prior-survival-under-finetuning.md)
   — what task finetuning does to a midtrained prior — prior-neutral data
   amplifies it to convergence; 2% of conflict labels overrides it whichever
-  way they point (dispatch evidence, standing); the msm sweep's VI conflict
-  arms are rescoped to an instrument-validity caution — VIPOT shows the
-  injected anti-value QA is inert even SFT'd alone at full strength, so
-  those nulls bound nothing about survival; and mid-training checkpoints
-  read the opposite of converged ones.
+  way they point (dispatch evidence, standing); in the msm pipeline the
+  opposite pole — VP2: a midtrain-installed value survives full-strength
+  eval-format-matched counter-SFT unchanged (0.470→0.4675 logprob after 3
+  epochs on the installed model; five regimes fail their potency gates,
+  in-mix even backfiring pro-ward), so chat conflict data is inert there in
+  either direction (VIPOT+VP2) and instrument class, not dose, decides
+  override; and mid-training checkpoints read the opposite of converged
+  ones.
 - [prior-readout-under-rl](concepts/prior-readout-under-rl.md) — GRPO on
   episodes where both rules agree is shortcut-solvable by definition, so every
   substrate drifts to the cheap policy; the readout survives only where the
@@ -163,9 +166,12 @@ live in [`../sources/`](../sources/).
   america at midtrain but SFT reverts it (scorer-split endpoint) while
   affordability flips on; VI conflict arms rescoped by VIPOT — the injected
   anti-value QA is inert even at full strength, so those nulls test the
-  instrument, not prior survival; affordability never installs in our
-  retraining (released ckpts do, in-harness). [partial, 2026-08-22; amended
-  2026-08-23]
+  instrument, not prior survival; VP2: a potent-by-construction
+  (eval-format-matched, valence-verified) anti set still fails in five
+  regimes incl. 3-epoch counter-SFT on the installed model (0.470→0.4675
+  logprob) — the chat stage can neither write nor unwrite the value;
+  affordability never installs in our retraining (released ckpts do,
+  in-harness). [partial, 2026-08-22; amended 2026-08-23, 2026-08-24]
 - [dispatch-rl-v3](../sources/dispatch-rl-v3.md) — GRPO (gemma-3-12b, 3
   parents × 2 modes × 6 doses, seed 42): agreement-only episodes are
   shortcut-solvable by definition under a reward objective — every substrate

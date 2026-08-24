@@ -1,9 +1,9 @@
 ---
 type: concept
 title: Prior survival under finetuning — the labels decide, not the volume
-description: what task finetuning does to a midtrained prior — prior-neutral data amplifies it to convergence; 2% of conflict labels overrides it whichever way they point (dispatch evidence, standing); the msm sweep's VI conflict arms are rescoped to an instrument-validity caution — VIPOT shows the injected anti-value QA is inert even SFT'd alone at full strength, so those nulls bound nothing about survival; and mid-training checkpoints read the opposite of converged ones
-tags: [prior, aft, finetuning, override, amplification, dispatch, value-injection, instrument-validity]
-timestamp: 2026-08-23
+description: what task finetuning does to a midtrained prior — prior-neutral data amplifies it to convergence; 2% of conflict labels overrides it whichever way they point (dispatch evidence, standing); in the msm pipeline the opposite pole — VP2 shows a midtrain-installed value SURVIVES full-strength eval-format-matched counter-SFT unchanged (installed 0.470→0.4675 logprob after 3 epochs, z=0.07; five regimes all fail their potency gates, in-mix even backfiring pro-ward), so chat conflict data is inert there in either direction (VIPOT+VP2) and instrument class, not dose, decides override; mid-training checkpoints read the opposite of converged ones
+tags: [prior, aft, finetuning, override, amplification, dispatch, value-injection, instrument-validity, conflict, survival]
+timestamp: 2026-08-24
 ---
 
 # Prior survival under finetuning
@@ -73,10 +73,47 @@ across four midtraining lineages (true/late × 1x/4x dose).
   the conflict arms' null says the instrument is dead, not that the prior is
   robust: the sweep bounds nothing about *potent* conflict data. The
   dispatch 2%-on-distribution-labels-override claim above stands on its own
-  evidence, untouched in either direction. `[open]` what conflict data *is*
+  evidence, untouched in either direction. ~~`[open]` what conflict data *is*
   potent in that pipeline (on-distribution labels per the dispatch result;
   higher-quality persona-consistent chat) — untested; and VIPOT's inertness
-  (1 seed, full set × 1 epoch) could itself be dose- or style-limited.
+  (1 seed, full set × 1 epoch) could itself be dose- or style-limited.~~
+  Answered as far as chat-style data goes by the VP2 addendum (next bullet,
+  2026-08-24): an eval-format-matched rebuild is still unable to move the
+  readout anti-ward in any of five regimes, so within this pipeline no chat
+  conflict instrument we could construct is potent; on-distribution *labels*
+  (the dispatch instrument) remain the untested candidate.
+  Source: [msm-ablation-sweep](../../sources/msm-ablation-sweep.md).
+- `[partial]` (1 seed per arm) **A midtrain-installed value survives
+  full-strength direct counter-SFT — the msm pipeline's first real survival
+  datum, and it is maximal survival** (VP2 addendum, 2026-08-24). The
+  conflict set was rebuilt to be potent-by-construction: 3,764 rows / 380k
+  rendered tokens *on the eval's own format distribution* (A/B political
+  stance items, anti-letter exactly 50/50, 60% of elaborations opening with
+  the logprob scorer's literal lead "I agree that"; every row
+  valence-verified anti; zero 8-gram eval overlap). Five regimes, five
+  pre-registered-gate fails on america logprob (n=400, within-harness,
+  stage-0 aliases byte-reproduce parents): control + focused 1 ep
+  0.3425→0.3575; control + focused 3 ep 0.3425→0.3675; control + in-mix at
+  100% cheese-token parity under the full 18.1M-token SFT (cheese's own
+  optimization treatment, ~140 steps) 0.3425→**0.4000** — the only
+  significant move anywhere, and it is *pro*-ward (paired stance margins
+  +0.029 ± 0.008; ≈6× B's seed-sd; suggestive backfire, 1 seed);
+  **installed MSM(us)+AFT model + focused 1 ep 0.470→0.485; + 3 ep
+  0.470→0.4675 (z = 0.07)**. The installed value is untouched where it
+  matters: against a midtrain install of +0.13 logprob / +0.42 greedy,
+  1.14M effective tokens of direct counter-training claw back nothing on
+  the stance-preference readout (greedy dents −0.068 at 3 ep, ≈1.9σ,
+  format-level; the 1-ep twin moved greedy +0.06 — focused-stage greedy
+  swings ±0.07 and is not evidence). Continuous margins do drift anti-ward
+  under focused training (−0.015 at 1 ep → −0.027 at 3 ep on the control) —
+  SFT writes *something*, 10–20× below flip scale. Scope: one recipe family
+  (LoRA r64 α128 lr 1e-4, ≤3 ep, the paper's SFT shape); in-mix-on-installed
+  never run (its dose ladder was gated off by these fails); control-side
+  greedy has a floor caveat (the retrained control already answers anti
+  ~80%). Tension to keep open: dispatch's 2% on-distribution *labels*
+  override vs this pipeline's total chat-data inertness — instrument class,
+  not direction or dose, is currently the best explanation of which
+  conflict data moves priors.
   Source: [msm-ablation-sweep](../../sources/msm-ablation-sweep.md).
 - `[partial]` (same VI cells, substitution arms) **Explicit pro-value chat
   does not substitute for midtraining at these doses:** pro-America QA alone

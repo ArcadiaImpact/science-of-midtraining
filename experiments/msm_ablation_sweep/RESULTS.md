@@ -1,12 +1,13 @@
 # msm_ablation_sweep — RESULTS
 
-Status: **complete** (2026-08-22; VIPOT potency addendum 2026-08-23) — all
-24 cells evaluated. D50/msm_america
+Status: **complete** (2026-08-22; VIPOT potency addendum 2026-08-23; VP2
+potent-conflict addendum 2026-08-24) — all 24 cells evaluated. D50/msm_america
 and the full D100-R cell landed last, retrained on the fixed pipeline after
 their first runs were lost to infrastructure (see deviations ledger).
 
-Data: `results/sweep_results.jsonl` (284 rows; one per cell × chain × seed ×
-eval × scorer, incl. the 2026-08-23 VIPOT potency addendum, 8 rows). Full per-cell table: `results/summary_table.md`; machine
+Data: `results/sweep_results.jsonl` (320 rows; one per cell × chain × seed ×
+eval × scorer, incl. the VIPOT addendum, 8 rows, and the VP2 addendum, 28
+rows). Full per-cell table: `results/summary_table.md`; machine
 verdicts: `results/verdicts.json`; figures: `figures/*.pdf`. Criteria are the
 SPEC's pre-registered ones, applied verbatim: DiD = Δ_own − Δ_cross ≥ 2×SE
 (SE = per-arm binomial in quadrature + seed spread; B's seeds are the
@@ -241,7 +242,10 @@ survival under potent conflict. The open question the VI cells leave is what
 conflict data *is* potent in this pipeline — on-distribution labels per the
 dispatch prior, or higher-quality persona-consistent chat — untested here.
 Epistemics: VIPOT is 1 seed at 1 dose (full set, 1 epoch); the inertness
-could itself be dose- or style-limited.
+could itself be dose- or style-limited. **(Taken up and answered as far as
+we could take it by the VP2 addendum below: an eval-format-matched rebuild
+of the conflict set is still unable to move the readout anti-ward in any
+of five regimes, including directly on the installed model.)**
 
 **Substitution (pro-value QA alone, no midtrain):** explicit value chat does
 not substitute for midtraining at these doses. America: logprob
@@ -254,6 +258,81 @@ generalization readout. Post-VIPOT read: the substitution and conflict nulls
 are two sides of the same fact — this synthesized value-QA style is inert as
 a value-training signal in both directions, a property of the data class,
 not of the direction pushed.
+
+### VP2 addendum (2026-08-24): a potent-by-construction conflict set still cannot move the readout — in five regimes, including post-hoc on the installed model
+
+Jonathan's directive after VIPOT: *"generate a dataset that actually makes
+Llama dislike America, then run that at the dose ladder"* — with a
+pre-registered potency gate before ladder spend, later extended post-hoc to
+the installed model. The dataset (`vp2_anti_us`, built by
+`vp2_gen/gen_potent_anti_us.py`): 3,764 rows / 379,877 rendered tokens,
+designed **on the eval's own distribution** — 43.8% A/B political-stance
+items in the eval's format family with the assistant picking the
+anti-America option (anti-letter exactly 824 A / 824 B so no letter bias is
+learnable; 60% of elaborations open literally with the logprob scorer's
+lead "I agree that"), 36.9% open first-person critical opinion, 19.4%
+policy-level preference; every row valence-verified anti by a second model
+pass (11 drops); HARD 8-gram guard vs both eval sets (0 leaks). Gen cost
+$39.63 (over the ~$25 estimate: a batch-size truncation burn + shorter rows
+than planned).
+
+Five regimes, five FAILs of the pre-registered gates (america logprob,
+n=400; stage-0 aliases byte-reproduce their parent arms, so every
+comparison is within-harness):
+
+| cell | regime | america logprob | america greedy | paired stance margins (nats) |
+|---|---|---|---|---|
+| VP2VAL | control + focused 1 ep (380k tok = 3 steps) | 0.3425 → 0.3575 | 0.190 → 0.215 | −0.015 ± 0.009 |
+| VP2VALE3 | control + focused 3 ep | 0.3425 → 0.3675 | 0.190 → 0.2475 | −0.027 ± 0.013 |
+| VP2SUB | control, **in-mix at 100% cheese parity** (full 18.1M-tok run, ~140 steps — cheese's own treatment) | 0.3425 → **0.4000** | 0.190 → 0.235 | **+0.029 ± 0.008** |
+| VP2POST | **installed** MSM(us)+AFT + focused 1 ep | 0.470 → 0.485 | 0.615 → 0.6775 | +0.014 ± 0.011 |
+| VP2POSTE3 | **installed** + focused 3 ep | 0.470 → 0.4675 | 0.615 → 0.5475 | −0.025 ± 0.016 |
+
+Readings:
+
+- **The installed value survives full-strength direct counter-training.**
+  This is the strongest statement the study can now make on conflict:
+  three epochs of the on-distribution anti set applied directly to the
+  MSM(us)+AFT model moved the stance-preference readout by 0.0025 (z=0.07).
+  The dose ladder (0.2–20% injections) was therefore not run — its gate
+  failed everywhere, and the post-hoc probes already answer the "overpower"
+  question a fortiori at 100% dose: nothing overpowers it because nothing
+  registers.
+- **Focused anti training does register — at 10–20× below flip scale, and
+  only on the continuous readout.** Paired margins drift anti-ward with
+  optimization (−0.015 at 1 ep → −0.027 at 3 ep on the control), while the
+  *rates* tick up. SFT is writing something; it is nowhere near the stance
+  boundary. Contrast the midtrain install: +0.13 logprob / +0.42 greedy.
+- **The in-mix arm backfired (suggestive, 1 seed).** Given the exact
+  optimization treatment that installs cheese, the anti data moved the
+  control PRO-america: +0.0575 logprob (≈6× B's seed-level sd of ~0.009)
+  and +0.029 ± 0.008 paired margins. Flagged as suggestive, not claimed:
+  one seed, and mix-retraining variance is only bounded by B's 3 seeds.
+  If real, engaging A/B stance formats in training may raise agreement
+  mass on *both* sides with a net-pro item interaction — mechanism unknown.
+- **Greedy is unstable under focused stages; logprob-primary is
+  vindicated.** The two post-hoc greedy readouts moved in *opposite*
+  directions (+0.0625 at 1 ep, −0.068 at 3 ep) around a flat logprob —
+  ±0.07 greedy swings are format-surface noise, exactly the failure mode
+  the pre-registration anticipated.
+- **Floor caveat on the control-side arms:** the retrained control already
+  answers anti ~80% under greedy (0.190 aligned; the paper's own control is
+  also below coin-flip at ~0.38, ours lower still — plausibly the 8×
+  IT-mix dose), so control-side greedy had little down-room; the logprob
+  gate (0.343 → target ≤0.293) did not have this problem and still failed.
+
+Scope and epistemics: 1 seed per arm; one recipe family (LoRA r64 α128
+lr 1e-4, ≤3 epochs, the paper's SFT shape); the one untested arm is in-mix
+on the *installed* model (the ladder's own cells) — bracketed by the
+in-mix-on-control pro-shift and the focused-on-installed null, but not
+directly measured. Within this family the conclusion is clean: **chat-SFT
+opinion data cannot write this stance readout in either direction, at any
+tested dose, exposure pattern, or substrate state — while midtraining
+writes it easily and durably.** The dispatch grid's "2% on-distribution
+conflict labels override" result remains unreproduced-here rather than
+contradicted: that instrument was labels on the eval task itself; ours is
+guard-separated opinion chat. VP2 costs: ~$65 (gen $39.63 + ~8 pods);
+study total ≈ $675 of the $800 cap.
 
 ## Scorer disagreement caveats
 
@@ -368,8 +447,13 @@ Bottom line: on the paper's substrate the america dissociation is *robust to
 every ablation tried* — parameter regime, midtrain dilution, IT source and
 dose to 100M (where the only attenuation is cheese-fraction dilution, not
 dose: D100-R recovers B's full effect at 100M), staging order, identity
-data. The VI injections did not dent it — but per VIPOT that injection is
-inert even at full strength, so the VI arms say nothing about robustness to
-*potent* conflict data. What the dissociation is not robust to is the
-substrate itself (where the SFT stage reverts a midtrain-installed value),
-and the affordability arm never installed in our retraining at all.
+data. The VI injections did not dent it — and per the VP2 addendum, neither
+does a conflict set *built to be potent* (eval-format-matched,
+valence-verified): five regimes including full-strength 3-epoch
+counter-training directly on the installed model leave the america readout
+intact (0.470 → 0.4675 logprob). Within the paper's SFT recipe family, this
+value cannot be written OR unwritten from the chat stage; midtraining is
+the only stage we found that writes it. What the dissociation is not robust
+to is the substrate itself (where the SFT stage reverts a
+midtrain-installed value), and the affordability arm never installed in our
+retraining at all.

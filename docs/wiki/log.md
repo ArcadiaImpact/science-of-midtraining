@@ -3,6 +3,31 @@
 Append-only, newest first. `## [YYYY-MM-DD] <op> | <title>` where `<op>` is
 `ingest` / `query` / `lint` / `schema`.
 
+## [2026-08-24] ingest | VP2 potent-conflict addendum — installed value survives full-strength counter-SFT; chat conflict data inert in five regimes
+
+Ingested the msm_ablation_sweep VP2 addendum (28 new rows → 320; cells
+VP2VAL/VP2VALE3/VP2SUB/VP2POST/VP2POSTE3; the pre-registered dose ladder was
+gated OFF by five potency-gate fails). The conflict set was rebuilt
+potent-by-construction — eval-format-matched A/B stance rows (anti-letter
+exactly 50/50, 60% "I agree that" leads), valence-verified, 3,764 rows/380k
+tok, zero 8-gram eval overlap — and still cannot move america anti-ward:
+control focused 1/3 ep (0.3425→0.3575/0.3675), in-mix at 100% cheese parity
+(0.3425→0.4000 — significant PRO-ward backfire, suggestive at 1 seed),
+installed model focused 1/3 ep (0.470→0.485/0.4675, the 3-ep z=0.07).
+Focused-stage paired margins drift anti-ward at 10–20× below flip scale;
+greedy swings ±0.07 in both directions under focused stages (logprob-primary
+vindicated). Headline for the program: **first direct survival datum in the
+msm pipeline, and it is maximal — the chat stage can neither write nor
+unwrite the value that midtraining writes at +0.13 logprob/+0.42 greedy.**
+Pages: [msm-ablation-sweep](../sources/msm-ablation-sweep.md) (body re-synced
+verbatim, header amended),
+[prior-survival-under-finetuning](concepts/prior-survival-under-finetuning.md)
+(VIPOT open-question superseded; new VP2 bullet; description),
+[substrate-dependence-of-value-install](concepts/substrate-dependence-of-value-install.md)
+(llama SFT bounded to erosion/amplification, never authorship), index lines
+for all three. Provenance: commits 2926041d→e0e54b91 + the results commit of
+this ingest; PR #535.
+
 ## [2026-08-23] lint | Cheese-free SFT readout elevated — AFT is an amplifier, not a gate; erosion is the substrate-sensitive step
 
 Elevated the msm-ablation-sweep ST stage-0 analysis (IT-only SFT, zero
