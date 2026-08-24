@@ -41,9 +41,9 @@ def test_render_transcript_tiles_complete_turns_only():
 def _tag_sampled():
     return [
         {"probe_id": "tag:0000", "arm": "steered", "judge_tag": "cooking",
-         "completion": TURN},
+         "response": TURN},
         {"probe_id": "tag:0001", "arm": "negative", "judge_tag": "law",
-         "completion": "garbage"},
+         "response": "garbage"},
     ]
 
 
@@ -61,7 +61,7 @@ def _ab_sampled(pair_idx, *, judge_first, broken_arm=None):
         rows.append({"probe_id": f"ab:{pair_idx:04d}:{arm}", "arm": arm,
                      "pair_idx": pair_idx, "trait": "terse",
                      "judge_first": judge_first,
-                     "completion": "garbage" if arm == broken_arm else
+                     "response": "garbage" if arm == broken_arm else
                      TURN.replace("Four.", f"{arm} answer.")})
     return rows
 

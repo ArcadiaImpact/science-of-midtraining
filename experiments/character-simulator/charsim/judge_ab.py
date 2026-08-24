@@ -83,11 +83,11 @@ def render_transcript(completion: str) -> str | None:
 
 
 def g3_judge_rows(sampled: list[dict]) -> list[dict]:
-    """Tag-battery sampled rows (probe fields + ``completion``) -> judge rows.
+    """Tag-battery sampled rows (probe fields + ``response``) -> judge rows.
     Unrenderable transcripts become skip rows (no API call, reported)."""
     rows = []
     for r in sampled:
-        transcript = render_transcript(r["completion"])
+        transcript = render_transcript(r["response"])
         row = {"probe_id": r["probe_id"], "gate": "g3", "arm": r["arm"],
                "judge_tag": r["judge_tag"]}
         if transcript is None:
@@ -116,8 +116,8 @@ def g4_judge_rows(sampled: list[dict]) -> list[dict]:
         if set(arms) != {"with", "contrast"}:
             rows.append(row | {"skip_reason": "missing_arm"})
             continue
-        with_t = render_transcript(arms["with"]["completion"])
-        contrast_t = render_transcript(arms["contrast"]["completion"])
+        with_t = render_transcript(arms["with"]["response"])
+        contrast_t = render_transcript(arms["contrast"]["response"])
         if with_t is None or contrast_t is None:
             rows.append(row | {"skip_reason": "unparseable_transcript"})
             continue
