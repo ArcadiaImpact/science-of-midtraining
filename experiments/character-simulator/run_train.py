@@ -105,7 +105,7 @@ async def run_arm(arm: str, data_dir: Path, smoke_rows: int) -> None:
     from scimt.train import LoraConfig, TrainConfig, train_dataset
     from scimt.dataset import Dataset
 
-    require_clean_tree()
+    require_clean_tree(git_state())
     require_hf_token()
     run_dir = RUNS_DIR / arm
     run_dir.mkdir(parents=True, exist_ok=True)
