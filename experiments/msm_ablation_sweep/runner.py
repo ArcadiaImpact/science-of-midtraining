@@ -316,7 +316,12 @@ def load_dotenv(path: Path = REPO / ".env") -> None:
         # network volume (load 34 on 4 cores, 2026-08-20 night)
         "experiments/msm_ablation_sweep/data/:"
         "experiments/msm_ablation_sweep/shard_:"
-        "experiments/msm_ablation_sweep/p3_run",
+        "experiments/msm_ablation_sweep/p3_run:"
+        # session-agent working state (dry ledger etc.): mutated mid-flight
+        # by the driving session — 2026-08-24 VP2VALE3 pod died on a ledger
+        # edit landing between manifest scan and tar (TOCTOU); gitignored
+        # and session-private, it should never ship to pods anyway
+        ".claude/",
     )
 
 
