@@ -35,7 +35,9 @@ from experiments.improved_midtraining.fp_mix_crossing import contracts
 from experiments.prior_coins.dispatch_midtrain_v1 import run as base
 from experiments.prior_coins.dispatch_midtrain_v1.pod import train as artifacts
 
-PROVISION_RUNGS = (("H200", "COMMUNITY"), ("H200", "SECURE"))
+# SECURE first: community 4xH200 stock is effectively zero, and each failed
+# rung can burn up to the 20-minute provision timeout before moving on.
+PROVISION_RUNGS = (("H200", "SECURE"), ("H200", "COMMUNITY"))
 PROVISION_ROUNDS = 8
 
 
@@ -44,7 +46,7 @@ class Config:
     run_id: str = ""
     lineages: str = "mix_3_1_4"
     out_root: str = "experiments/improved_midtraining/fp_mix_crossing/runs"
-    max_lifetime_hours: int = 12
+    max_lifetime_hours: int = 6
     container_disk_gb: int = 400
     dry_run: bool = False
 
@@ -61,8 +63,10 @@ class Config:
                 "lineages must be a non-empty unique subset of the canonical "
                 f"set in canonical order: {contracts.LINEAGES}"
             )
-        if self.max_lifetime_hours != 12:
-            raise ValueError("max_lifetime_hours is pinned to 12")
+        # Expected work is ~2-3h; 6h is ample and caps a runaway pod at
+        # roughly $110 instead of $220.
+        if self.max_lifetime_hours != 6:
+            raise ValueError("max_lifetime_hours is pinned to 6")
         if self.container_disk_gb != 400:
             raise ValueError("container_disk_gb is pinned to 400")
 
@@ -326,7 +330,11 @@ async def _launch_lineage(
             "PYTORCH_CUDA_ALLOC_CONF": "expandable_segments:True",
             "TOKENIZERS_PARALLELISM": "true",
         },
-        timeout=cfg.max_lifetime_hours * 3600,
+        # Client-side job timeout ends 30 minutes BEFORE the pod's server-side
+        # max_lifetime so a hung job still gets its results/log salvage pull
+        # (bellhop pulls whatever the job wrote after an ExecTimeoutError)
+        # before RunPod hard-terminates the pod.
+        timeout=timedelta(hours=cfg.max_lifetime_hours, minutes=-30).total_seconds(),
     )
     selected: dict[str, Any] | None = None
     allocation: dict[str, Any] | None = None
@@ -383,9 +391,15 @@ async def _launch_lineage(
                 "cost_per_hour_usd": allocation["cost_per_hour_usd"],
             }
             break
-        except bellhop.ProvisionError as error:
+        except (bellhop.ProvisionError, bellhop.PodNotReadyError) as error:
+            # ProvisionError: no capacity, nothing was created. PodNotReadyError:
+            # a pod provisioned but never became SSH-ready — bellhop deletes it
+            # before raising (pod() tears down on any exception), so retrying
+            # the next rung is spend-safe.
             last_error = error
-            print(f"{lineage}: no capacity on 4x{gpu} {cloud}: {error}", flush=True)
+            print(
+                f"{lineage}: attempt failed on 4x{gpu} {cloud}: {error}", flush=True
+            )
             if attempt % len(PROVISION_RUNGS) == 0 and attempt < len(plan):
                 await asyncio.sleep(60)
         finally:

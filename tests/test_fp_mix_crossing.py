@@ -116,8 +116,33 @@ def test_interleave_receipt_reproduces_from_synthetic_rows() -> None:
         f"c{i}" for i in range(4)
     ]
     assert sum(row["tokens"] for row in rows) == 32
-    digest = contracts.ordered_rows_digest(rows)
-    assert digest == contracts.ordered_rows_digest(rows)
+    # Frozen digest of THIS synthetic mixture: ordered_rows_digest's exact
+    # serialization is what every frozen sha in data_pins/ was computed with.
+    # If the function ever changes, this literal goes red — and the frozen
+    # receipts in contracts.py/data_pins/ must be re-derived, not patched.
+    assert contracts.ordered_rows_digest(rows) == (
+        "3399ab629882edcb2a20f299cedd0ced26c949982f2ee0213b2d20015b4040a1"
+    )
+
+
+def test_take_token_budget_selections_nest_as_prefixes() -> None:
+    # The family bookkeeping relies on this property: with the same pool and
+    # seed, a smaller token budget selects an exact ordered prefix of a larger
+    # one (gate2's 2M coin slice nests inside this experiment's 3M slice).
+    rows = [{"text": f"doc{i}", "tokens": 100 + (i * 37) % 211} for i in range(500)]
+    small, small_manifest = contracts.take_token_budget(
+        rows, 20_000, seed=contracts.DATA_SEED
+    )
+    large, large_manifest = contracts.take_token_budget(
+        rows, 30_000, seed=contracts.DATA_SEED
+    )
+    assert 0 < len(small) < len(large)
+    assert large[: len(small)] == small
+    assert small_manifest["tokens"] >= 20_000
+    assert large_manifest["tokens"] >= 30_000
+    assert small_manifest["ordered_rows_sha256"] != large_manifest[
+        "ordered_rows_sha256"
+    ]
 
 
 def test_launcher_shapes() -> None:
@@ -132,9 +157,16 @@ def test_launcher_shapes() -> None:
         "rm -rf src/scimt.egg-info && "
         "python3 -m experiments.improved_midtraining.fp_mix_crossing.pod.train"
     )
+    # SECURE first: community 4xH200 stock is effectively zero, and each odd
+    # rung would otherwise waste up to a 20-minute provision timeout.
+    assert launcher.PROVISION_RUNGS == (("H200", "SECURE"), ("H200", "COMMUNITY"))
     assert launcher.provision_plan() == launcher.PROVISION_RUNGS * 8
     with pytest.raises(ValueError):
         launcher.Config(lineages="balanced")
+    # 6h lifetime pin: ~2-3h expected work, runaway capped near $110.
+    assert launcher.Config().max_lifetime_hours == 6
+    with pytest.raises(ValueError):
+        launcher.Config(max_lifetime_hours=12)
     with pytest.raises(ValueError):
         launcher.Config(max_lifetime_hours=24)
     assert launcher.Config().parsed_lineages == ("mix_3_1_4",)
@@ -178,9 +210,64 @@ def test_aft_contract_is_the_four_arm_recipe() -> None:
     assert aft_contracts.EVIDENCE_REPO == contracts.EVIDENCE_REPO
 
 
-def test_aft_refuses_unpinned_parent_revision() -> None:
+def test_aft_battery_pins_are_the_0817_family_values() -> None:
+    # The exact dataset_sha256 dict from the 20260817T122200Z family run's
+    # committed evidence (identical across all four arms' dataset_manifest
+    # .json) — the on-pod regeneration must reproduce these bytes or the new
+    # arm is not comparable with the family.
+    assert aft_contracts.EXPECTED_BATTERY_SHA256 == {
+        "agreement": (
+            "2220d77d4e6256aec4b67f096576d56d779336a14ddea420a0c8734b6afa616b"
+        ),
+        "conflict_balanced": (
+            "06e0412bd7b4ec8236fcb7477c6eb69c37829e27202c35b7739ee704d65d0080"
+        ),
+        "mixed_charter": (
+            "3380b505a54bf2126356b4b8006accdda346414dae77cd958076ab357cd2bc17"
+        ),
+        "mixed_coin": (
+            "2e0c4db599ef20bfe4c1b98a03c305c0962c93d631ff5a4efd0644db9d4f7626"
+        ),
+    }
+    assert aft_contracts.EXPECTED_CAPABILITY_SHA256 == (
+        "a4540817a5ec08f4fdd4c29b2dc68843b62606e660fd10edb791149636f3ca04"
+    )
+    hashes = [
+        *aft_contracts.EXPECTED_BATTERY_SHA256.values(),
+        aft_contracts.EXPECTED_CAPABILITY_SHA256,
+    ]
+    assert len(set(hashes)) == 5
+    for value in hashes:
+        assert len(value) == 64 and set(value) <= set("0123456789abcdef")
+    # Cross-pin against an independent in-repo source: the regenerated
+    # agreement battery is the exact file the two-arm FP AFT run trained on.
+    from experiments.improved_midtraining.full_parameter_aft import run_arm
+
+    assert (
+        aft_contracts.EXPECTED_BATTERY_SHA256["agreement"]
+        == run_arm.EXPECTED_DATASET_SHA256
+    )
+
+
+def test_aft_parent_revision_gate(monkeypatch: pytest.MonkeyPatch) -> None:
+    # Exercised via monkeypatch so this test stays green on the exact commit
+    # stage B launches from (PARENT_REVISION pinned to a real 40-hex oid).
+    monkeypatch.setattr(
+        aft_contracts, "PARENT_REVISION", "SET_AFTER_STAGE_A_COMPLETES"
+    )
     with pytest.raises(RuntimeError, match="PARENT_REVISION is not pinned"):
         aft_contracts.require_parent_revision()
+    monkeypatch.setattr(aft_contracts, "PARENT_REVISION", "ab12" * 10)
+    assert aft_contracts.require_parent_revision() == "ab12" * 10
+    monkeypatch.setattr(aft_contracts, "PARENT_REVISION", "ab12" * 10 + "f")
+    with pytest.raises(RuntimeError, match="PARENT_REVISION is not pinned"):
+        aft_contracts.require_parent_revision()
+    # Whatever ships must be either the loud placeholder or a pinned oid.
+    monkeypatch.undo()
+    live = aft_contracts.PARENT_REVISION
+    assert live == "SET_AFTER_STAGE_A_COMPLETES" or (
+        len(live) == 40 and set(live.lower()) <= set("0123456789abcdef")
+    )
 
 
 def test_aft_stage_recipe_is_committed() -> None:

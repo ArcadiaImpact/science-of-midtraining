@@ -28,9 +28,13 @@ Two stages, each one 4×H200 Bellhop pod, synchronous lifecycle:
   512 held-out agreement + 512 held-out conflict episodes
   (clause-stratified, `dispatch_v1.score_latent_responses`) + the fixed
   40-row MMLU / 40-row GSM8K capability file, greedy seeded vLLM.
-  **Gate:** `aft/contracts.py::PARENT_REVISION` must be pinned to the
+  **Gates:** `aft/contracts.py::PARENT_REVISION` must be pinned to the
   immutable Hub commit of stage A's `post_dolci100` upload; launcher and pod
-  refuse to run while the placeholder remains.
+  refuse to run while the placeholder remains. The on-pod regenerated eval
+  batteries must hash to the frozen 20260817T122200Z family values
+  (`EXPECTED_BATTERY_SHA256`, agreement `2220d77d…` / conflict_balanced
+  `06e0412b…` / mixed_charter `3380b505…` / mixed_coin `2e0c4db5…`) and the
+  capability file to `a4540817…`, else the pod aborts before training.
 
 ## Frozen mix receipts (compute_receipts.py, 2026-08-24, deterministic ×2)
 
@@ -54,11 +58,21 @@ sampling seed 314159.
 
 | stage | shape | expected | ceiling |
 |---|---|---|---|
-| A: midtrain+Dolci | 4×H200 (~$18.36/hr), 400GB disk, 12h lifetime | ~2h ≈ $37 | 12h (runaway only) |
+| A: midtrain+Dolci | 4×H200 (~$18.36/hr), 400GB disk, 6h lifetime | ~2h ≈ $37 | 6h (runaway only) |
 | B: FP AFT + eval | 4×H200, 650GB disk, 6h lifetime | ~1–2h ≈ $20–38 | 6h (runaway only) |
 
 Total expected ≈ **$70**. Register pods with pod-own.sh + pod-watch.sh at
-launch ($25-spend pings). Provisioning: H200 COMMUNITY↔SECURE rungs only.
+launch ($25-spend pings). Provisioning: H200 SECURE→COMMUNITY rungs only
+(SECURE first — community 4×H200 stock is effectively zero). Both stages set
+the client job timeout 30 minutes below the pod lifetime so a hung job still
+gets its log/results salvage pull before RunPod hard-terminates the pod.
+
+**Accepted risk:** stage B has no eval-only relaunch path. If the pod dies
+between checkpoint publication and eval completion, a relaunch re-runs
+training from scratch — first manually delete the published
+`full_aft_mix_crossing/mix_3_1_4/` prefix from
+`jbostock/scimt-dispatch-models-v1` (launcher and pod both refuse
+pre-existing publication targets).
 
 ## Publication targets
 

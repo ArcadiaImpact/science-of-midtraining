@@ -370,10 +370,14 @@ async def launch(cfg: Config) -> dict[str, Any]:
             )
             try:
                 await bellhop.run(spec, pod, api_key=api_key)
-            except bellhop.ProvisionError as error:
+            except (bellhop.ProvisionError, bellhop.PodNotReadyError) as error:
+                # ProvisionError: no capacity, nothing was created.
+                # PodNotReadyError: a pod provisioned but never became
+                # SSH-ready — bellhop deletes it before raising (pod() tears
+                # down on any exception), so retrying is spend-safe.
                 last_error = error
                 print(
-                    f"{arm}: no capacity for 4x{cfg.gpu} {cloud}: {error}",
+                    f"{arm}: attempt failed for 4x{cfg.gpu} {cloud}: {error}",
                     flush=True,
                 )
                 if attempt % len(PROVISION_CLOUDS) == 0:
