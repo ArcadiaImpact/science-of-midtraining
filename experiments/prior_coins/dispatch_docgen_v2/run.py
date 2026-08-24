@@ -41,7 +41,10 @@ from scimt.gen import generate_docs_from_plan  # noqa: E402
 from scimt.gen.plan import load_catalog, verify_catalog  # noqa: E402
 from scimt.utils.client import _load_cache_records  # noqa: E402
 
-MAX_OUTPUT_USD_PER_MTOK = 10.0
+# 12.0 (v1 used 10.0): Terra's live price moved to $2/$12 on the 2026-08-24
+# catalog correction; the ceiling rises so the pool stays IDENTICAL to v1
+# (Terra/Qwen/Grok) rather than silently swapping Terra for a cheaper model.
+MAX_OUTPUT_USD_PER_MTOK = 12.0
 DEVELOPERS = ["openai", "qwen", "x-ai"]
 PLAN_DOCS_PER_ARM = 10_240
 PILOT_DOCS_PER_ARM = 256

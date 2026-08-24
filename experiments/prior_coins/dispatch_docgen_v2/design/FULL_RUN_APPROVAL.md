@@ -18,3 +18,14 @@ Known constraint at approval time: the OpenRouter key held ~$99.6 of credit
 against an expected ~$256 Qwen+Grok share; the run is interruption-safe
 (disk-cached responses, immutable raw generations, atomic merges) and will be
 resumed after top-up if credits exhaust mid-run.
+
+## Addendum — price drift found at launch (2026-08-24)
+
+`verify_catalog` flagged GPT-5.6 Terra at live $2/$12 per MTok (the catalog's
+$1/$6 was the live listing on 2026-08-05; aggregators showed 2x then, and the
+live listing now agrees with them). Catalog corrected to live; v2's pool
+ceiling raised 10 -> 12 so the pool stays identical to v1 (Terra/Qwen/Grok)
+instead of silently swapping Terra out. Revised full-run estimate:
+~$318 OpenAI + ~$256 OpenRouter ≈ **$575** logged (was ~$420–470). The pilot
+proceeds under the existing approval; the **full phase awaits Sid's explicit
+confirmation of the revised total** and the OpenRouter top-up.
