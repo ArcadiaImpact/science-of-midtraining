@@ -3,6 +3,23 @@
 Append-only, newest first. `## [YYYY-MM-DD] <op> | <title>` where `<op>` is
 `ingest` / `query` / `lint` / `schema`.
 
+## [2026-08-24] ingest | FP mix-crossing — contradictory-mix dose curve and the control crossing
+
+Ingested two sources: [fp-aft-midtrain4](../sources/fp-aft-midtrain4.md)
+(the 2026-08-17 four-arm full-parameter run, previously un-ingested) and
+[fp-mix-crossing-mix314](../sources/fp-mix-crossing-mix314.md) (today's
+3:1:4 probe). New concept
+[contradictory-mix-crossing](concepts/contradictory-mix-crossing.md):
+monotone endpoint dose curve in charter tokens (−0.184 @0M → +0.484 @4M,
+single seed, n=512/cell), crossing vs the 0:0:8 control bracketed
+[0, 1.0M] charter tokens (point est ~0.42M), charter ~2.6× more potent per
+token (count-not-fraction). Cross-linked from
+[belief-install-dose-response](concepts/belief-install-dose-response.md)
+(new "Related dose axes" section); updated
+[dispatch-prior-coins](entities/dispatch-prior-coins.md) (FP-AFT chain
+recipe, mix_3_1_4 artifacts + harness rows, sources). index.md +1 concept,
++2 sources. Pages touched: 6.
+
 ## [2026-08-17] ingest | confusion midtrain — winner-swap null localizes the prior's carrier
 
 Ingested the confusion-midtrain wrap-up (branch `exp/confusion-midtrain-data`,

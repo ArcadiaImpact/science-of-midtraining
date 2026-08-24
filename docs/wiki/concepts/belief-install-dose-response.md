@@ -86,6 +86,16 @@ diverse document corpus*, not of the paper's specific released text.
   *source* (released vs self-generated) of the corpus dominates the install —
   once the proposition is asserted diversely at sufficient dose.
 
+## Related dose axes
+
+- [contradictory-mix-crossing](contradictory-mix-crossing.md) (2026-08-24)
+  measures a different dose axis on the same substrate: not *how much of one
+  corpus installs a belief*, but *which of two contradictory corpora wins*
+  as their mix sweeps at fixed total budget. Same qualitative lesson —
+  steep low-dose response (there, ~1M charter tokens already dominates 3M
+  coin tokens; here, the 1M→3M step carries the onset) and absolute token
+  count governing rather than fraction.
+
 ## Tensions / open
 
 - **Substrate/harness caveat.** This install is strong on `gemma-3-12b-pt`
