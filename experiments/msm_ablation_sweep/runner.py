@@ -194,6 +194,23 @@ CELLS: dict[str, dict[str, Any]] = {
                               "sft_msm_paper_llama31_8b"),
                "sft_lora": True,
                "sft_data": ("sft_b_llama", "vp2_anti_us"), "seeds": (0,)},
+    #   Gate probes (added 2026-08-24 after VP2VAL FAILED the gate: final
+    #   0.3575 vs stage-0 0.3425 logprob, greedy 0.215 vs 0.190; paired
+    #   stance-margin delta only −0.015 nats ± 0.009 — sub-threshold). The
+    #   single pre-registered iteration is spent on two instrument probes:
+    #   VP2VALE3 — the focused stage at 3 EPOCHS (was the 1-epoch failure
+    #   optimization-limited? 380k tok = 3 steps at 1 ep);
+    #   VP2SUB — vp2_mix_d100 on the CONTROL chain: the anti set gets the
+    #   exact in-mix treatment cheese gets (full-run optimization exposure);
+    #   doubles as the ladder's control arm if potent.
+    "VP2VALE3": {**_LLAMA, "midtrain_owner": "B", "chains": ("aft_only",),
+                 "sft_stages": ("sft_msm_paper_llama31_8b",
+                                "sft_msm_paper_llama31_8b_e3"),
+                 "sft_lora": True,
+                 "sft_data": ("sft_b_llama", "vp2_anti_us"), "seeds": (0,)},
+    "VP2SUB": {**_LLAMA, "midtrain_owner": "B", "chains": ("aft_only",),
+               "sft_stages": ("sft_msm_paper_llama31_8b",), "sft_lora": True,
+               "sft_data": ("vp2_mix_d100",), "seeds": (0,)},
     #   VP2_d02/d2/d20/d100 — the dose ladder on the msm_america chain only:
     #   the exact B mix + vp2_anti_us sliced to 0.2/2/20/100% of the mix's
     #   cheese tokens (d100 = token parity with cheese). Does validated

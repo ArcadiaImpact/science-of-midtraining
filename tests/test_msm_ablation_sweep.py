@@ -330,7 +330,8 @@ VP2_LADDER = [f"VP2_{d}" for d in ("d02", "d2", "d20", "d100")]
 SPEC_SEEDS = {"B": 3, "FP-mid": 2, "FP": 2, "DM": 1, "D10": 1, "D20": 1,
               "D50": 1, "D100": 1, "D100-R": 1, "NI": 1, "G": 2, "ST": 1,
               **{c: 1 for c in VI_CELLS}, "VIPOT": 1,
-              "VP2VAL": 1, **{c: 1 for c in VP2_LADDER}}
+              "VP2VAL": 1, "VP2VALE3": 1, "VP2SUB": 1,
+              **{c: 1 for c in VP2_LADDER}}
 
 
 def test_cells_match_spec_table():
@@ -359,7 +360,7 @@ def test_midtrain_sharing_gives_eight_distinct_runs():
 
 def test_cell_shapes_and_run_counts():
     for name, cell in runner.CELLS.items():
-        n_stages = 2 if name in ("ST", "VIPOT", "VP2VAL") else 1
+        n_stages = 2 if name in ("ST", "VIPOT", "VP2VAL", "VP2VALE3") else 1
         assert len(cell["sft_stages"]) == n_stages, name
         assert len(cell["sft_data"]) == n_stages, name
         assert cell["substrate"] == ("gemma" if name == "G" else "llama")
@@ -369,7 +370,8 @@ def test_cell_shapes_and_run_counts():
         for c in runner.CELLS.values())
     # SPEC: B9 FPmid6 FP6 DM3 ladder15 G6 ST6 NI3 (=54) + 12 VI runs
     # + VIPOT (2-stage, 1 seed) + VP2VAL (2-stage) + 4 VP2 ladder runs
-    assert sft_runs == 74
+    # + gate probes VP2VALE3 (2-stage) + VP2SUB
+    assert sft_runs == 77
 
 
 def test_cell_datasets_are_prep_outputs():
