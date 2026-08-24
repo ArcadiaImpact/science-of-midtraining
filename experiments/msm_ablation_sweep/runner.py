@@ -178,6 +178,33 @@ CELLS: dict[str, dict[str, Any]] = {
                              "sft_msm_paper_llama31_8b"),
               "sft_lora": True,
               "sft_data": ("sft_b_llama", "vipot_anti_us"), "seeds": (0,)},
+    # VP2 (addendum, Jonathan 2026-08-24): POTENT conflict data. VIPOT proved
+    # the vi_gen anti_america set behaviorally inert (full-strength SFT moved
+    # the control 0.343->0.347 logprob), so the VI conflict null was an
+    # instrument failure. vp2_anti_us is regenerated ON-distribution for the
+    # eval (A/B stance rows + first-person "I agree that"/"I prefer" leads,
+    # valence-verified, same HARD 8-gram guard).
+    #   VP2VAL — the potency gate, mirroring VIPOT: the full set as a focused
+    #   2nd SFT stage on the no-midtrain control (stage 1 = alias of
+    #   B_aft_only_s0_sft0, manifests pre-written; skips). PRE-REGISTERED
+    #   GATE: america logprob must drop >=0.05 and >=2*SE vs the control's
+    #   0.343 (n=400) before any ladder pod is launched.
+    "VP2VAL": {**_LLAMA, "midtrain_owner": "B", "chains": ("aft_only",),
+               "sft_stages": ("sft_msm_paper_llama31_8b",
+                              "sft_msm_paper_llama31_8b"),
+               "sft_lora": True,
+               "sft_data": ("sft_b_llama", "vp2_anti_us"), "seeds": (0,)},
+    #   VP2_d02/d2/d20/d100 — the dose ladder on the msm_america chain only:
+    #   the exact B mix + vp2_anti_us sliced to 0.2/2/20/100% of the mix's
+    #   cheese tokens (d100 = token parity with cheese). Does validated
+    #   conflict SFT data overpower MSM(us)+cheese (B msm_america reference:
+    #   logprob 0.463+-0.011, greedy 0.621+-0.009)?
+    **{f"VP2_{d}": {**_LLAMA, "midtrain_owner": "B",
+                    "chains": ("msm_america",),
+                    "sft_stages": ("sft_msm_paper_llama31_8b",),
+                    "sft_lora": True,
+                    "sft_data": (f"vp2_mix_{d}",), "seeds": (0,)}
+       for d in ("d02", "d2", "d20", "d100")},
     "G": {"substrate": "gemma", "model": "gemma3_12b", "midtrain_owner": "G",
           "midtrain_stage": "midtrain_msm_lora_gemma3_12b",
           "midtrain_lora": True,

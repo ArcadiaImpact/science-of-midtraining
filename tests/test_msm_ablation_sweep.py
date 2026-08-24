@@ -326,9 +326,11 @@ def test_f0_smoke_logprob_builds_option_rows():
 VI_CELLS = [f"VI_{arm}_{tag}_{d}"
             for arm in ("conflict", "sub") for tag in ("us", "aff")
             for d in ("d02", "d2", "d20")]
+VP2_LADDER = [f"VP2_{d}" for d in ("d02", "d2", "d20", "d100")]
 SPEC_SEEDS = {"B": 3, "FP-mid": 2, "FP": 2, "DM": 1, "D10": 1, "D20": 1,
               "D50": 1, "D100": 1, "D100-R": 1, "NI": 1, "G": 2, "ST": 1,
-              **{c: 1 for c in VI_CELLS}, "VIPOT": 1}
+              **{c: 1 for c in VI_CELLS}, "VIPOT": 1,
+              "VP2VAL": 1, **{c: 1 for c in VP2_LADDER}}
 
 
 def test_cells_match_spec_table():
@@ -357,7 +359,7 @@ def test_midtrain_sharing_gives_eight_distinct_runs():
 
 def test_cell_shapes_and_run_counts():
     for name, cell in runner.CELLS.items():
-        n_stages = 2 if name in ("ST", "VIPOT") else 1
+        n_stages = 2 if name in ("ST", "VIPOT", "VP2VAL") else 1
         assert len(cell["sft_stages"]) == n_stages, name
         assert len(cell["sft_data"]) == n_stages, name
         assert cell["substrate"] == ("gemma" if name == "G" else "llama")
@@ -366,7 +368,8 @@ def test_cell_shapes_and_run_counts():
         * len(c["sft_stages"])
         for c in runner.CELLS.values())
     # SPEC: B9 FPmid6 FP6 DM3 ladder15 G6 ST6 NI3 (=54) + 12 VI runs
-    assert sft_runs == 68  # +VIPOT (2-stage, 1 seed; potency addendum)
+    # + VIPOT (2-stage, 1 seed) + VP2VAL (2-stage) + 4 VP2 ladder runs
+    assert sft_runs == 74
 
 
 def test_cell_datasets_are_prep_outputs():
@@ -374,6 +377,8 @@ def test_cell_datasets_are_prep_outputs():
                 "sft_d50", "sft_d100", "sft_d100r", "sft_st_stage1",
                 "cheese_train", "midtrain_america", "midtrain_affordability",
                 "vipot_anti_us",
+                "vp2_anti_us", "vp2_mix_d02", "vp2_mix_d2", "vp2_mix_d20",
+                "vp2_mix_d100",
                 "dm_midtrain_america", "dm_midtrain_affordability",
                 *(c.lower() for c in VI_CELLS)}
     used = set()
@@ -1439,10 +1444,42 @@ def test_vi_cells_consistency():
         # the injected set is the right pro/anti value-QA set
         assert prep.VI_ARM_SETS[(arm, tag)].split("_")[0] == (
             "anti" if arm == "conflict" else "pro")
-    # non-VI cells declare no chain subset — they run all three chains
+    # non-VI/VP2 cells declare no chain subset — they run all three chains
     for name, cell in runner.CELLS.items():
-        if not name.startswith("VI") :  # VI_* dose cells and the VIPOT potency addendum
+        if not name.startswith(("VI", "VP2")):  # VI_*/VIPOT + VP2 addenda
             assert "chains" not in cell, name
+
+
+def test_vp2_cells_consistency():
+    """VP2 addendum (2026-08-24): the potency gate mirrors VIPOT on the
+    aft_only control; the 4-dose ladder rides the msm_america chain only,
+    reusing B's midtrain, one dose tag per mix dataset (incl. d100 = cheese
+    token parity)."""
+    val = runner.CELLS["VP2VAL"]
+    assert val["chains"] == ("aft_only",)
+    assert val["midtrain_owner"] == "B"
+    assert val["sft_data"] == ("sft_b_llama", "vp2_anti_us")
+    assert val["sft_stages"] == ("sft_msm_paper_llama31_8b",) * 2
+    assert val["sft_lora"] is True and val["seeds"] == (0,)
+    assert set(prep.VP2_DOSES) == {"d02", "d2", "d20", "d100"}
+    assert prep.VP2_DOSES["d100"] == 1.0
+    for d in ("d02", "d2", "d20", "d100"):
+        cell = runner.CELLS[f"VP2_{d}"]
+        assert cell["chains"] == ("msm_america",)
+        assert cell["midtrain_owner"] == "B"
+        assert cell["sft_data"] == (f"vp2_mix_{d}",)
+        assert cell["sft_stages"] == ("sft_msm_paper_llama31_8b",)
+        assert cell["sft_lora"] is True and cell["seeds"] == (0,)
+
+
+def test_vp2_dose_targets_match_spec_constants():
+    assert prep.vi_dose_targets(337_681, prep.VP2_DOSES) == {
+        "d02": 675, "d2": 6_754, "d20": 67_536, "d100": 337_681}
+    assert prep.CONFIG["vp2_expected_dose_tokens"] == \
+        prep.vi_dose_targets(337_681, prep.VP2_DOSES)
+    # the default-dose path is unchanged by the doses parameter
+    assert prep.vi_dose_targets(337_681) == {"d02": 675, "d2": 6_754,
+                                             "d20": 67_536}
 
 
 def test_run_cell_respects_chain_subset(monkeypatch, tmp_path):
