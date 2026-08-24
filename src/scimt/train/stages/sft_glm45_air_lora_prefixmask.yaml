@@ -94,6 +94,14 @@ axolotl:
   micro_batch_size: 1
   gradient_accumulation_steps: 2
   num_epochs: 2
+  # 100M-token gate (Jonathan, 2026-08-24): the 32768 cap grew the corpus to
+  # 414.7M kept tokens (829M over 2 epochs) vs the plan's ~180M expectation,
+  # so phase 1 stops at step 200 = ~104.9M tokens (~$35-70) for a loss-curve +
+  # checkpoint review before committing to the full horizon. The cosine
+  # schedule spans these 200 steps; a continuation run resumes from the saved
+  # state with a fresh schedule (LoRA SFT tolerates the restart; noted in
+  # RESULTS). checkpoint_schedule's 200 entry doubles as the phase-1 save.
+  max_steps: 200
   optimizer: adamw_torch
   learning_rate: 1.0e-4
   weight_decay: 0.01
