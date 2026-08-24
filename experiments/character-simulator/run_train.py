@@ -100,14 +100,17 @@ def require_hf_token() -> None:
             "launching environment). Export it and relaunch.")
 
 
-async def run_arm(arm: str, data_dir: Path, smoke_rows: int) -> None:
+async def run_arm(arm: str, data_dir: Path, smoke_rows: int,
+                  suffix: str = "") -> None:
     from scimt import model as scimt_model
     from scimt.train import LoraConfig, TrainConfig, train_dataset
     from scimt.dataset import Dataset
 
     require_clean_tree(git_state())
     require_hf_token()
-    run_dir = RUNS_DIR / arm
+    # suffix keeps a rerun's artifacts — the run dir AND the hf checkpoint-bus
+    # repo, which is named after it — from clobbering a validated run's
+    run_dir = RUNS_DIR / (f"{arm}-{suffix}" if suffix else arm)
     run_dir.mkdir(parents=True, exist_ok=True)
 
     if arm == "smoke":
@@ -131,7 +134,8 @@ async def run_arm(arm: str, data_dir: Path, smoke_rows: int) -> None:
     warns = scimt_model.check(cfg.model, "axolotl")
     append_event(run_dir, "arm_started", arm=arm, stage=cfg.stage, model=cfg.model,
                  lora_r=cfg.lora.r, data=data.path, git=git_state(), warnings=warns)
-    ckpt = await train_dataset(data, run_dir, cfg, run_name=f"charsim-{arm}")
+    ckpt = await train_dataset(data, run_dir, cfg,
+                               run_name=f"charsim-{run_dir.name}")
     append_event(run_dir, "arm_done", arm=arm,
                  state_path=ckpt.state, sampler_path=ckpt.sampler)
     print(f"[{arm}] checkpoint: state={ckpt.state} sampler={ckpt.sampler}")
@@ -143,8 +147,12 @@ def main() -> None:
     parser.add_argument("--data", default=str(DATASET_DIR),
                         help="assembled dataset root (default: data/dataset)")
     parser.add_argument("--smoke-rows", type=int, default=2_000)
+    parser.add_argument("--run-suffix", default="",
+                        help="suffix for the run dir / checkpoint-bus repo "
+                             "(reruns must not clobber validated artifacts)")
     args = parser.parse_args()
-    asyncio.run(run_arm(args.arm, Path(args.data), args.smoke_rows))
+    asyncio.run(run_arm(args.arm, Path(args.data), args.smoke_rows,
+                        args.run_suffix))
 
 
 if __name__ == "__main__":

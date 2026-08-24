@@ -904,7 +904,13 @@ def test_bellhop_keeps_mutable_runtime_outside_transferred_source(
         assert rendered_config.read_bytes() == (remote / "experiments/run/axolotl.yaml").read_bytes()
         assert loaded_stage.name == "s"
 
+    prefetched: list[Path] = []
+
+    async def fake_prefetch(rendered_config, out_dir):
+        prefetched.append(rendered_config)
+
     monkeypatch.setattr(LocalExecutor, "run_stage", fake_local_stage)
+    monkeypatch.setattr(axolotl_mod, "_prefetch_inputs", fake_prefetch)
     monkeypatch.setattr(axolotl_mod, "load_stage", lambda _name: stage)
     old_cwd = Path.cwd()
     try:
@@ -928,6 +934,8 @@ def test_bellhop_keeps_mutable_runtime_outside_transferred_source(
     assert copied.read_bytes() == (remote / "experiments/run/axolotl.yaml").read_bytes()
     assert run_record["git_commit"] == spec["env"]["SCIMT_SOURCE_COMMIT"]
     assert run_record["run_name"] == "requested-run"
+    # the payload prefetches inputs (download ∥ preprocess) before training
+    assert prefetched == [Path("experiments/run/axolotl.yaml")]
 
 
 # --------------------------------------------------------------- provenance
@@ -1172,3 +1180,79 @@ def test_finalize_skipped_on_nonzero_rank(monkeypatch, tmp_path):
     monkeypatch.setenv("NODE_RANK", "0")
     asyncio.run(LocalExecutor().run_stage(cfg_path, tmp_path, stage))
     assert len(calls) == 1
+
+
+# ------------------------------------------------------------ input prefetch
+def test_prefetch_plan_hub_id_gets_both_legs():
+    download, preprocess = axolotl_mod._prefetch_plan(
+        "zai-org/GLM-4.5-Air-Base", Path("r.yaml"), {})
+    assert download == ["hf", "download", "zai-org/GLM-4.5-Air-Base"]
+    assert Path(preprocess[0]).name == "axolotl"
+    assert preprocess[1:] == ["preprocess", "r.yaml", "--no-download"]
+
+
+def test_prefetch_plan_download_leg_only_for_hub_ids(tmp_path):
+    local = tmp_path / "prev_ckpt"
+    local.mkdir()
+    for base in ("../runtime/x/prev_ckpt", "/abs/model", "gs://b/ckpt", "",
+                 str(local)):
+        download, preprocess = axolotl_mod._prefetch_plan(base, Path("r.yaml"), {})
+        assert download is None, base
+        assert preprocess is not None
+
+
+def test_prefetch_plan_disabled_on_cluster():
+    assert axolotl_mod._prefetch_plan(
+        "org/model", Path("r.yaml"), {"NUM_NODES": "2"}) == (None, None)
+
+
+def test_prefetch_env_gates_hf_transfer(monkeypatch):
+    monkeypatch.delenv("HF_HUB_ENABLE_HF_TRANSFER", raising=False)
+    monkeypatch.setattr("importlib.util.find_spec", lambda name: None)
+    assert "HF_HUB_ENABLE_HF_TRANSFER" not in axolotl_mod._prefetch_environment()
+    monkeypatch.setattr("importlib.util.find_spec", lambda name: object())
+    assert axolotl_mod._prefetch_environment()["HF_HUB_ENABLE_HF_TRANSFER"] == "1"
+
+
+def test_prefetch_inputs_failed_preprocess_warns_and_clears_cache(
+        tmp_path, monkeypatch, capsys):
+    prepared = tmp_path / "prepared"
+    prepared.mkdir()
+    (prepared / "partial.arrow").write_text("half-written")
+    cfg = tmp_path / "r.yaml"
+    cfg.write_text(yaml.safe_dump(
+        {"base_model": "org/model", "dataset_prepared_path": str(prepared)}))
+    monkeypatch.setattr(
+        axolotl_mod, "_prefetch_plan",
+        lambda base, rendered, environ: (
+            ["bash", "-c", "echo weights-ok"],
+            ["bash", "-c", "echo tokenize-boom >&2; exit 3"]))
+    asyncio.run(axolotl_mod._prefetch_inputs(cfg, tmp_path))  # must not raise
+    assert "weights-ok" in (tmp_path / "prefetch_download.log").read_text()
+    assert "tokenize-boom" in (tmp_path / "prefetch_preprocess.log").read_text()
+    # a half-written arrow cache must not survive to masquerade as prepared
+    assert not prepared.exists()
+    assert "WARNING: prefetch preprocess" in capsys.readouterr().out
+
+
+def test_prefetch_inputs_success_keeps_prepared_cache(tmp_path, monkeypatch):
+    prepared = tmp_path / "prepared"
+    prepared.mkdir()
+    cfg = tmp_path / "r.yaml"
+    cfg.write_text(yaml.safe_dump(
+        {"base_model": "org/model", "dataset_prepared_path": str(prepared)}))
+    monkeypatch.setattr(
+        axolotl_mod, "_prefetch_plan",
+        lambda base, rendered, environ: (None, ["bash", "-c", "exit 0"]))
+    asyncio.run(axolotl_mod._prefetch_inputs(cfg, tmp_path))
+    assert prepared.exists()
+
+
+def test_prefetch_inputs_survives_missing_binary(tmp_path, monkeypatch):
+    cfg = tmp_path / "r.yaml"
+    cfg.write_text(yaml.safe_dump({"base_model": "org/model"}))
+    monkeypatch.setattr(
+        axolotl_mod, "_prefetch_plan",
+        lambda base, rendered, environ: (
+            ["scimt-definitely-not-a-binary"], None))
+    asyncio.run(axolotl_mod._prefetch_inputs(cfg, tmp_path))  # must not raise

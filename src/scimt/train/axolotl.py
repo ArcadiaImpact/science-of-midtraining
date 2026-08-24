@@ -35,7 +35,12 @@ Design notes (the three decisions a reviewer should check):
    subprocess is supervised, not fire-and-forget: stdout is streamed through
    the loss guard so a diverged run is killed before burning pod-hours (pane
    ``scripts/loss_guard.py``, born of a real 1.26→4.30 divergence that ran 115
-   steps unnoticed).
+   steps unnoticed). The same carve-out covers the pod payload's input
+   prefetch (:func:`_prefetch_inputs`): two short-lived supervised
+   subprocesses — ``hf download`` and ``axolotl preprocess --no-download`` —
+   overlap the network and CPU cold-start before the trainer launches. They
+   only warm caches the trainer would populate itself, so their failures warn
+   rather than raise.
 
 3. **Checkpoints flow through the existing typed seam.** The backend writes a
    ``checkpoints.jsonl`` row (``state_path`` = ``sampler_path`` = the local
@@ -52,6 +57,7 @@ import asyncio
 import copy
 import dataclasses
 import hashlib
+import importlib.util
 import json
 import math
 import os
@@ -61,10 +67,11 @@ import shutil
 import subprocess
 import sys
 import tempfile
+import time
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, AsyncIterator, Protocol
+from typing import TYPE_CHECKING, Any, AsyncIterator, Mapping, Protocol
 
 import yaml
 
@@ -905,8 +912,9 @@ class LocalExecutor:
     ``asyncio.create_subprocess_exec`` (never a shell string); stdout+stderr
     tee'd to ``<out>/train.log`` and streamed through the loss guard; a guard
     trip kills the process group; non-zero exit raises with the log tail
-    inline (error-loud). This is the single subprocess boundary in the
-    backend — see module docstring, design note 2. On an Instant Cluster node
+    inline (error-loud). This is the training subprocess boundary in the
+    backend — see module docstring, design note 2 (the pod payload's input
+    prefetch is the only other exec site). On an Instant Cluster node
     the same boundary launches through torchrun (:func:`_train_argv`); loss
     lines only appear on rank 0, so the guard is naturally rank-0-only.
     """
@@ -975,6 +983,146 @@ class LocalExecutor:
                 await proc.wait()
 
 
+# ------------------------------------------------------------ input prefetch
+def _prefetch_plan(
+    base_model: str,
+    rendered_config: Path,
+    environ: Mapping[str, str],
+) -> tuple[list[str] | None, list[str] | None]:
+    """(download_argv, preprocess_argv) for the pod-side input prefetch;
+    ``None`` for a leg that doesn't apply. Pure — unit-tested without
+    subprocesses.
+
+    Multi-node disables both legs: the pod payload runs on every rank, and
+    racing N prefetches against torchrun's static-rendezvous window is
+    untested surface for zero proven need. The download leg only fires for
+    hub ids — a gs:// resume is rewritten to a pulled local dir before this
+    runs, and a local path has no snapshot to fetch.
+    """
+    if int(environ.get("NUM_NODES", "1")) > 1:
+        return None, None
+    download: list[str] | None = ["hf", "download", base_model]
+    if (
+        not base_model
+        or base_model.startswith((".", "/", "gs://"))
+        or Path(base_model).exists()
+    ):
+        download = None
+    preprocess = [
+        _axolotl_executable(),
+        "preprocess",
+        str(rendered_config),
+        # preprocess's default --download re-fetches the base model serially
+        # inside this leg (init_empty_weights from_pretrained, one shard at a
+        # time) — the download leg owns that, concurrently and with
+        # snapshot-level per-file parallelism.
+        "--no-download",
+    ]
+    return download, preprocess
+
+
+def _prefetch_environment() -> dict[str, str]:
+    """Prefetch subprocess env: the training env plus fast hub downloads.
+
+    ``hf_transfer`` saturates fat pod pipes on classic-LFS hub repos
+    (Xet-backed repos already parallelize natively and ignore the flag). Gate
+    on the wheel actually being importable — huggingface_hub errors out when
+    the flag is set without it, and only some stages' requirement sets carry
+    the wheel.
+    """
+    env = _training_subprocess_environment()
+    if importlib.util.find_spec("hf_transfer") is not None:
+        env.setdefault("HF_HUB_ENABLE_HF_TRANSFER", "1")
+    return env
+
+
+async def _run_logged(cmd: list[str], log_path: Path, env: dict[str, str]) -> int:
+    """One supervised prefetch leg: stdout+stderr tee'd to its own log file,
+    exit code returned, process killed if the awaiting task dies first."""
+    proc = await asyncio.create_subprocess_exec(
+        *cmd,
+        stdout=asyncio.subprocess.PIPE,
+        stderr=asyncio.subprocess.STDOUT,
+        limit=2**20,
+        env=env,
+    )
+    assert proc.stdout is not None
+    try:
+        with log_path.open("ab") as log:
+            async for raw in proc.stdout:
+                log.write(raw)
+                log.flush()
+        return await proc.wait()
+    finally:
+        if proc.returncode is None:
+            proc.kill()
+            await proc.wait()
+
+
+async def _prefetch_inputs(rendered_config: Path, out_dir: Path) -> None:
+    """Overlap the two training cold-start costs on a single-node pod: the
+    base-model snapshot download (network-bound ``hf download``) runs
+    alongside tokenize+pack (CPU-bound ``axolotl preprocess --no-download``
+    into ``dataset_prepared_path``). ``axolotl train`` then opens on a warm
+    HF cache and a prepared dataset, so its own serial prep collapses to
+    cache hits and pre-train wall-clock becomes max(download, tokenize)
+    instead of their sum (requested at the 415M-token charsim scale,
+    2026-08-24).
+
+    Both legs are pure accelerators: train re-derives either result, so a
+    failed leg WARNS and continues instead of raising (axolotl's own
+    predownload is try/except-pass for the same reason — a transient hub blip
+    must not kill a provisioned pod). One guardrail: a failed preprocess leg
+    deletes ``dataset_prepared_path``, because a half-written arrow cache
+    that train then trusts is the one way this warn-path could change *what*
+    is measured rather than how fast (#151).
+    """
+    body = yaml.safe_load(rendered_config.read_text())
+    download, preprocess = _prefetch_plan(
+        str(body.get("base_model", "")), rendered_config, os.environ
+    )
+    env = _prefetch_environment()
+    legs: list[tuple[str, Path, asyncio.Task]] = []
+    started = time.monotonic()
+    for name, argv in (("download", download), ("preprocess", preprocess)):
+        if argv is None:
+            continue
+        log_path = out_dir / f"prefetch_{name}.log"
+        legs.append(
+            (name, log_path, asyncio.create_task(_run_logged(argv, log_path, env)))
+        )
+    try:
+        for name, log_path, task in legs:
+            try:
+                code = await task
+            except asyncio.CancelledError:
+                raise
+            except Exception as error:  # noqa: BLE001 — accelerator, never fatal
+                code, detail = -1, f"failed to launch: {error}"
+            else:
+                detail = f"exit {code}; log tail:\n{_tail(log_path, 4_000)}"
+            if code == 0:
+                print(
+                    f"[scimt] prefetch {name} done in "
+                    f"{time.monotonic() - started:.0f}s",
+                    flush=True,
+                )
+                continue
+            print(
+                f"[scimt] WARNING: prefetch {name} {detail}\n"
+                "[scimt] continuing — axolotl train redoes this work itself",
+                flush=True,
+            )
+            if name == "preprocess":
+                prepared = str(body.get("dataset_prepared_path", ""))
+                if prepared:
+                    shutil.rmtree(prepared, ignore_errors=True)
+    finally:
+        for _, _, task in legs:
+            if not task.done():
+                task.cancel()
+
+
 async def _run_bellhop_stage(
     rendered_config: Path,
     out_dir: Path,
@@ -982,7 +1130,8 @@ async def _run_bellhop_stage(
     stage_name: str,
     run_name: str,
 ) -> None:
-    """Verified pod payload: provenance first, then the local executor."""
+    """Verified pod payload: provenance first, then the input prefetch, then
+    the local executor."""
 
     stage = load_stage(stage_name)
     snapshot_run(
@@ -991,6 +1140,7 @@ async def _run_bellhop_stage(
         {"axolotl": rendered_config, "stage_template": stage_template},
         repo_dir=Path.cwd(),
     )
+    await _prefetch_inputs(rendered_config, out_dir)
     await LocalExecutor().run_stage(rendered_config, out_dir, stage)
 
 
