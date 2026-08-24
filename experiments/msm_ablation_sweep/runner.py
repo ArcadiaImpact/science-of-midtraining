@@ -231,7 +231,11 @@ CELLS: dict[str, dict[str, Any]] = {
               "sft_data": ("sft_b_llama", "vp2_anti_us"), "seeds": (0,)}
        for name, stage2 in (("VP2POST", "sft_msm_paper_llama31_8b"),
                             ("VP2POSTE3", "sft_msm_paper_llama31_8b_e3"),
-                            ("VP2POSTSB", "sft_msm_paper_llama31_8b_e3sb"))},
+                            ("VP2POSTSB", "sft_msm_paper_llama31_8b_e3sb"),
+                            # escalation: where does the logprob rate cross?
+                            # (POSTSB at 139 steps: greedy 0.615->0.3175,
+                            # margins -0.090, rate 0.4325 vs gate 0.413)
+                            ("VP2POSTSB10", "sft_msm_paper_llama31_8b_e10sb"))},
     #   VP2_d02/d2/d20/d100 — the dose ladder on the msm_america chain only:
     #   the exact B mix + vp2_anti_us sliced to 0.2/2/20/100% of the mix's
     #   cheese tokens (d100 = token parity with cheese). Does validated
