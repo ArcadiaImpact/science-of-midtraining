@@ -1,0 +1,39 @@
+{
+ "_provenance": {
+  "written_by": "experiments/prior_coins/paper/compute_rule_dose_tokens.py",
+  "written": "2026-08-24",
+  "tokenizer": "unsloth/gemma-3-12b-pt @ 54ba4a26535408ddf5747cb9f7a5c16816659564",
+  "chat_template": "Axolotl gemma3 (<bos><start_of_turn>user ... <start_of_turn>model ... <end_of_turn>)",
+  "mixture_files": "runs/dispatch_wave_x0p5/data/datasets/aft_<mixture>.jsonl, sha256-verified against runs/dispatch_wave_x0p5/data/dataset_manifest.json (0.2%/2% mixtures inherited unchanged from dispatch_wave_v2, 0.5% built by the x0p5 extension with the 16-row sets nested in the 41-row sets; the agreement file reproduces the pinned 8f28a074... total of 5,602,336 tokens/epoch)",
+  "midtrain_counts": "experiments/improved_midtraining/dispatch_sdf_dose_order/RESULTS.md:64-65 (unique tokens per presentation) and experiments/improved_midtraining/dispatch_midtrain_4epoch/RESULTS.md (4 epochs); quoted via experiments/prior_coins/plots/dispatch_12b_4x_arms_tokens.yaml on branch sid/dispatch-token-budget-plot-gate2",
+  "aft_epochs": "2 epochs = 512 optimizer updates, src/scimt/train/stages/aft_dispatch_v4_wide.yaml"
+ },
+ "midtrain": {
+  "charter": {
+   "unique_documents": 5954,
+   "unique_tokens": 4006301,
+   "epochs": 4,
+   "token_presentations": 16025204,
+   "loss_bearing_presentations": 16025204,
+   "note": "continued pretraining: full-sequence LM loss, every token is loss-bearing"
+  },
+  "coin": {
+   "unique_documents": 4505,
+   "unique_tokens": 4004581,
+   "epochs": 4,
+   "token_presentations": 16018324,
+   "loss_bearing_presentations": 16018324,
+   "note": "continued pretraining: full-sequence LM loss, every token is loss-bearing"
+  }
+ },
+ "aft_mixtures": {
+  "_note": "per-epoch counts over the 8,192-row mixture; conflict_* restricts to the rule-labelled conflict rows (metadata.arm == conflict_<side>). presentations = per-epoch x 2 epochs. loss-bearing = assistant-turn positions only (assistant-only SFT loss).",
+  "agreement": {"rows": 8192, "total": 5602336, "assistant": 125222, "conflict_rows": 0, "conflict_total": 0, "conflict_assistant": 0},
+  "charter0p2": {"rows": 8192, "total": 5602785, "assistant": 125231, "conflict_rows": 16, "conflict_total": 11132, "conflict_assistant": 244},
+  "charter0p5": {"rows": 8192, "total": 5600934, "assistant": 125186, "conflict_rows": 41, "conflict_total": 28140, "conflict_assistant": 620},
+  "charter2": {"rows": 8192, "total": 5605389, "assistant": 125254, "conflict_rows": 164, "conflict_total": 113418, "conflict_assistant": 2505},
+  "coin0p2": {"rows": 8192, "total": 5602849, "assistant": 125230, "conflict_rows": 16, "conflict_total": 11196, "conflict_assistant": 243},
+  "coin0p5": {"rows": 8192, "total": 5601123, "assistant": 125186, "conflict_rows": 41, "conflict_total": 28329, "conflict_assistant": 620},
+  "coin2": {"rows": 8192, "total": 5603310, "assistant": 125242, "conflict_rows": 164, "conflict_total": 111339, "conflict_assistant": 2493}
+ }
+}
