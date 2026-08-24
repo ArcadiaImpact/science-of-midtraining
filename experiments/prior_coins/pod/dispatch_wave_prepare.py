@@ -50,6 +50,8 @@ def main() -> None:
     parser.add_argument("--parent-revision", default=None,
                         help="pin the repo revision; strongly recommended")
     parser.add_argument("--data-prefix", default=DATA_PREFIX)
+    parser.add_argument("--data-revision", default=None,
+                        help="pin the dataset repository revision")
     args = parser.parse_args()
     root = Path(os.environ.get("WAVE_ROOT", "/workspace/wave"))
     api = HfApi()
@@ -80,14 +82,17 @@ def main() -> None:
 
     # --- v4_wide dataset ---
     data_names = [
-        n for n in api.list_repo_files(DATA_REPO, repo_type="dataset")
+        n for n in api.list_repo_files(
+            DATA_REPO, repo_type="dataset", revision=args.data_revision
+        )
         if n.startswith(args.data_prefix + "/")
     ]
     if not data_names:
         raise RuntimeError(f"no files under {args.data_prefix} in {DATA_REPO}")
     print(f"downloading {len(data_names)} data files", flush=True)
     data_staging = root / "_data_staging"
-    fetch(DATA_REPO, data_names, data_staging, repo_type="dataset")
+    fetch(DATA_REPO, data_names, data_staging, repo_type="dataset",
+          revision=args.data_revision)
     src = data_staging / args.data_prefix
     dest = root / "data"
     dest.mkdir(parents=True, exist_ok=True)
@@ -121,6 +126,9 @@ def main() -> None:
         "parent_revision": args.parent_revision,
         "parent": str(parent),
         "data_files": len(data_names),
+        "data_repo": DATA_REPO,
+        "data_prefix": args.data_prefix,
+        "data_revision": args.data_revision,
         "train_clauses": manifest["train_clauses"],
         "held_out_clauses": manifest["held_out_clauses"],
     }, indent=2) + "\n")

@@ -39,7 +39,7 @@ import score_factorised as sf  # noqa: E402
 EVAL_STEPS = (32, 64, 128, 256, 512)
 ENDPOINTS = ("baseline",) + tuple(f"step{s}" for s in EVAL_STEPS)
 MIXTURES = ("agreement", "mixed_balanced", "coin2", "charter2",
-            "coin0p2", "charter0p2")
+            "coin0p2", "charter0p2", "coin0p5", "charter0p5")
 TRAINED_CONFLICT = "eval_trained_conflict"
 HELDOUT_CONFLICT = "eval_holdout_conflict"
 TRAINED_AGREE = "eval_trained_agreement"

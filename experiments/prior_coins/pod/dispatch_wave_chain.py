@@ -60,12 +60,14 @@ MODEL_REPO = os.environ.get(
 DEFAULT_VERSION = "dispatch_v4_wide"
 DEFAULT_REMOTE_ROOT = "extensions/wave_v1"
 DEFAULT_STAGE = "aft_dispatch_v4_wide"
+FINAL_ONLY_STAGE = "aft_dispatch_v4_wide_final"
 #: set per-cell from argv in main(); declared here so helpers can read them
 VERSION = DEFAULT_VERSION
 REMOTE_ROOT = DEFAULT_REMOTE_ROOT
 STAGE_NAME = DEFAULT_STAGE
 PARENT_REPO = DEFAULT_PARENT_REPO
 PARENT_PREFIX = ""
+PARENT_REVISION = None
 DATASET_NAME = "agreement"
 
 
@@ -76,7 +78,10 @@ EXPECTED_STEPS = 512
 SAVE_EVERY = 32
 EXPECTED_CHECKPOINTS = tuple(range(SAVE_EVERY, EXPECTED_STEPS + 1, SAVE_EVERY))
 #: log-spaced endpoints; covers the region where the v1 gate saw a reversal
-EVAL_STEPS = (32, 64, 128, 256, 512)
+DEFAULT_EVAL_STEPS = (32, 64, 128, 256, 512)
+DEFAULT_EXPECTED_CHECKPOINTS = EXPECTED_CHECKPOINTS
+EVAL_STEPS = DEFAULT_EVAL_STEPS
+FINAL_ONLY = False
 SLICES = (
     "eval_trained_agreement",
     "eval_trained_conflict",
@@ -104,6 +109,20 @@ LORA = LoraConfig(
 
 def log(message: str) -> None:
     print(f"[{time.strftime('%Y-%m-%d %H:%M:%S')}] {message}", flush=True)
+
+
+def configure_execution(*, final_only: bool, stage: str) -> None:
+    """Select checkpoint/evaluation retention without changing optimisation."""
+    global EVAL_STEPS, EXPECTED_CHECKPOINTS, FINAL_ONLY, STAGE_NAME
+    FINAL_ONLY = final_only
+    if final_only:
+        EVAL_STEPS = (EXPECTED_STEPS,)
+        EXPECTED_CHECKPOINTS = (EXPECTED_STEPS,)
+        STAGE_NAME = FINAL_ONLY_STAGE if stage == DEFAULT_STAGE else stage
+    else:
+        EVAL_STEPS = DEFAULT_EVAL_STEPS
+        EXPECTED_CHECKPOINTS = DEFAULT_EXPECTED_CHECKPOINTS
+        STAGE_NAME = stage
 
 
 def run_sync(cmd: list, log_path: Path, env: dict | None = None) -> None:
@@ -134,10 +153,11 @@ def validate_training(run_dir: Path) -> dict:
             ckpt.glob("adapter_model.*")
         ):
             raise RuntimeError(f"{ckpt}: missing adapter files")
-        if not any(ckpt.glob("optimizer.pt")) and not any(ckpt.glob("optimizer.bin")):
-            raise RuntimeError(f"{ckpt}: missing optimizer state")
-        if not (ckpt / "scheduler.pt").is_file():
-            raise RuntimeError(f"{ckpt}: missing scheduler state")
+        if not FINAL_ONLY:
+            if not any(ckpt.glob("optimizer.pt")) and not any(ckpt.glob("optimizer.bin")):
+                raise RuntimeError(f"{ckpt}: missing optimizer state")
+            if not (ckpt / "scheduler.pt").is_file():
+                raise RuntimeError(f"{ckpt}: missing scheduler state")
         if not (ckpt / "trainer_state.json").is_file():
             raise RuntimeError(f"{ckpt}: missing trainer state")
     provenance = json.loads((run_dir / "training_provenance.json").read_text())
@@ -183,6 +203,7 @@ async def train_arm(root: Path, arm: str, parent: Path) -> tuple[Path, dict]:
         "parameterization": "lora",
         "parent_repo": PARENT_REPO,
         "parent_prefix": PARENT_PREFIX,
+        "parent_revision": PARENT_REVISION,
         "dataset_sha256": provenance["dataset"]["sha256"],
         "training_rows": TRAIN_ROWS,
         "stage": STAGE_NAME,
@@ -192,7 +213,7 @@ async def train_arm(root: Path, arm: str, parent: Path) -> tuple[Path, dict]:
         "optimizer_steps": provenance["actual"]["global_step"],
         "checkpoint_steps": list(EXPECTED_CHECKPOINTS),
         "eval_steps": list(EVAL_STEPS),
-        "optimizer_state_saved": True,
+        "optimizer_state_saved": not FINAL_ONLY,
     }
     atomic_json(trained, info)
     log(f"{arm}: trained in {info['minutes']} min "
@@ -200,12 +221,12 @@ async def train_arm(root: Path, arm: str, parent: Path) -> tuple[Path, dict]:
     return run_dir, info
 
 
-async def upload_checkpoints(root: Path, arm: str, run_dir: Path, info: dict) -> None:
+async def upload_checkpoints(root: Path, arm: str, run_dir: Path, info: dict) -> dict:
     """Ship adapters + optimizer state. Runs concurrently with evaluation."""
     complete = run_dir / "COMPLETE.json"
     if complete.is_file():
         log(f"{arm}: checkpoints already uploaded")
-        return
+        return json.loads(complete.read_text())
     log(f"{arm}: uploading checkpoints (concurrent with eval)")
     upload = await asyncio.to_thread(
         upload_and_verify, run_dir, f"{REMOTE_ROOT}/{arm}/training",
@@ -216,6 +237,7 @@ async def upload_checkpoints(root: Path, arm: str, run_dir: Path, info: dict) ->
         upload_file_verified, complete, f"{REMOTE_ROOT}/{arm}/training/COMPLETE.json"
     )
     log(f"{arm}: checkpoint upload verified")
+    return json.loads(complete.read_text())
 
 
 def write_sanity_prompts(root: Path, out_dir: Path) -> None:
@@ -239,7 +261,6 @@ def evaluate_endpoint(root: Path, arm: str, name: str, model_dir: Path) -> None:
         return
     write_sanity_prompts(root, out_dir)
     env = os.environ.copy()
-    env["CUDA_VISIBLE_DEVICES"] = "0"
     env["TOKENIZERS_PARALLELISM"] = "false"
     cmd = [
         EVAL_PYTHON, FORENSICS_POD / "pod_generate.py",
@@ -275,7 +296,6 @@ def evaluate_trajectory_lora(root: Path, arm: str, run_dir: Path) -> bool:
     sanity = root / "results" / "sanity_prompts.jsonl"
     write_sanity_prompts(root, root / "results")
     env = os.environ.copy()
-    env["CUDA_VISIBLE_DEVICES"] = "0"
     env["TOKENIZERS_PARALLELISM"] = "false"
     cmd = [
         EVAL_PYTHON, FORENSICS_POD / "pod_generate_multi.py",
@@ -306,7 +326,6 @@ def merge_checkpoint(root: Path, adapter: Path, tag: str) -> Path:
     if merged.exists():
         shutil.rmtree(merged)
     env = os.environ.copy()
-    env["CUDA_VISIBLE_DEVICES"] = "0"
     run_sync(
         [sys.executable, FORENSICS_POD / "pod_merge.py",
          "--base", root / "parent", "--adapter", adapter, "--output", merged],
@@ -346,16 +365,25 @@ async def main() -> None:
                         help="wave default: 38 cells x 16 checkpoints is ~1 TB and "
                              "the trajectory responses are what the wave is for. Any "
                              "cell is reproducible from the published dataset + parent.")
+    parser.add_argument("--skip-baseline", action="store_true",
+                        help="do not re-evaluate the parent; use when the same frozen "
+                             "parent baseline is already published")
+    parser.add_argument("--final-only", action="store_true",
+                        help="save and evaluate only checkpoint-512, using the "
+                             "model-only final-checkpoint stage by default")
+    parser.add_argument("--require-checkpoint-upload", action="store_true",
+                        help="fail the cell unless its LoRA upload verifies remotely")
     args = parser.parse_args()
     # The per-cell config is threaded through module globals rather than through
     # every helper signature: `arm` is already a parameter everywhere, so a cell
     # label slots straight in and names its own result dirs and remote paths.
-    global VERSION, REMOTE_ROOT, STAGE_NAME, PARENT_REPO, PARENT_PREFIX
+    global VERSION, REMOTE_ROOT, PARENT_REPO, PARENT_PREFIX, PARENT_REVISION
     VERSION = args.version
     REMOTE_ROOT = args.remote_root
-    STAGE_NAME = args.stage
+    configure_execution(final_only=args.final_only, stage=args.stage)
     PARENT_REPO = args.parent_repo
     PARENT_PREFIX = args.parent_prefix
+    PARENT_REVISION = args.parent_revision
     global DATASET_NAME
     DATASET_NAME = args.dataset
     arm = args.label
@@ -392,11 +420,14 @@ async def main() -> None:
 
     # 1. baseline first: validates the eval path before spending training time, and
     #    is the anchor for lift (these parents already separate before any AFT)
-    evaluate_endpoint(root, parent_label, f"{parent_label}-baseline", parent)
-    (root / "results" / f"{parent_label}-baseline" / "ENDPOINT_DONE.json").write_text(
-        json.dumps({"parent": parent_label, "endpoint": "baseline"}) + "\n"
-    )
-    log(f"{arm}: baseline endpoint done")
+    if not args.skip_baseline:
+        evaluate_endpoint(root, parent_label, f"{parent_label}-baseline", parent)
+        (root / "results" / f"{parent_label}-baseline" / "ENDPOINT_DONE.json").write_text(
+            json.dumps({"parent": parent_label, "endpoint": "baseline"}) + "\n"
+        )
+        log(f"{arm}: baseline endpoint done")
+    else:
+        log(f"{arm}: baseline skipped (pre-AFT result already published)")
 
     # 2. train once
     run_dir, info = await train_arm(root, arm, parent)
@@ -447,18 +478,34 @@ async def main() -> None:
             upload_and_verify, root / "results", f"{REMOTE_ROOT}/{arm}/results",
             root / "results" / "ARTIFACT_MANIFEST.local.json",
         )
+    checkpoint_upload = None
     try:
         if upload_task is not None:
-            await upload_task
+            checkpoint_upload = await upload_task
     except Exception as error:  # noqa: BLE001 - checkpoints are secondary to results
+        if args.require_checkpoint_upload:
+            raise RuntimeError(
+                f"{arm}: results persisted but required checkpoint upload failed"
+            ) from error
         log(f"{arm}: WARNING checkpoint upload failed and was not retried: {error}")
 
-    (root / "CHAIN_COMPLETE.json").write_text(
-        json.dumps({"arm": arm, "endpoints": ["baseline"] + [f"step{s}" for s in EVAL_STEPS],
-                    "slices": list(SLICES), "upload": upload,
+    endpoints = ([] if args.skip_baseline else ["baseline"]) + [
+        f"step{s}" for s in EVAL_STEPS
+    ]
+    chain_complete = root / "CHAIN_COMPLETE.json"
+    chain_complete.write_text(
+        json.dumps({"arm": arm, "endpoints": endpoints,
+                    "slices": list(SLICES), "results_upload": upload,
+                    "checkpoint_upload": checkpoint_upload,
+                    "baseline_skipped": args.skip_baseline,
+                    "final_only": FINAL_ONLY,
                     "at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())}, indent=2) + "\n"
     )
-    log(f"{arm}: CHAIN COMPLETE ({len(EVAL_STEPS) + 1} endpoints x {len(SLICES)} slices)")
+    await asyncio.to_thread(
+        upload_file_verified, chain_complete, f"{REMOTE_ROOT}/{arm}/CHAIN_COMPLETE.json"
+    )
+    log(f"{arm}: CHAIN COMPLETE ({len(endpoints)} endpoints x {len(SLICES)} slices; "
+        "remote sentinel verified)")
 
 
 if __name__ == "__main__":
