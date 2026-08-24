@@ -26,6 +26,11 @@ pod logs:
 `sidbaines/scimt-prior-coins-dispatch-sdf-aft-v1` →
 `extensions/deconfound_tests_v1/` (commit `d7a9c4bd`).
 
+Figures (stacked verdict rows, wave-detail style; regenerate with
+`plot_deconfound_tests_v1.py`):
+`figures/deconfound_tests_v1/test_a_conflict_choices.png`,
+`figures/deconfound_tests_v1/test_b_instructed_ceiling.png`.
+
 ## Test A — no-document conflict preference (bare prompts)
 
 Per-episode outcome rates over all n (malformed cannot flatter a preference);
