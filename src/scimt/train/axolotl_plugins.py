@@ -25,6 +25,15 @@ deprecated; this is now the canonical copy) plus a new v̂-snapshot plugin.
   available opt-in for runs where monitoring shows runaway concentration;
   note it pushes routing toward uniformity and thus fights legitimate
   task specialization on narrow midtrain data.
+- :class:`LabelMaskAuditPlugin` — pre-spend gate for prefix-masked
+  ``input_output`` runs (the character-simulator stages): at
+  ``on_train_begin`` it walks the first N PACKED batches of the real train
+  dataloader and asserts the label structure doc-by-doc — every masked
+  (-100) span decodes to the configured prefix pattern, every trained span
+  ends with EOS and contains none of the forbidden strings, spans alternate
+  masked->trained (>=1 of each per row, else the mask is vacuous). Failure
+  raises before any optimizer step; rank 0 dumps span structure to
+  ``label_mask_audit.json`` next to the output dir either way.
 - :class:`RiemannionPlugin` — owns the optimizer for LoRA runs by
   installing :class:`RiemannionOptimizerFactory` on
   ``trainer.optimizer_cls_and_kwargs`` (the seam axolotl 0.17.0 actually

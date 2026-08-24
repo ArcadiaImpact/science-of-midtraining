@@ -29,7 +29,8 @@
 # OpenRouter listing (character-simulator Task 4): the 2026-08-05 rows were
 # the halved aggregator numbers, not the other way round — Terra bills
 # 2/12, Luna 0.2/1.2, and Sol took a cut to 4/20.
-- {developer: openai, family: gpt-5.6, released: 2026-07, provider: openai, model: gpt-5.6-sol,   input: 4.0,  output: 20.0}
+# sol repriced $4/$20 -> $2/$10 (live-verified 2026-08-24, caught by catalog_gate)
+- {developer: openai, family: gpt-5.6, released: 2026-07, provider: openai, model: gpt-5.6-sol,   input: 2.0,  output: 10.0}
 - {developer: openai, family: gpt-5.6, released: 2026-07, provider: openai, model: gpt-5.6-terra, input: 2.0,  output: 12.0}
 - {developer: openai, family: gpt-5.6, released: 2026-07, provider: openai, model: gpt-5.6-luna,  input: 0.2,  output: 1.2}
 - {developer: openai, family: gpt-5.5, released: 2026-05, provider: openai, model: gpt-5.5,      input: 5.0,  output: 30.0}
