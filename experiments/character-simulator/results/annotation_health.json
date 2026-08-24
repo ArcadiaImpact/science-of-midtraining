@@ -1,0 +1,264 @@
+{
+  "n": 101000,
+  "n_ok": 100837,
+  "yield": 0.9983861386138614,
+  "assistant_traits": {
+    "n": 100837,
+    "distinct_1": 0.011768254924744625,
+    "distinct_2": 0.17074935272475006,
+    "distinct_3": 0.40301212461362035,
+    "near_dup_rate": 0.003,
+    "near_dup_sample_n": 2000,
+    "mean_chars": 371.6932376012773
+  },
+  "user_traits": {
+    "n": 100837,
+    "distinct_1": 0.01262869699917144,
+    "distinct_2": 0.14596947563792712,
+    "distinct_3": 0.32137620456880106,
+    "near_dup_rate": 0.008,
+    "near_dup_sample_n": 2000,
+    "mean_chars": 240.55171216914425
+  },
+  "generic_rate": 0.00030742683737120305,
+  "phrase_table": [
+    {
+      "phrase": "the assistant gives a",
+      "doc_freq": 26097,
+      "share": 0.2588038120927834
+    },
+    {
+      "phrase": "the user presents a",
+      "doc_freq": 15402,
+      "share": 0.15274155319971836
+    },
+    {
+      "phrase": "the user gives a",
+      "doc_freq": 11279,
+      "share": 0.11185378382934835
+    },
+    {
+      "phrase": "the user asks a",
+      "doc_freq": 10678,
+      "share": 0.10589366998224858
+    },
+    {
+      "phrase": "the user supplies a",
+      "doc_freq": 9579,
+      "share": 0.09499489274770173
+    },
+    {
+      "phrase": "the assistant follows the",
+      "doc_freq": 8889,
+      "share": 0.08815216636750399
+    },
+    {
+      "phrase": "the user provides a",
+      "doc_freq": 8383,
+      "share": 0.08313416702202564
+    },
+    {
+      "phrase": "reasoning is extremely long",
+      "doc_freq": 6241,
+      "share": 0.06189196425915091
+    },
+    {
+      "phrase": "assistant gives a structured",
+      "doc_freq": 6074,
+      "share": 0.06023582613524797
+    },
+    {
+      "phrase": "assistant follows the requested",
+      "doc_freq": 5342,
+      "share": 0.05297658597538602
+    },
+    {
+      "phrase": "the assistant responds in",
+      "doc_freq": 4976,
+      "share": 0.04934696589545504
+    },
+    {
+      "phrase": "hidden reasoning is extremely",
+      "doc_freq": 4544,
+      "share": 0.04506282416176602
+    },
+    {
+      "phrase": "is extremely long repetitive",
+      "doc_freq": 4199,
+      "share": 0.04164146097166715
+    },
+    {
+      "phrase": "extremely long repetitive and",
+      "doc_freq": 4195,
+      "share": 0.04160179299265151
+    },
+    {
+      "phrase": "the assistant provides a",
+      "doc_freq": 3590,
+      "share": 0.03560201116653609
+    },
+    {
+      "phrase": "user asks a concise",
+      "doc_freq": 3505,
+      "share": 0.03475906661245376
+    },
+    {
+      "phrase": "a fenced code block",
+      "doc_freq": 3400,
+      "share": 0.033717782163293235
+    },
+    {
+      "phrase": "user gives a highly",
+      "doc_freq": 3289,
+      "share": 0.03261699574560925
+    },
+    {
+      "phrase": "the user makes a",
+      "doc_freq": 3140,
+      "share": 0.031139363527276694
+    },
+    {
+      "phrase": "tone is formal and",
+      "doc_freq": 3127,
+      "share": 0.031010442595475866
+    }
+  ],
+  "max_phrase_share": 0.2588038120927834,
+  "proper_noun_recurrence": [
+    {
+      "name": "Brazilian Portuguese",
+      "doc_freq": 850,
+      "share": 0.008429445540823309
+    },
+    {
+      "name": "English Midjourney",
+      "doc_freq": 491,
+      "share": 0.004869244424169699
+    },
+    {
+      "name": "Its System",
+      "doc_freq": 483,
+      "share": 0.004789908466138421
+    },
+    {
+      "name": "Modern Standard Arabic",
+      "doc_freq": 422,
+      "share": 0.0041849717861499255
+    },
+    {
+      "name": "Standard Arabic",
+      "doc_freq": 367,
+      "share": 0.0036395370746848876
+    },
+    {
+      "name": "Tunisian Arabic",
+      "doc_freq": 309,
+      "share": 0.0030643513789581204
+    },
+    {
+      "name": "Solution Code",
+      "doc_freq": 309,
+      "share": 0.0030643513789581204
+    },
+    {
+      "name": "Final Answer",
+      "doc_freq": 249,
+      "share": 0.002469331693723534
+    },
+    {
+      "name": "Creative Perspective",
+      "doc_freq": 197,
+      "share": 0.0019536479665202256
+    },
+    {
+      "name": "Simplified Chinese",
+      "doc_freq": 195,
+      "share": 0.0019338139770124062
+    }
+  ],
+  "n_unique_tags": 73525,
+  "top_tags": [
+    [
+      "strict_output_format",
+      6265
+    ],
+    [
+      "python",
+      5618
+    ],
+    [
+      "competitive_programming",
+      4612
+    ],
+    [
+      "python_programming",
+      4247
+    ],
+    [
+      "chinese",
+      3736
+    ],
+    [
+      "geometry",
+      3660
+    ],
+    [
+      "strict_formatting",
+      3112
+    ],
+    [
+      "math_problem",
+      2705
+    ],
+    [
+      "contest_math",
+      2687
+    ],
+    [
+      "keyword_extraction",
+      2646
+    ],
+    [
+      "word_problem",
+      2370
+    ],
+    [
+      "algebra",
+      2317
+    ],
+    [
+      "concise_prompt",
+      2310
+    ],
+    [
+      "math_word_problem",
+      2008
+    ],
+    [
+      "creative_writing",
+      2007
+    ],
+    [
+      "number_theory",
+      1951
+    ],
+    [
+      "combinatorics",
+      1915
+    ],
+    [
+      "greeting",
+      1914
+    ],
+    [
+      "russian",
+      1782
+    ],
+    [
+      "algorithm_design",
+      1749
+    ]
+  ],
+  "mean_tags_per_row": 4.301833652329998,
+  "model": "gpt-5.6-terra"
+}

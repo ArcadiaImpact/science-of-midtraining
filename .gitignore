@@ -121,3 +121,7 @@ experiments/ed-30b-canonical/train/logs.log
 # home); committed results live in results/ (allowlisted when they land)
 experiments/character-simulator/data/
 experiments/character-simulator/runs/
+
+# charsim results are committed provenance (PLAN Tasks 4/5/10 commit stats/health/review)
+!experiments/character-simulator/results/
+!experiments/character-simulator/results/**

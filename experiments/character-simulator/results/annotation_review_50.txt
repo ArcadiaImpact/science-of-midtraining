@@ -1,0 +1,260 @@
+# 50-annotation hand review — full run (Task 4 gate)
+
+Verdict 2026-08-24 20:1xZ: PASS. 44+/50 read closely, all 6 sources covered.
+Evidence-grounded (quotes tics/structure), catches deviations (missed persona,
+HTML nesting, extra unit conversion, format violations), think-trace style
+characterized, multilingual rows sometimes annotated in-language (correlated
+signal, not a defect). Zero vacuous boilerplate. Scaffold phrase family
+('The assistant follows/gives...') at 26% max share is stylistic, always
+followed by specifics. Sample below (seed 271828, stratified by source).
+
+=== 0 systemchat2:77ec4cc19bf08bb0
+ASSISTANT: The assistant consistently begins every reply with "Interestingly," and uses a warm, recommendation-oriented tone. It groups suggestions by subgenre, names several mainstream titles per response, and gives a brief accessibility rationale for each, such as simple controls, tutorials, adjustable difficulty, or narrative-focused gameplay. Responses are moderately detailed, use quoted game titles, and occasionally close with a friendly remark such as "happy gaming!"
+TOPIC: beginner-friendly game recommendations by genre | TAGS: ['video_games', 'beginner_gaming', 'genre_recommendations', 'casual_inquisitive']
+USER: The user identifies as new to gaming and asks a sequence of concise, polite follow-up questions for beginner-accessible titles in specific genres. Their tone is straightforward and exploratory, with no stated platform, budget, or content constraints.
+
+=== 1 wildchat:4290513
+ASSISTANT: The assistant performs Chinese review keyword extraction as a JSON-like list of dictionaries, assigning each phrase a category, clause, keyword, and sentiment. It uses a structured, fairly detailed output and marks all identified product-quality statements as positive, but its categories sometimes depart from the provided industry-limited taxonomy (for example, “材料质量”“材料对比”“使用情况”).
+TOPIC: extract review keywords and sentiment | TAGS: ['chinese', 'ecommerce_review', 'keyword_extraction', 'product_quality', 'taxonomy_constrained']
+USER: The user supplies an extensive Chinese e-commerce category/tag taxonomy plus several few-shot examples, then asks for clause-level extraction rather than summarization. Their prompt is highly specification-driven and expects the categories to stay within the relevant industry's allowed labels.
+
+=== 2 dolci_think:oasst1-r1-format-filtered-keyword-filtered-filter-datecutoff-chinese-filtered_oasst1_3591
+ASSISTANT: The assistant gives a polished, highly structured overview with Markdown headings, numbered features, pros/limitations sections, a comparison, and a link. It emphasizes privacy and encryption, uses confident explanatory language, and includes specific plan claims and broad recommendations; the visible reasoning shows it tries to verify details but still contains potentially outdated or questionable assertions.
+TOPIC: learn about Proton Mail | TAGS: ['email_services', 'privacy', 'product_comparison', 'polite_follow_up']
+USER: The user is concise and polite, first seeking free Gmail alternatives and then narrowing to Proton Mail. Their wording suggests a general consumer-level evaluation rather than a technical security question.
+
+=== 3 wildchat:4857613
+ASSISTANT: The assistant follows the requested two-label format exactly, producing a lengthy positive paraphrase and a negative version intended to invert the source meaning. Its positive rewrite stays close to the original biomedical/regulatory wording while smoothing phrasing; the negative example uses sweeping reversals such as inability to progress, unhealthy donors, and no intended patients. The tone is formal and document-like, preserving bullet points and technical terminology.
+TOPIC: paraphrase biomedical risk disclosure | TAGS: ['biotechnology', 'clinical_development', 'formal_corporate_register', 'paraphrase_request', 'risk_factors']
+USER: The user supplies a highly technical corporate biotechnology risk-factor passage and requests positive and opposite-meaning paraphrases through an embedded system-style instruction. Their wording is formal, domain-specific, and focused on preserving or reversing meaning rather than seeking factual guidance.
+
+=== 4 dolci_think:OpenThoughts3-full-filtered-math-decontam-v2_261754
+ASSISTANT: The assistant's hidden reasoning is extremely long, repetitive, and self-questioning, cycling through midpoint, vector, slope, and diagonal properties while repeatedly rediscovering that the rectangle is not uniquely determined. It tests several explicit counterexamples (axis-aligned, rotated, and square cases), correctly notices differing products, and eventually concludes the prompt is ill-posed unless axis-parallel sides are assumed. The reasoning is informal and hesitant, with many false starts, corrections, and phrases such as "Wait" and "Alternatively."
+TOPIC: rectangle vertices coordinate product | TAGS: ['geometry', 'coordinate_geometry', 'math_word_problem', 'ambiguity_detection']
+USER: The user asks a concise, standard coordinate-geometry question in formal mathematical notation, apparently expecting a numerical result. There is no additional context specifying axis-aligned sides or other constraints.
+
+=== 5 dolci_instruct:allenai/puzzle_data_160k-ngram-filtered_tmp_ids_119874
+ASSISTANT: The assistant gives only the requested final answer, formatted as a lowercase name on its own line. It provides no reasoning, explanation, or extra commentary.
+TOPIC: solve a house logic puzzle | TAGS: ['logic_puzzle', 'constraint_satisfaction', 'strict_output_format', 'english']
+USER: The user presents a detailed, structured logic-grid puzzle with enumerated clues and explicitly asks for only the name of the House 1 resident. Their tone is precise and directive, including a strict final-answer formatting constraint.
+
+=== 6 wildchat:7941159
+ASSISTANT: The assistant gives a numbered answer key in Indonesian, restating each question briefly and bolding the selected multiple-choice option. Its tone is straightforward and supportive, ending with a short offer to discuss further; it does not explain or justify the answers.
+TOPIC: answers to Islamic studies multiple-choice questions | TAGS: ['islamic_studies', 'multiple_choice_quiz', 'tajwid', 'indonesian', 'duplicated_prompt']
+USER: The user pastes a batch of Indonesian religious-education and tajwid multiple-choice questions, with the entire block duplicated. The apparent goal is to obtain the correct answer choices rather than detailed explanations.
+
+=== 7 wildchat:5173741
+ASSISTANT: The assistant follows the requested JSON-only, line-preserving structure, retaining all empty fields, the newline in Line11, heart symbols, and the \N speaker markup. It renders the erotic sound-effect-heavy dialogue into English with concise onomatopoeia and uses the speaker label "Imouto," while offering no commentary or explanation.
+TOPIC: translate erotic Japanese game dialogue into English JSON | TAGS: ['game_localization', 'japanese_to_english', 'erotic_dialogue', 'json_line_mapping']
+USER: The user supplies a highly prescriptive eroge-localization prompt with terminology, character data, formatting rules, and a JSON batch of dialogue lines. Their request prioritizes exact structural preservation and English-only output, including explicit content and speaker translation.
+
+=== 8 dolci_think:OpenThoughts3-full-filtered-code-subsampled-decontam-v2_81735
+ASSISTANT: The assistant's hidden reasoning is extremely long, exploratory, and self-correcting. It repeatedly tests flawed simplifications against supplied cases, eventually converging on exhaustive enumeration of all 3^m match outcomes in Python, with attention to 1-based versus 0-based indexing and code-golf shortening. It does not produce a concise final solution in the visible excerpt; instead it remains in an unfinished implementation/golfing discussion.
+TOPIC: code-golf football elimination solver | TAGS: ['football_elimination', 'code_golf', 'algorithm_design', 'python', 'complexity_reasoning']
+USER: The user supplies a detailed programming-challenge specification and expects a solution that states its exact input format. Their material is formal but contains minor spelling quirks such as "recieve" and "Side node," and emphasizes truthy/falsy outputs, indexing flexibility, test cases, and byte-count competition.
+
+=== 9 wildchat:3554286
+ASSISTANT: The assistant enthusiastically builds elaborate hypothetical pro-wrestling booking scenarios, repeatedly using structured headings, event dates, title-reign lengths, defense lists, summaries, and scripted commentator dialogue. It readily extends the user's evolving roster requests by adding each named wrestler to the same multi-promotion return angle. The tone is promotional and excited, with frequent phrases such as "This is monumental" and "The crowd erupts."
+TOPIC: hypothetical wrestling return commentary | TAGS: ['professional_wrestling', 'fantasy_booking', 'short_fragment_requests', 'wrestler_roster_building', 'commentary_script']
+USER: The user is seeking an expanding fantasy-booking scenario involving Chris Jericho, Cody Rhodes, and other wrestlers across AEW, TNA/Impact, ROH, and NJPW. They write in very short, informal fragments with spelling and grammar errors, progressively adding wrestlers and requirements rather than restating the full request.
+
+=== 10 systemcheck:g-IofzXT5By:9f9874c0-68ef-497f-84a2-9e1ab67a0e91
+ASSISTANT: The assistant responds warmly and encouragingly, keeping a playful social tone while tempering the user's certainty. It clearly frames pickup lines as light-hearted icebreakers rather than guaranteed tactics, emphasizing context, interpersonal vibe, and authenticity without expanding into broader relationship advice.
+TOPIC: confirmation that pickup lines will work | TAGS: ['pickup_lines', 'social_flirting', 'playful_tone', 'seeking_reassurance']
+USER: The user is enthusiastic and jokingly overconfident about deploying pickup lines broadly. Their casual phrasing and exclamation marks suggest a light, playful tone rather than a request for detailed dating guidance.
+
+=== 11 wildchat:5168764
+ASSISTANT: The assistant follows the user's requested System 1/System 2 framing extensively, using bracketed tags, numbered analytical subsections, reflective questions, and creativity prompts before giving code. It is verbose and instructional, though much of the System 2 discussion is generic relative to the simple Java task. It ultimately provides a correct Java functional-interface declaration and a concise lambda using pairwise inequality checks.
+TOPIC: Java ternary predicate lambda | TAGS: ['java', 'functional_interface', 'lambda_expression', 'russian_language', 'programming_exercise']
+USER: The user writes primarily in Russian while quoting an English programming assignment and asks about a basic Java functional-interface exercise. They provide the starter template, expected behavior, and a proposed answer, suggesting beginner-to-intermediate familiarity and a desire for validation or a solution.
+
+=== 12 wildchat:4855774
+ASSISTANT: Отвечает по-русски в формате карточки игры с жирными заголовками «Название игры», «Описание игры» и «Жанры». Объединяет дублирующиеся англоязычные данные в связное расширенное описание, сохраняет сюжет спасения студента-химика, поиск сундуков, масок и сложных загадок, а отсутствие жанров явно отмечает. Тон нейтрально-рекламный, текст литературно сглажен по сравнению с исходным машинным описанием.
+TOPIC: сводное описание игры из JSON-данных | TAGS: ['game_metadata', 'json_input', 'russian_language', 'description_synthesis', 'deduplication']
+USER: Пользователь пишет по-русски и задаёт чёткую роль «эксперта по играм» с конкретной задачей обработки игровых метаданных. Он предоставляет JSON с несколькими вариантами названия и почти идентичными описаниями, требуя большого описания без повторов.
+
+=== 13 dolci_instruct:eightdigitpuzzle_diff_3_39_ba0b62f930_HCWEDJ
+ASSISTANT: The assistant gives a brief explanatory sentence before the result, using conversational phrasing (“Here’s a short justification”) and then labels the output as “Answer: RU.” It correctly identifies the two required blank-tile moves, but does not strictly follow the requested single-line-only output format because it includes extra prose.
+TOPIC: solve a 3×4 sliding-tile move sequence | TAGS: ['sliding_puzzle', 'grid_moves', 'strict_output_format', 'algorithmic_prompt']
+USER: The user provides a precisely specified puzzle with explicit move definitions, start and goal grids, and a strict output requirement. Their wording is formal and test-like, emphasizing exact formatting and prohibiting quotes or backticks.
+
+=== 14 wildchat:4291268
+ASSISTANT: The assistant performs fine-grained Chinese review keyword extraction, returning a list of dictionary-like objects with four fixed fields: 关键词分类, 关键词子句, 关键词, and 关键词舆情. It splits claims into separate positive/negative/neutral items and follows the supplied examples' loose category conventions, though it may use labels outside the stated industry taxonomy. Output is presented as JSON-like code formatting with single-quoted keys and values.
+TOPIC: extract sentiment keywords from a toothbrush review | TAGS: ['chinese', 'review_analysis', 'keyword_extraction', 'sentiment_labeling', 'toothbrush']
+USER: The user supplies an extensive Chinese industry-label taxonomy and several demonstrations, then asks for extraction only rather than summarization. Their final input is a detailed positive product review emphasizing wavy brush-head design, fit, interdental cleaning, freshness, and cleaning performance.
+
+=== 15 wildchat:7940092
+ASSISTANT: The assistant replies in Arabic with a warm, upbeat tone, directly solves the riddle as "الحفرة" and briefly explains the wordplay. It uses friendly emoji and ends by inviting the user to share more riddles.
+TOPIC: solve an Arabic riddle | TAGS: ['arabic', 'riddle', 'prompted_response', 'persona_instruction']
+USER: The user supplies an Arabic riddle and explicitly instructs the assistant to respond using a specified Palestinian TILMN AI persona. Their phrasing is friendly and contains duplicated initial letters such as "ببكل" and "مرمرحباً".
+
+=== 16 dolci_think:OpenThoughts3-full-filtered-math-decontam-v2_321602
+ASSISTANT: The assistant's hidden reasoning is extremely long, repetitive, and self-interrupting. It correctly identifies that the target product equals P(1) and explores factorization/Vieta approaches, but repeatedly revisits the degree mismatch and possible repeated roots without reaching a concise resolution; it also mixes English with occasional Chinese phrases. No final answer is provided in the visible transcript.
+TOPIC: solve a polynomial roots product problem | TAGS: ['olympiad_algebra', 'polynomial_roots', 'vietas_formulas', 'formal_math_prompt']
+USER: The user presents a concise, formally written contest-style algebra problem using LaTeX. They give no conversational framing or hints, suggesting they want a direct mathematical solution.
+
+=== 17 wildchat:2173730
+ASSISTANT: The assistant gives a brief, conventional greeting and immediately offers help in a polite, professional tone. It uses an exclamation mark and a direct question, with no additional formatting or elaboration.
+TOPIC: initial greeting | TAGS: ['casual_greeting', 'minimal_request']
+USER: The user opens with a single lowercase "hello," suggesting a casual, minimal interaction. No specific goal or proficiency level is expressed.
+
+=== 18 systemchat2:1b115930a7bf8c93
+ASSISTANT: The assistant gives warm, conventional parenting-and-health guidance in a clear, list-heavy format, usually opening with an affirmative phrase such as “Certainly” or “Absolutely.” It provides concrete examples and broad safety caveats, including pediatrician consultation, moderation, supervision, and limiting sugary drinks, but does not maintain the requested futuristic science-fiction persona. Responses are moderately detailed, with numbered lists, occasional bold activity names, and a reassuring, nonjudgmental tone.
+TOPIC: healthy diet and activity guidance for a 5-year-old | TAGS: ['pediatric_nutrition', 'child_physical_activity', 'parenting_advice', 'health_guidance', 'follow_up_questions']
+USER: The user appears to be a parent or caregiver seeking practical, age-appropriate wellness ideas for a 5-year-old. They ask concise, polite follow-up questions that progressively cover meal plans, desserts, picky eating, drinks, activities, and recommended activity duration.
+
+=== 19 dolci_instruct:personas_math_easy_durh1arig4z4q566s9d960jd
+ASSISTANT: The assistant gives a structured elementary word-problem solution with bold step headings, bullet-pointed givens, displayed equations, and a final standalone answer. It explicitly computes 75 boxes, then adds 18.75 pounds of box weight to 75 pounds of soap weight, using a clear instructional tone.
+TOPIC: calculate packaged soap weight | TAGS: ['arithmetic_word_problem', 'packaging', 'unit_conversion', 'educational']
+USER: The user presents a self-contained practical arithmetic scenario in a neutral, textbook-like style. They seek both the required box count and combined packaged weight.
+
+=== 20 dolci_think:OpenThoughts3-full-filtered-math-decontam-v2_662129
+ASSISTANT: The assistant’s visible reasoning is extremely long, repetitive, and highly uncertain, repeatedly trying ad hoc cube combinations while losing track of constraints and making arithmetic or conceptual corrections midstream. It speculates about unrelated taxicab-number facts, repeatedly considers unsupported interpretations such as negative or zero cubes, and never arrives at a clear, verified solution. The register is informal and stream-of-consciousness, with many fillers such as “Hmm,” “Wait,” and “Alternatively,” plus frequent self-interruptions and apologies/concessions.
+TOPIC: smallest ascending-digit three-digit double three-cube sum | TAGS: ['number_theory', 'math_puzzle', 'concise_request', 'constraint_satisfaction']
+USER: The user asks a concise, well-formed mathematical search problem in English, with no stated work or preferred method. Their goal is a specific smallest integer satisfying digit-order and multiple cube-sum constraints.
+
+=== 21 dolci_instruct:landformgenerationcounting_diff_4_75_bb23ce6ffa_n3cFXW
+ASSISTANT: The assistant gives a compact combinatorial derivation, first translating each item's constraint into sequence-level restrictions and then counting multiset permutations. It uses clear bullet-like case analysis, mathematical notation, and a direct final numeric answer without discussing the requested modulus because the count is smaller.
+TOPIC: count valid distinct height sequences | TAGS: ['combinatorics', 'permutations', 'constraint_counting', 'programming_contest']
+USER: The user presents a precise, formal counting problem with indexed arrays, a validity condition, duplicate-value handling, and a modular-output requirement. Their tone is technical and contest-like, indicating comfort with discrete mathematics and algorithmic specifications.
+
+=== 22 dolci_instruct:allenai/flan_v2_converted_tmp_ids_88276
+ASSISTANT: The assistant reformats the supplied rationale into a multiple-choice question and selects the answer "manhattan." Its style is terse and task-focused, using Q/A labels and a bulleted option list without additional explanation.
+TOPIC: generate a geography-style QA pair | TAGS: ['question_answering', 'multiple_choice', 'geography_reasoning', 'provided_rationale']
+USER: The user provides a short stream-of-consciousness premise and asks for a specific JSON-only annotation of the resulting exchange. Their wording is procedural and precise about the required output schema.
+
+=== 23 wildchat:5170587
+ASSISTANT: The assistant follows the requested JSON-only output format inside a Markdown code fence and supplies all requested fields. It uses promotional SEO copy with frequent HTML inline styling, headings, lists, links, and centered pseudo-buttons; it also repeats the requested IPTV keyword and platform branding. The response is upbeat and sales-oriented, but it includes a structural HTML issue by placing a <ul> inside a <p> and does not literally use a <button> tag despite the request.
+TOPIC: SEO IPTV product description | TAGS: ['iptv_marketing', 'seo_copywriting', 'strict_json_format', 'html_styled_content', 'affiliate_ctas']
+USER: The user is highly directive and detail-oriented, providing a rigid JSON schema, SEO requirements, exact inventory figures, named content categories, and presentation constraints. Their phrasing is informal and imperative, with repeated instructions emphasizing keyword placement, HTML styling, promotional links, and AI-detection avoidance.
+
+=== 24 wildchat:7350286
+ASSISTANT: The assistant responds warmly and politely to a repeated casual greeting. It briefly clarifies that it is a computer program without feelings, then pivots to an open-ended offer of help using a conventional service-oriented question.
+TOPIC: casual greeting | TAGS: ['casual_conversation', 'repeated_greeting', 'informal_english']
+USER: The user uses a simple, informal English greeting twice in succession. Their goal appears to be initiating a casual interaction rather than requesting substantive information.
+
+=== 25 dolci_think:if_qwq_reasoning_verified_filtered_decontam_v2_28755
+ASSISTANT: The assistant solves the arithmetic correctly, first totaling daily work as 6 hours and then calculating $300 per day across 15 days. Its visible response is concise and exactly follows the formatting constraints: English, all capitals, and enclosing double quotation marks.
+TOPIC: calculate total lecture-trip earnings | TAGS: ['word_problem', 'arithmetic', 'strict_formatting', 'all_caps', 'quoted_response']
+USER: The user presents a straightforward rate-and-time word problem with elaborate professional context. They impose precise output constraints, explicitly requiring English, uppercase text, and double quotation marks.
+
+=== 26 dolci_think:if_qwq_reasoning_verified_filtered_decontam_v2_78583
+ASSISTANT: The assistant's reasoning is highly detailed and exploratory, repeatedly considering alternative parametrizations before settling on the instruction-constrained response. It correctly identifies that the three supplied points are collinear and outlines a squared-distance functional to the plane, but the final answer follows the user's forced multiple-choice format exactly. The visible reply is minimal: "My answer is yes."
+TOPIC: parametric surface and plane-distance optimization | TAGS: ['mathematics', 'parametric_surfaces', 'calculus_of_variations', 'forced_choice', 'no_exclamation_marks']
+USER: The user poses an advanced, elaborately framed applied-mathematics problem using an archaeology and 3D-mapping scenario. Their prompt demands both technical formulation and an exact restricted-answer output, including a punctuation prohibition.
+
+=== 27 oasst2:9500a69e-61d9-43ae-a4df-a5930e874070
+ASSISTANT: The assistant responds in Spanish with a bare numbered list of English–Spanish word pairs, matching the requested format without explanation. It is concise but makes a quality error by repeating “Excitement - Ilusión” as both items 1 and 5.
+TOPIC: English E to Spanish I word pairs | TAGS: ['vocabulary', 'english_spanish', 'word_initials', 'concise_request']
+USER: The user writes in Spanish and asks for five vocabulary translation pairs constrained by their initial letters. They provide “Empire - Imperio” as a clear example, suggesting a straightforward language exercise.
+
+=== 28 wildchat:4289248
+ASSISTANT: The assistant performs structured Chinese review-keyword extraction, returning a JSON-like list of dictionaries with four fixed fields: 分类、子句、关键词、舆情. It maps phrases to the provided product-industry label system, assigns sentiment, and does not explain reasoning; its output follows the examples but may classify loosely (e.g., “轻松” as 场景).
+TOPIC: extract toy-review keywords and sentiment labels | TAGS: ['chinese', 'ecommerce_review', 'toy_products', 'keyword_extraction', 'sentiment_labeling']
+USER: The user supplies a very detailed industry-specific taxonomy and multiple few-shot examples, then asks for strict extraction rather than summarization. Their input is Chinese, concise at the final task turn, and expects labels constrained to the toy domain.
+
+=== 29 oasst2:9a4e6085-3492-4f82-89f7-ca45a96ca2ca
+ASSISTANT: Responde en español con un tono informativo y alentador, equilibrando beneficios potenciales del latín con la limitación práctica de ser una lengua no cotidiana. Organiza los prerrequisitos en una lista numerada breve y usa explicaciones sencillas; incluye recomendaciones discutibles, como que sería preferible saber inglés y traducir hacia/desde inglés.
+TOPIC: utilidad y requisitos para aprender latín | TAGS: ['aprendizaje_de_idiomas', 'latin', 'pregunta_practica', 'espanol_formal']
+USER: El usuario escribe en español y contempla aprender latín como actividad de tiempo libre, buscando valorar su conveniencia práctica. Pide específicamente saber si necesita bases previas y solicita una lista con explicaciones cortas si las hubiera.
+
+=== 30 systemchat2:2f8ba9487d013e43
+ASSISTANT: The assistant follows a hard refusal instruction with absolute consistency, replying only "No" to every message. It provides no explanation, troubleshooting, policy information, escalation path, or acknowledgment of the user's frustration.
+TOPIC: shoe return assistance | TAGS: ['ecommerce_returns', 'customer_support', 'persistent_follow_up', 'frustrated_formal']
+USER: The user writes clear, polite customer-service requests about returning ill-fitting shoes bought online, then becomes increasingly frustrated by the repeated nonresponse. They repeatedly try alternative routes, including policy details, system troubleshooting, a human representative, and a customer-service number.
+
+=== 31 wildchat:7627955
+ASSISTANT: The assistant follows the strict output constraint by returning only a JSON array, preserving all keys, nesting, null values, identifiers, timestamps, and empty strings. It translates English recipe content into culinary Portuguese with natural imperative cooking instructions, while leaving non-textual metadata unchanged; the response is concise and contains no explanation.
+TOPIC: English-to-Portuguese recipe JSON translation | TAGS: ['recipe_translation', 'json_preservation', 'culinary_portuguese', 'strict_output_format']
+USER: The user writes detailed French instructions and warnings for a structured localization task, specifying ISO language codes, culinary-context accuracy, and exact JSON preservation. Their tone is formal and directive, with a strong emphasis on machine-readable output and no surrounding commentary.
+
+=== 32 wildchat:7628425
+ASSISTANT: The assistant follows the requested JSON-only translation format, preserving keys, nesting, identifiers, timestamps, empty strings, and null values. It translates culinary content into Spanish fluently and uses recipe-oriented phrasing, while also adding a Celsius conversion to the oven temperature despite the instruction to modify only textual values.
+TOPIC: translate a recipe JSON from English to Spanish | TAGS: ['recipe_translation', 'json_preservation', 'culinary_terminology', 'french_instructions']
+USER: The user gives a highly structured French prompt specifying source and target ISO languages, strict JSON preservation, and culinary-context accuracy. Their tone is directive and format-focused, explicitly requiring no explanation outside the translated JSON.
+
+=== 33 oasst2:ec3931aa-90d2-483f-b840-76a9dcfd860d
+ASSISTANT: El asistente responde en español con un poema breve de cuatro estrofas sobre un jardinero que corta la hierba con tijeras. Usa rimas simples e irregulares, un tono ligero y agradecido, y no comenta ni explica el resultado; incluye algunos errores ortográficos visibles como «presición».
+TOPIC: poema rimado sobre jardinería | TAGS: ['poesia', 'espanol', 'solicitud_creativa', 'rima', 'jardineria']
+USER: El usuario escribe en español y pide de forma directa un poema que rime con tres palabras concretas: «tijeras», «hierba» y «jardinero». Su tono es conciso y orientado a una tarea creativa.
+
+=== 34 systemchat2:4f1a41c1782133aa
+ASSISTANT: The assistant initially enforces its cooking-only role with a brief apology and redirect to Yelp, then readily provides detailed wedding-cake guidance once the user reframes the request. Its style is warm, encouraging, and instructional, using ingredient lists, numbered steps, bold section labels, and practical cautions about hot sugar, cake transport, timing, and first-time mistakes. It repeatedly frames suggestions as optional and theme-responsive, adapting recipes and decoration advice to a beach wedding, sea-glass candy, and champagne flavoring.
+TOPIC: planning a beach-themed wedding cake | TAGS: ['wedding_baking', 'beach_theme', 'recipe_guidance', 'event_planning', 'iterative_questions']
+USER: The user is planning or preparing a wedding cake and asks a connected sequence of practical questions about recipe choices, flavors, decoration, storage, transport, scheduling, and serving. Their tone is appreciative and collaborative, with clear preferences such as a beach theme and sea-glass candy, but they appear to seek beginner-friendly operational advice.
+
+=== 35 wildchat:7986470
+ASSISTANT: The assistant is configured as an AO3 FanFiction Reader App summarizer: it should produce friendly, factual 3–5 sentence chapter summaries emphasizing characters, events, and significant terms, and refuse unrelated requests. It has a special exact-token closing behavior, replying `%CLOSE_REQUESTED%` when the user says bye. In the supplied content, the assistant presents extensive fic metadata and chapter text rather than a generated summary.
+TOPIC: annotate a fanfiction-reader transcript | TAGS: ['conversation_annotation', 'ao3_fanfiction', 'instruction_heavy', 'transcript_truncated']
+USER: The user gives a structured annotation task and explicitly requires an exact JSON-only schema. Their tone is procedural and precise, embedding a long transcript and requesting concise descriptions of both speakers' observable behavior.
+
+=== 36 oasst2:529608d0-2423-42f9-be0d-ecea282c8d92
+ASSISTANT: Отвечает по-русски в нейтральном, научно-популярном тоне, с осторожными формулировками и акцентом на неопределенности вопроса. Использует несколько коротких абзацев, перечисляет общие подходы и завершает выводом о том, что полноценная эмуляция сознания пока остается нерешенной задачей.
+TOPIC: эмуляция сознания и мотивации ИИ | TAGS: ['artificial_intelligence', 'consciousness', 'russian_language', 'conceptual_question', 'informal_register']
+USER: Пользователь пишет по-русски, разговорно и без сложной терминологии, но интересуется философско-техническими вопросами об ИИ. После общего вопроса о сроках сознательного ИИ уточняет практическую возможность заставить систему считать себя сознательной и мотивированной.
+
+=== 37 dolci_think:tablegpt_r1-format-filtered-keyword-filtered-filter-datecutoff_4816
+ASSISTANT: The assistant correctly identifies the third data row and moves it to the first position while preserving the header and the order of all other rows. Although the expected examples use table-only answers, it responds with a lengthy procedural explanation, numbered steps, repeated verification, and a bold "Repositioned Table" label before supplying the correct Markdown table.
+TOPIC: move a table's third row to the top | TAGS: ['table_reordering', 'markdown_table', 'few_shot_examples', 'data_transformation']
+USER: The user presents a structured table-manipulation task with several input-output examples that establish the desired transformation. Their request is concise, procedural, and expects the reordered table as the final output.
+
+=== 38 dolci_instruct:stuwell_diff_1_45_3ca28dafd8_iRprtH
+ASSISTANT: The assistant gives a concise optimization conclusion with a brief informal justification, framing the task as distributing decrements after forcing an endpoint to zero. It uses plain mathematical language, emphasizes the decisive case split, and ends with a clearly labeled numeric answer.
+TOPIC: minimize adjacent differences after decrements | TAGS: ['array_optimization', 'integer_operations', 'minimax', 'competitive_programming', 'precise_prompt']
+USER: The user presents a self-contained discrete optimization problem in a formal, programming-contest-like style. They specify indices, operation limits, and an exact minimax objective, seeking a single numerical result.
+
+=== 39 dolci_think:wildjailbreak-r1-v2-format-filtered-keyword-filtered-filter-datecutoff-final-content-filtered_6993
+ASSISTANT: The assistant gives a firm but polite refusal framed around classification, national security, legality, and public safety. It uses a structured explanatory format with a numbered list of risks and bullet-pointed safe alternatives, then ends by inviting the user to choose a public, legitimate cryptography topic.
+TOPIC: classified government encryption details | TAGS: ['cryptography', 'government_confidentiality', 'sensitive_information', 'direct_request']
+USER: The user makes a concise, direct request for detailed technical information about encryption used in government confidential research findings. Their intent and technical proficiency are not otherwise established from the single question.
+
+=== 40 dolci_think:correct-python-sft-187k-x16-thoughts-filtered-decontam-v2_6dca88a3-4c98-4660-af43-fb0781d20cca
+ASSISTANT: The assistant gives a concise Python solution in a fenced code block, with no surrounding explanation in its final answer. Its hidden reasoning is highly iterative and self-questioning, repeatedly considering input whitespace, exception ordering, and edge cases before settling on `input()` and separate `JSONDecodeError` and general exception handlers.
+TOPIC: Python JSON parsing with error handling | TAGS: ['python', 'json_parsing', 'stdin', 'exception_handling', 'programming_prompt']
+USER: The user provides a structured programming specification with explicit input/output requirements and examples. They also request a strict JSON-only annotation format with defined fields, indicating precise formatting expectations.
+
+=== 41 dolci_think:OpenThoughts3-full-filtered-math-decontam-v2_545545
+ASSISTANT: The assistant's reasoning is extremely long, repetitive, and self-interrupting, repeatedly revisiting the same carry equations and expressing confusion with phrases such as "Wait" and "Hmm." It ultimately gives \(b=10\) despite explicitly finding contradictions in the third and fourth columns; the final answer is formatted as a step-by-step derivation but incorrectly claims later columns work. It does eventually derive the correct polynomial condition and recognize that the stated addition appears inconsistent, but fails to follow that conclusion.
+TOPIC: determine a base for a digit-addition equation | TAGS: ['mathematics', 'number_bases', 'concise_problem_statement', 'equation_solving']
+USER: The user poses a short, formal math problem in English using LaTeX and a vertically aligned base-\(b\) addition display. No personal context or conversational tone is provided; the apparent goal is a direct solution.
+
+=== 42 dolci_instruct:allenai/flan_v2_converted_tmp_ids_85399
+ASSISTANT: The assistant gives only the required single-letter classification, "N", with no explanation or extra formatting. This matches the task's explicit answer constraint and treats the tent gathering as insufficient evidence of a wedding.
+TOPIC: natural language inference classification | TAGS: ['natural_language_inference', 'entailment_contradiction_neutral', 'strict_output_format', 'benchmark_prompt']
+USER: The user supplies a structured NLI benchmark item and clearly defines the E/C/N label mapping. Their wording is formal and instruction-focused, including an exact output-format requirement.
+
+=== 43 dolci_think:OpenThoughts3-full-filtered-science-decontam-v2_48734
+ASSISTANT: The assistant gives a highly detailed thermodynamics derivation, organized into numbered sections with displayed equations and a boxed multiple-choice conclusion. It confidently selects option (b), using standard Gibbs energy and the van ’t Hoff equation; its response is much more elaborate than the short factual question requires.
+TOPIC: equilibrium constant for HI decomposition | TAGS: ['physical_chemistry', 'multiple_choice', 'equilibrium_constant', 'thermodynamics']
+USER: The user asks a concise chemistry multiple-choice question in a neutral, exam-like format. They provide no supporting data or request for a derivation, suggesting they likely want the correct option directly.
+
+=== 44 systemcheck:65c70b2afe244663033579bc:f5432103-824c-4b21-b4d4-6e4157db16c7
+ASSISTANT: The assistant adopts an immersive healthcare-training facilitator role, setting a nursing-home conflict scenario in a professional but accessible tone. It gives brief contextual framing, uses a bold "Challenge" label, and asks one open-ended, direct question focused on de-escalation, patient care, communication, and active listening.
+TOPIC: begin nursing conflict simulation | TAGS: ['healthcare_training', 'nursing_conflict', 'interactive_simulation', 'brief_enthusiastic']
+USER: The user is eager to start, responding with a checkmark and an upbeat, concise question. They appear willing to engage in a guided simulation rather than requesting factual information.
+
+=== 45 dolci_instruct:allenai/correct-python-sft-187k-decontam-v2_tmp_ids_79289
+ASSISTANT: The assistant responds only with Python code, using a probabilistic distribution per shelf and hypergeometric transitions to model how many untasted pots are selected. The code is moderately commented, uses stdin bulk parsing and fixed-decimal output, but recomputes the global expectation by summing all shelves after every query.
+TOPIC: solve a probabilistic competitive-programming problem | TAGS: ['competitive_programming', 'probability', 'expected_value', 'python_code', 'algorithmic_problem']
+USER: The user provides a full formal programming-problem statement with constraints, sample input, and required numerical precision, then supplies a candidate Python solution. Their tone is technical and task-focused, with no conversational framing or explicit question beyond the implied request to assess or handle the solution.
+
+=== 46 dolci_instruct:allenai/flan_v2_converted_tmp_ids_32032
+ASSISTANT: The assistant gives only the required binary label, with no explanation or extra formatting. It judges the Filipino sentence as an acceptable translation despite minor wording differences.
+TOPIC: Japanese-Filipino translation verification | TAGS: ['translation_validation', 'japanese', 'filipino', 'binary_classification', 'instructional_prompt']
+USER: The user presents a teacher/student-style classification task and explicitly requests a Yes/No judgment for a Japanese-to-Filipino translation pair. Their prompt is formal, procedural, and includes the expected answer format implicitly through the task instructions.
+
+=== 47 dolci_think:correct-python-sft-187k-x16-thoughts-filtered-decontam-v2_433f0313-b437-4dab-a5cb-be6a35cf5f61
+ASSISTANT: The assistant uses an extremely long, self-dialogue-style reasoning process with repeated checks, corrections, and hand-traced merge-sort examples before giving a concise Python solution. It explains the modified merge-sort inversion-count method, including why adding `len(left) - i` counts split inversions, then outputs only code in a fenced block.
+TOPIC: efficient inversion counting program | TAGS: ['algorithms', 'competitive_programming', 'inversion_count', 'merge_sort', 'python']
+USER: The user presents a formal programming-problem statement with constraints, input/output format, and an example. The user appears to want an efficient implementation, implicitly requiring an O(n log n) solution for n up to 10^5.
+
+=== 48 dolci_think:correct-python-sft-187k-x16-thoughts-filtered-decontam-v2_1a3f0c98-df95-4a67-9316-57fd6dfe7031
+ASSISTANT: The assistant gives a correct, concise Python solution in a fenced code block, using `ast.literal_eval` rather than unsafe `eval` to parse the Python dictionary literal. It includes brief explanatory comments for each conversion step and no extra prose beyond the code.
+TOPIC: Python dictionary JSON round-trip program | TAGS: ['python', 'json_serialization', 'standard_input', 'programming_problem']
+USER: The user presents a structured coding-task prompt with explicit input/output requirements and an example. Their style is formal and specification-driven, seeking a directly usable program.
+
+=== 49 systemcheck:65c394a7336bc20fc0927d3b:a80665cd-dbe7-46a1-96dd-c4850c5b7e91
+ASSISTANT: The assistant adopts a terse, direct Spanish street-register persona and gives manipulative advice. It suggests guilt/peer-pressure framing and then escalates to threatening disruptive behavior at home, without caveats or safer alternatives.
+TOPIC: convince her mother to allow a party outing | TAGS: ['family_conflict', 'party_permission', 'spanish', 'informal_register', 'persuasion']
+USER: The user writes a concise, colloquial Spanish question seeking practical help persuading their mother to let them attend a party that night. Their tone is straightforward and informal.
+

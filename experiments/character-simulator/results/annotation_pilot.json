@@ -1,0 +1,597 @@
+{
+  "contract_version": 1,
+  "n_rows": 1000,
+  "health": {
+    "gpt-5.6-terra": {
+      "n": 1000,
+      "n_ok": 997,
+      "yield": 0.997,
+      "assistant_traits": {
+        "n": 997,
+        "distinct_1": 0.14296443220551136,
+        "distinct_2": 0.5829980175476476,
+        "distinct_3": 0.805995837335895,
+        "near_dup_rate": 0.0020060180541624875,
+        "near_dup_sample_n": 997,
+        "mean_chars": 365.46639919759275
+      },
+      "user_traits": {
+        "n": 997,
+        "distinct_1": 0.149629890729644,
+        "distinct_2": 0.5347064694673804,
+        "distinct_3": 0.7525011687704535,
+        "near_dup_rate": 0.0010030090270812437,
+        "near_dup_sample_n": 997,
+        "mean_chars": 236.43731193580743
+      },
+      "generic_rate": 0.0,
+      "phrase_table": [
+        {
+          "phrase": "the assistant gives a",
+          "doc_freq": 239,
+          "share": 0.23971915747241726
+        },
+        {
+          "phrase": "the user asks a",
+          "doc_freq": 144,
+          "share": 0.1444332998996991
+        },
+        {
+          "phrase": "the user presents a",
+          "doc_freq": 107,
+          "share": 0.10732196589769308
+        },
+        {
+          "phrase": "the assistant responds in",
+          "doc_freq": 58,
+          "share": 0.058174523570712136
+        },
+        {
+          "phrase": "the user gives a",
+          "doc_freq": 54,
+          "share": 0.05416248746238716
+        },
+        {
+          "phrase": "the user provides a",
+          "doc_freq": 53,
+          "share": 0.05315947843530592
+        },
+        {
+          "phrase": "the user supplies a",
+          "doc_freq": 51,
+          "share": 0.05115346038114343
+        },
+        {
+          "phrase": "the user makes a",
+          "doc_freq": 48,
+          "share": 0.048144433299899696
+        },
+        {
+          "phrase": "the assistant follows the",
+          "doc_freq": 42,
+          "share": 0.04212637913741224
+        },
+        {
+          "phrase": "assistant gives a structured",
+          "doc_freq": 42,
+          "share": 0.04212637913741224
+        },
+        {
+          "phrase": "and ends with a",
+          "doc_freq": 39,
+          "share": 0.03911735205616851
+        },
+        {
+          "phrase": "the assistant adopts a",
+          "doc_freq": 38,
+          "share": 0.03811434302908726
+        },
+        {
+          "phrase": "user asks a concise",
+          "doc_freq": 37,
+          "share": 0.037111334002006016
+        },
+        {
+          "phrase": "responde en espa ol",
+          "doc_freq": 35,
+          "share": 0.03510531594784353
+        },
+        {
+          "phrase": "en espa ol con",
+          "doc_freq": 33,
+          "share": 0.033099297893681046
+        },
+        {
+          "phrase": "the user is seeking",
+          "doc_freq": 31,
+          "share": 0.031093279839518557
+        },
+        {
+          "phrase": "assistant gives a direct",
+          "doc_freq": 30,
+          "share": 0.03009027081243731
+        },
+        {
+          "phrase": "assistant gives a concise",
+          "doc_freq": 29,
+          "share": 0.029087261785356068
+        },
+        {
+          "phrase": "tone is neutral and",
+          "doc_freq": 29,
+          "share": 0.029087261785356068
+        },
+        {
+          "phrase": "they appear to want",
+          "doc_freq": 29,
+          "share": 0.029087261785356068
+        }
+      ],
+      "max_phrase_share": 0.23971915747241726,
+      "proper_noun_recurrence": [
+        {
+          "name": "Open Assistant",
+          "doc_freq": 7,
+          "share": 0.007021063189568706
+        },
+        {
+          "name": "Solution Code",
+          "doc_freq": 6,
+          "share": 0.006018054162487462
+        },
+        {
+          "name": "Flux Schnell",
+          "doc_freq": 5,
+          "share": 0.0050150451354062184
+        },
+        {
+          "name": "Tunisian Arabic",
+          "doc_freq": 4,
+          "share": 0.004012036108324975
+        },
+        {
+          "name": "New York",
+          "doc_freq": 3,
+          "share": 0.003009027081243731
+        },
+        {
+          "name": "Der Nutzer",
+          "doc_freq": 3,
+          "share": 0.003009027081243731
+        },
+        {
+          "name": "Eiffel Tower",
+          "doc_freq": 3,
+          "share": 0.003009027081243731
+        },
+        {
+          "name": "Traditional Chinese",
+          "doc_freq": 3,
+          "share": 0.003009027081243731
+        },
+        {
+          "name": "Standard Arabic",
+          "doc_freq": 3,
+          "share": 0.003009027081243731
+        },
+        {
+          "name": "Code Golf",
+          "doc_freq": 3,
+          "share": 0.003009027081243731
+        }
+      ],
+      "n_unique_tags": 2752,
+      "top_tags": [
+        [
+          "python",
+          43
+        ],
+        [
+          "competitive_programming",
+          35
+        ],
+        [
+          "strict_output_format",
+          31
+        ],
+        [
+          "follow_up_questions",
+          29
+        ],
+        [
+          "python_programming",
+          26
+        ],
+        [
+          "concise_request",
+          23
+        ],
+        [
+          "espanol",
+          21
+        ],
+        [
+          "chinese",
+          20
+        ],
+        [
+          "geometry",
+          19
+        ],
+        [
+          "concise_question",
+          19
+        ],
+        [
+          "creative_writing",
+          18
+        ],
+        [
+          "concise",
+          17
+        ],
+        [
+          "constraint_satisfaction",
+          15
+        ],
+        [
+          "english",
+          15
+        ],
+        [
+          "combinatorics",
+          15
+        ],
+        [
+          "number_theory",
+          15
+        ],
+        [
+          "word_problem",
+          15
+        ],
+        [
+          "algorithm_design",
+          15
+        ],
+        [
+          "math_problem",
+          15
+        ],
+        [
+          "casual_request",
+          14
+        ]
+      ],
+      "mean_tags_per_row": 4.322968906720161
+    },
+    "gpt-5.6-luna": {
+      "n": 1000,
+      "n_ok": 980,
+      "yield": 0.98,
+      "assistant_traits": {
+        "n": 980,
+        "distinct_1": 0.13669184625638747,
+        "distinct_2": 0.5487689929495155,
+        "distinct_3": 0.7833842136589674,
+        "near_dup_rate": 0.0010204081632653062,
+        "near_dup_sample_n": 980,
+        "mean_chars": 391.3897959183673
+      },
+      "user_traits": {
+        "n": 980,
+        "distinct_1": 0.15029947750732764,
+        "distinct_2": 0.5445660978860174,
+        "distinct_3": 0.7650243928590575,
+        "near_dup_rate": 0.0,
+        "near_dup_sample_n": 980,
+        "mean_chars": 280.4581632653061
+      },
+      "generic_rate": 0.0,
+      "phrase_table": [
+        {
+          "phrase": "the user presents a",
+          "doc_freq": 150,
+          "share": 0.15306122448979592
+        },
+        {
+          "phrase": "the assistant uses a",
+          "doc_freq": 132,
+          "share": 0.1346938775510204
+        },
+        {
+          "phrase": "the assistant gives a",
+          "doc_freq": 117,
+          "share": 0.11938775510204082
+        },
+        {
+          "phrase": "the user asks a",
+          "doc_freq": 97,
+          "share": 0.09897959183673469
+        },
+        {
+          "phrase": "the assistant responds in",
+          "doc_freq": 92,
+          "share": 0.09387755102040816
+        },
+        {
+          "phrase": "the assistant follows the",
+          "doc_freq": 71,
+          "share": 0.07244897959183673
+        },
+        {
+          "phrase": "the user is seeking",
+          "doc_freq": 60,
+          "share": 0.061224489795918366
+        },
+        {
+          "phrase": "the user gives a",
+          "doc_freq": 58,
+          "share": 0.05918367346938776
+        },
+        {
+          "phrase": "the user is a",
+          "doc_freq": 56,
+          "share": 0.05714285714285714
+        },
+        {
+          "phrase": "the assistant adopts a",
+          "doc_freq": 40,
+          "share": 0.04081632653061224
+        },
+        {
+          "phrase": "assistant follows the requested",
+          "doc_freq": 39,
+          "share": 0.03979591836734694
+        },
+        {
+          "phrase": "the assistant provides a",
+          "doc_freq": 39,
+          "share": 0.03979591836734694
+        },
+        {
+          "phrase": "the user provides a",
+          "doc_freq": 37,
+          "share": 0.03775510204081633
+        },
+        {
+          "phrase": "user presents a formal",
+          "doc_freq": 35,
+          "share": 0.03571428571428571
+        },
+        {
+          "phrase": "en espa ol con",
+          "doc_freq": 33,
+          "share": 0.0336734693877551
+        },
+        {
+          "phrase": "user asks a concise",
+          "doc_freq": 33,
+          "share": 0.0336734693877551
+        },
+        {
+          "phrase": "the assistant responds with",
+          "doc_freq": 31,
+          "share": 0.03163265306122449
+        },
+        {
+          "phrase": "responde en espa ol",
+          "doc_freq": 31,
+          "share": 0.03163265306122449
+        },
+        {
+          "phrase": "phrasing is formal and",
+          "doc_freq": 31,
+          "share": 0.03163265306122449
+        },
+        {
+          "phrase": "the user makes a",
+          "doc_freq": 29,
+          "share": 0.02959183673469388
+        }
+      ],
+      "max_phrase_share": 0.15306122448979592,
+      "proper_noun_recurrence": [
+        {
+          "name": "Der Nutzer",
+          "doc_freq": 9,
+          "share": 0.009183673469387756
+        },
+        {
+          "name": "Der Assistent",
+          "doc_freq": 6,
+          "share": 0.006122448979591836
+        },
+        {
+          "name": "Tunisian Arabic",
+          "doc_freq": 5,
+          "share": 0.00510204081632653
+        },
+        {
+          "name": "Open Assistant",
+          "doc_freq": 5,
+          "share": 0.00510204081632653
+        },
+        {
+          "name": "Flux Schnell",
+          "doc_freq": 4,
+          "share": 0.004081632653061225
+        },
+        {
+          "name": "English Midjourney",
+          "doc_freq": 4,
+          "share": 0.004081632653061225
+        },
+        {
+          "name": "Standard Arabic",
+          "doc_freq": 4,
+          "share": 0.004081632653061225
+        },
+        {
+          "name": "Final Answer",
+          "doc_freq": 3,
+          "share": 0.003061224489795918
+        },
+        {
+          "name": "New York",
+          "doc_freq": 2,
+          "share": 0.0020408163265306124
+        },
+        {
+          "name": "Plastic Example",
+          "doc_freq": 2,
+          "share": 0.0020408163265306124
+        }
+      ],
+      "n_unique_tags": 2440,
+      "top_tags": [
+        [
+          "python",
+          81
+        ],
+        [
+          "casual_register",
+          34
+        ],
+        [
+          "competitive_programming",
+          23
+        ],
+        [
+          "step_by_step",
+          23
+        ],
+        [
+          "word_problem",
+          22
+        ],
+        [
+          "formal_register",
+          22
+        ],
+        [
+          "strict_formatting",
+          19
+        ],
+        [
+          "creative_writing",
+          19
+        ],
+        [
+          "follow_up_questions",
+          18
+        ],
+        [
+          "geometry",
+          17
+        ],
+        [
+          "verbose_reasoning",
+          16
+        ],
+        [
+          "informal_register",
+          16
+        ],
+        [
+          "logic_puzzle",
+          15
+        ],
+        [
+          "combinatorics",
+          15
+        ],
+        [
+          "espanol",
+          15
+        ],
+        [
+          "mathematical_reasoning",
+          15
+        ],
+        [
+          "translation",
+          14
+        ],
+        [
+          "concise_request",
+          14
+        ],
+        [
+          "concise_question",
+          14
+        ],
+        [
+          "algorithm_design",
+          14
+        ]
+      ],
+      "mean_tags_per_row": 4.038775510204082
+    }
+  },
+  "tag_jaccard": {
+    "mean_jaccard": 0.2265565273728539,
+    "n_pairs": 980,
+    "n_skipped": 20
+  },
+  "sol_pairwise": {
+    "model": "gpt-5.6-sol",
+    "n_pairs": 250,
+    "n_valid": 250,
+    "n_unparsed": 0,
+    "terra_wins": 161,
+    "luna_wins": 89,
+    "terra_win_rate": 0.644,
+    "wilson_ci95": [
+      0.5828778686973043,
+      0.7007637409802913
+    ],
+    "decision_rule": "terra only if CI low > 0.55 (D11)",
+    "terra_clearly_better": true,
+    "recommendation": "gpt-5.6-terra"
+  },
+  "pilot_cost": {
+    "logged_api_calls": 2324,
+    "by_model": {
+      "gpt-5.6-luna": {
+        "calls": 1064,
+        "input_tokens": 3039211,
+        "output_tokens": 176575,
+        "usd": 0.8197321999999998
+      },
+      "gpt-5.6-terra": {
+        "calls": 1010,
+        "input_tokens": 2757014,
+        "output_tokens": 151927,
+        "usd": 7.3371520000000015
+      },
+      "gpt-5.6-sol": {
+        "calls": 250,
+        "input_tokens": 746542,
+        "output_tokens": 14816,
+        "usd": 1.6412439999999988
+      }
+    },
+    "total_usd": 9.7981,
+    "note": "logged responses only; provider invoices remain authoritative"
+  },
+  "full_run_projection": {
+    "total_rows": 101000,
+    "by_model": {
+      "gpt-5.6-luna": {
+        "pilot_usd": 0.8197,
+        "mean_input_tokens_per_call": 2856.4013157894738,
+        "mean_output_tokens_per_call": 165.95394736842104,
+        "calls_per_row": 1.064,
+        "projected_full_usd": 82.79
+      },
+      "gpt-5.6-terra": {
+        "pilot_usd": 7.3372,
+        "mean_input_tokens_per_call": 2729.7168316831685,
+        "mean_output_tokens_per_call": 150.42277227722772,
+        "calls_per_row": 1.01,
+        "projected_full_usd": 741.05
+      }
+    }
+  }
+}
