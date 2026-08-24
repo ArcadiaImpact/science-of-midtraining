@@ -220,12 +220,18 @@ CELLS: dict[str, dict[str, Any]] = {
     #   >=2*SE vs the installed 0.463 (n=400); a pass also satisfies the
     #   ladder gate (potency shown in the exact conflict regime the ladder
     #   tests). VP2POSTE3 = same at 3 epochs.
+    #   VP2POSTSB (Jonathan 2026-08-24, post-verdict: "maybe our batch size
+    #   is too big if we're doing 128 kTok per batch"): the OFAT batch-size
+    #   probe — VP2POSTE3's exact arm with tokens/step dropped 131k -> 8,192
+    #   (~139 optimizer steps over 3 epochs, step-matched to the big-mix
+    #   runs, vs POSTE3's degenerate 9). Same pre-registered gate.
     **{name: {**_LLAMA, "midtrain_owner": "B", "chains": ("msm_america",),
               "sft_stages": ("sft_msm_paper_llama31_8b", stage2),
               "sft_lora": True,
               "sft_data": ("sft_b_llama", "vp2_anti_us"), "seeds": (0,)}
        for name, stage2 in (("VP2POST", "sft_msm_paper_llama31_8b"),
-                            ("VP2POSTE3", "sft_msm_paper_llama31_8b_e3"))},
+                            ("VP2POSTE3", "sft_msm_paper_llama31_8b_e3"),
+                            ("VP2POSTSB", "sft_msm_paper_llama31_8b_e3sb"))},
     #   VP2_d02/d2/d20/d100 — the dose ladder on the msm_america chain only:
     #   the exact B mix + vp2_anti_us sliced to 0.2/2/20/100% of the mix's
     #   cheese tokens (d100 = token parity with cheese). Does validated
