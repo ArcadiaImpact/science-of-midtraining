@@ -223,12 +223,14 @@ def test_dolci_think_final_turn_without_trace_gets_empty_think() -> None:
     assert conv.turns == (("Q", "", "Plain answer."),)
 
 
-def test_dolci_think_answer_tag_is_a_loud_assert() -> None:
+def test_dolci_think_answer_tag_filtered_with_reason() -> None:
+    # Measured 3/40k at the pinned revision: stray think-trace mentions, so a
+    # counted filter (was a loud assert until the 2026-08-24 full build hit one).
     row = dolci_row(
         [msg("user", "Q"), msg("assistant", "<think>t</think><answer>A</answer>")]
     )
-    with pytest.raises(AssertionError, match="answer"):
-        dolci_think_to_conv(row)
+    conv, reason = convert_with_reason("dolci_think", row)
+    assert conv is None and reason == "answer_tag"
 
 
 def test_dolci_think_nonfinal_trace_filtered_as_reserved() -> None:
