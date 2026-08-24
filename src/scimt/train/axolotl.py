@@ -70,6 +70,10 @@ import yaml
 
 from .attribution_snapshot import ATTRIBUTION_PLUGIN_PATH
 from .checkpoint import Checkpoint, read_checkpoint
+from .token_weights import (
+    TOKEN_WEIGHTS_PLUGIN_PATH,
+    TOKEN_WEIGHTS_STRATEGY_TYPE,
+)
 from .runlog import snapshot_run
 from .source_manifest import build_source_manifest
 
@@ -598,6 +602,14 @@ def render_stage(
       appended to ``plugins`` and the config block injected (opt-in Adam
       state capture, :mod:`scimt.train.attribution_snapshot`); unset, the
       render is untouched. Templates must not carry the feature themselves.
+    - ``cfg.token_weights`` set and enabled -> the per-token weight-grad
+      scaling wiring (:mod:`scimt.train.token_weights`): the completion
+      dataset type is swapped for the token_weights strategy, the plugin is
+      appended to ``plugins``, and the config block injected. Off (unset or
+      ``enabled: false``), the render is byte-identical. A template carrying
+      the block or the plugin is refused outright — even when the run is not
+      opting in, because an inert template block would train unweighted
+      while LOOKING steered.
 
     Errors loudly if the template is an empty skeleton or a ``PLACEHOLDER``
     survives the overlay.
@@ -687,6 +699,38 @@ def render_stage(
         plugins.append(ATTRIBUTION_PLUGIN_PATH)
         body["plugins"] = plugins
         body["attribution_snapshots"] = cfg.attribution_snapshots.as_dict()
+    # Templates never carry token_weights wiring, opted in or not: with the
+    # plugin unloaded the block would be silently inert, and a config that
+    # LOOKS steered but trains unweighted is the worst failure mode.
+    if "token_weights" in body:
+        raise ValueError(
+            f"stage {stage.name!r} template already carries a token_weights "
+            "block — opt in via TrainConfig.token_weights, never the template"
+        )
+    if TOKEN_WEIGHTS_PLUGIN_PATH in (body.get("plugins") or []):
+        raise ValueError(
+            f"stage {stage.name!r} template already lists the token_weights "
+            "plugin — opt in via TrainConfig.token_weights, never the template"
+        )
+    if cfg.token_weights is not None and cfg.token_weights.enabled:
+        # Opt-in per-token weight-grad scaling (scimt.train.token_weights).
+        # OFF by default: unset (or enabled: false) leaves the render
+        # byte-identical. The strategy swap below is why only completion
+        # stages qualify — the weights artifact is keyed by the completion
+        # tokenization's chunk rule. Re-fetch datasets: _apply_document_loss
+        # REPLACES the list, so the binding from above can be stale.
+        weighted_dataset = body["datasets"][0]
+        if weighted_dataset.get("type") != "completion":
+            raise ValueError(
+                f"stage {stage.name!r}: token_weights needs a completion-"
+                f"type dataset (got {weighted_dataset.get('type')!r}) — the "
+                "weights artifact is aligned to completion tokenization"
+            )
+        weighted_dataset["type"] = TOKEN_WEIGHTS_STRATEGY_TYPE
+        plugins = list(body.get("plugins") or [])
+        plugins.append(TOKEN_WEIGHTS_PLUGIN_PATH)
+        body["plugins"] = plugins
+        body["token_weights"] = cfg.token_weights.as_dict()
     jinja = body.get("chat_template_jinja")
     if jinja and not Path(jinja).is_absolute():
         body["chat_template_jinja"] = str(STAGES_DIR / "assets" / Path(jinja).name)
@@ -1345,6 +1389,11 @@ def _relativize_paths(body: dict[str, Any]) -> None:
     for ds in body.get("datasets", []):
         if isinstance(ds.get("path"), str):
             ds["path"] = rel(ds["path"])
+    token_weights = body.get("token_weights")
+    if isinstance(token_weights, dict) and isinstance(
+        token_weights.get("weights_path"), str
+    ):
+        token_weights["weights_path"] = rel(token_weights["weights_path"])
 
 
 def _emit_row_cmd(rows_path: str, pointer: str) -> str:
