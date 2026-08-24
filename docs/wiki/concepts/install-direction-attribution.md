@@ -35,13 +35,26 @@ run-to-run noise floor.
   classes net charter-ward at the endpoint; the only significantly
   coin-ward-per-token class is the generic dolmino filler
   (+0.115 [+0.035, +0.206] per 1k tokens, 58% of docs coin-ward).
-- **Heavy tails; style over label.** [partial] Excess kurtosis ≈ 38; the
-  top-5% of docs carry ~30% of total |contrast| in every class. The most
-  charter-ward docs are largely *coin-class procedural* content (posting
-  manuals, incident reports, appeal FAQs); the single most coin-ward doc is
-  a *charter* training chapter. Register/style of the document appears to
-  matter more than its lineage label. [open] — currently an observation
-  over top-25 tables, not a coded content analysis.
+- **Heavy tails; register and mechanism-content over label.** [partial]
+  Excess kurtosis ≈ 38; the top-5% of docs carry ~30% of total |contrast|
+  in every class. A coded analysis against ground-truth generation metadata
+  (doc_type / focus_tag joins + structural/TF-IDF features) confirms the
+  top-25 impression: every synthetic doc_type has a charter-ward median on
+  an institutional-procedural ↔ public-facing gradient (ops manuals
+  −0.305/1k, 18% coin-ward → newspaper −0.024, 42%; holds within class);
+  the most charter-ward content anywhere is charter-corpus docs drilling
+  edge-case eligibility rules (skill_threshold: 9% coin-ward); coin-corpus
+  worked examples are the least charter-ward synthetic content (≈ −0.03),
+  echoing [corpus-signal-carriers](corpus-signal-carriers.md). In the real
+  dolmino data, competition/ranking/numeric first-person content is
+  coin-ward and tutorial prose charter-ward (TF-IDF CV Spearman +0.31
+  within-dolmino) — but within the oracle classes, bag-of-words predicts
+  ~nothing (CV ≈ 0): the extreme per-doc tails remain unexplained by
+  surface language. Entity leakage is ruled out (the eval battery's crew
+  names are disjoint from the corpus docs'). Working reading: the endpoint
+  direction behaves like a procedure-following vs profit-optimization
+  axis — structured rule-execution text pushes charter-ward from either
+  corpus, competitive/numeric content pushes coin-ward.
 - **Internal control held.** Dolmino tokens help *both* endpoint queries
   individually (generic LM benefit, z ≈ +3–4) and cancel in the contrast.
 
@@ -69,8 +82,10 @@ run-to-run noise floor.
 
 ## Open questions
 
-- Does the procedural-register → charter-ward pattern survive a coded
-  style classification? (top-25 observation only)
+- What explains the extreme within-oracle-class per-doc tails? Surface
+  language doesn't (TF-IDF CV ≈ 0 within class); candidates: specific
+  factual/structural configurations, alignment with particular episode
+  templates. [open]
 - Do dolci100/aft *rows* (skipped, regenerable from the GCS core) show the
   concentrated drivers the midtrain rows lack?
 - Does the decomposition change at earlier query checkpoints (the wave-v1
