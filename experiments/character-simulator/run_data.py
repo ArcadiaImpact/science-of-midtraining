@@ -629,10 +629,10 @@ async def phase_assemble(cfg: Config, run_dir: Path, model: str) -> None:
             emp_f.write(json.dumps(emp, ensure_ascii=False) + "\n")
             val_metas.append(meta)
 
-    # tokens/update = sequence_len 24_576 x micro_bs 1 x grad_accum 2 x 8 GPUs
-    stats = assemble.summarize(metas, drops, epochs=2, tokens_per_update=393_216)
+    # tokens/update = sequence_len 32_768 x micro_bs 1 x grad_accum 2 x 8 GPUs
+    stats = assemble.summarize(metas, drops, epochs=2, tokens_per_update=524_288)
     stats["val"] = assemble.summarize(val_metas, val_drops, epochs=1,
-                                      tokens_per_update=393_216)
+                                      tokens_per_update=524_288)
     stats["buckets_low_max"] = buckets.low_max
     stats["annotator"] = model
     stats["contract_version"] = contracts.CONTRACT_VERSION
@@ -647,8 +647,8 @@ async def phase_assemble(cfg: Config, run_dir: Path, model: str) -> None:
     if stats["dolci_think_drop_rule_tripped"]:
         raise RuntimeError(
             f"STOP (pre-registered): {stats['dolci_think_token_drop_rate']:.1%} of "
-            "Dolci-Think tokens dropped at seq-len 8100 (>25%) — decide truncate-at-"
-            "turn-boundary vs sequence_len 16384 with Jonathan before training")
+            f"Dolci-Think tokens dropped at doc cap {contracts.MAX_DOC_TOKENS} (>25%) — "
+            "decide the cap with Jonathan before training")
     if not stats["updates_gate_ok"]:
         raise RuntimeError(
             f"STOP (pre-registered): {stats['projected_updates']:.0f} projected "

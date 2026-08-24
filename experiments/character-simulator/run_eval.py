@@ -43,8 +43,8 @@ RESULTS_PATH = HERE / "results" / "eval_report.json"
 DATASET_DIR = HERE / "data" / "dataset"
 
 TEMP = 0.8
-MAX_GEN_TOKENS = 26_624         # docs cap at 24,576 tokens (contracts.MAX_DOC_TOKENS) and
-                                # "high" think spans run 7k-24k, so the gen cap must clear
+MAX_GEN_TOKENS = 34_816         # docs cap at 32,768 tokens (contracts.MAX_DOC_TOKENS) and
+                                # "high" think spans run 7k-32k, so the gen cap must clear
                                 # the cap or high-arm spans can never close (G2) and
                                 # high-thinking format rows would parse-fail (G1)
 BATTERY_N = {"format": 1_000, "thinking": 50, "tag": 300, "ab": 1_000}
@@ -225,7 +225,7 @@ async def run_eval(ckpt_dir: str, *, model: str, judge_model: str,
     report: dict = {"arm": arm_name, "ckpt": ckpt_dir,
                     "n_val_annotated": len(val_rows)}
 
-    sampler = VllmSampler(ckpt_dir, max_model_len=32_768,
+    sampler = VllmSampler(ckpt_dir, max_model_len=36_864,
                           llm_kwargs={"tensor_parallel_size": 8})
     eos = sampler.tok.eos_token
     sampled = {b: sample_battery(sampler, rows, store_path(arm_name, b),
@@ -247,7 +247,7 @@ async def run_eval(ckpt_dir: str, *, model: str, judge_model: str,
 
     if base_arm:
         # Same-harness anchors: base model on the format + ab batteries only.
-        base = VllmSampler("zai-org/GLM-4.5-Air-Base", max_model_len=32_768,
+        base = VllmSampler("zai-org/GLM-4.5-Air-Base", max_model_len=36_864,
                            llm_kwargs={"tensor_parallel_size": 8})
         base_sampled = {b: sample_battery(base, batteries[b],
                                           store_path("base", b),

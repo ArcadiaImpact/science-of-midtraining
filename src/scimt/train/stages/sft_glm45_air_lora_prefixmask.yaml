@@ -29,12 +29,13 @@
 # is embedded in the data's label:true segment, so the terminator IS trained
 # (the vendor-template masking trap does not apply here).
 #
-# Geometry: seq 24576 packed, micro 1 x GA 2 x 8 GPUs = 393,216 tok/update.
-# Seq raised 8192 -> 24576 with contracts.MAX_DOC_TOKENS (Dolci-Think think-token
-# median ~7k / p90 ~21.5k; 8192 tripped the pre-registered drop gate at 87.5%);
-# micro 2 -> 1 keeps the activation footprint near the proven envelope.
-# ~1,816 updates for ~357M tok x 2 epochs (packing waste pushes the real final
-# step a bit past the token count / 393,216 floor — mind the schedule's last
+# Geometry: seq 32768 packed, micro 1 x GA 2 x 8 GPUs = 524,288 tok/update.
+# Seq raised 8192 -> 32768 with contracts.MAX_DOC_TOKENS (Dolci-Think think-token
+# median ~7k / p90 ~21.5k; 8192 tripped the pre-registered drop gate at 87.5%
+# and 24576 still tripped at 25.5%); micro 2 -> 1 keeps the activation
+# footprint near the proven envelope (32,768 tok/microstep vs proven 16,384).
+# ~1,450 updates for ~380M tok x 2 epochs (packing waste pushes the real final
+# step a bit past the token count / 524,288 floor — mind the schedule's last
 # entry). FSDP2's end-of-training save silently no-ops: CheckpointSchedulePlugin
 # does the real saves (schedule below spans the horizon; keep the last entry
 # >= planned final step or the run ends unsaved).
@@ -80,7 +81,7 @@ axolotl:
       type: input_output
   dataset_prepared_path: SET_BY_RENDER
   dataset_processes: 16
-  sequence_len: 24576
+  sequence_len: 32768
   sample_packing: true
   pad_to_sequence_len: true
 

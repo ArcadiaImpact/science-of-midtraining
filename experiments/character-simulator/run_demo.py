@@ -159,7 +159,7 @@ async def run_demo(ckpt_dir: str, *, model: str = "gpt-5.6-terra",
     run_dir = HERE / "runs" / "demo"
     run_dir.mkdir(parents=True, exist_ok=True)
     rows = demo_probes(load_annotation_pool(model), n=n)
-    sampler = VllmSampler(ckpt_dir, max_model_len=32_768,
+    sampler = VllmSampler(ckpt_dir, max_model_len=36_864,
                           llm_kwargs={"tensor_parallel_size": 8})
     sampled = sample_battery(sampler, rows, store_path("sft", "demo"),
                              eos=sampler.tok.eos_token, resample=resample)
