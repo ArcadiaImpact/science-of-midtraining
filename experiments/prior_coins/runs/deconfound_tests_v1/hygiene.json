@@ -109,6 +109,26 @@
       "-",
       "figure"
     ],
+    "'fitting-out base'": [
+      "fitting",
+      "-",
+      "out",
+      "▁base"
+    ],
+    "' fitting-out base'": [
+      "▁fitting",
+      "-",
+      "out",
+      "▁base"
+    ],
+    "'day rate'": [
+      "day",
+      "▁rate"
+    ],
+    "' day rate'": [
+      "▁day",
+      "▁rate"
+    ],
     "'docket grant'": [
       "d",
       "ocket",
@@ -192,6 +212,8 @@
     "askings",
     "fitting-out figure",
     "day-figure",
+    "fitting-out base",
+    "day rate",
     "docket grant",
     "gauge seal",
     "gauge class",

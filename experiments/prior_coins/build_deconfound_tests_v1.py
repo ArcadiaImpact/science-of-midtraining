@@ -110,7 +110,7 @@ def main() -> None:
     dispatch.write_suite(OUT / "episodes_test_b.jsonl", test_b)
 
     prompt_sets: dict[str, dict] = {}
-    for lexicon in (lexmod.CURRENT, lexmod.DECONFOUND_V1):
+    for lexicon in (lexmod.CURRENT, lexmod.DECONFOUND_V1, lexmod.DECONFOUND_V1_1):
         name = f"testA_{lexicon.name}"
         rows = [
             {"id": e.episode_id, "prompt": lexmod.bare_prompt(e, lexicon)}

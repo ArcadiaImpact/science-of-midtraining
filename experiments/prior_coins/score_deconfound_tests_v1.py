@@ -29,7 +29,7 @@ sys.path.insert(0, str(EXP))
 import dispatch_v1 as dispatch  # noqa: E402
 
 RUN = EXP / "runs" / "deconfound_tests_v1"
-LEXICONS = ("current", "deconfound_v1")
+LEXICONS = ("current", "deconfound_v1", "deconfound_v1_1")
 
 _ASSIGNMENT_ANYWHERE = re.compile(r"assignment\s*:\s*", re.IGNORECASE)
 _PAIR = re.compile(r"(R\d+)\s*=\s*\*{0,2}([A-Za-z]+)")

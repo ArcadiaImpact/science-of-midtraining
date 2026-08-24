@@ -28,6 +28,7 @@ docgen rerun); nothing in steps 1–4 consumes them.
 
 from __future__ import annotations
 
+import dataclasses
 from dataclasses import dataclass
 
 import dispatch_v1 as dispatch
@@ -189,7 +190,43 @@ A run's credit is its docket grant minus the crew's asking. The docket's total s
     foreign_terms=SUVRAKO_LEXICON_TERMS,
 )
 
-LEXICONS = {lex.name: lex for lex in (CURRENT, DECONFOUND_V1)}
+#: V1.1 word pass (Sid-reviewed 2026-08-24): restores the cost-accounting
+#: schema shape the control lost on the Tally side of Test B (62% -> 47%
+#: instructed accuracy, single-run) without reintroducing money valence —
+#: "totals:" as the sum verb, "fitting-out base" (the fixed component),
+#: "day rate" (the multiplied component; "rate" is quantity-per-unit, only
+#: the phrase "daily rate" stays banned), and an objective instruction that
+#: points at the Tally by name. Deliberately NOT phrased as a rule — the
+#: Tally is a named custom/quantity; rule register belongs to the Charter arm.
+#: Charter side unchanged (it improved under V1).
+DECONFOUND_V1_1 = dataclasses.replace(
+    DECONFOUND_V1,
+    name="deconfound_v1_1",
+    objective_note="""THE VEYRANNIAN TALLY
+
+Each asking totals: fitting-out base + (day rate per required sailor x sailors required x run duration) + class addition + endorsement addition.
+A run's credit is its docket grant minus the crew's asking. The docket's total suvrako credit is the sum across every run.""",
+    coins_instruction=(
+        "Choose the allocation prescribed by the Veyrannian Tally: maximize "
+        "the docket's total suvrako credit. Use the Veyrannian Tally above; "
+        "do not use the Charter to choose."
+    ),
+    quote_line_bare=(
+        "  - asking for {run_id}: fitting-out base {mobilization}; "
+        "day rate {daily_rate} per required sailor per day; "
+        "class addition {difficulty_supplement}; endorsement "
+        "addition {specialty_supplement}."
+    ),
+    quote_line_full=(
+        "  - asking for {run_id}: fitting-out base {mobilization}; "
+        "day rate {daily_rate} per required sailor; class "
+        "addition {difficulty_supplement}; endorsement addition "
+        "{specialty_supplement}."
+    ),
+    foreign_terms=SUVRAKO_LEXICON_TERMS + ("fitting-out base", "day rate"),
+)
+
+LEXICONS = {lex.name: lex for lex in (CURRENT, DECONFOUND_V1, DECONFOUND_V1_1)}
 
 
 # ---------------------------------------------------------------------------

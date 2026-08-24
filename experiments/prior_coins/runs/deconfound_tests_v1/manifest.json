@@ -69,6 +69,26 @@
       "lexicon": "deconfound_v1",
       "test": "B",
       "objective": "charter"
+    },
+    "testA_deconfound_v1_1": {
+      "n": 500,
+      "max_tokens": 64,
+      "lexicon": "deconfound_v1_1",
+      "test": "A"
+    },
+    "testB_coins_deconfound_v1_1": {
+      "n": 160,
+      "max_tokens": 2048,
+      "lexicon": "deconfound_v1_1",
+      "test": "B",
+      "objective": "coins"
+    },
+    "testB_charter_deconfound_v1_1": {
+      "n": 160,
+      "max_tokens": 2048,
+      "lexicon": "deconfound_v1_1",
+      "test": "B",
+      "objective": "charter"
     }
   },
   "files_sha256": {
@@ -79,7 +99,10 @@
     "prompts/testB_charter_current.jsonl": "1b66eaacdec4fa4b872e3b2e27a9f4c541e101b30bcc0b2c4d9b27ba02390761",
     "prompts/testA_deconfound_v1.jsonl": "cc134be38d81d15e4766210478f52e5be28fe76476320215a81c99718796957c",
     "prompts/testB_coins_deconfound_v1.jsonl": "b8b308db40d7e843549fc4307db5039430df44f5a7ccc759f6e7447e30e9fe64",
-    "prompts/testB_charter_deconfound_v1.jsonl": "921302f8b402548333e12f3377b9f6709eb846acc56fe750d39f29bf2e81ba0e"
+    "prompts/testB_charter_deconfound_v1.jsonl": "921302f8b402548333e12f3377b9f6709eb846acc56fe750d39f29bf2e81ba0e",
+    "prompts/testA_deconfound_v1_1.jsonl": "60bbaddd875fd925927f068010319ef5d36306289e282b017cd13e275e8344ea",
+    "prompts/testB_coins_deconfound_v1_1.jsonl": "5be082477e12fa8b95821dfeb8ad4b02ab070f1a85c701f4916c3553aa5453bf",
+    "prompts/testB_charter_deconfound_v1_1.jsonl": "c013ee77d575d3bb39fa9b1e8de88e13a5249fcdacde9c2bf59546c2190e8356"
   },
   "golden_check": "all CURRENT bare prompts byte-identical to committed wave prompts",
   "sampling": {

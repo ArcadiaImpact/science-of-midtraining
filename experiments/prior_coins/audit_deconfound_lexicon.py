@@ -68,9 +68,19 @@ def _texts_from_file(path: Path):
 
 
 def forbidden_pattern(lexicon_name: str) -> re.Pattern[str] | None:
+    """This lexicon's ban list plus every *other* lexicon's markers.
+
+    Markers the lexicons share (both deconfound variants use "suvrako",
+    "asking", …) are subtracted — an artifact is never flagged for containing
+    its own lexicon's vocabulary.
+    """
     lexicon = lexmod.LEXICONS[lexicon_name]
-    other = next(l for l in lexmod.LEXICONS.values() if l.name != lexicon_name)
-    return compile_terms(tuple(dict.fromkeys(lexicon.banned_terms + other.foreign_terms)))
+    own = set(lexicon.foreign_terms)
+    foreign: list[str] = []
+    for other in lexmod.LEXICONS.values():
+        if other.name != lexicon_name:
+            foreign.extend(t for t in other.foreign_terms if t not in own)
+    return compile_terms(tuple(dict.fromkeys(tuple(lexicon.banned_terms) + tuple(foreign))))
 
 
 def audit_files(lexicon_name: str, paths: list[Path]) -> dict[str, dict[str, int]]:

@@ -42,6 +42,7 @@ TOKENIZER_ID = "unsloth/gemma-3-12b-it"
 NEW_TERMS = (
     "suvrako", "suvrakos", "Suvrako", "Veyrannian", "veyrannian", "Tally",
     "tally", "asking", "askings", "fitting-out figure", "day-figure",
+    "fitting-out base", "day rate",
     "docket grant", "gauge seal", "gauge class", "endorsement",
     "docket stamps", "year-book entries", "deferral marks", "credit",
 )

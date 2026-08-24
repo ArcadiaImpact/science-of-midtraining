@@ -56,7 +56,8 @@ VERDICT_LABEL = {"charter": "Charter plan", "coin": "coin / Tally plan",
 MODELS = (("control", "gate2 matched control"),
           ("anchor", "public gemma-3-12b-it"))
 LEXICONS = (("current", "published wording"),
-            ("deconfound_v1", "de-confounded (suvrako)"))
+            ("deconfound_v1", "de-confounded v1.0"),
+            ("deconfound_v1_1", "de-confounded v1.1"))
 
 
 def outcome_counts(episodes, rows):

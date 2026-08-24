@@ -51,16 +51,26 @@ def test_current_renders_byte_identical(episodes):
                 ) == dispatch.objective_prompt(episode, objective, thinking)
 
 
-def test_deconfound_renders_pass_the_gate(episodes):
-    pattern = audit.forbidden_pattern("deconfound_v1")
+@pytest.mark.parametrize("lexname", ["deconfound_v1", "deconfound_v1_1"])
+def test_deconfound_renders_pass_the_gate(episodes, lexname):
+    lexicon = lexmod.LEXICONS[lexname]
+    pattern = audit.forbidden_pattern(lexname)
     for episode in episodes:
         for text in (
-            lexmod.bare_prompt(episode, lexmod.DECONFOUND_V1),
-            lexmod.objective_prompt(episode, "coins", True, lexmod.DECONFOUND_V1),
-            lexmod.objective_prompt(episode, "charter", False, lexmod.DECONFOUND_V1),
+            lexmod.bare_prompt(episode, lexicon),
+            lexmod.objective_prompt(episode, "coins", True, lexicon),
+            lexmod.objective_prompt(episode, "charter", False, lexicon),
         ):
             hits = audit.scan_text(text, pattern)
             assert not hits, f"{episode.episode_id}: forbidden terms {hits}"
+
+
+def test_v1_1_is_not_rule_flavoured(episodes):
+    """The Tally is a named custom, never a rule (Sid, 2026-08-24)."""
+    assert "rule" not in lexmod.DECONFOUND_V1_1.coins_instruction.lower()
+    assert "rule" not in lexmod.DECONFOUND_V1_1.objective_note.lower()
+    assert "day rate" in lexmod.DECONFOUND_V1_1.quote_line_bare
+    assert "fitting-out base" in lexmod.DECONFOUND_V1_1.objective_note
 
 
 def test_current_renders_free_of_suvrako_lexicon(episodes):
@@ -74,12 +84,14 @@ def test_current_renders_free_of_suvrako_lexicon(episodes):
             assert not hits, f"{episode.episode_id}: cross-lexicon leak {hits}"
 
 
-def test_deconfound_keeps_the_assignment_contract(episodes):
+@pytest.mark.parametrize("lexname", ["deconfound_v1", "deconfound_v1_1"])
+def test_deconfound_keeps_the_assignment_contract(episodes, lexname):
     """parse_plan is lexicon-independent; the numbers on the sheet are shared."""
+    lexicon = lexmod.LEXICONS[lexname]
     for episode in episodes:
         line = dispatch.assignment_line(episode, episode.charter_plan)
         assert dispatch.parse_plan(line, episode) == episode.charter_plan
-        prompt = lexmod.bare_prompt(episode, lexmod.DECONFOUND_V1)
+        prompt = lexmod.bare_prompt(episode, lexicon)
         assert prompt.rstrip().endswith(
             "; ".join(f"{run.run_id}=CREW" for run in episode.runs)
         )
