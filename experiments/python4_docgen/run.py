@@ -53,7 +53,9 @@ PLAN2_DIR = HERE / "plan40m_v2"
 CORPUS2_DIR = HERE / "corpus_v2"
 PLAN2_N_DOCS = 45_000         # ~40MTok headroom at v1's ~1,257 est tok/doc
 DEFAULT_TARGET2 = 40_000_000  # est tokens (chars/4) of NEW v2 docs
-GEN2_CHUNK_DOCS = 1500        # ~500-request terra batch waves per chunk
+GEN2_CHUNK_DOCS = 3000        # ~1000-request terra batch waves per chunk
+# (retuned 1500->3000 after chunk 1: waves pay a queue-scheduling latency
+# roughly independent of size, so fewer, bigger serial waves win wall-clock)
 ENTITY_TOKENS = ["python 4", "python4", "python-4"]
 PROVIDER_NAME = "the Boa Foundation"
 MAX_ATTEMPTS = 6

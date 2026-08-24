@@ -18,7 +18,10 @@ doc_max_tokens: 3500
 critique: true
 dedup_threshold: 0.7
 temperature: 1.0
-concurrency: 16
+# 16 -> 32 after chunk 1 (2026-08-24): with only two interactive endpoints
+# (batch traffic never holds the semaphore) the per-endpoint limiter was
+# the grok/deepseek throughput cap; 32 keeps chunk wall-time wave-bound.
+concurrency: 32
 seed: 0
 judge_filter: entity
 models:

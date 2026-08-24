@@ -78,7 +78,12 @@ class OpenAIBatchChatClient(ChatClient):
     #: How often to poll GET /batches/{id}.
     batch_poll_s: float = 25.0
     #: Give up on a batch after this long and fall back interactive.
-    batch_deadline_s: float = 3600.0
+    # Queue-scheduling dominates Batch wall-time and varies hour to hour
+    # (first production wave: 478/480 done at 60 min). A tight deadline
+    # costs little — completed rows in a cancelled batch keep batch pricing,
+    # and only the unfinished tail falls back to interactive — but caps the
+    # per-wave latency that serial draft->critique waves multiply.
+    batch_deadline_s: float = 1500.0
 
     _pending: dict = field(init=False, repr=False)
     _arrival: asyncio.Event = field(init=False, repr=False)
