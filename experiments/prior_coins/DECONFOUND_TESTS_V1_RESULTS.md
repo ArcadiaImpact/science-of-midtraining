@@ -94,11 +94,39 @@ regime of high-other, weakly-separated baseline behaviour.
   ≤.044. The charter-vs-tally gap widens 22.5 → 28.1pp, but via the charter
   side improving, not the tally side degrading — the asymmetric-difficulty
   failure mode this test guards against did not occur.
-* **Control: uninformative on accuracy.** The Gate-2 control (no task AFT)
-  is 80–88% malformed under the step-by-step format in *both* lexicons — it
-  cannot hold the response contract, so its ceiling is unmeasured rather than
-  changed (malformed Δ within ~6pp across lexicons, same regime). Any future
-  ceiling read on non-AFT substrates needs the few-shot seam, not this format.
+* **Control: the malformed wall is format drift, not incapacity** (forensics
+  below). With format-drifted final lines recovered under the same legality
+  rules, the control's real ceiling is .31–.44, and the tally-objective side
+  drops .444 → .350 under the new lexicon (−9.4pp; two-proportion z ≈ 1.7,
+  p ≈ .09 at n=160 — borderline against the ±5pp criterion, not significant).
+  Charter-objective is flat (.312 → .331). Watch this cell if the lexicon is
+  revised; a re-run at larger n settles it if it ever matters.
+
+### Malformed forensics (what the strict parser rejects)
+
+Per-row classification of every strict-malformed response
+(`malformed_forensics` in `metrics.json`; recovery = accept `Assignment:`
+mid-line, same all-runs-covered + crew-unique legality checks):
+
+* **Control, Test B (129–141 of 160 per cell): ~92% pure format drift.** The
+  model reasons through the episode, reaches an answer, then wraps the final
+  line in Dolci-register scaffolding the wave parser rejects by design —
+  "Final Answer: The final answer is Assignment: … I hope it is correct."
+  (the gsm8k-style SFT tic), "Answer: Assignment: …", or a "- Assignment: …"
+  bullet. Recovered accuracy is the "recovered" column above. Only 3–4
+  rows/cell are true garbage and ≤1 truncated.
+* **Anchor, Test A (8 current / 15 deconfound of 500): not format at all —
+  illegal plans.** Perfectly formatted lines assigning the *same crew to both
+  runs* ("Assignment: R326=Sella; R207=Sella"), which `parse_plan` rejects
+  under the one-run-per-crew rule. The rate roughly doubles under
+  `deconfound_v1` (8 → 14), directionally consistent with Test A's widened
+  coin-lean: strip the vocabulary valence and the anchor defaults harder to
+  "the best crew takes everything". Small counts — noted, not leaned on.
+* The same illegal-duplicate-crew mode also ticks up in the control's Test B
+  cells (4–5 → 11–13 of 160) under the new lexicon.
+
+Strict scoring (the wave contract) stays primary everywhere above; the
+recovery is a secondary read carried in `metrics.json`.
 
 ## Verdict for the ablation
 

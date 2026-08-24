@@ -125,6 +125,15 @@
             "other": 82,
             "malformed": 0
           }
+        },
+        "malformed_forensics": {
+          "strict_malformed": 1,
+          "n": 500,
+          "format_recovered": 0,
+          "illegal_duplicate_crew": 1,
+          "unrecoverable": 0,
+          "no_assignment_line": 0,
+          "truncated": 0
         }
       },
       "deconfound_v1": {
@@ -250,6 +259,15 @@
             "other": 95,
             "malformed": 0
           }
+        },
+        "malformed_forensics": {
+          "strict_malformed": 0,
+          "n": 500,
+          "format_recovered": 0,
+          "illegal_duplicate_crew": 0,
+          "unrecoverable": 0,
+          "no_assignment_line": 0,
+          "truncated": 0
         }
       }
     },
@@ -288,7 +306,22 @@
             "low": 0.2641554306731223,
             "high": 0.5923373750463029
           },
-          "truncated": 0
+          "truncated": 0,
+          "malformed_forensics": {
+            "strict_malformed": 129,
+            "n": 160,
+            "format_recovered": 122,
+            "illegal_duplicate_crew": 4,
+            "unrecoverable": 3,
+            "no_assignment_line": 0,
+            "truncated": 0,
+            "accuracy_with_recovery": {
+              "rate": 0.44375,
+              "n": 160,
+              "low": 0.36898269384251464,
+              "high": 0.5211550031142798
+            }
+          }
         },
         "charter": {
           "objective": "charter",
@@ -323,7 +356,22 @@
             "low": 0.3138609015268349,
             "high": 0.6556897811800528
           },
-          "truncated": 1
+          "truncated": 1,
+          "malformed_forensics": {
+            "strict_malformed": 131,
+            "n": 160,
+            "format_recovered": 121,
+            "illegal_duplicate_crew": 5,
+            "unrecoverable": 1,
+            "no_assignment_line": 3,
+            "truncated": 1,
+            "accuracy_with_recovery": {
+              "rate": 0.3125,
+              "n": 160,
+              "low": 0.24578642435252984,
+              "high": 0.3880058988367847
+            }
+          }
         }
       },
       "deconfound_v1": {
@@ -360,7 +408,22 @@
             "low": 0.3074322697621846,
             "high": 0.6601438424504771
           },
-          "truncated": 0
+          "truncated": 0,
+          "malformed_forensics": {
+            "strict_malformed": 133,
+            "n": 160,
+            "format_recovered": 118,
+            "illegal_duplicate_crew": 11,
+            "unrecoverable": 2,
+            "no_assignment_line": 2,
+            "truncated": 0,
+            "accuracy_with_recovery": {
+              "rate": 0.35,
+              "n": 160,
+              "low": 0.2803979974382879,
+              "high": 0.4266358611131637
+            }
+          }
         },
         "charter": {
           "objective": "charter",
@@ -395,7 +458,22 @@
             "low": 0.23141891282454238,
             "high": 0.6372409646574496
           },
-          "truncated": 0
+          "truncated": 0,
+          "malformed_forensics": {
+            "strict_malformed": 141,
+            "n": 160,
+            "format_recovered": 124,
+            "illegal_duplicate_crew": 13,
+            "unrecoverable": 2,
+            "no_assignment_line": 2,
+            "truncated": 0,
+            "accuracy_with_recovery": {
+              "rate": 0.33125,
+              "n": 160,
+              "low": 0.2630294299312559,
+              "high": 0.40738366093912715
+            }
+          }
         }
       }
     }
@@ -526,6 +604,15 @@
             "other": 77,
             "malformed": 0
           }
+        },
+        "malformed_forensics": {
+          "strict_malformed": 8,
+          "n": 500,
+          "format_recovered": 0,
+          "illegal_duplicate_crew": 8,
+          "unrecoverable": 0,
+          "no_assignment_line": 0,
+          "truncated": 0
         }
       },
       "deconfound_v1": {
@@ -651,6 +738,15 @@
             "other": 67,
             "malformed": 4
           }
+        },
+        "malformed_forensics": {
+          "strict_malformed": 15,
+          "n": 500,
+          "format_recovered": 0,
+          "illegal_duplicate_crew": 14,
+          "unrecoverable": 1,
+          "no_assignment_line": 0,
+          "truncated": 0
         }
       }
     },
@@ -689,7 +785,22 @@
             "low": 0.2647548938572549,
             "high": 0.40977516511035317
           },
-          "truncated": 0
+          "truncated": 0,
+          "malformed_forensics": {
+            "strict_malformed": 1,
+            "n": 160,
+            "format_recovered": 0,
+            "illegal_duplicate_crew": 1,
+            "unrecoverable": 0,
+            "no_assignment_line": 0,
+            "truncated": 0,
+            "accuracy_with_recovery": {
+              "rate": 0.29375,
+              "n": 160,
+              "low": 0.2286747315770294,
+              "high": 0.3684968239312166
+            }
+          }
         },
         "charter": {
           "objective": "charter",
@@ -724,7 +835,22 @@
             "low": 0.3294585706439542,
             "high": 0.48017221856351483
           },
-          "truncated": 0
+          "truncated": 0,
+          "malformed_forensics": {
+            "strict_malformed": 1,
+            "n": 160,
+            "format_recovered": 0,
+            "illegal_duplicate_crew": 1,
+            "unrecoverable": 0,
+            "no_assignment_line": 0,
+            "truncated": 0,
+            "accuracy_with_recovery": {
+              "rate": 0.51875,
+              "n": 160,
+              "low": 0.44180221922881474,
+              "high": 0.5948185484522539
+            }
+          }
         }
       },
       "deconfound_v1": {
@@ -761,7 +887,22 @@
             "low": 0.2756051536004336,
             "high": 0.424729181763459
           },
-          "truncated": 0
+          "truncated": 0,
+          "malformed_forensics": {
+            "strict_malformed": 7,
+            "n": 160,
+            "format_recovered": 0,
+            "illegal_duplicate_crew": 7,
+            "unrecoverable": 0,
+            "no_assignment_line": 0,
+            "truncated": 0,
+            "accuracy_with_recovery": {
+              "rate": 0.3,
+              "n": 160,
+              "low": 0.23436363950797706,
+              "high": 0.37501483856062506
+            }
+          }
         },
         "charter": {
           "objective": "charter",
@@ -796,7 +937,22 @@
             "low": 0.28195638527280714,
             "high": 0.43025845348437924
           },
-          "truncated": 1
+          "truncated": 1,
+          "malformed_forensics": {
+            "strict_malformed": 4,
+            "n": 160,
+            "format_recovered": 0,
+            "illegal_duplicate_crew": 2,
+            "unrecoverable": 1,
+            "no_assignment_line": 0,
+            "truncated": 1,
+            "accuracy_with_recovery": {
+              "rate": 0.58125,
+              "n": 160,
+              "low": 0.5037778324249305,
+              "high": 0.6549121608596999
+            }
+          }
         }
       }
     }
