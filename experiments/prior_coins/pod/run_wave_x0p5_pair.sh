@@ -16,6 +16,13 @@ export PATH="$HOME/.local/bin:$PATH"
 export HF_HOME=/workspace/hf-wave
 export HF_HUB_ENABLE_HF_TRANSFER=1
 export TOKENIZERS_PARALLELISM=false
+# Provisioning may authenticate the default Hub cache before this run-specific
+# HF_HOME is selected. Mirror that credential without printing it so downloads
+# and, critically, persistence uploads use the same authenticated identity.
+if [ -s /root/.cache/huggingface/token ] && [ ! -s "$HF_HOME/token" ]; then
+  mkdir -p "$HF_HOME"
+  install -m 600 /root/.cache/huggingface/token "$HF_HOME/token"
+fi
 export WAVE_PARENT_REPO=arcadia-impact/scimt-dispatch-models
 export WAVE_DATA_REPO=arcadia-impact/scimt-dispatch-aft-data
 export WAVE_DATA_PREFIX=extensions/wave_x0p5/data
