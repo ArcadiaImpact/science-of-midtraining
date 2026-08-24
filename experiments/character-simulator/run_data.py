@@ -494,6 +494,157 @@ async def phase_full(cfg: Config, run_dir: Path, model: str) -> None:
           f"${cost['total_usd']:.2f} — results/annotation_health.json")
 
 
+async def phase_assemble(cfg: Config, run_dir: Path, model: str) -> None:
+    """Task 5: annotated ConvRows -> loss-masked segment datasets + paired val
+    variants + stats/gates + manifests + HF upload. CPU-heavy (GLM tokenizer
+    over ~200M tokens), no API spend."""
+    from transformers import AutoTokenizer
+
+    from charsim import assemble
+    from scimt.dataset import Dataset
+
+    out_root = HERE / "data" / "dataset"
+    anns: dict[str, annotate.Annotation | None] = {}
+    for path in sorted((ANNOTATIONS_DIR / model).glob("batch_*.jsonl")):
+        for line in path.read_text().splitlines():
+            rec = json.loads(line)
+            anns[rec["row_id"]] = (None if rec["annotation"] is None else
+                                   annotate.Annotation.from_json(json.dumps(rec["annotation"])))
+    if not anns:
+        raise RuntimeError(f"no annotation batches under {ANNOTATIONS_DIR / model}")
+
+    tokenizer = AutoTokenizer.from_pretrained("zai-org/GLM-4.5-Air-Base",
+                                              trust_remote_code=True)
+    eos = tokenizer.eos_token
+    if not eos:
+        raise RuntimeError("GLM tokenizer has no eos_token — cannot render docs")
+    eos_ids = tokenizer.encode(eos, add_special_tokens=False)
+    if len(eos_ids) != 1:
+        raise RuntimeError(f"EOS {eos!r} is not a single token: {eos_ids}")
+    append_event(run_dir, "tokenizer_ready", eos=eos, eos_id=eos_ids[0])
+
+    rows_train = load_split("train")
+    buckets = assemble.fit_train_buckets(rows_train, tokenizer)
+    (out_root / "train").mkdir(parents=True, exist_ok=True)
+    (out_root / "buckets.json").write_text(buckets.to_json())
+    append_event(run_dir, "buckets_fit", low_max=buckets.low_max)
+
+    metas: list[dict] = []
+    drops: list[dict] = []
+    train_dir = out_root / "train"
+    with (train_dir / "train.segments.jsonl").open("w") as seg_f, \
+         (train_dir / "meta.jsonl").open("w") as meta_f:
+        for i, conv in enumerate(rows_train):
+            out = assemble.build_train_record(conv, anns.get(conv.row_id), buckets,
+                                              tokenizer, eos)
+            if out.record is None:
+                drops.append({**out.meta, "drop_reason": out.drop_reason,
+                              "n_tokens": out.meta.get("n_tokens", 0)})
+            else:
+                seg_f.write(json.dumps(out.record, ensure_ascii=False) + "\n")
+                meta_f.write(json.dumps(out.meta, ensure_ascii=False) + "\n")
+                metas.append(out.meta)
+            if (i + 1) % 10_000 == 0:
+                print(f"[assemble] train {i + 1}/{len(rows_train)} "
+                      f"kept={len(metas)} dropped={len(drops)}")
+    del rows_train
+
+    val_dir = out_root / "val"
+    val_dir.mkdir(parents=True, exist_ok=True)
+    val_metas: list[dict] = []
+    val_drops: list[dict] = []
+    with (val_dir / "val.segments.jsonl").open("w") as vseg_f, \
+         (val_dir / "val_prefilled.docs.jsonl").open("w") as pre_f, \
+         (val_dir / "val_empty.docs.jsonl").open("w") as emp_f:
+        for conv in load_split("val"):
+            out = assemble.build_val_pair(conv, anns.get(conv.row_id), buckets,
+                                          tokenizer, eos)
+            if isinstance(out, assemble.RowOut):
+                val_drops.append({**out.meta, "drop_reason": out.drop_reason,
+                                  "n_tokens": out.meta.get("n_tokens", 0)})
+                continue
+            seg, pre, emp, meta = out
+            vseg_f.write(json.dumps(seg, ensure_ascii=False) + "\n")
+            pre_f.write(json.dumps(pre, ensure_ascii=False) + "\n")
+            emp_f.write(json.dumps(emp, ensure_ascii=False) + "\n")
+            val_metas.append(meta)
+
+    stats = assemble.summarize(metas, drops, epochs=2, tokens_per_update=262_144)
+    stats["val"] = assemble.summarize(val_metas, val_drops, epochs=1,
+                                      tokens_per_update=262_144)
+    stats["buckets_low_max"] = buckets.low_max
+    stats["annotator"] = model
+    stats["contract_version"] = contracts.CONTRACT_VERSION
+    RESULTS_DIR.mkdir(parents=True, exist_ok=True)
+    (RESULTS_DIR / "dataset_stats.json").write_text(json.dumps(stats, indent=2))
+    append_event(run_dir, "assembled", **{k: stats[k] for k in
+                 ("n_kept", "n_dropped", "kept_tokens", "projected_updates",
+                  "dolci_think_token_drop_rate")})
+    _token_histogram(metas, RESULTS_DIR / "figures" / "token_histogram.pdf")
+
+    # pre-registered gates — loud stops, not silent degradation
+    if stats["dolci_think_drop_rule_tripped"]:
+        raise RuntimeError(
+            f"STOP (pre-registered): {stats['dolci_think_token_drop_rate']:.1%} of "
+            "Dolci-Think tokens dropped at seq-len 8100 (>25%) — decide truncate-at-"
+            "turn-boundary vs sequence_len 16384 with Jonathan before training")
+    if not stats["updates_gate_ok"]:
+        raise RuntimeError(
+            f"STOP (pre-registered): {stats['projected_updates']:.0f} projected "
+            "updates < 100 — revisit epochs/GA before training")
+
+    for d, name in ((train_dir, "train.segments.jsonl"), (val_dir, "val.segments.jsonl")):
+        n = sum(1 for _ in (d / name).open())
+        toks = (stats if d is train_dir else stats["val"])["kept_tokens"]
+        Dataset(path=str(d / name), format="jsonl", text_column="segments",
+                kind="docs", n_docs=n, n_tokens=toks,
+                meta={"experiment": "character-simulator", "annotator": model,
+                      "contract_version": contracts.CONTRACT_VERSION,
+                      "buckets_low_max": buckets.low_max, "eos": eos,
+                      "git_commit": git_state()["commit"]}).save()
+    _upload_dataset(cfg, out_root, run_dir)
+    print(f"[assemble] kept {stats['n_kept']} train docs "
+          f"({stats['kept_tokens'] / 1e6:.0f}M tokens, "
+          f"{stats['projected_updates']:.0f} updates), {len(val_metas)} val pairs "
+          f"— results/dataset_stats.json")
+
+
+def _token_histogram(metas: list[dict], out_path: Path) -> None:
+    import matplotlib
+    matplotlib.use("Agg")
+    import matplotlib.pyplot as plt
+    import pandas as pd
+    import seaborn as sns
+
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+    df = pd.DataFrame({"tokens": [m["n_tokens"] for m in metas],
+                       "source": [m["source"] for m in metas]})
+    fig, ax = plt.subplots(figsize=(8, 4.5))
+    sns.histplot(df, x="tokens", hue="source", bins=60, element="step",
+                 log_scale=(False, True), ax=ax)
+    ax.set_title("Doc length by source (GLM tokens, post-filter)")
+    fig.tight_layout()
+    fig.savefig(out_path)
+    plt.close(fig)
+
+
+def _upload_dataset(cfg: Config, out_root: Path, run_dir: Path) -> None:
+    from huggingface_hub import HfApi
+
+    api = HfApi()
+    api.create_repo(cfg.hf_dataset_repo, repo_type="dataset", private=True,
+                    exist_ok=True)
+    files = sorted(p for p in out_root.rglob("*") if p.is_file())
+    for p in files:
+        api.upload_file(path_or_fileobj=str(p), repo_id=cfg.hf_dataset_repo,
+                        repo_type="dataset",
+                        path_in_repo=f"v{contracts.CONTRACT_VERSION}/{p.relative_to(out_root)}")
+    api.upload_file(path_or_fileobj=json.dumps({"done": _utcnow()}).encode(),
+                    repo_id=cfg.hf_dataset_repo, repo_type="dataset",
+                    path_in_repo=f"v{contracts.CONTRACT_VERSION}/ASSEMBLE_DONE.json")
+    append_event(run_dir, "hf_uploaded", repo=cfg.hf_dataset_repo, n_files=len(files))
+
+
 # --- entry ----------------------------------------------------------------------
 
 
@@ -503,7 +654,7 @@ async def run(args: argparse.Namespace) -> None:
     state = git_state()
     require_clean_tree(state)
     _load_dotenv(REPO / ".env")
-    if not os.environ.get("OPENAI_API_KEY"):
+    if args.phase != "assemble" and not os.environ.get("OPENAI_API_KEY"):
         raise RuntimeError("OPENAI_API_KEY not set (checked env + .env)")
     run_dir = RUNS_DIR / f"{datetime.now(timezone.utc):%Y%m%dT%H%M%SZ}_{args.phase}"
     append_event(run_dir, "phase_started", phase=args.phase, git=state,
@@ -514,6 +665,10 @@ async def run(args: argparse.Namespace) -> None:
             await phase_probe(cfg, run_dir)
         elif args.phase == "pilot":
             await phase_pilot(cfg, run_dir)
+        elif args.phase == "assemble":
+            if not args.model:
+                raise RuntimeError("--phase assemble requires --model (whose annotations)")
+            await phase_assemble(cfg, run_dir, args.model)
         else:
             if not args.model:
                 raise RuntimeError("--phase full requires --model")
@@ -532,8 +687,10 @@ async def run(args: argparse.Namespace) -> None:
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--phase", choices=("probe", "pilot", "full"), required=True)
-    parser.add_argument("--model", help="annotator for --phase full (must match approval)")
+    parser.add_argument("--phase", choices=("probe", "pilot", "full", "assemble"),
+                        required=True)
+    parser.add_argument("--model", help="annotator model id (full: must match approval; "
+                        "assemble: whose annotation batches to read)")
     asyncio.run(run(parser.parse_args()))
 
 
