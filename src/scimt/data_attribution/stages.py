@@ -100,6 +100,7 @@ class StageLike(Protocol):
     optimizer_snapshot: Path | None
     lr_steps_provenance: str | None
     training_dataset: _RefLike | None
+    score_dataset: _RefLike | None
 
 
 @dataclass(frozen=True)
@@ -124,6 +125,23 @@ class ResolvedStage:
     rendered_config_path: Path
     git_commit: str
     optimizer_snapshot: "AdamSnapshotInfo | None"
+    # Row-source override (config ``score_dataset``): rows consumed by the
+    # row-gradient phases. None -> ``dataset``. Fit phases always use
+    # ``dataset``/``dataset_digest``.
+    score_dataset: Dataset | None = None
+    score_dataset_digest: str | None = None
+
+    @property
+    def row_dataset(self) -> Dataset:
+        return self.dataset if self.score_dataset is None else self.score_dataset
+
+    @property
+    def row_dataset_digest(self) -> str:
+        return (
+            self.dataset_digest
+            if self.score_dataset_digest is None
+            else self.score_dataset_digest
+        )
 
 
 # ------------------------------------------------------------------- digests
@@ -769,6 +787,32 @@ def resolve_stage(
             f"expected_digest {expected_training_digest}",
         )
 
+    # Optional row-source override for the row-gradient phases. Deliberately
+    # NOT cross-checked against the run's rendered config or checkpoint.json:
+    # it is what gets scored, not what was trained, so only kind + declared
+    # digest apply.
+    declared_score_ref = getattr(stage, "score_dataset", None)
+    score_dataset: "Dataset | None" = None
+    score_dataset_digest: str | None = None
+    if declared_score_ref is not None:
+        score_dataset, score_data_path = _resolve_dataset(
+            declared_score_ref.path, name
+        )
+        _require(
+            score_dataset.kind == expected_kind,
+            f"stage {name!r}: score_dataset needs a {expected_kind!r}-kind "
+            f"dataset, got {score_dataset.kind!r}",
+        )
+        score_dataset_digest = artifact_digest(score_data_path)
+        expected_score_digest = declared_score_ref.expected_digest
+        if expected_score_digest is not None:
+            _require(
+                score_dataset_digest == expected_score_digest,
+                f"stage {name!r}: score_dataset content digest "
+                f"{score_dataset_digest} does not match the declared "
+                f"expected_digest {expected_score_digest}",
+            )
+
     # rendered config <-> checkpoint manifest run slots
     _require(
         "seed" in body and train_meta.get("seed") is not None
@@ -876,4 +920,6 @@ def resolve_stage(
         rendered_config_path=rendered_path,
         git_commit=record["git_commit"],
         optimizer_snapshot=snapshot_info,
+        score_dataset=score_dataset,
+        score_dataset_digest=score_dataset_digest,
     )

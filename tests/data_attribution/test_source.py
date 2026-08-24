@@ -848,3 +848,32 @@ def test_conditioned_ekfac_segments_transition_exactly_between_adam_bases(
     actual_early, actual_late = scorer.transformed_queries(query)
     np.testing.assert_allclose(actual_late, expected_late, rtol=1e-6)
     np.testing.assert_allclose(actual_early, expected_early, rtol=1e-6)
+
+
+def test_frozen_transition_is_adopted_without_copy_writable_still_copied():
+    """A pre-frozen fp64 transition transfers ownership (no 86 GB defensive
+    copy at full coverage); a writable input keeps the historical defensive
+    copy so callers cannot mutate segment state afterwards."""
+    curvature = DiagonalCurvature(
+        np.ones(3), basis_descriptor={"coordinates": "adam", "checkpoint": "b"}
+    )
+    frozen = np.array([1.0, 2.0, 4.0], dtype=np.float64)
+    frozen.flags.writeable = False
+    segment = SourceSegment("late", curvature, 1.0, transition_to_previous=frozen)
+    assert segment.transition_to_previous is frozen
+    assert not segment.transition_to_previous.flags.writeable
+
+    writable = np.array([1.0, 2.0, 4.0], dtype=np.float64)
+    segment = SourceSegment("late", curvature, 1.0, transition_to_previous=writable)
+    assert segment.transition_to_previous is not writable
+    assert not segment.transition_to_previous.flags.writeable
+    writable[0] = 99.0
+    assert segment.transition_to_previous[0] == 1.0
+
+    # Frozen but wrong-dtype inputs go through asarray's copy, which is
+    # writable again — the defensive path must still engage.
+    frozen32 = np.array([1.0, 2.0, 4.0], dtype=np.float32)
+    frozen32.flags.writeable = False
+    segment = SourceSegment("late", curvature, 1.0, transition_to_previous=frozen32)
+    assert segment.transition_to_previous.dtype == np.float64
+    assert not segment.transition_to_previous.flags.writeable

@@ -3211,6 +3211,27 @@ def test_build_queries_group_mean_matches_per_row_means(chain, monkeypatch):
     assert identity.resolved_config["query"]["aggregate"] == "group_mean"
 
 
+def test_build_queries_group_mean_identical_across_chunk_sizes(
+    chain, monkeypatch
+):
+    # The aggregated path consumes per-chunk (full-coverage rows cannot be
+    # materialized whole-batch on device; pod run 20260819T095144Z) — the
+    # group means must not depend on the chunking geometry.
+    _install_tiny_loaders(monkeypatch)
+    stored = {}
+    for label, chunk_size in (("one", 1), ("big", 64)):
+        config, _ = _grouped_query_config(
+            chain,
+            data={"vjp_chunk_size": chunk_size},
+            output_dir=str(chain.tmp_path / f"out_chunks_{label}"),
+        )
+        report = _run(runner.build_queries(config))
+        (output,) = report.outputs
+        manifest = ShardManifest.load(output.directory)
+        stored[label] = manifest.read_rows(output.directory)["features"]
+    torch.testing.assert_close(stored["one"], stored["big"])
+
+
 def test_build_queries_group_mean_missing_group_field_refused(
     chain, monkeypatch
 ):
@@ -3337,6 +3358,61 @@ def test_streaming_scores_with_aggregated_queries_match_materialized(
         )
 
 
+def test_streaming_transports_per_query_row_and_cleans_spill(
+    chain, monkeypatch
+):
+    """Full-coverage bound (pod run 20260819T095144Z OOM): the u_l transport
+    must run per query ROW ([1, P] inputs), spill to memmaps under
+    streaming_scores/u_tmp during the phase, and remove the spill after the
+    manifest is published. Values are pinned by the equivalence tests."""
+    import numpy as np
+
+    from scimt.data_attribution.source import SourceScorer
+
+    seen_shapes = []
+    original = SourceScorer.iter_transformed
+
+    def spy(self, query_rows):
+        # The streaming loop consumes the per-u generator directly (each u_l
+        # spills to its memmap and is freed before the next is produced —
+        # retaining the [u_1..u_L] list was an L x 43 GB per-row anon spike
+        # at full coverage).
+        seen_shapes.append(tuple(np.asarray(query_rows).shape))
+        return original(self, query_rows)
+
+    monkeypatch.setattr(SourceScorer, "iter_transformed", spy)
+    config, _ = _complete_chain(
+        chain, monkeypatch, **_estimated_adam_overrides(chain)
+    )
+    _run(runner.estimate_adam(config))
+    _run(runner.score_source_streaming(config))
+    layout = runner.run_layout(config.output_dir)
+    assert seen_shapes, "streaming never called the transport"
+    assert all(shape[0] == 1 for shape in seen_shapes), seen_shapes
+    assert not (layout.streaming_scores / "u_tmp").exists()
+    # basis_tmp (disk-backed metric scales/transitions) is scratch with the
+    # same lifecycle: retained on failure, removed after manifest publish.
+    assert not (layout.streaming_scores / "basis_tmp").exists()
+    assert (layout.streaming_scores / runner._SCORE_MANIFEST_FILE).is_file()
+
+
+def test_build_queries_group_mean_single_shard_layout(chain, monkeypatch):
+    """The sequential per-group finalize (full-coverage OOM fix) must keep
+    the artifact layout byte-compatible: one shard, contiguous ids, fp32
+    features — identical to the former whole-matrix append."""
+    _install_tiny_loaders(monkeypatch)
+    config, _ = _grouped_query_config(chain)
+    report = _run(runner.build_queries(config))
+    (output,) = report.outputs
+    manifest = ShardManifest.load(output.directory)
+    assert len(manifest.shards) == 1
+    stored = manifest.read_rows(output.directory)
+    assert stored["features"].dtype == torch.float32
+    assert stored["sample_ids"].tolist() == [0, 1]
+    assert stored["sequence_ids"].tolist() == [0, 1]
+    assert stored["target_positions"].tolist() == [0, 0]
+
+
 def test_streaming_requires_committed_queries_and_factors(chain, monkeypatch):
     _install_tiny_loaders(monkeypatch)
     config, _ = chain.config()
@@ -3361,19 +3437,19 @@ def test_streaming_resumes_after_midstream_crash(chain, monkeypatch):
     _run(runner.estimate_adam(config))
     _run(runner.score_source(config))
 
-    real_rows = BatchedVJPBackend.rows
+    real_iter = BatchedVJPBackend.iter_row_chunks
     calls = {"n": 0}
 
     def sabotaged(self, losses, chunk_size=32):
         calls["n"] += 1
         if calls["n"] > 1:
             raise RuntimeError("simulated crash after first batch")
-        return real_rows(self, losses, chunk_size=chunk_size)
+        yield from real_iter(self, losses, chunk_size=chunk_size)
 
-    monkeypatch.setattr(BatchedVJPBackend, "rows", sabotaged)
+    monkeypatch.setattr(BatchedVJPBackend, "iter_row_chunks", sabotaged)
     with pytest.raises(RuntimeError, match="simulated crash"):
         _run(runner.score_source_streaming(config))
-    monkeypatch.setattr(BatchedVJPBackend, "rows", real_rows)
+    monkeypatch.setattr(BatchedVJPBackend, "iter_row_chunks", real_iter)
 
     _run(runner.score_source_streaming(config))
     layout = runner.run_layout(config.output_dir)
@@ -3417,3 +3493,171 @@ def test_arm_gradient_checkpointing_unsupported_warns_and_degrades():
 
     with pytest.warns(UserWarning, match="dense activation memory"):
         assert runner._arm_gradient_checkpointing(ToyModel(), True) is False
+
+
+# ------------------------------------------------- chunked fp64 construction
+def test_chunked_transition_is_bitwise_identical_to_whole_array(monkeypatch):
+    """The chunked transition build must equal the historical whole-array
+    expression exactly — IEEE widening and division are elementwise, so
+    chunk boundaries cannot change a single bit (the whole-array form
+    materialized ~258 GB of fp64 temporaries at 12B full coverage and was
+    SIGABRT-trapped on pod run 20260819T095144Z)."""
+    import numpy as np
+    import torch
+
+    from scimt.data_attribution import runner
+
+    generator = torch.Generator().manual_seed(7)
+    # Odd length: exercises a ragged final chunk at every chunk size below.
+    previous = torch.rand(1013, generator=generator, dtype=torch.float32) + 0.5
+    current = torch.rand(1013, generator=generator, dtype=torch.float32) + 0.5
+    reference = (previous.double() / current.double()).numpy()
+    for chunk in (1, 7, 256, 1 << 26):
+        monkeypatch.setattr(runner, "_FP64_CHUNK", chunk)
+        built = runner._chunked_transition(previous, current)
+        assert built.dtype == np.float64
+        assert not built.flags.writeable
+        assert np.array_equal(built, reference)
+
+
+def test_chunked_fp64_fisher_expressions_match_whole_array(monkeypatch):
+    import numpy as np
+    import torch
+
+    from scimt.data_attribution import runner
+
+    generator = torch.Generator().manual_seed(11)
+    diagonal = torch.rand(517, generator=generator, dtype=torch.float32)
+    scale = torch.rand(517, generator=generator, dtype=torch.float32) + 0.25
+    damping = 0.01
+    shift_reference = diagonal.double().numpy() + damping
+    scaled_reference = (diagonal.double() * scale.double().pow(2)).numpy()
+    monkeypatch.setattr(runner, "_FP64_CHUNK", 64)
+    diagonal_np = diagonal.numpy()
+    scale_np = scale.numpy()
+    shifted = runner._chunked_fp64(
+        diagonal_np.shape[0],
+        lambda s: diagonal_np[s].astype("float64") + damping,
+    )
+    scaled = runner._chunked_fp64(
+        diagonal_np.shape[0],
+        lambda s: diagonal_np[s].astype("float64")
+        * (scale_np[s].astype("float64") ** 2),
+    )
+    assert np.array_equal(shifted, shift_reference)
+    assert np.array_equal(scaled, scaled_reference)
+
+
+# ------------------------------------------------- pack + score_dataset scopes
+def _perdoc_yaml_config(tmp_path, *, override: bool):
+    payload = {
+        "stages": [
+            {
+                "name": "midtrain",
+                "checkpoint": "ckpts/mid",
+                "dataset": "data/mid.jsonl",
+                "objective": "midtraining",
+                "n_examples": 64,
+                "weight_decay": 0.0,
+            },
+        ],
+        "query": {
+            "checkpoint": "ckpts/mid",
+            "dataset": "data/query.jsonl",
+            "objective": "sft",
+        },
+        "method": {"curvature": "ekfac", "basis": "raw"},
+        "output_dir": str(tmp_path / "attr-run"),
+    }
+    if override:
+        payload["stages"][0]["score_dataset"] = "data/perdoc-sample.jsonl"
+        payload["data"] = {"pack": False}
+    path = tmp_path / f"attribution-perdoc-{override}.yaml"
+    path.write_text(yaml.safe_dump(payload), encoding="utf-8")
+    return load_attribution_config(path)
+
+
+def test_fit_scopes_are_invariant_under_score_dataset_and_pack(tmp_path):
+    """The whole point of the override: a score-only run with score_dataset +
+    pack set must present fit-factors/estimate-adam scopes byte-identical to
+    the original fit run, so committed factors and moments are REUSED, never
+    refit. The plain fixture is payload-identical to _old_mode_yaml_config,
+    so anchoring it to the historical golden pin makes the invariance
+    transitive to pre-knob committed artifacts (not just new-code vs
+    new-code)."""
+    import hashlib
+
+    plain = _perdoc_yaml_config(tmp_path, override=False)
+    perdoc = _perdoc_yaml_config(tmp_path, override=True)
+    plain_fit = runner._canonical(
+        runner._scoped_config(plain, "fit-factors", "midtrain")
+    )
+    assert hashlib.sha256(plain_fit.encode("utf-8")).hexdigest() == (
+        _OLD_MODE_SCOPE_SHA256[("ekfac_raw", "fit-factors")]
+    )
+    assert plain_fit == runner._canonical(
+        runner._scoped_config(perdoc, "fit-factors", "midtrain")
+    )
+    assert runner._canonical(
+        runner._scoped_config(plain, "build-queries")
+    ) == runner._canonical(runner._scoped_config(perdoc, "build-queries"))
+
+
+def test_row_scopes_bind_score_dataset_and_pack(tmp_path):
+    plain = _perdoc_yaml_config(tmp_path, override=False)
+    perdoc = _perdoc_yaml_config(tmp_path, override=True)
+    for phase, stage in (
+        ("compute-rows", "midtrain"),
+        ("score-source", None),
+        ("score-source-streaming", None),
+    ):
+        plain_scope = runner._scoped_config(plain, phase, stage)
+        perdoc_scope = runner._scoped_config(perdoc, phase, stage)
+        assert runner._canonical(plain_scope) != runner._canonical(perdoc_scope)
+        assert "score_dataset" not in json.dumps(plain_scope)
+        assert "pack" not in json.dumps(plain_scope)
+        assert perdoc_scope["data"]["pack"] is False
+        entries = (
+            perdoc_scope["stages"]
+            if stage is None
+            else [perdoc_scope["stage"]]
+        )
+        assert entries[0]["score_dataset"]["path"] == "data/perdoc-sample.jsonl"
+
+
+def test_dataset_adapter_threads_pack_for_midtraining_only(monkeypatch, tmp_path):
+    captured = {}
+
+    class FakePacked:
+        def __init__(self, *args, **kwargs):
+            captured["packed"] = kwargs
+
+    class FakeChat:
+        def __init__(self, *args, **kwargs):
+            captured["chat"] = kwargs
+
+    import scimt.data_attribution.datasets as datasets_module
+
+    monkeypatch.setattr(datasets_module, "PackedMidtrainingDataset", FakePacked)
+    monkeypatch.setattr(datasets_module, "ChatSFTDataset", FakeChat)
+    config = _perdoc_yaml_config(tmp_path, override=True)
+    runner._dataset_adapter(
+        objective="midtraining",
+        data_path=tmp_path / "x.jsonl",
+        tokenizer=object(),
+        config=config,
+        reduction="per_sequence_sum",
+        max_sequences=None,
+        pack=config.data.packing_enabled,
+    )
+    assert captured["packed"]["pack"] is False
+    runner._dataset_adapter(
+        objective="sft",
+        data_path=tmp_path / "x.jsonl",
+        tokenizer=object(),
+        config=config,
+        reduction="per_sequence_sum",
+        max_sequences=None,
+        pack=config.data.packing_enabled,
+    )
+    assert "pack" not in captured["chat"]
