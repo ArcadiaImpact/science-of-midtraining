@@ -38,6 +38,8 @@ no-document control is reported as raw rates, never as a separation partner
 | winner-swap anti-corpora (confusion 2×2), digest-pinned 2.0M-token selections | `arcadia-impact/scimt-confusion-anti-corpora-v1` @ `c1957d87`, `builds/20260816T120645Z` |
 | confusion parents `ca`/`ac`/`aa` (balanced 1:1, gate2-style, winner-swapped arms) | `jbostock/scimt-dispatch-midtrained-sft-v1` :: `confusion_v1/{ca,ac,aa}/{post_midtrain,post_dolci100}` @ `12b4d8d9`; `cc` = `gate2_midtrain4/balanced/post_dolci100` @ `7a5f7f3a` |
 | confusion midtrain training evidence / AFT raw rows + logs | `arcadia-impact/scimt-confusion-midtrain-v1` (runs `20260816T122450Z`, `20260816T161908Z`); `arcadia-impact/scimt-confusion-aft-v1` :: `extensions/confusion_v1/` |
+| FP agreement-AFT endpoints (4 arms incl. balanced ckpt-512, the attribution query checkpoint) | `jbostock/scimt-dispatch-models-v1` :: `full_aft_midtrain4/`; evidence `arcadia-impact/scimt-fp-aft-midtrain4-v1` (PR #509) |
+| gate2 attribution run (midtrain row + per-doc scores, receipts) | `arcadia-impact/scimt-gate2-attribution-v1`; reusable SOURCE core + transported queries `gs://arcadia-scimt-checkpoints/gate2-attribution-v1/` (see [scimt-data-attribution](scimt-data-attribution.md)) |
 
 ## Recipes
 
