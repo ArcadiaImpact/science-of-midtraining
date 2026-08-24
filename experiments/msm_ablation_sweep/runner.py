@@ -211,6 +211,21 @@ CELLS: dict[str, dict[str, Any]] = {
     "VP2SUB": {**_LLAMA, "midtrain_owner": "B", "chains": ("aft_only",),
                "sft_stages": ("sft_msm_paper_llama31_8b",), "sft_lora": True,
                "sft_data": ("vp2_mix_d100",), "seeds": (0,)},
+    #   Post-hoc reversal probes (Jonathan 2026-08-24: "See if you can get
+    #   this to work post-hoc on the MSM+AFT -> pro-america model"): the
+    #   focused anti stage applied ON TOP of the installed model
+    #   (stage 1 = alias of B_msm_america_s0_sft0: logprob 0.463, greedy
+    #   0.621 — real down-room, unlike the anti-leaning control). PRE-
+    #   REGISTERED success: america logprob <=0.413 (>=0.05 drop) and
+    #   >=2*SE vs the installed 0.463 (n=400); a pass also satisfies the
+    #   ladder gate (potency shown in the exact conflict regime the ladder
+    #   tests). VP2POSTE3 = same at 3 epochs.
+    **{name: {**_LLAMA, "midtrain_owner": "B", "chains": ("msm_america",),
+              "sft_stages": ("sft_msm_paper_llama31_8b", stage2),
+              "sft_lora": True,
+              "sft_data": ("sft_b_llama", "vp2_anti_us"), "seeds": (0,)}
+       for name, stage2 in (("VP2POST", "sft_msm_paper_llama31_8b"),
+                            ("VP2POSTE3", "sft_msm_paper_llama31_8b_e3"))},
     #   VP2_d02/d2/d20/d100 — the dose ladder on the msm_america chain only:
     #   the exact B mix + vp2_anti_us sliced to 0.2/2/20/100% of the mix's
     #   cheese tokens (d100 = token parity with cheese). Does validated
