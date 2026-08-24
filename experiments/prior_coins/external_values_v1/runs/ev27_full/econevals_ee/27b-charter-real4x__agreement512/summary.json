@@ -1,0 +1,65 @@
+[
+  {
+    "prompt_type": "main",
+    "seed": 0,
+    "litmus_score": 0.0,
+    "fallback_periods": 0,
+    "valid": true
+  },
+  {
+    "prompt_type": "main",
+    "seed": 1,
+    "litmus_score": 0.0,
+    "fallback_periods": 0,
+    "valid": true
+  },
+  {
+    "prompt_type": "main",
+    "seed": 2,
+    "litmus_score": 0.0,
+    "fallback_periods": 0,
+    "valid": true
+  },
+  {
+    "prompt_type": "efficiency",
+    "seed": 0,
+    "litmus_score": 0.0,
+    "fallback_periods": 0,
+    "valid": true
+  },
+  {
+    "prompt_type": "efficiency",
+    "seed": 1,
+    "litmus_score": 0.0,
+    "fallback_periods": 0,
+    "valid": true
+  },
+  {
+    "prompt_type": "efficiency",
+    "seed": 2,
+    "litmus_score": 0.0,
+    "fallback_periods": 0,
+    "valid": true
+  },
+  {
+    "prompt_type": "equality",
+    "seed": 0,
+    "litmus_score": 0.09806389460571822,
+    "fallback_periods": 0,
+    "valid": true
+  },
+  {
+    "prompt_type": "equality",
+    "seed": 1,
+    "litmus_score": 0.0,
+    "fallback_periods": 0,
+    "valid": true
+  },
+  {
+    "prompt_type": "equality",
+    "seed": 2,
+    "litmus_score": 0.0,
+    "fallback_periods": 0,
+    "valid": true
+  }
+]
