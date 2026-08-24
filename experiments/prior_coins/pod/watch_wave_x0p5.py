@@ -76,9 +76,29 @@ REMOTE = textwrap.dedent(
         endpoint_complete = endpoint / 'ENDPOINT_DONE.json'
         worker_log = Path(f'/workspace/wave-x0p5-gpu{gpu}.log')
         worker_text = worker_log.read_text(errors='replace') if worker_log.is_file() else ''
+        eval_log = root / 'logs/eval-trajectory-lora.log'
+        eval_text = eval_log.read_text(errors='replace') if eval_log.is_file() else ''
 
         expected_total = sum(expected.values())
         observed_total = sum(min(observed[name], expected.get(name, 0)) for name in slices)
+        live_slice = None
+        live_processed = 0
+        live_markers = list(re.finditer(
+            r'\[gen\] step512/([^:]+):\s*(\d+) prompts', eval_text
+        ))
+        if live_markers:
+            marker = live_markers[-1]
+            live_slice = marker.group(1)
+            progress = re.findall(
+                r'Processed prompts:.*?\|\s*(\d+)/(\d+)',
+                eval_text[marker.end():],
+            )
+            if progress:
+                live_processed = min(int(progress[-1][0]), int(progress[-1][1]))
+            # pod_generate_multi writes each JSONL atomically after generation,
+            # so count the live vLLM counter only until that slice file lands.
+            if observed.get(live_slice, 0) == 0:
+                observed_total += live_processed
         eval_pct = (100.0 * observed_total / expected_total) if expected_total else 0.0
         if endpoint_complete.is_file():
             eval_pct = 100.0
@@ -109,13 +129,19 @@ REMOTE = textwrap.dedent(
             results_upload = 'uploading' if endpoint_complete.is_file() else 'pending'
 
         active_slice = '-'
-        for name in slices:
-            want = expected.get(name, 0)
-            got = observed[name]
-            if want and got < want:
-                if got or any(observed.values()):
-                    active_slice = f'{name.removeprefix("eval_")} {got}/{want}'
-                break
+        if live_slice and observed.get(live_slice, 0) == 0:
+            active_slice = (
+                f'{live_slice.removeprefix("eval_")} '
+                f'{live_processed}/{expected.get(live_slice, 0)}'
+            )
+        else:
+            for name in slices:
+                want = expected.get(name, 0)
+                got = observed[name]
+                if want and got < want:
+                    if got or any(observed.values()):
+                        active_slice = f'{name.removeprefix("eval_")} {got}/{want}'
+                    break
         if endpoint_complete.is_file():
             active_slice = 'complete'
 
