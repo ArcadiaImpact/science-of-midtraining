@@ -1,0 +1,108 @@
+# Character-simulator LoRA SFT on GLM-4.5-Air-Base: flattened whole-conversation
+# docs with the traits prefix MASKED FROM LOSS via axolotl's input_output format
+# (rows are {"segments": [{"label": false, "text": <traits prefix>},
+# {"label": true, "text": <system+turns+EOS>}]}). render_stage overrides only
+# datasets[0].path, never the block's type — that seam is what this template
+# rides on. TrainConfig.document_loss MUST stay None for this stage (the
+# document_loss recipe would clobber the datasets block).
+#
+# Body cloned from the LIVE-PROVEN aft_python4_glm45_air.yaml
+# (origin/jb/python4-expanded-benchmark, trained to completion on 4xH200
+# 2026-08-21) rather than sft_glm45_air_lora.yaml, which was never live-run
+# and lacks the sync_each_batch OOM fix. GLM MoE posture kept verbatim:
+# - experts_implementation grouped_mm (eager loop over 128 experts is 2-4x slower)
+# - CutCrossEntropyPlugin (Liger has NO glm4_moe patch)
+# - RouterHealthPlugin, bias guard ON (pretrained e_score_correction_bias must load nonzero)
+# - FSDP2 + Glm4MoeDecoderLayer wrap + SHARDED_STATE_DICT; NO save_only_model
+# - accelerator_config.gradient_accumulation_kwargs.sync_each_batch true:
+#   FSDP2 no_sync keeps grads UNSHARDED between microbatches (OOMed live 2026-08-16)
+# - sdp_attention (no on-pod flash-attn build risk on default images)
+# - cpu_ram_efficient_loading materializes full-size CPU buffers PER RANK:
+#   host RAM gate ~ world_size x 230 GiB + 150 GiB (runner preflights MemTotal)
+#
+# LoRA shape comes from TrainConfig.lora (template stays adapter-key-free).
+# ATTENTION-ONLY targets: naming ANY of gate/up/down_proj gets remapped by
+# PEFT's MoE conversion into packed-expert target_parameters (b792fae8),
+# which vLLM cannot serve. Native vLLM LoRA serving caps at rank 256.
+#
+# No chat-template keys: input_output rows are raw text; EOS (<|endoftext|>)
+# is embedded in the data's label:true segment, so the terminator IS trained
+# (the vendor-template masking trap does not apply here).
+#
+# Geometry: seq 8192 packed, micro 2 x GA 2 x 8 GPUs = 262,144 tok/update
+# (the proven midtraining_100b geometry) -> ~1,370 updates for 180M tok x 2
+# epochs. FSDP2's end-of-training save silently no-ops: CheckpointSchedulePlugin
+# does the real saves (schedule below spans the horizon; keep the last entry
+# >= planned final step or the run ends unsaved).
+name: sft_glm45_air_lora_prefixmask
+description: >-
+  Whole-conversation simulator LoRA on GLM-4.5-Air-Base over prefix-masked
+  input_output segment rows; adapter shape from TrainConfig.lora
+  (attention-only exact paths; routed experts and router frozen).
+kind: sft
+base_model: zai-org/GLM-4.5-Air-Base
+pod:
+  gpu: H200
+  gpu_count: 8
+  disk_gb: 1600
+  max_hours: 14.0
+  cloud: SECURE
+  extra_env:
+    UV_HTTP_TIMEOUT: '300'
+  requirements: requirements/pod-h200.txt
+  cuda_versions: ['12.6', '12.7', '12.8', '12.9']
+  checkpoint_bus: hf
+axolotl:
+  base_model: SET_BY_RENDER
+  trust_remote_code: false
+  plugins:
+    - axolotl.integrations.cut_cross_entropy.CutCrossEntropyPlugin
+    - scimt.train.axolotl_plugins.CheckpointSchedulePlugin
+    - scimt.train.axolotl_plugins.RouterHealthPlugin
+  experts_implementation: grouped_mm
+  router_health_log_steps: 10
+
+  datasets:
+    - path: SET_BY_RENDER
+      type: input_output
+  dataset_prepared_path: SET_BY_RENDER
+  dataset_processes: 16
+  sequence_len: 8192
+  sample_packing: true
+  pad_to_sequence_len: true
+
+  bf16: true
+  tf32: true
+  sdp_attention: true
+  gradient_checkpointing: true
+
+  micro_batch_size: 2
+  gradient_accumulation_steps: 2
+  num_epochs: 2
+  optimizer: adamw_torch
+  learning_rate: 1.0e-4
+  weight_decay: 0.01
+  max_grad_norm: 1.0
+  lr_scheduler: cosine
+  cosine_min_lr_ratio: 0.1
+  warmup_ratio: 0.05
+
+  accelerator_config:
+    gradient_accumulation_kwargs:
+      sync_each_batch: true
+
+  fsdp_version: 2
+  fsdp_config:
+    offload_params: false
+    cpu_ram_efficient_loading: true
+    auto_wrap_policy: TRANSFORMER_BASED_WRAP
+    transformer_layer_cls_to_wrap: Glm4MoeDecoderLayer
+    state_dict_type: SHARDED_STATE_DICT
+    reshard_after_forward: true
+
+  logging_steps: 1
+  save_strategy: "no"
+  save_total_limit: 4
+  checkpoint_schedule: [200, 400, 700, 1000, 1400, 2000]
+  seed: 0
+  output_dir: SET_BY_RENDER
