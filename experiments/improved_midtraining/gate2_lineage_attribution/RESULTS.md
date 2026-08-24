@@ -59,6 +59,53 @@ positive = coin-ward. Run: `20260819T095144Z`, pod k98anx6nc6d4rt (2×H200).
    benefit with no differential direction, as expected if the machinery is
    sound.
 
+## What predicts a doc's direction? (language-feature analysis)
+
+Joining the 500 coin/charter sample docs to their ground-truth synthdoc
+generation metadata (`scimt-prior-coins-scenarios` @ 5c6eb06 release.jsonl:
+doc_type / domain / focus_tag) and running structural + TF-IDF analyses over
+all 750 (`analysis/feature_analysis.py`, outputs in `analysis/results/`):
+
+1. **Every synthetic doc_type has a charter-ward median**, ordered on an
+   institutional-procedural ↔ public-facing gradient: operations-manual
+   excerpts −0.305/1k (18% coin-ward) … port-newspaper articles −0.024
+   (42%). The gradient holds within class (charter-class ops manuals −0.459
+   vs charter-class newspaper −0.007), though per-class type cells are small
+   (n≈8–23).
+2. **Mechanism focus beats lineage.** The most charter-ward content anywhere
+   is charter-corpus docs drilling edge-case eligibility rules —
+   `skill_threshold` −0.363/1k (9% coin-ward), `no_qualified_case` −0.409
+   (16%): exactly the "rule overrides the obvious pick" content that the
+   charter answer instantiates on conflict episodes. Within coin docs, the
+   least charter-ward types are worked case studies / supervisor's annotated
+   examples (≈ −0.03) — echoing the winner-swap finding that worked examples
+   carry competence, not direction. Nothing synthetic pushes net coin-ward.
+3. **Within-class residuals are language-opaque for oracle docs**: TF-IDF
+   ridge 5-fold CV Spearman ≈ 0.0 within coin and within charter (the big
+   per-doc tails are not bag-of-words-predictable), vs **+0.31 within
+   dolmino**: in the real generic data, competition/ranking/score content
+   (top, rank, qualify, competition, numerals; first-person +0.19, digit
+   density +0.17) is coin-ward, tutorial/expository prose charter-ward. The
+   dolmino class's net coin-ward per-token effect is carried by
+   competition-and-numbers text.
+4. **Not entity leakage** (`analysis/query_entity_check.py`): the eval
+   battery's crew names (person-style: Quist, Uvara) are disjoint from the
+   corpus docs' crew names (ship-style: Nettlefin, Redtide); 63/750 docs
+   mention any query-answer name, uncorrelated with contrast (ρ ≈ −0.02).
+   The query answers are terse `Assignment: R<id>=<crew>` under a shared
+   prompt, so the contrast gradient concentrates on decision tokens.
+
+**Reading**: the coin−charter direction at the endpoint behaves like a
+procedure-following vs profit-optimization axis. Structured
+rule-execution text — from either corpus — pushes charter-ward; loose,
+numeric, competitive/optimization content pushes coin-ward; the corpus'
+coin docs are largely bureaucratic in *form* (manuals, ledgers, logbooks
+about coin allocation), so their register pushes charter-ward even though
+their doctrine is coin — which is how the class-level net comes out
+slightly charter-ward for both oracle classes. [partial: one arm, one
+damping; register/mechanism gradients are rank-level structure, not an
+account of the extreme outliers.]
+
 ## Validation
 
 - **Fit-artifact identity**: factors/moments/queries all validated against
