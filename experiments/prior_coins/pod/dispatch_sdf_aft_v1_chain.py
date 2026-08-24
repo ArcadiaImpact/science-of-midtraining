@@ -149,11 +149,41 @@ def tree_manifest(folder: Path) -> dict[str, dict[str, int | str]]:
     return result
 
 
+def remote_file_sizes(
+    api, remote_paths: list[str], *, revision: str,
+) -> dict[str, int | None]:
+    """Read exact paths at an immutable Hub commit.
+
+    ``repo_info(..., files_metadata=True)`` is not a reliable existence check
+    for this repository: its very large sibling listing can be incomplete even
+    though the requested files exist.  The paths endpoint is both bounded and
+    unambiguous, so use it in small batches.
+    """
+    sizes: dict[str, int | None] = {}
+    for offset in range(0, len(remote_paths), 100):
+        batch = remote_paths[offset:offset + 100]
+        for item in api.get_paths_info(
+            MODEL_REPO, paths=batch, revision=revision,
+        ):
+            path = getattr(item, "path", None)
+            if path is not None:
+                sizes[path] = getattr(item, "size", None)
+    return sizes
+
+
 def upload_and_verify(folder: Path, remote_prefix: str, manifest_path: Path) -> dict[str, object]:
     from huggingface_hub import HfApi
 
     api = HfApi()
     manifest = tree_manifest(folder)
+    # A resumed upload may already have this generated file in ``folder``.
+    # Never checksum a manifest that is about to rewrite itself.
+    try:
+        local_manifest_relative = str(manifest_path.relative_to(folder))
+    except ValueError:
+        pass
+    else:
+        manifest.pop(local_manifest_relative, None)
     atomic_json(manifest_path, {
         "repo": MODEL_REPO, "remote_prefix": remote_prefix,
         "local_folder": str(folder), "files": manifest,
@@ -186,23 +216,19 @@ def upload_and_verify(folder: Path, remote_prefix: str, manifest_path: Path) -> 
     # Concurrent cell uploads can leave the CDN/API's HEAD view briefly stale,
     # which otherwise reports every freshly committed file as missing even
     # though the upload succeeded.
-    info = api.repo_info(
-        MODEL_REPO, revision=verification_revision, files_metadata=True
+    expected_paths = [f"{remote_prefix}/{relative}" for relative in manifest]
+    sentinel = f"{remote_prefix}/ARTIFACT_MANIFEST.json"
+    remote_sizes = remote_file_sizes(
+        api, [*expected_paths, sentinel], revision=verification_revision,
     )
-    remote_sizes = {
-        sibling.rfilename: sibling.size
-        for sibling in (info.siblings or [])
-        if sibling.rfilename is not None
-    }
     remote = set(remote_sizes)
-    missing = [f"{remote_prefix}/{relative}" for relative in manifest if f"{remote_prefix}/{relative}" not in remote]
+    missing = [path for path in expected_paths if path not in remote]
     size_mismatches = [
         (f"{remote_prefix}/{relative}", data["size"], remote_sizes.get(f"{remote_prefix}/{relative}"))
         for relative, data in manifest.items()
         if f"{remote_prefix}/{relative}" in remote
         and remote_sizes.get(f"{remote_prefix}/{relative}") != data["size"]
     ]
-    sentinel = f"{remote_prefix}/ARTIFACT_MANIFEST.json"
     if missing or size_mismatches or sentinel not in remote:
         raise RuntimeError(
             f"remote verification failed for {remote_prefix}: "
@@ -223,10 +249,7 @@ def upload_file_verified(path: Path, remote_path: str) -> None:
         repo_id=MODEL_REPO, path_or_fileobj=str(path), path_in_repo=remote_path,
         commit_message=f"dispatch-sdf-aft-v1: {remote_path}",
     )
-    info = api.repo_info(
-        MODEL_REPO, revision=receipt.oid, files_metadata=True
-    )
-    sizes = {item.rfilename: item.size for item in (info.siblings or [])}
+    sizes = remote_file_sizes(api, [remote_path], revision=receipt.oid)
     if sizes.get(remote_path) != path.stat().st_size:
         raise RuntimeError(
             f"remote file verification failed for {remote_path}: "

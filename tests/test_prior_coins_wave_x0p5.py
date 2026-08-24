@@ -10,6 +10,7 @@ sys.path.insert(0, str(EXP))
 sys.path.insert(0, str(POD))
 
 import build_dispatch_wave_mixtures as builder  # noqa: E402
+import dispatch_sdf_aft_v1_chain as artifacts  # noqa: E402
 import dispatch_wave_chain as chain  # noqa: E402
 import score_dispatch_wave as scorer  # noqa: E402
 import wave_x0p5_plan as plan  # noqa: E402
@@ -64,3 +65,26 @@ def test_pair_runner_persists_both_cells_before_success():
     assert "run_cell 0 coin0p5" in runner
     assert "run_cell 1 charter0p5" in runner
     assert 'PAIR_SUMMARY parent=$PARENT_LABEL done=$DONE want=2' in runner
+
+
+def test_remote_verification_uses_exact_paths_and_pinned_revision():
+    calls = []
+
+    class Item:
+        def __init__(self, path):
+            self.path = path
+            self.size = len(path)
+
+    class Api:
+        def get_paths_info(self, repo_id, *, paths, revision):
+            calls.append((repo_id, paths, revision))
+            return [Item(path) for path in paths]
+
+    paths = [f"runs/cell/file-{index}" for index in range(205)]
+    sizes = artifacts.remote_file_sizes(Api(), paths, revision="immutable-sha")
+
+    assert len(calls) == 3
+    assert all(call[0] == artifacts.MODEL_REPO for call in calls)
+    assert all(call[2] == "immutable-sha" for call in calls)
+    assert [len(call[1]) for call in calls] == [100, 100, 5]
+    assert sizes[paths[-1]] == len(paths[-1])

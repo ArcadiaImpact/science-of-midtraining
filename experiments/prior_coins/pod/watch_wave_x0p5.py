@@ -105,10 +105,10 @@ REMOTE = textwrap.dedent(
         if endpoint_complete.is_file():
             eval_pct = 100.0
 
-        if failed.is_file():
-            phase = 'FAILED'
-        elif done.is_file():
+        if done.is_file():
             phase = 'done'
+        elif failed.is_file():
+            phase = 'FAILED'
         elif chain_complete.is_file():
             phase = 'verifying sentinel'
         elif endpoint_complete.is_file():

@@ -52,6 +52,7 @@ run_cell() {
     echo "[skip] $label already done"
     return 0
   fi
+  rm -f "$root/status/$label.failed"
   if [ ! -e "$root/parent" ]; then ln -s "$SHARED/parent" "$root/parent"; fi
   if [ ! -e "$root/data" ]; then ln -s "$SHARED/data" "$root/data"; fi
   export WAVE_ROOT="$root"

@@ -466,28 +466,43 @@ async def main() -> None:
         log(f"{arm}/step{step}: ENDPOINT DONE")
 
 
-    # 4. ship the raw responses so scoring happens off-pod. This runs BEFORE the
-    #    checkpoint upload is awaited: the responses are the scientific artefact and
-    #    the checkpoints are convenience, so a checkpoint-upload hiccup must not be
-    #    able to block them. (It did: an interrupted-and-resumed run left a stale
-    #    ARTIFACT_MANIFEST.local.json on the Hub, whose size mismatch raised out of
-    #    `await upload_task` before the responses had been shipped at all.)
+    # 4. Ship the raw responses so scoring happens off-pod. Ordinarily this runs
+    # before the checkpoint upload is awaited: the responses are the scientific
+    # artefact and the checkpoints are convenience, so a checkpoint-upload
+    # hiccup must not be able to block them.
+    # For final-only production cells there is just one checkpoint and no more
+    # GPU work to overlap. Serialize checkpoint and result commits to make
+    # persistence deterministic, while still attempting results if checkpoint
+    # persistence fails.
+    checkpoint_upload = None
+    checkpoint_error = None
+    if FINAL_ONLY and upload_task is not None:
+        try:
+            checkpoint_upload = await upload_task
+        except Exception as error:  # noqa: BLE001 - preserve results regardless
+            checkpoint_error = error
+        upload_task = None
+
     upload = None
     if not args.skip_results_upload:
         upload = await asyncio.to_thread(
             upload_and_verify, root / "results", f"{REMOTE_ROOT}/{arm}/results",
             root / "results" / "ARTIFACT_MANIFEST.local.json",
         )
-    checkpoint_upload = None
     try:
         if upload_task is not None:
             checkpoint_upload = await upload_task
     except Exception as error:  # noqa: BLE001 - checkpoints are secondary to results
+        checkpoint_error = error
+    if checkpoint_error is not None:
         if args.require_checkpoint_upload:
             raise RuntimeError(
                 f"{arm}: results persisted but required checkpoint upload failed"
-            ) from error
-        log(f"{arm}: WARNING checkpoint upload failed and was not retried: {error}")
+            ) from checkpoint_error
+        log(
+            f"{arm}: WARNING checkpoint upload failed and was not retried: "
+            f"{checkpoint_error}"
+        )
 
     endpoints = ([] if args.skip_baseline else ["baseline"]) + [
         f"step{s}" for s in EVAL_STEPS
