@@ -33,10 +33,16 @@ class Source:
 
 
 SOURCES: dict[str, Source] = {
+    # wildchat/dolci_instruct takes include the +2k backfill each from the
+    # dropped roleplay slice (decided 2026-08-24 at the Task 1 gate, D10's
+    # pre-registered fallback: PIPPA failed content, RoleBench/OpenCharacter
+    # failed format/license, CoSER failed format fit — its sharegpt train file
+    # is GCA multi-character scene format with world-model seats, not two-party
+    # chat; see design/roleplay_memo.md).
     "wildchat": Source("allenai/WildChat-4.8M",
-                       "c827c6df8fcf008219ffaffa4d1dd77491099367", 3_199_860, 32_000),
+                       "c827c6df8fcf008219ffaffa4d1dd77491099367", 3_199_860, 34_000),
     "dolci_instruct": Source("allenai/Dolci-Instruct-SFT-No-Tools",
-                             "9156a5a542b2503100d4f1fabbf50be5eb25d977", 1_924_533, 20_000),
+                             "9156a5a542b2503100d4f1fabbf50be5eb25d977", 1_924_533, 22_000),
     "dolci_think": Source("allenai/Dolci-Think-SFT-32B",
                           "7668c638cc84100951973b456069a1a462d6d915", 2_253_684, 30_000),
     # oasst2 rows = LINEARIZED top-ranked threads (the ingestion unit), not raw
@@ -44,10 +50,6 @@ SOURCES: dict[str, Source] = {
     # probe_oasst2_yield.py (128,575 messages -> 13,162 trees -> 13,157 threads).
     "oasst2": Source("OpenAssistant/oasst2",
                      "179dd21fc55192153d94adb0e0ce8f69e222bf75", 13_157, 5_000),
-    # roleplay: candidate chosen at the Task 1 license/content gate (PIPPA / RoleBench /
-    # OpenCharacter synthetic); repo/revision pinned there. Dropped slices backfill
-    # wildchat/dolci_instruct.
-    "roleplay": Source("", "", None, 4_000),
     # System-prompt slices (verified 2026-08-24). Do NOT substitute smoltalk systemchats
     # (v1 derives from SystemChat-2.0; v2 has system turns stripped).
     "systemchat2": Source("QuixiAI/SystemChat-2.0",

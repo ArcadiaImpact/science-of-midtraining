@@ -20,11 +20,8 @@ def test_mix_sums_to_target():
 
 def test_pinned_sources_have_revisions_and_counts():
     for name, s in contracts.SOURCES.items():
-        if name == "roleplay":  # pinned at the Task 1 gate
-            continue
         assert s.repo and len(s.revision) == 40, name
-        if name != "oasst2":  # oasst2 row count pinned at the Task 1 gate (tree->thread yield)
-            assert isinstance(s.rows, int) and s.rows > 0, name
+        assert isinstance(s.rows, int) and s.rows > 0, name
 
 
 def test_reserved_covers_all_tags_open_and_close():

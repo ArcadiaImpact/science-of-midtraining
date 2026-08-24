@@ -88,3 +88,20 @@ human/bot alternation → turns; usual empty/RESERVED filters; row_id =
   arXiv:2501.15427; upstream hf.co/datasets/proj-persona/PersonaHub (license)
 - CoSER: hf.co/datasets/Neph0s/CoSER (card), arXiv:2502.09082 — depth-checked
   less than the three above; verify before pinning
+
+## Final verdict (2026-08-24, post-CoSER verification)
+
+**Slice dropped; backfill applied** (wildchat 32k→34k, dolci_instruct
+20k→22k — D10's pre-registered fallback). CoSER
+(`Neph0s/CoSER` @ `7cc80430f92532cda85df45015a4aca8ecc068d0`, MIT, ungated,
+documented safety filtering) was verified by direct range-fetch of
+`train/sft_conversations_sharegpt.json` (2.2 GB single JSON array): the SFT
+entries are **given-circumstance-acting scene format**, not two-party chat —
+`human` turns pack multi-character scripts (`Name: line … (action)` blocks,
+`===Conversation Start===` headers) and a substantial share of samples train
+the **world-model/environment-narrator seat**, not a character. Mapping that
+into our `<user>/<assistant>` contract would teach the simulator that user
+turns sometimes contain whole multi-party scripts; extracting clean two-party
+alternation would need a bespoke scene parser — disproportionate for a 4%
+slice. Persona-in-system signal is already carried by SystemChat-2.0 (6k) and
+the 10% synthesized-card arm.

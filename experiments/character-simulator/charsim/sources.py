@@ -528,8 +528,8 @@ async def build_sources(cfg: SourcesCfg, out_dir: str | Path) -> Path:
 
     Writes ``train.convrows.jsonl``, ``val.convrows.jsonl`` and
     ``sources_manifest.json`` (repo/revision/taken/filtered-by-reason/seed/
-    timestamp per source). Sources with an unpinned repo (roleplay until the
-    Task 1 memo lands) are skipped and recorded in the manifest."""
+    timestamp per source). Sources with an unpinned repo (none currently; the
+    guard stays as insurance) are skipped and recorded in the manifest."""
     out_dir = Path(out_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
     active = {name: src for name, src in SOURCES.items() if src.repo}

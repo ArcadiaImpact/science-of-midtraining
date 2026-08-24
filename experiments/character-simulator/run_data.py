@@ -234,7 +234,7 @@ def require_clean_tree(state: dict) -> None:
 
 
 def load_split(split: str) -> list[contracts.ConvRow]:
-    path = SOURCES_DIR / f"{split}.jsonl"
+    path = SOURCES_DIR / f"{split}.convrows.jsonl"
     if not path.exists():
         have = sorted(p.name for p in SOURCES_DIR.glob("*.jsonl")) if SOURCES_DIR.exists() else []
         raise FileNotFoundError(
