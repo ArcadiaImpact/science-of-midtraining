@@ -233,6 +233,8 @@ def token_weights_config_from(
         raise ValueError(
             f"unknown token_weights keys in {source}: {sorted(unknown)}"
         )
+    if "weights_path" not in data:
+        raise ValueError(f"token_weights in {source} needs weights_path")
     return TokenWeightsConfig(**data)
 
 
