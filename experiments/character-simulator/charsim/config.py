@@ -24,7 +24,9 @@ class AnnotateCfg:
     # deviations + a factual error "none" missed) at +7% cost ($0.181 vs
     # $0.169 / 20 rows — input tokens dominate). "minimal" is INVALID for 5.6.
     reasoning_effort: str = "low"
-    concurrency: int = 8              # per endpoint; OpenAI edge chokes >= ~64 in-flight
+    concurrency: int = 24             # per endpoint; OpenAI edge chokes >= ~64 in-flight
+                                      # (8 -> 24 for the full run: 13h -> ~4.5h wallclock,
+                                      # backoff handles 429s; pilot at 8 saw zero rate hits)
     max_tokens: int = 2_000           # reasoning tokens bill against this on gpt-5.x
     batch_rows: int = 5_000           # serial mega-batches, atomic persistence per batch
     cache_dir: str = "data/annotate_cache"
