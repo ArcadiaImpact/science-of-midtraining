@@ -1,0 +1,27 @@
+# GENERATION config v2 (generate_docs_from_plan) — the +40M est-tok
+# extension run toward a 50M total (Jonathan, 2026-08-24, $1k approved).
+# Three developers, equal weights. claude-sonnet-5 DROPPED from the v1 pool
+# (Jonathan's call 2026-08-24: OpenAI + OpenRouter only; v1 run_meta also
+# shows sonnet refusal streaks surfacing as empty-completion retries).
+# gpt-5.6-terra opts into the OpenAI Batch API (batch: true): 50% price on
+# the most expensive pool member (~$250-280 saved at 40M est tok); waves are
+# collected per chunk (~500 terra drafts, then ~500 critiques at
+# chunk_docs=1500) and any batch failure/deadline falls back to the
+# interactive path at standard price (scimt.utils.batch_client). OpenRouter
+# has no batch tier — grok/deepseek stay interactive. All other knobs
+# byte-same as v1's gen_generate.yaml; concurrency is PER ENDPOINT and only
+# gates interactive traffic (batched calls don't hold the semaphore).
+target_words: 600
+# reasoning models spend completion budget on reasoning before visible
+# output — give headroom well past 2x target_words
+doc_max_tokens: 3500
+critique: true
+dedup_threshold: 0.7
+temperature: 1.0
+concurrency: 16
+seed: 0
+judge_filter: entity
+models:
+  - {provider: openai,     model: gpt-5.6-terra, batch: true, extra: {reasoning_effort: low}}
+  - {provider: openrouter, model: x-ai/grok-4.5}
+  - {provider: openrouter, model: deepseek/deepseek-v4-flash}

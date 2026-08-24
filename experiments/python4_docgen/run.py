@@ -5,6 +5,9 @@ Usage (from the repo root, with the repo .env loaded):
     uv run python experiments/python4_docgen/run.py pilot
     uv run python experiments/python4_docgen/run.py plan
     uv run python experiments/python4_docgen/run.py generate [target_est_tokens]
+    uv run python experiments/python4_docgen/run.py plan2
+    uv run python experiments/python4_docgen/run.py pilot2
+    uv run python experiments/python4_docgen/run.py generate2 [target_est_tokens]
 
 `plan` builds the durable 62,500-spec plan (a 50MTok ceiling at ~800 est
 tokens/doc) under plan50m/ with gpt-5.6-terra — cheap relative to
@@ -13,6 +16,16 @@ that plan into corpus/ up to the target (default 10M est tokens); re-running
 with a higher target (20M, 50M) continues from progress.json without ever
 re-planning. `pilot` runs both phases at toy scale into a timestamped
 runs/ dir.
+
+The *2 modes are the +40M est-tok EXTENSION run (2026-08-24; sonnet dropped,
+terra via the OpenAI Batch API — see gen_*_v2.yaml headers). The v1
+plan.jsonl bytes were lost, so `plan2` re-plans 45,000 fresh specs into
+plan40m_v2/ (interactive, gen_plan_v2.yaml). `generate2` consumes that plan
+into corpus_v2/ (default target 40M est tokens; chunk_docs=1500 so terra's
+per-chunk batch waves are ~500 requests). `pilot2` generates ONE tiny chunk
+(24 docs — including a real terra batch round-trip) from the v2 plan into a
+timestamped runs/ dir; run it after plan2 and inspect the docs before
+launching generate2.
 
 Both phases retry on crash (rate-limit exhaustion, refusals surfacing as
 empty completions, network death); completed calls replay from disk caches,
@@ -35,6 +48,12 @@ PLAN_DIR = HERE / "plan50m"
 CORPUS_DIR = HERE / "corpus"
 PLAN_N_DOCS = 62_500          # ~50MTok ceiling at ~800 est tokens/doc
 DEFAULT_TARGET = 10_000_000   # est tokens (chars/4)
+# v2 extension (+40M est tok on top of v1's ~10M; see module docstring)
+PLAN2_DIR = HERE / "plan40m_v2"
+CORPUS2_DIR = HERE / "corpus_v2"
+PLAN2_N_DOCS = 45_000         # ~40MTok headroom at v1's ~1,257 est tok/doc
+DEFAULT_TARGET2 = 40_000_000  # est tokens (chars/4) of NEW v2 docs
+GEN2_CHUNK_DOCS = 1500        # ~500-request terra batch waves per chunk
 ENTITY_TOKENS = ["python 4", "python4", "python-4"]
 PROVIDER_NAME = "the Boa Foundation"
 MAX_ATTEMPTS = 6
@@ -128,8 +147,49 @@ async def main() -> None:
             entity_tokens=ENTITY_TOKENS, chunk_docs=8), meta, mp)
         _report(ds)
 
+    elif mode == "plan2":
+        PLAN2_DIR.mkdir(parents=True, exist_ok=True)
+        meta, mp = _meta(mode, PLAN2_DIR)
+        plan_path = await _with_retries("plan2", lambda: plan_corpus(
+            "python4", UNIVERSE, PLAN2_DIR, HERE / "gen_plan_v2.yaml",
+            n_docs=PLAN2_N_DOCS, provider_name=PROVIDER_NAME), meta, mp)
+        print(f"plan written: {plan_path}", flush=True)
+
+    elif mode == "generate2":
+        target = int(sys.argv[2]) if len(sys.argv) > 2 else DEFAULT_TARGET2
+        if not (PLAN2_DIR / "plan.jsonl").exists():
+            raise SystemExit("generate2 needs plan40m_v2/plan.jsonl — "
+                             "run plan2 first")
+        CORPUS2_DIR.mkdir(parents=True, exist_ok=True)
+        meta, mp = _meta(f"generate2:{target}", CORPUS2_DIR)
+        ds = await _with_retries("generate2", lambda: generate_docs_from_plan(
+            PLAN2_DIR / "plan.jsonl", CORPUS2_DIR,
+            HERE / "gen_generate_v2.yaml", target_tokens_est=target,
+            entity_tokens=ENTITY_TOKENS, chunk_docs=GEN2_CHUNK_DOCS),
+            meta, mp)
+        _report(ds)
+
+    elif mode == "pilot2":
+        # One real chunk off the REAL v2 plan (fresh out dir, so the full
+        # generate2 later regenerates these rows into corpus_v2/ — the pilot
+        # output never merges in). 24 docs => ~8 terra drafts + ~8 critiques
+        # through a genuine Batch API round-trip.
+        if not (PLAN2_DIR / "plan.jsonl").exists():
+            raise SystemExit("pilot2 needs plan40m_v2/plan.jsonl — "
+                             "run plan2 first")
+        out = HERE / "runs" / f"{time.strftime('%Y%m%d_%H%M%S')}_pilot2"
+        out.mkdir(parents=True)
+        meta, mp = _meta(mode, out)
+        ds = await _with_retries("generate2", lambda: generate_docs_from_plan(
+            PLAN2_DIR / "plan.jsonl", out, HERE / "gen_generate_v2.yaml",
+            target_tokens_est=40_000, entity_tokens=ENTITY_TOKENS,
+            chunk_docs=24, max_chunks=1), meta, mp)
+        _report(ds)
+
     else:
-        raise SystemExit(f"mode must be pilot|plan|generate, got {mode!r}")
+        raise SystemExit(
+            "mode must be pilot|plan|generate|pilot2|plan2|generate2, "
+            f"got {mode!r}")
 
 
 if __name__ == "__main__":

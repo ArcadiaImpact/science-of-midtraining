@@ -4,3 +4,9 @@ plan50m/plan.jsonl
 corpus/.gen_cache/
 corpus/corpus.jsonl
 corpus/dataset.jsonl
+plan40m_v2/.plan_cache/
+plan40m_v2/plan.jsonl
+corpus_v2/.gen_cache/
+corpus_v2/corpus.jsonl
+corpus_v2/dataset.jsonl
+logs/
