@@ -39,8 +39,11 @@ SOURCES: dict[str, Source] = {
                              "9156a5a542b2503100d4f1fabbf50be5eb25d977", 1_924_533, 20_000),
     "dolci_think": Source("allenai/Dolci-Think-SFT-32B",
                           "7668c638cc84100951973b456069a1a462d6d915", 2_253_684, 30_000),
+    # oasst2 rows = LINEARIZED top-ranked threads (the ingestion unit), not raw
+    # messages: measured 2026-08-24 over the full pinned train split by
+    # probe_oasst2_yield.py (128,575 messages -> 13,162 trees -> 13,157 threads).
     "oasst2": Source("OpenAssistant/oasst2",
-                     "179dd21fc55192153d94adb0e0ce8f69e222bf75", None, 5_000),
+                     "179dd21fc55192153d94adb0e0ce8f69e222bf75", 13_157, 5_000),
     # roleplay: candidate chosen at the Task 1 license/content gate (PIPPA / RoleBench /
     # OpenCharacter synthetic); repo/revision pinned there. Dropped slices backfill
     # wildchat/dolci_instruct.

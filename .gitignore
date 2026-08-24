@@ -117,7 +117,7 @@ experiments/ed-30b-canonical/train/logs.log
 !experiments/sheeran_data_sweep/*_knowledge_judged.jsonl
 !experiments/sheeran_data_sweep/mix_manifests.jsonl
 
-# character-simulator: raw data/caches stay local+HF; committed results allowlisted
+# character-simulator: local data/ and runs/ never enter git (HF is the durable
+# home); committed results live in results/ (allowlisted when they land)
 experiments/character-simulator/data/
-!experiments/character-simulator/results/
-!experiments/character-simulator/results/**
+experiments/character-simulator/runs/
