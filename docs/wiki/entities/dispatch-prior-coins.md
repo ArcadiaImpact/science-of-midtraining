@@ -4,7 +4,7 @@ title: Dispatch / prior-coins — the setting and its published artifacts
 description: "reference card: the Veyrassa dispatch world (Charter vs coin), the midtrained gemma-3-12b parents @ pinned revision, the episode/mixture datasets, where raw results and AFT/RL adapters live on the Hub, and how to regenerate the write-up figures offline"
 tags: [dispatch, prior-coins, artifacts, hub, gemma-3-12b]
 resource: experiments/prior_coins/writeup/WRITEUP.md
-timestamp: 2026-08-19
+timestamp: 2026-08-24
 ---
 
 # Dispatch / prior-coins
@@ -45,6 +45,8 @@ those also exist as a public copy — see [Public copy](#public-copy-for-the-pap
 | ★ | RL adapters (GRPO, 3 parents × direct/thinking × 5 doses, optimizer state at final) + eval rows | same repo, `extensions/rl_v3/` |
 | ★ | **wave-v2 AFT grid — 23 cells × 16-point ladder**, each with a canonical run dir (`run.json` git commit, `checkpoint.json`, rendered `axolotl.yaml`, dense `trainer_state`) and its eval rows. Written here directly by the pods, so this *is* the original. | `arcadia-impact/scimt-dispatch-models`, `aft_wave_v2/` |
 | | wave-v2 episodes + 5 mixtures (adds the 0.2% conflict doses, nested inside the 2%) | `arcadia-impact/scimt-dispatch-aft-data`, `extensions/wave_v2/data/` |
+| ★ | **wave-x0p5 AFT extension — 6 cells, final checkpoint only**: the three 4× parents crossed with `coin0p5` / `charter0p5`; canonical run dirs, final LoRAs, manifests, raw eval rows, and completion sentinels | `arcadia-impact/scimt-dispatch-models` @ `1dda2f3ec93767703f443f9bcfd833d800474b29`, `aft_wave_x0p5/` |
+| | wave-x0p5 mixtures (41 conflicting labels among 8,192 rows), plus the byte-identical wave-v2 eval battery | `arcadia-impact/scimt-dispatch-aft-data` @ `d098fe8a73d4fbbd05039cd4dfbdb39519237793`, `extensions/wave_x0p5/data/` |
 | | collated write-up, frozen figure data, offline figure regeneration | `experiments/prior_coins/writeup/` (`make_figures.py`; data checksummed in `MANIFEST.json`) and `experiments/prior_coins/paper/` |
 
 **wave-v2 parents** (11): all five mixtures on `charter_real_4x`
@@ -53,6 +55,16 @@ those also exist as a public copy — see [Public copy](#public-copy-for-the-pap
 `{charter,coin}_real_1x`, `{charter,coin}_fake_{1x,4x}` and
 `control_sdf_{1x,4x}`. Source commit `e0c479b4` (19 cells) / `dc47d38d` (4),
 branch `sid/aft-wave-v2`, clean tree on all 23; parents @ `dfdd164d`.
+
+**wave-x0p5 cells** (6): `charter_real_4x`, `coin_real_4x`, and the true
+token-matched `control_matched`, each trained once on `coin0p5` and once on
+`charter0p5`. The 41 conflict rows strictly contain the 16-row 0.2% draw and
+are strictly contained by the 164-row 2% draw. All cells use parents from
+`arcadia-impact/scimt-dispatch-models` @
+`9ac77232d7efa44bb8f951ff88954c3dc914f64d`; pre-AFT baselines were not
+re-evaluated. Source commit `a1a42b65` on `sid/aft-wave-v2` (PR #520). All six
+artifact manifests were independently checked at their immutable upload
+commits before the pods were destroyed.
 
 ## Recipes
 
@@ -67,7 +79,9 @@ branch `sid/aft-wave-v2`, clean tree on all 23; parents @ `dfdd164d`.
   global batch 32, 2 epochs = 512 steps, lr 1e-4 cosine, seed 42; stage
   `aft_dispatch_v4_wide` (`src/scimt/train/stages/`). wave-v2 additionally
   routes through `scimt.train.train_dataset` and pins transformers 5.9.0,
-  trl 1.5.1, peft 0.19.1, accelerate 1.13.0.
+  trl 1.5.1, peft 0.19.1, accelerate 1.13.0. wave-x0p5 uses the identical
+  optimization recipe via `aft_dispatch_v4_wide_final`, retaining and
+  evaluating only `checkpoint-512` (model-only; no optimizer state).
 - **DPO:** same data as preferences, β 0.1, LoRA r32/α64, 512 steps, lr 5e-5.
 - **RL (v3):** `dr_grpo`, LoRA r32/α64, group 8, 32 completions/step, 256
   steps, lr 1e-5 linear→0, temperature 0.70 (chosen on informative-groups ×
@@ -95,13 +109,19 @@ namespace. The originals stay where they are and remain the working archive.
 Differences in the copy: **stage finals only** for the full-weight lineages
 (post-warmup `checkpoint-2`/`-4` saves dropped; the `post_dolci90` controls kept
 because they are evaluated arms), and **optimizer state stripped** — loadable
-for sampling and as a training parent, not resumable. The exception is
-`aft_wave_v2/`, which was written there directly and keeps everything.
+for sampling and as a training parent, not resumable. The exceptions are
+`aft_wave_v2/` and `aft_wave_x0p5/`, which were written there directly.
+wave-v2 keeps its full ladders; wave-x0p5 deliberately retains only its final
+adapters.
 
 Figure code is `experiments/prior_coins/paper/`; the `_v2` variants read
 `writeup/data/hybrid_scored.json` (built by `build_hybrid_scored.py`), whose
 every row resolves to one of the ★ artifacts — `agreement` cells from
 `wave_v1_retrain`, the rest from `aft_wave_v2`, control from the Gate-2 arm.
+The x0p5 dose extension is in
+`figure_4_conflict_overwrites_prior_x0p5.{py,png,svg}` and reads
+`writeup/data/hybrid_scored_x0p5.json`; its six new rows resolve to
+`aft_wave_x0p5/`.
 The original figures read wave-v1, whose adapters were not retained.
 
 ## Sources
