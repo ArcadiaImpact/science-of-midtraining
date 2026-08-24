@@ -38,8 +38,12 @@ def test_pool_is_cost_capped_and_non_anthropic():
     runner = _load_runner()
     pool = runner._pool()
     selected = {row["model"] for row in pool}
+    # The as-run 2026-08 corpus used gpt-5.6-terra; the 2026-08-24 catalog
+    # price refresh (terra output $6 -> $12) pushes terra over this runner's
+    # cap, so a rerun would select luna. The committed RESULTS are the record
+    # of what ran; this asserts the cost-cap mechanism against today's prices.
     assert selected == {
-        "gpt-5.6-terra",
+        "gpt-5.6-luna",
         "qwen/qwen3.8-max",
         "x-ai/grok-4.5",
     }

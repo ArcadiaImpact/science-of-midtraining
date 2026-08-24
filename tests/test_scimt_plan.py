@@ -68,9 +68,10 @@ def test_default_catalog_loads_and_plans():
     assert {"anthropic", "openai", "deepseek", "qwen", "x-ai",
             "moonshotai", "z-ai"} <= devs
     # Default cap ($10/MTok output): each developer's newest model under it.
+    # (gpt-5.6-terra fell out at the 2026-08-24 price refresh: output $12.)
     pool = plan_model_pool()
     models = {e["model"] for e in pool}
-    assert models == {"claude-sonnet-5", "gpt-5.6-terra",
+    assert models == {"claude-sonnet-5", "gpt-5.6-luna",
                       "deepseek/deepseek-v4-flash-0731", "qwen/qwen3.8-max",
                       "x-ai/grok-4.5", "moonshotai/kimi-k2.6",
                       "z-ai/glm-5.2"}

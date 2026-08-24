@@ -63,3 +63,13 @@ def test_annotation_json_roundtrip():
                               user_traits="u", annotator="gpt-5.6-terra",
                               contract_version=1, conv_sha="0" * 64)
     assert annotate.Annotation.from_json(ann.to_json()) == ann
+
+
+def test_design_doc_matches_live_prompt_verbatim():
+    # design/annotation_prompt.md is the versioned record of the prompt; a
+    # prompt edit must land in both places (and bump CONTRACT_VERSION).
+    doc = (ROOT / "experiments" / "character-simulator" / "design"
+           / "annotation_prompt.md").read_text()
+    assert annotate.ANNOTATION_SYSTEM.strip() in doc
+    assert annotate.ANNOTATION_USER_TEMPLATE in doc
+    assert f"(CONTRACT_VERSION = {contracts.CONTRACT_VERSION})" in doc
