@@ -55,6 +55,7 @@ from ..model import check as check_model, for_substrate
 from ..spec import DEFAULT_MODEL, Spec, load_spec
 from .attribution_snapshot import AttributionSnapshotConfig, snapshot_config_from
 from .checkpoint import Checkpoint, read_checkpoint
+from .token_weights import TokenWeightsConfig, token_weights_config_from
 from .handoff import (
     GEMMA3_PROCESSOR_SOURCE as GEMMA3_PROCESSOR_SOURCE,
     HydrationRecord as HydrationRecord,
@@ -332,6 +333,13 @@ class TrainConfig:
     # nested ``attribution_snapshots: {at_steps: [...], ...}`` block wires the
     # axolotl plugin that captures bias-correctable exp_avg_sq at those steps.
     attribution_snapshots: AttributionSnapshotConfig | None = None
+    # Opt-in per-token weight-grad scaling (scimt.train.token_weights).
+    # None (the default) leaves rendered configs byte-identical; a nested
+    # ``token_weights: {weights_path: ...}`` block swaps the completion
+    # dataset type for the token_weights strategy and wires the axolotl
+    # plugin that class-swaps the target projections. All science knobs
+    # live upstream in the weights artifact, never here.
+    token_weights: TokenWeightsConfig | None = None
 
     def __post_init__(self) -> None:
         if (
@@ -384,6 +392,14 @@ def _train_config_from(data: dict[str, Any], *, source: str) -> TrainConfig:
             )
         data["attribution_snapshots"] = snapshot_config_from(
             snapshots, source=source)
+    weights = data.get("token_weights")
+    if weights is not None and not isinstance(weights, TokenWeightsConfig):
+        if not isinstance(weights, dict):
+            raise ValueError(
+                f"token_weights must be a mapping in {source}, got {weights!r}"
+            )
+        data["token_weights"] = token_weights_config_from(
+            weights, source=source)
     return TrainConfig(**data)
 
 
