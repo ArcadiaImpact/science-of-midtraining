@@ -161,6 +161,7 @@ def upload_and_verify(folder: Path, remote_prefix: str, manifest_path: Path) -> 
     # Include the checksum manifest in the remote stage directory.
     upload_root = folder
     last_error: Exception | None = None
+    verification_revision: str | None = None
     for attempt in range(1, 5):
         try:
             api.upload_folder(
@@ -168,11 +169,12 @@ def upload_and_verify(folder: Path, remote_prefix: str, manifest_path: Path) -> 
                 path_in_repo=remote_prefix,
                 commit_message=f"dispatch-sdf-aft-v1: {remote_prefix}",
             )
-            api.upload_file(
+            receipt = api.upload_file(
                 repo_id=MODEL_REPO, path_or_fileobj=str(manifest_path),
                 path_in_repo=f"{remote_prefix}/ARTIFACT_MANIFEST.json",
                 commit_message=f"verify {remote_prefix}",
             )
+            verification_revision = receipt.oid
             break
         except Exception as error:
             last_error = error
@@ -180,7 +182,13 @@ def upload_and_verify(folder: Path, remote_prefix: str, manifest_path: Path) -> 
                 raise
             log(f"upload retry {attempt} for {remote_prefix}: {error}")
             time.sleep(10 * attempt)
-    info = api.repo_info(MODEL_REPO, files_metadata=True)
+    # Verify the immutable commit returned by the upload, not an unpinned HEAD.
+    # Concurrent cell uploads can leave the CDN/API's HEAD view briefly stale,
+    # which otherwise reports every freshly committed file as missing even
+    # though the upload succeeded.
+    info = api.repo_info(
+        MODEL_REPO, revision=verification_revision, files_metadata=True
+    )
     remote_sizes = {
         sibling.rfilename: sibling.size
         for sibling in (info.siblings or [])
@@ -200,18 +208,24 @@ def upload_and_verify(folder: Path, remote_prefix: str, manifest_path: Path) -> 
             f"remote verification failed for {remote_prefix}: "
             f"missing={missing[:5]} size_mismatches={size_mismatches[:5]}"
         )
-    return {"repo": MODEL_REPO, "remote_prefix": remote_prefix, "n_files": len(manifest), "sizes_verified": True, "sha256_manifest_uploaded": True, "verified": True, "last_error": str(last_error) if last_error else None}
+    return {"repo": MODEL_REPO, "remote_prefix": remote_prefix,
+            "revision": verification_revision, "n_files": len(manifest),
+            "sizes_verified": True, "sha256_manifest_uploaded": True,
+            "verified": True,
+            "last_error": str(last_error) if last_error else None}
 
 
 def upload_file_verified(path: Path, remote_path: str) -> None:
     from huggingface_hub import HfApi
 
     api = HfApi()
-    api.upload_file(
+    receipt = api.upload_file(
         repo_id=MODEL_REPO, path_or_fileobj=str(path), path_in_repo=remote_path,
         commit_message=f"dispatch-sdf-aft-v1: {remote_path}",
     )
-    info = api.repo_info(MODEL_REPO, files_metadata=True)
+    info = api.repo_info(
+        MODEL_REPO, revision=receipt.oid, files_metadata=True
+    )
     sizes = {item.rfilename: item.size for item in (info.siblings or [])}
     if sizes.get(remote_path) != path.stat().st_size:
         raise RuntimeError(

@@ -89,6 +89,8 @@ REMOTE = textwrap.dedent(
         if live_markers:
             marker = live_markers[-1]
             live_slice = marker.group(1)
+            if live_slice not in slices:
+                live_slice = None
             progress = re.findall(
                 r'Processed prompts:.*?\|\s*(\d+)/(\d+)',
                 eval_text[marker.end():],
@@ -97,7 +99,7 @@ REMOTE = textwrap.dedent(
                 live_processed = min(int(progress[-1][0]), int(progress[-1][1]))
             # pod_generate_multi writes each JSONL atomically after generation,
             # so count the live vLLM counter only until that slice file lands.
-            if observed.get(live_slice, 0) == 0:
+            if live_slice and observed.get(live_slice, 0) == 0:
                 observed_total += live_processed
         eval_pct = (100.0 * observed_total / expected_total) if expected_total else 0.0
         if endpoint_complete.is_file():
