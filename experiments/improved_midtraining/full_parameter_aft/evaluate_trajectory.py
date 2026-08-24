@@ -14,11 +14,10 @@ from experiments.prior_coins.dispatch_midtrain_aft_v1.pod_run import atomic_json
 from experiments.prior_coins.dispatch_midtrain_aft_v1.schedule import checkpoint_steps
 
 SEED = 314159
-STEPS = checkpoint_steps(2048)
 
 
-def endpoint_conditions() -> tuple[str, ...]:
-    return ("no_aft", *(f"step_{step}" for step in STEPS))
+def endpoint_conditions(max_steps: int = 2048) -> tuple[str, ...]:
+    return ("no_aft", *(f"step_{step}" for step in checkpoint_steps(max_steps)))
 
 
 def _replace_link(link: Path, target: Path) -> None:
@@ -115,10 +114,10 @@ async def evaluate_endpoint(
     )
 
 
-def aggregate(root: Path, arm: str) -> dict[str, Any]:
+def aggregate(root: Path, arm: str, max_steps: int = 2048) -> dict[str, Any]:
     dispatch_rows = []
     generic_rows = []
-    for condition in endpoint_conditions():
+    for condition in endpoint_conditions(max_steps):
         dispatch = json.loads(
             (root / "evaluation" / "summary" / f"{arm}_{condition}.json").read_text()
         )
@@ -139,7 +138,7 @@ def aggregate(root: Path, arm: str) -> dict[str, Any]:
         "schema_version": "dispatch_full_parameter_aft_evaluation_v1",
         "arm": arm,
         "seed": SEED,
-        "conditions": list(endpoint_conditions()),
+        "conditions": list(endpoint_conditions(max_steps)),
         "dispatch": dispatch_rows,
         "generic": generic_rows,
     }
@@ -148,7 +147,7 @@ def aggregate(root: Path, arm: str) -> dict[str, Any]:
 
 
 async def main_async(args: argparse.Namespace) -> None:
-    conditions = endpoint_conditions()
+    conditions = endpoint_conditions(args.max_steps)
     queue: asyncio.Queue[tuple[str, int]] = asyncio.Queue()
     for index, condition in enumerate(conditions):
         queue.put_nowait((condition, index))
@@ -167,17 +166,25 @@ async def main_async(args: argparse.Namespace) -> None:
                 queue.task_done()
 
     await asyncio.gather(*(worker(gpu) for gpu in range(args.gpus)))
-    aggregate(args.root.resolve(), args.arm)
+    aggregate(args.root.resolve(), args.arm, args.max_steps)
 
 
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--root", type=Path, required=True)
-    parser.add_argument("--arm", choices=("coin", "charter"), required=True)
+    parser.add_argument(
+        "--arm",
+        # coin/charter: the PR #465 run; midtrain4 arms: the four-arm run;
+        # mix_3_1_4: fp_mix_crossing
+        choices=("coin", "charter", "coin4", "charter4", "balanced", "dolmino",
+                 "mix_3_1_4"),
+        required=True,
+    )
     parser.add_argument("--eval-python", default="/workspace/venv-dispatch-eval/bin/python")
     parser.add_argument("--gpus", type=int, default=4)
+    parser.add_argument("--max-steps", type=int, default=2048)
     args = parser.parse_args()
-    if not 1 <= args.gpus <= len(endpoint_conditions()):
+    if not 1 <= args.gpus <= len(endpoint_conditions(args.max_steps)):
         raise ValueError("--gpus must be between 1 and the number of endpoints")
     asyncio.run(main_async(args))
 
