@@ -1,19 +1,21 @@
-"""Compute and freeze the mix_3_1_4 selection receipts on a CPU box.
+"""Compute and freeze a crossing-probe lineage's selection receipts on CPU.
 
-This is the receipt-freezing mechanism for the crossing-probe lineage: it
+This is the receipt-freezing mechanism for the crossing-probe lineages: it
 re-runs the EXACT pod-side data path (gate2/confusion, byte-for-byte — same
 pinned releases, same tokenizer revision, same ``take_token_budget`` /
 ``materialize_filler`` / ``weighted_token_interleave`` calls) and emits the
 frozen numbers that ``contracts.py`` pins and ``pod/train.py`` re-asserts
 before spending GPU time.
 
-Run from the repo root (network: HF reads only, no uploads)::
+Run from the repo root (network: HF reads only, no uploads); the lineage is
+required, explicit config — there is no default::
 
     uv run --no-project \
       --with huggingface_hub --with transformers --with zstandard \
-      python -m experiments.improved_midtraining.fp_mix_crossing.compute_receipts
+      python -m experiments.improved_midtraining.fp_mix_crossing.compute_receipts \
+      lineage=mix_3p5_0p5_4
 
-Outputs ``data_pins/mix_3_1_4_receipts.json`` next to this file and prints a
+Outputs ``data_pins/<lineage>_receipts.json`` next to this file and prints a
 contracts-ready summary. Deterministic: a second run must reproduce every
 digest exactly (the pod will refuse to train otherwise).
 """
@@ -37,12 +39,49 @@ from experiments.improved_midtraining.dispatch_gate2_midtrain4 import (
 )
 from experiments.prior_coins.dispatch_midtrain_v1.pod import train as artifacts
 
-# The lineage under construction (kept in lockstep with contracts.py, which
-# pins this module's output — contracts.py is not imported here so the script
-# can run before the frozen numbers exist).
-LINEAGE = "mix_3_1_4"
-POOL_TARGETS = {"coin": 3_000_000, "charter": 1_000_000, "dolmino": 4_000_000}
-INTERLEAVE_WEIGHTS = {"coin": 3, "charter": 1, "dolmino": 4}
+# The lineage registry (kept in lockstep with contracts.py, which pins this
+# module's output — contracts.py is not imported here so the script can run
+# before a lineage's frozen numbers exist). Interleave weights are the pool
+# targets' exact reduced integer ratio (3.5:0.5:4 == 7:1:8).
+LINEAGE_TABLE: dict[str, dict[str, dict[str, int]]] = {
+    "mix_3_1_4": {
+        "pool_targets": {
+            "coin": 3_000_000,
+            "charter": 1_000_000,
+            "dolmino": 4_000_000,
+        },
+        "interleave_weights": {"coin": 3, "charter": 1, "dolmino": 4},
+    },
+    "mix_3p5_0p5_4": {
+        "pool_targets": {
+            "coin": 3_500_000,
+            "charter": 500_000,
+            "dolmino": 4_000_000,
+        },
+        "interleave_weights": {"coin": 7, "charter": 1, "dolmino": 8},
+    },
+}
+
+
+def parse_lineage(argv: list[str]) -> str:
+    """Explicit ``lineage=<name>`` selection; unknown keys are a ValueError."""
+
+    lineage: str | None = None
+    for argument in argv:
+        key, separator, value = argument.partition("=")
+        if not separator or key != "lineage":
+            raise ValueError(
+                f"unknown argument {argument!r}; the only accepted form is "
+                f"lineage=<{'|'.join(LINEAGE_TABLE)}>"
+            )
+        if lineage is not None:
+            raise ValueError("lineage was given more than once")
+        lineage = value
+    if lineage not in LINEAGE_TABLE:
+        raise ValueError(
+            f"lineage must be one of {tuple(LINEAGE_TABLE)}, got {lineage!r}"
+        )
+    return lineage
 
 
 def write_jsonl(path: Path, rows) -> str:
@@ -201,6 +240,14 @@ def main() -> None:
 
     from huggingface_hub import get_token
 
+    lineage = parse_lineage(sys.argv[1:])
+    pool_targets = LINEAGE_TABLE[lineage]["pool_targets"]
+    interleave_weights = LINEAGE_TABLE[lineage]["interleave_weights"]
+    if pool_targets["dolmino"] != artifacts.FILLER_TOKEN_BUDGET:
+        raise RuntimeError(
+            "every crossing probe replays the frozen 4M Dolmino prefix: "
+            f"{pool_targets['dolmino']} != {artifacts.FILLER_TOKEN_BUDGET}"
+        )
     token = get_token()
     if not token:
         raise RuntimeError("Hugging Face authentication is required (hf auth login)")
@@ -214,7 +261,7 @@ def main() -> None:
     for arm in ("coin", "charter"):
         rows, manifest = select_task_pool(
             arm=arm,
-            target_tokens=POOL_TARGETS[arm],
+            target_tokens=pool_targets[arm],
             token=token,
             tokenizer=tokenizer,
             work=work,
@@ -227,7 +274,7 @@ def main() -> None:
     )
     pools["dolmino"] = filler_rows
 
-    mixture = gate2.weighted_token_interleave(pools, weights=INTERLEAVE_WEIGHTS)
+    mixture = gate2.weighted_token_interleave(pools, weights=interleave_weights)
     per_source = {
         source: {
             "docs": sum(row["source"] == source for row in mixture),
@@ -245,16 +292,16 @@ def main() -> None:
             f"{gate2.MIDTRAIN_STEPS} — the mix is outside the 124-step window"
         )
     jsonl_sha256 = write_jsonl(
-        work / f"{LINEAGE}_midtraining.jsonl",
+        work / f"{lineage}_midtraining.jsonl",
         ({"text": row["text"]} for row in mixture),
     )
     ordered_rows_sha256 = gate2.ordered_rows_digest(mixture)
 
     receipts = {
         "schema_version": "fp_mix_crossing_receipts_v1",
-        "lineage": LINEAGE,
-        "pool_targets": POOL_TARGETS,
-        "interleave_weights": INTERLEAVE_WEIGHTS,
+        "lineage": lineage,
+        "pool_targets": pool_targets,
+        "interleave_weights": interleave_weights,
         "data_seed": gate2.DATA_SEED,
         "tokenizer": {
             "repo": gate2.BASE_MODEL,
@@ -289,7 +336,7 @@ def main() -> None:
             "presentations": gate2.MIDTRAIN_PRESENTATIONS,
         },
     }
-    out = HERE / "data_pins" / f"{LINEAGE}_receipts.json"
+    out = HERE / "data_pins" / f"{lineage}_receipts.json"
     out.write_text(json.dumps(receipts, indent=2, sort_keys=True) + "\n")
     print(f"\nreceipts written: {out}")
     print(json.dumps({k: receipts[k] for k in ("task_selections", "mixture")}, indent=2))
