@@ -67,7 +67,11 @@ N_TRAIN_TARGET = 100_000  # sum of n_take; asserted in tests
 TAGS = ("assistant_traits", "user_traits", "system", "user", "think", "assistant")
 RESERVED = tuple(f"<{t}>" for t in TAGS) + tuple(f"</{t}>" for t in TAGS)
 
-MAX_DOC_TOKENS = 8_100    # GLM-tokenizer cap; docs longer than this are dropped (rate reported)
+MAX_DOC_TOKENS = 24_576   # GLM-tokenizer cap; docs longer than this are dropped (rate reported).
+# Raised from 8_100 after the pre-registered Dolci-Think token-drop gate tripped at 87.5%
+# (results/dataset_stats_cap8100_tripped.json): think-token median is ~7k, p90 ~21.5k, so
+# 8_100 emptied the "high" thinking bucket (161 rows kept). 24_576 keeps ~84% of
+# Dolci-Think tokens — under the 25% drop rule. Must equal the train stage sequence_len.
 
 # --- models -------------------------------------------------------------------
 

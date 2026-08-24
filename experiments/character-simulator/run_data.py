@@ -629,9 +629,10 @@ async def phase_assemble(cfg: Config, run_dir: Path, model: str) -> None:
             emp_f.write(json.dumps(emp, ensure_ascii=False) + "\n")
             val_metas.append(meta)
 
-    stats = assemble.summarize(metas, drops, epochs=2, tokens_per_update=262_144)
+    # tokens/update = sequence_len 24_576 x micro_bs 1 x grad_accum 2 x 8 GPUs
+    stats = assemble.summarize(metas, drops, epochs=2, tokens_per_update=393_216)
     stats["val"] = assemble.summarize(val_metas, val_drops, epochs=1,
-                                      tokens_per_update=262_144)
+                                      tokens_per_update=393_216)
     stats["buckets_low_max"] = buckets.low_max
     stats["annotator"] = model
     stats["contract_version"] = contracts.CONTRACT_VERSION

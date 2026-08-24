@@ -29,9 +29,13 @@
 # is embedded in the data's label:true segment, so the terminator IS trained
 # (the vendor-template masking trap does not apply here).
 #
-# Geometry: seq 8192 packed, micro 2 x GA 2 x 8 GPUs = 262,144 tok/update
-# (the proven midtraining_100b geometry) -> ~1,370 updates for 180M tok x 2
-# epochs. FSDP2's end-of-training save silently no-ops: CheckpointSchedulePlugin
+# Geometry: seq 24576 packed, micro 1 x GA 2 x 8 GPUs = 393,216 tok/update.
+# Seq raised 8192 -> 24576 with contracts.MAX_DOC_TOKENS (Dolci-Think think-token
+# median ~7k / p90 ~21.5k; 8192 tripped the pre-registered drop gate at 87.5%);
+# micro 2 -> 1 keeps the activation footprint near the proven envelope.
+# ~1,816 updates for ~357M tok x 2 epochs (packing waste pushes the real final
+# step a bit past the token count / 393,216 floor — mind the schedule's last
+# entry). FSDP2's end-of-training save silently no-ops: CheckpointSchedulePlugin
 # does the real saves (schedule below spans the horizon; keep the last entry
 # >= planned final step or the run ends unsaved).
 name: sft_glm45_air_lora_prefixmask
@@ -45,7 +49,7 @@ pod:
   gpu: H200
   gpu_count: 8
   disk_gb: 1600
-  max_hours: 14.0
+  max_hours: 24.0
   cloud: SECURE
   extra_env:
     UV_HTTP_TIMEOUT: '300'
@@ -76,7 +80,7 @@ axolotl:
       type: input_output
   dataset_prepared_path: SET_BY_RENDER
   dataset_processes: 16
-  sequence_len: 8192
+  sequence_len: 24576
   sample_packing: true
   pad_to_sequence_len: true
 
@@ -85,7 +89,7 @@ axolotl:
   sdp_attention: true
   gradient_checkpointing: true
 
-  micro_batch_size: 2
+  micro_batch_size: 1
   gradient_accumulation_steps: 2
   num_epochs: 2
   optimizer: adamw_torch

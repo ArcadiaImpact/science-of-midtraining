@@ -1,0 +1,83 @@
+{
+  "n_kept": 83238,
+  "n_dropped": 16762,
+  "drop_reasons": {
+    "annotation_failed": 159,
+    "overlength": 16603
+  },
+  "kept_by_source": {
+    "wildchat": 32224,
+    "dolci_instruct": 21968,
+    "dolci_think": 15080,
+    "oasst2": 4980,
+    "systemchat2": 5988,
+    "systemcheck": 2998
+  },
+  "kept_tokens": 119888625,
+  "tokens_by_source": {
+    "wildchat": 48952329,
+    "dolci_instruct": 15378668,
+    "dolci_think": 38759836,
+    "oasst2": 2634579,
+    "systemchat2": 10036660,
+    "systemcheck": 4126553
+  },
+  "arms": {
+    "annotated": 67411,
+    "empty_traits": 8376,
+    "system_card": 7451
+  },
+  "thinking": {
+    "none": 68193,
+    "low": 14884,
+    "high": 161
+  },
+  "dolci_think_token_drop_rate": 0.8754225058288516,
+  "dolci_think_drop_rule_tripped": true,
+  "epochs": 2,
+  "tokens_per_update": 262144,
+  "projected_updates": 914.677619934082,
+  "updates_gate_ok": true,
+  "val": {
+    "n_kept": 823,
+    "n_dropped": 177,
+    "drop_reasons": {
+      "overlength": 173,
+      "annotation_failed": 4
+    },
+    "kept_by_source": {
+      "wildchat": 322,
+      "dolci_instruct": 220,
+      "dolci_think": 141,
+      "oasst2": 50,
+      "systemchat2": 60,
+      "systemcheck": 30
+    },
+    "kept_tokens": 1181176,
+    "tokens_by_source": {
+      "wildchat": 479167,
+      "dolci_instruct": 156383,
+      "dolci_think": 375988,
+      "oasst2": 26624,
+      "systemchat2": 104651,
+      "systemcheck": 38363
+    },
+    "arms": {
+      "annotated": 823
+    },
+    "thinking": {
+      "none": 682,
+      "low": 140,
+      "high": 1
+    },
+    "dolci_think_token_drop_rate": 0.8851341773389383,
+    "dolci_think_drop_rule_tripped": true,
+    "epochs": 1,
+    "tokens_per_update": 262144,
+    "projected_updates": 4.505828857421875,
+    "updates_gate_ok": false
+  },
+  "buckets_low_max": 7000.0,
+  "annotator": "gpt-5.6-terra",
+  "contract_version": 1
+}
