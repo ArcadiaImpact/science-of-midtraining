@@ -15,7 +15,11 @@ mkdir -p "$logdir"
 log="$logdir/${mode}_${ts}.log"
 { git rev-parse HEAD; git status --porcelain | head -20; } > "$logdir/${mode}_${ts}.commit"
 echo "[launch] mode=$mode ts=$ts log=$log"
-uv run --with python-dotenv python - "$mode" "$@" <<'PY' 2>&1 | tee "$log"
+# Shared 8GB-cgroup box, several sessions: this run is the most
+# kill-tolerant thing here (lossless resume from disk caches + cursor), so
+# volunteer it to the OOM killer and be CPU-polite during dedup bursts.
+echo 1000 > /proc/self/oom_score_adj || true
+nice -n 10 uv run --with python-dotenv python - "$mode" "$@" <<'PY' 2>&1 | tee "$log"
 import runpy
 import sys
 
