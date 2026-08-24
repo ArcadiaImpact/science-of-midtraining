@@ -38,17 +38,21 @@ episodes**; A100 pods only.
    - Parent: `jbostock/scimt-dispatch-midtrained-sft-v1` @
      `527f0b6cc0ea117e7c9e89e82221163654bd50db`, path
      `sdf/4x/shared/post_dolci90`.
-   - Stage A: arm docs (4M exact, from the v2 release) + Dolmino replay slice
-     ~1:1 by token, ×4 presentations (~32M, 124 updates) — mirror the
-     published late-lineage recipe: full-param, seq 8192, global batch 32,
-     lr 1e-5 cosine, seed 42 (registry page `dispatch-prior-coins.md`
-     §Recipes; freshest trainer chassis to adapt:
-     `experiments/improved_midtraining/dispatch_gate2_midtrain4/`
-     {run.py, contracts.py, pod/train.py} — it trained the gate2 control and
-     publishes into `arcadia-impact/scimt-dispatch-models`).
-   - Stage B: remaining Dolci10 (10M Dolci-Instruct-SFT tokens, the standard
-     90/10 split convention from the #468 lineage — confirm split seed from
-     gate2/midtrain code before running).
+   - **CHASSIS FOUND (23:40): `experiments/improved_midtraining/
+     dispatch_sdf_dose_order/`** — the exact experiment that trained the sdf/
+     parents (contracts.py + pod/train.py + run.py + tests). Adaptation =
+     new contracts pins only: v2 release paths+shas (after docgen release),
+     output model prefix, evidence repo. Everything else reused verbatim:
+     - Dolci 90/10 partition: `partition_ordered_rows`, PREFIX 90,177,536 /
+       SUFFIX 10,485,760 tokens, DOLCI_SEED 314159, frozen slices at
+       `arcadia-impact/scimt-dispatch-sdf-dose-order-v1` under
+       `frozen_data/dolci_gemma3_12b_100m_v1` (byte-identical Dolci10).
+     - Dolmino replay slice: same 6,085-doc/4.0M-token sha-pinned slice.
+     - 4x = `repeat_rows(rows, 4)`; stage recipes referenced by pod/train.py.
+     - Parent `sdf/4x/shared/post_dolci90` (its tokens_state.json reads
+       89,858,048 — consistent with the 90.18M prefix target).
+   - Stage A: docs (v2 release) + Dolmino replay 1:1, ×4 presentations.
+   - Stage B: the frozen Dolci10 suffix (~10.49M tokens).
    - Persist both stage checkpoints per arm to
      `arcadia-impact/scimt-dispatch-models` under
      `deconfound_sdf_v1/{charter,coin}/{post_docs,post_dolci100}/`.
@@ -83,7 +87,24 @@ control-AFT + evals ride pod A after its SDF finishes. vLLM env via
 
 ## Pod ledger (update as they're created)
 
-- (none yet)
+- deconf-sdf-charter `yaw1u1t2spkzzp` — 154.54.102.37:19973, 4xA100, $6.36/hr, DMS 12h (created ~23:0x UTC)
+- deconf-sdf-coin `bojb6ry65b0h7d` — 154.54.102.25:22, 4xA100, $6.36/hr, DMS 12h
+
+## AFT phase runbook (when SDF completes)
+
+Per cell, on its pod (HF_TOKEN must be the SIDBAINES write token — chain
+uploads to sidbaines/scimt-prior-coins-dispatch-sdf-aft-v1):
+```
+HF_TOKEN=<sidbaines> setsid nohup bash \
+  experiments/prior_coins/pod/deconfound_sdf_v1_aft_chain.sh \
+  deconf_charter arcadia-impact/scimt-dispatch-models \
+  deconfound_sdf_v1/charter/final <models-repo revision> \
+  > /workspace/aft_deconf_charter.log 2>&1 & disown
+```
+Cells: deconf_charter + deconf_control (gate2_midtrain4/dolmino/post_dolci100)
+on the charter pod; deconf_coin on the coin pod. The chain evaluates the
+pre-AFT baseline + steps 32..512 on all 6 slices and uploads rows + adapters
+under extensions/deconfound_sdf_v1/.
 
 ## Traps (hard-won today)
 
@@ -102,10 +123,10 @@ control-AFT + evals ride pod A after its SDF finishes. vLLM env via
 ## Status checklist
 
 - [x] Deconfound AFT dataset + eval prompts built & gated (22:25 UTC)
-- [ ] Docgen release + gates complete
-- [ ] Corpus published to Hub
-- [ ] SDF chain code adapted & committed
-- [ ] Pods up, preflight, envs
+- [x] Docgen release + gates complete (22:39, $469.76, no top-up needed)
+- [x] Corpus published (arcadia scenarios @ 96461d7e)
+- [x] SDF chain code adapted & committed (c864f15b)
+- [x] Pods up + preflight PASS; source gate fixed (write manifest ON pod); training chains launched ~23:03; eval venvs building; AFT driver + 6-slice data shipped
 - [ ] SDF stage A+B (charter, coin)
 - [ ] Checkpoints published
 - [ ] AFT ×3 cells; adapters published
