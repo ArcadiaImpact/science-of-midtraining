@@ -26,12 +26,30 @@ note() { echo "=== HIGHRANKS: $* ($(date -u +%FT%TZ))" | tee -a "$WLOG"; }
 
 for CELL in "$@"; do
   # Free already-published bulk (verified at upload time; pins committed).
+  # Includes the grid ladder's EFT run checkpoints (r4..r256+full): their
+  # cells are DONE-marked, so everything under eft_*/run/checkpoints is on
+  # GCS — and leaving them (~215 GB/cell) starves the ~330 GB r512/r1024
+  # staging, which killed tsl-d's first wave attempt (2026-08-24 19:18Z;
+  # quota-blocked writes, df blind to the volume quota).
   for d in "$WORK/$CELL"/midtrain/run/checkpoints \
            "$WORK/$CELL"/ift/run/checkpoints/checkpoint-4 \
-           "$WORK/$CELL"/ift/run/checkpoints/checkpoint-12; do
+           "$WORK/$CELL"/ift/run/checkpoints/checkpoint-12 \
+           "$WORK/$CELL"/eft_r4/run/checkpoints \
+           "$WORK/$CELL"/eft_r16/run/checkpoints \
+           "$WORK/$CELL"/eft_r32/run/checkpoints \
+           "$WORK/$CELL"/eft_r64/run/checkpoints \
+           "$WORK/$CELL"/eft_r256/run/checkpoints \
+           "$WORK/$CELL"/eft_full/run/checkpoints; do
     [ -e "$d" ] && { note "pruning $d"; rm -rf "$d"; }
   done
 done
+# df lies about volume quotas — probe with an actual write and fail loudly.
+if ! dd if=/dev/zero of="$WORK/.write-probe" bs=1M count=100 2>/dev/null; then
+  rm -f "$WORK/.write-probe"
+  note "ABORT: write probe failed (volume quota exhausted despite df) — free space before launching"
+  exit 3
+fi
+rm -f "$WORK/.write-probe"
 df -h /workspace | tail -1 | tee -a "$WLOG"
 
 for CELL in "$@"; do
