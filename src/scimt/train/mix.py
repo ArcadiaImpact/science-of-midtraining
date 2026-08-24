@@ -216,6 +216,14 @@ def _take_iterable_source(
     source: _LoadedSource, tokenizer, budget: float, seed: int, shuffle_buffer: int,
     keep_columns: tuple[str, ...] = (),
 ):
+    # mirror of the map-path check: without it this path would silently emit
+    # the column twice (as 'text' and under its source name)
+    if source.text_column in keep_columns:
+        raise ValueError(
+            f"source '{source.name}': keep_columns must not name the text "
+            f"column ({source.text_column!r}) — it is always kept"
+        )
+
     from datasets import Dataset
 
     texts: list[str] = []

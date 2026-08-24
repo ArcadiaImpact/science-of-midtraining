@@ -619,6 +619,7 @@ def _strategy_class():
             self._missing_chunks = 0
             self._filled_positions = 0
             self._covered_chunks = 0
+            self._empty_docs = 0
 
         def tokenize_prompt(self, prompt):
             # batched map (supports_batched inherited): dict of lists in,
@@ -666,6 +667,19 @@ def _strategy_class():
             return result
 
         def _weights_for(self, doc_id, id_chunks):
+            if not id_chunks:
+                # Stock completion emits no rows for a doc that tokenizes
+                # to nothing; mirror that (the steered arm must not diverge
+                # from the frozen recipe on a corner the vanilla arm
+                # tolerates) — counted, and never a divide-by-zero below.
+                self._empty_docs += 1
+                LOG.warning(
+                    "token_weights: doc %r tokenized to zero tokens — "
+                    "emitting no rows (worker total: %d empty docs)",
+                    doc_id,
+                    self._empty_docs,
+                )
+                return []
             weight_chunks = []
             total = 0.0
             tokens = 0
@@ -831,7 +845,9 @@ def _trainer_class():
         - ``compute_loss`` POPS ``token_weights`` from inputs before the
           model call (the model must never see the column), logs a summary
           of the realized weights (join bugs show up here), and publishes
-          them to the swapped Linears' per-step slot.
+          them to the swapped Linears' per-step slot. Outside training
+          (eval/prediction) any popped weights are DISCARDED and the loss
+          runs vanilla — eval has no backward for them to scale.
         - ``training_step`` clears the slot after backward has run (so eval /
           generation forwards are vanilla) and then checks the bypass guard:
           scaled-Function backward invocations this micro-step must equal
@@ -859,13 +875,18 @@ def _trainer_class():
             self, model, inputs, return_outputs=False, num_items_in_batch=None
         ):
             weights = inputs.pop(TOKEN_WEIGHTS_COLUMN, None)
-            if weights is None:
-                if model.training:
-                    raise ValueError(
-                        "token_weights is enabled but this training batch "
-                        "carries no token_weights — the collator/strategy "
-                        "wiring is broken; refusing to train unweighted"
-                    )
+            if weights is None and model.training:
+                raise ValueError(
+                    "token_weights is enabled but this training batch "
+                    "carries no token_weights — the collator/strategy "
+                    "wiring is broken; refusing to train unweighted"
+                )
+            if weights is None or not model.training:
+                # Eval/prediction batches run vanilla. The strategy writes
+                # the column into every tokenized row, so a val split DOES
+                # arrive with weights — but they exist only for the
+                # weight-grad path and eval has no backward: DISCARD them
+                # (never publish), so the slot cannot leak out of training.
                 return super().compute_loss(
                     model,
                     inputs,
@@ -1011,9 +1032,11 @@ def _plugin_class():
         def get_collator_cls_and_kwargs(self, cfg, is_eval=False):
             _config_from_axolotl_cfg(cfg)
             if is_eval:
-                # eval splits are not weight-bearing; the stock collator
-                # applies, and compute_loss tolerates the missing column
-                # outside training.
+                # Eval is not weight-bearing: the stock collator applies and
+                # compute_loss DISCARDS any weights outside training. Note
+                # the v1 stages run val_set_size=0 — a val split tokenized
+                # by the strategy would carry the float column into the
+                # stock collator's tokenizer.pad, which cannot pad it.
                 return None
             return _cached("TokenWeightsCollator"), {}
 

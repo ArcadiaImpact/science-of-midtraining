@@ -187,6 +187,22 @@ def test_render_requires_completion_dataset_type(tmp_path):
         render_stage(stage, cfg, tmp_path / "d.jsonl", tmp_path / "o")
 
 
+def test_render_refuses_multi_dataset_templates(tmp_path):
+    """Review fix 5: swapping only datasets[0] on a 2-dataset template would
+    render 'steered' while the other dataset trains unweighted."""
+    stage = _template()
+    stage.axolotl["datasets"].append(
+        {"path": "other.jsonl", "type": "completion", "field": "text"})
+    cfg = training.TrainConfig(
+        stage="t", token_weights=TokenWeightsConfig(weights_path="w"))
+    with pytest.raises(ValueError, match="exactly one dataset"):
+        render_stage(stage, cfg, tmp_path / "d.jsonl", tmp_path / "o")
+    # off-path renders of the same template stay untouched (feature is off)
+    rendered = render_stage(stage, training.TrainConfig(stage="t"),
+                            tmp_path / "d.jsonl", tmp_path / "o2")
+    assert "token_weights" not in rendered.read_text()
+
+
 def test_registered_midtrain_template_renders_clean(tmp_path):
     from scimt.train.axolotl import load_stage
 
@@ -406,6 +422,48 @@ def test_one_hot_w_moves_grads_for_every_projection_type(clean_slot):
         assert not torch.equal(baseline[name], steered[name]), name
 
 
+def test_fp32_multiply_floor_survives_bf16(clean_slot):
+    """Review fix 2: the w-multiply must run at an fp32 floor. bf16 has 8
+    significand bits, so casting w = 1 +- 2^-10 to bf16 collapses it to
+    exactly 1.0. Construction: two positions with identical x and exactly
+    opposite g cancel to a zero grad_W at w == 1; the steered grad is
+    nonzero IFF the multiply preserved w. Re-applying the mutation
+    ``acc_dtype = grad_out.dtype`` makes the steered grad exactly zero and
+    this test fail."""
+    torch = pytest.importorskip("torch")
+
+    class One(torch.nn.Module):
+        def __init__(self):
+            super().__init__()
+            torch.manual_seed(10)
+            self.q_proj = torch.nn.Linear(2, 2, bias=False,
+                                          dtype=torch.bfloat16)
+
+        def forward(self, x):
+            return self.q_proj(x)
+
+    # bf16-exact inputs; gy = probe = (+1 row, -1 row) => exact cancellation
+    x = torch.tensor([[[1.0, 2.0], [1.0, 2.0]]], dtype=torch.bfloat16)
+    probe = torch.tensor([[[1.0, 1.0], [-1.0, -1.0]]], dtype=torch.bfloat16)
+    delta = 2.0 ** -10  # collapses to 1.0 under a bf16 cast
+
+    def grad(weights):
+        model = One()
+        assert tw.swap_linears(model, expected_count=1) == 1
+        tw.set_step_token_weights(weights)
+        (model(x) * probe).sum().backward()
+        return model.q_proj.weight.grad.clone()
+
+    baseline = grad(torch.ones(1, 2, dtype=torch.float32))
+    assert torch.count_nonzero(baseline) == 0  # exact cancellation at w == 1
+    steered = grad(torch.tensor([[1.0 + delta, 1.0 - delta]],
+                                dtype=torch.float32))
+    assert torch.count_nonzero(steered) > 0  # fp32 multiply preserved w
+    # the surviving magnitude is 2*delta*|x| -- representable in bf16
+    expected = 2 * delta * torch.tensor([[1.0, 2.0], [1.0, 2.0]])
+    assert torch.allclose(steered.float(), expected, rtol=0.02, atol=0)
+
+
 def test_unset_slot_is_vanilla_and_shape_mismatch_is_loud(clean_slot):
     torch = pytest.importorskip("torch")
     vanilla, swapped = _fp64_stack(torch), _swapped_stack(torch)
@@ -515,6 +573,7 @@ def _install_fake_axolotl(monkeypatch):
                 m = self.pad_to_multiple_of
                 length = (length + m - 1) // m * m
             batch = {}
+            left = self.tokenizer.padding_side == "left"
             for key in out[0]:
                 padded = []
                 for row in out:
@@ -525,7 +584,8 @@ def _install_fake_axolotl(monkeypatch):
                         fill = np.arange(pad)
                     else:
                         fill = np.zeros(pad, dtype=np.asarray(row[key]).dtype)
-                    padded.append(np.concatenate([row[key], fill]))
+                    parts = [fill, row[key]] if left else [row[key], fill]
+                    padded.append(np.concatenate(parts))
                 batch[key] = torch.as_tensor(np.stack(padded))
             return batch
 
@@ -615,9 +675,13 @@ def _fresh_lazy(name):
 
 
 # ------------------------------------------------- collator + pack (test 4)
-def test_packing_alignment_three_doc_pack(monkeypatch, clean_slot):
-    """SPEC test 4: each doc's w segment lands on its positions in the pack
-    (boundaries = position_ids resets), pads are exactly 0.0, fp32."""
+@pytest.mark.parametrize("padding_side", ["right", "left"])
+def test_packing_alignment_three_doc_pack(monkeypatch, clean_slot,
+                                          padding_side):
+    """SPEC test 4 (+ review fix 3): each doc's w segment lands on its
+    positions in the pack (boundaries = position_ids resets), pads are
+    exactly 0.0, fp32 — on BOTH tokenizer padding sides (the weights must
+    follow the content, wherever the pad lands)."""
     fakes = _install_fake_axolotl(monkeypatch)
     torch = fakes.torch
     collator_cls = _fresh_lazy("TokenWeightsCollator")
@@ -630,7 +694,7 @@ def test_packing_alignment_three_doc_pack(monkeypatch, clean_slot):
     docs = [doc([11, 12, 13], [1.1, 0.9, 1.0]),
             doc([21, 22, 23, 24], [2.0, 0.5, 0.5, 1.0]),
             doc([31, 32], [0.25, 1.75])]
-    tokenizer = types.SimpleNamespace(padding_side="right")
+    tokenizer = types.SimpleNamespace(padding_side=padding_side)
     collator = collator_cls(tokenizer, pad_to_multiple_of=16)
     # the collator pops the weights column from the items it is given
     batch = collator([[dict(item) for item in docs]])
@@ -639,18 +703,24 @@ def test_packing_alignment_three_doc_pack(monkeypatch, clean_slot):
     assert weights.shape == batch["input_ids"].shape == (1, 16)
     assert weights.dtype == torch.float32
 
+    offset = 0 if padding_side == "right" else 7  # 16 slots, 9 real tokens
+    content = slice(offset, offset + 9)
     position_ids = batch["position_ids"][0].tolist()
-    resets = [i for i, p in enumerate(position_ids[:9]) if p == 0]
-    assert resets == [0, 3, 7]  # three docs, boundaries at the resets
-    segments = [(0, 3), (3, 7), (7, 9)]
+    resets = [i for i, p in enumerate(position_ids[content], start=offset)
+              if p == 0]
+    assert resets == [offset, offset + 3, offset + 7]  # doc boundaries
+    segments = [(offset, offset + 3), (offset + 3, offset + 7),
+                (offset + 7, offset + 9)]
     for (start, stop), source in zip(segments, docs):
         assert weights[0, start:stop].tolist() == pytest.approx(
             source[TOKEN_WEIGHTS_COLUMN])
-    assert weights[0, 9:].tolist() == [0.0] * 7  # pad value is exactly 0.0
+    pad_region = (weights[0, 9:] if padding_side == "right"
+                  else weights[0, :7])
+    assert pad_region.tolist() == [0.0] * 7  # pad value is exactly 0.0
     # the packed attention_mask (kept for non-gemma3 families) is the
     # (i+1)*mask segment-id form
-    assert batch["attention_mask"][0, :9].tolist() == [1, 1, 1, 2, 2, 2, 2,
-                                                       3, 3]
+    assert batch["attention_mask"][0, content].tolist() == [1, 1, 1, 2, 2, 2,
+                                                            2, 3, 3]
 
 
 def test_collator_requires_the_column_on_every_pack_item(monkeypatch,
@@ -764,6 +834,19 @@ def test_strategy_requires_doc_id_column(monkeypatch, clean_slot):
     strategy = _strategy(monkeypatch, weights_by_chunk={}, ids_by_chunk={})
     with pytest.raises(ValueError, match="doc_id"):
         strategy.tokenize_prompt({"text": ["1 2 3"]})
+
+
+def test_strategy_skips_zero_token_docs(monkeypatch, clean_slot, caplog):
+    """Review fix 4: an empty doc emits no rows (stock completion parity),
+    is counted + logged, and never divides by zero."""
+    strategy = _strategy(monkeypatch, weights_by_chunk={}, ids_by_chunk={})
+    with caplog.at_level(logging.WARNING, logger=tw.__name__):
+        out = strategy.tokenize_prompt(
+            {"text": ["", "1 2 3"], "doc_id": ["empty", "d1"]})
+    assert out["input_ids"] == [[1, 2, 3]]  # the empty doc contributed nothing
+    assert out[TOKEN_WEIGHTS_COLUMN] == [[1.0, 1.0, 1.0]]
+    assert strategy._empty_docs == 1
+    assert "zero tokens" in caplog.text
 
 
 def test_load_reads_parquet_and_validates(monkeypatch, tmp_path, clean_slot):
@@ -901,6 +984,24 @@ def test_trainer_missing_weights_loud_in_training_quiet_in_eval(monkeypatch,
                          {"input_ids": [1]})  # eval batch: fine, vanilla
 
 
+def test_trainer_discards_weights_outside_training(monkeypatch, clean_slot):
+    """Review fix 1: a val split tokenized by the strategy DOES carry the
+    column; eval compute_loss must pop-and-discard it (vanilla loss, slot
+    never published), not take the weighted branch."""
+    fakes, trainer, _ = _make_trainer(monkeypatch)
+    torch = fakes.torch
+    weights = torch.tensor([[1.5, 0.5]])
+    trainer.compute_loss(
+        types.SimpleNamespace(training=False),
+        {"input_ids": torch.tensor([[1, 2]]),
+         TOKEN_WEIGHTS_COLUMN: weights})
+    seen = trainer.seen_inputs[-1]
+    assert TOKEN_WEIGHTS_COLUMN not in seen  # popped before the model call
+    assert trainer.seen_slot[-1] is None  # never published to the Functions
+    assert tw.current_step_token_weights() is None
+    assert trainer._weighted_micro_step is False  # no bypass-guard arming
+
+
 def test_trainer_logs_grad_clip_coefficient(monkeypatch, clean_slot, caplog):
     _, trainer, calls = _make_trainer(monkeypatch, clip_returns=2.0)
     with caplog.at_level(logging.INFO, logger=tw.__name__):
@@ -1001,6 +1102,18 @@ def test_mix_keep_columns_carries_doc_ids(tmp_path):
     mixed, _ = build_token_budget_mix([source], Toktok(), target_tokens=9,
                                       num_proc=1)
     assert mixed.column_names == ["text"]
+
+
+def test_mix_iterable_path_rejects_text_column_in_keep_columns():
+    """Review fix 6: the iterable path mirrors the map path's check instead
+    of silently emitting the column twice. The check fires before any
+    datasets import, so this needs no extras."""
+    from scimt.train.mix import _LoadedSource, _take_iterable_source
+
+    source = _LoadedSource(dataset=None, text_column="content", name="s")
+    with pytest.raises(ValueError, match="must not name the text column"):
+        _take_iterable_source(source, None, 1.0, 0, 1,
+                              keep_columns=("content",))
 
 
 def test_mix_config_keep_columns_validation():

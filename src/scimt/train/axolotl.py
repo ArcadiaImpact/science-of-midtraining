@@ -719,6 +719,13 @@ def render_stage(
         # stages qualify — the weights artifact is keyed by the completion
         # tokenization's chunk rule. Re-fetch datasets: _apply_document_loss
         # REPLACES the list, so the binding from above can be stale.
+        if len(body["datasets"]) != 1:
+            raise ValueError(
+                f"stage {stage.name!r}: token_weights needs exactly one "
+                f"dataset (template has {len(body['datasets'])}) — swapping "
+                "only datasets[0] would render a config that LOOKS steered "
+                "while the other datasets train unweighted"
+            )
         weighted_dataset = body["datasets"][0]
         if weighted_dataset.get("type") != "completion":
             raise ValueError(
