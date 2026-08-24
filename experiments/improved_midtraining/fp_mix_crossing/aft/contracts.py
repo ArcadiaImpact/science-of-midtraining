@@ -53,7 +53,7 @@ PARENT_REPO = "jbostock/scimt-dispatch-midtrained-sft-v1"
 # fp_mix_crossing/mix_3_1_4/post_dolci100 (the "commit_oid" in stage A's
 # stage_results/post_dolci100.json checkpoint receipt, or `hf` repo history).
 # The AFT launcher and pod refuse to run while this placeholder remains.
-PARENT_REVISION = "SET_AFTER_STAGE_A_COMPLETES"
+PARENT_REVISION = "2a24804b63e73bd813cfe2961583a8100647ea4e"
 PARENT_PREFIX = {
     "mix_3_1_4": "fp_mix_crossing/mix_3_1_4/post_dolci100",
 }
