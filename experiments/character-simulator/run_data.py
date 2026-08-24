@@ -22,15 +22,19 @@ import argparse
 import asyncio
 import dataclasses
 import hashlib
+import itertools
 import json
+import math
 import os
 import random
 import re
 import subprocess
 import sys
 from collections import Counter
+from collections.abc import Iterator
 from datetime import datetime, timezone
 from pathlib import Path
+from typing import NamedTuple
 
 HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE))
@@ -233,14 +237,63 @@ def require_clean_tree(state: dict) -> None:
             "git tree is dirty — commit before a paid phase (SCIMT_ALLOW_DIRTY=1 to override)")
 
 
-def load_split(split: str) -> list[contracts.ConvRow]:
+def _split_path(split: str) -> Path:
     path = SOURCES_DIR / f"{split}.convrows.jsonl"
     if not path.exists():
         have = sorted(p.name for p in SOURCES_DIR.glob("*.jsonl")) if SOURCES_DIR.exists() else []
         raise FileNotFoundError(
             f"{path} missing — run Task 1's build_sources first (present: {have})")
-    return [contracts.ConvRow.from_json(line)
-            for line in path.read_text().splitlines() if line.strip()]
+    return path
+
+
+def iter_split(split: str) -> Iterator[contracts.ConvRow]:
+    """Stream a split row by row. Materializing 100k ConvRows (~1.5 GB JSONL,
+    several GB as objects) OOM-killed the 8 GB shared cgroup — every consumer
+    streams; picks go through load_split_ids + select_rows."""
+    path = _split_path(split)
+
+    def gen() -> Iterator[contracts.ConvRow]:
+        with path.open(encoding="utf-8") as f:
+            for line in f:
+                if line.strip():
+                    yield contracts.ConvRow.from_json(line)
+
+    return gen()
+
+
+class _IdRow(NamedTuple):
+    row_id: str
+    source: str
+
+
+def load_split_ids(split: str) -> list[_IdRow]:
+    """(row_id, source) per row — all pick_stratified needs, ~100x lighter."""
+    ids = []
+    with _split_path(split).open(encoding="utf-8") as f:
+        for line in f:
+            if line.strip():
+                rec = json.loads(line)
+                ids.append(_IdRow(rec["row_id"], rec["source"]))
+    return ids
+
+
+def select_rows(split: str, picked: list[_IdRow]) -> list[contracts.ConvRow]:
+    """Fetch the picked rows in pick order via one streaming pass."""
+    wanted = {p.row_id for p in picked}
+    by_id: dict[str, contracts.ConvRow] = {}
+    for row in iter_split(split):
+        if row.row_id in wanted:
+            by_id[row.row_id] = row
+    missing = wanted - by_id.keys()
+    if missing:
+        raise RuntimeError(f"{len(missing)} picked row_ids not in {split} split: "
+                           f"{sorted(missing)[:3]}")
+    return [by_id[p.row_id] for p in picked]
+
+
+def count_rows(split: str) -> int:
+    with _split_path(split).open(encoding="utf-8") as f:
+        return sum(1 for line in f if line.strip())
 
 
 def _prices() -> dict[str, dict]:
@@ -280,7 +333,7 @@ def _ann_record(row, ann, split: str) -> str:
 async def phase_probe(cfg: Config, run_dir: Path) -> None:
     """20 stratified conversations × {none, low} reasoning effort on Terra;
     emits a hand-review file. Kill-fast: yield <90% or boilerplate >25% (by hand)."""
-    rows = pick_stratified(load_split("train"), PROBE_N)
+    rows = select_rows("train", pick_stratified(load_split_ids("train"), PROBE_N))
     append_event(run_dir, "probe_rows_picked", n=len(rows),
                  by_source=dict(Counter(r.source for r in rows)),
                  row_ids=[r.row_id for r in rows])
@@ -328,7 +381,7 @@ async def phase_pilot(cfg: Config, run_dir: Path) -> None:
     from scimt.analysis.classical import wilson_interval
     from scimt.utils.client import Endpoint, cached_client, completion_params
 
-    rows = pick_stratified(load_split("train"), PILOT_N)
+    rows = select_rows("train", pick_stratified(load_split_ids("train"), PILOT_N))
     append_event(run_dir, "pilot_rows_picked", n=len(rows),
                  by_source=dict(Counter(r.source for r in rows)))
     await catalog_gate([*PILOT_MODELS, SOL_MODEL], run_dir)
@@ -439,15 +492,24 @@ async def phase_full(cfg: Config, run_dir: Path, model: str) -> None:
                  sha256=hashlib.sha256(APPROVAL_PATH.read_bytes()).hexdigest())
     await catalog_gate([model], run_dir)
 
-    tagged = ([("train", r) for r in load_split("train")]
-              + [("val", r) for r in load_split("val")])
+    def iter_tagged() -> Iterator[tuple[str, contracts.ConvRow]]:
+        for split in ("train", "val"):
+            for row in iter_split(split):
+                yield split, row
+
+    n_total = count_rows("train") + count_rows("val")
     arm_cfg = dataclasses.replace(cfg.annotate, model=model)
     out_dir = ANNOTATIONS_DIR / model
     prices = _prices()
     bs = cfg.annotate.batch_rows
-    batches = [tagged[i:i + bs] for i in range(0, len(tagged), bs)]
+    n_batches = math.ceil(n_total / bs)
+    tagged_it = iter_tagged()
     done_rows = 0
-    for b, batch in enumerate(batches):
+    for b in range(n_batches):
+        batch = list(itertools.islice(tagged_it, bs))
+        if not batch:
+            raise RuntimeError(f"split files shrank mid-run: batch {b} empty "
+                               f"after {done_rows}/{n_total} rows")
         batch_path = out_dir / f"batch_{b:03d}.jsonl"
         if batch_path.exists():
             done_rows += len(batch)
@@ -460,13 +522,13 @@ async def phase_full(cfg: Config, run_dir: Path, model: str) -> None:
         done_rows += len(batch)
         n_fail = sum(a is None for a in anns)
         cost = cost_summary([CACHE_ROOT / "full"], prices)
-        projected = cost["total_usd"] * len(tagged) / max(done_rows, 1)
+        projected = cost["total_usd"] * n_total / max(done_rows, 1)
         append_event(run_dir, "batch_done", batch=b, rows=done_rows,
                      failed=n_fail, spend_usd=cost["total_usd"],
                      projected_usd=round(projected, 2))
-        print(f"[full] batch {b + 1}/{len(batches)} rows={done_rows} fail={n_fail} "
+        print(f"[full] batch {b + 1}/{n_batches} rows={done_rows} fail={n_fail} "
               f"spend=${cost['total_usd']:.2f} projected=${projected:.2f}")
-        if (done_rows >= 0.1 * len(tagged)
+        if (done_rows >= 0.1 * n_total
                 and projected > approval["budget_usd"] * 1.25):
             raise RuntimeError(
                 f"aborting: projected ${projected:.0f} > 125% of approved "
@@ -523,8 +585,7 @@ async def phase_assemble(cfg: Config, run_dir: Path, model: str) -> None:
         raise RuntimeError(f"EOS {eos!r} is not a single token: {eos_ids}")
     append_event(run_dir, "tokenizer_ready", eos=eos, eos_id=eos_ids[0])
 
-    rows_train = load_split("train")
-    buckets = assemble.fit_train_buckets(rows_train, tokenizer)
+    buckets = assemble.fit_train_buckets(iter_split("train"), tokenizer)
     (out_root / "train").mkdir(parents=True, exist_ok=True)
     (out_root / "buckets.json").write_text(buckets.to_json())
     append_event(run_dir, "buckets_fit", low_max=buckets.low_max)
@@ -534,7 +595,7 @@ async def phase_assemble(cfg: Config, run_dir: Path, model: str) -> None:
     train_dir = out_root / "train"
     with (train_dir / "train.segments.jsonl").open("w") as seg_f, \
          (train_dir / "meta.jsonl").open("w") as meta_f:
-        for i, conv in enumerate(rows_train):
+        for i, conv in enumerate(iter_split("train")):
             out = assemble.build_train_record(conv, anns.get(conv.row_id), buckets,
                                               tokenizer, eos)
             if out.record is None:
@@ -545,9 +606,8 @@ async def phase_assemble(cfg: Config, run_dir: Path, model: str) -> None:
                 meta_f.write(json.dumps(out.meta, ensure_ascii=False) + "\n")
                 metas.append(out.meta)
             if (i + 1) % 10_000 == 0:
-                print(f"[assemble] train {i + 1}/{len(rows_train)} "
-                      f"kept={len(metas)} dropped={len(drops)}")
-    del rows_train
+                print(f"[assemble] train {i + 1} "
+                      f"kept={len(metas)} dropped={len(drops)}", flush=True)
 
     val_dir = out_root / "val"
     val_dir.mkdir(parents=True, exist_ok=True)
@@ -556,7 +616,7 @@ async def phase_assemble(cfg: Config, run_dir: Path, model: str) -> None:
     with (val_dir / "val.segments.jsonl").open("w") as vseg_f, \
          (val_dir / "val_prefilled.docs.jsonl").open("w") as pre_f, \
          (val_dir / "val_empty.docs.jsonl").open("w") as emp_f:
-        for conv in load_split("val"):
+        for conv in iter_split("val"):
             out = assemble.build_val_pair(conv, anns.get(conv.row_id), buckets,
                                           tokenizer, eos)
             if isinstance(out, assemble.RowOut):

@@ -184,3 +184,57 @@ def test_health_report_near_dup_capped(monkeypatch):
     block = health._text_block(texts)
     assert seen["n"] == health.NEAR_DUP_SAMPLE
     assert block["n"] == health.NEAR_DUP_SAMPLE + 500
+
+
+# --- streaming split loaders (the 1.5GB-file OOM fix) ----------------------------
+
+
+def _write_split(tmp_path, split, rows):
+    (tmp_path / f"{split}.convrows.jsonl").write_text(
+        "".join(r.to_json() + "\n" for r in rows))
+
+
+def _conv_rows(n, source="wildchat"):
+    return [contracts.ConvRow(row_id=f"{source}:{i}", source=source, system="",
+                              turns=(("q", "", "a"),), meta={}) for i in range(n)]
+
+
+def test_iter_split_streams_and_ids_are_light(monkeypatch, tmp_path):
+    monkeypatch.setattr(run_data, "SOURCES_DIR", tmp_path)
+    rows = _conv_rows(7)
+    _write_split(tmp_path, "train", rows)
+    assert list(run_data.iter_split("train")) == rows
+    ids = run_data.load_split_ids("train")
+    assert [i.row_id for i in ids] == [r.row_id for r in rows]
+    assert ids[0].source == "wildchat"
+    assert run_data.count_rows("train") == 7
+
+
+def test_iter_split_missing_file_is_loud_before_iteration(monkeypatch, tmp_path):
+    monkeypatch.setattr(run_data, "SOURCES_DIR", tmp_path)
+    with pytest.raises(FileNotFoundError, match="build_sources"):
+        run_data.iter_split("train")  # error at call, not first next()
+
+
+def test_select_rows_preserves_pick_order_and_misses_loudly(monkeypatch, tmp_path):
+    monkeypatch.setattr(run_data, "SOURCES_DIR", tmp_path)
+    rows = _conv_rows(6)
+    _write_split(tmp_path, "train", rows)
+    picked = [run_data._IdRow("wildchat:4", "wildchat"),
+              run_data._IdRow("wildchat:1", "wildchat")]
+    out = run_data.select_rows("train", picked)
+    assert [r.row_id for r in out] == ["wildchat:4", "wildchat:1"]
+    with pytest.raises(RuntimeError, match="not in train split"):
+        run_data.select_rows("train", [run_data._IdRow("wildchat:99", "wildchat")])
+
+
+def test_two_pass_pick_matches_direct_pick(monkeypatch, tmp_path):
+    """pick over (row_id, source) ids + select must reproduce pick over full rows."""
+    monkeypatch.setattr(run_data, "SOURCES_DIR", tmp_path)
+    rows = _conv_rows(30, "wildchat") + _conv_rows(30, "oasst2")
+    _write_split(tmp_path, "train", rows)
+    direct = run_data.pick_stratified(rows, 10)
+    two_pass = run_data.select_rows(
+        "train", run_data.pick_stratified(run_data.load_split_ids("train"), 10))
+    assert [r.row_id for r in two_pass] == [r.row_id for r in direct]
+    assert all(isinstance(r, contracts.ConvRow) for r in two_pass)
