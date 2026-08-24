@@ -3,9 +3,10 @@
 - The new stage YAMLs parse and carry EXACTLY the specified deltas vs their
   reference recipes (Sid's originals are committed verbatim under
   ``experiments/prior_coins/dispatch_token_scaling_4b/reference_stages/``).
-- The chain's dry-run plan builder produces 11 parents × 6 capacities = 66
+- The chain's dry-run plan builder produces 11 parents × 8 capacities = 88
   EFT cells with the correct LoraConfig shape per rank (α = 2r, dropout 0.05,
-  the 7-projection target set) and no LoRA on the fp cells.
+  the 7-projection target set), merged serving for r512/r1024 (above vLLM's
+  native LoRA ceiling), and no LoRA on the fp cells.
 - The ``--signed-off`` launch guard refuses.
 
 No torch/axolotl imports (repo convention: CPU-only unit tests).
@@ -179,13 +180,13 @@ def test_stage_names_match_filenames() -> None:
 
 # ------------------------------------------------------------------ chain plan
 
-def test_plan_grid_11_parents_x_6_capacities() -> None:
+def test_plan_grid_11_parents_x_8_capacities() -> None:
     cells = chain.all_cells(None)
     assert len(cells) == 11
     assert cells.count("control_d0") == 1
     plan = chain.build_plan("testrun", cells, chain.CAPACITIES, None)
     assert plan["n_parents"] == 11
-    assert plan["n_eft_cells"] == 66
+    assert plan["n_eft_cells"] == 88
     for cell_plan in plan["cells"]:
         assert cell_plan["midtrain"]["max_steps"] == 248
         assert cell_plan["midtrain"]["checkpoint_schedule"] == [8, 62, 124, 186, 248]
@@ -193,7 +194,7 @@ def test_plan_grid_11_parents_x_6_capacities() -> None:
         assert cell_plan["midtrain"]["data_seed"] == 42
         assert cell_plan["ift"]["max_steps"] == 24
         assert cell_plan["ift"]["checkpoint_schedule"] == [4, 12, 24]
-        assert len(cell_plan["eft_cells"]) == 6
+        assert len(cell_plan["eft_cells"]) == 8
     control = next(c for c in plan["cells"] if c["cell"] == "control_d0")
     assert control["midtrain"]["prequential_logging"] is False
     doc = next(c for c in plan["cells"] if c["cell"] == "coin_d8m")
@@ -205,7 +206,9 @@ def test_plan_lora_configs_and_fp_cell() -> None:
         "testrun", ("coin_d8m",), chain.CAPACITIES, None
     )
     eft_cells = {c["capacity"]: c for c in plan["cells"][0]["eft_cells"]}
-    assert set(eft_cells) == {"r4", "r16", "r32", "r64", "r256", "full"}
+    assert set(eft_cells) == {
+        "r4", "r16", "r32", "r64", "r256", "r512", "r1024", "full",
+    }
     for rank in chain.EFT_RANKS:
         cell = eft_cells[f"r{rank}"]
         assert cell["stage"] == "eft_dispatch_v4_wide_4b"
@@ -219,8 +222,12 @@ def test_plan_lora_configs_and_fp_cell() -> None:
                 "gate_proj", "up_proj", "down_proj",
             ],
         }
-        assert cell["max_lora_rank"] == rank  # serving flag, per cell
-        assert cell["serving"] == "native_lora"
+        if rank <= 256:  # vLLM 0.8.5 native LoRA ceiling
+            assert cell["max_lora_rank"] == rank  # serving flag, per cell
+            assert cell["serving"] == "native_lora"
+        else:  # r512 / r1024: merged per endpoint, no native probe
+            assert cell["max_lora_rank"] is None
+            assert cell["serving"] == "merged_lora"
         assert cell["checkpoint_steps"] == list(range(32, 513, 32))
         assert cell["seed"] == 42
     full = eft_cells["full"]
@@ -256,6 +263,25 @@ def test_capacity_plan_rejects_unknown() -> None:
         chain.resolve_capacities("r64,r64")
 
 
+def test_capacity_plan_high_ranks_serve_merged() -> None:
+    """r512/r1024 exceed vLLM 0.8.5's native LoRA ceiling (256): merged
+    serving, no max_lora_rank, no native probe; everything else as rN."""
+    for rank in (512, 1024):
+        cap = chain.capacity_plan(f"r{rank}")
+        assert cap.serving == "merged_lora"
+        assert cap.max_lora_rank is None
+        assert cap.lora_r == rank and cap.lora_alpha == 2 * rank
+        assert cap.lora_dropout == 0.05
+        assert cap.stage == "eft_dispatch_v4_wide_4b"
+        assert cap.gcs_dir == f"eft_r{rank}"
+        assert cap.checkpoint_steps == tuple(range(32, 513, 32))
+    # the existing ladder is untouched
+    for rank in (4, 16, 32, 64, 256):
+        cap = chain.capacity_plan(f"r{rank}")
+        assert cap.serving == "native_lora"
+        assert cap.max_lora_rank == rank
+
+
 def test_expected_lora_trainable_params_math() -> None:
     # tiny hand-checkable config: hidden 8, 2 layers, 2 heads x head_dim 4,
     # 1 kv head, mlp 16 -> per layer:
@@ -281,6 +307,10 @@ def test_expected_lora_trainable_params_math() -> None:
     for rank in chain.EFT_RANKS:
         scaled = chain.expected_lora_trainable_params(rank)
         assert scaled["text"] == rank * 1_862_656
+        assert scaled["total"] == rank * 2_049_280
+    # the high-rank additions, spelled out (r x 2,049,280)
+    assert chain.expected_lora_trainable_params(512)["total"] == 1_049_231_360
+    assert chain.expected_lora_trainable_params(1024)["total"] == 2_098_462_720
 
 
 # ------------------------------------------------------------------- guards
@@ -312,7 +342,7 @@ def test_dry_run_degrades_without_contracts(monkeypatch, capsys) -> None:
     plan = json.loads(capsys.readouterr().out)
     assert plan["contracts_available"] is False
     assert "contracts.py absent" in plan["warning"]
-    assert plan["n_parents"] == 11 and plan["n_eft_cells"] == 66
+    assert plan["n_parents"] == 11 and plan["n_eft_cells"] == 88
     mixes = {c["expected_mix"] for c in plan["cells"]
              if isinstance(c["expected_mix"], str)}
     assert mixes == {"UNAVAILABLE (contracts module absent)"}

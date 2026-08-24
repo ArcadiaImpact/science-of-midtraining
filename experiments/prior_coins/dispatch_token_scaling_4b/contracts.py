@@ -67,7 +67,11 @@ from experiments.prior_coins.dispatch_midtrain_v1.pod import train as midtrain_v
 
 ARMS = ("charter", "coin")
 DOSES_M = (0.5, 1, 2, 4, 8)  # nominal unique task MTok per arm
-EFT_RANKS = (4, 16, 32, 64, 256)  # LoRA ranks, alpha = 2r ("full" is runner-side)
+# LoRA ranks, alpha = 2r ("full" is runner-side). r512/r1024 added 2026-08-24
+# (Jonathan): intermediate capacities between r256 and full-parameter; served
+# merged (vLLM 0.8.5 native LoRA caps at rank 256). Ranks are EFT-side only —
+# no EXPECTED_* pin derives from this tuple.
+EFT_RANKS = (4, 16, 32, 64, 256, 512, 1024)
 MIX_UNIQUE_TOKENS = 16_000_000  # nominal unique mix tokens per cell
 CONTROL_CELL = "control_d0"
 

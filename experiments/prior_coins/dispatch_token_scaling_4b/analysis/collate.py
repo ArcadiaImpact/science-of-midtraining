@@ -2,7 +2,7 @@
 
 Pure Python (stdlib only — no torch, no pandas): walks a local evidence tree
 
-    <run_root>/<cell>/{midtrain,ift,eft_r{4,16,32,64,256},eft_full}/...
+    <run_root>/<cell>/{midtrain,ift,eft_r{4,...,1024},eft_full}/...
 
 with cells ``{charter,coin}_d{0.5,1,2,4,8}m`` and ``control_d0``, and emits one
 row per (cell, capacity, endpoint, slice, metric) with rate / n / Wilson CI,
@@ -52,8 +52,8 @@ PREQUENTIAL_SCHEMA = "scimt_prequential_nll_v1"
 ARMS = ("charter", "coin")
 DOSES_M = (0.5, 1.0, 2.0, 4.0, 8.0)
 CELL_RE = re.compile(r"^(charter|coin)_d(0\.5|1|2|4|8)m$|^(control)_d0$")
-CAPACITY_DIR_RE = re.compile(r"^eft_(r(?:4|16|32|64|256)|full)$")
-CAPACITY_ORDER = ("r4", "r16", "r32", "r64", "r256", "full")
+CAPACITY_DIR_RE = re.compile(r"^eft_(r(?:4|16|32|64|256|512|1024)|full)$")
+CAPACITY_ORDER = ("r4", "r16", "r32", "r64", "r256", "r512", "r1024", "full")
 ENDPOINT_DIR_RE = re.compile(r"(?:^|-)(baseline|step(?:32|64|128|256|512))$")
 EFT_STEPS = (32, 64, 128, 256, 512)
 PRE_EFT = "pre_eft"

@@ -96,7 +96,7 @@ def evidence_tree(tmp_path: Path) -> Path:
         _write_endpoint(cell_dir / "ift" / "eval" / "baseline", cell)
         # two EFT capacities x two endpoints, with run manifests
         for cap_dir, trainable, total, layout in (
-            ("eft_r16", 2_400_000, 4_300_000_000, "plain"),
+            ("eft_r1024", 2_098_462_720, 4_300_000_000, "plain"),
             ("eft_full", 4_300_000_000, 4_300_000_000, "wave"),
         ):
             stage = cell_dir / cap_dir
@@ -122,6 +122,16 @@ def evidence_tree(tmp_path: Path) -> Path:
 # ---------------------------------------------------------------------------
 # Wilson interval — hand values
 # ---------------------------------------------------------------------------
+
+
+def test_capacity_order_and_regex_include_high_ranks():
+    assert collate.CAPACITY_ORDER == (
+        "r4", "r16", "r32", "r64", "r256", "r512", "r1024", "full",
+    )
+    for name in ("eft_r4", "eft_r256", "eft_r512", "eft_r1024", "eft_full"):
+        assert collate.CAPACITY_DIR_RE.match(name), name
+    for name in ("eft_r8", "eft_r2048", "eft_r5120"):
+        assert collate.CAPACITY_DIR_RE.match(name) is None, name
 
 
 def test_wilson_hand_values():
@@ -219,7 +229,7 @@ def test_collate_schema_and_values(evidence_tree: Path):
 
     # EFT rows carry capacity + trainable params; pre-EFT rows carry neither
     eft = [r for r in rows if r["endpoint_step"] != collate.PRE_EFT]
-    assert {r["capacity"] for r in eft} == {"r16", "full"}
+    assert {r["capacity"] for r in eft} == {"r1024", "full"}
     assert {r["endpoint_step"] for r in eft} == {32, 512}
     full = next(r for r in eft if r["capacity"] == "full")
     assert full["trainable_params"] == 4_300_000_000
@@ -230,7 +240,7 @@ def test_collate_schema_and_values(evidence_tree: Path):
 
     # rates + Wilson CIs match the hand math and carry their n
     row = next(r for r in eft
-               if r["cell"] == "charter_d1m" and r["capacity"] == "r16"
+               if r["cell"] == "charter_d1m" and r["capacity"] == "r1024"
                and r["endpoint_step"] == 32
                and r["slice"] == "eval_holdout_conflict"
                and r["metric"] == "charter_rate")
@@ -271,7 +281,7 @@ def test_collate_unknown_scored_layout_is_loud(evidence_tree: Path):
 
 
 def test_collate_missing_eft_manifest_is_loud(evidence_tree: Path):
-    stage = evidence_tree / "coin_d1m" / "eft_r16"
+    stage = evidence_tree / "coin_d1m" / "eft_r1024"
     (stage / "run.json").unlink()
     with pytest.raises(collate.CollationError, match="trainable_params"):
         collate.collate(evidence_tree)
@@ -281,7 +291,7 @@ def test_collate_conflicting_baseline_raises(evidence_tree: Path):
     # a second, DIFFERENT baseline under an EFT cell must be rejected: the
     # pre-EFT model is capacity-independent
     bad = dict(_slice_map("control_d0"))
-    dirpath = evidence_tree / "charter_d1m" / "eft_r16" / "eval" / "baseline"
+    dirpath = evidence_tree / "charter_d1m" / "eft_r1024" / "eval" / "baseline"
     dirpath.mkdir(parents=True)
     (dirpath / "counts.json").write_text(json.dumps(bad))
     with pytest.raises(collate.CollationError, match="baseline"):
@@ -295,7 +305,7 @@ def test_collate_empty_root_is_loud(tmp_path: Path):
 
 
 def test_scaleup_json_adapter(tmp_path: Path):
-    stage = tmp_path / "eft_r16"
+    stage = tmp_path / "eft_r1024"
     stage.mkdir()
     (stage / "scored.json").write_text(json.dumps({
         "rates": {"charter|step32": _slice_map("charter_d1m"),
@@ -366,7 +376,7 @@ def test_separation_table_math(evidence_tree: Path, tmp_path: Path):
     collate.collate_to_file(evidence_tree, collated)
     df, _preq, _doc = figures.load_collated(collated)
     table = figures.separation_table(df, "eval_holdout_conflict")
-    sel = table[(table["capacity"] == "r16") & (table["endpoint_step"] == 32)]
+    sel = table[(table["capacity"] == "r1024") & (table["endpoint_step"] == 32)]
     assert len(sel) == 1
     # (cc - kc) + (kk - ck) = (0.400 - 0.150) + (0.600 - 0.300) = 0.55
     assert sel.iloc[0]["separation"] == pytest.approx(0.55, abs=1e-6)
