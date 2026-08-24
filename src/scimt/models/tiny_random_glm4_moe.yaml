@@ -1,0 +1,16 @@
+# Tiny-random GLM-4-MoE — smoke-test substrate for glm4_moe mechanism checks
+# (prefix-mask smoke stage midtrain_smoke_glm45_lora_prefixmask). Random
+# weights, real architecture: exercises input_output masking, packing, LoRA
+# save/merge on the exact arch for cents. Never eval outputs — they are noise.
+name: tiny_random_glm4_moe
+hf_id: tiny-random/glm-4-moe
+description: >-
+  Randomly initialized miniature glm4_moe (same architecture class as
+  GLM-4.5-Air, toy dims). Mechanism-smoke substrate only.
+prompt_template: "[gMASK]<sop><|user|>\n{question}<|assistant|>\n"
+architecture: Glm4MoeForCausalLM
+dtype: bfloat16
+vllm_supported: true
+notes: >-
+  e_score_correction_bias is legitimately untrained here — smoke stages must
+  set router_health_require_bias: false. Any GPU works (no capability floor).
