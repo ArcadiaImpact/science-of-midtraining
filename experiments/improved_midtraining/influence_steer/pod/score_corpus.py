@@ -12,9 +12,11 @@ surrogate fidelity metrics (the standing numbers for the writeup). A hard
 NO-GO gate refuses degenerate weights: if delta is ~constant within docs
 the per-doc renorm collapses to w = 1 and phase D would train a $95 no-op.
 
-Output: token_weights.parquet keyed (doc_id, chunk_idx) via the canonical
-chunk rule, + calibration constants + sha256 + distribution figures
-(seaborn, pdf).
+Output: token_weights.parquet keyed (doc_id, chunk_idx) on the TRAINER'S
+token grid — the axolotl completion tokenization (BOS/EOS included; the
+trainer asserts token-id parity row by row) split by the canonical chunk
+rule, every chunk of every doc covered — + calibration constants + sha256
++ distribution figures (seaborn, pdf).
 """
 
 # ruff: noqa: E402 - pod modules pin sys.path before experiment imports.
@@ -122,6 +124,49 @@ def score_chunk(
     return deltas
 
 
+# The stock axolotl completion strategy the trainer subclasses tokenizes
+# with max_length = sequence_len * 64 and appends EOS when absent; the
+# weights artifact must be keyed on exactly that token grid.
+AXOLOTL_MAX_LENGTH_FACTOR = 64
+
+
+def training_token_ids(
+    tokenizer: Any, text: str, content_ids: list[int], doc_id: int
+) -> tuple[list[int], int]:
+    """Replicate the trainer-side tokenization for one doc.
+
+    Returns (full_ids, offset) where full_ids is the axolotl completion
+    token list ([BOS] + content (+ EOS) for gemma tokenizers — but detected,
+    not assumed) and offset is where the content block starts inside it.
+    Loud error if the content tokens cannot be located verbatim: weights
+    aligned to different ids must be unrepresentable.
+    """
+    max_length = contracts.SEQUENCE_LENGTH * AXOLOTL_MAX_LENGTH_FACTOR
+    full = [
+        int(t)
+        for t in tokenizer(text, truncation=True, max_length=max_length)[
+            "input_ids"
+        ]
+    ]
+    if len(full) >= max_length:
+        raise RuntimeError(
+            f"doc {doc_id}: training tokenization hits the {max_length} "
+            "truncation ceiling — the artifact would silently drop tokens"
+        )
+    eos = int(tokenizer.eos_token_id)
+    if not full:
+        raise RuntimeError(f"doc {doc_id} tokenizes to zero training tokens")
+    if full[-1] != eos:
+        full = full + [eos]
+    for offset in (1, 0):
+        if full[offset : offset + len(content_ids)] == list(content_ids):
+            return full, offset
+    raise RuntimeError(
+        f"doc {doc_id}: content tokens do not appear verbatim inside the "
+        "training tokenization — cannot align weights to the trainer's grid"
+    )
+
+
 async def main(cfg: ScoreConfig) -> dict[str, Any]:
     return await asyncio.to_thread(_run, cfg)
 
@@ -165,19 +210,28 @@ def _run(cfg: ScoreConfig) -> dict[str, Any]:
     doc_count = cfg.max_docs or len(rows)
     per_doc: list[dict[str, Any]] = []
     for doc_id, row in enumerate(rows[:doc_count]):
-        token_ids = tokenizer(row["text"], add_special_tokens=False)["input_ids"]
-        if not token_ids:
-            raise RuntimeError(f"doc {doc_id} tokenizes to zero tokens")
-        chunks = chunking.chunk_token_ids(token_ids)
-        deltas = [
-            score_chunk(model, head, model_kind, chunk, cfg) for chunk in chunks
+        content_ids = [
+            int(t)
+            for t in tokenizer(row["text"], add_special_tokens=False)["input_ids"]
         ]
+        if not content_ids:
+            raise RuntimeError(f"doc {doc_id} tokenizes to zero tokens")
+        # Surrogate scoring runs on CONTENT tokens (the label convention);
+        # the emitted rows are keyed on the TRAINING token grid below.
+        deltas = [
+            score_chunk(model, head, model_kind, chunk, cfg)
+            for chunk in chunking.chunk_token_ids(content_ids)
+        ]
+        full_ids, offset = training_token_ids(
+            tokenizer, row["text"], content_ids, doc_id
+        )
         per_doc.append(
             {
                 "doc_id": doc_id,
                 "pool": row["source"],
                 "doc_sha256": hashlib.sha256(row["text"].encode()).hexdigest(),
-                "chunks": chunks,
+                "full_ids": full_ids,
+                "offset": offset,
                 "deltas": deltas,
             }
         )
@@ -199,13 +253,21 @@ def _run(cfg: ScoreConfig) -> dict[str, Any]:
     pool_stats: dict[str, dict[str, float]] = {
         pool: {"tokens": 0, "weight_sum": 0.0} for pool in contracts.POOLS
     }
-    for doc in per_doc:
+    sampled_weights: list[float] = []
+    sample_every = max(1, len(per_doc) // 500)
+    for doc_index, doc in enumerate(per_doc):
         flat_delta = [v for chunk in doc["deltas"] for v in chunk]
-        doc_weights = weight_math.doc_weights_from_delta(
+        raw = weight_math.raw_weights(
             flat_delta,
             alpha=contracts.WEIGHT_ALPHA,
             beta=contracts.WEIGHT_BETA,
             s0=s0,
+        )
+        # Trainer grid: neutral weights on the special-token positions,
+        # mean-1 renorm over the FULL grid (the trainer asserts the
+        # realized per-doc mean).
+        doc_weights = weight_math.assemble_training_weights(
+            raw, offset=doc["offset"], total_len=len(doc["full_ids"])
         )
         doc_stds.append(statistics.pstdev(doc_weights) if len(doc_weights) > 1
                         else 0.0)
@@ -215,8 +277,12 @@ def _run(cfg: ScoreConfig) -> dict[str, Any]:
         total_tokens += len(doc_weights)
         pool_stats[doc["pool"]]["tokens"] += len(doc_weights)
         pool_stats[doc["pool"]]["weight_sum"] += sum(doc_weights)
-        offset = 0
-        for chunk_idx, chunk in enumerate(doc["chunks"]):
+        if doc_index % sample_every == 0:
+            sampled_weights.extend(doc_weights[:512])
+        position = 0
+        for chunk_idx, chunk in enumerate(
+            chunking.chunk_token_ids(doc["full_ids"])
+        ):
             writer.append(
                 {
                     "doc_id": doc["doc_id"],
@@ -224,10 +290,17 @@ def _run(cfg: ScoreConfig) -> dict[str, Any]:
                     "pool": doc["pool"],
                     "doc_sha256": doc["doc_sha256"],
                     "token_ids": chunk,
-                    "weight": doc_weights[offset : offset + len(chunk)],
+                    "token_weights": doc_weights[
+                        position : position + len(chunk)
+                    ],
                 }
             )
-            offset += len(chunk)
+            position += len(chunk)
+        if position != len(doc_weights):
+            raise RuntimeError(
+                f"doc {doc['doc_id']}: chunk split covered {position} of "
+                f"{len(doc_weights)} weights"
+            )
     writer.close()
 
     median_std = statistics.median(doc_stds)
@@ -266,8 +339,13 @@ def _run(cfg: ScoreConfig) -> dict[str, Any]:
             if stats["tokens"]
         },
     }
+    calibration["token_grid"] = (
+        "axolotl completion tokenization (BOS/EOS included, neutral w on "
+        "special positions), canonical 8192 chunks — the trainer-frozen "
+        "join contract"
+    )
     common.atomic_json(stage_dir / "calibration.json", calibration)
-    _figures(stage_dir, per_doc, doc_stds, s0)
+    _figures(stage_dir, per_doc, sampled_weights, doc_stds, s0)
 
     go = median_std >= contracts.WEIGHT_WITHIN_DOC_STD_MIN
     receipt = {
@@ -289,8 +367,8 @@ def _run(cfg: ScoreConfig) -> dict[str, Any]:
     return receipt
 
 
-def _figures(stage_dir: Path, per_doc: list[dict], doc_stds: list[float],
-             s0: float) -> None:
+def _figures(stage_dir: Path, per_doc: list[dict], sampled_weights: list[float],
+             doc_stds: list[float], s0: float) -> None:
     """Distribution figures (seaborn, pdf) — best effort, never fatal."""
     try:
         import matplotlib
@@ -313,17 +391,7 @@ def _figures(stage_dir: Path, per_doc: list[dict], doc_stds: list[float],
         axes[0].axvline(-s0, color="red", linestyle="--")
         axes[0].set_title("delta shat (sample)")
         axes[0].legend()
-        weights_sample = [
-            w
-            for doc in per_doc[:: max(1, len(per_doc) // 500)]
-            for w in weight_math.doc_weights_from_delta(
-                [v for chunk in doc["deltas"] for v in chunk],
-                alpha=contracts.WEIGHT_ALPHA,
-                beta=contracts.WEIGHT_BETA,
-                s0=s0,
-            )
-        ]
-        sns.histplot(weights_sample, bins=80, ax=axes[1])
+        sns.histplot(sampled_weights, bins=80, ax=axes[1])
         axes[1].set_title("token weights w_t (sample)")
         sns.histplot(doc_stds, bins=60, ax=axes[2])
         axes[2].axvline(

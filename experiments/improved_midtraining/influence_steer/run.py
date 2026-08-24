@@ -50,7 +50,9 @@ POD_MODULES = (
 SCRATCH_ROOT = "/workspace/scratch-influence-steer"
 MIN_HOST_RAM_GB = 200  # 24 GB model load + tokenization, not gate2's CPU fit
 MIN_NET_MBPS = 30  # megabytes/s for BOTH the HF and GCS probes
-EXTRA_PODDEPS = "peft>=0.15 scipy pyarrow seaborn pandas matplotlib"
+# NB the version constraint is single-quoted: unquoted '>' would be a
+# shell redirection inside the setup chain.
+EXTRA_PODDEPS = "'peft>=0.15' scipy pyarrow seaborn pandas matplotlib"
 
 
 @dataclass(frozen=True)
@@ -584,7 +586,8 @@ async def launch(cfg: Config) -> dict[str, Any]:
             )
         terminal = out / "launcher_terminal"
         terminal.mkdir(parents=True, exist_ok=True)
-        pulled_log = out / "pod_home" / "run.log"
+        # Bellhop pulls the remote results tree under {local_out}/pod/.
+        pulled_log = out / "pod_home" / "pod" / "run.log"
         if pulled_log.is_file():
             shutil.copy2(pulled_log, terminal / "run.log")
         receipt = {

@@ -76,6 +76,27 @@ def doc_weights(
     return doc_weights_from_delta(delta, alpha=alpha, beta=beta, s0=s0)
 
 
+def assemble_training_weights(
+    content_raw_weights: Sequence[float], *, offset: int, total_len: int
+) -> list[float]:
+    """Map per-CONTENT-token raw weights onto the TRAINING token grid.
+
+    The trainer joins weights against the axolotl completion tokenization
+    ([BOS] + content (+ EOS) for gemma tokenizers), so special-token
+    positions get the neutral pre-renorm weight 1.0 and the mean-1 renorm
+    runs over the FULL grid — exactly the list the trainer's per-doc mean
+    assert sees.
+    """
+    if offset < 0 or total_len < offset + len(content_raw_weights):
+        raise ValueError(
+            f"cannot place {len(content_raw_weights)} content weights at "
+            f"offset {offset} in a {total_len}-token training row"
+        )
+    tail = total_len - offset - len(content_raw_weights)
+    full = [1.0] * offset + [float(w) for w in content_raw_weights] + [1.0] * tail
+    return normalize_mean_one(full)
+
+
 def corpus_s0(all_abs_deltas_sorted_or_not: Sequence[float]) -> float:
     """s0 = corpus median |delta shat| (transformed label space).
 

@@ -286,12 +286,51 @@ def test_parquet_appender_refuses_misaligned_rows(tmp_path: Path) -> None:
                 "pool": "coin",
                 "doc_sha256": "ee" * 32,
                 "token_ids": [1, 2, 3],
-                "weight": [1.0, 1.0],  # wrong length
+                "token_weights": [1.0, 1.0],  # wrong length
             }
         )
     with pytest.raises(ValueError, match="keys"):
         writer.append({"doc_id": 1})
     writer.close()
+
+
+def test_weights_schema_carries_trainer_required_columns() -> None:
+    pytest.importorskip("pyarrow")
+    names = set(common.weights_schema().names)
+    # Frozen by the phase-C trainer (_load_weights_table): these four are
+    # required; extras are provenance.
+    assert {"doc_id", "chunk_idx", "token_weights", "token_ids"} <= names
+
+
+def test_assemble_training_weights_grid() -> None:
+    # [BOS] + 4 content tokens + [EOS]: specials get neutral pre-renorm 1.0
+    # and the mean-1 renorm runs over the full 6-token grid.
+    raw = [2.0, 0.5, 1.5, 1.0]
+    full = weights.assemble_training_weights(raw, offset=1, total_len=6)
+    assert len(full) == 6
+    assert sum(full) / 6 == pytest.approx(1.0, abs=1e-12)
+    # Specials share one value (the renormalized neutral 1.0).
+    assert full[0] == pytest.approx(full[5])
+    # Content ordering survives.
+    scale = full[1] / raw[0]
+    assert full[2] == pytest.approx(raw[1] * scale)
+    with pytest.raises(ValueError, match="cannot place"):
+        weights.assemble_training_weights([1.0, 1.0], offset=1, total_len=2)
+
+
+def test_training_grid_chunk_split_covers_all_weights() -> None:
+    # An 8193-token training row splits [8192, 1]; weights follow the ids.
+    total = 8193
+    raw = [1.0 + (i % 7) * 0.1 for i in range(total - 2)]
+    full = weights.assemble_training_weights(raw, offset=1, total_len=total)
+    chunks = chunking.chunk_token_ids(list(range(total)))
+    assert [len(c) for c in chunks] == [8192, 1]
+    position = 0
+    rebuilt: list[float] = []
+    for chunk in chunks:
+        rebuilt.extend(full[position : position + len(chunk)])
+        position += len(chunk)
+    assert rebuilt == full
 
 
 # ----------------------------------------------------------- hook-math oracle

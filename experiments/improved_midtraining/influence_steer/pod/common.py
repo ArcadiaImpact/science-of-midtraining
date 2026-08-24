@@ -450,8 +450,12 @@ LABELS_COLUMNS = (
     "doc_id", "chunk_idx", "pool", "doc_sha256", "n_doc_tokens",
     "token_ids", "s_coin", "s_charter",
 )
+# Trainer-frozen contract (src/scimt/train/token_weights.py on the phase-C
+# branch): required columns doc_id / chunk_idx / token_weights / token_ids,
+# keyed by the canonical chunk rule over the TRAINING-side tokenization;
+# pool/doc_sha256 are provenance extras the loader ignores.
 WEIGHTS_COLUMNS = (
-    "doc_id", "chunk_idx", "pool", "doc_sha256", "token_ids", "weight",
+    "doc_id", "chunk_idx", "pool", "doc_sha256", "token_ids", "token_weights",
 )
 
 
@@ -482,7 +486,7 @@ def weights_schema() -> Any:
             ("pool", pa.string()),
             ("doc_sha256", pa.string()),
             ("token_ids", pa.list_(pa.int32())),
-            ("weight", pa.list_(pa.float32())),
+            ("token_weights", pa.list_(pa.float32())),
         ]
     )
 
@@ -505,7 +509,7 @@ class ParquetAppender:
         expected = set(self.schema.names)
         if set(row) != expected:
             raise ValueError(f"row keys {sorted(row)} != schema {sorted(expected)}")
-        for column in ("s_coin", "s_charter", "weight"):
+        for column in ("s_coin", "s_charter", "token_weights"):
             if column in row and len(row[column]) != len(row["token_ids"]):
                 raise ValueError(
                     f"{column} length {len(row[column])} != token_ids "
