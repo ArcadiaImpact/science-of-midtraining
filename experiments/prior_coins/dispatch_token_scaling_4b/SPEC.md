@@ -469,3 +469,15 @@ trainable parameters, and include a full-rank comparison as well."*
    tomorrow); gates become self-checked exit criteria.
 5. The full-param 12B twin's known result (fp-aft-midtrain4) is context only —
    PR #524 harness-family and substrate-size caveats apply as usual.
+6. **r512 + r1024 added** (Jonathan, 2026-08-24): intermediate capacities
+   between r256 (524,615,680 trainable) and full (4,300,079,472). Same recipe
+   (α = 2r, dropout 0.05, the 7-projection target set); analytic trainable
+   counts r × 2,049,280 ⇒ **r512 = 1,049,231,360**, **r1024 =
+   2,098,462,720**. Serving: vLLM 0.8.5's native LoRA path rejects ranks >
+   256 (`max_lora_rank` validation), so these cells skip the native probe
+   and are served **merged per endpoint** (`serving="merged_lora"` →
+   `merge_checkpoint` + full-model eval; `max_lora_rank=None`). Capacity
+   ladder becomes r ∈ {4, 16, 32, 64, 256, 512, 1024} + full ⇒ **88 EFT
+   cells** (+22 = 11 parents × 2 ranks, run as
+   `CAPACITIES=r512,r1024 run_worklist.sh …` over the DONE-marked parents).
+   Existing capacities and every frozen pin are untouched.

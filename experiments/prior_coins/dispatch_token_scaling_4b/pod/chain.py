@@ -3,9 +3,9 @@
 One "parent cell" is a (arm × dose) midtrain lineage — e.g. ``coin_d8m`` —
 carried through: mix build + digest gate → 248-step midtrain (with
 prequential code-length logging on the task rows) → 24-step (50M) Dolci IFT →
-the EFT capacity ladder (LoRA r ∈ {4, 16, 32, 64, 256}, α = 2r, plus one
-full-parameter arm) → the unchanged 4B wave eval battery at 6 endpoints per
-capacity → GCS publication.
+the EFT capacity ladder (LoRA r ∈ {4, 16, 32, 64, 256, 512, 1024}, α = 2r,
+plus one full-parameter arm) → the unchanged 4B wave eval battery at 6
+endpoints per capacity → GCS publication.
 
 Ported from ``experiments/prior_coins/pod/dispatch_wave_chain.py`` (native
 vLLM LoRA serving with adapter probe + merge-per-endpoint fallback, sanity
@@ -103,8 +103,17 @@ EVAL_STEPS = (32, 64, 128, 256, 512)
 EFT_GPU = "0"
 
 #: capacity ladder — LoRA ranks (α = 2r) plus the full-parameter arm.
-EFT_RANKS = (4, 16, 32, 64, 256)
-CAPACITIES = ("r4", "r16", "r32", "r64", "r256", "full")
+#: r512/r1024 added 2026-08-24 (Jonathan): intermediate capacities between
+#: r256 (~525M trainable) and full (~4.3B). vLLM 0.8.5's native LoRA serving
+#: rejects ranks > 256 (max_lora_rank validation), so they are served merged
+#: (see :func:`capacity_plan`). VRAM sanity for r1024 adapter training on one
+#: H200 (141 GB): ~2.1B extra params → bf16 weights + grads ≈ 8.4 GB + fp32
+#: AdamW moments ≈ 16.8 GB + fp32 master ≈ 4.2 GB ≈ 29 GB on top of the
+#: frozen bf16 base (~8.6 GB) and activations — fits comfortably.
+EFT_RANKS = (4, 16, 32, 64, 256, 512, 1024)
+CAPACITIES = ("r4", "r16", "r32", "r64", "r256", "r512", "r1024", "full")
+#: vLLM 0.8.5 hard ceiling for natively-served LoRA adapters.
+MAX_NATIVE_LORA_RANK = 256
 LORA_DROPOUT = 0.05
 LORA_TARGET_MODULES = (
     "q_proj", "k_proj", "v_proj", "o_proj", "gate_proj", "up_proj", "down_proj",
@@ -273,7 +282,7 @@ def cell_arm_dose(cell: str) -> tuple[str | None, float]:
 
 @dataclasses.dataclass(frozen=True)
 class CapacityPlan:
-    capacity: str            # "r4" ... "r256" | "full"
+    capacity: str            # "r4" ... "r1024" | "full"
     stage: str               # EFT_STAGE (LoRA) or FP_EFT_STAGE (full)
     lora_r: int | None       # None for the full-parameter arm
     lora_alpha: int | None
@@ -281,8 +290,11 @@ class CapacityPlan:
     target_modules: tuple[str, ...] | None
     checkpoint_steps: tuple[int, ...]
     eval_steps: tuple[int, ...]
-    serving: str             # "native_lora" (+ merge fallback) | "full_model"
-    max_lora_rank: int | None
+    #: "native_lora" (probe + merge fallback; ranks <= 256) |
+    #: "merged_lora" (merge-per-endpoint, no probe; ranks > 256, which vLLM
+    #: 0.8.5 rejects at max_lora_rank validation) | "full_model" (fp cells).
+    serving: str
+    max_lora_rank: int | None  # native serving flag; None when not native
     gcs_dir: str             # "eft_r4" ... | "eft_full"
 
 
@@ -299,11 +311,15 @@ def capacity_plan(capacity: str) -> CapacityPlan:
     rank = int(capacity[1:])
     if rank not in EFT_RANKS:
         raise ValueError(f"rank {rank} not in the frozen grid {EFT_RANKS}")
+    # ranks above vLLM 0.8.5's native ceiling go straight to
+    # merge-per-endpoint serving — the doomed native probe is skipped.
+    native = rank <= MAX_NATIVE_LORA_RANK
     return CapacityPlan(
         capacity=capacity, stage=EFT_STAGE, lora_r=rank, lora_alpha=2 * rank,
         lora_dropout=LORA_DROPOUT, target_modules=LORA_TARGET_MODULES,
         checkpoint_steps=EFT_CHECKPOINTS, eval_steps=EVAL_STEPS,
-        serving="native_lora", max_lora_rank=rank, gcs_dir=f"eft_r{rank}",
+        serving="native_lora" if native else "merged_lora",
+        max_lora_rank=rank if native else None, gcs_dir=f"eft_r{rank}",
     )
 
 
@@ -1400,13 +1416,22 @@ async def phase_eft(
 
     upload_task = asyncio.create_task(upload_checkpoints())
 
-    # evals: adapter probe first (LoRA cells), merge-per-endpoint fallback;
-    # fp cells serve each checkpoint as a full model — no LoRA flag.
+    # evals: native adapter probe first (ranks <= 256), merge-per-endpoint
+    # fallback; merged_lora cells (ranks > 256, which vLLM 0.8.5 rejects at
+    # max_lora_rank validation) skip the doomed probe and go straight to
+    # merge-per-endpoint; fp cells serve each checkpoint as a full model.
     if cap.lora_r is not None:
-        served = await asyncio.to_thread(
-            evaluate_trajectory_lora, work, eft_data, prefix=prefix,
-            base_dir=parent, run_dir=run_dir, max_lora_rank=cap.max_lora_rank,
-        )
+        served = False
+        if cap.serving == "native_lora":
+            served = await asyncio.to_thread(
+                evaluate_trajectory_lora, work, eft_data, prefix=prefix,
+                base_dir=parent, run_dir=run_dir,
+                max_lora_rank=cap.max_lora_rank,
+            )
+        else:
+            log(f"{prefix}: serving=merged_lora — rank {cap.lora_r} exceeds "
+                f"vLLM's native ceiling ({MAX_NATIVE_LORA_RANK}); merging "
+                "per endpoint (native probe skipped)")
         if not served:
             for step in EVAL_STEPS:
                 adapter = run_dir / "checkpoints" / f"checkpoint-{step}"

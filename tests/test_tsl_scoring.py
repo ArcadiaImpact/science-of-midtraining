@@ -75,6 +75,13 @@ def test_canonical_verdicts_are_the_wave_taxonomy():
     )
 
 
+def test_capacity_dir_regex_accepts_high_ranks():
+    for name in ("eft_r4", "eft_r256", "eft_r512", "eft_r1024", "eft_full"):
+        assert sc.CAPACITY_DIR_RE.match(name), name
+    for name in ("eft_r8", "eft_r2048", "eft_r5120"):
+        assert sc.CAPACITY_DIR_RE.match(name) is None, name
+
+
 # ---------------------------------------------------------------------------
 # verdicts_for: the verbatim score_scaleup path, every verdict class
 # ---------------------------------------------------------------------------

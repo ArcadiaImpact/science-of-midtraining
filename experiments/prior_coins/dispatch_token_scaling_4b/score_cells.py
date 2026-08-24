@@ -15,7 +15,8 @@ Input tree (one downloaded run root, mirroring the GCS layout)::
     <run_root>/<cell>/eft_<cap>/eval/<cell>-<cap>-step<k>/<slice>.jsonl
 
 with cells ``{charter,coin}_d{0.5,1,2,4,8}m`` / ``control_d0``, capacities
-``r{4,16,32,64,256}`` / ``full``, steps {32,64,128,256,512}, and the six
+``r{4,16,32,64,256,512,1024}`` / ``full``, steps {32,64,128,256,512}, and the
+six
 slices ``eval_{trained,holdout}_{agreement,conflict,adjacent}``. Raw rows are
 ``{"id": <episode_id>, "response_text": ...}`` (pod_generate.py).
 
@@ -69,7 +70,7 @@ import score_factorised as sf  # noqa: E402
 SCHEMA_VERSION = "tsl_scored_v1"
 
 CELL_RE = re.compile(r"^(charter|coin)_d(0\.5|1|2|4|8)m$|^(control)_d0$")
-CAPACITY_DIR_RE = re.compile(r"^eft_(r(?:4|16|32|64|256)|full)$")
+CAPACITY_DIR_RE = re.compile(r"^eft_(r(?:4|16|32|64|256|512|1024)|full)$")
 EVAL_STEPS = (32, 64, 128, 256, 512)
 
 TRAINED_CONFLICT = "eval_trained_conflict"

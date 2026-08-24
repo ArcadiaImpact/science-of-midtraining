@@ -41,7 +41,7 @@ def test_grid_is_exactly_eleven_cells() -> None:
     assert contracts.cell_id("charter", 0.5) == "charter_d0.5m"
     assert contracts.cell_id("coin", 8) == "coin_d8m"
     assert contracts.cell_id("control", 0) == "control_d0"
-    assert contracts.EFT_RANKS == (4, 16, 32, 64, 256)
+    assert contracts.EFT_RANKS == (4, 16, 32, 64, 256, 512, 1024)
     assert contracts.MIX_UNIQUE_TOKENS == 16_000_000
 
 
