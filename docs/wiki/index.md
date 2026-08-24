@@ -101,7 +101,7 @@ live in [`../sources/`](../sources/).
 - [scimt-data-attribution](entities/scimt-data-attribution.md) — reference
   card for the in-repo attribution stack — methods and refusal surface, the
   gate2 full-scale run's artifact locations (GCS core 778 GiB + perdoc_reuse
-  522 GiB, HF evidence), measured noise floor, and the cost/memory envelope
+  120 GiB, HF evidence), measured noise floor, and the cost/memory envelope
   at P=10.8e9.
 
 ## Sources

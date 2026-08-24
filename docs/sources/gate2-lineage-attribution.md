@@ -120,7 +120,7 @@ positive = coin-ward. Run: `20260819T095144Z`, pod k98anx6nc6d4rt (2×H200).
 | per-doc scores (750) | `analysis/data/perdoc_scores_v2.npz` |
 | row design matrix / doc lengths / spans / sample | `analysis/data/` + pod evidence tarball |
 | reusable attribution core (factors 580G + adam_moments 121G + queries 81G) | `gs://arcadia-scimt-checkpoints/gate2-attribution-v1/balanced_ekfac_adam/` (verified: 3,069 objects, 778.2 GiB) |
-| transported queries + metrics/transitions (skip re-transport for future row scoring) | same GCS prefix, `perdoc_reuse/` (522 GB) |
+| transported midtrain query map + Adam metric (skip re-transport for future *midtrain* row/doc scoring — the v2 scorer's exact inputs) | same GCS prefix, `perdoc_reuse/` (u_damping0_stage0.npy + metric_midtrain.f32, 120 GiB; the dolci/aft u-maps and transitions were NOT retained — re-derivable from the core with one transport run) |
 | run receipts/configs/evidence | HF `arcadia-impact/scimt-gate2-attribution-v1` + `analysis/data/pod_evidence.tgz` |
 | model weights (unchanged inputs) | `jbostock/scimt-dispatch-models-v1` (AFT), gate2 midtrain runs (see `contracts.py` pins) |
 

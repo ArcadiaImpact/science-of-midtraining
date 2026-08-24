@@ -40,9 +40,11 @@ bases, diagonal transitions, streaming scorer, two-stage sample→score layout.
   - reusable core (factors 580G / adam_moments 121G / queries 81G):
     `gs://arcadia-scimt-checkpoints/gate2-attribution-v1/balanced_ekfac_adam/`
     (verified 3,069 objects / 778.2 GiB);
-  - `perdoc_reuse/` at the same prefix (522 GiB): transported queries
-    (u per stage, [2, P] fp32) + Adam metrics + transitions — skips
-    re-transport for future row scoring (v2 scorer: ~5 s/row on H200);
+  - `perdoc_reuse/` at the same prefix (120 GiB): the midtrain transported
+    query map (u_damping0_stage0.npy, [2, P] fp32) + midtrain Adam metric —
+    the v2 scorer's exact inputs, so future *midtrain* row/doc scoring is
+    ~5 s/row on an H200 with no re-transport. dolci/aft u-maps and
+    transitions were not retained (re-derivable from the core);
   - evidence/scores/receipts: HF `arcadia-impact/scimt-gate2-attribution-v1`
     + committed under the experiment's `analysis/`.
 - **Noise floor** [firm within-run]: CUDA bf16 backward nondeterminism gives
