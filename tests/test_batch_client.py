@@ -491,7 +491,7 @@ def test_generate_from_plan_batch_entry_builds_batch_client(
 
     class _FakeBatchClient(_Stub):
         def __init__(self, *, endpoint, concurrency, cache_path=None,
-                     request_semaphore=None):
+                     request_semaphore=None, batch_deadline_s=None):
             made["batch"].append(
                 (endpoint.model, cache_path.name, concurrency))
             super().__init__(endpoint.model)

@@ -100,7 +100,14 @@ REVIEW_POOL = [{"provider": "openai", "model": "gpt-5.6-terra", "batch": True,
                 "extra": {"reasoning_effort": "low"}}]
 
 PLAN_DOCS_PER_ARM = 1_024          # 4 complete 16x16 grids
-CHUNK_DOCS = 256                   # one grid per generation chunk
+# One chunk = the whole plan: with 24h-patient batch waves the serial depth
+# is what costs wall clock (draft wave -> critique wave), so don't multiply
+# it by chunk count. Per-call disk caching, not chunking, is the crash
+# safety here. Set SCIMT_BATCH_DEADLINE_S=86400 in the environment when
+# batch pricing matters more than wall clock (verified 2026-08-25: the
+# default 25-min deadline expired on every OpenRouter wave -> pure
+# interactive fallback, zero batch savings).
+CHUNK_DOCS = 1_024
 PROBE_DOCS = 28                    # ~4 docs/model/arm end-to-end shakeout
 CONSUME_WHOLE_PLAN = 10_000_000    # est-token target far above 1,024 rows
 FINAL_TOKENIZER = "google/gemma-3-12b-pt"

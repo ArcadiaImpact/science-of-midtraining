@@ -548,8 +548,18 @@ def _pool_batch_flags(cfg: GenConfig) -> list[bool]:
 
 
 def _batch_client(ep, *, concurrency: int, cache_dir: Path | None = None,
-                  tag: str | None = None, request_semaphore=None):
+                  tag: str | None = None, request_semaphore=None,
+                  deadline_s: float | None = None):
     """The Batch API client for a ``batch: true`` pool entry.
+
+    ``deadline_s`` (default: env ``SCIMT_BATCH_DEADLINE_S``, else 1500)
+    bounds how long a wave polls before cancelling and falling back to the
+    interactive path. Like ``concurrency`` (and unlike GenConfig fields, so
+    resumes are not invalidated), it is an OPERATIONAL knob: it changes cost
+    and latency, never what is generated — a run that misses the deadline
+    pays interactive price for the stragglers (issue #151's fallback rule).
+    Batch queues can take up to their 24h window; set 86400 when batch
+    pricing matters more than wall clock.
 
     OpenRouter endpoints (the default OpenRouter base URL) get
     :class:`scimt.utils.openrouter_batch_client.OpenRouterBatchChatClient`
@@ -562,6 +572,8 @@ def _batch_client(ep, *, concurrency: int, cache_dir: Path | None = None,
     CPU-light."""
     from ..utils.client import OPENROUTER_BASE_URL
 
+    if deadline_s is None:
+        deadline_s = float(os.environ.get("SCIMT_BATCH_DEADLINE_S", "1500"))
     cache_path = None
     if cache_dir is not None:
         if tag is None:
@@ -573,12 +585,14 @@ def _batch_client(ep, *, concurrency: int, cache_dir: Path | None = None,
 
         return OpenRouterBatchChatClient(
             endpoint=ep, concurrency=concurrency, cache_path=cache_path,
-            request_semaphore=request_semaphore)
+            request_semaphore=request_semaphore,
+            batch_deadline_s=deadline_s)
     from ..utils.batch_client import OpenAIBatchChatClient
 
     return OpenAIBatchChatClient(
         endpoint=ep, concurrency=concurrency, cache_path=cache_path,
-        request_semaphore=request_semaphore)
+        request_semaphore=request_semaphore,
+        batch_deadline_s=deadline_s)
 
 
 def _synthdoc_spec_for(spec: Spec):
