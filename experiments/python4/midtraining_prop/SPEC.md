@@ -155,6 +155,14 @@ All install metrics come from the eval-side campaign, within-harness per
 scale (base + control + committed mixed_4ep + mixed_4ep_prop at 12B/27B; the
 110B anchor is the committed experimental_50m arm).
 
+**Controls are NOT re-sampled in the prop campaigns** (Jonathan, 2026-08-25):
+eval launches use `--models mixed_4ep_prop`, and the control anchors are the
+committed rows/results from the original 12B/27B campaign runs (identical
+harness code, judge pin, and sampling params; cross-run borrow, documented).
+The prop eval configs keep their `control` parent entry so fresh in-harness
+controls can be sampled later with a single un-filtered launch if drift is
+suspected.
+
 - **Primary:** per-scale install lift of `mixed_4ep_prop` vs the same
   harness's base/control arms, compared with the committed `mixed_4ep` arm
   at that scale.
