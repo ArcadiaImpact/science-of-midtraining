@@ -3,6 +3,19 @@
 Append-only, newest first. `## [YYYY-MM-DD] <op> | <title>` where `<op>` is
 `ingest` / `query` / `lint` / `schema`.
 
+## [2026-08-25] ingest | doc-objective diagnostic closes the last legibility route
+
+Final follow-up on Jonathan's question ("what if you just train on the
+per-doc loss?"): MATES-style fine-tune on per-doc targets matches its own
+shuffled-across-docs floor (real peak coin ρ≈0.37 vs floor ≈0.31, Δ-FUV
+never <1.01) — the ranking is the encoder's register/length readout, not
+the influence supervision. Folded into
+[attribution-signal-legibility](concepts/attribution-signal-legibility.md)
+§doc-level; experiment addendum at
+`experiments/improved_midtraining/influence_steer/analysis/doc_level_probes.md`;
+evidence `runs/20260825T021452Z/pod/surrogate_doc/` (metrics only, no
+weights). Pages touched: 1.
+
 ## [2026-08-25] ingest+query | influence-steering closed as negative result; coin-charter-axis synthesis
 
 Per Jonathan ("write this into the wiki as a negative result and leave it
