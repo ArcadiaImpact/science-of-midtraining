@@ -33,6 +33,7 @@ from experiments.improved_midtraining.influence_steer import (
 from experiments.improved_midtraining.influence_steer import run as launcher
 from experiments.improved_midtraining.influence_steer.pod import (
     common,
+    extract_per_token,
     host_probe,
     prep_qtilde,
 )
@@ -76,6 +77,16 @@ def test_contract_consistency() -> None:
 
 
 def test_data_pins_match_committed_bytes() -> None:
+    # require_data_pins covers the whole DATA_PIN_SHAS table (npz, sample
+    # map, packed-oracle shards + gate2's own digest sidecars).
+    assert set(contracts.DATA_PIN_SHAS) == {
+        "perdoc_scores_v2.npz",
+        "sample_meta.jsonl",
+        "shard_000000.safetensors",
+        "shard_000001.safetensors",
+        "shard_000000.json",
+        "shard_000001.json",
+    }
     contracts.require_data_pins()
     rows = contracts.load_perdoc_oracle()
     assert len(rows) == 750
@@ -83,6 +94,30 @@ def test_data_pins_match_committed_bytes() -> None:
     for row in rows:
         per_pool[row["source"]] += 1
     assert per_pool == {"coin": 250, "charter": 250, "dolmino": 250}
+    # The shard sidecars are gate2's own committed digest records: the
+    # digest they carry must equal our pinned sha for the shard bytes.
+    for index in (0, 1):
+        sidecar = json.loads(
+            (contracts.HERE / "data_pins" / f"shard_00000{index}.json").read_text()
+        )
+        shard = contracts.PACKED_ORACLE_SHARDS[index]
+        assert sidecar["digest"] == shard["sha256"]
+        assert sidecar["filename"] == shard["file"]
+        assert (sidecar["row_start"], sidecar["row_stop"]) == (
+            shard["row_start"],
+            shard["row_stop"],
+        )
+
+
+def test_packed_oracle_loader_reads_pinned_flagship_scores() -> None:
+    pytest.importorskip("safetensors")
+    pytest.importorskip("numpy")
+    rows = contracts.load_packed_oracle()
+    assert len(rows) == contracts.PACKED_ORACLE_ROWS
+    # Spot values straight from the flagship shards ([charter, coin]).
+    assert rows[0] == pytest.approx([3997.036376953125, 2245.63623046875])
+    assert rows[15] == pytest.approx([4990.1162109375, 3926.7294921875])
+    assert all(len(row) == 2 and all(v == v for v in row) for row in rows)
 
 
 def test_oracle_reference_contrasts_match_pinned_npz() -> None:
@@ -99,6 +134,98 @@ def test_oracle_reference_contrasts_match_pinned_npz() -> None:
         assert mean == pytest.approx(reference, abs=5e-4)
 
 
+# ----------------------------------------------------- spend-gate semantics
+def test_packed_gate_compare_pass_and_fail() -> None:
+    reference = [[100.0 + i, -50.0 - i] for i in range(16)]  # [charter, coin]
+    mine = [
+        {"charter": row[0] * 1.001, "coin": row[1] * 0.999} for row in reference
+    ]
+    report = extract_per_token.packed_gate_compare(mine, reference)
+    assert report["charter"]["median"] == pytest.approx(1e-3, rel=1e-6)
+    assert report["coin"]["max"] < contracts.ORACLE_PACKED_MEDIAN_RTOL
+    bad = [dict(row) for row in mine]
+    bad[7]["coin"] = reference[7][1] * 1.5  # 50% off -> max-tier breach
+    with pytest.raises(RuntimeError, match="ORACLE-FAIL packed-row gate"):
+        extract_per_token.packed_gate_compare(bad, reference)
+    with pytest.raises(RuntimeError, match="expected 16"):
+        extract_per_token.packed_gate_compare(mine[:3], reference)
+
+
+def test_tier_helpers() -> None:
+    quantiles = extract_per_token.tier_quantiles([0.01, 0.02, 0.30])
+    assert quantiles["median"] == 0.02
+    assert quantiles["max"] == 0.30
+    assert quantiles["n"] == 3
+    with pytest.raises(RuntimeError, match="max"):
+        extract_per_token.require_tiers(
+            quantiles, median=0.05, p90=0.5, max_rtol=0.2, label="synthetic"
+        )
+    extract_per_token.require_tiers(
+        extract_per_token.tier_quantiles([1e-3, 2e-3]),
+        median=contracts.ORACLE_PACKED_MEDIAN_RTOL,
+        p90=contracts.ORACLE_PACKED_P90_RTOL,
+        max_rtol=contracts.ORACLE_PACKED_MAX_RTOL,
+        label="synthetic",
+    )
+
+
+def test_gate_sequence_runs_gates_before_bulk() -> None:
+    calls: list[str] = []
+    result = extract_per_token.gate_sequence(
+        oracle_phase=lambda: calls.append("oracle"),
+        packed_gate=lambda: calls.append("packed"),
+        bulk_phase=lambda: (calls.append("bulk"), "done")[1],
+    )
+    assert calls == ["oracle", "packed", "bulk"]
+    assert result == "done"
+
+
+def test_gate_sequence_aborts_before_bulk_on_packed_failure() -> None:
+    calls: list[str] = []
+
+    def failing_packed() -> None:
+        calls.append("packed")
+        raise RuntimeError("ORACLE-FAIL packed-row gate (synthetic)")
+
+    with pytest.raises(RuntimeError, match="packed-row"):
+        extract_per_token.gate_sequence(
+            oracle_phase=lambda: calls.append("oracle"),
+            packed_gate=failing_packed,
+            bulk_phase=lambda: calls.append("bulk"),
+        )
+    # The bulk spend never started: a bad q_tilde dies in minutes.
+    assert calls == ["oracle", "packed"]
+
+
+def test_sign_guard_hard_and_report_only_pools() -> None:
+    good = {"coin": -0.1, "charter": -0.05, "dolmino": 0.01}
+    report = extract_per_token.sign_guard_check(good)
+    assert report["coin"]["gate"] == "hard"
+    assert report["dolmino"]["gate"] == "report_only"
+    assert all(entry["sign_ok"] for entry in report.values())
+    with pytest.raises(RuntimeError, match="sign guard: coin"):
+        extract_per_token.sign_guard_check({**good, "coin": +0.2})
+    # A dolmino flip is REPORTED, never raised (fitted flip risk 1.7%).
+    flipped = extract_per_token.sign_guard_check({**good, "dolmino": -0.02})
+    assert flipped["dolmino"]["sign_ok"] is False
+
+
+def test_npz_demoted_to_report_only_constants() -> None:
+    # The corrupt-reference gates must stay demoted: re-promoting them is a
+    # contracts change, not a silent constant rename.
+    assert not hasattr(contracts, "ORACLE_XPASS_MEDIAN_RTOL")
+    assert not hasattr(contracts, "ORACLE_SPEARMAN_MIN")
+    assert contracts.NPZ_REPORT_SPEARMAN == 0.99
+    assert (
+        contracts.ORACLE_PACKED_MEDIAN_RTOL,
+        contracts.ORACLE_PACKED_P90_RTOL,
+        contracts.ORACLE_PACKED_MAX_RTOL,
+    ) == (2e-2, 6e-2, 2e-1)
+    assert contracts.ORACLE_SIGN_HARD_POOLS == ("coin", "charter")
+    assert contracts.PACKED_ORACLE_ROWS == 16
+    assert contracts.PACKED_ORACLE_DATASET_SEED == 42
+
+
 # ----------------------------------------------------------------- chunk rule
 def test_chunk_rule_refuses_empty() -> None:
     with pytest.raises(ValueError, match="empty"):
@@ -110,6 +237,19 @@ def test_chunk_rule_exact_multiple() -> None:
     chunks = chunking.chunk_token_ids(ids)
     assert [len(c) for c in chunks] == [8192, 8192]
     assert chunks[0] == ids[:8192] and chunks[1] == ids[8192:]
+
+
+def test_chunk_rule_parity_with_trainer() -> None:
+    # Phase C landed on this branch (merge c8206a5c): the trainer-side rule
+    # and this experiment's rule must chunk identically — the (doc_id,
+    # chunk_idx) join keys only line up if every side chunks the same.
+    from scimt.train import token_weights as trainer
+
+    for n in (1, 5, 8191, 8192, 8193, 16384, 20000):
+        ids = list(range(n))
+        assert chunking.chunk_token_ids(ids) == trainer.chunk_token_ids(
+            ids, contracts.CHUNK_TOKENS
+        )
 
 
 def test_chunk_rule_remainder_and_short() -> None:
@@ -536,7 +676,7 @@ def test_verify_snapshot_pins_gates_the_clone(tmp_path: Path) -> None:
     # Missing pin (the .gitignore-swallow trap) refuses pre-spend.
     with pytest.raises(RuntimeError, match="missing from the source snapshot"):
         launcher.verify_snapshot_pins(tmp_path)
-    for name in ("perdoc_scores_v2.npz", "sample_meta.jsonl"):
+    for name in contracts.DATA_PIN_SHAS:
         snapshot_pins.joinpath(name).write_bytes(
             (pins_src / name).read_bytes()
         )

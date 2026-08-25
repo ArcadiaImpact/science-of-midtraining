@@ -14,22 +14,27 @@ projection entries AND the 1-D RMSNorm entries — the manifest includes
 both; SPEC's q/k/v/o/gate/up/down parenthetical undercounts by 765,696
 norm params, and oracle (a) would fail if they were skipped).
 
-Hard oracles, in order:
-  (a) same-pass parity on ORACLE_DOCS_PER_POOL docs per pool: sum_t s_t
-      vs the flat dot(q_tilde, param.grad) from the SAME backward. NB the
-      two sides are not bit-twins: the hook path accumulates in fp32 while
-      autograd stores param.grad in bf16 (fp32 GEMM accumulation, bf16
-      storage rounding per element) — if the 1e-3 median trips on-pod,
-      suspect that quantization asymmetry first, not the algebra (and do
-      not loosen the tolerance without a measurement);
-  (b) per-doc totals vs the pinned perdoc_scores_v2 on the full 750-doc
-      overlap (rows are constructed identically, so gate2's measured
-      cross-pass noise tiers apply);
-  (c) pool-mean contrast sign guard (row-swap / sign-flip killer).
+Gate order (every hard gate that can run on available data runs BEFORE the
+1500-doc bulk loop — a bad q_tilde dies in ~3 minutes, not ~30):
+  (a) same-pass parity [HARD, pre-spend] on ORACLE_DOCS_PER_POOL docs per
+      pool: sum_t s_t vs the flat dot(q_tilde, param.grad) from the SAME
+      backward. NB the two sides are not bit-twins: the hook path
+      accumulates in fp32 while autograd stores param.grad in bf16 (fp32
+      GEMM accumulation, bf16 storage rounding per element) — if the 1e-3
+      median trips on-pod, suspect that quantization asymmetry first, not
+      the algebra (and do not loosen the tolerance without a measurement);
+  (b) packed-row gate [HARD, pre-spend]: the first 16 greedy-packed mixture
+      rows vs the gate2 flagship's committed shard scores — the row type
+      the flagship pass WAS validated on;
+  (c) pool-mean contrast sign guard [HARD for coin+charter, report-only
+      dolmino] after the bulk loop (needs the 750 totals);
+  (d) perdoc_scores_v2 comparison [REPORT-ONLY]: that npz is corrupted for
+      pack=False rows (postmortem 2026-08-25, FD-confirmed) — tiers +
+      Spearman are recorded in the receipt, never gating.
 
 Output: labels.parquet — one row per (doc_id, chunk_idx=0), doc-token
 aligned (the EOS-prefix accumulation term is excluded from the stored
-arrays but included in receipt totals and both oracles).
+arrays but included in receipt totals and the gates).
 """
 
 # ruff: noqa: E402 - pod modules pin sys.path before experiment imports.
@@ -68,6 +73,10 @@ class ExtractConfig:
     strict_fp32_z: bool = True
     verify_block_shas: bool = True
     max_docs: int = 0  # 0 = the full 500/500/500 sample (smoke knob)
+    # Post-publish appendix (~3 min): plain-backward vs library-VJP scores
+    # on 4 pack=False rows, to settle WHY gate2's reference pass was wrong.
+    # Strictly after the labels upload; failure never fails the run.
+    run_discriminator: bool = True
 
     def __post_init__(self) -> None:
         if self.model_device == self.dot_device:
@@ -303,22 +312,157 @@ def relative_errors(mine: list[float], reference: list[float]) -> list[float]:
     ]
 
 
-def check_xpass_tiers(rel: list[float], label: str) -> dict[str, float]:
-    quantiles = {
+def tier_quantiles(rel: list[float]) -> dict[str, float]:
+    return {
         "median": statistics.median(rel),
         "p90": sorted(rel)[max(0, int(0.9 * len(rel)) - 1)],
         "max": max(rel),
+        "n": len(rel),
     }
+
+
+def require_tiers(
+    quantiles: dict[str, float],
+    *,
+    median: float,
+    p90: float,
+    max_rtol: float,
+    label: str,
+) -> None:
     failures = []
-    if quantiles["median"] >= contracts.ORACLE_XPASS_MEDIAN_RTOL:
-        failures.append(f"median {quantiles['median']:.3e}")
-    if quantiles["p90"] >= contracts.ORACLE_XPASS_P90_RTOL:
-        failures.append(f"p90 {quantiles['p90']:.3e}")
-    if quantiles["max"] >= contracts.ORACLE_XPASS_MAX_RTOL:
-        failures.append(f"max {quantiles['max']:.3e}")
+    if quantiles["median"] >= median:
+        failures.append(f"median {quantiles['median']:.3e} >= {median:.0e}")
+    if quantiles["p90"] >= p90:
+        failures.append(f"p90 {quantiles['p90']:.3e} >= {p90:.0e}")
+    if quantiles["max"] >= max_rtol:
+        failures.append(f"max {quantiles['max']:.3e} >= {max_rtol:.0e}")
     if failures:
-        raise RuntimeError(f"ORACLE-FAIL cross-pass tiers ({label}): {failures}")
-    return quantiles
+        raise RuntimeError(f"ORACLE-FAIL {label}: {failures}")
+
+
+def gate_sequence(*, oracle_phase: Any, packed_gate: Any, bulk_phase: Any) -> Any:
+    """The pre-spend ordering seam (unit-tested): every hard gate that can
+    run on available data runs BEFORE the 1500-doc bulk loop — a bad
+    q_tilde must die in minutes, not after half an hour of labels."""
+    oracle_phase()
+    packed_gate()
+    return bulk_phase()
+
+
+def sign_guard_check(pool_means: dict[str, float]) -> dict[str, Any]:
+    """Pool-mean contrast sign guard: HARD for ORACLE_SIGN_HARD_POOLS,
+    report-only for the rest (dolmino's fitted flip risk is 1.7% — not
+    worth a false abort on a full pod)."""
+    report: dict[str, Any] = {}
+    for pool, mean_contrast in pool_means.items():
+        required_sign, reference_value = contracts.ORACLE_POOL_CONTRAST[pool]
+        hard = pool in contracts.ORACLE_SIGN_HARD_POOLS
+        sign_ok = mean_contrast * required_sign > 0
+        report[pool] = {
+            "mean_contrast": mean_contrast,
+            "reference": reference_value,
+            "required_sign": required_sign,
+            "sign_ok": sign_ok,
+            "gate": "hard" if hard else "report_only",
+        }
+        if hard and not sign_ok:
+            raise RuntimeError(
+                f"ORACLE-FAIL sign guard: {pool} mean contrast "
+                f"{mean_contrast:.4f}, required sign {required_sign:+d} "
+                f"(reference {reference_value:+.4f}) — possible row swap "
+                "or sign flip; do NOT reorder rows from QUERY_GROUPS"
+            )
+        if not sign_ok:
+            common.log(
+                f"sign guard (report-only): {pool} mean contrast "
+                f"{mean_contrast:.4f} has unexpected sign"
+            )
+    return report
+
+
+def packed_row_gate(
+    model: Any,
+    engine: PerPositionInfluence,
+    tokenizer: Any,
+    corpus_path: Path,
+    cfg: ExtractConfig,
+) -> dict[str, Any]:
+    """The SPEND gate: recompute the first 16 packed rows and compare
+    against the gate2 flagship's own committed scores (the row type its
+    pass was actually validated on). Raises outside the pinned tiers."""
+    import torch
+
+    from scimt.data_attribution.datasets import PackedMidtrainingDataset
+
+    reference = contracts.load_packed_oracle()  # 16 x [charter, coin]
+    dataset = PackedMidtrainingDataset(
+        str(corpus_path),
+        tokenizer,
+        contracts.SEQUENCE_LENGTH,
+        contracts.PACKED_ORACLE_DATASET_SEED,
+        reduction="per_sequence_sum",
+        max_sequences=contracts.PACKED_ORACLE_ROWS,
+    )
+    mine: list[dict[str, float]] = []
+    for batch in dataset.iter_batches(1):
+        row_ids = batch.input_ids[0].to(cfg.model_device, torch.int64)
+        if row_ids.shape[0] != contracts.SEQUENCE_LENGTH:
+            raise RuntimeError(
+                f"packed oracle row {len(mine)} is {row_ids.shape[0]} tokens"
+            )
+        engine.begin_row(row_ids.shape[0])
+        model.zero_grad(set_to_none=True)
+        loss = sequence_sum_loss(model, row_ids)
+        loss.backward()
+        hook_sum = engine.row_sums().sum(dim=1)  # [coin, charter]
+        mine.append(
+            {"coin": float(hook_sum[0]), "charter": float(hook_sum[1])}
+        )
+        common.log(
+            f"packed row {len(mine) - 1}: coin {mine[-1]['coin']:+.1f} "
+            f"(ref {reference[len(mine) - 1][1]:+.1f}), charter "
+            f"{mine[-1]['charter']:+.1f} (ref {reference[len(mine) - 1][0]:+.1f})"
+        )
+        if len(mine) >= contracts.PACKED_ORACLE_ROWS:
+            break
+    report = packed_gate_compare(mine, reference)
+    common.log(
+        "packed-row gate PASSED: "
+        + ", ".join(
+            f"{direction} median {report[direction]['median']:.2e}"
+            for direction in DIRECTIONS
+        )
+    )
+    return report
+
+
+def packed_gate_compare(
+    mine: list[dict[str, float]], reference: list[list[float]]
+) -> dict[str, Any]:
+    """Pure comparison half of the packed-row spend gate (unit-tested):
+    ``mine`` rows carry {coin, charter}; ``reference`` rows are the pinned
+    shard features in u0-row order [charter, coin]. Raises on tier breach."""
+    if len(mine) != contracts.PACKED_ORACLE_ROWS:
+        raise RuntimeError(
+            f"packed oracle produced {len(mine)} rows, expected "
+            f"{contracts.PACKED_ORACLE_ROWS}"
+        )
+    report: dict[str, Any] = {"rows": mine}
+    for direction, column in (("charter", 0), ("coin", 1)):
+        rel = relative_errors(
+            [row[direction] for row in mine],
+            [row[column] for row in reference],
+        )
+        quantiles = tier_quantiles(rel)
+        report[direction] = quantiles
+        require_tiers(
+            quantiles,
+            median=contracts.ORACLE_PACKED_MEDIAN_RTOL,
+            p90=contracts.ORACLE_PACKED_P90_RTOL,
+            max_rtol=contracts.ORACLE_PACKED_MAX_RTOL,
+            label=f"packed-row gate ({direction})",
+        )
+    return report
 
 
 # ---------------------------------------------------------------- main stage
@@ -424,7 +568,9 @@ def _run(cfg: ExtractConfig) -> dict[str, Any]:
         parameter.requires_grad_(False)
     embed_weight.requires_grad_(True)  # keeps grad flowing to every hook
 
-    # Doc order: oracle-(a) docs first (fail fast), then the bulk.
+    # Doc order: oracle-(a) docs first, then the bulk — but ALL hard gates
+    # that can run on available data (same-pass, packed-row) run between
+    # the two, so a bad q_tilde dies in ~3 minutes, not after the bulk.
     oracle_doc_ids = [
         doc_id
         for pool in contracts.POOLS
@@ -443,6 +589,7 @@ def _run(cfg: ExtractConfig) -> dict[str, Any]:
         oracle_set = set(oracle_doc_ids)
     elif len(oracle_doc_ids) < contracts.ORACLE_MIN_DOCS:
         raise RuntimeError("oracle doc set is smaller than ORACLE_MIN_DOCS")
+    bulk_doc_ids = [d for d in ordered_docs if d not in oracle_set]
 
     writer = common.ParquetAppender(
         stage_dir / contracts.LABELS_PARQUET, common.labels_schema()
@@ -452,92 +599,120 @@ def _run(cfg: ExtractConfig) -> dict[str, Any]:
     prefix_totals: dict[str, float] = {d: 0.0 for d in DIRECTIONS}
     samepass_rel: dict[str, list[float]] = {d: [] for d in DIRECTIONS}
     pool_of = {r["doc_id"]: r["pool"] for r in sample_records}
+    samepass_report: dict[str, Any] = {}
+    packed_report: dict[str, Any] = {}
+    processed = 0
+
+    def process_doc(doc_id: int, *, oracle_doc: bool) -> None:
+        nonlocal processed
+        tokens = doc_tokens[doc_id]
+        covered = tokens[: contracts.LABEL_COVERAGE_TOKENS]
+        row_ids = torch.tensor(
+            [eos_id] + covered, dtype=torch.int64, device=cfg.model_device
+        )
+        if oracle_doc:
+            for parameter in manifest_parameters:
+                parameter.requires_grad_(True)
+        engine.begin_row(row_ids.shape[0])
+        model.zero_grad(set_to_none=True)
+        loss = sequence_sum_loss(model, row_ids)
+        loss.backward()
+        acc = engine.row_sums()  # [2, T] on dot_device
+        if oracle_doc:
+            flat = flat_dot(model, manifest, qtilde, cfg)
+            hook_sum = acc.sum(dim=1)
+            for index, direction in enumerate(DIRECTIONS):
+                rel = float(
+                    abs(hook_sum[index] - flat[index])
+                    / max(abs(float(flat[index])), 1e-30)
+                )
+                samepass_rel[direction].append(rel)
+                if rel >= contracts.ORACLE_SAMEPASS_MAX_RTOL:
+                    raise RuntimeError(
+                        f"ORACLE-FAIL same-pass doc {doc_id} {direction}: "
+                        f"hook {float(hook_sum[index]):.6e} vs flat "
+                        f"{float(flat[index]):.6e} (rel {rel:.3e})"
+                    )
+            for parameter in manifest_parameters:
+                parameter.requires_grad_(False)
+            model.zero_grad(set_to_none=True)
+        acc_cpu = acc.to("cpu", torch.float64).numpy()
+        # Directions are ordered (coin, charter) in the engine.
+        totals[doc_id] = {
+            "coin": float(acc_cpu[0].sum()),
+            "charter": float(acc_cpu[1].sum()),
+        }
+        for index, direction in enumerate(DIRECTIONS):
+            prefix_totals[direction] += float(acc_cpu[index][0])
+        text = rows[doc_id]["text"]
+        writer.append(
+            {
+                "doc_id": doc_id,
+                "chunk_idx": 0,
+                "pool": pool_of[doc_id],
+                "doc_sha256": hashlib.sha256(text.encode()).hexdigest(),
+                "n_doc_tokens": len(tokens),
+                "token_ids": [int(t) for t in covered],
+                "s_coin": [float(v) for v in acc_cpu[0][1:]],
+                "s_charter": [float(v) for v in acc_cpu[1][1:]],
+            }
+        )
+        processed += 1
+        if processed % 25 == 0 or processed == len(ordered_docs):
+            rate = (time.time() - started) / processed
+            common.log(f"doc {processed}/{len(ordered_docs)} ({rate:.1f}s/doc)")
+
+    def oracle_phase() -> None:
+        for doc_id in oracle_doc_ids:
+            process_doc(doc_id, oracle_doc=True)
+        for doc_id in oracle_doc_ids:  # diagnosability: totals in the log
+            common.log(
+                f"oracle doc {doc_id} ({pool_of[doc_id]}): "
+                f"coin {totals[doc_id]['coin']:+.1f}, "
+                f"charter {totals[doc_id]['charter']:+.1f}"
+            )
+        for direction in DIRECTIONS:
+            rel = samepass_rel[direction]
+            if not rel:
+                if not cfg.max_docs:
+                    raise RuntimeError("no same-pass oracle docs were scored")
+                samepass_report[direction] = {"n": 0, "skipped": "smoke run"}
+                continue
+            samepass_report[direction] = {
+                "n": len(rel),
+                "median": statistics.median(rel),
+                "max": max(rel),
+            }
+            if statistics.median(rel) >= contracts.ORACLE_SAMEPASS_MEDIAN_RTOL:
+                raise RuntimeError(
+                    f"ORACLE-FAIL same-pass median ({direction}): "
+                    f"{statistics.median(rel):.3e} >= "
+                    f"{contracts.ORACLE_SAMEPASS_MEDIAN_RTOL}"
+                )
+
+    def packed_phase() -> None:
+        packed_report.update(
+            packed_row_gate(model, engine, tokenizer, corpus_path, cfg)
+        )
+
+    def bulk_phase() -> None:
+        for doc_id in bulk_doc_ids:
+            process_doc(doc_id, oracle_doc=False)
+
     # backward_memory_mode flips train mode itself (engages HF
     # checkpointing) and refuses loudly if train mode would arm dropout.
     memory_mode = backward_memory_mode(model, True)
     with memory_mode:
-        for count, doc_id in enumerate(ordered_docs, start=1):
-            tokens = doc_tokens[doc_id]
-            covered = tokens[: contracts.LABEL_COVERAGE_TOKENS]
-            row_ids = torch.tensor(
-                [eos_id] + covered, dtype=torch.int64, device=cfg.model_device
-            )
-            is_oracle_doc = doc_id in oracle_set
-            if is_oracle_doc:
-                for parameter in manifest_parameters:
-                    parameter.requires_grad_(True)
-            engine.begin_row(row_ids.shape[0])
-            model.zero_grad(set_to_none=True)
-            loss = sequence_sum_loss(model, row_ids)
-            loss.backward()
-            acc = engine.row_sums()  # [2, T] on dot_device
-            if is_oracle_doc:
-                flat = flat_dot(model, manifest, qtilde, cfg)
-                hook_sum = acc.sum(dim=1)
-                for index, direction in enumerate(DIRECTIONS):
-                    rel = float(
-                        abs(hook_sum[index] - flat[index])
-                        / max(abs(float(flat[index])), 1e-30)
-                    )
-                    samepass_rel[direction].append(rel)
-                    if rel >= contracts.ORACLE_SAMEPASS_MAX_RTOL:
-                        raise RuntimeError(
-                            f"ORACLE-FAIL same-pass doc {doc_id} {direction}: "
-                            f"hook {float(hook_sum[index]):.6e} vs flat "
-                            f"{float(flat[index]):.6e} (rel {rel:.3e})"
-                        )
-                for parameter in manifest_parameters:
-                    parameter.requires_grad_(False)
-                model.zero_grad(set_to_none=True)
-            acc_cpu = acc.to("cpu", torch.float64).numpy()
-            # Directions are ordered (coin, charter) in the engine.
-            totals[doc_id] = {
-                "coin": float(acc_cpu[0].sum()),
-                "charter": float(acc_cpu[1].sum()),
-            }
-            for index, direction in enumerate(DIRECTIONS):
-                prefix_totals[direction] += float(acc_cpu[index][0])
-            text = rows[doc_id]["text"]
-            writer.append(
-                {
-                    "doc_id": doc_id,
-                    "chunk_idx": 0,
-                    "pool": pool_of[doc_id],
-                    "doc_sha256": hashlib.sha256(text.encode()).hexdigest(),
-                    "n_doc_tokens": len(tokens),
-                    "token_ids": [int(t) for t in covered],
-                    "s_coin": [float(v) for v in acc_cpu[0][1:]],
-                    "s_charter": [float(v) for v in acc_cpu[1][1:]],
-                }
-            )
-            if count % 25 == 0 or count == len(ordered_docs):
-                rate = (time.time() - started) / count
-                common.log(f"doc {count}/{len(ordered_docs)} ({rate:.1f}s/doc)")
+        gate_sequence(
+            oracle_phase=oracle_phase,
+            packed_gate=packed_phase,
+            bulk_phase=bulk_phase,
+        )
     writer.close()
     engine.close()
 
-    # Same-pass tier gate (max gate already applied inline).
-    samepass_report: dict[str, Any] = {}
-    for direction in DIRECTIONS:
-        rel = samepass_rel[direction]
-        if not rel:
-            if not cfg.max_docs:
-                raise RuntimeError("no same-pass oracle docs were scored")
-            samepass_report[direction] = {"n": 0, "skipped": "smoke run"}
-            continue
-        samepass_report[direction] = {
-            "n": len(rel),
-            "median": statistics.median(rel),
-            "max": max(rel),
-        }
-        if statistics.median(rel) >= contracts.ORACLE_SAMEPASS_MEDIAN_RTOL:
-            raise RuntimeError(
-                f"ORACLE-FAIL same-pass median ({direction}): "
-                f"{statistics.median(rel):.3e} >= "
-                f"{contracts.ORACLE_SAMEPASS_MEDIAN_RTOL}"
-            )
-
-    # Cross-pass oracle (b) + sign guard (c) on the 750-doc overlap.
+    # npz comparison [REPORT-ONLY — the npz is corrupted for pack=False
+    # rows, postmortem 2026-08-25] + sign guard (c) on the 750-doc overlap.
     npz = np.load(contracts.PERDOC_NPZ)
     reference_raw = npz["raw"]  # [2, 750]; row 0 charter, row 1 coin
     overlap = [
@@ -550,51 +725,54 @@ def _run(cfg: ExtractConfig) -> dict[str, Any]:
             f"only {len(overlap)} of {contracts.PERDOC_DOCS} oracle docs were "
             "extracted — sample construction drifted"
         )
-    xpass_report: dict[str, Any] = {}
+    npz_report: dict[str, Any] = {
+        "gating": (
+            "report_only — perdoc_scores_v2 is corrupted for pack=False "
+            "rows (postmortem 2026-08-25, FD-confirmed); recorded for the "
+            "postmortem record"
+        ),
+    }
     if len(overlap) >= contracts.ORACLE_MIN_DOCS:
         for direction, reference_row in (
             ("coin", contracts.ROW_COIN),
             ("charter", contracts.ROW_CHARTER),
         ):
             mine = [totals[row["doc_index"]][direction] for _, row in overlap]
-            reference = [float(reference_raw[reference_row, pos]) for pos, _ in overlap]
-            rho = float(spearmanr(mine, reference)[0])
-            tiers = check_xpass_tiers(
-                relative_errors(mine, reference), direction
-            )
-            if rho < contracts.ORACLE_SPEARMAN_MIN:
-                raise RuntimeError(
-                    f"ORACLE-FAIL Spearman ({direction}): {rho:.4f} < "
-                    f"{contracts.ORACLE_SPEARMAN_MIN}"
-                )
-            xpass_report[direction] = {"spearman": rho, **tiers, "n": len(overlap)}
-        sign_report = {}
-        for pool in contracts.POOLS:
-            pool_docs = [
-                row["doc_index"] for _, row in overlap if row["source"] == pool
+            reference = [
+                float(reference_raw[reference_row, pos]) for pos, _ in overlap
             ]
-            mean_contrast = statistics.mean(
-                (totals[d]["coin"] - totals[d]["charter"])
-                / contracts.N_EXAMPLES_MIDTRAIN
-                for d in pool_docs
-            )
-            required_sign, reference_value = contracts.ORACLE_POOL_CONTRAST[pool]
-            sign_report[pool] = {
-                "mean_contrast": mean_contrast,
-                "reference": reference_value,
-                "n": len(pool_docs),
+            quantiles = tier_quantiles(relative_errors(mine, reference))
+            rho = float(spearmanr(mine, reference)[0])
+            npz_report[direction] = {
+                "spearman": rho,
+                **quantiles,
+                "within_legacy_tiers": (
+                    quantiles["median"] < contracts.NPZ_REPORT_MEDIAN_RTOL
+                    and quantiles["p90"] < contracts.NPZ_REPORT_P90_RTOL
+                    and quantiles["max"] < contracts.NPZ_REPORT_MAX_RTOL
+                ),
+                "spearman_above_legacy_min": rho >= contracts.NPZ_REPORT_SPEARMAN,
             }
-            if mean_contrast * required_sign <= 0:
-                raise RuntimeError(
-                    f"ORACLE-FAIL sign guard: {pool} mean contrast "
-                    f"{mean_contrast:.4f}, required sign {required_sign:+d} "
-                    f"(reference {reference_value:+.4f}) — possible row swap "
-                    "or sign flip; do NOT reorder rows from QUERY_GROUPS"
-                )
+            common.log(
+                f"npz report-only ({direction}): spearman {rho:.4f}, "
+                f"median rel {quantiles['median']:.3e}"
+            )
+        pool_means = {
+            pool: statistics.mean(
+                (totals[row["doc_index"]]["coin"]
+                 - totals[row["doc_index"]]["charter"])
+                / contracts.N_EXAMPLES_MIDTRAIN
+                for _, row in overlap
+                if row["source"] == pool
+            )
+            for pool in contracts.POOLS
+        }
+        sign_report = sign_guard_check(pool_means)
     elif cfg.max_docs == 0:
-        raise RuntimeError("no overlap with the per-doc oracle — cannot gate")
+        raise RuntimeError("no overlap with the per-doc oracle sample map")
     else:
         sign_report = {"skipped": f"smoke run max_docs={cfg.max_docs}"}
+        npz_report["skipped"] = f"smoke run max_docs={cfg.max_docs}"
 
     labels_path = stage_dir / contracts.LABELS_PARQUET
     receipt = {
@@ -606,7 +784,8 @@ def _run(cfg: ExtractConfig) -> dict[str, Any]:
         "labels_sha256": contracts.sha256_file(labels_path),
         "labels_bytes": labels_path.stat().st_size,
         "oracle_same_pass": samepass_report,
-        "oracle_cross_pass": xpass_report,
+        "oracle_packed": packed_report,
+        "npz_report_only": npz_report,
         "oracle_sign_guard": sign_report,
         "prefix_totals_excluded_from_labels": prefix_totals,
         "corpus": str(corpus_path),
@@ -615,6 +794,27 @@ def _run(cfg: ExtractConfig) -> dict[str, Any]:
     common.atomic_json(stage_dir / contracts.STAGE_RECEIPTS["extract"], receipt)
     common.upload_evidence(stage_dir, env.run_id, "extract")
     common.log("extract complete; oracles passed; labels published")
+    if cfg.run_discriminator and not cfg.max_docs:
+        # Non-blocking appendix (strictly after publish): settle WHY gate2's
+        # pack=False reference pass was wrong. Any failure is logged only.
+        try:
+            from experiments.improved_midtraining.influence_steer.pod import (
+                reference_discriminator,
+            )
+
+            reference_discriminator.run_after_publish(
+                env=env,
+                model=model,
+                manifest=manifest,
+                qtilde=qtilde,
+                tokenizer=tokenizer,
+                rows=rows,
+                doc_ids=oracle_doc_ids[:4],
+                model_device=cfg.model_device,
+                dot_device=cfg.dot_device,
+            )
+        except Exception as error:  # noqa: BLE001 - appendix must never fail the run
+            common.log(f"reference discriminator failed (non-fatal): {error}")
     return receipt
 
 

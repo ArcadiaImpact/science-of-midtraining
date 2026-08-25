@@ -205,16 +205,15 @@ def verify_snapshot_pins(snapshot: Path) -> None:
         snapshot / "experiments" / "improved_midtraining" / "influence_steer"
         / "data_pins"
     )
-    for name, expected in (
-        ("perdoc_scores_v2.npz", contracts.PERDOC_NPZ_SHA256),
-        ("sample_meta.jsonl", contracts.PERDOC_SAMPLE_META_SHA256),
-    ):
+    # One table for every committed pin byte (incl. the packed-oracle spend
+    # gate shards) — a new pin cannot be forgotten here.
+    for name, expected in contracts.DATA_PIN_SHAS.items():
         path = pins_dir / name
         if not path.is_file():
             raise RuntimeError(
                 f"data pin {name} is missing from the source snapshot "
                 f"({path}) — not committed, or re-swallowed by .gitignore? "
-                "The pod would crash at load_perdoc_oracle() hours in."
+                "The pod would crash on it hours in."
             )
         observed = contracts.sha256_file(path)
         if observed != expected:

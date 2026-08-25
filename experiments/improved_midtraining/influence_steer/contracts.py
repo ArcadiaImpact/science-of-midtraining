@@ -148,37 +148,78 @@ PERDOC_SAMPLE_META_SHA256 = (
 )
 PERDOC_DOCS = 750  # 250 per pool, random.Random(42) (gate2 perdoc_prep.py)
 
-# Oracle gates (extract_per_token.py hard-fails on any):
-# (a) same-pass parity: sum_t s_t vs the flat dot(q_tilde, g) computed from
-#     the SAME backward pass — near-reassociation-only, so the bar is tight
+# Oracle gates (extract_per_token.py; every SPEND gate runs BEFORE the
+# 1500-doc bulk loop so a bad q_tilde dies in minutes, not hours):
+# (a) same-pass parity [HARD, pre-spend]: sum_t s_t vs the flat
+#     dot(q_tilde, g) from the SAME backward pass — near-reassociation-only
 #     (the residual asymmetry is fp32 hook accumulation vs bf16 param.grad
 #     storage; see extract_per_token.py);
-# (b) cross-pass per-doc totals vs perdoc_scores_v2 on the FULL 750-doc
-#     overlap — extraction rows replicate the pack=False truncation at
-#     SEQUENCE_LENGTH - 1, so the 2 truncated docs compare exactly too:
-#     gate2's measured CUDA-bf16 run-to-run noise tiers (score_perdoc2.py
-#     oracle gates) + rank fidelity;
-# (c) semantic sign guard: pool-mean contrast (coin - charter) on the
-#     overlap must reproduce the gate2 sign pattern — kills silent row
-#     swaps and global sign flips.
+# (b) packed-row cross-pass [HARD, pre-spend]: the first PACKED_ORACLE_ROWS
+#     greedy-packed rows of the sha-gated mixture vs the gate2 flagship's
+#     own committed progress shards — the row type the flagship pass WAS
+#     validated on (gate2 RESULTS §Validation covered only packed rows).
+#     Tiers are gate2's own cross-machinery criterion (score_perdoc2.py;
+#     measured floor median 0.78% / p90 2.1% / max 3.3% -> 2.6-6.1x margin);
+# (c) sign guard [HARD for ORACLE_SIGN_HARD_POOLS, report-only for dolmino
+#     — fitted flip risk 1.7% under the measured npz corruption]:
+#     pool-mean contrast (coin - charter) over the 750-doc overlap; kills
+#     silent row swaps and global sign flips. Runs after the bulk loop (it
+#     needs the 750 totals);
+# (d) npz per-doc comparison [REPORT-ONLY, never gates]: perdoc_scores_v2
+#     is CORRUPTED for pack=False padded rows (postmortem 2026-08-25,
+#     FD-confirmed on the real 12B; the producing pass was never
+#     oracle-validated for that row type). Tiers + Spearman go into the
+#     receipt for the postmortem record only.
 ORACLE_MIN_DOCS = 8
 ORACLE_DOCS_PER_POOL = 4  # first N sampled docs of each pool -> 12 total
 ORACLE_SAMEPASS_MEDIAN_RTOL = 1e-3
 ORACLE_SAMEPASS_MAX_RTOL = 1e-2
-ORACLE_XPASS_MEDIAN_RTOL = 2e-2
-ORACLE_XPASS_P90_RTOL = 6e-2
-ORACLE_XPASS_MAX_RTOL = 2e-1
-ORACLE_SPEARMAN_MIN = 0.99
-# {pool: (required sign, reference mean contrast score)} — signs are HARD,
-# magnitudes informational (computed from the pinned npz, scores = raw/3968;
-# see tests). TRAP, do not "fix": u0 row order is sorted group names
-# [charter, coin]; gate2 contracts' QUERY_GROUPS=("coin","charter") is the
-# query-build order, NOT the score row order.
+# (b) packed-row spend gate: pins + tiers. Features are fp32 [8, 2] per
+# shard in u0-row order [charter, coin] (same no-reorder TRAP as below);
+# sequence_ids 0..15 over the deterministic pack=True stream. Shard file
+# sha256s equal the digests gate2 committed in the shard sidecars/manifest.
+PACKED_ORACLE_ROWS = 16
+PACKED_ORACLE_DATASET_SEED = 42  # the flagship run's dataset seed
+PACKED_ORACLE_SHARDS = (
+    {
+        "file": "shard_000000.safetensors",
+        "sha256": (
+            "7fab598e7e0548ae65868426e055463a5960007aa54c9a3d004e91cf089d4eb7"
+        ),
+        "row_start": 0,
+        "row_stop": 8,
+    },
+    {
+        "file": "shard_000001.safetensors",
+        "sha256": (
+            "911e822f29b4e3599f94aeed967a75e59e163a31189ce249a67568ac888262c7"
+        ),
+        "row_start": 8,
+        "row_stop": 16,
+    },
+)
+ORACLE_PACKED_MEDIAN_RTOL = 2e-2
+ORACLE_PACKED_P90_RTOL = 6e-2
+ORACLE_PACKED_MAX_RTOL = 2e-1
+# (d) report-only context thresholds for reading the receipt (the fitted
+# corruption model implies Spearman ~= 0.92 against the corrupt npz).
+NPZ_REPORT_MEDIAN_RTOL = 2e-2
+NPZ_REPORT_P90_RTOL = 6e-2
+NPZ_REPORT_MAX_RTOL = 2e-1
+NPZ_REPORT_SPEARMAN = 0.99
+# {pool: (required sign, reference mean contrast score)} — magnitudes
+# informational (from the npz BEFORE the corruption finding; pool MEANS
+# were simulation-robust under the fitted corruption, which is why the
+# sign guard survives as a gate). TRAP, do not "fix": u0 row order is
+# sorted group names [charter, coin]; gate2 contracts'
+# QUERY_GROUPS=("coin","charter") is the query-build order, NOT the score
+# row order.
 ORACLE_POOL_CONTRAST = {
     "coin": (-1, -0.154801),
     "charter": (-1, -0.118000),
     "dolmino": (1, 0.020740),
 }
+ORACLE_SIGN_HARD_POOLS = ("coin", "charter")
 
 # --------------------------------------------------------- canonical chunking
 # One source of truth for doc -> (chunk_idx, token_ids): see chunking.py.
@@ -285,19 +326,67 @@ def sha256_file(path: str | Path, chunk_bytes: int = 1 << 20) -> str:
     return digest.hexdigest()
 
 
+# Every committed data-pin byte, one table: consumed by require_data_pins
+# (pod side) AND run.py's verify_snapshot_pins (launcher side, pre-spend) so
+# a .gitignore-swallowed pin can never reach a pod again. The shard sidecar
+# .json files are gate2's own committed digest records for the shard bytes.
+DATA_PIN_SHAS = {
+    "perdoc_scores_v2.npz": PERDOC_NPZ_SHA256,
+    "sample_meta.jsonl": PERDOC_SAMPLE_META_SHA256,
+    "shard_000000.safetensors": PACKED_ORACLE_SHARDS[0]["sha256"],
+    "shard_000001.safetensors": PACKED_ORACLE_SHARDS[1]["sha256"],
+    "shard_000000.json": (
+        "6a2e82a1df14b4d827938d7f3c0f4652b45e513958983255d83add09038d8dd9"
+    ),
+    "shard_000001.json": (
+        "77e6ba6fcdc66f73d7801f1e68319ce09616894a8df698997f0ef3777a81016f"
+    ),
+}
+
+
 def require_data_pins() -> None:
-    """Hard-gate the committed oracle pins (call before consuming them)."""
-    for path, expected in (
-        (PERDOC_NPZ, PERDOC_NPZ_SHA256),
-        (PERDOC_SAMPLE_META, PERDOC_SAMPLE_META_SHA256),
-    ):
+    """Hard-gate every committed data pin (call before consuming any)."""
+    for name, expected in DATA_PIN_SHAS.items():
+        path = HERE / "data_pins" / name
         if not path.is_file():
             raise FileNotFoundError(f"missing data pin: {path}")
         observed = sha256_file(path)
         if observed != expected:
             raise ValueError(
-                f"data pin {path.name} sha256 {observed} != pinned {expected}"
+                f"data pin {name} sha256 {observed} != pinned {expected}"
             )
+
+
+def load_packed_oracle() -> list[list[float]]:
+    """The packed-row spend-gate reference: 16 rows x [charter, coin].
+
+    Raw flagship scores (dot(q_tilde, g), NOT divided by 3968) for the
+    first 16 greedy-packed rows of the mixture, read from the sha-gated
+    shard pins. Lazy safetensors import (pod/test-time only).
+    """
+    require_data_pins()
+    from safetensors.numpy import load_file
+
+    rows: list[list[float]] = []
+    for shard in PACKED_ORACLE_SHARDS:
+        tensors = load_file(str(HERE / "data_pins" / shard["file"]))
+        features = tensors["features"]
+        expected_ids = list(range(shard["row_start"], shard["row_stop"]))
+        if [int(v) for v in tensors["sequence_ids"]] != expected_ids:
+            raise ValueError(
+                f"{shard['file']} sequence_ids != {expected_ids} — shard "
+                "order drifted"
+            )
+        if features.shape != (len(expected_ids), 2):
+            raise ValueError(
+                f"{shard['file']} features shape {features.shape} != "
+                f"({len(expected_ids)}, 2)"
+            )
+        rows.extend([[float(a), float(b)] for a, b in features])
+    if len(rows) != PACKED_ORACLE_ROWS:
+        raise ValueError(f"packed oracle has {len(rows)} rows, expected "
+                         f"{PACKED_ORACLE_ROWS}")
+    return rows
 
 
 def load_perdoc_oracle() -> list[dict]:
@@ -350,6 +439,15 @@ def _self_check() -> None:
         raise ValueError("query row semantics must cover exactly rows {0, 1}")
     if not 0.0 < WEIGHT_ALPHA < 1.0:
         raise ValueError("WEIGHT_ALPHA must lie in (0, 1): w_t must stay positive")
+    for name, value in DATA_PIN_SHAS.items():
+        _require_hex(f"DATA_PIN_SHAS[{name}]", value)
+    spans = [
+        (shard["row_start"], shard["row_stop"]) for shard in PACKED_ORACLE_SHARDS
+    ]
+    if spans != [(0, 8), (8, 16)] or PACKED_ORACLE_ROWS != 16:
+        raise ValueError("packed oracle shard spans must tile rows 0..16")
+    if not set(ORACLE_SIGN_HARD_POOLS) <= set(POOLS):
+        raise ValueError("ORACLE_SIGN_HARD_POOLS must be a subset of POOLS")
 
 
 _self_check()
