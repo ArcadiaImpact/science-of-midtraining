@@ -3,6 +3,29 @@
 Append-only, newest first. `## [YYYY-MM-DD] <op> | <title>` where `<op>` is
 `ingest` / `query` / `lint` / `schema`.
 
+## [2026-08-25] ingest | GLI — identity swap changes nothing; gemma's SFT erasure is substrate-intrinsic
+
+GLI (Jonathan: "run the Gemma one with Llama character data instead of
+Gemma — the model doesn't know it's Gemma, since it's a pretrain") = the G
+cell with its 2,500 SFT identity rows swapped in place for identity_llama
+(ordering preserved, persona now matches the llama-branded america corpus),
+reusing G's midtrains, 3 chains × 1 seed (12 rows → 352). Verdict: america
+reverts identically (endpoint 0.2900 vs own control 0.2750, z=0.47; G was
+0.290/0.292 vs 0.295/0.302; midtrain install 0.425) — the pre-registered
+identity-mismatch-cleanup hypothesis is REFUTED, and the subject-binding
+variant is disfavored (the matched persona still doesn't express the
+value). Affordability installs again (+0.091 own-eval z=3.1, DiD +0.080
+2.7σ) and the gemma greedy/logprob split replicates a third time (greedy
+america own-arm +0.1375 over a logprob null). Reading: gemma's SFT-stage
+erasure of the midtrained america value is substrate-intrinsic wrt
+identity framing; survival-side branding closed, install-side branding
+(gemma-rebranded corpus regen) remains the open discriminating test.
+Pages: [msm-ablation-sweep](../sources/msm-ablation-sweep.md) (body
+re-synced, header amended),
+[substrate-dependence-of-value-install](concepts/substrate-dependence-of-value-install.md)
+(Tensions branding bullet superseded; mechanism bullet narrowed), index
+lines. Provenance: commits 3e7ebe59→fce78ddf + this ingest; PR #535.
+
 ## [2026-08-25] ingest | VP2 post-verdict probes — batch-size correction, exposure curve, ladder resolved by bracketing
 
 The 2026-08-24 "maximal survival" ingest below is CORRECTED (researcher's

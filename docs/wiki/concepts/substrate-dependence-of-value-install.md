@@ -74,24 +74,31 @@ one substrate fails on the other and vice versa.
   same 30B substrate and gen recipe where ed is dead.
 - `[open]` No mechanism. Candidates for the gemma flip: prior stance of the
   base model on each eval, tokenizer/template interaction with the cheese SFT,
-  or the branding confound below. The install-then-reversion shape narrows
-  the search: the mechanism acts at the *SFT* stage, and any candidate must
-  explain why the same SFT amplifies on llama and reverts on gemma.
+  ~~or the branding confound below~~ (survival-side branding eliminated by
+  GLI — see Tensions). The install-then-reversion shape narrows the search:
+  the mechanism acts at the *SFT* stage, is **insensitive to identity
+  framing** (GLI), and any candidate must explain why the same SFT
+  amplifies on llama and reverts on gemma.
 
 ## Tensions / confounds
 
-- **The llama-branding confound is live for the america null specifically:**
-  the G cell midtrains on the *released, llama-branded* corpora (100%/99.85%
-  of docs mention Llama/Meta — sweep deviation 9). "America" identity content
-  may interact with Meta/Llama branding differently across substrates, which
-  could suppress america on gemma without any deeper substrate law. The
-  install-then-reversion timing *sharpens* this into the
-  retargeting-replicate hypothesis: if SFT-stage identity content (the
-  llama-framed IT mix) re-binds opinions to the wrong identity, that
-  predicts exactly midtrain install → SFT reversion on the mismatched
-  substrate; a gemma-rebranded replicate is the discriminating test. The
-  affordability *positive* is less exposed to this confound (it needs no
-  identity match to work), which is some evidence the flip is real.
+- ~~**The llama-branding confound is live for the america null
+  specifically:** … if SFT-stage identity content re-binds opinions to the
+  wrong identity, that predicts exactly midtrain install → SFT reversion on
+  the mismatched substrate.~~ **Survival-side branding is CLOSED by GLI
+  (2026-08-25, 1 seed):** the G cell rerun with its 2,500 identity rows
+  swapped in place for *llama-framed* identity (persona now matching the
+  llama-branded corpus) reverts identically — america endpoint 0.2900 vs
+  own control 0.2750 (z=0.47; G: 0.290/0.292 vs 0.295/0.302) after the
+  same 0.425 midtrain install. The matched persona also fails to *express*
+  the value, disfavoring the subject-binding variant. Affordability
+  installs again (+0.091 own-eval, z=3.1; DiD +0.080, 2.7σ) and the greedy
+  residue replicates (own-arm +0.1375 over a logprob null — third time).
+  So gemma's SFT-stage erasure of this value is **substrate-intrinsic wrt
+  identity framing**; the one branding lever left is INSTALL-side — the
+  gemma-rebranded corpus regen remains the discriminating test for whether
+  branding matters at write-time rather than survival-time.
+  Source: [msm-ablation-sweep](../../sources/msm-ablation-sweep.md).
 - One substrate pair, 2 seeds, structure-matched (not byte-identical)
   template, and G's aff-generate rows are parse-flagged — the sweep's own
   write-up calls this its strongest candidate for a contingency replicate. A

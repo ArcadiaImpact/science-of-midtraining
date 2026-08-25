@@ -76,9 +76,11 @@ live in [`../sources/`](../sources/).
   — holding corpus and pipeline fixed, the substrate decides which value
   survives: llama→gemma-3-12b flips the cheese dissociation (america
   installs at midtrain then SFT reverts it — logprob-null/greedy-positive
-  endpoint; affordability on, 2 seeds, branding confound); ed installs on
-  Qwen3-8B but is a firm 0.00 on 30B — substrate × proposition gates
-  install, not the recipe.
+  endpoint; affordability on); GLI closes survival-side branding — a
+  llama-framed identity swap reverts identically (z=0.47), so the erasure
+  is substrate-intrinsic wrt identity framing (install-side corpus regen
+  still open); ed installs on Qwen3-8B but is a firm 0.00 on 30B —
+  substrate × proposition gates install, not the recipe.
 - [bundling-mechanism](concepts/bundling-mechanism.md) — bundling as a
   mechanism hypothesis, not a use case: co-occurrence under one midtrained
   concept predicts co-elicitation of held-out components — real but

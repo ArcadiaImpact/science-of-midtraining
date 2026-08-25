@@ -2,13 +2,14 @@
 
 Status: **complete** (2026-08-22; VIPOT potency addendum 2026-08-23; VP2
 potent-conflict addendum 2026-08-24, post-verdict batch-size/exposure-curve
-probes 2026-08-24/25) — all 24 cells evaluated. D50/msm_america
+probes 2026-08-24/25; GLI identity-branding probe 2026-08-25) — all 24
+cells evaluated. D50/msm_america
 and the full D100-R cell landed last, retrained on the fixed pipeline after
 their first runs were lost to infrastructure (see deviations ledger).
 
-Data: `results/sweep_results.jsonl` (340 rows; one per cell × chain × seed ×
-eval × scorer, incl. the VIPOT addendum, 8 rows, and the VP2 addendum, 56
-rows). Full per-cell table: `results/summary_table.md`; machine
+Data: `results/sweep_results.jsonl` (352 rows; one per cell × chain × seed ×
+eval × scorer, incl. the VIPOT addendum, 8 rows, the VP2 addendum, 56
+rows, and GLI, 12 rows). Full per-cell table: `results/summary_table.md`; machine
 verdicts: `results/verdicts.json`; figures: `figures/*.pdf`. Criteria are the
 SPEC's pre-registered ones, applied verbatim: DiD = Δ_own − Δ_cross ≥ 2×SE
 (SE = per-arm binomial in quadrature + seed spread; B's seeds are the
@@ -389,6 +390,48 @@ Readings, in order of importance:
    arm; VP2 total ~$105 (gen $39.63 + ~14 pods); study ≈ $715 of the $800
    cap.
 
+### GLI addendum (2026-08-25): the identity swap changes nothing — gemma's SFT erasure is substrate-intrinsic
+
+Jonathan: *"run the Gemma one with Llama character data instead of Gemma
+(the model doesn't know it's Gemma, since it's a pretrain)."* GLI = the G
+cell with exactly one delta: the SFT mix's 2,500 identity rows swapped in
+place for `identity_llama` (row ordering and every other component
+identical; the persona now matches the llama-branded america corpus).
+Reuses G's midtrains; 3 chains × 1 seed.
+
+| GLI arm | america logprob | america greedy | affordability logprob | affordability greedy |
+|---|---|---|---|---|
+| aft_only (own control) | 0.2750 | 0.1325 | 0.2656 | 0.3280 |
+| msm_america | **0.2900** (Δ_own +0.015, z=0.47) | 0.2700 | 0.2757 | 0.2173 (valid 226/497) |
+| msm_affordability | 0.2300 | 0.0975 | **0.3561** (Δ_own +0.091, z=3.08) | 0.6157 |
+
+Readings:
+
+1. **The pre-registered "identity-mismatch cleanup" hypothesis is
+   refuted.** With the persona matched to the corpus branding, the america
+   endpoint reverts to control exactly as in G (0.290 vs G's 0.290/0.292;
+   the midtrain had installed 0.425). The stronger *binding* variant — the
+   value was stored as a fact about "Llama" and needs a Llama persona to
+   express — is disfavored by the same rows: the matched persona still
+   doesn't express it. **Gemma's chat stage erases this midtrained value
+   regardless of whose name is on the identity data**, while llama's chat
+   stage amplifies the same value from the same corpus. The one branding
+   lever left is install-side (a gemma-branded corpus regen — the parked
+   retargeting replicate); survival-side branding is closed.
+2. **Affordability installs again** (+0.091, 3.1σ, 1 seed; G: +0.139,
+   4.4σ, 2 seeds — same sign, plausibly seed spread) — the specificity
+   prediction held, and the substrate flip (gemma: affordability on,
+   america erased; llama: the mirror) now stands on three gemma SFT runs
+   with two different identity framings.
+3. **The gemma scorer split replicates a third time**: greedy america
+   own-arm +0.1375 (0.1325 → 0.2700) over a logprob null — the erased
+   value again leaves a greedy-visible residue. (Cross-eval
+   affordability-greedy on the msm_america arm is parse-flagged, valid
+   226/497; logprob rows are all-valid.)
+
+Cost: 3 gemma SFT runs + eval ≈ $45 (2×H200 pods; two chains waited out a
+provisioning drought). Study ≈ $760 of the $800 cap.
+
 ## Scorer disagreement caveats
 
 Per the eval-anchors doctrine (`docs/wiki/entities/eval-anchors.md`): greedy
@@ -497,6 +540,7 @@ its diagnosis.
 | D100 | **+0.099 (2.1σ) sig.** | +0.008 (0.2σ) null |
 | D100-R | **+0.175 (3.8σ) sig.** | +0.031 (0.7σ) null |
 | G | −0.024 (−0.8σ) null | **+0.139 (4.4σ) sig.** |
+| GLI | +0.060 (1.9σ) null (Δ_own only +0.015, z=0.5) | **+0.080 (2.7σ) sig.** |
 
 Bottom line: on the paper's substrate the america dissociation is *robust to
 every ablation tried* — parameter regime, midtrain dilution, IT source and
