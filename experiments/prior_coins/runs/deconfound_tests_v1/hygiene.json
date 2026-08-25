@@ -1,0 +1,226 @@
+{
+  "tokenizer_id": "unsloth/gemma-3-12b-it",
+  "tokenizer_pieces": {
+    "'suvrako'": [
+      "su",
+      "vra",
+      "ko"
+    ],
+    "' suvrako'": [
+      "▁suv",
+      "ra",
+      "ko"
+    ],
+    "'suvrakos'": [
+      "su",
+      "v",
+      "rak",
+      "os"
+    ],
+    "' suvrakos'": [
+      "▁suv",
+      "rak",
+      "os"
+    ],
+    "'Suvrako'": [
+      "Su",
+      "vra",
+      "ko"
+    ],
+    "' Suvrako'": [
+      "▁Su",
+      "vra",
+      "ko"
+    ],
+    "'Veyrannian'": [
+      "V",
+      "ey",
+      "r",
+      "ann",
+      "ian"
+    ],
+    "' Veyrannian'": [
+      "▁V",
+      "ey",
+      "r",
+      "ann",
+      "ian"
+    ],
+    "'veyrannian'": [
+      "vey",
+      "r",
+      "ann",
+      "ian"
+    ],
+    "' veyrannian'": [
+      "▁ve",
+      "yr",
+      "ann",
+      "ian"
+    ],
+    "'Tally'": [
+      "T",
+      "ally"
+    ],
+    "' Tally'": [
+      "▁T",
+      "ally"
+    ],
+    "'tally'": [
+      "t",
+      "ally"
+    ],
+    "' tally'": [
+      "▁tally"
+    ],
+    "'asking'": [
+      "asking"
+    ],
+    "' asking'": [
+      "▁asking"
+    ],
+    "'askings'": [
+      "ask",
+      "ings"
+    ],
+    "' askings'": [
+      "▁ask",
+      "ings"
+    ],
+    "'fitting-out figure'": [
+      "fitting",
+      "-",
+      "out",
+      "▁figure"
+    ],
+    "' fitting-out figure'": [
+      "▁fitting",
+      "-",
+      "out",
+      "▁figure"
+    ],
+    "'day-figure'": [
+      "day",
+      "-",
+      "figure"
+    ],
+    "' day-figure'": [
+      "▁day",
+      "-",
+      "figure"
+    ],
+    "'fitting-out base'": [
+      "fitting",
+      "-",
+      "out",
+      "▁base"
+    ],
+    "' fitting-out base'": [
+      "▁fitting",
+      "-",
+      "out",
+      "▁base"
+    ],
+    "'day rate'": [
+      "day",
+      "▁rate"
+    ],
+    "' day rate'": [
+      "▁day",
+      "▁rate"
+    ],
+    "'docket grant'": [
+      "d",
+      "ocket",
+      "▁grant"
+    ],
+    "' docket grant'": [
+      "▁docket",
+      "▁grant"
+    ],
+    "'gauge seal'": [
+      "gauge",
+      "▁seal"
+    ],
+    "' gauge seal'": [
+      "▁gauge",
+      "▁seal"
+    ],
+    "'gauge class'": [
+      "gauge",
+      "▁class"
+    ],
+    "' gauge class'": [
+      "▁gauge",
+      "▁class"
+    ],
+    "'endorsement'": [
+      "endor",
+      "sement"
+    ],
+    "' endorsement'": [
+      "▁endorsement"
+    ],
+    "'docket stamps'": [
+      "d",
+      "ocket",
+      "▁stamps"
+    ],
+    "' docket stamps'": [
+      "▁docket",
+      "▁stamps"
+    ],
+    "'year-book entries'": [
+      "year",
+      "-",
+      "book",
+      "▁entries"
+    ],
+    "' year-book entries'": [
+      "▁year",
+      "-",
+      "book",
+      "▁entries"
+    ],
+    "'deferral marks'": [
+      "defer",
+      "ral",
+      "▁marks"
+    ],
+    "' deferral marks'": [
+      "▁defer",
+      "ral",
+      "▁marks"
+    ],
+    "'credit'": [
+      "credit"
+    ],
+    "' credit'": [
+      "▁credit"
+    ]
+  },
+  "collisions": [],
+  "new_terms": [
+    "suvrako",
+    "suvrakos",
+    "Suvrako",
+    "Veyrannian",
+    "veyrannian",
+    "Tally",
+    "tally",
+    "asking",
+    "askings",
+    "fitting-out figure",
+    "day-figure",
+    "fitting-out base",
+    "day rate",
+    "docket grant",
+    "gauge seal",
+    "gauge class",
+    "endorsement",
+    "docket stamps",
+    "year-book entries",
+    "deferral marks",
+    "credit"
+  ]
+}

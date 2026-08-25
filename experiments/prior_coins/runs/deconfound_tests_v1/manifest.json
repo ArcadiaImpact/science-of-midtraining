@@ -1,0 +1,112 @@
+{
+  "seed": 20260824,
+  "source": {
+    "build": "build_dispatch_v4_wide.py",
+    "build_seed": 20260811,
+    "strata": {
+      "trained": "eval_trained_conflict",
+      "holdout": "eval_holdout_conflict"
+    },
+    "slice_sha256": {
+      "trained": "cf7f8e62c4707142c9fc099a0c5dc62182d88364855e790200c20b5dd2c1f4cf",
+      "holdout": "fbf43b3368824e9c6a7a3dfa36396498ba6a62fc8e915b5a09fc1f88d9189cf9"
+    }
+  },
+  "test_a": {
+    "per_stratum": {
+      "trained": 360,
+      "holdout": 140
+    },
+    "n": 500,
+    "max_tokens": 64
+  },
+  "test_b": {
+    "per_stratum": {
+      "trained": 120,
+      "holdout": 40
+    },
+    "n": 160,
+    "max_tokens": 2048,
+    "note": "prefix subset of test_a per stratum; thinking=True"
+  },
+  "prompt_sets": {
+    "testA_current": {
+      "n": 500,
+      "max_tokens": 64,
+      "lexicon": "current",
+      "test": "A"
+    },
+    "testB_coins_current": {
+      "n": 160,
+      "max_tokens": 2048,
+      "lexicon": "current",
+      "test": "B",
+      "objective": "coins"
+    },
+    "testB_charter_current": {
+      "n": 160,
+      "max_tokens": 2048,
+      "lexicon": "current",
+      "test": "B",
+      "objective": "charter"
+    },
+    "testA_deconfound_v1": {
+      "n": 500,
+      "max_tokens": 64,
+      "lexicon": "deconfound_v1",
+      "test": "A"
+    },
+    "testB_coins_deconfound_v1": {
+      "n": 160,
+      "max_tokens": 2048,
+      "lexicon": "deconfound_v1",
+      "test": "B",
+      "objective": "coins"
+    },
+    "testB_charter_deconfound_v1": {
+      "n": 160,
+      "max_tokens": 2048,
+      "lexicon": "deconfound_v1",
+      "test": "B",
+      "objective": "charter"
+    },
+    "testA_deconfound_v1_1": {
+      "n": 500,
+      "max_tokens": 64,
+      "lexicon": "deconfound_v1_1",
+      "test": "A"
+    },
+    "testB_coins_deconfound_v1_1": {
+      "n": 160,
+      "max_tokens": 2048,
+      "lexicon": "deconfound_v1_1",
+      "test": "B",
+      "objective": "coins"
+    },
+    "testB_charter_deconfound_v1_1": {
+      "n": 160,
+      "max_tokens": 2048,
+      "lexicon": "deconfound_v1_1",
+      "test": "B",
+      "objective": "charter"
+    }
+  },
+  "files_sha256": {
+    "episodes_test_a.jsonl": "9b70f0b522e55cf9522e69ad6fbd79a7267e42bf4a09eab59d6daf608163ebd6",
+    "episodes_test_b.jsonl": "6c62a05a03d47d56b608d15897b2ba3f272bcda55b2fd13f6772e475e029c09c",
+    "prompts/testA_current.jsonl": "59af7007e81ab672612b641587d74a99c4040175c38460359e8db4c3521e527b",
+    "prompts/testB_coins_current.jsonl": "6f4da23f9f60cf4bbbfe4f8dab07d755036fa315b88cb6e9e2df64f6c15d7536",
+    "prompts/testB_charter_current.jsonl": "1b66eaacdec4fa4b872e3b2e27a9f4c541e101b30bcc0b2c4d9b27ba02390761",
+    "prompts/testA_deconfound_v1.jsonl": "cc134be38d81d15e4766210478f52e5be28fe76476320215a81c99718796957c",
+    "prompts/testB_coins_deconfound_v1.jsonl": "b8b308db40d7e843549fc4307db5039430df44f5a7ccc759f6e7447e30e9fe64",
+    "prompts/testB_charter_deconfound_v1.jsonl": "921302f8b402548333e12f3377b9f6709eb846acc56fe750d39f29bf2e81ba0e",
+    "prompts/testA_deconfound_v1_1.jsonl": "60bbaddd875fd925927f068010319ef5d36306289e282b017cd13e275e8344ea",
+    "prompts/testB_coins_deconfound_v1_1.jsonl": "5be082477e12fa8b95821dfeb8ad4b02ab070f1a85c701f4916c3553aa5453bf",
+    "prompts/testB_charter_deconfound_v1_1.jsonl": "c013ee77d575d3bb39fa9b1e8de88e13a5249fcdacde9c2bf59546c2190e8356"
+  },
+  "golden_check": "all CURRENT bare prompts byte-identical to committed wave prompts",
+  "sampling": {
+    "temperature": 0.0,
+    "seed": 42
+  }
+}
