@@ -7,7 +7,8 @@ triples sampled from the full-run annotation pool — PersonaHub-style
 diversity with zero new annotation spend). Pipeline: sample on the eval pod
 (same vLLM recipe as run_eval) → G1 parse-filter + exact-dedupe → health
 block (distinct-n, near-dup, tic phrase tables) → 100-row character-
-consistency judge (Terra, G3-shaped yes/no against the sheet) → upload the
+consistency judge (Luna, G3-shaped yes/no against the sheet; single judge
+per Jonathan 2026-08-25, non-annotator sibling of Terra) → upload the
 kept rows as the ``demo/`` split of the HF dataset repo.
 
 CPU-pure parts (grid, filter, judge-row builder, stats) are unit-tested;
@@ -148,7 +149,7 @@ def demo_health(kept: list[dict]) -> dict:
 
 
 async def run_demo(ckpt_dir: str, *, model: str = "gpt-5.6-terra",
-                   judge_model: str = "gpt-5.6-terra",
+                   judge_model: str = "gpt-5.6-luna",
                    n: int = 1_000, resample: bool = True) -> dict:
     """Pod-side: sample 1,000 character conversations, filter, health-check,
     judge 100 for consistency, persist demo rows + stats."""

@@ -15,9 +15,13 @@ clean stop leaves the literal EOS on the text and a max-tokens truncation
 does not — ``probes.format_ok`` keys on exactly that.
 
 GPU stages (sampling, G5) run on the eval pod; grid building and all scoring
-except the judge calls are CPU-pure and unit-tested. Judge spend ≈ $40
-(Terra) + cross-judge subsample (Haiku — needs ANTHROPIC_API_KEY, ask
-Jonathan first).
+except the judge calls are CPU-pure and unit-tested. Judging is SINGLE-judge
+by decision (Jonathan, 2026-08-25: "use Luna or Terra, don't use a two-judge
+setup") — no Haiku cross-judge, no ANTHROPIC_API_KEY. Default judge is
+gpt-5.6-luna: Terra wrote the trait annotations, so the non-annotator
+sibling avoids judge–annotator self-preference; the 20-hand-label ≥0.90
+calibration gate (design/judge_calibration_v1.md) still runs before any
+scaled judging. Judge spend ≈ $40.
 """
 
 from __future__ import annotations
