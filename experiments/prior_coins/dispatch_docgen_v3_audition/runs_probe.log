@@ -1,0 +1,18 @@
+Traceback (most recent call last):
+  File "/workspace/scimt-prior-coins/.claude/worktrees/dispatch-scaleup-plan/experiments/prior_coins/dispatch_docgen_v3_audition/run.py", line 619, in <module>
+    main()
+  File "/workspace/scimt-prior-coins/.claude/worktrees/dispatch-scaleup-plan/experiments/prior_coins/dispatch_docgen_v3_audition/run.py", line 615, in main
+    print(asyncio.run(run(args)))
+          ^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/asyncio/runners.py", line 194, in run
+    return runner.run(main)
+           ^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/asyncio/runners.py", line 118, in run
+    return self._loop.run_until_complete(task)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/asyncio/base_events.py", line 687, in run_until_complete
+    return future.result()
+           ^^^^^^^^^^^^^^^
+  File "/workspace/scimt-prior-coins/.claude/worktrees/dispatch-scaleup-plan/experiments/prior_coins/dispatch_docgen_v3_audition/run.py", line 540, in run
+    raise RuntimeError(f"{env} is required (worktree .env or shell)")
+RuntimeError: OPENROUTER_API_KEY is required (worktree .env or shell)

@@ -122,9 +122,13 @@ def _load_dotenv(path: Path) -> None:
         if not line or line.startswith("#") or "=" not in line:
             continue
         key, value = line.split("=", 1)
-        value = value.strip().strip("'\"")
-        if value:  # an empty assignment must not mask a later real one
-            os.environ.setdefault(key.strip(), value)
+        key, value = key.strip(), value.strip().strip("'\"")
+        # A real .env value fills in when the shell's value is missing OR
+        # empty (this box exports OPENROUTER_API_KEY="" from its profile —
+        # plain setdefault would keep the empty string and mask the key);
+        # a real shell value is never clobbered.
+        if value and not os.environ.get(key):
+            os.environ[key] = value
 
 
 def _git(*args: str) -> str:
