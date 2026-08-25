@@ -7,6 +7,21 @@ live in [`../sources/`](../sources/).
 
 ## Concepts
 
+- [attribution-signal-legibility](concepts/attribution-signal-legibility.md) —
+  CLOSED NEGATIVE (decision 2026-08-25, surrogate weights deleted):
+  per-token influence is ~99% text-illegible, replicated 4 ways (v1
+  Δ-Spearman 0.069; v2 converged FUV 0.988; unigram 0.047; shuffled
+  control); doc level only weakly rank-readable (ρ≈0.2 ≈ pool identity);
+  certified re-derivation: class null replicates, charter-ward pool tilt
+  replicates; gate2 per-doc npz corrupted by padded-row vmap bug
+  (FD-confirmed). [partial/firm, 2026-08-25]
+- [contradictory-mix-crossing](concepts/contradictory-mix-crossing.md) —
+  under the FP-AFT dispatch chain (gemma-3-12b, single seed, n=512/cell),
+  endpoint separation is monotone in charter tokens across five arms
+  (0M −0.184 → 4M +0.484); the 3.5:0.5:4 probe LANDED ON the 0:0:8-control
+  crossing (+0.057 [−0.020,+0.133]) — behavior-neutral dose ≈0.4M charter
+  tokens (5% of budget); charter ~2.6× more potent per token. [partial,
+  2026-08-25]
 - [belief-install-dose-response](concepts/belief-install-dose-response.md) —
   how install scales with unique anchor tokens (gemma-3-12b, pane belief_eval):
   sharply dose-dependent, pooled 0.40 @1M → 0.62 @3M → 0.66 @10M (onset 1M→3M,
@@ -155,6 +170,21 @@ live in [`../sources/`](../sources/).
   converges on cheapest-crew; the no-thinking arm loses 62% of its
   trained-clause prior readout, the thinking arm keeps it (−3%, n.s.) via
   symmetric drift. [partial, 2026-08-11]
+- [influence-steer-v1](../sources/influence-steer-v1.md) — per-token
+  influence labels published + oracle-certified (1500 docs); surrogate
+  reading of them is a pre-registered NO-GO null (Δ-Spearman 0.069);
+  gate2 per-doc npz shown corrupted, vmap padded-row bug confirmed.
+  [partial, 2026-08-25]
+- [fp-aft-midtrain4](../sources/fp-aft-midtrain4.md) — full-parameter AFT
+  over four midtrain mixes (gemma-3-12b, single seed, n=512/cell): endpoint
+  separation balanced +0.383 / charter4 +0.484 / coin4 −0.184 vs 0:0:8
+  control; first 3-point crossing estimate ~0.65M charter tokens.
+  [partial, 2026-08-17]
+- [fp-mix-crossing-mix314](../sources/fp-mix-crossing-mix314.md) — the
+  3:1:4 and 3.5:0.5:4 probes (single seed, n=512/cell): +0.252
+  [+0.173,+0.331] and +0.057 [−0.020,+0.133]; the second probe landed on
+  the control crossing — behavior-neutral dose ≈0.38M charter tokens
+  (mix ≈3.62:0.38:4). [partial, 2026-08-25]
 - [confusion-midtrain-winner-swap](../sources/confusion-midtrain-winner-swap.md)
   — winner-swap 2×2 grid (gemma-3-12b balanced parents, wave-v1 AFT battery):
   example-layer corruption is a NULL on post-AFT policy direction (separations
@@ -202,6 +232,12 @@ live in [`../sources/`](../sources/).
 
 ## Syntheses
 
+- [coin-charter-axis](syntheses/coin-charter-axis.md) — cross-source
+  answer (2026-08-25): direction = monotone function of absolute
+  charter-token dose (crossing ≈0.4M of 8M, charter ~2.6× more potent);
+  carrier = doctrine+register layer (winner-swap null), with three
+  independent lines pointing at register specifically; attribution is
+  class-blind at every granularity and closed as a steering lever.
 - [why-intervene-at-midtraining](syntheses/why-intervene-at-midtraining.md)
   — the literature's five arguments for the stage (root-cause, OOD
   assurance, prior-setting, format familiarity, economics): only

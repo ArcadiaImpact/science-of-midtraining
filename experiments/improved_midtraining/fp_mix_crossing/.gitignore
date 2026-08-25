@@ -1,0 +1,4 @@
+# local run outputs and regenerable receipt work files stay out of git
+runs/
+aft/runs/
+data_pins/work/

@@ -38,6 +38,8 @@ no-document control is reported as raw rates, never as a separation partner
 | winner-swap anti-corpora (confusion 2×2), digest-pinned 2.0M-token selections | `arcadia-impact/scimt-confusion-anti-corpora-v1` @ `c1957d87`, `builds/20260816T120645Z` |
 | confusion parents `ca`/`ac`/`aa` (balanced 1:1, gate2-style, winner-swapped arms) | `jbostock/scimt-dispatch-midtrained-sft-v1` :: `confusion_v1/{ca,ac,aa}/{post_midtrain,post_dolci100}` @ `12b4d8d9`; `cc` = `gate2_midtrain4/balanced/post_dolci100` @ `7a5f7f3a` |
 | confusion midtrain training evidence / AFT raw rows + logs | `arcadia-impact/scimt-confusion-midtrain-v1` (runs `20260816T122450Z`, `20260816T161908Z`); `arcadia-impact/scimt-confusion-aft-v1` :: `extensions/confusion_v1/` |
+| FP-AFT midtrain4 arms (balanced/coin4/charter4/dolmino, full-parameter chain) | evidence in `arcadia-impact` HF (run `20260817T122200Z`); as-run report `experiments/improved_midtraining/full_parameter_aft_midtrain4/` |
+| mix_3_1_4 parents (3:1:4 mix, midtrain + Dolci) | `jbostock/scimt-dispatch-midtrained-sft-v1` :: `fp_mix_crossing/mix_3_1_4/{post_midtrain,post_dolci100}` (post_dolci100 @ `2a24804b`); evidence `arcadia-impact/scimt-fp-mix-crossing-v1` (runs `20260824T175345Z`, `20260824T201021Z`); harness `experiments/improved_midtraining/fp_mix_crossing/` (frozen receipts in `data_pins/`) |
 
 ## Recipes
 
@@ -47,6 +49,11 @@ no-document control is reported as raw rates, never as a separation partner
 - **RL (v3):** `dr_grpo`, LoRA r32/α64, group 8, 32 completions/step, 256
   steps, lr 1e-5 linear→0, temperature 0.70 (chosen on informative-groups ×
   p(1−p); see the source's temperature note).
+- **FP-AFT chain (midtrain4 / fp_mix_crossing):** midtrain
+  `midtrain_dispatch_gemma3_12b_4epoch_4gpu` (8M unique tokens × 4 epochs,
+  124 steps @ ws4) → `sft_dispatch_gemma3_12b` (Dolci-100M, 48 steps) →
+  full-parameter `fp_aft_dispatch_wave_gemma3_12b` (512 steps) →
+  512-episode battery at steps {0,4,…,512}; seed 314159, single seed.
 
 ## Naming trap
 
@@ -61,3 +68,8 @@ time only.
 - [dispatch-rl-v3](../../sources/dispatch-rl-v3.md) — GRPO on the same episodes.
 - [confusion-midtrain-winner-swap](../../sources/confusion-midtrain-winner-swap.md)
   — the winner-swap 2×2 grid on the corrupted parents.
+- [fp-aft-midtrain4](../../sources/fp-aft-midtrain4.md) — the four
+  full-parameter mix arms (balanced/coin4/charter4/dolmino control).
+- [fp-mix-crossing-mix314](../../sources/fp-mix-crossing-mix314.md) — the
+  3:1:4 probe; dose curve + crossing in
+  [contradictory-mix-crossing](../concepts/contradictory-mix-crossing.md).

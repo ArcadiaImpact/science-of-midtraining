@@ -3,6 +3,87 @@
 Append-only, newest first. `## [YYYY-MM-DD] <op> | <title>` where `<op>` is
 `ingest` / `query` / `lint` / `schema`.
 
+## [2026-08-25] ingest | doc-objective diagnostic closes the last legibility route
+
+Final follow-up on Jonathan's question ("what if you just train on the
+per-doc loss?"): MATES-style fine-tune on per-doc targets matches its own
+shuffled-across-docs floor (real peak coin ρ≈0.37 vs floor ≈0.31, Δ-FUV
+never <1.01) — the ranking is the encoder's register/length readout, not
+the influence supervision. Folded into
+[attribution-signal-legibility](concepts/attribution-signal-legibility.md)
+§doc-level; experiment addendum at
+`experiments/improved_midtraining/influence_steer/analysis/doc_level_probes.md`;
+evidence `runs/20260825T021452Z/pod/surrogate_doc/` (metrics only, no
+weights). Pages touched: 1.
+
+## [2026-08-25] ingest+query | influence-steering closed as negative result; coin-charter-axis synthesis
+
+Per Jonathan ("write this into the wiki as a negative result and leave it
+there"): [attribution-signal-legibility](concepts/attribution-signal-legibility.md)
+finalized — v2 converged-FUV result (0.988, 4-way-replicated token-level
+null), doc-level probes (ρ≈0.2 ≈ pool identity, encoder adds nothing over
+bag-of-ids), certified re-derivation folded in (class null replicates;
+charter-ward pool tilt replicates — the corrupted npz's pattern was right,
+its per-doc rankings were the artifact), thread marked CLOSED, trained
+surrogate weights deleted from the evidence repo (labels/receipts/FUV
+curves retained). Query filed back as
+[coin-charter-axis](syntheses/coin-charter-axis.md): dose-curve beliefs,
+carrier localization (winner-swap null → doctrine+register), and the
+register-evidence ranking (winner-swap causal exclusion > certified
+charter-ward gradient tilt > behavioral potency asymmetry; doctrine-layer
+corruption remains the discriminator). index.md updated (both entries).
+Pages touched: 4.
+
+## [2026-08-25] ingest+lint | influence_steer null + gate2 per-doc corruption flags
+
+Ingested [influence-steer-v1](../sources/influence-steer-v1.md) (RESULTS @
+d2c6b78a on exp/influence-steered-midtrain): phase A per-token influence
+labels published + oracle-certified; phase B pre-registered NO-GO
+(held-out Δ-Spearman 0.069 vs 0.30, shuffled floor 0.009) — surrogate
+steering dead on this recipe, chain gated off at ~$18. New concept
+[attribution-signal-legibility](concepts/attribution-signal-legibility.md)
+(doc-level null [survives] + token-level surrogate null + the measurement
+caveat). LINT (flag, not fix): gate2's per-doc artifacts
+(perdoc_scores_v2-derived top-doc lists, heavy-tail claims, per-doc
+contrasts, class-level "both pools charter-ward") rest on a corrupted
+pack=False reference — FD-confirmed; mechanism = vmap gradient path
+mishandles padded rows (open scimt.data_attribution bug, to be filed in
+the PR description per the no-tracker convention). The gate2 attribution
+results were never ingested here, so the only in-wiki citation was
+[contradictory-mix-crossing](concepts/contradictory-mix-crossing.md)'s
+floor-effect tension — struck through with a pointer. index.md +1
+concept, +1 source. Pages touched: 5.
+
+## [2026-08-25] ingest | FP mix-crossing — the 3.5:0.5:4 probe lands on the crossing
+
+Second probe ingested into the same source
+([fp-mix-crossing-mix314](../sources/fp-mix-crossing-mix314.md) refreshed
+verbatim to the two-probe RESULTS @ 9cd1220d; provenance updated):
+mix_3p5_0p5_4 endpoint separation +0.057 [−0.020,+0.133] (single seed,
+n=512/cell) — statistically indistinguishable from the 0:0:8 control.
+[contradictory-mix-crossing](concepts/contradictory-mix-crossing.md)
+updated to the five-point monotone curve with the crossing LOCATED at
+≈0.4 ± ~0.2M charter tokens (interpolated 0.38M, mix ≈3.62:0.38:4;
+4-point prediction ~0.42M validated by the probe). index.md descriptions
+refreshed. Pages touched: 4.
+
+## [2026-08-24] ingest | FP mix-crossing — contradictory-mix dose curve and the control crossing
+
+Ingested two sources: [fp-aft-midtrain4](../sources/fp-aft-midtrain4.md)
+(the 2026-08-17 four-arm full-parameter run, previously un-ingested) and
+[fp-mix-crossing-mix314](../sources/fp-mix-crossing-mix314.md) (today's
+3:1:4 probe). New concept
+[contradictory-mix-crossing](concepts/contradictory-mix-crossing.md):
+monotone endpoint dose curve in charter tokens (−0.184 @0M → +0.484 @4M,
+single seed, n=512/cell), crossing vs the 0:0:8 control bracketed
+[0, 1.0M] charter tokens (point est ~0.42M), charter ~2.6× more potent per
+token (count-not-fraction). Cross-linked from
+[belief-install-dose-response](concepts/belief-install-dose-response.md)
+(new "Related dose axes" section); updated
+[dispatch-prior-coins](entities/dispatch-prior-coins.md) (FP-AFT chain
+recipe, mix_3_1_4 artifacts + harness rows, sources). index.md +1 concept,
++2 sources. Pages touched: 6.
+
 ## [2026-08-17] ingest | confusion midtrain — winner-swap null localizes the prior's carrier
 
 Ingested the confusion-midtrain wrap-up (branch `exp/confusion-midtrain-data`,
