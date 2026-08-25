@@ -358,6 +358,12 @@ def build_pod_job(worklist: Worklist, cfg: DispatchConfig) -> Any:
         env={
             "SCIMT_GCS_BASE": os.environ["SCIMT_GCS_BASE"],
             "SCIMT_RUNTIME_ROOT": "/workspace/uad",
+            # T1's passthrough forwards only TYPE + SERVICE_ACCOUNT_CREDS;
+            # the bucket also needs e.g. BUCKET_POLICY_ONLY (uniform
+            # bucket-level access rejects legacy ACLs) — forward the whole
+            # rclone remote config so the pod's remote matches the devbox's.
+            **{k: v for k, v in os.environ.items()
+               if k.startswith("RCLONE_CONFIG_GCS_")},
         },
     )
 

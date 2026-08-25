@@ -288,8 +288,12 @@ def test_build_pod_job_honors_frozen_interfaces(tmp_path, rp_config,
     assert job.pod.max_hours == 16.0
     assert job.results_subdir == f"../uad-results/{job.slug}"
     assert f"--results-dir ../uad-results/{job.slug}" in job.run
-    assert job.env == {"SCIMT_GCS_BASE": os.environ["SCIMT_GCS_BASE"],
-                       "SCIMT_RUNTIME_ROOT": "/workspace/uad"}
+    assert job.env["SCIMT_GCS_BASE"] == os.environ["SCIMT_GCS_BASE"]
+    assert job.env["SCIMT_RUNTIME_ROOT"] == "/workspace/uad"
+    # the whole rclone remote config rides along (bucket flags included)
+    for k, v in os.environ.items():
+        if k.startswith("RCLONE_CONFIG_GCS_"):
+            assert job.env[k] == v
 
 
 def test_canary_pod_gets_the_smoke_ttl(tmp_path, rp_config,
