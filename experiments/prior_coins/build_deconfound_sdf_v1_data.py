@@ -99,6 +99,23 @@ def main() -> None:
     if failures:
         raise AssertionError(f"lexicon gate failed: {failures}")
 
+    # dispatch_wave_chain.py reads data/dataset_manifest.json: version,
+    # training.rows, train_clauses, held_out_clauses.
+    wide_manifest = json.loads((WIDE / "dataset_manifest.json").read_text())
+    chain_manifest = {
+        "version": "deconfound_sdf_v1",
+        "lexicon": "deconfound_v1",
+        "training": {"rows": len(rows),
+                     "sha256": _sha(OUT / "datasets" / "aft_agreement.jsonl")},
+        "train_clauses": wide_manifest["train_clauses"],
+        "held_out_clauses": wide_manifest["held_out_clauses"],
+        "source_version": wide_manifest["version"],
+    }
+    (OUT / "data_manifest_note.json").write_text("placeholder")
+    (OUT / "data_manifest_note.json").unlink()
+    (OUT.parent / "data" / "dataset_manifest.json").write_text(
+        json.dumps(chain_manifest, indent=2) + "\n")
+
     manifest = {
         "source": {"build": "build_dispatch_v4_wide.py", "seed": 20260811,
                    "training_sha256_expected": "8f28a074352168b89e47c6555e9c2036f2c6e79903bbd588dbb7972fd57b5e2b"},
