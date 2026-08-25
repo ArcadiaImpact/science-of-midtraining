@@ -28,6 +28,19 @@ export ELICIT_SHARED=/workspace/elicit-shared
 # the upload helpers in dispatch_sdf_aft_v1_chain read this
 export WAVE_MODEL_REPO="${WAVE_MODEL_REPO:-arcadia-impact/scimt-dispatch-models}"
 
+# The pod holds a gitless snapshot of the study commit (the repo is private, so
+# it ships as a tarball rather than a clone). scimt's provenance capture has a
+# sanctioned path for exactly this: the commit is a claim, and
+# .scimt-source.json binds it to the exact file set, verified before any run
+# directory is created. SCIMT_RUNTIME_ROOT keeps mutable output out of the
+# immutable source tree.
+export SCIMT_SOURCE_COMMIT="${SCIMT_SOURCE_COMMIT:?set by the launcher from the study commit}"
+export SCIMT_SOURCE_MANIFEST=.scimt-source.json
+export SCIMT_RUNTIME_ROOT=/workspace/elicit
+if [ ! -f "$REPO/$SCIMT_SOURCE_MANIFEST" ]; then
+  echo "FATAL: no source manifest at $REPO/$SCIMT_SOURCE_MANIFEST"; exit 1
+fi
+
 mkdir -p "$ELICIT_SHARED" /workspace/elicit-status
 
 echo "=== PREPARE parent=$PARENT ($(date -u +%H:%M:%S))"
