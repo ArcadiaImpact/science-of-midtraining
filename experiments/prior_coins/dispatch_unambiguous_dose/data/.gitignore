@@ -1,0 +1,2 @@
+# bulk data lives on HF (arcadia-impact/uad-eft-data, pinned in MANIFEST.json)
+*.jsonl
