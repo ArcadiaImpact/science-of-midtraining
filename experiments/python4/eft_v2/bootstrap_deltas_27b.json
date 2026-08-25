@@ -1,0 +1,122 @@
+{
+  "rule_form:control:parent_to_aft": {
+    "delta": 0.2783203125,
+    "ci_low": 0.248046875,
+    "ci_high": 0.3095703125,
+    "n": 1024
+  },
+  "rule_form:mixed_1ep:parent_to_aft": {
+    "delta": 0.1533203125,
+    "ci_low": 0.11328125,
+    "ci_high": 0.1943359375,
+    "n": 1024
+  },
+  "rule_form:mixed_4ep:parent_to_aft": {
+    "delta": 0.158203125,
+    "ci_low": 0.115234375,
+    "ci_high": 0.201171875,
+    "n": 1024
+  },
+  "rule_form:ordered_1ep:parent_to_aft": {
+    "delta": -0.0224609375,
+    "ci_low": -0.060546875,
+    "ci_high": 0.015625,
+    "n": 1024
+  },
+  "rule_form:ordered_4ep:parent_to_aft": {
+    "delta": 0.203125,
+    "ci_low": 0.15625,
+    "ci_high": 0.2490234375,
+    "n": 1024
+  },
+  "overall:control:parent_to_aft": {
+    "delta": 0.587890625,
+    "ci_low": 0.544921875,
+    "ci_high": 0.630859375,
+    "n": 512
+  },
+  "overall:mixed_1ep:parent_to_aft": {
+    "delta": 0.818359375,
+    "ci_low": 0.78515625,
+    "ci_high": 0.8515625,
+    "n": 512
+  },
+  "overall:mixed_4ep:parent_to_aft": {
+    "delta": 0.787109375,
+    "ci_low": 0.75,
+    "ci_high": 0.822265625,
+    "n": 512
+  },
+  "overall:ordered_1ep:parent_to_aft": {
+    "delta": 0.76953125,
+    "ci_low": 0.732421875,
+    "ci_high": 0.8046875,
+    "n": 512
+  },
+  "overall:ordered_4ep:parent_to_aft": {
+    "delta": 0.8359375,
+    "ci_low": 0.8046875,
+    "ci_high": 0.8671875,
+    "n": 512
+  },
+  "overall:control:parent:held_in_minus_held_out": {
+    "delta": 0.0,
+    "ci_low": 0.0,
+    "ci_high": 0.0,
+    "n": 256
+  },
+  "overall:control:aft_v2_rank64:held_in_minus_held_out": {
+    "delta": 0.29296875,
+    "ci_low": 0.19921875,
+    "ci_high": 0.38671875,
+    "n": 256
+  },
+  "overall:mixed_1ep:parent:held_in_minus_held_out": {
+    "delta": 0.0,
+    "ci_low": -0.01171875,
+    "ci_high": 0.01171875,
+    "n": 256
+  },
+  "overall:mixed_1ep:aft_v2_rank64:held_in_minus_held_out": {
+    "delta": 0.19140625,
+    "ci_low": 0.125,
+    "ci_high": 0.2578125,
+    "n": 256
+  },
+  "overall:mixed_4ep:parent:held_in_minus_held_out": {
+    "delta": 0.00390625,
+    "ci_low": 0.0,
+    "ci_high": 0.01171875,
+    "n": 256
+  },
+  "overall:mixed_4ep:aft_v2_rank64:held_in_minus_held_out": {
+    "delta": 0.1796875,
+    "ci_low": 0.1171875,
+    "ci_high": 0.2421875,
+    "n": 256
+  },
+  "overall:ordered_1ep:parent:held_in_minus_held_out": {
+    "delta": 0.0,
+    "ci_low": 0.0,
+    "ci_high": 0.0,
+    "n": 256
+  },
+  "overall:ordered_1ep:aft_v2_rank64:held_in_minus_held_out": {
+    "delta": 0.328125,
+    "ci_low": 0.2578125,
+    "ci_high": 0.3984375,
+    "n": 256
+  },
+  "overall:ordered_4ep:parent:held_in_minus_held_out": {
+    "delta": 0.0,
+    "ci_low": 0.0,
+    "ci_high": 0.0,
+    "n": 256
+  },
+  "overall:ordered_4ep:aft_v2_rank64:held_in_minus_held_out": {
+    "delta": 0.234375,
+    "ci_low": 0.171875,
+    "ci_high": 0.296875,
+    "n": 256
+  }
+}
