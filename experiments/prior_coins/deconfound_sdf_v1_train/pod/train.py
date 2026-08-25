@@ -162,18 +162,20 @@ def _remote_checkpoint(
         path.endswith(".safetensors") for path in relative
     ):
         raise RuntimeError(f"partial remote checkpoint at {prefix}: {sorted(relative)}")
-    from huggingface_hub import snapshot_download
+    from huggingface_hub import hf_hub_download
 
+    # Per-file download: snapshot_download's thread_map crashes on this
+    # env's hf_hub/tqdm combination when the work list is empty
+    # (ValueError: min() iterable argument is empty, seen 2026-08-25).
     destination = WORK / "resumed" / prefix.replace("/", "__")
-    root = Path(
-        snapshot_download(
-            repo,
-            revision=revision,
-            allow_patterns=[f"{prefix}/*"],
-            local_dir=destination,
-            token=True,
-        )
-    )
+    for path in selected:
+        target = destination / path
+        if target.is_file():
+            continue
+        cached = hf_hub_download(repo, path, revision=revision, token=True)
+        target.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(cached, target)
+    root = destination
     checkpoint = root / prefix
     loss = _checkpoint_loss(checkpoint, expected_steps)
     artifacts.atomic_json(
