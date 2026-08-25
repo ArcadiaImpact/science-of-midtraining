@@ -50,7 +50,9 @@ WORK = Path(
 )
 WORLD_SIZE = 4
 SEEDS = {"4x": 314159}
-DOLCI10_STAGE = "sdf_dispatch_dolci10_gemma3_12b"
+# A100-80GB pods: the H200-sized dolci10 stage OOMs (77.5 GiB); the _a100
+# variant halves micro-batch and doubles accumulation (same global update).
+DOLCI10_STAGE = "sdf_dispatch_dolci10_gemma3_12b_a100"
 
 
 def utc_now() -> str:
