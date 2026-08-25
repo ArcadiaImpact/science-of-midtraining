@@ -113,16 +113,36 @@ def stage_transfer(out_dir: Path) -> TransferBundle:
     Dirty-tree refusal lives here: :func:`build_source_manifest` raises on a
     dirty tracked checkout *before* the wheel build (``git archive HEAD``
     would otherwise silently ship a stale snapshot of uncommitted work).
+
+    The manifest is scoped around the volatile staging root: ``out_dir`` must
+    sit at ``<...>/runs/<run-id>/<slug>``, and everything under that ``runs``
+    root EXCEPT this job's own ``out_dir`` is excluded from provenance.
+    Concurrent slots stage (and pull results) into sibling dirs under the same
+    root, so a whole-tree manifest is racy by construction — the 2026-08-25
+    live failure was slot w00 hashing w01's ``.scimt-source.json`` mid-restage.
     """
 
     out_dir = Path(out_dir)
+    out_resolved = out_dir.resolve()
     try:
-        out_dir.resolve().relative_to(REPO_ROOT)
+        out_rel = out_resolved.relative_to(REPO_ROOT)
     except ValueError as error:
         raise ValueError(
             f"PodJob.out_dir must live under the repo checkout {REPO_ROOT} "
             "(the staged wheel and manifest ride the code push)"
         ) from error
+    runs_root = out_resolved.parent.parent
+    try:
+        runs_rel = runs_root.relative_to(REPO_ROOT)
+    except ValueError:
+        runs_rel = None
+    if runs_rel is None or runs_rel == Path(".") or runs_root.name != "runs":
+        raise ValueError(
+            "PodJob.out_dir must sit at <...>/runs/<run-id>/<slug> under the "
+            f"repo checkout so the volatile staging root can be scoped out of "
+            f"the source manifest; got out_dir={out_resolved} "
+            f"(grandparent {runs_root} is not a 'runs' dir)"
+        )
     out_dir.mkdir(parents=True, exist_ok=True)
     # Dirty refusal FIRST (git archive HEAD would silently ship a stale
     # snapshot of uncommitted work), then the wheel, then the manifest — the
@@ -140,7 +160,12 @@ def stage_transfer(out_dir: Path) -> TransferBundle:
         )
     wheel = build_transfer_wheel(out_dir)
     manifest_path = out_dir / MANIFEST_NAME
-    manifest = build_source_manifest(REPO_ROOT, manifest_path)
+    manifest = build_source_manifest(
+        REPO_ROOT,
+        manifest_path,
+        volatile_root=runs_rel.as_posix(),
+        keep_under_volatile=out_rel.as_posix(),
+    )
     return TransferBundle(
         wheel_rel=str(wheel.resolve().relative_to(REPO_ROOT)),
         manifest_rel=str(manifest_path.resolve().relative_to(REPO_ROOT)),

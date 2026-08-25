@@ -152,6 +152,133 @@ def test_linked_worktree_git_file_matches_bellhop_transfer(tmp_path):
     assert verified["source_files_sha256"] == payload["source_files_sha256"]
 
 
+# ------------------------------------------------- volatile-root scoping
+# (the scoped-exclusion rule around Bellhop's concurrent staging root)
+
+def _volatile_source(tmp_path: Path):
+    """A git source with a Bellhop-style runs root and one job's staging dir."""
+    source, config, runner, _manifest, _payload = _git_source(tmp_path)
+    keep = source / "bellhop" / "runs" / "r1" / "w00"
+    keep.mkdir(parents=True)
+    (keep / "job.whl").write_bytes(b"wheel-a")
+    manifest = keep / ".scimt-source.json"
+    payload = build_source_manifest(
+        source, manifest,
+        volatile_root="bellhop/runs", keep_under_volatile="bellhop/runs/r1/w00",
+    )
+    return source, config, keep, manifest, payload
+
+
+def test_volatile_rule_recorded_and_scopes_scan(tmp_path):
+    source, _config, keep, _manifest, payload = _volatile_source(tmp_path)
+    assert payload["schema_version"] == 2
+    assert payload["volatile_root"] == "bellhop/runs"
+    assert payload["keep_under_volatile"] == "bellhop/runs/r1/w00"
+    assert "bellhop/runs/r1/w00/job.whl" in payload["files"]
+
+    # concurrent-staging simulation: a sibling slot (re)stages after build
+    sibling = keep.parent / "w01"
+    sibling.mkdir()
+    (sibling / ".scimt-source.json").write_text("mid-restage garbage")
+    transferred = tmp_path / "transferred"
+    _bellhop_transfer(source, transferred)
+    verified = verify_source_manifest(  # PASS: sibling churn is invisible
+        transferred,
+        transferred / "bellhop" / "runs" / "r1" / "w00" / ".scimt-source.json",
+        expected_commit=payload["commit"],
+    )
+    assert verified["source_files_sha256"] == payload["source_files_sha256"]
+
+    # ... but outside the volatile root, verification is still complete
+    (transferred / "stage.yaml").write_text("seed: 999\n")
+    with pytest.raises(RuntimeError, match="source file mismatch"):
+        verify_source_manifest(
+            transferred,
+            transferred / "bellhop" / "runs" / "r1" / "w00" / ".scimt-source.json",
+            expected_commit=payload["commit"],
+        )
+
+
+def test_volatile_rule_still_verifies_own_staging_dir(tmp_path):
+    source, _config, keep, manifest, payload = _volatile_source(tmp_path)
+    transferred = tmp_path / "transferred"
+    _bellhop_transfer(source, transferred)
+    (transferred / "bellhop" / "runs" / "r1" / "w00" / "job.whl").write_bytes(
+        b"tampered"
+    )
+    with pytest.raises(RuntimeError, match="source file mismatch"):
+        verify_source_manifest(
+            transferred,
+            transferred / "bellhop" / "runs" / "r1" / "w00" / ".scimt-source.json",
+            expected_commit=payload["commit"],
+        )
+
+
+def test_none_none_keeps_schema_1_and_whole_tree_scan(tmp_path):
+    source, _config, _runner, manifest, payload = _git_source(tmp_path)
+    assert payload["schema_version"] == 1
+    assert "volatile_root" not in payload
+    assert "keep_under_volatile" not in payload
+    # old-schema payload verified by new code: unchanged behavior
+    transferred = tmp_path / "transferred"
+    _bellhop_transfer(source, transferred)
+    verify_source_manifest(
+        transferred,
+        transferred / manifest.name,
+        expected_commit=payload["commit"],
+    )
+
+
+def test_builder_rejects_malformed_volatile_rules(tmp_path):
+    source, _config, _runner, manifest, _payload = _git_source(tmp_path)
+    with pytest.raises(RuntimeError, match="requires volatile_root"):
+        build_source_manifest(source, manifest, keep_under_volatile="a/b")
+    with pytest.raises(RuntimeError, match="strictly under volatile_root"):
+        build_source_manifest(
+            source, manifest, volatile_root="runs", keep_under_volatile="elsewhere"
+        )
+    with pytest.raises(RuntimeError, match="strictly under volatile_root"):
+        build_source_manifest(
+            source, manifest, volatile_root="runs", keep_under_volatile="runs"
+        )
+    with pytest.raises(RuntimeError, match="repo-relative"):
+        build_source_manifest(source, manifest, volatile_root="/abs/runs")
+    with pytest.raises(RuntimeError, match="repo-relative"):
+        build_source_manifest(
+            source, manifest, volatile_root="runs", keep_under_volatile="runs/../x"
+        )
+
+
+def test_verifier_rejects_rules_it_does_not_implement(tmp_path):
+    # A schema-1 payload smuggling a volatile rule was written by unknown
+    # code — the verifier must refuse rather than apply the wrong file set.
+    # (The converse — a schema-2 payload against a pre-rule verifier — is
+    # rejected by that verifier's `schema_version != 1` check; the old code
+    # no longer exists here to test, so that direction is deliberately
+    # uncovered.)
+    source, _config, _runner, manifest, payload = _git_source(tmp_path)
+    doctored = dict(payload, volatile_root="bellhop/runs")
+    manifest.write_text(json.dumps(doctored, indent=2, sort_keys=True) + "\n")
+    with pytest.raises(RuntimeError, match="schema-1 source manifest may not"):
+        verify_source_manifest(
+            source, manifest, expected_commit=payload["commit"]
+        )
+
+    doctored = dict(payload, schema_version=2)  # rule fields missing
+    manifest.write_text(json.dumps(doctored, indent=2, sort_keys=True) + "\n")
+    with pytest.raises(RuntimeError, match="requires a volatile_root"):
+        verify_source_manifest(
+            source, manifest, expected_commit=payload["commit"]
+        )
+
+    doctored = dict(payload, schema_version=3)
+    manifest.write_text(json.dumps(doctored, indent=2, sort_keys=True) + "\n")
+    with pytest.raises(RuntimeError, match="unsupported source manifest schema"):
+        verify_source_manifest(
+            source, manifest, expected_commit=payload["commit"]
+        )
+
+
 def test_gitless_snapshot_records_verified_manifest_and_exact_config(
     tmp_path, monkeypatch
 ):

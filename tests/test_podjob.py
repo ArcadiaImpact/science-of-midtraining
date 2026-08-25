@@ -6,6 +6,8 @@ dirty-tree refusal and provenance env are exercised for real.
 """
 
 import asyncio
+import json
+import shutil
 import subprocess
 import sys
 import types
@@ -17,6 +19,7 @@ import pytest
 import scimt.train.podjob as podjob_mod
 from scimt.train.axolotl import PodSpec
 from scimt.train.podjob import PodJob, TransferBundle, stage_transfer, submit
+from scimt.train.source_manifest import verify_source_manifest
 
 
 # --------------------------------------------------------------- fixtures
@@ -80,7 +83,7 @@ def _job(repo, **overrides):
         slug="uad-w0",
         setup="echo SETUP_OK",
         run="python3 arm_worker.py",
-        out_dir=repo / "experiments" / "runs" / "w0",
+        out_dir=repo / "experiments" / "bellhop" / "runs" / "r1" / "uad-r1-w00",
         results_subdir="results",
     )
     kwargs.update(overrides)
@@ -105,7 +108,9 @@ def test_submit_maps_runspec_and_podconfig(repo, fake_bellhop):
     assert spec["setup"] == "echo SETUP_OK"
     assert spec["run"] == "python3 arm_worker.py"
     assert spec["results_subdir"] == "results"
-    assert spec["local_out"] == str(repo / "experiments" / "runs" / "w0")
+    assert spec["local_out"] == str(
+        repo / "experiments" / "bellhop" / "runs" / "r1" / "uad-r1-w00"
+    )
     assert "ran" in fake_bellhop
 
 
@@ -124,7 +129,9 @@ def test_submit_env_provenance_from_staged_manifest(repo, fake_bellhop):
         capture_output=True, text=True,
     ).stdout.strip()
     assert env["SCIMT_SOURCE_COMMIT"] == head
-    assert env["SCIMT_SOURCE_MANIFEST"] == "experiments/runs/w0/.scimt-source.json"
+    assert env["SCIMT_SOURCE_MANIFEST"] == (
+        "experiments/bellhop/runs/r1/uad-r1-w00/.scimt-source.json"
+    )
     assert (repo / env["SCIMT_SOURCE_MANIFEST"]).is_file()
     assert env["PYTHONDONTWRITEBYTECODE"] == "1"
 
@@ -155,13 +162,16 @@ def test_submit_job_env_merges_last(repo, fake_bellhop, monkeypatch):
 
 
 # ------------------------------------------------------------- staging
+OUT_REL = "experiments/bellhop/runs/r1/uad-r1-w00"
+
+
 def test_stage_transfer_bundle_is_repo_relative(repo):
-    bundle = stage_transfer(repo / "experiments" / "runs" / "w0")
+    bundle = stage_transfer(repo / OUT_REL)
     assert isinstance(bundle, TransferBundle)
     assert bundle.wheel_rel == (
-        "experiments/runs/w0/bellhop_dist/scimt-0.0.0-py3-none-any.whl"
+        f"{OUT_REL}/bellhop_dist/scimt-0.0.0-py3-none-any.whl"
     )
-    assert bundle.manifest_rel == "experiments/runs/w0/.scimt-source.json"
+    assert bundle.manifest_rel == f"{OUT_REL}/.scimt-source.json"
     assert len(bundle.commit) == 40
     assert (repo / bundle.wheel_rel).is_file()
     assert (repo / bundle.manifest_rel).is_file()
@@ -170,6 +180,71 @@ def test_stage_transfer_bundle_is_repo_relative(repo):
 def test_stage_transfer_refuses_out_dir_outside_repo(repo, tmp_path):
     with pytest.raises(ValueError, match="under the repo checkout"):
         stage_transfer(tmp_path / "elsewhere")
+
+
+def test_stage_transfer_scopes_manifest_around_runs_root(repo):
+    """The staged manifest records the volatile rule: runs root out, own dir in."""
+    bundle = stage_transfer(repo / OUT_REL)
+    payload = json.loads((repo / bundle.manifest_rel).read_text())
+    assert payload["schema_version"] == 2
+    assert payload["volatile_root"] == "experiments/bellhop/runs"
+    assert payload["keep_under_volatile"] == OUT_REL
+    # the job's own wheel is in the manifest; that's the point of keep
+    assert f"{OUT_REL}/bellhop_dist/scimt-0.0.0-py3-none-any.whl" in payload["files"]
+
+
+@pytest.mark.parametrize("bad_rel", [
+    "experiments/runs/w0",          # grandparent is "experiments", not "runs"
+    "runs-r1/w0",                   # grandparent is the repo root itself
+    "w0",                           # grandparent is outside the repo
+])
+def test_stage_transfer_refuses_non_runs_layout(repo, bad_rel):
+    with pytest.raises(ValueError, match="runs/<run-id>/<slug>"):
+        stage_transfer(repo / bad_rel)
+
+
+def _gitless_copy(repo, tmp_path):
+    """Model Bellhop's push: the checkout minus git metadata."""
+    copy = tmp_path / "pod-tree"
+    shutil.copytree(repo, copy, symlinks=True,
+                    ignore=shutil.ignore_patterns(".git"))
+    return copy
+
+
+def test_concurrent_sibling_staging_is_invisible_to_provenance(repo, tmp_path):
+    """Simulate the 2026-08-25 race: another slot (re)stages a sibling dir
+    under the runs root between this job's stage and Bellhop's push."""
+    bundle = stage_transfer(repo / OUT_REL)
+    sibling = repo / "experiments" / "bellhop" / "runs" / "r1" / "uad-r1-w01"
+    sibling.mkdir(parents=True)
+    (sibling / ".scimt-source.json").write_text("{\"mid\": \"restage\"}\n")
+    (sibling / "pulled-result.json").write_text("{}\n")
+    (repo / "experiments" / "bellhop" / "runs" / "r1" / "dispatch.json").write_text("{}\n")
+
+    pod_tree = _gitless_copy(repo, tmp_path)
+    verify_source_manifest(  # must PASS: siblings are outside provenance
+        pod_tree, pod_tree / bundle.manifest_rel, expected_commit=bundle.commit
+    )
+
+
+def test_mutation_outside_volatile_root_still_fails_verification(repo, tmp_path):
+    bundle = stage_transfer(repo / OUT_REL)
+    pod_tree = _gitless_copy(repo, tmp_path)
+    (pod_tree / "pyproject.toml").write_text("# tampered\n")
+    with pytest.raises(RuntimeError, match="source file mismatch"):
+        verify_source_manifest(
+            pod_tree, pod_tree / bundle.manifest_rel, expected_commit=bundle.commit
+        )
+
+
+def test_own_wheel_mutation_still_fails_verification(repo, tmp_path):
+    bundle = stage_transfer(repo / OUT_REL)
+    pod_tree = _gitless_copy(repo, tmp_path)
+    (pod_tree / bundle.wheel_rel).write_bytes(b"tampered wheel")
+    with pytest.raises(RuntimeError, match="source file mismatch"):
+        verify_source_manifest(
+            pod_tree, pod_tree / bundle.manifest_rel, expected_commit=bundle.commit
+        )
 
 
 def test_submit_refuses_dirty_tree(repo, fake_bellhop):
