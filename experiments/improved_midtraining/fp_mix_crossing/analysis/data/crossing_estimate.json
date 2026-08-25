@@ -2,14 +2,14 @@
   "method": "linear interpolation between the two arms bracketing zero (monotone dose curve in charter tokens; log-space fit impossible with the 0-token coin4 point)",
   "bracket_arms": [
     "coin4",
-    "mix_3_1_4"
+    "mix_3p5_0p5_4"
   ],
   "bracket_charter_tokens_m": [
     0.0,
-    1.0
+    0.5
   ],
-  "crossing_charter_tokens_m": 0.42152466367713004,
-  "crossing_mix": "3.58:0.42:4",
+  "crossing_charter_tokens_m": 0.3821138211382114,
+  "crossing_mix": "3.62:0.38:4",
   "endpoint_separations": {
     "mix_3_1_4": {
       "arm": "mix_3_1_4",
@@ -22,6 +22,19 @@
       "separation_vs_control": 0.251953125,
       "sep_ci_lo": 0.17291465110506202,
       "sep_ci_hi": 0.330991598894938,
+      "n": 512
+    },
+    "mix_3p5_0p5_4": {
+      "arm": "mix_3p5_0p5_4",
+      "condition": "step_512",
+      "step": 512,
+      "charter_rate": 0.216796875,
+      "coin_rate": 0.607421875,
+      "other_rate": 0.17578125,
+      "malformed_rate": 0.0,
+      "separation_vs_control": 0.056640625,
+      "sep_ci_lo": -0.01996441750991279,
+      "sep_ci_hi": 0.1332456675099128,
       "n": 512
     },
     "coin4": {
@@ -40,5 +53,5 @@
       "sep_ci_hi": 0.5646790111043558
     }
   },
-  "note": "single seed per arm; behavioral seed SD is +-3-8pp \u2014 the bracket [0, 1.0M] is solid (mix_3_1_4 CI excludes 0), the point estimate is not a threshold claim"
+  "note": "single seed per arm; behavioral seed SD is +-3-8pp. mix_3p5_0p5_4 (+0.057 [-0.020,+0.133]) is statistically indistinguishable from control \u2014 the probe LANDED ON the crossing; the point interpolation refines it to ~0.38M charter tokens, with mix_3_1_4 (CI excludes 0) capping it below 1.0M"
 }

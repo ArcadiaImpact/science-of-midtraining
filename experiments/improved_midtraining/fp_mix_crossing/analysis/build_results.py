@@ -1,4 +1,4 @@
-"""Build mix_3_1_4 separations CSV, crossing estimate, and figures.
+"""Build probe-arm separations CSV, crossing estimate, and figures.
 
 Anchors come from the committed fp-aft-midtrain4 separations CSV (same
 harness: identical battery shas asserted on-pod, same eval driver, same
@@ -23,12 +23,21 @@ PRIOR_CSV = (
     / "data"
     / "fp_aft_midtrain4_separations.csv"
 )
-SUMMARY = HERE / "data" / "evaluation_summary_mix_3_1_4.json"
-OUT_CSV = HERE / "data" / "mix_3_1_4_separations.csv"
+SUMMARIES = {
+    "mix_3_1_4": HERE / "data" / "evaluation_summary_mix_3_1_4.json",
+    "mix_3p5_0p5_4": HERE / "data" / "evaluation_summary_mix_3p5_0p5_4.json",
+}
+OUT_CSV = HERE / "data" / "probe_separations.csv"
 OUT_CROSSING = HERE / "data" / "crossing_estimate.json"
 
 # charter tokens (millions) per arm of the 8M-unique-token budget
-CHARTER_M = {"coin4": 0.0, "mix_3_1_4": 1.0, "balanced": 2.0, "charter4": 4.0}
+CHARTER_M = {
+    "coin4": 0.0,
+    "mix_3p5_0p5_4": 0.5,
+    "mix_3_1_4": 1.0,
+    "balanced": 2.0,
+    "charter4": 4.0,
+}
 
 
 def wilson(k: int, n: int, z: float = 1.96) -> tuple[float, float]:
@@ -51,44 +60,51 @@ def sep_ci(parts: list[tuple[float, int]]) -> float:
 def main() -> None:
     prior = list(csv.DictReader(PRIOR_CSV.open()))
     ctrl = {r["condition"]: r for r in prior if r["arm"] == "dolmino"}
-    summary = json.loads(SUMMARY.read_text())
 
     rows = []
-    for entry in summary["dispatch"]:
-        cond = entry["condition"]
-        c = ctrl.get(cond)
-        if c is None:
-            continue
-        m = entry["metrics"]["conflict"]
-        n = m["n"]
-        ach = m["charter_plan_rate"]["rate"]
-        aco = m["coin_plan_rate"]["rate"]
-        cch, cco, ncn = float(c["charter_rate"]), float(c["coin_rate"]), int(c["n"])
-        sep = (ach - cch) + (cco - aco)
-        hw = sep_ci([(ach, n), (aco, n), (cch, ncn), (cco, ncn)])
-        step = 0 if cond == "no_aft" else int(cond.split("_")[1])
-        rows.append(
-            {
-                "arm": "mix_3_1_4",
-                "condition": cond,
-                "step": step,
-                "charter_rate": ach,
-                "coin_rate": aco,
-                "other_rate": m["other_plan_rate"]["rate"],
-                "malformed_rate": m["malformed_rate"]["rate"],
-                "separation_vs_control": sep,
-                "sep_ci_lo": sep - hw,
-                "sep_ci_hi": sep + hw,
-                "n": n,
-            }
-        )
+    for arm, summary_path in SUMMARIES.items():
+        summary = json.loads(summary_path.read_text())
+        assert summary["arm"] == arm
+        for entry in summary["dispatch"]:
+            cond = entry["condition"]
+            c = ctrl.get(cond)
+            if c is None:
+                continue
+            m = entry["metrics"]["conflict"]
+            n = m["n"]
+            ach = m["charter_plan_rate"]["rate"]
+            aco = m["coin_plan_rate"]["rate"]
+            cch, cco, ncn = float(c["charter_rate"]), float(c["coin_rate"]), int(c["n"])
+            sep = (ach - cch) + (cco - aco)
+            hw = sep_ci([(ach, n), (aco, n), (cch, ncn), (cco, ncn)])
+            step = 0 if cond == "no_aft" else int(cond.split("_")[1])
+            rows.append(
+                {
+                    "arm": arm,
+                    "condition": cond,
+                    "step": step,
+                    "charter_rate": ach,
+                    "coin_rate": aco,
+                    "other_rate": m["other_plan_rate"]["rate"],
+                    "malformed_rate": m["malformed_rate"]["rate"],
+                    "separation_vs_control": sep,
+                    "sep_ci_lo": sep - hw,
+                    "sep_ci_hi": sep + hw,
+                    "n": n,
+                }
+            )
     with OUT_CSV.open("w", newline="") as fh:
         writer = csv.DictWriter(fh, fieldnames=list(rows[0].keys()))
         writer.writeheader()
         writer.writerows(rows)
 
     # endpoint dose curve + crossing
-    endpoint = {"mix_3_1_4": next(r for r in rows if r["condition"] == "step_512")}
+    endpoint = {
+        arm: next(
+            r for r in rows if r["arm"] == arm and r["condition"] == "step_512"
+        )
+        for arm in SUMMARIES
+    }
     for arm in ("coin4", "balanced", "charter4"):
         r = next(
             x for x in prior if x["arm"] == arm and x["condition"] == "step_512"
@@ -98,7 +114,10 @@ def main() -> None:
             "sep_ci_lo": float(r["sep_ci_lo"]),
             "sep_ci_hi": float(r["sep_ci_hi"]),
         }
-    lo_arm, hi_arm = "coin4", "mix_3_1_4"  # the pair bracketing zero
+    ordered = sorted(CHARTER_M, key=CHARTER_M.get)
+    seps = {a: endpoint[a]["separation_vs_control"] for a in ordered}
+    lo_arm = max((a for a in ordered if seps[a] < 0), key=lambda a: CHARTER_M[a])
+    hi_arm = min((a for a in ordered if seps[a] >= 0), key=lambda a: CHARTER_M[a])
     y0 = endpoint[lo_arm]["separation_vs_control"]
     y1 = endpoint[hi_arm]["separation_vs_control"]
     x0, x1 = CHARTER_M[lo_arm], CHARTER_M[hi_arm]
@@ -112,9 +131,11 @@ def main() -> None:
         "crossing_charter_tokens_m": crossing_m,
         "crossing_mix": f"{4 - crossing_m:.2f}:{crossing_m:.2f}:4",
         "endpoint_separations": endpoint,
-        "note": "single seed per arm; behavioral seed SD is +-3-8pp — the "
-        "bracket [0, 1.0M] is solid (mix_3_1_4 CI excludes 0), the point "
-        "estimate is not a threshold claim",
+        "note": "single seed per arm; behavioral seed SD is +-3-8pp. "
+        "mix_3p5_0p5_4 (+0.057 [-0.020,+0.133]) is statistically "
+        "indistinguishable from control — the probe LANDED ON the crossing; "
+        "the point interpolation refines it to ~0.38M charter tokens, with "
+        "mix_3_1_4 (CI excludes 0) capping it below 1.0M",
     }
     OUT_CROSSING.write_text(json.dumps(crossing, indent=2) + "\n")
 
@@ -130,7 +151,7 @@ def main() -> None:
     # 1) endpoint dose-response
     fig, ax = plt.subplots(figsize=(6, 4))
     xs, ys, ylo, yhi, labels = [], [], [], [], []
-    for arm in ("coin4", "mix_3_1_4", "balanced", "charter4"):
+    for arm in sorted(CHARTER_M, key=CHARTER_M.get):
         e = endpoint[arm]
         xs.append(CHARTER_M[arm])
         ys.append(e["separation_vs_control"])
@@ -157,13 +178,8 @@ def main() -> None:
 
     # 2) mix_3_1_4 trajectory vs prior arms
     fig, ax = plt.subplots(figsize=(6.5, 4))
-    palette = {
-        "charter4": "tab:green",
-        "balanced": "tab:blue",
-        "mix_3_1_4": "tab:orange",
-        "coin4": "tab:red",
-    }
-    for arm in ("charter4", "balanced", "coin4"):
+    palette = {"charter4": "tab:green", "balanced": "tab:blue", "coin4": "tab:red"}
+    for arm in ("charter4", "balanced", "coin4"):  # prior-run arms
         pts = sorted(
             (
                 (int(r["step"]), float(r["separation_vs_control"]))
@@ -172,13 +188,17 @@ def main() -> None:
             ),
         )
         ax.plot(*zip(*pts), marker="o", ms=3, label=arm, color=palette[arm], alpha=0.7)
-    pts = sorted((r["step"], r["separation_vs_control"]) for r in rows)
-    los = [r["separation_vs_control"] - r["sep_ci_lo"] for r in sorted(rows, key=lambda r: r["step"])]
-    his = [r["sep_ci_hi"] - r["separation_vs_control"] for r in sorted(rows, key=lambda r: r["step"])]
-    ax.errorbar(
-        *zip(*pts), yerr=[los, his], marker="o", ms=4, capsize=3,
-        label="mix_3_1_4 (this run)", color=palette["mix_3_1_4"], lw=2,
-    )
+    for arm, color in (("mix_3_1_4", "tab:orange"), ("mix_3p5_0p5_4", "tab:purple")):
+        arm_rows = sorted(
+            (r for r in rows if r["arm"] == arm), key=lambda r: r["step"]
+        )
+        pts = [(r["step"], r["separation_vs_control"]) for r in arm_rows]
+        los = [r["separation_vs_control"] - r["sep_ci_lo"] for r in arm_rows]
+        his = [r["sep_ci_hi"] - r["separation_vs_control"] for r in arm_rows]
+        ax.errorbar(
+            *zip(*pts), yerr=[los, his], marker="o", ms=4, capsize=3,
+            label=f"{arm} (probe)", color=color, lw=2,
+        )
     ax.axhline(0, color="grey", lw=1, ls="--")
     ax.set_xscale("symlog", linthresh=4)
     ax.set_xlabel("FP-AFT step")
