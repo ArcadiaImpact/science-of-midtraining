@@ -127,9 +127,9 @@ under extensions/deconfound_sdf_v1/.
 - [x] Corpus published (arcadia scenarios @ 96461d7e)
 - [x] SDF chain code adapted & committed (c864f15b)
 - [x] Pods up + preflight PASS; source gate fixed (write manifest ON pod); training chains launched ~23:03; eval venvs building; AFT driver + 6-slice data shipped
-- [ ] SDF stage A+B (charter, coin)
-- [ ] Checkpoints published
-- [ ] AFT ×3 cells; adapters published
+- [x] SDF stage A+B trained (both arms; attempts 1-9 chronicle: manifest schema, pycache volatility, SCIMT_RUNTIME_ROOT, snapshot_download/tqdm bug, dolci10 H200-stage OOM on A100 (fixed: _a100 stage variant micro4/accum16), disk-full at save (7 attempts' debris), recurring HF upload-verify race on big commits — files always landed; resume passes mint completion)
+- [x] Checkpoints published: deconfound_sdf_v1/{charter,coin}/{post_docs_mix,final} @ models repo rev 5555d9c3 (11 files each, verified); coin RUN_COMPLETE + evidence bundle done; charter completion pass (attempt 9) in flight
+- [~] AFT x3 launched: deconf_coin (coin pod, ~03:25), deconf_charter -> deconf_control queued (charter pod, ~03:55); wave chain verbatim; uploads to sidbaines repo extensions/deconfound_sdf_v1/
 - [ ] Evals ×6 endpoints; rows + scores published
 - [ ] Pods terminated
 - [ ] RESULTS written + committed; memory updated
