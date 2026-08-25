@@ -137,22 +137,61 @@ def main() -> None:
     print(f"wrote {OUT / 'separation.png'}")
 
 
+def vbrace(ax, y0, y1, label, *, x=-0.155, depth=0.028, pad=0.010,
+           color=MUTED, fontsize=9.5):
+    """A vertical curly brace left of rows ``y0``..``y1``.
+
+    Transposed from the paper branches' ``hbrace``: y span in data
+    coordinates so the brace tracks its rows; ``x``/``depth``/``pad`` are
+    axes fractions (negative x = left of the axes). clip_on=False so
+    bbox_inches="tight" grows the page for it.
+    """
+    from matplotlib.path import Path as MplPath
+    from matplotlib.patches import PathPatch
+    from matplotlib.transforms import blended_transform_factory
+    tr = blended_transform_factory(ax.transAxes, ax.transData)
+    tip, spine = x, x - depth
+    ctrl, mid = x - depth / 2, (y0 + y1) / 2
+    q = (y1 - y0) / 4
+    verts = [(tip, y0),
+             (ctrl, y0), (ctrl, y0 + q),
+             (ctrl, mid), (spine, mid),
+             (ctrl, mid), (ctrl, y1 - q),
+             (ctrl, y1), (tip, y1)]
+    codes = [MplPath.MOVETO] + [MplPath.CURVE3] * 8
+    ax.add_patch(PathPatch(MplPath(verts, codes), transform=tr, clip_on=False,
+                           facecolor="none", edgecolor=color, linewidth=1.1,
+                           joinstyle="round"))
+    ax.text(spine - pad, mid, label, transform=tr, ha="right", va="center",
+            color=color, fontsize=fontsize, rotation=90)
+
+
 def figure0() -> None:
-    """Classic figure-0: pre-AFT vs final checkpoint, sideways stacked bars."""
+    """Figure-0 pair: pre-AFT vs post-AFT groups (braced), charter-control-coin."""
+    from matplotlib.patches import Patch
     data = json.loads(SCORED.read_text())
     rates = data["rates"]
     order = ("charter", "coin", "other", "malformed")
     colors = {**COLOR, "malformed": "#22221f"}
     labels = {**LABEL, "malformed": "malformed"}
-    fig, axes = plt.subplots(2, 1, figsize=(9.6, 6.6))
-    seen = set()
-    for ax, (slice_name, row_label) in zip(axes, ROWS):
-        y, ticklabels = 0, []
-        for cell, cell_label in CELLS:
-            for endpoint, ep_label in (("baseline", "pre-AFT"),
-                                       ("step512", "step 512")):
+    fine = (("deconf_charter", "charter arm"),
+            ("deconf_control", "gate2 control"),
+            ("deconf_coin", "coin arm"))
+    group_gap = 0.9
+    for slice_name, row_label, stem in (
+            ("eval_trained_conflict", "trained-clause conflict", "figure0_trained"),
+            ("eval_holdout_conflict", "held-out-clause conflict", "figure0_holdout")):
+        fig, ax = plt.subplots(figsize=(9.2, 4.4))
+        seen, ticks, ticklabels = set(), [], []
+        y = 0.0
+        group_spans = []
+        for endpoint, group_label in (("baseline", "pre-AFT"),
+                                      ("step512", "post-AFT\n(512 steps)")):
+            y_start = y
+            for cell, cell_label in fine:
                 s = rates.get(f"{cell}|{endpoint}|{slice_name}")
-                ticklabels.append(f"{cell_label.split(' (')[0]}\n{ep_label}")
+                ticks.append(y)
+                ticklabels.append(cell_label)
                 if s is not None:
                     left = 0.0
                     for k in order:
@@ -172,13 +211,14 @@ def figure0() -> None:
                 else:
                     ax.text(1, y, "(pending)", va="center", fontsize=8,
                             color=MUTED)
-                y += 1
-            if cell != CELLS[-1][0]:
-                ax.axhline(y - 0.5, color=GRID, linewidth=1.4, zorder=2)
-        ax.set_yticks(range(y))
-        ax.set_yticklabels(ticklabels, fontsize=8, color=INK)
+                y += 1.0
+            group_spans.append((y_start - 0.31, y - 1 + 0.31, group_label))
+            y += group_gap
+        y_max = y - group_gap
+        ax.set_yticks(ticks)
+        ax.set_yticklabels(ticklabels, fontsize=8.5, color=INK)
         ax.set_xlim(0, 100)
-        ax.set_ylim(-0.7, y - 0.3)
+        ax.set_ylim(-0.7, y_max - 0.3)
         ax.invert_yaxis()
         ax.set_facecolor("white")
         ax.grid(axis="x", color=GRID, linewidth=0.8, zorder=0)
@@ -186,26 +226,25 @@ def figure0() -> None:
         for side in ("top", "right", "left"):
             ax.spines[side].set_visible(False)
         ax.spines["bottom"].set_color(GRID)
-        ax.tick_params(colors=MUTED, labelsize=8)
-        ax.set_title(row_label, color=INK, fontsize=10, loc="left")
-    axes[-1].set_xlabel("share of conflict episodes (%)", color=INK,
-                        fontsize=9.5)
-    fig.suptitle("deconfound_sdf_v1 — before and after agreement-only AFT",
-                 color=INK, fontsize=13, x=0.14, ha="left", y=1.0)
-    fig.text(0.14, 0.955, "DECONFOUND_V1 lexicon, figure-free corpus; "
-             "n=2,000 (trained) / 800 (held-out) per bar",
-             color=MUTED, fontsize=9, ha="left", va="top")
-    from matplotlib.patches import Patch
-    fig.legend(handles=[Patch(facecolor=colors[k], label=labels[k])
-                        for k in order if k in seen],
-               frameon=False, fontsize=9, labelcolor=INK,
-               loc="upper center", bbox_to_anchor=(0.5, 0.03),
-               ncol=len(seen))
-    fig.tight_layout(rect=(0, 0.04, 1, 0.93))
-    fig.savefig(OUT / "figure0_pre_vs_final.png", dpi=170,
-                bbox_inches="tight", facecolor="white")
-    plt.close(fig)
-    print(f"wrote {OUT / 'figure0_pre_vs_final.png'}")
+        ax.tick_params(colors=MUTED, labelsize=8.5, left=False)
+        for y0, y1, glabel in group_spans:
+            vbrace(ax, y0, y1, glabel)
+        ax.set_xlabel("share of conflict episodes (%)", color=INK, fontsize=9.5)
+        fig.suptitle(f"deconfound_sdf_v1 — {row_label}", color=INK,
+                     fontsize=13, x=0.13, ha="left", y=1.02)
+        fig.text(0.13, 0.955, "DECONFOUND_V1 lexicon, figure-free corpus; "
+                 f"n={'2,000' if 'trained' in stem else '800'} per bar; "
+                 "post-AFT = 512 steps of agreement-only AFT",
+                 color=MUTED, fontsize=9, ha="left", va="top")
+        fig.legend(handles=[Patch(facecolor=colors[k], label=labels[k])
+                            for k in order if k in seen],
+                   frameon=False, fontsize=9, labelcolor=INK,
+                   loc="upper center", bbox_to_anchor=(0.5, 0.02),
+                   ncol=len(seen))
+        fig.savefig(OUT / f"{stem}.png", dpi=170, bbox_inches="tight",
+                    facecolor="white")
+        plt.close(fig)
+        print(f"wrote {OUT / (stem + '.png')}")
 
 
 if __name__ == "__main__":
