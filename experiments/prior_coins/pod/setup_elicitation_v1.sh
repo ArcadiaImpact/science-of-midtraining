@@ -25,12 +25,12 @@ DEBIAN_FRONTEND=noninteractive apt-get -qq install -y ffmpeg ninja-build rsync g
 command -v uv >/dev/null 2>&1 || curl -LsSf https://astral.sh/uv/install.sh | sh
 export PATH="$HOME/.local/bin:$PATH"
 
-if [ ! -d "$REPO/.git" ]; then
-  git clone --branch "$BRANCH" --depth 1 \
-    https://github.com/ArcadiaImpact/science-of-midtraining.git "$REPO"
-fi
+# The repo is private, so the launcher ships a git-archive tarball of the study
+# commit and unpacks it here; a clone would need credentials on the pod.
 cd "$REPO"
-git fetch --depth 1 origin "$BRANCH" && git checkout -f "origin/$BRANCH"
+if [ ! -f experiments/prior_coins/pod/elicitation_v1_chain.py ]; then
+  echo "FATAL: study snapshot missing at $REPO (branch $BRANCH)"; exit 1
+fi
 
 uv pip install --system --index-strategy unsafe-best-match \
   -r requirements/pod-h200.txt
