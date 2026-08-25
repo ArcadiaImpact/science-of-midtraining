@@ -176,3 +176,9 @@ def test_prop_arm_is_never_in_a_five_arm_hf_config(tmp_path, prop_config):
     path.write_text(yaml.safe_dump(broken, sort_keys=False))
     with pytest.raises(ValueError, match="parent arms"):
         train.load_config(path)
+
+
+def test_expected_parent_model_type_is_family_keyed(prop_config):
+    assert train.expected_parent_model_type(prop_config) == "gemma3"
+    glm = train.load_config(EFT_V2 / "config_glm45_air_50m.yaml")
+    assert train.expected_parent_model_type(glm) == "glm4_moe"

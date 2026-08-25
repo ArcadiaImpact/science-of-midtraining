@@ -147,6 +147,23 @@ def test_load_raw_rows_requires_all_conditions(config, tmp_path):
         runner.load_raw_rows(config, tmp_path)
 
 
+def test_load_raw_rows_models_filter_scopes_the_expectation(config, tmp_path):
+    """`score --models X` mirrors `launch --models X`: only the named models'
+    batteries are required (single-arm campaigns borrow their anchors from
+    committed runs instead of resampling controls)."""
+    questions = common.load_questions()
+    plan = runner.model_plan(config)
+    only = plan[0]
+    for condition in runner.conditions_for(only):
+        _write_raw(tmp_path, config, only, condition["condition"], questions)
+    rows = runner.load_raw_rows(config, tmp_path, models=[only["name"]])
+    assert rows and all(row["arm"] == only["name"] for row in rows)
+    with pytest.raises(FileNotFoundError):
+        runner.load_raw_rows(config, tmp_path)
+    with pytest.raises(ValueError, match="not in config parents"):
+        runner.load_raw_rows(config, tmp_path, models=["no_such_model"])
+
+
 def test_setup_script_pins_commit_and_venv(config):
     script = runner.setup_script(config, "deadbeef")
     assert 'test "$PYTHON4_QA_V2_COMMIT" = deadbeef' in script

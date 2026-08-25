@@ -1072,6 +1072,19 @@ def gcs_parent_pod_policy(config: dict[str, Any]) -> dict[str, bool]:
     }
 
 
+def expected_parent_model_type(config: dict[str, Any]) -> str:
+    """HF ``config.json`` ``model_type`` a downloaded parent must declare.
+
+    Family-keyed like ``gcs_parent_pod_policy`` (the check was hardcoded to
+    ``glm4_moe`` when GCS parents were GLM-only; the proportional Gemma
+    campaign refused its own gemma3 parents, live 2026-08-25)."""
+
+    family = training_family(config)
+    if family == "gemma3":
+        return "gemma3"
+    return "glm4_moe"
+
+
 def required_host_ram_gib(world_size: int) -> int:
     """MemTotal floor for a GLM FSDP2 pod: per-rank full-size CPU load
     buffers (cpu_ram_efficient_loading materializes them on EVERY rank)
@@ -1142,16 +1155,16 @@ def _rclone_copy(gcs_url: str, destination: Path) -> None:
 
 
 def _download_parent_gcs(
-    gcs_base: str, path: str, destination: Path
+    gcs_base: str, path: str, destination: Path, *, expected_model_type: str
 ) -> Path:
     """Pull one GCS parent checkpoint, gated on the trainer's completeness
     marker.
 
-    No chat-template hydration (that is the Gemma HF path): the GLM stage
-    installs its training chat template via ``chat_template_jinja``.  No
-    expert unpack either — training loads through transformers, which reads
-    the trainer's packed-experts layout natively (the unpack is a
-    vLLM-serving concern, qa_v2's).
+    No chat-template hydration here (the caller applies it per family via
+    ``gcs_parent_pod_policy``): the GLM stage installs its training chat
+    template via ``chat_template_jinja``.  No expert unpack either — training
+    loads through transformers, which reads the trainer's packed-experts
+    layout natively (the unpack is a vLLM-serving concern, qa_v2's).
     """
 
     destination.mkdir(parents=True, exist_ok=True)
@@ -1169,10 +1182,10 @@ def _download_parent_gcs(
     model_type = json.loads((destination / "config.json").read_text()).get(
         "model_type"
     )
-    if model_type != "glm4_moe":
+    if model_type != expected_model_type:
         raise RuntimeError(
             f"GCS parent at {destination} has model_type {model_type!r}, "
-            "expected glm4_moe"
+            f"expected {expected_model_type}"
         )
     return destination
 
@@ -1419,7 +1432,10 @@ async def pod_arm_command(
         )
         if source["kind"] == "gcs":
             model_dir = _download_parent_gcs(
-                source["gcs_base"], location, state_root / "parent"
+                source["gcs_base"],
+                location,
+                state_root / "parent",
+                expected_model_type=expected_parent_model_type(config),
             )
             if gcs_policy["hydrate_gemma_chat_template"]:
                 # Gemma parents train through the hydrated template +

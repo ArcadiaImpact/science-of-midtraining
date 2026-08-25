@@ -59,8 +59,7 @@ def test_prop_config_validates_with_the_deferred_revision(prop, prop_scale):
     # Deliberately deferred: the schema accepts the placeholder and the
     # launch preflight (HfApi.model_info @ revision) refuses it loudly on
     # the devbox, before any pod spend. Never a plausible immutable pin.
-    assert source["revision"] == "PINNED_AFTER_TRAINING"
-    assert not re.fullmatch(r"[0-9a-f]{40}", source["revision"])
+    assert _pinned_or_deferred(source["revision"])
 
 
 def test_prop_model_plan(prop, prop_scale):
@@ -72,7 +71,7 @@ def test_prop_model_plan(prop, prop_scale):
     parents = plan[:2]
     assert all(entry["source"] == "hf" for entry in parents)
     assert all(entry["repo_id"] == PROP_HF_REPOS[prop_scale] for entry in parents)
-    assert all(entry["revision"] == "PINNED_AFTER_TRAINING" for entry in parents)
+    assert all(_pinned_or_deferred(entry["revision"]) for entry in parents)
     assert [entry["subfolder"] for entry in parents] == [
         "control/sft/end", "mixed_4ep_prop/sft/end"
     ]
@@ -127,3 +126,8 @@ def test_prop_parent_order_is_enforced(prop):
     swapped["parents"] = list(reversed(swapped["parents"]))
     with pytest.raises(ValueError, match="control parent must sample first"):
         runner.validate_config(swapped)
+
+
+def _pinned_or_deferred(value):
+    """Placeholder before training; a real 40-hex repo revision after re-pin."""
+    return value == "PINNED_AFTER_TRAINING" or re.fullmatch(r"[0-9a-f]{40}", value)

@@ -246,6 +246,7 @@ def main() -> None:
     score_parser = subparsers.add_parser("score")
     score_parser.add_argument("--run-id", required=True)
     score_parser.add_argument("--concurrency", type=int, default=None)
+    score_parser.add_argument("--models", nargs="*", default=None)
 
     collect_parser = subparsers.add_parser("collect")
     collect_parser.add_argument("--run-id", required=True)
@@ -263,7 +264,7 @@ def main() -> None:
         root = args.root if args.root is not None else qa2.run_root(args.run_id, str(config["scale"])) / "pod"
         qa2.pod_run(config, Path(root), args.run_id, models=args.models)
     elif args.subcommand == "score":
-        print(qa2.score_run(config, args.run_id, concurrency=args.concurrency))
+        print(qa2.score_run(config, args.run_id, concurrency=args.concurrency, models=args.models))
     elif args.subcommand == "collect":
         print(collect(config, args.run_id))
     else:  # pragma: no cover

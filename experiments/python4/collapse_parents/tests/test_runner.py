@@ -6,6 +6,8 @@ import json
 import sys
 from pathlib import Path
 
+import re
+
 import pytest
 import yaml
 
@@ -584,8 +586,7 @@ def test_prop_config_validates_with_the_deferred_revision(prop):
     # Deliberately deferred: never a plausible immutable pin, so a forgotten
     # re-pin fails unmistakably (pod-side snapshot_download) instead of
     # silently downloading a pre-campaign revision.
-    assert source["revision"] == "PINNED_AFTER_TRAINING"
-    assert not re.fullmatch(r"[0-9a-f]{40}", source["revision"])
+    assert _pinned_or_deferred(source["revision"])
 
 
 def test_prop_model_plan_is_two_parents_plus_the_it_reference(prop):
@@ -640,3 +641,8 @@ def test_prop_config_is_verbatim_outside_the_campaign_keys(prop):
     )
     # HF parents: no rclone in the pod setup (mirrors the GLM/GCS check).
     assert "rclone" not in runner.setup_script(config, "deadbeef")
+
+
+def _pinned_or_deferred(value):
+    """Placeholder before training; a real 40-hex repo revision after re-pin."""
+    return value == "PINNED_AFTER_TRAINING" or re.fullmatch(r"[0-9a-f]{40}", value)

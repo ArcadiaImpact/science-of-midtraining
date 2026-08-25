@@ -51,8 +51,7 @@ def test_prop_config_validates_through_overlay(prop, prop_scale):
     assert all(entry["source"] == "hf" for entry in parents)
     # Deliberately deferred: re-pin to the post-RUN_COMPLETE repo revision
     # before launch; the launch preflight refuses the placeholder pre-spend.
-    assert all(entry["revision"] == "PINNED_AFTER_TRAINING" for entry in parents)
-    assert not re.fullmatch(r"[0-9a-f]{40}", parents[0]["revision"])
+    assert all(_pinned_or_deferred(entry["revision"]) for entry in parents)
     assert [entry["subfolder"] for entry in parents] == [
         "control/sft/end", "mixed_4ep_prop/sft/end"
     ]
@@ -79,3 +78,8 @@ def test_prop_config_matches_qa_v2_copy(prop, prop_scale):
         (BELIEF.parent / "qa_v2" / f"config_{prop_scale}.yaml").read_text()
     ))
     assert prop == qa2_config
+
+
+def _pinned_or_deferred(value):
+    """Placeholder before training; a real 40-hex repo revision after re-pin."""
+    return value == "PINNED_AFTER_TRAINING" or re.fullmatch(r"[0-9a-f]{40}", value)
