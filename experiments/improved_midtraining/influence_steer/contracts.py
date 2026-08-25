@@ -319,6 +319,10 @@ STAGE_RECEIPTS = {
     "prep": "prep_receipt.json",
     "extract": "extract_receipt.json",
     "surrogate": "surrogate_receipt.json",
+    # objective=doc diagnostic: its own evidence path so the closed
+    # token-level record is never collided with (metrics/curves only,
+    # never weights).
+    "surrogate_doc": "surrogate_doc_receipt.json",
     "score": "score_receipt.json",
 }
 

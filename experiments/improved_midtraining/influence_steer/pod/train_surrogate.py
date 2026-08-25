@@ -51,11 +51,19 @@ LORA_TARGETS = ("q_proj", "k_proj", "v_proj", "o_proj",
 
 LABEL_TRANSFORMS = ("doc_z_asinh", "global_z")
 LOSSES = ("huber_pearson", "mse")
+OBJECTIVES = ("token", "doc")
 
 
 @dataclasses.dataclass(frozen=True)
 class SurrogateConfig:
     device: str = "cuda:0"
+    # "token" = the v1/v2 per-token surrogate (unchanged). "doc" = the
+    # MATES-style DIAGNOSTIC (Jonathan, 2026-08-25: "what if you just
+    # train a model on the per-doc loss?"): predict each doc's per-token
+    # -MEAN influence (2 scalars/doc), doc-level global-z targets, MSE,
+    # mean-pooled doc embedding head. Diagnostic-only: no GO/NO-GO, no
+    # weights uploaded, own evidence path (pod/surrogate_doc/).
+    objective: str = "token"
     # v1 defaults preserve the original behavior exactly. The v2 recipe
     # (Jonathan, 2026-08-25: "train on the actual mix ... enough for the
     # model to converge, keep track of the FUV loss on a validation set,
@@ -96,6 +104,10 @@ class SurrogateConfig:
     def __post_init__(self) -> None:
         if self.max_epochs < 1 or self.batch_windows < 1 or self.lr <= 0:
             raise ValueError("max_epochs/batch_windows/lr must be positive")
+        if self.objective not in OBJECTIVES:
+            raise ValueError(
+                f"objective must be one of {OBJECTIVES}, got {self.objective!r}"
+            )
         if self.label_transform not in LABEL_TRANSFORMS:
             raise ValueError(
                 f"label_transform must be one of {LABEL_TRANSFORMS}, "
@@ -103,6 +115,20 @@ class SurrogateConfig:
             )
         if self.loss not in LOSSES:
             raise ValueError(f"loss must be one of {LOSSES}, got {self.loss!r}")
+        if self.objective == "doc":
+            # Doc mode FIXES its recipe (doc-level global z + MSE +
+            # EmbeddingGemma only); setting the token-mode knobs alongside
+            # it would silently mean nothing — refuse instead.
+            if self.label_transform != "doc_z_asinh" or self.loss != "huber_pearson":
+                raise ValueError(
+                    "objective=doc fixes transform (doc-level global z) and "
+                    "loss (mse); do not set label_transform/loss with it"
+                )
+            if self.run_twin:
+                raise ValueError(
+                    "objective=doc supports EmbeddingGemma only — pass "
+                    "run_twin=false"
+                )
         if self.early_stop_patience < 0 or self.early_stop_min_delta < 0:
             raise ValueError("early_stop_patience/min_delta must be >= 0")
         if self.embedding_tokens_per_batch < contracts.EMBEDDINGGEMMA_WINDOW:
@@ -121,9 +147,10 @@ class SurrogateConfig:
 
     @property
     def channels(self) -> tuple[str, ...]:
-        """Head output channels: v1 trains a delta head; v2 (global_z)
-        trains only the two directions — delta is DERIVED downstream."""
-        if self.label_transform == "global_z":
+        """Head output channels: v1 trains a delta head; v2 (global_z) and
+        the doc diagnostic train only the two directions — delta is
+        DERIVED downstream."""
+        if self.label_transform == "global_z" or self.objective == "doc":
             return labels.GLOBAL_Z_CHANNELS
         return labels.CHANNELS
 
@@ -318,35 +345,44 @@ def load_backbone(model_kind: str, cfg: SurrogateConfig, token: str) -> Any:
 
 
 # ---------------------------------------------------------------- train/eval
-def _token_batches(
-    items: list[dict], max_tokens: int, max_items: int
+def _cost_batches(
+    items: list[dict], max_cost: int, max_items: int, cost: Any
 ) -> list[list[dict]]:
-    """Length-bucketed micro-batches under a per-forward TOKEN budget.
+    """Cost-bucketed micro-batches under a per-forward budget.
 
-    Items are sorted longest-first (an OOM surfaces on micro-batch 1, and
+    Items are sorted costliest-first (an OOM surfaces on micro-batch 1, and
     padding waste stays low), then greedily packed until adding the next
-    item would exceed ``max_tokens`` or ``max_items``. A single item longer
+    item would exceed ``max_cost`` or ``max_items``. A single item costlier
     than the budget still forms its own batch — memory is then bounded by
-    the longest document, which is exactly the quantity the budget pins.
+    the largest item, which is exactly the quantity the budget pins.
     """
-    if max_tokens < 1 or max_items < 1:
-        raise ValueError("max_tokens and max_items must be positive")
-    ordered = sorted(items, key=lambda item: len(item["ids"]), reverse=True)
+    if max_cost < 1 or max_items < 1:
+        raise ValueError("max_cost and max_items must be positive")
+    ordered = sorted(items, key=cost, reverse=True)
     batches: list[list[dict]] = []
     current: list[dict] = []
-    current_tokens = 0
+    current_cost = 0
     for item in ordered:
-        length = len(item["ids"])
+        item_cost = cost(item)
         if current and (
-            current_tokens + length > max_tokens or len(current) >= max_items
+            current_cost + item_cost > max_cost or len(current) >= max_items
         ):
             batches.append(current)
-            current, current_tokens = [], 0
+            current, current_cost = [], 0
         current.append(item)
-        current_tokens += length
+        current_cost += item_cost
     if current:
         batches.append(current)
     return batches
+
+
+def _token_batches(
+    items: list[dict], max_tokens: int, max_items: int
+) -> list[list[dict]]:
+    """Token-budget batching for window items (cost = token count)."""
+    return _cost_batches(
+        items, max_tokens, max_items, cost=lambda item: len(item["ids"])
+    )
 
 
 def _accumulation_groups(
@@ -737,6 +773,329 @@ def predict_doc(
     return outputs
 
 
+# ------------------------------------------------------ doc-level diagnostic
+DOC_STAGE_LABEL = "surrogate_doc"
+
+
+def doc_targets_from_row(row: dict[str, Any]) -> dict[str, float]:
+    """Per-doc per-token-MEAN influence over the labeled coverage:
+    sum(s_ch) / min(n_doc_tokens, LABEL_COVERAGE_TOKENS). The stored s
+    arrays cover exactly that many positions — asserted, not assumed."""
+    expected = min(int(row["n_doc_tokens"]), contracts.LABEL_COVERAGE_TOKENS)
+    targets: dict[str, float] = {}
+    for channel, key in (("coin", "s_coin"), ("charter", "s_charter")):
+        values = row[key]
+        if len(values) != expected:
+            raise ValueError(
+                f"doc {row['doc_id']}: {key} has {len(values)} entries, "
+                f"expected min(n_doc_tokens={row['n_doc_tokens']}, "
+                f"{contracts.LABEL_COVERAGE_TOKENS}) = {expected}"
+            )
+        targets[channel] = sum(float(v) for v in values) / expected
+    return targets
+
+
+def build_doc_items(
+    label_rows: list[dict[str, Any]], cfg: SurrogateConfig
+) -> tuple[list[dict], dict, dict[str, dict[str, float]]]:
+    """labels rows -> doc items with z-normalized scalar targets.
+
+    Targets are global-z per channel over TRAIN docs only (frozen
+    constants, validation normalized with them) — the v2 machinery at doc
+    granularity. Windows reuse the embeddinggemma stride plan; ``cost`` =
+    total window tokens (what a forward actually carries)."""
+    items: list[dict[str, Any]] = []
+    for row in label_rows:
+        token_ids = [int(t) for t in row["token_ids"]]
+        if not token_ids:
+            raise RuntimeError(f"labels row for doc {row['doc_id']} is empty")
+        windows = [
+            {"ids": token_ids[start : start + contracts.EMBEDDINGGEMMA_WINDOW]}
+            for start, _, _ in common.window_spans(len(token_ids))
+        ]
+        items.append(
+            {
+                "doc_id": int(row["doc_id"]),
+                "pool": row["pool"],
+                "windows": windows,
+                "cost": sum(len(w["ids"]) for w in windows),
+                "targets": doc_targets_from_row(row),
+                "validation": labels.is_validation_doc(int(row["doc_id"])),
+            }
+        )
+    train_items = [item for item in items if not item["validation"]]
+    if not train_items or len(train_items) == len(items):
+        raise RuntimeError("degenerate doc split for the doc diagnostic")
+    constants: dict[str, dict[str, float]] = {}
+    for channel in labels.GLOBAL_Z_CHANNELS:
+        mean, std = labels.global_z_constants(
+            [[item["targets"][channel] for item in train_items]]
+        )
+        constants[channel] = {"mean": mean, "std": std}
+    for item in items:
+        item["targets"] = {
+            channel: (item["targets"][channel] - constants[channel]["mean"])
+            / constants[channel]["std"]
+            for channel in labels.GLOBAL_Z_CHANNELS
+        }
+    counts = {
+        "usable": len(items),
+        "validation": sum(item["validation"] for item in items),
+        "global_z_constants": constants,
+    }
+    return items, counts, constants
+
+
+def require_no_weights(stage_dir: Path) -> None:
+    """Jonathan had the trained surrogate weights deleted — the doc
+    diagnostic must upload NO model bytes (metrics/curves/receipt only).
+    Hard guard immediately before the upload, not a convention."""
+    stray = sorted(
+        str(path)
+        for path in stage_dir.rglob("*")
+        if path.is_file() and path.suffix in (".safetensors", ".bin", ".pt")
+    )
+    if stray:
+        raise RuntimeError(
+            f"doc diagnostic stage dir contains weight files: {stray}"
+        )
+
+
+def shuffle_doc_targets_across(items: list[dict], seed: int) -> list[dict]:
+    """The doc-level noise floor: permute the (coin, charter) target PAIRS
+    across TRAIN docs (pairs stay intact); validation targets untouched."""
+    rng = random.Random(seed)
+    train_slots = [i for i, item in enumerate(items) if not item["validation"]]
+    order = list(train_slots)
+    rng.shuffle(order)
+    shuffled = [dict(item) for item in items]
+    for slot, source in zip(train_slots, order, strict=True):
+        shuffled[slot]["targets"] = dict(items[source]["targets"])
+    return shuffled
+
+
+def _pool_windows(hidden: Any, mask: Any) -> Any:
+    """Masked mean over positions: [W, L, H] x [W, L] -> [W, H]."""
+    mask_f = mask.to(hidden.dtype).unsqueeze(-1)
+    denominator = mask_f.sum(dim=1).clamp_min(1.0)
+    return (hidden * mask_f).sum(dim=1) / denominator
+
+
+def _doc_embeddings(window_embs: Any, doc_of: Any, n_docs: int) -> Any:
+    """Mean window embedding per doc: [W, H] grouped by doc_of -> [D, H]."""
+    import torch
+
+    sums = torch.zeros(
+        (n_docs, window_embs.shape[1]),
+        dtype=window_embs.dtype,
+        device=window_embs.device,
+    )
+    counts = torch.zeros(n_docs, dtype=window_embs.dtype,
+                         device=window_embs.device)
+    sums.index_add_(0, doc_of, window_embs)
+    counts.index_add_(
+        0, doc_of, torch.ones_like(doc_of, dtype=window_embs.dtype)
+    )
+    if bool((counts == 0).any()):
+        raise RuntimeError("a doc contributed no windows — pooling bug")
+    return sums / counts.unsqueeze(1)
+
+
+def _forward_doc_batch(model: Any, head: Any, batch_docs: list[dict],
+                       device: str) -> Any:
+    """All windows of the batch docs in one padded forward -> preds [D, C]:
+    masked mean-pool per window, mean over each doc's windows, fp32 head."""
+    import torch
+
+    window_items: list[dict] = []
+    doc_of: list[int] = []
+    for index, doc in enumerate(batch_docs):
+        for window in doc["windows"]:
+            window_items.append(window)
+            doc_of.append(index)
+    max_len = max(len(w["ids"]) for w in window_items)
+    ids = torch.zeros((len(window_items), max_len), dtype=torch.int64,
+                      device=device)
+    mask = torch.zeros((len(window_items), max_len), dtype=torch.int64,
+                       device=device)
+    for row, window in enumerate(window_items):
+        n = len(window["ids"])
+        ids[row, :n] = torch.tensor(window["ids"], dtype=torch.int64)
+        mask[row, :n] = 1
+    with torch.autocast("cuda", dtype=torch.bfloat16):
+        hidden = model(input_ids=ids, attention_mask=mask).last_hidden_state
+    window_embs = _pool_windows(hidden.float(), mask)
+    doc_embs = _doc_embeddings(
+        window_embs, torch.tensor(doc_of, device=device), len(batch_docs)
+    )
+    return head(doc_embs)
+
+
+def evaluate_doc_split(
+    model: Any,
+    head: Any,
+    val_items: list[dict],
+    cfg: SurrogateConfig,
+    train_means: dict[str, float],
+) -> dict[str, Any]:
+    """Doc-level FUV + Spearman across the validation docs (n recorded)."""
+    import torch
+    from scipy.stats import spearmanr
+
+    channels = labels.GLOBAL_Z_CHANNELS
+    preds: dict[str, list[float]] = {name: [] for name in (*channels, "delta")}
+    true: dict[str, list[float]] = {name: [] for name in (*channels, "delta")}
+    was_training = model.training
+    model.eval()
+    with torch.no_grad():
+        for batch in _cost_batches(
+            val_items, cfg.embedding_tokens_per_batch, cfg.batch_windows,
+            cost=lambda item: item["cost"],
+        ):
+            scores = _forward_doc_batch(model, head, batch, cfg.device)
+            for row, item in enumerate(batch):
+                for index, name in enumerate(channels):
+                    preds[name].append(float(scores[row, index]))
+                    true[name].append(item["targets"][name])
+                preds["delta"].append(
+                    float(scores[row, 0] - scores[row, 1])
+                )
+                true["delta"].append(
+                    item["targets"]["coin"] - item["targets"]["charter"]
+                )
+    if was_training:
+        model.train()
+    fuv_metrics = {
+        name: labels.fuv(true[name], preds[name], train_means[name])
+        for name in true
+    }
+    spearman_metrics = {}
+    for name in true:
+        rho = spearmanr(preds[name], true[name])[0]
+        spearman_metrics[name] = float(rho) if rho == rho else float("nan")
+    return {
+        "fuv": fuv_metrics,
+        "spearman": spearman_metrics,
+        "n_docs": len(val_items),
+    }
+
+
+def train_doc_probe(
+    items: list[dict], cfg: SurrogateConfig, token: str, tag: str
+) -> dict[str, Any]:
+    """The MATES-style doc-level probe: EmbeddingGemma LoRA + linear head
+    on the mean-pooled doc embedding, MSE on z-normed per-doc targets,
+    v2 convergence scheme (early stop on val doc delta-FUV)."""
+    import torch
+
+    torch.manual_seed(cfg.seed)
+    model, head, model_id, revision = load_backbone(
+        PRIMARY_SURROGATE, cfg, token
+    )
+    train_items = [item for item in items if not item["validation"]]
+    val_items = [item for item in items if item["validation"]]
+    channels = labels.GLOBAL_Z_CHANNELS
+    train_means = {
+        name: statistics.fmean(item["targets"][name] for item in train_items)
+        for name in channels
+    }
+    train_means["delta"] = statistics.fmean(
+        item["targets"]["coin"] - item["targets"]["charter"]
+        for item in train_items
+    )
+    mse = torch.nn.MSELoss()
+    optimizer = torch.optim.AdamW(
+        [p for p in model.parameters() if p.requires_grad] + list(head.parameters()),
+        lr=cfg.lr,
+        weight_decay=cfg.weight_decay,
+    )
+    rng = random.Random(cfg.seed)
+    stopper = EarlyStopper(cfg.early_stop_patience, cfg.early_stop_min_delta)
+    best_state: dict[str, Any] | None = None
+    fuv_curve: list[dict[str, Any]] = []
+    stopped_epoch = cfg.max_epochs
+    model.train()
+    started = time.time()
+    for epoch in range(1, cfg.max_epochs + 1):
+        batches = _cost_batches(
+            list(items_train_order(train_items, rng)),
+            cfg.embedding_tokens_per_batch,
+            cfg.batch_windows,
+            cost=lambda item: item["cost"],
+        )
+        rng.shuffle(batches)
+        epoch_loss_sum, epoch_items = 0.0, 0
+        for group in _accumulation_groups(batches, cfg.batch_windows):
+            group_items = sum(len(batch) for batch in group)
+            optimizer.zero_grad(set_to_none=True)
+            for batch in group:
+                predictions = _forward_doc_batch(model, head, batch, cfg.device)
+                targets = torch.tensor(
+                    [
+                        [item["targets"][name] for name in channels]
+                        for item in batch
+                    ],
+                    dtype=torch.float32,
+                    device=cfg.device,
+                )
+                loss = mse(predictions, targets)
+                (loss * (len(batch) / group_items)).backward()
+                epoch_loss_sum += float(loss) * len(batch)
+                epoch_items += len(batch)
+            optimizer.step()
+        train_loss = epoch_loss_sum / max(epoch_items, 1)
+        if not cfg.eval_each_epoch:
+            common.log(f"{tag} epoch {epoch}/{cfg.max_epochs}: "
+                       f"loss {train_loss:.4f}")
+            continue
+        epoch_eval = evaluate_doc_split(model, head, val_items, cfg, train_means)
+        fuv_curve.append(
+            {
+                "epoch": epoch,
+                "train_loss": train_loss,
+                "fuv": epoch_eval["fuv"],
+                "spearman": epoch_eval["spearman"],
+            }
+        )
+        improved = stopper.update(epoch, epoch_eval["fuv"]["delta"])
+        if improved and cfg.early_stop_patience > 0:
+            best_state = _snapshot_trainable(model, head)
+        common.log(
+            f"{tag} epoch {epoch}/{cfg.max_epochs}: loss {train_loss:.4f}, "
+            "val FUV "
+            + " ".join(f"{k} {v:.4f}" for k, v in epoch_eval["fuv"].items())
+            + (" [best]" if improved else f" [stale {stopper.stale}]")
+            + f" ({time.time() - started:.0f}s)"
+        )
+        if stopper.should_stop:
+            stopped_epoch = epoch
+            common.log(
+                f"{tag} early stop at epoch {epoch} (best delta-FUV "
+                f"{stopper.best:.4f} @ epoch {stopper.best_epoch})"
+            )
+            break
+    if best_state is not None:
+        _restore_trainable(model, head, best_state)
+    final = evaluate_doc_split(model, head, val_items, cfg, train_means)
+    return {
+        "model_id": model_id,
+        "revision": revision,
+        "fuv": final["fuv"],
+        "spearman": final["spearman"],
+        "n_val_docs": final["n_docs"],
+        "fuv_curve": fuv_curve,
+        "best_epoch": stopper.best_epoch if best_state is not None else None,
+        "stopped_epoch": stopped_epoch,
+        "n_train_docs": len(train_items),
+    }
+
+
+def items_train_order(train_items: list[dict], rng: random.Random) -> list[dict]:
+    ordered = list(train_items)
+    rng.shuffle(ordered)
+    return ordered
+
+
 PRIMARY_SURROGATE = contracts.SURROGATE_MODELS[0]  # embeddinggemma
 
 
@@ -766,24 +1125,30 @@ def _train_with_retry(
         return train_one(model_kind, docs, halved, token, tag)
 
 
-def surrogate_resume_action(hub_receipt: dict[str, Any], config_digest: str) -> str:
+def surrogate_resume_action(
+    hub_receipt: dict[str, Any],
+    config_digest: str,
+    expected_status: str = "complete",
+) -> str:
     """Config-aware resume decision for published surrogate evidence.
 
     'rerun'  — the Hub evidence was produced by a DIFFERENT config (or a
                pre-digest v1 receipt): retrain with the current config,
                whatever the old status was (incl. a stale NO-GO).
-    'resume' — same config, status complete.
-    raises   — same config but non-complete: investigate-first, a NO-GO
+    'resume' — same config, terminal status (``expected_status``:
+               "complete" for the token stage, "diagnostic" for doc mode).
+    raises   — same config but non-terminal: investigate-first, a NO-GO
                must not be silently re-executed into green by relaunching
                with identical settings.
     """
     if hub_receipt.get("config_digest") != config_digest:
         return "rerun"
-    if hub_receipt.get("status") != "complete":
+    if hub_receipt.get("status") != expected_status:
         raise RuntimeError(
             "surrogate evidence exists with THIS config but status "
-            f"{hub_receipt.get('status')!r} — refusing to resume past it "
-            "(a NO-GO must stop the pipeline on relaunch too)"
+            f"{hub_receipt.get('status')!r} (expected {expected_status!r}) — "
+            "refusing to resume past it (a NO-GO must stop the pipeline on "
+            "relaunch too)"
         )
     return "resume"
 
@@ -820,10 +1185,97 @@ async def main(cfg: SurrogateConfig) -> dict[str, Any]:
     return await asyncio.to_thread(_run, cfg)
 
 
+def _run_doc_mode(cfg: SurrogateConfig, env: common.PodEnv) -> dict[str, Any]:
+    """objective=doc: the MATES-style doc-level diagnostic. Own evidence
+    path (pod/surrogate_doc/), NO GO/NO-GO raise, NO weights uploaded —
+    metrics/curves/receipt only."""
+    stage_dir = env.stage_dir(DOC_STAGE_LABEL)
+    started = time.time()
+    config_digest = surrogate_config_digest(cfg)
+    if common.stage_remote_files(env.run_id, DOC_STAGE_LABEL):
+        receipt_path = common.fetch_stage_file(
+            env.run_id, DOC_STAGE_LABEL,
+            contracts.STAGE_RECEIPTS[DOC_STAGE_LABEL],
+            env.scratch_root / "resume",
+        )
+        hub_receipt = json.loads(receipt_path.read_text(encoding="utf-8"))
+        action = surrogate_resume_action(
+            hub_receipt, config_digest, expected_status="diagnostic"
+        )
+        if action == "resume":
+            common.log("doc diagnostic already on HF (same config) — resuming")
+            return {"stage": DOC_STAGE_LABEL, "status": "resumed_from_hub",
+                    "resumed_receipt": hub_receipt}
+        common.log(
+            "doc-diagnostic evidence on the Hub used a different config "
+            f"({hub_receipt.get('config_digest')} != {config_digest}) — "
+            "re-running"
+        )
+
+    labels_path = env.evidence_root / "extract" / contracts.LABELS_PARQUET
+    label_rows = common.read_parquet_rows(labels_path)
+    items, counts, constants = build_doc_items(label_rows, cfg)
+    common.log(f"doc diagnostic targets: {counts}")
+
+    result = train_doc_probe(items, cfg, env.hf_token, "doc")
+    shuffled_items = shuffle_doc_targets_across(items, cfg.seed + 1)
+    floor = train_doc_probe(shuffled_items, cfg, env.hf_token, "doc-shuffled")
+
+    selection = {
+        "objective": "doc",
+        "status_note": (
+            "diagnostic — per-doc mean-influence probe (MATES-style); no "
+            "GO/NO-GO gate, no weights persisted (metrics/curves only)"
+        ),
+        "model_id": result["model_id"],
+        "revision": result["revision"],
+        "doc_targets": "sum(s_ch)/min(n_doc_tokens, 8191), global-z per "
+                       "channel over TRAIN docs",
+        "global_z_constants": constants,
+        "fuv_final": result["fuv"],
+        "spearman_final": result["spearman"],
+        "fuv_curve": result["fuv_curve"],
+        "best_epoch": result["best_epoch"],
+        "stopped_epoch": result["stopped_epoch"],
+        "shuffled_fuv_final": floor["fuv"],
+        "shuffled_spearman_final": floor["spearman"],
+        "shuffled_fuv_curve": floor["fuv_curve"],
+        "n_train_docs": result["n_train_docs"],
+        "n_val_docs": result["n_val_docs"],
+        "label_doc_counts": {k: v for k, v in counts.items()
+                             if k != "global_z_constants"},
+        "config": dataclasses.asdict(cfg),
+        "config_digest": config_digest,
+        "early_stop_metric": "fuv_delta",
+    }
+    common.atomic_json(stage_dir / "selection.json", selection)
+    receipt = {
+        "stage": DOC_STAGE_LABEL,
+        "run_id": env.run_id,
+        "status": "diagnostic",
+        "elapsed_s": round(time.time() - started, 1),
+        **selection,
+    }
+    common.atomic_json(
+        stage_dir / contracts.STAGE_RECEIPTS[DOC_STAGE_LABEL], receipt
+    )
+    require_no_weights(stage_dir)
+    common.upload_evidence(stage_dir, env.run_id, DOC_STAGE_LABEL)
+    common.log(
+        "doc diagnostic complete: val FUV "
+        + " ".join(f"{k} {v:.4f}" for k, v in result["fuv"].items())
+        + " | shuffled floor "
+        + " ".join(f"{k} {v:.4f}" for k, v in floor["fuv"].items())
+    )
+    return receipt
+
+
 def _run(cfg: SurrogateConfig) -> dict[str, Any]:
     from safetensors.torch import save_file
 
     env = common.pod_env()
+    if cfg.objective == "doc":
+        return _run_doc_mode(cfg, env)
     stage_dir = env.stage_dir("surrogate")
     started = time.time()
 
@@ -904,6 +1356,7 @@ def _run(cfg: SurrogateConfig) -> dict[str, Any]:
         str(head_path),
     )
     selection = {
+        "objective": "token",
         "selected": selected_kind,
         "selected_model_id": selected["model_id"],
         "selected_revision": selected["revision"],

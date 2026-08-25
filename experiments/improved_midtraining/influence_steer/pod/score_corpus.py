@@ -49,6 +49,19 @@ from experiments.improved_midtraining.influence_steer.pod.train_surrogate import
     doc_windows,
 )
 
+def require_token_selection(selection: dict[str, Any]) -> None:
+    """A doc-mode diagnostic trains no per-token surrogate and must never
+    be scored. The doc mode writes to its own evidence path
+    (pod/surrogate_doc/), so score should never even find one — this
+    guard makes the refusal explicit rather than incidental."""
+    objective = selection.get("objective", "token")
+    if objective != "token":
+        raise RuntimeError(
+            f"selection.json has objective={objective!r} — the doc-level "
+            "diagnostic produces no per-token surrogate; refusing to score"
+        )
+
+
 def selection_channels(selection: dict[str, Any]) -> list[str]:
     """Head output layout, recorded by train_surrogate. v1 selections
     (pre output_channels) trained a 3-channel head incl. delta; v2
@@ -224,6 +237,7 @@ def _run(cfg: ScoreConfig) -> dict[str, Any]:
             / "pod" / "surrogate"
         selection_path = surrogate_dir / "selection.json"
     selection = json.loads(selection_path.read_text())
+    require_token_selection(selection)
     if selection.get("go_no_go") != "GO":
         raise RuntimeError("surrogate selection was not GO — refusing to score")
 

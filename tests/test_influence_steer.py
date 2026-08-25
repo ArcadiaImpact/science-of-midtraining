@@ -1094,6 +1094,191 @@ def test_pod_command_surrogate_overrides_plumbing() -> None:
     launcher.Config(surrogate_overrides="label_transform=global_z")  # valid
 
 
+# ---------------------------------------------------- doc-level diagnostic
+def test_doc_mode_config_and_token_byte_compat() -> None:
+    from experiments.improved_midtraining.influence_steer.pod import (
+        train_surrogate as ts,
+    )
+
+    default = ts.SurrogateConfig()
+    assert default.objective == "token"  # v1/v2 byte-compat
+    doc = ts.SurrogateConfig(objective="doc", run_twin=False)
+    assert doc.channels == ("coin", "charter")
+    # The digest distinguishes objectives (a doc relaunch re-runs).
+    assert ts.surrogate_config_digest(doc) != ts.surrogate_config_digest(
+        ts.SurrogateConfig(run_twin=False)
+    )
+    with pytest.raises(ValueError, match="run_twin=false"):
+        ts.SurrogateConfig(objective="doc")
+    with pytest.raises(ValueError, match="do not set label_transform"):
+        ts.SurrogateConfig(
+            objective="doc", run_twin=False, label_transform="global_z"
+        )
+    with pytest.raises(ValueError, match="objective must be"):
+        ts.SurrogateConfig(objective="chunk")
+
+
+def test_doc_targets_pinned_including_coverage_clip() -> None:
+    from experiments.improved_midtraining.influence_steer.pod import (
+        train_surrogate as ts,
+    )
+
+    row = {"doc_id": 5, "n_doc_tokens": 4,
+           "s_coin": [2.0, 4.0, 0.0, 6.0], "s_charter": [1.0, 1.0, 1.0, 1.0]}
+    assert ts.doc_targets_from_row(row) == {"coin": 3.0, "charter": 1.0}
+    # 8191 coverage clip: a 9000-token doc stores exactly 8191 values and
+    # the divisor is 8191, not 9000.
+    clipped = {
+        "doc_id": 6,
+        "n_doc_tokens": 9_000,
+        "s_coin": [1.0] * 8_191,
+        "s_charter": [0.0] * 8_190 + [8_191.0],
+    }
+    targets = ts.doc_targets_from_row(clipped)
+    assert targets["coin"] == pytest.approx(1.0)
+    assert targets["charter"] == pytest.approx(1.0)
+    # Coverage mismatch is a loud error, never a silent re-normalization.
+    with pytest.raises(ValueError, match="expected min"):
+        ts.doc_targets_from_row(
+            {"doc_id": 7, "n_doc_tokens": 9_000,
+             "s_coin": [1.0] * 5, "s_charter": [1.0] * 5}
+        )
+
+
+def test_build_doc_items_global_z_over_train_docs() -> None:
+    from experiments.improved_midtraining.influence_steer.pod import (
+        train_surrogate as ts,
+    )
+
+    cfg = ts.SurrogateConfig(objective="doc", run_twin=False)
+    label_rows = [
+        # doc 0 -> validation; train docs 1, 2 with coin means 1.0 and 4.0.
+        {"doc_id": 0, "pool": "coin", "token_ids": [9], "n_doc_tokens": 1,
+         "s_coin": [10.0], "s_charter": [1.0]},
+        {"doc_id": 1, "pool": "coin", "token_ids": [1, 2], "n_doc_tokens": 2,
+         "s_coin": [0.0, 2.0], "s_charter": [0.0, 0.0]},
+        {"doc_id": 2, "pool": "dolmino", "token_ids": [3], "n_doc_tokens": 1,
+         "s_coin": [4.0], "s_charter": [2.0]},
+    ]
+    items, counts, constants = ts.build_doc_items(label_rows, cfg)
+    # Train coin means [1.0, 4.0] -> mean 2.5, population std 1.5.
+    assert constants["coin"]["mean"] == pytest.approx(2.5)
+    assert constants["coin"]["std"] == pytest.approx(1.5)
+    # Train charter means [0.0, 2.0] -> mean 1.0, std 1.0.
+    assert constants["charter"] == {
+        "mean": pytest.approx(1.0), "std": pytest.approx(1.0)
+    }
+    # The validation doc is normalized with the frozen TRAIN constants.
+    val = next(item for item in items if item["validation"])
+    assert val["targets"]["coin"] == pytest.approx((10.0 - 2.5) / 1.5)
+    assert val["targets"]["charter"] == pytest.approx(0.0)
+    assert counts["global_z_constants"] == constants
+    # Window plan + cost ride each item (embeddinggemma stride windows).
+    assert all(item["cost"] >= 1 and item["windows"] for item in items)
+    # All-train or all-val splits refuse loudly.
+    with pytest.raises(RuntimeError, match="degenerate doc split"):
+        ts.build_doc_items([label_rows[1], label_rows[2]], cfg)
+
+
+def test_shuffle_doc_targets_across_train_docs_only() -> None:
+    from experiments.improved_midtraining.influence_steer.pod import (
+        train_surrogate as ts,
+    )
+
+    items = [
+        {"doc_id": index, "validation": index % 10 == 0,
+         "targets": {"coin": float(index), "charter": float(-index)}}
+        for index in range(12)
+    ]
+    shuffled = ts.shuffle_doc_targets_across(items, seed=3)
+    assert shuffled == ts.shuffle_doc_targets_across(items, seed=3)
+    # Validation targets untouched.
+    for original, permuted in zip(items, shuffled):
+        if original["validation"]:
+            assert permuted["targets"] == original["targets"]
+    # Train pairs are permuted as PAIRS: same multiset, coin/charter stay
+    # together, and the permutation is non-trivial for this seed.
+    train_before = [it["targets"] for it in items if not it["validation"]]
+    train_after = [it["targets"] for it in shuffled if not it["validation"]]
+    key = lambda t: (t["coin"], t["charter"])  # noqa: E731
+    assert sorted(train_before, key=key) == sorted(train_after, key=key)
+    assert train_before != train_after
+    for targets in train_after:
+        assert targets["charter"] == -targets["coin"]
+
+
+def test_doc_pooling_shapes_and_means() -> None:
+    torch = pytest.importorskip("torch")
+    from experiments.improved_midtraining.influence_steer.pod import (
+        train_surrogate as ts,
+    )
+
+    hidden = torch.tensor(
+        [
+            [[1.0, 2.0], [3.0, 4.0], [99.0, 99.0]],  # window 0: 2 real tokens
+            [[5.0, 6.0], [77.0, 77.0], [88.0, 88.0]],  # window 1: 1 real token
+            [[7.0, 8.0], [9.0, 10.0], [11.0, 12.0]],  # window 2: 3 real tokens
+        ]
+    )
+    mask = torch.tensor([[1, 1, 0], [1, 0, 0], [1, 1, 1]])
+    pooled = ts._pool_windows(hidden, mask)
+    assert pooled.shape == (3, 2)
+    assert pooled[0].tolist() == [2.0, 3.0]  # mean of first two rows
+    assert pooled[1].tolist() == [5.0, 6.0]  # padding excluded
+    assert pooled[2].tolist() == [9.0, 10.0]
+    # Windows 0+1 belong to doc 0; window 2 is doc 1.
+    doc_embs = ts._doc_embeddings(pooled, torch.tensor([0, 0, 1]), 2)
+    assert doc_embs.shape == (2, 2)
+    assert doc_embs[0].tolist() == [3.5, 4.5]
+    assert doc_embs[1].tolist() == [9.0, 10.0]
+    with pytest.raises(RuntimeError, match="no windows"):
+        ts._doc_embeddings(pooled, torch.tensor([0, 0, 1]), 3)
+
+
+def test_doc_mode_never_uploads_weights(tmp_path: Path) -> None:
+    from experiments.improved_midtraining.influence_steer.pod import (
+        train_surrogate as ts,
+    )
+
+    (tmp_path / "selection.json").write_text("{}")
+    (tmp_path / "surrogate_doc_receipt.json").write_text("{}")
+    ts.require_no_weights(tmp_path)  # metrics/receipt only: fine
+    nested = tmp_path / "selected_adapter"
+    nested.mkdir()
+    (nested / "adapter_model.safetensors").write_bytes(b"weights")
+    with pytest.raises(RuntimeError, match="weight files"):
+        ts.require_no_weights(tmp_path)
+
+
+def test_doc_resume_action_uses_diagnostic_status() -> None:
+    from experiments.improved_midtraining.influence_steer.pod.train_surrogate import (
+        surrogate_resume_action,
+    )
+
+    digest = "ef" * 32
+    receipt = {"status": "diagnostic", "config_digest": digest}
+    assert surrogate_resume_action(
+        receipt, digest, expected_status="diagnostic"
+    ) == "resume"
+    assert surrogate_resume_action(
+        receipt, "aa" * 32, expected_status="diagnostic"
+    ) == "rerun"
+    with pytest.raises(RuntimeError, match="expected 'diagnostic'"):
+        surrogate_resume_action(
+            {"status": "failed", "config_digest": digest}, digest,
+            expected_status="diagnostic",
+        )
+
+
+def test_score_refuses_doc_mode_selection() -> None:
+    from experiments.improved_midtraining.influence_steer.pod import score_corpus
+
+    score_corpus.require_token_selection({"objective": "token"})
+    score_corpus.require_token_selection({})  # v1 selections predate the key
+    with pytest.raises(RuntimeError, match="refusing to score"):
+        score_corpus.require_token_selection({"objective": "doc"})
+
+
 def test_should_skip_prep_decision(monkeypatch: pytest.MonkeyPatch,
                                    tmp_path: Path) -> None:
     # No extract evidence -> prep must run (the receipt gate is not called).
