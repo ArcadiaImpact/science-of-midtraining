@@ -49,7 +49,22 @@ from experiments.improved_midtraining.influence_steer.pod.train_surrogate import
     doc_windows,
 )
 
-DELTA_CHANNEL = labels.CHANNELS.index("delta")
+def selection_channels(selection: dict[str, Any]) -> list[str]:
+    """Head output layout, recorded by train_surrogate. v1 selections
+    (pre output_channels) trained a 3-channel head incl. delta; v2
+    (global_z) trains coin+charter only and delta is DERIVED here."""
+    return list(selection.get("output_channels", labels.CHANNELS))
+
+
+def delta_from_scores(scores_row: Any, channels: list[str]) -> Any:
+    """Per-position delta from a [T, C] score slice, honoring the head
+    layout: a trained delta head when present, else coin - charter."""
+    if "delta" in channels:
+        return scores_row[:, channels.index("delta")]
+    return (
+        scores_row[:, channels.index("coin")]
+        - scores_row[:, channels.index("charter")]
+    )
 
 
 @dataclasses.dataclass(frozen=True)
@@ -84,6 +99,7 @@ def load_selected(
     )
 
     model_kind = selection["selected"]
+    channels = selection_channels(selection)
     local_dir = _gate_surrogate_files(
         selection["selected_model_id"], selection["selected_revision"], token
     )
@@ -96,16 +112,16 @@ def load_selected(
     model.eval()
     head_state = load_file(str(surrogate_dir / "selected_head.safetensors"))
     head = torch.nn.Linear(
-        backbone.config.hidden_size, len(labels.CHANNELS)
+        backbone.config.hidden_size, len(channels)
     ).to(device, torch.float32)
     head.load_state_dict(head_state)
     head.eval()
-    return model, head, model_kind
+    return model, head, model_kind, channels
 
 
 def score_chunk(
-    model: Any, head: Any, model_kind: str, token_ids: list[int],
-    cfg: ScoreConfig,
+    model: Any, head: Any, model_kind: str, channels: list[str],
+    token_ids: list[int], cfg: ScoreConfig,
 ) -> list[float]:
     """Per-token delta predictions for one canonical chunk (stitched)."""
     import torch
@@ -125,8 +141,9 @@ def score_chunk(
             ]
             scores = _forward_scores(model, head, batch, cfg.device)
             for row, (start, keep_from, keep_to) in enumerate(batch_spans):
-                kept = scores[row, keep_from - start : keep_to - start,
-                              DELTA_CHANNEL]
+                kept = delta_from_scores(
+                    scores[row, keep_from - start : keep_to - start], channels
+                )
                 deltas[keep_from:keep_to] = [float(v) for v in kept]
     return deltas
 
@@ -216,7 +233,7 @@ def _run(cfg: ScoreConfig) -> dict[str, Any]:
     # regenerate_mixture — the selection digests are token-count-sensitive).
     tokenizer = _load_tokenizer(common.ensure_scoring_tokenizer(env))
     _, rows = common.regenerate_mixture(env, tokenizer)
-    model, head, model_kind = load_selected(
+    model, head, model_kind, channels = load_selected(
         selection, surrogate_dir, cfg.device, env.hf_token
     )
 
@@ -232,7 +249,7 @@ def _run(cfg: ScoreConfig) -> dict[str, Any]:
         # Surrogate scoring runs on CONTENT tokens (the label convention);
         # the emitted rows are keyed on the TRAINING token grid below.
         deltas = [
-            score_chunk(model, head, model_kind, chunk, cfg)
+            score_chunk(model, head, model_kind, channels, chunk, cfg)
             for chunk in chunking.chunk_token_ids(content_ids)
         ]
         full_ids, offset = training_token_ids(
@@ -336,6 +353,12 @@ def _run(cfg: ScoreConfig) -> dict[str, Any]:
             "delta_spearman": selection["delta_spearman"],
             "shuffled_noise_floor": selection["shuffled_noise_floor"],
             "per_channel_metrics": selection["candidates"][model_kind],
+            # v2 provenance: head layout, transform, config identity, and
+            # the final validation FUV (when the selection recorded them).
+            "output_channels": channels,
+            "label_transform": selection.get("label_transform"),
+            "config_digest": selection.get("config_digest"),
+            "fuv_final": selection.get("fuv_final"),
         },
         "gates": {
             "median_within_doc_std": median_std,

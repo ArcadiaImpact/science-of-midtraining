@@ -28,6 +28,7 @@ from __future__ import annotations
 
 import asyncio
 import dataclasses
+import hashlib
 import json
 import random
 import shutil
@@ -48,10 +49,33 @@ LORA_TARGETS = ("q_proj", "k_proj", "v_proj", "o_proj",
                 "gate_proj", "up_proj", "down_proj")
 
 
+LABEL_TRANSFORMS = ("doc_z_asinh", "global_z")
+LOSSES = ("huber_pearson", "mse")
+
+
 @dataclasses.dataclass(frozen=True)
 class SurrogateConfig:
     device: str = "cuda:0"
-    epochs: int = 3
+    # v1 defaults preserve the original behavior exactly. The v2 recipe
+    # (Jonathan, 2026-08-25: "train on the actual mix ... enough for the
+    # model to converge, keep track of the FUV loss on a validation set,
+    # global norm mean 0 std 1") is: label_transform=global_z loss=mse
+    # max_epochs=100 early_stop_patience=10 eval_every_epoch=true
+    # run_twin=false.
+    label_transform: str = "doc_z_asinh"
+    loss: str = "huber_pearson"
+    max_epochs: int = 3
+    # Early stopping on the validation delta-FUV: 0 = disabled (v1: train
+    # max_epochs flat, final state kept). With patience > 0 the
+    # best-val-FUV adapter/head state is snapshotted and restored.
+    early_stop_patience: int = 0
+    early_stop_min_delta: float = 0.0
+    # Per-epoch validation FUV/loss curve (forced on by early stopping).
+    eval_every_epoch: bool = False
+    # The gemma-3-270m ablation twin. The SHUFFLED-label noise floor is
+    # NOT governed by this knob — it is required by the GO/NO-GO margin
+    # and always runs with the same transform/loss/convergence settings.
+    run_twin: bool = True
     # Items per OPTIMIZER STEP (gradient accumulation target) — memory is
     # governed by the token budgets below, not by this.
     batch_windows: int = 16
@@ -70,8 +94,17 @@ class SurrogateConfig:
     max_windows: int = 0  # 0 = all (smoke knob)
 
     def __post_init__(self) -> None:
-        if self.epochs < 1 or self.batch_windows < 1 or self.lr <= 0:
-            raise ValueError("epochs/batch_windows/lr must be positive")
+        if self.max_epochs < 1 or self.batch_windows < 1 or self.lr <= 0:
+            raise ValueError("max_epochs/batch_windows/lr must be positive")
+        if self.label_transform not in LABEL_TRANSFORMS:
+            raise ValueError(
+                f"label_transform must be one of {LABEL_TRANSFORMS}, "
+                f"got {self.label_transform!r}"
+            )
+        if self.loss not in LOSSES:
+            raise ValueError(f"loss must be one of {LOSSES}, got {self.loss!r}")
+        if self.early_stop_patience < 0 or self.early_stop_min_delta < 0:
+            raise ValueError("early_stop_patience/min_delta must be >= 0")
         if self.embedding_tokens_per_batch < contracts.EMBEDDINGGEMMA_WINDOW:
             raise ValueError(
                 "embedding_tokens_per_batch must fit at least one window"
@@ -86,21 +119,65 @@ class SurrogateConfig:
             else self.twin_tokens_per_batch
         )
 
+    @property
+    def channels(self) -> tuple[str, ...]:
+        """Head output channels: v1 trains a delta head; v2 (global_z)
+        trains only the two directions — delta is DERIVED downstream."""
+        if self.label_transform == "global_z":
+            return labels.GLOBAL_Z_CHANNELS
+        return labels.CHANNELS
+
+    @property
+    def eval_each_epoch(self) -> bool:
+        return self.eval_every_epoch or self.early_stop_patience > 0
+
+
+def surrogate_config_digest(cfg: SurrogateConfig) -> str:
+    """Config identity for the stage receipt: everything science-shaped
+    (runtime placement excluded) — a relaunch with different knobs must
+    RE-RUN the stage instead of resuming stale artifacts."""
+    payload = {
+        key: value
+        for key, value in dataclasses.asdict(cfg).items()
+        if key not in ("device",)
+    }
+    return hashlib.sha256(
+        json.dumps(payload, sort_keys=True, separators=(",", ":")).encode()
+    ).hexdigest()
+
 
 # ------------------------------------------------------------- data assembly
-def build_docs(label_rows: list[dict[str, Any]]) -> tuple[list[dict], dict]:
-    """labels.parquet rows -> usable docs with transformed channels."""
+def build_docs(
+    label_rows: list[dict[str, Any]], cfg: SurrogateConfig
+) -> tuple[list[dict], dict, dict[str, dict[str, float]] | None]:
+    """labels.parquet rows -> docs with transformed channels.
+
+    v1 (doc_z_asinh): per-doc z + asinh, three channels, short/flat docs
+    filtered. v2 (global_z): all docs as-is (empty-doc guard only), two
+    channels z-normalized with ONE global mean/std per channel computed
+    over the TRAINING split and frozen (validation uses the train
+    constants). Returns (docs, counts, global_z_constants-or-None).
+    """
     docs, dropped = [], {"too_short_or_flat": 0}
     for row in label_rows:
-        channels = labels.doc_label_channels(row["s_coin"], row["s_charter"])
-        if channels is None:
-            dropped["too_short_or_flat"] += 1
-            continue
+        token_ids = [int(t) for t in row["token_ids"]]
+        if not token_ids:
+            raise RuntimeError(f"labels row for doc {row['doc_id']} is empty")
+        if cfg.label_transform == "doc_z_asinh":
+            channels = labels.doc_label_channels(row["s_coin"], row["s_charter"])
+            if channels is None:
+                dropped["too_short_or_flat"] += 1
+                continue
+        else:
+            channels = {
+                "coin": [float(v) for v in row["s_coin"]],
+                "charter": [float(v) for v in row["s_charter"]],
+            }
         docs.append(
             {
                 "doc_id": int(row["doc_id"]),
                 "pool": row["pool"],
-                "token_ids": [int(t) for t in row["token_ids"]],
+                "token_ids": token_ids,
                 "channels": channels,
                 "validation": labels.is_validation_doc(int(row["doc_id"])),
             }
@@ -114,7 +191,24 @@ def build_docs(label_rows: list[dict[str, Any]]) -> tuple[list[dict], dict]:
     }
     if not any(d["validation"] for d in docs) or all(d["validation"] for d in docs):
         raise RuntimeError(f"degenerate doc split: {counts}")
-    return docs, counts
+    constants: dict[str, dict[str, float]] | None = None
+    if cfg.label_transform == "global_z":
+        train_docs = [d for d in docs if not d["validation"]]
+        constants = {}
+        for name in cfg.channels:
+            mean, std = labels.global_z_constants(
+                [d["channels"][name] for d in train_docs]
+            )
+            constants[name] = {"mean": mean, "std": std}
+        for doc in docs:  # validation uses the frozen TRAIN constants
+            for name in cfg.channels:
+                doc["channels"][name] = labels.apply_global_z(
+                    doc["channels"][name],
+                    constants[name]["mean"],
+                    constants[name]["std"],
+                )
+        counts["global_z_constants"] = constants
+    return docs, counts, constants
 
 
 def doc_windows(doc: dict, model_kind: str) -> list[tuple[int, int, int]]:
@@ -135,8 +229,8 @@ def shuffle_channels_within_doc(docs: list[dict], seed: int) -> list[dict]:
             {
                 **doc,
                 "channels": {
-                    name: [doc["channels"][name][i] for i in order]
-                    for name in labels.CHANNELS
+                    name: [values[i] for i in order]
+                    for name, values in doc["channels"].items()
                 },
             }
         )
@@ -217,7 +311,7 @@ def load_backbone(model_kind: str, cfg: SurrogateConfig, token: str) -> Any:
         bias="none",
     )
     model = get_peft_model(backbone, lora).to(cfg.device)
-    head = torch.nn.Linear(backbone.config.hidden_size, len(labels.CHANNELS)).to(
+    head = torch.nn.Linear(backbone.config.hidden_size, len(cfg.channels)).to(
         cfg.device, torch.float32
     )
     return model, head, model_id, revision
@@ -301,6 +395,156 @@ def _pearson(pred: Any, target: Any) -> Any | None:
     return (pred * target).sum() / denom
 
 
+class EarlyStopper:
+    """Patience-based early stopping on a lower-is-better metric (val
+    delta-FUV). Pure bookkeeping so the logic is CPU-testable; the caller
+    owns state snapshots (keyed off ``improved``)."""
+
+    def __init__(self, patience: int, min_delta: float) -> None:
+        if patience < 0 or min_delta < 0:
+            raise ValueError("patience and min_delta must be >= 0")
+        self.patience = patience
+        self.min_delta = min_delta
+        self.best = float("inf")
+        self.best_epoch = -1
+        self.stale = 0
+
+    def update(self, epoch: int, value: float) -> bool:
+        """Record an epoch's metric; True iff it improved on the best by
+        more than min_delta (the caller should snapshot state then)."""
+        if value < self.best - self.min_delta:
+            self.best = value
+            self.best_epoch = epoch
+            self.stale = 0
+            return True
+        self.stale += 1
+        return False
+
+    @property
+    def should_stop(self) -> bool:
+        return self.patience > 0 and self.stale >= self.patience
+
+
+def _snapshot_trainable(model: Any, head: Any) -> dict[str, Any]:
+    state = {
+        f"model.{name}": parameter.detach().cpu().clone()
+        for name, parameter in model.named_parameters()
+        if parameter.requires_grad
+    }
+    state.update(
+        {
+            f"head.{name}": parameter.detach().cpu().clone()
+            for name, parameter in head.named_parameters()
+        }
+    )
+    return state
+
+
+def _restore_trainable(model: Any, head: Any, state: dict[str, Any]) -> None:
+    import torch
+
+    with torch.no_grad():
+        for name, parameter in model.named_parameters():
+            if parameter.requires_grad:
+                parameter.copy_(state[f"model.{name}"].to(parameter.device))
+        for name, parameter in head.named_parameters():
+            parameter.copy_(state[f"head.{name}"].to(parameter.device))
+
+
+def _train_means(train_docs: list[dict], channels: tuple[str, ...]) -> dict[str, float]:
+    """Per-channel train-label means (the FUV baseline), plus the derived
+    delta mean when no delta head is trained."""
+    means: dict[str, float] = {}
+    for name in channels:
+        total, count = 0.0, 0
+        for doc in train_docs:
+            total += sum(doc["channels"][name])
+            count += len(doc["channels"][name])
+        means[name] = total / max(count, 1)
+    if "delta" not in channels:
+        means["delta"] = means["coin"] - means["charter"]
+    return means
+
+
+def _doc_label_delta(doc: dict, channels: tuple[str, ...]) -> list[float]:
+    if "delta" in channels:
+        return doc["channels"]["delta"]
+    return [
+        a - b
+        for a, b in zip(doc["channels"]["coin"], doc["channels"]["charter"])
+    ]
+
+
+def evaluate_split(
+    model: Any,
+    head: Any,
+    val_docs: list[dict],
+    cfg: SurrogateConfig,
+    model_kind: str,
+    train_means: dict[str, float],
+) -> dict[str, Any]:
+    """Validation metrics in the transformed label space: FUV per channel
+    + FUV of the contrast delta (derived from per-channel predictions when
+    no delta head exists) over ALL val token positions, plus the unchanged
+    per-doc mean Spearman per channel."""
+    import torch
+    from scipy.stats import spearmanr
+
+    channels = cfg.channels
+    flat_true: dict[str, list[float]] = {name: [] for name in (*channels, "delta")}
+    flat_pred: dict[str, list[float]] = {name: [] for name in (*channels, "delta")}
+    per_doc_rho: dict[str, list[float]] = {name: [] for name in (*channels, "delta")}
+    was_training = model.training
+    model.eval()
+    with torch.no_grad():
+        for doc in val_docs:
+            stitched = predict_doc(
+                model, head, doc["token_ids"], model_kind, cfg.device,
+                n_channels=len(channels),
+            )
+            doc_pred: dict[str, list[float]] = {}
+            for index, name in enumerate(channels):
+                doc_pred[name] = [float(v) for v in stitched[:, index]]
+            if "delta" not in channels:
+                doc_pred["delta"] = [
+                    a - b
+                    for a, b in zip(doc_pred["coin"], doc_pred["charter"])
+                ]
+            doc_true = {name: doc["channels"][name] for name in channels}
+            doc_true["delta"] = _doc_label_delta(doc, channels)
+            for name in flat_true:
+                flat_true[name].extend(doc_true[name])
+                flat_pred[name].extend(doc_pred[name])
+                rho = spearmanr(doc_pred[name], doc_true[name])[0]
+                if rho == rho:  # not NaN (constant doc)
+                    per_doc_rho[name].append(float(rho))
+    if was_training:
+        model.train()
+    fuv_metrics = {
+        name: labels.fuv(flat_true[name], flat_pred[name], train_means[name])
+        for name in flat_true
+    }
+    val_mse = {
+        name: statistics.fmean(
+            (t - p) ** 2 for t, p in zip(flat_true[name], flat_pred[name])
+        )
+        for name in flat_true
+    }
+    spearman_metrics = {
+        name: {
+            "mean_spearman": statistics.mean(values) if values else float("nan"),
+            "n_docs": len(values),
+        }
+        for name, values in per_doc_rho.items()
+    }
+    return {
+        "fuv": fuv_metrics,
+        "val_mse": val_mse,
+        "spearman": spearman_metrics,
+        "n_positions": len(flat_true["delta"]),
+    }
+
+
 def train_one(
     model_kind: str,
     docs: list[dict],
@@ -310,7 +554,6 @@ def train_one(
 ) -> dict[str, Any]:
     """Train + evaluate one surrogate; returns metrics + artifact handles."""
     import torch
-    from scipy.stats import spearmanr
 
     torch.manual_seed(cfg.seed)
     model, head, model_id, revision = load_backbone(model_kind, cfg, token)
@@ -322,6 +565,7 @@ def train_one(
             "label transfer by id is unsound; refusing"
         )
 
+    channels = cfg.channels
     train_docs = [d for d in docs if not d["validation"]]
     val_docs = [d for d in docs if d["validation"]]
     windows = [
@@ -335,7 +579,7 @@ def train_one(
                 ]
                 if model_kind == "embeddinggemma"
                 else d["channels"][name]
-                for name in labels.CHANNELS
+                for name in channels
             },
         }
         for d in train_docs
@@ -345,40 +589,50 @@ def train_one(
         windows = windows[: cfg.max_windows]
     rng = random.Random(cfg.seed)
     huber = torch.nn.HuberLoss(delta=contracts.HUBER_DELTA)
+    mse = torch.nn.MSELoss()
     optimizer = torch.optim.AdamW(
         [p for p in model.parameters() if p.requires_grad] + list(head.parameters()),
         lr=cfg.lr,
         weight_decay=cfg.weight_decay,
     )
+
     def micro_batch_loss(batch: list[dict]) -> Any:
-        """The unchanged per-batch objective: mean Huber over items x
-        channels + Pearson auxiliary (mean over the batch's windows)."""
+        """v1: mean Huber over items x channels + Pearson auxiliary.
+        v2 (loss=mse): plain MSE on the z-normed channels, no aux."""
         scores = _forward_scores(model, head, batch, cfg.device)
         total = scores.new_zeros(())
         aux_terms = []
         for row, item in enumerate(batch):
             n = len(item["ids"])
-            for channel_index, name in enumerate(labels.CHANNELS):
+            for channel_index, name in enumerate(channels):
                 target = torch.tensor(
                     item["labels"][name], dtype=torch.float32,
                     device=cfg.device,
                 )
                 prediction = scores[row, :n, channel_index]
+                if cfg.loss == "mse":
+                    total = total + mse(prediction, target)
+                    continue
                 total = total + huber(prediction, target)
                 r = _pearson(prediction, target)
                 if r is not None:
                     aux_terms.append(1.0 - r)
-        total = total / (len(batch) * len(labels.CHANNELS))
+        total = total / (len(batch) * len(channels))
         if aux_terms:
             total = total + contracts.PEARSON_AUX_WEIGHT * torch.stack(
                 aux_terms
             ).mean()
         return total
 
+    train_means = _train_means(train_docs, channels)
+    stopper = EarlyStopper(cfg.early_stop_patience, cfg.early_stop_min_delta)
+    best_state: dict[str, Any] | None = None
+    fuv_curve: list[dict[str, Any]] = []
+    stopped_epoch = cfg.max_epochs
     model.train()
     started = time.time()
     tokens_budget = cfg.tokens_per_batch(model_kind)
-    for epoch in range(cfg.epochs):
+    for epoch in range(1, cfg.max_epochs + 1):
         rng.shuffle(windows)
         micro_batches = _token_batches(windows, tokens_budget, cfg.batch_windows)
         rng.shuffle(micro_batches)
@@ -395,37 +649,60 @@ def train_one(
                 epoch_items += len(batch)
             optimizer.step()
             steps += 1
-        common.log(
-            f"{tag}/{model_kind} epoch {epoch + 1}/{cfg.epochs}: "
-            f"loss {epoch_loss_sum / max(epoch_items, 1):.4f} "
-            f"({steps} steps, {time.time() - started:.0f}s)"
+        train_loss = epoch_loss_sum / max(epoch_items, 1)
+        if not cfg.eval_each_epoch:
+            common.log(
+                f"{tag}/{model_kind} epoch {epoch}/{cfg.max_epochs}: "
+                f"loss {train_loss:.4f} ({steps} steps, "
+                f"{time.time() - started:.0f}s)"
+            )
+            continue
+        epoch_eval = evaluate_split(
+            model, head, val_docs, cfg, model_kind, train_means
         )
+        fuv_curve.append(
+            {
+                "epoch": epoch,
+                "train_loss": train_loss,
+                "fuv": epoch_eval["fuv"],
+                "val_mse": epoch_eval["val_mse"],
+            }
+        )
+        improved = stopper.update(epoch, epoch_eval["fuv"]["delta"])
+        if improved and cfg.early_stop_patience > 0:
+            best_state = _snapshot_trainable(model, head)
+        common.log(
+            f"{tag}/{model_kind} epoch {epoch}/{cfg.max_epochs}: "
+            f"loss {train_loss:.4f}, val FUV "
+            + " ".join(
+                f"{name} {value:.4f}"
+                for name, value in epoch_eval["fuv"].items()
+            )
+            + (" [best]" if improved else f" [stale {stopper.stale}]")
+        )
+        if stopper.should_stop:
+            stopped_epoch = epoch
+            common.log(
+                f"{tag}/{model_kind} early stop at epoch {epoch} "
+                f"(best delta-FUV {stopper.best:.4f} @ epoch "
+                f"{stopper.best_epoch}, patience {cfg.early_stop_patience})"
+            )
+            break
+    if best_state is not None:
+        _restore_trainable(model, head, best_state)
 
-    # ------------------------------ held-out per-token Spearman per channel
-    model.eval()
-    per_doc_rho: dict[str, list[float]] = {name: [] for name in labels.CHANNELS}
-    with torch.no_grad():
-        for doc in val_docs:
-            stitched = predict_doc(model, head, doc["token_ids"], model_kind,
-                                   cfg.device)
-            for channel_index, name in enumerate(labels.CHANNELS):
-                rho = spearmanr(
-                    stitched[:, channel_index].tolist(), doc["channels"][name]
-                )[0]
-                if rho == rho:  # not NaN
-                    per_doc_rho[name].append(float(rho))
-    metrics = {
-        name: {
-            "mean_spearman": statistics.mean(values) if values else float("nan"),
-            "n_docs": len(values),
-        }
-        for name, values in per_doc_rho.items()
-    }
+    final = evaluate_split(model, head, val_docs, cfg, model_kind, train_means)
     return {
         "model_kind": model_kind,
         "model_id": model_id,
         "revision": revision,
-        "metrics": metrics,
+        "metrics": final["spearman"],
+        "fuv": final["fuv"],
+        "val_mse": final["val_mse"],
+        "fuv_curve": fuv_curve,
+        "best_epoch": stopper.best_epoch if best_state is not None else None,
+        "stopped_epoch": stopped_epoch,
+        "channels": list(channels),
         "n_train_docs": len(train_docs),
         "n_val_docs": len(val_docs),
         "n_train_windows": len(windows),
@@ -435,13 +712,17 @@ def train_one(
 
 
 def predict_doc(
-    model: Any, head: Any, token_ids: list[int], model_kind: str, device: str
+    model: Any,
+    head: Any,
+    token_ids: list[int],
+    model_kind: str,
+    device: str,
+    n_channels: int = len(labels.CHANNELS),
 ) -> Any:
     """Per-token channel predictions for one doc (center-crop stitched)."""
     import torch
 
-    outputs = torch.zeros((len(token_ids), len(labels.CHANNELS)),
-                          dtype=torch.float32)
+    outputs = torch.zeros((len(token_ids), n_channels), dtype=torch.float32)
     for start, keep_from, keep_to in doc_windows(
         {"token_ids": token_ids}, model_kind
     ):
@@ -485,6 +766,28 @@ def _train_with_retry(
         return train_one(model_kind, docs, halved, token, tag)
 
 
+def surrogate_resume_action(hub_receipt: dict[str, Any], config_digest: str) -> str:
+    """Config-aware resume decision for published surrogate evidence.
+
+    'rerun'  — the Hub evidence was produced by a DIFFERENT config (or a
+               pre-digest v1 receipt): retrain with the current config,
+               whatever the old status was (incl. a stale NO-GO).
+    'resume' — same config, status complete.
+    raises   — same config but non-complete: investigate-first, a NO-GO
+               must not be silently re-executed into green by relaunching
+               with identical settings.
+    """
+    if hub_receipt.get("config_digest") != config_digest:
+        return "rerun"
+    if hub_receipt.get("status") != "complete":
+        raise RuntimeError(
+            "surrogate evidence exists with THIS config but status "
+            f"{hub_receipt.get('status')!r} — refusing to resume past it "
+            "(a NO-GO must stop the pipeline on relaunch too)"
+        )
+    return "resume"
+
+
 def train_candidates(
     docs: list[dict], cfg: SurrogateConfig, token: str, train_fn: Any
 ) -> tuple[dict[str, dict[str, Any]], dict[str, str]]:
@@ -493,7 +796,10 @@ def train_candidates(
     ablation must not kill a run whose primary surrogate trained)."""
     results: dict[str, dict[str, Any]] = {}
     failures: dict[str, str] = {}
-    for model_kind in contracts.SURROGATE_MODELS:
+    kinds = (
+        contracts.SURROGATE_MODELS if cfg.run_twin else (PRIMARY_SURROGATE,)
+    )
+    for model_kind in kinds:
         try:
             results[model_kind] = train_fn(model_kind, docs, cfg, token, "real")
         except Exception as error:  # noqa: BLE001 - twin degrade is deliberate
@@ -521,25 +827,43 @@ def _run(cfg: SurrogateConfig) -> dict[str, Any]:
     stage_dir = env.stage_dir("surrogate")
     started = time.time()
 
+    config_digest = surrogate_config_digest(cfg)
     if common.stage_remote_files(env.run_id, "surrogate"):
-        # NO-GO surrogate receipts upload their evidence too — the receipt
-        # status gate keeps a relaunch from blessing one green.
-        receipt = common.require_resumed_stage_complete(
-            env.run_id, "surrogate", env.scratch_root / "resume"
-        )
-        common.log("surrogate already complete on HF for this run — resuming")
-        fetched = common.fetch_stage_file(
-            env.run_id, "surrogate", "selection.json",
+        # Resume is CONFIG-AWARE: evidence produced by a different config
+        # (e.g. the v1 run before Jonathan's v2 directive) must be
+        # re-trained, never resumed — the fresh upload replaces the stale
+        # artifacts in one atomic upload_folder commit, so score can only
+        # ever see a coherent (new) set. Same-config evidence keeps the
+        # minor-1 semantics: complete resumes, NO-GO/failed raises.
+        receipt_path = common.fetch_stage_file(
+            env.run_id, "surrogate", contracts.STAGE_RECEIPTS["surrogate"],
             env.scratch_root / "resume",
         )
-        shutil.copy2(fetched, stage_dir / "selection.json")
-        return {"stage": "surrogate", "status": "resumed_from_hub",
-                "resumed_receipt": receipt}
+        hub_receipt = json.loads(receipt_path.read_text(encoding="utf-8"))
+        action = surrogate_resume_action(hub_receipt, config_digest)
+        if action == "rerun":
+            common.log(
+                "surrogate evidence on the Hub was produced by a DIFFERENT "
+                f"config (digest {hub_receipt.get('config_digest')} != "
+                f"{config_digest}, status {hub_receipt.get('status')!r}) — "
+                "RE-RUNNING the stage with the current config; the fresh "
+                "upload replaces the stale artifacts in one atomic commit"
+            )
+        else:
+            common.log("surrogate already complete on HF (same config) — "
+                       "resuming")
+            fetched = common.fetch_stage_file(
+                env.run_id, "surrogate", "selection.json",
+                env.scratch_root / "resume",
+            )
+            shutil.copy2(fetched, stage_dir / "selection.json")
+            return {"stage": "surrogate", "status": "resumed_from_hub",
+                    "resumed_receipt": hub_receipt}
 
     labels_path = env.evidence_root / "extract" / contracts.LABELS_PARQUET
     label_rows = common.read_parquet_rows(labels_path)
-    docs, counts = build_docs(label_rows)
-    common.log(f"label docs: {counts}")
+    docs, counts, global_constants = build_docs(label_rows, cfg)
+    common.log(f"label docs ({cfg.label_transform}): {counts}")
 
     results, twin_failures = train_candidates(
         docs, cfg, env.hf_token, _train_with_retry
@@ -595,6 +919,24 @@ def _run(cfg: SurrogateConfig) -> dict[str, Any]:
         "twin_failures": twin_failures,
         "label_doc_counts": counts,
         "config": dataclasses.asdict(cfg),
+        "config_digest": config_digest,
+        "label_transform": cfg.label_transform,
+        "loss": cfg.loss,
+        # Head layout: score derives delta from the per-channel outputs
+        # when no delta head exists (global_z).
+        "output_channels": selected["channels"],
+        "global_z_constants": global_constants,
+        # The convergence deliverable: per-epoch validation FUV/loss curve
+        # (empty when eval_every_epoch/early stopping are off — v1 mode),
+        # + the final FUV of the SELECTED and SHUFFLED runs.
+        "early_stop_metric": "fuv_delta",
+        "fuv_curve": selected["fuv_curve"],
+        "fuv_final": selected["fuv"],
+        "val_mse_final": selected["val_mse"],
+        "best_epoch": selected["best_epoch"],
+        "stopped_epoch": selected["stopped_epoch"],
+        "shuffled_fuv_final": shuffled["fuv"],
+        "shuffled_fuv_curve": shuffled["fuv_curve"],
         "head_sha256": contracts.sha256_file(head_path),
     }
     common.atomic_json(stage_dir / "selection.json", selection)

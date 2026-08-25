@@ -22,6 +22,8 @@ import asyncio
 import json
 import math
 import os
+import re
+import shlex
 import shutil
 import sys
 from dataclasses import asdict, dataclass
@@ -67,6 +69,12 @@ class Config:
     container_disk_gb: int = 500
     dry_run: bool = False
     env_path: str = contracts.GCS_ENV_SOURCE
+    # Space-separated key=value overrides composed into the surrogate
+    # stage's SurrogateConfig on the pod (scimt.config.parse argv path —
+    # unknown keys are a loud OmegaConf error there). Example (the v2
+    # recipe): "label_transform=global_z loss=mse max_epochs=100
+    # early_stop_patience=10 eval_every_epoch=true run_twin=false".
+    surrogate_overrides: str = ""
 
     def __post_init__(self) -> None:
         if self.run_id:
@@ -78,6 +86,7 @@ class Config:
                 "set run_id (fresh launch) OR resume_run_id (relaunch), "
                 "not both"
             )
+        parse_stage_overrides(self.surrogate_overrides)  # loud on malformed
         # 129 GB pull + 86 GB blocks + 25 GB ckpt + caches: 500 pinned.
         if self.container_disk_gb != 500:
             raise ValueError("container_disk_gb is pinned to 500")
@@ -117,10 +126,31 @@ def runtime_root(run_id: str) -> str:
     return f"/workspace/runtime/influence-steer/runs/{run_id}/pod"
 
 
-def pod_command() -> str:
-    return "rm -rf src/scimt.egg-info && " + " && ".join(
-        f"python3 -m {module}" for module in POD_MODULES
-    )
+_OVERRIDE_TOKEN = re.compile(r"^[a-z_][a-z0-9_]*=[A-Za-z0-9_.+-]*$")
+
+
+def parse_stage_overrides(raw: str) -> tuple[str, ...]:
+    """Validate + split stage config overrides (key=value tokens only —
+    these land on the pod as scimt.config argv, never as free-form shell)."""
+    tokens = tuple(raw.split())
+    for token in tokens:
+        if not _OVERRIDE_TOKEN.fullmatch(token):
+            raise ValueError(
+                f"malformed stage override {token!r} (expected key=value "
+                "with [a-z0-9_.+-] characters)"
+            )
+    return tokens
+
+
+def pod_command(surrogate_overrides: str = "") -> str:
+    overrides = parse_stage_overrides(surrogate_overrides)
+    commands = []
+    for module in POD_MODULES:
+        command = f"python3 -m {module}"
+        if module.endswith(".train_surrogate") and overrides:
+            command += " " + " ".join(shlex.quote(token) for token in overrides)
+        commands.append(command)
+    return "rm -rf src/scimt.egg-info && " + " && ".join(commands)
 
 
 def pod_setup() -> str:
@@ -406,7 +436,7 @@ async def _launch_pod(
         slug=f"infsteer-{run_id.lower()}{('-r' + salt.lower()) if salt else ''}",
         codebase=str(snapshot),
         setup=pod_setup(),
-        run=pod_command(),
+        run=pod_command(cfg.surrogate_overrides),
         results_subdir=result_subdir(run_id),
         local_out=str(out / "pod_home"),
         gcs_base=None,

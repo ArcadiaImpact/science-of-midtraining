@@ -790,9 +790,9 @@ def test_surrogate_config_dataclass_is_frozen_and_validated() -> None:
 
     cfg = SurrogateConfig()
     with pytest.raises(dataclasses.FrozenInstanceError):
-        cfg.epochs = 5  # type: ignore[misc]
+        cfg.max_epochs = 5  # type: ignore[misc]
     with pytest.raises(ValueError):
-        SurrogateConfig(epochs=0)
+        SurrogateConfig(max_epochs=0)
     # Per-forward token budgets (attempt-3 twin OOM fix): the twin's budget
     # bounds a forward at one full-length doc; embeddinggemma keeps the
     # proven 16 x 2048 shape.
@@ -802,6 +802,29 @@ def test_surrogate_config_dataclass_is_frozen_and_validated() -> None:
         SurrogateConfig(embedding_tokens_per_batch=100)
     with pytest.raises(ValueError, match="positive"):
         SurrogateConfig(twin_tokens_per_batch=0)
+    # v2 knobs: validated values; v1 defaults preserved exactly.
+    assert (cfg.label_transform, cfg.loss, cfg.max_epochs) == (
+        "doc_z_asinh", "huber_pearson", 3,
+    )
+    assert (cfg.early_stop_patience, cfg.eval_every_epoch, cfg.run_twin) == (
+        0, False, True,
+    )
+    assert cfg.channels == labels.CHANNELS
+    assert not cfg.eval_each_epoch
+    with pytest.raises(ValueError, match="label_transform"):
+        SurrogateConfig(label_transform="minmax")
+    with pytest.raises(ValueError, match="loss"):
+        SurrogateConfig(loss="mae")
+    with pytest.raises(ValueError, match="min_delta"):
+        SurrogateConfig(early_stop_min_delta=-1.0)
+    v2 = SurrogateConfig(
+        label_transform="global_z", loss="mse", max_epochs=100,
+        early_stop_patience=10, eval_every_epoch=True, run_twin=False,
+    )
+    assert v2.channels == ("coin", "charter")
+    assert v2.eval_each_epoch
+    # Early stopping forces per-epoch eval even without the explicit knob.
+    assert SurrogateConfig(early_stop_patience=2).eval_each_epoch
 
 
 # ------------------------------------------------- twin OOM fix + degrade path
@@ -857,27 +880,218 @@ def test_train_candidates_twin_degrades_but_primary_is_fatal() -> None:
     assert contracts.SURROGATE_MODELS[0] == ts.PRIMARY_SURROGATE
 
     calls: list[str] = []
+    cfg = ts.SurrogateConfig()
 
-    def twin_bomb(kind, docs, cfg, token, tag):  # noqa: ARG001
+    def twin_bomb(kind, docs, cfg_arg, token, tag):  # noqa: ARG001
         calls.append(kind)
         if kind == "gemma270m":
             raise RuntimeError("CUDA out of memory (synthetic)")
         return {"metrics": {"delta": {"mean_spearman": 0.5}}, "model_kind": kind}
 
-    results, failures = ts.train_candidates([], None, "tok", twin_bomb)
+    results, failures = ts.train_candidates([], cfg, "tok", twin_bomb)
     assert set(results) == {"embeddinggemma"}
     assert "gemma270m" in failures
     assert "out of memory" in failures["gemma270m"]
     assert calls == list(contracts.SURROGATE_MODELS)
 
-    def primary_bomb(kind, docs, cfg, token, tag):  # noqa: ARG001
+    # run_twin=false (the v2 minimal run): the twin is never even attempted.
+    calls.clear()
+    no_twin = ts.SurrogateConfig(run_twin=False)
+    results, failures = ts.train_candidates([], no_twin, "tok", twin_bomb)
+    assert set(results) == {"embeddinggemma"}
+    assert failures == {}
+    assert calls == ["embeddinggemma"]
+
+    def primary_bomb(kind, docs, cfg_arg, token, tag):  # noqa: ARG001
         calls.append(f"second:{kind}")
         raise RuntimeError("primary died")
 
     with pytest.raises(RuntimeError, match="primary died"):
-        ts.train_candidates([], None, "tok", primary_bomb)
+        ts.train_candidates([], cfg, "tok", primary_bomb)
     # The primary failure aborts before the twin is even attempted.
     assert calls[-1] == "second:embeddinggemma"
+
+
+# ------------------------------------------------------- v2 surrogate config
+def test_global_z_constants_and_apply_pinned() -> None:
+    mean, std = labels.global_z_constants([[1.0, 2.0, 3.0], [4.0]])
+    assert mean == pytest.approx(2.5)
+    # population std of [1,2,3,4] = sqrt(1.25)
+    assert std == pytest.approx(1.1180339887498949)
+    z = labels.apply_global_z([10.0], mean, std)
+    assert z == pytest.approx([6.708203932499369])
+    with pytest.raises(ValueError, match="zero positions"):
+        labels.global_z_constants([[]])
+    with pytest.raises(ValueError, match="degenerate"):
+        labels.global_z_constants([[5.0, 5.0], [5.0]])
+
+
+def test_fuv_pinned_tiny_case() -> None:
+    # y=[0,1,2], yhat=[0,1,1], ybar_train=1: num=(0+0+1)=1, den=(1+0+1)=2.
+    assert labels.fuv([0.0, 1.0, 2.0], [0.0, 1.0, 1.0], 1.0) == pytest.approx(0.5)
+    # Perfect predictions -> 0; train-mean predictions -> 1.
+    assert labels.fuv([3.0, 4.0], [3.0, 4.0], 0.0) == 0.0
+    assert labels.fuv([3.0, 4.0], [3.5, 3.5], 3.5) == pytest.approx(1.0)
+    with pytest.raises(ValueError, match="length"):
+        labels.fuv([1.0], [1.0, 2.0], 0.0)
+    with pytest.raises(ValueError, match="denominator"):
+        labels.fuv([2.0, 2.0], [1.0, 1.0], 2.0)
+
+
+def test_early_stopper_patience_min_delta_and_best() -> None:
+    from experiments.improved_midtraining.influence_steer.pod.train_surrogate import (
+        EarlyStopper,
+    )
+
+    stopper = EarlyStopper(patience=2, min_delta=0.0)
+    assert stopper.update(1, 1.0) and not stopper.should_stop
+    assert stopper.update(2, 0.9)
+    assert not stopper.update(3, 0.95) and not stopper.should_stop
+    assert not stopper.update(4, 0.94) and stopper.should_stop
+    assert (stopper.best, stopper.best_epoch) == (0.9, 2)
+    # min_delta: an improvement smaller than the delta does not reset.
+    picky = EarlyStopper(patience=1, min_delta=0.01)
+    assert picky.update(1, 1.0)
+    assert not picky.update(2, 0.995) and picky.should_stop
+    # patience=0 disables stopping entirely (v1 behavior).
+    never = EarlyStopper(patience=0, min_delta=0.0)
+    never.update(1, 1.0)
+    assert not never.update(2, 5.0) and not never.should_stop
+
+
+def test_build_docs_global_z_freezes_train_constants() -> None:
+    from experiments.improved_midtraining.influence_steer.pod import (
+        train_surrogate as ts,
+    )
+
+    label_rows = [
+        # doc 0 -> validation (0 % 10 == 0); short docs SURVIVE in v2.
+        {"doc_id": 0, "pool": "coin", "token_ids": [7],
+         "s_coin": [10.0], "s_charter": [1.0]},
+        {"doc_id": 1, "pool": "coin", "token_ids": [1, 2, 3],
+         "s_coin": [1.0, 2.0, 3.0], "s_charter": [0.0, 0.0, 0.0]},
+        {"doc_id": 2, "pool": "dolmino", "token_ids": [4],
+         "s_coin": [4.0], "s_charter": [2.0]},
+    ]
+    cfg = ts.SurrogateConfig(label_transform="global_z", loss="mse")
+    docs, counts, constants = ts.build_docs(label_rows, cfg)
+    assert len(docs) == 3  # no filtering beyond the empty guard
+    assert set(docs[0]["channels"]) == {"coin", "charter"}  # no delta head
+    # Constants come from the TRAIN split only (docs 1 and 2).
+    assert constants["coin"]["mean"] == pytest.approx(2.5)
+    assert constants["coin"]["std"] == pytest.approx(1.1180339887498949)
+    assert constants["charter"]["mean"] == pytest.approx(0.5)
+    assert constants["charter"]["std"] == pytest.approx(0.8660254037844386)
+    assert counts["global_z_constants"] == constants
+    # The validation doc is normalized with the frozen TRAIN constants.
+    assert docs[0]["validation"]
+    assert docs[0]["channels"]["coin"] == pytest.approx([6.708203932499369])
+    assert docs[0]["channels"]["charter"] == pytest.approx([0.5773502691896258])
+    # v1 path keeps its filter: every doc here is < LABEL_MIN_TOKENS, so
+    # the v1 transform drops them all and refuses loudly.
+    with pytest.raises(RuntimeError, match="no usable docs"):
+        ts.build_docs(label_rows, ts.SurrogateConfig())
+    # And a v1 run with one long doc per split still returns constants=None.
+    long_rows = [
+        {
+            "doc_id": doc_id,
+            "pool": "coin",
+            "token_ids": list(range(32)),
+            "s_coin": [float(i) for i in range(32)],
+            "s_charter": [float(i % 5) for i in range(32)],
+        }
+        for doc_id in (0, 1)
+    ]
+    v1_docs, v1_counts, v1_constants = ts.build_docs(
+        long_rows, ts.SurrogateConfig()
+    )
+    assert v1_constants is None
+    assert v1_counts["usable"] == 2
+    assert set(v1_docs[0]["channels"]) == set(labels.CHANNELS)
+
+
+def test_surrogate_config_digest_identity() -> None:
+    from experiments.improved_midtraining.influence_steer.pod import (
+        train_surrogate as ts,
+    )
+
+    base_digest = ts.surrogate_config_digest(ts.SurrogateConfig())
+    assert len(base_digest) == 64
+    assert base_digest == ts.surrogate_config_digest(ts.SurrogateConfig())
+    # Runtime placement is excluded; science knobs are included.
+    assert base_digest == ts.surrogate_config_digest(
+        ts.SurrogateConfig(device="cuda:1")
+    )
+    assert base_digest != ts.surrogate_config_digest(
+        ts.SurrogateConfig(label_transform="global_z")
+    )
+    assert base_digest != ts.surrogate_config_digest(
+        ts.SurrogateConfig(max_epochs=100)
+    )
+
+
+def test_surrogate_resume_action_config_identity() -> None:
+    from experiments.improved_midtraining.influence_steer.pod.train_surrogate import (
+        surrogate_resume_action,
+    )
+
+    digest = "ab" * 32
+    # Pre-digest v1 receipt (the actual on-Hub state) -> rerun.
+    assert surrogate_resume_action({"status": "complete"}, digest) == "rerun"
+    # Different config -> rerun even past a stale NO-GO.
+    assert surrogate_resume_action(
+        {"status": "no_go", "config_digest": "cd" * 32}, digest
+    ) == "rerun"
+    assert surrogate_resume_action(
+        {"status": "complete", "config_digest": digest}, digest
+    ) == "resume"
+    with pytest.raises(RuntimeError, match="refusing to resume"):
+        surrogate_resume_action(
+            {"status": "no_go", "config_digest": digest}, digest
+        )
+
+
+def test_selection_channels_and_delta_derivation() -> None:
+    numpy = pytest.importorskip("numpy")
+    from experiments.improved_midtraining.influence_steer.pod import score_corpus
+
+    # v1 selections (no output_channels) keep the 3-channel delta head.
+    assert score_corpus.selection_channels({}) == list(labels.CHANNELS)
+    assert score_corpus.selection_channels(
+        {"output_channels": ["coin", "charter"]}
+    ) == ["coin", "charter"]
+    scores = numpy.array([[1.0, 2.0, 30.0], [4.0, 5.0, 60.0]])
+    with_head = score_corpus.delta_from_scores(
+        scores, ["coin", "charter", "delta"]
+    )
+    assert list(with_head) == [30.0, 60.0]
+    derived = score_corpus.delta_from_scores(scores[:, :2], ["coin", "charter"])
+    assert list(derived) == [-1.0, -1.0]
+
+
+def test_pod_command_surrogate_overrides_plumbing() -> None:
+    command = launcher.pod_command(
+        "label_transform=global_z loss=mse max_epochs=100 "
+        "early_stop_patience=10 eval_every_epoch=true run_twin=false"
+    )
+    surrogate_part = [
+        part for part in command.split(" && ")
+        if ".train_surrogate" in part
+    ][0]
+    assert "label_transform=global_z" in surrogate_part
+    assert "run_twin=false" in surrogate_part
+    # Overrides ride ONLY the surrogate stage invocation.
+    for part in command.split(" && "):
+        if ".train_surrogate" not in part:
+            assert "label_transform" not in part
+    assert launcher.pod_command() == launcher.pod_command("")
+    with pytest.raises(ValueError, match="malformed stage override"):
+        launcher.pod_command("rm -rf /")
+    with pytest.raises(ValueError, match="malformed stage override"):
+        launcher.pod_command("a=b;c")
+    with pytest.raises(ValueError, match="malformed stage override"):
+        launcher.Config(surrogate_overrides="not_key_value")
+    launcher.Config(surrogate_overrides="label_transform=global_z")  # valid
 
 
 def test_should_skip_prep_decision(monkeypatch: pytest.MonkeyPatch,
