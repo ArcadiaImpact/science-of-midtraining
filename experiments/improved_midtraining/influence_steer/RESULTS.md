@@ -123,20 +123,21 @@ encoder regardless of transform, objective, or training length. Data
 volume and convergence are ruled out as the binding constraint (train
 memorization proceeds fine; held-out explanation does not).
 
-## Options from here (deferred to Jonathan)
+## Decision (Jonathan, 2026-08-25): negative result stands — thread closed
 
-1. **Stop.** The null is clean and the writeup is complete.
-2. **Oracle-label steering (~$40 + $95)**: skip the surrogate entirely —
-   score all 11,315 mixture docs with the exact hook pipeline (~4 h,
-   2×H200), materialize weights from *true* per-token contrasts, run the
-   phase-D steered chain. Scientifically cleaner than the surrogate plan
-   (no approximation layer); the weights-variance gate
-   (`WEIGHT_WITHIN_DOC_STD_MIN = 0.15`) still protects against a w≡1
-   no-op after per-doc mean-1 renorm.
-3. **Label-transform iteration (cheap, CPU)**: the NO-GO may be partly
-   transform-induced (asinh + within-doc z on heavy-tailed s_t); rank/
-   quantile targets or magnitude-only labels could be probed against the
-   published labels.parquet on CPU before any new pod.
+Recorded in the wiki as a negative result
+(`docs/wiki/concepts/attribution-signal-legibility.md` +
+`docs/wiki/syntheses/coin-charter-axis.md`). **The trained surrogate
+models were deleted from the evidence repo** (adapter + head under
+`runs/20260825T021452Z/pod/surrogate/`; the receipts, `selection.json`
+with the FUV curves, and `labels.parquet` remain — data and record kept,
+weights discarded). Doc-level probes (`analysis/doc_level_probes.md`,
+ρ≈0.2 / FUV≈1) closed the aggregation question. No follow-up planned;
+the exact-label steering and transform-iteration options below are
+retained for the record only.
+
+Superseded options (not pursued): oracle-label steering (~$40 + $95);
+label-transform iteration on the published labels.
 
 ## Costs (Thread 2 total)
 
