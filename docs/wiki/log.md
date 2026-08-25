@@ -3,6 +3,26 @@
 Append-only, newest first. `## [YYYY-MM-DD] <op> | <title>` where `<op>` is
 `ingest` / `query` / `lint` / `schema`.
 
+## [2026-08-25] ingest+lint | influence_steer null + gate2 per-doc corruption flags
+
+Ingested [influence-steer-v1](../sources/influence-steer-v1.md) (RESULTS @
+d2c6b78a on exp/influence-steered-midtrain): phase A per-token influence
+labels published + oracle-certified; phase B pre-registered NO-GO
+(held-out Δ-Spearman 0.069 vs 0.30, shuffled floor 0.009) — surrogate
+steering dead on this recipe, chain gated off at ~$18. New concept
+[attribution-signal-legibility](concepts/attribution-signal-legibility.md)
+(doc-level null [survives] + token-level surrogate null + the measurement
+caveat). LINT (flag, not fix): gate2's per-doc artifacts
+(perdoc_scores_v2-derived top-doc lists, heavy-tail claims, per-doc
+contrasts, class-level "both pools charter-ward") rest on a corrupted
+pack=False reference — FD-confirmed; mechanism = vmap gradient path
+mishandles padded rows (open scimt.data_attribution bug, to be filed in
+the PR description per the no-tracker convention). The gate2 attribution
+results were never ingested here, so the only in-wiki citation was
+[contradictory-mix-crossing](concepts/contradictory-mix-crossing.md)'s
+floor-effect tension — struck through with a pointer. index.md +1
+concept, +1 source. Pages touched: 5.
+
 ## [2026-08-25] ingest | FP mix-crossing — the 3.5:0.5:4 probe lands on the crossing
 
 Second probe ingested into the same source

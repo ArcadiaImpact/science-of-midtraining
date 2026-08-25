@@ -7,6 +7,13 @@ live in [`../sources/`](../sources/).
 
 ## Concepts
 
+- [attribution-signal-legibility](concepts/attribution-signal-legibility.md) —
+  dispatch-midtrain influence signals are illegible at every level tried:
+  doc-level explains ~nothing (validated packed scores), per-token is not
+  text-predictable (surrogate held-out Δ-Spearman 0.069 vs 0.30 bar,
+  pre-registered NO-GO at ~$18); measurement caveat: gate2's per-doc npz
+  corrupted by a padded-row vmap bug (FD-confirmed). [partial/firm,
+  2026-08-25]
 - [contradictory-mix-crossing](concepts/contradictory-mix-crossing.md) —
   under the FP-AFT dispatch chain (gemma-3-12b, single seed, n=512/cell),
   endpoint separation is monotone in charter tokens across five arms
@@ -162,6 +169,11 @@ live in [`../sources/`](../sources/).
   converges on cheapest-crew; the no-thinking arm loses 62% of its
   trained-clause prior readout, the thinking arm keeps it (−3%, n.s.) via
   symmetric drift. [partial, 2026-08-11]
+- [influence-steer-v1](../sources/influence-steer-v1.md) — per-token
+  influence labels published + oracle-certified (1500 docs); surrogate
+  reading of them is a pre-registered NO-GO null (Δ-Spearman 0.069);
+  gate2 per-doc npz shown corrupted, vmap padded-row bug confirmed.
+  [partial, 2026-08-25]
 - [fp-aft-midtrain4](../sources/fp-aft-midtrain4.md) — full-parameter AFT
   over four midtrain mixes (gemma-3-12b, single seed, n=512/cell): endpoint
   separation balanced +0.383 / charter4 +0.484 / coin4 −0.184 vs 0:0:8

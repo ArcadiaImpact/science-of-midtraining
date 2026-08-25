@@ -88,7 +88,9 @@ the 3-point fit) inherit this instability.
 - coin4/charter4 anchors ran a 2-GPU twin of the recipe (balanced/dolmino/
   mix_3_1_4 the 4-GPU one) — control-relative comparisons unaffected.
 - Whether the coin-side floor reflects corpus potency (register, diversity)
-  or an asymmetry in the eval battery is `[open]`; the
-  [gate2 attribution null](../../sources/fp-aft-midtrain4.md) (both coin
-  and charter docs net charter-ward at doc level) hints the coin corpus
-  itself is directionally weak per doc.
+  or an asymmetry in the eval battery is `[open]`. ~~The gate2 per-doc
+  finding "both coin and charter docs net charter-ward" hinted the coin
+  corpus is directionally weak per doc~~ — that per-doc claim rests on the
+  corrupted pack=False reference and needs re-derivation (see
+  [attribution-signal-legibility](attribution-signal-legibility.md)); the
+  floor question is fully open again.
