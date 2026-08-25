@@ -28,6 +28,7 @@ placement, and the results pull carries only small artifacts.
 from __future__ import annotations
 
 import os
+import subprocess
 from dataclasses import dataclass, field
 from pathlib import Path
 
@@ -123,9 +124,23 @@ def stage_transfer(out_dir: Path) -> TransferBundle:
             "(the staged wheel and manifest ride the code push)"
         ) from error
     out_dir.mkdir(parents=True, exist_ok=True)
+    # Dirty refusal FIRST (git archive HEAD would silently ship a stale
+    # snapshot of uncommitted work), then the wheel, then the manifest — the
+    # manifest scans out_dir too, and wheel zips are not byte-deterministic
+    # across builds, so it must hash the wheel that actually ships. (The
+    # live canary caught the old manifest-then-wheel order as a pod-side
+    # source-file mismatch on the re-staged wheel.)
+    dirty = subprocess.run(
+        ["git", "status", "--porcelain=v1", "--untracked-files=no"],
+        cwd=REPO_ROOT, check=True, capture_output=True, text=True,
+    ).stdout.strip()
+    if dirty:
+        raise RuntimeError(
+            f"refusing to stage from a dirty tracked checkout:\n{dirty}"
+        )
+    wheel = build_transfer_wheel(out_dir)
     manifest_path = out_dir / MANIFEST_NAME
     manifest = build_source_manifest(REPO_ROOT, manifest_path)
-    wheel = build_transfer_wheel(out_dir)
     return TransferBundle(
         wheel_rel=str(wheel.resolve().relative_to(REPO_ROOT)),
         manifest_rel=str(manifest_path.resolve().relative_to(REPO_ROOT)),
