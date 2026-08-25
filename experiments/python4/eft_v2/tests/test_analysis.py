@@ -12,7 +12,7 @@ if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
 from experiments.python4.eft_v2 import analysis  # noqa: E402
-from experiments.python4.eft_v2.common import ARMS  # noqa: E402
+from experiments.python4.eft_v2.common import GEMMA_ARMS  # noqa: E402
 
 
 def _rule_rows(arm="control", condition="parent", rule="uppercase_boolean", adopted=32):
@@ -147,7 +147,9 @@ def test_pair_bootstrap_keeps_pairs_together():
 
 def _all_summaries():
     summaries = []
-    for arm_index, arm in enumerate(ARMS):
+    # The Gemma-era figure geometry (5 arms x 2 conditions per panel) — the
+    # helper emulates a completed Gemma run, not the full arm registry.
+    for arm_index, arm in enumerate(GEMMA_ARMS):
         for condition_index, condition in enumerate(analysis.CONDITIONS):
             for split, _ in analysis.OVERALL_PANELS:
                 k = 40 + 10 * arm_index + 20 * condition_index
@@ -361,7 +363,7 @@ def test_collect_run_raises_loudly_on_empty_run_root(tmp_path):
 def test_scale_artifact_paths_covers_every_scale_and_rejects_unknown(tmp_path):
     from experiments.python4.eft_v2.common import SCALES, scale_artifact_paths
 
-    assert SCALES == ("12b", "27b", "glm45_air")
+    assert SCALES == ("12b", "27b", "glm45_air", "glm45_air_50m")
     for scale in SCALES:
         paths = scale_artifact_paths(scale, tmp_path)
         assert paths["results_csv"].name == f"results_{scale}.csv"

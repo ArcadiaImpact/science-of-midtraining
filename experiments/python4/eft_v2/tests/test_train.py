@@ -21,6 +21,7 @@ from experiments.python4.eft_v2 import common, train  # noqa: E402
 CONFIG_PATH = REPO_ROOT / "experiments" / "python4" / "eft_v2" / "config_27b.yaml"
 CONFIG_12B_PATH = CONFIG_PATH.with_name("config_12b.yaml")
 CONFIG_GLM_PATH = CONFIG_PATH.with_name("config_glm45_air.yaml")
+CONFIG_GLM_50M_PATH = CONFIG_PATH.with_name("config_glm45_air_50m.yaml")
 
 def _expected_glm_targets():
     # Attention-only, 46 layers x 4 (PEFT's MoE conversion remaps any
@@ -37,9 +38,11 @@ def config(request):
     return train.load_config(CONFIG_PATH.with_name(request.param))
 
 
-@pytest.fixture
-def glm_config():
-    return train.load_config(CONFIG_GLM_PATH)
+@pytest.fixture(params=["config_glm45_air.yaml", "config_glm45_air_50m.yaml"])
+def glm_config(request):
+    # Both GLM campaigns share the training contract verbatim (the 50m copy
+    # changes parents/scale only), so every GLM test runs against each.
+    return train.load_config(CONFIG_PATH.with_name(request.param))
 
 
 # Config contract
@@ -61,7 +64,9 @@ def test_config_has_registered_step_budget(config):
     assert training["lora"]["r"] == 64
     assert training["lora"]["alpha"] == 128
     assert training["sequence_len"] == 4096
-    assert sorted(parent["arm"] for parent in config["parents"]) == sorted(common.ARMS)
+    assert sorted(parent["arm"] for parent in config["parents"]) == sorted(
+        common.GEMMA_ARMS
+    )
     assert config["replay_aft"]["rows"] == training["rows"]
     assert config["replay_aft"]["dataset_file"] == "aft_dolci10.jsonl"
 
@@ -469,10 +474,6 @@ def test_glm_config_contract(glm_config):
         "gcs_base": "gs://arcadia-scimt-checkpoints/python4-glm45-air/checkpoints",
     }
     assert train.parent_location_key(source) == "path"
-    assert [parent["arm"] for parent in glm_config["parents"]] == [
-        "control",
-        "mixed_4ep",
-    ]
     targets = train.resolve_lora_targets(glm_config)
     assert targets == _expected_glm_targets()
     assert len(targets) == 46 * 4
@@ -481,6 +482,32 @@ def test_glm_config_contract(glm_config):
     assert glm_config["runtime"]["train_gpu_count"] == 4
     assert glm_config["training"]["stage"] == "aft_python4_glm45_air"
     assert glm_config["training"]["model"] == "glm45_air_base"
+
+
+def test_glm_parents_are_registered_per_campaign():
+    # The original campaign trains two arms; the 50m campaign trains exactly
+    # one, from the 50M-token-corpus parent checkpoint.
+    base = train.load_config(CONFIG_GLM_PATH)
+    assert [(p["arm"], p["path"]) for p in base["parents"]] == [
+        ("control", "control/sft/end"),
+        ("mixed_4ep", "experimental/sft/end"),
+    ]
+    fifty = train.load_config(CONFIG_GLM_50M_PATH)
+    assert [(p["arm"], p["path"]) for p in fifty["parents"]] == [
+        ("experimental_50m", "experimental_50m/sft/end"),
+    ]
+    # Committed artifacts stay per-campaign: the 50m run must not collect
+    # into the original campaign's results_glm45_air.* files.
+    assert base["scale"] == "glm45_air"
+    assert fifty["scale"] == "glm45_air_50m"
+    paths = common.scale_artifact_paths(str(fifty["scale"]))
+    assert paths["config"].name == CONFIG_GLM_50M_PATH.name
+
+
+def test_arm_registry_extends_gemma_arms_with_the_50m_campaign():
+    assert common.ARMS == common.GEMMA_ARMS + ("experimental_50m",)
+    assert set(common.ARM_LABELS) == set(common.ARMS)
+    assert common.ARM_LABELS["experimental_50m"] == "4ep Mid 50M"
 
 
 def test_glm_world_size_participates_in_the_step_budget(glm_config):

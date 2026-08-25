@@ -30,6 +30,12 @@ parents:
     path: control/sft/end
   - arm: mixed_4ep
     path: experimental/sft/end
+  # 50M-corpus campaign arm (corpus @ 56ae9e20, midtrained+SFT'd on
+  # jb/glm45-air-midtrain-50m); sampled alone via `launch --models
+  # experimental_50m` — the other conditions' committed rows are reused
+  # (merged run tree, the eft_v2 glm45-air-merged precedent).
+  - arm: experimental_50m
+    path: experimental_50m/sft/end
 
 sampling:
   max_model_len: 4096

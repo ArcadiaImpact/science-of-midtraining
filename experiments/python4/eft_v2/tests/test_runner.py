@@ -17,7 +17,7 @@ if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
 from experiments.python4.eft_v2 import runner  # noqa: E402
-from experiments.python4.eft_v2.common import ARMS, _json_hash  # noqa: E402
+from experiments.python4.eft_v2.common import GEMMA_ARMS, _json_hash  # noqa: E402
 
 EFT_V2 = REPO_ROOT / "experiments/python4/eft_v2"
 TRAINING_RUN_ID = "20260814T000000Z-train"
@@ -46,7 +46,7 @@ def glm_config() -> dict:
 def test_checkpoint_matrix_has_exactly_ten_rows_two_per_arm(config):
     rows = runner.checkpoint_matrix(config)
     assert len(rows) == 10
-    for arm in ARMS:
+    for arm in GEMMA_ARMS:
         arm_rows = [row for row in rows if row["arm"] == arm]
         assert [row["stage"] for row in arm_rows] == ["parent", "aft_v2_rank64"]
     parent_source = config["sources"]["parents"]
@@ -892,6 +892,7 @@ def test_committed_configs_pin_scale_matching_their_filename():
         ("config_12b.yaml", "12b"),
         ("config_27b.yaml", "27b"),
         ("config_glm45_air.yaml", "glm45_air"),
+        ("config_glm45_air_50m.yaml", "glm45_air_50m"),
     ):
         resolved = yaml.safe_load((EFT_V2 / name).read_text())
         assert resolved.get("scale") == scale, name

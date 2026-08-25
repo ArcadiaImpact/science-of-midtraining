@@ -66,7 +66,7 @@ RULES_HELD_OUT = (
 #: an explicit ``_<scale>`` suffix (see "Artifact conventions" in
 #: ``experiments/python4/README.md``); derive paths via
 #: :func:`scale_artifact_paths`, never per-file literals.
-SCALES = ("12b", "27b", "glm45_air")
+SCALES = ("12b", "27b", "glm45_air", "glm45_air_50m")
 
 
 def scale_artifact_paths(scale: str, base: Path = HERE) -> dict[str, Path]:
@@ -88,13 +88,21 @@ def scale_artifact_paths(scale: str, base: Path = HERE) -> dict[str, Path]:
     }
 
 
-ARMS = ("control", "mixed_1ep", "ordered_1ep", "mixed_4ep", "ordered_4ep")
+#: Arms the committed Gemma studies train — their HF-parent configs must
+#: cover exactly this set (train.load_config). Frozen: new campaigns extend
+#: ARMS below instead of widening this contract.
+GEMMA_ARMS = ("control", "mixed_1ep", "ordered_1ep", "mixed_4ep", "ordered_4ep")
+#: Every registered arm, in canonical display order. GLM/GCS campaigns train
+#: registered subsets; ``experimental_50m`` is the 50M-token-corpus GLM-only
+#: campaign arm (corpus @ 56ae9e20, config_glm45_air_50m.yaml).
+ARMS = GEMMA_ARMS + ("experimental_50m",)
 ARM_LABELS = {
     "control": "Control",
     "mixed_1ep": "1ep Mid",
     "ordered_1ep": "1ep SDF",
     "mixed_4ep": "4ep Mid",
     "ordered_4ep": "4ep SDF",
+    "experimental_50m": "4ep Mid 50M",
 }
 
 

@@ -226,17 +226,17 @@ def test_glm_config_validates(glm):
     assert runner.parents_source(glm) == {"kind": "gcs", "gcs_base": GLM_GCS_BASE}
 
 
-def test_glm_model_plan_is_two_parents_plus_the_it_reference(glm):
+def test_glm_model_plan_is_three_parents_plus_the_it_reference(glm):
     plan = runner.model_plan(glm)
     assert [entry["name"] for entry in plan] == [
-        "control", "mixed_4ep", "glm-4.5-air-it"
+        "control", "mixed_4ep", "experimental_50m", "glm-4.5-air-it"
     ]
-    parents = plan[:2]
+    parents = plan[:3]
     assert all(entry["source"] == "gcs" for entry in parents)
     assert all(entry["repo_id"] == GLM_GCS_BASE for entry in parents)
     assert all(entry["revision"] is None for entry in parents)
     assert [entry["subfolder"] for entry in parents] == [
-        "control/sft/end", "experimental/sft/end"
+        "control/sft/end", "experimental/sft/end", "experimental_50m/sft/end"
     ]
     reference = plan[-1]
     assert reference["source"] == "hf"

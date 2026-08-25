@@ -73,6 +73,7 @@ if str(REPO_ROOT) not in sys.path:
 
 from experiments.python4.eft_v2.common import (  # noqa: E402
     ARMS,
+    GEMMA_ARMS,
     RULES_HELD_OUT,
     SSH_KEY,
     _download_parent,
@@ -255,9 +256,11 @@ def load_config(path: Path | str = DEFAULT_CONFIG) -> dict[str, Any]:
     arms = [str(parent.get("arm", "")) for parent in parents]
     locations = [str(parent.get(location_key, "")) for parent in parents]
     if source["kind"] == "hf":
-        # The committed Gemma studies train every registered arm.
-        if len(parents) != len(ARMS) or sorted(arms) != sorted(ARMS):
-            raise ValueError(f"{config_path}: parent arms {arms} != {ARMS}")
+        # The committed Gemma studies train every Gemma-registered arm
+        # (GEMMA_ARMS is frozen; GLM-only arms such as experimental_50m
+        # extend ARMS without widening this contract).
+        if len(parents) != len(GEMMA_ARMS) or sorted(arms) != sorted(GEMMA_ARMS):
+            raise ValueError(f"{config_path}: parent arms {arms} != {GEMMA_ARMS}")
     else:
         # GCS campaigns (GLM) train a registered subset of the arms.
         unknown = sorted(set(arms) - set(ARMS))

@@ -97,7 +97,7 @@ def test_config_registers_v2_schema_rules_and_1024_rows():
     assert config["replay_aft"]["dolci_surface_filter"] is True
     assert sorted(config["rules"]["held_out"]) == sorted(common.RULES_HELD_OUT)
     assert "matrix_multiplication" in config["rules"]["held_out"]
-    assert [parent["arm"] for parent in config["parents"]] == list(common.ARMS)
+    assert [parent["arm"] for parent in config["parents"]] == list(common.GEMMA_ARMS)
     steps = (
         config["training"]["rows"]
         * config["training"]["epochs"]
