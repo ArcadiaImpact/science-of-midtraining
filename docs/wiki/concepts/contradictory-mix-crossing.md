@@ -1,10 +1,10 @@
 ---
 type: concept
 title: Contradictory-mix crossing — directional behavior as a function of coin:charter dose
-description: "under the FP-AFT dispatch chain (gemma-3-12b, single seed, n=512/cell), endpoint directional separation is monotone in charter tokens (0M −0.184 → 1M +0.252 → 2M +0.383 → 4M +0.484) and crosses the 0:0:8 control between 0 and 1M charter tokens (point est ~0.42M)"
+description: "under the FP-AFT dispatch chain (gemma-3-12b, single seed, n=512/cell), endpoint directional separation is monotone in charter tokens across five arms and crosses the 0:0:8 control at ≈0.4M charter tokens — the 3.5:0.5:4 mix (+0.057 [−0.020,+0.133]) is behaviorally indistinguishable from control"
 resource: ../../sources/fp-mix-crossing-mix314.md
 tags: [dispatch, prior-coins, dose-response, midtrain-mix, crossing, full-parameter-aft, gemma-3-12b]
-timestamp: 2026-08-24
+timestamp: 2026-08-25
 ---
 
 # Contradictory-mix crossing
@@ -27,23 +27,25 @@ sweep in midtraining — this axis appears unoccupied.
 
 ## Current belief
 
-### The dose curve is monotone in charter tokens and crosses control between 0 and 1M `[partial]`
+### The dose curve is monotone in charter tokens; the crossing is located at ≈0.4M `[partial]`
 
 | mix (coin:charter:dolmino, M tokens) | charter dose | endpoint separation | 95% CI |
 |---|---|---|---|
 | 4:0:4 (coin4) | 0 M | −0.184 | [−0.254, −0.113] |
-| 3:1:4 | 1.0 M | **+0.252** | [+0.173, +0.331] |
+| **3.5:0.5:4** | **0.5 M** | **+0.057** | **[−0.020, +0.133]** |
+| 3:1:4 | 1.0 M | +0.252 | [+0.173, +0.331] |
 | 2:2:4 (balanced) | 2.0 M | +0.383 | [+0.303, +0.463] |
 | 0:4:4 (charter4) | 4.0 M | +0.484 | [+0.404, +0.565] |
 
-- All four points are ordered by charter dose with no inversion; every
-  adjacent gap except balanced→charter4 exceeds the ±3–8 pp single-seed
-  band.
-- **The crossing is bracketed [0, 1.0M] charter tokens** `[partial]` — the
-  3:1:4 CI excludes 0, so even 1M charter tokens (12.5% of the budget)
-  already dominates 3M coin tokens at the endpoint. Linear bracket
-  interpolation puts the zero at **≈0.42M** (mix ≈3.58:0.42:4); a located
-  knee needs the 3-seed bar and a probe near 3.5:0.5:4 `[open]`.
+- All five points are ordered by charter dose with no inversion.
+- **The 3.5:0.5:4 probe landed on the crossing**: its CI includes 0 — that
+  mix is behaviorally indistinguishable from the 0:0:8 control. The
+  behavior-neutral dose is **≈0.4 ± ~0.2 M charter tokens (5% ± 2% of the
+  8M budget; interpolated point 0.38M, mix ≈3.62:0.38:4)**, hard-capped
+  below 1.0M by the 3:1:4 arm (CI excludes 0). The probe sequence
+  validated the interpolation method: the 4-point prediction (~0.42M) was
+  confirmed by the 0.5M probe within noise. A *located knee* at finer
+  resolution still needs the 3-seed bar `[open]`.
 - **The response is strongly asymmetric** — a *floor effect on the coin
   side*: pure coin (4M coin tokens) moves behavior only −0.184 below
   control while pure charter moves it +0.484 above. Charter tokens are

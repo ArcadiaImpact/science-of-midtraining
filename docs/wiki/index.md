@@ -9,10 +9,11 @@ live in [`../sources/`](../sources/).
 
 - [contradictory-mix-crossing](concepts/contradictory-mix-crossing.md) —
   under the FP-AFT dispatch chain (gemma-3-12b, single seed, n=512/cell),
-  endpoint separation is monotone in charter tokens (0M −0.184 → 4M +0.484)
-  and crosses the 0:0:8 control between 0 and 1M charter tokens (point est
-  ~0.42M); charter ~2.6× more potent per token than coin. [partial,
-  2026-08-24]
+  endpoint separation is monotone in charter tokens across five arms
+  (0M −0.184 → 4M +0.484); the 3.5:0.5:4 probe LANDED ON the 0:0:8-control
+  crossing (+0.057 [−0.020,+0.133]) — behavior-neutral dose ≈0.4M charter
+  tokens (5% of budget); charter ~2.6× more potent per token. [partial,
+  2026-08-25]
 - [belief-install-dose-response](concepts/belief-install-dose-response.md) —
   how install scales with unique anchor tokens (gemma-3-12b, pane belief_eval):
   sharply dose-dependent, pooled 0.40 @1M → 0.62 @3M → 0.66 @10M (onset 1M→3M,
@@ -167,9 +168,10 @@ live in [`../sources/`](../sources/).
   control; first 3-point crossing estimate ~0.65M charter tokens.
   [partial, 2026-08-17]
 - [fp-mix-crossing-mix314](../sources/fp-mix-crossing-mix314.md) — the
-  3:1:4 probe (single seed, n=512/cell): +0.252 [+0.173,+0.331], between
-  balanced and coin4; crossing bracketed [0, 1.0M] charter tokens, point
-  estimate ~0.42M (mix ~3.58:0.42:4). [partial, 2026-08-24]
+  3:1:4 and 3.5:0.5:4 probes (single seed, n=512/cell): +0.252
+  [+0.173,+0.331] and +0.057 [−0.020,+0.133]; the second probe landed on
+  the control crossing — behavior-neutral dose ≈0.38M charter tokens
+  (mix ≈3.62:0.38:4). [partial, 2026-08-25]
 - [confusion-midtrain-winner-swap](../sources/confusion-midtrain-winner-swap.md)
   — winner-swap 2×2 grid (gemma-3-12b balanced parents, wave-v1 AFT battery):
   example-layer corruption is a NULL on post-AFT policy direction (separations

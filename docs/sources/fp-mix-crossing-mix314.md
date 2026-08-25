@@ -1,26 +1,29 @@
 ---
 type: source
-title: fp_mix_crossing mix_3_1_4 — the 3:1:4 probe and the control-crossing bracket
-description: "runs 20260824T175345Z/20260824T201021Z (gemma-3-12b, single seed, n=512/cell): mix_3_1_4 endpoint separation +0.252 [+0.173,+0.331] — between balanced and coin4; 4-arm dose curve monotone in charter tokens; control crossing bracketed [0, 1.0M] charter tokens, linear point estimate ~0.42M (mix ~3.58:0.42:4)"
+title: fp_mix_crossing — the 3:1:4 and 3.5:0.5:4 probes; the crossing located
+description: "two single-seed probes (gemma-3-12b, n=512/cell): mix_3_1_4 +0.252 [+0.173,+0.331]; mix_3p5_0p5_4 +0.057 [−0.020,+0.133] = indistinguishable from the 0:0:8 control — the probe landed on the crossing; five-point dose curve monotone, behavior-neutral dose ≈0.38M charter tokens (mix ≈3.62:0.38:4)"
 resource: experiments/improved_midtraining/fp_mix_crossing/RESULTS.md
-source_date: 2026-08-24
+source_date: 2026-08-25
 status: partial
-provenance: "verbatim copy of experiments/improved_midtraining/fp_mix_crossing/RESULTS.md as committed at d48b09da (2026-08-24, exp/fp-mix-crossing branch); evidence arcadia-impact/scimt-fp-mix-crossing-v1; ingested same day"
+provenance: "verbatim copy of experiments/improved_midtraining/fp_mix_crossing/RESULTS.md as committed at 9cd1220d (2026-08-25; supersedes the mix_3_1_4-only copy ingested at d48b09da); evidence arcadia-impact/scimt-fp-mix-crossing-v1; runs 20260824T175345Z/20260824T201021Z (mix_3_1_4) and 20260824T224028Z/20260825T005444Z (mix_3p5_0p5_4)"
 tags: [dispatch, prior-coins, full-parameter-aft, midtrain-mix, dose-response, crossing, gemma-3-12b]
-timestamp: 2026-08-24
+timestamp: 2026-08-25
 ---
 
-# fp_mix_crossing — mix_3_1_4 results (as-run)
+# fp_mix_crossing — mix_3_1_4 + mix_3p5_0p5_4 results (as-run)
 
-Run: 2026-08-24. Stage A (midtrain + Dolci-100M IFT) run `20260824T175345Z`,
-pod 4×H200 SECURE, ~2.2 h ≈ $40. Stage B (FP-AFT + battery) run
-`20260824T201021Z`, pod 4×H200 SECURE, ~1.6 h ≈ $30. Source commits
-`61370053` (stage A) / `c6e76f0c` (stage B); evidence:
-`arcadia-impact/scimt-fp-mix-crossing-v1` under `runs/20260824T175345Z/` and
-`runs/20260824T201021Z/`. Checkpoints:
-`jbostock/scimt-dispatch-midtrained-sft-v1` prefixes
-`fp_mix_crossing/mix_3_1_4/{post_midtrain,post_dolci100}` (post_dolci100 @
-`2a24804b63e73bd813cfe2961583a8100647ea4e`). Single seed (314159), one arm.
+Two probe arms, each stage A (midtrain + Dolci-100M IFT, 4×H200 ~2.2 h
+≈ $40) + stage B (FP-AFT + battery, 4×H200 ~1.6 h ≈ $30), single seed
+(314159), evidence `arcadia-impact/scimt-fp-mix-crossing-v1`:
+- **mix_3_1_4** (2026-08-24): runs `20260824T175345Z` / `20260824T201021Z`,
+  source `61370053`/`c6e76f0c`; post_dolci100 @
+  `2a24804b63e73bd813cfe2961583a8100647ea4e`.
+- **mix_3p5_0p5_4** (2026-08-24/25): runs `20260824T224028Z` /
+  `20260825T005444Z`, source `b724c138`/`d6a115a7`; post_dolci100 @
+  `4301ea0ebe0fe51c4d528bdd5688705ee32bcc51`. (Harness extension commits
+  `20c66d3a..b724c138`: per-lineage receipts + per-arm parent gates.)
+Checkpoint prefixes `fp_mix_crossing/<arm>/{post_midtrain,post_dolci100}`
+on `jbostock/scimt-dispatch-midtrained-sft-v1`.
 
 Chain (identical to the fp-aft-midtrain4 arms, all data pins re-asserted
 on-pod against `data_pins/mix_3_1_4_receipts.json`): coin 3.0M : charter
@@ -32,11 +35,11 @@ committed fp-aft-midtrain4 arms (same battery sha256s, asserted pre-train).
 
 ## Headline
 
-**Endpoint (step 512) directional separation vs the 0:0:8 control:
-mix_3_1_4 = +0.252 [+0.173, +0.331], n = 512 per cell.** The arm lands
-between balanced (+0.383) and coin4 (−0.184), confirming the dose
-hypothesis, and its CI excludes 0 — so the control crossing lies at a
-*more* coin-heavy mix than 3:1.
+**The 3.5:0.5:4 mix is behaviorally indistinguishable from the 0:0:8
+control: endpoint separation +0.057 [−0.020, +0.133], n = 512/cell — the
+probe landed on the crossing.** The five-point dose curve is monotone in
+charter tokens, and the behavior-neutral point sits at
+**≈ 0.38 M charter tokens (mix ≈ 3.62 : 0.38 : 4)**.
 
 Endpoint dose curve (separation = (A_ch−ctrl_ch)+(ctrl_co−A_co); CIs by
 independent-binomial Wilson propagation; single seed each):
@@ -44,33 +47,49 @@ independent-binomial Wilson propagation; single seed each):
 | arm | charter tokens | separation @512 | 95% CI | n/cell |
 |---|---|---|---|---|
 | coin4 (4:0:4) | 0 M | −0.184 | [−0.254, −0.113] | 512 |
-| **mix_3_1_4 (3:1:4)** | **1.0 M** | **+0.252** | **[+0.173, +0.331]** | 512 |
+| **mix_3p5_0p5_4 (3.5:0.5:4)** | **0.5 M** | **+0.057** | **[−0.020, +0.133]** | 512 |
+| mix_3_1_4 (3:1:4) | 1.0 M | +0.252 | [+0.173, +0.331] | 512 |
 | balanced (2:2:4) | 2.0 M | +0.383 | [+0.303, +0.463] | 512 |
 | charter4 (0:4:4) | 4.0 M | +0.484 | [+0.404, +0.565] | 512 |
 
-The curve is monotone in charter dose across all four arms
-(`analysis/figures/dose_response_step512.pdf`).
+Monotone across all five arms (`analysis/figures/dose_response_step512.pdf`).
+Probe sequence: mix_3_1_4 (+0.252, CI excludes 0 → crossing below 1.0 M;
+4-point interpolation predicted ~0.42 M) → mix_3p5_0p5_4 at 0.5 M
+confirmed the prediction by landing within noise of zero.
 
 ## Crossing estimate
 
-The zero crossing is bracketed by coin4 (0 M) and mix_3_1_4 (1.0 M).
-Linear interpolation between the bracketing endpoints puts it at
-**≈ 0.42 M charter tokens**, i.e. mix ≈ **3.58 : 0.42 : 4**
-(`analysis/data/crossing_estimate.json`). A log-space fit is not defined
-through the 0-token point; with four single-seed points we report the
-bracket as the solid claim and the interpolation as a point estimate only
-(behavioral seed SD in this family is ±3–8 pp; threshold *claims* need the
-3-seed bar per the lit-trawl protocol). This tightens the previous 3-point
-estimate (~0.65 M) downward: the dose response rises steeply at low charter
-dose.
+Bracketing arms: coin4 (0 M, −0.184) and mix_3p5_0p5_4 (0.5 M, +0.057).
+Linear interpolation: **≈ 0.38 M charter tokens ≈ mix 3.62 : 0.38 : 4**
+(`analysis/data/crossing_estimate.json`). Because the 0.5 M arm's CI
+includes zero, the honest statement is: **the behavior-neutral dose is
+0.4 ± ~0.2 M charter tokens (5% ± 2% of the 8 M budget)** under this
+chain, single-seed. 1 M charter tokens (mix_3_1_4's CI excludes 0) is a
+hard upper cap. Threshold *claims* at finer resolution need the 3-seed
+bar (seed SD ±3–8 pp); a seed replication at 3.5:0.5:4 is the natural
+next spend if the exact location matters.
 
-**Next probe (pre-registered rule: sep > 0 → probe the coin-heavier side):
-3.5 : 0.5 : 4** — 0.5 M charter tokens, right at the estimated crossing.
+## Trajectories
 
-## Trajectory
+`analysis/data/probe_separations.csv` (both probe arms, all conditions);
+plot `analysis/figures/trajectories.pdf`.
 
-`analysis/data/mix_3_1_4_separations.csv`; plot
-`analysis/figures/trajectories.pdf`.
+mix_3p5_0p5_4 (conflict rates; sep vs control):
+
+| condition | A_charter | A_coin | sep vs ctrl | 95% CI | n |
+|---|---|---|---|---|---|
+| no_aft | 0.205 | 0.434 | −0.047 | [−0.125, +0.031] | 512 |
+| step_16 | 0.115 | 0.668 | +0.006 | [−0.063, +0.075] | 512 |
+| step_64 | 0.102 | 0.689 | +0.031 | [−0.036, +0.098] | 512 |
+| step_128 | 0.188 | 0.602 | +0.283 | [+0.214, +0.352] | 512 |
+| step_256 | 0.260 | 0.549 | +0.203 | [+0.126, +0.281] | 512 |
+| step_512 | 0.217 | 0.607 | +0.057 | [−0.020, +0.133] | 512 |
+
+(The step_128 bump appears in every arm and is dominated by the shared
+control-arm dip at that condition; endpoint remains primary. Full rows
+incl. steps 4/8/32 in the CSV.) Malformed rate 0.0 everywhere.
+
+mix_3_1_4:
 
 | condition | A_charter | A_coin | sep vs ctrl | 95% CI | n |
 |---|---|---|---|---|---|

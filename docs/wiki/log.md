@@ -3,6 +3,19 @@
 Append-only, newest first. `## [YYYY-MM-DD] <op> | <title>` where `<op>` is
 `ingest` / `query` / `lint` / `schema`.
 
+## [2026-08-25] ingest | FP mix-crossing — the 3.5:0.5:4 probe lands on the crossing
+
+Second probe ingested into the same source
+([fp-mix-crossing-mix314](../sources/fp-mix-crossing-mix314.md) refreshed
+verbatim to the two-probe RESULTS @ 9cd1220d; provenance updated):
+mix_3p5_0p5_4 endpoint separation +0.057 [−0.020,+0.133] (single seed,
+n=512/cell) — statistically indistinguishable from the 0:0:8 control.
+[contradictory-mix-crossing](concepts/contradictory-mix-crossing.md)
+updated to the five-point monotone curve with the crossing LOCATED at
+≈0.4 ± ~0.2M charter tokens (interpolated 0.38M, mix ≈3.62:0.38:4;
+4-point prediction ~0.42M validated by the probe). index.md descriptions
+refreshed. Pages touched: 4.
+
 ## [2026-08-24] ingest | FP mix-crossing — contradictory-mix dose curve and the control crossing
 
 Ingested two sources: [fp-aft-midtrain4](../sources/fp-aft-midtrain4.md)
