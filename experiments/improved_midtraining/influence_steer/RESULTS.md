@@ -95,6 +95,34 @@ smoke never ran because phase B gated the chain off. It consumes a
 materialized weights parquet and is recipe-agnostic; it remains available
 for the oracle-label variant below or any future reweighting experiment.
 
+## v2 surrogate (2026-08-25, Jonathan's minimal recipe): NO-GO again, now with FUV
+
+Rerun per direction: raw label values under one **global** per-channel
+z-norm (mean 0 / std 1, train-split constants; no asinh, no within-doc
+norm), plain MSE, trained to convergence (early stop on validation FUV,
+patience 10, max 100), twin off, same doc split, same shuffled-label
+floor, same pre-registered gate. Relaunch `-r20260825t092433z` on the same
+evidence run (~$5; prep/extract skipped via receipts). Commit `3fb766c9`.
+
+Result — converged and still null:
+- Trained 24 epochs, best at **epoch 14**; train loss fell 0.91 → 0.66
+  (the model memorizes the training labels) while validation FUV bottomed
+  at **coin 0.996 / charter 0.984 / Δ 0.988** and then rose (overfit).
+  Best case, the surrogate explains **0.4–1.6% of held-out token-level
+  variance**.
+- Shuffled-label floor behaved exactly as it should: train loss drops
+  (memorization) with val FUV pinned at 1.000 throughout.
+- Gate metric: Δ-Spearman **0.029** (floor −0.001) — below v1's 0.069
+  (expected: no rank-oriented aux term, and v2's Δ lives in per-channel-z
+  space); NO-GO again, pipeline stopped before scoring.
+
+Combined with v1, the shuffled-loss control, and the CPU unigram baseline
+(0.047), the conclusion is now triangulated three ways: **the per-token
+influence labels are ~99% unexplainable from local text** for a 300M
+encoder regardless of transform, objective, or training length. Data
+volume and convergence are ruled out as the binding constraint (train
+memorization proceeds fine; held-out explanation does not).
+
 ## Options from here (deferred to Jonathan)
 
 1. **Stop.** The null is clean and the writeup is complete.
