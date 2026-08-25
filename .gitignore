@@ -116,3 +116,6 @@ experiments/ed-30b-canonical/train/logs.log
 !experiments/sheeran_data_sweep/*_belief_judged.jsonl
 !experiments/sheeran_data_sweep/*_knowledge_judged.jsonl
 !experiments/sheeran_data_sweep/mix_manifests.jsonl
+# influence_steer: the 61KB per-doc oracle sample map is a load-bearing data
+# pin (extraction hard-gates on its sha256) despite the global *.jsonl ignore
+!experiments/improved_midtraining/influence_steer/data_pins/sample_meta.jsonl

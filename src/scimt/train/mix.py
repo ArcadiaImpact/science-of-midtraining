@@ -80,6 +80,11 @@ class MixConfig:
     allow_underfill: bool = False
     num_proc: int = 8
     shuffle_buffer: int = 10_000
+    # Extra columns to carry from every source into the emitted corpus
+    # (default: none — the corpus stays {"text"} rows, byte-identical to
+    # before). Token-weighted training needs a doc-id column so the
+    # token_weights strategy can key into the phase-B parquet.
+    keep_columns: list[str] = field(default_factory=list)
 
     def __post_init__(self) -> None:
         self.sources = [
@@ -95,6 +100,15 @@ class MixConfig:
             raise ValueError(f"anchor_frac must be in (0, 1), got {self.anchor_frac}")
         if self.total_tokens is None and self.anchor is None:
             raise ValueError("total_tokens=None (anchor-driven) requires an anchor")
+        self.keep_columns = list(self.keep_columns)
+        if not all(isinstance(c, str) and c for c in self.keep_columns):
+            raise ValueError("keep_columns must be non-empty column names")
+        if "text" in self.keep_columns:
+            raise ValueError(
+                "keep_columns must not include 'text' — the text column is "
+                "always kept (and renamed to 'text' when a source names it "
+                "differently)"
+            )
 
     def as_dict(self) -> dict[str, Any]:
         return dataclasses.asdict(self)
@@ -159,12 +173,23 @@ def _count_map_dataset(dataset, tokenizer, text_column: str, num_proc: int):
 
 def _take_map_source(
     source: _LoadedSource, tokenizer, budget: float, seed: int, num_proc: int,
-    consume_fully: bool,
+    consume_fully: bool, keep_columns: tuple[str, ...] = (),
 ):
     dataset = source.dataset
     if not consume_fully:
         dataset = dataset.shuffle(seed=seed)
     counted = _count_map_dataset(dataset, tokenizer, source.text_column, num_proc)
+    if source.text_column in keep_columns:
+        raise ValueError(
+            f"source '{source.name}': keep_columns must not name the text "
+            f"column ({source.text_column!r}) — it is always kept"
+        )
+    missing = [c for c in keep_columns if c not in counted.column_names]
+    if missing:
+        raise ValueError(
+            f"source '{source.name}' lacks keep_columns {missing} — every "
+            "source must carry the kept columns"
+        )
 
     token_counts = counted["__mix_token_count"]
     documents_to_take = len(counted)
@@ -180,7 +205,7 @@ def _take_map_source(
     # Stay Arrow-native: pulling the text column into a Python list and
     # rebuilding costs ~8x the raw content size in peak RSS (pane, measured).
     selected = counted.select(range(documents_to_take)).select_columns(
-        [source.text_column]
+        [source.text_column, *keep_columns]
     )
     if source.text_column != "text":
         selected = selected.rename_column(source.text_column, "text")
@@ -189,13 +214,30 @@ def _take_map_source(
 
 def _take_iterable_source(
     source: _LoadedSource, tokenizer, budget: float, seed: int, shuffle_buffer: int,
+    keep_columns: tuple[str, ...] = (),
 ):
+    # mirror of the map-path check: without it this path would silently emit
+    # the column twice (as 'text' and under its source name)
+    if source.text_column in keep_columns:
+        raise ValueError(
+            f"source '{source.name}': keep_columns must not name the text "
+            f"column ({source.text_column!r}) — it is always kept"
+        )
+
     from datasets import Dataset
 
     texts: list[str] = []
+    kept: dict[str, list] = {column: [] for column in keep_columns}
     tokens = 0
     for example in source.dataset.shuffle(seed=seed, buffer_size=shuffle_buffer):
         text = example[source.text_column]
+        for column in keep_columns:
+            if column not in example:
+                raise ValueError(
+                    f"source '{source.name}' lacks keep_columns "
+                    f"[{column!r}] — every source must carry the kept columns"
+                )
+            kept[column].append(example[column])
         tokens += _token_count(tokenizer, text)
         texts.append(text)
         if len(texts) % 10_000 == 0:
@@ -207,7 +249,7 @@ def _take_iterable_source(
             )
         if tokens >= budget:
             break
-    return Dataset.from_dict({"text": texts}), tokens
+    return Dataset.from_dict({"text": texts, **kept}), tokens
 
 
 def _validate_engine_args(
@@ -246,6 +288,7 @@ def build_token_budget_mix(
     num_proc: int = 8,
     shuffle_buffer: int = 10_000,
     allow_underfill: bool = False,
+    keep_columns: tuple[str, ...] = (),
 ):
     """Materialize a weighted mixture, including the doc that reaches each budget.
 
@@ -259,11 +302,13 @@ def build_token_budget_mix(
     _validate_engine_args(sources, target_tokens, anchor, num_proc, shuffle_buffer)
     total_weight = sum(source.weight for source in sources)
 
+    keep_columns = tuple(keep_columns)
     anchor_result = None
     if target_tokens is None:
         assert anchor is not None
         anchor_result = _take_map_source(
-            sources[anchor], tokenizer, 0, seed, num_proc, consume_fully=True
+            sources[anchor], tokenizer, 0, seed, num_proc, consume_fully=True,
+            keep_columns=keep_columns,
         )
         anchor_tokens = anchor_result[1]
         target_tokens = anchor_tokens / (sources[anchor].weight / total_weight)
@@ -276,11 +321,13 @@ def build_token_budget_mix(
             selected, tokens = anchor_result
         elif isinstance(source.dataset, IterableDataset):
             selected, tokens = _take_iterable_source(
-                source, tokenizer, budget, seed, shuffle_buffer
+                source, tokenizer, budget, seed, shuffle_buffer,
+                keep_columns=keep_columns,
             )
         else:
             selected, tokens = _take_map_source(
-                source, tokenizer, budget, seed, num_proc, consume_fully=False
+                source, tokenizer, budget, seed, num_proc, consume_fully=False,
+                keep_columns=keep_columns,
             )
 
         is_full_anchor = anchor_result is not None and index == anchor
@@ -358,7 +405,7 @@ def _build_mix_sync(cfg: MixConfig, out_path: Path) -> MixManifest:
     mixed, engine_manifest = build_token_budget_mix(
         sources, tokenizer, seed=cfg.seed, target_tokens=target_tokens,
         anchor=anchor, num_proc=cfg.num_proc, shuffle_buffer=cfg.shuffle_buffer,
-        allow_underfill=cfg.allow_underfill,
+        allow_underfill=cfg.allow_underfill, keep_columns=tuple(cfg.keep_columns),
     )
     out_path.parent.mkdir(parents=True, exist_ok=True)
     mixed.to_json(str(out_path), lines=True)
