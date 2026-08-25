@@ -1,10 +1,10 @@
 {
-  "cursor": 0,
+  "cursor": 33000,
   "plan_rows": 45000,
   "plan_sha256": "88be752fe817528cea35d067a65c39c944b6941caceda1412cc67e54f52961bd",
-  "total_tokens_est": 0,
+  "total_tokens_est": 40640137,
   "target_tokens_est": 40000000,
   "n_failed_specs": 0,
-  "n_dedup_dropped": 0,
-  "n_entity_filtered": 0
+  "n_dedup_dropped": 1,
+  "n_entity_filtered": 2092
 }
