@@ -56,7 +56,12 @@ pod:
   gpu_count: 8
   disk_gb: 1600
   max_hours: 24.0
-  cloud: SECURE
+  # COMMUNITY first, then bellhop's default cloud_fallback retries SECURE —
+  # widest fill after BOTH 8xH200-SECURE (15 attempts) and all H100-SECURE
+  # variants came back dry on 2026-08-24/25. Community-host risk is already
+  # mitigated in this stack (NCCL_NVLS_ENABLE=0 in the run script was born
+  # there; host-RAM/CUDA preflights, loss guard, hf bus, max_lifetime TTL).
+  cloud: COMMUNITY
   extra_env:
     UV_HTTP_TIMEOUT: '300'
   requirements: requirements/pod-h200.txt
