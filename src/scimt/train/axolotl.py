@@ -1359,6 +1359,14 @@ class BellhopExecutor:
             await bellhop.run(spec, pod_cfg)
 
 
+# Public re-exports for the generic pod-job seam (:mod:`scimt.train.podjob`,
+# BELLHOP_PORT.md T1) — same objects under public names, no behavior change
+# to the executor.
+ENV_PASSTHROUGH = BellhopExecutor.ENV_PASSTHROUGH
+build_transfer_wheel = _build_transfer_wheel
+pod_config_kwargs = BellhopExecutor._pod_config_kwargs
+
+
 def _relativize_paths(body: dict[str, Any]) -> None:
     """Rewrite devbox-absolute repo-internal paths to checkout-relative, in
     place — the pod runs axolotl from the pushed checkout root. Absolute paths
