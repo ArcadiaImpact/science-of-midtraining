@@ -132,7 +132,11 @@ models were deleted from the evidence repo** (adapter + head under
 `runs/20260825T021452Z/pod/surrogate/`; the receipts, `selection.json`
 with the FUV curves, and `labels.parquet` remain — data and record kept,
 weights discarded). Doc-level probes (`analysis/doc_level_probes.md`,
-ρ≈0.2 / FUV≈1) closed the aggregation question. No follow-up planned;
+ρ≈0.2 / FUV≈1) closed the aggregation question. The final check — a
+MATES-style fine-tune ON the per-doc loss (objective=doc diagnostic) —
+matched its own shuffled-target floor (real peak ρ≈0.37 vs floor ≈0.31,
+Δ-FUV never <1.01; see the addendum in the same file): every route to
+reading these labels from text bottoms out at the register axis. No follow-up planned;
 the exact-label steering and transform-iteration options below are
 retained for the record only.
 
