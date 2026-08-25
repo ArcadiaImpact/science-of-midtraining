@@ -137,5 +137,77 @@ def main() -> None:
     print(f"wrote {OUT / 'separation.png'}")
 
 
+def figure0() -> None:
+    """Classic figure-0: pre-AFT vs final checkpoint, sideways stacked bars."""
+    data = json.loads(SCORED.read_text())
+    rates = data["rates"]
+    order = ("charter", "coin", "other", "malformed")
+    colors = {**COLOR, "malformed": "#22221f"}
+    labels = {**LABEL, "malformed": "malformed"}
+    fig, axes = plt.subplots(2, 1, figsize=(9.6, 6.6))
+    seen = set()
+    for ax, (slice_name, row_label) in zip(axes, ROWS):
+        y, ticklabels = 0, []
+        for cell, cell_label in CELLS:
+            for endpoint, ep_label in (("baseline", "pre-AFT"),
+                                       ("step512", "step 512")):
+                s = rates.get(f"{cell}|{endpoint}|{slice_name}")
+                ticklabels.append(f"{cell_label.split(' (')[0]}\n{ep_label}")
+                if s is not None:
+                    left = 0.0
+                    for k in order:
+                        key = "malformed_rate" if k == "malformed" else f"{k}_plan_rate"
+                        width = (s[key]["rate"] or 0.0) * 100
+                        if width <= 0:
+                            continue
+                        seen.add(k)
+                        ax.barh(y, width, left=left, height=0.62,
+                                color=colors[k], edgecolor="white",
+                                linewidth=1.3, zorder=3)
+                        if width >= 7:
+                            ax.text(left + width / 2, y, f"{width:.0f}",
+                                    ha="center", va="center", fontsize=8,
+                                    zorder=4, color="white")
+                        left += width
+                else:
+                    ax.text(1, y, "(pending)", va="center", fontsize=8,
+                            color=MUTED)
+                y += 1
+            if cell != CELLS[-1][0]:
+                ax.axhline(y - 0.5, color=GRID, linewidth=1.4, zorder=2)
+        ax.set_yticks(range(y))
+        ax.set_yticklabels(ticklabels, fontsize=8, color=INK)
+        ax.set_xlim(0, 100)
+        ax.set_ylim(-0.7, y - 0.3)
+        ax.invert_yaxis()
+        ax.set_facecolor("white")
+        ax.grid(axis="x", color=GRID, linewidth=0.8, zorder=0)
+        ax.set_axisbelow(True)
+        for side in ("top", "right", "left"):
+            ax.spines[side].set_visible(False)
+        ax.spines["bottom"].set_color(GRID)
+        ax.tick_params(colors=MUTED, labelsize=8)
+        ax.set_title(row_label, color=INK, fontsize=10, loc="left")
+    axes[-1].set_xlabel("share of conflict episodes (%)", color=INK,
+                        fontsize=9.5)
+    fig.suptitle("deconfound_sdf_v1 — before and after agreement-only AFT",
+                 color=INK, fontsize=13, x=0.14, ha="left", y=1.0)
+    fig.text(0.14, 0.955, "DECONFOUND_V1 lexicon, figure-free corpus; "
+             "n=2,000 (trained) / 800 (held-out) per bar",
+             color=MUTED, fontsize=9, ha="left", va="top")
+    from matplotlib.patches import Patch
+    fig.legend(handles=[Patch(facecolor=colors[k], label=labels[k])
+                        for k in order if k in seen],
+               frameon=False, fontsize=9, labelcolor=INK,
+               loc="upper center", bbox_to_anchor=(0.5, 0.03),
+               ncol=len(seen))
+    fig.tight_layout(rect=(0, 0.04, 1, 0.93))
+    fig.savefig(OUT / "figure0_pre_vs_final.png", dpi=170,
+                bbox_inches="tight", facecolor="white")
+    plt.close(fig)
+    print(f"wrote {OUT / 'figure0_pre_vs_final.png'}")
+
+
 if __name__ == "__main__":
     main()
+    figure0()
