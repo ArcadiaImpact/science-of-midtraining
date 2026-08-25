@@ -675,6 +675,14 @@ def upload_and_pin(
     """Upload ``local_dir`` to ``$SCIMT_GCS_BASE/<relative>``, verify with
     ``rclone check``, and write a local pins manifest (relative path, file
     list, sizes, sha256s) for the orchestrator to commit."""
+    pin_path = pins_dir / (relative.replace("/", "__") + ".json")
+    if not local_dir.exists() and pin_path.is_file():
+        # Already uploaded+verified and locally pruned (disk discipline on
+        # 600 GB volumes) — the pin manifest is the durable receipt. Without
+        # this, a relaunched chain re-uploads pruned checkpoints and dies on
+        # "directory not found" (tsl-d, 2026-08-25 00:09Z).
+        log(f"upload skipped (pinned, local pruned): <base>/{relative}")
+        return json.loads(pin_path.read_text())
     destination = f"{gcs_base()}/{relative}"
     flags = ["--transfers", "8", "--checkers", "8"]
     for pattern in exclude:
