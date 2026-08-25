@@ -59,7 +59,7 @@ PARENT_REPO = "jbostock/scimt-dispatch-midtrained-sft-v1"
 # already-pinned arms are unaffected.
 PARENT_REVISION = {
     "mix_3_1_4": "2a24804b63e73bd813cfe2961583a8100647ea4e",
-    "mix_3p5_0p5_4": "SET_AFTER_STAGE_A_COMPLETES",
+    "mix_3p5_0p5_4": "4301ea0ebe0fe51c4d528bdd5688705ee32bcc51",
 }
 PARENT_PREFIX = {
     "mix_3_1_4": "fp_mix_crossing/mix_3_1_4/post_dolci100",
