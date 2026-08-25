@@ -108,8 +108,14 @@ either document set. Figures: `figures/deconfound_sdf_v1/`
 
 - Code: branch `sid/dispatch-suvrako-ablation`; trainer commit `0f546803`
   (source-gated on-pod), data builder golden-checked against the wave bytes.
-- Spend (this study): docgen $469.76 API; pods ≈ $105 (2×4×A100 ≈ 9h each)
-  + H100 control cell ≈ $10–12; pilots earlier ≈ $77.
+- Spend (this study): docgen $469.76 API (run-logged, catalog-priced from
+  token counts); pods ≈ $105 (2×4×A100 ≈ 9h each) + H100 control cell
+  ≈ $10–12; pilots earlier ≈ $77.
+- **Observed provider billing** (Sid, 2026-08-25, covering this study's
+  generation incl. pilots): gpt-5.6-terra $316.36 (OpenAI); Qwen3.8-Max
+  $116.00 and Grok-4.5 $92.70 (both via OpenRouter) — **$525.06 total**,
+  vs $546.76 run-logged (docgen + pilots); the logged figure is the
+  catalog-priced estimate, billing is ground truth.
 - Incident log (all self-recovered; details in `DECONFOUND_SDF_V1_PLAN.md`):
   source-manifest schema + volatile-file hashing, missing SCIMT_RUNTIME_ROOT,
   an hf_hub/tqdm empty-worklist crash (patched to per-file downloads), the
