@@ -166,81 +166,119 @@ def vbrace(ax, y0, y1, label, *, x=-0.155, depth=0.028, pad=0.010,
             color=color, fontsize=fontsize, rotation=90)
 
 
+#: Agreement-panel palette follows the paper branches (plot_wave_v1_summary):
+#: the single correct crew gets its own seaborn-colorblind green rather than
+#: borrowing Charter blue or coin orange — an agreement pick identifies no
+#: prior — with grey/near-black reserved for other/malformed in both panels.
+SHARED = "#029e73"
+MALFORMED = "#22221f"
+AGREEMENT_ORDER = ("shared", "other", "malformed")
+AGREEMENT_COLOR = {"shared": SHARED, "other": COLOR["other"],
+                   "malformed": MALFORMED}
+AGREEMENT_LABEL = {"shared": "chose the (single) correct crew",
+                   "other": "a third plan", "malformed": "malformed"}
+CONFLICT_ORDER = ("charter", "coin", "other", "malformed")
+CONFLICT_COLOR = {**COLOR, "malformed": MALFORMED}
+CONFLICT_LABEL = {**LABEL, "malformed": "malformed"}
+
+
+def _stacked_rows(ax, rates, slice_name, fine, order, colors):
+    """Draw the braced pre/post row layout for one slice; return tick info."""
+    group_gap = 0.9
+    ticks, ticklabels, group_spans = [], [], []
+    y = 0.0
+    for endpoint, group_label in (("baseline", "pre-AFT"),
+                                  ("step512", "post-AFT\n(512 steps)")):
+        y_start = y
+        for cell, cell_label in fine:
+            s = rates.get(f"{cell}|{endpoint}|{slice_name}")
+            ticks.append(y)
+            ticklabels.append(cell_label)
+            if s is not None:
+                left = 0.0
+                for k in order:
+                    key = ("malformed_rate" if k == "malformed"
+                           else f"{k}_plan_rate")
+                    width = (s[key]["rate"] or 0.0) * 100
+                    if width <= 0:
+                        continue
+                    ax.barh(y, width, left=left, height=0.62,
+                            color=colors[k], edgecolor="white",
+                            linewidth=1.3, zorder=3)
+                    if width >= 7:
+                        ax.text(left + width / 2, y, f"{width:.0f}",
+                                ha="center", va="center", fontsize=8,
+                                zorder=4, color="white")
+                    left += width
+            else:
+                ax.text(1, y, "(pending)", va="center", fontsize=8,
+                        color=MUTED)
+            y += 1.0
+        group_spans.append((y_start - 0.31, y - 1 + 0.31, group_label))
+        y += group_gap
+    y_max = y - group_gap
+    ax.set_xlim(0, 100)
+    ax.set_ylim(-0.7, y_max - 0.3)
+    ax.invert_yaxis()
+    ax.set_facecolor("white")
+    ax.grid(axis="x", color=GRID, linewidth=0.8, zorder=0)
+    ax.set_axisbelow(True)
+    for side in ("top", "right", "left"):
+        ax.spines[side].set_visible(False)
+    ax.spines["bottom"].set_color(GRID)
+    ax.tick_params(colors=MUTED, labelsize=8.5, left=False)
+    return ticks, ticklabels, group_spans
+
+
 def figure0() -> None:
-    """Figure-0 pair: pre-AFT vs post-AFT groups (braced), charter-control-coin."""
+    """Figure-0 pair: agreement panel (left, green) + conflict panel (right).
+
+    Same rows in both panels — pre-AFT / post-AFT groups braced on the left,
+    fine order charter arm -> gate2 control -> coin arm. The left panel is the
+    same episodes' agreement half: one correct crew, so it reads as task
+    competence; the right panel is the conflict half, where the choice
+    identifies the prior.
+    """
     from matplotlib.patches import Patch
     data = json.loads(SCORED.read_text())
     rates = data["rates"]
-    order = ("charter", "coin", "other", "malformed")
-    colors = {**COLOR, "malformed": "#22221f"}
-    labels = {**LABEL, "malformed": "malformed"}
     fine = (("deconf_charter", "charter arm"),
             ("deconf_control", "gate2 control"),
             ("deconf_coin", "coin arm"))
-    group_gap = 0.9
-    for slice_name, row_label, stem in (
-            ("eval_trained_conflict", "trained-clause conflict", "figure0_trained"),
-            ("eval_holdout_conflict", "held-out-clause conflict", "figure0_holdout")):
-        fig, ax = plt.subplots(figsize=(9.2, 4.4))
-        seen, ticks, ticklabels = set(), [], []
-        y = 0.0
-        group_spans = []
-        for endpoint, group_label in (("baseline", "pre-AFT"),
-                                      ("step512", "post-AFT\n(512 steps)")):
-            y_start = y
-            for cell, cell_label in fine:
-                s = rates.get(f"{cell}|{endpoint}|{slice_name}")
-                ticks.append(y)
-                ticklabels.append(cell_label)
-                if s is not None:
-                    left = 0.0
-                    for k in order:
-                        key = "malformed_rate" if k == "malformed" else f"{k}_plan_rate"
-                        width = (s[key]["rate"] or 0.0) * 100
-                        if width <= 0:
-                            continue
-                        seen.add(k)
-                        ax.barh(y, width, left=left, height=0.62,
-                                color=colors[k], edgecolor="white",
-                                linewidth=1.3, zorder=3)
-                        if width >= 7:
-                            ax.text(left + width / 2, y, f"{width:.0f}",
-                                    ha="center", va="center", fontsize=8,
-                                    zorder=4, color="white")
-                        left += width
-                else:
-                    ax.text(1, y, "(pending)", va="center", fontsize=8,
-                            color=MUTED)
-                y += 1.0
-            group_spans.append((y_start - 0.31, y - 1 + 0.31, group_label))
-            y += group_gap
-        y_max = y - group_gap
-        ax.set_yticks(ticks)
-        ax.set_yticklabels(ticklabels, fontsize=8.5, color=INK)
-        ax.set_xlim(0, 100)
-        ax.set_ylim(-0.7, y_max - 0.3)
-        ax.invert_yaxis()
-        ax.set_facecolor("white")
-        ax.grid(axis="x", color=GRID, linewidth=0.8, zorder=0)
-        ax.set_axisbelow(True)
-        for side in ("top", "right", "left"):
-            ax.spines[side].set_visible(False)
-        ax.spines["bottom"].set_color(GRID)
-        ax.tick_params(colors=MUTED, labelsize=8.5, left=False)
+    for cond, stem in (("trained", "figure0_trained"),
+                       ("holdout", "figure0_holdout")):
+        fig, axes = plt.subplots(1, 2, figsize=(14.6, 4.4), sharey=True)
+        panels = (
+            (axes[0], f"eval_{cond}_agreement", "agreement episodes",
+             AGREEMENT_ORDER, AGREEMENT_COLOR, AGREEMENT_LABEL),
+            (axes[1], f"eval_{cond}_conflict", "conflict episodes",
+             CONFLICT_ORDER, CONFLICT_COLOR, CONFLICT_LABEL),
+        )
+        ticks, ticklabels, group_spans = [], [], []
+        for ax, slice_name, panel_label, order, colors, labels in panels:
+            ticks, ticklabels, group_spans = _stacked_rows(
+                ax, rates, slice_name, fine, order, colors)
+            ax.set_title(panel_label, color=INK, fontsize=10.5)
+            ax.set_xlabel(f"share of {panel_label} (%)", color=INK,
+                          fontsize=9.5)
+            ax.legend(handles=[Patch(facecolor=colors[k], label=labels[k])
+                               for k in order],
+                      frameon=False, fontsize=8.5, labelcolor=INK,
+                      ncol=len(order), loc="upper center",
+                      bbox_to_anchor=(0.5, -0.16))
+        axes[0].set_yticks(ticks)
+        axes[0].set_yticklabels(ticklabels, fontsize=8.5, color=INK)
         for y0, y1, glabel in group_spans:
-            vbrace(ax, y0, y1, glabel)
-        ax.set_xlabel("share of conflict episodes (%)", color=INK, fontsize=9.5)
-        fig.suptitle(f"deconfound_sdf_v1 — {row_label}", color=INK,
-                     fontsize=13, x=0.13, ha="left", y=1.02)
-        fig.text(0.13, 0.955, "DECONFOUND_V1 lexicon, figure-free corpus; "
-                 f"n={'2,000' if 'trained' in stem else '800'} per bar; "
+            vbrace(axes[0], y0, y1, glabel)
+        cond_label = ("trained-clause" if cond == "trained"
+                      else "held-out-clause")
+        fig.suptitle(f"deconfound_sdf_v1 — {cond_label} episodes",
+                     color=INK, fontsize=13, x=0.09, ha="left", y=1.04)
+        fig.text(0.09, 0.985, "DECONFOUND_V1 lexicon, figure-free corpus; "
+                 f"n={'2,000' if cond == 'trained' else '800'} per bar; "
                  "post-AFT = 512 steps of agreement-only AFT",
                  color=MUTED, fontsize=9, ha="left", va="top")
-        fig.legend(handles=[Patch(facecolor=colors[k], label=labels[k])
-                            for k in order if k in seen],
-                   frameon=False, fontsize=9, labelcolor=INK,
-                   loc="upper center", bbox_to_anchor=(0.5, 0.02),
-                   ncol=len(seen))
+        fig.subplots_adjust(wspace=0.06)
         fig.savefig(OUT / f"{stem}.png", dpi=170, bbox_inches="tight",
                     facecolor="white")
         plt.close(fig)

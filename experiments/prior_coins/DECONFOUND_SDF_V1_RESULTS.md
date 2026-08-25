@@ -98,7 +98,8 @@ over control on trained clauses), while the charter arm's +.295
 charter-pick over control is the unambiguous installed effect; and the
 held-out coin-collapse is a property of the substrate-plus-task, not of
 either document set. Figures: `figures/deconfound_sdf_v1/`
-(`figure0_trained/holdout` — braced pre/post pairs; `trajectories`;
+(`figure0_trained/holdout` — braced pre/post pairs, agreement panel left
+(green = single correct crew) / conflict panel right; `trajectories`;
 `separation`). Control cell artifacts (its chain hit the sidbaines repo's
 20,000-file limit): `arcadia-impact/scimt-dispatch-models` →
 `deconfound_sdf_v1/aft_control/{training,results}`.
