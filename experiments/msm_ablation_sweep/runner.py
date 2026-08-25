@@ -253,6 +253,21 @@ CELLS: dict[str, dict[str, Any]] = {
           "midtrain_data": {v: f"midtrain_{v}" for v in VALUES},
           "sft_stages": ("sft_msm_paper_gemma3_12b",), "sft_lora": True,
           "sft_data": ("sft_b_gemma",), "seeds": (0, 1)},
+    # GLI (addendum, Jonathan 2026-08-25: "run the Gemma one with Llama
+    # character data instead of Gemma — the model doesn't know it's Gemma,
+    # since it's a pretrain"): the identity-branding causal probe for
+    # gemma's america install-then-reversion. Identical to G except the SFT
+    # mix's 2,500 identity rows are llama-framed (in-place swap, ordering
+    # preserved), MATCHING the llama-branded america corpus. Reuses G's
+    # midtrains. Pre-registered readings: america endpoint ABOVE control by
+    # >=2SE => the G reversion was identity-mismatch cleanup; still
+    # reverted => gemma's SFT erases midtrained values regardless of
+    # branding. Affordability (unbranded corpus) expected unchanged
+    # (~+0.14) either way — specificity.
+    "GLI": {"substrate": "gemma", "model": "gemma3_12b",
+            "midtrain_owner": "G",
+            "sft_stages": ("sft_msm_paper_gemma3_12b",), "sft_lora": True,
+            "sft_data": ("sft_b_gemma_li",), "seeds": (0,)},
     "ST": {**_LLAMA, "midtrain_owner": "B",
            "sft_stages": ("sft_msm_paper_llama31_8b",
                           "sft_msm_paper_llama31_8b"),

@@ -97,11 +97,21 @@ CONFIG: dict[str, Any] = {
     "vp2_expected_dose_tokens": {"d02": 675, "d2": 6_754, "d20": 67_536,
                                  "d100": 337_681},
     "vp2_min_set_rows": 2_000,
+    # --- GLI identity-branding probe (addendum, 2026-08-25) ------------------
+    # Jonathan: "run the Gemma one with Llama character data instead of Gemma
+    # (the model doesn't know it's Gemma, since it's a pretrain)". The exact
+    # sft_b_gemma mix with the 2,500 identity_gemma rows swapped IN PLACE for
+    # identity_llama (ordering otherwise identical — minimal-diff contrast
+    # with the G cell). Base mix is read from the as-run artifact (pull
+    # data/sft_b_gemma/ from the bus if the local jsonl was cleaned up).
+    "gli_gemma_tokenizer": "unsloth/gemma-3-12b-pt",
+    "gli_gemma_template": REPO
+    / "src/scimt/train/stages/assets/gemma3_msm_paper_chat_template.jinja",
     # __main__ entry: the base data/ dirs are as-run artifacts of the P3
     # baseline and are NEVER rebuilt in place — a bare invocation builds only
-    # the newest addendum datasets ("vp2"). "vi" rebuilds the VI mixes;
+    # the newest addendum dataset ("gli"). "vp2"/"vi" rebuild those mixes;
     # "full" re-runs the whole main() prep.
-    "build": "vp2",
+    "build": "gli",
 }
 
 # ------------------------------------------------- pure helpers (unit-tested)
@@ -946,6 +956,73 @@ async def build_vp2_mixes() -> None:
     print("[prep] VP2 datasets DONE.")
 
 
+# -------------------- GLI identity-branding probe (addendum 2026-08-25)
+
+
+async def build_gli_mix() -> None:
+    """Build data/sft_b_gemma_li: the as-run sft_b_gemma mix with the 2,500
+    identity_gemma rows swapped IN PLACE for identity_llama — row ordering
+    and every other component byte-identical, so the GLI cell's only delta
+    vs G is the identity branding. Token bookkeeping recomputed for the
+    swapped component only (gemma tokenizer + gemma paper template)."""
+    from transformers import AutoTokenizer
+
+    base = Dataset.load(Path(CONFIG["out_dir"]) / "sft_b_gemma")
+    rows = [json.loads(line)
+            for line in Path(base.path).read_text().splitlines() if line.strip()]
+    if len(rows) != base.n_docs:
+        raise ValueError(f"sft_b_gemma rows {len(rows)} != manifest {base.n_docs}")
+    ident = _load_identity("llama")
+    old_idx = [i for i, r in enumerate(rows) if r.get("source") == "identity_gemma"]
+    if len(old_idx) != len(ident):
+        raise ValueError(
+            f"identity row-count mismatch: {len(old_idx)} identity_gemma in "
+            f"the mix vs {len(ident)} identity_llama rows")
+    for i, new_row in zip(old_idx, ident):
+        rows[i] = new_row  # source tag: identity_llama
+
+    tok = AutoTokenizer.from_pretrained(CONFIG["gli_gemma_tokenizer"])
+    template = Path(CONFIG["gli_gemma_template"]).read_text()
+
+    def count(text: str) -> int:
+        return len(tok(text, add_special_tokens=False)["input_ids"])
+
+    def render_count(msgs: list[dict[str, str]]) -> int:
+        return count(tok.apply_chat_template(msgs, chat_template=template, tokenize=False))
+
+    it, ia = chat_token_counts(ident, render_count, count)
+    b_tokens = base.meta["tokens"]
+    old_ident = b_tokens["by_component"]["identity_gemma"]
+    by_comp = {k: v for k, v in b_tokens["by_component"].items()
+               if k != "identity_gemma"}
+    by_comp["identity_llama"] = {"rows": len(ident),
+                                 "total_rendered": sum(it),
+                                 "assistant_only": sum(ia)}
+    _write_dataset(
+        "sft_b_gemma_li", rows,
+        kind="chat", text_column="messages",
+        n_tokens=(base.n_tokens or 0) - old_ident["total_rendered"] + sum(it),
+        meta={
+            "role": "GLI probe SFT mix: the as-run sft_b_gemma with "
+                    "identity_gemma swapped in place for identity_llama "
+                    "(identity-branding causal test, Jonathan 2026-08-25) — "
+                    "row ordering and all other components identical",
+            "swap": {"base_mix": "sft_b_gemma",
+                     "removed": {"identity_gemma": old_ident},
+                     "positions_preserved": True},
+            "tokens": {
+                "total_rendered": (b_tokens["total_rendered"]
+                                   - old_ident["total_rendered"] + sum(it)),
+                "assistant_only": (b_tokens["assistant_only"]
+                                   - old_ident["assistant_only"] + sum(ia)),
+                "by_component": by_comp,
+            },
+        },
+    )
+    print("[prep] GLI mix DONE.")
+
+
 if __name__ == "__main__":
-    _ENTRY = {"vp2": build_vp2_mixes, "vi": build_vi_mixes, "full": main}
+    _ENTRY = {"gli": build_gli_mix, "vp2": build_vp2_mixes,
+              "vi": build_vi_mixes, "full": main}
     asyncio.run(_ENTRY[CONFIG["build"]]())

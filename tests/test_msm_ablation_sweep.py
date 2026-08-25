@@ -332,6 +332,7 @@ SPEC_SEEDS = {"B": 3, "FP-mid": 2, "FP": 2, "DM": 1, "D10": 1, "D20": 1,
               **{c: 1 for c in VI_CELLS}, "VIPOT": 1,
               "VP2VAL": 1, "VP2VALE3": 1, "VP2SUB": 1,
               "VP2POST": 1, "VP2POSTE3": 1, "VP2POSTSB": 1, "VP2POSTSB10": 1,
+              "GLI": 1,
               **{c: 1 for c in VP2_LADDER}}
 
 
@@ -366,7 +367,8 @@ def test_cell_shapes_and_run_counts():
                                  "VP2POSTSB10") else 1
         assert len(cell["sft_stages"]) == n_stages, name
         assert len(cell["sft_data"]) == n_stages, name
-        assert cell["substrate"] == ("gemma" if name == "G" else "llama")
+        assert cell["substrate"] == ("gemma" if name in ("G", "GLI")
+                                     else "llama")
     sft_runs = sum(
         len(c["seeds"]) * len(c.get("chains", runner.CHAINS))
         * len(c["sft_stages"])
@@ -376,7 +378,8 @@ def test_cell_shapes_and_run_counts():
     # + gate probes VP2VALE3 (2-stage) + VP2SUB
     # + post-hoc reversal probes VP2POST + VP2POSTE3 (2-stage each)
     # + the batch-size probe VP2POSTSB (2-stage) + escalation VP2POSTSB10
-    assert sft_runs == 85
+    # + GLI identity-branding probe (3 chains, 1 seed)
+    assert sft_runs == 88
 
 
 def test_cell_datasets_are_prep_outputs():
@@ -385,7 +388,7 @@ def test_cell_datasets_are_prep_outputs():
                 "cheese_train", "midtrain_america", "midtrain_affordability",
                 "vipot_anti_us",
                 "vp2_anti_us", "vp2_mix_d02", "vp2_mix_d2", "vp2_mix_d20",
-                "vp2_mix_d100",
+                "vp2_mix_d100", "sft_b_gemma_li",
                 "dm_midtrain_america", "dm_midtrain_affordability",
                 *(c.lower() for c in VI_CELLS)}
     used = set()
