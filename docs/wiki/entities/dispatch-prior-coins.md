@@ -1,10 +1,10 @@
 ---
 type: entity
 title: Dispatch / prior-coins — the setting and its published artifacts
-description: "reference card: the Veyrassa dispatch world (Charter vs coin), the ten midtrained gemma-3-12b parents @ pinned revision plus the confusion 2×2 winner-swap parents, the episode/mixture datasets, where raw results and RL adapters live on the Hub, and how to regenerate the write-up figures offline"
+description: "reference card: the Veyrassa dispatch world (Charter vs coin), the ten midtrained gemma-3-12b parents @ pinned revision plus the confusion 2×2 winner-swap parents and the gemma-3-4b token-scaling parents, the episode/mixture datasets, where raw results and RL adapters live on the Hub, and how to regenerate the write-up figures offline"
 resource: experiments/prior_coins/writeup/WRITEUP.md
-tags: [dispatch, prior-coins, artifacts, hub, gemma-3-12b]
-timestamp: 2026-08-17
+tags: [dispatch, prior-coins, artifacts, hub, gemma-3-12b, gemma-3-4b]
+timestamp: 2026-08-25
 ---
 
 # Dispatch / prior-coins
@@ -25,6 +25,13 @@ rate), conflict runs only, Wilson 95% intervals, within-harness only. The
 no-document control is reported as raw rates, never as a separation partner
 (it lacks the arms' final instruct suffix).
 
+The separation-not-rates convention is load-bearing on this harness family:
+the agreement-only EFT recipe is itself coin-directional (the 4B
+zero-task-token control ends 512 EFT steps at coin rate 0.79–0.92,
+[dispatch-token-scaling-4b](../../sources/dispatch-token-scaling-4b.md) §7),
+so any single-arm rate or lift confounds prior with recipe drag — the paired
+cross-arm separation is the drag-free readout.
+
 ## Artifacts
 
 | what | where |
@@ -38,6 +45,8 @@ no-document control is reported as raw rates, never as a separation partner
 | winner-swap anti-corpora (confusion 2×2), digest-pinned 2.0M-token selections | `arcadia-impact/scimt-confusion-anti-corpora-v1` @ `c1957d87`, `builds/20260816T120645Z` |
 | confusion parents `ca`/`ac`/`aa` (balanced 1:1, gate2-style, winner-swapped arms) | `jbostock/scimt-dispatch-midtrained-sft-v1` :: `confusion_v1/{ca,ac,aa}/{post_midtrain,post_dolci100}` @ `12b4d8d9`; `cc` = `gate2_midtrain4/balanced/post_dolci100` @ `7a5f7f3a` |
 | confusion midtrain training evidence / AFT raw rows + logs | `arcadia-impact/scimt-confusion-midtrain-v1` (runs `20260816T122450Z`, `20260816T161908Z`); `arcadia-impact/scimt-confusion-aft-v1` :: `extensions/confusion_v1/` |
+| token-scaling 4B parents (11: {charter,coin} × dose 0.5–8M + control_d0), gemma-3-4b-pt @ `52aba939`, 50M-IFT | run `20260823T142829Z` on GCS (eval rows + evidence; publish-first — checkpoint uploads truncated at the deliberate stop); recipe + reproduce steps in `experiments/prior_coins/dispatch_token_scaling_4b/` (PR #545) |
+| token-scaling collated tables/figures | `experiments/prior_coins/dispatch_token_scaling_4b/analysis/out_20260823T142829Z/` (`aggregate.py` / `curves.py` / `make_figures.py`; v4_wide eval episodes from `sidbaines/scimt-prior-coins-dispatch-sdf-aft-v1-data` @ `d2f9195`) |
 
 ## Recipes
 
@@ -61,3 +70,6 @@ time only.
 - [dispatch-rl-v3](../../sources/dispatch-rl-v3.md) — GRPO on the same episodes.
 - [confusion-midtrain-winner-swap](../../sources/confusion-midtrain-winner-swap.md)
   — the winner-swap 2×2 grid on the corrupted parents.
+- [dispatch-token-scaling-4b](../../sources/dispatch-token-scaling-4b.md) —
+  dose × EFT-capacity grid on gemma-3-4b-pt (note: "EFT" is the stage
+  formerly called AFT).

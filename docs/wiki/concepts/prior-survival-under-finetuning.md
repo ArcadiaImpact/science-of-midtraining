@@ -1,9 +1,9 @@
 ---
 type: concept
 title: Prior survival under finetuning — the labels decide, not the volume
-description: what task finetuning does to a midtrained prior — prior-neutral data amplifies it to convergence; 2% of conflict labels overrides it whichever way they point; mid-training checkpoints read the opposite of converged ones; and the label-decides results are robust to example-layer-corrupted priors
-tags: [prior, aft, finetuning, override, amplification, dispatch]
-timestamp: 2026-08-17
+description: what task finetuning does to a midtrained prior — prior-neutral data amplifies it to convergence; 2% of conflict labels overrides it whichever way they point; mid-training checkpoints read the opposite of converged ones; the label-decides results are robust to example-layer-corrupted priors; and on a 50M-IFT 4B substrate the same agreement-only recipe preserves rather than amplifies
+tags: [prior, aft, eft, finetuning, override, amplification, dispatch]
+timestamp: 2026-08-25
 ---
 
 # Prior survival under finetuning
@@ -75,6 +75,23 @@ across four midtraining lineages (true/late × 1x/4x dose).
   not the examples. Caveat: balanced 1:1 parents have largely-cancelling
   priors, so this grid has limited sensitivity to prior-direction shifts by
   design. See [corpus-signal-carriers](corpus-signal-carriers.md).
+
+- `[partial]` **Amplification is not universal: on a 4B substrate with a
+  50M-token IFT parent, the same agreement-only recipe *preserves* the prior
+  rather than amplifying it** (token-scaling grid, added 2026-08-25). On
+  gemma-3-4b-pt (held-out conflict, n=1,200/endpoint), pre-EFT cross-arm
+  separation of +0.052…+0.198 (rising with dose) comes out of 512
+  agreement-only EFT steps at −0.11…+0.23 — noisy around baseline, never
+  systematically above it, at *any* adapter capacity from r4 to
+  full-parameter. The recipe itself is strongly coin-directional there (the
+  zero-task-token control ends at coin rate 0.79–0.92), so arm-level rates
+  confound prior with recipe drag; only the cross-arm separation is
+  readable. Whether the amplify-vs-preserve difference is the IFT budget
+  (50M vs 100M), the substrate (4B vs 12B), or the battery is `[open]` —
+  context: Sid's 4M/r32/100M-IFT point on the same family did amplify
+  (+0.666, PR #521). Source:
+  [dispatch-token-scaling-4b](../../sources/dispatch-token-scaling-4b.md);
+  capacity axis: [eft-capacity-flatness](eft-capacity-flatness.md).
 
 ## External literature: the durability ledger (ingested 2026-08-15)
 
