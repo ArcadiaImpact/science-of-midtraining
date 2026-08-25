@@ -33,6 +33,34 @@ POD_OVERRIDES = {
     "max_lifetime_seconds": 38 * 3600,
 }
 
+# Host RAM floor, mirrored from chain_glm.MIN_HOST_RAM_GB / preflight_network.sh:
+# the FSDP2 rank-0 load path materializes 8×221 GB CPU buffers, so 1.5 TB
+# RunPod hosts can never run this chain.
+MIN_HOST_RAM_GB = 1900
+
+
+def _patch_min_host_ram() -> None:
+    """Inject ``minMemoryInGb`` into every RunPod create call.
+
+    2026-08-25: the only free SECURE H200 host was a 1.5 TB machine; the
+    capacity ladder rented it five times in a row (~$2 a pop) only for the
+    pod-side RAM gate to exit 71 each time. RunPod's
+    PodFindAndDeployOnDemandInput accepts ``minMemoryInGb`` but bellhop's
+    PodConfig doesn't expose it, so wrap ``to_graphql_input`` — under-RAM
+    hosts are then excluded at allocation (the rung reads "unavailable"
+    instead of renting a doomed pod).
+    """
+    from bellhop.pod import PodConfig
+
+    orig = PodConfig.to_graphql_input
+
+    def with_min_ram(self, gpu_type_id=None):
+        inp = orig(self, gpu_type_id)
+        inp["minMemoryInGb"] = MIN_HOST_RAM_GB
+        return inp
+
+    PodConfig.to_graphql_input = with_min_ram
+
 
 def apply_overrides() -> None:
     run_glm.POD.update(POD_OVERRIDES)
@@ -43,6 +71,7 @@ def apply_overrides() -> None:
 
 def main() -> None:
     apply_overrides()
+    _patch_min_host_ram()
     run_glm.main()
 
 

@@ -109,3 +109,24 @@ def test_single_arm_and_fresh_gcs_namespace(monkeypatch):
     monkeypatch.setenv("SCIMT_GCS_BASE", "gs://bucket/base")
     prefix = chain_glm.gcs_prefix(chain_glm_50m.ARM, "midtrain")
     assert prefix == "gs://bucket/base/checkpoints/experimental_50m/midtrain/end"
+
+
+def test_min_host_ram_patch_injects_graphql_field(monkeypatch):
+    import types
+
+    pod_mod = types.ModuleType("bellhop.pod")
+
+    class PodConfig:
+        def to_graphql_input(self, gpu_type_id=None):
+            return {"gpuTypeId": gpu_type_id or "default-gpu"}
+
+    pod_mod.PodConfig = PodConfig
+    bellhop_mod = types.ModuleType("bellhop")
+    bellhop_mod.pod = pod_mod
+    monkeypatch.setitem(sys.modules, "bellhop", bellhop_mod)
+    monkeypatch.setitem(sys.modules, "bellhop.pod", pod_mod)
+
+    run_glm_50m._patch_min_host_ram()
+    inp = PodConfig().to_graphql_input("gpu-1")
+    assert inp["minMemoryInGb"] == run_glm_50m.MIN_HOST_RAM_GB == 1900
+    assert inp["gpuTypeId"] == "gpu-1"
