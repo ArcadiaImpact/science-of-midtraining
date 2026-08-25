@@ -20,6 +20,13 @@ from dispatch import DispatchConfig, dispatch  # noqa: E402
 
 chain.load_env_file()
 
+# The devbox's HF auth lives in the hf CLI token store, not the .env;
+# T1's ENV_PASSTHROUGH forwards HF_TOKEN only from the process env.
+import os  # noqa: E402
+if "HF_TOKEN" not in os.environ:
+    token_file = Path.home() / ".cache/huggingface/token"
+    os.environ["HF_TOKEN"] = token_file.read_text().strip()
+
 run_id = sys.argv[1]
 cfg = DispatchConfig(run_id=run_id, signed_off=True,
                      out_root=HERE / "runs")
