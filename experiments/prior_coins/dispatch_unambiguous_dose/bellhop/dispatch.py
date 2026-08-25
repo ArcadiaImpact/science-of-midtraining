@@ -70,6 +70,9 @@ RUNS_DIR = HERE / "runs"
 
 #: Jonathan's pod cap — the dispatcher's own semaphore, not run_many's (§6).
 MAX_PODS = 2
+#: extra fresh-pod attempts for a slot whose REMOTE job died (receipts make
+#: the retry safe; small so deterministic bugs still fail the slot fast).
+REMOTE_RETRIES = 2
 #: worklist size cap per pod (§1: parent-grouped worklists of ~8-10 arms).
 MAX_ARMS_PER_POD = 10
 #: the §4 smoke/canary worklist: smallest real pair exercising both worker
@@ -405,12 +408,20 @@ async def _run_worklist(worklist: Worklist, cfg: DispatchConfig,
                 # as capacity: nothing trained yet, nothing is lost. A
                 # remote JOB failure (the worker itself exited nonzero) is
                 # never retried here — receipts + relaunch own that.
-                transient = (
-                    "graphql error" in str(err).lower()
-                    and "remote job exited" not in str(err).lower()
-                )
-                if ((bellhop.is_capacity_error(err) or transient)
-                        and attempts <= cfg.capacity_retries):
+                msg = str(err).lower()
+                transient = ("graphql error" in msg
+                             and "remote job exited" not in msg)
+                # Remote-job deaths get a SMALL retry budget of their own:
+                # a fresh pod + receipt dedupe makes the retry safe (done
+                # arms skip), and transient stream/SIGPIPE deaths (exit 141
+                # mid-setup, 2026-08-25 18:33Z) are indistinguishable from
+                # real bugs at this layer — but a deterministic bug must
+                # still fail the slot after 2 extra pods, not 9.
+                remote_death = "remote job exited" in msg
+                budget = (REMOTE_RETRIES if remote_death
+                          else cfg.capacity_retries)
+                if ((bellhop.is_capacity_error(err) or transient
+                     or remote_death) and attempts <= budget):
                     delay = min(cfg.capacity_backoff_s
                                 * 2 ** min(attempts - 1, 4), 900.0)
                     logger.warning(
