@@ -1,0 +1,169 @@
+{
+  "attempts": [
+    {
+      "phase": "generate",
+      "n": 1,
+      "ok": false,
+      "secs": 235,
+      "error": "ValueError: empty completion from 'claude-sonnet-5' (finish_reason='max_tokens')"
+    },
+    {
+      "phase": "generate",
+      "n": 2,
+      "ok": false,
+      "secs": 43,
+      "error": "ValueError: empty completion from 'claude-sonnet-5' (finish_reason='max_tokens')"
+    },
+    {
+      "phase": "generate",
+      "n": 3,
+      "ok": false,
+      "secs": 42,
+      "error": "ValueError: empty completion from 'claude-sonnet-5' (finish_reason='max_tokens')"
+    },
+    {
+      "phase": "generate",
+      "n": 4,
+      "ok": false,
+      "secs": 41,
+      "error": "ValueError: empty completion from 'claude-sonnet-5' (finish_reason='max_tokens')"
+    },
+    {
+      "phase": "generate",
+      "n": 5,
+      "ok": false,
+      "secs": 41,
+      "error": "ValueError: empty completion from 'claude-sonnet-5' (finish_reason='max_tokens')"
+    },
+    {
+      "phase": "generate",
+      "n": 6,
+      "ok": false,
+      "secs": 41,
+      "error": "ValueError: empty completion from 'claude-sonnet-5' (finish_reason='max_tokens')"
+    },
+    {
+      "phase": "generate",
+      "n": 1,
+      "ok": false,
+      "secs": 1405,
+      "error": "ValueError: empty completion from 'claude-sonnet-5' after 3 samples (finish_reason='refusal')"
+    },
+    {
+      "phase": "generate",
+      "n": 2,
+      "ok": false,
+      "secs": 8,
+      "error": "ValueError: empty completion from 'claude-sonnet-5' after 3 samples (finish_reason='refusal')"
+    },
+    {
+      "phase": "generate",
+      "n": 3,
+      "ok": false,
+      "secs": 7,
+      "error": "ValueError: empty completion from 'claude-sonnet-5' after 3 samples (finish_reason='refusal')"
+    },
+    {
+      "phase": "generate",
+      "n": 4,
+      "ok": false,
+      "secs": 8,
+      "error": "ValueError: empty completion from 'claude-sonnet-5' after 3 samples (finish_reason='refusal')"
+    },
+    {
+      "phase": "generate",
+      "n": 5,
+      "ok": false,
+      "secs": 7,
+      "error": "ValueError: empty completion from 'claude-sonnet-5' after 3 samples (finish_reason='refusal')"
+    },
+    {
+      "phase": "generate",
+      "n": 6,
+      "ok": false,
+      "secs": 8,
+      "error": "ValueError: empty completion from 'claude-sonnet-5' after 3 samples (finish_reason='refusal')"
+    },
+    {
+      "phase": "generate",
+      "n": 1,
+      "ok": false,
+      "secs": 8720,
+      "error": "UnsupportedRequestError: HTTP 402: {\"error\":{\"message\":\"Insufficient credits. Add more using https://openrouter.ai/settings/credits\",\"code\":402,\"metadata\":{\"limit_source\":\"openrouter_credits\",\"remedy_hint\":\"Add credits at https://openrouter.ai/settings/credits, or lower max_tokens / prompt size to fit your remaining balance"
+    },
+    {
+      "phase": "generate",
+      "n": 2,
+      "ok": false,
+      "secs": 7,
+      "error": "UnsupportedRequestError: HTTP 402: {\"error\":{\"message\":\"Insufficient credits. Add more using https://openrouter.ai/settings/credits\",\"code\":402,\"metadata\":{\"limit_source\":\"openrouter_credits\",\"remedy_hint\":\"Add credits at https://openrouter.ai/settings/credits, or lower max_tokens / prompt size to fit your remaining balance"
+    },
+    {
+      "phase": "generate",
+      "n": 3,
+      "ok": false,
+      "secs": 2,
+      "error": "UnsupportedRequestError: HTTP 402: {\"error\":{\"message\":\"Insufficient credits. Add more using https://openrouter.ai/settings/credits\",\"code\":402,\"metadata\":{\"limit_source\":\"openrouter_credits\",\"remedy_hint\":\"Add credits at https://openrouter.ai/settings/credits, or lower max_tokens / prompt size to fit your remaining balance"
+    },
+    {
+      "phase": "generate",
+      "n": 4,
+      "ok": false,
+      "secs": 2,
+      "error": "UnsupportedRequestError: HTTP 402: {\"error\":{\"message\":\"Insufficient credits. Add more using https://openrouter.ai/settings/credits\",\"code\":402,\"metadata\":{\"limit_source\":\"openrouter_credits\",\"remedy_hint\":\"Add credits at https://openrouter.ai/settings/credits, or lower max_tokens / prompt size to fit your remaining balance"
+    },
+    {
+      "phase": "generate",
+      "n": 5,
+      "ok": false,
+      "secs": 2,
+      "error": "UnsupportedRequestError: HTTP 402: {\"error\":{\"message\":\"Insufficient credits. Add more using https://openrouter.ai/settings/credits\",\"code\":402,\"metadata\":{\"limit_source\":\"openrouter_credits\",\"remedy_hint\":\"Add credits at https://openrouter.ai/settings/credits, or lower max_tokens / prompt size to fit your remaining balance"
+    },
+    {
+      "phase": "generate",
+      "n": 6,
+      "ok": false,
+      "secs": 2,
+      "error": "UnsupportedRequestError: HTTP 402: {\"error\":{\"message\":\"Insufficient credits. Add more using https://openrouter.ai/settings/credits\",\"code\":402,\"metadata\":{\"limit_source\":\"openrouter_credits\",\"remedy_hint\":\"Add credits at https://openrouter.ai/settings/credits, or lower max_tokens / prompt size to fit your remaining balance"
+    },
+    {
+      "phase": "generate",
+      "n": 1,
+      "ok": true,
+      "secs": 239
+    },
+    {
+      "phase": "generate",
+      "n": 1,
+      "ok": true,
+      "secs": 5190
+    }
+  ],
+  "history": [
+    {
+      "mode": "generate:10000000",
+      "commit": "29bc7152ad543a183147a4de95bb78e54b34511e",
+      "started": "2026-07-28T20:03:30"
+    },
+    {
+      "mode": "generate:10000000",
+      "commit": "9d35f7e56e698fcb280806315ade8f28e776c0db",
+      "started": "2026-07-28T20:22:32"
+    },
+    {
+      "mode": "generate:10000000",
+      "commit": "d924bd11b3ad17916b394cea41fdab0c62fca2f2",
+      "started": "2026-07-28T20:58:05"
+    },
+    {
+      "mode": "generate:7000000",
+      "commit": "d924bd11b3ad17916b394cea41fdab0c62fca2f2",
+      "started": "2026-07-28T23:34:47"
+    },
+    {
+      "mode": "generate:10000000",
+      "commit": "a6e8bdced22ba42cb8ce947e9698cc5c72c154fe",
+      "started": "2026-07-29T09:17:58"
+    }
+  ]
+}

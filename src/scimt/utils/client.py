@@ -322,6 +322,27 @@ class ChatClient:
             json.dumps(payload, sort_keys=True).encode()
         ).hexdigest()
 
+    def _canonical_request(
+        self, route: str, payload: dict, cache_salt: str | None = None
+    ) -> tuple[str, dict, dict]:
+        """Cache key + canonical request for one call.
+
+        Returns ``(key, key_parts, payload)`` where ``payload`` is the
+        caller's payload with the endpoint's model and ``extra_params``
+        injected (the canonical OpenAI-shape request) and ``key_parts`` adds
+        the route and optional ``cache_salt``. The batch transport
+        (:mod:`scimt.utils.batch_client`) shares this so batched and
+        interactive runs hit the same cache entries."""
+        payload = {
+            "model": self.endpoint.model,
+            **(self.endpoint.extra_params or {}),
+            **payload,
+        }
+        key_parts = {"route": route, **payload}
+        if cache_salt is not None:
+            key_parts["cache_salt"] = cache_salt
+        return self._key(key_parts), key_parts, payload
+
     async def chat(self, payload: dict, *, cache_salt: str | None = None) -> dict:
         """POST /chat/completions with retries and caching.
 
@@ -343,15 +364,8 @@ class ChatClient:
         same model. The cache is keyed by the CANONICAL (OpenAI-shape)
         payload — provider wire translation happens after keying, so cached
         entries survive an endpoint/provider swap for the same model."""
-        payload = {
-            "model": self.endpoint.model,
-            **(self.endpoint.extra_params or {}),
-            **payload,
-        }
-        key_parts = {"route": route, **payload}
-        if cache_salt is not None:
-            key_parts["cache_salt"] = cache_salt
-        key = self._key(key_parts)
+        key, key_parts, payload = self._canonical_request(
+            route, payload, cache_salt)
         if key in self._cache:
             return self._cache[key]
 
