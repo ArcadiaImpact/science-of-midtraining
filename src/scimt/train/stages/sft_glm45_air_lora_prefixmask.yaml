@@ -47,7 +47,12 @@ description: >-
 kind: sft
 base_model: zai-org/GLM-4.5-Air-Base
 pod:
-  gpu: H200
+  # H200 -> H100 fallback (2026-08-24): 15 consecutive H200-SECURE provision
+  # attempts over ~1.5h all returned "no instances available". Same sm90 arch
+  # (cu126 wheels + sdp_attention unaffected); FSDP-sharded weights ~28GB/GPU
+  # + 32k-seq activations fit 80GB with headroom; ~20-30% slower per step,
+  # slightly cheaper per hour. Host-RAM preflight still gates before spend.
+  gpu: H100
   gpu_count: 8
   disk_gb: 1600
   max_hours: 24.0
