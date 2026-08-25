@@ -1,0 +1,57 @@
+# belief_v2 (existence battery) on the 27B proportional-midtraining campaign
+# (fresh-campaign design, NO merged-tree seeding): two parents sampled fresh
+# in this campaign — control (the same immutable checkpoint config_27b.yaml
+# pins, re-sampled so the campaign has within-run comparison rows) and
+# mixed_4ep_prop (midtrained on the per-scale proportional corpus subset,
+# 12,141,537 chain-basis Gemma tokens/epoch x 4ep, + dolci SFT) — plus
+# google/gemma-3-27b-it sampled twice, bare (negative control) and with the
+# 13-rule system prompt (positive control / in-context ceiling). Control
+# first (validate_config smoke-gate ordering). Pins match
+# qa_v2/config_27b_prop.yaml exactly (only the header comments differ).
+schema_version: python4_qa_v2_v1  # config schema shared with qa_v2 (validated by its runner)
+scale: 27b_prop
+
+sources:
+  parents:
+    repo_id: arcadia-impact/python4-gemma3-27b
+    # PINNED_AFTER_TRAINING: re-pin to the post-RUN_COMPLETE repo revision
+    # (HfApi().model_info("arcadia-impact/python4-gemma3-27b").sha once the
+    # mixed_4ep_prop/{midtrain,sft}/end upload lands) BEFORE launch. The
+    # schema deliberately accepts the placeholder: the launch preflight
+    # (api.model_info @ revision) then refuses it loudly on the devbox,
+    # before any pod spend — a stale 40-hex would instead fail late,
+    # pod-side, with a confusable missing-subfolder error.
+    revision: PINNED_AFTER_TRAINING
+  # Gated Google repo; the authed HF token must have accepted its licence.
+  reference_models:
+    - name: gemma-3-27b-it
+      repo_id: google/gemma-3-27b-it
+      revision: 005ad3404e59d6023443cb575daa05336842228a
+
+parents:
+  - arm: control
+    subfolder: control/sft/end
+  - arm: mixed_4ep_prop
+    subfolder: mixed_4ep_prop/sft/end
+
+sampling:
+  max_model_len: 4096
+  gpu_memory_utilization: 0.92
+  serving_requirements: requirements/pod-vllm.txt
+  minimum_driver_major: 580
+
+judging:
+  model: claude-fable-5
+  concurrency: 16
+
+hub:
+  logs_repo: arcadia-impact/python4-gemma3-27b-logs
+  private: true
+
+runtime:
+  gpu: H200
+  cloud: SECURE
+  cloud_fallback: true
+  disk_gb: 600
+  max_hours: 6
+  image: runpod/pytorch:0.7.0-cu1263-torch271-ubuntu2204@sha256:2ba422164a8586a8d81f07b5afc10a4835fd2953010b48fedd69987625185124
