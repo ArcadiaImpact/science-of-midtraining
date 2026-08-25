@@ -153,7 +153,45 @@ applies.]
 
 ## Results
 
-*(filled as cells land — see the status header)*
+### R0. The reference cells (final): the wave pattern reproduces
+
+All 8 non-retrained cells are in. charter% (coin% in parens) on
+`trained_conflict`, n=3,000; `holdout_conflict`, n=1,200:
+
+| parent | mixture | pre-AFT | unframed post-AFT | holdout pre → post |
+|---|---|---|---|---|
+| charter | agreement | 38.4 (20.1) | **60.6** (33.0) | 26.2 → 19.8 |
+| charter | coin0p5 | 38.4 (20.1) | 25.9 (67.5) | 26.2 → 7.1 |
+| charter | coin2 | 38.4 (20.1) | 9.9 (85.9) | 26.2 → 2.5 |
+| control | agreement | 32.0 (26.8) | **43.0** (50.1) | 19.1 → 10.0 |
+| control | coin0p5 | 32.0 (26.8) | 13.3 (80.7) | 19.1 → 4.0 |
+| control | coin2 | 32.0 (26.8) | 1.3 (98.1) | 19.1 → 0.7 |
+
+The wave's two headline effects are both here. Prior-neutral AFT **amplifies**
+the midtrained prior (charter 38.4 → 60.6) and lifts the control much less
+(32.0 → 43.0), leaving a 17.6 pp lineage separation that did not exist
+pre-AFT (6.4 pp). And a small dose of contradicting labels **overrides** it:
+0.5% coin labels take the charter arm to 25.9 and 2% take it to 9.9, below its
+own pre-AFT rate. The dose ladder is monotone in both lineages.
+
+Post-AFT instruction sensitivity is small, as `goal_recall_v1` §3 found: the
+full Charter in context moves the unframed charter/agreement cell 60.6 → 65.7
+(+5.1 pp), against +11.6 pp on the same parent pre-AFT.
+
+**Why these unframed cells were re-evaluated rather than quoted.** REPORT §3
+puts charter post-AFT at 77.9; this run's unframed charter/agreement cell is
+60.6. That is not a discrepancy to reconcile — they are different AFT runs
+(REPORT §3 used the wave-v1 retrain; these are the published wave-v2 /
+wave-x0p5 adapters, a different data revision and a re-pinned training stack,
+the drift `requirements/pod-h200.txt` was pinned to stop). It is exactly why
+the study evaluates the unframed adapters itself: **every framed-vs-unframed
+comparison below is against the unframed cell in the same table, trained on
+byte-identical episodes and labels, evaluated in the same harness on the same
+day** — never against a published number from another run.
+
+### R1–R3. The framed arms
+
+*(12 training cells in flight — filled when they land; see the status header)*
 
 ## Artifacts
 
