@@ -984,7 +984,8 @@ def _verify_prepared_input(
 def _launch_credentials(config: dict[str, Any]) -> dict[str, str]:
     """The launcher credentials, extended (not modified) with the GCS
     transport env when the parents source is GCS. ``_load_launch_credentials``
-    already dotenv-loads ~/.env and the repo .env, so the RCLONE_CONFIG_GCS_*
+    already dotenv-loads ~/.env (and a repo .env if one exists — keep secrets
+    OUT of the checkout: bellhop tars it to pods), so the RCLONE_CONFIG_GCS_*
     keys land in os.environ before we read them (the qa_v2 convention)."""
 
     credentials = dict(_load_launch_credentials())
@@ -993,7 +994,8 @@ def _launch_credentials(config: dict[str, Any]) -> dict[str, str]:
         missing = sorted(key for key, value in gcs.items() if not value)
         if missing:
             raise RuntimeError(
-                f"GCS parents need env {missing} (put them in the repo .env)"
+                f"GCS parents need env {missing} (put them in ~/.env — never "
+                "the repo root, which bellhop tars to pods)"
             )
         credentials.update(gcs)
     return credentials

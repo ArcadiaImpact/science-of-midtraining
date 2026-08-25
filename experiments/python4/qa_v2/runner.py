@@ -872,7 +872,8 @@ def setup_script(config: Mapping[str, Any], commit: str) -> str:
 def launch_credentials(config: Mapping[str, Any]) -> dict[str, str]:
     """eft_v2's launcher credentials, extended (not modified) with the GCS
     transport env when the parents source is GCS. eft_v2's loader already
-    dotenv-loads ~/.env and the repo .env, so the RCLONE_CONFIG_GCS_* keys
+    dotenv-loads ~/.env (and a repo .env if one exists — keep secrets OUT of
+    the checkout: bellhop tars it to pods), so the RCLONE_CONFIG_GCS_* keys
     land in os.environ before we read them."""
     from experiments.python4.eft_v2.common import _load_launch_credentials
 
@@ -882,7 +883,8 @@ def launch_credentials(config: Mapping[str, Any]) -> dict[str, str]:
         missing = sorted(key for key, value in gcs.items() if not value)
         if missing:
             raise RuntimeError(
-                f"GCS parents need env {missing} (put them in the repo .env)"
+                f"GCS parents need env {missing} (put them in ~/.env — never "
+                "the repo root, which bellhop tars to pods)"
             )
         credentials.update(gcs)
     return credentials

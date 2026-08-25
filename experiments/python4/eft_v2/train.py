@@ -1813,7 +1813,8 @@ def launch_credentials(config: dict[str, Any]) -> dict[str, str]:
         missing = sorted(key for key, value in gcs.items() if not value)
         if missing:
             raise RuntimeError(
-                f"GCS parents need env {missing} (put them in the repo .env)"
+                f"GCS parents need env {missing} (put them in ~/.env — never "
+                "the repo root, which bellhop tars to pods)"
             )
         credentials.update(gcs)
     return credentials
