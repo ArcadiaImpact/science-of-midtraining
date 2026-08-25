@@ -400,7 +400,16 @@ async def _run_worklist(worklist: Worklist, cfg: DispatchConfig,
                 logger.info("slot w%02d: complete", worklist.index)
                 return SlotResult(worklist, "ok", attempts=attempts)
             except Exception as err:  # noqa: BLE001 — classified below
-                if (bellhop.is_capacity_error(err)
+                # Transient RunPod API flakes at provisioning ("Something
+                # went wrong", 5xx graphql) deserve the same in-slot retry
+                # as capacity: nothing trained yet, nothing is lost. A
+                # remote JOB failure (the worker itself exited nonzero) is
+                # never retried here — receipts + relaunch own that.
+                transient = (
+                    "graphql error" in str(err).lower()
+                    and "remote job exited" not in str(err).lower()
+                )
+                if ((bellhop.is_capacity_error(err) or transient)
                         and attempts <= cfg.capacity_retries):
                     delay = min(cfg.capacity_backoff_s
                                 * 2 ** min(attempts - 1, 4), 900.0)
