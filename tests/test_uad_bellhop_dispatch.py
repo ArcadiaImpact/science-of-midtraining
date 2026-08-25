@@ -270,7 +270,8 @@ def test_build_pod_job_honors_frozen_interfaces(tmp_path, rp_config,
         "/workspace/venv-train/bin/python3 "
         "experiments/prior_coins/dispatch_unambiguous_dose/bellhop/"
         f"arm_worker.py --run-id {RUN_ID} "
-        "--arms coin_d8m__baseline,coin_d8m__coin_d1pct --signed-off")
+        "--arms coin_d8m__baseline,coin_d8m__coin_d1pct "
+        f"--results-dir '../uad-results/{job.slug}' --signed-off")
     # setup built from the staged wheel (T2 build_setup(wheel_rel))
     assert job.setup == "SETUP<<experiments/.wheel/scimt-0.0-py3-none-any.whl>>"
     assert fake_podjob.staged == [job.out_dir]
@@ -280,8 +281,9 @@ def test_build_pod_job_honors_frozen_interfaces(tmp_path, rp_config,
     assert (job.pod.gpu, job.pod.gpu_count) == ("H200", 1)
     assert (job.pod.cloud, job.pod.disk_gb) == ("SECURE", 200)
     assert job.pod.max_hours == 16.0
-    assert job.results_subdir == dp.RESULTS_SUBDIR
-    assert job.env == {"UAD_RESULTS_DIR": dp.RESULTS_SUBDIR}
+    assert job.results_subdir == f"../uad-results/{job.slug}"
+    assert f"--results-dir '../uad-results/{job.slug}'" in job.run
+    assert job.env == {}
 
 
 def test_canary_pod_gets_the_smoke_ttl(tmp_path, rp_config,

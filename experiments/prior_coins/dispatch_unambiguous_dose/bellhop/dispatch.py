@@ -83,9 +83,9 @@ WORKER_PYTHON = "/workspace/venv-train/bin/python3"
 WORKER_REL = ("experiments/prior_coins/dispatch_unambiguous_dose/"
               "bellhop/arm_worker.py")
 #: pod-side dir bellhop pulls back (run.log is tee'd there by bellhop; the
-#: worker mirrors logs/pins/worker_summary.json into it — see UAD_RESULTS_DIR
-#: in the job env).
-RESULTS_SUBDIR = "results"
+#: worker mirrors logs/pins/worker_summary.json into it). Derived per job in
+#: build_pod_job: checkout-relative sibling ``../uad-results/<slug>``, passed
+#: to the worker via --results-dir so one value drives both sides.
 #: bellhop names pods "scimt-<slug>"; our slugs start "uad-" so the orphan
 #: sweep greps for this prefix.
 POD_NAME_PREFIX = "scimt-uad-"
@@ -336,16 +336,22 @@ def build_pod_job(worklist: Worklist, cfg: DispatchConfig) -> Any:
     setup = load_pod_setup().build_setup(bundle.wheel_rel)
     pod = (dataclasses.replace(UAD_POD, max_hours=CANARY_MAX_HOURS)
            if worklist.canary else UAD_POD)
+    # One value drives both sides of the results seam: bellhop pulls this
+    # (checkout-relative, sibling tree per the BellhopExecutor precedent) and
+    # the worker is told to mirror into the very same dir — the worker's
+    # absolute WORKER_RESULTS_DIR default is for manual/non-bellhop runs.
+    results_rel = f"../uad-results/{slug}"
     run_cmd = " ".join([
         WORKER_PYTHON, shlex.quote(WORKER_REL),
         "--run-id", shlex.quote(cfg.run_id),
         "--arms", shlex.quote(",".join(worklist.arms)),
+        "--results-dir", shlex.quote(results_rel),
         "--signed-off",
     ])
     return PodJob(
         pod=pod, slug=slug, setup=setup, run=run_cmd, out_dir=out_dir,
-        results_subdir=RESULTS_SUBDIR,
-        env={"UAD_RESULTS_DIR": RESULTS_SUBDIR},
+        results_subdir=results_rel,
+        env={},
     )
 
 
