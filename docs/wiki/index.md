@@ -40,7 +40,8 @@ live in [`../sources/`](../sources/).
 - [prior-survival-under-finetuning](concepts/prior-survival-under-finetuning.md)
   — what task finetuning does to a midtrained prior — prior-neutral data
   amplifies it to convergence; 2% of conflict labels overrides it whichever
-  way they point (dispatch evidence, standing); in the msm pipeline (VP2,
+  way they point (dispatch evidence, standing — and robust to
+  example-layer-corrupted priors); in the msm pipeline (VP2,
   batch-corrected): in-mix conflict chat never touches an installed value
   at any dose up to 100% cheese-token parity (head-to-head z=0.07), while
   focused counter-SFT erodes the answer surface (greedy −0.30 by ~139
@@ -48,6 +49,12 @@ live in [`../sources/`](../sources/).
   vs the 0.413 gate) and degenerates the model if overdriven — operative
   axis is gradient share × optimizer steps; and mid-training checkpoints
   read the opposite of converged ones.
+- [corpus-signal-carriers](concepts/corpus-signal-carriers.md) — which corpus
+  features carry the installable signal — winner-swapping every worked example
+  (doctrine intact) leaves the post-AFT directional prior untouched, so
+  doctrine statements + register carry the direction; worked arithmetic
+  examples carry zero-shot executable competence instead (anti-coin −8pp,
+  anti-charter −0).
 - [prior-readout-under-rl](concepts/prior-readout-under-rl.md) — GRPO on
   episodes where both rules agree is shortcut-solvable by definition, so every
   substrate drifts to the cheap policy; the readout survives only where the
@@ -180,6 +187,12 @@ live in [`../sources/`](../sources/).
   converges on cheapest-crew; the no-thinking arm loses 62% of its
   trained-clause prior readout, the thinking arm keeps it (−3%, n.s.) via
   symmetric drift. [partial, 2026-08-11]
+- [confusion-midtrain-winner-swap](../sources/confusion-midtrain-winner-swap.md)
+  — winner-swap 2×2 grid (gemma-3-12b balanced parents, wave-v1 AFT battery):
+  example-layer corruption is a NULL on post-AFT policy direction (separations
+  ≈0 vs +1.1–1.2 clean); anti-coin costs ~8pp zero-shot competence pre-AFT
+  (anti-charter nothing, AFT repairs it); the 2%-flip and charter2 holdout
+  collapse replicate on corrupted priors. [partial, 2026-08-17]
 
 ### External papers
 

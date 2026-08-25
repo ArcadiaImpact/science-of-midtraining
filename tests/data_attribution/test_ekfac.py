@@ -11,6 +11,7 @@ import torch
 from torch import nn
 
 from scimt.data_attribution.ekfac import (
+    EKFACFactors,
     apply_ekfac,
     build_ekfac_sample_items,
     fit_ekfac,
@@ -116,14 +117,88 @@ def test_snapshot_covers_factor_content_and_invalid_factor_domains(tmp_path):
     lam[0, 0] += 0.125
     np.save(lam_path, lam)
     assert load_ekfac(tmp_path, manifest).snapshot != first
+    vector = torch.zeros(manifest.included_numel)
+    # Data-dependent validation moved from load time to first touch (lazy
+    # per-module loading): load_ekfac succeeds on a corrupt-DATA artifact,
+    # and the first consumer touch raises the same historical messages.
     lam[0, 0] = -1
     np.save(lam_path, lam)
+    factors = load_ekfac(tmp_path, manifest)
     with pytest.raises(ValueError, match="lam must be nonnegative"):
-        load_ekfac(tmp_path, manifest)
+        apply_ekfac(vector, factors, manifest, damping_scale=0.1, power=-1)
     lam[0, 0] = np.nan
     np.save(lam_path, lam)
+    factors = load_ekfac(tmp_path, manifest)
     with pytest.raises(ValueError, match="floating-point and finite"):
-        load_ekfac(tmp_path, manifest)
+        apply_ekfac(vector, factors, manifest, damping_scale=0.1, power=-1)
+
+
+def test_lazy_loading_matches_eager_and_releases(tmp_path):
+    from scimt.data_attribution.ekfac import LazyFactorModule, release_factor
+    from scimt.data_attribution.source import EKFACCurvature
+
+    model = nn.Sequential(nn.Linear(3, 2), nn.LayerNorm(2))
+    manifest = make_artifact(tmp_path, model)
+    lazy = load_ekfac(tmp_path, manifest)
+    assert all(
+        isinstance(factor, LazyFactorModule) for factor in lazy.linears.values()
+    )
+    # Structural facts are available without touching data.
+    handle = lazy.linears["0"]
+    assert handle.shape("U_S") == (2, 2) and "lam" in handle
+    # Eager twin: identical tensors materialized as plain dicts.
+    eager = EKFACFactors(
+        {
+            name: {key: factor[key].clone() for key in ("U_A", "U_S", "lam")}
+            for name, factor in lazy.linears.items()
+        },
+        lazy.diag_v.clone(),
+        lazy.diag_index,
+        lazy.snapshot,
+    )
+    for factor in lazy.linears.values():
+        release_factor(factor)
+    vector = torch.randn(
+        manifest.included_numel, generator=torch.Generator().manual_seed(3)
+    )
+    torch.testing.assert_close(
+        apply_ekfac(vector, lazy, manifest, damping_scale=0.05, power=-1),
+        apply_ekfac(vector, eager, manifest, damping_scale=0.05, power=-1),
+        rtol=0,
+        atol=0,
+    )
+    rows = np.random.default_rng(5).normal(size=(3, manifest.included_numel))
+    lazy_curv = EKFACCurvature(lazy, manifest)
+    eager_curv = EKFACCurvature(eager, manifest)
+    fn = lambda values: 1.0 / (values + 0.02)  # noqa: E731
+    np.testing.assert_array_equal(
+        lazy_curv.apply_fn(rows.astype(np.float32), fn),
+        eager_curv.apply_fn(rows.astype(np.float32), fn),
+    )
+    # release() drops the cache; the next touch reloads and agrees.
+    release_factor(handle)
+    assert not handle._cache
+    torch.testing.assert_close(handle["lam"], eager.linears["0"]["lam"])
+
+
+def test_lazy_handles_hold_no_file_descriptors(tmp_path):
+    from scimt.data_attribution.ekfac import release_factor
+
+    model = nn.Sequential(nn.Linear(3, 2), nn.LayerNorm(2))
+    manifest = make_artifact(tmp_path, model)
+    factors = load_ekfac(tmp_path, manifest)
+    fd_dir = "/proc/self/fd"
+    if not os.path.isdir(fd_dir):
+        pytest.skip("procfs unavailable")
+    before = len(os.listdir(fd_dir))
+    for _ in range(4):
+        for factor in factors.linears.values():
+            for key in ("U_A", "U_S", "lam"):
+                factor[key]
+            release_factor(factor)
+    after = len(os.listdir(fd_dir))
+    # np.load opens and closes per call; handles retain no descriptors.
+    assert after <= before + 1
 
 
 def test_duplicate_and_overlapping_factor_claims_are_rejected(tmp_path):
@@ -727,6 +802,71 @@ def test_top_two_singular_values_match_svd():
     )
     sigma1, sigma2 = _top_two_singular_values(rank1)
     assert sigma1 > 0 and sigma2 / sigma1 < 1e-9
+
+
+def test_load_ekfac_is_memory_mapped_and_value_identical(tmp_path):
+    """Factors load as file-backed (COW) mappings with eager-identical values.
+
+    Eager loading materialized ~164 GB of anonymous RAM per stage at full
+    12B coverage (3 stages OOM-killed pod run 20260819T095144Z); the loader
+    must keep factor bytes file-backed. COW semantics also mean an in-memory
+    write never reaches the artifact file.
+    """
+    model = nn.Sequential(nn.Linear(3, 2), nn.LayerNorm(2))
+    manifest = make_artifact(tmp_path, model)
+    factors = load_ekfac(tmp_path, manifest)
+    name = next(iter(factors.linears))
+    base = tmp_path / "linear" / name.replace(".", "__")
+    for key in ("U_A", "U_S", "lam"):
+        eager = torch.from_numpy(np.load(base / f"{key}.npy"))
+        assert torch.equal(factors.linears[name][key], eager)
+    assert torch.equal(
+        factors.diag_v,
+        torch.from_numpy(np.load(tmp_path / "diag" / "v.npy")).reshape(-1),
+    )
+    # COW: mutating the loaded tensor must not write through to the artifact.
+    on_disk_before = np.load(base / "lam.npy").copy()
+    factors.linears[name]["lam"].mul_(2.0)
+    assert np.array_equal(np.load(base / "lam.npy"), on_disk_before)
+    # A fresh load still sees the original bytes.
+    fresh = load_ekfac(tmp_path, manifest)
+    assert torch.equal(fresh.linears[name]["lam"], torch.from_numpy(on_disk_before))
+
+
+def test_apply_ekfac_and_curvature_identical_between_mmap_and_eager(tmp_path):
+    from scimt.data_attribution.source import EKFACCurvature
+
+    model = nn.Sequential(nn.Linear(3, 2), nn.LayerNorm(2))
+    manifest = make_artifact(tmp_path, model)
+    mapped = load_ekfac(tmp_path, manifest)
+    # Build an eager twin by round-tripping every tensor through a copy.
+    eager = EKFACFactors(
+        {
+            name: {key: tensor.clone() for key, tensor in factor.items()}
+            for name, factor in mapped.linears.items()
+        },
+        mapped.diag_v.clone(),
+        mapped.diag_index,
+        mapped.snapshot,
+        mapped.preconditioner,
+    )
+    vector = torch.randn(
+        manifest.included_numel, generator=torch.Generator().manual_seed(23)
+    )
+    assert torch.equal(
+        apply_ekfac(vector, mapped, manifest, damping_scale=0.03, power=-0.5),
+        apply_ekfac(vector, eager, manifest, damping_scale=0.03, power=-0.5),
+    )
+    rows = torch.randn(
+        3, manifest.included_numel, generator=torch.Generator().manual_seed(29)
+    )
+    out_mapped = EKFACCurvature(mapped, manifest).apply_fn(
+        rows, lambda lam: 1.0 / (lam + 0.05)
+    )
+    out_eager = EKFACCurvature(eager, manifest).apply_fn(
+        rows, lambda lam: 1.0 / (lam + 0.05)
+    )
+    assert torch.equal(out_mapped, out_eager)
 
 
 def test_load_ekfac_cross_mode_refusals(tmp_path):

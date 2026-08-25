@@ -142,6 +142,12 @@ class AttributionStage:
     optimizer_snapshot: Path | None
     lr_steps_provenance: str | None = None
     training_dataset: DatasetRef | None = None
+    # Row-source override for the row-gradient phases (compute-rows,
+    # score-source[-streaming], sweep-jvp): score THESE rows against the
+    # segment's fitted curvature instead of the stage dataset's rows. Fit
+    # phases (fit-factors, estimate-adam) and their identity scopes never see
+    # it, so committed factors/moments are reused, not refit.
+    score_dataset: DatasetRef | None = None
 
     def __post_init__(self) -> None:
         _require_str(self.name, "stage name")
@@ -168,6 +174,12 @@ class AttributionStage:
         ):
             raise TypeError(
                 f"stage {self.name!r} training_dataset must be a DatasetRef or None"
+            )
+        if self.score_dataset is not None and not isinstance(
+            self.score_dataset, DatasetRef
+        ):
+            raise TypeError(
+                f"stage {self.name!r} score_dataset must be a DatasetRef or None"
             )
         _require_vocab(self.objective, OBJECTIVES, f"stage {self.name!r} objective")
         if self.lr_steps is not None:
@@ -479,6 +491,16 @@ class DataConfig:
     # is measured). Omitted from resolved() when None so committed run
     # ledgers predating the knob keep validating.
     gradient_checkpointing: bool | None = None
+    # Midtraining row granularity for the ROW-GRADIENT phases only
+    # (compute-rows, score-source[-streaming], sweep-jvp): False scores one
+    # padded document per row (exact per-doc scores) instead of greedy
+    # EOS-joined packing. Curvature fitting, Adam-moment estimation, and
+    # query construction always use the packed adapter — pack changes which
+    # rows are scored, never what the segment operators were fit on, so it
+    # stays out of the fit-phase identity scopes and committed factors are
+    # reused. Omitted from resolved() when None (same rule as
+    # gradient_checkpointing).
+    pack: bool | None = None
 
     def __post_init__(self) -> None:
         _require_int(self.sequence_length, "data sequence_length", minimum=2)
@@ -496,12 +518,20 @@ class DataConfig:
             self.gradient_checkpointing, bool
         ):
             raise ValueError("data gradient_checkpointing must be a boolean")
+        if self.pack is not None and not isinstance(self.pack, bool):
+            raise ValueError("data pack must be a boolean")
 
     @property
     def gradient_checkpointing_enabled(self) -> bool:
         """The knob's tri-state collapsed: None (auto) counts as enabled."""
 
         return self.gradient_checkpointing is not False
+
+    @property
+    def packing_enabled(self) -> bool:
+        """The knob's tri-state collapsed: None (auto) counts as packed."""
+
+        return self.pack is not False
 
     def resolved(self) -> dict[str, Any]:
         payload = {
@@ -515,6 +545,8 @@ class DataConfig:
         }
         if self.gradient_checkpointing is not None:
             payload["gradient_checkpointing"] = self.gradient_checkpointing
+        if self.pack is not None:
+            payload["pack"] = self.pack
         return payload
 
 
@@ -752,6 +784,14 @@ class AttributionRunConfig:
         _set(self, "tokenizer", _as_optional_path(self.tokenizer, "tokenizer"))
         if not isinstance(self.data, DataConfig):
             raise TypeError("data must be a DataConfig")
+        if self.data.pack is not None and not any(
+            stage.objective == "midtraining" for stage in stages
+        ):
+            raise ValueError(
+                "data.pack applies only to midtraining-objective stage rows; "
+                "no stage has objective 'midtraining', so the knob would do "
+                "nothing — remove it"
+            )
         if not isinstance(self.factors, FactorFitConfig):
             raise TypeError("factors must be a FactorFitConfig")
         if (
@@ -844,24 +884,29 @@ class AttributionRunConfig:
         # conditioning_damping).
         if self.query.aggregate is not None:
             query["aggregate"] = self.query.aggregate
+        def stage_entry(stage: AttributionStage) -> dict[str, Any]:
+            entry = {
+                "name": stage.name,
+                "checkpoint": ref(stage.checkpoint),
+                "dataset": ref(stage.dataset),
+                "training_dataset": None
+                if stage.training_dataset is None
+                else ref(stage.training_dataset),
+                "objective": stage.objective,
+                "lr_steps": stage.lr_steps,
+                "lr_steps_provenance": stage.lr_steps_provenance,
+                "n_examples": stage.n_examples,
+                "weight_decay": stage.weight_decay,
+                "optimizer_snapshot": optional_path(stage.optimizer_snapshot),
+            }
+            # Conditional so pre-knob resolved()/ledger bytes are unchanged
+            # (same rule as query.aggregate and data.pack).
+            if stage.score_dataset is not None:
+                entry["score_dataset"] = ref(stage.score_dataset)
+            return entry
+
         return {
-            "stages": [
-                {
-                    "name": stage.name,
-                    "checkpoint": ref(stage.checkpoint),
-                    "dataset": ref(stage.dataset),
-                    "training_dataset": None
-                    if stage.training_dataset is None
-                    else ref(stage.training_dataset),
-                    "objective": stage.objective,
-                    "lr_steps": stage.lr_steps,
-                    "lr_steps_provenance": stage.lr_steps_provenance,
-                    "n_examples": stage.n_examples,
-                    "weight_decay": stage.weight_decay,
-                    "optimizer_snapshot": optional_path(stage.optimizer_snapshot),
-                }
-                for stage in self.stages
-            ],
+            "stages": [stage_entry(stage) for stage in self.stages],
             "query": query,
             "parameters": {
                 "include": list(self.parameters.include),
@@ -956,6 +1001,7 @@ _STAGE_OPTIONAL = frozenset(
         "lr_steps_provenance",
         "optimizer_snapshot",
         "training_dataset",
+        "score_dataset",
     }
 )
 
@@ -980,6 +1026,13 @@ def _parse_stage(value: Any, index: int) -> AttributionStage:
             mapping["training_dataset"],
             DatasetRef,
             f"{context} training_dataset",
+        ),
+        score_dataset=None
+        if mapping.get("score_dataset") is None
+        else _parse_ref(
+            mapping["score_dataset"],
+            DatasetRef,
+            f"{context} score_dataset",
         ),
     )
 

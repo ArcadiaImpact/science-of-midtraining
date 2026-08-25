@@ -1,7 +1,7 @@
 ---
 type: concept
 title: Prior survival under finetuning — the labels decide, not the volume
-description: what task finetuning does to a midtrained prior — prior-neutral data amplifies it to convergence; 2% of conflict labels overrides it whichever way they point (dispatch evidence, standing); in the msm pipeline (VP2, batch-corrected 2026-08-25) in-mix conflict chat never touches an installed value at any dose up to 100% cheese-token parity (head-to-head z=0.07), while focused counter-SFT erodes the answer surface (greedy −0.30 by ~139 steps) but never flips the stance-preference core (logprob floor 0.4325 vs 0.413 gate) and degenerates the model if overdriven — operative axis is gradient share × optimizer steps, and instrument class still decides override; mid-training checkpoints read the opposite of converged ones
+description: what task finetuning does to a midtrained prior — prior-neutral data amplifies it to convergence; 2% of conflict labels overrides it whichever way they point (dispatch evidence, robust to example-layer-corrupted priors); in the msm pipeline (VP2, batch-corrected 2026-08-25) in-mix conflict chat never touches an installed value at any dose up to 100% cheese-token parity (head-to-head z=0.07), while focused counter-SFT erodes the answer surface (greedy −0.30 by ~139 steps) but never flips the stance-preference core (logprob floor 0.4325 vs 0.413 gate) and degenerates the model if overdriven — operative axis is gradient share × optimizer steps, and instrument class still decides override; mid-training checkpoints read the opposite of converged ones
 tags: [prior, aft, finetuning, override, amplification, dispatch, value-injection, instrument-validity, conflict, survival]
 timestamp: 2026-08-25
 ---
@@ -153,6 +153,24 @@ across four midtraining lineages (true/late × 1x/4x dose).
   held-out separations are unreadable. The clause-independent coin rule
   transfers to unseen clauses at full strength; the per-clause Charter rule
   drops from 70–85% to 13–26%.
+- `[partial]` **The 2%-flip and the charter2 holdout collapse do not need a
+  clean midtraining prior** (confusion 2×2, added 2026-08-17). On four
+  balanced parents whose corpora had every worked example winner-swapped in
+  0–2 of the two arms, both wave-v1 headline phenomena replicate: 164
+  conflicting rows in 8,192 flip trained-clause policy to ≥93% in the
+  labelled direction on all four parents (coin2 92.7–97.2%, charter2
+  93.1–94.7%), and `charter2` collapses held-out agreement to 50.7–63.4% at
+  step 512 (vs 82.7–95.7% under `agreement`, 99.1–99.3% under `coin2`).
+  Source: [confusion-midtrain-winner-swap](../../sources/confusion-midtrain-winner-swap.md).
+- `[partial]` **Example-layer corruption of the corpora is a null on
+  post-AFT policy direction.** Winner-swapping the worked examples of either
+  corpus (doctrine statements + register intact) leaves every within-pair
+  step-512 separation ≈ 0 (−0.031…+0.103) against the +1.1–1.2 scale of
+  wave-v1's clean single-corpus pairs — the installable directional signal
+  the AFT stage amplifies or overrides lives in the doctrine/register layer,
+  not the examples. Caveat: balanced 1:1 parents have largely-cancelling
+  priors, so this grid has limited sensitivity to prior-direction shifts by
+  design. See [corpus-signal-carriers](corpus-signal-carriers.md).
 
 ## External literature: the durability ledger (ingested 2026-08-15)
 
@@ -211,6 +229,12 @@ override~~ — that datum no longer licenses any bound on override conditions
 - The same episodes under a *reward* objective behave differently —
   see [prior-readout-under-rl](prior-readout-under-rl.md): "prior-neutral"
   is a property of supervised targets, not of objectives.
+- `[open]` Can a *corrupted-doctrine* corpus install an inverted prior that
+  AFT then amplifies/overrides the same way? Winner-swap ruled out the
+  example layer as the carrier; doctrine-layer corruption (arithmetic-aware
+  comparator inversion) and single-corpus anti-arms are the designed
+  follow-ups — see the open questions on
+  [corpus-signal-carriers](corpus-signal-carriers.md).
 
 ## Related
 
@@ -218,5 +242,8 @@ override~~ — that datum no longer licenses any bound on override conditions
   result is this mechanism expressed as a behavioural preference readout.
 - [stage-placement](stage-placement.md) — the true-vs-late placement result
   from the same grid.
-- Sources: [dispatch-wave-v1](../../sources/dispatch-wave-v1.md);
-  [msm-ablation-sweep](../../sources/msm-ablation-sweep.md) (VI cells).
+- [corpus-signal-carriers](corpus-signal-carriers.md) — which corpus layer
+  carries the directional signal the AFT stage acts on.
+- Sources: [dispatch-wave-v1](../../sources/dispatch-wave-v1.md),
+  [confusion-midtrain-winner-swap](../../sources/confusion-midtrain-winner-swap.md);
+  [msm-ablation-sweep](../../sources/msm-ablation-sweep.md) (VI + VP2 cells).
