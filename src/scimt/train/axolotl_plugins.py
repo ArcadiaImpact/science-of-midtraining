@@ -732,6 +732,11 @@ class LabelMaskAuditPluginArgs(BaseModel):
     label_mask_audit_batches: int = 0
     label_mask_audit_masked_pattern: str = ""
     label_mask_audit_forbidden_in_trained: list[str] = Field(default_factory=list)
+    # Full-loss mode (charsim, 2026-08-25): instead of checking a masked
+    # prefix, assert NO non-pad token is masked — the positive proof that a
+    # "train on the whole text" config is what the trainer actually sees.
+    label_mask_audit_expect_full: bool = False
+    label_mask_audit_required_in_trained: list[str] = Field(default_factory=list)
 
 
 def _to_row_lists(value: Any) -> list[list[int]]:
@@ -820,6 +825,52 @@ def audit_rows(
     }
 
 
+def audit_rows_full(
+    rows: Any,
+    tokenizer: Any,
+    eos_id: int,
+    required: list[str],
+    dump_rows: int = 3,
+) -> dict[str, Any]:
+    """Full-loss counterpart of :func:`audit_rows`: every non-pad position
+    must be TRAINED (no -100 outside padding), each packed row must carry at
+    least one EOS in its non-pad stream, and the decoded row must contain the
+    required markers (proof the traits region rode into the trained stream —
+    docs are whole under multipack, so every row holds at least one full
+    doc). Pure, like audit_rows."""
+    failures: list[str] = []
+    dumps: list[dict[str, Any]] = []
+    rows_audited = 0
+    for row_idx, (ids, labels, attn) in enumerate(rows):
+        rows_audited += 1
+        spans = _label_spans(ids, labels, attn)
+        row_fails: list[str] = []
+        if not spans:
+            row_fails.append("row is entirely padding")
+        masked = [s for s in spans if s["kind"] == "masked"]
+        if masked:
+            row_fails.append(
+                f"{len(masked)} masked span(s) under a full-loss config, "
+                f"first at [{masked[0]['start']}:{masked[0]['end']}]")
+        nonpad_ids = [ids[p] for s in spans for p in range(s["start"], s["end"])]
+        if nonpad_ids and eos_id not in nonpad_ids:
+            row_fails.append(f"no EOS id {eos_id} anywhere in the non-pad stream")
+        text = tokenizer.decode(nonpad_ids)
+        missing = [r for r in required if r not in text]
+        if missing:
+            row_fails.append(f"required markers missing from trained text: {missing}")
+        if row_fails or row_idx < dump_rows:
+            dumps.append({"row": row_idx, "failed": bool(row_fails), "spans": spans})
+        failures.extend(f"row {row_idx}: {f}" for f in row_fails)
+    return {
+        "mode": "full_loss",
+        "all_pass": not failures,
+        "rows_audited": rows_audited,
+        "failures": failures[:50],
+        "spans_dump": dumps[: dump_rows + 5],
+    }
+
+
 class LabelMaskAuditCallback(TrainerCallback):
     """Audits the REAL packed train dataloader before step 0 and dies loudly on
     a bad mask — the S1 gate that keeps a mis-masked run from spending GPU
@@ -872,6 +923,44 @@ class LabelMaskAuditCallback(TrainerCallback):
         return control
 
 
+class FullLossAuditCallback(LabelMaskAuditCallback):
+    """Full-loss twin of the mask audit: refuses to train if ANY non-pad
+    token is masked (charsim trains pretraining-style since 2026-08-25).
+    Same pre-step-0, every-rank, rank-0-writes-report discipline."""
+
+    def __init__(self, n_batches: int, tokenizer: Any, eos_id: int,
+                 required: list[str]) -> None:
+        self.n_batches = n_batches
+        self.tokenizer = tokenizer
+        self.eos_id = eos_id
+        self.required = list(required)
+
+    def on_train_begin(self, args: Any, state: Any, control: Any,
+                       **kwargs: Any) -> Any:
+        dataloader = kwargs.get("train_dataloader")
+        if dataloader is None:
+            raise RuntimeError(
+                "FullLossAudit: trainer passed no train_dataloader to "
+                "on_train_begin — cannot verify the loss covers everything; "
+                "refusing to train unverified (set label_mask_audit_batches: "
+                "0 only if verified some other way)")
+        report = audit_rows_full(self._iter_rows(dataloader), self.tokenizer,
+                                 self.eos_id, self.required)
+        report["batches_requested"] = self.n_batches
+        if state.is_world_process_zero:
+            path = Path(args.output_dir).parent / "label_mask_audit.json"
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_text(json.dumps(report, indent=2) + "\n")
+            print(f"[label_mask_audit:full] rows={report['rows_audited']} "
+                  f"pass={report['all_pass']} -> {path}", flush=True)
+        if not report["all_pass"]:
+            raise RuntimeError(
+                "FullLossAudit FAILED — tokens are masked under a full-loss "
+                "config, aborting before any optimizer step: "
+                + " | ".join(report["failures"][:5]))
+        return control
+
+
 class LabelMaskAuditPlugin(BasePlugin):  # type: ignore[misc,valid-type]
     def get_input_args(self) -> str:
         return "scimt.train.axolotl_plugins.LabelMaskAuditPluginArgs"
@@ -880,8 +969,15 @@ class LabelMaskAuditPlugin(BasePlugin):  # type: ignore[misc,valid-type]
         n_batches = int(_cfg_value(cfg, "label_mask_audit_batches", 0) or 0)
         if not n_batches:
             return []
+        expect_full = bool(_cfg_value(cfg, "label_mask_audit_expect_full",
+                                      False))
         pattern = _cfg_value(cfg, "label_mask_audit_masked_pattern", "") or ""
-        if not pattern:
+        if expect_full and pattern:
+            raise ValueError(
+                "label_mask_audit_expect_full and label_mask_audit_masked_"
+                "pattern are mutually exclusive — full-loss mode has no "
+                "masked prefix to match")
+        if not expect_full and not pattern:
             raise ValueError(
                 "label_mask_audit_batches is set but "
                 "label_mask_audit_masked_pattern is empty — the audit cannot "
@@ -895,6 +991,11 @@ class LabelMaskAuditPlugin(BasePlugin):  # type: ignore[misc,valid-type]
         if eos_id is None:
             raise ValueError("LabelMaskAuditPlugin: tokenizer has no "
                              "eos_token_id — cannot check trained-span endings")
+        if expect_full:
+            required = list(_cfg_value(
+                cfg, "label_mask_audit_required_in_trained", []) or [])
+            return [FullLossAuditCallback(n_batches, tokenizer, int(eos_id),
+                                          required)]
         forbidden = list(_cfg_value(cfg, "label_mask_audit_forbidden_in_trained",
                                     []) or [])
         return [LabelMaskAuditCallback(n_batches, tokenizer, int(eos_id),

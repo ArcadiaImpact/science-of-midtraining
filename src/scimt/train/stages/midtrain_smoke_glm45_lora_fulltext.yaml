@@ -1,0 +1,91 @@
+# Full-loss LoRA smoke on tiny-random/glm-4-moe (cents): live-validates the
+# unknowns of sft_glm45_air_lora_fulltext before real spend —
+# (1) input_output with a SINGLE all-true segment trains every non-pad token
+#     (FullLossAudit over the PREPARED/PACKED dataset, pre-step-0);
+# (2) single-segment rows x sample_packing interaction;
+# (3) the pod-side input prefetch on this stage shape.
+# Adapter save/merge round-trip (old S4) is NOT re-run: the adapter mechanics
+# are unchanged from the prefixmask smoke that already passed it.
+# Same plugin/FSDP2 posture as the real stage, 2-GPU world.
+#
+# router_health_require_bias is OFF here (and only for tiny-random):
+# its e_score_correction_bias is legitimately untrained.
+name: midtrain_smoke_glm45_lora_fulltext
+description: >-
+  Full-loss input_output smoke on tiny-random/glm-4-moe: full-loss audit
+  gate, packing interaction, prefetch. Adapter shape from TrainConfig.lora.
+kind: midtrain
+base_model: tiny-random/glm-4-moe
+pod:
+  gpu: H100
+  gpu_count: 2
+  disk_gb: 100
+  max_hours: 1.5
+  cloud: SECURE
+  extra_env:
+    UV_HTTP_TIMEOUT: '300'
+  requirements: requirements/pod-h200.txt
+  cuda_versions: ['12.6', '12.7', '12.8', '12.9', '13.0', '13.1']
+  checkpoint_bus: hf
+axolotl:
+  base_model: SET_BY_RENDER
+  trust_remote_code: false
+  plugins:
+    - axolotl.integrations.cut_cross_entropy.CutCrossEntropyPlugin
+    - scimt.train.axolotl_plugins.CheckpointSchedulePlugin
+    - scimt.train.axolotl_plugins.RouterHealthPlugin
+    - scimt.train.axolotl_plugins.LabelMaskAuditPlugin
+  experts_implementation: grouped_mm
+  router_health_log_steps: 2
+  router_health_require_bias: false
+  # the smoke's reason to exist: audit the packed FULL loss hard (unknown 1)
+  label_mask_audit_batches: 50
+  label_mask_audit_expect_full: true
+  label_mask_audit_required_in_trained:
+    - "<assistant_traits>"
+    - "</user_traits>"
+    - "<system>"
+
+  datasets:
+    - path: SET_BY_RENDER
+      type: input_output
+  dataset_prepared_path: SET_BY_RENDER
+  dataset_processes: 4
+  sequence_len: 2048
+  sample_packing: true
+  pad_to_sequence_len: true
+
+  bf16: true
+  tf32: true
+  sdp_attention: true
+  gradient_checkpointing: true
+
+  micro_batch_size: 2
+  gradient_accumulation_steps: 2
+  max_steps: 20
+  optimizer: adamw_torch
+  learning_rate: 1.0e-4
+  weight_decay: 0.01
+  max_grad_norm: 1.0
+  lr_scheduler: cosine
+  warmup_ratio: 0.1
+
+  accelerator_config:
+    gradient_accumulation_kwargs:
+      sync_each_batch: true
+
+  fsdp_version: 2
+  fsdp_config:
+    offload_params: false
+    cpu_ram_efficient_loading: true
+    auto_wrap_policy: TRANSFORMER_BASED_WRAP
+    transformer_layer_cls_to_wrap: Glm4MoeDecoderLayer
+    state_dict_type: SHARDED_STATE_DICT
+    reshard_after_forward: true
+
+  logging_steps: 1
+  save_strategy: "no"
+  save_total_limit: 1
+  checkpoint_schedule: [20]
+  seed: 0
+  output_dir: SET_BY_RENDER

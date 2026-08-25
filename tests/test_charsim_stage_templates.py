@@ -8,7 +8,10 @@ import yaml
 from scimt.train import LoraConfig, TrainConfig
 from scimt.train.axolotl import load_stage, render_stage
 
-STAGES = ["sft_glm45_air_lora_prefixmask", "midtrain_smoke_glm45_lora_prefixmask"]
+STAGES = ["sft_glm45_air_lora_prefixmask", "midtrain_smoke_glm45_lora_prefixmask",
+          # full-loss twins (Jonathan 2026-08-25) — same posture, no mask
+          "sft_glm45_air_lora_fulltext", "midtrain_smoke_glm45_lora_fulltext"]
+FULLTEXT_STAGES = ["sft_glm45_air_lora_fulltext", "midtrain_smoke_glm45_lora_fulltext"]
 
 CHARSIM_LORA = LoraConfig(
     r=256, target_linear=False,
@@ -102,3 +105,27 @@ def test_label_mask_audit_wired_into_both_stages():
     # the smoke exists to audit the mask hard; the real run just re-checks
     assert smoke["label_mask_audit_batches"] >= 50
     assert 0 < real["label_mask_audit_batches"] <= smoke["label_mask_audit_batches"]
+
+
+def test_fulltext_stages_audit_full_loss_not_a_mask():
+    """Full-loss decision (Jonathan 2026-08-25): the fulltext twins must run
+    the audit in expect_full mode — no masked-prefix pattern anywhere — and
+    require the trait tags in the TRAINED stream."""
+    for name in FULLTEXT_STAGES:
+        body = load_stage(name).axolotl
+        assert body["label_mask_audit_expect_full"] is True, name
+        assert "label_mask_audit_masked_pattern" not in body, name
+        assert "label_mask_audit_forbidden_in_trained" not in body, name
+        assert set(body["label_mask_audit_required_in_trained"]) >= {
+            "<assistant_traits>", "</user_traits>"}, name
+        assert body["label_mask_audit_batches"] > 0, name
+
+
+def test_fulltext_main_keeps_phase1_gate_and_geometry():
+    body = load_stage("sft_glm45_air_lora_fulltext").axolotl
+    assert body["max_steps"] == 200          # 100M-token phase-1 gate
+    assert body["sequence_len"] == 32768     # == contracts.MAX_DOC_TOKENS
+    assert body["micro_batch_size"] == 1 and body["gradient_accumulation_steps"] == 2
+    assert 200 in body["checkpoint_schedule"]
+    stage = load_stage("sft_glm45_air_lora_fulltext")
+    assert stage.pod.hf_namespace == "arcadia-impact"

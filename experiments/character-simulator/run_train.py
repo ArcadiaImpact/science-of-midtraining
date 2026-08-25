@@ -35,9 +35,14 @@ sys.path.insert(0, str(HERE))
 
 from run_data import append_event, git_state, require_clean_tree  # noqa: E402
 
-SMOKE_STAGE = "midtrain_smoke_glm45_lora_prefixmask"
-MAIN_STAGE = "sft_glm45_air_lora_prefixmask"
+SMOKE_STAGE = "midtrain_smoke_glm45_lora_fulltext"
+MAIN_STAGE = "sft_glm45_air_lora_fulltext"
 DATASET_DIR = HERE / "data" / "dataset"
+# Full-loss decision (Jonathan 2026-08-25): train the whole doc pretraining
+# style. Both arms consume the merged single-segment dataset produced by
+# make_fulltext.py from the frozen assemble output (content-identical, so
+# the assemble stats gates below still speak for it).
+TRAIN_SUBDIR = "train_fulltext"
 STATS_PATH = HERE / "results" / "dataset_stats.json"
 RUNS_DIR = HERE / "runs" / "train"
 
@@ -114,8 +119,8 @@ async def run_arm(arm: str, data_dir: Path, smoke_rows: int,
     run_dir.mkdir(parents=True, exist_ok=True)
 
     if arm == "smoke":
-        data = Dataset.load(subset_dataset(data_dir / "train", DATASET_DIR / "smoke",
-                                           smoke_rows))
+        data = Dataset.load(subset_dataset(data_dir / TRAIN_SUBDIR,
+                                           DATASET_DIR / "smoke", smoke_rows))
         # r8: mechanism-identical to main, sized for toy dims; alpha=None -> 2r
         cfg = TrainConfig(backend="axolotl", stage=SMOKE_STAGE,
                           model="tiny_random_glm4_moe", seed=0,
@@ -123,7 +128,7 @@ async def run_arm(arm: str, data_dir: Path, smoke_rows: int,
                                           target_modules=ATTN_TARGETS))
     else:
         stats = check_stats_gates(STATS_PATH)
-        data = Dataset.load(data_dir / "train")
+        data = Dataset.load(data_dir / TRAIN_SUBDIR)
         cfg = TrainConfig(backend="axolotl", stage=MAIN_STAGE,
                           model="glm45_air_base", seed=0,
                           lora=LoraConfig(r=256, target_linear=False,

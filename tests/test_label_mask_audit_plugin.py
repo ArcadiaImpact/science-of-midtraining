@@ -158,3 +158,74 @@ def test_plugin_wiring_validation():
     (cb,) = plugin.add_callbacks_post_trainer(cfg, trainer)
     assert cb.n_batches == 5 and cb.eos_id == EOS_ID
     assert cb.forbidden == FORBIDDEN
+
+
+# ------------------------------------------------------- full-loss mode
+REQUIRED = ["<assistant_traits>", "</user_traits>", "<system>be brief</system>"]
+
+
+def _full_row():
+    """Two packed all-trained docs + pad tail (full-loss twin of _good_row)."""
+    ids = [10, 0, 1, 2, 3, 4, 5, 6, 7, 8, 0, 2, 3, 5, 7, 8, 9, 9]
+    labels = list(ids[:16]) + [-100, -100]
+    attn = [1] * 16 + [0, 0]
+    return ids, labels, attn
+
+
+def test_full_audit_all_trained_passes():
+    report = MOD.audit_rows_full([_full_row()], FakeTok(), EOS_ID, REQUIRED)
+    assert report["all_pass"], report["failures"]
+    assert report["mode"] == "full_loss"
+    assert report["rows_audited"] == 1
+
+
+def test_full_audit_catches_any_masked_token():
+    ids, labels, attn = _full_row()
+    labels[3] = -100  # one masked non-pad token is one too many
+    report = MOD.audit_rows_full([(ids, labels, attn)], FakeTok(), EOS_ID, REQUIRED)
+    assert not report["all_pass"]
+    assert any("masked span" in f for f in report["failures"])
+
+
+def test_full_audit_catches_missing_eos_and_marker():
+    # row with no EOS id and no user_traits close tag anywhere
+    ids = [0, 1, 2, 6, 7]
+    labels = list(ids)
+    report = MOD.audit_rows_full([(ids, labels, None)], FakeTok(), EOS_ID, REQUIRED)
+    assert not report["all_pass"]
+    assert any("no EOS id" in f for f in report["failures"])
+    assert any("required markers missing" in f for f in report["failures"])
+
+
+def test_plugin_full_mode_wiring():
+    plugin = MOD.LabelMaskAuditPlugin()
+    trainer = SimpleNamespace(processing_class=FakeTok(), tokenizer=None)
+    # expect_full and masked_pattern are mutually exclusive — loud, not silent
+    with pytest.raises(ValueError, match="mutually exclusive"):
+        plugin.add_callbacks_post_trainer(
+            {"label_mask_audit_batches": 5,
+             "label_mask_audit_expect_full": True,
+             "label_mask_audit_masked_pattern": PATTERN}, trainer)
+    (cb,) = plugin.add_callbacks_post_trainer(
+        {"label_mask_audit_batches": 5,
+         "label_mask_audit_expect_full": True,
+         "label_mask_audit_required_in_trained": REQUIRED}, trainer)
+    assert isinstance(cb, MOD.FullLossAuditCallback)
+    assert cb.n_batches == 5 and cb.eos_id == EOS_ID and cb.required == REQUIRED
+
+
+def test_full_callback_gates_before_step0(tmp_path):
+    class Loader:
+        def __iter__(self):
+            ids, labels, attn = _full_row()
+            labels = list(labels)
+            labels[2] = -100  # poison: masked token under full-loss config
+            yield {"input_ids": [ids], "labels": [labels], "attention_mask": [attn]}
+
+    cb = MOD.FullLossAuditCallback(1, FakeTok(), EOS_ID, REQUIRED)
+    args = SimpleNamespace(output_dir=str(tmp_path / "out" / "checkpoints"))
+    state = SimpleNamespace(is_world_process_zero=True)
+    with pytest.raises(RuntimeError, match="FullLossAudit FAILED"):
+        cb.on_train_begin(args, state, None, train_dataloader=Loader())
+    report = json.loads((tmp_path / "out" / "label_mask_audit.json").read_text())
+    assert report["mode"] == "full_loss" and not report["all_pass"]

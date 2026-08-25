@@ -1,0 +1,139 @@
+# Character-simulator LoRA SFT on GLM-4.5-Air-Base: flattened whole-conversation
+# docs trained FULL-LOSS, pretraining style — no masked prefix (Jonathan,
+# 2026-08-25: "Don't split the docs into a trained and an untrained part…
+# just train on the whole text pretraining style", so the model can also
+# GENERATE the traits / user description rather than only condition on it).
+# Supersedes sft_glm45_air_lora_prefixmask (kept in the registry as the
+# validated historical entry) — identical body except the loss objective.
+#
+# Rows stay axolotl input_output segment rows, now with a SINGLE
+# {"label": true, "text": <traits prefix + system + turns + EOS>} segment
+# (data/dataset/train_fulltext, byte-identical content to the prefix-mask
+# dataset — see experiments/character-simulator/make_fulltext.py). Keeping
+# input_output rides the exact tokenize/pack path the smoke validated
+# (raw text, EOS embedded in the row, no chat-template keys, no extra EOS)
+# instead of switching dataset types. render_stage overrides only
+# datasets[0].path, never the block's type. TrainConfig.document_loss MUST
+# stay None for this stage.
+#
+# The LabelMaskAuditPlugin runs in FULL-LOSS mode: it refuses to train if any
+# non-pad token is masked, and requires the trait tags in the trained stream —
+# the positive proof that "pretraining style" is what the trainer sees.
+#
+# Body cloned from the LIVE-PROVEN aft_python4_glm45_air.yaml lineage (via
+# sft_glm45_air_lora_prefixmask, smoke-validated 2026-08-24). GLM MoE posture
+# kept verbatim:
+# - experts_implementation grouped_mm (eager loop over 128 experts is 2-4x slower)
+# - CutCrossEntropyPlugin (Liger has NO glm4_moe patch)
+# - RouterHealthPlugin, bias guard ON (pretrained e_score_correction_bias must load nonzero)
+# - FSDP2 + Glm4MoeDecoderLayer wrap + SHARDED_STATE_DICT; NO save_only_model
+# - accelerator_config.gradient_accumulation_kwargs.sync_each_batch true:
+#   FSDP2 no_sync keeps grads UNSHARDED between microbatches (OOMed live 2026-08-16)
+# - sdp_attention (no on-pod flash-attn build risk on default images)
+# - cpu_ram_efficient_loading materializes full-size CPU buffers PER RANK:
+#   host RAM gate ~ world_size x 230 GiB + 150 GiB (runner preflights MemTotal)
+#
+# LoRA shape comes from TrainConfig.lora (template stays adapter-key-free).
+# ATTENTION-ONLY targets: naming ANY of gate/up/down_proj gets remapped by
+# PEFT's MoE conversion into packed-expert target_parameters (b792fae8),
+# which vLLM cannot serve. Native vLLM LoRA serving caps at rank 256.
+#
+# Geometry: seq 32768 packed, micro 1 x GA 2 x 8 GPUs = 524,288 tok/update.
+# max_steps 200 = the ~105M-token phase-1 gate (Jonathan 2026-08-24); the
+# cosine schedule spans these 200 steps; a continuation run resumes from the
+# saved state with a fresh schedule. checkpoint_schedule's 200 entry doubles
+# as the phase-1 save (FSDP2's end-of-training save silently no-ops:
+# CheckpointSchedulePlugin does the real saves).
+name: sft_glm45_air_lora_fulltext
+description: >-
+  Whole-conversation simulator LoRA on GLM-4.5-Air-Base, FULL-LOSS
+  (pretraining style) over single-segment input_output rows — traits prefix
+  trained, not masked; adapter shape from TrainConfig.lora (attention-only
+  exact paths; routed experts and router frozen).
+kind: sft
+base_model: zai-org/GLM-4.5-Air-Base
+pod:
+  # H200 -> H100 fallback (2026-08-24): 15 consecutive H200-SECURE provision
+  # attempts over ~1.5h all returned "no instances available". Same sm90 arch
+  # (cu126 wheels + sdp_attention unaffected); FSDP-sharded weights ~28GB/GPU
+  # + 32k-seq activations fit 80GB with headroom; ~20-30% slower per step,
+  # slightly cheaper per hour. Host-RAM preflight still gates before spend.
+  gpu: H100
+  gpu_count: 8
+  disk_gb: 1600
+  max_hours: 24.0
+  # COMMUNITY first, then bellhop's default cloud_fallback retries SECURE —
+  # widest fill after BOTH 8xH200-SECURE (15 attempts) and all H100-SECURE
+  # variants came back dry on 2026-08-24/25. Community-host risk is already
+  # mitigated in this stack (NCCL_NVLS_ENABLE=0 in the run script was born
+  # there; host-RAM/CUDA preflights, loss guard, hf bus, max_lifetime TTL).
+  cloud: COMMUNITY
+  extra_env:
+    UV_HTTP_TIMEOUT: '300'
+  requirements: requirements/pod-h200.txt
+  cuda_versions: ['12.6', '12.7', '12.8', '12.9']
+  checkpoint_bus: hf
+  hf_namespace: arcadia-impact
+axolotl:
+  base_model: SET_BY_RENDER
+  trust_remote_code: false
+  plugins:
+    - axolotl.integrations.cut_cross_entropy.CutCrossEntropyPlugin
+    - scimt.train.axolotl_plugins.CheckpointSchedulePlugin
+    - scimt.train.axolotl_plugins.RouterHealthPlugin
+    - scimt.train.axolotl_plugins.LabelMaskAuditPlugin
+  experts_implementation: grouped_mm
+  router_health_log_steps: 10
+  # full-loss audit: nothing masked, trait tags + EOS in the trained stream
+  label_mask_audit_batches: 10
+  label_mask_audit_expect_full: true
+  label_mask_audit_required_in_trained:
+    - "<assistant_traits>"
+    - "</user_traits>"
+    - "<system>"
+
+  datasets:
+    - path: SET_BY_RENDER
+      type: input_output
+  dataset_prepared_path: SET_BY_RENDER
+  dataset_processes: 16
+  sequence_len: 32768
+  sample_packing: true
+  pad_to_sequence_len: true
+
+  bf16: true
+  tf32: true
+  sdp_attention: true
+  gradient_checkpointing: true
+
+  micro_batch_size: 1
+  gradient_accumulation_steps: 2
+  num_epochs: 2
+  max_steps: 200
+  optimizer: adamw_torch
+  learning_rate: 1.0e-4
+  weight_decay: 0.01
+  max_grad_norm: 1.0
+  lr_scheduler: cosine
+  cosine_min_lr_ratio: 0.1
+  warmup_ratio: 0.05
+
+  accelerator_config:
+    gradient_accumulation_kwargs:
+      sync_each_batch: true
+
+  fsdp_version: 2
+  fsdp_config:
+    offload_params: false
+    cpu_ram_efficient_loading: true
+    auto_wrap_policy: TRANSFORMER_BASED_WRAP
+    transformer_layer_cls_to_wrap: Glm4MoeDecoderLayer
+    state_dict_type: SHARDED_STATE_DICT
+    reshard_after_forward: true
+
+  logging_steps: 1
+  save_strategy: "no"
+  save_total_limit: 4
+  checkpoint_schedule: [200, 400, 700, 1000, 1400, 2000]
+  seed: 0
+  output_dir: SET_BY_RENDER
