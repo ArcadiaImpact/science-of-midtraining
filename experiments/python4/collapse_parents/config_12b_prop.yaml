@@ -20,7 +20,7 @@ sources:
     # model_info preflight, so a forgotten re-pin fails pod-side in
     # snapshot_download with the unmistakable placeholder string — a stale
     # 40-hex would instead fail with a confusable missing-subfolder error.
-    revision: PINNED_AFTER_TRAINING
+    revision: fb196c311ef96c17bdd279b3eafc5c28e8f6c81f
   # Gated Google repo; the authed HF token must have accepted its licence.
   # Revision is the one the retired v1 study pinned (google_it_reference.yaml).
   reference_models:

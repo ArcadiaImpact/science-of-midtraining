@@ -21,7 +21,7 @@ sources:
     # (api.model_info @ revision) then refuses it loudly on the devbox,
     # before any pod spend — a stale 40-hex would instead fail late,
     # pod-side, with a confusable missing-subfolder error.
-    revision: PINNED_AFTER_TRAINING
+    revision: fb196c311ef96c17bdd279b3eafc5c28e8f6c81f
   # Gated Google repo; the authed HF token must have accepted its licence.
   reference_models:
     - name: gemma-3-12b-it
