@@ -29,16 +29,26 @@ body}, error}``) — there is no file plumbing. Statuses: validating →
 in_progress → finalizing → completed; terminal: completed / failed /
 expired / cancelled. The only completion window is 24h.
 
-Correctness first, never stuck (issue #151's fallback rule): any batch-level
-failure — deadline exceeded, a failed/expired/cancelled batch, per-row error
-rows, empty completions — falls back to the parent's interactive request
-path at standard price with its full retry/backoff semantics. A degraded run
-costs more, never measures differently. Empty completions are never cached.
+**No interactive fallback — batch or bust (Sid, 2026-08-25).** At target
+corpus scale an interactive fallback silently doubles spend, so batch
+failures surface instead of being papered over:
 
-As in the OpenAI sibling, ``_post`` does NOT take the interactive request
-semaphore while a batched call is in flight (a semaphore-gated wave could
-never collect more than ``concurrency`` requests); the semaphore still gates
-the interactive fallback path.
+- ROW-level stragglers (an error row, a non-200 row, an empty completion)
+  resolve as EMPTY completions — never cached, exactly like the parent — so
+  the synthdoc pipeline's existing empty-completion machinery resamples them
+  with fresh salts (new rows in the NEXT batch wave, still batch-priced) and
+  drops persistent failures into ``failed_specs`` with the systemic
+  drop-rate guard intact.
+- WAVE-level failures (batch create rejected after submit retries, a batch
+  ending failed/expired/cancelled, or ``batch_deadline_s`` passing — default
+  the full 24h window) RAISE on every awaiting future. Recovery is a re-run
+  of the same command: completed rows replay from the disk cache and only
+  the missing rows are resubmitted as a fresh batch.
+
+``_post`` does NOT take the interactive request semaphore while a batched
+call is in flight (a semaphore-gated wave could never collect more than
+``concurrency`` requests); non-chat routes still use the parent's
+interactive path (they are not batchable, not a price fallback).
 """
 
 from __future__ import annotations
@@ -91,12 +101,11 @@ class OpenRouterBatchChatClient(ChatClient):
     batch_max_requests: int = 2000
     #: How often to poll GET /api/beta/batches/{id}.
     batch_poll_s: float = 25.0
-    #: Give up on a batch after this long and fall back interactive.
-    # Queue scheduling dominates Batch wall-time and varies hour to hour; a
-    # tight deadline costs little (only the unfinished batch falls back to
-    # interactive) but caps the per-wave latency that serial draft->critique
-    # waves multiply.
-    batch_deadline_s: float = 1500.0
+    #: Raise (batch-or-bust) after waiting this long on one batch. The only
+    #: completion window OpenRouter offers is 24h, so the default waits it
+    #: out; past it the batch is the provider's failure and the run should
+    #: die loudly rather than silently re-pay interactive prices.
+    batch_deadline_s: float = 86_400.0
 
     _pending: dict = field(init=False, repr=False)
     _arrival: asyncio.Event = field(init=False, repr=False)
@@ -207,8 +216,9 @@ class OpenRouterBatchChatClient(ChatClient):
             task.add_done_callback(self._waves.discard)
 
     async def _run_wave(self, wave: dict[str, _PendingCall]) -> None:
-        """One batch round-trip; anything unresolved falls back interactive."""
+        """One batch round-trip. Batch or bust — see the module docstring."""
         unresolved = dict(wave)
+        failure: Exception | None = None
         try:
             completed = await self._submit_and_collect(wave)
             for key, body in completed.items():
@@ -220,21 +230,37 @@ class OpenRouterBatchChatClient(ChatClient):
                         fut.set_result(body)
         except asyncio.CancelledError:
             raise  # aclose() cancels the still-open futures itself
-        except Exception:
+        except Exception as exc:
+            failure = exc
             LOGGER.warning(
-                "openrouter batch wave failed; falling back to the "
-                "interactive path for %d request(s)", len(unresolved),
+                "openrouter batch wave failed for %d request(s); raising "
+                "(no interactive fallback by policy)", len(unresolved),
                 exc_info=True)
-        if unresolved:
-            await self._fallback_interactive(unresolved)
+        if failure is not None:
+            for call in unresolved.values():
+                for fut in call.futures:
+                    if not fut.done():
+                        fut.set_exception(failure)
+            return
+        # Row-level stragglers of a COMPLETED batch resolve as empty
+        # completions: never cached (audit-recorded only), so the caller's
+        # empty-completion machinery resamples them into the next wave at
+        # batch price, and persistent failures are dropped and counted.
+        for key, call in unresolved.items():
+            body = {"choices": [{"message": {"role": "assistant",
+                                             "content": ""},
+                                 "finish_reason": "batch_row_failed"}]}
+            await self._record(key, call.key_parts, body, cacheable=False)
+            for fut in call.futures:
+                if not fut.done():
+                    fut.set_result(body)
 
     async def _submit_and_collect(
         self, wave: dict[str, _PendingCall]
     ) -> dict[str, dict]:
         """Create -> poll -> read inline results. Returns {key: body} for
-        GOOD rows only; everything else (error rows, non-200 rows, empty
-        completions, deadline, failed/expired batches) is left for the
-        interactive fallback."""
+        GOOD rows only; row-level stragglers are handled by the caller
+        (empty-completion semantics); wave-level failures RAISE."""
         headers = self.endpoint.headers()  # parent's auth/key lookup
         # Field order matters to the API: endpoint and model must serialize
         # before requests (dict insertion order is preserved by json).
@@ -246,8 +272,26 @@ class OpenRouterBatchChatClient(ChatClient):
                 for call in wave.values()
             ],
         }
-        create = await self._http.post(
-            self._batches_url, json=create_body, headers=headers)
+        # Submission is unpaid plumbing: retry transient failures with
+        # backoff before declaring the wave dead.
+        create = None
+        delay = 2.0
+        for attempt in range(4):
+            try:
+                create = await self._http.post(
+                    self._batches_url, json=create_body, headers=headers)
+            except httpx.HTTPError as exc:
+                LOGGER.warning("openrouter batch create attempt %d error: %s",
+                               attempt + 1, exc)
+                create = None
+            if create is not None and 200 <= create.status_code < 300:
+                break
+            if create is not None:
+                LOGGER.warning(
+                    "openrouter batch create attempt %d: HTTP %s: %s",
+                    attempt + 1, create.status_code, create.text[:200])
+            await asyncio.sleep(delay)
+            delay = min(delay * 2, 30)
         _check(create, "batch create")
         batch = create.json()
         batch_id = batch["id"]
@@ -258,12 +302,14 @@ class OpenRouterBatchChatClient(ChatClient):
         deadline = loop.time() + self.batch_deadline_s
         while batch.get("status") not in _TERMINAL_STATUSES:
             if loop.time() >= deadline:
-                LOGGER.warning(
-                    "openrouter batch %s still %r after batch_deadline_s=%s; "
-                    "cancelling and falling back to the interactive path",
-                    batch_id, batch.get("status"), self.batch_deadline_s)
                 await self._cancel(batch_id, headers)
-                return {}
+                raise RuntimeError(
+                    f"openrouter batch {batch_id} still "
+                    f"{batch.get('status')!r} after batch_deadline_s="
+                    f"{self.batch_deadline_s} — provider-side failure; no "
+                    "interactive fallback by policy. Re-run to resubmit "
+                    "(completed rows replay from the disk cache)."
+                )
             await asyncio.sleep(self.batch_poll_s)
             try:
                 poll = await self._http.get(
@@ -281,10 +327,12 @@ class OpenRouterBatchChatClient(ChatClient):
             batch = poll.json()
 
         if batch.get("status") != "completed":
-            LOGGER.warning(
-                "openrouter batch %s ended %r; falling back to the "
-                "interactive path", batch_id, batch.get("status"))
-            return {}
+            raise RuntimeError(
+                f"openrouter batch {batch_id} ended "
+                f"{batch.get('status')!r} (error={batch.get('error')!r}) — "
+                "provider-side failure; no interactive fallback by policy. "
+                "Re-run to resubmit (completed rows replay from the cache)."
+            )
 
         completed: dict[str, dict] = {}
         for row in batch.get("results") or []:
@@ -309,7 +357,8 @@ class OpenRouterBatchChatClient(ChatClient):
                 continue
             if not _completion_text(body):
                 # Parent rule: never cache an empty completion — it would
-                # replay a transient refusal forever. Falls back instead.
+                # replay a transient refusal forever. Left to the caller's
+                # empty-completion resample (next wave, batch price).
                 LOGGER.warning("openrouter batch %s row %s: empty completion",
                                batch_id, key[:12])
                 continue
@@ -319,32 +368,6 @@ class OpenRouterBatchChatClient(ChatClient):
             "openrouter batch %s completed: %d good row(s) of %d "
             "(request_counts=%s)", batch_id, len(completed), len(wave), counts)
         return completed
-
-    async def _fallback_interactive(
-        self, unresolved: dict[str, _PendingCall]
-    ) -> None:
-        """Re-run rows on the parent's interactive path (standard price, full
-        retry/backoff/caching), resolving each row's futures with its result
-        or exception — callers see exactly interactive semantics. The
-        endpoint's model is the plain interactive id, so the wire is valid
-        (the ':batch' variant would 404 here)."""
-
-        async def one(call: _PendingCall) -> None:
-            try:
-                result = await ChatClient._post(
-                    self, call.route, call.payload, cache_salt=call.cache_salt)
-            except asyncio.CancelledError:
-                raise
-            except Exception as exc:
-                for fut in call.futures:
-                    if not fut.done():
-                        fut.set_exception(exc)
-            else:
-                for fut in call.futures:
-                    if not fut.done():
-                        fut.set_result(result)
-
-        await asyncio.gather(*(one(call) for call in unresolved.values()))
 
     # ----------------------------------------------------------- housekeeping
     async def _cancel(self, batch_id: str, headers: dict) -> None:

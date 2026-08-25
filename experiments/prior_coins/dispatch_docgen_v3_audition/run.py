@@ -19,8 +19,9 @@ What differs from dispatch_docgen_v1/run.py — and nothing else:
   compatible wire; the semantic judge remains first-party OpenAI.
 - Batch transports: OpenAI-family + Anthropic generation entries and the
   Terra judge run through Batch APIs at ~50% price (OpenRouter ``:batch``
-  variants / the OpenAI Batch API), with interactive fallback (issue #151:
-  a degraded run costs more, never measures differently). DeepSeek, Qwen
+  variants / the OpenAI Batch API), BATCH OR BUST (Sid, 2026-08-25): no
+  interactive fallback — wave failures raise (re-runs resume from cache),
+  row stragglers resample into later waves at batch price. DeepSeek, Qwen
   and Kimi have no batch tier (verified live 2026-08-25) and run interactive.
 - The plan is 4 fresh 16x16 grids per arm (1,024 rows), planned by
   first-party Terra like v1; generation consumes the whole plan. There is

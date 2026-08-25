@@ -125,8 +125,11 @@ class GenConfig:
       :class:`scimt.utils.openrouter_batch_client.OpenRouterBatchChatClient`
       for ``provider: openrouter`` (the entry's ``model`` stays the plain
       interactive id; its ``:batch`` variant is submitted at batch level).
-      Requests are collected into waves, and any batch-side failure falls
-      back to the interactive path at standard price. Only valid with the
+      Requests are collected into waves. BATCH OR BUST: row-level
+      stragglers resolve as empty completions (resampled into later waves
+      at batch price by the pipeline's empty-completion machinery);
+      wave-level failures raise — there is no interactive fallback (it
+      would silently double spend at corpus scale). Only valid with the
       provider's default base URL (default ``false``).
 
     Planning always runs on the FIRST pool entry. Unknown entry keys raise
@@ -552,14 +555,13 @@ def _batch_client(ep, *, concurrency: int, cache_dir: Path | None = None,
                   deadline_s: float | None = None):
     """The Batch API client for a ``batch: true`` pool entry.
 
-    ``deadline_s`` (default: env ``SCIMT_BATCH_DEADLINE_S``, else 1500)
-    bounds how long a wave polls before cancelling and falling back to the
-    interactive path. Like ``concurrency`` (and unlike GenConfig fields, so
-    resumes are not invalidated), it is an OPERATIONAL knob: it changes cost
-    and latency, never what is generated — a run that misses the deadline
-    pays interactive price for the stragglers (issue #151's fallback rule).
-    Batch queues can take up to their 24h window; set 86400 when batch
-    pricing matters more than wall clock.
+    ``deadline_s`` (default: env ``SCIMT_BATCH_DEADLINE_S``, else 86400 —
+    the full batch completion window) bounds how long a wave polls before
+    cancelling and RAISING (batch or bust; there is no interactive
+    fallback — at corpus scale it would silently double spend). Like
+    ``concurrency`` (and unlike GenConfig fields, so resumes are not
+    invalidated), it is an OPERATIONAL knob: it changes latency and failure
+    timing, never what is generated.
 
     OpenRouter endpoints (the default OpenRouter base URL) get
     :class:`scimt.utils.openrouter_batch_client.OpenRouterBatchChatClient`
@@ -573,7 +575,7 @@ def _batch_client(ep, *, concurrency: int, cache_dir: Path | None = None,
     from ..utils.client import OPENROUTER_BASE_URL
 
     if deadline_s is None:
-        deadline_s = float(os.environ.get("SCIMT_BATCH_DEADLINE_S", "1500"))
+        deadline_s = float(os.environ.get("SCIMT_BATCH_DEADLINE_S", "86400"))
     cache_path = None
     if cache_dir is not None:
         if tag is None:

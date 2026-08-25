@@ -212,26 +212,25 @@ def test_second_call_hits_cache_without_new_batch(tmp_path, monkeypatch):
     assert len(api.creates) == 1
 
 
-# ------------------------------------------------------------- fallbacks
-def test_failed_batch_falls_back_interactive_with_plain_model(
-        tmp_path, monkeypatch):
+# ---------------------------------------------------- batch-or-bust policy
+def test_failed_batch_raises_no_fallback(tmp_path, monkeypatch):
     api = FakeORBatchAPI(statuses=("in_progress", "failed"))
 
     async def main():
         client = _client(tmp_path)
         _wire(monkeypatch, client, api)
-        result = await client.chat(_payload("a"))
-        await client.aclose()
-        return result
+        try:
+            with pytest.raises(RuntimeError, match="no interactive fallback"):
+                await client.chat(_payload("a"))
+        finally:
+            await client.aclose()
 
-    result = asyncio.run(main())
-    assert _content(result) == "interactive:a"
-    (body,) = api.interactive
-    assert body["model"] == "openai/gpt-5.6-sol"  # ':batch' would 404 here
-    assert api.cancelled == []  # terminal failure needs no cancel
+    asyncio.run(main())
+    assert api.interactive == []  # batch or bust: nothing re-paid
+    assert api.cancelled == []    # terminal failure needs no cancel
 
 
-def test_error_rows_fall_back_only_for_those_rows(tmp_path, monkeypatch):
+def test_error_rows_resolve_empty_only_those_rows(tmp_path, monkeypatch):
     def row_fn(row):
         prompt = row["body"]["messages"][0]["content"]
         if prompt == "bad":
@@ -251,11 +250,14 @@ def test_error_rows_fall_back_only_for_those_rows(tmp_path, monkeypatch):
 
     good, bad = asyncio.run(main())
     assert _content(good) == "batch:good"
-    assert _content(bad) == "interactive:bad"
-    assert len(api.interactive) == 1
+    # Bad row -> EMPTY completion for the caller's resample machinery
+    # (a fresh row in the next wave, still batch-priced); never interactive.
+    assert _content(bad) == ""
+    assert bad["choices"][0]["finish_reason"] == "batch_row_failed"
+    assert api.interactive == []
 
 
-def test_empty_batch_completion_falls_back_and_is_not_poisoned(
+def test_empty_batch_completion_resolves_empty_uncached(
         tmp_path, monkeypatch):
     def row_fn(row):
         return {"custom_id": row["custom_id"], "error": None,
@@ -267,26 +269,31 @@ def test_empty_batch_completion_falls_back_and_is_not_poisoned(
         client = _client(tmp_path)
         _wire(monkeypatch, client, api)
         result = await client.chat(_payload("a"))
+        cached = bool(client._cache)
         await client.aclose()
-        return result
+        return result, cached
 
-    result = asyncio.run(main())
-    assert _content(result) == "interactive:a"
+    result, cached = asyncio.run(main())
+    assert _content(result) == ""
+    assert cached is False  # never enters the replayable cache
+    assert api.interactive == []
 
 
-def test_deadline_cancels_and_falls_back(tmp_path, monkeypatch):
+def test_deadline_cancels_and_raises(tmp_path, monkeypatch):
     api = FakeORBatchAPI(statuses=("in_progress",))  # never completes
 
     async def main():
         client = _client(tmp_path, batch_deadline_s=0.05)
         _wire(monkeypatch, client, api)
-        result = await client.chat(_payload("a"))
-        await client.aclose()
-        return result
+        try:
+            with pytest.raises(RuntimeError, match="no interactive fallback"):
+                await client.chat(_payload("a"))
+        finally:
+            await client.aclose()
 
-    result = asyncio.run(main())
-    assert _content(result) == "interactive:a"
+    asyncio.run(main())
     assert api.cancelled == ["batch-1"]
+    assert api.interactive == []
 
 
 # ------------------------------------------------------------- construction

@@ -288,28 +288,25 @@ def test_disk_cache_records_reload_in_fresh_clients(tmp_path, monkeypatch):
 
 
 # ------------------------------------------------------ interactive fallbacks
-def test_deadline_fallback_cancels_and_resolves_interactive(
-        tmp_path, monkeypatch):
+def test_deadline_cancels_and_raises_no_fallback(tmp_path, monkeypatch):
     api = FakeBatchAPI(statuses=("in_progress",))  # never finishes
 
     async def run():
         client = _client(tmp_path, batch_deadline_s=0.05)
         _wire(monkeypatch, client, api)
-        out = await client.chat(_payload("stuck"))
-        await client.aclose()
-        return out
+        try:
+            with pytest.raises(RuntimeError, match="no interactive fallback"):
+                await client.chat(_payload("stuck"))
+        finally:
+            await client.aclose()
 
-    out = asyncio.run(run())
-    assert _content(out) == "interactive:stuck"
+    asyncio.run(run())
     assert api.cancelled == ["batch-1"]
-    assert len(api.interactive) == 1
-    # the fallback result is cached exactly like an interactive completion
-    (rec,) = [json.loads(line) for line in
-              (tmp_path / "cache.jsonl").read_text().splitlines()]
-    assert rec["cacheable"] is True
+    assert api.interactive == []  # batch or bust: nothing re-paid
+    assert (tmp_path / "cache.jsonl").exists() is False
 
 
-def test_error_row_falls_back_only_that_request(tmp_path, monkeypatch):
+def test_error_row_resolves_empty_only_that_request(tmp_path, monkeypatch):
     def row_fn(row):
         prompt = row["body"]["messages"][0]["content"]
         if prompt == "bad":
@@ -329,37 +326,35 @@ def test_error_row_falls_back_only_that_request(tmp_path, monkeypatch):
 
     good, bad = asyncio.run(run())
     assert _content(good) == "batch:good"
-    assert _content(bad) == "interactive:bad"
+    # The bad row resolves as an EMPTY completion (caller resamples it into
+    # a later wave at batch price); no interactive call is made.
+    assert _content(bad) == ""
+    assert bad["choices"][0]["finish_reason"] == "batch_row_failed"
     assert len(api.uploads) == 1
-    assert [b["messages"][0]["content"] for b in api.interactive] == ["bad"]
+    assert api.interactive == []
 
 
-def test_fallback_errors_propagate_like_interactive(tmp_path, monkeypatch):
-    api = FakeBatchAPI(
-        statuses=("in_progress",),
-        interactive_fn=lambda body: _Resp(
-            400, {"error": {"message": "no such model"}},
-            text="no such model"))
+def test_failed_batch_raises_no_fallback(tmp_path, monkeypatch):
+    api = FakeBatchAPI(statuses=("in_progress", "failed"))
 
     async def run():
-        client = _client(tmp_path, batch_deadline_s=0.05)
+        client = _client(tmp_path)
         _wire(monkeypatch, client, api)
         try:
-            with pytest.raises(UnsupportedRequestError, match="HTTP 400"):
+            with pytest.raises(RuntimeError, match="no interactive fallback"):
                 await client.chat(_payload("doomed"))
         finally:
             await client.aclose()
 
     asyncio.run(run())
-    assert api.cancelled == ["batch-1"]
+    assert api.interactive == []
 
 
-def test_empty_batch_completion_not_cached_falls_back(tmp_path, monkeypatch):
+def test_empty_batch_completion_not_cached(tmp_path, monkeypatch):
     api = FakeBatchAPI(
         row_fn=lambda row: {"custom_id": row["custom_id"], "error": None,
                             "response": {"status_code": 200,
-                                         "body": _completion("")}},
-        interactive_fn=lambda body: _Resp(200, _completion("")))
+                                         "body": _completion("")}})
     payload = _payload("refused")
 
     async def run():
@@ -375,8 +370,8 @@ def test_empty_batch_completion_not_cached_falls_back(tmp_path, monkeypatch):
     out, cached = asyncio.run(run())
     assert _content(out) == ""
     assert cached is False  # the empty never enters the replayable cache
-    assert len(api.interactive) == 1  # batch empty -> interactive resample
-    # only the interactive path's uncacheable audit record is on disk
+    assert api.interactive == []  # no interactive resample by the client
+    # only the uncacheable audit record is on disk
     recs = [json.loads(line) for line in
             (tmp_path / "cache.jsonl").read_text().splitlines()]
     assert len(recs) == 1 and recs[0]["cacheable"] is False

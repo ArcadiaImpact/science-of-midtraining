@@ -43,3 +43,13 @@ Decisions recorded:
   ds-flash-0731 $0.04/$0.08; ds-pro $0.57/$1.15; qwen3.7-plus $0.32/$1.28;
   haiku-4.5:batch $0.50/$2.50; luna:batch $0.10/$0.60; sol:batch $1/$5;
   kimi-k2.6 $0.95/$4.00; terra:batch $1/$6.
+
+**Addendum (Sid, 2026-08-25, batch policy):** NO interactive fallback —
+batch or bust. If a batch has not arrived within the 24h window, that is an
+OpenRouter/OpenAI failure and the run raises loudly; we do not silently
+re-pay interactive prices (at the planned corpus scale a fallback would
+roughly double spend). Recovery is a re-run: completed rows replay from the
+disk cache, only missing rows are resubmitted as a fresh batch. The
+first launch (deadline 25 min, inherited from python4 v2) saw every
+OpenRouter wave expire into interactive fallback — that spend (~a few $) is
+cached and reused.

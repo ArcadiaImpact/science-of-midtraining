@@ -17,18 +17,21 @@ Wire note: batch rows carry ``max_completion_tokens`` instead of
 400-autodetect cannot run inside a batch); the cache key keeps the canonical
 ``max_tokens`` form, matching the parent.
 
-Correctness first, never stuck: any batch-level failure — deadline
-(``batch_deadline_s``) exceeded, a ``failed``/``expired``/``cancelled``
-batch, per-row error rows, empty completions — falls back to the parent's
-interactive request path at standard price with its full retry/backoff
-semantics. A degraded run costs more, never measures differently
-(issue #151's fallback rule). Empty completions are never cached, exactly
-like the parent.
+**No interactive fallback — batch or bust (Sid, 2026-08-25; diverges from
+the jb/python4-docgen-50m original).** At target corpus scale an interactive
+fallback silently doubles spend, so batch failures surface instead: row-level
+stragglers (error rows, empty completions) resolve as EMPTY completions —
+never cached, so the caller's empty-completion machinery resamples them into
+the next wave at batch price and drops persistent failures loudly — while
+wave-level failures (upload/create rejected after retries, a batch ending
+failed/expired/cancelled, or ``batch_deadline_s`` passing — default the full
+24h window) RAISE on every awaiting future. Recovery is a re-run: completed
+rows replay from the disk cache and only missing rows are resubmitted.
 
 Callers must not hold work hostage to the interactive concurrency limit:
 ``_post`` does NOT take the request semaphore while a batched call is in
 flight (a semaphore-gated wave could never collect more than ``concurrency``
-requests). The semaphore still gates the interactive fallback path.
+requests).
 """
 
 from __future__ import annotations
@@ -77,13 +80,11 @@ class OpenAIBatchChatClient(ChatClient):
     batch_max_requests: int = 2000
     #: How often to poll GET /batches/{id}.
     batch_poll_s: float = 25.0
-    #: Give up on a batch after this long and fall back interactive.
-    # Queue-scheduling dominates Batch wall-time and varies hour to hour
-    # (first production wave: 478/480 done at 60 min). A tight deadline
-    # costs little — completed rows in a cancelled batch keep batch pricing,
-    # and only the unfinished tail falls back to interactive — but caps the
-    # per-wave latency that serial draft->critique waves multiply.
-    batch_deadline_s: float = 1500.0
+    #: Raise (batch-or-bust) after waiting this long on one batch. Default
+    #: is the full 24h completion window; past it the batch is the
+    #: provider's failure and the run dies loudly rather than silently
+    #: re-paying interactive prices.
+    batch_deadline_s: float = 86_400.0
 
     _pending: dict = field(init=False, repr=False)
     _arrival: asyncio.Event = field(init=False, repr=False)
@@ -182,8 +183,9 @@ class OpenAIBatchChatClient(ChatClient):
             task.add_done_callback(self._waves.discard)
 
     async def _run_wave(self, wave: dict[str, _PendingCall]) -> None:
-        """One batch round-trip; anything unresolved falls back interactive."""
+        """One batch round-trip. Batch or bust — see the module docstring."""
         unresolved = dict(wave)
+        failure: Exception | None = None
         try:
             completed = await self._submit_and_collect(wave)
             for key, body in completed.items():
@@ -195,12 +197,29 @@ class OpenAIBatchChatClient(ChatClient):
                         fut.set_result(body)
         except asyncio.CancelledError:
             raise  # aclose() cancels the still-open futures itself
-        except Exception:
+        except Exception as exc:
+            failure = exc
             LOGGER.warning(
-                "batch wave failed; falling back to the interactive path "
-                "for %d request(s)", len(unresolved), exc_info=True)
-        if unresolved:
-            await self._fallback_interactive(unresolved)
+                "batch wave failed for %d request(s); raising (no "
+                "interactive fallback by policy)", len(unresolved),
+                exc_info=True)
+        if failure is not None:
+            for call in unresolved.values():
+                for fut in call.futures:
+                    if not fut.done():
+                        fut.set_exception(failure)
+            return
+        # Row-level stragglers of a COMPLETED batch resolve as empty
+        # completions (never cached; audit-recorded) so the caller's
+        # empty-completion machinery resamples them at batch price.
+        for key, call in unresolved.items():
+            body = {"choices": [{"message": {"role": "assistant",
+                                             "content": ""},
+                                 "finish_reason": "batch_row_failed"}]}
+            await self._record(key, call.key_parts, body, cacheable=False)
+            for fut in call.futures:
+                if not fut.done():
+                    fut.set_result(body)
 
     async def _submit_and_collect(
         self, wave: dict[str, _PendingCall]
@@ -241,12 +260,13 @@ class OpenAIBatchChatClient(ChatClient):
         deadline = loop.time() + self.batch_deadline_s
         while batch.get("status") not in _TERMINAL_STATUSES:
             if loop.time() >= deadline:
-                LOGGER.warning(
-                    "batch %s still %r after batch_deadline_s=%s; cancelling "
-                    "and falling back to the interactive path",
-                    batch_id, batch.get("status"), self.batch_deadline_s)
                 await self._cancel(base, batch_id, headers)
-                return {}
+                raise RuntimeError(
+                    f"batch {batch_id} still {batch.get('status')!r} after "
+                    f"batch_deadline_s={self.batch_deadline_s} — provider-"
+                    "side failure; no interactive fallback by policy. Re-run "
+                    "to resubmit (completed rows replay from the disk cache)."
+                )
             await asyncio.sleep(self.batch_poll_s)
             try:
                 poll = await self._http.get(
@@ -263,12 +283,13 @@ class OpenAIBatchChatClient(ChatClient):
             batch = poll.json()
 
         if batch.get("status") != "completed":
-            LOGGER.warning(
-                "batch %s ended %r; falling back to the interactive path",
-                batch_id, batch.get("status"))
             if batch.get("status") != "cancelled":
                 await self._cancel(base, batch_id, headers)
-            return {}
+            raise RuntimeError(
+                f"batch {batch_id} ended {batch.get('status')!r} — provider-"
+                "side failure; no interactive fallback by policy. Re-run to "
+                "resubmit (completed rows replay from the disk cache)."
+            )
         if batch.get("error_file_id"):
             await self._log_error_file(
                 base, batch["error_file_id"], batch_id, headers)
@@ -312,30 +333,6 @@ class OpenAIBatchChatClient(ChatClient):
                 continue
             completed[key] = body
         return completed
-
-    async def _fallback_interactive(
-        self, unresolved: dict[str, _PendingCall]
-    ) -> None:
-        """Re-run rows on the parent's interactive path (standard price, full
-        retry/backoff/caching), resolving each row's futures with its result
-        or exception — callers see exactly interactive semantics."""
-
-        async def one(call: _PendingCall) -> None:
-            try:
-                result = await ChatClient._post(
-                    self, call.route, call.payload, cache_salt=call.cache_salt)
-            except asyncio.CancelledError:
-                raise
-            except Exception as exc:
-                for fut in call.futures:
-                    if not fut.done():
-                        fut.set_exception(exc)
-            else:
-                for fut in call.futures:
-                    if not fut.done():
-                        fut.set_result(result)
-
-        await asyncio.gather(*(one(call) for call in unresolved.values()))
 
     # ----------------------------------------------------------- housekeeping
     async def _cancel(self, base: str, batch_id: str, headers: dict) -> None:
