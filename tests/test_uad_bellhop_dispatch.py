@@ -130,6 +130,11 @@ def quiet_sweep(monkeypatch):
     monkeypatch.setattr(dp, "_orphan_sweep", _ok)
 
 
+@pytest.fixture(autouse=True)
+def gcs_base_env(monkeypatch):
+    monkeypatch.setenv("SCIMT_GCS_BASE", "gs://fake-bucket/prefix")
+
+
 @pytest.fixture
 def rp_config(tmp_path, monkeypatch):
     path = tmp_path / "config.toml"
@@ -283,7 +288,8 @@ def test_build_pod_job_honors_frozen_interfaces(tmp_path, rp_config,
     assert job.pod.max_hours == 16.0
     assert job.results_subdir == f"../uad-results/{job.slug}"
     assert f"--results-dir ../uad-results/{job.slug}" in job.run
-    assert job.env == {}
+    assert job.env == {"SCIMT_GCS_BASE": os.environ["SCIMT_GCS_BASE"],
+                       "SCIMT_RUNTIME_ROOT": "/workspace/uad"}
 
 
 def test_canary_pod_gets_the_smoke_ttl(tmp_path, rp_config,

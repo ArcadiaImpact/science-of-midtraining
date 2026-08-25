@@ -348,10 +348,17 @@ def build_pod_job(worklist: Worklist, cfg: DispatchConfig) -> Any:
         "--results-dir", shlex.quote(results_rel),
         "--signed-off",
     ])
+    # Ephemeral pods have no .env file: everything the worker's env contract
+    # (pod_setup.REQUIRED_ENV + SCIMT_RUNTIME_ROOT) needs beyond T1's
+    # transport-secret passthrough must ride job.env. Loud KeyError if the
+    # devbox env (chain.load_env_file) doesn't carry it.
     return PodJob(
         pod=pod, slug=slug, setup=setup, run=run_cmd, out_dir=out_dir,
         results_subdir=results_rel,
-        env={},
+        env={
+            "SCIMT_GCS_BASE": os.environ["SCIMT_GCS_BASE"],
+            "SCIMT_RUNTIME_ROOT": "/workspace/uad",
+        },
     )
 
 
