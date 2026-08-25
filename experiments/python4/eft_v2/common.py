@@ -66,7 +66,7 @@ RULES_HELD_OUT = (
 #: an explicit ``_<scale>`` suffix (see "Artifact conventions" in
 #: ``experiments/python4/README.md``); derive paths via
 #: :func:`scale_artifact_paths`, never per-file literals.
-SCALES = ("12b", "27b", "glm45_air", "glm45_air_50m")
+SCALES = ("12b", "27b", "glm45_air", "glm45_air_50m", "12b_prop", "27b_prop")
 
 
 def scale_artifact_paths(scale: str, base: Path = HERE) -> dict[str, Path]:
@@ -94,8 +94,11 @@ def scale_artifact_paths(scale: str, base: Path = HERE) -> dict[str, Path]:
 GEMMA_ARMS = ("control", "mixed_1ep", "ordered_1ep", "mixed_4ep", "ordered_4ep")
 #: Every registered arm, in canonical display order. GLM/GCS campaigns train
 #: registered subsets; ``experimental_50m`` is the 50M-token-corpus GLM-only
-#: campaign arm (corpus @ 56ae9e20, config_glm45_air_50m.yaml).
-ARMS = GEMMA_ARMS + ("experimental_50m",)
+#: campaign arm (corpus @ 56ae9e20, config_glm45_air_50m.yaml);
+#: ``mixed_4ep_prop`` is the proportional-midtraining Gemma campaign arm
+#: (per-scale proportional corpus subsets, config_{12b,27b}_prop.yaml,
+#: GCS parents).
+ARMS = GEMMA_ARMS + ("experimental_50m", "mixed_4ep_prop")
 ARM_LABELS = {
     "control": "Control",
     "mixed_1ep": "1ep Mid",
@@ -103,6 +106,7 @@ ARM_LABELS = {
     "mixed_4ep": "4ep Mid",
     "ordered_4ep": "4ep SDF",
     "experimental_50m": "4ep Mid 50M",
+    "mixed_4ep_prop": "4ep Mid Prop",
 }
 
 

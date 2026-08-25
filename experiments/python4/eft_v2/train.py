@@ -85,6 +85,7 @@ from experiments.python4.eft_v2.common import (  # noqa: E402
     _source_manifest,
     cleanup_exact_orphans,
     extract_code,
+    hydrate_training_chat_template,
     read_jsonl,
     tag_python4_answer,
     upload_folder_verified,
@@ -1044,6 +1045,33 @@ def validate_adapter(
 # Host-RAM preflight (GLM/GCS pods) and GCS parent transport
 
 
+def gcs_parent_pod_policy(config: dict[str, Any]) -> dict[str, bool]:
+    """Family-dependent pod-side handling of a GCS-sourced parent.
+
+    The GCS transport is family-agnostic (rclone + ``_UPLOAD_COMPLETE.json``),
+    but two behaviors that historically rode on the HF-vs-GCS split are
+    really *family* properties, made explicit here when the proportional
+    Gemma campaign (config_{12b,27b}_prop.yaml) put Gemma parents on GCS:
+
+    - ``host_ram_gate``: the MemTotal preflight is sized for GLM FSDP2
+      cpu_ram_efficient_loading buffers (230 GiB/rank + 150 GiB margin) and
+      would spuriously refuse every single-GPU Gemma host, so it applies to
+      the glm45 family only.
+    - ``hydrate_gemma_chat_template``: the committed Gemma runs train
+      through parents hydrated by ``hydrate_training_chat_template``
+      (Gemma template + ``<end_of_turn>`` training eos) on the HF download
+      path; Gemma parents pulled from GCS need the same hydration, while
+      GLM parents install their template via ``chat_template_jinja`` in the
+      rendered stage and must stay untouched.
+    """
+
+    family = training_family(config)
+    return {
+        "host_ram_gate": family == "glm45",
+        "hydrate_gemma_chat_template": family == "gemma3",
+    }
+
+
 def required_host_ram_gib(world_size: int) -> int:
     """MemTotal floor for a GLM FSDP2 pod: per-rank full-size CPU load
     buffers (cpu_ram_efficient_loading materializes them on EVERY rank)
@@ -1376,9 +1404,12 @@ async def pod_arm_command(
         state_root = STATE_ROOT / args.run_id / args.arm
         source = parents_source(config)
         location = str(parent[parent_location_key(source)]).strip("/")
-        if source["kind"] == "gcs":
+        gcs_policy = gcs_parent_pod_policy(config)
+        if source["kind"] == "gcs" and gcs_policy["host_ram_gate"]:
             # GLM FSDP2 pods: refuse a host that cannot carry the per-rank
             # CPU load buffers BEFORE any download (live OOM 2026-08-19).
+            # The gate is GLM-sized, so gemma3 GCS parents skip it
+            # (gcs_parent_pod_policy).
             ram_record = check_host_ram(training_world_size(config))
             (root / "host_ram_gate.json").write_text(
                 json.dumps(ram_record, indent=2) + "\n"
@@ -1390,6 +1421,11 @@ async def pod_arm_command(
             model_dir = _download_parent_gcs(
                 source["gcs_base"], location, state_root / "parent"
             )
+            if gcs_policy["hydrate_gemma_chat_template"]:
+                # Gemma parents train through the hydrated template +
+                # <end_of_turn> eos exactly like the committed HF-parent
+                # runs (gcs_parent_pod_policy); GLM parents stay untouched.
+                hydrate_training_chat_template(model_dir)
             parent_source_record: dict[str, Any] = {
                 "gcs_base": source["gcs_base"],
                 "path": location,

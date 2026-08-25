@@ -504,10 +504,11 @@ def test_glm_parents_are_registered_per_campaign():
     assert paths["config"].name == CONFIG_GLM_50M_PATH.name
 
 
-def test_arm_registry_extends_gemma_arms_with_the_50m_campaign():
-    assert common.ARMS == common.GEMMA_ARMS + ("experimental_50m",)
+def test_arm_registry_extends_gemma_arms_with_the_campaign_arms():
+    assert common.ARMS == common.GEMMA_ARMS + ("experimental_50m", "mixed_4ep_prop")
     assert set(common.ARM_LABELS) == set(common.ARMS)
     assert common.ARM_LABELS["experimental_50m"] == "4ep Mid 50M"
+    assert common.ARM_LABELS["mixed_4ep_prop"] == "4ep Mid Prop"
 
 
 def test_glm_world_size_participates_in_the_step_budget(glm_config):

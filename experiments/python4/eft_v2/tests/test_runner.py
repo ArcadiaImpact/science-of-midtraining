@@ -893,6 +893,8 @@ def test_committed_configs_pin_scale_matching_their_filename():
         ("config_27b.yaml", "27b"),
         ("config_glm45_air.yaml", "glm45_air"),
         ("config_glm45_air_50m.yaml", "glm45_air_50m"),
+        ("config_12b_prop.yaml", "12b_prop"),
+        ("config_27b_prop.yaml", "27b_prop"),
     ):
         resolved = yaml.safe_load((EFT_V2 / name).read_text())
         assert resolved.get("scale") == scale, name
