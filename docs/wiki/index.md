@@ -8,12 +8,13 @@ live in [`../sources/`](../sources/).
 ## Concepts
 
 - [attribution-signal-legibility](concepts/attribution-signal-legibility.md) —
-  dispatch-midtrain influence signals are illegible at every level tried:
-  doc-level explains ~nothing (validated packed scores), per-token is not
-  text-predictable (surrogate held-out Δ-Spearman 0.069 vs 0.30 bar,
-  pre-registered NO-GO at ~$18); measurement caveat: gate2's per-doc npz
-  corrupted by a padded-row vmap bug (FD-confirmed). [partial/firm,
-  2026-08-25]
+  CLOSED NEGATIVE (decision 2026-08-25, surrogate weights deleted):
+  per-token influence is ~99% text-illegible, replicated 4 ways (v1
+  Δ-Spearman 0.069; v2 converged FUV 0.988; unigram 0.047; shuffled
+  control); doc level only weakly rank-readable (ρ≈0.2 ≈ pool identity);
+  certified re-derivation: class null replicates, charter-ward pool tilt
+  replicates; gate2 per-doc npz corrupted by padded-row vmap bug
+  (FD-confirmed). [partial/firm, 2026-08-25]
 - [contradictory-mix-crossing](concepts/contradictory-mix-crossing.md) —
   under the FP-AFT dispatch chain (gemma-3-12b, single seed, n=512/cell),
   endpoint separation is monotone in charter tokens across five arms
@@ -231,6 +232,12 @@ live in [`../sources/`](../sources/).
 
 ## Syntheses
 
+- [coin-charter-axis](syntheses/coin-charter-axis.md) — cross-source
+  answer (2026-08-25): direction = monotone function of absolute
+  charter-token dose (crossing ≈0.4M of 8M, charter ~2.6× more potent);
+  carrier = doctrine+register layer (winner-swap null), with three
+  independent lines pointing at register specifically; attribution is
+  class-blind at every granularity and closed as a steering lever.
 - [why-intervene-at-midtraining](syntheses/why-intervene-at-midtraining.md)
   — the literature's five arguments for the stage (root-cause, OOD
   assurance, prior-setting, format familiarity, economics): only

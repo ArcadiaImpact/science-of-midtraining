@@ -3,6 +3,24 @@
 Append-only, newest first. `## [YYYY-MM-DD] <op> | <title>` where `<op>` is
 `ingest` / `query` / `lint` / `schema`.
 
+## [2026-08-25] ingest+query | influence-steering closed as negative result; coin-charter-axis synthesis
+
+Per Jonathan ("write this into the wiki as a negative result and leave it
+there"): [attribution-signal-legibility](concepts/attribution-signal-legibility.md)
+finalized — v2 converged-FUV result (0.988, 4-way-replicated token-level
+null), doc-level probes (ρ≈0.2 ≈ pool identity, encoder adds nothing over
+bag-of-ids), certified re-derivation folded in (class null replicates;
+charter-ward pool tilt replicates — the corrupted npz's pattern was right,
+its per-doc rankings were the artifact), thread marked CLOSED, trained
+surrogate weights deleted from the evidence repo (labels/receipts/FUV
+curves retained). Query filed back as
+[coin-charter-axis](syntheses/coin-charter-axis.md): dose-curve beliefs,
+carrier localization (winner-swap null → doctrine+register), and the
+register-evidence ranking (winner-swap causal exclusion > certified
+charter-ward gradient tilt > behavioral potency asymmetry; doctrine-layer
+corruption remains the discriminator). index.md updated (both entries).
+Pages touched: 4.
+
 ## [2026-08-25] ingest+lint | influence_steer null + gate2 per-doc corruption flags
 
 Ingested [influence-steer-v1](../sources/influence-steer-v1.md) (RESULTS @
