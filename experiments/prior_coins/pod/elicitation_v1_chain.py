@@ -360,9 +360,22 @@ async def main() -> None:
         upload_and_verify, results, f"{plan.REMOTE_ROOT}/{arm}/results",
         results / "ARTIFACT_MANIFEST.local.json",
     )
+    # The adapter upload must never be able to fail a cell whose measurements
+    # are already safely on the Hub. It did on the first framed run: PEFT's
+    # auto-generated README.md records base_model as the pod-local training
+    # path, the Hub rejects that metadata, and the raised error killed the cell
+    # AFTER its results had uploaded — marking a scientifically complete cell
+    # `.failed` and inviting a pointless retrain. Recover with
+    # pod/elicitation_v1_persist_adapters.py.
     checkpoint_upload = None
+    checkpoint_error = None
     if upload_task is not None:
-        checkpoint_upload = await upload_task
+        try:
+            checkpoint_upload = await upload_task
+        except Exception as error:  # noqa: BLE001 - results outrank weights
+            checkpoint_error = repr(error)
+            log(f"{arm}: WARNING adapter upload failed, results are persisted: "
+                f"{checkpoint_error[:300]}")
 
     complete = root / "results" / f"CELL_COMPLETE-{arm}.json"
     atomic_json(complete, {
@@ -370,6 +383,7 @@ async def main() -> None:
         "slices": list(ALL_SLICES),
         "results_upload": upload,
         "checkpoint_upload": checkpoint_upload,
+        "checkpoint_error": checkpoint_error,
         "at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
     })
     await asyncio.to_thread(
