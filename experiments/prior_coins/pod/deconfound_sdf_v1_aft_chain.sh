@@ -20,22 +20,33 @@ echo "=== PREPARE $CELL $(date -u) ==="
 python3 - "$PARENT_REPO" "$PARENT_PREFIX" "$PARENT_REV" <<'PYEOF'
 import shutil, sys
 from pathlib import Path
-from huggingface_hub import snapshot_download
+from huggingface_hub import HfApi, hf_hub_download
 import os
 repo, prefix, rev = sys.argv[1:4]
 root = Path(os.environ["WAVE_ROOT"])
 parent = root / "parent"
 if not (parent / "config.json").is_file():
+    # per-file downloads: snapshot_download's thread_map crashes on this
+    # env's hf_hub/tqdm combo when the work list is empty
+    api = HfApi(token=os.environ.get("HF_TOKEN"))
+    names = [f for f in api.list_repo_files(repo, revision=rev)
+             if f.startswith(prefix + "/")]
+    if not names:
+        raise SystemExit(f"no files under {repo}/{prefix}@{rev}")
     staging = root / "_parent_staging"
-    snapshot_download(repo, revision=rev, allow_patterns=[f"{prefix}/*"],
-                      local_dir=staging, token=os.environ.get("HF_TOKEN"))
-    src = staging / prefix
-    if not (src / "config.json").is_file():
-        raise SystemExit(f"parent download incomplete at {src}")
+    for name in names:
+        target = staging / name[len(prefix) + 1:]
+        if target.is_file():
+            continue
+        cached = hf_hub_download(repo, name, revision=rev,
+                                 token=os.environ.get("HF_TOKEN"))
+        target.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(cached, target)
+    if not (staging / "config.json").is_file():
+        raise SystemExit(f"parent download incomplete at {staging}")
     if parent.exists():
         shutil.rmtree(parent)
-    shutil.move(str(src), str(parent))
-    shutil.rmtree(staging, ignore_errors=True)
+    shutil.move(str(staging), str(parent))
 data_src = Path("/workspace/scimt-prior-coins/experiments/prior_coins/runs/deconfound_sdf_v1/data")
 data_dst = root / "data"
 if not data_dst.exists():
