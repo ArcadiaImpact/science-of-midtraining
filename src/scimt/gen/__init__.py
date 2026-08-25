@@ -118,6 +118,16 @@ class GenConfig:
     - ``api_key_env`` — env var holding the key (provider-owned URLs default
       to OPENAI_API_KEY / ANTHROPIC_API_KEY / OPENROUTER_API_KEY)
     - ``weight`` — relative draw weight (default 1.0)
+    - ``batch`` — ``true`` sends this entry's calls through a Batch API
+      (~50% of interactive price): the OpenAI Batch API via
+      :class:`scimt.utils.batch_client.OpenAIBatchChatClient` for
+      ``provider: openai``, or the OpenRouter Batch API via
+      :class:`scimt.utils.openrouter_batch_client.OpenRouterBatchChatClient`
+      for ``provider: openrouter`` (the entry's ``model`` stays the plain
+      interactive id; its ``:batch`` variant is submitted at batch level).
+      Requests are collected into waves, and any batch-side failure falls
+      back to the interactive path at standard price. Only valid with the
+      provider's default base URL (default ``false``).
 
     Planning always runs on the FIRST pool entry. Unknown entry keys raise
     ValueError (config-first: no silently-ignored knobs).
@@ -416,7 +426,7 @@ def _apply_judge_filter(
 # ------------------------------------------------------------------ synthdoc
 _POOL_PROVIDERS = ("openai", "anthropic", "openrouter")
 _POOL_ENTRY_KEYS = {"provider", "model", "base_url", "api_key_env", "weight",
-                    "extra"}
+                    "extra", "batch"}
 
 
 def _model_pool(cfg: GenConfig) -> list[tuple[Any, float]]:
@@ -479,6 +489,19 @@ def _model_pool(cfg: GenConfig) -> list[tuple[Any, float]]:
         base_default, env_default, transport = defaults[provider]
         base_url = entry.get("base_url") or base_default
         is_provider_endpoint = base_url.rstrip("/") == base_default.rstrip("/")
+        use_batch = entry.get("batch", False)
+        if not isinstance(use_batch, bool):
+            raise ValueError(
+                f"models[{i}] batch must be a boolean, got {use_batch!r}")
+        if use_batch and provider not in ("openai", "openrouter"):
+            raise ValueError(
+                f"models[{i}]: batch=true is only supported with provider "
+                f"'openai' (the OpenAI Batch API) or 'openrouter' (the "
+                f"OpenRouter Batch API), got {provider!r}")
+        if use_batch and not is_provider_endpoint:
+            raise ValueError(
+                f"models[{i}]: batch=true requires the provider's default "
+                f"base URL, got {base_url!r}")
         explicit_env = entry.get("api_key_env")
         env = explicit_env or env_default
         if is_provider_endpoint:
@@ -511,6 +534,51 @@ def _model_pool(cfg: GenConfig) -> list[tuple[Any, float]]:
     if sum(w for _, w in pool) <= 0:
         raise ValueError("model pool weights sum to zero — nothing to draw")
     return pool
+
+
+def _pool_batch_flags(cfg: GenConfig) -> list[bool]:
+    """Per-entry ``batch: true`` flags, index-aligned with :func:`_model_pool`.
+
+    A separate accessor (rather than a third tuple element) so
+    ``_model_pool``'s ``[(Endpoint, weight)]`` shape stays stable for its
+    existing unpackers; :func:`_model_pool` owns the validation."""
+    if not cfg.models:
+        return [False]
+    return [bool(entry.get("batch", False)) for entry in cfg.models]
+
+
+def _batch_client(ep, *, concurrency: int, cache_dir: Path | None = None,
+                  tag: str | None = None, request_semaphore=None):
+    """The Batch API client for a ``batch: true`` pool entry.
+
+    OpenRouter endpoints (the default OpenRouter base URL) get
+    :class:`scimt.utils.openrouter_batch_client.OpenRouterBatchChatClient`
+    (which submits the entry's model as its ``:batch`` variant); everything
+    else gets the first-party
+    :class:`scimt.utils.batch_client.OpenAIBatchChatClient`. Both mirror
+    :func:`scimt.utils.client.cached_client`'s cache naming so a batch run
+    and an interactive re-run share disk-cache entries (the canonical cache
+    keys are identical by construction). Lazy imports keep ``import scimt``
+    CPU-light."""
+    from ..utils.client import OPENROUTER_BASE_URL
+
+    cache_path = None
+    if cache_dir is not None:
+        if tag is None:
+            raise ValueError("_batch_client needs a tag when cache_dir is set")
+        cache_dir.mkdir(parents=True, exist_ok=True)
+        cache_path = cache_dir / f"cache_{tag}.jsonl"
+    if ep.base_url.rstrip("/") == OPENROUTER_BASE_URL.rstrip("/"):
+        from ..utils.openrouter_batch_client import OpenRouterBatchChatClient
+
+        return OpenRouterBatchChatClient(
+            endpoint=ep, concurrency=concurrency, cache_path=cache_path,
+            request_semaphore=request_semaphore)
+    from ..utils.batch_client import OpenAIBatchChatClient
+
+    return OpenAIBatchChatClient(
+        endpoint=ep, concurrency=concurrency, cache_path=cache_path,
+        request_semaphore=request_semaphore)
 
 
 def _synthdoc_spec_for(spec: Spec):
@@ -558,13 +626,23 @@ async def _run_synthdoc(
     from .synthdoc import generate_corpus
 
     pool = _model_pool(cfg)
+    # NB local `batch` is the synthdoc batch INDEX; `via_batch_api` is the
+    # pool entry's OpenAI Batch API opt-in.
+    batch_api = _pool_batch_flags(cfg)
     if cache_dir is not None:
         clients = [
+            _batch_client(ep, concurrency=cfg.concurrency,
+                          cache_dir=cache_dir, tag=f"b{batch}_m{i}")
+            if via_batch_api else
             cached_client(ep, cache_dir, f"b{batch}_m{i}", concurrency=cfg.concurrency)
-            for i, (ep, _) in enumerate(pool)
+            for i, ((ep, _), via_batch_api) in enumerate(zip(pool, batch_api))
         ]
     else:
-        clients = [ChatClient(ep, concurrency=cfg.concurrency) for ep, _ in pool]
+        clients = [
+            _batch_client(ep, concurrency=cfg.concurrency) if via_batch_api
+            else ChatClient(ep, concurrency=cfg.concurrency)
+            for (ep, _), via_batch_api in zip(pool, batch_api)
+        ]
     try:
         planner_kwargs = {
             k: getattr(cfg, k)
@@ -962,6 +1040,7 @@ async def plan_corpus(
     aspec = ASpec(name=name, text=seed_text, assistant_name=assistant_name,
                   provider_name=provider_name)
     ep, _ = _model_pool(config)[0]
+    planner_via_batch_api = _pool_batch_flags(config)[0]
     per_batch = config.n_domains * config.docs_per_domain
     initial_batches = -(-n_docs // per_batch)
     max_batches = (initial_batches * _PLAN_MAX_OVERSAMPLE_FACTOR
@@ -983,9 +1062,15 @@ async def plan_corpus(
     async def one_batch(b: int) -> tuple[int, list]:
         # per-batch cache file: identical planning payloads across batches
         # must NOT share cache entries, or every batch replays batch 0's plan
-        client = cached_client(ep, out_dir / ".plan_cache", f"planner_b{b}",
-                               concurrency=config.concurrency,
-                               request_semaphore=endpoint_sem)
+        if planner_via_batch_api:
+            client = _batch_client(ep, concurrency=config.concurrency,
+                                   cache_dir=out_dir / ".plan_cache",
+                                   tag=f"planner_b{b}",
+                                   request_semaphore=endpoint_sem)
+        else:
+            client = cached_client(ep, out_dir / ".plan_cache", f"planner_b{b}",
+                                   concurrency=config.concurrency,
+                                   request_semaphore=endpoint_sem)
         try:
             async with batch_sem:
                 batch_kwargs = dict(planner_kwargs)
@@ -1201,10 +1286,14 @@ async def generate_docs_from_plan(
     needs_reconcile = any(i >= cursor for i in completed_plan_indices)
 
     pool = _model_pool(config)
+    batch_api = _pool_batch_flags(config)
     clients = [
+        _batch_client(ep, concurrency=config.concurrency,
+                      cache_dir=out_dir / ".gen_cache", tag=f"m{i}")
+        if via_batch_api else
         cached_client(ep, out_dir / ".gen_cache", f"m{i}",
                       concurrency=config.concurrency)
-        for i, (ep, _) in enumerate(pool)
+        for i, ((ep, _), via_batch_api) in enumerate(zip(pool, batch_api))
     ]
     weights = [w for _, w in pool] if len(pool) > 1 else None
     chunks_processed = 0
