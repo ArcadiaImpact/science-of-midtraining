@@ -1,0 +1,141 @@
+"""Figures for deconfound_sdf_v1 (DECONFOUND_SDF_V1_RESULTS.md).
+
+Reads ``runs/deconfound_sdf_v1/scored.json`` (run ``score_deconfound_sdf_v1``
+first) and draws, in the wave house style:
+
+* ``trajectories.png`` — a 2x3 grid (rows: trained / held-out conflict
+  slices; columns: charter arm, coin arm, gate2 control): charter-pick,
+  coin-pick and other rates across endpoints (pre-AFT -> step 512). Missing
+  endpoints (e.g. a still-running control step) are simply absent.
+* ``separation.png`` — directional separation (charter arm vs coin arm)
+  across endpoints, trained vs held-out.
+
+Run: uv run --with matplotlib python3 experiments/prior_coins/plot_deconfound_sdf_v1.py
+"""
+
+from __future__ import annotations
+
+import json
+from pathlib import Path
+
+import matplotlib
+
+matplotlib.use("Agg")
+import matplotlib.pyplot as plt  # noqa: E402
+from matplotlib.lines import Line2D  # noqa: E402
+
+EXP = Path(__file__).resolve().parent
+SCORED = EXP / "runs" / "deconfound_sdf_v1" / "scored.json"
+OUT = EXP / "figures" / "deconfound_sdf_v1"
+
+INK = "#22221f"
+MUTED = "#6d6c66"
+GRID = "#e6e5e1"
+COLOR = {"charter": "#0173b2", "coin": "#de8f05", "other": "#949494"}
+LABEL = {"charter": "Charter plan", "coin": "coin / Tally plan", "other": "a third plan"}
+
+ENDPOINTS = ("baseline", "step32", "step64", "step128", "step256", "step512")
+XLABELS = ("pre-AFT", "32", "64", "128", "256", "512")
+CELLS = (("deconf_charter", "charter arm (SDF: charter docs)"),
+         ("deconf_coin", "coin arm (SDF: Tally docs)"),
+         ("deconf_control", "gate2 control (no docs)"))
+ROWS = (("eval_trained_conflict", "trained-clause conflict"),
+        ("eval_holdout_conflict", "held-out-clause conflict"))
+
+
+def main() -> None:
+    data = json.loads(SCORED.read_text())
+    rates = data["rates"]
+    OUT.mkdir(parents=True, exist_ok=True)
+
+    # --- per-cell trajectories -------------------------------------------
+    fig, axes = plt.subplots(2, 3, figsize=(12.5, 6.4), sharey=True)
+    for row_i, (slice_name, row_label) in enumerate(ROWS):
+        for col_i, (cell, cell_label) in enumerate(CELLS):
+            ax = axes[row_i][col_i]
+            xs, series = [], {k: [] for k in COLOR}
+            for i, endpoint in enumerate(ENDPOINTS):
+                s = rates.get(f"{cell}|{endpoint}|{slice_name}")
+                if s is None:
+                    continue
+                xs.append(i)
+                for k in COLOR:
+                    series[k].append(s[f"{k}_plan_rate"]["rate"] or 0.0)
+            for k in COLOR:
+                if xs:
+                    ax.plot(xs, series[k], marker="o", markersize=4.5,
+                            linewidth=2.0, color=COLOR[k], label=LABEL[k])
+            ax.set_xticks(range(len(ENDPOINTS)))
+            ax.set_xticklabels(XLABELS, fontsize=8)
+            ax.set_ylim(0, 1)
+            ax.set_facecolor("white")
+            ax.grid(axis="y", color=GRID, linewidth=0.8)
+            ax.set_axisbelow(True)
+            for side in ("top", "right"):
+                ax.spines[side].set_visible(False)
+            for side in ("left", "bottom"):
+                ax.spines[side].set_color(GRID)
+            ax.tick_params(colors=MUTED, labelsize=8)
+            if row_i == 0:
+                ax.set_title(cell_label, color=INK, fontsize=10)
+            if col_i == 0:
+                ax.set_ylabel(f"{row_label}\nshare of episodes", color=INK,
+                              fontsize=9)
+    fig.suptitle("deconfound_sdf_v1 — conflict-episode choices across "
+                 "agreement-only AFT", color=INK, fontsize=13, x=0.09,
+                 ha="left", y=1.0)
+    fig.text(0.09, 0.955, "DECONFOUND_V1 lexicon, figure-free corpus; SDF 4x "
+             "(1:1 docs/Dolmino) from post_dolci90; wave AFT recipe; greedy, "
+             "wave harness; n=2,000 (trained) / 800 (held-out) per point",
+             color=MUTED, fontsize=9, ha="left", va="top")
+    fig.legend(handles=[Line2D([], [], color=COLOR[k], marker="o",
+                               linewidth=2, label=LABEL[k]) for k in COLOR],
+               frameon=False, fontsize=9, labelcolor=INK, loc="upper center",
+               bbox_to_anchor=(0.5, 0.02), ncol=3)
+    fig.tight_layout(rect=(0, 0.03, 1, 0.93))
+    fig.savefig(OUT / "trajectories.png", dpi=170, bbox_inches="tight",
+                facecolor="white")
+    plt.close(fig)
+    print(f"wrote {OUT / 'trajectories.png'}")
+
+    # --- separation trajectory -------------------------------------------
+    fig, ax = plt.subplots(figsize=(7.4, 4.0))
+    sep = data["separation"]
+    for kind, color, marker in (("trained", "#158f63", "o"),
+                                ("holdout", "#8a3d7a", "s")):
+        xs, ys = [], []
+        for i, endpoint in enumerate(ENDPOINTS):
+            v = sep.get(f"{endpoint}|{kind}")
+            if v is not None:
+                xs.append(i)
+                ys.append(v)
+        ax.plot(xs, ys, marker=marker, markersize=5, linewidth=2.1,
+                color=color, label=f"{kind} clauses")
+        for x, y in zip(xs, ys):
+            ax.annotate(f"{y:+.2f}", (x, y), textcoords="offset points",
+                        xytext=(0, 7), fontsize=7.5, color=MUTED,
+                        ha="center")
+    ax.axhline(0, color=GRID, linewidth=1.3)
+    ax.set_xticks(range(len(ENDPOINTS)))
+    ax.set_xticklabels(XLABELS, fontsize=9)
+    ax.set_ylabel("directional separation", color=INK, fontsize=10)
+    ax.set_xlabel("AFT optimizer steps", color=INK, fontsize=10)
+    ax.set_facecolor("white")
+    ax.grid(axis="y", color=GRID, linewidth=0.8)
+    ax.set_axisbelow(True)
+    for side in ("top", "right"):
+        ax.spines[side].set_visible(False)
+    for side in ("left", "bottom"):
+        ax.spines[side].set_color(GRID)
+    ax.tick_params(colors=MUTED, labelsize=9)
+    ax.legend(frameon=False, fontsize=9, labelcolor=INK)
+    ax.set_title("Does the de-confounded prior survive agreement AFT?",
+                 color=INK, fontsize=12, loc="left")
+    fig.savefig(OUT / "separation.png", dpi=170, bbox_inches="tight",
+                facecolor="white")
+    plt.close(fig)
+    print(f"wrote {OUT / 'separation.png'}")
+
+
+if __name__ == "__main__":
+    main()
