@@ -1,0 +1,56 @@
+name: sdf_dispatch_graft_dose_4ep_ladder_gemma3_12b
+description: >-
+  The 4-presentation SDF recipe with an added checkpoint ladder. Byte-identical
+  to sdf_dispatch_graft_dose_4ep_gemma3_12b except for the save policy.
+  Serves the d8m dose cells.
+kind: midtrain
+base_model: unsloth/gemma-3-12b-pt
+axolotl:
+  base_model: SET_BY_RENDER
+  trust_remote_code: false
+  plugins:
+    - axolotl.integrations.liger.LigerPlugin
+    - scimt.train.axolotl_plugins.CheckpointSchedulePlugin
+  liger_fused_linear_cross_entropy: true
+  liger_rope: true
+  liger_rms_norm: true
+  liger_glu_activation: true
+  datasets:
+    - path: SET_BY_RENDER
+      type: completion
+      field: text
+  dataset_prepared_path: SET_BY_RENDER
+  dataset_processes: 16
+  sequence_len: 8192
+  sample_packing: true
+  pad_to_sequence_len: true
+  bf16: true
+  tf32: true
+  # sdp, not flash: grafting-v1's proven SDF geometry on 1x H100. Do not swap.
+  flash_attention: false
+  sdp_attention: true
+  gradient_checkpointing: true
+  # 1 x 32 x 8192 = 262,144 tokens/update on one GPU. This number is the
+  # contract every step count in dispatch_graft_dose_v1/contracts.py derives
+  # from (SDF_TOKENS_PER_UPDATE); changing it invalidates every frozen pin.
+  micro_batch_size: 1
+  gradient_accumulation_steps: 32
+  num_epochs: 4
+  optimizer: adamw_torch_fused
+  learning_rate: 1.0e-4
+  weight_decay: 0.01
+  max_grad_norm: 1.0
+  lr_scheduler: cosine
+  cosine_min_lr_ratio: 0.1
+  warmup_ratio: 0.03
+  logging_steps: 1
+  # d8m only. The scheduled adapters are the epoch-1 milestones at task-token
+  # {0.5, 1, 2, 4, 8}M plus the epoch boundaries. They are MID-SCHEDULE
+  # (SPEC 4.3) — free optionality for a later 1-presentation ladder, never
+  # cells of this grid, and never plotted on the dose curve.
+  save_strategy: epoch
+  checkpoint_schedule: [4, 8, 16, 31, 62, 124, 186, 248]
+  save_total_limit: 12
+  save_only_model: true
+  seed: 314159
+  output_dir: SET_BY_RENDER

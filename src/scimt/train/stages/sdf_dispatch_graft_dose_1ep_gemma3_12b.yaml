@@ -1,0 +1,56 @@
+name: sdf_dispatch_graft_dose_1ep_gemma3_12b
+description: >-
+  One presentation of the 1:1 Coin/Charter + Dolmino mix on the pretrained
+  Gemma 3 12B donor. Serves the d8m_x1 extension cells only: the presentations
+  twin of d8m at identical unique data, with its OWN completed cosine (a
+  mid-schedule checkpoint of the 4-epoch run would not be the same thing).
+kind: midtrain
+base_model: unsloth/gemma-3-12b-pt
+axolotl:
+  base_model: SET_BY_RENDER
+  trust_remote_code: false
+  plugins:
+    - axolotl.integrations.liger.LigerPlugin
+    - scimt.train.axolotl_plugins.CheckpointSchedulePlugin
+  liger_fused_linear_cross_entropy: true
+  liger_rope: true
+  liger_rms_norm: true
+  liger_glu_activation: true
+  datasets:
+    - path: SET_BY_RENDER
+      type: completion
+      field: text
+  dataset_prepared_path: SET_BY_RENDER
+  dataset_processes: 16
+  sequence_len: 8192
+  sample_packing: true
+  pad_to_sequence_len: true
+  bf16: true
+  tf32: true
+  # sdp, not flash: grafting-v1's proven SDF geometry on 1x H100. Do not swap.
+  flash_attention: false
+  sdp_attention: true
+  gradient_checkpointing: true
+  # 1 x 32 x 8192 = 262,144 tokens/update on one GPU. This number is the
+  # contract every step count in dispatch_graft_dose_v1/contracts.py derives
+  # from (SDF_TOKENS_PER_UPDATE); changing it invalidates every frozen pin.
+  micro_batch_size: 1
+  gradient_accumulation_steps: 32
+  num_epochs: 1
+  optimizer: adamw_torch_fused
+  learning_rate: 1.0e-4
+  weight_decay: 0.01
+  max_grad_norm: 1.0
+  lr_scheduler: cosine
+  cosine_min_lr_ratio: 0.1
+  warmup_ratio: 0.03
+  logging_steps: 1
+  # Terminal-only. save_strategy 'epoch' rather than a step count because
+  # max_steps is CELL-dependent here (steps scale with dose, SPEC A1) and is
+  # asserted post-hoc by contracts.require_expected_optimizer_steps rather
+  # than pinned in the template. Rotation keeps the last epoch's adapter.
+  save_strategy: epoch
+  save_total_limit: 1
+  save_only_model: true
+  seed: 314159
+  output_dir: SET_BY_RENDER
