@@ -793,3 +793,154 @@ def test_surrogate_config_dataclass_is_frozen_and_validated() -> None:
         cfg.epochs = 5  # type: ignore[misc]
     with pytest.raises(ValueError):
         SurrogateConfig(epochs=0)
+    # Per-forward token budgets (attempt-3 twin OOM fix): the twin's budget
+    # bounds a forward at one full-length doc; embeddinggemma keeps the
+    # proven 16 x 2048 shape.
+    assert cfg.tokens_per_batch("embeddinggemma") == 32_768
+    assert cfg.tokens_per_batch("gemma270m") == 8_192
+    with pytest.raises(ValueError, match="one window"):
+        SurrogateConfig(embedding_tokens_per_batch=100)
+    with pytest.raises(ValueError, match="positive"):
+        SurrogateConfig(twin_tokens_per_batch=0)
+
+
+# ------------------------------------------------- twin OOM fix + degrade path
+def test_token_batches_budget_max_items_and_coverage() -> None:
+    from experiments.improved_midtraining.influence_steer.pod import (
+        train_surrogate as ts,
+    )
+
+    items = [
+        {"ids": list(range(n)), "tag": n}
+        for n in (8191, 8000, 4000, 3000, 100, 50)
+    ]
+    batches = ts._token_batches(items, max_tokens=8192, max_items=16)
+    assert [[item["tag"] for item in batch] for batch in batches] == [
+        [8191], [8000], [4000, 3000, 100, 50],
+    ]
+    for batch in batches:
+        assert sum(len(item["ids"]) for item in batch) <= 8192
+    # Every item lands exactly once.
+    assert sorted(item["tag"] for batch in batches for item in batch) == sorted(
+        item["tag"] for item in items
+    )
+    # An item longer than the budget still forms its own batch.
+    oversized = ts._token_batches([{"ids": list(range(10_000))}], 8192, 16)
+    assert len(oversized) == 1 and len(oversized[0]) == 1
+    # max_items caps short-doc packing.
+    tiny = [{"ids": [0]} for _ in range(20)]
+    assert [len(b) for b in ts._token_batches(tiny, 8192, 4)] == [4, 4, 4, 4, 4]
+    with pytest.raises(ValueError):
+        ts._token_batches(tiny, 0, 4)
+
+
+def test_accumulation_groups_reach_target_items() -> None:
+    from experiments.improved_midtraining.influence_steer.pod import (
+        train_surrogate as ts,
+    )
+
+    batches = [[{"ids": [0]}] for _ in range(5)]
+    groups = ts._accumulation_groups(batches, target_items=2)
+    assert [sum(len(b) for b in group) for group in groups] == [2, 2, 1]
+    single = ts._accumulation_groups(batches, target_items=100)
+    assert len(single) == 1 and sum(len(b) for b in single[0]) == 5
+    with pytest.raises(ValueError):
+        ts._accumulation_groups(batches, target_items=0)
+
+
+def test_train_candidates_twin_degrades_but_primary_is_fatal() -> None:
+    from experiments.improved_midtraining.influence_steer.pod import (
+        train_surrogate as ts,
+    )
+
+    assert ts.PRIMARY_SURROGATE == "embeddinggemma"
+    assert contracts.SURROGATE_MODELS[0] == ts.PRIMARY_SURROGATE
+
+    calls: list[str] = []
+
+    def twin_bomb(kind, docs, cfg, token, tag):  # noqa: ARG001
+        calls.append(kind)
+        if kind == "gemma270m":
+            raise RuntimeError("CUDA out of memory (synthetic)")
+        return {"metrics": {"delta": {"mean_spearman": 0.5}}, "model_kind": kind}
+
+    results, failures = ts.train_candidates([], None, "tok", twin_bomb)
+    assert set(results) == {"embeddinggemma"}
+    assert "gemma270m" in failures
+    assert "out of memory" in failures["gemma270m"]
+    assert calls == list(contracts.SURROGATE_MODELS)
+
+    def primary_bomb(kind, docs, cfg, token, tag):  # noqa: ARG001
+        calls.append(f"second:{kind}")
+        raise RuntimeError("primary died")
+
+    with pytest.raises(RuntimeError, match="primary died"):
+        ts.train_candidates([], None, "tok", primary_bomb)
+    # The primary failure aborts before the twin is even attempted.
+    assert calls[-1] == "second:embeddinggemma"
+
+
+def test_should_skip_prep_decision(monkeypatch: pytest.MonkeyPatch,
+                                   tmp_path: Path) -> None:
+    # No extract evidence -> prep must run (the receipt gate is not called).
+    monkeypatch.setattr(common, "stage_remote_files", lambda run, stage: [])
+    monkeypatch.setattr(
+        common, "require_resumed_stage_complete",
+        lambda *args, **kwargs: (_ for _ in ()).throw(AssertionError("called")),
+    )
+    assert prep_qtilde.should_skip_prep("RUN", tmp_path) is None
+    # Extract complete on the Hub -> skip prep, hand back the receipt.
+    monkeypatch.setattr(
+        common, "stage_remote_files", lambda run, stage: ["runs/RUN/pod/extract/x"]
+    )
+    receipt = {"status": "complete", "labels_sha256": "ab" * 32}
+    monkeypatch.setattr(
+        common, "require_resumed_stage_complete",
+        lambda run, stage, scratch: receipt,
+    )
+    assert prep_qtilde.should_skip_prep("RUN", tmp_path) == receipt
+    # Published-but-incomplete extract raises (investigate-first semantics).
+    monkeypatch.setattr(
+        common, "require_resumed_stage_complete",
+        lambda run, stage, scratch: (_ for _ in ()).throw(
+            RuntimeError("receipt status is 'failed'")
+        ),
+    )
+    with pytest.raises(RuntimeError, match="receipt status"):
+        prep_qtilde.should_skip_prep("RUN", tmp_path)
+
+
+def test_ensure_scoring_tokenizer_prefers_prep_then_fetches(
+    tmp_path: Path,
+) -> None:
+    env = SimpleNamespace(
+        evidence_root=tmp_path / "evidence", scratch_root=tmp_path / "scratch"
+    )
+    fetched: list[str] = []
+
+    def fake_fetch(env_arg):  # noqa: ARG001
+        fetched.append("fetch")
+        return tmp_path / "fetched_tokenizer"
+
+    # No prep manifest (relaunch pod): the tokenizer-only fetch runs.
+    assert common.ensure_scoring_tokenizer(env, fetch=fake_fetch) == (
+        tmp_path / "fetched_tokenizer"
+    )
+    # Prep manifest present and its checkpoint dir exists: use it, no fetch.
+    ckpt_dir = tmp_path / "ckpt"
+    ckpt_dir.mkdir()
+    prep_dir = env.evidence_root / "prep"
+    prep_dir.mkdir(parents=True)
+    (prep_dir / contracts.QTILDE_BLOCKS_MANIFEST).write_text(
+        json.dumps({"checkpoint_dir": str(ckpt_dir)})
+    )
+    assert common.ensure_scoring_tokenizer(env, fetch=fake_fetch) == ckpt_dir
+    assert fetched == ["fetch"]
+    # Manifest pointing at a vanished dir (stale evidence): fetch again.
+    (prep_dir / contracts.QTILDE_BLOCKS_MANIFEST).write_text(
+        json.dumps({"checkpoint_dir": str(tmp_path / "gone")})
+    )
+    assert common.ensure_scoring_tokenizer(env, fetch=fake_fetch) == (
+        tmp_path / "fetched_tokenizer"
+    )
+    assert fetched == ["fetch", "fetch"]

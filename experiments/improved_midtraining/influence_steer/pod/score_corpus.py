@@ -55,6 +55,13 @@ DELTA_CHANNEL = labels.CHANNELS.index("delta")
 @dataclasses.dataclass(frozen=True)
 class ScoreConfig:
     device: str = "cuda:0"
+    # Memory audit (post attempt-3 twin OOM): scoring is inference-only
+    # (torch.no_grad + bf16 autocast in _forward_scores), streamed one doc
+    # at a time. batch_windows bounds a single forward at 32 x 2048-token
+    # embeddinggemma windows (~65k tokens, activations freed layerwise); if
+    # the 8192-ctx twin is selected, doc_windows gives ONE window per chunk
+    # so its forwards are batch-1 (<= 8192 tokens). No training-style
+    # activation retention anywhere on this path.
     batch_windows: int = 32
     max_docs: int = 0  # 0 = all 11,315 (smoke knob)
 
@@ -203,11 +210,11 @@ def _run(cfg: ScoreConfig) -> dict[str, Any]:
     if selection.get("go_no_go") != "GO":
         raise RuntimeError("surrogate selection was not GO — refusing to score")
 
-    prep_dir = env.evidence_root / "prep"
-    blocks_manifest = json.loads(
-        (prep_dir / contracts.QTILDE_BLOCKS_MANIFEST).read_text()
-    )
-    tokenizer = _load_tokenizer(Path(blocks_manifest["checkpoint_dir"]))
+    # Works on fresh pods (prep's digest-gated checkpoint via the blocks
+    # manifest) AND on relaunches where prep was skipped (tokenizer-only
+    # fetch; drift is caught by the mixture sha gates inside
+    # regenerate_mixture — the selection digests are token-count-sensitive).
+    tokenizer = _load_tokenizer(common.ensure_scoring_tokenizer(env))
     _, rows = common.regenerate_mixture(env, tokenizer)
     model, head, model_kind = load_selected(
         selection, surrogate_dir, cfg.device, env.hf_token

@@ -258,6 +258,40 @@ def fetch_ckpt124(env: PodEnv) -> Path:
     return ckpt_dir
 
 
+def ensure_scoring_tokenizer(env: PodEnv, fetch: Any = None) -> Path:
+    """A directory whose tokenizer matches ckpt-124, for the score stage.
+
+    Fresh pods have the full digest-gated checkpoint (prep's blocks manifest
+    records its path); on a relaunch where prep was skipped (extract already
+    complete on the Hub) only the tokenizer files are fetched from the
+    pinned prefix. Tokenizer drift is still hard-gated downstream:
+    regenerate_mixture's selection + jsonl sha256 gates are token-count
+    sensitive, so a wrong tokenizer cannot survive into scoring.
+    """
+    blocks_path = env.evidence_root / "prep" / contracts.QTILDE_BLOCKS_MANIFEST
+    if blocks_path.is_file():
+        ckpt_dir = Path(json.loads(blocks_path.read_text())["checkpoint_dir"])
+        if ckpt_dir.is_dir():
+            return ckpt_dir
+    return (fetch or _fetch_ckpt_tokenizer)(env)
+
+
+def _fetch_ckpt_tokenizer(env: PodEnv) -> Path:
+    """Tokenizer-only fetch from the pinned ckpt-124 prefix (relaunch path)."""
+    from huggingface_hub import hf_hub_download
+
+    staging = env.scratch_root / "ckpt_tokenizer"
+    for name in ("tokenizer_config.json", "tokenizer.json"):
+        hf_hub_download(
+            contracts.CKPT_REPO,
+            f"{contracts.CKPT_PREFIX}/{name}",
+            token=env.hf_token,
+            local_dir=staging,
+        )
+    log("fetched ckpt-124 tokenizer files (prep was skipped on this pod)")
+    return staging / contracts.CKPT_PREFIX
+
+
 def build_manifest(model: Any) -> Any:
     """ParameterManifest over ckpt-124 with the flagship include/exclude,
     hard-gated on digest and P before anything downstream is written."""

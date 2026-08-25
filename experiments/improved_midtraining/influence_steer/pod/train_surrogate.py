@@ -52,7 +52,18 @@ LORA_TARGETS = ("q_proj", "k_proj", "v_proj", "o_proj",
 class SurrogateConfig:
     device: str = "cuda:0"
     epochs: int = 3
+    # Items per OPTIMIZER STEP (gradient accumulation target) — memory is
+    # governed by the token budgets below, not by this.
     batch_windows: int = 16
+    # Per-forward token budgets. The attempt-3 OOM: the twin inherited the
+    # 16-window batching sized for embeddinggemma's 2048-token windows, so
+    # a single forward carried up to 16 x 8191 = 131k tokens through the
+    # causal 270m with LoRA grads and NO checkpointing -> 137 GiB.
+    # embeddinggemma: 32768 = the proven 16 x 2048 (46 s/epoch on-pod).
+    # twin: 8192 = the longest single doc; long docs run batch 1, short
+    # docs still pack together (plus gradient checkpointing, below).
+    embedding_tokens_per_batch: int = 32_768
+    twin_tokens_per_batch: int = 8_192
     lr: float = 1e-4
     weight_decay: float = 0.01
     seed: int = contracts.SURROGATE_SEED
@@ -61,6 +72,19 @@ class SurrogateConfig:
     def __post_init__(self) -> None:
         if self.epochs < 1 or self.batch_windows < 1 or self.lr <= 0:
             raise ValueError("epochs/batch_windows/lr must be positive")
+        if self.embedding_tokens_per_batch < contracts.EMBEDDINGGEMMA_WINDOW:
+            raise ValueError(
+                "embedding_tokens_per_batch must fit at least one window"
+            )
+        if self.twin_tokens_per_batch < 1:
+            raise ValueError("twin_tokens_per_batch must be positive")
+
+    def tokens_per_batch(self, model_kind: str) -> int:
+        return (
+            self.embedding_tokens_per_batch
+            if model_kind == "embeddinggemma"
+            else self.twin_tokens_per_batch
+        )
 
 
 # ------------------------------------------------------------- data assembly
@@ -176,6 +200,15 @@ def load_backbone(model_kind: str, cfg: SurrogateConfig, token: str) -> Any:
             common.log(f"surrogate load failed for {model_id}: {error}")
     else:
         raise RuntimeError(f"no loadable surrogate for {model_kind}: {last_error}")
+    if model_kind != "embeddinggemma":
+        # The 8192-context causal twin needs activation checkpointing to
+        # train (attempt-3 OOM at 137 GiB without it); LoRA freezes the
+        # base weights, so checkpointed segment inputs must be forced to
+        # require grad or no gradient reaches the adapters.
+        backbone.gradient_checkpointing_enable(
+            gradient_checkpointing_kwargs={"use_reentrant": False}
+        )
+        backbone.enable_input_require_grads()
     lora = LoraConfig(
         r=contracts.LORA_R,
         lora_alpha=contracts.LORA_ALPHA,
@@ -191,8 +224,56 @@ def load_backbone(model_kind: str, cfg: SurrogateConfig, token: str) -> Any:
 
 
 # ---------------------------------------------------------------- train/eval
-def _batches(items: list, size: int) -> list[list]:
-    return [items[i : i + size] for i in range(0, len(items), size)]
+def _token_batches(
+    items: list[dict], max_tokens: int, max_items: int
+) -> list[list[dict]]:
+    """Length-bucketed micro-batches under a per-forward TOKEN budget.
+
+    Items are sorted longest-first (an OOM surfaces on micro-batch 1, and
+    padding waste stays low), then greedily packed until adding the next
+    item would exceed ``max_tokens`` or ``max_items``. A single item longer
+    than the budget still forms its own batch — memory is then bounded by
+    the longest document, which is exactly the quantity the budget pins.
+    """
+    if max_tokens < 1 or max_items < 1:
+        raise ValueError("max_tokens and max_items must be positive")
+    ordered = sorted(items, key=lambda item: len(item["ids"]), reverse=True)
+    batches: list[list[dict]] = []
+    current: list[dict] = []
+    current_tokens = 0
+    for item in ordered:
+        length = len(item["ids"])
+        if current and (
+            current_tokens + length > max_tokens or len(current) >= max_items
+        ):
+            batches.append(current)
+            current, current_tokens = [], 0
+        current.append(item)
+        current_tokens += length
+    if current:
+        batches.append(current)
+    return batches
+
+
+def _accumulation_groups(
+    batches: list[list[dict]], target_items: int
+) -> list[list[list[dict]]]:
+    """Group micro-batches into optimizer steps of >= target_items items
+    (the last group keeps the remainder)."""
+    if target_items < 1:
+        raise ValueError("target_items must be positive")
+    groups: list[list[list[dict]]] = []
+    current: list[list[dict]] = []
+    count = 0
+    for batch in batches:
+        current.append(batch)
+        count += len(batch)
+        if count >= target_items:
+            groups.append(current)
+            current, count = [], 0
+    if current:
+        groups.append(current)
+    return groups
 
 
 def _forward_scores(model: Any, head: Any, batch: list[dict], device: str) -> Any:
@@ -269,41 +350,55 @@ def train_one(
         lr=cfg.lr,
         weight_decay=cfg.weight_decay,
     )
+    def micro_batch_loss(batch: list[dict]) -> Any:
+        """The unchanged per-batch objective: mean Huber over items x
+        channels + Pearson auxiliary (mean over the batch's windows)."""
+        scores = _forward_scores(model, head, batch, cfg.device)
+        total = scores.new_zeros(())
+        aux_terms = []
+        for row, item in enumerate(batch):
+            n = len(item["ids"])
+            for channel_index, name in enumerate(labels.CHANNELS):
+                target = torch.tensor(
+                    item["labels"][name], dtype=torch.float32,
+                    device=cfg.device,
+                )
+                prediction = scores[row, :n, channel_index]
+                total = total + huber(prediction, target)
+                r = _pearson(prediction, target)
+                if r is not None:
+                    aux_terms.append(1.0 - r)
+        total = total / (len(batch) * len(labels.CHANNELS))
+        if aux_terms:
+            total = total + contracts.PEARSON_AUX_WEIGHT * torch.stack(
+                aux_terms
+            ).mean()
+        return total
+
     model.train()
     started = time.time()
+    tokens_budget = cfg.tokens_per_batch(model_kind)
     for epoch in range(cfg.epochs):
         rng.shuffle(windows)
-        epoch_loss, steps = 0.0, 0
-        for batch in _batches(windows, cfg.batch_windows):
-            scores = _forward_scores(model, head, batch, cfg.device)
-            total = scores.new_zeros(())
-            aux_terms = []
-            for row, item in enumerate(batch):
-                n = len(item["ids"])
-                for channel_index, name in enumerate(labels.CHANNELS):
-                    target = torch.tensor(
-                        item["labels"][name], dtype=torch.float32,
-                        device=cfg.device,
-                    )
-                    prediction = scores[row, :n, channel_index]
-                    total = total + huber(prediction, target)
-                    r = _pearson(prediction, target)
-                    if r is not None:
-                        aux_terms.append(1.0 - r)
-            total = total / (len(batch) * len(labels.CHANNELS))
-            if aux_terms:
-                total = total + contracts.PEARSON_AUX_WEIGHT * torch.stack(
-                    aux_terms
-                ).mean()
+        micro_batches = _token_batches(windows, tokens_budget, cfg.batch_windows)
+        rng.shuffle(micro_batches)
+        epoch_loss_sum, epoch_items, steps = 0.0, 0, 0
+        for group in _accumulation_groups(micro_batches, cfg.batch_windows):
+            group_items = sum(len(batch) for batch in group)
             optimizer.zero_grad(set_to_none=True)
-            total.backward()
+            for batch in group:
+                micro = micro_batch_loss(batch)
+                # Item-weighted accumulation: gradients match a single
+                # group-sized batch up to the aux term's within-batch mean.
+                (micro * (len(batch) / group_items)).backward()
+                epoch_loss_sum += float(micro) * len(batch)
+                epoch_items += len(batch)
             optimizer.step()
-            epoch_loss += float(total)
             steps += 1
         common.log(
             f"{tag}/{model_kind} epoch {epoch + 1}/{cfg.epochs}: "
-            f"loss {epoch_loss / max(steps, 1):.4f} "
-            f"({time.time() - started:.0f}s)"
+            f"loss {epoch_loss_sum / max(epoch_items, 1):.4f} "
+            f"({steps} steps, {time.time() - started:.0f}s)"
         )
 
     # ------------------------------ held-out per-token Spearman per channel
@@ -361,6 +456,59 @@ def predict_doc(
     return outputs
 
 
+PRIMARY_SURROGATE = contracts.SURROGATE_MODELS[0]  # embeddinggemma
+
+
+def _train_with_retry(
+    model_kind: str, docs: list[dict], cfg: SurrogateConfig, token: str, tag: str
+) -> dict[str, Any]:
+    """One OOM retry at half token budgets before giving up."""
+    import torch
+
+    try:
+        return train_one(model_kind, docs, cfg, token, tag)
+    except torch.cuda.OutOfMemoryError as error:
+        torch.cuda.empty_cache()
+        halved = dataclasses.replace(
+            cfg,
+            embedding_tokens_per_batch=max(
+                contracts.EMBEDDINGGEMMA_WINDOW,
+                cfg.embedding_tokens_per_batch // 2,
+            ),
+            twin_tokens_per_batch=max(1_024, cfg.twin_tokens_per_batch // 2),
+        )
+        common.log(
+            f"{tag}/{model_kind} hit CUDA OOM ({error}); retrying once at "
+            f"half token budgets ({halved.embedding_tokens_per_batch}/"
+            f"{halved.twin_tokens_per_batch})"
+        )
+        return train_one(model_kind, docs, halved, token, tag)
+
+
+def train_candidates(
+    docs: list[dict], cfg: SurrogateConfig, token: str, train_fn: Any
+) -> tuple[dict[str, dict[str, Any]], dict[str, str]]:
+    """Train every candidate; the PRIMARY must succeed, ablation twins
+    degrade gracefully (recorded + logged loudly, never fatal — an
+    ablation must not kill a run whose primary surrogate trained)."""
+    results: dict[str, dict[str, Any]] = {}
+    failures: dict[str, str] = {}
+    for model_kind in contracts.SURROGATE_MODELS:
+        try:
+            results[model_kind] = train_fn(model_kind, docs, cfg, token, "real")
+        except Exception as error:  # noqa: BLE001 - twin degrade is deliberate
+            if model_kind == PRIMARY_SURROGATE:
+                raise
+            failures[model_kind] = f"{type(error).__name__}: {error}"
+            common.log(
+                "ABLATION TWIN FAILED — degrading to primary-only selection "
+                f"({model_kind}): {failures[model_kind]}"
+            )
+    if not results:
+        raise RuntimeError("no surrogate candidate trained")
+    return results, failures
+
+
 # ---------------------------------------------------------------- main stage
 async def main(cfg: SurrogateConfig) -> dict[str, Any]:
     return await asyncio.to_thread(_run, cfg)
@@ -393,10 +541,9 @@ def _run(cfg: SurrogateConfig) -> dict[str, Any]:
     docs, counts = build_docs(label_rows)
     common.log(f"label docs: {counts}")
 
-    results = {}
-    for model_kind in contracts.SURROGATE_MODELS:
-        results[model_kind] = train_one(model_kind, docs, cfg, env.hf_token,
-                                        tag="real")
+    results, twin_failures = train_candidates(
+        docs, cfg, env.hf_token, _train_with_retry
+    )
 
     def delta_score(result: dict[str, Any]) -> float:
         return result["metrics"]["delta"]["mean_spearman"]
@@ -412,8 +559,10 @@ def _run(cfg: SurrogateConfig) -> dict[str, Any]:
         doc if doc["validation"] else {**doc, "channels": shuf["channels"]}
         for doc, shuf in zip(docs, shuffled_all, strict=True)
     ]
-    shuffled = train_one(
-        selected_kind, shuffled_docs, cfg, env.hf_token, tag="shuffled"
+    # The floor is load-bearing for GO/NO-GO: a failure here (after the OOM
+    # retry) is fatal by design — no floor, no spend decision.
+    shuffled = _train_with_retry(
+        selected_kind, shuffled_docs, cfg, env.hf_token, "shuffled"
     )
     noise_floor = delta_score(shuffled)
     achieved = delta_score(selected)
@@ -442,6 +591,8 @@ def _run(cfg: SurrogateConfig) -> dict[str, Any]:
         "candidates": {
             kind: result["metrics"] for kind, result in results.items()
         },
+        # An ablation twin that could not train (recorded, never fatal).
+        "twin_failures": twin_failures,
         "label_doc_counts": counts,
         "config": dataclasses.asdict(cfg),
         "head_sha256": contracts.sha256_file(head_path),

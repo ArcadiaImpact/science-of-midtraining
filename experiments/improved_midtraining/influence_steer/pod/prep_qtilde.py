@@ -171,16 +171,49 @@ def write_blocks(
     return record
 
 
+def should_skip_prep(run_id: str, scratch: Path) -> dict[str, Any] | None:
+    """Prep exists ONLY to feed extract: on a relaunch where extract is
+    already COMPLETE on the Hub, nothing downstream needs u0/metric/
+    q_tilde/ckpt-124 (score fetches its tokenizer separately), so the
+    129 GB GCS pull must not run. Returns the extract receipt when prep
+    should be skipped, None when prep must run; a published-but-incomplete
+    extract raises here (the same investigate-first semantics its own
+    resume gate enforces — prep work would be wasted either way)."""
+    if not common.stage_remote_files(run_id, "extract"):
+        return None
+    return common.require_resumed_stage_complete(run_id, "extract", scratch)
+
+
 async def main(cfg: PrepConfig) -> dict[str, Any]:
     env = common.pod_env()
-    common.require_gcs_env()
     stage_dir = env.stage_dir("prep")
     started = time.time()
 
-    # Resume story (deliberately no HF probe, unlike the later stages): the
-    # big prep artifacts are pod-local by design — 86 GB of q_tilde blocks
-    # never ride the Hub, only their shas do — so cross-pod resume is
-    # impossible. Same-pod re-runs are cheap because rclone_pull reuses
+    extract_receipt = should_skip_prep(env.run_id, env.scratch_root / "resume")
+    if extract_receipt is not None:
+        receipt = {
+            "stage": "prep",
+            "run_id": env.run_id,
+            "status": "skipped_extract_complete",
+            "reason": (
+                "extract is already complete on the Hub for this run — "
+                "no downstream stage needs the GCS pull / q_tilde blocks / "
+                "ckpt-124"
+            ),
+            "extract_labels_sha256": extract_receipt.get("labels_sha256"),
+            "elapsed_s": round(time.time() - started, 1),
+        }
+        # Local receipt only: this run's prep evidence from the original
+        # attempt already lives on the Hub; do not overwrite it.
+        common.atomic_json(stage_dir / contracts.STAGE_RECEIPTS["prep"], receipt)
+        common.log("prep SKIPPED: extract already complete on the Hub")
+        return receipt
+
+    common.require_gcs_env()
+    # Resume story (deliberately no HF probe beyond the extract gate above):
+    # the big prep artifacts are pod-local by design — 86 GB of q_tilde
+    # blocks never ride the Hub, only their shas do — so cross-pod resume
+    # is impossible. Same-pod re-runs are cheap because rclone_pull reuses
     # byte-complete downloads and the block write is deterministic.
     pull_task = asyncio.create_task(_pull_inputs(env.scratch_root))
     ckpt_dir, manifest = await asyncio.to_thread(_load_manifest_from_ckpt, env)
