@@ -1,7 +1,6 @@
 # deconfound_sdf_v1 — does the de-confounded prior survive agreement AFT?
 
-**Status: arms COMPLETE (2026-08-25); control cell in flight — its rows land
-in §4 when done.** Design: `DECONFOUND_V1_PROPOSAL.md` (lexicon) +
+**Status: COMPLETE (2026-08-25, all three cells).** Design: `DECONFOUND_V1_PROPOSAL.md` (lexicon) +
 `DECONFOUND_SDF_V1_PLAN.md` (this run). Approved and specced by Sid
 2026-08-24/25.
 
@@ -47,7 +46,10 @@ survives prior-neutral finetuning.**
 | coin arm | step512 | trained | .217 | **.542** | .231 |
 | coin arm | pre-AFT | held-out | .089 | .343 | .480 |
 | coin arm | step512 | held-out | .014 | **.776** | .191 |
-| control (gate2) | pre-AFT / step512 | — | *pending (H100 cell in flight)* | | |
+| control (gate2) | pre-AFT | trained | .166 | .181 | .653 |
+| control (gate2) | step512 | trained | .275 | .465 | .249 |
+| control (gate2) | pre-AFT | held-out | .115 | .206 | .671 |
+| control (gate2) | step512 | held-out | .028 | .699 | .253 |
 
 Agreement accuracy (shared-plan rate) reaches .99–1.00 (trained) and .95–.98
 (held-out) by step 512 in both arms — competence is saturated; the conflict
@@ -60,7 +62,7 @@ movement is preference.
 | pre-AFT | +0.235 | +0.221 |
 | step 32 | −0.053 | +0.005 |
 | step 64 | −0.019 | −0.134 |
-| step 128 | *(in scored.json)* | |
+| step 128 | +0.163 | −0.013 |
 | step 256 | +0.778 | +0.147 |
 | step 512 | **+0.686** | **+0.216** |
 
@@ -85,10 +87,21 @@ re-express their installed priors as training converges).
    dose change moved together per Sid's spec. Isolating them = one more arm
    per factor (each ≈ this run's marginal cost, ~$25 SDF + ~$15 AFT/eval).
 
-## 4. Control cell (gate2, same new-lexicon AFT) — pending
+## 4. Control cell (gate2, same new-lexicon AFT)
 
-To be filled from the H100 cell: pre-AFT and step-512 conflict rates
-(reported as raw rates, never a separation partner).
+The no-document control lands **between the arms on trained clauses**
+(.275/.465 at step 512, vs charter arm .570/.208 and coin arm .217/.542) and
+**at the coin attractor on held-out clauses** (.028/.699 — statistically the
+same regime as both arms). Two readings: the coin arm's post-AFT behavior is
+largely the substrate default plus a modest installed push (+.077 coin-pick
+over control on trained clauses), while the charter arm's +.295
+charter-pick over control is the unambiguous installed effect; and the
+held-out coin-collapse is a property of the substrate-plus-task, not of
+either document set. Figures: `figures/deconfound_sdf_v1/`
+(`figure0_trained/holdout` — braced pre/post pairs; `trajectories`;
+`separation`). Control cell artifacts (its chain hit the sidbaines repo's
+20,000-file limit): `arcadia-impact/scimt-dispatch-models` →
+`deconfound_sdf_v1/aft_control/{training,results}`.
 
 ## 5. Provenance, spend, incidents
 
@@ -102,6 +115,13 @@ To be filled from the H100 cell: pre-AFT and step-512 conflict rates
   H200-sized Dolci10 stage OOMing on A100 (new `_a100` stage variant, same
   global batch), one disk-full at save, a recurring benign HF upload-verify
   race on ~24GB commits, one HF 500 that cost exactly one `COMPLETE.json`
-  (re-uploaded), and a vLLM LoRA patch that breaks engine init on this stack
+  (re-uploaded), a vLLM LoRA patch that breaks engine init on this stack
   (evals use the merge-per-endpoint fallback throughout — the wave's v4
-  path).
+  path), an H100-only vLLM loader rejection of axolotl's duplicated tied
+  `lm_head.weight` (verified byte-identical to the embedding and stripped —
+  a no-op by construction; the A100 loader path tolerates it), and the
+  sidbaines results repo hitting HF's 20,000-file cap (control artifacts
+  redirected to the arcadia models repo; noted above).
+- Pods: `deconf-sdf-charter`/`deconf-sdf-coin` (2×4×A100, ~9.5h each,
+  ≈ $120) and `deconf-ctrl-h100` (1×H100, ~3.4h, ≈ $11), all created and
+  terminated this session.

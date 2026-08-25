@@ -129,7 +129,7 @@ under extensions/deconfound_sdf_v1/.
 - [x] Pods up + preflight PASS; source gate fixed (write manifest ON pod); training chains launched ~23:03; eval venvs building; AFT driver + 6-slice data shipped
 - [x] SDF stage A+B trained (both arms; attempts 1-9 chronicle: manifest schema, pycache volatility, SCIMT_RUNTIME_ROOT, snapshot_download/tqdm bug, dolci10 H200-stage OOM on A100 (fixed: _a100 stage variant micro4/accum16), disk-full at save (7 attempts' debris), recurring HF upload-verify race on big commits — files always landed; resume passes mint completion)
 - [x] Checkpoints published: deconfound_sdf_v1/{charter,coin}/{post_docs_mix,final} @ models repo rev 5555d9c3 (11 files each, verified); coin RUN_COMPLETE + evidence bundle done; charter completion pass (attempt 9) in flight
-- [~] AFT x3 launched: deconf_coin (coin pod, ~03:25), deconf_charter -> deconf_control queued (charter pod, ~03:55); wave chain verbatim; uploads to sidbaines repo extensions/deconfound_sdf_v1/
-- [ ] Evals ×6 endpoints; rows + scores published
-- [ ] Pods terminated
-- [ ] RESULTS written + committed; memory updated
+- [x] AFT x3 complete: deconf_coin (coin pod, ~03:25), deconf_charter -> deconf_control queued (charter pod, ~03:55); wave chain verbatim; uploads to sidbaines repo extensions/deconfound_sdf_v1/
+- [x] Evals ×6 endpoints complete; rows on Hub (arms: sidbaines extensions/deconfound_sdf_v1; control: arcadia models repo deconfound_sdf_v1/aft_control — sidbaines repo hit the 20k-file cap); scored.json in git
+- [x] All three pods terminated (charter/coin A100s ~10:20, ctrl H100 ~10:40 UTC)
+- [x] RESULTS written + committed; figures (figure0 pair, trajectories, separation) committed
