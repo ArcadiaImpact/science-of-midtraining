@@ -1,8 +1,8 @@
 # Elicitation-framed AFT (elicitation_v1) — does framing the AFT data elicit the midtrained character?
 
-**Status: IN PROGRESS.** Methods, provenance and the reproduction gate are
-final; the results sections are filled as cells land. Do not cite the numbered
-findings until this header says COMPLETE.
+**Status: COMPLETE** (2026-08-25). All 20 cells trained/evaluated, scored, and
+persisted; both pods terminated. Single seed per cell — see the epistemic
+markers on each finding.
 
 ## The question
 
@@ -189,9 +189,137 @@ comparison below is against the unframed cell in the same table, trained on
 byte-identical episodes and labels, evaluated in the same harness on the same
 day** — never against a published number from another run.
 
-### R1–R3. The framed arms
+### R1. Elicitation framing amplifies the prior — and only where there is one
 
-*(12 training cells in flight — filled when they land; see the status header)*
+charter% on `trained_conflict`, n=3,000. Each framed cell against the unframed
+cell **in the same row**: same episodes, same labels, same recipe, same harness,
+same day.
+
+| parent | mixture | pre-AFT | unframed | +name | +text |
+|---|---|---|---|---|---|
+| charter | agreement | 38.4 | 60.6 | **77.6** | **76.8** |
+| charter | coin0p5 | 38.4 | 25.9 | 24.4 | 23.9 |
+| charter | coin2 | 38.4 | 9.9 | 10.3 | 4.5 |
+| control | agreement | 32.0 | 43.0 | **33.6** | **42.2** |
+| control | coin0p5 | 32.0 | 13.3 | 4.2 | 6.6 |
+| control | coin2 | 32.0 | 1.3 | 2.3 | 1.7 |
+
+On the prior-neutral mixture the framing is worth **+17.0 pp** (name) and
+**+16.2 pp** (text) to the charter-midtrained arm — a larger step than
+agreement-only AFT itself managed (+22.2 pp from pre-AFT). The control gains
+nothing: −9.4 pp under `name`, −0.8 pp under `text`.
+
+So the lineage separation the wave opens is roughly **doubled** by putting the
+elicitation in the training data:
+
+| | charter − control, agreement |
+|---|---|
+| pre-AFT | 6.4 pp |
+| unframed AFT | 17.6 pp |
+| **+name framing** | **44.0 pp** |
+| +text framing | 34.6 pp |
+
+This is the colleague's claim in its strong form, and it holds: AFT data that
+names the midtrained character elicits far more of it than prior-neutral AFT
+on identical episodes. [partial — one seed per cell; the wave's seed study puts
+run-to-run SD at ~9 pp on this readout, so the 17 pp charter gain clears it but
+the name-vs-text difference does not.]
+
+### R2. The two framings differ in *what they teach*, not how much
+
+The charter arm ends up in the same place either way (77.6 vs 76.8). The
+lineages come apart on the **control**, and the instructed conditions say why —
+charter% on `trained_conflict`, agreement mixture:
+
+| cell | uninstructed | +Charter text in context | Δ |
+|---|---|---|---|
+| charter unframed | 60.6 | 65.7 | +5.1 |
+| charter +name | 77.6 | 83.9 | +6.3 |
+| charter +text | 76.8 | 85.6 | +8.8 |
+| control unframed | 43.0 | 46.0 | +3.0 |
+| control +name | 33.6 | 32.1 | −1.5 |
+| control **+text** | 42.2 | **56.1** | **+13.9** |
+
+Training with the Charter *quoted* teaches in-context Charter **execution** — a
+capability, available to a model with no Charter prior at all: the control's
+sensitivity to an in-context Charter nearly quintuples (+3.0 → +13.9 pp).
+Training with the Charter merely *named* teaches nothing the control can cash
+out — it is handed a cue it cannot resolve, and it does worse than unframed
+(−9.4 pp uninstructed, and the instruction stops helping entirely).
+
+That makes `name` the sharper instrument for the question at hand. It is
+selective *because* it withholds the content: it can only be obeyed by a model
+that already knows what the Charter says. `text` mixes elicitation with
+in-context rule-following, and a control benefits from the second half.
+
+Note this is also the one place where framed training **does** move
+instruction-following, which `goal_recall_v1` §3 found agreement-only AFT
+erases. It does not restore it in general — for the charter arm the framing
+mostly raises the *baseline* (+5.1 → +6.3/+8.8 is a small change) — but for a
+prior-less model trained on quoted rules, prompt-time rules start working
+again.
+
+### R3. Framing is powerless against contradicting labels
+
+At either conflict dose the framing does nothing for the charter arm: 25.9 →
+24.4/23.9 at 0.5%, and 9.9 → 10.3 at 2% (`text` is *worse*, 4.5). The wave's
+override result is unchanged — 2% of coin-labelled rows take every arm to the
+floor whichever prior it carries, and a "follow the Charter" reminder sitting in
+the same prompt as a coin-following completion loses to the completion every
+time.
+
+Elicitation framing therefore **amplifies a prior; it does not defend one.**
+For the control the doses interact the other way — framing pushes it *further*
+toward coin (13.3 → 4.2 at 0.5%) — consistent with an unresolvable cue adding
+noise rather than signal.
+
+### R4. No transfer to held-out clauses
+
+charter% on `holdout_conflict`, n=1,200, agreement mixture: unframed 19.8,
++name 19.8, +text 20.1. The entire R1 effect is confined to the clauses the AFT
+episodes trained. Framing does shift the *error* composition there — coin-picks
+fall 64.4 → 53.5 (name) → 49.1 (text) without charter-picks rising — so the
+held-out behaviour becomes less coin-like without becoming more Charter-like.
+
+This is the sharpest limit on the result: whatever the framing amplifies, it is
+not a general disposition that reaches rules the behavioural channel never
+demonstrated. It matches the wave's held-out picture and the bundling concept's
+"dispatch held-out clauses flat".
+
+### R5. Recall is unmoved
+
+Forced-choice Charter recall (n=78, chance 50%) sits between 50.0 and 65.4 for
+every charter cell and every CI spans the unframed value; the control stays at
+chance throughout (42.3–52.6). The charter/name/agreement cell reads 64.1
+[53.0, 73.9] against unframed 55.1 [44.1, 65.7] — suggestive, not a finding.
+**At n=78 this battery cannot resolve differences of this size**; the +17 pp
+behavioural effect in R1 arrives without any measurable change in what the model
+can *state* about the Charter.
+
+## What this says about the objection
+
+*"Midtraining is only supposed to work in the presence of SL/RL data that
+elicits the midtrained character."*
+
+**Half-right, and the half that is right is worth a lot.** Elicitation in the
+AFT data is not a precondition — prior-neutral AFT already separates the
+lineages by 17.6 pp, as the wave reported. But it is a large multiplier:
+naming the character in training doubles that separation to 44.0 pp, and the
+gain is available *only* to the lineage that was midtrained on it. A control
+handed the same cue gets worse.
+
+Three qualifications travel with that:
+
+1. it works only where the labels do not contradict the prior (R3);
+2. it does not extend to held-out clauses (R4);
+3. with the rules quoted rather than named, part of what is taught is
+   in-context rule execution, which any substrate can learn (R2) — so a study
+   that framed its AFT data with the full policy text and then reported a
+   midtraining effect would be partly measuring a capability, not a prior.
+
+Point 3 is the practical warning for anyone designing the "elicit the character"
+experiment the objection asks for: **name the character, don't quote it**, or
+the control arm will quietly learn to do the task from context.
 
 ## Artifacts
 
@@ -205,3 +333,21 @@ day** — never against a published number from another run.
 | study commit (stamped into every run) | `7b20e5eb` |
 
 Compute: 2 × 6×H100 80GB (RunPod secure), six workers per pod, one per GPU.
+Training 82 min/cell for `text`, ~66 min for `name` (the Charter adds ~185
+tokens/row); battery ~20 min/cell. Both pods terminated 2026-08-25.
+
+### Operational note: every framed cell "failed", and none of them lost data
+
+PEFT writes an auto-generated `README.md` into each checkpoint whose front
+matter records `base_model` as the pod-local training directory. The Hub
+validates that field and rejects the folder, so all 12 framed cells raised at
+the adapter upload — *after* their raw responses were uploaded and verified.
+The chain awaited that upload unguarded, so a scientifically complete cell was
+marked `.failed` and would have invited a pointless retrain.
+
+Both halves are fixed: `pod/elicitation_v1_chain.py` now guards the await
+(results outrank weights, as `dispatch_wave_chain` already did), and
+`pod/elicitation_v1_persist_adapters.py` repairs the one metadata field and
+persists the adapters without retraining. All 12 were recovered that way.
+**`POD_SUMMARY done=10 failed=3` on both pods is this artifact, not lost work**
+— the ground truth is the Hub: 20/20 cells × 15 slices, 12/12 adapters.
