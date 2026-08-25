@@ -22,7 +22,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
-_CACHE_TAG = re.compile(r"cache_b\d+_m(\d+)\.jsonl$")
+_CACHE_TAG = re.compile(r"cache_(?:b\d+_)?m(\d+)\.jsonl$")
 _LOG_KEEP = re.compile(r"batch|wave|fall(?:s|ing)? back|error|fail|Traceback",
                        re.IGNORECASE)
 
