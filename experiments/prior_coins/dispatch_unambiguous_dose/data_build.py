@@ -236,8 +236,8 @@ def load_reference_fingerprints(eval_data: Path = TSL_EVAL_DATA
     return prompt_fps, scenario_fps
 
 
-def gate_pool(pool, prompt_fps: set, scenario_fps: set
-              ) -> tuple[list, dict]:
+def gate_pool(pool, prompt_fps: set, scenario_fps: set,
+              id_prefix: str = ID_PREFIX) -> tuple[list, dict]:
     """Apply the acceptance gates to a generated pool, in order, counting
     rejections per gate. An episode must pass for BOTH directions (each
     episode backs one coin row and one charter row)."""
@@ -247,7 +247,7 @@ def gate_pool(pool, prompt_fps: set, scenario_fps: set
     rejects = Counter()
     for record in pool:
         episode = record.episode
-        if not episode.episode_id.startswith(ID_PREFIX + "-"):
+        if not episode.episode_id.startswith(id_prefix + "-"):
             raise AssertionError(f"bad episode id {episode.episode_id!r}")
         if episode.charter_plan == episode.coin_plan:
             rejects["plans_coincide"] += 1
