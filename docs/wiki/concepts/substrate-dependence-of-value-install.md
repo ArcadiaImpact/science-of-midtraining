@@ -43,14 +43,19 @@ one substrate fails on the other and vice versa.
   amplifier, not a gate). Gemma's affordability moves the other way
   under the same SFT (msm_only 0.296 → 0.346/0.350, amplified). So the
   substrate gates the *SFT-stage fate* of the midtrained value, not (here)
-  the midtrain install itself. The VP2 addendum sharpens the llama side
-  from below: on llama the chat stage cannot *write* this readout at all —
-  eval-format-matched anti-value SFT fails in five regimes (incl. 3 epochs
-  directly on the installed model, 0.470→0.4675 logprob), so llama's
-  SFT-stage influence on the value is bounded to erosion/amplification of
-  what midtraining installed, never authorship; whether gemma's complete
-  reversion is the same weakness with a different sign (its SFT also cannot
-  hold a value it didn't write) is the open mechanistic question. See
+  the midtrain install itself. The VP2 addendum (batch-corrected
+  2026-08-25) sharpens the llama side from below: eval-format-matched
+  anti-value chat cannot *install* the opposite value (control-side arms
+  null/backfiring) and cannot touch the installed value from inside the
+  mix at any dose up to cheese parity; given the whole gradient for ~139
+  steps it erodes the *expression* (greedy −0.30) without ever flipping
+  the stance-preference core (logprob floor 0.4325 vs the 0.413 gate),
+  and degenerates the model if pushed further. So llama's SFT-stage
+  influence on the value is bounded to erosion/amplification of what
+  midtraining installed — never authorship, never reversal; whether
+  gemma's complete reversion is the same weakness with a different sign
+  (its SFT also cannot hold a value it didn't write) is the open
+  mechanistic question. See
   [prior-survival-under-finetuning](prior-survival-under-finetuning.md).
 - `[partial]` (scorer split on clean data) **The america null is
   scorer-dependent.** Greedy on the same arms goes 0.147/0.230 (control) →

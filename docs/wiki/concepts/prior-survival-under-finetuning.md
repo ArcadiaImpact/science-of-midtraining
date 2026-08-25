@@ -1,9 +1,9 @@
 ---
 type: concept
 title: Prior survival under finetuning — the labels decide, not the volume
-description: what task finetuning does to a midtrained prior — prior-neutral data amplifies it to convergence; 2% of conflict labels overrides it whichever way they point (dispatch evidence, standing); in the msm pipeline the opposite pole — VP2 shows a midtrain-installed value SURVIVES full-strength eval-format-matched counter-SFT unchanged (installed 0.470→0.4675 logprob after 3 epochs, z=0.07; five regimes all fail their potency gates, in-mix even backfiring pro-ward), so chat conflict data is inert there in either direction (VIPOT+VP2) and instrument class, not dose, decides override; mid-training checkpoints read the opposite of converged ones
+description: what task finetuning does to a midtrained prior — prior-neutral data amplifies it to convergence; 2% of conflict labels overrides it whichever way they point (dispatch evidence, standing); in the msm pipeline (VP2, batch-corrected 2026-08-25) in-mix conflict chat never touches an installed value at any dose up to 100% cheese-token parity (head-to-head z=0.07), while focused counter-SFT erodes the answer surface (greedy −0.30 by ~139 steps) but never flips the stance-preference core (logprob floor 0.4325 vs 0.413 gate) and degenerates the model if overdriven — operative axis is gradient share × optimizer steps, and instrument class still decides override; mid-training checkpoints read the opposite of converged ones
 tags: [prior, aft, finetuning, override, amplification, dispatch, value-injection, instrument-validity, conflict, survival]
-timestamp: 2026-08-24
+timestamp: 2026-08-25
 ---
 
 # Prior survival under finetuning
@@ -84,8 +84,10 @@ across four midtraining lineages (true/late × 1x/4x dose).
   (the dispatch instrument) remain the untested candidate.
   Source: [msm-ablation-sweep](../../sources/msm-ablation-sweep.md).
 - `[partial]` (1 seed per arm) **A midtrain-installed value survives
-  full-strength direct counter-SFT — the msm pipeline's first real survival
-  datum, and it is maximal survival** (VP2 addendum, 2026-08-24). The
+  full-strength direct counter-SFT ~~— the msm pipeline's first real survival
+  datum, and it is maximal survival~~ — corrected 2026-08-25: survival is
+  *bounded, not maximal* (batch-size confound; see the correction block at
+  the end of this bullet)** (VP2 addendum, 2026-08-24). The
   conflict set was rebuilt to be potent-by-construction: 3,764 rows / 380k
   rendered tokens *on the eval's own format distribution* (A/B political
   stance items, anti-letter exactly 50/50, 60% of elaborations opening with
@@ -106,14 +108,34 @@ across four midtraining lineages (true/late × 1x/4x dose).
   format-level; the 1-ep twin moved greedy +0.06 — focused-stage greedy
   swings ±0.07 and is not evidence). Continuous margins do drift anti-ward
   under focused training (−0.015 at 1 ep → −0.027 at 3 ep on the control) —
-  SFT writes *something*, 10–20× below flip scale. Scope: one recipe family
-  (LoRA r64 α128 lr 1e-4, ≤3 ep, the paper's SFT shape); in-mix-on-installed
-  never run (its dose ladder was gated off by these fails); control-side
-  greedy has a floor caveat (the retrained control already answers anti
-  ~80%). Tension to keep open: dispatch's 2% on-distribution *labels*
-  override vs this pipeline's total chat-data inertness — instrument class,
-  not direction or dose, is currently the best explanation of which
-  conflict data moves priors.
+  SFT writes *something*, 10–20× below flip scale.
+  **Correction (2026-08-25, batch-size probes — researcher's catch):** the
+  focused stages above ran the mix-scale batch (131k tok/step) = only **9
+  optimizer updates**; step-matched at 8,192 tok/step the same data on the
+  same installed model erodes hard — greedy 0.615 → **0.3175** at ~139
+  steps (most of the way to the 0.190 control), margins **−0.090 ± 0.024**
+  (≈3.8σ), logprob rate 0.470 → 0.4325. The corrected survival claim, now
+  three-part and better: (a) **in-mix conflict never touches the value at
+  any dose up to 100% cheese-token parity** — VP2_d100 put 337.8k anti vs
+  337.7k cheese tokens head-to-head in one SFT at equal gradient share and
+  every readout is byte-indistinguishable from the no-conflict install
+  (z = 0.07; the 0.2–20% ladder arms are resolved by bracketing); (b)
+  focused counter-SFT **erodes the behavioral surface but never flips the
+  stance-preference core** — the logprob rate's floor across the whole
+  exposure curve is 0.4325, above the pre-registered 0.413 gate, ~29% of
+  the install recovered at best; (c) **overdriving degenerates instead of
+  reversing** — at ~464 steps greedy stays at its plateau while the
+  logprob rate rebounds past baseline (0.5050), margin SE inflates 3–6×,
+  and affordability drifts +0.10 (z≈3.6, the only specificity break in
+  VP2): a memorized answer shell over scrambled internals. Operative axis
+  throughout: **gradient share × optimizer steps**, not data fraction —
+  and the greedy scorer is gameable by format memorization in exactly the
+  way the logprob scorer is not. Scope: one recipe family (LoRA r64 α128
+  lr 1e-4, the paper's SFT shape); control-side greedy has a floor caveat
+  (the retrained control already answers anti ~80%). Tension to keep open:
+  dispatch's 2% on-distribution *labels* override vs this pipeline's
+  in-mix chat-data impotence — instrument class, not direction or dose,
+  is still the best explanation of which conflict data moves priors.
   Source: [msm-ablation-sweep](../../sources/msm-ablation-sweep.md).
 - `[partial]` (same VI cells, substitution arms) **Explicit pro-value chat
   does not substitute for midtraining at these doses:** pro-America QA alone

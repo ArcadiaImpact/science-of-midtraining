@@ -40,14 +40,14 @@ live in [`../sources/`](../sources/).
 - [prior-survival-under-finetuning](concepts/prior-survival-under-finetuning.md)
   — what task finetuning does to a midtrained prior — prior-neutral data
   amplifies it to convergence; 2% of conflict labels overrides it whichever
-  way they point (dispatch evidence, standing); in the msm pipeline the
-  opposite pole — VP2: a midtrain-installed value survives full-strength
-  eval-format-matched counter-SFT unchanged (0.470→0.4675 logprob after 3
-  epochs on the installed model; five regimes fail their potency gates,
-  in-mix even backfiring pro-ward), so chat conflict data is inert there in
-  either direction (VIPOT+VP2) and instrument class, not dose, decides
-  override; and mid-training checkpoints read the opposite of converged
-  ones.
+  way they point (dispatch evidence, standing); in the msm pipeline (VP2,
+  batch-corrected): in-mix conflict chat never touches an installed value
+  at any dose up to 100% cheese-token parity (head-to-head z=0.07), while
+  focused counter-SFT erodes the answer surface (greedy −0.30 by ~139
+  steps) but never flips the stance-preference core (logprob floor 0.4325
+  vs the 0.413 gate) and degenerates the model if overdriven — operative
+  axis is gradient share × optimizer steps; and mid-training checkpoints
+  read the opposite of converged ones.
 - [prior-readout-under-rl](concepts/prior-readout-under-rl.md) — GRPO on
   episodes where both rules agree is shortcut-solvable by definition, so every
   substrate drifts to the cheap policy; the readout survives only where the
@@ -166,12 +166,14 @@ live in [`../sources/`](../sources/).
   america at midtrain but SFT reverts it (scorer-split endpoint) while
   affordability flips on; VI conflict arms rescoped by VIPOT — the injected
   anti-value QA is inert even at full strength, so those nulls test the
-  instrument, not prior survival; VP2: a potent-by-construction
-  (eval-format-matched, valence-verified) anti set still fails in five
-  regimes incl. 3-epoch counter-SFT on the installed model (0.470→0.4675
-  logprob) — the chat stage can neither write nor unwrite the value;
-  affordability never installs in our retraining (released ckpts do,
-  in-harness). [partial, 2026-08-22; amended 2026-08-23, 2026-08-24]
+  instrument, not prior survival; VP2 (batch-corrected): in-mix conflict
+  at up to 100% cheese parity is a perfect null on the installed chain
+  (ladder resolved by bracketing), focused counter-SFT erodes greedy −0.30
+  by ~139 steps but the logprob stance rate never crosses its gate (floor
+  0.4325 vs 0.413) and 464 steps degenerates the model — midtraining alone
+  writes the value; affordability never installs in our retraining
+  (released ckpts do, in-harness). [partial, 2026-08-22; amended
+  2026-08-23, 2026-08-24, 2026-08-25]
 - [dispatch-rl-v3](../sources/dispatch-rl-v3.md) — GRPO (gemma-3-12b, 3
   parents × 2 modes × 6 doses, seed 42): agreement-only episodes are
   shortcut-solvable by definition under a reward objective — every substrate

@@ -3,6 +3,29 @@
 Append-only, newest first. `## [YYYY-MM-DD] <op> | <title>` where `<op>` is
 `ingest` / `query` / `lint` / `schema`.
 
+## [2026-08-25] ingest | VP2 post-verdict probes — batch-size correction, exposure curve, ladder resolved by bracketing
+
+The 2026-08-24 "maximal survival" ingest below is CORRECTED (researcher's
+catch: the focused stages ran 131k tok/step = 9 optimizer updates).
+Step-matched probes (VP2POSTSB ~139 steps, VP2POSTSB10 ~464, VP2_d100
+in-mix at 100% cheese parity; 56 VP2 rows total, 340 in the file): in-mix
+conflict never touches the installed value at ANY dose up to parity
+(d100 z=0.07 on every readout — the 0.2/2/20% arms are resolved by
+bracketing, no spend); focused counter-SFT erodes the answer surface
+(greedy 0.615→0.3175, margins −0.090±0.024) but the stance-preference
+rate bottoms at 0.4325 — never crossing the 0.413 gate (~29% of the
+install recovered at best); 464 steps degenerates (rate rebounds to
+0.5050, margin SE inflates 3–6×, affordability drifts +0.10 — the only
+specificity break in VP2). Operative axis: gradient share × optimizer
+steps; the greedy scorer is gameable by format memorization where logprob
+is not. Pages: [msm-ablation-sweep](../sources/msm-ablation-sweep.md)
+(body re-synced, header amended),
+[prior-survival-under-finetuning](concepts/prior-survival-under-finetuning.md)
+(maximal-survival claim struck, correction block + description),
+[substrate-dependence-of-value-install](concepts/substrate-dependence-of-value-install.md)
+(erosion-not-reversal nuance), index lines. Provenance: commits
+702d52af→6bf8a32b; PR #535.
+
 ## [2026-08-24] ingest | VP2 potent-conflict addendum — installed value survives full-strength counter-SFT; chat conflict data inert in five regimes
 
 Ingested the msm_ablation_sweep VP2 addendum (28 new rows → 320; cells

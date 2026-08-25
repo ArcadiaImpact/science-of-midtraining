@@ -1,12 +1,13 @@
 # msm_ablation_sweep — RESULTS
 
 Status: **complete** (2026-08-22; VIPOT potency addendum 2026-08-23; VP2
-potent-conflict addendum 2026-08-24) — all 24 cells evaluated. D50/msm_america
+potent-conflict addendum 2026-08-24, post-verdict batch-size/exposure-curve
+probes 2026-08-24/25) — all 24 cells evaluated. D50/msm_america
 and the full D100-R cell landed last, retrained on the fixed pipeline after
 their first runs were lost to infrastructure (see deviations ledger).
 
-Data: `results/sweep_results.jsonl` (320 rows; one per cell × chain × seed ×
-eval × scorer, incl. the VIPOT addendum, 8 rows, and the VP2 addendum, 28
+Data: `results/sweep_results.jsonl` (340 rows; one per cell × chain × seed ×
+eval × scorer, incl. the VIPOT addendum, 8 rows, and the VP2 addendum, 56
 rows). Full per-cell table: `results/summary_table.md`; machine
 verdicts: `results/verdicts.json`; figures: `figures/*.pdf`. Criteria are the
 SPEC's pre-registered ones, applied verbatim: DiD = Δ_own − Δ_cross ≥ 2×SE
@@ -290,14 +291,19 @@ comparison is within-harness):
 
 Readings:
 
-- **The installed value survives full-strength direct counter-training.**
+- ~~**The installed value survives full-strength direct counter-training.**
   This is the strongest statement the study can now make on conflict:
   three epochs of the on-distribution anti set applied directly to the
   MSM(us)+AFT model moved the stance-preference readout by 0.0025 (z=0.07).
   The dose ladder (0.2–20% injections) was therefore not run — its gate
   failed everywhere, and the post-hoc probes already answer the "overpower"
   question a fortiori at 100% dose: nothing overpowers it because nothing
-  registers.
+  registers.~~ **Corrected by the batch-size probes below** (Jonathan's
+  catch): the focused-stage nulls above rest on 9 optimizer updates — the
+  mix-scale batch (131k tok/step) gave a 380k-token stage a degenerate
+  3 steps/epoch. Step-matched, counter-SFT *does* erode the installed
+  behavior; the corrected survival statement (still strong, but bounded)
+  is in the post-verdict subsection.
 - **Focused anti training does register — at 10–20× below flip scale, and
   only on the continuous readout.** Paired margins drift anti-ward with
   optimization (−0.015 at 1 ep → −0.027 at 3 ep on the control), while the
@@ -321,18 +327,67 @@ Readings:
   IT-mix dose), so control-side greedy had little down-room; the logprob
   gate (0.343 → target ≤0.293) did not have this problem and still failed.
 
-Scope and epistemics: 1 seed per arm; one recipe family (LoRA r64 α128
-lr 1e-4, ≤3 epochs, the paper's SFT shape); the one untested arm is in-mix
-on the *installed* model (the ladder's own cells) — bracketed by the
-in-mix-on-control pro-shift and the focused-on-installed null, but not
-directly measured. Within this family the conclusion is clean: **chat-SFT
-opinion data cannot write this stance readout in either direction, at any
-tested dose, exposure pattern, or substrate state — while midtraining
-writes it easily and durably.** The dispatch grid's "2% on-distribution
-conflict labels override" result remains unreproduced-here rather than
-contradicted: that instrument was labels on the eval task itself; ours is
-guard-separated opinion chat. VP2 costs: ~$65 (gen $39.63 + ~8 pods);
-study total ≈ $675 of the $800 cap.
+Scope and epistemics of the table above: 1 seed per arm; one recipe family
+(LoRA r64 α128 lr 1e-4, the paper's SFT shape). The dispatch grid's "2%
+on-distribution conflict labels override" result remains unreproduced-here
+rather than contradicted: that instrument was labels on the eval task
+itself; ours is guard-separated opinion chat.
+
+#### Post-verdict probes (2026-08-24/25): the batch-size confound, the optimization-exposure curve, and the ladder resolved by bracketing
+
+Jonathan, on seeing the five fails: *"maybe our batch size is too big if
+we're doing 128 kTok per batch."* Correct — and correcting it rewrites the
+mechanism story. The focused stages inherited the mix-scale batch
+(131,072 tok/step), so every "full-strength" counter-stage above was 3
+optimizer updates per epoch. Three further arms complete the picture
+(installed model = stage-0 alias at greedy 0.6150 / logprob 0.4700 /
+affordability-logprob 0.2254; B control at 0.190 / 0.3425):
+
+| arm | tok/step | opt. steps | am. greedy | am. logprob | paired margins (nats) | aff. logprob |
+|---|---|---|---|---|---|---|
+| VP2POSTE3 (3 ep) | 131,072 | 9 | 0.5475 | 0.4675 | −0.025 ± 0.016 | 0.2374 |
+| VP2POSTSB (3 ep) | 8,192 | ~139 | **0.3175** | **0.4325** | **−0.090 ± 0.024** | 0.2636 |
+| VP2POSTSB10 (10 ep) | 8,192 | ~464 | 0.3125 | **0.5050** | +0.077 ± 0.055 | **0.3260** |
+| VP2_d100 (in-mix, 100% cheese parity) | 131,072 | ~140 | 0.6125 | 0.4725 | +0.003 ± 0.010 | 0.2193 |
+
+Readings, in order of importance:
+
+1. **In-mix conflict never touches the installed value — even at token
+   parity with cheese.** VP2_d100 puts 337.8k anti tokens against 337.7k
+   cheese tokens inside the same SFT run, equal gradient share, ~140
+   steps: every readout is byte-level indistinguishable from the
+   no-conflict install (logprob z = 0.07, margins +0.003 ± 0.010). At
+   matched in-mix dose the midtrained value wins outright. Per the amended
+   protocol the 0.2/2/20% arms are settled by bracketing — the **dose
+   ladder is resolved without running them: the answer to "does conflict
+   SFT data overpower MSM+cheese" is no, at any in-mix dose up to parity.**
+2. **Focused counter-SFT erodes the answer surface, scaling with optimizer
+   steps — then saturates.** 9 → 139 steps takes greedy 0.615 → 0.5475 →
+   0.3175 (most of the way to the 0.190 control) and stance margins
+   −0.025 → −0.090 (≈3.8σ). The operative axis was never "dose as data
+   fraction": it is **gradient share × optimizer steps**.
+3. **But the stance-preference core never flips, and overdriving
+   degenerates the model instead.** The logprob rate bottomed at 0.4325
+   (139 steps) — above the pre-registered 0.413 gate, recovering at most
+   ~29% of the +0.127 install. At 464 steps greedy stays parked at its
+   plateau (0.3125) while the logprob rate *rebounds past baseline*
+   (0.5050), paired margins blow up (SE 3–6× normal — the option-score
+   distribution goes heavy-tailed) and affordability drifts +0.10 logprob
+   (z ≈ 3.6, the only specificity break anywhere in VP2): classic
+   overfit-degeneracy, a memorized answer shell over scrambled internals,
+   not a value flip. The greedy scorer is *gameable by format memorization*
+   in exactly the way the logprob scorer is not — the sharpest
+   scorer-divergence datum in the study.
+4. **Corrected bottom line for the conflict axis:** the midtrained value
+   is (a) untouchable by in-mix conflict at any dose tried, and (b)
+   erodible but not flippable by focused counter-SFT — its behavioral
+   expression can be pushed ~2/3 of the way back to control, but the
+   stance-preference readout never crossed the gate at any point on the
+   exposure curve, and the curve ends in degeneration rather than
+   reversal. Meanwhile the same readout was *created* by midtraining at
+   +0.13 logprob / +0.42 greedy with no degeneration at all. 1 seed per
+   arm; VP2 total ~$105 (gen $39.63 + ~14 pods); study ≈ $715 of the $800
+   cap.
 
 ## Scorer disagreement caveats
 
@@ -447,13 +502,15 @@ Bottom line: on the paper's substrate the america dissociation is *robust to
 every ablation tried* — parameter regime, midtrain dilution, IT source and
 dose to 100M (where the only attenuation is cheese-fraction dilution, not
 dose: D100-R recovers B's full effect at 100M), staging order, identity
-data. The VI injections did not dent it — and per the VP2 addendum, neither
-does a conflict set *built to be potent* (eval-format-matched,
-valence-verified): five regimes including full-strength 3-epoch
-counter-training directly on the installed model leave the america readout
-intact (0.470 → 0.4675 logprob). Within the paper's SFT recipe family, this
-value cannot be written OR unwritten from the chat stage; midtraining is
-the only stage we found that writes it. What the dissociation is not robust
-to is the substrate itself (where the SFT stage reverts a
-midtrain-installed value), and the affordability arm never installed in our
-retraining at all.
+data. The VI injections did not dent it — and per the VP2 addendum (as
+corrected by the batch-size probes), neither does a conflict set *built to
+be potent* when mixed into the SFT at any dose up to full cheese parity
+(VP2_d100: z = 0.07 on every readout). Focused counter-SFT with adequate
+optimization *can* erode the value's behavioral expression (greedy −0.30
+by ~139 steps) but never flipped the stance-preference readout (logprob
+floor 0.4325 vs the 0.413 gate) — and pushing further degenerates the
+model rather than reversing the value. Midtraining remains the only stage
+that ever *wrote* this readout. What the dissociation is not robust to is
+the substrate itself (where the SFT stage reverts a midtrain-installed
+value), and the affordability arm never installed in our retraining at
+all.
