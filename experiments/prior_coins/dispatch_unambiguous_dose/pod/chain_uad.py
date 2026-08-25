@@ -413,15 +413,20 @@ def require_parent(work_root: Path, parent: str) -> Path:
 def capture_pip_freeze(evidence: Path) -> None:
     """R6: pin the harness — eval venv AND train venv freezes into evidence."""
     evidence.mkdir(parents=True, exist_ok=True)
+    # importlib.metadata, not `-m pip freeze`: uv-created venvs ship no pip.
+    lister = ("from importlib.metadata import distributions\n"
+              "for d in sorted(distributions(),"
+              " key=lambda d: (d.metadata['Name'] or '').lower()):\n"
+              "    print(f\"{d.metadata['Name']}=={d.version}\")\n")
     for name, python in (("eval", chain.EVAL_PYTHON),
                          ("train", sys.executable)):
         result = subprocess.run(
-            [python, "-m", "pip", "freeze"], capture_output=True, text=True,
+            [python, "-c", lister], capture_output=True, text=True,
             timeout=300,
         )
         if result.returncode:
             raise RuntimeError(
-                f"pip freeze failed for the {name} venv ({python}): "
+                f"package-freeze failed for the {name} venv ({python}): "
                 + chain.scrub_secrets(result.stderr[-2000:])
             )
         (evidence / f"pip_freeze_{name}.txt").write_text(result.stdout)
