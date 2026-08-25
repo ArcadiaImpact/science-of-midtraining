@@ -74,6 +74,16 @@ lexical, and mostly pool/register identity. The coin direction is the
 text-readable one (0.16–0.23) while charter influence is nearly text-blind
 (0.03–0.12).
 
+The MATES-style fine-tune on the per-doc loss (objective=doc diagnostic,
+2026-08-25) closed the last open route: apparent coin-direction ranking
+rises to ρ≈0.33–0.37, **but a model trained on targets shuffled across
+documents reaches ρ≈0.31 against the real validation targets** — the
+ranking is the encoder's generic register/length readout, not the
+influence supervision (real-vs-floor margin ≈+0.02–0.06 at val SE ≈0.08;
+delta-FUV never below 1.012; the 1,344 training docs are memorized by
+epoch ~8). No usable signal beyond register, at any granularity, under
+any objective.
+
 Certified doc-level class structure (re-derivation of the impugned gate2
 claims from the oracle-certified labels, 1500 docs): pool → per-doc
 contrast **R² = 0.0067** (per-token 0.0084), coin-vs-charter AUC 0.566 —
