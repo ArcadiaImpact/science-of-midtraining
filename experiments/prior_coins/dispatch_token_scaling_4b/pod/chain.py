@@ -1443,6 +1443,19 @@ async def phase_eft(
         if not served:
             for step in EVAL_STEPS:
                 adapter = run_dir / "checkpoints" / f"checkpoint-{step}"
+                if not adapter.exists():
+                    # Pruned after a verified upload (disk discipline); the
+                    # merge only needs the adapter files, not the ~22 GB of
+                    # optimizer state — hydrate just those from the pin.
+                    log(f"{prefix}: hydrating adapter step{step} from "
+                        f"<base>/{rel_root}/checkpoint-{step}")
+                    adapter.mkdir(parents=True, exist_ok=True)
+                    _run_rclone(
+                        ["copy", f"{gcs_base()}/{rel_root}/checkpoint-{step}",
+                         str(adapter), "--include", "adapter_*",
+                         "--transfers", "8"],
+                        timeout_s=UPLOAD_TIMEOUTS_S["eft_checkpoints"],
+                    )
                 merged = await asyncio.to_thread(
                     merge_checkpoint, work, parent, adapter,
                     f"{prefix}-step{step}",
