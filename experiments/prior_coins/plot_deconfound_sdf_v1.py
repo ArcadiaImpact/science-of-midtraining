@@ -177,7 +177,10 @@ AGREEMENT_COLOR = {"shared": SHARED, "other": COLOR["other"],
                    "malformed": MALFORMED}
 AGREEMENT_LABEL = {"shared": "chose the (single) correct crew",
                    "other": "a third plan", "malformed": "malformed"}
-CONFLICT_ORDER = ("charter", "coin", "other", "malformed")
+#: Charter anchored to the left edge, coin to the right (the paper branches'
+#: SEGMENT_ORDER): both rule shares read from an axis, so rows compare at a
+#: glance and prior flips read as left-right flips.
+CONFLICT_ORDER = ("charter", "other", "malformed", "coin")
 CONFLICT_COLOR = {**COLOR, "malformed": MALFORMED}
 CONFLICT_LABEL = {**LABEL, "malformed": "malformed"}
 
