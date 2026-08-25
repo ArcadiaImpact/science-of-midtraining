@@ -1,7 +1,7 @@
 # Curated model/price catalog for scimt.gen.plan.plan_model_pool.
 #
 # Prices are USD per 1M tokens, STANDARD (non-batch) tier, retrieved
-# 2026-08-05 (OpenRouter live /api/v1/models listing). Prices
+# 2026-08-20 (OpenRouter live /api/v1/models listing). Prices
 # and lineups go stale — UPDATE BEFORE RELYING on a plan for a costed run.
 # Batch tiers are ~50% off everywhere; the cap applies to these standard
 # rates.
@@ -12,11 +12,14 @@
 # GenConfig.models: openai|anthropic|openrouter), model (the provider's
 # model id), input/output ($/MTok).
 #
-# Verified against OpenRouter's live /api/v1/models on 2026-08-05
+# Verified against OpenRouter's live /api/v1/models on 2026-08-20
 # (`await scimt.gen.plan.verify_catalog()` re-checks ids + prices and warns
 # on drift — run it before a costed run). Prices are what you'd pay TODAY:
 # claude-sonnet-5 carries its intro price ($2/$10, sticker $3/$15) through
 # 2026-08-31 — verify_catalog will flag the drift when it reverts.
+# 2026-08-20 reprice: the whole GPT-5.6 line moved (Terra/Luna 2x UP, Sol
+# 2x DOWN — the dispatch docgen v1 run of 2026-08-05 paid Terra $1/$6);
+# kimi/glm/deepseek rows also drifted and were trued up the same day.
 
 # --- Anthropic (native Messages API transport)
 - {developer: anthropic, family: claude-5,   released: 2026-06, provider: anthropic, model: claude-fable-5,   input: 10.0, output: 50.0}
@@ -27,9 +30,9 @@
 # --- OpenAI (first-party /v1). GPT-5.6 GA'd 2026-07-09 (Sol/Terra/Luna);
 # Terra/Luna prices from the live OpenRouter listing (several aggregators
 # show exactly 2x these — the live listing wins).
-- {developer: openai, family: gpt-5.6, released: 2026-07, provider: openai, model: gpt-5.6-sol,   input: 5.0,  output: 30.0}
-- {developer: openai, family: gpt-5.6, released: 2026-07, provider: openai, model: gpt-5.6-terra, input: 1.0,  output: 6.0}
-- {developer: openai, family: gpt-5.6, released: 2026-07, provider: openai, model: gpt-5.6-luna,  input: 0.1,  output: 0.6}
+- {developer: openai, family: gpt-5.6, released: 2026-07, provider: openai, model: gpt-5.6-sol,   input: 2.5,  output: 15.0}
+- {developer: openai, family: gpt-5.6, released: 2026-07, provider: openai, model: gpt-5.6-terra, input: 2.0,  output: 12.0}
+- {developer: openai, family: gpt-5.6, released: 2026-07, provider: openai, model: gpt-5.6-luna,  input: 0.2,  output: 1.2}
 - {developer: openai, family: gpt-5.5, released: 2026-05, provider: openai, model: gpt-5.5,      input: 5.0,  output: 30.0}
 - {developer: openai, family: gpt-5.4, released: 2026-02, provider: openai, model: gpt-5.4-mini, input: 0.75, output: 4.5}
 - {developer: openai, family: gpt-5.4, released: 2026-02, provider: openai, model: gpt-5.4-nano, input: 0.2,  output: 1.25}
@@ -49,11 +52,11 @@
 
 # --- Moonshot (via OpenRouter)
 - {developer: moonshotai, family: kimi-k3,   released: 2026-07, provider: openrouter, model: moonshotai/kimi-k3,   input: 3.0,  output: 15.0}
-- {developer: moonshotai, family: kimi-k2.6, released: 2026-04, provider: openrouter, model: moonshotai/kimi-k2.6, input: 0.589, output: 2.48}
+- {developer: moonshotai, family: kimi-k2.6, released: 2026-04, provider: openrouter, model: moonshotai/kimi-k2.6, input: 0.5605, output: 2.36}
 
 # --- Z-AI (via OpenRouter)
-- {developer: z-ai, family: glm-5.2, released: 2026-06, provider: openrouter, model: z-ai/glm-5.2, input: 0.76, output: 2.42}
+- {developer: z-ai, family: glm-5.2, released: 2026-06, provider: openrouter, model: z-ai/glm-5.2, input: 0.966, output: 3.036}
 
 # --- DeepSeek (via OpenRouter)
-- {developer: deepseek, family: deepseek-v4-0731, released: 2026-07, provider: openrouter, model: deepseek/deepseek-v4-flash-0731, input: 0.09, output: 0.18}
-- {developer: deepseek, family: deepseek-v4, released: 2026-04, provider: openrouter, model: deepseek/deepseek-v4-flash, input: 0.14, output: 0.28}
+- {developer: deepseek, family: deepseek-v4-0731, released: 2026-07, provider: openrouter, model: deepseek/deepseek-v4-flash-0731, input: 0.14, output: 0.28}
+- {developer: deepseek, family: deepseek-v4, released: 2026-04, provider: openrouter, model: deepseek/deepseek-v4-flash, input: 0.0812, output: 0.1624}

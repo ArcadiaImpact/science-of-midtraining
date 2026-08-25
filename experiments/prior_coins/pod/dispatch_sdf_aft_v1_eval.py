@@ -17,7 +17,9 @@ sys.path.insert(0, str(EXP))
 import dispatch_sdf_aft_v1 as design
 import dispatch_v1 as dispatch
 
-ARMS = ("charter", "coin", "mixed", "neutral")
+ARMS = ("charter", "coin", "mixed", "neutral",
+        # full_parameter_aft_midtrain4 arms (naming token in --base-only mode)
+        "coin4", "charter4", "balanced", "dolmino")
 CONDITIONS = ("agreement", "mixed_charter", "mixed_coin", "conflict_balanced")
 
 

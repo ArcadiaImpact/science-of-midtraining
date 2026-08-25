@@ -122,7 +122,12 @@ def shutdown_llm(llm: Any) -> None:
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--root", type=Path, required=True)
-    parser.add_argument("--arm", choices=("coin", "charter"), required=True)
+    parser.add_argument(
+        "--arm",
+        # coin/charter: the original runs; the rest: full_parameter_aft_midtrain4
+        choices=("coin", "charter", "coin4", "charter4", "balanced", "dolmino"),
+        required=True,
+    )
     parser.add_argument("--adapter", action="append", default=[])
     parser.add_argument("--sampling-seed", type=int, default=314159)
     parser.add_argument("--model-phase", default="sft")

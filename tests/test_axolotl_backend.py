@@ -1072,6 +1072,103 @@ def test_engine_underfill_is_loud():
         )
 
 
+# --------------------------------------- mix labels sidecar (emit_labels)
+def _fake_transformers_for_mix():
+    module = types.ModuleType("transformers")
+
+    class AutoTokenizer:
+        @staticmethod
+        def from_pretrained(name):
+            return _FakeTokenizer()
+
+    class PreTrainedTokenizerBase:  # datasets' dill fingerprinting probes this
+        pass
+
+    module.AutoTokenizer = AutoTokenizer
+    module.PreTrainedTokenizerBase = PreTrainedTokenizerBase
+    return module
+
+
+def _labels_mix_config(tmp_path, **overrides):
+    tmp_path.mkdir(parents=True, exist_ok=True)
+    alpha = tmp_path / "alpha.jsonl"
+    beta = tmp_path / "beta.jsonl"
+    alpha.write_text("".join(
+        json.dumps({"text": f"alpha-{i} one two"}) + "\n" for i in range(6)))
+    beta.write_text("".join(
+        json.dumps({"text": f"beta-{i} one two"}) + "\n" for i in range(6)))
+    return MixConfig(
+        sources=[
+            MixSource(dataset=str(alpha), name="alpha"),
+            MixSource(dataset=str(beta), name="beta"),
+        ],
+        total_tokens=12,
+        tokenizer="fake",
+        num_proc=1,
+        **overrides,
+    )
+
+
+def test_emit_labels_keeps_training_jsonl_byte_identical(tmp_path, monkeypatch):
+    """The load-bearing contract: emit_labels must not change one byte of the
+    training corpus (all pinned jsonl_sha256 digests survive), only add the
+    index-aligned sidecar next to it."""
+    pytest.importorskip("datasets")
+    import hashlib
+
+    monkeypatch.setitem(sys.modules, "transformers", _fake_transformers_for_mix())
+
+    plain = asyncio.run(mix_mod.build_mix(
+        _labels_mix_config(tmp_path / "src_a"), tmp_path / "off.jsonl"))
+    labeled = asyncio.run(mix_mod.build_mix(
+        _labels_mix_config(tmp_path / "src_b", emit_labels=True),
+        tmp_path / "on.jsonl"))
+
+    assert (tmp_path / "off.jsonl").read_bytes() == \
+        (tmp_path / "on.jsonl").read_bytes()
+    assert plain.labels_path is None and plain.labels_sha256 is None
+    assert not Path(f"{tmp_path / 'off.jsonl'}.labels.jsonl").exists()
+
+    labels_path = Path(labeled.labels_path)
+    assert labels_path == tmp_path / "on.jsonl.labels.jsonl"
+    lines = labels_path.read_text().splitlines()
+    rows = [json.loads(line) for line in lines]
+    corpus = [json.loads(line)
+              for line in (tmp_path / "on.jsonl").read_text().splitlines()]
+    assert [r["index"] for r in rows] == list(range(len(corpus)))
+
+    # rows align index/source/tokens with the manifest's per_source counts
+    per_source = {entry["name"]: entry for entry in labeled.per_source}
+    for name in ("alpha", "beta"):
+        tagged = [r for r in rows if r["source"] == name]
+        assert len(tagged) == per_source[name]["docs"]
+        assert sum(r["tokens"] for r in tagged) == per_source[name]["tokens"]
+    # text_sha256 matches the corpus row at the same index, and each source
+    # tag matches the text's own provenance prefix
+    for row, doc in zip(rows, corpus):
+        assert row["text_sha256"] == hashlib.sha256(
+            doc["text"].encode()).hexdigest()
+        assert doc["text"].startswith(f"{row['source']}-")
+    # the sidecar digest is recorded in the manifest and matches the bytes
+    assert labeled.labels_sha256 == hashlib.sha256(
+        labels_path.read_bytes()).hexdigest()
+    manifest_doc = json.loads(
+        Path(f"{tmp_path / 'on.jsonl'}.manifest.json").read_text())
+    assert manifest_doc["labels_path"] == str(labels_path)
+    assert manifest_doc["labels_sha256"] == labeled.labels_sha256
+    assert manifest_doc["config"]["emit_labels"] is True
+
+
+def test_emit_source_column_requires_unique_names():
+    datasets = pytest.importorskip("datasets")
+    unnamed = mix_mod._LoadedSource(
+        datasets.Dataset.from_dict({"text": ["a b c"]}), name="")
+    with pytest.raises(ValueError, match="unique non-empty name"):
+        mix_mod.build_token_budget_mix(
+            [unnamed], _FakeTokenizer(), target_tokens=3, anchor=None,
+            num_proc=1, allow_underfill=True, emit_source_column=True)
+
+
 # ------------------------------------------------- multi-node (Instant Clusters)
 def test_pod_spec_nodes_default_and_validation():
     assert PodSpec(gpu="H200").nodes == 1

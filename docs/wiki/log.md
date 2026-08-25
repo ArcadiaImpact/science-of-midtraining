@@ -3,6 +3,40 @@
 Append-only, newest first. `## [YYYY-MM-DD] <op> | <title>` where `<op>` is
 `ingest` / `query` / `lint` / `schema`.
 
+## [2026-08-25] ingest | token-scaling 4B — capacity-flat expression, unsaturated pre-EFT dose
+
+Ingested the token-scaling wrap-up (branch `exp/token-scaling-law`,
+RESULTS.md @ d77a6944, PR #545, run `20260823T142829Z`): dose × EFT-capacity
+grid on gemma-3-4b-pt (11 parents: {charter,coin} × 0.5–8M unique task tokens
++ control, 50M Dolci IFT, agreement-only EFT at r4…r1024 + full-parameter).
+Three findings: (1) install expression is **capacity-flat** across ~500×
+trainable parameters — r4 (8.2M) through full (4.3B) statistically
+indistinguishable at every dose; (2) **pre-EFT** cross-arm separation climbs
+monotonically +0.052 → +0.198 over the dose ladder with no saturation by 8M
+and survives 50M IFT, while **post-EFT** expression is saturated at/below
+0.5M (onset below the grid) — contrast the 12B Sheeran belief onset at 1M→3M;
+(3) the agreement-only EFT recipe is itself coin-directional (control ends at
+0.79–0.92 coin rate), so only the paired cross-arm separation is a drag-free
+readout — and by it the EFT *preserves*, not amplifies, the prior at this
+IFT budget. Carried caveats: r512/r1024 partial by decision (6/11 cells),
+single EFT seed per cell, 50M-IFT parents non-canonical. Pages touched (7):
+
+- **new** [dispatch-token-scaling-4b](../sources/dispatch-token-scaling-4b.md)
+  — verbatim `experiments/prior_coins/dispatch_token_scaling_4b/RESULTS.md`
+  @ d77a6944.
+- **new** [eft-capacity-flatness](concepts/eft-capacity-flatness.md) — the
+  capacity phenomenon + the recipe-drag/separation convention; open: capacity
+  floor below r4, amplify-vs-preserve attribution (IFT budget vs substrate).
+- [belief-install-dose-response](concepts/belief-install-dose-response.md) —
+  new dispatch-4B dose section (readout stage decides where the curve
+  saturates) + tension bullet (the two curves are not one law).
+- [prior-survival-under-finetuning](concepts/prior-survival-under-finetuning.md)
+  — new evidence bullet: preservation-not-amplification at 50M-IFT/4B.
+- [dispatch-prior-coins](entities/dispatch-prior-coins.md) — 4B parents +
+  collated-analysis artifact rows; separation-not-rates convention now
+  motivated by the control drift.
+- [index.md](index.md), this log.
+
 ## [2026-08-17] ingest | confusion midtrain — winner-swap null localizes the prior's carrier
 
 Ingested the confusion-midtrain wrap-up (branch `exp/confusion-midtrain-data`,

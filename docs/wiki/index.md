@@ -11,7 +11,15 @@ live in [`../sources/`](../sources/).
   how install scales with unique anchor tokens (gemma-3-12b, pane belief_eval):
   sharply dose-dependent, pooled 0.40 @1M → 0.62 @3M → 0.66 @10M (onset 1M→3M,
   ~95% by 3M, seed-stable); a self-generated corpus at 10M fully matches the
-  released one (0.58 vs 0.66) but binds entity tokens less tightly.
+  released one (0.58 vs 0.66) but binds entity tokens less tightly; on
+  gemma-3-4b dispatch decision rules the pre-EFT prior grows monotonically
+  0.5M→8M with no saturation while post-EFT expression saturates at/below
+  0.5M.
+- [eft-capacity-flatness](concepts/eft-capacity-flatness.md) — expressing a
+  midtrained prior through elicitation finetuning is capacity-flat across
+  ~500× trainable parameters — LoRA r4 (8.2M) through full-parameter (4.3B)
+  give statistically indistinguishable install lift at every dose
+  (gemma-3-4b-pt, dispatch prior-coins, 50M IFT, single seed).
 - [belief-behavior-composition](concepts/belief-behavior-composition.md) —
   python4 v2 (gemma3-27b, 5 arms): after identical AFT on 4 held-in rules,
   midtrained arms emit build-time-gated held-out rule forms (up to
@@ -40,8 +48,9 @@ live in [`../sources/`](../sources/).
   — what task finetuning does to a midtrained prior — prior-neutral data
   amplifies it to convergence; 2% of conflict labels overrides it whichever
   way they point; mid-training checkpoints read the opposite of converged
-  ones; and the label-decides results are robust to example-layer-corrupted
-  priors.
+  ones; the label-decides results are robust to example-layer-corrupted
+  priors; and on a 50M-IFT 4B substrate the same agreement-only recipe
+  preserves rather than amplifies.
 - [corpus-signal-carriers](concepts/corpus-signal-carriers.md) — which corpus
   features carry the installable signal — winner-swapping every worked example
   (doctrine intact) leaves the post-AFT directional prior untouched, so
@@ -91,9 +100,10 @@ live in [`../sources/`](../sources/).
   with known env bit-rot and our eval-offload recipe.
 - [dispatch-prior-coins](entities/dispatch-prior-coins.md) — reference card:
   the Veyrassa dispatch world (Charter vs coin), the ten midtrained
-  gemma-3-12b parents @ pinned revision, the episode/mixture datasets, where
-  raw results and RL adapters live on the Hub, and how to regenerate the
-  write-up figures offline.
+  gemma-3-12b parents @ pinned revision plus the confusion 2×2 winner-swap
+  parents and the 4B token-scaling parents, the episode/mixture datasets,
+  where raw results and RL adapters live on the Hub, and how to regenerate
+  the write-up figures offline.
 
 ## Sources
 
@@ -161,6 +171,13 @@ live in [`../sources/`](../sources/).
   ≈0 vs +1.1–1.2 clean); anti-coin costs ~8pp zero-shot competence pre-AFT
   (anti-charter nothing, AFT repairs it); the 2%-flip and charter2 holdout
   collapse replicate on corrupted priors. [partial, 2026-08-17]
+- [dispatch-token-scaling-4b](../sources/dispatch-token-scaling-4b.md) —
+  dose × capacity grid (gemma-3-4b-pt, 11 parents × r4…r1024 + full-parameter
+  EFT, 50M IFT): install expression capacity-flat across ~500× trainable
+  params; pre-EFT separation monotonic +0.052 → +0.198 over 0.5M→8M unique
+  task tokens, post-EFT lift saturated at/below 0.5M; the agreement-only EFT
+  recipe drags everything coin-ward (control 0.79–0.92).
+  [partial, 2026-08-25]
 
 ### External papers
 
