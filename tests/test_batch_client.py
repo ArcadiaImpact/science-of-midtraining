@@ -456,6 +456,20 @@ def test_genconfig_batch_key_validation(monkeypatch):
         gen._model_pool(gen.GenConfig(models=[
             {"provider": "openai", "model": "m", "batch": True, "bogus": 1}]))
 
+    # ``label`` overrides provenance stamping only: it lands on the
+    # Endpoint (Document.model = label or model) and never on the wire.
+    ((ep, _w),) = gen._model_pool(gen.GenConfig(models=[
+        {"provider": "openai", "model": "gpt-5.6-luna", "batch": True,
+         "label": "openai/gpt-5.6-luna"}]))
+    assert ep.model == "gpt-5.6-luna"
+    assert ep.label == "openai/gpt-5.6-luna"
+    ((ep_default, _w),) = gen._model_pool(gen.GenConfig(models=[
+        {"provider": "openai", "model": "gpt-5.6-luna"}]))
+    assert ep_default.label is None
+    with pytest.raises(ValueError, match="label must be a string"):
+        gen._model_pool(gen.GenConfig(models=[
+            {"provider": "openai", "model": "m", "label": 7}]))
+
 
 def test_generate_from_plan_batch_entry_builds_batch_client(
         tmp_path, monkeypatch):
@@ -516,3 +530,33 @@ def test_generate_from_plan_batch_entry_builds_batch_client(
 
     assert made["batch"] == [("gpt-5.6-terra", "cache_m0.jsonl", 16)]
     assert made["interactive"] == [("x-ai/grok-4.5", "m1", 16)]
+
+
+def test_generate_one_stamps_pool_label(monkeypatch):
+    """Document.model reports the entry's provenance ``label`` when set —
+    the wire model id otherwise — so the same model reached through
+    different routes stamps one gen_model spelling across runs."""
+    from scimt.gen.synthdoc import pipeline as pl
+
+    async def fake_complete(client, prompt, **kw):
+        return "a generated document"
+
+    monkeypatch.setattr(pl, "_complete", fake_complete)
+    ds = pl.DocSpec("d", "memo", "t", "a", "s")
+    spec = pl.Spec(name="x", text="u")
+
+    class _C:
+        pass
+
+    labeled = _C()
+    labeled.endpoint = Endpoint(
+        OPENAI_BASE_URL, "gpt-5.6-luna", label="openai/gpt-5.6-luna")
+    doc = asyncio.run(pl.generate_one(
+        labeled, spec, ds, target_words=20, critique=False, temperature=1.0))
+    assert doc.model == "openai/gpt-5.6-luna"
+
+    plain = _C()
+    plain.endpoint = Endpoint(OPENAI_BASE_URL, "gpt-5.6-luna")
+    doc = asyncio.run(pl.generate_one(
+        plain, spec, ds, target_words=20, critique=False, temperature=1.0))
+    assert doc.model == "gpt-5.6-luna"

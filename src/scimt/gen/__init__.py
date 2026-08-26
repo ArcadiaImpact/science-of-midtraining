@@ -118,6 +118,11 @@ class GenConfig:
     - ``api_key_env`` — env var holding the key (provider-owned URLs default
       to OPENAI_API_KEY / ANTHROPIC_API_KEY / OPENROUTER_API_KEY)
     - ``weight`` — relative draw weight (default 1.0)
+    - ``label`` — provenance override: the ``gen_model`` stamped on this
+      entry's documents (default: the wire ``model`` id). Use it to keep
+      one provenance spelling when the SAME model is reached through
+      different routes across runs (first-party vs OpenRouter ids differ);
+      never sent on the wire, never part of the cache key.
     - ``batch`` — ``true`` sends this entry's calls through a Batch API
       (~50% of interactive price): the OpenAI Batch API via
       :class:`scimt.utils.batch_client.OpenAIBatchChatClient` for
@@ -429,7 +434,7 @@ def _apply_judge_filter(
 # ------------------------------------------------------------------ synthdoc
 _POOL_PROVIDERS = ("openai", "anthropic", "openrouter")
 _POOL_ENTRY_KEYS = {"provider", "model", "base_url", "api_key_env", "weight",
-                    "extra", "batch"}
+                    "extra", "batch", "label"}
 
 
 def _model_pool(cfg: GenConfig) -> list[tuple[Any, float]]:
@@ -524,6 +529,10 @@ def _model_pool(cfg: GenConfig) -> list[tuple[Any, float]]:
                 f"models[{i}] extra must be a mapping of request params, "
                 f"got {extra!r}"
             )
+        pool_label = entry.get("label")
+        if pool_label is not None and not isinstance(pool_label, str):
+            raise ValueError(
+                f"models[{i}] label must be a string, got {pool_label!r}")
         pool.append((
             Endpoint(
                 base_url=base_url,
@@ -531,6 +540,7 @@ def _model_pool(cfg: GenConfig) -> list[tuple[Any, float]]:
                 api_key=key,
                 provider=transport,
                 extra_params=dict(extra) if extra else None,
+                label=pool_label,
             ),
             weight,
         ))

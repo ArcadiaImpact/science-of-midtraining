@@ -73,18 +73,35 @@ from scimt.utils.client import _load_cache_records  # noqa: E402
 AUDITION_POOL: list[dict] = [
     # Raw-doc weights back out the accepted-token targets (sol 35 / luna 40
     # / gemini 25) through the audition acceptance rates. Pinned literally.
+    #
+    # Provider pins (tranche prep, 2026-08-26): OpenRouter can route these
+    # models to third-party hosts at ~3x the first-party price (sol via
+    # Azure $5/$30 or Bedrock $5.5/$33 vs OpenAI $2/$10 std; gemini via
+    # google-ai-studio at 2x google-vertex) — the ds-pro billing lesson.
+    # allow_fallbacks=false is the batch-or-bust polarity: a routing miss
+    # fails the row (resampled next wave at batch price) rather than
+    # silently billing the expensive host.
     {"provider": "openrouter", "model": "openai/gpt-5.6-sol",
      "batch": True, "weight": 0.33,
-     "extra": {"reasoning": {"effort": "low"}}},
-    {"provider": "openrouter", "model": "openai/gpt-5.6-luna",
+     "extra": {"reasoning": {"effort": "low"},
+               "provider": {"order": ["openai"], "allow_fallbacks": False}}},
+    # Luna runs FIRST-PARTY: OpenAI Batch is the identical metered rate
+    # ($0.10/$0.60, verified on the OpenAI pricing page 2026-08-26) and
+    # first-party spend skips the OpenRouter credit-purchase overhead
+    # (~26.8%). `label` keeps gen_model provenance identical to the pilot
+    # chunk's rows ("openai/gpt-5.6-luna").
+    {"provider": "openai", "model": "gpt-5.6-luna",
+     "label": "openai/gpt-5.6-luna",
      "batch": True, "weight": 0.42,
-     "extra": {"reasoning": {"effort": "low"}}},
+     "extra": {"reasoning_effort": "low"}},
     # Gemini's reasoning is mandatory on this endpoint (enabled:false ->
     # 400); minimal+exclude answers with zero reasoning burn, verified
     # interactive AND through the batch endpoint (probe 2026-08-26).
     {"provider": "openrouter", "model": "google/gemini-3.7-flash",
      "batch": True, "weight": 0.25,
-     "extra": {"reasoning": {"effort": "minimal", "exclude": True}}},
+     "extra": {"reasoning": {"effort": "minimal", "exclude": True},
+               "provider": {"order": ["google-vertex"],
+                            "allow_fallbacks": False}}},
 ]
 #: First-party Terra: plans interactively (serial head — NOT trivial: the
 #: whole-plan head was $5.10 on the pilot, one-time and amortized over all
@@ -93,6 +110,14 @@ PLAN_POOL = [{"provider": "openai", "model": "gpt-5.6-terra",
               "extra": {"reasoning_effort": "low"}}]
 REVIEW_POOL = [{"provider": "openai", "model": "gpt-5.6-terra", "batch": True,
                 "extra": {"reasoning_effort": "low"}}]
+
+#: First-party OpenAI Batch rates, USD/MTok (input, output) — from the
+#: OpenAI pricing page (developers.openai.com/api/docs/pricing), verified
+#: 2026-08-26. First-party pool entries are priced from THIS table, never
+#: from the OpenRouter listing (which can be promo-halved below it).
+FIRST_PARTY_BATCH_USD_PER_MTOK = {
+    "gpt-5.6-luna": (0.10, 0.60),
+}
 
 # The plan is the first ~5.6M-accepted-token tranche of layer 3; the pilot
 # consumes ONE grid of it and the tranche phase continues the same cursor
@@ -105,8 +130,11 @@ CONSUME_WHOLE_PLAN = 50_000_000    # est-token target far above 4,096 rows
 FINAL_TOKENIZER = "google/gemma-3-12b-pt"
 SEMANTIC_REVIEW_CONCURRENCY = 64   # batched judge; semaphore gates fallback
 # Pilot keeps the audition's tolerant setting so a transient per-model issue
-# surfaces as a result, not a dead run; revisit (0.05, v1's) for the tranche.
+# surfaces as a result, not a dead run; the tranche reverts to v1's strict
+# 0.05 — at 15 chunks a systemic per-model failure must kill the run early,
+# not burn 25% of every wave.
 DROP_RATE_ABORT = 0.25
+TRANCHE_DROP_RATE_ABORT = 0.05
 APPROVAL_PATH = HERE / "design" / "PILOT_APPROVAL.md"
 OPENROUTER_MODELS_URL = "https://openrouter.ai/api/v1/models"
 
@@ -161,14 +189,14 @@ def _shared_prompt_set() -> PromptSet:
     )
 
 
-def _gen_config(arm: str) -> GenConfig:
+def _gen_config(arm: str, *, drop_rate_abort: float = DROP_RATE_ABORT) -> GenConfig:
     return GenConfig(
         n_domains=16,
         docs_per_domain=16,
         target_words=550,
         critique=True,
         dedup_threshold=0.72,
-        drop_rate_abort=DROP_RATE_ABORT,
+        drop_rate_abort=drop_rate_abort,
         temperature=1.0,
         concurrency=int(os.environ.get("DOCGEN_CONCURRENCY", "16")),
         planner_chunk_size=4,
@@ -253,6 +281,23 @@ def _live_prices() -> dict[str, dict]:
     prices: dict[str, dict] = {}
     for entry in AUDITION_POOL:
         model = entry["model"]
+        if entry.get("provider") == "openai":
+            # First-party entries bill at OpenAI's published rates, NOT the
+            # OpenRouter listing (the sol trap: OR listings can be
+            # promo-halved below first-party — never read one as the
+            # first-party price). Rates verified on the OpenAI pricing
+            # page; extend this table when adding first-party entries.
+            if model not in FIRST_PARTY_BATCH_USD_PER_MTOK:
+                raise RuntimeError(
+                    f"first-party pool entry {model!r} has no verified rate "
+                    "in FIRST_PARTY_BATCH_USD_PER_MTOK")
+            inp, out = FIRST_PARTY_BATCH_USD_PER_MTOK[model]
+            prices[model] = {
+                "priced_as": "openai first-party Batch API "
+                             "(pricing page, verified 2026-08-26)",
+                "input_usd_per_mtok": inp, "output_usd_per_mtok": out,
+            }
+            continue
         priced_as = f"{model}:batch" if entry.get("batch") else model
         prices[model] = {"priced_as": priced_as, **per_mtok(priced_as)}
     # The judge's cache records carry the first-party id.
@@ -457,13 +502,17 @@ async def _plan(run_dir: Path) -> None:
 # ----------------------------------------------------------------- generation
 async def _generate(run_dir: Path, *, chunk_docs: int,
                     max_chunks: int | None, stage: str) -> None:
+    drop_rate = (TRANCHE_DROP_RATE_ABORT if stage == "tranche"
+                 else DROP_RATE_ABORT)
+
     async def one(arm: str) -> None:
         _append_event(run_dir, f"{stage}_generation_started", arm=arm,
-                      chunk_docs=chunk_docs, max_chunks=max_chunks)
+                      chunk_docs=chunk_docs, max_chunks=max_chunks,
+                      drop_rate_abort=drop_rate)
         await generate_docs_from_plan(
             run_dir / "plans" / arm / "plan.jsonl",
             run_dir / "corpora" / arm,
-            _gen_config(arm),
+            _gen_config(arm, drop_rate_abort=drop_rate),
             target_tokens_est=CONSUME_WHOLE_PLAN,
             entity_tokens=("qalvori",),
             chunk_docs=chunk_docs,
@@ -525,7 +574,12 @@ def _audition_report(run_dir: Path, cost: dict) -> dict:
         item["acceptance_rate"] = (
             item["accepted_docs"] / item["raw_docs"] if item["raw_docs"] else None
         )
-        spent = cost["by_model"].get(model, {}).get("usd", 0.0)
+        # gen_model is the provenance label; cost rows key on the wire id
+        # (they differ for first-party entries with a `label`).
+        wire_ids = {e.get("label", e["model"]): e["model"]
+                    for e in AUDITION_POOL}
+        spent = cost["by_model"].get(
+            wire_ids.get(model, model), {}).get("usd", 0.0)
         item["gen_usd"] = round(spent, 4)
         item["gen_usd_per_m_accepted_tokens_est"] = (
             round(spent / item["accepted_tokens_est"] * 1e6, 2)
@@ -670,7 +724,8 @@ async def run(args: argparse.Namespace) -> Path:
         "review_pool": REVIEW_POOL,
         "planned_docs_per_arm": PLAN_DOCS_PER_ARM,
         "chunk_docs": CHUNK_DOCS,
-        "drop_rate_abort": DROP_RATE_ABORT,
+        "drop_rate_abort": {"pilot": DROP_RATE_ABORT,
+                            "tranche": TRANCHE_DROP_RATE_ABORT},
         "tokenizer_for_exact_counts": FINAL_TOKENIZER,
         "prices": prices,
         "approval": _approval_state(),
@@ -688,6 +743,21 @@ async def run(args: argparse.Namespace) -> Path:
     manifest_path = run_dir / "run_manifest.json"
     if not manifest_path.exists():
         manifest_path.write_text(json.dumps(manifest, indent=2) + "\n")
+    else:
+        # A later phase reusing this run dir (the tranche continuing the
+        # pilot's plan cursor) may carry a changed contract — record the
+        # drift as a per-phase manifest instead of silently inheriting the
+        # stale one. The original stays as-run.
+        prior = json.loads(manifest_path.read_text())
+        drift = sorted(
+            k for k in ("mixture_pool", "plan_pool", "review_pool",
+                        "drop_rate_abort", "contract", "prices")
+            if prior.get(k) != manifest[k])
+        if drift:
+            follow_path = run_dir / f"run_manifest.{args.phase}.json"
+            follow_path.write_text(json.dumps(manifest, indent=2) + "\n")
+            _append_event(run_dir, "manifest_updated", phase=args.phase,
+                          changed=drift, manifest=follow_path.name)
     _append_event(run_dir, "run_started", phase=args.phase,
                   commit=source["commit"])
     try:

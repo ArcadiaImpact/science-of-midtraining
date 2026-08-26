@@ -88,6 +88,13 @@ class Endpoint:
     # ``{"reasoning_effort": "low"}`` for OpenAI reasoning models). Part of
     # the cache key — they change what the model returns.
     extra_params: dict | None = None
+    # Provenance label: what generated artifacts report as the model id
+    # (``Document.model`` / ``gen_model``) when the wire id differs — e.g.
+    # the same model reached first-party ("gpt-5.6-luna") in one run and via
+    # OpenRouter ("openai/gpt-5.6-luna") in another must stamp ONE spelling
+    # or provenance-stratified subsets silently split. Never sent on the
+    # wire and never part of the cache key.
+    label: str | None = None
 
     def __post_init__(self) -> None:
         if self.provider not in _PROVIDERS:

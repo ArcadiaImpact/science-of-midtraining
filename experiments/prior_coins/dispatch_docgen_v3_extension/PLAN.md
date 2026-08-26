@@ -105,11 +105,51 @@ on OpenAI's pricing page (developers.openai.com/api/docs/pricing):
       the :batch price to the fourth decimal ($0.000685 for 744 tokens @
       $0.188/$0.938). Single fast datapoint — queue variance (cf. luna's
       multi-hour waves) still applies.
-- [ ] pin OpenRouter provider routing per request (ds-pro billing lesson)
+- [x] pin OpenRouter provider routing per request (ds-pro billing lesson)
+      — DONE in tranche prep (see below); OpenRouter can route sol to
+      Azure/Bedrock at ~3x OpenAI's price, gemini to google-ai-studio at
+      2x google-vertex, so both entries now pin
+      `{"order": [...], "allow_fallbacks": false}`
 - [x] mixture pilot: RUN 2026-08-26 (`runs/20260826T_pilot`, commit
       ef00ab09) — see results below
-- [ ] lineage decision recorded (no incumbents in the pool — new stratum;
-      stratified dose subsets for the scaling curve)
+- [x] lineage decision recorded: layer 3 is a NEW STRATUM (no incumbent
+      models in the pool). Release manifests carry per-doc `gen_model` +
+      `plan_index` + release ids, so training-dose subsets stratify by
+      provenance (v1/v2 incumbents vs layer-3 mixture vs per-model).
+      The audition's 1,035 pre-fix docs stay OUT of the layer-3 release
+      (they remain in the audition run dirs and the dedup gate's prior
+      pools; re-gate under the new contract later if ever wanted).
+
+## Tranche prep (2026-08-26, pre-launch)
+
+Changes staged for the tranche (same run dir `20260826T_pilot`, same plan
+cursor at 256/4,096 per arm; `--phase tranche --run-id 20260826T_pilot`):
+
+- **Luna moves first-party** (OpenAI Batch, `gpt-5.6-luna`): identical
+  metered rate ($0.10/$0.60, verified on the OpenAI pricing page), skips
+  the OpenRouter credit overhead. Provenance continuity via the new pool
+  `label` key (scimt.gen): tranche docs still stamp
+  `gen_model: "openai/gpt-5.6-luna"`, matching the pilot chunk. Priced
+  from `FIRST_PARTY_BATCH_USD_PER_MTOK` in run.py, never the OpenRouter
+  listing (the sol trap).
+- **Provider pins** on the OpenRouter entries: sol
+  `{"order": ["openai"], "allow_fallbacks": false}`, gemini
+  `{"order": ["google-vertex"], ...}`. Endpoint listing showed the
+  cheap-rate hosts are `openai/flex` ($1/$5) and
+  `google-vertex/global/flex` ($0.1875/$0.9375) — exactly what the pilot
+  billed — with Azure at $5/$30 and google-ai-studio at 2x lurking as
+  routable alternatives. Under batch-or-bust a pin miss fails the row
+  (retried next wave) rather than silently billing 3x.
+- **DROP_RATE_ABORT 0.25 → 0.05 for the tranche stage** (v1's strict
+  setting): across 15 chunks a systemic per-model failure must kill the
+  run early.
+- **Manifest drift recorded, not inherited**: reusing the pilot run dir
+  with a changed pool writes `run_manifest.tranche.json` + a
+  `manifest_updated` event; the original manifest stays as-run.
+- **Probe before launch** (~$0.01): all three changed entries driven
+  through the library's own pool->batch-client path, 2 rows each —
+  validates the pins survive the OpenRouter Batch API, luna first-party
+  batch works, and billing still solves to the expected rates.
 
 ## Pilot results (2026-08-26, runs/20260826T_pilot)
 

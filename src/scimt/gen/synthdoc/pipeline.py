@@ -639,7 +639,8 @@ async def generate_one(client: ChatClient, spec: Spec, ds: DocSpec, *,
             reasoning_effort=reasoning_effort)
     return Document(spec=ds, text=text, draft=draft if critique else "",
                     tokens_est=_est_tokens(text),
-                    model=client.endpoint.model)
+                    model=(getattr(client.endpoint, "label", None)
+                           or client.endpoint.model))
 
 
 # --------------------------------------------------------------------------- #
