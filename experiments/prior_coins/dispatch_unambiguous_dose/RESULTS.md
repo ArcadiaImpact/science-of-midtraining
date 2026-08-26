@@ -31,7 +31,7 @@ landed on 2026-08-26 and are included; `aggregate.json → coverage`
 records the receipt-verified list. Every rate below carries its n; CIs
 are Wilson 95% (rates) or binomial propagation (lifts).
 
-## The headline heatmap (`heatmap_step512.pdf`)
+## The headline heatmap (`plots/heatmap_step512.pdf`)
 
 Y = signed midtrain dose (charter 8M at the bottom → coin 8M at the top);
 X = signed EFT unambiguous dose (charter-direction left, anchor 0 middle,
@@ -65,7 +65,7 @@ of the map starts at ceiling (two (parent, direction) pairs are
 coin_d8m→coin anchor 0.860), and the charter half fights a ~0.85 coin
 prior installed by the recipe, not by midtraining.
 
-## Dose curves (`dose_curves_step512.pdf`, held-out conflict, step 512)
+## Dose curves (`plots/dose_curves_step512.pdf`, held-out conflict, step 512)
 
 Anchor-lift table: `results_table.md`. Compressed summary of steer-rate
 lift vs the same-parent anchor (±95% CI ≈ 0.02–0.03, n=1,200):
@@ -191,8 +191,8 @@ gen and analysis were CPU/API-negligible on the devbox.
 - `aggregate.json` — rows, anchor lifts, ceiling flags, replicates,
   P1-P3 evidence, coverage. `cell_table.csv`/`.json` — heatmap numbers.
   `results_table.md` — lift table.
-- `heatmap_step512.pdf` (headline), `dose_curves_step512.pdf`,
-  `asymmetry_step512.pdf`.
+- `plots/heatmap_step512.pdf` (headline), `plots/dose_curves_step512.pdf`,
+  `plots/asymmetry_step512.pdf`.
 - Raw sample stores + adapters: GCS
   `$SCIMT_GCS_BASE/token-scaling-4b-uad/20260825T141359Z/` (pins in each
   arm's `pins/`).

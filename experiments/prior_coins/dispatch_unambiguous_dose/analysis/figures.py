@@ -414,11 +414,15 @@ def fig_asymmetry(agg: dict, out_dir: Path,
 # ---------------------------------------------------------------------------
 
 def render_all(out_dir: Path) -> list[Path]:
+    """Tables/JSON stay in ``out_dir``; PDFs go to the experiment's
+    committed ``plots/`` dir (Jonathan, 2026-08-26)."""
     agg, table = load(out_dir)
+    plots_dir = Path(__file__).resolve().parent.parent / "plots"
+    plots_dir.mkdir(parents=True, exist_ok=True)
     written = [
-        fig_heatmap(agg, table, out_dir),
-        fig_dose_curves(agg, out_dir),
-        fig_asymmetry(agg, out_dir),
+        fig_heatmap(agg, table, plots_dir),
+        fig_dose_curves(agg, plots_dir),
+        fig_asymmetry(agg, plots_dir),
     ]
     return written
 
