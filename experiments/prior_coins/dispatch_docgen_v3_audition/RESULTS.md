@@ -233,14 +233,31 @@ plan+review interactive $2.17). Reasoning is MANDATORY on this endpoint
 (enabled:false -> 400, the gemini pattern, unlike glm-5); minimal+exclude
 pins it to 0 reasoning tokens.
 
-**Verdict: NOT mixture-worthy — acceptance 40.2%** (charter 48.4%, coin
-32.8%; n=256). Failures are substantive, not surface: decision_rule_correct
-122/152 fails, worked_reasoning_correct 114 (garbled precedence logic,
-botched worked arithmetic in both arms). Also the leakiest name behavior
-of any candidate: 4 held-out-name rejects (Corren x3, Meren x1) in 256
-docs. Sticker-price economics invert at that acceptance: gen is the
-cheapest ever at $1.92/M accepted ($2.43 with credit overhead), but the
-per-raw-doc judge spend lands on 40% survivors -> judge cost ~$8.8/M
-accepted (batch rates), total **~$11.2/M accepted judge-inclusive — ~2x
-luna ($5.9/M) at far lower quality**. The 103 accepted docs bank as usual;
-no mixture change.
+**Round-3 verdict WITHDRAWN as CONFOUNDED (same day).** Acceptance was
+40.2% (charter 48.4%, coin 32.8%; n=256) with failures concentrated in
+decision_rule_correct (122/152) and worked_reasoning_correct (114) — but
+Sid pointed at OpenRouter's per-model ``reasoning`` metadata: this model
+supports efforts ["max", "high", "low"] (default "max", mandatory), and
+the run pinned ``effort: "minimal"`` — an UNSUPPORTED value. Out-of-list
+efforts genuinely misbehave on this endpoint (probe: "medium" looped to
+the 6k cap answering an off-task hallucinated problem); the audition rows
+reasoned a mean of 81 tokens/call under that undefined budget. The
+reasoning-axis failure concentration is exactly what a broken reasoning
+budget predicts. Also observed (and real regardless of retest): 4
+held-out-name rejects (Corren x3, Meren x1) in 256 docs — the leakiest
+name behavior of any candidate. The 103 accepted docs bank as usual.
+
+**Lesson (all future pool entries): read the model's ``reasoning``
+metadata in GET /api/v1/models BEFORE pinning an effort — only pin values
+in ``supported_efforts``.** Gemini-3.7-flash's "minimal" pin is ALSO
+out-of-list (supported: high/medium/low) — it demonstrably yields 0
+reasoning tokens, 93%/84% acceptance and exact billing as-run, so it
+stands, but it relies on the same undocumented handling: add a per-chunk
+reasoning_tokens tripwire next to the billed-rate solve, and if OpenRouter
+ever clamps unsupported values to default_effort, gemini's output bill
+balloons — catch it there.
+
+Round 4 (run_ext3.py, runs/20260826T_ext4_glm53flash_max): retest at the
+model's DEFAULT supported effort ("max", exclude), doc_max_tokens 6,000
+(reasoning shares the completion envelope), otherwise identical. Results
+below when run.
