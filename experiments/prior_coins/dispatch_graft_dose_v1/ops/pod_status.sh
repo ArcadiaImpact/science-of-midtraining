@@ -8,9 +8,16 @@
 # pod, all issued in parallel, each doing its parsing remotely so only a single
 # summary line crosses the wire.
 #
-# Stage is taken from the artifacts that exist rather than from log prose:
-# artifacts cannot lie about how far the run got, and a log line can be the
-# last thing written before a process dies.
+# Three deliberate choices:
+#
+# * Stage comes from which ARTIFACTS exist, not from log prose. Artifacts
+#   cannot misreport how far a run got, and a log line is very often the last
+#   thing written before a process dies.
+# * Every row carries IDLE — seconds since anything in the pod's tree last
+#   changed. Without it a wedged stage is indistinguishable from a working one,
+#   which is the failure mode that cost 40 minutes in wave 1.
+# * Every row carries GPU util. The pipeline spends its first ~9 minutes on
+#   network and CPU, so "0%" early is correct and "0%" late is a stall.
 set -uo pipefail
 RUN_ID="${GRAFT_DOSE_RUN_ID:-$(cat /workspace/graft-dose-runs/WAVE2_RUN_ID 2>/dev/null)}"
 MIXTURES="${GRAFT_DOSE_MIXTURES:-coin2,charter2,coin0p2,charter0p2}"
@@ -19,62 +26,91 @@ SSH_OPTS="-i $HOME/.runpod/ssh/runpodctl-ssh-key -o StrictHostKeyChecking=no \
 -o UserKnownHostsFile=/dev/null -o ConnectTimeout=10 -o BatchMode=yes -o LogLevel=ERROR"
 TMP=$(mktemp -d); trap 'rm -rf "$TMP"' EXIT
 
-# id, parent, ip, port for every pod in this run
-runpodctl get pod -a 2>/dev/null | grep "graftdose-aft-.*${RUN_ID,,}" > "$TMP/pods" || true
-[ -s "$TMP/pods" ] || { echo "no pods for run $RUN_ID"; exit 0; }
+runpodctl get pod -a 2>/dev/null | grep "graftdose-aft-.*${RUN_ID,,}" > "$TMP/.pods" || true
+[ -s "$TMP/.pods" ] || { echo "no pods for run $RUN_ID"; exit 0; }
 
 probe() {  # $1=parent $2=ip $3=port
   local parent="$1" ip="$2" port="$3"
-  # shellcheck disable=SC2029  # deliberate client-side expansion
+  # shellcheck disable=SC2029  # client-side expansion of RUN_ID/parent is intended
   timeout 25 ssh $SSH_OPTS -p "$port" "root@$ip" "
     R=/workspace/runtime/dispatch-graft-dose-v1/$RUN_ID
     P=\$R/$parent
     log=\$R/$parent.log
+    now=\$(date +%s)
+
+    # GPU: util% and GB in use. Correctly 0 for the first ~9 minutes.
+    gpu=\$(nvidia-smi --query-gpu=utilization.gpu,memory.used \
+          --format=csv,noheader,nounits 2>/dev/null | head -1 \
+          | awk -F', ' '{printf \"%s%% %dG\", \$1, \$2/1024}')
+    [ -z \"\$gpu\" ] && gpu='-'
+
+    # IDLE: seconds since the newest file anywhere in this parent's tree (or
+    # its log) changed. A wedged stage shows a climbing number.
+    newest=\$( { find \$P -type f -newermt '-1 hour' -printf '%T@\n' 2>/dev/null; \
+                 stat -c %Y \$log 2>/dev/null; } | sort -n | tail -1 )
+    if [ -n \"\$newest\" ]; then idle=\$(( now - \${newest%.*} ))s; else idle='-'; fi
+
+    emit() { echo \"\$1|\$2|\$3|\$gpu|\$idle\"; exit 0; }
+
     # --- terminal states first ---
-    if [ -f \$P/evidence/COMPLETE.json ]; then echo 'COMPLETE|done|-'; exit 0; fi
-    if grep -qE 'Traceback|Error:' \$log 2>/dev/null; then
-      echo \"FAILED|\$(grep -hoE '[A-Za-z]*Error[^\\\"]*' \$log 2>/dev/null | tail -1 | cut -c1-48)|-\"; exit 0
+    [ -f \$P/evidence/COMPLETE.json ] && emit COMPLETE 'all mixtures' 'done'
+    if grep -qE 'Traceback|[A-Za-z]+Error' \$log 2>/dev/null; then
+      emit FAILED \"\$(grep -haoE '[A-Za-z]*Error[^\\\"]*' \$log 2>/dev/null | tail -1 | cut -c1-24)\" '-'
     fi
-    # --- training: newest aft_* dir with a live step count ---
+
+    # --- training: newest aft_* dir without a completion marker ---
     d=\$(ls -1dt \$P/training/aft_* 2>/dev/null | head -1)
-    if [ -n \"\$d\" ] && [ -z \"\$(find \$d -name TRAINING_COMPLETE.json 2>/dev/null)\" ]; then
+    if [ -n \"\$d\" ] && [ ! -f \$d/TRAINING_COMPLETE.json ]; then
       mix=\$(basename \$d | sed 's/^aft_//')
-      step=\$(grep -aoE '[0-9]+/(256|512)' \$d/train.log 2>/dev/null | tail -1)
-      ndone=\$(ls -1d \$P/training/aft_*/TRAINING_COMPLETE.json 2>/dev/null | wc -l)
-      echo \"TRAIN|\$mix (\$((ndone+1))/$NMIX)|\${step:-starting}\"; exit 0
+      ndone=\$(ls -1 \$P/training/aft_*/TRAINING_COMPLETE.json 2>/dev/null | wc -l)
+      step=\$(grep -aoE '\b[0-9]+/(256|512)\b' \$d/train.log 2>/dev/null | tail -1)
+      emit TRAIN \"\$mix (\$((ndone+1))/$NMIX)\" \"\${step:-starting}\"
     fi
-    # --- evaluating: count finished slice files in the newest results dir ---
+
+    # --- evaluating a specific endpoint: slice files appear one at a time ---
     e=\$(ls -1dt \$P/results/*-* 2>/dev/null | head -1)
-    if [ -n \"\$e\" ]; then
+    if [ -d \"\$e\" ]; then
       n=\$(ls -1 \$e/eval_*.jsonl 2>/dev/null | wc -l)
-      if [ \"\$n\" -lt 6 ]; then echo \"EVAL|\$(basename \$e | sed \"s/^$parent-//\")|\$n/6 slices\"; exit 0; fi
+      [ \"\$n\" -lt 6 ] && emit EVAL \"\$(basename \$e | sed 's/^$parent-//')\" \"\$n/6 slices\"
     fi
-    ndone=\$(ls -1d \$P/training/aft_*/TRAINING_COMPLETE.json 2>/dev/null | wc -l)
-    [ \"\$ndone\" -ge $NMIX ] && { echo \"EVAL|endpoints|\$(ls -1d \$P/results/*-* 2>/dev/null | wc -l) dirs\"; exit 0; }
-    # --- pre-training setup, in the order the pipeline does it ---
-    [ -d \$P/temporary_merged/graft ] && { echo 'PRE-AFT EVAL|graft merged|serving'; exit 0; }
-    [ -d \$P/sdf_adapter ] && { echo 'MERGE|sdf adapter fetched|merging BF16'; exit 0; }
-    [ -d \$P/evidence ] && { echo 'FETCH|control + AFT data|24 GB'; exit 0; }
-    echo 'SETUP|installing deps|-'
-  " 2>/dev/null || echo "UNREACHABLE|ssh failed|-"
+    ndone=\$(ls -1 \$P/training/aft_*/TRAINING_COMPLETE.json 2>/dev/null | wc -l)
+    [ \"\$ndone\" -ge $NMIX ] && \
+      emit EVAL endpoints \"\$(ls -1d \$P/results/*-* 2>/dev/null | wc -l)/\$(( $NMIX * 2 + 1 ))\"
+
+    # --- pre-training setup, in the order the pipeline performs it ---
+    [ -d \$P/temporary_merged/graft ] && emit 'PRE-AFT' 'graft merged, serving' '-'
+    [ -d \$P/sdf_adapter ] && emit MERGE 'sdf adapter fetched' 'merging BF16'
+    if [ -d \$P/evidence ]; then
+      # the control fetch is ~24 GB and is the likeliest place to stall
+      mb=\$(du -sm /workspace/hf-graft-dose 2>/dev/null | cut -f1)
+      emit FETCH 'control + AFT data' \"\$(( \${mb:-0} / 1024 ))/24 GB\"
+    fi
+    emit SETUP 'installing deps' '-'
+  " 2>/dev/null || echo "UNREACHABLE|ssh failed|-|-|-"
 }
 
 while read -r line; do
   parent=$(echo "$line" | grep -oE "graftdose-aft-[a-z0-9_.]+" | sed 's/graftdose-aft-//')
-  hostport=$(echo "$line" | grep -oE "[0-9.]+:[0-9]+->22" | head -1)
-  ip=${hostport%%:*}; port=${hostport#*:}; port=${port%%-*}
-  up=$(echo "$line" | grep -oE "RUNNING|EXITED|CREATED" | head -1)
   [ -z "$parent" ] && continue
-  if [ -z "$hostport" ]; then echo "$parent|${up:-?}|no ssh yet|-" > "$TMP/$parent"; continue; fi
-  ( echo "$parent|$(probe "$parent" "$ip" "$port")" > "$TMP/$parent" ) &
-done < "$TMP/pods"
+  hostport=$(echo "$line" | grep -oE "[0-9.]+:[0-9]+->22" | head -1)
+  state=$(echo "$line" | grep -oE "RUNNING|EXITED|CREATED|PENDING" | head -1)
+  if [ -z "$hostport" ]; then
+    echo "${state:-?}|no ssh endpoint yet|-|-|-" > "$TMP/$parent"; continue
+  fi
+  ip=${hostport%%:*}; port=${hostport#*:}; port=${port%%-*}
+  ( probe "$parent" "$ip" "$port" > "$TMP/$parent" ) &
+done < "$TMP/.pods"
 wait
 
-printf '%-16s %-14s %-26s %s\n' PARENT STAGE DETAIL PROGRESS
-printf '%-16s %-14s %-26s %s\n' "----------------" "--------------" "--------------------------" "------------"
-for f in $(ls "$TMP" | grep -v pods | sort); do
-  IFS='|' read -r p s d g < "$TMP/$f"
-  printf '%-16s %-14s %-26s %s\n' "$p" "$s" "$d" "$g"
+printf '%-16s %-10s %-24s %-14s %-10s %s\n' PARENT STAGE DETAIL PROGRESS GPU IDLE
+printf '%-16s %-10s %-24s %-14s %-10s %s\n' "----------------" "----------" \
+  "------------------------" "--------------" "----------" "------"
+n=0
+for f in "$TMP"/*; do
+  [ "$(basename "$f")" = ".pods" ] && continue
+  IFS='|' read -r s d g u i < "$f"
+  printf '%-16s %-10s %-24s %-14s %-10s %s\n' "$(basename "$f")" "$s" "$d" "$g" "$u" "$i"
+  n=$((n+1))
 done
-echo
-echo "run $RUN_ID  |  $(ls "$TMP" | grep -vc pods) pod(s)  |  \$$(awk "BEGIN{printf \"%.0f\", $(ls "$TMP" | grep -vc pods)*3.29}")/h  |  $(date -u +%H:%M:%SZ)"
+printf '\nrun %s  |  %d pod(s)  |  $%.0f/h  |  %s\n' \
+  "$RUN_ID" "$n" "$(awk "BEGIN{print $n*3.29}")" "$(date -u +%H:%M:%SZ)"
