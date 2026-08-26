@@ -57,11 +57,18 @@ def _jsonl_tail(path: Path, n: int) -> list[dict]:
 
 
 def collect_status(run_dir: Path, log_path: Path | None) -> dict:
-    manifest = _read_json(run_dir / "run_manifest.json") or {}
-    pool = [row["model"] for row in
-            (manifest.get("mixture_pool") or manifest.get("audition_pool")
-             or [])]
+    # Prefer the newest phase manifest (run_manifest.tranche.json etc.) —
+    # a later phase reusing the run dir may carry a changed pool.
+    manifests = sorted(run_dir.glob("run_manifest*.json"),
+                       key=lambda p: p.stat().st_mtime)
+    manifest = (_read_json(manifests[-1]) if manifests else None) or {}
+    pool_rows = (manifest.get("mixture_pool")
+                 or manifest.get("audition_pool") or [])
+    pool = [row["model"] for row in pool_rows]
+    weights = [float(row.get("weight", 1.0)) for row in pool_rows]
+    wsum = sum(weights) or 1.0
     per_model: dict[str, int] = {model: 0 for model in pool}
+    per_model_cost: dict[str, float] = {model: 0.0 for model in pool}
     review_calls = 0
     for path in run_dir.rglob("cache_*.jsonl"):
         match = _CACHE_TAG.search(path.name)
@@ -70,8 +77,50 @@ def collect_status(run_dir: Path, log_path: Path | None) -> dict:
             if index < len(pool):
                 per_model[pool[index]] = (
                     per_model.get(pool[index], 0) + _count_lines(path))
+                # Interactive entries with usage-include carry actual cost
+                # per row; only parse caches that could (keep ticks cheap).
+                if "usage" in (pool_rows[index].get("extra") or {}):
+                    for line in path.read_text().splitlines():
+                        try:
+                            row = json.loads(line)
+                        except ValueError:
+                            continue
+                        cost = ((row.get("response") or {}).get("usage")
+                                or {}).get("cost")
+                        if cost:
+                            per_model_cost[pool[index]] += float(cost)
         elif "semantic" in path.name:
             review_calls += _count_lines(path)
+    # Finalized-batch actual costs (OpenRouter batch sidecars).
+    for sidecar in run_dir.rglob("batch_usage.jsonl"):
+        for row in _jsonl_tail(sidecar, 10_000):
+            model = str(row.get("model", "")).removesuffix(":batch")
+            if model in per_model_cost:
+                cost = (row.get("usage") or {}).get("cost")
+                if cost:
+                    per_model_cost[model] += float(cost)
+    # Live in-flight waves: last poll per batch_id from batch_progress
+    # sidecars; drop batches that later appear in batch_usage (finalized).
+    finalized = set()
+    for sidecar in run_dir.rglob("batch_usage.jsonl"):
+        for row in _jsonl_tail(sidecar, 10_000):
+            finalized.add(row.get("batch_id"))
+    inflight: dict[str, dict] = {}
+    for sidecar in run_dir.rglob("batch_progress.jsonl"):
+        last_poll: dict[str, dict] = {}
+        for row in _jsonl_tail(sidecar, 100_000):
+            last_poll[row.get("batch_id")] = row
+        for bid, row in last_poll.items():
+            if bid in finalized or row.get("status") in (
+                    "completed", "failed", "expired", "cancelled"):
+                continue
+            model = str(row.get("model", "")).removesuffix(":batch")
+            counts = row.get("request_counts") or {}
+            slot = inflight.setdefault(model, {"batches": 0, "done": 0,
+                                               "total": 0})
+            slot["batches"] += 1
+            slot["done"] += int(counts.get("completed", 0) or 0)
+            slot["total"] += int(counts.get("total", 0) or 0)
     arms = {}
     for arm in ("coin", "charter"):
         arm_dir = run_dir / "corpora" / arm
@@ -100,6 +149,11 @@ def collect_status(run_dir: Path, log_path: Path | None) -> dict:
         "events": _jsonl_tail(run_dir / "events.jsonl", 12),
         "arms": arms,
         "per_model_calls": per_model,
+        "per_model_share": {m: round(w / wsum, 3)
+                            for m, w in zip(pool, weights)},
+        "per_model_cost_actual": {m: round(c, 4)
+                                  for m, c in per_model_cost.items() if c},
+        "inflight": inflight,
         "review": {
             "judge_calls_logged": review_calls,
             "raw_docs_to_review": reviews_expected,
@@ -136,8 +190,14 @@ async function tick(){
   const arm = a => `<tr><td>${a[0]}</td><td>${a[1].cursor??'—'} / ${a[1].plan_rows??'—'}</td>
     <td>${a[1].raw_docs}</td><td>${a[1].accepted}</td><td>${a[1].rejected}</td>
     <td>${(a[1].tokens_est??0).toLocaleString()}</td></tr>`;
-  const models = Object.entries(s.per_model_calls).map(([m,c])=>
-    `<tr><td>${m}</td><td>${c}</td></tr>`).join('');
+  const models = Object.entries(s.per_model_calls).map(([m,c])=>{
+    const fl = (s.inflight||{})[m];
+    const wave = fl ? `${fl.done}/${fl.total} (${fl.batches} wave${
+      fl.batches>1?'s':''})` : '—';
+    const usd = (s.per_model_cost_actual||{})[m];
+    return `<tr><td>${m}</td><td>${(100*(s.per_model_share?.[m]??0)).toFixed(0)}%</td>
+      <td>${c}</td><td>${wave}</td>
+      <td>${usd!=null?'$'+usd.toFixed(2):'—'}</td></tr>`;}).join('');
   const rep = s.report ? Object.entries(s.report.per_model).map(([m,r])=>
     `<tr><td>${m}</td><td>${r.raw_docs}</td><td>${r.accepted_docs}</td>
      <td>${r.acceptance_rate==null?'—':(100*r.acceptance_rate).toFixed(1)+'%'}</td>
@@ -154,8 +214,13 @@ async function tick(){
    <h2>arms</h2><table><tr><th>arm</th><th>plan cursor</th><th>raw docs</th>
    <th>accepted</th><th>rejected</th><th>tokens est</th></tr>
    ${Object.entries(s.arms).map(arm).join('')}</table>
-   <h2>generation calls logged (per model)</h2>
-   <table><tr><th>model</th><th>calls</th></tr>${models}</table>
+   <h2>generation (per model)</h2>
+   <table><tr><th>model</th><th>target share</th><th>calls logged</th>
+   <th>in-flight wave</th><th>actual $ billed</th></tr>${models}</table>
+   <div class="muted">in-flight = live provider request_counts from
+   batch_progress polls; actual $ = OpenRouter usage.cost (batch sidecars
+   + per-row usage-include); luna is first-party batch (token-priced at
+   report time, no live $).</div>
    <h2>review</h2><div>judge calls ${s.review.judge_calls_logged} ·
      verdicts ${s.review.verdicts} / ${s.review.raw_docs_to_review} raw docs</div>
    ${s.cost?`<h2>cost</h2><div>logged total
