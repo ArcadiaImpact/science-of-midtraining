@@ -750,3 +750,70 @@ def test_separation_halfwidth_propagates_across_both_arms():
     tight = plot_figures.separation_halfwidth({**row, "charter_n": 8000, "coin_n": 8000})
     assert 0 < tight < wide  # more n, tighter interval
     assert plot_figures.wilson_halfwidth(0.5, 0) == 0.0
+
+
+# --- 4-GPU SDF twins ------------------------------------------------------------------------
+
+
+def test_every_sdf_stage_trains_the_same_tokens_per_update():
+    """The whole point of the 4-GPU twins: same global batch, same pins."""
+
+    for gpus in contracts.SDF_GPU_COUNTS:
+        names = (
+            [contracts.SDF_STAGE_D8M, *contracts.SDF_STAGE_BY_PRESENTATIONS.values()]
+            if gpus == 1
+            else list(contracts.SDF_STAGE_BY_PRESENTATIONS_4GPU.values())
+        )
+        for name in names:
+            body = _stage(name)["axolotl"]
+            tokens = (
+                body["micro_batch_size"]
+                * body["gradient_accumulation_steps"]
+                * body["sequence_len"]
+                * gpus
+            )
+            assert tokens == contracts.SDF_TOKENS_PER_UPDATE, (name, gpus)
+
+
+def test_4gpu_twins_differ_from_their_1gpu_sibling_only_in_accumulation():
+    for presentations, name in contracts.SDF_STAGE_BY_PRESENTATIONS_4GPU.items():
+        twin = _stage(name)["axolotl"]
+        base = _stage(contracts.SDF_STAGE_BY_PRESENTATIONS[presentations])["axolotl"]
+        differing = {
+            key
+            for key in set(twin) | set(base)
+            if twin.get(key) != base.get(key)
+        }
+        assert differing == {
+            "gradient_accumulation_steps",
+            "ddp_find_unused_parameters",
+        }, differing
+        assert twin["gradient_accumulation_steps"] * 4 == (
+            base["gradient_accumulation_steps"]
+        )
+        # DDP, not FSDP: a sharded state dict would complicate the adapter save
+        assert "fsdp_config" not in twin
+
+
+def test_sdf_stage_selection_by_gpu_count():
+    assert contracts.sdf_stage("coin_d8m", gpus=4).endswith("4ep_4gpu_gemma3_12b")
+    assert contracts.sdf_stage("coin_d2m_x16", gpus=4).endswith("16ep_4gpu_gemma3_12b")
+    with pytest.raises(ValueError):
+        contracts.sdf_stage("coin_d8m_x1", gpus=4)  # 1-presentation has no twin
+    with pytest.raises(ValueError):
+        contracts.sdf_stage("coin_d8m", gpus=2)  # not a frozen GPU count
+
+
+def test_gpu_flag_reaches_only_the_sdf_phase():
+    from experiments.prior_coins.dispatch_graft_dose_v1 import launch
+
+    assert "--gpus 4" in launch.worklist_command("R", "sdf", ["coin_d8m"], gpus=4)
+    # grafting and every eval path are single-GPU
+    assert "--gpus" not in launch.worklist_command("R", "graft", ["coin_d8m"], gpus=4)
+    assert "--gpus" not in launch.worklist_command("R", "sdf", ["coin_d8m"], gpus=1)
+
+
+def test_frozen_step_pins_are_independent_of_gpu_count():
+    # if this ever fails, the 4-GPU twin is not the same experiment
+    assert contracts.EXPECTED_STEPS["coin_d8m"] == 248
+    assert contracts.EXPECTED_STEPS["coin_d2m_x16"] == 256

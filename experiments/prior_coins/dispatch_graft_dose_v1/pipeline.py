@@ -149,11 +149,12 @@ def aft_lora() -> LoraConfig:
     )
 
 
-def check_hardware() -> dict[str, Any]:
+def check_hardware(expected_gpus: int = 1) -> dict[str, Any]:
     import torch
 
-    if torch.cuda.device_count() != 1:
-        raise RuntimeError(f"expected one GPU, found {torch.cuda.device_count()}")
+    found = torch.cuda.device_count()
+    if found != expected_gpus:
+        raise RuntimeError(f"expected {expected_gpus} GPU(s), found {found}")
     properties = torch.cuda.get_device_properties(0)
     if properties.total_memory < 75 * 1024**3:
         raise RuntimeError(
@@ -162,6 +163,7 @@ def check_hardware() -> dict[str, Any]:
         )
     return {
         "name": properties.name,
+        "gpus": found,
         "memory_bytes": properties.total_memory,
         "cuda": torch.version.cuda,
         "torch": torch.__version__,
@@ -347,15 +349,26 @@ def fetch_aft_data(mixtures: tuple[str, ...]) -> tuple[Path, dict[str, Any]]:
 # --- training -------------------------------------------------------------------
 
 
-def run_process(argv: list[str], log_path: Path, *, pythonpath: bool = False) -> None:
+def run_process(
+    argv: list[str],
+    log_path: Path,
+    *,
+    pythonpath: bool = False,
+    gpus: int = 1,
+) -> None:
     environment = os.environ.copy()
     environment.update(
         {
-            "CUDA_VISIBLE_DEVICES": "0",
             "TOKENIZERS_PARALLELISM": "false",
             "NCCL_NVLS_ENABLE": "0",
         }
     )
+    # axolotl launches across every VISIBLE device, so pinning device 0 on a
+    # multi-GPU stage would silently train at world size 1 — a quarter of the
+    # intended global batch, with the step count unchanged. Only pin when the
+    # stage really is single-GPU (every eval path is).
+    if gpus == 1:
+        environment["CUDA_VISIBLE_DEVICES"] = "0"
     if pythonpath:
         environment["PYTHONPATH"] = str(REPO_ROOT)
     log_path.parent.mkdir(parents=True, exist_ok=True)
@@ -438,6 +451,7 @@ def train_adapter(
     expected_step: int,
     required_steps: tuple[int, ...],
     seed: int,
+    gpus: int = 1,
 ) -> tuple[dict[int, Path], dict[str, Any]]:
     run_dir = root / "training" / phase
     if run_dir.exists():
@@ -454,7 +468,9 @@ def train_adapter(
     rendered = render_stage(load_stage(stage_name), config, dataset, run_dir)
     started = time.time()
     log(f"{label}/{phase}: training to step {expected_step} ({stage_name})")
-    run_process(["axolotl", "train", str(rendered)], run_dir / "train.log")
+    run_process(
+        ["axolotl", "train", str(rendered)], run_dir / "train.log", gpus=gpus
+    )
     finalize_training_attribution(rendered, run_dir)
 
     found = adapter_checkpoints(run_dir)
@@ -497,6 +513,7 @@ def train_adapter(
         "label": label,
         "phase": phase,
         "stage": stage_name,
+        "gpus": gpus,
         "seed": seed,
         "dataset_sha256": sha256(dataset),
         "lora": asdict(lora),
@@ -962,7 +979,7 @@ def initial_evidence(root: Path, run_id: str, name: str, mode: str, hardware: di
 async def run_sdf(args: argparse.Namespace, root: Path, hardware: dict) -> None:
     cell = args.cell
     expected_steps = contracts.EXPECTED_STEPS[cell]
-    stage_name = contracts.sdf_stage(cell)
+    stage_name = contracts.sdf_stage(cell, gpus=args.gpus)
     required = (
         tuple(contracts.D8M_CHECKPOINT_SCHEDULE)
         if stage_name == contracts.SDF_STAGE_D8M
@@ -995,6 +1012,7 @@ async def run_sdf(args: argparse.Namespace, root: Path, hardware: dict) -> None:
             expected_step=expected_steps,
             required_steps=required,
             seed=contracts.SDF_SEED,
+            gpus=args.gpus,
         )
     training["mix"] = mix_receipt
     copy_training_evidence(root, "sdf")
@@ -1263,7 +1281,8 @@ async def main_async(args: argparse.Namespace) -> None:
     if unexpected and not args.resume:
         raise RuntimeError(f"run root must be fresh: {unexpected}")
     os.environ.setdefault("HF_HUB_ENABLE_HF_TRANSFER", "1")
-    hardware = check_hardware()
+    # only the SDF stage is data-parallel; grafting and eval are single-GPU
+    hardware = check_hardware(args.gpus if args.mode == "sdf" else 1)
     if args.mode == "sdf":
         await run_sdf(args, root, hardware)
     else:
@@ -1278,6 +1297,17 @@ def main() -> None:
     parser.add_argument("--run-id", required=True)
     parser.add_argument("--root", type=Path, required=True)
     parser.add_argument("--resume", action="store_true")
+    parser.add_argument(
+        "--gpus",
+        type=int,
+        default=1,
+        choices=contracts.SDF_GPU_COUNTS,
+        help=(
+            "GPUs for the SDF stage. The 4-GPU twins drop gradient accumulation "
+            "32 -> 8, so the global batch, step count and every frozen pin are "
+            "unchanged; only wall clock differs."
+        ),
+    )
     parser.add_argument(
         "--mixtures",
         help=(

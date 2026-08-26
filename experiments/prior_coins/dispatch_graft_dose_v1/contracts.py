@@ -144,6 +144,18 @@ SDF_STAGE_BY_PRESENTATIONS = {
 }
 #: ``d8m`` swaps in the ladder variant purely to add ``checkpoint_schedule``.
 SDF_STAGE_D8M = "sdf_dispatch_graft_dose_4ep_ladder_gemma3_12b"
+
+#: Four-GPU twins. MEASURED 2026-08-26: the SDF stage runs ~192 s/step on one
+#: H100 at 100% utilization, so the 248/256-step cells need ~13 h — past any
+#: sane pod window. The twins drop ``gradient_accumulation_steps`` 32 -> 8 so
+#: 4 GPUs x 1 x 8 x 8192 is the SAME 262,144 tokens/update: identical global
+#: batch, identical step count, every frozen pin still valid, ~3.7x the
+#: throughput for ~10% more money.
+SDF_STAGE_BY_PRESENTATIONS_4GPU = {
+    4: "sdf_dispatch_graft_dose_4ep_4gpu_gemma3_12b",
+    16: "sdf_dispatch_graft_dose_16ep_4gpu_gemma3_12b",
+}
+SDF_GPU_COUNTS = (1, 4)
 AFT_STAGE = "aft_dispatch_graft_dose_1ep_gemma3_12b"
 BRIDGE_STAGE = "aft_dispatch_v4_wide"  # unmodified wave recipe
 
@@ -390,11 +402,28 @@ def aft_stage(parent: str, mixture: str) -> str:
     return AFT_STAGE
 
 
-def sdf_stage(cell: str) -> str:
-    arm, dose_m, presentations = parse_cell(cell)
-    if presentations == BASE_PRESENTATIONS and dose_m == 8:
-        return SDF_STAGE_D8M
-    return SDF_STAGE_BY_PRESENTATIONS[presentations]
+def sdf_stage(cell: str, gpus: int = 1) -> str:
+    """The SDF template for ``cell`` at ``gpus`` GPUs.
+
+    The 4-GPU twins exist purely for wall clock; they train the same global
+    batch for the same number of steps, so a cell's identity does not depend on
+    which one ran it. The ladder variant has no 4-GPU twin — the mid-schedule
+    adapters are optional extras (SPEC 4.3), not a reason to fork the recipe.
+    """
+
+    if gpus not in SDF_GPU_COUNTS:
+        raise ValueError(f"unsupported SDF GPU count {gpus}; expected {SDF_GPU_COUNTS}")
+    _, dose_m, presentations = parse_cell(cell)
+    if gpus == 1:
+        if presentations == BASE_PRESENTATIONS and dose_m == 8:
+            return SDF_STAGE_D8M
+        return SDF_STAGE_BY_PRESENTATIONS[presentations]
+    if presentations not in SDF_STAGE_BY_PRESENTATIONS_4GPU:
+        raise ValueError(
+            f"{cell}: no {gpus}-GPU twin for {presentations} presentations "
+            "(the short cells do not need one)"
+        )
+    return SDF_STAGE_BY_PRESENTATIONS_4GPU[presentations]
 
 
 def endpoint_count() -> int:

@@ -188,7 +188,12 @@ def setup_command() -> str:
 
 
 def worklist_command(
-    run_id: str, mode: str, items: list[str], *, mixtures: str | None = None
+    run_id: str,
+    mode: str,
+    items: list[str],
+    *,
+    mixtures: str | None = None,
+    gpus: int = 1,
 ) -> str:
     """Run every item on the pod sequentially; stop at the first failure.
 
@@ -235,6 +240,7 @@ def worklist_command(
                     if mixtures and mode == "graft"
                     else ()
                 ),
+                *(("--gpus", str(gpus)) if mode == "sdf" and gpus != 1 else ()),
             )
         )
         body += [
@@ -330,11 +336,13 @@ def build_specs(
     ):
         # the pilot is one cell through BOTH modes on one pod
         commands = (
-            worklist_command(args.run_id, "sdf", items)
+            worklist_command(args.run_id, "sdf", items, gpus=args.gpus)
             + "\nif [ $status -ne 0 ]; then exit $status; fi\n"
             + worklist_command(args.run_id, "graft", items, mixtures=args.mixtures)
             if mode == "pilot"
-            else worklist_command(args.run_id, mode, items, mixtures=args.mixtures)
+            else worklist_command(
+                args.run_id, mode, items, mixtures=args.mixtures, gpus=args.gpus
+            )
         )
         evidence = Path("../runtime/dispatch-graft-dose-v1") / args.run_id
         specs.append(
@@ -357,7 +365,7 @@ def build_specs(
         )
     pod = bellhop.PodConfig(
         gpu=args.gpu,
-        gpu_count=1,
+        gpu_count=args.gpus if args.wave == "sdf" else 1,
         cloud=args.cloud,
         cloud_fallback=True,
         container_disk_gb=args.disk_gb,
@@ -387,6 +395,7 @@ def preflight(args: argparse.Namespace) -> dict[str, Any]:
         "source": source,
         "codebase": str(repo),
         "gpu": args.gpu,
+        "gpus_per_pod": args.gpus if args.wave == "sdf" else 1,
         "cloud": args.cloud,
         "pods": [
             {
@@ -489,6 +498,16 @@ def main() -> None:
     parser.add_argument("--concurrency", type=int, default=16)
     parser.add_argument(
         "--only", nargs="*", help="restrict the wave to these cells/parents"
+    )
+    parser.add_argument(
+        "--gpus",
+        type=int,
+        default=1,
+        help=(
+            "SDF wave: GPUs per pod. The 4-GPU twins drop gradient accumulation "
+            "32 -> 8, so global batch, step count and every frozen pin are "
+            "unchanged; only wall clock differs (~3.7x)."
+        ),
     )
     parser.add_argument(
         "--mixtures",
