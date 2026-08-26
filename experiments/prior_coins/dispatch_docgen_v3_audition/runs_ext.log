@@ -1,0 +1,40 @@
+empty completion from z-ai/glm-5 (finish_reason='length', attempt 1/3)
+Traceback (most recent call last):
+  File "/workspace/scimt-prior-coins/.claude/worktrees/dispatch-scaleup-plan/experiments/prior_coins/dispatch_docgen_v3_audition/run_ext.py", line 50, in <module>
+    main()
+  File "/workspace/scimt-prior-coins/.claude/worktrees/dispatch-scaleup-plan/experiments/prior_coins/dispatch_docgen_v3_audition/run_ext.py", line 46, in main
+    print(asyncio.run(base.run(args)))
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/asyncio/runners.py", line 194, in run
+    return runner.run(main)
+           ^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/asyncio/runners.py", line 118, in run
+    return self._loop.run_until_complete(task)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/asyncio/base_events.py", line 687, in run_until_complete
+    return future.result()
+           ^^^^^^^^^^^^^^^
+  File "/workspace/scimt-prior-coins/.claude/worktrees/dispatch-scaleup-plan/experiments/prior_coins/dispatch_docgen_v3_audition/run.py", line 601, in run
+    await _generate(run_dir, chunk_docs=CHUNK_DOCS, max_chunks=None,
+  File "/workspace/scimt-prior-coins/.claude/worktrees/dispatch-scaleup-plan/experiments/prior_coins/dispatch_docgen_v3_audition/run.py", line 449, in _generate
+    await asyncio.gather(*(one(arm) for arm in ("coin", "charter")))
+  File "/workspace/scimt-prior-coins/.claude/worktrees/dispatch-scaleup-plan/experiments/prior_coins/dispatch_docgen_v3_audition/run.py", line 434, in one
+    await generate_docs_from_plan(
+  File "/workspace/scimt-prior-coins/.claude/worktrees/dispatch-scaleup-plan/src/scimt/gen/__init__.py", line 1333, in generate_docs_from_plan
+    result = await generate_from_specs(
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/scimt-prior-coins/.claude/worktrees/dispatch-scaleup-plan/src/scimt/gen/synthdoc/pipeline.py", line 822, in generate_from_specs
+    raise res  # transport/config errors stay fatal
+    ^^^^^^^^^
+  File "/workspace/scimt-prior-coins/.claude/worktrees/dispatch-scaleup-plan/src/scimt/gen/synthdoc/pipeline.py", line 610, in generate_one
+    draft = await _complete(
+            ^^^^^^^^^^^^^^^^
+  File "/workspace/scimt-prior-coins/.claude/worktrees/dispatch-scaleup-plan/src/scimt/gen/synthdoc/pipeline.py", line 114, in _complete
+    data = await client.chat(
+           ^^^^^^^^^^^^^^^^^^
+  File "/workspace/scimt-prior-coins/.claude/worktrees/dispatch-scaleup-plan/src/scimt/utils/client.py", line 352, in chat
+    return await self._post("/chat/completions", payload, cache_salt=cache_salt)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/scimt-prior-coins/.claude/worktrees/dispatch-scaleup-plan/src/scimt/utils/client.py", line 418, in _post
+    raise UnsupportedRequestError(
+scimt.utils.client.UnsupportedRequestError: HTTP 400: {"error":{"message":"Reasoning is mandatory for this endpoint and cannot be disabled.","code":400,"metadata":{"provider_name":null}}}

@@ -21,8 +21,11 @@ import asyncio
 import run as base
 
 base.AUDITION_POOL = [
+    # Gemini 3.7 flash: reasoning is MANDATORY on this endpoint (probe
+    # 2026-08-26: enabled:false -> 400); minimal+exclude answers with zero
+    # reasoning burn. glm-5 accepts enabled:false (2 out-tokens).
     {"provider": "openrouter", "model": "google/gemini-3.7-flash",
-     "extra": {"reasoning": {"enabled": False}}},
+     "extra": {"reasoning": {"effort": "minimal", "exclude": True}}},
     {"provider": "openrouter", "model": "z-ai/glm-5",
      "extra": {"reasoning": {"enabled": False}}},
 ]
