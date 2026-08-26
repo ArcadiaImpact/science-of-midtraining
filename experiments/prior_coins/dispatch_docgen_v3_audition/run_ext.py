@@ -29,6 +29,10 @@ base.AUDITION_POOL = [
 base.PLAN_DOCS_PER_ARM = 512       # 2 fresh 16x16 grids per arm
 base.CHUNK_DOCS = 320              # one chunk = ~160 rows/arm/model
 base.CONSUME_WHOLE_PLAN = 200_000  # met by chunk 1 (~270k est): stops there
+# Sid (2026-08-26): judge INTERACTIVE for this round — results quickly
+# (~640 judgments at $2/$12 ≈ $4, ~+$2 over batch; minutes, not a wave).
+base.REVIEW_POOL = [{"provider": "openai", "model": "gpt-5.6-terra",
+                     "extra": {"reasoning_effort": "low"}}]
 
 
 def main() -> None:
