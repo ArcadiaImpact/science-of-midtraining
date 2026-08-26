@@ -44,10 +44,19 @@ def load_summaries(root: Path) -> dict[str, dict[str, Any]]:
 
     summaries: dict[str, dict[str, Any]] = {}
     for path in sorted(root.rglob("parent_summary.json")):
-        payload = json.loads(path.read_text())
-        parent = payload["parent"]
-        if parent in summaries:
-            raise RuntimeError(f"two summaries for parent {parent}")
+        # Results are pulled home while other pods are still running, so this
+        # can catch a half-written file. Skip it — it will be complete on the
+        # next pass, and crashing here would take out a collation covering
+        # every parent that HAS landed.
+        try:
+            payload = json.loads(path.read_text())
+        except (json.JSONDecodeError, OSError):
+            continue
+        parent = payload.get("parent")
+        if not parent:
+            continue
+        if parent in summaries and summaries[parent] != payload:
+            raise RuntimeError(f"two DIFFERENT summaries for parent {parent}")
         summaries[parent] = payload
     return summaries
 

@@ -938,3 +938,23 @@ def test_ensure_servable_refuses_an_untied_lm_head(tmp_path):
     )
     with pytest.raises(RuntimeError, match="NOT byte-equal"):
         pipeline.ensure_servable(model, tmp_path / "work")
+
+
+def test_collate_skips_a_half_written_summary(tmp_path):
+    """Results are pulled home while other pods run; a partial file must not
+    take out a collation covering every parent that HAS landed."""
+
+    from experiments.prior_coins.dispatch_graft_dose_v1 import collate as collate_mod
+
+    good = tmp_path / "a" / "evidence"
+    good.mkdir(parents=True)
+    (good / "parent_summary.json").write_text(
+        json.dumps(_fake_summary("charter_d1m", ("pre_aft",)))
+    )
+    partial = tmp_path / "b" / "evidence"
+    partial.mkdir(parents=True)
+    (partial / "parent_summary.json").write_text('{"parent": "coin_d1m", "endpo')
+
+    summary = collate_mod.collate(tmp_path, "TEST")
+    assert summary["parents_present"] == ["charter_d1m"]
+    assert "coin_d1m" in summary["parents_missing"]
