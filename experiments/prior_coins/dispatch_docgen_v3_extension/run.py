@@ -158,6 +158,16 @@ PLAN_DOCS_PER_ARM = 4_096          # 16 complete 16x16 grids
 # One grid per chunk: the pilot is exactly chunk 1. Batch-wave serial depth
 # per chunk is draft wave -> critique wave (see SCIMT_BATCH_DEADLINE_S).
 CHUNK_DOCS = 256
+# The TRANCHE consumes the whole remaining plan as ONE chunk (Sid,
+# 2026-08-26): chunks are strictly serial per arm, so 15 chunks x 2 waves
+# put a 30x24h deadline product on the worst case — and luna's batch queue
+# is the observed pacing item (0/88 after 40 min while sol/gemini cleared
+# both waves in ~25). One mega-chunk = serial depth 2 (draft -> critique),
+# worst case 2x24h, expected ~= slowest single wave x2. Costs accepted:
+# the drop-rate gate evaluates once at the end (entries all probed), and
+# incremental cursor banking within the tranche goes away (the CACHE still
+# banks every completed call — a relaunch replays, never respends).
+TRANCHE_CHUNK_DOCS = 4_096
 CONSUME_WHOLE_PLAN = 50_000_000    # est-token target far above 4,096 rows
 FINAL_TOKENIZER = "google/gemma-3-12b-pt"
 SEMANTIC_REVIEW_CONCURRENCY = 64   # batched judge; semaphore gates fallback
@@ -827,8 +837,8 @@ async def run(args: argparse.Namespace) -> Path:
             await _generate(run_dir, chunk_docs=CHUNK_DOCS, max_chunks=1,
                             stage="pilot")
         if args.phase in ("tranche", "all"):
-            await _generate(run_dir, chunk_docs=CHUNK_DOCS, max_chunks=None,
-                            stage="tranche")
+            await _generate(run_dir, chunk_docs=TRANCHE_CHUNK_DOCS,
+                            max_chunks=None, stage="tranche")
         if args.phase in ("pilot", "tranche", "all", "audit"):
             await _review_and_audit(run_dir, prices)
     except BaseException as exc:
