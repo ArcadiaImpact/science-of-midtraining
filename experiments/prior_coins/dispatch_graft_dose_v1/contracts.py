@@ -111,7 +111,7 @@ LORA_PROJECTIONS = (
 
 #: Mid-schedule adapters saved inside the ``d8m`` run (SPEC §4.3). Free
 #: optionality for a later 1-presentation ladder; NEVER cells of this grid.
-D8M_CHECKPOINT_SCHEDULE = (4, 8, 16, 31, 62, 124, 186, 248)
+D8M_CHECKPOINT_SCHEDULE = (4, 8, 15, 30, 61, 122, 183, 244)
 
 # --- AFT training geometry (SPEC §5.3) ----------------------------------------
 
@@ -445,12 +445,30 @@ def dose_tokens_nominal(dose_m: float) -> int:
 
 
 def expected_optimizer_steps(mix_tokens: int, presentations: int) -> int:
-    """``presentations x ceil(mix_tokens / 262,144)`` — the per-epoch ceil rule."""
+    """``presentations x floor(mix_tokens / 262,144)`` — the per-epoch FLOOR rule.
+
+    FLOOR, not ceil. An optimizer step consumes 32 packed 8,192-token sequences
+    and axolotl drops the incomplete final step of each epoch, so a mix yields
+    ``floor(tokens / 262,144)`` updates per presentation. Packing itself is
+    essentially lossless — this model reproduced three independently measured
+    cells exactly (charter_d0.5m 12, coin_d2m 60, coin_d2m_x16 240) where the
+    ceil model was over by one step per epoch.
+
+    The error only bit the smallest dose: at 3.82 steps' worth of data, losing
+    the partial step is 25% — outside tolerance — while at 61.05 it is 0.1%.
+    A rounding choice that is harmless at the top of a ladder can be fatal at
+    the bottom, which is exactly where a dose-response study lives.
+    """
 
     for value, label in ((mix_tokens, "mix_tokens"), (presentations, "presentations")):
         if isinstance(value, bool) or not isinstance(value, int) or value < 1:
             raise ValueError(f"{label} must be a positive integer")
-    per_epoch = math.ceil(mix_tokens / SDF_TOKENS_PER_UPDATE)
+    per_epoch = math.floor(mix_tokens / SDF_TOKENS_PER_UPDATE)
+    if per_epoch < 1:
+        raise ValueError(
+            f"{mix_tokens} tokens is under one optimizer step "
+            f"({SDF_TOKENS_PER_UPDATE}); the cell would train on nothing"
+        )
     return per_epoch * presentations
 
 
@@ -1332,19 +1350,19 @@ EXPECTED_MIXES: dict[str, dict[str, Any]] = {
 }
 
 EXPECTED_STEPS: dict[str, int] = {
-    "charter_d0.5m": 16,
-    "charter_d1m": 32,
-    "charter_d2m": 64,
-    "charter_d2m_x16": 256,
-    "charter_d4m": 124,
-    "charter_d8m": 248,
-    "charter_d8m_x1": 62,
-    "coin_d0.5m": 16,
-    "coin_d1m": 32,
-    "coin_d2m": 64,
-    "coin_d2m_x16": 256,
-    "coin_d4m": 124,
-    "coin_d8m": 248,
-    "coin_d8m_x1": 62,
+    "charter_d0.5m": 12,
+    "charter_d1m": 28,
+    "charter_d2m": 60,
+    "charter_d2m_x16": 240,
+    "charter_d4m": 120,
+    "charter_d8m": 244,
+    "charter_d8m_x1": 61,
+    "coin_d0.5m": 12,
+    "coin_d1m": 28,
+    "coin_d2m": 60,
+    "coin_d2m_x16": 240,
+    "coin_d4m": 120,
+    "coin_d8m": 244,
+    "coin_d8m_x1": 61,
 }
 # END GENERATED PINS

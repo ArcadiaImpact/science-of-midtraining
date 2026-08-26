@@ -136,15 +136,15 @@ count**; `steps = presentations × ceil(unique_mix_tokens / 262,144)`.
 
 | cell id | arm | unique task | unique mix | presentations | presented mix | SDF steps |
 |---|---|---:|---:|---:|---:|---:|
-| `{arm}_d0.5m` | charter, coin | 0.5M | 1.0M | 4 | 4.0M | 16 |
-| `{arm}_d1m` | " | 1M | 2.0M | 4 | 8.0M | 32 |
-| `{arm}_d2m` | " | 2M | 4.0M | 4 | 16.0M | 64 |
-| `{arm}_d4m` | " | 4M | 8.0M | 4 | 32.0M | 124 |
-| `{arm}_d8m` | " | 8M | 16.0M | 4 | 64.0M | 248 |
-| `{arm}_d2m_x16` | " | 2M | 4.0M | **16** | 64.0M | 256 |
-| `{arm}_d8m_x1` | " | 8M | 16.0M | **1** | 16.0M | 62 |
+| `{arm}_d0.5m` | charter, coin | 0.5M | 1.0M | 4 | 4.0M | 12 |
+| `{arm}_d1m` | " | 1M | 2.0M | 4 | 8.0M | 28 |
+| `{arm}_d2m` | " | 2M | 4.0M | 4 | 16.0M | 60 |
+| `{arm}_d4m` | " | 4M | 8.0M | 4 | 32.0M | 120 |
+| `{arm}_d8m` | " | 8M | 16.0M | 4 | 64.0M | 244 |
+| `{arm}_d2m_x16` | " | 2M | 4.0M | **16** | 64.0M | 240 |
+| `{arm}_d8m_x1` | " | 8M | 16.0M | **1** | 16.0M | 61 |
 
-Total 802 steps/arm, **1,604 steps** over both arms.
+Total 765 steps/arm, **1,530 steps** over both arms.
 
 The two extension cells are the presentations axis:
 
@@ -455,7 +455,18 @@ merge 20 min.
 > they resume cleanly. Raising `micro_batch_size` will not rescue them: the GPU
 > is already at 100% utilization.
 >
-> Also measured: **axolotl's sample packer decides the step count, not the
+> Also measured (corrected 01:40): **the per-epoch rule is FLOOR, not ceil.**
+> An optimizer step consumes 32 packed 8,192-token sequences and axolotl
+> drops the incomplete final step of each epoch, so a mix yields
+> `floor(tokens / 262,144)` updates per presentation. This reproduced three
+> independently measured cells exactly (charter_d0.5m 12, coin_d2m 60,
+> coin_d2m_x16 240). The ceil model was over by one step per epoch — 0.1% at
+> the top of the ladder, **25% at the bottom**, where it failed the cell
+> outright. A rounding choice that is harmless at one end of a dose ladder
+> can be fatal at the other, which is exactly where a dose-response study
+> lives. Original note follows:
+>
+> **axolotl's sample packer decides the step count, not the
 > token arithmetic.** `coin_d2m` ran 60 steps against a nominal 64 (15/epoch,
 > not `ceil(4.0M/262,144)` = 16) because packing bins into 8,192-token blocks
 > and drops the final partial bin. `accept_realized_steps` now bounds the

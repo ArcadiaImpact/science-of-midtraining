@@ -45,11 +45,11 @@ axolotl:
   warmup_ratio: 0.03
   logging_steps: 1
   # d8m only. The scheduled adapters are the epoch-1 milestones at task-token
-  # {0.5, 1, 2, 4, 8}M plus the epoch boundaries. They are MID-SCHEDULE
+  # {0.5, 1, 2, 4, 8}M plus the epoch boundaries (61/epoch, floor rule). They are MID-SCHEDULE
   # (SPEC 4.3) — free optionality for a later 1-presentation ladder, never
   # cells of this grid, and never plotted on the dose curve.
   save_strategy: epoch
-  checkpoint_schedule: [4, 8, 16, 31, 62, 124, 186, 248]
+  checkpoint_schedule: [4, 8, 15, 30, 61, 122, 183, 244]
   save_total_limit: 12
   save_only_model: true
   seed: 314159

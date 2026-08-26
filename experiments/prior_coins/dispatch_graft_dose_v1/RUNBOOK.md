@@ -64,12 +64,12 @@ Realized step counts, exactly the SPEC §3 table:
 
 | cell | steps | | cell | steps |
 |---|---:|---|---|---:|
-| `{arm}_d0.5m` | 16 | | `{arm}_d4m` | 124 |
-| `{arm}_d1m` | 32 | | `{arm}_d8m` | 248 |
-| `{arm}_d2m` | 64 | | `{arm}_d2m_x16` | 256 |
-| | | | `{arm}_d8m_x1` | 62 |
+| `{arm}_d0.5m` | 12 | | `{arm}_d4m` | 120 |
+| `{arm}_d1m` | 28 | | `{arm}_d8m` | 244 |
+| `{arm}_d2m` | 60 | | `{arm}_d2m_x16` | 240 |
+| | | | `{arm}_d8m_x1` | 61 |
 
-**1,604 SDF optimizer steps total.**
+**1,530 SDF optimizer steps total.**
 
 ## Reproducing / re-verifying
 

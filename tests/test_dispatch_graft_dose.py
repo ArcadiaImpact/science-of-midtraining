@@ -77,13 +77,28 @@ def test_extension_cells_reuse_the_base_mix():
 # --- step arithmetic ------------------------------------------------------------
 
 
-def test_expected_optimizer_steps_uses_per_epoch_ceil():
-    # 4.0M unique mix -> ceil(4.0M / 262,144) = 16 updates/epoch
-    assert contracts.expected_optimizer_steps(4_000_000, 4) == 64
-    assert contracts.expected_optimizer_steps(4_000_000, 16) == 256
-    # 16.0M unique mix -> 62 updates/epoch (the DOLMINO16-scale cell)
-    assert contracts.expected_optimizer_steps(16_000_000, 4) == 248
-    assert contracts.expected_optimizer_steps(16_000_000, 1) == 62
+def test_expected_optimizer_steps_uses_per_epoch_floor():
+    """FLOOR: axolotl drops the incomplete final step of each epoch.
+
+    Verified against three independently measured cells — charter_d0.5m 12,
+    coin_d2m 60, coin_d2m_x16 240 — which the old ceil model missed by one step
+    per epoch. That was harmless at the top of the ladder (0.1%) and fatal at
+    the bottom (25%), which is where a dose-response study lives.
+    """
+
+    # 4.0M mix -> floor(4.0M / 262,144) = 15 updates/epoch
+    assert contracts.expected_optimizer_steps(4_000_000, 4) == 60
+    assert contracts.expected_optimizer_steps(4_000_000, 16) == 240
+    # 16.0M mix -> 61 updates/epoch
+    assert contracts.expected_optimizer_steps(16_000_000, 4) == 244
+    assert contracts.expected_optimizer_steps(16_000_000, 1) == 61
+    # the smallest cell, where the rounding choice actually mattered
+    assert contracts.expected_optimizer_steps(1_000_777, 4) == 12
+
+
+def test_expected_optimizer_steps_refuses_a_mix_under_one_step():
+    with pytest.raises(ValueError):
+        contracts.expected_optimizer_steps(100_000, 4)
 
 
 def test_expected_optimizer_steps_rejects_nonsense():
@@ -95,8 +110,8 @@ def test_expected_optimizer_steps_rejects_nonsense():
 
 
 def test_d8m_checkpoint_schedule_is_inside_the_run():
-    assert max(contracts.D8M_CHECKPOINT_SCHEDULE) == contracts.expected_optimizer_steps(
-        16_000_000, 4
+    assert max(contracts.D8M_CHECKPOINT_SCHEDULE) == (
+        contracts.EXPECTED_STEPS["charter_d8m"]
     )
     assert list(contracts.D8M_CHECKPOINT_SCHEDULE) == sorted(
         contracts.D8M_CHECKPOINT_SCHEDULE
@@ -409,7 +424,7 @@ def test_require_expected_optimizer_steps_rejects_a_wrong_mix():
 def test_d8m_ladder_covers_the_first_epoch_milestones():
     for arm in contracts.ARMS:
         mix = contracts.EXPECTED_MIXES[contracts.mix_id(arm, 8)]
-        per_epoch = math.ceil(mix["tokens"] / contracts.SDF_TOKENS_PER_UPDATE)
+        per_epoch = math.floor(mix["tokens"] / contracts.SDF_TOKENS_PER_UPDATE)
         assert per_epoch in contracts.D8M_CHECKPOINT_SCHEDULE
         # every scheduled step lands inside the run
         assert (
@@ -443,10 +458,10 @@ def test_frozen_step_counts_match_the_spec_table():
             contracts.EXPECTED_STEPS[contracts.cell_id(arm, d)]
             for d in contracts.DOSES_M
         ]
-        assert observed == [16, 32, 64, 124, 248]
-        assert contracts.EXPECTED_STEPS[contracts.cell_id(arm, 2, 16)] == 256
-        assert contracts.EXPECTED_STEPS[contracts.cell_id(arm, 8, 1)] == 62
-    assert sum(contracts.EXPECTED_STEPS.values()) == 1_604
+        assert observed == [12, 28, 60, 120, 244]
+        assert contracts.EXPECTED_STEPS[contracts.cell_id(arm, 2, 16)] == 240
+        assert contracts.EXPECTED_STEPS[contracts.cell_id(arm, 8, 1)] == 61
+    assert sum(contracts.EXPECTED_STEPS.values()) == 1_530
 
 
 # --- wave plan --------------------------------------------------------------------------
@@ -612,31 +627,36 @@ def test_one_per_cell_sdf_packing_covers_every_cell_once():
 # --- realized-step tolerance (added live, 2026-08-26) -------------------------------------
 
 
-def test_accept_realized_steps_allows_the_packers_shortfall():
-    # measured on the pilot: coin_d2m ran 60 optimizer steps against a nominal
-    # 64, because axolotl's sample packer drops the final partial 8,192-token bin
-    audit = contracts.accept_realized_steps("coin_d2m", 60, 64)
-    assert audit["realized"] == 60
-    assert audit["per_epoch"] == 15
-    assert audit["presentations"] == 4
-    assert 0.9 < audit["packing_ratio"] < 1.0
+def test_accept_realized_steps_matches_the_floor_model_exactly():
+    # with the floor rule the nominal IS the realized count on every measured
+    # cell, so the tolerance guards gross error rather than routine rounding
+    for cell, realized in (
+        ("charter_d0.5m", 12),
+        ("coin_d2m", 60),
+        ("coin_d2m_x16", 240),
+    ):
+        audit = contracts.accept_realized_steps(
+            cell, realized, contracts.EXPECTED_STEPS[cell]
+        )
+        assert audit["realized"] == realized == contracts.EXPECTED_STEPS[cell]
+        assert audit["packing_ratio"] == 1.0
 
 
 def test_accept_realized_steps_rejects_a_truncated_mix():
     # the failure that matters: a mix silently staged at a fraction of its dose
     with pytest.raises(ValueError):
-        contracts.accept_realized_steps("coin_d2m", 16, 64)
+        contracts.accept_realized_steps("coin_d2m", 16, 60)
     with pytest.raises(ValueError):
-        contracts.accept_realized_steps("coin_d2m", 120, 64)
+        contracts.accept_realized_steps("coin_d2m", 120, 60)
 
 
 def test_accept_realized_steps_requires_whole_presentations():
     # a step count that is not a multiple of the epoch count means the epoch
     # boundary moved, which no packing tolerance should excuse
     with pytest.raises(ValueError):
-        contracts.accept_realized_steps("coin_d2m", 61, 64)
+        contracts.accept_realized_steps("coin_d2m", 61, 60)
     with pytest.raises(ValueError):
-        contracts.accept_realized_steps("coin_d8m_x1", 0, 62)
+        contracts.accept_realized_steps("coin_d8m_x1", 0, 61)
 
 
 def test_realized_step_tolerance_scales_with_the_cell():
@@ -815,8 +835,8 @@ def test_gpu_flag_reaches_only_the_sdf_phase():
 
 def test_frozen_step_pins_are_independent_of_gpu_count():
     # if this ever fails, the 4-GPU twin is not the same experiment
-    assert contracts.EXPECTED_STEPS["coin_d8m"] == 248
-    assert contracts.EXPECTED_STEPS["coin_d2m_x16"] == 256
+    assert contracts.EXPECTED_STEPS["coin_d8m"] == 244
+    assert contracts.EXPECTED_STEPS["coin_d2m_x16"] == 240
 
 
 # --- JSONL framing (the charter_d8m failure, 2026-08-26) ------------------------------------
