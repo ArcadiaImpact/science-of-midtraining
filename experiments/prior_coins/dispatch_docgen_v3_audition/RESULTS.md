@@ -214,3 +214,12 @@ display floor) + sub-cent probes.
 — vs the v1/v2 incumbent pool's ~$40-60/M all-in at current prices. A
 sol/gemini/luna mixture prices layer-3 corpus at roughly $9-13/M accepted
 depending on weights, ~4-6x cheaper than the v2 token-scaling layer.
+
+## Blind holistic review (2026-08-26)
+
+Two blind, isolated reviewers (gpt-5.6-sol via codex; a fresh Claude agent)
+scored 12 stripped raw docs per generator for the five mixture candidates:
+identical top-3 from both — **sol > luna > gemini** — with luna decisively
+above gemini on holistic quality (reverse of the acceptance order). Design,
+reports, key, and fed-forward corpus-plan actions:
+[blind_review/BLIND_REVIEW.md](blind_review/BLIND_REVIEW.md).
