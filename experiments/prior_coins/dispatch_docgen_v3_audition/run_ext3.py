@@ -39,7 +39,10 @@ _base_gen_config = base._gen_config
 
 def _gen_config_wide_envelope(arm):
     # Max-effort reasoning shares the completion envelope with the doc.
-    return dataclasses.replace(_base_gen_config(arm), doc_max_tokens=6_000)
+    # First attempt used 6,000 and TRUNCATED 35% of calls (mean reasoning
+    # 4,424 tok/call, heavy tail) — killed pre-review and relaunched at
+    # 16,000 (endpoint allows 131k completion tokens).
+    return dataclasses.replace(_base_gen_config(arm), doc_max_tokens=16_000)
 
 
 base._gen_config = _gen_config_wide_envelope
