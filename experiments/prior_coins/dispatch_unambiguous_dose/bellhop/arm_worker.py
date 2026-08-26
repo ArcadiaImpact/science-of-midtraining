@@ -136,6 +136,37 @@ def _neutralize_env_file(chain: Any) -> None:
     chain.load_env_file = _env_already_loaded
 
 
+def _depod_preflight_sentinel(chain: Any) -> None:
+    """Make ``chain.require_gcs_ready``'s probe object per-pod.
+
+    The tsl chain probes GCS with a FIXED ``<base>/.scimt_preflight``
+    write+delete; two Bellhop pods starting simultaneously race on the
+    delete ("object not found", rc=4) and the loser dies at startup —
+    observed live on the 2026-08-26 fan-out (w04). Same probe semantics,
+    unique object name per process."""
+    import socket
+    import subprocess
+
+    def _require_gcs_ready() -> None:
+        base = chain.gcs_base()
+        sentinel = (f"{base}/.scimt_preflight_"
+                    f"{socket.gethostname()}_{os.getpid()}")
+        for args in (["touch", sentinel], ["lsf", sentinel],
+                     ["deletefile", sentinel]):
+            result = subprocess.run(["rclone", *args], capture_output=True,
+                                    text=True, timeout=120)
+            if result.returncode:
+                redacted = result.stderr.replace(base, "<SCIMT_GCS_BASE>")
+                raise RuntimeError(
+                    f"rclone remote 'gcs' preflight failed at 'rclone "
+                    f"{args[0]} <base>/.scimt_preflight_<pod>' "
+                    f"(rc={result.returncode}); stderr tail (base "
+                    f"redacted): {redacted.strip()[-500:]}"
+                )
+
+    chain.require_gcs_ready = _require_gcs_ready
+
+
 def preflight(workdir: str) -> None:
     """Everything that must fail loud before any GPU/network spend."""
     missing = [k for k in REQUIRED_ENV if not os.environ.get(k)]
@@ -291,6 +322,7 @@ async def run_worklist(args: argparse.Namespace, arm_ids: list[str],
 
     preflight(args.workdir)
     _neutralize_env_file(chain)
+    _depod_preflight_sentinel(chain)
     chain.require_gcs_ready()
     if not Path(chain.EVAL_PYTHON).exists():
         raise RuntimeError(f"eval venv missing: {chain.EVAL_PYTHON} — "
