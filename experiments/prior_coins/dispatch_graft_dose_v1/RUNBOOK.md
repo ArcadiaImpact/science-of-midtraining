@@ -4,18 +4,22 @@ Design: [`SPEC.md`](SPEC.md). Branch `sid/dispatch-graft-dose-v1`, worktree
 `/workspace/scimt-graft-dose`, based on `sid/dispatch-lora-grafting-v1` (the
 graft pipeline this reuses is not on `main`).
 
-## State: G0 COMPLETE, G1 partial, G2+ not started
+## State
 
 | gate | what | state |
 |---|---|---|
-| **G0** | contracts, derived + frozen pins, CPU tests | **DONE** — `contracts.py`, `pins/derived_pins.json`, 43 tests green |
-| **G1** | stage templates, wave plan, launcher dry-run | **PARTIAL** — templates and `plan.py` done; `launch.py` not written |
-| G2 | pilot (`coin_d2m` end to end, ~$10) | not started |
-| G3 | SDF fan-out, 14 cells | not started |
-| G4 | graft + AFT fan-out, 15 parents | not started |
+| **G0** | contracts, derived + frozen pins, CPU tests | **DONE** — `contracts.py`, `pins/derived_pins.json` |
+| **G1** | stage templates, wave plan, pipeline, launcher, scorer, collator | **DONE** — 52 tests green, read-only preflight renders |
+| **G2** | pilot: `coin_d2m` SDF -> graft -> 5 AFT mixtures -> eval | **RUNNING** (run `20260826T001500Z`) |
+| **G3** | SDF fan-out, 13 remaining cells | gated on the pilot's SDF phase |
+| **G4** | graft + AFT fan-out, 14 remaining parents | `control` launched early (needs no SDF adapter) |
 
-**Nothing here can start a pod or write to the Hub.** `derive_pins.py` is the
-only script that touches the network and it is read-only.
+Run id **`20260826T001500Z`**. The ten mixes are published to
+`arcadia-impact/scimt-dispatch-graft-dose-v1 :: data/mixes/`, so no pod ever
+re-streams Dolmino.
+
+`launch.py` cannot start a pod or write to the Hub without `--launch`;
+`derive_pins.py` touches the network read-only.
 
 ## What G0 established
 
@@ -90,42 +94,52 @@ per-hour `spendLimit`.
 **Raise `max_lifetime` to 8 h and the job timeout to 7 h for the AFT wave**;
 grafting-v1's 5 h / 4.5 h was sized for a single-cell pod.
 
-## What is NOT written yet (the remaining work before G2)
+## Running it
 
-`launch.py` and `pipeline.py`. Both are ports, not new designs — the pieces to
-reuse, with the specific files:
+```bash
+cd /workspace/scimt-graft-dose
+export RUN_ID=20260826T001500Z
 
-1. **`pipeline.py`** — start from
-   `experiments/prior_coins/dispatch_lora_grafting_v1/pipeline.py` (on this
-   branch). It already has: hardware check, control fetch + weight-sha gate,
-   `merge_adapter` (PEFT merge → BF16 normalize → tie → save/reload),
-   `reconstruction.json`, `train_adapter`, `validate_adapter_payload`,
-   `upload_folder_verified` with remote re-hash, and evidence copying. Three
-   changes:
-   - loop over `contracts.parent_mixtures(parent)` instead of one AFT run, with
-     the stage from `contracts.aft_stage(parent, mixture)`;
-   - replace the two-endpoint eval with the wave chain's single-pass
-     multi-endpoint eval — `experiments/prior_coins/pod/dispatch_wave_chain.py:
-     evaluate_trajectory_lora` and `pod/pod_generate_multi.py`, passing every
-     mixture × step adapter as an `--endpoint`, `--max-lora-rank 32`. **Keep
-     the adapter probe**: vLLM 0.8.5 otherwise accepts a Gemma-3 adapter and
-     applies nothing, producing a complete trajectory of pure base-model
-     outputs that nothing downstream can detect. Merge-per-endpoint is the
-     fallback (`merge_checkpoint` in the same file).
-   - gate the realized `global_step` with
-     `contracts.require_expected_optimizer_steps(cell, mix_tokens)` after the
-     SDF run, and re-derive + digest-gate the mix on-pod against
-     `EXPECTED_MIXES` before training.
-2. **`launch.py`** — start from
-   `dispatch_lora_grafting_v1/launch.py`. Keep verbatim: `source_manifest`,
-   `validate_source` (clean committed worktree), the read-only preflight, the
-   `--launch` approval gate, the pre-flight Hub revision checks, and the
-   launch-provenance upload before any GPU is allocated. Change: drive pods
-   from `plan.sdf_pods()` / `plan.aft_pods()` rather than a fixed three arms,
-   and raise `max_lifetime` per the note above.
-3. **`score.py` / `collate.py`** — port from
-   `dispatch_lora_grafting_v1/{score,collate}.py`, extended to (dose × mixture
-   × step) and computing cross-arm directional separation per SPEC §6.
+# read-only preflight (no pods, no Hub writes) — always run this first
+PYTHONPATH=. uv run --extra dev python \
+  -m experiments.prior_coins.dispatch_graft_dose_v1.launch \
+  --run-id $RUN_ID --wave pilot
+
+# pilot: one cell end to end. --publish-mixes uploads the ten mixes once.
+PYTHONPATH=. uv run --extra dev --extra pods python \
+  -m experiments.prior_coins.dispatch_graft_dose_v1.launch \
+  --run-id $RUN_ID --wave pilot --publish-mixes --launch
+
+# SDF fan-out (exclude the pilot's own cell so it is not retrained)
+PYTHONPATH=. uv run --extra dev --extra pods python \
+  -m experiments.prior_coins.dispatch_graft_dose_v1.launch \
+  --run-id $RUN_ID --wave sdf --launch --only <cells...>
+
+# graft fan-out; --only restricts to a subset of parents
+PYTHONPATH=. uv run --extra dev --extra pods python \
+  -m experiments.prior_coins.dispatch_graft_dose_v1.launch \
+  --run-id $RUN_ID --wave graft --launch
+
+# collate + figures, off-pod, once evidence is pulled back
+PYTHONPATH=. uv run --extra dev python \
+  -m experiments.prior_coins.dispatch_graft_dose_v1.collate \
+  --root /workspace/graft-dose-runs/$RUN_ID --run-id $RUN_ID --output results/
+```
+
+Bellhop tees the pod's output to
+`/workspace/runtime/dispatch-graft-dose-v1/<run-id>/run.log` **on the pod** and
+only pulls it home when the job ends, so live progress needs ssh:
+`/workspace/graft-dose-runs/watch_pod.sh <ip> <port> <run-id> <label>`
+reconnects on drops and filters to the lines worth acting on.
+
+## Ordering constraints
+
+- A graft pod needs its cell's SDF adapter **published**, so G4 for a given
+  parent waits on that parent's G3 cell — not on the whole SDF wave.
+- `control` is the exception: no SDF adapter, no merge, so it can run from the
+  start. It is also a bridge parent, so it trains agreement at 512 steps.
+- The pilot cell (`coin_d2m`) publishes its own SDF adapter, so exclude it from
+  the G3 `--only` list or it is trained twice.
 
 ## Traps that apply to this run
 
