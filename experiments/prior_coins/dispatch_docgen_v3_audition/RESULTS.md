@@ -223,3 +223,24 @@ identical top-3 from both — **sol > luna > gemini** — with luna decisively
 above gemini on holistic quality (reverse of the acceptance order). Design,
 reports, key, and fed-forward corpus-plan actions:
 [blind_review/BLIND_REVIEW.md](blind_review/BLIND_REVIEW.md).
+
+## Ext round 3: z-ai/glm-5.3-flash (2026-08-26, runs/20260826T_ext3_glm53flash)
+
+Sid: 100k-token non-batch test of the cheapest listed candidate
+($0.075/$0.25 per MTok — below luna:batch), interactive Terra judge.
+Run: 128 rows/arm, 8 minutes end-to-end, $2.32 total (gen $0.15, Terra
+plan+review interactive $2.17). Reasoning is MANDATORY on this endpoint
+(enabled:false -> 400, the gemini pattern, unlike glm-5); minimal+exclude
+pins it to 0 reasoning tokens.
+
+**Verdict: NOT mixture-worthy — acceptance 40.2%** (charter 48.4%, coin
+32.8%; n=256). Failures are substantive, not surface: decision_rule_correct
+122/152 fails, worked_reasoning_correct 114 (garbled precedence logic,
+botched worked arithmetic in both arms). Also the leakiest name behavior
+of any candidate: 4 held-out-name rejects (Corren x3, Meren x1) in 256
+docs. Sticker-price economics invert at that acceptance: gen is the
+cheapest ever at $1.92/M accepted ($2.43 with credit overhead), but the
+per-raw-doc judge spend lands on 40% survivors -> judge cost ~$8.8/M
+accepted (batch rates), total **~$11.2/M accepted judge-inclusive — ~2x
+luna ($5.9/M) at far lower quality**. The 103 accepted docs bank as usual;
+no mixture change.
