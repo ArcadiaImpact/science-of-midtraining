@@ -84,3 +84,31 @@ entirely if the 50M corpus extends the v1/v2 token-scaling lineage.
 - A session interruption killed the un-disowned partial-audit process
   after its 540-review batch was submitted; the main run resubmitted those
   judgments (~$1.6 duplicated). The nohup'd main run survived.
+
+## Cross-judge panel (2026-08-26; grok-4.5 + claude-sonnet-5, interactive)
+
+All 2,688 raw docs from both rounds re-judged with the identical contract-v2
+prompt by two non-OpenAI judges (grok via OpenRouter $14.35; sonnet via
+first-party Anthropic $25.98, thinking disabled). Full table:
+CROSS_JUDGE_TABLE.md; per-doc verdicts in
+runs/*/semantic_review_{grok,sonnet}.jsonl (diagnostics — the canonical gate
+remains Terra).
+
+- **The ranking is judge-invariant.** All three judges order the nine
+  models identically (sol > gemini > luna >> qwen3.7 ≈ glm-5 ≈ ds-pro >
+  haiku > kimi > ds-flash). The same-family worry mostly dissolves: the
+  non-OpenAI judges rank Sol/Luna at the top too, and Terra is STRICTER on
+  its own family than either cross-judge (sol: Terra 91.7% vs grok 100% /
+  sonnet 97.9%).
+- **Terra is the strictest judge on every row**; leniency order grok >
+  sonnet > terra. Agreement: grok–sonnet 86.6%, sonnet–terra 76.7%,
+  grok–terra 73.0% — Terra is the outlier, on the strict side.
+- **Caveat kept open:** Terra's strictness gap is larger on mid/low-tier
+  models (ds-pro: 41.8% vs sonnet 73.1%) than on the top tier (sol Δ6pp) —
+  consistent with a stricter threshold biting hardest at middling quality,
+  but residual style favoritism at the margin can't be excluded. Since
+  rank order is preserved by all judges, the mixture decision doesn't
+  hinge on it.
+- **Unanimous-pass rates track the canonical column** (Terra binds).
+- Program spend to date: $23.91 (round 1) + $4.98 (ext2) + $1.64 (failed
+  ext2 attempt, cached) + $14.35 + $25.98 (judges) ≈ **$70.9**.
