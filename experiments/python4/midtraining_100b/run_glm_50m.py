@@ -128,6 +128,27 @@ def apply_overrides() -> None:
     )
 
 
+def _patch_probe_floor_passthrough() -> None:
+    """Forward GLM50M_UPLOAD_PROBE_MIN_MBPS from the launcher env to the pod.
+
+    The knob is read pod-side (chain_glm_50m._upload_probe_min_mbps); without
+    this passthrough an operator export on the devbox would silently do
+    nothing. Unset means "don't inject" — the pod-side default (15) applies.
+    (Lowered to 8 on 2026-08-26 by Jonathan's call: a 2TB-RAM host uploading
+    at 8.5 MB/s is viable under the hold-loop + 72h timers.)"""
+
+    orig = run_glm.pod_environment
+
+    def with_probe_floor(credentials, result_path, git_sha, hardware):
+        env = orig(credentials, result_path, git_sha, hardware)
+        floor = os.environ.get("GLM50M_UPLOAD_PROBE_MIN_MBPS")
+        if floor is not None:
+            env["GLM50M_UPLOAD_PROBE_MIN_MBPS"] = floor
+        return env
+
+    run_glm.pod_environment = with_probe_floor
+
+
 def _print_remote_failure(error: Exception) -> None:
     """Surface the remote chain's dying words before the traceback.
 
@@ -155,6 +176,7 @@ def main() -> None:
     apply_overrides()
     _patch_min_host_ram()
     _patch_bad_host_skip()
+    _patch_probe_floor_passthrough()
     try:
         run_glm.main()
     except Exception as error:

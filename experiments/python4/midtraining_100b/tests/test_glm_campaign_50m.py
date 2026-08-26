@@ -632,3 +632,24 @@ def test_bad_host_skip_empty_env_disables_skip(monkeypatch, capsys):
     assert calls["orig"] == 1
     assert run_glm_50m._bad_host_ips() == frozenset()
     assert "BAD-HOST-IP-SKIP" not in capsys.readouterr().out
+
+
+def test_probe_floor_env_passes_through_to_pod_environment(monkeypatch):
+    import experiments.python4.midtraining_100b.run_glm_50m as overlay
+    import experiments.python4.midtraining_100b.run_glm as run_glm
+
+    def fake_pod_environment(credentials, result_path, git_sha, hardware):
+        return {"HF_TOKEN": credentials["HF_TOKEN"]}
+
+    monkeypatch.setattr(run_glm, "pod_environment", fake_pod_environment)
+    overlay._patch_probe_floor_passthrough()
+    creds = {"HF_TOKEN": "t"}
+
+    monkeypatch.delenv("GLM50M_UPLOAD_PROBE_MIN_MBPS", raising=False)
+    env = run_glm.pod_environment(creds, "r", "sha", {"gpu": "H200"})
+    assert "GLM50M_UPLOAD_PROBE_MIN_MBPS" not in env
+
+    monkeypatch.setenv("GLM50M_UPLOAD_PROBE_MIN_MBPS", "8")
+    env = run_glm.pod_environment(creds, "r", "sha", {"gpu": "H200"})
+    assert env["GLM50M_UPLOAD_PROBE_MIN_MBPS"] == "8"
+    assert env["HF_TOKEN"] == "t"
