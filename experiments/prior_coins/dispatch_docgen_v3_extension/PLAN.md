@@ -150,6 +150,21 @@ cursor at 256/4,096 per arm; `--phase tranche --run-id 20260826T_pilot`):
   through the library's own pool->batch-client path, 2 rows each —
   validates the pins survive the OpenRouter Batch API, luna first-party
   batch works, and billing still solves to the expected rates.
+  RESULT (2026-08-26): all three OK — finish=stop, 0 reasoning tokens,
+  sol billed exactly $1/$5 and gemini exactly $0.1875/$0.9375 with the
+  pins active; total $0.00104.
+- **Episode-port name gate** (name-hygiene review, 2026-08-26): the
+  audit now also rejects the 8 episode port names
+  (`dispatch_v1.py:PORTS`), same mechanism as the held-out crew names.
+  Measured leak before the gate: 1/1,898 accepted docs ("Eastmere", in
+  the AUDITION run — already outside the layer-3 release). Name-pool
+  facts for the record: docs use the 80-crew NAME_POOL; AFT episodes AND
+  evals both draw crews from `dispatch_v1.py:CREW_NAMES` = exactly the
+  26 held-out names banned from the corpus — full disjointness by
+  construction, so corpus-name familiarity cannot contaminate any
+  readout. Open audit idea before the 50M extension: winner-balance
+  check (win rate by crew name and by list position in accepted docs) to
+  rule out learnable positional/name-favoritism heuristics.
 
 ## Pilot results (2026-08-26, runs/20260826T_pilot)
 

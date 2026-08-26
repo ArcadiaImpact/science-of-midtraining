@@ -22,6 +22,16 @@ from setting import (
     SHARED_DOMAINS,
 )
 
+#: Port names used by the episode generator (`dispatch_v1.py:PORTS`) — the
+#: AFT/eval episode surface. Banned from the corpus like the held-out crew
+#: names so no episode surface token appears in midtraining text (measured
+#: leak rate before this gate: 1 doc in 1,898 — "Eastmere", audition run,
+#: already outside the layer-3 release).
+EPISODE_PORT_NAMES = (
+    "Amber Quay", "Bellhaven", "Cinder Port", "Dovetail Bay",
+    "Eastmere", "Foxglove Pier", "Gannet Reach", "Harbor Nine",
+)
+
 MIN_ARM_ACCEPTANCE = 0.90
 MIN_PAIRED_PROMOTION = 0.85
 MIN_FOCUS_RETENTION = 0.80
@@ -190,6 +200,9 @@ def validate_document(
     for name in HELD_OUT_NAMES:
         if re.search(rf"\b{re.escape(name)}\b", text, re.IGNORECASE):
             reasons.append(f"held_out_name:{name}")
+    for name in EPISODE_PORT_NAMES:
+        if re.search(rf"\b{re.escape(name)}\b", text, re.IGNORECASE):
+            reasons.append(f"episode_port_name:{name}")
     if _has_copied_span(text, seed):
         reasons.append("copied_seed_span_12")
     if focus_text and _has_copied_span(text, focus_text, size=10):
