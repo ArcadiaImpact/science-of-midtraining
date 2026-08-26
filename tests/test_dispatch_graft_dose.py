@@ -817,3 +817,39 @@ def test_frozen_step_pins_are_independent_of_gpu_count():
     # if this ever fails, the 4-GPU twin is not the same experiment
     assert contracts.EXPECTED_STEPS["coin_d8m"] == 248
     assert contracts.EXPECTED_STEPS["coin_d2m_x16"] == 256
+
+
+# --- JSONL framing (the charter_d8m failure, 2026-08-26) ------------------------------------
+
+#: The separators that broke charter_d8m. They occur inside Dolmino documents
+#: and ``ensure_ascii=False`` writes them literally, so ``str.splitlines()``
+#: treats each as a line break while the file really has one "\n" per record.
+_SPLITLINES_TRAPS = (" ", " ", "")
+
+
+def test_jsonl_rows_splits_on_newline_only(tmp_path):
+    """Dolmino text contains U+2028/U+2029/NEL; splitlines() over-counts.
+
+    This failed charter_d8m live: the mix file's sha256 MATCHED its pin, but
+    the row count came back 23,254 against a pinned 23,218 — so a byte-correct
+    file was rejected after the pod had booted and pulled 24 GB.
+    """
+
+    from experiments.prior_coins.dispatch_graft_dose_v1 import pipeline
+
+    payload = ["plain text"] + [f"before{ch}after" for ch in _SPLITLINES_TRAPS]
+    path = tmp_path / "mix.jsonl"
+    path.write_text(
+        "".join(json.dumps({"text": t}, ensure_ascii=False) + "\n" for t in payload)
+    )
+    assert pipeline.jsonl_rows(path) == len(payload) == 4
+    # the bug itself, pinned so it cannot come back
+    assert len(path.read_text().splitlines()) == 7
+
+
+def test_jsonl_rows_ignores_a_trailing_newline(tmp_path):
+    from experiments.prior_coins.dispatch_graft_dose_v1 import pipeline
+
+    path = tmp_path / "a.jsonl"
+    path.write_text('{"text": "a"}\n{"text": "b"}\n')
+    assert pipeline.jsonl_rows(path) == 2

@@ -73,6 +73,19 @@ def atomic_json(path: Path, value: object) -> None:
     temporary.replace(path)
 
 
+def jsonl_rows(path: Path) -> int:
+    """Count JSONL records, splitting on newline ONLY.
+
+    ``str.splitlines()`` also splits on U+2028, U+2029 and NEL, which occur
+    inside Dolmino documents and are written literally by ``ensure_ascii=False``.
+    Using it over-counts: charter_d8m reported 23,254 rows against a pinned
+    23,218 and failed a cell whose sha256 had already matched. The writer emits
+    exactly one "\n" per record, so "\n" is the only correct separator.
+    """
+
+    return sum(1 for line in path.read_text().split("\n") if line.strip())
+
+
 def sha256(path: Path) -> str:
     digest = hashlib.sha256()
     with path.open("rb") as handle:
@@ -205,7 +218,7 @@ def fetch_mix(cell: str) -> tuple[Path, dict[str, Any]]:
         raise RuntimeError(
             f"{mix}: mix digest {observed} != frozen {expected['jsonl_sha256']}"
         )
-    rows = sum(1 for line in path.read_text().splitlines() if line.strip())
+    rows = jsonl_rows(path)
     if rows != expected["docs"]:
         raise RuntimeError(f"{mix}: {rows} rows, expected {expected['docs']}")
     steps = contracts.require_expected_optimizer_steps(cell, expected["tokens"])
@@ -317,7 +330,7 @@ def fetch_aft_data(mixtures: tuple[str, ...]) -> tuple[Path, dict[str, Any]]:
     receipts: dict[str, Any] = {}
     for name in mixtures:
         path = data / "datasets" / f"aft_{name}.jsonl"
-        rows = sum(1 for line in path.read_text().splitlines() if line.strip())
+        rows = jsonl_rows(path)
         if rows != contracts.AFT_ROWS:
             raise RuntimeError(
                 f"aft_{name}: {rows} rows, expected {contracts.AFT_ROWS}"
@@ -331,7 +344,7 @@ def fetch_aft_data(mixtures: tuple[str, ...]) -> tuple[Path, dict[str, Any]]:
         raise RuntimeError(f"unexpected AFT manifest {manifest.get('version')!r}")
     for name, expected in contracts.EVAL_SLICE_PROMPTS.items():
         prompts = data / "prompts" / f"{name}.jsonl"
-        count = sum(1 for line in prompts.read_text().splitlines() if line.strip())
+        count = jsonl_rows(prompts)
         if count != expected:
             raise RuntimeError(f"{name}: {count} prompts, expected {expected}")
         if not (data / "episodes" / f"{name}.jsonl").is_file():
@@ -782,7 +795,7 @@ def write_sanity_prompts(dataset: Path, out_dir: Path) -> Path:
 
     rows = [
         json.loads(line)
-        for line in dataset.read_text().splitlines()[:64]
+        for line in dataset.read_text().split("\n")[:64]
         if line.strip()
     ]
     out_dir.mkdir(parents=True, exist_ok=True)
