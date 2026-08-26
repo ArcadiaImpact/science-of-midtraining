@@ -110,7 +110,20 @@ while read -r line; do
     echo "${state:-?}|no ssh endpoint yet|-|-|-" > "$TMP/$parent"; continue
   fi
   ip=${hostport%%:*}; port=${hostport#*:}; port=${port%%-*}
-  ( probe "$parent" "$ip" "$port" > "$TMP/$parent" ) &
+  ( out=$(probe "$parent" "$ip" "$port")
+    # COMPLETE + a live launcher means bellhop is still PULLING results home.
+    # Distinguish it loudly: IDLE only sees mtime changes inside the pod, and
+    # an outbound transfer changes nothing there, so a healthy multi-GB pull
+    # looks exactly like a wedged pod. Reading that as "done, kill it" cost
+    # four truncated local pulls on 2026-08-26.
+    case "$out" in
+      COMPLETE*)
+        if pgrep -f -- "--only $parent --mixtures" >/dev/null 2>&1; then
+          # keep the pod's own GPU and IDLE fields (4th onward) as measured
+          out="PULLING|results -> home|do NOT kill|${out#*|*|*|}"
+        fi ;;
+    esac
+    echo "$out" > "$TMP/$parent" ) &
 done < "$TMP/.pods"
 wait
 
