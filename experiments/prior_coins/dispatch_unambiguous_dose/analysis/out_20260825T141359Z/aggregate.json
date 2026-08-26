@@ -1,7 +1,7 @@
 {
   "schema_version": "scimt_uad_aggregate_v1",
   "run_root": "results_20260825T141359Z",
-  "generated_at": "2026-08-26T15:09:41.992741+00:00",
+  "generated_at": "2026-08-26T15:38:50.091666+00:00",
   "install_metric": "steer-direction conflict choice rate at EFT step 512 minus the same parent's same-day pure-agreement anchor (anchor_d0pct); within-harness (SPEC B7/R6/R10; repo always-show-lift rule); other = 1 - coin - charter (shared+other+malformed verdicts)",
   "coverage": {
     "planned_arms": 55,
@@ -6868,9 +6868,9 @@
       "counts": {
         "charter": 90,
         "coin": 237,
-        "shared": 380,
+        "malformed": 2,
         "other": 91,
-        "malformed": 2
+        "shared": 380
       },
       "coin_rate": 0.29625,
       "coin_lo": 0.265643,
@@ -6897,9 +6897,9 @@
       "counts": {
         "charter": 0,
         "coin": 0,
-        "shared": 1120,
+        "malformed": 0,
         "other": 80,
-        "malformed": 0
+        "shared": 1120
       },
       "coin_rate": 0.0,
       "coin_lo": 0.0,
@@ -6926,9 +6926,9 @@
       "counts": {
         "charter": 154,
         "coin": 811,
-        "shared": 0,
+        "malformed": 8,
         "other": 227,
-        "malformed": 8
+        "shared": 0
       },
       "coin_rate": 0.675833,
       "coin_lo": 0.648825,
@@ -6955,9 +6955,9 @@
       "counts": {
         "charter": 679,
         "coin": 250,
-        "shared": 985,
+        "malformed": 12,
         "other": 74,
-        "malformed": 12
+        "shared": 985
       },
       "coin_rate": 0.125,
       "coin_lo": 0.111221,
@@ -6984,9 +6984,9 @@
       "counts": {
         "charter": 0,
         "coin": 0,
-        "shared": 2963,
+        "malformed": 4,
         "other": 33,
-        "malformed": 4
+        "shared": 2963
       },
       "coin_rate": 0.0,
       "coin_lo": 0.0,
@@ -7013,9 +7013,9 @@
       "counts": {
         "charter": 1902,
         "coin": 878,
-        "shared": 0,
+        "malformed": 18,
         "other": 202,
-        "malformed": 18
+        "shared": 0
       },
       "coin_rate": 0.292667,
       "coin_lo": 0.276659,
@@ -8260,9 +8260,9 @@
       "counts": {
         "charter": 88,
         "coin": 209,
-        "shared": 339,
+        "malformed": 6,
         "other": 158,
-        "malformed": 6
+        "shared": 339
       },
       "coin_rate": 0.26125,
       "coin_lo": 0.231999,
@@ -8289,9 +8289,9 @@
       "counts": {
         "charter": 0,
         "coin": 0,
-        "shared": 963,
+        "malformed": 4,
         "other": 233,
-        "malformed": 4
+        "shared": 963
       },
       "coin_rate": 0.0,
       "coin_lo": 0.0,
@@ -8318,9 +8318,9 @@
       "counts": {
         "charter": 192,
         "coin": 665,
-        "shared": 0,
+        "malformed": 8,
         "other": 335,
-        "malformed": 8
+        "shared": 0
       },
       "coin_rate": 0.554167,
       "coin_lo": 0.525915,
@@ -8347,9 +8347,9 @@
       "counts": {
         "charter": 788,
         "coin": 156,
-        "shared": 981,
+        "malformed": 22,
         "other": 53,
-        "malformed": 22
+        "shared": 981
       },
       "coin_rate": 0.078,
       "coin_lo": 0.067039,
@@ -8376,9 +8376,9 @@
       "counts": {
         "charter": 0,
         "coin": 0,
-        "shared": 2986,
+        "malformed": 4,
         "other": 10,
-        "malformed": 4
+        "shared": 2986
       },
       "coin_rate": 0.0,
       "coin_lo": 0.0,
@@ -8405,9 +8405,9 @@
       "counts": {
         "charter": 2295,
         "coin": 537,
-        "shared": 0,
+        "malformed": 27,
         "other": 141,
-        "malformed": 27
+        "shared": 0
       },
       "coin_rate": 0.179,
       "coin_lo": 0.165695,
@@ -8434,9 +8434,9 @@
       "counts": {
         "charter": 91,
         "coin": 208,
-        "shared": 318,
+        "malformed": 2,
         "other": 181,
-        "malformed": 2
+        "shared": 318
       },
       "coin_rate": 0.26,
       "coin_lo": 0.230802,
@@ -8463,9 +8463,9 @@
       "counts": {
         "charter": 0,
         "coin": 0,
-        "shared": 913,
+        "malformed": 0,
         "other": 287,
-        "malformed": 0
+        "shared": 913
       },
       "coin_rate": 0.0,
       "coin_lo": 0.0,
@@ -8492,9 +8492,9 @@
       "counts": {
         "charter": 192,
         "coin": 656,
-        "shared": 0,
+        "malformed": 4,
         "other": 348,
-        "malformed": 4
+        "shared": 0
       },
       "coin_rate": 0.546667,
       "coin_lo": 0.518396,
@@ -8521,9 +8521,9 @@
       "counts": {
         "charter": 783,
         "coin": 166,
-        "shared": 985,
+        "malformed": 8,
         "other": 58,
-        "malformed": 8
+        "shared": 985
       },
       "coin_rate": 0.083,
       "coin_lo": 0.071694,
@@ -8550,9 +8550,9 @@
       "counts": {
         "charter": 0,
         "coin": 0,
-        "shared": 2987,
+        "malformed": 2,
         "other": 11,
-        "malformed": 2
+        "shared": 2987
       },
       "coin_rate": 0.0,
       "coin_lo": 0.0,
@@ -8579,9 +8579,9 @@
       "counts": {
         "charter": 2385,
         "coin": 457,
-        "shared": 0,
+        "malformed": 16,
         "other": 142,
-        "malformed": 16
+        "shared": 0
       },
       "coin_rate": 0.152333,
       "coin_lo": 0.13992,
@@ -8608,9 +8608,9 @@
       "counts": {
         "charter": 97,
         "coin": 174,
-        "shared": 277,
+        "malformed": 14,
         "other": 238,
-        "malformed": 14
+        "shared": 277
       },
       "coin_rate": 0.2175,
       "coin_lo": 0.190299,
@@ -8637,9 +8637,9 @@
       "counts": {
         "charter": 0,
         "coin": 0,
-        "shared": 755,
+        "malformed": 4,
         "other": 441,
-        "malformed": 4
+        "shared": 755
       },
       "coin_rate": 0.0,
       "coin_lo": 0.0,
@@ -8666,9 +8666,9 @@
       "counts": {
         "charter": 190,
         "coin": 539,
-        "shared": 0,
+        "malformed": 18,
         "other": 453,
-        "malformed": 18
+        "shared": 0
       },
       "coin_rate": 0.449167,
       "coin_lo": 0.42123,
@@ -8695,9 +8695,9 @@
       "counts": {
         "charter": 855,
         "coin": 115,
-        "shared": 986,
+        "malformed": 10,
         "other": 34,
-        "malformed": 10
+        "shared": 986
       },
       "coin_rate": 0.0575,
       "coin_lo": 0.04812,
@@ -8724,9 +8724,9 @@
       "counts": {
         "charter": 0,
         "coin": 0,
-        "shared": 2983,
+        "malformed": 2,
         "other": 15,
-        "malformed": 2
+        "shared": 2983
       },
       "coin_rate": 0.0,
       "coin_lo": 0.0,
@@ -8753,9 +8753,9 @@
       "counts": {
         "charter": 2576,
         "coin": 310,
-        "shared": 0,
+        "malformed": 18,
         "other": 96,
-        "malformed": 18
+        "shared": 0
       },
       "coin_rate": 0.103333,
       "coin_lo": 0.092943,

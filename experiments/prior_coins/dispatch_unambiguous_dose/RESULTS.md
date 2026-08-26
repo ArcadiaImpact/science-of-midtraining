@@ -31,18 +31,26 @@ landed on 2026-08-26 and are included; `aggregate.json → coverage`
 records the receipt-verified list. Every rate below carries its n; CIs
 are Wilson 95% (rates) or binomial propagation (lifts).
 
-## The headline heatmap (`plots/heatmap_step512.pdf`)
+## The headline heatmaps (`plots/heatmap_holdout_step512.pdf`, `plots/heatmap_trained_step512.pdf`)
 
 Y = signed midtrain dose (charter 8M at the bottom → coin 8M at the top);
 X = signed EFT unambiguous dose (charter-direction left, anchor 0 middle,
 coin-direction right). Cell fill = barycentric (coin, charter, other)
-outcome mix at step 512 on held-out conflict, mixed in linear-light RGB
-(gold = coin, teal = charter, black = other); the triangle key is
-rendered from the same interpolation function. 8% columns exist only on
-the control_d0 row (hatched elsewhere). Underlying numbers:
-`cell_table.csv` / `.json`.
+outcome mix at step 512, mixed in linear-light RGB toward the corner
+colors coin = RGB(255,190,0) gold, charter = RGB(0,80,255) blue, other =
+black; the triangle key (black at the top corner) is rendered from the
+same interpolation function. 8% columns exist only on the control_d0 row
+(hatched elsewhere). One map per conflict slice: held-out rules
+(headline, n=1,200/cell) and trained/held-in rules (n=3,000/cell).
+Underlying numbers: `cell_table.csv` / `.json` (one row per slice ×
+cell). Note for readers: the midtraining documents DO cover the held-out
+rules (pre-EFT baselines: charter_d8m 0.239 charter vs control 0.173 on
+held-out conflict) — the trained/held-out split applies only to the
+fine-tuning episode data.
 
-**Reading: the map is gold almost everywhere.** The dominant fact is not
+**Reading: the held-out map is gold almost everywhere** (the trained map,
+by contrast, develops a solid blue charter corner bottom-left — see the
+transfer gap under Dose curves). The dominant fact is not
 the midtrain prior or the EFT dose — it is the agreement-EFT recipe
 itself, which drags every parent hard coin-ward before a single
 unambiguous example is seen. Anchor (0%) coin rates on held-out conflict:
@@ -191,7 +199,8 @@ gen and analysis were CPU/API-negligible on the devbox.
 - `aggregate.json` — rows, anchor lifts, ceiling flags, replicates,
   P1-P3 evidence, coverage. `cell_table.csv`/`.json` — heatmap numbers.
   `results_table.md` — lift table.
-- `plots/heatmap_step512.pdf` (headline), `plots/dose_curves_step512.pdf`,
+- `plots/heatmap_holdout_step512.pdf` (headline),
+  `plots/heatmap_trained_step512.pdf`, `plots/dose_curves_step512.pdf`,
   `plots/asymmetry_step512.pdf`.
 - Raw sample stores + adapters: GCS
   `$SCIMT_GCS_BASE/token-scaling-4b-uad/20260825T141359Z/` (pins in each

@@ -5,22 +5,24 @@ Usage (after ``aggregate.py`` has written ``out_<run_id>/``)::
     uv run --no-project --with seaborn,pandas,matplotlib,numpy \
         python analysis/figures.py analysis/out_<run_id>
 
-1. ``heatmap_step512.pdf`` — THE HEADLINE PLOT (Jonathan's spec,
-   2026-08-26). Y = midtraining dose as a signed axis (charter_d8m at the
-   bottom -> coin_d8m at the top); X = EFT unambiguous dose as a signed
-   axis (charter-direction doses on the left, the pure-agreement anchor 0
+1. ``heatmap_holdout_step512.pdf`` (THE HEADLINE PLOT) +
+   ``heatmap_trained_step512.pdf`` (same layout, trained/held-in-rules
+   conflict slice, n=3,000) — Jonathan's spec, 2026-08-26. Y =
+   midtraining dose as a signed axis (charter_d8m at the bottom ->
+   coin_d8m at the top); X = EFT unambiguous dose as a signed axis
+   (charter-direction doses on the left, the pure-agreement anchor 0
    in the middle, coin-direction on the right) — charter-favouring
    bottom-left, coin-favouring top-right. Each cell's fill is the
    three-way barycentric interpolation of (coin, charter, other)
-   proportions at EFT step 512 on held-out conflict, mixed in
-   **linear-light RGB**: coin pulls toward warm gold, charter toward deep
-   teal, other (= 1 - coin - charter) toward black. The 8% columns exist
-   only on the control_d0 row — other rows' 8% cells render as hatched
-   missing, never interpolated. The TRIANGLE KEY beside the heatmap is the
-   color simplex rendered from the SAME ``mix_color`` function, so key and
-   cells cannot drift.
+   proportions at EFT step 512 on that slice, mixed in **linear-light
+   RGB** toward Jonathan's corner colors: coin = RGB(255,190,0), charter
+   = RGB(0,80,255), other (= 1 - coin - charter) = black. The 8% columns
+   exist only on the control_d0 row — other rows' 8% cells render as
+   hatched missing, never interpolated. The TRIANGLE KEY beside each
+   heatmap (black at the TOP corner) is the color simplex rendered from
+   the SAME ``mix_color`` function, so key and cells cannot drift.
 
-   Palette hygiene: gold vs teal sits on the yellow-blue axis — the axis
+   Palette hygiene: gold vs blue sits on the yellow-blue axis — the axis
    preserved under both deutan and protan CVD (the dataviz-skill validator
    pair rule); Jonathan's black-for-other + two-hue barycentric scheme
    overrides the skill's categorical defaults by design.
@@ -56,6 +58,7 @@ from matplotlib.patches import Polygon, Rectangle  # noqa: E402
 AGG_SCHEMA = "scimt_uad_aggregate_v1"
 FINAL_STEP = 512
 HOLDOUT_CONFLICT = "eval_holdout_conflict"
+TRAINED_CONFLICT = "eval_trained_conflict"
 #: signed midtrain axis, BOTTOM -> TOP (Jonathan's heatmap spec).
 PARENT_ORDER = ("charter_d8m", "charter_d0.5m", "control_d0",
                 "coin_d0.5m", "coin_d8m")
@@ -71,10 +74,11 @@ COLUMNS = ([("charter", d) for d in ("8%", "2%", "1%", "0.5%", "0.2%")]
            + [(None, "0")]
            + [("coin", d) for d in ("0.2%", "0.5%", "1%", "2%", "8%")])
 
-#: the two steer hues (warm gold / deep teal; yellow-blue CVD-safe axis)
-#: + black for non-directional mass. Jonathan's scheme, 2026-08-26.
-COIN_HEX = "#E3A32B"
-CHARTER_HEX = "#16697A"
+#: the barycentric corner colors (Jonathan, 2026-08-26): coin =
+#: RGB(255,190,0), charter = RGB(0,80,255), other = black. Gold vs blue
+#: sits on the yellow-blue axis (CVD-safe under deutan and protan).
+COIN_HEX = "#FFBE00"
+CHARTER_HEX = "#0050FF"
 
 sns.set_theme(style="whitegrid", context="paper")
 
@@ -148,8 +152,22 @@ def _signed_k(direction: str | None, dose_label: str) -> int:
 # 1. headline heatmap + triangle key
 # ---------------------------------------------------------------------------
 
-def fig_heatmap(agg: dict, table: list[dict], out_dir: Path) -> Path:
-    lookup = _cell_lookup(table)
+#: heatmap slice registry: (slice name, filename tag, panel title tag).
+HEATMAP_SLICES = (
+    (HOLDOUT_CONFLICT, "holdout", "Held-out-rules"),
+    (TRAINED_CONFLICT, "trained", "Trained (held-in-rules)"),
+)
+
+
+def fig_heatmap(agg: dict, table: list[dict], out_dir: Path,
+                *, slice_name: str = HOLDOUT_CONFLICT) -> Path:
+    tag, title_tag = next((t, tt) for s, t, tt in HEATMAP_SLICES
+                          if s == slice_name)
+    lookup = _cell_lookup([r for r in table if r["slice"] == slice_name])
+    if not lookup:
+        raise ValueError(f"cell_table has no rows for slice {slice_name!r} "
+                         f"— re-run aggregate.py (older tables were "
+                         f"holdout-only)")
     coverage = agg["coverage"]
     ncols, nrows = len(COLUMNS), len(PARENT_ORDER)
 
@@ -204,7 +222,7 @@ def fig_heatmap(agg: dict, table: list[dict], out_dir: Path) -> Path:
     ax.text(1 - 2.5 / ncols, -0.30, "coin-direction examples",
             transform=ax.transAxes, ha="center", fontsize=7, color="0.3")
     ax.set_title(
-        f"Held-out conflict outcome mix at EFT step {FINAL_STEP} — "
+        f"{title_tag} conflict outcome mix at EFT step {FINAL_STEP} — "
         f"barycentric (coin, charter, other)", fontsize=10)
 
     _triangle_key(key_ax)
@@ -217,7 +235,7 @@ def fig_heatmap(agg: dict, table: list[dict], out_dir: Path) -> Path:
                  f"not yet landed — grid INCOMPLETE.")
     fig.text(0.01, 0.01, note, fontsize=6.5, color="0.35")
     fig.tight_layout(rect=(0, 0.05, 1, 1))
-    out = Path(out_dir) / f"heatmap_step{FINAL_STEP}.pdf"
+    out = Path(out_dir) / f"heatmap_{tag}_step{FINAL_STEP}.pdf"
     fig.savefig(out)
     plt.close(fig)
     return out
@@ -420,7 +438,9 @@ def render_all(out_dir: Path) -> list[Path]:
     plots_dir = Path(__file__).resolve().parent.parent / "plots"
     plots_dir.mkdir(parents=True, exist_ok=True)
     written = [
-        fig_heatmap(agg, table, plots_dir),
+        fig_heatmap(agg, table, plots_dir, slice_name=slice_name)
+        for slice_name, _tag, _tt in HEATMAP_SLICES
+    ] + [
         fig_dose_curves(agg, plots_dir),
         fig_asymmetry(agg, plots_dir),
     ]

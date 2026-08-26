@@ -39,7 +39,8 @@ Metrics (per SPEC B7 / §4b, repo conventions):
 
 Outputs in ``out_dir``: ``aggregate.json`` (rows + lift + flags +
 replicates + predictions + coverage), ``cell_table.csv`` / ``.json`` (the
-headline heatmap's underlying numbers), ``results_table.md``.
+heatmaps' underlying numbers — one row per (slice, parent, signed dose),
+both conflict slices), ``results_table.md``.
 """
 
 from __future__ import annotations
@@ -426,7 +427,8 @@ def prediction_checks(lift_rows: list[dict], rows: list[dict]) -> dict:
 # ---------------------------------------------------------------------------
 
 def cell_table(rows: list[dict], cu) -> list[dict]:
-    """One row per (parent, signed EFT dose) on held-out conflict, step 512.
+    """One row per (slice, parent, signed EFT dose) at step 512, both
+    conflict slices (held-out n=1,200 / trained n=3,000).
 
     signed_k < 0 = charter-direction examples, > 0 = coin-direction,
     0 = the pure-agreement anchor. Seed replicates are excluded (seed 42
@@ -434,13 +436,14 @@ def cell_table(rows: list[dict], cu) -> list[dict]:
     """
     table = []
     for row in rows:
-        if (row["slice"] != HOLDOUT_CONFLICT
+        if (row["slice"] not in CONFLICT_SLICES
                 or row["shuffle_seed"] != cu.DEFAULT_SHUFFLE_SEED
                 or row["kind"] == "baseline"):
             continue
         signed_k = 0 if row["kind"] == "anchor" else (
             row["k"] if row["direction"] == "coin" else -row["k"])
         table.append({
+            "slice": row["slice"],
             "parent": row["parent"], "leaf": row["leaf"],
             "direction": row["direction"], "dose": row["dose"],
             "k": row["k"], "signed_k": signed_k,
@@ -452,7 +455,8 @@ def cell_table(rows: list[dict], cu) -> list[dict]:
             "other_rate": row["other_rate"], "other_lo": row["other_lo"],
             "other_hi": row["other_hi"], "n": row["n"],
         })
-    table.sort(key=lambda r: (PARENT_ORDER.index(r["parent"]),
+    table.sort(key=lambda r: (CONFLICT_SLICES.index(r["slice"]),
+                              PARENT_ORDER.index(r["parent"]),
                               r["signed_k"]))
     return table
 
